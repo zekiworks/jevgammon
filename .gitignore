@@ -1,0 +1,15 @@
+/target
+/jevgammon.db*
+/league.db*
+/league.log
+/league-before-removing-3.db
+/gnubg_eval.db
+/replay.db
+/*.db-shm
+/*.db-wal
+/*.db-journal
+/*.log
+/analysis/
+.DS_Store
+._*
+__pycache__/

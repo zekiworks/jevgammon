@@ -1,0 +1,596 @@
+#!/usr/bin/env python3
+"""League dashboard: serves one page and JSON snapshots read from the league database.
+
+    python3 tools/league_web.py --db league.db --port 8095
+
+Standard library only. The database is opened read-only per request, so it can run beside a
+league in progress. The page shows the latest league (or ?league=N), the history of every
+league in the database with what each one tested (`leagues.note`), and a comparison of each
+model's record across leagues. The table follows `src/league.rs`: 3 points for a win, 1 for
+a draw, ties broken by more games won, then fewer games lost; only finished matches count.
+"""
+
+import argparse
+import json
+import sqlite3
+import time
+from datetime import datetime
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+from urllib.parse import parse_qs, urlparse
+
+WIN_POINTS, DRAW_POINTS = 3, 1
+CACHE_SECONDS = 2.0
+# A league that is not finished counts as live while it moved within this many seconds.
+LIVE_SECONDS = 600
+
+
+def connect(db: Path) -> sqlite3.Connection:
+    conn = sqlite3.connect(f"file:{db}?mode=ro", uri=True, timeout=10)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def league_fixtures(conn: sqlite3.Connection, lid: int) -> tuple[list[dict], dict[int, list[int]]]:
+    """The league's fixtures with their latest match, and games won per match."""
+    fixtures = [dict(r) for r in conn.execute(
+        """SELECT lm.id, lm.stage, lm.label, lm.matchday, lm.model1, lm.model2, lm.match_id,
+                  m.status, m.score1, m.score2, m.winner, m.rounds_played, m.rounds_planned,
+                  m.error, m.started_at, m.finished_at
+           FROM league_matches lm LEFT JOIN matches m ON m.id = lm.match_id
+           WHERE lm.league_id = ? ORDER BY lm.stage = 'playoff', lm.matchday, lm.id""",
+        (lid,),
+    )]
+    match_ids = [f["match_id"] for f in fixtures if f["match_id"]]
+    marks = ",".join("?" * len(match_ids)) or "NULL"
+    games_won: dict[int, list[int]] = {}
+    for r in conn.execute(
+        f"""SELECT match_id, winner_player, COUNT(*) AS n FROM games
+            WHERE match_id IN ({marks}) AND winner_player IS NOT NULL GROUP BY 1, 2""",
+        match_ids,
+    ):
+        games_won.setdefault(r["match_id"], [0, 0])[r["winner_player"] - 1] = r["n"]
+    return fixtures, games_won
+
+
+def league_table(names: list[str], fixtures: list[dict], games_won: dict[int, list[int]]) -> list[dict]:
+    """League-stage table from finished matches, ordered as `src/league.rs` ranks it."""
+    rows = {n: dict(name=n, played=0, won=0, drawn=0, lost=0, points=0, gw=0, gl=0, pf=0, pa=0) for n in names}
+    for f in fixtures:
+        if f["stage"] != "league" or f["status"] != "finished":
+            continue
+        gw = games_won.get(f["match_id"], [0, 0])
+        for side, name in enumerate((f["model1"], f["model2"])):
+            row, other = rows[name], 1 - side
+            row["played"] += 1
+            row["gw"] += gw[side]
+            row["gl"] += gw[other]
+            row["pf"] += (f["score1"], f["score2"])[side]
+            row["pa"] += (f["score1"], f["score2"])[other]
+            if f["winner"] is None:
+                row["drawn"] += 1
+                row["points"] += DRAW_POINTS
+            elif f["winner"] == side + 1:
+                row["won"] += 1
+                row["points"] += WIN_POINTS
+            else:
+                row["lost"] += 1
+    order = {n: i for i, n in enumerate(names)}
+    return sorted(rows.values(), key=lambda r: (-r["points"], -r["gw"], r["gl"], order[r["name"]]))
+
+
+def last_activity(conn: sqlite3.Connection, lid: int) -> str | None:
+    """Newest move or match start in the league."""
+    return conn.execute(
+        """SELECT MAX(t) FROM (
+               SELECT MAX(t.created_at) AS t FROM turns t JOIN games g ON g.id = t.game_id
+               JOIN league_matches lm ON lm.match_id = g.match_id WHERE lm.league_id = ?1
+               UNION ALL
+               SELECT MAX(m.started_at) FROM matches m
+               JOIN league_matches lm ON lm.match_id = m.id WHERE lm.league_id = ?1)""",
+        (lid,),
+    ).fetchone()[0]
+
+
+def league_state(league: sqlite3.Row, last: str | None) -> str:
+    """finished, live (activity in the last LIVE_SECONDS), or stopped part-way."""
+    if league["status"] == "finished":
+        return "finished"
+    if last and time.time() - datetime.fromisoformat(last).timestamp() < LIVE_SECONDS:
+        return "live"
+    return "stopped"
+
+
+GAME_TOTALS = """SELECT COUNT(*) AS games, AVG(g.turns) AS avg_turns,
+                        SUM(g.result = 'turn_limit') AS turn_limit, SUM(g.result = 'timeout') AS timeouts,
+                        SUM(g.result IN ('gammon', 'backgammon')) AS gammons
+                 FROM games g JOIN league_matches lm ON lm.match_id = g.match_id AND lm.league_id = ?
+                 WHERE g.winner_player IS NOT NULL"""
+
+
+def snapshot(db: Path, league_id: int | None) -> dict:
+    with connect(db) as conn:
+        league = conn.execute(
+            "SELECT * FROM leagues WHERE id = ?" if league_id else "SELECT * FROM leagues ORDER BY id DESC LIMIT 1",
+            (league_id,) if league_id else (),
+        ).fetchone()
+        if league is None:
+            return {"error": "no league in this database"}
+        lid = league["id"]
+        names = [m["name"] for m in json.loads(league["models"])]
+        fixtures, games_won = league_fixtures(conn, lid)
+        state = league_state(league, last_activity(conn, lid))
+
+        # The game in progress (or the last one) of every running match; a stopped league's
+        # interrupted matches are not live.
+        live = {}
+        for f in fixtures:
+            if state != "live" or f["status"] != "running":
+                continue
+            game = conn.execute(
+                "SELECT * FROM games WHERE match_id = ? ORDER BY id DESC LIMIT 1", (f["match_id"],)
+            ).fetchone()
+            if game is None:
+                continue
+            turn = conn.execute(
+                "SELECT * FROM turns WHERE game_id = ? ORDER BY turn_no DESC LIMIT 1", (game["id"],)
+            ).fetchone()
+            live[f["match_id"]] = {
+                "turn_id": turn["id"] if turn else None,
+                "round": game["round_no"],
+                "leg": game["leg"],
+                "white": f["model1"] if game["white_player"] == 1 else f["model2"],
+                "black": f["model2"] if game["white_player"] == 1 else f["model1"],
+                "turn": turn["turn_no"] if turn else 0,
+                "mover": (f["model1"] if turn["player"] == 1 else f["model2"]) if turn else None,
+                "dice": [turn["die1"], turn["die2"]] if turn else None,
+                "move": turn["move"] if turn else None,
+                "decided_by": turn["decided_by"] if turn else None,
+                "latency_ms": turn["latency_ms"] if turn else None,
+                "legal": turn["legal_count"] if turn else None,
+                # Position before that move, white's perspective.
+                "position": json.loads(turn["position"]) if turn else None,
+                "at": turn["created_at"] if turn else game["started_at"],
+                "game_over": game["finished_at"] is not None,
+            }
+
+        def model(player_col: str) -> str:
+            """League name of the player in `player_col` (1 = model1, 2 = model2)."""
+            return f"CASE {player_col} WHEN 1 THEN lm.model1 ELSE lm.model2 END"
+
+        decisions = {r["name"]: dict(r) for r in conn.execute(
+            f"""SELECT {model('t.player')} AS name,
+                       SUM(t.decided_by IN ('model', 'fallback', 'timeout')) AS decisions,
+                       AVG(CASE WHEN t.decided_by IN ('model', 'fallback') THEN t.latency_ms END) AS avg_ms,
+                       MAX(CASE WHEN t.decided_by IN ('model', 'fallback') THEN t.latency_ms END) AS max_ms,
+                       SUM(t.decided_by = 'fallback') AS fallbacks,
+                       SUM(t.decided_by = 'timeout') AS timeouts,
+                       SUM(t.move LIKE '%*%' AND t.decided_by IN ('model', 'fallback')) AS hits,
+                       SUM(t.input_tokens) AS input_tokens
+                FROM turns t JOIN games g ON g.id = t.game_id
+                JOIN league_matches lm ON lm.match_id = g.match_id AND lm.league_id = ?
+                GROUP BY 1""",
+            (lid,),
+        )}
+        outcomes: dict[str, dict] = {}
+        for r in conn.execute(
+            f"""SELECT {model('g.winner_player')} AS name, g.result, COUNT(*) AS n
+                FROM games g JOIN league_matches lm ON lm.match_id = g.match_id AND lm.league_id = ?
+                WHERE g.winner_player IS NOT NULL GROUP BY 1, 2""",
+            (lid,),
+        ):
+            outcomes.setdefault(r["name"], {})[r["result"]] = r["n"]
+        game_totals = conn.execute(GAME_TOTALS, (lid,)).fetchone()
+        recent = [dict(r) for r in conn.execute(
+            f"""SELECT lm.label, g.round_no, g.leg, g.result, g.points, g.turns, g.finished_at,
+                       {model('g.winner_player')} AS winner
+                FROM games g JOIN league_matches lm ON lm.match_id = g.match_id AND lm.league_id = ?
+                WHERE g.winner_player IS NOT NULL ORDER BY g.finished_at DESC LIMIT 25""",
+            (lid,),
+        )]
+
+    table = league_table(names, fixtures, games_won)
+
+    for f in fixtures:
+        f["games_won"] = games_won.get(f["match_id"], [0, 0])
+        f["live"] = live.get(f["match_id"])
+
+    return {
+        "league": {
+            "id": lid,
+            "status": state,
+            "note": league["note"],
+            "seed": str(league["seed"] & (2**64 - 1)),
+            "rounds": league["rounds"],
+            "clock_seconds": league["clock_seconds"],
+            "delay_seconds": league["delay_seconds"],
+            "max_turns": league["max_turns"],
+            "started_at": league["started_at"],
+            "finished_at": league["finished_at"],
+            "ranking": json.loads(league["ranking"]) if league["ranking"] else None,
+            "models": json.loads(league["models"]),
+        },
+        "table": table,
+        "fixtures": fixtures,
+        "models": [
+            {"name": n, **decisions.get(n, {}), "outcomes": outcomes.get(n, {})} for n in names
+        ],
+        "games": dict(game_totals),
+        "recent": recent,
+        "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
+
+
+def history(db: Path) -> dict:
+    """Every league, newest first: what it tested, how far it got, its table and game totals."""
+    leagues = []
+    with connect(db) as conn:
+        for league in conn.execute("SELECT * FROM leagues ORDER BY id DESC").fetchall():
+            lid = league["id"]
+            names = [m["name"] for m in json.loads(league["models"])]
+            fixtures, games_won = league_fixtures(conn, lid)
+            last = last_activity(conn, lid)
+            leagues.append({
+                "id": lid,
+                "status": league_state(league, last),
+                "note": league["note"],
+                "started_at": league["started_at"],
+                "finished_at": league["finished_at"],
+                "last_activity": last,
+                "rounds": league["rounds"],
+                "models": json.loads(league["models"]),
+                "matches_done": sum(f["status"] == "finished" for f in fixtures),
+                "matches_total": len(fixtures),
+                "games": dict(conn.execute(GAME_TOTALS, (lid,)).fetchone()),
+                "ranking": json.loads(league["ranking"]) if league["ranking"] else None,
+                "table": league_table(names, fixtures, games_won),
+            })
+    return {"leagues": leagues, "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
+
+
+def round_turns(db: Path, match_id: int, round_no: int) -> dict:
+    """Every roll of one round (both games), oldest first, in the shape of a live game."""
+    with connect(db) as conn:
+        fixture = conn.execute(
+            "SELECT model1, model2 FROM league_matches WHERE match_id = ?", (match_id,)
+        ).fetchone()
+        if fixture is None:
+            return {"error": f"no league match #{match_id}"}
+        names = (fixture["model1"], fixture["model2"])
+        turns = [
+            {
+                "turn_id": r["id"],
+                "round": round_no,
+                "leg": r["leg"],
+                "white": names[r["white_player"] - 1],
+                "black": names[2 - r["white_player"]],
+                "turn": r["turn_no"],
+                "mover": names[r["player"] - 1],
+                "dice": [r["die1"], r["die2"]],
+                "move": r["move"],
+                "decided_by": r["decided_by"],
+                "latency_ms": r["latency_ms"],
+                "legal": r["legal_count"],
+                # Position before the move, white's perspective.
+                "position": json.loads(r["position"]),
+                "at": r["created_at"],
+            }
+            for r in conn.execute(
+                """SELECT t.id, g.leg, g.white_player, t.turn_no, t.player, t.die1, t.die2, t.move,
+                          t.decided_by, t.latency_ms, t.legal_count, t.position, t.created_at
+                   FROM turns t JOIN games g ON g.id = t.game_id
+                   WHERE g.match_id = ? AND g.round_no = ? ORDER BY g.leg, t.turn_no""",
+                (match_id, round_no),
+            )
+        ]
+    return {"match_id": match_id, "round": round_no, "turns": turns}
+
+
+def turn_context(db: Path, turn_id: int) -> dict:
+    """What was sent to the model for one roll and what it answered: one entry per request
+    (play lists above a service's option limit are split into several)."""
+    with connect(db) as conn:
+        turn = conn.execute(
+            "SELECT turn_no, die1, die2, move, decided_by FROM turns WHERE id = ?", (turn_id,)
+        ).fetchone()
+        if turn is None:
+            return {"error": f"no turn #{turn_id}"}
+        exchanges = []
+        for r in conn.execute(
+            "SELECT request, response, error, latency_ms FROM exchanges WHERE turn_id = ? ORDER BY id",
+            (turn_id,),
+        ):
+            try:
+                request = json.loads(r["request"])
+            except ValueError:
+                request = {}
+            # System One: `state` + `questions.play.criteria`; OpenAI Decisions: `input` +
+            # `questions[0].choices`; LLMs: chat messages.
+            questions = request.get("questions")
+            # The option text the model read: the description (older requests repeat the play).
+            if isinstance(questions, dict):
+                options = [str(v) for v in next(iter(questions.values()), {}).get("criteria", {}).values()]
+            elif isinstance(questions, list) and questions:
+                options = [c.get("description") or c.get("value") for c in questions[0].get("choices", [])]
+            else:
+                options = []
+            context = request.get("state", request.get("input"))
+            if context is None and "messages" in request:
+                context = "\n\n".join(str(m.get("content")) for m in request["messages"])
+            if not isinstance(context, str):
+                context = json.dumps(context, indent=2)
+            exchanges.append({
+                "model": request.get("model"),
+                "context": context,
+                "options": options,
+                "response": r["response"],
+                "error": r["error"],
+                "latency_ms": r["latency_ms"],
+            })
+    return {"turn": dict(turn), "exchanges": exchanges}
+
+
+PAGE = r"""<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>jevgammon league</title>
+<style>
+:root{--bg:#0f1115;--panel:#171a21;--line:#2a2f3a;--fg:#e6e8ec;--mute:#8a91a0;--acc:#6aa9ff;--win:#4cc38a;--draw:#d9b44a;--loss:#e5636b;--wc:#d5dae3;--bc:#d9534f}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.45 system-ui,-apple-system,Segoe UI,sans-serif}
+header{padding:14px 20px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:8px 24px;align-items:baseline}
+h1{font-size:18px;margin:0}h2{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--mute);margin:0 0 10px}
+.meta{color:var(--mute)}main{display:grid;gap:16px;padding:16px 20px;grid-template-columns:repeat(auto-fit,minmax(420px,1fr))}
+section{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px}
+.wide{grid-column:1/-1}table{border-collapse:collapse;width:100%}th,td{padding:5px 8px;text-align:right;white-space:nowrap}
+th{color:var(--mute);font-weight:500;border-bottom:1px solid var(--line)}td:first-child,th:first-child,td.l,th.l{text-align:left}
+tbody tr+tr td{border-top:1px solid #20242d}.pts{font-weight:700;color:var(--acc)}.top td{background:#1b2230}
+.pill{display:inline-block;padding:1px 7px;border-radius:9px;font-size:12px;background:#232836;color:var(--mute)}
+.running{background:#16324f;color:#9cc7ff}.finished{background:#1c3327;color:#8fe0b3}.aborted{background:#3d1d22;color:#ff9aa1}
+.w{color:var(--win);font-weight:600}.live{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(330px,1fr))}
+.card{border:1px solid var(--line);border-radius:8px;padding:10px}.card h3{margin:0 0 4px;font-size:14px}
+.board{display:grid;grid-template-columns:repeat(13,1fr);gap:2px;margin:8px 0;font-size:11px;text-align:center}
+.pt{background:#20242d;border-radius:3px;min-height:22px;padding:2px 0}
+/* Checker colours: one per side, shared by board cells, legend discs and names. */
+.pt.wc{background:var(--wc);color:#12151b;font-weight:700}.pt.wc .num{color:#5a6070}
+.pt.bc{background:var(--bc);color:#fff;font-weight:700}.pt.bc .num{color:#ffd3d1}
+.pt.bar{background:#111;color:var(--mute)}.num{color:#555b68;font-size:10px}
+.disc{display:inline-block;width:.75em;height:.75em;border-radius:50%;vertical-align:-.05em;margin-right:1px}
+.disc.dw{background:var(--wc)}.disc.db{background:var(--bc)}
+.cw{color:var(--wc);font-weight:600}.cb{color:var(--bc);font-weight:600}
+/* Home-board labels: points 19-24 (black) above the top right, 1-6 (white) below the bottom right. */
+.home{grid-column:8/14;font-size:11px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.home.top{border-bottom:2px solid var(--bc)}.home.bottom{border-top:2px solid var(--wc)}.homegap{grid-column:1/8}
+.nav{display:flex;gap:6px;align-items:center;margin-top:8px}.nav button{background:#232836;color:var(--fg);border:1px solid var(--line);border-radius:5px;padding:2px 10px;font:inherit;cursor:pointer}
+.nav button:disabled{opacity:.35;cursor:default}.nav button:not(:disabled):hover{border-color:var(--acc)}
+.mute{color:var(--mute)}.days{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.day h3{margin:0 0 6px;font-size:13px;color:var(--mute)}.fx{display:flex;justify-content:space-between;gap:8px;padding:3px 0}
+.fx .s{font-variant-numeric:tabular-nums;min-width:52px;text-align:center}footer{padding:0 20px 20px;color:var(--mute);font-size:12px}
+dialog{background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:8px;width:min(1000px,94vw);max-height:90vh;padding:14px}
+dialog::backdrop{background:#000a}dialog pre{white-space:pre-wrap;word-break:break-word;background:#0b0d11;border:1px solid var(--line);border-radius:6px;padding:10px;font:12px/1.4 ui-monospace,monospace;max-height:55vh;overflow:auto}
+dialog .head{display:flex;justify-content:space-between;align-items:baseline;gap:12px}dialog h3{margin:0}
+/* History: one row per league; the league on view is highlighted. */
+#history tbody tr{cursor:pointer}#history tbody tr:hover td{background:#1d2230}#history tr.sel td{background:#1b2a40}
+#history td.note{white-space:normal;text-align:left;min-width:280px;color:var(--mute);font-size:13px}
+#places td.n{font-variant-numeric:tabular-nums}#places td.zero{color:#3a404c}#places td.gold{color:var(--win);font-weight:700}
+h2 .seasons{float:right;text-transform:none;letter-spacing:0;display:flex;gap:6px;align-items:center}
+.seasons button{background:#232836;color:var(--fg);border:1px solid var(--line);border-radius:5px;padding:0 9px;font:inherit;cursor:pointer}
+.seasons button:disabled{opacity:.35;cursor:default}
+#note{flex-basis:100%;color:var(--mute);font-size:13px}header a{color:var(--acc)}
+</style></head><body>
+<dialog id="ctx"><div class="head"><h3 id="ctxTitle"></h3><button onclick="$('ctx').close()">close</button></div><div id="ctxBody"></div></dialog>
+<header><h1>jevgammon league <span id="lid"></span></h1><span id="status"></span><span class="meta" id="rules"></span><span class="meta" id="updated"></span><a href="#" id="latest" hidden>back to the latest league</a><div id="note"></div></header>
+<main>
+<section class="wide"><h2>History</h2><table id="history"></table><div class="mute" style="margin-top:8px">Click a league to view it. Live: moved in the last 10 minutes; stopped: ended before its last match, so only its finished matches count.</div></section>
+<section class="wide"><h2>Places</h2><table id="places"></table><div class="mute" style="margin-top:8px" id="placesNote"></div></section>
+<section><h2>Table <span class="seasons"><button id="prevSeason" title="previous league">&lsaquo;</button><span id="season"></span><button id="nextSeason" title="next league">&rsaquo;</button></span></h2><table id="table"></table><div class="mute" style="margin-top:8px">3 points per win, 1 per draw; ties: more games won, then fewer games lost. PF/PA are backgammon points. The arrows step through finished leagues and the live one.</div></section>
+<section><h2>Models</h2><table id="models"></table><div class="mute" style="margin-top:8px" id="totals"></div></section>
+<section class="wide"><h2>Live</h2><div class="live" id="live"></div></section>
+<section class="wide"><h2>Fixture</h2><div class="days" id="fixture"></div></section>
+<section class="wide"><h2>Recent games</h2><table id="recent"></table></section>
+</main>
+<footer>Refreshes every 5 s · <span id="ranking"></span></footer>
+<script>
+const $=id=>document.getElementById(id);
+// Side markers in the same colours as the board's checkers.
+const W='<span class="disc dw"></span>',B='<span class="disc db"></span>';
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const clock=s=>s==null?'off':`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+const ago=t=>{if(!t)return'';const s=Math.max(0,(Date.now()-Date.parse(t))/1000);return s<60?`${s|0}s ago`:s<3600?`${(s/60)|0}m ago`:`${(s/3600).toFixed(1)}h ago`};
+const pct=(a,b)=>b?`${(100*a/b).toFixed(0)}%`:'–';
+function board(p,white,black){ if(!p)return'';
+  // White's perspective: points[i] is white's point i+1 (+ white, - black). Top row 13..24, bottom 12..1.
+  const cell=(i)=>{const v=p.points[i];const c=v>0?'wc':v<0?'bc':'';return `<div class="pt ${c}">${v?Math.abs(v):''}<div class="num">${i+1}</div></div>`};
+  let top='',bot='';
+  for(let i=12;i<24;i++){top+=cell(i);if(i===17)top+=`<div class="pt bar">${p.bar.black?B+p.bar.black:''}</div>`}
+  for(let i=11;i>=0;i--){bot+=cell(i);if(i===6)bot+=`<div class="pt bar">${p.bar.white?W+p.bar.white:''}</div>`}
+  const label=(cls,side,name)=>`<div class="homegap"></div><div class="home ${cls} ${side}">${esc(name)} home</div>`;
+  return `<div class="board">${label('top','cb',black)}${top}${bot}${label('bottom','cw',white)}</div><div class="mute">off: ${W} ${p.off.white} · ${B} ${p.off.black}</div>`;
+}
+function render(d){
+  if(d.error){$('status').textContent=d.error;return}
+  const L=d.league;
+  $('lid').textContent='#'+L.id;
+  $('status').innerHTML=pill(L.status);
+  $('note').textContent=L.note||'';
+  $('latest').hidden=selected==null;
+  $('rules').textContent=`${L.rounds} rounds per match · clock ${clock(L.delay_seconds)} delay + ${clock(L.clock_seconds)} bank · turn limit ${L.max_turns??'off'} · seed ${L.seed}`;
+  $('updated').textContent='updated '+new Date(d.generated_at).toLocaleTimeString();
+  $('table').innerHTML='<thead><tr><th>#</th><th class="l">Model</th><th>P</th><th>W</th><th>D</th><th>L</th><th>Pts</th><th>GW</th><th>GL</th><th>PF</th><th>PA</th></tr></thead><tbody>'+
+    d.table.map((r,i)=>`<tr class="${i<3?'top':''}"><td>${i+1}</td><td class="l">${esc(r.name)}</td><td>${r.played}</td><td>${r.won}</td><td>${r.drawn}</td><td>${r.lost}</td><td class="pts">${r.points}</td><td>${r.gw}</td><td>${r.gl}</td><td>${r.pf}</td><td>${r.pa}</td></tr>`).join('')+'</tbody>';
+  $('models').innerHTML='<thead><tr><th class="l">Model</th><th>Decisions</th><th>Avg</th><th>Max</th><th>Hit %</th><th>Fallback</th><th>Timeout</th><th>G/BG won</th></tr></thead><tbody>'+
+    d.models.map(m=>{const o=m.outcomes||{};return `<tr><td class="l">${esc(m.name)}</td><td>${m.decisions??0}</td><td>${m.avg_ms!=null?(m.avg_ms/1000).toFixed(2)+'s':'–'}</td><td>${m.max_ms!=null?(m.max_ms/1000).toFixed(1)+'s':'–'}</td><td>${pct(m.hits||0,m.decisions||0)}</td><td>${m.fallbacks??0}</td><td>${m.timeouts??0}</td><td>${(o.gammon||0)}/${(o.backgammon||0)}</td></tr>`}).join('')+'</tbody>';
+  const g=d.games;
+  $('totals').textContent=g.games?`${g.games} games · avg ${Math.round(g.avg_turns)} turns · ${g.turn_limit} at the turn limit (${pct(g.turn_limit,g.games)}) · ${g.gammons} gammons/backgammons · ${g.timeouts} lost on time`:'no finished games yet';
+  const running=d.fixtures.filter(f=>f.live);
+  $('live').innerHTML=running.length?running.map(f=>{
+    const s=view[f.match_id], v=s?s.turns[s.i]:f.live;
+    const nav=`<div class="nav"><button data-id="${f.match_id}" data-step="start" title="first roll of round ${v.round}">&#9198; round start</button><button data-id="${f.match_id}" data-step="prev" ${s&&s.i===0?'disabled':''}>&laquo;</button><button data-id="${f.match_id}" data-step="next" ${s?'':'disabled'}>&raquo;</button><button data-id="${f.match_id}" data-step="live" ${s?'':'disabled'}>live</button><button data-ctx="${v.turn_id??''}" ${v.turn_id&&v.decided_by!=='forced'&&v.decided_by!=='no_move'?'':'disabled'} title="what was sent to the model for this roll">context</button>${s?`<span class="pill">roll ${s.i+1} of ${s.turns.length} in round ${s.round}</span>`:''}</div>`;
+    return `<div class="card"><h3>${esc(f.label)}</h3>
+    <div><b>${esc(f.model1)}</b> <span class="pts">${f.score1} – ${f.score2}</span> <b>${esc(f.model2)}</b> <span class="mute">(games ${f.games_won[0]}–${f.games_won[1]})</span></div>
+    <div class="mute">round ${v.round} game ${v.leg} · ${W} <span class="cw">${esc(v.white)}</span> v ${B} <span class="cb">${esc(v.black)}</span> · turn ${v.turn}${L.max_turns?' / '+L.max_turns:''}</div>
+    ${board(v.position,v.white,v.black)}
+    <div>${v.mover?`<span class="${v.mover===v.white?'cw':'cb'}">${esc(v.mover)}</span> rolled ${v.dice.join('-')}: <b>${esc(v.move||'(no move)')}</b> <span class="mute">${v.decided_by}${v.decided_by==='model'?`, ${(v.latency_ms/1000).toFixed(1)}s of ${v.legal} plays`:''} · ${ago(v.at)}</span>`:'<span class="mute">starting</span>'}</div>${nav}</div>`}).join(''):`<div class="mute">${L.status==='live'?'no match running':`league #${L.id} is ${L.status}`}</div>`;
+  const days={};for(const f of d.fixtures){const k=f.stage==='playoff'?'Playoffs':'Matchday '+f.matchday;(days[k]=days[k]||[]).push(f)}
+  $('fixture').innerHTML=Object.entries(days).map(([k,fs])=>`<div class="day"><h3>${k}</h3>`+fs.map(f=>{
+    const st=f.status||'pending';const w1=f.winner===1,w2=f.winner===2;
+    const score=f.status?`${f.score1} – ${f.score2}`:'v';
+    return `<div class="fx"><span class="${w1?'w':''}">${esc(f.model1)}</span><span class="s">${score}</span><span class="${w2?'w':''}">${esc(f.model2)}</span><span class="pill ${st}">${st==='finished'&&f.winner==null?'draw':st}</span></div>`}).join('')+'</div>').join('');
+  $('recent').innerHTML='<thead><tr><th class="l">When</th><th class="l">Match</th><th>Game</th><th class="l">Winner</th><th class="l">Result</th><th>Pts</th><th>Turns</th></tr></thead><tbody>'+
+    d.recent.map(r=>`<tr><td class="l mute">${ago(r.finished_at)}</td><td class="l">${esc(r.label)}</td><td>${r.round_no}.${r.leg}</td><td class="l">${esc(r.winner)}</td><td class="l">${esc(r.result.replace('_',' '))}</td><td>${r.points}</td><td>${r.turns}</td></tr>`).join('')+'</tbody>';
+  $('ranking').textContent=L.ranking?'Final ranking: '+L.ranking.join(' · '):'';
+}
+const pill=s=>`<span class="pill ${{finished:'finished',live:'running',stopped:'aborted'}[s]||''}">${esc(s)}</span>`;
+const span=(a,b)=>{if(!a||!b)return'–';const m=Math.round((Date.parse(b)-Date.parse(a))/60000);return m<60?`${m} min`:`${Math.floor(m/60)} h ${m%60} min`};
+function renderHistory(h){
+  const Ls=h.leagues||[];const shown=lastData&&lastData.league?lastData.league.id:null;
+  $('history').innerHTML='<thead><tr><th>#</th><th class="l">Status</th><th class="l">Started</th><th>Duration</th><th>Models</th><th>Rounds</th><th>Matches</th><th>Games</th><th>Turn limit</th><th class="l">Leader</th><th class="l">What it tested</th></tr></thead><tbody>'+
+    Ls.map(l=>{const g=l.games,leader=l.ranking?l.ranking[0]:(l.matches_done?l.table[0].name:'–');
+      return `<tr data-league="${l.id}" class="${l.id===shown?'sel':''}"><td>${l.id}</td><td class="l">${pill(l.status)}</td><td class="l">${new Date(l.started_at).toLocaleString()}</td><td>${span(l.started_at,l.finished_at||l.last_activity)}</td><td>${l.models.length}</td><td>${l.rounds}</td><td>${l.matches_done} / ${l.matches_total}</td><td>${g.games}</td><td>${pct(g.turn_limit||0,g.games)}</td><td class="l">${esc(leader)}${l.ranking?'':l.matches_done?' <span class="mute">(so far)</span>':''}</td><td class="note">${esc(l.note||'')}</td></tr>`}).join('')+'</tbody>';
+  // Places: how often each model finished 1st, 2nd, ... over finished leagues only.
+  const done=Ls.filter(l=>l.status==='finished'&&l.ranking);
+  const width=Math.max(0,...done.map(l=>l.ranking.length));
+  const count={};
+  for(const l of done)for(const entry of l.ranking){const m=/^(\d+)\. (.*)$/.exec(entry);if(!m)continue;
+    const c=count[m[2]]=count[m[2]]||Array(width).fill(0);c[+m[1]-1]++}
+  // Best first: more wins, then more seconds, and so on.
+  const rows=Object.entries(count).sort((a,b)=>{for(let i=0;i<width;i++)if(a[1][i]!==b[1][i])return b[1][i]-a[1][i];return a[0].localeCompare(b[0])});
+  const ord=n=>n+(n%10===1&&n!==11?'st':n%10===2&&n!==12?'nd':n%10===3&&n!==13?'rd':'th');
+  $('places').innerHTML=done.length?'<thead><tr><th class="l">Model</th>'+Array.from({length:width},(_,i)=>`<th>${ord(i+1)}</th>`).join('')+'<th>Leagues</th></tr></thead><tbody>'+
+    rows.map(([n,c])=>`<tr><td class="l">${esc(n)}</td>`+c.map((v,i)=>`<td class="n ${v?(i===0?'gold':''):'zero'}">${v}</td>`).join('')+`<td>${c.reduce((s,v)=>s+v,0)}</td></tr>`).join('')+'</tbody>':'<tr><td class="mute">no finished league yet</td></tr>';
+  $('placesNote').textContent=done.length?`Final places over ${done.length} finished league${done.length>1?'s':''} (#${done.map(l=>l.id).reverse().join(', #')}); stopped and running leagues are left out.`:'';
+  // Season arrows: finished leagues plus the live one, oldest to newest.
+  const seasons=Ls.filter(l=>l.status!=='stopped').map(l=>l.id).sort((a,b)=>a-b);
+  const at=seasons.indexOf(shown);
+  $('season').textContent=shown!=null?`#${shown}`:'';
+  $('prevSeason').disabled=at<=0;$('nextSeason').disabled=at<0||at>=seasons.length-1;
+  $('prevSeason').onclick=()=>at>0&&choose(seasons[at-1]);
+  $('nextSeason').onclick=()=>at>=0&&at<seasons.length-1&&choose(seasons[at+1]);
+}
+// Rolls being browsed per running match: match_id -> {round, i, turns}. Absent = live.
+const view={};let lastData=null,lastHistory=null;
+// League on view: null = the latest one; ?league=N in the address selects one.
+let selected=new URLSearchParams(location.search).get('league');selected=selected?+selected:null;
+function choose(id){selected=id;for(const k in view)delete view[k];history.replaceState(null,'',id==null?location.pathname:`?league=${id}`);tick()}
+$('history').addEventListener('click',e=>{const r=e.target.closest('tr[data-league]');if(r)choose(+r.dataset.league)});
+$('latest').addEventListener('click',e=>{e.preventDefault();choose(null)});
+async function step(id,dir){
+  const f=lastData&&lastData.fixtures.find(x=>x.match_id===id);if(!f||!f.live)return;
+  if(dir==='live'){delete view[id];render(lastData);return}
+  const round=view[id]?view[id].round:f.live.round;
+  const r=await fetch(`api/round?match=${id}&round=${round}`,{cache:'no-store'});const turns=(await r.json()).turns||[];
+  if(!turns.length)return;
+  // Live shows the newest roll, so stepping back from live starts one before it.
+  let i=view[id]?view[id].i:turns.length-1;
+  i=dir==='start'?0:dir==='prev'?Math.max(0,i-1):i+1;
+  if(dir!=='start'&&i>=turns.length-1&&round===f.live.round)delete view[id];else view[id]={round,i:Math.min(i,turns.length-1),turns};
+  render(lastData);
+}
+async function showContext(turnId){
+  const d=await (await fetch(`api/context?turn=${turnId}`,{cache:'no-store'})).json();
+  if(d.error){$('ctxTitle').textContent=d.error;$('ctxBody').innerHTML='';$('ctx').showModal();return}
+  const t=d.turn;
+  $('ctxTitle').textContent=`Turn ${t.turn_no} · rolled ${t.die1}-${t.die2} · played ${t.move||'(no move)'} · ${t.decided_by}`;
+  $('ctxBody').innerHTML=d.exchanges.length?d.exchanges.map((x,k)=>`
+    <p class="mute">request ${k+1} of ${d.exchanges.length}${x.model?' · model '+esc(x.model):''} · ${x.context.length} chars · ${(x.latency_ms/1000).toFixed(2)}s${x.error?' · <span style="color:var(--loss)">'+esc(x.error)+'</span>':''}</p>
+    <b>Context sent</b><pre>${esc(x.context)}</pre>
+    ${x.options.length?`<b>Options (${x.options.length})</b><pre>${esc(x.options.join('\n'))}</pre>`:''}
+    <b>Response</b><pre>${esc(x.response??'(none)')}</pre>`).join(''):'<p class="mute">No request was sent for this roll (forced or no legal move).</p>';
+  $('ctx').showModal();
+}
+$('live').addEventListener('click',e=>{const c=e.target.closest('button[data-ctx]');if(c&&!c.disabled){showContext(+c.dataset.ctx);return}
+  const b=e.target.closest('button[data-step]');if(b&&!b.disabled)step(+b.dataset.id,b.dataset.step)});
+async function tick(){try{
+  const [s,h]=await Promise.all([fetch(selected==null?'api/state':`api/state?league=${selected}`,{cache:'no-store'}),fetch('api/history',{cache:'no-store'})]);
+  lastData=await s.json();lastHistory=await h.json();render(lastData);renderHistory(lastHistory);
+}catch(e){$('updated').textContent='update failed: '+e}}
+tick();setInterval(tick,5000);
+</script></body></html>"""
+
+
+class Handler(BaseHTTPRequestHandler):
+    db: Path
+    league_id: int | None
+    # Rendered JSON per key ("state:<league>", "history"), with the time it was built.
+    cache: dict[str, tuple[float, bytes]] = {}
+
+    def cached(self, key: str, build) -> bytes:
+        now = time.monotonic()
+        hit = self.cache.get(key)
+        if hit is None or now - hit[0] > CACHE_SECONDS:
+            try:
+                body = json.dumps(build()).encode()
+            except sqlite3.Error as error:
+                body = json.dumps({"error": f"database: {error}"}).encode()
+            hit = self.cache[key] = (now, body)
+        return hit[1]
+
+    def do_GET(self):
+        path = self.path.split("?", 1)[0]
+        if path == "/":
+            self.reply(200, "text/html; charset=utf-8", PAGE.encode())
+        elif path == "/api/context":
+            query = parse_qs(urlparse(self.path).query)
+            try:
+                turn_id = int(query["turn"][0])
+            except (KeyError, ValueError):
+                self.reply(400, "text/plain", b"need integer turn")
+                return
+            try:
+                body = json.dumps(turn_context(self.db, turn_id)).encode()
+            except sqlite3.Error as error:
+                body = json.dumps({"error": f"database: {error}"}).encode()
+            self.reply(200, "application/json", body)
+        elif path == "/api/round":
+            query = parse_qs(urlparse(self.path).query)
+            try:
+                match_id, round_no = int(query["match"][0]), int(query["round"][0])
+            except (KeyError, ValueError):
+                self.reply(400, "text/plain", b"need integer match and round")
+                return
+            try:
+                body = json.dumps(round_turns(self.db, match_id, round_no)).encode()
+            except sqlite3.Error as error:
+                body = json.dumps({"error": f"database: {error}"}).encode()
+            self.reply(200, "application/json", body)
+        elif path == "/api/state":
+            query = parse_qs(urlparse(self.path).query)
+            try:
+                league_id = int(query["league"][0]) if "league" in query else self.league_id
+            except ValueError:
+                self.reply(400, "text/plain", b"league must be an integer")
+                return
+            body = self.cached(f"state:{league_id}", lambda: snapshot(self.db, league_id))
+            self.reply(200, "application/json", body)
+        elif path == "/api/history":
+            self.reply(200, "application/json", self.cached("history", lambda: history(self.db)))
+        else:
+            self.reply(404, "text/plain", b"not found")
+
+    def reply(self, status: int, kind: str, body: bytes):
+        self.send_response(status)
+        self.send_header("Content-Type", kind)
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(body)
+
+    def log_message(self, *args):
+        pass
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--db", type=Path, default=Path("league.db"))
+    parser.add_argument("--league", type=int, help="league id (default: the latest)")
+    parser.add_argument("--host", default="0.0.0.0")
+    parser.add_argument("--port", type=int, default=8095)
+    args = parser.parse_args()
+    if not args.db.exists():
+        parser.error(f"{args.db} does not exist")
+    Handler.db, Handler.league_id = args.db.resolve(), args.league
+    server = ThreadingHTTPServer((args.host, args.port), Handler)
+    print(f"serving {args.db} on http://{args.host}:{args.port}", flush=True)
+    server.serve_forever()
+
+
+if __name__ == "__main__":
+    main()

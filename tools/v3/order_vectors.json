@@ -1,0 +1,12 @@
+[
+  {"seed": 0, "position_key": "4HPwATDgc/ABMA:21:white", "n": 15, "order": [5, 4, 6, 9, 12, 0, 1, 2, 7, 3, 8, 11, 13, 14, 10]},
+  {"seed": 1, "position_key": "4HPwATDgc/ABMA:65:black", "n": 2, "order": [1, 0]},
+  {"seed": 20261014, "position_key": "4HPwATDgc/ABMA:33:white", "n": 25, "order": [12, 9, 7, 6, 14, 3, 8, 11, 24, 23, 18, 4, 21, 13, 17, 1, 5, 16, 0, 15, 20, 19, 2, 10, 22]},
+  {"seed": 20261014, "position_key": "4Dn4AFjgc/ABIg:61:black", "n": 9, "order": [1, 8, 2, 7, 0, 6, 5, 4, 3]},
+  {"seed": 18446744073709551615, "position_key": "4HPwATDgc/ABMA:21:white", "n": 15, "order": [0, 9, 2, 10, 13, 14, 3, 11, 12, 5, 1, 4, 7, 8, 6]},
+  {"seed": 42, "position_key": "4Dn4AFjgc/ABIg:44:white", "n": 1, "order": [0]},
+  {"seed": 42, "position_key": "4Dn4AFjgc/ABIg:44:white", "n": 3, "order": [2, 1, 0]},
+  {"seed": 9007199254740993, "position_key": "sw0AAMDOAgAAAA:52:black", "n": 12, "order": [5, 4, 9, 8, 6, 11, 0, 3, 10, 1, 2, 7]},
+  {"seed": 123456789, "position_key": "4HPwATDgc/ABMA:43:white", "n": 26, "order": [22, 16, 24, 5, 1, 8, 10, 14, 7, 6, 25, 15, 19, 0, 2, 23, 21, 18, 13, 20, 11, 17, 9, 12, 3, 4]},
+  {"seed": 7, "position_key": "4HPwATDgc/ABMA:54:black", "n": 40, "order": [39, 6, 29, 16, 32, 0, 20, 18, 5, 34, 35, 10, 30, 26, 24, 28, 8, 7, 27, 13, 25, 36, 22, 14, 9, 15, 12, 11, 31, 38, 4, 17, 19, 2, 37, 21, 1, 33, 3, 23]}
+]

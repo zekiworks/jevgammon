@@ -1,0 +1,11 @@
+{
+  "option_order_seed": 1190975713392774006,
+  "positions": {
+    "selfplay_seed": 1711332899,
+    "sampling_seed": 3723441206,
+    "standard_games": [0, 12000],
+    "new_set_games": [0, 3000],
+    "extension_games": [3000, 12000],
+    "nackgammon_games": [0, 2000]
+  }
+}

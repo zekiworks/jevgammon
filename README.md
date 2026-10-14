@@ -315,11 +315,34 @@ for s in $(seq 0 39); do
 done; wait
 ```
 
-Each decision's legal plays are generated again with the rules of `src/board.rs` (the count
-must match `turns.legal_count`, otherwise the decision is listed in `skipped`). Every play
+Each decision's legal plays are generated again with the rules of `src/board.rs`, ported in
+`tools/v3/rules.py` (the count must match `turns.legal_count`, otherwise the decision is
+listed in `skipped`). Every play
 is evaluated at 0-ply, the five best and the chosen one again at 2-ply, in cubeless money
 equity. The `decisions` table holds the best and chosen equity and the loss. The error rate
 is the mean loss × 500. A shard that is run again skips decisions it already scored.
+
+### Benchmark v3 positions
+
+`tools/v3/` builds and scores the v3 shared position sets. The gnubg scripts run from the
+repo root inside gnubg's embedded Python and take their arguments from `V3_ARGS`:
+
+```sh
+gnubg -t -q -p tools/v3/test_classify.py      # phase rules, game-plan tags, gnubg class numbers
+V3_ARGS="standard 1711332899 0 300 positions/games/standard-00.jsonl.gz" \
+  gnubg -t -q -p tools/v3/selfplay.py          # expert self-play games (one shard)
+gnubg -t -q -p tools/v3/build.py               # positions/*.jsonl and positions/build-log.json
+V3_ARGS="evaluate out=score.db positions=positions/new.jsonl" gnubg -t -q -p tools/v3/score.py
+V3_ARGS="rollout out=score.db positions=positions/new.jsonl chosen=chosen.json" \
+  gnubg -t -q -p tools/v3/score.py             # rollouts of near-ties, chosen ones first
+python3 tools/v3/freeze.py                     # sha256 of positions, prompts, seeds, roster
+```
+
+`seeds.json` holds the option-order seed and the self-play and sampling seeds; the games in
+`positions/games/` (not committed) are reproduced from them. `tools/v3/order.py` is the
+Python twin of `src/players/order.rs` (test vectors in `tools/v3/order_vectors.json`). Each
+position row lists its legal plays in `Board::legal_plays` order and `option_order[k]`, the
+index of the play shown as option k.
 
 ## Database
 

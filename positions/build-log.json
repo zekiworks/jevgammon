@@ -1,0 +1,74 @@
+{
+  "new": {
+    "games_used": [
+      0,
+      747
+    ],
+    "per_phase": {
+      "opening": 200,
+      "contact": 200,
+      "holding": 200,
+      "race": 200,
+      "bear-off": 200
+    },
+    "first_roll_positions": 15,
+    "first_rolls_excluded": {},
+    "holding_found": 200,
+    "holding_quota": 200,
+    "duplicates_skipped": 5
+  },
+  "extension": {
+    "games_used": [
+      3000,
+      5938
+    ],
+    "per_phase": {
+      "opening": 800,
+      "contact": 800,
+      "holding": 800,
+      "race": 800,
+      "bear-off": 800
+    },
+    "first_roll_positions": 0,
+    "first_rolls_excluded": {},
+    "holding_found": 800,
+    "holding_quota": 800,
+    "duplicates_skipped": 99
+  },
+  "opening-control": {
+    "positions": 200,
+    "first_roll_positions": 15
+  },
+  "nackgammon": {
+    "games_used": [
+      0,
+      301
+    ],
+    "turns_1_to_6": 300,
+    "later_turns": 200,
+    "first_roll_positions": 14,
+    "first_rolls_excluded": {
+      "3-2": 27
+    },
+    "per_phase": {
+      "opening": 300,
+      "contact": 145,
+      "bear-off": 19,
+      "race": 28,
+      "holding": 8
+    },
+    "duplicates_skipped": 14
+  },
+  "v1": {
+    "positions": 1000,
+    "per_phase": {
+      "contact": 641,
+      "race": 136,
+      "bear-off": 60,
+      "opening": 143,
+      "holding": 20
+    },
+    "games": 396,
+    "legal_plays_differ_from_stored": []
+  }
+}

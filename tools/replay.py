@@ -63,7 +63,26 @@ MODELS = {
     # answer constrained by a JSON schema, thinking on at its lowest effort ("low" = 25 of 100). Choice only.
     # Up to 8 requests in flight, the server's MAX_RUNNING_REQUESTS.
     "DeepSeek V4.1 Flash (thinking)": ("http://127.0.0.1:8010/v1/chat/completions", "deepseek-v4.1-flash", False, None, 8),
-}
+    # Gemini 4 Argon: Gemini 3.8 Flash's setup (letter prompt, answer constrained to the letters, thinking
+    # level low, choice only). It has no "minimal" thinking level and returns no token probabilities.
+    "Gemini 4 Argon": ("https://generativelanguage.googleapis.com/v1beta/models/gemini-4-argon:generateContent",
+                       "gemini-4-argon", False, "GEMINI_API_KEY", 4),
+    # The same, with the options in a seeded random order per position (see SHUFFLED), to measure the
+    # effect of the v1 move-generation order.
+    "Gemini 4 Argon (shuffled)": ("https://generativelanguage.googleapis.com/v1beta/models/gemini-4-argon:generateContent",
+                                  "gemini-4-argon", False, "GEMINI_API_KEY", 4),
+ }
+
+# Models whose options are shown in a random order, seeded by the position id, instead of the
+# move-generation order the original model saw.
+SHUFFLED = {"Gemini 4 Argon (shuffled)"}
+
+
+def shuffled(options, position_id):
+    items = list(options.items())
+    random.Random(f"order-{position_id}").shuffle(items)
+    return dict(items)
+
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS positions (
@@ -317,13 +336,18 @@ def ask(args):
         if key and not os.environ.get(key):
             raise SystemExit(f"{m} needs {key}")
     positions = out.execute("SELECT id, state, instructions, options FROM positions ORDER BY id").fetchall()
+    if args.limit:
+        positions = positions[:args.limit]
     done = {(p, m) for p, m in out.execute("SELECT position_id, model FROM answers WHERE error IS NULL")}
     counts = {m: 0 for m in models}
 
     def one(model, pid, state, instructions, options):
         started = time.monotonic()
         try:
-            payload = body(model, state, instructions, json.loads(options))
+            options = json.loads(options)
+            if model in SHUFFLED:
+                options = shuffled(options, pid)
+            payload = body(model, state, instructions, options)
             text = send(model, payload)
             choice, probs, tokens = parse(model, text, payload.get("_letters"))
             error = None if choice is not None else "refusal"
@@ -361,6 +385,7 @@ def main():
     a = sub.add_parser("ask")
     a.add_argument("--out", default="replay.db")
     a.add_argument("--models", help="comma-separated subset of model names")
+    a.add_argument("--limit", type=int, help="only the first N positions (by id)")
     args = p.parse_args()
     {"sample": sample, "ask": ask}[args.cmd](args)
 

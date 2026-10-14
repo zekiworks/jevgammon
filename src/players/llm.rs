@@ -1,13 +1,23 @@
 //! Chat-model players: OpenAI and Anthropic subscriptions, Gemini API keys, and
-//! OpenAI-compatible local servers (Ollama, llama.cpp, LM Studio, vLLM).
+//! OpenAI-compatible servers (SGLang, vLLM, Ollama, paid providers). All get Cygnet's letter
+//! prompt (`prompt::letter_user`), the options lettered in the seeded order.
+//!
+//! OpenAI-compatible servers return letter probabilities: with reasoning on, request 1 lets
+//! the model reason (its answer constrained to the option letters); request 2 sends the
+//! conversation back with the reasoning and a prefilled `Answer:` (`continue_final_message`),
+//! one output token and `top_logprobs`, and the option letters' probabilities are read and
+//! normalised. Reasoning off is request 2 alone. A server that returns no logprobs falls back
+//! to the constrained letter (choice only). Subscription models return no probabilities and
+//! answer with one constrained letter.
 
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Instant;
 
 use anyhow::{Context, Result, anyhow};
 use serde_json::{Value, json};
 
-use super::prompt::{llm_system, llm_user, parse_choice};
+use super::prompt::{LETTERS, letter_probabilities, letter_system, letter_user, parse_letter};
 use super::{Decision, DecisionRequest};
 use crate::auth::Credentials;
 use crate::db::Exchange;
@@ -18,8 +28,19 @@ const ANTHROPIC_URL: &str = "https://api.anthropic.com/v1/messages";
 const GEMINI_URL: &str = "https://generativelanguage.googleapis.com/v1beta";
 /// Anthropic serves subscription tokens only when this is the first system block.
 const CLAUDE_CODE_IDENTITY: &str = "You are Claude Code, Anthropic's official CLI for Claude.";
-/// Model replies per decision before falling back to the first legal play.
-const MAX_REPLIES: usize = 3;
+/// Log-probabilities returned for the answer token (OpenAI's maximum).
+const TOP_LOGPROBS: u32 = 20;
+/// Prefilled before the answer letter.
+const ANSWER_PREFIX: &str = "Answer:";
+
+/// Per-player settings from its config.
+pub struct Options {
+    /// Reasoning effort; `None` = reasoning off (subscriptions: the provider default).
+    pub reasoning: Option<String>,
+    /// Fields merged into every request body.
+    pub request: Option<Value>,
+    pub max_tokens: Option<u32>,
+}
 
 enum Kind {
     OpenAiSubscription(Arc<Credentials>),
@@ -36,34 +57,64 @@ pub struct LlmClient {
     model: String,
     kind: Kind,
     session_id: String,
+    options: Options,
+    /// Set when the server answered a logprobs request without logprobs; later decisions
+    /// skip that request and use the constrained letter.
+    no_logprobs: AtomicBool,
 }
 
+#[derive(Debug, Default, PartialEq)]
 struct Completion {
+    /// The answer, without reasoning.
     text: String,
+    /// Reasoning returned separately (`reasoning_content`) or in `<think>` tags.
+    reasoning: Option<String>,
+    /// Top log-probabilities of the first answer token; `None` when not returned.
+    top: Option<Vec<(String, f64)>>,
     input_tokens: u64,
     output_tokens: u64,
 }
 
-fn schema() -> Value {
+/// JSON schema of a one-letter answer among `count` options.
+fn letter_schema(count: usize) -> Value {
     json!({
         "type": "object",
-        "properties": {"choice": {"type": "integer", "description": "Number of the chosen play"}},
+        "properties": {"choice": {"type": "string", "enum": letters(count)}},
         "required": ["choice"],
         "additionalProperties": false,
     })
+}
+
+fn letters(count: usize) -> Vec<String> {
+    LETTERS[..count]
+        .iter()
+        .map(|l| (*l as char).to_string())
+        .collect()
 }
 
 fn tokens(value: &Value, pointer: &str) -> u64 {
     value.pointer(pointer).and_then(Value::as_u64).unwrap_or(0)
 }
 
+/// `body` with the configured extra fields merged in at the top level.
+fn merged(mut body: Value, extra: Option<&Value>) -> Value {
+    if let (Some(Value::Object(extra)), Value::Object(fields)) = (extra, &mut body) {
+        for (key, value) in extra {
+            fields.insert(key.clone(), value.clone());
+        }
+    }
+    body
+}
+
 impl LlmClient {
-    fn new(http: reqwest::Client, model: String, kind: Kind) -> Self {
+    fn new(http: reqwest::Client, model: String, kind: Kind, options: Options) -> Self {
         LlmClient {
             http,
             model,
             kind,
             session_id: uuid::Uuid::new_v4().to_string(),
+            options,
+            no_logprobs: AtomicBool::new(false),
         }
     }
 
@@ -71,20 +122,22 @@ impl LlmClient {
         http: reqwest::Client,
         model: String,
         creds: Arc<Credentials>,
+        options: Options,
     ) -> Self {
-        Self::new(http, model, Kind::OpenAiSubscription(creds))
+        Self::new(http, model, Kind::OpenAiSubscription(creds), options)
     }
 
     pub fn anthropic_subscription(
         http: reqwest::Client,
         model: String,
         creds: Arc<Credentials>,
+        options: Options,
     ) -> Self {
-        Self::new(http, model, Kind::AnthropicSubscription(creds))
+        Self::new(http, model, Kind::AnthropicSubscription(creds), options)
     }
 
-    pub fn gemini(http: reqwest::Client, model: String, key: String) -> Self {
-        Self::new(http, model, Kind::Gemini(key))
+    pub fn gemini(http: reqwest::Client, model: String, key: String, options: Options) -> Self {
+        Self::new(http, model, Kind::Gemini(key), options)
     }
 
     pub fn openai_compatible(
@@ -92,109 +145,256 @@ impl LlmClient {
         model: String,
         base_url: String,
         api_key: Option<String>,
+        options: Options,
     ) -> Self {
-        Self::new(http, model, Kind::OpenAiCompatible { base_url, api_key })
+        Self::new(
+            http,
+            model,
+            Kind::OpenAiCompatible { base_url, api_key },
+            options,
+        )
     }
 
-    pub async fn decide(&self, req: &DecisionRequest<'_>) -> Result<Decision> {
-        let count = req.notations.len();
-        let system = llm_system(req);
-        let prompt = llm_user(req);
-        let mut user = prompt.clone();
-        let mut decision = Decision {
-            index: 0,
-            fallback: false,
-            exchanges: Vec::new(),
-            input_tokens: 0,
-            output_tokens: 0,
+    /// One question over `shown` (indices into the plays, at most 26, in the shown order).
+    /// Returns the chosen play, or `None` for an invalid answer.
+    pub async fn choose(
+        &self,
+        req: &DecisionRequest<'_>,
+        shown: &[usize],
+        decision: &mut Decision,
+    ) -> Result<Option<usize>> {
+        let count = shown.len();
+        let user = letter_user(req, shown);
+        let picked = match self.kind {
+            Kind::OpenAiCompatible { .. } => {
+                self.choose_compatible(req, &user, count, decision).await?
+            }
+            _ => {
+                let body = self.constrained_body(&user, count);
+                let completion = self.call(&body, req, decision).await?;
+                self.constrained_letter(&completion, count, decision)
+                    .map(|position| (position, None))
+            }
         };
-        for _ in 0..MAX_REPLIES {
-            let body = self.body(&system, &user);
-            let started = Instant::now();
-            let result = self.send(&body).await;
-            let latency_ms = started.elapsed().as_millis() as u64;
-            let completion = match result {
-                Ok(completion) => completion,
-                Err(error) => {
-                    return Err(error
-                        .into_anyhow()
-                        .context(format!("{} request failed", self.model)));
-                }
+        Ok(picked.map(|(position, probabilities)| {
+            decision.probabilities = match probabilities {
+                Some(probabilities) => shown.iter().copied().zip(probabilities).collect(),
+                None => vec![(shown[position], 1.0)],
             };
-            decision.input_tokens += completion.input_tokens;
-            decision.output_tokens += completion.output_tokens;
-            let parsed = parse_choice(&completion.text, count);
-            decision.exchanges.push(Exchange {
-                request: body.to_string(),
-                response: Some(completion.text.clone()),
-                error: parsed.as_ref().err().cloned(),
-                latency_ms,
+            decision.probability_source = Some(if decision.probabilities.len() > 1 {
+                "logprobs"
+            } else {
+                "choice_only"
             });
-            match parsed {
-                Ok(index) => {
-                    decision.index = index;
-                    return Ok(decision);
-                }
-                Err(reason) => {
-                    user = format!(
-                        "{prompt}\n\nYour previous reply was rejected ({reason}). \
-                         Reply with JSON only: {{\"choice\": N}} with N from 1 to {count}."
-                    );
+            shown[position]
+        }))
+    }
+
+    /// `(shown position, letter probabilities when read)`, or `None` when invalid.
+    async fn choose_compatible(
+        &self,
+        req: &DecisionRequest<'_>,
+        user: &str,
+        count: usize,
+        decision: &mut Decision,
+    ) -> Result<Option<(usize, Option<Vec<f64>>)>> {
+        let messages = json!([
+            {"role": "system", "content": letter_system()},
+            {"role": "user", "content": user},
+        ]);
+        // Reasoning on: the model reasons and answers with a constrained letter.
+        let mut constrained = None;
+        let prefill = match &self.options.reasoning {
+            Some(effort) => {
+                let body = json!({
+                    "model": self.model,
+                    "messages": messages,
+                    "temperature": 1.0,
+                    "max_tokens": self.options.max_tokens.unwrap_or(32768),
+                    "reasoning_effort": effort,
+                    "response_format": {
+                        "type": "json_schema",
+                        "json_schema": {"name": "play", "schema": letter_schema(count), "strict": true},
+                    },
+                });
+                let completion = self.call(&body, req, decision).await?;
+                constrained = self.constrained_letter(&completion, count, decision);
+                format!(
+                    "<think>{}</think>{ANSWER_PREFIX}",
+                    completion.reasoning.unwrap_or_default()
+                )
+            }
+            None => ANSWER_PREFIX.to_owned(),
+        };
+        // The letter probabilities after "Answer:".
+        if !self.no_logprobs.load(Ordering::Relaxed) {
+            let mut conversation = messages.as_array().cloned().unwrap_or_default();
+            conversation.push(json!({"role": "assistant", "content": prefill}));
+            let body = json!({
+                "model": self.model,
+                "messages": conversation,
+                "continue_final_message": true,
+                "temperature": 1.0,
+                "max_tokens": 1,
+                "logprobs": true,
+                "top_logprobs": TOP_LOGPROBS,
+            });
+            let completion = self.call(&body, req, decision).await?;
+            match &completion.top {
+                Some(top) => match letter_probabilities(top, count) {
+                    Some(probabilities) => {
+                        let best = (0..count)
+                            .max_by(|&a, &b| probabilities[a].total_cmp(&probabilities[b]))
+                            .expect("at least two options");
+                        return Ok(Some((best, Some(probabilities))));
+                    }
+                    None => mark(decision, "no option letter among the top logprobs"),
+                },
+                None => {
+                    mark(decision, "no logprobs returned; constrained letter used");
+                    self.no_logprobs.store(true, Ordering::Relaxed);
                 }
             }
         }
-        decision.fallback = true;
-        Ok(decision)
+        // No probabilities: the constrained letter, asked now when reasoning is off.
+        if self.options.reasoning.is_none() {
+            let body = self.constrained_body(user, count);
+            let completion = self.call(&body, req, decision).await?;
+            constrained = self.constrained_letter(&completion, count, decision);
+        }
+        Ok(constrained.map(|position| (position, None)))
     }
 
-    fn body(&self, system: &str, user: &str) -> Value {
+    /// The parsed letter of a constrained answer; an unparseable one is noted on its
+    /// exchange.
+    fn constrained_letter(
+        &self,
+        completion: &Completion,
+        count: usize,
+        decision: &mut Decision,
+    ) -> Option<usize> {
+        let position = parse_letter(&completion.text, count);
+        if position.is_none() {
+            mark(
+                decision,
+                &format!(
+                    "reply is not one of the letters A-{}",
+                    LETTERS[count - 1] as char
+                ),
+            );
+        }
+        position
+    }
+
+    /// A request for one letter, constrained to the option letters by the provider.
+    fn constrained_body(&self, user: &str, count: usize) -> Value {
+        let system = letter_system();
+        let effort = self.options.reasoning.as_deref();
         match &self.kind {
-            Kind::OpenAiSubscription(_) => json!({
-                "model": self.model,
-                "instructions": system,
-                "input": [{"type": "message", "role": "user", "content": [{"type": "input_text", "text": user}]}],
-                "stream": true,
-                "store": false,
-                "text": {"format": {"type": "json_schema", "name": "backgammon_play", "schema": schema(), "strict": true}},
-            }),
-            Kind::AnthropicSubscription(_) => json!({
-                "model": self.model,
-                "max_tokens": 1024,
-                "system": [
-                    {"type": "text", "text": CLAUDE_CODE_IDENTITY},
-                    {"type": "text", "text": system},
-                ],
-                "messages": [{"role": "user", "content": user}],
-                "tools": [{"name": "choose_play", "description": "Submit the chosen play.", "input_schema": schema()}],
-                "tool_choice": {"type": "tool", "name": "choose_play"},
-            }),
-            Kind::Gemini(_) => json!({
-                "systemInstruction": {"parts": [{"text": system}]},
-                "contents": [{"role": "user", "parts": [{"text": user}]}],
-                "generationConfig": {
-                    "responseMimeType": "application/json",
-                    "responseSchema": {
-                        "type": "OBJECT",
-                        "properties": {"choice": {"type": "INTEGER"}},
-                        "required": ["choice"],
-                    },
-                },
-            }),
+            Kind::OpenAiSubscription(_) => {
+                let mut body = json!({
+                    "model": self.model,
+                    "instructions": system,
+                    "input": [{"type": "message", "role": "user", "content": [{"type": "input_text", "text": user}]}],
+                    "stream": true,
+                    "store": false,
+                    "text": {"format": {"type": "json_schema", "name": "backgammon_play", "schema": letter_schema(count), "strict": true}},
+                });
+                if let Some(effort) = effort {
+                    body["reasoning"] = json!({"effort": effort});
+                }
+                body
+            }
+            Kind::AnthropicSubscription(_) => {
+                let mut output =
+                    json!({"format": {"type": "json_schema", "schema": letter_schema(count)}});
+                if let Some(effort) = effort {
+                    output["effort"] = json!(effort);
+                }
+                json!({
+                    "model": self.model,
+                    "max_tokens": self.options.max_tokens.unwrap_or(1024),
+                    "system": [
+                        {"type": "text", "text": CLAUDE_CODE_IDENTITY},
+                        {"type": "text", "text": system},
+                    ],
+                    "messages": [{"role": "user", "content": user}],
+                    "output_config": output,
+                })
+            }
+            Kind::Gemini(_) => {
+                let mut config = json!({
+                    "responseMimeType": "text/x.enum",
+                    "responseSchema": {"type": "STRING", "enum": letters(count)},
+                    "temperature": 1.0,
+                });
+                if let Some(effort) = effort {
+                    config["thinkingConfig"] = json!({"thinkingLevel": effort});
+                }
+                json!({
+                    "systemInstruction": {"parts": [{"text": system}]},
+                    "contents": [{"role": "user", "parts": [{"text": user}]}],
+                    "generationConfig": config,
+                })
+            }
             Kind::OpenAiCompatible { .. } => json!({
                 "model": self.model,
                 "messages": [
                     {"role": "system", "content": system},
                     {"role": "user", "content": user},
                 ],
+                "temperature": 1.0,
+                "max_tokens": self.options.max_tokens.unwrap_or(32768),
                 "response_format": {
                     "type": "json_schema",
-                    "json_schema": {"name": "backgammon_play", "strict": true, "schema": schema()},
+                    "json_schema": {"name": "play", "schema": letter_schema(count), "strict": true},
                 },
             }),
         }
     }
 
-    async fn send(&self, body: &Value) -> Result<Completion, CallError> {
+    /// Sends `body` (with the configured extra fields) and records the exchange and tokens.
+    async fn call(
+        &self,
+        body: &Value,
+        req: &DecisionRequest<'_>,
+        decision: &mut Decision,
+    ) -> Result<Completion> {
+        let body = merged(body.clone(), self.options.request.as_ref());
+        let started = Instant::now();
+        let retry_before = req.retry.get();
+        let result = self.send(&body, req).await;
+        let latency_ms = started
+            .elapsed()
+            .saturating_sub(req.retry.get() - retry_before)
+            .as_millis() as u64;
+        let (raw, completion) = match result {
+            Ok(done) => done,
+            Err(error) => {
+                return Err(error
+                    .into_anyhow()
+                    .context(format!("{} request failed", self.model)));
+            }
+        };
+        decision.input_tokens += completion.input_tokens;
+        decision.output_tokens += completion.output_tokens;
+        decision.exchanges.push(Exchange {
+            request: body.to_string(),
+            response: Some(raw),
+            error: None,
+            latency_ms,
+        });
+        Ok(completion)
+    }
+
+    /// The response as stored (raw body; the answer text for Codex's event stream) and
+    /// its parse.
+    async fn send(
+        &self,
+        body: &Value,
+        req: &DecisionRequest<'_>,
+    ) -> Result<(String, Completion), CallError> {
+        let retry = req.retry;
         match &self.kind {
             Kind::OpenAiSubscription(creds) => {
                 let mut token = creds.token().await?;
@@ -215,12 +415,15 @@ impl LlmClient {
                         }
                         builder
                     };
-                    match http::send(request).await {
+                    match http::send(request, retry).await {
                         Err(CallError::Auth(_)) if !refreshed => {
                             token = creds.refresh_after_rejection(&token.access).await?;
                             refreshed = true;
                         }
-                        other => return Ok(parse_codex_sse(&other?)?),
+                        other => {
+                            let completion = parse_codex_sse(&other?)?;
+                            return Ok((completion.text.clone(), completion));
+                        }
                     }
                 }
             }
@@ -236,39 +439,58 @@ impl LlmClient {
                             .header("anthropic-beta", "claude-code-20250219,oauth-2025-04-20")
                             .json(body)
                     };
-                    match http::send(request).await {
+                    match http::send(request, retry).await {
                         Err(CallError::Auth(_)) if !refreshed => {
                             token = creds.refresh_after_rejection(&token.access).await?;
                             refreshed = true;
                         }
-                        other => return Ok(parse_anthropic(&other?)?),
+                        other => {
+                            let raw = other?;
+                            let completion = parse_anthropic(&raw)?;
+                            return Ok((raw, completion));
+                        }
                     }
                 }
             }
             Kind::Gemini(key) => {
                 let url = format!("{GEMINI_URL}/models/{}:generateContent", self.model);
-                let text = http::send(|| {
-                    self.http
-                        .post(&url)
-                        .header("x-goog-api-key", key)
-                        .json(body)
-                })
+                let raw = http::send(
+                    || {
+                        self.http
+                            .post(&url)
+                            .header("x-goog-api-key", key)
+                            .json(body)
+                    },
+                    retry,
+                )
                 .await?;
-                Ok(parse_gemini(&text)?)
+                let completion = parse_gemini(&raw)?;
+                Ok((raw, completion))
             }
             Kind::OpenAiCompatible { base_url, api_key } => {
                 let url = format!("{base_url}/chat/completions");
-                let text = http::send(|| {
-                    let builder = self.http.post(&url).json(body);
-                    match api_key {
-                        Some(key) => builder.bearer_auth(key),
-                        None => builder,
-                    }
-                })
+                let raw = http::send(
+                    || {
+                        let builder = self.http.post(&url).json(body);
+                        match api_key {
+                            Some(key) => builder.bearer_auth(key),
+                            None => builder,
+                        }
+                    },
+                    retry,
+                )
                 .await?;
-                Ok(parse_chat_completion(&text)?)
+                let completion = parse_chat_completion(&raw)?;
+                Ok((raw, completion))
             }
         }
+    }
+}
+
+/// Notes `reason` on the decision's latest exchange.
+fn mark(decision: &mut Decision, reason: &str) {
+    if let Some(exchange) = decision.exchanges.last_mut() {
+        exchange.error = Some(reason.to_owned());
     }
 }
 
@@ -314,6 +536,7 @@ fn parse_codex_sse(stream: &str) -> Result<Completion> {
         text: done_text.unwrap_or(text),
         input_tokens: tokens(&usage, "/input_tokens"),
         output_tokens: tokens(&usage, "/output_tokens"),
+        ..Completion::default()
     })
 }
 
@@ -324,25 +547,18 @@ fn parse_anthropic(body: &str) -> Result<Completion> {
         .and_then(Value::as_array)
         .cloned()
         .unwrap_or_default();
-    let text = content
+    let text: String = content
         .iter()
-        .find(|block| block.get("type").and_then(Value::as_str) == Some("tool_use"))
-        .and_then(|block| block.get("input"))
-        .map(Value::to_string)
-        .or_else(|| {
-            let joined: String = content
-                .iter()
-                .filter_map(|block| block.get("text").and_then(Value::as_str))
-                .collect();
-            (!joined.is_empty()).then_some(joined)
-        })
-        .ok_or_else(|| anyhow!("Anthropic response had no tool call or text: {body}"))?;
+        .filter(|block| block.get("type").and_then(Value::as_str) == Some("text"))
+        .filter_map(|block| block.get("text").and_then(Value::as_str))
+        .collect();
     Ok(Completion {
         text,
         input_tokens: tokens(&value, "/usage/input_tokens")
             + tokens(&value, "/usage/cache_read_input_tokens")
             + tokens(&value, "/usage/cache_creation_input_tokens"),
         output_tokens: tokens(&value, "/usage/output_tokens"),
+        ..Completion::default()
     })
 }
 
@@ -358,34 +574,102 @@ fn parse_gemini(body: &str) -> Result<Completion> {
         .filter(|part| part.get("thought").and_then(Value::as_bool) != Some(true))
         .filter_map(|part| part.get("text").and_then(Value::as_str))
         .collect();
-    if text.is_empty() {
-        return Err(anyhow!(
-            "Gemini response had no text: {}",
-            crate::auth::snippet(body)
-        ));
-    }
     Ok(Completion {
         text,
         input_tokens: tokens(&value, "/usageMetadata/promptTokenCount"),
         output_tokens: tokens(&value, "/usageMetadata/candidatesTokenCount")
             + tokens(&value, "/usageMetadata/thoughtsTokenCount"),
+        ..Completion::default()
     })
 }
 
 fn parse_chat_completion(body: &str) -> Result<Completion> {
     let value: Value = serde_json::from_str(body).context("chat completion is not JSON")?;
-    let text = value
-        .pointer("/choices/0/message/content")
+    let message = value.pointer("/choices/0/message").ok_or_else(|| {
+        anyhow!(
+            "chat completion had no message: {}",
+            crate::auth::snippet(body)
+        )
+    })?;
+    let mut text = message
+        .get("content")
         .and_then(Value::as_str)
-        .ok_or_else(|| {
-            anyhow!(
-                "chat completion had no message content: {}",
-                crate::auth::snippet(body)
-            )
-        })?;
+        .unwrap_or_default()
+        .to_owned();
+    let mut reasoning = ["reasoning_content", "reasoning"]
+        .iter()
+        .find_map(|key| message.get(*key).and_then(Value::as_str))
+        .filter(|r| !r.is_empty())
+        .map(str::to_owned);
+    if reasoning.is_none()
+        && let Some(end) = text.find("</think>")
+    {
+        let thought = text[..end]
+            .trim_start()
+            .trim_start_matches("<think>")
+            .to_owned();
+        text = text[end + "</think>".len()..].to_owned();
+        reasoning = Some(thought);
+    }
+    let top = value
+        .pointer("/choices/0/logprobs/content/0/top_logprobs")
+        .and_then(Value::as_array)
+        .map(|entries| {
+            entries
+                .iter()
+                .filter_map(|e| {
+                    Some((
+                        e.get("token")?.as_str()?.to_owned(),
+                        e.get("logprob")?.as_f64()?,
+                    ))
+                })
+                .collect::<Vec<_>>()
+        })
+        .filter(|top| !top.is_empty());
     Ok(Completion {
-        text: text.to_owned(),
+        text,
+        reasoning,
+        top,
         input_tokens: tokens(&value, "/usage/prompt_tokens"),
         output_tokens: tokens(&value, "/usage/completion_tokens"),
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn reads_reasoning_answer_and_top_logprobs() {
+        let body = r#"{"choices":[{"message":{"content":" C","reasoning_content":"hmm"},
+            "logprobs":{"content":[{"token":" C","logprob":-0.1,
+            "top_logprobs":[{"token":" C","logprob":-0.1},{"token":" A","logprob":-2.5}]}]}}],
+            "usage":{"prompt_tokens":3903,"completion_tokens":1}}"#;
+        let c = parse_chat_completion(body).unwrap();
+        assert_eq!(c.text, " C");
+        assert_eq!(c.reasoning.as_deref(), Some("hmm"));
+        assert_eq!(c.top.as_ref().unwrap().len(), 2);
+        assert_eq!((c.input_tokens, c.output_tokens), (3903, 1));
+
+        let inline =
+            r#"{"choices":[{"message":{"content":"<think>plan</think>{\"choice\":\"B\"}"}}]}"#;
+        let c = parse_chat_completion(inline).unwrap();
+        assert_eq!(c.reasoning.as_deref(), Some("plan"));
+        assert_eq!(parse_letter(&c.text, 3), Some(1));
+        assert!(c.top.is_none());
+    }
+
+    #[test]
+    fn extra_fields_are_merged() {
+        let body = merged(
+            json!({"model": "m", "temperature": 1.0}),
+            Some(&json!({"chat_template_kwargs": {"thinking": true}, "temperature": 0.6})),
+        );
+        assert_eq!(body["chat_template_kwargs"]["thinking"], true);
+        assert_eq!(body["temperature"], 0.6);
+        assert_eq!(
+            letter_schema(3)["properties"]["choice"]["enum"],
+            json!(["A", "B", "C"])
+        );
+    }
 }

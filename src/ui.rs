@@ -193,7 +193,7 @@ impl App {
                 };
                 let note = match decided_by {
                     "model" | "timeout" => format!("  {:.1}s", latency_ms as f64 / 1000.0),
-                    "fallback" => "  [fallback: no valid reply]".to_owned(),
+                    "fallback" => "  [invalid answer: random play]".to_owned(),
                     "forced" => "  [forced]".to_owned(),
                     _ => String::new(),
                 };

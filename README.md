@@ -32,6 +32,8 @@ cp target/release/jevgammon .
 | `--quiet` (alias `--quite`) | off | No interface; print the score when it changes |
 | `--db <path>` | `jevgammon.db` | SQLite database file (created if missing) |
 | `--seed <u64>` | random | Match seed; fixes every roll of every round |
+| `--order-seed <u64>` | random | Option-order seed; fixes the order in which every position's legal plays are shown (see [What the models see](#what-the-models-see)) |
+| `--prompt-version <id>` | `bg-v2` | `bg-v2`, `bg-v2-notation`, `bg-v2-history`, or `nack-v2` (see [Prompt versions](#prompt-versions)) |
 | `--clock <seconds>` | `300` | Thinking-time bank per player per game; `0` disables the clock (see [Clock](#clock)) |
 | `--delay <seconds>` | `30` | Free time per decision before the bank is used |
 | `--max-turns <n>` | `300` | Turn limit per game, decided on pip count; `0` = no limit (see [Turn limit](#turn-limit)) |
@@ -78,7 +80,8 @@ printed and stored in `matches.error`), `2` for invalid arguments.
 | `anthropic/<model>`, `claude/<model>` | Claude subscription | qfork store or `~/.claude/.credentials.json` |
 | `gemini/<model>`, `google/<model>` | Gemini API | `GEMINI_API_KEY`, `GOOGLE_API_KEY`, or qfork `credentials/gemini.json` |
 | `ollama/<model>` | Ollama (OpenAI-compatible API) | `OLLAMA_HOST` (default `localhost:11434`) |
-| `local/<model>` | Any OpenAI-compatible server (llama.cpp, LM Studio, vLLM) | `--local-url`, optional `LOCAL_API_KEY` |
+| `local/<model>` | Any OpenAI-compatible server (SGLang, vLLM, llama.cpp, LM Studio) | `--local-url` (or `base_url` in a player config), optional `LOCAL_API_KEY` (or `api_key_env`) |
+| `openai-compatible/<model>` | Any OpenAI-compatible provider, from a [player config](#player-configs) | `base_url`, and the key in the variable named by `api_key_env` |
 
 Examples: `openai/gpt-5.6-sol`, `anthropic/claude-sonnet-4-5`, `gemini/gemini-2.5-flash`,
 `ollama/qwen3`, `jev`, `jev/jev-1.13.0`. OpenAI model names are lowercased (`gpt-5.6-Sol` →
@@ -90,55 +93,120 @@ overridden: `TYPESAFE_BASE_URL`, `FASTINO_BASE_URL`, `OPENAI_DECISIONS_BASE_URL`
 
 Missing credentials are reported at startup, before a match is created.
 
+### Player configs
+
+A league can take its roster from a JSON file (`jevgammon league --config FILE`), where each
+player carries what a spec alone cannot:
+
+```json
+{
+  "prompt_version": "bg-v2", "seed": 1, "order_seed": 2, "rounds": 3, "max_turns": 300,
+  "clock": 300, "delay": 30, "note": "League 1",
+  "players": [
+    {"name": "Random", "spec": "random"},
+    {"name": "DeepSeek V4.1 Flash (on)", "spec": "local/deepseek-v4.1-flash",
+     "base_url": "http://127.0.0.1:8010/v1", "provider": "local-sglang", "quantization": null,
+     "reasoning": "low", "request": {"chat_template_kwargs": {"thinking": true}},
+     "max_tokens": 32768, "price": {"input_per_mtok": 0.1, "output_per_mtok": 0.4}}
+  ]
+}
+```
+
+- `provider` and `quantization` are logged with every decision (`provider` defaults to the
+  spec's prefix; `quantization` may be null).
+- `reasoning` is the reasoning effort (`low`, `high`, ...). Left out, an OpenAI-compatible
+  model answers without reasoning; subscription models then use their provider's default.
+- `request` is merged into every request body (e.g. `chat_template_kwargs` to switch a
+  model's thinking on or off).
+- `price` (dollars per million input and output tokens) gives `turns.cost_usd`; without it
+  the cost is NULL.
+
+The top-level settings override the command line; `seed`, `order_seed`, and `prompt_version`
+are stored with the league, so `--resume` keeps them. Config files are kept in `leagues/`.
+
+### Prompt versions
+
+Every decision logs its prompt version (`turns.prompt_version`). The texts are in
+[`prompts/`](prompts/):
+
+| Version | State | Options |
+| --- | --- | --- |
+| `bg-v2` | `prompts/bg-v2.md` (League #8's rules, strategy, opening table, match rules), then the turn | every play with its consequences |
+| `bg-v2-notation` | as bg-v2 | notation only (`prompts/instructions-notation.txt`) |
+| `bg-v2-history` | as bg-v2, plus the last 10 moves of the game before the dice (League #13's format) | as bg-v2 |
+| `nack-v2` | `prompts/nack-v2.md`: bg-v2 without the opening table, for Nackgammon and the opening control | as bg-v2 |
+
+bg-v2 reproduces League #8 exactly: a unit test renders a stored League #8 request
+(`src/players/testdata/league8_request.json`, from `league.db`) and compares the state,
+instructions, and every option text. `jevgammon render --order-seed N [--prompt-version V]
+[--input FILE]` prints what a model is sent for stored positions: one JSON line in per
+position (`position` as in `turns.position`, `dice`, optional score, round, turn, clock and
+history fields), one JSON line out with the state, instructions, letter prompt, options in
+the seeded order, and position key.
+
 ### What the models see
 
-Every player gets text in this order. Earlier games of the match are not described, and
-only the last 10 moves of the current game are:
+Every player gets text in this order. Earlier games of the match are not described:
 
-1. [`PROMPT.md`](PROMPT.md) with this match's rounds, turn limit, and clock filled in (the
-   turn-limit and clock rules are dropped when the match has none). LLMs get all of it.
-   Decision models get only the rules, strategy principles, opening rolls, and match rules
-   (about 8,000 characters): self-hosted ones such as Open-Jev and Cygnet accept 4,096
-   tokens, and the full file is about 5,500.
+1. The version's rules text with this match's rounds, turn limit, and clock filled in (the
+   turn-limit and clock rules are dropped when the match has none).
 2. **Score**: both scores and whether it leads or trails, round and game number.
 3. **Time**: the turn number and the turn limit, the delay for this decision, and both
    players' bank left in this game.
 4. **Position** from its own side (you move from 24 toward 1 and bear off past 1):
    checkers, bar, borne off, pip counts, and the **race**: the pip lead and whether the
-   checkers are still in contact. Then the **last 10 moves** of this game, oldest first,
-   both sides, in its own numbering (the opponent's moves are converted), so it can follow
-   how the position came about. Ten keeps Open-Jev's prompt plus one option under its
-   4,096 tokens.
+   checkers are still in contact. bg-v2-history adds the **last 10 moves** of this game,
+   oldest first, both sides, in its own numbering.
 5. **Dice**, then the question "Which of the following moves makes a point in front of
    the opponent's checkers, or reduces your single pieces, or gets you closer to your
    home?".
-6. **Legal plays**, each in standard notation (`bar/22 13/11*`, `6/off`, `*` = hit) followed
-   by what the position looks like after it, computed exactly in `src/players/prompt.rs`:
-   checkers hit, points newly made, blots left and how many of the opponent's 36 rolls can
-   hit one of them (by generating the opponent's legal plays for every roll), points held
-   and how many in the home board, longest prime, and both pip counts.
+6. **Legal plays** in the seeded option order, each in standard notation (`bar/22 13/11*`,
+   `6/off`, `*` = hit) followed (except in bg-v2-notation) by what the position looks like
+   after it, computed exactly in `src/players/prompt.rs`: checkers hit, points newly made,
+   blots left and how many of the opponent's 36 rolls can hit one of them, points held and
+   how many in the home board, longest prime, and both pip counts.
 
-The "Your turn" and "Example" sections of `PROMPT.md` show the exact format.
+**Option order.** The plays are shown in a fixed random order per position, never in
+move-generation or engine order: a Fisher-Yates shuffle driven by SplitMix64, seeded with
+the first 8 bytes of SHA-256(`"{order_seed}:{position_key}"`), where the position key is
+GNUbg's position ID, the dice high then low, and the side to move
+(`4HPwATDgc/ABMA:21:white`). `src/players/order.rs` and its Python twin `tools/v3/order.py`
+share the test vectors in `tools/v3/order_vectors.json`. `turns.option_order` stores the
+order and `turns.letter` / `turns.chosen_position` where the chosen play was shown.
 
 How they answer:
 
-- **LLMs** get `PROMPT.md` as the system prompt and items 2-6 as the user message, with
-  the plays numbered, and answer `{"choice": N}`. OpenAI, Gemini, and local servers get a
-  JSON schema; Anthropic gets a forced tool call. A reply that doesn't parse or is out of
-  range is re-asked with the reason, up to three replies. After that the first legal play is used
-  and the turn is marked `fallback`.
+- **Chat models** get Cygnet's letter prompt: system prompt `prompts/letter-system.txt`,
+  user message = items 1-5, the instructions (`prompts/instructions.txt`), the options
+  lettered A, B, C..., and "Answer with the letter of exactly one option, and nothing
+  else:". The answer is constrained to the option letters (JSON schema enum; Gemini an
+  enum MIME type).
+  - **OpenAI-compatible servers** return letter probabilities. With reasoning on, request 1
+    lets the model reason (`reasoning_effort`, answer constrained to the letters); request 2
+    sends the conversation back with the reasoning in `<think>` tags and a prefilled
+    `Answer:` (`continue_final_message`), `max_tokens` 1, `logprobs` and 20
+    `top_logprobs`, and the option letters' probabilities (summed over surface forms such
+    as ` C`, normalised over the option letters) are stored; the most probable letter is
+    played. Reasoning off is request 2 alone. A server that returns no logprobs falls back
+    to the constrained letter, stored as `probability_source = 'choice_only'` (the chosen
+    play gets probability 1), and later decisions skip the logprobs request.
+  - **Subscriptions** (OpenAI, Anthropic, Gemini) return no probabilities: one constrained
+    letter, choice only, at the configured reasoning effort.
 - **Decision models** get items 1-5 as a string in `state` (OpenAI's Decisions API: in
-  `input`) and one `choice` question whose options are the legal plays: keyed by notation,
-  so the answer is always legal, with the described play as the option text. Each service
-  has an option limit: 255 for hosted services, 110 for Clef (16,384-token option list),
-  26 for Cygnet and Gemma (one letter per option), 25 for the local Decider v1.1 (8,192
-  tokens, and GPU memory). Longer play lists are split into equal chunks, a winner is
-  picked per chunk, then a final choice is made among the winners. A refusal (OpenAI)
-  plays the first candidate and marks the turn `fallback`.
-- Transient HTTP failures (network errors, 408/409/425/429/5xx/529) are retried up to ten
-  times with exponential backoff from 1 s to 60 s (about 4 minutes in all). `Retry-After`
-  can lengthen a wait but never shorten it. The waits count against the mover's clock. Any
-  other failure, or running out of retries, aborts the match.
+  `input`) and one `choice` question whose options are the legal plays in the seeded order,
+  keyed by notation, with the option text as description; their probability for every
+  option is stored (`probability_source = 'decision'`).
+- **Long play lists:** each player has an option limit: 26 letters for chat models, 255
+  for hosted decision services, 110 for Clef, 26 for Cygnet and Gemma, 25 for the local
+  Decider v1.1. Longer lists are split into equal groups, a winner is picked per group,
+  then among the winners; `turns.group_size` records the group size.
+- **Invalid answers** (a reply that names no option, a letter outside the options, a
+  refusal) are not repaired or re-asked: the runner plays a uniformly random legal play,
+  seeded per decision, and records `decided_by = 'fallback'`, `invalid = 1`.
+- **Network and server errors** (connection failures, HTTP 408, 429, 5xx) are retried up to
+  3 times with backoff (2, 4, 8 s; `Retry-After` can lengthen a wait up to 60 s). The time
+  spent is logged in `turns.retry_ms` and not charged to the clock. Any other failure, or
+  running out of retries, aborts the match.
 
 ### Clock
 
@@ -148,17 +216,16 @@ only time beyond that comes out of the player's bank of `--clock` seconds (defau
 for the game. Both banks are full again at the start of every game, including the second
 leg of a round. A model that answers within the delay at its normal pace never touches
 its bank, and the bank absorbs the occasional slow decision. Forced moves, turns with no
-legal move, and the pause between moves are free. The time includes HTTP retries and
-re-asks, because they happen inside the decision.
+legal move, and the pause between moves are free, and so is the time spent on HTTP
+retries: it extends the deadline and is not taken from the bank.
 
 Unlike WBGF, where running out of time loses the match, an empty bank loses only the
 game: the request is abandoned, the turn is recorded with `decided_by = 'timeout'`, and
 the opponent wins the game for 1 point (`games.result = 'timeout'`), whatever the
 position.
 
-The models know about the clock: the rule is part of the rules they get, every request
-shows the delay and both banks, and a game lost on time is listed with its reason in the
-earlier-games list of every later request (see [What the models see](#what-the-models-see)).
+The models know about the clock: the rule is part of the rules they get, and every
+request shows the delay and both banks.
 
 ### Turn limit
 
@@ -171,7 +238,7 @@ Models see the turn number and the limit in every request.
 
 ### Latency
 
-Models run with their provider's default settings. Reasoning models can be slow. On a
+Models run with their provider's default settings unless a player config sets `reasoning`. Reasoning models can be slow. On a
 ChatGPT subscription, `gpt-5.6-sol` took about 3 minutes for one decision at the default
 (medium) reasoning effort, which empties a 5-minute bank within two decisions. Claude
 Sonnet without extended thinking takes about 1–2 s per decision. Decision services take
@@ -248,7 +315,11 @@ a bare spec that is also its name):
 ```
 
 `--note` records what the league tests (a prompt change, a model swap) in `leagues.note`;
-the dashboard shows it in the league history.
+the dashboard shows it in the league history. `--config FILE` takes the roster and
+settings from a [player config](#player-configs) file instead of `NAME=SPEC` arguments;
+`--prompt-version` and `--order-seed` set the prompt version and option-order seed, stored
+in `leagues.prompt_version` and `leagues.order_seed` (a league stored before versions
+existed resumes with `bg-v2-history`, the prompt the runner then sent).
 
 - **Fixture:** drawn from the league seed (`--seed`, random by default) by the circle
   method on a shuffled entry list: with 8 models, 7 matchdays of 4 matches, every model
@@ -350,11 +421,11 @@ The database has six tables:
 
 | Table | Contents |
 | --- | --- |
-| `matches` | models, seed, planned and played rounds, clock bank and delay seconds (NULL = off), turn limit, score, winner (`1`, `2`, or NULL for draw), status `running\|finished\|aborted`, error |
+| `matches` | models, seed, planned and played rounds, clock bank and delay seconds (NULL = off), turn limit, score, winner (`1`, `2`, or NULL for draw), status `running\|finished\|aborted`, error, prompt version, option-order seed, harness commit and dirty flag |
 | `games` | round, leg, white player, dice seed, opening roll, winner, result (`single\|gammon\|backgammon\|timeout\|turn_limit`), points, turn count |
-| `turns` | side, player, dice, position before the move (JSON, white's perspective), number of legal plays, chosen index, move (mover's numbering), `decided_by` (`model\|forced\|no_move\|fallback\|timeout`), latency, tokens, mover's bank left after the turn (`clock_ms`) |
+| `turns` | side, player, dice, position before the move (JSON, white's perspective), number of legal plays, chosen index, move (mover's numbering), `decided_by` (`model\|forced\|no_move\|fallback\|timeout`; `fallback` = invalid answer, random play), latency, tokens, mover's bank left after the turn (`clock_ms`); per decision: `prompt_version`, `harness_commit` (`git rev-parse HEAD` at startup) and `harness_dirty`, `provider`, `quantization`, `option_order` (JSON: legal-play index shown as option k), `letter` and `chosen_position`, `probabilities` (JSON aligned with `option_order`), `probability_source` (`logprobs\|decision\|choice_only`), `request_ms`, `retry_ms`, `cost_usd`, `invalid`, `group_size` |
 | `exchanges` | every model request body, reply text, rejection reason, latency; one row per request |
-| `leagues` | seed, rounds, clock bank and delay, turn limit, entrants (JSON `{name, spec}`), status, final ranking, note (`--note`) |
+| `leagues` | seed, rounds, clock bank and delay, turn limit, entrants (JSON player configs: `{name, spec, ...}`), status, final ranking, note (`--note`), prompt version, option-order seed |
 | `league_matches` | stage (`league\|playoff`), label, matchday, model names, seed, latest `match_id` |
 
 Seeds are unsigned 64-bit values stored in SQLite's signed INTEGER; cast back to `u64` to
@@ -390,7 +461,7 @@ cargo run -- --model1 ollama/qwen3 --model2 jev --speed 5
 | `src/board.rs` | rules, legal play generation, game results |
 | `src/dice.rs` | seeded dice (SplitMix64, implemented locally so seeds stay reproducible across dependency upgrades) |
 | `src/runner.rs` | match flow, mirrored legs, tie-break round, pacing and pause |
-| `src/players/` | prompts, LLM providers, decision services (System One, OpenAI Decisions) |
+| `src/players/` | prompt versions and the letter prompt (`prompt.rs`, texts in `prompts/`), seeded option order (`order.rs`), LLM providers, decision services (System One, OpenAI Decisions), invalid-answer fallback and group splits (`mod.rs`) |
 | `src/league.rs` | league fixture, parallel matchdays, table, playoffs, resume |
 | `src/auth.rs` | subscription credential stores and refresh |
 | `src/http.rs` | retries and backoff |

@@ -8,8 +8,11 @@ use anyhow::{Result, bail};
 use tokio::sync::{Notify, mpsc};
 
 use crate::board::{Board, Side, WinKind};
-use crate::db::{Db, TurnRecord};
-use crate::dice::{Dice, round_seed};
+use crate::db::{Db, DecisionLog, TurnRecord};
+use crate::dice::{Dice, derive_seed, round_seed};
+use crate::http::RetryTime;
+use crate::players::order::{option_order, position_key};
+use crate::players::prompt::PromptVersion;
 use crate::players::{DecisionRequest, PastMove, Player};
 
 /// Delay after each move per speed level (1-based); the last level is max speed.
@@ -162,6 +165,42 @@ pub enum Event {
     Failed(String),
 }
 
+/// The runner's commit, read once at startup: `git rev-parse HEAD` in the source tree,
+/// and whether tracked files differed from it.
+#[derive(Clone, Debug, Default)]
+pub struct Harness {
+    /// `None` when git or the repository is unavailable.
+    pub commit: Option<String>,
+    pub dirty: bool,
+}
+
+impl Harness {
+    pub fn detect() -> Self {
+        let git = |args: &[&str]| {
+            std::process::Command::new("git")
+                .args(args)
+                .current_dir(env!("CARGO_MANIFEST_DIR"))
+                .output()
+                .ok()
+                .filter(|out| out.status.success())
+                .map(|out| String::from_utf8_lossy(&out.stdout).trim().to_owned())
+        };
+        Harness {
+            commit: git(&["rev-parse", "HEAD"]).filter(|c| !c.is_empty()),
+            dirty: git(&["status", "--porcelain", "--untracked-files=no"])
+                .is_some_and(|s| !s.is_empty()),
+        }
+    }
+}
+
+/// What every decision of a run shares: prompt version, option-order seed, and harness.
+#[derive(Clone, Debug)]
+pub struct Protocol {
+    pub version: PromptVersion,
+    pub order_seed: u64,
+    pub harness: Harness,
+}
+
 pub struct MatchSettings {
     pub match_id: i64,
     pub seed: u64,
@@ -175,6 +214,7 @@ pub struct MatchSettings {
     /// A tie after the planned rounds adds rounds until one player leads; otherwise
     /// exactly one extra round is played and a tie after it is a draw.
     pub decisive: bool,
+    pub protocol: Arc<Protocol>,
 }
 
 /// How a finished match ended; index 0 = `--model1`.
@@ -322,9 +362,17 @@ impl Runner {
             let plays = board.legal_plays(roll.0, roll.1);
             let notations: Vec<String> = plays.iter().map(|p| p.notation()).collect();
             let started = Instant::now();
-            let (chosen, decided_by, exchanges, input_tokens, output_tokens) = match plays.len() {
-                0 => (None, "no_move", Vec::new(), 0, 0),
-                1 => (Some(0), "forced", Vec::new(), 0, 0),
+            let retry = RetryTime::default();
+            let mover = self.players[me].clone();
+            let protocol = self.settings.protocol.clone();
+            let order = option_order(
+                protocol.order_seed,
+                &position_key(&board, roll, side),
+                plays.len(),
+            );
+            let (chosen, decided_by, decision) = match plays.len() {
+                0 => (None, "no_move", None),
+                1 => (Some(0), "forced", None),
                 _ => {
                     let _ = self.events.send(Event::Thinking {
                         player,
@@ -349,46 +397,89 @@ impl Runner {
                         max_turns: self.settings.max_turns,
                         player,
                         history: &history,
+                        order: &order,
+                        seed: derive_seed(seed, &format!("decision:{}:{turn_no}", game.leg)),
+                        version: protocol.version,
+                        retry: &retry,
                     };
-                    let decide = self.players[me].decide(&request);
+                    let decide = mover.decide(&request);
                     let budget = clocks[me].map(|bank| bank + delay);
-                    // `None` means the bank ran out before the model answered.
+                    let retried = &retry;
+                    // `None` means the bank ran out before the model answered. Retry time
+                    // extends the deadline: it is not charged to the clock.
                     let timed = async move {
-                        match budget {
-                            Some(left) => tokio::time::timeout(left, decide).await.ok(),
-                            None => Some(decide.await),
+                        let Some(budget) = budget else {
+                            return Some(decide.await);
+                        };
+                        tokio::pin!(decide);
+                        loop {
+                            let deadline = started + budget + retried.get();
+                            tokio::select! {
+                                outcome = &mut decide => return Some(outcome),
+                                _ = tokio::time::sleep_until(deadline.into()) => {
+                                    if Instant::now() >= started + budget + retried.get() {
+                                        return None;
+                                    }
+                                }
+                            }
                         }
                     };
                     let outcome = tokio::select! {
                         outcome = timed => outcome,
                         _ = self.control.cancelled() => bail!("cancelled"),
                     };
-                    // Only time beyond the delay comes out of the bank.
+                    // Only time beyond the delay, retries excluded, comes out of the bank.
                     if let Some(bank) = &mut clocks[me] {
-                        *bank = bank.saturating_sub(started.elapsed().saturating_sub(delay));
+                        let used = started.elapsed().saturating_sub(retry.get());
+                        *bank = bank.saturating_sub(used.saturating_sub(delay));
                     }
                     match outcome {
-                        None => (None, "timeout", Vec::new(), 0, 0),
+                        None => (None, "timeout", None),
                         Some(decision) => {
                             let decision = decision?;
-                            let by = if decision.fallback {
+                            let by = if decision.invalid {
                                 "fallback"
                             } else {
                                 "model"
                             };
-                            (
-                                Some(decision.index),
-                                by,
-                                decision.exchanges,
-                                decision.input_tokens,
-                                decision.output_tokens,
-                            )
+                            (Some(decision.index), by, Some(decision))
                         }
                     }
                 }
             };
-            let latency_ms = started.elapsed().as_millis() as u64;
+            let latency = started.elapsed();
+            let retry_spent = retry.get().min(latency);
             let notation = chosen.map(|i| notations[i].clone()).unwrap_or_default();
+            let log = (plays.len() > 1).then(|| DecisionLog {
+                protocol: &protocol,
+                provider: &mover.provider,
+                quantization: mover.quantization.as_deref(),
+                option_order: &order,
+                probabilities: decision
+                    .as_ref()
+                    .filter(|d| !d.probabilities.is_empty())
+                    .map(|d| {
+                        order
+                            .iter()
+                            .map(|i| {
+                                d.probabilities
+                                    .iter()
+                                    .find(|(j, _)| j == i)
+                                    .map(|&(_, p)| p)
+                            })
+                            .collect()
+                    }),
+                probability_source: decision.as_ref().and_then(|d| d.probability_source),
+                request_ms: (latency - retry_spent).as_millis() as u64,
+                retry_ms: retry_spent.as_millis() as u64,
+                cost_usd: decision.as_ref().and_then(|d| mover.cost(d)),
+                invalid: decision.as_ref().is_some_and(|d| d.invalid),
+                group_size: decision.as_ref().and_then(|d| d.group_size),
+            });
+            let (input_tokens, output_tokens) = decision
+                .as_ref()
+                .map_or((0, 0), |d| (d.input_tokens, d.output_tokens));
+            let latency_ms = latency.as_millis() as u64;
             self.db.record_turn(
                 &TurnRecord {
                     game_id,
@@ -405,8 +496,9 @@ impl Runner {
                     input_tokens,
                     output_tokens,
                     clock_ms: clocks[me].map(|left| left.as_millis() as u64),
+                    decision: log,
                 },
-                &exchanges,
+                decision.as_ref().map_or(&[][..], |d| &d.exchanges),
             )?;
             if let Some(index) = chosen {
                 board = plays[index].result;

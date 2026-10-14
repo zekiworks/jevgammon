@@ -1,0 +1,74 @@
+{
+ "source": "league.db exchange #113082 (league 8, match 106, turn id 102861)",
+ "position": {
+  "bar": {
+   "black": 0,
+   "white": 1
+  },
+  "off": {
+   "black": 0,
+   "white": 0
+  },
+  "points": [
+   2,
+   0,
+   2,
+   4,
+   1,
+   2,
+   1,
+   0,
+   0,
+   0,
+   0,
+   -1,
+   0,
+   2,
+   0,
+   0,
+   0,
+   0,
+   -3,
+   0,
+   -2,
+   -3,
+   -3,
+   -3
+  ],
+  "to_move": "black"
+ },
+ "dice": [
+  4,
+  3
+ ],
+ "turn_no": 29,
+ "round": 2,
+ "rounds": 3,
+ "leg": 2,
+ "player": 1,
+ "my_score": 3,
+ "opp_score": 1,
+ "max_turns": 300,
+ "clock_seconds": 300,
+ "delay_seconds": 30,
+ "my_clock_ms": 300000,
+ "opp_clock_ms": 300000,
+ "request": {
+  "model": "pplx-decider-v1.1-27b",
+  "questions": {
+   "play": {
+    "criteria": {
+     "13/9 4/1": "13/9 4/1: hits 0; makes no new point; leaves 2 blots, the opponent hits with 11 of 36 rolls; you hold 4 points (4 in your home board), longest prime 3; pips: you 50, opponent 101",
+     "13/9 6/3": "13/9 6/3: hits 0; makes no new point; leaves 1 blot, the opponent hits with 2 of 36 rolls; you hold 5 points (5 in your home board), longest prime 4; pips: you 50, opponent 101",
+     "13/9 9/6": "13/9 9/6: hits 0; makes no new point; leaves 0 blots, the opponent hits with 0 of 36 rolls; you hold 5 points (5 in your home board), longest prime 4; pips: you 50, opponent 101",
+     "6/2 13/10": "6/2 13/10: hits 0; makes no new point; leaves 1 blot, the opponent hits with 1 of 36 rolls; you hold 5 points (5 in your home board), longest prime 4; pips: you 50, opponent 101",
+     "6/2 4/1": "6/2 4/1: hits 0; makes no new point; leaves 2 blots, the opponent hits with 13 of 36 rolls; you hold 4 points (4 in your home board), longest prime 3; pips: you 50, opponent 101",
+     "6/2 6/3": "6/2 6/3: hits 0; makes no new point; leaves 2 blots, the opponent hits with 15 of 36 rolls; you hold 4 points (4 in your home board), longest prime 4; pips: you 50, opponent 101"
+    },
+    "instructions": "Choose the strongest backgammon play for the side to move (\"you\") with the given dice, following the rules in the state and taking the match score into account. Each choice is a complete legal play in your numbering (from/to per checker, `bar` enters from the bar, `off` bears off, `*` hits an opponent blot), followed by what the position looks like after it.",
+    "type": "choice"
+   }
+  },
+  "state": "You are playing a backgammon game against a language model. Below are the rules of the game and basic strategy. Your task is to win the game.\n\n# Backgammon: Rules and Strategy\n\n## Rules\n\n### Setup\n\nThe board has 24 points in a horseshoe-shaped track, 12 on each side. Each player numbers the points from their own side, 1 to 24, and moves from the 24-point toward the 1-point; the two players move in opposite directions. Each player starts with 15 checkers: two on the 24-point, five on the 13-point (the midpoint), three on the 8-point, and five on the 6-point.\n\nPoints 1-6 are your home board and points 7-12 your outer board. The 7-point is the bar point.\n\n### Moving\n\n- **Starting:** each player rolls one die. The higher number moves first, playing both dice. Equal numbers are rolled again. After that, players alternate, rolling two dice each turn.\n- **Using the dice:** move one checker by each die. One checker may take both moves, as long as each step lands on a legal point. A roll of 6-3 moves one checker six and another (or the same) checker three.\n- **Doubles** are played four times: 5-5 is four moves of five.\n- **Using the whole roll:** you must use both dice if you can. If only one die can be played, you must play the higher one when possible. If neither can be played, the turn is lost.\n\n### Hitting and entering\n\n- A checker may land on an empty point, a point holding your own checkers, or a point holding exactly one opposing checker (a blot). Landing on a blot hits it and sends it to the bar.\n- A checker may never land on a point held by two or more opposing checkers, so no point ever holds checkers of both players.\n- A player with checkers on the bar must enter them all before moving anything else. Checkers enter in the opponent's home board: a 1 enters on your 24-point (the opponent's 1-point), a 2 on your 23-point, and so on up to a 6 on your 19-point. Entering on a blot hits it.\n- If no die matches an open point, you dance and the turn is lost. Against a closed board you cannot enter at all until the opponent opens a point.\n\n### Bearing off\n\nOnce all 15 of your checkers are in your home board, you may bear them off: a 1 removes a checker from the 1-point, a 2 from the 2-point, and so on. A die higher than your highest occupied point removes a checker from that highest point. For example, with 6-5, no checkers on the 6-point, and two on the 5-point, both checkers come off the 5-point. A checker hit during the bear-off must enter and come home before bearing off continues.\n\n### Scoring\n\nThe first player to bear off all 15 checkers wins:\n\n| Result | When | Points |\n| --- | --- | --- |\n| Single game | The loser has borne off at least one checker | 1 |\n| Gammon | The loser has borne off no checkers | 2 |\n| Backgammon | The loser has borne off no checkers and still has one on the bar or in the winner's home board | 3 |\n\n## Strategy principles\n\nBackgammon is a race to bear off first, but the straightest path is rarely the best one. Beginners tend to avoid leaving blots and hit whenever they can; neither habit makes a good plan.\n\n- **Blots and points:** a blot is exposed and goes back to the start if hit. Two or more checkers make a safe point that can also block the opponent.\n- **Distribution:** spread checkers evenly over the points you hold. Three checkers on each of two points beat four and two. Rarely put six checkers on one point and almost never more. Even distribution gives you more good rolls.\n- **Exposure:** leaving shots early to build a strong position is fine. Be more careful as the opponent's home board grows, since entering gets harder. Anchors in the opponent's home board let you play more boldly. Even against a weak board, leave no more than four blots. When well ahead in the race or position, cut your exposure to keep the lead.\n- **Blocking:** make points without gaps directly in front of the opponent's back checkers. The most valuable early points, in rough order, are your 5-, 4- and 7-points. Six in a row is a full prime, and checkers behind it cannot escape while it holds.\n- **Hitting:** hit the opponent's most advanced checkers, or blots they want to cover to make an important point. Hit only when it helps: with two opposing checkers already on the bar, making another home-board point is usually worth more than hitting a third. Do not hit if it leaves you more exposed than your opponent. When genuinely in doubt, hit.\n- **Anchors:** an anchor gives you a safe point to enter on and keeps the opponent from closing their board. Early on, aim for the high points in the opponent's home board: your 20- and 21-points (their 5- and 4-points). Far behind in the race, the low points (your 22-, 23- and 24-points) gain value, because your plan becomes building your board and waiting for a shot. With two anchors, keep them on adjacent points.\n\n## Opening rolls\n\nPlays are written from-point/to-point. Doubles cannot be an opening roll. These are the results of computer rollouts.\n\n| Roll | Best play | Notes |\n| --- | --- | --- |\n| 2-1 | 13/11 6/5 or 24/23 13/11 | The slot and the split are about equal; nothing else is close. |\n| 3-1 | 8/5 6/5 | The only play. |\n| 4-1 | 24/23 13/9 | The split is clearly better than slotting with 13/9 6/5: the builder on the 9-point already gives many numbers to make a point next turn. |\n| 5-1 | 24/23 13/8 | The split is a little better than slotting with 13/8 6/5; 24/18 is clearly worse. |\n| 6-1 | 13/7 8/7 | 13/7 6/5 is very poor. |\n| 3-2 | 24/21 13/11 | The split is a little better than 13/10 13/11. |\n| 4-2 | 8/4 6/4 | |\n| 5-2 | 24/22 13/8 | The split is a little better than 13/11 13/8; slotting with 13/8 6/4 is clearly worse. |\n| 6-2 | 24/18 13/11 | The split is clearly best; 24/16 is second, slotting with 13/5 third. |\n| 4-3 | 13/10 13/9 or 24/20 13/10 | About equal; 24/21 13/9 is only a little behind. |\n| 5-3 | 8/3 6/3 | Clearly best; 13/10 13/8 is far worse. |\n| 6-3 | 24/18 13/10 | Best; 24/15 is not far behind. |\n| 5-4 | 24/20 13/8 | Slightly better than 13/9 13/8; 24/15 is weaker. |\n| 6-4 | 24/14, 24/18 13/9, or 8/2 6/2 | All about equal. |\n| 6-5 | 24/13 | Clearly best. |\n\n## Match rules\n\n- **Rounds:** the match is 3 rounds. Each round is two games with identical dice: in the second game the players swap seats and the same sequence of rolls is repeated, so both players face the same luck. The player who moved first in the first game moves second in the second.\n- **Score:** the points of every game (1, 2 or 3) add up to the match score. The first player to reach 5 points wins the match, but the mirror game of that round is always played first: if the round ends with one player ahead and at least one player at 5 or more, the player ahead wins the match. If the score is tied when the match would end (after the planned rounds, or level at 5 or more after a round), one extra round is played; a tie after that is a draw. In a playoff, extra rounds are played until one player leads after a round, so it cannot end in a draw.\n- **Turn limit:** a game that has not ended after 300 turns (both players' turns counted) ends there. The player with the lower pip count wins a single game (1 point); with equal pip counts, the player due to roll next wins.\n- **Thinking time:** each decision first gets a free delay of 0:30, which does not accumulate; only time beyond it comes out of your bank of 5:00 per game. Both banks are full again at the start of every game. A roll with a single legal play is played for you instantly. If your bank runs out while you decide, you lose that game for 1 point, whatever the position.\n\nScore: you 3, opponent 1 (you lead by 2).\nMatch: round 2 of 3, game 2 of 2 in this round.\nTurn 29 of at most 300 in this game.\nClock: 0:30 free delay for this decision, then your bank: 5:00 of 5:00 left in this game (opponent 5:00). If your bank runs out, you lose this game.\n\nPosition (your numbering; you move 24 -> 1):\n  your checkers:     13:1 6:3 4:2 3:3 2:3 1:3\n  opponent checkers: 11:2 18:1 19:2 20:1 21:4 22:2 24:2\n  on the bar: you 0, opponent 1\n  borne off:  you 0, opponent 0\n  pip count:  you 57, opponent 101\nRace: you lead by 44 pips; the checkers are still in contact.\nDice: 4-3\n\nWhich of the following moves makes a point in front of the opponent's checkers, or reduces your single pieces, or gets you closer to your home?"
+ }
+}

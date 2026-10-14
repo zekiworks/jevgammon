@@ -11,14 +11,17 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::{Context, Result, bail};
+use serde::Deserialize;
 use tokio::sync::mpsc;
 use tokio::task::JoinSet;
 
 use crate::db::{Db, FixtureRow};
 use crate::dice::{Dice, derive_seed};
-use crate::players::{Player, Setup};
+use crate::players::prompt::PromptVersion;
+use crate::players::{Player, PlayerConfig, Setup};
 use crate::runner::{
-    Clock, Control, Event, MAX_SPEED, MatchResult, MatchSettings, Runner, describe_clock,
+    Clock, Control, Event, Harness, MAX_SPEED, MatchResult, MatchSettings, Protocol, Runner,
+    describe_clock,
 };
 
 /// League points for a match won, drawn, lost.
@@ -33,17 +36,50 @@ const RETRY_PAUSE: Duration = Duration::from_secs(120);
 
 pub enum Start {
     New {
-        /// `(name, spec)` in entry order.
-        models: Vec<(String, String)>,
+        /// Entry order.
+        models: Vec<PlayerConfig>,
         seed: u64,
         rounds: u32,
         clock: Option<Clock>,
         max_turns: Option<u32>,
         /// What this league tests; shown in the history.
         note: Option<String>,
+        version: PromptVersion,
+        order_seed: u64,
     },
     Resume(i64),
 }
+
+/// A league config file (`jevgammon league --config FILE`): the roster with each player's
+/// provider, quantization, reasoning, request fields and price, plus the settings. Fields
+/// left out fall back to the command line.
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct LeagueConfig {
+    pub players: Vec<PlayerConfig>,
+    pub seed: Option<u64>,
+    pub order_seed: Option<u64>,
+    pub prompt_version: Option<String>,
+    pub rounds: Option<u32>,
+    /// Bank per player per game in seconds; 0 = no clock.
+    pub clock: Option<u64>,
+    pub delay: Option<u64>,
+    /// 0 = no limit.
+    pub max_turns: Option<u32>,
+    pub note: Option<String>,
+}
+
+impl LeagueConfig {
+    pub fn load(path: &std::path::Path) -> Result<Self> {
+        let text =
+            std::fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))?;
+        serde_json::from_str(&text).with_context(|| format!("parsing {}", path.display()))
+    }
+}
+
+/// Prompt version of a league stored before versions existed: the runner then sent
+/// League #13's prompt, which is bg-v2-history.
+const LEGACY_VERSION: PromptVersion = PromptVersion::BgV2History;
 
 struct League {
     db_path: PathBuf,
@@ -56,6 +92,7 @@ struct League {
     names: Vec<String>,
     players: HashMap<String, Arc<Player>>,
     control: Arc<Control>,
+    protocol: Arc<Protocol>,
 }
 
 /// One model's line in a table.
@@ -218,7 +255,7 @@ fn draw_fixture(names: &[String], seed: u64) -> Vec<(u32, String, String)> {
     fixture
 }
 
-pub async fn run(db_path: PathBuf, setup: &Setup, start: Start) -> Result<()> {
+pub async fn run(db_path: PathBuf, setup: &Setup, start: Start, harness: Harness) -> Result<()> {
     let db = Db::open(&db_path)?;
     let id = match start {
         Start::New {
@@ -228,9 +265,20 @@ pub async fn run(db_path: PathBuf, setup: &Setup, start: Start) -> Result<()> {
             clock,
             max_turns,
             note,
+            version,
+            order_seed,
         } => {
-            let id = db.create_league(seed, rounds, clock, max_turns, &models, note.as_deref())?;
-            let names: Vec<String> = models.into_iter().map(|(name, _)| name).collect();
+            let id = db.create_league(
+                seed,
+                rounds,
+                clock,
+                max_turns,
+                &models,
+                note.as_deref(),
+                version.id(),
+                order_seed,
+            )?;
+            let names: Vec<String> = models.into_iter().map(|m| m.name).collect();
             for (day, model1, model2) in draw_fixture(&names, seed) {
                 let label = format!("matchday {day}: {model1} v {model2}");
                 let seed = derive_seed(seed, &label);
@@ -241,12 +289,23 @@ pub async fn run(db_path: PathBuf, setup: &Setup, start: Start) -> Result<()> {
         Start::Resume(id) => id,
     };
     let row = db.league(id)?;
+    let version = match &row.prompt_version {
+        Some(id) => PromptVersion::parse(id)?,
+        None => LEGACY_VERSION,
+    };
+    let protocol = Arc::new(Protocol {
+        version,
+        order_seed: row
+            .order_seed
+            .unwrap_or_else(|| derive_seed(row.seed, "option order")),
+        harness,
+    });
     let mut players = HashMap::new();
-    for (name, spec) in &row.models {
-        let player = Player::from_spec(spec, setup)
+    for config in &row.models {
+        let player = Player::from_config(config, setup)
             .await
-            .with_context(|| format!("{name} ({spec})"))?;
-        players.insert(name.clone(), Arc::new(player));
+            .with_context(|| format!("{} ({})", config.name, config.spec))?;
+        players.insert(config.name.clone(), Arc::new(player));
     }
     let control = Arc::new(Control::new(MAX_SPEED));
     let interrupt = control.clone();
@@ -262,21 +321,31 @@ pub async fn run(db_path: PathBuf, setup: &Setup, start: Start) -> Result<()> {
         rounds: row.rounds,
         clock: row.clock,
         max_turns: row.max_turns,
-        names: row.models.iter().map(|(name, _)| name.clone()).collect(),
+        names: row.models.iter().map(|m| m.name.clone()).collect(),
         players,
         control,
+        protocol: protocol.clone(),
     });
     println!(
-        "league #{id}: {} models · {} rounds per match · clock {} · turn limit {} · seed {} · db {}",
+        "league #{id}: {} models · {} rounds per match · clock {} · turn limit {} · seed {} · \
+         prompt {} · option-order seed {} · harness {}{} · db {}",
         league.names.len(),
         league.rounds,
         describe_clock(league.clock),
         league.max_turns.map_or("off".to_owned(), |t| t.to_string()),
         league.seed,
+        protocol.version.id(),
+        protocol.order_seed,
+        protocol.harness.commit.as_deref().unwrap_or("unknown"),
+        if protocol.harness.dirty {
+            " (dirty)"
+        } else {
+            ""
+        },
         db_path.display()
     );
-    for (name, spec) in &row.models {
-        println!("  {name}: {spec}");
+    for config in &row.models {
+        println!("  {}: {}", config.name, config.spec);
     }
     let fixtures = db.fixtures(id, "league")?;
     println!("\nFixture");
@@ -457,6 +526,7 @@ impl League {
             self.rounds,
             self.clock,
             self.max_turns,
+            &self.protocol,
         )?;
         db.set_fixture_match(fixture.id, match_id)?;
         println!("[{tag}] match #{match_id} starts");
@@ -471,6 +541,7 @@ impl League {
                 clock: self.clock,
                 max_turns: self.max_turns,
                 decisive,
+                protocol: self.protocol.clone(),
             },
             events,
             control: self.control.clone(),

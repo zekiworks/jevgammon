@@ -1,0 +1,1 @@
+Choose the strongest backgammon play for the side to move ("you") with the given dice, following the rules in the state and taking the match score into account. Each choice is a complete legal play in your numbering (from/to per checker, `bar` enters from the bar, `off` bears off, `*` hits an opponent blot).

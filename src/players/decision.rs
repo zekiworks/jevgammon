@@ -1,16 +1,16 @@
 //! Decision models: TypeSafe's System One format (Jev and the services that copy it) and
-//! OpenAI's Decisions API. The legal plays become the options of one `choice` question, so
-//! the answer is always one of them.
+//! OpenAI's Decisions API. The legal plays become the options of one `choice` question, in
+//! the seeded option order, and the service returns its probability for each.
 
 use std::time::{Duration, Instant};
 
-use anyhow::{Context, Result, anyhow, bail};
+use anyhow::{Result, bail};
 use serde_json::{Map, Value, json};
 
-use super::prompt::{JEV_INSTRUCTIONS, descriptions, jev_state};
+use super::prompt::{instructions, option_text, state};
 use super::{Decision, DecisionRequest};
 use crate::db::Exchange;
-use crate::http;
+use crate::http::{self, RetryTime};
 
 const QUESTION: &str = "play";
 /// Longest wait for a service to answer its warm-up request.
@@ -216,34 +216,8 @@ impl DecisionClient {
         })
     }
 
-    pub async fn decide(&self, req: &DecisionRequest<'_>) -> Result<Decision> {
-        let mut decision = Decision {
-            index: 0,
-            fallback: false,
-            exchanges: Vec::new(),
-            input_tokens: 0,
-            output_tokens: 0,
-        };
-        let state = jev_state(req);
-        let texts = descriptions(req);
-        let max = self.service.max_choices;
-        // Above the option limit: pick a winner per (balanced) chunk, then choose among
-        // the winners, until one play is left.
-        let mut candidates: Vec<usize> = (0..req.notations.len()).collect();
-        while candidates.len() > 1 {
-            let chunks = candidates.len().div_ceil(max);
-            let size = candidates.len().div_ceil(chunks);
-            let mut winners = Vec::with_capacity(chunks);
-            for chunk in candidates.chunks(size) {
-                winners.push(
-                    self.choose(&state, req, &texts, chunk, &mut decision)
-                        .await?,
-                );
-            }
-            candidates = winners;
-        }
-        decision.index = candidates[0];
-        Ok(decision)
+    pub fn max_choices(&self) -> usize {
+        self.service.max_choices
     }
 
     /// Sends a two-option request until the service answers, so a cold start (e.g.
@@ -252,11 +226,15 @@ impl DecisionClient {
     pub async fn warm_up(&self) -> Result<Duration> {
         let started = Instant::now();
         let body = self.body(
-            &json!("Warm-up request before a backgammon match."),
-            &[("yes", "yes"), ("no", "no")],
+            "Warm-up request before a backgammon match.",
+            "Answer yes.",
+            &[
+                ("yes".to_owned(), "yes".to_owned()),
+                ("no".to_owned(), "no".to_owned()),
+            ],
         );
         loop {
-            match self.send(&body).await {
+            match self.send(&body, &RetryTime::default()).await {
                 Ok(_) => return Ok(started.elapsed()),
                 Err(error) if started.elapsed() < WARM_UP_LIMIT => {
                     eprintln!("{} warming up: {error:#}", self.service.label);
@@ -273,14 +251,17 @@ impl DecisionClient {
         }
     }
 
-    async fn send(&self, body: &Value) -> Result<String> {
-        http::send(|| {
-            let request = self.http.post(&self.url).json(body);
-            match &self.key {
-                Some(key) => request.bearer_auth(key),
-                None => request,
-            }
-        })
+    async fn send(&self, body: &Value, retry: &RetryTime) -> Result<String> {
+        http::send(
+            || {
+                let request = self.http.post(&self.url).json(body);
+                match &self.key {
+                    Some(key) => request.bearer_auth(key),
+                    None => request,
+                }
+            },
+            retry,
+        )
         .await
         .map_err(|e| {
             e.into_anyhow()
@@ -290,7 +271,7 @@ impl DecisionClient {
 
     /// `plays`: `(notation, description)`; the notation identifies the option in the answer
     /// and the description is the option text the model reads.
-    fn body(&self, state: &Value, plays: &[(&str, &str)]) -> Value {
+    fn body(&self, state: &str, instructions: &str, plays: &[(String, String)]) -> Value {
         let mut body = Map::new();
         if let Some(model) = &self.model {
             body.insert("model".into(), model.as_str().into());
@@ -300,27 +281,21 @@ impl DecisionClient {
                 .iter()
                 .map(|(play, text)| json!({"value": play, "description": text}))
                 .collect();
-            body.insert(
-                "input".into(),
-                match state {
-                    Value::String(text) => text.clone(),
-                    other => serde_json::to_string_pretty(other).expect("state serializes"),
-                }
-                .into(),
-            );
+            body.insert("input".into(), state.into());
             body.insert(
                 "questions".into(),
-                json!([{"type": "choice", "name": QUESTION, "instructions": JEV_INSTRUCTIONS, "choices": choices}]),
+                json!([{"type": "choice", "name": QUESTION, "instructions": instructions, "choices": choices}]),
             );
         } else {
+            // Keys keep the shown order (serde_json's `preserve_order`).
             let mut criteria = Map::new();
-            for &(play, text) in plays {
-                criteria.insert(play.to_owned(), text.into());
+            for (play, text) in plays {
+                criteria.insert(play.clone(), text.as_str().into());
             }
-            body.insert("state".into(), state.clone());
+            body.insert("state".into(), state.into());
             body.insert(
                 "questions".into(),
-                json!({QUESTION: {"type": "choice", "instructions": JEV_INSTRUCTIONS, "criteria": criteria}}),
+                json!({QUESTION: {"type": "choice", "instructions": instructions, "criteria": criteria}}),
             );
         }
         Value::Object(body)
@@ -339,58 +314,93 @@ impl DecisionClient {
         }
     }
 
-    async fn choose(
+    /// The service's probability per option, by notation, in either response format.
+    fn probabilities(&self, answer: &Value) -> Vec<(String, f64)> {
+        let Some(probabilities) = answer.get("probabilities") else {
+            return Vec::new();
+        };
+        if let Some(list) = probabilities.as_array() {
+            list.iter()
+                .filter_map(|p| {
+                    Some((
+                        p.get("value")?.as_str()?.to_owned(),
+                        p.get("probability")?.as_f64()?,
+                    ))
+                })
+                .collect()
+        } else if let Some(map) = probabilities.as_object() {
+            map.iter()
+                .filter_map(|(play, p)| Some((play.clone(), p.as_f64()?)))
+                .collect()
+        } else {
+            Vec::new()
+        }
+    }
+
+    /// One question over `shown` (indices into the plays, in the shown order). Returns the
+    /// chosen play, or `None` for an invalid answer (a refusal, a reply that is not JSON or
+    /// names no candidate).
+    pub async fn choose(
         &self,
-        state: &Value,
         req: &DecisionRequest<'_>,
-        texts: &[String],
-        candidates: &[usize],
+        shown: &[usize],
         decision: &mut Decision,
-    ) -> Result<usize> {
-        if let [only] = candidates {
-            return Ok(*only);
-        }
-        let label = self.service.label;
-        let plays: Vec<(&str, &str)> = candidates
+    ) -> Result<Option<usize>> {
+        let plays: Vec<(String, String)> = shown
             .iter()
-            .map(|&i| (req.notations[i].as_str(), texts[i].as_str()))
+            .map(|&i| (req.notations[i].clone(), option_text(req, i)))
             .collect();
-        let body = self.body(state, &plays);
+        let body = self.body(&state(req), instructions(req), &plays);
         let started = Instant::now();
-        let result = self.send(&body).await;
-        let latency_ms = started.elapsed().as_millis() as u64;
-        let text = result?;
-        let value: Value =
-            serde_json::from_str(&text).with_context(|| format!("{label} response is not JSON"))?;
-        decision.input_tokens += value
-            .pointer("/usage/input_tokens")
-            .and_then(Value::as_u64)
-            .unwrap_or(0);
-        decision.output_tokens += value
-            .pointer("/usage/output_tokens")
-            .and_then(Value::as_u64)
-            .unwrap_or(0);
-        let answer = self.answer(&value);
+        let retry_before = req.retry.get();
+        let text = self.send(&body, req.retry).await?;
+        let latency_ms = started
+            .elapsed()
+            .saturating_sub(req.retry.get() - retry_before)
+            .as_millis() as u64;
+        let value: Option<Value> = serde_json::from_str(&text).ok();
+        let usage = |key: &str| {
+            value
+                .as_ref()
+                .and_then(|v| v.pointer(&format!("/usage/{key}")))
+                .and_then(Value::as_u64)
+                .unwrap_or(0)
+        };
+        decision.input_tokens += usage("input_tokens");
+        decision.output_tokens += usage("output_tokens");
+        let answer = value.as_ref().and_then(|v| self.answer(v));
         let refused = answer.and_then(|a| a.get("type")).and_then(Value::as_str) == Some("refusal");
-        decision.exchanges.push(Exchange {
-            request: body.to_string(),
-            response: Some(text.clone()),
-            error: refused.then(|| "refusal".to_owned()),
-            latency_ms,
-        });
-        if refused {
-            // No choice to use: the first candidate stands in, and the turn is marked.
-            decision.fallback = true;
-            return Ok(candidates[0]);
-        }
         let choice = answer
+            .filter(|_| !refused)
             .and_then(|a| a.get("choice"))
             .and_then(Value::as_str)
-            .ok_or_else(|| anyhow!("{label} response lacks the {QUESTION} choice: {text}"))?;
-        candidates
-            .iter()
-            .copied()
-            .find(|&index| req.notations[index] == choice)
-            .ok_or_else(|| anyhow!("{label} chose `{choice}`, which is not a candidate"))
+            .and_then(|choice| shown.iter().copied().find(|&i| req.notations[i] == choice));
+        let error = match (&value, refused, choice) {
+            (None, _, _) => Some("response is not JSON".to_owned()),
+            (_, true, _) => Some("refusal".to_owned()),
+            (_, _, None) => Some(format!("no {QUESTION} choice among the candidates")),
+            _ => None,
+        };
+        if choice.is_some() {
+            let probabilities = answer.map(|a| self.probabilities(a)).unwrap_or_default();
+            decision.probabilities = shown
+                .iter()
+                .filter_map(|&i| {
+                    probabilities
+                        .iter()
+                        .find(|(play, _)| *play == req.notations[i])
+                        .map(|&(_, p)| (i, p))
+                })
+                .collect();
+            decision.probability_source =
+                (!decision.probabilities.is_empty()).then_some("decision");
+        }
+        decision.exchanges.push(Exchange {
+            request: body.to_string(),
+            response: Some(text),
+            error,
+            latency_ms,
+        });
+        Ok(choice)
     }
 }

@@ -31,6 +31,17 @@ def connect(db: Path) -> sqlite3.Connection:
     return conn
 
 
+def columns(conn: sqlite3.Connection, table: str) -> set[str]:
+    """Column names of `table`; older databases lack the per-decision v3 columns."""
+    return {r["name"] for r in conn.execute(f"PRAGMA table_info({table})")}
+
+
+def unsigned(value: int | None) -> str | None:
+    """A seed stored as SQLite's signed 64-bit integer, as the runner's u64 (a string for JS)."""
+    return None if value is None else str(value & (2**64 - 1))
+
+
+
 def league_fixtures(conn: sqlite3.Connection, lid: int) -> tuple[list[dict], dict[int, list[int]]]:
     """The league's fixtures with their latest match, and games won per match."""
     fixtures = [dict(r) for r in conn.execute(
@@ -158,15 +169,23 @@ def snapshot(db: Path, league_id: int | None) -> dict:
             """League name of the player in `player_col` (1 = model1, 2 = model2)."""
             return f"CASE {player_col} WHEN 1 THEN lm.model1 ELSE lm.model2 END"
 
+        # 'fallback': the answer named no legal play, so a random legal play was made.
+        # The v3 per-decision columns, only when this database has them.
+        v3 = (
+            """, SUM(t.decided_by IN ('model', 'fallback') AND t.probability_source IS NOT NULL) AS with_probs,
+                 AVG(CASE WHEN t.decided_by IN ('model', 'fallback') THEN t.request_ms END) AS avg_request_ms,
+                 SUM(t.cost_usd) AS cost_usd"""
+            if {"probability_source", "request_ms", "cost_usd"} <= columns(conn, "turns") else ""
+        )
         decisions = {r["name"]: dict(r) for r in conn.execute(
             f"""SELECT {model('t.player')} AS name,
                        SUM(t.decided_by IN ('model', 'fallback', 'timeout')) AS decisions,
                        AVG(CASE WHEN t.decided_by IN ('model', 'fallback') THEN t.latency_ms END) AS avg_ms,
                        MAX(CASE WHEN t.decided_by IN ('model', 'fallback') THEN t.latency_ms END) AS max_ms,
-                       SUM(t.decided_by = 'fallback') AS fallbacks,
+                       SUM(t.decided_by = 'fallback') AS invalid,
                        SUM(t.decided_by = 'timeout') AS timeouts,
                        SUM(t.move LIKE '%*%' AND t.decided_by IN ('model', 'fallback')) AS hits,
-                       SUM(t.input_tokens) AS input_tokens
+                       SUM(t.input_tokens) AS input_tokens{v3}
                 FROM turns t JOIN games g ON g.id = t.game_id
                 JOIN league_matches lm ON lm.match_id = g.match_id AND lm.league_id = ?
                 GROUP BY 1""",
@@ -200,7 +219,10 @@ def snapshot(db: Path, league_id: int | None) -> dict:
             "id": lid,
             "status": state,
             "note": league["note"],
-            "seed": str(league["seed"] & (2**64 - 1)),
+            "seed": unsigned(league["seed"]),
+            # v3 leagues only.
+            "prompt_version": league["prompt_version"] if "prompt_version" in league.keys() else None,
+            "order_seed": unsigned(league["order_seed"]) if "order_seed" in league.keys() else None,
             "rounds": league["rounds"],
             "clock_seconds": league["clock_seconds"],
             "delay_seconds": league["delay_seconds"],
@@ -215,6 +237,7 @@ def snapshot(db: Path, league_id: int | None) -> dict:
         "models": [
             {"name": n, **decisions.get(n, {}), "outcomes": outcomes.get(n, {})} for n in names
         ],
+        "v3": bool(v3),
         "games": dict(game_totals),
         "recent": recent,
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
@@ -290,8 +313,12 @@ def turn_context(db: Path, turn_id: int) -> dict:
     """What was sent to the model for one roll and what it answered: one entry per request
     (play lists above a service's option limit are split into several)."""
     with connect(db) as conn:
+        # The v3 per-decision fields the dialog shows, when this database has them.
+        extra = [c for c in ("letter", "probability_source", "request_ms", "cost_usd", "provider",
+                             "quantization", "prompt_version") if c in columns(conn, "turns")]
         turn = conn.execute(
-            "SELECT turn_no, die1, die2, move, decided_by FROM turns WHERE id = ?", (turn_id,)
+            f"SELECT {', '.join(['turn_no', 'die1', 'die2', 'move', 'decided_by', *extra])} FROM turns WHERE id = ?",
+            (turn_id,),
         ).fetchone()
         if turn is None:
             return {"error": f"no turn #{turn_id}"}
@@ -412,12 +439,18 @@ function render(d){
   $('status').innerHTML=pill(L.status);
   $('note').textContent=L.note||'';
   $('latest').hidden=selected==null;
-  $('rules').textContent=`${L.rounds} rounds per match · clock ${clock(L.delay_seconds)} delay + ${clock(L.clock_seconds)} bank · turn limit ${L.max_turns??'off'} · seed ${L.seed}`;
+  $('rules').textContent=`${L.rounds} rounds per match · clock ${clock(L.delay_seconds)} delay + ${clock(L.clock_seconds)} bank · turn limit ${L.max_turns??'off'} · seed ${L.seed}`+
+    (L.order_seed!=null?` · option order seed ${L.order_seed}`:'')+(L.prompt_version?` · prompt ${L.prompt_version}`:'');
   $('updated').textContent='updated '+new Date(d.generated_at).toLocaleTimeString();
   $('table').innerHTML='<thead><tr><th>#</th><th class="l">Model</th><th>P</th><th>W</th><th>D</th><th>L</th><th>Pts</th><th>GW</th><th>GL</th><th>PF</th><th>PA</th></tr></thead><tbody>'+
     d.table.map((r,i)=>`<tr class="${i<3?'top':''}"><td>${i+1}</td><td class="l">${esc(r.name)}</td><td>${r.played}</td><td>${r.won}</td><td>${r.drawn}</td><td>${r.lost}</td><td class="pts">${r.points}</td><td>${r.gw}</td><td>${r.gl}</td><td>${r.pf}</td><td>${r.pa}</td></tr>`).join('')+'</tbody>';
-  $('models').innerHTML='<thead><tr><th class="l">Model</th><th>Decisions</th><th>Avg</th><th>Max</th><th>Hit %</th><th>Fallback</th><th>Timeout</th><th>G/BG won</th></tr></thead><tbody>'+
-    d.models.map(m=>{const o=m.outcomes||{};return `<tr><td class="l">${esc(m.name)}</td><td>${m.decisions??0}</td><td>${m.avg_ms!=null?(m.avg_ms/1000).toFixed(2)+'s':'–'}</td><td>${m.max_ms!=null?(m.max_ms/1000).toFixed(1)+'s':'–'}</td><td>${pct(m.hits||0,m.decisions||0)}</td><td>${m.fallbacks??0}</td><td>${m.timeouts??0}</td><td>${(o.gammon||0)}/${(o.backgammon||0)}</td></tr>`}).join('')+'</tbody>';
+  // Player config per name: spec plus provider / quantization when the league recorded them.
+  const player=n=>{const c=(L.models||[]).find(x=>x.name===n)||{};return [c.spec,c.provider,c.quantization].filter(Boolean).join(' · ')};
+  const sec=ms=>ms!=null?(ms/1000).toFixed(2)+'s':'–';
+  $('models').innerHTML='<thead><tr><th class="l">Model</th><th>Decisions</th><th>Avg</th><th>Max</th><th>Hit %</th><th title="the answer named no legal play; a random legal play was made">Invalid</th><th>Timeout</th>'+
+    (d.v3?'<th title="decisions with option probabilities">Probs %</th><th title="mean request time, retries excluded">Request</th><th>Cost</th>':'')+'<th>G/BG won</th></tr></thead><tbody>'+
+    d.models.map(m=>{const o=m.outcomes||{},n=m.decisions||0;return `<tr><td class="l">${esc(m.name)} <span class="mute">${esc(player(m.name))}</span></td><td>${n}</td><td>${sec(m.avg_ms)}</td><td>${m.max_ms!=null?(m.max_ms/1000).toFixed(1)+'s':'–'}</td><td>${pct(m.hits||0,n)}</td><td>${m.invalid??0} <span class="mute">(${pct(m.invalid||0,n)})</span></td><td>${m.timeouts??0}</td>`+
+      (d.v3?`<td>${pct(m.with_probs||0,n)}</td><td>${sec(m.avg_request_ms)}</td><td>${m.cost_usd!=null?'$'+m.cost_usd.toFixed(4):'–'}</td>`:'')+`<td>${(o.gammon||0)}/${(o.backgammon||0)}</td></tr>`}).join('')+'</tbody>';
   const g=d.games;
   $('totals').textContent=g.games?`${g.games} games · avg ${Math.round(g.avg_turns)} turns · ${g.turn_limit} at the turn limit (${pct(g.turn_limit,g.games)}) · ${g.gammons} gammons/backgammons · ${g.timeouts} lost on time`:'no finished games yet';
   const running=d.fixtures.filter(f=>f.live);
@@ -428,7 +461,7 @@ function render(d){
     <div><b>${esc(f.model1)}</b> <span class="pts">${f.score1} – ${f.score2}</span> <b>${esc(f.model2)}</b> <span class="mute">(games ${f.games_won[0]}–${f.games_won[1]})</span></div>
     <div class="mute">round ${v.round} game ${v.leg} · ${W} <span class="cw">${esc(v.white)}</span> v ${B} <span class="cb">${esc(v.black)}</span> · turn ${v.turn}${L.max_turns?' / '+L.max_turns:''}</div>
     ${board(v.position,v.white,v.black)}
-    <div>${v.mover?`<span class="${v.mover===v.white?'cw':'cb'}">${esc(v.mover)}</span> rolled ${v.dice.join('-')}: <b>${esc(v.move||'(no move)')}</b> <span class="mute">${v.decided_by}${v.decided_by==='model'?`, ${(v.latency_ms/1000).toFixed(1)}s of ${v.legal} plays`:''} · ${ago(v.at)}</span>`:'<span class="mute">starting</span>'}</div>${nav}</div>`}).join(''):`<div class="mute">${L.status==='live'?'no match running':`league #${L.id} is ${L.status}`}</div>`;
+    <div>${v.mover?`<span class="${v.mover===v.white?'cw':'cb'}">${esc(v.mover)}</span> rolled ${v.dice.join('-')}: <b>${esc(v.move||'(no move)')}</b> <span class="mute">${how(v.decided_by)}${v.decided_by==='model'||v.decided_by==='fallback'?`, ${(v.latency_ms/1000).toFixed(1)}s of ${v.legal} plays`:''} · ${ago(v.at)}</span>`:'<span class="mute">starting</span>'}</div>${nav}</div>`}).join(''):`<div class="mute">${L.status==='live'?'no match running':`league #${L.id} is ${L.status}`}</div>`;
   const days={};for(const f of d.fixtures){const k=f.stage==='playoff'?'Playoffs':'Matchday '+f.matchday;(days[k]=days[k]||[]).push(f)}
   $('fixture').innerHTML=Object.entries(days).map(([k,fs])=>`<div class="day"><h3>${k}</h3>`+fs.map(f=>{
     const st=f.status||'pending';const w1=f.winner===1,w2=f.winner===2;
@@ -438,6 +471,8 @@ function render(d){
     d.recent.map(r=>`<tr><td class="l mute">${ago(r.finished_at)}</td><td class="l">${esc(r.label)}</td><td>${r.round_no}.${r.leg}</td><td class="l">${esc(r.winner)}</td><td class="l">${esc(r.result.replace('_',' '))}</td><td>${r.points}</td><td>${r.turns}</td></tr>`).join('')+'</tbody>';
   $('ranking').textContent=L.ranking?'Final ranking: '+L.ranking.join(' · '):'';
 }
+// turns.decided_by as shown: 'fallback' = the answer named no legal play.
+const how=s=>s==='fallback'?'invalid answer, random legal play':s;
 const pill=s=>`<span class="pill ${{finished:'finished',live:'running',stopped:'aborted'}[s]||''}">${esc(s)}</span>`;
 const span=(a,b)=>{if(!a||!b)return'–';const m=Math.round((Date.parse(b)-Date.parse(a))/60000);return m<60?`${m} min`:`${Math.floor(m/60)} h ${m%60} min`};
 function renderHistory(h){
@@ -488,12 +523,15 @@ async function showContext(turnId){
   const d=await (await fetch(`api/context?turn=${turnId}`,{cache:'no-store'})).json();
   if(d.error){$('ctxTitle').textContent=d.error;$('ctxBody').innerHTML='';$('ctx').showModal();return}
   const t=d.turn;
-  $('ctxTitle').textContent=`Turn ${t.turn_no} · rolled ${t.die1}-${t.die2} · played ${t.move||'(no move)'} · ${t.decided_by}`;
-  $('ctxBody').innerHTML=d.exchanges.length?d.exchanges.map((x,k)=>`
+  $('ctxTitle').textContent=`Turn ${t.turn_no} · rolled ${t.die1}-${t.die2} · played ${t.move||'(no move)'} · ${how(t.decided_by)}`;
+  // v3 decision fields, when recorded.
+  const facts=[t.letter&&(t.decided_by==='fallback'?'random play ':'answer ')+t.letter,t.probability_source&&'probabilities: '+t.probability_source,t.request_ms!=null&&'request '+(t.request_ms/1000).toFixed(2)+'s',
+    t.cost_usd!=null&&'$'+t.cost_usd.toFixed(5),t.provider,t.quantization,t.prompt_version&&'prompt '+t.prompt_version].filter(Boolean);
+  $('ctxBody').innerHTML=(facts.length?`<p class="mute">${esc(facts.join(' · '))}</p>`:'')+(d.exchanges.length?d.exchanges.map((x,k)=>`
     <p class="mute">request ${k+1} of ${d.exchanges.length}${x.model?' · model '+esc(x.model):''} · ${x.context.length} chars · ${(x.latency_ms/1000).toFixed(2)}s${x.error?' · <span style="color:var(--loss)">'+esc(x.error)+'</span>':''}</p>
     <b>Context sent</b><pre>${esc(x.context)}</pre>
     ${x.options.length?`<b>Options (${x.options.length})</b><pre>${esc(x.options.join('\n'))}</pre>`:''}
-    <b>Response</b><pre>${esc(x.response??'(none)')}</pre>`).join(''):'<p class="mute">No request was sent for this roll (forced or no legal move).</p>';
+    <b>Response</b><pre>${esc(x.response??'(none)')}</pre>`).join(''):`<p class="mute">${t.decided_by==='forced'||t.decided_by==='no_move'?'No request was sent for this roll (forced or no legal move).':'No request was recorded for this roll: this player decides locally (baseline or engine).'}</p>`);
   $('ctx').showModal();
 }
 $('live').addEventListener('click',e=>{const c=e.target.closest('button[data-ctx]');if(c&&!c.disabled){showContext(+c.dataset.ctx);return}

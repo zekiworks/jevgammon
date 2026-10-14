@@ -365,11 +365,21 @@ python3 tools/league_web.py --db league.db --port 8095   # http://<host>:8095/
   (`?league=<id>` in the address).
 - **Places:** for each model, how many times it finished 1st, 2nd, 3rd, … over the
   finished leagues only (stopped and running ones are left out), best record first.
-- **League on view:** table (`‹` `›` step through the finished leagues and the live one),
-  per-model decision stats, the fixture with results, and recent
-  games. While it is live, every running game shows its board and last move; `«`, `»` and
-  `⏮ round start` step through the rolls of the current round, `live` returns to the game
-  in progress, and `context` shows what was sent to the model for that roll and its answer.
+- **League on view:** header with rules and seed (plus the prompt version and option-order
+  seed for leagues that stored them), table (`‹` `›` step through the finished leagues and
+  the live one), per-model decision stats, the fixture with results, and recent games. The
+  model stats list each player's spec, provider and quantization; decisions, mean and
+  longest decision time, hit share, **Invalid** (`decided_by = 'fallback'`: the answer named
+  no option and a random legal play was made) and timeouts; on databases with the
+  per-decision columns also the share of decisions with probabilities
+  (`probability_source` set), the mean request time (`request_ms`, retries excluded) and the
+  total cost (`cost_usd`). Older databases show the page without those three columns.
+- **Live:** while the league is live, every running game shows its board and last move;
+  `«`, `»` and `⏮ round start` step through the rolls of the current round, `live` returns
+  to the game in progress, and `context` shows what was sent to the model for that roll and
+  its answer, with the decision's letter, probability source, request time, cost, provider,
+  quantization and prompt version when recorded (local players such as baselines and gnubg
+  send no request, so they show none).
 
 `--league <id>` picks the league shown by default (otherwise the latest); `--host` defaults
 to `0.0.0.0`, so the page is reachable from the LAN without authentication.

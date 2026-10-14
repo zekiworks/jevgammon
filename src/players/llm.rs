@@ -28,18 +28,46 @@ const ANTHROPIC_URL: &str = "https://api.anthropic.com/v1/messages";
 const GEMINI_URL: &str = "https://generativelanguage.googleapis.com/v1beta";
 /// Anthropic serves subscription tokens only when this is the first system block.
 const CLAUDE_CODE_IDENTITY: &str = "You are Claude Code, Anthropic's official CLI for Claude.";
-/// Log-probabilities returned for the answer token (OpenAI's maximum).
+/// Log-probabilities asked for the answer token unless the player config sets fewer
+/// (OpenAI's maximum; Fireworks allows 5).
 const TOP_LOGPROBS: u32 = 20;
 /// Prefilled before the answer letter.
 const ANSWER_PREFIX: &str = "Answer:";
+
+/// How an OpenAI-compatible server's letter probabilities are read.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum Readout {
+    /// A request continuing a prefilled `Answer:` (after the reasoning, when on), one
+    /// output token (`continue_final_message`; SGLang, vLLM).
+    #[default]
+    Prefill,
+    /// The log-probabilities of the answer letter in the ordinary (reasoning, when on)
+    /// response, constrained to the letters: for servers that do not continue a prefill
+    /// (Fireworks, Novita and Together through OpenRouter).
+    Answer,
+}
+
+impl Readout {
+    pub fn parse(name: Option<&str>) -> Result<Self> {
+        match name {
+            None | Some("prefill") => Ok(Readout::Prefill),
+            Some("answer") => Ok(Readout::Answer),
+            Some(other) => Err(anyhow!(
+                "letter_readout must be `prefill` or `answer`, not `{other}`"
+            )),
+        }
+    }
+}
 
 /// Per-player settings from its config.
 pub struct Options {
     /// Reasoning effort; `None` = reasoning off (subscriptions: the provider default).
     pub reasoning: Option<String>,
-    /// Fields merged into every request body.
+    /// Fields merged into every request body; a null value removes the field.
     pub request: Option<Value>,
     pub max_tokens: Option<u32>,
+    pub top_logprobs: Option<u32>,
+    pub readout: Readout,
 }
 
 enum Kind {
@@ -69,10 +97,15 @@ struct Completion {
     text: String,
     /// Reasoning returned separately (`reasoning_content`) or in `<think>` tags.
     reasoning: Option<String>,
-    /// Top log-probabilities of the first answer token; `None` when not returned.
+    /// Top log-probabilities at the answer letter: the first answer token that is a single
+    /// letter, else the first answer token; `None` when not returned.
     top: Option<Vec<(String, f64)>>,
     input_tokens: u64,
     output_tokens: u64,
+    /// Reasoning tokens, when the provider reports them.
+    reasoning_tokens: Option<u64>,
+    /// Dollars, when the provider reports them (OpenRouter's `usage.cost`).
+    cost: Option<f64>,
 }
 
 /// JSON schema of a one-letter answer among `count` options.
@@ -96,14 +129,23 @@ fn tokens(value: &Value, pointer: &str) -> u64 {
     value.pointer(pointer).and_then(Value::as_u64).unwrap_or(0)
 }
 
-/// `body` with the configured extra fields merged in at the top level.
+/// `body` with the configured extra fields merged in at the top level; a null value
+/// removes that field.
 fn merged(mut body: Value, extra: Option<&Value>) -> Value {
     if let (Some(Value::Object(extra)), Value::Object(fields)) = (extra, &mut body) {
         for (key, value) in extra {
-            fields.insert(key.clone(), value.clone());
+            if value.is_null() {
+                fields.remove(key);
+            } else {
+                fields.insert(key.clone(), value.clone());
+            }
         }
     }
     body
+}
+
+fn optional(value: &Value, pointer: &str) -> Option<u64> {
+    value.pointer(pointer).and_then(Value::as_u64)
 }
 
 impl LlmClient {
@@ -202,6 +244,44 @@ impl LlmClient {
             {"role": "system", "content": letter_system()},
             {"role": "user", "content": user},
         ]);
+        let top_logprobs = self.options.top_logprobs.unwrap_or(TOP_LOGPROBS);
+        let schema = json!({
+            "type": "json_schema",
+            "json_schema": {"name": "play", "schema": letter_schema(count), "strict": true},
+        });
+        if self.options.readout == Readout::Answer {
+            // One request; its answer letter carries the probabilities.
+            let mut body = json!({
+                "model": self.model,
+                "messages": messages,
+                "temperature": 1.0,
+                "max_tokens": match self.options.reasoning {
+                    Some(_) => self.options.max_tokens.unwrap_or(32768),
+                    None => 16,
+                },
+                "response_format": schema,
+                "logprobs": true,
+                "top_logprobs": top_logprobs,
+            });
+            if let Some(effort) = &self.options.reasoning {
+                body["reasoning_effort"] = json!(effort);
+            }
+            let completion = self.call(&body, req, decision).await?;
+            let letter = self.constrained_letter(&completion, count, decision);
+            let probabilities = completion
+                .top
+                .as_ref()
+                .and_then(|top| letter_probabilities(top, count));
+            return Ok(match probabilities {
+                Some(probabilities) => Some((argmax(&probabilities), Some(probabilities))),
+                None => {
+                    if letter.is_some() {
+                        mark(decision, "no letter logprobs returned; choice only");
+                    }
+                    letter.map(|position| (position, None))
+                }
+            });
+        }
         // Reasoning on: the model reasons and answers with a constrained letter.
         let mut constrained = None;
         let prefill = match &self.options.reasoning {
@@ -212,10 +292,7 @@ impl LlmClient {
                     "temperature": 1.0,
                     "max_tokens": self.options.max_tokens.unwrap_or(32768),
                     "reasoning_effort": effort,
-                    "response_format": {
-                        "type": "json_schema",
-                        "json_schema": {"name": "play", "schema": letter_schema(count), "strict": true},
-                    },
+                    "response_format": schema,
                 });
                 let completion = self.call(&body, req, decision).await?;
                 constrained = self.constrained_letter(&completion, count, decision);
@@ -234,19 +311,18 @@ impl LlmClient {
                 "model": self.model,
                 "messages": conversation,
                 "continue_final_message": true,
+                // vLLM refuses continue_final_message next to its default true.
+                "add_generation_prompt": false,
                 "temperature": 1.0,
                 "max_tokens": 1,
                 "logprobs": true,
-                "top_logprobs": TOP_LOGPROBS,
+                "top_logprobs": top_logprobs,
             });
             let completion = self.call(&body, req, decision).await?;
             match &completion.top {
                 Some(top) => match letter_probabilities(top, count) {
                     Some(probabilities) => {
-                        let best = (0..count)
-                            .max_by(|&a, &b| probabilities[a].total_cmp(&probabilities[b]))
-                            .expect("at least two options");
-                        return Ok(Some((best, Some(probabilities))));
+                        return Ok(Some((argmax(&probabilities), Some(probabilities))));
                     }
                     None => mark(decision, "no option letter among the top logprobs"),
                 },
@@ -313,7 +389,8 @@ impl LlmClient {
                 }
                 json!({
                     "model": self.model,
-                    "max_tokens": self.options.max_tokens.unwrap_or(1024),
+                    // Room for adaptive thinking at high effort (1,024 ran out in the smoke test).
+                    "max_tokens": self.options.max_tokens.unwrap_or(32000),
                     "system": [
                         {"type": "text", "text": CLAUDE_CODE_IDENTITY},
                         {"type": "text", "text": system},
@@ -378,6 +455,12 @@ impl LlmClient {
         };
         decision.input_tokens += completion.input_tokens;
         decision.output_tokens += completion.output_tokens;
+        if let Some(reasoning) = completion.reasoning_tokens {
+            *decision.reasoning_tokens.get_or_insert(0) += reasoning;
+        }
+        if let Some(cost) = completion.cost {
+            *decision.reported_cost.get_or_insert(0.0) += cost;
+        }
         decision.exchanges.push(Exchange {
             request: body.to_string(),
             response: Some(raw),
@@ -494,6 +577,23 @@ fn mark(decision: &mut Decision, reason: &str) {
     }
 }
 
+/// Position of the most probable letter (the first on ties).
+fn argmax(probabilities: &[f64]) -> usize {
+    let mut best = 0;
+    for (position, p) in probabilities.iter().enumerate() {
+        if *p > probabilities[best] {
+            best = position;
+        }
+    }
+    best
+}
+
+/// A token that is one letter, give or take spaces, quotes and punctuation (`C`, ` C`, `"C`).
+fn letter_token(token: &str) -> bool {
+    let core = token.trim_matches(|c: char| c.is_whitespace() || "([{'\".,:)]}".contains(c));
+    core.len() == 1 && core.as_bytes()[0].is_ascii_alphabetic()
+}
+
 fn parse_codex_sse(stream: &str) -> Result<Completion> {
     let mut text = String::new();
     let mut done_text = None;
@@ -536,6 +636,7 @@ fn parse_codex_sse(stream: &str) -> Result<Completion> {
         text: done_text.unwrap_or(text),
         input_tokens: tokens(&usage, "/input_tokens"),
         output_tokens: tokens(&usage, "/output_tokens"),
+        reasoning_tokens: optional(&usage, "/output_tokens_details/reasoning_tokens"),
         ..Completion::default()
     })
 }
@@ -558,6 +659,7 @@ fn parse_anthropic(body: &str) -> Result<Completion> {
             + tokens(&value, "/usage/cache_read_input_tokens")
             + tokens(&value, "/usage/cache_creation_input_tokens"),
         output_tokens: tokens(&value, "/usage/output_tokens"),
+        reasoning_tokens: optional(&value, "/usage/output_tokens_details/thinking_tokens"),
         ..Completion::default()
     })
 }
@@ -579,6 +681,7 @@ fn parse_gemini(body: &str) -> Result<Completion> {
         input_tokens: tokens(&value, "/usageMetadata/promptTokenCount"),
         output_tokens: tokens(&value, "/usageMetadata/candidatesTokenCount")
             + tokens(&value, "/usageMetadata/thoughtsTokenCount"),
+        reasoning_tokens: Some(tokens(&value, "/usageMetadata/thoughtsTokenCount")),
         ..Completion::default()
     })
 }
@@ -611,8 +714,23 @@ fn parse_chat_completion(body: &str) -> Result<Completion> {
         text = text[end + "</think>".len()..].to_owned();
         reasoning = Some(thought);
     }
-    let top = value
-        .pointer("/choices/0/logprobs/content/0/top_logprobs")
+    // The answer letter's alternatives: the first single-letter answer token (inside a
+    // constrained `{"choice":"C"}` it is the fourth), else the first token.
+    let entries = value
+        .pointer("/choices/0/logprobs/content")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
+    let at = entries
+        .iter()
+        .find(|e| {
+            e.get("token")
+                .and_then(Value::as_str)
+                .is_some_and(letter_token)
+        })
+        .or(entries.first());
+    let top = at
+        .and_then(|e| e.get("top_logprobs"))
         .and_then(Value::as_array)
         .map(|entries| {
             entries
@@ -632,6 +750,9 @@ fn parse_chat_completion(body: &str) -> Result<Completion> {
         top,
         input_tokens: tokens(&value, "/usage/prompt_tokens"),
         output_tokens: tokens(&value, "/usage/completion_tokens"),
+        reasoning_tokens: optional(&value, "/usage/completion_tokens_details/reasoning_tokens")
+            .or_else(|| optional(&value, "/usage/reasoning_tokens")),
+        cost: value.pointer("/usage/cost").and_then(Value::as_f64),
     })
 }
 
@@ -671,5 +792,37 @@ mod tests {
             letter_schema(3)["properties"]["choice"]["enum"],
             json!(["A", "B", "C"])
         );
+        // A null removes the field (endpoints without a JSON schema).
+        let body = merged(
+            json!({"response_format": {"type": "json_schema"}, "reasoning_effort": "low"}),
+            Some(&json!({"response_format": null})),
+        );
+        assert!(body.get("response_format").is_none());
+        assert_eq!(body["reasoning_effort"], "low");
+    }
+
+    /// Answer readout: the letter inside a constrained `{"choice":"M"}` carries the
+    /// alternatives; usage gives reasoning tokens and the provider's cost.
+    #[test]
+    fn reads_the_answer_letter_inside_json() {
+        let body = r#"{"choices":[{"message":{"content":"{\"choice\":\"B\"}","reasoning":"think"},
+            "logprobs":{"content":[
+              {"token":"{\"","logprob":0.0,"top_logprobs":[{"token":"{\"","logprob":0.0}]},
+              {"token":"choice","logprob":0.0,"top_logprobs":[{"token":"choice","logprob":0.0}]},
+              {"token":"\":\"","logprob":0.0,"top_logprobs":[{"token":"\":\"","logprob":0.0}]},
+              {"token":"B","logprob":-0.2,"top_logprobs":[{"token":"B","logprob":-0.2},{"token":"A","logprob":-1.8},{"token":" B","logprob":-4.0}]},
+              {"token":"\"}","logprob":0.0,"top_logprobs":[{"token":"\"}","logprob":0.0}]}]}}],
+            "usage":{"prompt_tokens":3600,"completion_tokens":900,"cost":0.0042,
+                     "completion_tokens_details":{"reasoning_tokens":880}}}"#;
+        let c = parse_chat_completion(body).unwrap();
+        assert_eq!(parse_letter(&c.text, 3), Some(1));
+        let probs = letter_probabilities(c.top.as_ref().unwrap(), 3).unwrap();
+        assert!(probs[1] > 0.8 && probs[0] > 0.1 && probs[2] == 0.0);
+        assert_eq!(argmax(&probs), 1);
+        assert_eq!(c.reasoning_tokens, Some(880));
+        assert_eq!(c.cost, Some(0.0042));
+        assert!(letter_token(" B") && letter_token("\"C") && !letter_token("choice"));
+        assert_eq!(Readout::parse(Some("answer")).unwrap(), Readout::Answer);
+        assert!(Readout::parse(Some("x")).is_err());
     }
 }

@@ -15,3 +15,5 @@
 ._*
 __pycache__/
 /positions/games/
+/smoke/
+/v3.db*

@@ -1,0 +1,200 @@
+{
+  "note": "v3 League 1: decision models and models on our own hardware",
+  "prompt_version": "bg-v2",
+  "seed": 2567889193785291627,
+  "order_seed": 1190975713392774006,
+  "rounds": 3,
+  "clock": 300,
+  "delay": 30,
+  "max_turns": 300,
+  "players": [
+    {
+      "name": "Jev 1.13.0",
+      "spec": "jev/jev-1.13.0",
+      "provider": "typesafe",
+      "price": {
+        "input_per_mtok": 0.042,
+        "output_per_mtok": 0
+      }
+    },
+    {
+      "name": "GPT-6 Luna",
+      "spec": "openai-decisions/gpt-6-luna",
+      "provider": "openai-decisions",
+      "price": {
+        "input_per_mtok": 0.1,
+        "output_per_mtok": 0
+      }
+    },
+    {
+      "name": "Decider v1.1 27B",
+      "spec": "pplx-local",
+      "provider": "local (pplx-decider server.py)",
+      "quantization": "bf16",
+      "price": {
+        "input_per_mtok": 0.02,
+        "output_per_mtok": 0
+      },
+      "parallel": 1,
+      "note": "runs on our GPUs (Perplexity hosting of v1.1 unverified); price = Perplexity list price"
+    },
+    {
+      "name": "SubQ Snap Preview",
+      "spec": "subq/subq-snap-preview",
+      "provider": "subq",
+      "price": {
+        "input_per_mtok": 0.05,
+        "output_per_mtok": 0
+      }
+    },
+    {
+      "name": "Fastino GLiDE",
+      "spec": "fastino",
+      "provider": "fastino",
+      "price": {
+        "input_per_mtok": 0.15,
+        "output_per_mtok": 0
+      }
+    },
+    {
+      "name": "Celeris-1 Decision",
+      "spec": "celeris/celeris-1-decision",
+      "provider": "celeris",
+      "price": {
+        "input_per_mtok": 0.04,
+        "output_per_mtok": 0
+      }
+    },
+    {
+      "name": "Clef",
+      "spec": "clef",
+      "provider": "local",
+      "quantization": "bf16",
+      "parallel": 1
+    },
+    {
+      "name": "Open-Jev 27B v1.1",
+      "spec": "open-jev",
+      "provider": "local",
+      "quantization": "bf16",
+      "parallel": 1
+    },
+    {
+      "name": "Cygnet (Gemma 4 12B)",
+      "spec": "cygnet",
+      "provider": "local",
+      "quantization": "bf16",
+      "parallel": 4
+    },
+    {
+      "name": "Gemma 4 31B (off)",
+      "spec": "local/gemma-4-31B-it",
+      "base_url": "http://127.0.0.1:8894/v1",
+      "provider": "local-vllm",
+      "quantization": "fp8 (bf16 checkpoint quantized by vLLM at load; fp8 KV cache)",
+      "parallel": 4,
+      "note": "thinking off; vLLM on our GPUs",
+      "request": {
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        }
+      }
+    },
+    {
+      "name": "Gemma 4 31B (on)",
+      "spec": "local/gemma-4-31B-it",
+      "base_url": "http://127.0.0.1:8894/v1",
+      "provider": "local-vllm",
+      "quantization": "fp8 (bf16 checkpoint quantized by vLLM at load; fp8 KV cache)",
+      "parallel": 4,
+      "note": "thinking on (enable_thinking); no effort knob, template default",
+      "reasoning": "template default",
+      "max_tokens": 24000,
+      "request": {
+        "chat_template_kwargs": {
+          "enable_thinking": true
+        },
+        "reasoning_effort": null
+      }
+    },
+    {
+      "name": "Qwen3.8-27B (off)",
+      "spec": "openai-compatible/qwen/qwen3.8-27b",
+      "base_url": "https://openrouter.ai/api/v1",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "provider": "openrouter:cerebras/fp16",
+      "quantization": "fp16",
+      "request": {
+        "provider": {
+          "order": [
+            "cerebras/fp16"
+          ],
+          "allow_fallbacks": false,
+          "require_parameters": true
+        },
+        "usage": {
+          "include": true
+        },
+        "reasoning": {
+          "enabled": false
+        },
+        "response_format": null
+      },
+      "letter_readout": "answer",
+      "price": {
+        "input_per_mtok": 0.99,
+        "output_per_mtok": 1.49
+      },
+      "parallel": 2,
+      "rpm": 18,
+      "note": "Cerebras takes no response_format: unconstrained letter"
+    },
+    {
+      "name": "Qwen3.8-27B (on)",
+      "spec": "openai-compatible/qwen/qwen3.8-27b",
+      "base_url": "https://openrouter.ai/api/v1",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "provider": "openrouter:cerebras/fp16",
+      "quantization": "fp16",
+      "request": {
+        "provider": {
+          "order": [
+            "cerebras/fp16"
+          ],
+          "allow_fallbacks": false,
+          "require_parameters": true
+        },
+        "usage": {
+          "include": true
+        },
+        "response_format": null
+      },
+      "letter_readout": "answer",
+      "price": {
+        "input_per_mtok": 0.99,
+        "output_per_mtok": 1.49
+      },
+      "parallel": 2,
+      "rpm": 18,
+      "reasoning": "low",
+      "note": "reasoning effort low; Cerebras takes no response_format: unconstrained letter"
+    },
+    {
+      "name": "Random",
+      "spec": "random",
+      "provider": "local"
+    },
+    {
+      "name": "Safest",
+      "spec": "safest",
+      "provider": "local"
+    },
+    {
+      "name": "GNUbg weak",
+      "spec": "gnubg-weak",
+      "provider": "local",
+      "note": "gnubg 1.08 Beginner level (0-ply, deterministic noise 0.060)",
+      "parallel": 1
+    }
+  ]
+}

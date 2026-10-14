@@ -475,6 +475,7 @@ impl Runner {
                 cost_usd: decision.as_ref().and_then(|d| mover.cost(d)),
                 invalid: decision.as_ref().is_some_and(|d| d.invalid),
                 group_size: decision.as_ref().and_then(|d| d.group_size),
+                reasoning_tokens: decision.as_ref().and_then(|d| d.reasoning_tokens),
             });
             let (input_tokens, output_tokens) = decision
                 .as_ref()

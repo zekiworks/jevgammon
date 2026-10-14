@@ -116,6 +116,8 @@ CREATE TABLE IF NOT EXISTS turns (
     invalid         INTEGER,
     -- Options per request when the list was split into groups; NULL for one request.
     group_size      INTEGER,
+    -- Reasoning tokens of the decision, when the provider reports them.
+    reasoning_tokens INTEGER,
     UNIQUE (game_id, turn_no)
 );
 
@@ -171,7 +173,7 @@ CREATE TABLE IF NOT EXISTS league_matches (
 "#;
 
 /// Columns added after the first release, for databases created before them.
-const ADDED_COLUMNS: [(&str, &str, &str); 26] = [
+const ADDED_COLUMNS: [(&str, &str, &str); 27] = [
     ("matches", "clock_seconds", "INTEGER"),
     ("turns", "clock_ms", "INTEGER"),
     ("matches", "delay_seconds", "INTEGER"),
@@ -198,6 +200,7 @@ const ADDED_COLUMNS: [(&str, &str, &str); 26] = [
     ("turns", "cost_usd", "REAL"),
     ("turns", "invalid", "INTEGER"),
     ("turns", "group_size", "INTEGER"),
+    ("turns", "reasoning_tokens", "INTEGER"),
 ];
 
 pub struct Db {
@@ -275,6 +278,7 @@ pub struct DecisionLog<'a> {
     pub cost_usd: Option<f64>,
     pub invalid: bool,
     pub group_size: Option<usize>,
+    pub reasoning_tokens: Option<u64>,
 }
 
 #[derive(Clone, Debug)]
@@ -473,9 +477,9 @@ impl Db {
                                 harness_commit, harness_dirty, provider, quantization,
                                 option_order, letter, chosen_position, probabilities,
                                 probability_source, request_ms, retry_ms, cost_usd, invalid,
-                                group_size)
+                                group_size, reasoning_tokens)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17,
-                     ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28, ?29, ?30, ?31)",
+                     ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28, ?29, ?30, ?31, ?32)",
             params![
                 turn.game_id,
                 turn.turn_no,
@@ -509,6 +513,7 @@ impl Db {
                 log.and_then(|l| l.cost_usd),
                 log.map(|l| l.invalid),
                 log.and_then(|l| l.group_size).map(|g| g as i64),
+                log.and_then(|l| l.reasoning_tokens).map(|r| r as i64),
             ],
         )?;
         let turn_id = tx.last_insert_rowid();

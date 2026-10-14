@@ -90,6 +90,10 @@ pub struct Decision {
     /// Options per request when the play list was split into groups (more legal plays than
     /// the player takes at once); `None` for a single request.
     pub group_size: Option<usize>,
+    /// Reasoning tokens over the decision's requests, when the provider reports them.
+    pub reasoning_tokens: Option<u64>,
+    /// Dollars the provider reported for the decision's requests (OpenRouter).
+    pub reported_cost: Option<f64>,
 }
 
 impl Decision {
@@ -144,8 +148,26 @@ pub struct PlayerConfig {
     /// Output token limit of a chat-model answer (the reasoning request included).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub max_tokens: Option<u32>,
+    /// Log-probabilities asked per answer token (default 20; Fireworks allows 5).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub top_logprobs: Option<u32>,
+    /// `prefill` (default: continue a prefilled `Answer:`) or `answer` (read the answer
+    /// letter's log-probabilities from the ordinary response), for OpenAI-compatible
+    /// servers.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub letter_readout: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub price: Option<Price>,
+    /// Free text kept with the roster (how the setup was pinned, what a level means).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub note: Option<String>,
+    /// Requests in flight when answering stored positions (`jevgammon ask`); default 4.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parallel: Option<usize>,
+    /// Most requests started per minute by `jevgammon ask` (provider rate limits, e.g.
+    /// OpenRouter's 20 per minute per model for new accounts); default unlimited.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rpm: Option<u32>,
 }
 
 impl PlayerConfig {
@@ -162,6 +184,8 @@ pub struct Player {
     pub spec: String,
     pub provider: String,
     pub quantization: Option<String>,
+    /// Reasoning effort from the config, as logged with stored-position answers.
+    pub reasoning: Option<String>,
     pub price: Option<Price>,
     backend: Backend,
 }
@@ -222,6 +246,7 @@ impl Player {
             spec: spec.to_owned(),
             provider: "local".to_owned(),
             quantization: None,
+            reasoning: None,
             price: None,
             backend: Backend::Engine(engine),
         }
@@ -249,6 +274,8 @@ impl Player {
             reasoning: config.reasoning.clone(),
             request: config.request.clone(),
             max_tokens: config.max_tokens,
+            top_logprobs: config.top_logprobs,
+            readout: llm::Readout::parse(config.letter_readout.as_deref())?,
         };
         let player = |backend| Player {
             spec: spec.to_owned(),
@@ -257,6 +284,7 @@ impl Player {
                 .clone()
                 .unwrap_or_else(|| provider.to_ascii_lowercase()),
             quantization: config.quantization.clone(),
+            reasoning: config.reasoning.clone(),
             price: config.price,
             backend,
         };
@@ -440,12 +468,15 @@ impl Player {
         Ok(decision)
     }
 
-    /// Dollars for this decision at the configured list price; `None` without a price.
+    /// Dollars for this decision: what the provider reported, else the tokens at the
+    /// configured list price; `None` with neither.
     pub fn cost(&self, decision: &Decision) -> Option<f64> {
-        self.price.map(|p| {
-            (decision.input_tokens as f64 * p.input_per_mtok
-                + decision.output_tokens as f64 * p.output_per_mtok)
-                / 1e6
+        decision.reported_cost.or_else(|| {
+            self.price.map(|p| {
+                (decision.input_tokens as f64 * p.input_per_mtok
+                    + decision.output_tokens as f64 * p.output_per_mtok)
+                    / 1e6
+            })
         })
     }
 
@@ -479,6 +510,7 @@ mod tests {
             spec: "scripted".into(),
             provider: "test".into(),
             quantization: None,
+            reasoning: None,
             price: None,
             backend: Backend::Scripted {
                 max,
@@ -601,6 +633,7 @@ mod tests {
             spec: "x".into(),
             provider: "x".into(),
             quantization: None,
+            reasoning: None,
             price: Some(Price {
                 input_per_mtok: 2.0,
                 output_per_mtok: 10.0,

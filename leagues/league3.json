@@ -1,0 +1,182 @@
+{
+  "note": "v3 League 3: frontier, closed and open",
+  "prompt_version": "bg-v2",
+  "seed": 3685413082999515901,
+  "order_seed": 1190975713392774006,
+  "rounds": 3,
+  "clock": 300,
+  "delay": 30,
+  "max_turns": 300,
+  "players": [
+    {
+      "name": "GPT-6 Astra (low)",
+      "spec": "openai/gpt-6-astra",
+      "provider": "chatgpt-subscription",
+      "reasoning": "low",
+      "price": {
+        "input_per_mtok": 10,
+        "output_per_mtok": 50
+      },
+      "parallel": 4,
+      "note": "subscription login; cost is API-list-price equivalent"
+    },
+    {
+      "name": "GPT-6 Astra (high)",
+      "spec": "openai/gpt-6-astra",
+      "provider": "chatgpt-subscription",
+      "reasoning": "high",
+      "price": {
+        "input_per_mtok": 10,
+        "output_per_mtok": 50
+      },
+      "parallel": 4,
+      "note": "subscription login; cost is API-list-price equivalent"
+    },
+    {
+      "name": "Claude Opus 5.5 (low)",
+      "spec": "anthropic/claude-opus-5-5",
+      "provider": "claude-subscription",
+      "reasoning": "low",
+      "price": {
+        "input_per_mtok": 4,
+        "output_per_mtok": 20
+      },
+      "parallel": 4,
+      "note": "subscription login; cost is API-list-price equivalent"
+    },
+    {
+      "name": "Claude Opus 5.5 (high)",
+      "spec": "anthropic/claude-opus-5-5",
+      "provider": "claude-subscription",
+      "reasoning": "high",
+      "price": {
+        "input_per_mtok": 4,
+        "output_per_mtok": 20
+      },
+      "parallel": 4,
+      "note": "subscription login; cost is API-list-price equivalent"
+    },
+    {
+      "name": "Gemini 4 Argon (low)",
+      "spec": "gemini/gemini-4-argon",
+      "provider": "gemini-api",
+      "reasoning": "low",
+      "price": {
+        "input_per_mtok": 2,
+        "output_per_mtok": 10
+      },
+      "parallel": 4,
+      "note": "thinking level low spends no reasoning tokens: effectively off"
+    },
+    {
+      "name": "Gemini 4 Argon (high)",
+      "spec": "gemini/gemini-4-argon",
+      "provider": "gemini-api",
+      "reasoning": "high",
+      "price": {
+        "input_per_mtok": 2,
+        "output_per_mtok": 10
+      },
+      "parallel": 4,
+      "note": "effectively on"
+    },
+    {
+      "name": "DeepSeek V4 Pro (off)",
+      "spec": "openai-compatible/deepseek/deepseek-v4-pro",
+      "base_url": "https://openrouter.ai/api/v1",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "provider": "openrouter:novita/fp8",
+      "quantization": "fp8",
+      "request": {
+        "provider": {
+          "order": [
+            "novita/fp8"
+          ],
+          "allow_fallbacks": false,
+          "require_parameters": true
+        },
+        "usage": {
+          "include": true
+        },
+        "reasoning": {
+          "enabled": false
+        },
+        "response_format": null
+      },
+      "letter_readout": "answer",
+      "price": {
+        "input_per_mtok": 1.6,
+        "output_per_mtok": 3.2
+      },
+      "parallel": 8,
+      "rpm": 18,
+      "note": "Novita takes no JSON schema: unconstrained letter"
+    },
+    {
+      "name": "DeepSeek V4 Pro (on)",
+      "spec": "openai-compatible/deepseek/deepseek-v4-pro",
+      "base_url": "https://openrouter.ai/api/v1",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "provider": "openrouter:novita/fp8",
+      "quantization": "fp8",
+      "request": {
+        "provider": {
+          "order": [
+            "novita/fp8"
+          ],
+          "allow_fallbacks": false,
+          "require_parameters": true
+        },
+        "usage": {
+          "include": true
+        },
+        "response_format": null
+      },
+      "letter_readout": "answer",
+      "price": {
+        "input_per_mtok": 1.6,
+        "output_per_mtok": 3.2
+      },
+      "parallel": 8,
+      "rpm": 18,
+      "reasoning": "low",
+      "note": "reasoning effort low; Novita takes no JSON schema: unconstrained letter"
+    },
+    {
+      "name": "Qwen3.8-Max (on)",
+      "spec": "openai-compatible/qwen/qwen3.8-2.4t-a95b",
+      "base_url": "https://openrouter.ai/api/v1",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "provider": "openrouter:together",
+      "quantization": null,
+      "request": {
+        "provider": {
+          "order": [
+            "together"
+          ],
+          "allow_fallbacks": false,
+          "require_parameters": true
+        },
+        "usage": {
+          "include": true
+        }
+      },
+      "letter_readout": "answer",
+      "price": {
+        "input_per_mtok": 2,
+        "output_per_mtok": 6
+      },
+      "parallel": 8,
+      "rpm": 18,
+      "reasoning": "low",
+      "note": "joins only if its open weights are confirmed (listed as open on OpenRouter); reasoning mandatory, so no off setup; effort low"
+    },
+    {
+      "name": "GNUbg weak",
+      "spec": "gnubg-weak",
+      "provider": "local",
+      "note": "gnubg 1.08 Beginner level (0-ply, deterministic noise 0.060)",
+      "parallel": 1
+    }
+  ]
+}

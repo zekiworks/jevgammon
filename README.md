@@ -72,6 +72,9 @@ printed and stored in `matches.error`), `2` for invalid arguments.
 | `openai-decisions`, `openai-decisions/<model>` | OpenAI Decisions API (`gpt-6-luna` default) | `OPENAI_API_KEY` (an API key with billing) |
 | `perplexity`, `perplexity/<model>` | Perplexity Decisions API (`pplx-decider-v1-27b` default) | `PERPLEXITY_API_KEY` |
 | `liquid`, `liquid/<model>` | Liquid AI System One API (`d1:free` default) | `LIQUID_API_KEY` |
+| `subq`, `subq/<model>` | SubQ System One API (`subq-snap-preview` default) | `SUBQ_API_KEY` |
+| `celeris`, `celeris/<model>` | Celeris System One API (`celeris-1-decision` default) | `CELERIS_API_KEY` |
+| `random`, `safest`, `gnubg-weak` | Baselines on the CPU: a random legal play, the play the opponent hits with the fewest rolls, GNUbg 1.08 at its Beginner level | none |
 | `clef` | Self-hosted Clef server, `http://127.0.0.1:18091` | none |
 | `open-jev` | Self-hosted Open-Jev server, `http://127.0.0.1:8791` (takes no model name) | none |
 | `cygnet` | Self-hosted Cygnet decision server, `http://127.0.0.1:18093` | optional `CYGNET_API_KEY` |
@@ -89,7 +92,7 @@ Examples: `openai/gpt-5.6-sol`, `anthropic/claude-sonnet-4-5`, `gemini/gemini-2.
 after the provider unchanged (`fastino/fastino/GLiDE`). Each decision service's host can be
 overridden: `TYPESAFE_BASE_URL`, `FASTINO_BASE_URL`, `OPENAI_DECISIONS_BASE_URL`,
 `PERPLEXITY_BASE_URL`, `LIQUID_BASE_URL`, `CLEF_BASE_URL`, `OPEN_JEV_BASE_URL`,
-`CYGNET_BASE_URL`, `GEMMA_BASE_URL`, `PPLX_LOCAL_BASE_URL` (`pplx-local`: pplx-decider-v1.1-27b served by `~/code/pplx-decider/server.py` on port 18097).
+`CYGNET_BASE_URL`, `GEMMA_BASE_URL`, `SUBQ_BASE_URL`, `CELERIS_BASE_URL`, `PPLX_LOCAL_BASE_URL` (`pplx-local`: pplx-decider-v1.1-27b served by `~/code/pplx-decider/server.py` on port 18097).
 
 Missing credentials are reported at startup, before a match is created.
 
@@ -114,15 +117,41 @@ player carries what a spec alone cannot:
 
 - `provider` and `quantization` are logged with every decision (`provider` defaults to the
   spec's prefix; `quantization` may be null).
-- `reasoning` is the reasoning effort (`low`, `high`, ...). Left out, an OpenAI-compatible
-  model answers without reasoning; subscription models then use their provider's default.
+- `reasoning` is the reasoning effort (`low`, `high`, ...), sent as `reasoning_effort` to
+  OpenAI-compatible servers. Left out, an OpenAI-compatible model answers without reasoning;
+  subscription models then use their provider's default.
 - `request` is merged into every request body (e.g. `chat_template_kwargs` to switch a
-  model's thinking on or off).
-- `price` (dollars per million input and output tokens) gives `turns.cost_usd`; without it
-  the cost is NULL.
+  model's thinking on or off, OpenRouter's `provider` pinning and `reasoning`); a `null`
+  value removes a field the runner would send, e.g. `"response_format": null` for an
+  endpoint without JSON-schema support (the letter is then unconstrained) or
+  `"reasoning_effort": null` for a local model whose thinking has no effort knob.
+- `letter_readout`: `prefill` (default) continues a prefilled `Answer:`, as SGLang and vLLM
+  allow; `answer` reads the answer letter's log-probabilities from the ordinary response
+  (after the reasoning, when on), for servers that start a new turn instead of continuing a
+  prefill (Fireworks, Novita and Together through OpenRouter). `top_logprobs` lowers the
+  20 alternatives asked per token (Fireworks allows 5; letters outside them get 0).
+- `price` (dollars per million input and output tokens) gives `turns.cost_usd` when the
+  provider reports no cost (OpenRouter does, in `usage.cost`, and that is used); without
+  either the cost is NULL. Reasoning tokens are logged in `turns.reasoning_tokens` when the
+  provider reports them (Anthropic does not).
+- `parallel` is the number of requests in flight for `jevgammon ask`; `note` is free text.
 
 The top-level settings override the command line; `seed`, `order_seed`, and `prompt_version`
-are stored with the league, so `--resume` keeps them. Config files are kept in `leagues/`.
+are stored with the league, so `--resume` keeps them. The v3 rosters are
+`leagues/league1.json`, `league2.json` and `league3.json`.
+
+### Stored positions
+
+`jevgammon ask --config FILE --positions FILE [--setup NAME]... [--out answers.db]
+[--limit N] [--repeats N] [--max-cost USD]` sends stored positions (the format of
+`positions/*.jsonl`) to players of a league config, through the same players, prompt, option
+order and fallbacks as the leagues, and stores every answer in table `answers` (the per-decision
+fields of `turns`, plus the setup, position id, repeat and error) with its requests in
+`answer_exchanges`. The match context shown is the config's (round 1 of its rounds, its turn
+limit and a full clock); the clock is not enforced. A rerun asks only what is missing or
+failed; `--max-cost` stops a setup taking new positions once its answers cost more.
+`tools/v3/smoke_positions.py` draws the 50 smoke-test positions (`positions/smoke.jsonl`)
+and `tools/v3/smoke_report.py` turns the answers and GNUbg's equities into the smoke table.
 
 ### Prompt versions
 
@@ -433,7 +462,7 @@ The database has six tables:
 | --- | --- |
 | `matches` | models, seed, planned and played rounds, clock bank and delay seconds (NULL = off), turn limit, score, winner (`1`, `2`, or NULL for draw), status `running\|finished\|aborted`, error, prompt version, option-order seed, harness commit and dirty flag |
 | `games` | round, leg, white player, dice seed, opening roll, winner, result (`single\|gammon\|backgammon\|timeout\|turn_limit`), points, turn count |
-| `turns` | side, player, dice, position before the move (JSON, white's perspective), number of legal plays, chosen index, move (mover's numbering), `decided_by` (`model\|forced\|no_move\|fallback\|timeout`; `fallback` = invalid answer, random play), latency, tokens, mover's bank left after the turn (`clock_ms`); per decision: `prompt_version`, `harness_commit` (`git rev-parse HEAD` at startup) and `harness_dirty`, `provider`, `quantization`, `option_order` (JSON: legal-play index shown as option k), `letter` and `chosen_position`, `probabilities` (JSON aligned with `option_order`), `probability_source` (`logprobs\|decision\|choice_only`), `request_ms`, `retry_ms`, `cost_usd`, `invalid`, `group_size` |
+| `turns` | side, player, dice, position before the move (JSON, white's perspective), number of legal plays, chosen index, move (mover's numbering), `decided_by` (`model\|forced\|no_move\|fallback\|timeout`; `fallback` = invalid answer, random play), latency, tokens, mover's bank left after the turn (`clock_ms`); per decision: `prompt_version`, `harness_commit` (`git rev-parse HEAD` at startup) and `harness_dirty`, `provider`, `quantization`, `option_order` (JSON: legal-play index shown as option k), `letter` and `chosen_position`, `probabilities` (JSON aligned with `option_order`), `probability_source` (`logprobs\|decision\|choice_only`), `request_ms`, `retry_ms`, `cost_usd`, `invalid`, `group_size`, `reasoning_tokens` |
 | `exchanges` | every model request body, reply text, rejection reason, latency; one row per request |
 | `leagues` | seed, rounds, clock bank and delay, turn limit, entrants (JSON player configs: `{name, spec, ...}`), status, final ranking, note (`--note`), prompt version, option-order seed |
 | `league_matches` | stage (`league\|playoff`), label, matchday, model names, seed, latest `match_id` |

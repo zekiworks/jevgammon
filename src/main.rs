@@ -1,3 +1,4 @@
+mod ask;
 mod auth;
 mod board;
 mod db;
@@ -8,7 +9,6 @@ mod players;
 mod runner;
 mod ui;
 
-use std::io::{BufRead, Write as _};
 use std::path::PathBuf;
 use std::process::ExitCode;
 use std::sync::Arc;
@@ -16,13 +16,10 @@ use std::time::Duration;
 
 use anyhow::{Context, Result, bail};
 use clap::{Args, Parser, Subcommand};
-use serde_json::{Value, json};
 use tokio::sync::mpsc;
 
-use crate::http::RetryTime;
-use crate::players::order::{option_order, position_key};
-use crate::players::prompt::{self, PromptVersion};
-use crate::players::{DecisionRequest, PastMove, Player, PlayerConfig, Setup};
+use crate::players::prompt::PromptVersion;
+use crate::players::{Player, PlayerConfig, Setup};
 use crate::runner::{Clock, Control, Event, Harness, MAX_SPEED, MatchSettings, Protocol, Runner};
 
 /// Backgammon between two AI models. Every round is played twice with seats
@@ -50,22 +47,58 @@ enum Command {
     /// each) from --input or stdin and writes one JSON line per position with the state,
     /// instructions, letter prompt, and options in the seeded order.
     Render(RenderArgs),
+    /// Sends stored positions to the players of a league config and stores every answer
+    /// with the per-decision fields (shared positions, smoke tests).
+    Ask(AskArgs),
 }
 
 #[derive(Args)]
 struct RenderArgs {
-    /// JSON lines: {"position": <turns.position JSON>, "dice": [d1, d2], optional "id",
-    /// "my_score", "opp_score", "round", "rounds", "leg", "turn_no", "max_turns" (null = no
-    /// limit), "clock": {"bank", "delay", "my_left", "opp_left"} in seconds (null = no
-    /// clock), "history": [{"turn_no", "player", "dice", "notation"}], "player"}. Legal
-    /// plays are generated with the dice in the given order.
+    /// JSON lines, one position each (the format of positions/*.jsonl: "position" as in
+    /// turns.position, "dice" in the order the legal plays are generated, optional "id",
+    /// "prompt", "turn", score, round, clock and history fields); stdin when omitted.
     #[arg(long)]
     input: Option<PathBuf>,
-    #[arg(long, default_value = "bg-v2")]
-    prompt_version: PromptVersion,
+    /// Prompt version; default: the row's "prompt", else bg-v2.
+    #[arg(long)]
+    prompt_version: Option<PromptVersion>,
     /// Option-order seed.
     #[arg(long)]
     order_seed: u64,
+}
+
+#[derive(Args)]
+struct AskArgs {
+    /// League config file whose players answer (see `league --config`); its order_seed,
+    /// prompt_version, rounds, clock and max_turns set the option order and the match
+    /// context shown.
+    #[arg(long)]
+    config: PathBuf,
+    /// Positions file (JSON lines, as for `render`).
+    #[arg(long)]
+    positions: PathBuf,
+    /// SQLite file for the answers (tables answers, answer_exchanges); a rerun asks only
+    /// what is missing or failed.
+    #[arg(long, default_value = "answers.db")]
+    out: PathBuf,
+    /// Player name in the config (repeatable); default: every player.
+    #[arg(long = "setup")]
+    setups: Vec<String>,
+    /// Only the first N positions.
+    #[arg(long)]
+    limit: Option<usize>,
+    /// Times each position is asked.
+    #[arg(long, default_value_t = 1)]
+    repeats: u32,
+    /// Prompt version for every position; default: the row's "prompt", else the config's.
+    #[arg(long)]
+    prompt_version: Option<PromptVersion>,
+    /// A setup takes no new positions once its answers cost more than this many dollars.
+    #[arg(long)]
+    max_cost: Option<f64>,
+    /// qfork/Glyph credential root read for subscription logins and API keys.
+    #[arg(long, env = "JEVGAMMON_QFORK_ROOT")]
+    qfork_root: Option<PathBuf>,
 }
 
 #[derive(Args)]
@@ -201,7 +234,33 @@ async fn main() -> ExitCode {
     let cli = Cli::parse();
     let result = match cli.command {
         Some(Command::League(args)) => run_league(args).await,
-        Some(Command::Render(args)) => render(args),
+        Some(Command::Render(args)) => ask::render(
+            args.input.as_deref().unwrap_or(std::path::Path::new("-")),
+            args.prompt_version,
+            args.order_seed,
+        ),
+        Some(Command::Ask(args)) => {
+            let setup = Setup::new(
+                args.qfork_root
+                    .clone()
+                    .unwrap_or_else(auth::default_qfork_root),
+                "http://localhost:8080/v1".to_owned(),
+            );
+            ask::ask(
+                ask::AskArgs {
+                    config: args.config,
+                    positions: args.positions,
+                    out: args.out,
+                    setups: args.setups,
+                    limit: args.limit,
+                    repeats: args.repeats,
+                    version: args.prompt_version,
+                    max_cost: args.max_cost,
+                },
+                &setup,
+            )
+            .await
+        }
         None => run_match(cli.game).await,
     };
     match result {
@@ -278,103 +337,6 @@ fn checked(models: Vec<PlayerConfig>) -> Result<Vec<PlayerConfig>> {
         }
     }
     Ok(models)
-}
-
-/// `jevgammon render`: one JSON line out per position line in.
-fn render(args: RenderArgs) -> Result<()> {
-    let input: Box<dyn BufRead> = match &args.input {
-        Some(path) => Box::new(std::io::BufReader::new(
-            std::fs::File::open(path).with_context(|| format!("opening {}", path.display()))?,
-        )),
-        None => Box::new(std::io::stdin().lock()),
-    };
-    let mut out = std::io::stdout().lock();
-    for (number, line) in input.lines().enumerate() {
-        let line = line?;
-        if line.trim().is_empty() {
-            continue;
-        }
-        let row: Value =
-            serde_json::from_str(&line).with_context(|| format!("input line {}", number + 1))?;
-        let rendered = render_row(&row, args.prompt_version, args.order_seed)
-            .with_context(|| format!("input line {}", number + 1))?;
-        writeln!(out, "{rendered}")?;
-    }
-    Ok(())
-}
-
-fn render_row(row: &Value, version: PromptVersion, order_seed: u64) -> Result<Value> {
-    let position = match &row["position"] {
-        Value::String(text) => serde_json::from_str(text).context("position")?,
-        other => other.clone(),
-    };
-    let (board, side) = db::parse_position(&position)?;
-    let die = |i: usize| -> Result<u8> {
-        row["dice"][i]
-            .as_u64()
-            .filter(|d| (1..=6).contains(d))
-            .map(|d| d as u8)
-            .context("dice must be two numbers 1-6")
-    };
-    let dice = (die(0)?, die(1)?);
-    let number = |key: &str, default: u64| row[key].as_u64().unwrap_or(default);
-    let seconds = |key: &str| row["clock"][key].as_u64().map(Duration::from_secs);
-    let clock = seconds("bank").map(|bank| Clock {
-        bank,
-        delay: seconds("delay").unwrap_or_default(),
-    });
-    let history: Vec<PastMove> = row["history"]
-        .as_array()
-        .map(|moves| {
-            moves
-                .iter()
-                .map(|m| PastMove {
-                    turn_no: m["turn_no"].as_u64().unwrap_or(0) as u32,
-                    player: m["player"].as_u64().unwrap_or(0) as u8,
-                    dice: (
-                        m["dice"][0].as_u64().unwrap_or(0) as u8,
-                        m["dice"][1].as_u64().unwrap_or(0) as u8,
-                    ),
-                    notation: m["notation"].as_str().unwrap_or_default().to_owned(),
-                })
-                .collect()
-        })
-        .unwrap_or_default();
-    let plays = board.legal_plays(dice.0, dice.1);
-    let notations: Vec<String> = plays.iter().map(|p| p.notation()).collect();
-    let key = position_key(&board, dice, side);
-    let order = option_order(order_seed, &key, plays.len());
-    let retry = RetryTime::default();
-    let req = DecisionRequest {
-        board: &board,
-        dice,
-        plays: &plays,
-        notations: &notations,
-        my_score: number("my_score", 0) as u32,
-        opp_score: number("opp_score", 0) as u32,
-        round: number("round", 1) as u32,
-        rounds: number("rounds", 3) as u32,
-        leg: number("leg", 1) as u8,
-        clock,
-        my_clock: clock.map(|c| seconds("my_left").unwrap_or(c.bank)),
-        opp_clock: clock.map(|c| seconds("opp_left").unwrap_or(c.bank)),
-        turn_no: number("turn_no", 1) as u32,
-        max_turns: match &row["max_turns"] {
-            Value::Null if row.get("max_turns").is_some() => None,
-            value => Some(value.as_u64().unwrap_or(300) as u32),
-        },
-        player: number("player", 1) as u8,
-        history: &history,
-        order: &order,
-        seed: 0,
-        version,
-        retry: &retry,
-    };
-    let mut rendered = prompt::render(&req);
-    rendered["id"] = row.get("id").cloned().unwrap_or(Value::Null);
-    rendered["position_key"] = json!(key);
-    rendered["order_seed"] = json!(order_seed);
-    Ok(rendered)
 }
 
 async fn run_match(args: MatchArgs) -> Result<()> {

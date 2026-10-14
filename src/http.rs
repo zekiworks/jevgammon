@@ -57,7 +57,7 @@ impl RetryTime {
 pub fn client() -> reqwest::Client {
     reqwest::Client::builder()
         .connect_timeout(Duration::from_secs(20))
-        .timeout(Duration::from_secs(600))
+        .timeout(Duration::from_secs(1800))
         .build()
         .expect("HTTP client")
 }

@@ -5,6 +5,7 @@
 /league-before-removing-3.db
 /gnubg_eval.db
 /replay.db
+/argon.db
 /*.db-shm
 /*.db-wal
 /*.db-journal

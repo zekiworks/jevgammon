@@ -6,7 +6,7 @@ RTX PRO 6000 (96 GB) GPUs. Each script takes `start` (launch, then wait until it
 
 ```sh
 tools/v3/servers/qwen38-flash-next.sh start|stop|status
-tools/v3/servers/wave.sh A|B start|stop|status|probe
+tools/v3/servers/wave.sh A|B|L1 start|stop|status|probe
 ```
 
 vLLM servers run as docker containers (`docker logs -f <name>`); the Python decision servers
@@ -71,6 +71,7 @@ servers come in two waves that are never up together:
 |---|---|---|---|---|
 | wave A | Qwen 48.6 + ComfyUI (8-24) | Qwen 48.6 | Qwen 48.6 | Qwen 48.6 + Gemma 41.5 |
 | wave B | Cygnet 42.2 + ComfyUI (8-24) | Clef 51.9 | Open-Jev 51.8 | Decider 49.2 |
+| wave L1 | Cygnet 32.5 (share 0.34) + Gemma 42.5 + ComfyUI | Clef 55.5 | Open-Jev 52.8 | Decider 51.6 |
 
 (GiB in use per process, measured with `nvidia-smi` on 2026-10-14; each card has 95.6 GiB.)
 
@@ -84,3 +85,12 @@ tools/v3/servers/wave.sh B probe     # a 2-option Choice to each decision server
 
 The DeepSeek V4.1 Flash server (`deepseek-v41.service`, all four GPUs, port 8010) must be
 stopped for either wave: `systemctl --user stop deepseek-v41.service`. It is enabled at boot.
+
+## League 1 layout (wave L1)
+
+League 1 needs Gemma 4 31B next to the four decision servers. Wave L1 is wave B with Cygnet's
+vLLM at a 0.34 memory share (`CYGNET_UTIL`; 0.32 leaves too little KV cache for its 16,384-token
+context) and Gemma on GPU 0 (`GEMMA_GPU=0`), which leaves about 20 GiB on GPU 0 for ComfyUI.
+Qwen3.8 Flash Next (wave A) cannot run at the same time; it plays in League 2.
+
+    tools/v3/servers/wave.sh L1 start|stop|status|probe

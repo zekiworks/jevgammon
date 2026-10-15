@@ -1,30 +1,23 @@
 {
-  "note": "v3 League 1: decision models and models on our own hardware",
+  "note": "v3 League 1: decision models and models on our own hardware. Jev 1.13.0, Fastino GLiDE and Celeris-1 Decision dropped (blocked: no key or credit); GPT-6 Luna plays through the ChatGPT subscription, choice only. No clock (smoke-test p90 above 30 s).",
   "prompt_version": "bg-v2",
   "seed": 2567889193785291627,
   "order_seed": 1190975713392774006,
   "rounds": 3,
-  "clock": 300,
+  "clock": 0,
   "delay": 30,
   "max_turns": 300,
   "players": [
     {
-      "name": "Jev 1.13.0",
-      "spec": "jev/jev-1.13.0",
-      "provider": "typesafe",
-      "price": {
-        "input_per_mtok": 0.042,
-        "output_per_mtok": 0
-      }
-    },
-    {
-      "name": "GPT-6 Luna",
-      "spec": "openai-decisions/gpt-6-luna",
-      "provider": "openai-decisions",
+      "name": "GPT-6 Luna (subscription, choice only)",
+      "spec": "openai/gpt-6-luna",
+      "provider": "chatgpt-subscription",
       "price": {
         "input_per_mtok": 0.1,
-        "output_per_mtok": 0
-      }
+        "output_per_mtok": 0.5
+      },
+      "parallel": 4,
+      "note": "Decisions API key unavailable: chat-model letter player through the ChatGPT subscription, no reasoning setting sent, choice only; cost is the API list price"
     },
     {
       "name": "Decider v1.1 27B",
@@ -44,24 +37,6 @@
       "provider": "subq",
       "price": {
         "input_per_mtok": 0.05,
-        "output_per_mtok": 0
-      }
-    },
-    {
-      "name": "Fastino GLiDE",
-      "spec": "fastino",
-      "provider": "fastino",
-      "price": {
-        "input_per_mtok": 0.15,
-        "output_per_mtok": 0
-      }
-    },
-    {
-      "name": "Celeris-1 Decision",
-      "spec": "celeris/celeris-1-decision",
-      "provider": "celeris",
-      "price": {
-        "input_per_mtok": 0.04,
         "output_per_mtok": 0
       }
     },

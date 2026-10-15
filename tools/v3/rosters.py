@@ -20,7 +20,7 @@ OR = "https://openrouter.ai/api/v1"
 
 def common(seed, note):
     return {"note": note, "prompt_version": "bg-v2", "seed": seed, "order_seed": ORDER_SEED,
-            "rounds": 3, "clock": 300, "delay": 30, "max_turns": 300}
+            "rounds": 3, "clock": 0, "delay": 30, "max_turns": 300}
 
 
 def price(i, o):
@@ -83,19 +83,20 @@ L = json.loads("""{"decider": {"quant": "bf16"}, "clef": {"quant": "bf16"}, "ope
  "gemma": {"model": "gemma-4-31B-it", "url": "http://127.0.0.1:8894/v1", "quant": "fp8 (bf16 checkpoint quantized by vLLM at load; fp8 KV cache)", "on": {"enable_thinking": true}, "off": {"enable_thinking": false}},
  "qwen": {"model": "qwen3.8-flash-next", "url": "http://127.0.0.1:8896/v1", "quant": "fp8 (checkpoint, 128x128 block scales)", "on": {"enable_thinking": true}, "off": {"enable_thinking": false}}}""")
 
-league1 = common(2567889193785291627, "v3 League 1: decision models and models on our own hardware")
+league1 = common(2567889193785291627, "v3 League 1: decision models and models on our own hardware. Jev 1.13.0, Fastino GLiDE and Celeris-1 Decision dropped (blocked: no key or credit); GPT-6 Luna plays through the ChatGPT subscription, choice only. No clock (smoke-test p90 above 30 s).")
 league1["players"] = [
-    {"name": "Jev 1.13.0", "spec": "jev/jev-1.13.0", "provider": "typesafe", "price": price(0.042, 0)},
-    {"name": "GPT-6 Luna", "spec": "openai-decisions/gpt-6-luna", "provider": "openai-decisions",
-     "price": price(0.1, 0)},
+    # GPT-6 Luna's Decisions API needs an API key we do not have; it plays through the
+    # ChatGPT subscription as a chat-model letter player instead (choice only, left out of
+    # the confidence analyses).
+    {"name": "GPT-6 Luna (subscription, choice only)", "spec": "openai/gpt-6-luna",
+     "provider": "chatgpt-subscription", "price": price(0.1, 0.5), "parallel": 4,
+     "note": "Decisions API key unavailable: chat-model letter player through the ChatGPT "
+             "subscription, no reasoning setting sent, choice only; cost is the API list price"},
     {"name": "Decider v1.1 27B", "spec": "pplx-local", "provider": "local (pplx-decider server.py)",
      "quantization": L["decider"]["quant"], "price": price(0.02, 0), "parallel": 1,
      "note": "runs on our GPUs (Perplexity hosting of v1.1 unverified); price = Perplexity list price"},
     {"name": "SubQ Snap Preview", "spec": "subq/subq-snap-preview", "provider": "subq",
      "price": price(0.05, 0)},
-    {"name": "Fastino GLiDE", "spec": "fastino", "provider": "fastino", "price": price(0.15, 0)},
-    {"name": "Celeris-1 Decision", "spec": "celeris/celeris-1-decision", "provider": "celeris",
-     "price": price(0.04, 0)},
     {"name": "Clef", "spec": "clef", "provider": "local", "quantization": L["clef"]["quant"], "parallel": 1},
     {"name": "Open-Jev 27B v1.1", "spec": "open-jev", "provider": "local",
      "quantization": L["openjev"]["quant"], "parallel": 1},
@@ -114,7 +115,7 @@ league1["players"] = [
     GNUBG,
 ]
 
-league2 = common(8637860750269043463, "v3 League 2: workhorses, closed and open")
+league2 = common(8637860750269043463, "v3 League 2: workhorses, closed and open. No clock (smoke-test p90 above 30 s).")
 league2["players"] = [
     gemini("Gemini 3.8 Flash (low)", "gemini-3.8-flash", "low", price(0.75, 3.75)),
     gemini("Gemini 3.8 Flash (high)", "gemini-3.8-flash", "high", price(0.75, 3.75)),
@@ -135,7 +136,7 @@ league2["players"] = [
     GNUBG,
 ]
 
-league3 = common(3685413082999515901, "v3 League 3: frontier, closed and open")
+league3 = common(3685413082999515901, "v3 League 3: frontier, closed and open. No clock (smoke-test p90 above 30 s).")
 league3["players"] = [
     sub("GPT-6 Astra (low)", "openai/gpt-6-astra", "chatgpt-subscription", "low", price(10, 50)),
     sub("GPT-6 Astra (high)", "openai/gpt-6-astra", "chatgpt-subscription", "high", price(10, 50)),

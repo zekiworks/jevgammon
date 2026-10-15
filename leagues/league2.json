@@ -1,10 +1,10 @@
 {
-  "note": "v3 League 2: workhorses, closed and open",
+  "note": "v3 League 2: workhorses, closed and open. No clock (smoke-test p90 above 30 s).",
   "prompt_version": "bg-v2",
   "seed": 8637860750269043463,
   "order_seed": 1190975713392774006,
   "rounds": 3,
-  "clock": 300,
+  "clock": 0,
   "delay": 30,
   "max_turns": 300,
   "players": [

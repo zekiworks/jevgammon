@@ -16,7 +16,7 @@ case ${1:-} in
       --entrypoint vllm vllm/vllm-openai:v0.30.0 \
       serve google/gemma-4-12B-it --revision 707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7 \
       --served-model-name cygnet --host 127.0.0.1 --port "$VLLM_PORT" \
-      --max-model-len 16384 --gpu-memory-utilization 0.45
+      --max-model-len 16384 --gpu-memory-utilization ${CYGNET_UTIL:-0.45}
     docker_wait "$NAME" "http://127.0.0.1:$VLLM_PORT/v1/models" 900
     unit_up "$UNIT" "$PORT" /home/cbasaran/code/cygnet \
       -E "SHIM_VLLM=http://127.0.0.1:$VLLM_PORT/v1/chat/completions" -E SHIM_MODEL=cygnet \

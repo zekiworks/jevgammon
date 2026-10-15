@@ -150,7 +150,9 @@ CREATE TABLE IF NOT EXISTS leagues (
     -- What the league tests (`--note`), shown in the web history.
     note            TEXT,
     prompt_version  TEXT,
-    order_seed      INTEGER
+    order_seed      INTEGER,
+    -- Last sign of life of a runner that picks up added players (every 30 s).
+    heartbeat_at    TEXT
 );
 
 CREATE TABLE IF NOT EXISTS league_matches (
@@ -173,7 +175,7 @@ CREATE TABLE IF NOT EXISTS league_matches (
 "#;
 
 /// Columns added after the first release, for databases created before them.
-const ADDED_COLUMNS: [(&str, &str, &str); 27] = [
+const ADDED_COLUMNS: [(&str, &str, &str); 28] = [
     ("matches", "clock_seconds", "INTEGER"),
     ("turns", "clock_ms", "INTEGER"),
     ("matches", "delay_seconds", "INTEGER"),
@@ -201,6 +203,7 @@ const ADDED_COLUMNS: [(&str, &str, &str); 27] = [
     ("turns", "invalid", "INTEGER"),
     ("turns", "group_size", "INTEGER"),
     ("turns", "reasoning_tokens", "INTEGER"),
+    ("leagues", "heartbeat_at", "TEXT"),
 ];
 
 pub struct Db {
@@ -623,6 +626,102 @@ impl Db {
         Ok(())
     }
 
+    /// Marks the runner's process as alive for this league (`leagues.heartbeat_at`).
+    pub fn heartbeat(&self, league_id: i64) -> Result<()> {
+        self.conn.execute(
+            "UPDATE leagues SET heartbeat_at = ?2 WHERE id = ?1",
+            params![league_id, now()],
+        )?;
+        Ok(())
+    }
+
+    pub fn clear_heartbeat(&self, league_id: i64) -> Result<()> {
+        self.conn.execute(
+            "UPDATE leagues SET heartbeat_at = NULL WHERE id = ?1",
+            params![league_id],
+        )?;
+        Ok(())
+    }
+
+    /// Whether a process is playing this league: seconds since its runner's last heartbeat
+    /// (runners that pick up added players) and since the last turn of a match still marked
+    /// running (any runner).
+    pub fn league_activity(&self, league_id: i64) -> Result<Activity> {
+        let age = |sql: &str| -> Result<Option<f64>> {
+            Ok(self
+                .conn
+                .query_row(sql, params![league_id], |row| row.get::<_, Option<f64>>(0))?)
+        };
+        Ok(Activity {
+            heartbeat_secs: age(
+                "SELECT (julianday('now') - julianday(heartbeat_at)) * 86400 FROM leagues
+                 WHERE id = ?1",
+            )?,
+            running_turn_secs: age(
+                "SELECT (julianday('now') - julianday(MAX(t.created_at))) * 86400
+                 FROM league_matches lm JOIN matches m ON m.id = lm.match_id
+                 JOIN games g ON g.match_id = m.id JOIN turns t ON t.game_id = g.id
+                 WHERE lm.league_id = ?1 AND m.status = 'running'",
+            )?,
+        })
+    }
+
+    /// The highest matchday of the league stage (0 when none).
+    pub fn max_matchday(&self, league_id: i64) -> Result<u32> {
+        Ok(self.conn.query_row(
+            "SELECT COALESCE(MAX(matchday), 0) FROM league_matches WHERE league_id = ?1",
+            params![league_id],
+            |row| row.get(0),
+        )?)
+    }
+
+    /// Appends `config` to the roster with its fixtures (`(matchday, label, model1, model2,
+    /// seed)`), appends `note` to the league note, and marks earlier playoffs stale; one
+    /// transaction. Returns how many playoff fixtures were marked stale.
+    pub fn add_league_player(
+        &mut self,
+        league_id: i64,
+        config: &PlayerConfig,
+        fixtures: &[(u32, String, String, String, u64)],
+        note: &str,
+    ) -> Result<usize> {
+        let tx = self.conn.transaction()?;
+        let models: String = tx.query_row(
+            "SELECT models FROM leagues WHERE id = ?1",
+            params![league_id],
+            |row| row.get(0),
+        )?;
+        let mut models: Vec<PlayerConfig> = serde_json::from_str(&models)?;
+        if models.iter().any(|m| m.name == config.name) {
+            bail!(
+                "league #{league_id} already has a player named `{}`",
+                config.name
+            );
+        }
+        models.push(config.clone());
+        tx.execute(
+            "UPDATE leagues SET models = ?2, status = 'running', finished_at = NULL,
+                 note = TRIM(COALESCE(note, '') || ' ' || ?3)
+             WHERE id = ?1",
+            params![league_id, serde_json::to_string(&models)?, note],
+        )?;
+        for (matchday, label, model1, model2, seed) in fixtures {
+            tx.execute(
+                "INSERT INTO league_matches (league_id, stage, label, matchday, model1, model2, seed)
+                 VALUES (?1, 'league', ?2, ?3, ?4, ?5, ?6)",
+                params![league_id, label, matchday, model1, model2, *seed as i64],
+            )?;
+        }
+        let stale = stale_playoffs(&tx, league_id)?;
+        tx.commit()?;
+        Ok(stale)
+    }
+
+    /// Marks this league's playoffs stale (kept, renamed): the table changed after them.
+    pub fn mark_playoffs_stale(&self, league_id: i64) -> Result<usize> {
+        stale_playoffs(&self.conn, league_id)
+    }
+
     /// Adds a fixture unless the label already exists; returns the stored row.
     #[allow(clippy::too_many_arguments)]
     pub fn add_fixture(
@@ -704,6 +803,35 @@ impl Db {
             winner,
         }))
     }
+}
+
+/// Seconds since the league's runner heartbeat and its last running turn.
+#[derive(Clone, Copy, Debug)]
+pub struct Activity {
+    pub heartbeat_secs: Option<f64>,
+    pub running_turn_secs: Option<f64>,
+}
+
+impl Activity {
+    /// A runner that picks up added players beat within the last 90 s.
+    pub fn pickup_runner(&self) -> bool {
+        self.heartbeat_secs.is_some_and(|s| s < 90.0)
+    }
+
+    /// Some runner (old or new) moved in a running match in the last 5 minutes.
+    pub fn playing(&self) -> bool {
+        self.pickup_runner() || self.running_turn_secs.is_some_and(|s| s < 300.0)
+    }
+}
+
+/// Playoff fixtures move to stage `playoff-stale` with a dated label, so their matches stay
+/// and a playoff of the same pairing is played afresh.
+fn stale_playoffs(conn: &Connection, league_id: i64) -> Result<usize> {
+    Ok(conn.execute(
+        "UPDATE league_matches SET stage = 'playoff-stale', label = label || ' [stale ' || ?2 || ']'
+         WHERE league_id = ?1 AND stage = 'playoff'",
+        params![league_id, now()],
+    )?)
 }
 
 #[cfg(test)]

@@ -383,6 +383,36 @@ existed resumes with `bg-v2-history`, the prompt the runner then sent).
 The table is printed each time every match of a matchday has finished, then the final
 table and ranking.
 
+### Adding a player later
+
+A player that could not play at the start (no key yet, say) can join a running or finished
+league and play only its own matches:
+
+```sh
+./jevgammon league-add --db v3.db --league 1 --player "Jev 1.13.0=jev/jev-1.13.0"
+./jevgammon league-add --db v3.db --league 1 --config leagues/league1.json --name "Jev 1.13.0"
+./jevgammon league-add --db v3.db --league 1 --entry '{"name": "Jev 1.13.0", "spec": "jev/jev-1.13.0"}'
+```
+
+- The player's client is built first, so a missing key fails here, not mid-league.
+- The entry is appended to `leagues.models`, with one fixture against every current player
+  (baselines and anchor included) on a new matchday after the last. Which side is `model1`
+  is drawn from the league seed and the two names; each match seed is
+  `derive_seed(league seed, label)`, the rule of the original fixture. The prompt version and
+  option-order seed stay the league's.
+- The league note gets "NAME added on DATE.", and the addition (time, harness commit, the
+  entry and its sha256, the fixtures) is appended to `freeze/league<ID>-additions.json`
+  (`--freeze-log` to change it).
+- Playoffs wait until every fixture, added ones included, has been played. Playoffs played
+  before the addition are kept but marked stale (stage `playoff-stale`, label suffixed
+  `[stale <time>]`); the league is set running again and plays off afresh.
+- **Running leagues** pick added players up by themselves: a league process re-reads the
+  roster and fixtures every 30 s and signs `leagues.heartbeat_at`, and `league-add` says
+  whether such a process holds the league. A runner older than this feature does not pick
+  up; `league-add` then says so (it sees recent turns but no heartbeat): let it finish or
+  stop it with Ctrl-C, then `league --resume` plays the added matches. `league --resume`
+  refuses while another process is playing the league.
+
 ### Dashboard
 
 `tools/league_web.py` serves one page for every league in the database. It needs only

@@ -16,6 +16,7 @@ use std::time::Duration;
 
 use anyhow::{Context, Result, bail};
 use clap::{Args, Parser, Subcommand};
+use sha2::Digest as _;
 use tokio::sync::mpsc;
 
 use crate::players::prompt::PromptVersion;
@@ -50,6 +51,43 @@ enum Command {
     /// Sends stored positions to the players of a league config and stores every answer
     /// with the per-decision fields (shared positions, smoke tests).
     Ask(AskArgs),
+    /// Adds a player to an existing league, running or finished: roster entry, one match
+    /// against every current player (seeds from the league seed), a note, and an entry in
+    /// the additions freeze log. A running league picks the matches up within 30 s;
+    /// otherwise `league --resume` plays them.
+    LeagueAdd(LeagueAddArgs),
+}
+
+#[derive(Args)]
+struct LeagueAddArgs {
+    #[arg(long)]
+    db: PathBuf,
+    #[arg(long)]
+    league: i64,
+    /// NAME=SPEC (or a bare spec, also the name).
+    #[arg(long, conflicts_with_all = ["entry", "config"])]
+    player: Option<String>,
+    /// A player config entry as JSON, e.g. '{"name": "Jev 1.13.0", "spec": "jev/jev-1.13.0"}'.
+    #[arg(long, conflicts_with = "config")]
+    entry: Option<String>,
+    /// League config file holding the player (with --name).
+    #[arg(long, requires = "name")]
+    config: Option<PathBuf>,
+    #[arg(long)]
+    name: Option<String>,
+    /// JSON array the addition is appended to; default freeze/league<ID>-additions.json.
+    #[arg(long)]
+    freeze_log: Option<PathBuf>,
+    /// qfork/Glyph credential root read for subscription logins and API keys.
+    #[arg(long, env = "JEVGAMMON_QFORK_ROOT")]
+    qfork_root: Option<PathBuf>,
+    /// Base URL of the OpenAI-compatible server behind `local/<model>`.
+    #[arg(
+        long,
+        env = "JEVGAMMON_LOCAL_URL",
+        default_value = "http://localhost:8080/v1"
+    )]
+    local_url: String,
 }
 
 #[derive(Args)]
@@ -239,6 +277,7 @@ async fn main() -> ExitCode {
             args.prompt_version,
             args.order_seed,
         ),
+        Some(Command::LeagueAdd(args)) => league_add(args).await,
         Some(Command::Ask(args)) => {
             let setup = Setup::new(
                 args.qfork_root
@@ -324,6 +363,111 @@ async fn run_league(args: LeagueArgs) -> Result<()> {
         }
     };
     league::run(args.common.db, &setup, start, Harness::detect()).await
+}
+
+/// `jevgammon league-add`.
+async fn league_add(args: LeagueAddArgs) -> Result<()> {
+    let config = match (&args.player, &args.entry, &args.config) {
+        (Some(entry), _, _) => match entry.split_once('=') {
+            Some((name, spec)) => PlayerConfig::new(name.trim(), spec.trim()),
+            None => PlayerConfig::new(entry, entry),
+        },
+        (_, Some(json), _) => serde_json::from_str(json).context("--entry")?,
+        (_, _, Some(path)) => {
+            let name = args.name.as_deref().expect("required by clap");
+            league::LeagueConfig::load(path)?
+                .players
+                .into_iter()
+                .find(|p| p.name == name)
+                .with_context(|| format!("no player `{name}` in {}", path.display()))?
+        }
+        _ => {
+            bail!("give the player: --player NAME=SPEC, --entry JSON, or --config FILE --name NAME")
+        }
+    };
+    // Credentials and settings are checked now, not when its first match starts.
+    let setup = Setup::new(
+        args.qfork_root
+            .clone()
+            .unwrap_or_else(auth::default_qfork_root),
+        args.local_url.clone(),
+    );
+    Player::from_config(&config, &setup)
+        .await
+        .with_context(|| format!("{} ({})", config.name, config.spec))?;
+    let harness = Harness::detect();
+    let now = chrono::Utc::now();
+    let mut db = db::Db::open(&args.db)?;
+    let addition = league::add_player(
+        &mut db,
+        args.league,
+        &config,
+        &now.format("%Y-%m-%d").to_string(),
+    )?;
+    let entry_json = serde_json::to_string(&config)?;
+    let log = args
+        .freeze_log
+        .clone()
+        .unwrap_or_else(|| PathBuf::from(format!("freeze/league{}-additions.json", args.league)));
+    let mut entries: Vec<serde_json::Value> = match std::fs::read_to_string(&log) {
+        Ok(text) => {
+            serde_json::from_str(&text).with_context(|| format!("parsing {}", log.display()))?
+        }
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Vec::new(),
+        Err(error) => return Err(error).with_context(|| format!("reading {}", log.display())),
+    };
+    entries.push(serde_json::json!({
+        "added_at": now.to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
+        "league": args.league,
+        "db": args.db.display().to_string(),
+        "name": config.name,
+        "harness_commit": harness.commit,
+        "harness_dirty": harness.dirty,
+        "entry": config,
+        "entry_sha256": hex::encode(sha2::Sha256::digest(entry_json.as_bytes())),
+        "fixtures": addition.fixtures,
+        "stale_playoff_fixtures": addition.stale_playoffs,
+    }));
+    if let Some(dir) = log.parent().filter(|d| !d.as_os_str().is_empty()) {
+        std::fs::create_dir_all(dir)?;
+    }
+    std::fs::write(&log, serde_json::to_string_pretty(&entries)? + "\n")?;
+    println!(
+        "{} joins league #{} with {} matches; note: \"{}\"; logged in {}",
+        config.name,
+        args.league,
+        addition.fixtures.len(),
+        addition.note,
+        log.display()
+    );
+    for label in &addition.fixtures {
+        println!("  {label}");
+    }
+    if addition.stale_playoffs > 0 {
+        println!(
+            "{} playoff fixtures marked stale; playoffs are played again after the new matches",
+            addition.stale_playoffs
+        );
+    }
+    let activity = db.league_activity(args.league)?;
+    if activity.pickup_runner() {
+        println!("the running league process picks these matches up within 30 s");
+    } else if activity.playing() {
+        println!(
+            "an older runner without pick-up is playing this league (last turn {}): let it finish, \
+             or stop it with Ctrl-C, then run `jevgammon league --resume {} --db {}`",
+            league::ago(activity.running_turn_secs),
+            args.league,
+            args.db.display()
+        );
+    } else {
+        println!(
+            "no process is playing this league: `jevgammon league --resume {} --db {}` plays the new matches",
+            args.league,
+            args.db.display()
+        );
+    }
+    Ok(())
 }
 
 /// At least two entrants with non-empty, unique names.

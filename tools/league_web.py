@@ -49,7 +49,7 @@ def league_fixtures(conn: sqlite3.Connection, lid: int) -> tuple[list[dict], dic
                   m.status, m.score1, m.score2, m.winner, m.rounds_played, m.rounds_planned,
                   m.error, m.started_at, m.finished_at
            FROM league_matches lm LEFT JOIN matches m ON m.id = lm.match_id
-           WHERE lm.league_id = ? ORDER BY lm.stage = 'playoff', lm.matchday, lm.id""",
+           WHERE lm.league_id = ? ORDER BY lm.stage != 'league', lm.stage, lm.matchday, lm.id""",
         (lid,),
     )]
     match_ids = [f["match_id"] for f in fixtures if f["match_id"]]
@@ -462,7 +462,7 @@ function render(d){
     <div class="mute">round ${v.round} game ${v.leg} · ${W} <span class="cw">${esc(v.white)}</span> v ${B} <span class="cb">${esc(v.black)}</span> · turn ${v.turn}${L.max_turns?' / '+L.max_turns:''}</div>
     ${board(v.position,v.white,v.black)}
     <div>${v.mover?`<span class="${v.mover===v.white?'cw':'cb'}">${esc(v.mover)}</span> rolled ${v.dice.join('-')}: <b>${esc(v.move||'(no move)')}</b> <span class="mute">${how(v.decided_by)}${v.decided_by==='model'||v.decided_by==='fallback'?`, ${(v.latency_ms/1000).toFixed(1)}s of ${v.legal} plays`:''} · ${ago(v.at)}</span>`:'<span class="mute">starting</span>'}</div>${nav}</div>`}).join(''):`<div class="mute">${L.status==='live'?'no match running':`league #${L.id} is ${L.status}`}</div>`;
-  const days={};for(const f of d.fixtures){const k=f.stage==='playoff'?'Playoffs':'Matchday '+f.matchday;(days[k]=days[k]||[]).push(f)}
+  const days={};for(const f of d.fixtures){const k=f.stage==='playoff'?'Playoffs':f.stage==='playoff-stale'?'Playoffs (stale: players added after them)':'Matchday '+f.matchday;(days[k]=days[k]||[]).push(f)}
   $('fixture').innerHTML=Object.entries(days).map(([k,fs])=>`<div class="day"><h3>${k}</h3>`+fs.map(f=>{
     const st=f.status||'pending';const w1=f.winner===1,w2=f.winner===2;
     const score=f.status?`${f.score1} – ${f.score2}`:'v';

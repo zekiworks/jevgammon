@@ -11,6 +11,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::{Context, Result, bail};
+use parking_lot::RwLock;
 use serde::Deserialize;
 use tokio::sync::mpsc;
 use tokio::task::JoinSet;
@@ -88,9 +89,9 @@ struct League {
     rounds: u32,
     clock: Option<Clock>,
     max_turns: Option<u32>,
-    /// Entry order.
-    names: Vec<String>,
-    players: HashMap<String, Arc<Player>>,
+    /// Entry order; players added later come last.
+    names: RwLock<Vec<String>>,
+    players: RwLock<HashMap<String, Arc<Player>>>,
     control: Arc<Control>,
     protocol: Arc<Protocol>,
 }
@@ -256,6 +257,28 @@ fn draw_fixture(names: &[String], seed: u64) -> Vec<(u32, String, String)> {
 }
 
 pub async fn run(db_path: PathBuf, setup: &Setup, start: Start, harness: Harness) -> Result<()> {
+    let mut league_id = None;
+    let result = run_inner(&db_path, setup, start, harness, &mut league_id).await;
+    if let Some(id) = league_id {
+        // Lets `--resume` and `league-add` see at once that no runner holds the league.
+        let _ = Db::open(&db_path).and_then(|db| db.clear_heartbeat(id));
+    }
+    result
+}
+
+/// `"12 s ago"`, or `"none"`.
+pub fn ago(secs: Option<f64>) -> String {
+    secs.map_or("none".to_owned(), |s| format!("{s:.0} s ago"))
+}
+
+async fn run_inner(
+    db_path: &std::path::Path,
+    setup: &Setup,
+    start: Start,
+    harness: Harness,
+    league_id: &mut Option<i64>,
+) -> Result<()> {
+    let db_path = db_path.to_path_buf();
     let db = Db::open(&db_path)?;
     let id = match start {
         Start::New {
@@ -286,8 +309,21 @@ pub async fn run(db_path: PathBuf, setup: &Setup, start: Start, harness: Harness
             }
             id
         }
-        Start::Resume(id) => id,
+        Start::Resume(id) => {
+            let activity = db.league_activity(id)?;
+            if activity.playing() {
+                bail!(
+                    "league #{id} is being played by another process (heartbeat {}, last turn \
+                     of a running match {}); a current runner picks up added players by itself, \
+                     otherwise resume after it stops",
+                    ago(activity.heartbeat_secs),
+                    ago(activity.running_turn_secs)
+                );
+            }
+            id
+        }
     };
+    *league_id = Some(id);
     let row = db.league(id)?;
     let version = match &row.prompt_version {
         Some(id) => PromptVersion::parse(id)?,
@@ -321,15 +357,15 @@ pub async fn run(db_path: PathBuf, setup: &Setup, start: Start, harness: Harness
         rounds: row.rounds,
         clock: row.clock,
         max_turns: row.max_turns,
-        names: row.models.iter().map(|m| m.name.clone()).collect(),
-        players,
+        names: RwLock::new(row.models.iter().map(|m| m.name.clone()).collect()),
+        players: RwLock::new(players),
         control,
         protocol: protocol.clone(),
     });
     println!(
         "league #{id}: {} models · {} rounds per match · clock {} · turn limit {} · seed {} · \
          prompt {} · option-order seed {} · harness {}{} · db {}",
-        league.names.len(),
+        league.names.read().len(),
         league.rounds,
         describe_clock(league.clock),
         league.max_turns.map_or("off".to_owned(), |t| t.to_string()),
@@ -347,127 +383,277 @@ pub async fn run(db_path: PathBuf, setup: &Setup, start: Start, harness: Harness
     for config in &row.models {
         println!("  {}: {}", config.name, config.spec);
     }
-    let fixtures = db.fixtures(id, "league")?;
+    let mut state = State::default();
+    state.sync(&db, &league, setup, true).await?;
     println!("\nFixture");
-    for fixture in &fixtures {
+    for fixture in state.played.iter().map(|(f, _)| f).chain(&state.pending) {
         println!("  {}", fixture.label);
     }
-
-    let total = fixtures.len();
-    // Matches finished before a resume count at once; only the rest are scheduled, so a
-    // stored result never holds its models busy.
-    let mut played = Vec::new();
-    let mut pending = Vec::new();
-    let mut left: HashMap<u32, usize> = HashMap::new();
-    for fixture in fixtures {
-        let stored = match fixture.match_id {
-            Some(match_id) => db.match_result(match_id)?,
-            None => None,
-        };
-        match stored {
-            Some(result) => played.push((fixture, result)),
-            None => {
-                if let Some(day) = fixture.matchday {
-                    *left.entry(day).or_default() += 1;
-                }
-                pending.push(fixture);
-            }
-        }
-    }
-    if !played.is_empty() {
+    if !state.played.is_empty() {
         print_table(
-            &format!("Table so far ({} of {total} matches played)", played.len()),
-            &table(&league.names, &results_of(&played)),
+            &format!(
+                "Table so far ({} of {} matches played)",
+                state.played.len(),
+                state.known.len()
+            ),
+            &table(&league.names.read(), &results_of(&state.played)),
         );
     }
     let mut busy = HashSet::new();
     let mut set = JoinSet::new();
-    let mut failures = Vec::new();
+    let mut failures: Vec<String> = Vec::new();
+    // League stage, then playoffs; again when players were added meanwhile.
     loop {
-        // After a failure no new match starts; the running ones finish first.
-        if failures.is_empty() {
-            for fixture in take_startable(&mut pending, &mut busy) {
-                let league = league.clone();
-                set.spawn(async move {
-                    let result = league.play_retrying(&fixture, false).await;
-                    (fixture, result)
-                });
+        let mut tick = tokio::time::interval(RELOAD);
+        loop {
+            // After a failure no new match starts; the running ones finish first.
+            if failures.is_empty() {
+                for fixture in take_startable(&mut state.pending, &mut busy) {
+                    let league = league.clone();
+                    set.spawn(async move {
+                        let result = league.play_retrying(&fixture, false).await;
+                        (fixture, result)
+                    });
+                }
+            }
+            if set.is_empty() && (state.pending.is_empty() || !failures.is_empty()) {
+                break;
+            }
+            tokio::select! {
+                joined = set.join_next(), if !set.is_empty() => {
+                    let (fixture, result) = joined.expect("not empty")?;
+                    busy.remove(&fixture.model1);
+                    busy.remove(&fixture.model2);
+                    let day = fixture.matchday;
+                    match result {
+                        Ok(result) => state.played.push((fixture, result)),
+                        Err(error) => failures.push(format!("{}: {error:#}", fixture.label)),
+                    }
+                    if let Some(day) = day {
+                        let remaining = state.left.get_mut(&day).expect("counted on sync");
+                        *remaining -= 1;
+                        if *remaining == 0 && failures.is_empty() {
+                            print_table(
+                                &format!(
+                                    "Table after matchday {day} ({} of {} matches played)",
+                                    state.played.len(),
+                                    state.known.len()
+                                ),
+                                &table(&league.names.read(), &results_of(&state.played)),
+                            );
+                        }
+                    }
+                }
+                _ = tick.tick() => {
+                    if let Err(error) = state.sync(&db, &league, setup, false).await {
+                        failures.push(format!("picking up added players: {error:#}"));
+                    }
+                }
             }
         }
-        let Some(joined) = set.join_next().await else {
-            break;
-        };
-        let (fixture, result) = joined?;
-        busy.remove(&fixture.model1);
-        busy.remove(&fixture.model2);
-        let day = fixture.matchday;
-        match result {
-            Ok(result) => played.push((fixture, result)),
-            Err(error) => failures.push(format!("{}: {error:#}", fixture.label)),
+        if !failures.is_empty() {
+            bail!(
+                "league #{id} stopped:\n  {}\nfinished matches are kept; resume with \
+                 `jevgammon league --resume {id} --db {}`",
+                failures.join("\n  "),
+                db_path.display()
+            );
         }
-        if let Some(day) = day {
-            let remaining = left.get_mut(&day).expect("counted above");
-            *remaining -= 1;
-            if *remaining == 0 && failures.is_empty() {
-                print_table(
-                    &format!(
-                        "Table after matchday {day} ({} of {total} matches played)",
-                        played.len()
-                    ),
-                    &table(&league.names, &results_of(&played)),
-                );
-            }
-        }
-    }
-    if !failures.is_empty() {
-        bail!(
-            "league #{id} stopped:\n  {}\nfinished matches are kept; resume with \
-             `jevgammon league --resume {id} --db {}`",
-            failures.join("\n  "),
-            db_path.display()
-        );
-    }
-    let results = results_of(&played);
-
-    let rows = table(&league.names, &results);
-    let mut ranking: Vec<String> = rows.iter().map(|r| r.name.clone()).collect();
-    // Places of unresolved ties outside the playoff places: (start, end) shares one place.
-    let mut shared = Vec::new();
-    for group in tie_groups(&rows) {
-        let members: Vec<String> = ranking[group.clone()].to_vec();
-        if group.start >= PLAYOFF_PLACES {
-            shared.push(group);
+        // Playoffs wait until every fixture, added ones included, is done.
+        if state.sync(&db, &league, setup, false).await? > 0 {
             continue;
         }
-        let key = format!("playoff for places {}-{}", group.start + 1, group.end);
-        println!(
-            "\n{key}: {} are level on points, games won, and games lost",
-            members.join(", ")
-        );
-        let ordered = league.order(members, key).await?;
-        ranking.splice(group, ordered);
+        let names = league.names.read().clone();
+        let rows = table(&names, &results_of(&state.played));
+        let mut ranking: Vec<String> = rows.iter().map(|r| r.name.clone()).collect();
+        // Places of unresolved ties outside the playoff places: (start, end) shares one place.
+        let mut shared = Vec::new();
+        for group in tie_groups(&rows) {
+            let members: Vec<String> = ranking[group.clone()].to_vec();
+            if group.start >= PLAYOFF_PLACES {
+                shared.push(group);
+                continue;
+            }
+            let key = format!("playoff for places {}-{}", group.start + 1, group.end);
+            println!(
+                "\n{key}: {} are level on points, games won, and games lost",
+                members.join(", ")
+            );
+            let ordered = league.order(members, key).await?;
+            ranking.splice(group, ordered);
+        }
+        // A player added during the playoffs makes them stale: play the new matches, then
+        // rank and play off again.
+        if state.sync(&db, &league, setup, false).await? > 0 {
+            let stale = db.mark_playoffs_stale(id)?;
+            println!(
+                "players were added during the playoffs: {stale} playoff fixtures marked stale"
+            );
+            continue;
+        }
+        let places: Vec<usize> = (0..ranking.len())
+            .map(|i| {
+                shared
+                    .iter()
+                    .find(|g| g.contains(&i))
+                    .map_or(i + 1, |g| g.start + 1)
+            })
+            .collect();
+        print_table("Final table (league stage)", &rows);
+        println!("\nFinal ranking");
+        for (name, place) in ranking.iter().zip(&places) {
+            let tied = places.iter().filter(|p| *p == place).count() > 1;
+            println!("  {place}{} {name}", if tied { "=" } else { "." });
+        }
+        let stored: Vec<String> = ranking
+            .iter()
+            .zip(&places)
+            .map(|(name, place)| format!("{place}. {name}"))
+            .collect();
+        db.finish_league(id, &stored)?;
+        return Ok(());
     }
-    let places: Vec<usize> = (0..ranking.len())
-        .map(|i| {
-            shared
-                .iter()
-                .find(|g| g.contains(&i))
-                .map_or(i + 1, |g| g.start + 1)
-        })
-        .collect();
-    print_table("Final table (league stage)", &rows);
-    println!("\nFinal ranking");
-    for (name, place) in ranking.iter().zip(&places) {
-        let tied = places.iter().filter(|p| *p == place).count() > 1;
-        println!("  {place}{} {name}", if tied { "=" } else { "." });
+}
+
+/// How often a running league checks for added players and signs its heartbeat.
+const RELOAD: Duration = Duration::from_secs(30);
+
+/// The fixtures a league run knows about.
+#[derive(Default)]
+struct State {
+    /// Fixture ids already played or scheduled.
+    known: HashSet<i64>,
+    played: Vec<(FixtureRow, MatchResult)>,
+    pending: Vec<FixtureRow>,
+    /// Unfinished fixtures per matchday, for the table after each matchday.
+    left: HashMap<u32, usize>,
+}
+
+impl State {
+    /// Signs the heartbeat, builds players added to the roster since, and takes up league
+    /// fixtures not seen yet (all of them on the first call). Returns how many unplayed
+    /// fixtures it added. Fixtures of a player whose client cannot be built yet are left
+    /// for a later call.
+    async fn sync(
+        &mut self,
+        db: &Db,
+        league: &League,
+        setup: &Setup,
+        first: bool,
+    ) -> Result<usize> {
+        db.heartbeat(league.id)?;
+        if !first {
+            let row = db.league(league.id)?;
+            for config in &row.models {
+                if league.players.read().contains_key(&config.name) {
+                    continue;
+                }
+                let player = Player::from_config(config, setup)
+                    .await
+                    .with_context(|| format!("added player {} ({})", config.name, config.spec))?;
+                println!("added player picked up: {} ({})", config.name, config.spec);
+                league
+                    .players
+                    .write()
+                    .insert(config.name.clone(), Arc::new(player));
+                league.names.write().push(config.name.clone());
+            }
+        }
+        let mut added = 0;
+        for fixture in db.fixtures(league.id, "league")? {
+            if self.known.contains(&fixture.id) {
+                continue;
+            }
+            {
+                let players = league.players.read();
+                if !players.contains_key(&fixture.model1) || !players.contains_key(&fixture.model2)
+                {
+                    continue;
+                }
+            }
+            self.known.insert(fixture.id);
+            let stored = match fixture.match_id {
+                Some(match_id) => db.match_result(match_id)?,
+                None => None,
+            };
+            match stored {
+                Some(result) => self.played.push((fixture, result)),
+                None => {
+                    if !first {
+                        println!("added fixture picked up: {}", fixture.label);
+                    }
+                    if let Some(day) = fixture.matchday {
+                        *self.left.entry(day).or_default() += 1;
+                    }
+                    self.pending.push(fixture);
+                    added += 1;
+                }
+            }
+        }
+        Ok(added)
     }
-    let stored: Vec<String> = ranking
+}
+
+/// What `add_player` did.
+pub struct Addition {
+    pub fixtures: Vec<String>,
+    pub stale_playoffs: usize,
+    pub note: String,
+}
+
+/// The fixtures of a player joining a league: one match against every current player, all
+/// on one new matchday after the last. Which side is `model1` is drawn from the league seed
+/// and the pairing; each match seed is `derive_seed(league seed, label)`, the rule of the
+/// original fixture.
+fn added_fixtures(
+    seed: u64,
+    matchday: u32,
+    new: &str,
+    others: &[String],
+) -> Vec<(u32, String, String, String, u64)> {
+    others
         .iter()
-        .zip(&places)
-        .map(|(name, place)| format!("{place}. {name}"))
-        .collect();
-    db.finish_league(id, &stored)?;
-    Ok(())
+        .map(|other| {
+            let side = derive_seed(seed, &format!("added: {new} v {other}"));
+            let (model1, model2) = if side & 1 == 0 {
+                (new, other.as_str())
+            } else {
+                (other.as_str(), new)
+            };
+            let label = format!("matchday {matchday}: {model1} v {model2}");
+            let match_seed = derive_seed(seed, &label);
+            (
+                matchday,
+                label,
+                model1.to_owned(),
+                model2.to_owned(),
+                match_seed,
+            )
+        })
+        .collect()
+}
+
+/// Adds `config` to league `id`: roster entry, its fixtures against every current player,
+/// and the note; earlier playoffs are marked stale. Playing the matches is left to a
+/// running league process (it picks them up within `RELOAD`) or to `--resume`.
+pub fn add_player(db: &mut Db, id: i64, config: &PlayerConfig, date: &str) -> Result<Addition> {
+    let row = db.league(id)?;
+    if config.name.is_empty() || row.models.iter().any(|m| m.name == config.name) {
+        bail!(
+            "the added player needs a name not yet in league #{id}: `{}`",
+            config.name
+        );
+    }
+    let others: Vec<String> = row.models.iter().map(|m| m.name.clone()).collect();
+    let matchday = db.max_matchday(id)? + 1;
+    let fixtures = added_fixtures(row.seed, matchday, &config.name, &others);
+    let note = format!("{} added on {date}.", config.name);
+    let stale_playoffs = db.add_league_player(id, config, &fixtures, &note)?;
+    Ok(Addition {
+        fixtures: fixtures.into_iter().map(|f| f.1).collect(),
+        stale_playoffs,
+        note,
+    })
 }
 
 impl League {
@@ -505,10 +691,10 @@ impl League {
             return Ok(result);
         }
         let names = [fixture.model1.clone(), fixture.model2.clone()];
-        let players = [
-            self.players[&names[0]].clone(),
-            self.players[&names[1]].clone(),
-        ];
+        let players = {
+            let players = self.players.read();
+            [players[&names[0]].clone(), players[&names[1]].clone()]
+        };
         let tag = &fixture.label;
         for (name, player) in names.iter().zip(&players) {
             let took = player
@@ -745,5 +931,108 @@ mod tests {
         assert_eq!(rows[1].points, DRAW_POINTS);
         // m0 and m1 are level on everything.
         assert_eq!(tie_groups(&rows), vec![1..3]);
+    }
+
+    /// Adding a player to a league with a finished playoff: one match against every
+    /// current player on a new matchday, seeds from the league seed and the label, the
+    /// roster and note updated, the playoff kept but marked stale.
+    #[test]
+    fn added_player_gets_one_match_against_each_player() {
+        let path = std::env::temp_dir().join(format!("jevgammon-add-{}.db", std::process::id()));
+        let _ = std::fs::remove_file(&path);
+        let mut db = Db::open(&path).unwrap();
+        let models: Vec<PlayerConfig> = ["A", "B", "C"]
+            .iter()
+            .map(|n| PlayerConfig::new(n, "random"))
+            .collect();
+        let id = db
+            .create_league(7, 1, None, None, &models, Some("test."), "bg-v2", 9)
+            .unwrap();
+        let names: Vec<String> = models.iter().map(|m| m.name.clone()).collect();
+        for (day, m1, m2) in draw_fixture(&names, 7) {
+            let label = format!("matchday {day}: {m1} v {m2}");
+            db.add_fixture(
+                id,
+                "league",
+                &label,
+                Some(day),
+                &m1,
+                &m2,
+                derive_seed(7, &label),
+            )
+            .unwrap();
+        }
+        db.add_fixture(
+            id,
+            "playoff",
+            "playoff for places 1-2: A v B",
+            None,
+            "A",
+            "B",
+            1,
+        )
+        .unwrap();
+        db.finish_league(id, &["1. A".into()]).unwrap();
+        let before = db.fixtures(id, "league").unwrap();
+        let last_day = db.max_matchday(id).unwrap();
+
+        let addition =
+            add_player(&mut db, id, &PlayerConfig::new("D", "safest"), "2026-10-15").unwrap();
+        assert_eq!(addition.fixtures.len(), 3);
+        assert_eq!(addition.stale_playoffs, 1);
+        let after = db.fixtures(id, "league").unwrap();
+        assert_eq!(after.len(), before.len() + 3);
+        for fixture in &after[before.len()..] {
+            assert_eq!(fixture.matchday, Some(last_day + 1));
+            assert!(fixture.model1 == "D" || fixture.model2 == "D");
+            assert_eq!(fixture.seed, derive_seed(7, &fixture.label));
+            assert!(fixture.match_id.is_none());
+        }
+        let mut opponents: Vec<&str> = after[before.len()..]
+            .iter()
+            .map(|f| {
+                if f.model1 == "D" {
+                    f.model2.as_str()
+                } else {
+                    f.model1.as_str()
+                }
+            })
+            .collect();
+        opponents.sort_unstable();
+        assert_eq!(opponents, ["A", "B", "C"]);
+        // Same league seed and names, same fixtures.
+        assert_eq!(
+            added_fixtures(7, last_day + 1, "D", &names),
+            after[before.len()..]
+                .iter()
+                .map(|f| (
+                    last_day + 1,
+                    f.label.clone(),
+                    f.model1.clone(),
+                    f.model2.clone(),
+                    f.seed
+                ))
+                .collect::<Vec<_>>()
+        );
+        let row = db.league(id).unwrap();
+        assert_eq!(row.models.last().unwrap().name, "D");
+        assert!(db.fixtures(id, "playoff").unwrap().is_empty());
+        assert_eq!(db.fixtures(id, "playoff-stale").unwrap().len(), 1);
+        // The note and the running status.
+        let activity = db.league_activity(id).unwrap();
+        assert!(!activity.playing());
+        assert!(add_player(&mut db, id, &PlayerConfig::new("D", "random"), "x").is_err());
+        drop(db);
+        let conn = rusqlite::Connection::open(&path).unwrap();
+        let (note, status): (String, String) = conn
+            .query_row(
+                "SELECT note, status FROM leagues WHERE id = ?1",
+                [id],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .unwrap();
+        assert_eq!(note, "test. D added on 2026-10-15.");
+        assert_eq!(status, "running");
+        let _ = std::fs::remove_file(&path);
     }
 }

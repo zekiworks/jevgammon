@@ -134,7 +134,10 @@ player carries what a spec alone cannot:
   provider reports no cost (OpenRouter does, in `usage.cost`, and that is used); without
   either the cost is NULL. Reasoning tokens are logged in `turns.reasoning_tokens` when the
   provider reports them (Anthropic does not).
-- `parallel` is the number of requests in flight for `jevgammon ask`; `note` is free text.
+- `parallel` is the number of requests in flight for `jevgammon ask`; `rpm` caps chat-model
+  requests per minute, shared by every player of a `rate_group` (default: same base URL and
+  spec, so both setups of one OpenRouter model share it), in leagues and `ask` alike; waits for
+  a slot are logged in `retry_ms`. `note` is free text.
 
 The top-level settings override the command line; `seed`, `order_seed`, and `prompt_version`
 are stored with the league, so `--resume` keeps them. The v3 rosters are
@@ -233,7 +236,8 @@ How they answer:
   refusal) are not repaired or re-asked: the runner plays a uniformly random legal play,
   seeded per decision, and records `decided_by = 'fallback'`, `invalid = 1`.
 - **Network and server errors** (connection failures, HTTP 408, 429, 5xx) are retried up to
-  3 times with backoff (2, 4, 8 s; `Retry-After` can lengthen a wait up to 60 s). The time
+  3 times with backoff (2, 4, 8 s; after a 429, 15, 30, 60 s; `Retry-After` can lengthen a wait
+  up to 60 s). The time
   spent is logged in `turns.retry_ms` and not charged to the clock. Any other failure, or
   running out of retries, aborts the match.
 

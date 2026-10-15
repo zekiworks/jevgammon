@@ -8,9 +8,10 @@ mod llm;
 pub mod order;
 pub mod prompt;
 
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use anyhow::{Result, bail};
 use serde::{Deserialize, Serialize};
@@ -164,10 +165,14 @@ pub struct PlayerConfig {
     /// Requests in flight when answering stored positions (`jevgammon ask`); default 4.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parallel: Option<usize>,
-    /// Most requests started per minute by `jevgammon ask` (provider rate limits, e.g.
-    /// OpenRouter's 20 per minute per model for new accounts); default unlimited.
+    /// Most chat-model requests started per minute (provider rate limits, e.g. OpenRouter's
+    /// 20 per minute per model for new accounts), shared by every player of the same
+    /// `rate_group` (default: base URL and spec); default unlimited. Waits for a slot are
+    /// logged as retry time.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub rpm: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rate_group: Option<String>,
 }
 
 impl PlayerConfig {
@@ -211,9 +216,43 @@ pub struct Setup {
     pub local_url: String,
     pub openai: Arc<Credentials>,
     pub anthropic: Arc<Credentials>,
+    /// Request pacers by rate-limit group, shared by every player of the group.
+    pacers: parking_lot::Mutex<HashMap<String, Arc<Pacer>>>,
+}
+
+/// Spaces the requests of a rate-limit group (e.g. both setups of one OpenRouter model) at
+/// least `interval` apart.
+pub struct Pacer {
+    interval: Duration,
+    next: tokio::sync::Mutex<Instant>,
+}
+
+impl Pacer {
+    /// Waits for this request's slot; returns how long it waited.
+    pub async fn wait(&self) -> Duration {
+        let started = Instant::now();
+        let mut next = self.next.lock().await;
+        tokio::time::sleep_until((*next).into()).await;
+        *next = Instant::now() + self.interval;
+        started.elapsed()
+    }
 }
 
 impl Setup {
+    /// The shared pacer of `group` at `rpm` requests per minute.
+    fn pacer(&self, group: String, rpm: u32) -> Arc<Pacer> {
+        self.pacers
+            .lock()
+            .entry(group)
+            .or_insert_with(|| {
+                Arc::new(Pacer {
+                    interval: Duration::from_secs_f64(60.0 / f64::from(rpm)),
+                    next: tokio::sync::Mutex::new(Instant::now()),
+                })
+            })
+            .clone()
+    }
+
     pub fn new(qfork_root: PathBuf, local_url: String) -> Self {
         let http = crate::http::client();
         Setup {
@@ -230,6 +269,7 @@ impl Setup {
             http,
             qfork_root,
             local_url,
+            pacers: parking_lot::Mutex::new(HashMap::new()),
         }
     }
 }
@@ -276,6 +316,12 @@ impl Player {
             max_tokens: config.max_tokens,
             top_logprobs: config.top_logprobs,
             readout: llm::Readout::parse(config.letter_readout.as_deref())?,
+            pacer: config.rpm.filter(|&rpm| rpm > 0).map(|rpm| {
+                let group = config.rate_group.clone().unwrap_or_else(|| {
+                    format!("{}|{spec}", config.base_url.as_deref().unwrap_or(""))
+                });
+                setup.pacer(group, rpm)
+            }),
         };
         let player = |backend| Player {
             spec: spec.to_owned(),

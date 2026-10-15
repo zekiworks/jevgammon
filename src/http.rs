@@ -15,6 +15,8 @@ pub const RETRIES: u32 = 3;
 /// wait up to `MAX_BACKOFF`, never shorten it.
 const FIRST_BACKOFF: Duration = Duration::from_secs(2);
 const MAX_BACKOFF: Duration = Duration::from_secs(60);
+/// First wait after a 429 (rate limit): 15, 30, 60 s.
+const RATE_LIMIT_BACKOFF: Duration = Duration::from_secs(15);
 
 #[derive(Debug)]
 pub enum CallError {
@@ -73,13 +75,14 @@ pub async fn send(
     make: impl Fn() -> RequestBuilder,
     retry: &RetryTime,
 ) -> Result<String, CallError> {
-    send_with_backoff(make, retry, FIRST_BACKOFF).await
+    send_with_backoff(make, retry, FIRST_BACKOFF, RATE_LIMIT_BACKOFF).await
 }
 
 async fn send_with_backoff(
     make: impl Fn() -> RequestBuilder,
     retry: &RetryTime,
     first_backoff: Duration,
+    rate_limit_backoff: Duration,
 ) -> Result<String, CallError> {
     let mut backoff = first_backoff;
     let mut attempt = 0;
@@ -106,6 +109,10 @@ async fn send_with_backoff(
                         "{status}: {}",
                         snippet(&body)
                     )));
+                }
+                if status == StatusCode::TOO_MANY_REQUESTS {
+                    // Shared provider pools recover in tens of seconds, not two.
+                    backoff = backoff.max(rate_limit_backoff);
                 }
                 if let Some(wait) = retry_after {
                     backoff = backoff.max(wait).min(MAX_BACKOFF);
@@ -179,12 +186,12 @@ mod tests {
         // 503, 429, 500, then 200: the fourth attempt succeeds.
         let (url, count) = serve(vec![503, 429, 500, 200]);
         let retry = RetryTime::default();
-        let body = send_with_backoff(|| http.get(&url), &retry, backoff)
+        let body = send_with_backoff(|| http.get(&url), &retry, backoff, backoff * 3)
             .await
             .unwrap();
         assert_eq!(body, "status 200");
         assert_eq!(count.load(Ordering::SeqCst), 4);
-        // Waits of 20, 40 and 80 ms plus the failed attempts.
+        // Waits of 20, 60 (after the 429) and 120 ms plus the failed attempts.
         assert!(
             retry.get() >= Duration::from_millis(140),
             "{:?}",
@@ -194,7 +201,7 @@ mod tests {
         // Always 502: one attempt and three retries, then an error.
         let (url, count) = serve(vec![502]);
         let retry = RetryTime::default();
-        let error = send_with_backoff(|| http.get(&url), &retry, backoff)
+        let error = send_with_backoff(|| http.get(&url), &retry, backoff, backoff * 3)
             .await
             .unwrap_err();
         assert!(format!("{:?}", error).contains("gave up after 4 attempts"));
@@ -205,7 +212,7 @@ mod tests {
         let (url, count) = serve(vec![400]);
         let retry = RetryTime::default();
         assert!(
-            send_with_backoff(|| http.get(&url), &retry, backoff)
+            send_with_backoff(|| http.get(&url), &retry, backoff, backoff * 3)
                 .await
                 .is_err()
         );

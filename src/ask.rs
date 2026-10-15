@@ -420,11 +420,6 @@ pub async fn ask(args: AskArgs, setup: &Setup) -> Result<()> {
             let mut jobs = JoinSet::new();
             let started = Instant::now();
             let mut stopped = None;
-            let pace = config
-                .rpm
-                .filter(|&rpm| rpm > 0)
-                .map(|rpm| Duration::from_secs_f64(60.0 / f64::from(rpm)));
-            let mut next_start = Instant::now();
             'outer: for repeat in 1..=repeats {
                 for index in 0..positions.len() {
                     let position = &positions[index];
@@ -435,10 +430,6 @@ pub async fn ask(args: AskArgs, setup: &Setup) -> Result<()> {
                         continue;
                     }
                     let permit = parallel.clone().acquire_owned().await.expect("open");
-                    if let Some(pace) = pace {
-                        tokio::time::sleep_until(next_start.into()).await;
-                        next_start = Instant::now() + pace;
-                    }
                     let cost = spent.load(Ordering::Relaxed) as f64 / 1e9;
                     if max_cost.is_some_and(|limit| cost > limit) {
                         stopped = Some(cost);

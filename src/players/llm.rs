@@ -68,6 +68,8 @@ pub struct Options {
     pub max_tokens: Option<u32>,
     pub top_logprobs: Option<u32>,
     pub readout: Readout,
+    /// Rate-limit pacing shared with the other players of the group.
+    pub pacer: Option<Arc<super::Pacer>>,
 }
 
 enum Kind {
@@ -438,6 +440,10 @@ impl LlmClient {
         decision: &mut Decision,
     ) -> Result<Completion> {
         let body = merged(body.clone(), self.options.request.as_ref());
+        if let Some(pacer) = &self.options.pacer {
+            // Not thinking time: logged with the retries, off the clock.
+            req.retry.add(pacer.wait().await);
+        }
         let started = Instant::now();
         let retry_before = req.retry.get();
         let result = self.send(&body, req).await;

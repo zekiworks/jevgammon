@@ -118,6 +118,19 @@ impl WinKind {
         }
     }
 
+    /// The kind stored as `name` in `games.result`.
+    pub fn parse(name: &str) -> Option<Self> {
+        [
+            WinKind::Single,
+            WinKind::Gammon,
+            WinKind::Backgammon,
+            WinKind::Timeout,
+            WinKind::TurnLimit,
+        ]
+        .into_iter()
+        .find(|kind| kind.name() == name)
+    }
+
     /// Shown after "wins", e.g. "wins a gammon", "wins on time".
     pub fn describe(self) -> &'static str {
         match self {

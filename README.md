@@ -134,14 +134,18 @@ player carries what a spec alone cannot:
   provider reports no cost (OpenRouter does, in `usage.cost`, and that is used); without
   either the cost is NULL. Reasoning tokens are logged in `turns.reasoning_tokens` when the
   provider reports them (Anthropic does not).
-- `parallel` is the number of requests in flight for `jevgammon ask`; `rpm` caps chat-model
-  requests per minute, shared by every player of a `rate_group` (default: same base URL and
-  spec, so both setups of one OpenRouter model share it), in leagues and `ask` alike; waits for
-  a slot are logged in `retry_ms`. `note` is free text.
+- `parallel` caps the player's decisions in flight, over all its league matches and both
+  games of a round (more queue; the wait is logged in `retry_ms`, off the clock); default
+  unlimited, and 4 for `jevgammon ask`. `max_matches` is how many league matches the player
+  plays at once: default 4, unlimited for the local engines `random`, `safest` and
+  `gnubg-weak` (one gnubg process per player answers its matches one decision at a time).
+  `rpm` caps chat-model requests per minute, shared by every player of a `rate_group`
+  (default: same base URL and spec, so both setups of one OpenRouter model share it), in
+  leagues and `ask` alike; waits for a slot are logged in `retry_ms`. `note` is free text.
 
-The top-level settings override the command line; `seed`, `order_seed`, and `prompt_version`
-are stored with the league, so `--resume` keeps them. The v3 rosters are
-`leagues/league1.json`, `league2.json` and `league3.json`.
+The top-level settings override the command line; `seed`, `order_seed`, `prompt_version`
+and `mirror_concurrent` are stored with the league, so `--resume` keeps them. The v3 rosters
+are `leagues/league1.json`, `league2.json` and `league3.json`.
 
 ### Stored positions
 
@@ -239,7 +243,8 @@ How they answer:
   3 times with backoff (2, 4, 8 s; after a 429, 15, 30, 60 s; `Retry-After` can lengthen a wait
   up to 60 s). The time
   spent is logged in `turns.retry_ms` and not charged to the clock. Any other failure, or
-  running out of retries, aborts the match.
+  running out of retries, aborts the match; a league resumes it later from its last
+  stored turn (see [League](#league)).
 
 ### Clock
 
@@ -250,7 +255,9 @@ for the game. Both banks are full again at the start of every game, including th
 leg of a round. A model that answers within the delay at its normal pace never touches
 its bank, and the bank absorbs the occasional slow decision. Forced moves, turns with no
 legal move, and the pause between moves are free, and so is the time spent on HTTP
-retries: it extends the deadline and is not taken from the bank.
+retries: it extends the deadline and is not taken from the bank, and so is a wait for one
+of the player's request slots (`parallel`). A resumed match restores each bank from the
+last stored turn's `clock_ms`; the time of a decision cut off in flight is not charged.
 
 Unlike WBGF, where running out of time loses the match, an empty bank loses only the
 game: the request is abandoned, the turn is recorded with `decided_by = 'timeout'`, and
@@ -361,9 +368,17 @@ existed resumes with `bg-v2-history`, the prompt the runner then sent).
   then decides who moves first, and the second game repeats the rolls with seats swapped,
   so the other model moves first with the same roll.
 - **Matches** use the normal format (`--rounds`, `--clock`, `--delay`, `--max-turns`). A
-  match starts as soon as both its models are free, in fixture order: a model never plays
-  two matches at once, but nobody waits for the rest of a matchday to finish. Every match
-  has its own seed, derived from the league seed and the fixture.
+  match starts as soon as both its models are below their `max_matches` (default 4, local
+  engines unlimited), in fixture order: earlier matchdays get the free places first, and
+  nobody waits for the rest of a matchday to finish. Every match has its own seed, derived
+  from the league seed and the fixture, so results do not depend on what runs at once.
+- **Mirror games at once:** with `--mirror-concurrent` (`"mirror_concurrent": true` in the
+  config; stored in `leagues.mirror_concurrent` and printed in the league's header line) the
+  two games of a round are played at the same time, and both show the score at the start
+  of the round. Without it (the default, and League 1) game 2 starts after game 1 and shows
+  the score after it. Rounds stay one after the other either way, since whether another
+  round is played depends on the score. Turns, dice, events and scores are recorded the
+  same way; the round's score is stored when both games have finished.
 - **Table:** a win is 3 league points, a draw (still tied after the extra round) 1. Ties
   are broken by more games won, then fewer games lost. Backgammon points scored and
   conceded are shown but not used.
@@ -374,11 +389,25 @@ existed resumes with `bg-v2-history`, the prompt the runner then sent).
 - **Warm-up:** before every match (league or single) each decision service gets a
   two-option request, repeated until it answers (up to 15 minutes), so a cold start such
   as Fastino's HTTP 425 "warming up" never runs on a clock.
-- **Failed matches:** a match that aborts (for example, a provider outage that outlasts
-  the HTTP retries) is replayed from the start with the same seed after 2 minutes, up to 3
-  attempts. If the last attempt fails too, no new match starts and the league stops once
-  the running ones finish; `--resume <id>` keeps every finished match and replays
-  unfinished ones from the start with the same seed.
+- **Failed matches:** a match that fails (a provider outage that outlasts the HTTP
+  retries, an account out of credit, a warm-up that never answers) is deferred: the error
+  and time go to `league_matches.error` and `failed_at`, and the model to blame (the one
+  whose request failed) backs off: none of its matches starts for 2 minutes, doubling with
+  every failure in a row up to 1 hour, reset when one of its matches finishes. A failure no
+  model is to blame for backs off only that match. Every other match goes on. When only
+  deferred matches are left the league waits for the next backoff to end and tries again,
+  logging what waits and why, so topping up credit later lets it finish by itself.
+  Playoffs start only once every fixture has finished; a failing playoff match is retried
+  the same way. A model whose client cannot be built (a missing key, say) is tried again
+  every 30 s while its matches wait.
+- **Resuming:** a match cut off part-way (a failure, Ctrl-C or SIGTERM, a killed process, a
+  reboot) keeps its match id and resumes from its last stored turn: the stored games count
+  as played, and the unfinished game is replayed from the stored turns, checking every
+  roll, position and play against the match seed, which restores the board, side to move,
+  turn number, move history, banks, and the position in the dice stream, so the remaining
+  rolls are those of an uninterrupted match. A decision in flight at the cut is asked
+  again. Ctrl-C and SIGTERM stop the league cleanly (running matches are marked `aborted`
+  with the error `cancelled`, the heartbeat is cleared); `--resume <id>` continues.
 
 The table is printed each time every match of a matchday has finished, then the final
 table and ranking.
@@ -430,14 +459,17 @@ python3 tools/league_web.py --db league.db --port 8095   # http://<host>:8095/
   finished leagues only (stopped and running ones are left out), best record first.
 - **League on view:** header with rules and seed (plus the prompt version and option-order
   seed for leagues that stored them), table (`‹` `›` step through the finished leagues and
-  the live one), per-model decision stats, the fixture with results, and recent games. The
+  the live one), per-model decision stats, the fixture with results (a failed match waiting
+  for its model's backoff shows `deferred`, with the error and time on hover), and recent
+  games. The
   model stats list each player's spec, provider and quantization; decisions, mean and
   longest decision time, hit share, **Invalid** (`decided_by = 'fallback'`: the answer named
   no option and a random legal play was made) and timeouts; on databases with the
   per-decision columns also the share of decisions with probabilities
   (`probability_source` set), the mean request time (`request_ms`, retries excluded) and the
   total cost (`cost_usd`). Older databases show the page without those three columns.
-- **Live:** while the league is live, every running game shows its board and last move;
+- **Live:** while the league is live, every running match shows its board and last move
+  (with the games of a round played at once, the game that moved last);
   `«`, `»` and `⏮ round start` step through the rolls of the current round, `live` returns
   to the game in progress, and `context` shows what was sent to the model for that roll and
   its answer, with the decision's letter, probability source, request time, cost, provider,
@@ -494,12 +526,12 @@ The database has six tables:
 
 | Table | Contents |
 | --- | --- |
-| `matches` | models, seed, planned and played rounds, clock bank and delay seconds (NULL = off), turn limit, score, winner (`1`, `2`, or NULL for draw), status `running\|finished\|aborted`, error, prompt version, option-order seed, harness commit and dirty flag |
+| `matches` | models, seed, planned and played rounds, clock bank and delay seconds (NULL = off), turn limit, score, winner (`1`, `2`, or NULL for draw), status `running\|finished\|aborted` (an aborted league match resumes, back to `running`), error (the last stop), prompt version, option-order seed, harness commit and dirty flag |
 | `games` | round, leg, white player, dice seed, opening roll, winner, result (`single\|gammon\|backgammon\|timeout\|turn_limit`), points, turn count |
 | `turns` | side, player, dice, position before the move (JSON, white's perspective), number of legal plays, chosen index, move (mover's numbering), `decided_by` (`model\|forced\|no_move\|fallback\|timeout`; `fallback` = invalid answer, random play), latency, tokens, mover's bank left after the turn (`clock_ms`); per decision: `prompt_version`, `harness_commit` (`git rev-parse HEAD` at startup) and `harness_dirty`, `provider`, `quantization`, `option_order` (JSON: legal-play index shown as option k), `letter` and `chosen_position`, `probabilities` (JSON aligned with `option_order`), `probability_source` (`logprobs\|decision\|choice_only`), `request_ms`, `retry_ms`, `cost_usd`, `invalid`, `group_size`, `reasoning_tokens` |
 | `exchanges` | every model request body, reply text, rejection reason, latency; one row per request |
-| `leagues` | seed, rounds, clock bank and delay, turn limit, entrants (JSON player configs: `{name, spec, ...}`), status, final ranking, note (`--note`), prompt version, option-order seed |
-| `league_matches` | stage (`league\|playoff`), label, matchday, model names, seed, latest `match_id` |
+| `leagues` | seed, rounds, clock bank and delay, turn limit, entrants (JSON player configs: `{name, spec, ...}`), status, final ranking, note (`--note`), prompt version, option-order seed, `mirror_concurrent` |
+| `league_matches` | stage (`league\|playoff`), label, matchday, model names, seed, `match_id` (resumed until it finishes), last failure `error` and `failed_at` |
 
 Seeds are unsigned 64-bit values stored in SQLite's signed INTEGER; cast back to `u64` to
 reuse them. Passing the same `--seed` replays the same dice for every round.
@@ -533,9 +565,9 @@ cargo run -- --model1 ollama/qwen3 --model2 jev --speed 5
 | --- | --- |
 | `src/board.rs` | rules, legal play generation, game results |
 | `src/dice.rs` | seeded dice (SplitMix64, implemented locally so seeds stay reproducible across dependency upgrades) |
-| `src/runner.rs` | match flow, mirrored legs, tie-break round, pacing and pause |
+| `src/runner.rs` | match flow, mirrored legs (one after the other or at once), resuming from stored turns, tie-break round, pacing and pause |
 | `src/players/` | prompt versions and the letter prompt (`prompt.rs`, texts in `prompts/`), seeded option order (`order.rs`), LLM providers, decision services (System One, OpenAI Decisions), invalid-answer fallback and group splits (`mod.rs`) |
-| `src/league.rs` | league fixture, parallel matchdays, table, playoffs, resume |
+| `src/league.rs` | league fixture, match limits, deferral and backoff, table, playoffs, resume |
 | `src/auth.rs` | subscription credential stores and refresh |
 | `src/http.rs` | retries and backoff |
 | `src/db.rs` | SQLite schema and writes |

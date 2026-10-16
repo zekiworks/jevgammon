@@ -7,7 +7,7 @@ use anyhow::{Context, Result, bail};
 use rusqlite::{Connection, OptionalExtension, params};
 use serde_json::Value;
 
-use crate::board::{Board, Side};
+use crate::board::{Board, Side, WinKind};
 use crate::players::PlayerConfig;
 use crate::players::prompt::letter;
 use crate::runner::{Clock, MatchResult, Protocol};
@@ -29,7 +29,8 @@ CREATE TABLE IF NOT EXISTS matches (
     score2          INTEGER NOT NULL DEFAULT 0,
     -- 1 or 2; NULL while running, when aborted, or when drawn.
     winner          INTEGER,
-    -- running | finished | aborted
+    -- running | finished | aborted (stopped by an error or a stop; a league resumes it
+    -- from its last stored turn, back to running). `error`: the last such stop.
     status          TEXT NOT NULL,
     error           TEXT,
     -- Simple Delay clock: bank per player per game and free delay per decision, in
@@ -152,7 +153,10 @@ CREATE TABLE IF NOT EXISTS leagues (
     prompt_version  TEXT,
     order_seed      INTEGER,
     -- Last sign of life of a runner that picks up added players (every 30 s).
-    heartbeat_at    TEXT
+    heartbeat_at    TEXT,
+    -- 1: the two games of a round play at once, both showing the round-start score;
+    -- NULL or 0: game 2 starts after game 1 and shows the score after it.
+    mirror_concurrent INTEGER
 );
 
 CREATE TABLE IF NOT EXISTS league_matches (
@@ -168,14 +172,19 @@ CREATE TABLE IF NOT EXISTS league_matches (
     model1          TEXT NOT NULL,
     model2          TEXT NOT NULL,
     seed            INTEGER NOT NULL,
-    -- Latest attempt; an aborted attempt is replaced by a fresh match with the same seed.
+    -- The fixture's match. An unfinished one (aborted by an error or a stop, or still
+    -- `running` after the process died) resumes from its last stored turn.
     match_id        INTEGER REFERENCES matches(id),
+    -- Last failure of the match (or of its warm-up) and when: the league deferred it and
+    -- retries it later. Kept once the match finished.
+    error           TEXT,
+    failed_at       TEXT,
     UNIQUE (league_id, label)
 );
 "#;
 
 /// Columns added after the first release, for databases created before them.
-const ADDED_COLUMNS: [(&str, &str, &str); 28] = [
+const ADDED_COLUMNS: [(&str, &str, &str); 31] = [
     ("matches", "clock_seconds", "INTEGER"),
     ("turns", "clock_ms", "INTEGER"),
     ("matches", "delay_seconds", "INTEGER"),
@@ -204,6 +213,9 @@ const ADDED_COLUMNS: [(&str, &str, &str); 28] = [
     ("turns", "group_size", "INTEGER"),
     ("turns", "reasoning_tokens", "INTEGER"),
     ("leagues", "heartbeat_at", "TEXT"),
+    ("leagues", "mirror_concurrent", "INTEGER"),
+    ("league_matches", "error", "TEXT"),
+    ("league_matches", "failed_at", "TEXT"),
 ];
 
 pub struct Db {
@@ -220,6 +232,8 @@ pub struct LeagueRow {
     /// `None` for leagues before prompt versions.
     pub prompt_version: Option<String>,
     pub order_seed: Option<u64>,
+    /// Whether the two games of a round play at once (`leagues.mirror_concurrent`).
+    pub mirror_concurrent: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -290,6 +304,36 @@ pub struct Exchange {
     pub response: Option<String>,
     pub error: Option<String>,
     pub latency_ms: u64,
+}
+
+/// A game of a match as stored, for resuming the match.
+#[derive(Debug)]
+pub struct StoredGame {
+    pub id: i64,
+    pub round: u32,
+    pub leg: u8,
+    pub white_player: u8,
+    pub dice_seed: u64,
+    pub opening: (u8, u8),
+    /// Winner (1 or 2) and how, once the game is over.
+    pub result: Option<(u8, WinKind)>,
+    /// Every turn so far, in order; empty for finished games.
+    pub turns: Vec<StoredTurn>,
+}
+
+/// A stored turn of an unfinished game.
+#[derive(Debug)]
+pub struct StoredTurn {
+    pub turn_no: u32,
+    pub side: Side,
+    pub player: u8,
+    pub dice: (u8, u8),
+    /// Board before the move, mover's perspective.
+    pub board: Board,
+    pub chosen_index: Option<usize>,
+    pub notation: String,
+    pub decided_by: String,
+    pub clock_ms: Option<u64>,
 }
 
 fn now() -> String {
@@ -422,6 +466,143 @@ impl Db {
         Ok(())
     }
 
+    /// Marks an unfinished match running again before it resumes; its `error` stays as the
+    /// record of the last stop.
+    pub fn resume_match(&self, match_id: i64) -> Result<()> {
+        self.conn.execute(
+            "UPDATE matches SET status = 'running', finished_at = NULL
+             WHERE id = ?1 AND status != 'finished'",
+            params![match_id],
+        )?;
+        Ok(())
+    }
+
+    /// The games of a match in round and leg order, with every turn of the unfinished ones.
+    pub fn stored_games(&self, match_id: i64) -> Result<Vec<StoredGame>> {
+        let mut statement = self.conn.prepare(
+            "SELECT id, round_no, leg, white_player, dice_seed, opening_white, opening_black,
+                    winner_player, result
+             FROM games WHERE match_id = ?1 ORDER BY round_no, leg",
+        )?;
+        type Row = (i64, u32, u8, u8, i64, u8, u8, Option<u8>, Option<String>);
+        let rows = statement
+            .query_map(params![match_id], |row| {
+                Ok((
+                    row.get(0)?,
+                    row.get(1)?,
+                    row.get(2)?,
+                    row.get(3)?,
+                    row.get(4)?,
+                    row.get(5)?,
+                    row.get(6)?,
+                    row.get(7)?,
+                    row.get(8)?,
+                ))
+            })?
+            .collect::<rusqlite::Result<Vec<Row>>>()?;
+        let mut games = Vec::with_capacity(rows.len());
+        for (id, round, leg, white_player, dice_seed, white, black, winner, result) in rows {
+            let result = match (winner, result) {
+                (Some(winner), Some(name)) => Some((
+                    winner,
+                    WinKind::parse(&name)
+                        .with_context(|| format!("game #{id}: unknown result `{name}`"))?,
+                )),
+                _ => None,
+            };
+            let turns = if result.is_some() {
+                Vec::new()
+            } else {
+                self.stored_turns(id)?
+            };
+            games.push(StoredGame {
+                id,
+                round,
+                leg,
+                white_player,
+                dice_seed: dice_seed as u64,
+                opening: (white, black),
+                result,
+                turns,
+            });
+        }
+        Ok(games)
+    }
+
+    fn stored_turns(&self, game_id: i64) -> Result<Vec<StoredTurn>> {
+        let mut statement = self.conn.prepare(
+            "SELECT turn_no, side, player, die1, die2, position, chosen_index, move, decided_by,
+                    clock_ms
+             FROM turns WHERE game_id = ?1 ORDER BY turn_no",
+        )?;
+        type Row = (
+            u32,
+            String,
+            u8,
+            u8,
+            u8,
+            String,
+            Option<i64>,
+            String,
+            String,
+            Option<i64>,
+        );
+        let rows = statement
+            .query_map(params![game_id], |row| {
+                Ok((
+                    row.get(0)?,
+                    row.get(1)?,
+                    row.get(2)?,
+                    row.get(3)?,
+                    row.get(4)?,
+                    row.get(5)?,
+                    row.get(6)?,
+                    row.get(7)?,
+                    row.get(8)?,
+                    row.get(9)?,
+                ))
+            })?
+            .collect::<rusqlite::Result<Vec<Row>>>()?;
+        rows.into_iter()
+            .map(
+                |(
+                    turn_no,
+                    side,
+                    player,
+                    die1,
+                    die2,
+                    position,
+                    chosen,
+                    notation,
+                    decided_by,
+                    clock,
+                )| {
+                    let context = || format!("game #{game_id} turn {turn_no}");
+                    let json: Value = serde_json::from_str(&position).with_context(context)?;
+                    let (board, to_move) = parse_position(&json).with_context(context)?;
+                    if to_move.name() != side {
+                        bail!(
+                            "{}: side {side} but the position has {} to move",
+                            context(),
+                            to_move.name()
+                        );
+                    }
+                    Ok(StoredTurn {
+                        turn_no,
+                        side: to_move,
+                        player,
+                        dice: (die1, die2),
+                        board,
+                        chosen_index: chosen.map(|i| i as usize),
+                        notation,
+                        decided_by,
+                        clock_ms: clock.map(|ms| ms as u64),
+                    })
+                },
+            )
+            .collect()
+    }
+
     #[allow(clippy::too_many_arguments)]
     pub fn create_game(
         &self,
@@ -549,11 +730,13 @@ impl Db {
         note: Option<&str>,
         prompt_version: &str,
         order_seed: u64,
+        mirror_concurrent: bool,
     ) -> Result<i64> {
         self.conn.execute(
             "INSERT INTO leagues (started_at, seed, rounds, clock_seconds, delay_seconds,
-                                  max_turns, models, status, note, prompt_version, order_seed)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 'running', ?8, ?9, ?10)",
+                                  max_turns, models, status, note, prompt_version, order_seed,
+                                  mirror_concurrent)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 'running', ?8, ?9, ?10, ?11)",
             params![
                 now(),
                 seed as i64,
@@ -564,7 +747,8 @@ impl Db {
                 serde_json::to_string(models)?,
                 note,
                 prompt_version,
-                order_seed as i64
+                order_seed as i64,
+                mirror_concurrent
             ],
         )?;
         Ok(self.conn.last_insert_rowid())
@@ -580,28 +764,30 @@ impl Db {
             String,
             Option<String>,
             Option<i64>,
+            Option<bool>,
         );
-        let (seed, rounds, bank, delay, max_turns, models, prompt_version, order_seed): Row = self
-            .conn
-            .query_row(
-                "SELECT seed, rounds, clock_seconds, delay_seconds, max_turns, models,
-                        prompt_version, order_seed
-                 FROM leagues WHERE id = ?1",
-                params![league_id],
-                |row| {
-                    Ok((
-                        row.get(0)?,
-                        row.get(1)?,
-                        row.get(2)?,
-                        row.get(3)?,
-                        row.get(4)?,
-                        row.get(5)?,
-                        row.get(6)?,
-                        row.get(7)?,
-                    ))
-                },
-            )
-            .with_context(|| format!("league #{league_id}"))?;
+        let (seed, rounds, bank, delay, max_turns, models, prompt_version, order_seed, mirror): Row =
+            self.conn
+                .query_row(
+                    "SELECT seed, rounds, clock_seconds, delay_seconds, max_turns, models,
+                            prompt_version, order_seed, mirror_concurrent
+                     FROM leagues WHERE id = ?1",
+                    params![league_id],
+                    |row| {
+                        Ok((
+                            row.get(0)?,
+                            row.get(1)?,
+                            row.get(2)?,
+                            row.get(3)?,
+                            row.get(4)?,
+                            row.get(5)?,
+                            row.get(6)?,
+                            row.get(7)?,
+                            row.get(8)?,
+                        ))
+                    },
+                )
+                .with_context(|| format!("league #{league_id}"))?;
         let models: Vec<PlayerConfig> =
             serde_json::from_str(&models).context("leagues.models (entries need name and spec)")?;
         Ok(LeagueRow {
@@ -615,6 +801,7 @@ impl Db {
             models,
             prompt_version,
             order_seed: order_seed.map(|s| s as u64),
+            mirror_concurrent: mirror.unwrap_or(false),
         })
     }
 
@@ -764,6 +951,24 @@ impl Db {
         ))?;
         let rows = statement.query_map(params![league_id, stage], fixture_row)?;
         Ok(rows.collect::<rusqlite::Result<_>>()?)
+    }
+
+    /// The fixture's current match, if one was created.
+    pub fn fixture_match(&self, fixture_id: i64) -> Result<Option<i64>> {
+        Ok(self.conn.query_row(
+            "SELECT match_id FROM league_matches WHERE id = ?1",
+            params![fixture_id],
+            |row| row.get(0),
+        )?)
+    }
+
+    /// Records that the fixture's match failed now with `error` and was deferred.
+    pub fn defer_fixture(&self, fixture_id: i64, error: &str) -> Result<()> {
+        self.conn.execute(
+            "UPDATE league_matches SET error = ?2, failed_at = ?3 WHERE id = ?1",
+            params![fixture_id, error, now()],
+        )?;
+        Ok(())
     }
 
     pub fn set_fixture_match(&self, fixture_id: i64, match_id: i64) -> Result<()> {

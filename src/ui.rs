@@ -153,6 +153,31 @@ impl App {
                     format!("── round {round}/{rounds} · leg {leg} · {white} plays ○ ──"),
                 );
             }
+            Event::Resumed {
+                round,
+                rounds,
+                leg,
+                white_player,
+                turn_no,
+                board,
+                clocks,
+                score,
+            } => {
+                (
+                    self.round,
+                    self.rounds,
+                    self.leg,
+                    self.white_player,
+                    self.board,
+                    self.clocks,
+                    self.score,
+                ) = (round, rounds, leg, white_player, board, clocks, score);
+                self.roll = None;
+                self.push(
+                    None,
+                    format!("── round {round}/{rounds} · leg {leg} resumes at turn {turn_no} ──"),
+                );
+            }
             Event::Thinking {
                 player,
                 side,

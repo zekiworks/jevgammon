@@ -162,9 +162,15 @@ pub struct PlayerConfig {
     /// Free text kept with the roster (how the setup was pinned, what a level means).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub note: Option<String>,
-    /// Requests in flight when answering stored positions (`jevgammon ask`); default 4.
+    /// Decisions in flight at once, over all the player's matches and their games (more
+    /// queue; the wait is logged as retry time, off the clock); default unlimited, and 4
+    /// for `jevgammon ask`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parallel: Option<usize>,
+    /// League matches this player plays at once; default 4, unlimited for the local
+    /// engines (random, safest, gnubg-weak).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_matches: Option<usize>,
     /// Most chat-model requests started per minute (provider rate limits, e.g. OpenRouter's
     /// 20 per minute per model for new accounts), shared by every player of the same
     /// `rate_group` (default: base URL and spec); default unlimited. Waits for a slot are
@@ -192,6 +198,8 @@ pub struct Player {
     /// Reasoning effort from the config, as logged with stored-position answers.
     pub reasoning: Option<String>,
     pub price: Option<Price>,
+    /// Permits for decisions in flight (`PlayerConfig::parallel`); `None` = unlimited.
+    requests: Option<tokio::sync::Semaphore>,
     backend: Backend,
 }
 
@@ -288,6 +296,7 @@ impl Player {
             quantization: None,
             reasoning: None,
             price: None,
+            requests: None,
             backend: Backend::Engine(engine),
         }
     }
@@ -297,9 +306,22 @@ impl Player {
         Self::from_config(&PlayerConfig::new(spec, spec), setup).await
     }
 
-    /// Parses `provider/model` (or a bare decision provider such as `jev`) and resolves
-    /// its credentials.
+    /// Parses `provider/model` (or a bare decision provider such as `jev`), resolves its
+    /// credentials, and limits its decisions in flight to `config.parallel`.
     pub async fn from_config(config: &PlayerConfig, setup: &Setup) -> Result<Self> {
+        let mut player = Self::build(config, setup).await?;
+        player.requests = config
+            .parallel
+            .map(|n| tokio::sync::Semaphore::new(n.max(1)));
+        Ok(player)
+    }
+
+    /// Whether the player decides locally (random, safest, gnubg-weak), not by request.
+    pub fn is_engine(&self) -> bool {
+        matches!(self.backend, Backend::Engine(_))
+    }
+
+    async fn build(config: &PlayerConfig, setup: &Setup) -> Result<Self> {
         let spec = config.spec.as_str();
         let (provider, model) = match spec.split_once('/') {
             Some((provider, model)) if !model.is_empty() => (provider, Some(model.to_owned())),
@@ -332,6 +354,7 @@ impl Player {
             quantization: config.quantization.clone(),
             reasoning: config.reasoning.clone(),
             price: config.price,
+            requests: None,
             backend,
         };
         if let Some(service) = decision::service(provider) {
@@ -474,10 +497,23 @@ impl Player {
         }
     }
 
-    /// Asks for a play over the options in `req.order`. Above the player's option limit,
-    /// the options are split into equal groups, a winner is picked per group, then among
-    /// the winners. An invalid answer anywhere ends the decision with a random legal play.
+    /// Asks for a play over the options in `req.order`, once a request slot is free (the
+    /// wait counts as retry time). Above the player's option limit, the options are split
+    /// into equal groups, a winner is picked per group, then among the winners. An invalid
+    /// answer anywhere ends the decision with a random legal play.
     pub async fn decide(&self, req: &DecisionRequest<'_>) -> Result<Decision> {
+        let _slot = match &self.requests {
+            Some(slots) => {
+                let started = Instant::now();
+                let slot = slots
+                    .acquire()
+                    .await
+                    .expect("the semaphore is never closed");
+                req.retry.add(started.elapsed());
+                Some(slot)
+            }
+            None => None,
+        };
         if let Backend::Engine(engine) = &self.backend {
             return tokio::task::block_in_place(|| engine.decide(req));
         }
@@ -558,6 +594,7 @@ mod tests {
             quantization: None,
             reasoning: None,
             price: None,
+            requests: None,
             backend: Backend::Scripted {
                 max,
                 answers: parking_lot::Mutex::new(answers),
@@ -684,6 +721,7 @@ mod tests {
                 input_per_mtok: 2.0,
                 output_per_mtok: 10.0,
             }),
+            requests: None,
             backend: Backend::Engine(Box::new(baseline::Baseline::Random)),
         };
         let mut decision = Decision::new(0);

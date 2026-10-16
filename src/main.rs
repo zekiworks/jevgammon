@@ -172,12 +172,14 @@ struct LeagueArgs {
     /// GLiDE=fastino "Decider 27B=perplexity".
     models: Vec<String>,
     /// League config file (JSON): players with spec, provider, quantization, reasoning,
-    /// request fields and price, plus optional seed, order_seed, prompt_version, rounds,
-    /// clock, delay, max_turns and note, which override the command line.
+    /// request fields, price, parallel and max_matches, plus optional seed, order_seed,
+    /// prompt_version, rounds, clock, delay, max_turns, mirror_concurrent and note, which
+    /// override the command line.
     #[arg(long, conflicts_with_all = ["models", "resume"])]
     config: Option<PathBuf>,
     /// Continue a stopped league from this database; its models, rounds, clock, seeds and
-    /// prompt version are the stored ones.
+    /// prompt version are the stored ones, and unfinished matches resume from their last
+    /// stored turn.
     #[arg(long, conflicts_with = "models")]
     resume: Option<i64>,
     /// League seed; fixes the fixture, every match's dice, and the playoffs. Random when
@@ -191,6 +193,10 @@ struct LeagueArgs {
     /// league history on the web page.
     #[arg(long, conflicts_with = "resume")]
     note: Option<String>,
+    /// Play the two games of each round at once; both then show the score at the start of
+    /// the round (game 2 otherwise starts after game 1 and shows the score after it).
+    #[arg(long, conflicts_with = "resume")]
+    mirror_concurrent: bool,
     #[command(flatten)]
     common: Common,
 }
@@ -339,6 +345,7 @@ async fn run_league(args: LeagueArgs) -> Result<()> {
                     .order_seed
                     .or(args.order_seed)
                     .unwrap_or_else(random_seed),
+                mirror_concurrent: config.mirror_concurrent.unwrap_or(args.mirror_concurrent),
             }
         }
         (None, None) => {
@@ -359,6 +366,7 @@ async fn run_league(args: LeagueArgs) -> Result<()> {
                 note: args.note,
                 version: args.common.prompt_version,
                 order_seed: args.order_seed.unwrap_or_else(random_seed),
+                mirror_concurrent: args.mirror_concurrent,
             }
         }
     };
@@ -525,7 +533,7 @@ async fn run_match(args: MatchArgs) -> Result<()> {
     }));
     let (events, mut receiver) = mpsc::unbounded_channel();
     let runner = Runner {
-        db,
+        db: parking_lot::Mutex::new(db),
         players: [player1, player2],
         settings: MatchSettings {
             match_id,
@@ -534,6 +542,8 @@ async fn run_match(args: MatchArgs) -> Result<()> {
             clock,
             max_turns,
             decisive: false,
+            // The board view follows one game at a time.
+            concurrent_mirror: false,
             protocol: protocol.clone(),
         },
         events,

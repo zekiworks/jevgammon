@@ -44,10 +44,16 @@ def unsigned(value: int | None) -> str | None:
 
 def league_fixtures(conn: sqlite3.Connection, lid: int) -> tuple[list[dict], dict[int, list[int]]]:
     """The league's fixtures with their latest match, and games won per match."""
+    # A deferred match failed and is retried later (databases since resumable matches).
+    deferred = (
+        "lm.error AS deferred_error, lm.failed_at AS deferred_at"
+        if {"error", "failed_at"} <= columns(conn, "league_matches")
+        else "NULL AS deferred_error, NULL AS deferred_at"
+    )
     fixtures = [dict(r) for r in conn.execute(
-        """SELECT lm.id, lm.stage, lm.label, lm.matchday, lm.model1, lm.model2, lm.match_id,
+        f"""SELECT lm.id, lm.stage, lm.label, lm.matchday, lm.model1, lm.model2, lm.match_id,
                   m.status, m.score1, m.score2, m.winner, m.rounds_played, m.rounds_planned,
-                  m.error, m.started_at, m.finished_at
+                  m.error, m.started_at, m.finished_at, {deferred}
            FROM league_matches lm LEFT JOIN matches m ON m.id = lm.match_id
            WHERE lm.league_id = ? ORDER BY lm.stage != 'league', lm.stage, lm.matchday, lm.id""",
         (lid,),
@@ -132,14 +138,19 @@ def snapshot(db: Path, league_id: int | None) -> dict:
         fixtures, games_won = league_fixtures(conn, lid)
         state = league_state(league, last_activity(conn, lid))
 
-        # The game in progress (or the last one) of every running match; a stopped league's
-        # interrupted matches are not live.
+        # The game in progress (or the last one) of every running match: with both games of
+        # a round played at once, the one that moved last. A stopped league's interrupted
+        # matches are not live.
         live = {}
         for f in fixtures:
             if state != "live" or f["status"] != "running":
                 continue
             game = conn.execute(
-                "SELECT * FROM games WHERE match_id = ? ORDER BY id DESC LIMIT 1", (f["match_id"],)
+                """SELECT * FROM games g WHERE match_id = ?
+                   ORDER BY finished_at IS NULL DESC,
+                            (SELECT MAX(t.id) FROM turns t WHERE t.game_id = g.id) DESC, id DESC
+                   LIMIT 1""",
+                (f["match_id"],),
             ).fetchone()
             if game is None:
                 continue
@@ -371,7 +382,7 @@ section{background:var(--panel);border:1px solid var(--line);border-radius:8px;p
 th{color:var(--mute);font-weight:500;border-bottom:1px solid var(--line)}td:first-child,th:first-child,td.l,th.l{text-align:left}
 tbody tr+tr td{border-top:1px solid #20242d}.pts{font-weight:700;color:var(--acc)}.top td{background:#1b2230}
 .pill{display:inline-block;padding:1px 7px;border-radius:9px;font-size:12px;background:#232836;color:var(--mute)}
-.running{background:#16324f;color:#9cc7ff}.finished{background:#1c3327;color:#8fe0b3}.aborted{background:#3d1d22;color:#ff9aa1}
+.running{background:#16324f;color:#9cc7ff}.finished{background:#1c3327;color:#8fe0b3}.aborted{background:#3d1d22;color:#ff9aa1}.deferred{background:#3d331d;color:#ffd27a}
 .w{color:var(--win);font-weight:600}.live{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(330px,1fr))}
 .card{border:1px solid var(--line);border-radius:8px;padding:10px}.card h3{margin:0 0 4px;font-size:14px}
 .board{display:grid;grid-template-columns:repeat(13,1fr);gap:2px;margin:8px 0;font-size:11px;text-align:center}
@@ -464,9 +475,11 @@ function render(d){
     <div>${v.mover?`<span class="${v.mover===v.white?'cw':'cb'}">${esc(v.mover)}</span> rolled ${v.dice.join('-')}: <b>${esc(v.move||'(no move)')}</b> <span class="mute">${how(v.decided_by)}${v.decided_by==='model'||v.decided_by==='fallback'?`, ${(v.latency_ms/1000).toFixed(1)}s of ${v.legal} plays`:''} · ${ago(v.at)}</span>`:'<span class="mute">starting</span>'}</div>${nav}</div>`}).join(''):`<div class="mute">${L.status==='live'?'no match running':`league #${L.id} is ${L.status}`}</div>`;
   const days={};for(const f of d.fixtures){const k=f.stage==='playoff'?'Playoffs':f.stage==='playoff-stale'?'Playoffs (stale: players added after them)':'Matchday '+f.matchday;(days[k]=days[k]||[]).push(f)}
   $('fixture').innerHTML=Object.entries(days).map(([k,fs])=>`<div class="day"><h3>${k}</h3>`+fs.map(f=>{
-    const st=f.status||'pending';const w1=f.winner===1,w2=f.winner===2;
+    // Deferred: failed, waiting for the failing model's backoff; resumes from its last turn.
+    const st=f.status!=='finished'&&f.status!=='running'&&f.deferred_error?'deferred':f.status||'pending';const w1=f.winner===1,w2=f.winner===2;
     const score=f.status?`${f.score1} – ${f.score2}`:'v';
-    return `<div class="fx"><span class="${w1?'w':''}">${esc(f.model1)}</span><span class="s">${score}</span><span class="${w2?'w':''}">${esc(f.model2)}</span><span class="pill ${st}">${st==='finished'&&f.winner==null?'draw':st}</span></div>`}).join('')+'</div>').join('');
+    const tip=st==='deferred'?` title="${esc('failed '+new Date(f.deferred_at).toLocaleString()+': '+f.deferred_error)}"`:'';
+    return `<div class="fx"><span class="${w1?'w':''}">${esc(f.model1)}</span><span class="s">${score}</span><span class="${w2?'w':''}">${esc(f.model2)}</span><span class="pill ${st}"${tip}>${st==='finished'&&f.winner==null?'draw':st}</span></div>`}).join('')+'</div>').join('');
   $('recent').innerHTML='<thead><tr><th class="l">When</th><th class="l">Match</th><th>Game</th><th class="l">Winner</th><th class="l">Result</th><th>Pts</th><th>Turns</th></tr></thead><tbody>'+
     d.recent.map(r=>`<tr><td class="l mute">${ago(r.finished_at)}</td><td class="l">${esc(r.label)}</td><td>${r.round_no}.${r.leg}</td><td class="l">${esc(r.winner)}</td><td class="l">${esc(r.result.replace('_',' '))}</td><td>${r.points}</td><td>${r.turns}</td></tr>`).join('')+'</tbody>';
   $('ranking').textContent=L.ranking?'Final ranking: '+L.ranking.join(' · '):'';

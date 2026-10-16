@@ -1,18 +1,25 @@
 #!/usr/bin/env python3
 """League dashboard: serves one page and JSON snapshots read from the league database.
 
-    python3 tools/league_web.py --db league.db --port 8095
+    python3 tools/league_web.py --db league.db --port 8095 [--control tools/v3/league_control.sh]
 
 Standard library only. The database is opened read-only per request, so it can run beside a
 league in progress. The page shows the latest league (or ?league=N), the history of every
 league in the database with what each one tested (`leagues.note`), and a comparison of each
 model's record across leagues. The table follows `src/league.rs`: 3 points for a win, 1 for
 a draw, ties broken by more games won, then fewer games lost; only finished matches count.
+
+--control SCRIPT adds a Pause / Resume button: GET /api/control runs `SCRIPT status` (one JSON
+line: unit, state, since, message) and POST /api/control {"action": "pause"|"resume"} starts
+`SCRIPT pause|resume` in its own systemd user unit (league-control) and returns at once. POSTs
+are taken only from CONTROL_NETWORKS and with the X-League-Control header the page sends.
 """
 
 import argparse
+import ipaddress
 import json
 import sqlite3
+import subprocess
 import time
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -23,6 +30,39 @@ WIN_POINTS, DRAW_POINTS = 3, 1
 CACHE_SECONDS = 2.0
 # A league that is not finished counts as live while it moved within this many seconds.
 LIVE_SECONDS = 600
+# Clients allowed to pause or resume: this machine and the LAN.
+CONTROL_NETWORKS = (ipaddress.ip_network("127.0.0.1/32"), ipaddress.ip_network("192.168.1.0/24"))
+# Header the page sends with control POSTs; a cross-site form or fetch cannot set it unasked.
+CONTROL_HEADER = "X-League-Control"
+CONTROL_UNIT = "league-control"
+
+
+def control_allowed(host: str) -> bool:
+    """Whether a client at `host` may pause or resume."""
+    try:
+        address = ipaddress.ip_address(host)
+    except ValueError:
+        return False
+    return any(address in net for net in CONTROL_NETWORKS)
+
+
+def control_status(script: Path) -> dict:
+    """`SCRIPT status` as a dict, with enabled: true."""
+    try:
+        out = subprocess.run([str(script), "status"], capture_output=True, text=True, timeout=20, check=True)
+        return {"enabled": True, **json.loads(out.stdout)}
+    except (OSError, subprocess.SubprocessError, ValueError) as error:
+        return {"enabled": True, "state": "error", "unit": "", "since": "", "message": f"status failed: {error}"}
+
+
+def control_start(script: Path, action: str) -> str | None:
+    """Start `SCRIPT action` in a transient systemd user unit; an error message, or None."""
+    out = subprocess.run(
+        ["systemd-run", "--user", "--collect", "--quiet", f"--unit={CONTROL_UNIT}",
+         f"--working-directory={script.parent}", str(script), action],
+        capture_output=True, text=True, timeout=20,
+    )
+    return None if out.returncode == 0 else (out.stderr.strip() or f"systemd-run exited {out.returncode}")
 
 
 def connect(db: Path) -> sqlite3.Connection:
@@ -413,9 +453,17 @@ h2 .seasons{float:right;text-transform:none;letter-spacing:0;display:flex;gap:6p
 .seasons button{background:#232836;color:var(--fg);border:1px solid var(--line);border-radius:5px;padding:0 9px;font:inherit;cursor:pointer}
 .seasons button:disabled{opacity:.35;cursor:default}
 #note{flex-basis:100%;color:var(--mute);font-size:13px}header a{color:var(--acc)}
+/* Pause / Resume (--control): the league runner and the GPU servers it uses. */
+#control{margin-left:auto;display:flex;flex-wrap:wrap;gap:8px;align-items:center}#control[hidden]{display:none}
+#control button{background:#232836;color:var(--fg);border:1px solid var(--acc);border-radius:6px;padding:5px 14px;font:inherit;font-weight:600;cursor:pointer}
+#control button[data-action=pause]{border-color:var(--draw);color:#ffd27a}#control button[data-action=resume]{border-color:var(--win);color:#8fe0b3}
+#control button:disabled{opacity:.7;cursor:default;border-color:var(--line);color:var(--mute)}#control button:not(:disabled):hover{background:#2b3142}
+#ctlStatus.error{color:var(--loss)}
+.spin{display:inline-block;width:.8em;height:.8em;border:2px solid var(--mute);border-top-color:transparent;border-radius:50%;vertical-align:-.1em;margin-right:4px;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 </style></head><body>
 <dialog id="ctx"><div class="head"><h3 id="ctxTitle"></h3><button onclick="$('ctx').close()">close</button></div><div id="ctxBody"></div></dialog>
-<header><h1>jevgammon league <span id="lid"></span></h1><span id="status"></span><span class="meta" id="rules"></span><span class="meta" id="updated"></span><a href="#" id="latest" hidden>back to the latest league</a><div id="note"></div></header>
+<header><h1>jevgammon league <span id="lid"></span></h1><span id="status"></span><span class="meta" id="rules"></span><span class="meta" id="updated"></span><a href="#" id="latest" hidden>back to the latest league</a><div id="control" hidden><span id="ctlButtons"></span><span class="meta" id="ctlStatus"></span></div><div id="note"></div></header>
 <main>
 <section class="wide"><h2>History</h2><table id="history"></table><div class="mute" style="margin-top:8px">Click a league to view it. Live: moved in the last 10 minutes; stopped: ended before its last match, so only its finished matches count.</div></section>
 <section class="wide"><h2>Places</h2><table id="places"></table><div class="mute" style="margin-top:8px" id="placesNote"></div></section>
@@ -549,7 +597,30 @@ async function showContext(turnId){
 }
 $('live').addEventListener('click',e=>{const c=e.target.closest('button[data-ctx]');if(c&&!c.disabled){showContext(+c.dataset.ctx);return}
   const b=e.target.closest('button[data-step]');if(b&&!b.disabled)step(+b.dataset.id,b.dataset.step)});
-async function tick(){try{
+// Pause / Resume, when the server runs with --control: GET api/control is the runner's state.
+let control=null;
+function renderControl(c){
+  control=c;$('control').hidden=!c||!c.enabled;if($('control').hidden)return;
+  const busy=c.state==='pausing'||c.state==='resuming';
+  const btn=(a,label)=>`<button data-action="${a}">${label}</button>`;
+  $('ctlButtons').innerHTML=busy?`<button disabled><span class="spin"></span>${c.state==='pausing'?'Pausing… (stopping the league, then the GPU servers)':'Resuming… (loading the GPU servers, about 3 min)'}</button>`:
+    c.state==='running'?btn('pause','Pause (frees GPUs)'):c.state==='paused'?btn('resume','Resume'):btn('pause','Pause (frees GPUs)')+' '+btn('resume','Resume');
+  $('ctlStatus').className=c.state==='error'?'meta error':'meta';
+  $('ctlStatus').textContent=`${c.unit||'league'}: ${c.state}`+(c.since?` since ${new Date(c.since).toLocaleString()} (${ago(c.since)})`:'')+(c.message?` · ${c.message}`:'');
+}
+const CONFIRM={pause:'Pause the league?\n\nThe league runner stops (unfinished matches resume from their last turn), then the Gemma and Open-Jev servers stop and free the GPUs. Takes about a minute.',
+  resume:'Resume the league?\n\nThe Gemma and Open-Jev servers start on the GPUs (about 3 minutes), then the league runner continues where it stopped.'};
+$('ctlButtons').addEventListener('click',async e=>{
+  const b=e.target.closest('button[data-action]');if(!b||b.disabled)return;
+  const a=b.dataset.action;if(!confirm(CONFIRM[a]))return;
+  renderControl({...control,state:a==='pause'?'pausing':'resuming',since:new Date().toISOString(),message:'starting'});
+  try{const r=await fetch('api/control',{method:'POST',cache:'no-store',headers:{'Content-Type':'application/json','X-League-Control':'1'},body:JSON.stringify({action:a})});
+    const d=await r.json();if(!r.ok)alert(`Could not ${a}: ${d.error}`);
+  }catch(err){alert(`Could not ${a}: ${err}`)}
+  refreshControl();
+});
+function refreshControl(){fetch('api/control',{cache:'no-store'}).then(r=>r.json()).then(renderControl).catch(()=>{})}
+async function tick(){refreshControl();try{
   const [s,h]=await Promise.all([fetch(selected==null?'api/state':`api/state?league=${selected}`,{cache:'no-store'}),fetch('api/history',{cache:'no-store'})]);
   lastData=await s.json();lastHistory=await h.json();render(lastData);renderHistory(lastHistory);
 }catch(e){$('updated').textContent='update failed: '+e}}
@@ -560,6 +631,8 @@ tick();setInterval(tick,5000);
 class Handler(BaseHTTPRequestHandler):
     db: Path
     league_id: int | None
+    # --control script, or None (no Pause / Resume button).
+    control: Path | None = None
     # Rendered JSON per key ("state:<league>", "history"), with the time it was built.
     cache: dict[str, tuple[float, bytes]] = {}
 
@@ -613,8 +686,48 @@ class Handler(BaseHTTPRequestHandler):
             self.reply(200, "application/json", body)
         elif path == "/api/history":
             self.reply(200, "application/json", self.cached("history", lambda: history(self.db)))
+        elif path == "/api/control":
+            status = control_status(self.control) if self.control else {"enabled": False}
+            self.reply(200, "application/json", json.dumps(status).encode())
         else:
             self.reply(404, "text/plain", b"not found")
+
+    def do_POST(self):
+        """POST /api/control {"action": "pause"|"resume"}: start the control script, return its
+        status once it has picked the action up (or after 5 s)."""
+        if self.path.split("?", 1)[0] != "/api/control" or not self.control:
+            self.reply_json(404, {"error": "not found"})
+            return
+        if not control_allowed(self.client_address[0]):
+            self.reply_json(403, {"error": "pause and resume are allowed from this machine and the LAN only"})
+            return
+        if self.headers.get(CONTROL_HEADER) != "1":
+            self.reply_json(403, {"error": f"missing {CONTROL_HEADER} header"})
+            return
+        try:
+            length = int(self.headers.get("Content-Length") or 0)
+            action = json.loads(self.rfile.read(min(length, 4096)))["action"] if 0 < length <= 4096 else None
+        except (ValueError, KeyError, TypeError):
+            action = None
+        if action not in ("pause", "resume"):
+            self.reply_json(400, {"error": 'body must be {"action": "pause"} or {"action": "resume"}'})
+            return
+        before = control_status(self.control)
+        if before.get("state") in ("pausing", "resuming"):
+            self.reply_json(409, {"error": f"already {before['state']}", **before})
+            return
+        error = control_start(self.control, action)
+        if error:
+            self.reply_json(409, {"error": error, **before})
+            return
+        deadline, status = time.monotonic() + 5, before
+        while status.get("state") == before.get("state") and time.monotonic() < deadline:
+            time.sleep(0.25)
+            status = control_status(self.control)
+        self.reply_json(202, status)
+
+    def reply_json(self, status: int, body: dict):
+        self.reply(status, "application/json", json.dumps(body).encode())
 
     def reply(self, status: int, kind: str, body: bytes):
         self.send_response(status)
@@ -634,10 +747,16 @@ def main():
     parser.add_argument("--league", type=int, help="league id (default: the latest)")
     parser.add_argument("--host", default="0.0.0.0")
     parser.add_argument("--port", type=int, default=8095)
+    parser.add_argument("--control", type=Path, metavar="SCRIPT",
+                        help="pause/resume script (pause|resume|status); adds the Pause / Resume button")
     args = parser.parse_args()
     if not args.db.exists():
         parser.error(f"{args.db} does not exist")
     Handler.db, Handler.league_id = args.db.resolve(), args.league
+    if args.control:
+        if not args.control.is_file():
+            parser.error(f"{args.control} does not exist")
+        Handler.control = args.control.resolve()
     server = ThreadingHTTPServer((args.host, args.port), Handler)
     print(f"serving {args.db} on http://{args.host}:{args.port}", flush=True)
     server.serve_forever()

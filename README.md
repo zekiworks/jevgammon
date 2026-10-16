@@ -484,6 +484,32 @@ python3 tools/league_web.py --db league.db --port 8095   # http://<host>:8095/
 `--league <id>` picks the league shown by default (otherwise the latest); `--host` defaults
 to `0.0.0.0`, so the page is reachable from the LAN without authentication.
 
+**Pause / Resume (League 1).** With `--control tools/v3/league_control.sh` the header shows
+a button: `Pause (frees GPUs)` while the league runs, `Resume` while it is paused, and a
+spinner while either is under way, with the state, since when and the last message beside
+it. Each asks for confirmation. `tools/v3/league_control.sh pause|resume|status` does the
+work and can also be run by hand:
+
+- **pause** sends SIGINT to the `league1` systemd user unit (the runner stops; unfinished
+  matches resume from their last stored turn), waits until it is inactive, then stops the
+  Gemma 4 31B replicas and proxy (GPUs 0, 1, 3) and Open-Jev (GPU 2). About a minute.
+- **resume** starts those servers (each start waits until it answers), checks Gemma answers a
+  chat request, then starts `league1` (`run_league1.sh`, which resumes League 1). About
+  3 minutes. The decision servers on the DGX Sparks are not touched by either.
+- Both are idempotent, hold `league_control.lock` (a second click is refused while one runs)
+  and log to `league_control.log`; `status` prints one JSON line (`state`: running, pausing,
+  paused, resuming or error).
+
+The page runs them in a transient systemd user unit (`league-control`), so a pause or resume
+carries on if the page or the server goes away. The server accepts `POST /api/control` only
+from `127.0.0.1` and `192.168.1.0/24` and only with the `X-League-Control` header the page
+sends (no other authentication); the database stays read-only.
+
+```sh
+setsid nohup python3 tools/league_web.py --db v3.db --port 8095 --host 0.0.0.0 \
+  --control tools/v3/league_control.sh >> league_web.log 2>&1 < /dev/null &
+```
+
 ### Engine evaluation
 
 `tools/gnubg_eval.py` scores every model decision with GNU Backgammon (`apt install

@@ -211,11 +211,13 @@ pub struct DecisionClient {
 
 impl DecisionClient {
     /// `model` overrides the service's default; it is ignored by services without a
-    /// `model` field. Fails when a required API key is missing.
+    /// `model` field. `base_url` (a player config's) overrides the service's URL and its
+    /// environment variable. Fails when a required API key is missing.
     pub fn new(
         http: reqwest::Client,
         service: &'static Service,
         model: Option<String>,
+        base_url: Option<&str>,
     ) -> Result<Self> {
         let key = service
             .key_vars
@@ -228,7 +230,10 @@ impl DecisionClient {
                 service.key_vars.join(" or ")
             );
         }
-        let base = std::env::var(service.url_var).unwrap_or_else(|_| service.base_url.into());
+        let base = match base_url {
+            Some(url) => url.to_owned(),
+            None => std::env::var(service.url_var).unwrap_or_else(|_| service.base_url.into()),
+        };
         Ok(DecisionClient {
             http,
             service,

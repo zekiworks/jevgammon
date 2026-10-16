@@ -8,6 +8,38 @@ set -euo pipefail
 
 HF_HUB=/home/cbasaran/.cache/huggingface/hub
 
+# Address the decision servers listen on: this machine only, or 0.0.0.0 when they serve
+# League 1 from the DGX Sparks (spark.sh).
+BIND_HOST=${BIND_HOST:-127.0.0.1}
+
+# docker_gpu N: docker options for GPU N. The nvidia runtime is registered here, not on the
+# Sparks, where --gpus alone works.
+docker_gpu() {
+  if docker info --format '{{json .Runtimes}}' 2>/dev/null | grep -q '"nvidia"'; then
+    echo --runtime nvidia --gpus "\"device=$1\""
+  else
+    echo --gpus "\"device=$1\""
+  fi
+}
+
+# free_page_cache: on a DGX Spark (unified memory) CUDA reports MemFree as free GPU memory,
+# so the page cache left by loading checkpoints counts as used, and vLLM's and Decider's
+# start-up memory checks fail. Touching anonymous memory up to MemAvailable makes the kernel
+# drop that cache (no root needed); the memory is returned when the process exits.
+free_page_cache() {
+  python3 - <<'EOF'
+import mmap
+GIB = 1 << 30
+meminfo = {l.split(':')[0]: int(l.split()[1]) * 1024 for l in open('/proc/meminfo')}
+chunks, block = [], b'\1' * GIB
+for _ in range(max(0, (meminfo['MemAvailable'] - 6 * GIB) // GIB)):
+    m = mmap.mmap(-1, GIB)
+    m.write(block)
+    chunks.append(m)
+EOF
+  echo "free memory: $(awk '/MemFree/ {printf "%.0f GiB", $2 / 1048576}' /proc/meminfo)"
+}
+
 die() { echo "$*" >&2; exit 1; }
 
 port_busy() { ss -ltnH "sport = :$1" | grep -q .; }

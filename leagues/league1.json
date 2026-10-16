@@ -1,5 +1,5 @@
 {
-  "note": "v3 League 1: decision models and models on our own hardware. Jev 1.13.0, Fastino GLiDE and Celeris-1 Decision dropped (blocked: no key or credit); GPT-6 Luna plays through the ChatGPT subscription, choice only. No clock (smoke-test p90 above 30 s).",
+  "note": "v3 League 1: decision models and models on our own hardware. Jev 1.13.0, Fastino GLiDE and Celeris-1 Decision dropped (blocked: no key or credit); GPT-6 Luna plays through the ChatGPT subscription, choice only. No clock (smoke-test p90 above 30 s). 2026-10-16 11:04 UTC: Clef, Cygnet and Decider moved to DGX Spark (GB10) servers with the same checkpoints and settings; Open-Jev stayed on the RTX PRO 6000 (2 of 20 replayed requests chose another play on a GB10).",
   "prompt_version": "bg-v2",
   "seed": 2567889193785291627,
   "order_seed": 1190975713392774006,
@@ -29,7 +29,9 @@
         "output_per_mtok": 0
       },
       "parallel": 1,
-      "note": "runs on our GPUs (Perplexity hosting of v1.1 unverified); price = Perplexity list price"
+      "note": "runs on our GPUs (Perplexity hosting of v1.1 unverified); price = Perplexity list price; moved to a DGX Spark at 2026-10-16 11:04 UTC, same checkpoint and server arguments; 20 League 1 requests replayed on both machines: same play 20/20, max |dp| 0.029",
+      "base_url": "http://192.168.1.139:18097",
+      "device": "NVIDIA GB10 (DGX Spark spark-194d) from 2026-10-16 11:04 UTC; RTX PRO 6000 (bariton) before"
     },
     {
       "name": "SubQ Snap Preview",
@@ -45,21 +47,28 @@
       "spec": "clef",
       "provider": "local",
       "quantization": "bf16",
-      "parallel": 1
+      "parallel": 1,
+      "base_url": "http://192.168.1.127:18091",
+      "device": "NVIDIA GB10 (DGX Spark spark-002e) from 2026-10-16 11:04 UTC; RTX PRO 6000 (bariton) before",
+      "note": "moved to a DGX Spark at 2026-10-16 11:04 UTC, same checkpoint and server arguments; 20 League 1 requests replayed on both machines: same play 20/20, max |dp| 0.007"
     },
     {
       "name": "Open-Jev 27B v1.1",
       "spec": "open-jev",
       "provider": "local",
       "quantization": "bf16",
-      "parallel": 1
+      "parallel": 1,
+      "device": "RTX PRO 6000 (bariton) throughout: on a DGX Spark it chose another play in 2 of 20 replayed League 1 requests (near-ties), so it did not move"
     },
     {
       "name": "Cygnet (Gemma 4 12B)",
       "spec": "cygnet",
       "provider": "local",
       "quantization": "bf16",
-      "parallel": 4
+      "parallel": 4,
+      "base_url": "http://192.168.1.127:18093",
+      "device": "NVIDIA GB10 (DGX Spark spark-002e) from 2026-10-16 11:04 UTC; RTX PRO 6000 (bariton) before",
+      "note": "moved to a DGX Spark at 2026-10-16 11:04 UTC, same checkpoint and server arguments; 20 League 1 requests replayed on both machines: same play 20/20, max |dp| 0.042"
     },
     {
       "name": "Gemma 4 31B (off)",
@@ -81,7 +90,7 @@
       "base_url": "http://127.0.0.1:8894/v1",
       "provider": "local-vllm",
       "quantization": "fp8 (bf16 checkpoint quantized by vLLM at load; fp8 KV cache)",
-      "parallel": 4,
+      "parallel": 9,
       "note": "thinking on (enable_thinking); no effort knob, template default",
       "reasoning": "template default",
       "max_tokens": 24000,
@@ -90,7 +99,8 @@
           "enable_thinking": true
         },
         "reasoning_effort": null
-      }
+      },
+      "max_matches": 9
     },
     {
       "name": "Qwen3.8-27B (off)",

@@ -455,8 +455,8 @@ function render(d){
   $('updated').textContent='updated '+new Date(d.generated_at).toLocaleTimeString();
   $('table').innerHTML='<thead><tr><th>#</th><th class="l">Model</th><th>P</th><th>W</th><th>D</th><th>L</th><th>Pts</th><th>GW</th><th>GL</th><th>PF</th><th>PA</th></tr></thead><tbody>'+
     d.table.map((r,i)=>`<tr class="${i<3?'top':''}"><td>${i+1}</td><td class="l">${esc(r.name)}</td><td>${r.played}</td><td>${r.won}</td><td>${r.drawn}</td><td>${r.lost}</td><td class="pts">${r.points}</td><td>${r.gw}</td><td>${r.gl}</td><td>${r.pf}</td><td>${r.pa}</td></tr>`).join('')+'</tbody>';
-  // Player config per name: spec plus provider / quantization when the league recorded them.
-  const player=n=>{const c=(L.models||[]).find(x=>x.name===n)||{};return [c.spec,c.provider,c.quantization].filter(Boolean).join(' · ')};
+  // Player config per name: spec plus provider / quantization / device when the league recorded them.
+  const player=n=>{const c=(L.models||[]).find(x=>x.name===n)||{};return [c.spec,c.provider,c.quantization,c.device].filter(Boolean).join(' · ')};
   const sec=ms=>ms!=null?(ms/1000).toFixed(2)+'s':'–';
   $('models').innerHTML='<thead><tr><th class="l">Model</th><th>Decisions</th><th>Avg</th><th>Max</th><th>Hit %</th><th title="the answer named no legal play; a random legal play was made">Invalid</th><th>Timeout</th>'+
     (d.v3?'<th title="decisions with option probabilities">Probs %</th><th title="mean request time, retries excluded">Request</th><th>Cost</th>':'')+'<th>G/BG won</th></tr></thead><tbody>'+

@@ -131,7 +131,8 @@ pub struct PlayerConfig {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub quantization: Option<String>,
     /// OpenAI-compatible server for `openai-compatible/<model>` (and to override
-    /// `--local-url` for `local/<model>`), e.g. `https://api.example.com/v1`.
+    /// `--local-url` for `local/<model>`, or a decision service's URL and its environment
+    /// variable), e.g. `https://api.example.com/v1`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub base_url: Option<String>,
     /// Environment variable holding that server's API key.
@@ -162,6 +163,10 @@ pub struct PlayerConfig {
     /// Free text kept with the roster (how the setup was pinned, what a level means).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub note: Option<String>,
+    /// Hardware the player's server runs on (free text, for the record), e.g. when a
+    /// self-hosted model moves to another machine during a league.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub device: Option<String>,
     /// Decisions in flight at once, over all the player's matches and their games (more
     /// queue; the wait is logged as retry time, off the clock); default unlimited, and 4
     /// for `jevgammon ask`.
@@ -359,7 +364,10 @@ impl Player {
         };
         if let Some(service) = decision::service(provider) {
             return Ok(player(Backend::Decision(decision::DecisionClient::new(
-                http, service, model,
+                http,
+                service,
+                model,
+                config.base_url.as_deref(),
             )?)));
         }
         let backend = match provider.to_ascii_lowercase().as_str() {

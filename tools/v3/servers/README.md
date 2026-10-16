@@ -105,13 +105,13 @@ versions and server arguments, so that Gemma 4 31B (on), the slowest player, cou
 three of this machine's GPUs at once. Open-Jev stayed here. Each player's `base_url` in the
 roster points at its server, and its `device` field and note record the move.
 
-| host | server | URL | memory in use |
+| host | server | URL | memory in use (`nvidia-smi`, 2026-10-16) |
 |---|---|---|---|
-| `spark` (spark-002e, 192.168.1.127) | Cygnet: vLLM share 0.28 (34 GiB; 0.34 of a 95.6 GiB card here) + shim | `http://192.168.1.127:18093` | 32.5 GiB |
-| `spark` | Clef | `http://192.168.1.127:18091` | 52.6 GiB |
-| `spark3` (spark-194d, 192.168.1.139) | Decider v1.1 27B | `http://192.168.1.139:18097` | 50.0 GiB |
-| this machine, GPU 2 | Open-Jev 27B v1.1 (`open-jev.sh`) | `http://127.0.0.1:8791` | 52.8 GiB |
-| this machine, GPUs 0, 1, 3 | Gemma 4 31B, one replica each (share 0.85, 195k-token KV cache each) behind `gemma_proxy.py` | `http://127.0.0.1:8894/v1` | 80 GiB each |
+| `spark` (spark-002e, 192.168.1.127) | Cygnet: vLLM share 0.28 (34 GiB; 0.34 of a 95.6 GiB card here) + shim | `http://192.168.1.127:18093` | 31.8 GiB |
+| `spark` | Clef | `http://192.168.1.127:18091` | 51.4 GiB |
+| `spark3` (spark-194d, 192.168.1.139) | Decider v1.1 27B | `http://192.168.1.139:18097` | 48.8 GiB |
+| this machine, GPU 2 | Open-Jev 27B v1.1 (`open-jev.sh`) | `http://127.0.0.1:8791` | 52.9 GiB |
+| this machine, GPUs 0, 1, 3 | Gemma 4 31B, one replica each (share 0.85, 195k-token KV cache each) behind `gemma_proxy.py` | `http://127.0.0.1:8894/v1` | 78.6 GiB each |
 
 ```sh
 tools/v3/servers/spark.sh start|stop|status|probe     # ssh to the Sparks; about 10 min to load
@@ -156,3 +156,8 @@ one in 20 differing kept it here.
 `gemma_proxy.py` (aiohttp, run with `uv run --script`) sends each request to the replica with
 the fewest in flight, passes method, path, headers and body through unchanged and streams the
 response back as it arrives; a replica that refuses the connection is skipped.
+
+Measured on 2026-10-16 with Gemma 4 31B (on) in 9 matches at once: 342 generated tokens/s
+over the three replicas, 3 requests running on each (about 38 tokens/s per request; one
+GPU next to Cygnet gave about 154 tokens/s over 4 matches). A thinking decision still takes
+about 130 s; what grew is the number of matches played at once.

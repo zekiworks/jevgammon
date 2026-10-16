@@ -141,7 +141,12 @@ player carries what a spec alone cannot:
   `gnubg-weak` (one gnubg process per player answers its matches one decision at a time).
   `rpm` caps chat-model requests per minute, shared by every player of a `rate_group`
   (default: same base URL and spec, so both setups of one OpenRouter model share it), in
-  leagues and `ask` alike; waits for a slot are logged in `retry_ms`. `note` is free text.
+  leagues and `ask` alike; waits for a slot are logged in `retry_ms`. `note` is free text, and
+  so is `device`, the hardware a self-hosted player's server runs on (shown on the league
+  page).
+- `base_url` is required for `openai-compatible/`, overrides `--local-url` for `local/`, and
+  for a decision service (e.g. `clef`, `pplx-local`) overrides its URL and its environment
+  variable (`CLEF_BASE_URL`, ...): the server root, without `/v1/systemone`.
 
 The top-level settings override the command line; `seed`, `order_seed`, `prompt_version`
 and `mirror_concurrent` are stored with the league, so `--resume` keeps them. The v3 rosters

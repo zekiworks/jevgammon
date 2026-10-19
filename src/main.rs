@@ -141,8 +141,8 @@ struct AskArgs {
 
 #[derive(Args)]
 struct MatchArgs {
-    /// First player: openai/<model>, anthropic/<model>, gemini/<model>, ollama/<model>,
-    /// local/<model>, random, safest, gnubg-weak, or a decision service: jev, fastino,
+    /// First player: openai/<model>, anthropic/<model>, gemini/<model>, antigravity/<model>,
+    /// ollama/<model>, local/<model>, random, safest, gnubg-weak, or a decision service: jev, fastino,
     /// openai-decisions, perplexity, liquid, clef, open-jev, cygnet, gemma, pplx-local
     /// (optionally /<model>). Reasoning, prices and other providers need a league --config.
     #[arg(long, required = true)]

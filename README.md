@@ -82,14 +82,20 @@ printed and stored in `matches.error`), `2` for invalid arguments.
 | `openai/<model>` | ChatGPT subscription (Codex backend) | qfork store or `~/.codex/auth.json` |
 | `anthropic/<model>`, `claude/<model>` | Claude subscription | qfork store or `~/.claude/.credentials.json` |
 | `gemini/<model>`, `google/<model>` | Gemini API | `GEMINI_API_KEY`, `GOOGLE_API_KEY`, or qfork `credentials/gemini.json` |
+| `antigravity/<model>`, `google-antigravity/<model>` | Gemini through the Google Antigravity subscription (Cloud Code Assist `daily-cloudcode-pa`, `v1internal:generateContent`) | OMP's login in `~/.omp/agent/agent.db` (read-only) |
 | `ollama/<model>` | Ollama (OpenAI-compatible API) | `OLLAMA_HOST` (default `localhost:11434`) |
 | `local/<model>` | Any OpenAI-compatible server (SGLang, vLLM, llama.cpp, LM Studio) | `--local-url` (or `base_url` in a player config), optional `LOCAL_API_KEY` (or `api_key_env`) |
 | `openai-compatible/<model>` | Any OpenAI-compatible provider, from a [player config](#player-configs) | `base_url`, and the key in the variable named by `api_key_env` |
 
 Examples: `openai/gpt-5.6-sol`, `anthropic/claude-sonnet-4-5`, `gemini/gemini-2.5-flash`,
+`antigravity/gemini-3.8-flash`,
 `ollama/qwen3`, `jev`, `jev/jev-1.13.0`. OpenAI model names are lowercased (`gpt-5.6-Sol` →
 `gpt-5.6-sol`), as the subscription endpoint requires. A model name containing `/` goes
-after the provider unchanged (`fastino/fastino/GLiDE`). Each decision service's host can be
+after the provider unchanged (`fastino/fastino/GLiDE`). Antigravity lists each Gemini model
+per thinking level, so the config's `reasoning` is appended to the model id
+(`antigravity/gemini-3.8-flash` at `low` asks for `gemini-3.8-flash-low`) and also sent as
+`thinkingLevel`; the request is the `gemini/` one (same prompt, enum-constrained letter)
+inside Antigravity's envelope. Each decision service's host can be
 overridden: `TYPESAFE_BASE_URL`, `FASTINO_BASE_URL`, `OPENAI_DECISIONS_BASE_URL`,
 `PERPLEXITY_BASE_URL`, `LIQUID_BASE_URL`, `CLEF_BASE_URL`, `OPEN_JEV_BASE_URL`,
 `CYGNET_BASE_URL`, `GEMMA_BASE_URL`, `SUBQ_BASE_URL`, `CELERIS_BASE_URL`, `PPLX_LOCAL_BASE_URL` (`pplx-local`: pplx-decider-v1.1-27b served by `~/code/pplx-decider/server.py` on port 18097).
@@ -307,6 +313,15 @@ Refreshing rotates the refresh token, so the new tokens are written back to the 
 came from; otherwise the owning tool would be logged out. For qfork, the token is added
 as a new active revision under qfork's own `locks/<provider>*.lock` file locks. Codex and
 Claude files are updated in place, atomically, with mode 0600.
+
+The Google Antigravity login is OMP's (`/login` in omp): its `google-antigravity` row in
+`~/.omp/agent/agent.db` is read read-only and never written. Google does not rotate the
+refresh token, so an expired access token is refreshed with Antigravity's OAuth client
+(the installed-app client OMP uses; kept out of the repository because GitHub push
+protection rejects Google OAuth client credentials) from `ANTIGRAVITY_OAUTH_CLIENT_ID` and
+`ANTIGRAVITY_OAUTH_CLIENT_SECRET` (in `~/.keys` for the league scripts), and cached in
+`~/.local/state/jevgammon/google-antigravity.json` (mode 0600); the freshest of the two is
+used. Without those variables a player runs while OMP's own token is fresh.
 
 ## Interface
 

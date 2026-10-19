@@ -6,6 +6,12 @@
 //! freshest token wins. Refreshing rotates the refresh token, so refreshed tokens
 //! are written back to the store they came from; otherwise that tool would be
 //! logged out.
+//!
+//! The Google Antigravity login is OMP's (`~/.omp/agent/agent.db`, opened read-only and
+//! never written). Google does not rotate the refresh token, so an expired access token
+//! is refreshed here with Antigravity's OAuth client (`ANTIGRAVITY_OAUTH_CLIENT_ID`,
+//! `ANTIGRAVITY_OAUTH_CLIENT_SECRET`) and cached in jevgammon's own state
+//! (`~/.local/state/jevgammon/google-antigravity.json`); the freshest of the two wins.
 
 use std::fs::{self, File, OpenOptions};
 use std::io::Write as _;
@@ -24,11 +30,21 @@ const OPENAI_CLIENT_ID: &str = "app_EMoamEEZ73f0CkXaXp7hrann";
 const OPENAI_TOKEN_URL: &str = "https://auth.openai.com/oauth/token";
 const ANTHROPIC_CLIENT_ID: &str = "9d1c250a-e61b-44d9-88ed-5944d1962f5e";
 const ANTHROPIC_TOKEN_URL: &str = "https://platform.claude.com/v1/oauth/token";
+const GOOGLE_TOKEN_URL: &str = "https://oauth2.googleapis.com/token";
+/// Environment variables holding Antigravity's OAuth client (the one OMP uses for its
+/// Antigravity login), needed only to refresh an expired access token. Not in the source:
+/// GitHub push protection rejects Google OAuth client credentials.
+const ANTIGRAVITY_CLIENT_ID_ENV: &str = "ANTIGRAVITY_OAUTH_CLIENT_ID";
+const ANTIGRAVITY_CLIENT_SECRET_ENV: &str = "ANTIGRAVITY_OAUTH_CLIENT_SECRET";
+/// OMP's provider id, in its credential table and in the cache file name.
+const ANTIGRAVITY: &str = "google-antigravity";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Subscription {
     OpenAi,
     Anthropic,
+    /// Google Antigravity (Gemini through Cloud Code Assist), OMP's login.
+    Antigravity,
 }
 
 impl Subscription {
@@ -36,6 +52,7 @@ impl Subscription {
         match self {
             Subscription::OpenAi => "openai",
             Subscription::Anthropic => "anthropic",
+            Subscription::Antigravity => ANTIGRAVITY,
         }
     }
 
@@ -43,6 +60,7 @@ impl Subscription {
         match self {
             Subscription::OpenAi => "OpenAI (ChatGPT)",
             Subscription::Anthropic => "Anthropic (Claude)",
+            Subscription::Antigravity => "Google Antigravity",
         }
     }
 }
@@ -52,13 +70,20 @@ enum Source {
     Qfork(PathBuf),
     Codex(PathBuf),
     Claude(PathBuf),
+    /// OMP's credential database: read-only.
+    Omp(PathBuf),
+    /// jevgammon's own cache of refreshed Antigravity tokens.
+    Cache(PathBuf),
 }
 
 impl Source {
     fn describe(&self) -> String {
         match self {
             Source::Qfork(root) => format!("qfork store {}", root.display()),
-            Source::Codex(path) | Source::Claude(path) => path.display().to_string(),
+            Source::Codex(path)
+            | Source::Claude(path)
+            | Source::Omp(path)
+            | Source::Cache(path) => path.display().to_string(),
         }
     }
 }
@@ -68,6 +93,8 @@ pub struct Token {
     pub access: String,
     /// ChatGPT account id (OpenAI only).
     pub account_id: Option<String>,
+    /// Cloud Code Assist project (Antigravity only).
+    pub project: Option<String>,
     refresh: String,
     expires_at_ms: i64,
     source: Source,
@@ -128,34 +155,39 @@ impl Credentials {
     fn best_stored(&self) -> Result<Token> {
         let mut candidates = Vec::new();
         let mut looked = Vec::new();
-        let qfork = self.qfork_root.clone();
-        looked.push(Source::Qfork(qfork.clone()).describe());
-        if let Some(token) = read_qfork(self.provider, &qfork)? {
-            candidates.push(token);
-        }
-        match self.provider {
-            Subscription::OpenAi => {
-                let path = codex_auth_path();
-                looked.push(path.display().to_string());
-                if let Some(token) = read_codex(&path)? {
-                    candidates.push(token);
+        let hint = match self.provider {
+            Subscription::OpenAi | Subscription::Anthropic => {
+                let qfork = self.qfork_root.clone();
+                looked.push(Source::Qfork(qfork.clone()).describe());
+                candidates.extend(read_qfork(self.provider, &qfork)?);
+                if self.provider == Subscription::OpenAi {
+                    let path = codex_auth_path();
+                    looked.push(path.display().to_string());
+                    candidates.extend(read_codex(&path)?);
+                } else {
+                    let path = claude_credentials_path();
+                    looked.push(path.display().to_string());
+                    candidates.extend(read_claude(&path)?);
                 }
+                "log in with qfork, `codex login`, or `claude`"
             }
-            Subscription::Anthropic => {
-                let path = claude_credentials_path();
-                looked.push(path.display().to_string());
-                if let Some(token) = read_claude(&path)? {
-                    candidates.push(token);
-                }
+            Subscription::Antigravity => {
+                looked.push(omp_db_path().display().to_string());
+                looked.push(antigravity_cache_path().display().to_string());
+                candidates.extend(stored_antigravity()?);
+                "log in to Google Antigravity with omp (/login)"
             }
-        }
-        candidates.into_iter().max_by_key(|t| t.expires_at_ms).ok_or_else(|| {
-            anyhow!(
-                "no {} subscription login found (looked in: {}); log in with qfork, `codex login`, or `claude`",
-                self.provider.label(),
-                looked.join(", ")
-            )
-        })
+        };
+        candidates
+            .into_iter()
+            .max_by_key(|t| t.expires_at_ms)
+            .ok_or_else(|| {
+                anyhow!(
+                    "no {} subscription login found (looked in: {}); {hint}",
+                    self.provider.label(),
+                    looked.join(", ")
+                )
+            })
     }
 
     async fn refresh(&self, stale: Token) -> Result<Token> {
@@ -167,6 +199,13 @@ impl Credentials {
                 )
                 .await?,
             ),
+            Source::Omp(_) | Source::Cache(_) => Some(
+                lock(
+                    &jevgammon_state_dir(),
+                    &format!("{ANTIGRAVITY}.oauth-refresh"),
+                )
+                .await?,
+            ),
             _ => None,
         };
         // Another process may have refreshed the store since we read it.
@@ -174,6 +213,9 @@ impl Credentials {
             Source::Qfork(root) => read_qfork(self.provider, root)?,
             Source::Codex(path) => read_codex(path)?,
             Source::Claude(path) => read_claude(path)?,
+            Source::Omp(_) | Source::Cache(_) => stored_antigravity()?
+                .into_iter()
+                .max_by_key(|t| t.expires_at_ms),
         };
         if let Some(fresh) = reread.filter(|t| t.access != stale.access && !t.needs_refresh()) {
             return Ok(fresh);
@@ -209,6 +251,7 @@ impl Credentials {
         let token = Token {
             access,
             account_id,
+            project: stale.project.clone(),
             refresh,
             expires_at_ms,
             source: stale.source.clone(),
@@ -217,6 +260,15 @@ impl Credentials {
             Source::Qfork(root) => write_qfork(self.provider, root, &token, id_token).await?,
             Source::Codex(path) => write_codex(path, &token, id_token)?,
             Source::Claude(path) => write_claude(path, &token)?,
+            // Never OMP's database: the refreshed token goes to jevgammon's cache.
+            Source::Omp(_) | Source::Cache(_) => {
+                let path = antigravity_cache_path();
+                write_cache(&path, &token)?;
+                return Ok(Token {
+                    source: Source::Cache(path),
+                    ..token
+                });
+            }
         }
         Ok(token)
     }
@@ -233,6 +285,16 @@ impl Credentials {
                 "client_id": ANTHROPIC_CLIENT_ID,
                 "refresh_token": refresh_token,
             })),
+            Subscription::Antigravity => {
+                let client_id = required_env(ANTIGRAVITY_CLIENT_ID_ENV)?;
+                let client_secret = required_env(ANTIGRAVITY_CLIENT_SECRET_ENV)?;
+                self.http.post(GOOGLE_TOKEN_URL).form(&[
+                    ("grant_type", "refresh_token"),
+                    ("client_id", client_id.as_str()),
+                    ("client_secret", client_secret.as_str()),
+                    ("refresh_token", refresh_token),
+                ])
+            }
         };
         let response = request.send().await?;
         let status = response.status();
@@ -282,6 +344,95 @@ fn claude_credentials_path() -> PathBuf {
         .map(PathBuf::from)
         .unwrap_or_else(|| dirs::home_dir().unwrap_or_default().join(".claude"))
         .join(".credentials.json")
+}
+
+/// OMP's credential database.
+fn omp_db_path() -> PathBuf {
+    dirs::home_dir()
+        .unwrap_or_default()
+        .join(".omp/agent/agent.db")
+}
+
+fn jevgammon_state_dir() -> PathBuf {
+    dirs::state_dir()
+        .unwrap_or_else(|| dirs::home_dir().unwrap_or_default().join(".local/state"))
+        .join("jevgammon")
+}
+
+fn antigravity_cache_path() -> PathBuf {
+    jevgammon_state_dir().join(format!("{ANTIGRAVITY}.json"))
+}
+
+/// The Antigravity tokens in OMP's database and in jevgammon's cache.
+fn stored_antigravity() -> Result<Vec<Token>> {
+    let mut tokens = read_omp(&omp_db_path())?;
+    tokens.extend(read_cache(&antigravity_cache_path())?);
+    Ok(tokens)
+}
+
+/// OMP's enabled `google-antigravity` logins, read-only.
+fn read_omp(path: &Path) -> Result<Vec<Token>> {
+    use rusqlite::{Connection, OpenFlags};
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let connection = Connection::open_with_flags(
+        path,
+        OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX,
+    )
+    .with_context(|| format!("opening {} read-only", path.display()))?;
+    connection.busy_timeout(std::time::Duration::from_secs(5))?;
+    let mut statement = connection.prepare(
+        "SELECT data FROM auth_credentials WHERE provider = ?1 AND disabled_cause IS NULL",
+    )?;
+    let rows = statement
+        .query_map([ANTIGRAVITY], |row| row.get::<_, String>(0))?
+        .collect::<rusqlite::Result<Vec<String>>>()
+        .with_context(|| format!("reading {}", path.display()))?;
+    Ok(rows
+        .iter()
+        .filter_map(|data| serde_json::from_str::<Value>(data).ok())
+        .filter_map(|data| antigravity_token(&data, Source::Omp(path.to_owned())))
+        .collect())
+}
+
+fn read_cache(path: &Path) -> Result<Option<Token>> {
+    Ok(read_json(path)?.and_then(|data| antigravity_token(&data, Source::Cache(path.to_owned()))))
+}
+
+/// A token from OMP's credential JSON: `access`, `refresh`, `expires` (ms), `projectId`.
+fn antigravity_token(data: &Value, source: Source) -> Option<Token> {
+    Some(Token {
+        access: data.get("access")?.as_str()?.to_owned(),
+        account_id: None,
+        project: Some(data.get("projectId")?.as_str()?.to_owned()),
+        refresh: data.get("refresh")?.as_str()?.to_owned(),
+        expires_at_ms: data.get("expires").and_then(Value::as_i64).unwrap_or(0),
+        source,
+    })
+}
+
+/// Caches a refreshed Antigravity token in OMP's credential shape.
+fn write_cache(path: &Path, token: &Token) -> Result<()> {
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    write_atomic(
+        path,
+        &json!({
+            "access": token.access,
+            "refresh": token.refresh,
+            "expires": token.expires_at_ms,
+            "projectId": token.project,
+        }),
+    )
+}
+
+fn required_env(name: &str) -> Result<String> {
+    std::env::var(name)
+        .ok()
+        .filter(|value| !value.is_empty())
+        .ok_or_else(|| anyhow!("set {name} (Antigravity's OAuth client, as OMP uses)"))
 }
 
 fn read_json(path: &Path) -> Result<Option<Value>> {
@@ -335,6 +486,7 @@ fn read_qfork(provider: Subscription, root: &Path) -> Result<Option<Token>> {
     Ok(Some(Token {
         access: access.to_owned(),
         account_id,
+        project: None,
         refresh: refresh.to_owned(),
         expires_at_ms,
         source: Source::Qfork(root.to_owned()),
@@ -367,6 +519,7 @@ fn read_codex(path: &Path) -> Result<Option<Token>> {
     Ok(Some(Token {
         access: access.to_owned(),
         account_id,
+        project: None,
         refresh: refresh.to_owned(),
         expires_at_ms: jwt_exp_ms(access).unwrap_or(0),
         source: Source::Codex(path.to_owned()),
@@ -389,6 +542,7 @@ fn read_claude(path: &Path) -> Result<Option<Token>> {
     Ok(Some(Token {
         access: access.to_owned(),
         account_id: None,
+        project: None,
         refresh: refresh.to_owned(),
         expires_at_ms: oauth.get("expiresAt").and_then(Value::as_i64).unwrap_or(0),
         source: Source::Claude(path.to_owned()),
@@ -584,6 +738,7 @@ mod tests {
         Token {
             access: "new-access".into(),
             account_id: Some("acct-1".into()),
+            project: None,
             refresh: "new-refresh".into(),
             expires_at_ms: 4_000_000_000_000,
             source,
@@ -636,6 +791,59 @@ mod tests {
         assert_eq!(reread.expires_at_ms, 4_000_000_000_000);
         assert_eq!(
             fs::metadata(&path).unwrap().permissions().mode() & 0o777,
+            0o600
+        );
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    /// OMP's database is read without being changed; a refreshed token lands in the cache
+    /// in the same shape and reads back with its project.
+    #[test]
+    fn antigravity_reads_omp_and_round_trips_the_cache() {
+        let root = temp_dir();
+        let db = root.join("agent.db");
+        let connection = rusqlite::Connection::open(&db).unwrap();
+        connection
+            .execute_batch(
+                "CREATE TABLE auth_credentials (id INTEGER PRIMARY KEY, provider TEXT,
+                 credential_type TEXT, data TEXT, disabled_cause TEXT);
+                 INSERT INTO auth_credentials (provider, credential_type, data, disabled_cause) VALUES
+                 ('google-antigravity', 'oauth', '{\"access\":\"a1\",\"refresh\":\"r1\",\"expires\":5,\"projectId\":\"p\"}', NULL),
+                 ('google-antigravity', 'oauth', '{\"access\":\"a0\",\"refresh\":\"r0\",\"expires\":9,\"projectId\":\"p\"}', 'revoked'),
+                 ('anthropic', 'oauth', '{\"access\":\"x\",\"refresh\":\"y\",\"expires\":9}', NULL);",
+            )
+            .unwrap();
+        drop(connection);
+        let before = fs::read(&db).unwrap();
+        let tokens = read_omp(&db).unwrap();
+        assert_eq!(tokens.len(), 1);
+        assert_eq!(
+            (tokens[0].access.as_str(), tokens[0].refresh.as_str()),
+            ("a1", "r1")
+        );
+        assert_eq!(
+            (tokens[0].expires_at_ms, tokens[0].project.as_deref()),
+            (5, Some("p"))
+        );
+        assert_eq!(fs::read(&db).unwrap(), before);
+        assert!(read_omp(&root.join("missing.db")).unwrap().is_empty());
+
+        let cache = root.join("state/google-antigravity.json");
+        let refreshed = Token {
+            project: Some("p".into()),
+            account_id: None,
+            ..token(Source::Cache(cache.clone()))
+        };
+        write_cache(&cache, &refreshed).unwrap();
+        let reread = read_cache(&cache).unwrap().unwrap();
+        assert_eq!(
+            (reread.access.as_str(), reread.refresh.as_str()),
+            ("new-access", "new-refresh")
+        );
+        assert_eq!(reread.expires_at_ms, 4_000_000_000_000);
+        assert_eq!(reread.project.as_deref(), Some("p"));
+        assert_eq!(
+            fs::metadata(&cache).unwrap().permissions().mode() & 0o777,
             0o600
         );
         fs::remove_dir_all(root).unwrap();

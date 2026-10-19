@@ -58,27 +58,27 @@
     },
     {
       "name": "Gemini 4 Argon (low)",
-      "spec": "gemini/gemini-4-argon",
-      "provider": "gemini-api",
+      "spec": "antigravity/gemini-4-argon",
+      "provider": "antigravity-subscription",
       "reasoning": "low",
       "price": {
         "input_per_mtok": 2,
         "output_per_mtok": 10
       },
       "parallel": 4,
-      "note": "thinking level low spends no reasoning tokens: effectively off"
+      "note": "thinking level low spends no reasoning tokens: effectively off. Google Antigravity subscription (Google AI Ultra, OMP's login; Antigravity model id gemini-4-argon-low; modelVersion gemini-4-argon); cost is API-list-price equivalent. Smoke check (10 positions x 2): same play as the Gemini API answers in 15 of 20 (Antigravity against itself 9 of 10), no reasoning tokens either way"
     },
     {
       "name": "Gemini 4 Argon (high)",
-      "spec": "gemini/gemini-4-argon",
-      "provider": "gemini-api",
+      "spec": "antigravity/gemini-4-argon",
+      "provider": "antigravity-subscription",
       "reasoning": "high",
       "price": {
         "input_per_mtok": 2,
         "output_per_mtok": 10
       },
       "parallel": 4,
-      "note": "effectively on"
+      "note": "effectively on. Google Antigravity subscription (Google AI Ultra, OMP's login; Antigravity model id gemini-4-argon-high; modelVersion gemini-4-argon); cost is API-list-price equivalent. Smoke check (5 positions): same play as the Gemini API answers in 5 of 5"
     },
     {
       "name": "DeepSeek V4 Pro (off)",

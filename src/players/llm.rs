@@ -1,6 +1,6 @@
-//! Chat-model players: OpenAI and Anthropic subscriptions, Gemini API keys, and
-//! OpenAI-compatible servers (SGLang, vLLM, Ollama, paid providers). All get Cygnet's letter
-//! prompt (`prompt::letter_user`), the options lettered in the seeded order.
+//! Chat-model players: OpenAI, Anthropic and Google Antigravity subscriptions, Gemini API
+//! keys, and OpenAI-compatible servers (SGLang, vLLM, Ollama, paid providers). All get
+//! Cygnet's letter prompt (`prompt::letter_user`), the options lettered in the seeded order.
 //!
 //! OpenAI-compatible servers return letter probabilities: with reasoning on, request 1 lets
 //! the model reason (its answer constrained to the option letters); request 2 sends the
@@ -26,6 +26,15 @@ use crate::http::{self, CallError};
 const CODEX_URL: &str = "https://chatgpt.com/backend-api/codex/responses";
 const ANTHROPIC_URL: &str = "https://api.anthropic.com/v1/messages";
 const GEMINI_URL: &str = "https://generativelanguage.googleapis.com/v1beta";
+/// Cloud Code Assist endpoints serving Antigravity, in OMP's order (the production
+/// `cloudcode-pa` host answers Antigravity requests with Gemini CLI's quota: 429).
+const ANTIGRAVITY_URLS: [&str; 2] = [
+    "https://daily-cloudcode-pa.googleapis.com",
+    "https://daily-cloudcode-pa.sandbox.googleapis.com",
+];
+/// The Antigravity app's user agent, as OMP sends it (its default version).
+const ANTIGRAVITY_USER_AGENT: &str =
+    "antigravity/hub/2.19.1 (aidev_client; os_type=darwin; arch=arm64; cl=963137146)";
 /// Anthropic serves subscription tokens only when this is the first system block.
 const CLAUDE_CODE_IDENTITY: &str = "You are Claude Code, Anthropic's official CLI for Claude.";
 /// Log-probabilities asked for the answer token unless the player config sets fewer
@@ -76,6 +85,9 @@ enum Kind {
     OpenAiSubscription(Arc<Credentials>),
     AnthropicSubscription(Arc<Credentials>),
     Gemini(String),
+    /// Gemini through the Antigravity subscription: the Gemini request inside a Cloud
+    /// Code Assist envelope.
+    Antigravity(Arc<Credentials>),
     OpenAiCompatible {
         base_url: String,
         api_key: Option<String>,
@@ -182,6 +194,15 @@ impl LlmClient {
 
     pub fn gemini(http: reqwest::Client, model: String, key: String, options: Options) -> Self {
         Self::new(http, model, Kind::Gemini(key), options)
+    }
+
+    pub fn antigravity(
+        http: reqwest::Client,
+        model: String,
+        creds: Arc<Credentials>,
+        options: Options,
+    ) -> Self {
+        Self::new(http, model, Kind::Antigravity(creds), options)
     }
 
     pub fn openai_compatible(
@@ -401,7 +422,7 @@ impl LlmClient {
                     "output_config": output,
                 })
             }
-            Kind::Gemini(_) => {
+            Kind::Gemini(_) | Kind::Antigravity(_) => {
                 let mut config = json!({
                     "responseMimeType": "text/x.enum",
                     "responseSchema": {"type": "STRING", "enum": letters(count)},
@@ -556,6 +577,42 @@ impl LlmClient {
                 let completion = parse_gemini(&raw)?;
                 Ok((raw, completion))
             }
+            Kind::Antigravity(creds) => {
+                let mut token = creds.token().await?;
+                let mut refreshed = false;
+                let mut endpoint = 0;
+                let session = antigravity_session(&self.session_id);
+                loop {
+                    let project = token
+                        .project
+                        .clone()
+                        .ok_or_else(|| anyhow!("the Antigravity login has no project id"))?;
+                    let envelope = antigravity_envelope(&self.model, &project, body, &session);
+                    let url = format!("{}/v1internal:generateContent", ANTIGRAVITY_URLS[endpoint]);
+                    let request = || {
+                        self.http
+                            .post(&url)
+                            .bearer_auth(&token.access)
+                            .header("User-Agent", ANTIGRAVITY_USER_AGENT)
+                            .json(&envelope)
+                    };
+                    match http::send(request, retry).await {
+                        Err(CallError::Auth(_)) if !refreshed => {
+                            token = creds.refresh_after_rejection(&token.access).await?;
+                            refreshed = true;
+                        }
+                        // The next endpoint, as OMP falls back from daily to sandbox.
+                        Err(CallError::Fatal(_)) if endpoint + 1 < ANTIGRAVITY_URLS.len() => {
+                            endpoint += 1;
+                        }
+                        other => {
+                            let raw = other?;
+                            let completion = parse_antigravity(&raw)?;
+                            return Ok((raw, completion));
+                        }
+                    }
+                }
+            }
             Kind::OpenAiCompatible { base_url, api_key } => {
                 let url = format!("{base_url}/chat/completions");
                 let raw = http::send(
@@ -672,23 +729,76 @@ fn parse_anthropic(body: &str) -> Result<Completion> {
 
 fn parse_gemini(body: &str) -> Result<Completion> {
     let value: Value = serde_json::from_str(body).context("Gemini response is not JSON")?;
-    let parts = value
+    Ok(gemini_completion(&value))
+}
+
+/// Antigravity wraps the Gemini response: `{"response": {...}, "traceId": ...}`.
+fn parse_antigravity(body: &str) -> Result<Completion> {
+    let value: Value = serde_json::from_str(body).context("Antigravity response is not JSON")?;
+    let response = value.get("response").ok_or_else(|| {
+        anyhow!(
+            "Antigravity answer has no response: {}",
+            crate::auth::snippet(body)
+        )
+    })?;
+    Ok(gemini_completion(response))
+}
+
+fn gemini_completion(value: &Value) -> Completion {
+    let text: String = value
         .pointer("/candidates/0/content/parts")
         .and_then(Value::as_array)
-        .cloned()
-        .unwrap_or_default();
-    let text: String = parts
-        .iter()
+        .into_iter()
+        .flatten()
         .filter(|part| part.get("thought").and_then(Value::as_bool) != Some(true))
         .filter_map(|part| part.get("text").and_then(Value::as_str))
         .collect();
-    Ok(Completion {
+    Completion {
         text,
-        input_tokens: tokens(&value, "/usageMetadata/promptTokenCount"),
-        output_tokens: tokens(&value, "/usageMetadata/candidatesTokenCount")
-            + tokens(&value, "/usageMetadata/thoughtsTokenCount"),
-        reasoning_tokens: Some(tokens(&value, "/usageMetadata/thoughtsTokenCount")),
+        input_tokens: tokens(value, "/usageMetadata/promptTokenCount"),
+        output_tokens: tokens(value, "/usageMetadata/candidatesTokenCount")
+            + tokens(value, "/usageMetadata/thoughtsTokenCount"),
+        reasoning_tokens: Some(tokens(value, "/usageMetadata/thoughtsTokenCount")),
         ..Completion::default()
+    }
+}
+
+/// Antigravity's model id for a spec's model at a reasoning level: Antigravity lists each
+/// Gemini model per level (`gemini-3.8-flash-low`, `gemini-4-argon-high`), so the level is
+/// appended unless the spec already names it. The request's `thinkingLevel` still sets
+/// the level (the id picks the quota bucket and the default budget).
+pub fn antigravity_model(model: &str, reasoning: Option<&str>) -> String {
+    match reasoning {
+        Some(level) if !model.ends_with(&format!("-{level}")) => format!("{model}-{level}"),
+        _ => model.to_owned(),
+    }
+}
+
+/// Antigravity's session id form: `-` and a random number below 9e18.
+fn antigravity_session(session_id: &str) -> String {
+    let bits = uuid::Uuid::parse_str(session_id)
+        .map(|id| id.as_u128() as u64)
+        .unwrap_or_default();
+    format!("-{}", (bits & i64::MAX as u64) % 9_000_000_000_000_000_000)
+}
+
+/// The Cloud Code Assist envelope around a Gemini `request`, as the Antigravity app sends
+/// it (`project`, a fresh agent `requestId`, the model, `requestType: agent`).
+fn antigravity_envelope(model: &str, project: &str, request: &Value, session: &str) -> Value {
+    let mut request = request.clone();
+    request["sessionId"] = json!(session);
+    json!({
+        "project": project,
+        "requestId": format!(
+            "agent/{}/{}/{}/2",
+            uuid::Uuid::new_v4(),
+            chrono::Utc::now().timestamp_millis(),
+            uuid::Uuid::new_v4()
+        ),
+        "request": request,
+        "model": model,
+        "userAgent": "antigravity",
+        "requestType": "agent",
     })
 }
 
@@ -830,5 +940,80 @@ mod tests {
         assert!(letter_token(" B") && letter_token("\"C") && !letter_token("choice"));
         assert_eq!(Readout::parse(Some("answer")).unwrap(), Readout::Answer);
         assert!(Readout::parse(Some("x")).is_err());
+    }
+
+    /// Antigravity: the Gemini request (enum-constrained letter, thinking level) inside the
+    /// Cloud Code Assist envelope; the answer and usage read from the wrapped response.
+    #[test]
+    fn builds_antigravity_requests_and_reads_the_wrapped_answer() {
+        assert_eq!(
+            antigravity_model("gemini-3.8-flash", Some("low")),
+            "gemini-3.8-flash-low"
+        );
+        assert_eq!(
+            antigravity_model("gemini-4-argon-high", Some("high")),
+            "gemini-4-argon-high"
+        );
+        assert_eq!(
+            antigravity_model("gemini-3.8-flash-high", None),
+            "gemini-3.8-flash-high"
+        );
+
+        let http = reqwest::Client::new();
+        let creds = Arc::new(Credentials::new(
+            crate::auth::Subscription::Antigravity,
+            std::path::PathBuf::new(),
+            http.clone(),
+        ));
+        let client = LlmClient::antigravity(
+            http,
+            antigravity_model("gemini-3.8-flash", Some("high")),
+            creds,
+            Options {
+                reasoning: Some("high".into()),
+                request: None,
+                max_tokens: None,
+                top_logprobs: None,
+                readout: Readout::Prefill,
+                pacer: None,
+            },
+        );
+        let body = client.constrained_body("the position", 3);
+        assert_eq!(body["contents"][0]["parts"][0]["text"], "the position");
+        assert_eq!(
+            body["systemInstruction"]["parts"][0]["text"],
+            letter_system()
+        );
+        let config = &body["generationConfig"];
+        assert_eq!(config["responseMimeType"], "text/x.enum");
+        assert_eq!(config["responseSchema"]["enum"], json!(["A", "B", "C"]));
+        assert_eq!(config["thinkingConfig"]["thinkingLevel"], "high");
+
+        let session = antigravity_session(&client.session_id);
+        assert!(session.starts_with('-') && session[1..].parse::<u64>().is_ok());
+        let envelope = antigravity_envelope(&client.model, "proj", &body, &session);
+        assert_eq!(envelope["project"], "proj");
+        assert_eq!(envelope["model"], "gemini-3.8-flash-high");
+        assert_eq!(envelope["userAgent"], "antigravity");
+        assert_eq!(envelope["requestType"], "agent");
+        assert!(
+            envelope["requestId"]
+                .as_str()
+                .unwrap()
+                .starts_with("agent/")
+        );
+        assert_eq!(envelope["request"]["sessionId"], session.as_str());
+        assert_eq!(envelope["request"]["generationConfig"], *config);
+
+        let raw = r#"{"response": {"candidates": [{"content": {"role": "model", "parts": [
+            {"thoughtSignature": "sig", "text": "\"B\""}]}, "finishReason": "STOP"}],
+            "usageMetadata": {"promptTokenCount": 3900, "candidatesTokenCount": 3,
+            "totalTokenCount": 4400, "thoughtsTokenCount": 497},
+            "modelVersion": "gemini-3.8-flash"}, "traceId": "t"}"#;
+        let c = parse_antigravity(raw).unwrap();
+        assert_eq!(parse_letter(&c.text, 3), Some(1));
+        assert_eq!((c.input_tokens, c.output_tokens), (3900, 500));
+        assert_eq!(c.reasoning_tokens, Some(497));
+        assert!(parse_antigravity(r#"{"error": {"code": 429}}"#).is_err());
     }
 }

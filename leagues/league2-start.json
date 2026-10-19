@@ -10,25 +10,27 @@
   "players": [
     {
       "name": "Gemini 3.8 Flash (low)",
-      "spec": "gemini/gemini-3.8-flash",
-      "provider": "gemini-api",
+      "spec": "antigravity/gemini-3.8-flash",
+      "provider": "antigravity-subscription",
       "reasoning": "low",
       "price": {
         "input_per_mtok": 0.75,
         "output_per_mtok": 3.75
       },
-      "parallel": 4
+      "parallel": 4,
+      "note": "Google Antigravity subscription (Google AI Ultra, OMP's login; Antigravity model id gemini-3.8-flash-low) from 2026-10-19 12:46 UTC; its first League 2 decision came then: until then it waited, not ready, for a Gemini API key the league never had. Same model (modelVersion gemini-3.8-flash), prompt, thinking level and enum-constrained letter as the gemini/ smoke setup; cost is API-list-price equivalent. Smoke check (10 positions x 2): same play as the Gemini API answers in 19 of 20"
     },
     {
       "name": "Gemini 3.8 Flash (high)",
-      "spec": "gemini/gemini-3.8-flash",
-      "provider": "gemini-api",
+      "spec": "antigravity/gemini-3.8-flash",
+      "provider": "antigravity-subscription",
       "reasoning": "high",
       "price": {
         "input_per_mtok": 0.75,
         "output_per_mtok": 3.75
       },
-      "parallel": 4
+      "parallel": 4,
+      "note": "Google Antigravity subscription (Google AI Ultra, OMP's login; Antigravity model id gemini-3.8-flash-high) from 2026-10-19 12:46 UTC; its first League 2 decision came then: until then it waited, not ready, for a Gemini API key the league never had. Same model (modelVersion gemini-3.8-flash), prompt, thinking level and enum-constrained letter as the gemini/ smoke setup; cost is API-list-price equivalent. Smoke check (10 positions x 2): same play as the Gemini API answers in 19 of 20"
     },
     {
       "name": "Claude Sonnet 5.5 (low)",

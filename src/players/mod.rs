@@ -229,6 +229,7 @@ pub struct Setup {
     pub local_url: String,
     pub openai: Arc<Credentials>,
     pub anthropic: Arc<Credentials>,
+    pub antigravity: Arc<Credentials>,
     /// Request pacers by rate-limit group, shared by every player of the group.
     pacers: parking_lot::Mutex<HashMap<String, Arc<Pacer>>>,
 }
@@ -276,6 +277,11 @@ impl Setup {
             )),
             anthropic: Arc::new(Credentials::new(
                 Subscription::Anthropic,
+                qfork_root.clone(),
+                http.clone(),
+            )),
+            antigravity: Arc::new(Credentials::new(
+                Subscription::Antigravity,
                 qfork_root.clone(),
                 http.clone(),
             )),
@@ -410,6 +416,15 @@ impl Player {
                 auth::gemini_api_key(&setup.qfork_root)?,
                 options,
             )),
+            "antigravity" | "google-antigravity" => {
+                setup.antigravity.token().await?;
+                Backend::Llm(llm::LlmClient::antigravity(
+                    http,
+                    llm::antigravity_model(&need_model(model)?, config.reasoning.as_deref()),
+                    setup.antigravity.clone(),
+                    options,
+                ))
+            }
             "ollama" => {
                 let host = std::env::var("OLLAMA_HOST")
                     .unwrap_or_else(|_| "http://localhost:11434".into());
@@ -460,7 +475,7 @@ impl Player {
             other => {
                 let decision: Vec<&str> = decision::SERVICES.iter().map(|s| s.provider).collect();
                 bail!(
-                    "unknown provider `{other}` in `{spec}`; use openai/, anthropic/, gemini/, ollama/, local/, openai-compatible/, random, safest, gnubg-weak, or a decision service: {}",
+                    "unknown provider `{other}` in `{spec}`; use openai/, anthropic/, gemini/, antigravity/, ollama/, local/, openai-compatible/, random, safest, gnubg-weak, or a decision service: {}",
                     decision.join(", ")
                 )
             }

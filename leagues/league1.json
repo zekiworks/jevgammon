@@ -1,5 +1,5 @@
 {
-  "note": "v3 League 1: decision models and models on our own hardware. Jev 1.13.0, Fastino GLiDE and Celeris-1 Decision dropped (blocked: no key or credit); GPT-6 Luna plays through the ChatGPT subscription, choice only. No clock (smoke-test p90 above 30 s). 2026-10-16 11:04 UTC: Clef, Cygnet and Decider moved to DGX Spark (GB10) servers with the same checkpoints and settings; Open-Jev stayed on the RTX PRO 6000 (2 of 20 replayed requests chose another play on a GB10). 2026-10-16 11:11 UTC: Gemma 4 31B served by three identical replicas behind a proxy (same URL and settings). 2026-10-19: Liquid d1-ultra joins late (league-add). 2026-10-19 18:36 UTC: bariton's GPUs no longer available: Gemma 4 31B moved to one DGX Spark (GB10) server next to Decider (same checkpoint and arguments; 20 replayed (off) requests: same play 19/20); Open-Jev's matches against Liquid d1-ultra wait for its GPU. 2026-10-19 19:31 UTC: reshaped on 2026-10-19 to decision models only: Gemma 4 31B (off), Gemma 4 31B (on), Qwen3.8-27B (off) and Qwen3.8-27B (on) removed (moved to League 2), GPT-6 Luna removed (played via subscription as a chat model; it may rejoin through the OpenAI Decisions API once there is an API key); Cygnet (Gemma 4 12B) stays as a decision model. Their 55 League 1 fixtures (53 played, 2 unfinished) are removed from the league; the matches stay in the database.",
+  "note": "v3 League 1: decision models and models on our own hardware. Jev 1.13.0, Fastino GLiDE and Celeris-1 Decision dropped (blocked: no key or credit); GPT-6 Luna plays through the ChatGPT subscription, choice only. No clock (smoke-test p90 above 30 s). 2026-10-16 11:04 UTC: Clef, Cygnet and Decider moved to DGX Spark (GB10) servers with the same checkpoints and settings; Open-Jev stayed on the RTX PRO 6000 (2 of 20 replayed requests chose another play on a GB10). 2026-10-16 11:11 UTC: Gemma 4 31B served by three identical replicas behind a proxy (same URL and settings). 2026-10-19: Liquid d1-ultra joins late (league-add). 2026-10-19 18:36 UTC: bariton's GPUs no longer available: Gemma 4 31B moved to one DGX Spark (GB10) server next to Decider (same checkpoint and arguments; 20 replayed (off) requests: same play 19/20); Open-Jev's matches against Liquid d1-ultra wait for its GPU. 2026-10-19 19:31 UTC: reshaped on 2026-10-19 to decision models only: Gemma 4 31B (off), Gemma 4 31B (on), Qwen3.8-27B (off) and Qwen3.8-27B (on) removed (moved to League 2), GPT-6 Luna removed (played via subscription as a chat model; it may rejoin through the OpenAI Decisions API once there is an API key); Cygnet (Gemma 4 12B) stays as a decision model. Their 55 League 1 fixtures (53 played, 2 unfinished) are removed from the league; the matches stay in the database. 2026-10-19 ~21:00 UTC: seven decision models join late (league-add, one at a time, each against every player then in the league): Jev 1.14.0, Jev 1.13.0, Celeris-1 Decision, GPT-6 Luna (OpenAI Decisions API), Decider Flash v1.2 and Winnow-12B (both on bariton GPU 3 next to Open-Jev), and Mercury Decide (via OpenRouter, out of credit when added: its matches defer until credit is added). Fastino GLiDE stays out (its key is rejected: HTTP 401 invalid_api_key); Decider v1.2 27B waits for memory (49 GB bf16; GPU 3 had 44 GB free next to Open-Jev, spark 20 GB, spark3 5 GB).",
   "prompt_version": "bg-v2",
   "seed": 2567889193785291627,
   "order_seed": 1190975713392774006,
@@ -69,6 +69,86 @@
       },
       "parallel": 2,
       "note": "Liquid AI decisions API, paid tier; list price $0.042 per million input tokens (liquid.ai/blog/d1-ultra, 2026-10-15)"
+    },
+    {
+      "name": "Jev 1.14.0",
+      "spec": "jev/jev-1.14.0",
+      "provider": "jev",
+      "price": {
+        "input_per_mtok": 0.042,
+        "output_per_mtok": 0
+      },
+      "parallel": 2,
+      "note": "TypeSafe System One API; list price $0.042 per million input tokens, the same as 1.13.0 (docs.typesafe.ai/models, 2026-10-16)"
+    },
+    {
+      "name": "Jev 1.13.0",
+      "spec": "jev/jev-1.13.0",
+      "provider": "jev",
+      "price": {
+        "input_per_mtok": 0.042,
+        "output_per_mtok": 0
+      },
+      "parallel": 2,
+      "note": "TypeSafe System One API; list price $0.042 per million input tokens (typesafe.ai/blog/introducing-system-one-models-and-jev, 2026-10-08)"
+    },
+    {
+      "name": "Celeris-1 Decision",
+      "spec": "celeris/celeris-1-decision",
+      "provider": "celeris",
+      "price": {
+        "input_per_mtok": 0.04,
+        "output_per_mtok": 0
+      },
+      "parallel": 2,
+      "note": "Celeris System One endpoint (inference.celeris.ai/celeris-1-decision); list price $0.04 per million input tokens, output free (docs.celeris.ai/pricing, 2026-10-10); probabilities come rounded to two decimals"
+    },
+    {
+      "name": "Mercury Decide",
+      "spec": "openrouter-decisions/inception/mercury-decide",
+      "provider": "openrouter (inception)",
+      "price": {
+        "input_per_mtok": 0.02,
+        "output_per_mtok": 0
+      },
+      "parallel": 2,
+      "note": "Inception's Mercury Decide through OpenRouter's System One route, its paid listing (not :free); list price $0.02 per million input tokens, the one output token not charged (openrouter.ai/inception/mercury-decide, 2026-10-17); latency includes OpenRouter's own time. Added while OpenRouter credit is exhausted (402 at the smoke test and warm-up): its matches defer until credit is added; the request format is the one the Turkish benchmark ran through OpenRouter on 2026-10-17 (runs 204, 210, 212, 214, 216: 0 invalid)"
+    },
+    {
+      "name": "GPT-6 Luna",
+      "spec": "openai-decisions/gpt-6-luna",
+      "provider": "openai-decisions",
+      "price": {
+        "input_per_mtok": 0.1,
+        "output_per_mtok": 0
+      },
+      "parallel": 2,
+      "note": "OpenAI Decisions API (public beta), API key with billing; list price $0.10 per million input tokens, no cache or output charges (developers.openai.com/api/docs/guides/decisions, 2026-10-08). Its earlier League 1 entry (ChatGPT subscription, chat model) was removed on 2026-10-19"
+    },
+    {
+      "name": "Decider Flash v1.2",
+      "spec": "pplx-local/pplx-decider-flash-v1.2",
+      "provider": "local (pplx_decider_server.py)",
+      "quantization": "bf16",
+      "price": {
+        "input_per_mtok": 0.01,
+        "output_per_mtok": 0
+      },
+      "parallel": 1,
+      "base_url": "http://127.0.0.1:18098",
+      "device": "RTX PRO 6000 (bariton GPU 3, next to Open-Jev)",
+      "note": "Perplexity's pplx-decider-flash-v1.2 (from Qwen3.5-4B) on our GPU through the pplx_decider package its checkpoint ships, reference path, one request at a time (tools/v3/servers/decider-v1.2.sh flash); price = Perplexity's list price for the same model (2026-10-18)"
+    },
+    {
+      "name": "Winnow-12B",
+      "spec": "winnow/winnow-12b",
+      "provider": "local (winnow-inference)",
+      "quantization": "Q8_0 (GGUF), Q8_0 KV cache",
+      "price": null,
+      "parallel": 4,
+      "base_url": "http://127.0.0.1:8091",
+      "device": "RTX PRO 6000 (bariton GPU 3, next to Open-Jev)",
+      "note": "EldanRing's Winnow-12B (Gemma 4 12B IT fine-tune) through its author's winnow-inference server (image winnow-inference:d4631fb) with the author's measured configuration (tools/v3/servers/winnow.sh); no published price"
     },
     {
       "name": "Random",

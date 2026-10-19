@@ -40,6 +40,22 @@ impl CallError {
     }
 }
 
+/// A response with a status that is not retried (and not 401/403); `Display` gives the
+/// status and the start of the body.
+#[derive(Debug)]
+pub struct StatusError {
+    pub status: StatusCode,
+    pub message: String,
+}
+
+impl std::fmt::Display for StatusError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}: {}", self.status, self.message)
+    }
+}
+
+impl std::error::Error for StatusError {}
+
 /// Time spent on failed attempts and backoff waits, shared between the requests of one
 /// decision and the runner's clock.
 #[derive(Debug, Default)]
@@ -105,10 +121,13 @@ async fn send_with_backoff(
                     return Err(CallError::Auth(format!("{status}: {}", snippet(&body))));
                 }
                 if !retryable(status) {
-                    return Err(CallError::Fatal(anyhow::anyhow!(
-                        "{status}: {}",
-                        snippet(&body)
-                    )));
+                    return Err(CallError::Fatal(
+                        StatusError {
+                            status,
+                            message: snippet(&body),
+                        }
+                        .into(),
+                    ));
                 }
                 if status == StatusCode::TOO_MANY_REQUESTS {
                     // Shared provider pools recover in tens of seconds, not two.

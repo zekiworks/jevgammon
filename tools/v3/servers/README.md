@@ -10,6 +10,8 @@ tools/v3/servers/wave.sh A|B|L1 start|stop|status|probe
 tools/v3/servers/spark.sh start|stop|status|probe              # League 1 from 2026-10-16 (+ Gemma on spark3 from 2026-10-19)
 tools/v3/servers/gemma4-31b-replicas.sh start|stop|status      # League 1, 2026-10-16 to 2026-10-19
 tools/v3/servers/spark3-flashnext.sh start|stop|status|probe   # League 2 Flash Next, 2026-10-19 (withdrawn, stopped)
+tools/v3/servers/decider-v1.2.sh flash|27b start|stop|status|probe   # League 1 from 2026-10-19 (flash on GPU 3)
+tools/v3/servers/winnow.sh start|stop|status|probe          # League 1 from 2026-10-19 (GPU 3)
 ```
 
 vLLM servers run as docker containers (`docker logs -f <name>`); the Python decision servers
@@ -187,6 +189,28 @@ At 19:31 UTC League 1 became decision models only and both Gemma 4 31B setups mo
 matches the server runs 24 sequences at once (`GEMMA_MAX_SEQS=24` in `spark.sh`, was 16; same
 memory share and KV cache): with 16 running it generated about 84 tokens/s in total (5.3 per
 request) with the KV cache a third full. Restarting it does not touch Decider.
+
+## League 1 late joiners on bariton GPU 3 (from 2026-10-19)
+
+Only GPU 3 is available on bariton (GPUs 0-2 hold other work), and Open-Jev 27B v1.1
+(`open-jev.sh`, 54.0 GiB) runs there again. Two local decision models joining League 1 late
+run next to it, both started with the arguments the Turkish benchmark used:
+
+| script | URL | served model name | checkpoint | weights as served | GPU memory |
+|---|---|---|---|---|---|
+| `decider-v1.2.sh flash` | `http://127.0.0.1:18098/v1/systemone` (unit `v3-decider-flash-v12`) | `pplx-decider-flash-v1.2` | `~/code/pplx-decider/checkpoint-flash-v1.2` (rsync from spark3) | `bf16` | 9.3 GiB idle, about 13 GiB under load |
+| `winnow.sh` | `http://127.0.0.1:8091/v1/systemone` (container `v3-winnow`) | `winnow-12b` | `~/code/winnow/models/gguf/Winnow-12B-Q8_0.gguf` | Q8_0 GGUF, Q8_0 KV cache | 14.6 GiB |
+
+- **Decider Flash v1.2**: `~/code/pplx-decider/pplx_decider_server.py` (from turkce-benchmark
+  `runner/servers` at `febf46c`) in `.venv-v1.2`, which holds only the checkpoint's
+  `requirements.txt` on uv's Python 3.12.13 (Triton needs the headers). Reference path, one
+  request at a time; the request's model must name the loaded checkpoint. It plays through
+  the `pplx-local` service (25 options per request at most, as Decider v1.1).
+- **Winnow-12B**: image `winnow-inference:d4631fb`, 8,192-token context, 4 decision slots,
+  selected head, optimized pipeline, text only. A stored 110-option League 1 request cut to
+  48 options took 7,679 input tokens, so the `winnow` service sends at most 40.
+- **Decider v1.2 27B** (`decider-v1.2.sh 27b`, port 18099) does not fit: 49 GB of bf16
+  weights against 44 GiB free on GPU 3, 20 GiB available on spark and 5 GiB on spark3.
 
 ## League 2 Flash Next on DGX Spark spark3 (2026-10-19, withdrawn)
 

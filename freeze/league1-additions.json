@@ -34,5 +34,252 @@
       "matchday 14: Liquid d1-ultra v GNUbg weak"
     ],
     "stale_playoff_fixtures": 0
+  },
+  {
+    "added_at": "2026-10-19T20:52:46Z",
+    "league": 1,
+    "db": "v3.db",
+    "name": "Jev 1.14.0",
+    "harness_commit": "64251979eb08a30222f886e4da6ecbcebad389f0",
+    "harness_dirty": true,
+    "entry": {
+      "name": "Jev 1.14.0",
+      "spec": "jev/jev-1.14.0",
+      "provider": "jev",
+      "price": {
+        "input_per_mtok": 0.042,
+        "output_per_mtok": 0.0
+      },
+      "note": "TypeSafe System One API; list price $0.042 per million input tokens, the same as 1.13.0 (docs.typesafe.ai/models, 2026-10-16)",
+      "parallel": 2
+    },
+    "entry_sha256": "cc84687319713d4fcce82f0b0f930bd13bff159cdf3473622473822f6488d174",
+    "fixtures": [
+      "matchday 15: Decider v1.1 27B v Jev 1.14.0",
+      "matchday 15: SubQ Snap Preview v Jev 1.14.0",
+      "matchday 15: Clef v Jev 1.14.0",
+      "matchday 15: Jev 1.14.0 v Open-Jev 27B v1.1",
+      "matchday 15: Jev 1.14.0 v Cygnet (Gemma 4 12B)",
+      "matchday 15: Random v Jev 1.14.0",
+      "matchday 15: Safest v Jev 1.14.0",
+      "matchday 15: GNUbg weak v Jev 1.14.0",
+      "matchday 15: Liquid d1-ultra v Jev 1.14.0"
+    ],
+    "stale_playoff_fixtures": 0
+  },
+  {
+    "added_at": "2026-10-19T20:52:46Z",
+    "league": 1,
+    "db": "v3.db",
+    "name": "Jev 1.13.0",
+    "harness_commit": "64251979eb08a30222f886e4da6ecbcebad389f0",
+    "harness_dirty": true,
+    "entry": {
+      "name": "Jev 1.13.0",
+      "spec": "jev/jev-1.13.0",
+      "provider": "jev",
+      "price": {
+        "input_per_mtok": 0.042,
+        "output_per_mtok": 0.0
+      },
+      "note": "TypeSafe System One API; list price $0.042 per million input tokens (typesafe.ai/blog/introducing-system-one-models-and-jev, 2026-10-08)",
+      "parallel": 2
+    },
+    "entry_sha256": "098cab00a76950ad5d824b621b3549c12b957292e7b396eea8a7c3d60b266e0b",
+    "fixtures": [
+      "matchday 16: Jev 1.13.0 v Decider v1.1 27B",
+      "matchday 16: Jev 1.13.0 v SubQ Snap Preview",
+      "matchday 16: Jev 1.13.0 v Clef",
+      "matchday 16: Jev 1.13.0 v Open-Jev 27B v1.1",
+      "matchday 16: Cygnet (Gemma 4 12B) v Jev 1.13.0",
+      "matchday 16: Random v Jev 1.13.0",
+      "matchday 16: Jev 1.13.0 v Safest",
+      "matchday 16: Jev 1.13.0 v GNUbg weak",
+      "matchday 16: Liquid d1-ultra v Jev 1.13.0",
+      "matchday 16: Jev 1.13.0 v Jev 1.14.0"
+    ],
+    "stale_playoff_fixtures": 0
+  },
+  {
+    "added_at": "2026-10-19T20:52:46Z",
+    "league": 1,
+    "db": "v3.db",
+    "name": "Celeris-1 Decision",
+    "harness_commit": "64251979eb08a30222f886e4da6ecbcebad389f0",
+    "harness_dirty": true,
+    "entry": {
+      "name": "Celeris-1 Decision",
+      "spec": "celeris/celeris-1-decision",
+      "provider": "celeris",
+      "price": {
+        "input_per_mtok": 0.04,
+        "output_per_mtok": 0.0
+      },
+      "note": "Celeris System One endpoint (inference.celeris.ai/celeris-1-decision); list price $0.04 per million input tokens, output free (docs.celeris.ai/pricing, 2026-10-10); probabilities come rounded to two decimals",
+      "parallel": 2
+    },
+    "entry_sha256": "428eeb5189b73a4b9718ef67cf263ea24966c18360ec362c42b9546a095ce7e3",
+    "fixtures": [
+      "matchday 17: Celeris-1 Decision v Decider v1.1 27B",
+      "matchday 17: SubQ Snap Preview v Celeris-1 Decision",
+      "matchday 17: Celeris-1 Decision v Clef",
+      "matchday 17: Open-Jev 27B v1.1 v Celeris-1 Decision",
+      "matchday 17: Celeris-1 Decision v Cygnet (Gemma 4 12B)",
+      "matchday 17: Celeris-1 Decision v Random",
+      "matchday 17: Safest v Celeris-1 Decision",
+      "matchday 17: GNUbg weak v Celeris-1 Decision",
+      "matchday 17: Liquid d1-ultra v Celeris-1 Decision",
+      "matchday 17: Celeris-1 Decision v Jev 1.14.0",
+      "matchday 17: Jev 1.13.0 v Celeris-1 Decision"
+    ],
+    "stale_playoff_fixtures": 0
+  },
+  {
+    "added_at": "2026-10-19T20:52:46Z",
+    "league": 1,
+    "db": "v3.db",
+    "name": "GPT-6 Luna",
+    "harness_commit": "64251979eb08a30222f886e4da6ecbcebad389f0",
+    "harness_dirty": true,
+    "entry": {
+      "name": "GPT-6 Luna",
+      "spec": "openai-decisions/gpt-6-luna",
+      "provider": "openai-decisions",
+      "price": {
+        "input_per_mtok": 0.1,
+        "output_per_mtok": 0.0
+      },
+      "note": "OpenAI Decisions API (public beta), API key with billing; list price $0.10 per million input tokens, no cache or output charges (developers.openai.com/api/docs/guides/decisions, 2026-10-08). Its earlier League 1 entry (ChatGPT subscription, chat model) was removed on 2026-10-19",
+      "parallel": 2
+    },
+    "entry_sha256": "d16704218a90c933e3bf1e26d733a300faf608868c0ec07553888b6a2f5cba7f",
+    "fixtures": [
+      "matchday 18: Decider v1.1 27B v GPT-6 Luna",
+      "matchday 18: GPT-6 Luna v SubQ Snap Preview",
+      "matchday 18: GPT-6 Luna v Clef",
+      "matchday 18: GPT-6 Luna v Open-Jev 27B v1.1",
+      "matchday 18: GPT-6 Luna v Cygnet (Gemma 4 12B)",
+      "matchday 18: GPT-6 Luna v Random",
+      "matchday 18: Safest v GPT-6 Luna",
+      "matchday 18: GPT-6 Luna v GNUbg weak",
+      "matchday 18: GPT-6 Luna v Liquid d1-ultra",
+      "matchday 18: GPT-6 Luna v Jev 1.14.0",
+      "matchday 18: Jev 1.13.0 v GPT-6 Luna",
+      "matchday 18: Celeris-1 Decision v GPT-6 Luna"
+    ],
+    "stale_playoff_fixtures": 0
+  },
+  {
+    "added_at": "2026-10-19T20:52:46Z",
+    "league": 1,
+    "db": "v3.db",
+    "name": "Decider Flash v1.2",
+    "harness_commit": "64251979eb08a30222f886e4da6ecbcebad389f0",
+    "harness_dirty": true,
+    "entry": {
+      "name": "Decider Flash v1.2",
+      "spec": "pplx-local/pplx-decider-flash-v1.2",
+      "provider": "local (pplx_decider_server.py)",
+      "quantization": "bf16",
+      "base_url": "http://127.0.0.1:18098",
+      "price": {
+        "input_per_mtok": 0.01,
+        "output_per_mtok": 0.0
+      },
+      "note": "Perplexity's pplx-decider-flash-v1.2 (from Qwen3.5-4B) on our GPU through the pplx_decider package its checkpoint ships, reference path, one request at a time (tools/v3/servers/decider-v1.2.sh flash); price = Perplexity's list price for the same model (2026-10-18)",
+      "device": "RTX PRO 6000 (bariton GPU 3, next to Open-Jev)",
+      "parallel": 1
+    },
+    "entry_sha256": "344ea795356189a0cc3d265e69c87d1af78373463203d86713dc380fc6e035f4",
+    "fixtures": [
+      "matchday 19: Decider v1.1 27B v Decider Flash v1.2",
+      "matchday 19: SubQ Snap Preview v Decider Flash v1.2",
+      "matchday 19: Decider Flash v1.2 v Clef",
+      "matchday 19: Open-Jev 27B v1.1 v Decider Flash v1.2",
+      "matchday 19: Cygnet (Gemma 4 12B) v Decider Flash v1.2",
+      "matchday 19: Decider Flash v1.2 v Random",
+      "matchday 19: Safest v Decider Flash v1.2",
+      "matchday 19: GNUbg weak v Decider Flash v1.2",
+      "matchday 19: Decider Flash v1.2 v Liquid d1-ultra",
+      "matchday 19: Decider Flash v1.2 v Jev 1.14.0",
+      "matchday 19: Jev 1.13.0 v Decider Flash v1.2",
+      "matchday 19: Celeris-1 Decision v Decider Flash v1.2",
+      "matchday 19: Decider Flash v1.2 v GPT-6 Luna"
+    ],
+    "stale_playoff_fixtures": 0
+  },
+  {
+    "added_at": "2026-10-19T20:52:46Z",
+    "league": 1,
+    "db": "v3.db",
+    "name": "Winnow-12B",
+    "harness_commit": "64251979eb08a30222f886e4da6ecbcebad389f0",
+    "harness_dirty": true,
+    "entry": {
+      "name": "Winnow-12B",
+      "spec": "winnow/winnow-12b",
+      "provider": "local (winnow-inference)",
+      "quantization": "Q8_0 (GGUF), Q8_0 KV cache",
+      "base_url": "http://127.0.0.1:8091",
+      "note": "EldanRing's Winnow-12B (Gemma 4 12B IT fine-tune) through its author's winnow-inference server (image winnow-inference:d4631fb) with the author's measured configuration (tools/v3/servers/winnow.sh); no published price",
+      "device": "RTX PRO 6000 (bariton GPU 3, next to Open-Jev)",
+      "parallel": 4
+    },
+    "entry_sha256": "9051dda97f2c566312c5d456f053c3573b506e64da7f18d300713210908d69a3",
+    "fixtures": [
+      "matchday 20: Winnow-12B v Decider v1.1 27B",
+      "matchday 20: Winnow-12B v SubQ Snap Preview",
+      "matchday 20: Clef v Winnow-12B",
+      "matchday 20: Open-Jev 27B v1.1 v Winnow-12B",
+      "matchday 20: Cygnet (Gemma 4 12B) v Winnow-12B",
+      "matchday 20: Random v Winnow-12B",
+      "matchday 20: Winnow-12B v Safest",
+      "matchday 20: Winnow-12B v GNUbg weak",
+      "matchday 20: Winnow-12B v Liquid d1-ultra",
+      "matchday 20: Winnow-12B v Jev 1.14.0",
+      "matchday 20: Winnow-12B v Jev 1.13.0",
+      "matchday 20: Celeris-1 Decision v Winnow-12B",
+      "matchday 20: Winnow-12B v GPT-6 Luna",
+      "matchday 20: Decider Flash v1.2 v Winnow-12B"
+    ],
+    "stale_playoff_fixtures": 0
+  },
+  {
+    "added_at": "2026-10-19T20:52:46Z",
+    "league": 1,
+    "db": "v3.db",
+    "name": "Mercury Decide",
+    "harness_commit": "64251979eb08a30222f886e4da6ecbcebad389f0",
+    "harness_dirty": true,
+    "entry": {
+      "name": "Mercury Decide",
+      "spec": "openrouter-decisions/inception/mercury-decide",
+      "provider": "openrouter (inception)",
+      "price": {
+        "input_per_mtok": 0.02,
+        "output_per_mtok": 0.0
+      },
+      "note": "Inception's Mercury Decide through OpenRouter's System One route, its paid listing (not :free); list price $0.02 per million input tokens, the one output token not charged (openrouter.ai/inception/mercury-decide, 2026-10-17); latency includes OpenRouter's own time. Added while OpenRouter credit is exhausted (402 at the smoke test and warm-up): its matches defer until credit is added; the request format is the one the Turkish benchmark ran through OpenRouter on 2026-10-17 (runs 204, 210, 212, 214, 216: 0 invalid)",
+      "parallel": 2
+    },
+    "entry_sha256": "d9dc7816909ee7271512c924dc484d9e9d55c7808fa0378f8b7eb106303658b3",
+    "fixtures": [
+      "matchday 21: Mercury Decide v Decider v1.1 27B",
+      "matchday 21: SubQ Snap Preview v Mercury Decide",
+      "matchday 21: Mercury Decide v Clef",
+      "matchday 21: Open-Jev 27B v1.1 v Mercury Decide",
+      "matchday 21: Mercury Decide v Cygnet (Gemma 4 12B)",
+      "matchday 21: Mercury Decide v Random",
+      "matchday 21: Mercury Decide v Safest",
+      "matchday 21: Mercury Decide v GNUbg weak",
+      "matchday 21: Liquid d1-ultra v Mercury Decide",
+      "matchday 21: Mercury Decide v Jev 1.14.0",
+      "matchday 21: Jev 1.13.0 v Mercury Decide",
+      "matchday 21: Celeris-1 Decision v Mercury Decide",
+      "matchday 21: Mercury Decide v GPT-6 Luna",
+      "matchday 21: Decider Flash v1.2 v Mercury Decide",
+      "matchday 21: Mercury Decide v Winnow-12B"
+    ],
+    "stale_playoff_fixtures": 0
   }
 ]

@@ -74,11 +74,14 @@ printed and stored in `matches.error`), `2` for invalid arguments.
 | `liquid`, `liquid/<model>` | Liquid AI System One API (`d1:free` default; `d1`, `d1-ultra` paid) | `LIQUID_API_KEY` or `LIQUIDAI_API_KEY` |
 | `subq`, `subq/<model>` | SubQ System One API (`subq-snap-preview` default) | `SUBQ_API_KEY` |
 | `celeris`, `celeris/<model>` | Celeris System One API (`celeris-1-decision` default) | `CELERIS_API_KEY` |
+| `openrouter-decisions/<vendor>/<model>` | OpenRouter's System One route for the decision models it lists (`inception/mercury-decide` default) | `OPENROUTER_API_KEY` |
 | `random`, `safest`, `gnubg-weak` | Baselines on the CPU: a random legal play, the play the opponent hits with the fewest rolls, GNUbg 1.08 at its Beginner level | none |
 | `clef` | Self-hosted Clef server, `http://127.0.0.1:18091` | none |
 | `open-jev` | Self-hosted Open-Jev server, `http://127.0.0.1:8791` (takes no model name) | none |
 | `cygnet` | Self-hosted Cygnet decision server, `http://127.0.0.1:18093` | optional `CYGNET_API_KEY` |
 | `gemma` | A second Cygnet decision server (same option-letter readout) in front of a `gemma-4-31B-it` vLLM server, `http://127.0.0.1:18094` | optional `GEMMA_API_KEY` |
+| `pplx-local/<model>` | Self-hosted Perplexity Decider server, `http://127.0.0.1:18097` (`base_url` picks another); the model must name the loaded checkpoint (`pplx-decider-v1.1-27b` default, `pplx-decider-v1.2`, `pplx-decider-flash-v1.2`) | none |
+| `winnow`, `winnow/<model>` | Self-hosted Winnow-12B server (`winnow-inference`), `http://127.0.0.1:8091` (`winnow-12b` default) | none |
 | `openai/<model>` | ChatGPT subscription (Codex backend) | qfork store or `~/.codex/auth.json` |
 | `anthropic/<model>`, `claude/<model>` | Claude subscription | qfork store or `~/.claude/.credentials.json` |
 | `gemini/<model>`, `google/<model>` | Gemini API | `GEMINI_API_KEY`, `GOOGLE_API_KEY`, or qfork `credentials/gemini.json` |

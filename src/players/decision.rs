@@ -88,13 +88,15 @@ pub const SERVICES: &[Service] = &[
         openai_format: false,
         max_choices: 255,
     },
-    // pplx-decider-v1.1-27b served locally by ~/code/pplx-decider/server.py; one request at
-    // a time (others get 529, which is retried). It rejects inputs over 8192 tokens (state
+    // Perplexity's Decider checkpoints served locally: pplx-decider-v1.1-27b by
+    // ~/code/pplx-decider/server.py, v1.2 and Flash v1.2 by pplx_decider_server.py (a
+    // player config's `base_url` picks the server, its spec the model). One request at a time
+    // (v1.1 answers others 529, which is retried). v1.1 rejects inputs over 8192 tokens (state
     // about 2,900, each described option about 110), and on our shared GPUs 40 options ran
     // out of memory while 30 worked, so longer play lists are split.
     Service {
         provider: "pplx-local",
-        label: "Decider v1.1 (local)",
+        label: "Perplexity Decider (local)",
         base_url: "http://127.0.0.1:18097",
         url_var: "PPLX_LOCAL_BASE_URL",
         path: "/v1/systemone",
@@ -139,6 +141,35 @@ pub const SERVICES: &[Service] = &[
         default_model: Some("celeris-1-decision"),
         openai_format: false,
         max_choices: 255,
+    },
+    // OpenRouter's System One route for the decision models it lists; a request names the
+    // model with its vendor prefix (a bare name is read as typesafe/<name>).
+    Service {
+        provider: "openrouter-decisions",
+        label: "OpenRouter (System One)",
+        base_url: "https://openrouter.ai/api",
+        url_var: "OPENROUTER_DECISIONS_BASE_URL",
+        path: "/v1/systemone",
+        key_vars: &["OPENROUTER_API_KEY"],
+        key_required: true,
+        default_model: Some("inception/mercury-decide"),
+        openai_format: false,
+        max_choices: 255,
+    },
+    // Winnow-12B through its author's winnow-inference server (tools/v3/servers/winnow.sh):
+    // at most 64 options per question, and state plus options must fit its 8,192-token
+    // decision context (state about 2,900 tokens, a described option about 117).
+    Service {
+        provider: "winnow",
+        label: "Winnow",
+        base_url: "http://127.0.0.1:8091",
+        url_var: "WINNOW_BASE_URL",
+        path: "/v1/systemone",
+        key_vars: &[],
+        key_required: false,
+        default_model: Some("winnow-12b"),
+        openai_format: false,
+        max_choices: 40,
     },
     Service {
         provider: "clef",
@@ -251,7 +282,8 @@ impl DecisionClient {
 
     /// Sends a two-option request until the service answers, so a cold start (e.g.
     /// Fastino's HTTP 425 "warming up") happens before a match instead of on a clock.
-    /// Returns how long it took; fails after `WARM_UP_LIMIT`.
+    /// Returns how long it took; fails after `WARM_UP_LIMIT`, or at once when the request is
+    /// refused (a 4xx other than 425, e.g. 402 out of credit), which waiting does not cure.
     pub async fn warm_up(&self) -> Result<Duration> {
         let started = Instant::now();
         let body = self.body(
@@ -265,6 +297,11 @@ impl DecisionClient {
         loop {
             match self.send(&body, &RetryTime::default()).await {
                 Ok(_) => return Ok(started.elapsed()),
+                Err(error) if refused(&error) => {
+                    return Err(
+                        error.context(format!("{} refused the warm-up", self.service.label))
+                    );
+                }
                 Err(error) if started.elapsed() < WARM_UP_LIMIT => {
                     eprintln!("{} warming up: {error:#}", self.service.label);
                     tokio::time::sleep(Duration::from_secs(10)).await;
@@ -432,4 +469,12 @@ impl DecisionClient {
         });
         Ok(choice)
     }
+}
+
+/// Whether the service refused the request (a 4xx other than 425 Too Early).
+fn refused(error: &anyhow::Error) -> bool {
+    error.chain().any(|e| {
+        e.downcast_ref::<http::StatusError>()
+            .is_some_and(|s| s.status.is_client_error() && s.status.as_u16() != 425)
+    })
 }

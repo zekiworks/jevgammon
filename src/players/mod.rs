@@ -158,6 +158,11 @@ pub struct PlayerConfig {
     /// servers.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub letter_readout: Option<String>,
+    /// Prefill readout with reasoning off: the assistant text the letter continues (default
+    /// `Answer:`), e.g. `<think></think>Answer:` for a model whose chat template opens a
+    /// reasoning block on every answer and has no switch to turn it off.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub answer_prefix: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub price: Option<Price>,
     /// Free text kept with the roster (how the setup was pinned, what a level means).
@@ -349,6 +354,7 @@ impl Player {
             max_tokens: config.max_tokens,
             top_logprobs: config.top_logprobs,
             readout: llm::Readout::parse(config.letter_readout.as_deref())?,
+            answer_prefix: config.answer_prefix.clone(),
             pacer: config.rpm.filter(|&rpm| rpm > 0).map(|rpm| {
                 let group = config.rate_group.clone().unwrap_or_else(|| {
                     format!("{}|{spec}", config.base_url.as_deref().unwrap_or(""))

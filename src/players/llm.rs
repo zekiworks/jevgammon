@@ -77,6 +77,8 @@ pub struct Options {
     pub max_tokens: Option<u32>,
     pub top_logprobs: Option<u32>,
     pub readout: Readout,
+    /// Prefill text before the letter when reasoning is off (default `Answer:`).
+    pub answer_prefix: Option<String>,
     /// Rate-limit pacing shared with the other players of the group.
     pub pacer: Option<Arc<super::Pacer>>,
 }
@@ -111,15 +113,28 @@ struct Completion {
     text: String,
     /// Reasoning returned separately (`reasoning_content`) or in `<think>` tags.
     reasoning: Option<String>,
-    /// Top log-probabilities at the answer letter: the first answer token that is a single
-    /// letter, else the first answer token; `None` when not returned.
+    /// Top log-probabilities at the answer letter (see `letter_entry`); `None` when not
+    /// returned or when the answer letter's token is not found.
     top: Option<Vec<(String, f64)>>,
+    /// The token whose alternatives are `top`.
+    answer_token: Option<String>,
+    /// Top log-probabilities of the only logprobs entry, when there is exactly one.
+    single_entry_top: Option<Vec<(String, f64)>>,
     input_tokens: u64,
     output_tokens: u64,
     /// Reasoning tokens, when the provider reports them.
     reasoning_tokens: Option<u64>,
     /// Dollars, when the provider reports them (OpenRouter's `usage.cost`).
     cost: Option<f64>,
+}
+
+impl Completion {
+    /// The alternatives at the prefill readout's one generated token (`max_tokens` 1): that
+    /// only logprobs entry's, wherever the server filed the token (a reasoning parser may
+    /// put it under reasoning), else `top`.
+    fn prefill_top(&self) -> Option<&Vec<(String, f64)>> {
+        self.single_entry_top.as_ref().or(self.top.as_ref())
+    }
 }
 
 /// JSON schema of a one-letter answer among `count` options.
@@ -290,20 +305,11 @@ impl LlmClient {
                 body["reasoning_effort"] = json!(effort);
             }
             let completion = self.call(&body, req, decision).await?;
-            let letter = self.constrained_letter(&completion, count, decision);
-            let probabilities = completion
-                .top
-                .as_ref()
-                .and_then(|top| letter_probabilities(top, count));
-            return Ok(match probabilities {
-                Some(probabilities) => Some((argmax(&probabilities), Some(probabilities))),
-                None => {
-                    if letter.is_some() {
-                        mark(decision, "no letter logprobs returned; choice only");
-                    }
-                    letter.map(|position| (position, None))
-                }
-            });
+            let (picked, note) = answer_decision(&completion, count);
+            if let Some(note) = note {
+                mark(decision, &note);
+            }
+            return Ok(picked);
         }
         // Reasoning on: the model reasons and answers with a constrained letter.
         let mut constrained = None;
@@ -324,7 +330,11 @@ impl LlmClient {
                     completion.reasoning.unwrap_or_default()
                 )
             }
-            None => ANSWER_PREFIX.to_owned(),
+            None => self
+                .options
+                .answer_prefix
+                .clone()
+                .unwrap_or_else(|| ANSWER_PREFIX.to_owned()),
         };
         // The letter probabilities after "Answer:".
         if !self.no_logprobs.load(Ordering::Relaxed) {
@@ -342,7 +352,7 @@ impl LlmClient {
                 "top_logprobs": top_logprobs,
             });
             let completion = self.call(&body, req, decision).await?;
-            match &completion.top {
+            match completion.prefill_top() {
                 Some(top) => match letter_probabilities(top, count) {
                     Some(probabilities) => {
                         return Ok(Some((argmax(&probabilities), Some(probabilities))));
@@ -374,13 +384,7 @@ impl LlmClient {
     ) -> Option<usize> {
         let position = parse_letter(&completion.text, count);
         if position.is_none() {
-            mark(
-                decision,
-                &format!(
-                    "reply is not one of the letters A-{}",
-                    LETTERS[count - 1] as char
-                ),
-            );
+            mark(decision, &not_a_letter(count));
         }
         position
     }
@@ -640,6 +644,45 @@ fn mark(decision: &mut Decision, reason: &str) {
     }
 }
 
+/// Why a reply without one of the first `count` letters is invalid.
+fn not_a_letter(count: usize) -> String {
+    format!(
+        "reply is not one of the letters A-{}",
+        LETTERS[count - 1] as char
+    )
+}
+
+/// The answer readout's decision from its one completion — `(shown position, letter
+/// probabilities when read)`, `None` when invalid — and the reason to note on its exchange.
+/// The play is the most probable letter, but it counts only when the reply has a letter and
+/// the probabilities were read at that letter's token.
+fn answer_decision(
+    completion: &Completion,
+    count: usize,
+) -> (Option<(usize, Option<Vec<f64>>)>, Option<String>) {
+    let Some(letter) = parse_letter(&completion.text, count) else {
+        return (None, Some(not_a_letter(count)));
+    };
+    let probabilities = completion
+        .top
+        .as_ref()
+        .and_then(|top| letter_probabilities(top, count));
+    let Some(probabilities) = probabilities else {
+        let note = "no letter logprobs returned; choice only";
+        return (Some((letter, None)), Some(note.to_owned()));
+    };
+    let token = completion.answer_token.as_deref();
+    if token.and_then(token_letter) != Some(LETTERS[letter]) {
+        let note = format!(
+            "letter logprobs read at token {:?}, not at the reply's letter {}",
+            token.unwrap_or_default(),
+            LETTERS[letter] as char
+        );
+        return (None, Some(note));
+    }
+    (Some((argmax(&probabilities), Some(probabilities))), None)
+}
+
 /// Position of the most probable letter (the first on ties).
 fn argmax(probabilities: &[f64]) -> usize {
     let mut best = 0;
@@ -651,10 +694,46 @@ fn argmax(probabilities: &[f64]) -> usize {
     best
 }
 
-/// A token that is one letter, give or take spaces, quotes and punctuation (`C`, ` C`, `"C`).
-fn letter_token(token: &str) -> bool {
+/// The letter of a token that is one uppercase letter, give or take spaces, quotes and
+/// punctuation (`C`, ` C`, `"C`).
+fn token_letter(token: &str) -> Option<u8> {
     let core = token.trim_matches(|c: char| c.is_whitespace() || "([{'\".,:)]}".contains(c));
-    core.len() == 1 && core.as_bytes()[0].is_ascii_alphabetic()
+    match core.as_bytes() {
+        [byte] if byte.is_ascii_uppercase() => Some(*byte),
+        _ => None,
+    }
+}
+
+/// The entry of `entries` (one per token, as in `choices[0].logprobs.content`) at the
+/// answer letter: the last one-uppercase-letter token, provided the tokens after it spell
+/// the end of the answer `text`. Read from the end because some providers list the
+/// reasoning's tokens first and others leave tokens out. `None` when `text` is blank or no
+/// such entry exists.
+fn letter_entry<'a>(entries: &'a [Value], text: &str) -> Option<&'a Value> {
+    let text = text.trim();
+    if text.is_empty() {
+        return None;
+    }
+    let token = |e: &'a Value| e.get("token").and_then(Value::as_str).unwrap_or_default();
+    let at = entries.iter().rposition(|e| token_letter(token(e)).is_some())?;
+    let after: String = entries[at + 1..].iter().map(token).collect();
+    text.ends_with(after.trim()).then_some(&entries[at])
+}
+
+/// The `(token, logprob)` alternatives of a logprobs entry; `None` when it has none.
+fn top_logprobs(entry: &Value) -> Option<Vec<(String, f64)>> {
+    let top: Vec<_> = entry
+        .get("top_logprobs")?
+        .as_array()?
+        .iter()
+        .filter_map(|e| {
+            Some((
+                e.get("token")?.as_str()?.to_owned(),
+                e.get("logprob")?.as_f64()?,
+            ))
+        })
+        .collect();
+    (!top.is_empty()).then_some(top)
 }
 
 fn parse_codex_sse(stream: &str) -> Result<Completion> {
@@ -830,40 +909,29 @@ fn parse_chat_completion(body: &str) -> Result<Completion> {
         text = text[end + "</think>".len()..].to_owned();
         reasoning = Some(thought);
     }
-    // The answer letter's alternatives: the first single-letter answer token (inside a
-    // constrained `{"choice":"C"}` it is the fourth), else the first token.
     let entries = value
         .pointer("/choices/0/logprobs/content")
         .and_then(Value::as_array)
-        .cloned()
+        .map(Vec::as_slice)
         .unwrap_or_default();
-    let at = entries
-        .iter()
-        .find(|e| {
-            e.get("token")
-                .and_then(Value::as_str)
-                .is_some_and(letter_token)
-        })
-        .or(entries.first());
-    let top = at
-        .and_then(|e| e.get("top_logprobs"))
-        .and_then(Value::as_array)
-        .map(|entries| {
-            entries
-                .iter()
-                .filter_map(|e| {
-                    Some((
-                        e.get("token")?.as_str()?.to_owned(),
-                        e.get("logprob")?.as_f64()?,
-                    ))
-                })
-                .collect::<Vec<_>>()
-        })
-        .filter(|top| !top.is_empty());
+    let at = letter_entry(entries, &text);
+    let top = at.and_then(top_logprobs);
+    let answer_token = top
+        .as_ref()
+        .and(at)
+        .and_then(|e| e.get("token"))
+        .and_then(Value::as_str)
+        .map(str::to_owned);
+    let single_entry_top = match entries {
+        [entry] => top_logprobs(entry),
+        _ => None,
+    };
     Ok(Completion {
         text,
         reasoning,
         top,
+        answer_token,
+        single_entry_top,
         input_tokens: tokens(&value, "/usage/prompt_tokens"),
         output_tokens: tokens(&value, "/usage/completion_tokens"),
         reasoning_tokens: optional(&value, "/usage/completion_tokens_details/reasoning_tokens")
@@ -937,9 +1005,193 @@ mod tests {
         assert_eq!(argmax(&probs), 1);
         assert_eq!(c.reasoning_tokens, Some(880));
         assert_eq!(c.cost, Some(0.0042));
-        assert!(letter_token(" B") && letter_token("\"C") && !letter_token("choice"));
+        assert_eq!(c.answer_token.as_deref(), Some("B"));
+        assert_eq!(answer_decision(&c, 3).0.unwrap().0, 1);
+        assert!(token_letter(" b").is_none());
+        assert_eq!(token_letter("\"C"), Some(b'C'));
+        assert!(token_letter("choice").is_none());
         assert_eq!(Readout::parse(Some("answer")).unwrap(), Readout::Answer);
         assert!(Readout::parse(Some("x")).is_err());
+    }
+
+    /// Providers that list the reasoning's tokens before the answer's: the letter is read
+    /// at the answer's letter, not at a letter in the reasoning.
+    #[test]
+    fn reads_the_letter_in_the_answer_not_the_reasoning() {
+        let reasoning = r#"
+              {"token":"We","logprob":0.0,"top_logprobs":[{"token":"We","logprob":0.0}]},
+              {"token":" need","logprob":0.0,"top_logprobs":[{"token":" need","logprob":0.0}]},
+              {"token":" option","logprob":0.0,"top_logprobs":[{"token":" option","logprob":0.0}]},
+              {"token":" A","logprob":-0.1,"top_logprobs":[{"token":" A","logprob":-0.1},{"token":" C","logprob":-2.4}]},
+              {"token":" or","logprob":0.0,"top_logprobs":[{"token":" or","logprob":0.0}]},
+              {"token":" B","logprob":0.0,"top_logprobs":[{"token":" B","logprob":0.0}]}"#;
+        let answer = r#",
+              {"token":"{\"","logprob":0.0,"top_logprobs":[{"token":"{\"","logprob":0.0}]},
+              {"token":"choice","logprob":0.0,"top_logprobs":[{"token":"choice","logprob":0.0}]},
+              {"token":"\":\"","logprob":0.0,"top_logprobs":[{"token":"\":\"","logprob":0.0}]},
+              {"token":"B","logprob":-0.3,"top_logprobs":[{"token":"B","logprob":-0.3},{"token":"A","logprob":-1.5}]},
+              {"token":"\"}","logprob":0.0,"top_logprobs":[{"token":"\"}","logprob":0.0}]}"#;
+        let body = format!(
+            r#"{{"choices":[{{"message":{{"content":"{{\"choice\":\"B\"}}",
+            "reasoning_content":"We need option A or B"}},"finish_reason":"stop",
+            "logprobs":{{"content":[{reasoning}{answer}]}}}}]}}"#
+        );
+        let c = parse_chat_completion(&body).unwrap();
+        assert_eq!(c.answer_token.as_deref(), Some("B"));
+        assert_eq!(c.top.as_ref().unwrap()[0], ("B".to_owned(), -0.3));
+        let (picked, note) = answer_decision(&c, 3);
+        let (position, probabilities) = picked.unwrap();
+        assert_eq!(position, 1);
+        assert!(probabilities.unwrap()[1] > 0.7);
+        assert!(note.is_none());
+
+        // Reasoning cut short by max_tokens: no answer, so no letter read and no play.
+        let body = format!(
+            r#"{{"choices":[{{"message":{{"content":"",
+            "reasoning_content":"We need option A or B"}},"finish_reason":"length",
+            "logprobs":{{"content":[{reasoning}]}}}}]}}"#
+        );
+        let c = parse_chat_completion(&body).unwrap();
+        assert!(c.top.is_none() && c.answer_token.is_none());
+        let (picked, note) = answer_decision(&c, 3);
+        assert!(picked.is_none());
+        assert_eq!(note.as_deref(), Some("reply is not one of the letters A-C"));
+    }
+
+    /// Providers that list the answer's tokens only (Cerebras, OpenRouter).
+    #[test]
+    fn reads_the_letter_when_logprobs_cover_the_answer_only() {
+        let body = r#"{"choices":[{"message":{"content":"\n\nD"},
+            "logprobs":{"content":[
+              {"token":"\n\n","logprob":0.0,"top_logprobs":[{"token":"\n\n","logprob":0.0}]},
+              {"token":"D","logprob":-0.2,"top_logprobs":[{"token":"D","logprob":-0.2},{"token":"B","logprob":-1.9}]}]}}]}"#;
+        let c = parse_chat_completion(body).unwrap();
+        assert_eq!(c.answer_token.as_deref(), Some("D"));
+        let (picked, note) = answer_decision(&c, 4);
+        assert_eq!(picked.unwrap().0, 3);
+        assert!(note.is_none());
+    }
+
+    /// A chat completion whose logprobs list `tokens`; the token `A` has `B` as an
+    /// alternative.
+    fn chat_with_tokens(content: &str, reasoning: Option<&str>, tokens: &[&str]) -> String {
+        let entries: Vec<Value> = tokens
+            .iter()
+            .map(|token| {
+                let top = match *token {
+                    "A" => json!([{"token": "A", "logprob": -0.4}, {"token": "B", "logprob": -1.1}]),
+                    _ => json!([{"token": token, "logprob": 0.0}]),
+                };
+                json!({"token": token, "logprob": 0.0, "top_logprobs": top})
+            })
+            .collect();
+        json!({"choices": [{
+            "message": {"content": content, "reasoning_content": reasoning},
+            "logprobs": {"content": entries},
+        }]})
+        .to_string()
+    }
+
+    /// Fireworks (GLM-5.3) leaves tokens out of the logprobs; Alibaba (Qwen3.8 Flash) splits
+    /// the key into lowercase letters. Both read the answer's `A`.
+    #[test]
+    fn reads_the_last_uppercase_letter_followed_by_the_answers_end() {
+        let glm = chat_with_tokens(
+            "{\n\"choice\": \"A\"\n}",
+            None,
+            &["\":", " \"", "A", "\"\n", "}"],
+        );
+        let qwen = chat_with_tokens(
+            "{\"choice\": \"A\"}",
+            None,
+            &["{\"", "c", "ho", "ice", "\":", " \"", "A", "\"}"],
+        );
+        for body in [glm, qwen] {
+            let c = parse_chat_completion(&body).unwrap();
+            assert_eq!(c.answer_token.as_deref(), Some("A"));
+            let (picked, note) = answer_decision(&c, 3);
+            assert_eq!(picked.unwrap().0, 0);
+            assert!(note.is_none());
+        }
+        // The tokens after the letter must end the answer.
+        let c = parse_chat_completion(&chat_with_tokens(
+            "{\"choice\": \"A\"}",
+            None,
+            &["{\"choice\": \"", "A", "\"}", " extra"],
+        ))
+        .unwrap();
+        assert!(c.top.is_none() && c.answer_token.is_none());
+    }
+
+    /// Prefill readout: the one generated token is read even when a reasoning parser filed
+    /// it under reasoning and left the content empty.
+    #[test]
+    fn prefill_reads_the_only_token_when_content_is_empty() {
+        let c = parse_chat_completion(&chat_with_tokens("", Some("A"), &["A"])).unwrap();
+        assert!(c.top.is_none());
+        let probabilities = letter_probabilities(c.prefill_top().unwrap(), 3).unwrap();
+        assert_eq!(argmax(&probabilities), 0);
+
+        let c = parse_chat_completion(&chat_with_tokens(" A", None, &[" A"])).unwrap();
+        assert_eq!(c.prefill_top(), c.top.as_ref());
+
+        // More than one entry: no single generated token to read.
+        let c = parse_chat_completion(&chat_with_tokens("", Some("A B"), &["A", " B"])).unwrap();
+        assert!(c.prefill_top().is_none());
+    }
+
+    /// The answer readout is invalid when the reply has no letter, or when the
+    /// probabilities were read at a token other than the reply's letter; without
+    /// probabilities the reply's letter is played.
+    #[test]
+    fn answer_readout_requires_the_replys_letter_at_the_readout() {
+        let top = Some(vec![("A".to_owned(), -0.1), ("B".to_owned(), -2.0)]);
+        let mismatch = Completion {
+            text: r#"{"choice":"B"}"#.to_owned(),
+            top: top.clone(),
+            answer_token: Some("A".to_owned()),
+            ..Completion::default()
+        };
+        let (picked, note) = answer_decision(&mismatch, 3);
+        assert!(picked.is_none());
+        assert_eq!(
+            note.as_deref(),
+            Some(r#"letter logprobs read at token "A", not at the reply's letter B"#)
+        );
+
+        let no_letter_token = Completion {
+            answer_token: Some("{\"".to_owned()),
+            ..mismatch
+        };
+        assert!(answer_decision(&no_letter_token, 3).0.is_none());
+
+        let unparseable = Completion {
+            text: "B or A".to_owned(),
+            top: top.clone(),
+            answer_token: Some("B".to_owned()),
+            ..Completion::default()
+        };
+        assert!(answer_decision(&unparseable, 3).0.is_none());
+
+        // Sampled B, but A is the more probable: the readout matches, so A is played.
+        let matched = Completion {
+            text: "B".to_owned(),
+            ..unparseable
+        };
+        let (picked, note) = answer_decision(&matched, 3);
+        assert_eq!(picked.unwrap().0, 0);
+        assert!(note.is_none());
+
+        let choice_only = Completion {
+            text: "C".to_owned(),
+            ..Completion::default()
+        };
+        let (picked, note) = answer_decision(&choice_only, 3);
+        assert_eq!(picked, Some((2, None)));
+        assert_eq!(
+            note.as_deref(),
+            Some("no letter logprobs returned; choice only")
+        );
     }
 
     /// Antigravity: the Gemini request (enum-constrained letter, thinking level) inside the
@@ -975,6 +1227,7 @@ mod tests {
                 max_tokens: None,
                 top_logprobs: None,
                 readout: Readout::Prefill,
+                answer_prefix: None,
                 pacer: None,
             },
         );

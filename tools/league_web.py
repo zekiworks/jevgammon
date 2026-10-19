@@ -165,6 +165,32 @@ GAME_TOTALS = """SELECT COUNT(*) AS games, AVG(g.turns) AS avg_turns,
                  WHERE g.winner_player IS NOT NULL"""
 
 
+def live_game(conn: sqlite3.Connection, fixture: dict, game: sqlite3.Row) -> dict:
+    """One game of a running match at its newest roll, as the live card shows it."""
+    turn = conn.execute(
+        "SELECT * FROM turns WHERE game_id = ? ORDER BY turn_no DESC LIMIT 1", (game["id"],)
+    ).fetchone()
+    names = (fixture["model1"], fixture["model2"])
+    return {
+        "turn_id": turn["id"] if turn else None,
+        "round": game["round_no"],
+        "leg": game["leg"],
+        "white": names[game["white_player"] - 1],
+        "black": names[2 - game["white_player"]],
+        "turn": turn["turn_no"] if turn else 0,
+        "mover": names[turn["player"] - 1] if turn else None,
+        "dice": [turn["die1"], turn["die2"]] if turn else None,
+        "move": turn["move"] if turn else None,
+        "decided_by": turn["decided_by"] if turn else None,
+        "latency_ms": turn["latency_ms"] if turn else None,
+        "legal": turn["legal_count"] if turn else None,
+        # Position before that move, white's perspective.
+        "position": json.loads(turn["position"]) if turn else None,
+        "at": turn["created_at"] if turn else game["started_at"],
+        "game_over": game["finished_at"] is not None,
+    }
+
+
 def snapshot(db: Path, league_id: int | None) -> dict:
     with connect(db) as conn:
         league = conn.execute(
@@ -179,8 +205,10 @@ def snapshot(db: Path, league_id: int | None) -> dict:
         state = league_state(league, last_activity(conn, lid))
 
         # The game in progress (or the last one) of every running match: with both games of
-        # a round played at once, the one that moved last. A stopped league's interrupted
-        # matches are not live.
+        # a round played at once (mirror_concurrent), the one that moved last, plus `games`:
+        # both games of that round, each at its own newest roll. A stopped league's
+        # interrupted matches are not live.
+        concurrent = bool(league["mirror_concurrent"]) if "mirror_concurrent" in league.keys() else False
         live = {}
         for f in fixtures:
             if state != "live" or f["status"] != "running":
@@ -194,27 +222,12 @@ def snapshot(db: Path, league_id: int | None) -> dict:
             ).fetchone()
             if game is None:
                 continue
-            turn = conn.execute(
-                "SELECT * FROM turns WHERE game_id = ? ORDER BY turn_no DESC LIMIT 1", (game["id"],)
-            ).fetchone()
-            live[f["match_id"]] = {
-                "turn_id": turn["id"] if turn else None,
-                "round": game["round_no"],
-                "leg": game["leg"],
-                "white": f["model1"] if game["white_player"] == 1 else f["model2"],
-                "black": f["model2"] if game["white_player"] == 1 else f["model1"],
-                "turn": turn["turn_no"] if turn else 0,
-                "mover": (f["model1"] if turn["player"] == 1 else f["model2"]) if turn else None,
-                "dice": [turn["die1"], turn["die2"]] if turn else None,
-                "move": turn["move"] if turn else None,
-                "decided_by": turn["decided_by"] if turn else None,
-                "latency_ms": turn["latency_ms"] if turn else None,
-                "legal": turn["legal_count"] if turn else None,
-                # Position before that move, white's perspective.
-                "position": json.loads(turn["position"]) if turn else None,
-                "at": turn["created_at"] if turn else game["started_at"],
-                "game_over": game["finished_at"] is not None,
-            }
+            live[f["match_id"]] = live_game(conn, f, game)
+            if concurrent:
+                live[f["match_id"]]["games"] = [live_game(conn, f, g) for g in conn.execute(
+                    "SELECT * FROM games WHERE match_id = ? AND round_no = ? ORDER BY leg, id",
+                    (f["match_id"], game["round_no"]),
+                ).fetchall()]
 
         def model(player_col: str) -> str:
             """League name of the player in `player_col` (1 = model1, 2 = model2)."""
@@ -348,10 +361,12 @@ def round_turns(db: Path, match_id: int, round_no: int) -> dict:
                 # Position before the move, white's perspective.
                 "position": json.loads(r["position"]),
                 "at": r["created_at"],
+                # The game has ended, so this list of its rolls is complete.
+                "game_over": r["finished_at"] is not None,
             }
             for r in conn.execute(
                 """SELECT t.id, g.leg, g.white_player, t.turn_no, t.player, t.die1, t.die2, t.move,
-                          t.decided_by, t.latency_ms, t.legal_count, t.position, t.created_at
+                          t.decided_by, t.latency_ms, t.legal_count, t.position, t.created_at, g.finished_at
                    FROM turns t JOIN games g ON g.id = t.game_id
                    WHERE g.match_id = ? AND g.round_no = ? ORDER BY g.leg, t.turn_no""",
                 (match_id, round_no),
@@ -425,6 +440,8 @@ tbody tr+tr td{border-top:1px solid #20242d}.pts{font-weight:700;color:var(--acc
 .running{background:#16324f;color:#9cc7ff}.finished{background:#1c3327;color:#8fe0b3}.aborted{background:#3d1d22;color:#ff9aa1}.deferred{background:#3d331d;color:#ffd27a}
 .w{color:var(--win);font-weight:600}.live{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(330px,1fr))}
 .card{border:1px solid var(--line);border-radius:8px;padding:10px}.card h3{margin:0 0 4px;font-size:14px}
+/* Both games of a round played at once: the card spans the row, one board per game. */
+.card.duo{grid-column:1/-1}.games{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));margin-top:4px}
 .board{display:grid;grid-template-columns:repeat(13,1fr);gap:2px;margin:8px 0;font-size:11px;text-align:center}
 .pt{background:#20242d;border-radius:3px;min-height:22px;padding:2px 0}
 /* Checker colours: one per side, shared by board cells, legend discs and names. */
@@ -512,13 +529,18 @@ function render(d){
   $('totals').textContent=g.games?`${g.games} games · avg ${Math.round(g.avg_turns)} turns · ${g.turn_limit} at the turn limit (${pct(g.turn_limit,g.games)}) · ${g.gammons} gammons/backgammons · ${g.timeouts} lost on time`:'no finished games yet';
   const running=d.fixtures.filter(f=>f.live);
   $('live').innerHTML=running.length?running.map(f=>{
-    const s=view[f.match_id], v=s?s.turns[s.i]:f.live;
-    const nav=`<div class="nav"><button data-id="${f.match_id}" data-step="start" title="first roll of round ${v.round}">&#9198; round start</button><button data-id="${f.match_id}" data-step="prev" ${s&&s.i===0?'disabled':''}>&laquo;</button><button data-id="${f.match_id}" data-step="next" ${s?'':'disabled'}>&raquo;</button><button data-id="${f.match_id}" data-step="live" ${s?'':'disabled'}>live</button><button data-ctx="${v.turn_id??''}" ${v.turn_id&&v.decided_by!=='forced'&&v.decided_by!=='no_move'?'':'disabled'} title="what was sent to the model for this roll">context</button>${s?`<span class="pill">roll ${s.i+1} of ${s.turns.length} in round ${s.round}</span>`:''}</div>`;
-    return `<div class="card"><h3>${esc(f.label)}</h3>
-    <div><b>${esc(f.model1)}</b> <span class="pts">${f.score1} – ${f.score2}</span> <b>${esc(f.model2)}</b> <span class="mute">(games ${f.games_won[0]}–${f.games_won[1]})</span></div>
-    <div class="mute">round ${v.round} game ${v.leg} · ${W} <span class="cw">${esc(v.white)}</span> v ${B} <span class="cb">${esc(v.black)}</span> · turn ${v.turn}${L.max_turns?' / '+L.max_turns:''}</div>
+    const gs=slots(f);
+    // One game: its newest roll (live) or the roll being browsed, with its own navigation.
+    const game=(lv,k)=>{
+      const s=view[f.match_id+':'+k], v=s?s.turns[s.i]:lv, at=`data-id="${f.match_id}" data-slot="${k}"`;
+      const last=s&&s.i===s.turns.length-1&&s.turns[s.i].game_over;
+      const nav=`<div class="nav"><button ${at} data-step="start" title="first roll of round ${v.round} game ${v.leg}">&#9198; round start</button><button ${at} data-step="prev" ${s&&s.i===0?'disabled':''}>&laquo;</button><button ${at} data-step="next" ${s&&!last?'':'disabled'}>&raquo;</button><button ${at} data-step="live" ${s?'':'disabled'}>live</button><button data-ctx="${v.turn_id??''}" ${v.turn_id&&v.decided_by!=='forced'&&v.decided_by!=='no_move'?'':'disabled'} title="what was sent to the model for this roll">context</button>${s?`<span class="pill">roll ${s.i+1} of ${s.turns.length} · round ${s.round} game ${s.leg}</span>`:''}</div>`;
+      return `<div class="mute">round ${v.round} game ${v.leg} · ${W} <span class="cw">${esc(v.white)}</span> v ${B} <span class="cb">${esc(v.black)}</span> · turn ${v.turn}${L.max_turns?' / '+L.max_turns:''}${!s&&lv.game_over?' · game over':''}</div>
     ${board(v.position,v.white,v.black)}
-    <div>${v.mover?`<span class="${v.mover===v.white?'cw':'cb'}">${esc(v.mover)}</span> rolled ${v.dice.join('-')}: <b>${esc(v.move||'(no move)')}</b> <span class="mute">${how(v.decided_by)}${v.decided_by==='model'||v.decided_by==='fallback'?`, ${(v.latency_ms/1000).toFixed(1)}s of ${v.legal} plays`:''} · ${ago(v.at)}</span>`:'<span class="mute">starting</span>'}</div>${nav}</div>`}).join(''):`<div class="mute">${L.status==='live'?'no match running':`league #${L.id} is ${L.status}`}</div>`;
+    <div>${v.mover?`<span class="${v.mover===v.white?'cw':'cb'}">${esc(v.mover)}</span> rolled ${v.dice.join('-')}: <b>${esc(v.move||'(no move)')}</b> <span class="mute">${how(v.decided_by)}${v.decided_by==='model'||v.decided_by==='fallback'?`, ${(v.latency_ms/1000).toFixed(1)}s of ${v.legal} plays`:''} · ${ago(v.at)}</span>`:'<span class="mute">starting</span>'}</div>${nav}`};
+    return `<div class="card${gs.length>1?' duo':''}"><h3>${esc(f.label)}</h3>
+    <div><b>${esc(f.model1)}</b> <span class="pts">${f.score1} – ${f.score2}</span> <b>${esc(f.model2)}</b> <span class="mute">(games ${f.games_won[0]}–${f.games_won[1]})</span></div>
+    ${gs.length>1?`<div class="games">${gs.map((lv,k)=>`<div>${game(lv,k)}</div>`).join('')}</div>`:game(gs[0],0)}</div>`}).join(''):`<div class="mute">${L.status==='live'?'no match running':`league #${L.id} is ${L.status}`}</div>`;
   const days={};for(const f of d.fixtures){const k=f.stage==='playoff'?'Playoffs':f.stage==='playoff-stale'?'Playoffs (stale: players added after them)':'Matchday '+f.matchday;(days[k]=days[k]||[]).push(f)}
   $('fixture').innerHTML=Object.entries(days).map(([k,fs])=>`<div class="day"><h3>${k}</h3>`+fs.map(f=>{
     // Deferred: failed, waiting for the failing model's backoff; resumes from its last turn.
@@ -547,23 +569,38 @@ function renderHistory(h){
   $('prevSeason').onclick=()=>at>0&&choose(seasons[at-1]);
   $('nextSeason').onclick=()=>at>=0&&at<seasons.length-1&&choose(seasons[at+1]);
 }
-// Rolls being browsed per running match: match_id -> {round, i, turns}. Absent = live.
+// Rolls being browsed per game on a live card: "match_id:slot" -> {round, leg, turn_id, i, turns}
+// (turns: that game's rolls). Absent = live. Slot k is the k-th game the card shows.
 const view={};let lastData=null,lastHistory=null;
+// The games a running match's card shows: both games of the round when they are played at once.
+const slots=f=>f.live.games&&f.live.games.length?f.live.games:[f.live];
 // League on view: null = the latest one; ?league=N in the address selects one.
 let selected=new URLSearchParams(location.search).get('league');selected=selected?+selected:null;
 function choose(id){selected=id;for(const k in view)delete view[k];history.replaceState(null,'',id==null?location.pathname:`?league=${id}`);tick()}
 $('history').addEventListener('click',e=>{const r=e.target.closest('tr[data-league]');if(r)choose(+r.dataset.league)});
 $('latest').addEventListener('click',e=>{e.preventDefault();choose(null)});
-async function step(id,dir){
+// Steps run one after another, so quick clicks each start from where the previous one ended.
+let stepping=Promise.resolve();
+const step=(id,k,dir)=>stepping=stepping.then(()=>stepGame(id,k,dir)).catch(()=>{});
+async function stepGame(id,k,dir){
   const f=lastData&&lastData.fixtures.find(x=>x.match_id===id);if(!f||!f.live)return;
-  if(dir==='live'){delete view[id];render(lastData);return}
-  const round=view[id]?view[id].round:f.live.round;
-  const r=await fetch(`api/round?match=${id}&round=${round}`,{cache:'no-store'});const turns=(await r.json()).turns||[];
+  const key=id+':'+k,lv=slots(f)[k];if(!lv)return;
+  if(dir==='live'){delete view[key];render(lastData);return}
+  const s=view[key],round=s?s.round:lv.round,leg=s?s.leg:lv.leg;
+  const r=await fetch(`api/round?match=${id}&round=${round}`,{cache:'no-store'});
+  const turns=((await r.json()).turns||[]).filter(t=>t.leg===leg);
   if(!turns.length)return;
-  // Live shows the newest roll, so stepping back from live starts one before it.
-  let i=view[id]?view[id].i:turns.length-1;
+  // The game grows while it is browsed: find the shown roll again by its id. Live shows the
+  // newest roll, so stepping back from live starts one before it.
+  let i=turns.findIndex(t=>t.turn_id===(s?s.turn_id:lv.turn_id));
+  if(i<0)i=s?Math.min(s.i,turns.length-1):turns.length;
   i=dir==='start'?0:dir==='prev'?Math.max(0,i-1):i+1;
-  if(dir!=='start'&&i>=turns.length-1&&round===f.live.round)delete view[id];else view[id]={round,i:Math.min(i,turns.length-1),turns};
+  // Past the newest stored roll of a running game: back to live once the live view has caught
+  // up with it (else it would step back); a finished game stays at its end.
+  const newest=turns[turns.length-1];
+  if(i>=turns.length&&!newest.game_over&&lv.round===round&&lv.leg===leg&&lv.turn>=newest.turn){delete view[key];render(lastData);return}
+  i=Math.min(i,turns.length-1);
+  view[key]={round,leg,turn_id:turns[i].turn_id,i,turns};
   render(lastData);
 }
 async function showContext(turnId){
@@ -582,7 +619,7 @@ async function showContext(turnId){
   $('ctx').showModal();
 }
 $('live').addEventListener('click',e=>{const c=e.target.closest('button[data-ctx]');if(c&&!c.disabled){showContext(+c.dataset.ctx);return}
-  const b=e.target.closest('button[data-step]');if(b&&!b.disabled)step(+b.dataset.id,b.dataset.step)});
+  const b=e.target.closest('button[data-step]');if(b&&!b.disabled)step(+b.dataset.id,+b.dataset.slot,b.dataset.step)});
 // Pause / Resume, when the server runs with --control: GET api/control is the runner's state.
 let control=null;
 function renderControl(c){

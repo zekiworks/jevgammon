@@ -1,5 +1,5 @@
 {
-  "note": "v3 League 1: decision models and models on our own hardware. Jev 1.13.0, Fastino GLiDE and Celeris-1 Decision dropped (blocked: no key or credit); GPT-6 Luna plays through the ChatGPT subscription, choice only. No clock (smoke-test p90 above 30 s). 2026-10-16 11:04 UTC: Clef, Cygnet and Decider moved to DGX Spark (GB10) servers with the same checkpoints and settings; Open-Jev stayed on the RTX PRO 6000 (2 of 20 replayed requests chose another play on a GB10). 2026-10-16 11:11 UTC: Gemma 4 31B served by three identical replicas behind a proxy (same URL and settings). 2026-10-19: Liquid d1-ultra joins late (league-add). 2026-10-19 18:36 UTC: bariton's GPUs no longer available: Gemma 4 31B moved to one DGX Spark (GB10) server next to Decider (same checkpoint and arguments; 20 replayed (off) requests: same play 19/20); Open-Jev's matches against Liquid d1-ultra wait for its GPU.",
+  "note": "v3 League 1: decision models and models on our own hardware. Jev 1.13.0, Fastino GLiDE and Celeris-1 Decision dropped (blocked: no key or credit); GPT-6 Luna plays through the ChatGPT subscription, choice only. No clock (smoke-test p90 above 30 s). 2026-10-16 11:04 UTC: Clef, Cygnet and Decider moved to DGX Spark (GB10) servers with the same checkpoints and settings; Open-Jev stayed on the RTX PRO 6000 (2 of 20 replayed requests chose another play on a GB10). 2026-10-16 11:11 UTC: Gemma 4 31B served by three identical replicas behind a proxy (same URL and settings). 2026-10-19: Liquid d1-ultra joins late (league-add). 2026-10-19 18:36 UTC: bariton's GPUs no longer available: Gemma 4 31B moved to one DGX Spark (GB10) server next to Decider (same checkpoint and arguments; 20 replayed (off) requests: same play 19/20); Open-Jev's matches against Liquid d1-ultra wait for its GPU. 2026-10-19 19:31 UTC: reshaped on 2026-10-19 to decision models only: Gemma 4 31B (off), Gemma 4 31B (on), Qwen3.8-27B (off) and Qwen3.8-27B (on) removed (moved to League 2), GPT-6 Luna removed (played via subscription as a chat model; it may rejoin through the OpenAI Decisions API once there is an API key); Cygnet (Gemma 4 12B) stays as a decision model. Their 55 League 1 fixtures (53 played, 2 unfinished) are removed from the league; the matches stay in the database.",
   "prompt_version": "bg-v2",
   "seed": 2567889193785291627,
   "order_seed": 1190975713392774006,
@@ -8,17 +8,6 @@
   "delay": 30,
   "max_turns": 300,
   "players": [
-    {
-      "name": "GPT-6 Luna (subscription, choice only)",
-      "spec": "openai/gpt-6-luna",
-      "provider": "chatgpt-subscription",
-      "price": {
-        "input_per_mtok": 0.1,
-        "output_per_mtok": 0.5
-      },
-      "parallel": 4,
-      "note": "Decisions API key unavailable: chat-model letter player through the ChatGPT subscription, no reasoning setting sent, choice only; cost is the API list price"
-    },
     {
       "name": "Decider v1.1 27B",
       "spec": "pplx-local",
@@ -69,102 +58,6 @@
       "base_url": "http://192.168.1.127:18093",
       "device": "NVIDIA GB10 (DGX Spark spark-002e) from 2026-10-16 11:04 UTC; RTX PRO 6000 (bariton) before",
       "note": "moved to a DGX Spark at 2026-10-16 11:04 UTC, same checkpoint and server arguments; 20 League 1 requests replayed on both machines: same play 20/20, max |dp| 0.042"
-    },
-    {
-      "name": "Gemma 4 31B (off)",
-      "spec": "local/gemma-4-31B-it",
-      "base_url": "http://192.168.1.139:8894/v1",
-      "provider": "local-vllm",
-      "quantization": "fp8 (bf16 checkpoint quantized by vLLM at load; fp8 KV cache)",
-      "parallel": 4,
-      "note": "thinking off; vLLM on our GPUs",
-      "request": {
-        "chat_template_kwargs": {
-          "enable_thinking": false
-        }
-      },
-      "device": "RTX PRO 6000 (bariton): one GPU until 2026-10-16 11:11 UTC, then three replicas (GPUs 0, 1, 3, same image and arguments) behind a least-busy proxy at the same URL; from 2026-10-19 18:36 UTC one server on NVIDIA GB10 (DGX Spark spark-194d, next to Decider), same image, checkpoint and arguments (memory share 0.45)"
-    },
-    {
-      "name": "Gemma 4 31B (on)",
-      "spec": "local/gemma-4-31B-it",
-      "base_url": "http://192.168.1.139:8894/v1",
-      "provider": "local-vllm",
-      "quantization": "fp8 (bf16 checkpoint quantized by vLLM at load; fp8 KV cache)",
-      "parallel": 9,
-      "note": "thinking on (enable_thinking); no effort knob, template default",
-      "reasoning": "template default",
-      "max_tokens": 24000,
-      "request": {
-        "chat_template_kwargs": {
-          "enable_thinking": true
-        },
-        "reasoning_effort": null
-      },
-      "max_matches": 9,
-      "device": "RTX PRO 6000 (bariton): one GPU until 2026-10-16 11:11 UTC, then three replicas (GPUs 0, 1, 3, same image and arguments) behind a least-busy proxy at the same URL; from 2026-10-19 18:36 UTC one server on NVIDIA GB10 (DGX Spark spark-194d, next to Decider), same image, checkpoint and arguments (memory share 0.45)"
-    },
-    {
-      "name": "Qwen3.8-27B (off)",
-      "spec": "openai-compatible/qwen/qwen3.8-27b",
-      "base_url": "https://openrouter.ai/api/v1",
-      "api_key_env": "OPENROUTER_API_KEY",
-      "provider": "openrouter:cerebras/fp16",
-      "quantization": "fp16",
-      "request": {
-        "provider": {
-          "order": [
-            "cerebras/fp16"
-          ],
-          "allow_fallbacks": false,
-          "require_parameters": true
-        },
-        "usage": {
-          "include": true
-        },
-        "reasoning": {
-          "enabled": false
-        },
-        "response_format": null
-      },
-      "letter_readout": "answer",
-      "price": {
-        "input_per_mtok": 0.99,
-        "output_per_mtok": 1.49
-      },
-      "parallel": 2,
-      "rpm": 18,
-      "note": "Cerebras takes no response_format: unconstrained letter"
-    },
-    {
-      "name": "Qwen3.8-27B (on)",
-      "spec": "openai-compatible/qwen/qwen3.8-27b",
-      "base_url": "https://openrouter.ai/api/v1",
-      "api_key_env": "OPENROUTER_API_KEY",
-      "provider": "openrouter:cerebras/fp16",
-      "quantization": "fp16",
-      "request": {
-        "provider": {
-          "order": [
-            "cerebras/fp16"
-          ],
-          "allow_fallbacks": false,
-          "require_parameters": true
-        },
-        "usage": {
-          "include": true
-        },
-        "response_format": null
-      },
-      "letter_readout": "answer",
-      "price": {
-        "input_per_mtok": 0.99,
-        "output_per_mtok": 1.49
-      },
-      "parallel": 2,
-      "rpm": 18,
-      "reasoning": "low",
-      "note": "reasoning effort low; Cerebras takes no response_format: unconstrained letter"
     },
     {
       "name": "Liquid d1-ultra",

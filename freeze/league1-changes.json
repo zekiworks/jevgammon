@@ -1,0 +1,108 @@
+[
+  {
+    "changed_at": "2026-10-19T19:31:15Z",
+    "league": 1,
+    "db": "v3.db",
+    "change": "reshaped to decision models only",
+    "harness_commit": "2421d9e09f90f54f03b8d7b193f9b7deb85f9836",
+    "harness_dirty": false,
+    "removed": [
+      {
+        "name": "GPT-6 Luna (subscription, choice only)",
+        "reason": "played via the ChatGPT subscription as a chat model; may rejoin through the OpenAI Decisions API once there is an API key"
+      },
+      {
+        "name": "Gemma 4 31B (off)",
+        "reason": "chat model; moved to League 2"
+      },
+      {
+        "name": "Gemma 4 31B (on)",
+        "reason": "chat model; moved to League 2"
+      },
+      {
+        "name": "Qwen3.8-27B (off)",
+        "reason": "chat model; moved to League 2"
+      },
+      {
+        "name": "Qwen3.8-27B (on)",
+        "reason": "chat model; moved to League 2"
+      }
+    ],
+    "removed_fixtures": [
+      "matchday 10: GPT-6 Luna (subscription, choice only) v SubQ Snap Preview",
+      "matchday 10: Gemma 4 31B (off) v Random",
+      "matchday 10: Gemma 4 31B (on) v Safest",
+      "matchday 10: Open-Jev 27B v1.1 v Qwen3.8-27B (off)",
+      "matchday 11: Cygnet (Gemma 4 12B) v Gemma 4 31B (off)",
+      "matchday 11: Gemma 4 31B (on) v Open-Jev 27B v1.1",
+      "matchday 11: Qwen3.8-27B (on) v GPT-6 Luna (subscription, choice only)",
+      "matchday 12: GNUbg weak v Qwen3.8-27B (on)",
+      "matchday 12: GPT-6 Luna (subscription, choice only) v Qwen3.8-27B (off)",
+      "matchday 12: Gemma 4 31B (off) v Decider v1.1 27B",
+      "matchday 13: GPT-6 Luna (subscription, choice only) v Gemma 4 31B (on)",
+      "matchday 13: Gemma 4 31B (off) v Safest",
+      "matchday 13: Qwen3.8-27B (off) v GNUbg weak",
+      "matchday 13: Random v Qwen3.8-27B (on)",
+      "matchday 14: GPT-6 Luna (subscription, choice only) v Liquid d1-ultra",
+      "matchday 14: Liquid d1-ultra v Gemma 4 31B (off)",
+      "matchday 14: Liquid d1-ultra v Gemma 4 31B (on)",
+      "matchday 14: Liquid d1-ultra v Qwen3.8-27B (off)",
+      "matchday 14: Liquid d1-ultra v Qwen3.8-27B (on)",
+      "matchday 1: Clef v Gemma 4 31B (off)",
+      "matchday 1: Cygnet (Gemma 4 12B) v Qwen3.8-27B (on)",
+      "matchday 1: GPT-6 Luna (subscription, choice only) v Open-Jev 27B v1.1",
+      "matchday 1: Gemma 4 31B (on) v GNUbg weak",
+      "matchday 1: Qwen3.8-27B (off) v Random",
+      "matchday 2: Cygnet (Gemma 4 12B) v Qwen3.8-27B (off)",
+      "matchday 2: Decider v1.1 27B v Qwen3.8-27B (on)",
+      "matchday 2: Random v Gemma 4 31B (on)",
+      "matchday 2: SubQ Snap Preview v Gemma 4 31B (off)",
+      "matchday 3: GPT-6 Luna (subscription, choice only) v Safest",
+      "matchday 3: Gemma 4 31B (on) v Cygnet (Gemma 4 12B)",
+      "matchday 3: Qwen3.8-27B (off) v Decider v1.1 27B",
+      "matchday 3: Qwen3.8-27B (on) v Gemma 4 31B (off)",
+      "matchday 4: GNUbg weak v GPT-6 Luna (subscription, choice only)",
+      "matchday 4: Gemma 4 31B (off) v Qwen3.8-27B (off)",
+      "matchday 4: Gemma 4 31B (on) v Decider v1.1 27B",
+      "matchday 4: Qwen3.8-27B (on) v Clef",
+      "matchday 5: GPT-6 Luna (subscription, choice only) v Random",
+      "matchday 5: Gemma 4 31B (off) v Gemma 4 31B (on)",
+      "matchday 5: Qwen3.8-27B (off) v Clef",
+      "matchday 5: Qwen3.8-27B (on) v SubQ Snap Preview",
+      "matchday 6: Clef v Gemma 4 31B (on)",
+      "matchday 6: Cygnet (Gemma 4 12B) v GPT-6 Luna (subscription, choice only)",
+      "matchday 6: Open-Jev 27B v1.1 v Gemma 4 31B (off)",
+      "matchday 6: Safest v Qwen3.8-27B (on)",
+      "matchday 6: SubQ Snap Preview v Qwen3.8-27B (off)",
+      "matchday 7: Decider v1.1 27B v GPT-6 Luna (subscription, choice only)",
+      "matchday 7: Qwen3.8-27B (off) v Qwen3.8-27B (on)",
+      "matchday 7: SubQ Snap Preview v Gemma 4 31B (on)",
+      "matchday 8: GPT-6 Luna (subscription, choice only) v Gemma 4 31B (off)",
+      "matchday 8: Qwen3.8-27B (on) v Gemma 4 31B (on)",
+      "matchday 8: Safest v Qwen3.8-27B (off)",
+      "matchday 9: GNUbg weak v Gemma 4 31B (off)",
+      "matchday 9: GPT-6 Luna (subscription, choice only) v Clef",
+      "matchday 9: Gemma 4 31B (on) v Qwen3.8-27B (off)",
+      "matchday 9: Qwen3.8-27B (on) v Open-Jev 27B v1.1"
+    ],
+    "removed_fixtures_count": 55,
+    "removed_fixtures_unfinished": [
+      "matchday 14: Liquid d1-ultra v Gemma 4 31B (on)",
+      "matchday 14: Liquid d1-ultra v Qwen3.8-27B (on)"
+    ],
+    "stale_playoff_fixtures": 0,
+    "ranking_cleared": true,
+    "remaining_players": [
+      "Decider v1.1 27B",
+      "SubQ Snap Preview",
+      "Clef",
+      "Open-Jev 27B v1.1",
+      "Cygnet (Gemma 4 12B)",
+      "Random",
+      "Safest",
+      "GNUbg weak",
+      "Liquid d1-ultra"
+    ],
+    "note": "Removed fixtures deleted from league_matches; their matches, games and turns stay in the database (unreferenced). Cygnet (Gemma 4 12B) was briefly removed too and restored at 19:38 UTC (same fixture rows and match ids); it stays as a decision model. Backups: v3.db.bak-20261019-reshape-l1 (before the change), v3.db.bak-20261019-before-cygnet-restore."
+  }
+]

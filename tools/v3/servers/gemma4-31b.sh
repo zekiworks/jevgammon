@@ -2,7 +2,7 @@
 # gemma-4-31B-it, plain OpenAI-compatible vLLM on GPU 3 (wave A, next to Qwen's TP4 shard) or
 # GPU 0 (League 1 layout, next to Cygnet): GEMMA_GPU=0. gemma4-31b-replicas.sh runs one
 # replica per GPU with this script (GEMMA_NAME, GEMMA_PORT, GEMMA_UTIL per replica).
-#   [GEMMA_GPU=N] [GEMMA_UTIL=share] [BIND_HOST=0.0.0.0] tools/v3/servers/gemma4-31b.sh start|stop|status
+#   [GEMMA_GPU=N] [GEMMA_UTIL=share] [GEMMA_MAX_SEQS=n] [BIND_HOST=0.0.0.0] tools/v3/servers/gemma4-31b.sh start|stop|status
 # Model flags as ~/code/gemma4-31b/compose.yaml (bf16 checkpoint, online FP8 weights, FP8 KV
 # cache); a smaller memory share, no image/video inputs, and its own port. On spark3 (League 1
 # from 2026-10-19, spark.sh) it listens on the LAN: BIND_HOST=0.0.0.0.
@@ -26,7 +26,7 @@ case ${1:-} in
       --quantization fp8 \
       --kv-cache-dtype fp8 \
       --max-model-len 32768 \
-      --max-num-seqs 16 \
+      --max-num-seqs "${GEMMA_MAX_SEQS:-16}" \
       --gpu-memory-utilization "${GEMMA_UTIL:-0.6}" \
       --limit-mm-per-prompt '{"image":0,"video":0,"audio":0}' \
       --enable-chunked-prefill \

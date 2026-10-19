@@ -217,5 +217,215 @@
       "matchday 12: LFM2.5-24B-A2B (on) v LFM2.5-24B-A2B (off)"
     ],
     "stale_playoff_fixtures": 0
+  },
+  {
+    "added_at": "2026-10-19T19:39:58Z",
+    "league": 2,
+    "db": "v3.db",
+    "name": "Gemma 4 31B (on)",
+    "harness_commit": "2421d9e09f90f54f03b8d7b193f9b7deb85f9836",
+    "harness_dirty": true,
+    "entry": {
+      "name": "Gemma 4 31B (on)",
+      "spec": "local/gemma-4-31B-it",
+      "provider": "local-vllm",
+      "quantization": "fp8 (bf16 checkpoint quantized by vLLM at load; fp8 KV cache)",
+      "base_url": "http://192.168.1.139:8894/v1",
+      "reasoning": "template default",
+      "request": {
+        "chat_template_kwargs": {
+          "enable_thinking": true
+        },
+        "reasoning_effort": null
+      },
+      "max_tokens": 24000,
+      "note": "thinking on (enable_thinking); no effort knob, template default",
+      "device": "RTX PRO 6000 (bariton): one GPU until 2026-10-16 11:11 UTC, then three replicas (GPUs 0, 1, 3, same image and arguments) behind a least-busy proxy at the same URL; from 2026-10-19 18:36 UTC one server on NVIDIA GB10 (DGX Spark spark-194d, next to Decider), same image, checkpoint and arguments (memory share 0.45)",
+      "parallel": 16,
+      "max_matches": 16
+    },
+    "entry_sha256": "abcae8f2f0e57a98d84be24e9322a7273becfd30e5f073f29439ca97eab74978",
+    "fixtures": [
+      "matchday 13: Gemma 4 31B (on) v Gemini 3.8 Flash (low)",
+      "matchday 13: Gemini 3.8 Flash (high) v Gemma 4 31B (on)",
+      "matchday 13: Gemma 4 31B (on) v Claude Sonnet 5.5 (low)",
+      "matchday 13: Gemma 4 31B (on) v Claude Sonnet 5.5 (high)",
+      "matchday 13: Gemma 4 31B (on) v GPT-6.1 Sol (low)",
+      "matchday 13: GPT-6.1 Sol (high) v Gemma 4 31B (on)",
+      "matchday 13: DeepSeek V4.1 Flash (off) v Gemma 4 31B (on)",
+      "matchday 13: Gemma 4 31B (on) v DeepSeek V4.1 Flash (on)",
+      "matchday 13: Gemma 4 31B (on) v GLM-5.3 (on)",
+      "matchday 13: Gemma 4 31B (on) v GNUbg weak",
+      "matchday 13: Gemma 4 31B (on) v Qwen3.8 Flash (off)",
+      "matchday 13: LFM2.5-24B-A2B (off) v Gemma 4 31B (on)",
+      "matchday 13: LFM2.5-24B-A2B (on) v Gemma 4 31B (on)"
+    ],
+    "stale_playoff_fixtures": 0,
+    "changes": [
+      {
+        "at": "2026-10-19T19:55:00Z",
+        "parallel": 24,
+        "was": 16,
+        "reason": "spark3 vLLM server restarted with --max-num-seqs 24 (was 16), same memory share; league2 runner restarted to apply"
+      }
+    ]
+  },
+  {
+    "added_at": "2026-10-19T19:39:58Z",
+    "league": 2,
+    "db": "v3.db",
+    "name": "Gemma 4 31B (off)",
+    "harness_commit": "2421d9e09f90f54f03b8d7b193f9b7deb85f9836",
+    "harness_dirty": true,
+    "entry": {
+      "name": "Gemma 4 31B (off)",
+      "spec": "local/gemma-4-31B-it",
+      "provider": "local-vllm",
+      "quantization": "fp8 (bf16 checkpoint quantized by vLLM at load; fp8 KV cache)",
+      "base_url": "http://192.168.1.139:8894/v1",
+      "request": {
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        }
+      },
+      "note": "thinking off; vLLM on our GPUs",
+      "device": "RTX PRO 6000 (bariton): one GPU until 2026-10-16 11:11 UTC, then three replicas (GPUs 0, 1, 3, same image and arguments) behind a least-busy proxy at the same URL; from 2026-10-19 18:36 UTC one server on NVIDIA GB10 (DGX Spark spark-194d, next to Decider), same image, checkpoint and arguments (memory share 0.45)",
+      "parallel": 4
+    },
+    "entry_sha256": "1aa43e4665f218c737cd295a19b7d77c131e4dadb400fa4271d02cae5c2123f9",
+    "fixtures": [
+      "matchday 14: Gemini 3.8 Flash (low) v Gemma 4 31B (off)",
+      "matchday 14: Gemini 3.8 Flash (high) v Gemma 4 31B (off)",
+      "matchday 14: Claude Sonnet 5.5 (low) v Gemma 4 31B (off)",
+      "matchday 14: Gemma 4 31B (off) v Claude Sonnet 5.5 (high)",
+      "matchday 14: Gemma 4 31B (off) v GPT-6.1 Sol (low)",
+      "matchday 14: GPT-6.1 Sol (high) v Gemma 4 31B (off)",
+      "matchday 14: DeepSeek V4.1 Flash (off) v Gemma 4 31B (off)",
+      "matchday 14: DeepSeek V4.1 Flash (on) v Gemma 4 31B (off)",
+      "matchday 14: GLM-5.3 (on) v Gemma 4 31B (off)",
+      "matchday 14: Gemma 4 31B (off) v GNUbg weak",
+      "matchday 14: Qwen3.8 Flash (off) v Gemma 4 31B (off)",
+      "matchday 14: Gemma 4 31B (off) v LFM2.5-24B-A2B (off)",
+      "matchday 14: LFM2.5-24B-A2B (on) v Gemma 4 31B (off)",
+      "matchday 14: Gemma 4 31B (on) v Gemma 4 31B (off)"
+    ],
+    "stale_playoff_fixtures": 0
+  },
+  {
+    "added_at": "2026-10-19T19:39:58Z",
+    "league": 2,
+    "db": "v3.db",
+    "name": "Qwen3.8-27B (off)",
+    "harness_commit": "2421d9e09f90f54f03b8d7b193f9b7deb85f9836",
+    "harness_dirty": true,
+    "entry": {
+      "name": "Qwen3.8-27B (off)",
+      "spec": "openai-compatible/qwen/qwen3.8-27b",
+      "provider": "openrouter:cerebras/fp16",
+      "quantization": "fp16",
+      "base_url": "https://openrouter.ai/api/v1",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "request": {
+        "provider": {
+          "order": [
+            "cerebras/fp16"
+          ],
+          "allow_fallbacks": false,
+          "require_parameters": true
+        },
+        "usage": {
+          "include": true
+        },
+        "reasoning": {
+          "enabled": false
+        },
+        "response_format": null
+      },
+      "letter_readout": "answer",
+      "price": {
+        "input_per_mtok": 0.99,
+        "output_per_mtok": 1.49
+      },
+      "note": "Cerebras takes no response_format: unconstrained letter",
+      "parallel": 2,
+      "rpm": 18
+    },
+    "entry_sha256": "fe3130020502019da8cec54d4dffa700865f2bc0ec44c5a6e506371b981a1f70",
+    "fixtures": [
+      "matchday 15: Gemini 3.8 Flash (low) v Qwen3.8-27B (off)",
+      "matchday 15: Gemini 3.8 Flash (high) v Qwen3.8-27B (off)",
+      "matchday 15: Qwen3.8-27B (off) v Claude Sonnet 5.5 (low)",
+      "matchday 15: Claude Sonnet 5.5 (high) v Qwen3.8-27B (off)",
+      "matchday 15: GPT-6.1 Sol (low) v Qwen3.8-27B (off)",
+      "matchday 15: GPT-6.1 Sol (high) v Qwen3.8-27B (off)",
+      "matchday 15: DeepSeek V4.1 Flash (off) v Qwen3.8-27B (off)",
+      "matchday 15: Qwen3.8-27B (off) v DeepSeek V4.1 Flash (on)",
+      "matchday 15: Qwen3.8-27B (off) v GLM-5.3 (on)",
+      "matchday 15: GNUbg weak v Qwen3.8-27B (off)",
+      "matchday 15: Qwen3.8-27B (off) v Qwen3.8 Flash (off)",
+      "matchday 15: Qwen3.8-27B (off) v LFM2.5-24B-A2B (off)",
+      "matchday 15: LFM2.5-24B-A2B (on) v Qwen3.8-27B (off)",
+      "matchday 15: Qwen3.8-27B (off) v Gemma 4 31B (on)",
+      "matchday 15: Gemma 4 31B (off) v Qwen3.8-27B (off)"
+    ],
+    "stale_playoff_fixtures": 0
+  },
+  {
+    "added_at": "2026-10-19T19:39:58Z",
+    "league": 2,
+    "db": "v3.db",
+    "name": "Qwen3.8-27B (on)",
+    "harness_commit": "2421d9e09f90f54f03b8d7b193f9b7deb85f9836",
+    "harness_dirty": true,
+    "entry": {
+      "name": "Qwen3.8-27B (on)",
+      "spec": "openai-compatible/qwen/qwen3.8-27b",
+      "provider": "openrouter:cerebras/fp16",
+      "quantization": "fp16",
+      "base_url": "https://openrouter.ai/api/v1",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "reasoning": "low",
+      "request": {
+        "provider": {
+          "order": [
+            "cerebras/fp16"
+          ],
+          "allow_fallbacks": false,
+          "require_parameters": true
+        },
+        "usage": {
+          "include": true
+        },
+        "response_format": null
+      },
+      "letter_readout": "answer",
+      "price": {
+        "input_per_mtok": 0.99,
+        "output_per_mtok": 1.49
+      },
+      "note": "reasoning effort low; Cerebras takes no response_format: unconstrained letter",
+      "parallel": 2,
+      "rpm": 18
+    },
+    "entry_sha256": "e03936eb09d47ca1dee978f238286731c350d647c972fadc91c1edfa5038ebfc",
+    "fixtures": [
+      "matchday 16: Qwen3.8-27B (on) v Gemini 3.8 Flash (low)",
+      "matchday 16: Qwen3.8-27B (on) v Gemini 3.8 Flash (high)",
+      "matchday 16: Qwen3.8-27B (on) v Claude Sonnet 5.5 (low)",
+      "matchday 16: Claude Sonnet 5.5 (high) v Qwen3.8-27B (on)",
+      "matchday 16: Qwen3.8-27B (on) v GPT-6.1 Sol (low)",
+      "matchday 16: Qwen3.8-27B (on) v GPT-6.1 Sol (high)",
+      "matchday 16: DeepSeek V4.1 Flash (off) v Qwen3.8-27B (on)",
+      "matchday 16: DeepSeek V4.1 Flash (on) v Qwen3.8-27B (on)",
+      "matchday 16: Qwen3.8-27B (on) v GLM-5.3 (on)",
+      "matchday 16: Qwen3.8-27B (on) v GNUbg weak",
+      "matchday 16: Qwen3.8 Flash (off) v Qwen3.8-27B (on)",
+      "matchday 16: Qwen3.8-27B (on) v LFM2.5-24B-A2B (off)",
+      "matchday 16: Qwen3.8-27B (on) v LFM2.5-24B-A2B (on)",
+      "matchday 16: Gemma 4 31B (on) v Qwen3.8-27B (on)",
+      "matchday 16: Gemma 4 31B (off) v Qwen3.8-27B (on)",
+      "matchday 16: Qwen3.8-27B (on) v Qwen3.8-27B (off)"
+    ],
+    "stale_playoff_fixtures": 0
   }
 ]

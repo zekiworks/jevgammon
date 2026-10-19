@@ -5,7 +5,7 @@
 # listening on the LAN (BIND_HOST=0.0.0.0):
 #   spark  (192.168.1.127): cygnet (vLLM 8892, shim 18093), clef (18091)
 #   spark3 (192.168.1.139): decider (18097); from 2026-10-19 also Gemma 4 31B (vLLM 8894,
-#     share 0.45), since bariton's GPUs are no longer available
+#     share 0.45, 24 sequences at once), since bariton's GPUs are no longer available
 # Open-Jev stays on this machine (open-jev.sh, GPU 2): on spark3 it chose another play than
 # here in 2 of 20 League 1 requests (near-ties), over the 1-in-20 limit for moving a player.
 #   tools/v3/servers/spark.sh start|stop|status|probe
@@ -21,7 +21,9 @@ declare -A SERVERS=([spark]="cygnet clef" [spark3]="decider gemma4-31b")
 REMOTE=code/v3-servers
 # Cygnet's vLLM share: 0.28 of 121.7 GiB is 34 GiB, about what 0.34 of a 95.6 GiB card gives.
 # Gemma's 0.45 (55 GiB) leaves room for Decider (49 GiB) on spark3; it starts after Decider.
-ENV="BIND_HOST=0.0.0.0 CYGNET_UTIL=0.28 CLEF_GPU=0 DECIDER_GPU=0 GEMMA_GPU=0 GEMMA_UTIL=0.45"
+# From 2026-10-19 19:45 UTC Gemma runs 24 sequences at once (was 16) for League 2's thinking
+# matches: same KV cache (233,725 tokens), which was a third full with 16 running.
+ENV="BIND_HOST=0.0.0.0 CYGNET_UTIL=0.28 CLEF_GPU=0 DECIDER_GPU=0 GEMMA_GPU=0 GEMMA_UTIL=0.45 GEMMA_MAX_SEQS=24"
 
 remote() { local host=$1; shift; ssh -o BatchMode=yes "$host" "cd ~/$REMOTE && $ENV $*"; }
 

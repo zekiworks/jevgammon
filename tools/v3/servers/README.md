@@ -182,6 +182,12 @@ within the one-in-20 rule used for the 2026-10-16 moves; there was no alternativ
 Open-Jev 27B v1.1 failed the same check on a GB10 (18/20) and its GPU on bariton is not
 available, so its match against Liquid d1-ultra stays deferred until `open-jev.sh` runs again.
 
+At 19:31 UTC League 1 became decision models only and both Gemma 4 31B setups moved to League 2
+(`leagues/league2-l1chat.json`, `league-add`), on the same spark3 server. For League 2's thinking
+matches the server runs 24 sequences at once (`GEMMA_MAX_SEQS=24` in `spark.sh`, was 16; same
+memory share and KV cache): with 16 running it generated about 84 tokens/s in total (5.3 per
+request) with the KV cache a third full. Restarting it does not touch Decider.
+
 ## League 2 Flash Next on DGX Spark spark3 (2026-10-19, withdrawn)
 
 Withdrawn later on 2026-10-19 (7-20 minutes per thinking decision); the spark3 server is

@@ -1,0 +1,182 @@
+{
+  "note": "v3 League 2: workhorses, closed and open. No clock (smoke-test p90 above 30 s).",
+  "prompt_version": "bg-v2",
+  "seed": 8637860750269043463,
+  "order_seed": 1190975713392774006,
+  "rounds": 3,
+  "clock": 0,
+  "delay": 30,
+  "max_turns": 300,
+  "players": [
+    {
+      "name": "Gemini 3.8 Flash (low)",
+      "spec": "gemini/gemini-3.8-flash",
+      "provider": "gemini-api",
+      "reasoning": "low",
+      "price": {
+        "input_per_mtok": 0.75,
+        "output_per_mtok": 3.75
+      },
+      "parallel": 4
+    },
+    {
+      "name": "Gemini 3.8 Flash (high)",
+      "spec": "gemini/gemini-3.8-flash",
+      "provider": "gemini-api",
+      "reasoning": "high",
+      "price": {
+        "input_per_mtok": 0.75,
+        "output_per_mtok": 3.75
+      },
+      "parallel": 4
+    },
+    {
+      "name": "Claude Sonnet 5.5 (low)",
+      "spec": "anthropic/claude-sonnet-5-5",
+      "provider": "claude-subscription",
+      "reasoning": "low",
+      "price": {
+        "input_per_mtok": 2,
+        "output_per_mtok": 10
+      },
+      "parallel": 4,
+      "note": "subscription login; cost is API-list-price equivalent"
+    },
+    {
+      "name": "Claude Sonnet 5.5 (high)",
+      "spec": "anthropic/claude-sonnet-5-5",
+      "provider": "claude-subscription",
+      "reasoning": "high",
+      "price": {
+        "input_per_mtok": 2,
+        "output_per_mtok": 10
+      },
+      "parallel": 4,
+      "note": "subscription login; cost is API-list-price equivalent"
+    },
+    {
+      "name": "GPT-6.1 Sol (low)",
+      "spec": "openai/gpt-6.1-sol",
+      "provider": "chatgpt-subscription",
+      "reasoning": "low",
+      "price": {
+        "input_per_mtok": 2,
+        "output_per_mtok": 10
+      },
+      "parallel": 4,
+      "note": "subscription login; cost is API-list-price equivalent"
+    },
+    {
+      "name": "GPT-6.1 Sol (high)",
+      "spec": "openai/gpt-6.1-sol",
+      "provider": "chatgpt-subscription",
+      "reasoning": "high",
+      "price": {
+        "input_per_mtok": 2,
+        "output_per_mtok": 10
+      },
+      "parallel": 4,
+      "note": "subscription login; cost is API-list-price equivalent"
+    },
+    {
+      "name": "DeepSeek V4.1 Flash (off)",
+      "spec": "openai-compatible/deepseek/deepseek-v4.1-flash",
+      "base_url": "https://openrouter.ai/api/v1",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "provider": "openrouter:fireworks",
+      "quantization": null,
+      "request": {
+        "provider": {
+          "order": [
+            "fireworks"
+          ],
+          "allow_fallbacks": false,
+          "require_parameters": true
+        },
+        "usage": {
+          "include": true
+        },
+        "reasoning": {
+          "enabled": false
+        }
+      },
+      "letter_readout": "answer",
+      "price": {
+        "input_per_mtok": 0.3,
+        "output_per_mtok": 1.2
+      },
+      "parallel": 8,
+      "rpm": 18,
+      "top_logprobs": 5,
+      "note": "Fireworks via OpenRouter; quantization not published; top_logprobs max 5"
+    },
+    {
+      "name": "DeepSeek V4.1 Flash (on)",
+      "spec": "openai-compatible/deepseek/deepseek-v4.1-flash",
+      "base_url": "https://openrouter.ai/api/v1",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "provider": "openrouter:fireworks",
+      "quantization": null,
+      "request": {
+        "provider": {
+          "order": [
+            "fireworks"
+          ],
+          "allow_fallbacks": false,
+          "require_parameters": true
+        },
+        "usage": {
+          "include": true
+        }
+      },
+      "letter_readout": "answer",
+      "price": {
+        "input_per_mtok": 0.3,
+        "output_per_mtok": 1.2
+      },
+      "parallel": 8,
+      "rpm": 18,
+      "reasoning": "low",
+      "top_logprobs": 5,
+      "note": "reasoning effort low; letter logprobs read from the answer after reasoning"
+    },
+    {
+      "name": "GLM-5.3 (on)",
+      "spec": "openai-compatible/z-ai/glm-5.3",
+      "base_url": "https://openrouter.ai/api/v1",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "provider": "openrouter:fireworks",
+      "quantization": null,
+      "request": {
+        "provider": {
+          "order": [
+            "fireworks"
+          ],
+          "allow_fallbacks": false,
+          "require_parameters": true
+        },
+        "usage": {
+          "include": true
+        }
+      },
+      "letter_readout": "answer",
+      "price": {
+        "input_per_mtok": 1.4,
+        "output_per_mtok": 4.4
+      },
+      "parallel": 8,
+      "rpm": 18,
+      "reasoning": "low",
+      "top_logprobs": 5,
+      "note": "reasoning is mandatory on this endpoint, so no off setup; effort low"
+    },
+    {
+      "name": "GNUbg weak",
+      "spec": "gnubg-weak",
+      "provider": "local",
+      "note": "gnubg 1.08 Beginner level (0-ply, deterministic noise 0.060)",
+      "parallel": 1
+    }
+  ],
+  "mirror_concurrent": true
+}

@@ -1,0 +1,113 @@
+{
+  "harness_commit": "293be03d6ee08c646b3ca12203eee64e33607b0c",
+  "files": {
+    "positions": {
+      "positions/extension.jsonl": {
+        "sha256": "6fc93858ab66f538f25d8660cb447221f7e590573de42c091c3b179732f584c1",
+        "bytes": 2484324,
+        "rows": 4000
+      },
+      "positions/nackgammon.jsonl": {
+        "sha256": "383ab82cadd02127c95e89cee5f9bc4442a128f1b9a140da58508daa8d659eff",
+        "bytes": 334182,
+        "rows": 500
+      },
+      "positions/new.jsonl": {
+        "sha256": "ad06427c4106e8d889b027dc49f79557fb2739b8fd278f8fa2f05da72dc12d69",
+        "bytes": 615854,
+        "rows": 1000
+      },
+      "positions/opening-control.jsonl": {
+        "sha256": "c26a21198e65503d986ff6fffa02fceb7a4b84c63295cea4a996599703befd36",
+        "bytes": 140694,
+        "rows": 200
+      },
+      "positions/smoke.jsonl": {
+        "sha256": "d1cd1b406b39622880ee05ff821768bb9fdd5d775cfd2589ad0a3055d6609a8a",
+        "bytes": 30628,
+        "rows": 50
+      },
+      "positions/v1.jsonl": {
+        "sha256": "52e7abf8d9cea173d0bb522cf681ddebefc444bb961d0eaec38253a0dfdd6976",
+        "bytes": 661377,
+        "rows": 1000
+      },
+      "positions/build-log.json": {
+        "sha256": "20962716532c9984348a78a1eec728e0a70f060d0290867b4b5246081a0e70d3",
+        "bytes": 1361
+      }
+    },
+    "prompts": {
+      "prompts/bg-v2.md": {
+        "sha256": "3c59036a1f416f6187ccec06ec939e4d888a2029441daf30f6ee06a69015c465",
+        "bytes": 7603
+      },
+      "prompts/nack-v2.md": {
+        "sha256": "fa7397be6e9a7d337389a401d61464464bcbbe5725b8a2c70e01e6cb670395a8",
+        "bytes": 6312
+      },
+      "prompts/instructions-notation.txt": {
+        "sha256": "8565178e44a566f703fe1443f028ab2877d3d931b9ddef43547b92f9d1a7acdb",
+        "bytes": 310
+      },
+      "prompts/instructions.txt": {
+        "sha256": "445735bf10ff30e4cc7f1a90dbeaa0c8858f0cf0b7bfe3f9dd3a0da1f1f0ec2d",
+        "bytes": 361
+      },
+      "prompts/letter-system.txt": {
+        "sha256": "21059b268bae257dab3aa7f608d1545d9d6a610f6f2782fc4baa84e728a6c82e",
+        "bytes": 276
+      },
+      "prompts/question.txt": {
+        "sha256": "ef76def6baccec519ff9515c66b41d4c233b8e2927acf18115ad1e2e494211dc",
+        "bytes": 144
+      },
+      "src/players/prompt.rs": {
+        "sha256": "67934a35ca7c40fb4f750b2cf440ab2da46c1ffe8445b9d2f035bf4786ea786d",
+        "bytes": 25719
+      }
+    },
+    "seeds": {
+      "seeds.json": {
+        "sha256": "2af25908d991bd3240a01a9767a1df299a5f11d5d6211b269ddf6e3f4f140e02",
+        "bytes": 273
+      }
+    },
+    "roster": {
+      "leagues/league1.json": {
+        "sha256": "5a46ff00f4c39707d614229cf1a1f43d37cf2f8f5d74d95931c1f36b9a70ad29",
+        "bytes": 6789
+      },
+      "leagues/league2-start.json": {
+        "sha256": "50b9641042c1364e2446f3188564ec640bccb1f42d6c53a2d3bea66773906bcc",
+        "bytes": 4862
+      },
+      "leagues/league2.json": {
+        "sha256": "c1f027315444b23bc70e4274d0ab82e7b1907b9ebf0a197bdc90345086e61d4d",
+        "bytes": 5821
+      },
+      "leagues/league3.json": {
+        "sha256": "023b439f1d6d5e19c1b52a5843de039f149e9de72d39a1981f6caa3dffcb53ec",
+        "bytes": 4939
+      }
+    }
+  },
+  "groups_without_files": [],
+  "patterns": {
+    "positions": [
+      "positions/*.jsonl",
+      "positions/build-log.json"
+    ],
+    "prompts": [
+      "prompts/*.md",
+      "prompts/*.txt",
+      "src/players/prompt.rs"
+    ],
+    "seeds": [
+      "seeds.json"
+    ],
+    "roster": [
+      "leagues/*.json"
+    ]
+  }
+}

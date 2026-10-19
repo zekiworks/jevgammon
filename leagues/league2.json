@@ -143,37 +143,6 @@
       "note": "reasoning effort low; letter logprobs read from the answer after reasoning"
     },
     {
-      "name": "Qwen3.8 Flash Next (off)",
-      "spec": "local/qwen3.8-flash-next",
-      "base_url": "http://127.0.0.1:8896/v1",
-      "provider": "local-vllm",
-      "quantization": "fp8 (checkpoint, 128x128 block scales)",
-      "parallel": 8,
-      "note": "not on OpenRouter: our GPUs, same build as v1; thinking off",
-      "request": {
-        "chat_template_kwargs": {
-          "enable_thinking": false
-        }
-      }
-    },
-    {
-      "name": "Qwen3.8 Flash Next (on)",
-      "spec": "local/qwen3.8-flash-next",
-      "base_url": "http://127.0.0.1:8896/v1",
-      "provider": "local-vllm",
-      "quantization": "fp8 (checkpoint, 128x128 block scales)",
-      "parallel": 8,
-      "note": "thinking on (enable_thinking); no effort knob, template default",
-      "reasoning": "template default",
-      "max_tokens": 24000,
-      "request": {
-        "chat_template_kwargs": {
-          "enable_thinking": true
-        },
-        "reasoning_effort": null
-      }
-    },
-    {
       "name": "GLM-5.3 (on)",
       "spec": "openai-compatible/z-ai/glm-5.3",
       "base_url": "https://openrouter.ai/api/v1",

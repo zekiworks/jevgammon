@@ -5,8 +5,8 @@
 
 Standard library only. The database is opened read-only per request, so it can run beside a
 league in progress. The page shows the latest league (or ?league=N), the history of every
-league in the database with what each one tested (`leagues.note`), and a comparison of each
-model's record across leagues. The table follows `src/league.rs`: 3 points for a win, 1 for
+league in the database with what each one tested (`leagues.note`), and links to the working
+copy of the published report (`--report`, served at /report/). The table follows `src/league.rs`: 3 points for a win, 1 for
 a draw, ties broken by more games won, then fewer games lost; only finished matches count.
 
 --control SCRIPT adds a Pause / Resume button: GET /api/control runs `SCRIPT status` (one JSON
@@ -448,7 +448,6 @@ dialog .head{display:flex;justify-content:space-between;align-items:baseline;gap
 /* History: one row per league; the league on view is highlighted. */
 #history tbody tr{cursor:pointer}#history tbody tr:hover td{background:#1d2230}#history tr.sel td{background:#1b2a40}
 #history td.note{white-space:normal;text-align:left;min-width:280px;color:var(--mute);font-size:13px}
-#places td.n{font-variant-numeric:tabular-nums}#places td.zero{color:#3a404c}#places td.gold{color:var(--win);font-weight:700}
 h2 .seasons{float:right;text-transform:none;letter-spacing:0;display:flex;gap:6px;align-items:center}
 .seasons button{background:#232836;color:var(--fg);border:1px solid var(--line);border-radius:5px;padding:0 9px;font:inherit;cursor:pointer}
 .seasons button:disabled{opacity:.35;cursor:default}
@@ -463,10 +462,9 @@ h2 .seasons{float:right;text-transform:none;letter-spacing:0;display:flex;gap:6p
 @keyframes spin{to{transform:rotate(360deg)}}
 </style></head><body>
 <dialog id="ctx"><div class="head"><h3 id="ctxTitle"></h3><button onclick="$('ctx').close()">close</button></div><div id="ctxBody"></div></dialog>
-<header><h1>jevgammon league <span id="lid"></span></h1><span id="status"></span><span class="meta" id="rules"></span><span class="meta" id="updated"></span><a href="#" id="latest" hidden>back to the latest league</a><div id="control" hidden><span id="ctlButtons"></span><span class="meta" id="ctlStatus"></span></div><div id="note"></div></header>
+<header><h1>jevgammon league <span id="lid"></span></h1><span id="status"></span><span class="meta" id="rules"></span><span class="meta" id="updated"></span><a href="report/" target="_blank" id="report" hidden>report (working copy)</a><a href="#" id="latest" hidden>back to the latest league</a><div id="control" hidden><span id="ctlButtons"></span><span class="meta" id="ctlStatus"></span></div><div id="note"></div></header>
 <main>
 <section class="wide"><h2>History</h2><table id="history"></table><div class="mute" style="margin-top:8px">Click a league to view it. Live: moved in the last 10 minutes; stopped: ended before its last match, so only its finished matches count.</div></section>
-<section class="wide"><h2>Places</h2><table id="places"></table><div class="mute" style="margin-top:8px" id="placesNote"></div></section>
 <section><h2>Table <span class="seasons"><button id="prevSeason" title="previous league">&lsaquo;</button><span id="season"></span><button id="nextSeason" title="next league">&rsaquo;</button></span></h2><table id="table"></table><div class="mute" style="margin-top:8px">3 points per win, 1 per draw; ties: more games won, then fewer games lost. PF/PA are backgammon points. The arrows step through finished leagues and the live one.</div></section>
 <section><h2>Models</h2><table id="models"></table><div class="mute" style="margin-top:8px" id="totals"></div></section>
 <section class="wide"><h2>Live</h2><div class="live" id="live"></div></section>
@@ -541,18 +539,6 @@ function renderHistory(h){
   $('history').innerHTML='<thead><tr><th>#</th><th class="l">Status</th><th class="l">Started</th><th>Duration</th><th>Models</th><th>Rounds</th><th>Matches</th><th>Games</th><th>Turn limit</th><th class="l">Leader</th><th class="l">What it tested</th></tr></thead><tbody>'+
     Ls.map(l=>{const g=l.games,leader=l.ranking?l.ranking[0]:(l.matches_done?l.table[0].name:'–');
       return `<tr data-league="${l.id}" class="${l.id===shown?'sel':''}"><td>${l.id}</td><td class="l">${pill(l.status)}</td><td class="l">${new Date(l.started_at).toLocaleString()}</td><td>${span(l.started_at,l.finished_at||l.last_activity)}</td><td>${l.models.length}</td><td>${l.rounds}</td><td>${l.matches_done} / ${l.matches_total}</td><td>${g.games}</td><td>${pct(g.turn_limit||0,g.games)}</td><td class="l">${esc(leader)}${l.ranking?'':l.matches_done?' <span class="mute">(so far)</span>':''}</td><td class="note">${esc(l.note||'')}</td></tr>`}).join('')+'</tbody>';
-  // Places: how often each model finished 1st, 2nd, ... over finished leagues only.
-  const done=Ls.filter(l=>l.status==='finished'&&l.ranking);
-  const width=Math.max(0,...done.map(l=>l.ranking.length));
-  const count={};
-  for(const l of done)for(const entry of l.ranking){const m=/^(\d+)\. (.*)$/.exec(entry);if(!m)continue;
-    const c=count[m[2]]=count[m[2]]||Array(width).fill(0);c[+m[1]-1]++}
-  // Best first: more wins, then more seconds, and so on.
-  const rows=Object.entries(count).sort((a,b)=>{for(let i=0;i<width;i++)if(a[1][i]!==b[1][i])return b[1][i]-a[1][i];return a[0].localeCompare(b[0])});
-  const ord=n=>n+(n%10===1&&n!==11?'st':n%10===2&&n!==12?'nd':n%10===3&&n!==13?'rd':'th');
-  $('places').innerHTML=done.length?'<thead><tr><th class="l">Model</th>'+Array.from({length:width},(_,i)=>`<th>${ord(i+1)}</th>`).join('')+'<th>Leagues</th></tr></thead><tbody>'+
-    rows.map(([n,c])=>`<tr><td class="l">${esc(n)}</td>`+c.map((v,i)=>`<td class="n ${v?(i===0?'gold':''):'zero'}">${v}</td>`).join('')+`<td>${c.reduce((s,v)=>s+v,0)}</td></tr>`).join('')+'</tbody>':'<tr><td class="mute">no finished league yet</td></tr>';
-  $('placesNote').textContent=done.length?`Final places over ${done.length} finished league${done.length>1?'s':''} (#${done.map(l=>l.id).reverse().join(', #')}); stopped and running leagues are left out.`:'';
   // Season arrows: finished leagues plus the live one, oldest to newest.
   const seasons=Ls.filter(l=>l.status!=='stopped').map(l=>l.id).sort((a,b)=>a-b);
   const at=seasons.indexOf(shown);
@@ -625,6 +611,7 @@ async function tick(){refreshControl();try{
   lastData=await s.json();lastHistory=await h.json();render(lastData);renderHistory(lastHistory);
 }catch(e){$('updated').textContent='update failed: '+e}}
 tick();setInterval(tick,5000);
+fetch('report/',{method:'HEAD',cache:'no-store'}).then(r=>{if(r.ok)$('report').hidden=false}).catch(()=>{});
 </script></body></html>"""
 
 
@@ -633,6 +620,8 @@ class Handler(BaseHTTPRequestHandler):
     league_id: int | None
     # --control script, or None (no Pause / Resume button).
     control: Path | None = None
+    # --report: the working copy of the published report page, served at /report/.
+    report: Path | None = None
     # Rendered JSON per key ("state:<league>", "history"), with the time it was built.
     cache: dict[str, tuple[float, bytes]] = {}
 
@@ -651,6 +640,11 @@ class Handler(BaseHTTPRequestHandler):
         path = self.path.split("?", 1)[0]
         if path == "/":
             self.reply(200, "text/html; charset=utf-8", PAGE.encode())
+        elif path in ("/report", "/report/"):
+            if not self.report or not self.report.is_file():
+                self.reply(404, "text/plain", b"no report page (--report)")
+                return
+            self.reply(200, "text/html; charset=utf-8", self.report.read_bytes())
         elif path == "/api/context":
             query = parse_qs(urlparse(self.path).query)
             try:
@@ -691,6 +685,12 @@ class Handler(BaseHTTPRequestHandler):
             self.reply(200, "application/json", json.dumps(status).encode())
         else:
             self.reply(404, "text/plain", b"not found")
+
+    def do_HEAD(self):
+        ok = self.path.split("?", 1)[0] in ("/report", "/report/") and self.report and self.report.is_file()
+        self.send_response(200 if ok else 404)
+        self.send_header("Content-Length", "0")
+        self.end_headers()
 
     def do_POST(self):
         """POST /api/control {"action": "pause"|"resume"}: start the control script, return its
@@ -749,6 +749,9 @@ def main():
     parser.add_argument("--port", type=int, default=8095)
     parser.add_argument("--control", type=Path, metavar="SCRIPT",
                         help="pause/resume script (pause|resume|status); adds the Pause / Resume button")
+    parser.add_argument("--report", type=Path, metavar="HTML",
+                        default=Path(__file__).resolve().parent.parent / "analysis" / "backgammon" / "index.html",
+                        help="working copy of the published report, served at /report/ (default: analysis/backgammon/index.html)")
     args = parser.parse_args()
     if not args.db.exists():
         parser.error(f"{args.db} does not exist")
@@ -757,6 +760,7 @@ def main():
         if not args.control.is_file():
             parser.error(f"{args.control} does not exist")
         Handler.control = args.control.resolve()
+    Handler.report = args.report.resolve()
     server = ThreadingHTTPServer((args.host, args.port), Handler)
     print(f"serving {args.db} on http://{args.host}:{args.port}", flush=True)
     server.serve_forever()

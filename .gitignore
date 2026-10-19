@@ -19,3 +19,4 @@ __pycache__/
 /v3.db*
 /league_control.state
 /league_control.lock
+/league_control.servers

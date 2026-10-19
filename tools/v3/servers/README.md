@@ -7,11 +7,13 @@ RTX PRO 6000 (96 GB) GPUs. Each script takes `start` (launch, then wait until it
 ```sh
 tools/v3/servers/qwen38-flash-next.sh start|stop|status
 tools/v3/servers/wave.sh A|B|L1 start|stop|status|probe
-tools/v3/servers/spark.sh start|stop|status|probe              # League 1 from 2026-10-16 (+ Gemma on spark3 from 2026-10-19)
-tools/v3/servers/gemma4-31b-replicas.sh start|stop|status      # League 1, 2026-10-16 to 2026-10-19
+tools/v3/servers/spark.sh start|stop|status|probe              # League 1 from 2026-10-16 (+ Gemma on spark3 2026-10-19 18:36-22:26)
+GEMMA_GPUS=0 tools/v3/servers/gemma4-31b-replicas.sh start|stop|status   # League 1 2026-10-16 to 2026-10-19 (GPUs 0 1 3); League 2 from 2026-10-19 22:26 (GPU 0)
 tools/v3/servers/spark3-flashnext.sh start|stop|status|probe   # League 2 Flash Next, 2026-10-19 (withdrawn, stopped)
-tools/v3/servers/decider-v1.2.sh flash|27b start|stop|status|probe   # League 1 from 2026-10-19 (flash on GPU 3)
+tools/v3/servers/decider-v1.2.sh flash|27b start|stop|status|probe   # League 1 from 2026-10-19 (flash on GPU 3; 27b on GPU 1 once Qwen3.8-27B is done)
 tools/v3/servers/winnow.sh start|stop|status|probe          # League 1 from 2026-10-19 (GPU 3)
+tools/v3/servers/qwen38-27b.sh start|stop|status|probe      # League 2 from 2026-10-19 22:26 (GPU 1)
+tools/v3/servers/lfm25-24b.sh start|stop|status|probe       # League 2 from 2026-10-19 22:26 (GPU 2)
 ```
 
 vLLM servers run as docker containers (`docker logs -f <name>`); the Python decision servers
@@ -188,7 +190,9 @@ At 19:31 UTC League 1 became decision models only and both Gemma 4 31B setups mo
 (`leagues/league2-l1chat.json`, `league-add`), on the same spark3 server. For League 2's thinking
 matches the server runs 24 sequences at once (`GEMMA_MAX_SEQS=24` in `spark.sh`, was 16; same
 memory share and KV cache): with 16 running it generated about 84 tokens/s in total (5.3 per
-request) with the KV cache a third full. Restarting it does not touch Decider.
+request) with the KV cache a third full. Restarting it does not touch Decider. From 2026-10-19
+22:26 UTC both setups play on bariton GPU 0 again (below); spark3's Gemma server is stopped
+(`ssh spark3 'cd ~/code/v3-servers && ./gemma4-31b.sh stop'`, Decider untouched).
 
 ## League 1 late joiners on bariton GPU 3 (from 2026-10-19)
 
@@ -209,8 +213,54 @@ run next to it, both started with the arguments the Turkish benchmark used:
 - **Winnow-12B**: image `winnow-inference:d4631fb`, 8,192-token context, 4 decision slots,
   selected head, optimized pipeline, text only. A stored 110-option League 1 request cut to
   48 options took 7,679 input tokens, so the `winnow` service sends at most 40.
-- **Decider v1.2 27B** (`decider-v1.2.sh 27b`, port 18099) does not fit: 49 GB of bf16
-  weights against 44 GiB free on GPU 3, 20 GiB available on spark and 5 GiB on spark3.
+- **Decider v1.2 27B** (`decider-v1.2.sh 27b`, port 18099) did not fit here: 49 GB of bf16
+  weights against 44 GiB free on GPU 3, 20 GiB available on spark and 5 GiB on spark3. It
+  waits for bariton GPU 1 overnight (next section).
+
+## League 2 overnight on bariton GPUs 0-2 (from 2026-10-19 22:26 UTC)
+
+bariton's GPUs 0-2 were free overnight. From 22:26 UTC (league2 restart) they serve League 2's
+self-hosted players, one server per GPU; GPU 3 keeps League 1's Open-Jev, Winnow-12B and
+Decider Flash v1.2. `tools/v3/league_control.sh` stops and starts all of them (see the repo
+README); `free` gives GPUs 0-2 back and lets both leagues play on without them.
+
+| GPU | script | URL | served model name | checkpoint, weights as served | memory |
+|---|---|---|---|---|---|
+| 0 | `GEMMA_GPUS=0 GEMMA_MAX_SEQS=24 gemma4-31b-replicas.sh` | `http://127.0.0.1:8894/v1` (proxy) -> `:8900` | `gemma-4-31B-it` | as before: bf16 checkpoint, online FP8, FP8 KV cache; share 0.85, 24 sequences, 194,617-token KV cache | 80.7 GiB |
+| 1 | `qwen38-27b.sh` | `http://127.0.0.1:8897/v1` (container `v3-qwen38-27b`) | `qwen3.8-27b` | `Qwen/Qwen3.8-27B` @ `1d4bf0f2` (bf16) served in fp16; share 0.90, 32 sequences, 65,536-token context | 85.7 GiB |
+| 2 | `lfm25-24b.sh` | `http://127.0.0.1:8898/v1` (container `v3-lfm25-24b`) | `lfm2.5-24b-a2b` | `LiquidAI/LFM2.5-24B-A2B` @ `1769516a`, bf16; share 0.90, 32 sequences, 2.07M-token KV cache | 86.5 GiB |
+
+All three run `vllm/vllm-openai:v0.30.0` with raw top-20 logprobs and the checkpoints'
+sampling defaults (the league sets temperature 1). Equivalence check before the switch: 20
+stored League 2 (off) requests per model, replayed with the stored messages:
+
+| player | stored on | same top letter | max \|Δp\| | median \|Δp\| | median latency |
+|---|---|---|---|---|---|
+| Gemma 4 31B (off) | spark3 (GB10) | 20/20 | 0.08 | 0.00002 | 0.66 s |
+| Qwen3.8-27B (off), fp16 | Cerebras fp16 (OpenRouter) | 18/20 | 0.15 | 0.034 | 1.4 s |
+| Qwen3.8-27B (off), bf16 (not used) | | 17/20 | 0.16 | 0.042 | 0.4 s |
+| LFM2.5-24B-A2B (off), bf16, `<think></think>Answer:` prefill | Liquid AI's API, same prefill (LocalQwenLfm's baseline) | 14/20 | 0.21 | 0.098 | 0.13 s |
+| LFM2.5-24B-A2B (off), FP8 `f54bf395` (not used) | | 12/20 | 0.22 | 0.13 | 0.11 s |
+
+Qwen's differing letters were near-ties (stored top two 0.004-0.055 apart). For LFM, Liquid's
+API against its own baseline gave 19/20, local bf16 against local FP8 15/20; the (off)
+distributions are flat (7 of the 20 have Liquid's top two within 0.06). Both (on) setups were
+smoke-tested through the runner (`jevgammon ask`, 5 positions each): all answered with
+probabilities; Qwen (on) 484-10,211 reasoning tokens at about 27 tokens/s per request, LFM (on)
+14,221-24,016 output tokens at about 70 tokens/s per request (5 at once).
+
+Throughput in the first minutes of play (vLLM metrics over 60 s): Gemma 676 generated tokens/s
+with 24 requests running (about 28 per request, about 2 minutes per thinking decision; spark3
+gave about 5 per request); LFM2.5 about 800 tokens/s with 16 thinking matches (about 50 per
+request, about 10 minutes per (on) decision at its 29k tokens); Qwen mostly prefill (about
+5,000 prompt tokens/s from the (off) matches against fast opponents).
+
+Decider v1.2 27B (53 GiB under load, measured on GPU 2 before LFM2.5 took it) fits next to none
+of these. `tools/v3/swap_qwen_decider.sh` (unit `v3-swap-qwen-decider`) waits until
+Qwen3.8-27B has no League 2 fixture left to play (except against OpenRouter players, out of
+credit since 22:26), then stops Qwen, starts Decider v1.2 27B on GPU 1 and adds it to League 1
+(`league-add`, entry in `leagues/league1.json`; smoke test on 2026-10-19: 10/10 answered with
+probabilities, 10 s for all 10).
 
 ## League 2 Flash Next on DGX Spark spark3 (2026-10-19, withdrawn)
 

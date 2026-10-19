@@ -10,7 +10,7 @@
     {
       "name": "Gemma 4 31B (off)",
       "spec": "local/gemma-4-31B-it",
-      "base_url": "http://192.168.1.139:8894/v1",
+      "base_url": "http://127.0.0.1:8894/v1",
       "provider": "local-vllm",
       "quantization": "fp8 (bf16 checkpoint quantized by vLLM at load; fp8 KV cache)",
       "parallel": 4,
@@ -20,12 +20,12 @@
           "enable_thinking": false
         }
       },
-      "device": "RTX PRO 6000 (bariton): one GPU until 2026-10-16 11:11 UTC, then three replicas (GPUs 0, 1, 3, same image and arguments) behind a least-busy proxy at the same URL; from 2026-10-19 18:36 UTC one server on NVIDIA GB10 (DGX Spark spark-194d, next to Decider), same image, checkpoint and arguments (memory share 0.45)"
+      "device": "RTX PRO 6000 (bariton): one GPU until 2026-10-16 11:11 UTC, then three replicas (GPUs 0, 1, 3, same image and arguments) behind a least-busy proxy at the same URL; from 2026-10-19 18:36 UTC one server on NVIDIA GB10 (DGX Spark spark-194d, next to Decider), same image, checkpoint and arguments (memory share 0.45); from 2026-10-19 22:26 UTC back on RTX PRO 6000 (bariton GPU 0): one replica (memory share 0.85, 24 sequences, 194,617-token FP8 KV cache) behind the least-busy proxy at http://127.0.0.1:8894/v1, same image, checkpoint and arguments; 20 stored League 2 (off) requests replayed there: same play 20/20, max |dp| 0.08"
     },
     {
       "name": "Gemma 4 31B (on)",
       "spec": "local/gemma-4-31B-it",
-      "base_url": "http://192.168.1.139:8894/v1",
+      "base_url": "http://127.0.0.1:8894/v1",
       "provider": "local-vllm",
       "quantization": "fp8 (bf16 checkpoint quantized by vLLM at load; fp8 KV cache)",
       "parallel": 24,
@@ -39,69 +39,44 @@
         "reasoning_effort": null
       },
       "max_matches": 16,
-      "device": "RTX PRO 6000 (bariton): one GPU until 2026-10-16 11:11 UTC, then three replicas (GPUs 0, 1, 3, same image and arguments) behind a least-busy proxy at the same URL; from 2026-10-19 18:36 UTC one server on NVIDIA GB10 (DGX Spark spark-194d, next to Decider), same image, checkpoint and arguments (memory share 0.45)"
+      "device": "RTX PRO 6000 (bariton): one GPU until 2026-10-16 11:11 UTC, then three replicas (GPUs 0, 1, 3, same image and arguments) behind a least-busy proxy at the same URL; from 2026-10-19 18:36 UTC one server on NVIDIA GB10 (DGX Spark spark-194d, next to Decider), same image, checkpoint and arguments (memory share 0.45); from 2026-10-19 22:26 UTC back on RTX PRO 6000 (bariton GPU 0): one replica (memory share 0.85, 24 sequences, 194,617-token FP8 KV cache) behind the least-busy proxy at http://127.0.0.1:8894/v1, same image, checkpoint and arguments; 20 stored League 2 (off) requests replayed there: same play 20/20, max |dp| 0.08"
     },
     {
       "name": "Qwen3.8-27B (off)",
-      "spec": "openai-compatible/qwen/qwen3.8-27b",
-      "base_url": "https://openrouter.ai/api/v1",
-      "api_key_env": "OPENROUTER_API_KEY",
-      "provider": "openrouter:cerebras/fp16",
-      "quantization": "fp16",
+      "spec": "openai-compatible/qwen3.8-27b",
+      "base_url": "http://127.0.0.1:8897/v1",
+      "provider": "local-vllm",
+      "quantization": "fp16 (bf16 checkpoint served in fp16 by vLLM; fp16 KV cache)",
       "request": {
-        "provider": {
-          "order": [
-            "cerebras/fp16"
-          ],
-          "allow_fallbacks": false,
-          "require_parameters": true
-        },
-        "usage": {
-          "include": true
-        },
-        "reasoning": {
-          "enabled": false
+        "chat_template_kwargs": {
+          "enable_thinking": false
         },
         "response_format": null
       },
       "letter_readout": "answer",
-      "price": {
-        "input_per_mtok": 0.99,
-        "output_per_mtok": 1.49
-      },
-      "parallel": 2,
-      "rpm": 18,
-      "note": "Cerebras takes no response_format: unconstrained letter"
+      "parallel": 8,
+      "max_matches": 16,
+      "note": "thinking off; unconstrained letter, as on Cerebras (fp16 via OpenRouter) before 2026-10-19 22:26 UTC, where it finished no match; from then vLLM on our GPU (tools/v3/servers/qwen38-27b.sh); 20 stored (off) requests replayed there: same top letter 18/20 (bf16: 17/20; the others near-ties), max |dp| 0.15, median 0.034",
+      "device": "Cerebras (OpenRouter) until 2026-10-19 22:26 UTC; then RTX PRO 6000 (bariton GPU 1), the whole GPU (memory share 0.90, 32 sequences)"
     },
     {
       "name": "Qwen3.8-27B (on)",
-      "spec": "openai-compatible/qwen/qwen3.8-27b",
-      "base_url": "https://openrouter.ai/api/v1",
-      "api_key_env": "OPENROUTER_API_KEY",
-      "provider": "openrouter:cerebras/fp16",
-      "quantization": "fp16",
+      "spec": "openai-compatible/qwen3.8-27b",
+      "base_url": "http://127.0.0.1:8897/v1",
+      "provider": "local-vllm",
+      "quantization": "fp16 (bf16 checkpoint served in fp16 by vLLM; fp16 KV cache)",
+      "reasoning": "low",
       "request": {
-        "provider": {
-          "order": [
-            "cerebras/fp16"
-          ],
-          "allow_fallbacks": false,
-          "require_parameters": true
-        },
-        "usage": {
-          "include": true
+        "chat_template_kwargs": {
+          "enable_thinking": true
         },
         "response_format": null
       },
-      "letter_readout": "answer",
-      "price": {
-        "input_per_mtok": 0.99,
-        "output_per_mtok": 1.49
-      },
-      "parallel": 2,
-      "rpm": 18,
-      "reasoning": "low",
-      "note": "reasoning effort low; Cerebras takes no response_format: unconstrained letter"
+      "letter_readout": "prefill",
+      "parallel": 16,
+      "max_matches": 16,
+      "note": "reasoning effort low (the chat template's reasoning_effort); Cerebras (fp16 via OpenRouter) before 2026-10-19 22:26 UTC, where it finished no match; from then vLLM on our GPU (tools/v3/servers/qwen38-27b.sh), letter read after the reasoning from a prefilled Answer:; smoke (5 positions): all answered with probabilities, 484-10,211 reasoning tokens, about 27 tokens/s per request",
+      "device": "Cerebras (OpenRouter) until 2026-10-19 22:26 UTC; then RTX PRO 6000 (bariton GPU 1), the whole GPU (memory share 0.90, 32 sequences)"
     }
   ]
 }

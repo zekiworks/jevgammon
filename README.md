@@ -508,21 +508,29 @@ python3 tools/league_web.py --db league.db --port 8095   # http://<host>:8095/
 `--league <id>` picks the league shown by default (otherwise the latest); `--host` defaults
 to `0.0.0.0`, so the page is reachable from the LAN without authentication.
 
-**Pause / Resume (League 1).** With `--control tools/v3/league_control.sh` the header shows
-a button: `Pause (frees GPUs)` while the league runs, `Resume` while it is paused, and a
+**Pause / Resume (both leagues).** With `--control tools/v3/league_control.sh` the header
+shows a button: `Pause (frees GPUs)` while League 1 runs, `Resume` while it is paused, and a
 spinner while either is under way, with the state, since when and the last message beside
-it. Each asks for confirmation. `tools/v3/league_control.sh pause|resume|status` does the
-work and can also be run by hand:
+it. Each asks for confirmation. `tools/v3/league_control.sh pause [all]|free|resume|status`
+does the work and can also be run by hand. The servers it handles on this machine (from
+2026-10-19 22:26 UTC): GPU 0 Gemma 4 31B (replica + proxy), GPU 1 Qwen3.8-27B (Decider v1.2
+27B once Qwen's matches are played), GPU 2 LFM2.5-24B-A2B, all League 2 except Decider; GPU 3
+League 1's Open-Jev, Winnow-12B and Decider Flash v1.2.
 
-- **pause** sends SIGINT to the `league1` systemd user unit (the runner stops; unfinished
-  matches resume from their last stored turn), waits until it is inactive, then stops the
-  Gemma 4 31B replicas and proxy (GPUs 0, 1, 3) and Open-Jev (GPU 2). About a minute.
-- **resume** starts those servers (each start waits until it answers), checks Gemma answers a
-  chat request, then starts `league1` (`run_league1.sh`, which resumes League 1). About
-  3 minutes. The decision servers on the DGX Sparks are not touched by either.
-- Both are idempotent, hold `league_control.lock` (a second click is refused while one runs)
-  and log to `league_control.log`; `status` prints one JSON line (`state`: running, pausing,
-  paused, resuming or error).
+- **pause** sends SIGINT to the `league1` and `league2` systemd user units (the runners
+  stop; unfinished matches resume from their last stored turn), waits until both are
+  inactive, notes which GPU 0-2 servers were up (`league_control.servers`) and stops them.
+  GPU 3's servers keep running; `pause all` stops them too. About a minute.
+- **free** is pause (GPUs 0-2 only) followed by starting `league1` and `league2` again, so
+  both leagues play on with GPU 3, the DGX Sparks and the APIs while GPUs 0-2 are free;
+  matches of the stopped local models are deferred and retried with back-off.
+- **resume** starts the GPU 3 servers that are down, then the GPU 0-2 servers the last pause
+  noted (each start waits until it answers), checks Gemma answers a chat request, then starts
+  `league1` and `league2` (`run_league1.sh`, `run_league2.sh`, which resume them). About
+  4 minutes. The decision servers on the DGX Sparks are not touched.
+- All are idempotent, hold `league_control.lock` (a second click is refused while one runs)
+  and log to `league_control.log`; `status` prints one JSON line (`state` of League 1:
+  running, pausing, paused, resuming or error; `league2`: its runner's state).
 
 The page runs them in a transient systemd user unit (`league-control`), so a pause or resume
 carries on if the page or the server goes away. The server accepts `POST /api/control` only

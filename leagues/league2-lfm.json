@@ -10,42 +10,34 @@
     {
       "name": "LFM2.5-24B-A2B (off)",
       "spec": "openai-compatible/lfm2.5-24b-a2b",
-      "base_url": "https://api.liquid.ai/openai/v1",
-      "api_key_env": "LIQUIDAI_API_KEY",
-      "provider": "liquid",
-      "quantization": null,
+      "base_url": "http://127.0.0.1:8898/v1",
+      "provider": "local-vllm",
+      "quantization": "bf16",
       "letter_readout": "prefill",
-      "price": {
-        "input_per_mtok": 0.05,
-        "output_per_mtok": 0.7
-      },
       "parallel": 16,
       "top_logprobs": 20,
       "request": {},
-      "note": "Liquid AI's own API; no reasoning request (letter probabilities directly)",
+      "note": "no reasoning: the letter continues a prefilled <think></think>Answer:. Liquid AI's own API until its matches were voided on 2026-10-19 22:20 UTC; from 2026-10-19 22:26 UTC Liquid's bf16 checkpoint on our GPU (vLLM, tools/v3/servers/lfm25-24b.sh). 20 stored (off) requests with this prefill: same top letter as Liquid's API 14/20 (max |dp| 0.21; Liquid against itself 19/20; Liquid's FP8 checkpoint here 12/20; bf16 against FP8 here 15/20, the distributions are flat: 7 of the 20 have Liquid's top two within 0.06)",
       "max_tokens": 32000,
-      "max_matches": 11,
-      "answer_prefix": "<think></think>Answer:"
+      "max_matches": 16,
+      "answer_prefix": "<think></think>Answer:",
+      "device": "Liquid AI's API until 2026-10-19 22:20 UTC; from 22:26 UTC RTX PRO 6000 (bariton GPU 2), the whole GPU (memory share 0.90, 32 sequences)"
     },
     {
       "name": "LFM2.5-24B-A2B (on)",
       "spec": "openai-compatible/lfm2.5-24b-a2b",
-      "base_url": "https://api.liquid.ai/openai/v1",
-      "api_key_env": "LIQUIDAI_API_KEY",
-      "provider": "liquid",
-      "quantization": null,
+      "base_url": "http://127.0.0.1:8898/v1",
+      "provider": "local-vllm",
+      "quantization": "bf16",
       "letter_readout": "prefill",
-      "price": {
-        "input_per_mtok": 0.05,
-        "output_per_mtok": 0.7
-      },
       "parallel": 16,
       "top_logprobs": 20,
       "request": {},
-      "note": "Liquid AI's own API (no 8,192-token output cap, unlike OpenRouter); reasoning_effort low",
+      "note": "reasons on every answer (its template has no switch or effort knob; \"low\" is sent and ignored), then the letter continues a prefilled Answer:. Liquid AI's own API until its matches were voided on 2026-10-19 22:20 UTC; from 2026-10-19 22:26 UTC Liquid's bf16 checkpoint on our GPU (vLLM, tools/v3/servers/lfm25-24b.sh); (off) on the same server agreed with Liquid's API 14/20",
       "max_tokens": 32000,
       "reasoning": "low",
-      "max_matches": 11
+      "max_matches": 16,
+      "device": "Liquid AI's API until 2026-10-19 22:20 UTC; from 22:26 UTC RTX PRO 6000 (bariton GPU 2), the whole GPU (memory share 0.90, 32 sequences)"
     }
   ]
 }

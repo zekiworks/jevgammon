@@ -140,6 +140,20 @@
       "note": "Perplexity's pplx-decider-flash-v1.2 (from Qwen3.5-4B) on our GPU through the pplx_decider package its checkpoint ships, reference path, one request at a time (tools/v3/servers/decider-v1.2.sh flash); price = Perplexity's list price for the same model (2026-10-18)"
     },
     {
+      "name": "Decider v1.2 27B",
+      "spec": "pplx-local/pplx-decider-v1.2",
+      "provider": "local (pplx_decider_server.py)",
+      "quantization": "bf16",
+      "price": {
+        "input_per_mtok": 0.02,
+        "output_per_mtok": 0
+      },
+      "parallel": 1,
+      "base_url": "http://127.0.0.1:18099",
+      "device": "RTX PRO 6000 (bariton GPU 1, after Qwen3.8-27B's League 2 matches)",
+      "note": "Perplexity's pplx-decider-v1.2 (Hugging Face snapshot 225c913) on our GPU through the pplx_decider package its checkpoint ships, reference path, one request at a time (tools/v3/servers/decider-v1.2.sh 27b, DECIDER_V12_GPU=1); joined late overnight 2026-10-19/20 when bariton GPU 1 was freed by Qwen3.8-27B (tools/v3/swap_qwen_decider.sh); smoke test 10/10 answered with probabilities on 2026-10-19 (bariton GPU 2); price = Perplexity's list price for the same model (2026-10-18)"
+    },
+    {
       "name": "Winnow-12B",
       "spec": "winnow/winnow-12b",
       "provider": "local (winnow-inference)",

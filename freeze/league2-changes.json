@@ -1,0 +1,281 @@
+[
+ {
+  "changed_at": "2026-10-19T22:20:20Z",
+  "league": 2,
+  "db": "v3.db",
+  "change": "LFM2.5-24B-A2B (off, on) and Qwen3.8 Flash (off) matches voided and replayed from scratch with the same seeds (letter readout fix)",
+  "harness_commit": "74d74c734859eb0a5b0d1918dbd0d0f6c444f40d",
+  "harness_dirty": true,
+  "reason": "The answer letter readout (letter_readout \"answer\") read letter probabilities at the first single-letter token of the response's logprobs. Liquid AI's API returns logprobs for the reasoning tokens too, so every LFM2.5 decision read a letter from the reasoning text (off: the 16-token budget ended inside the reasoning, no answer at all; on: 88 of 101 sampled decisions read a different letter than the model answered). For Qwen3.8 Flash (off) via OpenRouter/Alibaba, 145 of 930 decisions read the lowercase c of a \"choice\" key split into c/ho/ice. The runner now reads the last uppercase single-letter token that ends the reply and counts a mismatch with the reply's letter as invalid (74d74c7). Audit of the other answer-readout setups: DeepSeek V4.1 Flash (off, on) and GLM-5.3 (on) via Fireworks and Qwen3.8-27B via Cerebras read the reply's letter in every sampled decision.",
+  "voided": [
+   {
+    "fixture": "matchday 10: Claude Sonnet 5.5 (high) v Qwen3.8 Flash (off)",
+    "match_id": 153,
+    "status": "finished",
+    "voided_for": "Qwen3.8 Flash (off)"
+   },
+   {
+    "fixture": "matchday 10: Claude Sonnet 5.5 (low) v Qwen3.8 Flash (off)",
+    "match_id": 155,
+    "status": "finished",
+    "voided_for": "Qwen3.8 Flash (off)"
+   },
+   {
+    "fixture": "matchday 10: DeepSeek V4.1 Flash (off) v Qwen3.8 Flash (off)",
+    "match_id": 178,
+    "status": "finished",
+    "voided_for": "Qwen3.8 Flash (off)"
+   },
+   {
+    "fixture": "matchday 10: GPT-6.1 Sol (low) v Qwen3.8 Flash (off)",
+    "match_id": 176,
+    "status": "finished",
+    "voided_for": "Qwen3.8 Flash (off)"
+   },
+   {
+    "fixture": "matchday 10: Qwen3.8 Flash (off) v GLM-5.3 (on)",
+    "match_id": 183,
+    "status": "finished",
+    "voided_for": "Qwen3.8 Flash (off)"
+   },
+   {
+    "fixture": "matchday 10: Qwen3.8 Flash (off) v GNUbg weak",
+    "match_id": 189,
+    "status": "finished",
+    "voided_for": "Qwen3.8 Flash (off)"
+   },
+   {
+    "fixture": "matchday 10: Qwen3.8 Flash (off) v GPT-6.1 Sol (high)",
+    "match_id": 177,
+    "status": "finished",
+    "voided_for": "Qwen3.8 Flash (off)"
+   },
+   {
+    "fixture": "matchday 10: Qwen3.8 Flash (off) v Gemini 3.8 Flash (high)",
+    "match_id": 156,
+    "status": "finished",
+    "voided_for": "Qwen3.8 Flash (off)"
+   },
+   {
+    "fixture": "matchday 10: Qwen3.8 Flash (off) v Gemini 3.8 Flash (low)",
+    "match_id": 154,
+    "status": "finished",
+    "voided_for": "Qwen3.8 Flash (off)"
+   },
+   {
+    "fixture": "matchday 11: Claude Sonnet 5.5 (high) v LFM2.5-24B-A2B (off)",
+    "match_id": 164,
+    "status": "finished",
+    "voided_for": "LFM2.5-24B-A2B"
+   },
+   {
+    "fixture": "matchday 11: GLM-5.3 (on) v LFM2.5-24B-A2B (off)",
+    "match_id": 160,
+    "status": "finished",
+    "voided_for": "LFM2.5-24B-A2B"
+   },
+   {
+    "fixture": "matchday 11: GPT-6.1 Sol (low) v LFM2.5-24B-A2B (off)",
+    "match_id": 172,
+    "status": "finished",
+    "voided_for": "LFM2.5-24B-A2B"
+   },
+   {
+    "fixture": "matchday 11: Gemini 3.8 Flash (high) v LFM2.5-24B-A2B (off)",
+    "match_id": 159,
+    "status": "finished",
+    "voided_for": "LFM2.5-24B-A2B"
+   },
+   {
+    "fixture": "matchday 11: LFM2.5-24B-A2B (off) v Claude Sonnet 5.5 (low)",
+    "match_id": 174,
+    "status": "finished",
+    "voided_for": "LFM2.5-24B-A2B"
+   },
+   {
+    "fixture": "matchday 11: LFM2.5-24B-A2B (off) v DeepSeek V4.1 Flash (off)",
+    "match_id": 175,
+    "status": "finished",
+    "voided_for": "LFM2.5-24B-A2B"
+   },
+   {
+    "fixture": "matchday 11: LFM2.5-24B-A2B (off) v GNUbg weak",
+    "match_id": 162,
+    "status": "finished",
+    "voided_for": "LFM2.5-24B-A2B"
+   },
+   {
+    "fixture": "matchday 11: LFM2.5-24B-A2B (off) v GPT-6.1 Sol (high)",
+    "match_id": 168,
+    "status": "finished",
+    "voided_for": "LFM2.5-24B-A2B"
+   },
+   {
+    "fixture": "matchday 11: LFM2.5-24B-A2B (off) v Gemini 3.8 Flash (low)",
+    "match_id": 157,
+    "status": "finished",
+    "voided_for": "LFM2.5-24B-A2B"
+   },
+   {
+    "fixture": "matchday 11: Qwen3.8 Flash (off) v LFM2.5-24B-A2B (off)",
+    "match_id": 193,
+    "status": "finished",
+    "voided_for": "LFM2.5-24B-A2B and Qwen3.8 Flash (off)"
+   },
+   {
+    "fixture": "matchday 12: DeepSeek V4.1 Flash (off) v LFM2.5-24B-A2B (on)",
+    "match_id": 171,
+    "status": "aborted",
+    "voided_for": "LFM2.5-24B-A2B"
+   },
+   {
+    "fixture": "matchday 12: GLM-5.3 (on) v LFM2.5-24B-A2B (on)",
+    "match_id": 173,
+    "status": "finished",
+    "voided_for": "LFM2.5-24B-A2B"
+   },
+   {
+    "fixture": "matchday 12: GNUbg weak v LFM2.5-24B-A2B (on)",
+    "match_id": 158,
+    "status": "finished",
+    "voided_for": "LFM2.5-24B-A2B"
+   },
+   {
+    "fixture": "matchday 12: GPT-6.1 Sol (low) v LFM2.5-24B-A2B (on)",
+    "match_id": 163,
+    "status": "finished",
+    "voided_for": "LFM2.5-24B-A2B"
+   },
+   {
+    "fixture": "matchday 12: Gemini 3.8 Flash (high) v LFM2.5-24B-A2B (on)",
+    "match_id": 167,
+    "status": "finished",
+    "voided_for": "LFM2.5-24B-A2B"
+   },
+   {
+    "fixture": "matchday 12: Gemini 3.8 Flash (low) v LFM2.5-24B-A2B (on)",
+    "match_id": 169,
+    "status": "finished",
+    "voided_for": "LFM2.5-24B-A2B"
+   },
+   {
+    "fixture": "matchday 12: LFM2.5-24B-A2B (on) v Claude Sonnet 5.5 (high)",
+    "match_id": 165,
+    "status": "finished",
+    "voided_for": "LFM2.5-24B-A2B"
+   },
+   {
+    "fixture": "matchday 12: LFM2.5-24B-A2B (on) v Claude Sonnet 5.5 (low)",
+    "match_id": 161,
+    "status": "finished",
+    "voided_for": "LFM2.5-24B-A2B"
+   },
+   {
+    "fixture": "matchday 12: LFM2.5-24B-A2B (on) v GPT-6.1 Sol (high)",
+    "match_id": 170,
+    "status": "finished",
+    "voided_for": "LFM2.5-24B-A2B"
+   },
+   {
+    "fixture": "matchday 12: LFM2.5-24B-A2B (on) v LFM2.5-24B-A2B (off)",
+    "match_id": 166,
+    "status": "finished",
+    "voided_for": "LFM2.5-24B-A2B"
+   },
+   {
+    "fixture": "matchday 12: Qwen3.8 Flash (off) v LFM2.5-24B-A2B (on)",
+    "match_id": 194,
+    "status": "aborted",
+    "voided_for": "LFM2.5-24B-A2B and Qwen3.8 Flash (off)"
+   },
+   {
+    "fixture": "matchday 13: Gemma 4 31B (on) v Qwen3.8 Flash (off)",
+    "match_id": 212,
+    "status": "aborted",
+    "voided_for": "Qwen3.8 Flash (off)"
+   },
+   {
+    "fixture": "matchday 13: LFM2.5-24B-A2B (off) v Gemma 4 31B (on)",
+    "match_id": 208,
+    "status": "aborted",
+    "voided_for": "LFM2.5-24B-A2B"
+   },
+   {
+    "fixture": "matchday 13: LFM2.5-24B-A2B (on) v Gemma 4 31B (on)",
+    "match_id": 207,
+    "status": "aborted",
+    "voided_for": "LFM2.5-24B-A2B"
+   },
+   {
+    "fixture": "matchday 14: Gemma 4 31B (off) v LFM2.5-24B-A2B (off)",
+    "match_id": 228,
+    "status": "finished",
+    "voided_for": "LFM2.5-24B-A2B"
+   },
+   {
+    "fixture": "matchday 14: LFM2.5-24B-A2B (on) v Gemma 4 31B (off)",
+    "match_id": 229,
+    "status": "finished",
+    "voided_for": "LFM2.5-24B-A2B"
+   },
+   {
+    "fixture": "matchday 14: Qwen3.8 Flash (off) v Gemma 4 31B (off)",
+    "match_id": 232,
+    "status": "aborted",
+    "voided_for": "Qwen3.8 Flash (off)"
+   }
+  ],
+  "voided_match_ids": [
+   153,
+   154,
+   155,
+   156,
+   157,
+   158,
+   159,
+   160,
+   161,
+   162,
+   163,
+   164,
+   165,
+   166,
+   167,
+   168,
+   169,
+   170,
+   171,
+   172,
+   173,
+   174,
+   175,
+   176,
+   177,
+   178,
+   183,
+   189,
+   193,
+   194,
+   207,
+   208,
+   212,
+   228,
+   229,
+   232
+  ],
+  "roster_changes": [
+   {
+    "name": "LFM2.5-24B-A2B (off)",
+    "letter_readout": "prefill",
+    "answer_prefix": "<think></think>Answer:",
+    "request": {}
+   },
+   {
+    "name": "LFM2.5-24B-A2B (on)",
+    "letter_readout": "prefill",
+    "request": {},
+    "note": "reasoning_effort comes from \"reasoning\": \"low\""
+   }
+  ]
+ }
+]

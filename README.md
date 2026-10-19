@@ -137,8 +137,14 @@ player carries what a spec alone cannot:
 - `letter_readout`: `prefill` (default) continues a prefilled `Answer:`, as SGLang and vLLM
   allow; `answer` reads the answer letter's log-probabilities from the ordinary response
   (after the reasoning, when on), for servers that start a new turn instead of continuing a
-  prefill (Fireworks, Novita and Together through OpenRouter). `top_logprobs` lowers the
+  prefill (Fireworks, Novita and Together through OpenRouter). The answer readout takes the
+  last one-uppercase-letter token whose following tokens end the reply (some providers list
+  the reasoning's tokens too, or leave tokens out); a reply without a letter, or a letter
+  that differs from the token read, makes the decision invalid. `top_logprobs` lowers the
   20 alternatives asked per token (Fireworks allows 5; letters outside them get 0).
+- `answer_prefix` replaces `Answer:` as the prefill when reasoning is off, e.g.
+  `<think></think>Answer:` for a model whose chat template opens a reasoning block on every
+  answer with no switch (LFM2.5).
 - `price` (dollars per million input and output tokens) gives `turns.cost_usd` when the
   provider reports no cost (OpenRouter does, in `usage.cost`, and that is used); without
   either the cost is NULL. Reasoning tokens are logged in `turns.reasoning_tokens` when the

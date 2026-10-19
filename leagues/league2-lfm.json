@@ -14,7 +14,7 @@
       "api_key_env": "LIQUIDAI_API_KEY",
       "provider": "liquid",
       "quantization": null,
-      "letter_readout": "answer",
+      "letter_readout": "prefill",
       "price": {
         "input_per_mtok": 0.05,
         "output_per_mtok": 0.7
@@ -24,7 +24,8 @@
       "request": {},
       "note": "Liquid AI's own API; no reasoning request (letter probabilities directly)",
       "max_tokens": 32000,
-      "max_matches": 11
+      "max_matches": 11,
+      "answer_prefix": "<think></think>Answer:"
     },
     {
       "name": "LFM2.5-24B-A2B (on)",
@@ -33,16 +34,14 @@
       "api_key_env": "LIQUIDAI_API_KEY",
       "provider": "liquid",
       "quantization": null,
-      "letter_readout": "answer",
+      "letter_readout": "prefill",
       "price": {
         "input_per_mtok": 0.05,
         "output_per_mtok": 0.7
       },
       "parallel": 16,
       "top_logprobs": 20,
-      "request": {
-        "reasoning_effort": "low"
-      },
+      "request": {},
       "note": "Liquid AI's own API (no 8,192-token output cap, unlike OpenRouter); reasoning_effort low",
       "max_tokens": 32000,
       "reasoning": "low",

@@ -1,0 +1,38 @@
+[
+  {
+    "added_at": "2026-10-19T18:20:16Z",
+    "league": 1,
+    "db": "v3.db",
+    "name": "Liquid d1-ultra",
+    "harness_commit": "c770e3b4f7a4933bf6bb13a0fe3d7e549cddfacb",
+    "harness_dirty": true,
+    "entry": {
+      "name": "Liquid d1-ultra",
+      "spec": "liquid/d1-ultra",
+      "provider": "liquid",
+      "price": {
+        "input_per_mtok": 0.042,
+        "output_per_mtok": 0.0
+      },
+      "note": "Liquid AI decisions API, paid tier; list price $0.042 per million input tokens (liquid.ai/blog/d1-ultra, 2026-10-15)",
+      "parallel": 2
+    },
+    "entry_sha256": "793b6fbaf5139236b47fd904808668298cd6bea5e5ac1b61757b5b4c1c5ce573",
+    "fixtures": [
+      "matchday 14: GPT-6 Luna (subscription, choice only) v Liquid d1-ultra",
+      "matchday 14: Decider v1.1 27B v Liquid d1-ultra",
+      "matchday 14: SubQ Snap Preview v Liquid d1-ultra",
+      "matchday 14: Clef v Liquid d1-ultra",
+      "matchday 14: Open-Jev 27B v1.1 v Liquid d1-ultra",
+      "matchday 14: Liquid d1-ultra v Cygnet (Gemma 4 12B)",
+      "matchday 14: Liquid d1-ultra v Gemma 4 31B (off)",
+      "matchday 14: Liquid d1-ultra v Gemma 4 31B (on)",
+      "matchday 14: Liquid d1-ultra v Qwen3.8-27B (off)",
+      "matchday 14: Liquid d1-ultra v Qwen3.8-27B (on)",
+      "matchday 14: Liquid d1-ultra v Random",
+      "matchday 14: Liquid d1-ultra v Safest",
+      "matchday 14: Liquid d1-ultra v GNUbg weak"
+    ],
+    "stale_playoff_fixtures": 0
+  }
+]

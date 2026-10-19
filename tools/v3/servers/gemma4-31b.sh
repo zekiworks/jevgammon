@@ -2,9 +2,10 @@
 # gemma-4-31B-it, plain OpenAI-compatible vLLM on GPU 3 (wave A, next to Qwen's TP4 shard) or
 # GPU 0 (League 1 layout, next to Cygnet): GEMMA_GPU=0. gemma4-31b-replicas.sh runs one
 # replica per GPU with this script (GEMMA_NAME, GEMMA_PORT, GEMMA_UTIL per replica).
-#   [GEMMA_GPU=N] [GEMMA_UTIL=share] tools/v3/servers/gemma4-31b.sh start|stop|status
+#   [GEMMA_GPU=N] [GEMMA_UTIL=share] [BIND_HOST=0.0.0.0] tools/v3/servers/gemma4-31b.sh start|stop|status
 # Model flags as ~/code/gemma4-31b/compose.yaml (bf16 checkpoint, online FP8 weights, FP8 KV
-# cache); a smaller memory share, no image/video inputs, and its own port.
+# cache); a smaller memory share, no image/video inputs, and its own port. On spark3 (League 1
+# from 2026-10-19, spark.sh) it listens on the LAN: BIND_HOST=0.0.0.0.
 source "$(dirname "$(readlink -f "$0")")/_lib.sh"
 
 NAME=${GEMMA_NAME:-v3-gemma4-31b}
@@ -15,7 +16,7 @@ case ${1:-} in
   start)
     # shellcheck disable=SC2046
     docker_up "$NAME" "$PORT" $(docker_gpu "${GEMMA_GPU:-3}") --ipc host \
-      -p "127.0.0.1:$PORT:$PORT" \
+      -p "$BIND_HOST:$PORT:$PORT" \
       -v /home/cbasaran/code/models/gemma-4-31B-it:/model:ro \
       vllm/vllm-openai:v0.30.0 \
       /model \

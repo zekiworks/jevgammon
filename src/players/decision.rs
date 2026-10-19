@@ -110,7 +110,7 @@ pub const SERVICES: &[Service] = &[
         base_url: "https://api.liquid.ai/decisions",
         url_var: "LIQUID_BASE_URL",
         path: "/v1/systemone",
-        key_vars: &["LIQUID_API_KEY"],
+        key_vars: &["LIQUID_API_KEY", "LIQUIDAI_API_KEY"],
         key_required: true,
         default_model: Some("d1:free"),
         openai_format: false,

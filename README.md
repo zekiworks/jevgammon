@@ -71,7 +71,7 @@ printed and stored in `matches.error`), `2` for invalid arguments.
 | `fastino`, `fastino/<model>` | Fastino System One API (`fastino/GLiDE` default) | `FASTINO_API_KEY` |
 | `openai-decisions`, `openai-decisions/<model>` | OpenAI Decisions API (`gpt-6-luna` default) | `OPENAI_API_KEY` (an API key with billing) |
 | `perplexity`, `perplexity/<model>` | Perplexity Decisions API (`pplx-decider-v1-27b` default) | `PERPLEXITY_API_KEY` |
-| `liquid`, `liquid/<model>` | Liquid AI System One API (`d1:free` default) | `LIQUID_API_KEY` |
+| `liquid`, `liquid/<model>` | Liquid AI System One API (`d1:free` default; `d1`, `d1-ultra` paid) | `LIQUID_API_KEY` or `LIQUIDAI_API_KEY` |
 | `subq`, `subq/<model>` | SubQ System One API (`subq-snap-preview` default) | `SUBQ_API_KEY` |
 | `celeris`, `celeris/<model>` | Celeris System One API (`celeris-1-decision` default) | `CELERIS_API_KEY` |
 | `random`, `safest`, `gnubg-weak` | Baselines on the CPU: a random legal play, the play the opponent hits with the fewest rolls, GNUbg 1.08 at its Beginner level | none |

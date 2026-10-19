@@ -7,9 +7,9 @@ RTX PRO 6000 (96 GB) GPUs. Each script takes `start` (launch, then wait until it
 ```sh
 tools/v3/servers/qwen38-flash-next.sh start|stop|status
 tools/v3/servers/wave.sh A|B|L1 start|stop|status|probe
-tools/v3/servers/spark.sh start|stop|status|probe              # League 1 from 2026-10-16
-tools/v3/servers/gemma4-31b-replicas.sh start|stop|status      # League 1 from 2026-10-16
-tools/v3/servers/spark3-flashnext.sh start|stop|status|probe   # League 2 Flash Next from 2026-10-19
+tools/v3/servers/spark.sh start|stop|status|probe              # League 1 from 2026-10-16 (+ Gemma on spark3 from 2026-10-19)
+tools/v3/servers/gemma4-31b-replicas.sh start|stop|status      # League 1, 2026-10-16 to 2026-10-19
+tools/v3/servers/spark3-flashnext.sh start|stop|status|probe   # League 2 Flash Next, 2026-10-19 (withdrawn, stopped)
 ```
 
 vLLM servers run as docker containers (`docker logs -f <name>`); the Python decision servers
@@ -163,7 +163,29 @@ over the three replicas, 3 requests running on each (about 38 tokens/s per reque
 GPU next to Cygnet gave about 154 tokens/s over 4 matches). A thinking decision still takes
 about 130 s; what grew is the number of matches played at once.
 
-## League 2 Flash Next on DGX Spark spark3 (from 2026-10-19)
+## League 1 late joiner: Gemma 4 31B on spark3 (from 2026-10-19)
+
+Liquid d1-ultra joined the finished League 1 on 2026-10-19 (`league-add`, 13 matches) when
+bariton's GPUs were no longer available. From 18:36 UTC both Gemma 4 31B setups play from one
+server on spark3 next to Decider (`spark.sh` starts it after Decider; `BIND_HOST=0.0.0.0`):
+same `gemma4-31b.sh` arguments, image `vllm/vllm-openai:v0.30.0` (aarch64, pulled by the
+digest spark has), checkpoint `~/code/models/gemma-4-31B-it` copied from here, memory share
+0.45 (55.3 GiB in use next to Decider's 50.0 GiB; 233,725-token FP8 KV cache). URL
+`http://192.168.1.139:8894/v1`, in the roster's `base_url`, `device` and the league note.
+
+Equivalence check: 20 Gemma 4 31B (off) requests taken at random from the last 400 stored
+League 1 exchanges, replayed on spark3: same play 19/20 (the other: stored Q 0.94 / A 0.06,
+spark3 A 0.80 / Q 0.20), max |Δp| 0.67, median |Δp| under 0.0001, median latency 0.87 s. That is
+within the one-in-20 rule used for the 2026-10-16 moves; there was no alternative host.
+(on) is sampled at temperature 1, so it was only checked to answer with letter probabilities.
+
+Open-Jev 27B v1.1 failed the same check on a GB10 (18/20) and its GPU on bariton is not
+available, so its match against Liquid d1-ultra stays deferred until `open-jev.sh` runs again.
+
+## League 2 Flash Next on DGX Spark spark3 (2026-10-19, withdrawn)
+
+Withdrawn later on 2026-10-19 (7-20 minutes per thinking decision); the spark3 server is
+stopped and spark3 serves League 1 again (Decider and Gemma 4 31B, see above).
 
 bariton's GPUs are taken, so both Qwen3.8 Flash Next setups of League 2 joined late
 (`leagues/league2-flashnext.json`, `league-add`) against one server on spark3 (GB10,

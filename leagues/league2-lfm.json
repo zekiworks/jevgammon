@@ -1,0 +1,52 @@
+{
+  "order_seed": 1190975713392774006,
+  "prompt_version": "bg-v2",
+  "seed": 8637860750269043463,
+  "rounds": 3,
+  "clock": 0,
+  "delay": 30,
+  "max_turns": 300,
+  "players": [
+    {
+      "name": "LFM2.5-24B-A2B (off)",
+      "spec": "openai-compatible/lfm2.5-24b-a2b",
+      "base_url": "https://api.liquid.ai/openai/v1",
+      "api_key_env": "LIQUIDAI_API_KEY",
+      "provider": "liquid",
+      "quantization": null,
+      "letter_readout": "answer",
+      "price": {
+        "input_per_mtok": 0.05,
+        "output_per_mtok": 0.7
+      },
+      "parallel": 16,
+      "top_logprobs": 20,
+      "request": {},
+      "note": "Liquid AI's own API; no reasoning request (letter probabilities directly)",
+      "max_tokens": 32000,
+      "max_matches": 11
+    },
+    {
+      "name": "LFM2.5-24B-A2B (on)",
+      "spec": "openai-compatible/lfm2.5-24b-a2b",
+      "base_url": "https://api.liquid.ai/openai/v1",
+      "api_key_env": "LIQUIDAI_API_KEY",
+      "provider": "liquid",
+      "quantization": null,
+      "letter_readout": "answer",
+      "price": {
+        "input_per_mtok": 0.05,
+        "output_per_mtok": 0.7
+      },
+      "parallel": 16,
+      "top_logprobs": 20,
+      "request": {
+        "reasoning_effort": "low"
+      },
+      "note": "Liquid AI's own API (no 8,192-token output cap, unlike OpenRouter); reasoning_effort low",
+      "max_tokens": 32000,
+      "reasoning": "low",
+      "max_matches": 11
+    }
+  ]
+}

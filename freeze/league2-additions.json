@@ -131,5 +131,91 @@
       "matchday 10: Qwen3.8 Flash (off) v GNUbg weak"
     ],
     "stale_playoff_fixtures": 0
+  },
+  {
+    "added_at": "2026-10-19T18:27:07Z",
+    "league": 2,
+    "db": "v3.db",
+    "name": "LFM2.5-24B-A2B (off)",
+    "harness_commit": "c770e3b4f7a4933bf6bb13a0fe3d7e549cddfacb",
+    "harness_dirty": true,
+    "entry": {
+      "name": "LFM2.5-24B-A2B (off)",
+      "spec": "openai-compatible/lfm2.5-24b-a2b",
+      "provider": "liquid",
+      "base_url": "https://api.liquid.ai/openai/v1",
+      "api_key_env": "LIQUIDAI_API_KEY",
+      "request": {},
+      "max_tokens": 32000,
+      "top_logprobs": 20,
+      "letter_readout": "answer",
+      "price": {
+        "input_per_mtok": 0.05,
+        "output_per_mtok": 0.7
+      },
+      "note": "Liquid AI's own API; no reasoning request (letter probabilities directly)",
+      "parallel": 16,
+      "max_matches": 11
+    },
+    "entry_sha256": "411cad81827bb96ed9489fc2a91503d3a4f1b940a7eb69d6e70f1617bc4962b3",
+    "fixtures": [
+      "matchday 11: LFM2.5-24B-A2B (off) v Gemini 3.8 Flash (low)",
+      "matchday 11: Gemini 3.8 Flash (high) v LFM2.5-24B-A2B (off)",
+      "matchday 11: LFM2.5-24B-A2B (off) v Claude Sonnet 5.5 (low)",
+      "matchday 11: Claude Sonnet 5.5 (high) v LFM2.5-24B-A2B (off)",
+      "matchday 11: GPT-6.1 Sol (low) v LFM2.5-24B-A2B (off)",
+      "matchday 11: LFM2.5-24B-A2B (off) v GPT-6.1 Sol (high)",
+      "matchday 11: LFM2.5-24B-A2B (off) v DeepSeek V4.1 Flash (off)",
+      "matchday 11: DeepSeek V4.1 Flash (on) v LFM2.5-24B-A2B (off)",
+      "matchday 11: GLM-5.3 (on) v LFM2.5-24B-A2B (off)",
+      "matchday 11: LFM2.5-24B-A2B (off) v GNUbg weak",
+      "matchday 11: Qwen3.8 Flash (off) v LFM2.5-24B-A2B (off)"
+    ],
+    "stale_playoff_fixtures": 0
+  },
+  {
+    "added_at": "2026-10-19T18:27:07Z",
+    "league": 2,
+    "db": "v3.db",
+    "name": "LFM2.5-24B-A2B (on)",
+    "harness_commit": "c770e3b4f7a4933bf6bb13a0fe3d7e549cddfacb",
+    "harness_dirty": true,
+    "entry": {
+      "name": "LFM2.5-24B-A2B (on)",
+      "spec": "openai-compatible/lfm2.5-24b-a2b",
+      "provider": "liquid",
+      "base_url": "https://api.liquid.ai/openai/v1",
+      "api_key_env": "LIQUIDAI_API_KEY",
+      "reasoning": "low",
+      "request": {
+        "reasoning_effort": "low"
+      },
+      "max_tokens": 32000,
+      "top_logprobs": 20,
+      "letter_readout": "answer",
+      "price": {
+        "input_per_mtok": 0.05,
+        "output_per_mtok": 0.7
+      },
+      "note": "Liquid AI's own API (no 8,192-token output cap, unlike OpenRouter); reasoning_effort low",
+      "parallel": 16,
+      "max_matches": 11
+    },
+    "entry_sha256": "1a00cd9784e969c16c3537d1765d77443b0bd133f4ee80233b4dd7f164cfa9c5",
+    "fixtures": [
+      "matchday 12: Gemini 3.8 Flash (low) v LFM2.5-24B-A2B (on)",
+      "matchday 12: Gemini 3.8 Flash (high) v LFM2.5-24B-A2B (on)",
+      "matchday 12: LFM2.5-24B-A2B (on) v Claude Sonnet 5.5 (low)",
+      "matchday 12: LFM2.5-24B-A2B (on) v Claude Sonnet 5.5 (high)",
+      "matchday 12: GPT-6.1 Sol (low) v LFM2.5-24B-A2B (on)",
+      "matchday 12: LFM2.5-24B-A2B (on) v GPT-6.1 Sol (high)",
+      "matchday 12: DeepSeek V4.1 Flash (off) v LFM2.5-24B-A2B (on)",
+      "matchday 12: DeepSeek V4.1 Flash (on) v LFM2.5-24B-A2B (on)",
+      "matchday 12: GLM-5.3 (on) v LFM2.5-24B-A2B (on)",
+      "matchday 12: GNUbg weak v LFM2.5-24B-A2B (on)",
+      "matchday 12: Qwen3.8 Flash (off) v LFM2.5-24B-A2B (on)",
+      "matchday 12: LFM2.5-24B-A2B (on) v LFM2.5-24B-A2B (off)"
+    ],
+    "stale_playoff_fixtures": 0
   }
 ]

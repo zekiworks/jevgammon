@@ -1,0 +1,82 @@
+[
+  {
+    "added_at": "2026-10-19T13:36:08Z",
+    "league": 2,
+    "db": "v3.db",
+    "name": "Qwen3.8 Flash Next (off)",
+    "harness_commit": "931509f6fe636f20cec634a05443e257af419a2d",
+    "harness_dirty": false,
+    "entry": {
+      "name": "Qwen3.8 Flash Next (off)",
+      "spec": "local/qwen3.8-flash-next",
+      "provider": "local-vllm",
+      "quantization": "NVFP4, Mia-AiLab/Qwen3.8-Flash-Next-NVFP4",
+      "base_url": "http://192.168.1.139:8896/v1",
+      "request": {
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        }
+      },
+      "note": "not on OpenRouter: our DGX Spark spark3, Mia-AiLab NVFP4 build of the v1 model (v1 and the planned League 2 server: FP8 checkpoint on bariton, taken); thinking off",
+      "device": "DGX Spark GB10 (spark3)",
+      "parallel": 2,
+      "max_matches": 2
+    },
+    "entry_sha256": "8da26a25a254066fe08d70d993eda685b1eb47728ce43349563f690f5cbdb689",
+    "fixtures": [
+      "matchday 10: Qwen3.8 Flash Next (off) v Gemini 3.8 Flash (low)",
+      "matchday 10: Gemini 3.8 Flash (high) v Qwen3.8 Flash Next (off)",
+      "matchday 10: Qwen3.8 Flash Next (off) v Claude Sonnet 5.5 (low)",
+      "matchday 10: Qwen3.8 Flash Next (off) v Claude Sonnet 5.5 (high)",
+      "matchday 10: GPT-6.1 Sol (low) v Qwen3.8 Flash Next (off)",
+      "matchday 10: GPT-6.1 Sol (high) v Qwen3.8 Flash Next (off)",
+      "matchday 10: DeepSeek V4.1 Flash (off) v Qwen3.8 Flash Next (off)",
+      "matchday 10: Qwen3.8 Flash Next (off) v DeepSeek V4.1 Flash (on)",
+      "matchday 10: GLM-5.3 (on) v Qwen3.8 Flash Next (off)",
+      "matchday 10: Qwen3.8 Flash Next (off) v GNUbg weak"
+    ],
+    "stale_playoff_fixtures": 0
+  },
+  {
+    "added_at": "2026-10-19T13:36:08Z",
+    "league": 2,
+    "db": "v3.db",
+    "name": "Qwen3.8 Flash Next (on)",
+    "harness_commit": "931509f6fe636f20cec634a05443e257af419a2d",
+    "harness_dirty": false,
+    "entry": {
+      "name": "Qwen3.8 Flash Next (on)",
+      "spec": "local/qwen3.8-flash-next",
+      "provider": "local-vllm",
+      "quantization": "NVFP4, Mia-AiLab/Qwen3.8-Flash-Next-NVFP4",
+      "base_url": "http://192.168.1.139:8896/v1",
+      "reasoning": "template default",
+      "request": {
+        "chat_template_kwargs": {
+          "enable_thinking": true
+        },
+        "reasoning_effort": null
+      },
+      "max_tokens": 24000,
+      "note": "thinking on (enable_thinking); no effort knob, template default; DGX Spark spark3, Mia-AiLab NVFP4 build",
+      "device": "DGX Spark GB10 (spark3)",
+      "parallel": 6,
+      "max_matches": 3
+    },
+    "entry_sha256": "c24e7404c3c5e02625722be30227ef441165b8494e803c08fecf0d54d4c294a8",
+    "fixtures": [
+      "matchday 11: Qwen3.8 Flash Next (on) v Gemini 3.8 Flash (low)",
+      "matchday 11: Qwen3.8 Flash Next (on) v Gemini 3.8 Flash (high)",
+      "matchday 11: Qwen3.8 Flash Next (on) v Claude Sonnet 5.5 (low)",
+      "matchday 11: Claude Sonnet 5.5 (high) v Qwen3.8 Flash Next (on)",
+      "matchday 11: GPT-6.1 Sol (low) v Qwen3.8 Flash Next (on)",
+      "matchday 11: Qwen3.8 Flash Next (on) v GPT-6.1 Sol (high)",
+      "matchday 11: DeepSeek V4.1 Flash (off) v Qwen3.8 Flash Next (on)",
+      "matchday 11: DeepSeek V4.1 Flash (on) v Qwen3.8 Flash Next (on)",
+      "matchday 11: Qwen3.8 Flash Next (on) v GLM-5.3 (on)",
+      "matchday 11: Qwen3.8 Flash Next (on) v GNUbg weak",
+      "matchday 11: Qwen3.8 Flash Next (off) v Qwen3.8 Flash Next (on)"
+    ],
+    "stale_playoff_fixtures": 0
+  }
+]

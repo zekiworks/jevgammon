@@ -1,0 +1,47 @@
+{
+  "note": "v3 League 2 late joiners: Qwen3.8 Flash Next (off/on), served on DGX Spark spark3 (GB10) from the Mia-AiLab NVFP4 checkpoint (tools/v3/servers/spark3-flashnext.sh), because bariton's GPUs are taken. Same roster entries as league2.json except server, model, quantization and device. One server (max-num-seqs 8) for both: (on) gets 6 requests in flight (3 matches, mirror games concurrent), (off) 2, so the long reasoning requests cannot starve the 1-token ones (in a shared smoke run off waited 444 s on average behind 8 on requests; alone 2 s).",
+  "prompt_version": "bg-v2",
+  "seed": 8637860750269043463,
+  "order_seed": 1190975713392774006,
+  "rounds": 3,
+  "clock": 0,
+  "delay": 30,
+  "max_turns": 300,
+  "players": [
+    {
+      "name": "Qwen3.8 Flash Next (off)",
+      "spec": "local/qwen3.8-flash-next",
+      "base_url": "http://192.168.1.139:8896/v1",
+      "provider": "local-vllm",
+      "quantization": "NVFP4, Mia-AiLab/Qwen3.8-Flash-Next-NVFP4",
+      "parallel": 2,
+      "note": "not on OpenRouter: our DGX Spark spark3, Mia-AiLab NVFP4 build of the v1 model (v1 and the planned League 2 server: FP8 checkpoint on bariton, taken); thinking off",
+      "request": {
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        }
+      },
+      "device": "DGX Spark GB10 (spark3)",
+      "max_matches": 2
+    },
+    {
+      "name": "Qwen3.8 Flash Next (on)",
+      "spec": "local/qwen3.8-flash-next",
+      "base_url": "http://192.168.1.139:8896/v1",
+      "provider": "local-vllm",
+      "quantization": "NVFP4, Mia-AiLab/Qwen3.8-Flash-Next-NVFP4",
+      "parallel": 6,
+      "note": "thinking on (enable_thinking); no effort knob, template default; DGX Spark spark3, Mia-AiLab NVFP4 build",
+      "reasoning": "template default",
+      "max_tokens": 24000,
+      "request": {
+        "chat_template_kwargs": {
+          "enable_thinking": true
+        },
+        "reasoning_effort": null
+      },
+      "device": "DGX Spark GB10 (spark3)",
+      "max_matches": 3
+    }
+  ]
+}

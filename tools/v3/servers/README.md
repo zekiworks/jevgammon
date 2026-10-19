@@ -9,6 +9,7 @@ tools/v3/servers/qwen38-flash-next.sh start|stop|status
 tools/v3/servers/wave.sh A|B|L1 start|stop|status|probe
 tools/v3/servers/spark.sh start|stop|status|probe              # League 1 from 2026-10-16
 tools/v3/servers/gemma4-31b-replicas.sh start|stop|status      # League 1 from 2026-10-16
+tools/v3/servers/spark3-flashnext.sh start|stop|status|probe   # League 2 Flash Next from 2026-10-19
 ```
 
 vLLM servers run as docker containers (`docker logs -f <name>`); the Python decision servers
@@ -161,3 +162,22 @@ Measured on 2026-10-16 with Gemma 4 31B (on) in 9 matches at once: 342 generated
 over the three replicas, 3 requests running on each (about 38 tokens/s per request; one
 GPU next to Cygnet gave about 154 tokens/s over 4 matches). A thinking decision still takes
 about 130 s; what grew is the number of matches played at once.
+
+## League 2 Flash Next on DGX Spark spark3 (from 2026-10-19)
+
+bariton's GPUs are taken, so both Qwen3.8 Flash Next setups of League 2 joined late
+(`leagues/league2-flashnext.json`, `league-add`) against one server on spark3 (GB10,
+`http://192.168.1.139:8896/v1`, served name `qwen3.8-flash-next`): the MiaAI-Lab single-Spark
+recipe (`~/code/Qwen3.8-Flash-Next-Single-DGX-Spark`, `.env` as on spark2), image
+`vllm/vllm-openai:qwen38-flash-next`, checkpoint `Mia-AiLab/Qwen3.8-Flash-Next-NVFP4` (99 GB:
+MXFP8 attention, NVFP4 experts via Marlin, the 27 GiB n-gram table memory-mapped on the CPU),
+all copied from spark2. Overrides: `--max-model-len 32768`, `--max-num-seqs 8`,
+`--max-logprobs 20`, port 8896; MTP speculation (3 tokens), FP8 KV cache (611k tokens) and
+`--reasoning-parser qwen3` as the recipe has them. Start-up takes about 13 minutes.
+
+Smoke test (first 10 of `positions/smoke.jsonl`, `smoke/flashnext-spark3.db`) against the
+bariton FP8 server (`smoke/answers.db`): letter probabilities from logprobs on every answer,
+no invalid answers. Off: same top letter 9/10, median max |dp| 0.08; about 2 s per request
+alone, but 444 s on average while 8 thinking requests held every slot, hence (on) 6 and (off)
+2 requests in flight. On: same top letter 6/10; about 18,500 reasoning tokens per decision at
+15 tokens/s per request with 8 running (bariton FP8: 54 tokens/s), about 20 minutes a decision.

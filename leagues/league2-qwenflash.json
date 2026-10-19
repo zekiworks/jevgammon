@@ -1,0 +1,73 @@
+{
+  "players": [
+    {
+      "name": "Qwen3.8 Flash (off)",
+      "spec": "openai-compatible/qwen/qwen3.8-flash",
+      "base_url": "https://openrouter.ai/api/v1",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "provider": "openrouter:alibaba",
+      "quantization": null,
+      "letter_readout": "answer",
+      "price": {
+        "input_per_mtok": 0.15,
+        "output_per_mtok": 0.47
+      },
+      "parallel": 8,
+      "rpm": 18,
+      "top_logprobs": 5,
+      "request": {
+        "provider": {
+          "order": [
+            "alibaba"
+          ],
+          "allow_fallbacks": false,
+          "require_parameters": true
+        },
+        "usage": {
+          "include": true
+        },
+        "reasoning": {
+          "enabled": false
+        }
+      },
+      "note": "Alibaba via OpenRouter (only provider); replaces Qwen3.8 Flash Next, which is not on OpenRouter; quantization not published"
+    },
+    {
+      "name": "Qwen3.8 Flash (on)",
+      "spec": "openai-compatible/qwen/qwen3.8-flash",
+      "base_url": "https://openrouter.ai/api/v1",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "provider": "openrouter:alibaba",
+      "quantization": null,
+      "letter_readout": "answer",
+      "price": {
+        "input_per_mtok": 0.15,
+        "output_per_mtok": 0.47
+      },
+      "parallel": 8,
+      "rpm": 18,
+      "top_logprobs": 5,
+      "request": {
+        "provider": {
+          "order": [
+            "alibaba"
+          ],
+          "allow_fallbacks": false,
+          "require_parameters": true
+        },
+        "usage": {
+          "include": true
+        }
+      },
+      "reasoning": "low",
+      "note": "reasoning effort low; letter logprobs read from the answer after reasoning"
+    }
+  ],
+  "order_seed": 1190975713392774006,
+  "prompt_version": "bg-v2",
+  "seed": 8637860750269043463,
+  "rounds": 3,
+  "clock": 0,
+  "delay": 30,
+  "max_turns": 300
+}

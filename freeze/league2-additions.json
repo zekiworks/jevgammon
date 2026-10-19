@@ -78,5 +78,58 @@
       "matchday 11: Qwen3.8 Flash Next (off) v Qwen3.8 Flash Next (on)"
     ],
     "stale_playoff_fixtures": 0
+  },
+  {
+    "added_at": "2026-10-19T18:04:44Z",
+    "league": 2,
+    "db": "v3.db",
+    "name": "Qwen3.8 Flash (off)",
+    "harness_commit": "ebba47ee54a5a0bb4335a9935c294d634a4ff585",
+    "harness_dirty": false,
+    "entry": {
+      "name": "Qwen3.8 Flash (off)",
+      "spec": "openai-compatible/qwen/qwen3.8-flash",
+      "provider": "openrouter:alibaba",
+      "base_url": "https://openrouter.ai/api/v1",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "request": {
+        "provider": {
+          "order": [
+            "alibaba"
+          ],
+          "allow_fallbacks": false,
+          "require_parameters": true
+        },
+        "usage": {
+          "include": true
+        },
+        "reasoning": {
+          "enabled": false
+        }
+      },
+      "top_logprobs": 5,
+      "letter_readout": "answer",
+      "price": {
+        "input_per_mtok": 0.15,
+        "output_per_mtok": 0.47
+      },
+      "note": "Alibaba via OpenRouter (only provider); replaces Qwen3.8 Flash Next, which is not on OpenRouter; quantization not published",
+      "parallel": 8,
+      "rpm": 18
+    },
+    "entry_sha256": "630658c0b60da8c8e1dcb8024cf7a606999c9a7b2a58d5b81a0024da99b48f04",
+    "fixtures": [
+      "matchday 10: Qwen3.8 Flash (off) v Gemini 3.8 Flash (low)",
+      "matchday 10: Qwen3.8 Flash (off) v Gemini 3.8 Flash (high)",
+      "matchday 10: Claude Sonnet 5.5 (low) v Qwen3.8 Flash (off)",
+      "matchday 10: Claude Sonnet 5.5 (high) v Qwen3.8 Flash (off)",
+      "matchday 10: GPT-6.1 Sol (low) v Qwen3.8 Flash (off)",
+      "matchday 10: Qwen3.8 Flash (off) v GPT-6.1 Sol (high)",
+      "matchday 10: DeepSeek V4.1 Flash (off) v Qwen3.8 Flash (off)",
+      "matchday 10: Qwen3.8 Flash (off) v DeepSeek V4.1 Flash (on)",
+      "matchday 10: Qwen3.8 Flash (off) v GLM-5.3 (on)",
+      "matchday 10: Qwen3.8 Flash (off) v GNUbg weak"
+    ],
+    "stale_playoff_fixtures": 0
   }
 ]

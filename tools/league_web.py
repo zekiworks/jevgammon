@@ -467,6 +467,10 @@ dialog .head{display:flex;justify-content:space-between;align-items:baseline;gap
 #history td.note{white-space:normal;text-align:left;min-width:280px;max-width:520px;color:var(--mute);font-size:13px}
 .note details{margin-top:2px}.note summary{cursor:pointer;color:var(--acc);font-size:12px}.note ul{margin:4px 0 0;padding-left:18px}.note li{margin:2px 0}
 #note.note{max-width:900px}
+a.mlink{color:inherit;text-decoration:none;border-bottom:1px dotted var(--mute)}a.mlink:hover{color:var(--acc)}
+.mtable{width:100%}.mtable td{padding:4px 8px}.m-win td{background:#4cc38a26}.m-win td:nth-child(4){color:var(--win);font-weight:600}
+.m-loss td{background:#e5636b26}.m-loss td:nth-child(4){color:var(--loss);font-weight:600}.m-draw td{background:#d9b44a26}.m-draw td:nth-child(4){color:var(--draw);font-weight:600}
+.m-open td{color:var(--mute)}
 h2 .seasons{float:right;text-transform:none;letter-spacing:0;display:flex;gap:6px;align-items:center}
 .seasons button{background:#232836;color:var(--fg);border:1px solid var(--line);border-radius:5px;padding:0 9px;font:inherit;cursor:pointer}
 .seasons button:disabled{opacity:.35;cursor:default}
@@ -519,7 +523,7 @@ function render(d){
     (L.order_seed!=null?` · option order seed ${L.order_seed}`:'')+(L.prompt_version?` · prompt ${L.prompt_version}`:'');
   $('updated').textContent='updated '+new Date(d.generated_at).toLocaleTimeString();
   $('table').innerHTML='<thead><tr><th>#</th><th class="l">Model</th><th>P</th><th>W</th><th>D</th><th>L</th><th>Pts</th><th>GW</th><th>GL</th><th>PF</th><th>PA</th></tr></thead><tbody>'+
-    d.table.map((r,i)=>`<tr class="${i<3?'top':''}"><td>${i+1}</td><td class="l">${esc(r.name)}</td><td>${r.played}</td><td>${r.won}</td><td>${r.drawn}</td><td>${r.lost}</td><td class="pts">${r.points}</td><td>${r.gw}</td><td>${r.gl}</td><td>${r.pf}</td><td>${r.pa}</td></tr>`).join('')+'</tbody>';
+    d.table.map((r,i)=>`<tr class="${i<3?'top':''}"><td>${i+1}</td><td class="l"><a href="#" class="mlink" data-model="${esc(r.name)}" title="show this model's matches">${esc(r.name)}</a></td><td>${r.played}</td><td>${r.won}</td><td>${r.drawn}</td><td>${r.lost}</td><td class="pts">${r.points}</td><td>${r.gw}</td><td>${r.gl}</td><td>${r.pf}</td><td>${r.pa}</td></tr>`).join('')+'</tbody>';
   // Player config per name: spec plus provider / quantization / device when the league recorded them.
   const player=n=>{const c=(L.models||[]).find(x=>x.name===n)||{};return [c.spec,c.provider,c.quantization,c.device].filter(Boolean).join(' · ')};
   const sec=ms=>ms!=null?(ms/1000).toFixed(2)+'s':'–';
@@ -613,6 +617,21 @@ async function stepGame(id,k,dir){
   view[key]={round,leg,turn_id:turns[i].turn_id,i,turns};
   render(lastData);
 }
+// A model's matches in the league on view: green win, red loss, yellow draw, grey not finished.
+function showMatches(name){
+  const fs=(lastData&&lastData.fixtures||[]).filter(f=>f.model1===name||f.model2===name);
+  const rows=fs.map(f=>{const me=f.model1===name?1:2,opp=me===1?f.model2:f.model1;
+    const done=f.status==='finished',my=me===1?f.score1:f.score2,their=me===1?f.score2:f.score1;
+    const res=!done?'open':f.winner==null?'draw':f.winner===me?'win':'loss';
+    const st=done?{win:'won',loss:'lost',draw:'draw'}[res]:(f.status&&f.status!=='running'&&f.deferred_error?'deferred':f.status||'pending');
+    const when=f.stage==='playoff'?'playoff':f.stage==='playoff-stale'?'playoff (stale)':'matchday '+f.matchday;
+    return {res,html:`<tr class="m-${res}"><td class="l mute">${esc(when)}</td><td class="l">${esc(opp)}</td><td>${f.status?`${my??0} – ${their??0}`:'–'}</td><td class="l">${esc(st)}</td></tr>`}});
+  const n=k=>rows.filter(r=>r.res===k).length;
+  $('ctxTitle').textContent=`${name}: ${n('win')} won · ${n('draw')} drawn · ${n('loss')} lost${n('open')?` · ${n('open')} to play`:''}`;
+  $('ctxBody').innerHTML=`<table class="mtable"><thead><tr><th class="l">When</th><th class="l">Opponent</th><th>Score</th><th class="l">Result</th></tr></thead><tbody>${rows.map(r=>r.html).join('')}</tbody></table>`;
+  $('ctx').showModal();
+}
+document.addEventListener('click',e=>{const a=e.target.closest('a.mlink');if(a){e.preventDefault();showMatches(a.dataset.model)}});
 async function showContext(turnId){
   const d=await (await fetch(`api/context?turn=${turnId}`,{cache:'no-store'})).json();
   if(d.error){$('ctxTitle').textContent=d.error;$('ctxBody').innerHTML='';$('ctx').showModal();return}

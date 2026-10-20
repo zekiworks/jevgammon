@@ -43,7 +43,7 @@ BEST, BLUNDER = 0.001, 0.08
 RUNS_ON = {
     # League 1
     "Liquid d1-ultra": "Liquid AI decisions API",
-    "GNUbg weak": "GNU Backgammon 1.08, Beginner level (0-ply, noise 0.060)",
+    "GNUbg weak": "GNU Backgammon 1.08, Beginner level (0-ply, noise 0.060), x86-64 build (see About the anchor)",
     "Jev 1.14.0": "TypeSafe API",
     "Jev 1.13.0": "TypeSafe API",
     "Fastino GLiDE": "Fastino API",
@@ -263,7 +263,8 @@ def main():
 
     text = Path(html_path).read_text()
     text = patch(text, "asof", as_of.strftime("%-d %B %Y, %H:%M UTC"))
-    text = patch(text, "scored", f"{len(scored):,}")
+    counted = sum(m.get("scored", 0) for lg in result["leagues"] for m in lg["models"])
+    text = patch(text, "scored", f"{counted:,}")
     for lg in result["leagues"]:
         text = patch(text, f"league{lg['id']}", "\n      " + tables(lg) + "\n      ")
         text = patch(text, f"progress{lg['id']}",

@@ -30,6 +30,8 @@ WIN_POINTS, DRAW_POINTS = 3, 1
 CACHE_SECONDS = 2.0
 # A league that is not finished counts as live while it moved within this many seconds.
 LIVE_SECONDS = 600
+# A gap between two turns of a match longer than this (seconds) counts as a pause, not play.
+PAUSE_GAP = 1800
 # Clients allowed to pause or resume: this machine and the LAN.
 CONTROL_NETWORKS = (ipaddress.ip_network("127.0.0.1/32"), ipaddress.ip_network("192.168.1.0/24"))
 # Header the page sends with control POSTs; a cross-site form or fetch cannot set it unasked.
@@ -107,6 +109,18 @@ def league_fixtures(conn: sqlite3.Connection, lid: int) -> tuple[list[dict], dic
         match_ids,
     ):
         games_won.setdefault(r["match_id"], [0, 0])[r["winner_player"] - 1] = r["n"]
+    # Playing time per match, in minutes: the span of its turns with pauses taken out
+    # (gaps over PAUSE_GAP between consecutive turns, e.g. a stopped runner, count as zero).
+    times: dict[int, list[float]] = {}
+    for r in conn.execute(
+        f"""SELECT g.match_id, t.created_at FROM turns t JOIN games g ON g.id = t.game_id
+            WHERE g.match_id IN ({marks}) ORDER BY g.match_id, t.created_at""",
+        match_ids,
+    ):
+        times.setdefault(r["match_id"], []).append(datetime.fromisoformat(r["created_at"].replace("Z", "+00:00")).timestamp())
+    for f in fixtures:
+        ts = times.get(f["match_id"], [])
+        f["minutes"] = round(sum(min(b - a, PAUSE_GAP) for a, b in zip(ts, ts[1:])) / 60, 1) if len(ts) > 1 else None
     return fixtures, games_won
 
 
@@ -643,10 +657,10 @@ function showMatches(name){
     const st=done?{win:'won',loss:'lost',draw:'draw'}[res]:(f.status&&f.status!=='running'&&f.deferred_error?'deferred':f.status||'pending');
     const when=f.stage==='playoff'?'playoff':f.stage==='playoff-stale'?'playoff (stale)':'matchday '+f.matchday;
     const sm=f.s_move||[],t=v=>v!=null?v.toFixed(2):'–';
-    return {res,html:`<tr class="m-${res}"><td class="l mute">${esc(when)}</td><td class="l">${esc(opp)}</td><td>${f.status?`${my??0} – ${their??0}`:'–'}</td><td class="l">${esc(st)}</td><td>${t(sm[me-1])}</td><td>${t(sm[2-me])}</td><td>${t(f.s_turn)}</td></tr>`}});
+    return {res,html:`<tr class="m-${res}"><td class="l mute">${esc(when)}</td><td class="l">${esc(opp)}</td><td>${f.status?`${my??0} – ${their??0}`:'–'}</td><td class="l">${esc(st)}</td><td>${t(sm[me-1])}</td><td>${t(sm[2-me])}</td><td>${t(f.s_turn)}</td><td>${f.minutes!=null?f.minutes.toFixed(1):'–'}</td></tr>`}});
   const n=k=>rows.filter(r=>r.res===k).length;
   $('ctxTitle').textContent=`${name}: ${n('win')} won · ${n('draw')} drawn · ${n('loss')} lost${n('open')?` · ${n('open')} to play`:''}`;
-  $('ctxBody').innerHTML=`<table class="mtable"><thead><tr><th class="l">When</th><th class="l">Opponent</th><th>Score</th><th class="l">Result</th><th title="mean seconds per decision of ${esc(name)} in this match">s/move</th><th title="mean seconds per decision of the opponent">opp. s/move</th><th title="mean seconds per decision over both players' turns">s/turn</th></tr></thead><tbody>${rows.map(r=>r.html).join('')}</tbody></table>`;
+  $('ctxBody').innerHTML=`<table class="mtable"><thead><tr><th class="l">When</th><th class="l">Opponent</th><th>Score</th><th class="l">Result</th><th title="mean seconds per decision of ${esc(name)} in this match">s/move</th><th title="mean seconds per decision of the opponent">opp. s/move</th><th title="mean seconds per decision over both players' turns">s/turn</th><th title="playing time from first to last move; gaps over 30 min (paused runner) left out">min</th></tr></thead><tbody>${rows.map(r=>r.html).join('')}</tbody></table>`;
   $('ctx').showModal();
 }
 document.addEventListener('click',e=>{const a=e.target.closest('a.mlink');if(a){e.preventDefault();showMatches(a.dataset.model)}});

@@ -400,5 +400,182 @@
     "rpm": null
    }
   ]
+ },
+ {
+  "changed_at": "2026-10-20T20:21:14Z",
+  "league": 2,
+  "db": "v3.db",
+  "change": "Qwen3.8-27B (off) matches played on our vLLM server voided and replayed from scratch with the same seeds (letter readout fix)",
+  "harness_commit": "afc7b4140dbd24f0b0f853014a7e4819bbddcac6",
+  "harness_dirty": true,
+  "reason": "The answer letter readout found the letter's logprobs entry only when the tokens after it spelled the end of the reply. vLLM (Qwen3.8-27B (off), from 2026-10-19 22:26 UTC) lists the end-of-sequence token <|im_end|> after the letter although it is not in the reply, so no entry was found and every decision (1,572) fell back to the reply's letter, sampled at temperature 1 (probability_source choice_only), instead of the argmax of the letter probabilities the protocol plays. The runner now leaves out trailing special tokens (afc7b41). Audit of every setup in Leagues 1 and 2 by probability_source: no other setup that should give probabilities has choice_only decisions (Claude, GPT-6.1 Sol and Gemini via subscriptions are choice only by design; League 1's decision services all report decision probabilities; Gemma 4 31B, LFM2.5-24B-A2B and Qwen3.8-27B (on) read logprobs).",
+  "voided_match_ids": [
+   206,
+   341,
+   327,
+   224,
+   209,
+   219,
+   197,
+   335,
+   321,
+   195,
+   346,
+   333,
+   308,
+   389,
+   306
+  ],
+  "voided": [
+   {
+    "fixture": "matchday 15: Claude Sonnet 5.5 (high) v Qwen3.8-27B (off)",
+    "match_id": 206,
+    "status": "finished",
+    "voided_for": "Qwen3.8-27B (off)"
+   },
+   {
+    "fixture": "matchday 15: DeepSeek V4.1 Flash (off) v Qwen3.8-27B (off)",
+    "match_id": 341,
+    "status": "finished",
+    "voided_for": "Qwen3.8-27B (off)"
+   },
+   {
+    "fixture": "matchday 15: GNUbg weak v Qwen3.8-27B (off)",
+    "match_id": 327,
+    "status": "finished",
+    "voided_for": "Qwen3.8-27B (off)"
+   },
+   {
+    "fixture": "matchday 15: GPT-6.1 Sol (high) v Qwen3.8-27B (off)",
+    "match_id": 224,
+    "status": "finished",
+    "voided_for": "Qwen3.8-27B (off)"
+   },
+   {
+    "fixture": "matchday 15: GPT-6.1 Sol (low) v Qwen3.8-27B (off)",
+    "match_id": 209,
+    "status": "finished",
+    "voided_for": "Qwen3.8-27B (off)"
+   },
+   {
+    "fixture": "matchday 15: Gemini 3.8 Flash (high) v Qwen3.8-27B (off)",
+    "match_id": 219,
+    "status": "finished",
+    "voided_for": "Qwen3.8-27B (off)"
+   },
+   {
+    "fixture": "matchday 15: Gemini 3.8 Flash (low) v Qwen3.8-27B (off)",
+    "match_id": 197,
+    "status": "finished",
+    "voided_for": "Qwen3.8-27B (off)"
+   },
+   {
+    "fixture": "matchday 15: Gemma 4 31B (off) v Qwen3.8-27B (off)",
+    "match_id": 335,
+    "status": "finished",
+    "voided_for": "Qwen3.8-27B (off)"
+   },
+   {
+    "fixture": "matchday 15: LFM2.5-24B-A2B (on) v Qwen3.8-27B (off)",
+    "match_id": 321,
+    "status": "finished",
+    "voided_for": "Qwen3.8-27B (off)"
+   },
+   {
+    "fixture": "matchday 15: Qwen3.8-27B (off) v Claude Sonnet 5.5 (low)",
+    "match_id": 195,
+    "status": "finished",
+    "voided_for": "Qwen3.8-27B (off)"
+   },
+   {
+    "fixture": "matchday 15: Qwen3.8-27B (off) v GLM-5.3 (on)",
+    "match_id": 346,
+    "status": "finished",
+    "voided_for": "Qwen3.8-27B (off)"
+   },
+   {
+    "fixture": "matchday 15: Qwen3.8-27B (off) v Gemma 4 31B (on)",
+    "match_id": 333,
+    "status": "finished",
+    "voided_for": "Qwen3.8-27B (off)"
+   },
+   {
+    "fixture": "matchday 15: Qwen3.8-27B (off) v LFM2.5-24B-A2B (off)",
+    "match_id": 308,
+    "status": "finished",
+    "voided_for": "Qwen3.8-27B (off)"
+   },
+   {
+    "fixture": "matchday 15: Qwen3.8-27B (off) v Qwen3.8 Flash (off)",
+    "match_id": 389,
+    "status": "finished",
+    "voided_for": "Qwen3.8-27B (off)"
+   },
+   {
+    "fixture": "matchday 16: Qwen3.8-27B (on) v Qwen3.8-27B (off)",
+    "match_id": 306,
+    "status": "finished",
+    "voided_for": "Qwen3.8-27B (off)"
+   }
+  ]
+ },
+ {
+  "changed_at": "2026-10-20T21:56:17Z",
+  "league": 2,
+  "db": "v3.db",
+  "change": "League 2's self-hosted players moved for League 2's last matches: Gemma 4 31B and LFM2.5-24B-A2B to DGX Spark spark-194d, Qwen3.8-27B to DGX Spark spark-002e (21:10 UTC); DeepSeek V4.1 Flash (off, on) from Fireworks (OpenRouter) to our own SGLang server on bariton's four RTX PRO 6000 (21:56 UTC)",
+  "harness_commit": "afc7b4140dbd24f0b0f853014a7e4819bbddcac6",
+  "harness_dirty": true,
+  "reason": "League 1 finished at 20:41:52 UTC and DeepSeek V4.1 Flash needs all four bariton GPUs, so the other self-hosted League 2 players moved to the DGX Sparks, freed by League 1 (same images, checkpoints and arguments; memory shares 0.45 for Gemma and LFM2.5 side by side, 0.85 for Qwen). 20 stored League 2 (off) requests from bariton replayed on each: same top letter Gemma 20/20 (max |dp| 0.50, median 0.0000), LFM2.5 20/20 (max 0.10, median 0.05; bariton against itself 18/20), Qwen 20/20 (max 0.005, median 0.002). DeepSeek: local checkpoint DeepSeek-V4.1-Flash-1017 @ 1bae0e10 as published (Fireworks' revision not published); 20 stored Fireworks (off) requests: local 16/20 and 17/20 in two runs (not deterministic, |dp| about 0.1 between runs), Fireworks against its own stored answers 18/20, so local is within Fireworks' own spread (Main's rule: go local when Fireworks itself is 18/20 or below).",
+  "roster_changes": [
+   {
+    "name": "Gemma 4 31B (off)",
+    "base_url": "http://192.168.1.139:8894/v1"
+   },
+   {
+    "name": "Gemma 4 31B (on)",
+    "base_url": "http://192.168.1.139:8894/v1"
+   },
+   {
+    "name": "LFM2.5-24B-A2B (off)",
+    "base_url": "http://192.168.1.139:8898/v1"
+   },
+   {
+    "name": "LFM2.5-24B-A2B (on)",
+    "base_url": "http://192.168.1.139:8898/v1"
+   },
+   {
+    "name": "Qwen3.8-27B (off)",
+    "base_url": "http://192.168.1.127:8897/v1"
+   },
+   {
+    "name": "Qwen3.8-27B (on)",
+    "base_url": "http://192.168.1.127:8897/v1"
+   },
+   {
+    "name": "DeepSeek V4.1 Flash (off)",
+    "spec": "openai-compatible/deepseek-v4.1-flash",
+    "base_url": "http://127.0.0.2:8010/v1",
+    "provider": "local-sglang",
+    "request": {
+     "chat_template_kwargs": {
+      "thinking": false
+     }
+    },
+    "rpm": null
+   },
+   {
+    "name": "DeepSeek V4.1 Flash (on)",
+    "spec": "openai-compatible/deepseek-v4.1-flash",
+    "base_url": "http://127.0.0.2:8010/v1",
+    "provider": "local-sglang",
+    "request": {
+     "chat_template_kwargs": {
+      "thinking": true
+     }
+    },
+    "rpm": null
+   }
+  ]
  }
 ]

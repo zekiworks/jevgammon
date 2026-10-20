@@ -136,7 +136,7 @@
       },
       "parallel": 1,
       "base_url": "http://127.0.0.1:18098",
-      "device": "RTX PRO 6000 (bariton GPU 3, next to Open-Jev)",
+      "device": "RTX PRO 6000 (bariton GPU 3, next to Open-Jev); from 2026-10-20 20:10 UTC bariton GPU 1, next to Decider v1.2 27B and Winnow-12B (same script and arguments)",
       "note": "Perplexity's pplx-decider-flash-v1.2 (from Qwen3.5-4B) on our GPU through the pplx_decider package its checkpoint ships, reference path, one request at a time (tools/v3/servers/decider-v1.2.sh flash); price = Perplexity's list price for the same model (2026-10-18)"
     },
     {
@@ -150,7 +150,7 @@
       },
       "parallel": 1,
       "base_url": "http://127.0.0.1:18099",
-      "device": "RTX PRO 6000 (bariton GPU 1, after Qwen3.8-27B's League 2 matches)",
+      "device": "RTX PRO 6000 (bariton GPU 1, after Qwen3.8-27B's League 2 matches); paused 2026-10-20 (GPUs needed elsewhere); from 2026-10-20 20:09 UTC bariton GPU 1 again, same script and arguments, next to Decider Flash v1.2 and Winnow-12B",
       "note": "Perplexity's pplx-decider-v1.2 (Hugging Face snapshot 225c913) on our GPU through the pplx_decider package its checkpoint ships, reference path, one request at a time (tools/v3/servers/decider-v1.2.sh 27b, DECIDER_V12_GPU=1); joined late overnight 2026-10-19/20 when bariton GPU 1 was freed by Qwen3.8-27B (tools/v3/swap_qwen_decider.sh); smoke test 10/10 answered with probabilities on 2026-10-19 (bariton GPU 2); price = Perplexity's list price for the same model (2026-10-18)"
     },
     {
@@ -161,7 +161,7 @@
       "price": null,
       "parallel": 4,
       "base_url": "http://127.0.0.1:8091",
-      "device": "RTX PRO 6000 (bariton GPU 3, next to Open-Jev)",
+      "device": "RTX PRO 6000 (bariton GPU 3, next to Open-Jev); from 2026-10-20 20:10 UTC bariton GPU 1, next to Decider v1.2 27B and Decider Flash v1.2 (same image and arguments)",
       "note": "EldanRing's Winnow-12B (Gemma 4 12B IT fine-tune) through its author's winnow-inference server (image winnow-inference:d4631fb) with the author's measured configuration (tools/v3/servers/winnow.sh); no published price"
     },
     {

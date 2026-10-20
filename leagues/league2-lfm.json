@@ -10,7 +10,7 @@
     {
       "name": "LFM2.5-24B-A2B (off)",
       "spec": "openai-compatible/lfm2.5-24b-a2b",
-      "base_url": "http://127.0.0.1:8898/v1",
+      "base_url": "http://192.168.1.139:8898/v1",
       "provider": "local-vllm",
       "quantization": "bf16",
       "letter_readout": "prefill",
@@ -21,12 +21,12 @@
       "max_tokens": 32000,
       "max_matches": 16,
       "answer_prefix": "<think></think>Answer:",
-      "device": "Liquid AI's API until 2026-10-19 22:20 UTC; from 22:26 UTC RTX PRO 6000 (bariton GPU 2), the whole GPU (memory share 0.90, 32 sequences)"
+      "device": "Liquid AI's API until 2026-10-19 22:20 UTC; from 22:26 UTC RTX PRO 6000 (bariton GPU 2), the whole GPU (memory share 0.90, 32 sequences); paused 2026-10-20; from 2026-10-20 20:16 UTC bariton GPU 2 again, same script and arguments; from 2026-10-20 21:10 UTC NVIDIA GB10 (DGX Spark spark-194d), same image, checkpoint and arguments except memory share 0.45 (next to Gemma 4 31B), while bariton's four GPUs serve DeepSeek V4.1 Flash; 20 stored League 2 (off) requests (bariton) replayed there: same top letter 20/20, max |dp| 0.10, median 0.05 (bariton against its own stored answers: 18/20)"
     },
     {
       "name": "LFM2.5-24B-A2B (on)",
       "spec": "openai-compatible/lfm2.5-24b-a2b",
-      "base_url": "http://127.0.0.1:8898/v1",
+      "base_url": "http://192.168.1.139:8898/v1",
       "provider": "local-vllm",
       "quantization": "bf16",
       "letter_readout": "prefill",
@@ -37,7 +37,7 @@
       "max_tokens": 32000,
       "reasoning": "low",
       "max_matches": 16,
-      "device": "Liquid AI's API until 2026-10-19 22:20 UTC; from 22:26 UTC RTX PRO 6000 (bariton GPU 2), the whole GPU (memory share 0.90, 32 sequences)"
+      "device": "Liquid AI's API until 2026-10-19 22:20 UTC; from 22:26 UTC RTX PRO 6000 (bariton GPU 2), the whole GPU (memory share 0.90, 32 sequences); paused 2026-10-20; from 2026-10-20 20:16 UTC bariton GPU 2 again, same script and arguments; from 2026-10-20 21:10 UTC NVIDIA GB10 (DGX Spark spark-194d), same image, checkpoint and arguments except memory share 0.45 (next to Gemma 4 31B), while bariton's four GPUs serve DeepSeek V4.1 Flash; 20 stored League 2 (off) requests (bariton) replayed there: same top letter 20/20, max |dp| 0.10, median 0.05 (bariton against its own stored answers: 18/20)"
     }
   ]
 }

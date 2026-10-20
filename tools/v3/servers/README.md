@@ -12,8 +12,8 @@ GEMMA_GPUS=0 tools/v3/servers/gemma4-31b-replicas.sh start|stop|status   # Leagu
 tools/v3/servers/spark3-flashnext.sh start|stop|status|probe   # League 2 Flash Next, 2026-10-19 (withdrawn, stopped)
 tools/v3/servers/decider-v1.2.sh flash|27b start|stop|status|probe   # League 1 from 2026-10-19 (flash on GPU 3; 27b on GPU 1 once Qwen3.8-27B is done)
 tools/v3/servers/winnow.sh start|stop|status|probe          # League 1 from 2026-10-19 (GPU 3)
-tools/v3/servers/qwen38-27b.sh start|stop|status|probe      # League 2 from 2026-10-19 22:26 (GPU 1)
-tools/v3/servers/lfm25-24b.sh start|stop|status|probe       # League 2 from 2026-10-19 22:26 (GPU 2)
+tools/v3/servers/qwen38-27b.sh start|stop|status|probe      # League 2 from 2026-10-19 22:26 (GPU 1; GPU 3 2026-10-20 20:16-21:10; then spark, see the end)
+tools/v3/servers/lfm25-24b.sh start|stop|status|probe       # League 2 from 2026-10-19 22:26 (GPU 2; spark3 from 2026-10-20 21:10)
 ```
 
 vLLM servers run as docker containers (`docker logs -f <name>`); the Python decision servers
@@ -283,3 +283,46 @@ no invalid answers. Off: same top letter 9/10, median max |dp| 0.08; about 2 s p
 alone, but 444 s on average while 8 thinking requests held every slot, hence (on) 6 and (off)
 2 requests in flight. On: same top letter 6/10; about 18,500 reasoning tokens per decision at
 15 tokens/s per request with 8 running (bariton FP8: 54 tokens/s), about 20 minutes a decision.
+
+## League 1's last matches and League 2's DeepSeek V4.1 Flash (2026-10-20)
+
+From 20:09 UTC bariton's GPUs were free again for the leagues. League 1's last 16 matches (all
+Decider v1.2 27B's) ran with Decider v1.2 27B, Decider Flash v1.2 and Winnow-12B together on
+GPU 1 (`DECIDER_V12_GPU=1`, `WINNOW_GPU=1`; 81 GB; Open-Jev was not needed) and Clef, Cygnet
+and Decider v1.1 on the Sparks as before; League 1 finished at 20:41:52 UTC. League 2's
+Gemma 4 31B (GPU 0), LFM2.5-24B-A2B (GPU 2) and Qwen3.8-27B (`QWEN27_GPU=3`) played on their
+overnight servers until 21:10.
+
+Then DeepSeek V4.1 Flash (off, on) moved from Fireworks (OpenRouter) to our own server, which
+needs all four GPUs: `~/code/deepseek-v4.1-flash-4x-rtx-pro-6000`, started with
+`BIND_ADDRESS=127.0.0.2 docker compose -f compose.yaml up -d` (launcher defaults; listening on
+`127.0.0.2:8010` so the league could not reach it before the check; `deepseek-v41.service`
+stays disabled), checkpoint `DeepSeek-V4.1-Flash-1017` @ `1bae0e10`. The other self-hosted
+League 2 players moved to the Sparks, freed by League 1, with the same scripts:
+
+| host | server | URL | memory share |
+|---|---|---|---|
+| `spark3` (spark-194d) | `gemma4-31b.sh` (`GEMMA_MAX_SEQS=24`), started first: it loads the bf16 checkpoint and quantizes, and was OOM-killed when started after LFM2.5 | `http://192.168.1.139:8894/v1` | 0.45 |
+| `spark3` | `lfm25-24b.sh` (`LFM_GPU=0`) | `http://192.168.1.139:8898/v1` | 0.45 |
+| `spark` (spark-002e) | `qwen38-27b.sh` (`QWEN27_GPU=0`) | `http://192.168.1.127:8897/v1` | 0.85 |
+
+All with `BIND_HOST=0.0.0.0`, scripts copied to `~/code/v3-servers`, the LFM2.5 checkpoint
+copied to spark3. Equivalence, 20 stored League 2 (off) requests each, reference = the stored
+answers:
+
+| player | stored on | replayed on | same top letter | max \|Δp\| | median \|Δp\| |
+|---|---|---|---|---|---|
+| Qwen3.8-27B (off) | bariton GPU 1 | bariton GPU 3 | 20/20 | 0.008 | 0.002 |
+| Qwen3.8-27B (off) | bariton | spark | 20/20 | 0.005 | 0.002 |
+| LFM2.5-24B-A2B (off) | bariton GPU 2 | bariton GPU 2 (same server) | 18/20 | 0.15 | 0.04 |
+| LFM2.5-24B-A2B (off) | bariton | spark3 | 20/20 | 0.10 | 0.05 |
+| Gemma 4 31B (off) | bariton | spark3 | 20/20 | 0.50 | 0.0000 |
+| DeepSeek V4.1 Flash (off) | Fireworks | our server, two runs | 16/20, 17/20 | 0.49 | 0.09 |
+| DeepSeek V4.1 Flash (off) | Fireworks | Fireworks again | 18/20 | 0.18 | 0.05 |
+
+Our DeepSeek server is not deterministic (|Δp| about 0.1 between two runs of the same request);
+Fireworks disagrees with its own stored answers about as often, so DeepSeek played on locally
+(Main's call). Its answers end with `<｜end▁of▁sentence｜>` in the logprobs, as vLLM's end with
+`<|im_end|>`; the runner skips such trailing special tokens since `afc7b41` (before it, all of
+Qwen3.8-27B (off)'s vLLM decisions fell back to the sampled letter; its matches were replayed,
+see `freeze/league2-changes.json`).

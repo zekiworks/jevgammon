@@ -281,5 +281,39 @@
       "matchday 21: Mercury Decide v Winnow-12B"
     ],
     "stale_playoff_fixtures": 0
+  },
+  {
+    "added_at": "2026-10-20T04:54:55Z",
+    "league": 1,
+    "db": "v3.db",
+    "name": "Fastino GLiDE",
+    "harness_commit": "6feeefa95ebc25ab9082a1a62ac86c9f45d29fa5",
+    "harness_dirty": false,
+    "entry": {
+      "name": "Fastino GLiDE",
+      "spec": "fastino",
+      "provider": "fastino",
+      "note": "Fastino's hosted System One API; key added 2026-10-20"
+    },
+    "entry_sha256": "95348fd7021dfd8e83a440ed79b74ac1d16c32c68fab3d1cfe2a9a0d018ed406",
+    "fixtures": [
+      "matchday 22: Decider v1.1 27B v Fastino GLiDE",
+      "matchday 22: SubQ Snap Preview v Fastino GLiDE",
+      "matchday 22: Fastino GLiDE v Clef",
+      "matchday 22: Fastino GLiDE v Open-Jev 27B v1.1",
+      "matchday 22: Cygnet (Gemma 4 12B) v Fastino GLiDE",
+      "matchday 22: Fastino GLiDE v Random",
+      "matchday 22: Safest v Fastino GLiDE",
+      "matchday 22: GNUbg weak v Fastino GLiDE",
+      "matchday 22: Liquid d1-ultra v Fastino GLiDE",
+      "matchday 22: Fastino GLiDE v Jev 1.14.0",
+      "matchday 22: Fastino GLiDE v Jev 1.13.0",
+      "matchday 22: Fastino GLiDE v Celeris-1 Decision",
+      "matchday 22: GPT-6 Luna v Fastino GLiDE",
+      "matchday 22: Decider Flash v1.2 v Fastino GLiDE",
+      "matchday 22: Winnow-12B v Fastino GLiDE",
+      "matchday 22: Fastino GLiDE v Mercury Decide"
+    ],
+    "stale_playoff_fixtures": 0
   }
 ]

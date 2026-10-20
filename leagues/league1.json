@@ -180,6 +180,13 @@
       "provider": "local",
       "note": "gnubg 1.08 Beginner level (0-ply, deterministic noise 0.060)",
       "parallel": 1
+    },
+    {
+      "name": "Fastino GLiDE",
+      "spec": "fastino",
+      "provider": "fastino",
+      "quantization": null,
+      "note": "Fastino's hosted System One API; key added 2026-10-20"
     }
   ]
 }

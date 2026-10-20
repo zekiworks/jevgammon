@@ -1,4 +1,8 @@
-//! SQLite record of every match, game, roll, move, and model exchange.
+//! SQLite record of every match, game, roll, move, and model exchange, and of the leagues:
+//! players (one row per setup), the leagues' settings and their participants. A league's
+//! table is the valid matches between two of its current participants played under its
+//! rules; its fixtures are implicit (every pair of current participants without a valid
+//! match is still to play).
 
 use std::path::Path;
 use std::time::Duration;
@@ -8,14 +12,175 @@ use rusqlite::{Connection, OptionalExtension, params};
 use serde_json::Value;
 
 use crate::board::{Board, Side, WinKind};
+use crate::dice::derive_seed;
 use crate::players::PlayerConfig;
 use crate::players::prompt::letter;
 use crate::runner::{Clock, MatchResult, Protocol};
 
-const SCHEMA: &str = r#"
-PRAGMA journal_mode = WAL;
-PRAGMA foreign_keys = ON;
+/// What a league's matches are played under. Two matches are played under the same rules
+/// when these columns are equal (`IS`, so NULL equals NULL); a league's table counts only
+/// matches under its own rules. Raw column values: a league stored before prompt versions
+/// keeps `prompt_version` and `order_seed` NULL here, and so do its matches.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Rules {
+    pub rounds: u32,
+    pub clock_seconds: Option<u64>,
+    pub delay_seconds: Option<u64>,
+    pub max_turns: Option<u32>,
+    pub prompt_version: Option<String>,
+    pub order_seed: Option<u64>,
+    pub mirror_concurrent: bool,
+}
 
+impl Rules {
+    pub fn new(
+        rounds: u32,
+        clock: Option<Clock>,
+        max_turns: Option<u32>,
+        prompt_version: &str,
+        order_seed: u64,
+        mirror_concurrent: bool,
+    ) -> Self {
+        Rules {
+            rounds,
+            clock_seconds: clock.map(|c| c.bank.as_secs()),
+            delay_seconds: clock.map(|c| c.delay.as_secs()),
+            max_turns,
+            prompt_version: Some(prompt_version.to_owned()),
+            order_seed: Some(order_seed),
+            mirror_concurrent,
+        }
+    }
+
+    pub fn clock(&self) -> Option<Clock> {
+        self.clock_seconds.map(|bank| Clock {
+            bank: Duration::from_secs(bank),
+            delay: Duration::from_secs(self.delay_seconds.unwrap_or(0)),
+        })
+    }
+
+    /// The rules as one stable string (`tools/league_web.py` builds the same one).
+    pub fn canonical(&self) -> String {
+        fn opt<T: std::fmt::Display>(value: &Option<T>) -> String {
+            value.as_ref().map_or("-".to_owned(), |v| v.to_string())
+        }
+        format!(
+            "rules-v1 rounds={} clock={} delay={} max_turns={} prompt={} order_seed={} mirror={}",
+            self.rounds,
+            opt(&self.clock_seconds),
+            opt(&self.delay_seconds),
+            opt(&self.max_turns),
+            opt(&self.prompt_version),
+            opt(&self.order_seed),
+            u8::from(self.mirror_concurrent)
+        )
+    }
+
+    /// Hash of the rules, the root of every pair's dice seed.
+    pub fn hash(&self) -> u64 {
+        derive_seed(0, &self.canonical())
+    }
+
+    /// Dice seed of a league match between `a` and `b` under these rules: the same pair
+    /// gets the same dice in every league with the same rules, whatever the league.
+    pub fn pair_seed(&self, a: &str, b: &str) -> u64 {
+        let (low, high) = if a <= b { (a, b) } else { (b, a) };
+        derive_seed(self.hash(), &format!("pair: {low} v {high}"))
+    }
+
+    /// `(model1, model2)` of a new match between `a` and `b`: drawn from the pair seed, so
+    /// it does not depend on the order the two are given in.
+    pub fn sides<'a>(&self, a: &'a str, b: &'a str) -> (&'a str, &'a str) {
+        let (low, high) = if a <= b { (a, b) } else { (b, a) };
+        if derive_seed(self.pair_seed(a, b), "side") & 1 == 0 {
+            (low, high)
+        } else {
+            (high, low)
+        }
+    }
+
+    /// Column values in `RULES_COLUMNS` order.
+    fn values(&self) -> [rusqlite::types::Value; 7] {
+        use rusqlite::types::Value;
+        let int = |v: Option<i64>| v.map_or(Value::Null, Value::Integer);
+        [
+            Value::Integer(self.rounds as i64),
+            int(self.clock_seconds.map(|s| s as i64)),
+            int(self.delay_seconds.map(|s| s as i64)),
+            int(self.max_turns.map(i64::from)),
+            self.prompt_version.clone().map_or(Value::Null, Value::Text),
+            int(self.order_seed.map(|s| s as i64)),
+            Value::Integer(i64::from(self.mirror_concurrent)),
+        ]
+    }
+}
+
+/// Rule columns of `matches`, in `Rules::values` order (`leagues` names the first `rounds`).
+const RULES_COLUMNS: [&str; 7] = [
+    "rounds_planned",
+    "clock_seconds",
+    "delay_seconds",
+    "max_turns",
+    "prompt_version",
+    "order_seed",
+    "mirror_concurrent",
+];
+
+/// `m.rounds_planned IS ?first AND m.clock_seconds IS ?first+1 ...` for `alias`.
+fn rules_sql(alias: &str, first: usize) -> String {
+    RULES_COLUMNS
+        .iter()
+        .enumerate()
+        .map(|(i, column)| format!("{alias}.{column} IS ?{}", first + i))
+        .collect::<Vec<_>>()
+        .join(" AND ")
+}
+
+/// How the dice seed of a new league match is chosen (`leagues.seed_rule`): from the two
+/// player names and the rules hash (`Rules::pair_seed`), or the stored seed of an earlier
+/// match of the pair under the same rules (a voided one replays with the same dice).
+pub const SEED_RULE: &str = "pair-v1";
+
+/// Opens `path` for concurrent use (WAL, one connection per league match).
+pub fn connect(path: &Path) -> Result<Connection> {
+    let conn = Connection::open(path).with_context(|| format!("opening {}", path.display()))?;
+    conn.busy_timeout(Duration::from_secs(60))?;
+    conn.execute_batch("PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;")?;
+    Ok(conn)
+}
+
+fn has_column(conn: &Connection, table: &str, column: &str) -> Result<bool> {
+    Ok(conn.query_row(
+        "SELECT COUNT(*) > 0 FROM pragma_table_info(?1) WHERE name = ?2",
+        params![table, column],
+        |row| row.get(0),
+    )?)
+}
+
+/// Whether the database still keeps rosters in `leagues.models` (before `jevgammon migrate`).
+pub fn legacy_layout(conn: &Connection) -> Result<bool> {
+    has_column(conn, "leagues", "models")
+}
+
+/// Creates missing tables and adds missing columns.
+pub fn ensure_schema(conn: &Connection) -> Result<()> {
+    conn.execute_batch(SCHEMA).context("creating schema")?;
+    for (table, column, kind) in ADDED_COLUMNS {
+        if !has_column(conn, table, column)? {
+            conn.execute_batch(&format!("ALTER TABLE {table} ADD COLUMN {column} {kind}"))
+                .with_context(|| format!("adding {table}.{column}"))?;
+        }
+    }
+    Ok(())
+}
+
+/// Indexes and the league view (needs the columns of `ensure_schema`).
+pub fn ensure_derived_schema(conn: &Connection) -> Result<()> {
+    conn.execute_batch(DERIVED_SCHEMA)
+        .context("creating indexes and views")
+}
+
+const SCHEMA: &str = r#"
 CREATE TABLE IF NOT EXISTS matches (
     id              INTEGER PRIMARY KEY,
     started_at      TEXT NOT NULL,
@@ -45,7 +210,22 @@ CREATE TABLE IF NOT EXISTS matches (
     order_seed      INTEGER,
     -- `git rev-parse HEAD` of the runner at startup, and whether its tree had changes.
     harness_commit  TEXT,
-    harness_dirty   INTEGER
+    harness_dirty   INTEGER,
+    -- League matches: the players (model1/model2 above are the specs played), `league` or
+    -- `playoff` (NULL for a single match), and the label it was created under.
+    player1         INTEGER REFERENCES players(id),
+    player2         INTEGER REFERENCES players(id),
+    stage           TEXT,
+    label           TEXT,
+    -- Rule column next to the ones above (see `Rules`).
+    mirror_concurrent INTEGER,
+    -- 0: voided (`void_reason`, `voided_at`); no table counts it and the pair is played
+    -- again. Earlier attempts replaced by a later match are voided too.
+    valid           INTEGER NOT NULL DEFAULT 1,
+    void_reason     TEXT,
+    voided_at       TEXT,
+    -- Last failure that deferred the match (the error is in `error`); kept once finished.
+    failed_at       TEXT
 );
 
 CREATE TABLE IF NOT EXISTS games (
@@ -136,55 +316,83 @@ CREATE TABLE IF NOT EXISTS leagues (
     id              INTEGER PRIMARY KEY,
     started_at      TEXT NOT NULL,
     finished_at     TEXT,
+    -- Orders the round robin of the founding participants (not the dice).
     seed            INTEGER NOT NULL,
+    -- Rules, compared with the same columns of `matches` (see `Rules`).
     rounds          INTEGER NOT NULL,
-    -- As in matches.
     clock_seconds   INTEGER,
     delay_seconds   INTEGER,
     max_turns       INTEGER,
-    -- JSON array of {"name", "spec"} in entry order.
-    models          TEXT NOT NULL,
     -- running | finished
     status          TEXT NOT NULL,
     -- Final ranking (JSON array of names, first place first), playoffs applied.
     ranking         TEXT,
-    -- What the league tests (`--note`), shown in the web history.
+    -- What the league tests (`--note`) and what changed since, shown in the web history.
     note            TEXT,
     prompt_version  TEXT,
     order_seed      INTEGER,
-    -- Last sign of life of a runner that picks up added players (every 30 s).
+    -- Last sign of life of the league's runner (every 30 s).
     heartbeat_at    TEXT,
     -- 1: the two games of a round play at once, both showing the round-start score;
-    -- NULL or 0: game 2 starts after game 1 and shows the score after it.
-    mirror_concurrent INTEGER
+    -- 0: game 2 starts after game 1 and shows the score after it.
+    mirror_concurrent INTEGER,
+    -- How a new match's dice seed is chosen (`SEED_RULE`).
+    seed_rule       TEXT
 );
 
-CREATE TABLE IF NOT EXISTS league_matches (
+-- One row per setup: the name is the identity a league table shows.
+CREATE TABLE IF NOT EXISTS players (
+    id              INTEGER PRIMARY KEY,
+    name            TEXT NOT NULL UNIQUE,
+    -- Copies of `settings` fields, for queries.
+    spec            TEXT NOT NULL,
+    provider        TEXT,
+    quantization    TEXT,
+    device          TEXT,
+    -- JSON {"input_per_mtok", "output_per_mtok"}.
+    price           TEXT,
+    -- The full player config (JSON `{name, spec, ...}`, as in a league config file).
+    settings        TEXT NOT NULL,
+    created_at      TEXT NOT NULL
+);
+
+-- Participation of a player in a league; `left_at` NULL = a current participant.
+CREATE TABLE IF NOT EXISTS league_players (
     id              INTEGER PRIMARY KEY,
     league_id       INTEGER NOT NULL REFERENCES leagues(id),
-    -- league | playoff
-    stage           TEXT NOT NULL,
-    -- Unique within the league, e.g. `matchday 3 match 2` or `playoff 2-3: A v B`.
-    label           TEXT NOT NULL,
-    -- League stage: 1-based matchday; NULL for playoffs.
-    matchday        INTEGER,
-    -- Model names (leagues.models); model1 plays white in the first game of every round.
-    model1          TEXT NOT NULL,
-    model2          TEXT NOT NULL,
-    seed            INTEGER NOT NULL,
-    -- The fixture's match. An unfinished one (aborted by an error or a stop, or still
-    -- `running` after the process died) resumes from its last stored turn.
-    match_id        INTEGER REFERENCES matches(id),
-    -- Last failure of the match (or of its warm-up) and when: the league deferred it and
-    -- retries it later. Kept once the match finished.
-    error           TEXT,
-    failed_at       TEXT,
-    UNIQUE (league_id, label)
+    player_id       INTEGER NOT NULL REFERENCES players(id),
+    joined_at       TEXT NOT NULL,
+    left_at         TEXT,
+    -- Why the player joined late or left.
+    note            TEXT
 );
 "#;
 
+/// Indexes and views over columns that older databases gain in `ADDED_COLUMNS`.
+const DERIVED_SCHEMA: &str = r#"
+CREATE UNIQUE INDEX IF NOT EXISTS league_players_current
+    ON league_players (league_id, player_id) WHERE left_at IS NULL;
+CREATE INDEX IF NOT EXISTS matches_pair ON matches (player1, player2);
+
+-- Every valid match between two current participants of a league under the league's rules:
+-- the matches its table, playoffs and pages count. A match can belong to several leagues.
+CREATE VIEW IF NOT EXISTS league_match_view AS
+SELECT l.id AS league_id, m.id AS match_id, m.stage, m.label, p1.name AS model1,
+       p2.name AS model2, m.player1, m.player2, m.seed, m.status
+FROM leagues l
+JOIN matches m ON m.valid = 1 AND m.stage IS NOT NULL
+    AND m.rounds_planned = l.rounds AND m.clock_seconds IS l.clock_seconds
+    AND m.delay_seconds IS l.delay_seconds AND m.max_turns IS l.max_turns
+    AND m.prompt_version IS l.prompt_version AND m.order_seed IS l.order_seed
+    AND m.mirror_concurrent IS l.mirror_concurrent
+JOIN league_players a ON a.league_id = l.id AND a.player_id = m.player1 AND a.left_at IS NULL
+JOIN league_players b ON b.league_id = l.id AND b.player_id = m.player2 AND b.left_at IS NULL
+JOIN players p1 ON p1.id = m.player1
+JOIN players p2 ON p2.id = m.player2;
+"#;
+
 /// Columns added after the first release, for databases created before them.
-const ADDED_COLUMNS: [(&str, &str, &str); 31] = [
+const ADDED_COLUMNS: [(&str, &str, &str); 39] = [
     ("matches", "clock_seconds", "INTEGER"),
     ("turns", "clock_ms", "INTEGER"),
     ("matches", "delay_seconds", "INTEGER"),
@@ -214,8 +422,16 @@ const ADDED_COLUMNS: [(&str, &str, &str); 31] = [
     ("turns", "reasoning_tokens", "INTEGER"),
     ("leagues", "heartbeat_at", "TEXT"),
     ("leagues", "mirror_concurrent", "INTEGER"),
-    ("league_matches", "error", "TEXT"),
-    ("league_matches", "failed_at", "TEXT"),
+    ("matches", "player1", "INTEGER REFERENCES players(id)"),
+    ("matches", "player2", "INTEGER REFERENCES players(id)"),
+    ("matches", "stage", "TEXT"),
+    ("matches", "label", "TEXT"),
+    ("matches", "mirror_concurrent", "INTEGER"),
+    ("matches", "valid", "INTEGER NOT NULL DEFAULT 1"),
+    ("matches", "void_reason", "TEXT"),
+    ("matches", "voided_at", "TEXT"),
+    ("matches", "failed_at", "TEXT"),
+    ("leagues", "seed_rule", "TEXT"),
 ];
 
 pub struct Db {
@@ -223,43 +439,52 @@ pub struct Db {
 }
 
 pub struct LeagueRow {
+    /// Orders the founding participants' round robin.
     pub seed: u64,
-    pub rounds: u32,
-    pub clock: Option<Clock>,
-    pub max_turns: Option<u32>,
-    /// Entry order.
-    pub models: Vec<PlayerConfig>,
-    /// `None` for leagues before prompt versions.
-    pub prompt_version: Option<String>,
-    pub order_seed: Option<u64>,
-    /// Whether the two games of a round play at once (`leagues.mirror_concurrent`).
-    pub mirror_concurrent: bool,
+    pub rules: Rules,
 }
 
+/// A current participant of a league.
 #[derive(Clone, Debug)]
-pub struct FixtureRow {
+pub struct Participant {
+    pub player_id: i64,
+    pub config: PlayerConfig,
+    pub joined_at: String,
+}
+
+/// A stored match of one stage between two players.
+#[derive(Clone, Debug)]
+pub struct MatchRow {
     pub id: i64,
-    pub label: String,
-    pub matchday: Option<u32>,
-    pub model1: String,
-    pub model2: String,
+    pub player1: i64,
+    pub player2: i64,
     pub seed: u64,
-    pub match_id: Option<i64>,
+    pub status: String,
+    pub valid: bool,
 }
 
-fn fixture_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<FixtureRow> {
-    Ok(FixtureRow {
-        id: row.get(0)?,
-        label: row.get(1)?,
-        matchday: row.get(2)?,
-        model1: row.get(3)?,
-        model2: row.get(4)?,
-        seed: row.get::<_, i64>(5)? as u64,
-        match_id: row.get(6)?,
-    })
+impl MatchRow {
+    /// The pair, lower player id first.
+    pub fn pair(&self) -> (i64, i64) {
+        (
+            self.player1.min(self.player2),
+            self.player1.max(self.player2),
+        )
+    }
 }
 
-const FIXTURE_COLUMNS: &str = "id, label, matchday, model1, model2, seed, match_id";
+/// A league match about to be created.
+pub struct NewMatch<'a> {
+    pub rules: &'a Rules,
+    /// `league` or `playoff`.
+    pub stage: &'a str,
+    pub label: &'a str,
+    pub players: [i64; 2],
+    /// Specs as the match plays them, for `matches.model1` and `model2`.
+    pub specs: [&'a str; 2],
+    pub seed: u64,
+    pub protocol: &'a Protocol,
+}
 
 pub struct TurnRecord<'a> {
     pub game_id: i64,
@@ -384,22 +609,29 @@ pub fn parse_position(json: &Value) -> Result<(Board, Side)> {
 
 impl Db {
     pub fn open(path: &Path) -> Result<Self> {
-        let conn = Connection::open(path).with_context(|| format!("opening {}", path.display()))?;
-        // League matches write concurrently, one connection each.
-        conn.busy_timeout(Duration::from_secs(60))?;
-        conn.execute_batch(SCHEMA).context("creating schema")?;
-        for (table, column, kind) in ADDED_COLUMNS {
-            let exists: bool = conn.query_row(
-                "SELECT COUNT(*) > 0 FROM pragma_table_info(?1) WHERE name = ?2",
-                params![table, column],
-                |row| row.get(0),
-            )?;
-            if !exists {
-                conn.execute_batch(&format!("ALTER TABLE {table} ADD COLUMN {column} {kind}"))
-                    .with_context(|| format!("adding {table}.{column}"))?;
-            }
+        let conn = connect(path)?;
+        if legacy_layout(&conn)? {
+            bail!(
+                "{} still has the old league layout (leagues.models, league_matches): run \
+                 `jevgammon migrate --db {}` first (back the file up before)",
+                path.display(),
+                path.display()
+            );
         }
+        ensure_schema(&conn)?;
+        ensure_derived_schema(&conn)?;
         Ok(Db { conn })
+    }
+
+    /// Opens without the layout check or schema changes, for `jevgammon migrate`.
+    pub fn open_raw(path: &Path) -> Result<Self> {
+        Ok(Db {
+            conn: connect(path)?,
+        })
+    }
+
+    pub fn conn(&self) -> &Connection {
+        &self.conn
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -719,90 +951,66 @@ impl Db {
         Ok(())
     }
 
-    #[allow(clippy::too_many_arguments)]
+    /// A new league with `players` as its founding participants (in entry order); one
+    /// transaction.
     pub fn create_league(
-        &self,
+        &mut self,
         seed: u64,
-        rounds: u32,
-        clock: Option<Clock>,
-        max_turns: Option<u32>,
-        models: &[PlayerConfig],
+        rules: &Rules,
+        players: &[PlayerConfig],
         note: Option<&str>,
-        prompt_version: &str,
-        order_seed: u64,
-        mirror_concurrent: bool,
     ) -> Result<i64> {
-        self.conn.execute(
-            "INSERT INTO leagues (started_at, seed, rounds, clock_seconds, delay_seconds,
-                                  max_turns, models, status, note, prompt_version, order_seed,
-                                  mirror_concurrent)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 'running', ?8, ?9, ?10, ?11)",
-            params![
-                now(),
-                seed as i64,
-                rounds,
-                clock.map(|c| c.bank.as_secs() as i64),
-                clock.map(|c| c.delay.as_secs() as i64),
-                max_turns,
-                serde_json::to_string(models)?,
-                note,
-                prompt_version,
-                order_seed as i64,
-                mirror_concurrent
-            ],
+        let tx = self.conn.transaction()?;
+        let started_at = now();
+        let mut values: Vec<rusqlite::types::Value> = vec![
+            started_at.clone().into(),
+            (seed as i64).into(),
+            note.map(str::to_owned).into(),
+            SEED_RULE.to_owned().into(),
+        ];
+        values.extend(rules.values());
+        tx.execute(
+            "INSERT INTO leagues (started_at, seed, note, seed_rule, status, rounds,
+                                  clock_seconds, delay_seconds, max_turns, prompt_version,
+                                  order_seed, mirror_concurrent)
+             VALUES (?1, ?2, ?3, ?4, 'running', ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+            rusqlite::params_from_iter(values),
         )?;
-        Ok(self.conn.last_insert_rowid())
+        let id = tx.last_insert_rowid();
+        for config in players {
+            let player_id = upsert_player(&tx, config)?;
+            tx.execute(
+                "INSERT INTO league_players (league_id, player_id, joined_at) VALUES (?1, ?2, ?3)",
+                params![id, player_id, started_at],
+            )?;
+        }
+        tx.commit()?;
+        Ok(id)
     }
 
     pub fn league(&self, league_id: i64) -> Result<LeagueRow> {
-        type Row = (
-            i64,
-            u32,
-            Option<i64>,
-            Option<i64>,
-            Option<u32>,
-            String,
-            Option<String>,
-            Option<i64>,
-            Option<bool>,
-        );
-        let (seed, rounds, bank, delay, max_turns, models, prompt_version, order_seed, mirror): Row =
-            self.conn
-                .query_row(
-                    "SELECT seed, rounds, clock_seconds, delay_seconds, max_turns, models,
-                            prompt_version, order_seed, mirror_concurrent
-                     FROM leagues WHERE id = ?1",
-                    params![league_id],
-                    |row| {
-                        Ok((
-                            row.get(0)?,
-                            row.get(1)?,
-                            row.get(2)?,
-                            row.get(3)?,
-                            row.get(4)?,
-                            row.get(5)?,
-                            row.get(6)?,
-                            row.get(7)?,
-                            row.get(8)?,
-                        ))
-                    },
-                )
-                .with_context(|| format!("league #{league_id}"))?;
-        let models: Vec<PlayerConfig> =
-            serde_json::from_str(&models).context("leagues.models (entries need name and spec)")?;
-        Ok(LeagueRow {
-            seed: seed as u64,
-            rounds,
-            clock: bank.map(|bank| Clock {
-                bank: Duration::from_secs(bank as u64),
-                delay: Duration::from_secs(delay.unwrap_or(0) as u64),
-            }),
-            max_turns,
-            models,
-            prompt_version,
-            order_seed: order_seed.map(|s| s as u64),
-            mirror_concurrent: mirror.unwrap_or(false),
-        })
+        self.conn
+            .query_row(
+                "SELECT seed, rounds, clock_seconds, delay_seconds, max_turns, prompt_version,
+                        order_seed, mirror_concurrent
+                 FROM leagues WHERE id = ?1",
+                params![league_id],
+                |row| {
+                    Ok(LeagueRow {
+                        seed: row.get::<_, i64>(0)? as u64,
+                        rules: Rules {
+                            rounds: row.get(1)?,
+                            clock_seconds: row.get::<_, Option<i64>>(2)?.map(|s| s as u64),
+                            delay_seconds: row.get::<_, Option<i64>>(3)?.map(|s| s as u64),
+                            max_turns: row.get(4)?,
+                            prompt_version: row.get(5)?,
+                            order_seed: row.get::<_, Option<i64>>(6)?.map(|s| s as u64),
+                            mirror_concurrent: row.get::<_, Option<bool>>(7)?.unwrap_or(false),
+                        },
+                    })
+                },
+            )
+            .with_context(|| format!("league #{league_id}"))
     }
 
     pub fn finish_league(&self, league_id: i64, ranking: &[String]) -> Result<()> {
@@ -846,135 +1054,225 @@ impl Db {
             )?,
             running_turn_secs: age(
                 "SELECT (julianday('now') - julianday(MAX(t.created_at))) * 86400
-                 FROM league_matches lm JOIN matches m ON m.id = lm.match_id
-                 JOIN games g ON g.match_id = m.id JOIN turns t ON t.game_id = g.id
-                 WHERE lm.league_id = ?1 AND m.status = 'running'",
+                 FROM league_match_view v JOIN games g ON g.match_id = v.match_id
+                 JOIN turns t ON t.game_id = g.id
+                 WHERE v.league_id = ?1 AND v.status = 'running'",
             )?,
         })
     }
 
-    /// The highest matchday of the league stage (0 when none).
-    pub fn max_matchday(&self, league_id: i64) -> Result<u32> {
-        Ok(self.conn.query_row(
-            "SELECT COALESCE(MAX(matchday), 0) FROM league_matches WHERE league_id = ?1",
-            params![league_id],
-            |row| row.get(0),
-        )?)
+    /// The current participants of `league_id`, in the order they joined (founders in
+    /// their entry order).
+    pub fn participants(&self, league_id: i64) -> Result<Vec<Participant>> {
+        let mut statement = self.conn.prepare(
+            "SELECT p.id, p.settings, lp.joined_at FROM league_players lp
+             JOIN players p ON p.id = lp.player_id
+             WHERE lp.league_id = ?1 AND lp.left_at IS NULL ORDER BY lp.id",
+        )?;
+        let rows = statement
+            .query_map(params![league_id], |row| {
+                Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?, row.get(2)?))
+            })?
+            .collect::<rusqlite::Result<Vec<_>>>()?;
+        rows.into_iter()
+            .map(|(player_id, settings, joined_at)| {
+                Ok(Participant {
+                    player_id,
+                    config: serde_json::from_str(&settings)
+                        .with_context(|| format!("players #{player_id}: settings"))?,
+                    joined_at,
+                })
+            })
+            .collect()
     }
 
-    /// Appends `config` to the roster with its fixtures (`(matchday, label, model1, model2,
-    /// seed)`), appends `note` to the league note, and marks earlier playoffs stale; one
-    /// transaction. Returns how many playoff fixtures were marked stale.
-    pub fn add_league_player(
+    /// Adds `config` to the league as a current participant now, appends `note` to the
+    /// league note, reopens a finished league and voids its playoffs (the table changes);
+    /// one transaction. Returns how many playoff matches were voided.
+    pub fn add_participant(
         &mut self,
         league_id: i64,
         config: &PlayerConfig,
-        fixtures: &[(u32, String, String, String, u64)],
         note: &str,
     ) -> Result<usize> {
         let tx = self.conn.transaction()?;
-        let models: String = tx.query_row(
-            "SELECT models FROM leagues WHERE id = ?1",
-            params![league_id],
+        let player_id = upsert_player(&tx, config)?;
+        let current: bool = tx.query_row(
+            "SELECT COUNT(*) > 0 FROM league_players
+             WHERE league_id = ?1 AND player_id = ?2 AND left_at IS NULL",
+            params![league_id, player_id],
             |row| row.get(0),
         )?;
-        let mut models: Vec<PlayerConfig> = serde_json::from_str(&models)?;
-        if models.iter().any(|m| m.name == config.name) {
-            bail!(
-                "league #{league_id} already has a player named `{}`",
-                config.name
-            );
+        if current {
+            bail!("`{}` already plays in league #{league_id}", config.name);
         }
-        models.push(config.clone());
         tx.execute(
-            "UPDATE leagues SET models = ?2, status = 'running', finished_at = NULL,
-                 note = TRIM(COALESCE(note, '') || ' ' || ?3)
-             WHERE id = ?1",
-            params![league_id, serde_json::to_string(&models)?, note],
+            "INSERT INTO league_players (league_id, player_id, joined_at, note)
+             VALUES (?1, ?2, ?3, ?4)",
+            params![league_id, player_id, now(), note],
         )?;
-        for (matchday, label, model1, model2, seed) in fixtures {
-            tx.execute(
-                "INSERT INTO league_matches (league_id, stage, label, matchday, model1, model2, seed)
-                 VALUES (?1, 'league', ?2, ?3, ?4, ?5, ?6)",
-                params![league_id, label, matchday, model1, model2, *seed as i64],
-            )?;
-        }
-        let stale = stale_playoffs(&tx, league_id)?;
+        let voided = league_changed(&tx, league_id, note, &format!("{} joined", config.name))?;
         tx.commit()?;
-        Ok(stale)
+        Ok(voided)
     }
 
-    /// Marks this league's playoffs stale (kept, renamed): the table changed after them.
-    pub fn mark_playoffs_stale(&self, league_id: i64) -> Result<usize> {
-        stale_playoffs(&self.conn, league_id)
-    }
-
-    /// Adds a fixture unless the label already exists; returns the stored row.
-    #[allow(clippy::too_many_arguments)]
-    pub fn add_fixture(
-        &self,
+    /// Ends `name`'s participation now with `reason`: its matches stay but no longer count,
+    /// and its unplayed pairs drop out of the fixture. Returns how many playoff matches were
+    /// voided.
+    pub fn remove_participant(
+        &mut self,
         league_id: i64,
-        stage: &str,
-        label: &str,
-        matchday: Option<u32>,
-        model1: &str,
-        model2: &str,
-        seed: u64,
-    ) -> Result<FixtureRow> {
-        self.conn.execute(
-            "INSERT INTO league_matches (league_id, stage, label, matchday, model1, model2, seed)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7) ON CONFLICT (league_id, label) DO NOTHING",
-            params![
-                league_id,
-                stage,
-                label,
-                matchday,
-                model1,
-                model2,
-                seed as i64
-            ],
+        name: &str,
+        reason: &str,
+    ) -> Result<usize> {
+        let tx = self.conn.transaction()?;
+        let date = now();
+        // Playoffs are voided while the player still counts, then the participation ends.
+        let note = format!("{name} left on {}: {reason}.", &date[..10]);
+        let voided = league_changed(&tx, league_id, &note, &format!("{name} left"))?;
+        let changed = tx.execute(
+            "UPDATE league_players SET left_at = ?3, note = TRIM(COALESCE(note, '') || ' ' || ?4)
+             WHERE league_id = ?1 AND left_at IS NULL
+               AND player_id = (SELECT id FROM players WHERE name = ?2)",
+            params![league_id, name, date, reason],
         )?;
-        Ok(self.conn.query_row(
-            &format!(
-                "SELECT {FIXTURE_COLUMNS} FROM league_matches WHERE league_id = ?1 AND label = ?2"
-            ),
-            params![league_id, label],
-            fixture_row,
-        )?)
+        if changed == 0 {
+            bail!("`{name}` is not a current participant of league #{league_id}");
+        }
+        tx.commit()?;
+        Ok(voided)
     }
 
-    /// Fixtures of one stage, in matchday and creation order.
-    pub fn fixtures(&self, league_id: i64, stage: &str) -> Result<Vec<FixtureRow>> {
+    /// Voids a valid match: no table counts it any more and its pair is played again (with
+    /// the same seed). Every league whose table counted it reopens and loses its playoffs.
+    /// Returns those leagues.
+    pub fn void_match(&mut self, match_id: i64, reason: &str) -> Result<Vec<i64>> {
+        let tx = self.conn.transaction()?;
+        let leagues: Vec<i64> = {
+            let mut statement =
+                tx.prepare("SELECT league_id FROM league_match_view WHERE match_id = ?1")?;
+            statement
+                .query_map(params![match_id], |row| row.get(0))?
+                .collect::<rusqlite::Result<_>>()?
+        };
+        let changed = tx.execute(
+            "UPDATE matches SET valid = 0, void_reason = ?2, voided_at = ?3
+             WHERE id = ?1 AND valid = 1",
+            params![match_id, reason, now()],
+        )?;
+        if changed == 0 {
+            bail!("match #{match_id} does not exist or is already void");
+        }
+        for &league_id in &leagues {
+            let note = format!("Match #{match_id} voided on {}: {reason}.", &now()[..10]);
+            league_changed(&tx, league_id, &note, &format!("match #{match_id} voided"))?;
+        }
+        tx.commit()?;
+        Ok(leagues)
+    }
+
+    /// Voids the league's valid playoff matches: the table they decided changed.
+    pub fn void_playoffs(&self, league_id: i64, why: &str) -> Result<usize> {
+        void_playoffs(&self.conn, league_id, why)
+    }
+
+    /// Every match of `stage` (valid or void) between two of `players` under `rules`, in id
+    /// order. With a league's current participants and rules: the matches of its table and
+    /// fixture; with any set of players and rules: a merged view over leagues.
+    pub fn matches_between(
+        &self,
+        rules: &Rules,
+        players: &[i64],
+        stage: &str,
+    ) -> Result<Vec<MatchRow>> {
+        let ids = serde_json::to_string(players)?;
         let mut statement = self.conn.prepare(&format!(
-            "SELECT {FIXTURE_COLUMNS} FROM league_matches WHERE league_id = ?1 AND stage = ?2
-             ORDER BY matchday, id"
+            "SELECT m.id, m.player1, m.player2, m.seed, m.status, m.valid
+             FROM matches m
+             WHERE m.stage = ?1
+               AND m.player1 IN (SELECT value FROM json_each(?2))
+               AND m.player2 IN (SELECT value FROM json_each(?2))
+               AND {}
+             ORDER BY m.id",
+            rules_sql("m", 3)
         ))?;
-        let rows = statement.query_map(params![league_id, stage], fixture_row)?;
+        let mut values: Vec<rusqlite::types::Value> = vec![stage.to_owned().into(), ids.into()];
+        values.extend(rules.values());
+        let rows = statement.query_map(rusqlite::params_from_iter(values), |row| {
+            Ok(MatchRow {
+                id: row.get(0)?,
+                player1: row.get(1)?,
+                player2: row.get(2)?,
+                seed: row.get::<_, i64>(3)? as u64,
+                status: row.get(4)?,
+                valid: row.get(5)?,
+            })
+        })?;
         Ok(rows.collect::<rusqlite::Result<_>>()?)
     }
 
-    /// The fixture's current match, if one was created.
-    pub fn fixture_match(&self, fixture_id: i64) -> Result<Option<i64>> {
-        Ok(self.conn.query_row(
-            "SELECT match_id FROM league_matches WHERE id = ?1",
-            params![fixture_id],
-            |row| row.get(0),
-        )?)
+    /// The valid match of `stage` between the two players under `rules` (either side
+    /// first), with `label` too when given (playoffs).
+    pub fn current_match(
+        &self,
+        rules: &Rules,
+        stage: &str,
+        players: [i64; 2],
+        label: Option<&str>,
+    ) -> Result<Option<CurrentMatch>> {
+        current_match(&self.conn, rules, stage, players, label)
     }
 
-    /// Records that the fixture's match failed now with `error` and was deferred.
-    pub fn defer_fixture(&self, fixture_id: i64, error: &str) -> Result<()> {
-        self.conn.execute(
-            "UPDATE league_matches SET error = ?2, failed_at = ?3 WHERE id = ?1",
-            params![fixture_id, error, now()],
+    /// The valid match of the new match's stage, pair, rules and (for playoffs) label, or a
+    /// new one created now; one transaction, so two runners never create the same match.
+    pub fn ensure_league_match(&self, new: &NewMatch<'_>) -> Result<i64> {
+        let tx = rusqlite::Transaction::new_unchecked(
+            &self.conn,
+            rusqlite::TransactionBehavior::Immediate,
         )?;
-        Ok(())
+        let label = (new.stage != "league").then_some(new.label);
+        if let Some(current) = current_match(&tx, new.rules, new.stage, new.players, label)? {
+            return Ok(current.id);
+        }
+        let mut values: Vec<rusqlite::types::Value> = vec![
+            now().into(),
+            new.specs[0].to_owned().into(),
+            new.specs[1].to_owned().into(),
+            (new.seed as i64).into(),
+            new.protocol.harness.commit.clone().into(),
+            i64::from(new.protocol.harness.dirty).into(),
+            new.players[0].into(),
+            new.players[1].into(),
+            new.stage.to_owned().into(),
+            new.label.to_owned().into(),
+        ];
+        values.extend(new.rules.values());
+        tx.execute(
+            &format!(
+                "INSERT INTO matches (started_at, status, model1, model2, seed, harness_commit,
+                                      harness_dirty, player1, player2, stage, label, {})
+                 VALUES (?1, 'running', ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, {})",
+                RULES_COLUMNS.join(", "),
+                (11..18)
+                    .map(|i| format!("?{i}"))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ),
+            rusqlite::params_from_iter(values),
+        )?;
+        let id = tx.last_insert_rowid();
+        tx.commit()?;
+        Ok(id)
     }
 
-    pub fn set_fixture_match(&self, fixture_id: i64, match_id: i64) -> Result<()> {
+    /// Records that the match failed now with `error` and was deferred.
+    pub fn defer_match(&self, match_id: i64, error: &str) -> Result<()> {
         self.conn.execute(
-            "UPDATE league_matches SET match_id = ?2 WHERE id = ?1",
-            params![fixture_id, match_id],
+            "UPDATE matches SET error = ?2, failed_at = ?3,
+                 finished_at = CASE status WHEN 'running' THEN ?3 ELSE finished_at END,
+                 status = CASE status WHEN 'running' THEN 'aborted' ELSE status END
+             WHERE id = ?1",
+            params![match_id, error, now()],
         )?;
         Ok(())
     }
@@ -1029,13 +1327,128 @@ impl Activity {
     }
 }
 
-/// Playoff fixtures move to stage `playoff-stale` with a dated label, so their matches stay
-/// and a playoff of the same pairing is played afresh.
-fn stale_playoffs(conn: &Connection, league_id: i64) -> Result<usize> {
+/// A league's valid match of a pair: its id, which player is `player1`, and its seed.
+#[derive(Clone, Copy, Debug)]
+pub struct CurrentMatch {
+    pub id: i64,
+    pub player1: i64,
+    pub seed: u64,
+}
+
+/// The valid match of `stage` between `players` under `rules` (and `label`, if given).
+fn current_match(
+    conn: &Connection,
+    rules: &Rules,
+    stage: &str,
+    [a, b]: [i64; 2],
+    label: Option<&str>,
+) -> Result<Option<CurrentMatch>> {
+    let mut values: Vec<rusqlite::types::Value> = vec![
+        stage.to_owned().into(),
+        a.into(),
+        b.into(),
+        label.map(str::to_owned).into(),
+    ];
+    values.extend(rules.values());
+    Ok(conn
+        .query_row(
+            &format!(
+                "SELECT id, player1, seed FROM matches m
+                 WHERE m.valid = 1 AND m.stage = ?1
+                   AND ((m.player1 = ?2 AND m.player2 = ?3) OR (m.player1 = ?3 AND m.player2 = ?2))
+                   AND (?4 IS NULL OR m.label = ?4) AND {}
+                 ORDER BY m.id DESC LIMIT 1",
+                rules_sql("m", 5)
+            ),
+            rusqlite::params_from_iter(values),
+            |row| {
+                Ok(CurrentMatch {
+                    id: row.get(0)?,
+                    player1: row.get(1)?,
+                    seed: row.get::<_, i64>(2)? as u64,
+                })
+            },
+        )
+        .optional()?)
+}
+
+/// The `players` row of `config.name`: created with these settings, or the existing one
+/// when its settings are the same. Different settings under a known name are refused: a
+/// name is one setup (edit `players.settings` to record a change of the same setup).
+pub fn upsert_player(conn: &Connection, config: &PlayerConfig) -> Result<i64> {
+    if config.name.is_empty() {
+        bail!("a player needs a name");
+    }
+    let existing: Option<(i64, String)> = conn
+        .query_row(
+            "SELECT id, settings FROM players WHERE name = ?1",
+            params![config.name],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )
+        .optional()?;
+    if let Some((id, settings)) = existing {
+        let stored: PlayerConfig =
+            serde_json::from_str(&settings).with_context(|| format!("players #{id}: settings"))?;
+        if &stored != config {
+            bail!(
+                "player `{}` is already recorded (players #{id}) with other settings: use the \
+                 same settings, another name, or update players.settings if it is the same \
+                 setup\n  stored: {settings}\n  given:  {}",
+                config.name,
+                serde_json::to_string(config)?
+            );
+        }
+        return Ok(id);
+    }
+    insert_player(conn, config, &now())
+}
+
+/// Inserts a `players` row (the name must be new).
+pub fn insert_player(conn: &Connection, config: &PlayerConfig, created_at: &str) -> Result<i64> {
+    conn.execute(
+        "INSERT INTO players (name, spec, provider, quantization, device, price, settings,
+                              created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+        params![
+            config.name,
+            config.spec,
+            config.provider,
+            config.quantization,
+            config.device,
+            config
+                .price
+                .map(|p| serde_json::to_string(&p))
+                .transpose()?,
+            serde_json::to_string(config)?,
+            created_at
+        ],
+    )?;
+    Ok(conn.last_insert_rowid())
+}
+
+/// The league's participants or results changed: append `note` to the league note, reopen
+/// it if finished, and void its playoffs. Returns how many playoff matches were voided.
+fn league_changed(conn: &Connection, league_id: i64, note: &str, why: &str) -> Result<usize> {
+    let changed = conn.execute(
+        "UPDATE leagues SET status = 'running', finished_at = NULL,
+             note = TRIM(COALESCE(note, '') || ' ' || ?2)
+         WHERE id = ?1",
+        params![league_id, note],
+    )?;
+    if changed == 0 {
+        bail!("no league #{league_id}");
+    }
+    void_playoffs(conn, league_id, why)
+}
+
+/// Voids the league's valid playoff matches: `stale: <why> on <date>`.
+fn void_playoffs(conn: &Connection, league_id: i64, why: &str) -> Result<usize> {
+    let at = now();
     Ok(conn.execute(
-        "UPDATE league_matches SET stage = 'playoff-stale', label = label || ' [stale ' || ?2 || ']'
-         WHERE league_id = ?1 AND stage = 'playoff'",
-        params![league_id, now()],
+        "UPDATE matches SET valid = 0, void_reason = ?2, voided_at = ?3
+         WHERE id IN (SELECT match_id FROM league_match_view
+                      WHERE league_id = ?1 AND stage = 'playoff')",
+        params![league_id, format!("stale: {why} on {}", &at[..10]), at],
     )?)
 }
 
@@ -1043,8 +1456,8 @@ fn stale_playoffs(conn: &Connection, league_id: i64) -> Result<usize> {
 mod tests {
     use super::*;
 
-    /// A database from before prompt versions opens, gains the new columns, and its
-    /// leagues still read.
+    /// A database from before prompt versions is refused until migrated; then it has every
+    /// column, and its league reads with its roster as participants.
     #[test]
     fn old_databases_are_migrated_and_readable() {
         let path = std::env::temp_dir().join(format!("jevgammon-old-{}.db", std::process::id()));
@@ -1068,10 +1481,24 @@ mod tests {
             )
             .unwrap();
         }
+        assert!(Db::open(&path).is_err());
+        crate::migrate::run(&crate::migrate::MigrateArgs {
+            db: path.clone(),
+            dry_run: false,
+            freeze: std::env::temp_dir().join("jevgammon-no-freeze"),
+            freeze_db: None,
+        })
+        .unwrap();
         let db = Db::open(&path).unwrap();
         let league = db.league(1).unwrap();
-        assert_eq!(league.models, vec![PlayerConfig::new("Cygnet", "cygnet")]);
-        assert_eq!(league.prompt_version, None);
+        let participants = db.participants(1).unwrap();
+        assert_eq!(participants.len(), 1);
+        assert_eq!(
+            participants[0].config,
+            PlayerConfig::new("Cygnet", "cygnet")
+        );
+        assert_eq!(participants[0].joined_at, "2026-10-09");
+        assert_eq!(league.rules.prompt_version, None);
         for (table, column, _) in ADDED_COLUMNS {
             let exists: bool = db
                 .conn

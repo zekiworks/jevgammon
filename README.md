@@ -396,17 +396,35 @@ settings from a [player config](#player-configs) file instead of `NAME=SPEC` arg
 in `leagues.prompt_version` and `leagues.order_seed` (a league stored before versions
 existed resumes with `bg-v2-history`, the prompt the runner then sent).
 
-- **Fixture:** drawn from the league seed (`--seed`, random by default) by the circle
-  method on a shuffled entry list: with 8 models, 7 matchdays of 4 matches, every model
-  playing once per matchday (an odd count gives one model a bye each matchday). Which model
-  is `model1` (white in the first game of every round) is drawn per match; the opening roll
-  then decides who moves first, and the second game repeats the rolls with seats swapped,
-  so the other model moves first with the same roll.
+- **Participants and players:** every setup is one `players` row (unique name, spec,
+  provider, quantization, device, price, and the full config as `settings`); a league's
+  roster is its current participants (`league_players` rows with `left_at` NULL). A name
+  already recorded with other settings is refused: pick another name, or update
+  `players.settings` when it is the same setup (a server moved, say).
+- **Fixture:** implicit. Every pair of current participants without a valid match under the
+  league's rules is still to play. The order is derived from the participants: the founders
+  (those who joined at the start) play a round robin by the circle method on an entry list
+  shuffled with the league seed (`--seed`, random by default): with 8 models, 7 matchdays
+  of 4 matches, every model playing once per matchday (an odd count gives one model a bye
+  each matchday); each later joiner, in join order, gets a matchday of its own after them
+  against everyone who joined before it. The opening roll decides who moves first, and the
+  second game repeats the rolls with seats swapped, so the other model moves first with the
+  same roll.
+- **Rules and seeds:** a league's rules are its rounds, clock bank and delay, turn limit,
+  prompt version, option-order seed and `mirror_concurrent`; every league match stores
+  them, and a league's table counts only valid matches between two current participants
+  whose rule columns equal the league's (`league_match_view`). The dice seed of a pair's
+  match comes from the two names (sorted) and a hash of the rules (`Rules::pair_seed`), not
+  from the league: the same pairing gets the same dice in every league with the same rules,
+  and which side is `model1` (white in the first game of every round) is drawn from it too.
+  A pair played before under the same rules (a voided match, a migrated fixture) keeps that
+  match's seed and sides. `Db::matches_between` takes any set of players and rules, so a
+  merged view over leagues with the same rules counts each pairing once.
 - **Matches** use the normal format (`--rounds`, `--clock`, `--delay`, `--max-turns`). A
   match starts as soon as both its models are below their `max_matches` (default 4, local
   engines unlimited), in fixture order: earlier matchdays get the free places first, and
-  nobody waits for the rest of a matchday to finish. Every match has its own seed, derived
-  from the league seed and the fixture, so results do not depend on what runs at once.
+  nobody waits for the rest of a matchday to finish. Every match has its own seed, so
+  results do not depend on what runs at once.
 - **Mirror games at once:** with `--mirror-concurrent` (`"mirror_concurrent": true` in the
   config; stored in `leagues.mirror_concurrent` and printed in the league's header line) the
   two games of a round are played at the same time, and both show the score at the start
@@ -426,7 +444,7 @@ existed resumes with `bg-v2-history`, the prompt the runner then sent).
   as Fastino's HTTP 425 "warming up" never runs on a clock.
 - **Failed matches:** a match that fails (a provider outage that outlasts the HTTP
   retries, an account out of credit, a warm-up that never answers) is deferred: the error
-  and time go to `league_matches.error` and `failed_at`, and the model to blame (the one
+  and time go to the match's `error` and `failed_at`, and the model to blame (the one
   whose request failed) backs off: none of its matches starts for 2 minutes, doubling with
   every failure in a row up to 1 hour, reset when one of its matches finishes. A failure no
   model is to blame for backs off only that match. Every other match goes on. When only
@@ -447,7 +465,7 @@ existed resumes with `bg-v2-history`, the prompt the runner then sent).
 The table is printed each time every match of a matchday has finished, then the final
 table and ranking.
 
-### Adding a player later
+### Adding, removing, voiding
 
 A player that could not play at the start (no key yet, say) can join a running or finished
 league and play only its own matches:
@@ -456,26 +474,56 @@ league and play only its own matches:
 ./jevgammon league-add --db v3.db --league 1 --player "Jev 1.13.0=jev/jev-1.13.0"
 ./jevgammon league-add --db v3.db --league 1 --config leagues/league1.json --name "Jev 1.13.0"
 ./jevgammon league-add --db v3.db --league 1 --entry '{"name": "Jev 1.13.0", "spec": "jev/jev-1.13.0"}'
+./jevgammon league-remove --db v3.db --league 1 --player "Jev 1.13.0" --reason "key revoked"
+./jevgammon void --db v3.db --match 153 --reason "letter readout read the reasoning"
 ```
 
-- The player's client is built first, so a missing key fails here, not mid-league.
-- The entry is appended to `leagues.models`, with one fixture against every current player
-  (baselines and anchor included) on a new matchday after the last. Which side is `model1`
-  is drawn from the league seed and the two names; each match seed is
-  `derive_seed(league seed, label)`, the rule of the original fixture. The prompt version and
-  option-order seed stay the league's.
+- `league-add` builds the player's client first, so a missing key fails here, not
+  mid-league. It adds a participant (a `players` row is created, or reused when the name is
+  known with the same settings); its pairs with every current participant (baselines and
+  anchor included) join the fixture on a matchday after the others. The rules stay the
+  league's.
 - The league note gets "NAME added on DATE.", and the addition (time, harness commit, the
-  entry and its sha256, the fixtures) is appended to `freeze/league<ID>-additions.json`
+  entry and its sha256, the pairs) is appended to `freeze/league<ID>-additions.json`
   (`--freeze-log` to change it).
-- Playoffs wait until every fixture, added ones included, has been played. Playoffs played
-  before the addition are kept but marked stale (stage `playoff-stale`, label suffixed
-  `[stale <time>]`); the league is set running again and plays off afresh.
-- **Running leagues** pick added players up by themselves: a league process re-reads the
-  roster and fixtures every 30 s and signs `leagues.heartbeat_at`, and `league-add` says
-  whether such a process holds the league. A runner older than this feature does not pick
-  up; `league-add` then says so (it sees recent turns but no heartbeat): let it finish or
-  stop it with Ctrl-C, then `league --resume` plays the added matches. `league --resume`
-  refuses while another process is playing the league.
+- `league-remove` sets `left_at` and the reason, and appends "NAME left on DATE: REASON." to
+  the league note. Its matches stay in the database and valid (they count again if it
+  rejoins under the same rules) but leave the table; its unplayed pairs leave the fixture.
+- `void` sets `matches.valid = 0` with `void_reason` and `voided_at`: no table counts the
+  match, and its pair is played again with the same seed and sides. A running match should
+  be stopped first, or it plays on to no effect.
+- Each of the three reopens the league (status `running`) and voids its playoff matches
+  (`void_reason` `stale: ...`): playoffs wait until every pair has been played and are
+  played afresh.
+- **Running leagues** pick changes up by themselves: a league process re-reads the
+  participants and matches every 30 s and signs `leagues.heartbeat_at`, and the commands say
+  whether such a process holds the league; otherwise `league --resume` plays the new
+  pairs. `league --resume` refuses while another process is playing the league.
+
+### Migrating an older database
+
+Databases from before participants kept the roster in `leagues.models` and fixtures in
+`league_matches`; the runner refuses them until they are converted:
+
+```sh
+sqlite3 v3.db ".backup v3.db.bak-before-participants"
+./jevgammon migrate --db v3.db --dry-run      # converts, compares, rolls back
+./jevgammon migrate --db v3.db
+```
+
+It turns every roster entry into a player and current participant (joined at the league
+start, or when `freeze/league<ID>-additions.json` added it), players of the fixtures or
+freeze logs no longer on a roster into participants who left (time and reason from
+`freeze/league<ID>-changes.json` when recorded), and every match a fixture links into a
+valid match with its players, stage, label and the league's `mirror_concurrent` (a stale
+playoff void). Matches no fixture links are found by their seed (that of a fixture, or of a
+label in the freeze logs) and voided with why: voided in the changes log, their fixture
+removed, a player who left, or a replaced attempt; a match nothing explains stays as a
+single match. Every row is kept: `league_matches` becomes `legacy_league_matches`, the
+rosters `legacy_league_rosters`. Then it prints every league's table computed the old way
+and the new way side by side and rolls back if any line differs. One transaction;
+`--freeze-db v3.db` reads the freeze logs' entries for `v3.db` when migrating a copy. Run
+again, it only compares.
 
 ### Dashboard
 
@@ -494,7 +542,8 @@ python3 tools/league_web.py --db league.db --port 8095   # http://<host>:8095/
   finished leagues only (stopped and running ones are left out), best record first.
 - **League on view:** header with rules and seed (plus the prompt version and option-order
   seed for leagues that stored them), table (`‹` `›` step through the finished leagues and
-  the live one), per-model decision stats, the fixture with results (a failed match waiting
+  the live one), per-model decision stats, the fixture with results (derived as the runner
+  derives it; a failed match waiting
   for its model's backoff shows `deferred`, with the error and time on hover), and recent
   games. The
   model stats list each player's spec, provider and quantization; decisions, mean and
@@ -502,7 +551,8 @@ python3 tools/league_web.py --db league.db --port 8095   # http://<host>:8095/
   no option and a random legal play was made) and timeouts; on databases with the
   per-decision columns also the share of decisions with probabilities
   (`probability_source` set), the mean request time (`request_ms`, retries excluded) and the
-  total cost (`cost_usd`). Older databases show the page without those three columns.
+  total cost (`cost_usd`). Older databases show the page without those three columns; a
+  database in the old league layout needs `jevgammon migrate` first.
 - **Live:** while the league is live, every running match shows its board and last move
   (with the games of a round played at once, the game that moved last);
   `«`, `»` and `⏮ round start` step through the rolls of the current round, `live` returns
@@ -591,7 +641,7 @@ index of the play shown as option k.
 
 ## Database
 
-The database has six tables:
+The database has these tables:
 
 | Table | Contents |
 | --- | --- |
@@ -599,11 +649,21 @@ The database has six tables:
 | `games` | round, leg, white player, dice seed, opening roll, winner, result (`single\|gammon\|backgammon\|timeout\|turn_limit`), points, turn count |
 | `turns` | side, player, dice, position before the move (JSON, white's perspective), number of legal plays, chosen index, move (mover's numbering), `decided_by` (`model\|forced\|no_move\|fallback\|timeout`; `fallback` = invalid answer, random play), latency, tokens, mover's bank left after the turn (`clock_ms`); per decision: `prompt_version`, `harness_commit` (`git rev-parse HEAD` at startup) and `harness_dirty`, `provider`, `quantization`, `option_order` (JSON: legal-play index shown as option k), `letter` and `chosen_position`, `probabilities` (JSON aligned with `option_order`), `probability_source` (`logprobs\|decision\|choice_only`), `request_ms`, `retry_ms`, `cost_usd`, `invalid`, `group_size`, `reasoning_tokens` |
 | `exchanges` | every model request body, reply text, rejection reason, latency; one row per request |
-| `leagues` | seed, rounds, clock bank and delay, turn limit, entrants (JSON player configs: `{name, spec, ...}`), status, final ranking, note (`--note`), prompt version, option-order seed, `mirror_concurrent` |
-| `league_matches` | stage (`league\|playoff`), label, matchday, model names, seed, `match_id` (resumed until it finishes), last failure `error` and `failed_at` |
+| `players` | one row per setup: unique name, spec, provider, quantization, device, price, the full player config (`settings`) |
+| `leagues` | seed (orders the founders' round robin), rules (rounds, clock bank and delay, turn limit, prompt version, option-order seed, `mirror_concurrent`), `seed_rule`, status, final ranking, note (`--note` and every change since), runner heartbeat |
+| `league_players` | league, player, `joined_at`, `left_at` (NULL = current participant), note (why it joined late or left) |
+
+League matches also store `player1`, `player2`, `stage` (`league\|playoff`), `label`,
+`mirror_concurrent`, `valid` (0 = voided, with `void_reason` and `voided_at`) and the last
+deferral time `failed_at`. The view `league_match_view` lists every valid match between two
+current participants of a league under its rules (`league_id`, `match_id`, `stage`, `label`,
+player names as `model1`/`model2`, player ids, seed, status): what its table, playoffs and
+dashboard count. Migrated databases also keep `legacy_league_matches` and
+`legacy_league_rosters`.
 
 Seeds are unsigned 64-bit values stored in SQLite's signed INTEGER; cast back to `u64` to
-reuse them. Passing the same `--seed` replays the same dice for every round.
+reuse them. Passing the same `--seed` to a single match replays the same dice for every
+round.
 
 ```sql
 -- Points per pairing across finished matches
@@ -636,8 +696,9 @@ cargo run -- --model1 ollama/qwen3 --model2 jev --speed 5
 | `src/dice.rs` | seeded dice (SplitMix64, implemented locally so seeds stay reproducible across dependency upgrades) |
 | `src/runner.rs` | match flow, mirrored legs (one after the other or at once), resuming from stored turns, tie-break round, pacing and pause |
 | `src/players/` | prompt versions and the letter prompt (`prompt.rs`, texts in `prompts/`), seeded option order (`order.rs`), LLM providers, decision services (System One, OpenAI Decisions), invalid-answer fallback and group splits (`mod.rs`) |
-| `src/league.rs` | league fixture, match limits, deferral and backoff, table, playoffs, resume |
+| `src/league.rs` | participants, derived fixture, match limits, deferral and backoff, table, playoffs, resume |
+| `src/migrate.rs` | `jevgammon migrate`: old league layout to players and participants, table comparison |
 | `src/auth.rs` | subscription credential stores and refresh |
 | `src/http.rs` | retries and backoff |
-| `src/db.rs` | SQLite schema and writes |
+| `src/db.rs` | SQLite schema and writes, rules, participants, matches between players |
 | `src/ui.rs` | ratatui interface |

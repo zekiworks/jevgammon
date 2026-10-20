@@ -5,6 +5,7 @@ mod db;
 mod dice;
 mod http;
 mod league;
+mod migrate;
 mod players;
 mod runner;
 mod ui;
@@ -51,11 +52,48 @@ enum Command {
     /// Sends stored positions to the players of a league config and stores every answer
     /// with the per-decision fields (shared positions, smoke tests).
     Ask(AskArgs),
-    /// Adds a player to an existing league, running or finished: roster entry, one match
-    /// against every current player (seeds from the league seed), a note, and an entry in
-    /// the additions freeze log. A running league picks the matches up within 30 s;
-    /// otherwise `league --resume` plays them.
+    /// Adds a player to an existing league, running or finished: a participant (its
+    /// `players` row is created, or reused when the name is known with the same settings),
+    /// a note, and an entry in the additions freeze log. Its pairs with every current
+    /// participant are played: a running league picks them up within 30 s; otherwise
+    /// `league --resume` plays them.
     LeagueAdd(LeagueAddArgs),
+    /// Ends a player's participation in a league: its matches stay in the database but
+    /// leave the table, its unplayed pairs leave the fixture.
+    LeagueRemove(LeagueRemoveArgs),
+    /// Voids a match: no table counts it any more and its pair is played again with the
+    /// same seed (by a running league within 30 s, or `league --resume`).
+    Void(VoidArgs),
+    /// Converts a database from the old league layout (leagues.models, league_matches) to
+    /// players, league_players and matches.valid, and compares every league's table before
+    /// and after.
+    Migrate(migrate::MigrateArgs),
+}
+
+#[derive(Args)]
+struct LeagueRemoveArgs {
+    #[arg(long)]
+    db: PathBuf,
+    #[arg(long)]
+    league: i64,
+    /// Player name.
+    #[arg(long)]
+    player: String,
+    /// Why it leaves; kept with the participation and appended to the league note.
+    #[arg(long)]
+    reason: String,
+}
+
+#[derive(Args)]
+struct VoidArgs {
+    #[arg(long)]
+    db: PathBuf,
+    /// Match id (`matches.id`).
+    #[arg(long = "match")]
+    match_id: i64,
+    /// Why the match does not count; kept in `matches.void_reason`.
+    #[arg(long)]
+    reason: String,
 }
 
 #[derive(Args)]
@@ -186,8 +224,8 @@ struct LeagueArgs {
     /// stored turn.
     #[arg(long, conflicts_with = "models")]
     resume: Option<i64>,
-    /// League seed; fixes the fixture, every match's dice, and the playoffs. Random when
-    /// omitted.
+    /// League seed; fixes the order of the founders' round robin. Random when omitted.
+    /// (Dice come from the two player names and the rules.)
     #[arg(long, conflicts_with = "resume")]
     seed: Option<u64>,
     /// Option-order seed; random when omitted.
@@ -288,6 +326,9 @@ async fn main() -> ExitCode {
             args.order_seed,
         ),
         Some(Command::LeagueAdd(args)) => league_add(args).await,
+        Some(Command::LeagueRemove(args)) => league_remove(args),
+        Some(Command::Void(args)) => void(args),
+        Some(Command::Migrate(args)) => migrate::run(&args),
         Some(Command::Ask(args)) => {
             let setup = Setup::new(
                 args.qfork_root
@@ -335,22 +376,25 @@ async fn run_league(args: LeagueArgs) -> Result<()> {
             league::Start::New {
                 models: checked(config.players)?,
                 seed: config.seed.or(args.seed).unwrap_or_else(random_seed),
-                rounds: config.rounds.unwrap_or(common.rounds),
-                clock: (bank > 0).then(|| Clock {
-                    bank: Duration::from_secs(bank),
-                    delay: Duration::from_secs(delay),
-                }),
-                max_turns: (max_turns > 0).then_some(max_turns),
+                rules: db::Rules::new(
+                    config.rounds.unwrap_or(common.rounds),
+                    (bank > 0).then(|| Clock {
+                        bank: Duration::from_secs(bank),
+                        delay: Duration::from_secs(delay),
+                    }),
+                    (max_turns > 0).then_some(max_turns),
+                    match &config.prompt_version {
+                        Some(id) => PromptVersion::parse(id)?,
+                        None => common.prompt_version,
+                    }
+                    .id(),
+                    config
+                        .order_seed
+                        .or(args.order_seed)
+                        .unwrap_or_else(random_seed),
+                    config.mirror_concurrent.unwrap_or(args.mirror_concurrent),
+                ),
                 note: config.note.or(args.note),
-                version: match &config.prompt_version {
-                    Some(id) => PromptVersion::parse(id)?,
-                    None => common.prompt_version,
-                },
-                order_seed: config
-                    .order_seed
-                    .or(args.order_seed)
-                    .unwrap_or_else(random_seed),
-                mirror_concurrent: config.mirror_concurrent.unwrap_or(args.mirror_concurrent),
             }
         }
         (None, None) => {
@@ -365,13 +409,15 @@ async fn run_league(args: LeagueArgs) -> Result<()> {
             league::Start::New {
                 models: checked(models)?,
                 seed: args.seed.unwrap_or_else(random_seed),
-                rounds: args.common.rounds,
-                clock: args.common.clock(),
-                max_turns: args.common.max_turns(),
+                rules: db::Rules::new(
+                    args.common.rounds,
+                    args.common.clock(),
+                    args.common.max_turns(),
+                    args.common.prompt_version.id(),
+                    args.order_seed.unwrap_or_else(random_seed),
+                    args.mirror_concurrent,
+                ),
                 note: args.note,
-                version: args.common.prompt_version,
-                order_seed: args.order_seed.unwrap_or_else(random_seed),
-                mirror_concurrent: args.mirror_concurrent,
             }
         }
     };
@@ -439,7 +485,7 @@ async fn league_add(args: LeagueAddArgs) -> Result<()> {
         "entry": config,
         "entry_sha256": hex::encode(sha2::Sha256::digest(entry_json.as_bytes())),
         "fixtures": addition.fixtures,
-        "stale_playoff_fixtures": addition.stale_playoffs,
+        "voided_playoff_matches": addition.stale_playoffs,
     }));
     if let Some(dir) = log.parent().filter(|d| !d.as_os_str().is_empty()) {
         std::fs::create_dir_all(dir)?;
@@ -458,27 +504,60 @@ async fn league_add(args: LeagueAddArgs) -> Result<()> {
     }
     if addition.stale_playoffs > 0 {
         println!(
-            "{} playoff fixtures marked stale; playoffs are played again after the new matches",
+            "{} playoff matches voided; playoffs are played again after the new matches",
             addition.stale_playoffs
         );
     }
-    let activity = db.league_activity(args.league)?;
+    who_plays(&db, args.league, &args.db, "these matches")
+}
+
+/// Tells who plays league `id`'s changed fixture: its running process, or `--resume`.
+fn who_plays(db: &db::Db, id: i64, path: &std::path::Path, what: &str) -> Result<()> {
+    let activity = db.league_activity(id)?;
     if activity.pickup_runner() {
-        println!("the running league process picks these matches up within 30 s");
+        println!("the running league process picks {what} up within 30 s");
     } else if activity.playing() {
         println!(
             "an older runner without pick-up is playing this league (last turn {}): let it finish, \
-             or stop it with Ctrl-C, then run `jevgammon league --resume {} --db {}`",
+             or stop it with Ctrl-C, then run `jevgammon league --resume {id} --db {}`",
             league::ago(activity.running_turn_secs),
-            args.league,
-            args.db.display()
+            path.display()
         );
     } else {
         println!(
-            "no process is playing this league: `jevgammon league --resume {} --db {}` plays the new matches",
-            args.league,
-            args.db.display()
+            "no process is playing this league: `jevgammon league --resume {id} --db {}` plays {what}",
+            path.display()
         );
+    }
+    Ok(())
+}
+
+/// `jevgammon league-remove`.
+fn league_remove(args: LeagueRemoveArgs) -> Result<()> {
+    let mut db = db::Db::open(&args.db)?;
+    let (voided, open) = league::remove_player(&mut db, args.league, &args.player, &args.reason)?;
+    println!(
+        "{} left league #{}: {open} unplayed pairs dropped from the fixture, {voided} playoff \
+         matches voided; its matches stay in the database",
+        args.player, args.league
+    );
+    who_plays(&db, args.league, &args.db, "the change")
+}
+
+/// `jevgammon void`.
+fn void(args: VoidArgs) -> Result<()> {
+    let mut db = db::Db::open(&args.db)?;
+    let leagues = db.void_match(args.match_id, &args.reason)?;
+    println!(
+        "match #{} voided ({}); counted in league{} {:?}, which play the pair again with the \
+         same seed",
+        args.match_id,
+        args.reason,
+        if leagues.len() == 1 { "" } else { "s" },
+        leagues
+    );
+    for id in leagues {
+        who_plays(&db, id, &args.db, "the replay")?;
     }
     Ok(())
 }

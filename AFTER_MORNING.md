@@ -10,7 +10,7 @@ League 1 was **reopened on 2026-10-22** for a late joiner, Fastino GLiDE v1.2 (l
 (DeepSeek V4.1 Flash's last matches): #311 DeepSeek (off) v LFM2.5-24B-A2B (on), #348 DeepSeek (on) v
 LFM2.5 (on), #349 Gemma 4 31B (on) v DeepSeek (on), plus whatever the league has not started yet. They
 resume from their last stored turn. Details, equivalence checks and history: `tools/v3/servers/README.md`,
-`freeze/league2-changes.json`, and the players' `device` fields in `v3.db` (`leagues.models`, league 2).
+`freeze/league2-changes.json`, and the players' `device` fields in `v3.db` (`players.settings`).
 
 The roster in `v3.db` is already set for the resume (since 2026-10-22 15:37 UTC; no change needed):
 

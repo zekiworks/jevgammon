@@ -659,5 +659,24 @@
     "parallel": 8
    }
   ]
+ },
+ {
+  "changed_at": "2026-10-19T17:44:10Z",
+  "league": 2,
+  "db": "v3.db",
+  "change": "Qwen3.8 Flash Next (off, on) withdrawn",
+  "harness_commit": "ebba47ee54a5a0bb4335a9935c294d634a4ff585",
+  "reason": "with reasoning on it took 7-20 min per decision on the DGX Spark; its matches are kept in the database but removed from the league",
+  "removed": [
+   {
+    "name": "Qwen3.8 Flash Next (off)",
+    "reason": "withdrawn with (on): 7-20 min per reasoning-on decision on the DGX Spark"
+   },
+   {
+    "name": "Qwen3.8 Flash Next (on)",
+    "reason": "7-20 min per reasoning-on decision on the DGX Spark"
+   }
+  ],
+  "recorded": "2026-10-20, for jevgammon migrate: from the league 2 note and commit ebba47e; changed_at = the time of backup v3.db.bak-before-flashnext-removal"
  }
 ]

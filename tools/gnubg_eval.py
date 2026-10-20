@@ -83,7 +83,7 @@ def main():
         SELECT t.id, lm.league_id, g.match_id, CASE t.player WHEN 1 THEN lm.model1 ELSE lm.model2 END,
                t.side, t.die1, t.die2, t.move, t.legal_count, t.position
         FROM turns t JOIN games g ON g.id = t.game_id
-        JOIN league_matches lm ON lm.match_id = g.match_id
+        JOIN league_match_view lm ON lm.match_id = g.match_id
         WHERE lm.league_id IN ({marks}) AND t.decided_by IN ('model', 'fallback') AND t.id % ? = ?
         ORDER BY t.id""", (*leagues, shards, shard)).fetchall()
     n = 0

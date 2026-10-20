@@ -1,10 +1,13 @@
-//! League: a single round robin between models on a random fixture. A match starts as soon
-//! as both its models can take another one (`max_matches` each), in fixture order, so the
-//! matchday order holds wherever it can but nobody waits for a whole matchday. A match
-//! that fails is deferred and resumed later from its last stored turn; only the failing
-//! model backs off, the others play on. Ties in the table are broken by more games won,
-//! then fewer games lost; a tie still standing that decides any of the first three places
-//! goes to a playoff.
+//! League: a single round robin between its current participants. The fixture is implicit:
+//! every pair of current participants without a valid match under the league's rules is
+//! still to play, in a matchday order derived from the participants (founders by a round
+//! robin drawn from the league seed, each late joiner on a matchday of its own after it).
+//! A match starts as soon as both its models can take another one (`max_matches` each), in
+//! fixture order, so the matchday order holds wherever it can but nobody waits for a whole
+//! matchday. A match that fails is deferred and resumed later from its last stored turn;
+//! only the failing model backs off, the others play on. Ties in the table are broken by
+//! more games won, then fewer games lost; a tie still standing that decides any of the
+//! first three places goes to a playoff.
 
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
@@ -18,13 +21,13 @@ use serde::Deserialize;
 use tokio::sync::mpsc;
 use tokio::task::JoinSet;
 
-use crate::db::{Db, FixtureRow};
+use crate::db::{Db, MatchRow, NewMatch, Participant, Rules};
 use crate::dice::{Dice, derive_seed};
 use crate::players::prompt::PromptVersion;
 use crate::players::{Player, PlayerConfig, Setup};
 use crate::runner::{
-    Clock, Control, Event, Harness, MAX_SPEED, MatchResult, MatchSettings, PlayerFault, Protocol,
-    Runner, describe_clock,
+    Control, Event, Harness, MAX_SPEED, MatchResult, MatchSettings, PlayerFault, Protocol, Runner,
+    describe_clock,
 };
 
 /// League points for a match won, drawn, lost.
@@ -46,14 +49,9 @@ pub enum Start {
         /// Entry order.
         models: Vec<PlayerConfig>,
         seed: u64,
-        rounds: u32,
-        clock: Option<Clock>,
-        max_turns: Option<u32>,
+        rules: Rules,
         /// What this league tests; shown in the history.
         note: Option<String>,
-        version: PromptVersion,
-        order_seed: u64,
-        mirror_concurrent: bool,
     },
     Resume(i64),
 }
@@ -95,13 +93,13 @@ const LEGACY_VERSION: PromptVersion = PromptVersion::BgV2History;
 struct League {
     db_path: PathBuf,
     id: i64,
+    /// Orders the founders' round robin.
     seed: u64,
-    rounds: u32,
-    clock: Option<Clock>,
-    max_turns: Option<u32>,
-    mirror_concurrent: bool,
-    /// Entry order; players added later come last.
+    rules: Rules,
+    /// Current participants in join order.
     names: RwLock<Vec<String>>,
+    /// Player ids of the current participants by name.
+    ids: RwLock<HashMap<String, i64>>,
     players: RwLock<HashMap<String, Entrant>>,
     control: Arc<Control>,
     protocol: Arc<Protocol>,
@@ -125,6 +123,50 @@ impl Entrant {
         Entrant {
             max_matches: config.max_matches.unwrap_or(default).max(1),
             player: Arc::new(player),
+        }
+    }
+}
+
+/// A match of the league: one pair of current participants (league stage), or a playoff.
+#[derive(Clone, Debug)]
+struct Fixture {
+    /// Position in the derived fixture; earlier fixtures start first.
+    order: usize,
+    /// `league` or `playoff`.
+    stage: &'static str,
+    /// `matchday 3: A v B`, or the playoff key with the pair.
+    label: String,
+    matchday: Option<u32>,
+    /// model1 plays white in the first game of every round.
+    model1: String,
+    model2: String,
+    /// Player ids of model1 and model2.
+    players: [i64; 2],
+    /// Seed of a new match; an existing match keeps its own.
+    seed: u64,
+    /// The pair's valid match and its status, once created.
+    match_id: Option<i64>,
+    status: Option<String>,
+}
+
+impl Fixture {
+    /// The pair, lower player id first.
+    fn key(&self) -> (i64, i64) {
+        let [a, b] = self.players;
+        (a.min(b), a.max(b))
+    }
+
+    /// The label a playoff match is found by (league matches are found by their pair).
+    fn playoff_label(&self) -> Option<&str> {
+        (self.stage != "league").then_some(self.label.as_str())
+    }
+
+    /// The same match with the sides the other way round.
+    fn swap(&mut self) {
+        std::mem::swap(&mut self.model1, &mut self.model2);
+        self.players.swap(0, 1);
+        if let Some(day) = self.matchday {
+            self.label = format!("matchday {day}: {} v {}", self.model1, self.model2);
         }
     }
 }
@@ -157,6 +199,7 @@ impl Row {
 }
 
 /// The table for `names` over `results`, best first; equal keys keep `names` order.
+/// Results of players outside `names` (they left the league) are left out.
 fn table(names: &[String], results: &[(String, String, MatchResult)]) -> Vec<Row> {
     let mut rows: Vec<Row> = names
         .iter()
@@ -171,8 +214,12 @@ fn table(names: &[String], results: &[(String, String, MatchResult)]) -> Vec<Row
         .map(|(i, n)| (n.as_str(), i))
         .collect();
     for (model1, model2, result) in results {
-        for (side, name) in [model1, model2].into_iter().enumerate() {
-            let row = &mut rows[index[name.as_str()]];
+        let (Some(&one), Some(&two)) = (index.get(model1.as_str()), index.get(model2.as_str()))
+        else {
+            continue;
+        };
+        for (side, at) in [one, two].into_iter().enumerate() {
+            let row = &mut rows[at];
             let other = 1 - side;
             row.played += 1;
             row.games_won += result.games_won[side];
@@ -241,11 +288,11 @@ fn print_table(title: &str, rows: &[Row]) {
 /// `waiting`, and counts it in `running`. Earlier fixtures go first, so the matchday order
 /// holds wherever it can.
 fn take_startable(
-    pending: &mut Vec<FixtureRow>,
+    pending: &mut Vec<Fixture>,
     running: &mut HashMap<String, usize>,
     limit: impl Fn(&str) -> usize,
-    waiting: impl Fn(&FixtureRow) -> bool,
-) -> Vec<FixtureRow> {
+    waiting: impl Fn(&Fixture) -> bool,
+) -> Vec<Fixture> {
     let mut started = Vec::new();
     let mut i = 0;
     while i < pending.len() {
@@ -333,21 +380,17 @@ fn span(duration: Duration) -> String {
     }
 }
 
-/// Running backoffs by model name and by fixture id.
+/// Running backoffs by model name and by pair.
 #[derive(Default)]
 struct Backoffs {
     players: HashMap<String, Backoff>,
-    fixtures: HashMap<i64, Backoff>,
+    fixtures: HashMap<(i64, i64), Backoff>,
 }
 
 impl Backoffs {
     /// The running backoff that keeps `fixture` from starting at `now`, with what backs off
     /// (a model's name, or "the match").
-    fn holding<'a>(
-        &'a self,
-        fixture: &'a FixtureRow,
-        now: Instant,
-    ) -> Option<(&'a str, &'a Backoff)> {
+    fn holding<'a>(&'a self, fixture: &'a Fixture, now: Instant) -> Option<(&'a str, &'a Backoff)> {
         [&fixture.model1, &fixture.model2]
             .into_iter()
             .find_map(|name| {
@@ -358,7 +401,7 @@ impl Backoffs {
             })
             .or_else(|| {
                 self.fixtures
-                    .get(&fixture.id)
+                    .get(&fixture.key())
                     .filter(|b| b.until > now)
                     .map(|b| ("the match", b))
             })
@@ -378,7 +421,7 @@ impl Backoffs {
     /// the match when none is. Returns what backs off and until when.
     fn fail(
         &mut self,
-        fixture: &FixtureRow,
+        fixture: &Fixture,
         error: &anyhow::Error,
         now: Instant,
         limits: (Duration, Duration),
@@ -395,24 +438,25 @@ impl Backoffs {
                 text
             }
             None => {
-                let backoff = Backoff::after(self.fixtures.get(&fixture.id), message, now, limits);
+                let key = fixture.key();
+                let backoff = Backoff::after(self.fixtures.get(&key), message, now, limits);
                 let text = format!("the match is retried {}", backoff.describe(now));
-                self.fixtures.insert(fixture.id, backoff);
+                self.fixtures.insert(key, backoff);
                 text
             }
         }
     }
 
     /// A match of `fixture` finished: its models and the match work again.
-    fn clear(&mut self, fixture: &FixtureRow) {
+    fn clear(&mut self, fixture: &Fixture) {
         self.players.remove(&fixture.model1);
         self.players.remove(&fixture.model2);
-        self.fixtures.remove(&fixture.id);
+        self.fixtures.remove(&fixture.key());
     }
 }
 
 /// The model of `fixture` whose decision or warm-up caused `error`, if one did.
-fn blamed<'a>(fixture: &'a FixtureRow, error: &anyhow::Error) -> Option<&'a str> {
+fn blamed<'a>(fixture: &'a Fixture, error: &anyhow::Error) -> Option<&'a str> {
     error
         .downcast_ref::<PlayerFault>()
         .map(|&PlayerFault(player)| {
@@ -425,20 +469,20 @@ fn blamed<'a>(fixture: &'a FixtureRow, error: &anyhow::Error) -> Option<&'a str>
 }
 
 /// Played matches as table input, in fixture order whatever order they finished in.
-fn results_of(played: &[(FixtureRow, MatchResult)]) -> Vec<(String, String, MatchResult)> {
+fn results_of(played: &[(Fixture, MatchResult)]) -> Vec<(String, String, MatchResult)> {
     let mut sorted: Vec<_> = played.iter().collect();
-    sorted.sort_by_key(|(fixture, _)| fixture.id);
+    sorted.sort_by_key(|(fixture, _)| fixture.order);
     sorted
         .into_iter()
         .map(|(f, result)| (f.model1.clone(), f.model2.clone(), *result))
         .collect()
 }
 
-/// Single round robin by the circle method on a shuffled entry list; `(matchday, model1,
-/// model2)` with model1 (white in each round's first game) drawn per match.
-fn draw_fixture(names: &[String], seed: u64) -> Vec<(u32, String, String)> {
+/// Single round robin by the circle method on `items` shuffled with the league seed:
+/// `(matchday, a, b)` from 1.
+fn round_robin(items: &[usize], seed: u64) -> Vec<(u32, usize, usize)> {
     let mut rng = Dice::new(derive_seed(seed, "fixture"));
-    let mut teams: Vec<Option<&String>> = names.iter().map(Some).collect();
+    let mut teams: Vec<Option<usize>> = items.iter().copied().map(Some).collect();
     for i in (1..teams.len()).rev() {
         teams.swap(i, rng.below(i + 1));
     }
@@ -446,17 +490,95 @@ fn draw_fixture(names: &[String], seed: u64) -> Vec<(u32, String, String)> {
         teams.push(None); // bye
     }
     let n = teams.len();
-    let mut fixture = Vec::new();
+    let mut pairs = Vec::new();
     for day in 1..n as u32 {
         for i in 0..n / 2 {
             if let (Some(a), Some(b)) = (teams[i], teams[n - 1 - i]) {
-                let (model1, model2) = if rng.below(2) == 0 { (a, b) } else { (b, a) };
-                fixture.push((day, model1.clone(), model2.clone()));
+                pairs.push((day, a, b));
             }
         }
         teams[1..].rotate_right(1);
     }
-    fixture
+    pairs
+}
+
+/// Every pair of `participants` (indices) in fixture order, with its matchday: the
+/// founders (those who joined first, together) by `round_robin`, then each later joiner in
+/// join order on a matchday of its own against everyone who joined before it.
+/// `tools/league_web.py` derives the same order.
+fn pair_order(participants: &[Participant], seed: u64) -> Vec<(u32, usize, usize)> {
+    let mut join: Vec<usize> = (0..participants.len()).collect();
+    join.sort_by_key(|&i| (&participants[i].joined_at, i));
+    let Some(&first) = join.first() else {
+        return Vec::new();
+    };
+    let founded = &participants[first].joined_at;
+    let founders = join
+        .iter()
+        .take_while(|&&i| participants[i].joined_at == *founded)
+        .count();
+    let mut pairs = round_robin(&join[..founders], seed);
+    let last = pairs.last().map_or(0, |p| p.0);
+    for (day, k) in (last + 1..).zip(founders..join.len()) {
+        pairs.extend(join[..k].iter().map(|&earlier| (day, earlier, join[k])));
+    }
+    pairs
+}
+
+/// The league stage: every pair of current participants in `pair_order`, each with its
+/// valid match from `matches` (stored side and seed) or, without one, the side and seed of
+/// its last voided match (so a voided pair replays the same dice), else from the pair's
+/// names and the rules (`Rules::sides`, `Rules::pair_seed`).
+fn derive_fixture(
+    seed: u64,
+    rules: &Rules,
+    participants: &[Participant],
+    matches: &[MatchRow],
+) -> Vec<Fixture> {
+    /// The pair's valid match and its last voided one.
+    type Known<'a> = (Option<&'a MatchRow>, Option<&'a MatchRow>);
+    let mut by_pair: HashMap<(i64, i64), Known> = HashMap::new();
+    for row in matches {
+        let entry = by_pair.entry(row.pair()).or_default();
+        if row.valid {
+            entry.0.get_or_insert(row);
+        } else {
+            entry.1 = Some(row);
+        }
+    }
+    pair_order(participants, seed)
+        .into_iter()
+        .enumerate()
+        .map(|(order, (day, i, j))| {
+            let (a, b) = (&participants[i], &participants[j]);
+            let key = (a.player_id.min(b.player_id), a.player_id.max(b.player_id));
+            let (valid, void) = by_pair.get(&key).copied().unwrap_or_default();
+            let (first, seed) = match valid.or(void) {
+                Some(row) => (row.player1, row.seed),
+                None => {
+                    let (model1, _) = rules.sides(&a.config.name, &b.config.name);
+                    let first = if model1 == a.config.name { a } else { b };
+                    (
+                        first.player_id,
+                        rules.pair_seed(&a.config.name, &b.config.name),
+                    )
+                }
+            };
+            let (one, two) = if first == a.player_id { (a, b) } else { (b, a) };
+            Fixture {
+                order,
+                stage: "league",
+                label: format!("matchday {day}: {} v {}", one.config.name, two.config.name),
+                matchday: Some(day),
+                model1: one.config.name.clone(),
+                model2: two.config.name.clone(),
+                players: [one.player_id, two.player_id],
+                seed,
+                match_id: valid.map(|row| row.id),
+                status: valid.map(|row| row.status.clone()),
+            }
+        })
+        .collect()
 }
 
 pub async fn run(db_path: PathBuf, setup: &Setup, start: Start, harness: Harness) -> Result<()> {
@@ -482,34 +604,14 @@ async fn run_inner(
     league_id: &mut Option<i64>,
 ) -> Result<()> {
     let db_path = db_path.to_path_buf();
-    let db = Db::open(&db_path)?;
+    let mut db = Db::open(&db_path)?;
     let id = match start {
         Start::New {
             models,
             seed,
-            rounds,
-            clock,
-            max_turns,
+            rules,
             note,
-            version,
-            order_seed,
-            mirror_concurrent,
-        } => {
-            let id = db.create_league(
-                seed,
-                rounds,
-                clock,
-                max_turns,
-                &models,
-                note.as_deref(),
-                version.id(),
-                order_seed,
-                mirror_concurrent,
-            )?;
-            let names: Vec<String> = models.into_iter().map(|m| m.name).collect();
-            add_fixtures(&db, id, &names, seed)?;
-            id
-        }
+        } => db.create_league(seed, &rules, &models, note.as_deref())?,
         Start::Resume(id) => {
             let activity = db.league_activity(id)?;
             if activity.playing() {
@@ -526,13 +628,14 @@ async fn run_inner(
     };
     *league_id = Some(id);
     let row = db.league(id)?;
-    let version = match &row.prompt_version {
+    let version = match &row.rules.prompt_version {
         Some(id) => PromptVersion::parse(id)?,
         None => LEGACY_VERSION,
     };
     let protocol = Arc::new(Protocol {
         version,
         order_seed: row
+            .rules
             .order_seed
             .unwrap_or_else(|| derive_seed(row.seed, "option order")),
         harness,
@@ -560,28 +663,31 @@ async fn run_inner(
         db_path: db_path.clone(),
         id,
         seed: row.seed,
-        rounds: row.rounds,
-        clock: row.clock,
-        max_turns: row.max_turns,
-        mirror_concurrent: row.mirror_concurrent,
-        names: RwLock::new(row.models.iter().map(|m| m.name.clone()).collect()),
+        rules: row.rules.clone(),
+        names: RwLock::new(Vec::new()),
+        ids: RwLock::new(HashMap::new()),
         players: RwLock::new(HashMap::new()),
         control,
         protocol: protocol.clone(),
         backoff: (FIRST_BACKOFF, MAX_BACKOFF),
     });
+    let mut state = State::default();
+    state.sync(&db, &league, setup).await?;
     println!(
         "league #{id}: {} models · {} rounds per match · games of a round {} · clock {} · turn \
          limit {} · seed {} · prompt {} · option-order seed {} · harness {}{} · db {}",
         league.names.read().len(),
-        league.rounds,
-        if league.mirror_concurrent {
+        league.rules.rounds,
+        if league.rules.mirror_concurrent {
             "at once (both show the round-start score)"
         } else {
             "one after the other"
         },
-        describe_clock(league.clock),
-        league.max_turns.map_or("off".to_owned(), |t| t.to_string()),
+        describe_clock(league.rules.clock()),
+        league
+            .rules
+            .max_turns
+            .map_or("off".to_owned(), |t| t.to_string()),
         league.seed,
         protocol.version.id(),
         protocol.order_seed,
@@ -593,9 +699,8 @@ async fn run_inner(
         },
         db_path.display()
     );
-    let mut state = State::default();
-    state.sync(&db, &league, setup).await?;
-    for config in &row.models {
+    for participant in db.participants(id)? {
+        let config = &participant.config;
         println!(
             "  {}: {}{}",
             config.name,
@@ -617,7 +722,7 @@ async fn run_inner(
         );
     }
     println!("\nFixture");
-    for fixture in state.played.iter().map(|(f, _)| f).chain(&state.pending) {
+    for fixture in &state.fixtures {
         println!("  {}", fixture.label);
     }
     if !state.played.is_empty() {
@@ -625,23 +730,12 @@ async fn run_inner(
             &format!(
                 "Table so far ({} of {} matches played)",
                 state.played.len(),
-                state.known.len()
+                state.fixtures.len()
             ),
             &table(&league.names.read(), &results_of(&state.played)),
         );
     }
     play_league(league, &db, setup, state).await
-}
-
-/// The round robin's fixtures (`draw_fixture`), each match seeded from the league seed and
-/// its label.
-fn add_fixtures(db: &Db, id: i64, names: &[String], seed: u64) -> Result<()> {
-    for (day, model1, model2) in draw_fixture(names, seed) {
-        let label = format!("matchday {day}: {model1} v {model2}");
-        let seed = derive_seed(seed, &label);
-        db.add_fixture(id, "league", &label, Some(day), &model1, &model2, seed)?;
-    }
-    Ok(())
 }
 
 /// Plays the league stage, then the playoffs, and stores the final ranking. A failing match
@@ -662,7 +756,7 @@ async fn play_league(league: Arc<League>, db: &Db, setup: &Setup, mut state: Sta
     let mut set = JoinSet::new();
     // Whether the current wait with nothing to play was explained in the log.
     let mut waiting_told = false;
-    // League stage, then playoffs; again when players were added meanwhile.
+    // League stage, then playoffs; again when players joined meanwhile.
     loop {
         let mut tick = tokio::time::interval(RELOAD);
         loop {
@@ -682,11 +776,9 @@ async fn play_league(league: Arc<League>, db: &Db, setup: &Setup, mut state: Sta
                 );
                 for fixture in started {
                     waiting_told = false;
+                    state.running.insert(fixture.key());
                     let league = league.clone();
-                    set.spawn(async move {
-                        let result = league.play(&fixture, false).await;
-                        (fixture, result)
-                    });
+                    set.spawn(async move { league.play(fixture, false).await });
                 }
             }
             if set.is_empty() {
@@ -730,6 +822,7 @@ async fn play_league(league: Arc<League>, db: &Db, setup: &Setup, mut state: Sta
             tokio::select! {
                 joined = set.join_next(), if !set.is_empty() => {
                     let (fixture, result) = joined.expect("not empty")?;
+                    state.running.remove(&fixture.key());
                     for name in [&fixture.model1, &fixture.model2] {
                         if let Some(count) = running.get_mut(name) {
                             *count -= 1;
@@ -740,20 +833,17 @@ async fn play_league(league: Arc<League>, db: &Db, setup: &Setup, mut state: Sta
                             backoffs.clear(&fixture);
                             let day = fixture.matchday;
                             state.played.push((fixture, result));
-                            if let Some(day) = day {
-                                let remaining =
-                                    state.left.get_mut(&day).expect("counted on sync");
-                                *remaining -= 1;
-                                if *remaining == 0 {
-                                    print_table(
-                                        &format!(
-                                            "Table after matchday {day} ({} of {} matches played)",
-                                            state.played.len(),
-                                            state.known.len()
-                                        ),
-                                        &table(&league.names.read(), &results_of(&state.played)),
-                                    );
-                                }
+                            if let Some(day) = day
+                                && state.matchday_done(day)
+                            {
+                                print_table(
+                                    &format!(
+                                        "Table after matchday {day} ({} of {} matches played)",
+                                        state.played.len(),
+                                        state.fixtures.len()
+                                    ),
+                                    &table(&league.names.read(), &results_of(&state.played)),
+                                );
                             }
                         }
                         // Stopped on request: the match resumes with the next run.
@@ -776,8 +866,9 @@ async fn play_league(league: Arc<League>, db: &Db, setup: &Setup, mut state: Sta
                 _ = league.control.cancelled(), if !league.control.is_cancelled() => {}
             }
         }
-        // Playoffs wait until every fixture, added ones included, is done.
-        if state.sync(db, &league, setup).await? > 0 {
+        // Playoffs wait until every pair, joiners' included, is played.
+        state.sync(db, &league, setup).await?;
+        if !state.pending.is_empty() || state.skipped > 0 {
             continue;
         }
         let names = league.names.read().clone();
@@ -799,13 +890,12 @@ async fn play_league(league: Arc<League>, db: &Db, setup: &Setup, mut state: Sta
             let ordered = league.order(members, key).await?;
             ranking.splice(group, ordered);
         }
-        // A player added during the playoffs makes them stale: play the new matches, then
-        // rank and play off again.
-        if state.sync(db, &league, setup).await? > 0 {
-            let stale = db.mark_playoffs_stale(id)?;
-            println!(
-                "players were added during the playoffs: {stale} playoff fixtures marked stale"
-            );
+        // Participants changed during the playoffs: play the new pairs, then rank and play
+        // off again.
+        state.sync(db, &league, setup).await?;
+        if !state.pending.is_empty() || state.skipped > 0 || names != *league.names.read() {
+            let voided = db.void_playoffs(id, "participants changed during the playoffs")?;
+            println!("participants changed during the playoffs: {voided} playoff matches voided");
             continue;
         }
         let places: Vec<usize> = (0..ranking.len())
@@ -832,42 +922,59 @@ async fn play_league(league: Arc<League>, db: &Db, setup: &Setup, mut state: Sta
     }
 }
 
-/// How often a running league checks for added players and signs its heartbeat.
+/// How often a running league checks for joined and departed players and signs its
+/// heartbeat.
 const RELOAD: Duration = Duration::from_secs(30);
 
-/// The fixtures a league run knows about.
+/// The league stage as a run sees it, rebuilt from the database on every sync.
 #[derive(Default)]
 struct State {
-    /// Fixture ids already played or scheduled.
-    known: HashSet<i64>,
-    played: Vec<(FixtureRow, MatchResult)>,
-    /// Unfinished fixtures in fixture order, deferred ones included.
-    pending: Vec<FixtureRow>,
-    /// Unfinished fixtures per matchday, for the table after each matchday.
-    left: HashMap<u32, usize>,
+    /// Every pair of current participants, in fixture order.
+    fixtures: Vec<Fixture>,
+    played: Vec<(Fixture, MatchResult)>,
+    /// Unfinished pairs in fixture order, deferred ones included, not running.
+    pending: Vec<Fixture>,
+    /// Pairs this run is playing now.
+    running: HashSet<(i64, i64)>,
+    /// Unfinished pairs seen so far, to log the ones picked up.
+    seen: HashSet<(i64, i64)>,
     /// Models whose client could not be built yet, with the error.
     unbuilt: HashMap<String, String>,
-    /// Unfinished fixtures of those models, left for a later sync: the league stage does
-    /// not end before them.
+    /// Unfinished pairs of those models, left for a later sync: the league stage does not
+    /// end before them.
     skipped: usize,
     /// Whether the first sync is done.
     synced: bool,
 }
 
 impl State {
-    /// Signs the heartbeat, builds the roster's players not built yet (all of them on the
-    /// first call, then players added since), and takes up league fixtures not seen yet.
-    /// Returns how many unfinished fixtures it added. A player whose client cannot be
-    /// built is tried again on the next call; its unfinished fixtures wait until then.
+    /// Signs the heartbeat, reads the current participants (building the players not built
+    /// yet and dropping those who left), and derives the fixture: played pairs, and pending
+    /// ones not running. Returns how many unfinished pairs it saw for the first time. A
+    /// player whose client cannot be built is tried again on the next call; its pairs wait
+    /// until then.
     async fn sync(&mut self, db: &Db, league: &League, setup: &Setup) -> Result<usize> {
         db.heartbeat(league.id)?;
-        let row = db.league(league.id)?;
-        for config in &row.models {
+        let participants = db.participants(league.id)?;
+        let current: HashSet<&str> = participants
+            .iter()
+            .map(|p| p.config.name.as_str())
+            .collect();
+        league
+            .players
+            .write()
+            .retain(|name, _| current.contains(name.as_str()));
+        self.unbuilt
+            .retain(|name, _| current.contains(name.as_str()));
+        *league.names.write() = participants.iter().map(|p| p.config.name.clone()).collect();
+        *league.ids.write() = participants
+            .iter()
+            .map(|p| (p.config.name.clone(), p.player_id))
+            .collect();
+        for participant in &participants {
+            let config = &participant.config;
             if league.players.read().contains_key(&config.name) {
                 continue;
-            }
-            if !league.names.read().contains(&config.name) {
-                league.names.write().push(config.name.clone());
             }
             match Player::from_config(config, setup).await {
                 Ok(player) => {
@@ -893,19 +1000,22 @@ impl State {
                 }
             }
         }
-        let mut added = 0;
+        let ids: Vec<i64> = participants.iter().map(|p| p.player_id).collect();
+        let matches = db.matches_between(&league.rules, &ids, "league")?;
+        let fixtures = derive_fixture(league.seed, &league.rules, &participants, &matches);
+        self.played.clear();
+        self.pending.clear();
         self.skipped = 0;
-        for fixture in db.fixtures(league.id, "league")? {
-            if self.known.contains(&fixture.id) {
+        let mut added = 0;
+        for fixture in &fixtures {
+            if fixture.status.as_deref() == Some("finished")
+                && let Some(match_id) = fixture.match_id
+                && let Some(result) = db.match_result(match_id)?
+            {
+                self.played.push((fixture.clone(), result));
                 continue;
             }
-            let stored = match fixture.match_id {
-                Some(match_id) => db.match_result(match_id)?,
-                None => None,
-            };
-            if let Some(result) = stored {
-                self.known.insert(fixture.id);
-                self.played.push((fixture, result));
+            if self.running.contains(&fixture.key()) {
                 continue;
             }
             {
@@ -916,114 +1026,146 @@ impl State {
                     continue;
                 }
             }
-            self.known.insert(fixture.id);
-            if self.synced {
-                println!("fixture picked up: {}", fixture.label);
+            if self.seen.insert(fixture.key()) {
+                added += 1;
+                if self.synced {
+                    println!("fixture picked up: {}", fixture.label);
+                }
             }
-            if let Some(day) = fixture.matchday {
-                *self.left.entry(day).or_default() += 1;
-            }
-            self.pending.push(fixture);
-            added += 1;
+            self.pending.push(fixture.clone());
         }
+        self.fixtures = fixtures;
         self.synced = true;
         Ok(added)
     }
 
     /// Puts a deferred fixture back in fixture order.
-    fn requeue(&mut self, fixture: FixtureRow) {
-        let key = |f: &FixtureRow| (f.matchday, f.id);
-        let at = self.pending.partition_point(|f| key(f) < key(&fixture));
+    fn requeue(&mut self, fixture: Fixture) {
+        let at = self.pending.partition_point(|f| f.order < fixture.order);
         self.pending.insert(at, fixture);
     }
+
+    /// Whether every pair of matchday `day` is played.
+    fn matchday_done(&self, day: u32) -> bool {
+        let played: HashSet<(i64, i64)> = self.played.iter().map(|(f, _)| f.key()).collect();
+        self.fixtures
+            .iter()
+            .filter(|f| f.matchday == Some(day))
+            .all(|f| played.contains(&f.key()))
+    }
+}
+
+/// The unplayed league pairs of `name` in league `id`, as labels in fixture order.
+fn open_pairs(db: &Db, id: i64, name: &str) -> Result<Vec<String>> {
+    let row = db.league(id)?;
+    let participants = db.participants(id)?;
+    let ids: Vec<i64> = participants.iter().map(|p| p.player_id).collect();
+    let matches = db.matches_between(&row.rules, &ids, "league")?;
+    Ok(
+        derive_fixture(row.seed, &row.rules, &participants, &matches)
+            .into_iter()
+            .filter(|f| {
+                (f.model1 == name || f.model2 == name) && f.status.as_deref() != Some("finished")
+            })
+            .map(|f| f.label)
+            .collect(),
+    )
 }
 
 /// What `add_player` did.
 pub struct Addition {
+    /// The joiner's unplayed pairs.
     pub fixtures: Vec<String>,
     pub stale_playoffs: usize,
     pub note: String,
 }
 
-/// The fixtures of a player joining a league: one match against every current player, all
-/// on one new matchday after the last. Which side is `model1` is drawn from the league seed
-/// and the pairing; each match seed is `derive_seed(league seed, label)`, the rule of the
-/// original fixture.
-fn added_fixtures(
-    seed: u64,
-    matchday: u32,
-    new: &str,
-    others: &[String],
-) -> Vec<(u32, String, String, String, u64)> {
-    others
-        .iter()
-        .map(|other| {
-            let side = derive_seed(seed, &format!("added: {new} v {other}"));
-            let (model1, model2) = if side & 1 == 0 {
-                (new, other.as_str())
-            } else {
-                (other.as_str(), new)
-            };
-            let label = format!("matchday {matchday}: {model1} v {model2}");
-            let match_seed = derive_seed(seed, &label);
-            (
-                matchday,
-                label,
-                model1.to_owned(),
-                model2.to_owned(),
-                match_seed,
-            )
-        })
-        .collect()
-}
-
-/// Adds `config` to league `id`: roster entry, its fixtures against every current player,
-/// and the note; earlier playoffs are marked stale. Playing the matches is left to a
-/// running league process (it picks them up within `RELOAD`) or to `--resume`.
+/// Adds `config` to league `id` as a participant (its `players` row is created, or reused
+/// when the name is known with the same settings) with a note; earlier playoffs are voided.
+/// Its pairs with every current participant become pending: a running league process picks
+/// them up within `RELOAD`, otherwise `--resume` plays them.
 pub fn add_player(db: &mut Db, id: i64, config: &PlayerConfig, date: &str) -> Result<Addition> {
-    let row = db.league(id)?;
-    if config.name.is_empty() || row.models.iter().any(|m| m.name == config.name) {
-        bail!(
-            "the added player needs a name not yet in league #{id}: `{}`",
-            config.name
-        );
-    }
-    let others: Vec<String> = row.models.iter().map(|m| m.name.clone()).collect();
-    let matchday = db.max_matchday(id)? + 1;
-    let fixtures = added_fixtures(row.seed, matchday, &config.name, &others);
     let note = format!("{} added on {date}.", config.name);
-    let stale_playoffs = db.add_league_player(id, config, &fixtures, &note)?;
+    let stale_playoffs = db.add_participant(id, config, &note)?;
     Ok(Addition {
-        fixtures: fixtures.into_iter().map(|f| f.1).collect(),
+        fixtures: open_pairs(db, id, &config.name)?,
         stale_playoffs,
         note,
     })
 }
 
+/// Ends `name`'s participation in league `id`: its matches stay (and count again if it
+/// rejoins) but leave the table, its unplayed pairs leave the fixture. Returns how many
+/// playoff matches were voided and how many pairs it had left to play.
+pub fn remove_player(db: &mut Db, id: i64, name: &str, reason: &str) -> Result<(usize, usize)> {
+    let open = open_pairs(db, id, name)?.len();
+    let voided = db.remove_participant(id, name, reason)?;
+    Ok((voided, open))
+}
+
 impl League {
-    /// The result of `fixture`: stored when it already finished, otherwise played now. A
-    /// match started before (cut off by a failure, a stop, or the process dying) resumes
-    /// from its last stored turn under its match id.
-    async fn play(&self, fixture: &FixtureRow, decisive: bool) -> Result<MatchResult> {
+    fn player(&self, name: &str) -> Result<Arc<Player>> {
+        self.players
+            .read()
+            .get(name)
+            .map(|entrant| entrant.player.clone())
+            .with_context(|| format!("{name} is not ready"))
+    }
+
+    /// The result of `fixture`'s match: stored when it already finished, otherwise played
+    /// now. A match started before (cut off by a failure, a stop, or the process dying)
+    /// resumes from its last stored turn under its match id. Returns the fixture with the
+    /// sides of its match (another league with the same rules may have created it).
+    async fn play(&self, mut fixture: Fixture, decisive: bool) -> (Fixture, Result<MatchResult>) {
+        let result = self.play_match(&mut fixture, decisive).await;
+        (fixture, result)
+    }
+
+    async fn play_match(&self, fixture: &mut Fixture, decisive: bool) -> Result<MatchResult> {
         let db = Db::open(&self.db_path)?;
-        let existing = db.fixture_match(fixture.id)?;
-        if let Some(match_id) = existing
-            && let Some(result) = db.match_result(match_id)?
-        {
+        let label = fixture.playoff_label().map(str::to_owned);
+        let existing = db.current_match(
+            &self.rules,
+            fixture.stage,
+            fixture.players,
+            label.as_deref(),
+        )?;
+        let current = match existing {
+            Some(current) => current,
+            None => {
+                let specs = [
+                    self.player(&fixture.model1)?.spec.clone(),
+                    self.player(&fixture.model2)?.spec.clone(),
+                ];
+                db.ensure_league_match(&NewMatch {
+                    rules: &self.rules,
+                    stage: fixture.stage,
+                    label: &fixture.label,
+                    players: fixture.players,
+                    specs: [&specs[0], &specs[1]],
+                    seed: fixture.seed,
+                    protocol: &self.protocol,
+                })?;
+                db.current_match(
+                    &self.rules,
+                    fixture.stage,
+                    fixture.players,
+                    label.as_deref(),
+                )?
+                .context("the created match is not found")?
+            }
+        };
+        if current.player1 != fixture.players[0] {
+            fixture.swap();
+        }
+        fixture.match_id = Some(current.id);
+        fixture.seed = current.seed;
+        if let Some(result) = db.match_result(current.id)? {
             return Ok(result);
         }
         let names = [fixture.model1.clone(), fixture.model2.clone()];
-        let players = {
-            let players = self.players.read();
-            let player = |name: &String| {
-                players
-                    .get(name)
-                    .map(|entrant| entrant.player.clone())
-                    .with_context(|| format!("{name} is not ready"))
-            };
-            [player(&names[0])?, player(&names[1])?]
-        };
-        let tag = &fixture.label;
+        let players = [self.player(&names[0])?, self.player(&names[1])?];
+        let tag = fixture.label.clone();
         for (index, (name, player)) in names.iter().zip(&players).enumerate() {
             let took = player
                 .warm_up()
@@ -1034,39 +1176,25 @@ impl League {
                 println!("[{tag}] {name} warmed up in {} s", took.as_secs());
             }
         }
-        let match_id = match existing {
-            Some(match_id) => {
-                db.resume_match(match_id)?;
-                println!("[{tag}] match #{match_id} resumes");
-                match_id
-            }
-            None => {
-                let match_id = db.create_match(
-                    &players[0].spec,
-                    &players[1].spec,
-                    fixture.seed,
-                    self.rounds,
-                    self.clock,
-                    self.max_turns,
-                    &self.protocol,
-                )?;
-                db.set_fixture_match(fixture.id, match_id)?;
-                println!("[{tag}] match #{match_id} starts");
-                match_id
-            }
-        };
+        let match_id = current.id;
+        if existing.is_some() {
+            db.resume_match(match_id)?;
+            println!("[{tag}] match #{match_id} resumes");
+        } else {
+            println!("[{tag}] match #{match_id} starts");
+        }
         let (events, mut receiver) = mpsc::unbounded_channel();
         let runner = Runner {
             db: parking_lot::Mutex::new(db),
             players,
             settings: MatchSettings {
                 match_id,
-                seed: fixture.seed,
-                rounds: self.rounds,
-                clock: self.clock,
-                max_turns: self.max_turns,
+                seed: current.seed,
+                rounds: self.rules.rounds,
+                clock: self.rules.clock(),
+                max_turns: self.rules.max_turns,
                 decisive,
-                concurrent_mirror: self.mirror_concurrent,
+                concurrent_mirror: self.rules.mirror_concurrent,
                 protocol: self.protocol.clone(),
             },
             events,
@@ -1125,37 +1253,52 @@ impl League {
         result
     }
 
-    /// Logs a failed match and stores the failure with its fixture; `backoff` says who
-    /// waits for how long.
-    fn defer(&self, fixture: &FixtureRow, error: &anyhow::Error, backoff: &str) {
+    /// Logs a failed match and stores the failure with its match; `backoff` says who waits
+    /// for how long.
+    fn defer(&self, fixture: &Fixture, error: &anyhow::Error, backoff: &str) {
         let message = format!("{error:#}");
         println!(
             "[{}] deferred: {message}\n[{}] {backoff}; the match resumes from its last stored \
              turn then, other matches go on",
             fixture.label, fixture.label
         );
-        if let Err(error) =
-            Db::open(&self.db_path).and_then(|db| db.defer_fixture(fixture.id, &message))
-        {
+        let stored = Db::open(&self.db_path).and_then(|db| {
+            match db.current_match(
+                &self.rules,
+                fixture.stage,
+                fixture.players,
+                fixture.playoff_label(),
+            )? {
+                Some(current) => db.defer_match(current.id, &message),
+                None => Ok(()),
+            }
+        });
+        if let Err(error) = stored {
             println!("[{}] storing the failure failed: {error:#}", fixture.label);
         }
     }
 
     /// `play` until the match finishes (playoffs, played one at a time): after a failure
     /// the match waits out a doubling backoff and resumes. Only a stop request ends it.
-    async fn play_until_done(&self, fixture: &FixtureRow, decisive: bool) -> Result<MatchResult> {
+    async fn play_until_done(
+        &self,
+        mut fixture: Fixture,
+        decisive: bool,
+    ) -> Result<(Fixture, MatchResult)> {
         let mut backoff: Option<Backoff> = None;
         loop {
-            let error = match self.play(fixture, decisive).await {
-                Ok(result) => return Ok(result),
+            let (played, result) = self.play(fixture, decisive).await;
+            fixture = played;
+            let error = match result {
+                Ok(result) => return Ok((fixture, result)),
                 Err(error) if self.control.is_cancelled() => return Err(error),
                 Err(error) => error,
             };
             let now = Instant::now();
             let next = Backoff::after(backoff.as_ref(), format!("{error:#}"), now, self.backoff);
-            let who = blamed(fixture, &error).unwrap_or("the match");
+            let who = blamed(&fixture, &error).unwrap_or("the match");
             self.defer(
-                fixture,
+                &fixture,
                 &error,
                 &format!("{who} backs off {}", next.describe(now)),
             );
@@ -1169,6 +1312,8 @@ impl League {
 
     /// Orders a tied group by playoff: one decisive match for two models; for more, a
     /// decisive round robin ranked like the league, with its own ties played off again.
+    /// A playoff match is found again by its pair, rules and label (`key` and the pair), so
+    /// a resumed league resumes it; its seed comes from the rules and the label.
     fn order(
         &self,
         mut group: Vec<String>,
@@ -1176,17 +1321,35 @@ impl League {
     ) -> Pin<Box<dyn Future<Output = Result<Vec<String>>> + Send + '_>> {
         Box::pin(async move {
             group.sort();
-            let db = Db::open(&self.db_path)?;
             let mut results = Vec::new();
             for i in 0..group.len() {
                 for j in i + 1..group.len() {
                     let (a, b) = (&group[i], &group[j]);
                     let label = format!("{key}: {a} v {b}");
-                    let seed = derive_seed(self.seed, &label);
+                    let seed = derive_seed(self.rules.hash(), &label);
                     let (model1, model2) = if seed & 1 == 0 { (a, b) } else { (b, a) };
-                    let fixture =
-                        db.add_fixture(self.id, "playoff", &label, None, model1, model2, seed)?;
-                    let result = self.play_until_done(&fixture, true).await?;
+                    let players = {
+                        let ids = self.ids.read();
+                        let id = |name: &String| {
+                            ids.get(name)
+                                .copied()
+                                .with_context(|| format!("{name} left the league"))
+                        };
+                        [id(model1)?, id(model2)?]
+                    };
+                    let fixture = Fixture {
+                        order: 0,
+                        stage: "playoff",
+                        label,
+                        matchday: None,
+                        model1: model1.clone(),
+                        model2: model2.clone(),
+                        players,
+                        seed,
+                        match_id: None,
+                        status: None,
+                    };
+                    let (fixture, result) = self.play_until_done(fixture, true).await?;
                     results.push((fixture.model1, fixture.model2, result));
                 }
             }
@@ -1205,496 +1368,64 @@ impl League {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn names(n: usize) -> Vec<String> {
-        (0..n).map(|i| format!("m{i}")).collect()
-    }
-
-    fn fixture(id: i64, day: u32, model1: &str, model2: &str) -> FixtureRow {
-        FixtureRow {
-            id,
-            label: format!("matchday {day}: {model1} v {model2}"),
-            matchday: Some(day),
-            model1: model1.into(),
-            model2: model2.into(),
-            seed: 0,
-            match_id: None,
+/// The league stage's table of league `id` as `(name, P, W, D, L, Pts, GW, GL, PF, PA)`
+/// lines, best first, computed as the runner computes it: valid finished matches between
+/// current participants under the league's rules.
+pub fn standings(db: &Db, id: i64) -> Result<Vec<Standing>> {
+    let row = db.league(id)?;
+    let participants = db.participants(id)?;
+    let ids: Vec<i64> = participants.iter().map(|p| p.player_id).collect();
+    let matches = db.matches_between(&row.rules, &ids, "league")?;
+    let fixtures = derive_fixture(row.seed, &row.rules, &participants, &matches);
+    let mut played = Vec::new();
+    for fixture in fixtures {
+        if let Some(match_id) = fixture.match_id
+            && let Some(result) = db.match_result(match_id)?
+        {
+            played.push((fixture, result));
         }
     }
+    let names: Vec<String> = participants.iter().map(|p| p.config.name.clone()).collect();
+    Ok(table(&names, &results_of(&played))
+        .into_iter()
+        .map(Standing::from)
+        .collect())
+}
 
-    #[test]
-    fn a_match_starts_while_both_models_are_below_their_limit_in_fixture_order() {
-        let mut pending = vec![
-            fixture(1, 1, "A", "B"),
-            fixture(2, 1, "C", "D"),
-            fixture(3, 2, "A", "C"),
-            fixture(4, 2, "B", "D"),
-            fixture(5, 3, "A", "D"),
-            fixture(6, 3, "B", "C"),
-        ];
-        // A plays two matches at once, R (a local engine) any number, the others one.
-        let limit = |name: &str| match name {
-            "A" => 2,
-            "R" => usize::MAX,
-            _ => 1,
-        };
-        let free = |_: &FixtureRow| false;
-        let mut running: HashMap<String, usize> = HashMap::new();
-        let ids = |started: Vec<FixtureRow>| started.iter().map(|f| f.id).collect::<Vec<_>>();
-        let end = |running: &mut HashMap<String, usize>, a: &str, b: &str| {
-            *running.get_mut(a).unwrap() -= 1;
-            *running.get_mut(b).unwrap() -= 1;
-        };
-        assert_eq!(
-            ids(take_startable(&mut pending, &mut running, limit, free)),
-            [1, 2]
-        );
-        // C v D ends while A v B still runs: A v C starts as A's second match; B v D still
-        // waits for B, A v D for A.
-        end(&mut running, "C", "D");
-        assert_eq!(
-            ids(take_startable(&mut pending, &mut running, limit, free)),
-            [3]
-        );
-        assert_eq!(running["A"], 2);
-        // A v B ends: B v D goes first; A v D now waits for D, B v C for B and C.
-        end(&mut running, "A", "B");
-        assert_eq!(
-            ids(take_startable(&mut pending, &mut running, limit, free)),
-            [4]
-        );
-        end(&mut running, "A", "C");
-        end(&mut running, "B", "D");
-        // C backs off: its match waits, the next one starts.
-        let c_backs_off = |f: &FixtureRow| f.model1 == "C" || f.model2 == "C";
-        assert_eq!(
-            ids(take_startable(
-                &mut pending,
-                &mut running,
-                limit,
-                c_backs_off
-            )),
-            [5]
-        );
-        assert_eq!(
-            ids(take_startable(&mut pending, &mut running, limit, free)),
-            [6]
-        );
-        assert!(pending.is_empty());
-        // An engine without a limit plays all its matches at once.
-        let mut pending = vec![
-            fixture(7, 4, "R", "E"),
-            fixture(8, 5, "F", "R"),
-            fixture(9, 6, "R", "G"),
-        ];
-        assert_eq!(
-            ids(take_startable(&mut pending, &mut running, limit, free)),
-            [7, 8, 9]
-        );
-        assert_eq!(running["R"], 3);
-    }
+/// One line of `standings`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Standing {
+    pub name: String,
+    /// played, won, drawn, lost, points, games won, games lost, points for, points against
+    pub counts: [u32; 9],
+}
 
-    #[test]
-    fn backoff_doubles_up_to_the_longest_and_blames_the_failing_player() {
-        let limits = (Duration::from_secs(120), Duration::from_secs(600));
-        let now = Instant::now();
-        let first = Backoff::after(None, "402".into(), now, limits);
-        assert_eq!((first.delay, first.failures), (limits.0, 1));
-        // Another failure while it runs (a second match of the player) keeps it.
-        let same = Backoff::after(Some(&first), "402 again".into(), now, limits);
-        assert_eq!((same.until, same.failures), (first.until, 1));
-        let mut last = first;
-        for delay in [240, 480, 600, 600] {
-            let at = last.until;
-            last = Backoff::after(Some(&last), "402".into(), at, limits);
-            assert_eq!(last.delay, Duration::from_secs(delay));
-            assert_eq!(last.until, at + last.delay);
+impl From<Row> for Standing {
+    fn from(row: Row) -> Self {
+        Standing {
+            counts: [
+                row.played,
+                row.won,
+                row.drawn,
+                row.lost,
+                row.points,
+                row.games_won,
+                row.games_lost,
+                row.scored,
+                row.conceded,
+            ],
+            name: row.name,
         }
-        assert_eq!(last.failures, 5);
-
-        let f = fixture(1, 1, "A", "B");
-        let failed = anyhow::anyhow!("402 Payment Required")
-            .context(PlayerFault(2))
-            .context("round 1");
-        assert_eq!(blamed(&f, &failed), Some("B"));
-        assert_eq!(blamed(&f, &anyhow::anyhow!("database is locked")), None);
-        let mut backoffs = Backoffs::default();
-        backoffs.fail(&f, &failed, now, limits);
-        let other = fixture(2, 2, "A", "C");
-        let (who, backoff) = backoffs.holding(&f, now).unwrap();
-        assert_eq!(
-            (who, backoff.error.as_str()),
-            ("B", "round 1: player 2: 402 Payment Required")
-        );
-        assert!(backoffs.holding(&other, now).is_none());
-        assert!(backoffs.holding(&f, now + limits.0).is_none());
-        assert_eq!(backoffs.next_end(now), Some(now + limits.0));
-        // A failure no player is to blame for holds the match only.
-        backoffs.fail(&other, &anyhow::anyhow!("disk full"), now, limits);
-        assert_eq!(backoffs.holding(&other, now).unwrap().0, "the match");
-        assert!(backoffs.holding(&fixture(3, 3, "A", "D"), now).is_none());
-        backoffs.clear(&f);
-        assert!(backoffs.holding(&f, now).is_none());
-    }
-
-    #[test]
-    fn fixture_is_a_round_robin_with_one_match_per_model_per_matchday() {
-        for n in [7, 8] {
-            let names = names(n);
-            let fixture = draw_fixture(&names, 11);
-            let mut pairs: Vec<(String, String)> = fixture
-                .iter()
-                .map(|(_, a, b)| {
-                    if a < b {
-                        (a.clone(), b.clone())
-                    } else {
-                        (b.clone(), a.clone())
-                    }
-                })
-                .collect();
-            pairs.sort();
-            pairs.dedup();
-            assert_eq!(pairs.len(), n * (n - 1) / 2);
-            assert_eq!(fixture.len(), pairs.len());
-            let days = if n % 2 == 0 { n - 1 } else { n };
-            for day in 1..=days as u32 {
-                let mut seen: Vec<&String> = fixture
-                    .iter()
-                    .filter(|f| f.0 == day)
-                    .flat_map(|(_, a, b)| [a, b])
-                    .collect();
-                let count = seen.len();
-                seen.sort();
-                seen.dedup();
-                assert_eq!(seen.len(), count, "a model plays twice on matchday {day}");
-                assert_eq!(count, n / 2 * 2);
-            }
-        }
-        assert_ne!(draw_fixture(&names(8), 1), draw_fixture(&names(8), 2));
-    }
-
-    fn result(score: [u32; 2], games_won: [u32; 2]) -> MatchResult {
-        let winner = match score[0].cmp(&score[1]) {
-            std::cmp::Ordering::Greater => Some(1),
-            std::cmp::Ordering::Less => Some(2),
-            std::cmp::Ordering::Equal => None,
-        };
-        MatchResult {
-            score,
-            games_won,
-            winner,
-        }
-    }
-
-    #[test]
-    fn table_ranks_by_points_then_games_won_then_fewer_games_lost() {
-        let names = names(4);
-        let r = |a: usize, b: usize, score, games| {
-            (names[a].clone(), names[b].clone(), result(score, games))
-        };
-        let order = |rows: &[Row]| rows.iter().map(|r| r.name.clone()).collect::<Vec<_>>();
-
-        // Equal points: more games won ranks higher (m1 over m0, m2 over m3).
-        let rows = table(&names, &[r(0, 2, [7, 5], [6, 4]), r(1, 3, [9, 3], [7, 3])]);
-        assert_eq!(order(&rows), ["m1", "m0", "m2", "m3"]);
-
-        // Equal points and games won: fewer games lost ranks higher. m1 beat m2 in ten
-        // games, m0 needed an extra round.
-        let rows = table(
-            &names[..3],
-            &[r(0, 2, [7, 5], [6, 5]), r(1, 2, [7, 5], [6, 4])],
-        );
-        assert_eq!(order(&rows), ["m1", "m0", "m2"]);
-        assert!(tie_groups(&rows).is_empty());
-
-        // A draw is worth DRAW_POINTS; a win by fewer games still outranks it.
-        let rows = table(&names, &[r(0, 1, [6, 6], [6, 6]), r(2, 3, [4, 3], [2, 1])]);
-        assert_eq!(order(&rows)[0], "m2");
-        assert_eq!(rows[1].points, DRAW_POINTS);
-        // m0 and m1 are level on everything.
-        assert_eq!(tie_groups(&rows), vec![1..3]);
-    }
-
-    /// Adding a player to a league with a finished playoff: one match against every
-    /// current player on a new matchday, seeds from the league seed and the label, the
-    /// roster and note updated, the playoff kept but marked stale.
-    #[test]
-    fn added_player_gets_one_match_against_each_player() {
-        let path = std::env::temp_dir().join(format!("jevgammon-add-{}.db", std::process::id()));
-        let _ = std::fs::remove_file(&path);
-        let mut db = Db::open(&path).unwrap();
-        let models: Vec<PlayerConfig> = ["A", "B", "C"]
-            .iter()
-            .map(|n| PlayerConfig::new(n, "random"))
-            .collect();
-        let id = db
-            .create_league(7, 1, None, None, &models, Some("test."), "bg-v2", 9, false)
-            .unwrap();
-        let names: Vec<String> = models.iter().map(|m| m.name.clone()).collect();
-        for (day, m1, m2) in draw_fixture(&names, 7) {
-            let label = format!("matchday {day}: {m1} v {m2}");
-            db.add_fixture(
-                id,
-                "league",
-                &label,
-                Some(day),
-                &m1,
-                &m2,
-                derive_seed(7, &label),
-            )
-            .unwrap();
-        }
-        db.add_fixture(
-            id,
-            "playoff",
-            "playoff for places 1-2: A v B",
-            None,
-            "A",
-            "B",
-            1,
-        )
-        .unwrap();
-        db.finish_league(id, &["1. A".into()]).unwrap();
-        let before = db.fixtures(id, "league").unwrap();
-        let last_day = db.max_matchday(id).unwrap();
-
-        let addition =
-            add_player(&mut db, id, &PlayerConfig::new("D", "safest"), "2026-10-15").unwrap();
-        assert_eq!(addition.fixtures.len(), 3);
-        assert_eq!(addition.stale_playoffs, 1);
-        let after = db.fixtures(id, "league").unwrap();
-        assert_eq!(after.len(), before.len() + 3);
-        for fixture in &after[before.len()..] {
-            assert_eq!(fixture.matchday, Some(last_day + 1));
-            assert!(fixture.model1 == "D" || fixture.model2 == "D");
-            assert_eq!(fixture.seed, derive_seed(7, &fixture.label));
-            assert!(fixture.match_id.is_none());
-        }
-        let mut opponents: Vec<&str> = after[before.len()..]
-            .iter()
-            .map(|f| {
-                if f.model1 == "D" {
-                    f.model2.as_str()
-                } else {
-                    f.model1.as_str()
-                }
-            })
-            .collect();
-        opponents.sort_unstable();
-        assert_eq!(opponents, ["A", "B", "C"]);
-        // Same league seed and names, same fixtures.
-        assert_eq!(
-            added_fixtures(7, last_day + 1, "D", &names),
-            after[before.len()..]
-                .iter()
-                .map(|f| (
-                    last_day + 1,
-                    f.label.clone(),
-                    f.model1.clone(),
-                    f.model2.clone(),
-                    f.seed
-                ))
-                .collect::<Vec<_>>()
-        );
-        let row = db.league(id).unwrap();
-        assert_eq!(row.models.last().unwrap().name, "D");
-        assert!(db.fixtures(id, "playoff").unwrap().is_empty());
-        assert_eq!(db.fixtures(id, "playoff-stale").unwrap().len(), 1);
-        // The note and the running status.
-        let activity = db.league_activity(id).unwrap();
-        assert!(!activity.playing());
-        assert!(add_player(&mut db, id, &PlayerConfig::new("D", "random"), "x").is_err());
-        drop(db);
-        let conn = rusqlite::Connection::open(&path).unwrap();
-        let (note, status): (String, String) = conn
-            .query_row(
-                "SELECT note, status FROM leagues WHERE id = ?1",
-                [id],
-                |r| Ok((r.get(0)?, r.get(1)?)),
-            )
-            .unwrap();
-        assert_eq!(note, "test. D added on 2026-10-15.");
-        assert_eq!(status, "running");
-        let _ = std::fs::remove_file(&path);
-    }
-
-    /// Plays like `random` while `fail` is false; otherwise every decision fails like a
-    /// provider out of credit.
-    struct Flaky {
-        fail: Arc<std::sync::atomic::AtomicBool>,
-    }
-
-    impl crate::players::Engine for Flaky {
-        fn decide(
-            &self,
-            req: &crate::players::DecisionRequest<'_>,
-        ) -> Result<crate::players::Decision> {
-            if self.fail.load(std::sync::atomic::Ordering::Relaxed) {
-                bail!("402 Payment Required: insufficient credits");
-            }
-            crate::players::baseline::Baseline::Random.decide(req)
-        }
-    }
-
-    /// `(model1, model2, match id, match status, fixture error)`.
-    type StageRow = (String, String, Option<i64>, Option<String>, Option<String>);
-
-    /// The league stage's fixtures.
-    fn league_stage(path: &std::path::Path, id: i64) -> Vec<StageRow> {
-        let conn = rusqlite::Connection::open(path).unwrap();
-        let mut statement = conn
-            .prepare(
-                "SELECT lm.model1, lm.model2, lm.match_id, m.status, lm.error
-                 FROM league_matches lm LEFT JOIN matches m ON m.id = lm.match_id
-                 WHERE lm.league_id = ?1 AND lm.stage = 'league' ORDER BY lm.id",
-            )
-            .unwrap();
-        statement
-            .query_map([id], |r| {
-                Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?))
-            })
-            .unwrap()
-            .collect::<rusqlite::Result<_>>()
-            .unwrap()
-    }
-
-    /// F fails like a provider out of credit: its matches are deferred with the error
-    /// stored and only F backs off, so every other match (F's opponents' included)
-    /// finishes while F still fails, and the league neither stops nor starts its playoffs.
-    /// A stop request ends the run cleanly; once F works again, the next run resumes F's
-    /// matches under their match ids and finishes the league.
-    #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
-    async fn a_failing_model_backs_off_while_the_others_play_on_and_its_matches_resume() {
-        use crate::players::baseline::Baseline;
-        let path = std::env::temp_dir().join(format!("jevgammon-flaky-{}.db", std::process::id()));
-        let _ = std::fs::remove_file(&path);
-        let db = Db::open(&path).unwrap();
-        let names: Vec<String> = ["A", "B", "C", "F"].map(String::from).to_vec();
-        let models: Vec<PlayerConfig> = names
-            .iter()
-            .map(|n| PlayerConfig::new(n, "random"))
-            .collect();
-        let id = db
-            .create_league(5, 1, None, Some(300), &models, None, "bg-v2", 9, true)
-            .unwrap();
-        add_fixtures(&db, id, &names, 5).unwrap();
-        let fail = Arc::new(std::sync::atomic::AtomicBool::new(true));
-        let setup = Setup::new(std::env::temp_dir(), "http://127.0.0.1:9/v1".into());
-        let league = || {
-            let players = models
-                .iter()
-                .map(|config| {
-                    let player = if config.name == "F" {
-                        Player::engine("flaky", Box::new(Flaky { fail: fail.clone() }))
-                    } else {
-                        Player::engine("random", Box::new(Baseline::Random))
-                    };
-                    (config.name.clone(), Entrant::new(config, player))
-                })
-                .collect();
-            Arc::new(League {
-                db_path: path.clone(),
-                id,
-                seed: 5,
-                rounds: 1,
-                clock: None,
-                max_turns: Some(300),
-                mirror_concurrent: true,
-                names: RwLock::new(names.clone()),
-                players: RwLock::new(players),
-                control: Arc::new(Control::new(MAX_SPEED)),
-                protocol: Arc::new(Protocol {
-                    version: PromptVersion::BgV2,
-                    order_seed: 9,
-                    harness: Harness::default(),
-                }),
-                // Long enough that F is not tried again during the first run.
-                backoff: (Duration::from_secs(3600), Duration::from_secs(3600)),
-            })
-        };
-        let with_f = |row: &StageRow| row.0 == "F" || row.1 == "F";
-        let finished = |row: &StageRow| row.3.as_deref() == Some("finished");
-
-        let first = league();
-        let mut state = State::default();
-        state.sync(&db, &first, &setup).await.unwrap();
-        let watch = async {
-            loop {
-                let stage = league_stage(&path, id);
-                if stage.iter().filter(|r| !with_f(r)).all(finished) {
-                    break;
-                }
-                tokio::time::sleep(Duration::from_millis(50)).await;
-            }
-            first.control.cancel();
-        };
-        let (stopped, ()) = tokio::time::timeout(Duration::from_secs(120), async {
-            tokio::join!(play_league(first.clone(), &db, &setup, state), watch)
-        })
-        .await
-        .expect("the matches without F finish while F fails");
-        assert!(
-            format!("{:#}", stopped.unwrap_err()).contains("stopped on request"),
-            "only the stop request ends the run"
-        );
-        let stage = league_stage(&path, id);
-        let deferred: Vec<_> = stage.iter().filter(|r| with_f(r)).collect();
-        assert_eq!(deferred.len(), 3);
-        for row in &deferred {
-            assert!(!finished(row), "{row:?}");
-            let error = row
-                .4
-                .as_deref()
-                .expect("the failure is stored with the fixture");
-            assert!(error.contains("402 Payment Required"), "{error}");
-            assert!(error.starts_with("player "), "{error}");
-        }
-        let match_ids: Vec<Option<i64>> = deferred.iter().map(|r| r.2).collect();
-        assert!(match_ids.iter().all(Option::is_some));
-        let (status,): (String,) = rusqlite::Connection::open(&path)
-            .unwrap()
-            .query_row("SELECT status FROM leagues WHERE id = ?1", [id], |r| {
-                Ok((r.get(0)?,))
-            })
-            .unwrap();
-        assert_eq!(
-            status, "running",
-            "no playoffs or final ranking without F's matches"
-        );
-
-        fail.store(false, std::sync::atomic::Ordering::Relaxed);
-        let second = league();
-        let mut state = State::default();
-        state.sync(&db, &second, &setup).await.unwrap();
-        assert_eq!(state.pending.len(), 3);
-        tokio::time::timeout(
-            Duration::from_secs(120),
-            play_league(second, &db, &setup, state),
-        )
-        .await
-        .expect("the league finishes")
-        .unwrap();
-        let stage = league_stage(&path, id);
-        assert!(stage.iter().all(finished), "{stage:?}");
-        let resumed: Vec<Option<i64>> = stage.iter().filter(|r| with_f(r)).map(|r| r.2).collect();
-        assert_eq!(
-            resumed, match_ids,
-            "F's matches resumed under their match ids"
-        );
-        let (status, ranking): (String, String) = rusqlite::Connection::open(&path)
-            .unwrap()
-            .query_row(
-                "SELECT status, ranking FROM leagues WHERE id = ?1",
-                [id],
-                |r| Ok((r.get(0)?, r.get(1)?)),
-            )
-            .unwrap();
-        assert_eq!(status, "finished");
-        assert!(ranking.contains('F'));
-        drop(db);
-        let _ = std::fs::remove_file(&path);
     }
 }
+
+/// Ranks `(model1, model2, result)` lines for `names` like the league table does.
+pub fn rank(names: &[String], results: &[(String, String, MatchResult)]) -> Vec<Standing> {
+    table(names, results)
+        .into_iter()
+        .map(Standing::from)
+        .collect()
+}
+
+#[cfg(test)]
+mod tests;

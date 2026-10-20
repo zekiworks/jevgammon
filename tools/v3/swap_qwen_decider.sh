@@ -15,16 +15,23 @@ set -euo pipefail
 cd "$(dirname "$(readlink -f "$0")")/../.."
 SKIP_PROVIDER=${SKIP_PROVIDER:-openrouter%}
 
+# Unplayed League 2 pairs of a current Qwen3.8-27B participant: no valid finished match with a
+# current participant under the league's rules (league_match_view), the Qwen-Qwen pair once.
 left() {
   sqlite3 -readonly -cmd '.timeout 60000' v3.db "
-    SELECT count(*) FROM league_matches lm LEFT JOIN matches m ON m.id = lm.match_id
-    WHERE lm.league_id = 2
-      AND (lm.model1 LIKE 'Qwen3.8-27B (%' OR lm.model2 LIKE 'Qwen3.8-27B (%')
-      AND (m.status IS NULL OR m.status <> 'finished')
+    SELECT count(*) FROM league_players q JOIN players qp ON qp.id = q.player_id
+    JOIN league_players o ON o.league_id = q.league_id AND o.left_at IS NULL
+      AND o.player_id <> q.player_id
+    JOIN players op ON op.id = o.player_id
+    WHERE q.league_id = 2 AND q.left_at IS NULL AND qp.name LIKE 'Qwen3.8-27B (%'
+      AND NOT (op.name LIKE 'Qwen3.8-27B (%' AND op.id < qp.id)
+      AND IFNULL(qp.provider, '') NOT LIKE '$SKIP_PROVIDER'
+      AND IFNULL(op.provider, '') NOT LIKE '$SKIP_PROVIDER'
       AND NOT EXISTS (
-        SELECT 1 FROM leagues l, json_each(l.models) j
-        WHERE l.id = 2 AND json_extract(j.value, '$.name') IN (lm.model1, lm.model2)
-          AND json_extract(j.value, '$.provider') LIKE '$SKIP_PROVIDER')"
+        SELECT 1 FROM league_match_view v
+        WHERE v.league_id = 2 AND v.stage = 'league' AND v.status = 'finished'
+          AND ((v.player1 = qp.id AND v.player2 = op.id)
+            OR (v.player1 = op.id AND v.player2 = qp.id)))"
 }
 
 # A failed query (empty or non-numeric) counts as fixtures left: only a clean 0 swaps.

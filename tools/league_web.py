@@ -7,7 +7,9 @@ Standard library only. The database is opened read-only per request, so it can r
 league in progress. The page shows the latest league (or ?league=N), the history of every
 league in the database with what each one tested (`leagues.note`), and links to the working
 copy of the published report (`--report`, served at /report/). The table follows `src/league.rs`: 3 points for a win, 1 for
-a draw, ties broken by more games won, then fewer games lost; only finished matches count.
+a draw, ties broken by more games won, then fewer games lost; only finished matches count: the
+valid matches between current participants under the league's rules (`league_match_view`). The
+fixture is derived from the participants as the runner derives it (`pair_order`, `new_pair`).
 
 --control SCRIPT adds a Pause / Resume button: GET /api/control runs `SCRIPT status` (one JSON
 line: unit, state, since, message) and POST /api/control {"action": "pause"|"resume"} starts
@@ -17,6 +19,7 @@ are taken only from CONTROL_NETWORKS and with the X-League-Control header the pa
 
 import argparse
 import ipaddress
+import itertools
 import json
 import sqlite3
 import subprocess
@@ -84,22 +87,173 @@ def unsigned(value: int | None) -> str | None:
 
 
 
-def league_fixtures(conn: sqlite3.Connection, lid: int) -> tuple[list[dict], dict[int, list[int]]]:
-    """The league's fixtures with their latest match, and games won per match."""
-    # A deferred match failed and is retried later (databases since resumable matches).
-    deferred = (
-        "lm.error AS deferred_error, lm.failed_at AS deferred_at"
-        if {"error", "failed_at"} <= columns(conn, "league_matches")
-        else "NULL AS deferred_error, NULL AS deferred_at"
-    )
-    fixtures = [dict(r) for r in conn.execute(
-        f"""SELECT lm.id, lm.stage, lm.label, lm.matchday, lm.model1, lm.model2, lm.match_id,
-                  m.status, m.score1, m.score2, m.winner, m.rounds_played, m.rounds_planned,
-                  m.error, m.started_at, m.finished_at, {deferred}
-           FROM league_matches lm LEFT JOIN matches m ON m.id = lm.match_id
-           WHERE lm.league_id = ? ORDER BY lm.stage != 'league', lm.stage, lm.matchday, lm.id""",
-        (lid,),
+MASK = 2**64 - 1
+
+
+def mix(z: int) -> int:
+    """SplitMix64 finaliser, as `src/dice.rs`."""
+    z = ((z ^ (z >> 30)) * 0xBF58476D1CE4E5B9) & MASK
+    z = ((z ^ (z >> 27)) * 0x94D049BB133111EB) & MASK
+    return z ^ (z >> 31)
+
+
+def derive_seed(seed: int, label: str) -> int:
+    """`dice::derive_seed`: FNV-1a of the label mixed into the seed."""
+    h = 0xCBF29CE484222325
+    for b in label.encode():
+        h = ((h ^ b) * 0x100000001B3) & MASK
+    return mix((seed & MASK) ^ mix(h))
+
+
+class Dice:
+    """`dice::Dice`, as far as the fixture draw uses it."""
+
+    def __init__(self, seed: int):
+        self.state = seed & MASK
+
+    def next_u64(self) -> int:
+        self.state = (self.state + 0x9E3779B97F4A7C15) & MASK
+        return mix(self.state)
+
+    def below(self, n: int) -> int:
+        zone = MASK - MASK % n
+        while True:
+            value = self.next_u64()
+            if value < zone:
+                return value % n
+
+
+# Rule columns of `matches`; `leagues` names the first one `rounds` (see `db::Rules`).
+RULE_COLUMNS = ("rounds_planned", "clock_seconds", "delay_seconds", "max_turns", "prompt_version",
+                "order_seed", "mirror_concurrent")
+
+
+def league_rules(league: sqlite3.Row) -> tuple:
+    """The league's rules in RULE_COLUMNS order."""
+    return (league["rounds"], league["clock_seconds"], league["delay_seconds"], league["max_turns"],
+            league["prompt_version"], league["order_seed"], league["mirror_concurrent"] or 0)
+
+
+def rules_hash(rules: tuple) -> int:
+    """`Rules::hash`: the root of every pair's dice seed."""
+    opt = lambda v: "-" if v is None else str(v & MASK if isinstance(v, int) and v < 0 else v)
+    rounds, clock, delay, max_turns, prompt, order_seed, mirror = rules
+    return derive_seed(0, f"rules-v1 rounds={rounds} clock={opt(clock)} delay={opt(delay)} "
+                          f"max_turns={opt(max_turns)} prompt={opt(prompt)} order_seed={opt(order_seed)} "
+                          f"mirror={1 if mirror else 0}")
+
+
+def new_pair(rules: tuple, a: str, b: str) -> tuple[str, str, int]:
+    """`Rules::sides` and `Rules::pair_seed`: (model1, model2, seed) of a pair's first match."""
+    low, high = sorted((a, b), key=lambda s: s.encode())
+    seed = derive_seed(rules_hash(rules), f"pair: {low} v {high}")
+    return (low, high, seed) if derive_seed(seed, "side") & 1 == 0 else (high, low, seed)
+
+
+def pair_order(participants: list[dict], seed: int) -> list[tuple[int, int, int]]:
+    """`league::pair_order`: (matchday, i, j) over participant indices in fixture order. The
+    founders (who joined first, together) play a round robin drawn from the league seed; each
+    later joiner gets a matchday of its own against everyone who joined before it."""
+    join = sorted(range(len(participants)), key=lambda i: (participants[i]["joined_at"], i))
+    if not join:
+        return []
+    founded = participants[join[0]]["joined_at"]
+    founders = sum(1 for _ in itertools.takewhile(lambda i: participants[i]["joined_at"] == founded, join))
+    rng = Dice(derive_seed(seed, "fixture"))
+    teams: list[int | None] = list(join[:founders])
+    for i in range(len(teams) - 1, 0, -1):
+        k = rng.below(i + 1)
+        teams[i], teams[k] = teams[k], teams[i]
+    if len(teams) % 2:
+        teams.append(None)
+    n, pairs = len(teams), []
+    for day in range(1, n):
+        for i in range(n // 2):
+            a, b = teams[i], teams[n - 1 - i]
+            if a is not None and b is not None:
+                pairs.append((day, a, b))
+        teams[1:] = teams[-1:] + teams[1:-1]
+    day = pairs[-1][0] if pairs else 0
+    for k in range(founders, len(join)):
+        day += 1
+        pairs.extend((day, earlier, join[k]) for earlier in join[:k])
+    return pairs
+
+
+def participants(conn: sqlite3.Connection, lid: int) -> list[dict]:
+    """Current participants of the league in join order, with their player settings."""
+    return [
+        {"id": r["id"], "name": r["name"], "joined_at": r["joined_at"], "settings": json.loads(r["settings"])}
+        for r in conn.execute(
+            """SELECT p.id, p.name, p.settings, lp.joined_at FROM league_players lp
+               JOIN players p ON p.id = lp.player_id
+               WHERE lp.league_id = ? AND lp.left_at IS NULL ORDER BY lp.id""",
+            (lid,),
+        )
+    ]
+
+
+MATCH_FIELDS = """m.id AS match_id, m.player1, m.player2, m.seed, m.valid, m.void_reason, m.stage, m.label,
+                  m.status, m.score1, m.score2, m.winner, m.rounds_played, m.rounds_planned, m.error,
+                  m.started_at, m.finished_at,
+                  CASE WHEN m.failed_at IS NOT NULL THEN m.error END AS deferred_error,
+                  m.failed_at AS deferred_at"""
+
+
+def matches_between(conn: sqlite3.Connection, ids: list[int], rules: tuple, stage: str) -> list[dict]:
+    """Every match of `stage` (valid or void) between two of the players `ids` under `rules`, oldest
+    first: with a league's participants and rules, its matches; with any set of players and rules, a
+    merged view over leagues (`Db::matches_between`)."""
+    same = " AND ".join(f"m.{c} IS ?" for c in RULE_COLUMNS)
+    players = json.dumps(ids)
+    return [dict(r) for r in conn.execute(
+        f"""SELECT {MATCH_FIELDS} FROM matches m
+            WHERE m.stage = ? AND m.player1 IN (SELECT value FROM json_each(?))
+              AND m.player2 IN (SELECT value FROM json_each(?)) AND {same}
+            ORDER BY m.id""",
+        (stage, players, players, *rules),
     )]
+
+
+def league_fixtures(conn: sqlite3.Connection, league: sqlite3.Row) -> tuple[list[dict], dict[int, list[int]]]:
+    """The league's fixture as the runner derives it (`league::derive_fixture`): every pair of
+    current participants in matchday order with its valid match, then the playoffs (valid ones,
+    and stale ones voided when the table changed); and games won per match."""
+    people = participants(conn, league["id"])
+    ids = [p["id"] for p in people]
+    rules = league_rules(league)
+    by_pair: dict[tuple[int, int], dict] = {}
+    for m in matches_between(conn, ids, rules, "league"):
+        entry = by_pair.setdefault((min(m["player1"], m["player2"]), max(m["player1"], m["player2"])), {})
+        if m["valid"]:
+            entry.setdefault("valid", m)
+        else:
+            entry["void"] = m
+    names = {p["id"]: p["name"] for p in people}
+    empty = dict.fromkeys(("match_id", "status", "score1", "score2", "winner", "rounds_played", "rounds_planned",
+                           "error", "started_at", "finished_at", "deferred_error", "deferred_at"))
+    fixtures = []
+    for day, i, j in pair_order(people, league["seed"]):
+        a, b = people[i], people[j]
+        entry = by_pair.get((min(a["id"], b["id"]), max(a["id"], b["id"])), {})
+        known = entry.get("valid") or entry.get("void")
+        if known:
+            model1, model2 = names[known["player1"]], names[known["player2"]]
+        else:
+            model1, model2, _ = new_pair(rules, a["name"], b["name"])
+        match = entry.get("valid")
+        fixtures.append({
+            **empty, **({k: match[k] for k in empty} if match else {}),
+            "stage": "league", "label": f"matchday {day}: {model1} v {model2}", "matchday": day,
+            "model1": model1, "model2": model2,
+        })
+    for m in matches_between(conn, ids, rules, "playoff"):
+        if not m["valid"] and not (m["void_reason"] or "").startswith("stale"):
+            continue
+        fixtures.append({
+            **{k: m[k] for k in empty}, "stage": "playoff" if m["valid"] else "playoff-stale",
+            "label": m["label"], "matchday": None, "model1": names[m["player1"]], "model2": names[m["player2"]],
+        })
     match_ids = [f["match_id"] for f in fixtures if f["match_id"]]
     marks = ",".join("?" * len(match_ids)) or "NULL"
     games_won: dict[int, list[int]] = {}
@@ -155,10 +309,10 @@ def last_activity(conn: sqlite3.Connection, lid: int) -> str | None:
     return conn.execute(
         """SELECT MAX(t) FROM (
                SELECT MAX(t.created_at) AS t FROM turns t JOIN games g ON g.id = t.game_id
-               JOIN league_matches lm ON lm.match_id = g.match_id WHERE lm.league_id = ?1
+               JOIN league_match_view lm ON lm.match_id = g.match_id WHERE lm.league_id = ?1
                UNION ALL
                SELECT MAX(m.started_at) FROM matches m
-               JOIN league_matches lm ON lm.match_id = m.id WHERE lm.league_id = ?1)""",
+               JOIN league_match_view lm ON lm.match_id = m.id WHERE lm.league_id = ?1)""",
         (lid,),
     ).fetchone()[0]
 
@@ -175,7 +329,7 @@ def league_state(league: sqlite3.Row, last: str | None) -> str:
 GAME_TOTALS = """SELECT COUNT(*) AS games, AVG(g.turns) AS avg_turns,
                         SUM(g.result = 'turn_limit') AS turn_limit, SUM(g.result = 'timeout') AS timeouts,
                         SUM(g.result IN ('gammon', 'backgammon')) AS gammons
-                 FROM games g JOIN league_matches lm ON lm.match_id = g.match_id AND lm.league_id = ?
+                 FROM games g JOIN league_match_view lm ON lm.match_id = g.match_id AND lm.league_id = ?
                  WHERE g.winner_player IS NOT NULL"""
 
 
@@ -214,15 +368,16 @@ def snapshot(db: Path, league_id: int | None) -> dict:
         if league is None:
             return {"error": "no league in this database"}
         lid = league["id"]
-        names = [m["name"] for m in json.loads(league["models"])]
-        fixtures, games_won = league_fixtures(conn, lid)
+        roster = [p["settings"] for p in participants(conn, lid)]
+        names = [c["name"] for c in roster]
+        fixtures, games_won = league_fixtures(conn, league)
         state = league_state(league, last_activity(conn, lid))
 
         # The game in progress (or the last one) of every running match: with both games of
         # a round played at once (mirror_concurrent), the one that moved last, plus `games`:
         # both games of that round, each at its own newest roll. A stopped league's
         # interrupted matches are not live.
-        concurrent = bool(league["mirror_concurrent"]) if "mirror_concurrent" in league.keys() else False
+        concurrent = bool(league["mirror_concurrent"])
         live = {}
         for f in fixtures:
             if state != "live" or f["status"] != "running":
@@ -265,14 +420,14 @@ def snapshot(db: Path, league_id: int | None) -> dict:
                        SUM(t.move LIKE '%*%' AND t.decided_by IN ('model', 'fallback')) AS hits,
                        SUM(t.input_tokens) AS input_tokens{v3}
                 FROM turns t JOIN games g ON g.id = t.game_id
-                JOIN league_matches lm ON lm.match_id = g.match_id AND lm.league_id = ?
+                JOIN league_match_view lm ON lm.match_id = g.match_id AND lm.league_id = ?
                 GROUP BY 1""",
             (lid,),
         )}
         outcomes: dict[str, dict] = {}
         for r in conn.execute(
             f"""SELECT {model('g.winner_player')} AS name, g.result, COUNT(*) AS n
-                FROM games g JOIN league_matches lm ON lm.match_id = g.match_id AND lm.league_id = ?
+                FROM games g JOIN league_match_view lm ON lm.match_id = g.match_id AND lm.league_id = ?
                 WHERE g.winner_player IS NOT NULL GROUP BY 1, 2""",
             (lid,),
         ):
@@ -281,7 +436,7 @@ def snapshot(db: Path, league_id: int | None) -> dict:
         recent = [dict(r) for r in conn.execute(
             f"""SELECT lm.label, g.round_no, g.leg, g.result, g.points, g.turns, g.finished_at,
                        {model('g.winner_player')} AS winner
-                FROM games g JOIN league_matches lm ON lm.match_id = g.match_id AND lm.league_id = ?
+                FROM games g JOIN league_match_view lm ON lm.match_id = g.match_id AND lm.league_id = ?
                 WHERE g.winner_player IS NOT NULL ORDER BY g.finished_at DESC LIMIT 25""",
             (lid,),
         )]
@@ -315,9 +470,8 @@ def snapshot(db: Path, league_id: int | None) -> dict:
             "status": state,
             "note": league["note"],
             "seed": unsigned(league["seed"]),
-            # v3 leagues only.
-            "prompt_version": league["prompt_version"] if "prompt_version" in league.keys() else None,
-            "order_seed": unsigned(league["order_seed"]) if "order_seed" in league.keys() else None,
+            "prompt_version": league["prompt_version"],
+            "order_seed": unsigned(league["order_seed"]),
             "rounds": league["rounds"],
             "clock_seconds": league["clock_seconds"],
             "delay_seconds": league["delay_seconds"],
@@ -325,7 +479,7 @@ def snapshot(db: Path, league_id: int | None) -> dict:
             "started_at": league["started_at"],
             "finished_at": league["finished_at"],
             "ranking": json.loads(league["ranking"]) if league["ranking"] else None,
-            "models": json.loads(league["models"]),
+            "models": roster,
         },
         "table": table,
         "fixtures": fixtures,
@@ -345,8 +499,9 @@ def history(db: Path) -> dict:
     with connect(db) as conn:
         for league in conn.execute("SELECT * FROM leagues ORDER BY id DESC").fetchall():
             lid = league["id"]
-            names = [m["name"] for m in json.loads(league["models"])]
-            fixtures, games_won = league_fixtures(conn, lid)
+            roster = [p["settings"] for p in participants(conn, lid)]
+            names = [c["name"] for c in roster]
+            fixtures, games_won = league_fixtures(conn, league)
             last = last_activity(conn, lid)
             leagues.append({
                 "id": lid,
@@ -356,7 +511,7 @@ def history(db: Path) -> dict:
                 "finished_at": league["finished_at"],
                 "last_activity": last,
                 "rounds": league["rounds"],
-                "models": json.loads(league["models"]),
+                "models": roster,
                 "matches_done": sum(f["status"] == "finished" for f in fixtures),
                 "matches_total": len(fixtures),
                 "games": dict(conn.execute(GAME_TOTALS, (lid,)).fetchone()),
@@ -370,7 +525,10 @@ def round_turns(db: Path, match_id: int, round_no: int) -> dict:
     """Every roll of one round (both games), oldest first, in the shape of a live game."""
     with connect(db) as conn:
         fixture = conn.execute(
-            "SELECT model1, model2 FROM league_matches WHERE match_id = ?", (match_id,)
+            """SELECT p1.name AS model1, p2.name AS model2 FROM matches m
+               JOIN players p1 ON p1.id = m.player1 JOIN players p2 ON p2.id = m.player2
+               WHERE m.id = ?""",
+            (match_id,),
         ).fetchone()
         if fixture is None:
             return {"error": f"no league match #{match_id}"}

@@ -119,7 +119,7 @@ pub struct Price {
 }
 
 /// One entrant: a name, a spec (`provider/model`), and the settings that the spec alone
-/// cannot carry. Stored in `leagues.models`; old entries hold only `name` and `spec`.
+/// cannot carry. Stored in `players.settings`; old entries hold only `name` and `spec`.
 #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq)]
 pub struct PlayerConfig {
     pub name: String,

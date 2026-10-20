@@ -706,9 +706,10 @@ fn token_letter(token: &str) -> Option<u8> {
 
 /// The entry of `entries` (one per token, as in `choices[0].logprobs.content`) at the
 /// answer letter: the last one-uppercase-letter token, provided the tokens after it spell
-/// the end of the answer `text`. Read from the end because some providers list the
-/// reasoning's tokens first and others leave tokens out. `None` when `text` is blank or no
-/// such entry exists.
+/// the end of the answer `text`, leaving out trailing special tokens such as vLLM's
+/// `<|im_end|>`, which are not in the text. Read from the end because some providers list
+/// the reasoning's tokens first and others leave tokens out. `None` when `text` is blank or
+/// no such entry exists.
 fn letter_entry<'a>(entries: &'a [Value], text: &str) -> Option<&'a Value> {
     let text = text.trim();
     if text.is_empty() {
@@ -716,8 +717,21 @@ fn letter_entry<'a>(entries: &'a [Value], text: &str) -> Option<&'a Value> {
     }
     let token = |e: &'a Value| e.get("token").and_then(Value::as_str).unwrap_or_default();
     let at = entries.iter().rposition(|e| token_letter(token(e)).is_some())?;
-    let after: String = entries[at + 1..].iter().map(token).collect();
+    let mut end = entries.len();
+    while end > at + 1 && is_special_token(token(&entries[end - 1])) {
+        end -= 1;
+    }
+    let after: String = entries[at + 1..end].iter().map(token).collect();
     text.ends_with(after.trim()).then_some(&entries[at])
+}
+
+/// A tokenizer control token (`<|im_end|>`, `<eos>`, `</s>`, `<｜end▁of▁sentence｜>`): one
+/// angle-bracketed word without spaces.
+fn is_special_token(token: &str) -> bool {
+    token.len() > 2
+        && token.starts_with('<')
+        && token.ends_with('>')
+        && !token[1..token.len() - 1].contains(|c: char| c.is_whitespace() || c == '<' || c == '>')
 }
 
 /// The `(token, logprob)` alternatives of a logprobs entry; `None` when it has none.
@@ -1121,6 +1135,26 @@ mod tests {
         ))
         .unwrap();
         assert!(c.top.is_none() && c.answer_token.is_none());
+    }
+
+    /// vLLM lists the end-of-sequence token after the answer (Qwen3.8-27B (off): `A`, then
+    /// `<|im_end|>`), though it is not in the text; the letter is still read.
+    #[test]
+    fn reads_the_letter_before_a_trailing_end_of_sequence_token() {
+        for tokens in [
+            &["A", "<|im_end|>"][..],
+            &["{\"choice\":\"", "A", "\"}", "<｜end▁of▁sentence｜>"][..],
+            &["A", "<end_of_turn>", "<eos>"][..],
+        ] {
+            let text: String = tokens.iter().filter(|t| !is_special_token(t)).copied().collect();
+            let c = parse_chat_completion(&chat_with_tokens(&text, None, tokens)).unwrap();
+            assert_eq!(c.answer_token.as_deref(), Some("A"));
+            let (picked, note) = answer_decision(&c, 3);
+            assert_eq!(picked.unwrap().0, 0);
+            assert!(note.is_none());
+        }
+        assert!(!is_special_token("<"));
+        assert!(!is_special_token("< b >"));
     }
 
     /// Prefill readout: the one generated token is read even when a reasoning parser filed

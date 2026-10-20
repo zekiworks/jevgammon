@@ -564,9 +564,12 @@ function render(d){
       (d.v3?`<td>${pct(m.with_probs||0,n)}</td><td>${sec(m.avg_request_ms)}</td><td>${m.cost_usd!=null?'$'+m.cost_usd.toFixed(4):'–'}</td>`:'')+`<td>${(o.gammon||0)}/${(o.backgammon||0)}</td></tr>`}).join('')+'</tbody>';
   const g=d.games;
   $('totals').textContent=g.games?`${g.games} games · avg ${Math.round(g.avg_turns)} turns · ${g.turn_limit} at the turn limit (${pct(g.turn_limit,g.games)}) · ${g.gammons} gammons/backgammons · ${g.timeouts} lost on time`:'no finished games yet';
-  const running=d.fixtures.filter(f=>f.live);
+  // Finished games leave the live view at once, unless their board is being browsed; a match
+  // whose games are all over (between rounds, or done) shows no card until play resumes.
+  const shown=f=>slots(f).map((lv,k)=>({lv,k})).filter(x=>!x.lv.game_over||view[f.match_id+':'+x.k]);
+  const running=d.fixtures.filter(f=>f.live&&shown(f).length);
   $('live').innerHTML=running.length?running.map(f=>{
-    const gs=slots(f);
+    const gs=shown(f);
     // One game: its newest roll (live) or the roll being browsed, with its own navigation.
     const game=(lv,k)=>{
       const s=view[f.match_id+':'+k], v=s?s.turns[s.i]:lv, at=`data-id="${f.match_id}" data-slot="${k}"`;
@@ -577,7 +580,7 @@ function render(d){
     <div>${v.mover?`<span class="${v.mover===v.white?'cw':'cb'}">${esc(v.mover)}</span> rolled ${v.dice.join('-')}: <b>${esc(v.move||'(no move)')}</b> <span class="mute">${how(v.decided_by)}${v.decided_by==='model'||v.decided_by==='fallback'?`, ${(v.latency_ms/1000).toFixed(1)}s of ${v.legal} plays`:''} · ${ago(v.at)}</span>`:'<span class="mute">starting</span>'}</div>${nav}`};
     return `<div class="card${gs.length>1?' duo':''}"><h3>${esc(f.label)}</h3>
     <div><b>${esc(f.model1)}</b> <span class="pts">${f.score1} – ${f.score2}</span> <b>${esc(f.model2)}</b> <span class="mute">(games ${f.games_won[0]}–${f.games_won[1]})</span></div>
-    ${gs.length>1?`<div class="games">${gs.map((lv,k)=>`<div>${game(lv,k)}</div>`).join('')}</div>`:game(gs[0],0)}</div>`}).join(''):`<div class="mute">${L.status==='live'?'no match running':`league #${L.id} is ${L.status}`}</div>`;
+    ${gs.length>1?`<div class="games">${gs.map(x=>`<div>${game(x.lv,x.k)}</div>`).join('')}</div>`:game(gs[0].lv,gs[0].k)}</div>`}).join(''):`<div class="mute">${L.status==='live'?'no match running':`league #${L.id} is ${L.status}`}</div>`;
   const days={};for(const f of d.fixtures){const k=f.stage==='playoff'?'Playoffs':f.stage==='playoff-stale'?'Playoffs (stale: players added after them)':'Matchday '+f.matchday;(days[k]=days[k]||[]).push(f)}
   $('fixture').innerHTML=Object.entries(days).map(([k,fs])=>`<div class="day"><h3>${k}</h3>`+fs.map(f=>{
     // Deferred: failed, waiting for the failing model's backoff; resumes from its last turn.

@@ -464,7 +464,9 @@ dialog::backdrop{background:#000a}dialog pre{white-space:pre-wrap;word-break:bre
 dialog .head{display:flex;justify-content:space-between;align-items:baseline;gap:12px}dialog h3{margin:0}
 /* History: one row per league; the league on view is highlighted. */
 #history tbody tr{cursor:pointer}#history tbody tr:hover td{background:#1d2230}#history tr.sel td{background:#1b2a40}
-#history td.note{white-space:normal;text-align:left;min-width:280px;color:var(--mute);font-size:13px}
+#history td.note{white-space:normal;text-align:left;min-width:280px;max-width:520px;color:var(--mute);font-size:13px}
+.note details{margin-top:2px}.note summary{cursor:pointer;color:var(--acc);font-size:12px}.note ul{margin:4px 0 0;padding-left:18px}.note li{margin:2px 0}
+#note.note{max-width:900px}
 h2 .seasons{float:right;text-transform:none;letter-spacing:0;display:flex;gap:6px;align-items:center}
 .seasons button{background:#232836;color:var(--fg);border:1px solid var(--line);border-radius:5px;padding:0 9px;font:inherit;cursor:pointer}
 .seasons button:disabled{opacity:.35;cursor:default}
@@ -479,7 +481,7 @@ h2 .seasons{float:right;text-transform:none;letter-spacing:0;display:flex;gap:6p
 @keyframes spin{to{transform:rotate(360deg)}}
 </style></head><body>
 <dialog id="ctx"><div class="head"><h3 id="ctxTitle"></h3><button onclick="$('ctx').close()">close</button></div><div id="ctxBody"></div></dialog>
-<header><h1>jevgammon league <span id="lid"></span></h1><span id="status"></span><span class="meta" id="rules"></span><span class="meta" id="updated"></span><a href="report/" target="_blank" id="report" hidden>report (working copy)</a><a href="#" id="latest" hidden>back to the latest league</a><div id="control" hidden><span id="ctlButtons"></span><span class="meta" id="ctlStatus"></span></div><div id="note"></div></header>
+<header><h1>jevgammon league <span id="lid"></span></h1><span id="status"></span><span class="meta" id="rules"></span><span class="meta" id="updated"></span><a href="report/" target="_blank" id="report" hidden>report (working copy)</a><a href="#" id="latest" hidden>back to the latest league</a><div id="control" hidden><span id="ctlButtons"></span><span class="meta" id="ctlStatus"></span></div><div id="note" class="note"></div></header>
 <main>
 <section class="wide"><h2>History</h2><table id="history"></table><div class="mute" style="margin-top:8px">Click a league to view it. Live: moved in the last 10 minutes; stopped: ended before its last match, so only its finished matches count.</div></section>
 <section><h2>Table <span class="seasons"><button id="prevSeason" title="previous league">&lsaquo;</button><span id="season"></span><button id="nextSeason" title="next league">&rsaquo;</button></span></h2><table id="table"></table><div class="mute" style="margin-top:8px">3 points per win, 1 per draw; ties: more games won, then fewer games lost. PF/PA are backgammon points. The arrows step through finished leagues and the live one.</div></section>
@@ -511,7 +513,7 @@ function render(d){
   const L=d.league;
   $('lid').textContent='#'+L.id;
   $('status').innerHTML=pill(L.status);
-  $('note').textContent=L.note||'';
+  $('note').innerHTML=noteHtml(L.note,'head');
   $('latest').hidden=selected==null;
   $('rules').textContent=`${L.rounds} rounds per match · clock ${clock(L.delay_seconds)} delay + ${clock(L.clock_seconds)} bank · turn limit ${L.max_turns??'off'} · seed ${L.seed}`+
     (L.order_seed!=null?` · option order seed ${L.order_seed}`:'')+(L.prompt_version?` · prompt ${L.prompt_version}`:'');
@@ -556,11 +558,19 @@ function render(d){
 const how=s=>s==='fallback'?'invalid answer, random legal play':s;
 const pill=s=>`<span class="pill ${{finished:'finished',live:'running',stopped:'aborted'}[s]||''}">${esc(s)}</span>`;
 const span=(a,b)=>{if(!a||!b)return'–';const m=Math.round((Date.parse(b)-Date.parse(a))/60000);return m<60?`${m} min`:`${Math.floor(m/60)} h ${m%60} min`};
+// League notes grow with every change; show the first sentence and fold the rest into a list.
+const openNotes=new Set();
+function noteHtml(note,key){
+  const parts=String(note||'').split(/(?<=\.)\s+(?=[A-Z0-9])/).filter(Boolean);
+  if(parts.length<=1)return esc(parts[0]||'');
+  return `${esc(parts[0])}<details data-note="${key}" ${openNotes.has(key)?'open':''}><summary>${parts.length-1} more</summary><ul>${parts.slice(1).map(p=>`<li>${esc(p)}</li>`).join('')}</ul></details>`;
+}
+document.addEventListener('toggle',e=>{const k=e.target.dataset&&e.target.dataset.note;if(k){if(e.target.open)openNotes.add(k);else openNotes.delete(k)}},true);
 function renderHistory(h){
   const Ls=h.leagues||[];const shown=lastData&&lastData.league?lastData.league.id:null;
   $('history').innerHTML='<thead><tr><th>#</th><th class="l">Status</th><th class="l">Started</th><th>Duration</th><th>Models</th><th>Rounds</th><th>Matches</th><th>Games</th><th>Turn limit</th><th class="l">Leader</th><th class="l">What it tested</th></tr></thead><tbody>'+
     Ls.map(l=>{const g=l.games,leader=l.ranking?l.ranking[0]:(l.matches_done?l.table[0].name:'–');
-      return `<tr data-league="${l.id}" class="${l.id===shown?'sel':''}"><td>${l.id}</td><td class="l">${pill(l.status)}</td><td class="l">${new Date(l.started_at).toLocaleString()}</td><td>${span(l.started_at,l.finished_at||l.last_activity)}</td><td>${l.models.length}</td><td>${l.rounds}</td><td>${l.matches_done} / ${l.matches_total}</td><td>${g.games}</td><td>${pct(g.turn_limit||0,g.games)}</td><td class="l">${esc(leader)}${l.ranking?'':l.matches_done?' <span class="mute">(so far)</span>':''}</td><td class="note">${esc(l.note||'')}</td></tr>`}).join('')+'</tbody>';
+      return `<tr data-league="${l.id}" class="${l.id===shown?'sel':''}"><td>${l.id}</td><td class="l">${pill(l.status)}</td><td class="l">${new Date(l.started_at).toLocaleString()}</td><td>${span(l.started_at,l.finished_at||l.last_activity)}</td><td>${l.models.length}</td><td>${l.rounds}</td><td>${l.matches_done} / ${l.matches_total}</td><td>${g.games}</td><td>${pct(g.turn_limit||0,g.games)}</td><td class="l">${esc(leader)}${l.ranking?'':l.matches_done?' <span class="mute">(so far)</span>':''}</td><td class="note">${noteHtml(l.note,'h'+l.id)}</td></tr>`}).join('')+'</tbody>';
   // Season arrows: finished leagues plus the live one, oldest to newest.
   const seasons=Ls.filter(l=>l.status!=='stopped').map(l=>l.id).sort((a,b)=>a-b);
   const at=seasons.indexOf(shown);
@@ -577,7 +587,7 @@ const slots=f=>f.live.games&&f.live.games.length?f.live.games:[f.live];
 // League on view: null = the latest one; ?league=N in the address selects one.
 let selected=new URLSearchParams(location.search).get('league');selected=selected?+selected:null;
 function choose(id){selected=id;for(const k in view)delete view[k];history.replaceState(null,'',id==null?location.pathname:`?league=${id}`);tick()}
-$('history').addEventListener('click',e=>{const r=e.target.closest('tr[data-league]');if(r)choose(+r.dataset.league)});
+$('history').addEventListener('click',e=>{if(e.target.closest('details'))return;const r=e.target.closest('tr[data-league]');if(r)choose(+r.dataset.league)});
 $('latest').addEventListener('click',e=>{e.preventDefault();choose(null)});
 // Steps run one after another, so quick clicks each start from where the previous one ended.
 let stepping=Promise.resolve();

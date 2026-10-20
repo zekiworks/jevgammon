@@ -86,12 +86,13 @@ printed and stored in `matches.error`), `2` for invalid arguments.
 | `anthropic/<model>`, `claude/<model>` | Claude subscription | qfork store or `~/.claude/.credentials.json` |
 | `gemini/<model>`, `google/<model>` | Gemini API | `GEMINI_API_KEY`, `GOOGLE_API_KEY`, or qfork `credentials/gemini.json` |
 | `antigravity/<model>`, `google-antigravity/<model>` | Gemini through the Google Antigravity subscription (Cloud Code Assist `daily-cloudcode-pa`, `v1internal:generateContent`) | OMP's login in `~/.omp/agent/agent.db` (read-only) |
+| `xai/<model>`, `xai-oauth/<model>`, `grok/<model>` | Grok through the xAI subscription (SuperGrok; `api.x.ai/v1/responses`, JSON-schema-constrained letter) | OMP's `xai-oauth` login in `~/.omp/agent/agent.db` (read-only); xAI rotates refresh tokens, so an expiring token is refreshed by OMP (`omp token xai-oauth --force-refresh`; binary from `OMP_BIN` or `~/.local/bin/omp`) and read back |
 | `ollama/<model>` | Ollama (OpenAI-compatible API) | `OLLAMA_HOST` (default `localhost:11434`) |
 | `local/<model>` | Any OpenAI-compatible server (SGLang, vLLM, llama.cpp, LM Studio) | `--local-url` (or `base_url` in a player config), optional `LOCAL_API_KEY` (or `api_key_env`) |
 | `openai-compatible/<model>` | Any OpenAI-compatible provider, from a [player config](#player-configs) | `base_url`, and the key in the variable named by `api_key_env` |
 
 Examples: `openai/gpt-5.6-sol`, `anthropic/claude-sonnet-4-5`, `gemini/gemini-2.5-flash`,
-`antigravity/gemini-3.8-flash`,
+`antigravity/gemini-3.8-flash`, `xai/grok-4.7`,
 `ollama/qwen3`, `jev`, `jev/jev-1.13.0`. OpenAI model names are lowercased (`gpt-5.6-Sol` →
 `gpt-5.6-sol`), as the subscription endpoint requires. A model name containing `/` goes
 after the provider unchanged (`fastino/fastino/GLiDE`). Antigravity lists each Gemini model

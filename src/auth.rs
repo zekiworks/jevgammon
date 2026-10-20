@@ -12,6 +12,11 @@
 //! is refreshed here with Antigravity's OAuth client (`ANTIGRAVITY_OAUTH_CLIENT_ID`,
 //! `ANTIGRAVITY_OAUTH_CLIENT_SECRET`) and cached in jevgammon's own state
 //! (`~/.local/state/jevgammon/google-antigravity.json`); the freshest of the two wins.
+//!
+//! The xAI (Grok subscription) login is OMP's too (`xai-oauth`, read-only). xAI rotates the
+//! refresh token on every refresh, so refreshing it here would log OMP out: OMP refreshes its
+//! own login (`omp token xai-oauth --force-refresh`, the binary from `OMP_BIN` or
+//! `~/.local/bin/omp`) and the new token is read back from its database.
 
 use std::fs::{self, File, OpenOptions};
 use std::io::Write as _;
@@ -38,6 +43,8 @@ const ANTIGRAVITY_CLIENT_ID_ENV: &str = "ANTIGRAVITY_OAUTH_CLIENT_ID";
 const ANTIGRAVITY_CLIENT_SECRET_ENV: &str = "ANTIGRAVITY_OAUTH_CLIENT_SECRET";
 /// OMP's provider id, in its credential table and in the cache file name.
 const ANTIGRAVITY: &str = "google-antigravity";
+/// OMP's provider id for its xAI (Grok subscription) login.
+const XAI: &str = "xai-oauth";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Subscription {
@@ -45,6 +52,8 @@ pub enum Subscription {
     Anthropic,
     /// Google Antigravity (Gemini through Cloud Code Assist), OMP's login.
     Antigravity,
+    /// xAI (Grok through `api.x.ai`), OMP's login.
+    Xai,
 }
 
 impl Subscription {
@@ -53,6 +62,7 @@ impl Subscription {
             Subscription::OpenAi => "openai",
             Subscription::Anthropic => "anthropic",
             Subscription::Antigravity => ANTIGRAVITY,
+            Subscription::Xai => XAI,
         }
     }
 
@@ -61,6 +71,7 @@ impl Subscription {
             Subscription::OpenAi => "OpenAI (ChatGPT)",
             Subscription::Anthropic => "Anthropic (Claude)",
             Subscription::Antigravity => "Google Antigravity",
+            Subscription::Xai => "xAI (Grok)",
         }
     }
 }
@@ -177,6 +188,11 @@ impl Credentials {
                 candidates.extend(stored_antigravity()?);
                 "log in to Google Antigravity with omp (/login)"
             }
+            Subscription::Xai => {
+                looked.push(omp_db_path().display().to_string());
+                candidates.extend(read_omp(&omp_db_path(), XAI, xai_token)?);
+                "log in to xAI (Grok) with omp (/login)"
+            }
         };
         candidates
             .into_iter()
@@ -191,6 +207,9 @@ impl Credentials {
     }
 
     async fn refresh(&self, stale: Token) -> Result<Token> {
+        if self.provider == Subscription::Xai {
+            return refresh_xai(&stale).await;
+        }
         let _guard = match &stale.source {
             Source::Qfork(root) => Some(
                 lock(
@@ -295,6 +314,7 @@ impl Credentials {
                     ("refresh_token", refresh_token),
                 ])
             }
+            Subscription::Xai => bail!("OMP refreshes the xAI login, not jevgammon"),
         };
         let response = request.send().await?;
         let status = response.status();
@@ -365,13 +385,17 @@ fn antigravity_cache_path() -> PathBuf {
 
 /// The Antigravity tokens in OMP's database and in jevgammon's cache.
 fn stored_antigravity() -> Result<Vec<Token>> {
-    let mut tokens = read_omp(&omp_db_path())?;
+    let mut tokens = read_omp(&omp_db_path(), ANTIGRAVITY, antigravity_token)?;
     tokens.extend(read_cache(&antigravity_cache_path())?);
     Ok(tokens)
 }
 
-/// OMP's enabled `google-antigravity` logins, read-only.
-fn read_omp(path: &Path) -> Result<Vec<Token>> {
+/// OMP's enabled logins of `provider`, read-only, parsed by `parse`.
+fn read_omp(
+    path: &Path,
+    provider: &str,
+    parse: fn(&Value, Source) -> Option<Token>,
+) -> Result<Vec<Token>> {
     use rusqlite::{Connection, OpenFlags};
     if !path.exists() {
         return Ok(Vec::new());
@@ -386,13 +410,13 @@ fn read_omp(path: &Path) -> Result<Vec<Token>> {
         "SELECT data FROM auth_credentials WHERE provider = ?1 AND disabled_cause IS NULL",
     )?;
     let rows = statement
-        .query_map([ANTIGRAVITY], |row| row.get::<_, String>(0))?
+        .query_map([provider], |row| row.get::<_, String>(0))?
         .collect::<rusqlite::Result<Vec<String>>>()
         .with_context(|| format!("reading {}", path.display()))?;
     Ok(rows
         .iter()
         .filter_map(|data| serde_json::from_str::<Value>(data).ok())
-        .filter_map(|data| antigravity_token(&data, Source::Omp(path.to_owned())))
+        .filter_map(|data| parse(&data, Source::Omp(path.to_owned())))
         .collect())
 }
 
@@ -409,6 +433,58 @@ fn antigravity_token(data: &Value, source: Source) -> Option<Token> {
         refresh: data.get("refresh")?.as_str()?.to_owned(),
         expires_at_ms: data.get("expires").and_then(Value::as_i64).unwrap_or(0),
         source,
+    })
+}
+
+/// A token from OMP's `xai-oauth` credential JSON: `access`, `refresh`, `expires` (ms).
+fn xai_token(data: &Value, source: Source) -> Option<Token> {
+    Some(Token {
+        access: data.get("access")?.as_str()?.to_owned(),
+        account_id: None,
+        project: None,
+        refresh: data.get("refresh")?.as_str()?.to_owned(),
+        expires_at_ms: data.get("expires").and_then(Value::as_i64).unwrap_or(0),
+        source,
+    })
+}
+
+/// A fresh xAI token other than `stale`: re-read once another caller may have had OMP
+/// refresh it, else after OMP refreshed its own login (xAI rotates refresh tokens, so only
+/// OMP may spend its refresh token).
+async fn refresh_xai(stale: &Token) -> Result<Token> {
+    let _guard = lock(&jevgammon_state_dir(), &format!("{XAI}.oauth-refresh")).await?;
+    let path = omp_db_path();
+    let fresh = || -> Result<Option<Token>> {
+        Ok(read_omp(&path, XAI, xai_token)?
+            .into_iter()
+            .filter(|t| t.access != stale.access && !t.needs_refresh())
+            .max_by_key(|t| t.expires_at_ms))
+    };
+    if let Some(token) = fresh()? {
+        return Ok(token);
+    }
+    let omp = std::env::var_os("OMP_BIN")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| dirs::home_dir().unwrap_or_default().join(".local/bin/omp"));
+    let output = tokio::process::Command::new(&omp)
+        .args(["token", XAI, "--force-refresh"])
+        .stdin(std::process::Stdio::null())
+        .output()
+        .await
+        .with_context(|| format!("running {}", omp.display()))?;
+    if !output.status.success() {
+        bail!(
+            "`{} token {XAI} --force-refresh` failed ({}): {}",
+            omp.display(),
+            output.status,
+            snippet(&String::from_utf8_lossy(&output.stderr))
+        );
+    }
+    fresh()?.ok_or_else(|| {
+        anyhow!(
+            "OMP refreshed its {XAI} login, but {} holds no fresh token",
+            path.display()
+        )
     })
 }
 
@@ -810,12 +886,13 @@ mod tests {
                  INSERT INTO auth_credentials (provider, credential_type, data, disabled_cause) VALUES
                  ('google-antigravity', 'oauth', '{\"access\":\"a1\",\"refresh\":\"r1\",\"expires\":5,\"projectId\":\"p\"}', NULL),
                  ('google-antigravity', 'oauth', '{\"access\":\"a0\",\"refresh\":\"r0\",\"expires\":9,\"projectId\":\"p\"}', 'revoked'),
-                 ('anthropic', 'oauth', '{\"access\":\"x\",\"refresh\":\"y\",\"expires\":9}', NULL);",
+                 ('anthropic', 'oauth', '{\"access\":\"x\",\"refresh\":\"y\",\"expires\":9}', NULL),
+                 ('xai-oauth', 'oauth', '{\"access\":\"g1\",\"refresh\":\"gr\",\"expires\":7,\"accountId\":\"u\"}', NULL);",
             )
             .unwrap();
         drop(connection);
         let before = fs::read(&db).unwrap();
-        let tokens = read_omp(&db).unwrap();
+        let tokens = read_omp(&db, ANTIGRAVITY, antigravity_token).unwrap();
         assert_eq!(tokens.len(), 1);
         assert_eq!(
             (tokens[0].access.as_str(), tokens[0].refresh.as_str()),
@@ -825,8 +902,19 @@ mod tests {
             (tokens[0].expires_at_ms, tokens[0].project.as_deref()),
             (5, Some("p"))
         );
+        let grok = read_omp(&db, XAI, xai_token).unwrap();
+        assert_eq!(
+            grok.iter()
+                .map(|t| (t.access.as_str(), t.expires_at_ms, t.project.is_none()))
+                .collect::<Vec<_>>(),
+            vec![("g1", 7, true)]
+        );
         assert_eq!(fs::read(&db).unwrap(), before);
-        assert!(read_omp(&root.join("missing.db")).unwrap().is_empty());
+        assert!(
+            read_omp(&root.join("missing.db"), ANTIGRAVITY, antigravity_token)
+                .unwrap()
+                .is_empty()
+        );
 
         let cache = root.join("state/google-antigravity.json");
         let refreshed = Token {

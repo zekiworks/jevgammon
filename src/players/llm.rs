@@ -1,4 +1,4 @@
-//! Chat-model players: OpenAI, Anthropic and Google Antigravity subscriptions, Gemini API
+//! Chat-model players: OpenAI, Anthropic, Google Antigravity and xAI subscriptions, Gemini API
 //! keys, and OpenAI-compatible servers (SGLang, vLLM, Ollama, paid providers). All get
 //! Cygnet's letter prompt (`prompt::letter_user`), the options lettered in the seeded order.
 //!
@@ -25,6 +25,8 @@ use crate::http::{self, CallError};
 
 const CODEX_URL: &str = "https://chatgpt.com/backend-api/codex/responses";
 const ANTHROPIC_URL: &str = "https://api.anthropic.com/v1/messages";
+/// xAI's Responses API, which takes OMP's `xai-oauth` subscription token.
+const XAI_URL: &str = "https://api.x.ai/v1/responses";
 const GEMINI_URL: &str = "https://generativelanguage.googleapis.com/v1beta";
 /// Cloud Code Assist endpoints serving Antigravity, in OMP's order (the production
 /// `cloudcode-pa` host answers Antigravity requests with Gemini CLI's quota: 429).
@@ -90,6 +92,8 @@ enum Kind {
     /// Gemini through the Antigravity subscription: the Gemini request inside a Cloud
     /// Code Assist envelope.
     Antigravity(Arc<Credentials>),
+    /// Grok through the xAI subscription (OMP's login) on xAI's Responses API.
+    Xai(Arc<Credentials>),
     OpenAiCompatible {
         base_url: String,
         api_key: Option<String>,
@@ -218,6 +222,15 @@ impl LlmClient {
         options: Options,
     ) -> Self {
         Self::new(http, model, Kind::Antigravity(creds), options)
+    }
+
+    pub fn xai(
+        http: reqwest::Client,
+        model: String,
+        creds: Arc<Credentials>,
+        options: Options,
+    ) -> Self {
+        Self::new(http, model, Kind::Xai(creds), options)
     }
 
     pub fn openai_compatible(
@@ -408,6 +421,19 @@ impl LlmClient {
                 }
                 body
             }
+            Kind::Xai(_) => {
+                let mut body = json!({
+                    "model": self.model,
+                    "instructions": system,
+                    "input": [{"role": "user", "content": user}],
+                    "store": false,
+                    "text": {"format": {"type": "json_schema", "name": "backgammon_play", "schema": letter_schema(count), "strict": true}},
+                });
+                if let Some(effort) = effort {
+                    body["reasoning"] = json!({"effort": effort});
+                }
+                body
+            }
             Kind::AnthropicSubscription(_) => {
                 let mut output =
                     json!({"format": {"type": "json_schema", "schema": letter_schema(count)}});
@@ -561,6 +587,29 @@ impl LlmClient {
                         other => {
                             let raw = other?;
                             let completion = parse_anthropic(&raw)?;
+                            return Ok((raw, completion));
+                        }
+                    }
+                }
+            }
+            Kind::Xai(creds) => {
+                let mut token = creds.token().await?;
+                let mut refreshed = false;
+                loop {
+                    let request = || {
+                        self.http
+                            .post(XAI_URL)
+                            .bearer_auth(&token.access)
+                            .json(body)
+                    };
+                    match http::send(request, retry).await {
+                        Err(CallError::Auth(_)) if !refreshed => {
+                            token = creds.refresh_after_rejection(&token.access).await?;
+                            refreshed = true;
+                        }
+                        other => {
+                            let raw = other?;
+                            let completion = parse_xai(&raw)?;
                             return Ok((raw, completion));
                         }
                     }
@@ -816,6 +865,36 @@ fn parse_anthropic(body: &str) -> Result<Completion> {
             + tokens(&value, "/usage/cache_creation_input_tokens"),
         output_tokens: tokens(&value, "/usage/output_tokens"),
         reasoning_tokens: optional(&value, "/usage/output_tokens_details/thinking_tokens"),
+        ..Completion::default()
+    })
+}
+
+/// xAI's Responses API answer: the `output_text` of its message items (reasoning items carry
+/// none), usage as OpenAI's.
+fn parse_xai(body: &str) -> Result<Completion> {
+    let value: Value = serde_json::from_str(body).context("xAI response is not JSON")?;
+    if value.get("status").and_then(Value::as_str) != Some("completed") {
+        return Err(anyhow!(
+            "xAI response not completed: {}",
+            crate::auth::snippet(body)
+        ));
+    }
+    let text: String = value
+        .get("output")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter(|item| item.get("type").and_then(Value::as_str) == Some("message"))
+        .filter_map(|item| item.get("content").and_then(Value::as_array))
+        .flatten()
+        .filter(|part| part.get("type").and_then(Value::as_str) == Some("output_text"))
+        .filter_map(|part| part.get("text").and_then(Value::as_str))
+        .collect();
+    Ok(Completion {
+        text,
+        input_tokens: tokens(&value, "/usage/input_tokens"),
+        output_tokens: tokens(&value, "/usage/output_tokens"),
+        reasoning_tokens: optional(&value, "/usage/output_tokens_details/reasoning_tokens"),
         ..Completion::default()
     })
 }
@@ -1302,5 +1381,20 @@ mod tests {
         assert_eq!((c.input_tokens, c.output_tokens), (3900, 500));
         assert_eq!(c.reasoning_tokens, Some(497));
         assert!(parse_antigravity(r#"{"error": {"code": 429}}"#).is_err());
+    }
+
+    #[test]
+    fn reads_the_xai_answer_after_its_reasoning() {
+        let raw = r#"{"status": "completed", "model": "grok-4.7", "output": [
+            {"type": "reasoning", "summary": [{"type": "summary_text", "text": "A or C? C."}]},
+            {"type": "message", "role": "assistant", "content": [
+                {"type": "output_text", "text": "{\"choice\":\"B\"}", "annotations": []}]}],
+            "usage": {"input_tokens": 1327, "output_tokens": 196,
+                "output_tokens_details": {"reasoning_tokens": 190}}}"#;
+        let c = parse_xai(raw).unwrap();
+        assert_eq!(parse_letter(&c.text, 3), Some(1));
+        assert_eq!((c.input_tokens, c.output_tokens), (1327, 196));
+        assert_eq!(c.reasoning_tokens, Some(190));
+        assert!(parse_xai(r#"{"status": "incomplete", "output": []}"#).is_err());
     }
 }

@@ -235,6 +235,7 @@ pub struct Setup {
     pub openai: Arc<Credentials>,
     pub anthropic: Arc<Credentials>,
     pub antigravity: Arc<Credentials>,
+    pub xai: Arc<Credentials>,
     /// Request pacers by rate-limit group, shared by every player of the group.
     pacers: parking_lot::Mutex<HashMap<String, Arc<Pacer>>>,
 }
@@ -287,6 +288,11 @@ impl Setup {
             )),
             antigravity: Arc::new(Credentials::new(
                 Subscription::Antigravity,
+                qfork_root.clone(),
+                http.clone(),
+            )),
+            xai: Arc::new(Credentials::new(
+                Subscription::Xai,
                 qfork_root.clone(),
                 http.clone(),
             )),
@@ -431,6 +437,15 @@ impl Player {
                     options,
                 ))
             }
+            "xai" | "xai-oauth" | "grok" => {
+                setup.xai.token().await?;
+                Backend::Llm(llm::LlmClient::xai(
+                    http,
+                    need_model(model)?,
+                    setup.xai.clone(),
+                    options,
+                ))
+            }
             "ollama" => {
                 let host = std::env::var("OLLAMA_HOST")
                     .unwrap_or_else(|_| "http://localhost:11434".into());
@@ -481,7 +496,7 @@ impl Player {
             other => {
                 let decision: Vec<&str> = decision::SERVICES.iter().map(|s| s.provider).collect();
                 bail!(
-                    "unknown provider `{other}` in `{spec}`; use openai/, anthropic/, gemini/, antigravity/, ollama/, local/, openai-compatible/, random, safest, gnubg-weak, or a decision service: {}",
+                    "unknown provider `{other}` in `{spec}`; use openai/, anthropic/, gemini/, antigravity/, xai/, ollama/, local/, openai-compatible/, random, safest, gnubg-weak, or a decision service: {}",
                     decision.join(", ")
                 )
             }

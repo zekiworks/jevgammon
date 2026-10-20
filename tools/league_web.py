@@ -271,12 +271,29 @@ def snapshot(db: Path, league_id: int | None) -> dict:
                 WHERE g.winner_player IS NOT NULL ORDER BY g.finished_at DESC LIMIT 25""",
             (lid,),
         )]
+        # Mean seconds per decision in each match, per player and for both together.
+        timing = {}
+        ids = [f["match_id"] for f in fixtures if f["match_id"]]
+        if ids:
+            for r in conn.execute(
+                f"""SELECT g.match_id, t.player, COUNT(*) AS n, SUM(t.latency_ms) AS ms
+                    FROM turns t JOIN games g ON g.id = t.game_id
+                    WHERE g.match_id IN ({','.join('?' * len(ids))})
+                      AND t.decided_by IN ('model', 'fallback', 'timeout')
+                    GROUP BY 1, 2""",
+                ids,
+            ):
+                timing.setdefault(r["match_id"], {})[r["player"]] = (r["n"], r["ms"] or 0)
 
     table = league_table(names, fixtures, games_won)
 
     for f in fixtures:
         f["games_won"] = games_won.get(f["match_id"], [0, 0])
         f["live"] = live.get(f["match_id"])
+        per = timing.get(f["match_id"], {})
+        f["s_move"] = [round(per[p][1] / per[p][0] / 1000, 2) if p in per and per[p][0] else None for p in (1, 2)]
+        n = sum(v[0] for v in per.values())
+        f["s_turn"] = round(sum(v[1] for v in per.values()) / n / 1000, 2) if n else None
 
     return {
         "league": {
@@ -625,10 +642,11 @@ function showMatches(name){
     const res=!done?'open':f.winner==null?'draw':f.winner===me?'win':'loss';
     const st=done?{win:'won',loss:'lost',draw:'draw'}[res]:(f.status&&f.status!=='running'&&f.deferred_error?'deferred':f.status||'pending');
     const when=f.stage==='playoff'?'playoff':f.stage==='playoff-stale'?'playoff (stale)':'matchday '+f.matchday;
-    return {res,html:`<tr class="m-${res}"><td class="l mute">${esc(when)}</td><td class="l">${esc(opp)}</td><td>${f.status?`${my??0} – ${their??0}`:'–'}</td><td class="l">${esc(st)}</td></tr>`}});
+    const sm=f.s_move||[],t=v=>v!=null?v.toFixed(2):'–';
+    return {res,html:`<tr class="m-${res}"><td class="l mute">${esc(when)}</td><td class="l">${esc(opp)}</td><td>${f.status?`${my??0} – ${their??0}`:'–'}</td><td class="l">${esc(st)}</td><td>${t(sm[me-1])}</td><td>${t(sm[2-me])}</td><td>${t(f.s_turn)}</td></tr>`}});
   const n=k=>rows.filter(r=>r.res===k).length;
   $('ctxTitle').textContent=`${name}: ${n('win')} won · ${n('draw')} drawn · ${n('loss')} lost${n('open')?` · ${n('open')} to play`:''}`;
-  $('ctxBody').innerHTML=`<table class="mtable"><thead><tr><th class="l">When</th><th class="l">Opponent</th><th>Score</th><th class="l">Result</th></tr></thead><tbody>${rows.map(r=>r.html).join('')}</tbody></table>`;
+  $('ctxBody').innerHTML=`<table class="mtable"><thead><tr><th class="l">When</th><th class="l">Opponent</th><th>Score</th><th class="l">Result</th><th title="mean seconds per decision of ${esc(name)} in this match">s/move</th><th title="mean seconds per decision of the opponent">opp. s/move</th><th title="mean seconds per decision over both players' turns">s/turn</th></tr></thead><tbody>${rows.map(r=>r.html).join('')}</tbody></table>`;
   $('ctx').showModal();
 }
 document.addEventListener('click',e=>{const a=e.target.closest('a.mlink');if(a){e.preventDefault();showMatches(a.dataset.model)}});

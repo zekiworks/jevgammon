@@ -120,7 +120,7 @@ def league_fixtures(conn: sqlite3.Connection, lid: int) -> tuple[list[dict], dic
         times.setdefault(r["match_id"], []).append(datetime.fromisoformat(r["created_at"].replace("Z", "+00:00")).timestamp())
     for f in fixtures:
         ts = times.get(f["match_id"], [])
-        f["minutes"] = round(sum(min(b - a, PAUSE_GAP) for a, b in zip(ts, ts[1:])) / 60, 1) if len(ts) > 1 else None
+        f["minutes"] = round(sum(b - a for a, b in zip(ts, ts[1:]) if b - a <= PAUSE_GAP) / 60, 1) if len(ts) > 1 else None
     return fixtures, games_won
 
 

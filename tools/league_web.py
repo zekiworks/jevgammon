@@ -650,6 +650,9 @@ function showMatches(name){
   $('ctx').showModal();
 }
 document.addEventListener('click',e=>{const a=e.target.closest('a.mlink');if(a){e.preventDefault();showMatches(a.dataset.model)}});
+// A click on the backdrop (outside the dialog box) closes it; clicks inside the box land on its children.
+$('ctx').addEventListener('click',e=>{if(e.target!==$('ctx'))return;const r=$('ctx').getBoundingClientRect();
+  if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)$('ctx').close()});
 async function showContext(turnId){
   const d=await (await fetch(`api/context?turn=${turnId}`,{cache:'no-store'})).json();
   if(d.error){$('ctxTitle').textContent=d.error;$('ctxBody').innerHTML='';$('ctx').showModal();return}

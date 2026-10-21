@@ -1,0 +1,9 @@
+[Unit]
+Description=Refresh the v3 section of the public backgammon report from v3.db (tools/v3/page_refresh.sh)
+
+[Service]
+Type=oneshot
+ExecStart=%h/code/jevgammon/tools/v3/page_refresh.sh
+Nice=19
+IOSchedulingClass=idle
+TimeoutStartSec=50min

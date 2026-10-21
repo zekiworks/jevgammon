@@ -1,10 +1,15 @@
 """v3 league results for the public report: a JSON of the numbers and the generated tables of
 analysis/backgammon/index.html, from a snapshot of the league database and GNUbg's scores.
 
-    sqlite3 v3.db ".backup /tmp/v3-snap.db"
-    GNUBG_EVAL_ARGS="/tmp/v3-snap.db /tmp/v3-gnubg/sN.db N 32 1 2" gnubg -t -q -p tools/gnubg_eval.py   # N = 0..31
-    python3 tools/v3/page_v3.py /tmp/v3-snap.db "/tmp/v3-gnubg/s*.db" \
+tools/v3/page_refresh.sh runs the whole refresh every 15 minutes (systemd user timer
+v3-page-refresh.timer): snapshot, incremental GNUbg scoring, this script, commit and push. By hand:
+
+    python3 tools/v3/page_v3.py SNAPSHOT.db "SCORES/s*.db" \
         analysis/backgammon/v3-results.json analysis/backgammon/index.html
+
+The page fetches v3-results.json on load and every 5 minutes and renders the same tables from it
+(the script at the end of index.html mirrors tables(), pending(), live(), status() and progress());
+the HTML written here is the no-JavaScript fallback. Change both together.
 
 Standings come from tools/league_web.py (league_fixtures, league_table), so they match the
 dashboard: only finished league-stage matches count. Decisions are turns decided by the model
@@ -18,10 +23,11 @@ excluded); dollars per 1,000 decisions where every decision has a price (provide
 price; subscriptions at API-list-price equivalent); and where the setup runs (RUNS_ON, written for
 the public page: no hostnames).
 
-The HTML file is patched between `<!-- v3:NAME -->` and `<!-- /v3:NAME -->` markers: asof (data
-time), scored (decisions scored), progressN (matches finished), leagueN (tables), N = 1..3.
-The prose around them is written by hand and has to be checked against the new numbers after a
-refresh. Standard library only.
+The HTML file is patched between `<!-- v3:NAME -->` and `<!-- /v3:NAME -->` markers: live (data
+time), status (matches to play), scored (decisions scored), progressN (matches finished), leagueN
+(tables), N = 1..3. Matches not finished are listed per league: playing (a move within the last
+hour), paused (started, no recent move) or to play. The prose around the markers is written by
+hand and carries the time it was last checked. Standard library only.
 """
 
 import glob
@@ -39,6 +45,7 @@ from league_web import league_fixtures, league_table  # noqa: E402
 
 BOOTSTRAP = 2000
 BEST, BLUNDER = 0.001, 0.08
+PLAYING = 3600  # a started match counts as playing when its last move is at most this many seconds old
 
 RUNS_ON = {
     # League 1
@@ -93,6 +100,10 @@ RUNS_ON = {
 READOUT = {"decision": "option probabilities", "logprobs": "letter probabilities", "choice_only": "one letter"}
 
 
+def utc(stamp: str) -> datetime:
+    return datetime.fromisoformat(stamp.replace("Z", "+00:00")).astimezone(timezone.utc)
+
+
 def scores(paths: list[str]) -> tuple[dict[int, tuple[int, float]], int]:
     """turn_id -> (plays, loss) from every shard database, and the number of skipped turns."""
     out, skipped = {}, 0
@@ -115,7 +126,7 @@ def interval(games: list[tuple[float, int]], rng: random.Random) -> tuple[float,
     return stats[int(0.025 * BOOTSTRAP)], stats[int(0.975 * BOOTSTRAP) - 1]
 
 
-def league(conn: sqlite3.Connection, lid: int, scored: dict, rng: random.Random) -> dict:
+def league(conn: sqlite3.Connection, lid: int, scored: dict, rng: random.Random, as_of: datetime) -> dict:
     row = conn.execute("SELECT * FROM leagues WHERE id = ?", (lid,)).fetchone()
     roster = json.loads(row["models"])
     names = [m["name"] for m in roster]
@@ -123,10 +134,34 @@ def league(conn: sqlite3.Connection, lid: int, scored: dict, rng: random.Random)
     fixtures = [f for f in fixtures if f["stage"] == "league"]
     table = league_table(names, fixtures, games_won)
     left = {n: 0 for n in names}
-    for f in fixtures:
-        if f["status"] != "finished":
-            left[f["model1"]] += 1
-            left[f["model2"]] += 1
+    playing = {n: 0 for n in names}
+    open_ = [f for f in fixtures if f["status"] != "finished"]
+    last = dict(conn.execute(
+        f"""SELECT g.match_id, MAX(t.created_at) FROM turns t JOIN games g ON g.id = t.game_id
+            WHERE g.match_id IN ({','.join('?' * len(open_)) or 'NULL'}) GROUP BY 1""",
+        [f["match_id"] for f in open_],
+    ).fetchall())
+    pending = []
+    for f in open_:
+        left[f["model1"]] += 1
+        left[f["model2"]] += 1
+        moved = last.get(f["match_id"])
+        if moved is None:
+            state = "to play"
+        elif (as_of - utc(moved)).total_seconds() <= PLAYING:
+            state = "playing"
+        else:
+            state = "paused"
+        if state == "playing":
+            playing[f["model1"]] += 1
+            playing[f["model2"]] += 1
+        pending.append(dict(
+            model1=f["model1"], model2=f["model2"], state=state,
+            rounds_played=f["rounds_played"] or 0, rounds_planned=f["rounds_planned"],
+            score1=f["score1"] or 0, score2=f["score2"] or 0,
+            last_move=utc(moved).strftime("%Y-%m-%dT%H:%MZ") if moved else None,
+        ))
+    pending.sort(key=lambda p: ("playing", "paused", "to play").index(p["state"]))  # stable: matchday order within
 
     per: dict[str, dict] = {}
     for r in conn.execute(
@@ -160,7 +195,7 @@ def league(conn: sqlite3.Connection, lid: int, scored: dict, rng: random.Random)
         m = per.get(name)
         out = dict(place=place, name=name, played=t["played"], won=t["won"], drawn=t["drawn"], lost=t["lost"],
                    points=t["points"], games_won=t["gw"], games_lost=t["gl"], to_play=left[name],
-                   runs_on=RUNS_ON.get(name), decisions=0)
+                   playing=playing[name], runs_on=RUNS_ON.get(name), decisions=0)
         if m:
             games = list(m["games"].values())
             n = sum(g[1] for g in games)
@@ -189,7 +224,8 @@ def league(conn: sqlite3.Connection, lid: int, scored: dict, rng: random.Random)
            WHERE g.winner_player IS NOT NULL""",
         (lid,),
     ).fetchone()[0]
-    return dict(id=lid, matches=len(fixtures), finished=finished, games=games, models=models)
+    return dict(id=lid, status="finished" if row["status"] == "finished" else "running", matches=len(fixtures),
+                finished=finished, games=games, pending=pending, models=models)
 
 
 # --- HTML ---------------------------------------------------------------------------------
@@ -214,11 +250,12 @@ def tables(lg: dict) -> str:
         if m.get("error_rate") is not None:
             er = f'<strong>{m["error_rate"]:.1f}</strong> <span class="muted">{m["error_rate_lo"]:.1f}–{m["error_rate_hi"]:.1f}</span>'
         left = m["to_play"]
+        to_play = str(left) + (f' <span class="live">({m["playing"]} playing)</span>' if m["playing"] else "")
         rows.append("<tr>" + "".join([
             cell(str(m["place"])), cell(name, "l"), cell(str(m["played"])), cell(str(m["won"])),
             cell(str(m["drawn"]), "zero" if not m["drawn"] else ""), cell(str(m["lost"])),
             cell(f"<strong>{m['points']}</strong>"), cell(f"{m['games_won']}-{m['games_lost']}"),
-            cell(str(left), "zero" if not left else ""), cell(er), cell(pct(m.get("best_share"))),
+            cell(to_play, "zero" if not left else ""), cell(er), cell(pct(m.get("best_share"))),
             cell(pct(m.get("blunder_share"))),
         ]) + "</tr>")
         cost = m.get("usd_per_1000")
@@ -231,7 +268,7 @@ def tables(lg: dict) -> str:
             cell(html.escape(m["runs_on"] or "–"), "l wrap"),
         ]) + "</tr>")
     indent = "\n            "
-    return f"""<div class="table-wrap">
+    return pending(lg) + f"""<div class="table-wrap">
         <table>
           <thead><tr><th>#</th><th class="l">Setup</th><th>P</th><th>W</th><th>D</th><th>L</th><th>Pts</th><th>Games</th><th>To play</th><th>Error rate (95%)</th><th>Engine's best play</th><th>Blunders</th></tr></thead>
           <tbody>
@@ -249,6 +286,55 @@ def tables(lg: dict) -> str:
       </div>"""
 
 
+def pending(lg: dict) -> str:
+    """Matches not finished: playing (a move in the last hour), paused (started, no recent move), to play."""
+    if not lg["pending"]:
+        return ""
+    rows = []
+    for p in lg["pending"]:
+        state = '<span class="live">playing</span>' if p["state"] == "playing" else p["state"]
+        started = p["state"] != "to play"
+        rows.append("<tr>" + "".join([
+            cell(f"{html.escape(p['model1'])} v {html.escape(p['model2'])}", "l"), cell(state, "l"),
+            cell(f"{p['rounds_played']} of {p['rounds_planned']}" if started else "–"),
+            cell(f"{p['score1']}-{p['score2']}" if started else "–"),
+            cell(utc(p["last_move"]).strftime("%-d %b %H:%M") if p["last_move"] else "–"),
+        ]) + "</tr>")
+    indent = "\n            "
+    return f"""<div class="table-wrap">
+        <table>
+          <thead><tr><th class="l">Match not finished</th><th class="l">State</th><th>Rounds played</th><th>Score</th><th>Last move (UTC)</th></tr></thead>
+          <tbody>
+            {indent.join(rows)}
+          </tbody>
+        </table>
+      </div>
+      """
+
+
+def live(result: dict) -> str:
+    stamp = utc(result["data_as_of"]).strftime("%-d %B %Y, %H:%M UTC")
+    if all(lg["status"] == "finished" for lg in result["leagues"]):
+        return f"Final: data as of {stamp}"
+    return f"Live: data as of {stamp} · updates every 15 minutes"
+
+
+def status(result: dict) -> str:
+    parts = []
+    for lg in result["leagues"]:
+        if lg["status"] == "finished":
+            parts.append(f"League {lg['id']} has finished")
+            continue
+        playing = sum(p["state"] == "playing" for p in lg["pending"])
+        parts.append(f"League {lg['id']} has {len(lg['pending'])} of {lg['matches']} matches to play"
+                     + (f" ({playing} playing)" if playing else ""))
+    return "; ".join(parts) + "."
+
+
+def progress(lg: dict) -> str:
+    return f"{lg['finished']} of {lg['matches']} matches finished, {lg['games']:,} games"
+
+
 def patch(text: str, name: str, body: str) -> str:
     pattern = re.compile(rf"(<!-- v3:{name} -->).*?(<!-- /v3:{name} -->)", re.S)
     if not pattern.search(text):
@@ -261,25 +347,23 @@ def main():
     conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
     conn.row_factory = sqlite3.Row
     scored, skipped = scores(sorted(glob.glob(score_glob)))
-    as_of = conn.execute("SELECT MAX(created_at) FROM turns").fetchone()[0]
-    as_of = datetime.fromisoformat(as_of.replace("Z", "+00:00")).astimezone(timezone.utc)
+    as_of = utc(conn.execute("SELECT MAX(created_at) FROM turns").fetchone()[0])
     rng = random.Random(1)
     result = dict(
         data_as_of=as_of.strftime("%Y-%m-%dT%H:%MZ"),
-        generated_at=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%MZ"),
         gnubg=dict(scored=len(scored), skipped=skipped, method="GNU Backgammon 1.08: 0-ply on every play, 2-ply on the five best and the chosen one"),
-        leagues=[league(conn, lid, scored, rng) for lid in (1, 2, 3)],
+        leagues=[league(conn, lid, scored, rng, as_of) for lid in (1, 2, 3)],
     )
+    result["scored"] = sum(m.get("scored", 0) for lg in result["leagues"] for m in lg["models"])
     Path(json_out).write_text(json.dumps(result, indent=1, ensure_ascii=False) + "\n")
 
     text = Path(html_path).read_text()
-    text = patch(text, "asof", as_of.strftime("%-d %B %Y, %H:%M UTC"))
-    counted = sum(m.get("scored", 0) for lg in result["leagues"] for m in lg["models"])
-    text = patch(text, "scored", f"{counted:,}")
+    text = patch(text, "live", live(result))
+    text = patch(text, "status", status(result))
+    text = patch(text, "scored", f"{result['scored']:,}")
     for lg in result["leagues"]:
         text = patch(text, f"league{lg['id']}", "\n      " + tables(lg) + "\n      ")
-        text = patch(text, f"progress{lg['id']}",
-                     f"{lg['finished']} of {lg['matches']} matches finished, {lg['games']:,} games")
+        text = patch(text, f"progress{lg['id']}", progress(lg))
     Path(html_path).write_text(text)
 
 

@@ -519,7 +519,7 @@ h2 .seasons{float:right;text-transform:none;letter-spacing:0;display:flex;gap:6p
 <header><h1>jevgammon league <span id="lid"></span></h1><span id="status"></span><span class="meta" id="rules"></span><span class="meta" id="updated"></span><a href="report/" target="_blank" id="report" hidden>report (working copy)</a><a href="#" id="latest" hidden>back to the latest league</a><div id="control" hidden><span id="ctlButtons"></span><span class="meta" id="ctlStatus"></span></div><div id="note" class="note"></div></header>
 <main>
 <section class="wide"><h2>History</h2><table id="history"></table><div class="mute" style="margin-top:8px">Click a league to view it. Live: moved in the last 10 minutes; stopped: ended before its last match, so only its finished matches count.</div></section>
-<section><h2>Table <span class="seasons"><button id="prevSeason" title="previous league">&lsaquo;</button><span id="season"></span><button id="nextSeason" title="next league">&rsaquo;</button></span></h2><table id="table"></table><div class="mute" style="margin-top:8px">3 points per win, 1 per draw; ties: more games won, then fewer games lost. PF/PA are backgammon points. The arrows step through finished leagues and the live one.</div></section>
+<section><h2>Table <span class="seasons"><button id="prevSeason" title="previous league">&lsaquo;</button><span id="season"></span><button id="nextSeason" title="next league">&rsaquo;</button></span></h2><table id="table"></table><div class="mute" style="margin-top:8px">3 points per win, 1 per draw; ties: more games won, then fewer games lost. PF/PA are backgammon points. The arrows step through all leagues.</div></section>
 <section><h2>Models</h2><table id="models"></table><div class="mute" style="margin-top:8px" id="totals"></div></section>
 <section class="wide"><h2>Live</h2><div class="live" id="live"></div></section>
 <section class="wide"><h2>Fixture</h2><div class="days" id="fixture"></div></section>
@@ -609,8 +609,9 @@ function renderHistory(h){
   $('history').innerHTML='<thead><tr><th>#</th><th class="l">Status</th><th class="l">Started</th><th>Duration</th><th>Models</th><th>Rounds</th><th>Matches</th><th>Games</th><th>Turn limit</th><th class="l">Leader</th><th class="l">What it tested</th></tr></thead><tbody>'+
     Ls.map(l=>{const g=l.games,leader=l.ranking?l.ranking[0]:(l.matches_done?l.table[0].name:'–');
       return `<tr data-league="${l.id}" class="${l.id===shown?'sel':''}"><td>${l.id}</td><td class="l">${pill(l.status)}</td><td class="l">${new Date(l.started_at).toLocaleString()}</td><td>${span(l.started_at,l.finished_at||l.last_activity)}</td><td>${l.models.length}</td><td>${l.rounds}</td><td>${l.matches_done} / ${l.matches_total}</td><td>${g.games}</td><td>${pct(g.turn_limit||0,g.games)}</td><td class="l">${esc(leader)}${l.ranking?'':l.matches_done?' <span class="mute">(so far)</span>':''}</td><td class="note">${noteHtml(l.note,'h'+l.id)}</td></tr>`}).join('')+'</tbody>';
-  // Season arrows: finished leagues plus the live one, oldest to newest.
-  const seasons=Ls.filter(l=>l.status!=='stopped').map(l=>l.id).sort((a,b)=>a-b);
+  // League arrows: every league, oldest to newest. Paused ("stopped") leagues are included, so
+  // the arrows don't go dead while a league is paused.
+  const seasons=Ls.map(l=>l.id).sort((a,b)=>a-b);
   const at=seasons.indexOf(shown);
   $('season').textContent=shown!=null?`#${shown}`:'';
   $('prevSeason').disabled=at<=0;$('nextSeason').disabled=at<0||at>=seasons.length-1;

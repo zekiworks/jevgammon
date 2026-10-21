@@ -51,10 +51,12 @@ def main():
               f"- Shared positions ({shared['standard']:,}): {shared['status']}. This is the only cross-league answer.",
               "- Within each league (league decisions; not a cross-league ranking):"]
     leagues = sorted((out / "data/v3").glob("league-*.json"))
+    programs = {(s["dataset"], s["name"]) for s in load(out, "setups.json")["setups"] if s.get("model_type") == "program"}
+    lines[-1] += " Programs (Random, Safest, GNUbg weak) are left out."
     for p in leagues:
         lg = json.loads(p.read_text())
-        rows = [(n, s["quality"]) for n, s in lg["setups"].items()
-                if s["quality"].get("error_rate") is not None and not s["quality"].get("too_few")]
+        rows = [(n, s["quality"]) for n, s in lg["setups"].items() if (lg["dataset"], n) not in programs
+                and s["quality"].get("error_rate") is not None and not s["quality"].get("too_few")]
         rows.sort(key=lambda r: r[1]["error_rate"])
         if not rows:
             lines.append(f"  - League {lg['id']} ({lg['status']}): nothing scored yet.")
@@ -68,15 +70,17 @@ def main():
               f"{T['min_decisions_per_cell']} decisions of each kind):"]
     for p in leagues:
         lg = json.loads(p.read_text())
-        rows = [(n, s["risk"]) for n, s in lg["setups"].items()
-                if s["risk"].get("takes_risk") is not None and not s["risk"]["risk_too_few"] and not s["risk"]["safety_too_few"]]
+        rows = [(n, s["risk"]) for n, s in lg["setups"].items() if (lg["dataset"], n) not in programs
+                and s["risk"].get("takes_risk") is not None and not s["risk"]["risk_too_few"] and not s["risk"]["safety_too_few"]]
         if not rows:
             lines.append(f"  - League {lg['id']}: too few decisions.")
             continue
-        a = max(rows, key=lambda r: r[1]["takes_risk"])
-        b = min(rows, key=lambda r: r[1]["needless_risk"])
-        lines.append(f"  - League {lg['id']} ({lg['metric_status']}): takes the risk most often when it pays: {a[0]} "
-                     f"({100 * a[1]['takes_risk']:.1f}%); fewest needless risks: {b[0]} ({100 * b[1]['needless_risk']:.1f}%).")
+        rows.sort(key=lambda r: r[1]["needless_risk"] - r[1]["takes_risk"])
+        a = rows[0]
+        lines.append(f"  - League {lg['id']} ({lg['metric_status']}): widest gap between taking the risk when it pays "
+                     f"and taking a needless one: {a[0]} ({100 * a[1]['takes_risk']:.1f}% vs "
+                     f"{100 * a[1]['needless_risk']:.1f}%); narrowest: {rows[-1][0]} ({100 * rows[-1][1]['takes_risk']:.1f}% vs "
+                     f"{100 * rows[-1][1]['needless_risk']:.1f}%).")
     v1 = load(out, "v1/v1-set.json")
     lines += ["", "## 3. Where does high reasoning help?", "",
               "- Shared positions: Analysis pending (league games are not paired)."]

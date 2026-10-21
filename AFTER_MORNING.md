@@ -1,49 +1,38 @@
-# After the morning (bariton GPUs 0-2 back to you)
+# v3 leagues: state and how to restart (2026-10-21)
 
-Overnight from 2026-10-19 22:26 UTC, bariton's GPUs serve League 2 (and, later, one League 1
-player). Details and measurements: `tools/v3/servers/README.md`, section "League 2 overnight on
-bariton GPUs 0-2".
+League 1 finished on 2026-10-20 20:41:52 UTC. League 3 (unit `league3`) uses subscriptions only
+and needs no local server. League 2 (unit `league2`) has DeepSeek V4.1 Flash's last matches left,
+against the thinking players (Gemma 4 31B (on), LFM2.5-24B-A2B (on), Qwen3.8-27B (on)). Details,
+equivalence checks and history: `tools/v3/servers/README.md`, `freeze/league2-changes.json`, and
+the players' `device` fields in `v3.db` (`leagues.models`, league 2).
 
-| GPU | server | script | players |
+## Servers League 2 uses now
+
+| where | server | URL in v3.db | start |
 |---|---|---|---|
-| 0 | Gemma 4 31B, one vLLM replica (`v3-gemma4-31b-g0`, :8900) behind the proxy (`v3-gemma-proxy`, :8894) | `GEMMA_GPUS=0 GEMMA_MAX_SEQS=24 tools/v3/servers/gemma4-31b-replicas.sh` | League 2: Gemma 4 31B (off), (on) |
-| 1 | Qwen3.8-27B fp16 (`v3-qwen38-27b`, :8897); once its playable matches are done, Decider v1.2 27B (`v3-decider-v12`, :18099) | `tools/v3/servers/qwen38-27b.sh`; `DECIDER_V12_GPU=1 tools/v3/servers/decider-v1.2.sh 27b` | League 2: Qwen3.8-27B (off), (on); then League 1: Decider v1.2 27B |
-| 2 | LFM2.5-24B-A2B bf16 (`v3-lfm25-24b`, :8898) | `tools/v3/servers/lfm25-24b.sh` | League 2: LFM2.5-24B-A2B (off), (on) |
-| 3 | Open-Jev (`v3-open-jev`), Winnow-12B (`v3-winnow`), Decider Flash v1.2 (`v3-decider-flash-v12`) | `open-jev.sh` (`OPEN_JEV_GPU=3`), `winnow.sh`, `decider-v1.2.sh flash` | League 1 (unchanged) |
+| bariton, all four GPUs | DeepSeek V4.1 Flash (SGLang, 2026-10-17 revision) | `http://127.0.0.2:8010/v1` | `cd ~/code/deepseek-v4.1-flash-4x-rtx-pro-6000 && BIND_ADDRESS=127.0.0.2 docker compose -f compose.yaml up -d` (about 2 min); stop: `docker compose -f compose.yaml stop`. `deepseek-v41.service` stays disabled. |
+| spark3 | Gemma 4 31B (`v3-gemma4-31b`) | `http://192.168.1.139:8894/v1` | on spark3, `cd ~/code/v3-servers && BIND_HOST=0.0.0.0 GEMMA_MAX_SEQS=24 ./gemma4-31b.sh start`, **before** LFM2.5 (it is OOM-killed when started after it) |
+| spark3 | LFM2.5-24B-A2B (`v3-lfm25-24b`) | `http://192.168.1.139:8898/v1` | on spark3, `cd ~/code/v3-servers && BIND_HOST=0.0.0.0 LFM_GPU=0 ./lfm25-24b.sh start` |
+| spark | Qwen3.8-27B (`v3-qwen38-27b`) | `http://192.168.1.127:8897/v1` | on spark, `cd ~/code/v3-servers && BIND_HOST=0.0.0.0 QWEN27_GPU=0 ./qwen38-27b.sh start` |
 
-The swap on GPU 1 is automatic: the `v3-swap-qwen-decider` unit (`tools/v3/swap_qwen_decider.sh`)
-waits until Qwen3.8-27B has no League 2 fixture left to play except against OpenRouter
-players, then stops Qwen, starts Decider v1.2 27B and runs `league-add` for it in League 1
-(after a v3.db backup). See whether it happened: `journalctl --user -u v3-swap-qwen-decider`.
+spark2 holds the user's own container: not used.
 
-## Free GPUs 0-2 (one command)
+## Pause and resume League 2
 
-```sh
-tools/v3/league_control.sh free
-```
+- Pause: `systemctl --user kill -s SIGINT league2` (matches keep their stored turns), then stop
+  DeepSeek (`docker compose -f compose.yaml stop` in its directory) to empty bariton's GPUs.
+- Resume: check `nvidia-smi` shows no other process on bariton's GPUs, start DeepSeek (above), wait
+  until `curl http://127.0.0.2:8010/v1/models` answers, optionally re-check with `/tmp/equiv.py ds-off
+  http://127.0.0.2:8010/v1` (17/20 at each check so far), then
+  `systemctl --user reset-failed league2; systemd-run --user --unit=league2 --working-directory=$HOME/code/jevgammon /usr/bin/bash -c "tools/v3/run_league2.sh >> league2.log 2>&1"`.
 
-It stops both league runners, stops the swap watcher, stops every server on GPUs 0-2 (noting
-which were up), then starts `league1` and `league2` again: both leagues keep playing on GPU 3,
-the DGX Sparks and the APIs. Unfinished Gemma / Qwen / LFM2.5 (and Decider v1.2 27B) matches
-are deferred and retried with back-off; they resume from their last stored turn once their
-servers are back. Log: `league_control.log`.
+## When League 2 has finished
 
-- `tools/v3/league_control.sh pause` stops the leagues as well (they stay stopped);
-  `pause all` also stops GPU 3's League 1 servers.
-- `tools/v3/league_control.sh resume` brings back the servers the last pause noted, then both
-  leagues (about 4 minutes).
-
-## Still to do
-
-- Unfinished Gemma 4 31B matches without bariton: `tools/v3/servers/spark.sh start` starts
-  Gemma on spark3 again (Decider is left as it is), then set both Gemma entries' `base_url` back
-  to `http://192.168.1.139:8894/v1` in v3.db (`leagues.models`, league 2) and
-  `leagues/league2-l1chat.json`, note the move in `device` and the league note, and restart
-  `league2` (back up v3.db first).
-- spark2 hung: power-cycle it, then on spark2 `systemctl --user disable --now
-  qwen36-nvfp4.service` (approved), or that unit takes about 100 GB again.
-- OpenRouter is out of credit (HTTP 402 since at least 22:26 UTC): League 2's DeepSeek V4.1
-  Flash (off, on), GLM-5.3 (on) and Qwen3.8 Flash (off) back off until it is topped up; their
-  fixtures against Qwen3.8-27B then need `qwen38-27b.sh` running again.
-- DeepSeek V4.1 Flash on our own GPUs (`deepseek-v41.service` needs all four) was skipped
-  tonight.
+Stop DeepSeek (above), and the Spark servers League 3 does not need: on spark3
+`./gemma4-31b.sh stop; ./lfm25-24b.sh stop`, on spark `./qwen38-27b.sh stop` (in
+`~/code/v3-servers`). League 1's Spark servers (Clef and Cygnet on spark, Decider v1.1 27B on
+spark3) are already stopped (since 2026-10-20 21:10 UTC); to bring them back, stop the League 2
+servers on the Sparks first, then `tools/v3/servers/spark.sh start` (about 10 min to load; it also
+starts Gemma 4 31B on spark3 after Decider).
+The v3 page refreshes itself (`v3-page-refresh.timer`); a final refresh:
+`systemctl --user start v3-page-refresh.service`.

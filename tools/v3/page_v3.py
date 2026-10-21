@@ -19,7 +19,7 @@ price; subscriptions at API-list-price equivalent); and where the setup runs (RU
 the public page: no hostnames).
 
 The HTML file is patched between `<!-- v3:NAME -->` and `<!-- /v3:NAME -->` markers: asof (data
-time), scored (decisions scored), progress1/progress2 (matches finished), league1/league2 (tables).
+time), scored (decisions scored), progressN (matches finished), leagueN (tables), N = 1..3.
 The prose around them is written by hand and has to be checked against the new numbers after a
 refresh. Standard library only.
 """
@@ -67,16 +67,27 @@ RUNS_ON = {
     "Gemini 3.8 Flash (high)": "Google Antigravity subscription",
     "Claude Sonnet 5.5 (low)": "Claude subscription",
     "Claude Sonnet 5.5 (high)": "Claude subscription",
-    "Gemma 4 31B (on)": "our GPU, fp8 (vLLM); DGX Spark 19 Oct 19:40-22:26 UTC",
-    "Gemma 4 31B (off)": "our GPU, fp8 (vLLM); DGX Spark 19 Oct 19:40-22:26 UTC",
-    "Qwen3.8-27B (on)": "our GPU, fp16 (vLLM); first decisions on Cerebras via OpenRouter",
-    "Qwen3.8-27B (off)": "our GPU, fp16 (vLLM); first decisions on Cerebras via OpenRouter",
-    "DeepSeek V4.1 Flash (off)": "Fireworks via OpenRouter, quantization not published",
-    "DeepSeek V4.1 Flash (on)": "Fireworks via OpenRouter, quantization not published",
+    "Gemma 4 31B (on)": "our GPU, fp8 (vLLM); DGX Spark 19 Oct 18:36-22:26 UTC and from 20 Oct 21:10 UTC (back on our GPU 21 Oct 01:25-05:00)",
+    "Gemma 4 31B (off)": "our GPU, fp8 (vLLM); DGX Spark 19 Oct 18:36-22:26 UTC and from 20 Oct 21:10 UTC (back on our GPU 21 Oct 01:25-05:00)",
+    "Qwen3.8-27B (on)": "our GPU, fp16 (vLLM); first decisions on Cerebras via OpenRouter; DGX Spark from 20 Oct 21:10 UTC (back on our GPU 21 Oct 01:25-05:00)",
+    "Qwen3.8-27B (off)": "our GPU, fp16 (vLLM); first decisions on Cerebras via OpenRouter; DGX Spark from 20 Oct 21:10 UTC (back on our GPU 21 Oct 01:25-05:00)",
+    "DeepSeek V4.1 Flash (off)": "Fireworks via OpenRouter (quantization not published) until 20 Oct 21:56 UTC, then our four GPUs (SGLang, published FP4/FP8 weights, 17 Oct revision)",
+    "DeepSeek V4.1 Flash (on)": "Fireworks via OpenRouter (quantization not published) until 20 Oct 21:56 UTC, then our four GPUs (SGLang, published FP4/FP8 weights, 17 Oct revision)",
     "Qwen3.8 Flash (off)": "Alibaba via OpenRouter, quantization not published",
     "GLM-5.3 (on)": "Fireworks via OpenRouter, quantization not published",
-    "LFM2.5-24B-A2B (on)": "our GPU, bf16 (vLLM)",
-    "LFM2.5-24B-A2B (off)": "our GPU, bf16 (vLLM)",
+    "LFM2.5-24B-A2B (on)": "our GPU, bf16 (vLLM); first decisions on Liquid AI's API (voided); DGX Spark from 20 Oct 21:10 UTC (back on our GPU 21 Oct 01:25-05:00)",
+    "LFM2.5-24B-A2B (off)": "our GPU, bf16 (vLLM); DGX Spark from 20 Oct 21:10 UTC (back on our GPU 21 Oct 01:25-05:00)",
+    # League 3
+    "GPT-6 Astra (off)": "ChatGPT subscription",
+    "GPT-6 Astra (on)": "ChatGPT subscription",
+    "Claude Opus 5.5 (off)": "Claude subscription",
+    "Claude Opus 5.5 (on)": "Claude subscription",
+    "Claude Fable 5.1 (off)": "Claude subscription",
+    "Claude Fable 5.1 (on)": "Claude subscription",
+    "Gemini 4 Argon (off)": "Google Antigravity subscription",
+    "Gemini 4 Argon (on)": "Google Antigravity subscription",
+    "Grok 4.7 (off)": "xAI subscription (SuperGrok)",
+    "Grok 4.7 (on)": "xAI subscription (SuperGrok)",
 }
 
 READOUT = {"decision": "option probabilities", "logprobs": "letter probabilities", "choice_only": "one letter"}
@@ -257,7 +268,7 @@ def main():
         data_as_of=as_of.strftime("%Y-%m-%dT%H:%MZ"),
         generated_at=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%MZ"),
         gnubg=dict(scored=len(scored), skipped=skipped, method="GNU Backgammon 1.08: 0-ply on every play, 2-ply on the five best and the chosen one"),
-        leagues=[league(conn, lid, scored, rng) for lid in (1, 2)],
+        leagues=[league(conn, lid, scored, rng) for lid in (1, 2, 3)],
     )
     Path(json_out).write_text(json.dumps(result, indent=1, ensure_ascii=False) + "\n")
 

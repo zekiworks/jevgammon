@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Refreshes the v3 section of the public report (zekiworks.github.io/analysis/backgammon/#v3) from v3.db.
-# Run by the systemd user timer v3-page-refresh.timer every 15 minutes (tools/v3/systemd/); by hand:
+# Run by the systemd user timer v3-page-refresh.timer every 15 minutes. Install and run by hand:
+#   systemctl --user link tools/v3/systemd/v3-page-refresh.{service,timer}
+#   systemctl --user enable --now v3-page-refresh.timer
 #   systemctl --user start v3-page-refresh.service
 #
 #   1. snapshot: one read transaction copies every table but `exchanges` (the prompts and answers, most of

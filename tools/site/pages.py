@@ -947,7 +947,7 @@ body{{margin:0;width:1200px;height:630px;background:#0e0e0d;color:#ebe9e4;font-f
 h1{{font-size:64px;margin:0 0 20px;line-height:1.05}} p{{font-size:28px;color:#b8b5ad;margin:0 0 28px}} ul{{list-style:none;padding:0;margin:0;font-size:28px}} li{{margin:8px 0}} b{{color:#ff5b4f}}
 .f{{position:absolute;bottom:40px;left:80px;font-size:22px;color:#8a877f}}</style></head><body>
 <h1>{TITLE}</h1><p>{SUBTITLE}</p><ul>{leagues}<li><b>Shared positions</b> {count(S["shared"]["standard"])} · analysis pending</li></ul>
-<div class="f">Zeki Works · backgammon benchmark · {esc(version_line(S))}</div></body></html>"""
+<div class="f">Zeki Works · backgammon benchmark · engine-scored decisions, GNUbg 2-ply</div></body></html>"""
 
 
 def description(S) -> str:

@@ -95,7 +95,7 @@ def load_leagues(snap: Path, plays_dir: Path) -> dict:
         elif state == "live":
             label = f"Running ({done} / {len(fixtures)} matches)"
         else:
-            label = f"Stopped ({done} / {len(fixtures)} matches)"
+            label = f"Stopped (paused; {done} / {len(fixtures)} matches)"
         left = Counter()
         for f in fixtures:
             if f["status"] != "finished":

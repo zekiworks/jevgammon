@@ -1,0 +1,272 @@
+"""Pre-deploy checks of a built site (brief B1). run() returns a list of failures; empty means deployable.
+
+1. Numbers trace to data files: every number in the text of every page appears, as printed, among the values
+   of the data files under data/ or the content files (tools/site/content/: thresholds, setups metadata,
+   human scale, method experiments, archived earlier-page sections), allowing the formats the pages use
+   (decimals, percentages, thousands separators, signs). Dates and times are taken out first.
+2. Counts add up: per league, setup decisions sum to the league's decisions and match the snapshot; invalid +
+   valid = decisions; risk cells and phase cells sum to the scored decisions; standings played = 2 x matches
+   finished; the v1 set is setups x positions; exported decisions match the engine-scored decisions.
+3. No mixing: no table holds rows of two datasets; v1 rows only inside an Earlier-version block; every block
+   of a league that has not finished says "Provisional: league still running".
+4. No banned strings (hostnames, IPs, local paths, keys, the other benchmark's name) in any output file.
+5. Every relative link resolves; ids are unique per page and every #anchor exists.
+"""
+
+import gzip
+import json
+import re
+import sqlite3
+from html.parser import HTMLParser
+from pathlib import Path
+
+from common import BANNED, CONTENT, PROVISIONAL, PROVISIONAL_NOTE
+
+NUM = re.compile(r"(?<![\w.\u2212+-])([\u2212+-]?)(\d{1,3}(?:,\d{3})+|\d+)(\.\d+)?")
+DATE = re.compile(r"\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2})?(?:\.\d+)?Z?)?|\b\d{1,2}:\d{2}\b|"
+                  r"\b\d{1,2} (?:January|February|March|April|May|June|July|August|September|October|November|December)"
+                  r"(?: \d{4})?|\b(?:January|February|March|April|May|June|July|August|September|October|November|December) \d{4}"
+                  r"|\b\d{1,2} (?:Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b")
+
+
+class Node:
+    __slots__ = ("tag", "attrs", "children", "parent", "text")
+
+    def __init__(self, tag, attrs, parent):
+        self.tag, self.attrs, self.parent, self.children, self.text = tag, dict(attrs), parent, [], []
+
+
+VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"}
+
+
+class Tree(HTMLParser):
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.root = Node("root", {}, None)
+        self.cur = self.root
+        self.skip = 0
+
+    def handle_starttag(self, tag, attrs):
+        n = Node(tag, attrs, self.cur)
+        self.cur.children.append(n)
+        if tag in ("script", "style"):
+            self.skip += 1
+        if tag not in VOID:
+            self.cur = n
+
+    def handle_startendtag(self, tag, attrs):
+        self.cur.children.append(Node(tag, attrs, self.cur))
+
+    def handle_endtag(self, tag):
+        if tag in VOID:
+            return
+        n = self.cur
+        while n is not self.root and n.tag != tag:
+            n = n.parent
+        if n is not self.root:
+            if tag in ("script", "style"):
+                self.skip -= 1
+            self.cur = n.parent
+
+    def handle_data(self, data):
+        if not self.skip:
+            self.cur.text.append(data)
+
+
+def walk(n):
+    yield n
+    for c in n.children:
+        yield from walk(c)
+
+
+def text_of(n) -> str:
+    return "".join(t for x in walk(n) if x.tag not in ("script", "style") for t in x.text)
+
+
+def ancestors(n):
+    n = n.parent
+    while n is not None:
+        yield n
+        n = n.parent
+
+
+# --- 1. Numbers ---------------------------------------------------------------------------------------------
+
+def _forms(x: float, out: set):
+    for v in (x, 100 * x):
+        for d in range(4):
+            out.add(f"{abs(v):.{d}f}")
+
+
+def _collect(obj, nums: set, texts: list):
+    if isinstance(obj, bool) or obj is None:
+        return
+    if isinstance(obj, (int, float)):
+        _forms(float(obj), nums)
+    elif isinstance(obj, str):
+        texts.append(obj)
+    elif isinstance(obj, dict):
+        for k, v in obj.items():
+            texts.append(str(k))
+            _collect(v, nums, texts)
+    elif isinstance(obj, list):
+        for v in obj:
+            _collect(v, nums, texts)
+
+
+def allowed_numbers(out: Path, S: dict) -> set:
+    nums, texts = set(), []
+    for p in (out / "data").rglob("*.json"):
+        _collect(json.loads(p.read_text()), nums, texts)
+    idx = out / "decisions/index.json"
+    if idx.exists():
+        _collect(json.loads(idx.read_text()), nums, texts)
+    for p in CONTENT.rglob("*"):
+        if p.suffix == ".json":
+            _collect(json.loads(p.read_text()), nums, texts)
+        elif p.suffix in (".html", ".txt", ".md"):
+            texts.append(re.sub(r"<[^>]+>", " ", p.read_text()))
+    texts.append(S["as_of"])
+    for t in texts:
+        for m in NUM.finditer(DATE.sub(" ", t)):
+            nums.add((m.group(2) + (m.group(3) or "")).replace(",", ""))
+            if "." not in m.group(0):
+                _forms(float(m.group(2).replace(",", "")), nums)
+    return nums
+
+
+def check_numbers(page: Path, root: Node, nums: set) -> list[str]:
+    bad = []
+    for n in walk(root):
+        if n.tag in ("script", "style", "code", "pre", "svg"):
+            continue
+        if any(a.tag in ("script", "style", "code", "pre", "svg") for a in ancestors(n)):
+            continue
+        for chunk in n.text:
+            for m in NUM.finditer(DATE.sub(" ", chunk)):
+                token = (m.group(2) + (m.group(3) or "")).replace(",", "")
+                if token not in nums:
+                    bad.append(f"{page}: number {m.group(0)!r} not found in any data file (in {chunk.strip()[:80]!r})")
+    return bad
+
+
+# --- 2. Counts ----------------------------------------------------------------------------------------------
+
+def check_counts(S: dict) -> list[str]:
+    bad = []
+    snap = sqlite3.connect(f"file:{S['_state'] / 'snap.db'}?mode=ro", uri=True)
+    for lg in S["leagues"]:
+        n = snap.execute("""SELECT COUNT(*) FROM turns t JOIN games g ON g.id = t.game_id
+                            JOIN league_matches lm ON lm.match_id = g.match_id
+                            WHERE lm.league_id = ? AND t.decided_by IN ('model', 'fallback')""", (lg["id"],)).fetchone()[0]
+        su = sum(s["quality"]["decisions"] for s in lg["setups"].values())
+        if not (n == su == lg["decisions"]):
+            bad.append(f"league {lg['id']}: snapshot {n}, setups sum {su}, league {lg['decisions']} decisions")
+        if sum(s["quality"]["engine_scored"] for s in lg["setups"].values()) != lg["scored"]:
+            bad.append(f"league {lg['id']}: engine-scored decisions do not add up")
+        played = sum(t["played"] for t in lg["standings"])
+        if played != 2 * lg["matches_done"]:
+            bad.append(f"league {lg['id']}: standings played {played} != 2 x {lg['matches_done']} finished matches")
+    snap.close()
+    sets = [(lg["dataset"], lg["setups"]) for lg in S["leagues"]] + [("v1-set", S["v1"]["setups"])]
+    for ds, setups in sets:
+        for name, s in setups.items():
+            q, r = s["quality"], s["risk"]
+            if q["scored"] > q["decisions"] - q["invalid"]:
+                bad.append(f"{ds}/{name}: scored {q['scored']} > valid decisions")
+            if sum(c["n"] for c in r["cells"].values()) != r["decisions"]:
+                bad.append(f"{ds}/{name}: risk cells do not sum to the risk decisions")
+            if r["decisions"] + r["no_risk_choice"] != q["scored"]:
+                bad.append(f"{ds}/{name}: risk decisions + no-choice {r['decisions'] + r['no_risk_choice']} != scored {q['scored']}")
+            for field in ("phases", "options"):
+                if sum(c["n"] for c in s[field].values()) != q["scored"]:
+                    bad.append(f"{ds}/{name}: {field} cells sum {sum(c['n'] for c in s[field].values())} != scored {q['scored']}")
+    v1 = S["v1"]
+    if v1["decisions"] != len(v1["setups"]) * v1["positions"] or any(
+            s["quality"]["decisions"] != v1["positions"] for s in v1["setups"].values()):
+        bad.append("v1 set: decisions != setups x positions")
+    exp = S.get("decisions_export") or {}
+    for lg in S["leagues"]:
+        got = exp.get(lg["dataset"], {})
+        for name, s in lg["setups"].items():
+            want = s["quality"]["engine_scored"]
+            have = got.get(name, {}).get("decisions", 0)
+            if want != have:
+                bad.append(f"{lg['dataset']}/{name}: {want} engine-scored decisions, {have} exported")
+    got = exp.get("v1-set", {})
+    for name in v1["setups"]:
+        if got.get(name, {}).get("decisions") != v1["positions"]:
+            bad.append(f"v1-set/{name}: exported {got.get(name, {}).get('decisions')} of {v1['positions']}")
+    return bad
+
+
+# --- 3. Mixing ----------------------------------------------------------------------------------------------
+
+def check_mixing(page: Path, root: Node, S: dict) -> list[str]:
+    bad = []
+    running = {lg["dataset"] for lg in S["leagues"] if lg["metric_status"] == PROVISIONAL}
+    for t in (n for n in walk(root) if n.tag == "table"):
+        ds = {r.attrs.get("data-dataset") for r in walk(t) if r.tag == "tr" and r.attrs.get("data-dataset")}
+        if t.attrs.get("data-dataset"):
+            ds.add(t.attrs["data-dataset"])
+        if len(ds) > 1:
+            bad.append(f"{page}: a table mixes datasets {sorted(ds)}")
+        if "v1-set" in ds and not any(a.attrs.get("data-version") == "v1" or a.attrs.get("data-dataset") == "v1-set"
+                                      for a in [t] + list(ancestors(t))):
+            bad.append(f"{page}: v1 rows outside an Earlier-version block")
+        for r in ds & running:
+            if not any(PROVISIONAL_NOTE in text_of(a) for a in ancestors(t) if a.attrs.get("data-dataset") == r
+                       or a.tag in ("section", "div") and a.attrs.get("id", "").startswith("league-")):
+                bad.append(f"{page}: table of running {r} without '{PROVISIONAL_NOTE}' in its block")
+    return bad
+
+
+# --- 5. Links and ids ---------------------------------------------------------------------------------------
+
+def check_links(page: Path, root: Node, out: Path) -> list[str]:
+    bad, ids = [], []
+    for n in walk(root):
+        if n.attrs.get("id"):
+            ids.append(n.attrs["id"])
+    if len(ids) != len(set(ids)):
+        dup = sorted({i for i in ids if ids.count(i) > 1})
+        bad.append(f"{page}: duplicate ids {dup[:5]}")
+    idset = set(ids)
+    for n in walk(root):
+        for attr in ("href", "src"):
+            v = n.attrs.get(attr)
+            if not v or v.startswith(("http:", "https:", "mailto:", "data:")):
+                continue
+            path, _, frag = v.partition("#")
+            path = path.split("?")[0]
+            if not path:
+                if frag and frag not in idset and not v.startswith("?"):
+                    bad.append(f"{page}: anchor #{frag} missing")
+                continue
+            target = (page.parent / path).resolve()
+            if target.is_dir():
+                target = target / "index.html"
+            if not target.exists():
+                bad.append(f"{page}: link {v} does not resolve")
+    return bad
+
+
+def run(S: dict, out: Path) -> list[str]:
+    failures = []
+    nums = allowed_numbers(out, S)
+    for page in sorted(out.rglob("index.html")):
+        rel = page.relative_to(out)
+        tree = Tree()
+        tree.feed(page.read_text())
+        failures += check_numbers(rel, tree.root, nums)
+        failures += check_mixing(rel, tree.root, S)
+        failures += [f.replace(str(page), str(rel)) for f in check_links(page, tree.root, out)]
+    failures += check_counts(S)
+    for p in out.rglob("*"):
+        if not p.is_file() or p.suffix == ".png":
+            continue
+        data = gzip.decompress(p.read_bytes()) if p.suffix == ".gz" else p.read_bytes()
+        m = BANNED.search(data.decode("utf-8", "replace"))
+        if m:
+            failures.append(f"{p.relative_to(out)}: banned string {m.group(0)!r}")
+    return failures

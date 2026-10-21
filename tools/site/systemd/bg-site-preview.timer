@@ -1,0 +1,11 @@
+[Unit]
+Description=Update the backgammon site preview every 30 minutes (does nothing when no data changed)
+
+[Timer]
+OnCalendar=*:5/30
+AccuracySec=1min
+Persistent=true
+Unit=bg-site-preview.service
+
+[Install]
+WantedBy=timers.target

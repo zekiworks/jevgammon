@@ -1,0 +1,9 @@
+[Unit]
+Description=Backgammon site preview: snapshot, GNUbg scoring, build, checks, deploy (tools/site/update.sh)
+
+[Service]
+Type=oneshot
+ExecStart=%h/code/jevgammon/tools/site/update.sh
+Nice=19
+IOSchedulingClass=idle
+TimeoutStartSec=90min

@@ -1,0 +1,22 @@
+{
+  "note": "Part A smoke tests (workspace/backgammon-site-brief.md): candidate models on the 50 smoke positions (positions/smoke.jsonl), same prompt (bg-v2) and option-order seed as the v3 leagues. Not a league: run with `jevgammon ask` only (tools/v3/smoke_parta.sh).",
+  "prompt_version": "bg-v2",
+  "seed": 0,
+  "order_seed": 1190975713392774006,
+  "rounds": 3,
+  "clock": 0,
+  "delay": 30,
+  "max_turns": 300,
+  "players": [
+    {
+      "name": "d3-turbo",
+      "spec": "d3/d3-turbo",
+      "provider": "local (d3_server.py)",
+      "quantization": "bf16",
+      "parallel": 1,
+      "base_url": "http://127.0.0.1:18100",
+      "device": "RTX PRO 6000 (bariton; GPU index from D3_GPU at run time)",
+      "note": "vllm-sr/d3-turbo (Apache-2.0, 26.09B, Qwen3.5 backbone + 255-way answer-code readout) @ a0f3e9e59ebd1202fe1d4de1c4c0f9a986758cbb on our GPU through the d3_server.py its Hugging Face package ships (tools/v3/servers/d3-turbo.sh; transformers 5.17.0, flash-linear-attention 0.5.2): bf16 backbone, fp32 readout, softmax over the shown options' codes at temperature 1.0, no text generated, no permutation averaging, 32,768 tokens per question; one request at a time"
+    }
+  ]
+}

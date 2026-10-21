@@ -8,7 +8,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
 
-use anyhow::{Context, Result, bail};
+use anyhow::{Context, Result, anyhow, bail};
 use parking_lot::Mutex;
 use rusqlite::{Connection, params};
 use serde_json::{Value, json};
@@ -310,7 +310,13 @@ pub struct AskArgs {
     pub version: Option<PromptVersion>,
     /// A setup stops taking new positions once its answers cost more than this.
     pub max_cost: Option<f64>,
+    /// Longest wall-clock time per decision (requests, retries and waits); a decision that
+    /// hits it is stored with an error starting with `TIMED_OUT` and not asked again.
+    pub time_limit: Option<Duration>,
 }
+
+/// Start of the stored error of a decision that hit the time limit.
+pub const TIMED_OUT: &str = "timed out";
 
 /// One stored answer.
 struct Answer {
@@ -397,11 +403,12 @@ pub async fn ask(args: AskArgs, setup: &Setup) -> Result<()> {
             let conn = conn.lock();
             let mut statement = conn.prepare(
                 "SELECT position_id, repeat, prompt_version FROM answers
-                 WHERE setup = ?1 AND error IS NULL",
+                 WHERE setup = ?1 AND (error IS NULL OR error LIKE ?2)",
             )?;
-            let rows = statement.query_map(params![config.name], |row| {
-                Ok((row.get(0)?, row.get(1)?, row.get(2)?))
-            })?;
+            let rows = statement
+                .query_map(params![config.name, format!("{TIMED_OUT}%")], |row| {
+                    Ok((row.get(0)?, row.get(1)?, row.get(2)?))
+                })?;
             rows.collect::<rusqlite::Result<_>>()?
         };
         let positions = positions.clone();
@@ -410,6 +417,7 @@ pub async fn ask(args: AskArgs, setup: &Setup) -> Result<()> {
         let max_cost = args.max_cost;
         let repeats = args.repeats;
         let version_override = args.version;
+        let time_limit = args.time_limit;
         setups.spawn(async move {
             let name = config.name.clone();
             let parallel = Semaphore::new(config.parallel.unwrap_or(4).max(1));
@@ -467,9 +475,19 @@ pub async fn ask(args: AskArgs, setup: &Setup) -> Result<()> {
                             &format!("ask:{}:{repeat}:{}", position.id, version.id()),
                         );
                         let started = Instant::now();
-                        let outcome = asker
-                            .decide(&position.request(&order, version, seed, &retry))
-                            .await;
+                        let request = position.request(&order, version, seed, &retry);
+                        let decide = asker.decide(&request);
+                        let outcome = match time_limit {
+                            Some(limit) => tokio::time::timeout(limit, decide)
+                                .await
+                                .unwrap_or_else(|_| {
+                                    Err(anyhow!(
+                                        "{TIMED_OUT}: no answer within {} s",
+                                        limit.as_secs()
+                                    ))
+                                }),
+                            None => decide.await,
+                        };
                         let elapsed = started.elapsed();
                         let retry_spent = retry.get().min(elapsed);
                         match &outcome {

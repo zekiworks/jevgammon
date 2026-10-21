@@ -134,6 +134,10 @@ struct AskArgs {
     /// A setup takes no new positions once its answers cost more than this many dollars.
     #[arg(long)]
     max_cost: Option<f64>,
+    /// Longest wall-clock seconds per decision; a decision that takes longer is stored as
+    /// timed out (not invalid) and not asked again.
+    #[arg(long)]
+    time_limit: Option<u64>,
     /// qfork/Glyph credential root read for subscription logins and API keys.
     #[arg(long, env = "JEVGAMMON_QFORK_ROOT")]
     qfork_root: Option<PathBuf>,
@@ -143,7 +147,7 @@ struct AskArgs {
 struct MatchArgs {
     /// First player: openai/<model>, anthropic/<model>, gemini/<model>, antigravity/<model>,
     /// xai/<model>, ollama/<model>, local/<model>, random, safest, gnubg-weak, or a decision service: jev, fastino,
-    /// openai-decisions, perplexity, liquid, clef, open-jev, cygnet, gemma, pplx-local
+    /// openai-decisions, perplexity, liquid, clef, open-jev, cygnet, gemma, pplx-local, d3
     /// (optionally /<model>). Reasoning, prices and other providers need a league --config.
     #[arg(long, required = true)]
     model1: Option<String>,
@@ -301,6 +305,7 @@ async fn main() -> ExitCode {
                     repeats: args.repeats,
                     version: args.prompt_version,
                     max_cost: args.max_cost,
+                    time_limit: args.time_limit.map(std::time::Duration::from_secs),
                 },
                 &setup,
             )

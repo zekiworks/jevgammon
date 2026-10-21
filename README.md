@@ -82,6 +82,7 @@ printed and stored in `matches.error`), `2` for invalid arguments.
 | `gemma` | A second Cygnet decision server (same option-letter readout) in front of a `gemma-4-31B-it` vLLM server, `http://127.0.0.1:18094` | optional `GEMMA_API_KEY` |
 | `pplx-local/<model>` | Self-hosted Perplexity Decider server, `http://127.0.0.1:18097` (`base_url` picks another); the model must name the loaded checkpoint (`pplx-decider-v1.1-27b` default, `pplx-decider-v1.2`, `pplx-decider-flash-v1.2`) | none |
 | `winnow`, `winnow/<model>` | Self-hosted Winnow-12B server (`winnow-inference`), `http://127.0.0.1:8091` (`winnow-12b` default) | none |
+| `d3`, `d3/<model>` | Self-hosted vllm-sr/d3-turbo (`d3_server.py` from its Hugging Face package, `tools/v3/servers/d3-turbo.sh`), `http://127.0.0.1:18100` (model name accepted and ignored; `d3-turbo` default) | none |
 | `openai/<model>` | ChatGPT subscription (Codex backend) | qfork store or `~/.codex/auth.json` |
 | `anthropic/<model>`, `claude/<model>` | Claude subscription | qfork store or `~/.claude/.credentials.json` |
 | `gemini/<model>`, `google/<model>` | Gemini API | `GEMINI_API_KEY`, `GOOGLE_API_KEY`, or qfork `credentials/gemini.json` |
@@ -102,7 +103,7 @@ per thinking level, so the config's `reasoning` is appended to the model id
 inside Antigravity's envelope. Each decision service's host can be
 overridden: `TYPESAFE_BASE_URL`, `FASTINO_BASE_URL`, `OPENAI_DECISIONS_BASE_URL`,
 `PERPLEXITY_BASE_URL`, `LIQUID_BASE_URL`, `CLEF_BASE_URL`, `OPEN_JEV_BASE_URL`,
-`CYGNET_BASE_URL`, `GEMMA_BASE_URL`, `SUBQ_BASE_URL`, `CELERIS_BASE_URL`, `PPLX_LOCAL_BASE_URL` (`pplx-local`: pplx-decider-v1.1-27b served by `~/code/pplx-decider/server.py` on port 18097).
+`CYGNET_BASE_URL`, `GEMMA_BASE_URL`, `SUBQ_BASE_URL`, `CELERIS_BASE_URL`, `PPLX_LOCAL_BASE_URL` (`pplx-local`: pplx-decider-v1.1-27b served by `~/code/pplx-decider/server.py` on port 18097), `D3_BASE_URL` (`d3`: vllm-sr/d3-turbo on port 18100).
 
 Missing credentials are reported at startup, before a match is created.
 
@@ -171,15 +172,19 @@ are `leagues/league1.json`, `league2.json` and `league3.json`.
 ### Stored positions
 
 `jevgammon ask --config FILE --positions FILE [--setup NAME]... [--out answers.db]
-[--limit N] [--repeats N] [--max-cost USD]` sends stored positions (the format of
-`positions/*.jsonl`) to players of a league config, through the same players, prompt, option
-order and fallbacks as the leagues, and stores every answer in table `answers` (the per-decision
-fields of `turns`, plus the setup, position id, repeat and error) with its requests in
-`answer_exchanges`. The match context shown is the config's (round 1 of its rounds, its turn
+[--limit N] [--repeats N] [--max-cost USD] [--time-limit SECONDS]` sends stored positions (the
+format of `positions/*.jsonl`) to players of a league config, through the same players, prompt,
+option order and fallbacks as the leagues, and stores every answer in table `answers` (the
+per-decision fields of `turns`, plus the setup, position id, repeat and error) with its requests
+in `answer_exchanges`. The match context shown is the config's (round 1 of its rounds, its turn
 limit and a full clock); the clock is not enforced. A rerun asks only what is missing or
-failed; `--max-cost` stops a setup taking new positions once its answers cost more.
+failed; `--max-cost` stops a setup taking new positions once its answers cost more;
+`--time-limit` stores a decision that takes longer (wall clock, retries included) with an error
+starting `timed out`, counted apart from failed and invalid answers and not asked again.
 `tools/v3/smoke_positions.py` draws the 50 smoke-test positions (`positions/smoke.jsonl`)
-and `tools/v3/smoke_report.py` turns the answers and GNUbg's equities into the smoke table.
+and `tools/v3/smoke_report.py` turns the answers and GNUbg's equities into the smoke table;
+`smoke_report.py paired` adds 95% bootstrap intervals and paired differences from reference
+setups (candidate models, `leagues/smoke-parta.json`).
 
 ### Prompt versions
 

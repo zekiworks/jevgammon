@@ -223,6 +223,22 @@ pub const SERVICES: &[Service] = &[
         openai_format: false,
         max_choices: 26,
     },
+    // vllm-sr/d3-turbo (26B, Qwen3.5 backbone + 255-way code readout) served by the d3_server.py
+    // its Hugging Face package ships (tools/v3/servers/d3-turbo.sh). The model field is accepted
+    // and ignored; one request runs at a time. Each question prompt may take 32,768 tokens (state
+    // about 3,500, a described option about 120) and a question 255 options; 200 leaves margin.
+    Service {
+        provider: "d3",
+        label: "d3-turbo (local)",
+        base_url: "http://127.0.0.1:18100",
+        url_var: "D3_BASE_URL",
+        path: "/v1/systemone",
+        key_vars: &[],
+        key_required: false,
+        default_model: Some("d3-turbo"),
+        openai_format: false,
+        max_choices: 200,
+    },
 ];
 
 pub fn service(provider: &str) -> Option<&'static Service> {

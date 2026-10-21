@@ -1,0 +1,50 @@
+{
+  "note": "Part A smoke tests (workspace/backgammon-site-brief.md): candidate models on the 50 smoke positions (positions/smoke.jsonl), same prompt (bg-v2) and option-order seed as the v3 leagues. Not a league: run with `jevgammon ask` only. This file: Nemotron 3.5 Bolt 74B-A9B, the BF16 release, on two of our GPUs (NEMOTRON_CHECKPOINT=bf16 tools/v3/servers/nemotron35-bolt.sh).",
+  "prompt_version": "bg-v2",
+  "seed": 0,
+  "order_seed": 1190975713392774006,
+  "rounds": 3,
+  "clock": 0,
+  "delay": 30,
+  "max_turns": 300,
+  "players": [
+    {
+      "name": "Nemotron 3.5 Bolt BF16 (off)",
+      "spec": "local/nemotron-3.5-bolt",
+      "base_url": "http://127.0.0.1:8893/v1",
+      "provider": "local-vllm",
+      "quantization": "bf16 (bf16 KV cache, fp32 Mamba states)",
+      "request": {
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        }
+      },
+      "letter_readout": "prefill",
+      "answer_prefix": "<think></think>Answer:",
+      "top_logprobs": 20,
+      "parallel": 8,
+      "note": "thinking off (chat_template_kwargs.enable_thinking false; the template then opens the answer with <think></think>, so the letter continues a prefilled <think></think>Answer:). nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-BF16 @ 567021037ff88364143e24ea05e6abd0f72086ff (149.8 GB, the full-precision release); vLLM nightly 77154ca6 + b12x 1.5.1, NVIDIA's BF16 recipe (no drafter), tensor parallel 2, 65,536-token context, temperature 1 (top_p 0.95 from generation_config.json), top-20 logprobs",
+      "device": "2x RTX PRO 6000 (bariton), TP2 (NEMOTRON_GPUS, NCCL_P2P_DISABLE=1), memory share 0.92 of each, 16 sequences"
+    },
+    {
+      "name": "Nemotron 3.5 Bolt BF16 (on)",
+      "spec": "local/nemotron-3.5-bolt",
+      "base_url": "http://127.0.0.1:8893/v1",
+      "provider": "local-vllm",
+      "quantization": "bf16 (bf16 KV cache, fp32 Mamba states)",
+      "reasoning": "template default",
+      "max_tokens": 32000,
+      "request": {
+        "chat_template_kwargs": {
+          "enable_thinking": true
+        },
+        "reasoning_effort": null
+      },
+      "letter_readout": "prefill",
+      "top_logprobs": 20,
+      "parallel": 8,
+      "note": "thinking on (chat_template_kwargs.enable_thinking true, the template default; full effort: medium_effort is not set and reasoning_effort is not sent), reasoning returned by NVIDIA's ultra_v3 parser, then the letter continues a prefilled <think>reasoning</think>Answer:. Same server as (off): nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-BF16 @ 567021037ff88364143e24ea05e6abd0f72086ff, vLLM nightly 77154ca6 + b12x 1.5.1, no drafter, TP2, 65,536-token context, max_tokens 32,000, temperature 1, top-20 logprobs",
+      "device": "2x RTX PRO 6000 (bariton), TP2 (NEMOTRON_GPUS, NCCL_P2P_DISABLE=1), memory share 0.92 of each, 16 sequences"
+    }
+  ]
+}

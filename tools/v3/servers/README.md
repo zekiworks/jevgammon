@@ -14,6 +14,8 @@ tools/v3/servers/decider-v1.2.sh flash|27b start|stop|status|probe   # League 1 
 tools/v3/servers/winnow.sh start|stop|status|probe          # League 1 from 2026-10-19 (GPU 3)
 tools/v3/servers/qwen38-27b.sh start|stop|status|probe      # League 2 from 2026-10-19 22:26 (GPU 1; GPU 3 2026-10-20 20:16-21:10; then spark, see the end)
 tools/v3/servers/lfm25-24b.sh start|stop|status|probe       # League 2 from 2026-10-19 22:26 (GPU 2; spark3 from 2026-10-20 21:10)
+D3_GPU=N tools/v3/servers/d3-turbo.sh download|setup|start|stop|status|probe   # Part A smoke test (vllm-sr/d3-turbo), see the end
+NEMOTRON_GPUS=N[,M] [NEMOTRON_CHECKPOINT=24gb|bf16] tools/v3/servers/nemotron35-bolt.sh fetch|start|stop|status|probe   # Part A smoke test (Nemotron 3.5 Bolt), see the end
 ```
 
 vLLM servers run as docker containers (`docker logs -f <name>`); the Python decision servers
@@ -31,6 +33,8 @@ GPU 0 and 0.5 GB on the others) stays up; the memory shares below leave room for
 | `clef.sh` | `http://127.0.0.1:18091/v1/systemone` | `clef` | `~/code/clef/model` (Qwen3.5 backbone + joint head) | `bf16` | 1 | B |
 | `open-jev.sh` | `http://127.0.0.1:8791/v1/systemone` | (takes no model name) | `~/code/Open-Jev/checkpoints/open-jev-27b-v1.1` (LoRA rank 8 + head) on `Qwen/Qwen3.8-27B` @ `1d4bf0f2` | `bf16` | 2 | B |
 | `decider.sh` | `http://127.0.0.1:18097/v1/systemone` | `pplx-decider-v1.1-27b` | `~/code/pplx-decider/checkpoint` | `bf16` | 3 | B |
+| `d3-turbo.sh` | `http://127.0.0.1:18100/v1/systemone` (unit `v3-d3-turbo`) | `d3-turbo` (accepted, not checked) | `vllm-sr/d3-turbo` @ `a0f3e9e5`, `~/.cache/huggingface/hub` | `bf16` (fp32 readout) | `D3_GPU`, about 52 GiB | Part A |
+| `nemotron35-bolt.sh` | `http://127.0.0.1:8893/v1` (OpenAI-compatible; container `v3-nemotron35-bolt`) | `nemotron-3.5-bolt` | `nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB` @ `cf2effc5` + drafter `…-24GB-LiLiCorr` @ `449d2414`, `~/.cache/huggingface/hub` | IQ2_XXS routed experts (2.06 bits, QAD), Q8_0 / W4A16 NVFP4 elsewhere; FP8 KV cache | `NEMOTRON_GPUS` (one), 0.50 (two GPUs: BF16 @ `56702103`, TP2, 0.92 each) | Part A |
 
 The "weights as served" column is what goes into a player config's `quantization` (and so
 `turns.quantization`).
@@ -326,3 +330,78 @@ Fireworks disagrees with its own stored answers about as often, so DeepSeek play
 `<|im_end|>`; the runner skips such trailing special tokens since `afc7b41` (before it, all of
 Qwen3.8-27B (off)'s vLLM decisions fell back to the sampled letter; its matches were replayed,
 see `freeze/league2-changes.json`).
+
+## Part A smoke test: vllm-sr/d3-turbo
+
+`d3-turbo.sh` runs the System One server the Hugging Face package ships (`d3_server.py`, Python
+standard library) from the pinned snapshot `a0f3e9e59ebd1202fe1d4de1c4c0f9a986758cbb`, with the
+package's runtime (`d3_runtime.D3`; reviewed in `d3-turbo-code-review.md`). vLLM does not serve
+it. Python: `~/code/pplx-decider/.venv` (`D3_PYTHON`), which has the versions the package's
+`requirements.txt` pins (transformers 5.17.0, flash-linear-attention 0.5.2; torch 2.14.0, CUDA
+13.0); `setup` builds a separate `~/code/d3-turbo/.venv` from that file instead.
+
+- Model: Qwen3.5 backbone (26.09B, bf16) plus a 255-row readout over answer codes (A..Z, AA..):
+  the options are listed under codes, the prompt is read once without generating text, and the
+  probabilities are a softmax over the shown options' codes at temperature 1.0. No thinking
+  (the template is rendered with `enable_thinking=False`), no permutation averaging.
+- Limits: 255 options per question and 32,768 tokens per question prompt (the server has no
+  `long_context` switch); the `d3` service sends at most 200 options, so the smoke positions
+  (2-24 plays, about 3,500 + 120 tokens each) go in one request.
+- One request at a time (a lock); others wait in the server, so players use `parallel: 1`.
+- Memory: 48.6 GiB of weights; `start` refuses a GPU with less than 56,000 MiB free
+  (`D3_MIN_FREE_MIB`). Not yet measured; record `nvidia-smi` after the run.
+- Start-up: `--verify fast` (manifest hashes), then a kernel warm-up (text batches 1-8 and
+  three image requests). `HF_HUB_OFFLINE=1`, so `download` must have run first.
+
+```sh
+tools/v3/servers/d3-turbo.sh download                 # once, 52 GB
+D3_GPU=N tools/v3/servers/d3-turbo.sh start && tools/v3/servers/d3-turbo.sh probe
+target/parta/release/jevgammon ask --config leagues/smoke-parta-d3.json \
+  --positions positions/smoke.jsonl --out smoke/part-a.db --time-limit 600
+tools/v3/servers/d3-turbo.sh stop
+```
+
+## Part A smoke test: Nemotron 3.5 Bolt 74B-A9B
+
+`nemotron35-bolt.sh` serves NVIDIA's Nemotron 3.5 Bolt 74B-A9B (Mamba-2/attention hybrid
+LatentMoE, 88 layers of which 8 attention, 2 KV heads; vision encoder unused) with NVIDIA's vLLM
+recipe, minus tool calling and image/video inputs, plus `--max-logprobs 20`. Both setups,
+(off) and (on), use the one server (`leagues/smoke-parta-nemotron.json`; BF16:
+`leagues/smoke-parta-nemotron-bf16.json`, players "Nemotron 3.5 Bolt BF16 (off)/(on)").
+
+- Checkpoint: `NEMOTRON_CHECKPOINT=24gb` (default with one GPU in `NEMOTRON_GPUS`) serves the
+  24GB build (`cf2effc5c4b794ee9fb8d34eab3d1d65ce64142f`; NVIDIA's inference checkpoint, 24.1 GB)
+  with its LiLiCorr DFlash drafter (`449d24140160b8e51871bfc0f0a7338abf640aa1`, 7 speculative
+  tokens, standard rejection sampling, so the target's distribution; `NEMOTRON_SPEC=0` drops it).
+  `NEMOTRON_CHECKPOINT=bf16` (default with two GPUs, e.g. `NEMOTRON_GPUS=1,2`) serves the BF16
+  release (`567021037ff88364143e24ea05e6abd0f72086ff`, 149.8 GB, about 75 GB of weights per GPU)
+  with TP2 and `NCCL_P2P_DISABLE=1`, memory share 0.92 each, no drafter.
+- Image: both model cards require vLLM nightly `77154ca6` (2026-10-14; `v0.30.0` is older).
+  `fetch` builds `v3-vllm-nemotron35:77154ca6` from it with `b12x==1.5.1` (the SM120 kernels for
+  the IQ2/Q8_0/NVFP4 layers, `vllm[b12x]` at that commit) and `vllm download-kernels`, and
+  downloads the pinned snapshots at `nice 19`/idle I/O; `start` runs `fetch` when something is
+  missing. Model Runner V2 (`VLLM_USE_V2_MODEL_RUNNER=1`), FlashInfer attention and Mamba
+  kernels, `--mamba-cache-mode align`, bf16 Mamba states, `--trust-remote-code`.
+- Thinking: `chat_template_kwargs.enable_thinking` (template default true; false ends the
+  prompt with `<think></think>`, so (off) prefills `<think></think>Answer:`). The template has
+  no effort level except `medium_effort: true`; (on) uses the default (full) and sends no
+  `reasoning_effort`. NVIDIA's `ultra_v3` reasoning parser (`ultra_v3_reasoning_parser.py` in
+  the snapshot, a `deepseek_r1` subclass) returns the reasoning under `reasoning`.
+- Limits: 65,536-token context (the model takes 262,144), 16 sequences. A smoke prompt is
+  about 3,500 + 120 tokens per option, under 7,000 for 24 options, so every position goes in
+  one request (the runner splits only above 26 options); (on) has `max_tokens` 32,000.
+- Memory: about 25 GB of weights; share 0.50 (48 GiB) leaves room for the FP8 KV cache
+  (8 attention layers × 2 KV heads × 128: 4 KiB a token) and the Mamba states. Not yet
+  measured; record `nvidia-smi` and the KV-cache size from `docker logs` after the run.
+- Sampling: `generation_config.json` (top_p 0.95); the runner sets temperature 1.
+
+```sh
+NEMOTRON_GPUS=3 tools/v3/servers/nemotron35-bolt.sh fetch   # once: snapshots + image (about 10 GB pull)
+NEMOTRON_GPUS=3 tools/v3/servers/nemotron35-bolt.sh start && tools/v3/servers/nemotron35-bolt.sh probe
+target/parta/release/jevgammon ask --config leagues/smoke-parta-nemotron.json \
+  --positions positions/smoke.jsonl --out smoke/part-a.db --time-limit 600
+tools/v3/servers/nemotron35-bolt.sh stop
+```
+
+BF16 on two GPUs: `NEMOTRON_GPUS=1,2 tools/v3/smoke_parta.sh nemotron-bf16` (fetch downloads
+150 GB; check `df` first).

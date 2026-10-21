@@ -1,0 +1,59 @@
+<!-- Archived from the earlier live page: zekiworks/analysis, backgammon/index.html at commit 3eca8e4.
+     Sections: "Why it looks like this". Text and numbers unchanged; markup adapted to site.css (classes, ids, links),
+     the Error rate link points to the archived section on the Leagues page.
+     -->
+<section class="card" id="v1-why" aria-labelledby="v1-why-title">
+  <h2 id="v1-why-title">Why it looks like this</h2>
+  <p>The prompt was changed one step at a time, and a league was run after each step. Leagues stopped part-way are kept,
+    with their finished matches only.</p>
+  <div class="table-wrap">
+    <table class="board">
+      <thead>
+        <tr><th class="num">League</th><th>What changed</th><th class="num">Games</th><th class="num">Hit the 300-turn limit</th><th class="num">Moves that hit</th><th class="num">Average game</th><th class="num">Best opening play</th><th class="num">Error rate</th></tr>
+      </thead>
+      <tbody>
+        <tr class="muted"><td class="num">#1</td><td>Structured state (JSON) with a short rules text and how every earlier game ended</td><td class="num">38</td><td class="num">82%</td><td class="num">62%</td><td class="num">277 turns</td><td class="num">28%</td><td class="num">138</td></tr>
+        <tr><td class="num">#3</td><td>Rules and strategy text, then score, time, position and dice; nothing about earlier games</td><td class="num">170</td><td class="num">81%</td><td class="num">60%</td><td class="num">274 turns</td><td class="num">77%</td><td class="num">132</td></tr>
+        <tr class="muted"><td class="num">#6</td><td>+ the question before the choices; Decider v1.1 self-hosted</td><td class="num">124</td><td class="num">71%</td><td class="num">58%</td><td class="num">255 turns</td><td class="num">83%</td><td class="num">120</td></tr>
+        <tr class="muted"><td class="num">#7</td><td>+ what each play leads to, and the race line</td><td class="num">135</td><td class="num">0%</td><td class="num">9.7%</td><td class="num">50 turns</td><td class="num">68%</td><td class="num">38.5</td></tr>
+        <tr><td class="num">#8</td><td>As #7 without d1 (7 models)</td><td class="num">120</td><td class="num">0%</td><td class="num">9.5%</td><td class="num">51 turns</td><td class="num">69%</td><td class="num">39.4</td></tr>
+        <tr><td class="num">#11</td><td>Repeat, new dice</td><td class="num">112</td><td class="num">0%</td><td class="num">9.3%</td><td class="num">50 turns</td><td class="num">58%</td><td class="num">40.1</td></tr>
+        <tr><td class="num">#12</td><td>Repeat, new dice</td><td class="num">112</td><td class="num">0%</td><td class="num">9.7%</td><td class="num">51 turns</td><td class="num">69%</td><td class="num">36.2</td></tr>
+        <tr><td class="num">#13</td><td>+ the last 10 moves of the game</td><td class="num">106</td><td class="num">0%</td><td class="num">10.9%</td><td class="num">52 turns</td><td class="num">72%</td><td class="num">39.1</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note">Grey rows did not finish. "Best opening play" is the share of first moves of a game that match the
+    computer-rollout table in the prompt. "Error rate" is GNU Backgammon's, over all model decisions of the league (see
+    <a href="../leagues/#v1-error-rate">Error rate</a>); lower is better. Leagues #2, #4, #5, #9 and #10 failed at start or were stopped
+    within minutes; league #3 is left out of the standings below because its format differs.</p>
+
+  <h3 id="v1-why-rules-and-strategy-as-text-not-a-data-structure">Rules and strategy as text, not a data structure</h3>
+  <p>The first leagues sent the position as structured data with a short rules summary. Models opened badly: 28% of
+    first moves matched the known best play. With the rules, strategy principles and the opening table as prose,
+    that rose to 77%. Opening play improved, but the middle game did not: games still ran to the turn limit, because both
+    sides kept hitting and re-entering.</p>
+
+  <h3 id="v1-why-a-question-that-names-what-a-good-move-does">A question that names what a good move does</h3>
+  <p>The question before the choices states three goals in plain words: build a point in front of the opponent's
+    checkers, reduce your blots, bring checkers home. It deliberately leaves hitting out, because hitting on almost every move was the
+    problem. The turn-limit share fell from 81% to 71% (this league also switched to the
+    self-hosted Decider v1.1); hitting barely changed.</p>
+
+  <h3 id="v1-why-compute-the-consequences-in-code-not-in-the-model">Compute the consequences in code, not in the model</h3>
+  <p>Backgammon decisions turn on numbers a language model cannot work out reliably from a list of notations: which
+    checkers are left alone, how many of the opponent's 36 rolls hit them, which points are made. Earlier, each option
+    was just its notation, like <code>bar/19 13/11*</code>, and the model had to imagine the resulting position.
+    Now the program computes those numbers for every option and the model compares them. This is the change that
+    ended the endless games: hits fell from about 60% to under 10% of moves and the average game from about 270 turns
+    to about 50.</p>
+  <p>Opening play got worse at the same time, from about 80% to between 58% and 69% best plays. The metrics after each option
+    compete with the opening table earlier in the prompt, and on the first move several plays look similar on these numbers.</p>
+
+  <h3 id="v1-why-recent-moves-for-longer-plans">Recent moves, for longer plans</h3>
+  <p>Each decision is a separate request, so a model cannot see how the position came about. League #13 adds the last
+    10 moves of the game, both sides. Ten turns add about 200 tokens. More would eat into Open-Jev's
+    4,096-token limit, which it applies to the whole question repeated for every option.</p>
+  <p>It made no measurable difference. League #13's error rate was 39.1 (± 2.2), against 38.6 (± 1.2) for #8, #11 and #12
+    together, and the finishing order barely changed. Ten moves may be too few, or these models may not use them.</p>
+</section>

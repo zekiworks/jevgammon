@@ -1,0 +1,62 @@
+<!-- Archived from the earlier live page: zekiworks/analysis, backgammon/index.html at commit 3eca8e4.
+     Sections: "Changes during the leagues" and "About the anchor" (both h3 in the v3 section, here h2). Text and numbers unchanged; markup adapted to site.css (classes, ids, links),
+     the generated "anchor-stats" list (filled from v3-results.json by the page script) is left out.
+     -->
+<section class="card" id="v3-changes" aria-labelledby="v3-changes-title">
+  <h2 id="v3-changes-title">Changes during the leagues</h2>
+  <ul>
+    <li><strong>Voided matches.</strong> The first matches of LFM2.5-24B-A2B (off, on) and Qwen3.8 Flash (off) were voided
+      on 19 October and replay from scratch with the same dice. The runner had read the letter probabilities from the wrong
+      token: for LFM2.5, Liquid's API returns probabilities for the reasoning tokens too, so every decision read a letter
+      from the reasoning; for Qwen3.8 Flash, some decisions read the "c" of a split "choice" key. It now reads them
+      at the reply's letter and counts a mismatch as invalid. LFM2.5 now runs on our GPU from Liquid's bf16 checkpoint,
+      with the letter read after a prefilled "Answer:".</li>
+    <li><strong>Qwen3.8-27B (off) replayed.</strong> On our vLLM server the list of token probabilities ends with an
+      end-of-message token after the letter, so the runner found no letter and played the letter Qwen had sampled
+      instead of its most likely one, in every one of its decisions there. The runner now skips such trailing tokens;
+      Qwen3.8-27B (off)'s affected matches were voided on 20 October and replayed with the same dice. No other setup
+      was affected.</li>
+    <li><strong>Withdrawn.</strong> Qwen3.8 Flash Next (off, on): with reasoning on it took many minutes per decision
+      on a DGX Spark. Its matches are removed from the league. Qwen3.8 Flash (off), through OpenRouter, joined instead.</li>
+    <li><strong>Moved.</strong> On 19 October League 1 became decision models only: Gemma 4 31B (off, on) and
+      Qwen3.8-27B (off, on) moved to League 2, and their League 1 matches no longer count. GPT-6 Luna's first
+      entry, through the ChatGPT subscription as a chat model, was removed; it plays through OpenAI's Decisions API.
+      The other new decision models joined League 1 the same day; Fastino GLiDE and Decider v1.2 27B joined on 20 October.</li>
+    <li><strong>Hardware.</strong> Clef, Cygnet and Decider v1.1 27B moved from our RTX PRO 6000 cards to DGX Spark (GB10)
+      machines on 16 October, with the same checkpoints and settings (replayed requests: the same play in all). Open-Jev
+      stayed, because on a DGX Spark it sometimes chose another play. Gemma 4 31B ran on a DGX Spark from 19 October
+      18:36 to 22:26 UTC, then on an RTX PRO 6000 again (the same play in all replayed requests). Qwen3.8-27B started on
+      Cerebras through OpenRouter, where it finished no match, and then moved to our GPU in fp16 (the same top letter in
+      most replayed requests). From 20 October 21:10 UTC Gemma 4 31B, LFM2.5-24B-A2B and Qwen3.8-27B played on DGX Sparks
+      with the same checkpoints and settings (the same top letter in all replayed requests), so that DeepSeek V4.1 Flash
+      could have all of our RTX PRO 6000 cards; on 21 October 01:25-05:00 UTC they played their last non-DeepSeek matches
+      on the RTX PRO 6000 cards again (LFM2.5 is not deterministic, so its replays agree less often).</li>
+    <li><strong>DeepSeek V4.1 Flash on our GPUs.</strong> From 20 October 21:56 UTC, DeepSeek V4.1 Flash (off, on) plays
+      on our own SGLang server instead of Fireworks through OpenRouter: the 17 October revision of the published weights
+      (FP4 routed experts, FP8/BF16 elsewhere); Fireworks does not say which revision it serves. On stored Fireworks
+      requests our server usually chose the same top letter, but not always; it is not deterministic, and Fireworks
+      replaying its own stored answers did not always agree either.</li>
+    <li><strong>Gemini by subscription.</strong> With no Gemini API key, Gemini 3.8 Flash (low, high) plays through
+      the Google Antigravity subscription from 19 October 12:46 UTC: the same model, prompt, thinking levels and
+      constrained letter. On the smoke positions it nearly always chose the same play as the API.</li>
+    <li><strong>Paused matches.</strong> A match that fails on a provider error (OpenRouter credit or rate limits, a
+      server restart) waits and resumes later from its last stored turn; the other matches go on.</li>
+  </ul>
+</section>
+
+<section class="card" id="v3-anchor" aria-labelledby="v3-anchor-title">
+  <h2 id="v3-anchor-title">About the anchor</h2>
+  <p>The anchor, GNU Backgammon 1.08 at its Beginner level (0-ply, deterministic noise 0.06), ran on one x86-64 build
+    only, and on x86-64 it is not the Beginner that GNU Backgammon intends. Its deterministic-noise code sums the hash
+    bytes as <code>char</code>, which is signed on x86-64, but subtracts the mean of unsigned bytes, so every noise draw
+    is shifted by about −7 standard deviations. The anchor understates its own winning chances and plays for gammons.</p>
+  <ul>
+    <li><strong>Another build plays differently.</strong> On the 1,000 v1 positions, the x86-64 and ARM builds of the same
+      package choose different plays in 659; with the noise off, in 6, all exact ties. Error rate 21.8 on x86-64 against
+      16.8 on ARM.</li>
+    <li><strong>Gammons in self-play.</strong> 72% of games end in a gammon or backgammon on x86-64, 40% on ARM and
+      about 30% without noise.</li>
+  </ul>
+  <p>So v3's anchor is "GNUbg 1.08 Beginner, x86-64 build", and its results are reproducible on x86-64 only: a replay
+    there gives the recorded plays. Later releases of the benchmark use a corrected build.</p>
+</section>

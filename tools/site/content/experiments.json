@@ -1,0 +1,44 @@
+{
+  "_about": "Numbers of the two method experiments shown on the Method page (brief B5). Each value is copied as printed in its source file; 'section' names the heading it comes from. These are method findings run with GNU Backgammon players, not model results.",
+  "roll_schedule": {
+    "source": "mailbox/Roll-schedule test - results.md",
+    "numbers": {
+      "players": {"value": "8", "section": "Setup > Players and true strength"},
+      "replays_per_scheme": {"value": "500", "section": "Setup > Schemes"},
+      "long_run_matches": {"value": "11,200", "section": "Setup > Players and true strength"},
+      "long_run_pairs": {"value": "28", "section": "Setup > Players and true strength"},
+      "sd_ratio": {"value": "1.10", "section": "Answer (top); Results > (1) Scatter of league points"},
+      "sd_ratio_lo": {"value": "1.06", "section": "Answer (top)"},
+      "sd_ratio_hi": {"value": "1.14", "section": "Answer (top)"},
+      "variance_ratio": {"value": "1.20", "section": "Answer (top); Results > (1) Scatter of league points"},
+      "variance_ratio_lo": {"value": "1.11", "section": "Answer (top)"},
+      "variance_ratio_hi": {"value": "1.29", "section": "Answer (top)"},
+      "rho_a": {"value": "0.890", "section": "Results > (2) Spearman correlation"},
+      "rho_b": {"value": "0.864", "section": "Results > (2) Spearman correlation"},
+      "rho_diff": {"value": "\u22120.026", "section": "Results > (2) Spearman correlation"},
+      "rho_diff_lo": {"value": "\u22120.038", "section": "Results > (2) Spearman correlation"},
+      "rho_diff_hi": {"value": "\u22120.014", "section": "Results > (2) Spearman correlation"},
+      "neighbour_above_pct": {"value": "72", "section": "Answer (top)"},
+      "match_corr_a": {"value": "+0.001", "section": "Results > (4) Oddities and diagnostics > Why B is worse"},
+      "match_corr_b": {"value": "+0.042", "section": "Results > (4) Oddities and diagnostics > Why B is worse"}
+    }
+  },
+  "anchor_checks": {
+    "source": "mailbox/Anchor checks - results.md",
+    "numbers": {
+      "positions": {"value": "1,000", "section": "Check 1 > 4. Results"},
+      "differ_noise": {"value": "659", "section": "Check 1 > 4. Results"},
+      "differ_no_noise": {"value": "6", "section": "Check 1 > 4. Results"},
+      "pr_x86": {"value": "21.8", "section": "Check 1 > 4. Results (21.80)"},
+      "pr_arm": {"value": "16.8", "section": "Check 1 > 4. Results (16.77)"},
+      "noise_shift_sd": {"value": "\u22126.9", "section": "Check 1 (top)"},
+      "replayed": {"value": "4,387", "section": "Check 1 > 1. Where the anchor ran in v3"},
+      "replayed_same": {"value": "4,387", "section": "Check 1 > 1. Where the anchor ran in v3"},
+      "arm_match_pct": {"value": "31.0", "section": "Check 1 > 1. Where the anchor ran in v3"},
+      "selfplay_games": {"value": "300", "section": "Check 1 > 5. Why the noise differs > Self-play"},
+      "gammons_x86_pct": {"value": "71.7", "section": "Check 1 > 5. Why the noise differs > Self-play"},
+      "gammons_arm_pct": {"value": "40.3", "section": "Check 1 > 5. Why the noise differs > Self-play"},
+      "gammons_no_noise_pct": {"value": "30.0", "section": "Check 1 > 5. Why the noise differs > Self-play (Expert, x86)"}
+    }
+  }
+}

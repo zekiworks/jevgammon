@@ -25,9 +25,11 @@ the public page: no hostnames).
 
 The HTML file is patched between `<!-- v3:NAME -->` and `<!-- /v3:NAME -->` markers: live (data
 time), status (matches to play), scored (decisions scored), progressN (matches finished), leagueN
-(tables), N = 1..3. Matches not finished are listed per league: playing (a move within the last
-hour), paused (started, no recent move) or to play. The prose around the markers is written by
-hand and carries the time it was last checked. Standard library only.
+(tables), N = 1..3, and every piece of prose with a number in it (texts(): title, toc, byline,
+summary, headN, notesN, anchor-stats), which is also stored in the JSON under "text" so the page
+script shows prose and tables from the same data. Matches not finished are listed per league:
+playing (a move within the last hour of the run), paused (started, no recent move) or to play.
+The prose outside the markers carries no league numbers. Standard library only.
 """
 
 import glob
@@ -99,6 +101,16 @@ RUNS_ON = {
 
 READOUT = {"decision": "option probabilities", "logprobs": "letter probabilities", "choice_only": "one letter"}
 
+# Perplexity's Deciders run on our GPUs; their cost column is Perplexity's list price for the tokens, not money paid.
+SELF_HOSTED_PRICED = {"Decider v1.1 27B", "Decider v1.2 27B", "Decider Flash v1.2"}
+LIST_PRICE_ESTIMATE = "list-price estimate; runs on our GPUs"
+ANCHOR = "GNUbg weak"
+# v1 error rates of the v1 decision models (leagues #8, #11 and #12; the "By model" table of the report).
+V1_ERROR = {"Jev 1.13.0": 35.7, "Clef": 35.8, "Decider v1.1 27B": 32.7, "Cygnet (Gemma 4 12B)": 43.2,
+            "GPT-6 Luna": 39.4, "Open-Jev 27B v1.1": 59.6}
+LEAGUE_TITLE = {1: "League 1: decision models", 2: "League 2: workhorse chat models, closed and open",
+                3: "League 3: frontier chat models on subscriptions"}
+
 
 def utc(stamp: str) -> datetime:
     return datetime.fromisoformat(stamp.replace("Z", "+00:00")).astimezone(timezone.utc)
@@ -126,7 +138,7 @@ def interval(games: list[tuple[float, int]], rng: random.Random) -> tuple[float,
     return stats[int(0.025 * BOOTSTRAP)], stats[int(0.975 * BOOTSTRAP) - 1]
 
 
-def league(conn: sqlite3.Connection, lid: int, scored: dict, rng: random.Random, as_of: datetime) -> dict:
+def league(conn: sqlite3.Connection, lid: int, scored: dict, rng: random.Random, now: datetime) -> dict:
     row = conn.execute("SELECT * FROM leagues WHERE id = ?", (lid,)).fetchone()
     roster = json.loads(row["models"])
     names = [m["name"] for m in roster]
@@ -148,7 +160,7 @@ def league(conn: sqlite3.Connection, lid: int, scored: dict, rng: random.Random,
         moved = last.get(f["match_id"])
         if moved is None:
             state = "to play"
-        elif (as_of - utc(moved)).total_seconds() <= PLAYING:
+        elif (now - utc(moved)).total_seconds() <= PLAYING:
             state = "playing"
         else:
             state = "paused"
@@ -203,9 +215,11 @@ def league(conn: sqlite3.Connection, lid: int, scored: dict, rng: random.Random,
                 decisions=m["decisions"],
                 scored=n,
                 coverage=round(n / m["decisions"], 4),
+                invalid=m["invalid"],
                 invalid_share=round(m["invalid"] / m["decisions"], 4),
                 s_per_decision=round(m["ms"] / m["decisions"] / 1000, 2),
                 usd_per_1000=round(1000 * m["cost"] / m["decisions"], 3) if m["priced"] == m["decisions"] else None,
+                cost_note=LIST_PRICE_ESTIMATE if name in SELF_HOSTED_PRICED else None,
                 readout=READOUT.get(max(m["readout"], key=m["readout"].get)) if m["readout"] else None,
             )
             if n:
@@ -264,7 +278,8 @@ def tables(lg: dict) -> str:
             cell(html.escape(m.get("readout") or "–"), "l"),
             cell(pct(m.get("invalid_share"), 1), "zero" if not m.get("invalid_share") else ""),
             cell(num(m.get("s_per_decision"), ".2f") + (" s" if m.get("s_per_decision") is not None else "")),
-            cell("–" if cost is None else f"${cost:.2f}"),
+            cell("–" if cost is None else f"${cost:.2f}"
+                 + (f'<br><span class="muted">{m["cost_note"]}</span>' if m.get("cost_note") else "")),
             cell(html.escape(m["runs_on"] or "–"), "l wrap"),
         ]) + "</tr>")
     indent = "\n            "
@@ -335,6 +350,298 @@ def progress(lg: dict) -> str:
     return f"{lg['finished']} of {lg['matches']} matches finished, {lg['games']:,} games"
 
 
+# --- Generated text -------------------------------------------------------------------------
+# Every number in the v3 prose comes from the result written to v3-results.json: main() stores the HTML of
+# each text block in result["text"], patches it between the markers, and the page script sets it from the
+# JSON with the tables, so the prose and the tables always show the same data.
+
+def anchor_stats(conn: sqlite3.Connection) -> dict:
+    """Gammons and match wins of the anchor in finished league-stage matches, per league."""
+    out = {}
+    for lid in (1, 2, 3):
+        kinds = {k: [0, 0] for k in ("anchor", "models", "programs")}  # finished games, gammon or backgammon
+        wins = gammon_wins = certain = 0
+        programs = {m["name"] for m in json.loads(conn.execute("SELECT models FROM leagues WHERE id = ?", (lid,))
+                                                  .fetchone()[0]) if m["name"] in ("Random", "Safest")}
+        for lm in conn.execute(
+            """SELECT lm.model1, lm.model2, m.id, m.winner, m.rounds_planned FROM league_matches lm
+               JOIN matches m ON m.id = lm.match_id
+               WHERE lm.league_id = ? AND lm.stage = 'league' AND m.status = 'finished'""", (lid,)):
+            pair = {lm["model1"], lm["model2"]}
+            kind = "anchor" if ANCHOR in pair else "programs" if pair & programs else "models"
+            games = conn.execute("SELECT winner_player, result FROM games WHERE match_id = ? AND winner_player IS NOT NULL",
+                                 (lm["id"],)).fetchall()
+            kinds[kind][0] += len(games)
+            kinds[kind][1] += sum(g["result"] in ("gammon", "backgammon") for g in games)
+            if kind != "anchor" or lm["winner"] is None:
+                continue
+            side = 1 if lm["model1"] == ANCHOR else 2
+            if lm["winner"] != side:
+                continue
+            wins += 1
+            gammon_wins += any(g["winner_player"] == side and g["result"] in ("gammon", "backgammon") for g in games)
+            won = sum(g["winner_player"] == side for g in games)
+            certain += won > len(games) - won + 2 * lm["rounds_planned"] - len(games)
+        out[lid] = dict(gammon_share={k: round(v[1] / v[0], 3) if v[0] else None for k, v in kinds.items()},
+                        anchor_wins=wins, anchor_wins_with_gammon=gammon_wins, anchor_wins_certain_at_1_point=certain)
+    return out
+
+
+def e(m: dict) -> str:
+    return f"{m['error_rate']:.1f}"
+
+
+def overlap(a: dict, b: dict) -> bool:
+    return a["error_rate_lo"] <= b["error_rate_hi"] and b["error_rate_lo"] <= a["error_rate_hi"]
+
+
+def compare(a: dict, b: dict) -> str:
+    """How b's error rate stands against a's: a clear difference only when the intervals do not overlap."""
+    if overlap(a, b):
+        return "no clear difference in league play"
+    return "lower, and the intervals do not overlap" if b["error_rate"] < a["error_rate"] else \
+        "higher, and the intervals do not overlap"
+
+
+def names(items: list[str]) -> str:
+    items = list(items)
+    return items[0] if len(items) == 1 else ", ".join(items[:-1]) + " and " + items[-1]
+
+
+def span(values: list[float], unit: str = "", money: bool = False) -> str:
+    fmt = (lambda v: f"${v:,.0f}" if v >= 10 else f"${v:.2f}") if money else (lambda v: f"{v:.1f}{unit}")
+    lo, hi = min(values), max(values)
+    return fmt(lo) if fmt(lo) == fmt(hi) else f"{fmt(lo)} to {fmt(hi)}"
+
+
+def pairs(models: list[dict]) -> list[tuple[str, dict, dict]]:
+    """(base name, lower setting, higher setting) for every model played at two reasoning settings."""
+    by = {}
+    for m in models:
+        found = re.fullmatch(r"(.*) \((off|on|low|high)\)", m["name"])
+        if found and m.get("error_rate") is not None:
+            by.setdefault(found.group(1), {})[found.group(2) in ("on", "high")] = m
+    return [(base, s[False], s[True]) for base, s in by.items() if len(s) == 2]
+
+
+def setting(m: dict) -> str:
+    return re.fullmatch(r".* \((\w+)\)", m["name"]).group(1)
+
+
+def reasoning(lg: dict) -> str:
+    lines = []
+    for base, lo, hi in pairs(lg["models"]):
+        lines.append(f"{html.escape(base)} {e(lo)} ({setting(lo)}) and {e(hi)} ({setting(hi)}): {compare(lo, hi)}"
+                     f"; {lo['s_per_decision']:.1f} s and {hi['s_per_decision']:.1f} s per decision")
+    return ("<li><strong>Reasoning, lower and higher setting</strong> (error rate; a difference counts only when "
+            "the 95% intervals do not overlap): " + "; ".join(lines) + ". League games are not the same positions, "
+            "so these are not paired comparisons.</li>")
+
+
+def still(lg: dict) -> str:
+    if not lg["pending"]:
+        return ""
+    count = {s: sum(p["state"] == s for p in lg["pending"]) for s in ("playing", "paused", "to play")}
+    parts = [f"{n} {'not started' if s == 'to play' else s}" for s, n in count.items() if n]
+    return (f"<li><strong>Still to play</strong>: {len(lg['pending'])} of {lg['matches']} matches "
+            f"({', '.join(parts)}; listed above the table).</li>")
+
+
+def leader(lg: dict) -> str:
+    top = lg["models"][0]
+    word = "won" if lg["status"] == "finished" else "leads"
+    return f"{html.escape(top['name'])} {word} with {top['won']} wins in {top['played']} matches"
+
+
+def notes1(lg: dict) -> str:
+    ms = lg["models"]
+    by = {m["name"]: m for m in ms}
+    programs = [m for m in ms if (m["runs_on"] or "").startswith("program:")]
+    dm = sorted((m for m in ms if m["name"] != ANCHOR and m not in programs and m.get("error_rate") is not None),
+                key=lambda m: m["error_rate"])
+    out = []
+    top = ", ".join(f"{m['place']}. {html.escape(m['name'])} ({m['points']} points)" for m in ms[:5])
+    last = ms[-1]
+    out.append(f"<li><strong>{'Final ranking' if lg['status'] == 'finished' else 'Standing'}</strong>: {top}; "
+               f"{html.escape(last['name'])} last, with {last['won']} matches won.</li>")
+    best = dm[0]
+    close = [m for m in dm[1:] if m["error_rate"] <= best["error_rate_hi"]]
+    rest = [m for m in dm[1:] if m not in close]
+    text = f"<li><strong>{html.escape(best['name'])} has the lowest error rate of the decision models</strong>, {e(best)}."
+    if close:
+        text += f" {names(f'{html.escape(m['name'])} ({e(m)})' for m in close)} {'is' if len(close) == 1 else 'are'} within its interval;"
+    if rest:
+        text += f" every other decision model is at {e(rest[0])} or higher."
+    out.append(text + "</li>")
+    a = by.get(ANCHOR)
+    if a and a.get("error_rate") is not None:
+        worse = [m for m in dm if m["error_rate"] > a["error_rate"]]
+        if len(worse) == len(dm):
+            out.append(f"<li><strong>The weak GNU Backgammon anchor plays better than every decision model</strong> by "
+                       f"error rate ({e(a)}); its match wins come with many gammons (see "
+                       f'<a href="#v3-anchor">About the anchor</a>).</li>')
+        else:
+            out.append(f"<li><strong>The weak GNU Backgammon anchor</strong> ({e(a)}) has a lower error rate than "
+                       f"{len(worse)} of the {len(dm)} decision models.</li>")
+    safest, rnd = by.get("Safest"), by.get("Random")
+    if safest and safest.get("error_rate") is not None:
+        worse = [m for m in dm if m["error_rate"] > safest["error_rate"]]
+        near = [m for m in dm if safest["error_rate_lo"] <= m["error_rate"] <= safest["error_rate"]]
+        text = (f"<li><strong>{len(worse)} decision model{'s play' if len(worse) != 1 else ' plays'} worse than the "
+                f"Safest program</strong> by error rate"
+                + (f": {names(f'{html.escape(m['name'])} ({e(m)})' for m in worse)}, against {e(safest)}." if worse
+                   else f" ({e(safest)})."))
+        if near:
+            text += f" {names(f'{html.escape(m['name'])} ({e(m)})' for m in near)} within Safest's interval."
+        if rnd and rnd.get("error_rate") is not None:
+            text += f" Random scores {e(rnd)}."
+        out.append(text + "</li>")
+    v1 = [(by[n], v) for n, v in V1_ERROR.items() if by.get(n, {}).get("error_rate") is not None]
+    if v1:
+        higher = sum(m["error_rate"] > v for m, v in v1)
+        out.append(f"<li><strong>The {len(v1)} v1 decision models against their v1 error rates</strong>: {higher} higher, "
+                   f"{len(v1) - higher} lower or equal: "
+                   + ", ".join(f"{html.escape(m['name'])} {e(m)} (v1: {v:.1f})" for m, v in v1)
+                   + ". The games, opponents and option order differ, so this is not a paired comparison.</li>")
+    vs = [(by[x], by[y]) for x, y in (("Jev 1.13.0", "Jev 1.14.0"), ("Decider v1.1 27B", "Decider v1.2 27B"))
+          if by.get(x, {}).get("error_rate") is not None and by.get(y, {}).get("error_rate") is not None]
+    if vs:
+        out.append("<li><strong>New versions</strong>: " + "; ".join(
+            f"{html.escape(y['name'])} {e(y)} ({y['points']} points) against {html.escape(x['name'])} {e(x)} "
+            f"({x['points']} points): {compare(x, y)}" for x, y in vs) + ".</li>")
+    hosted = [m for m in dm if not (m["runs_on"] or "").startswith("our GPU")]
+    priced = [m["usd_per_1000"] for m in hosted if m.get("usd_per_1000") is not None]
+    if hosted:
+        out.append(f"<li><strong>The hosted decision services</strong> ({len(hosted)}) take "
+                   f"{span([m['s_per_decision'] for m in hosted], ' s')} per decision"
+                   + (f"; the {len(priced)} with a price cost {span(priced, money=True)} per 1,000 decisions" if priced else "")
+                   + ".</li>")
+    return "\n        ".join(out)
+
+
+def notes2(lg: dict) -> str:
+    ms = [m for m in lg["models"] if m.get("error_rate") is not None]
+    rated = sorted(ms, key=lambda m: m["error_rate"])
+    closed = [m for m in rated if "subscription" in (m["runs_on"] or "")]
+    open_ = [m for m in rated if m not in closed and m["name"] != ANCHOR]
+    out = [f"<li><strong>{leader(lg)}</strong>. The lowest error rate is {html.escape(rated[0]['name'])}'s, "
+           f"{e(rated[0])}.</li>", reasoning(lg)]
+    if closed and open_:
+        gap = open_[0]["error_rate"] - closed[0]["error_rate"]
+        out.append(f"<li><strong>The best open setup is {gap:.1f} "
+                   f"points behind the best closed one</strong>: {html.escape(open_[0]['name'])} at {e(open_[0])}, "
+                   f"against {html.escape(closed[0]['name'])} at {e(closed[0])}.</li>")
+    a = next((m for m in ms if m["name"] == ANCHOR), None)
+    if a:
+        below_closed = [m for m in closed if m["error_rate"] < a["error_rate"]]
+        below_open = [m for m in open_ if m["error_rate"] < a["error_rate"]]
+        out.append(f"<li><strong>The weak GNU Backgammon anchor</strong> ({e(a)}): {len(below_closed)} of "
+                   f"{len(closed)} closed setups have a lower error rate; of the {len(open_)} open setups, "
+                   + (names(f"{html.escape(m['name'])} ({e(m)})" for m in below_open) + " do" if below_open else "none")
+                   + ".</li>")
+    out.append(invalid(lg))
+    out.append(still(lg))
+    return "\n        ".join(x for x in out if x)
+
+
+def invalid(lg: dict) -> str:
+    bad = [m for m in lg["models"] if m.get("invalid")]
+    if not bad:
+        return "<li><strong>No invalid answers.</strong></li>"
+    return ("<li><strong>Invalid answers</strong>: " + ", ".join(
+        f"{m['invalid']} from {html.escape(m['name'])} ({pct(m['invalid_share'], 1)} of its decisions)" for m in bad)
+        + "; none from any other setup.</li>")
+
+
+def notes3(lg: dict) -> str:
+    ms = [m for m in lg["models"] if m.get("error_rate") is not None]
+    rated = sorted(ms, key=lambda m: m["error_rate"])
+    best = rated[0]
+    close = [m for m in rated[1:] if overlap(best, m) and m["name"] != ANCHOR][:3]
+    out = [f"<li><strong>{leader(lg)}</strong>. Lowest error rates: "
+           + ", ".join(f"{html.escape(m['name'])} {e(m)}" for m in [best] + close)
+           + (", with overlapping intervals" if close else "") + ".</li>", reasoning(lg)]
+    a = next((m for m in ms if m["name"] == ANCHOR), None)
+    if a:
+        better = [m for m in ms if m["name"] != ANCHOR and m["error_rate"] < a["error_rate"]]
+        out.append(f"<li><strong>{len(better)} of the {len(ms) - 1} setups have a lower error rate than the weak "
+                   f"GNU Backgammon anchor</strong> ({e(a)}).</li>")
+    out.append(invalid(lg))
+    for word in ("off", "on"):
+        side = [m for m in ms if m["name"].endswith(f"({word})")]
+        if side:
+            slow = max(side, key=lambda m: m["s_per_decision"])
+            out.append(f"<li><strong>Time per decision, reasoning {word}</strong>: "
+                       f"{span([m['s_per_decision'] for m in side], ' s')}; slowest {html.escape(slow['name'])}.</li>")
+    priced = [m["usd_per_1000"] for m in ms if m.get("usd_per_1000") is not None]
+    if priced:
+        out.append(f"<li><strong>Cost</strong> at API list prices: {span(priced, money=True)} per 1,000 decisions.</li>")
+    out.append(still(lg))
+    return "\n        ".join(x for x in out if x)
+
+
+def phase(lg: dict) -> str:
+    """'' when finished, else 'in progress' (a match played within the last hour) or 'paused'."""
+    if lg["status"] == "finished":
+        return ""
+    return "in progress" if any(p["state"] == "playing" for p in lg["pending"]) else "paused"
+
+
+def byline(result: dict) -> str:
+    done = [str(lg["id"]) for lg in result["leagues"] if lg["status"] == "finished"]
+    parts = [f"League{'s' if len(done) > 1 else ''} {names(done)} finished"] if done else []
+    parts += [f"League {lg['id']}: {lg['finished']} of {lg['matches']} matches, {phase(lg)}"
+              for lg in result["leagues"] if lg["status"] != "finished"]
+    return "; ".join(parts)
+
+
+def summary(result: dict) -> str:
+    l1, l2, l3 = result["leagues"]
+    best = lambda lg: min((m for m in lg["models"] if m.get("error_rate") is not None), key=lambda m: m["error_rate"])
+    dm = [m for m in l1["models"] if m["name"] != ANCHOR and not (m["runs_on"] or "").startswith("program:")
+          and m.get("error_rate") is not None]
+    a1 = next((m for m in l1["models"] if m["name"] == ANCHOR and m.get("error_rate") is not None), None)
+    word = lambda lg: "first" if lg["status"] == "finished" else "leads"
+    state = lambda lg: "finished" if lg["status"] == "finished" else phase(lg)
+    b2 = best(l2)
+    return (f"decision models ({state(l1)}: {html.escape(l1['models'][0]['name'])} {word(l1)}"
+            + (", and the weak GNU Backgammon anchor plays better than every decision model"
+               if a1 and all(m["error_rate"] > a1["error_rate"] for m in dm) else "")
+            + f"), workhorse chat models closed and open ({state(l2)}: {html.escape(l2['models'][0]['name'])} "
+            f"{word(l2)}; lowest error rate {html.escape(b2['name'])}, {e(b2)}), and frontier chat models on "
+            f"subscriptions, each with reasoning off and on ({state(l3)}: {html.escape(l3['models'][0]['name'])} "
+            f"{word(l3)})")
+
+
+def anchor_notes(stats: dict) -> str:
+    share = lambda x: "–" if x is None else f"{100 * x:.0f}%"
+    s = {lid: v["gammon_share"] for lid, v in stats.items()}
+    wins = sum(v["anchor_wins"] for v in stats.values())
+    gammon = sum(v["anchor_wins_with_gammon"] for v in stats.values())
+    certain = {lid: v["anchor_wins_certain_at_1_point"] for lid, v in stats.items()}
+    return (f"<li><strong>Gammons in the leagues.</strong> Games with the anchor end in a gammon or backgammon in "
+            + ", ".join(f"{share(s[l]['anchor'])} (League {l})" for l in s)
+            + "; games between two models in " + ", ".join(f"{share(s[l]['models'])} (League {l})" for l in s)
+            + f"; games with Random or Safest in {share(s[1]['programs'])}.</li>\n        "
+            f"<li><strong>Match wins.</strong> {gammon} of the {wins} matches the anchor won included a gammon or "
+            f"backgammon by it. Scored at 1 point per game, {sum(certain.values())} of those wins are certain ("
+            + ", ".join(f"{n} in League {l}" for l, n in certain.items())
+            + "); the rest would need games that were never played.</li>")
+
+
+def texts(result: dict, stats: dict) -> dict:
+    l1, l2, l3 = result["leagues"]
+    phases = {phase(lg) for lg in result["leagues"]} - {""}
+    suffix = "in progress" if "in progress" in phases else "paused" if phases else ""
+    out = {"title": "v3 leagues" + (f" ({suffix})" if suffix else ""), "byline": byline(result),
+           "summary": summary(result), "anchor-stats": anchor_notes(stats),
+           "notes1": notes1(l1), "notes2": notes2(l2), "notes3": notes3(l3)}
+    out["toc"] = out["title"]
+    for lg in result["leagues"]:
+        out[f"head{lg['id']}"] = LEAGUE_TITLE[lg["id"]] + (f" ({phase(lg)})" if phase(lg) else "")
+    return out
+
+
 def patch(text: str, name: str, body: str) -> str:
     pattern = re.compile(rf"(<!-- v3:{name} -->).*?(<!-- /v3:{name} -->)", re.S)
     if not pattern.search(text):
@@ -352,9 +659,11 @@ def main():
     result = dict(
         data_as_of=as_of.strftime("%Y-%m-%dT%H:%MZ"),
         gnubg=dict(scored=len(scored), skipped=skipped, method="GNU Backgammon 1.08: 0-ply on every play, 2-ply on the five best and the chosen one"),
-        leagues=[league(conn, lid, scored, rng, as_of) for lid in (1, 2, 3)],
+        leagues=[league(conn, lid, scored, rng, datetime.now(timezone.utc)) for lid in (1, 2, 3)],
     )
     result["scored"] = sum(m.get("scored", 0) for lg in result["leagues"] for m in lg["models"])
+    result["anchor"] = anchor_stats(conn)
+    result["text"] = texts(result, result["anchor"])
     Path(json_out).write_text(json.dumps(result, indent=1, ensure_ascii=False) + "\n")
 
     text = Path(html_path).read_text()
@@ -364,6 +673,8 @@ def main():
     for lg in result["leagues"]:
         text = patch(text, f"league{lg['id']}", "\n      " + tables(lg) + "\n      ")
         text = patch(text, f"progress{lg['id']}", progress(lg))
+    for name, body in result["text"].items():
+        text = patch(text, name, body)
     Path(html_path).write_text(text)
 
 

@@ -1,0 +1,12 @@
+[Unit]
+Description=Midnight takeover of bariton's GPUs: Part A smoke tests, League 2's last matches, cleanup (tools/v3/midnight_takeover.sh)
+
+[Service]
+Type=simple
+ExecStart=%h/code/jevgammon/tools/v3/midnight_takeover.sh
+WorkingDirectory=%h/code/jevgammon
+Environment=PATH=%h/.pyenv/shims:%h/.local/bin:%h/.cargo/bin:/usr/local/bin:/usr/bin:/bin
+TimeoutStartSec=infinity
+TimeoutStopSec=15min
+# League 2 runs in its own unit (league2) and DeepSeek in docker: stopping this unit stops only
+# the script (and a smoke test in progress), not the league.

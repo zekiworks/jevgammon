@@ -6,6 +6,13 @@ against the thinking players (Gemma 4 31B (on), LFM2.5-24B-A2B (on), Qwen3.8-27B
 equivalence checks and history: `tools/v3/servers/README.md`, `freeze/league2-changes.json`, and
 the players' `device` fields in `v3.db` (`leagues.models`, league 2).
 
+Scheduled: at 00:00 UTC on 2026-10-22 `midnight-takeover.timer` (one-shot, `tools/v3/systemd/`) runs
+`tools/v3/midnight_takeover.sh`: stops the user's GPU jobs (docker stop / SIGINT, SIGTERM; never
+SIGKILL), runs the Part A local smoke tests (d3-turbo, Nemotron 3.5 Bolt), resumes League 2 as below
+(check: `tools/v3/ds_equiv.py`), and when it has finished does the shutdown below and writes
+`mailbox/Midnight takeover - log.md`. Log: `midnight-takeover.log`. Preview: `--dry-run`. Cancel:
+`systemctl --user disable --now midnight-takeover.timer` (or stop `midnight-takeover.service`).
+
 ## Servers League 2 uses now
 
 | where | server | URL in v3.db | start |

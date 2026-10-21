@@ -1,0 +1,11 @@
+[Unit]
+Description=One-shot: take bariton's GPUs over at 00:00 UTC on 2026-10-22 (midnight-takeover.service)
+
+[Timer]
+OnCalendar=2026-10-22 00:00:00 UTC
+AccuracySec=1s
+Persistent=false
+Unit=midnight-takeover.service
+
+[Install]
+WantedBy=timers.target

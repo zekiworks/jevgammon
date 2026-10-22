@@ -358,5 +358,45 @@
       "matchday 23: Fastino GLiDE v Decider v1.2 27B"
     ],
     "stale_playoff_fixtures": 0
+  },
+  {
+    "added_at": "2026-10-22T17:16:27Z",
+    "league": 1,
+    "db": "v3.db",
+    "name": "Fastino GLiDE v1.2 (local)",
+    "harness_commit": "d2f1f9e4411e3877e0b950fab41dc2ab5469fcfe",
+    "harness_dirty": true,
+    "entry": {
+      "name": "Fastino GLiDE v1.2 (local)",
+      "spec": "fastino/glide-v1.2",
+      "provider": "local (glide/server.py)",
+      "quantization": "bf16",
+      "base_url": "http://127.0.0.1:18101",
+      "note": "Fastino's GLiDE v1.2 (served model name glide-v1.2, package version 1.2.0) from its released weights: Hugging Face fastino/GLiDE @ a7e45896be7c96ba3354891da790c5ec99c30b6c (Fastino Community License; a Qwen3.8-27B modification, bf16, 255-way decision readout), run on our GPU through the glide/server.py its repository ships (tools/v3/servers/glide-v12.sh, GLIDE_GPU=0; Python 3.12.13, torch 2.14.0+cu130, transformers 5.17.0, flash-linear-attention 0.5.2; GLIDE_MAX_BATCH=1, so an answer never depends on other traffic); joined late 2026-10-22; smoke test 50/50 answered with probabilities (error rate 22.5; Fastino's API, League 1's \"Fastino GLiDE\", 20.0, same play 48/50, max |dp| 0.022). Not the same setup as \"Fastino GLiDE\", whose API responses name the model glide_v2",
+      "device": "RTX PRO 6000 (bariton GPU 0)",
+      "parallel": 4
+    },
+    "entry_sha256": "ff6a0bf409ab013fcf44989f6c469f4050a600bdb441defb1579329943888e2b",
+    "fixtures": [
+      "matchday 24: Fastino GLiDE v1.2 (local) v Decider v1.1 27B",
+      "matchday 24: Fastino GLiDE v1.2 (local) v SubQ Snap Preview",
+      "matchday 24: Fastino GLiDE v1.2 (local) v Clef",
+      "matchday 24: Open-Jev 27B v1.1 v Fastino GLiDE v1.2 (local)",
+      "matchday 24: Fastino GLiDE v1.2 (local) v Cygnet (Gemma 4 12B)",
+      "matchday 24: Random v Fastino GLiDE v1.2 (local)",
+      "matchday 24: Fastino GLiDE v1.2 (local) v Safest",
+      "matchday 24: GNUbg weak v Fastino GLiDE v1.2 (local)",
+      "matchday 24: Fastino GLiDE v1.2 (local) v Liquid d1-ultra",
+      "matchday 24: Fastino GLiDE v1.2 (local) v Jev 1.14.0",
+      "matchday 24: Jev 1.13.0 v Fastino GLiDE v1.2 (local)",
+      "matchday 24: Celeris-1 Decision v Fastino GLiDE v1.2 (local)",
+      "matchday 24: Fastino GLiDE v1.2 (local) v GPT-6 Luna",
+      "matchday 24: Decider Flash v1.2 v Fastino GLiDE v1.2 (local)",
+      "matchday 24: Fastino GLiDE v1.2 (local) v Winnow-12B",
+      "matchday 24: Mercury Decide v Fastino GLiDE v1.2 (local)",
+      "matchday 24: Fastino GLiDE v1.2 (local) v Fastino GLiDE",
+      "matchday 24: Fastino GLiDE v1.2 (local) v Decider v1.2 27B"
+    ],
+    "stale_playoff_fixtures": 0
   }
 ]

@@ -1,0 +1,29 @@
+{
+  "note": "Fastino GLiDE v1.2 (local weights) smoke test before it joins League 1 late: the 50 smoke positions (positions/smoke.jsonl), same prompt (bg-v2) and option-order seed as the v3 leagues, next to Fastino's hosted GLiDE (League 1's \"Fastino GLiDE\", same request). Not a league: run with `jevgammon ask` only.",
+  "prompt_version": "bg-v2",
+  "seed": 0,
+  "order_seed": 1190975713392774006,
+  "rounds": 3,
+  "clock": 0,
+  "delay": 30,
+  "max_turns": 300,
+  "players": [
+    {
+      "name": "Fastino GLiDE v1.2 (local)",
+      "spec": "fastino/glide-v1.2",
+      "provider": "local (glide/server.py)",
+      "quantization": "bf16",
+      "parallel": 4,
+      "base_url": "http://127.0.0.1:18101",
+      "device": "RTX PRO 6000 (bariton; GPU index from GLIDE_GPU at run time)",
+      "note": "Fastino's GLiDE v1.2 (Hugging Face fastino/GLiDE @ a7e45896be7c96ba3354891da790c5ec99c30b6c, Fastino Community License; Qwen3.8-27B modification, bf16, 255-way decision readout) on our GPU through the glide/server.py its repository ships (tools/v3/servers/glide-v12.sh; torch 2.14.0, transformers 5.17.0, flash-linear-attention 0.5.2): served model name glide-v1.2, one request per forward pass (GLIDE_MAX_BATCH=1), no text generated, 40,000 tokens per question"
+    },
+    {
+      "name": "Fastino GLiDE",
+      "spec": "fastino",
+      "provider": "fastino",
+      "quantization": null,
+      "note": "Fastino's hosted System One API, model fastino/GLiDE (responses name glide_v2), as League 1's \"Fastino GLiDE\""
+    }
+  ]
+}

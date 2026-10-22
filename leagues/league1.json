@@ -187,6 +187,16 @@
       "provider": "fastino",
       "quantization": null,
       "note": "Fastino's hosted System One API; key added 2026-10-20"
+    },
+    {
+      "name": "Fastino GLiDE v1.2 (local)",
+      "spec": "fastino/glide-v1.2",
+      "provider": "local (glide/server.py)",
+      "quantization": "bf16",
+      "parallel": 4,
+      "base_url": "http://127.0.0.1:18101",
+      "device": "RTX PRO 6000 (bariton GPU 0)",
+      "note": "Fastino's GLiDE v1.2 (served model name glide-v1.2, package version 1.2.0) from its released weights: Hugging Face fastino/GLiDE @ a7e45896be7c96ba3354891da790c5ec99c30b6c (Fastino Community License; a Qwen3.8-27B modification, bf16, 255-way decision readout), run on our GPU through the glide/server.py its repository ships (tools/v3/servers/glide-v12.sh, GLIDE_GPU=0; Python 3.12.13, torch 2.14.0+cu130, transformers 5.17.0, flash-linear-attention 0.5.2; GLIDE_MAX_BATCH=1, so an answer never depends on other traffic); joined late 2026-10-22; smoke test 50/50 answered with probabilities (error rate 22.5; Fastino's API, League 1's \"Fastino GLiDE\", 20.0, same play 48/50, max |dp| 0.022). Not the same setup as \"Fastino GLiDE\", whose API responses name the model glide_v2"
     }
   ]
 }

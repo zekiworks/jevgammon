@@ -16,6 +16,7 @@ tools/v3/servers/qwen38-27b.sh start|stop|status|probe      # League 2 from 2026
 tools/v3/servers/lfm25-24b.sh start|stop|status|probe       # League 2 from 2026-10-19 22:26 (GPU 2; spark3 from 2026-10-20 21:10)
 D3_GPU=N tools/v3/servers/d3-turbo.sh download|setup|start|stop|status|probe   # Part A smoke test (vllm-sr/d3-turbo), see the end
 NEMOTRON_GPUS=N[,M] [NEMOTRON_CHECKPOINT=24gb|bf16] tools/v3/servers/nemotron35-bolt.sh fetch|start|stop|status|probe   # Part A smoke test (Nemotron 3.5 Bolt), see the end
+GLIDE_GPU=N tools/v3/servers/glide-v12.sh download|setup|start|stop|status|probe   # League 1 late joiner Fastino GLiDE v1.2 (local), 2026-10-22, see the end
 ```
 
 vLLM servers run as docker containers (`docker logs -f <name>`); the Python decision servers
@@ -35,6 +36,7 @@ GPU 0 and 0.5 GB on the others) stays up; the memory shares below leave room for
 | `decider.sh` | `http://127.0.0.1:18097/v1/systemone` | `pplx-decider-v1.1-27b` | `~/code/pplx-decider/checkpoint` | `bf16` | 3 | B |
 | `d3-turbo.sh` | `http://127.0.0.1:18100/v1/systemone` (unit `v3-d3-turbo`) | `d3-turbo` (accepted, not checked) | `vllm-sr/d3-turbo` @ `a0f3e9e5`, `~/.cache/huggingface/hub` | `bf16` (fp32 readout) | `D3_GPU`, about 52 GiB | Part A |
 | `nemotron35-bolt.sh` | `http://127.0.0.1:8893/v1` (OpenAI-compatible; container `v3-nemotron35-bolt`) | `nemotron-3.5-bolt` | `nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB` @ `cf2effc5` + drafter `…-24GB-LiLiCorr` @ `449d2414`, `~/.cache/huggingface/hub` | IQ2_XXS routed experts (2.06 bits, QAD), Q8_0 / W4A16 NVFP4 elsewhere; FP8 KV cache | `NEMOTRON_GPUS` (one), 0.50 (two GPUs: BF16 @ `56702103`, TP2, 0.92 each) | Part A |
+| `glide-v12.sh` | `http://127.0.0.1:18101/v1/systemone` (unit `v3-glide-v12`) | `glide-v1.2` (request's model ignored) | `fastino/GLiDE` @ `a7e45896`, `~/.cache/huggingface/hub` | `bf16` | `GLIDE_GPU`, 53.6 GiB | League 1 |
 
 The "weights as served" column is what goes into a player config's `quantization` (and so
 `turns.quantization`).
@@ -416,3 +418,21 @@ bariton: `GEMMA_GPUS="0 1" GEMMA_MAX_SEQS=24 gemma4-31b-replicas.sh start`, `LFM
 and 3). 20 stored League 2 (off) requests (`/tmp/equiv.py`): Gemma 20/20 (max |Δp| 0.044), LFM2.5 17/20
 (max 0.15; not deterministic), Qwen 20/20 (max 0.007). Resumed 15:37:42; Spark copies stopped 15:40.
 See `freeze/league2-changes.json`.
+
+## League 1 late joiner: Fastino GLiDE v1.2 (local) (2026-10-22)
+
+`glide-v12.sh` runs the HTTP server that `fastino/GLiDE` ships (`glide/server.py`, System One) from
+the pinned snapshot `a7e45896be7c96ba3354891da790c5ec99c30b6c` (Fastino Community License;
+benchmarking is not "Production", so allowed) in `~/code/glide/.venv` (the snapshot's
+`requirements.txt` on uv's Python 3.12.13: torch 2.14.0+cu130, transformers 5.17.0,
+flash-linear-attention 0.5.2). Served name `glide-v1.2`; `GLIDE_MAX_BATCH=1` (answers independent of
+other traffic); Triton kernels cached in `~/code/glide/triton-cache`. Loads in 20 s, 53.6 GiB on
+bariton GPU 0; it reproduces the model card's example to four decimals. The player
+"Fastino GLiDE v1.2 (local)" uses the `fastino` service with `base_url` `http://127.0.0.1:18101`.
+Fastino's API (League 1's "Fastino GLiDE") answers as `glide_v2`; on the 50 smoke positions it chose
+the same play as these weights 48/50 times (max |Δp| 0.022).
+
+League 1 ran with it from 17:16 UTC: GLiDE GPU 0, Open-Jev GPU 3 (`OPEN_JEV_GPU=3`), Decider v1.2
+27B + Flash + Winnow-12B GPU 1 (`DECIDER_V12_GPU=1`, `WINNOW_GPU=1`; 73.5 GiB), Clef and Cygnet on
+spark and Decider v1.1 on spark3 (started without spark3's Gemma). Paused at 17:22 UTC (Can); resume
+steps in `AFTER_MORNING.md`. Log: `mailbox/GLiDE v1.2 - log.md`.

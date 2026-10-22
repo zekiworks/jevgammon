@@ -544,7 +544,7 @@
    "model": "Fastino GLiDE",
    "setting": null,
    "model_id": "fastino/GLiDE",
-   "provider": "Fastino API",
+   "provider": "Fastino API (responses name the model glide_v2)",
    "date_run": null,
    "price": null,
    "model_type": "decision model",
@@ -555,7 +555,7 @@
    "rules_text": "long",
    "option_groups": "up to 255 options per request; more legal plays are split into equal groups, a winner per group, then among the winners",
    "sampling": "not sent (decision request)",
-   "notes": "Fastino's hosted decision API",
+   "notes": "Fastino's hosted decision API; every stored response (all its League 1 matches, 20 Oct) names the model glide_v2, as did the API on 22 Oct",
    "sources": [
     "leagues.models (snapshot of v3.db)",
     "leagues/league1.json",
@@ -602,6 +602,37 @@
     "turns.provider/quantization/probability_source/group_size (snapshot)"
    ],
    "missing": []
+  },
+  {
+   "dataset": "league-1",
+   "name": "Fastino GLiDE v1.2 (local)",
+   "slug": "fastino-glide-v1-2-local",
+   "model": "Fastino GLiDE v1.2",
+   "setting": null,
+   "model_id": "fastino/GLiDE @ a7e45896 (glide-v1.2)",
+   "provider": "our GPU, bf16, Fastino's released weights and server",
+   "date_run": null,
+   "price": null,
+   "model_type": "decision model",
+   "weights": "open",
+   "runs_on": "our GPUs",
+   "reasoning": "none (decision model)",
+   "confidence_source": "decision-model probability",
+   "rules_text": "long",
+   "option_groups": "up to 255 options per request; more legal plays are split into equal groups, a winner per group, then among the winners",
+   "sampling": "not sent (decision request)",
+   "notes": "Fastino's GLiDE v1.2 weights (Hugging Face fastino/GLiDE, Fastino Community License) through the glide/server.py its repository ships, bf16, one request per forward pass; joined late (22 Oct)",
+   "sources": [
+    "leagues.models (snapshot of v3.db)",
+    "leagues/league1.json",
+    "freeze/league1-additions.json",
+    "tools/v3/page_v3.py",
+    "src/players/decision.rs",
+    "turns.provider/quantization/probability_source/group_size (snapshot)"
+   ],
+   "missing": [
+    "price"
+   ]
   },
   {
    "dataset": "league-2",

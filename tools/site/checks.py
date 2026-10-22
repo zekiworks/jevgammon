@@ -6,11 +6,14 @@
    (decimals, percentages, thousands separators, signs). Dates and times are taken out first.
 2. Counts add up: per league, setup decisions sum to the league's decisions and match the snapshot; invalid +
    valid = decisions; risk cells and phase cells sum to the scored decisions; standings played = 2 x matches
-   finished; the v1 set is setups x positions; exported decisions match the engine-scored decisions.
+   finished; the v1 set is setups x positions; exported decisions match the engine-scored decisions; the B6 marks
+   on Every decision match the 2x2 counts.
 3. No mixing: no table holds rows of two datasets; v1 rows only inside an Earlier-version block; every block
    of a league that has not finished says "Provisional: league still running".
-4. No banned strings (hostnames, IPs, local paths, keys, the other benchmark's name) in any output file.
+4. No private addresses or credentials (B7): hostnames, IPs, ports, server paths, keys, tokens, request headers,
+   the other benchmark's name, in any output file including the decompressed decision files.
 5. Every relative link resolves; ids are unique per page and every #anchor exists.
+6. Every published finding still holds (B4): findings.py reruns each finding's machine check on the built data.
 """
 
 import gzip
@@ -20,6 +23,7 @@ import sqlite3
 from html.parser import HTMLParser
 from pathlib import Path
 
+import findings
 from common import BANNED, CONTENT, PROVISIONAL, PROVISIONAL_NOTE
 
 NUM = re.compile(r"(?<![\w.\u2212+-])([\u2212+-]?)(\d{1,3}(?:,\d{3})+|\d+)(\.\d+)?")
@@ -197,6 +201,12 @@ def check_counts(S: dict) -> list[str]:
     for name in v1["setups"]:
         if got.get(name, {}).get("decisions") != v1["positions"]:
             bad.append(f"v1-set/{name}: exported {got.get(name, {}).get('decisions')} of {v1['positions']}")
+    # Every decision's B6 mark (Every decision filters) must match the 2x2 counts of the analyses.
+    for ds, setups in sets:
+        for name, s in setups.items():
+            r, rc = s["risk"], exp.get(ds, {}).get(name, {}).get("risk")
+            if rc is not None and (rc["risk"], rc["safety"], rc["none"]) != (r["risk_pays"], r["safety_pays"], r["no_risk_choice"]):
+                bad.append(f"{ds}/{name}: exported risk marks {rc} != analysis {r['risk_pays']}/{r['safety_pays']}/{r['no_risk_choice']}")
     return bad
 
 
@@ -269,4 +279,5 @@ def run(S: dict, out: Path) -> list[str]:
         m = BANNED.search(data.decode("utf-8", "replace"))
         if m:
             failures.append(f"{p.relative_to(out)}: banned string {m.group(0)!r}")
+    failures += findings.failures(out)
     return failures

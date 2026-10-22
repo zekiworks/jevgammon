@@ -321,44 +321,59 @@ def quality(decs: list[dict], key: str) -> dict:
     return out
 
 
+def risk_class(d: dict) -> tuple[str | None, bool | None]:
+    """B6 v6, one rule per decision: ('none' | 'safety' | 'risk', took a risk). Hitting rolls are the numbers the
+    model was shown. Minimum risk: the fewest hitting rolls any legal play leaves; best safe play: the engine's best
+    among the plays that leave it. No hit-risk trade-off when every play leaves the same number."""
+    if d["invalid"] or not d["scored"]:
+        return None, None
+    shots, losses = d["shots"], d["losses"]
+    least = min(shots)
+    took = shots[d["chosen"]] > least
+    if least == max(shots):
+        return "none", False
+    best_safe = min(losses[i] for i, s in enumerate(shots) if s == least)
+    return ("safety" if best_safe < T["safety_pays_loss_below"] else "risk"), took
+
+
 def risk(decs: list[dict], key: str) -> dict:
-    """Is the risk worth it? (B6) for one setup: the 2x2 of decision kind x what the model did."""
+    """Is the risk worth it? (B6) for one setup: the 2x2 of decision kind x what the model did. Each cell: raw
+    count, share of its row (denominator: the decisions of that row's class), mean equity lost (None when empty).
+    Shares are always shown with count and denominator (B9): no 'Too few' here."""
     cells = {k: [] for k in ("risk_took", "risk_safe", "safety_took", "safety_safe")}
     by_phase = defaultdict(lambda: {k: [] for k in cells})
     skipped = 0
     for d in decs:
-        if d["invalid"] or not d["scored"]:
+        cls, took = risk_class(d)
+        if cls is None:
             continue
-        shots, losses = d["shots"], d["losses"]
-        least = min(shots)
-        if least == max(shots):
-            skipped += 1  # every play leaves the same number of hitting rolls: no risk choice
+        if cls == "none":
+            skipped += 1
             continue
-        safest = [i for i, s in enumerate(shots) if s == least]
-        best = min(range(len(losses)), key=lambda i: losses[i])
-        safety_pays = shots[best] == least or min(losses[i] for i in safest) < T["safety_pays_loss_below"]
-        took = shots[d["chosen"]] > least
-        k = ("safety_" if safety_pays else "risk_") + ("took" if took else "safe")
+        k = f"{cls}_" + ("took" if took else "safe")
         cells[k].append(d)
         by_phase[d["phase"]][k].append(d)
     total = sum(len(v) for v in cells.values())
+    rows = {"risk": len(cells["risk_took"]) + len(cells["risk_safe"]),
+            "safety": len(cells["safety_took"]) + len(cells["safety_safe"])}
 
-    def cell(v):
+    def cell(k, v):
+        den = rows[k.split("_")[0]]
         withp = [d["p"] for d in v if d.get("p") is not None]
-        return dict(n=len(v), share=len(v) / total if total else None,
+        return dict(n=len(v), den=den, share=len(v) / den if den else None,
                     mean_loss=sum(d["loss"] for d in v) / len(v) if v else None,
                     confidence=sum(withp) / len(withp) if withp and len(withp) == len(v) else None)
 
     def heads(c):
         rp = len(c["risk_took"]) + len(c["risk_safe"])
         sp = len(c["safety_took"]) + len(c["safety_safe"])
-        return dict(risk_pays=rp, safety_pays=sp,
+        return dict(risk_pays=rp, safety_pays=sp, took_when_pays=len(c["risk_took"]),
+                    took_needless=len(c["safety_took"]),
                     takes_risk=len(c["risk_took"]) / rp if rp else None,
-                    needless_risk=len(c["safety_took"]) / sp if sp else None,
-                    risk_too_few=too_few(rp), safety_too_few=too_few(sp))
+                    needless_risk=len(c["safety_took"]) / sp if sp else None)
 
-    return dict(decisions=total, no_risk_choice=skipped, too_few=too_few(total),
-                cells={k: cell(v) for k, v in cells.items()}, **heads(cells),
+    return dict(decisions=total, no_risk_choice=skipped,
+                cells={k: cell(k, v) for k, v in cells.items()}, **heads(cells),
                 phases={ph: heads(c) for ph, c in by_phase.items()})
 
 

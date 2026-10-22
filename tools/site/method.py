@@ -26,7 +26,7 @@ PHASES = ("opening", "contact", "holding", "race", "bear-off")  # display order,
 VERDICTS = [
     ("High helps", "The paired 95% interval of the error difference (high minus low, or B minus A) lies entirely below zero."),
     ("High hurts", "The interval lies entirely above zero."),
-    ("No clear benefit", "The interval includes zero. This does not mean the two are the same."),
+    ("No clear benefit", "The interval includes zero. Never read as \"the same\", \"level\" or \"gains nothing\"."),
     ("Depends on the position", "Phase-level effects point in different directions, each with an interval that excludes zero."),
 ]
 STATUSES = [
@@ -123,7 +123,8 @@ def _toc() -> str:
              ("v1-why", "Why it looks like this"), ("error-rate", "Error rate"), ("human-scale", "Human scale"),
              ("risk", "Is the risk worth it?"), ("statistics", "Statistics and verdicts"), ("thresholds", "Fixed thresholds"),
              ("status", "Status labels"), ("versions", "Versions and play order"), ("confidence", "Confidence"),
-             ("cost", "Cost"), ("time", "Time"), ("limits", "Limits"), ("experiments", "Method experiments")]
+             ("cost", "Cost"), ("time", "Time"), ("limits", "Limits"), ("v3-changes", "Runner changes during the leagues"),
+             ("v3-anchor", "The anchor"), ("experiments", "Method experiments")]
     lis = "".join(f'<li><a href="#{a}">{t}</a></li>' for a, t in items)
     return f'<nav class="toc" aria-label="On this page"><ul>{lis}</ul></nav>'
 
@@ -310,21 +311,27 @@ def _human_scale() -> str:
 
 def _risk(t: dict) -> str:
     return _section("risk", "Is the risk worth it? Definitions", f"""
-<p>This is the main research question: can a model tell when a risk is worth taking?</p>
+<p>The core question: can a model tell when a risk is worth taking? Every scored decision gets exactly one class.</p>
 <dl class="facts">
   <dt>Hitting rolls</dt><dd>How many of the opponent's 36 rolls hit a blot after a play, as the model was shown it next
     to that play. The program counts them by generating the opponent's legal plays for each roll.</dd>
-  <dt>Safest play</dt><dd>The legal play that leaves the fewest hitting rolls. Several plays can tie.</dd>
-  <dt>Safety pays</dt><dd>A safest play is the engine's best play, or loses less than {_value(t["safety_pays_loss_below"])}
-    equity.</dd>
-  <dt>Risk pays</dt><dd>Otherwise: the engine's best play leaves more hitting rolls than the safest play.</dd>
-  <dt>Took the risk</dt><dd>The play made leaves more hitting rolls than the safest play.</dd>
-  <dt>Played safe</dt><dd>The play made is one of the safest plays.</dd>
-  <dt>Left out</dt><dd>Decisions where every legal play leaves the same number of hitting rolls. They are not risk
-    decisions.</dd>
+  <dt>Minimum risk</dt><dd>The fewest hitting rolls any legal play leaves in that position.</dd>
+  <dt>Best safe play</dt><dd>Among the plays that leave the minimum, the one the engine rates best.</dd>
+  <dt>No hit-risk trade-off</dt><dd>Every legal play leaves the same number of hitting rolls: the model has no risk
+    choice. These decisions are counted and left out of every risk share.</dd>
+  <dt>Safety pays</dt><dd>The best safe play loses less than {_value(t["safety_pays_loss_below"])} equity against the
+    engine's best play.</dd>
+  <dt>Risk pays</dt><dd>The best safe play loses {_value(t["safety_pays_loss_below"])} equity or more against the
+    engine's best play.</dd>
+  <dt>Took a risk</dt><dd>The play made leaves more hitting rolls than the minimum.</dd>
+  <dt>Played safe</dt><dd>The play made leaves the minimum.</dd>
 </dl>
-<p>Two headline numbers per setup: in Risk pays decisions, how often it takes the risk; in Safety pays decisions, how
-  often it takes a needless risk.</p>
+<p>Each 2×2 cell shows its raw count, its share of the row and its mean equity lost. The denominator of a share is the
+  number of decisions in that row's class (Risk pays or Safety pays). Two headline numbers per setup: in Risk pays
+  decisions, the share where it took a risk; in Safety pays decisions, the share where it took a needless risk; each
+  with its count and denominator. A cell with no decisions shows 0 and no mean. The Safest program, which never takes
+  a risk, is the reference row: it shows what pure caution costs. The {_value(t["safety_pays_loss_below"])} threshold
+  was fixed before any result was computed.</p>
 <p class="note">Limit: this measures one kind of risk, being hit. Gammon risk and priming are not in it.</p>""")
 
 
@@ -338,12 +345,17 @@ def _statistics(t: dict) -> str:
   <li><strong>Shared positions</strong> resample positions.</li>
   <li><strong>Comparisons</strong> of two setups on the same positions are always paired: the interval is of the
     per-position difference in loss.</li>
-  <li><strong>Minimum sample:</strong> a cell with fewer than {_value(t["min_decisions_per_cell"])} decisions shows
-    "{esc(TOO_FEW)}" instead of a value.</li>
+  <li><strong>League comparisons are not paired.</strong> League games give each setup different positions. Between
+    league setups we write only "no clear difference in league play" or "lower/higher error rate in league play",
+    never a verdict label.</li>
+  <li><strong>Minimum sample:</strong> an average (error rate, mean equity lost, a calibration metric) over fewer than
+    {_value(t["min_decisions_per_cell"])} decisions shows "{esc(TOO_FEW)}" instead of a value. Raw counts are always
+    shown, and a share is always shown with its count and denominator. Exception: the 50-position error rates on New
+    models: first look are shown with their intervals.</li>
   <li><strong>League placings</strong> are descriptive. Middle places move between leagues with the dice.</li>
 </ul>
 {_h3("verdicts", "Verdicts")}
-<p>For reasoning (low against high, off against on) and any comparison of A against B:</p>
+<p>For reasoning (low against high, off against on) and any comparison of A against B on the same positions:</p>
 {_table(["Verdict", "Rule"], rows)}
 <p>Every phase-level verdict is exploratory. "Worse moves" and "more time or cost with no shown gain" are kept as two
   separate findings and never merged into "high is bad".</p>""")
@@ -375,7 +387,7 @@ def _status() -> str:
 {_table(["Status", "Meaning"], rows)}
 {_h3("status-leagues", "League status")}
 {_table(["League", "Meaning"], lrows)}
-<p>A cell below the minimum sample shows "{esc(TOO_FEW)}".</p>""")
+<p>An average below the minimum sample shows "{esc(TOO_FEW)}".</p>""")
 
 
 def _versions(po: dict) -> str:
@@ -421,6 +433,8 @@ def _cost() -> str:
   <dt>API-equivalent (subscription)</dt><dd>A setup played through a subscription, which is not billed per token,
     priced at the API list price × the tokens reported. Not money paid.</dd>
   <dt>Own hardware</dt><dd>A setup run on our own GPUs. It has no per-request price; no dollar figure is shown.</dd>
+  <dt>List-price estimate; runs on our GPUs</dt><dd>A model that runs on our GPUs but has a maker's list price,
+    priced at that list price × the tokens reported. Not money paid.</dd>
 </dl>
 <p>Every view shows how many of its decisions have a cost (cost coverage).</p>""")
 
@@ -510,7 +524,7 @@ def _experiments() -> str:
     gammon or backgammon on x86-64, {a["gammons_arm_pct"]}% on ARM, {a["gammons_no_noise_pct"]}% without noise.</li>
 </ul>
 <p>So the v3 anchor is "GNU Backgammon 1.08 Beginner, x86-64 build". It is a fixed reference, not GNU Backgammon's
-  Beginner as published elsewhere. See also <a href="{LEAGUES}#v3-anchor">About the anchor</a>.</p>"""
+  Beginner as published elsewhere. See also <a href="#v3-anchor">The anchor</a>.</p>"""
     return _section("experiments", "Method experiments", f"""
 <p>Two experiments with GNU Backgammon players only, run to choose how the leagues work. They are method findings, not
   results about any model.</p>{dice}{anchor}""")
@@ -524,7 +538,7 @@ def body(ctx: dict) -> str:
     return "\n".join([
         _intro(), _toc(), _setup(), _shared(ctx["shared_sets"]), _prompt(), _error_rate(t), _human_scale(), _risk(t),
         _statistics(t), _thresholds(t), _status(), _versions(ctx["play_order"]), _confidence(t), _cost(), _time(t),
-        _limits(), _experiments(),
+        _limits(), _archive("v3-notes.html"), _experiments(),
     ])
 
 
@@ -537,6 +551,3 @@ def archive_v1() -> str:
     return intro + _earlier(_archive("v1-report.html"))
 
 
-def archive_v3_notes() -> str:
-    """The v3 league notes kept from the earlier live page: 'Changes during the leagues', 'About the anchor'."""
-    return _archive("v3-notes.html")

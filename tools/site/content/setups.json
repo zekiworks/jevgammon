@@ -14,7 +14,7 @@
     "input_per_mtok": 0.02,
     "output_per_mtok": 0.0,
     "date": null,
-    "label": "list-price estimate (runs on our GPUs)"
+    "label": "list-price estimate; runs on our GPUs"
    },
    "model_type": "decision model",
    "weights": "open",
@@ -446,7 +446,7 @@
     "input_per_mtok": 0.01,
     "output_per_mtok": 0.0,
     "date": "2026-10-18",
-    "label": "list-price estimate (runs on our GPUs)"
+    "label": "list-price estimate; runs on our GPUs"
    },
    "model_type": "decision model",
    "weights": "open",
@@ -582,7 +582,7 @@
     "input_per_mtok": 0.02,
     "output_per_mtok": 0.0,
     "date": "2026-10-18",
-    "label": "list-price estimate (runs on our GPUs)"
+    "label": "list-price estimate; runs on our GPUs"
    },
    "model_type": "decision model",
    "weights": "open",
@@ -1710,7 +1710,7 @@
     "input_per_mtok": 0.02,
     "output_per_mtok": 0.0,
     "date": null,
-    "label": "list-price estimate (runs on our GPUs)"
+    "label": "list-price estimate; runs on our GPUs"
    },
    "model_type": "decision model",
    "weights": "open",
@@ -2201,7 +2201,8 @@
    "name": "Gemini 4 Argon (shuffled)",
    "slug": "v1-gemini-4-argon-shuffled",
    "model": "Gemini 4 Argon",
-   "setting": "shuffled",
+   "setting": null,
+   "play_order": "shuffled (replay of the v1 set with the plays in a seeded random order)",
    "model_id": "gemini-4-argon",
    "provider": "Gemini API",
    "date_run": null,

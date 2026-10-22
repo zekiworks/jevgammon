@@ -18,7 +18,11 @@ TOO_FEW = "Too few decisions"
 PROVISIONAL_NOTE = "Provisional: league still running"
 EARLIER_NOTE = ("Earlier version: plays were listed in the runner's order, which tends to put the best play early.")
 
-BANNED = re.compile(r"192\.168|127\.0\.0|/home/|bariton|spark-|\bsk-|base_url|decision-models")
+# B7 publishing rule: no internal hostnames, IP addresses, ports, server paths, keys, tokens or request headers in any
+# published file (pages, JSON downloads, decision files); the pre-deploy check scans every file for these.
+BANNED = re.compile(r"192\.168\.|127\.0\.0|\b10\.\d{1,3}\.\d{1,3}\.\d{1,3}\b|\b172\.(?:1[6-9]|2\d|3[01])\.\d|localhost|"
+                    r"https?://[\w.-]+:\d{2,5}|/home/|/root/|/mnt/|bariton|spark-|\bsk-[\w-]{8}|base_url|"
+                    r"api[_-]key|Bearer [\w.-]{8}|[Aa]uthorization:|x-api-key|decision-models")
 
 
 def slug(name: str) -> str:

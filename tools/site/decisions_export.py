@@ -4,7 +4,10 @@
     body() -> the inner HTML of <main> for decisions/index.html
 
 Writes, under out/decisions/:
-    index.json                                  datasets, their status and setups (name, slug, decisions, invalid, pages)
+    index.json                                  datasets, their status and setups (name, slug, decisions, invalid, pages,
+                                                risk: decisions per B6 class)
+    <dataset>/<setup slug>/risk.json.gz         [page, id, class, took a risk] per decision, so Every decision can filter
+                                                by Risk pays / Safety pays / No hit-risk trade-off without loading pages
     <dataset>/<setup slug>/<page>.json.gz       PAGE_SIZE decisions per page, pages numbered from 1 (gzip, mtime 0, so an
                                                 unchanged page is byte-identical from one build to the next)
     contexts/<hash>.txt                         the shared rules text of the prompts (hash = sha256(text)[:12])
@@ -28,6 +31,7 @@ sys.path.insert(0, str(SITE))
 sys.path.insert(0, str(SITE.parent / "v3"))
 sys.path.insert(0, str(SITE.parent))
 
+from analysis import risk_class  # noqa: E402
 from common import EARLIER, PROVISIONAL, PROVISIONAL_NOTE, slug  # noqa: E402
 from rules import from_json, pips  # noqa: E402
 import replay  # noqa: E402
@@ -82,6 +86,46 @@ def pages_of(items):
     return [items[i:i + PAGE_SIZE] for i in range(0, len(items), PAGE_SIZE)]
 
 
+RISK_CODE = {"risk": "r", "safety": "s", "none": "n", None: None}
+
+
+def mark_risk(d: dict, entries, order, page: int) -> None:
+    """B6 class of one exported decision, by the same rule as the site's analyses (analysis.risk_class), on the
+    unrounded engine equities (entries[legal index] = (notation, equity, hitting rolls, description))."""
+    shown = [entries[li] for li in order]
+    scored = all(e[1] is not None and e[2] is not None for e in shown)
+    top = max(e[1] for e in shown) if scored else None
+    cls, took = risk_class({"invalid": d["invalid"], "scored": scored, "chosen": d["chosen"],
+                            "shots": [e[2] for e in shown], "losses": [top - e[1] for e in shown] if scored else None})
+    d["risk"] = None if cls is None else {"class": cls, "took": took}
+    # The site's showcase (hero board, social preview): per dataset, the model decision where risk paid most clearly
+    # (largest loss of the best safe play) and the model played safe anyway.
+    if cls == "risk" and not took and not d["program"]:
+        least = min(e[2] for e in shown)
+        gap = min(top - e[1] for e in shown if e[2] == least)
+        key = (gap, -d["id"] if isinstance(d["id"], int) else 0)
+        old = SHOWCASE.get(d["dataset"])
+        if old is None or key > old[0]:
+            SHOWCASE[d["dataset"]] = (key, {k: d[k] for k in ("id", "dataset", "setup", "dice", "board", "pips", "plays",
+                                                              "best", "chosen", "phase", "turn_no")} | {"gap": gap, "page": page})
+
+
+SHOWCASE: dict = {}
+
+
+def write_risk_index(root, ds, setup, rows) -> dict:
+    """rows: (page, id, decision['risk']); returns decisions per class for index.json."""
+    path = root / ds / slug(setup) / "risk.json.gz"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    items = [[pg, i, RISK_CODE[r["class"]] if r else None, (r["took"] if r and r["class"] != "none" else None)]
+             for pg, i, r in rows]
+    path.write_bytes(gzip.compress(json.dumps(items, separators=(",", ":")).encode(), compresslevel=9, mtime=0))
+    counts = {"risk": 0, "safety": 0, "none": 0, "unclassified": 0}
+    for _, _, r in rows:
+        counts[r["class"] if r else "unclassified"] += 1
+    return counts
+
+
 def shown_plays(entries, order, probs, program, cycle=None):
     """The plays in shown order: entries[legal index] = (notation, equity, hitting rolls, description).
 
@@ -131,6 +175,7 @@ def export_league(root, ds, sdb, shards, pdb, contexts):
         ids = sorted(by_setup[setup])
         program = setup in programs
         invalid = 0
+        risk_rows = []
         chunks = pages_of(ids)
         for page, chunk in enumerate(chunks, 1):
             rows = {}
@@ -170,9 +215,11 @@ def export_league(root, ds, sdb, shards, pdb, contexts):
                     "group_size": group_size, "probability_source": source,
                     "request_seconds": None if request_ms is None else request_ms / 1000,
                     "retry_seconds": None if retry_ms is None else retry_ms / 1000, "cost_usd": cost})
+                mark_risk(decisions[-1], entries, order, page)
+                risk_rows.append((page, tid, decisions[-1]["risk"]))
             write_page(root, ds["id"], setup, page, len(chunks), decisions)
         out[setup] = {"slug": slug(setup), "decisions": len(ids), "invalid": invalid, "pages": len(chunks),
-                      "program": program}
+                      "program": program, "risk": write_risk_index(root, ds["id"], setup, risk_rows)}
     return out
 
 
@@ -216,6 +263,7 @@ def export_v1(root, ds, rdb, v1_positions, contexts):
                           for _, _, p, _, _ in rows)
         source = "choice_only" if choice_only else "decision"
         invalid = 0
+        risk_rows = []
         chunks = pages_of(rows)
         for page, chunk in enumerate(chunks, 1):
             decisions = []
@@ -249,9 +297,11 @@ def export_v1(root, ds, rdb, v1_positions, contexts):
                     "probability_source": source,
                     "request_seconds": None if latency_ms is None else latency_ms / 1000,
                     "retry_seconds": None, "cost_usd": None})
+                mark_risk(decisions[-1], entries, range(len(names)), page)
+                risk_rows.append((page, lab["id"], decisions[-1]["risk"]))
             write_page(root, ds["id"], model, page, len(chunks), decisions)
         out[model] = {"slug": slug(model), "decisions": len(rows), "invalid": invalid, "pages": len(chunks),
-                      "program": False}
+                      "program": False, "risk": write_risk_index(root, ds["id"], model, risk_rows)}
     return out
 
 

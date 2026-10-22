@@ -315,5 +315,48 @@
       "matchday 22: Fastino GLiDE v Mercury Decide"
     ],
     "stale_playoff_fixtures": 0
+  },
+  {
+    "added_at": "2026-10-20T07:24:26Z",
+    "league": 1,
+    "db": "v3.db",
+    "name": "Decider v1.2 27B",
+    "harness_commit": "cf7dfa55da67117c6b9c6c0f0fbb0decf8025817",
+    "harness_dirty": false,
+    "entry": {
+      "name": "Decider v1.2 27B",
+      "spec": "pplx-local/pplx-decider-v1.2",
+      "provider": "local (pplx_decider_server.py)",
+      "quantization": "bf16",
+      "base_url": "http://127.0.0.1:18099",
+      "price": {
+        "input_per_mtok": 0.02,
+        "output_per_mtok": 0.0
+      },
+      "note": "Perplexity's pplx-decider-v1.2 (Hugging Face snapshot 225c913) on our GPU through the pplx_decider package its checkpoint ships, reference path, one request at a time (tools/v3/servers/decider-v1.2.sh 27b, DECIDER_V12_GPU=1); joined late overnight 2026-10-19/20 when bariton GPU 1 was freed by Qwen3.8-27B (tools/v3/swap_qwen_decider.sh); smoke test 10/10 answered with probabilities on 2026-10-19 (bariton GPU 2); price = Perplexity's list price for the same model (2026-10-18)",
+      "device": "RTX PRO 6000 (bariton GPU 1, after Qwen3.8-27B's League 2 matches)",
+      "parallel": 1
+    },
+    "entry_sha256": "94dcefe2fb50b980170968bec86d3af79437fc1a3e5f2e77e3c64f07796ddd93",
+    "fixtures": [
+      "matchday 23: Decider v1.2 27B v Decider v1.1 27B",
+      "matchday 23: SubQ Snap Preview v Decider v1.2 27B",
+      "matchday 23: Clef v Decider v1.2 27B",
+      "matchday 23: Open-Jev 27B v1.1 v Decider v1.2 27B",
+      "matchday 23: Cygnet (Gemma 4 12B) v Decider v1.2 27B",
+      "matchday 23: Random v Decider v1.2 27B",
+      "matchday 23: Decider v1.2 27B v Safest",
+      "matchday 23: Decider v1.2 27B v GNUbg weak",
+      "matchday 23: Liquid d1-ultra v Decider v1.2 27B",
+      "matchday 23: Decider v1.2 27B v Jev 1.14.0",
+      "matchday 23: Decider v1.2 27B v Jev 1.13.0",
+      "matchday 23: Decider v1.2 27B v Celeris-1 Decision",
+      "matchday 23: Decider v1.2 27B v GPT-6 Luna",
+      "matchday 23: Decider v1.2 27B v Decider Flash v1.2",
+      "matchday 23: Winnow-12B v Decider v1.2 27B",
+      "matchday 23: Decider v1.2 27B v Mercury Decide",
+      "matchday 23: Fastino GLiDE v Decider v1.2 27B"
+    ],
+    "stale_playoff_fixtures": 0
   }
 ]

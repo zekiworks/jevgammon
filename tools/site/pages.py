@@ -11,10 +11,25 @@ from common import (EARLIER, EARLIER_NOTE, NA, NOT_MEASURED, PENDING, PROVISIONA
 NAV = [("decisions/", "Every decision"), ("disagreements/", "Where models disagree"), ("phases/", "Phases"),
        ("compare/", "Compare"), ("models/", "Models"), ("leagues/", "Leagues"), ("new-models/", "New models"),
        ("method/", "Method"), ("data/", "Data")]
-TABS = [("quality", "Quality"), ("risk", "Risk"), ("reasoning", "Reasoning"), ("confidence", "Confidence"),
-        ("routing", "Routing"), ("stability", "Stability"), ("cost", "Cost")]
-TITLE = "How well do models decide under risk?"
-SUBTITLE = "We compare move quality, reasoning, confidence and cost using engine-scored backgammon decisions."
+TABS = [("quality", "Quality"), ("risk", "Risk"), ("confidence", "Confidence"), ("reasoning", "Reasoning"),
+        ("cost", "Cost"), ("stability", "Stability")]
+TITLE = "Can a model tell when a risk is worth taking?"
+
+
+def subtitle(S) -> str:
+    return (f"We score every backgammon decision with an engine and compare decision quality, what the input adds, "
+            f"confidence and cost across {count(S['counts']['model_setups'])} model setups.")
+
+
+INTRO = ("Language models and decision models play backgammon leagues, and GNU Backgammon scores every legal play of "
+         "every decision, so a move is judged by the equity it gives away, not by who won the game. The hardest "
+         "choices trade safety against gain: leaving a blot can be the best play or a needless risk. "
+         "Every decision is public.")
+# B0: the five threads; every home section and tab belongs to one of them.
+THREADS = {1: "Decision quality under risk", 2: "What the input adds", 3: "Confidence", 4: "Cost",
+           5: "Learning from experience"}
+TAB_THREAD = {"quality": 1, "risk": 1, "confidence": 3, "reasoning": 4, "cost": 4, "stability": 1}
+RISK_LIMIT = "Hit risk only: being hit. Gammon risk and priming are not in it."
 SWIPE = '<p class="swipe-hint" data-swipe-hint>Swipe for more columns \u2192</p>'
 LEAGUE_KIND = {1: "decision models and models on our own hardware", 2: "workhorse chat models, closed and open",
                3: "frontier chat models on subscriptions"}
@@ -31,7 +46,7 @@ def as_of(S) -> str:
 
 
 def version_line(S) -> str:
-    return f"Results {S['hash']}, data as of {as_of(S)}."
+    return f"Results {S['hash']}, updated {as_of(S)}."
 
 
 def band(S, er) -> str:
@@ -103,7 +118,8 @@ def row_attrs(S, dataset, name) -> str:
 
 def model_cell(S, rel, dataset, name) -> str:
     m = meta(S, dataset, name)
-    bits = [x for x in (m.get("setting") and f"{m['setting']}", m.get("model_type"), m.get("runs_on")) if x]
+    bits = [x for x in (m.get("setting") and f"{m['setting']}", m.get("model_type"), m.get("runs_on"),
+                        m.get("play_order") and "shuffled play order") if x]
     return (f'<td class="model"><a class="model-name" href="{model_href(rel, dataset, name, S)}">{esc(name)}</a>'
             f'<span class="small">{esc(" · ".join(bits))}</span></td>')
 
@@ -179,20 +195,28 @@ QUALITY_HEAD = ["Model and setting", "Error rate (PR), 95% interval", "Band on t
                 "Decisions scored", "Invalid answers"]
 
 
+def share_cell(share, n, den, digits=1) -> str:
+    """A share is always shown with its count and denominator (B9)."""
+    if not den:
+        return f'<td class="num">{nm(NA)}<span class="small">0 / 0</span></td>'
+    return f'<td class="num">{pct(share, digits)}<span class="small">{count(n)} / {count(den)}</span></td>'
+
+
 def risk_rows(S, rel, dataset, setups) -> list[str]:
     rows = []
     for n in by_error(setups):
         r, q = setups[n]["risk"], setups[n]["quality"]
-        cells = (val(r, "takes_risk", pct, "risk_too_few") + val(r, "needless_risk", pct, "safety_too_few")
+        cells = (share_cell(r["takes_risk"], r["took_when_pays"], r["risk_pays"])
+                 + share_cell(r["needless_risk"], r["took_needless"], r["safety_pays"])
                  + val(q, "p95_loss", eq) + val(q, "worst_mean", eq) + val(q, "blunder_share", pct)
-                 + f'<td class="num">{count(r["risk_pays"])} / {count(r["safety_pays"])}</td>'
+                 + f'<td class="num">{count(r["no_risk_choice"])}</td>'
                  + f'<td class="num">{count(q["invalid"])}</td>')
         rows.append(tr(S, dataset, n, cells, rel))
     return rows
 
 
-RISK_HEAD = ["Model and setting", "Takes the risk when it pays", "Takes a needless risk", "P95 equity loss",
-             "Mean loss, worst 5%", "Blunder rate", "Decisions: risk pays / safety pays", "Invalid answers"]
+RISK_HEAD = ["Model and setting", "Risk pays: took a risk", "Safety pays: took a needless risk", "P95 equity loss",
+             "Mean loss, worst 5%", "Blunder rate", "No hit-risk trade-off (left out)", "Invalid answers"]
 
 
 def confidence_rows(S, rel, dataset, setups) -> list[str]:
@@ -302,7 +326,7 @@ def layout(S, base, path: str, title: str, body: str, description: str | None = 
 {body}
   </main>
   <footer class="footer">
-    <p>Download: <a href="{rel}data/">data files</a> · <a href="{rel}data/manifest.json">manifest.json</a></p>
+    <p>Download: <a href="{rel}data/results.json">results (JSON)</a> · <a href="{rel}decisions/index.json">decisions (JSON index)</a> · <a href="{rel}data/">every data file</a> · <a href="{rel}data/manifest.json">manifest.json</a></p>
     <p>{esc(version_line(S))}</p>
   </footer>
 </body>

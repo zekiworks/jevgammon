@@ -32,7 +32,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import analysis as A  # noqa: E402
 import checks  # noqa: E402
 import pages  # noqa: E402
-from common import CONTENT, EARLIER, PENDING, PROVISIONAL, PUBLISHED, ROOT, SITE, THRESHOLDS  # noqa: E402
+from common import CONTENT, EARLIER, PENDING, PROVISIONAL, PUBLISHED, ROOT, SITE, THRESHOLDS, slug  # noqa: E402
 
 BASE = "https://zekiworks.github.io/analysis/backgammon-preview/"
 
@@ -101,6 +101,14 @@ def compute(args) -> dict:
     play_order = pairs["Gemini 4 Argon\u2192Gemini 4 Argon (shuffled)"]
     smoke = json.loads((ROOT / "smoke/part-a.json").read_text())
     shared = A.shared_sets(ROOT)
+    # Stats strip and subtitle: model setups and models in the leagues (programs left out), from setups metadata.
+    programs = {k for k, m in setups.items() if m.get("model_type") == "program"}
+    model_setups = sorted({(lg["dataset"], n) for lg in leagues for n in lg["setups"]} - programs)
+    counts = dict(model_setups=len(model_setups),
+                  models=len({setups[k]["model"] if k in setups else k[1] for k in model_setups}),
+                  leagues=len(leagues), decisions_scored=sum(lg["scored"] for lg in leagues))
+    for lg in leagues:
+        lg["reasoning"] = league_reasoning(lg, setups, programs)
     return dict(
         as_of=snapshot_time(snap), last_move=L["last_move"], leagues=leagues, setups_meta=setups,
         v1=dict(dataset="v1-set", version="v1", status=EARLIER, positions=len(v1["positions"]),
@@ -109,10 +117,42 @@ def compute(args) -> dict:
                 play_order=dict(setup="Gemini 4 Argon", diff=play_order["diff"], lo=play_order["lo"],
                                 hi=play_order["hi"], positions=play_order["positions"]),
                 disagreements=A.disagreements(v1)),
-        smoke=smoke, shared=shared, thresholds=THRESHOLDS,
+        smoke=smoke, shared=shared, thresholds=THRESHOLDS, counts=counts,
         status=json.loads((CONTENT / "analysis_status.json").read_text()),
         human_scale=json.loads((CONTENT / "human_scale.json").read_text()),
         _v1_raw=v1, _state=state)
+
+
+def league_reasoning(lg: dict, setups: dict, programs: set) -> list[dict]:
+    """One model at two reasoning settings inside one league. League games are not the same positions, so this is
+    not paired and gets no verdict label (B9): 'lower/higher error rate in league play' when the two 95% intervals
+    do not overlap, otherwise 'no clear difference in league play'."""
+    by_model = {}
+    for n, s in lg["setups"].items():
+        m = setups.get((lg["dataset"], n))
+        if (lg["dataset"], n) in programs or not m or not m.get("setting"):
+            continue
+        by_model.setdefault(m["model"], []).append((m["setting"], n, s["quality"]))
+    order = {"off": 0, "low": 0, "on": 1, "high": 1}
+    out = []
+    for model, rows in sorted(by_model.items()):
+        if len(rows) != 2:
+            continue
+        (sa, na, qa), (sb, nb, qb) = sorted(rows, key=lambda r: order.get(r[0], 9))
+        if None in (qa.get("error_rate"), qb.get("error_rate")) or qa.get("too_few") or qb.get("too_few"):
+            reading = None
+        elif qb["error_hi"] < qa["error_lo"]:
+            reading = "lower error rate in league play"
+        elif qb["error_lo"] > qa["error_hi"]:
+            reading = "higher error rate in league play"
+        else:
+            reading = "no clear difference in league play"
+        out.append(dict(model=model, low=na, high=nb, low_setting=sa, high_setting=sb, reading=reading,
+                        extra_time_median=(qb["time_median"] - qa["time_median"])
+                        if None not in (qb.get("time_median"), qa.get("time_median")) else None,
+                        extra_cost=(qb["usd_per_1000"] - qa["usd_per_1000"])
+                        if None not in (qb.get("usd_per_1000"), qa.get("usd_per_1000")) else None))
+    return out
 
 
 def write_data(S: dict, out: Path) -> None:
@@ -150,7 +190,15 @@ def write_data(S: dict, out: Path) -> None:
         version="v3", note="Counts only; league numbers are never merged into one score.",
         leagues=len(S["leagues"]), league_setups=sum(len(lg["setups"]) for lg in S["leagues"]),
         league_decisions=sum(lg["decisions"] for lg in S["leagues"]),
-        league_decisions_scored=sum(lg["scored"] for lg in S["leagues"])))
+        league_decisions_scored=sum(lg["scored"] for lg in S["leagues"]),
+        model_setups=S["counts"]["model_setups"], models=S["counts"]["models"]))
+    # The download linked from the hero and from Data: every league's results per setup, one league per key.
+    write_json(out, "data/results.json", dict(
+        version="v3", note="Results per league; leagues are never merged. Decisions: decisions/index.json.",
+        leagues={lg["dataset"]: dict(id=lg["id"], status=lg["status"], metric_status=lg["metric_status"],
+                                     reasoning=lg["reasoning"],
+                                     setups={n: dict(quality=s["quality"], risk=s["risk"]) for n, s in lg["setups"].items()})
+                 for lg in S["leagues"]}))
 
 
 def manifest(S: dict, out: Path) -> None:
@@ -189,6 +237,57 @@ def preview_image(S: dict, out: Path) -> str | None:
     return name
 
 
+def showcase(S: dict, found: dict) -> dict | None:
+    """The board on the hero and the social preview: a real Risk pays decision in which the model played safe, from
+    the most recent finished league that has one (decisions_export picks the clearest per dataset)."""
+    for lg in sorted(S["leagues"], key=lambda l: (l["metric_status"] == PUBLISHED, l["id"]), reverse=True):
+        if lg["dataset"] in found:
+            d = found[lg["dataset"]][1]
+            chosen = d["plays"][d["chosen"]]
+            best = d["plays"][d["best"]]
+            return dict(league=lg["id"], dataset=lg["dataset"], metric_status=lg["metric_status"], id=d["id"],
+                        setup=d["setup"], slug=slug(d["setup"]), page=d["page"],
+                        dice=d["dice"], board=d["board"], pips=d["pips"], phase=d["phase"],
+                        chosen=dict(notation=chosen["notation"], hitting_rolls=chosen["hitting_rolls"], loss=chosen["loss"]),
+                        best=dict(notation=best["notation"], hitting_rolls=best["hitting_rolls"]),
+                        best_safe_loss=round(d["gap"], 4))
+    return None
+
+
+def _shoot(html: str, png: Path, width: int, height: int) -> bool:
+    with tempfile.TemporaryDirectory() as tmp:
+        src = Path(tmp) / "card.html"
+        src.write_text(html)
+        shot = Path(tmp) / "card.png"
+        r = subprocess.run(["google-chrome", "--headless=new", "--disable-gpu", "--hide-scrollbars", "--no-sandbox",
+                            f"--window-size={width},{height}", f"--screenshot={shot}", src.as_uri()],
+                           capture_output=True, text=True, timeout=120)
+        if r.returncode != 0 or not shot.exists():
+            print("image failed:", r.stderr[-500:], file=sys.stderr)
+            return False
+        shutil.copy(shot, png)
+    return True
+
+
+def risk_images(S: dict, out: Path) -> dict:
+    """The risk 2x2 of each league as a standalone image for X (1200 x 675), drawn from the current results."""
+    folder = out / "share"
+    folder.mkdir(exist_ok=True)
+    made, keep = {}, set()
+    for lg in S["leagues"]:
+        html = pages.risk_card(S, lg)
+        if html is None:
+            continue
+        name = f"share/risk-{lg['dataset']}-{hashlib.sha256(html.encode()).hexdigest()[:8]}.png"
+        if (out / name).exists() or _shoot(html, out / name, 1200, 675):
+            made[lg["dataset"]] = name
+            keep.add(Path(name).name)
+    for old in folder.glob("risk-*.png"):
+        if old.name not in keep:
+            old.unlink()
+    return made
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--state", default="~/.local/state/bg-site")
@@ -211,9 +310,12 @@ def main():
         out, S["_state"] / "snap.db", S["_state"] / "plays", S["_state"] / "prompts.db", ROOT / "replay.db",
         ROOT / "positions/v1.jsonl", datasets)
     S["decision_files"] = sum(1 for p in (out / "decisions").rglob("*") if p.is_file())
+    S["showcase"] = showcase(S, decisions_export.SHOWCASE)
+    write_json(out, "data/showcase.json", S["showcase"] or {})
     S["hash"] = results_hash(out)
     manifest(S, out)
     S["image"] = None if args.no_image else preview_image(S, out)
+    S["risk_images"] = {} if args.no_image else risk_images(S, out)
     if S["image"] is None:
         old = sorted((out / "share").glob("preview-*.png")) if (out / "share").exists() else []
         S["image"] = f"share/{old[0].name}" if old else None

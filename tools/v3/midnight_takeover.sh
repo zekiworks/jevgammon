@@ -466,7 +466,7 @@ else
   trap 'note "takeover script exiting early (signal or error)"; write_mailbox' EXIT
   log "midnight takeover start"
 fi
-step1
+[[ ${SKIP_SMOKE:-0} == 1 ]] || step1
 step2
 step3
 write_mailbox

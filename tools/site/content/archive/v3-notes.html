@@ -1,9 +1,10 @@
 <!-- Archived from the earlier live page: zekiworks/analysis, backgammon/index.html at commit 3eca8e4.
      Sections: "Changes during the leagues" and "About the anchor" (both h3 in the v3 section, here h2). Text and numbers unchanged; markup adapted to site.css (classes, ids, links),
      the generated "anchor-stats" list (filled from v3-results.json by the page script) is left out.
+     Shown on the Method page (brief v6 B5: the anchor note and the runner changes during the leagues).
      -->
 <section class="card" id="v3-changes" aria-labelledby="v3-changes-title">
-  <h2 id="v3-changes-title">Changes during the leagues</h2>
+  <h2 id="v3-changes-title">Runner changes during the leagues</h2>
   <ul>
     <li><strong>Voided matches.</strong> The first matches of LFM2.5-24B-A2B (off, on) and Qwen3.8 Flash (off) were voided
       on 19 October and replay from scratch with the same dice. The runner had read the letter probabilities from the wrong
@@ -45,7 +46,7 @@
 </section>
 
 <section class="card" id="v3-anchor" aria-labelledby="v3-anchor-title">
-  <h2 id="v3-anchor-title">About the anchor</h2>
+  <h2 id="v3-anchor-title">The anchor</h2>
   <p>The anchor, GNU Backgammon 1.08 at its Beginner level (0-ply, deterministic noise 0.06), ran on one x86-64 build
     only, and on x86-64 it is not the Beginner that GNU Backgammon intends. Its deterministic-noise code sums the hash
     bytes as <code>char</code>, which is signed on x86-64, but subtracts the mean of unsigned bytes, so every noise draw

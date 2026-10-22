@@ -25,11 +25,14 @@ the public page: no hostnames).
 
 The HTML file is patched between `<!-- v3:NAME -->` and `<!-- /v3:NAME -->` markers: live (data
 time), status (matches to play), scored (decisions scored), progressN (matches finished), leagueN
-(tables), N = 1..3, and every piece of prose with a number in it (texts(): title, toc, byline,
-summary, headN, notesN, anchor-stats), which is also stored in the JSON under "text" so the page
-script shows prose and tables from the same data. Matches not finished are listed per league:
-playing (a move within the last hour of the run), paused (started, no recent move) or to play.
-The prose outside the markers carries no league numbers. Standard library only.
+(tables), N = 1..3, and every piece of prose with a number or a date in it (texts(): updated,
+title, toc, byline, summary, headN, notesN, anchor-stats), which is also stored in the JSON under
+"text" so the page script shows prose and tables from the same data. Matches not finished are
+listed per league: paused (stopped by an error: the runner stored a failure after the match's last
+move and has not retried it yet, or the match was aborted), thinking (started, the league runner is
+running, waiting on the next decision; with the minutes since the last move at build time),
+stopped (started, no runner running, no error) or to play. The prose outside the markers carries
+no league numbers. Standard library only.
 """
 
 import glob
@@ -47,7 +50,9 @@ from league_web import league_fixtures, league_table  # noqa: E402
 
 BOOTSTRAP = 2000
 BEST, BLUNDER = 0.001, 0.08
-PLAYING = 3600  # a started match counts as playing when its last move is at most this many seconds old
+RUNNER_ALIVE = 300  # the league runner signs leagues.heartbeat_at every 30 s while it runs (src/league.rs RELOAD)
+RETRY = 3600  # a deferred match is retried within this many seconds (src/league.rs MAX_BACKOFF)
+STATES = ("thinking", "paused", "stopped", "to play")
 
 RUNS_ON = {
     # League 1
@@ -138,7 +143,9 @@ def interval(games: list[tuple[float, int]], rng: random.Random) -> tuple[float,
     return stats[int(0.025 * BOOTSTRAP)], stats[int(0.975 * BOOTSTRAP) - 1]
 
 
-def league(conn: sqlite3.Connection, lid: int, scored: dict, rng: random.Random, now: datetime) -> dict:
+def league(conn: sqlite3.Connection, lid: int, scored: dict, rng: random.Random, now: datetime,
+           taken: datetime) -> dict:
+    """One league's standings and setups; `now` is the build time, `taken` when the snapshot was written."""
     row = conn.execute("SELECT * FROM leagues WHERE id = ?", (lid,)).fetchone()
     roster = json.loads(row["models"])
     names = [m["name"] for m in roster]
@@ -146,34 +153,45 @@ def league(conn: sqlite3.Connection, lid: int, scored: dict, rng: random.Random,
     fixtures = [f for f in fixtures if f["stage"] == "league"]
     table = league_table(names, fixtures, games_won)
     left = {n: 0 for n in names}
-    playing = {n: 0 for n in names}
+    thinking = {n: 0 for n in names}
     open_ = [f for f in fixtures if f["status"] != "finished"]
     last = dict(conn.execute(
         f"""SELECT g.match_id, MAX(t.created_at) FROM turns t JOIN games g ON g.id = t.game_id
             WHERE g.match_id IN ({','.join('?' * len(open_)) or 'NULL'}) GROUP BY 1""",
         [f["match_id"] for f in open_],
     ).fetchall())
+    beat = row["heartbeat_at"]
+    runner = bool(beat) and (taken - utc(beat)).total_seconds() <= RUNNER_ALIVE
     pending = []
     for f in open_:
         left[f["model1"]] += 1
         left[f["model2"]] += 1
         moved = last.get(f["match_id"])
-        if moved is None:
-            state = "to play"
-        elif (now - utc(moved)).total_seconds() <= PLAYING:
-            state = "playing"
-        else:
+        failed = f["deferred_at"]
+        # The runner keeps a failed match's error after it resumes; the failure stops the match only while it is
+        # newer than the match's last move and its retry is still to come (a runner start retries every match).
+        errored = f["status"] == "aborted" or bool(
+            failed and (moved is None or utc(failed) > utc(moved))
+            and (not runner or (now - utc(failed)).total_seconds() < RETRY))
+        if errored:
             state = "paused"
-        if state == "playing":
-            playing[f["model1"]] += 1
-            playing[f["model2"]] += 1
+        elif moved is None:
+            state = "to play"
+        elif runner:
+            state = "thinking"
+        else:
+            state = "stopped"
+        if state == "thinking":
+            thinking[f["model1"]] += 1
+            thinking[f["model2"]] += 1
         pending.append(dict(
             model1=f["model1"], model2=f["model2"], state=state,
             rounds_played=f["rounds_played"] or 0, rounds_planned=f["rounds_planned"],
             score1=f["score1"] or 0, score2=f["score2"] or 0,
             last_move=utc(moved).strftime("%Y-%m-%dT%H:%MZ") if moved else None,
+            minutes_since_move=int((now - utc(moved)).total_seconds() // 60) if moved else None,
         ))
-    pending.sort(key=lambda p: ("playing", "paused", "to play").index(p["state"]))  # stable: matchday order within
+    pending.sort(key=lambda p: STATES.index(p["state"]))  # stable: matchday order within
 
     per: dict[str, dict] = {}
     for r in conn.execute(
@@ -207,7 +225,7 @@ def league(conn: sqlite3.Connection, lid: int, scored: dict, rng: random.Random,
         m = per.get(name)
         out = dict(place=place, name=name, played=t["played"], won=t["won"], drawn=t["drawn"], lost=t["lost"],
                    points=t["points"], games_won=t["gw"], games_lost=t["gl"], to_play=left[name],
-                   playing=playing[name], runs_on=RUNS_ON.get(name), decisions=0)
+                   thinking=thinking[name], runs_on=RUNS_ON.get(name), decisions=0)
         if m:
             games = list(m["games"].values())
             n = sum(g[1] for g in games)
@@ -239,7 +257,7 @@ def league(conn: sqlite3.Connection, lid: int, scored: dict, rng: random.Random,
         (lid,),
     ).fetchone()[0]
     return dict(id=lid, status="finished" if row["status"] == "finished" else "running", matches=len(fixtures),
-                finished=finished, games=games, pending=pending, models=models)
+                finished=finished, games=games, runner=runner, pending=pending, models=models)
 
 
 # --- HTML ---------------------------------------------------------------------------------
@@ -264,7 +282,7 @@ def tables(lg: dict) -> str:
         if m.get("error_rate") is not None:
             er = f'<strong>{m["error_rate"]:.1f}</strong> <span class="muted">{m["error_rate_lo"]:.1f}–{m["error_rate_hi"]:.1f}</span>'
         left = m["to_play"]
-        to_play = str(left) + (f' <span class="live">({m["playing"]} playing)</span>' if m["playing"] else "")
+        to_play = str(left) + (f' <span class="live">({m["thinking"]} thinking)</span>' if m["thinking"] else "")
         rows.append("<tr>" + "".join([
             cell(str(m["place"])), cell(name, "l"), cell(str(m["played"])), cell(str(m["won"])),
             cell(str(m["drawn"]), "zero" if not m["drawn"] else ""), cell(str(m["lost"])),
@@ -302,13 +320,14 @@ def tables(lg: dict) -> str:
 
 
 def pending(lg: dict) -> str:
-    """Matches not finished: playing (a move in the last hour), paused (started, no recent move), to play."""
+    """Matches not finished: thinking, paused after an error, stopped or to play (see the module docstring)."""
     if not lg["pending"]:
         return ""
     rows = []
     for p in lg["pending"]:
-        state = '<span class="live">playing</span>' if p["state"] == "playing" else p["state"]
-        started = p["state"] != "to play"
+        state = (f'<span class="live">thinking</span>, last move {p["minutes_since_move"]} min ago'
+                 if p["state"] == "thinking" else STATE_TEXT[p["state"]])
+        started = p["last_move"] is not None
         rows.append("<tr>" + "".join([
             cell(f"{html.escape(p['model1'])} v {html.escape(p['model2'])}", "l"), cell(state, "l"),
             cell(f"{p['rounds_played']} of {p['rounds_planned']}" if started else "–"),
@@ -334,15 +353,29 @@ def live(result: dict) -> str:
     return f"Live: data as of {stamp} · updates every 15 minutes"
 
 
+STATE_TEXT = {"thinking": "thinking", "paused": "paused after an error", "stopped": "stopped", "to play": "to play"}
+
+
+def groups(lg: dict) -> list[str]:
+    """The started matches not finished, by state: 'N thinking, last move M min ago', 'N paused after an error'..."""
+    out = []
+    for s in STATES[:-1]:
+        ps = [p for p in lg["pending"] if p["state"] == s]
+        if ps:
+            out.append(f"{len(ps)} {STATE_TEXT[s]}" + (f", last move {min(p['minutes_since_move'] for p in ps)} min ago"
+                                                        if s == "thinking" else ""))
+    return out
+
+
 def status(result: dict) -> str:
     parts = []
     for lg in result["leagues"]:
         if lg["status"] == "finished":
             parts.append(f"League {lg['id']} has finished")
             continue
-        playing = sum(p["state"] == "playing" for p in lg["pending"])
+        started = groups(lg)
         parts.append(f"League {lg['id']} has {len(lg['pending'])} of {lg['matches']} matches to play"
-                     + (f" ({playing} playing)" if playing else ""))
+                     + (f" ({'; '.join(started)})" if started else ""))
     return "; ".join(parts) + "."
 
 
@@ -441,8 +474,8 @@ def reasoning(lg: dict) -> str:
 def still(lg: dict) -> str:
     if not lg["pending"]:
         return ""
-    count = {s: sum(p["state"] == s for p in lg["pending"]) for s in ("playing", "paused", "to play")}
-    parts = [f"{n} {'not started' if s == 'to play' else s}" for s, n in count.items() if n]
+    count = sum(p["state"] == "to play" for p in lg["pending"])
+    parts = groups(lg) + ([f"{count} not started"] if count else [])
     return (f"<li><strong>Still to play</strong>: {len(lg['pending'])} of {lg['matches']} matches "
             f"({', '.join(parts)}; listed above the table).</li>")
 
@@ -581,10 +614,20 @@ def notes3(lg: dict) -> str:
 
 
 def phase(lg: dict) -> str:
-    """'' when finished, else 'in progress' (a match played within the last hour) or 'paused'."""
+    """'' when finished; else 'in progress, last move N min ago' (a match is thinking), 'in progress' (the runner
+    runs), 'paused after an error' (a match stopped by an error, no runner) or 'stopped'."""
     if lg["status"] == "finished":
         return ""
-    return "in progress" if any(p["state"] == "playing" for p in lg["pending"]) else "paused"
+    thinking = [p["minutes_since_move"] for p in lg["pending"] if p["state"] == "thinking"]
+    if thinking:
+        return f"in progress, last move {min(thinking)} min ago"
+    if lg["runner"]:
+        return "in progress"
+    return "paused after an error" if any(p["state"] == "paused" for p in lg["pending"]) else "stopped"
+
+
+def short(lg: dict) -> str:
+    return phase(lg).split(",")[0]
 
 
 def byline(result: dict) -> str:
@@ -602,7 +645,7 @@ def summary(result: dict) -> str:
           and m.get("error_rate") is not None]
     a1 = next((m for m in l1["models"] if m["name"] == ANCHOR and m.get("error_rate") is not None), None)
     word = lambda lg: "first" if lg["status"] == "finished" else "leads"
-    state = lambda lg: "finished" if lg["status"] == "finished" else phase(lg)
+    state = lambda lg: "finished" if lg["status"] == "finished" else short(lg)
     b2 = best(l2)
     return (f"decision models ({state(l1)}: {html.escape(l1['models'][0]['name'])} {word(l1)}"
             + (", and the weak GNU Backgammon anchor plays better than every decision model"
@@ -631,9 +674,10 @@ def anchor_notes(stats: dict) -> str:
 
 def texts(result: dict, stats: dict) -> dict:
     l1, l2, l3 = result["leagues"]
-    phases = {phase(lg) for lg in result["leagues"]} - {""}
-    suffix = "in progress" if "in progress" in phases else "paused" if phases else ""
-    out = {"title": "v3 leagues" + (f" ({suffix})" if suffix else ""), "byline": byline(result),
+    phases = [short(lg) for lg in result["leagues"] if lg["status"] != "finished"]
+    suffix = "in progress" if "in progress" in phases else phases[0] if phases else ""
+    out = {"updated": utc(result["data_as_of"]).strftime("%-d %B %Y"),
+           "title": "v3 leagues" + (f" ({suffix})" if suffix else ""), "byline": byline(result),
            "summary": summary(result), "anchor-stats": anchor_notes(stats),
            "notes1": notes1(l1), "notes2": notes2(l2), "notes3": notes3(l3)}
     out["toc"] = out["title"]
@@ -651,6 +695,8 @@ def patch(text: str, name: str, body: str) -> str:
 
 def main():
     db_path, score_glob, json_out, html_path = sys.argv[1:5]
+    taken = datetime.fromtimestamp(Path(db_path).stat().st_mtime, timezone.utc)  # when the snapshot was written
+    now = datetime.now(timezone.utc)
     conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
     conn.row_factory = sqlite3.Row
     scored, skipped = scores(sorted(glob.glob(score_glob)))
@@ -659,7 +705,7 @@ def main():
     result = dict(
         data_as_of=as_of.strftime("%Y-%m-%dT%H:%MZ"),
         gnubg=dict(scored=len(scored), skipped=skipped, method="GNU Backgammon 1.08: 0-ply on every play, 2-ply on the five best and the chosen one"),
-        leagues=[league(conn, lid, scored, rng, datetime.now(timezone.utc)) for lid in (1, 2, 3)],
+        leagues=[league(conn, lid, scored, rng, now, taken) for lid in (1, 2, 3)],
     )
     result["scored"] = sum(m.get("scored", 0) for lg in result["leagues"] for m in lg["models"])
     result["anchor"] = anchor_stats(conn)

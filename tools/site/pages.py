@@ -707,21 +707,59 @@ def league_section(S, lg, inner: str, title: str, anchor: str) -> str:
             f'{league_status_text(lg)}</div>{inner}</div>')
 
 
-def hero_board(S) -> str:
-    """The board, the site's visual signature: a real Risk pays decision in which the model played safe, with the
-    engine's best play drawn as arrows."""
-    sc = S.get("showcase")
-    if not sc:
-        return ""
+def hero_numbers(dec: dict, label: str, who: str, slug_: str, page: int, earlier: bool = False) -> dict:
+    """The numbers of one decision for the hero board, from an exported decision (decisions/<ds>/<setup>/<page>):
+    its B6 class (same rule as analysis.risk_class), the engine's best play, the best safe play and the play made."""
+    plays = dec["plays"]
+    hr = [p["hitting_rolls"] for p in plays]
+    least = min(hr)
+    bs = min((i for i in range(len(plays)) if hr[i] == least), key=lambda i: plays[i]["loss"])
+    ch, best = dec["chosen"], dec["best"]
+    pick = lambda i: dict(notation=plays[i]["notation"], hitting_rolls=hr[i], loss=plays[i]["loss"])
+    kind = "none" if least == max(hr) else "risk" if plays[bs]["loss"] >= A.T["safety_pays_loss_below"] else "safety"
+    return dict(dataset=dec["dataset"], label=label, who=who, earlier=earlier, id=dec["id"], slug=slug_, page=page,
+                dice=dec["dice"], board=dec["board"], pips=dec["pips"], phase=dec["phase"], kind=kind,
+                took=hr[ch] > least, min_risk=least, best=pick(best), best_safe=pick(bs), chosen=pick(ch))
+
+
+def hero_figure(sc: dict, rel: str = "") -> str:
+    """The board, the site's visual signature: one real decision, the engine's best play as solid arrows and the
+    play made, when different, dashed."""
     from board import board_svg
-    svg = board_svg(sc["board"], sc["dice"], sc["pips"], play=sc["best"]["notation"], cls="bd hero-bd",
-                    label_extra=f"Arrows: the engine's best play, {sc['best']['notation']}.")
-    href = f'decisions/?d={sc["dataset"]}&amp;s={sc["slug"]}&amp;p={sc["page"]}#d{sc["id"]}'
-    return (f'<figure class="hero-board">{svg}<figcaption><strong>Risk paid here.</strong> League {sc["league"]}, '
-            f'dice {sc["dice"][0]}-{sc["dice"][1]}: the engine\'s best play <code>{esc(sc["best"]["notation"])}</code> '
-            f'(arrows) leaves {count(sc["best"]["hitting_rolls"])} hitting rolls; the best safe play gives away '
-            f'{eq(sc["best_safe_loss"])}. {esc(sc["setup"])} played safe with <code>{esc(sc["chosen"]["notation"])}</code>. '
+    b, s, c = sc["best"], sc["best_safe"], sc["chosen"]
+    alt = c["notation"] if c["notation"] != b["notation"] else None
+    svg = board_svg(sc["board"], sc["dice"], sc["pips"], play=b["notation"], alt=alt, cls="bd hero-bd",
+                    label_extra=f"Solid arrows: the engine's best play, {b['notation']}."
+                    + (f" Dashed: the play made, {alt}." if alt else ""))
+    code = lambda p: f'<code>{esc(p["notation"])}</code>'
+    dashed = " (dashed)" if alt else ""
+    head = f'{esc(sc["label"])}, dice {sc["dice"][0]}-{sc["dice"][1]}'
+    if sc["kind"] == "risk" and not sc["took"]:
+        text = (f'<strong>Risk paid here.</strong> {head}: the engine\'s best play {code(b)} (arrows) leaves '
+                f'{count(b["hitting_rolls"])} hitting rolls; the best safe play {code(s)} gives away {eq(s["loss"])}. '
+                f'{esc(sc["who"])} played safe with {code(c)}{dashed}.')
+    elif sc["kind"] == "risk":
+        made = ("the engine's best play" if not alt else
+                f'{code(c)}{dashed}, leaving {count(c["hitting_rolls"])} hitting rolls and giving away {eq(c["loss"])}')
+        text = (f'<strong>Risk paid here, and it was taken.</strong> {head}: the best safe play {code(s)} leaves '
+                f'{count(s["hitting_rolls"])} hitting rolls but gives away {eq(s["loss"])}; the engine\'s best play '
+                f'{code(b)} (arrows) leaves {count(b["hitting_rolls"])}. {esc(sc["who"])} took the risk with {made}.')
+    elif sc["kind"] == "safety" and sc["took"]:
+        text = (f'<strong>Safety paid here.</strong> {head}: the engine\'s best play {code(b)} (arrows) leaves '
+                f'{count(b["hitting_rolls"])} hitting rolls, the minimum. {esc(sc["who"])} took a needless risk with '
+                f'{code(c)}{dashed}, leaving {count(c["hitting_rolls"])} hitting rolls and giving away {eq(c["loss"])}.')
+    else:
+        text = (f'<strong>Safety paid here.</strong> {head}: the engine\'s best play {code(b)} (arrows) leaves '
+                f'{count(b["hitting_rolls"])} hitting rolls, the minimum. {esc(sc["who"])} played {code(c)}{dashed}.')
+    href = f'{rel}decisions/?d={sc["dataset"]}&amp;s={sc["slug"]}&amp;p={sc["page"]}#d{sc["id"]}'
+    badge = f'{status_badge(EARLIER)} ' if sc.get("earlier") else ""
+    version = ' data-version="v1"' if sc.get("earlier") else ""
+    return (f'<figure class="hero-board"{version}>{svg}<figcaption>{badge}{text} '
             f'<a href="{href}">Open this decision</a></figcaption></figure>')
+
+
+def hero_board(S) -> str:
+    return hero_figure(S["showcase"]) if S.get("showcase") else ""
 
 
 FINDING_QUESTIONS = [  # one per thread; the first answers the core question
@@ -1002,7 +1040,8 @@ def phases_page(S) -> str:
                 + f'<h3 id="{ds}-gap">Equity gap between the two best plays</h3>'
                 + phase_table(S, rel, ds, setups, "gaps", A.GAP_LABELS, "Error rate (PR) by the gap between the two best plays"))
         note = f'<p class="table-note">{esc(play_order_note(S))}</p>' if not lg else ""
-        out.append(f'<section class="card" id="{ds}" data-dataset="{ds}"><div class="section-head"><h2>{esc(title)}</h2>'
+        version = "" if lg else ' data-version="v1"'
+        out.append(f'<section class="card" id="{ds}" data-dataset="{ds}"{version}><div class="section-head"><h2>{esc(title)}</h2>'
                    f'{badge}</div>{body}{note}</section>')
     out.append(about("<p>Error rate by game phase, strategy tag, number of legal plays and the equity gap between the "
                      "two best plays. Each league on its own; the shared-position version waits for the answers. A cell "
@@ -1256,9 +1295,10 @@ def share_card(S) -> str:
     sc = S.get("showcase")
     c = S["counts"]
     css = (SITE_CSS_DIR / "decisions.css").read_text()
-    board = board_svg(sc["board"], sc["dice"], sc["pips"], play=sc["best"]["notation"]) if sc else ""
-    cap = (f'League {sc["league"]}: the engine\'s best play {esc(sc["best"]["notation"])} (arrows) leaves '
-           f'{sc["best"]["hitting_rolls"]} hitting rolls; playing safe gave away {eq(sc["best_safe_loss"])}.') if sc else ""
+    board = board_svg(sc["board"], sc["dice"], sc["pips"], play=sc["best"]["notation"],
+                      alt=sc["chosen"]["notation"] if sc["chosen"]["notation"] != sc["best"]["notation"] else None) if sc else ""
+    cap = (f'{esc(sc["label"])}: the engine\'s best play {esc(sc["best"]["notation"])} (arrows) leaves '
+           f'{sc["best"]["hitting_rolls"]} hitting rolls; the best safe play gives away {eq(sc["best_safe"]["loss"])}.') if sc else ""
     return f"""<!doctype html><html><head><meta charset="utf-8"><style>
 {css}
 :root{{--text:#e2e8f0;--sans:system-ui,sans-serif;--bd-frame:#3d3226;--bd-felt:#1e293b;--bd-a:#6b5a43;--bd-b:#2f6f63;--bd-tray:#162032;--bd-num:#94a3b8;--bd-me:#ebe9e4;--bd-me-edge:#0e0e0d;--bd-opp:#9a3b2e;--bd-opp-edge:#f0b8ad;--bd-die:#ebe9e4;--bd-die-edge:#0e0e0d;--bd-pip:#1a1a18}}

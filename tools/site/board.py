@@ -72,7 +72,9 @@ def moves(notation: str) -> list[tuple[int, int]]:
     return out
 
 
-def board_svg(board: dict, dice, pips, play: str | None = None, label_extra: str = "", cls: str = "bd") -> str:
+def board_svg(board: dict, dice, pips, play: str | None = None, label_extra: str = "", cls: str = "bd",
+              alt: str | None = None) -> str:
+    """play: the engine's best play (solid arrows); alt: another play, the model's, drawn dashed (class bd-move-alt)."""
     points, bar, off = board["points"], board["bar"], board["off"]
     s = [f'<rect class="bd-frame" x="0" y="{BAND}" width="{EDGE + FRAME}" height="{BOTTOM - BAND + 6}" rx="6"/>',
          f'<rect class="bd-felt" x="{LEFT}" y="{TOP}" width="{6 * P}" height="{BOTTOM - TOP}"/>',
@@ -98,16 +100,21 @@ def board_svg(board: dict, dice, pips, play: str | None = None, label_extra: str
         s.append(f'<rect class="ck-off ck-me" x="{tray_x + 5}" y="{BOTTOM - 8 - k * 7}" width="{tray_w - 10}" height="6" rx="1.5"/>')
     dx = RIGHT + 3 * P
     s.append(_die(dx - 30, MID_Y - 13, dice[0]) + _die(dx + 4, MID_Y - 13, dice[1]))
-    if play:
-        s.append('<defs><marker id="bd-arrow" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" '
-                 'orient="auto-start-reverse"><path class="bd-move-head" d="M0 0L10 5L0 10Z"/></marker></defs>')
-        for a, b in moves(play):
+    arrows = [(n, k) for n, k in ((play, ""), (alt, "-alt")) if n]
+    if arrows:
+        s.append("<defs>" + "".join(
+            f'<marker id="bd-arrow{k}" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" '
+            f'orient="auto-start-reverse"><path class="bd-move-head{k}" d="M0 0L10 5L0 10Z"/></marker>' for _, k in arrows)
+                 + "</defs>")
+    for notation, k in arrows:
+        for a, b in moves(notation):
             x1, y1 = _anchor(a, points, bar[0])
             x2 = point_x(b) if b else EDGE + FRAME + TRAY / 2
             y2 = _stack_y(b, 0) if b else BOTTOM - 20
             lift = 46 if (a >= 13) == (b >= 13) and b else 0
             cy = (min(y1, y2) + lift) if a >= 13 and b >= 13 else (max(y1, y2) - lift)
-            s.append(f'<path class="bd-move" d="M{x1:g} {y1:g}Q{(x1 + x2) / 2:g} {cy:g} {x2:g} {y2:g}" marker-end="url(#bd-arrow)"/>')
+            s.append(f'<path class="bd-move{" bd-move" + k if k else ""}" d="M{x1:g} {y1:g}Q{(x1 + x2) / 2:g} {cy:g} '
+                     f'{x2:g} {y2:g}" marker-end="url(#bd-arrow{k})"/>')
     label = (f"Board from the mover's side, the mover at the bottom: dice {dice[0]}-{dice[1]}; pip count: you {pips[0]}, "
              f"opponent {pips[1]}.{(' ' + label_extra) if label_extra else ''}")
     return (f'<svg class="{cls}" viewBox="0 0 {WIDTH} {HEIGHT}" role="img" aria-label="{esc(label)}">'

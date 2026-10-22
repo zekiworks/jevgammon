@@ -239,18 +239,13 @@ def preview_image(S: dict, out: Path) -> str | None:
 
 def showcase(S: dict, found: dict) -> dict | None:
     """The board on the hero and the social preview: a real Risk pays decision in which the model played safe, from
-    the most recent finished league that has one (decisions_export picks the clearest per dataset)."""
+    the most recent finished league that has one (decisions_export picks the clearest per dataset).
+    tools/site/hero_candidates.py prepares alternatives; none is switched in without Can's choice."""
     for lg in sorted(S["leagues"], key=lambda l: (l["metric_status"] == PUBLISHED, l["id"]), reverse=True):
         if lg["dataset"] in found:
             d = found[lg["dataset"]][1]
-            chosen = d["plays"][d["chosen"]]
-            best = d["plays"][d["best"]]
-            return dict(league=lg["id"], dataset=lg["dataset"], metric_status=lg["metric_status"], id=d["id"],
-                        setup=d["setup"], slug=slug(d["setup"]), page=d["page"],
-                        dice=d["dice"], board=d["board"], pips=d["pips"], phase=d["phase"],
-                        chosen=dict(notation=chosen["notation"], hitting_rolls=chosen["hitting_rolls"], loss=chosen["loss"]),
-                        best=dict(notation=best["notation"], hitting_rolls=best["hitting_rolls"]),
-                        best_safe_loss=round(d["gap"], 4))
+            return dict(league=lg["id"], metric_status=lg["metric_status"],
+                        **pages.hero_numbers(d, f"League {lg['id']}", d["setup"], slug(d["setup"]), d["page"]))
     return None
 
 

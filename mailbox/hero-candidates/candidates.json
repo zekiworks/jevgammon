@@ -1,0 +1,101 @@
+{
+ "A": {
+  "why": "Typical Risk pays position (best-safe-play loss at the 48th percentile of the 355 v1 Risk pays positions) where most setups went wrong: 17 of 17 played safe; the most common safe play, 4/1 4/2, was chosen by 12.",
+  "label": "Earlier version (v1 set), the same position for every setup",
+  "who": "17 of the 17 setups that answered it",
+  "dataset": "v1-set",
+  "id": "v1-0709",
+  "slug": "claude-opus-5-5",
+  "page": 15,
+  "phase": "contact",
+  "dice": [
+   3,
+   2
+  ],
+  "kind": "risk",
+  "took": false,
+  "min_risk": 0,
+  "best": {
+   "notation": "4/1 24/22",
+   "hitting_rolls": 32,
+   "loss": 0.0
+  },
+  "best_safe": {
+   "notation": "4/1 3/1",
+   "hitting_rolls": 0,
+   "loss": 0.0878
+  },
+  "chosen": {
+   "notation": "4/1 4/2",
+   "hitting_rolls": 0,
+   "loss": 0.112
+  },
+  "setups_safe": 17,
+  "setups_answered": 17,
+  "setups_took_best": 0
+ },
+ "B": {
+  "why": "Typical Safety pays decision gone wrong: of the 324 League 3 decisions where a model took a needless risk, the median equity lost is 0.061; this one loses 0.060.",
+  "label": "League 3",
+  "who": "Claude Opus 5.5 (on)",
+  "dataset": "league-3",
+  "id": 102778,
+  "slug": "claude-opus-5-5-on",
+  "page": 1,
+  "phase": "contact",
+  "dice": [
+   3,
+   2
+  ],
+  "kind": "safety",
+  "took": true,
+  "min_risk": 0,
+  "best": {
+   "notation": "10/7 7/5",
+   "hitting_rolls": 0,
+   "loss": 0.0
+  },
+  "best_safe": {
+   "notation": "10/7 7/5",
+   "hitting_rolls": 0,
+   "loss": 0.0
+  },
+  "chosen": {
+   "notation": "13/10 13/11",
+   "hitting_rolls": 2,
+   "loss": 0.06
+  }
+ },
+ "C": {
+  "why": "Middle of the road: a Risk pays decision with the median stake (best-safe-play loss 0.089 is the median of the 4,152 League 3 Risk pays decisions; this one 0.089), and the model got it right: it took the risk with the engine's best play.",
+  "label": "League 3",
+  "who": "Claude Fable 5.1 (off)",
+  "dataset": "league-3",
+  "id": 104334,
+  "slug": "claude-fable-5-1-off",
+  "page": 4,
+  "phase": "opening",
+  "dice": [
+   5,
+   5
+  ],
+  "kind": "risk",
+  "took": true,
+  "min_risk": 24,
+  "best": {
+   "notation": "bar/20 13/8 8/3 8/3",
+   "hitting_rolls": 27,
+   "loss": 0.0
+  },
+  "best_safe": {
+   "notation": "bar/20 20/15 8/3 8/3",
+   "hitting_rolls": 24,
+   "loss": 0.0893
+  },
+  "chosen": {
+   "notation": "bar/20 13/8 8/3 8/3",
+   "hitting_rolls": 27,
+   "loss": 0.0
+  }
+ }
+}

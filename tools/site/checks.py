@@ -212,22 +212,32 @@ def check_counts(S: dict) -> list[str]:
 
 # --- 3. Mixing ----------------------------------------------------------------------------------------------
 
+def _is_unit(n) -> bool:
+    """A ranking, table or chart: every table, every 2x2 wall and every chart SVG."""
+    cls = n.attrs.get("class") or ""
+    return n.tag == "table" or "r2-wall" in cls.split() or n.tag == "svg" and "chart-svg" in cls.split()
+
+
 def check_mixing(page: Path, root: Node, S: dict) -> list[str]:
+    """No table, 2x2 wall or chart combines datasets (v1 set, league 1, 2, 3): every element in it that names a
+    dataset (data-dataset on rows, tiles, points or the unit itself) names the same one, and a unit inside an
+    Earlier-version block (data-version="v1") holds no v3 dataset. v1 numbers sit only inside such blocks."""
     bad = []
     running = {lg["dataset"] for lg in S["leagues"] if lg["metric_status"] == PROVISIONAL}
-    for t in (n for n in walk(root) if n.tag == "table"):
-        ds = {r.attrs.get("data-dataset") for r in walk(t) if r.tag == "tr" and r.attrs.get("data-dataset")}
-        if t.attrs.get("data-dataset"):
-            ds.add(t.attrs["data-dataset"])
+    for t in (n for n in walk(root) if _is_unit(n)):
+        ds = {r.attrs["data-dataset"] for r in walk(t) if r.attrs.get("data-dataset")}
+        in_v1 = any(a.attrs.get("data-version") == "v1" for a in [t] + list(ancestors(t)))
+        what = "a table" if t.tag == "table" else "a 2x2 wall" if t.tag == "div" else "a chart"
         if len(ds) > 1:
-            bad.append(f"{page}: a table mixes datasets {sorted(ds)}")
-        if "v1-set" in ds and not any(a.attrs.get("data-version") == "v1" or a.attrs.get("data-dataset") == "v1-set"
-                                      for a in [t] + list(ancestors(t))):
+            bad.append(f"{page}: {what} mixes datasets {sorted(ds)}")
+        if in_v1 and ds - {"v1-set"}:
+            bad.append(f"{page}: {what} in an Earlier-version block holds v3 rows {sorted(ds - {'v1-set'})}")
+        if "v1-set" in ds and not in_v1:
             bad.append(f"{page}: v1 rows outside an Earlier-version block")
         for r in ds & running:
             if not any(PROVISIONAL_NOTE in text_of(a) for a in ancestors(t) if a.attrs.get("data-dataset") == r
                        or a.tag in ("section", "div") and a.attrs.get("id", "").startswith("league-")):
-                bad.append(f"{page}: table of running {r} without '{PROVISIONAL_NOTE}' in its block")
+                bad.append(f"{page}: {what} of running {r} without '{PROVISIONAL_NOTE}' in its block")
     return bad
 
 

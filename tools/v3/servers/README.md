@@ -405,3 +405,14 @@ tools/v3/servers/nemotron35-bolt.sh stop
 
 BF16 on two GPUs: `NEMOTRON_GPUS=1,2 tools/v3/smoke_parta.sh nemotron-bf16` (fetch downloads
 150 GB; check `df` first).
+
+## League 2's last matches back on bariton (2026-10-22)
+
+League 2 paused 15:27:13 UTC (`systemctl --user kill -s SIGINT league2`; `resume-league2` stopped),
+DeepSeek's server stopped 15:27:43 and DeepSeek V4.1 Flash (off, on) went back to Fireworks via
+OpenRouter (provider pinned, fallbacks off; the roster entry as before 2026-10-20 21:56 UTC). On
+bariton: `GEMMA_GPUS="0 1" GEMMA_MAX_SEQS=24 gemma4-31b-replicas.sh start`, `LFM_GPU=2 lfm25-24b.sh start`,
+`QWEN27_GPU=3 qwen38-27b.sh start` (URLs `127.0.0.1:8894/8898/8897`; ComfyUI kept its share of GPUs 2
+and 3). 20 stored League 2 (off) requests (`/tmp/equiv.py`): Gemma 20/20 (max |Δp| 0.044), LFM2.5 17/20
+(max 0.15; not deterministic), Qwen 20/20 (max 0.007). Resumed 15:37:42; Spark copies stopped 15:40.
+See `freeze/league2-changes.json`.

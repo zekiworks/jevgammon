@@ -577,5 +577,87 @@
     "rpm": null
    }
   ]
+ },
+ {
+  "changed_at": "2026-10-22T15:37:42Z",
+  "league": 2,
+  "db": "v3.db",
+  "change": "League 2's last 4 matches: DeepSeek V4.1 Flash (off, on) from our SGLang server on bariton back to Fireworks via OpenRouter (provider pinned to Fireworks, fallbacks off), the entry as before 2026-10-20 21:56 UTC; Gemma 4 31B (bariton GPUs 0 and 1), LFM2.5-24B-A2B (GPU 2) and Qwen3.8-27B (GPU 3) from the DGX Sparks back to bariton's RTX PRO 6000 cards",
+  "harness_commit": "afc7b4140dbd24f0b0f853014a7e4819bbddcac6",
+  "harness_dirty": true,
+  "reason": "Finish League 2 faster: the reasoning players were slow on the DGX Sparks. League 2 paused 15:27:13 UTC (unfinished matches keep their stored turns and resume from the last one), DeepSeek server stopped 15:27:43, resumed 15:37:42. turns.provider is recorded per decision from the roster entry (local-sglang before, openrouter:fireworks after), so each resumed match shows which turns ran where. 20 stored League 2 (off) requests replayed on bariton: Gemma 20/20 (max |dp| 0.044, median 0.0000), LFM2.5 17/20 (max 0.15, median 0.046; not deterministic, bariton against itself 18/20), Qwen 20/20 (max 0.007, median 0.0008). OpenRouter credit before: $6.32 left. Spark servers stopped 15:40 UTC.",
+  "roster_changes": [
+   {
+    "name": "Gemma 4 31B (off)",
+    "base_url": "http://127.0.0.1:8894/v1"
+   },
+   {
+    "name": "Gemma 4 31B (on)",
+    "base_url": "http://127.0.0.1:8894/v1"
+   },
+   {
+    "name": "LFM2.5-24B-A2B (off)",
+    "base_url": "http://127.0.0.1:8898/v1"
+   },
+   {
+    "name": "LFM2.5-24B-A2B (on)",
+    "base_url": "http://127.0.0.1:8898/v1"
+   },
+   {
+    "name": "Qwen3.8-27B (off)",
+    "base_url": "http://127.0.0.1:8897/v1"
+   },
+   {
+    "name": "Qwen3.8-27B (on)",
+    "base_url": "http://127.0.0.1:8897/v1"
+   },
+   {
+    "name": "DeepSeek V4.1 Flash (off)",
+    "spec": "openai-compatible/deepseek/deepseek-v4.1-flash",
+    "base_url": "https://openrouter.ai/api/v1",
+    "api_key_env": "OPENROUTER_API_KEY",
+    "provider": "openrouter:fireworks",
+    "quantization": null,
+    "request": {
+     "provider": {
+      "order": [
+       "fireworks"
+      ],
+      "allow_fallbacks": false,
+      "require_parameters": true
+     },
+     "usage": {
+      "include": true
+     },
+     "reasoning": {
+      "enabled": false
+     }
+    },
+    "rpm": 18,
+    "parallel": 8
+   },
+   {
+    "name": "DeepSeek V4.1 Flash (on)",
+    "spec": "openai-compatible/deepseek/deepseek-v4.1-flash",
+    "base_url": "https://openrouter.ai/api/v1",
+    "api_key_env": "OPENROUTER_API_KEY",
+    "provider": "openrouter:fireworks",
+    "quantization": null,
+    "request": {
+     "provider": {
+      "order": [
+       "fireworks"
+      ],
+      "allow_fallbacks": false,
+      "require_parameters": true
+     },
+     "usage": {
+      "include": true
+     }
+    },
+    "rpm": 18,
+    "parallel": 8
+   }
+  ]
  }
 ]

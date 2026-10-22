@@ -92,6 +92,7 @@ if [ -n "$(git -C "$CLONE" status --porcelain -- backgammon/v3-results.json)" ];
   for attempt in 1 2 3; do
     if git -C "$CLONE" push -q origin main; then
       log "pushed data as of $AS_OF"
+      echo "$(date -u +%s) $AS_OF" >"$STATE/last_push"
       break
     fi
     [ "$attempt" = 3 ] && { log "push failed 3 times; next run retries"; exit 1; }
@@ -99,6 +100,32 @@ if [ -n "$(git -C "$CLONE" status --porcelain -- backgammon/v3-results.json)" ];
   done
 else
   log "no change (data as of $AS_OF)"
+fi
+
+# 5. Public check: once GitHub Pages and its CDN (max-age 600 s) have had 15 minutes after a push,
+# the public URL, fetched as a visitor gets it, must show the pushed "data as of". Otherwise
+# report it in mailbox/ (once per pushed value).
+PUBLIC_URL=https://zekiworks.github.io/analysis/backgammon/
+if [ -s "$STATE/last_push" ]; then
+  read -r PUSHED_AT PUSHED_ASOF <"$STATE/last_push"
+  if (( $(date -u +%s) - PUSHED_AT >= 900 )); then
+    PUBLIC=$(curl -s -m 30 "$PUBLIC_URL" | python3 -c '
+import re, sys, datetime
+m = re.search(r"(?:Live|Final): data as of (\d+ \w+ \d{4}), (\d\d:\d\d) UTC", sys.stdin.read())
+print(datetime.datetime.strptime(m[1] + " " + m[2], "%d %B %Y %H:%M").strftime("%Y-%m-%d %H:%M UTC") if m else "not found")')
+    if [ "$PUBLIC" = "$PUSHED_ASOF" ]; then
+      log "public check ok: $PUBLIC_URL shows data as of $PUBLIC"
+    elif [ ! -e "$STATE/reported-$PUSHED_AT" ]; then
+      log "public check FAILED: $PUBLIC_URL shows '$PUBLIC', pushed '$PUSHED_ASOF'"
+      {
+        echo "# Live page: public URL does not show the pushed data"
+        echo
+        echo "$(date -u '+%F %H:%M UTC'): $PUBLIC_URL shows data as of **$PUBLIC**; the update loop pushed **$PUSHED_ASOF** at $(date -u -d "@$PUSHED_AT" '+%F %H:%M UTC') (at least 15 minutes ago)."
+        echo "Check the GitHub Pages runs (https://github.com/zekiworks/analysis/actions) and the CDN; the loop's log is v3-page-refresh.log."
+      } >"$HOME/code/jevgammon/mailbox/Live page - public URL check failed.md"
+      touch "$STATE/reported-$PUSHED_AT"
+    fi
+  fi
 fi
 
 # Done: leagues 2 and 3 finished and their final data is published.

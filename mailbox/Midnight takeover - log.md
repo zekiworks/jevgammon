@@ -6,17 +6,11 @@ bariton's four GPUs, taken over at 00:00 UTC on 2026-10-22 by `tools/v3/midnight
 
 ## What happened
 
-- 21:28 UTC: [00:00] GPUs free for us: 0 1 2 3
-- 21:28 UTC: smoke tests in parallel: d3-turbo on GPU 0, Nemotron BF16 on GPUs 2,3 (24GB fallback on GPU 2)
-- 21:30 UTC: d3: done
-- 21:32 UTC: nemotron-bf16: failed (exit 1, see smoke/takeover-nemotron-bf16.log)
-- 22:00 UTC: nemotron: done
-- 22:00 UTC: smoke report: smoke/takeover-report.txt and smoke/part-a.json
-- 22:00 UTC: [step 2] GPUs free for us: 0 1 2 3
-- 22:02 UTC: DeepSeek V4.1 Flash ready after 121 s (http://127.0.0.2:8010/v1)
-- 22:02 UTC: 20-request check: same top letter 19/20, max |dp| 0.310, median |dp| 0.0952, median latency 0.49s
-- 22:02 UTC: league2 started: 5 of 136 matches left
-- 06:14 UTC: takeover script exiting early (signal or error)
+- 14:04 UTC: [step 2] GPUs free for us: 0 1 2 3
+- 14:06 UTC: DeepSeek V4.1 Flash ready after 121 s (http://127.0.0.2:8010/v1)
+- 14:07 UTC: 20-request check: same top letter 17/20, max |dp| 0.486, median |dp| 0.0939, median latency 0.46s
+- 14:07 UTC: league2 started: 4 of 136 matches left
+- 15:27 UTC: takeover script exiting early (signal or error)
 
 ## Smoke test table
 
@@ -47,7 +41,7 @@ bariton's four GPUs, taken over at 00:00 UTC on 2026-10-22 by `tools/v3/midnight
 | Nemotron 3.5 Bolt (on) | 50 / 0 / 0 | 0% | letter logprobs | one request | 218.0 / 303.4 | 0.0 / 0.0 | 29616 / 23169 / 0 | – | 11.6 [5.1, 19.8] | -2.0 [-11.7, +5.6] (n=50) | +3.1 [+0.6, +6.4] (n=50) |
 ```
 
-## End state (2026-10-22 06:14 UTC)
+## End state (2026-10-22 15:27 UTC)
 
-- League 2: running, 4 of 136 matches not finished
-- bariton GPUs: 0, 85844 MiB;1, 86253 MiB;2, 85844 MiB;3, 85844 MiB;
+- League 2: running, 3 of 136 matches not finished
+- bariton GPUs: 0, 85828 MiB;1, 86237 MiB;2, 96328 MiB;3, 86450 MiB;

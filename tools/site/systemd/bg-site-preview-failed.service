@@ -1,0 +1,6 @@
+[Unit]
+Description=Write why the backgammon site preview loop failed to mailbox/ (tools/site/report_failure.sh)
+
+[Service]
+Type=oneshot
+ExecStart=%h/code/jevgammon/tools/site/report_failure.sh

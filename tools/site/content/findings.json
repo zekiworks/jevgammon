@@ -1,0 +1,4 @@
+{
+ "_about": "Published findings (brief v6 B4): only findings Ümit approved, one per thread, each with a machine check of its claim (tools/site/findings.py). Empty until a first set is approved; the home page then shows 'Findings will be written when the current leagues finish.'",
+ "findings": []
+}

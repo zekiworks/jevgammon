@@ -1,5 +1,7 @@
 [Unit]
 Description=Backgammon site preview: snapshot, GNUbg scoring, build, checks, deploy (tools/site/update.sh)
+# The loop reports its own failures: a failed, killed or timed-out run writes why to mailbox/.
+OnFailure=bg-site-preview-failed.service
 
 [Service]
 Type=oneshot

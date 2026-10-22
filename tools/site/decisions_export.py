@@ -31,7 +31,7 @@ sys.path.insert(0, str(SITE))
 sys.path.insert(0, str(SITE.parent / "v3"))
 sys.path.insert(0, str(SITE.parent))
 
-from analysis import risk_class  # noqa: E402
+import analysis  # noqa: E402  (module import: analysis imports this module too; risk_class is read at call time)
 from common import EARLIER, PROVISIONAL, PROVISIONAL_NOTE, slug  # noqa: E402
 from rules import from_json, pips  # noqa: E402
 import replay  # noqa: E402
@@ -95,7 +95,7 @@ def mark_risk(d: dict, entries, order, page: int) -> None:
     shown = [entries[li] for li in order]
     scored = all(e[1] is not None and e[2] is not None for e in shown)
     top = max(e[1] for e in shown) if scored else None
-    cls, took = risk_class({"invalid": d["invalid"], "scored": scored, "chosen": d["chosen"],
+    cls, took = analysis.risk_class({"invalid": d["invalid"], "scored": scored, "chosen": d["chosen"],
                             "shots": [e[2] for e in shown], "losses": [top - e[1] for e in shown] if scored else None})
     d["risk"] = None if cls is None else {"class": cls, "took": took}
     # The site's showcase (hero board, social preview): per dataset, the model decision where risk paid most clearly

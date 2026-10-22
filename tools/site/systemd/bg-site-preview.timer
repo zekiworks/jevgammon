@@ -1,9 +1,10 @@
 [Unit]
-Description=Update the backgammon site preview every 30 minutes (does nothing when no data changed)
+Description=Update the backgammon site preview every 15 minutes (does nothing when no data changed)
 
 [Timer]
-OnCalendar=*:5/30
+OnCalendar=*:5/15
 AccuracySec=1min
+# A run missed while the machine was off or the user manager was down happens at the next start.
 Persistent=true
 Unit=bg-site-preview.service
 

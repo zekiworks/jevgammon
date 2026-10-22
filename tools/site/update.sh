@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Update loop of the backgammon site preview (brief B1, B2): https://zekiworks.github.io/analysis/backgammon-preview/
-# Run by the systemd user timer bg-site-preview.timer (every 30 minutes). Install:
-#   systemctl --user link tools/site/systemd/bg-site-preview.{service,timer}
+# Update loop of the backgammon site preview (brief v6 B1, B2): https://zekiworks.github.io/analysis/backgammon-preview/
+# Run by the systemd user timer bg-site-preview.timer (every 15 minutes; Persistent, so a run missed while the
+# machine was off happens at boot; the user manager lingers, so it runs without a login). Install:
+#   systemctl --user link tools/site/systemd/bg-site-preview{,-failed}.service tools/site/systemd/bg-site-preview.timer
 #   systemctl --user enable --now bg-site-preview.timer
 #
 #   1. snapshot (tools/site/snapshot.py): league tables copied in one read transaction, plus the prompts of new
@@ -10,10 +11,15 @@
 #   2. GNUbg scores every legal play of the new decisions (tools/site/score.sh: 8 processes, nice 19, idle I/O),
 #      never at the same time as the live page's scoring (shares v3-page-refresh's lock while it scores);
 #   3. tools/site/build.py builds the site into this job's own clone of the analysis repository and runs the
-#      pre-deploy checks; if a check fails nothing is deployed and the failures go to
-#      mailbox/Backgammon site preview - check failed.md;
+#      pre-deploy checks (numbers trace, counts add up, no mixing, every published finding still holds, no private
+#      address or credential in any file); if a check fails nothing is deployed and the failures go to
+#      mailbox/Backgammon site preview - check failed.md (a failed finding also to
+#      mailbox/Backgammon site - findings to re-check.md);
 #   4. commit backgammon-preview/ only (never the live page) and push, rebasing on a race;
 #   5. tools/site/findings_draft.py refreshes workspace/findings-draft.md from the deployed data.
+# The loop reports its own failures: any other failure (a crash, a push that keeps failing, a kill or timeout)
+# writes mailbox/Backgammon site preview - update loop failed.md (tools/site/report_failure.sh, from the ERR trap and
+# from systemd's OnFailure=); the next successful run removes it.
 # Runs never overlap (flock). Log: STATE/update.log.
 set -euo pipefail
 
@@ -24,7 +30,8 @@ OUT=$CLONE/backgammon-preview
 REMOTE=git@github-zekiworks:zekiworks/analysis
 LIVE_LOCK=${XDG_STATE_HOME:-$HOME/.local/state}/v3-page-refresh/lock
 FAILED="$ROOT/mailbox/Backgammon site preview - check failed.md"
-BANNED='192\.168|127\.0\.0|/home/|bariton|spark-|\bsk-|base_url'
+FINDINGS="$ROOT/mailbox/Backgammon site - findings to re-check.md"
+LOOP_FAILED="$ROOT/mailbox/Backgammon site preview - update loop failed.md"
 
 mkdir -p "$STATE"
 exec >>"$STATE/update.log" 2>&1
@@ -36,7 +43,7 @@ if ! flock -n 9; then
 fi
 renice -n 19 $$ >/dev/null
 ionice -c 3 -p $$ 2>/dev/null || true
-trap 'log "failed (line $LINENO)"' ERR
+trap 'log "failed (line $LINENO)"; "$ROOT/tools/site/report_failure.sh" "update.sh stopped at line $LINENO"' ERR
 cd "$ROOT"
 log "start"
 
@@ -47,6 +54,7 @@ CODE=$(git rev-parse HEAD:tools/site)
 KEY="$FP code:$CODE smoke:$(sha256sum smoke/part-a.json | cut -c1-12) v1:$(stat -c %Y replay.db)"
 if [ "${1:-}" != "--force" ] && [ -f "$STATE/deployed.key" ] && [ "$(cat "$STATE/deployed.key")" = "$KEY" ]; then
   log "no change ($FP)"
+  rm -f "$LOOP_FAILED"
   exit 0
 fi
 log "snapshot: $SUMMARY"
@@ -81,21 +89,27 @@ if [ $STATUS -ne 0 ]; then
     fi
     echo '```'
   } > "$FAILED"
+  # B4: a published finding that no longer holds also gets its own note; Ümit decides the new wording.
+  if [ $STATUS -eq 2 ] && python3 -c 'import json, sys; sys.exit(0 if any(f.startswith("Finding ") for f in json.load(open(sys.argv[1]))["failures"]) else 1)' "$STATE/site-check-failures.json"; then
+    {
+      echo "# Published findings the new data no longer supports"
+      echo
+      echo "$(date -u '+%F %H:%M UTC'). The deploy was stopped. Each line: the finding, then what the data now shows."
+      echo
+      python3 -c 'import json, sys; [print("- " + f) for f in json.load(open(sys.argv[1]))["failures"] if f.startswith("Finding ")]' "$STATE/site-check-failures.json"
+    } > "$FINDINGS"
+  fi
   log "build or checks failed (status $STATUS); not deployed; see mailbox"
   git -C "$CLONE" reset -q --hard origin/main
   git -C "$CLONE" clean -qfd -- backgammon-preview
+  # A failed check is the loop working as intended (reported above); a crashed build is a loop failure.
+  [ $STATUS -eq 2 ] && { rm -f "$LOOP_FAILED"; exit 0; }
   exit 1
 fi
-rm -f "$FAILED"
+rm -f "$FAILED" "$FINDINGS"
 if git -C "$CLONE" diff --name-only HEAD -- . ':!backgammon-preview' | grep -q .; then
   log "build touched files outside backgammon-preview/; not deployed"
   git -C "$CLONE" reset -q --hard origin/main
-  exit 1
-fi
-if grep -rqE "$BANNED" "$OUT" --include='*.html' --include='*.json' --include='*.js' --include='*.css'; then
-  log "banned string in the preview; not deployed"
-  git -C "$CLONE" reset -q --hard origin/main
-  git -C "$CLONE" clean -qfd -- backgammon-preview
   exit 1
 fi
 
@@ -119,4 +133,5 @@ echo "$KEY" > "$STATE/deployed.key"
 
 # 5. Findings draft (never published by itself).
 python3 tools/site/findings_draft.py "$OUT" "$ROOT/workspace/findings-draft.md" || log "findings draft failed"
+rm -f "$LOOP_FAILED"
 log "done"

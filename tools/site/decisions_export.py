@@ -299,9 +299,6 @@ def body() -> str:
     return f"""<section class="hero">
 <p class="eyebrow">Every decision</p>
 <h1>What did each model see, and what did it play?</h1>
-<p class="intro">Every scored decision, {PAGE_SIZE} to a page: the board, the position exactly as the model saw it, every
-legal play with its consequences, the engine's equity for each play, the equity the chosen play lost and the model's
-probability where it gives one.</p>
 </section>
 <div id="dec-controls" class="panel dec-controls" hidden></div>
 <noscript><p class="note">This page loads its decisions on demand with JavaScript. The same data is in
@@ -309,4 +306,8 @@ probability where it gives one.</p>
 <p id="dec-status" class="note" role="status"></p>
 <div id="dec-list" class="dec-list"></div>
 <nav id="dec-pager-bottom" class="dec-pager" aria-label="Pages" hidden></nav>
+<details class="about"><summary>About this page</summary><p>Every scored decision, {PAGE_SIZE} to a page: the board,
+the position exactly as the model saw it, every legal play with its consequences, the engine's equity for each play, the
+equity the chosen play lost and the model's probability where it gives one. Click a column header to sort a play
+table.</p></details>
 """

@@ -77,6 +77,7 @@ def compute(args) -> dict:
             metric_status=lg["metric_status"], matches=lg["fixtures"], matches_done=lg["done"], games=lg["games"],
             started=lg["started"], finished=lg["finished"],
             decisions=len(lg["decisions"]), scored=sum(1 for d in lg["decisions"] if d["scored"]),
+            matches_list=lg["matches_list"],
             standings=[dict(place=i, name=t["name"], played=t["played"], won=t["won"], drawn=t["drawn"],
                             lost=t["lost"], points=t["points"], games_won=t["gw"], games_lost=t["gl"],
                             gammons_won=lg["gammons"].get(t["name"], 0), to_play=lg["left"].get(t["name"], 0))
@@ -216,7 +217,7 @@ def main():
     if S["image"] is None:
         old = sorted((out / "share").glob("preview-*.png")) if (out / "share").exists() else []
         S["image"] = f"share/{old[0].name}" if old else None
-    for name in ("site.css", "site.js", "bg.css", "bg.js", "decisions.css", "decisions.js"):
+    for name in ("site.css", "site.js", "tables.js", "bg.css", "bg.js", "decisions.css", "decisions.js"):
         if (SITE / "assets" / name).exists():
             shutil.copy(SITE / "assets" / name, out / name)
     pages.write_all(S, out, BASE)

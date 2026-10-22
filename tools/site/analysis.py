@@ -27,6 +27,7 @@ from pathlib import Path
 
 import stats
 from common import EARLIER, PROVISIONAL, PUBLISHED, ROOT, THRESHOLDS as T, slug
+from decisions_export import PAGE_SIZE as DECISION_PAGE
 
 sys.path.insert(0, str(ROOT / "tools"))
 from league_web import last_activity, league_fixtures, league_state, league_table  # noqa: E402
@@ -103,7 +104,7 @@ def load_leagues(snap: Path, plays_dir: Path) -> dict:
                 left[f["model2"]] += 1
         decisions = []
         for r in conn.execute(
-            """SELECT t.id, g.id AS game_id, CASE t.player WHEN 1 THEN lm.model1 ELSE lm.model2 END AS name,
+            """SELECT t.id, g.id AS game_id, g.match_id, CASE t.player WHEN 1 THEN lm.model1 ELSE lm.model2 END AS name,
                       t.decided_by, t.legal_count, t.probability_source, t.probabilities, t.chosen_position,
                       t.request_ms, t.latency_ms, t.retry_ms, t.cost_usd, t.group_size, t.created_at,
                       t.input_tokens, t.output_tokens, t.reasoning_tokens
@@ -115,7 +116,7 @@ def load_leagues(snap: Path, plays_dir: Path) -> dict:
                 probs = json.loads(r["probabilities"])
                 if r["chosen_position"] < len(probs):
                     prob = probs[r["chosen_position"]]
-            d = dict(id=r["id"], setup=r["name"], cluster=r["game_id"], invalid=r["decided_by"] == "fallback",
+            d = dict(id=r["id"], setup=r["name"], cluster=r["game_id"], match=r["match_id"], invalid=r["decided_by"] == "fallback",
                      scored=p is not None, n=r["legal_count"], source=r["probability_source"], p=prob,
                      req_s=(r["request_ms"] if r["request_ms"] is not None else r["latency_ms"]) / 1000,
                      retry_s=(r["retry_ms"] or 0) / 1000, cost=r["cost_usd"], group=r["group_size"],
@@ -124,7 +125,32 @@ def load_leagues(snap: Path, plays_dir: Path) -> dict:
                 d.update(loss=p["loss"], phase=p["phase"], tag=p["tag"], **decision_from_plays(p))
                 d["chosen"] = p["chosen"]
             decisions.append(d)
+        # Where each match's decisions sit in Every decision: per setup, scored decisions in turn order, 50 a page.
+        order = defaultdict(list)
+        for d in decisions:
+            if d["scored"]:
+                order[d["setup"]].append(d["id"])
+        first = {}
+        for ids in order.values():
+            ids.sort()
+        by_match = {}
+        for d in decisions:
+            if d["scored"]:
+                k = (d["match"], d["setup"])
+                if k not in by_match or d["id"] < by_match[k]:
+                    by_match[k] = d["id"]
+        position = {setup: {tid: i for i, tid in enumerate(ids)} for setup, ids in order.items()}
+        for (mid, setup), tid in by_match.items():
+            first[(mid, setup)] = dict(id=tid, slug=slug(setup), page=position[setup][tid] // DECISION_PAGE + 1)
+        matches_list = []
+        for f in fixtures:
+            gw = games_won.get(f["match_id"], [0, 0]) if f["match_id"] else [0, 0]
+            matches_list.append(dict(
+                matchday=f["matchday"], model1=f["model1"], model2=f["model2"], match_id=f["match_id"],
+                status=f["status"], score1=f["score1"] or 0, score2=f["score2"] or 0, games=sum(gw),
+                model1_first=first.get((f["match_id"], f["model1"])), model2_first=first.get((f["match_id"], f["model2"]))))
         leagues.append(dict(
+            matches_list=matches_list,
             id=lid, dataset=f"league-{lid}", roster=roster, names=names, table=table,
             fixtures=len(fixtures), done=done, state=state, status_label=label,
             metric_status=PUBLISHED if state == "finished" else PROVISIONAL,

@@ -19,8 +19,8 @@
       },
       "parallel": 1,
       "note": "runs on our GPUs (Perplexity hosting of v1.1 unverified); price = Perplexity list price; moved to a DGX Spark at 2026-10-16 11:04 UTC, same checkpoint and server arguments; 20 League 1 requests replayed on both machines: same play 20/20, max |dp| 0.029",
-      "base_url": "http://192.168.1.139:18097",
-      "device": "NVIDIA GB10 (DGX Spark spark-194d) from 2026-10-16 11:04 UTC; RTX PRO 6000 (bariton) before"
+      "base_url": "http://127.0.0.1:18097",
+      "device": "NVIDIA GB10 (DGX Spark spark-194d) from 2026-10-16 11:04 UTC; RTX PRO 6000 (bariton) before; spark3 server OOM-killed 2026-10-22 19:34 UTC and spark3 then short of memory, so from 2026-10-22 22:41 UTC back on RTX PRO 6000 (bariton GPU 2), same checkpoint and server arguments (decider.sh, DECIDER_GPU=2); 20 stored League 1 requests replayed there: same play 19/20 (the other a near-tie, 0.190 v 0.185), max |dp| 0.017, median 0.008; League 1 finished 2026-10-22 22:55 UTC; server stopped 22:57 UTC"
     },
     {
       "name": "SubQ Snap Preview",

@@ -12,6 +12,8 @@ from common import (EARLIER, EARLIER_NOTE, NA, NOT_MEASURED, PENDING, PROVISIONA
 NAV = [("decisions/", "Every decision"), ("disagreements/", "Where models disagree"), ("phases/", "Phases"),
        ("compare/", "Compare"), ("leagues/", "Leagues"), ("method/", "Method"), ("data/", "Data")]
 TITLE = "Can a model tell when a risk is worth taking?"
+# TEMPORARY (Can, 23 Oct 2026): the "Export page as PNG" key in the top bar (assets/png.js); False removes it.
+EXPORT_PAGE_PNG = True
 
 
 RISK_LIMIT = "Hit risk only: being hit. Gammon risk and priming are not in it."
@@ -216,7 +218,9 @@ def layout(S, base, path: str, title: str, body: str, description: str | None = 
     nav = "".join(f'<li><a href="{rel}{href}"{" aria-current=page" if path.startswith(href) else ""}>{esc(label)}</a></li>'
                   for href, label in NAV)
     css = "".join(f'<link rel="stylesheet" href="{rel}{s}">' for s in ("site.css", "bg.css") + tuple(styles))
-    js = "".join(f'<script src="{rel}{s}" defer></script>' for s in ("site.js", "tables.js") + tuple(scripts))
+    js = "".join(f'<script src="{rel}{s}" defer></script>' for s in ("site.js", "tables.js", "png.js") + tuple(scripts))
+    page_png = ('<button type="button" class="key page-png" data-page-png hidden>Export page as PNG</button>'
+                if EXPORT_PAGE_PNG else "")
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -238,7 +242,7 @@ def layout(S, base, path: str, title: str, body: str, description: str | None = 
   <a class="skip" href="#main">Skip to content</a>
   <header class="topbar">
     <a class="brand" href="{rel or './'}">Zeki Works · Backgammon benchmark · v3</a>
-    <nav class="nav" aria-label="Pages"><ul>{nav}</ul></nav>
+    <nav class="nav" aria-label="Pages"><ul>{nav}</ul></nav>{page_png}
     <div class="theme-switch" role="group" aria-label="Colour theme" hidden><button type="button" class="key" data-theme-choice="dark" aria-pressed="true" aria-label="Dark background"><span class="lamp" aria-hidden="true"></span>Dark<span class="long"> background</span></button><button type="button" class="key" data-theme-choice="light" aria-pressed="false" aria-label="Light background"><span class="lamp" aria-hidden="true"></span>Light<span class="long"> background</span></button></div>
   </header>
   <main id="main"{f' class="{main_class}"' if main_class else ''}>
@@ -485,7 +489,7 @@ def phases_page(S) -> str:
             risk_ph = (f'<h3 id="{ds}-risk-phase">Risk judgement per phase</h3>' + SWIPE
                        + table(["Model and setting"] + [PHASE_LABEL[p] for p in A.PHASES], rows,
                                "Risk judgement (margin 0.001) per game phase; N/A where a phase has no Risk pays or no "
-                               "Safety pays decisions", attrs=f' data-dataset="{ds}"')
+                               "Safety pays decisions", attrs=f' data-dataset="{ds}" data-margin="0.001"')
                        + f'<p class="table-note">{esc(RISK_LIMIT)}</p>')
         badge = league_status_text(lg) if lg else status_badge(EARLIER)
         body = (risk_ph + f'<h3 id="{ds}-phase">Game phase</h3>' + phase_table(S, rel, ds, setups)

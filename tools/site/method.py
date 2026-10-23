@@ -398,9 +398,11 @@ def _risk(t: dict, extra: dict) -> str:
   2, so the corner (0, 0) is risk judgement 100; the faint diagonals mark {_value(t["risk_map_diagonals"])}. A point's
   colour is its share of wrong risks among the Risk pays decisions without the right risk. <strong>Error rate by risk-call
   category</strong>: the six parts as a stacked bar. <strong>Stake chart</strong>: risks found, wrong and missed risks per
-  stake band, and big needless risks. <strong>Risk call card</strong>: one image per league winner. A downloaded PNG
+  stake band, and big needless risks. <strong>Risk call card</strong>: one image per league winner. A downloaded chart PNG
   carries the league, the margin, the number of decisions, the results version and the site address, and lists the active
-  filters; it keeps the theme in view.</p>
+  filters; it keeps the theme in view. Every table on the site has its own Download PNG: the table as shown (tab, filters,
+  sort, theme) with all its columns and rows, the headings above it and the notes under it, then the same small type, with
+  the rows shown and the decisions behind them.</p>
 {_h3("risk-robust", "Robustness: the 0.02 margin")}
 <p>At 2-ply the engine can misjudge close plays by more than {m}. Every risk metric is therefore computed a second time
   with {r} in every place where {m} appears above. The {r} results are on the Risk tab under the main table, and here:</p>

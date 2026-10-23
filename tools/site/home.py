@@ -160,7 +160,7 @@ def risk_table(S, lg, phase="all") -> str:
     where = "all phases" if phase == "all" else P.PHASE_LABEL[phase]
     return (P.SWIPE + P.table(RISK_HEAD, body, f"Risk calls at the 0.001 margin, {esc(where)}; shares with count / "
                               "denominator, risk judgement with its 95% interval (games resampled)",
-                              attrs=f' data-dataset="{ds}"')
+                              attrs=f' data-dataset="{ds}" data-margin="0.001"')
             + f'<p class="table-note">{esc(LIMIT_HIT)}</p><p class="table-note">{esc(LIMIT_HARD)}</p>'
             + '<p class="table-note">Big: above 0.08 · confidence on the call: ranking score only, no calibration gap '
               '(the probability is for the chosen play, not the risk) · <a href="method/#risk">Definitions</a></p>')
@@ -176,7 +176,7 @@ def robust_table(S, lg, phase="all") -> str:
                     + share_td(r["missed"]) + share_td(r["needless"]) + share_td(r["wrong"]) + "</tr>")
     return (f'<h3 class="table-title" id="risk-robust-{ds}{"" if phase == "all" else "-" + phase}">The same at the 0.02 margin (robustness)</h3>'
             + P.SWIPE + P.table(ROBUST_HEAD, body, "Every 0.001 in the definitions replaced by 0.02",
-                                attrs=f' data-dataset="{ds}"'))
+                                attrs=f' data-dataset="{ds}" data-margin="0.02"'))
 
 
 def slug_name(n: str) -> str:
@@ -776,7 +776,7 @@ def method_extras(S) -> dict:
                         + "</tr>")
         robust.append(f'<h4 id="robust-{ds}">League {lg["id"]}</h4>' + P.SWIPE + P.table(
             ["Model and setting", "Risk judgement", "Risks found", "Right safety", "Missed risks", "Needless risks",
-             "Wrong risks"], rows, "Margin 0.001 (large) and 0.02 (small)", attrs=f' data-dataset="{ds}"'))
+             "Wrong risks"], rows, "Margin 0.001 (large) and 0.02 (small)", attrs=f' data-dataset="{ds}" data-margin="0.001 and 0.02"'))
         hrows = []
         for n in P.by_error(lg["setups"]):
             c = lg["setups"][n].get("confidence")

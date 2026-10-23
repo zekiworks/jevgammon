@@ -374,7 +374,7 @@ def main():
     if S["image"] is None:
         old = sorted((out / "share").glob("preview-*.png")) if (out / "share").exists() else []
         S["image"] = f"share/{old[0].name}" if old else None
-    for name in ("site.css", "site.js", "tables.js", "bg.css", "bg.js", "decisions.css", "decisions.js"):
+    for name in ("site.css", "site.js", "tables.js", "png.js", "bg.css", "bg.js", "decisions.css", "decisions.js"):
         if (SITE / "assets" / name).exists():
             shutil.copy(SITE / "assets" / name, out / name)
     pages.write_all(S, out, BASE)

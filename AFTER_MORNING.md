@@ -1,5 +1,9 @@
 # v3 leagues: state and how to restart (2026-10-22)
 
+**Update 2026-10-23 02:52 UTC: League 1 (22:55 UTC) and League 2 (02:50 UTC) have both finished; all bariton
+servers are stopped and the GPUs were released to compactor. See `mailbox/Night run - log.md`. The resume
+steps below are history.**
+
 League 1 was **reopened on 2026-10-22** for a late joiner, Fastino GLiDE v1.2 (local), and is **paused since
 17:22 UTC** (Can) with 17 of its 18 matches left (section below). League 3 has finished. League 2 (unit `league2`) is
 **paused since 2026-10-22 16:20 UTC** (Can: bariton's GPUs go to compactor until tonight). Unfinished

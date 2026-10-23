@@ -74,7 +74,7 @@ Same play on 48 of 50 positions. Probability gap: max 0.022, median 0.007 (large
   - Not started: 13.
   - Stored decisions: 322, all answered by `glide-v1.2`, none failed, mean 2.1 s per decision (cold kernel cache, 4 matches at once).
 - **Servers:** stopped at 17:22 UTC (bariton). Release posted on the bus at 17:23 UTC. The Spark servers are left running for the resume.
-- **Final standings:** not yet; League 1 finishes with 19 entrants (16 models + 3 programs) and 189 matches once the 17 remaining matches are played.
+- **Final standings:** League 1 finished at 22:55 UTC on 22 Oct (19 entrants, 189 matches); see "Night run" below.
 
 ## Timeline (UTC, 22 Oct)
 
@@ -88,6 +88,38 @@ Same play on 48 of 50 positions. Probability gap: max 0.022, median 0.007 (large
 - 17:16: `league-add`, League 1 resumed.
 - 17:22: League 1 paused (Can). Bariton servers stopped; release posted at 17:23.
 - 17:24: pages refreshed (`v3-page-refresh.service`); the public page (https://zekiworks.github.io/analysis/backgammon/) lists the new player and its matches.
+
+## Night run (22 Oct, UTC)
+
+- 22:19: compactor's release. 22:21: GLiDE v1.2 (GPU 0), Decider v1.2 27B + Flash v1.2 + Winnow-12B (GPU 1), Open-Jev (GPU 2) up, same scripts and arguments; League 1 resumed 22:21:54. Clef and Cygnet on spark answered.
+- Decider v1.1 on spark3 was down (OOM-killed 19:34 UTC) and could not restart: a container `glide` (vLLM, port 8888, not ours, started 19:54 UTC) holds about 56 GB there. Left untouched; asked on the bus whose it is.
+- 22:40: Open-Jev's match ended (lost 2-5 to GLiDE v1.2); Open-Jev stopped, Decider v1.1 started on bariton GPU 2 (`DECIDER_GPU=2 ./decider.sh start`, same checkpoint and arguments as on bariton before 16 Oct). 20 stored League 1 requests replayed: same play 19/20, max |dp| 0.017, median 0.008, median latency 0.65 s. Roster `base_url` set to `http://127.0.0.1:18097`, device note updated; League 1 restarted 22:51 (`leagues/league1.json` still has the spark3 URL; the resume reads the roster from `v3.db`).
+- 22:55: League 1 finished. Bariton and Spark servers stopped at 22:57.
+
+GLiDE v1.2 (local)'s 18 matches: 10 won, 8 lost, 10th of 19 (ranking points 30).
+
+| opponent | score (GLiDE v1.2 first) |
+|---|---|
+| SubQ Snap Preview | 2-4 L |
+| Open-Jev 27B v1.1 | 5-2 W |
+| Random | 8-0 W |
+| Cygnet (Gemma 4 12B) | 4-5 L |
+| Clef | 1-5 L |
+| Safest | 5-1 W |
+| GNUbg weak | 1-7 L |
+| Liquid d1-ultra | 2-5 L |
+| Jev 1.14.0 | 4-2 W |
+| Jev 1.13.0 | 5-2 W |
+| Celeris-1 Decision | 5-1 W |
+| GPT-6 Luna | 3-4 L |
+| Decider Flash v1.2 | 5-0 W |
+| Mercury Decide | 5-0 W |
+| Winnow-12B | 5-2 W |
+| Fastino GLiDE (API) | 3-6 L |
+| Decider v1.1 27B | 4-3 W |
+| Decider v1.2 27B | 2-6 L |
+
+Final top 5: 1. Liquid d1-ultra, 2. GNUbg weak, 3. Fastino GLiDE, 4. Decider v1.2 27B, 5. Jev 1.14.0.
 
 ## Files
 

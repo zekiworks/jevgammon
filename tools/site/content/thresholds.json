@@ -53,5 +53,18 @@
     0.99
   ],
   "cutoff_split_runs": 300,
-  "_about_risk": "Brief v10 B6/B9: margin 0.001 (main) and 0.02 (robustness) for Safety pays / Risk pays and for right vs wrong risk; stake bands small < 0.02 <= medium <= 0.08 < big; Confidence-tab cutoffs 0.90 and 0.99; 300 game-level half splits. Fixed and committed before any v10 risk number was computed."
+  "_about_risk": "Brief v10 B6/B9: margin 0.001 (main) and 0.02 (robustness) for Safety pays / Risk pays and for right vs wrong risk; stake bands small < 0.02 <= medium <= 0.08 < big; Confidence-tab cutoffs 0.90 and 0.99; 300 game-level half splits. Fixed and committed before any v10 risk number was computed.",
+  "cutoff_split_rule": "On one half of the games (a game's decisions together), the lowest probability cutoff whose kept decisions (probability at or above it) hold no blunder; scored on the other half: share kept and blunder rate among kept, averaged over cutoff_split_runs seeded splits.",
+  "surest_share": 0.25,
+  "needless_loss_bands": [
+    0.02,
+    0.08
+  ],
+  "risk_map_diagonals": [
+    50,
+    60,
+    70,
+    80,
+    90
+  ]
 }

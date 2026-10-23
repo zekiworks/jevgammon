@@ -501,10 +501,13 @@ def request(conn, plan: dict, db: Path) -> str:
             f"\"ladder round {n}: <reason> to league M\", then league-add with the setup's stored settings) and "
             "sets the leagues that receive a mover to play both games of a round at the same time.",
             "2. Block 1 (API and subscription): resume the leagues that hold those pairings "
-            "(`tools/v3/run_league<N>.sh` units); their runners play only the new pairings, and a pairing whose "
-            "server is not up waits (its player is retried every 30 s).",
+            "(`tools/v3/run_league<N>.sh` units); their runners play only the new pairings. A league that also "
+            "holds GPU pairings starts them too: while their server is down they fail the warm-up and back off "
+            "(2 minutes, doubling up to 1 hour) and resume once the server is up. A league whose pairings are "
+            "all GPU pairings is resumed with its first GPU block.",
             "3. GPU blocks: claim the GPUs with compactor over the agent bus, start the block's servers "
-            "(`tools/v3/servers/`), let the runners play the block, stop the servers and release the GPUs.",
+            "(`tools/v3/servers/`; the scripts take the GPU index), let the runners play the block, stop the "
+            "servers and release the GPUs.",
             "4. When every pairing is played, the next `tools/ladder.py plan` writes round " + str(n + 1) + "'s request "
             "(or the steady state).", ""]
     return "\n".join(out) + "\n"

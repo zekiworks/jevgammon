@@ -9,12 +9,49 @@
   "time_budget_seconds": 30,
   "min_decisions_per_cell": 200,
   "near_tie_gap_below": 0.02,
-  "gap_buckets": [0.02, 0.08],
-  "option_buckets": [[2, 5], [6, 10], [11, 15], [16, 25], [26, null]],
+  "gap_buckets": [
+    0.02,
+    0.08
+  ],
+  "option_buckets": [
+    [
+      2,
+      5
+    ],
+    [
+      6,
+      10
+    ],
+    [
+      11,
+      15
+    ],
+    [
+      16,
+      25
+    ],
+    [
+      26,
+      null
+    ]
+  ],
   "safety_pays_loss_below": 0.001,
   "tail_quantile": 0.95,
   "worst_share": 0.05,
   "bootstrap_resamples": 2000,
   "bootstrap_seed": 20261021,
-  "interval": 0.95
+  "interval": 0.95,
+  "risk_thresholds_fixed_on": "2026-10-23",
+  "risk_margin": 0.001,
+  "risk_margin_robust": 0.02,
+  "stake_bands": [
+    0.02,
+    0.08
+  ],
+  "confidence_cutoffs": [
+    0.9,
+    0.99
+  ],
+  "cutoff_split_runs": 300,
+  "_about_risk": "Brief v10 B6/B9: margin 0.001 (main) and 0.02 (robustness) for Safety pays / Risk pays and for right vs wrong risk; stake bands small < 0.02 <= medium <= 0.08 < big; Confidence-tab cutoffs 0.90 and 0.99; 300 game-level half splits. Fixed and committed before any v10 risk number was computed."
 }

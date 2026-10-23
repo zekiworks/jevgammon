@@ -1,4 +1,4 @@
-BACKGAMMON BENCHMARK: WEBSITE + SMOKE TESTS (brief v11)
+BACKGAMMON BENCHMARK: WEBSITE + SMOKE TESTS (brief v12)
 
 This brief replaces every earlier version and the separate messages about the rebuild.
 Two jobs:
@@ -108,7 +108,7 @@ Nothing else on the home page. "What the input adds" (Earlier version), learning
 
 
 B5. SUB-PAGES (nav)
-- Every decision: the board drawn as SVG, plus the position as text exactly as the model saw it; dice; legal plays with their computed consequences; the model's choice and probability; the engine's equity for every play; equity lost; whether this model's plays were split into groups. Mark each decision with its position class (Risk pays, Safety pays, No trade-off), its stake, and its risk call (right risk, wrong risk, needless risk, missed risk, right safety), as defined in B6.1. Make all three filterable, so a reader can open, for example, every needless risk a model took with a big stake. Show the best safe play next to the chosen play. Paginated. Loads its data on demand.
+- Every decision: the board drawn as SVG, plus the position as text exactly as the model saw it; dice; legal plays with their computed consequences; the model's choice and probability; the engine's equity for every play; equity lost; whether this model's plays were split into groups. Mark each decision with its position class (Risk pays, Safety pays, No trade-off), its stake, and its risk call (right risk, wrong risk, needless risk, missed risk, right safety), as defined in B6.1. Make all three filterable, so a reader can open, for example, every missed risk a model made with a big stake, or every needless risk that lost a lot of equity. Show the best safe play next to the chosen play. Paginated. Loads its data on demand.
 - Where models disagree: positions where models pick different plays.
 - Phases: opening, contact, holding game, race, bear-off. Also break down by strategy tag, number of options, and the gap between the two best plays.
 - Compare: two models, or one model at two reasoning settings, side by side, paired on the same positions.
@@ -141,7 +141,8 @@ B6.1 Definitions (use these exact terms everywhere on the site, one term per con
 Every decision with a trade-off gets exactly one risk call.
 
 B6.2 Metrics per setup (the Risk tab, in this column order)
-1. Risk judgement (headline): the average of two shares: right risks among Risk pays decisions, and right safety among Safety pays decisions. 100 means every call was right. Because it averages the two shares, it does not depend on how many positions of each class a setup met: the Safest program scores exactly 50 (0 and 100) whatever the mix, so 50 is the "always safe" line. Show it with a 95% interval (bootstrap by game).
+1. Risk judgement (headline): the average of two shares: right risks among Risk pays decisions, and right safety among Safety pays decisions. 100 means every call was right. Because it averages the two shares, it does not depend on how many positions of each class a setup met: as long as both classes have decisions, the Safest program scores exactly 50 (0 and 100), so 50 is the "always safe" line. Show it with a 95% interval (bootstrap by game).
+   Limit, shown as one line under the Risk tab: "Setups met different positions; risk judgement is not adjusted for how hard they were. Paired comparisons wait for the shared positions." Weighting the two classes equally does not make positions equally hard.
    If a setup has no Risk pays decisions or no Safety pays decisions, risk judgement cannot be computed: show "N/A: no <class> decisions". Never treat the empty class as 0 or 100. (Safest scores exactly 50 only because both classes exist.)
 2. Risks found: right risks ÷ Risk pays decisions. The first part of item 1.
 3. Right safety: right safety ÷ Safety pays decisions. The second part of item 1.
@@ -150,7 +151,7 @@ B6.2 Metrics per setup (the Risk tab, in this column order)
 5. Missed risks: missed risks ÷ Risk pays decisions (too cautious).
 6. Needless risks: needless risks ÷ Safety pays decisions (too bold).
 7. Wrong risks: wrong risks ÷ Risk pays decisions (bold at the right time, wrong play).
-8. Error rate by risk-call category: the setup's error rate (PR) split by where the equity was lost, in six parts: needless risks, missed risks, wrong risks, right risks, right safety, and No trade-off decisions. A right risk or right safety call can still lose equity, because the chosen play need not be the engine's best play; those losses are their own parts. The six parts add up exactly to the setup's error rate. Use this title; it describes where losses happened, not what caused them.
+8. Error rate by risk-call category: the setup's error rate (PR) split by where the equity was lost, in six parts: needless risks, missed risks, wrong risks, right risks, right safety, and No trade-off decisions. A right risk or right safety call can still lose equity, because the chosen play need not be the engine's best play; those losses are their own parts. Each part = 500 × (equity lost in that category) ÷ (all scored decisions of the setup), so every part uses the same denominator and the six parts add up exactly to the setup's error rate. Use this title; it describes where losses happened, not what caused them.
 9. Decisions with a trade-off, and the counts per class.
 Every share shows its count and denominator (B9). Every metric is computed per league; league comparisons are not paired.
 

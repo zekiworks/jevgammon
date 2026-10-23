@@ -17,6 +17,26 @@ const HOME = {
 const FILTER_LABEL = { kind: 'Model type', setting: 'Reasoning', runs: 'Runs on', weights: 'Weights' };
 const TOP_N = 8;
 
+/* The anchors of the page that was live here before the switch (B2) open where that content lives now. */
+(function oldAnchors() {
+  if (!document.body.classList.contains('home')) return;
+  const MOVED = {
+    v3: 'leagues/', 'v3-title': 'leagues/', 'v3-l1': 'leagues/#league-1', 'v3-league1': 'leagues/#league-1',
+    'v3-l2': 'leagues/#league-2', 'v3-league2': 'leagues/#league-2', 'v3-l3': 'leagues/#league-3',
+    'v3-league3': 'leagues/#league-3', 'v3-anchor': 'method/#v3-anchor', 'v3-dice': 'method/#exp-dice',
+    'v3-changes': 'method/#v3-changes', setup: 'leagues/#v1-setup', models: 'leagues/#v1-models',
+    prompt: 'method/#v1-prompt', changes: 'method/#v1-why', 'error-rate': 'leagues/#v1-error-rate',
+    results: 'leagues/#v1-results', allstar: 'leagues/#v1-allstar', 'speed-cost': 'leagues/#v1-speed-cost',
+    limits: 'leagues/#v1-limits',
+  };
+  const go = () => {
+    const id = decodeURIComponent(location.hash.slice(1)).replace(/-title$/, '');
+    if (id && !document.getElementById(id) && MOVED[id]) location.replace(MOVED[id]);
+  };
+  go();
+  window.addEventListener('hashchange', go);
+})();
+
 function rowShown(el) {
   const f = HOME.filters;
   return el.dataset.kind === 'reference' || Object.keys(f).every(g => f[g] === 'all' || el.dataset[g] === f[g]);

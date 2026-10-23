@@ -16,6 +16,14 @@
 # Runs never overlap (flock). Log: v3-page-refresh.log in the repository root.
 set -euo pipefail
 
+# Retired on 23 Oct 2026, when the live URL switched to the new site (built and deployed by tools/site/update.sh).
+# Run now, this would overwrite backgammon/index.html with the old page, so it refuses; its systemd units are masked.
+# The old page is kept, frozen, at analysis/backgammon/archive/2026-10-23/.
+if [ "${V3_PAGE_REFRESH_RETIRED_OVERRIDE:-}" != "yes-overwrite-the-live-site" ]; then
+  echo "v3-page-refresh is retired: the live page is built by tools/site/update.sh" >&2
+  exit 0
+fi
+
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 STATE=${XDG_STATE_HOME:-$HOME/.local/state}/v3-page-refresh
 CLONE=$STATE/analysis

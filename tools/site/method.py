@@ -144,7 +144,8 @@ def _toc() -> str:
 def _intro() -> str:
     return ('<section class="card" id="method" aria-labelledby="method-title">\n<h1 id="method-title">Method</h1>\n'
             '<p>How the games are played, what the models are shown, how every decision is scored, and the rules for '
-            'intervals and verdicts. The thresholds below were fixed before any number on this site was computed.</p>\n'
+            'intervals and verdicts. The thresholds below were fixed before any number on this site was computed. The '
+            'page as it was before this site went live: <a href="../archive/2026-10-23/">archive, 23 October 2026</a>.</p>\n'
             "</section>\n")
 
 

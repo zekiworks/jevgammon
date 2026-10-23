@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Builds the backgammon benchmark site (preview) from the data files, then checks it.
+"""Builds the backgammon benchmark site (https://zekiworks.github.io/analysis/backgammon/) from the data files, then checks it.
 
     python3 tools/site/build.py --state ~/.local/state/bg-site --out OUT_DIR [--no-image]
 
@@ -34,7 +34,7 @@ import checks  # noqa: E402
 import pages  # noqa: E402
 from common import CONTENT, EARLIER, PENDING, PROVISIONAL, PUBLISHED, ROOT, SITE, THRESHOLDS, slug  # noqa: E402
 
-BASE = "https://zekiworks.github.io/analysis/backgammon-preview/"
+BASE = "https://zekiworks.github.io/analysis/backgammon/"
 
 
 def load_setups() -> dict:
@@ -302,15 +302,56 @@ def risk_cards(S: dict, out: Path) -> dict:
     return made
 
 
+ARCHIVE_DATE = "2026-10-23"
+
+
+def archive_pre_switch(out: Path) -> None:
+    """B2: the page that was live before the switch, frozen as it was (its final data, 23 Oct 02:50 UTC), under
+    archive/<date>/ with a banner; Leagues and Method hold its content in the new form."""
+    src, dst = SITE / "archive_page", out / "archive" / ARCHIVE_DATE
+    (out / "v3-results.json").unlink(missing_ok=True)  # that page's data file, now beside it in the archive
+    dst.mkdir(parents=True, exist_ok=True)
+    shutil.copy(src / "v3-results.json", dst / "v3-results.json")
+    page = (src / "index.html").read_text()
+    page = page.replace(f'<link rel="canonical" href="{BASE}">', f'<link rel="canonical" href="{BASE}archive/{ARCHIVE_DATE}/">', 1)
+    banner = (f'<p style="margin:0;padding:.6rem 1rem;background:#fff3c4;color:#222;font:14px/1.4 system-ui,sans-serif">'
+              f'Archived: this is the page as it was before the new site went live ({ARCHIVE_DATE}). The current results '
+              f'are on the <a href="../../">home page</a>; this content now lives in <a href="../../leagues/">Leagues</a> '
+              f'and <a href="../../method/">Method</a>.</p>')
+    page = page.replace("<body>", "<body>" + banner, 1)
+    (dst / "index.html").write_text(page)
+
+
+def preview_redirects(out: Path, target: Path) -> None:
+    """The old preview path after the switch: every page redirects to the same page on the live address, keeping the
+    query and the anchor (stable links posted from the preview keep working)."""
+    if target.exists():
+        shutil.rmtree(target)
+    for page in out.rglob("index.html"):
+        rel = page.parent.relative_to(out).as_posix()
+        rel = "" if rel == "." else rel + "/"
+        url = BASE + rel
+        stub = target / rel / "index.html"
+        stub.parent.mkdir(parents=True, exist_ok=True)
+        stub.write_text(f"""<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="robots" content="noindex">
+<title>Moved to {url}</title><link rel="canonical" href="{url}"><meta http-equiv="refresh" content="0; url={url}">
+<script>location.replace({json.dumps(url)} + location.search + location.hash);</script></head>
+<body><p>This page moved to <a href="{url}">{url}</a>.</p></body></html>
+""")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--state", default="~/.local/state/bg-site")
     ap.add_argument("--out", required=True)
     ap.add_argument("--no-image", action="store_true")
+    ap.add_argument("--preview-redirects", metavar="DIR",
+                    help="write a redirect to the live address for every page of the build into DIR (the old preview path)")
     args = ap.parse_args()
     out = Path(args.out).expanduser()
     out.mkdir(parents=True, exist_ok=True)
     S = compute(args)
+    S["base"] = BASE
     write_data(S, out)
     import decisions_export
     datasets = [dict(id=lg["dataset"], label=f"League {lg['id']}", version="v3", league_id=lg["id"],
@@ -337,6 +378,9 @@ def main():
         if (SITE / "assets" / name).exists():
             shutil.copy(SITE / "assets" / name, out / name)
     pages.write_all(S, out, BASE)
+    archive_pre_switch(out)
+    if args.preview_redirects:
+        preview_redirects(out, Path(args.preview_redirects).expanduser())
     failures = checks.run(S, out)
     report = S["_state"] / "site-check-failures.json"
     if failures:

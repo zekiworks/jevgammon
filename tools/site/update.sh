@@ -1,21 +1,24 @@
 #!/usr/bin/env bash
-# Update loop of the backgammon site preview (brief v6 B1, B2): https://zekiworks.github.io/analysis/backgammon-preview/
-# Run by the systemd user timer bg-site-preview.timer (every 15 minutes; Persistent, so a run missed while the
-# machine was off happens at boot; the user manager lingers, so it runs without a login). Install:
+# Update loop of the backgammon site (brief v12 B1, B2): https://zekiworks.github.io/analysis/backgammon/
+# Since the live switch (23 Oct 2026, Ümit's approval) it deploys data updates to the live site by itself; the old
+# preview path, analysis/backgammon-preview/, holds one redirect per page to the same page on the live address.
+# New sections, layout changes and findings text still need Ümit's approval before they are committed here.
+# Run by the systemd user timer bg-site-preview.timer (its name predates the switch; every 15 minutes; Persistent,
+# so a run missed while the machine was off happens at boot; the user manager lingers, so it runs without a login).
+# Install:
 #   systemctl --user link tools/site/systemd/bg-site-preview{,-failed}.service tools/site/systemd/bg-site-preview.timer
 #   systemctl --user enable --now bg-site-preview.timer
 #
 #   1. snapshot (tools/site/snapshot.py): league tables copied in one read transaction, plus the prompts of new
 #      decisions; its fingerprint, the smoke-test rows, the v1 set and the site code make the change key;
 #      if the key equals the last deployed one, stop: nothing changed;
-#   2. GNUbg scores every legal play of the new decisions (tools/site/score.sh: 8 processes, nice 19, idle I/O),
-#      never at the same time as the live page's scoring (shares v3-page-refresh's lock while it scores);
+#   2. GNUbg scores every legal play of the new decisions (tools/site/score.sh: 8 processes, nice 19, idle I/O);
 #   3. tools/site/build.py builds the site into this job's own clone of the analysis repository and runs the
 #      pre-deploy checks (numbers trace, counts add up, no mixing, every published finding still holds, no private
 #      address or credential in any file); if a check fails nothing is deployed and the failures go to
 #      mailbox/Backgammon site preview - check failed.md (a failed finding also to
 #      mailbox/Backgammon site - findings to re-check.md);
-#   4. commit backgammon-preview/ only (never the live page) and push, rebasing on a race;
+#   4. commit backgammon/ and the redirects in backgammon-preview/ only, and push, rebasing on a race;
 #   5. tools/site/findings_draft.py refreshes workspace/findings-draft.md from the deployed data.
 # The loop reports its own failures: any other failure (a crash, a push that keeps failing, a kill or timeout)
 # writes mailbox/Backgammon site preview - update loop failed.md (tools/site/report_failure.sh, from the ERR trap and
@@ -26,9 +29,9 @@ set -euo pipefail
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 STATE=${XDG_STATE_HOME:-$HOME/.local/state}/bg-site
 CLONE=$STATE/analysis
-OUT=$CLONE/backgammon-preview
+OUT=$CLONE/backgammon
+PREVIEW=$CLONE/backgammon-preview
 REMOTE=git@github-zekiworks:zekiworks/analysis
-LIVE_LOCK=${XDG_STATE_HOME:-$HOME/.local/state}/v3-page-refresh/lock
 FAILED="$ROOT/mailbox/Backgammon site preview - check failed.md"
 FINDINGS="$ROOT/mailbox/Backgammon site - findings to re-check.md"
 LOOP_FAILED="$ROOT/mailbox/Backgammon site preview - update loop failed.md"
@@ -59,11 +62,8 @@ if [ "${1:-}" != "--force" ] && [ -f "$STATE/deployed.key" ] && [ "$(cat "$STATE
 fi
 log "snapshot: $SUMMARY"
 
-# 2. Score new decisions, never alongside the live page's scoring.
-exec 8>"$LIVE_LOCK"
-flock -w 1800 8 || { log "live page scoring held its lock for 30 min; next run retries"; exit 0; }
+# 2. Score new decisions.
 log "scored: $(tools/site/score.sh "$STATE/snap.db" "$STATE/plays" | tail -1)"
-flock -u 8
 
 # 3. Build and check in the job's own clone, on top of the published site.
 [ -d "$CLONE/.git" ] || git clone -q "$REMOTE" "$CLONE"
@@ -71,15 +71,15 @@ git -C "$CLONE" fetch -q origin main
 git -C "$CLONE" checkout -q main
 git -C "$CLONE" reset -q --hard origin/main
 set +e
-python3 tools/site/build.py --state "$STATE" --out "$OUT" > "$STATE/build.out" 2> "$STATE/build.err"
+python3 tools/site/build.py --state "$STATE" --out "$OUT" --preview-redirects "$PREVIEW" > "$STATE/build.out" 2> "$STATE/build.err"
 STATUS=$?
 set -e
 if [ $STATUS -ne 0 ]; then
   {
-    echo "# Backgammon site preview: pre-deploy check failed"
+    echo "# Backgammon site: pre-deploy check failed"
     echo
-    echo "$(date -u '+%F %H:%M UTC'). The update loop (tools/site/update.sh) built the preview but did not deploy it."
-    echo "Exit status $STATUS. The preview keeps its last good build."
+    echo "$(date -u '+%F %H:%M UTC'). The update loop (tools/site/update.sh) built the site but did not deploy it."
+    echo "Exit status $STATUS. The live site keeps its last good build."
     echo
     echo '```'
     if [ -f "$STATE/site-check-failures.json" ] && [ $STATUS -eq 2 ]; then
@@ -101,28 +101,28 @@ if [ $STATUS -ne 0 ]; then
   fi
   log "build or checks failed (status $STATUS); not deployed; see mailbox"
   git -C "$CLONE" reset -q --hard origin/main
-  git -C "$CLONE" clean -qfd -- backgammon-preview
+  git -C "$CLONE" clean -qfd -- backgammon backgammon-preview
   # A failed check is the loop working as intended (reported above); a crashed build is a loop failure.
   [ $STATUS -eq 2 ] && { rm -f "$LOOP_FAILED"; exit 0; }
   exit 1
 fi
 rm -f "$FAILED" "$FINDINGS"
-if git -C "$CLONE" diff --name-only HEAD -- . ':!backgammon-preview' | grep -q .; then
-  log "build touched files outside backgammon-preview/; not deployed"
+if git -C "$CLONE" diff --name-only HEAD -- . ':!backgammon' ':!backgammon-preview' | grep -q .; then
+  log "build touched files outside backgammon/ and backgammon-preview/; not deployed"
   git -C "$CLONE" reset -q --hard origin/main
   exit 1
 fi
 
 # 4. Publish when the build changed anything.
 AS_OF=$(python3 -c 'import json, sys; d = json.load(open(sys.argv[1])); print(d["data_as_of"], d["results"])' "$OUT/data/manifest.json")
-git -C "$CLONE" add -A -- backgammon-preview
+git -C "$CLONE" add -A -- backgammon backgammon-preview
 if git -C "$CLONE" diff --cached --quiet; then
   log "no change in the built site ($AS_OF)"
 else
-  git -C "$CLONE" commit -q -m "backgammon-preview: data as of $AS_OF"
+  git -C "$CLONE" commit -q -m "backgammon: data as of $AS_OF"
   for attempt in 1 2 3; do
     if git -C "$CLONE" push -q origin main; then
-      log "pushed preview, data as of $AS_OF"
+      log "pushed, data as of $AS_OF"
       break
     fi
     [ "$attempt" = 3 ] && { log "push failed 3 times; next run retries"; exit 1; }

@@ -222,7 +222,6 @@ def layout(S, base, path: str, title: str, body: str, description: str | None = 
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="robots" content="noindex, nofollow">
   <title>{esc(full)}</title>
   <link rel="canonical" href="{base}{path}">
   <meta name="description" content="{esc(desc)}">
@@ -238,7 +237,7 @@ def layout(S, base, path: str, title: str, body: str, description: str | None = 
 <body class="v3 {body_class}">
   <a class="skip" href="#main">Skip to content</a>
   <header class="topbar">
-    <a class="brand" href="{rel or './'}">Zeki Works · Backgammon benchmark · v3 preview</a>
+    <a class="brand" href="{rel or './'}">Zeki Works · Backgammon benchmark · v3</a>
     <nav class="nav" aria-label="Pages"><ul>{nav}</ul></nav>
     <div class="theme-switch" role="group" aria-label="Colour theme" hidden><button type="button" class="key" data-theme-choice="dark" aria-pressed="true" aria-label="Dark background"><span class="lamp" aria-hidden="true"></span>Dark<span class="long"> background</span></button><button type="button" class="key" data-theme-choice="light" aria-pressed="false" aria-label="Light background"><span class="lamp" aria-hidden="true"></span>Light<span class="long"> background</span></button></div>
   </header>
@@ -456,7 +455,9 @@ def leagues_page(S, archive_v1: str) -> str:
     return (page_head(S, "Leagues", "Leagues")
             + "".join(blocks) + intro
             + f'<section class="card" id="earlier"><details class="more"><summary>Earlier version: v1 leagues and teams '
-              f'{status_badge(EARLIER)}</summary><p class="note">{esc(play_order_note(S))}</p>{archive_v1}</details></section>')
+              f'{status_badge(EARLIER)}</summary><p class="note">{esc(play_order_note(S))}</p>{archive_v1}</details>'
+              f'<p class="table-note" id="pre-switch">The page as it was before this site went live, with its final league '
+              f'data: <a href="../archive/2026-10-23/">archive, 23 October 2026</a>.</p></section>')
 
 
 # --- Phases -------------------------------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-"""The home page of the backgammon site (brief v12 B4), in the preview's look: hero, findings, filters, the
+"""The home page of the backgammon site (brief v12 B4), in the approved look: hero, findings, filters, the
 leaderboard (Risk first), the chart panels, "Risk pays vs safety pays" and the downloads line. Every number comes
 from S (build.compute); the per-phase views of a league are written as fragments (fragments/<league>-<phase>.html)
 that the page loads when the Phase filter changes, so the page itself stays small."""
@@ -753,7 +753,7 @@ h1{{font-size:34px;margin:0 0 4px}} .sub{{font-size:19px;color:var(--text-2);mar
 <p class="big">{fmt(r["judgement"])}<small>95% interval {fmt(r["judgement_lo"])} to {fmt(r["judgement_hi"])} · 100 = every call right, 50 = always safe</small></p>
 <p class="parts">Risks found {pct(r["found"]["share"])} ({n_(r["found"]["n"])} / {n_(r["found"]["den"])}) · right safety {pct(r["right_safety"]["share"])} ({n_(r["right_safety"]["n"])} / {n_(r["right_safety"]["den"])})</p>
 {bars}
-<div class="f">{esc(LIMIT_HIT)}<br>Results {esc(S["hash"])}, {esc(P.as_of(S))} · GNU Backgammon 1.08, 2-ply · zekiworks.github.io/analysis/backgammon-preview/</div></body></html>"""
+<div class="f">{esc(LIMIT_HIT)}<br>Results {esc(S["hash"])}, {esc(P.as_of(S))} · GNU Backgammon 1.08, 2-ply · {esc(S["base"])}</div></body></html>"""
 
 
 # --- Method sections fed from the results (B4 moves them off the home page; B6.6 robustness; B6.7) -------------

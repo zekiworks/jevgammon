@@ -290,8 +290,11 @@ def run(S: dict, out: Path) -> list[str]:
         rel = page.relative_to(out)
         tree = Tree()
         tree.feed(page.read_text())
-        failures += check_numbers(rel, tree.root, nums)
-        failures += check_mixing(rel, tree.root, S)
+        # archive/: the page that was live before the switch, frozen with its own data file; only its links and the
+        # private-data scan apply (its numbers are that day's and trace to its v3-results.json, not to data/).
+        if rel.parts[0] != "archive":
+            failures += check_numbers(rel, tree.root, nums)
+            failures += check_mixing(rel, tree.root, S)
         failures += [f.replace(str(base), str(rel)) for f in check_links(base, tree.root, out, anchors=page == base)]
     failures += check_counts(S)
     for p in out.rglob("*"):

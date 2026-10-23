@@ -1,4 +1,5 @@
 {
- "_about": "Published findings (brief v6 B4): only findings Ümit approved, one per thread, each with a machine check of its claim (tools/site/findings.py). Empty until a first set is approved; the home page then shows 'Findings will be written when the current leagues finish.'",
+ "_about": "Published findings (brief v12 B4): only findings Ümit approved, each with a machine check of its claim (tools/site/findings.py). 'lead_in' is the one-line lead-in above the bullets, itself a finding, checked and approved the same way (\"None led on every measure\" only if the results show it). Empty until a first set is approved; the home page then shows 'Findings will be published after review.'",
+ "lead_in": null,
  "findings": []
 }

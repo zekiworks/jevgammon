@@ -5,10 +5,10 @@ from the same data, once as built and once deliberately mixed, and runs the chec
     python3 tools/site/selftest_mixing.py BUILD_DIR [--state STATE]
 
 BUILD_DIR is a finished build (its data/ is reused). The mixed build:
-  1. adds a v1-set row to every league's quality table (v1 and v3 rows in one table);
-  2. adds a v1-set tile to every league's 2x2 wall (v1 and v3 in one chart);
+  1. adds a v1-set row to every league's quality table on the Leagues page (v1 and v3 rows in one table);
+  2. adds a v1-set point to every league's risk map (v1 and v3 in one chart);
   3. adds a v1-set table, outside any Earlier-version block, under every league's reasoning table;
-  4. adds a League 3 table inside every Earlier-version (v1) block.
+  4. adds a League 3 table inside the Phases page's Earlier-version (v1) section.
 Exit 0 when the clean pages pass and every kind of mixing is caught; 1 otherwise. Writes nothing outside a temp dir.
 """
 
@@ -23,6 +23,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import build  # noqa: E402
 import checks  # noqa: E402
+import home  # noqa: E402
 import pages  # noqa: E402
 
 
@@ -40,35 +41,34 @@ def mix(S: dict):
     v1 = S["v1"]["setups"]
     one = next(iter(v1))
     lg3 = S["leagues"][-1]
-    orig = dict(quality_rows=pages.quality_rows, risk_tiles=pages.risk_tiles,
-                league_reasoning_table=pages.league_reasoning_table, earlier_block=pages.earlier_block)
+    orig = dict(quality_rows=pages.quality_rows, league_reasoning_table=pages.league_reasoning_table,
+                phase_table=pages.phase_table)
+    orig_map = home.risk_map
 
     def quality_rows(S_, rel, ds, setups):
         rows = orig["quality_rows"](S_, rel, ds, setups)
         return rows + orig["quality_rows"](S_, rel, "v1-set", {one: v1[one]}) if ds != "v1-set" else rows
 
-    def risk_tiles(S_, rel, ds, setups, image=None):
-        html = orig["risk_tiles"](S_, rel, ds, setups, image=image)
-        if ds == "v1-set":
-            return html
-        tag = f'<div class="r2-wall" data-dataset="{ds}">'
-        return html.replace(tag, tag + pages.r2_tile(S_, rel, "v1-set", one, v1[one]["risk"]), 1)
+    def risk_map(S_, lg, margin, phase="all"):
+        svg = orig_map(S_, lg, margin, phase)
+        return svg.replace("</svg>", f'<g class="pt" data-dataset="v1-set" data-setup="{one}"></g></svg>', 1)
 
     def league_reasoning_table(S_, lg):
         return orig["league_reasoning_table"](S_, lg) + pages.table(
             pages.QUALITY_HEAD, orig["quality_rows"](S_, "", "v1-set", v1), "v1 rows outside an Earlier-version block")
 
-    def earlier_block(S_, inner, title):
-        return orig["earlier_block"](S_, inner + pages.table(
-            pages.QUALITY_HEAD, orig["quality_rows"](S_, "", lg3["dataset"], lg3["setups"]), "v3 rows in a v1 block",
-            attrs=f' data-dataset="{lg3["dataset"]}"'), title)
+    def phase_table(S_, rel, ds, setups, *args, **kw):
+        html = orig["phase_table"](S_, rel, ds, setups, *args, **kw)
+        return html + pages.table(pages.QUALITY_HEAD, orig["quality_rows"](S_, "", lg3["dataset"], lg3["setups"]),
+                                  "v3 rows in a v1 block", attrs=f' data-dataset="{lg3["dataset"]}"') if ds == "v1-set" else html
 
-    pages.quality_rows, pages.risk_tiles = quality_rows, risk_tiles
-    pages.league_reasoning_table, pages.earlier_block = league_reasoning_table, earlier_block
+    pages.quality_rows, home.risk_map = quality_rows, risk_map
+    pages.league_reasoning_table, pages.phase_table = league_reasoning_table, phase_table
 
     def undo():
         for k, f in orig.items():
             setattr(pages, k, f)
+        home.risk_map = orig_map
     return undo
 
 
@@ -80,7 +80,7 @@ def main():
     built = Path(args.build_dir)
     S = build.compute(argparse.Namespace(state=args.state))
     sc = json.loads((built / "data/showcase.json").read_text())
-    S.update(hash="selftest", decision_files=0, image=None, risk_images={}, showcase=sc or None)
+    S.update(hash="selftest", decision_files=0, image=None, risk_cards={}, showcase=sc or None)
     result = {}
     with tempfile.TemporaryDirectory() as tmp:
         for label in ("clean", "mixed"):
@@ -94,7 +94,7 @@ def main():
             result[label] = mixing_failures(out, S)
     mixed = result["mixed"]
     kinds = {"table mixes": any("a table mixes datasets" in f for f in mixed),
-             "wall mixes": any("a 2x2 wall mixes datasets" in f for f in mixed),
+             "chart mixes": any("a chart mixes datasets" in f for f in mixed),
              "v1 outside Earlier version": any("v1 rows outside an Earlier-version block" in f for f in mixed),
              "v3 inside Earlier version": any("in an Earlier-version block holds v3 rows" in f for f in mixed)}
     print(f"clean build: {len(result['clean'])} mixing failures")

@@ -6,7 +6,7 @@
 Writes, under out/decisions/:
     index.json                                  datasets, their status and setups (name, slug, decisions, invalid, pages,
                                                 risk: decisions per B6 class)
-    <dataset>/<setup slug>/risk.json.gz         [page, id, class, took a risk] per decision, so Every decision can filter
+    <dataset>/<setup slug>/risk.json.gz         [page, id, class, risk call, band] per decision, so Every decision can filter
                                                 by Risk pays / Safety pays / No hit-risk trade-off without loading pages
     <dataset>/<setup slug>/<page>.json.gz       PAGE_SIZE decisions per page, pages numbered from 1 (gzip, mtime 0, so an
                                                 unchanged page is byte-identical from one build to the next)
@@ -87,42 +87,60 @@ def pages_of(items):
 
 
 RISK_CODE = {"risk": "r", "safety": "s", "none": "n", None: None}
+CALL_CODE = {"right_risk": "rr", "wrong_risk": "wr", "needless": "nr", "missed": "mr", "right_safety": "rs", None: None}
+BAND_CODE = {"small": "s", "medium": "m", "big": "b", None: None}
 
 
 def mark_risk(d: dict, entries, order, page: int) -> None:
-    """B6 class of one exported decision, by the same rule as the site's analyses (analysis.risk_class), on the
-    unrounded engine equities (entries[legal index] = (notation, equity, hitting rolls, description))."""
+    """B6.1 marks of one exported decision by the same rule as the site's analyses (analysis.risk_class), on the
+    unrounded engine equities (entries[legal index] = (notation, equity, hitting rolls, description)): position
+    class, risk call (main margin and robustness margin), stake, the best safe play and the band the Every decision
+    filter uses (the stake for Risk pays decisions, the equity the chosen play lost for needless risks)."""
     shown = [entries[li] for li in order]
     scored = all(e[1] is not None and e[2] is not None for e in shown)
     top = max(e[1] for e in shown) if scored else None
-    cls, took = analysis.risk_class({"invalid": d["invalid"], "scored": scored, "chosen": d["chosen"],
-                            "shots": [e[2] for e in shown], "losses": [top - e[1] for e in shown] if scored else None})
-    d["risk"] = None if cls is None else {"class": cls, "took": took}
-    # The site's showcase (hero board, social preview): per dataset, the model decision where risk paid most clearly
-    # (largest loss of the best safe play) and the model played safe anyway.
-    if cls == "risk" and not took and not d["program"]:
-        least = min(e[2] for e in shown)
-        gap = min(top - e[1] for e in shown if e[2] == least)
-        key = (gap, -d["id"] if isinstance(d["id"], int) else 0)
-        old = SHOWCASE.get(d["dataset"])
-        if old is None or key > old[0]:
-            SHOWCASE[d["dataset"]] = (key, {k: d[k] for k in ("id", "dataset", "setup", "dice", "board", "pips", "plays",
-                                                              "best", "chosen", "phase", "turn_no")} | {"gap": gap, "page": page})
+    probe = {"invalid": d["invalid"], "scored": scored, "chosen": d["chosen"], "shots": [e[2] for e in shown],
+             "losses": [top - e[1] for e in shown] if scored else None}
+    cls, call, stake = analysis.risk_class(probe)
+    if cls is None:
+        d["risk"] = None
+        return
+    _, call_robust, _ = analysis.risk_class(probe, analysis.T["risk_margin_robust"])
+    least = min(probe["shots"])
+    safe = min((k for k, s in enumerate(probe["shots"]) if s == least), key=lambda k: probe["losses"][k])
+    loss = probe["losses"][d["chosen"]]
+    bnd = (analysis.band(stake) if cls == "risk" else
+           analysis.band(loss, analysis.T["needless_loss_bands"]) if call == "needless" else None)
+    d["risk"] = {"class": cls, "call": call, "call_robust": call_robust, "band": bnd,
+                 "stake": analysis_r4(stake), "best_safe": safe if cls != "none" else None}
+    # The hero board (B4): a typical Risk pays decision by a model, stake within the hero range.
+    lo, hi = analysis.T["hero_stake_range"]
+    if cls == "risk" and not d["program"] and lo <= stake <= hi:
+        SHOWCASE.setdefault(d["dataset"], []).append(
+            (stake, d["id"], {k: d[k] for k in ("id", "dataset", "setup", "dice", "board", "pips", "plays", "best",
+                                                "chosen", "phase", "turn_no", "risk")} | {"stake": stake, "page": page}))
+
+
+def analysis_r4(x):
+    return None if x is None else round(x, 4)
 
 
 SHOWCASE: dict = {}
 
 
 def write_risk_index(root, ds, setup, rows) -> dict:
-    """rows: (page, id, decision['risk']); returns decisions per class for index.json."""
+    """rows: (page, id, decision['risk']); each item [page, id, class, call, band]; returns the counts per class and
+    per call for index.json (the pre-deploy check compares them with the analysis)."""
     path = root / ds / slug(setup) / "risk.json.gz"
     path.parent.mkdir(parents=True, exist_ok=True)
-    items = [[pg, i, RISK_CODE[r["class"]] if r else None, (r["took"] if r and r["class"] != "none" else None)]
+    items = [[pg, i, RISK_CODE[r["class"]], CALL_CODE[r["call"]], BAND_CODE[r["band"]]] if r else [pg, i, None, None, None]
              for pg, i, r in rows]
     path.write_bytes(gzip.compress(json.dumps(items, separators=(",", ":")).encode(), compresslevel=9, mtime=0))
-    counts = {"risk": 0, "safety": 0, "none": 0, "unclassified": 0}
+    counts = {"risk": 0, "safety": 0, "none": 0, "unclassified": 0, "calls": {c: 0 for c in analysis.CALLS}}
     for _, _, r in rows:
         counts[r["class"] if r else "unclassified"] += 1
+        if r and r["call"]:
+            counts["calls"][r["call"]] += 1
     return counts
 
 

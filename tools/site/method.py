@@ -56,7 +56,17 @@ THRESHOLDS = {
     "near_tie_gap_below": ("Near-tie", "The two best plays are closer than this in equity."),
     "gap_buckets": ("Gap groups", "Limits of the groups by equity gap between the two best plays."),
     "option_buckets": ("Option groups", "Groups by number of legal plays."),
-    "safety_pays_loss_below": ("Safe enough", "In \"Is the risk worth it?\", a safest play that loses less than this counts as the right play."),
+    "risk_margin": ("Risk margin", "B6.1: stake below it is Safety pays, at or above it Risk pays; a taken risk is right when the chosen play is at least this much better than the best safe play."),
+    "risk_margin_robust": ("Robustness margin", "B6.6: every risk metric computed again with this margin in place of the risk margin."),
+    "risk_thresholds_fixed_on": ("Risk thresholds fixed on", "Date the risk thresholds were fixed, before any risk number was computed."),
+    "stake_bands": ("Stake bands", "Risk pays decisions by stake: small below the first value, medium up to the second, big above it."),
+    "needless_loss_bands": ("Needless-risk bands", "Needless risks by the equity the chosen play lost: small, medium, big."),
+    "confidence_cutoffs": ("Confidence cutoffs", "Confidence tab: decisions kept at or above each probability."),
+    "cutoff_split_runs": ("Held-out splits", "Random halves of the games for the cutoff chosen on one half and tested on the other."),
+    "cutoff_split_rule": ("Held-out cutoff rule", "How that cutoff is chosen."),
+    "surest_share": ("Surest share", "Share of a setup's decisions with the highest confidence, for the error rate in the surest quarter."),
+    "risk_map_diagonals": ("Risk map diagonals", "Risk judgement values drawn as faint diagonals on the risk map."),
+    "hero_stake_range": ("Hero board stake", "The home page board shows a Risk pays decision with a stake in this range: the one closest to the median stake of those decisions in the latest finished league."),
     "tail_quantile": ("Tail error", "Quantile of the loss per decision reported as tail error."),
     "worst_share": ("Worst decisions", "Share of a setup's decisions, the ones with the largest loss, whose mean loss is reported."),
     "bootstrap_resamples": ("Bootstrap resamples", "Resamples for every interval."),
@@ -121,9 +131,11 @@ def _archive(name: str) -> str:
 def _toc() -> str:
     items = [("setup", "Setup"), ("shared-positions", "Shared positions"), ("prompt", "The prompt"),
              ("v1-why", "Why it looks like this"), ("error-rate", "Error rate"), ("human-scale", "Human scale"),
-             ("risk", "Is the risk worth it?"), ("statistics", "Statistics and verdicts"), ("thresholds", "Fixed thresholds"),
+             ("risk", "Was it the right risk?"), ("statistics", "Statistics and verdicts"), ("thresholds", "Fixed thresholds"),
              ("status", "Status labels"), ("versions", "Versions and play order"), ("confidence", "Confidence"),
-             ("cost", "Cost"), ("time", "Time"), ("limits", "Limits"), ("v3-changes", "Runner changes during the leagues"),
+             ("cost", "Cost"), ("time", "Time"), ("limits", "Limits"), ("input", "What the input adds"),
+             ("learning", "Learning from experience"), ("routing", "Routing and teams"), ("tail", "Tail risk"),
+             ("v3-changes", "Runner changes during the leagues"),
              ("v3-anchor", "The anchor"), ("experiments", "Method experiments")]
     lis = "".join(f'<li><a href="#{a}">{t}</a></li>' for a, t in items)
     return f'<nav class="toc" aria-label="On this page"><ul>{lis}</ul></nav>'
@@ -309,29 +321,91 @@ def _human_scale() -> str:
   at 2-ply. Read a band as a rough guide, not as a measured human level.</p>""")
 
 
-def _risk(t: dict) -> str:
-    return _section("risk", "Is the risk worth it? Definitions", f"""
-<p>The core question: can a model tell when a risk is worth taking? Every scored decision gets exactly one class.</p>
+def _risk(t: dict, extra: dict) -> str:
+    m, r = _value(t["risk_margin"]), _value(t["risk_margin_robust"])
+    a, b = t["stake_bands"]
+    return _section("risk", "Was it the right risk? Definitions", f"""
+<p>The core question: when a model takes a risk, is it the right risk? And when it plays safe, was safe right? The
+  thresholds below ({m}, {r}, the stake bands {_value(a)} and {_value(b)}) were fixed on
+  {esc(t["risk_thresholds_fixed_on"])}, before any of these numbers was computed.</p>
 <dl class="facts">
-  <dt>Hitting rolls</dt><dd>How many of the opponent's 36 rolls hit a blot after a play, as the model was shown it next
-    to that play. The program counts them by generating the opponent's legal plays for each roll.</dd>
+  <dt>Hitting rolls</dt><dd>For each legal play, how many of the opponent's 36 rolls hit, read from the numbers the
+    model was shown next to that play.</dd>
   <dt>Minimum risk</dt><dd>The fewest hitting rolls any legal play leaves in that position.</dd>
-  <dt>Best safe play</dt><dd>Among the plays that leave the minimum, the one the engine rates best.</dd>
-  <dt>No hit-risk trade-off</dt><dd>Every legal play leaves the same number of hitting rolls: the model has no risk
-    choice. These decisions are counted and left out of every risk share.</dd>
-  <dt>Safety pays</dt><dd>The best safe play loses less than {_value(t["safety_pays_loss_below"])} equity against the
-    engine's best play.</dd>
-  <dt>Risk pays</dt><dd>The best safe play loses {_value(t["safety_pays_loss_below"])} equity or more against the
-    engine's best play.</dd>
-  <dt>Took a risk</dt><dd>The play made leaves more hitting rolls than the minimum.</dd>
-  <dt>Played safe</dt><dd>The play made leaves the minimum.</dd>
+  <dt>Best safe play</dt><dd>Among the plays that leave the minimum risk, the one the engine rates best.</dd>
+  <dt>Stake</dt><dd>The equity difference between the engine's best play and the best safe play: how much the risk call
+    is worth in that position.</dd>
+  <dt>Position class</dt><dd><strong>No trade-off</strong>: every legal play leaves the same number of hitting rolls;
+    counted and left out of every risk metric. <strong>Safety pays</strong>: stake below {m}. <strong>Risk pays</strong>:
+    stake {m} or more.</dd>
+  <dt>Took a risk</dt><dd>The chosen play leaves more hitting rolls than the minimum. Otherwise the model played safe.</dd>
+  <dt>Risk call</dt><dd><strong>Right risk</strong>: took a risk, and the chosen play is at least {m} better than the
+    best safe play. <strong>Wrong risk</strong>: took a risk in a Risk pays position, but not one at least {m} better
+    than the best safe play. <strong>Needless risk</strong>: took a risk in a Safety pays position. <strong>Missed
+    risk</strong>: played safe in a Risk pays position. <strong>Right safety</strong>: played safe in a Safety pays
+    position. Every decision with a trade-off gets exactly one risk call.</dd>
 </dl>
-<p>Each 2×2 cell shows its raw count, its share of the row and its mean equity lost. The denominator of a share is the
-  number of decisions in that row's class (Risk pays or Safety pays). Two headline numbers per setup: in Risk pays
-  decisions, the share where it took a risk; in Safety pays decisions, the share where it took a needless risk; each
-  with its count and denominator. A cell with no decisions shows 0 and no mean. The Safest program, which never takes
-  a risk, is the reference row: it shows what pure caution costs. The {_value(t["safety_pays_loss_below"])} threshold
-  was fixed before any result was computed.</p>
+{_h3("risk-metrics", "Metrics per setup (the Risk tab, in this order)")}
+<ol>
+  <li><strong>Risk judgement</strong>: the average of risks found and right safety, × 100. It does not depend on how many
+    positions of each class a setup met. With both classes present, the Safest program scores exactly 50, the "always
+    safe" line. If a setup has no Risk pays or no Safety pays decisions, it shows "N/A: no &lt;class&gt; decisions";
+    an empty class is never read as 0 or 100. 95% interval: bootstrap by game.</li>
+  <li><strong>Risks found</strong>: right risks ÷ Risk pays decisions.</li>
+  <li><strong>Right safety</strong>: right safety ÷ Safety pays decisions.</li>
+  <li><strong>Good risks</strong>: right risks ÷ all risks taken.</li>
+  <li><strong>Missed risks</strong>: missed risks ÷ Risk pays decisions (too cautious).</li>
+  <li><strong>Needless risks</strong>: needless risks ÷ Safety pays decisions (too bold).</li>
+  <li><strong>Wrong risks</strong>: wrong risks ÷ Risk pays decisions.</li>
+  <li><strong>Error rate by risk-call category</strong>: each part is 500 × the equity lost in that category ÷ all scored
+    decisions of the setup, the same denominator for all six parts (needless risks, missed risks, wrong risks, right
+    risks, right safety, No trade-off), so they add up exactly to the error rate. A right risk or right safety can still
+    lose equity: the chosen play need not be the engine's best. It says where losses happened, not what caused
+    them.</li>
+  <li><strong>Decisions with a trade-off</strong>, and the counts per class.</li>
+</ol>
+<p>Every share shows its count and denominator. Every metric is computed per league; league comparisons are not paired.
+  Setups met different positions, and risk judgement is not adjusted for how hard they were; paired comparisons wait for
+  the shared positions.</p>
+{_h3("risk-breakdowns", "Breakdowns")}
+<ul>
+  <li><strong>By stake</strong> (Risk pays only): small (below {_value(a)}), medium ({_value(a)} to {_value(b)}), big
+    (above {_value(b)}); risks found, missed risks and wrong risks per band, and "big risks found" on its own.</li>
+  <li><strong>Needless risks</strong> have no stake band (their stake is below the margin by definition); they are
+    banded by the equity the chosen play lost, with the same limits, and "big needless risks" are those that lost more
+    than {_value(b)}.</li>
+  <li><strong>Risk size</strong>: extra hitting rolls over the minimum, averaged for right risks and for wrong and
+    needless risks. An average over fewer than {_value(t["min_decisions_per_cell"])} decisions shows "{esc(TOO_FEW)}".</li>
+  <li><strong>By phase</strong>: risk judgement per phase, on the <a href="../phases/">Phases</a> page and through the
+    home page's Phase filter.</li>
+  <li><strong>Confidence on the call</strong> (setups with probabilities only): among risks taken, the ranking score
+    (AUROC) of confidence for "right risk", and the average confidence on missed risks. The confidence is the probability
+    a model gave its chosen play, not the probability that the risk beats the best safe play, so no calibration gap is
+    reported for risk calls. The calibration gap is reported only for the event the confidence stands for, the chosen
+    play being the engine's best (Confidence tab).</li>
+</ul>
+{_h3("risk-references", "Reference rows")}
+<p>Shown, never ranked, never champions. <strong>Safest</strong> always plays the best safe play; <strong>Random</strong>
+  plays a random legal play; <strong>GNUbg weak</strong> is the x86-64 build: its noise is shifted, so it overplays
+  gammons (see <a href="#v3-anchor">The anchor</a>). Safest and Random played League 1 only; in the other leagues they are
+  computed on that league's positions (every scored decision of the league): Safest from the best safe play, Random as
+  the expectation over all legal plays, so its counts can have decimals. A cell with no decisions shows its count, 0, and
+  no average.</p>
+{_h3("risk-charts", "Charts")}
+<p><strong>Risk map</strong>: across, the Risk pays decisions without the right risk (missed + wrong risks) as a share
+  of Risk pays decisions; up, needless risks as a share of Safety pays decisions. Risk judgement = 100 − (across + up) /
+  2, so the corner (0, 0) is risk judgement 100; the faint diagonals mark {_value(t["risk_map_diagonals"])}. A point's
+  colour is its share of wrong risks among the Risk pays decisions without the right risk. <strong>Error rate by risk-call
+  category</strong>: the six parts as a stacked bar. <strong>Stake chart</strong>: risks found, wrong and missed risks per
+  stake band, and big needless risks. <strong>Risk call card</strong>: one image per league winner. A downloaded PNG
+  carries the league, the margin, the number of decisions, the results version and the site address, and lists the active
+  filters; it keeps the theme in view.</p>
+{_h3("risk-robust", "Robustness: the 0.02 margin")}
+<p>At 2-ply the engine can misjudge close plays by more than {m}. Every risk metric is therefore computed a second time
+  with {r} in every place where {m} appears above. The {r} results are on the Risk tab under the main table, and here:</p>
+{extra["robust"]}
+{_h3("risk-evaluations", "Plays without a 2-ply evaluation")}
+<p>{extra["unscored"]}</p>
 <p class="note">Limit: this measures one kind of risk, being hit. Gammon risk and priming are not in it.</p>""")
 
 
@@ -408,7 +482,8 @@ def _versions(po: dict) -> str:
   at 2-ply. The current version evaluates every legal play at 2-ply.</p>""")
 
 
-def _confidence(t: dict) -> str:
+def _confidence(t: dict, extra: dict) -> str:
+    c = " and ".join(_value(x) for x in t["confidence_cutoffs"])
     return _section("confidence", "Confidence", f"""
 <ul>
   <li><strong>Sources.</strong> A setup's confidence is its probability for the play it chose. It comes from one of
@@ -418,10 +493,19 @@ def _confidence(t: dict) -> str:
   <li><strong>Same source only.</strong> Confidence is compared only between setups with the same confidence source.</li>
   <li><strong>Group splits.</strong> Decisions whose plays were split into groups are left out of the confidence
     analyses: the probability then belongs to a smaller choice.</li>
+  <li><strong>Cutoffs</strong> {c}, fixed before computing: decisions kept (probability at or above the cutoff), blunders
+    among them and their mean equity lost. <strong>Surest quarter</strong>: the error rate of the
+    {_value(t["surest_share"])} share of decisions with the highest probability.</li>
+  <li><strong>Ranking scores (AUROC)</strong>: for the engine's best play (does a higher probability go with the best
+    play?) and for warning before a blunder (does a lower probability go with a blunder?). <strong>Calibration gap
+    (ECE)</strong>: for the event "the chosen play is the engine's best", in 10 bins, in points.</li>
   <li><strong>Confident and badly wrong:</strong> the setup gave its play at least
     {_value(t["very_confident_probability_at_least"])} and the play lost more than {_value(t["badly_wrong_loss_above"])}
     equity.</li>
-</ul>""")
+</ul>
+{_h3("confidence-held-out", "A cutoff chosen on half of the games")}
+<p>{esc(t["cutoff_split_rule"])} {_value(t["cutoff_split_runs"])} splits, by game.</p>
+{extra["held_out"]}""")
 
 
 def _cost() -> str:
@@ -455,8 +539,10 @@ def _time(t: dict) -> str:
 def _limits() -> str:
     return _section("limits", "Limits", """
 <ul>
-  <li><strong>One kind of risk.</strong> "Is the risk worth it?" measures one kind of risk, being hit. Gammon risk and
-    priming are not in it.</li>
+  <li><strong>One kind of risk.</strong> The risk calls measure one kind of risk, being hit. Gammon risk and priming are
+    not in it.</li>
+  <li><strong>Different positions.</strong> Setups played different positions; league comparisons are not paired, and
+    risk judgement is not adjusted for how hard the positions were.</li>
   <li><strong>Checker plays only.</strong> The games have no doubling cube, so the error rate leaves out cube decisions.
     The human scale is a rough guide.</li>
   <li><strong>The engine evaluation is not the strongest available.</strong> Plays are judged at 2-ply with GNU
@@ -474,9 +560,21 @@ def _limits() -> str:
     We log them; we cannot control them.</li>
   <li><strong>Models only play each other</strong> and the anchor. Their strength against human players is not
     measured.</li>
-  <li><strong>No learning from experience.</strong> Every decision is a separate request; models are not told how
-    earlier games went.</li>
 </ul>""")
+
+
+def _home_extras(extra: dict) -> str:
+    """What B4 moves off the home page: what the input adds, learning from experience, routing and teams, tail risk."""
+    return (_section("input", f"What the input adds {status_badge(EARLIER)}", extra["input"])
+            + _section("learning", f"Learning from experience {status_badge(NOT_MEASURED)}",
+                       "<p>Every decision is a separate request; models are not told how earlier games went.</p>")
+            + _section("routing", f"Routing and teams {status_badge(PENDING)}",
+                       "<p>Which decisions a cheap model can handle before handing over to a strong one, and whether a team "
+                       "picks better plays than its best member, wait for the shared-position answers. A team \"oracle\", "
+                       "the best answer any member gave, is an upper bound and never a working system; the earlier "
+                       "version's team results are on <a href=\"../leagues/#earlier\">Leagues</a>.</p>")
+            + _section("tail", "Tail risk", "<p>The 95th percentile of the equity lost per decision and the mean loss of "
+                       "the worst 5% of decisions, per league.</p>" + extra["tail"]))
 
 
 def _experiments() -> str:
@@ -534,11 +632,12 @@ def _experiments() -> str:
 
 def body(ctx: dict) -> str:
     """Inner HTML of <main> for method/index.html."""
-    t = ctx["thresholds"]
+    t, extra = ctx["thresholds"], ctx["extra"]
     return "\n".join([
-        _intro(), _toc(), _setup(), _shared(ctx["shared_sets"]), _prompt(), _error_rate(t), _human_scale(), _risk(t),
-        _statistics(t), _thresholds(t), _status(), _versions(ctx["play_order"]), _confidence(t), _cost(), _time(t),
-        _limits(), _archive("v3-notes.html"), _experiments(),
+        _intro(), _toc(), _setup(), _shared(ctx["shared_sets"]), _prompt(), _error_rate(t), _human_scale(),
+        _risk(t, extra), _statistics(t), _thresholds(t), _status(), _versions(ctx["play_order"]),
+        _confidence(t, extra), _cost(), _time(t), _limits(), _home_extras(extra), _archive("v3-notes.html"),
+        _experiments(),
     ])
 
 

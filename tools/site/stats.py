@@ -23,6 +23,19 @@ def ratio_interval(sums: list[float], counts: list[int], scale: float, resamples
     return _quantiles(stats, level)
 
 
+def judgement_interval(rr: list[float], rp: list[float], rs: list[float], sp: list[float], resamples: int,
+                       seed: int, level: float) -> tuple[float, float]:
+    """Interval of risk judgement = 50 x (right risks / Risk pays + right safety / Safety pays), resampling games;
+    a resample without one of the two classes is left out."""
+    a, b, c, d = (np.asarray(x, float) for x in (rr, rp, rs, sp))
+    rng = np.random.default_rng(seed)
+    idx = rng.integers(0, len(a), size=(resamples, len(a)))
+    B, D = b[idx].sum(axis=1), d[idx].sum(axis=1)
+    ok = (B > 0) & (D > 0)
+    j = 50 * (a[idx].sum(axis=1)[ok] / B[ok] + c[idx].sum(axis=1)[ok] / D[ok])
+    return _quantiles(j, level)
+
+
 def paired_interval(diffs: list[float], scale: float, resamples: int, seed: int, level: float) -> tuple[float, float]:
     """Interval of scale x mean per-position difference, resampling positions."""
     d = np.asarray(diffs, float)

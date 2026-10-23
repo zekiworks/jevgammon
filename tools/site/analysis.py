@@ -18,6 +18,7 @@ Rules applied here (brief B1, B8, B9, B11):
 
 import glob
 import json
+import math
 import re
 import sqlite3
 import sys
@@ -321,60 +322,220 @@ def quality(decs: list[dict], key: str) -> dict:
     return out
 
 
-def risk_class(d: dict) -> tuple[str | None, bool | None]:
-    """B6 v6, one rule per decision: ('none' | 'safety' | 'risk', took a risk). Hitting rolls are the numbers the
-    model was shown. Minimum risk: the fewest hitting rolls any legal play leaves; best safe play: the engine's best
-    among the plays that leave it. No hit-risk trade-off when every play leaves the same number."""
-    if d["invalid"] or not d["scored"]:
-        return None, None
-    shots, losses = d["shots"], d["losses"]
+MARGINS = {"main": T["risk_margin"], "robust": T["risk_margin_robust"]}
+CALLS = ["right_risk", "wrong_risk", "needless", "missed", "right_safety"]
+BANDS = ["small", "medium", "big"]
+
+
+def band(x: float, edges=None) -> str:
+    """small below the first edge, medium up to and including the second, big above it (B6.3)."""
+    a, b = edges or T["stake_bands"]
+    return "small" if x < a else ("medium" if x <= b else "big")
+
+
+def play_call(shots: list, losses: list, i: int, margin: float) -> tuple:
+    """B6.1 for play i of one position: (position class, risk call, stake, extra hitting rolls over the minimum).
+    Hitting rolls are the numbers the model was shown; stake = the best safe play's equity loss against the engine's
+    best play; class 'none' (No trade-off) when every legal play leaves the same number of hitting rolls."""
     least = min(shots)
-    took = shots[d["chosen"]] > least
     if least == max(shots):
-        return "none", False
-    best_safe = min(losses[i] for i, s in enumerate(shots) if s == least)
-    return ("safety" if best_safe < T["safety_pays_loss_below"] else "risk"), took
+        return "none", None, None, 0
+    stake = min(losses[j] for j, s in enumerate(shots) if s == least)
+    cls = "safety" if stake < margin else "risk"
+    if shots[i] > least:
+        call = "needless" if cls == "safety" else ("right_risk" if stake - losses[i] >= margin else "wrong_risk")
+    else:
+        call = "missed" if cls == "risk" else "right_safety"
+    return cls, call, stake, shots[i] - least
 
 
-def risk(decs: list[dict], key: str) -> dict:
-    """Is the risk worth it? (B6) for one setup: the 2x2 of decision kind x what the model did. Each cell: raw
-    count, share of its row (denominator: the decisions of that row's class), mean equity lost (None when empty).
-    Shares are always shown with count and denominator (B9): no 'Too few' here."""
-    cells = {k: [] for k in ("risk_took", "risk_safe", "safety_took", "safety_safe")}
-    by_phase = defaultdict(lambda: {k: [] for k in cells})
-    skipped = 0
-    for d in decs:
-        cls, took = risk_class(d)
-        if cls is None:
+def risk_class(d: dict, margin: float | None = None) -> tuple[str | None, str | None, float | None]:
+    """One decision: (position class, risk call, stake); (None, None, None) for invalid or unscored decisions."""
+    if d["invalid"] or not d["scored"]:
+        return None, None, None
+    cls, call, stake, _ = play_call(d["shots"], d["losses"], d["chosen"], T["risk_margin"] if margin is None else margin)
+    return cls, call, stake
+
+
+def _items(d: dict, margin: float, who: str | None) -> list[tuple]:
+    """What one decision adds to a setup's risk metrics: (weight, class, call, stake, loss, extra rolls, p). A real
+    setup has one item of weight 1; the computed reference rows spread a position over what they would play: Safest
+    the best safe play, Random every legal play with equal weight."""
+    shots, losses = d["shots"], d["losses"]
+    if who is None:
+        cls, call, stake, extra = play_call(shots, losses, d["chosen"], margin)
+        p = d.get("p") if not d.get("group") else None
+        return [(1.0, cls, call, stake, d["loss"], extra, p)]
+    if who == "Safest":
+        least = min(shots)
+        i = min((j for j, s in enumerate(shots) if s == least), key=lambda j: losses[j])
+        cls, call, stake, extra = play_call(shots, losses, i, margin)
+        return [(1.0, cls, call, stake, losses[i], extra, None)]
+    w = 1.0 / len(shots)
+    out = []
+    for i in range(len(shots)):
+        cls, call, stake, extra = play_call(shots, losses, i, margin)
+        out.append((w, cls, call, stake, losses[i], extra, None))
+    return out
+
+
+def _share(n: float, den: float) -> dict:
+    return dict(n=n, den=den, share=n / den if den else None)
+
+
+def risk_metrics(decs: list[dict], key: str, margin: float, who: str | None = None, phases: bool = True) -> dict:
+    """B6.2 and B6.3 for one setup at one margin. Every share carries its count and denominator; averages below the
+    minimum sample show Too few (B9). who='Safest' or 'Random' computes that reference row on these positions."""
+    valid = [d for d in decs if not d["invalid"] and d["scored"]]
+    calls = {c: 0.0 for c in CALLS}
+    loss_by = {c: 0.0 for c in CALLS + ["none"]}
+    classes = {"none": 0.0, "risk": 0.0, "safety": 0.0}
+    stake = {b: dict(risk_pays=0.0, right_risk=0.0, missed=0.0, wrong_risk=0.0) for b in BANDS}
+    needless_by_loss = {b: 0.0 for b in BANDS}
+    size = {"right": [0.0, 0.0], "bad": [0.0, 0.0]}
+    conf_taken, conf_missed = [], []
+    clusters = defaultdict(lambda: [0.0, 0.0, 0.0, 0.0])  # right risks, Risk pays, right safety, Safety pays
+    for d in valid:
+        for w, cls, call, st, loss, extra, p in _items(d, margin, who):
+            classes[cls] += w
+            if cls == "none":
+                loss_by["none"] += w * loss
+                continue
+            calls[call] += w
+            loss_by[call] += w * loss
+            c = clusters[d["cluster"]]
+            if cls == "risk":
+                b = band(st)
+                stake[b]["risk_pays"] += w
+                if call in stake[b]:
+                    stake[b][call] += w
+                c[1] += w
+                c[0] += w * (call == "right_risk")
+            else:
+                c[3] += w
+                c[2] += w * (call == "right_safety")
+                if call == "needless":
+                    needless_by_loss[band(loss, T["needless_loss_bands"])] += w
+            if call == "right_risk":
+                size["right"][0] += w * extra
+                size["right"][1] += w
+            elif call in ("wrong_risk", "needless"):
+                size["bad"][0] += w * extra
+                size["bad"][1] += w
+            if p is not None and call in ("right_risk", "wrong_risk", "needless"):
+                conf_taken.append((p, call == "right_risk"))
+            if p is not None and call == "missed":
+                conf_missed.append(p)
+    # Position classes are whole positions; the reference rows' play weights sum to 1 per position.
+    classes = {k: round(v, 6) for k, v in classes.items()}
+    for v in stake.values():
+        v["risk_pays"] = round(v["risk_pays"], 6)
+    rp, sp = classes["risk"], classes["safety"]
+    out = dict(margin=margin, scored=len(valid), trade_off=rp + sp, no_trade_off=classes["none"],
+               risk_pays=rp, safety_pays=sp, calls=calls, reference=who)
+    if rp and sp:
+        cl = list(clusters.values())
+        lo, hi = stats.judgement_interval([c[0] for c in cl], [c[1] for c in cl], [c[2] for c in cl],
+                                          [c[3] for c in cl], T["bootstrap_resamples"], boot(f"{key}/j"), T["interval"])
+        out.update(judgement=50 * (calls["right_risk"] / rp + calls["right_safety"] / sp), judgement_lo=lo,
+                   judgement_hi=hi, judgement_na=None)
+    else:
+        out.update(judgement=None, judgement_na="N/A: no " + ("Risk pays" if not rp else "Safety pays") + " decisions")
+    taken = calls["right_risk"] + calls["wrong_risk"] + calls["needless"]
+    out.update(found=_share(calls["right_risk"], rp), right_safety=_share(calls["right_safety"], sp),
+               good=_share(calls["right_risk"], taken), missed=_share(calls["missed"], rp),
+               needless=_share(calls["needless"], sp), wrong=_share(calls["wrong_risk"], rp))
+    # B6.2 item 8: the error rate by risk-call category; the six parts sum to the error rate.
+    n = len(valid)
+    out["by_call"] = {k: SCALE * v / n if n else None for k, v in loss_by.items()}
+    out["error_rate"] = SCALE * sum(loss_by.values()) / n if n else None
+    out["stake"] = {b: dict(risk_pays=v["risk_pays"], found=_share(v["right_risk"], v["risk_pays"]),
+                            missed=_share(v["missed"], v["risk_pays"]), wrong=_share(v["wrong_risk"], v["risk_pays"]))
+                    for b, v in stake.items()}
+    out["needless_by_loss"] = {b: _share(v, sp) for b, v in needless_by_loss.items()}
+    out["size"] = {k: dict(n=v[1], too_few=too_few(v[1]), mean=v[0] / v[1] if v[1] else None) for k, v in size.items()}
+    # B6.3 confidence on the call: ranking score only (the probability is for the chosen play, not for the risk).
+    conf = dict(taken_n=len(conf_taken), missed_n=len(conf_missed), auroc_right_risk=None, missed_mean_p=None)
+    if conf_taken and not too_few(len(conf_taken)):
+        conf["auroc_right_risk"] = calibration([p for p, _ in conf_taken], [r for _, r in conf_taken]).get("auroc")
+    if conf_missed and not too_few(len(conf_missed)):
+        conf["missed_mean_p"] = sum(conf_missed) / len(conf_missed)
+    out["confidence"] = conf if (conf_taken or conf_missed) else None
+    # B6.5 risk map: x = Risk pays without the right risk, y = needless risks; colour = wrong among x.
+    out["map"] = None
+    if rp and sp:
+        bad = calls["missed"] + calls["wrong_risk"]
+        out["map"] = dict(x=bad / rp, y=calls["needless"] / sp, wrong_share=calls["wrong_risk"] / bad if bad else None)
+    if phases:
+        out["phases"] = {ph: risk_metrics([d for d in valid if d["phase"] == ph], key + "/" + ph, margin, who, False)
+                         for ph in PHASES}
+    return out
+
+
+def risk(decs: list[dict], key: str, who: str | None = None) -> dict:
+    """Every risk metric at the main margin and at the robustness margin (B6.6)."""
+    return {m: risk_metrics(decs, f"{key}/{m}", v, who) for m, v in MARGINS.items()}
+
+
+def confidence(decs: list[dict], key: str) -> dict | None:
+    """The Confidence tab (B4) for a setup that returns probabilities; None otherwise (N/A). Group-split decisions
+    are left out. Averages below the minimum sample show Too few (B9)."""
+    withp = [d for d in decs if not d["invalid"] and d["scored"] and d.get("p") is not None and not d.get("group")]
+    if not withp:
+        return None
+    blunder = T["blunder_loss_above"]
+    out = dict(n=len(withp), too_few=too_few(len(withp)), cutoffs={})
+    for c in T["confidence_cutoffs"]:
+        kept = [d for d in withp if d["p"] >= c]
+        nb = sum(d["loss"] > blunder for d in kept)
+        out["cutoffs"][str(c)] = dict(kept=_share(len(kept), len(withp)), blunders=_share(nb, len(kept)),
+                                      too_few=too_few(len(kept)),
+                                      mean_loss=sum(d["loss"] for d in kept) / len(kept) if kept else None)
+    ps = sorted((d["p"] for d in withp), reverse=True)
+    cut = ps[math.ceil(T["surest_share"] * len(ps)) - 1]
+    sure = [d for d in withp if d["p"] >= cut]
+    out["surest"] = dict(n=len(sure), too_few=too_few(len(sure)), cut=cut,
+                         error_rate=SCALE * sum(d["loss"] for d in sure) / len(sure))
+    best = calibration([d["p"] for d in withp], [d["loss"] < T["best_play_loss_below"] for d in withp])
+    warn = calibration([d["p"] for d in withp], [d["loss"] <= blunder for d in withp])
+    out.update(auroc_best=best.get("auroc"), auroc_blunder=warn.get("auroc"), ece=best["ece"],
+               confident_badly_wrong=_share(sum(d["p"] >= T["very_confident_probability_at_least"]
+                                                and d["loss"] > T["badly_wrong_loss_above"] for d in withp), len(withp)))
+    out["held_out"] = held_out_cutoff(withp, key)
+    return out
+
+
+def held_out_cutoff(withp: list[dict], key: str) -> dict:
+    """content/thresholds.json cutoff_split_rule: chosen on half of the games, scored on the other half."""
+    import random
+    games = defaultdict(list)
+    for i, d in enumerate(withp):
+        games[d["cluster"]].append(i)
+    units = list(games.values())
+    p = [d["p"] for d in withp]
+    bl = [d["loss"] > T["blunder_loss_above"] for d in withp]
+    rng = random.Random(boot(key + "/split"))
+    kept_sum = blunder_sum = 0.0
+    none = 0
+    runs = T["cutoff_split_runs"]
+    for _ in range(runs):
+        order = list(range(len(units)))
+        rng.shuffle(order)
+        half = len(units) // 2
+        first = [i for u in order[:half] for i in units[u]]
+        test = [i for u in order[half:] for i in units[u]]
+        worst = max((p[i] for i in first if bl[i]), default=None)
+        above = [p[i] for i in first if worst is None or p[i] > worst]
+        if not above or not test:
+            none += 1
             continue
-        if cls == "none":
-            skipped += 1
-            continue
-        k = f"{cls}_" + ("took" if took else "safe")
-        cells[k].append(d)
-        by_phase[d["phase"]][k].append(d)
-    total = sum(len(v) for v in cells.values())
-    rows = {"risk": len(cells["risk_took"]) + len(cells["risk_safe"]),
-            "safety": len(cells["safety_took"]) + len(cells["safety_safe"])}
-
-    def cell(k, v):
-        den = rows[k.split("_")[0]]
-        withp = [d["p"] for d in v if d.get("p") is not None]
-        return dict(n=len(v), den=den, share=len(v) / den if den else None,
-                    mean_loss=sum(d["loss"] for d in v) / len(v) if v else None,
-                    confidence=sum(withp) / len(withp) if withp and len(withp) == len(v) else None)
-
-    def heads(c):
-        rp = len(c["risk_took"]) + len(c["risk_safe"])
-        sp = len(c["safety_took"]) + len(c["safety_safe"])
-        return dict(risk_pays=rp, safety_pays=sp, took_when_pays=len(c["risk_took"]),
-                    took_needless=len(c["safety_took"]),
-                    takes_risk=len(c["risk_took"]) / rp if rp else None,
-                    needless_risk=len(c["safety_took"]) / sp if sp else None)
-
-    return dict(decisions=total, no_risk_choice=skipped,
-                cells={k: cell(k, v) for k, v in cells.items()}, **heads(cells),
-                phases={ph: heads(c) for ph, c in by_phase.items()})
+        cutoff = min(above)
+        kept = [i for i in test if p[i] >= cutoff]
+        kept_sum += len(kept) / len(test)
+        blunder_sum += (sum(bl[i] for i in kept) / len(kept)) if kept else 0.0
+    done = runs - none
+    return dict(runs=runs, no_cutoff=none, kept=kept_sum / done if done else None,
+                blunders=blunder_sum / done if done else None)
 
 
 def breakdown(decs: list[dict], field: str, labels: list) -> dict:
@@ -427,9 +588,23 @@ def dataset_summary(dataset: str, decisions: list[dict], setups: list[str]) -> d
         key = f"{dataset}/{name}"
         out[name] = dict(
             name=name, slug=slug(name), quality=quality(decs, key), risk=risk(decs, key),
+            confidence=confidence(decs, key),
             phases=breakdown(decs, "phase", PHASES), tags=breakdown(decs, "tag", TAGS),
-            options=breakdown(decs, "options", OPTION_LABELS), gaps=breakdown(decs, "gapb", GAP_LABELS))
+            options=breakdown(decs, "options", OPTION_LABELS), gaps=breakdown(decs, "gapb", GAP_LABELS),
+            quality_phases={ph: quality([d for d in decs if d.get("phase") == ph], f"{key}/{ph}") for ph in PHASES})
     return out
+
+
+REFERENCE_LABEL = {"Safest": "computed: always the best safe play", "Random": "computed: every legal play equally likely"}
+
+
+def references(dataset: str, decisions: list[dict], setups: list[str]) -> dict:
+    """B6.4 reference rows for a league where the Safest or Random program did not play: computed on the positions
+    of this league's scored decisions (every setup's), never ranked and never champions."""
+    return {f"{who} (computed)": dict(name=f"{who} (computed)", slug=slug(f"{who} computed"), reference=who,
+                                      label=REFERENCE_LABEL[who], positions=sum(1 for d in decisions if not d["invalid"] and d["scored"]),
+                                      risk=risk(decisions, f"{dataset}/ref/{who}", who))
+            for who in ("Safest", "Random") if who not in setups}
 
 
 def paired(decs_a: list[dict], decs_b: list[dict], key: str) -> dict:

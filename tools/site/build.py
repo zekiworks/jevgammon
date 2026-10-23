@@ -82,7 +82,7 @@ def compute(args) -> dict:
                             lost=t["lost"], points=t["points"], games_won=t["gw"], games_lost=t["gl"],
                             gammons_won=lg["gammons"].get(t["name"], 0), to_play=lg["left"].get(t["name"], 0))
                        for i, t in enumerate(lg["table"], 1)],
-            setups=summary))
+            setups=summary, references=A.references(lg["dataset"], lg["decisions"], names)))
     v1 = A.load_v1(ROOT / "replay.db", ROOT / "positions/v1.jsonl")
     v1_summary = A.dataset_summary("v1-set", v1["decisions"], v1["setups"])
     per = {}
@@ -109,6 +109,8 @@ def compute(args) -> dict:
                   leagues=len(leagues), decisions_scored=sum(lg["scored"] for lg in leagues))
     for lg in leagues:
         lg["reasoning"] = league_reasoning(lg, setups, programs)
+        # League winners · match results (B4): the league's first place once it finished; never a ranking.
+        lg["winner"] = lg["standings"][0]["name"] if lg["state"] == "finished" and lg["standings"] else None
     return dict(
         as_of=snapshot_time(snap), last_move=L["last_move"], leagues=leagues, setups_meta=setups,
         v1=dict(dataset="v1-set", version="v1", status=EARLIER, positions=len(v1["positions"]),
@@ -160,21 +162,28 @@ def write_data(S: dict, out: Path) -> None:
     if (out / "data").exists():
         shutil.rmtree(out / "data")
     files = []
+    def brief(s):
+        """A setup in a league file: quality, confidence and every risk metric at both margins, without phases."""
+        return dict(slug=s["slug"], quality=s["quality"], confidence=s.get("confidence"),
+                    risk={m: {k: v for k, v in r.items() if k != "phases"} for m, r in s["risk"].items()})
+
     for lg in S["leagues"]:
-        head = {k: v for k, v in lg.items() if k != "setups"}
-        head["setups"] = {n: dict(slug=s["slug"], quality=s["quality"], risk={k: v for k, v in s["risk"].items()
-                                                                               if k != "phases"})
-                          for n, s in lg["setups"].items()}
+        head = {k: v for k, v in lg.items() if k not in ("setups", "references")}
+        head["setups"] = {n: brief(s) for n, s in lg["setups"].items()}
+        head["references"] = {n: dict(r, risk={m: {k: v for k, v in x.items() if k != "phases"} for m, x in r["risk"].items()})
+                              for n, r in lg["references"].items()}
         write_json(out, f"data/v3/{lg['dataset']}.json", head)
         files.append(f"data/v3/{lg['dataset']}.json")
         for n, s in lg["setups"].items():
             rel = f"data/v3/{lg['dataset']}/{s['slug']}.json"
             write_json(out, rel, dict(dataset=lg["dataset"], version="v3", status=lg["metric_status"], **s))
+        for n, r in lg["references"].items():
+            write_json(out, f"data/v3/{lg['dataset']}/{r['slug']}.json",
+                       dict(dataset=lg["dataset"], version="v3", status=lg["metric_status"], **r))
     v1 = S["v1"]
     write_json(out, "data/v1/v1-set.json", dict(
         {k: v for k, v in v1.items() if k not in ("setups", "pairs", "disagreements")},
-        setups={n: dict(slug=s["slug"], quality=s["quality"], risk={k: v for k, v in s["risk"].items() if k != "phases"})
-                for n, s in v1["setups"].items()}))
+        setups={n: brief(s) for n, s in v1["setups"].items()}))
     for n, s in v1["setups"].items():
         write_json(out, f"data/v1/v1-set/{s['slug']}.json", dict(dataset="v1-set", version="v1", status=EARLIER, **s))
     write_json(out, "data/v1/compare.json", dict(dataset="v1-set", version="v1", status=EARLIER, pairs=v1["pairs"]))
@@ -196,8 +205,11 @@ def write_data(S: dict, out: Path) -> None:
     write_json(out, "data/results.json", dict(
         version="v3", note="Results per league; leagues are never merged. Decisions: decisions/index.json.",
         leagues={lg["dataset"]: dict(id=lg["id"], status=lg["status"], metric_status=lg["metric_status"],
-                                     reasoning=lg["reasoning"],
-                                     setups={n: dict(quality=s["quality"], risk=s["risk"]) for n, s in lg["setups"].items()})
+                                     winner=lg["winner"], reasoning=lg["reasoning"],
+                                     setups={n: brief(s) for n, s in lg["setups"].items()},
+                                     references={n: dict(r, risk={m: {k: v for k, v in x.items() if k != "phases"}
+                                                                  for m, x in r["risk"].items()})
+                                                 for n, r in lg["references"].items()})
                  for lg in S["leagues"]}))
 
 
@@ -237,14 +249,18 @@ def preview_image(S: dict, out: Path) -> str | None:
     return name
 
 
-def showcase(S: dict, found: dict) -> dict | None:
-    """The board on the hero and the social preview: a real Risk pays decision in which the model played safe, from
-    the most recent finished league that has one (decisions_export picks the clearest per dataset).
-    tools/site/hero_candidates.py prepares alternatives; none is switched in without Can's choice."""
+def showcase(S: dict, pool: dict) -> dict | None:
+    """The board on the hero and the social preview (B4): a typical Risk pays decision, from the most recent finished
+    league: among the models' Risk pays decisions with a stake inside thresholds hero_stake_range, the one whose
+    stake is closest to the median of that pool (ties: the lower decision id). Its callout explains that one model's
+    risk call; league positions were answered only by the model that moved."""
     for lg in sorted(S["leagues"], key=lambda l: (l["metric_status"] == PUBLISHED, l["id"]), reverse=True):
-        if lg["dataset"] in found:
-            d = found[lg["dataset"]][1]
-            return dict(league=lg["id"], metric_status=lg["metric_status"],
+        rows = pool.get(lg["dataset"])
+        if rows:
+            stakes = sorted(r[0] for r in rows)
+            med = stakes[len(stakes) // 2]
+            d = min(rows, key=lambda r: (abs(r[0] - med), r[1]))[2]
+            return dict(league=lg["id"], metric_status=lg["metric_status"], pool=len(rows), median_stake=med,
                         **pages.hero_numbers(d, f"League {lg['id']}", d["setup"], slug(d["setup"]), d["page"]))
     return None
 
@@ -264,16 +280,19 @@ def _shoot(html: str, png: Path, width: int, height: int) -> bool:
     return True
 
 
-def risk_images(S: dict, out: Path) -> dict:
-    """The risk 2x2 of each league as a standalone image for X (1200 x 675), drawn from the current results."""
+def risk_cards(S: dict, out: Path) -> dict:
+    """B6.5: the risk call card of each league winner as a standalone image for X (1200 x 675), from the current
+    results, in the site's dark theme."""
+    import home
     folder = out / "share"
     folder.mkdir(exist_ok=True)
+    css = (SITE / "assets/site.css").read_text() + (SITE / "assets/bg.css").read_text()
     made, keep = {}, set()
     for lg in S["leagues"]:
-        html = pages.risk_card(S, lg)
+        html = home.risk_call_card(S, lg, css)
         if html is None:
             continue
-        name = f"share/risk-{lg['dataset']}-{hashlib.sha256(html.encode()).hexdigest()[:8]}.png"
+        name = f"share/risk-card-{lg['dataset']}-{hashlib.sha256(html.encode()).hexdigest()[:8]}.png"
         if (out / name).exists() or _shoot(html, out / name, 1200, 675):
             made[lg["dataset"]] = name
             keep.add(Path(name).name)
@@ -310,7 +329,7 @@ def main():
     S["hash"] = results_hash(out)
     manifest(S, out)
     S["image"] = None if args.no_image else preview_image(S, out)
-    S["risk_images"] = {} if args.no_image else risk_images(S, out)
+    S["risk_cards"] = {} if args.no_image else risk_cards(S, out)
     if S["image"] is None:
         old = sorted((out / "share").glob("preview-*.png")) if (out / "share").exists() else []
         S["image"] = f"share/{old[0].name}" if old else None

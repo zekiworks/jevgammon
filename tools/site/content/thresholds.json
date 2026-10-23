@@ -35,7 +35,6 @@
       null
     ]
   ],
-  "safety_pays_loss_below": 0.001,
   "tail_quantile": 0.95,
   "worst_share": 0.05,
   "bootstrap_resamples": 2000,
@@ -66,5 +65,9 @@
     70,
     80,
     90
+  ],
+  "hero_stake_range": [
+    0.05,
+    0.15
   ]
 }

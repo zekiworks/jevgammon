@@ -8,27 +8,12 @@ import analysis as A
 from common import (EARLIER, EARLIER_NOTE, NA, NOT_MEASURED, PENDING, PROVISIONAL, PROVISIONAL_NOTE, PUBLISHED,
                     TOO_FEW, count, esc, fmt, nm, pct, slug, status_badge)
 
+# B4: the nav of decision-models' form; model pages open from the table rows, New models is linked from Data.
 NAV = [("decisions/", "Every decision"), ("disagreements/", "Where models disagree"), ("phases/", "Phases"),
-       ("compare/", "Compare"), ("models/", "Models"), ("leagues/", "Leagues"), ("new-models/", "New models"),
-       ("method/", "Method"), ("data/", "Data")]
-TABS = [("quality", "Quality"), ("risk", "Risk"), ("confidence", "Confidence"), ("reasoning", "Reasoning"),
-        ("cost", "Cost"), ("stability", "Stability")]
+       ("compare/", "Compare"), ("leagues/", "Leagues"), ("method/", "Method"), ("data/", "Data")]
 TITLE = "Can a model tell when a risk is worth taking?"
 
 
-def subtitle(S) -> str:
-    return (f"We score every backgammon decision with an engine and compare decision quality, what the input adds, "
-            f"confidence and cost across {count(S['counts']['model_setups'])} model setups.")
-
-
-INTRO = ("Language models and decision models play backgammon leagues, and GNU Backgammon scores every legal play of "
-         "every decision, so a move is judged by the equity it gives away, not by who won the game. The hardest "
-         "choices trade safety against gain: leaving a blot can be the best play or a needless risk. "
-         "Every decision is public.")
-# B0: the five threads; every home section and tab belongs to one of them.
-THREADS = {1: "Decision quality under risk", 2: "What the input adds", 3: "Confidence", 4: "Cost",
-           5: "Learning from experience"}
-TAB_THREAD = {"quality": 1, "risk": 1, "confidence": 3, "reasoning": 4, "cost": 4, "stability": 1}
 RISK_LIMIT = "Hit risk only: being hit. Gammon risk and priming are not in it."
 SWIPE = '<p class="swipe-hint" data-swipe-hint>Swipe for more columns \u2192</p>'
 LEAGUE_KIND = {1: "decision models and models on our own hardware", 2: "workhorse chat models, closed and open",
@@ -46,7 +31,7 @@ def as_of(S) -> str:
 
 
 def version_line(S) -> str:
-    return f"Results {S['hash']}, updated {as_of(S)}."
+    return f"Results {S['hash']}, updated {as_of(S)}; scored by GNU Backgammon 1.08, 2-ply."
 
 
 def band(S, er) -> str:
@@ -167,11 +152,6 @@ def about(inner: str, label: str = "About this table") -> str:
     return f'<details class="about"><summary>{esc(label)}</summary>{inner}</details>'
 
 
-def earlier_block(S, inner: str, title: str) -> str:
-    return (f'<div class="block" data-version="v1"><div class="section-head"><h3>{esc(title)}</h3>'
-            f'{status_badge(EARLIER)}</div>{inner}<p class="table-note">{esc(play_order_note(S))} v1 used an '
-            f'earlier prompt; these numbers never share a table or chart with v3 numbers.</p></div>')
-
 
 def quality_rows(S, rel, dataset, setups) -> list[str]:
     rows = []
@@ -202,43 +182,6 @@ def share_cell(share, n, den, digits=1) -> str:
     return f'<td class="num">{pct(share, digits)}<span class="small">{count(n)} / {count(den)}</span></td>'
 
 
-def risk_rows(S, rel, dataset, setups) -> list[str]:
-    rows = []
-    for n in by_error(setups):
-        r, q = setups[n]["risk"], setups[n]["quality"]
-        cells = (share_cell(r["takes_risk"], r["took_when_pays"], r["risk_pays"])
-                 + share_cell(r["needless_risk"], r["took_needless"], r["safety_pays"])
-                 + val(q, "p95_loss", eq) + val(q, "worst_mean", eq) + val(q, "blunder_share", pct)
-                 + f'<td class="num">{count(r["no_risk_choice"])}</td>'
-                 + f'<td class="num">{count(q["invalid"])}</td>')
-        rows.append(tr(S, dataset, n, cells, rel))
-    return rows
-
-
-RISK_HEAD = ["Model and setting", "Risk pays: took a risk", "Safety pays: took a needless risk", "P95 equity loss",
-             "Mean loss, worst 5%", "Blunder rate", "No hit-risk trade-off (left out)", "Invalid answers"]
-
-
-def confidence_rows(S, rel, dataset, setups) -> list[str]:
-    rows = []
-    for n in by_error(setups):
-        q = setups[n]["quality"]
-        src = meta(S, dataset, n).get("confidence_source") or "unknown"
-        if q.get("confidence_n") is None:
-            cells = f'<td>{esc(src)}</td>' + "".join(f'<td class="num">{nm(NA)}</td>' for _ in range(5))
-        else:
-            tf = A.too_few(q["confidence_n"])
-            g = (lambda k, f: f'<td class="num">{nm(TOO_FEW) if tf else (f(q[k]) if q.get(k) is not None else nm(NA))}</td>')
-            cells = (f'<td>{esc(src)}</td>' + g("auroc", lambda v: fmt(v, 2)) + g("ece", lambda v: fmt(v, 3))
-                     + g("brier", lambda v: fmt(v, 3)) + g("confident_badly_wrong", pct)
-                     + f'<td class="num">{count(q["confidence_n"])}</td>')
-        rows.append(tr(S, dataset, n, cells, rel))
-    return rows
-
-
-CONF_HEAD = ["Model and setting", "Confidence source", "AUROC", "ECE", "Brier score", "Confident and badly wrong",
-             "Decisions with probabilities"]
-
 
 def cost_rows(S, rel, dataset, setups) -> list[str]:
     rows = []
@@ -256,29 +199,6 @@ def cost_rows(S, rel, dataset, setups) -> list[str]:
 
 COST_HEAD = ["Model and setting", "$ per 1,000 decisions", "Median / P90 s per decision", "Mean retry/wait s",
              "Over the time budget", "Tokens in / out per decision", "Cost coverage", "Decisions"]
-
-
-def reasoning_rows(S, items) -> list[str]:
-    rows = []
-    for r in items:
-        phases = " · ".join(
-            f'{PHASE_LABEL[p]}: {TOO_FEW if v["too_few"] else fmt(v["diff"], 1, True) + " (" + v["verdict"] + ")"}'
-            for p, v in r["phases"].items())
-        rows.append(f'<tr data-dataset="v1-set"><td class="model"><span class="model-name">{esc(r["model"])}</span>'
-                    f'<span class="small">{esc(r["low"])} \u2192 {esc(r["high"])}</span></td>'
-                    f'<td class="num">{fmt(r["diff"], 1, True)}<span class="small">{fmt(r["lo"], 1, True)} to {fmt(r["hi"], 1, True)}</span></td>'
-                    f'<td class="verdict">{esc(r["verdict"])}<span class="small">By phase (exploratory): {esc(phases)}</span></td>'
-                    f'<td class="num">{count(r["fixed"])} / {count(r["broken"])}</td>'
-                    f'<td class="num">{eq(r["fixed_loss"])} / {eq(r["broken_loss"])}</td>'
-                    f'<td class="num">{fmt(r["extra_time_median"], 1, True)}</td>'
-                    f'<td class="num">{fmt(r["extra_cost"], 3, True) if r.get("extra_cost") is not None else nm(NOT_MEASURED)}</td>'
-                    f'<td class="num">{count(r["positions"])}</td></tr>')
-    return rows
-
-
-REASON_HEAD = ["Model", "Paired error difference (higher minus lower setting), 95% interval", "Verdict",
-               "Blunders fixed / broken", "Equity regained / lost in total", "Extra median s per decision",
-               "Extra $ per 1,000 decisions", "Positions"]
 
 
 # --- Layout -------------------------------------------------------------------------------------------------
@@ -326,7 +246,7 @@ def layout(S, base, path: str, title: str, body: str, description: str | None = 
 {body}
   </main>
   <footer class="footer">
-    <p>Download: <a href="{rel}data/results.json">results (JSON)</a> · <a href="{rel}decisions/index.json">decisions (JSON index)</a> · <a href="{rel}data/">every data file</a> · <a href="{rel}data/manifest.json">manifest.json</a></p>
+    <p>Download: <a href="{rel}data/results.json" download="results.json">results.json</a> · <a href="{rel}decisions/index.json" download="decisions.json">decisions.json</a> · <a href="{rel}data/">every data file</a></p>
     <p>{esc(version_line(S))}</p>
   </footer>
 </body>
@@ -341,151 +261,12 @@ def page_head(S, eyebrow: str, title: str, intro: str = "") -> str:
 
 # --- Home ---------------------------------------------------------------------------------------------------
 
-def shared_note(S) -> str:
-    sh = S["shared"]
-    p = sh["parts"]
-    return (f'<p id="shared-positions">The shared positions: {count(sh["standard"])} standard positions '
-            f'({count(p["v1"]["positions"])} from the earlier v1 league games and {count(p["new"]["positions"])} from GNUbg '
-            f'self-play at expert level, {count(p["new"]["positions"] // 5)} per game phase), plus '
-            f'{count(p["nackgammon"]["positions"])} Nackgammon positions and a {count(p["opening-control"]["positions"])}-position '
-            f'opening control. Every standard position has {sh["min_plays"]} to {sh["max_plays"]} legal plays, so no '
-            f'play list is split into groups. Every setup answers the same positions; this set, not the league tables, '
-            f'compares setups across leagues. <a href="method/#shared-positions">How they were drawn</a>.</p>')
-
-
 def readouts(S) -> str:
     c = S["counts"]
     items = [(count(c["decisions_scored"]), "decisions scored"), (count(c["leagues"]), "leagues"),
              (count(c["model_setups"]), "setups"), (count(c["models"]), "models")]
     return "".join(f'<li class="readout"><span class="readout-value">{v}</span> <span class="readout-label">{l}</span></li>'
                    for v, l in items)
-
-
-def default_league(S) -> str:
-    """The league the leaderboard opens on: the most recent finished league, else the most recent one."""
-    done = [lg for lg in S["leagues"] if lg["metric_status"] == PUBLISHED]
-    return max(done or S["leagues"], key=lambda lg: lg["id"])["dataset"]
-
-
-def league_views(S) -> list[tuple[str, str]]:
-    """The leaderboard's league selector: one league at a time, never merged (B4); the shared positions show their
-    status until answered; the v1 set is the earlier version."""
-    return ([(lg["dataset"], f"League {lg['id']}") for lg in S["leagues"]]
-            + [("shared", "Shared positions"), ("v1-set", "Earlier version: v1 set")])
-
-
-def league_picker(S, label="League") -> str:
-    cur = default_league(S)
-    keys = "".join(f'<button type="button" class="key" data-league-pick="{k}" aria-pressed="{str(k == cur).lower()}">'
-                   f'<span class="lamp" aria-hidden="true"></span>{esc(l)}</button>' for k, l in league_views(S))
-    return (f'<div class="group league-pick" role="group" aria-label="{esc(label)}"><span class="group-label">{esc(label)}</span>'
-            f'<span class="keys">{keys}</span></div>')
-
-
-def view_block(S, key: str, inner: str) -> str:
-    """One league's (or the shared set's, or v1's) part of a section; the league selector shows one at a time.
-    Without JavaScript every block shows, each under its own heading."""
-    return f'<div class="league-view" data-league-view="{key}"{"" if key == default_league(S) else " data-off"}>{inner}</div>'
-
-
-def filters(S) -> str:
-    def group(key, label, values):
-        keys = "".join(f'<button type="button" class="key" data-filter-{key}="{esc(v)}" aria-pressed="{str(v == "all").lower()}">'
-                       f'<span class="lamp" aria-hidden="true"></span>{esc(v[:1].upper() + v[1:] if v != "all" else "All")}</button>'
-                       for v in ["all"] + values)
-        return (f'<div class="group" role="group" aria-labelledby="f-{key}"><span class="group-label" id="f-{key}">{label}</span>'
-                f'<span class="keys" data-control="{key}">{keys}</span></div>')
-    ms = list(S["setups_meta"].values())
-    types = sorted({m["model_type"] for m in ms if m.get("model_type")})
-    weights = sorted({m["weights"] for m in ms if m.get("weights")})
-    runs = sorted({m["runs_on"] for m in ms if m.get("runs_on")})
-    # Reasoning settings only; the v1 replay with shuffled plays is a play-order flag, not a setting.
-    settings = sorted({m["setting"] for m in ms if m.get("setting")})
-    return f"""<section class="panel filters is-open needs-js" id="filters" aria-label="Filters">
-      <div class="filters-body" id="filters-body">
-        {league_picker(S)}
-        {group("type", "Model type", types)}{group("weights", "Weights", weights)}{group("runs", "Runs on", runs)}{group("setting", "Reasoning setting", settings)}
-        <div class="group"><p class="filters-summary" data-summary aria-live="polite">All setups</p><button type="button" class="key reset" data-control="reset">Reset</button></div>
-      </div>
-    </section>"""
-
-
-def league_head(S, lg) -> str:
-    return (f'<div class="section-head"><h3>League {lg["id"]}</h3>{league_status_text(lg)}'
-            f'<span class="small inline">{esc(LEAGUE_KIND.get(lg["id"], ""))}; league decisions, intervals resample whole games</span></div>')
-
-
-def per_view(S, league_html, shared_html: str, v1_html: str | None) -> str:
-    """A tab or section: one block per league, the shared positions, and the v1 set (Earlier version)."""
-    out = []
-    for lg in S["leagues"]:
-        out.append(view_block(S, lg["dataset"], f'<div class="block" data-dataset="{lg["dataset"]}">'
-                              f'{league_head(S, lg)}{league_html(lg)}</div>'))
-    out.append(view_block(S, "shared", f'<div class="block"><div class="section-head"><h3>Shared positions</h3>'
-                                       f'{status_badge(PENDING)}</div>{shared_html}</div>'))
-    out.append(view_block(S, "v1-set", v1_html if v1_html else
-                          f'<div class="block" data-version="v1"><div class="section-head"><h3>Earlier version: the v1 set</h3>'
-                          f'{status_badge(EARLIER)}</div><p>{nm(NOT_MEASURED)} in the earlier version.</p></div>'))
-    return "".join(out)
-
-
-def tab_panel(S, key: str) -> str:
-    """The tab's tables first, league by league; what they mean in a collapsed note under them."""
-    rel = ""
-    v1 = S["v1"]["setups"]
-    cap = "Earlier version: v1 set, {n} positions, {k} setups".format(n=count(S["v1"]["positions"]), k=count(len(v1)))
-    definition = (f'<p><strong>Thread {TAB_THREAD[key]}: {esc(THREADS[TAB_THREAD[key]])}.</strong> '
-                  f'{esc(DEFINITIONS[key])}</p>')
-    lt = lambda head, rows_fn, caption: (lambda lg: SWIPE + table(head, rows_fn(S, rel, lg["dataset"], lg["setups"]), caption,
-                                                                   attrs=f' data-dataset="{lg["dataset"]}"'))
-    pending = lambda what: f'<p class="pending">{status_badge(PENDING)} {esc(what)}</p>'
-    earlier = lambda head, rows: earlier_block(S, SWIPE + table(head, rows, cap, attrs=' data-version="v1"'),
-                                               "Earlier version: the v1 set")
-    if key == "quality":
-        body = per_view(S, lt(QUALITY_HEAD, quality_rows, "Decision quality in this league's games"),
-                        pending("No setup has answered the shared positions yet; this view fills in when they do."),
-                        earlier(QUALITY_HEAD, quality_rows(S, rel, "v1-set", v1)))
-        note = ('<p>Error rate (PR): 500 \u00d7 the mean equity a setup gives away per decision, '
-                'against GNUbg 2-ply; lower is better. The band is approximate: human ratings include doubling-cube '
-                'decisions and these games have none. Invalid answers are left out of the error rate and counted next to it. '
-                'Failed requests: a request that fails after retries leaves no decision, so they are not counted here. '
-                'League games are not the same positions for every setup, so league rows are not paired comparisons.</p>')
-        return body + about(definition + shared_note(S) + note)
-    if key == "risk":
-        body = per_view(S, lt(RISK_HEAD, risk_rows, "Risk in this league's games: shares with count / denominator"),
-                        pending("Waits for the shared-position answers."),
-                        earlier(RISK_HEAD, risk_rows(S, rel, "v1-set", v1)))
-        return body + f'<p class="table-note risk-limit">{esc(RISK_LIMIT)}</p>' + about(
-            definition + '<p>The 2\u00d72 for each setup: <a href="#risk-worth">Is the risk worth it?</a></p>')
-    if key == "reasoning":
-        body = per_view(S, lambda lg: league_reasoning_table(S, lg),
-                        pending("Waits for the shared-position answers: the only paired comparison of two settings."),
-                        earlier_block(S, SWIPE + table(REASON_HEAD, reasoning_rows(S, S["v1"]["reasoning"]),
-                                                       "Earlier version: v1 set, paired on the same positions",
-                                                       attrs=' data-version="v1"'), "Earlier version: the v1 set"))
-        return body + about(definition)
-    if key == "confidence":
-        body = per_view(S, lt(CONF_HEAD, confidence_rows, "Confidence in this league's games"),
-                        pending("Waits for the shared-position answers."),
-                        earlier(CONF_HEAD, confidence_rows(S, rel, "v1-set", v1)))
-        note = ('<p>Confidence metrics are N/A for setups that return only a choice: their recorded 1.0 '
-                'is not 100% confidence. Compare confidence only between setups with the same confidence source. '
-                '"Right" means the engine\'s best play.</p>')
-        return body + about(definition + note)
-    if key == "cost":
-        body = per_view(S, lt(COST_HEAD, cost_rows, "Time and cost in this league"),
-                        pending("Waits for the shared-position answers."),
-                        earlier(COST_HEAD, cost_rows(S, rel, "v1-set", v1)))
-        note = ('<p>Cost labels never mix: API price estimate, API-equivalent (subscription runs), own hardware, and '
-                '"list-price estimate; runs on our GPUs". Request time is shown apart from retry and wait time. The v3 '
-                'leagues had no clock, so the risk of running over a time budget was not measured; "Over the time '
-                'budget" is the share of request times above it.</p>')
-        return body + about(definition + note)
-    if key == "stability":
-        return (per_view(S, lambda lg: f'<p class="pending">{status_badge(NOT_MEASURED)} League games never repeat a position.</p>',
-                         pending("Waits for the repeat answers (positions asked 5 times)."), None)
-                + about(definition))
-    raise KeyError(key)
 
 
 def league_reasoning_table(S, lg) -> str:
@@ -509,167 +290,6 @@ def league_reasoning_table(S, lg) -> str:
             + '<p class="table-note">League games are not the same positions, so this comparison is not paired: it reads '
               '"lower/higher error rate in league play" only when the two 95% intervals do not overlap, and "no clear '
               'difference in league play" otherwise. The paired verdict waits for the shared positions.</p>')
-
-
-DEFINITIONS = {
-    "quality": "How much equity each move gives away, judged by the engine, not by wins: error rate with its 95% interval, the share of engine-best plays and of blunders.",
-    "risk": "Whether risks were taken when they paid, and the decisions that averages hide: tail losses and blunders.",
-    "reasoning": "What more reasoning buys: the same model at two settings.",
-    "confidence": "Whether a model's probability for its play shows when the play is likely wrong.",
-    "cost": "Dollars per 1,000 decisions and seconds per decision.",
-    "stability": "Whether a setup repeats its play when asked the same position again.",
-}
-
-CHARTS = [("error-cost", "Error vs cost (log cost axis, line through the best-value setups)"),
-          ("error-time", "Error vs median time per decision"),
-          ("paired", "Paired low \u2192 high, per model"),
-          ("risk-coverage", "Risk\u2013coverage curves"),
-          ("phase-heatmap", "Game phase \u00d7 model")]
-
-
-def v1_chart(S) -> str:
-    """Earlier version only: v1-set error rates with 95% intervals, as an SVG dot plot."""
-    setups = S["v1"]["setups"]
-    names = by_error(setups)
-    hi = max(setups[n]["quality"]["error_hi"] for n in names)
-    top = (int(hi / 10) + 1) * 10
-    w, left, row = 640, 200, 22
-    h = 30 + row * len(names)
-    x = lambda v: left + (w - left - 20) * v / top
-    parts = [f'<svg class="chart-svg" viewBox="0 0 {w} {h}" role="img" aria-label="v1 set error rates with 95% intervals">']
-    for t in range(0, top + 1, 10):
-        parts.append(f'<line class="grid" x1="{x(t):.1f}" x2="{x(t):.1f}" y1="10" y2="{h - 20}"/>'
-                     f'<text x="{x(t):.1f}" y="{h - 5}" text-anchor="middle" class="muted">{t}</text>')
-    for i, n in enumerate(names):
-        q = setups[n]["quality"]
-        y = 22 + i * row
-        parts.append(f'<text x="{left - 8}" y="{y + 4}" text-anchor="end">{esc(n)}</text>'
-                     f'<line class="whisker" x1="{x(q["error_lo"]):.1f}" x2="{x(q["error_hi"]):.1f}" y1="{y}" y2="{y}" stroke-width="2"/>'
-                     f'<circle class="dot" cx="{x(q["error_rate"]):.1f}" cy="{y}" r="4"><title>{esc(n)}: {fmt(q["error_rate"])}</title></circle>')
-    parts.append("</svg>")
-    return "".join(parts)
-
-
-def charts(S) -> str:
-    risk = per_view(S, lambda lg: risk_tiles(S, "", lg["dataset"], lg["setups"], image=S.get("risk_images", {}).get(lg["dataset"])),
-                    f'<p class="chart-status">{status_badge(PENDING)} Waits for the shared-position answers.</p>',
-                    earlier_block(S, risk_tiles(S, "", "v1-set", S["v1"]["setups"]), "Earlier version: the v1 set"))
-    lead = (f'<figure class="panel chart-card" id="chart-risk-2x2"><div class="chart-head"><h2>Is the risk worth it? 2 \u00d7 2</h2></div>'
-            f'{risk}<p class="table-note risk-limit">{esc(RISK_LIMIT)}</p></figure>')
-    cards = "".join(f'<figure class="panel chart-card" id="chart-{k}"><div class="chart-head"><h2>{esc(t)}</h2></div>'
-                    f'<p class="chart-status">{status_badge(PENDING)} Shared positions (v3): waits for the shared-position answers.</p></figure>'
-                    for k, t in CHARTS)
-    v1 = (f'<figure class="panel chart-card" id="chart-v1-error" data-version="v1"><div class="chart-head"><h2>Error rate (PR) with 95% interval, v1 set</h2>'
-          f'{status_badge(EARLIER)}</div><p class="note">{esc(play_order_note(S))}</p>{v1_chart(S)}</figure>')
-    return f'<section class="charts" id="charts" aria-label="Charts" tabindex="-1">{lead}{cards}{v1}</section>'
-
-
-# --- Is the risk worth it? (B6): the 2x2, the site's second signature ------------------------------------------
-
-R2_CELLS = [("risk", "took", "good"), ("risk", "safe", "bad"), ("safety", "took", "bad"), ("safety", "safe", "good")]
-
-
-def r2_cell(c: dict, tone: str) -> str:
-    """One cell: share of its row (big), count / row total, mean equity lost. An empty cell shows 0 and no mean."""
-    share = c["share"]
-    big = pct(share, 0) if share is not None else "\u2013"
-    mean = f'<span class="r2-loss">loses {eq(c["mean_loss"])}</span>' if c["mean_loss"] is not None else '<span class="r2-loss">no mean</span>'
-    return (f'<div class="r2-cell r2-{tone}" style="--share:{share or 0:.3f}"><b>{big}</b>'
-            f'<span class="r2-n">{count(c["n"])} / {count(c["den"])}</span>{mean}</div>')
-
-
-def r2_tile(S, rel, dataset, name, r, reference=False) -> str:
-    c = r["cells"]
-    m = meta(S, dataset, name)
-    grid = ('<div class="r2-grid"><span></span><span class="r2-col">Took a risk</span><span class="r2-col">Played safe</span>'
-            f'<span class="r2-row">Risk pays<small>{count(r["risk_pays"])}</small></span>'
-            + r2_cell(c["risk_took"], "good") + r2_cell(c["risk_safe"], "bad")
-            + f'<span class="r2-row">Safety pays<small>{count(r["safety_pays"])}</small></span>'
-            + r2_cell(c["safety_took"], "bad") + r2_cell(c["safety_safe"], "good") + "</div>")
-    tag = '<span class="r2-ref">reference: never takes a risk</span>' if reference else ""
-    return (f'<figure class="r2"{row_attrs(S, dataset, name)}><figcaption><a href="{model_href(rel, dataset, name, S)}">'
-            f'{esc(name)}</a>{tag}<span class="small">{count(r["no_risk_choice"])} with no hit-risk trade-off, left out</span>'
-            f'</figcaption>{grid}</figure>')
-
-
-def risk_order(S, dataset, setups) -> list[tuple[str, bool]]:
-    """The Safest program first (the reference row: what pure caution costs), then the setups by error rate;
-    other programs and setups without risk decisions are left out."""
-    ref = [(n, True) for n in setups if n == "Safest" and setups[n]["risk"]["decisions"]]
-    rest = [(n, False) for n in by_error(setups) if n != "Safest" and setups[n]["risk"]["decisions"]
-            and meta(S, dataset, n).get("model_type") != "program"]
-    return ref + rest
-
-
-def risk_tiles(S, rel, dataset, setups, image: str | None = None) -> str:
-    tiles = "".join(r2_tile(S, rel, dataset, n, setups[n]["risk"], ref) for n, ref in risk_order(S, dataset, setups))
-    if not tiles:
-        return f'<p>{nm("Not scored yet")}</p>'
-    img = (f'<p class="r2-image"><a href="{rel}{image}">The 2\u00d72 of this league as an image (PNG, 1200\u00d7675)</a></p>'
-           if image else "")
-    return (f'<div class="r2-key" aria-hidden="true"><span class="r2-good">good call</span><span class="r2-bad">costly call</span>'
-            f'<span>big number: share of its row; small: count / row total, mean equity lost</span></div>'
-            f'<div class="r2-wall" data-dataset="{dataset}">{tiles}</div>{img}')
-
-
-def risk_table(S, rel, dataset, setups) -> str:
-    """The 2x2 as a sortable table: each cell's count, share of its row and mean equity lost."""
-    rows = []
-    for n, ref in risk_order(S, dataset, setups):
-        r = setups[n]["risk"]
-        c = r["cells"]
-        cell = (lambda k: f'<td class="num">{count(c[k]["n"])}<span class="small">'
-                f'{pct(c[k]["share"]) if c[k]["share"] is not None else "0 / 0"}'
-                f'{" · loses " + eq(c[k]["mean_loss"]) if c[k]["mean_loss"] is not None else ""}</span></td>')
-        cells = (share_cell(r["takes_risk"], r["took_when_pays"], r["risk_pays"])
-                 + share_cell(r["needless_risk"], r["took_needless"], r["safety_pays"])
-                 + cell("risk_took") + cell("risk_safe") + cell("safety_took") + cell("safety_safe")
-                 + f'<td class="num">{count(r["no_risk_choice"])}</td>')
-        row = tr(S, dataset, n, cells, rel)
-        rows.append(row.replace("<tr", '<tr class="reference"', 1) if ref else row)
-    head = ["Model and setting", "Risk pays: took a risk", "Safety pays: took a needless risk",
-            "Risk pays \u00d7 took a risk", "Risk pays \u00d7 played safe", "Safety pays \u00d7 took a risk",
-            "Safety pays \u00d7 played safe", "No hit-risk trade-off"]
-    return SWIPE + table(head, rows, "Each cell: count, share of its row, mean equity lost",
-                         attrs=f' data-dataset="{dataset}"')
-
-
-def risk_phase_table(S, rel, dataset, setups) -> str:
-    rows = []
-    for n, _ in risk_order(S, dataset, setups):
-        ph = setups[n]["risk"]["phases"]
-        cells = ""
-        for p in A.PHASES:
-            h = ph.get(p) or dict(risk_pays=0, safety_pays=0, took_when_pays=0, took_needless=0, takes_risk=None,
-                                  needless_risk=None)
-            a = f'{pct(h["takes_risk"], 0)} ({count(h["took_when_pays"])}/{count(h["risk_pays"])})' if h["risk_pays"] else "0/0"
-            b = f'{pct(h["needless_risk"], 0)} ({count(h["took_needless"])}/{count(h["safety_pays"])})' if h["safety_pays"] else "0/0"
-            cells += f'<td class="num">{a}<span class="small">{b}</span></td>'
-        rows.append(tr(S, dataset, n, cells, rel))
-    head = ["Model and setting"] + [PHASE_LABEL[p] for p in A.PHASES]
-    return SWIPE + table(head, rows, "Per phase: Risk pays, took a risk (large); Safety pays, took a needless risk (small); "
-                                     "count / denominator in brackets", attrs=f' data-dataset="{dataset}"')
-
-
-def risk_card(S, lg) -> str | None:
-    """The league's 2x2 wall as a standalone 1200 x 675 image for X: the core question, the league, up to ten tiles."""
-    order = risk_order(S, lg["dataset"], lg["setups"])[:10]
-    if not order:
-        return None
-    tiles = "".join(r2_tile(S, "", lg["dataset"], n, lg["setups"][n]["risk"], ref) for n, ref in order)
-    css = (SITE_CSS_DIR / "bg.css").read_text()
-    status = "Provisional: league still running" if lg["metric_status"] == PROVISIONAL else "Finished league"
-    return f"""<!doctype html><html data-theme="dark"><head><meta charset="utf-8"><style>
-:root{{--bg:#0f172a;--panel:#1e293b;--text:#e2e8f0;--text-2:#94a3b8;--edge:#334155;--sans:system-ui,sans-serif}}
-{css}
-body{{margin:0;width:1200px;height:675px;background:var(--bg);color:var(--text);font-family:var(--sans);padding:34px 44px;box-sizing:border-box}}
-h1{{font-size:38px;margin:0 0 6px;line-height:1.1}} .sub{{font-size:19px;color:var(--text-2);margin:0 0 18px}}
-.r2-wall{{grid-template-columns:repeat(5,1fr);gap:12px}} .r2 figcaption .small{{display:none}} .r2 figcaption a{{color:var(--text);text-decoration:none}}
-.f{{position:absolute;bottom:22px;left:44px;right:44px;font-size:15px;color:var(--text-2);display:flex;justify-content:space-between}}
-</style></head><body><h1>{esc(TITLE)}</h1>
-<p class="sub">League {lg["id"]} ({esc(status)}): in decisions where risk pays, did the model take it, and where safety pays, did it stay safe? Share of each row.</p>
-<div class="r2-wall">{tiles}</div>
-<div class="f"><span>{esc(RISK_LIMIT)} Engine: GNU Backgammon 2-ply.</span><span>Zeki Works · {esc(version_line(S))}</span></div></body></html>"""
 
 
 SITE_CSS_DIR = Path(__file__).resolve().parent / "assets"
@@ -702,84 +322,19 @@ def phase_table(S, rel, dataset, setups, field="phases", labels=None, title="Err
                          attrs=f' data-dataset="{dataset}"')
 
 
-def league_section(S, lg, inner: str, title: str, anchor: str) -> str:
-    return (f'<div class="block" id="{anchor}" data-dataset="{lg["dataset"]}"><div class="section-head"><h3>{esc(title)}</h3>'
-            f'{league_status_text(lg)}</div>{inner}</div>')
+
+def hero_numbers(dec: dict, label: str, who: str, slug_: str, page: int) -> dict:
+    """The numbers of one decision for the hero board, from an exported decision: its B6.1 marks (computed by
+    decisions_export.mark_risk with analysis.risk_class), the engine's best play, the best safe play, the play made."""
+    plays, r = dec["plays"], dec["risk"]
+    pick = lambda i: dict(notation=plays[i]["notation"], hitting_rolls=plays[i]["hitting_rolls"], loss=plays[i]["loss"])
+    return dict(dataset=dec["dataset"], label=label, who=who, id=dec["id"], slug=slug_, page=page,
+                dice=dec["dice"], board=dec["board"], pips=dec["pips"], phase=dec["phase"], kind=r["class"],
+                call=r["call"], stake=dec["stake"], best=pick(dec["best"]), best_safe=pick(r["best_safe"]),
+                chosen=pick(dec["chosen"]))
 
 
-def hero_numbers(dec: dict, label: str, who: str, slug_: str, page: int, earlier: bool = False) -> dict:
-    """The numbers of one decision for the hero board, from an exported decision (decisions/<ds>/<setup>/<page>):
-    its B6 class (same rule as analysis.risk_class), the engine's best play, the best safe play and the play made."""
-    plays = dec["plays"]
-    hr = [p["hitting_rolls"] for p in plays]
-    least = min(hr)
-    bs = min((i for i in range(len(plays)) if hr[i] == least), key=lambda i: plays[i]["loss"])
-    ch, best = dec["chosen"], dec["best"]
-    pick = lambda i: dict(notation=plays[i]["notation"], hitting_rolls=hr[i], loss=plays[i]["loss"])
-    kind = "none" if least == max(hr) else "risk" if plays[bs]["loss"] >= A.T["safety_pays_loss_below"] else "safety"
-    return dict(dataset=dec["dataset"], label=label, who=who, earlier=earlier, id=dec["id"], slug=slug_, page=page,
-                dice=dec["dice"], board=dec["board"], pips=dec["pips"], phase=dec["phase"], kind=kind,
-                took=hr[ch] > least, min_risk=least, best=pick(best), best_safe=pick(bs), chosen=pick(ch))
 
-
-def hero_figure(sc: dict, rel: str = "") -> str:
-    """The board, the site's visual signature: one real decision, the engine's best play as solid arrows and the
-    play made, when different, dashed."""
-    from board import board_svg
-    b, s, c = sc["best"], sc["best_safe"], sc["chosen"]
-    alt = c["notation"] if c["notation"] != b["notation"] else None
-    svg = board_svg(sc["board"], sc["dice"], sc["pips"], play=b["notation"], alt=alt, cls="bd hero-bd",
-                    label_extra=f"Solid arrows: the engine's best play, {b['notation']}."
-                    + (f" Dashed: the play made, {alt}." if alt else ""))
-    code = lambda p: f'<code>{esc(p["notation"])}</code>'
-    dashed = " (dashed)" if alt else ""
-    head = f'{esc(sc["label"])}, dice {sc["dice"][0]}-{sc["dice"][1]}'
-    if sc["kind"] == "risk" and not sc["took"]:
-        text = (f'<strong>Risk paid here.</strong> {head}: the engine\'s best play {code(b)} (arrows) leaves '
-                f'{count(b["hitting_rolls"])} hitting rolls; the best safe play {code(s)} gives away {eq(s["loss"])}. '
-                f'{esc(sc["who"])} played safe with {code(c)}{dashed}.')
-    elif sc["kind"] == "risk":
-        made = ("the engine's best play" if not alt else
-                f'{code(c)}{dashed}, leaving {count(c["hitting_rolls"])} hitting rolls and giving away {eq(c["loss"])}')
-        text = (f'<strong>Risk paid here, and it was taken.</strong> {head}: the best safe play {code(s)} leaves '
-                f'{count(s["hitting_rolls"])} hitting rolls but gives away {eq(s["loss"])}; the engine\'s best play '
-                f'{code(b)} (arrows) leaves {count(b["hitting_rolls"])}. {esc(sc["who"])} took the risk with {made}.')
-    elif sc["kind"] == "safety" and sc["took"]:
-        text = (f'<strong>Safety paid here.</strong> {head}: the engine\'s best play {code(b)} (arrows) leaves '
-                f'{count(b["hitting_rolls"])} hitting rolls, the minimum. {esc(sc["who"])} took a needless risk with '
-                f'{code(c)}{dashed}, leaving {count(c["hitting_rolls"])} hitting rolls and giving away {eq(c["loss"])}.')
-    else:
-        text = (f'<strong>Safety paid here.</strong> {head}: the engine\'s best play {code(b)} (arrows) leaves '
-                f'{count(b["hitting_rolls"])} hitting rolls, the minimum. {esc(sc["who"])} played {code(c)}{dashed}.')
-    href = f'{rel}decisions/?d={sc["dataset"]}&amp;s={sc["slug"]}&amp;p={sc["page"]}#d{sc["id"]}'
-    badge = f'{status_badge(EARLIER)} ' if sc.get("earlier") else ""
-    version = ' data-version="v1"' if sc.get("earlier") else ""
-    return (f'<figure class="hero-board"{version}>{svg}<figcaption>{badge}{text} '
-            f'<a href="{href}">Open this decision</a></figcaption></figure>')
-
-
-def hero_board(S) -> str:
-    return hero_figure(S["showcase"]) if S.get("showcase") else ""
-
-
-FINDING_QUESTIONS = [  # one per thread; the first answers the core question
-    (1, "#risk-worth", "Can a model tell when a risk is worth taking?"),
-    (2, "#input", "How much of a model's play comes from the information we compute for it?"),
-    (3, "#confidence", "Does a model know when it is likely wrong?"),
-    (4, "#cost-reasoning", "What does each level of quality cost, and what does more reasoning buy?"),
-]
-
-
-def findings_block(S) -> str:
-    import findings as F
-    approved = sorted(F.published(), key=lambda f: f["thread"])
-    if approved:
-        items = "".join(f'<li><a href="{esc("#" + f["anchor"])}">{esc(f["text"])}</a></li>' for f in approved)
-        return f'<div class="summary" id="findings"><ul class="summary-list">{items}</ul></div>'
-    items = "".join(f'<li><span class="thread">{esc(THREADS[t])}</span> <a href="{a}">{esc(q)}</a></li>'
-                    for t, a, q in FINDING_QUESTIONS)
-    return (f'<div class="summary" id="findings"><p class="summary-lead findings-wait">Findings will be written when the '
-            f'current leagues finish.</p><ul class="summary-list">{items}</ul></div>')
 
 
 def input_history() -> str:
@@ -797,126 +352,9 @@ def input_history() -> str:
             f'strongest finding so far.</p>{SWIPE}{tbl}'
             f'<p class="table-note">Each league added one change to the prompt. Error rate: GNU Backgammon\'s, over all '
             f'model decisions of the league (earlier scoring), lower is better; grey rows did not finish. The full story: '
-            f'<a href="method/#v1-why">Method, Why it looks like this</a>.</p>')
+            f'<a href="#v1-why">Why it looks like this</a>.</p>')
 
 
-def home(S) -> str:
-    rel = ""
-    tabs = "".join(f'<button type="button" role="tab" id="tab-{k}" class="mode" aria-controls="board" '
-                   f'aria-selected="{str(i == 0).lower()}" data-tab="{k}"><span class="lamp" aria-hidden="true"></span>{l}</button>'
-                   for i, (k, l) in enumerate(TABS))
-    panels = "".join(f'<div class="tabpanel" id="panel-{k}" data-panel="{k}"{" hidden" if i else ""}>'
-                     f'{tab_panel(S, k)}</div>'
-                     for i, (k, _) in enumerate(TABS))
-    th = S["thresholds"]
-    pending = lambda what: f'<p class="pending">{status_badge(PENDING)} {esc(what)}</p>'
-    risk_views = per_view(
-        S, lambda lg: (risk_tiles(S, rel, lg["dataset"], lg["setups"], image=S.get("risk_images", {}).get(lg["dataset"]))
-                       + '<details class="more"><summary>The same as a table</summary>' + risk_table(S, rel, lg["dataset"], lg["setups"])
-                       + "</details>" + '<details class="more"><summary>By game phase</summary>'
-                       + risk_phase_table(S, rel, lg["dataset"], lg["setups"]) + "</details>"
-                       + ("" if any(n == "Safest" for n in lg["setups"]) else
-                          '<p class="table-note">Reference: the Safest program, which never takes a risk, plays in '
-                          f'<a href="#risk-worth" data-league-goto="{S["leagues"][0]["dataset"]}">League {S["leagues"][0]["id"]}</a>.</p>')),
-        pending("Waits for the shared-position answers."),
-        earlier_block(S, risk_tiles(S, rel, "v1-set", S["v1"]["setups"]), "Earlier version: the v1 set"))
-    conf_views = per_view(
-        S, lambda lg: tail_table(S, rel, lg["dataset"], lg["setups"]),
-        pending("Waits for the shared-position answers: confidence is compared on the same positions."),
-        earlier_block(S, SWIPE + table(CONF_HEAD, confidence_rows(S, rel, "v1-set", S["v1"]["setups"]),
-                                       "Earlier version: v1 set, confidence per setup", attrs=' data-version="v1"'),
-                      "Earlier version: the v1 set"))
-    reason_views = per_view(
-        S, lambda lg: league_reasoning_table(S, lg),
-        pending("Waits for the shared-position answers: the paired comparison with a verdict."),
-        earlier_block(S, SWIPE + table(REASON_HEAD, reasoning_rows(S, S["v1"]["reasoning"]),
-                                       "Earlier version: v1 set, paired on the same positions", attrs=' data-version="v1"'),
-                      "Earlier version: the v1 set"))
-    thread = lambda n: f'<span class="thread">Thread {n}: {esc(THREADS[n])}</span>'
-    return f"""
-    <header class="hero hero-split">
-      <div class="hero-text">
-        <h1>{TITLE}</h1>
-        <p class="subtitle">{esc(subtitle(S))}</p>
-        <p class="intro">{esc(INTRO)}</p>
-        <p class="hero-links"><a class="key" href="data/results.json" download>Results (JSON)</a> <a class="key" href="decisions/index.json">Decisions (JSON)</a> <a class="key" href="decisions/">Every decision</a> <a class="key" href="method/">Method</a></p>
-        <div class="readout-row">
-          <ul class="readouts">{readouts(S)}</ul>
-          <p class="version">{esc(version_line(S))}</p>
-        </div>
-      </div>
-      {hero_board(S)}
-    </header>
-    {findings_block(S)}
-    {filters(S)}
-    <section class="panel board-panel" id="board-panel" aria-labelledby="board-title">
-      <div class="section-head"><h2 id="board-title">Leaderboard</h2>{thread(1)}</div>
-      <div class="modebar">
-        <div class="keys view-switch needs-js" role="group" aria-label="Show the results as"><button type="button" class="key" data-view="table" aria-pressed="true"><span class="lamp" aria-hidden="true"></span>Table</button><button type="button" class="key" data-view="charts" aria-pressed="false"><span class="lamp" aria-hidden="true"></span>Charts</button></div>
-        <div class="modes" role="tablist" aria-label="Leaderboard metric">{tabs}</div>
-      </div>
-      <p class="version-line">One league at a time; leagues are never merged. League games are not the same positions, so league rows are not paired. Shared positions: Analysis pending.</p>
-      <div id="board" role="tabpanel">{panels}</div>
-      {charts(S)}
-    </section>
-
-    <section class="card" id="risk-worth">
-      <div class="section-head"><h2>Is the risk worth it?</h2>{thread(1)}</div>
-      <p class="section-lead">For every scored decision: does the engine say the risk pays, or safety? And did the model take a risk or play safe? Good calls are green, costly calls red.</p>
-      {league_picker(S, "Show")}
-      {risk_views}
-      <p class="table-note risk-limit">{esc(RISK_LIMIT)}</p>
-      {about(f'''<p>Hitting rolls are the numbers the model was shown: for each legal play, how many of the opponent's 36
-      rolls hit. Minimum risk: the fewest hitting rolls any legal play leaves. Best safe play: among the plays that leave
-      the minimum, the one the engine rates best. <strong>Safety pays</strong>: the best safe play loses less than
-      {th['safety_pays_loss_below']} equity against the engine's best play. <strong>Risk pays</strong>: it loses
-      {th['safety_pays_loss_below']} or more. <strong>No hit-risk trade-off</strong>: every legal play leaves the same
-      number of hitting rolls; these decisions are counted and left out of every share. The model took a risk if its play
-      leaves more hitting rolls than the minimum. A share's denominator is its row's class. Full definitions:
-      <a href="method/#risk">Method</a>.</p>''', "About this section")}
-    </section>
-
-    <section class="card" id="input">
-      <div class="section-head"><h2>What the input adds</h2>{thread(2)}{status_badge(EARLIER)}</div>
-      {input_history()}
-      {pending("The same question on the current version (each piece of computed information switched off in turn) waits for the shared-position answers.")}
-      <p class="table-note">{esc(play_order_note(S))}</p>
-    </section>
-
-    <section class="card" id="confidence">
-      <div class="section-head"><h2>Confidence: does a model know when it is likely wrong?</h2>{thread(3)}</div>
-      {league_picker(S, "Show")}
-      {conf_views}
-      {about(f'''<p>Does confidence track error, per confidence source (decision-model probability, letter probability;
-      setups that name one play have none). "Confident and badly wrong": the model gave its play a probability of at
-      least {th['very_confident_probability_at_least']} and lost more than {th['badly_wrong_loss_above']} equity. Tail
-      risk: the 95th percentile of the equity lost per decision and the mean loss of the worst
-      {pct(th['worst_share'], 0)} of decisions. Risk–coverage curves and calibration on the same positions wait for the
-      shared-position answers.</p>''', "About this section")}
-    </section>
-
-    <section class="card" id="cost-reasoning">
-      <div class="section-head"><h2>Cost and reasoning</h2>{thread(4)}</div>
-      <p class="section-lead">What each level of quality costs in time and money, and what more reasoning buys. Time and cost per setup: the leaderboard's <a href="?tab=cost#board" data-goto-tab="cost">Cost</a> tab; the quality vs cost chart: <a href="#chart-error-cost" data-view-goto="charts">Charts</a> ({esc(PENDING)}).</p>
-      <h3 id="reasoning">What more reasoning buys</h3>
-      {league_picker(S, "Show")}
-      {reason_views}
-      <h3 id="routing">Routing and teams</h3>
-      {pending("Which decisions a cheap model can handle before handing over to a strong one, and whether a team picks better plays than its best member, wait for the shared-position answers.")}
-      <p class="table-note">A team "oracle", the best answer any member gave, is an upper bound and never a working system. The earlier version's team results: <a href="leagues/#earlier">Leagues</a> (Earlier version).</p>
-    </section>
-
-    <section class="card" id="learning">
-      <div class="section-head"><h2>Learning from experience</h2>{thread(5)}{status_badge(NOT_MEASURED)}</div>
-      <p>Every decision is a separate request; models are not told how earlier games went.</p>
-    </section>
-
-    <section class="card" id="more">
-      <h2>Leagues, Method and Data</h2>
-      <p><a href="leagues/">Leagues</a>: standings, matches and each league's notes, one table per league. <a href="method/">Method</a>: setup, prompt, rules,
-      error rate, human scale, statistics, fixed thresholds, the anchor and the runner changes during the leagues.
-      <a href="data/">Data</a>: every download, versions and how to recompute.</p>
-    </section>"""
 
 
 CONTENT_DIR = Path(__file__).resolve().parent / "content"
@@ -1032,7 +470,24 @@ def phases_page(S) -> str:
     sets.append(("v1-set", "Earlier version: the v1 set", S["v1"]["setups"], None))
     for ds, title, setups, lg in sets:
         badge = league_status_text(lg) if lg else status_badge(EARLIER)
-        body = (f'<h3 id="{ds}-phase">Game phase</h3>' + phase_table(S, rel, ds, setups)
+        risk_ph = ""
+        if lg:
+            rows = []
+            for n in by_error(setups):
+                cells = ""
+                for p in A.PHASES:
+                    r = setups[n]["risk"]["main"]["phases"][p]
+                    v = r["judgement"]
+                    cells += (f'<td class="num heat" style="--heat:{(v or 0) / 100:.2f}">{fmt(v) if v is not None else nm(NA)}'
+                              f'<span class="small">{fmt(r["trade_off"], 0)} with a trade-off</span></td>')
+                rows.append(tr(S, ds, n, cells, rel))
+            risk_ph = (f'<h3 id="{ds}-risk-phase">Risk judgement per phase</h3>' + SWIPE
+                       + table(["Model and setting"] + [PHASE_LABEL[p] for p in A.PHASES], rows,
+                               "Risk judgement (margin 0.001) per game phase; N/A where a phase has no Risk pays or no "
+                               "Safety pays decisions", attrs=f' data-dataset="{ds}"')
+                       + f'<p class="table-note">{esc(RISK_LIMIT)}</p>')
+        badge = league_status_text(lg) if lg else status_badge(EARLIER)
+        body = (risk_ph + f'<h3 id="{ds}-phase">Game phase</h3>' + phase_table(S, rel, ds, setups)
                 + f'<h3 id="{ds}-tag">Strategy tag (contact and holding positions after the opening)</h3>'
                 + phase_table(S, rel, ds, setups, "tags", A.TAGS, "Error rate (PR) per strategy tag")
                 + f'<h3 id="{ds}-options">Number of legal plays</h3>'
@@ -1100,16 +555,30 @@ def model_page(S, dataset: str, name: str, entry: dict | None, smoke_row: dict |
                       f"<dt>P95 equity loss</dt><dd>{eq(q['p95_loss'])}</dd><dt>Mean loss, worst 5%</dt><dd>{eq(q['worst_mean'])}</dd>")
         cells += (f"<dt>Median / P90 s per decision</dt><dd>{secs(q.get('time_median'))} / {secs(q.get('time_p90'))}</dd>"
                   f"<dt>$ per 1,000 decisions</dt><dd>{cost_cell(S, dataset, name, q)[16:-5]}</dd>")
-        r = entry["risk"]
-        if r["decisions"]:
-            share = lambda s, n, d: f"{pct(s)} ({count(n)} / {count(d)})" if d else "0 / 0"
-            cells += (f"<dt>Risk pays: took a risk</dt><dd>{share(r['takes_risk'], r['took_when_pays'], r['risk_pays'])}</dd>"
-                      f"<dt>Safety pays: took a needless risk</dt><dd>{share(r['needless_risk'], r['took_needless'], r['safety_pays'])}</dd>"
-                      f"<dt>No hit-risk trade-off</dt><dd>{count(r['no_risk_choice'])} (left out)</dd>")
+        for mk, label in (("main", "0.001"), ("robust", "0.02")):
+            r = entry["risk"][mk]
+            share = lambda s: f"{pct(s['share'])} ({fmt(s['n'], 0)} / {fmt(s['den'], 0)})" if s["den"] else "0 / 0"
+            j = (f"{fmt(r['judgement'])} (95% interval {fmt(r['judgement_lo'])} to {fmt(r['judgement_hi'])})"
+                 if r["judgement"] is not None else r["judgement_na"])
+            cells += (f"<dt>Risk judgement, margin {label}</dt><dd>{esc(j)}; risks found {share(r['found'])}, right safety "
+                      f"{share(r['right_safety'])}</dd>")
+        r = entry["risk"]["main"]
+        cells += f"<dt>No trade-off</dt><dd>{count(int(r['no_trade_off']))} (left out of every risk metric)</dd>"
         note = f'<p class="note">{esc(play_order_note(S))}</p>' if dataset == "v1-set" else ""
         parts.append(f'<section class="card" id="results"><h2>Results in {esc(where)}</h2>{note}<dl class="facts">{cells}</dl>'
                      f'<p><a href="{rel}decisions/?d={dataset}&amp;s={m["slug"] if dataset != "v1-set" else slug(name)}">Every decision of this setup</a> · '
                      f'<a href="{rel}data/{"v1/v1-set" if dataset == "v1-set" else "v3/" + dataset}/{slug(name)}.json">JSON</a></p></section>')
+        if r["trade_off"]:
+            top = max(r["calls"].values()) or 1
+            bars = "".join(f'<div class="cc-row"><span class="cc-l">{esc(lab)}</span><span class="cc-bar {cls}" '
+                           f'style="width:{60 * r["calls"][k] / top:.1f}%"></span><span class="cc-n">{fmt(r["calls"][k], 0)}</span></div>'
+                           for k, lab, cls in (("right_risk", "right risks", "sp-right"), ("wrong_risk", "wrong risks", "sp-wrong"),
+                                               ("needless", "needless risks", "sp-needless"), ("missed", "missed risks", "sp-missed"),
+                                               ("right_safety", "right safety", "sp-safety")))
+            big = esc(fmt(r["judgement"]) if r["judgement"] is not None else r["judgement_na"])
+            parts.append(f'<section class="card risk-card" id="risk-calls"><h2>Risk call card</h2><p class="cc-big">{big}'
+                         f'<span class="small">risk judgement, margin 0.001</span></p>{bars}'
+                         f'<p class="table-note">{esc(RISK_LIMIT)}</p></section>')
         b = entry["phases"]
         rows = "".join(f'<tr><th scope="row">{PHASE_LABEL[p]}</th><td class="num">{nm(TOO_FEW) if b[p]["too_few"] else fmt(b[p]["error_rate"])}</td>'
                        f'<td class="num">{count(b[p]["n"])}</td></tr>' for p in A.PHASES)
@@ -1264,11 +733,13 @@ def data_page(S, out: Path) -> str:
                    f'<td><code>{f["sha256"][:12]}</code></td></tr>' for f in man["files"])
     return (page_head(S, "Data", "Data, versions and how to recompute")
             + f'<section class="card" id="downloads"><h2>Downloads</h2>'
-              f'<p class="hero-links"><a class="key" href="../data/results.json" download>Results (JSON)</a> '
-              f'<a class="key" href="../decisions/index.json">Decisions (JSON index)</a></p>'
-              f'<p>Results: every league\'s results per setup, one league per key. Decisions: the index of every decision '
-              f'file, one gzip JSON file per setup and page of 50 decisions, with the board, the plays as shown, the '
-              f'engine\'s equities, the model\'s choice and its "Is the risk worth it?" class.</p>'
+              f'<p class="hero-links"><a class="key" href="../data/results.json" download="results.json">results.json</a> '
+              f'<a class="key" href="../decisions/index.json" download="decisions.json">decisions.json</a> '
+              f'<a class="key" href="../new-models/">New models: first look</a> <a class="key" href="../models/">Every model setup</a></p>'
+              f'<p>results.json: every league\'s results per setup, one league per key, every risk metric at both margins. '
+              f'decisions.json: the index of every decision file, one gzip JSON file per setup and page of 50 decisions, '
+              f'with the board, the plays as shown, the engine\'s equities, the model\'s choice and its position class, '
+              f'stake and risk call.</p>'
               + SWIPE + table(["File", "Bytes", "sha256"], [rows], "Data files of this build", cls="board list")
               + f'<p class="table-note">Data files are split per version, league and model, '
               f'so each loads on a phone. Every number on the site is in one of them. The decision files behind '
@@ -1296,9 +767,10 @@ def share_card(S) -> str:
     c = S["counts"]
     css = (SITE_CSS_DIR / "decisions.css").read_text()
     board = board_svg(sc["board"], sc["dice"], sc["pips"], play=sc["best"]["notation"],
-                      alt=sc["chosen"]["notation"] if sc["chosen"]["notation"] != sc["best"]["notation"] else None) if sc else ""
-    cap = (f'{esc(sc["label"])}: the engine\'s best play {esc(sc["best"]["notation"])} (arrows) leaves '
-           f'{sc["best"]["hitting_rolls"]} hitting rolls; the best safe play gives away {eq(sc["best_safe"]["loss"])}.') if sc else ""
+                      alt=sc["best_safe"]["notation"]) if sc else ""
+    cap = (f'{esc(sc["label"])}, stake {eq(sc["stake"])}: the engine\'s best play {esc(sc["best"]["notation"])} (arrows) '
+           f'leaves {sc["best"]["hitting_rolls"]} hitting rolls; the best safe play (dashed) '
+           f'{sc["best_safe"]["hitting_rolls"]}.') if sc else ""
     return f"""<!doctype html><html><head><meta charset="utf-8"><style>
 {css}
 :root{{--text:#e2e8f0;--sans:system-ui,sans-serif;--bd-frame:#3d3226;--bd-felt:#1e293b;--bd-a:#6b5a43;--bd-b:#2f6f63;--bd-tray:#162032;--bd-num:#94a3b8;--bd-me:#ebe9e4;--bd-me-edge:#0e0e0d;--bd-opp:#9a3b2e;--bd-opp-edge:#f0b8ad;--bd-die:#ebe9e4;--bd-die-edge:#0e0e0d;--bd-pip:#1a1a18}}
@@ -1308,21 +780,23 @@ body{{margin:0;width:1200px;height:630px;background:#0f172a;color:#e2e8f0;font-f
 ul{{list-style:none;padding:0;margin:0;display:flex;gap:28px}} li b{{display:block;font-size:40px;color:#2dd4bf}} li{{font-size:18px;color:#94a3b8}}
 .f{{position:absolute;bottom:26px;right:56px;font-size:17px;color:#64748b}}</style></head><body>
 <div class="l">{board}<p>{cap}</p></div>
-<div class="r"><h1>{esc(TITLE)}</h1><p class="s">Every backgammon decision scored by an engine: decision quality, what the input adds, confidence and cost.</p>
+<div class="r"><h1>{esc(TITLE)}</h1><p class="s">Every backgammon move scored by an engine: was each risk the right one, and what did it cost?</p>
 <ul><li><b>{count(c["decisions_scored"])}</b>decisions</li><li><b>{c["leagues"]}</b>leagues</li><li><b>{c["model_setups"]}</b>setups</li><li><b>{c["models"]}</b>models</li></ul></div>
 <div class="f">Zeki Works · every decision is public</div></body></html>"""
 
 
 def description(S) -> str:
-    st = "; ".join(f"League {lg['id']} {lg['status'].lower()}" for lg in S["leagues"])
-    return (f"{subtitle(S)} {count(S['counts']['decisions_scored'])} decisions scored by GNU Backgammon so far ({st}). "
-            f"Every decision is public.")
+    c = S["counts"]
+    return (f"Models play backgammon, and GNU Backgammon scores every move they make: {count(c['decisions_scored'])} "
+            f"decisions, {count(c['model_setups'])} setups, {count(c['leagues'])} leagues. We measure whether each risk a "
+            f"model takes is the right one, and what that costs. Every decision is public.")
 
 
 # --- Write ----------------------------------------------------------------------------------------------------
 
 def write_all(S, out: Path, base: str) -> None:
     import decisions_export
+    import home
     import method
     S["description"] = description(S)
 
@@ -1335,7 +809,8 @@ def write_all(S, out: Path, base: str) -> None:
         import shutil
         if (out / stale).exists():
             shutil.rmtree(out / stale)
-    put("", TITLE, home(S), scripts=("bg.js",), styles=("decisions.css",), body_class="home")
+    put("", TITLE, home.home(S), scripts=("bg.js",), styles=("decisions.css",), body_class="home")
+    home.fragments(S, out)
     put("leagues/", "Leagues", leagues_page(S, method.archive_v1()), scripts=("bg.js",))
     put("phases/", "Phases", phases_page(S), scripts=("bg.js",))
     put("compare/", "Compare", compare_page(S), scripts=("bg.js",))
@@ -1351,7 +826,7 @@ def write_all(S, out: Path, base: str) -> None:
         put(f"models/smoke-part-a/{meta(S, 'smoke-part-a', r['setup'])['slug']}/", r["setup"],
             model_page(S, "smoke-part-a", r["setup"], None, r))
     ctx = dict(thresholds=S["thresholds"], play_order=S["v1"]["play_order"], shared_sets=S["shared"]["build_log"],
-               data_as_of=as_of(S))
+               data_as_of=as_of(S), extra=home.method_extras(S))
     put("method/", "Method", method.body(ctx), main_class="method-page")
     put("data/", "Data", data_page(S, out))
     put("decisions/", "Every decision", decisions_page(S, decisions_export.body()),

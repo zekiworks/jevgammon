@@ -175,13 +175,19 @@ def check_counts(S: dict) -> list[str]:
     sets = [(lg["dataset"], lg["setups"]) for lg in S["leagues"]] + [("v1-set", S["v1"]["setups"])]
     for ds, setups in sets:
         for name, s in setups.items():
-            q, r = s["quality"], s["risk"]
+            q = s["quality"]
             if q["scored"] > q["decisions"] - q["invalid"]:
                 bad.append(f"{ds}/{name}: scored {q['scored']} > valid decisions")
-            if sum(c["n"] for c in r["cells"].values()) != r["decisions"]:
-                bad.append(f"{ds}/{name}: risk cells do not sum to the risk decisions")
-            if r["decisions"] + r["no_risk_choice"] != q["scored"]:
-                bad.append(f"{ds}/{name}: risk decisions + no-choice {r['decisions'] + r['no_risk_choice']} != scored {q['scored']}")
+            for m, r in s["risk"].items():
+                if sum(r["calls"].values()) != r["trade_off"]:
+                    bad.append(f"{ds}/{name} ({m}): risk calls do not sum to the decisions with a trade-off")
+                if r["trade_off"] + r["no_trade_off"] != q["scored"]:
+                    bad.append(f"{ds}/{name} ({m}): trade-off + No trade-off {r['trade_off'] + r['no_trade_off']} != scored {q['scored']}")
+                parts = [v for v in r["by_call"].values() if v is not None]
+                if q.get("error_rate") is not None and abs(sum(parts) - q["error_rate"]) > 1e-9:
+                    bad.append(f"{ds}/{name} ({m}): error rate by risk-call category sums to {sum(parts)}, not {q['error_rate']}")
+                if r["judgement"] is None and r["risk_pays"] and r["safety_pays"]:
+                    bad.append(f"{ds}/{name} ({m}): risk judgement missing with both classes present")
             for field in ("phases", "options"):
                 if sum(c["n"] for c in s[field].values()) != q["scored"]:
                     bad.append(f"{ds}/{name}: {field} cells sum {sum(c['n'] for c in s[field].values())} != scored {q['scored']}")
@@ -201,33 +207,36 @@ def check_counts(S: dict) -> list[str]:
     for name in v1["setups"]:
         if got.get(name, {}).get("decisions") != v1["positions"]:
             bad.append(f"v1-set/{name}: exported {got.get(name, {}).get('decisions')} of {v1['positions']}")
-    # Every decision's B6 mark (Every decision filters) must match the 2x2 counts of the analyses.
+    # Every decision's B6.1 marks (Every decision filters) must match the analyses' counts at the main margin.
     for ds, setups in sets:
         for name, s in setups.items():
-            r, rc = s["risk"], exp.get(ds, {}).get(name, {}).get("risk")
-            if rc is not None and (rc["risk"], rc["safety"], rc["none"]) != (r["risk_pays"], r["safety_pays"], r["no_risk_choice"]):
-                bad.append(f"{ds}/{name}: exported risk marks {rc} != analysis {r['risk_pays']}/{r['safety_pays']}/{r['no_risk_choice']}")
+            r, rc = s["risk"]["main"], exp.get(ds, {}).get(name, {}).get("risk")
+            if rc is None:
+                continue
+            want = (r["risk_pays"], r["safety_pays"], r["no_trade_off"], {k: v for k, v in r["calls"].items()})
+            have = (rc["risk"], rc["safety"], rc["none"], rc["calls"])
+            if want != have:
+                bad.append(f"{ds}/{name}: exported risk marks {have} != analysis {want}")
     return bad
 
 
 # --- 3. Mixing ----------------------------------------------------------------------------------------------
 
 def _is_unit(n) -> bool:
-    """A ranking, table or chart: every table, every 2x2 wall and every chart SVG."""
-    cls = n.attrs.get("class") or ""
-    return n.tag == "table" or "r2-wall" in cls.split() or n.tag == "svg" and "chart-svg" in cls.split()
+    """A ranking, table or chart: every table and every chart SVG."""
+    return n.tag == "table" or n.tag == "svg" and "chart-svg" in (n.attrs.get("class") or "").split()
 
 
 def check_mixing(page: Path, root: Node, S: dict) -> list[str]:
-    """No table, 2x2 wall or chart combines datasets (v1 set, league 1, 2, 3): every element in it that names a
-    dataset (data-dataset on rows, tiles, points or the unit itself) names the same one, and a unit inside an
-    Earlier-version block (data-version="v1") holds no v3 dataset. v1 numbers sit only inside such blocks."""
+    """No table or chart combines datasets (v1 set, league 1, 2, 3): every element in it that names a dataset
+    (data-dataset on rows, points or the unit itself) names the same one, and a unit inside an Earlier-version block
+    (data-version="v1") holds no v3 dataset. v1 numbers sit only inside such blocks."""
     bad = []
     running = {lg["dataset"] for lg in S["leagues"] if lg["metric_status"] == PROVISIONAL}
     for t in (n for n in walk(root) if _is_unit(n)):
         ds = {r.attrs["data-dataset"] for r in walk(t) if r.attrs.get("data-dataset")}
         in_v1 = any(a.attrs.get("data-version") == "v1" for a in [t] + list(ancestors(t)))
-        what = "a table" if t.tag == "table" else "a 2x2 wall" if t.tag == "div" else "a chart"
+        what = "a table" if t.tag == "table" else "a chart"
         if len(ds) > 1:
             bad.append(f"{page}: {what} mixes datasets {sorted(ds)}")
         if in_v1 and ds - {"v1-set"}:
@@ -243,7 +252,7 @@ def check_mixing(page: Path, root: Node, S: dict) -> list[str]:
 
 # --- 5. Links and ids ---------------------------------------------------------------------------------------
 
-def check_links(page: Path, root: Node, out: Path) -> list[str]:
+def check_links(page: Path, root: Node, out: Path, anchors: bool = True) -> list[str]:
     bad, ids = [], []
     for n in walk(root):
         if n.attrs.get("id"):
@@ -260,7 +269,7 @@ def check_links(page: Path, root: Node, out: Path) -> list[str]:
             path, _, frag = v.partition("#")
             path = path.split("?")[0]
             if not path:
-                if frag and frag not in idset and not v.startswith("?"):
+                if anchors and frag and frag not in idset and not v.startswith("?"):
                     bad.append(f"{page}: anchor #{frag} missing")
                 continue
             target = (page.parent / path).resolve()
@@ -274,13 +283,16 @@ def check_links(page: Path, root: Node, out: Path) -> list[str]:
 def run(S: dict, out: Path) -> list[str]:
     failures = []
     nums = allowed_numbers(out, S)
-    for page in sorted(out.rglob("index.html")):
+    # The home page's per-league, per-phase views load as fragments into the home page: checked as part of it.
+    pages = [(p, p) for p in sorted(out.rglob("index.html"))] + [(p, out / "index.html")
+                                                                 for p in sorted((out / "fragments").glob("*.html"))]
+    for page, base in pages:
         rel = page.relative_to(out)
         tree = Tree()
         tree.feed(page.read_text())
         failures += check_numbers(rel, tree.root, nums)
         failures += check_mixing(rel, tree.root, S)
-        failures += [f.replace(str(page), str(rel)) for f in check_links(page, tree.root, out)]
+        failures += [f.replace(str(base), str(rel)) for f in check_links(base, tree.root, out, anchors=page == base)]
     failures += check_counts(S)
     for p in out.rglob("*"):
         if not p.is_file() or p.suffix == ".png":

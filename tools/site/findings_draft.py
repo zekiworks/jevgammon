@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Refreshes the findings draft from the deployed site data (brief v6 B4). The site never shows it: findings are
-published only after Ümit approves them; until then the home page says "Findings will be written when the
-current leagues finish." Approved findings live in tools/site/content/findings.json with a machine check each
-(tools/site/findings.py); checks.py reruns them before every deploy and a failing one stops the deploy.
-The draft has one section per thread; the first answers the core question.
+"""Refreshes the findings draft from the deployed site data (brief v12 B4). The site never shows it: findings are
+published only after Ümit approves them; until then the home page says "Findings will be published after review."
+Approved findings live in tools/site/content/findings.json with a machine check each (tools/site/findings.py),
+the one-line lead-in too; checks.py reruns them before every deploy and a failing one stops the deploy.
+The draft has one section per thread; the first answers the core question, at both risk margins (B6.6).
 
     python3 tools/site/findings_draft.py OUT_DIR DRAFT.md
 
@@ -44,19 +44,24 @@ def main():
               "setup-to-setup differences read as 'in league play'):"]
     for p in leagues:
         lg = json.loads(p.read_text())
-        rows = [(n, s["risk"]) for n, s in lg["setups"].items() if (lg["dataset"], n) not in programs
-                and s["risk"].get("takes_risk") is not None and s["risk"].get("needless_risk") is not None]
-        if not rows:
-            lines.append(f"  - League {lg['id']}: no risk decisions scored yet.")
-            continue
-        rows.sort(key=lambda r: r[1]["needless_risk"] - r[1]["takes_risk"])
-        a, z = rows[0], rows[-1]
-        share = lambda r, k, n, d: f"{100 * r[k]:.1f}% ({r[n]:,}/{r[d]:,})"
-        lines.append(f"  - League {lg['id']} ({lg['metric_status']}): widest gap between taking a risk when it pays "
-                     f"and taking a needless one: {a[0]} ({share(a[1], 'takes_risk', 'took_when_pays', 'risk_pays')} vs "
-                     f"{share(a[1], 'needless_risk', 'took_needless', 'safety_pays')}); narrowest: {z[0]} "
-                     f"({share(z[1], 'takes_risk', 'took_when_pays', 'risk_pays')} vs "
-                     f"{share(z[1], 'needless_risk', 'took_needless', 'safety_pays')}).")
+        for m, label in (("main", "0.001 margin"), ("robust", "0.02 margin")):
+            rows = [(n, s["risk"][m]) for n, s in lg["setups"].items() if (lg["dataset"], n) not in programs
+                    and s["risk"][m].get("judgement") is not None]
+            if not rows:
+                lines.append(f"  - League {lg['id']} ({label}): risk judgement N/A for every model setup.")
+                continue
+            rows.sort(key=lambda r: -r[1]["judgement"])
+            (a, ra), rest = rows[0], rows[1:]
+            close = [n for n, r in rest if r["judgement_hi"] >= ra["judgement_lo"]]
+            share = lambda x: f"{100 * x['share']:.1f}% ({x['n']:,.0f}/{x['den']:,.0f})"
+            lines.append(f"  - League {lg['id']} ({lg['metric_status']}, {label}): best risk judgement {a} "
+                         f"{ra['judgement']:.1f} [{ra['judgement_lo']:.1f}, {ra['judgement_hi']:.1f}] (risks found "
+                         f"{share(ra['found'])}, right safety {share(ra['right_safety'])}); no clear difference in league "
+                         f"play from: {', '.join(close) if close else 'none'}.")
+            cautious = sum(1 for _, r in rows if r["missed"]["share"] is not None and r["needless"]["share"] is not None
+                           and r["missed"]["share"] > r["needless"]["share"])
+            lines.append(f"    Risk-call pattern ({label}): {cautious} of {len(rows)} model setups missed a larger share "
+                         f"of Risk pays decisions than the share of Safety pays decisions where they took a needless risk.")
     lines += ["", "### Lowest move error (thread 1)", "",
               f"- Shared positions ({shared['standard']:,}): {shared['status']}. This is the only cross-league answer."]
     for p in leagues:

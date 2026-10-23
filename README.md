@@ -53,7 +53,6 @@ printed and stored in `matches.error`), `2` for invalid arguments.
   the round in which a player reaches 5 points: the mirror game is always played, then the
   player ahead wins. If the score is tied when the match would end (after the planned
   rounds, or level at 5+), exactly one extra round is played; a tie after that is a draw.
-  League playoffs keep adding rounds until one player leads (see [League](#league)).
 - Games are scored in points: single 1, gammon 2, backgammon 3. There is no doubling cube.
 - Thinking time uses the WBGF Simple Delay clock: 30 s free per decision, then a 5-minute
   bank per player per game. An empty bank loses that game for 1 point (see [Clock](#clock)).
@@ -401,8 +400,8 @@ existed resumes with `bg-v2-history`, the prompt the runner then sent).
   roster is its current participants (`league_players` rows with `left_at` NULL). A name
   already recorded with other settings is refused: pick another name, or update
   `players.settings` when it is the same setup (a server moved, say).
-- **Fixture:** implicit. Every pair of current participants without a valid match under the
-  league's rules is still to play. The order is derived from the participants: the founders
+- **Fixture:** implicit. Every pair of current participants without a valid match is still
+  to play. The order is derived from the participants: the founders
   (those who joined at the start) play a round robin by the circle method on an entry list
   shuffled with the league seed (`--seed`, random by default): with 8 models, 7 matchdays
   of 4 matches, every model playing once per matchday (an odd count gives one model a bye
@@ -410,16 +409,19 @@ existed resumes with `bg-v2-history`, the prompt the runner then sent).
   against everyone who joined before it. The opening roll decides who moves first, and the
   second game repeats the rolls with seats swapped, so the other model moves first with the
   same roll.
+- **One result per pair:** two setups play each other at most once. A pair's valid match
+  (any stage but the legacy playoffs) counts in every league that holds both, whatever
+  league, ladder round or Cup it was played in and whatever its rules (`league_match_view`,
+  `Db::matches_between`, `Db::current_match`); a setup that moves to another league keeps its
+  results and plays only the pairs it never played. A pair's unfinished match started under
+  other rules is not resumed (finish it where it started, or void it).
 - **Rules and seeds:** a league's rules are its rounds, clock bank and delay, turn limit,
-  prompt version, option-order seed and `mirror_concurrent`; every league match stores
-  them, and a league's table counts only valid matches between two current participants
-  whose rule columns equal the league's (`league_match_view`). The dice seed of a pair's
-  match comes from the two names (sorted) and a hash of the rules (`Rules::pair_seed`), not
-  from the league: the same pairing gets the same dice in every league with the same rules,
-  and which side is `model1` (white in the first game of every round) is drawn from it too.
-  A pair played before under the same rules (a voided match, a migrated fixture) keeps that
-  match's seed and sides. `Db::matches_between` takes any set of players and rules, so a
-  merged view over leagues with the same rules counts each pairing once.
+  prompt version, option-order seed and `mirror_concurrent`; its new matches are played and
+  stored under them. The dice seed of a pair's match comes from the two names (sorted) and a
+  hash of the rules (`Rules::pair_seed`), not from the league: the same pairing gets the
+  same dice in every league with the same rules, and which side is `model1` (white in the
+  first game of every round) is drawn from it too. A voided pair keeps its voided match's
+  seed and sides.
 - **Matches** use the normal format (`--rounds`, `--clock`, `--delay`, `--max-turns`). A
   match starts as soon as both its models are below their `max_matches` (default 4, local
   engines unlimited), in fixture order: earlier matchdays get the free places first, and
@@ -433,12 +435,16 @@ existed resumes with `bg-v2-history`, the prompt the runner then sent).
   round is played depends on the score. Turns, dice, events and scores are recorded the
   same way; the round's score is stored when both games have finished.
 - **Table:** a win is 3 league points, a draw (still tied after the extra round) 1. Ties
-  are broken by more games won, then fewer games lost. Backgammon points scored and
-  conceded are shown but not used.
-- **Playoffs:** a tie still standing that involves any of the first three places is played
-  off: two models play one match whose tie adds rounds until one leads; three or more play a
-  round robin of such matches, ranked like the league, with any tie inside it played off
-  again. Ties below third place share their place.
+  are broken by more games won, then fewer games lost, then the **lower error rate** over
+  all of the setup's valid matches (every league, ladder round and Cup): 500 × the mean
+  GNUbg 1.08 2-ply equity loss of its decisions with two or more legal plays, invalid
+  answers left out, as on the site (rule B11). The runner reads the site update loop's
+  scores (`--scores`, default `$XDG_STATE_HOME/bg-site/plays/s*.db`, written by
+  `tools/site/score.sh`; `src/scores.rs`); a setup without scored decisions ranks after
+  those with one, and rows level on all four share a place. There are no playoffs.
+  Backgammon points scored and conceded are shown but not used. Decisions the site has not
+  scored yet are left out of the error rate and the final ranking says so;
+  `jevgammon rank` ranks a finished league again once they are scored.
 - **Warm-up:** before every match (league or single) each decision service gets a
   two-option request, repeated until it answers (up to 15 minutes), so a cold start such
   as Fastino's HTTP 425 "warming up" never runs on a clock.
@@ -450,9 +456,8 @@ existed resumes with `bg-v2-history`, the prompt the runner then sent).
   model is to blame for backs off only that match. Every other match goes on. When only
   deferred matches are left the league waits for the next backoff to end and tries again,
   logging what waits and why, so topping up credit later lets it finish by itself.
-  Playoffs start only once every fixture has finished; a failing playoff match is retried
-  the same way. A model whose client cannot be built (a missing key, say) is tried again
-  every 30 s while its matches wait.
+  The final ranking waits until every pair has finished. A model whose client cannot be
+  built (a missing key, say) is tried again every 30 s while its matches wait.
 - **Resuming:** a match cut off part-way (a failure, Ctrl-C or SIGTERM, a killed process, a
   reboot) keeps its match id and resumes from its last stored turn: the stored games count
   as played, and the unfinished game is replayed from the stored turns, checking every
@@ -463,7 +468,14 @@ existed resumes with `bg-v2-history`, the prompt the runner then sent).
   with the error `cancelled`, the heartbeat is cleared); `--resume <id>` continues.
 
 The table is printed each time every match of a matchday has finished, then the final
-table and ranking.
+table and ranking (stored in `leagues.ranking` as "place. name").
+
+```sh
+./jevgammon rank --db v3.db [--league 3] [--dry-run]   # finished leagues: stored v new ranking
+```
+
+`jevgammon rank` computes the final ranking of finished leagues with the error-rate
+tiebreak, prints it next to the stored one, and stores it when it changed.
 
 ### Adding, removing, voiding
 
@@ -487,14 +499,13 @@ league and play only its own matches:
   entry and its sha256, the pairs) is appended to `freeze/league<ID>-additions.json`
   (`--freeze-log` to change it).
 - `league-remove` sets `left_at` and the reason, and appends "NAME left on DATE: REASON." to
-  the league note. Its matches stay in the database and valid (they count again if it
-  rejoins under the same rules) but leave the table; its unplayed pairs leave the fixture.
+  the league note. Its matches stay in the database and valid (they count wherever the same
+  pair meets again) but leave the table; its unplayed pairs leave the fixture.
 - `void` sets `matches.valid = 0` with `void_reason` and `voided_at`: no table counts the
   match, and its pair is played again with the same seed and sides. A running match should
   be stopped first, or it plays on to no effect.
-- Each of the three reopens the league (status `running`) and voids its playoff matches
-  (`void_reason` `stale: ...`): playoffs wait until every pair has been played and are
-  played afresh.
+- Each of the three reopens the league (status `running`); its final ranking is stored again
+  when every pair has been played.
 - **Running leagues** pick changes up by themselves: a league process re-reads the
   participants and matches every 30 s and signs `leagues.heartbeat_at`, and the commands say
   whether such a process holds the league; otherwise `league --resume` plays the new
@@ -525,6 +536,39 @@ and the new way side by side and rolls back if any line differs. One transaction
 `--freeze-db v3.db` reads the freeze logs' entries for `v3.db` when migrating a copy. Run
 again, it only compares.
 
+### Inter-league ladder and Hype Cup
+
+`tools/ladder.py` runs the ladder of `mailbox/backgammon-ladder-cup.md` between Leagues 1, 2
+and 3 (bottom to top). It plays nothing: the leagues' runners play the new pairings.
+
+```sh
+python3 tools/ladder.py plan --db v3.db --out "mailbox/Ladder round N - request.md"   # read-only
+python3 tools/ladder.py apply --db v3.db --round N    # only after the round is approved
+python3 tools/ladder.py cup-winner --db v3.db --match ID
+```
+
+- **plan** ranks every league (points, games won, fewer games lost, error rate), takes each
+  lower league's winner and the upper league's last (programs never move: the next setup is
+  taken), applies the lock rule (a setup relegated from a league for the second time stays
+  below unless the upper league holds a setup it has not played; a locked winner that has
+  played them all freezes the boundary for the round), and writes the request: the move log
+  (round, setup, from, to, reason), the error-rate flag of each swap with 95% intervals
+  (resampling games, as the site), every new pairing with its estimated money (API price;
+  API-equivalent for subscriptions; own hardware), duration and servers or APIs, the
+  reused pairings and where they were played, the playing order (API and subscription
+  pairings first, then GPU blocks of at most four bariton GPUs) and the totals. It stops with
+  an error while the site has not scored every decision. A round without moves is the
+  steady state.
+- **apply** records the moves with `league-remove` (reason "ladder round N: promoted to
+  league M", "relegated", or "promoted (lock exception)"; these notes are the ladder's
+  history) and `league-add` (the setup's stored settings), and switches a receiving league
+  that played its games in sequence (League 1) to both games of a round at once, the ladder
+  and Cup format; earlier matches stay as played. Then `league --resume` plays only the new
+  pairings.
+- **Hype Cup tie rule** (`cup-winner`): a Cup match that ends level, stored or new, goes to
+  the setup with the lower error rate in that match; no extra rounds are played. A Cup
+  pairing already played anywhere is not played again: its stored result stands.
+
 ### Dashboard
 
 `tools/league_web.py` serves one page for every league in the database. It needs only
@@ -533,6 +577,11 @@ Python 3.10+, reads the database read-only, and refreshes every 5 s:
 ```sh
 python3 tools/league_web.py --db league.db --port 8095   # http://<host>:8095/
 ```
+
+The table ranks as the runner does, error-rate tiebreak included (column **Err**): the
+error rates come from the site's score shards (`--scores`, default
+`$XDG_STATE_HOME/bg-site/plays`), read again at most every 5 minutes; without them ties keep
+the participants' order.
 
 - **History:** every league, newest first: live (moved in the last 10 minutes), finished,
   or stopped part-way; start, duration, models, rounds, matches finished, games, share of
@@ -653,12 +702,13 @@ The database has these tables:
 | `leagues` | seed (orders the founders' round robin), rules (rounds, clock bank and delay, turn limit, prompt version, option-order seed, `mirror_concurrent`), `seed_rule`, status, final ranking, note (`--note` and every change since), runner heartbeat |
 | `league_players` | league, player, `joined_at`, `left_at` (NULL = current participant), note (why it joined late or left) |
 
-League matches also store `player1`, `player2`, `stage` (`league\|playoff`), `label`,
+League matches also store `player1`, `player2`, `stage` (`league`; `playoff` for a legacy
+second match of a pair, from before the error-rate tiebreak), `label`,
 `mirror_concurrent`, `valid` (0 = voided, with `void_reason` and `voided_at`) and the last
 deferral time `failed_at`. The view `league_match_view` lists every valid match between two
-current participants of a league under its rules (`league_id`, `match_id`, `stage`, `label`,
-player names as `model1`/`model2`, player ids, seed, status): what its table, playoffs and
-dashboard count. Migrated databases also keep `legacy_league_matches` and
+current participants of a league, whatever rules it was played under (`league_id`,
+`match_id`, `stage`, `label`, player names as `model1`/`model2`, player ids, seed, status):
+what its table and dashboard count. Migrated databases also keep `legacy_league_matches` and
 `legacy_league_rosters`.
 
 Seeds are unsigned 64-bit values stored in SQLite's signed INTEGER; cast back to `u64` to
@@ -696,7 +746,8 @@ cargo run -- --model1 ollama/qwen3 --model2 jev --speed 5
 | `src/dice.rs` | seeded dice (SplitMix64, implemented locally so seeds stay reproducible across dependency upgrades) |
 | `src/runner.rs` | match flow, mirrored legs (one after the other or at once), resuming from stored turns, tie-break round, pacing and pause |
 | `src/players/` | prompt versions and the letter prompt (`prompt.rs`, texts in `prompts/`), seeded option order (`order.rs`), LLM providers, decision services (System One, OpenAI Decisions), invalid-answer fallback and group splits (`mod.rs`) |
-| `src/league.rs` | participants, derived fixture, match limits, deferral and backoff, table, playoffs, resume |
+| `src/league.rs` | participants, derived fixture, match limits, deferral and backoff, table with the error-rate tiebreak, resume |
+| `src/scores.rs` | error rates from the site's GNUbg score shards |
 | `src/migrate.rs` | `jevgammon migrate`: old league layout to players and participants, table comparison |
 | `src/auth.rs` | subscription credential stores and refresh |
 | `src/http.rs` | retries and backoff |

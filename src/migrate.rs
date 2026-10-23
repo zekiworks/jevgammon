@@ -722,22 +722,22 @@ fn migrate(conn: &Connection, history: &History) -> Result<String> {
     for (kind, n) in &outcome {
         summary += &format!("\nmatches {kind}: {n}");
     }
+    // One result per pair: a pair's valid match counts in every league, whatever its rules.
     let duplicates: Vec<(i64, i64, i64)> = {
-        let mut statement = conn.prepare(
-            "SELECT MIN(id), MAX(id), COUNT(*) FROM matches WHERE valid = 1 AND stage = 'league'
-             GROUP BY MIN(player1, player2), MAX(player1, player2), rounds_planned,
-                      clock_seconds, delay_seconds, max_turns, prompt_version, order_seed,
-                      mirror_concurrent
+        let mut statement = conn.prepare(&format!(
+            "SELECT MIN(m.id), MAX(m.id), COUNT(*) FROM matches m WHERE {}
+             GROUP BY MIN(m.player1, m.player2), MAX(m.player1, m.player2)
              HAVING COUNT(*) > 1",
-        )?;
+            db::PAIR_RESULT
+        ))?;
         statement
             .query_map([], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)))?
             .collect::<rusqlite::Result<_>>()?
     };
     if !duplicates.is_empty() {
         bail!(
-            "pairs with several valid league matches under the same rules (first id, last id, \
-             count): {duplicates:?}"
+            "pairs with several valid matches (one result per pair; first id, last id, count): \
+             {duplicates:?}"
         );
     }
     conn.execute_batch(
@@ -1182,9 +1182,8 @@ mod tests {
         assert_eq!(count("SELECT COUNT(*) FROM players WHERE name = 'D'"), 1);
         // League 2's running match resumes as the pair's match; F v D is still to play.
         let participants = db.participants(2).unwrap();
-        let row = db.league(2).unwrap();
         let ids: Vec<i64> = participants.iter().map(|p| p.player_id).collect();
-        let matches = db.matches_between(&row.rules, &ids, "league").unwrap();
+        let matches = db.matches_between(&ids).unwrap();
         assert_eq!(matches.len(), 2);
         drop(db);
         // Idempotent: a second run only compares.

@@ -12,9 +12,8 @@ fn id_of(name: &str) -> i64 {
 fn fixture(order: usize, day: u32, model1: &str, model2: &str) -> Fixture {
     Fixture {
         order,
-        stage: "league",
         label: format!("matchday {day}: {model1} v {model2}"),
-        matchday: Some(day),
+        matchday: day,
         model1: model1.into(),
         model2: model2.into(),
         players: [id_of(model1), id_of(model2)],
@@ -181,7 +180,7 @@ fn fixture_is_a_round_robin_with_one_match_per_model_per_matchday_and_joiners_af
         for day in 1..=days as u32 {
             let mut seen: Vec<&String> = fixture
                 .iter()
-                .filter(|f| f.matchday == Some(day))
+                .filter(|f| f.matchday == day)
                 .flat_map(|f| [&f.model1, &f.model2])
                 .collect();
             let count = seen.len();
@@ -199,7 +198,7 @@ fn fixture_is_a_round_robin_with_one_match_per_model_per_matchday_and_joiners_af
         for (old, new) in fixture.iter().zip(&with_late) {
             assert_eq!((&old.label, old.seed), (&new.label, new.seed));
         }
-        let day = |f: &Fixture| f.matchday.unwrap();
+        let day = |f: &Fixture| f.matchday;
         let late1: Vec<&Fixture> = with_late[fixture.len()..fixture.len() + n].iter().collect();
         assert!(
             late1
@@ -242,15 +241,20 @@ fn result(score: [u32; 2], games_won: [u32; 2]) -> MatchResult {
 }
 
 #[test]
-fn table_ranks_by_points_then_games_won_then_fewer_games_lost() {
+fn table_ranks_by_points_then_games_won_then_fewer_games_lost_then_error_rate() {
     let names = names(4);
     let r = |a: usize, b: usize, score, games| {
         (names[a].clone(), names[b].clone(), result(score, games))
     };
     let order = |rows: &[Row]| rows.iter().map(|r| r.name.clone()).collect::<Vec<_>>();
+    let none = HashMap::new();
 
     // Equal points: more games won ranks higher (m1 over m0, m2 over m3).
-    let rows = table(&names, &[r(0, 2, [7, 5], [6, 4]), r(1, 3, [9, 3], [7, 3])]);
+    let rows = table(
+        &names,
+        &[r(0, 2, [7, 5], [6, 4]), r(1, 3, [9, 3], [7, 3])],
+        &none,
+    );
     assert_eq!(order(&rows), ["m1", "m0", "m2", "m3"]);
 
     // Equal points and games won: fewer games lost ranks higher. m1 beat m2 in ten
@@ -258,18 +262,31 @@ fn table_ranks_by_points_then_games_won_then_fewer_games_lost() {
     let rows = table(
         &names[..3],
         &[r(0, 2, [7, 5], [6, 5]), r(1, 2, [7, 5], [6, 4])],
+        &none,
     );
     assert_eq!(order(&rows), ["m1", "m0", "m2"]);
-    assert!(tie_groups(&rows).is_empty());
+    assert_eq!(places(&rows), [1, 2, 3]);
 
     // A draw is worth DRAW_POINTS; a win by fewer games still outranks it.
-    let rows = table(&names, &[r(0, 1, [6, 6], [6, 6]), r(2, 3, [4, 3], [2, 1])]);
+    let results = [r(0, 1, [6, 6], [6, 6]), r(2, 3, [4, 3], [2, 1])];
+    let rows = table(&names, &results, &none);
     assert_eq!(order(&rows)[0], "m2");
     assert_eq!(rows[1].points, DRAW_POINTS);
-    // m0 and m1 are level on everything.
-    assert_eq!(tie_groups(&rows), vec![1..3]);
+    // m0 and m1 are level on everything and no error rate is known: they share 2nd place.
+    assert_eq!(places(&rows), [1, 2, 2, 4]);
+    assert_eq!(ranking(&rows)[..3], ["1. m2", "2. m0", "2. m1"]);
+    // The lower error rate breaks the tie; a known error rate ranks before an unknown one.
+    let rates: HashMap<String, f64> = [("m0".to_owned(), 30.0), ("m1".to_owned(), 23.4)].into();
+    let rows = table(&names, &results, &rates);
+    assert_eq!(order(&rows)[1..3], ["m1", "m0"]);
+    assert_eq!(places(&rows), [1, 2, 3, 4]);
+    let rates: HashMap<String, f64> = [("m0".to_owned(), 30.0)].into();
+    assert_eq!(order(&table(&names, &results, &rates))[1..3], ["m0", "m1"]);
+    // The error rate never outranks points or games.
+    let rates: HashMap<String, f64> = [("m3".to_owned(), 1.0)].into();
+    assert_eq!(order(&table(&names, &results, &rates))[3], "m3");
     // A player who left is not in the table.
-    let rows = table(&names[..2], &[r(0, 2, [7, 5], [6, 4])]);
+    let rows = table(&names[..2], &[r(0, 2, [7, 5], [6, 4])], &none);
     assert_eq!(rows.iter().map(|r| r.played).sum::<u32>(), 0);
 }
 
@@ -333,6 +350,7 @@ fn local_league(path: &std::path::Path, id: i64) -> Arc<League> {
             harness: Harness::default(),
         }),
         backoff: (Duration::from_secs(1), Duration::from_secs(1)),
+        scores: std::env::temp_dir().join("jevgammon-no-scores"),
     })
 }
 
@@ -434,11 +452,177 @@ async fn late_join_plays_only_new_pairs() {
     let table = standings(&db, id).unwrap();
     assert!(table.iter().all(|row| row.counts[0] == 3), "{table:?}");
     // D leaves: its matches stay valid but leave the table; nothing is left to play.
-    let (_, open) = remove_player(&mut db, id, "D", "test").unwrap();
+    let open = remove_player(&mut db, id, "D", "test").unwrap();
     assert_eq!(open, 0);
     assert_eq!(standings(&db, id).unwrap().len(), 3);
     assert!(stored_matches(&path).iter().all(|m| m.4));
     drop(db);
+    let _ = std::fs::remove_file(&path);
+}
+
+/// A setup that moves to another league (ladder) keeps its results: a pair it already
+/// played anywhere counts in the new league's table and is not played again, whatever
+/// rules it was played under; it plays only its new pairs, under the new league's rules,
+/// and leaves the old league's table while its matches stay valid.
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn a_mover_plays_only_pairs_it_never_played() {
+    let path = temp_db("mover");
+    let mut db = Db::open(&path).unwrap();
+    let players = |names: &[&str]| -> Vec<PlayerConfig> {
+        names
+            .iter()
+            .map(|n| PlayerConfig::new(n, "random"))
+            .collect()
+    };
+    // G is in both leagues, as GNUbg weak is; the leagues play different formats.
+    let lower = db
+        .create_league(1, &rules(false), &players(&["A", "B", "G"]), None)
+        .unwrap();
+    let upper = db
+        .create_league(2, &rules(true), &players(&["C", "D", "G"]), None)
+        .unwrap();
+    play_out(&path, lower).await;
+    play_out(&path, upper).await;
+    assert_eq!(stored_matches(&path).len(), 6);
+
+    assert_eq!(remove_player(&mut db, lower, "A", "promoted").unwrap(), 0);
+    let addition = add_player(
+        &mut db,
+        upper,
+        &PlayerConfig::new("A", "random"),
+        "2026-10-24",
+    )
+    .unwrap();
+    let mut new_pairs = addition.fixtures.clone();
+    new_pairs.sort();
+    assert_eq!(new_pairs.len(), 2, "{new_pairs:?}");
+    assert!(
+        new_pairs
+            .iter()
+            .all(|l| l.contains('A') && !l.contains('G'))
+    );
+
+    let after = play_out(&path, upper).await;
+    assert_eq!(after.played.len(), 6);
+    let stored = stored_matches(&path);
+    assert_eq!(stored.len(), 8);
+    assert!(stored.iter().all(|m| m.4), "every match stays valid");
+    let mirror: Vec<bool> = {
+        let conn = rusqlite::Connection::open(&path).unwrap();
+        stored[6..]
+            .iter()
+            .map(|m| {
+                conn.query_row(
+                    "SELECT mirror_concurrent FROM matches WHERE id = ?1",
+                    [m.0],
+                    |r| r.get(0),
+                )
+                .unwrap()
+            })
+            .collect()
+    };
+    assert_eq!(
+        mirror,
+        [true, true],
+        "new matches use the new league's rules"
+    );
+    let upper_table = standings(&db, upper).unwrap();
+    assert!(
+        upper_table.iter().all(|row| row.counts[0] == 3),
+        "{upper_table:?}"
+    );
+    let lower_table = standings(&db, lower).unwrap();
+    assert_eq!(lower_table.len(), 2);
+    assert!(
+        lower_table.iter().all(|row| row.counts[0] == 1),
+        "{lower_table:?}"
+    );
+    drop(db);
+    let _ = std::fs::remove_file(&path);
+}
+
+/// Error rates come from the score shards: 500 × mean loss over a setup's scored decisions
+/// in valid matches; decisions skipped by GNUbg and decisions not scored yet are counted
+/// apart, and a voided match's decisions are left out.
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn error_rates_come_from_the_score_shards_of_valid_matches() {
+    let path = temp_db("rates");
+    let mut db = Db::open(&path).unwrap();
+    let models: Vec<PlayerConfig> = ["A", "B", "C"]
+        .iter()
+        .map(|n| PlayerConfig::new(n, "random"))
+        .collect();
+    let id = db.create_league(5, &rules(true), &models, None).unwrap();
+    play_out(&path, id).await;
+    let decisions = |name: &str| -> Vec<i64> {
+        let mut statement = db
+            .conn()
+            .prepare(
+                "SELECT t.id FROM turns t JOIN games g ON g.id = t.game_id
+                 JOIN matches m ON m.id = g.match_id
+                 JOIN players p ON p.id = CASE t.player WHEN 1 THEN m.player1 ELSE m.player2 END
+                 WHERE p.name = ?1 AND t.decided_by = 'model' AND t.legal_count >= 2
+                   AND m.valid = 1 ORDER BY t.id",
+            )
+            .unwrap();
+        statement
+            .query_map([name], |r| r.get(0))
+            .unwrap()
+            .collect::<rusqlite::Result<_>>()
+            .unwrap()
+    };
+    let (a, b) = (decisions("A"), decisions("B"));
+    assert!(a.len() > 2 && b.len() > 2);
+    let dir = std::env::temp_dir().join(format!("jevgammon-scores-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    for (shard, turns) in [("s0.db", &a), ("s1.db", &b)] {
+        let conn = rusqlite::Connection::open(dir.join(shard)).unwrap();
+        conn.execute_batch(
+            "CREATE TABLE plays (turn_id INTEGER PRIMARY KEY, loss REAL);
+             CREATE TABLE skipped (turn_id INTEGER PRIMARY KEY, reason TEXT);",
+        )
+        .unwrap();
+        let loss = if shard == "s0.db" { 0.01 } else { 0.03 };
+        // A's last decision is not scored yet; B's first one was skipped.
+        for &turn in &turns[..turns.len() - usize::from(shard == "s0.db")] {
+            if shard == "s1.db" && turn == turns[0] {
+                conn.execute("INSERT INTO skipped VALUES (?1, 'test')", [turn])
+                    .unwrap();
+            } else {
+                conn.execute("INSERT INTO plays VALUES (?1, ?2)", (turn, loss))
+                    .unwrap();
+            }
+        }
+    }
+    let rates = scores::error_rates(&db, &dir).unwrap();
+    let rate_a = rates["A"];
+    assert_eq!(
+        (rate_a.scored, rate_a.pending, rate_a.skipped),
+        (a.len() as u64 - 1, 1, 0)
+    );
+    assert!((rate_a.rate().unwrap() - 5.0).abs() < 1e-9);
+    let rate_b = rates["B"];
+    assert_eq!(
+        (rate_b.scored, rate_b.pending, rate_b.skipped),
+        (b.len() as u64 - 1, 0, 1)
+    );
+    assert!((rate_b.rate().unwrap() - 15.0).abs() < 1e-9);
+    assert_eq!(rates["C"].rate(), None);
+    // A voided match's decisions leave the error rate.
+    let match_of_a: i64 = db
+        .conn()
+        .query_row(
+            "SELECT g.match_id FROM turns t JOIN games g ON g.id = t.game_id WHERE t.id = ?1",
+            [a[0]],
+            |r| r.get(0),
+        )
+        .unwrap();
+    db.void_match(match_of_a, "test").unwrap();
+    let after = scores::error_rates(&db, &dir).unwrap()["A"];
+    assert!(after.scored + after.pending < rate_a.scored + rate_a.pending);
+    drop(db);
+    let _ = std::fs::remove_dir_all(&dir);
     let _ = std::fs::remove_file(&path);
 }
 
@@ -525,7 +709,7 @@ fn league_stage(path: &std::path::Path) -> Vec<StageRow> {
 
 /// F fails like a provider out of credit: its matches are deferred with the error
 /// stored and only F backs off, so every other match (F's opponents' included)
-/// finishes while F still fails, and the league neither stops nor starts its playoffs.
+/// finishes while F still fails, and the league neither stops nor ranks.
 /// A stop request ends the run cleanly; once F works again, the next run resumes F's
 /// matches under their match ids and finishes the league.
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
@@ -613,10 +797,7 @@ async fn a_failing_model_backs_off_while_the_others_play_on_and_its_matches_resu
             Ok((r.get(0)?,))
         })
         .unwrap();
-    assert_eq!(
-        status, "running",
-        "no playoffs or final ranking without F's matches"
-    );
+    assert_eq!(status, "running", "no final ranking without F's matches");
 
     fail.store(false, std::sync::atomic::Ordering::Relaxed);
     let second = league();

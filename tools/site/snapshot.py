@@ -55,7 +55,7 @@ CREATE TABLE IF NOT EXISTS meta(key TEXT PRIMARY KEY, value TEXT);
 """
 LEAGUE_DECISIONS = """
 SELECT t.id, lm.league_id, CASE t.player WHEN 1 THEN lm.model1 ELSE lm.model2 END
-FROM {p}turns t JOIN {p}games g ON g.id = t.game_id JOIN {p}league_matches lm ON lm.match_id = g.match_id
+FROM {p}turns t JOIN {p}games g ON g.id = t.game_id JOIN {p}league_match_view lm ON lm.match_id = g.match_id
 WHERE t.decided_by IN ('model', 'fallback')
 """
 
@@ -232,23 +232,23 @@ def extract(bodies, meta):
 
 
 def engine_setups(db, prefix=""):
-    """(league_id, setup name) of the runner's engines, which send no requests."""
-    out = set()
-    for league_id, models in db.execute(f"SELECT id, models FROM {prefix}leagues"):
-        for model in json.loads(models):
-            if model.get("spec") in ENGINE_SPECS:
-                out.add((league_id, model["name"]))
-    return out
+    """Names of the runner's engines (players.spec), which send no requests."""
+    marks = ",".join("?" * len(ENGINE_SPECS))
+    return {name for (name,) in db.execute(f"SELECT name FROM {prefix}players WHERE spec IN ({marks})",
+                                            sorted(ENGINE_SPECS))}
 
 
 def fingerprint(db):
     turns = db.execute("SELECT count(*), coalesce(max(id), 0) FROM turns").fetchone()
     parts = [f"t{turns[0]}/{turns[1]}"]
-    for league_id, status, done, total in db.execute(
-            "SELECT l.id, l.status, sum(m.status = 'finished'), count(lm.id) FROM leagues l"
-            " LEFT JOIN league_matches lm ON lm.league_id = l.id LEFT JOIN matches m ON m.id = lm.match_id"
-            " GROUP BY l.id ORDER BY l.id"):
-        parts.append(f"l{league_id}:{status}:{done or 0}/{total}")
+    # Per league: status, finished matches of its table / pairs of current participants.
+    for league_id, status, done, n in db.execute(
+            "SELECT l.id, l.status,"
+            " (SELECT count(*) FROM league_match_view v JOIN matches m ON m.id = v.match_id"
+            "  WHERE v.league_id = l.id AND m.status = 'finished'),"
+            " (SELECT count(*) FROM league_players lp WHERE lp.league_id = l.id AND lp.left_at IS NULL)"
+            " FROM leagues l ORDER BY l.id"):
+        parts.append(f"l{league_id}:{status}:{done}/{n * (n - 1) // 2}")
     return " ".join(parts)
 
 
@@ -327,10 +327,13 @@ def run(v3, state):
     for (sql,) in db.execute("SELECT sql FROM src.sqlite_master WHERE type = 'index' AND sql IS NOT NULL"
                              " AND tbl_name != 'exchanges'").fetchall():
         db.execute(sql)
+    # Views (league_match_view) after the tables they read: their names resolve to main's copies.
+    for (sql,) in db.execute("SELECT sql FROM src.sqlite_master WHERE type = 'view' ORDER BY rowid").fetchall():
+        db.execute(sql)
     engines = engine_setups(db, "main.")
     targets = {}
     for turn_id, league_id, setup in db.execute(LEAGUE_DECISIONS.format(p="main.")):
-        if turn_id not in done and (league_id, setup) not in engines:
+        if turn_id not in done and setup not in engines:
             targets[turn_id] = league_id
     exchanges = {}
     if targets:

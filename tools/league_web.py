@@ -7,9 +7,11 @@ Standard library only. The database is opened read-only per request, so it can r
 league in progress. The page shows the latest league (or ?league=N), the history of every
 league in the database with what each one tested (`leagues.note`), and links to the working
 copy of the published report (`--report`, served at /report/). The table follows `src/league.rs`: 3 points for a win, 1 for
-a draw, ties broken by more games won, then fewer games lost; only finished matches count: the
-valid matches between current participants under the league's rules (`league_match_view`). The
-fixture is derived from the participants as the runner derives it (`pair_order`, `new_pair`).
+a draw, ties broken by more games won, then fewer games lost, then the lower error rate over all of a
+setup's valid matches (the site's GNUbg scores, `--scores`); only finished matches count: the valid
+match of every pair of current participants, whatever league or rules it was played under (one result
+per pair). The fixture is derived from the participants as the runner derives it (`pair_order`,
+`new_pair`).
 
 --control SCRIPT adds a Pause / Resume button: GET /api/control runs `SCRIPT status` (one JSON
 line: unit, state, since, message) and POST /api/control {"action": "pause"|"resume"} starts
@@ -21,16 +23,23 @@ import argparse
 import ipaddress
 import itertools
 import json
+import os
+import re
 import sqlite3
 import subprocess
 import time
+from collections import defaultdict
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 WIN_POINTS, DRAW_POINTS = 3, 1
+# Error rate = ERROR_SCALE x mean equity loss (site thresholds `equity_scale`, `src/scores.rs`).
+ERROR_SCALE = 500.0
 CACHE_SECONDS = 2.0
+# Error rates are read again at most this often (seconds) by the dashboard.
+RATES_SECONDS = 300
 # A league that is not finished counts as live while it moved within this many seconds.
 LIVE_SECONDS = 600
 # A gap between two turns of a match longer than this (seconds) counts as a pause, not play.
@@ -200,30 +209,31 @@ MATCH_FIELDS = """m.id AS match_id, m.player1, m.player2, m.seed, m.valid, m.voi
                   m.failed_at AS deferred_at"""
 
 
-def matches_between(conn: sqlite3.Connection, ids: list[int], rules: tuple, stage: str) -> list[dict]:
-    """Every match of `stage` (valid or void) between two of the players `ids` under `rules`, oldest
-    first: with a league's participants and rules, its matches; with any set of players and rules, a
-    merged view over leagues (`Db::matches_between`)."""
-    same = " AND ".join(f"m.{c} IS ?" for c in RULE_COLUMNS)
+def matches_between(conn: sqlite3.Connection, ids: list[int]) -> list[dict]:
+    """Every match (valid or void) of a pair of the players `ids`, of any stage but the legacy playoffs,
+    under any rules, oldest first (`Db::matches_between`): with a league's participants, the matches of
+    its table and fixture."""
     players = json.dumps(ids)
     return [dict(r) for r in conn.execute(
         f"""SELECT {MATCH_FIELDS} FROM matches m
-            WHERE m.stage = ? AND m.player1 IN (SELECT value FROM json_each(?))
-              AND m.player2 IN (SELECT value FROM json_each(?)) AND {same}
+            WHERE m.stage IS NOT NULL AND m.stage <> 'playoff'
+              AND m.player1 IN (SELECT value FROM json_each(?)) AND m.player2 IN (SELECT value FROM json_each(?))
             ORDER BY m.id""",
-        (stage, players, players, *rules),
+        (players, players),
     )]
 
 
 def league_fixtures(conn: sqlite3.Connection, league: sqlite3.Row) -> tuple[list[dict], dict[int, list[int]]]:
     """The league's fixture as the runner derives it (`league::derive_fixture`): every pair of
-    current participants in matchday order with its valid match, then the playoffs (valid ones,
-    and stale ones voided when the table changed); and games won per match."""
+    current participants with its valid match (played in this league or anywhere else); and games won
+    per match. A match played in this league (both players were already its participants when it
+    started) keeps the matchday and label it was played under; the other pairs take the derived
+    matchday. Matchday order, the derived pair order within a matchday."""
     people = participants(conn, league["id"])
     ids = [p["id"] for p in people]
     rules = league_rules(league)
     by_pair: dict[tuple[int, int], dict] = {}
-    for m in matches_between(conn, ids, rules, "league"):
+    for m in matches_between(conn, ids):
         entry = by_pair.setdefault((min(m["player1"], m["player2"]), max(m["player1"], m["player2"])), {})
         if m["valid"]:
             entry.setdefault("valid", m)
@@ -233,7 +243,7 @@ def league_fixtures(conn: sqlite3.Connection, league: sqlite3.Row) -> tuple[list
     empty = dict.fromkeys(("match_id", "status", "score1", "score2", "winner", "rounds_played", "rounds_planned",
                            "error", "started_at", "finished_at", "deferred_error", "deferred_at"))
     fixtures = []
-    for day, i, j in pair_order(people, league["seed"]):
+    for order, (day, i, j) in enumerate(pair_order(people, league["seed"])):
         a, b = people[i], people[j]
         entry = by_pair.get((min(a["id"], b["id"]), max(a["id"], b["id"])), {})
         known = entry.get("valid") or entry.get("void")
@@ -242,18 +252,18 @@ def league_fixtures(conn: sqlite3.Connection, league: sqlite3.Row) -> tuple[list
         else:
             model1, model2, _ = new_pair(rules, a["name"], b["name"])
         match = entry.get("valid")
+        label = f"matchday {day}: {model1} v {model2}"
+        played = re.match(r"matchday (\d+): ", match["label"] or "") if match else None
+        if played and match["started_at"] >= max(a["joined_at"], b["joined_at"]):
+            day, label = int(played.group(1)), match["label"]
         fixtures.append({
             **empty, **({k: match[k] for k in empty} if match else {}),
-            "stage": "league", "label": f"matchday {day}: {model1} v {model2}", "matchday": day,
-            "model1": model1, "model2": model2,
+            "stage": "league", "label": label, "matchday": day, "model1": model1, "model2": model2,
+            "order": order,
         })
-    for m in matches_between(conn, ids, rules, "playoff"):
-        if not m["valid"] and not (m["void_reason"] or "").startswith("stale"):
-            continue
-        fixtures.append({
-            **{k: m[k] for k in empty}, "stage": "playoff" if m["valid"] else "playoff-stale",
-            "label": m["label"], "matchday": None, "model1": names[m["player1"]], "model2": names[m["player2"]],
-        })
+    fixtures.sort(key=lambda f: (f["matchday"], f["order"]))
+    for f in fixtures:
+        del f["order"]
     match_ids = [f["match_id"] for f in fixtures if f["match_id"]]
     marks = ",".join("?" * len(match_ids)) or "NULL"
     games_won: dict[int, list[int]] = {}
@@ -278,9 +288,14 @@ def league_fixtures(conn: sqlite3.Connection, league: sqlite3.Row) -> tuple[list
     return fixtures, games_won
 
 
-def league_table(names: list[str], fixtures: list[dict], games_won: dict[int, list[int]]) -> list[dict]:
-    """League-stage table from finished matches, ordered as `src/league.rs` ranks it."""
-    rows = {n: dict(name=n, played=0, won=0, drawn=0, lost=0, points=0, gw=0, gl=0, pf=0, pa=0) for n in names}
+def league_table(names: list[str], fixtures: list[dict], games_won: dict[int, list[int]],
+                 rates: dict[str, float] | None = None) -> list[dict]:
+    """League-stage table from finished matches, ordered as `src/league.rs` ranks it: points, games won,
+    fewer games lost, then the lower error rate (`rates`, from `tiebreak_rates`; a setup without one
+    after those with one). `place` is shared by rows level on all four."""
+    rates = rates or {}
+    rows = {n: dict(name=n, played=0, won=0, drawn=0, lost=0, points=0, gw=0, gl=0, pf=0, pa=0,
+                    error_rate=rates.get(n)) for n in names}
     for f in fixtures:
         if f["stage"] != "league" or f["status"] != "finished":
             continue
@@ -301,7 +316,63 @@ def league_table(names: list[str], fixtures: list[dict], games_won: dict[int, li
             else:
                 row["lost"] += 1
     order = {n: i for i, n in enumerate(names)}
-    return sorted(rows.values(), key=lambda r: (-r["points"], -r["gw"], r["gl"], order[r["name"]]))
+
+    def rank(r):
+        return (-r["points"], -r["gw"], r["gl"], r["error_rate"] is None,
+                r["error_rate"] if r["error_rate"] is not None else 0.0)
+
+    table = sorted(rows.values(), key=lambda r: (*rank(r), order[r["name"]]))
+    for i, row in enumerate(table):
+        row["place"] = table[i - 1]["place"] if i and rank(table[i - 1]) == rank(row) else i + 1
+    return table
+
+
+def default_scores() -> Path:
+    """The site update loop's GNUbg score shards (`tools/site/update.sh`, `score.sh`)."""
+    state = os.environ.get("XDG_STATE_HOME") or os.path.join(os.path.expanduser("~"), ".local", "state")
+    return Path(state) / "bg-site" / "plays"
+
+
+def error_rates(conn: sqlite3.Connection, plays_dir: Path) -> dict[str, dict]:
+    """Every setup's error rate over all of its valid matches (every league, ladder round and Cup), as
+    `src/scores.rs` computes it for the tiebreak: 500 x mean 2-ply equity loss of its decisions with two
+    or more legal plays, invalid answers left out (site rule B11), from the site's score shards
+    `plays_dir/s*.db`. Per name: rate (None without a scored decision), scored, skipped, pending (not
+    scored yet), and per game the loss sum and count (`games`, for bootstrap intervals)."""
+    loss: dict[int, float] = {}
+    skipped: set[int] = set()
+    for path in sorted(plays_dir.glob("s*.db")):
+        shard = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+        try:
+            loss.update(shard.execute("SELECT turn_id, loss FROM plays"))
+            skipped.update(t for (t,) in shard.execute("SELECT turn_id FROM skipped"))
+        finally:
+            shard.close()
+    out: dict[str, dict] = {}
+    for turn, game, name in conn.execute(
+            """SELECT t.id, t.game_id, p.name FROM turns t JOIN games g ON g.id = t.game_id
+               JOIN matches m ON m.id = g.match_id
+               JOIN players p ON p.id = CASE t.player WHEN 1 THEN m.player1 ELSE m.player2 END
+               WHERE m.valid = 1 AND m.stage IS NOT NULL AND t.decided_by = 'model' AND t.legal_count >= 2"""):
+        r = out.setdefault(name, dict(loss=0.0, scored=0, skipped=0, pending=0, games=defaultdict(lambda: [0.0, 0])))
+        if turn in loss:
+            r["loss"] += loss[turn]
+            r["scored"] += 1
+            g = r["games"][game]
+            g[0] += loss[turn]
+            g[1] += 1
+        elif turn in skipped:
+            r["skipped"] += 1
+        else:
+            r["pending"] += 1
+    for r in out.values():
+        r["rate"] = ERROR_SCALE * r["loss"] / r["scored"] if r["scored"] else None
+    return out
+
+
+def tiebreak_rates(rates: dict[str, dict]) -> dict[str, float]:
+    """`error_rates` as the table's tiebreak map: setups with a scored decision."""
+    return {name: r["rate"] for name, r in rates.items() if r["rate"] is not None}
 
 
 def last_activity(conn: sqlite3.Connection, lid: int) -> str | None:
@@ -359,7 +430,23 @@ def live_game(conn: sqlite3.Connection, fixture: dict, game: sqlite3.Row) -> dic
     }
 
 
-def snapshot(db: Path, league_id: int | None) -> dict:
+_rates_cache: dict = {}
+
+
+def dashboard_rates(conn: sqlite3.Connection, scores: Path | None) -> dict[str, float]:
+    """`tiebreak_rates` for the dashboard, read again at most every RATES_SECONDS; empty (ties keep
+    the participants' order) without score shards."""
+    if scores is None or not any(scores.glob("s*.db")):
+        return {}
+    now = time.monotonic()
+    hit = _rates_cache.get(scores)
+    if hit is None or now - hit[0] > RATES_SECONDS:
+        hit = (now, tiebreak_rates(error_rates(conn, scores)))
+        _rates_cache[scores] = hit
+    return hit[1]
+
+
+def snapshot(db: Path, league_id: int | None, scores: Path | None = None) -> dict:
     with connect(db) as conn:
         league = conn.execute(
             "SELECT * FROM leagues WHERE id = ?" if league_id else "SELECT * FROM leagues ORDER BY id DESC LIMIT 1",
@@ -453,8 +540,9 @@ def snapshot(db: Path, league_id: int | None) -> dict:
                 ids,
             ):
                 timing.setdefault(r["match_id"], {})[r["player"]] = (r["n"], r["ms"] or 0)
+        rates = dashboard_rates(conn, scores)
 
-    table = league_table(names, fixtures, games_won)
+    table = league_table(names, fixtures, games_won, rates)
 
     for f in fixtures:
         f["games_won"] = games_won.get(f["match_id"], [0, 0])
@@ -493,10 +581,11 @@ def snapshot(db: Path, league_id: int | None) -> dict:
     }
 
 
-def history(db: Path) -> dict:
+def history(db: Path, scores: Path | None = None) -> dict:
     """Every league, newest first: what it tested, how far it got, its table and game totals."""
     leagues = []
     with connect(db) as conn:
+        rates = dashboard_rates(conn, scores)
         for league in conn.execute("SELECT * FROM leagues ORDER BY id DESC").fetchall():
             lid = league["id"]
             roster = [p["settings"] for p in participants(conn, lid)]
@@ -516,7 +605,7 @@ def history(db: Path) -> dict:
                 "matches_total": len(fixtures),
                 "games": dict(conn.execute(GAME_TOTALS, (lid,)).fetchone()),
                 "ranking": json.loads(league["ranking"]) if league["ranking"] else None,
-                "table": league_table(names, fixtures, games_won),
+                "table": league_table(names, fixtures, games_won, rates),
             })
     return {"leagues": leagues, "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
 
@@ -711,8 +800,8 @@ function render(d){
   $('rules').textContent=`${L.rounds} rounds per match · clock ${clock(L.delay_seconds)} delay + ${clock(L.clock_seconds)} bank · turn limit ${L.max_turns??'off'} · seed ${L.seed}`+
     (L.order_seed!=null?` · option order seed ${L.order_seed}`:'')+(L.prompt_version?` · prompt ${L.prompt_version}`:'');
   $('updated').textContent='updated '+new Date(d.generated_at).toLocaleTimeString();
-  $('table').innerHTML='<thead><tr><th>#</th><th class="l">Model</th><th>P</th><th>W</th><th>D</th><th>L</th><th>Pts</th><th>GW</th><th>GL</th><th>PF</th><th>PA</th></tr></thead><tbody>'+
-    d.table.map((r,i)=>`<tr class="${i<3?'top':''}"><td>${i+1}</td><td class="l"><a href="#" class="mlink" data-model="${esc(r.name)}" title="show this model's matches">${esc(r.name)}</a></td><td>${r.played}</td><td>${r.won}</td><td>${r.drawn}</td><td>${r.lost}</td><td class="pts">${r.points}</td><td>${r.gw}</td><td>${r.gl}</td><td>${r.pf}</td><td>${r.pa}</td></tr>`).join('')+'</tbody>';
+  $('table').innerHTML='<thead><tr><th>#</th><th class="l">Model</th><th>P</th><th>W</th><th>D</th><th>L</th><th>Pts</th><th>GW</th><th>GL</th><th>PF</th><th>PA</th><th title="error rate over all of the setup\'s valid matches: the tiebreak after points and games">Err</th></tr></thead><tbody>'+
+    d.table.map((r,i)=>`<tr class="${i<3?'top':''}"><td>${r.place}</td><td class="l"><a href="#" class="mlink" data-model="${esc(r.name)}" title="show this model's matches">${esc(r.name)}</a></td><td>${r.played}</td><td>${r.won}</td><td>${r.drawn}</td><td>${r.lost}</td><td class="pts">${r.points}</td><td>${r.gw}</td><td>${r.gl}</td><td>${r.pf}</td><td>${r.pa}</td><td>${r.error_rate!=null?r.error_rate.toFixed(1):'–'}</td></tr>`).join('')+'</tbody>';
   // Player config per name: spec plus provider / quantization / device when the league recorded them.
   const player=n=>{const c=(L.models||[]).find(x=>x.name===n)||{};return [c.spec,c.provider,c.quantization,c.device].filter(Boolean).join(' · ')};
   const sec=ms=>ms!=null?(ms/1000).toFixed(2)+'s':'–';
@@ -739,7 +828,7 @@ function render(d){
     return `<div class="card${gs.length>1?' duo':''}"><h3>${esc(f.label)}</h3>
     <div><b>${esc(f.model1)}</b> <span class="pts">${f.score1} – ${f.score2}</span> <b>${esc(f.model2)}</b> <span class="mute">(games ${f.games_won[0]}–${f.games_won[1]})</span></div>
     ${gs.length>1?`<div class="games">${gs.map(x=>`<div>${game(x.lv,x.k)}</div>`).join('')}</div>`:game(gs[0].lv,gs[0].k)}</div>`}).join(''):`<div class="mute">${L.status==='live'?'no match running':`league #${L.id} is ${L.status}`}</div>`;
-  const days={};for(const f of d.fixtures){const k=f.stage==='playoff'?'Playoffs':f.stage==='playoff-stale'?'Playoffs (stale: players added after them)':'Matchday '+f.matchday;(days[k]=days[k]||[]).push(f)}
+  const days={};for(const f of d.fixtures){const k='Matchday '+f.matchday;(days[k]=days[k]||[]).push(f)}
   $('fixture').innerHTML=Object.entries(days).map(([k,fs])=>`<div class="day"><h3>${k}</h3>`+fs.map(f=>{
     // Deferred: failed, waiting for the failing model's backoff; resumes from its last turn.
     const st=f.status!=='finished'&&f.status!=='running'&&f.deferred_error?'deferred':f.status||'pending';const w1=f.winner===1,w2=f.winner===2;
@@ -817,7 +906,7 @@ function showMatches(name){
     const done=f.status==='finished',my=me===1?f.score1:f.score2,their=me===1?f.score2:f.score1;
     const res=!done?'open':f.winner==null?'draw':f.winner===me?'win':'loss';
     const st=done?{win:'won',loss:'lost',draw:'draw'}[res]:(f.status&&f.status!=='running'&&f.deferred_error?'deferred':f.status||'pending');
-    const when=f.stage==='playoff'?'playoff':f.stage==='playoff-stale'?'playoff (stale)':'matchday '+f.matchday;
+    const when='matchday '+f.matchday;
     const sm=f.s_move||[],t=v=>v!=null?v.toFixed(2):'–';
     return {res,html:`<tr class="m-${res}"><td class="l mute">${esc(when)}</td><td class="l">${esc(opp)}</td><td>${f.status?`${my??0} – ${their??0}`:'–'}</td><td class="l">${esc(st)}</td><td>${t(sm[me-1])}</td><td>${t(sm[2-me])}</td><td>${t(f.s_turn)}</td><td>${f.minutes!=null?f.minutes.toFixed(1):'–'}</td></tr>`}});
   const n=k=>rows.filter(r=>r.res===k).length;
@@ -883,6 +972,8 @@ class Handler(BaseHTTPRequestHandler):
     league_id: int | None
     # --control script, or None (no Pause / Resume button).
     control: Path | None = None
+    # --scores: the site's GNUbg score shards, for the error-rate tiebreak.
+    scores: Path | None = None
     # --report: the working copy of the published report page, served at /report/.
     report: Path | None = None
     # Rendered JSON per key ("state:<league>", "history"), with the time it was built.
@@ -939,10 +1030,10 @@ class Handler(BaseHTTPRequestHandler):
             except ValueError:
                 self.reply(400, "text/plain", b"league must be an integer")
                 return
-            body = self.cached(f"state:{league_id}", lambda: snapshot(self.db, league_id))
+            body = self.cached(f"state:{league_id}", lambda: snapshot(self.db, league_id, self.scores))
             self.reply(200, "application/json", body)
         elif path == "/api/history":
-            self.reply(200, "application/json", self.cached("history", lambda: history(self.db)))
+            self.reply(200, "application/json", self.cached("history", lambda: history(self.db, self.scores)))
         elif path == "/api/control":
             status = control_status(self.control) if self.control else {"enabled": False}
             self.reply(200, "application/json", json.dumps(status).encode())
@@ -1015,10 +1106,13 @@ def main():
     parser.add_argument("--report", type=Path, metavar="HTML",
                         default=Path(__file__).resolve().parent.parent / "analysis" / "backgammon" / "index.html",
                         help="working copy of the published report, served at /report/ (default: analysis/backgammon/index.html)")
+    parser.add_argument("--scores", type=Path, default=default_scores(),
+                        help="the site's GNUbg score shards s*.db, for the error-rate tiebreak "
+                             "(default: $XDG_STATE_HOME/bg-site/plays)")
     args = parser.parse_args()
     if not args.db.exists():
         parser.error(f"{args.db} does not exist")
-    Handler.db, Handler.league_id = args.db.resolve(), args.league
+    Handler.db, Handler.league_id, Handler.scores = args.db.resolve(), args.league, args.scores
     if args.control:
         if not args.control.is_file():
             parser.error(f"{args.control} does not exist")

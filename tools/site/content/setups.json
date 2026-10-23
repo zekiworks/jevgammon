@@ -26,7 +26,7 @@
    "sampling": "not sent (decision request)",
    "notes": "Perplexity's released checkpoint on our GPUs; moved to a DGX Spark on 16 Oct 11:04 UTC (same checkpoint and server arguments; 20 replayed requests: same play 20/20)",
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "leagues/league1.json",
     "freeze/league1-additions.json",
     "tools/v3/page_v3.py",
@@ -62,7 +62,7 @@
    "sampling": "not sent (decision request)",
    "notes": null,
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "leagues/league1.json",
     "freeze/league1-additions.json",
     "tools/v3/page_v3.py",
@@ -99,7 +99,7 @@
    "sampling": "not sent (decision request)",
    "notes": "moved to a DGX Spark on 16 Oct 11:04 UTC (same checkpoint and server arguments; 20 replayed requests: same play 20/20)",
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "leagues/league1.json",
     "freeze/league1-additions.json",
     "tools/v3/page_v3.py",
@@ -133,7 +133,7 @@
    "sampling": "not sent (decision request)",
    "notes": "its server takes no model field; stayed on the same GPU throughout",
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "leagues/league1.json",
     "freeze/league1-additions.json",
     "tools/v3/page_v3.py",
@@ -167,7 +167,7 @@
    "sampling": null,
    "notes": "Google's gemma-4-12B-it behind a server that labels the options with letters and reads the letter probabilities; moved to a DGX Spark on 16 Oct 11:04 UTC (20 replayed requests: same play 20/20)",
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "leagues/league1.json",
     "freeze/league1-additions.json",
     "tools/v3/page_v3.py",
@@ -198,7 +198,7 @@
    "sampling": null,
    "notes": "random legal play",
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "tools/v3/page_v3.py"
    ],
    "missing": []
@@ -223,7 +223,7 @@
    "sampling": null,
    "notes": "the play the fewest opponent rolls hit",
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "tools/v3/page_v3.py"
    ],
    "missing": []
@@ -248,7 +248,7 @@
    "sampling": null,
    "notes": "GNU Backgammon 1.08, Beginner level (0-ply, deterministic noise 0.060); fixed anchor in every league",
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "tools/v3/page_v3.py"
    ],
    "missing": []
@@ -278,7 +278,7 @@
    "sampling": "not sent (decision request)",
    "notes": "Liquid AI decisions API, paid tier",
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "leagues/league1.json",
     "freeze/league1-additions.json",
     "tools/v3/page_v3.py",
@@ -314,7 +314,7 @@
    "sampling": "not sent (decision request)",
    "notes": "TypeSafe System One API",
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "leagues/league1.json",
     "freeze/league1-additions.json",
     "tools/v3/page_v3.py",
@@ -350,7 +350,7 @@
    "sampling": "not sent (decision request)",
    "notes": "TypeSafe System One API",
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "leagues/league1.json",
     "freeze/league1-additions.json",
     "tools/v3/page_v3.py",
@@ -386,7 +386,7 @@
    "sampling": "not sent (decision request)",
    "notes": "probabilities come rounded to two decimals",
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "leagues/league1.json",
     "freeze/league1-additions.json",
     "tools/v3/page_v3.py",
@@ -422,7 +422,7 @@
    "sampling": "not sent (decision request)",
    "notes": "OpenAI Decisions API (public beta); an earlier League 1 entry through the ChatGPT subscription (chat model) was removed on 19 Oct",
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "leagues/league1.json",
     "freeze/league1-additions.json",
     "tools/v3/page_v3.py",
@@ -458,7 +458,7 @@
    "sampling": "not sent (decision request)",
    "notes": "Perplexity's pplx-decider-flash-v1.2 (from Qwen3.5-4B) through the pplx_decider package its checkpoint ships, one request at a time; price is Perplexity's list price for the same model",
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "leagues/league1.json",
     "freeze/league1-additions.json",
     "tools/v3/page_v3.py",
@@ -492,7 +492,7 @@
    "sampling": "not sent (decision request)",
    "notes": "a Gemma 4 12B IT fine-tune, run through its author's inference server with the author's configuration (Q8_0 GGUF); no published price",
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "leagues/league1.json",
     "freeze/league1-additions.json",
     "tools/v3/page_v3.py",
@@ -526,7 +526,7 @@
    "sampling": "not sent (decision request)",
    "notes": "Inception's Mercury Decide through OpenRouter's decision route, paid listing; latency includes OpenRouter's own time",
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "leagues/league1.json",
     "freeze/league1-additions.json",
     "tools/v3/page_v3.py",
@@ -557,7 +557,7 @@
    "sampling": "not sent (decision request)",
    "notes": "Fastino's hosted decision API; every stored response (all its League 1 matches, 20 Oct) names the model glide_v2, as did the API on 22 Oct",
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "leagues/league1.json",
     "freeze/league1-additions.json",
     "tools/v3/page_v3.py",
@@ -594,7 +594,7 @@
    "sampling": "not sent (decision request)",
    "notes": "Perplexity's pplx-decider-v1.2 through the pplx_decider package its checkpoint ships, one request at a time; joined late (20 Oct); price is Perplexity's list price for the same model",
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "leagues/league1.json",
     "freeze/league1-additions.json",
     "tools/v3/page_v3.py",
@@ -623,7 +623,7 @@
    "sampling": "not sent (decision request)",
    "notes": "Fastino's GLiDE v1.2 weights (Hugging Face fastino/GLiDE, Fastino Community License) through the glide/server.py its repository ships, bf16, one request per forward pass; joined late (22 Oct)",
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "leagues/league1.json",
     "freeze/league1-additions.json",
     "tools/v3/page_v3.py",
@@ -659,7 +659,7 @@
    "sampling": "temperature 1.0",
    "notes": "Google Antigravity subscription from 19 Oct 12:46 UTC (Antigravity model id gemini-3.8-flash-low, model version gemini-3.8-flash); before that it waited for a Gemini API key; answer letter constrained to the option letters",
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "leagues/league2.json",
     "tools/v3/page_v3.py",
     "src/players/llm.rs",
@@ -698,7 +698,7 @@
    "sampling": "temperature 1.0",
    "notes": "Google Antigravity subscription from 19 Oct 12:46 UTC (Antigravity model id gemini-3.8-flash-high, model version gemini-3.8-flash); before that it waited for a Gemini API key; answer letter constrained to the option letters",
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "leagues/league2.json",
     "tools/v3/page_v3.py",
     "src/players/llm.rs",
@@ -737,7 +737,7 @@
    "sampling": "not sent (API default)",
    "notes": null,
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "leagues/league2.json",
     "tools/v3/page_v3.py",
     "src/players/llm.rs",
@@ -776,7 +776,7 @@
    "sampling": "not sent (API default)",
    "notes": null,
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "leagues/league2.json",
     "tools/v3/page_v3.py",
     "src/players/llm.rs",
@@ -815,7 +815,7 @@
    "sampling": "not sent (API default)",
    "notes": null,
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "leagues/league2.json",
     "tools/v3/page_v3.py",
     "src/players/llm.rs",
@@ -854,7 +854,7 @@
    "sampling": "not sent (API default)",
    "notes": null,
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "leagues/league2.json",
     "tools/v3/page_v3.py",
     "src/players/llm.rs",
@@ -893,7 +893,7 @@
    "sampling": "temperature 1.0",
    "notes": "Fireworks via OpenRouter (model ID deepseek/deepseek-v4.1-flash, quantization not published, at most 5 top logprobs) until 20 Oct 21:56 UTC, then the published weights on our GPUs (SGLang), still 5 top logprobs; the price stays Fireworks' list price for comparison",
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "leagues/league2.json",
     "tools/v3/page_v3.py",
     "src/players/llm.rs",
@@ -932,7 +932,7 @@
    "sampling": "temperature 1.0",
    "notes": "Fireworks via OpenRouter (model ID deepseek/deepseek-v4.1-flash, quantization not published) until 20 Oct 21:56 UTC, then the published weights on our GPUs (SGLang); letter probabilities read from the answer after the reasoning; the price stays Fireworks' list price for comparison",
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "leagues/league2.json",
     "tools/v3/page_v3.py",
     "src/players/llm.rs",
@@ -971,7 +971,7 @@
    "sampling": "temperature 1.0",
    "notes": "OpenRouter, pinned to Fireworks (no fallbacks); quantization not published",
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "leagues/league2.json",
     "tools/v3/page_v3.py",
     "src/players/llm.rs",
@@ -1005,7 +1005,7 @@
    "sampling": null,
    "notes": "GNU Backgammon 1.08, Beginner level (0-ply, deterministic noise 0.060); fixed anchor in every league",
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "tools/v3/page_v3.py"
    ],
    "missing": []
@@ -1035,7 +1035,7 @@
    "sampling": "temperature 1.0",
    "notes": "OpenRouter, pinned to Alibaba (its only provider); replaces Qwen3.8 Flash Next, which is not on OpenRouter; quantization not published",
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "leagues/league2.json",
     "tools/v3/page_v3.py",
     "src/players/llm.rs",
@@ -1074,7 +1074,7 @@
    "sampling": "temperature 1.0",
    "notes": "Liquid AI's own API until its matches were voided on 19 Oct 22:20 UTC; from 22:26 UTC Liquid's bf16 checkpoint on our GPU (vLLM)",
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "leagues/league2.json",
     "tools/v3/page_v3.py",
     "src/players/llm.rs",
@@ -1111,7 +1111,7 @@
    "sampling": "temperature 1.0",
    "notes": "Liquid AI's own API until its matches were voided on 19 Oct 22:20 UTC; from 22:26 UTC Liquid's bf16 checkpoint on our GPU (vLLM); letter read from a prefilled Answer: after the reasoning",
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "leagues/league2.json",
     "tools/v3/page_v3.py",
     "src/players/llm.rs",
@@ -1148,7 +1148,7 @@
    "sampling": "temperature 1.0",
    "notes": "moved between our GPUs and a DGX Spark during the league with the same image, checkpoint and arguments",
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "leagues/league2.json",
     "tools/v3/page_v3.py",
     "src/players/llm.rs",
@@ -1185,7 +1185,7 @@
    "sampling": "temperature 1.0",
    "notes": "moved between our GPUs and a DGX Spark during the league with the same image, checkpoint and arguments",
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "leagues/league2.json",
     "tools/v3/page_v3.py",
     "src/players/llm.rs",
@@ -1222,7 +1222,7 @@
    "sampling": "temperature 1.0",
    "notes": "Cerebras via OpenRouter (model ID qwen/qwen3.8-27b, fp16) before 19 Oct 22:26 UTC, where it finished no match; then on our GPU (vLLM, fp16); unconstrained letter",
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "leagues/league2.json",
     "tools/v3/page_v3.py",
     "src/players/llm.rs",
@@ -1259,7 +1259,7 @@
    "sampling": "temperature 1.0",
    "notes": "Cerebras via OpenRouter (model ID qwen/qwen3.8-27b, fp16) before 19 Oct 22:26 UTC, where it finished no match (its first 4 decisions came from there); then on our GPU (vLLM, fp16); letter read from a prefilled Answer: after the reasoning",
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "leagues/league2.json",
     "tools/v3/page_v3.py",
     "src/players/llm.rs",
@@ -1296,7 +1296,7 @@
    "sampling": "not sent (API default)",
    "notes": "ChatGPT subscription (Codex backend)",
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "leagues/league3.json",
     "tools/v3/page_v3.py",
     "src/players/llm.rs",
@@ -1332,7 +1332,7 @@
    "sampling": "not sent (API default)",
    "notes": "ChatGPT subscription (Codex backend)",
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "leagues/league3.json",
     "tools/v3/page_v3.py",
     "src/players/llm.rs",
@@ -1368,7 +1368,7 @@
    "sampling": "not sent (API default)",
    "notes": null,
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "leagues/league3.json",
     "tools/v3/page_v3.py",
     "src/players/llm.rs",
@@ -1404,7 +1404,7 @@
    "sampling": "not sent (API default)",
    "notes": null,
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "leagues/league3.json",
     "tools/v3/page_v3.py",
     "src/players/llm.rs",
@@ -1440,7 +1440,7 @@
    "sampling": "not sent (API default)",
    "notes": "the newest Fable the subscription serves",
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "leagues/league3.json",
     "tools/v3/page_v3.py",
     "src/players/llm.rs",
@@ -1476,7 +1476,7 @@
    "sampling": "not sent (API default)",
    "notes": null,
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "leagues/league3.json",
     "tools/v3/page_v3.py",
     "src/players/llm.rs",
@@ -1512,7 +1512,7 @@
    "sampling": "temperature 1.0",
    "notes": "Antigravity model id gemini-4-argon-low (model version gemini-4-argon); list price $2/$10 per million tokens until 2026-12-01 ($4/$20 after)",
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "leagues/league3.json",
     "tools/v3/page_v3.py",
     "src/players/llm.rs",
@@ -1548,7 +1548,7 @@
    "sampling": "temperature 1.0",
    "notes": "Antigravity model id gemini-4-argon-high (model version gemini-4-argon); list price $2/$10 per million tokens until 2026-12-01 ($4/$20 after)",
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "leagues/league3.json",
     "tools/v3/page_v3.py",
     "src/players/llm.rs",
@@ -1584,7 +1584,7 @@
    "sampling": "not sent (API default)",
    "notes": "letter constrained by a JSON schema",
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "leagues/league3.json",
     "tools/v3/page_v3.py",
     "src/players/llm.rs",
@@ -1620,7 +1620,7 @@
    "sampling": "not sent (API default)",
    "notes": "letter constrained by a JSON schema",
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "leagues/league3.json",
     "tools/v3/page_v3.py",
     "src/players/llm.rs",
@@ -1651,7 +1651,7 @@
    "sampling": null,
    "notes": "GNU Backgammon 1.08, Beginner level (0-ply, deterministic noise 0.060); fixed anchor in every league",
    "sources": [
-    "leagues.models (snapshot of v3.db)",
+    "players.settings (snapshot of v3.db)",
     "tools/v3/page_v3.py"
    ],
    "missing": []
@@ -1684,7 +1684,7 @@
     "tools/replay.py",
     "replay.db answers",
     "analysis/backgammon/index.html",
-    "leagues.models (snapshot of v3.db)"
+    "players.settings (snapshot of v3.db)"
    ],
    "missing": [
     "weights",
@@ -1720,7 +1720,7 @@
     "tools/replay.py",
     "replay.db answers",
     "analysis/backgammon/index.html",
-    "leagues.models (snapshot of v3.db)"
+    "players.settings (snapshot of v3.db)"
    ],
    "missing": [
     "weights",
@@ -1757,7 +1757,7 @@
     "replay.db answers",
     "analysis/backgammon/index.html",
     "mailbox/Backgammon benchmark v3 design final.md",
-    "leagues.models (snapshot of v3.db)"
+    "players.settings (snapshot of v3.db)"
    ],
    "missing": [
     "price.date",
@@ -2074,7 +2074,7 @@
     "replay.db answers",
     "analysis/backgammon/index.html",
     "mailbox/Backgammon benchmark v3 design final.md",
-    "leagues.models (snapshot of v3.db)"
+    "players.settings (snapshot of v3.db)"
    ],
    "missing": [
     "option_groups",
@@ -2110,7 +2110,7 @@
     "replay.db answers",
     "analysis/backgammon/index.html",
     "mailbox/Backgammon benchmark v3 design final.md",
-    "leagues.models (snapshot of v3.db)"
+    "players.settings (snapshot of v3.db)"
    ],
    "missing": [
     "option_groups",
@@ -2147,7 +2147,7 @@
     "replay.db answers",
     "analysis/backgammon/index.html",
     "mailbox/Backgammon benchmark v3 design final.md",
-    "leagues.models (snapshot of v3.db)"
+    "players.settings (snapshot of v3.db)"
    ],
    "missing": [
     "option_groups",
@@ -2219,7 +2219,7 @@
     "replay.db answers",
     "analysis/backgammon/index.html",
     "mailbox/Backgammon benchmark v3 design final.md",
-    "leagues.models (snapshot of v3.db)"
+    "players.settings (snapshot of v3.db)"
    ],
    "missing": [
     "option_groups",
@@ -2257,7 +2257,7 @@
     "replay.db answers",
     "analysis/backgammon/index.html",
     "mailbox/Backgammon benchmark v3 design final.md",
-    "leagues.models (snapshot of v3.db)"
+    "players.settings (snapshot of v3.db)"
    ],
    "missing": [
     "option_groups",

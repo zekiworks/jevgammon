@@ -1,17 +1,18 @@
 //! League: a single round robin between its current participants. The fixture is implicit:
-//! every pair of current participants without a valid match under the league's rules is
-//! still to play, in a matchday order derived from the participants (founders by a round
-//! robin drawn from the league seed, each late joiner on a matchday of its own after it).
+//! every pair of current participants without a valid match is still to play, in a
+//! matchday order derived from the participants (founders by a round robin drawn from the
+//! league seed, each late joiner on a matchday of its own after it). A pair plays at most
+//! once: its valid match from any league, ladder round or Cup counts here too, whatever
+//! rules it was played under; new matches are played under the league's rules.
 //! A match starts as soon as both its models can take another one (`max_matches` each), in
 //! fixture order, so the matchday order holds wherever it can but nobody waits for a whole
 //! matchday. A match that fails is deferred and resumed later from its last stored turn;
-//! only the failing model backs off, the others play on. Ties in the table are broken by
-//! more games won, then fewer games lost; a tie still standing that decides any of the
-//! first three places goes to a playoff.
+//! only the failing model backs off, the others play on. The table ranks by points, then
+//! more games won, then fewer games lost, then the lower error rate over all of a setup's
+//! valid matches (`scores`); there are no playoffs.
 
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
-use std::pin::Pin;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
@@ -29,12 +30,11 @@ use crate::runner::{
     Control, Event, Harness, MAX_SPEED, MatchResult, MatchSettings, PlayerFault, Protocol, Runner,
     describe_clock,
 };
+use crate::scores;
 
 /// League points for a match won, drawn, lost.
 const WIN_POINTS: u32 = 3;
 const DRAW_POINTS: u32 = 1;
-/// Places a playoff decides when the table leaves them tied.
-const PLAYOFF_PLACES: usize = 3;
 /// After a failure no new match of the failing model (or, when no model is to blame, the
 /// failed match) starts for `FIRST_BACKOFF`, doubling with every failure in a row up to
 /// `MAX_BACKOFF`; the failed match is resumed after it.
@@ -105,6 +105,8 @@ struct League {
     protocol: Arc<Protocol>,
     /// First and longest backoff after failures.
     backoff: (Duration, Duration),
+    /// The site's GNUbg score shards, for the error-rate tiebreak (`scores::error_rates`).
+    scores: PathBuf,
 }
 
 /// A model of the league and how many matches it plays at once.
@@ -127,16 +129,14 @@ impl Entrant {
     }
 }
 
-/// A match of the league: one pair of current participants (league stage), or a playoff.
+/// A match of the league: one pair of current participants.
 #[derive(Clone, Debug)]
 struct Fixture {
     /// Position in the derived fixture; earlier fixtures start first.
     order: usize,
-    /// `league` or `playoff`.
-    stage: &'static str,
-    /// `matchday 3: A v B`, or the playoff key with the pair.
+    /// `matchday 3: A v B`.
     label: String,
-    matchday: Option<u32>,
+    matchday: u32,
     /// model1 plays white in the first game of every round.
     model1: String,
     model2: String,
@@ -156,18 +156,14 @@ impl Fixture {
         (a.min(b), a.max(b))
     }
 
-    /// The label a playoff match is found by (league matches are found by their pair).
-    fn playoff_label(&self) -> Option<&str> {
-        (self.stage != "league").then_some(self.label.as_str())
-    }
-
     /// The same match with the sides the other way round.
     fn swap(&mut self) {
         std::mem::swap(&mut self.model1, &mut self.model2);
         self.players.swap(0, 1);
-        if let Some(day) = self.matchday {
-            self.label = format!("matchday {day}: {} v {}", self.model1, self.model2);
-        }
+        self.label = format!(
+            "matchday {}: {} v {}",
+            self.matchday, self.model1, self.model2
+        );
     }
 }
 
@@ -185,26 +181,41 @@ struct Row {
     /// Backgammon points scored and conceded; shown, not used for ranking.
     scored: u32,
     conceded: u32,
+    /// Error rate over all of the setup's valid matches; `None` when none is scored.
+    error_rate: Option<f64>,
 }
 
 impl Row {
-    /// Ranking key: league points, then games won, then fewer games lost.
-    fn key(&self) -> (u32, u32, std::cmp::Reverse<u32>) {
-        (
-            self.points,
-            self.games_won,
-            std::cmp::Reverse(self.games_lost),
-        )
+    /// Ranking order, better first: league points, then games won, then fewer games lost,
+    /// then the lower error rate (a row without one after a row with one).
+    fn rank(&self, other: &Row) -> std::cmp::Ordering {
+        other
+            .points
+            .cmp(&self.points)
+            .then(other.games_won.cmp(&self.games_won))
+            .then(self.games_lost.cmp(&other.games_lost))
+            .then(match (self.error_rate, other.error_rate) {
+                (Some(a), Some(b)) => a.total_cmp(&b),
+                (Some(_), None) => std::cmp::Ordering::Less,
+                (None, Some(_)) => std::cmp::Ordering::Greater,
+                (None, None) => std::cmp::Ordering::Equal,
+            })
     }
 }
 
-/// The table for `names` over `results`, best first; equal keys keep `names` order.
-/// Results of players outside `names` (they left the league) are left out.
-fn table(names: &[String], results: &[(String, String, MatchResult)]) -> Vec<Row> {
+/// The table for `names` over `results`, best first (`Row::rank`, with each name's error
+/// rate from `rates`); rows equal on everything keep `names` order. Results of players
+/// outside `names` (they left the league) are left out.
+fn table(
+    names: &[String],
+    results: &[(String, String, MatchResult)],
+    rates: &HashMap<String, f64>,
+) -> Vec<Row> {
     let mut rows: Vec<Row> = names
         .iter()
         .map(|name| Row {
             name: name.clone(),
+            error_rate: rates.get(name).copied(),
             ..Row::default()
         })
         .collect();
@@ -239,36 +250,39 @@ fn table(names: &[String], results: &[(String, String, MatchResult)]) -> Vec<Row
             }
         }
     }
-    rows.sort_by(|a, b| b.key().cmp(&a.key()));
+    rows.sort_by(Row::rank);
     rows
 }
 
-/// Runs of equal ranking keys in a sorted table, as index ranges.
-fn tie_groups(rows: &[Row]) -> Vec<std::ops::Range<usize>> {
-    let mut groups = Vec::new();
-    let mut start = 0;
-    for i in 1..=rows.len() {
-        if i == rows.len() || rows[i].key() != rows[start].key() {
-            if i - start > 1 {
-                groups.push(start..i);
-            }
-            start = i;
-        }
+/// Places of a sorted table, from 1: rows equal on everything share the first one's place.
+fn places(rows: &[Row]) -> Vec<usize> {
+    let mut out: Vec<usize> = Vec::with_capacity(rows.len());
+    for i in 0..rows.len() {
+        let shared = i > 0 && rows[i - 1].rank(&rows[i]).is_eq();
+        out.push(if shared { out[i - 1] } else { i + 1 });
     }
-    groups
+    out
+}
+
+/// The final ranking as stored in `leagues.ranking`: `"place. name"`, best first.
+fn ranking(rows: &[Row]) -> Vec<String> {
+    rows.iter()
+        .zip(places(rows))
+        .map(|(row, place)| format!("{place}. {}", row.name))
+        .collect()
 }
 
 fn print_table(title: &str, rows: &[Row]) {
     let width = rows.iter().map(|r| r.name.len()).max().unwrap_or(5).max(5);
     println!("\n{title}");
     println!(
-        "  #  {:width$}   P   W   D   L  Pts   GW   GL    PF    PA",
+        "  #  {:width$}   P   W   D   L  Pts   GW   GL    PF    PA    Err",
         "Model"
     );
-    for (place, row) in rows.iter().enumerate() {
+    for (place, row) in places(rows).into_iter().zip(rows) {
         println!(
-            " {:>2}  {:width$} {:>3} {:>3} {:>3} {:>3} {:>4} {:>4} {:>4} {:>5} {:>5}",
-            place + 1,
+            " {:>2}  {:width$} {:>3} {:>3} {:>3} {:>3} {:>4} {:>4} {:>4} {:>5} {:>5} {:>6}",
+            place,
             row.name,
             row.played,
             row.won,
@@ -278,7 +292,8 @@ fn print_table(title: &str, rows: &[Row]) {
             row.games_won,
             row.games_lost,
             row.scored,
-            row.conceded
+            row.conceded,
+            row.error_rate.map_or("-".to_owned(), |e| format!("{e:.1}"))
         );
     }
 }
@@ -567,9 +582,8 @@ fn derive_fixture(
             let (one, two) = if first == a.player_id { (a, b) } else { (b, a) };
             Fixture {
                 order,
-                stage: "league",
                 label: format!("matchday {day}: {} v {}", one.config.name, two.config.name),
-                matchday: Some(day),
+                matchday: day,
                 model1: one.config.name.clone(),
                 model2: two.config.name.clone(),
                 players: [one.player_id, two.player_id],
@@ -581,9 +595,15 @@ fn derive_fixture(
         .collect()
 }
 
-pub async fn run(db_path: PathBuf, setup: &Setup, start: Start, harness: Harness) -> Result<()> {
+pub async fn run(
+    db_path: PathBuf,
+    setup: &Setup,
+    start: Start,
+    harness: Harness,
+    scores: PathBuf,
+) -> Result<()> {
     let mut league_id = None;
-    let result = run_inner(&db_path, setup, start, harness, &mut league_id).await;
+    let result = run_inner(&db_path, setup, start, harness, scores, &mut league_id).await;
     if let Some(id) = league_id {
         // Lets `--resume` and `league-add` see at once that no runner holds the league.
         let _ = Db::open(&db_path).and_then(|db| db.clear_heartbeat(id));
@@ -601,6 +621,7 @@ async fn run_inner(
     setup: &Setup,
     start: Start,
     harness: Harness,
+    scores: PathBuf,
     league_id: &mut Option<i64>,
 ) -> Result<()> {
     let db_path = db_path.to_path_buf();
@@ -670,6 +691,7 @@ async fn run_inner(
         control,
         protocol: protocol.clone(),
         backoff: (FIRST_BACKOFF, MAX_BACKOFF),
+        scores,
     });
     let mut state = State::default();
     state.sync(&db, &league, setup).await?;
@@ -732,16 +754,20 @@ async fn run_inner(
                 state.played.len(),
                 state.fixtures.len()
             ),
-            &table(&league.names.read(), &results_of(&state.played)),
+            &table(
+                &league.names.read(),
+                &results_of(&state.played),
+                &league.rates(&db, false),
+            ),
         );
     }
     play_league(league, &db, setup, state).await
 }
 
-/// Plays the league stage, then the playoffs, and stores the final ranking. A failing match
-/// is deferred and its failing model backs off while the other matches go on; when only
-/// deferred matches are left, the league waits for the backoffs and retries rather than
-/// stopping. Returns early only on a stop request (Ctrl-C, SIGTERM).
+/// Plays the league stage and stores the final ranking (`ranking`, no playoffs). A failing
+/// match is deferred and its failing model backs off while the other matches go on; when
+/// only deferred matches are left, the league waits for the backoffs and retries rather
+/// than stopping. Returns early only on a stop request (Ctrl-C, SIGTERM).
 async fn play_league(league: Arc<League>, db: &Db, setup: &Setup, mut state: State) -> Result<()> {
     let id = league.id;
     let stopped = || {
@@ -756,7 +782,7 @@ async fn play_league(league: Arc<League>, db: &Db, setup: &Setup, mut state: Sta
     let mut set = JoinSet::new();
     // Whether the current wait with nothing to play was explained in the log.
     let mut waiting_told = false;
-    // League stage, then playoffs; again when players joined meanwhile.
+    // League stage; again when players joined meanwhile.
     loop {
         let mut tick = tokio::time::interval(RELOAD);
         loop {
@@ -778,7 +804,7 @@ async fn play_league(league: Arc<League>, db: &Db, setup: &Setup, mut state: Sta
                     waiting_told = false;
                     state.running.insert(fixture.key());
                     let league = league.clone();
-                    set.spawn(async move { league.play(fixture, false).await });
+                    set.spawn(async move { league.play(fixture).await });
                 }
             }
             if set.is_empty() {
@@ -833,16 +859,18 @@ async fn play_league(league: Arc<League>, db: &Db, setup: &Setup, mut state: Sta
                             backoffs.clear(&fixture);
                             let day = fixture.matchday;
                             state.played.push((fixture, result));
-                            if let Some(day) = day
-                                && state.matchday_done(day)
-                            {
+                            if state.matchday_done(day) {
                                 print_table(
                                     &format!(
                                         "Table after matchday {day} ({} of {} matches played)",
                                         state.played.len(),
                                         state.fixtures.len()
                                     ),
-                                    &table(&league.names.read(), &results_of(&state.played)),
+                                    &table(
+                                        &league.names.read(),
+                                        &results_of(&state.played),
+                                        &league.rates(db, false),
+                                    ),
                                 );
                             }
                         }
@@ -866,57 +894,19 @@ async fn play_league(league: Arc<League>, db: &Db, setup: &Setup, mut state: Sta
                 _ = league.control.cancelled(), if !league.control.is_cancelled() => {}
             }
         }
-        // Playoffs wait until every pair, joiners' included, is played.
+        // The final ranking waits until every pair, joiners' included, is played.
         state.sync(db, &league, setup).await?;
         if !state.pending.is_empty() || state.skipped > 0 {
             continue;
         }
         let names = league.names.read().clone();
-        let rows = table(&names, &results_of(&state.played));
-        let mut ranking: Vec<String> = rows.iter().map(|r| r.name.clone()).collect();
-        // Places of unresolved ties outside the playoff places: (start, end) shares one place.
-        let mut shared = Vec::new();
-        for group in tie_groups(&rows) {
-            let members: Vec<String> = ranking[group.clone()].to_vec();
-            if group.start >= PLAYOFF_PLACES {
-                shared.push(group);
-                continue;
-            }
-            let key = format!("playoff for places {}-{}", group.start + 1, group.end);
-            println!(
-                "\n{key}: {} are level on points, games won, and games lost",
-                members.join(", ")
-            );
-            let ordered = league.order(members, key).await?;
-            ranking.splice(group, ordered);
-        }
-        // Participants changed during the playoffs: play the new pairs, then rank and play
-        // off again.
-        state.sync(db, &league, setup).await?;
-        if !state.pending.is_empty() || state.skipped > 0 || names != *league.names.read() {
-            let voided = db.void_playoffs(id, "participants changed during the playoffs")?;
-            println!("participants changed during the playoffs: {voided} playoff matches voided");
-            continue;
-        }
-        let places: Vec<usize> = (0..ranking.len())
-            .map(|i| {
-                shared
-                    .iter()
-                    .find(|g| g.contains(&i))
-                    .map_or(i + 1, |g| g.start + 1)
-            })
-            .collect();
-        print_table("Final table (league stage)", &rows);
+        let rows = table(&names, &results_of(&state.played), &league.rates(db, true));
+        print_table("Final table", &rows);
+        let stored = ranking(&rows);
         println!("\nFinal ranking");
-        for (name, place) in ranking.iter().zip(&places) {
-            let tied = places.iter().filter(|p| *p == place).count() > 1;
-            println!("  {place}{} {name}", if tied { "=" } else { "." });
+        for line in &stored {
+            println!("  {line}");
         }
-        let stored: Vec<String> = ranking
-            .iter()
-            .zip(&places)
-            .map(|(name, place)| format!("{place}. {name}"))
-            .collect();
         db.finish_league(id, &stored)?;
         return Ok(());
     }
@@ -1001,7 +991,7 @@ impl State {
             }
         }
         let ids: Vec<i64> = participants.iter().map(|p| p.player_id).collect();
-        let matches = db.matches_between(&league.rules, &ids, "league")?;
+        let matches = db.matches_between(&ids)?;
         let fixtures = derive_fixture(league.seed, &league.rules, &participants, &matches);
         self.played.clear();
         self.pending.clear();
@@ -1050,7 +1040,7 @@ impl State {
         let played: HashSet<(i64, i64)> = self.played.iter().map(|(f, _)| f.key()).collect();
         self.fixtures
             .iter()
-            .filter(|f| f.matchday == Some(day))
+            .filter(|f| f.matchday == day)
             .all(|f| played.contains(&f.key()))
     }
 }
@@ -1060,7 +1050,7 @@ fn open_pairs(db: &Db, id: i64, name: &str) -> Result<Vec<String>> {
     let row = db.league(id)?;
     let participants = db.participants(id)?;
     let ids: Vec<i64> = participants.iter().map(|p| p.player_id).collect();
-    let matches = db.matches_between(&row.rules, &ids, "league")?;
+    let matches = db.matches_between(&ids)?;
     Ok(
         derive_fixture(row.seed, &row.rules, &participants, &matches)
             .into_iter()
@@ -1074,33 +1064,31 @@ fn open_pairs(db: &Db, id: i64, name: &str) -> Result<Vec<String>> {
 
 /// What `add_player` did.
 pub struct Addition {
-    /// The joiner's unplayed pairs.
+    /// The joiner's unplayed pairs (pairs it already played elsewhere count as played).
     pub fixtures: Vec<String>,
-    pub stale_playoffs: usize,
     pub note: String,
 }
 
 /// Adds `config` to league `id` as a participant (its `players` row is created, or reused
-/// when the name is known with the same settings) with a note; earlier playoffs are voided.
-/// Its pairs with every current participant become pending: a running league process picks
-/// them up within `RELOAD`, otherwise `--resume` plays them.
+/// when the name is known with the same settings) with a note. Its pairs with every current
+/// participant that it has not played anywhere become pending: a running league process
+/// picks them up within `RELOAD`, otherwise `--resume` plays them.
 pub fn add_player(db: &mut Db, id: i64, config: &PlayerConfig, date: &str) -> Result<Addition> {
     let note = format!("{} added on {date}.", config.name);
-    let stale_playoffs = db.add_participant(id, config, &note)?;
+    db.add_participant(id, config, &note)?;
     Ok(Addition {
         fixtures: open_pairs(db, id, &config.name)?,
-        stale_playoffs,
         note,
     })
 }
 
-/// Ends `name`'s participation in league `id`: its matches stay (and count again if it
-/// rejoins) but leave the table, its unplayed pairs leave the fixture. Returns how many
-/// playoff matches were voided and how many pairs it had left to play.
-pub fn remove_player(db: &mut Db, id: i64, name: &str, reason: &str) -> Result<(usize, usize)> {
+/// Ends `name`'s participation in league `id`: its matches stay valid (and count wherever it
+/// meets the same opponent again) but leave the table, its unplayed pairs leave the
+/// fixture. Returns how many pairs it had left to play.
+pub fn remove_player(db: &mut Db, id: i64, name: &str, reason: &str) -> Result<usize> {
     let open = open_pairs(db, id, name)?.len();
-    let voided = db.remove_participant(id, name, reason)?;
-    Ok((voided, open))
+    db.remove_participant(id, name, reason)?;
+    Ok(open)
 }
 
 impl League {
@@ -1112,24 +1100,52 @@ impl League {
             .with_context(|| format!("{name} is not ready"))
     }
 
-    /// The result of `fixture`'s match: stored when it already finished, otherwise played
-    /// now. A match started before (cut off by a failure, a stop, or the process dying)
-    /// resumes from its last stored turn under its match id. Returns the fixture with the
-    /// sides of its match (another league with the same rules may have created it).
-    async fn play(&self, mut fixture: Fixture, decisive: bool) -> (Fixture, Result<MatchResult>) {
-        let result = self.play_match(&mut fixture, decisive).await;
+    /// Error rates by name for the tiebreak (`scores::error_rates`). Without readable
+    /// scores the map is empty and ties stay shared. `warn`: say which current
+    /// participants have decisions not scored yet (their error rate is partial).
+    fn rates(&self, db: &Db, warn: bool) -> HashMap<String, f64> {
+        match scores::error_rates(db, &self.scores) {
+            Ok(all) => {
+                if warn {
+                    let names = self.names.read();
+                    let partial: Vec<String> = names
+                        .iter()
+                        .filter_map(|n| {
+                            all.get(n)
+                                .filter(|r| r.pending > 0)
+                                .map(|r| format!("{n} ({})", r.pending))
+                        })
+                        .collect();
+                    if !partial.is_empty() {
+                        println!(
+                            "error rates: decisions not scored yet: {}; once the site update \
+                             has scored them, `jevgammon rank --league {}` ranks again",
+                            partial.join(", "),
+                            self.id
+                        );
+                    }
+                }
+                tiebreak_rates(&all)
+            }
+            Err(error) => {
+                println!("error rates unavailable, ties stay shared: {error:#}");
+                HashMap::new()
+            }
+        }
+    }
+
+    /// The result of `fixture`'s match: stored when it already finished (in this league or
+    /// anywhere else), otherwise played now. A match started before (cut off by a failure,
+    /// a stop, or the process dying) resumes from its last stored turn under its match id.
+    /// Returns the fixture with the sides of its match.
+    async fn play(&self, mut fixture: Fixture) -> (Fixture, Result<MatchResult>) {
+        let result = self.play_match(&mut fixture).await;
         (fixture, result)
     }
 
-    async fn play_match(&self, fixture: &mut Fixture, decisive: bool) -> Result<MatchResult> {
+    async fn play_match(&self, fixture: &mut Fixture) -> Result<MatchResult> {
         let db = Db::open(&self.db_path)?;
-        let label = fixture.playoff_label().map(str::to_owned);
-        let existing = db.current_match(
-            &self.rules,
-            fixture.stage,
-            fixture.players,
-            label.as_deref(),
-        )?;
+        let existing = db.current_match(fixture.players)?;
         let current = match existing {
             Some(current) => current,
             None => {
@@ -1139,30 +1155,37 @@ impl League {
                 ];
                 db.ensure_league_match(&NewMatch {
                     rules: &self.rules,
-                    stage: fixture.stage,
                     label: &fixture.label,
                     players: fixture.players,
                     specs: [&specs[0], &specs[1]],
                     seed: fixture.seed,
                     protocol: &self.protocol,
                 })?;
-                db.current_match(
-                    &self.rules,
-                    fixture.stage,
-                    fixture.players,
-                    label.as_deref(),
-                )?
-                .context("the created match is not found")?
+                db.current_match(fixture.players)?
+                    .context("the created match is not found")?
             }
         };
+        if let Some(result) = db.match_result(current.id)? {
+            if current.player1 != fixture.players[0] {
+                fixture.swap();
+            }
+            fixture.match_id = Some(current.id);
+            return Ok(result);
+        }
+        let rules = db.match_rules(current.id)?;
+        if rules != self.rules {
+            bail!(
+                "the pair's unfinished match #{} was started under other rules ({}); finish it \
+                 where it started or void it (`jevgammon void`)",
+                current.id,
+                rules.canonical()
+            );
+        }
         if current.player1 != fixture.players[0] {
             fixture.swap();
         }
         fixture.match_id = Some(current.id);
         fixture.seed = current.seed;
-        if let Some(result) = db.match_result(current.id)? {
-            return Ok(result);
-        }
         let names = [fixture.model1.clone(), fixture.model2.clone()];
         let players = [self.player(&names[0])?, self.player(&names[1])?];
         let tag = fixture.label.clone();
@@ -1193,7 +1216,6 @@ impl League {
                 rounds: self.rules.rounds,
                 clock: self.rules.clock(),
                 max_turns: self.rules.max_turns,
-                decisive,
                 concurrent_mirror: self.rules.mirror_concurrent,
                 protocol: self.protocol.clone(),
             },
@@ -1262,120 +1284,32 @@ impl League {
              turn then, other matches go on",
             fixture.label, fixture.label
         );
-        let stored = Db::open(&self.db_path).and_then(|db| {
-            match db.current_match(
-                &self.rules,
-                fixture.stage,
-                fixture.players,
-                fixture.playoff_label(),
-            )? {
+        let stored =
+            Db::open(&self.db_path).and_then(|db| match db.current_match(fixture.players)? {
                 Some(current) => db.defer_match(current.id, &message),
                 None => Ok(()),
-            }
-        });
+            });
         if let Err(error) = stored {
             println!("[{}] storing the failure failed: {error:#}", fixture.label);
         }
     }
-
-    /// `play` until the match finishes (playoffs, played one at a time): after a failure
-    /// the match waits out a doubling backoff and resumes. Only a stop request ends it.
-    async fn play_until_done(
-        &self,
-        mut fixture: Fixture,
-        decisive: bool,
-    ) -> Result<(Fixture, MatchResult)> {
-        let mut backoff: Option<Backoff> = None;
-        loop {
-            let (played, result) = self.play(fixture, decisive).await;
-            fixture = played;
-            let error = match result {
-                Ok(result) => return Ok((fixture, result)),
-                Err(error) if self.control.is_cancelled() => return Err(error),
-                Err(error) => error,
-            };
-            let now = Instant::now();
-            let next = Backoff::after(backoff.as_ref(), format!("{error:#}"), now, self.backoff);
-            let who = blamed(&fixture, &error).unwrap_or("the match");
-            self.defer(
-                &fixture,
-                &error,
-                &format!("{who} backs off {}", next.describe(now)),
-            );
-            tokio::select! {
-                _ = tokio::time::sleep(next.delay) => {}
-                _ = self.control.cancelled() => bail!("cancelled"),
-            }
-            backoff = Some(next);
-        }
-    }
-
-    /// Orders a tied group by playoff: one decisive match for two models; for more, a
-    /// decisive round robin ranked like the league, with its own ties played off again.
-    /// A playoff match is found again by its pair, rules and label (`key` and the pair), so
-    /// a resumed league resumes it; its seed comes from the rules and the label.
-    fn order(
-        &self,
-        mut group: Vec<String>,
-        key: String,
-    ) -> Pin<Box<dyn Future<Output = Result<Vec<String>>> + Send + '_>> {
-        Box::pin(async move {
-            group.sort();
-            let mut results = Vec::new();
-            for i in 0..group.len() {
-                for j in i + 1..group.len() {
-                    let (a, b) = (&group[i], &group[j]);
-                    let label = format!("{key}: {a} v {b}");
-                    let seed = derive_seed(self.rules.hash(), &label);
-                    let (model1, model2) = if seed & 1 == 0 { (a, b) } else { (b, a) };
-                    let players = {
-                        let ids = self.ids.read();
-                        let id = |name: &String| {
-                            ids.get(name)
-                                .copied()
-                                .with_context(|| format!("{name} left the league"))
-                        };
-                        [id(model1)?, id(model2)?]
-                    };
-                    let fixture = Fixture {
-                        order: 0,
-                        stage: "playoff",
-                        label,
-                        matchday: None,
-                        model1: model1.clone(),
-                        model2: model2.clone(),
-                        players,
-                        seed,
-                        match_id: None,
-                        status: None,
-                    };
-                    let (fixture, result) = self.play_until_done(fixture, true).await?;
-                    results.push((fixture.model1, fixture.model2, result));
-                }
-            }
-            let rows = table(&group, &results);
-            let mut ordered: Vec<String> = rows.iter().map(|r| r.name.clone()).collect();
-            if group.len() > 2 {
-                print_table(&key, &rows);
-            }
-            for tie in tie_groups(&rows) {
-                let sub_key = format!("{key} > places {}-{}", tie.start + 1, tie.end);
-                let sub = self.order(ordered[tie.clone()].to_vec(), sub_key).await?;
-                ordered.splice(tie, sub);
-            }
-            Ok(ordered)
-        })
-    }
 }
 
-/// The league stage's table of league `id` as `(name, P, W, D, L, Pts, GW, GL, PF, PA)`
-/// lines, best first, computed as the runner computes it: valid finished matches between
-/// current participants under the league's rules.
-pub fn standings(db: &Db, id: i64) -> Result<Vec<Standing>> {
+/// Converts the error rates of `scores::error_rates` to the tiebreak's map (setups with a
+/// scored decision).
+pub fn tiebreak_rates(all: &HashMap<String, scores::ErrorRate>) -> HashMap<String, f64> {
+    all.iter()
+        .filter_map(|(name, rate)| rate.rate().map(|r| (name.clone(), r)))
+        .collect()
+}
+
+/// League `id`'s table rows as the runner ranks them, from the valid finished matches between
+/// its current participants (from any league), with `rates` for the tiebreak.
+fn league_rows(db: &Db, id: i64, rates: &HashMap<String, f64>) -> Result<Vec<Row>> {
     let row = db.league(id)?;
     let participants = db.participants(id)?;
     let ids: Vec<i64> = participants.iter().map(|p| p.player_id).collect();
-    let matches = db.matches_between(&row.rules, &ids, "league")?;
+    let matches = db.matches_between(&ids)?;
     let fixtures = derive_fixture(row.seed, &row.rules, &participants, &matches);
     let mut played = Vec::new();
     for fixture in fixtures {
@@ -1386,10 +1320,44 @@ pub fn standings(db: &Db, id: i64) -> Result<Vec<Standing>> {
         }
     }
     let names: Vec<String> = participants.iter().map(|p| p.config.name.clone()).collect();
-    Ok(table(&names, &results_of(&played))
+    Ok(table(&names, &results_of(&played), rates))
+}
+
+/// The league stage's table of league `id` as `(name, P, W, D, L, Pts, GW, GL, PF, PA)`
+/// lines, best first, without the error-rate tiebreak (rows level on points and games keep
+/// the participants' order): what `jevgammon migrate` compares with the old layout.
+pub fn standings(db: &Db, id: i64) -> Result<Vec<Standing>> {
+    Ok(league_rows(db, id, &HashMap::new())?
         .into_iter()
         .map(Standing::from)
         .collect())
+}
+
+/// What `rank_league` found.
+pub struct Ranked {
+    /// `"place. name"`, best first, as `leagues.ranking` stores it.
+    pub ranking: Vec<String>,
+    /// Current participants with decisions not scored yet, and how many.
+    pub unscored: Vec<(String, u64)>,
+}
+
+/// Prints league `id`'s final table with the error-rate tiebreak (error rates from the
+/// score shards in `scores`) and returns its ranking (`jevgammon rank`).
+pub fn rank_league(db: &Db, id: i64, scores: &std::path::Path) -> Result<Ranked> {
+    let all = scores::error_rates(db, scores)?;
+    let rows = league_rows(db, id, &tiebreak_rates(&all))?;
+    print_table(&format!("League #{id}"), &rows);
+    Ok(Ranked {
+        ranking: ranking(&rows),
+        unscored: rows
+            .iter()
+            .filter_map(|r| {
+                all.get(&r.name)
+                    .filter(|e| e.pending > 0)
+                    .map(|e| (r.name.clone(), e.pending))
+            })
+            .collect(),
+    })
 }
 
 /// One line of `standings`.
@@ -1419,9 +1387,10 @@ impl From<Row> for Standing {
     }
 }
 
-/// Ranks `(model1, model2, result)` lines for `names` like the league table does.
+/// Ranks `(model1, model2, result)` lines for `names` like the league table does, without
+/// the error-rate tiebreak.
 pub fn rank(names: &[String], results: &[(String, String, MatchResult)]) -> Vec<Standing> {
-    table(names, results)
+    table(names, results, &HashMap::new())
         .into_iter()
         .map(Standing::from)
         .collect()

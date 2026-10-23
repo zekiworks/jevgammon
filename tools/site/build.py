@@ -78,10 +78,10 @@ def compute(args) -> dict:
             started=lg["started"], finished=lg["finished"],
             decisions=len(lg["decisions"]), scored=sum(1 for d in lg["decisions"] if d["scored"]),
             matches_list=lg["matches_list"],
-            standings=[dict(place=i, name=t["name"], played=t["played"], won=t["won"], drawn=t["drawn"],
+            standings=[dict(place=t["place"], name=t["name"], played=t["played"], won=t["won"], drawn=t["drawn"],
                             lost=t["lost"], points=t["points"], games_won=t["gw"], games_lost=t["gl"],
                             gammons_won=lg["gammons"].get(t["name"], 0), to_play=lg["left"].get(t["name"], 0))
-                       for i, t in enumerate(lg["table"], 1)],
+                       for t in lg["table"]],
             setups=summary, references=A.references(lg["dataset"], lg["decisions"], names)))
     v1 = A.load_v1(ROOT / "replay.db", ROOT / "positions/v1.jsonl")
     v1_summary = A.dataset_summary("v1-set", v1["decisions"], v1["setups"])

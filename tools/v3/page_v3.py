@@ -14,7 +14,7 @@ the HTML written here is the no-JavaScript fallback. Change both together.
 Standings come from tools/league_web.py (league_fixtures, league_table), so they match the
 dashboard: only finished league-stage matches count. Decisions are turns decided by the model
 ('model', or 'fallback' when the answer named no option and a random legal play was made) in
-matches linked from league_matches; voided and removed matches are not linked.
+valid staged matches of the league's current participants (league_match_view); voided matches are not listed.
 
 Per setup: error rate = 500 x mean 2-ply equity loss over scored decisions (every decision has two
 or more legal plays), with a 95% bootstrap interval resampling games; best-play share (loss <
@@ -46,7 +46,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from league_web import league_fixtures, league_table  # noqa: E402
+from league_web import league_fixtures, league_table, participants  # noqa: E402
 
 BOOTSTRAP = 2000
 BEST, BLUNDER = 0.001, 0.08
@@ -148,9 +148,9 @@ def league(conn: sqlite3.Connection, lid: int, scored: dict, rng: random.Random,
            taken: datetime) -> dict:
     """One league's standings and setups; `now` is the build time, `taken` when the snapshot was written."""
     row = conn.execute("SELECT * FROM leagues WHERE id = ?", (lid,)).fetchone()
-    roster = json.loads(row["models"])
+    roster = [p["settings"] for p in participants(conn, lid)]
     names = [m["name"] for m in roster]
-    fixtures, games_won = league_fixtures(conn, lid)
+    fixtures, games_won = league_fixtures(conn, row)
     fixtures = [f for f in fixtures if f["stage"] == "league"]
     table = league_table(names, fixtures, games_won)
     left = {n: 0 for n in names}
@@ -199,8 +199,9 @@ def league(conn: sqlite3.Connection, lid: int, scored: dict, rng: random.Random,
         """SELECT t.id, g.id AS game_id, CASE t.player WHEN 1 THEN lm.model1 ELSE lm.model2 END AS name,
                   t.decided_by, t.legal_count, t.probability_source, COALESCE(t.request_ms, t.latency_ms) AS ms,
                   t.cost_usd
-           FROM turns t JOIN games g ON g.id = t.game_id JOIN league_matches lm ON lm.match_id = g.match_id
-           WHERE lm.league_id = ? AND t.decided_by IN ('model', 'fallback')""",
+           FROM turns t JOIN games g ON g.id = t.game_id JOIN league_match_view lm ON lm.match_id = g.match_id
+           WHERE lm.league_id = ? AND t.decided_by IN ('model', 'fallback')
+           ORDER BY lm.label, g.id, t.turn_no""",
         (lid,),
     ):
         m = per.setdefault(r["name"], dict(decisions=0, invalid=0, ms=0, priced=0, cost=0.0, readout={}, games={}))
@@ -253,7 +254,7 @@ def league(conn: sqlite3.Connection, lid: int, scored: dict, rng: random.Random,
         models.append(out)
     finished = sum(f["status"] == "finished" for f in fixtures)
     games = conn.execute(
-        """SELECT COUNT(*) FROM games g JOIN league_matches lm ON lm.match_id = g.match_id AND lm.league_id = ?
+        """SELECT COUNT(*) FROM games g JOIN league_match_view lm ON lm.match_id = g.match_id AND lm.league_id = ?
            WHERE g.winner_player IS NOT NULL""",
         (lid,),
     ).fetchone()[0]
@@ -395,10 +396,9 @@ def anchor_stats(conn: sqlite3.Connection) -> dict:
     for lid in (1, 2, 3):
         kinds = {k: [0, 0] for k in ("anchor", "models", "programs")}  # finished games, gammon or backgammon
         wins = gammon_wins = certain = 0
-        programs = {m["name"] for m in json.loads(conn.execute("SELECT models FROM leagues WHERE id = ?", (lid,))
-                                                  .fetchone()[0]) if m["name"] in ("Random", "Safest")}
+        programs = {p["name"] for p in participants(conn, lid) if p["name"] in ("Random", "Safest")}
         for lm in conn.execute(
-            """SELECT lm.model1, lm.model2, m.id, m.winner, m.rounds_planned FROM league_matches lm
+            """SELECT lm.model1, lm.model2, m.id, m.winner, m.rounds_planned FROM league_match_view lm
                JOIN matches m ON m.id = lm.match_id
                WHERE lm.league_id = ? AND lm.stage = 'league' AND m.status = 'finished'""", (lid,)):
             pair = {lm["model1"], lm["model2"]}

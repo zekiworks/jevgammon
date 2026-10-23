@@ -310,9 +310,13 @@ ensure_thinkers() {
 }
 
 league2_status() { sqlite3 -readonly -cmd '.timeout 60000' v3.db "SELECT status FROM leagues WHERE id = 2"; }
+# Unplayed League 2 pairs: pairs of current participants without a finished valid match (league_match_view).
 league2_left() {
-  sqlite3 -readonly -cmd '.timeout 60000' v3.db "SELECT count(*) FROM league_matches lm LEFT JOIN matches m ON m.id = lm.match_id
-    WHERE lm.league_id = 2 AND coalesce(m.status, '') != 'finished'"
+  sqlite3 -readonly -cmd '.timeout 60000' v3.db "SELECT count(*) FROM league_players a
+    JOIN league_players b ON b.league_id = a.league_id AND b.left_at IS NULL AND b.player_id > a.player_id
+    WHERE a.league_id = 2 AND a.left_at IS NULL AND NOT EXISTS (
+      SELECT 1 FROM league_match_view v WHERE v.league_id = 2 AND v.status = 'finished'
+        AND ((v.player1 = a.player_id AND v.player2 = b.player_id) OR (v.player1 = b.player_id AND v.player2 = a.player_id)))"
 }
 league2_start() {
   if systemctl --user is-active -q league2; then log "league2 already running"; return 0; fi

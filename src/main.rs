@@ -8,6 +8,7 @@ mod league;
 mod migrate;
 mod players;
 mod runner;
+mod scores;
 mod ui;
 
 use std::path::PathBuf;
@@ -43,7 +44,7 @@ struct Cli {
 #[derive(Subcommand)]
 enum Command {
     /// Round-robin league between models on a random fixture, matchdays played in
-    /// parallel, then playoffs for ties among the first three places.
+    /// parallel; ranked by points, games won, fewer games lost, then the lower error rate.
     League(LeagueArgs),
     /// Prints what a model is sent for stored positions: reads JSON lines (one position
     /// each) from --input or stdin and writes one JSON line per position with the state,
@@ -55,11 +56,12 @@ enum Command {
     /// Adds a player to an existing league, running or finished: a participant (its
     /// `players` row is created, or reused when the name is known with the same settings),
     /// a note, and an entry in the additions freeze log. Its pairs with every current
-    /// participant are played: a running league picks them up within 30 s; otherwise
-    /// `league --resume` plays them.
+    /// participant that it has not played anywhere are played: a running league picks them
+    /// up within 30 s; otherwise `league --resume` plays them.
     LeagueAdd(LeagueAddArgs),
-    /// Ends a player's participation in a league: its matches stay in the database but
-    /// leave the table, its unplayed pairs leave the fixture.
+    /// Ends a player's participation in a league: its matches stay in the database (and
+    /// count wherever the same pair meets again) but leave the table, its unplayed pairs
+    /// leave the fixture.
     LeagueRemove(LeagueRemoveArgs),
     /// Voids a match: no table counts it any more and its pair is played again with the
     /// same seed (by a running league within 30 s, or `league --resume`).
@@ -68,6 +70,25 @@ enum Command {
     /// players, league_players and matches.valid, and compares every league's table before
     /// and after.
     Migrate(migrate::MigrateArgs),
+    /// Ranks finished leagues again (points, games won, fewer games lost, then the lower
+    /// error rate from the site's GNUbg scores) and stores the ranking; prints the stored
+    /// and the new ranking.
+    Rank(RankArgs),
+}
+
+#[derive(Args)]
+struct RankArgs {
+    #[arg(long)]
+    db: PathBuf,
+    /// League id; default: every finished league.
+    #[arg(long)]
+    league: Option<i64>,
+    /// The site's GNUbg score shards (s*.db); default: $XDG_STATE_HOME/bg-site/plays.
+    #[arg(long, env = "JEVGAMMON_SCORES")]
+    scores: Option<PathBuf>,
+    /// Print only; store nothing.
+    #[arg(long)]
+    dry_run: bool,
 }
 
 #[derive(Args)]
@@ -239,6 +260,10 @@ struct LeagueArgs {
     /// the round (game 2 otherwise starts after game 1 and shows the score after it).
     #[arg(long, conflicts_with = "resume")]
     mirror_concurrent: bool,
+    /// The site's GNUbg score shards (s*.db) for the error-rate tiebreak; default:
+    /// $XDG_STATE_HOME/bg-site/plays.
+    #[arg(long, env = "JEVGAMMON_SCORES")]
+    scores: Option<PathBuf>,
     #[command(flatten)]
     common: Common,
 }
@@ -329,6 +354,7 @@ async fn main() -> ExitCode {
         Some(Command::LeagueRemove(args)) => league_remove(args),
         Some(Command::Void(args)) => void(args),
         Some(Command::Migrate(args)) => migrate::run(&args),
+        Some(Command::Rank(args)) => rank(args),
         Some(Command::Ask(args)) => {
             let setup = Setup::new(
                 args.qfork_root
@@ -421,7 +447,72 @@ async fn run_league(args: LeagueArgs) -> Result<()> {
             }
         }
     };
-    league::run(args.common.db, &setup, start, Harness::detect()).await
+    league::run(
+        args.common.db,
+        &setup,
+        start,
+        Harness::detect(),
+        args.scores.unwrap_or_else(scores::default_dir),
+    )
+    .await
+}
+
+/// `jevgammon rank`.
+fn rank(args: RankArgs) -> Result<()> {
+    let db = db::Db::open(&args.db)?;
+    let scores = args.scores.unwrap_or_else(scores::default_dir);
+    let leagues: Vec<(i64, String, Option<String>)> = {
+        let mut statement = db.conn().prepare(
+            "SELECT id, status, ranking FROM leagues WHERE ?1 IS NULL OR id = ?1 ORDER BY id",
+        )?;
+        statement
+            .query_map([args.league], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)))?
+            .collect::<rusqlite::Result<_>>()?
+    };
+    if leagues.is_empty() {
+        bail!("no such league");
+    }
+    for (id, status, stored) in leagues {
+        if status != "finished" {
+            println!("\nleague #{id} is {status}: its ranking is stored when it finishes");
+            continue;
+        }
+        let ranked = league::rank_league(&db, id, &scores)?;
+        let stored: Vec<String> = stored
+            .map(|s| serde_json::from_str(&s))
+            .transpose()?
+            .unwrap_or_default();
+        println!("\nleague #{id}: stored ranking | new ranking");
+        for i in 0..stored.len().max(ranked.ranking.len()) {
+            let (old, new) = (stored.get(i), ranked.ranking.get(i));
+            println!(
+                "  {:40} | {}{}",
+                old.map_or("-", String::as_str),
+                new.map_or("-", String::as_str),
+                if old == new { "" } else { "   <-- changed" }
+            );
+        }
+        if !ranked.unscored.is_empty() {
+            println!(
+                "league #{id}: decisions not scored yet (partial error rates): {}",
+                ranked
+                    .unscored
+                    .iter()
+                    .map(|(name, n)| format!("{name} ({n})"))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            );
+        }
+        if args.dry_run {
+            println!("league #{id}: dry run, nothing stored");
+        } else if stored == ranked.ranking {
+            println!("league #{id}: ranking unchanged");
+        } else {
+            db.store_ranking(id, &ranked.ranking)?;
+            println!("league #{id}: new ranking stored");
+        }
+    }
+    Ok(())
 }
 
 /// `jevgammon league-add`.
@@ -485,7 +576,6 @@ async fn league_add(args: LeagueAddArgs) -> Result<()> {
         "entry": config,
         "entry_sha256": hex::encode(sha2::Sha256::digest(entry_json.as_bytes())),
         "fixtures": addition.fixtures,
-        "voided_playoff_matches": addition.stale_playoffs,
     }));
     if let Some(dir) = log.parent().filter(|d| !d.as_os_str().is_empty()) {
         std::fs::create_dir_all(dir)?;
@@ -501,12 +591,6 @@ async fn league_add(args: LeagueAddArgs) -> Result<()> {
     );
     for label in &addition.fixtures {
         println!("  {label}");
-    }
-    if addition.stale_playoffs > 0 {
-        println!(
-            "{} playoff matches voided; playoffs are played again after the new matches",
-            addition.stale_playoffs
-        );
     }
     who_plays(&db, args.league, &args.db, "these matches")
 }
@@ -535,10 +619,10 @@ fn who_plays(db: &db::Db, id: i64, path: &std::path::Path, what: &str) -> Result
 /// `jevgammon league-remove`.
 fn league_remove(args: LeagueRemoveArgs) -> Result<()> {
     let mut db = db::Db::open(&args.db)?;
-    let (voided, open) = league::remove_player(&mut db, args.league, &args.player, &args.reason)?;
+    let open = league::remove_player(&mut db, args.league, &args.player, &args.reason)?;
     println!(
-        "{} left league #{}: {open} unplayed pairs dropped from the fixture, {voided} playoff \
-         matches voided; its matches stay in the database",
+        "{} left league #{}: {open} unplayed pairs dropped from the fixture; its matches stay \
+         in the database",
         args.player, args.league
     );
     who_plays(&db, args.league, &args.db, "the change")
@@ -625,7 +709,6 @@ async fn run_match(args: MatchArgs) -> Result<()> {
             rounds,
             clock,
             max_turns,
-            decisive: false,
             // The board view follows one game at a time.
             concurrent_mirror: false,
             protocol: protocol.clone(),

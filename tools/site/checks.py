@@ -161,7 +161,7 @@ def check_counts(S: dict) -> list[str]:
     snap = sqlite3.connect(f"file:{S['_state'] / 'snap.db'}?mode=ro", uri=True)
     for lg in S["leagues"]:
         n = snap.execute("""SELECT COUNT(*) FROM turns t JOIN games g ON g.id = t.game_id
-                            JOIN league_matches lm ON lm.match_id = g.match_id
+                            JOIN league_match_view lm ON lm.match_id = g.match_id
                             WHERE lm.league_id = ? AND t.decided_by IN ('model', 'fallback')""", (lg["id"],)).fetchone()[0]
         su = sum(s["quality"]["decisions"] for s in lg["setups"].values())
         if not (n == su == lg["decisions"]):

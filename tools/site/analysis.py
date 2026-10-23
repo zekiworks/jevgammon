@@ -31,7 +31,8 @@ from common import EARLIER, PROVISIONAL, PUBLISHED, ROOT, THRESHOLDS as T, slug
 from decisions_export import PAGE_SIZE as DECISION_PAGE
 
 sys.path.insert(0, str(ROOT / "tools"))
-from league_web import last_activity, league_fixtures, league_state, league_table  # noqa: E402
+from league_web import (error_rates, last_activity, league_fixtures, league_state, league_table,  # noqa: E402
+                        participants, tiebreak_rates)
 
 SCALE = T["equity_scale"]
 PHASES = ["opening", "contact", "holding", "race", "bear-off"]
@@ -83,13 +84,14 @@ def load_leagues(snap: Path, plays_dir: Path) -> dict:
     conn.row_factory = sqlite3.Row
     plays = load_plays(plays_dir)
     leagues = []
+    rates = tiebreak_rates(error_rates(conn, plays_dir))
     for row in conn.execute("SELECT * FROM leagues ORDER BY id").fetchall():
         lid = row["id"]
-        roster = json.loads(row["models"])
+        roster = [p["settings"] for p in participants(conn, lid)]
         names = [m["name"] for m in roster]
-        fixtures, games_won = league_fixtures(conn, lid)
+        fixtures, games_won = league_fixtures(conn, row)
         fixtures = [f for f in fixtures if f["stage"] == "league"]
-        table = league_table(names, fixtures, games_won)
+        table = league_table(names, fixtures, games_won, rates)
         done = sum(f["status"] == "finished" for f in fixtures)
         state = league_state(row, last_activity(conn, lid))
         if state == "finished":
@@ -109,8 +111,9 @@ def load_leagues(snap: Path, plays_dir: Path) -> dict:
                       t.decided_by, t.legal_count, t.probability_source, t.probabilities, t.chosen_position,
                       t.request_ms, t.latency_ms, t.retry_ms, t.cost_usd, t.group_size, t.created_at,
                       t.input_tokens, t.output_tokens, t.reasoning_tokens
-               FROM turns t JOIN games g ON g.id = t.game_id JOIN league_matches lm ON lm.match_id = g.match_id
-               WHERE lm.league_id = ? AND t.decided_by IN ('model', 'fallback')""", (lid,)):
+               FROM turns t JOIN games g ON g.id = t.game_id JOIN league_match_view lm ON lm.match_id = g.match_id
+               WHERE lm.league_id = ? AND t.decided_by IN ('model', 'fallback')
+               ORDER BY lm.label, g.id, t.turn_no""", (lid,)):
             p = plays.get(r["id"])
             prob = None
             if r["probability_source"] in REAL_PROBS and r["probabilities"] and r["chosen_position"] is not None:
@@ -156,11 +159,11 @@ def load_leagues(snap: Path, plays_dir: Path) -> dict:
             fixtures=len(fixtures), done=done, state=state, status_label=label,
             metric_status=PUBLISHED if state == "finished" else PROVISIONAL,
             started=row["started_at"], finished=row["finished_at"], left=dict(left),
-            games=conn.execute("""SELECT COUNT(*) FROM games g JOIN league_matches lm ON lm.match_id = g.match_id
+            games=conn.execute("""SELECT COUNT(*) FROM games g JOIN league_match_view lm ON lm.match_id = g.match_id
                                   WHERE lm.league_id = ? AND g.winner_player IS NOT NULL""", (lid,)).fetchone()[0],
             gammons=dict(conn.execute(
                 """SELECT CASE g.winner_player WHEN 1 THEN lm.model1 ELSE lm.model2 END, COUNT(*)
-                   FROM games g JOIN matches m ON m.id = g.match_id JOIN league_matches lm ON lm.match_id = g.match_id
+                   FROM games g JOIN matches m ON m.id = g.match_id JOIN league_match_view lm ON lm.match_id = g.match_id
                    WHERE lm.league_id = ? AND lm.stage = 'league' AND m.status = 'finished'
                      AND g.result IN ('gammon', 'backgammon') GROUP BY 1""", (lid,)).fetchall()),
             decisions=decisions))

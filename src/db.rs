@@ -1,8 +1,10 @@
 //! SQLite record of every match, game, roll, move, and model exchange, and of the leagues:
-//! players (one row per setup), the leagues' settings and their participants. A league's
-//! table is the valid matches between two of its current participants played under its
-//! rules; its fixtures are implicit (every pair of current participants without a valid
-//! match is still to play).
+//! players (one row per setup), the leagues' settings and their participants. Two setups
+//! play each other at most once: a pair's valid match is its result in every league (and
+//! ladder round and Cup) whatever rules it was played under. A league's table is the valid
+//! matches between two of its current participants; its fixtures are implicit (every pair
+//! of current participants without a valid match is still to play, under the league's
+//! rules).
 
 use std::path::Path;
 use std::time::Duration;
@@ -17,10 +19,11 @@ use crate::players::PlayerConfig;
 use crate::players::prompt::letter;
 use crate::runner::{Clock, MatchResult, Protocol};
 
-/// What a league's matches are played under. Two matches are played under the same rules
-/// when these columns are equal (`IS`, so NULL equals NULL); a league's table counts only
-/// matches under its own rules. Raw column values: a league stored before prompt versions
-/// keeps `prompt_version` and `order_seed` NULL here, and so do its matches.
+/// What a league plays its new matches under. A stored match counts in every league that
+/// holds both its players, whatever rules it was played under (one result per pair); the
+/// rules choose a new match's format and dice. Raw column values: a league stored before
+/// prompt versions keeps `prompt_version` and `order_seed` NULL here, and so do its
+/// matches.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Rules {
     pub rounds: u32,
@@ -126,19 +129,13 @@ const RULES_COLUMNS: [&str; 7] = [
     "mirror_concurrent",
 ];
 
-/// `m.rounds_planned IS ?first AND m.clock_seconds IS ?first+1 ...` for `alias`.
-fn rules_sql(alias: &str, first: usize) -> String {
-    RULES_COLUMNS
-        .iter()
-        .enumerate()
-        .map(|(i, column)| format!("{alias}.{column} IS ?{}", first + i))
-        .collect::<Vec<_>>()
-        .join(" AND ")
-}
+/// The matches that are a pair's result (`m` aliases `matches`): valid, of any stage but the
+/// legacy playoffs (a second match of a pair, played before the error-rate tiebreak).
+pub const PAIR_RESULT: &str = "m.valid = 1 AND m.stage IS NOT NULL AND m.stage <> 'playoff'";
 
 /// How the dice seed of a new league match is chosen (`leagues.seed_rule`): from the two
 /// player names and the rules hash (`Rules::pair_seed`), or the stored seed of an earlier
-/// match of the pair under the same rules (a voided one replays with the same dice).
+/// voided match of the pair (a voided pair replays with the same dice).
 pub const SEED_RULE: &str = "pair-v1";
 
 /// Opens `path` for concurrent use (WAL, one connection per league match).
@@ -174,10 +171,27 @@ pub fn ensure_schema(conn: &Connection) -> Result<()> {
     Ok(())
 }
 
-/// Indexes and the league view (needs the columns of `ensure_schema`).
+/// Indexes and the league view (needs the columns of `ensure_schema`). The view is replaced
+/// when its stored definition differs from `LEAGUE_MATCH_VIEW` (a database from an earlier
+/// definition), and left alone otherwise.
 pub fn ensure_derived_schema(conn: &Connection) -> Result<()> {
     conn.execute_batch(DERIVED_SCHEMA)
-        .context("creating indexes and views")
+        .context("creating indexes")?;
+    let stored: Option<String> = conn
+        .query_row(
+            "SELECT sql FROM sqlite_master WHERE type = 'view' AND name = 'league_match_view'",
+            [],
+            |row| row.get(0),
+        )
+        .optional()?;
+    if stored.as_deref() != Some(LEAGUE_MATCH_VIEW.trim()) {
+        conn.execute_batch(&format!(
+            "DROP VIEW IF EXISTS league_match_view; {}",
+            LEAGUE_MATCH_VIEW.trim()
+        ))
+        .context("creating league_match_view")?;
+    }
+    Ok(())
 }
 
 const SCHEMA: &str = r#"
@@ -211,8 +225,9 @@ CREATE TABLE IF NOT EXISTS matches (
     -- `git rev-parse HEAD` of the runner at startup, and whether its tree had changes.
     harness_commit  TEXT,
     harness_dirty   INTEGER,
-    -- League matches: the players (model1/model2 above are the specs played), `league` or
-    -- `playoff` (NULL for a single match), and the label it was created under.
+    -- League matches: the players (model1/model2 above are the specs played), `league`
+    -- (`playoff`: a legacy second match of a pair; NULL for a single match), and the label
+    -- it was created under.
     player1         INTEGER REFERENCES players(id),
     player2         INTEGER REFERENCES players(id),
     stage           TEXT,
@@ -325,7 +340,8 @@ CREATE TABLE IF NOT EXISTS leagues (
     max_turns       INTEGER,
     -- running | finished
     status          TEXT NOT NULL,
-    -- Final ranking (JSON array of names, first place first), playoffs applied.
+    -- Final ranking (JSON array of "place. name", first place first): points, games won,
+    -- fewer games lost, then the lower error rate over all of a setup's valid matches.
     ranking         TEXT,
     -- What the league tests (`--note`) and what changed since, shown in the web history.
     note            TEXT,
@@ -368,28 +384,27 @@ CREATE TABLE IF NOT EXISTS league_players (
 );
 "#;
 
-/// Indexes and views over columns that older databases gain in `ADDED_COLUMNS`.
+/// Indexes over columns that older databases gain in `ADDED_COLUMNS`.
 const DERIVED_SCHEMA: &str = r#"
 CREATE UNIQUE INDEX IF NOT EXISTS league_players_current
     ON league_players (league_id, player_id) WHERE left_at IS NULL;
 CREATE INDEX IF NOT EXISTS matches_pair ON matches (player1, player2);
+"#;
 
--- Every valid match between two current participants of a league under the league's rules:
--- the matches its table, playoffs and pages count. A match can belong to several leagues.
-CREATE VIEW IF NOT EXISTS league_match_view AS
+/// Every valid match between two current participants of a league, whatever rules it was
+/// played under (one result per pair; legacy playoffs included): the matches its table and
+/// pages count. A match can belong to several leagues.
+const LEAGUE_MATCH_VIEW: &str = "
+CREATE VIEW league_match_view AS
 SELECT l.id AS league_id, m.id AS match_id, m.stage, m.label, p1.name AS model1,
        p2.name AS model2, m.player1, m.player2, m.seed, m.status
 FROM leagues l
 JOIN matches m ON m.valid = 1 AND m.stage IS NOT NULL
-    AND m.rounds_planned = l.rounds AND m.clock_seconds IS l.clock_seconds
-    AND m.delay_seconds IS l.delay_seconds AND m.max_turns IS l.max_turns
-    AND m.prompt_version IS l.prompt_version AND m.order_seed IS l.order_seed
-    AND m.mirror_concurrent IS l.mirror_concurrent
 JOIN league_players a ON a.league_id = l.id AND a.player_id = m.player1 AND a.left_at IS NULL
 JOIN league_players b ON b.league_id = l.id AND b.player_id = m.player2 AND b.left_at IS NULL
 JOIN players p1 ON p1.id = m.player1
-JOIN players p2 ON p2.id = m.player2;
-"#;
+JOIN players p2 ON p2.id = m.player2
+";
 
 /// Columns added after the first release, for databases created before them.
 const ADDED_COLUMNS: [(&str, &str, &str); 39] = [
@@ -476,8 +491,6 @@ impl MatchRow {
 /// A league match about to be created.
 pub struct NewMatch<'a> {
     pub rules: &'a Rules,
-    /// `league` or `playoff`.
-    pub stage: &'a str,
     pub label: &'a str,
     pub players: [i64; 2],
     /// Specs as the match plays them, for `matches.model1` and `model2`.
@@ -1013,6 +1026,38 @@ impl Db {
             .with_context(|| format!("league #{league_id}"))
     }
 
+    /// The rules match `match_id` was played under.
+    pub fn match_rules(&self, match_id: i64) -> Result<Rules> {
+        self.conn
+            .query_row(
+                "SELECT rounds_planned, clock_seconds, delay_seconds, max_turns, prompt_version,
+                        order_seed, mirror_concurrent
+                 FROM matches WHERE id = ?1",
+                params![match_id],
+                |row| {
+                    Ok(Rules {
+                        rounds: row.get(0)?,
+                        clock_seconds: row.get::<_, Option<i64>>(1)?.map(|s| s as u64),
+                        delay_seconds: row.get::<_, Option<i64>>(2)?.map(|s| s as u64),
+                        max_turns: row.get(3)?,
+                        prompt_version: row.get(4)?,
+                        order_seed: row.get::<_, Option<i64>>(5)?.map(|s| s as u64),
+                        mirror_concurrent: row.get::<_, Option<bool>>(6)?.unwrap_or(false),
+                    })
+                },
+            )
+            .with_context(|| format!("match #{match_id}"))
+    }
+
+    /// Replaces a finished league's stored ranking (`jevgammon rank`); its finish time stays.
+    pub fn store_ranking(&self, league_id: i64, ranking: &[String]) -> Result<()> {
+        self.conn.execute(
+            "UPDATE leagues SET ranking = ?2 WHERE id = ?1 AND status = 'finished'",
+            params![league_id, serde_json::to_string(ranking)?],
+        )?;
+        Ok(())
+    }
+
     pub fn finish_league(&self, league_id: i64, ranking: &[String]) -> Result<()> {
         self.conn.execute(
             "UPDATE leagues SET status = 'finished', finished_at = ?2, ranking = ?3 WHERE id = ?1",
@@ -1087,14 +1132,13 @@ impl Db {
     }
 
     /// Adds `config` to the league as a current participant now, appends `note` to the
-    /// league note, reopens a finished league and voids its playoffs (the table changes);
-    /// one transaction. Returns how many playoff matches were voided.
+    /// league note and reopens a finished league (the table changes); one transaction.
     pub fn add_participant(
         &mut self,
         league_id: i64,
         config: &PlayerConfig,
         note: &str,
-    ) -> Result<usize> {
+    ) -> Result<()> {
         let tx = self.conn.transaction()?;
         let player_id = upsert_player(&tx, config)?;
         let current: bool = tx.query_row(
@@ -1111,25 +1155,19 @@ impl Db {
              VALUES (?1, ?2, ?3, ?4)",
             params![league_id, player_id, now(), note],
         )?;
-        let voided = league_changed(&tx, league_id, note, &format!("{} joined", config.name))?;
+        league_changed(&tx, league_id, note)?;
         tx.commit()?;
-        Ok(voided)
+        Ok(())
     }
 
-    /// Ends `name`'s participation now with `reason`: its matches stay but no longer count,
-    /// and its unplayed pairs drop out of the fixture. Returns how many playoff matches were
-    /// voided.
-    pub fn remove_participant(
-        &mut self,
-        league_id: i64,
-        name: &str,
-        reason: &str,
-    ) -> Result<usize> {
+    /// Ends `name`'s participation now with `reason`: its matches stay valid (a pair's
+    /// result in any league it meets again) but leave this league's table, and its unplayed
+    /// pairs drop out of the fixture.
+    pub fn remove_participant(&mut self, league_id: i64, name: &str, reason: &str) -> Result<()> {
         let tx = self.conn.transaction()?;
         let date = now();
-        // Playoffs are voided while the player still counts, then the participation ends.
         let note = format!("{name} left on {}: {reason}.", &date[..10]);
-        let voided = league_changed(&tx, league_id, &note, &format!("{name} left"))?;
+        league_changed(&tx, league_id, &note)?;
         let changed = tx.execute(
             "UPDATE league_players SET left_at = ?3, note = TRIM(COALESCE(note, '') || ' ' || ?4)
              WHERE league_id = ?1 AND left_at IS NULL
@@ -1140,12 +1178,11 @@ impl Db {
             bail!("`{name}` is not a current participant of league #{league_id}");
         }
         tx.commit()?;
-        Ok(voided)
+        Ok(())
     }
 
     /// Voids a valid match: no table counts it any more and its pair is played again (with
-    /// the same seed). Every league whose table counted it reopens and loses its playoffs.
-    /// Returns those leagues.
+    /// the same seed). Every league whose table counted it reopens. Returns those leagues.
     pub fn void_match(&mut self, match_id: i64, reason: &str) -> Result<Vec<i64>> {
         let tx = self.conn.transaction()?;
         let leagues: Vec<i64> = {
@@ -1165,40 +1202,26 @@ impl Db {
         }
         for &league_id in &leagues {
             let note = format!("Match #{match_id} voided on {}: {reason}.", &now()[..10]);
-            league_changed(&tx, league_id, &note, &format!("match #{match_id} voided"))?;
+            league_changed(&tx, league_id, &note)?;
         }
         tx.commit()?;
         Ok(leagues)
     }
 
-    /// Voids the league's valid playoff matches: the table they decided changed.
-    pub fn void_playoffs(&self, league_id: i64, why: &str) -> Result<usize> {
-        void_playoffs(&self.conn, league_id, why)
-    }
-
-    /// Every match of `stage` (valid or void) between two of `players` under `rules`, in id
-    /// order. With a league's current participants and rules: the matches of its table and
-    /// fixture; with any set of players and rules: a merged view over leagues.
-    pub fn matches_between(
-        &self,
-        rules: &Rules,
-        players: &[i64],
-        stage: &str,
-    ) -> Result<Vec<MatchRow>> {
+    /// Every match (valid or void) of a pair of `players`, of any stage but the legacy
+    /// playoffs, under any rules, in id order: with a league's current participants, the
+    /// matches of its table and fixture (and the seeds of voided pairs).
+    pub fn matches_between(&self, players: &[i64]) -> Result<Vec<MatchRow>> {
         let ids = serde_json::to_string(players)?;
-        let mut statement = self.conn.prepare(&format!(
+        let mut statement = self.conn.prepare(
             "SELECT m.id, m.player1, m.player2, m.seed, m.status, m.valid
              FROM matches m
-             WHERE m.stage = ?1
-               AND m.player1 IN (SELECT value FROM json_each(?2))
-               AND m.player2 IN (SELECT value FROM json_each(?2))
-               AND {}
+             WHERE m.stage IS NOT NULL AND m.stage <> 'playoff'
+               AND m.player1 IN (SELECT value FROM json_each(?1))
+               AND m.player2 IN (SELECT value FROM json_each(?1))
              ORDER BY m.id",
-            rules_sql("m", 3)
-        ))?;
-        let mut values: Vec<rusqlite::types::Value> = vec![stage.to_owned().into(), ids.into()];
-        values.extend(rules.values());
-        let rows = statement.query_map(rusqlite::params_from_iter(values), |row| {
+        )?;
+        let rows = statement.query_map(params![ids], |row| {
             Ok(MatchRow {
                 id: row.get(0)?,
                 player1: row.get(1)?,
@@ -1211,27 +1234,19 @@ impl Db {
         Ok(rows.collect::<rusqlite::Result<_>>()?)
     }
 
-    /// The valid match of `stage` between the two players under `rules` (either side
-    /// first), with `label` too when given (playoffs).
-    pub fn current_match(
-        &self,
-        rules: &Rules,
-        stage: &str,
-        players: [i64; 2],
-        label: Option<&str>,
-    ) -> Result<Option<CurrentMatch>> {
-        current_match(&self.conn, rules, stage, players, label)
+    /// The pair's result: its valid match (`PAIR_RESULT`, either side first, any rules).
+    pub fn current_match(&self, players: [i64; 2]) -> Result<Option<CurrentMatch>> {
+        current_match(&self.conn, players)
     }
 
-    /// The valid match of the new match's stage, pair, rules and (for playoffs) label, or a
-    /// new one created now; one transaction, so two runners never create the same match.
+    /// The pair's valid match, or a new league match created now under `new.rules`; one
+    /// transaction, so two runners never create the same match.
     pub fn ensure_league_match(&self, new: &NewMatch<'_>) -> Result<i64> {
         let tx = rusqlite::Transaction::new_unchecked(
             &self.conn,
             rusqlite::TransactionBehavior::Immediate,
         )?;
-        let label = (new.stage != "league").then_some(new.label);
-        if let Some(current) = current_match(&tx, new.rules, new.stage, new.players, label)? {
+        if let Some(current) = current_match(&tx, new.players)? {
             return Ok(current.id);
         }
         let mut values: Vec<rusqlite::types::Value> = vec![
@@ -1243,7 +1258,7 @@ impl Db {
             i64::from(new.protocol.harness.dirty).into(),
             new.players[0].into(),
             new.players[1].into(),
-            new.stage.to_owned().into(),
+            String::from("league").into(),
             new.label.to_owned().into(),
         ];
         values.extend(new.rules.values());
@@ -1327,7 +1342,7 @@ impl Activity {
     }
 }
 
-/// A league's valid match of a pair: its id, which player is `player1`, and its seed.
+/// A pair's valid match: its id, which player is `player1`, and its seed.
 #[derive(Clone, Copy, Debug)]
 pub struct CurrentMatch {
     pub id: i64,
@@ -1335,32 +1350,18 @@ pub struct CurrentMatch {
     pub seed: u64,
 }
 
-/// The valid match of `stage` between `players` under `rules` (and `label`, if given).
-fn current_match(
-    conn: &Connection,
-    rules: &Rules,
-    stage: &str,
-    [a, b]: [i64; 2],
-    label: Option<&str>,
-) -> Result<Option<CurrentMatch>> {
-    let mut values: Vec<rusqlite::types::Value> = vec![
-        stage.to_owned().into(),
-        a.into(),
-        b.into(),
-        label.map(str::to_owned).into(),
-    ];
-    values.extend(rules.values());
+/// The pair's result: its valid match of any stage but the legacy playoffs, under any rules
+/// (the newest, should there be two).
+fn current_match(conn: &Connection, [a, b]: [i64; 2]) -> Result<Option<CurrentMatch>> {
     Ok(conn
         .query_row(
             &format!(
                 "SELECT id, player1, seed FROM matches m
-                 WHERE m.valid = 1 AND m.stage = ?1
-                   AND ((m.player1 = ?2 AND m.player2 = ?3) OR (m.player1 = ?3 AND m.player2 = ?2))
-                   AND (?4 IS NULL OR m.label = ?4) AND {}
-                 ORDER BY m.id DESC LIMIT 1",
-                rules_sql("m", 5)
+                 WHERE {PAIR_RESULT}
+                   AND ((m.player1 = ?1 AND m.player2 = ?2) OR (m.player1 = ?2 AND m.player2 = ?1))
+                 ORDER BY m.id DESC LIMIT 1"
             ),
-            rusqlite::params_from_iter(values),
+            params![a, b],
             |row| {
                 Ok(CurrentMatch {
                     id: row.get(0)?,
@@ -1426,9 +1427,9 @@ pub fn insert_player(conn: &Connection, config: &PlayerConfig, created_at: &str)
     Ok(conn.last_insert_rowid())
 }
 
-/// The league's participants or results changed: append `note` to the league note, reopen
-/// it if finished, and void its playoffs. Returns how many playoff matches were voided.
-fn league_changed(conn: &Connection, league_id: i64, note: &str, why: &str) -> Result<usize> {
+/// The league's participants or results changed: append `note` to the league note and reopen
+/// it if finished (its final ranking is computed again when it finishes).
+fn league_changed(conn: &Connection, league_id: i64, note: &str) -> Result<()> {
     let changed = conn.execute(
         "UPDATE leagues SET status = 'running', finished_at = NULL,
              note = TRIM(COALESCE(note, '') || ' ' || ?2)
@@ -1438,18 +1439,7 @@ fn league_changed(conn: &Connection, league_id: i64, note: &str, why: &str) -> R
     if changed == 0 {
         bail!("no league #{league_id}");
     }
-    void_playoffs(conn, league_id, why)
-}
-
-/// Voids the league's valid playoff matches: `stale: <why> on <date>`.
-fn void_playoffs(conn: &Connection, league_id: i64, why: &str) -> Result<usize> {
-    let at = now();
-    Ok(conn.execute(
-        "UPDATE matches SET valid = 0, void_reason = ?2, voided_at = ?3
-         WHERE id IN (SELECT match_id FROM league_match_view
-                      WHERE league_id = ?1 AND stage = 'playoff')",
-        params![league_id, format!("stale: {why} on {}", &at[..10]), at],
-    )?)
+    Ok(())
 }
 
 #[cfg(test)]

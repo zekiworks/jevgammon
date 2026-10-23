@@ -229,9 +229,6 @@ pub struct MatchSettings {
     /// A game still running after this many turns (both sides counted) is won by the
     /// lower pip count, or with equal pips by the side due to roll next.
     pub max_turns: Option<u32>,
-    /// A tie after the planned rounds adds rounds until one player leads; otherwise
-    /// exactly one extra round is played and a tie after it is a draw.
-    pub decisive: bool,
     /// Plays the two games of a round at once, both showing the score at the start of the
     /// round; otherwise game 2 starts after game 1 and shows the score after it.
     pub concurrent_mirror: bool,
@@ -358,8 +355,7 @@ impl Runner {
                     }
                 }
             }
-            (rounds, tie_break) =
-                rounds_after(round, rounds, score, tie_break, self.settings.decisive);
+            (rounds, tie_break) = rounds_after(round, rounds, score, tie_break);
             round += 1;
         }
         if let Some(game) = stored.values().next() {
@@ -752,17 +748,11 @@ fn turn_limit_winner(board: &Board, player: u8) -> u8 {
 /// The last round to play and whether the tie-break has started, after `round` ended with
 /// `score`. Regular play ends after the planned rounds, or after the round (mirror game
 /// included) in which a player reached `FIRST_TO`; a leader then wins, and a tie earns one
-/// extra round, or as many as it takes in a decisive match.
-fn rounds_after(
-    round: u32,
-    rounds: u32,
-    score: [u32; 2],
-    tie_break: bool,
-    decisive: bool,
-) -> (u32, bool) {
+/// extra round; a tie after it is a draw.
+fn rounds_after(round: u32, rounds: u32, score: [u32; 2], tie_break: bool) -> (u32, bool) {
     if round < rounds && score.iter().all(|&s| s < FIRST_TO) {
         (rounds, tie_break)
-    } else if score[0] == score[1] && (!tie_break || decisive) {
+    } else if score[0] == score[1] && !tie_break {
         (round + 1, true)
     } else {
         (round, tie_break)
@@ -844,7 +834,6 @@ mod tests {
                 rounds: 3,
                 clock: None,
                 max_turns: Some(300),
-                decisive: false,
                 concurrent_mirror,
                 protocol,
             },
@@ -1073,18 +1062,16 @@ mod tests {
     #[test]
     fn first_to_five_ends_after_the_round_unless_tied() {
         // Not reached, rounds left: keep going.
-        assert_eq!(rounds_after(1, 3, [4, 2], false, false), (3, false));
+        assert_eq!(rounds_after(1, 3, [4, 2], false), (3, false));
         // 5 reached and ahead after the mirror game: match over this round.
-        assert_eq!(rounds_after(1, 3, [5, 3], false, false), (1, false));
+        assert_eq!(rounds_after(1, 3, [5, 3], false), (1, false));
         // The trailing player overtakes in the mirror game: still over, they lead.
-        assert_eq!(rounds_after(2, 3, [5, 6], false, false), (2, false));
+        assert_eq!(rounds_after(2, 3, [5, 6], false), (2, false));
         // Level at 5: one extra round, then a draw.
-        assert_eq!(rounds_after(1, 3, [5, 5], false, false), (2, true));
-        assert_eq!(rounds_after(2, 2, [6, 6], true, false), (2, true));
-        // A decisive match keeps adding rounds.
-        assert_eq!(rounds_after(2, 2, [6, 6], true, true), (3, true));
+        assert_eq!(rounds_after(1, 3, [5, 5], false), (2, true));
+        assert_eq!(rounds_after(2, 2, [6, 6], true), (2, true));
         // Planned rounds done below 5: leader wins, tie earns an extra round.
-        assert_eq!(rounds_after(3, 3, [4, 2], false, false), (3, false));
-        assert_eq!(rounds_after(3, 3, [3, 3], false, false), (4, true));
+        assert_eq!(rounds_after(3, 3, [4, 2], false), (3, false));
+        assert_eq!(rounds_after(3, 3, [3, 3], false), (4, true));
     }
 }

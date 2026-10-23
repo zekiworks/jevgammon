@@ -39,7 +39,7 @@ import replay  # noqa: E402
 PAGE_SIZE = 50
 LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 TURN_PART = "Score: you "
-# leagues.models[].spec of the players that are programs: they get no prompt and give no probabilities.
+# players.spec of the players that are programs: they get no prompt and give no probabilities.
 PROGRAM_SPECS = {"random", "safest", "gnubg-weak"}
 HITS = re.compile(r"the opponent hits with (\d+) of 36 rolls")
 EARLIER_BADGE = "Earlier version: plays listed in the runner's order"
@@ -171,23 +171,29 @@ def shown_plays(entries, order, probs, program, cycle=None):
 
 TURNS = """
 SELECT t.id, t.game_id, t.turn_no, t.side, t.die1, t.die2, t.position, t.option_order, t.probabilities,
-       t.probability_source, t.decided_by, t.group_size, t.request_ms, t.retry_ms, t.cost_usd
-FROM turns t JOIN games g ON g.id = t.game_id JOIN league_matches lm ON lm.match_id = g.match_id
+       t.probability_source, t.decided_by, t.group_size, t.request_ms, t.retry_ms, t.cost_usd,
+       CASE t.player WHEN 1 THEN lm.model1 ELSE lm.model2 END
+FROM turns t JOIN games g ON g.id = t.game_id JOIN league_match_view lm ON lm.match_id = g.match_id
 WHERE lm.league_id = ? AND t.decided_by IN ('model', 'fallback')
 """
 
 
 def export_league(root, ds, sdb, shards, pdb, contexts):
     league = ds["league_id"]
-    models = json.loads(sdb.execute("SELECT models FROM leagues WHERE id = ?", (league,)).fetchone()[0])
-    programs = {m["name"] for m in models if m.get("spec") in PROGRAM_SPECS}
-    turns = {r[0]: r for r in sdb.execute(TURNS, (league,))}
-    by_setup = {m["name"]: [] for m in models}
+    # The league's current participants in join order (league_web.participants), programs by players.spec.
+    models = sdb.execute("""SELECT p.name, p.spec FROM league_players lp JOIN players p ON p.id = lp.player_id
+                            WHERE lp.league_id = ? AND lp.left_at IS NULL ORDER BY lp.id""", (league,)).fetchall()
+    programs = {name for name, spec in models if spec in PROGRAM_SPECS}
+    turns, setup_of = {}, {}
+    for r in sdb.execute(TURNS, (league,)):
+        turns[r[0]], setup_of[r[0]] = tuple(r[:-1]), r[-1]
+    by_setup = {name: [] for name, _ in models}
+    # The league's scored decisions: every scored turn of a match in the league's view (a setup that
+    # moved leagues keeps its matches here, whatever league its plays row was scored under).
     for db in shards.values():
-        for tid, model in db.execute("SELECT turn_id, model FROM plays WHERE league_id = ?", (league,)):
-            if tid not in turns:
-                raise RuntimeError(f"scored turn {tid} is not a decision of league {league} in the snapshot")
-            by_setup.setdefault(model, []).append(tid)
+        for (tid,) in db.execute("SELECT turn_id FROM plays"):
+            if tid in turns:
+                by_setup.setdefault(setup_of[tid], []).append(tid)
     out = {}
     for setup in sorted(by_setup, key=str.lower):
         ids = sorted(by_setup[setup])

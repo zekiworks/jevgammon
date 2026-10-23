@@ -65,6 +65,9 @@ for name, sql in tables:
 for (sql,) in db.execute("SELECT sql FROM src.sqlite_master WHERE type = 'index' AND sql IS NOT NULL"
                          " AND tbl_name != 'exchanges'").fetchall():
     db.execute(sql)
+# Views (league_match_view, read by page_v3.py) after the tables: their names resolve to main's copies.
+for (sql,) in db.execute("SELECT sql FROM src.sqlite_master WHERE type = 'view' ORDER BY rowid").fetchall():
+    db.execute(sql)
 db.execute("COMMIT")
 db.execute("DETACH src")
 EOF

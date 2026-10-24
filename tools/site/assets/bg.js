@@ -260,6 +260,7 @@ async function downloadChart(panel) {
     versionLine,
     location.origin + location.pathname,
   ];
+  if (svg.dataset.note) lines.unshift(...svg.dataset.note.split(' | '));
   const site = `${document.body.dataset.siteTitle || ''} ${document.body.dataset.siteSubtitle || ''}`.trim();
   const head = site ? 46 : 28, foot = lines.length * 16 + 12;
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));

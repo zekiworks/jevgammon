@@ -193,3 +193,16 @@ td.heat { background-image: linear-gradient(color-mix(in srgb, var(--good-soft) 
 .charts .league-view .block { margin-top: 0; }
 ul.league-notes { margin: .25rem 0 .75rem; padding-left: 1.1rem; }
 .also-league { color: var(--accent); }
+/* Close choices (Method spec 2026-10-24 §9): neutral colours; a share of close choices is neither good nor bad. */
+.ccs-small { fill: var(--data-chat); background: var(--data-chat); }
+.ccs-medium { fill: var(--reading); background: var(--reading); }
+.ccs-big { fill: var(--grammar); background: var(--grammar); }
+th .th-note { display: block; font-weight: 400; font-size: .72rem; color: var(--text-2); max-width: 14rem; white-space: normal; }
+th[data-nosort] { cursor: default; }
+.cc-list { display: grid; gap: .35rem; margin: .4rem 0 .6rem; }
+details.cc-details { border: 1px solid var(--edge); border-radius: 6px; padding: .35rem .7rem; background: var(--panel); }
+details.cc-details > summary { cursor: pointer; font-size: .9rem; }
+details.cc-details:target, details.cc-details[open] { border-color: var(--accent); }
+.cc-body h4 { margin: .7rem 0 .25rem; font-size: .9rem; }
+.cc-body p { margin: .2rem 0 .4rem; font-size: .88rem; }
+a.cc-open { font-weight: 600; }

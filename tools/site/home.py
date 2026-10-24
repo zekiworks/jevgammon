@@ -308,7 +308,7 @@ def confidence_table(S, lg) -> str:
         src = P.meta(S, ds, n).get("confidence_source") or "none"
         c = s.get("confidence")
         if not c:
-            cells = f"<td>{esc(src)}</td>" + "".join(f'<td class="num">{nm(NA)}</td>' for _ in range(9))
+            cells = f"<td>{esc(src)}</td>" + "".join(f'<td class="num">{nm(NA)}</td>' for _ in range(10))
         else:
             cut = []
             for k in (str(x) for x in th["confidence_cutoffs"]):
@@ -326,21 +326,74 @@ def confidence_table(S, lg) -> str:
                        f'{g(c["auroc_blunder"], lambda v: fmt(v, 2))}</span></td>'
                      + f'<td class="num">{g(c["ece"], lambda v: fmt(100 * v, 1))}</td>'
                      + share_td(c["confident_badly_wrong"]))
+        cells += close_td(S, ds, n, s.get("close"))
         rows.append(f"<tr{attrs(S, ds, n)}>{cell_model(S, ds, n)}{cells}</tr>")
     head = ["Model and setting", "Confidence source", "Kept at 0.90", "Blunders among kept, 0.90",
             "Mean equity lost among kept, 0.90", "Kept at 0.99", "Blunders among kept, 0.99",
             "Mean equity lost among kept, 0.99", "Error rate in the surest quarter (PR)",
             "Ranking score (AUROC) for the engine's best play", "Calibration gap (ECE, points)",
-            "Confident and badly wrong"]
+            "Confident and badly wrong",
+            (f'Close choices<span class="small th-note">{esc(CC_HEAD_NOTE)}</span>',
+             ' data-nosort title="Not sortable: setups are never ranked by close choices"')]
     return (P.SWIPE + P.table(head, rows, "Confidence: the probability a setup gave its chosen play; N/A for setups "
                               "without probabilities", attrs=f' data-dataset="{ds}"')
             + '<p class="table-note">The cutoff chosen on half of the games and tested on the other half: '
-              '<a href="method/#confidence">Method</a>.</p>')
+              '<a href="method/#confidence">Method</a>.</p>'
+            + f'<p class="table-note cc-label">Close choices: {esc(S["close_spec"]["label"])} Click a value for its '
+              f'details; this column cannot be sorted. <a href="method/#close-choices">Method</a></p>')
 
 
 def cost_table(S, lg) -> str:
     return P.SWIPE + P.table(P.COST_HEAD, P.cost_rows(S, "", lg["dataset"], lg["setups"]), "Time and cost in this league",
                              attrs=f' data-dataset="{lg["dataset"]}"')
+
+
+# --- Close choices (Method spec 2026-10-24 §9) ------------------------------------------------------------------
+
+CC_HEAD_NOTE = "The second most likely play has at least half the probability of the first."
+CC_PNG_NOTE = ("Bars per setup, top to bottom: small, medium, big stake (Risk pays only). | Each bar: close choices "
+               "among the eligible decisions in that band. | ")
+def cc_id(S, ds, n) -> str:
+    return f'cc-{ds}-{P.meta(S, ds, n)["slug"]}'
+
+
+def close_td(S, ds, n, c) -> str:
+    """The Confidence tab's Close choices cell: the value opens the setup's details (an anchor; never sorted)."""
+    if not c or c["na"]:
+        return f'<td class="num">{nm(NA)}<span class="small">{esc(P.CC_NA)}</span></td>'
+    s = c["close"]
+    return (f'<td class="num"><a class="cc-open" href="#{cc_id(S, ds, n)}" title="Details: {esc(n)}">{pct(s["share"])}</a>'
+            f'<span class="small">{count(s["n"])} / {count(s["den"])}{P.SMALL_MARK if s["small"] else ""}</span></td>')
+
+
+def close_details(S, lg) -> str:
+    """Per setup, opened from the Close choices column: risk, engine values, missed risks, both margins."""
+    ds = lg["dataset"]
+    label = S["close_spec"]["label"]
+    out, na = [], []
+    for n in P.by_error(lg["setups"]):
+        c = lg["setups"][n].get("close")
+        if not c or c["na"]:
+            na.append(n)
+            continue
+        href = P.model_href("", ds, n, S) + "#close-choices"
+        out.append(
+            f'<details class="cc-details" id="{cc_id(S, ds, n)}"><summary><strong>{esc(n)}</strong>: close choices '
+            f'{esc(P.cc_text(c["close"]))}</summary><div class="cc-body">'
+            f'<h4>1. Risk</h4><p>Close choices between a safe play (the fewest hitting rolls of all legal plays) and a '
+            f'riskier one: <strong>{esc(P.cc_text(c["risk_close"]))}</strong> of the close choices.</p>{P.close_risk_table(c)}'
+            f'<h4>2. Engine values</h4>{P.close_engine_table(c)}'
+            f'<h4>3. Missed risks</h4><p>In Risk pays positions whose two most likely plays are a safe one and a riskier '
+            f'one: is the play made more often a missed risk in close choices than in other decisions?</p>{P.close_missed_table(c)}'
+            f'<p class="table-note">{esc(label)} <a href="{href}">Full breakdown</a></p>'
+            f'</div></details>')
+    note = (f'<p class="table-note">{esc(NA)} ({esc(P.CC_NA)}): {esc(", ".join(na))}.</p>' if na else "")
+    if not out:
+        return (f'<h3 class="table-title" id="close-{ds}">Close choices: details</h3>'
+                f'<p class="table-note">{esc(NA)}: no setup in this league has a full probability distribution. {esc(label)}</p>')
+    return (f'<h3 class="table-title" id="close-{ds}">Close choices: details per setup</h3>'
+            f'<p class="table-note">{esc(S["close_spec"]["definition"])} {esc(label)}</p>'
+            f'<div class="cc-list">{"".join(out)}</div>{note}')
 
 
 # --- Offline analyses (reviewed brief of 24 Oct 2026, item 5; Method spec 2026-10-24) --------------------------
@@ -656,6 +709,41 @@ def stake_chart(S, lg, margin, phase="all") -> str:
                       f"Risk calls by stake, League {lg['id']}", 1, lambda t: pct(t, 0), legend)
 
 
+def close_chart(S, lg, margin) -> str:
+    """Close choices by stake band, Risk pays only (Method spec 2026-10-24 §9.6): the Confidence table's order, never
+    ranked by the share; N/A for setups without a full probability distribution."""
+    rows = []
+    for n in P.by_error(lg["setups"]):
+        c = lg["setups"][n].get("close")
+        ref = ref_label(S, lg["dataset"], n)
+        if not c or c["na"]:
+            rows.append((n, dict(trade_off=0, stake=None), None, ref, P.CC_NA))
+            continue
+        st = c["margins"][margin]["stake"]
+        rp = c["margins"][margin]["classes"]["risk"]["eligible"]
+        rows.append((n, dict(trade_off=rp, stake=st), None, ref, f"Risk pays: {count(rp)} eligible decisions"))
+
+    def draw(x, r, q):
+        s = []
+        for i, b in enumerate(A.BANDS):
+            v = r["stake"][b]
+            y0 = 2 + i * 10
+            if not v["den"]:
+                s.append(f'<text class="muted" x="{x(0) + 2:.1f}" y="{y0 + 8}" font-size="8">{esc(b)}: {esc(NA)}</text>')
+                continue
+            s.append(f'<rect class="ccs-{b}" x="{x(0):.1f}" y="{y0}" width="{x(v["share"]) - x(0):.1f}" height="8">'
+                     f'<title>{esc(b)} stake: {esc(P.cc_text(v))}</title></rect>')
+        return "".join(s)
+    legend = ('<p class="chart-legend"><span>Three bars per setup: small, medium, big stake (Risk pays only); each bar is '
+              'the share of eligible decisions in that band that are close choices.</span> <span><i class="swatch ccs-small">'
+              '</i>small</span> <span><i class="swatch ccs-medium"></i>medium</span> <span><i class="swatch ccs-big"></i>big</span> '
+              '<span>Rows in the Confidence table\'s order, not ranked by this share. A big stake means playing safe costs more '
+              'by the engine\'s value, not that the decision was harder.</span></p>')
+    svg = bars_chart(S, lg, "closestake", margin, rows, lambda r, q: r["stake"], draw,
+                     f"Close choices by stake band, League {lg['id']}", 1, lambda t: pct(t, 0), legend)
+    return svg.replace('<svg class="chart-svg"', f'<svg class="chart-svg" data-note="{esc(CC_PNG_NOTE + S["close_spec"]["label"])}"', 1)
+
+
 def pays_chart(S, lg) -> str:
     """Risk pays vs safety pays: risks found and right safety per setup, as two bars on one 0-100% axis."""
     rows = [(n, r, q, ref, detail_of(S, lg, n, ref)) for n, r, q, ref in rows_of(S, lg)]
@@ -866,7 +954,7 @@ def tab_body(S, key: str) -> str:
         elif key == "quality":
             inner = slot(lg, "quality", quality_table(S, lg)) + f'<p class="table-note">{esc(LIMIT_PAIRED)}</p>'
         elif key == "confidence":
-            inner = confidence_table(S, lg) + offline_confidence(S, lg)
+            inner = confidence_table(S, lg) + close_details(S, lg) + offline_confidence(S, lg)
         elif key == "reasoning":
             inner = P.league_reasoning_table(S, lg)
         elif key == "cost":
@@ -998,6 +1086,11 @@ def charts(S) -> str:
     trade = "".join(view(S, lg, "".join(f'<div class="chart-view" data-view-chart="tradeoff-{k}" data-view-margin="main">{tradeoff_chart(S, lg, k)}</div>'
                                         for k in ("cost", "time"))) for lg in S["leagues"]) + shared_view(S, "Analysis pending.")
     paired = f'<p class="table-note">{esc(LIMIT_PAIRED)} Charts cover all phases except the Risk panel.</p>'
+    conf = "".join(view(S, lg, "".join(f'<div class="chart-view" data-view-chart="closestake" data-view-margin="{m}">'
+                                       f'{close_chart(S, lg, m)}</div>' for m in ("main", "robust")))
+                   for lg in S["leagues"]) + shared_view(S, "Analysis pending.")
+    conf_note = (f'<p class="table-note cc-label">{esc(S["close_spec"]["label"])} {esc(S["close_spec"]["definition"])} '
+                 f'{esc(NA)} for setups without a full probability distribution. <a href="method/#close-choices">Method</a></p>')
     return ('<section class="charts" id="charts" aria-label="Charts" tabindex="-1">'
             + chart_panel("chart-risk", "Risk", [("riskmap", "Risk map"), ("split", "Error rate by risk-call category"),
                                                  ("stake", "Stake chart"), ("sdt", "Ability and caution")], risk, True,
@@ -1006,6 +1099,8 @@ def charts(S) -> str:
                                                                            ("cost", "Cost")], measures, False, paired)
             + chart_panel("chart-tradeoff", "Trade-off", [("tradeoff-cost", "Cost"), ("tradeoff-time", "Time")], trade,
                           False, paired)
+            + chart_panel("chart-confidence", "Confidence", [("closestake", "Close choices by stake band")], conf, True,
+                          conf_note)
             + "</section>")
 
 

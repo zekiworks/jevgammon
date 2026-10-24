@@ -1,0 +1,595 @@
+{
+ "set": "close-choices-b-v2",
+ "method": "tools/site/content/method-spec-2026-10-24.md \u00a79.10 (branch brief-2026-10-24)",
+ "supersedes": "freeze/close-choices-b.json (main; 20 per phase from v1 + new)",
+ "source": {
+  "file": "positions/new.jsonl",
+  "sha256": "ad06427c4106e8d889b027dc49f79557fb2739b8fd278f8fa2f05da72dc12d69",
+  "rows": 1000
+ },
+ "engine_values": {
+  "tool": "tools/v3/score.py evaluate (GNUbg 1.08, 2-ply cubeless, engine.PLY2), CPU nice 19, 8 shards",
+  "files": "~/.local/state/bg-site/shared/new-2ply-s0..s7.db",
+  "sha256_of_sorted_position_play_equity_lines": "fe5ed3a3a6128450a9a01d87f551558917c0107462de2a341da005b856ac24f0",
+  "positions": 1000
+ },
+ "rule": "Position class at margin 0.001 (analysis.play_call); targets 40 Risk pays, 40 Safety pays, 20 No trade-off, evenly over the phases (8/8/4 per phase); per (class, phase) cell the ids with the smallest sha256('close-choices-b-v2-2026-10-24:' + id); shortfall to other phases of the same class in phase order; rows byte-identical.",
+ "seed_text": "close-choices-b-v2-2026-10-24:",
+ "excluded_fewer_than_2_legal_plays": 0,
+ "eligible": {
+  "risk/opening": 124,
+  "risk/contact": 46,
+  "risk/holding": 34,
+  "risk/race": 0,
+  "risk/bear-off": 0,
+  "safety/opening": 73,
+  "safety/contact": 128,
+  "safety/holding": 142,
+  "safety/race": 0,
+  "safety/bear-off": 0,
+  "none/opening": 3,
+  "none/contact": 26,
+  "none/holding": 24,
+  "none/race": 200,
+  "none/bear-off": 200
+ },
+ "selected_per_cell": {
+  "risk/opening": 14,
+  "risk/contact": 13,
+  "risk/holding": 13,
+  "risk/race": 0,
+  "risk/bear-off": 0,
+  "safety/opening": 14,
+  "safety/contact": 13,
+  "safety/holding": 13,
+  "safety/race": 0,
+  "safety/bear-off": 0,
+  "none/opening": 3,
+  "none/contact": 5,
+  "none/holding": 4,
+  "none/race": 4,
+  "none/bear-off": 4
+ },
+ "shortfall": {
+  "risk": 0,
+  "safety": 0,
+  "none": 0
+ },
+ "file": "close-choices-b-v2.jsonl",
+ "sha256": "88bc3904595c6dccc3f6fe015e865b7b23e3ed81b9be1ad8d1e7efcf5848410c",
+ "rows": 100,
+ "options": {
+  "min": 2,
+  "max": 25,
+  "total": 1204
+ },
+ "frozen_at": "2026-10-24T19:23:47Z",
+ "selected": {
+  "risk/opening": [
+   {
+    "id": "new-0160",
+    "stake": 0.1548359990119934,
+    "options": 5
+   },
+   {
+    "id": "new-0002",
+    "stake": 0.027142882347106934,
+    "options": 15
+   },
+   {
+    "id": "new-0119",
+    "stake": 0.2215660810470581,
+    "options": 25
+   },
+   {
+    "id": "new-0175",
+    "stake": 0.1490347981452942,
+    "options": 21
+   },
+   {
+    "id": "new-0122",
+    "stake": 0.2720492482185364,
+    "options": 16
+   },
+   {
+    "id": "new-0092",
+    "stake": 0.061750829219818115,
+    "options": 14
+   },
+   {
+    "id": "new-0069",
+    "stake": 0.270094633102417,
+    "options": 13
+   },
+   {
+    "id": "new-0009",
+    "stake": 0.16168004274368286,
+    "options": 8
+   },
+   {
+    "id": "new-0007",
+    "stake": 0.09788304567337036,
+    "options": 4
+   },
+   {
+    "id": "new-0149",
+    "stake": 0.015250205993652344,
+    "options": 18
+   },
+   {
+    "id": "new-0016",
+    "stake": 0.024928271770477295,
+    "options": 5
+   },
+   {
+    "id": "new-0111",
+    "stake": 0.08275717496871948,
+    "options": 4
+   },
+   {
+    "id": "new-0046",
+    "stake": 0.08419275283813477,
+    "options": 22
+   },
+   {
+    "id": "new-0107",
+    "stake": 0.1517753005027771,
+    "options": 16
+   }
+  ],
+  "risk/contact": [
+   {
+    "id": "new-0356",
+    "stake": 0.009007453918457031,
+    "options": 16
+   },
+   {
+    "id": "new-0274",
+    "stake": 0.22128987312316895,
+    "options": 20
+   },
+   {
+    "id": "new-0353",
+    "stake": 0.1410617232322693,
+    "options": 11
+   },
+   {
+    "id": "new-0254",
+    "stake": 0.05968654155731201,
+    "options": 3
+   },
+   {
+    "id": "new-0337",
+    "stake": 0.12578153610229492,
+    "options": 8
+   },
+   {
+    "id": "new-0256",
+    "stake": 0.09287011623382568,
+    "options": 10
+   },
+   {
+    "id": "new-0385",
+    "stake": 0.15555047988891602,
+    "options": 16
+   },
+   {
+    "id": "new-0239",
+    "stake": 0.08688473701477051,
+    "options": 8
+   },
+   {
+    "id": "new-0297",
+    "stake": 0.1696491241455078,
+    "options": 17
+   },
+   {
+    "id": "new-0328",
+    "stake": 0.05815553665161133,
+    "options": 11
+   },
+   {
+    "id": "new-0244",
+    "stake": 0.04641205072402954,
+    "options": 4
+   },
+   {
+    "id": "new-0349",
+    "stake": 0.0013679862022399902,
+    "options": 22
+   },
+   {
+    "id": "new-0361",
+    "stake": 0.046129047870635986,
+    "options": 11
+   }
+  ],
+  "risk/holding": [
+   {
+    "id": "new-0532",
+    "stake": 0.22068673372268677,
+    "options": 6
+   },
+   {
+    "id": "new-0469",
+    "stake": 0.016603469848632812,
+    "options": 24
+   },
+   {
+    "id": "new-0598",
+    "stake": 0.0011370182037353516,
+    "options": 14
+   },
+   {
+    "id": "new-0511",
+    "stake": 0.008902251720428467,
+    "options": 8
+   },
+   {
+    "id": "new-0588",
+    "stake": 0.5949833393096924,
+    "options": 10
+   },
+   {
+    "id": "new-0572",
+    "stake": 0.37300175428390503,
+    "options": 18
+   },
+   {
+    "id": "new-0474",
+    "stake": 0.03371238708496094,
+    "options": 15
+   },
+   {
+    "id": "new-0550",
+    "stake": 0.06776896119117737,
+    "options": 8
+   },
+   {
+    "id": "new-0554",
+    "stake": 0.027391374111175537,
+    "options": 23
+   },
+   {
+    "id": "new-0413",
+    "stake": 0.31310737133026123,
+    "options": 20
+   },
+   {
+    "id": "new-0525",
+    "stake": 0.009206831455230713,
+    "options": 23
+   },
+   {
+    "id": "new-0459",
+    "stake": 0.07910269498825073,
+    "options": 5
+   },
+   {
+    "id": "new-0593",
+    "stake": 0.049766719341278076,
+    "options": 17
+   }
+  ],
+  "risk/race": [],
+  "risk/bear-off": [],
+  "safety/opening": [
+   {
+    "id": "new-0200",
+    "stake": 0.0,
+    "options": 11
+   },
+   {
+    "id": "new-0155",
+    "stake": 0.0,
+    "options": 18
+   },
+   {
+    "id": "new-0156",
+    "stake": 0.0,
+    "options": 12
+   },
+   {
+    "id": "new-0190",
+    "stake": 0.0,
+    "options": 8
+   },
+   {
+    "id": "new-0131",
+    "stake": 0.0,
+    "options": 25
+   },
+   {
+    "id": "new-0112",
+    "stake": 0.0,
+    "options": 17
+   },
+   {
+    "id": "new-0040",
+    "stake": 0.0,
+    "options": 21
+   },
+   {
+    "id": "new-0043",
+    "stake": 0.0,
+    "options": 17
+   },
+   {
+    "id": "new-0050",
+    "stake": 0.0,
+    "options": 11
+   },
+   {
+    "id": "new-0147",
+    "stake": 0.0,
+    "options": 10
+   },
+   {
+    "id": "new-0188",
+    "stake": 0.0,
+    "options": 13
+   },
+   {
+    "id": "new-0053",
+    "stake": 0.0,
+    "options": 14
+   },
+   {
+    "id": "new-0041",
+    "stake": 0.0,
+    "options": 14
+   },
+   {
+    "id": "new-0070",
+    "stake": 0.0,
+    "options": 16
+   }
+  ],
+  "safety/contact": [
+   {
+    "id": "new-0263",
+    "stake": 0.0,
+    "options": 11
+   },
+   {
+    "id": "new-0371",
+    "stake": 0.0,
+    "options": 21
+   },
+   {
+    "id": "new-0264",
+    "stake": 0.0,
+    "options": 6
+   },
+   {
+    "id": "new-0250",
+    "stake": 0.0,
+    "options": 18
+   },
+   {
+    "id": "new-0377",
+    "stake": 0.0,
+    "options": 15
+   },
+   {
+    "id": "new-0330",
+    "stake": 0.0,
+    "options": 13
+   },
+   {
+    "id": "new-0237",
+    "stake": 0.0,
+    "options": 7
+   },
+   {
+    "id": "new-0344",
+    "stake": 0.0,
+    "options": 4
+   },
+   {
+    "id": "new-0249",
+    "stake": 0.0,
+    "options": 13
+   },
+   {
+    "id": "new-0383",
+    "stake": 0.0,
+    "options": 20
+   },
+   {
+    "id": "new-0362",
+    "stake": 0.0,
+    "options": 19
+   },
+   {
+    "id": "new-0307",
+    "stake": 0.0,
+    "options": 17
+   },
+   {
+    "id": "new-0270",
+    "stake": 0.0,
+    "options": 6
+   }
+  ],
+  "safety/holding": [
+   {
+    "id": "new-0494",
+    "stake": 0.0,
+    "options": 9
+   },
+   {
+    "id": "new-0467",
+    "stake": 0.0,
+    "options": 14
+   },
+   {
+    "id": "new-0513",
+    "stake": 0.0,
+    "options": 8
+   },
+   {
+    "id": "new-0562",
+    "stake": 0.0,
+    "options": 6
+   },
+   {
+    "id": "new-0529",
+    "stake": 0.0,
+    "options": 2
+   },
+   {
+    "id": "new-0575",
+    "stake": 0.0,
+    "options": 9
+   },
+   {
+    "id": "new-0518",
+    "stake": 0.0,
+    "options": 14
+   },
+   {
+    "id": "new-0410",
+    "stake": 0.0,
+    "options": 6
+   },
+   {
+    "id": "new-0564",
+    "stake": 0.0,
+    "options": 7
+   },
+   {
+    "id": "new-0422",
+    "stake": 0.0,
+    "options": 17
+   },
+   {
+    "id": "new-0546",
+    "stake": 0.0,
+    "options": 16
+   },
+   {
+    "id": "new-0465",
+    "stake": 0.0,
+    "options": 11
+   },
+   {
+    "id": "new-0582",
+    "stake": 0.0,
+    "options": 21
+   }
+  ],
+  "safety/race": [],
+  "safety/bear-off": [],
+  "none/opening": [
+   {
+    "id": "new-0062",
+    "stake": null,
+    "options": 16
+   },
+   {
+    "id": "new-0165",
+    "stake": null,
+    "options": 4
+   },
+   {
+    "id": "new-0024",
+    "stake": null,
+    "options": 5
+   }
+  ],
+  "none/contact": [
+   {
+    "id": "new-0388",
+    "stake": null,
+    "options": 3
+   },
+   {
+    "id": "new-0278",
+    "stake": null,
+    "options": 25
+   },
+   {
+    "id": "new-0331",
+    "stake": null,
+    "options": 4
+   },
+   {
+    "id": "new-0329",
+    "stake": null,
+    "options": 2
+   },
+   {
+    "id": "new-0281",
+    "stake": null,
+    "options": 4
+   }
+  ],
+  "none/holding": [
+   {
+    "id": "new-0447",
+    "stake": null,
+    "options": 21
+   },
+   {
+    "id": "new-0591",
+    "stake": null,
+    "options": 2
+   },
+   {
+    "id": "new-0537",
+    "stake": null,
+    "options": 7
+   },
+   {
+    "id": "new-0430",
+    "stake": null,
+    "options": 25
+   }
+  ],
+  "none/race": [
+   {
+    "id": "new-0679",
+    "stake": null,
+    "options": 4
+   },
+   {
+    "id": "new-0618",
+    "stake": null,
+    "options": 3
+   },
+   {
+    "id": "new-0626",
+    "stake": null,
+    "options": 2
+   },
+   {
+    "id": "new-0706",
+    "stake": null,
+    "options": 3
+   }
+  ],
+  "none/bear-off": [
+   {
+    "id": "new-0999",
+    "stake": null,
+    "options": 3
+   },
+   {
+    "id": "new-0814",
+    "stake": null,
+    "options": 4
+   },
+   {
+    "id": "new-0801",
+    "stake": null,
+    "options": 14
+   },
+   {
+    "id": "new-0919",
+    "stake": null,
+    "options": 2
+   }
+  ]
+ }
+}

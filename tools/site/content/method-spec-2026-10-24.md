@@ -321,3 +321,31 @@ Replaces the position source of §9.9. The scoring rules of §9.9 are unchanged.
 version and format, max tokens, provider route. Temperature is recorded per setup where known (the value sent, or the
 provider's documented default) and as "not disclosed" where not. A setup that gives five identical answers on every
 scored position is reported as deterministic on these positions; settings are never changed to create variation.
+
+### 9.11 Stage B positions, v2 freeze (published 2026-10-24 19:23 UTC, before any stage B call)
+
+- File `positions/close-choices-b-v2.jsonl`: 100 rows, sha256 `88bc3904595c6dccc3f6fe015e865b7b23e3ed81b9be1ad8d1e7efcf5848410c`. Record `freeze/close-choices-b-v2.json`;
+  script `tools/site/close_choices_b_freeze.py`. Source `positions/new.jsonl` sha256 `ad06427c4106e8d889b027dc49f79557fb2739b8fd278f8fa2f05da72dc12d69`.
+- Engine values: GNUbg 2-ply of every legal play of the 1,000 pool positions (sha256 of the sorted position/play/equity
+  lines `fe5ed3a3a6128450a9a01d87f551558917c0107462de2a341da005b856ac24f0`). Excluded for fewer than 2 legal plays: 0.
+- Race and bear-off positions have no contact, so every one is No trade-off; the Risk pays and Safety pays quotas of those
+  phases moved to opening, contact and holding by the shortfall rule. Shortfall per class: none.
+- Options per position: 2–25, 1,204 in all (no decision is split into groups).
+
+| Class / phase | Eligible | Selected | Ids (in hash order) |
+| --- | --- | --- | --- |
+| Risk pays / opening | 124 | 14 | new-0160, new-0002, new-0119, new-0175, new-0122, new-0092, new-0069, new-0009, new-0007, new-0149, new-0016, new-0111, new-0046, new-0107 |
+| Risk pays / contact | 46 | 13 | new-0356, new-0274, new-0353, new-0254, new-0337, new-0256, new-0385, new-0239, new-0297, new-0328, new-0244, new-0349, new-0361 |
+| Risk pays / holding | 34 | 13 | new-0532, new-0469, new-0598, new-0511, new-0588, new-0572, new-0474, new-0550, new-0554, new-0413, new-0525, new-0459, new-0593 |
+| Risk pays / race | 0 | 0 | — |
+| Risk pays / bear-off | 0 | 0 | — |
+| Safety pays / opening | 73 | 14 | new-0200, new-0155, new-0156, new-0190, new-0131, new-0112, new-0040, new-0043, new-0050, new-0147, new-0188, new-0053, new-0041, new-0070 |
+| Safety pays / contact | 128 | 13 | new-0263, new-0371, new-0264, new-0250, new-0377, new-0330, new-0237, new-0344, new-0249, new-0383, new-0362, new-0307, new-0270 |
+| Safety pays / holding | 142 | 13 | new-0494, new-0467, new-0513, new-0562, new-0529, new-0575, new-0518, new-0410, new-0564, new-0422, new-0546, new-0465, new-0582 |
+| Safety pays / race | 0 | 0 | — |
+| Safety pays / bear-off | 0 | 0 | — |
+| No trade-off / opening | 3 | 3 | new-0062, new-0165, new-0024 |
+| No trade-off / contact | 26 | 5 | new-0388, new-0278, new-0331, new-0329, new-0281 |
+| No trade-off / holding | 24 | 4 | new-0447, new-0591, new-0537, new-0430 |
+| No trade-off / race | 200 | 4 | new-0679, new-0618, new-0626, new-0706 |
+| No trade-off / bear-off | 200 | 4 | new-0999, new-0814, new-0801, new-0919 |

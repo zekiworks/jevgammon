@@ -1,6 +1,6 @@
 # Close choices, stage B: positions, method and estimate
 
-Oct 24, 2026 · for Ümit · request: `mailbox/Close choices - request 2026-10-24.md`, section B. Stage B **has not run**.
+Oct 24, 2026 · for Ümit · request: `mailbox/Close choices - request 2026-10-24.md`, section B. Stage B **has not run**. **Updated Oct 24 with Can's decisions (section 5): 8 teams incl. Gemma 4 31B (on) on spark3; no stage B call until the ladder settles.**
 
 **No model requests were made for this note.** That means no prediction call, no play call, no smoke test, probe or preflight, and no local model server started. Here is what I did:
 
@@ -90,7 +90,7 @@ The observed set O can never contain a feature that cannot differ in that positi
   - plus the two 3rd-placed models with the lowest error rates.
 - `mailbox/backgammon-ladder-cup - response.md` (Oct 23) confirms that format.
 - Your earlier brief said "9 Cup teams". The shared-positions review (decision D2) asked whether that meant the 8-team Hype Cup or a separate nine-setup list. That question is still open, and I found no nine-setup list anywhere in `mailbox/`, `workspace/` or `tools/ladder.py`.
-- **Please say whether stage B uses 8 or 9 teams, and name the ninth if there is one.**
+- **Decided (Can, 2026-10-24): 8 teams**, the Cup's documented format. No ninth team.
 
 ### The roster is not final
 
@@ -103,7 +103,7 @@ The ladder has no steady state yet.
   - GPT-6.1 Sol (high) from League 2 to League 3;
   - Grok 4.7 (off) from League 3 to League 2.
 - The Cup is drawn only at a steady state. The list below is a **dated snapshot, not a roster**: the tables of the round-2 request (Oct 24, 12:44 UTC), with the Cup rule applied, the same as scenario 4.2 of the shared-positions review.
-- **Question:** wait for the steady state, or run on this snapshot?
+- **Decided (Can, 2026-10-24): wait for the ladder to settle. No stage B call until then.** The teams are taken from the Cup roster at the steady state, so Table B1 may still change; any one-letter replacement is priced in Table B3.
 
 ### Who counts as "one-letter"
 
@@ -124,12 +124,12 @@ A setup whose recorded answers are one option letter with no probability distrib
 
 The third 3rd place, Jev 1.13.0 (League 1, error rate 34.5), drops out.
 
-**Five one-letter teams in this snapshot:** GPT-6.1 Sol (low), GPT-6 Astra (on), GPT-6.1 Sol (high), Gemini 3.8 Flash (low) and Claude Opus 5.5 (on).
+**Five one-letter teams in this snapshot:** GPT-6.1 Sol (low), GPT-6 Astra (on), GPT-6.1 Sol (high), Gemini 3.8 Flash (low) and Claude Opus 5.5 (on). **Stage B teams in this snapshot: these five plus Gemma 4 31B (on), six in all** (GLiDE and Jev are decision models and cannot answer the prediction).
 
 - **Decision models (GLiDE, Jev):** they only pick among options and cannot answer a free-text prediction question, so they are not in stage B.
 - **Gemma 4 31B (on):**
-  - **Discrepancy, reported but not fixed:** `tools/site/content/setups.json` labels Gemma 4 31B (on) and (off) "chat model, one letter", but their records hold letter log-probabilities.
-  - **Option:** it could answer the prediction in free text, but it isn't one-letter by its record. It is priced separately below; include it only if you say so.
+  - **Label fixed (branch `brief-2026-10-24` only):** `tools/site/content/setups.json` labelled Gemma 4 31B (on) and (off) "chat model, one letter", but their records hold letter log-probabilities. Both now read "chat model, answer-letter probabilities", confidence source "letter probability", as for the other letter-readout setups.
+  - **Decided (Can, 2026-10-24): included**, on the Gemma server already running on spark3. See "Gemma 4 31B (on): device and pre-run check" in section 4. It is in stage B as a Cup team that can answer the prediction question; by its record it is not one-letter, and the report says so.
 
 ## 3. Method for B
 
@@ -141,7 +141,7 @@ One separate call per team and position. It shows the same system prompt and the
 
 > If you answered this position again independently, on which features might your chosen plays differ: hitting risk, making a point, the race or the prime? You may name several, or none.
 
-- **Proposed format line, for your approval** (the question itself stays verbatim): "Answer with the features you name, using only these words: hitting risk, making a point, the race, the prime; or the single word none."
+- **Format line, approved by Can on 2026-10-24** (the question itself stays verbatim): "Answer with the features you name, using only these words: hitting risk, making a point, the race, the prime; or the single word none."
 - **Constraint:** every one-letter route already constrains the letter: ChatGPT, Claude and xAI with a JSON schema (`src/players/llm.rs` `letter_schema`), Gemini with an enum. The prediction answer is constrained the same way. It becomes a JSON list of unique items from the four names, and an empty list means "none".
 - **Parsing and validity:**
   - Each named item must map to exactly one of the four features. Duplicates collapse.
@@ -171,7 +171,7 @@ Provider default; the value is recorded if disclosed, else "not disclosed".
 | GPT-6.1 Sol (low, high), GPT-6 Astra (on) | nothing (setups.json "not sent (API default)") | **not disclosed** for the ChatGPT subscription route | OpenAI's API docs describe reasoning models' temperature as fixed at its default of 1, per search summaries of platform.openai.com pages (checked 2026-10-24). Not verified for these models or this route, so not claimed |
 | Claude Opus 5.5 (on) | nothing | **1.0, Anthropic's documented Messages API default** (newer models accept only 1.0) | [Messages API reference](https://platform.claude.com/docs/en/api/http/beta/messages/create), checked 2026-10-24 via web search; the subscription route uses the same Messages API |
 | Gemini 3.8 Flash (low) | `temperature: 1.0` (`src/players/llm.rs` line 463, every Gemini/Antigravity call) | **1.0, Google's documented default** | [Gemini 3 guide](https://ai.google.dev/gemini-api/docs/gemini-3) (keep the 1.0 default) and the [text generation page](https://ai.google.dev/gemini-api/docs/text-generation) (3.6+ and 4 ignore custom values), checked 2026-10-24. Proposal: keep the league call unchanged, since the value sent equals the default |
-| Option: Gemma 4 31B (on) | `temperature: 1.0` (our own vLLM server: we are the provider) | 1.0 | `llm.rs` lines 312, 338 |
+| Gemma 4 31B (on) | `temperature: 1.0` (our own vLLM server: we are the provider) | 1.0 | `llm.rs` lines 312, 338 |
 
 The Google and Anthropic default values (1.0) are documented in their docs as linked above. Whether each applies to the specific subscription route is an inference, labelled as such on the page.
 
@@ -257,7 +257,7 @@ Stage B results are added to the site separately, only after the experiment is c
 | Gemini 3.8 Flash (low) | Antigravity subscription | 1,767 (Oct 19–23) | 3,276 | 186 (183) | 2.0 / 3.3 / 3.4 | 4 | $0.825 / $4.125 | $2.09 | $2.50 | $0 | 8–12 min |
 | Claude Opus 5.5 (on) | Claude subscription | 1,381 (Oct 20–23) | 4,299 | 443 (432) | 6.3 / 6.6 / 7.2 | 4 | $4 / $20 | $15.69 | $19.81 | $0 | 16–25 min |
 | **Total, 5 teams** | 3 subscriptions | | | | | | | **$48.59** | **$57.64** | **$0** | see below |
-| *Option: Gemma 4 31B (on)* | own GPU (vLLM, 2 calls per play decision) | 1,914 (Oct 19–24) | 10,519 per decision | 3,898 (3,886) | 115.8 / 161.5 / 173.7 | 24 | ($0.20 / $0.40, hypothetical) | ($2.20) | ($2.88) | $0 | **1.1–1.7 GPU-hours** on one RTX PRO 6000 |
+| Gemma 4 31B (on), included | own server, spark3 (vLLM, 2 calls per play decision) | 1,914 (Oct 19–24) | 10,519 per decision | 3,898 (3,886) | 115.8 / 161.5 / 173.7 | 24 | ($0.20 / $0.40, hypothetical) | ($2.20) | ($2.88) | $0 | bariton figure, **superseded: see Spark hours below** |
 
 **Totals for the five teams:**
 
@@ -266,9 +266,38 @@ Stage B results are added to the site separately, only after the experiment is c
 - **Billed:** $0. **API-equivalent:** $48.59 central, $57.64 conservative (ChatGPT $30.81–35.34, Claude $15.69–19.81, Antigravity $2.09–2.50).
 - **Wall time:** about **0.8–1.2 h** if the three subscriptions run side by side and the three ChatGPT teams one after another (47–72 min). Claude takes 16–25 min, Antigravity 8–12 min.
 - **Quota reference:** ladder round 1 used about $185 API-equivalent of subscription capacity in one night without a reported stop (shared-positions review). The limits themselves are unknown.
-- **Option Gemma 4 31B (on):** add 600 calls (its prediction call is one call; its play calls are two each) and 1.1–1.7 GPU-hours.
-  - It needs a free bariton GPU. None was free at the review's 10:33 UTC check; not re-checked.
-  - [INFERENCE] Its league latency includes queueing at 24 sequences, so the hours are rough (±50%).
+- **With Gemma 4 31B (on) (decided in):** 3,600 calls, of which Gemma 600 (1,100 requests: the prediction is one request, each play decision two). Billed **$0**. Gemma's time: **about 15–25 Spark hours** (next section).
+
+### Gemma 4 31B (on): device and pre-run check (decided 2026-10-24)
+
+**Device change from bariton.** Stage B runs Gemma 4 31B (on) on the Gemma server **already serving on spark3** (`192.168.1.139:8894`, vLLM, model id `gemma-4-31B-it`, `max_model_len` 32,768, logprobs allowed). No bariton GPU is used. Nothing on the Spark is started, stopped or reconfigured. The league setup ran on bariton (RTX PRO 6000) for most of its decisions, and on a DGX Spark (`spark-194d`, not spark3) in some windows (roster device note in `v3.db`). Stage B's device is recorded per decision, and the device note gets this change.
+
+**Settings to verify before any stage-B call** (read-only: the server's `/v1/models` and its launch arguments; no generation), against the league player config (`players.settings` of Gemma 4 31B (on)):
+
+| Setting | League (`players.settings`) | spark3 (to verify) |
+| --- | --- | --- |
+| Weights | `gemma-4-31B-it`, same checkpoint as in the leagues | model id `gemma-4-31B-it`; checkpoint path and hash to match |
+| Quantization | fp8: bf16 checkpoint quantized by vLLM at load; fp8 KV cache | the same flags |
+| Chat template | the checkpoint's template; `chat_template_kwargs: {enable_thinking: true}` | the same template file (hash) |
+| Reasoning | on (`enable_thinking: true`, template default; no effort knob) | thinking text present in the check below |
+| Max tokens | `max_tokens` 24,000 per request | 24,000 sent; prompt (~5.3k tokens per request) + 24,000 fits within `max_model_len` 32,768. The league server's `max_model_len` is to be read and compared too |
+| Temperature | 1.0 sent by the runner | 1.0 sent |
+| Logprobs | top log-probabilities for the letter readout | allowed (per Can) |
+
+Any mismatch stops the run before any stage-B call, and it is reported here.
+
+**20-request comparison** (the precedent of every earlier Gemma device move, `v3.db` device note: "20 stored League 2 (off) requests replayed there: same top letter 20/20, max |dp| …", and Decider v1.1's move in `Night run - log.md`, rule "same play in at least 19 of 20"):
+- **(a) Equivalence, 20 stored League 2 Gemma 4 31B (off) requests** (thinking off, so the letter readout is deterministic enough to compare), replayed from `prompts.db` exactly as sent. **Pass: same top letter in at least 19 of 20.** Reported: max and median |dp|. This checks weights, quantization and chat template.
+- **(b) Reasoning on, 20 stored League 2 Gemma 4 31B (on) requests**, replayed the same way. Thinking is sampled at temperature 1.0, so no play-agreement threshold. **Pass: every response has thinking text, a valid letter, and no request cut at 24,000 tokens beyond the league's own rate.** Reported: same play x/20 as information, reasoning tokens, seconds per request.
+- These 40 requests are check calls, made only after approval of the run and before any stage-B call. They are not stage-B data.
+- **Cost:** local, **$0 billed**. Time on spark3: (a) about 2 minutes (league (off) readouts take a few seconds each); (b) about 20 × 3,900 output tokens ≈ 78k tokens ≈ **0.5 h** batched, up to **7 h** if the server runs them one at a time (3 tokens/s, below).
+
+**Spark hours (estimate).**
+- Measured on a DGX Spark in the leagues (`spark-194d`, `v3.db`, Gemma 4 31B (on) decisions in its Spark windows, 94 decisions): about **3 output tokens/s per request** when one request ran at a time (e.g. 3,285 tokens in 1,090 s; 17,512 in 5,824 s), and about **43 tokens/s in total** in the busiest hour (Oct 19, 20:00 UTC: 46 (on) decisions × 3,407 tokens, alongside 714 (off) readouts).
+- Stage B output for Gemma: 500 play decisions × 3,898 tokens (measured, mostly bariton) + 100 predictions (estimated as in "How the numbers are built") = **2.34 M tokens central, 3.90 M conservative**.
+- At 43 tokens/s in total: **about 15 h central, 25 h conservative**, with requests sent in parallel (the server's 24 sequences). One at a time it would take weeks, so the run sends in parallel.
+- [INFERENCE] spark3 is assumed to be the same hardware class (GB10) as `spark-194d`; its real throughput is unmeasured, and so is any load from other work on it. Check (b) measures it before the run, and this estimate is updated then.
+- Billed $0; electricity and the Spark's time are not priced (unknown, not $0).
 
 ### Table B3: unit cost of every other one-letter setup in Leagues 2 and 3
 
@@ -295,19 +324,26 @@ Use it if the roster changes (round 2, a steady state, or a ninth team). Same me
 - **Quotas:** unknown. A quota stop changes time, not money.
 - **Price drift:** the dated prices above, checked Oct 24.
 
-## 5. Decisions needed before any call
+## 5. Decisions
 
-1. **8 or 9 teams**, and which (section 2). Also: snapshot now, or wait for the ladder's steady state?
-2. **Pool:** the 2,000 shared standard positions (as frozen), or `new.jsonl` only?
-3. **Gemma 4 31B (on):** in or out? It is not one-letter by its record, and it costs GPU hours.
-4. **The prediction format line** (B1), and constraining the answer to the four names.
-5. **Temperature:** keep the league calls unchanged (Gemini sends 1.0, the documented default; the other routes send nothing).
-6. **Failed calls are final**, with no re-ask after the run. This is my proposal.
+Recorded 2026-10-24 (Can's answers, via Main):
+
+1. **8 teams** (the Cup's documented format). **Wait for the ladder to settle; no stage B until then.** The roster is taken at the steady state.
+2. **Gemma 4 31B (on): included**, on the Gemma server already on spark3; device change from bariton; settings check and 20-request comparison before any call (section 4).
+3. **The prediction format line (B1): approved**, with the answer constrained to the four names.
+4. **Failed calls are final**, with no re-ask after the run: **approved**.
+
+Still open:
+
+5. **Pool:** the 2,000 shared standard positions (as frozen), or `new.jsonl` only?
+6. **Temperature:** keep the league calls unchanged (Gemini and Gemma send 1.0; the other routes send nothing).
+
 
 Checks to run before the first call, after approval:
 
 - re-hash `positions/close-choices-b.jsonl` against the freeze record;
 - render hashes of the play prompt and the prediction prompt;
 - unit tests of the prediction parser.
+- Gemma 4 31B (on) on spark3: settings verification and the 20-request comparison (section 4).
 
-Waiting for approval
+Waiting for the ladder to settle

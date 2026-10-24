@@ -448,31 +448,24 @@ def dashboard_rates(conn: sqlite3.Connection, scores: Path | None) -> dict[str, 
 
 def origins(db: Path, league_id: int) -> dict[str, int]:
     """For each current member of a league, the league it played in before any ladder move:
-    follow its ladder moves back from its row in this league (a move ends one row with a
-    "ladder round" note and starts the next at the same moment). A setup that never moved,
-    such as the GNUbg anchor present in every league, gets this league."""
+    the league of its earliest membership ended by a ladder move ("ladder round" note), or this
+    league if it never moved. Memberships ended for other reasons (the League 1 reshape) don't
+    count, so a setup moved before the ladder belongs to the league it then played in."""
     out: dict[str, int] = {}
     with connect(db) as conn:
         if "league_players" not in {r[0] for r in conn.execute("SELECT name FROM sqlite_master")}:
             return out
         rows: dict[str, list] = {}
         for r in conn.execute(
-            """SELECT p.name, lp.league_id, lp.joined_at, lp.left_at, lp.note FROM league_players lp
-               JOIN players p ON p.id = lp.player_id ORDER BY lp.joined_at"""
+            """SELECT p.name, lp.league_id, lp.left_at, lp.note FROM league_players lp
+               JOIN players p ON p.id = lp.player_id ORDER BY lp.joined_at, lp.id"""
         ):
             rows.setdefault(r["name"], []).append(dict(r))
-        ts = lambda t: datetime.fromisoformat(t.replace("Z", "+00:00")).timestamp()
         for name, rs in rows.items():
-            cur = next((r for r in rs if r["league_id"] == league_id and r["left_at"] is None), None)
-            if cur is None:
+            if not any(r["league_id"] == league_id and r["left_at"] is None for r in rs):
                 continue
-            while True:
-                prev = next((r for r in rs if r["left_at"] and (r["note"] or "").startswith("ladder round")
-                             and abs(ts(r["left_at"]) - ts(cur["joined_at"])) < 5), None)
-                if prev is None:
-                    break
-                cur = prev
-            out[name] = cur["league_id"]
+            moved = next((r for r in rs if r["left_at"] and (r["note"] or "").startswith("ladder round")), None)
+            out[name] = moved["league_id"] if moved else league_id
     return out
 
 

@@ -506,12 +506,23 @@ def fragments(S, out) -> None:
     for lg in S["leagues"]:
         for ph in A.PHASES:
             parts = "".join(slot(lg, k, v) for k, v in phase_slots(S, lg, ph).items())
-            (folder / f"{lg['dataset']}-{ph}.html").write_text(f'<div data-league-view="{lg["dataset"]}">{parts}</div>\n')
+            (folder / f"{lg['dataset']}-{ph}.html").write_text(
+                f'<div data-league-view="{lg["dataset"]}" data-dataset="{lg["dataset"]}">{prov_note(lg)}{parts}</div>\n')
+
+
+def prov_note(lg) -> str:
+    """The Provisional label every block of a running league carries (brief B10)."""
+    return f'<p class="table-note">{esc(PROVISIONAL_NOTE)}</p>' if lg["metric_status"] == PROVISIONAL else ""
+
+
+def league_block(lg, inner: str) -> str:
+    """One league's block outside the league switcher (Method page): its dataset plus the Provisional label if running."""
+    return f'<div data-dataset="{lg["dataset"]}">{prov_note(lg)}{inner}</div>'
 
 
 def view(S, lg, inner: str) -> str:
     off = "" if lg["dataset"] == default_league(S) else " data-off"
-    prov = f'<p class="table-note">{esc(PROVISIONAL_NOTE)}</p>' if lg["metric_status"] == PROVISIONAL else ""
+    prov = prov_note(lg)
     return f'<div class="league-view" data-league-view="{lg["dataset"]}" data-dataset="{lg["dataset"]}"{off}>{prov}{inner}</div>'
 
 
@@ -774,9 +785,9 @@ def method_extras(S) -> dict:
             rows.append(f'<tr{attrs(S, ds, n, bool(ref))}>{name}' + two(esc(j(r)), esc(j(rr)))
                         + "".join(two(s(r[k]), s(rr[k])) for k in ("found", "right_safety", "missed", "needless", "wrong"))
                         + "</tr>")
-        robust.append(f'<h4 id="robust-{ds}">League {lg["id"]}</h4>' + P.SWIPE + P.table(
+        robust.append(f'<h4 id="robust-{ds}">League {lg["id"]}</h4>' + league_block(lg, P.SWIPE + P.table(
             ["Model and setting", "Risk judgement", "Risks found", "Right safety", "Missed risks", "Needless risks",
-             "Wrong risks"], rows, "Margin 0.001 (large) and 0.02 (small)", attrs=f' data-dataset="{ds}" data-margin="0.001 and 0.02"'))
+             "Wrong risks"], rows, "Margin 0.001 (large) and 0.02 (small)", attrs=f' data-dataset="{ds}" data-margin="0.001 and 0.02"')))
         hrows = []
         for n in P.by_error(lg["setups"]):
             c = lg["setups"][n].get("confidence")
@@ -788,11 +799,11 @@ def method_extras(S) -> dict:
                      f'<td class="num">{count(h["no_cutoff"])} of {count(h["runs"])}</td><td class="num">{count(c["n"])}</td>')
             hrows.append(P.tr(S, ds, n, cells, rel))
         if hrows:
-            held.append(f'<h4 id="held-out-{ds}">League {lg["id"]}</h4>' + P.SWIPE + P.table(
+            held.append(f'<h4 id="held-out-{ds}">League {lg["id"]}</h4>' + league_block(lg, P.SWIPE + P.table(
                 ["Model and setting", "Share kept on the other half", "Blunders among kept", "Splits with no cutoff",
                  "Decisions with probabilities"], hrows, "Means over the splits of the held-out half",
-                attrs=f' data-dataset="{ds}"'))
-        tail.append(f'<h4 id="tail-{ds}">League {lg["id"]}</h4>' + P.tail_table(S, rel, ds, lg["setups"]))
+                attrs=f' data-dataset="{ds}"')))
+        tail.append(f'<h4 id="tail-{ds}">League {lg["id"]}</h4>' + league_block(lg, P.tail_table(S, rel, ds, lg["setups"])))
     total = sum(lg["decisions"] for lg in S["leagues"])
     scored = sum(lg["scored"] for lg in S["leagues"])
     unscored = (f"All {count(scored)} of the {count(total)} league decisions have a 2-ply evaluation of every legal play, "

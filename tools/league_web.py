@@ -793,11 +793,11 @@ h2 .seasons{float:right;text-transform:none;letter-spacing:0;display:flex;gap:6p
 #ctlStatus.error{color:var(--loss)}
 .spin{display:inline-block;width:.8em;height:.8em;border:2px solid var(--mute);border-top-color:transparent;border-radius:50%;vertical-align:-.1em;margin-right:4px;animation:spin 1s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-/* League colours (pastel): League 1 yellow, League 2 green, League 3 blue. Table cells take the
-   league's colour; the # cell takes the colour of the setup's original league. Dark text on them. */
-tr.lg td{color:#1e293b;border-color:rgba(0,0,0,.08)}tr.lg td a.mlink{color:#1e293b;border-bottom-color:#64748b}
-.lg1,tr.lg1 td{background:#fdf3c4}.lg2,tr.lg2 td{background:#d6f0d0}.lg3,tr.lg3 td{background:#d4e6f8}
-tr.lg td.lgo.lg1{background:#fdf3c4}tr.lg td.lgo.lg2{background:#d6f0d0}tr.lg td.lgo.lg3{background:#d4e6f8}
+/* League colours (pastel): League 1 yellow, League 2 green, League 3 blue. The "Table" title
+   cell takes the league's colour; a model's # cell takes its original league's colour. Programs stay uncoloured. */
+.lg1{background:#fdf3c4}.lg2{background:#d6f0d0}.lg3{background:#d4e6f8}
+td.lgo.lg1{background:#fdf3c4}td.lgo.lg2{background:#d6f0d0}td.lgo.lg3{background:#d4e6f8}td.lgo.lg1,td.lgo.lg2,td.lgo.lg3{color:#1e293b}
+.tabtitle{display:inline-block;padding:2px 10px;border-radius:4px}.tabtitle.lg1,.tabtitle.lg2,.tabtitle.lg3{color:#1e293b}
 td.lgo{font-weight:700;box-shadow:inset -2px 0 0 rgba(0,0,0,.15)}
 .lgkey{margin-top:6px;font-size:12px}.lgkey span{display:inline-block;padding:1px 8px;border-radius:4px;color:#1e293b;margin-left:6px}
 </style></head><body>
@@ -805,7 +805,7 @@ td.lgo{font-weight:700;box-shadow:inset -2px 0 0 rgba(0,0,0,.15)}
 <header><h1>jevgammon league <span id="lid"></span></h1><span id="status"></span><span class="meta" id="rules"></span><span class="meta" id="updated"></span><a href="report/" target="_blank" id="report" hidden>report (working copy)</a><a href="#" id="latest" hidden>back to the latest league</a><div id="control" hidden><span id="ctlButtons"></span><span class="meta" id="ctlStatus"></span></div><div id="note" class="note"></div></header>
 <main>
 <section class="wide"><h2>History</h2><table id="history"></table><div class="mute" style="margin-top:8px">Click a league to view it. Live: moved in the last 10 minutes; stopped: ended before its last match, so only its finished matches count.</div></section>
-<section><h2>Table <span class="seasons"><button id="prevSeason" title="previous league">&lsaquo;</button><span id="season"></span><button id="nextSeason" title="next league">&rsaquo;</button></span></h2><table id="table"></table><div class="mute lgkey" id="lgkey"></div><div class="mute" style="margin-top:8px">3 points per win, 1 per draw; ties: more games won, then fewer games lost. PF/PA are backgammon points. The arrows step through all leagues.</div></section>
+<section><h2><span id="tabTitle" class="tabtitle">Table</span> <span class="seasons"><button id="prevSeason" title="previous league">&lsaquo;</button><span id="season"></span><button id="nextSeason" title="next league">&rsaquo;</button></span></h2><table id="table"></table><div class="mute lgkey" id="lgkey"></div><div class="mute" style="margin-top:8px">3 points per win, 1 per draw; ties: more games won, then fewer games lost. PF/PA are backgammon points. The arrows step through all leagues.</div></section>
 <section><h2>Models</h2><table id="models"></table><div class="mute" style="margin-top:8px" id="totals"></div></section>
 <section class="wide"><h2>Live</h2><div class="live" id="live"></div></section>
 <section class="wide"><h2>Fixture</h2><div class="days" id="fixture"></div></section>
@@ -844,7 +844,8 @@ function render(d){
   $('updated').textContent='updated '+new Date(d.generated_at).toLocaleTimeString();
   $('table').innerHTML='<thead><tr><th>#</th><th class="l">Model</th><th>P</th><th>W</th><th>D</th><th>L</th><th>Pts</th><th>GW</th><th>GL</th><th>PF</th><th>PA</th><th title="error rate over all of the setup\'s valid matches: the tiebreak after points and games">Err</th></tr></thead><tbody>'+
     d.table.map((r,i)=>{const prog=PROG.has(((L.models||[]).find(x=>x.name===r.name)||{}).spec),o=prog?null:(d.origin||{})[r.name],cur=prog?null:d.league&&d.league.id;
-      return `<tr class="${i<3?'top':''}${LG[cur]?' lg lg'+cur:''}"><td class="${LG[o]?'lgo lg'+o:''}" title="${LG[o]?'original league: League '+o:''}">${r.place}</td><td class="l"><a href="#" class="mlink" data-model="${esc(r.name)}" title="show this model's matches">${esc(r.name)}</a></td><td>${r.played}</td><td>${r.won}</td><td>${r.drawn}</td><td>${r.lost}</td><td class="pts">${r.points}</td><td>${r.gw}</td><td>${r.gl}</td><td>${r.pf}</td><td>${r.pa}</td><td>${r.error_rate!=null?r.error_rate.toFixed(1):'–'}</td></tr>`}).join('')+'</tbody>';
+      return `<tr class="${i<3?'top':''}"><td class="${LG[o]?'lgo lg'+o:''}" title="${LG[o]?'original league: League '+o:''}">${r.place}</td><td class="l"><a href="#" class="mlink" data-model="${esc(r.name)}" title="show this model's matches">${esc(r.name)}</a></td><td>${r.played}</td><td>${r.won}</td><td>${r.drawn}</td><td>${r.lost}</td><td class="pts">${r.points}</td><td>${r.gw}</td><td>${r.gl}</td><td>${r.pf}</td><td>${r.pa}</td><td>${r.error_rate!=null?r.error_rate.toFixed(1):'–'}</td></tr>`}).join('')+'</tbody>';
+  $('tabTitle').className='tabtitle'+(LG[d.league&&d.league.id]?' lg'+d.league.id:'');
   $('lgkey').innerHTML='# colour = original league: '+[1,2,3].map(n=>`<span class="lg${n}">League ${n}</span>`).join('');
   // Player config per name: spec plus provider / quantization / device when the league recorded them.
   const player=n=>{const c=(L.models||[]).find(x=>x.name===n)||{};return [c.spec,c.provider,c.quantization,c.device].filter(Boolean).join(' · ')};

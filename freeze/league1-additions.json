@@ -398,5 +398,49 @@
       "matchday 24: Fastino GLiDE v1.2 (local) v Decider v1.2 27B"
     ],
     "stale_playoff_fixtures": 0
+  },
+  {
+    "added_at": "2026-10-23T20:49:40Z",
+    "league": 1,
+    "db": "v3.db",
+    "name": "LFM2.5-24B-A2B (off)",
+    "harness_commit": "f3dd45244d5074ab6c63e304c418163d0e2047b2",
+    "harness_dirty": true,
+    "entry": {
+      "name": "LFM2.5-24B-A2B (off)",
+      "spec": "openai-compatible/lfm2.5-24b-a2b",
+      "provider": "local-vllm",
+      "quantization": "bf16",
+      "base_url": "http://127.0.0.1:8898/v1",
+      "request": {},
+      "max_tokens": 32000,
+      "top_logprobs": 20,
+      "letter_readout": "prefill",
+      "answer_prefix": "<think></think>Answer:",
+      "note": "no reasoning: the letter continues a prefilled <think></think>Answer:. Liquid AI's own API until its matches were voided on 2026-10-19 22:20 UTC; from 2026-10-19 22:26 UTC Liquid's bf16 checkpoint on our GPU (vLLM, tools/v3/servers/lfm25-24b.sh). 20 stored (off) requests with this prefill: same top letter as Liquid's API 14/20 (max |dp| 0.21; Liquid against itself 19/20; Liquid's FP8 checkpoint here 12/20; bf16 against FP8 here 15/20, the distributions are flat: 7 of the 20 have Liquid's top two within 0.06)",
+      "device": "Liquid AI's API until 2026-10-19 22:20 UTC; from 22:26 UTC RTX PRO 6000 (bariton GPU 2), the whole GPU (memory share 0.90, 32 sequences); paused 2026-10-20; from 2026-10-20 20:16 UTC bariton GPU 2 again, same script and arguments; from 2026-10-20 21:10 UTC NVIDIA GB10 (DGX Spark spark-194d), same image, checkpoint and arguments except memory share 0.45 (next to Gemma 4 31B), while bariton's four GPUs serve DeepSeek V4.1 Flash; 20 stored League 2 (off) requests (bariton) replayed there: same top letter 20/20, max |dp| 0.10, median 0.05 (bariton against its own stored answers: 18/20); from 2026-10-21 01:25 UTC back on bariton GPU 2 (overnight server), same script and arguments, while DeepSeek V4.1 Flash is paused (its four GPUs freed for League 2's non-DeepSeek thinking matches); 20 stored (off) requests: same top letter 16/20, then 18/20 and 18/20 in two reruns, max |dp| 0.12 (LFM2.5 is not deterministic; bariton against its own stored answers gave 18/20 earlier); from 2026-10-21 05:00 UTC NVIDIA GB10 (DGX Spark spark-194d) again, the same server as from 2026-10-20 21:10 UTC, while DeepSeek V4.1 Flash plays its last matches on bariton; from 2026-10-22 15:37 UTC back on RTX PRO 6000 (bariton GPU 2), same image, checkpoint and arguments (memory share 0.90); 20 stored League 2 (off) requests replayed there: same top letter 17/20, max |dp| 0.15, median 0.046 (LFM2.5 is not deterministic: bariton against itself 18/20); paused 2026-10-22 16:20 UTC; from 2026-10-22 22:21 UTC bariton GPU 3, same script, image, checkpoint and arguments",
+      "parallel": 16,
+      "max_matches": 16
+    },
+    "entry_sha256": "22e56f184638e8f5969554d03235242b97a6e1dec5ddb4b5f95aa85277bcbc01",
+    "fixtures": [
+      "matchday 18: LFM2.5-24B-A2B (off) v Decider v1.1 27B",
+      "matchday 18: LFM2.5-24B-A2B (off) v SubQ Snap Preview",
+      "matchday 18: LFM2.5-24B-A2B (off) v Clef",
+      "matchday 18: Open-Jev 27B v1.1 v LFM2.5-24B-A2B (off)",
+      "matchday 18: LFM2.5-24B-A2B (off) v Cygnet (Gemma 4 12B)",
+      "matchday 18: Random v LFM2.5-24B-A2B (off)",
+      "matchday 18: Safest v LFM2.5-24B-A2B (off)",
+      "matchday 18: Jev 1.14.0 v LFM2.5-24B-A2B (off)",
+      "matchday 18: Jev 1.13.0 v LFM2.5-24B-A2B (off)",
+      "matchday 18: LFM2.5-24B-A2B (off) v Celeris-1 Decision",
+      "matchday 18: LFM2.5-24B-A2B (off) v GPT-6 Luna",
+      "matchday 18: Decider Flash v1.2 v LFM2.5-24B-A2B (off)",
+      "matchday 18: LFM2.5-24B-A2B (off) v Winnow-12B",
+      "matchday 18: LFM2.5-24B-A2B (off) v Mercury Decide",
+      "matchday 18: LFM2.5-24B-A2B (off) v Fastino GLiDE",
+      "matchday 18: LFM2.5-24B-A2B (off) v Decider v1.2 27B",
+      "matchday 18: Fastino GLiDE v1.2 (local) v LFM2.5-24B-A2B (off)"
+    ]
   }
 ]

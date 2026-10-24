@@ -1,0 +1,34 @@
+[
+  {
+    "added_at": "2026-10-23T20:49:40Z",
+    "league": 3,
+    "db": "v3.db",
+    "name": "GPT-6.1 Sol (low)",
+    "harness_commit": "f3dd45244d5074ab6c63e304c418163d0e2047b2",
+    "harness_dirty": true,
+    "entry": {
+      "name": "GPT-6.1 Sol (low)",
+      "spec": "openai/gpt-6.1-sol",
+      "provider": "chatgpt-subscription",
+      "reasoning": "low",
+      "price": {
+        "input_per_mtok": 2.0,
+        "output_per_mtok": 10.0
+      },
+      "note": "subscription login; cost is API-list-price equivalent",
+      "parallel": 4
+    },
+    "entry_sha256": "86dabac36810d3df6ff1b8ebfa013b7ec92a7d177868f654ca5d4c0ea910960e",
+    "fixtures": [
+      "matchday 10: GPT-6 Astra (off) v GPT-6.1 Sol (low)",
+      "matchday 10: GPT-6 Astra (on) v GPT-6.1 Sol (low)",
+      "matchday 10: GPT-6.1 Sol (low) v Claude Opus 5.5 (off)",
+      "matchday 10: Claude Opus 5.5 (on) v GPT-6.1 Sol (low)",
+      "matchday 10: GPT-6.1 Sol (low) v Claude Fable 5.1 (on)",
+      "matchday 10: GPT-6.1 Sol (low) v Gemini 4 Argon (off)",
+      "matchday 10: Gemini 4 Argon (on) v GPT-6.1 Sol (low)",
+      "matchday 10: Grok 4.7 (off) v GPT-6.1 Sol (low)",
+      "matchday 10: Grok 4.7 (on) v GPT-6.1 Sol (low)"
+    ]
+  }
+]

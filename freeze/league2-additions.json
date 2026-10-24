@@ -427,5 +427,79 @@
       "matchday 16: Qwen3.8-27B (on) v Qwen3.8-27B (off)"
     ],
     "stale_playoff_fixtures": 0
+  },
+  {
+    "added_at": "2026-10-23T20:49:40Z",
+    "league": 2,
+    "db": "v3.db",
+    "name": "Liquid d1-ultra",
+    "harness_commit": "f3dd45244d5074ab6c63e304c418163d0e2047b2",
+    "harness_dirty": false,
+    "entry": {
+      "name": "Liquid d1-ultra",
+      "spec": "liquid/d1-ultra",
+      "provider": "liquid",
+      "price": {
+        "input_per_mtok": 0.042,
+        "output_per_mtok": 0.0
+      },
+      "note": "Liquid AI decisions API, paid tier; list price $0.042 per million input tokens (liquid.ai/blog/d1-ultra, 2026-10-15)",
+      "parallel": 2
+    },
+    "entry_sha256": "793b6fbaf5139236b47fd904808668298cd6bea5e5ac1b61757b5b4c1c5ce573",
+    "fixtures": [
+      "matchday 16: Gemini 3.8 Flash (low) v Liquid d1-ultra",
+      "matchday 16: Gemini 3.8 Flash (high) v Liquid d1-ultra",
+      "matchday 16: Claude Sonnet 5.5 (low) v Liquid d1-ultra",
+      "matchday 16: Liquid d1-ultra v Claude Sonnet 5.5 (high)",
+      "matchday 16: Liquid d1-ultra v GPT-6.1 Sol (high)",
+      "matchday 16: DeepSeek V4.1 Flash (off) v Liquid d1-ultra",
+      "matchday 16: Liquid d1-ultra v DeepSeek V4.1 Flash (on)",
+      "matchday 16: GLM-5.3 (on) v Liquid d1-ultra",
+      "matchday 16: Qwen3.8 Flash (off) v Liquid d1-ultra",
+      "matchday 16: Liquid d1-ultra v LFM2.5-24B-A2B (on)",
+      "matchday 16: Liquid d1-ultra v Gemma 4 31B (on)",
+      "matchday 16: Liquid d1-ultra v Gemma 4 31B (off)",
+      "matchday 16: Liquid d1-ultra v Qwen3.8-27B (off)",
+      "matchday 16: Liquid d1-ultra v Qwen3.8-27B (on)"
+    ]
+  },
+  {
+    "added_at": "2026-10-23T20:49:40Z",
+    "league": 2,
+    "db": "v3.db",
+    "name": "Claude Fable 5.1 (off)",
+    "harness_commit": "f3dd45244d5074ab6c63e304c418163d0e2047b2",
+    "harness_dirty": true,
+    "entry": {
+      "name": "Claude Fable 5.1 (off)",
+      "spec": "anthropic/claude-fable-5-1",
+      "provider": "claude-subscription",
+      "reasoning": "low",
+      "price": {
+        "input_per_mtok": 10.0,
+        "output_per_mtok": 50.0
+      },
+      "note": "claude-fable-5-1, the newest Fable the subscription serves; effort low, the lowest it accepts (thinking disabled is rejected: adaptive thinking only), labelled off. Claude subscription; subscription login; cost is API-list-price equivalent",
+      "parallel": 4
+    },
+    "entry_sha256": "2af6c7c7ebe2803e25fdd79a8c4aebe31387cf2ee5dbeb659f8b6a41563a964b",
+    "fixtures": [
+      "matchday 17: Claude Fable 5.1 (off) v Gemini 3.8 Flash (low)",
+      "matchday 17: Claude Fable 5.1 (off) v Gemini 3.8 Flash (high)",
+      "matchday 17: Claude Sonnet 5.5 (low) v Claude Fable 5.1 (off)",
+      "matchday 17: Claude Fable 5.1 (off) v Claude Sonnet 5.5 (high)",
+      "matchday 17: GPT-6.1 Sol (high) v Claude Fable 5.1 (off)",
+      "matchday 17: DeepSeek V4.1 Flash (off) v Claude Fable 5.1 (off)",
+      "matchday 17: Claude Fable 5.1 (off) v DeepSeek V4.1 Flash (on)",
+      "matchday 17: GLM-5.3 (on) v Claude Fable 5.1 (off)",
+      "matchday 17: Qwen3.8 Flash (off) v Claude Fable 5.1 (off)",
+      "matchday 17: Claude Fable 5.1 (off) v LFM2.5-24B-A2B (on)",
+      "matchday 17: Gemma 4 31B (on) v Claude Fable 5.1 (off)",
+      "matchday 17: Gemma 4 31B (off) v Claude Fable 5.1 (off)",
+      "matchday 17: Qwen3.8-27B (off) v Claude Fable 5.1 (off)",
+      "matchday 17: Claude Fable 5.1 (off) v Qwen3.8-27B (on)",
+      "matchday 17: Liquid d1-ultra v Claude Fable 5.1 (off)"
+    ]
   }
 ]

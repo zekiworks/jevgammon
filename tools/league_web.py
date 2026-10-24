@@ -982,9 +982,7 @@ function renderControl(c){
   $('ctlButtons').innerHTML=busy?`<button disabled><span class="spin"></span>${c.state==='pausing'?'Pausing… (stopping the league, then the GPU servers)':'Resuming… (loading the GPU servers, about 3 min)'}</button>`:
     c.state==='running'?btn('pause','Pause (frees GPUs)'):c.state==='paused'?btn('resume','Resume'):btn('pause','Pause (frees GPUs)')+' '+btn('resume','Resume');
   $('ctlStatus').className=c.state==='error'?'meta error':'meta';
-  // Shown cut to 80 characters; the full status is in the tooltip.
-  const st=`${c.unit||'league'}: ${c.state}`+(c.since?` since ${new Date(c.since).toLocaleString()} (${ago(c.since)})`:'')+(c.message?` · ${c.message}`:'');
-  $('ctlStatus').textContent=st.length>80?st.slice(0,79)+'…':st;$('ctlStatus').title=st;
+  $('ctlStatus').textContent=`${c.unit||'league'}: ${c.state}`+(c.since?` since ${new Date(c.since).toLocaleString()} (${ago(c.since)})`:'')+(c.message?` · ${c.message}`:'');
 }
 const CONFIRM={pause:'Pause the league?\n\nThe league runner stops (unfinished matches resume from their last turn), then the Gemma and Open-Jev servers stop and free the GPUs. Takes about a minute.',
   resume:'Resume the league?\n\nThe Gemma and Open-Jev servers start on the GPUs (about 3 minutes), then the league runner continues where it stopped.'};

@@ -1,6 +1,6 @@
 # Close choices, stage B: positions, method and estimate
 
-Oct 24, 2026 · for Ümit · request: `mailbox/Close choices - request 2026-10-24.md`, section B. Stage B **has not run**. **Updated Oct 24 with Can's decisions (section 5): 8 teams incl. Gemma 4 31B (on) on spark3; no stage B call until the ladder settles.**
+Oct 24, 2026 · for Ümit · request: `mailbox/Close choices - request 2026-10-24.md`, section B. Stage B **has not run**. **Updated Oct 24 with Can's decisions (section 5): 8 teams incl. Gemma 4 31B (on) on spark3; no stage B call until the ladder settles. Second update (19:40 UTC): positions refrozen from `new.jsonl`, stratified by risk class (v2 freeze); settings rule; estimate redone for the new 100.**
 
 **No model requests were made for this note.** That means no prediction call, no play call, no smoke test, probe or preflight, and no local model server started. Here is what I did:
 
@@ -13,73 +13,53 @@ Nothing was merged or deployed. The `brief-2026-10-24` worktree was not touched.
 
 The scoring rules are fixed in **Method §9.9 "Stage B scoring (B4)"**: `tools/site/content/method-spec-2026-10-24.md` on branch `brief-2026-10-24`, commit `be887d3` ("Method §9 close choices …, fixed 2026-10-24 15:15 UTC before computing"). This plan cites that section and does not restate it differently.
 
-## 1. Position pool and freeze record
+## 1. Positions: v2 freeze (supersedes the 20-per-phase freeze)
 
-### Which pool and why
+### Which set and why
 
-**Pool: the 2,000 shared standard positions.** These are `positions/v1.jsonl` (1,000) and `positions/new.jsonl` (1,000).
+- **Can's decision (2026-10-24): take the 100 from `positions/new.jsonl`, if the Cup teams also answer that set in the shared-position run.**
+- **Checked: they do.** The shared-position run gives every setup, Cup teams included, the same base of 2,700 decisions: the 2,000 shared standard positions (`positions/v1.jsonl` 1,000 + `positions/new.jsonl` 1,000, prompt `bg-v2`), 500 Nackgammon and 200 opening controls.
+  - `mailbox/Shared positions - review and estimates 2026-10-24.md`: "Base per setup: 2,700 decisions (2,000 standard + 500 Nackgammon + 200 control)", and its Cup scenario table prices "Base 2,700" for each of the six Cup setups.
+  - `freeze.json` hashes `positions/new.jsonl` (sha256 `ad06427c…`, 1,000 rows), the file `tools/v3/build.py` writes (1,000 positions, 200 per phase, 2–25 legal plays, prompt `bg-v2`).
+  - So `new.jsonl` is half of the shared standard set the Cup teams answer; it is not the whole set (the other half is `v1.jsonl`).
 
-- The v3 design ("Shared positions", `mailbox/Backgammon benchmark v3 design final.md` lines 113–129) defines them as the set every setup answers with the `bg-v2` prompt.
-- `mailbox/Shared positions - review and estimates 2026-10-24.md` prices them as "2,000 standard" next to the 500 Nackgammon and 200 control positions.
-- Both files are standard backgammon only: `variant: standard`, `prompt: bg-v2`, 2–25 legal plays.
-- These files are not in the pool:
-  - `nackgammon.jsonl`: a different variant;
-  - `opening-control.jsonl`: `nack-v2`, with the opening table removed;
-  - `extension.jsonl`: League 1 only;
-  - `smoke.jsonl`;
-  - `first-look-kimi.jsonl`: a subset of `new.jsonl`.
-- **Alternative, if you prefer it:** `new.jsonl` alone, as the Kimi first look did. It holds expert self-play only, while v1 positions come from games between weaker models. The rule below would select from it the same way.
+### Rule, fixed in Method before selection
 
-### Rule, fixed before selection
-
-The rule was committed alone in `freeze/close-choices-b.json` as commit `3445c99`, at 15:18:25 UTC, before the selection ran.
-
-- **Eligible:** 2 ≤ legal plays ≤ 26. The letter runner's limit is 26 options per request (`prompt::LETTERS`), so no decision is split into groups. Fewer than 2 legal plays is not a decision.
-- **Per phase** (opening, contact, holding, race, bear-off): the 20 eligible ids with the smallest hex `sha256("close-choices-b-2026-10-24:" + id)`.
-- **Rows:** copied byte for byte from the source, in pool order (v1 lines first, then new).
-- **Option order:** every row keeps its stored `option_order`.
+- Method §9.10 on `brief-2026-10-24`, commit `c265db3` (19:22:31 UTC; header time fixed in `9140007`), before the engine values were computed and before selection.
+- **Excluded:** fewer than 2 legal plays (0 of 1,000).
+- **Position class at margin 0.001** by the site's rule: hitting rolls as shown with each option; losses from GNUbg 1.08 2-ply, cubeless, the existing settings (`tools/v3/score.py evaluate`), run on CPU (nice 19, 8 processes, 16 s) into `~/.local/state/bg-site/shared/new-2ply-s0..s7.db`.
+- **Targets:** 40 Risk pays, 40 Safety pays, 20 No trade-off, evenly over the five phases (8/8/4 per phase). Per (class, phase) cell, the ids with the smallest `sha256("close-choices-b-v2-2026-10-24:" + id)`. A short cell's places go to the other phases of the same class, in phase order.
+- Script: `tools/site/close_choices_b_freeze.py` (branch).
 
 ### Result
 
-Frozen 2026-10-24T15:18:41Z. The ids and the per-id hashes are in `freeze/close-choices-b.json`.
+- `positions/close-choices-b-v2.jsonl` (branch): **100 rows, sha256 `88bc3904595c6dccc3f6fe015e865b7b23e3ed81b9be1ad8d1e7efcf5848410c`**, byte-identical to the source lines. Record `freeze/close-choices-b-v2.json` (branch), frozen 2026-10-24T19:23:47Z.
+- **The list of 100 ids and the hash are published in Method §9.11** (branch commit `60bebef`), before any stage B call.
+- Race and bear-off positions have no contact, so all 400 are No trade-off. The Risk pays and Safety pays places of those phases went to opening, contact and holding by the shortfall rule:
 
-| Item | Value |
-| --- | --- |
-| Source `positions/v1.jsonl` | sha256 `52e7abf8d9cea173d0bb522cf681ddebefc444bb961d0eaec38253a0dfdd6976` |
-| Source `positions/new.jsonl` | sha256 `ad06427c4106e8d889b027dc49f79557fb2739b8fd278f8fa2f05da72dc12d69` |
-| Excluded by the play-count rule | 0 of 2,000: every pool row has 2–25 legal plays |
-| Output `positions/close-choices-b.jsonl` | 100 rows, sha256 `3b8b8c3eb6749f04a86f1c054f48603683fa06ff55704ec23d54e30794b68826` |
-| Per phase | 20 each. By set: opening v1 12 / new 8; contact 15 / 5; holding 2 / 18; race 8 / 12; bear-off 6 / 14 |
-| Legal plays | 2–24 per position, 1,065 in all (mean 10.65); 4 first-roll positions |
-| Byte check | every output line equals its source line (checked) |
-| Notation check | the legal plays regenerated by `tools/v3/rules.py` equal the stored lists for all 100 |
-| Overlap with the Kimi first-look set | 13 ids (listed in the freeze record). It doesn't matter here: Kimi is not a Cup team |
+| Class | Opening | Contact | Holding | Race | Bear-off | Total |
+| --- | --- | --- | --- | --- | --- | --- |
+| Risk pays (eligible) | 14 (124) | 13 (46) | 13 (34) | 0 (0) | 0 (0) | 40 |
+| Safety pays (eligible) | 14 (73) | 13 (128) | 13 (142) | 0 (0) | 0 (0) | 40 |
+| No trade-off (eligible) | 3 (3) | 5 (26) | 4 (24) | 4 (200) | 4 (200) | 20 |
 
-### Engine values
-
-- The rows carry no GNUbg values.
-- No stored 2-ply value exists for every legal play of these positions:
-  - `STATE/plays` (`tools/site/score_plays.py`) scores league turns by turn id;
-  - `gnubg_eval.db` holds only the best and chosen equity of v1 decisions.
-- Stage B scoring doesn't need them, because it uses the described features. They could be filled on CPU later with the existing settings if you want them for a side table. That is not planned.
+- Opening No trade-off has only 3 eligible positions; its fourth place went to contact.
+- Options: 2–25 per position, **1,204 in all** (the old freeze had 1,065). No decision is split into groups.
+- **The earlier freeze** (`freeze/close-choices-b.json`, `positions/close-choices-b.jsonl`, 20 per phase from v1 + new) is **superseded**. Both files are kept on main, and the record is marked superseded.
 
 ### Offline preview: which features can differ at all
 
 This was computed with `describe.py` over every legal play. It is a property of the positions, not a result.
 
-| Feature | Positions where at least two legal plays differ on it |
-| --- | --- |
-| Hitting risk | 54 |
-| Making a point | 45 |
-| Race | 18 |
-| Prime | 62 |
+| Feature | Risk pays (40) | Safety pays (40) | No trade-off (20) |
+| --- | --- | --- | --- |
+| Hitting risk | 40 | 40 | 0 (by definition) |
+| Making a point | 22 | 25 | 6 |
+| Race (pip counts) | 13 | 14 | 0 |
+| Prime | 24 | 22 | 13 |
 
-- **9 positions:** no feature can differ. Any repeat set there has an empty observed set.
-- **Number of features that can differ:** 0 in 9 positions, 1 in 32, 2 in 35, 3 in 19, all 4 in 5.
-- **Race positions:** hitting risk never varies.
-- **Race feature:** both pip counts change only with hits, bear-offs or partial plays.
-
-The observed set O can never contain a feature that cannot differ in that position.
+- **7 positions** (all No trade-off) where no feature can differ. Any repeat set there has an empty observed set.
+- The observed set O can never contain a feature that cannot differ in that position.
 
 ## 2. Cup teams, as currently documented
 
@@ -152,7 +132,7 @@ One separate call per team and position. It shows the same system prompt and the
 
 ### B2. Five play calls
 
-- **Command:** `jevgammon ask --positions positions/close-choices-b.jsonl --repeats 5` with each team's league settings JSON unchanged (`players.settings`), into a separate answers database, never `v3.db`.
+- **Command:** `jevgammon ask --positions positions/close-choices-b-v2.jsonl --repeats 5` with each team's league settings JSON unchanged (`players.settings`), into a separate answers database, never `v3.db`.
 - **Prompt:** `bg-v2` from each row, with no `--prompt-version` flag (the review's warning).
 - **Independence:** each call is a fresh, stateless request. The prediction is never shown to the play calls.
 - **Same option order in all five:**
@@ -162,9 +142,11 @@ One separate call per team and position. It shows the same system prompt and the
 - **Group splitting:** none. At most 24 legal plays, against the limit of 26.
 - **Clock:** none, as in the leagues.
 
-### Temperature
+### Settings and temperature (Method §9.10, Can's decision 2026-10-24)
 
-Provider default; the value is recorded if disclosed, else "not disclosed".
+- **Each setup keeps its league settings exactly:** temperature (or none sent), reasoning setting, prompt version and format, max tokens, provider route. Nothing is tuned for stage B.
+- **Temperature** is recorded where known (the value sent, or the documented default) and as **"not disclosed"** where not.
+- **Deterministic setups:** a setup that gives five identical answers on every scored position is reported as deterministic on these positions. Settings are never changed to create variation.
 
 | Team(s) | What our runner sends | What is recorded | Source |
 | --- | --- | --- | --- |
@@ -224,9 +206,10 @@ Stage B results are added to the site separately, only after the experiment is c
 ### How the numbers are built
 
 - **Calls:** 600 per team = 100 positions × (1 prediction + 5 plays). Network retries inside a call are allowed for in the conservative figure (+5%). Nothing is re-asked after the run.
-- **Play-call tokens are measured.** They come from `v3.db` (read-only, 15:20 UTC), using every model decision of the team in valid matches that was asked in one request (2–26 options), over all its routes and dates (shown in the table).
-  - **Input** = per-setup linear fit of `input_tokens` on the number of options, applied to the frozen positions (1,065 options). That is +0.3% to +2.4% against each setup's league mean.
-  - **Output** = mean `output_tokens`, reasoning included.
+- **Play-call tokens are measured** (redone for the v2 100, 19:40 UTC). They come from each team's scored league decisions in the site snapshot of 12:51 UTC (valid, one request, not grouped), with each decision's position class at 0.001 and phase.
+  - **Input** = per-setup linear fit of `input_tokens` on the number of options, applied to the v2 positions (1,204 options).
+  - **Output** and **seconds** = the team's league mean in the same (class, phase) cell as each frozen position; a cell with fewer than 20 league decisions uses the class mean. Reasoning tokens are included.
+  - The risk-class mix moves output by −1% to +5% against the league mean (Gemini 3.8 Flash (low) 195 vs 187 tokens; Gemma 4 31B (on) 4,040 vs 3,901).
 - **Prediction-call tokens are estimated, not measured.**
   - Input = play input + 70 tokens (the question and the format line replace the letter instruction, about 14 tokens; all three are token-count estimates).
   - Output: central = play output + 15; conservative = 2 × play output + 50 (the setup reasons before naming features).
@@ -242,31 +225,31 @@ Stage B results are added to the site separately, only after the experiment is c
   - Gemini 3.8 Flash at that fetch's $0.825/$4.125 per M (the roster has $0.75/$3.75);
   - Gemma 4 31B at OpenRouter's $0.20/$0.40, hypothetical, because it runs on our GPU.
 - **Time:**
-  - central = 600 × mean `request_ms` ÷ parallel;
-  - conservative = (500 × mean `latency_ms` × 1.2 + 100 × mean `latency_ms` × 2) × 1.05 ÷ parallel;
+  - central = 6 × the sum over the 100 positions of the cell's mean request seconds ÷ parallel;
+  - conservative = central × 1.5 × 1.05;
   - parallel is each setup's configured request limit, as used in the leagues (4; Grok 4.7 (on) 8; Gemma 24 sequences).
   - Latency columns: p50 / mean request / mean total, in seconds.
 
-### Table B2: snapshot one-letter Cup teams
+### Table B2: stage B teams on the v2 100 (snapshot roster)
 
-| Team | Route | League decisions used | Input tok/call | Output tok/call (reasoning) | Latency p50 / req. mean / mean, s | Parallel | Price $/M in / out | API-eq. central | API-eq. conservative | Billed | Time |
+| Team | Route | League decisions used | Input tok/play call | Output tok/play call (league mean) | Mean s per call | Parallel | Price $/M in / out | API-eq. central | API-eq. conservative | Billed | Time |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| GPT-6.1 Sol (low) | ChatGPT subscription | 2,460 (Oct 19–24) | 3,114 | 76 (60) | 3.7 / 4.3 / 4.7 | 4 | $2 / $10 | $4.22 | $4.75 | $0 | 11–16 min |
-| GPT-6 Astra (on) | ChatGPT subscription | 1,187 (Oct 20–23) | 3,113 | 75 (59) | 3.9 / 4.6 / 5.0 | 4 | $10 / $50 | $21.08 | $23.70 | $0 | 11–18 min |
-| GPT-6.1 Sol (high) | ChatGPT subscription | 1,675 (Oct 19–23) | 3,112 | 291 (274) | 7.9 / 10.1 / 11.0 | 4 | $2 / $10 | $5.51 | $6.89 | $0 | 25–38 min |
-| Gemini 3.8 Flash (low) | Antigravity subscription | 1,767 (Oct 19–23) | 3,276 | 186 (183) | 2.0 / 3.3 / 3.4 | 4 | $0.825 / $4.125 | $2.09 | $2.50 | $0 | 8–12 min |
-| Claude Opus 5.5 (on) | Claude subscription | 1,381 (Oct 20–23) | 4,299 | 443 (432) | 6.3 / 6.6 / 7.2 | 4 | $4 / $20 | $15.69 | $19.81 | $0 | 16–25 min |
-| **Total, 5 teams** | 3 subscriptions | | | | | | | **$48.59** | **$57.64** | **$0** | see below |
-| Gemma 4 31B (on), included | own server, spark3 (vLLM, 2 calls per play decision) | 1,914 (Oct 19–24) | 10,519 per decision | 3,898 (3,886) | 115.8 / 161.5 / 173.7 | 24 | ($0.20 / $0.40, hypothetical) | ($2.20) | ($2.88) | $0 | bariton figure, **superseded: see Spark hours below** |
+| GPT-6.1 Sol (low) | ChatGPT subscription | 1,009 | 3,209 | 74 (75) | 4.5 | 4 | $2 / $10 | $4.33 | $4.85 | $0 | 11–18 min |
+| GPT-6 Astra (on) | ChatGPT subscription | 1,054 | 3,208 | 74 (75) | 4.6 | 4 | $10 / $50 | $21.61 | $24.23 | $0 | 11–18 min |
+| GPT-6.1 Sol (high) | ChatGPT subscription | 1,537 | 3,207 | 289 (292) | 10.1 | 4 | $2 / $10 | $5.61 | $6.99 | $0 | 25–40 min |
+| Gemini 3.8 Flash (low) | Antigravity subscription | 1,588 | 3,377 | 195 (187) | 3.5 | 4 | $0.825 / $4.125 | $2.17 | $2.59 | $0 | 9–14 min |
+| Claude Opus 5.5 (on) | Claude subscription | 1,218 | 4,426 | 433 (440) | 6.5 | 4 | $4 / $20 | $15.88 | $19.93 | $0 | 16–26 min |
+| Gemma 4 31B (on) | own server, spark3 (vLLM, 2 requests per play decision) | 1,654 | 10,823 per decision | 4,040 (3,901) | Spark: see below | 24 sequences | ($0.20 / $0.40, hypothetical) | ($2.27) | ($2.98) | $0 | **about 16–26 Spark hours** |
+| **Total, 6 teams** | 3 subscriptions + spark3 | | | | | | | **$49.60** (subscriptions) | **$58.59** | **$0** | see below |
 
-**Totals for the five teams:**
+**Totals:**
 
-- **Calls:** 3,000 (up to about 3,150 with network retries).
-- **Tokens:** about 10.2 M input; output 0.65 M central and 1.10 M conservative.
-- **Billed:** $0. **API-equivalent:** $48.59 central, $57.64 conservative (ChatGPT $30.81–35.34, Claude $15.69–19.81, Antigravity $2.09–2.50).
-- **Wall time:** about **0.8–1.2 h** if the three subscriptions run side by side and the three ChatGPT teams one after another (47–72 min). Claude takes 16–25 min, Antigravity 8–12 min.
-- **Quota reference:** ladder round 1 used about $185 API-equivalent of subscription capacity in one night without a reported stop (shared-positions review). The limits themselves are unknown.
-- **With Gemma 4 31B (on) (decided in):** 3,600 calls, of which Gemma 600 (1,100 requests: the prediction is one request, each play decision two). Billed **$0**. Gemma's time: **about 15–25 Spark hours** (next section).
+- **Calls:** 3,600 (600 per team: 100 predictions + 500 plays); Gemma's 500 play decisions are 1,000 requests, so 4,100 requests in all. Up to about 5% more with in-call network retries.
+- **Tokens (5 subscription teams):** about 10.5 M input; output 0.65 M central, 1.09 M conservative. **Gemma:** 6.5–6.8 M input, 2.43 M output central, 4.04 M conservative.
+- **Billed: $0.** API-equivalent (never spent): $49.60 central, $58.59 conservative (ChatGPT $31.55–36.07, Claude $15.88–19.93, Antigravity $2.17–2.59). Gemma at a hypothetical $2.27–2.98.
+- **Wall time:** the three ChatGPT teams one after another 48–76 min; Claude 16–26 min and Antigravity 9–14 min side by side. **Gemma on spark3: about 16 h central, 26 h conservative** (output tokens ÷ 43 tokens/s, below), the bound on the run.
+- **Quota:** limits unknown. Reference: ladder round 1 used about $185 API-equivalent of subscription capacity in one night without a reported stop.
+- [INFERENCE] Gemma's prediction call is one request, not two, so its input estimate is on the high side.
 
 ### Gemma 4 31B (on): device and pre-run check (decided 2026-10-24)
 
@@ -294,12 +277,14 @@ Any mismatch stops the run before any stage-B call, and it is reported here.
 
 **Spark hours (estimate).**
 - Measured on a DGX Spark in the leagues (`spark-194d`, `v3.db`, Gemma 4 31B (on) decisions in its Spark windows, 94 decisions): about **3 output tokens/s per request** when one request ran at a time (e.g. 3,285 tokens in 1,090 s; 17,512 in 5,824 s), and about **43 tokens/s in total** in the busiest hour (Oct 19, 20:00 UTC: 46 (on) decisions × 3,407 tokens, alongside 714 (off) readouts).
-- Stage B output for Gemma: 500 play decisions × 3,898 tokens (measured, mostly bariton) + 100 predictions (estimated as in "How the numbers are built") = **2.34 M tokens central, 3.90 M conservative**.
-- At 43 tokens/s in total: **about 15 h central, 25 h conservative**, with requests sent in parallel (the server's 24 sequences). One at a time it would take weeks, so the run sends in parallel.
+- Stage B output for Gemma on the v2 100: 500 play decisions × 4,040 tokens (the league mean of each position's class and phase cell; measured, mostly bariton) + 100 predictions (estimated as in "How the numbers are built") = **2.43 M tokens central, 4.04 M conservative**.
+- At 43 tokens/s in total: **about 16 h central, 26 h conservative**, with requests sent in parallel (the server's 24 sequences). One at a time it would take weeks, so the run sends in parallel.
 - [INFERENCE] spark3 is assumed to be the same hardware class (GB10) as `spark-194d`; its real throughput is unmeasured, and so is any load from other work on it. Check (b) measures it before the run, and this estimate is updated then.
 - Billed $0; electricity and the Spark's time are not priced (unknown, not $0).
 
 ### Table B3: unit cost of every other one-letter setup in Leagues 2 and 3
+
+Computed for the superseded 20-per-phase freeze (1,065 options), not redone: on the v2 100 (1,204 options) input is about 3–5% higher, and output moves by the class mix as in Table B2.
 
 Use it if the roster changes (round 2, a steady state, or a ninth team). Same method as Table B2, 600 calls each, billed $0 for all (subscriptions).
 
@@ -320,7 +305,7 @@ Use it if the roster changes (round 2, a steady state, or a ninth team). Same me
 ### What could move the numbers
 
 - **Prediction-call output** is not measured. For reasoning setups it could fall outside the range.
-- **Phase mix:** the frozen mix (20 per phase) holds more holding and bear-off positions than league play. Reasoning length by phase isn't measured.
+- **Class and phase mix:** the v2 100 hold 40 Risk pays and 40 Safety pays positions, more than league play. The estimate uses each team's league output per (class, phase) cell, so the mix is in it; how reasoning length varies inside a cell is not.
 - **Quotas:** unknown. A quota stop changes time, not money.
 - **Price drift:** the dated prices above, checked Oct 24.
 
@@ -333,17 +318,19 @@ Recorded 2026-10-24 (Can's answers, via Main):
 3. **The prediction format line (B1): approved**, with the answer constrained to the four names.
 4. **Failed calls are final**, with no re-ask after the run: **approved**.
 
-Still open:
+Recorded 2026-10-24, second round (Can, via Main):
 
-5. **Pool:** the 2,000 shared standard positions (as frozen), or `new.jsonl` only?
-6. **Temperature:** keep the league calls unchanged (Gemini and Gemma send 1.0; the other routes send nothing).
+5. **Positions:** 100 from `positions/new.jsonl` (checked: part of the set the Cup teams answer in the shared-position run), positions with one legal play excluded, stratified 40 Risk pays / 40 Safety pays / 20 No trade-off at 0.001 over the phases, fixed seed published; rule in Method before selection; list and hash in Method before any call. Done: v2 freeze (section 1). The 20-per-phase freeze is superseded.
+6. **Settings:** each setup keeps its league settings exactly; temperature recorded where known, "not disclosed" where not; a deterministic setup is reported, never adjusted. In Method §9.10 and section 3.
+
+Nothing is open in the plan. The run waits for Can's go and for the ladder to settle; the teams are then taken from the settled Cup roster.
 
 
 Checks to run before the first call, after approval:
 
-- re-hash `positions/close-choices-b.jsonl` against the freeze record;
+- re-hash `positions/close-choices-b-v2.jsonl` against `freeze/close-choices-b-v2.json` and Method §9.11;
 - render hashes of the play prompt and the prediction prompt;
 - unit tests of the prediction parser.
 - Gemma 4 31B (on) on spark3: settings verification and the 20-request comparison (section 4).
 
-Waiting for the ladder to settle
+Waiting for Can's go (and the ladder to settle)

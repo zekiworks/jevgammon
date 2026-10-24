@@ -1,4 +1,5 @@
 {
+ "status": "SUPERSEDED on 2026-10-24 (19:40 UTC) by freeze/close-choices-b-v2.json on branch brief-2026-10-24 (Method \u00a79.10/\u00a79.11): Can's decision to take the 100 from positions/new.jsonl, stratified by risk class at 0.001. Kept for the record; never used for stage B.",
  "set": "close-choices-b",
  "purpose": "Close choices, stage B (mailbox/Close choices - request 2026-10-24.md, section B): 100 positions for the prediction call and the five play calls per one-letter Cup team. Prepared only; no call made; new calls wait for approval.",
  "rule_fixed_at": "2026-10-24T15:18:25Z",

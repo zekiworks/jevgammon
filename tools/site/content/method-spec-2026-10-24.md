@@ -152,3 +152,139 @@ decisions, T = risks taken in Risk pays (right + wrong risks), N = needless risk
 - Read the program's code (`src/players/baseline.rs`) and its League 1 records; report the share of its decisions on a
   minimum-hitting-roll play and on the engine's best safe play, and the right-safety PR contribution with its
   denominator and the conditional mean over right-safety decisions, side by side.
+
+## 9. Close choices (section added 2026-10-24, 15:15 UTC, before any close-choice number was computed)
+
+Request: `mailbox/Close choices - request 2026-10-24.md` (stage A now, stage B only prepared). Values in
+`close_choices_2026-10-24.json`. Code: `tools/site/close_choices.py`. Not changed after seeing results; a bug found later
+is fixed in a dated amendment at the end of this file. Inspired by "Can LLMs Anticipate Their Cruxes?"
+(arXiv 2610.21006). Nothing here concludes anything about a model's inner reasoning or the cause of its decision.
+
+### 9.1 Term (A3)
+
+One term on the site: **close choice**. Definition, written once: "A decision is a close choice when the second most
+likely play has at least half the probability of the first (internally: split)." Every result carries the label
+"Probabilities over plays, not sampled reasoning."
+
+### 9.2 Data (A1)
+
+- The same fixed snapshot as §0 and the ability and caution analyses: `snap.db` copied 2026-10-24 12:51 UTC
+  (sha256 `0e11c179…b011d9`), GNUbg scores `plays/s0..s31.db` (sha256 of the 32 files concatenated in that order
+  `161ab5e0…f14e1f`), probability audit `content/probability_audit.json.gz` (sha256 `4ad35193…628789`).
+  Full hashes in the JSON file.
+- Decisions: the site's league decisions (`analysis.load_leagues`), the three leagues kept separate. No league,
+  result or record is changed; no model is called; `v3.db` is not opened for this section (the audit already read it,
+  read-only).
+
+### 9.3 Eligibility (A2)
+
+- Eligible: audit status `complete` (§1: the record itself gives an explicit probability for every legal option,
+  decided by the record's content, not by model type) **and** an engine value for every legal play.
+- Excluded, counted per setup by reason: `invalid` (invalid answer, fallback), `grouped` (asked in groups of
+  options), `sparse` (incomplete distribution: an option without an explicit probability), `unverified`, `no_raw`,
+  `not_audited` (no audit status), `not_scored` (complete but no engine value; see 9.5), `no_probabilities`
+  (one letter only, or a program).
+- A setup with no eligible decision shows **N/A** ("no full probability distribution"). Missing probabilities are
+  never filled by new calls.
+- Shares are always shown with count and denominator. A denominator under 200 (the site's minimum,
+  `min_decisions_per_cell`) is shown with the note "fewer than 200 decisions"; it is not hidden.
+
+### 9.4 Close-choice rule and ties (A3)
+
+- The probabilities are the stored vector over legal plays (`pvec`), each divided by their sum (the stored vectors
+  already sum to 1 up to rounding; the rule does not depend on it).
+- Plays are ordered by probability, highest first; equal probabilities (exact equality, no tolerance) are ordered by
+  the recorded option order (the shuffled order shown to the model), earlier first; never by engine values.
+- Candidate 1 and candidate 2 are the first two; p1 and p2 their probabilities. **Close choice ⇔ p2 ≥ 0.5 × p1.**
+  Stored for every eligible decision: p1, p2, p1 + p2, both candidate plays.
+- **Ties that affect the top two**: p1 = p2 (the order of the two candidates comes from the option order) or p2 equals
+  the probability of the third play (which play is candidate 2 comes from the option order). Counted per setup and
+  reported in two parts: at a positive probability (p2 > 0) and at zero (p2 = 0: every play but one has probability 0;
+  such a decision is never a close choice). A tie never changes whether a decision is a close choice; it changes which
+  plays are compared.
+
+### 9.5 Features and engine values (A4)
+
+- From the option text the model was shown (`describe.py`, stored with every legal play in `plays.data`), for
+  candidate 1 against candidate 2:
+  - **hitting**: the opponent's hitting rolls ("the opponent hits with N of 36 rolls");
+  - **points**: the set of newly made points ("makes the … point(s)" / "makes no new point");
+  - **race**: both players' pip counts (differs when either player's count differs);
+  - **prime**: the longest prime length.
+- Every feature that differs is recorded (a set of 0–4 features). When several differ, none is picked as the cause.
+- Engine values: both candidates' GNUbg 1.08 2-ply values (cubeless money equity for the mover, the site's existing
+  settings), the gap |e1 − e2|, and each candidate's loss against the engine's best play (best − e). Two candidates
+  can be close to each other and both lose a lot.
+- The same features and values are recorded for the top two plays of decisions that are not close choices, for
+  comparison.
+- Summaries per setup, close choices and the other eligible decisions separately: the share of decisions where each
+  feature differs, the count by number of differing features (0–4), mean and median of the gap, of candidate 1's loss
+  and of candidate 2's loss.
+- Missing engine values: any eligible-by-probability decision without them would be scored with
+  `tools/site/score.sh` (GNUbg on CPU, 2-ply, `nice -n 19`, at most 8 processes, the existing settings) into the
+  site's scores store (`STATE/plays`), never on the leagues' GPUs. The count is reported (expected 0, as in §0).
+
+### 9.6 Risk close choices and stake bands (A5)
+
+- Minimum hitting risk = the smallest number of hitting rolls among all legal plays (the numbers the model was
+  shown). The two candidates form a **risk pair** when one of them leaves the minimum and the other leaves more.
+- **Risk close choice** = a close choice whose candidates form a risk pair (does not depend on the margin).
+  Per setup: risk close choices ÷ close choices (count and denominator; this is the site's share), and ÷ eligible
+  decisions.
+- At each margin (0.001 main, 0.02 robustness; the close-choice rule is the same at both): the position class of each
+  decision (`analysis.play_call`: Risk pays, Safety pays, No trade-off) and, per class, close choices and risk close
+  choices with their denominators (eligible decisions of that class).
+- **Stake bands**, at each margin, Risk pays positions only, as on the site: stake = the best safe play's loss
+  against the engine's best play; small < 0.02 ≤ medium ≤ 0.08 < big (`thresholds.json`). Per band: close choices ÷
+  all eligible decisions in that band.
+- Wording: a big stake means playing safe is more expensive by the engine's value. It is not decision difficulty, and
+  nothing assumes that good setups have more (or fewer) close choices there. A share of close choices is never called
+  good or bad, and setups are never sorted or ranked by it.
+
+### 9.7 Missed risks (A6), at each margin
+
+- Group G: eligible decisions in Risk pays positions whose two candidates form a risk pair (9.6). Within G, close
+  choices (C) are compared with the other decisions (O).
+- Outcome: the risk class of the play actually made: **missed risk** (`play_call` call `missed`: a minimum-hitting
+  play in a Risk pays position).
+- Crude rates: missed ÷ n in C and in O; difference = rate(C) − rate(O).
+- **Adjusted** (shown on the site): strata = phase (5) × number of options (`option_buckets`, 5) × the engine gap
+  between its two best plays (`gap_buckets`: under 0.02, 0.02 to 0.08, over 0.08). Only strata holding both C and O
+  decisions count. Adjusted rate(C) = missed C ÷ C in those strata; adjusted rate(O) = O's stratum rates weighted by
+  C's counts in the same strata (O standardised to C's mix); difference = adjusted rate(C) − adjusted rate(O).
+  Coverage reported: C decisions in counted strata ÷ all C.
+- 95% interval of both differences: bootstrap by match, 2,000 resamples of the setup's matches with replacement (all
+  decisions of a match move together), percentiles 2.5 and 97.5; a resample where the difference is undefined is
+  left out and counted. Seed: `analysis.boot` of a label naming league, setup, margin and estimate.
+- **N/A** when C or O is empty (crude), or when no stratum holds both (adjusted).
+- Wording: an association within recorded decisions, not a cause.
+
+### 9.8 Site (no change to the Risk tab)
+
+Confidence tab column "Close choices" (share, count, denominator; N/A as in 9.3; not sortable), details per setup
+(9.6 risk share, 9.5 engine values, 9.7 missed risks; margin shown as on the Risk tab), chart panel "close choices by
+stake band (Risk pays only)" with Download PNG; model page with the full breakdown; Every decision "Close choice"
+filter with p1, p2 and both candidate plays. The label of 9.1 under the column, the details and the chart.
+
+### 9.9 Stage B scoring (B4), fixed now, before any stage B call
+
+- Positions: 100, frozen from the prepared shared standard pool (`freeze/close-choices-b.json`). Teams: the one-letter
+  Cup teams (plan in `mailbox/Close choices - stage B plan and estimate.md`).
+- Observed feature set O (per setup and position): the features of 9.5 (same fixed mapping: hitting risk = the
+  opponent's hitting rolls; making a point = the set of newly made points; race = both players' pip counts; prime =
+  the longest prime length) that differ between any two of the plays selected across the five repeat calls.
+- Predicted set P: the features named in the separate prediction call. A valid answer of "none" is the empty set; a
+  missing, invalid or failed response is not a prediction.
+- A position is scored only when its prediction and all five play responses are valid; excluded positions are
+  reported separately with their reasons.
+- **Primary score**: exact agreement, 1 when P = O, else 0 (an extra predicted feature is a mismatch, so naming all
+  four does not automatically succeed). **Secondary score**, declared secondary: partial overlap |P ∩ O| ÷ |P ∪ O|;
+  1 when both sets are empty; 0 when exactly one is empty.
+- Baseline: the predictions shuffled across positions within the same setup and phase (1,000 seeded permutations,
+  `analysis.boot` seeds), scored the same way with the same conventions; reported: observed mean, baseline mean, the
+  baseline's 2.5–97.5 percentiles, and the share of shuffles scoring at least the observed mean. A (setup, phase)
+  group with one scored position keeps its own prediction.
+- Reported separately, both with an empty O: (a) the selected play did not change across the five calls; (b) the play
+  changed but the measured features are identical.
+- Five repeats are not presented as a measure of the model's whole behaviour. Stage B results go on the site
+  separately, after the experiment is complete.

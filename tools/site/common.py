@@ -10,6 +10,8 @@ SITE = Path(__file__).resolve().parent
 CONTENT = SITE / "content"
 
 THRESHOLDS = json.loads((CONTENT / "thresholds.json").read_text())
+# The values of the Method specification of 24 Oct 2026 (content/method-spec-2026-10-24.md), fixed before computing.
+SPEC = json.loads((CONTENT / "analysis_2026-10-24.json").read_text())
 
 # Status words (brief B10).
 PUBLISHED, PROVISIONAL, EARLIER, PENDING, NOT_MEASURED, NA = (

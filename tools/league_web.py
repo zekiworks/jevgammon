@@ -805,8 +805,7 @@ td.lgo{font-weight:700;box-shadow:inset -2px 0 0 rgba(0,0,0,.15)}
 <header><h1>jevgammon league <span id="lid"></span></h1><span id="status"></span><span class="meta" id="rules"></span><span class="meta" id="updated"></span><a href="report/" target="_blank" id="report" hidden>report (working copy)</a><a href="#" id="latest" hidden>back to the latest league</a><div id="control" hidden><span id="ctlButtons"></span><span class="meta" id="ctlStatus"></span></div><div id="note" class="note"></div></header>
 <main>
 <section class="wide"><h2>History</h2><table id="history"></table><div class="mute" style="margin-top:8px">Click a league to view it. Live: moved in the last 10 minutes; stopped: ended before its last match, so only its finished matches count.</div></section>
-<section><h2><span id="tabTitle" class="tabtitle">Table</span> <span class="seasons"><button id="prevSeason" title="previous league">&lsaquo;</button><span id="season"></span><button id="nextSeason" title="next league">&rsaquo;</button></span></h2><table id="table"></table><div class="mute lgkey" id="lgkey"></div><div class="mute" style="margin-top:8px">3 points per win, 1 per draw; ties: more games won, then fewer games lost. PF/PA are backgammon points. The arrows step through all leagues.</div></section>
-<section><h2>Models</h2><table id="models"></table><div class="mute" style="margin-top:8px" id="totals"></div></section>
+<section class="wide"><h2><span id="tabTitle" class="tabtitle">Table</span> <span class="seasons"><button id="prevSeason" title="previous league">&lsaquo;</button><span id="season"></span><button id="nextSeason" title="next league">&rsaquo;</button></span></h2><table id="table"></table><div class="mute lgkey" id="lgkey"></div><div class="mute" style="margin-top:8px">3 points per win, 1 per draw; ties: more games won, then fewer games lost. PF/PA are backgammon points. The arrows step through all leagues.</div></section>
 <section class="wide"><h2>Live</h2><div class="live" id="live"></div></section>
 <section class="wide"><h2>Fixture</h2><div class="days" id="fixture"></div></section>
 <section class="wide"><h2>Recent games</h2><table id="recent"></table></section>
@@ -850,12 +849,6 @@ function render(d){
   // Player config per name: spec plus provider / quantization / device when the league recorded them.
   const player=n=>{const c=(L.models||[]).find(x=>x.name===n)||{};return [c.spec,c.provider,c.quantization,c.device].filter(Boolean).join(' · ')};
   const sec=ms=>ms!=null?(ms/1000).toFixed(2)+'s':'–';
-  $('models').innerHTML='<thead><tr><th class="l">Model</th><th>Decisions</th><th>Avg</th><th>Max</th><th>Hit %</th><th title="the answer named no legal play; a random legal play was made">Invalid</th><th>Timeout</th>'+
-    (d.v3?'<th title="decisions with option probabilities">Probs %</th><th title="mean request time, retries excluded">Request</th><th>Cost</th>':'')+'<th>G/BG won</th></tr></thead><tbody>'+
-    d.models.map(m=>{const o=m.outcomes||{},n=m.decisions||0;return `<tr><td class="l">${esc(m.name)} <span class="mute">${esc(player(m.name))}</span></td><td>${n}</td><td>${sec(m.avg_ms)}</td><td>${m.max_ms!=null?(m.max_ms/1000).toFixed(1)+'s':'–'}</td><td>${pct(m.hits||0,n)}</td><td>${m.invalid??0} <span class="mute">(${pct(m.invalid||0,n)})</span></td><td>${m.timeouts??0}</td>`+
-      (d.v3?`<td>${pct(m.with_probs||0,n)}</td><td>${sec(m.avg_request_ms)}</td><td>${m.cost_usd!=null?'$'+m.cost_usd.toFixed(4):'–'}</td>`:'')+`<td>${(o.gammon||0)}/${(o.backgammon||0)}</td></tr>`}).join('')+'</tbody>';
-  const g=d.games;
-  $('totals').textContent=g.games?`${g.games} games · avg ${Math.round(g.avg_turns)} turns · ${g.turn_limit} at the turn limit (${pct(g.turn_limit,g.games)}) · ${g.gammons} gammons/backgammons · ${g.timeouts} lost on time`:'no finished games yet';
   // Finished games leave the live view at once, unless their board is being browsed; a match
   // whose games are all over (between rounds, or done) shows no card until play resumes.
   const shown=f=>slots(f).map((lv,k)=>({lv,k})).filter(x=>!x.lv.game_over||view[f.match_id+':'+x.k]);

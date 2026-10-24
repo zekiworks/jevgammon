@@ -8,6 +8,8 @@ use std::time::{Duration, Instant};
 use reqwest::{RequestBuilder, StatusCode};
 
 use crate::auth::snippet;
+use crate::budget::{Hold, Ledger};
+use std::sync::Arc;
 
 /// Retries after the first attempt.
 pub const RETRIES: u32 = 3;
@@ -91,18 +93,45 @@ pub async fn send(
     make: impl Fn() -> RequestBuilder,
     retry: &RetryTime,
 ) -> Result<String, CallError> {
-    send_with_backoff(make, retry, FIRST_BACKOFF, RATE_LIMIT_BACKOFF).await
+    let (body, _) = send_with_backoff(make, retry, None, FIRST_BACKOFF, RATE_LIMIT_BACKOFF).await?;
+    Ok(body)
+}
+
+/// As `send`, under a budget: every attempt first reserves `worst_case` dollars in `ledger`
+/// (refused, before the call, when that would pass the cap). An attempt answered with an
+/// error status is booked at nothing; one without a response keeps its worst case. The
+/// successful attempt's reservation is returned for the caller to settle at its cost.
+pub async fn send_metered(
+    make: impl Fn() -> RequestBuilder,
+    retry: &RetryTime,
+    ledger: &Arc<Ledger>,
+    worst_case: f64,
+) -> Result<(String, Hold), CallError> {
+    let (body, hold) = send_with_backoff(
+        make,
+        retry,
+        Some((ledger, worst_case)),
+        FIRST_BACKOFF,
+        RATE_LIMIT_BACKOFF,
+    )
+    .await?;
+    Ok((body, hold.expect("a metered attempt holds a reservation")))
 }
 
 async fn send_with_backoff(
     make: impl Fn() -> RequestBuilder,
     retry: &RetryTime,
+    budget: Option<(&Arc<Ledger>, f64)>,
     first_backoff: Duration,
     rate_limit_backoff: Duration,
-) -> Result<String, CallError> {
+) -> Result<(String, Option<Hold>), CallError> {
     let mut backoff = first_backoff;
     let mut attempt = 0;
     loop {
+        let hold = match budget {
+            Some((ledger, amount)) => Some(ledger.reserve(amount)?),
+            None => None,
+        };
         let started = Instant::now();
         let failure = match make().send().await {
             Ok(response) => {
@@ -113,9 +142,21 @@ async fn send_with_backoff(
                     .and_then(|v| v.to_str().ok())
                     .and_then(|v| v.trim().parse::<u64>().ok())
                     .map(Duration::from_secs);
-                let body = response.text().await.unwrap_or_default();
+                let body = match response.text().await {
+                    Ok(body) => body,
+                    // The body was cut off: what was generated is unknown, `hold` is lost.
+                    Err(error) if status.is_success() => {
+                        return Err(CallError::Fatal(anyhow::anyhow!(
+                            "reading the response failed: {error}"
+                        )));
+                    }
+                    Err(_) => String::new(),
+                };
                 if status.is_success() {
-                    return Ok(body);
+                    return Ok((body, hold));
+                }
+                if let Some(hold) = hold {
+                    hold.refused(&format!("{status}"));
                 }
                 if matches!(status, StatusCode::UNAUTHORIZED | StatusCode::FORBIDDEN) {
                     return Err(CallError::Auth(format!("{status}: {}", snippet(&body))));
@@ -138,6 +179,7 @@ async fn send_with_backoff(
                 }
                 format!("{status}: {}", snippet(&body))
             }
+            // No response: `hold` drops here and keeps its worst case.
             Err(error) => format!("{error}"),
         };
         if attempt >= RETRIES {
@@ -205,7 +247,7 @@ mod tests {
         // 503, 429, 500, then 200: the fourth attempt succeeds.
         let (url, count) = serve(vec![503, 429, 500, 200]);
         let retry = RetryTime::default();
-        let body = send_with_backoff(|| http.get(&url), &retry, backoff, backoff * 3)
+        let (body, _) = send_with_backoff(|| http.get(&url), &retry, None, backoff, backoff * 3)
             .await
             .unwrap();
         assert_eq!(body, "status 200");
@@ -220,7 +262,7 @@ mod tests {
         // Always 502: one attempt and three retries, then an error.
         let (url, count) = serve(vec![502]);
         let retry = RetryTime::default();
-        let error = send_with_backoff(|| http.get(&url), &retry, backoff, backoff * 3)
+        let error = send_with_backoff(|| http.get(&url), &retry, None, backoff, backoff * 3)
             .await
             .unwrap_err();
         assert!(format!("{:?}", error).contains("gave up after 4 attempts"));
@@ -231,11 +273,73 @@ mod tests {
         let (url, count) = serve(vec![400]);
         let retry = RetryTime::default();
         assert!(
-            send_with_backoff(|| http.get(&url), &retry, backoff, backoff * 3)
+            send_with_backoff(|| http.get(&url), &retry, None, backoff, backoff * 3)
                 .await
                 .is_err()
         );
         assert_eq!(count.load(Ordering::SeqCst), 1);
         assert_eq!(retry.get(), Duration::ZERO);
+    }
+
+    /// Under a budget: an error status is booked at nothing, the answered attempt's hold
+    /// is returned, and an attempt over the cap is refused before anything is sent.
+    #[tokio::test]
+    async fn metered_attempts_reserve_before_sending() {
+        let http = reqwest::Client::new();
+        let backoff = Duration::from_millis(5);
+        let dir = std::env::temp_dir().join(format!("budget-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let config = crate::budget::BudgetConfig {
+            ledger: dir.join("ledger.db").to_string_lossy().into_owned(),
+            cap_usd: 1.0,
+            input_per_mtok: 2.0,
+            cached_input_per_mtok: 0.2,
+            output_per_mtok: 10.0,
+        };
+        let ledger = Ledger::open(&config, "t").unwrap();
+        let (url, count) = serve(vec![503, 200]);
+        let retry = RetryTime::default();
+        let (_, hold) = send_with_backoff(
+            || http.get(&url),
+            &retry,
+            Some((&ledger, 0.7)),
+            backoff,
+            backoff,
+        )
+        .await
+        .unwrap();
+        assert_eq!(count.load(Ordering::SeqCst), 2);
+        // The answered attempt's 0.7 is still reserved: 0.4 more is refused unsent.
+        let (url, count) = serve(vec![200]);
+        let error = send_with_backoff(
+            || http.get(&url),
+            &retry,
+            Some((&ledger, 0.4)),
+            backoff,
+            backoff,
+        )
+        .await
+        .unwrap_err();
+        assert!(format!("{error:?}").contains("BUDGET CAP"));
+        assert_eq!(count.load(Ordering::SeqCst), 0);
+        hold.unwrap().settle(
+            crate::budget::Usage {
+                input_tokens: 1000,
+                output_tokens: 1000,
+                ..Default::default()
+            },
+            None,
+        );
+        assert!(
+            send_with_backoff(
+                || http.get(&url),
+                &retry,
+                Some((&ledger, 0.4)),
+                backoff,
+                backoff
+            )
+            .await
+            .is_ok()
+        );
     }
 }

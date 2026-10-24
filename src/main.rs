@@ -1,6 +1,7 @@
 mod ask;
 mod auth;
 mod board;
+mod budget;
 mod db;
 mod dice;
 mod http;

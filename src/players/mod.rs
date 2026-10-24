@@ -189,6 +189,9 @@ pub struct PlayerConfig {
     pub rpm: Option<u32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub rate_group: Option<String>,
+    /// Hard spending cap with a shared ledger (OpenAI-compatible servers only).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub budget: Option<crate::budget::BudgetConfig>,
 }
 
 impl PlayerConfig {
@@ -367,6 +370,13 @@ impl Player {
                 });
                 setup.pacer(group, rpm)
             }),
+            budget: match &config.budget {
+                Some(budget) if provider.eq_ignore_ascii_case("openai-compatible") => {
+                    Some(crate::budget::Ledger::open(budget, &config.name)?)
+                }
+                Some(_) => bail!("{}: a budget needs an openai-compatible spec", config.name),
+                None => None,
+            },
         };
         let player = |backend| Player {
             spec: spec.to_owned(),

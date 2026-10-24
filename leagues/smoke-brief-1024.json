@@ -1,0 +1,117 @@
+{
+  "note": "Reviewed brief of 2026-10-24, item 1: smoke tests before late entries (Liquid d1.1 for League 1; Kimi K3.1 Pro (off) for League 3, (on) for the 200-position first look). The 50 smoke positions (positions/smoke.jsonl), same prompt (bg-v2) and option-order seed as the v3 leagues, next to the reference setup (Gemini 3.8 Flash (low), Antigravity) and Liquid's d1-ultra and d1 the same day. Kimi requests go through the shared $30 hard-cap ledger smoke/kimi-k31-budget.db. Not a league: run with `jevgammon ask` only.",
+  "prompt_version": "bg-v2",
+  "seed": 0,
+  "order_seed": 1190975713392774006,
+  "rounds": 3,
+  "clock": 0,
+  "delay": 30,
+  "max_turns": 300,
+  "players": [
+    {
+      "name": "Liquid d1.1",
+      "spec": "liquid/d1.1",
+      "provider": "liquid",
+      "price": {
+        "input_per_mtok": 0.02,
+        "output_per_mtok": 0
+      },
+      "parallel": 2,
+      "note": "Liquid AI decisions API (api.liquid.ai/decisions/v1/systemone), request model d1.1: listed by GET /decisions/v1/models (release_date 2026-10-19) and named the default hosted decision model at docs.liquid.ai/lfm/models/d1 (checked 2026-10-24). Price: liquid.ai/pricing has no d1.1 row on 2026-10-24; $0.02 per million input tokens is its row labelled d1 (assumption)"
+    },
+    {
+      "name": "Liquid d1-ultra",
+      "spec": "liquid/d1-ultra",
+      "provider": "liquid",
+      "price": {
+        "input_per_mtok": 0.042,
+        "output_per_mtok": 0
+      },
+      "parallel": 2,
+      "note": "As League 1's (now League 2's) Liquid d1-ultra; same-day comparison for d1.1. liquid.ai/pricing $0.042 per million input tokens (2026-10-24)"
+    },
+    {
+      "name": "Liquid d1",
+      "spec": "liquid/d1",
+      "provider": "liquid",
+      "price": {
+        "input_per_mtok": 0.02,
+        "output_per_mtok": 0
+      },
+      "parallel": 2,
+      "note": "Request model d1 (the earlier hosted model): checks what plain d1 resolves to now. liquid.ai/pricing $0.02 per million input tokens (2026-10-24)"
+    },
+    {
+      "name": "Gemini 3.8 Flash (low) [antigravity]",
+      "spec": "antigravity/gemini-3.8-flash",
+      "provider": "antigravity-subscription",
+      "reasoning": "low",
+      "price": {
+        "input_per_mtok": 0.75,
+        "output_per_mtok": 3.75
+      },
+      "parallel": 4,
+      "note": "Reference setup, as League 2's Gemini 3.8 Flash (low): Google Antigravity subscription (OMP's login; Antigravity model id gemini-3.8-flash-low), enum-constrained letter, temperature 1.0; cost is API-list-price equivalent ($0.75/$3.75 per million tokens, League 2's price)"
+    },
+    {
+      "name": "Kimi K3.1 Pro (off)",
+      "spec": "openai-compatible/moonshotai/kimi-k3.1-pro",
+      "base_url": "https://openrouter.ai/api/v1",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "provider": "openrouter:moonshotai/mxfp4",
+      "quantization": "mxfp4",
+      "reasoning": "none",
+      "request": {
+        "provider": {
+          "order": ["moonshotai/mxfp4"],
+          "allow_fallbacks": false
+        },
+        "usage": {"include": true}
+      },
+      "letter_readout": "answer",
+      "price": {
+        "input_per_mtok": 2.0,
+        "output_per_mtok": 10.0
+      },
+      "budget": {
+        "ledger": "smoke/kimi-k31-budget.db",
+        "cap_usd": 30.0,
+        "input_per_mtok": 2.0,
+        "cached_input_per_mtok": 0.2,
+        "output_per_mtok": 10.0
+      },
+      "parallel": 4,
+      "note": "Moonshot's Kimi K3.1 Pro (moonshotai/kimi-k3.1-pro, canonical moonshotai/kimi-k3.1-pro-20261023) via OpenRouter pinned to Moonshot AI's standard endpoint (tag moonshotai/mxfp4, service_tier null; not moonshotai/highspeed), fallbacks off. Off = reasoning_effort none, the lowest effort OpenRouter lists for this model on 2026-10-24 (supported_efforts max/high/low/none, default max). Letter constrained by JSON schema; logprobs asked, read when returned. Temperature 1.0. List price $2/$10 per million, cache read $0.20 (OpenRouter endpoints API, 2026-10-24). $30 hard cap shared with (on)"
+    },
+    {
+      "name": "Kimi K3.1 Pro (on)",
+      "spec": "openai-compatible/moonshotai/kimi-k3.1-pro",
+      "base_url": "https://openrouter.ai/api/v1",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "provider": "openrouter:moonshotai/mxfp4",
+      "quantization": "mxfp4",
+      "reasoning": "max",
+      "request": {
+        "provider": {
+          "order": ["moonshotai/mxfp4"],
+          "allow_fallbacks": false
+        },
+        "usage": {"include": true}
+      },
+      "letter_readout": "answer",
+      "price": {
+        "input_per_mtok": 2.0,
+        "output_per_mtok": 10.0
+      },
+      "budget": {
+        "ledger": "smoke/kimi-k31-budget.db",
+        "cap_usd": 30.0,
+        "input_per_mtok": 2.0,
+        "cached_input_per_mtok": 0.2,
+        "output_per_mtok": 10.0
+      },
+      "parallel": 4,
+      "note": "As Kimi K3.1 Pro (off), reasoning_effort max, the model's default effort (OpenRouter default_effort max, 2026-10-24). First look only, never in a league. $30 hard cap shared with (off)"
+    }
+  ]
+}

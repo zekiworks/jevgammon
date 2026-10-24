@@ -215,3 +215,130 @@ Hypothesis (recorded before computing; gains largest for high-ability setups wit
 - Summary claims rechecked by the build's finding check (passed); I did not re-verify findings by hand.
 - Visual check: hero and Risk table screenshots only; chart PNG/table PNG downloads not clicked through; mobile layout not checked.
 - Late entries (BriefPart1) will add unaudited decisions: they show as "not audited" and stay out of 5A/5B/5D until `prob_audit.py` is rerun; League 1/3 roster changes also change these tables before ladder round 2.
+
+## Item 1: smoke tests, Kimi cost projection and gate (Oct 24, 14:20 UTC)
+
+**Outcome: the Kimi gate FAILED. No league match was scheduled and no first-look position was asked. Question for Ümit at the end of this section.**
+
+### Identity and settings verified (B7 fields)
+
+| Field | Liquid d1.1 | Kimi K3.1 Pro (off) | Kimi K3.1 Pro (on) |
+|---|---|---|---|
+| Request model | `d1.1` | `moonshotai/kimi-k3.1-pro` | same |
+| Response-resolved model | `d1.1` (50/50 responses) | `moonshotai/kimi-k3.1-pro`; generation API: `moonshotai/kimi-k3.1-pro-20261023` | same |
+| Provider / endpoint | Liquid decisions API, `api.liquid.ai/decisions/v1/systemone` | OpenRouter pinned `provider.order = ["moonshotai/mxfp4"]`, `allow_fallbacks: false` | same |
+| Endpoint identity check | — | The endpoints API lists two Moonshot AI endpoints: `moonshotai/mxfp4` (service_tier null, $2/$10) and `moonshotai/highspeed` (service_tier `priority`, $4/$20). Every response had `provider: Moonshot AI` and `service_tier: null`; billed costs match $2/$10 to the cent. So the standard endpoint answered, not Highspeed. | same |
+| Explicit setting | none (decision model) | `reasoning_effort: none` | `reasoning_effort: max` |
+| Probabilities | per legal option (decision model distribution; all legal plays present, sums to 1) | **none**: `logprobs: true, top_logprobs: 20` were sent and every response returned `logprobs: null`. The endpoint doesn't list logprobs. So it's choice only. | same: choice only |
+| Prompt caching | n/a | Implicit (endpoint `supports_implicit_caching: true`). The rules text is the prompt's prefix. **Measured**: 105,216 of 165,193 input tokens cached (64%). | Measured: 72,960 of 117,449 (62%) |
+| Run date | 2026-10-24 | 2026-10-24 | 2026-10-24 |
+| Price and price date | **Assumption:** $0.02/M input. liquid.ai/pricing has no d1.1 row on 2026-10-24, and $0.02 is its row labelled `d1`. Conservative projections use d1-ultra's $0.042. | $2/M in, $0.20/M cached in, $10/M out (OpenRouter endpoints API, 2026-10-24) | same |
+| Official source | `GET api.liquid.ai/decisions/v1/models` lists `d1.1` (release_date 2026-10-19). docs.liquid.ai/lfm/models/d1 calls `d1.1` the "default hosted decision model". There's no blog post yet. Checked 2026-10-24. | openrouter.ai/api/v1/models and `/models/moonshotai/kimi-k3.1-pro/endpoints`, 2026-10-24 | same |
+
+**Change from the reviewed mapping: (off) = `none`, not `low`.** On 2026-10-24, OpenRouter's model metadata for `moonshotai/kimi-k3.1-pro` reads `reasoning: {mandatory: false, default_enabled: true, supported_efforts: [max, high, low, none], default_effort: max}`. On the pinned standard endpoint, `none` was accepted, used 0 reasoning tokens on all 52 decisions (50 smoke + 2 probe), and gave valid answers. This follows League 3's rule ("reasoning off; its lowest setting where it has no off"): Astra and Grok are at `low` only because they reject `none`. Main approved this. (on) = `max` is the model's documented default and matches the reviewed mapping.
+
+**Plain `d1`** still answers as `d1`. It doesn't resolve to d1.1: the two picked the same play on 35 of 50 positions, with a largest probability gap of 0.70. The historical d1 results are untouched.
+
+### Smoke rows (50 positions, `positions/smoke.jsonl`, bg-v2, order seed 1190975713392774006, 600 s limit)
+
+Config `leagues/smoke-brief-1024.json`, answers `smoke/brief-1024.db`, table `smoke/brief-1024.json`. Runner: commit e78a5cf plus the budget change (dirty), committed with this report. Scored with `smoke/score.db` (GNUbg 1.08, 2-ply). Read any difference under about 10 as noise (Part A).
+
+| Setup | Answers / failed / timed out | Invalid | Probabilities | p50 / p90 s | Tokens in / out / reasoning | $ per 1,000 | Error rate [95% CI] | Δ vs Gemini 3.8 Flash (low) today | Δ vs Liquid d1-ultra today |
+|---|---|---|---|---|---|---|---|---|---|
+| **Liquid d1.1** | 50 / 0 / 0 | 0% | decision model | 0.2 / 0.3 | 3000 / 0 / – | 0.06 | 23.4 [11.9, 36.6] | +15.0 [+4.2, +27.4] | −5.9 [−22.5, +7.9] |
+| Liquid d1-ultra (same day) | 50 / 0 / 0 | 0% | decision model | 0.2 / 0.3 | 3000 / 0 / – | 0.13 | 29.3 [15.5, 45.6] | +20.9 [+7.8, +36.7] | reference |
+| Liquid d1 (same day) | 50 / 0 / 0 | 0% | decision model | 0.3 / 0.4 | 3000 / 0 / – | 0.06 | 24.7 [13.2, 37.9] | +16.3 [+5.5, +28.8] | −4.6 [−18.7, +6.8] |
+| Gemini 3.8 Flash (low) [antigravity], reference | 50 / 0 / 0 | 0% | none (choice only) | 2.0 / 5.3 | 3244 / 292 / 289 | 3.53 (API-eq.) | 8.4 [3.0, 15.8] | reference | −20.9 [−36.7, −7.9] |
+| **Kimi K3.1 Pro (off)** (`none`) | 50 / 0 / 0 | 0% | none (choice only) | 3.3 / 4.3 | 3164 / 15 / 0 | 2.69 | 20.3 [8.7, 34.9] | +11.9 [+1.4, +26.1] | −9.0 [−20.1, +0.6] |
+| **Kimi K3.1 Pro (on)** (`max`) | 37 / 0 / **13** | 0% | none (choice only) | 154.5 / 491.0 | 3174 / 9810 / 9790 | 100.90 | 3.5 [0.3, 9.2] (n=37; the 13 timeouts are probably the hard ones, so this is biased low) | +1.6 [−2.3, +7.5] (n=37) | −16.5 [−29.6, −6.0] (n=37) |
+
+Failures:
+- **Liquid:** 8 requests (d1.1: 4, d1: 4) failed with Liquid's `502 All upstream backends failed` after 4 attempts, and the runner's warm-up probes failed the same way. A rerun 1 hour later answered all of them. No invalid answers.
+- **Kimi (on):** 13 of 50 decisions hit the 600 s limit (26%). OpenRouter billed them anyway; see the ledger.
+
+### Kimi hard cap: implementation
+
+- New `src/budget.rs`, wired into `src/http.rs` and `src/players/llm.rs`.
+- **Config.** A player config with `budget: {ledger, cap_usd, input_per_mtok, cached_input_per_mtok, output_per_mtok}` (OpenAI-compatible specs only) shares a SQLite ledger with every process that names it. Both Kimi settings use `smoke/kimi-k31-budget.db`, cap $30.
+- **Reservation.** Before **every attempt**, retries included, the runner reserves that attempt's worst case: request bytes × input price + `max_tokens` (32,768) × output price, about $0.35. In one transaction, it refuses the call when spent + open reservations + this one would pass $30. The refusal is an error ("BUDGET CAP … stopped before the call"): a league match aborts and resumes later, and `ask` stores a failure. No random play is made.
+- **Settlement.**
+  - An answered attempt is booked at max(list-price cost, OpenRouter's reported cost). List cost = uncached input × $2 + cached × $0.20 + all completion tokens (reasoning included) × $10, so nothing is counted twice.
+  - An error status books $0.
+  - No response (timeout, dropped decision, crash) keeps the worst case ("lost").
+- **Tests:** `budget::tests`, `http::tests::metered_attempts_reserve_before_sending`; all 59 runner tests pass.
+
+### Spend ledger (Kimi, at list prices)
+
+| | Attempts | Input (cached) | Output (reasoning) | Booked |
+|---|---|---|---|---|
+| (off), smoke + 2 probe decisions | 52 settled | 165,193 (105,216) | 780 (0) | $0.1488 |
+| (on), answered | 37 settled | 117,449 (72,960) | 362,979 (362,239) | $3.7334 |
+| (on), no response (13 timeouts + 4 in flight when my shell killed the first run at 13:54:48 UTC; booked by hand as lost) | 17 lost | – | – | $5.9573 (worst case) |
+| **Ledger total (conservative)** | | | | **$9.84** |
+| OpenRouter actual (`/credits` usage 63.9992 → 71.2627) | | | | **$7.26** (so each timeout was billed about $0.20) |
+
+**OpenRouter credit left: $3.74** ($75.00 total, $71.26 used, 14:08 UTC).
+
+### Projection from measured tokens (each setting's own)
+
+- **Rates:** $2/M input, $0.20/M cached input, $10/M output (2026-10-24).
+- **Off: League 3 late entry.**
+  - Measured per decision: 3,177 input tokens (2,023 cached), 15 output, 0 reasoning, **$0.00286**.
+  - Workload is not fixed. Kimi (off) would play 11 matches, one against each of League 3's 11 current entrants (3 rounds). Finished League 3 matches give 126.6 decisions per player per match (SD 28.2, range 64–187, 110 player-matches). Resampling 11 matches gives 1,392 decisions (p50), 1,547 (p95) and 2,057 at most.
+  - About 14% of League 3 decisions have more than 26 plays and are split into groups. That makes a decision cost 1.35–1.53× an ungrouped one (League 3's chat models).
+  - **Projected:** $5.78 central (1,392 × 1.45 × $0.00286); $6.77 at p95 (1,547 × 1.53); $15.39 at p95 with no cache hits.
+- **On: 200 fixed first-look positions.**
+  - Measured: $0.1009 per answered decision (9,790 reasoning tokens); 26% timed out, each billed about $0.20 (up to $0.35 worst case).
+  - The frozen 200 render to the same prompt length as the smoke positions (21,342 vs 21,441 characters).
+  - **Projected:** $25.28 (actual timeout cost), $33.18 (worst-case timeouts).
+- **Combined:**
+
+| | Incurred | Off remaining | On 200 | Total |
+|---|---|---|---|---|
+| Central | $7.26 | $5.78 | $25.28 | **$38.32** |
+| Optimistic (no groups; timeouts free) | $7.26 | $3.98 | $20.18 | **$31.42** |
+| Conservative (ledger, p95, worst-case timeouts) | $9.84 | $6.77 | $33.18 | **$49.79** |
+
+### Gate decision
+
+1. **Incurred plus projected exceeds $30 in every scenario.** Under the brief, I stop and ask Ümit. I did not shrink the 200 positions, change the effort, drop the roster or raise the cap.
+2. **OpenRouter credit ($3.74 left) can't cover even (off)'s League 3 entry** (about $5.8). No top-up was requested.
+3. So **Kimi (off) is not entered in League 3** and **Kimi (on) has not been asked any first-look position.** League 3 stays final, and its table, champions and Cup roster are unchanged.
+
+**Question for Ümit:**
+1. With the measured costs, the brief's Kimi work needs about $38 at list prices, against a $30 cap and $3.74 of OpenRouter credit. Options:
+   - (a) raise the cap and have Can add credit;
+   - (b) run (off)'s League 3 entry only (about $6–7, needs credit) and drop or postpone (on)'s first look;
+   - (c) change (on)'s plan, e.g. fewer positions or a longer time limit (timeouts cost money but give no answer);
+   - (d) stop Kimi here.
+
+   Nothing runs until you choose.
+2. Liquid d1.1's League 1 entry is gated separately; see below.
+
+### Frozen first-look set (prepared, not asked)
+
+`positions/first-look-kimi.jsonl`: 200 positions, sha256 `dbec41a1640043deb23e728c3b48582a70da4d4c1ad1f7fa15c4a5d2b9506a29`.
+- **Source:** `positions/new.jsonl` (sha256 `ad06427c…`, as in `freeze.json`).
+- **Selection:** 40 per phase, the ids with the smallest sha256(`kimi-k3.1-pro-first-look-2026-10-24:` + id). Rows are byte-identical to the source.
+- **Size:** 2–25 legal plays, so no decision is split into groups.
+- **Record:** `freeze/first-look-kimi.json` (rule, ids, hashes, frozen 14:00 UTC). These positions are not yet GNUbg-scored. That's a CPU job, to do before any scoring.
+
+### Liquid d1.1 → League 1: not scheduled
+
+- **Smoke gate passed:** model identity verified, valid answers, full option probabilities, cost $0.003 per 50.
+- **Roster check:** I can't verify against the original brief's 19 names, because the original Discord messages aren't available to me (Main doesn't have them either). The current League 1 roster in `v3.db` has 19 entrants: Celeris-1 Decision, Clef, Cygnet (Gemma 4 12B), Decider Flash v1.2, Decider v1.1 27B, Decider v1.2 27B, Fastino GLiDE, Fastino GLiDE v1.2 (local), GNUbg weak, GPT-6 Luna, Jev 1.13.0, Jev 1.14.0, LFM2.5-24B-A2B (off), Mercury Decide, Open-Jev 27B v1.1, Random, Safest, SubQ Snap Preview, Winnow-12B.
+  - **Discrepancy:** if the original brief was written before ladder round 1 (Oct 23, 20:49 UTC), its 19 included **Liquid d1-ultra** (now in League 2) and not **LFM2.5-24B-A2B (off)** (now in League 1).
+  - **Please confirm the opponent list.** Not scheduled until then.
+- **Local servers:** 9 of the 19 opponents need local model servers that are **not running** now: Clef, Cygnet, Decider Flash v1.2, Decider v1.1 27B, Decider v1.2 27B, Fastino GLiDE v1.2 (local), LFM2.5-24B-A2B (off), Open-Jev 27B v1.1, Winnow-12B. All their ports refused connections at 14:15 UTC. Those matches are blocked until Can brings the servers up. I didn't start any.
+- **Interaction with ladder round 2:** League 1/3 late entries change the rosters and tables that ladder round 2 (pending) would use. Nothing changed, because nothing was entered.
+
+### Changes during the leagues
+
+None. No late entry was made, so Leagues 1 and 3 stay **Final**.
+
+## Item 7: A2 on shared positions, status only (no paid calls)
+
+- **Build:** done. The runner has the A2 prompt versions `bg-v2-notation` (plays as notation only) and `bg-v2-history` (`src/players/prompt.rs`, `prompts/instructions-notation.txt`).
+- **Freeze:** the shared position files are hashed in `freeze.json` (`positions/new.jsonl` etc.). No A2-specific freeze or matched-position mapping exists. The shared-positions run is still waiting for Ümit (`mailbox/Shared positions - review and estimates 2026-10-24.md`).
+- **Results:** none. Every `answers` table in the repo's databases (smoke/*.db; `v3.db` not counted) holds `bg-v2` answers only, and no `bg-v2-notation`/`bg-v2-history` answers exist. The v12 site delivery lists A2 as "Analysis pending (ablation answers)".
+- **So A2 has not been run.** It needs the shared positions first. Until a valid paired result exists, "the prompt mattered more than the model" stays an **Earlier version (v1)** finding.

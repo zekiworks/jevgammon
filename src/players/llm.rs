@@ -83,6 +83,8 @@ pub struct Options {
     pub answer_prefix: Option<String>,
     /// Rate-limit pacing shared with the other players of the group.
     pub pacer: Option<Arc<super::Pacer>>,
+    /// Hard spending cap (OpenAI-compatible servers): every attempt reserves its worst case.
+    pub budget: Option<Arc<crate::budget::Ledger>>,
 }
 
 enum Kind {
@@ -125,6 +127,8 @@ struct Completion {
     /// Top log-probabilities of the only logprobs entry, when there is exactly one.
     single_entry_top: Option<Vec<(String, f64)>>,
     input_tokens: u64,
+    /// Prompt tokens served from the provider's cache (part of `input_tokens`).
+    cached_tokens: u64,
     output_tokens: u64,
     /// Reasoning tokens, when the provider reports them.
     reasoning_tokens: Option<u64>,
@@ -668,19 +672,40 @@ impl LlmClient {
             }
             Kind::OpenAiCompatible { base_url, api_key } => {
                 let url = format!("{base_url}/chat/completions");
-                let raw = http::send(
-                    || {
-                        let builder = self.http.post(&url).json(body);
-                        match api_key {
-                            Some(key) => builder.bearer_auth(key),
-                            None => builder,
-                        }
-                    },
-                    retry,
-                )
-                .await?;
-                let completion = parse_chat_completion(&raw)?;
-                Ok((raw, completion))
+                let make = || {
+                    let builder = self.http.post(&url).json(body);
+                    match api_key {
+                        Some(key) => builder.bearer_auth(key),
+                        None => builder,
+                    }
+                };
+                let Some(ledger) = &self.options.budget else {
+                    let raw = http::send(make, retry).await?;
+                    let completion = parse_chat_completion(&raw)?;
+                    return Ok((raw, completion));
+                };
+                let max_output = body
+                    .get("max_tokens")
+                    .and_then(Value::as_u64)
+                    .unwrap_or(32768);
+                let worst = ledger.worst_case(body.to_string().len(), max_output);
+                let (raw, hold) = http::send_metered(make, retry, ledger, worst).await?;
+                match parse_chat_completion(&raw) {
+                    Ok(completion) => {
+                        hold.settle(
+                            crate::budget::Usage {
+                                input_tokens: completion.input_tokens,
+                                cached_tokens: completion.cached_tokens,
+                                output_tokens: completion.output_tokens,
+                                reasoning_tokens: completion.reasoning_tokens.unwrap_or(0),
+                            },
+                            completion.cost,
+                        );
+                        Ok((raw, completion))
+                    }
+                    // Unreadable answer: its cost is unknown, so `hold` keeps its worst case.
+                    Err(error) => Err(error.into()),
+                }
             }
         }
     }
@@ -765,7 +790,9 @@ fn letter_entry<'a>(entries: &'a [Value], text: &str) -> Option<&'a Value> {
         return None;
     }
     let token = |e: &'a Value| e.get("token").and_then(Value::as_str).unwrap_or_default();
-    let at = entries.iter().rposition(|e| token_letter(token(e)).is_some())?;
+    let at = entries
+        .iter()
+        .rposition(|e| token_letter(token(e)).is_some())?;
     let mut end = entries.len();
     while end > at + 1 && is_special_token(token(&entries[end - 1])) {
         end -= 1;
@@ -1026,6 +1053,7 @@ fn parse_chat_completion(body: &str) -> Result<Completion> {
         answer_token,
         single_entry_top,
         input_tokens: tokens(&value, "/usage/prompt_tokens"),
+        cached_tokens: tokens(&value, "/usage/prompt_tokens_details/cached_tokens"),
         output_tokens: tokens(&value, "/usage/completion_tokens"),
         reasoning_tokens: optional(&value, "/usage/completion_tokens_details/reasoning_tokens")
             .or_else(|| optional(&value, "/usage/reasoning_tokens")),
@@ -1172,7 +1200,9 @@ mod tests {
             .iter()
             .map(|token| {
                 let top = match *token {
-                    "A" => json!([{"token": "A", "logprob": -0.4}, {"token": "B", "logprob": -1.1}]),
+                    "A" => {
+                        json!([{"token": "A", "logprob": -0.4}, {"token": "B", "logprob": -1.1}])
+                    }
                     _ => json!([{"token": token, "logprob": 0.0}]),
                 };
                 json!({"token": token, "logprob": 0.0, "top_logprobs": top})
@@ -1225,7 +1255,11 @@ mod tests {
             &["{\"choice\":\"", "A", "\"}", "<｜end▁of▁sentence｜>"][..],
             &["A", "<end_of_turn>", "<eos>"][..],
         ] {
-            let text: String = tokens.iter().filter(|t| !is_special_token(t)).copied().collect();
+            let text: String = tokens
+                .iter()
+                .filter(|t| !is_special_token(t))
+                .copied()
+                .collect();
             let c = parse_chat_completion(&chat_with_tokens(&text, None, tokens)).unwrap();
             assert_eq!(c.answer_token.as_deref(), Some("A"));
             let (picked, note) = answer_decision(&c, 3);
@@ -1342,6 +1376,7 @@ mod tests {
                 readout: Readout::Prefill,
                 answer_prefix: None,
                 pacer: None,
+                budget: None,
             },
         );
         let body = client.constrained_body("the position", 3);

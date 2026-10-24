@@ -818,6 +818,8 @@ const $=id=>document.getElementById(id);
 const W='<span class="disc dw"></span>',B='<span class="disc db"></span>';
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const LG={1:1,2:1,3:1};
+// Programs, not models: their rows stay uncoloured.
+const PROG=new Set(['gnubg-weak','gnubg','safest','random']);
 const clock=s=>s==null?'off':`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
 const ago=t=>{if(!t)return'';const s=Math.max(0,(Date.now()-Date.parse(t))/1000);return s<60?`${s|0}s ago`:s<3600?`${(s/60)|0}m ago`:`${(s/3600).toFixed(1)}h ago`};
 const pct=(a,b)=>b?`${(100*a/b).toFixed(0)}%`:'–';
@@ -841,7 +843,7 @@ function render(d){
     (L.order_seed!=null?` · option order seed ${L.order_seed}`:'')+(L.prompt_version?` · prompt ${L.prompt_version}`:'');
   $('updated').textContent='updated '+new Date(d.generated_at).toLocaleTimeString();
   $('table').innerHTML='<thead><tr><th>#</th><th class="l">Model</th><th>P</th><th>W</th><th>D</th><th>L</th><th>Pts</th><th>GW</th><th>GL</th><th>PF</th><th>PA</th><th title="error rate over all of the setup\'s valid matches: the tiebreak after points and games">Err</th></tr></thead><tbody>'+
-    d.table.map((r,i)=>{const o=(d.origin||{})[r.name],cur=d.league&&d.league.id;
+    d.table.map((r,i)=>{const prog=PROG.has(((L.models||[]).find(x=>x.name===r.name)||{}).spec),o=prog?null:(d.origin||{})[r.name],cur=prog?null:d.league&&d.league.id;
       return `<tr class="${i<3?'top':''}${LG[cur]?' lg lg'+cur:''}"><td class="${LG[o]?'lgo lg'+o:''}" title="${LG[o]?'original league: League '+o:''}">${r.place}</td><td class="l"><a href="#" class="mlink" data-model="${esc(r.name)}" title="show this model's matches">${esc(r.name)}</a></td><td>${r.played}</td><td>${r.won}</td><td>${r.drawn}</td><td>${r.lost}</td><td class="pts">${r.points}</td><td>${r.gw}</td><td>${r.gl}</td><td>${r.pf}</td><td>${r.pa}</td><td>${r.error_rate!=null?r.error_rate.toFixed(1):'–'}</td></tr>`}).join('')+'</tbody>';
   $('lgkey').innerHTML='# colour = original league: '+[1,2,3].map(n=>`<span class="lg${n}">League ${n}</span>`).join('');
   // Player config per name: spec plus provider / quantization / device when the league recorded them.

@@ -289,7 +289,7 @@ filter with p1, p2 and both candidate plays. The label of 9.1 under the column, 
 - Five repeats are not presented as a measure of the model's whole behaviour. Stage B results go on the site
   separately, after the experiment is complete.
 
-### 9.10 Stage B amendment (2026-10-24, 19:25 UTC; Can's decisions, before any stage B call and before selection)
+### 9.10 Stage B amendment (2026-10-24, 19:22 UTC; Can's decisions, before any stage B call and before selection)
 
 Replaces the position source of §9.9. The scoring rules of §9.9 are unchanged.
 

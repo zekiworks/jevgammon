@@ -446,6 +446,36 @@ def dashboard_rates(conn: sqlite3.Connection, scores: Path | None) -> dict[str, 
     return hit[1]
 
 
+def origins(db: Path, league_id: int) -> dict[str, int]:
+    """For each current member of a league, the league it played in before any ladder move:
+    follow its ladder moves back from its row in this league (a move ends one row with a
+    "ladder round" note and starts the next at the same moment). A setup that never moved,
+    such as the GNUbg anchor present in every league, gets this league."""
+    out: dict[str, int] = {}
+    with connect(db) as conn:
+        if "league_players" not in {r[0] for r in conn.execute("SELECT name FROM sqlite_master")}:
+            return out
+        rows: dict[str, list] = {}
+        for r in conn.execute(
+            """SELECT p.name, lp.league_id, lp.joined_at, lp.left_at, lp.note FROM league_players lp
+               JOIN players p ON p.id = lp.player_id ORDER BY lp.joined_at"""
+        ):
+            rows.setdefault(r["name"], []).append(dict(r))
+        ts = lambda t: datetime.fromisoformat(t.replace("Z", "+00:00")).timestamp()
+        for name, rs in rows.items():
+            cur = next((r for r in rs if r["league_id"] == league_id and r["left_at"] is None), None)
+            if cur is None:
+                continue
+            while True:
+                prev = next((r for r in rs if r["left_at"] and (r["note"] or "").startswith("ladder round")
+                             and abs(ts(r["left_at"]) - ts(cur["joined_at"])) < 5), None)
+                if prev is None:
+                    break
+                cur = prev
+            out[name] = cur["league_id"]
+    return out
+
+
 def snapshot(db: Path, league_id: int | None, scores: Path | None = None) -> dict:
     with connect(db) as conn:
         league = conn.execute(
@@ -570,6 +600,8 @@ def snapshot(db: Path, league_id: int | None, scores: Path | None = None) -> dic
             "models": roster,
         },
         "table": table,
+        # League each setup played in before any ladder move (reshape removals are skipped).
+        "origin": origins(db, lid),
         "fixtures": fixtures,
         "models": [
             {"name": n, **decisions.get(n, {}), "outcomes": outcomes.get(n, {})} for n in names
@@ -761,12 +793,19 @@ h2 .seasons{float:right;text-transform:none;letter-spacing:0;display:flex;gap:6p
 #ctlStatus.error{color:var(--loss)}
 .spin{display:inline-block;width:.8em;height:.8em;border:2px solid var(--mute);border-top-color:transparent;border-radius:50%;vertical-align:-.1em;margin-right:4px;animation:spin 1s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+/* League colours (pastel): League 1 yellow, League 2 green, League 3 blue. Table cells take the
+   league's colour; the # cell takes the colour of the setup's original league. Dark text on them. */
+tr.lg td{color:#1e293b;border-color:rgba(0,0,0,.08)}tr.lg td a.mlink{color:#1e293b;border-bottom-color:#64748b}
+.lg1,tr.lg1 td{background:#fdf3c4}.lg2,tr.lg2 td{background:#d6f0d0}.lg3,tr.lg3 td{background:#d4e6f8}
+tr.lg td.lgo.lg1{background:#fdf3c4}tr.lg td.lgo.lg2{background:#d6f0d0}tr.lg td.lgo.lg3{background:#d4e6f8}
+td.lgo{font-weight:700;box-shadow:inset -2px 0 0 rgba(0,0,0,.15)}
+.lgkey{margin-top:6px;font-size:12px}.lgkey span{display:inline-block;padding:1px 8px;border-radius:4px;color:#1e293b;margin-left:6px}
 </style></head><body>
 <dialog id="ctx"><div class="head"><h3 id="ctxTitle"></h3><button onclick="$('ctx').close()">close</button></div><div id="ctxBody"></div></dialog>
 <header><h1>jevgammon league <span id="lid"></span></h1><span id="status"></span><span class="meta" id="rules"></span><span class="meta" id="updated"></span><a href="report/" target="_blank" id="report" hidden>report (working copy)</a><a href="#" id="latest" hidden>back to the latest league</a><div id="control" hidden><span id="ctlButtons"></span><span class="meta" id="ctlStatus"></span></div><div id="note" class="note"></div></header>
 <main>
 <section class="wide"><h2>History</h2><table id="history"></table><div class="mute" style="margin-top:8px">Click a league to view it. Live: moved in the last 10 minutes; stopped: ended before its last match, so only its finished matches count.</div></section>
-<section><h2>Table <span class="seasons"><button id="prevSeason" title="previous league">&lsaquo;</button><span id="season"></span><button id="nextSeason" title="next league">&rsaquo;</button></span></h2><table id="table"></table><div class="mute" style="margin-top:8px">3 points per win, 1 per draw; ties: more games won, then fewer games lost. PF/PA are backgammon points. The arrows step through all leagues.</div></section>
+<section><h2>Table <span class="seasons"><button id="prevSeason" title="previous league">&lsaquo;</button><span id="season"></span><button id="nextSeason" title="next league">&rsaquo;</button></span></h2><table id="table"></table><div class="mute lgkey" id="lgkey"></div><div class="mute" style="margin-top:8px">3 points per win, 1 per draw; ties: more games won, then fewer games lost. PF/PA are backgammon points. The arrows step through all leagues.</div></section>
 <section><h2>Models</h2><table id="models"></table><div class="mute" style="margin-top:8px" id="totals"></div></section>
 <section class="wide"><h2>Live</h2><div class="live" id="live"></div></section>
 <section class="wide"><h2>Fixture</h2><div class="days" id="fixture"></div></section>
@@ -778,6 +817,7 @@ const $=id=>document.getElementById(id);
 // Side markers in the same colours as the board's checkers.
 const W='<span class="disc dw"></span>',B='<span class="disc db"></span>';
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const LG={1:1,2:1,3:1};
 const clock=s=>s==null?'off':`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
 const ago=t=>{if(!t)return'';const s=Math.max(0,(Date.now()-Date.parse(t))/1000);return s<60?`${s|0}s ago`:s<3600?`${(s/60)|0}m ago`:`${(s/3600).toFixed(1)}h ago`};
 const pct=(a,b)=>b?`${(100*a/b).toFixed(0)}%`:'–';
@@ -801,7 +841,9 @@ function render(d){
     (L.order_seed!=null?` · option order seed ${L.order_seed}`:'')+(L.prompt_version?` · prompt ${L.prompt_version}`:'');
   $('updated').textContent='updated '+new Date(d.generated_at).toLocaleTimeString();
   $('table').innerHTML='<thead><tr><th>#</th><th class="l">Model</th><th>P</th><th>W</th><th>D</th><th>L</th><th>Pts</th><th>GW</th><th>GL</th><th>PF</th><th>PA</th><th title="error rate over all of the setup\'s valid matches: the tiebreak after points and games">Err</th></tr></thead><tbody>'+
-    d.table.map((r,i)=>`<tr class="${i<3?'top':''}"><td>${r.place}</td><td class="l"><a href="#" class="mlink" data-model="${esc(r.name)}" title="show this model's matches">${esc(r.name)}</a></td><td>${r.played}</td><td>${r.won}</td><td>${r.drawn}</td><td>${r.lost}</td><td class="pts">${r.points}</td><td>${r.gw}</td><td>${r.gl}</td><td>${r.pf}</td><td>${r.pa}</td><td>${r.error_rate!=null?r.error_rate.toFixed(1):'–'}</td></tr>`).join('')+'</tbody>';
+    d.table.map((r,i)=>{const o=(d.origin||{})[r.name],cur=d.league&&d.league.id;
+      return `<tr class="${i<3?'top':''}${LG[cur]?' lg lg'+cur:''}"><td class="${LG[o]?'lgo lg'+o:''}" title="${LG[o]?'original league: League '+o:''}">${r.place}</td><td class="l"><a href="#" class="mlink" data-model="${esc(r.name)}" title="show this model's matches">${esc(r.name)}</a></td><td>${r.played}</td><td>${r.won}</td><td>${r.drawn}</td><td>${r.lost}</td><td class="pts">${r.points}</td><td>${r.gw}</td><td>${r.gl}</td><td>${r.pf}</td><td>${r.pa}</td><td>${r.error_rate!=null?r.error_rate.toFixed(1):'–'}</td></tr>`}).join('')+'</tbody>';
+  $('lgkey').innerHTML='# colour = original league: '+[1,2,3].map(n=>`<span class="lg${n}">League ${n}</span>`).join('');
   // Player config per name: spec plus provider / quantization / device when the league recorded them.
   const player=n=>{const c=(L.models||[]).find(x=>x.name===n)||{};return [c.spec,c.provider,c.quantization,c.device].filter(Boolean).join(' · ')};
   const sec=ms=>ms!=null?(ms/1000).toFixed(2)+'s':'–';

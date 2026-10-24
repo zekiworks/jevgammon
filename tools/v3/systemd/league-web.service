@@ -1,0 +1,11 @@
+[Unit]
+Description=jevgammon live league dashboard (port 8095)
+
+[Service]
+WorkingDirectory=/home/cbasaran/code/jevgammon
+ExecStart=/usr/bin/env python3 tools/league_web.py --db v3.db --port 8095 --host 0.0.0.0 --control tools/v3/league_control.sh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

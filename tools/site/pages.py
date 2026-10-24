@@ -12,8 +12,8 @@ from common import (EARLIER, EARLIER_NOTE, NA, NOT_MEASURED, PENDING, PROVISIONA
 NAV = [("decisions/", "Every decision"), ("disagreements/", "Where models disagree"), ("phases/", "Phases"),
        ("compare/", "Compare"), ("leagues/", "Leagues"), ("method/", "Method"), ("data/", "Data")]
 TITLE = "Can a model tell when a risk is worth taking?"
-# Reviewed brief of 24 Oct 2026, item 2: the subtitle, used with the title in the hero, the meta description and the
-# link preview card.
+# Reviewed brief of 24 Oct 2026, item 2: the subtitle, used with the title in the hero, the meta description, the social
+# preview and the PNG headers (png.js, bg.js read both from the body's data attributes).
 SUBTITLE = "And when does playing safe cost more?"
 # TEMPORARY (Can, 23 Oct 2026): the "Export page as PNG" key in the top bar (assets/png.js); False removes it.
 EXPORT_PAGE_PNG = True
@@ -214,6 +214,7 @@ def layout(S, base, path: str, title: str, body: str, description: str | None = 
     rel = "../" * depth
     desc = description or S["description"]
     full = f"{title} · Zeki Works" if title != TITLE else f"{TITLE} · Zeki Works"
+    social = full if title != TITLE else f"{TITLE} {SUBTITLE} · Zeki Works"
     image = f'{base}{S["image"]}' if S.get("image") else None
     og = (f'<meta property="og:image" content="{image}"><meta property="og:image:width" content="1200">'
           f'<meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image">'
@@ -232,16 +233,16 @@ def layout(S, base, path: str, title: str, body: str, description: str | None = 
   <title>{esc(full)}</title>
   <link rel="canonical" href="{base}{path}">
   <meta name="description" content="{esc(desc)}">
-  <meta property="og:title" content="{esc(full)}"><meta property="og:description" content="{esc(desc)}">
+  <meta property="og:title" content="{esc(social)}"><meta property="og:description" content="{esc(desc)}">
   <meta property="og:type" content="website"><meta property="og:url" content="{base}{path}">
-  <meta name="twitter:title" content="{esc(full)}"><meta name="twitter:description" content="{esc(desc)}">
+  <meta name="twitter:title" content="{esc(social)}"><meta name="twitter:description" content="{esc(desc)}">
   {og}
   <meta name="color-scheme" content="dark light">
   <script>document.documentElement.classList.add("js"); try {{ var t = localStorage.getItem("theme") || (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark"); if (t === "light") document.documentElement.dataset.theme = "light"; }} catch (e) {{}}</script>
   {css}
   {js}
 </head>
-<body class="v3 {body_class}">
+<body class="v3 {body_class}" data-site-title="{esc(TITLE)}" data-site-subtitle="{esc(SUBTITLE)}">
   <a class="skip" href="#main">Skip to content</a>
   <header class="topbar">
     <a class="brand" href="{rel or './'}">Zeki Works · Backgammon benchmark · v3</a>

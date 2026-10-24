@@ -31,6 +31,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import analysis as A  # noqa: E402
 import checks  # noqa: E402
+import offline as O  # noqa: E402
 import pages  # noqa: E402
 from common import CONTENT, EARLIER, PENDING, PROVISIONAL, PUBLISHED, ROOT, SITE, THRESHOLDS, slug  # noqa: E402
 
@@ -69,9 +70,13 @@ def compute(args) -> dict:
     L = A.load_leagues(snap, state / "plays")
     setups = load_setups()
     leagues = []
+    audit = O.load_audit()
+    boots = {}
     for lg in L["leagues"]:
         names = lg["names"]
         summary = A.dataset_summary(lg["dataset"], lg["decisions"], names)
+        offline = O.league(lg, {n: m for (d, n), m in setups.items() if d == lg["dataset"]}, audit)
+        boots[lg["dataset"]] = offline.pop("_boot")
         leagues.append(dict(
             id=lg["id"], dataset=lg["dataset"], version="v3", status=lg["status_label"], state=lg["state"],
             metric_status=lg["metric_status"], matches=lg["fixtures"], matches_done=lg["done"], games=lg["games"],
@@ -82,7 +87,8 @@ def compute(args) -> dict:
                             lost=t["lost"], points=t["points"], games_won=t["gw"], games_lost=t["gl"],
                             gammons_won=lg["gammons"].get(t["name"], 0), to_play=lg["left"].get(t["name"], 0))
                        for t in lg["table"]],
-            setups=summary, references=A.references(lg["dataset"], lg["decisions"], names)))
+            setups=summary, references=A.references(lg["dataset"], lg["decisions"], names), offline=offline))
+    hypothesis = O.hypothesis([(lg["dataset"], lg["offline"]) for lg in leagues], boots)
     v1 = A.load_v1(ROOT / "replay.db", ROOT / "positions/v1.jsonl")
     v1_summary = A.dataset_summary("v1-set", v1["decisions"], v1["setups"])
     per = {}
@@ -119,7 +125,7 @@ def compute(args) -> dict:
                 play_order=dict(setup="Gemini 4 Argon", diff=play_order["diff"], lo=play_order["lo"],
                                 hi=play_order["hi"], positions=play_order["positions"]),
                 disagreements=A.disagreements(v1)),
-        smoke=smoke, shared=shared, thresholds=THRESHOLDS, counts=counts,
+        smoke=smoke, shared=shared, thresholds=THRESHOLDS, counts=counts, hypothesis=hypothesis,
         status=json.loads((CONTENT / "analysis_status.json").read_text()),
         human_scale=json.loads((CONTENT / "human_scale.json").read_text()),
         _v1_raw=v1, _state=state)
@@ -149,11 +155,17 @@ def league_reasoning(lg: dict, setups: dict, programs: set) -> list[dict]:
             reading = "higher error rate in league play"
         else:
             reading = "no clear difference in league play"
+        # Item 4 of the reviewed brief: ability and caution, lower → higher setting (UNPAIRED: different positions).
+        sdt = {}
+        for m in ("main", "robust"):
+            a, b = lg["setups"][na]["risk"][m]["sdt"], lg["setups"][nb]["risk"][m]["sdt"]
+            sdt[m] = None if a["na"] or b["na"] else dict(
+                dprime_change=b["dprime"] - a["dprime"], caution_change=b["caution"] - a["caution"])
         out.append(dict(model=model, low=na, high=nb, low_setting=sa, high_setting=sb, reading=reading,
                         extra_time_median=(qb["time_median"] - qa["time_median"])
                         if None not in (qb.get("time_median"), qa.get("time_median")) else None,
                         extra_cost=(qb["usd_per_1000"] - qa["usd_per_1000"])
-                        if None not in (qb.get("usd_per_1000"), qa.get("usd_per_1000")) else None))
+                        if None not in (qb.get("usd_per_1000"), qa.get("usd_per_1000")) else None, sdt=sdt))
     return out
 
 
@@ -190,6 +202,8 @@ def write_data(S: dict, out: Path) -> None:
     write_json(out, "data/v1/disagreements.json", dict(dataset="v1-set", version="v1", status=EARLIER,
                                                          **v1["disagreements"]))
     write_json(out, "data/v3/shared.json", dict(version="v3", status=PENDING, **S["shared"]))
+    # Reviewed brief of 24 Oct 2026, item 5A: the recorded hypothesis, tested across setups of all leagues (ranks only).
+    write_json(out, "data/v3/offline-hypothesis.json", dict(version="v3", label=O.REREAD_LABEL, **S["hypothesis"]))
     write_json(out, "data/smoke/part-a.json", dict(dataset="smoke-part-a", status="Smoke test", rows=S["smoke"]))
     write_json(out, "data/setups.json", dict(setups=[v for v in S["setups_meta"].values()]))
     write_json(out, "data/thresholds.json", S["thresholds"])

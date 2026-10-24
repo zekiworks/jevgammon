@@ -161,6 +161,18 @@ tr.reference > td { font-style: italic; }
 .chart-svg .rm-name { font-size: 10px; }
 .rm-cautious { background: var(--reading); }
 .rm-wrong { background: var(--wrong); }
+/* Ability and caution (reviewed brief 24 Oct 2026, item 4): the cost-derived SDT reference mark, only where valid. */
+.chart-svg[data-chart="sdt"] .rm-dot { fill: var(--reading); }
+.chart-svg .sdt-ref { stroke: var(--wrong); stroke-width: 2.5; }
+.chart-svg .sdt-link { stroke: var(--wrong); stroke-width: 1; stroke-dasharray: 2 3; opacity: .6; }
+.chart-svg .axis0 { stroke: var(--text-2); opacity: .55; }
+.sdt-swatch { background: var(--wrong); height: .2rem; vertical-align: .2rem; }
+.mini-rel, .mini-hist { display: block; margin-top: .2rem; }
+.mini-rel .rel-diag { stroke: var(--text-2); stroke-dasharray: 2 3; opacity: .5; }
+.mini-rel polyline { fill: none; stroke-width: 1.6; }
+.mini-rel .rel-before { stroke: var(--reading); }
+.mini-rel .rel-after { stroke: var(--wrong); stroke-dasharray: 4 2; }
+.mini-hist .hist-bar { fill: var(--reading); }
 .sp-needless { fill: var(--bad); background: var(--bad); }
 .sp-missed { fill: var(--reading); background: var(--reading); }
 .sp-wrong { fill: var(--grammar); background: var(--grammar); }

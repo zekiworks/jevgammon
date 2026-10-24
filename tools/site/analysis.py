@@ -25,9 +25,12 @@ import sys
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
+from statistics import NormalDist
+
+import numpy as np
 
 import stats
-from common import EARLIER, PROVISIONAL, PUBLISHED, ROOT, THRESHOLDS as T, slug
+from common import EARLIER, PROVISIONAL, PUBLISHED, ROOT, SPEC, THRESHOLDS as T, slug
 from decisions_export import PAGE_SIZE as DECISION_PAGE
 
 sys.path.insert(0, str(ROOT / "tools"))
@@ -39,6 +42,7 @@ PHASES = ["opening", "contact", "holding", "race", "bear-off"]
 TAGS = ["blitz", "back game", "holding", "priming", "low-anchor", "other"]
 REAL_PROBS = {"decision", "logprobs"}
 SHOTS = re.compile(r"the opponent hits with (\d+) of 36 rolls")
+_Z = NormalDist().inv_cdf
 
 
 def utc(stamp: str) -> datetime:
@@ -107,20 +111,28 @@ def load_leagues(snap: Path, plays_dir: Path) -> dict:
                 left[f["model2"]] += 1
         decisions = []
         for r in conn.execute(
-            """SELECT t.id, g.id AS game_id, g.match_id, CASE t.player WHEN 1 THEN lm.model1 ELSE lm.model2 END AS name,
-                      t.decided_by, t.legal_count, t.probability_source, t.probabilities, t.chosen_position,
+            """SELECT t.id, g.id AS game_id, g.match_id, g.round_no, CASE t.player WHEN 1 THEN lm.model1 ELSE lm.model2 END AS name,
+                      t.decided_by, t.legal_count, t.probability_source, t.probabilities, t.chosen_position, t.option_order,
                       t.request_ms, t.latency_ms, t.retry_ms, t.cost_usd, t.group_size, t.created_at,
                       t.input_tokens, t.output_tokens, t.reasoning_tokens
                FROM turns t JOIN games g ON g.id = t.game_id JOIN league_match_view lm ON lm.match_id = g.match_id
                WHERE lm.league_id = ? AND t.decided_by IN ('model', 'fallback')
                ORDER BY lm.label, g.id, t.turn_no""", (lid,)):
             p = plays.get(r["id"])
-            prob = None
+            prob = pvec = rank = None
             if r["probability_source"] in REAL_PROBS and r["probabilities"] and r["chosen_position"] is not None:
                 probs = json.loads(r["probabilities"])
                 if r["chosen_position"] < len(probs):
                     prob = probs[r["chosen_position"]]
+                # The whole vector in legal order, and each legal play's place in the shown order (offline.py).
+                order = json.loads(r["option_order"]) if r["option_order"] else list(range(len(probs)))
+                if not r["group_size"] and len(order) == len(probs) == r["legal_count"]:
+                    pvec, rank = [None] * len(order), [0] * len(order)
+                    for k, li in enumerate(order):
+                        pvec[li], rank[li] = probs[k], k
+            # Block: the two games of a round (seats swapped, same dice) stay together in every resample and split.
             d = dict(id=r["id"], setup=r["name"], cluster=r["game_id"], match=r["match_id"], invalid=r["decided_by"] == "fallback",
+                     block=f'{r["match_id"]}/{r["round_no"]}', pvec=pvec, rank=rank,
                      scored=p is not None, n=r["legal_count"], source=r["probability_source"], p=prob,
                      req_s=(r["request_ms"] if r["request_ms"] is not None else r["latency_ms"]) / 1000,
                      retry_s=(r["retry_ms"] or 0) / 1000, cost=r["cost_usd"], group=r["group_size"],
@@ -386,6 +398,68 @@ def _share(n: float, den: float) -> dict:
     return dict(n=n, den=den, share=n / den if den else None)
 
 
+def sdt_point(taken: float, rp: float, needless: float, sp: float) -> tuple[float, float]:
+    """(ability d′, caution c) from the log-linear corrected hit and false-alarm rates (Method spec 2026-10-24 §2)."""
+    a, b = SPEC["loglinear_add"]
+    zh, zf = _Z((taken + a) / (rp + b)), _Z((needless + a) / (sp + b))
+    return zh - zf, -(zh + zf) / 2
+
+
+def cstar_of(rp, sp, needless, missed, loss_needless, loss_missed, d) -> tuple[float | None, float | None, str | None]:
+    """(c*, β, N/A note) by rules 2-4 of the Method spec §2: the cost-derived SDT reference c* = ln β / d′."""
+    if not needless:
+        return None, None, "N/A: no needless risks to price"
+    if not missed:
+        return None, None, "N/A: no missed risks to price"
+    ln_, lm = loss_needless / needless, loss_missed / missed
+    beta = (sp / rp) * (ln_ / lm) if ln_ > 0 and lm > 0 else None
+    if beta is None or not math.isfinite(beta) or beta <= 0:
+        return None, None, "N/A: nonpositive cost"
+    if d <= 0:
+        return None, beta, "N/A: no ability (d\u2032 \u2264 0)"
+    return math.log(beta) / d, beta, None
+
+
+def sdt(calls: dict, rp: float, sp: float, loss_by: dict, blocks: list, key: str) -> dict:
+    """Item 4 of the reviewed brief: ability d′, caution c, aim and the cost-derived SDT reference c*, with the raw
+    counts; intervals resample blocks (a resample without one of the classes is left out). Rules: Method spec §2."""
+    taken, needless, missed = calls["right_risk"] + calls["wrong_risk"], calls["needless"], calls["missed"]
+    out = dict(hit=_share(taken, rp), false_alarm=_share(needless, sp), aim=_share(calls["right_risk"], taken),
+               needless_n=needless, missed_n=missed,
+               needless_loss=loss_by["needless"] / needless if needless else None,
+               missed_loss=loss_by["missed"] / missed if missed else None,
+               dprime=None, caution=None, dprime_lo=None, dprime_hi=None, caution_lo=None, caution_hi=None,
+               cstar=None, beta=None, cstar_status="na", cstar_note=None, na=None)
+    if not rp or not sp:
+        out["na"] = out["cstar_note"] = "N/A: no " + ("Risk pays" if not rp else "Safety pays") + " decisions"
+        return out
+    d, c = sdt_point(taken, rp, needless, sp)
+    a, b = SPEC["loglinear_add"]
+    arr = np.asarray(blocks, float)
+    rng = np.random.default_rng(boot(f"{key}/sdt"))
+    s = arr[rng.integers(0, len(arr), size=(SPEC["dprime_bootstrap_resamples"], len(arr)))].sum(axis=1)
+    s = s[(s[:, 1] > 0) & (s[:, 3] > 0)]
+    if len(s):
+        zh = np.array([_Z(x) for x in (s[:, 0] + a) / (s[:, 1] + b)])
+        zf = np.array([_Z(x) for x in (s[:, 2] + a) / (s[:, 3] + b)])
+        q = [(1 - T["interval"]) / 2, 1 - (1 - T["interval"]) / 2]
+        out["dprime_lo"], out["dprime_hi"] = (float(v) for v in np.quantile(zh - zf, q))
+        out["caution_lo"], out["caution_hi"] = (float(v) for v in np.quantile(-(zh + zf) / 2, q))
+    out.update(dprime=d, caution=c, hit_rate=(taken + a) / (rp + b), false_alarm_rate=(needless + a) / (sp + b))
+    cs, beta, note = cstar_of(rp, sp, needless, missed, loss_by["needless"], loss_by["missed"], d)
+    out.update(cstar=cs, beta=beta, cstar_note=note)
+    if cs is not None:
+        few = [w for w, n in (("needless", needless), ("missed", missed)) if n < SPEC["cost_min_risks"]]
+        if out["dprime_lo"] is None or out["dprime_lo"] <= 0:
+            out.update(cstar_status="unstable", cstar_note="unstable: d\u2032 near zero")
+        elif few:
+            out.update(cstar_status="unstable", cstar_note=f"unstable: fewer than {SPEC['cost_min_risks']} "
+                                                           f"{' and '.join(few)} risks behind a mean cost")
+        else:
+            out["cstar_status"] = "valid"
+    return out
+
+
 def risk_metrics(decs: list[dict], key: str, margin: float, who: str | None = None, phases: bool = True) -> dict:
     """B6.2 and B6.3 for one setup at one margin. Every share carries its count and denominator; averages below the
     minimum sample show Too few (B9). who='Safest' or 'Random' computes that reference row on these positions."""
@@ -398,6 +472,8 @@ def risk_metrics(decs: list[dict], key: str, margin: float, who: str | None = No
     size = {"right": [0.0, 0.0], "bad": [0.0, 0.0]}
     conf_taken, conf_missed = [], []
     clusters = defaultdict(lambda: [0.0, 0.0, 0.0, 0.0])  # right risks, Risk pays, right safety, Safety pays
+    blocks = defaultdict(lambda: [0.0, 0.0, 0.0, 0.0])  # risks taken in Risk pays, Risk pays, needless, Safety pays
+    taken_without = {"grouped": 0, "other": 0}  # risks taken without a single probability (Confidence on the call)
     for d in valid:
         for w, cls, call, st, loss, extra, p in _items(d, margin, who):
             classes[cls] += w
@@ -407,6 +483,14 @@ def risk_metrics(decs: list[dict], key: str, margin: float, who: str | None = No
             calls[call] += w
             loss_by[call] += w * loss
             c = clusters[d["cluster"]]
+            sb = blocks[d.get("block") or d["cluster"]]
+            if call in ("right_risk", "wrong_risk"):
+                sb[0] += w
+            elif call == "needless":
+                sb[2] += w
+            sb[1 if cls == "risk" else 3] += w
+            if who is None and p is None and call in ("right_risk", "wrong_risk", "needless") and d.get("source") in REAL_PROBS:
+                taken_without["grouped" if d.get("group") else "other"] += 1
             if cls == "risk":
                 b = band(st)
                 stake[b]["risk_pays"] += w
@@ -458,7 +542,8 @@ def risk_metrics(decs: list[dict], key: str, margin: float, who: str | None = No
     out["needless_by_loss"] = {b: _share(v, sp) for b, v in needless_by_loss.items()}
     out["size"] = {k: dict(n=v[1], too_few=too_few(v[1]), mean=v[0] / v[1] if v[1] else None) for k, v in size.items()}
     # B6.3 confidence on the call: ranking score only (the probability is for the chosen play, not for the risk).
-    conf = dict(taken_n=len(conf_taken), missed_n=len(conf_missed), auroc_right_risk=None, missed_mean_p=None)
+    conf = dict(taken_n=len(conf_taken), missed_n=len(conf_missed), auroc_right_risk=None, missed_mean_p=None,
+                taken_grouped=taken_without["grouped"], taken_other=taken_without["other"])
     if conf_taken and not too_few(len(conf_taken)):
         conf["auroc_right_risk"] = calibration([p for p, _ in conf_taken], [r for _, r in conf_taken]).get("auroc")
     if conf_missed and not too_few(len(conf_missed)):
@@ -469,6 +554,7 @@ def risk_metrics(decs: list[dict], key: str, margin: float, who: str | None = No
     if rp and sp:
         bad = calls["missed"] + calls["wrong_risk"]
         out["map"] = dict(x=bad / rp, y=calls["needless"] / sp, wrong_share=calls["wrong_risk"] / bad if bad else None)
+    out["sdt"] = sdt(calls, rp, sp, loss_by, list(blocks.values()), key)
     if phases:
         out["phases"] = {ph: risk_metrics([d for d in valid if d["phase"] == ph], key + "/" + ph, margin, who, False)
                          for ph in PHASES}

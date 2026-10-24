@@ -135,16 +135,72 @@ def conf_call_td(r: dict) -> str:
         return f'<td class="num">{nm(NA)}</td>'
     a = fmt(c["auroc_right_risk"], 2) if c["auroc_right_risk"] is not None else TOO_FEW
     b = pct(c["missed_mean_p"]) if c["missed_mean_p"] is not None else TOO_FEW
-    return (f'<td class="num">{esc(a)}<span class="small">{count(c["taken_n"])} risks taken; mean confidence on missed '
-            f'risks {esc(b)} ({count(c["missed_n"])})</span></td>')
+    left = "".join(f"; {count(c[k])} {what} left out" for k, what in (("taken_grouped", "split into groups"),
+                                                                    ("taken_other", "without a probability for another reason"))
+                   if c.get(k))
+    return (f'<td class="num">{esc(a)}<span class="small">{count(c["taken_n"])} risks with a probability\u2021{esc(left)}; '
+            f'mean confidence on missed risks {esc(b)} ({count(c["missed_n"])})</span></td>')
 
 
+# Reviewed brief of 24 Oct 2026, item 4: ability and caution (Method spec 2026-10-24 §2).
+SDT_LIMIT = "A simple model of the risk call (equal-variance signal detection); setups met different positions."
+SDT_COSTS = ("The cost-derived SDT reference uses the setup's own mean equity lost per needless and per missed risk; those "
+             "costs depend on the setup's own play, so it is a reference under that model, not the best caution, and a "
+             "correctly classified call can still lose equity.")
+
+
+def ability_td(r: dict) -> str:
+    s = r["sdt"]
+    if s["na"]:
+        return f'<td class="num">{nm(s["na"])}</td>'
+    iv = f'{fmt(s["dprime_lo"], 2)} to {fmt(s["dprime_hi"], 2)} · ' if s["dprime_lo"] is not None else ""
+    return (f'<td class="num">{fmt(s["dprime"], 2)}<span class="small">{iv}risks taken {n_(s["hit"]["n"])} / '
+            f'{n_(s["hit"]["den"])} Risk pays · needless {n_(s["false_alarm"]["n"])} / {n_(s["false_alarm"]["den"])} '
+            f'Safety pays</span></td>')
+
+
+def caution_td(r: dict) -> str:
+    s = r["sdt"]
+    if s["na"]:
+        return f'<td class="num">{nm(s["na"])}</td>'
+    word = "cautious" if s["caution"] > 0 else "bold" if s["caution"] < 0 else "neutral"
+    iv = f'{fmt(s["caution_lo"], 2, True)} to {fmt(s["caution_hi"], 2, True)} · ' if s["caution_lo"] is not None else ""
+    return f'<td class="num">{fmt(s["caution"], 2, True)}<span class="small">{iv}{word}</span></td>'
+
+
+def cstar_td(r: dict) -> str:
+    s = r["sdt"]
+    costs = (f'needless risks lost {P.eq(s["needless_loss"]) if s["needless_loss"] is not None else nm(NA)} on average '
+             f'({n_(s["needless_n"])}) · missed risks {P.eq(s["missed_loss"]) if s["missed_loss"] is not None else nm(NA)} '
+             f'({n_(s["missed_n"])})')
+    if s["cstar"] is None:
+        return f'<td class="num">{nm(s["cstar_note"])}<span class="small">{costs}</span></td>'
+    label = "" if s["cstar_status"] == "valid" else f'{nm(s["cstar_note"])} '
+    return (f'<td class="num">{label}{fmt(s["cstar"], 2, True)}<span class="small">\u03b2 {fmt(s["beta"], 2)} · '
+            f'{costs}</span></td>')
+
+
+def sdt_cells(r: dict) -> str:
+    return ability_td(r) + caution_td(r) + share_td(r["sdt"]["aim"]) + cstar_td(r)
+
+
+SDT_HEAD = ["Ability d\u2032", "Caution c (+ cautious, \u2212 bold)", "Aim: right ÷ (right + wrong risks)",
+            "Cost-derived SDT reference c*"]
 RISK_HEAD = ["Model and setting", "Risk judgement", "Risks found", "Right safety", "Good risks", "Missed risks",
              "Needless risks", "Wrong risks", "Error rate by risk-call category (PR)", "Decisions with a trade-off",
              "Big risks found", "Big needless risks", "Extra hitting rolls: right / wrong and needless",
-             "Confidence on the call: ranking score for right risk"]
+             "Confidence on the call: ranking score for right risk"] + SDT_HEAD
 ROBUST_HEAD = ["Model and setting", "Risk judgement", "Risks found", "Right safety", "Good risks", "Missed risks",
-               "Needless risks", "Wrong risks"]
+               "Needless risks", "Wrong risks"] + SDT_HEAD
+BIG_NOTE = "Big risks found: stake above 0.08. Big needless risks: the chosen play lost more than 0.08."
+CONF_NOTE = ("\u2021 Risks with a probability: decisions whose plays were split into groups have no single probability "
+             "and are left out; their count is shown per row. Setups that return no probabilities show N/A.")
+
+
+def sdt_notes() -> str:
+    return (f'<p class="table-note">Ability, caution and the SDT reference: {esc(SDT_LIMIT)} {esc(SDT_COSTS)} Rates '
+            'corrected by adding 0.5 to the counts and 1 to the totals; a setup without Risk pays or Safety pays decisions '
+            'shows N/A. Intervals: 95%, blocks of two seat-swapped games resampled. <a href="method/#risk-ability">Definitions</a></p>')
 
 
 def risk_table(S, lg, phase="all") -> str:
@@ -156,14 +212,15 @@ def risk_table(S, lg, phase="all") -> str:
                     + judgement_td(r) + share_td(r["found"]) + share_td(r["right_safety"]) + share_td(r["good"])
                     + share_td(r["missed"]) + share_td(r["needless"]) + share_td(r["wrong"]) + split_td(r)
                     + classes_td(r) + share_td(r["stake"]["big"]["found"]) + share_td(r["needless_by_loss"]["big"])
-                    + size_td(r) + conf_call_td(r) + "</tr>")
+                    + size_td(r) + conf_call_td(r) + sdt_cells(r) + "</tr>")
     where = "all phases" if phase == "all" else P.PHASE_LABEL[phase]
     return (P.SWIPE + P.table(RISK_HEAD, body, f"Risk calls at the 0.001 margin, {esc(where)}; shares with count / "
                               "denominator, risk judgement with its 95% interval (games resampled)",
                               attrs=f' data-dataset="{ds}" data-margin="0.001"')
             + f'<p class="table-note">{esc(LIMIT_HIT)}</p><p class="table-note">{esc(LIMIT_HARD)}</p>'
-            + '<p class="table-note">Big: above 0.08 · confidence on the call: ranking score only, no calibration gap '
-              '(the probability is for the chosen play, not the risk) · <a href="method/#risk">Definitions</a></p>')
+            + f'<p class="table-note">{esc(BIG_NOTE)}</p><p class="table-note">{esc(CONF_NOTE)} Confidence on the call: '
+              'ranking score only, no calibration gap (the probability is for the chosen play, not the risk). '
+              '<a href="method/#risk">Definitions</a></p>' + sdt_notes())
 
 
 def robust_table(S, lg, phase="all") -> str:
@@ -173,10 +230,45 @@ def robust_table(S, lg, phase="all") -> str:
         cls = ' class="reference"' if ref else ""
         body.append(f'<tr{cls}{attrs(S, ds, slug_name(n), bool(ref))}>{cell_model(S, ds, n, ref if n in lg["references"] else None)}'
                     + judgement_td(r) + share_td(r["found"]) + share_td(r["right_safety"]) + share_td(r["good"])
-                    + share_td(r["missed"]) + share_td(r["needless"]) + share_td(r["wrong"]) + "</tr>")
+                    + share_td(r["missed"]) + share_td(r["needless"]) + share_td(r["wrong"]) + sdt_cells(r) + "</tr>")
     return (f'<h3 class="table-title" id="risk-robust-{ds}{"" if phase == "all" else "-" + phase}">The same at the 0.02 margin (robustness)</h3>'
             + P.SWIPE + P.table(ROBUST_HEAD, body, "Every 0.001 in the definitions replaced by 0.02",
                                 attrs=f' data-dataset="{ds}" data-margin="0.02"'))
+
+
+def reasoning_sdt_table(S, lg) -> str:
+    """Item 4 for Leagues 2 and 3: ability and caution of one model at its two reasoning settings in this league, with
+    the change and the time and tokens it costs. Different positions: UNPAIRED."""
+    if not lg["reasoning"]:
+        return ""
+    rows = []
+    for r in lg["reasoning"]:
+        lo, hi = lg["setups"][r["low"]], lg["setups"][r["high"]]
+        cells = []
+        for m in ("main", "robust"):
+            a, b = lo["risk"][m]["sdt"], hi["risk"][m]["sdt"]
+            for k in ("dprime", "caution"):
+                if r["sdt"][m] is None:
+                    cells.append(f'<td class="num">{nm(a["na"] or b["na"])}</td>')
+                else:
+                    cells.append(f'<td class="num">{fmt(a[k], 2, k == "caution")} \u2192 {fmt(b[k], 2, k == "caution")}'
+                                 f'<span class="small">change {fmt(r["sdt"][m][k + "_change"], 2, True)}</span></td>')
+        qa, qb = lo["quality"], hi["quality"]
+        t = (f'{P.secs(qa.get("time_median"))} \u2192 {P.secs(qb.get("time_median"))}<span class="small">'
+             + (f'{fmt(r["extra_time_median"], 1, True)} s' if r["extra_time_median"] is not None else nm(NOT_MEASURED))
+             + '</span>')
+        tok = lambda q: fmt(q["tokens_out"], 0) if q.get("tokens_out") is not None else nm(NOT_MEASURED)
+        rows.append(f'<tr data-dataset="{lg["dataset"]}"><td class="model"><span class="model-name">{esc(r["model"])}</span>'
+                    f'<span class="small">{esc(r["low_setting"])} \u2192 {esc(r["high_setting"])} · UNPAIRED</span></td>'
+                    + "".join(cells) + f'<td class="num">{t}</td><td class="num">{tok(qa)} \u2192 {tok(qb)}</td></tr>')
+    head = ["Model", "Ability d\u2032, 0.001", "Caution c, 0.001", "Ability d\u2032, 0.02", "Caution c, 0.02",
+            "Median s per decision", "Output tokens per decision (mean)"]
+    return (f'<h3 class="table-title" id="risk-reasoning-{lg["dataset"]}">Ability and caution by reasoning setting '
+            '(UNPAIRED)</h3>' + P.SWIPE
+            + P.table(head, rows, "The same model at its lower and higher setting in this league's games: UNPAIRED, the "
+                      "two settings met different positions", attrs=f' data-dataset="{lg["dataset"]}"')
+            + '<p class="table-note">UNPAIRED: league games are not the same positions, so a change here is not a paired '
+              'effect of the setting. Output tokens include reasoning tokens where the provider counts them there.</p>')
 
 
 def slug_name(n: str) -> str:
@@ -249,6 +341,183 @@ def confidence_table(S, lg) -> str:
 def cost_table(S, lg) -> str:
     return P.SWIPE + P.table(P.COST_HEAD, P.cost_rows(S, "", lg["dataset"], lg["setups"]), "Time and cost in this league",
                              attrs=f' data-dataset="{lg["dataset"]}"')
+
+
+# --- Offline analyses (reviewed brief of 24 Oct 2026, item 5; Method spec 2026-10-24) --------------------------
+
+SUPPORT_LABEL = [("complete", "Complete"), ("sparse", "Sparse: an option without its own probability"),
+                 ("unverified", "Stored vector not reproduced from the response"), ("no_raw", "No raw response"),
+                 ("grouped", "Plays split into groups"), ("not_audited", "Not audited (after the audit)")]
+REREAD_NOTE = ("Re-read from the model's probabilities, not played: the recorded positions scored again with the play "
+               "the setup's own probabilities point to; not a league result, and no new win rates.")
+
+
+def mini_bins(bins: list, other: list | None = None) -> str:
+    """A small reliability diagram (10 fixed bins): observed share against mean probability; dashed: after the refit."""
+    W = H = 64
+    pt = lambda b: f'{4 + (W - 8) * b["mean_p"]:.1f},{H - 4 - (H - 8) * b["observed"]:.1f}'
+    line = lambda bs, cls: (f'<polyline class="{cls}" points="{" ".join(pt(b) for b in bs if b["n"])}"/>'
+                            if any(b["n"] for b in bs) else "")
+    return (f'<svg class="mini-rel" viewBox="0 0 {W} {H}" width="{W}" height="{H}" role="img" aria-label="Reliability '
+            f'diagram"><line class="rel-diag" x1="4" y1="{H - 4}" x2="{W - 4}" y2="4"/>{line(bins, "rel-before")}'
+            f'{line(other, "rel-after") if other else ""}</svg>')
+
+
+def mini_hist(h: dict) -> str:
+    W, H = 100, 28
+    top = max(h["counts"]) or 1
+    bars = "".join(f'<rect class="hist-bar" x="{i * W / 10 + 1:.1f}" y="{H - (H - 2) * c / top:.1f}" width="{W / 10 - 2:.1f}" '
+                   f'height="{(H - 2) * c / top:.1f}"/>' for i, c in enumerate(h["counts"]))
+    return f'<svg class="mini-hist" viewBox="0 0 {W} {H}" width="{W}" height="{H}" role="img" aria-label="Histogram">{bars}</svg>'
+
+
+def support_table(S, lg) -> str:
+    off = lg["offline"]
+    rows = []
+    for n in sorted(off["support"], key=str.lower):
+        c = off["support"][n]
+        if not sum(c.get(k, 0) for k, _ in SUPPORT_LABEL):
+            continue
+        rows.append(f'<tr{attrs(S, lg["dataset"], n)}>{cell_model(S, lg["dataset"], n)}'
+                    + "".join(f'<td class="num">{count(c.get(k, 0))}</td>' for k, _ in SUPPORT_LABEL) + "</tr>")
+    if not rows:
+        return f'<p>{nm(NA)}: no setup in this league returns option probabilities.</p>'
+    return (P.SWIPE + P.table(["Model and setting"] + [l for _, l in SUPPORT_LABEL], rows,
+                              "Probability support of each decision, checked against the raw responses",
+                              attrs=f' data-dataset="{lg["dataset"]}"')
+            + '<p class="table-note">Only Complete decisions enter the re-read, the refit and the distributions below. '
+              'Sparse: a letter missing from the returned top log-probabilities was filled with 0 and the rest '
+              'renormalised, so its probability is unknown. <a href="method/#offline">Method</a></p>')
+
+
+def reread_table(S, lg) -> str:
+    off = lg["offline"]
+    rows = []
+    for n in sorted(off["reread"], key=str.lower):
+        r = off["reread"][n]
+        iv = lambda a, b: f'95% interval {fmt(r[a], 2, True)} to {fmt(r[b], 2, True)}' if r[a] is not None else ""
+        common = max(r["chosen"].items(), key=lambda kv: kv[1]) if r["chosen"] else None
+        rows.append(
+            f'<tr{attrs(S, lg["dataset"], n)}>{cell_model(S, lg["dataset"], n)}'
+            f'<td class="num">{count(r["records"])}<span class="small">{count(r["trade_off"])} with a trade-off</span></td>'
+            f'<td class="num">{fmt(r["judgement_played"])} \u2192 {fmt(r["judgement_reread"])}</td>'
+            f'<td class="num">{fmt(r["judgement_diff"], 1, True)}<span class="small">{iv("judgement_diff_lo", "judgement_diff_hi")}'
+            f' · stability {fmt(r["judgement_diff_p5"], 1, True)} to {fmt(r["judgement_diff_p95"], 1, True)}</span></td>'
+            f'<td class="num">{fmt(r["pr_played"])} \u2192 {fmt(r["pr_reread"])}</td>'
+            f'<td class="num">{fmt(r["pr_diff"], 1, True)}<span class="small">{iv("pr_diff_lo", "pr_diff_hi")}'
+            f' · stability {fmt(r["pr_diff_p5"], 1, True)} to {fmt(r["pr_diff_p95"], 1, True)}</span></td>'
+            f'<td class="num">{esc(common[0]) if common else nm(NA)}<span class="small">'
+            + (f'{count(common[1])} of {count(off["splits"])} splits · ' if common else "")
+            + f'always safe {count(r["always_safe"])} · always risky {count(r["always_risky"])}</span></td>'
+            f'<td class="num">{count(r["no_fit"])} / {count(r["test_judgement_na"])}</td></tr>')
+    few = off["reread_too_few"]
+    note = ("".join(f" {esc(n)}: {count(k)} complete decisions." for n, k in sorted(few.items()))
+            if few else "")
+    if not rows:
+        body = (f'<p>{nm(NA)}: no setup in this league has {count(S["thresholds"]["min_decisions_per_cell"])} complete '
+                f'decisions.{note}</p>')
+    else:
+        head = ["Model and setting", "Complete decisions", "Risk judgement: as played \u2192 re-read",
+                "Change in risk judgement", "Error rate (PR): as played \u2192 re-read", "Change in error rate",
+                "Threshold chosen most often", "Splits without a fit / test half without a class"]
+        body = (P.SWIPE + P.table(head, rows, f"Re-read risk call, {esc(off['label'])}: means over {count(off['splits'])} "
+                                  "splits of the games, each tested on its held-out half",
+                                  attrs=f' data-dataset="{lg["dataset"]}" data-margin="0.001"')
+                + (f'<p class="table-note">{esc(TOO_FEW)}:{note}</p>' if note else ""))
+    return (f'<h3 class="table-title" id="reread-{lg["dataset"]}">Re-read risk call ({esc(off["label"])})</h3>' + body
+            + f'<p class="table-note">{esc(REREAD_NOTE)} Same held-out decisions for both columns. Stability: the 5th to '
+              '95th percentile over the splits, not an interval; 95% interval: blocks of two seat-swapped games resampled, '
+              'the whole procedure repeated. <a href="method/#offline">Method</a></p>')
+
+
+def calibration_tables(S, lg) -> str:
+    off = lg["offline"]
+    out = []
+    for ev, title, what in (("chosen", "Chosen play", "the probability of the chosen play against \"the chosen play is "
+                             "the engine's best\""),
+                            ("risk_class", "Risk class", "P(risk), the probability mass on risky plays, against \"the "
+                             "position is Risk pays\"")):
+        rows = []
+        for n in sorted(off["calibration"], key=str.lower):
+            c = off["calibration"][n].get(ev)
+            if not c:
+                continue
+            if c["too_few"] or c.get("brier_before") is None:
+                cells = f'<td class="num">{nm(TOO_FEW)}</td><td class="num">{nm(TOO_FEW)}</td><td></td>'
+            else:
+                cells = (f'<td class="num">{fmt(c["brier_before"], 3)}</td><td class="num">{fmt(c["brier_after"], 3)}</td>'
+                         f'<td>{mini_bins(c["bins_before"], c["bins_after"])}</td>')
+            rows.append(f'<tr{attrs(S, lg["dataset"], n)}>{cell_model(S, lg["dataset"], n)}'
+                        f'<td class="num">{count(c["paired"])}<span class="small">of {count(c["records"])}; '
+                        f'{count(c["failed_folds"])} folds without a fit</span></td>{cells}</tr>')
+        if rows:
+            out.append(f'<h4>{esc(title)}: {esc(what)}</h4>' + P.SWIPE + P.table(
+                ["Model and setting", "Decisions (before and after)", "Brier score as shipped", "Brier score after the refit",
+                 "Reliability: as shipped (solid), after (dashed)"], rows,
+                f"{esc(title)} calibration as shipped and after a Platt refit cross-fitted by blocks of games",
+                attrs=f' data-dataset="{lg["dataset"]}"'))
+    if not out:
+        return ""
+    return (f'<h3 class="table-title" id="calibration-{lg["dataset"]}">Calibration as shipped and after a refit</h3>'
+            + "".join(out) + '<p class="table-note">Two different events, kept apart: the chosen play\'s probability is '
+            'not the probability that a risk pays. 10 fixed bins; the refit of a decision never saw its own block of '
+            'games. <a href="method/#offline">Method</a></p>')
+
+
+def distribution_tables(S, lg) -> str:
+    off = lg["offline"]
+    rows = []
+    for n in sorted(off["distributions"], key=str.lower):
+        d = off["distributions"][n]
+        for a, b, label in (("right", "wrong", "Engine's best play vs not"),
+                            ("right_risk", "bad_risk", "Right risks vs wrong and needless risks")):
+            cell = lambda h: (f'<td class="num">{nm(TOO_FEW) if h["too_few"] else fmt(h["median"], 2)}'
+                              f'<span class="small">{count(h["n"])} decisions</span>{mini_hist(h) if h["n"] else ""}</td>')
+            rows.append(f'<tr{attrs(S, lg["dataset"], n)}>{cell_model(S, lg["dataset"], n)}<td>{esc(label)}</td>'
+                        + cell(d[a]) + cell(d[b]) + "</tr>")
+    if not rows:
+        return ""
+    return (f'<h3 class="table-title" id="distributions-{lg["dataset"]}">Confidence on right and wrong decisions</h3>'
+            + P.SWIPE + P.table(["Model and setting", "Groups", "First group: median confidence",
+                                 "Second group: median confidence"], rows,
+                                "The chosen play's probability, Complete decisions only; 10 fixed bins from 0 to 1",
+                                attrs=f' data-dataset="{lg["dataset"]}" data-margin="0.001"')
+            + '<p class="table-note">The probability here is the chosen play\'s, never P(risk). Risks: risks taken at the '
+              '0.001 margin. <a href="method/#offline">Method</a></p>')
+
+
+def offline_confidence(S, lg) -> str:
+    if not lg.get("offline"):
+        return ""
+    return (f'<h3 class="table-title" id="support-{lg["dataset"]}">Which probabilities are complete</h3>'
+            + support_table(S, lg) + reread_table(S, lg) + calibration_tables(S, lg) + distribution_tables(S, lg))
+
+
+def cheapest_section(S, lg) -> str:
+    off = lg.get("offline")
+    if not off:
+        return ""
+    c = off["cheapest"]
+    rows = []
+    for n in sorted(c["setups"], key=str.lower):
+        v, cov = c["setups"][n], c["coverage"][n]
+        rows.append(f'<tr{attrs(S, lg["dataset"], n)}>{cell_model(S, lg["dataset"], n)}'
+                    f'<td class="num">{count(v["qualified"])}<span class="small">{count(v["qualified_unpriced"])} of them '
+                    f'unpriced</span></td><td class="num">{count(v["chosen"])}</td>'
+                    f'<td class="num">{count(v["cleared"]) if v["chosen"] else nm(NA)}'
+                    f'<span class="small">of {count(v["chosen"])} chosen</span></td>'
+                    f'<td class="num">{count(cov["priced"])} / {count(cov["decisions"])}</td></tr>')
+    head = ["Model and setting", f"Splits clearing the bar on training (of {count(c['splits'])})", "Chosen as cheapest",
+            "Bar cleared on the held-out half", "Decisions with a price"]
+    return (f'<h3 class="table-title" id="cheapest-{lg["dataset"]}">Minimum bar, then cheapest</h3>'
+            f'<p>Bar: risk judgement at least {fmt(c["bar_judgement"], 0)} and error rate at most {fmt(c["bar_error_rate"], 0)} '
+            f'PR (equity lost, not a share of mistakes). In each of {count(c["splits"])} splits the cheapest priced setup '
+            f'that clears the bar on one half of the games is chosen and checked on the other half. No setup cleared the '
+            f'bar in {count(c["no_qualifier"])} splits; only unpriced setups did in {count(c["no_priced_qualifier"])}.</p>'
+            + P.SWIPE + P.table(head, rows, "Minimum bar on training, cheapest priced setup, checked on the held-out half",
+                                attrs=f' data-dataset="{lg["dataset"]}" data-margin="0.001"')
+            + '<p class="table-note">An unpriced setup can clear the bar but is never called cheapest. Programs are left out. '
+              '<a href="method/#offline">Method</a></p>')
 
 
 # --- Charts -------------------------------------------------------------------------------------------------
@@ -469,6 +738,53 @@ def tradeoff_chart(S, lg, which) -> str:
                 f"Error rate against {which}, League {lg['id']}", 0, 0, 0, sum(q["scored"] for _, q in pts))
 
 
+def sdt_chart(S, lg, margin, phase="all") -> str:
+    """Item 4: ability d′ across, caution c up; programs and computed rows as squares; a short bar at c* only where the
+    cost-derived SDT reference is valid (Method spec 2026-10-24 §2, rule 7)."""
+    ds = lg["dataset"]
+    pts = [(n, r, ref) for n, r, _, ref in rows_of(S, lg, phase, margin) if not r["sdt"]["na"]]
+    if not pts:
+        return f'<p class="chart-status">{nm(NA)}: no setup has both Risk pays and Safety pays decisions here.</p>'
+    W, H, L, T, R, B = 640, 470, 56, 16, 20, 46
+    xs = [r["sdt"]["dprime"] for _, r, _ in pts]
+    ys = [r["sdt"]["caution"] for _, r, _ in pts] + [r["sdt"]["cstar"] for _, r, _ in pts if r["sdt"]["cstar_status"] == "valid"]
+    x0, x1 = min(-0.5, math.floor(min(xs) * 2) / 2), max(2.0, math.ceil(max(xs) * 2) / 2)
+    y0, y1 = min(-1.0, math.floor(min(ys) * 2) / 2), max(1.0, math.ceil(max(ys) * 2) / 2)
+    x = lambda v: L + (W - L - R) * (v - x0) / (x1 - x0)
+    y = lambda v: H - B - (H - T - B) * (v - y0) / (y1 - y0)
+    parts = []
+    for k in range(int(round(x0 * 2)), int(round(x1 * 2)) + 1):
+        v = k / 2
+        parts.append(f'<line class="grid{" axis0" if v == 0 else ""}" x1="{x(v):.1f}" x2="{x(v):.1f}" y1="{T}" y2="{H - B}"/>'
+                     f'<text class="muted" x="{x(v):.1f}" y="{H - B + 14}" text-anchor="middle">{v:g}</text>')
+    for k in range(int(round(y0 * 2)), int(round(y1 * 2)) + 1):
+        v = k / 2
+        parts.append(f'<line class="grid{" axis0" if v == 0 else ""}" x1="{L}" x2="{W - R}" y1="{y(v):.1f}" y2="{y(v):.1f}"/>'
+                     f'<text class="muted" x="{L - 6}" y="{y(v) + 4:.1f}" text-anchor="end">{v:+g}</text>')
+    parts.append(f'<text x="{(L + W - R) / 2}" y="{H - 10}" text-anchor="middle">Ability d\u2032: tells Risk pays from '
+                 f'Safety pays \u2192</text><text transform="translate(14 {(T + H - B) / 2}) rotate(-90)" '
+                 f'text-anchor="middle">Caution c: + cautious, \u2212 bold</text>')
+    total = 0.0
+    for rank, (n, r, ref) in enumerate(pts):
+        s = r["sdt"]
+        total += r["trade_off"]
+        cx, cy = x(s["dprime"]), y(s["caution"])
+        tip = f'{n}: ability {fmt(s["dprime"], 2)}, caution {fmt(s["caution"], 2, True)}; SDT reference: ' + (
+            fmt(s["cstar"], 2, True) if s["cstar_status"] == "valid" else (s["cstar_note"] or NA))
+        mark = (f'<rect class="rm-ref" x="{cx - 5:.1f}" y="{cy - 5:.1f}" width="10" height="10"/>' if ref else
+                f'<circle class="rm-dot" cx="{cx:.1f}" cy="{cy:.1f}" r="5.5"/>')
+        if s["cstar_status"] == "valid":
+            mark += (f'<line class="sdt-link" x1="{cx:.1f}" x2="{cx:.1f}" y1="{cy:.1f}" y2="{y(s["cstar"]):.1f}"/>'
+                     f'<line class="sdt-ref" x1="{cx - 9:.1f}" x2="{cx + 9:.1f}" y1="{y(s["cstar"]):.1f}" y2="{y(s["cstar"]):.1f}"/>')
+        anchor = "end" if cx > (L + W - R) * .7 else "start"
+        dx = -8 if anchor == "end" else 8
+        parts.append(f'<g class="pt"{attrs(S, ds, n, bool(ref))} data-n="{r["trade_off"]:.0f}" data-rank="{rank}">'
+                     f'<title>{esc(tip)}</title>{mark}<text class="rm-name" x="{cx + dx:.1f}" y="{cy + 4:.1f}" '
+                     f'text-anchor="{anchor}">{esc(n)}</text></g>')
+    return _svg("sdt", ds, margin, W, H, "".join(parts),
+                f"Ability and caution of League {lg['id']} at the {MARGIN_LABEL[margin]} margin", 0, 0, 0, total)
+
+
 def risk_panel_body(S, lg, phase="all") -> str:
     out = []
     for m in ("main", "robust"):
@@ -478,6 +794,10 @@ def risk_panel_body(S, lg, phase="all") -> str:
                    'Risk pays decisions without the right risk · squares: reference rows · diagonals: risk judgement</span></p></div>')
         out.append(f'<div class="chart-view" data-view-chart="split" data-view-margin="{m}">{split_chart(S, lg, m, phase)}</div>')
         out.append(f'<div class="chart-view" data-view-chart="stake" data-view-margin="{m}">{stake_chart(S, lg, m, phase)}</div>')
+        out.append(f'<div class="chart-view" data-view-chart="sdt" data-view-margin="{m}">{sdt_chart(S, lg, m, phase)}'
+                   '<p class="chart-legend"><span>circles: model setups · squares: programs and computed reference rows · '
+                   '<i class="swatch sdt-swatch"></i>short bar: the cost-derived SDT reference c*, drawn only where it is '
+                   f'valid</span></p><p class="chart-legend">{esc(SDT_LIMIT)} {esc(SDT_COSTS)}</p></div>')
     return "".join(out)
 
 
@@ -540,14 +860,17 @@ def tab_body(S, key: str) -> str:
     for lg in S["leagues"]:
         if key == "risk":
             inner = slot(lg, "risk", risk_table(S, lg) + robust_table(S, lg))
+            extra = reasoning_sdt_table(S, lg)
+            if extra:
+                inner += extra + '<p class="table-note">The Phase filter does not apply to this table: all phases.</p>'
         elif key == "quality":
             inner = slot(lg, "quality", quality_table(S, lg)) + f'<p class="table-note">{esc(LIMIT_PAIRED)}</p>'
         elif key == "confidence":
-            inner = confidence_table(S, lg)
+            inner = confidence_table(S, lg) + offline_confidence(S, lg)
         elif key == "reasoning":
             inner = P.league_reasoning_table(S, lg)
         elif key == "cost":
-            inner = cost_table(S, lg)
+            inner = cost_table(S, lg) + cheapest_section(S, lg)
         else:
             inner = f'<p class="pending">{status_badge(NOT_MEASURED)} League games never repeat a position.</p>'
         if key in ("confidence", "reasoning", "cost", "stability"):
@@ -677,7 +1000,8 @@ def charts(S) -> str:
     paired = f'<p class="table-note">{esc(LIMIT_PAIRED)} Charts cover all phases except the Risk panel.</p>'
     return ('<section class="charts" id="charts" aria-label="Charts" tabindex="-1">'
             + chart_panel("chart-risk", "Risk", [("riskmap", "Risk map"), ("split", "Error rate by risk-call category"),
-                                                 ("stake", "Stake chart")], risk, True, risk_note)
+                                                 ("stake", "Stake chart"), ("sdt", "Ability and caution")], risk, True,
+                          risk_note)
             + chart_panel("chart-measures", "Error rate, time and cost", [("error", "Error rate"), ("time", "Time"),
                                                                            ("cost", "Cost")], measures, False, paired)
             + chart_panel("chart-tradeoff", "Trade-off", [("tradeoff-cost", "Cost"), ("tradeoff-time", "Time")], trade,
@@ -755,12 +1079,12 @@ def risk_call_card(S, lg, css: str) -> str | None:
     return f"""<!doctype html><html data-theme="dark"><head><meta charset="utf-8"><style>
 {css}
 body{{margin:0;width:1200px;height:675px;background:var(--bg);color:var(--text);font-family:var(--sans);padding:40px 56px;box-sizing:border-box;position:relative}}
-h1{{font-size:34px;margin:0 0 4px}} .sub{{font-size:19px;color:var(--text-2);margin:0 0 18px}}
+h1{{font-size:34px;margin:0 0 4px}} .sub{{font-size:19px;color:var(--text-2);margin:0 0 18px}} .site{{font-size:17px;font-weight:700;color:var(--text-2);margin:0 0 8px}}
 .big{{font-size:120px;font-weight:700;line-height:1;margin:0}} .big small{{font-size:24px;font-weight:400;color:var(--text-2);margin-left:14px}}
 .parts{{font-size:20px;color:var(--text-2);margin:6px 0 22px}}
 .cc-row{{display:flex;align-items:center;gap:14px;margin:7px 0;font-size:20px}} .cc-l{{width:170px;text-align:right}} .cc-bar{{height:24px;border-radius:3px;display:inline-block}}
 .f{{position:absolute;bottom:24px;left:56px;right:56px;font-size:15px;color:var(--text-2)}}
-</style></head><body><h1>{esc(w)}: risk judgement</h1>
+</style></head><body><p class="site">{esc(P.TITLE)} {esc(P.SUBTITLE)}</p><h1>{esc(w)}: risk judgement</h1>
 <p class="sub">League {lg["id"]} winner (match results) · {n_(r["trade_off"])} decisions with a trade-off · margin 0.001</p>
 <p class="big">{fmt(r["judgement"])}<small>95% interval {fmt(r["judgement_lo"])} to {fmt(r["judgement_hi"])} · 100 = every call right, 50 = always safe</small></p>
 <p class="parts">Risks found {pct(r["found"]["share"])} ({n_(r["found"]["n"])} / {n_(r["found"]["den"])}) · right safety {pct(r["right_safety"]["share"])} ({n_(r["right_safety"]["n"])} / {n_(r["right_safety"]["den"])})</p>
@@ -812,28 +1136,39 @@ def method_extras(S) -> dict:
                 f"{count(total - scored)} of {count(total)} league decisions have plays without a 2-ply evaluation; they "
                 f"are evaluated with GNU Backgammon on CPU, at low priority, by the update loop.")
     return dict(robust="".join(robust), held_out="".join(held) or f"<p>{nm(NA)}: no setup returns probabilities.</p>",
-                tail="".join(tail), input=P.input_history(), unscored=unscored, safest=safest_text(S))
+                tail="".join(tail), input=P.input_history(), unscored=unscored, safest=safest_text(S),
+                hypothesis=hypothesis_text(S))
 
 
 def safest_text(S) -> str:
     """Item 6 of the reviewed brief: the played program (League 1) against the computed reference (Leagues 2, 3)."""
+    played = [(lg, lg["offline"]["safest"]) for lg in S["leagues"] if lg.get("offline", {}).get("safest")]
     out = []
-    for lg in S["leagues"]:
-        if "Safest" not in lg["setups"]:
-            continue
-        r = lg["setups"]["Safest"]["risk"]["main"]
-        prov = f' ({esc(PROVISIONAL_NOTE)}.)' if lg["metric_status"] == PROVISIONAL else ""
+    for lg, s in played:
         out.append(
             f'In League {lg["id"]}, Safest is the program that actually played the matches: among the plays that leave '
             f'the fewest hitting rolls it takes the one with the fewest blots, then the largest pip lead, then the play shown '
-            f'first; it never asks the engine, so its play is not always the engine\'s best safe play. Its right-safety '
-            f'part of the error rate, {fmt(r["by_call"]["right_safety"], 2)} PR, is the equity lost on its '
-            f'{count(int(r["calls"]["right_safety"]))} right-safety decisions × {count(S["thresholds"]["equity_scale"])} ÷ '
-            f'all {count(r["scored"])} of its scored decisions: a share of its error rate, not the average loss of a '
-            f'right-safety decision.{prov}')
+            f'first; it never asks the engine. It played a fewest-hitting-rolls play in {count(s["minimum_hitting_rolls"])} '
+            f'of its {count(s["decisions"])} scored decisions and the engine\'s best safe play in '
+            f'{count(s["best_safe_play"])} of them. Its right-safety part of the error rate, '
+            f'{fmt(s["right_safety_contribution"], 2)} PR, is the equity lost on its {count(s["right_safety"])} '
+            f'right-safety decisions × {count(S["thresholds"]["equity_scale"])} ÷ all {count(s["decisions"])} of its scored '
+            f'decisions: a share of its error rate, not the average loss of a right-safety decision, which is '
+            f'{fmt(s["right_safety_conditional"], 2)} PR.')
     computed = [lg["id"] for lg in S["leagues"] if "Safest (computed)" in lg["references"]]
     if computed:
         out.append(f'In League {" and League ".join(str(i) for i in computed)}, <em>Safest (computed)</em> is a computed '
                    'reference: the engine\'s best safe play on every scored decision of that league. Its numbers are not '
                    'directly comparable with League 1\'s played program.')
     return " ".join(out)
+
+
+def hypothesis_text(S) -> str:
+    h = S["hypothesis"]
+    if h["rho"] is None:
+        return f'Result: {esc(h["verdict"])}.'
+    iv = (f' (95% interval {fmt(h["rho_lo"], 2, True)} to {fmt(h["rho_hi"], 2, True)}, {count(h["replicates"])} '
+          f'resamples)' if h["rho_lo"] is not None else "")
+    left = f' Left out (predictor undefined): {esc(", ".join(h["left_out"]))}.' if h["left_out"] else ""
+    return (f'Result: ρ = {fmt(h["rho"], 2, True)}{iv} over {count(h["setups"])} setups: <strong>{esc(h["verdict"])}'
+            f'</strong>.{left}')

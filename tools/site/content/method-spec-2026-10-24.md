@@ -288,3 +288,36 @@ filter with p1, p2 and both candidate plays. The label of 9.1 under the column, 
   changed but the measured features are identical.
 - Five repeats are not presented as a measure of the model's whole behaviour. Stage B results go on the site
   separately, after the experiment is complete.
+
+### 9.10 Stage B amendment (2026-10-24, 19:25 UTC; Can's decisions, before any stage B call and before selection)
+
+Replaces the position source of §9.9. The scoring rules of §9.9 are unchanged.
+
+**Positions (v2 freeze).**
+- Pool: `positions/new.jsonl` (sha256 `ad06427c4106e8d889b027dc49f79557fb2739b8fd278f8fa2f05da72dc12d69`, 1,000 rows,
+  200 per phase). This file is part of the shared standard set the Cup teams answer in the shared-position run
+  (v1 set + new set, prompt `bg-v2`).
+- Excluded: positions with fewer than 2 legal plays (none expected: the file was built with 2–25 legal plays).
+- Position class at margin 0.001, by the site's rule (`analysis.play_call`): hitting rolls = the number shown with each
+  option (`describe.py`); losses = GNUbg 1.08 2-ply, cubeless, the existing settings (`tools/v3/score.py evaluate`,
+  `engine.PLY2`), computed on CPU (`nice -n 19`, at most 8 processes). No trade-off when every legal play leaves the
+  same number of hitting rolls; otherwise stake = the loss of the best minimum-hitting play; Risk pays when the stake is
+  at least 0.001, else Safety pays.
+- Targets: 40 Risk pays, 40 Safety pays, 20 No trade-off. Within a class, the target is spread evenly over the five
+  phases (opening, contact, holding, race, bear-off): 8 per phase for Risk pays and Safety pays, 4 per phase for No
+  trade-off. In each (class, phase) cell, the eligible ids with the smallest hex
+  sha256(`close-choices-b-v2-2026-10-24:` + id) are taken.
+- Shortfall: when a cell holds fewer eligible ids than its quota, all of them are taken and the missing places go to the
+  other phases of the same class, one at a time, in the phase order above, to phases that still have unselected ids
+  (next smallest hash). A class is never filled from another class; if a class has fewer eligible ids than its target,
+  all are taken and the shortfall is reported.
+- Each row keeps its stored `option_order`; every call for a position uses that one order. Rows are written
+  byte-identical to the source to `positions/close-choices-b-v2.jsonl`; the record is `freeze/close-choices-b-v2.json`
+  (rule, seed text, source hash, engine values' file hash, per-cell counts, ids, output hash). The earlier freeze
+  (`freeze/close-choices-b.json`, 20 per phase from v1 + new) is superseded and kept, marked as such.
+- The list of the 100 ids and the output hash are published below (9.11) before any stage B call.
+
+**Settings.** Every setup keeps its league settings exactly: temperature (or none sent), reasoning setting, prompt
+version and format, max tokens, provider route. Temperature is recorded per setup where known (the value sent, or the
+provider's documented default) and as "not disclosed" where not. A setup that gives five identical answers on every
+scored position is reported as deterministic on these positions; settings are never changed to create variation.

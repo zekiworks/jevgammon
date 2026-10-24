@@ -1,0 +1,20 @@
+{
+ "set": "close-choices-b",
+ "purpose": "Close choices, stage B (mailbox/Close choices - request 2026-10-24.md, section B): 100 positions for the prediction call and the five play calls per one-letter Cup team. Prepared only; no call made; new calls wait for approval.",
+ "rule_fixed_at": "2026-10-24T15:18:25Z",
+ "status": "rule fixed; selection not run yet",
+ "pool": "the 2,000 shared standard positions (design final 'Shared positions': v1 set 1,000 + new set 1,000, prompt bg-v2, variant standard), the standard part of the shared set priced in 'mailbox/Shared positions - review and estimates 2026-10-24.md' (2,000 standard + 500 Nackgammon + 200 control). Nackgammon, opening-control (nack-v2, table removed), extension (League 1 only) and smoke files are not in the pool.",
+ "sources": [
+  {
+   "file": "positions/v1.jsonl",
+   "sha256": "52e7abf8d9cea173d0bb522cf681ddebefc444bb961d0eaec38253a0dfdd6976"
+  },
+  {
+   "file": "positions/new.jsonl",
+   "sha256": "ad06427c4106e8d889b027dc49f79557fb2739b8fd278f8fa2f05da72dc12d69"
+  }
+ ],
+ "seed_text": "close-choices-b-2026-10-24:",
+ "rule": "Eligible: rows of the pool with 2 <= len(legal_plays) <= 26 (26 = the letter runner's option limit, prompt::LETTERS, so no decision is split into groups; fewer than 2 legal plays is not a decision). Per phase (opening, contact, holding, race, bear-off), the 20 eligible ids with the smallest hex sha256('close-choices-b-2026-10-24:' + id), 100 in all. Rows written byte-identical to the source lines, in pool order (positions/v1.jsonl lines first, then positions/new.jsonl), to positions/close-choices-b.jsonl. Each row keeps its stored option_order (seeded by the frozen option-order seed); every call for a position uses that one order.",
+ "file": "positions/close-choices-b.jsonl"
+}

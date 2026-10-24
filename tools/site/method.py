@@ -134,7 +134,7 @@ def _toc() -> str:
              ("v1-why", "Why it looks like this"), ("error-rate", "Error rate"), ("human-scale", "Human scale"),
              ("risk", "Was it the right risk?"), ("statistics", "Statistics and verdicts"), ("thresholds", "Fixed thresholds"),
              ("status", "Status labels"), ("versions", "Versions and play order"), ("confidence", "Confidence"),
-             ("offline", "Re-read, refit, bar and distributions"),
+             ("offline", "Re-read, refit, bar and distributions"), ("close-choices", "Close choices"),
              ("cost", "Cost"), ("time", "Time"), ("limits", "Limits"), ("input", "What the input adds"),
              ("learning", "Learning from experience"), ("routing", "Routing and teams"), ("tail", "Tail risk"),
              ("v3-changes", "Runner changes during the leagues"),
@@ -609,6 +609,43 @@ def _offline(t: dict, extra: dict) -> str:
   margin).</p>""")
 
 
+def _close(t: dict) -> str:
+    """Close choices (Method spec 2026-10-24 §9), defined once here."""
+    c = _load("close_choices_2026-10-24.json")
+    return _section("close-choices", "Close choices", f"""
+<p><strong>{esc(c["definition"])}</strong> {esc(c["label"])} The rules below were fixed and committed on
+  {esc(c["fixed_on"][:10])} before any close-choice number was computed. Inspired by <a href="https://arxiv.org/abs/2610.21006">"Can LLMs Anticipate Their
+  Cruxes?"</a>. They describe the probabilities a setup gave; they say nothing about how it reasoned or why it chose.</p>
+<ul>
+  <li><strong>Which decisions.</strong> Only decisions whose record gives a probability for every legal play (decided by
+    the record's content, not by model type; the check is described under
+    <a href="#offline-support">Which probabilities are complete</a>). Left out and counted per setup: invalid answers,
+    decisions asked in groups of options, incomplete distributions and records that cannot be verified. Setups that
+    name one play only, and programs, show {esc(NA)}. No model was asked again.</li>
+  <li><strong>The rule.</strong> Take the two most probable plays, with probabilities p1 and p2. A decision is a close
+    choice when p2 is at least half of p1. Both are kept for every decision, with p1 + p2, so two strong candidates can
+    be told apart from probability spread over many options. Equal probabilities are ordered by the order the plays
+    were shown to the model, never by the engine; how many decisions have such a tie in the top two is reported.</li>
+  <li><strong>What differs between the two plays.</strong> From the option text the model was shown: the opponent's
+    hitting rolls, the newly made points, both pip counts and the longest prime. Every feature that differs is recorded;
+    when several differ, none is picked as the cause. Both plays' GNUbg 2-ply values, the gap between them and how far
+    each is behind the engine's best play (two plays can be close to each other and both lose a lot).</li>
+  <li><strong>Risk.</strong> A close choice is <strong>between a safe play and a riskier one</strong> when one of the two
+    plays leaves the fewest hitting rolls of all legal plays and the other leaves more. By stake band, in Risk pays
+    positions only: close choices among all eligible decisions in the band. A big stake means playing safe costs more by
+    the engine's value; it is not how hard the decision was. Both margins ({_value(c["margins"])}); the rule for a close
+    choice is the same at both.</li>
+  <li><strong>Missed risks.</strong> In Risk pays positions whose two most probable plays are a safe one and a riskier
+    one: how often the play made was a missed risk, among close choices and among the other decisions. The other
+    decisions are weighted to the close choices' mix of phase, number of options and the engine's gap between its two
+    best plays (only groups holding both count); the crude rates are shown too. 95% interval: {_value(c["bootstrap_resamples"])}
+    resamples of matches (a match's decisions stay together). Empty groups show {esc(NA)}. An association, not a cause.</li>
+  <li><strong>Reading it.</strong> A high or low share of close choices is neither good nor bad; setups are never sorted
+    or ranked by it. Shares come with count and denominator; under {_value(c["small_group_below"])} decisions they are
+    marked.</li>
+</ul>""")
+
+
 def _cost() -> str:
     return _section("cost", "Cost", """
 <p>Cost per 1,000 decisions carries one of three labels. They are never mixed in one figure or ranking.</p>
@@ -737,7 +774,7 @@ def body(ctx: dict) -> str:
     return "\n".join([
         _intro(), _toc(), _setup(), _shared(ctx["shared_sets"]), _prompt(), _error_rate(t), _human_scale(),
         _risk(t, extra), _statistics(t), _thresholds(t), _status(), _versions(ctx["play_order"]),
-        _confidence(t, extra), _offline(t, extra), _cost(), _time(t), _limits(), _home_extras(extra), _archive("v3-notes.html"),
+        _confidence(t, extra), _offline(t, extra), _close(t), _cost(), _time(t), _limits(), _home_extras(extra), _archive("v3-notes.html"),
         _experiments(),
     ])
 

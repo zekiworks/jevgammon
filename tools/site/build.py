@@ -31,6 +31,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import analysis as A  # noqa: E402
 import checks  # noqa: E402
+import close_choices as CC  # noqa: E402
 import offline as O  # noqa: E402
 import pages  # noqa: E402
 from common import CONTENT, EARLIER, PENDING, PROVISIONAL, PUBLISHED, ROOT, SITE, THRESHOLDS, slug  # noqa: E402
@@ -72,11 +73,17 @@ def compute(args) -> dict:
     leagues = []
     audit = O.load_audit()
     boots = {}
+    close_records = {}
     for lg in L["leagues"]:
         names = lg["names"]
         summary = A.dataset_summary(lg["dataset"], lg["decisions"], names)
         offline = O.league(lg, {n: m for (d, n), m in setups.items() if d == lg["dataset"]}, audit)
         boots[lg["dataset"]] = offline.pop("_boot")
+        # Close choices (Method spec 2026-10-24 §9): per setup, and per decision for Every decision.
+        close = CC.league(lg, audit, state / "plays")
+        close_records.update(close["records"])
+        for n, s in summary.items():
+            s["close"] = close["setups"].get(n)
         leagues.append(dict(
             id=lg["id"], dataset=lg["dataset"], version="v3", status=lg["status_label"], state=lg["state"],
             metric_status=lg["metric_status"], matches=lg["fixtures"], matches_done=lg["done"], games=lg["games"],
@@ -126,6 +133,7 @@ def compute(args) -> dict:
                                 hi=play_order["hi"], positions=play_order["positions"]),
                 disagreements=A.disagreements(v1)),
         smoke=smoke, shared=shared, thresholds=THRESHOLDS, counts=counts, hypothesis=hypothesis,
+        close_spec=dict(fixed_on=CC.CC["fixed_on"], definition=CC.DEFINITION, label=CC.LABEL), _close=close_records,
         status=json.loads((CONTENT / "analysis_status.json").read_text()),
         human_scale=json.loads((CONTENT / "human_scale.json").read_text()),
         _v1_raw=v1, _state=state)
@@ -176,7 +184,7 @@ def write_data(S: dict, out: Path) -> None:
     files = []
     def brief(s):
         """A setup in a league file: quality, confidence and every risk metric at both margins, without phases."""
-        return dict(slug=s["slug"], quality=s["quality"], confidence=s.get("confidence"),
+        return dict(slug=s["slug"], quality=s["quality"], confidence=s.get("confidence"), close=s.get("close"),
                     risk={m: {k: v for k, v in r.items() if k != "phases"} for m, r in s["risk"].items()})
 
     for lg in S["leagues"]:
@@ -377,7 +385,7 @@ def main():
         shutil.rmtree(out / "decisions")
     S["decisions_export"] = decisions_export.export(
         out, S["_state"] / "snap.db", S["_state"] / "plays", S["_state"] / "prompts.db", ROOT / "replay.db",
-        ROOT / "positions/v1.jsonl", datasets)
+        ROOT / "positions/v1.jsonl", datasets, S["_close"])
     S["decision_files"] = sum(1 for p in (out / "decisions").rglob("*") if p.is_file())
     S["showcase"] = showcase(S, decisions_export.SHOWCASE)
     write_json(out, "data/showcase.json", S["showcase"] or {})

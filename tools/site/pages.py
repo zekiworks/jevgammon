@@ -73,8 +73,10 @@ def val(q, key, f, too_few_key="too_few") -> str:
     return f'<td class="num">{f(v) if v is not None else nm(NA)}</td>'
 
 
-def table(head: list[str], rows: list[str], caption: str, cls="board", attrs="") -> str:
-    th = "".join(f'<th scope="col"{" class=num" if i else ""}>{h}</th>' for i, h in enumerate(head))
+def table(head: list, rows: list[str], caption: str, cls="board", attrs="") -> str:
+    """head: header texts; a (text, extra attributes) pair adds attributes to that header (e.g. data-nosort)."""
+    th = "".join(f'<th scope="col"{" class=num" if i else ""}{h[1] if isinstance(h, tuple) else ""}>'
+                 f'{h[0] if isinstance(h, tuple) else h}</th>' for i, h in enumerate(head))
     return (f'<div class="table-wrap"><table class="{cls}"{attrs}><caption>{caption}</caption><thead><tr>{th}</tr>'
             f'</thead><tbody>{"".join(rows)}</tbody></table></div>')
 
@@ -541,6 +543,149 @@ def facts(m: dict, q: dict | None) -> str:
     return f'<dl class="facts">{"".join(out)}</dl>'
 
 
+# --- Close choices (Method spec 2026-10-24 §9), shared by the Confidence tab and the model pages -------------
+
+CC_MARGIN = {"main": "0.001", "robust": "0.02"}
+CC_NA = "no full probability distribution"
+SMALL_MARK = ", under 200 decisions"
+
+
+def cc_text(s: dict) -> str:
+    """A share as text: 'x% (n / den)', marked when the denominator is under the site's minimum."""
+    if not s["den"]:
+        return f"{NA} (0 / 0)"
+    return f'{pct(s["share"])} ({count(s["n"])} / {count(s["den"])}){SMALL_MARK if s["small"] else ""}'
+
+
+def cc_td(s: dict) -> str:
+    if not s["den"]:
+        return f'<td class="num">{nm(NA)}<span class="small">0 / 0</span></td>'
+    return (f'<td class="num">{pct(s["share"])}<span class="small">{count(s["n"])} / {count(s["den"])}'
+            f'{SMALL_MARK if s["small"] else ""}</span></td>')
+
+
+def cc_rate(x) -> str:
+    return nm(NA) if x is None else pct(x)
+
+
+def cc_diff(m: dict, k: str) -> str:
+    v = m.get(k)
+    if v is None:
+        return nm(m.get(f"{k}_na") or NA)
+    out = f"{fmt(100 * v, 1, True)} points"
+    if m.get(f"{k}_lo") is not None:
+        out += f'<span class="small">95% interval {fmt(100 * m[k + "_lo"], 1, True)} to {fmt(100 * m[k + "_hi"], 1, True)}</span>'
+    return out
+
+
+def close_engine_table(c: dict) -> str:
+    rows = []
+    for g, lab in (("close", "Close choices"), ("other", "Other decisions")):
+        x = c["groups"][g]
+        v = lambda k: (nm(NA) if not x["n"] else f'{eq(x[k]["mean"])}<span class="small">median {eq(x[k]["median"])}</span>')
+        rows.append(f'<tr><th scope="row">{lab}</th><td class="num">{count(x["n"])}</td><td class="num">{v("gap")}</td>'
+                    f'<td class="num">{v("loss1")}</td><td class="num">{v("loss2")}</td></tr>')
+    return table(["Decisions", "Number", "Gap between the two plays' values", "Most likely play: behind the engine's best",
+                    "Second most likely play: behind the engine's best"], rows,
+                   "Engine values (GNUbg 2-ply, equity), mean with median", cls="board list")
+
+
+def close_missed_table(c: dict) -> str:
+    rows = []
+    for mk in ("main", "robust"):
+        m = c["margins"][mk]["missed"]
+        lab = f'<th scope="row">margin {CC_MARGIN[mk]}<span class="small">{count(m["group"])} decisions</span></th>'
+        if m.get("na"):
+            rows.append(f'<tr>{lab}<td class="num">{cc_rate(None)}<span class="small">{esc(cc_text(m["close"]))}</span></td>'
+                        f'<td class="num">{cc_rate(m["other"]["share"])}<span class="small">{esc(cc_text(m["other"]))}</span></td>'
+                        f'<td class="num">{nm(m["na"])}</td><td class="num">{nm(NA)}</td></tr>')
+            continue
+        rows.append(f'<tr>{lab}<td class="num">{cc_rate(m["adj_close"])}<span class="small">crude {esc(cc_text(m["close"]))}</span></td>'
+                    f'<td class="num">{cc_rate(m["adj_other"])}<span class="small">crude {esc(cc_text(m["other"]))}</span></td>'
+                    f'<td class="num">{cc_diff(m, "adjusted")}</td><td class="num">{cc_diff(m, "crude")}</td></tr>')
+    return table(["Margin", "Close choices: missed risks", "Other decisions: missed risks (weighted to the close choices' mix)",
+                    "Difference, close minus other", "Crude difference"], rows,
+                   "Missed risks where the risk is worth taking, close choices vs other decisions", cls="board list")
+
+
+def close_risk_table(c: dict) -> str:
+    rows = []
+    for mk in ("main", "robust"):
+        k = c["margins"][mk]["classes"]
+        rows.append(f'<tr><th scope="row">margin {CC_MARGIN[mk]}</th>' + cc_td(k["risk"]["risk_close"])
+                    + cc_td(k["safety"]["risk_close"]) + "</tr>")
+    return table(["Margin", "In Risk pays positions", "In Safety pays positions"], rows,
+                   "Close choices between a safe play and a riskier one, by position class", cls="board list")
+
+
+CC_EXCLUSION = {"invalid": "invalid answers", "grouped": "asked in groups of options",
+                "sparse": "incomplete distribution (an option without its own probability)",
+                "unverified": "stored probabilities not reproduced from the raw response", "no_raw": "no raw response",
+                "not_audited": "not audited", "not_scored": "no engine value",
+                "no_probabilities": "one letter only, or a program"}
+CC_FEATURES = [("hitting", "Hitting rolls"), ("points", "Newly made points"), ("race", "Pip counts"),
+               ("prime", "Longest prime")]
+
+
+def close_section(S, dataset: str, name: str, c: dict, rel: str) -> str:
+    """The model page's full close-choice breakdown (Method spec 2026-10-24 §9)."""
+    spec = S["close_spec"]
+    ex = "; ".join(f"{CC_EXCLUSION[k]} {count(v)}" for k, v in c["exclusions"].items()) or "none"
+    head = (f'<section class="card" id="close-choices"><h2>Close choices</h2><p>{esc(spec["definition"])}</p>'
+            f'<p class="table-note">{esc(spec["label"])} <a href="{rel}method/#close-choices">Method</a></p>')
+    facts_ = [("Decisions", count(c["decisions"])), ("Eligible (full probability distribution)", count(c["eligible"])),
+              ("Left out, by reason", esc(ex))]
+    if c["na"]:
+        facts_.append(("Close choices", nm(NA) + " " + esc(CC_NA)))
+        return head + '<dl class="facts">' + "".join(f"<dt>{k}</dt><dd>{v}</dd>" for k, v in facts_) + "</dl></section>"
+    t = c["ties"]
+    facts_ += [("Close choices", esc(cc_text(c["close"]))),
+               ("Ties in the top two", f'{count(t["top_two"])} decisions ({count(t["positive"])} at a positive probability, '
+                                       f'{count(t["zero"])} at 0; the two most likely plays tied: {count(t["order"])}, the '
+                                       f'second tied with the third: {count(t["member"])}); {count(t["close"])} of them '
+                                       f'close choices. Ties are broken by the order the plays were shown, never by the engine.'),
+               ("Between a safe play and a riskier one", esc(cc_text(c["risk_close"])) + " of the close choices; "
+                + esc(cc_text(c["risk_close_of_eligible"])) + " of all eligible decisions")]
+    out = [head, '<dl class="facts">' + "".join(f"<dt>{k}</dt><dd>{v}</dd>" for k, v in facts_) + "</dl>"]
+    G = c["groups"]
+    st = lambda x, k: (nm(NA) if not x["n"] else f'{fmt(x[k]["mean"], 3)}<span class="small">median {fmt(x[k]["median"], 3)}</span>')
+    rows = [f'<tr><th scope="row">{lab}</th><td class="num">{count(G[g]["n"])}</td><td class="num">{st(G[g], "p1")}</td>'
+            f'<td class="num">{st(G[g], "p2")}</td><td class="num">{st(G[g], "psum")}</td></tr>'
+            for g, lab in (("close", "Close choices"), ("other", "Other decisions"))]
+    out.append(table(["Decisions", "Number", "p1 (most likely play)", "p2 (second)", "p1 + p2"], rows,
+                     "Probabilities of the two most likely plays, mean with median", cls="board list"))
+    bins = [f"{b / 10:.1f}\u2013{(b + 1) / 10:.1f}" for b in range(10)]
+    rows = [f'<tr><th scope="row">{lab}</th>' + "".join(f'<td class="num">{count(v)}</td>' for v in G[g]["psum_bins"]) + "</tr>"
+            for g, lab in (("close", "Close choices"), ("other", "Other decisions"))]
+    out.append(table(["p1 + p2"] + bins, rows, "How much probability the two plays hold together: decisions per bin",
+                     cls="board list"))
+    rows = [f'<tr><th scope="row">{lab}</th><td class="num">{count(G[g]["n"])}</td>'
+            + "".join(cc_td(G[g]["differ"][f]) for f, _ in CC_FEATURES)
+            + f'<td class="num">{" / ".join(count(x) for x in G[g]["by_count"])}</td></tr>'
+            for g, lab in (("close", "Close choices"), ("other", "Other decisions"))]
+    out.append(table(["Decisions", "Number"] + [l for _, l in CC_FEATURES] + ["None / 1 / 2 / 3 / 4 differ"], rows,
+                     "What differs between the two most likely plays (several can differ; none is picked as the cause)",
+                     cls="board list"))
+    out.append(close_engine_table(c))
+    out.append(close_risk_table(c))
+    rows = []
+    for mk in ("main", "robust"):
+        m = c["margins"][mk]
+        k = m["classes"]
+        rows.append(f'<tr><th scope="row">margin {CC_MARGIN[mk]}</th>' + cc_td(k["risk"]["close"]) + cc_td(k["safety"]["close"])
+                    + cc_td(k["none"]["close"]) + "".join(cc_td(m["stake"][b]) for b in A.BANDS) + "</tr>")
+    out.append(table(["Margin", "Risk pays", "Safety pays", "No trade-off", "Risk pays, small stake",
+                      "Risk pays, medium stake", "Risk pays, big stake"], rows,
+                     "Close choices among eligible decisions, by position class and stake band", cls="board list"))
+    out.append('<p class="table-note">At the 0.02 margin a Risk pays position has a stake of at least 0.02, so the small '
+               'band is empty. A big stake means playing safe costs more by the engine\'s value, not that the decision '
+               'was harder.</p>')
+    out.append(close_missed_table(c))
+    out.append(f'<p class="table-note">{esc(spec["label"])} <a href="{rel}decisions/?d={dataset}&amp;s={meta(S, dataset, name)["slug"]}'
+               f'&amp;k=close">Every close choice of this setup</a></p></section>')
+    return "".join(out)
+
+
 def model_page(S, dataset: str, name: str, entry: dict | None, smoke_row: dict | None) -> str:
     m = meta(S, dataset, name)
     rel = "../../../"
@@ -588,6 +733,8 @@ def model_page(S, dataset: str, name: str, entry: dict | None, smoke_row: dict |
             parts.append(f'<section class="card risk-card" id="risk-calls"><h2>Risk call card</h2><p class="cc-big">{big}'
                          f'<span class="small">risk judgement, margin 0.001</span></p>{bars}'
                          f'<p class="table-note">{esc(RISK_LIMIT)}</p></section>')
+        if entry.get("close") is not None:
+            parts.append(close_section(S, dataset, name, entry["close"], rel))
         b = entry["phases"]
         rows = "".join(f'<tr><th scope="row">{PHASE_LABEL[p]}</th><td class="num">{nm(TOO_FEW) if b[p]["too_few"] else fmt(b[p]["error_rate"])}</td>'
                        f'<td class="num">{count(b[p]["n"])}</td></tr>' for p in A.PHASES)

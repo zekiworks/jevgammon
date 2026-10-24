@@ -800,12 +800,13 @@ td.lgo.lg1{background:#fdf3c4}td.lgo.lg2{background:#d6f0d0}td.lgo.lg3{backgroun
 .tabtitle{display:inline-block;padding:2px 10px;border-radius:4px}.tabtitle.lg1,.tabtitle.lg2,.tabtitle.lg3{color:#1e293b}
 td.lgo{font-weight:700;box-shadow:inset -2px 0 0 rgba(0,0,0,.15)}
 .lgkey{margin-top:6px;font-size:12px}.lgkey span{display:inline-block;padding:1px 8px;border-radius:4px;color:#1e293b;margin-left:6px}
+.ltab{width:80ch;max-width:100%}
 </style></head><body>
 <dialog id="ctx"><div class="head"><h3 id="ctxTitle"></h3><button onclick="$('ctx').close()">close</button></div><div id="ctxBody"></div></dialog>
 <header><h1>jevgammon league <span id="lid"></span></h1><span id="status"></span><span class="meta" id="rules"></span><span class="meta" id="updated"></span><a href="report/" target="_blank" id="report" hidden>report (working copy)</a><a href="#" id="latest" hidden>back to the latest league</a><div id="control" hidden><span id="ctlButtons"></span><span class="meta" id="ctlStatus"></span></div><div id="note" class="note"></div></header>
 <main>
 <section class="wide"><h2>History</h2><table id="history"></table><div class="mute" style="margin-top:8px">Click a league to view it. Live: moved in the last 10 minutes; stopped: ended before its last match, so only its finished matches count.</div></section>
-<section class="wide"><h2><span id="tabTitle" class="tabtitle">Table</span> <span class="seasons"><button id="prevSeason" title="previous league">&lsaquo;</button><span id="season"></span><button id="nextSeason" title="next league">&rsaquo;</button></span></h2><table id="table"></table><div class="mute lgkey" id="lgkey"></div><div class="mute" style="margin-top:8px">3 points per win, 1 per draw; ties: more games won, then fewer games lost. PF/PA are backgammon points. The arrows step through all leagues.</div></section>
+<section class="wide"><div class="ltab"><h2><span id="tabTitle" class="tabtitle">Table</span> <span class="seasons"><button id="prevSeason" title="previous league">&lsaquo;</button><span id="season"></span><button id="nextSeason" title="next league">&rsaquo;</button></span></h2><table id="table"></table><div class="mute lgkey" id="lgkey"></div><div class="mute" style="margin-top:8px">3 points per win, 1 per draw; ties: more games won, then fewer games lost. PF/PA are backgammon points. The arrows step through all leagues.</div></div></section>
 <section class="wide"><h2>Live</h2><div class="live" id="live"></div></section>
 <section class="wide"><h2>Fixture</h2><div class="days" id="fixture"></div></section>
 <section class="wide"><h2>Recent games</h2><table id="recent"></table></section>

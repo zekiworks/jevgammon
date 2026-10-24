@@ -12,6 +12,9 @@ from common import (EARLIER, EARLIER_NOTE, NA, NOT_MEASURED, PENDING, PROVISIONA
 NAV = [("decisions/", "Every decision"), ("disagreements/", "Where models disagree"), ("phases/", "Phases"),
        ("compare/", "Compare"), ("leagues/", "Leagues"), ("method/", "Method"), ("data/", "Data")]
 TITLE = "Can a model tell when a risk is worth taking?"
+# Reviewed brief of 24 Oct 2026, item 2: the subtitle, used with the title in the hero, the meta description and the
+# link preview card.
+SUBTITLE = "And when does playing safe cost more?"
 # TEMPORARY (Can, 23 Oct 2026): the "Export page as PNG" key in the top bar (assets/png.js); False removes it.
 EXPORT_PAGE_PNG = True
 
@@ -775,24 +778,24 @@ def share_card(S) -> str:
                       alt=sc["best_safe"]["notation"]) if sc else ""
     cap = (f'{esc(sc["label"])}, stake {eq(sc["stake"])}: the engine\'s best play {esc(sc["best"]["notation"])} (arrows) '
            f'leaves {sc["best"]["hitting_rolls"]} hitting rolls; the best safe play (dashed) '
-           f'{sc["best_safe"]["hitting_rolls"]}.') if sc else ""
+           f'leaves {sc["best_safe"]["hitting_rolls"]}.') if sc else ""
     return f"""<!doctype html><html><head><meta charset="utf-8"><style>
 {css}
-:root{{--text:#e2e8f0;--sans:system-ui,sans-serif;--bd-frame:#3d3226;--bd-felt:#1e293b;--bd-a:#6b5a43;--bd-b:#2f6f63;--bd-tray:#162032;--bd-num:#94a3b8;--bd-me:#ebe9e4;--bd-me-edge:#0e0e0d;--bd-opp:#9a3b2e;--bd-opp-edge:#f0b8ad;--bd-die:#ebe9e4;--bd-die-edge:#0e0e0d;--bd-pip:#1a1a18}}
+:root{{--text:#e2e8f0;--text-2:#94a3b8;--sans:system-ui,sans-serif;--bd-frame:#3d3226;--bd-felt:#1e293b;--bd-a:#6b5a43;--bd-b:#2f6f63;--bd-tray:#162032;--bd-num:#94a3b8;--bd-me:#ebe9e4;--bd-me-edge:#0e0e0d;--bd-opp:#9a3b2e;--bd-opp-edge:#f0b8ad;--bd-die:#ebe9e4;--bd-die-edge:#0e0e0d;--bd-pip:#1a1a18}}
 body{{margin:0;width:1200px;height:630px;background:#0f172a;color:#e2e8f0;font-family:system-ui,sans-serif;display:flex;gap:44px;align-items:center;padding:0 56px;box-sizing:border-box}}
 .l{{flex:0 0 520px}} .l svg{{width:520px;height:auto;display:block}} .l p{{font-size:17px;color:#94a3b8;margin:12px 0 0;line-height:1.35}}
 .r{{flex:1}} h1{{font-size:50px;margin:0 0 18px;line-height:1.08}} .s{{font-size:23px;color:#cbd5e1;margin:0 0 26px;line-height:1.3}}
 ul{{list-style:none;padding:0;margin:0;display:flex;gap:28px}} li b{{display:block;font-size:40px;color:#2dd4bf}} li{{font-size:18px;color:#94a3b8}}
 .f{{position:absolute;bottom:26px;right:56px;font-size:17px;color:#64748b}}</style></head><body>
 <div class="l">{board}<p>{cap}</p></div>
-<div class="r"><h1>{esc(TITLE)}</h1><p class="s">Every backgammon move scored by an engine: was each risk the right one, and what did it cost?</p>
+<div class="r"><h1>{esc(TITLE)}</h1><p class="s">{esc(SUBTITLE)}</p>
 <ul><li><b>{count(c["decisions_scored"])}</b>decisions</li><li><b>{c["leagues"]}</b>leagues</li><li><b>{c["model_setups"]}</b>setups</li><li><b>{c["models"]}</b>models</li></ul></div>
 <div class="f">Zeki Works · every decision is public</div></body></html>"""
 
 
 def description(S) -> str:
     c = S["counts"]
-    return (f"Models play backgammon, and GNU Backgammon scores every move they make: {count(c['decisions_scored'])} "
+    return (f"{TITLE} {SUBTITLE} Models play backgammon, and GNU Backgammon scores every move they make: {count(c['decisions_scored'])} "
             f"decisions, {count(c['model_setups'])} setups, {count(c['leagues'])} leagues. We measure whether each risk a "
             f"model takes is the right one, and what that costs. Every decision is public.")
 

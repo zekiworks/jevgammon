@@ -712,6 +712,7 @@ def home(S) -> str:
     <header class="hero hero-split">
       <div class="hero-text">
         <h1>{esc(P.TITLE)}</h1>
+        <p class="subtitle">{esc(P.SUBTITLE)}</p>
         <p class="intro">{esc(INTRO)}</p>
         <div class="readout-row">
           <ul class="readouts">{P.readouts(S)}</ul>

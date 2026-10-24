@@ -334,3 +334,7 @@ Checks to run before the first call, after approval:
 - Gemma 4 31B (on) on spark3: settings verification and the 20-request comparison (section 4).
 
 Waiting for Can's go (and the ladder to settle)
+
+## Approval
+
+2026-10-24: Can approved stage B ("go") on this plan and estimate. It starts when the ladder has settled; the teams are the final 8-team Cup roster. Until then, no stage B call.

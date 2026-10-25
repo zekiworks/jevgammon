@@ -1131,6 +1131,7 @@ def pays_section(S) -> str:
 CCB_VS = {"above": "above the baseline range", "within": "inside the baseline range: not clearly above it",
           "below": "below the baseline range"}
 CCB_SHORT = {"above": "above", "within": "inside", "below": "below"}
+CCB_TITLE = "Can a model predict where it will waver?"
 CCB_SUBTITLE = "Close choices: does a setup know where it hesitates?"
 CCB_RANKING = ("Not a ranking: each team is compared with its own shuffled baseline, never with another team. Rows are in "
                "fixed alphabetical order and the table cannot be sorted.")
@@ -1230,7 +1231,8 @@ def close_b_section(S) -> str:
                  else "No team gave the same play in all five answers on every scored position.")
     notes.append("Every team kept its league settings. Temperature: the value sent or the provider's documented default "
                  "where known, otherwise not disclosed.")
-    return (f'<section class="card" id="close-choices-stage-b"><div class="section-head"><h2>{esc(B["title"])}</h2></div>'
+    return (f'<section class="card" id="close-choices-stage-b"><div class="section-head"><h2>{esc(CCB_TITLE)}</h2></div>'
+            f'<p class="section-label">{esc(B["title"])}</p>'
             f'<p class="subtitle-line"><strong>{esc(CCB_SUBTITLE)}</strong></p>'
             f'<p class="note"><strong>Scope.</strong> {esc(CLOSE_B_SCOPE_NOTE)}</p>'
             f'<p>Each team answered the same {count(B["positions"])} positions {count(B["repeats"])} times, and once more in '

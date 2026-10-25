@@ -17,3 +17,5 @@ Running before it: league2 (last matches), league2early (Argon (off) early start
 1. Start Gemma (GPU 0) and Qwen (GPU 1) as above; claim them on the bus.
 2. `systemctl --user reset-failed league2 league2early` and start both again the same way (see `systemctl --user cat` of each, or the round-2 log). Matches resume from their last move.
 3. Gemma stage B: a third session for the play calls with no stored answer needs Can's OK and a Method addendum first. Same skip check (dry run on a copy of the store).
+- league2early: `systemd-run --user --unit=league2early --working-directory=$HOME/code/jevgammon bash -c 'tools/v3/run_league2_early.sh >> league2-early.log 2>&1'`
+- Gemma stage B session 3 (only after Can's OK + Method addendum): same command as session 2, `jevgammon-ccb2/target/release/jevgammon ask --config leagues/close-choices-b-gemma.json --positions positions/close-choices-b-v2.jsonl --out smoke/close-choices-b.db --repeats 5 --once --retries 2` (it skips stored answers).

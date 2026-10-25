@@ -521,3 +521,11 @@ league settings unchanged. Gemma 4 31B (on) and any changed team join after the 
   reboot). `--once` skips every stored (position, repeat). Each play call's seed comes from (position, repeat).
 - The report gives the three sessions' start and end times separately, and Gemma's results in their own section with
   this three-session note.
+
+#### 9.13 addendum (2026-10-25, 16:05 UTC): scope change, Gemma 4 31B (on) stopped and not reported (Ümit's decision)
+
+- Reason: hardware interruptions. Sessions 1 and 2 were cut by two bariton reboots (~11:46 and ~12:20 UTC), and a GPU
+  fault (13:05 UTC, Xid 79 on another GPU of the machine) forced a third reboot. Session 3 started at 13:55:48 UTC.
+- The run was then stopped on purpose at 16:02:00 UTC, with 311 of 500 Gemma play answers stored (count only).
+- Gemma's partial data (100 predictions, 311 play answers) is never scored or reported. Stage B is reported for the
+  five subscription teams only, scored by §9.9 unchanged; its title is "Stage B: five teams".

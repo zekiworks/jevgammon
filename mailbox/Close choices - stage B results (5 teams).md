@@ -1,6 +1,8 @@
-# Close choices, stage B: results (5 subscription teams)
+# Close choices, stage B: five teams
 
-Oct 25, 2026 · for Ümit and Can · rules: Method §9.9 (scoring), §9.10-9.11 (positions, v2 freeze), §9.12-9.13 (request and run conditions) in `tools/site/content/method-spec-2026-10-24.md`. **Not published on the site** (Method: results are published after the run is complete; Gemma 4 31B (on) is still running, see the last section).
+Oct 25, 2026 · for Ümit and Can · rules: Method §9.9 (scoring), §9.10-9.11 (positions, v2 freeze), §9.12-9.13 (request and run conditions, scope change 16:05 UTC) in `tools/site/content/method-spec-2026-10-24.md`. Published on the site (Ümit, 2026-10-25).
+
+**Scope.** Gemma 4 31B (on) was started but not completed: two reboots and a GPU fault interrupted it, and it was stopped after 311 of 500 play calls on 2026-10-25. Its partial data is not reported.
 
 ## Run
 
@@ -38,6 +40,6 @@ What it shows:
 
 Per-phase counts, the predicted and observed sets and the per-position P/O are in `smoke/close-choices-b-score-5teams.json` (local, not in git).
 
-## Gemma 4 31B (on): not finished
+## Gemma 4 31B (on): stopped, not reported
 
-100 predictions stored (10:40:53-11:33:04 UTC, all valid). Play calls: session 1 stored 23 (11:33:49-11:45:01), cut by the bariton reboot at 11:45:57; session 2 (started 12:08:07) stored 22 more (12:09:14-12:17:53), cut by the second reboot (~12:20). 45 of 500 stored, all valid. Session 3 for the 455 calls never stored is approved by Can and recorded in Method (§9.13 addendum, 13:32 UTC); the skip check passed (dry run on a copy against a dead port: 455 asked, the 45 stored untouched). It is not started yet: at 13:05 UTC a GPU fell off the bus and the machine needs a reboot first. Its section is added here when it is done.
+100 predictions (10:40:53-11:33:04 UTC). Play calls: session 1 11:33:49-11:45:01 (cut by a reboot ~11:46), session 2 12:08:07-12:17:53 (cut by a reboot ~12:20), session 3 13:55:48-16:01:51 (after a GPU fault at 13:05 and a third reboot), stopped on purpose at 16:02:00 UTC (Ümit). 311 of 500 play answers stored (count only). Not scored; the 5-team score JSON's Gemma entry is ignored. Journal: `smoke/close-choices-b-gemma-session3.log`.

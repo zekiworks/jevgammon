@@ -61,7 +61,7 @@ WHERE t.decided_by IN ('model', 'fallback') AND {shown}
 """
 
 
-def shown(db, prefix=""):
+def shown_leagues(db, prefix=""):
     """SQL condition on `leagues l` leaving out hidden leagues (`leagues.hidden`, e.g. an early start
     for the next ladder round; league_web.shown): the site never shows them."""
     if "hidden" not in {r[1] for r in db.execute(f"PRAGMA {prefix}table_info(leagues)")}:
@@ -256,7 +256,7 @@ def fingerprint(db):
             " (SELECT count(*) FROM league_match_view v JOIN matches m ON m.id = v.match_id"
             "  WHERE v.league_id = l.id AND m.status = 'finished'),"
             " (SELECT count(*) FROM league_players lp WHERE lp.league_id = l.id AND lp.left_at IS NULL)"
-            f" FROM leagues l WHERE {shown(db)} ORDER BY l.id"):
+            f" FROM leagues l WHERE {shown_leagues(db)} ORDER BY l.id"):
         parts.append(f"l{league_id}:{status}:{done}/{n * (n - 1) // 2}")
     return " ".join(parts)
 
@@ -341,7 +341,7 @@ def run(v3, state):
         db.execute(sql)
     engines = engine_setups(db, "main.")
     targets = {}
-    for turn_id, league_id, setup in db.execute(LEAGUE_DECISIONS.format(p="main.", shown=shown(db, "main."))):
+    for turn_id, league_id, setup in db.execute(LEAGUE_DECISIONS.format(p="main.", shown=shown_leagues(db, "main."))):
         if turn_id not in done and setup not in engines:
             targets[turn_id] = league_id
     exchanges = {}

@@ -320,19 +320,26 @@ pub fn constrained_request(
                 "generationConfig": config,
             })
         }
-        Route::OpenAiCompatible => json!({
-            "model": model,
-            "messages": [
-                {"role": "system", "content": system},
-                {"role": "user", "content": user},
-            ],
-            "temperature": 1.0,
-            "max_tokens": options.max_tokens.unwrap_or(32768),
-            "response_format": {
+        Route::OpenAiCompatible => {
+            let mut body = json!({
+                "model": model,
+                "messages": [
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": user},
+                ],
+                "temperature": 1.0,
+                "max_tokens": options.max_tokens.unwrap_or(32768),
+            });
+            // As the reasoning request of a play call (`choose_compatible`).
+            if let Some(effort) = effort {
+                body["reasoning_effort"] = json!(effort);
+            }
+            body["response_format"] = json!({
                 "type": "json_schema",
                 "json_schema": {"name": compatible_name, "schema": answer_schema(answer), "strict": true},
-            },
-        }),
+            });
+            body
+        }
     }
 }
 
@@ -1702,5 +1709,48 @@ mod tests {
             "usage": {"input_tokens": 1, "output_tokens": 1}}"#;
         let c = parse_anthropic(refusal).unwrap();
         assert_eq!(parse_prediction(&c.text).unwrap_err(), "not JSON");
+    }
+
+    /// Gemma 4 31B (on)'s League 2 settings: the prediction request is the play call's
+    /// reasoning request (`choose_compatible`) with the prediction schema, the neutral system
+    /// prompt and the prediction text, extra fields merged as configured.
+    #[test]
+    fn compatible_prediction_mirrors_the_reasoning_request() {
+        let o = Options {
+            reasoning: Some("template default".into()),
+            request: Some(
+                json!({"chat_template_kwargs": {"enable_thinking": true}, "reasoning_effort": null}),
+            ),
+            max_tokens: Some(24000),
+            top_logprobs: None,
+            readout: Readout::Prefill,
+            answer_prefix: None,
+            pacer: None,
+            budget: None,
+        };
+        let sent = as_sent(
+            constrained_request(
+                Route::OpenAiCompatible,
+                "gemma-4-31B-it",
+                &o,
+                "U",
+                Answer::Prediction,
+            ),
+            &o,
+        );
+        let play_reasoning = merged(
+            json!({
+                "model": "gemma-4-31B-it",
+                "messages": [{"role": "system", "content": prediction_system()}, {"role": "user", "content": "U"}],
+                "temperature": 1.0,
+                "max_tokens": 24000,
+                "reasoning_effort": "template default",
+                "response_format": {"type": "json_schema", "json_schema": {"name": "prediction", "schema": prediction_schema(), "strict": true}},
+            }),
+            o.request.as_ref(),
+        );
+        assert_eq!(sent.to_string(), play_reasoning.to_string());
+        assert!(sent.get("reasoning_effort").is_none());
+        assert_eq!(sent["chat_template_kwargs"]["enable_thinking"], true);
     }
 }

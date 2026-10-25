@@ -1,0 +1,31 @@
+{
+  "note": "Close choices, stage B, Gemma 4 31B (on) (Method §9.13 addendum, Can's approval 2026-10-25): its v3.db roster row (players.settings) unchanged except `parallel` 4 (roster 24), to keep the shared bariton server's League 2 matches moving; same server, weights and arguments as League 2 (base_url the roster's proxy). Same prompt version, option-order seed and match context as close-choices-b.json. Not a league.",
+  "prompt_version": "bg-v2",
+  "seed": 0,
+  "order_seed": 1190975713392774006,
+  "rounds": 3,
+  "clock": 0,
+  "delay": 30,
+  "max_turns": 300,
+  "players": [
+    {
+      "name": "Gemma 4 31B (on)",
+      "spec": "local/gemma-4-31B-it",
+      "provider": "local-vllm",
+      "quantization": "fp8 (bf16 checkpoint quantized by vLLM at load; fp8 KV cache)",
+      "base_url": "http://127.0.0.1:8894/v1",
+      "reasoning": "template default",
+      "request": {
+        "chat_template_kwargs": {
+          "enable_thinking": true
+        },
+        "reasoning_effort": null
+      },
+      "max_tokens": 24000,
+      "note": "thinking on (enable_thinking); no effort knob, template default",
+      "device": "RTX PRO 6000 (bariton): one GPU until 2026-10-16 11:11 UTC, then three replicas (GPUs 0, 1, 3, same image and arguments) behind a least-busy proxy at the same URL; from 2026-10-19 18:36 UTC one server on NVIDIA GB10 (DGX Spark spark-194d, next to Decider), same image, checkpoint and arguments (memory share 0.45); from 2026-10-19 22:26 UTC back on RTX PRO 6000 (bariton GPU 0): one replica (memory share 0.85, 24 sequences, 194,617-token FP8 KV cache) behind the least-busy proxy at http://127.0.0.1:8894/v1, same image, checkpoint and arguments; 20 stored League 2 (off) requests replayed there: same play 20/20, max |dp| 0.08; paused 2026-10-20; from 2026-10-20 20:16 UTC bariton GPU 0 again, same replica and proxy; from 2026-10-20 21:10 UTC NVIDIA GB10 (DGX Spark spark-194d) again, as on 2026-10-19 (memory share 0.45, 24 sequences), next to LFM2.5-24B-A2B, while bariton's four GPUs serve DeepSeek V4.1 Flash; 20 stored League 2 (off) requests (bariton) replayed there: same top letter 20/20, max |dp| 0.50, median 0.0000; from 2026-10-21 01:25 UTC back on bariton GPU 0 (overnight replica + proxy), same script and arguments, while DeepSeek V4.1 Flash is paused (its four GPUs freed for League 2's non-DeepSeek thinking matches); 20 stored (off) requests: same top letter 19/20, max |dp| 0.65; from 2026-10-21 05:00 UTC NVIDIA GB10 (DGX Spark spark-194d) again, the same server as from 2026-10-20 21:10 UTC, while DeepSeek V4.1 Flash plays its last matches on bariton; from 2026-10-22 15:37 UTC back on RTX PRO 6000 (bariton GPUs 0 and 1): two replicas (memory share 0.85, 24 sequences each) behind the least-busy proxy at http://127.0.0.1:8894/v1, same image, checkpoint and arguments; 20 stored League 2 (off) requests replayed there: same play 20/20, max |dp| 0.044, median 0.0000; paused 2026-10-22 16:20 UTC; from 2026-10-22 22:59 UTC bariton GPUs 0 and 1 again: the same two replicas (memory share 0.85, 24 sequences each) behind the least-busy proxy at http://127.0.0.1:8894/v1, same script, image, checkpoint and arguments as from 15:37 UTC; from 2026-10-23 21:31 UTC (ladder round 1) bariton GPU 1: one replica (memory share 0.85, 24 sequences) behind the least-busy proxy at http://127.0.0.1:8894/v1, same script, image, checkpoint and arguments (GEMMA_GPUS=1); 2026-10-23 22:36 UTC the GPU fell off the bus (Xid 79) and the server died; matches deferred until bariton is reset; from 2026-10-25 07:55 UTC (ladder round 2) bariton GPU 0: one replica (memory share 0.85, 24 sequences) behind the proxy at http://127.0.0.1:8894/v1, same script, image, checkpoint and arguments (GEMMA_GPUS=0)",
+      "parallel": 4,
+      "max_matches": 16
+    }
+  ]
+}

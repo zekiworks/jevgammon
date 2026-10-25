@@ -619,7 +619,8 @@ def _close(t: dict) -> str:
     b = c["stage_b"]
     return _section("close-choices", "Close choices", f"""
 <p class="note"><strong>Stage A: results published (Confidence tab, model pages, Every decision filter). Stage B:
-  approved, not run; starts after the ladder settles (Can, 2026-10-25).</strong></p>
+  approved for the 5 subscription teams (Can, 2026-10-25), not run yet; Gemma 4 31B (on) and changed teams after the
+  ladder settles.</strong></p>
 <p><strong>{esc(c["definition"])}</strong> {esc(c["label"])} The rules below were fixed and committed on
   {esc(c["fixed_on"][:10])} before any close-choice number was computed. Inspired by <a href="https://arxiv.org/abs/2610.21006">"Can LLMs Anticipate Their
   Cruxes?"</a>. They describe the probabilities a setup gave; they say nothing about how it reasoned or why it chose.</p>
@@ -653,8 +654,9 @@ def _close(t: dict) -> str:
     marked.</li>
 </ul>
 {_h3("close-choices-b", "Stage B: does a setup know where it hesitates? (planned, not run)")}
-<p>Approved, not run; starts after the ladder settles (Can, 2026-10-25). No stage B call has been made. The positions
-  and the scoring rules were fixed on 2026-10-24, before any stage B call.</p>
+<p>Approved for the 5 subscription teams (Can, 2026-10-25), not run yet: no stage B call has been made. Gemma 4 31B (on)
+  and changed teams join after the ladder settles. The positions and the scoring rules were fixed on 2026-10-24, before
+  any stage B call; the run conditions below on 2026-10-25.</p>
 <ul>
   <li><strong>Positions.</strong> {_value(b["positions"])} positions from the new half of the shared standard set, by
     risk class at the {_value(c["margins"][0])} margin: 40 Risk pays, 40 Safety pays and 20 No trade-off, spread over the
@@ -665,7 +667,12 @@ def _close(t: dict) -> str:
   <li><strong>Calls.</strong> Each setup answers every position {_value(b["repeats"])} times, and once more in a separate
     call that names the features it expects to differ between the plays it might choose. Every setup keeps its league
     settings exactly; a setup that gives the same answer every time is reported as deterministic on these positions, and
-    settings are never changed to create variation.</li>
+    settings are never changed to create variation. The separate call gets everything the play call gets (rules and
+    strategy text, position, options in the same order) except the answer format: its question, a schema for the
+    features and a neutral system prompt instead of the letter instruction. Before the run, one call per provider route
+    on a position outside every shared set checks only that the format is accepted.</li>
+  <li><strong>One run.</strong> Each setup is run once: at most 2 retries of network or server errors per call, no
+    rerun, and no invalid answer is asked again.</li>
   <li><strong>Scoring.</strong> Observed set: the features of stage A that differ between any two of the plays chosen in
     the {_value(b["repeats"])} answers. Predicted set: the features named in the separate call. Primary score:
     {esc(b["primary"])}. Secondary score: {esc(b["secondary"])}. A position is scored only when the prediction and all

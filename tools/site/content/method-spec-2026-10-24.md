@@ -423,3 +423,49 @@ The schema does not exclude duplicates, or `none` together with a feature; the p
   - It holds one sha256 per request and one per team.
 
 **Not checked offline:** whether each provider accepts the prediction schema. That can only be seen in a response.
+
+### 9.13 Stage B run conditions (2026-10-25, Can's approval; written before any stage B call)
+
+Can approved stage B on 2026-10-25 for the five subscription teams of §9.12, on the frozen v2 100 (§9.11), with their
+league settings unchanged. Gemma 4 31B (on) and any changed team join after the ladder settles.
+
+**Prediction call: neutral system prompt (the only change from §9.12).**
+- In the leagues, the system prompt holds only the letter readout's answer format; the rules and strategy text are in
+  the user message.
+- The play call's system prompt is unchanged (`prompts/letter-system.txt`): "You are a calibration engine. You never
+  answer in prose. You are given a state, a question and a numbered set of options, and you choose exactly one option.
+  You reply with that option's LETTER and nothing else — a single character, no words, no punctuation, no
+  explanation."
+- The prediction call gets a neutral one (`prompts/prediction-system.txt`): "You are given a state, a question and a
+  numbered set of options. You answer the question in the format it asks for, and nothing else."
+- Everything else the prediction call gets is the play call's: the rules and strategy text, the position, the options
+  in the same seeded order, the model, the reasoning setting, the temperature (or none) and the token limit. Only the
+  answer format changes: the question and format line of §9.12, and the feature-list schema. On the Claude route the
+  subscription's identity block stays the first system block, as in the play call.
+- Play calls are exactly the league requests. Rendered requests: `freeze/close-choices-b-v2-requests-r2.json` (all 500
+  play requests are unchanged from the first rendering). The jsonl sha256 is
+  `d8f4ea127e392716b9a6e883dc9abfef64c56c71625ccbfac5358f02e8ae21bb`; the first rendering (§9.12) is superseded.
+
+**Format acceptance, one call per route, before the run.**
+- Routes and teams: ChatGPT (GPT-6.1 Sol (low)), Claude (Claude Opus 5.5 (on)) and Gemini on Antigravity (Gemini 3.8
+  Flash (low)).
+- One prediction call each, on `smoke-0012`. That is the first contact position with at least 10 legal plays of
+  `positions/smoke.jsonl`, outside the v2 100 and outside every shared set (v1, new, Nackgammon, opening control, Kimi
+  first look, extension).
+- The calls are stored in `smoke/stage-b-acceptance.db` and are not stage B data.
+- They check acceptance only: the provider answers the request with a response the runner reads. The answer's content is
+  never used to change the prompt.
+- If a route rejects the format, the fix is written here before the run.
+
+**Retries, one run, no re-ask.**
+- The runner's default is 3 retries per send (league logs: "gave up after 4 attempts").
+- Stage B runs with `--retries 2`: at most 2 retries of network and server errors (no response, 408, 429, 5xx) per call,
+  counted over every send of the call. That includes the Antigravity route's fallback endpoint.
+- A client error (other 4xx) is final at once. A 401/403 credential refresh resends once, as in the leagues; it is not a
+  transport retry.
+- One run per team: `jevgammon predict --retries 2` (one prediction per position; a stored row, even a failed one, is
+  never asked again), then `jevgammon ask --repeats 5 --once --retries 2` (`--once`: no stored answer is asked again,
+  failed included).
+- No rerun afterwards and no re-ask of invalid answers. If a process stops mid-run, a restart asks only the calls never
+  stored, and the report says so.
+- Store: `smoke/close-choices-b.db` (tables `predictions` and `answers`), not `v3.db`.

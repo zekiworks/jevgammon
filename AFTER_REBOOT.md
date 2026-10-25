@@ -19,3 +19,11 @@ Running before it: league2 (last matches), league2early (Argon (off) early start
 3. Gemma stage B: a third session for the play calls with no stored answer needs Can's OK and a Method addendum first. Same skip check (dry run on a copy of the store).
 - league2early: `systemd-run --user --unit=league2early --working-directory=$HOME/code/jevgammon bash -c 'tools/v3/run_league2_early.sh >> league2-early.log 2>&1'`
 - Gemma stage B session 3 (only after Can's OK + Method addendum): same command as session 2, `jevgammon-ccb2/target/release/jevgammon ask --config leagues/close-choices-b-gemma.json --positions positions/close-choices-b-v2.jsonl --out smoke/close-choices-b.db --repeats 5 --once --retries 2` (it skips stored answers).
+
+## Third reboot (Oct 25, after 13:40 UTC; GPU fault)
+
+Cause: 13:05:40 UTC GPU 2 (PCI e1:00) fell off the bus (Xid 79); the driver marked the others "Node Reboot Required" (Xid 154). Qwen died 13:06 and would not restart ("CUDA unknown error"). Gemma (GPU 0) kept serving League 2.
+Done before it: Method §9.13 third-session addendum live (13:32 UTC, commit e17fcc9, deployed 13:35); skip dry run passed (455 asked, 45 stored untouched); 5-team stage B report written (`mailbox/Close choices - stage B results (5 teams).md`). Fixed snapshot.py name clash (143ab65) that had broken the update loop.
+1. Gemma (GPU 0), Qwen (GPU 1) as above; bus claim. `reset-failed` and restart `league2`, `league2early` as above.
+2. Start Gemma stage B session 3 (NOT started yet), unit `ccb-gemma-s3`, same command as session 2 with "session 3" in the echo lines and log `smoke/close-choices-b-gemma-session3.log`. If anything was stored meanwhile (it should not be), re-run the dry run first.
+3. Then: Gemma section in the stage B report (three-session note), Method live status, round 3 request, round-2 log (see the Round2Finish2 task list).

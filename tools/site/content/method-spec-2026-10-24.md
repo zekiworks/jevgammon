@@ -507,3 +507,17 @@ league settings unchanged. Gemma 4 31B (on) and any changed team join after the 
 - This replaces, for these 477 calls only, the line above "If the server goes down before the run ends, nothing is
   asked again". The report gives both sessions' start and end times separately, and Gemma's results in their own
   section with this two-session note.
+
+#### 9.13 addendum (2026-10-25, 13:32 UTC): Gemma 4 31B (on), third session (Can's approval; written before its first call)
+
+- Session 2 (started 12:08:07 UTC) was cut by a second bariton reboot (~12:20 UTC) with 45 of 500 Gemma play answers
+  stored (23 from the first session, 22 from the second; all valid). The last stored answer is from 12:17:53 UTC; the
+  machine's last log entry before it went down is from 12:18:02 UTC. Up to 4 calls were in flight; no response to them
+  was received or stored.
+- The remaining calls with no stored answer (455) are completed in session 3 (approved by Can, 2026-10-25). Stored
+  answers are kept; nothing is re-asked. Session 3 runs the same binary, config, flags, positions, store and
+  option-order seed as session 2 (`jevgammon ask --repeats 5 --once --retries 2`, at most 4 calls in flight), on the
+  same Gemma server (GPU 0 behind the roster's proxy URL, same image, weights and arguments, restarted after the
+  reboot). `--once` skips every stored (position, repeat). Each play call's seed comes from (position, repeat).
+- The report gives the three sessions' start and end times separately, and Gemma's results in their own section with
+  this three-session note.

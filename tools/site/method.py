@@ -620,8 +620,8 @@ def _close(t: dict) -> str:
     return _section("close-choices", "Close choices", f"""
 <p class="note"><strong>Stage A: results published (Confidence tab, model pages, Every decision filter). Stage B:
   the 5 subscription teams are done (2026-10-25, 10:23–11:02 UTC). Gemma 4 31B (on), on its League 2 server: interrupted
-  by a reboot of its server at about 11:46 UTC after 100 predictions and 23 of 500 play calls; the 477 play calls never stored
-  are being completed in a second session (approved by Can, 2026-10-25). Changed teams after the ladder settles.</strong></p>
+  by reboots of its server at about 11:46 UTC (after 100 predictions and 23 of 500 play calls) and about 12:20 UTC (45 of 500
+  play calls stored); the 455 play calls never stored are being completed in a third session (approved by Can, 2026-10-25). Changed teams after the ladder settles.</strong></p>
 <p><strong>{esc(c["definition"])}</strong> {esc(c["label"])} The rules below were fixed and committed on
   {esc(c["fixed_on"][:10])} before any close-choice number was computed. Inspired by <a href="https://arxiv.org/abs/2610.21006">"Can LLMs Anticipate Their
   Cruxes?"</a>. They describe the probabilities a setup gave; they say nothing about how it reasoned or why it chose.</p>
@@ -656,8 +656,8 @@ def _close(t: dict) -> str:
 </ul>
 {_h3("close-choices-b", "Stage B: does a setup know where it hesitates? (running)")}
 <p>The 5 subscription teams are done (2026-10-25, 10:23–11:02 UTC). Gemma 4 31B (on), on its League 2 server: interrupted
-  by a reboot of its server at about 11:46 UTC after 100 predictions and 23 of 500 play calls; the 477 play calls never stored
-  are being completed in a second session (approved by Can, 2026-10-25). Changed teams after the ladder settles. Results
+  by reboots of its server at about 11:46 UTC (after 100 predictions and 23 of 500 play calls) and about 12:20 UTC (45 of 500
+  play calls stored); the 455 play calls never stored are being completed in a third session (approved by Can, 2026-10-25). Changed teams after the ladder settles. Results
   are published after the run is complete. The positions and the scoring rules were fixed on 2026-10-24, before
   any stage B call; the run conditions below on 2026-10-25.</p>
 <ul>

@@ -99,11 +99,14 @@ def pair_matches(conn) -> dict[frozenset, dict]:
     return out
 
 
-def played_in(conn, match: dict) -> list[int]:
-    """The leagues a stored match was played in: both players were participants when it started."""
-    return [r[0] for r in conn.execute(
-        """SELECT a.league_id FROM league_players a JOIN players pa ON pa.id = a.player_id
+def played_in(conn, match: dict) -> list[str]:
+    """The leagues a stored match was played in (both players were participants when it started), as
+    labels; a hidden league (`leagues.hidden`) is an early start for a coming round."""
+    hidden = "COALESCE(l.hidden, 0)" if "hidden" in {r[1] for r in conn.execute("PRAGMA table_info(leagues)")} else "0"
+    return [f"early start, hidden league #{lid}" if is_hidden else short(lid) for lid, is_hidden in conn.execute(
+        f"""SELECT a.league_id, {hidden} FROM league_players a JOIN players pa ON pa.id = a.player_id
            JOIN league_players b ON b.league_id = a.league_id JOIN players pb ON pb.id = b.player_id
+           JOIN leagues l ON l.id = a.league_id
            WHERE pa.name = ? AND pb.name = ?
              AND a.joined_at <= ? AND (a.left_at IS NULL OR a.left_at > ?)
              AND b.joined_at <= ? AND (b.left_at IS NULL OR b.left_at > ?)
@@ -463,7 +466,7 @@ def request(conn, plan: dict, db: Path) -> str:
     for r in reused:
         m = r["match"]
         result = f"{m['a']} {m['score1']}-{m['score2']} {m['b']}"
-        where = ", ".join(short(x) for x in r["played_in"]) or "outside the leagues"
+        where = ", ".join(r["played_in"]) or "outside the leagues"
         out.append(f"| {short(r['league'])} | {r['a']} v {r['b']} | #{m['id']} ({m['started_at'][:10]}) | {where} | {result} |")
     out += ["", "## Scheduling order", "",
             "API and subscription pairings first (no GPU), then the GPU pairings in blocks: each block needs one "

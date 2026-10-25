@@ -353,7 +353,11 @@ CREATE TABLE IF NOT EXISTS leagues (
     -- 0: game 2 starts after game 1 and shows the score after it.
     mirror_concurrent INTEGER,
     -- How a new match's dice seed is chosen (`SEED_RULE`).
-    seed_rule       TEXT
+    seed_rule       TEXT,
+    -- 1: left out of the site, the dashboard and the ladder tools (`Scope::hidden`).
+    hidden          INTEGER,
+    -- Only this participant's pairs are played (`Scope::only_pairs_of`); NULL: every pair.
+    only_pairs_of   TEXT
 );
 
 -- One row per setup: the name is the identity a league table shows.
@@ -407,7 +411,7 @@ JOIN players p2 ON p2.id = m.player2
 ";
 
 /// Columns added after the first release, for databases created before them.
-const ADDED_COLUMNS: [(&str, &str, &str); 39] = [
+const ADDED_COLUMNS: [(&str, &str, &str); 41] = [
     ("matches", "clock_seconds", "INTEGER"),
     ("turns", "clock_ms", "INTEGER"),
     ("matches", "delay_seconds", "INTEGER"),
@@ -447,6 +451,8 @@ const ADDED_COLUMNS: [(&str, &str, &str); 39] = [
     ("matches", "voided_at", "TEXT"),
     ("matches", "failed_at", "TEXT"),
     ("leagues", "seed_rule", "TEXT"),
+    ("leagues", "hidden", "INTEGER"),
+    ("leagues", "only_pairs_of", "TEXT"),
 ];
 
 pub struct Db {
@@ -457,6 +463,19 @@ pub struct LeagueRow {
     /// Orders the founding participants' round robin.
     pub seed: u64,
     pub rules: Rules,
+    pub scope: Scope,
+}
+
+/// Which pairs a league plays and who sees it. The default is a normal league: every pair,
+/// shown everywhere.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Scope {
+    /// Play only this participant's pairs (an early start of a setup's matches for a coming
+    /// ladder round); the other pairs of the league are neither played nor waited for.
+    pub only_pairs_of: Option<String>,
+    /// Left out of the site, the dashboard and the ladder tools: its matches still count
+    /// wherever both players meet, as every match does.
+    pub hidden: bool,
 }
 
 /// A current participant of a league.
@@ -965,14 +984,20 @@ impl Db {
     }
 
     /// A new league with `players` as its founding participants (in entry order); one
-    /// transaction.
+    /// transaction. `scope.only_pairs_of` must be one of them.
     pub fn create_league(
         &mut self,
         seed: u64,
         rules: &Rules,
         players: &[PlayerConfig],
         note: Option<&str>,
+        scope: &Scope,
     ) -> Result<i64> {
+        if let Some(name) = &scope.only_pairs_of
+            && !players.iter().any(|p| &p.name == name)
+        {
+            bail!("only_pairs_of: `{name}` is not a player of the league");
+        }
         let tx = self.conn.transaction()?;
         let started_at = now();
         let mut values: Vec<rusqlite::types::Value> = vec![
@@ -980,13 +1005,15 @@ impl Db {
             (seed as i64).into(),
             note.map(str::to_owned).into(),
             SEED_RULE.to_owned().into(),
+            i64::from(scope.hidden).into(),
+            scope.only_pairs_of.clone().into(),
         ];
         values.extend(rules.values());
         tx.execute(
-            "INSERT INTO leagues (started_at, seed, note, seed_rule, status, rounds,
-                                  clock_seconds, delay_seconds, max_turns, prompt_version,
-                                  order_seed, mirror_concurrent)
-             VALUES (?1, ?2, ?3, ?4, 'running', ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+            "INSERT INTO leagues (started_at, seed, note, seed_rule, hidden, only_pairs_of, status,
+                                  rounds, clock_seconds, delay_seconds, max_turns,
+                                  prompt_version, order_seed, mirror_concurrent)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'running', ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
             rusqlite::params_from_iter(values),
         )?;
         let id = tx.last_insert_rowid();
@@ -1005,7 +1032,7 @@ impl Db {
         self.conn
             .query_row(
                 "SELECT seed, rounds, clock_seconds, delay_seconds, max_turns, prompt_version,
-                        order_seed, mirror_concurrent
+                        order_seed, mirror_concurrent, hidden, only_pairs_of
                  FROM leagues WHERE id = ?1",
                 params![league_id],
                 |row| {
@@ -1019,6 +1046,10 @@ impl Db {
                             prompt_version: row.get(5)?,
                             order_seed: row.get::<_, Option<i64>>(6)?.map(|s| s as u64),
                             mirror_concurrent: row.get::<_, Option<bool>>(7)?.unwrap_or(false),
+                        },
+                        scope: Scope {
+                            hidden: row.get::<_, Option<bool>>(8)?.unwrap_or(false),
+                            only_pairs_of: row.get(9)?,
                         },
                     })
                 },

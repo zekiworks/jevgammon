@@ -35,7 +35,7 @@ from decisions_export import PAGE_SIZE as DECISION_PAGE
 
 sys.path.insert(0, str(ROOT / "tools"))
 from league_web import (error_rates, last_activity, league_fixtures, league_state, league_table,  # noqa: E402
-                        participants, tiebreak_rates)
+                        participants, shown, tiebreak_rates)
 
 SCALE = T["equity_scale"]
 PHASES = ["opening", "contact", "holding", "race", "bear-off"]
@@ -89,7 +89,7 @@ def load_leagues(snap: Path, plays_dir: Path) -> dict:
     plays = load_plays(plays_dir)
     leagues = []
     rates = tiebreak_rates(error_rates(conn, plays_dir))
-    for row in conn.execute("SELECT * FROM leagues ORDER BY id").fetchall():
+    for row in conn.execute(f"SELECT * FROM leagues WHERE {shown(conn)} ORDER BY id").fetchall():
         lid = row["id"]
         roster = [p["settings"] for p in participants(conn, lid)]
         names = [m["name"] for m in roster]

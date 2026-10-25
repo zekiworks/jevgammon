@@ -1,0 +1,359 @@
+{
+  "note": "Early start for round 3, approved by Can (2026-10-25): Gemini 4 Argon (off)'s League 2 pairs of ladder round 3, played before round 2 ends. Hidden league (not on the site, the dashboard or the ladder tools); only Argon (off)'s pairs are played. Opponents: the League 2 members staying in round 3 plus Jev 1.14.0 (joining League 2 in round 3); Gemini 3.8 Flash (low) and Qwen3.8-27B (off) are skipped (Can). League 2's rules (so League 2's dice); stored pairs are reused. Roster settings unchanged.",
+  "prompt_version": "bg-v2",
+  "seed": 8637860750269043463,
+  "order_seed": 1190975713392774006,
+  "rounds": 3,
+  "clock": 0,
+  "delay": 30,
+  "max_turns": 300,
+  "mirror_concurrent": true,
+  "only_pairs_of": "Gemini 4 Argon (off)",
+  "hidden": true,
+  "players": [
+    {
+      "name": "Gemini 4 Argon (off)",
+      "spec": "antigravity/gemini-4-argon",
+      "provider": "antigravity-subscription",
+      "reasoning": "low",
+      "price": {
+        "input_per_mtok": 2.0,
+        "output_per_mtok": 10.0
+      },
+      "note": "thinking level low, the lowest (spends no reasoning tokens), labelled off. Google Antigravity subscription (Google AI Ultra, OMP's login; Antigravity model id gemini-4-argon-low; modelVersion gemini-4-argon); cost is API-list-price equivalent. Smoke check (10 positions x 2): same play as the Gemini API answers in 15 of 20 (Antigravity against itself 9 of 10), no reasoning tokens either way; list price $2/$10 per million tokens until 2026-12-01 ($4/$20 after)",
+      "parallel": 4
+    },
+    {
+      "name": "Gemini 3.8 Flash (high)",
+      "spec": "antigravity/gemini-3.8-flash",
+      "provider": "antigravity-subscription",
+      "reasoning": "high",
+      "price": {
+        "input_per_mtok": 0.75,
+        "output_per_mtok": 3.75
+      },
+      "note": "Google Antigravity subscription (Google AI Ultra, OMP's login; Antigravity model id gemini-3.8-flash-high) from 2026-10-19 12:46 UTC; its first League 2 decision came then: until then it waited, not ready, for a Gemini API key the league never had. Same model (modelVersion gemini-3.8-flash), prompt, thinking level and enum-constrained letter as the gemini/ smoke setup; cost is API-list-price equivalent. Smoke check (10 positions x 2): same play as the Gemini API answers in 19 of 20",
+      "parallel": 4
+    },
+    {
+      "name": "Claude Sonnet 5.5 (low)",
+      "spec": "anthropic/claude-sonnet-5-5",
+      "provider": "claude-subscription",
+      "reasoning": "low",
+      "price": {
+        "input_per_mtok": 2.0,
+        "output_per_mtok": 10.0
+      },
+      "note": "subscription login; cost is API-list-price equivalent",
+      "parallel": 4
+    },
+    {
+      "name": "Claude Sonnet 5.5 (high)",
+      "spec": "anthropic/claude-sonnet-5-5",
+      "provider": "claude-subscription",
+      "reasoning": "high",
+      "price": {
+        "input_per_mtok": 2.0,
+        "output_per_mtok": 10.0
+      },
+      "note": "subscription login; cost is API-list-price equivalent",
+      "parallel": 4
+    },
+    {
+      "name": "DeepSeek V4.1 Flash (off)",
+      "spec": "openai-compatible/deepseek/deepseek-v4.1-flash",
+      "provider": "openrouter:fireworks",
+      "base_url": "https://openrouter.ai/api/v1",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "request": {
+        "provider": {
+          "order": [
+            "fireworks"
+          ],
+          "allow_fallbacks": false,
+          "require_parameters": true
+        },
+        "usage": {
+          "include": true
+        },
+        "reasoning": {
+          "enabled": false
+        }
+      },
+      "top_logprobs": 5,
+      "letter_readout": "answer",
+      "price": {
+        "input_per_mtok": 0.3,
+        "output_per_mtok": 1.2
+      },
+      "note": "Fireworks via OpenRouter; quantization not published; top_logprobs max 5; from 2026-10-20 21:56 UTC our SGLang server, thinking switched with chat_template_kwargs.thinking (false); top_logprobs kept at 5 as on Fireworks; price stays Fireworks' list price via OpenRouter, for comparison; no requests-per-minute cap locally (OpenRouter's was 18); from 2026-10-22 15:37 UTC back on Fireworks via OpenRouter (provider pinned: order [fireworks], allow_fallbacks false, require_parameters true; usage included), the entry as before 2026-10-20 21:56 UTC (rpm 18), so that bariton's GPUs serve the reasoning players for League 2's last matches; turns.provider shows where each decision ran",
+      "device": "Fireworks via OpenRouter until 2026-10-20 20:09 UTC; from 2026-10-20 21:56 UTC our own SGLang server on bariton's four RTX PRO 6000 (TP4/EP4, ~/code/deepseek-v4.1-flash-4x-rtx-pro-6000, launcher defaults: NVMe Engram offload with 64 GiB DDR5 cache, memory share 0.85, DSpark speculation, context 409,600), served name deepseek-v4.1-flash, checkpoint DeepSeek-V4.1-Flash-1017 @ 1bae0e10 (the launcher pins the 2026-10-17 revision; which revision Fireworks serves is not published), weights as published: FP4 routed experts, FP8/BF16 other weights, FP8 Engram; 20 stored Fireworks (off) requests (random from the last 400) replayed: local same top letter 16/20 and 17/20 in two runs (max |dp| 0.49, median 0.09; the local server is not deterministic, |dp| about 0.1 between runs), Fireworks against its own stored answers 18/20 (max |dp| 0.18), so local is within Fireworks' own spread; paused 2026-10-21 01:22-05:33 UTC (its four GPUs served the thinking players), then the same server again; 20 stored Fireworks (off) requests replayed: same top letter 17/20 (max |dp| 0.47, median 0.10); from 2026-10-22 15:37 UTC Fireworks via OpenRouter again",
+      "parallel": 8,
+      "rpm": 18
+    },
+    {
+      "name": "DeepSeek V4.1 Flash (on)",
+      "spec": "openai-compatible/deepseek/deepseek-v4.1-flash",
+      "provider": "openrouter:fireworks",
+      "base_url": "https://openrouter.ai/api/v1",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "reasoning": "low",
+      "request": {
+        "provider": {
+          "order": [
+            "fireworks"
+          ],
+          "allow_fallbacks": false,
+          "require_parameters": true
+        },
+        "usage": {
+          "include": true
+        }
+      },
+      "top_logprobs": 5,
+      "letter_readout": "answer",
+      "price": {
+        "input_per_mtok": 0.3,
+        "output_per_mtok": 1.2
+      },
+      "note": "reasoning effort low; letter logprobs read from the answer after reasoning; from 2026-10-20 21:56 UTC our SGLang server, thinking switched with chat_template_kwargs.thinking (true, reasoning_effort low); top_logprobs kept at 5 as on Fireworks; price stays Fireworks' list price via OpenRouter, for comparison; no requests-per-minute cap locally (OpenRouter's was 18); from 2026-10-22 15:37 UTC back on Fireworks via OpenRouter (provider pinned: order [fireworks], allow_fallbacks false, require_parameters true; usage included), the entry as before 2026-10-20 21:56 UTC (rpm 18), so that bariton's GPUs serve the reasoning players for League 2's last matches; turns.provider shows where each decision ran",
+      "device": "Fireworks via OpenRouter until 2026-10-20 20:09 UTC; from 2026-10-20 21:56 UTC our own SGLang server on bariton's four RTX PRO 6000 (TP4/EP4, ~/code/deepseek-v4.1-flash-4x-rtx-pro-6000, launcher defaults: NVMe Engram offload with 64 GiB DDR5 cache, memory share 0.85, DSpark speculation, context 409,600), served name deepseek-v4.1-flash, checkpoint DeepSeek-V4.1-Flash-1017 @ 1bae0e10 (the launcher pins the 2026-10-17 revision; which revision Fireworks serves is not published), weights as published: FP4 routed experts, FP8/BF16 other weights, FP8 Engram; 20 stored Fireworks (off) requests (random from the last 400) replayed: local same top letter 16/20 and 17/20 in two runs (max |dp| 0.49, median 0.09; the local server is not deterministic, |dp| about 0.1 between runs), Fireworks against its own stored answers 18/20 (max |dp| 0.18), so local is within Fireworks' own spread; paused 2026-10-21 01:22-05:33 UTC (its four GPUs served the thinking players), then the same server again; 20 stored Fireworks (off) requests replayed: same top letter 17/20 (max |dp| 0.47, median 0.10); from 05:57 UTC 16 decisions in flight (was 8); from 2026-10-22 15:37 UTC Fireworks via OpenRouter again",
+      "parallel": 8,
+      "rpm": 18
+    },
+    {
+      "name": "GLM-5.3 (on)",
+      "spec": "openai-compatible/z-ai/glm-5.3",
+      "provider": "openrouter:fireworks",
+      "base_url": "https://openrouter.ai/api/v1",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "reasoning": "low",
+      "request": {
+        "provider": {
+          "order": [
+            "fireworks"
+          ],
+          "allow_fallbacks": false,
+          "require_parameters": true
+        },
+        "usage": {
+          "include": true
+        }
+      },
+      "top_logprobs": 5,
+      "letter_readout": "answer",
+      "price": {
+        "input_per_mtok": 1.4,
+        "output_per_mtok": 4.4
+      },
+      "note": "reasoning is mandatory on this endpoint, so no off setup; effort low",
+      "parallel": 8,
+      "rpm": 18
+    },
+    {
+      "name": "GNUbg weak",
+      "spec": "gnubg-weak",
+      "provider": "local",
+      "note": "gnubg 1.08 Beginner level (0-ply, deterministic noise 0.060)",
+      "parallel": 1
+    },
+    {
+      "name": "Qwen3.8 Flash (off)",
+      "spec": "openai-compatible/qwen/qwen3.8-flash",
+      "provider": "openrouter:alibaba",
+      "base_url": "https://openrouter.ai/api/v1",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "request": {
+        "provider": {
+          "order": [
+            "alibaba"
+          ],
+          "allow_fallbacks": false,
+          "require_parameters": true
+        },
+        "usage": {
+          "include": true
+        },
+        "reasoning": {
+          "enabled": false
+        }
+      },
+      "top_logprobs": 5,
+      "letter_readout": "answer",
+      "price": {
+        "input_per_mtok": 0.15,
+        "output_per_mtok": 0.47
+      },
+      "note": "Alibaba via OpenRouter (only provider); replaces Qwen3.8 Flash Next, which is not on OpenRouter; quantization not published",
+      "parallel": 8,
+      "rpm": 18
+    },
+    {
+      "name": "Gemma 4 31B (on)",
+      "spec": "local/gemma-4-31B-it",
+      "provider": "local-vllm",
+      "quantization": "fp8 (bf16 checkpoint quantized by vLLM at load; fp8 KV cache)",
+      "base_url": "http://127.0.0.1:8894/v1",
+      "reasoning": "template default",
+      "request": {
+        "chat_template_kwargs": {
+          "enable_thinking": true
+        },
+        "reasoning_effort": null
+      },
+      "max_tokens": 24000,
+      "note": "thinking on (enable_thinking); no effort knob, template default",
+      "device": "RTX PRO 6000 (bariton): one GPU until 2026-10-16 11:11 UTC, then three replicas (GPUs 0, 1, 3, same image and arguments) behind a least-busy proxy at the same URL; from 2026-10-19 18:36 UTC one server on NVIDIA GB10 (DGX Spark spark-194d, next to Decider), same image, checkpoint and arguments (memory share 0.45); from 2026-10-19 22:26 UTC back on RTX PRO 6000 (bariton GPU 0): one replica (memory share 0.85, 24 sequences, 194,617-token FP8 KV cache) behind the least-busy proxy at http://127.0.0.1:8894/v1, same image, checkpoint and arguments; 20 stored League 2 (off) requests replayed there: same play 20/20, max |dp| 0.08; paused 2026-10-20; from 2026-10-20 20:16 UTC bariton GPU 0 again, same replica and proxy; from 2026-10-20 21:10 UTC NVIDIA GB10 (DGX Spark spark-194d) again, as on 2026-10-19 (memory share 0.45, 24 sequences), next to LFM2.5-24B-A2B, while bariton's four GPUs serve DeepSeek V4.1 Flash; 20 stored League 2 (off) requests (bariton) replayed there: same top letter 20/20, max |dp| 0.50, median 0.0000; from 2026-10-21 01:25 UTC back on bariton GPU 0 (overnight replica + proxy), same script and arguments, while DeepSeek V4.1 Flash is paused (its four GPUs freed for League 2's non-DeepSeek thinking matches); 20 stored (off) requests: same top letter 19/20, max |dp| 0.65; from 2026-10-21 05:00 UTC NVIDIA GB10 (DGX Spark spark-194d) again, the same server as from 2026-10-20 21:10 UTC, while DeepSeek V4.1 Flash plays its last matches on bariton; from 2026-10-22 15:37 UTC back on RTX PRO 6000 (bariton GPUs 0 and 1): two replicas (memory share 0.85, 24 sequences each) behind the least-busy proxy at http://127.0.0.1:8894/v1, same image, checkpoint and arguments; 20 stored League 2 (off) requests replayed there: same play 20/20, max |dp| 0.044, median 0.0000; paused 2026-10-22 16:20 UTC; from 2026-10-22 22:59 UTC bariton GPUs 0 and 1 again: the same two replicas (memory share 0.85, 24 sequences each) behind the least-busy proxy at http://127.0.0.1:8894/v1, same script, image, checkpoint and arguments as from 15:37 UTC; from 2026-10-23 21:31 UTC (ladder round 1) bariton GPU 1: one replica (memory share 0.85, 24 sequences) behind the least-busy proxy at http://127.0.0.1:8894/v1, same script, image, checkpoint and arguments (GEMMA_GPUS=1); 2026-10-23 22:36 UTC the GPU fell off the bus (Xid 79) and the server died; matches deferred until bariton is reset; from 2026-10-25 07:55 UTC (ladder round 2) bariton GPU 0: one replica (memory share 0.85, 24 sequences) behind the proxy at http://127.0.0.1:8894/v1, same script, image, checkpoint and arguments (GEMMA_GPUS=0)",
+      "parallel": 24,
+      "max_matches": 16
+    },
+    {
+      "name": "Gemma 4 31B (off)",
+      "spec": "local/gemma-4-31B-it",
+      "provider": "local-vllm",
+      "quantization": "fp8 (bf16 checkpoint quantized by vLLM at load; fp8 KV cache)",
+      "base_url": "http://127.0.0.1:8894/v1",
+      "request": {
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        }
+      },
+      "note": "thinking off; vLLM on our GPUs",
+      "device": "RTX PRO 6000 (bariton): one GPU until 2026-10-16 11:11 UTC, then three replicas (GPUs 0, 1, 3, same image and arguments) behind a least-busy proxy at the same URL; from 2026-10-19 18:36 UTC one server on NVIDIA GB10 (DGX Spark spark-194d, next to Decider), same image, checkpoint and arguments (memory share 0.45); from 2026-10-19 22:26 UTC back on RTX PRO 6000 (bariton GPU 0): one replica (memory share 0.85, 24 sequences, 194,617-token FP8 KV cache) behind the least-busy proxy at http://127.0.0.1:8894/v1, same image, checkpoint and arguments; 20 stored League 2 (off) requests replayed there: same play 20/20, max |dp| 0.08; paused 2026-10-20; from 2026-10-20 20:16 UTC bariton GPU 0 again, same replica and proxy; from 2026-10-20 21:10 UTC NVIDIA GB10 (DGX Spark spark-194d) again, as on 2026-10-19 (memory share 0.45, 24 sequences), next to LFM2.5-24B-A2B, while bariton's four GPUs serve DeepSeek V4.1 Flash; 20 stored League 2 (off) requests (bariton) replayed there: same top letter 20/20, max |dp| 0.50, median 0.0000; from 2026-10-21 01:25 UTC back on bariton GPU 0 (overnight replica + proxy), same script and arguments, while DeepSeek V4.1 Flash is paused (its four GPUs freed for League 2's non-DeepSeek thinking matches); 20 stored (off) requests: same top letter 19/20, max |dp| 0.65; from 2026-10-21 05:00 UTC NVIDIA GB10 (DGX Spark spark-194d) again, the same server as from 2026-10-20 21:10 UTC, while DeepSeek V4.1 Flash plays its last matches on bariton; from 2026-10-22 15:37 UTC back on RTX PRO 6000 (bariton GPUs 0 and 1): two replicas (memory share 0.85, 24 sequences each) behind the least-busy proxy at http://127.0.0.1:8894/v1, same image, checkpoint and arguments; 20 stored League 2 (off) requests replayed there: same play 20/20, max |dp| 0.044, median 0.0000; paused 2026-10-22 16:20 UTC; from 2026-10-22 22:59 UTC bariton GPUs 0 and 1 again: the same two replicas (memory share 0.85, 24 sequences each) behind the least-busy proxy at http://127.0.0.1:8894/v1, same script, image, checkpoint and arguments as from 15:37 UTC; from 2026-10-23 21:31 UTC (ladder round 1) bariton GPU 1: one replica (memory share 0.85, 24 sequences) behind the least-busy proxy at http://127.0.0.1:8894/v1, same script, image, checkpoint and arguments (GEMMA_GPUS=1); 2026-10-23 22:36 UTC the GPU fell off the bus (Xid 79) and the server died; matches deferred until bariton is reset; from 2026-10-25 07:55 UTC (ladder round 2) bariton GPU 0: one replica (memory share 0.85, 24 sequences) behind the proxy at http://127.0.0.1:8894/v1, same script, image, checkpoint and arguments (GEMMA_GPUS=0)",
+      "parallel": 4
+    },
+    {
+      "name": "Qwen3.8-27B (on)",
+      "spec": "openai-compatible/qwen3.8-27b",
+      "provider": "local-vllm",
+      "quantization": "fp16 (bf16 checkpoint served in fp16 by vLLM; fp16 KV cache)",
+      "base_url": "http://127.0.0.1:8897/v1",
+      "reasoning": "low",
+      "request": {
+        "chat_template_kwargs": {
+          "enable_thinking": true
+        },
+        "response_format": null
+      },
+      "letter_readout": "prefill",
+      "note": "reasoning effort low (the chat template's reasoning_effort); Cerebras (fp16 via OpenRouter) before 2026-10-19 22:26 UTC, where it finished no match; from then vLLM on our GPU (tools/v3/servers/qwen38-27b.sh), letter read after the reasoning from a prefilled Answer:; smoke (5 positions): all answered with probabilities, 484-10,211 reasoning tokens, about 27 tokens/s per request",
+      "device": "Cerebras (OpenRouter) until 2026-10-19 22:26 UTC; then RTX PRO 6000 (bariton GPU 1), the whole GPU (memory share 0.90, 32 sequences); paused 2026-10-20 (GPUs needed elsewhere); from 2026-10-20 20:16 UTC bariton GPU 3 (same model of GPU, image, checkpoint and arguments); from 2026-10-20 21:10 UTC NVIDIA GB10 (DGX Spark spark-002e), same image, checkpoint and arguments except memory share 0.85, while bariton's four GPUs serve DeepSeek V4.1 Flash; 20 stored League 2 (off) requests (bariton) replayed there: same top letter 20/20, max |dp| 0.005, median 0.002; from 2026-10-21 01:25 UTC back on bariton GPU 3, same script and arguments, while DeepSeek V4.1 Flash is paused (its four GPUs freed for League 2's non-DeepSeek thinking matches); 20 stored (off) requests: same top letter 20/20, max |dp| 0.009; from 2026-10-21 05:00 UTC NVIDIA GB10 (DGX Spark spark-002e) again, the same server as from 2026-10-20 21:10 UTC, while DeepSeek V4.1 Flash plays its last matches on bariton; from 2026-10-22 15:37 UTC back on RTX PRO 6000 (bariton GPU 3), same image, checkpoint and arguments (memory share 0.90); 20 stored League 2 (off) requests replayed there: same top letter 20/20, max |dp| 0.007, median 0.0008; from 2026-10-23 21:34 UTC (ladder round 1) bariton GPU 0, same script, image, checkpoint and arguments (QWEN27_GPU=0); 2026-10-23 23:09 UTC the server died (CUDA unknown error after another GPU fell off the bus); matches deferred until bariton is reset; from 2026-10-25 09:49 UTC (ladder round 2) bariton GPU 1 (QWEN27_GPU=1), same script, image, checkpoint and arguments",
+      "parallel": 16,
+      "max_matches": 16
+    },
+    {
+      "name": "Liquid d1-ultra",
+      "spec": "liquid/d1-ultra",
+      "provider": "liquid",
+      "price": {
+        "input_per_mtok": 0.042,
+        "output_per_mtok": 0.0
+      },
+      "note": "Liquid AI decisions API, paid tier; list price $0.042 per million input tokens (liquid.ai/blog/d1-ultra, 2026-10-15)",
+      "parallel": 2
+    },
+    {
+      "name": "Claude Fable 5.1 (off)",
+      "spec": "anthropic/claude-fable-5-1",
+      "provider": "claude-subscription",
+      "reasoning": "low",
+      "price": {
+        "input_per_mtok": 10.0,
+        "output_per_mtok": 50.0
+      },
+      "note": "claude-fable-5-1, the newest Fable the subscription serves; effort low, the lowest it accepts (thinking disabled is rejected: adaptive thinking only), labelled off. Claude subscription; subscription login; cost is API-list-price equivalent",
+      "parallel": 4
+    },
+    {
+      "name": "Fastino GLiDE",
+      "spec": "fastino",
+      "provider": "fastino",
+      "note": "Fastino's hosted System One API; key added 2026-10-20"
+    },
+    {
+      "name": "Grok 4.7 (off)",
+      "spec": "xai/grok-4.7",
+      "provider": "xai-subscription",
+      "reasoning": "low",
+      "price": {
+        "input_per_mtok": 2.0,
+        "output_per_mtok": 6.0
+      },
+      "note": "reasoning effort low, the lowest grok-4.7 takes (none is rejected; minimal is served as low), labelled off: it still reasons. xAI subscription (SuperGrok, OMP's xai-oauth login) on api.x.ai Responses API, letter constrained by JSON schema; subscription login; cost is API-list-price equivalent",
+      "parallel": 4
+    },
+    {
+      "name": "DeepSeek V4.1 Flash 1017 (off)",
+      "spec": "openai-compatible/deepseek/deepseek-v4.1-flash-1017",
+      "provider": "openrouter:deepseek",
+      "base_url": "https://openrouter.ai/api/v1",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "request": {
+        "provider": {
+          "order": [
+            "deepseek"
+          ],
+          "allow_fallbacks": false,
+          "require_parameters": true
+        },
+        "usage": {
+          "include": true
+        },
+        "reasoning": {
+          "enabled": false
+        },
+        "response_format": null
+      },
+      "top_logprobs": 5,
+      "letter_readout": "answer",
+      "price": {
+        "input_per_mtok": 0.15,
+        "output_per_mtok": 0.6
+      },
+      "note": "reasoning off (request.reasoning.enabled false); DeepSeek first-party via OpenRouter (model deepseek/deepseek-v4.1-flash-1017, the 2026-10-17 snapshot; provider pinned: order [deepseek], allow_fallbacks false, require_parameters true; usage included); quantization not published; top_logprobs 5; price $0.15 / $0.60 per M tokens in/out (cache read $0.003), OpenRouter endpoint list 2026-10-24; late League 2 entry; provider trains on paid prompts; allowed by Can, 2026-10-24; DeepSeek's endpoint takes no JSON schema (structured outputs), so from 2026-10-24 20:35 UTC no response_format is sent (request.response_format null): the answer letter is read from free text, as with logprobs; none of its decisions were played before",
+      "parallel": 8,
+      "rpm": 18
+    },
+    {
+      "name": "DeepSeek V4.1 Flash 1017 (on)",
+      "spec": "openai-compatible/deepseek/deepseek-v4.1-flash-1017",
+      "provider": "openrouter:deepseek",
+      "base_url": "https://openrouter.ai/api/v1",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "reasoning": "low",
+      "request": {
+        "provider": {
+          "order": [
+            "deepseek"
+          ],
+          "allow_fallbacks": false,
+          "require_parameters": true
+        },
+        "usage": {
+          "include": true
+        },
+        "response_format": null
+      },
+      "top_logprobs": 5,
+      "letter_readout": "answer",
+      "price": {
+        "input_per_mtok": 0.15,
+        "output_per_mtok": 0.6
+      },
+      "note": "reasoning effort low; letter logprobs read from the answer after reasoning; DeepSeek first-party via OpenRouter (model deepseek/deepseek-v4.1-flash-1017, the 2026-10-17 snapshot; provider pinned: order [deepseek], allow_fallbacks false, require_parameters true; usage included); quantization not published; top_logprobs 5; price $0.15 / $0.60 per M tokens in/out (cache read $0.003), OpenRouter endpoint list 2026-10-24; late League 2 entry; provider trains on paid prompts; allowed by Can, 2026-10-24; DeepSeek's endpoint takes no JSON schema (structured outputs), so from 2026-10-24 20:35 UTC no response_format is sent (request.response_format null): the answer letter is read from free text, as with logprobs; none of its decisions were played before",
+      "parallel": 8,
+      "rpm": 18
+    },
+    {
+      "name": "Jev 1.14.0",
+      "spec": "jev/jev-1.14.0",
+      "provider": "jev",
+      "price": {
+        "input_per_mtok": 0.042,
+        "output_per_mtok": 0.0
+      },
+      "note": "TypeSafe System One API; list price $0.042 per million input tokens, the same as 1.13.0 (docs.typesafe.ai/models, 2026-10-16)",
+      "parallel": 2
+    }
+  ]
+}

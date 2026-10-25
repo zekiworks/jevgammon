@@ -202,6 +202,15 @@ def participants(conn: sqlite3.Connection, lid: int) -> list[dict]:
     ]
 
 
+def shown(conn: sqlite3.Connection, alias: str = "") -> str:
+    """SQL condition on `leagues` (as `alias`) that leaves out hidden leagues (`leagues.hidden`,
+    e.g. an early start of a setup's matches for the next ladder round): the dashboard, the site
+    and the ladder tools never show them. True on databases from before the column."""
+    if "hidden" not in {r[1] for r in conn.execute("PRAGMA table_info(leagues)")}:
+        return "1"
+    return f"COALESCE({alias}hidden, 0) = 0"
+
+
 MATCH_FIELDS = """m.id AS match_id, m.player1, m.player2, m.seed, m.valid, m.void_reason, m.stage, m.label,
                   m.status, m.score1, m.score2, m.winner, m.rounds_played, m.rounds_planned, m.error,
                   m.started_at, m.finished_at,
@@ -225,10 +234,11 @@ def matches_between(conn: sqlite3.Connection, ids: list[int]) -> list[dict]:
 
 def league_fixtures(conn: sqlite3.Connection, league: sqlite3.Row) -> tuple[list[dict], dict[int, list[int]]]:
     """The league's fixture as the runner derives it (`league::derive_fixture`): every pair of
-    current participants with its valid match (played in this league or anywhere else); and games won
-    per match. A match played in this league (both players were already its participants when it
-    started) keeps the matchday and label it was played under; the other pairs take the derived
-    matchday. Matchday order, the derived pair order within a matchday."""
+    current participants with its valid match (played in this league or anywhere else), only the
+    pairs of `leagues.only_pairs_of` when it is set (`league::in_scope`); and games won per match.
+    A match played in this league (both players were already its participants when it started)
+    keeps the matchday and label it was played under; the other pairs take the derived matchday.
+    Matchday order, the derived pair order within a matchday."""
     people = participants(conn, league["id"])
     ids = [p["id"] for p in people]
     rules = league_rules(league)
@@ -243,8 +253,11 @@ def league_fixtures(conn: sqlite3.Connection, league: sqlite3.Row) -> tuple[list
     empty = dict.fromkeys(("match_id", "status", "score1", "score2", "winner", "rounds_played", "rounds_planned",
                            "error", "started_at", "finished_at", "deferred_error", "deferred_at"))
     fixtures = []
+    only = league["only_pairs_of"] if "only_pairs_of" in league.keys() else None
     for order, (day, i, j) in enumerate(pair_order(people, league["seed"])):
         a, b = people[i], people[j]
+        if only is not None and only not in (a["name"], b["name"]):
+            continue
         entry = by_pair.get((min(a["id"], b["id"]), max(a["id"], b["id"])), {})
         known = entry.get("valid") or entry.get("void")
         if known:
@@ -471,8 +484,10 @@ def origins(db: Path, league_id: int) -> dict[str, int]:
 
 def snapshot(db: Path, league_id: int | None, scores: Path | None = None) -> dict:
     with connect(db) as conn:
+        hide = shown(conn)
         league = conn.execute(
-            "SELECT * FROM leagues WHERE id = ?" if league_id else "SELECT * FROM leagues ORDER BY id DESC LIMIT 1",
+            f"SELECT * FROM leagues WHERE id = ? AND {hide}" if league_id
+            else f"SELECT * FROM leagues WHERE {hide} ORDER BY id DESC LIMIT 1",
             (league_id,) if league_id else (),
         ).fetchone()
         if league is None:
@@ -611,7 +626,7 @@ def history(db: Path, scores: Path | None = None) -> dict:
     leagues = []
     with connect(db) as conn:
         rates = dashboard_rates(conn, scores)
-        for league in conn.execute("SELECT * FROM leagues ORDER BY id DESC").fetchall():
+        for league in conn.execute(f"SELECT * FROM leagues WHERE {shown(conn)} ORDER BY id DESC").fetchall():
             lid = league["id"]
             roster = [p["settings"] for p in participants(conn, lid)]
             names = [c["name"] for c in roster]

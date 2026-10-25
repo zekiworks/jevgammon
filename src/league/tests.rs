@@ -303,13 +303,31 @@ fn same_pair_same_rules_same_seed_across_leagues() {
             .collect()
     };
     let one = db
-        .create_league(1, &rules(true), &players(&["A", "B", "C"]), None)
+        .create_league(
+            1,
+            &rules(true),
+            &players(&["A", "B", "C"]),
+            None,
+            &Scope::default(),
+        )
         .unwrap();
     let two = db
-        .create_league(2, &rules(true), &players(&["C", "D", "B"]), None)
+        .create_league(
+            2,
+            &rules(true),
+            &players(&["C", "D", "B"]),
+            None,
+            &Scope::default(),
+        )
         .unwrap();
     let three = db
-        .create_league(3, &rules(false), &players(&["B", "C"]), None)
+        .create_league(
+            3,
+            &rules(false),
+            &players(&["B", "C"]),
+            None,
+            &Scope::default(),
+        )
         .unwrap();
     let pair = |id: i64| {
         let row = db.league(id).unwrap();
@@ -340,6 +358,7 @@ fn local_league(path: &std::path::Path, id: i64) -> Arc<League> {
         id,
         seed: row.seed,
         rules: row.rules.clone(),
+        only_pairs_of: row.scope.only_pairs_of.clone(),
         names: RwLock::new(Vec::new()),
         ids: RwLock::new(HashMap::new()),
         players: RwLock::new(HashMap::new()),
@@ -409,7 +428,7 @@ async fn late_join_plays_only_new_pairs() {
         .map(|n| PlayerConfig::new(n, "random"))
         .collect();
     let id = db
-        .create_league(7, &rules(true), &models, Some("test."))
+        .create_league(7, &rules(true), &models, Some("test."), &Scope::default())
         .unwrap();
     play_out(&path, id).await;
     let before = stored_matches(&path);
@@ -476,10 +495,22 @@ async fn a_mover_plays_only_pairs_it_never_played() {
     };
     // G is in both leagues, as GNUbg weak is; the leagues play different formats.
     let lower = db
-        .create_league(1, &rules(false), &players(&["A", "B", "G"]), None)
+        .create_league(
+            1,
+            &rules(false),
+            &players(&["A", "B", "G"]),
+            None,
+            &Scope::default(),
+        )
         .unwrap();
     let upper = db
-        .create_league(2, &rules(true), &players(&["C", "D", "G"]), None)
+        .create_league(
+            2,
+            &rules(true),
+            &players(&["C", "D", "G"]),
+            None,
+            &Scope::default(),
+        )
         .unwrap();
     play_out(&path, lower).await;
     play_out(&path, upper).await;
@@ -541,6 +572,79 @@ async fn a_mover_plays_only_pairs_it_never_played() {
     let _ = std::fs::remove_file(&path);
 }
 
+/// An early start (`Scope`): a league that plays only one setup's pairs plays exactly those
+/// it never played, under its rules (the same dice as any league with the same rules), and
+/// neither plays nor waits for the other pairs; its matches count later in the league the
+/// setup joins, which then has nothing left to play for it.
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn an_early_start_plays_only_its_setups_pairs() {
+    let path = temp_db("early");
+    let mut db = Db::open(&path).unwrap();
+    let players = |names: &[&str]| -> Vec<PlayerConfig> {
+        names
+            .iter()
+            .map(|n| PlayerConfig::new(n, "random"))
+            .collect()
+    };
+    let main = db
+        .create_league(
+            1,
+            &rules(true),
+            &players(&["A", "B", "C"]),
+            None,
+            &Scope::default(),
+        )
+        .unwrap();
+    play_out(&path, main).await;
+    assert_eq!(stored_matches(&path).len(), 3);
+
+    let scope = Scope {
+        only_pairs_of: Some("X".into()),
+        hidden: true,
+    };
+    // The setup must be one of the players.
+    assert!(
+        db.create_league(1, &rules(true), &players(&["A", "B"]), None, &scope)
+            .is_err()
+    );
+    // E is a newcomer too: its pairs with A, B and C stay unplayed.
+    let early = db
+        .create_league(
+            1,
+            &rules(true),
+            &players(&["A", "B", "C", "E", "X"]),
+            None,
+            &scope,
+        )
+        .unwrap();
+    assert_eq!(db.league(early).unwrap().scope, scope);
+    let after = play_out(&path, early).await;
+    assert_eq!(after.fixtures.len(), 4);
+    assert_eq!(after.played.len(), 4);
+    let stored = stored_matches(&path);
+    assert_eq!(stored.len(), 7);
+    for (_, one, two, seed, valid) in &stored[3..] {
+        assert!(*valid && (one == "X") != (two == "X"), "{one} v {two}");
+        assert_eq!(*seed as u64, rules(true).pair_seed(one, two));
+        assert_eq!(rules(true).sides(one, two), (one.as_str(), two.as_str()));
+    }
+    let table = standings(&db, early).unwrap();
+    let played = |name: &str| table.iter().find(|r| r.name == name).unwrap().counts[0];
+    assert_eq!((played("X"), played("E"), played("A")), (4, 1, 1));
+
+    // The ladder later moves X into the main league: its pairs there are already played.
+    let addition = add_player(
+        &mut db,
+        main,
+        &PlayerConfig::new("X", "random"),
+        "2026-10-25",
+    )
+    .unwrap();
+    assert!(addition.fixtures.is_empty(), "{:?}", addition.fixtures);
+    drop(db);
+    let _ = std::fs::remove_file(&path);
+}
+
 /// Error rates come from the score shards: 500 × mean loss over a setup's scored decisions
 /// in valid matches; decisions skipped by GNUbg and decisions not scored yet are counted
 /// apart, and a voided match's decisions are left out.
@@ -552,7 +656,9 @@ async fn error_rates_come_from_the_score_shards_of_valid_matches() {
         .iter()
         .map(|n| PlayerConfig::new(n, "random"))
         .collect();
-    let id = db.create_league(5, &rules(true), &models, None).unwrap();
+    let id = db
+        .create_league(5, &rules(true), &models, None, &Scope::default())
+        .unwrap();
     play_out(&path, id).await;
     let decisions = |name: &str| -> Vec<i64> {
         let mut statement = db
@@ -636,7 +742,9 @@ async fn void_replays_the_pair() {
         .iter()
         .map(|n| PlayerConfig::new(n, "random"))
         .collect();
-    let id = db.create_league(3, &rules(false), &models, None).unwrap();
+    let id = db
+        .create_league(3, &rules(false), &models, None, &Scope::default())
+        .unwrap();
     play_out(&path, id).await;
     let before = stored_matches(&path);
     let voided = before[1].clone();
@@ -722,7 +830,9 @@ async fn a_failing_model_backs_off_while_the_others_play_on_and_its_matches_resu
         .iter()
         .map(|n| PlayerConfig::new(n, "random"))
         .collect();
-    let id = db.create_league(5, &rules(true), &models, None).unwrap();
+    let id = db
+        .create_league(5, &rules(true), &models, None, &Scope::default())
+        .unwrap();
     let fail = Arc::new(std::sync::atomic::AtomicBool::new(true));
     let setup = Setup::new(std::env::temp_dir(), "http://127.0.0.1:9/v1".into());
     let league = || {

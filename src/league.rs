@@ -9,7 +9,9 @@
 //! matchday. A match that fails is deferred and resumed later from its last stored turn;
 //! only the failing model backs off, the others play on. The table ranks by points, then
 //! more games won, then fewer games lost, then the lower error rate over all of a setup's
-//! valid matches (`scores`); there are no playoffs.
+//! valid matches (`scores`); there are no playoffs. A league can play only one setup's pairs
+//! (an early start of its matches for a coming ladder round) and be hidden from the site,
+//! the dashboard and the ladder tools (`Scope`).
 
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
@@ -22,7 +24,7 @@ use serde::Deserialize;
 use tokio::sync::mpsc;
 use tokio::task::JoinSet;
 
-use crate::db::{Db, MatchRow, NewMatch, Participant, Rules};
+use crate::db::{Db, MatchRow, NewMatch, Participant, Rules, Scope};
 use crate::dice::{Dice, derive_seed};
 use crate::players::prompt::PromptVersion;
 use crate::players::{Player, PlayerConfig, Setup};
@@ -52,6 +54,7 @@ pub enum Start {
         rules: Rules,
         /// What this league tests; shown in the history.
         note: Option<String>,
+        scope: Scope,
     },
     Resume(i64),
 }
@@ -76,6 +79,10 @@ pub struct LeagueConfig {
     /// at the start of the round.
     pub mirror_concurrent: Option<bool>,
     pub note: Option<String>,
+    /// Play only this player's pairs (`Scope::only_pairs_of`); every pair when left out.
+    pub only_pairs_of: Option<String>,
+    /// Leave the league out of the site, the dashboard and the ladder tools (default false).
+    pub hidden: Option<bool>,
 }
 
 impl LeagueConfig {
@@ -96,6 +103,8 @@ struct League {
     /// Orders the founders' round robin.
     seed: u64,
     rules: Rules,
+    /// Play only this participant's pairs (`Scope::only_pairs_of`).
+    only_pairs_of: Option<String>,
     /// Current participants in join order.
     names: RwLock<Vec<String>>,
     /// Player ids of the current participants by name.
@@ -595,6 +604,17 @@ fn derive_fixture(
         .collect()
 }
 
+/// The pairs a league plays: every derived pair, or only those of `only_pairs_of`.
+fn in_scope(fixtures: Vec<Fixture>, only_pairs_of: Option<&str>) -> Vec<Fixture> {
+    match only_pairs_of {
+        None => fixtures,
+        Some(name) => fixtures
+            .into_iter()
+            .filter(|f| f.model1 == name || f.model2 == name)
+            .collect(),
+    }
+}
+
 pub async fn run(
     db_path: PathBuf,
     setup: &Setup,
@@ -632,7 +652,8 @@ async fn run_inner(
             seed,
             rules,
             note,
-        } => db.create_league(seed, &rules, &models, note.as_deref())?,
+            scope,
+        } => db.create_league(seed, &rules, &models, note.as_deref(), &scope)?,
         Start::Resume(id) => {
             let activity = db.league_activity(id)?;
             if activity.playing() {
@@ -685,6 +706,7 @@ async fn run_inner(
         id,
         seed: row.seed,
         rules: row.rules.clone(),
+        only_pairs_of: row.scope.only_pairs_of.clone(),
         names: RwLock::new(Vec::new()),
         ids: RwLock::new(HashMap::new()),
         players: RwLock::new(HashMap::new()),
@@ -721,6 +743,12 @@ async fn run_inner(
         },
         db_path.display()
     );
+    if let Some(name) = &league.only_pairs_of {
+        println!("only the pairs of {name} are played");
+    }
+    if row.scope.hidden {
+        println!("hidden: left out of the site, the dashboard and the ladder tools");
+    }
     for participant in db.participants(id)? {
         let config = &participant.config;
         println!(
@@ -992,7 +1020,10 @@ impl State {
         }
         let ids: Vec<i64> = participants.iter().map(|p| p.player_id).collect();
         let matches = db.matches_between(&ids)?;
-        let fixtures = derive_fixture(league.seed, &league.rules, &participants, &matches);
+        let fixtures = in_scope(
+            derive_fixture(league.seed, &league.rules, &participants, &matches),
+            league.only_pairs_of.as_deref(),
+        );
         self.played.clear();
         self.pending.clear();
         self.skipped = 0;
@@ -1045,21 +1076,21 @@ impl State {
     }
 }
 
-/// The unplayed league pairs of `name` in league `id`, as labels in fixture order.
+/// The unplayed league pairs of `name` in league `id` (within the league's scope), as labels
+/// in fixture order.
 fn open_pairs(db: &Db, id: i64, name: &str) -> Result<Vec<String>> {
     let row = db.league(id)?;
     let participants = db.participants(id)?;
     let ids: Vec<i64> = participants.iter().map(|p| p.player_id).collect();
     let matches = db.matches_between(&ids)?;
-    Ok(
-        derive_fixture(row.seed, &row.rules, &participants, &matches)
-            .into_iter()
-            .filter(|f| {
-                (f.model1 == name || f.model2 == name) && f.status.as_deref() != Some("finished")
-            })
-            .map(|f| f.label)
-            .collect(),
+    Ok(in_scope(
+        derive_fixture(row.seed, &row.rules, &participants, &matches),
+        row.scope.only_pairs_of.as_deref(),
     )
+    .into_iter()
+    .filter(|f| (f.model1 == name || f.model2 == name) && f.status.as_deref() != Some("finished"))
+    .map(|f| f.label)
+    .collect())
 }
 
 /// What `add_player` did.
@@ -1304,13 +1335,17 @@ pub fn tiebreak_rates(all: &HashMap<String, scores::ErrorRate>) -> HashMap<Strin
 }
 
 /// League `id`'s table rows as the runner ranks them, from the valid finished matches between
-/// its current participants (from any league), with `rates` for the tiebreak.
+/// its current participants (from any league) within the league's scope, with `rates` for the
+/// tiebreak.
 fn league_rows(db: &Db, id: i64, rates: &HashMap<String, f64>) -> Result<Vec<Row>> {
     let row = db.league(id)?;
     let participants = db.participants(id)?;
     let ids: Vec<i64> = participants.iter().map(|p| p.player_id).collect();
     let matches = db.matches_between(&ids)?;
-    let fixtures = derive_fixture(row.seed, &row.rules, &participants, &matches);
+    let fixtures = in_scope(
+        derive_fixture(row.seed, &row.rules, &participants, &matches),
+        row.scope.only_pairs_of.as_deref(),
+    );
     let mut played = Vec::new();
     for fixture in fixtures {
         if let Some(match_id) = fixture.match_id

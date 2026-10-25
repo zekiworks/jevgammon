@@ -292,8 +292,8 @@ struct LeagueArgs {
     models: Vec<String>,
     /// League config file (JSON): players with spec, provider, quantization, reasoning,
     /// request fields, price, parallel and max_matches, plus optional seed, order_seed,
-    /// prompt_version, rounds, clock, delay, max_turns, mirror_concurrent and note, which
-    /// override the command line.
+    /// prompt_version, rounds, clock, delay, max_turns, mirror_concurrent, note,
+    /// only_pairs_of and hidden, which override the command line.
     #[arg(long, conflicts_with_all = ["models", "resume"])]
     config: Option<PathBuf>,
     /// Continue a stopped league from this database; its models, rounds, clock, seeds and
@@ -316,6 +316,14 @@ struct LeagueArgs {
     /// the round (game 2 otherwise starts after game 1 and shows the score after it).
     #[arg(long, conflicts_with = "resume")]
     mirror_concurrent: bool,
+    /// Play only this player's pairs (e.g. an early start of a setup's matches for the
+    /// next ladder round); the league's other pairs are neither played nor waited for.
+    #[arg(long, conflicts_with = "resume")]
+    only_pairs_of: Option<String>,
+    /// Leave the league out of the site, the dashboard and the ladder tools; its matches
+    /// still count wherever both players meet.
+    #[arg(long, conflicts_with = "resume")]
+    hidden: bool,
     /// The site's GNUbg score shards (s*.db) for the error-rate tiebreak; default:
     /// $XDG_STATE_HOME/bg-site/plays.
     #[arg(long, env = "JEVGAMMON_SCORES")]
@@ -506,6 +514,10 @@ async fn run_league(args: LeagueArgs) -> Result<()> {
                     config.mirror_concurrent.unwrap_or(args.mirror_concurrent),
                 ),
                 note: config.note.or(args.note),
+                scope: db::Scope {
+                    only_pairs_of: config.only_pairs_of.or(args.only_pairs_of),
+                    hidden: config.hidden.unwrap_or(args.hidden),
+                },
             }
         }
         (None, None) => {
@@ -529,6 +541,10 @@ async fn run_league(args: LeagueArgs) -> Result<()> {
                     args.mirror_concurrent,
                 ),
                 note: args.note,
+                scope: db::Scope {
+                    only_pairs_of: args.only_pairs_of,
+                    hidden: args.hidden,
+                },
             }
         }
     };

@@ -349,3 +349,77 @@ scored position is reported as deterministic on these positions; settings are ne
 | No trade-off / holding | 24 | 4 | new-0447, new-0591, new-0537, new-0430 |
 | No trade-off / race | 200 | 4 | new-0679, new-0618, new-0626, new-0706 |
 | No trade-off / bear-off | 200 | 4 | new-0999, new-0814, new-0801, new-0919 |
+
+### 9.12 Stage B prediction request (2026-10-25; built and tested offline, no model call; approved, not run)
+
+Ümit's instruction of 2026-10-25 (ZEKI-BG-CLOSE-CHOICES-1563831405077725236): stage B no longer waits for the
+ladder. The run waits for confirmation with Can. Gemma 4 31B (on) and any changed team join after the ladder settles.
+
+**Teams.** Each name resolves to exactly one `v3.db` roster row. Its settings are copied unchanged into
+`leagues/close-choices-b.json` (they equal the League 2 and 3 config entries):
+
+| Team | Roster id | Spec | Route | Model id sent | Setting | Temperature |
+| --- | --- | --- | --- | --- | --- | --- |
+| GPT-6.1 Sol (low) | 23 | `openai/gpt-6.1-sol` | ChatGPT subscription, Codex Responses API | `gpt-6.1-sol` | reasoning effort low | none sent; not disclosed |
+| GPT-6.1 Sol (high) | 45 | `openai/gpt-6.1-sol` | same | `gpt-6.1-sol` | reasoning effort high | none sent; not disclosed |
+| GPT-6 Astra (on) | 47 | `openai/gpt-6-astra` | same | `gpt-6-astra` | reasoning effort medium (the model's default) | none sent; not disclosed |
+| Gemini 3.8 Flash (low) | 17 | `antigravity/gemini-3.8-flash` | Google Antigravity subscription (generateContent) | `gemini-3.8-flash-low` | thinking level low | 1.0, sent |
+| Claude Opus 5.5 (on) | 34 | `anthropic/claude-opus-5-5` | Claude subscription, Messages API | `claude-opus-5-5` | effort high (default, adaptive thinking) | none sent; 1.0 is Anthropic's documented default |
+
+The match context shown is that of Leagues 2 and 3: prompt `bg-v2`, option-order seed 1190975713392774006, 3 rounds,
+no clock, 300 turns.
+
+**Prediction request.** `prompt::prediction_user` returns the play call's user text (`letter_user`: the state, the
+instructions and the options lettered in the stored order). Only its last line, the letter instruction, is replaced by
+`prompts/prediction.txt`:
+- the request's question, verbatim;
+- on the next line, the approved format line: "Answer with the features you name, using only these words: hitting
+  risk, making a point, the race, the prime; or the single word none."
+
+Everything else is the play call's:
+- the system prompt (Cygnet's letter-readout system prompt, as in the leagues);
+- the model id, reasoning or thinking setting, temperature (or none), token limit and configured extra fields.
+
+**Answer constraint.** As with the letter, the provider constrains the answer:
+- ChatGPT and Claude: JSON schema `{"features": [...]}`, each item one of the four feature words or `none`.
+- Gemini: `application/json` with the same object schema.
+
+The schema does not exclude duplicates, or `none` together with a feature; the parser judges those.
+
+**Parsing (`prompt::parse_prediction`; no repair, no re-ask).**
+- Valid answers:
+  - JSON `{"features": [...]}` with no other key, or a bare JSON list, optionally after `<think>` reasoning or inside a
+    code fence;
+  - every item one of the four words or `none`, case and outer spaces ignored;
+  - duplicates collapse.
+  - `none` alone, or an empty list, is the valid empty set.
+- Invalid answers: `none` with a feature, an unknown or non-string item, prose (including a bare `none` that is not
+  JSON), a refusal, or an empty reply.
+- A failed request is final.
+- Mapping to the §9.5 feature ids: hitting risk → hitting, making a point → points, the race → race,
+  the prime → prime.
+
+**Run commands.**
+- `jevgammon predict`: one prediction call per team and position, into table `predictions`. A stored row, valid,
+  invalid or failed, is never asked again.
+- `jevgammon ask --repeats 5`: the five play calls, the league request unchanged. It is run once per team and not
+  rerun, so a failed play call stays failed.
+- The prediction is never shown to a play call; every call is a separate, stateless request.
+
+**Offline checks (2026-10-25, harness `ef991ab`).**
+- Unit tests, 63 passing:
+  - the prediction prompt differs from the letter prompt only in its last line;
+  - on every route the prediction body keeps every play setting;
+  - synthetic answers parse as above;
+  - synthetic Codex, Claude and Antigravity replies parse.
+- `jevgammon render-stage-b` rebuilt the stored smoke requests of these exact settings byte for byte:
+  - Gemini 3.8 Flash (low) [antigravity]: 50 of 50;
+  - GPT-6.1 Sol (low) and (high): 50 of 50 each, with that run's clock;
+  - GPT-6 Astra (on) and Claude Opus 5.5 (on): 10 of 10 each.
+- Rendered for the 5 teams × the 100 v2 positions: 500 play requests and 500 prediction requests, with option orders
+  equal to the stored ones and no other difference between play and prediction.
+  - The record is `freeze/close-choices-b-v2-requests.json`, with the file `freeze/close-choices-b-v2-requests.jsonl.gz`
+    (jsonl sha256 `0e551aecc353f00fe750f54a6297231cc5a1846d433ad4cc96eaea2f007a898b`).
+  - It holds one sha256 per request and one per team.
+
+**Not checked offline:** whether each provider accepts the prediction schema. That can only be seen in a response.

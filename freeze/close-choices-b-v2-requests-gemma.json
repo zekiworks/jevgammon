@@ -1,0 +1,424 @@
+{
+ "set": "close-choices-b-v2 rendered prediction requests, Gemma 4 31B (on) (offline, no request sent)",
+ "rendered_at": "2026-10-25T10:27:04Z",
+ "harness_commit": "f3de5350594039fa682056230a1d9291ad571b1b",
+ "command": "jevgammon render-stage-b --config leagues/close-choices-b-gemma.json --positions positions/close-choices-b-v2.jsonl",
+ "config": {
+  "file": "leagues/close-choices-b-gemma.json",
+  "sha256": "2ef1a9797fdd50081d12b8a0a803258ffaedd2eb122e103528dea45608e1bda1"
+ },
+ "positions": {
+  "file": "positions/close-choices-b-v2.jsonl",
+  "sha256": "88bc3904595c6dccc3f6fe015e865b7b23e3ed81b9be1ad8d1e7efcf5848410c"
+ },
+ "note": "Play calls on this route are the league's two-step letter-probability readout (reasoning request, then a prefilled one-token logprobs request); they are built at run time and not rendered here.",
+ "output": {
+  "file": "freeze/close-choices-b-v2-requests-gemma.jsonl.gz",
+  "jsonl_sha256": "7b4b37854caa8b26b825d44588cd1fc0fcd8e6541d7ca4780425c316414eb235",
+  "gz_sha256": "dc850554cc02644b0fa4b08eb9564cc2d1786e89411cc45a47ed38ee0b19ba03",
+  "lines": 100
+ },
+ "prediction_hashes_sha256": "77b101335a905229073dab349e665efe82af1531ab511a6e6fd41f6c918e7244",
+ "requests": [
+  {
+   "position_id": "new-0002",
+   "prediction_sha256": "de1ecdd0afc1379f3646875a854d09feb551eb2f0e78b7a39b79a8ae476bc1b6"
+  },
+  {
+   "position_id": "new-0007",
+   "prediction_sha256": "3efd3063e50433f09f6c45ad7ace26d538ff1b292a629583f7b2670ee8ab7662"
+  },
+  {
+   "position_id": "new-0009",
+   "prediction_sha256": "4604a941d3fad9f7c5c7b82e33ae0092141716dfb44d78a4bed2e8284950defa"
+  },
+  {
+   "position_id": "new-0016",
+   "prediction_sha256": "dfbb52ffcd64bf897212430f3befac5316e29547d36e189f35101bb4e379f58b"
+  },
+  {
+   "position_id": "new-0024",
+   "prediction_sha256": "4ee5ddc97133ae0c43c9b860efc2f9d7600f4ff509837b55bc7a53f4cb4e19d1"
+  },
+  {
+   "position_id": "new-0040",
+   "prediction_sha256": "289a6b91ce2f6d799334b4f563b63feca6caf2184f3e579ed40b006315635aca"
+  },
+  {
+   "position_id": "new-0041",
+   "prediction_sha256": "e989a145c2c4294b70747b55288c7a10c82832ff2fd98bd64875ce6db30bd034"
+  },
+  {
+   "position_id": "new-0043",
+   "prediction_sha256": "f5aa52db5687b072edfcb2ac4f17383df64564b56f0758df1449d32e1d008d9f"
+  },
+  {
+   "position_id": "new-0046",
+   "prediction_sha256": "30ad9a1f9c4f60b2932c34cb612b63507b85716d20202f198cd29217c32857c1"
+  },
+  {
+   "position_id": "new-0050",
+   "prediction_sha256": "f82a528929c46e9a3d7cf64bbb74e38ff47011df55a2be074e42300516228a0b"
+  },
+  {
+   "position_id": "new-0053",
+   "prediction_sha256": "c80eb5ad783f46186172a02fdc3c129f989ce6151f1d0fd735e33b3005f6a8b0"
+  },
+  {
+   "position_id": "new-0062",
+   "prediction_sha256": "03b3edac22ac109892571d8525db161050cf73373b78206877938e1371938f31"
+  },
+  {
+   "position_id": "new-0069",
+   "prediction_sha256": "04ae4587043638794d124b8f2daae69a8811027701cf9c0af0fe955251568aa2"
+  },
+  {
+   "position_id": "new-0070",
+   "prediction_sha256": "a23ae492a8d00def17f35a82d808e57a3fbd5f5e3f01d1caf928dbaca4610290"
+  },
+  {
+   "position_id": "new-0092",
+   "prediction_sha256": "0e380d60d25126185824d1334724d80ef4b660ee63eb98ae012141b2cdba3f9b"
+  },
+  {
+   "position_id": "new-0107",
+   "prediction_sha256": "414fc777bd85ccde65bdbe53b834f124dc80a8ce22e19c55d17395bff52d9028"
+  },
+  {
+   "position_id": "new-0111",
+   "prediction_sha256": "74f3370f840c3a59689633e0bcd8a7e1fbce9802822c32142afd9f1f9fe0a8f2"
+  },
+  {
+   "position_id": "new-0112",
+   "prediction_sha256": "f6728b15c27e2f50bea715632d7da3cd52eb2577cff1d8e40e71eb27fcb534c3"
+  },
+  {
+   "position_id": "new-0119",
+   "prediction_sha256": "89e42d56da3d99a0ed40fa1b3505c7b3bd9947d5db58067da8d229b91225a018"
+  },
+  {
+   "position_id": "new-0122",
+   "prediction_sha256": "0976dcc358d3402a923d44e3c79c4f0be0453511ebf3499fec6a06e8fada1d29"
+  },
+  {
+   "position_id": "new-0131",
+   "prediction_sha256": "deeb68ad922e3cf943719705f33a454426b97f504b883ffbd9ebe23e305388c3"
+  },
+  {
+   "position_id": "new-0147",
+   "prediction_sha256": "1404e5723510afda4d7432319a4f162b9739fa06b481740fd3a6f4e58fb979fc"
+  },
+  {
+   "position_id": "new-0149",
+   "prediction_sha256": "dfce8bc6a444fe0028cf8854eedd2882186193f5ee6eae3bdc8fd33d257c9523"
+  },
+  {
+   "position_id": "new-0155",
+   "prediction_sha256": "1b8e9c7c982fe7604e1f67137b4e8c70dc7a39f475f0e0d1924118fe00a411ee"
+  },
+  {
+   "position_id": "new-0156",
+   "prediction_sha256": "9e64e5047442a4bec0f31695a4c51d1b906b73910a03714647695bb5b8d4d2ec"
+  },
+  {
+   "position_id": "new-0160",
+   "prediction_sha256": "9b64e77f87a34a3f09eb09f87e00d4470eeeabf2236068118514b954c00c2c3b"
+  },
+  {
+   "position_id": "new-0165",
+   "prediction_sha256": "c0455bcc091f6647072f751945e7aa5c453d8d8630225d105e9e7427e4a0f7b5"
+  },
+  {
+   "position_id": "new-0175",
+   "prediction_sha256": "6bd3277d7e0d591e7acf165f74dabf0fcb65a5a30184f1ba811aa0742007d9ca"
+  },
+  {
+   "position_id": "new-0188",
+   "prediction_sha256": "4ee03dd079cf1ebc76456f5b634b85e5f16ccd619c25c1f4eb3eb8658f92359b"
+  },
+  {
+   "position_id": "new-0190",
+   "prediction_sha256": "3ee46b4b1774c0630585cee11304a969497fcd9be2dc94216c77c309615f4323"
+  },
+  {
+   "position_id": "new-0200",
+   "prediction_sha256": "2b1c6f772af559f4114f14d36c03c23149ac4878866ed3a5cf94d40228689be3"
+  },
+  {
+   "position_id": "new-0237",
+   "prediction_sha256": "3dabb65851ec3382ac5687feb58319171148a0b7e573c368e378a52125b9635f"
+  },
+  {
+   "position_id": "new-0239",
+   "prediction_sha256": "794abfe46ea90d1b92ad11e02a8ee6964f9ccef34b0b04de18906e66daa350c1"
+  },
+  {
+   "position_id": "new-0244",
+   "prediction_sha256": "b2fed189834a8f58788f3b92d27624811ccde36fcc8a9f0e474ece6723b6f33b"
+  },
+  {
+   "position_id": "new-0249",
+   "prediction_sha256": "2f44c2065a03f18b1f3fe6ab7d5c236d6051438eded4453fc569328e7a73f549"
+  },
+  {
+   "position_id": "new-0250",
+   "prediction_sha256": "8782ce14cc0f2e46b0af861596434b13e434ac4c7b015255c447231b5d0e18d8"
+  },
+  {
+   "position_id": "new-0254",
+   "prediction_sha256": "1d1e8fa1569a4a062d42d859e0dcab4d993b10d1720bb29df377b333ef69c74d"
+  },
+  {
+   "position_id": "new-0256",
+   "prediction_sha256": "3e4ce3fc2f59a8d7c52918e0c548fda8e3c8d7a1d20f2248ec9ae13ab83afef6"
+  },
+  {
+   "position_id": "new-0263",
+   "prediction_sha256": "b66dcc4a7632233148d61b46b9ee262f3876dce32f72c7785f86d2c5814ef833"
+  },
+  {
+   "position_id": "new-0264",
+   "prediction_sha256": "ce7920721ce707bb8bde4e2350162f34d140a1567cfb0bcc961d5da6dd891638"
+  },
+  {
+   "position_id": "new-0270",
+   "prediction_sha256": "f7e568984f344d8afc59b417794140db675c8f81e614d0e165a7fdaa12685446"
+  },
+  {
+   "position_id": "new-0274",
+   "prediction_sha256": "5fcb01e9dd33ea2e226d27c4673557c7172fa18a1cfeb82cbdaff5a530ea1acf"
+  },
+  {
+   "position_id": "new-0278",
+   "prediction_sha256": "cfab15f8abe954bd4fef0b59ef8c754ebab5203292bc1ca1e8d49108c3e14dc6"
+  },
+  {
+   "position_id": "new-0281",
+   "prediction_sha256": "c14f743a3601abce35a784f8cd371461bb4dbd3e08f83dff5dfd4d123a547bf9"
+  },
+  {
+   "position_id": "new-0297",
+   "prediction_sha256": "057a8548431dba1f726202fea8183331e688bf2c97d4bc021bf0705d4637e6ca"
+  },
+  {
+   "position_id": "new-0307",
+   "prediction_sha256": "4c6a52335675a8db31ee7a75a75707232ef98b8182642eff075a74027bbbd436"
+  },
+  {
+   "position_id": "new-0328",
+   "prediction_sha256": "68bad16fb5be85c084b17db035d7225b5c132fd0643ea53bfc4f7af09934b9ea"
+  },
+  {
+   "position_id": "new-0329",
+   "prediction_sha256": "d0f3787dfcaf7a7c9e247c86ebb77e5339d67bfe316086e4c5d80669e3000c04"
+  },
+  {
+   "position_id": "new-0330",
+   "prediction_sha256": "dd44019efd42c0459fd50a035ee15c7db726061c75efcafea9681248e776e9e7"
+  },
+  {
+   "position_id": "new-0331",
+   "prediction_sha256": "f99c623996aa0984032b59bcd9280218dd9a76c1844382cc87fd33f4f521ce08"
+  },
+  {
+   "position_id": "new-0337",
+   "prediction_sha256": "30cea09e57d92e3bac1c5e7690ff4e821036174073e2ade0f09a06542d6e0b25"
+  },
+  {
+   "position_id": "new-0344",
+   "prediction_sha256": "8614ffda8a6eefbd37b79bc1ea3395f4e01c21289de5cbafdac04d05ae90bebf"
+  },
+  {
+   "position_id": "new-0349",
+   "prediction_sha256": "46dbebfef4ce220485c635ac53529863ce8861993c07181c315d047f1184eeb6"
+  },
+  {
+   "position_id": "new-0353",
+   "prediction_sha256": "deaa41b053fb304d5bc486081900915496ea15a82de744532c41f8b15f424981"
+  },
+  {
+   "position_id": "new-0356",
+   "prediction_sha256": "aefdb4ecc66a1a496307f96a29807d022bbec7fe11fe5af58520551f15ec1d9d"
+  },
+  {
+   "position_id": "new-0361",
+   "prediction_sha256": "9b000353b4c910edcf11d79b45c7e23493d49de7fbfb492c90b781c53864b130"
+  },
+  {
+   "position_id": "new-0362",
+   "prediction_sha256": "4bb2c2b32418149d712a5c53c9275a1853ddef5543ccc25102f67572acc6afcb"
+  },
+  {
+   "position_id": "new-0371",
+   "prediction_sha256": "b0c5be905b0c445a856d3a59466e7b31708924aa5ce15eb16d0f1d0db471d9b9"
+  },
+  {
+   "position_id": "new-0377",
+   "prediction_sha256": "5de471c9c95187432cc479759830c9a3161b38e2b2609debad2a9df1b443f929"
+  },
+  {
+   "position_id": "new-0383",
+   "prediction_sha256": "77bf5270b21387b07851dbf3607b01f8ad6e89230179a4954858205291ea69a6"
+  },
+  {
+   "position_id": "new-0385",
+   "prediction_sha256": "2c3c57de77101917cc8972c44c51475a1290e11779e3a3183e3ed656c7d973ba"
+  },
+  {
+   "position_id": "new-0388",
+   "prediction_sha256": "165bf7879ce57f883de0b662290360eebcf80c142b112e243bd05ce3e9b6f58a"
+  },
+  {
+   "position_id": "new-0410",
+   "prediction_sha256": "45540849a134b3a8e8e8589dea4b443dd511b173d7664e722c2645da18fe0c9e"
+  },
+  {
+   "position_id": "new-0413",
+   "prediction_sha256": "358ca4eb29c2864ef61e8a53859a89fb421b37e4e1bd4196ee387cf2ae73f33b"
+  },
+  {
+   "position_id": "new-0422",
+   "prediction_sha256": "0e6caa4904c0b496df6c2ef83900854e42d826a015c31a494b353e6997b0a05e"
+  },
+  {
+   "position_id": "new-0430",
+   "prediction_sha256": "962397c04463569c02f4cb559e3050ecfaca312dc56d44a0fe2ed697bab5741e"
+  },
+  {
+   "position_id": "new-0447",
+   "prediction_sha256": "71b10de20f0333079cd8964a1e5b6b0ec3b3f7517c892ed625dcd7d13fe41df0"
+  },
+  {
+   "position_id": "new-0459",
+   "prediction_sha256": "85308997646f9f18f6eb4fc3167e664969a2c12dcf53ad1f64066d9c24e09bef"
+  },
+  {
+   "position_id": "new-0465",
+   "prediction_sha256": "c6c55c19bad77b5394eb0bbbbb9e4181b87886296317d75311aafeae412068f0"
+  },
+  {
+   "position_id": "new-0467",
+   "prediction_sha256": "2c8018dbb025a30a97ce89bff009980309384ced94aac20990954e33d3809cf4"
+  },
+  {
+   "position_id": "new-0469",
+   "prediction_sha256": "e76d14d30cc9e396c0d3dc6948c1cae0ca8c78aaa3b47921369bc051ce61aeaf"
+  },
+  {
+   "position_id": "new-0474",
+   "prediction_sha256": "3c657d01e418d0a7fc71a5587f2227358dc30e5b3ad118ab9132185d09b8d573"
+  },
+  {
+   "position_id": "new-0494",
+   "prediction_sha256": "87b3aae8df35255d5bedd0a9e52e1e6d46552c49c58197b456cee1824f5ec70d"
+  },
+  {
+   "position_id": "new-0511",
+   "prediction_sha256": "aad3ebc14b46ee2b46e28275c9180751fe6b59bfd31b11845a661e39999b807c"
+  },
+  {
+   "position_id": "new-0513",
+   "prediction_sha256": "1daa0bcd9a2ae8fb94e8f5c5367c1f31dabbe2d0d827403699f68caa39c926dd"
+  },
+  {
+   "position_id": "new-0518",
+   "prediction_sha256": "344d6fb7b502b70d0a6943a9b3d8f712dd3d9f8a02b8166754e3bd73d7eee147"
+  },
+  {
+   "position_id": "new-0525",
+   "prediction_sha256": "3c8f4950b68e1887df6eaaed3530e421d902fc7857fc0dc8dd72d02dfa216cbe"
+  },
+  {
+   "position_id": "new-0529",
+   "prediction_sha256": "506925446e7bf41a82b0305f93b31b9fc30cd81845f17f95c8ad181833bfaa64"
+  },
+  {
+   "position_id": "new-0532",
+   "prediction_sha256": "763f40f2415247fb927cf4c615adbc63bfe8dff1fe6a5c86778525a22b6e62ee"
+  },
+  {
+   "position_id": "new-0537",
+   "prediction_sha256": "b48523707337ab517ddbd5ca012049074a849289dc858132a4ff63988e2cf548"
+  },
+  {
+   "position_id": "new-0546",
+   "prediction_sha256": "06f9a759d7bf5dc43906b7315eff6a1a9e582273af35606bf1047060cc80686c"
+  },
+  {
+   "position_id": "new-0550",
+   "prediction_sha256": "f31ec231a8ed3f0bee640030cf56f2308955240b8c0e15e97218a33a3bd04e16"
+  },
+  {
+   "position_id": "new-0554",
+   "prediction_sha256": "4b3db63443e70731e7cbadb0ebd93ec1a6824f699450505bd0cb35ff6b2e3dbe"
+  },
+  {
+   "position_id": "new-0562",
+   "prediction_sha256": "2bf1c6bd220e5f5c331b7303cac8113871eb43de01885d1bb6adab53ec2c1a58"
+  },
+  {
+   "position_id": "new-0564",
+   "prediction_sha256": "d5330483df6ccdd2e60175be39cda3295b19e1c4a42ab52c1d6aec410e4d8b94"
+  },
+  {
+   "position_id": "new-0572",
+   "prediction_sha256": "b4f6833e8f8975ea5f1a481e4293c128a0edae62c449d5ccb2affa17722fae6f"
+  },
+  {
+   "position_id": "new-0575",
+   "prediction_sha256": "13d325fd83230e7ed64d2f54a6441a35fc14fb6796ae56dbf71723c525cf5499"
+  },
+  {
+   "position_id": "new-0582",
+   "prediction_sha256": "4e561685ba66f8223c451e7c01380dbbdad32124121d0760d2cb51ac69b4e553"
+  },
+  {
+   "position_id": "new-0588",
+   "prediction_sha256": "1c7eb6d26e13a4fc6bbab07e1560a08be82cbca58f3ca558ae436c2b9845c8dd"
+  },
+  {
+   "position_id": "new-0591",
+   "prediction_sha256": "0a7fa5c971463320d3b6d190f165d34614b8f1ca68a8d5d52b3c5881f74510bf"
+  },
+  {
+   "position_id": "new-0593",
+   "prediction_sha256": "9e6cb5575a94c95c11872bc7a9c9abec512955e12825e696b876206a7395cf5a"
+  },
+  {
+   "position_id": "new-0598",
+   "prediction_sha256": "9b9df43d6f2ee56634bbaa1d1deb89b4b15880d8733e298809dbd62342e1e638"
+  },
+  {
+   "position_id": "new-0618",
+   "prediction_sha256": "5ae7a86acadc3d58766f58b1471e1b1305a51f5a4a981925946e3f12a04a027d"
+  },
+  {
+   "position_id": "new-0626",
+   "prediction_sha256": "0dd8a004c1edaa001fe4769be52ade02d6d3142d265f200f2eeff15c6fb49f40"
+  },
+  {
+   "position_id": "new-0679",
+   "prediction_sha256": "c74e97ae5d0027f9e73c4e80f6d7b9e1c06a8ba0a178c127a28c43b066b38e22"
+  },
+  {
+   "position_id": "new-0706",
+   "prediction_sha256": "47f9c386e7c548b0740957b94e7294d68837bde2c1efbf91e290dfe15037bcdf"
+  },
+  {
+   "position_id": "new-0801",
+   "prediction_sha256": "c66f78ab148ffd392011115dcad634c55cdce495e24f8c89926dd6b8c34c0522"
+  },
+  {
+   "position_id": "new-0814",
+   "prediction_sha256": "e5dcad8f6498efea42d4e580271554b6d1258f639a0ea506366a51b99ba3f107"
+  },
+  {
+   "position_id": "new-0919",
+   "prediction_sha256": "86d296396fdd1c94a2ee85a9204074db5fd7c2f1310b6667556cba6c3a24c225"
+  },
+  {
+   "position_id": "new-0999",
+   "prediction_sha256": "efdcb0dc0a2ac493df7d586b404f06ebb3788ecc8b2169e90512c2fe817a3e39"
+  }
+ ]
+}

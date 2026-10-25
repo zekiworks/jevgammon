@@ -381,15 +381,16 @@ def _risk(t: dict, extra: dict) -> str:
     needless risks. An average over fewer than {_value(t["min_decisions_per_cell"])} decisions shows "{esc(TOO_FEW)}".</li>
   <li><strong>By phase</strong>: risk judgement per phase, on the <a href="../phases/">Phases</a> page and through the
     home page's Phase filter.</li>
-  <li><strong>Confidence on the call</strong> (setups with probabilities only): among risks taken, the ranking score
-    (AUROC) of confidence for "right risk", and the average confidence on missed risks. The confidence is the probability
-    a model gave its chosen play, not the probability that the risk beats the best safe play, so no calibration gap is
-    reported for risk calls. The calibration gap is reported only for the event the confidence stands for, the chosen
-    play being the engine's best (Confidence tab).</li>
+  <li><strong>Confidence on the call</strong> (setups with probabilities only): among the risks with a probability, the
+    ranking score (AUROC) of confidence for "right risk", and the average confidence on missed risks. Decisions whose plays
+    were split into groups have no single probability and are left out; each row shows how many. The confidence is the
+    probability a model gave its chosen play, not the probability that the risk beats the best safe play, so no
+    calibration gap is reported for risk calls. The calibration gap is reported only for the event the confidence stands
+    for, the chosen play being the engine's best (Confidence tab).</li>
 </ul>
 {_h3("risk-ability", "Ability and caution")}
-<p class="note"><strong>Method only: results not yet published.</strong> No table or chart on this site shows ability,
-  caution, aim or the cost-derived SDT reference yet; the definitions below are fixed for when they are.</p>
+<p class="note"><strong>Results published:</strong> ability, caution, aim and the cost-derived SDT reference are on the
+  home page's Risk tab (table and chart).</p>
 <p>In plain words: <strong>ability</strong> is how well a setup tells Risk pays positions from Safety pays positions;
   <strong>caution</strong> is how much evidence it needs before it takes a risk. A setup can be able and cautious, able and
   bold, and so on; the two are read separately. Both use the risk classes and risk calls above, at each margin, for every
@@ -399,14 +400,14 @@ def _risk(t: dict, extra: dict) -> str:
     <strong>False-alarm rate</strong> = needless risks ÷ Safety pays decisions.</li>
   <li>Both rates are corrected before the formulas: {_value(SPEC["loglinear_add"][0])} is added to the count and
     {_value(SPEC["loglinear_add"][1])} to the total (log-linear correction), so a rate of 0 or 1 still has a finite z.
-    The raw counts and totals go next to every value.</li>
+    The raw counts and totals are shown next to every value.</li>
   <li><strong>Ability</strong> d′ = z(hit rate) − z(false-alarm rate), z the inverse of the standard normal distribution.
     <strong>Caution</strong> c = −(z(hit rate) + z(false-alarm rate)) ÷ 2: positive is cautious, negative is bold.
     95% intervals resample blocks of games (the two games of a round, seats swapped, same dice),
     {_value(SPEC["dprime_bootstrap_resamples"])} times; a resample without one of the two classes is left out.</li>
   <li><strong>Aim</strong> = right risks ÷ (right + wrong risks): needless risks are not in it, so it is not the same as
-    Good risks. With no right or wrong risk it is N/A with the count 0 / 0.</li>
-  <li><strong>Missing class</strong>: a setup without Risk pays or without Safety pays decisions gets "N/A: no
+    Good risks. With no right or wrong risk it shows N/A and the count 0 / 0.</li>
+  <li><strong>Missing class</strong>: a setup without Risk pays or without Safety pays decisions shows "N/A: no
     &lt;class&gt; decisions" for ability, caution and the reference. The correction is never used to stand in for an
     absent class.</li>
   <li><strong>Cost-derived SDT reference</strong> c* = ln β ÷ d′, with β = (Safety pays ÷ Risk pays decisions) × (mean
@@ -415,9 +416,9 @@ def _risk(t: dict, extra: dict) -> str:
     caution for actual play and not a proven optimum. The costs are conditional on the setup's own policy (which positions
     it took risks in), and a correctly classified call can still lose equity. Rules, in order: N/A when a class is absent;
     N/A with no needless or no missed risk to price; N/A when a mean cost is 0 or β is not a positive finite number; N/A
-    when d′ ≤ 0; "unstable: d′ near zero" (value kept, not used as a reference) when the lower end of the d′ interval is
-    0 or below; "unstable" (value kept, not used as a reference) when fewer than {_value(SPEC["cost_min_risks"])}
-    needless or missed risks are behind a mean cost. Only the remaining values count as a valid reference.</li>
+    when d′ ≤ 0; "unstable: d′ near zero" (value shown, no mark) when the lower end of the d′ interval is 0 or below;
+    "unstable" (value shown, no mark) when fewer than {_value(SPEC["cost_min_risks"])} needless or missed risks are
+    behind a mean cost. Only the remaining values get the short reference mark on the chart.</li>
   <li><strong>By reasoning setting</strong> (Leagues 2 and 3): ability and caution of the same model at its lower and
     higher setting, the change, and the time and output tokens per decision. UNPAIRED: the two settings met different
     positions.</li>
@@ -436,8 +437,11 @@ def _risk(t: dict, extra: dict) -> str:
   2, so the corner (0, 0) is risk judgement 100; the faint diagonals mark {_value(t["risk_map_diagonals"])}. A point's
   colour is its share of wrong risks among the Risk pays decisions without the right risk. <strong>Error rate by risk-call
   category</strong>: the six parts as a stacked bar. <strong>Stake chart</strong>: risks found, wrong and missed risks per
-  stake band, and big needless risks. <strong>Risk call card</strong>: one image per league winner. A downloaded chart PNG
-  carries the league, the margin, the number of decisions, the results version and the site address, and lists the active
+  stake band, and big needless risks. <strong>Ability and caution</strong>: ability across, caution up, programs and
+  computed reference rows as squares, a short bar at the cost-derived SDT reference where it is valid; under it the limit
+  line: a simple model of the risk call (equal-variance signal detection); setups met different positions.
+  <strong>Risk call card</strong>: one image per league winner. A downloaded chart PNG
+  carries the site's title and subtitle, the league, the margin, the number of decisions, the results version and the site address, and lists the active
   filters; it keeps the theme in view. Every table on the site has its own Download PNG: the table as shown (tab, filters,
   sort, theme) with all its columns and rows, the headings above it and the notes under it, then the same small type, with
   the rows shown and the decisions behind them.</p>
@@ -549,13 +553,13 @@ def _confidence(t: dict, extra: dict) -> str:
 {extra["held_out"]}""")
 
 
-def _offline(t: dict) -> str:
+def _offline(t: dict, extra: dict) -> str:
     s = SPEC
     th = ", ".join(_value(x) for x in s["reread_thresholds"])
     return _section("offline", "Re-read, refit, bar and distributions (offline, from recorded decisions)", f"""
-<p class="note"><strong>Method only: results not yet published.</strong> None of the four analyses below has results on
-  this site yet.</p>
-<p>Four analyses of the decisions already recorded; no model is asked again. Every rule below (thresholds, estimators,
+<p class="note"><strong>Results published:</strong> the re-read, calibration and distributions on the Confidence tab, the
+  minimum bar on the Cost tab.</p>
+<p>Four analyses of the decisions already recorded; no model was asked again. Every rule below (thresholds, estimators,
   exclusions, degenerate cases, splits and the hypothesis) was fixed and committed on {esc(s["fixed_on"][:10])}, before any of
   these numbers was computed. Splits, folds and resamples use one map of blocks per league for every setup: a block is the
   two games of a round, the second with seats swapped and the same dice (checked on the data: same rolls, and no two
@@ -567,7 +571,7 @@ def _offline(t: dict) -> str:
   letter readout. A letter missing there was filled with 0 and the rest renormalised by the runner; such a decision is
   <strong>sparse</strong>, whatever the length or sum of its vector. Decisions split into groups, choice-only answers,
   invalid answers, decisions without a raw response and decisions whose stored vector is not reproduced are counted
-  separately, per setup, and left out.</p>
+  separately and left out (Confidence tab, per setup).</p>
 {_h3("offline-reread", "Re-read risk call (re-read from the model's probabilities, not played)")}
 <ul>
   <li>P(risk) = the probability mass on the plays that leave more hitting rolls than the minimum. If P(risk) ≥ t the re-read
@@ -579,7 +583,7 @@ def _offline(t: dict) -> str:
   <li>{_value(s["splits"])} splits; reported: the mean over splits, and the 5th to 95th percentile of the change over the
     splits as <strong>stability</strong> (the splits are not independent experiments). 95% interval: the whole procedure
     repeated on {_value(s["bootstrap_replicates"])} resamples of blocks ({_value(s["bootstrap_splits_per_replicate"])} splits
-    each). Setups with fewer than {_value(t["min_decisions_per_cell"])} complete decisions get "{esc(TOO_FEW)}".</li>
+    each). Setups with fewer than {_value(t["min_decisions_per_cell"])} complete decisions show "{esc(TOO_FEW)}".</li>
   <li>Recorded positions scored again, not new games: it says nothing about win rates.</li>
 </ul>
 <p><strong>Hypothesis, recorded before computing:</strong> gains will be largest for setups with high ability whose
@@ -587,7 +591,7 @@ def _offline(t: dict) -> str:
   Predictor, from the training half only: d′ × (c − c*); undefined where c* is N/A or d′ is below
   {_value(s["split_dprime_near_zero_below"])}; a setup needs it in {_value(s["hypothesis_min_defined_splits"])} splits.
   Test: Spearman rank correlation with the held-out change in risk judgement across setups, leagues pooled; supported only
-  if it is positive and its 95% interval is above 0. Result not yet published.</p>
+  if it is positive and its 95% interval is above 0. {extra["hypothesis"]}</p>
 {_h3("offline-calibration", "Calibration as shipped and after a refit")}
 <p>Two events, never mixed: the <strong>chosen play</strong> (its probability against "the chosen play is the engine's
   best") and the <strong>risk class</strong> (P(risk) against "the position is Risk pays", decisions with a trade-off).
@@ -600,9 +604,9 @@ def _offline(t: dict) -> str:
 <p>Bar: risk judgement at least {_value(s["bar_judgement_at_least"])} and error rate at most
   {_value(s["bar_error_rate_at_most"])} PR (equity lost, not a share of mistakes). In each split, the model setups that clear
   the bar on the training half qualify, and the cheapest of them with a price on every training decision is chosen; it is
-  then checked on the other half. Reported: how often each setup qualified, was chosen and cleared the bar on the held-out
+  then checked on the other half. Shown: how often each setup qualified, was chosen and cleared the bar on the held-out
   half; splits where none qualified, or only unpriced setups did. An unpriced setup is never called cheapest; programs are
-  left out.</p>
+  left out (Cost tab).</p>
 {_h3("offline-distributions", "Confidence on right and wrong decisions")}
 <p>The chosen play's probability (never P(risk)), complete decisions only, in {_value(s["reliability_bins"])} fixed bins:
   decisions that were the engine's best play against the rest, and right risks against wrong and needless risks (0.001
@@ -614,8 +618,8 @@ def _close(t: dict) -> str:
     c = _load("close_choices_2026-10-24.json")
     b = c["stage_b"]
     return _section("close-choices", "Close choices", f"""
-<p class="note"><strong>Stage A: method only, results not yet published. Stage B: approved, not run; it starts after the
-  ladder settles.</strong></p>
+<p class="note"><strong>Stage A: results published (Confidence tab, model pages, Every decision filter). Stage B:
+  approved, not run.</strong></p>
 <p><strong>{esc(c["definition"])}</strong> {esc(c["label"])} The rules below were fixed and committed on
   {esc(c["fixed_on"][:10])} before any close-choice number was computed. Inspired by <a href="https://arxiv.org/abs/2610.21006">"Can LLMs Anticipate Their
   Cruxes?"</a>. They describe the probabilities a setup gave; they say nothing about how it reasoned or why it chose.</p>
@@ -625,7 +629,7 @@ def _close(t: dict) -> str:
     the record's content, not by model type; the check is described under
     <a href="#offline-support">Which probabilities are complete</a>). Left out and counted per setup: invalid answers,
     decisions asked in groups of options, incomplete distributions and records that cannot be verified. Setups that
-    name one play only, and programs, are {esc(NA)}. No model is asked again.</li>
+    name one play only, and programs, show {esc(NA)}. No model was asked again.</li>
   <li><strong>The rule.</strong> Take the two most probable plays, with probabilities p1 and p2. A decision is a close
     choice when p2 is at least half of p1. Both are kept for every decision, with p1 + p2, so two strong candidates can
     be told apart from probability spread over many options. Equal probabilities are ordered by the order the plays
@@ -642,14 +646,14 @@ def _close(t: dict) -> str:
   <li><strong>Missed risks.</strong> In Risk pays positions whose two most probable plays are a safe one and a riskier
     one: how often the play made was a missed risk, among close choices and among the other decisions. The other
     decisions are weighted to the close choices' mix of phase, number of options and the engine's gap between its two
-    best plays (only groups holding both count); the crude rates are reported too. 95% interval: {_value(c["bootstrap_resamples"])}
-    resamples of matches (a match's decisions stay together). Empty groups are {esc(NA)}. An association, not a cause.</li>
+    best plays (only groups holding both count); the crude rates are shown too. 95% interval: {_value(c["bootstrap_resamples"])}
+    resamples of matches (a match's decisions stay together). Empty groups show {esc(NA)}. An association, not a cause.</li>
   <li><strong>Reading it.</strong> A high or low share of close choices is neither good nor bad; setups are never sorted
     or ranked by it. Shares come with count and denominator; under {_value(c["small_group_below"])} decisions they are
     marked.</li>
 </ul>
 {_h3("close-choices-b", "Stage B: does a setup know where it hesitates? (planned, not run)")}
-<p>Approved, not run; it starts after the ladder settles. No stage B call has been made. The positions and the scoring
+<p>Approved, not run. No stage B call has been made. The positions and the scoring
   rules were fixed on 2026-10-24, before any stage B call.</p>
 <ul>
   <li><strong>Positions.</strong> {_value(b["positions"])} positions from the new half of the shared standard set, by
@@ -800,8 +804,7 @@ def body(ctx: dict) -> str:
     return "\n".join([
         _intro(), _toc(), _setup(), _shared(ctx["shared_sets"]), _prompt(), _error_rate(t), _human_scale(),
         _risk(t, extra), _statistics(t), _thresholds(t), _status(), _versions(ctx["play_order"]),
-        _confidence(t, extra), _offline(t), _close(t), _cost(), _time(t), _limits(), _home_extras(extra),
-        _archive("v3-notes.html"),
+        _confidence(t, extra), _offline(t, extra), _close(t), _cost(), _time(t), _limits(), _home_extras(extra), _archive("v3-notes.html"),
         _experiments(),
     ])
 

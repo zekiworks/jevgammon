@@ -217,6 +217,13 @@ def check_counts(S: dict) -> list[str]:
             have = (rc["risk"], rc["safety"], rc["none"], rc["calls"])
             if want != have:
                 bad.append(f"{ds}/{name}: exported risk marks {have} != analysis {want}")
+            # Close choices (Method spec 2026-10-24 §9): the Every decision marks match the analysis.
+            cc = s.get("close")
+            if cc is not None and "close" in rc:
+                want_cc = (cc["close"]["n"], cc["eligible"] - cc["close"]["n"]) if not cc["na"] else (0, 0)
+                have_cc = (rc["close"]["close"], rc["close"]["other"])
+                if want_cc != have_cc:
+                    bad.append(f"{ds}/{name}: exported close-choice marks {have_cc} != analysis {want_cc}")
     return bad
 
 

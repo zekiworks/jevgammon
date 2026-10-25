@@ -6,8 +6,9 @@
 Writes, under out/decisions/:
     index.json                                  datasets, their status and setups (name, slug, decisions, invalid, pages,
                                                 risk: decisions per B6 class)
-    <dataset>/<setup slug>/risk.json.gz         [page, id, class, risk call, band] per decision, so Every decision can filter
-                                                by Risk pays / Safety pays / No hit-risk trade-off without loading pages
+    <dataset>/<setup slug>/risk.json.gz         [page, id, class, risk call, band, close] per decision, so Every decision can
+                                                filter by Risk pays / Safety pays / No hit-risk trade-off and by close choice
+                                                (1 close choice, 0 eligible but not, null not eligible) without loading pages
     <dataset>/<setup slug>/<page>.json.gz       PAGE_SIZE decisions per page, pages numbered from 1 (gzip, mtime 0, so an
                                                 unchanged page is byte-identical from one build to the next)
     contexts/<hash>.txt                         the shared rules text of the prompts (hash = sha256(text)[:12])
@@ -129,18 +130,22 @@ SHOWCASE: dict = {}
 
 
 def write_risk_index(root, ds, setup, rows) -> dict:
-    """rows: (page, id, decision['risk']); each item [page, id, class, call, band]; returns the counts per class and
-    per call for index.json (the pre-deploy check compares them with the analysis)."""
+    """rows: (page, id, decision['risk'], decision['close']); each item [page, id, class, call, band, close]; returns the
+    counts per class and per call for index.json (the pre-deploy check compares them with the analysis) and the
+    close-choice counts (Method spec 2026-10-24 §9)."""
     path = root / ds / slug(setup) / "risk.json.gz"
     path.parent.mkdir(parents=True, exist_ok=True)
-    items = [[pg, i, RISK_CODE[r["class"]], CALL_CODE[r["call"]], BAND_CODE[r["band"]]] if r else [pg, i, None, None, None]
-             for pg, i, r in rows]
+    cc = lambda c: None if c is None else int(c["close"])
+    items = [([pg, i, RISK_CODE[r["class"]], CALL_CODE[r["call"]], BAND_CODE[r["band"]]] if r else [pg, i, None, None, None])
+             + [cc(c)] for pg, i, r, c in rows]
     path.write_bytes(gzip.compress(json.dumps(items, separators=(",", ":")).encode(), compresslevel=9, mtime=0))
     counts = {"risk": 0, "safety": 0, "none": 0, "unclassified": 0, "calls": {c: 0 for c in analysis.CALLS}}
-    for _, _, r in rows:
+    for _, _, r, _ in rows:
         counts[r["class"] if r else "unclassified"] += 1
         if r and r["call"]:
             counts["calls"][r["call"]] += 1
+    counts["close"] = {"close": sum(1 for *_, c in rows if c and c["close"]),
+                       "other": sum(1 for *_, c in rows if c and not c["close"])}
     return counts
 
 
@@ -178,7 +183,15 @@ WHERE lm.league_id = ? AND t.decided_by IN ('model', 'fallback')
 """
 
 
-def export_league(root, ds, sdb, shards, pdb, contexts):
+def close_mark(rec, order) -> dict | None:
+    """The close-choice record of one decision for Every decision: p1, p2 and both candidates in shown order."""
+    if rec is None:
+        return None
+    return {"close": rec["close"], "p1": r4(rec["p1"]), "p2": r4(rec["p2"]), "c1": order.index(rec["c1"]),
+            "c2": order.index(rec["c2"])}
+
+
+def export_league(root, ds, sdb, shards, pdb, contexts, close):
     league = ds["league_id"]
     # The league's current participants in join order (league_web.participants), programs by players.spec.
     models = sdb.execute("""SELECT p.name, p.spec FROM league_players lp JOIN players p ON p.id = lp.player_id
@@ -238,9 +251,10 @@ def export_league(root, ds, sdb, shards, pdb, contexts):
                     "chosen": order.index(chosen), "best": best, "decided_by": decided_by, "invalid": bad,
                     "group_size": group_size, "probability_source": source,
                     "request_seconds": None if request_ms is None else request_ms / 1000,
-                    "retry_seconds": None if retry_ms is None else retry_ms / 1000, "cost_usd": cost})
+                    "retry_seconds": None if retry_ms is None else retry_ms / 1000, "cost_usd": cost,
+                    "close": close_mark(close.get(tid), order)})
                 mark_risk(decisions[-1], entries, order, page)
-                risk_rows.append((page, tid, decisions[-1]["risk"]))
+                risk_rows.append((page, tid, decisions[-1]["risk"], decisions[-1]["close"]))
             write_page(root, ds["id"], setup, page, len(chunks), decisions)
         out[setup] = {"slug": slug(setup), "decisions": len(ids), "invalid": invalid, "pages": len(chunks),
                       "program": program, "risk": write_risk_index(root, ds["id"], setup, risk_rows)}
@@ -322,7 +336,7 @@ def export_v1(root, ds, rdb, v1_positions, contexts):
                     "request_seconds": None if latency_ms is None else latency_ms / 1000,
                     "retry_seconds": None, "cost_usd": None})
                 mark_risk(decisions[-1], entries, range(len(names)), page)
-                risk_rows.append((page, lab["id"], decisions[-1]["risk"]))
+                risk_rows.append((page, lab["id"], decisions[-1]["risk"], None))
             write_page(root, ds["id"], model, page, len(chunks), decisions)
         out[model] = {"slug": slug(model), "decisions": len(rows), "invalid": invalid, "pages": len(chunks),
                       "program": False, "risk": write_risk_index(root, ds["id"], model, risk_rows)}
@@ -334,7 +348,7 @@ def badge(status):
 
 
 def export(out: Path, snap: Path, plays_dir: Path, prompts_db: Path, replay_db: Path, v1_positions: Path,
-           datasets: list[dict]) -> dict:
+           datasets: list[dict], close: dict) -> dict:
     root = Path(out) / "decisions"
     if root.exists():
         shutil.rmtree(root)
@@ -352,7 +366,7 @@ def export(out: Path, snap: Path, plays_dir: Path, prompts_db: Path, replay_db: 
         if ds["version"] == "v1":
             setups = export_v1(root, ds, rdb, v1_positions, v1_contexts)
         else:
-            setups = export_league(root, ds, sdb, shards, pdb, league_contexts)
+            setups = export_league(root, ds, sdb, shards, pdb, league_contexts, close)
         result[ds["id"]] = {name: {k: v for k, v in s.items() if k != "program"} for name, s in setups.items()}
         index.append({"id": ds["id"], "label": ds["label"], "version": ds["version"], "status": ds["status"],
                       "badge": badge(ds["status"]), "note": ds.get("note"), "league_id": ds.get("league_id"),

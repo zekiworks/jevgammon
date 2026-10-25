@@ -812,4 +812,28 @@ def method_extras(S) -> dict:
                 f"{count(total - scored)} of {count(total)} league decisions have plays without a 2-ply evaluation; they "
                 f"are evaluated with GNU Backgammon on CPU, at low priority, by the update loop.")
     return dict(robust="".join(robust), held_out="".join(held) or f"<p>{nm(NA)}: no setup returns probabilities.</p>",
-                tail="".join(tail), input=P.input_history(), unscored=unscored)
+                tail="".join(tail), input=P.input_history(), unscored=unscored, safest=safest_text(S))
+
+
+def safest_text(S) -> str:
+    """Item 6 of the reviewed brief: the played program (League 1) against the computed reference (Leagues 2, 3)."""
+    out = []
+    for lg in S["leagues"]:
+        if "Safest" not in lg["setups"]:
+            continue
+        r = lg["setups"]["Safest"]["risk"]["main"]
+        prov = f' ({esc(PROVISIONAL_NOTE)}.)' if lg["metric_status"] == PROVISIONAL else ""
+        out.append(
+            f'In League {lg["id"]}, Safest is the program that actually played the matches: among the plays that leave '
+            f'the fewest hitting rolls it takes the one with the fewest blots, then the largest pip lead, then the play shown '
+            f'first; it never asks the engine, so its play is not always the engine\'s best safe play. Its right-safety '
+            f'part of the error rate, {fmt(r["by_call"]["right_safety"], 2)} PR, is the equity lost on its '
+            f'{count(int(r["calls"]["right_safety"]))} right-safety decisions × {count(S["thresholds"]["equity_scale"])} ÷ '
+            f'all {count(r["scored"])} of its scored decisions: a share of its error rate, not the average loss of a '
+            f'right-safety decision.{prov}')
+    computed = [lg["id"] for lg in S["leagues"] if "Safest (computed)" in lg["references"]]
+    if computed:
+        out.append(f'In League {" and League ".join(str(i) for i in computed)}, <em>Safest (computed)</em> is a computed '
+                   'reference: the engine\'s best safe play on every scored decision of that league. Its numbers are not '
+                   'directly comparable with League 1\'s played program.')
+    return " ".join(out)

@@ -1,0 +1,29 @@
+{
+  "_about": "Values of section 9 of method-spec-2026-10-24.md (close choices), fixed before any close-choice number was computed. Never changed after results.",
+  "fixed_on": "2026-10-24T15:15Z",
+  "term": "close choice",
+  "definition": "A decision is a close choice when the second most likely play has at least half the probability of the first (internally: split).",
+  "label": "Probabilities over plays, not sampled reasoning.",
+  "close_ratio": 0.5,
+  "eligible_status": "complete",
+  "features": ["hitting", "points", "race", "prime"],
+  "margins": [0.001, 0.02],
+  "strata": ["phase", "options", "gap"],
+  "bootstrap_resamples": 2000,
+  "bootstrap_unit": "match",
+  "small_group_below": 200,
+  "snapshot": {
+    "copied_at": "2026-10-24T12:51Z",
+    "snap_db_sha256": "0e11c1793efe5ccde9b7bf57f00a3cbbeaaddb818303515ee5fd20ddc3b011d9",
+    "plays_s0_to_s31_concatenated_sha256": "161ab5e07a53587a60caba0543a9d1561ccb6e4dc052693c7fb54a92d9f14e1f",
+    "probability_audit_sha256": "4ad35193ab2d505585c0f76e61243999383c50941a31fa9411b1aabbf3628789"
+  },
+  "stage_b": {
+    "positions": 100,
+    "repeats": 5,
+    "baseline_shuffles": 1000,
+    "baseline_within": ["setup", "phase"],
+    "primary": "exact agreement of predicted and observed feature sets",
+    "secondary": "partial overlap |P and O| / |P or O|; 1 when both empty, 0 when exactly one empty"
+  }
+}

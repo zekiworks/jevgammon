@@ -1,0 +1,23 @@
+{
+  "_about": "Values of the Method specification of 2026-10-24 (method-spec-2026-10-24.md), fixed before any of these analyses was computed.",
+  "fixed_on": "2026-10-24T12:55Z",
+  "loglinear_add": [0.5, 1.0],
+  "dprime_bootstrap_resamples": 2000,
+  "cost_min_risks": 200,
+  "split_dprime_near_zero_below": 0.2,
+  "reread_thresholds": [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0, "always safe"],
+  "reread_tie_tolerance": 1e-9,
+  "splits": 300,
+  "bootstrap_replicates": 200,
+  "bootstrap_splits_per_replicate": 30,
+  "stability_percentiles": [5, 95],
+  "hypothesis_min_defined_splits": 150,
+  "platt_folds": 5,
+  "platt_clip": 1e-6,
+  "platt_max_steps": 50,
+  "platt_tolerance": 1e-10,
+  "reliability_bins": 10,
+  "bar_judgement_at_least": 60,
+  "bar_error_rate_at_most": 35,
+  "probability_match_tolerance": 1e-9
+}

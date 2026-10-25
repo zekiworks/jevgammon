@@ -10,3 +10,10 @@ State before the reboot: League 1 and League 3 finished. League 2 had 8 matches 
 6. Argon (off) early start: check whether its early-start league row exists and resume or create it (see the round-2 log).
 
 deepseek-v41.service stays disabled.
+
+## Second reboot (Oct 25, ~12:20 UTC)
+
+Running before it: league2 (last matches), league2early (Argon (off) early start for round 3, a hidden league row), ccb-gemma-s2 (Gemma stage B session 2, 44 of 500 Gemma play answers stored).
+1. Start Gemma (GPU 0) and Qwen (GPU 1) as above; claim them on the bus.
+2. `systemctl --user reset-failed league2 league2early` and start both again the same way (see `systemctl --user cat` of each, or the round-2 log). Matches resume from their last move.
+3. Gemma stage B: a third session for the play calls with no stored answer needs Can's OK and a Method addendum first. Same skip check (dry run on a copy of the store).

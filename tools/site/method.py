@@ -619,8 +619,8 @@ def _close(t: dict) -> str:
     b = c["stage_b"]
     return _section("close-choices", "Close choices", f"""
 <p class="note"><strong>Stage A: results published (Confidence tab, model pages, Every decision filter). Stage B:
-  running on 5 subscription teams since 2026-10-25 10:23 UTC (approved by Can, 2026-10-25); Gemma 4 31B (on) and changed
-  teams after the ladder settles.</strong></p>
+  running on 5 subscription teams since 2026-10-25 10:23 UTC and on Gemma 4 31B (on), on its League 2 server, from
+  2026-10-25 (approved by Can, 2026-10-25); changed teams after the ladder settles.</strong></p>
 <p><strong>{esc(c["definition"])}</strong> {esc(c["label"])} The rules below were fixed and committed on
   {esc(c["fixed_on"][:10])} before any close-choice number was computed. Inspired by <a href="https://arxiv.org/abs/2610.21006">"Can LLMs Anticipate Their
   Cruxes?"</a>. They describe the probabilities a setup gave; they say nothing about how it reasoned or why it chose.</p>
@@ -654,8 +654,8 @@ def _close(t: dict) -> str:
     marked.</li>
 </ul>
 {_h3("close-choices-b", "Stage B: does a setup know where it hesitates? (planned, not run)")}
-<p>Running on 5 subscription teams since 2026-10-25 10:23 UTC (approved by Can, 2026-10-25); Gemma 4 31B (on) and changed
-  teams after the ladder settles. Results are published after the run is complete. The positions and the scoring rules were fixed on 2026-10-24, before
+<p>Running on 5 subscription teams since 2026-10-25 10:23 UTC and on Gemma 4 31B (on), on its League 2 server, from
+  2026-10-25 (approved by Can, 2026-10-25); changed teams after the ladder settles. Results are published after the run is complete. The positions and the scoring rules were fixed on 2026-10-24, before
   any stage B call; the run conditions below on 2026-10-25.</p>
 <ul>
   <li><strong>Positions.</strong> {_value(b["positions"])} positions from the new half of the shared standard set, by

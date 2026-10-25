@@ -469,3 +469,25 @@ league settings unchanged. Gemma 4 31B (on) and any changed team join after the 
 - No rerun afterwards and no re-ask of invalid answers. If a process stops mid-run, a restart asks only the calls never
   stored, and the report says so.
 - Store: `smoke/close-choices-b.db` (tables `predictions` and `answers`), not `v3.db`.
+
+#### 9.13 addendum (2026-10-25): Gemma 4 31B (on) joins now on bariton (Can's approval; written before its first call)
+
+- On 2026-10-25 Can approved starting Gemma 4 31B (on) now. It runs on the bariton Gemma server that serves League 2
+  (GPU 0, behind the roster's proxy URL): the same server, weights and arguments as its league decisions. It does not
+  run on spark3, so the device check planned for spark3 does not apply. The server is shared with League 2's running
+  matches and is not started, stopped or reconfigured for stage B.
+- Settings: its League 2 roster row unchanged: thinking on (`chat_template_kwargs.enable_thinking`), max tokens 24,000,
+  temperature 1.0 sent, and the letter-probability readout for play calls (two requests: reasoning, then the prefilled
+  one-token readout). The one exception is concurrency: at most 4 calls in flight (roster 24), so League 2's matches keep
+  moving. Config: `leagues/close-choices-b-gemma.json`.
+- Prediction call: the play call's reasoning request with the neutral system prompt, the prediction text and the
+  prediction schema (`response_format` json_schema), the extra fields as configured. Rendered offline:
+  `freeze/close-choices-b-v2-requests-gemma.json`.
+- The other conditions are those of §9.13:
+  - one format-acceptance call on `smoke-0012` for this route (OpenAI-compatible, vLLM), logged in
+    `smoke/stage-b-acceptance.db`;
+  - `--retries 2`;
+  - one run (`predict`, then `ask --repeats 5 --once`), into `smoke/close-choices-b.db`.
+- If the server goes down before the run ends, nothing is asked again; the unfinished positions are reported.
+- Gemma's results are reported in their own section, with their timing. A letter-probability record is not a
+  one-letter record; stage B uses only its chosen plays and its prediction.

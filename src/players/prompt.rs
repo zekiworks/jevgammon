@@ -28,6 +28,9 @@ const LETTER_SYSTEM: &str = include_str!("../../prompts/letter-system.txt");
 /// Close choices, stage B: the prediction question (verbatim from the request) and the
 /// approved format line, sent in place of the letter instruction.
 const PREDICTION: &str = include_str!("../../prompts/prediction.txt");
+/// Close choices, stage B (Method §9.13): the prediction call's neutral system prompt, in place of
+/// the letter readout's (whose format sentences ask for one letter). The play call keeps its own.
+const PREDICTION_SYSTEM: &str = include_str!("../../prompts/prediction-system.txt");
 /// The four features a prediction may name, as the format line spells them, with their ids
 /// in the site's close-choice analysis (Method §9.5).
 pub const PREDICTION_FEATURES: [(&str, &str); 4] = [
@@ -366,6 +369,10 @@ pub fn option_text(req: &DecisionRequest<'_>, index: usize) -> String {
 
 pub fn letter_system() -> &'static str {
     LETTER_SYSTEM.trim_end()
+}
+
+pub fn prediction_system() -> &'static str {
+    PREDICTION_SYSTEM.trim_end()
 }
 
 pub fn letter(position: usize) -> char {

@@ -2,7 +2,7 @@
 //! 5xx are retried up to `RETRIES` times with backoff. The time spent on failed attempts
 //! and waits is added to a `RetryTime`, which the runner keeps off the clock.
 
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
 use std::time::{Duration, Instant};
 
 use reqwest::{RequestBuilder, StatusCode};
@@ -13,6 +13,36 @@ use std::sync::Arc;
 
 /// Retries after the first attempt.
 pub const RETRIES: u32 = 3;
+/// Retry limit in force (`RETRIES` unless `limit_retries_per_call` set another).
+static RETRY_LIMIT: AtomicU32 = AtomicU32::new(RETRIES);
+/// When set, the limit counts every failed network or server attempt of one call (one
+/// `RetryTime`), over all its sends (e.g. Antigravity's fallback endpoint), not per send.
+static PER_CALL: AtomicBool = AtomicBool::new(false);
+
+/// Close choices, stage B (Method §9.13): at most `retries` retries of network and server
+/// errors per call, counted over every send of the call. Process-wide; the leagues never
+/// call it.
+pub fn limit_retries_per_call(retries: u32) {
+    RETRY_LIMIT.store(retries, Ordering::Relaxed);
+    PER_CALL.store(true, Ordering::Relaxed);
+}
+
+/// Retries allowed after failed network or server attempts.
+#[derive(Clone, Copy, Debug)]
+struct RetryPolicy {
+    limit: u32,
+    /// Count failures over the whole call (`RetryTime`), not per send.
+    per_call: bool,
+}
+
+impl RetryPolicy {
+    fn current() -> Self {
+        RetryPolicy {
+            limit: RETRY_LIMIT.load(Ordering::Relaxed),
+            per_call: PER_CALL.load(Ordering::Relaxed),
+        }
+    }
+}
 /// First wait; doubled after each failure (2 s, 4 s, 8 s). `Retry-After` can lengthen a
 /// wait up to `MAX_BACKOFF`, never shorten it.
 const FIRST_BACKOFF: Duration = Duration::from_secs(2);
@@ -61,7 +91,7 @@ impl std::error::Error for StatusError {}
 /// Time spent on failed attempts and backoff waits, shared between the requests of one
 /// decision and the runner's clock.
 #[derive(Debug, Default)]
-pub struct RetryTime(AtomicU64);
+pub struct RetryTime(AtomicU64, AtomicU32);
 
 impl RetryTime {
     pub fn add(&self, spent: Duration) {
@@ -71,6 +101,12 @@ impl RetryTime {
 
     pub fn get(&self) -> Duration {
         Duration::from_millis(self.0.load(Ordering::Relaxed))
+    }
+
+    /// Failed network or server attempts so far (counted when `limit_retries_per_call` is on).
+    #[cfg(test)]
+    pub fn failures(&self) -> u32 {
+        self.1.load(Ordering::Relaxed)
     }
 }
 
@@ -93,7 +129,15 @@ pub async fn send(
     make: impl Fn() -> RequestBuilder,
     retry: &RetryTime,
 ) -> Result<String, CallError> {
-    let (body, _) = send_with_backoff(make, retry, None, FIRST_BACKOFF, RATE_LIMIT_BACKOFF).await?;
+    let (body, _) = send_with_backoff(
+        make,
+        retry,
+        None,
+        FIRST_BACKOFF,
+        RATE_LIMIT_BACKOFF,
+        RetryPolicy::current(),
+    )
+    .await?;
     Ok(body)
 }
 
@@ -113,6 +157,7 @@ pub async fn send_metered(
         Some((ledger, worst_case)),
         FIRST_BACKOFF,
         RATE_LIMIT_BACKOFF,
+        RetryPolicy::current(),
     )
     .await?;
     Ok((body, hold.expect("a metered attempt holds a reservation")))
@@ -124,6 +169,7 @@ async fn send_with_backoff(
     budget: Option<(&Arc<Ledger>, f64)>,
     first_backoff: Duration,
     rate_limit_backoff: Duration,
+    policy: RetryPolicy,
 ) -> Result<(String, Option<Hold>), CallError> {
     let mut backoff = first_backoff;
     let mut attempt = 0;
@@ -182,7 +228,13 @@ async fn send_with_backoff(
             // No response: `hold` drops here and keeps its worst case.
             Err(error) => format!("{error}"),
         };
-        if attempt >= RETRIES {
+        // Failed attempts so far: of this send, or of the whole call under a per-call limit.
+        let failed = if policy.per_call {
+            retry.1.fetch_add(1, Ordering::Relaxed) + 1
+        } else {
+            attempt + 1
+        };
+        if failed > policy.limit {
             retry.add(started.elapsed());
             return Err(CallError::Fatal(anyhow::anyhow!(
                 "gave up after {} attempts: {failure}",
@@ -230,6 +282,48 @@ mod tests {
         (url, count)
     }
 
+    const LEAGUE: RetryPolicy = RetryPolicy {
+        limit: RETRIES,
+        per_call: false,
+    };
+
+    /// Stage B (Method §9.13): at most 2 retries per call, counted over every send of the call.
+    #[tokio::test]
+    async fn per_call_limit_counts_failures_over_every_send() {
+        let http = reqwest::Client::new();
+        let backoff = Duration::from_millis(5);
+        let stage_b = RetryPolicy {
+            limit: 2,
+            per_call: true,
+        };
+        // Always 502: one attempt and two retries.
+        let (url, count) = serve(vec![502]);
+        let retry = RetryTime::default();
+        let error = send_with_backoff(|| http.get(&url), &retry, None, backoff, backoff, stage_b)
+            .await
+            .unwrap_err();
+        assert!(format!("{error:?}").contains("gave up after 3 attempts"));
+        assert_eq!(count.load(Ordering::SeqCst), 3);
+        // A second send of the same call (a fallback endpoint) gets no retry left: one attempt.
+        let (url, count) = serve(vec![502]);
+        assert!(
+            send_with_backoff(|| http.get(&url), &retry, None, backoff, backoff, stage_b)
+                .await
+                .is_err()
+        );
+        assert_eq!(count.load(Ordering::SeqCst), 1);
+        // 503 then 200: one retry, success.
+        let (url, count) = serve(vec![503, 200]);
+        let retry = RetryTime::default();
+        assert!(
+            send_with_backoff(|| http.get(&url), &retry, None, backoff, backoff, stage_b)
+                .await
+                .is_ok()
+        );
+        assert_eq!(count.load(Ordering::SeqCst), 2);
+        assert_eq!(retry.failures(), 1);
+    }
+
     #[test]
     fn retries_only_network_and_server_errors() {
         for code in [408, 429, 500, 502, 503, 504, 529] {
@@ -247,9 +341,16 @@ mod tests {
         // 503, 429, 500, then 200: the fourth attempt succeeds.
         let (url, count) = serve(vec![503, 429, 500, 200]);
         let retry = RetryTime::default();
-        let (body, _) = send_with_backoff(|| http.get(&url), &retry, None, backoff, backoff * 3)
-            .await
-            .unwrap();
+        let (body, _) = send_with_backoff(
+            || http.get(&url),
+            &retry,
+            None,
+            backoff,
+            backoff * 3,
+            LEAGUE,
+        )
+        .await
+        .unwrap();
         assert_eq!(body, "status 200");
         assert_eq!(count.load(Ordering::SeqCst), 4);
         // Waits of 20, 60 (after the 429) and 120 ms plus the failed attempts.
@@ -262,9 +363,16 @@ mod tests {
         // Always 502: one attempt and three retries, then an error.
         let (url, count) = serve(vec![502]);
         let retry = RetryTime::default();
-        let error = send_with_backoff(|| http.get(&url), &retry, None, backoff, backoff * 3)
-            .await
-            .unwrap_err();
+        let error = send_with_backoff(
+            || http.get(&url),
+            &retry,
+            None,
+            backoff,
+            backoff * 3,
+            LEAGUE,
+        )
+        .await
+        .unwrap_err();
         assert!(format!("{:?}", error).contains("gave up after 4 attempts"));
         assert_eq!(count.load(Ordering::SeqCst), 4);
         assert!(retry.get() >= Duration::from_millis(140));
@@ -273,9 +381,16 @@ mod tests {
         let (url, count) = serve(vec![400]);
         let retry = RetryTime::default();
         assert!(
-            send_with_backoff(|| http.get(&url), &retry, None, backoff, backoff * 3)
-                .await
-                .is_err()
+            send_with_backoff(
+                || http.get(&url),
+                &retry,
+                None,
+                backoff,
+                backoff * 3,
+                LEAGUE
+            )
+            .await
+            .is_err()
         );
         assert_eq!(count.load(Ordering::SeqCst), 1);
         assert_eq!(retry.get(), Duration::ZERO);
@@ -305,6 +420,7 @@ mod tests {
             Some((&ledger, 0.7)),
             backoff,
             backoff,
+            LEAGUE,
         )
         .await
         .unwrap();
@@ -317,6 +433,7 @@ mod tests {
             Some((&ledger, 0.4)),
             backoff,
             backoff,
+            LEAGUE,
         )
         .await
         .unwrap_err();
@@ -336,7 +453,8 @@ mod tests {
                 &retry,
                 Some((&ledger, 0.4)),
                 backoff,
-                backoff
+                backoff,
+                LEAGUE
             )
             .await
             .is_ok()

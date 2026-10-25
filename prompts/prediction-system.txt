@@ -1,0 +1,1 @@
+You are given a state, a question and a numbered set of options. You answer the question in the format it asks for, and nothing else.

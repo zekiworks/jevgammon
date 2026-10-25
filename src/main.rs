@@ -203,6 +203,10 @@ struct PredictArgs {
     /// Longest wall-clock seconds per prediction; a longer one is stored as timed out.
     #[arg(long)]
     time_limit: Option<u64>,
+    /// At most this many retries of network and server errors per call, counted over every
+    /// send of the call (default: 3 per send, as in the leagues).
+    #[arg(long)]
+    retries: Option<u32>,
     /// qfork/Glyph credential root read for subscription logins and API keys.
     #[arg(long, env = "JEVGAMMON_QFORK_ROOT")]
     qfork_root: Option<PathBuf>,
@@ -241,6 +245,14 @@ struct AskArgs {
     /// timed out (not invalid) and not asked again.
     #[arg(long)]
     time_limit: Option<u64>,
+    /// One-shot: a stored answer, failed included, is never asked again (close choices,
+    /// stage B: no rerun, no re-ask).
+    #[arg(long)]
+    once: bool,
+    /// At most this many retries of network and server errors per call, counted over every
+    /// send of the call (default: 3 per send, as in the leagues).
+    #[arg(long)]
+    retries: Option<u32>,
     /// qfork/Glyph credential root read for subscription logins and API keys.
     #[arg(long, env = "JEVGAMMON_QFORK_ROOT")]
     qfork_root: Option<PathBuf>,
@@ -403,6 +415,9 @@ async fn main() -> ExitCode {
             ask::render_stage_b(&args.config, &args.positions, &args.setups)
         }
         Some(Command::Predict(args)) => {
+            if let Some(retries) = args.retries {
+                http::limit_retries_per_call(retries);
+            }
             let setup = Setup::new(
                 args.qfork_root
                     .clone()
@@ -422,6 +437,9 @@ async fn main() -> ExitCode {
             .await
         }
         Some(Command::Ask(args)) => {
+            if let Some(retries) = args.retries {
+                http::limit_retries_per_call(retries);
+            }
             let setup = Setup::new(
                 args.qfork_root
                     .clone()
@@ -439,6 +457,7 @@ async fn main() -> ExitCode {
                     version: args.prompt_version,
                     max_cost: args.max_cost,
                     time_limit: args.time_limit.map(std::time::Duration::from_secs),
+                    once: args.once,
                 },
                 &setup,
             )

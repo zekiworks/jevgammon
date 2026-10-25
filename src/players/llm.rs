@@ -19,7 +19,7 @@ use serde_json::{Value, json};
 
 use super::prompt::{
     LETTERS, PREDICTION_FEATURES, PREDICTION_NONE, letter_probabilities, letter_system,
-    letter_user, parse_letter, parse_prediction, prediction_user,
+    letter_user, parse_letter, parse_prediction, prediction_system, prediction_user,
 };
 use super::{Decision, DecisionRequest};
 use crate::auth::Credentials;
@@ -231,7 +231,7 @@ pub fn as_sent(body: Value, options: &Options) -> Value {
 
 /// A request constrained by the provider to `answer`, before the configured extra fields
 /// (`as_sent`). The play call (`Answer::Letter`) is the league request; the prediction differs
-/// only in its user text and its answer format.
+/// only in its user text, its system prompt (neutral, Method §9.13) and its answer format.
 pub fn constrained_request(
     route: Route,
     model: &str,
@@ -239,7 +239,10 @@ pub fn constrained_request(
     user: &str,
     answer: Answer,
 ) -> Value {
-    let system = letter_system();
+    let system = match answer {
+        Answer::Letter(_) => letter_system(),
+        Answer::Prediction => prediction_system(),
+    };
     let effort = options.reasoning.as_deref();
     let (name, compatible_name) = match answer {
         Answer::Letter(_) => ("backgammon_play", "play"),
@@ -1623,7 +1626,21 @@ mod tests {
                     body["generationConfig"]["responseSchema"] = Value::Null;
                 }
             }
-            let text = |v: &Value| v.to_string().replace("PREDICT", "U").replace("PLAY", "U");
+            // The system prompt is the only other difference: neutral for the prediction.
+            let letter = serde_json::to_string(letter_system()).unwrap();
+            let neutral = serde_json::to_string(prediction_system()).unwrap();
+            assert!(play.to_string().contains(&letter) && !play.to_string().contains(&neutral));
+            assert!(
+                prediction.to_string().contains(&neutral)
+                    && !prediction.to_string().contains(&letter)
+            );
+            let text = |v: &Value| {
+                v.to_string()
+                    .replace("PREDICT", "U")
+                    .replace("PLAY", "U")
+                    .replace(&letter, "S")
+                    .replace(&neutral, "S")
+            };
             assert_eq!(text(&play), text(&prediction), "{route:?}");
         }
         let o = options(Some("low"));

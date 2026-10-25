@@ -359,9 +359,8 @@ pub fn render_stage_b(config: &PlayerConfig, req: &DecisionRequest<'_>, shown: &
     Ok(json!({
         "route": route.id(),
         "model": model,
-        "system": prompt::letter_system(),
-        "play": {"user": play_user, "body": play},
-        "prediction": {"user": prediction_user, "body": prediction},
+        "play": {"system": prompt::letter_system(), "user": play_user, "body": play},
+        "prediction": {"system": prompt::prediction_system(), "user": prediction_user, "body": prediction},
     }))
 }
 

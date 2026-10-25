@@ -313,6 +313,9 @@ pub struct AskArgs {
     /// Longest wall-clock time per decision (requests, retries and waits); a decision that
     /// hits it is stored with an error starting with `TIMED_OUT` and not asked again.
     pub time_limit: Option<Duration>,
+    /// One-shot (close choices, stage B): a stored answer, failed or timed out included, is
+    /// never asked again.
+    pub once: bool,
 }
 
 /// Start of the stored error of a decision that hit the time limit.
@@ -398,12 +401,12 @@ pub async fn ask(args: AskArgs, setup: &Setup) -> Result<()> {
             let conn = conn.lock();
             let mut statement = conn.prepare(
                 "SELECT position_id, repeat, prompt_version FROM answers
-                 WHERE setup = ?1 AND (error IS NULL OR error LIKE ?2)",
+                 WHERE setup = ?1 AND (error IS NULL OR error LIKE ?2 OR ?3)",
             )?;
-            let rows = statement
-                .query_map(params![config.name, format!("{TIMED_OUT}%")], |row| {
-                    Ok((row.get(0)?, row.get(1)?, row.get(2)?))
-                })?;
+            let rows = statement.query_map(
+                params![config.name, format!("{TIMED_OUT}%"), args.once],
+                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+            )?;
             rows.collect::<rusqlite::Result<_>>()?
         };
         let positions = positions.clone();

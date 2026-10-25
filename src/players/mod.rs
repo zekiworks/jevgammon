@@ -307,6 +307,64 @@ impl Setup {
     }
 }
 
+/// Close choices, stage B: what a chat-model player would be sent for one position, built
+/// from its config alone (no credentials, no network): the route, the model id, the play
+/// call (`Player::decide`'s constrained letter request, as in the leagues) and the
+/// prediction call (`LlmClient::predict`), each as sent (configured extra fields merged in).
+/// `shown` is the option order (at most 26). OpenAI-compatible servers' play calls (letter
+/// probabilities in two steps) are not rendered here: `play` is null for them.
+pub fn render_stage_b(config: &PlayerConfig, req: &DecisionRequest<'_>, shown: &[usize]) -> Result<Value> {
+    use serde_json::json;
+    let spec = config.spec.as_str();
+    let Some((provider, model)) = spec.split_once('/').filter(|(_, m)| !m.is_empty()) else {
+        bail!("{}: `{spec}` is not a chat model (no prediction call)", config.name);
+    };
+    let (route, model) = match provider.to_ascii_lowercase().as_str() {
+        "openai" => (llm::Route::OpenAiSubscription, model.to_ascii_lowercase()),
+        "anthropic" | "claude" => (llm::Route::AnthropicSubscription, model.to_owned()),
+        "gemini" | "google" => (llm::Route::Gemini, model.to_owned()),
+        "antigravity" | "google-antigravity" => (
+            llm::Route::Antigravity,
+            llm::antigravity_model(model, config.reasoning.as_deref()),
+        ),
+        "xai" | "xai-oauth" | "grok" => (llm::Route::Xai, model.to_owned()),
+        "local" | "openai-compatible" | "ollama" => (llm::Route::OpenAiCompatible, model.to_owned()),
+        other => bail!("{}: provider `{other}` is not a chat model (no prediction call)", config.name),
+    };
+    if shown.len() > prompt::LETTERS.len() {
+        bail!("{}: {} options, more than one request holds", config.name, shown.len());
+    }
+    let options = llm::Options {
+        reasoning: config.reasoning.clone(),
+        request: config.request.clone(),
+        max_tokens: config.max_tokens,
+        top_logprobs: config.top_logprobs,
+        readout: llm::Readout::parse(config.letter_readout.as_deref())?,
+        answer_prefix: config.answer_prefix.clone(),
+        pacer: None,
+        budget: None,
+    };
+    let play_user = prompt::letter_user(req, shown);
+    let prediction_user = prompt::prediction_user(req, shown);
+    let play = (route != llm::Route::OpenAiCompatible).then(|| {
+        llm::as_sent(
+            llm::constrained_request(route, &model, &options, &play_user, llm::Answer::Letter(shown.len())),
+            &options,
+        )
+    });
+    let prediction = llm::as_sent(
+        llm::constrained_request(route, &model, &options, &prediction_user, llm::Answer::Prediction),
+        &options,
+    );
+    Ok(json!({
+        "route": route.id(),
+        "model": model,
+        "system": prompt::letter_system(),
+        "play": {"user": play_user, "body": play},
+        "prediction": {"user": prediction_user, "body": prediction},
+    }))
+}
+
 /// Index of a uniformly random legal play, seeded per decision.
 pub fn random_play(req: &DecisionRequest<'_>) -> usize {
     Dice::new(derive_seed(req.seed, "invalid answer")).below(req.plays.len())
@@ -555,6 +613,33 @@ impl Player {
     /// wait counts as retry time). Above the player's option limit, the options are split
     /// into equal groups, a winner is picked per group, then among the winners. An invalid
     /// answer anywhere ends the decision with a random legal play.
+    /// Close choices, stage B: one prediction call over the play call's options in its order
+    /// (chat models only, at most 26 options). The decision holds the exchange and tokens
+    /// (`index` unused); the parse is `Ok(feature ids)` (empty = "none") or `Err(reason)`.
+    pub async fn predict(
+        &self,
+        req: &DecisionRequest<'_>,
+    ) -> Result<(Decision, Result<Vec<&'static str>, String>)> {
+        let _slot = match &self.requests {
+            Some(slots) => {
+                let started = Instant::now();
+                let slot = slots.acquire().await.expect("the semaphore is never closed");
+                req.retry.add(started.elapsed());
+                Some(slot)
+            }
+            None => None,
+        };
+        let Backend::Llm(client) = &self.backend else {
+            bail!("{}: not a chat model, no prediction call", self.spec);
+        };
+        if req.order.len() > prompt::LETTERS.len() {
+            bail!("{} options: more than one request holds", req.order.len());
+        }
+        let mut decision = Decision::default();
+        let parsed = client.predict(req, req.order, &mut decision).await?;
+        Ok((decision, parsed))
+    }
+
     pub async fn decide(&self, req: &DecisionRequest<'_>) -> Result<Decision> {
         let _slot = match &self.requests {
             Some(slots) => {

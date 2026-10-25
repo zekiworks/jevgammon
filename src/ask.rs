@@ -22,7 +22,7 @@ use crate::http::RetryTime;
 use crate::league::LeagueConfig;
 use crate::players::order::{option_order, position_key};
 use crate::players::prompt::{self, PromptVersion, letter};
-use crate::players::{DecisionRequest, PastMove, Player, Setup};
+use crate::players::{DecisionRequest, PastMove, Player, PlayerConfig, Setup};
 use crate::runner::{Clock, Harness};
 
 /// The match context shown with a stored position when its row does not give one.
@@ -330,6 +330,22 @@ struct Answer {
     retry_ms: u64,
 }
 
+/// The match context shown with stored positions: the config's rounds, clock and turn limit.
+fn match_defaults(config: &LeagueConfig) -> MatchContext {
+    let bank = config.clock.unwrap_or(300);
+    MatchContext {
+        rounds: config.rounds.unwrap_or(3),
+        max_turns: match config.max_turns.unwrap_or(300) {
+            0 => None,
+            t => Some(t),
+        },
+        clock: (bank > 0).then(|| Clock {
+            bank: Duration::from_secs(bank),
+            delay: Duration::from_secs(config.delay.unwrap_or(30)),
+        }),
+    }
+}
+
 /// `jevgammon ask`.
 pub async fn ask(args: AskArgs, setup: &Setup) -> Result<()> {
     let config = LeagueConfig::load(&args.config)?;
@@ -340,35 +356,14 @@ pub async fn ask(args: AskArgs, setup: &Setup) -> Result<()> {
         Some(id) => PromptVersion::parse(id)?,
         None => PromptVersion::BgV2,
     };
-    let bank = config.clock.unwrap_or(300);
-    let defaults = MatchContext {
-        rounds: config.rounds.unwrap_or(3),
-        max_turns: match config.max_turns.unwrap_or(300) {
-            0 => None,
-            t => Some(t),
-        },
-        clock: (bank > 0).then(|| Clock {
-            bank: Duration::from_secs(bank),
-            delay: Duration::from_secs(config.delay.unwrap_or(30)),
-        }),
-    };
+    let defaults = match_defaults(&config);
     let mut positions = read_positions(&args.positions, defaults)?;
     positions.retain(|p| p.legal_count() > 1);
     if let Some(limit) = args.limit {
         positions.truncate(limit);
     }
     let positions = Arc::new(positions);
-    let chosen: Vec<_> = config
-        .players
-        .iter()
-        .filter(|p| args.setups.is_empty() || args.setups.contains(&p.name))
-        .cloned()
-        .collect();
-    for name in &args.setups {
-        if !chosen.iter().any(|p| &p.name == name) {
-            bail!("no player `{name}` in {}", args.config.display());
-        }
-    }
+    let chosen = chosen_players(&config, &args.config, &args.setups)?;
     let harness = Harness::detect();
     let conn =
         Connection::open(&args.out).with_context(|| format!("opening {}", args.out.display()))?;
@@ -641,6 +636,342 @@ fn store(
         tx.execute(
             "INSERT INTO answer_exchanges (answer_id, attempt, request, response, error,
                                            latency_ms)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            params![
+                id,
+                (attempt + 1) as i64,
+                exchange.request,
+                exchange.response,
+                exchange.error,
+                exchange.latency_ms as i64
+            ],
+        )?;
+    }
+    tx.commit()?;
+    Ok(())
+}
+
+/// The chosen players of a config (every player when `setups` is empty); an error for a name
+/// the config does not hold.
+fn chosen_players(
+    config: &LeagueConfig,
+    path: &Path,
+    setups: &[String],
+) -> Result<Vec<PlayerConfig>> {
+    for name in setups {
+        if !config.players.iter().any(|p| &p.name == name) {
+            bail!("no player `{name}` in {}", path.display());
+        }
+    }
+    Ok(config
+        .players
+        .iter()
+        .filter(|p| setups.is_empty() || setups.contains(&p.name))
+        .cloned()
+        .collect())
+}
+
+fn sha256_hex(text: &str) -> String {
+    use sha2::Digest as _;
+    hex::encode(sha2::Sha256::digest(text.as_bytes()))
+}
+
+/// `jevgammon render-stage-b`: close choices, stage B, offline. For every chosen player and
+/// position, the play call and the prediction call exactly as they would be sent (built from
+/// the player config without credentials or network), with the sha256 of each request body
+/// as serialized for sending. One JSON line per (player, position). No request is made.
+pub fn render_stage_b(config_path: &Path, positions_path: &Path, setups: &[String]) -> Result<()> {
+    use std::io::Write as _;
+    let config = LeagueConfig::load(config_path)?;
+    let order_seed = config
+        .order_seed
+        .context("the league config needs order_seed to render stored positions")?;
+    let config_version = match &config.prompt_version {
+        Some(id) => PromptVersion::parse(id)?,
+        None => PromptVersion::BgV2,
+    };
+    let mut positions = read_positions(positions_path, match_defaults(&config))?;
+    positions.retain(|p| p.legal_count() > 1);
+    let players = chosen_players(&config, config_path, setups)?;
+    let mut out = std::io::stdout().lock();
+    for player in &players {
+        for position in &positions {
+            let order = position.order(order_seed)?;
+            let version = position.version.unwrap_or(config_version);
+            let retry = RetryTime::default();
+            let seed = derive_seed(
+                order_seed,
+                &format!("ask:{}:1:{}", position.id, version.id()),
+            );
+            let req = position.request(&order, version, seed, &retry);
+            let mut rendered = crate::players::render_stage_b(player, &req, &order)?;
+            for call in ["play", "prediction"] {
+                let body = &rendered[call]["body"];
+                let hash = (!body.is_null()).then(|| sha256_hex(&body.to_string()));
+                rendered[call]["sha256"] = json!(hash);
+            }
+            rendered["setup"] = json!(player.name);
+            rendered["spec"] = json!(player.spec);
+            rendered["reasoning"] = json!(player.reasoning);
+            rendered["position_id"] = json!(position.id);
+            rendered["prompt_version"] = json!(version.id());
+            rendered["order_seed"] = json!(order_seed);
+            rendered["option_order"] = json!(order);
+            writeln!(out, "{rendered}")?;
+        }
+    }
+    Ok(())
+}
+
+const PREDICTION_SCHEMA: &str = r#"
+PRAGMA journal_mode = WAL;
+CREATE TABLE IF NOT EXISTS predictions (
+    id                 INTEGER PRIMARY KEY,
+    setup              TEXT NOT NULL,
+    spec               TEXT NOT NULL,
+    provider           TEXT,
+    reasoning          TEXT,
+    position_id        TEXT NOT NULL,
+    position_set       TEXT,
+    -- The play calls' prompt version; the prediction replaces only its letter instruction.
+    prompt_version     TEXT NOT NULL,
+    order_seed         INTEGER NOT NULL,
+    harness_commit     TEXT,
+    harness_dirty      INTEGER,
+    legal_count        INTEGER NOT NULL,
+    option_order       TEXT NOT NULL,
+    -- JSON list of feature ids (hitting, points, race, prime); [] = a valid "none";
+    -- NULL when invalid or failed.
+    features           TEXT,
+    invalid            INTEGER,
+    invalid_reason     TEXT,
+    request_ms         INTEGER,
+    retry_ms           INTEGER,
+    input_tokens       INTEGER,
+    output_tokens      INTEGER,
+    reasoning_tokens   INTEGER,
+    cost_usd           REAL,
+    -- The request failed after its in-call retries. Final: never asked again.
+    error              TEXT,
+    created_at         TEXT NOT NULL,
+    UNIQUE (setup, position_id, prompt_version)
+);
+CREATE TABLE IF NOT EXISTS prediction_exchanges (
+    id            INTEGER PRIMARY KEY,
+    prediction_id INTEGER NOT NULL REFERENCES predictions(id),
+    attempt       INTEGER NOT NULL,
+    request       TEXT NOT NULL,
+    response      TEXT,
+    error         TEXT,
+    latency_ms    INTEGER NOT NULL
+);
+"#;
+
+pub struct PredictArgs {
+    pub config: PathBuf,
+    pub positions: PathBuf,
+    pub out: PathBuf,
+    pub setups: Vec<String>,
+    pub time_limit: Option<Duration>,
+}
+
+/// `jevgammon predict`: close choices, stage B (Method §9.9). One prediction call per chosen
+/// player and position, stored in `predictions`. Every (player, position) is asked once: a
+/// stored row, valid, invalid or failed, is never asked again (no re-ask).
+pub async fn predict(args: PredictArgs, setup: &Setup) -> Result<()> {
+    let config = LeagueConfig::load(&args.config)?;
+    let order_seed = config
+        .order_seed
+        .context("the league config needs order_seed to ask stored positions")?;
+    let config_version = match &config.prompt_version {
+        Some(id) => PromptVersion::parse(id)?,
+        None => PromptVersion::BgV2,
+    };
+    let mut positions = read_positions(&args.positions, match_defaults(&config))?;
+    positions.retain(|p| p.legal_count() > 1);
+    let positions = Arc::new(positions);
+    let players = chosen_players(&config, &args.config, &args.setups)?;
+    let harness = Harness::detect();
+    let conn =
+        Connection::open(&args.out).with_context(|| format!("opening {}", args.out.display()))?;
+    conn.busy_timeout(Duration::from_secs(60))?;
+    conn.execute_batch(PREDICTION_SCHEMA)?;
+    let conn = Arc::new(Mutex::new(conn));
+    println!(
+        "predicting {} positions of {} · {} setup(s) · option-order seed {order_seed} · harness {}{} · out {}",
+        positions.len(),
+        args.positions.display(),
+        players.len(),
+        harness.commit.as_deref().unwrap_or("unknown"),
+        if harness.dirty { " (dirty)" } else { "" },
+        args.out.display()
+    );
+    let mut setups = JoinSet::new();
+    for player_config in players {
+        let player = match Player::from_config(&player_config, setup).await {
+            Ok(player) => Arc::new(player),
+            Err(error) => {
+                println!("[{}] blocked: {error:#}", player_config.name);
+                continue;
+            }
+        };
+        let done: std::collections::HashSet<(String, String)> = {
+            let conn = conn.lock();
+            let mut statement = conn
+                .prepare("SELECT position_id, prompt_version FROM predictions WHERE setup = ?1")?;
+            let rows = statement.query_map(params![player_config.name], |row| {
+                Ok((row.get(0)?, row.get(1)?))
+            })?;
+            rows.collect::<rusqlite::Result<_>>()?
+        };
+        let (positions, conn, harness) = (positions.clone(), conn.clone(), harness.clone());
+        let time_limit = args.time_limit;
+        setups.spawn(async move {
+            let name = player_config.name.clone();
+            let parallel = Arc::new(Semaphore::new(player_config.parallel.unwrap_or(4).max(1)));
+            let mut jobs = JoinSet::new();
+            let started = Instant::now();
+            for index in 0..positions.len() {
+                let version = positions[index].version.unwrap_or(config_version);
+                if done.contains(&(positions[index].id.clone(), version.id().to_owned())) {
+                    continue;
+                }
+                let permit = parallel.clone().acquire_owned().await.expect("open");
+                let (asker, rows, name) = (player.clone(), positions.clone(), name.clone());
+                jobs.spawn(async move {
+                    let _permit = permit;
+                    let position = &rows[index];
+                    let order = position.order(order_seed);
+                    let retry = RetryTime::default();
+                    let started = Instant::now();
+                    let outcome = match &order {
+                        Err(error) => Err(anyhow!("{error:#}")),
+                        Ok(order) => {
+                            let seed = derive_seed(
+                                order_seed,
+                                &format!("predict:{}:{}", position.id, version.id()),
+                            );
+                            let request = position.request(order, version, seed, &retry);
+                            let call = asker.predict(&request);
+                            match time_limit {
+                                Some(limit) => {
+                                    tokio::time::timeout(limit, call).await.unwrap_or_else(|_| {
+                                        Err(anyhow!(
+                                            "{TIMED_OUT}: no answer within {} s",
+                                            limit.as_secs()
+                                        ))
+                                    })
+                                }
+                                None => call.await,
+                            }
+                        }
+                    };
+                    let elapsed = started.elapsed();
+                    let retry_spent = retry.get().min(elapsed);
+                    Prediction {
+                        setup: name,
+                        position: index,
+                        version,
+                        order: order.unwrap_or_default(),
+                        outcome,
+                        request_ms: (elapsed - retry_spent).as_millis() as u64,
+                        retry_ms: retry_spent.as_millis() as u64,
+                    }
+                });
+                while let Some(joined) = jobs.try_join_next() {
+                    store_prediction(&conn, &positions, &player, &harness, order_seed, joined?)?;
+                }
+            }
+            while let Some(joined) = jobs.join_next().await {
+                store_prediction(&conn, &positions, &player, &harness, order_seed, joined?)?;
+            }
+            println!("[{name}] done in {:.0} s", started.elapsed().as_secs_f64());
+            anyhow::Ok(())
+        });
+    }
+    while let Some(joined) = setups.join_next().await {
+        if let Err(error) = joined? {
+            println!("setup failed: {error:#}");
+        }
+    }
+    Ok(())
+}
+
+/// One stored prediction.
+struct Prediction {
+    setup: String,
+    position: usize,
+    version: PromptVersion,
+    order: Vec<usize>,
+    outcome: Result<(
+        crate::players::Decision,
+        std::result::Result<Vec<&'static str>, String>,
+    )>,
+    request_ms: u64,
+    retry_ms: u64,
+}
+
+fn store_prediction(
+    conn: &Mutex<Connection>,
+    positions: &[Position],
+    player: &Player,
+    harness: &Harness,
+    order_seed: u64,
+    prediction: Prediction,
+) -> Result<()> {
+    let position = &positions[prediction.position];
+    let (decision, parsed, error) = match &prediction.outcome {
+        Ok((decision, parsed)) => (Some(decision), Some(parsed), None),
+        Err(error) => {
+            println!("[{}] {}: {error:#}", prediction.setup, position.id);
+            (None, None, Some(format!("{error:#}")))
+        }
+    };
+    let features = parsed
+        .and_then(|p| p.as_ref().ok())
+        .map(|f| serde_json::to_string(f).expect("serializes"));
+    let invalid_reason = parsed.and_then(|p| p.as_ref().err()).cloned();
+    let mut conn = conn.lock();
+    let tx = conn.transaction()?;
+    tx.execute(
+        "INSERT INTO predictions (setup, spec, provider, reasoning, position_id, position_set,
+             prompt_version, order_seed, harness_commit, harness_dirty, legal_count, option_order,
+             features, invalid, invalid_reason, request_ms, retry_ms, input_tokens, output_tokens,
+             reasoning_tokens, cost_usd, error, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18,
+                 ?19, ?20, ?21, ?22, ?23)",
+        params![
+            prediction.setup,
+            player.spec,
+            player.provider,
+            player.reasoning,
+            position.id,
+            position.set,
+            prediction.version.id(),
+            order_seed as i64,
+            harness.commit,
+            harness.dirty,
+            position.legal_count() as i64,
+            serde_json::to_string(&prediction.order).expect("serializes"),
+            features,
+            parsed.map(|p| p.is_err()),
+            invalid_reason,
+            prediction.request_ms as i64,
+            prediction.retry_ms as i64,
+            decision.map(|d| d.input_tokens as i64),
+            decision.map(|d| d.output_tokens as i64),
+            decision.and_then(|d| d.reasoning_tokens).map(|r| r as i64),
+            decision.and_then(|d| player.cost(d)),
+            error,
+            chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Millis, true),
+        ],
+    )?;
+    let id = tx.last_insert_rowid();
+    let exchanges: &[Exchange] = decision.map_or(&[], |d| &d.exchanges);
+    for (attempt, exchange) in exchanges.iter().enumerate() {
+        tx.execute(
+            "INSERT INTO prediction_exchanges (prediction_id, attempt, request, response, error,
+                                               latency_ms)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
             params![
                 id,

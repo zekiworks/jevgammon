@@ -25,6 +25,19 @@ const NOTATION_INSTRUCTIONS: &str = include_str!("../../prompts/instructions-not
 const QUESTION: &str = include_str!("../../prompts/question.txt");
 /// Cygnet's system prompt for the letter readout (`~/code/cygnet/shim/cygnet_shim.py`).
 const LETTER_SYSTEM: &str = include_str!("../../prompts/letter-system.txt");
+/// Close choices, stage B: the prediction question (verbatim from the request) and the
+/// approved format line, sent in place of the letter instruction.
+const PREDICTION: &str = include_str!("../../prompts/prediction.txt");
+/// The four features a prediction may name, as the format line spells them, with their ids
+/// in the site's close-choice analysis (Method §9.5).
+pub const PREDICTION_FEATURES: [(&str, &str); 4] = [
+    ("hitting risk", "hitting"),
+    ("making a point", "points"),
+    ("the race", "race"),
+    ("the prime", "prime"),
+];
+/// The word for "no feature".
+pub const PREDICTION_NONE: &str = "none";
 
 pub const LETTERS: &[u8; 26] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
@@ -362,6 +375,14 @@ pub fn letter(position: usize) -> char {
 /// Cygnet's `build_prompt`: the state, the instructions, then `shown` (indices into the
 /// legal plays, at most 26) lettered A, B, C... in that order.
 pub fn letter_user(req: &DecisionRequest<'_>, shown: &[usize]) -> String {
+    let mut out = lettered_options(req, shown);
+    out.push_str("\n\nAnswer with the letter of exactly one option, and nothing else:");
+    out
+}
+
+/// The state, the instructions and the lettered options: the letter prompt without its last
+/// line.
+fn lettered_options(req: &DecisionRequest<'_>, shown: &[usize]) -> String {
     let mut out = format!(
         "{}\n\n{}\n\nOptions:",
         state(req).trim_end(),
@@ -370,8 +391,75 @@ pub fn letter_user(req: &DecisionRequest<'_>, shown: &[usize]) -> String {
     for (position, &index) in shown.iter().enumerate() {
         let _ = write!(out, "\n{}. {}", letter(position), option_text(req, index));
     }
-    out.push_str("\n\nAnswer with the letter of exactly one option, and nothing else:");
     out
+}
+
+/// Close choices, stage B (Method §9.9): the letter prompt of the play call with its last
+/// line (the letter instruction) replaced by the prediction question and the format line.
+/// Same system prompt, state, instructions and options in the same order.
+pub fn prediction_user(req: &DecisionRequest<'_>, shown: &[usize]) -> String {
+    format!(
+        "{}\n\n{}",
+        lettered_options(req, shown),
+        PREDICTION.trim_end()
+    )
+}
+
+/// A parsed prediction: the named features' ids (`hitting`, `points`, `race`, `prime`) in
+/// that fixed order, empty for a valid "none"; `Err` with the reason for an invalid answer.
+/// Valid answers are JSON: `{"features": [...]}` (the constrained form) or a bare array,
+/// optionally after reasoning in `<think>` tags or inside a ```json fence; each item must be
+/// one of the four feature words or `none` (case and outer spaces ignored, nothing else
+/// mapped); duplicates collapse; `none` alone or an empty list is the empty set; `none` with
+/// a feature, an unknown item, a non-string item, prose, a refusal or an empty reply is
+/// invalid. No repair.
+pub fn parse_prediction(text: &str) -> Result<Vec<&'static str>, String> {
+    let mut text = text.trim();
+    if let Some(end) = text.rfind("</think>") {
+        text = text[end + "</think>".len()..].trim();
+    }
+    let text = text
+        .trim_start_matches("```json")
+        .trim_start_matches("```")
+        .trim_end_matches("```")
+        .trim();
+    if text.is_empty() {
+        return Err("empty reply".into());
+    }
+    let value: Value = serde_json::from_str(text).map_err(|_| "not JSON".to_owned())?;
+    let items = match &value {
+        Value::Array(items) => items,
+        Value::Object(fields) => match (fields.get("features"), fields.len()) {
+            (Some(Value::Array(items)), 1) => items,
+            _ => return Err("not {\"features\": [...]}".into()),
+        },
+        _ => return Err("not a list of features".into()),
+    };
+    let mut named = [false; 4];
+    let mut none = false;
+    for item in items {
+        let Some(word) = item.as_str() else {
+            return Err(format!("item {item} is not a string"));
+        };
+        let word = word.trim().to_ascii_lowercase();
+        if word == PREDICTION_NONE {
+            none = true;
+            continue;
+        }
+        match PREDICTION_FEATURES.iter().position(|(w, _)| *w == word) {
+            Some(k) => named[k] = true,
+            None => return Err(format!("unknown feature `{word}`")),
+        }
+    }
+    if none && named.iter().any(|&n| n) {
+        return Err("none together with a feature".into());
+    }
+    Ok(PREDICTION_FEATURES
+        .iter()
+        .zip(named)
+        .filter(|(_, n)| *n)
+        .map(|((_, id), _)| *id)
+        .collect())
 }
 
 /// The position (0-based) of the option letter in a constrained one-letter reply: `C`,
@@ -687,5 +775,77 @@ mod tests {
         assert!((probs[0] - 0.1 / 0.9).abs() < 1e-9);
         assert_eq!(probs[1], 0.0);
         assert!(letter_probabilities(&[(" the".into(), -0.1)], 3).is_none());
+    }
+
+    /// The prediction prompt is the letter prompt with only its last line replaced.
+    #[test]
+    fn prediction_prompt_replaces_only_the_letter_instruction() {
+        let fixture = Fixture::new(Board::start(), (6, 3));
+        let req = fixture.request(PromptVersion::BgV2, (6, 3));
+        let letter = letter_user(&req, req.order);
+        let prediction = prediction_user(&req, req.order);
+        let tail = "\n\nAnswer with the letter of exactly one option, and nothing else:";
+        let common = letter.strip_suffix(tail).unwrap();
+        let asked = prediction.strip_prefix(common).unwrap();
+        assert_eq!(
+            asked,
+            "\n\nIf you answered this position again independently, on which features might your \
+             chosen plays differ: hitting risk, making a point, the race or the prime? You may name \
+             several, or none.\nAnswer with the features you name, using only these words: hitting \
+             risk, making a point, the race, the prime; or the single word none."
+        );
+    }
+
+    /// Synthetic answers: the validity rules of Method §9.9 and the stage B plan (B1).
+    #[test]
+    fn parses_predictions() {
+        let ok = |text: &str| parse_prediction(text).unwrap();
+        let bad = |text: &str| parse_prediction(text).unwrap_err();
+        let empty: Vec<&str> = Vec::new();
+        assert_eq!(
+            ok(r#"{"features": ["the prime", "hitting risk"]}"#),
+            ["hitting", "prime"]
+        );
+        assert_eq!(
+            ok(r#"{"features": ["hitting risk", "making a point", "the race", "the prime"]}"#),
+            ["hitting", "points", "race", "prime"]
+        );
+        assert_eq!(ok(r#"{"features": ["the race", "the race"]}"#), ["race"]);
+        assert_eq!(ok(r#"{"features": [" The Race "]}"#), ["race"]);
+        assert_eq!(ok(r#"["making a point"]"#), ["points"]);
+        assert_eq!(ok(r#"{"features": ["none"]}"#), empty);
+        assert_eq!(ok(r#"{"features": ["none", "none"]}"#), empty);
+        assert_eq!(ok(r#"{"features": []}"#), empty);
+        assert_eq!(ok("[]"), empty);
+        assert_eq!(
+            ok("<think>maybe the race</think>{\"features\": [\"the race\"]}"),
+            ["race"]
+        );
+        assert_eq!(
+            ok("```json\n{\"features\": [\"the prime\"]}\n```"),
+            ["prime"]
+        );
+        assert_eq!(
+            bad(r#"{"features": ["none", "the race"]}"#),
+            "none together with a feature"
+        );
+        assert_eq!(bad(r#"{"features": ["race"]}"#), "unknown feature `race`");
+        assert_eq!(bad(r#"{"features": ["blots"]}"#), "unknown feature `blots`");
+        assert_eq!(bad(r#"{"features": [1]}"#), "item 1 is not a string");
+        assert_eq!(
+            bad(r#"{"features": "the race"}"#),
+            "not {\"features\": [...]}"
+        );
+        assert_eq!(
+            bad(r#"{"features": [], "why": "x"}"#),
+            "not {\"features\": [...]}"
+        );
+        assert_eq!(bad(r#"{"choice": "A"}"#), "not {\"features\": [...]}");
+        assert_eq!(bad(r#""none""#), "not a list of features");
+        assert_eq!(bad("none"), "not JSON");
+        assert_eq!(bad("the race, the prime"), "not JSON");
+        assert_eq!(bad("I can't help with that."), "not JSON");
+        assert_eq!(bad("   "), "empty reply");
+        assert_eq!(bad("<think>long thought</think>"), "empty reply");
     }
 }

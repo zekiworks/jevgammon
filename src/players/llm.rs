@@ -17,7 +17,10 @@ use std::time::Instant;
 use anyhow::{Context, Result, anyhow};
 use serde_json::{Value, json};
 
-use super::prompt::{LETTERS, letter_probabilities, letter_system, letter_user, parse_letter};
+use super::prompt::{
+    LETTERS, PREDICTION_FEATURES, PREDICTION_NONE, letter_probabilities, letter_system,
+    letter_user, parse_letter, parse_prediction, prediction_user,
+};
 use super::{Decision, DecisionRequest};
 use crate::auth::Credentials;
 use crate::db::Exchange;
@@ -142,6 +145,191 @@ impl Completion {
     /// put it under reasoning), else `top`.
     fn prefill_top(&self) -> Option<&Vec<(String, f64)>> {
         self.single_entry_top.as_ref().or(self.top.as_ref())
+    }
+}
+
+/// What a constrained request asks for: one option letter among `count`, or a stage B
+/// prediction (a list of feature words).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Answer {
+    Letter(usize),
+    Prediction,
+}
+
+/// The provider route of a chat-model player, without its credentials (for rendering the
+/// exact request offline).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Route {
+    OpenAiSubscription,
+    Xai,
+    AnthropicSubscription,
+    Gemini,
+    /// Gemini's request inside a Cloud Code Assist envelope (model and project added at send).
+    Antigravity,
+    OpenAiCompatible,
+}
+
+impl Route {
+    pub fn id(self) -> &'static str {
+        match self {
+            Route::OpenAiSubscription => "openai-subscription (Codex Responses API)",
+            Route::Xai => "xai-subscription (Responses API)",
+            Route::AnthropicSubscription => "anthropic-subscription (Messages API)",
+            Route::Gemini => "gemini-api (generateContent)",
+            Route::Antigravity => {
+                "antigravity-subscription (generateContent in a Cloud Code Assist envelope)"
+            }
+            Route::OpenAiCompatible => "openai-compatible (chat completions)",
+        }
+    }
+}
+
+impl Kind {
+    fn route(&self) -> Route {
+        match self {
+            Kind::OpenAiSubscription(_) => Route::OpenAiSubscription,
+            Kind::Xai(_) => Route::Xai,
+            Kind::AnthropicSubscription(_) => Route::AnthropicSubscription,
+            Kind::Gemini(_) => Route::Gemini,
+            Kind::Antigravity(_) => Route::Antigravity,
+            Kind::OpenAiCompatible { .. } => Route::OpenAiCompatible,
+        }
+    }
+}
+
+/// JSON schema of a stage B prediction: `{"features": [...]}`, each item one of the four
+/// feature words or `none` (duplicates and `none` with a feature are judged by
+/// `parse_prediction`, not by the schema).
+fn prediction_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {"features": {"type": "array", "items": {"type": "string", "enum": prediction_words()}}},
+        "required": ["features"],
+        "additionalProperties": false,
+    })
+}
+
+fn prediction_words() -> Vec<&'static str> {
+    PREDICTION_FEATURES
+        .iter()
+        .map(|(word, _)| *word)
+        .chain([PREDICTION_NONE])
+        .collect()
+}
+
+fn answer_schema(answer: Answer) -> Value {
+    match answer {
+        Answer::Letter(count) => letter_schema(count),
+        Answer::Prediction => prediction_schema(),
+    }
+}
+
+/// The request body as sent: `body` with the player's configured extra fields merged in.
+pub fn as_sent(body: Value, options: &Options) -> Value {
+    merged(body, options.request.as_ref())
+}
+
+/// A request constrained by the provider to `answer`, before the configured extra fields
+/// (`as_sent`). The play call (`Answer::Letter`) is the league request; the prediction differs
+/// only in its user text and its answer format.
+pub fn constrained_request(
+    route: Route,
+    model: &str,
+    options: &Options,
+    user: &str,
+    answer: Answer,
+) -> Value {
+    let system = letter_system();
+    let effort = options.reasoning.as_deref();
+    let (name, compatible_name) = match answer {
+        Answer::Letter(_) => ("backgammon_play", "play"),
+        Answer::Prediction => ("backgammon_prediction", "prediction"),
+    };
+    match route {
+        Route::OpenAiSubscription => {
+            let mut body = json!({
+                "model": model,
+                "instructions": system,
+                "input": [{"type": "message", "role": "user", "content": [{"type": "input_text", "text": user}]}],
+                "stream": true,
+                "store": false,
+                "text": {"format": {"type": "json_schema", "name": name, "schema": answer_schema(answer), "strict": true}},
+            });
+            if let Some(effort) = effort {
+                body["reasoning"] = json!({"effort": effort});
+            }
+            body
+        }
+        Route::Xai => {
+            let mut body = json!({
+                "model": model,
+                "instructions": system,
+                "input": [{"role": "user", "content": user}],
+                "store": false,
+                "text": {"format": {"type": "json_schema", "name": name, "schema": answer_schema(answer), "strict": true}},
+            });
+            if let Some(effort) = effort {
+                body["reasoning"] = json!({"effort": effort});
+            }
+            body
+        }
+        Route::AnthropicSubscription => {
+            let mut output =
+                json!({"format": {"type": "json_schema", "schema": answer_schema(answer)}});
+            if let Some(effort) = effort {
+                output["effort"] = json!(effort);
+            }
+            json!({
+                "model": model,
+                // Room for adaptive thinking at high effort (1,024 ran out in the smoke test).
+                "max_tokens": options.max_tokens.unwrap_or(32000),
+                "system": [
+                    {"type": "text", "text": CLAUDE_CODE_IDENTITY},
+                    {"type": "text", "text": system},
+                ],
+                "messages": [{"role": "user", "content": user}],
+                "output_config": output,
+            })
+        }
+        Route::Gemini | Route::Antigravity => {
+            let mut config = match answer {
+                Answer::Letter(count) => json!({
+                    "responseMimeType": "text/x.enum",
+                    "responseSchema": {"type": "STRING", "enum": letters(count)},
+                    "temperature": 1.0,
+                }),
+                Answer::Prediction => json!({
+                    "responseMimeType": "application/json",
+                    "responseSchema": {
+                        "type": "OBJECT",
+                        "properties": {"features": {"type": "ARRAY", "items": {"type": "STRING", "enum": prediction_words()}}},
+                        "required": ["features"],
+                    },
+                    "temperature": 1.0,
+                }),
+            };
+            if let Some(effort) = effort {
+                config["thinkingConfig"] = json!({"thinkingLevel": effort});
+            }
+            json!({
+                "systemInstruction": {"parts": [{"text": system}]},
+                "contents": [{"role": "user", "parts": [{"text": user}]}],
+                "generationConfig": config,
+            })
+        }
+        Route::OpenAiCompatible => json!({
+            "model": model,
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ],
+            "temperature": 1.0,
+            "max_tokens": options.max_tokens.unwrap_or(32768),
+            "response_format": {
+                "type": "json_schema",
+                "json_schema": {"name": compatible_name, "schema": answer_schema(answer), "strict": true},
+            },
+        }),
     }
 }
 
@@ -408,83 +596,38 @@ impl LlmClient {
 
     /// A request for one letter, constrained to the option letters by the provider.
     fn constrained_body(&self, user: &str, count: usize) -> Value {
-        let system = letter_system();
-        let effort = self.options.reasoning.as_deref();
-        match &self.kind {
-            Kind::OpenAiSubscription(_) => {
-                let mut body = json!({
-                    "model": self.model,
-                    "instructions": system,
-                    "input": [{"type": "message", "role": "user", "content": [{"type": "input_text", "text": user}]}],
-                    "stream": true,
-                    "store": false,
-                    "text": {"format": {"type": "json_schema", "name": "backgammon_play", "schema": letter_schema(count), "strict": true}},
-                });
-                if let Some(effort) = effort {
-                    body["reasoning"] = json!({"effort": effort});
-                }
-                body
-            }
-            Kind::Xai(_) => {
-                let mut body = json!({
-                    "model": self.model,
-                    "instructions": system,
-                    "input": [{"role": "user", "content": user}],
-                    "store": false,
-                    "text": {"format": {"type": "json_schema", "name": "backgammon_play", "schema": letter_schema(count), "strict": true}},
-                });
-                if let Some(effort) = effort {
-                    body["reasoning"] = json!({"effort": effort});
-                }
-                body
-            }
-            Kind::AnthropicSubscription(_) => {
-                let mut output =
-                    json!({"format": {"type": "json_schema", "schema": letter_schema(count)}});
-                if let Some(effort) = effort {
-                    output["effort"] = json!(effort);
-                }
-                json!({
-                    "model": self.model,
-                    // Room for adaptive thinking at high effort (1,024 ran out in the smoke test).
-                    "max_tokens": self.options.max_tokens.unwrap_or(32000),
-                    "system": [
-                        {"type": "text", "text": CLAUDE_CODE_IDENTITY},
-                        {"type": "text", "text": system},
-                    ],
-                    "messages": [{"role": "user", "content": user}],
-                    "output_config": output,
-                })
-            }
-            Kind::Gemini(_) | Kind::Antigravity(_) => {
-                let mut config = json!({
-                    "responseMimeType": "text/x.enum",
-                    "responseSchema": {"type": "STRING", "enum": letters(count)},
-                    "temperature": 1.0,
-                });
-                if let Some(effort) = effort {
-                    config["thinkingConfig"] = json!({"thinkingLevel": effort});
-                }
-                json!({
-                    "systemInstruction": {"parts": [{"text": system}]},
-                    "contents": [{"role": "user", "parts": [{"text": user}]}],
-                    "generationConfig": config,
-                })
-            }
-            Kind::OpenAiCompatible { .. } => json!({
-                "model": self.model,
-                "messages": [
-                    {"role": "system", "content": system},
-                    {"role": "user", "content": user},
-                ],
-                "temperature": 1.0,
-                "max_tokens": self.options.max_tokens.unwrap_or(32768),
-                "response_format": {
-                    "type": "json_schema",
-                    "json_schema": {"name": "play", "schema": letter_schema(count), "strict": true},
-                },
-            }),
+        constrained_request(
+            self.kind.route(),
+            &self.model,
+            &self.options,
+            user,
+            Answer::Letter(count),
+        )
+    }
+
+    /// Close choices, stage B: one prediction call over `shown` (the play call's options and
+    /// order). `Ok(Ok(feature ids))` for a valid prediction (empty = "none"), `Ok(Err(reason))`
+    /// for an invalid one (noted on its exchange), `Err` for a failed request. Never asked again.
+    pub async fn predict(
+        &self,
+        req: &DecisionRequest<'_>,
+        shown: &[usize],
+        decision: &mut Decision,
+    ) -> Result<Result<Vec<&'static str>, String>> {
+        let user = prediction_user(req, shown);
+        let body = constrained_request(
+            self.kind.route(),
+            &self.model,
+            &self.options,
+            &user,
+            Answer::Prediction,
+        );
+        let completion = self.call(&body, req, decision).await?;
+        let parsed = parse_prediction(&completion.text);
+        if let Err(reason) = &parsed {
+            mark(decision, &format!("invalid prediction: {reason}"));
         }
+        Ok(parsed)
     }
 
     /// Sends `body` (with the configured extra fields) and records the exchange and tokens.
@@ -1431,5 +1574,116 @@ mod tests {
         assert_eq!((c.input_tokens, c.output_tokens), (1327, 196));
         assert_eq!(c.reasoning_tokens, Some(190));
         assert!(parse_xai(r#"{"status": "incomplete", "output": []}"#).is_err());
+    }
+
+    /// Close choices, stage B: on every route the prediction request is the play request with
+    /// only the user text and the answer format changed (same model, system prompt, reasoning
+    /// setting, temperature, token limit and extra fields).
+    #[test]
+    fn prediction_requests_keep_every_play_setting() {
+        let options = |reasoning: Option<&str>| Options {
+            reasoning: reasoning.map(str::to_owned),
+            request: None,
+            max_tokens: None,
+            top_logprobs: None,
+            readout: Readout::Prefill,
+            answer_prefix: None,
+            pacer: None,
+            budget: None,
+        };
+        let routes = [
+            (Route::OpenAiSubscription, Some("high"), "/text/format"),
+            (Route::Xai, Some("low"), "/text/format"),
+            (
+                Route::AnthropicSubscription,
+                Some("high"),
+                "/output_config/format",
+            ),
+            (
+                Route::Gemini,
+                Some("low"),
+                "/generationConfig/responseMimeType",
+            ),
+            (
+                Route::Antigravity,
+                Some("low"),
+                "/generationConfig/responseMimeType",
+            ),
+            (Route::OpenAiCompatible, None, "/response_format"),
+        ];
+        for (route, effort, format) in routes {
+            let o = options(effort);
+            let mut play = constrained_request(route, "m", &o, "PLAY", Answer::Letter(3));
+            let mut prediction = constrained_request(route, "m", &o, "PREDICT", Answer::Prediction);
+            let user = |v: &Value| v.to_string().contains("PREDICT");
+            assert!(user(&prediction) && !user(&play), "{route:?}");
+            for body in [&mut play, &mut prediction] {
+                *body.pointer_mut(format).unwrap() = Value::Null;
+                if matches!(route, Route::Gemini | Route::Antigravity) {
+                    body["generationConfig"]["responseSchema"] = Value::Null;
+                }
+            }
+            let text = |v: &Value| v.to_string().replace("PREDICT", "U").replace("PLAY", "U");
+            assert_eq!(text(&play), text(&prediction), "{route:?}");
+        }
+        let o = options(Some("low"));
+        let body = constrained_request(Route::OpenAiSubscription, "m", &o, "U", Answer::Prediction);
+        assert_eq!(body["reasoning"]["effort"], "low");
+        assert_eq!(
+            body["text"]["format"]["schema"]["properties"]["features"]["items"]["enum"],
+            json!([
+                "hitting risk",
+                "making a point",
+                "the race",
+                "the prime",
+                "none"
+            ])
+        );
+        assert_eq!(body["text"]["format"]["name"], "backgammon_prediction");
+        let body = constrained_request(Route::Antigravity, "m", &o, "U", Answer::Prediction);
+        assert_eq!(
+            body["generationConfig"]["responseMimeType"],
+            "application/json"
+        );
+        assert_eq!(body["generationConfig"]["temperature"], 1.0);
+        assert_eq!(
+            body["generationConfig"]["thinkingConfig"]["thinkingLevel"],
+            "low"
+        );
+        let body = constrained_request(
+            Route::AnthropicSubscription,
+            "m",
+            &o,
+            "U",
+            Answer::Prediction,
+        );
+        assert_eq!(body["max_tokens"], 32000);
+        assert_eq!(body["output_config"]["effort"], "low");
+    }
+
+    /// Synthetic provider replies to a prediction call, through each route's response parser
+    /// and `parse_prediction`.
+    #[test]
+    fn reads_predictions_from_each_route() {
+        let codex = "data: {\"type\":\"response.output_text.delta\",\"delta\":\"{\\\"features\\\":[\\\"the race\\\"\"}\n\
+                     data: {\"type\":\"response.output_text.delta\",\"delta\":\",\\\"hitting risk\\\"]}\"}\n\
+                     data: {\"type\":\"response.completed\",\"response\":{\"usage\":{\"input_tokens\":3200,\"output_tokens\":90}}}\n";
+        let c = parse_codex_sse(codex).unwrap();
+        assert_eq!(parse_prediction(&c.text).unwrap(), ["hitting", "race"]);
+        let claude = r#"{"content": [{"type": "thinking", "thinking": "the prime?"},
+            {"type": "text", "text": "{\"features\": [\"none\"]}"}],
+            "usage": {"input_tokens": 4400, "output_tokens": 300}}"#;
+        let c = parse_anthropic(claude).unwrap();
+        assert_eq!(parse_prediction(&c.text).unwrap(), Vec::<&str>::new());
+        let gemini = r#"{"response": {"candidates": [{"content": {"role": "model", "parts": [
+            {"thoughtSignature": "sig", "text": "{\"features\": [\"making a point\", \"the prime\"]}"}]},
+            "finishReason": "STOP"}], "usageMetadata": {"promptTokenCount": 3400,
+            "candidatesTokenCount": 12}}, "traceId": "t"}"#;
+        let c = parse_antigravity(gemini).unwrap();
+        assert_eq!(parse_prediction(&c.text).unwrap(), ["points", "prime"]);
+        let refusal = r#"{"content": [{"type": "text", "text": "I can only answer with a letter."}],
+            "usage": {"input_tokens": 1, "output_tokens": 1}}"#;
+        let c = parse_anthropic(refusal).unwrap();
+        assert_eq!(parse_prediction(&c.text).unwrap_err(), "not JSON");
     }
 }

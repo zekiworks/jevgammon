@@ -54,6 +54,13 @@ enum Command {
     /// Sends stored positions to the players of a league config and stores every answer
     /// with the per-decision fields (shared positions, smoke tests).
     Ask(AskArgs),
+    /// Close choices, stage B, offline: prints the play call and the prediction call each
+    /// chosen player would be sent for every stored position (built from the config, no
+    /// credentials, no request), with the sha256 of each request body. One JSON line each.
+    RenderStageB(RenderStageBArgs),
+    /// Close choices, stage B: one prediction call per chosen player and stored position
+    /// (table `predictions`); a stored row (valid, invalid or failed) is never asked again.
+    Predict(PredictArgs),
     /// Adds a player to an existing league, running or finished: a participant (its
     /// `players` row is created, or reused when the name is known with the same settings),
     /// a note, and an entry in the additions freeze log. Its pairs with every current
@@ -163,6 +170,42 @@ struct RenderArgs {
     /// Option-order seed.
     #[arg(long)]
     order_seed: u64,
+}
+
+#[derive(Args)]
+struct RenderStageBArgs {
+    /// League config file holding the players (its order_seed, prompt_version, rounds, clock
+    /// and max_turns, as for `ask`).
+    #[arg(long)]
+    config: PathBuf,
+    /// Positions file (JSON lines, as for `render`).
+    #[arg(long)]
+    positions: PathBuf,
+    /// Player name in the config (repeatable); default: every player.
+    #[arg(long = "setup")]
+    setups: Vec<String>,
+}
+
+#[derive(Args)]
+struct PredictArgs {
+    /// League config file whose players answer (as for `ask`).
+    #[arg(long)]
+    config: PathBuf,
+    /// Positions file (JSON lines, as for `render`).
+    #[arg(long)]
+    positions: PathBuf,
+    /// SQLite file for the predictions (tables predictions, prediction_exchanges).
+    #[arg(long)]
+    out: PathBuf,
+    /// Player name in the config (repeatable); default: every player.
+    #[arg(long = "setup")]
+    setups: Vec<String>,
+    /// Longest wall-clock seconds per prediction; a longer one is stored as timed out.
+    #[arg(long)]
+    time_limit: Option<u64>,
+    /// qfork/Glyph credential root read for subscription logins and API keys.
+    #[arg(long, env = "JEVGAMMON_QFORK_ROOT")]
+    qfork_root: Option<PathBuf>,
 }
 
 #[derive(Args)]
@@ -356,6 +399,28 @@ async fn main() -> ExitCode {
         Some(Command::Void(args)) => void(args),
         Some(Command::Migrate(args)) => migrate::run(&args),
         Some(Command::Rank(args)) => rank(args),
+        Some(Command::RenderStageB(args)) => {
+            ask::render_stage_b(&args.config, &args.positions, &args.setups)
+        }
+        Some(Command::Predict(args)) => {
+            let setup = Setup::new(
+                args.qfork_root
+                    .clone()
+                    .unwrap_or_else(auth::default_qfork_root),
+                "http://localhost:8080/v1".to_owned(),
+            );
+            ask::predict(
+                ask::PredictArgs {
+                    config: args.config,
+                    positions: args.positions,
+                    out: args.out,
+                    setups: args.setups,
+                    time_limit: args.time_limit.map(std::time::Duration::from_secs),
+                },
+                &setup,
+            )
+            .await
+        }
         Some(Command::Ask(args)) => {
             let setup = Setup::new(
                 args.qfork_root

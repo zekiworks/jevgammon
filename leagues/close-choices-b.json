@@ -1,0 +1,72 @@
+{
+  "note": "Close choices, stage B (Method §9.9-9.11; mailbox/Close choices - stage B plan and estimate.md): the five one-letter Cup teams named by Ümit on 2026-10-25 (ZEKI-BG-CLOSE-CHOICES-1563831405077725236). Each player entry is its v3.db roster row (players.settings) copied byte for byte in content: league settings unchanged. Same prompt version, option-order seed and match context (rounds 3, no clock, 300 turns) as Leagues 2 and 3. Not a league: run with `jevgammon render-stage-b`, `predict` and `ask --repeats 5` only, after approval.",
+  "prompt_version": "bg-v2",
+  "seed": 0,
+  "order_seed": 1190975713392774006,
+  "rounds": 3,
+  "clock": 0,
+  "delay": 30,
+  "max_turns": 300,
+  "players": [
+    {
+      "name": "GPT-6.1 Sol (low)",
+      "spec": "openai/gpt-6.1-sol",
+      "provider": "chatgpt-subscription",
+      "reasoning": "low",
+      "price": {
+        "input_per_mtok": 2.0,
+        "output_per_mtok": 10.0
+      },
+      "note": "subscription login; cost is API-list-price equivalent",
+      "parallel": 4
+    },
+    {
+      "name": "GPT-6.1 Sol (high)",
+      "spec": "openai/gpt-6.1-sol",
+      "provider": "chatgpt-subscription",
+      "reasoning": "high",
+      "price": {
+        "input_per_mtok": 2.0,
+        "output_per_mtok": 10.0
+      },
+      "note": "subscription login; cost is API-list-price equivalent",
+      "parallel": 4
+    },
+    {
+      "name": "GPT-6 Astra (on)",
+      "spec": "openai/gpt-6-astra",
+      "provider": "chatgpt-subscription",
+      "reasoning": "medium",
+      "price": {
+        "input_per_mtok": 10.0,
+        "output_per_mtok": 50.0
+      },
+      "note": "reasoning effort medium, the model's default (a request without an effort reports medium). ChatGPT subscription (Codex backend); subscription login; cost is API-list-price equivalent",
+      "parallel": 4
+    },
+    {
+      "name": "Gemini 3.8 Flash (low)",
+      "spec": "antigravity/gemini-3.8-flash",
+      "provider": "antigravity-subscription",
+      "reasoning": "low",
+      "price": {
+        "input_per_mtok": 0.75,
+        "output_per_mtok": 3.75
+      },
+      "note": "Google Antigravity subscription (Google AI Ultra, OMP's login; Antigravity model id gemini-3.8-flash-low) from 2026-10-19 12:46 UTC; its first League 2 decision came then: until then it waited, not ready, for a Gemini API key the league never had. Same model (modelVersion gemini-3.8-flash), prompt, thinking level and enum-constrained letter as the gemini/ smoke setup; cost is API-list-price equivalent. Smoke check (10 positions x 2): same play as the Gemini API answers in 19 of 20",
+      "parallel": 4
+    },
+    {
+      "name": "Claude Opus 5.5 (on)",
+      "spec": "anthropic/claude-opus-5-5",
+      "provider": "claude-subscription",
+      "reasoning": "high",
+      "price": {
+        "input_per_mtok": 4.0,
+        "output_per_mtok": 20.0
+      },
+      "note": "effort high, Anthropic's default effort (adaptive thinking). Claude subscription; subscription login; cost is API-list-price equivalent",
+      "parallel": 4
+    }
+  ]
+}

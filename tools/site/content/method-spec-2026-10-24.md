@@ -491,3 +491,19 @@ league settings unchanged. Gemma 4 31B (on) and any changed team join after the 
 - If the server goes down before the run ends, nothing is asked again; the unfinished positions are reported.
 - Gemma's results are reported in their own section, with their timing. A letter-probability record is not a
   one-letter record; stage B uses only its chosen plays and its prediction.
+
+#### 9.13 addendum (2026-10-25, 12:15 UTC): Gemma 4 31B (on), second session (Can's approval; written before its first call)
+
+- Gemma 4 31B (on)'s run was interrupted by the bariton reboot at about 11:46 UTC on 2026-10-25, after 100
+  predictions (all valid) and 23 of 500 play calls (all valid; repeat 1 of 23 positions). The last stored answer is
+  from 11:45:01 UTC; the machine went down at 11:45:57 UTC.
+- The 477 play calls with no stored answer are completed in a second session (approved by Can, 2026-10-25). Up to 4 of
+  them were in flight when the server went down; no response to them was received or stored.
+- Stored answers are kept; nothing is re-asked. The second session runs `jevgammon ask --repeats 5 --once --retries 2`
+  with the same config (`leagues/close-choices-b-gemma.json`: roster settings, at most 4 calls in flight), the same
+  positions, store and option-order seed, on the same Gemma server (GPU 0 behind the roster's proxy URL, same image,
+  weights and arguments, restarted after the reboot). `--once` skips every stored (position, repeat), so it asks only
+  the 477. Each play call's seed comes from (position, repeat), as in the first session.
+- This replaces, for these 477 calls only, the line above "If the server goes down before the run ends, nothing is
+  asked again". The report gives both sessions' start and end times separately, and Gemma's results in their own
+  section with this two-session note.

@@ -338,3 +338,29 @@ Waiting for Can's go (and the ladder to settle)
 ## Approval
 
 2026-10-24: Can approved stage B ("go") on this plan and estimate. It starts when the ladder has settled; the teams are the final 8-team Cup roster. Until then, no stage B call.
+
+## Addendum, 2026-10-25: offline build done; waiting for the ladder (Can)
+
+**Status:** approved, not run. **No stage B call has been made, schema acceptance calls included.** On 2026-10-25 Can decided that stage B keeps waiting for the ladder to settle; that decision overrides the earlier relayed "don't wait".
+
+**Built and tested offline (main):**
+- `ef991ab`: the prediction request.
+  - `prompts/prediction.txt`: the question verbatim, then the approved format line.
+  - Prediction prompt and parser; each route's constrained prediction request, with the play call's settings.
+  - Commands `render-stage-b` (offline render with hashes) and `predict` (one call per team and position; a stored row, even a failed one, is never asked again).
+  - `leagues/close-choices-b.json`: the 5 teams' roster settings, unchanged.
+  - 63 unit tests pass.
+  - The renderer reproduced the stored smoke requests byte for byte: Gemini 50/50, both Sol settings 50/50 each, Astra and Claude 10/10 each.
+- `3e99825`: 500 play and 500 prediction requests rendered (5 teams × the v2 100).
+  - Record: `freeze/close-choices-b-v2-requests.json`, with a sha256 per request and per team.
+  - Rendered file sha256: `0e551aec…a898b`.
+- `e7f0146`: Method §9.12 (dated 2026-10-25): the five team names resolved to their roster rows, the prediction request, the parsing rules and the offline checks.
+- `464586e`: the live Method page now reads "Approved, not run; starts after the ladder settles (Can, 2026-10-25). No stage B call has been made." Its positions bullet describes the v2 selection.
+
+**Open decisions (held for Can and Ümit):**
+1. **System prompt of the prediction call.** The plan reuses the play call's system prompt, which tells the model to reply with one letter and nothing else; the answer schema still forces the feature-list format. Keep it, or use a neutral system prompt for the prediction call only?
+2. **Schema acceptance.** Whether each provider accepts the prediction schema can't be seen offline. A rejection would fail every prediction on that route, and failed calls are final. Proposal: one acceptance call per route on a smoke position outside the 100, after approval.
+3. **Play calls are run once.** `jevgammon ask --repeats 5` asks failed play calls again if it is rerun, so it must be run once per team to keep "failed is final".
+4. **Gemma 4 31B (on) and changed teams** join once the ladder settles (spark3 checks as in section 4).
+
+Waiting for the ladder (Can).

@@ -350,10 +350,8 @@ def error_rates(conn: sqlite3.Connection, plays_dir: Path) -> dict[str, dict]:
     """Every setup's error rate over all of its valid matches (every league, ladder round and Cup), as
     `src/scores.rs` computes it for the tiebreak: 500 x mean 2-ply equity loss of its decisions with two
     or more legal plays, invalid answers left out (site rule B11), from the site's score shards
-    `plays_dir/s*.db`. Matches held only by hidden leagues (an early start for the next ladder round) are
-    left out until a shown league holds them, as `tools/site/score_plays.py` leaves them unscored. Per
-    name: rate (None without a scored decision), scored, skipped, pending (not scored yet), and per game
-    the loss sum and count (`games`, for bootstrap intervals)."""
+    `plays_dir/s*.db`. Per name: rate (None without a scored decision), scored, skipped, pending (not
+    scored yet), and per game the loss sum and count (`games`, for bootstrap intervals)."""
     loss: dict[int, float] = {}
     skipped: set[int] = set()
     for path in sorted(plays_dir.glob("s*.db")):
@@ -368,9 +366,7 @@ def error_rates(conn: sqlite3.Connection, plays_dir: Path) -> dict[str, dict]:
             """SELECT t.id, t.game_id, p.name FROM turns t JOIN games g ON g.id = t.game_id
                JOIN matches m ON m.id = g.match_id
                JOIN players p ON p.id = CASE t.player WHEN 1 THEN m.player1 ELSE m.player2 END
-               WHERE m.valid = 1 AND m.stage IS NOT NULL AND t.decided_by = 'model' AND t.legal_count >= 2
-                 AND m.id NOT IN (SELECT lm.match_id FROM league_match_view lm JOIN leagues l ON l.id = lm.league_id
-                                  GROUP BY lm.match_id HAVING SUM(COALESCE(l.hidden, 0) = 0) = 0)"""):
+               WHERE m.valid = 1 AND m.stage IS NOT NULL AND t.decided_by = 'model' AND t.legal_count >= 2"""):
         r = out.setdefault(name, dict(loss=0.0, scored=0, skipped=0, pending=0, games=defaultdict(lambda: [0.0, 0])))
         if turn in loss:
             r["loss"] += loss[turn]

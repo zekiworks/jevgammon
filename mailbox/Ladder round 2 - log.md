@@ -23,7 +23,7 @@ Approved by Can; run as in `Ladder round 2 - request.md`. **Status (Oct 25, 19:0
 - 16:45:28: hidden league #4 finished: 15 Argon (off) matches (#652-666); its other 3 League 2 pairs (GNUbg weak, Claude Fable 5.1 (off), Grok 4.7 (off)) were already played in earlier rounds.
 - 18:16: League 2's Gemma matches done; Gemma stopped, GPU 0 released on the bus (#83).
 - 19:00:53: League 2 finished (last: Grok 4.7 (off) v Qwen3.8-27B (on)). 19:01: Qwen stopped, GPU 1 released (#84). `tools/site/score.sh v3.db ~/.local/state/bg-site/plays` (on v3.db, no copy): 4 decisions newly scored.
-- 19:01: `tools/ladder.py plan` stopped on Argon's unscored hidden-league decisions (the site scores those matches only once a shown league holds them). Fixed `tools/league_web.py` `error_rates` to leave hidden-only matches out, as the scorer does; the plan then ran: round 3, 37 new pairings, 27 reused.
+- 19:01: `tools/ladder.py plan` stopped on Argon's unscored hidden-league decisions: the site scorer skipped matches held only by a hidden league. They are valid matches and count in every error rate (Method), so `tools/site/score_plays.py` now scores them too; `score.sh v3.db ~/.local/state/bg-site/plays` (no copy) scored 3,483 more decisions, none left pending. Only the 16 setups of the early-start matches changed error rate (e.g. Argon (off) 15.93 to 15.84). The plan then ran: round 3, 37 new pairings, 27 reused.
 - Device notes in v3.db were updated for every server move up to 10:27. The restarts after the reboots kept the same servers on the same GPUs; the final stops (Gemma 18:16, Qwen 19:01) are not in the device notes.
 
 ## Spend
@@ -36,8 +36,8 @@ Approved by Can; run as in `Ladder round 2 - request.md`. **Status (Oct 25, 19:0
 ## Early start for round 3 (Gemini 4 Argon (off) in League 2): done
 
 - Can approved starting Argon (off)'s round 3 League 2 matches early; `ladder.py plan` relegates Argon (off), with no lock rule (confirmed again by the round 3 plan).
-- Played in hidden league #4 (`only_pairs_of` = Gemini 4 Argon (off), hidden from the site, the dashboard and the ladder tools), 2026-10-25 12:17:33-16:45:28 UTC, across two reboots (resumed from the last stored turns): 15 matches, #652-666. Round 3 reuses them (listed under "Reused pairings" in its request). They are scored by the site once round 3's apply puts Argon (off) into League 2.
-- Round 3 lists the pairings of Gemini 3.8 Flash (low) and Qwen3.8-27B (off) as "not played: skipped by Can" (23 of its 37 new pairings).
+- Played in hidden league #4 (`only_pairs_of` = Gemini 4 Argon (off), hidden from the site, the dashboard and the ladder tools), 2026-10-25 12:17:33-16:45:28 UTC, across two reboots (resumed from the last stored turns): 15 matches, #652-666, GNUbg-scored. Round 3 reuses them (listed under "Reused pairings" in its request).
+- Can skipped Argon (off)'s two pairs with Gemini 3.8 Flash (low) and Qwen3.8-27B (off) in the early start: both leave League 2 in round 3, so after the moves they are not League 2 pairings. No round-3 pairing is skipped.
 
 ## Next
 

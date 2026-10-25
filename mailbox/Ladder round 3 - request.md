@@ -1,18 +1,18 @@
 # Ladder round 3: request
 
-Oct 25, 2026 19:01 UTC · computed by `tools/ladder.py plan` from `v3.db` (read-only). Nothing has started. Nothing runs until Can approves this round.
+Oct 25, 2026 19:07 UTC · computed by `tools/ladder.py plan` from `v3.db` (read-only). Nothing has started. Nothing runs until Can approves this round.
 
-**Provisional, not applied.** Round 2 had late entries (Kimi K3.1 Pro (off), DeepSeek V4.1 Flash 1017 (off)/(on)), so this round is provisional until Can approves it. Pairings of Gemini 3.8 Flash (low) and Qwen3.8-27B (off) are listed but not played: skipped by Can (23 of 37; marked in the table). Gemini 4 Argon (off)'s League 2 matches were pre-played as an early start (approved by Can) in hidden league #4, 2026-10-25 12:17-16:45 UTC; they are reused below, not played again. Without the skipped pairings: 14 new pairings (1-11, 35-37), money (API price) $2.72, API-equivalent $17.65, match time 15.0 h; the totals below are the tool's, over all 37.
+**Provisional, not applied.** Round 2 had late entries (Kimi K3.1 Pro (off), DeepSeek V4.1 Flash 1017 (off)/(on)), so this round is provisional until Can approves it. All 37 new pairings below are to be played; no round-3 pairing is skipped.
 
-Error rates and tables leave out matches held only by the hidden league (the plan's error-rate query now skips them, as the site's scoring does).
+Gemini 4 Argon (off)'s League 2 matches were pre-played as an early start (approved by Can) in hidden league #4, 2026-10-25 12:17-16:45 UTC: 15 matches (#652-666), reused below, not played again. In that early start Can skipped Argon (off)'s two pairs with Gemini 3.8 Flash (low) and Qwen3.8-27B (off): both leave League 2 in this round, so after the moves they are not League 2 pairings. Those early matches are valid matches and are GNUbg-scored, so they count in the error rates below (Method: all valid matches).
 
 ## Tables used
 
 Ranking: points, then games won, then fewer games lost, then the lower error rate over all of a setup's valid matches (every league, ladder round and Cup; GNUbg 1.08 2-ply, 500 x mean equity loss, decisions with two or more legal plays, invalid answers left out, as on the site). Programs never move.
 
-- **League 1 (decision models)** (19 setups): 1. GNUbg weak (program): 48 pts, games 54-24, error rate 25.5; 2. Jev 1.14.0: 42 pts, games 57-35, error rate 36.8; 3. Jev 1.13.0: 39 pts, games 56-34, error rate 34.4 … last: 19. Random (program): 0 pts, games 6-58, error rate 118.2; last setup that can move: 18. Decider Flash v1.2: 6 pts, games 30-64, error rate 58.7
-- **League 2 (workhorses)** (19 setups): 1. Gemini 3.8 Flash (low): 44 pts, games 65-39, error rate 16.7; 2. Claude Sonnet 5.5 (low): 40 pts, games 66-42, error rate 20.3; 3. DeepSeek V4.1 Flash 1017 (on): 40 pts, games 62-46, error rate 16.3 … last: 19. Qwen3.8-27B (off): 6 pts, games 30-70, error rate 41.1
-- **League 3 (frontier models)** (12 setups): 1. GPT-6.1 Sol (low): 27 pts, games 41-25, error rate 11.5; 2. GPT-6 Astra (on): 24 pts, games 36-26, error rate 11.7; 3. GPT-6.1 Sol (high): 21 pts, games 38-26, error rate 10.7 … last: 12. GNUbg weak (program): 8 pts, games 26-38, error rate 25.5; last setup that can move: 11. Gemini 4 Argon (off): 10 pts, games 27-43, error rate 16.5
+- **League 1 (decision models)** (19 setups): 1. GNUbg weak (program): 48 pts, games 54-24, error rate 25.5; 2. Jev 1.14.0: 42 pts, games 57-35, error rate 35.6; 3. Jev 1.13.0: 39 pts, games 56-34, error rate 34.4 … last: 19. Random (program): 0 pts, games 6-58, error rate 118.2; last setup that can move: 18. Decider Flash v1.2: 6 pts, games 30-64, error rate 58.7
+- **League 2 (workhorses)** (19 setups): 1. Gemini 3.8 Flash (low): 44 pts, games 65-39, error rate 16.7; 2. Claude Sonnet 5.5 (low): 40 pts, games 66-42, error rate 20.0; 3. DeepSeek V4.1 Flash 1017 (on): 40 pts, games 62-46, error rate 16.3 … last: 19. Qwen3.8-27B (off): 6 pts, games 30-70, error rate 41.1
+- **League 3 (frontier models)** (12 setups): 1. GPT-6.1 Sol (low): 27 pts, games 41-25, error rate 11.5; 2. GPT-6 Astra (on): 24 pts, games 36-26, error rate 11.7; 3. GPT-6.1 Sol (high): 21 pts, games 38-26, error rate 10.7 … last: 12. GNUbg weak (program): 8 pts, games 26-38, error rate 25.5; last setup that can move: 11. Gemini 4 Argon (off): 10 pts, games 27-43, error rate 15.8
 
 ## Moves
 
@@ -43,8 +43,8 @@ A swap is flagged when the promoted setup's error rate is worse (higher) than th
 
 | Boundary | Promoted | Error rate | Replaced | Error rate | Flag |
 | --- | --- | --- | --- | --- | --- |
-| League 1-League 2 | Jev 1.14.0 | 36.8 (95% interval 32.9-41.1; 1,897 decisions) | Qwen3.8-27B (off) | 41.1 (95% interval 37.4-44.8; 2,320 decisions) | no |
-| League 2-League 3 | Gemini 3.8 Flash (low) | 16.7 (95% interval 15.0-18.4; 2,468 decisions) | Gemini 4 Argon (off) | 16.5 (95% interval 13.7-19.4; 1,484 decisions) | **flagged: worse than the setup it replaces** |
+| League 1-League 2 | Jev 1.14.0 | 35.6 (95% interval 32.5-39.3; 2,288 decisions) | Qwen3.8-27B (off) | 41.1 (95% interval 37.4-44.8; 2,320 decisions) | no |
+| League 2-League 3 | Gemini 3.8 Flash (low) | 16.7 (95% interval 15.0-18.4; 2,468 decisions) | Gemini 4 Argon (off) | 15.8 (95% interval 14.2-17.6; 3,575 decisions) | **flagged: worse than the setup it replaces** |
 
 ## Lineups after the round
 
@@ -58,45 +58,45 @@ Each mover plays every setup of its new league it has not played anywhere (two n
 
 Estimates from each setup's stored valid matches: decisions per match (the mean of the two setups), its mean seconds per decision, its cost per decision at its configured price. Duration = decisions x (seconds of both) x 0.56 (measured: wall time of a match with both games at once over its summed decision time, median of the stored matches). Money labels as on the site's Method page: **API price** (billed money), **API-equivalent (subscription)** (list price of the tokens, not billed), **own hardware** (no money; GPU time).
 
-| # | League | Pairing | Money (API price) | API-equivalent (subscription) | Duration | Own hardware | APIs and subscriptions | Status |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | League 2 | Jev 1.14.0 v Claude Fable 5.1 (off) | $0.02 | $7.47 | 4 min | none | claude-subscription, jev |  |
-| 2 | League 2 | Jev 1.14.0 v Claude Sonnet 5.5 (high) | $0.02 | $2.30 | 10 min | none | claude-subscription, jev |  |
-| 3 | League 2 | Jev 1.14.0 v Claude Sonnet 5.5 (low) | $0.02 | $1.50 | 4 min | none | claude-subscription, jev |  |
-| 4 | League 2 | Jev 1.14.0 v DeepSeek V4.1 Flash (off) | $0.08 | $0.00 | 11 min | none | jev, openrouter:fireworks |  |
-| 5 | League 2 | Jev 1.14.0 v DeepSeek V4.1 Flash (on) | $1.48 | $0.00 | 1.6 h | none | jev, openrouter:fireworks |  |
-| 6 | League 2 | Jev 1.14.0 v DeepSeek V4.1 Flash 1017 (off) | $0.04 | $0.00 | 27 min | none | jev, openrouter:deepseek |  |
-| 7 | League 2 | Jev 1.14.0 v DeepSeek V4.1 Flash 1017 (on) | $0.56 | $0.00 | 1.1 h | none | jev, openrouter:deepseek |  |
-| 8 | League 2 | Jev 1.14.0 v GLM-5.3 (on) | $0.35 | $0.00 | 11 min | none | jev, openrouter:fireworks |  |
-| 9 | League 2 | Jev 1.14.0 v Gemini 3.8 Flash (high) | $0.02 | $2.65 | 23 min | none | antigravity-subscription, jev |  |
-| 10 | League 2 | Jev 1.14.0 v Grok 4.7 (off) | $0.02 | $3.73 | 1.1 h | none | jev, xai-subscription |  |
-| 11 | League 2 | Jev 1.14.0 v Qwen3.8 Flash (off) | $0.05 | $0.00 | 14 min | none | jev, openrouter:alibaba |  |
-| 12 | League 3 | Gemini 3.8 Flash (low) v Claude Fable 5.1 (on) | $0.00 | $15.72 | 27 min | none | antigravity-subscription, claude-subscription | **not played: skipped by Can** |
-| 13 | League 3 | Gemini 3.8 Flash (low) v Claude Opus 5.5 (off) | $0.00 | $3.95 | 10 min | none | antigravity-subscription, claude-subscription | **not played: skipped by Can** |
-| 14 | League 3 | Gemini 3.8 Flash (low) v Claude Opus 5.5 (on) | $0.00 | $5.05 | 16 min | none | antigravity-subscription, claude-subscription | **not played: skipped by Can** |
-| 15 | League 3 | Gemini 3.8 Flash (low) v GPT-6 Astra (off) | $0.00 | $6.28 | 11 min | none | antigravity-subscription, chatgpt-subscription | **not played: skipped by Can** |
-| 16 | League 3 | Gemini 3.8 Flash (low) v GPT-6 Astra (on) | $0.00 | $6.45 | 13 min | none | antigravity-subscription, chatgpt-subscription | **not played: skipped by Can** |
-| 17 | League 3 | Gemini 3.8 Flash (low) v Gemini 4 Argon (on) | $0.00 | $7.59 | 1.4 h | none | antigravity-subscription | **not played: skipped by Can** |
-| 18 | League 3 | Gemini 3.8 Flash (low) v Grok 4.7 (on) | $0.00 | $14.26 | 4.4 h | none | antigravity-subscription, xai-subscription | **not played: skipped by Can** |
-| 19 | League 3 | Gemini 3.8 Flash (low) v Kimi K3.1 Pro (off) | $0.43 | $0.45 | 7 min | none | antigravity-subscription, openrouter:moonshotai/mxfp4 | **not played: skipped by Can** |
-| 20 | League 1 | Qwen3.8-27B (off) v Decider Flash v1.2 | $0.00 | $0.00 | 3 min | qwen38-27b.sh: Qwen3.8-27B (bariton); decider-v1.2.sh 27b + flash, winnow.sh (bariton, one GPU) | none | **not played: skipped by Can** |
-| 21 | League 1 | Qwen3.8-27B (off) v Decider v1.2 27B | $0.00 | $0.00 | 5 min | qwen38-27b.sh: Qwen3.8-27B (bariton); decider-v1.2.sh 27b + flash, winnow.sh (bariton, one GPU) | none | **not played: skipped by Can** |
-| 22 | League 1 | Qwen3.8-27B (off) v Winnow-12B | $0.00 | $0.00 | 5 min | qwen38-27b.sh: Qwen3.8-27B (bariton); decider-v1.2.sh 27b + flash, winnow.sh (bariton, one GPU) | none | **not played: skipped by Can** |
-| 23 | League 1 | Qwen3.8-27B (off) v Decider v1.1 27B | $0.00 | $0.00 | 10 min | qwen38-27b.sh: Qwen3.8-27B (bariton); decider.sh: Decider v1.1 27B (bariton) | none | **not played: skipped by Can** |
-| 24 | League 1 | Qwen3.8-27B (off) v Fastino GLiDE v1.2 (local) | $0.00 | $0.00 | 4 min | qwen38-27b.sh: Qwen3.8-27B (bariton); glide-v12.sh: Fastino GLiDE v1.2 (bariton) | none | **not played: skipped by Can** |
-| 25 | League 1 | Qwen3.8-27B (off) v Clef | $0.00 | $0.00 | 12 min | qwen38-27b.sh: Qwen3.8-27B (bariton); local server at 127.0.0.1:18091 | none | **not played: skipped by Can** |
-| 26 | League 1 | Qwen3.8-27B (off) v Cygnet (Gemma 4 12B) | $0.00 | $0.00 | 3 min | qwen38-27b.sh: Qwen3.8-27B (bariton); local server at 127.0.0.1:18093 | none | **not played: skipped by Can** |
-| 27 | League 1 | Qwen3.8-27B (off) v Open-Jev 27B v1.1 | $0.00 | $0.00 | 6 min | qwen38-27b.sh: Qwen3.8-27B (bariton); open-jev.sh: Open-Jev 27B v1.1 (bariton) | none | **not played: skipped by Can** |
-| 28 | League 1 | Qwen3.8-27B (off) v Celeris-1 Decision | $0.02 | $0.00 | 2 min | qwen38-27b.sh: Qwen3.8-27B (bariton) | celeris | **not played: skipped by Can** |
-| 29 | League 1 | Qwen3.8-27B (off) v GPT-6 Luna | $0.04 | $0.00 | 2 min | qwen38-27b.sh: Qwen3.8-27B (bariton) | openai-decisions | **not played: skipped by Can** |
-| 30 | League 1 | Qwen3.8-27B (off) v Jev 1.13.0 | $0.02 | $0.00 | 2 min | qwen38-27b.sh: Qwen3.8-27B (bariton) | jev | **not played: skipped by Can** |
-| 31 | League 1 | Qwen3.8-27B (off) v Mercury Decide | $0.01 | $0.00 | 2 min | qwen38-27b.sh: Qwen3.8-27B (bariton) | openrouter (inception) | **not played: skipped by Can** |
-| 32 | League 1 | Qwen3.8-27B (off) v Random | $0.00 | $0.00 | 2 min | qwen38-27b.sh: Qwen3.8-27B (bariton) | none | **not played: skipped by Can** |
-| 33 | League 1 | Qwen3.8-27B (off) v Safest | $0.00 | $0.00 | 2 min | qwen38-27b.sh: Qwen3.8-27B (bariton) | none | **not played: skipped by Can** |
-| 34 | League 1 | Qwen3.8-27B (off) v SubQ Snap Preview | $0.02 | $0.00 | 2 min | qwen38-27b.sh: Qwen3.8-27B (bariton) | subq | **not played: skipped by Can** |
-| 35 | League 2 | Jev 1.14.0 v Gemma 4 31B (off) | $0.02 | $0.00 | 3 min | gemma4-31b-replicas.sh: Gemma 4 31B (bariton) | jev |  |
-| 36 | League 2 | Jev 1.14.0 v Gemma 4 31B (on) | $0.02 | $0.00 | 3.9 h | gemma4-31b-replicas.sh: Gemma 4 31B (bariton) | jev |  |
-| 37 | League 2 | Jev 1.14.0 v Qwen3.8-27B (on) | $0.02 | $0.00 | 5.5 h | qwen38-27b.sh: Qwen3.8-27B (bariton) | jev |  |
+| # | League | Pairing | Money (API price) | API-equivalent (subscription) | Duration | Own hardware | APIs and subscriptions |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | League 2 | Jev 1.14.0 v Claude Fable 5.1 (off) | $0.02 | $7.47 | 4 min | none | claude-subscription, jev |
+| 2 | League 2 | Jev 1.14.0 v Claude Sonnet 5.5 (high) | $0.02 | $2.30 | 10 min | none | claude-subscription, jev |
+| 3 | League 2 | Jev 1.14.0 v Claude Sonnet 5.5 (low) | $0.02 | $1.50 | 4 min | none | claude-subscription, jev |
+| 4 | League 2 | Jev 1.14.0 v DeepSeek V4.1 Flash (off) | $0.08 | $0.00 | 11 min | none | jev, openrouter:fireworks |
+| 5 | League 2 | Jev 1.14.0 v DeepSeek V4.1 Flash (on) | $1.48 | $0.00 | 1.6 h | none | jev, openrouter:fireworks |
+| 6 | League 2 | Jev 1.14.0 v DeepSeek V4.1 Flash 1017 (off) | $0.04 | $0.00 | 27 min | none | jev, openrouter:deepseek |
+| 7 | League 2 | Jev 1.14.0 v DeepSeek V4.1 Flash 1017 (on) | $0.56 | $0.00 | 1.1 h | none | jev, openrouter:deepseek |
+| 8 | League 2 | Jev 1.14.0 v GLM-5.3 (on) | $0.35 | $0.00 | 11 min | none | jev, openrouter:fireworks |
+| 9 | League 2 | Jev 1.14.0 v Gemini 3.8 Flash (high) | $0.02 | $2.65 | 23 min | none | antigravity-subscription, jev |
+| 10 | League 2 | Jev 1.14.0 v Grok 4.7 (off) | $0.02 | $3.73 | 1.1 h | none | jev, xai-subscription |
+| 11 | League 2 | Jev 1.14.0 v Qwen3.8 Flash (off) | $0.05 | $0.00 | 14 min | none | jev, openrouter:alibaba |
+| 12 | League 3 | Gemini 3.8 Flash (low) v Claude Fable 5.1 (on) | $0.00 | $15.72 | 27 min | none | antigravity-subscription, claude-subscription |
+| 13 | League 3 | Gemini 3.8 Flash (low) v Claude Opus 5.5 (off) | $0.00 | $3.95 | 10 min | none | antigravity-subscription, claude-subscription |
+| 14 | League 3 | Gemini 3.8 Flash (low) v Claude Opus 5.5 (on) | $0.00 | $5.05 | 16 min | none | antigravity-subscription, claude-subscription |
+| 15 | League 3 | Gemini 3.8 Flash (low) v GPT-6 Astra (off) | $0.00 | $6.28 | 11 min | none | antigravity-subscription, chatgpt-subscription |
+| 16 | League 3 | Gemini 3.8 Flash (low) v GPT-6 Astra (on) | $0.00 | $6.45 | 13 min | none | antigravity-subscription, chatgpt-subscription |
+| 17 | League 3 | Gemini 3.8 Flash (low) v Gemini 4 Argon (on) | $0.00 | $7.59 | 1.4 h | none | antigravity-subscription |
+| 18 | League 3 | Gemini 3.8 Flash (low) v Grok 4.7 (on) | $0.00 | $14.26 | 4.4 h | none | antigravity-subscription, xai-subscription |
+| 19 | League 3 | Gemini 3.8 Flash (low) v Kimi K3.1 Pro (off) | $0.43 | $0.45 | 7 min | none | antigravity-subscription, openrouter:moonshotai/mxfp4 |
+| 20 | League 1 | Qwen3.8-27B (off) v Decider Flash v1.2 | $0.00 | $0.00 | 3 min | qwen38-27b.sh: Qwen3.8-27B (bariton); decider-v1.2.sh 27b + flash, winnow.sh (bariton, one GPU) | none |
+| 21 | League 1 | Qwen3.8-27B (off) v Decider v1.2 27B | $0.00 | $0.00 | 5 min | qwen38-27b.sh: Qwen3.8-27B (bariton); decider-v1.2.sh 27b + flash, winnow.sh (bariton, one GPU) | none |
+| 22 | League 1 | Qwen3.8-27B (off) v Winnow-12B | $0.00 | $0.00 | 5 min | qwen38-27b.sh: Qwen3.8-27B (bariton); decider-v1.2.sh 27b + flash, winnow.sh (bariton, one GPU) | none |
+| 23 | League 1 | Qwen3.8-27B (off) v Decider v1.1 27B | $0.00 | $0.00 | 10 min | qwen38-27b.sh: Qwen3.8-27B (bariton); decider.sh: Decider v1.1 27B (bariton) | none |
+| 24 | League 1 | Qwen3.8-27B (off) v Fastino GLiDE v1.2 (local) | $0.00 | $0.00 | 4 min | qwen38-27b.sh: Qwen3.8-27B (bariton); glide-v12.sh: Fastino GLiDE v1.2 (bariton) | none |
+| 25 | League 1 | Qwen3.8-27B (off) v Clef | $0.00 | $0.00 | 12 min | qwen38-27b.sh: Qwen3.8-27B (bariton); local server at 127.0.0.1:18091 | none |
+| 26 | League 1 | Qwen3.8-27B (off) v Cygnet (Gemma 4 12B) | $0.00 | $0.00 | 3 min | qwen38-27b.sh: Qwen3.8-27B (bariton); local server at 127.0.0.1:18093 | none |
+| 27 | League 1 | Qwen3.8-27B (off) v Open-Jev 27B v1.1 | $0.00 | $0.00 | 6 min | qwen38-27b.sh: Qwen3.8-27B (bariton); open-jev.sh: Open-Jev 27B v1.1 (bariton) | none |
+| 28 | League 1 | Qwen3.8-27B (off) v Celeris-1 Decision | $0.02 | $0.00 | 2 min | qwen38-27b.sh: Qwen3.8-27B (bariton) | celeris |
+| 29 | League 1 | Qwen3.8-27B (off) v GPT-6 Luna | $0.04 | $0.00 | 2 min | qwen38-27b.sh: Qwen3.8-27B (bariton) | openai-decisions |
+| 30 | League 1 | Qwen3.8-27B (off) v Jev 1.13.0 | $0.02 | $0.00 | 2 min | qwen38-27b.sh: Qwen3.8-27B (bariton) | jev |
+| 31 | League 1 | Qwen3.8-27B (off) v Mercury Decide | $0.01 | $0.00 | 2 min | qwen38-27b.sh: Qwen3.8-27B (bariton) | openrouter (inception) |
+| 32 | League 1 | Qwen3.8-27B (off) v Random | $0.00 | $0.00 | 2 min | qwen38-27b.sh: Qwen3.8-27B (bariton) | none |
+| 33 | League 1 | Qwen3.8-27B (off) v Safest | $0.00 | $0.00 | 2 min | qwen38-27b.sh: Qwen3.8-27B (bariton) | none |
+| 34 | League 1 | Qwen3.8-27B (off) v SubQ Snap Preview | $0.02 | $0.00 | 2 min | qwen38-27b.sh: Qwen3.8-27B (bariton) | subq |
+| 35 | League 2 | Jev 1.14.0 v Gemma 4 31B (off) | $0.02 | $0.00 | 3 min | gemma4-31b-replicas.sh: Gemma 4 31B (bariton) | jev |
+| 36 | League 2 | Jev 1.14.0 v Gemma 4 31B (on) | $0.02 | $0.00 | 3.9 h | gemma4-31b-replicas.sh: Gemma 4 31B (bariton) | jev |
+| 37 | League 2 | Jev 1.14.0 v Qwen3.8-27B (on) | $0.02 | $0.00 | 5.5 h | qwen38-27b.sh: Qwen3.8-27B (bariton) | jev |
 
 ## Reused pairings (27)
 

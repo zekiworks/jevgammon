@@ -501,5 +501,189 @@
       "matchday 17: Claude Fable 5.1 (off) v Qwen3.8-27B (on)",
       "matchday 17: Liquid d1-ultra v Claude Fable 5.1 (off)"
     ]
+  },
+  {
+    "added_at": "2026-10-24T15:38:40Z",
+    "league": 2,
+    "db": "v3.db",
+    "name": "Fastino GLiDE",
+    "harness_commit": "323ab35ffa45cf560ab9f140f9c057b21c69f6fc",
+    "harness_dirty": true,
+    "entry": {
+      "name": "Fastino GLiDE",
+      "spec": "fastino",
+      "provider": "fastino",
+      "note": "Fastino's hosted System One API; key added 2026-10-20"
+    },
+    "entry_sha256": "95348fd7021dfd8e83a440ed79b74ac1d16c32c68fab3d1cfe2a9a0d018ed406",
+    "fixtures": [
+      "matchday 15: Fastino GLiDE v Gemini 3.8 Flash (low)",
+      "matchday 15: Gemini 3.8 Flash (high) v Fastino GLiDE",
+      "matchday 15: Claude Sonnet 5.5 (low) v Fastino GLiDE",
+      "matchday 15: Claude Sonnet 5.5 (high) v Fastino GLiDE",
+      "matchday 15: Fastino GLiDE v DeepSeek V4.1 Flash (off)",
+      "matchday 15: Fastino GLiDE v DeepSeek V4.1 Flash (on)",
+      "matchday 15: Fastino GLiDE v GLM-5.3 (on)",
+      "matchday 15: Fastino GLiDE v Qwen3.8 Flash (off)",
+      "matchday 15: Fastino GLiDE v Gemma 4 31B (on)",
+      "matchday 15: Gemma 4 31B (off) v Fastino GLiDE",
+      "matchday 15: Fastino GLiDE v Qwen3.8-27B (off)",
+      "matchday 15: Qwen3.8-27B (on) v Fastino GLiDE",
+      "matchday 15: Claude Fable 5.1 (off) v Fastino GLiDE"
+    ]
+  },
+  {
+    "added_at": "2026-10-24T15:38:41Z",
+    "league": 2,
+    "db": "v3.db",
+    "name": "Grok 4.7 (off)",
+    "harness_commit": "323ab35ffa45cf560ab9f140f9c057b21c69f6fc",
+    "harness_dirty": true,
+    "entry": {
+      "name": "Grok 4.7 (off)",
+      "spec": "xai/grok-4.7",
+      "provider": "xai-subscription",
+      "reasoning": "low",
+      "price": {
+        "input_per_mtok": 2.0,
+        "output_per_mtok": 6.0
+      },
+      "note": "reasoning effort low, the lowest grok-4.7 takes (none is rejected; minimal is served as low), labelled off: it still reasons. xAI subscription (SuperGrok, OMP's xai-oauth login) on api.x.ai Responses API, letter constrained by JSON schema; subscription login; cost is API-list-price equivalent",
+      "parallel": 4
+    },
+    "entry_sha256": "801d9c937e598e1e4a2bbc18f840231938e1b4a7eb9d433c76f9183030904fa7",
+    "fixtures": [
+      "matchday 16: Gemini 3.8 Flash (low) v Grok 4.7 (off)",
+      "matchday 16: Gemini 3.8 Flash (high) v Grok 4.7 (off)",
+      "matchday 16: Grok 4.7 (off) v Claude Sonnet 5.5 (low)",
+      "matchday 16: Grok 4.7 (off) v Claude Sonnet 5.5 (high)",
+      "matchday 16: Grok 4.7 (off) v DeepSeek V4.1 Flash (off)",
+      "matchday 16: Grok 4.7 (off) v DeepSeek V4.1 Flash (on)",
+      "matchday 16: Grok 4.7 (off) v GLM-5.3 (on)",
+      "matchday 16: Qwen3.8 Flash (off) v Grok 4.7 (off)",
+      "matchday 16: Gemma 4 31B (on) v Grok 4.7 (off)",
+      "matchday 16: Grok 4.7 (off) v Gemma 4 31B (off)",
+      "matchday 16: Grok 4.7 (off) v Qwen3.8-27B (off)",
+      "matchday 16: Grok 4.7 (off) v Qwen3.8-27B (on)",
+      "matchday 16: Grok 4.7 (off) v Liquid d1-ultra",
+      "matchday 16: Fastino GLiDE v Grok 4.7 (off)"
+    ]
+  },
+  {
+    "added_at": "2026-10-24T18:39:54Z",
+    "league": 2,
+    "db": "v3.db",
+    "name": "DeepSeek V4.1 Flash 1017 (off)",
+    "harness_commit": "46498528c1d9a05540114f523867cf2ae627ff29",
+    "harness_dirty": true,
+    "entry": {
+      "name": "DeepSeek V4.1 Flash 1017 (off)",
+      "spec": "openai-compatible/deepseek/deepseek-v4.1-flash-1017",
+      "provider": "openrouter:deepseek",
+      "base_url": "https://openrouter.ai/api/v1",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "request": {
+        "provider": {
+          "order": [
+            "deepseek"
+          ],
+          "allow_fallbacks": false,
+          "require_parameters": true
+        },
+        "usage": {
+          "include": true
+        },
+        "reasoning": {
+          "enabled": false
+        }
+      },
+      "top_logprobs": 5,
+      "letter_readout": "answer",
+      "price": {
+        "input_per_mtok": 0.15,
+        "output_per_mtok": 0.6
+      },
+      "note": "reasoning off (request.reasoning.enabled false); DeepSeek first-party via OpenRouter (model deepseek/deepseek-v4.1-flash-1017, the 2026-10-17 snapshot; provider pinned: order [deepseek], allow_fallbacks false, require_parameters true; usage included); quantization not published; top_logprobs 5; price $0.15 / $0.60 per M tokens in/out (cache read $0.003), OpenRouter endpoint list 2026-10-24; late League 2 entry",
+      "parallel": 8,
+      "rpm": 18
+    },
+    "entry_sha256": "339cadced5ce783a5342d32f9c55a82680f5b4d6058f0d30e44a98f5f1069b61",
+    "fixtures": [
+      "matchday 17: Gemini 3.8 Flash (low) v DeepSeek V4.1 Flash 1017 (off)",
+      "matchday 17: Gemini 3.8 Flash (high) v DeepSeek V4.1 Flash 1017 (off)",
+      "matchday 17: Claude Sonnet 5.5 (low) v DeepSeek V4.1 Flash 1017 (off)",
+      "matchday 17: Claude Sonnet 5.5 (high) v DeepSeek V4.1 Flash 1017 (off)",
+      "matchday 17: DeepSeek V4.1 Flash 1017 (off) v DeepSeek V4.1 Flash (off)",
+      "matchday 17: DeepSeek V4.1 Flash (on) v DeepSeek V4.1 Flash 1017 (off)",
+      "matchday 17: DeepSeek V4.1 Flash 1017 (off) v GLM-5.3 (on)",
+      "matchday 17: DeepSeek V4.1 Flash 1017 (off) v GNUbg weak",
+      "matchday 17: DeepSeek V4.1 Flash 1017 (off) v Qwen3.8 Flash (off)",
+      "matchday 17: Gemma 4 31B (on) v DeepSeek V4.1 Flash 1017 (off)",
+      "matchday 17: DeepSeek V4.1 Flash 1017 (off) v Gemma 4 31B (off)",
+      "matchday 17: Qwen3.8-27B (off) v DeepSeek V4.1 Flash 1017 (off)",
+      "matchday 17: DeepSeek V4.1 Flash 1017 (off) v Qwen3.8-27B (on)",
+      "matchday 17: Liquid d1-ultra v DeepSeek V4.1 Flash 1017 (off)",
+      "matchday 17: DeepSeek V4.1 Flash 1017 (off) v Claude Fable 5.1 (off)",
+      "matchday 17: DeepSeek V4.1 Flash 1017 (off) v Fastino GLiDE",
+      "matchday 17: DeepSeek V4.1 Flash 1017 (off) v Grok 4.7 (off)"
+    ]
+  },
+  {
+    "added_at": "2026-10-24T18:39:54Z",
+    "league": 2,
+    "db": "v3.db",
+    "name": "DeepSeek V4.1 Flash 1017 (on)",
+    "harness_commit": "46498528c1d9a05540114f523867cf2ae627ff29",
+    "harness_dirty": true,
+    "entry": {
+      "name": "DeepSeek V4.1 Flash 1017 (on)",
+      "spec": "openai-compatible/deepseek/deepseek-v4.1-flash-1017",
+      "provider": "openrouter:deepseek",
+      "base_url": "https://openrouter.ai/api/v1",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "reasoning": "low",
+      "request": {
+        "provider": {
+          "order": [
+            "deepseek"
+          ],
+          "allow_fallbacks": false,
+          "require_parameters": true
+        },
+        "usage": {
+          "include": true
+        }
+      },
+      "top_logprobs": 5,
+      "letter_readout": "answer",
+      "price": {
+        "input_per_mtok": 0.15,
+        "output_per_mtok": 0.6
+      },
+      "note": "reasoning effort low; letter logprobs read from the answer after reasoning; DeepSeek first-party via OpenRouter (model deepseek/deepseek-v4.1-flash-1017, the 2026-10-17 snapshot; provider pinned: order [deepseek], allow_fallbacks false, require_parameters true; usage included); quantization not published; top_logprobs 5; price $0.15 / $0.60 per M tokens in/out (cache read $0.003), OpenRouter endpoint list 2026-10-24; late League 2 entry",
+      "parallel": 8,
+      "rpm": 18
+    },
+    "entry_sha256": "2ced2d765c5d1313c0750fc992a1ee3f7e870a951ac9b76c8a7bf5f927329d87",
+    "fixtures": [
+      "matchday 18: Gemini 3.8 Flash (low) v DeepSeek V4.1 Flash 1017 (on)",
+      "matchday 18: DeepSeek V4.1 Flash 1017 (on) v Gemini 3.8 Flash (high)",
+      "matchday 18: Claude Sonnet 5.5 (low) v DeepSeek V4.1 Flash 1017 (on)",
+      "matchday 18: DeepSeek V4.1 Flash 1017 (on) v Claude Sonnet 5.5 (high)",
+      "matchday 18: DeepSeek V4.1 Flash 1017 (on) v DeepSeek V4.1 Flash (off)",
+      "matchday 18: DeepSeek V4.1 Flash 1017 (on) v DeepSeek V4.1 Flash (on)",
+      "matchday 18: DeepSeek V4.1 Flash 1017 (on) v GLM-5.3 (on)",
+      "matchday 18: DeepSeek V4.1 Flash 1017 (on) v GNUbg weak",
+      "matchday 18: Qwen3.8 Flash (off) v DeepSeek V4.1 Flash 1017 (on)",
+      "matchday 18: DeepSeek V4.1 Flash 1017 (on) v Gemma 4 31B (on)",
+      "matchday 18: Gemma 4 31B (off) v DeepSeek V4.1 Flash 1017 (on)",
+      "matchday 18: Qwen3.8-27B (off) v DeepSeek V4.1 Flash 1017 (on)",
+      "matchday 18: DeepSeek V4.1 Flash 1017 (on) v Qwen3.8-27B (on)",
+      "matchday 18: DeepSeek V4.1 Flash 1017 (on) v Liquid d1-ultra",
+      "matchday 18: Claude Fable 5.1 (off) v DeepSeek V4.1 Flash 1017 (on)",
+      "matchday 18: Fastino GLiDE v DeepSeek V4.1 Flash 1017 (on)",
+      "matchday 18: DeepSeek V4.1 Flash 1017 (on) v Grok 4.7 (off)",
+      "matchday 18: DeepSeek V4.1 Flash 1017 (off) v DeepSeek V4.1 Flash 1017 (on)"
+    ]
   }
 ]

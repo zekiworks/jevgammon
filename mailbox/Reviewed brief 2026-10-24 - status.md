@@ -334,7 +334,7 @@ Failures:
 
 ### Changes during the leagues
 
-None. No late entry was made, so Leagues 1 and 3 stay **Final**.
+- **2026-10-24 18:39 UTC: Kimi K3.1 Pro (off) late entry in League 3** (Can's approval, via Main). It is the smoke-tested entry exactly (`leagues/smoke-brief-1024.json`, effort `none`, Moonshot standard endpoint pinned, `$30` cap in `smoke/kimi-k31-budget.db`). `league-add` gave 11 fixtures, logged in `freeze/league3-additions.json`. League 3's runner was restarted at 18:40 on a binary with the budget ledger (`target/parta` build of 6fbf445, installed as `target/release/jevgammon`; the earlier binary had no cap code). Every Kimi attempt in the ledger since then comes from that process. Round 2's running match resumed from its stored turn. League 3 is **provisional** until these matches finish. Kimi (on)'s first look is still not run (it needs Ümit).
 
 ## Item 7: A2 on shared positions, status only (no paid calls)
 

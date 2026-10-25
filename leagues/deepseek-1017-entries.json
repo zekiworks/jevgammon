@@ -1,0 +1,64 @@
+[
+  {
+    "name": "DeepSeek V4.1 Flash 1017 (off)",
+    "spec": "openai-compatible/deepseek/deepseek-v4.1-flash-1017",
+    "provider": "openrouter:deepseek",
+    "base_url": "https://openrouter.ai/api/v1",
+    "api_key_env": "OPENROUTER_API_KEY",
+    "request": {
+      "provider": {
+        "order": [
+          "deepseek"
+        ],
+        "allow_fallbacks": false,
+        "require_parameters": true
+      },
+      "usage": {
+        "include": true
+      },
+      "reasoning": {
+        "enabled": false
+      },
+      "response_format": null
+    },
+    "top_logprobs": 5,
+    "letter_readout": "answer",
+    "price": {
+      "input_per_mtok": 0.15,
+      "output_per_mtok": 0.6
+    },
+    "note": "reasoning off (request.reasoning.enabled false); DeepSeek first-party via OpenRouter (model deepseek/deepseek-v4.1-flash-1017, the 2026-10-17 snapshot; provider pinned: order [deepseek], allow_fallbacks false, require_parameters true; usage included); quantization not published; top_logprobs 5; price $0.15 / $0.60 per M tokens in/out (cache read $0.003), OpenRouter endpoint list 2026-10-24; late League 2 entry",
+    "parallel": 8,
+    "rpm": 18
+  },
+  {
+    "name": "DeepSeek V4.1 Flash 1017 (on)",
+    "spec": "openai-compatible/deepseek/deepseek-v4.1-flash-1017",
+    "provider": "openrouter:deepseek",
+    "base_url": "https://openrouter.ai/api/v1",
+    "api_key_env": "OPENROUTER_API_KEY",
+    "reasoning": "low",
+    "request": {
+      "provider": {
+        "order": [
+          "deepseek"
+        ],
+        "allow_fallbacks": false,
+        "require_parameters": true
+      },
+      "usage": {
+        "include": true
+      },
+      "response_format": null
+    },
+    "top_logprobs": 5,
+    "letter_readout": "answer",
+    "price": {
+      "input_per_mtok": 0.15,
+      "output_per_mtok": 0.6
+    },
+    "note": "reasoning effort low; letter logprobs read from the answer after reasoning; DeepSeek first-party via OpenRouter (model deepseek/deepseek-v4.1-flash-1017, the 2026-10-17 snapshot; provider pinned: order [deepseek], allow_fallbacks false, require_parameters true; usage included); quantization not published; top_logprobs 5; price $0.15 / $0.60 per M tokens in/out (cache read $0.003), OpenRouter endpoint list 2026-10-24; late League 2 entry",
+    "parallel": 8,
+    "rpm": 18
+  }
+]

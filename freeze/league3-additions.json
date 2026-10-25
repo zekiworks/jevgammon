@@ -30,5 +30,92 @@
       "matchday 10: Grok 4.7 (off) v GPT-6.1 Sol (low)",
       "matchday 10: Grok 4.7 (on) v GPT-6.1 Sol (low)"
     ]
+  },
+  {
+    "added_at": "2026-10-24T15:38:41Z",
+    "league": 3,
+    "db": "v3.db",
+    "name": "GPT-6.1 Sol (high)",
+    "harness_commit": "323ab35ffa45cf560ab9f140f9c057b21c69f6fc",
+    "harness_dirty": true,
+    "entry": {
+      "name": "GPT-6.1 Sol (high)",
+      "spec": "openai/gpt-6.1-sol",
+      "provider": "chatgpt-subscription",
+      "reasoning": "high",
+      "price": {
+        "input_per_mtok": 2.0,
+        "output_per_mtok": 10.0
+      },
+      "note": "subscription login; cost is API-list-price equivalent",
+      "parallel": 4
+    },
+    "entry_sha256": "5f5c87558a94a5ffb3e95952c5a0ebec03b79308430170434bec1fef7dd05705",
+    "fixtures": [
+      "matchday 11: GPT-6 Astra (off) v GPT-6.1 Sol (high)",
+      "matchday 11: GPT-6 Astra (on) v GPT-6.1 Sol (high)",
+      "matchday 11: Claude Opus 5.5 (off) v GPT-6.1 Sol (high)",
+      "matchday 11: GPT-6.1 Sol (high) v Claude Opus 5.5 (on)",
+      "matchday 11: GPT-6.1 Sol (high) v Claude Fable 5.1 (on)",
+      "matchday 11: Gemini 4 Argon (off) v GPT-6.1 Sol (high)",
+      "matchday 11: GPT-6.1 Sol (high) v Gemini 4 Argon (on)",
+      "matchday 11: GPT-6.1 Sol (high) v Grok 4.7 (on)"
+    ]
+  },
+  {
+    "added_at": "2026-10-24T18:39:54Z",
+    "league": 3,
+    "db": "v3.db",
+    "name": "Kimi K3.1 Pro (off)",
+    "harness_commit": "46498528c1d9a05540114f523867cf2ae627ff29",
+    "harness_dirty": true,
+    "entry": {
+      "name": "Kimi K3.1 Pro (off)",
+      "spec": "openai-compatible/moonshotai/kimi-k3.1-pro",
+      "provider": "openrouter:moonshotai/mxfp4",
+      "quantization": "mxfp4",
+      "base_url": "https://openrouter.ai/api/v1",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "reasoning": "none",
+      "request": {
+        "provider": {
+          "order": [
+            "moonshotai/mxfp4"
+          ],
+          "allow_fallbacks": false
+        },
+        "usage": {
+          "include": true
+        }
+      },
+      "letter_readout": "answer",
+      "price": {
+        "input_per_mtok": 2.0,
+        "output_per_mtok": 10.0
+      },
+      "note": "Moonshot's Kimi K3.1 Pro (moonshotai/kimi-k3.1-pro, canonical moonshotai/kimi-k3.1-pro-20261023) via OpenRouter pinned to Moonshot AI's standard endpoint (tag moonshotai/mxfp4, service_tier null; not moonshotai/highspeed), fallbacks off. Off = reasoning_effort none, the lowest effort OpenRouter lists for this model on 2026-10-24 (supported_efforts max/high/low/none, default max). Letter constrained by JSON schema; logprobs asked, read when returned. Temperature 1.0. List price $2/$10 per million, cache read $0.20 (OpenRouter endpoints API, 2026-10-24). $30 hard cap shared with (on)",
+      "parallel": 4,
+      "budget": {
+        "ledger": "smoke/kimi-k31-budget.db",
+        "cap_usd": 30.0,
+        "input_per_mtok": 2.0,
+        "cached_input_per_mtok": 0.2,
+        "output_per_mtok": 10.0
+      }
+    },
+    "entry_sha256": "56ca4a0b27b7ba3ca372ecda5a230a47e92e38006ac9c0d5e465b87a4f9caab9",
+    "fixtures": [
+      "matchday 12: Kimi K3.1 Pro (off) v GPT-6 Astra (off)",
+      "matchday 12: GPT-6 Astra (on) v Kimi K3.1 Pro (off)",
+      "matchday 12: Kimi K3.1 Pro (off) v Claude Opus 5.5 (off)",
+      "matchday 12: Kimi K3.1 Pro (off) v Claude Opus 5.5 (on)",
+      "matchday 12: Kimi K3.1 Pro (off) v Claude Fable 5.1 (on)",
+      "matchday 12: Kimi K3.1 Pro (off) v Gemini 4 Argon (off)",
+      "matchday 12: Kimi K3.1 Pro (off) v Gemini 4 Argon (on)",
+      "matchday 12: Grok 4.7 (on) v Kimi K3.1 Pro (off)",
+      "matchday 12: GNUbg weak v Kimi K3.1 Pro (off)",
+      "matchday 12: GPT-6.1 Sol (low) v Kimi K3.1 Pro (off)",
+      "matchday 12: GPT-6.1 Sol (high) v Kimi K3.1 Pro (off)"
+    ]
   }
 ]

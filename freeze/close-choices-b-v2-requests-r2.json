@@ -1,0 +1,2587 @@
+{
+ "set": "close-choices-b-v2 rendered requests, revision 2 (neutral prediction system prompt, Method \u00a79.13; offline, no request sent)",
+ "supersedes": "freeze/close-choices-b-v2-requests.json (3e99825): same play requests, prediction requests with the letter system prompt",
+ "rendered_at": "2026-10-25T10:15:38Z",
+ "harness_commit": "b94a0d5215449646a355c824c81c24e9cb02ff47",
+ "command": "jevgammon render-stage-b --config leagues/close-choices-b.json --positions positions/close-choices-b-v2.jsonl",
+ "config": {
+  "file": "leagues/close-choices-b.json",
+  "sha256": "68753cd4a4127f490a899c7348cb73c827aa393ee77ef98db2a32969adfe012c"
+ },
+ "positions": {
+  "file": "positions/close-choices-b-v2.jsonl",
+  "sha256": "88bc3904595c6dccc3f6fe015e865b7b23e3ed81b9be1ad8d1e7efcf5848410c"
+ },
+ "prediction_prompt": {
+  "file": "prompts/prediction.txt",
+  "sha256": "cf3b989784a3b815fe1440589e2f212acc4e106ec4fe1e784d256ab58b128725"
+ },
+ "prediction_system_prompt": {
+  "file": "prompts/prediction-system.txt",
+  "sha256": "4d08045b72eeedc28602af09f82475a60bac768819d40a00a50601a661da332f"
+ },
+ "play_system_prompt": {
+  "file": "prompts/letter-system.txt",
+  "sha256": "21059b268bae257dab3aa7f608d1545d9d6a610f6f2782fc4baa84e728a6c82e"
+ },
+ "play_requests_unchanged_from_r1": "500 of 500",
+ "output": {
+  "file": "freeze/close-choices-b-v2-requests-r2.jsonl.gz",
+  "jsonl_sha256": "d8f4ea127e392716b9a6e883dc9abfef64c56c71625ccbfac5358f02e8ae21bb",
+  "gz_sha256": "06de0160d9453a5d73770f0195c7232a763f6591c0b42196db0ff8b6a018b906",
+  "lines": 500
+ },
+ "body_hash_rule": "sha256 of the request body as serialized for sending (serde_json compact, keys in insertion order); Antigravity: the inner Gemini request (the envelope adds model, project and session at send)",
+ "teams": {
+  "GPT-6.1 Sol (low)": {
+   "spec": "openai/gpt-6.1-sol",
+   "route": "openai-subscription (Codex Responses API)",
+   "model": "gpt-6.1-sol",
+   "reasoning": "low",
+   "requests": [
+    {
+     "position_id": "new-0002",
+     "play_sha256": "9409d188a649b8924c18c40e834a4b8ce0c4dbc18d471a1fbc24572a03fb4f44",
+     "prediction_sha256": "6ab91365f24ddf91c9ac90475add9042481c6dc290de2cd0dfaea6ebbe193470"
+    },
+    {
+     "position_id": "new-0007",
+     "play_sha256": "3d97b387a71695272b6392e63a4dd9c19cb2af83c134dbd9265207e889f88cba",
+     "prediction_sha256": "f41fd6d16b0d787df0dc7dd9bdc36aae1506ec3a7fa984d420f99f0db56386b0"
+    },
+    {
+     "position_id": "new-0009",
+     "play_sha256": "a35d70e3183efcaf8d6b984806fdff8688aff141e3c9704a9a43b9692bf7ddc8",
+     "prediction_sha256": "5bf41c4df0980f745a81ab6a9cafd921c2fbcde9177063fed2e6b2d75df6f683"
+    },
+    {
+     "position_id": "new-0016",
+     "play_sha256": "a08a77846a843dad7fb353913abc689136b3f93be485dad32c48ad672d27fdfc",
+     "prediction_sha256": "396017f532510137291cffb6f10ae5ad3c1a7b33c83c9a421068cb6a6aca4541"
+    },
+    {
+     "position_id": "new-0024",
+     "play_sha256": "35662c21d54aea13173f1d51b8cc9a46056a35804fbc168ef66d90534acc04af",
+     "prediction_sha256": "b881d4bd177d728de206b835574db157b29c0dda7c63697e6e0c44bf63fde547"
+    },
+    {
+     "position_id": "new-0040",
+     "play_sha256": "e719c7e14031584e0b6ebc5bef09d29abc01a66e2d84690e928e6b3799806be2",
+     "prediction_sha256": "7ff493b7695661385dfd00c03a067b6318ce5d3d56d0e9e46302e66673f0bc06"
+    },
+    {
+     "position_id": "new-0041",
+     "play_sha256": "9ce545f837e2cef70e82a5aa96a3a9d18565211819c76074e72b9ffd3b24797f",
+     "prediction_sha256": "954f0bf22643364b775a6c546ea04aae9ff36cb727ed848a8c613b221b58f1d2"
+    },
+    {
+     "position_id": "new-0043",
+     "play_sha256": "42fe4eaf6c83a5f2b9a7a16b2ddb068cc7e5e5149bc2406c5168a7bf9bf38d92",
+     "prediction_sha256": "9a08bf5e1345f14fb5803e589eb4d7c4c2689ac47ae8ddcd0f3d076e6c4e85bf"
+    },
+    {
+     "position_id": "new-0046",
+     "play_sha256": "a5ffa189e515268e504f785c80f597f2b367d041fdb5dcdcf6e2b58b9be4ea09",
+     "prediction_sha256": "9af1d19653db4334913698b30826066fd4a26396c65df13a0ac990019da665e5"
+    },
+    {
+     "position_id": "new-0050",
+     "play_sha256": "e7627c01f9825cd01ccb2d5619c1643f5c99b39d259a0b2c72377071667cc043",
+     "prediction_sha256": "cd39c128c1bb7a7ff3b29773f09ef701626a254bf41d162dbe050c65f0ff61a0"
+    },
+    {
+     "position_id": "new-0053",
+     "play_sha256": "f347a70a502c0abcb4ec4bf79d73f9d82a04172dc53f69c3ecc71fe14fcbb070",
+     "prediction_sha256": "187c5477d3f02ba61309e445e236715c9db68c6c9d800dd695009284f399ddff"
+    },
+    {
+     "position_id": "new-0062",
+     "play_sha256": "557c05c43d91dd158f1a7ea7062e479b1406756bf8fcb9542e9316aa11a7ebdd",
+     "prediction_sha256": "cdb776947999017cbe21a3ee699bc5ec160b1be6523aca55236e7e032c96f651"
+    },
+    {
+     "position_id": "new-0069",
+     "play_sha256": "6cb9d7ed19c40979c80093b2b886ddf68d7d62ed72f900b927540318d7de2844",
+     "prediction_sha256": "2ff29848c48cb82b3766eec2ba9d28bac8cfc598c8c803b739d1ed4e81c29b34"
+    },
+    {
+     "position_id": "new-0070",
+     "play_sha256": "e58d6aac93be7e40e84be37600a972869f5c8689c6be8df97646258b6b400d5e",
+     "prediction_sha256": "d0cd07e3bef4c3bbb54aa5bd7ece1239f69d9843595d0f76cae684b8cc69529c"
+    },
+    {
+     "position_id": "new-0092",
+     "play_sha256": "06f9e6af64d8e5f2034beb8c2a0c0fbd1abe5ea2afa3ab5c63c9eaae7bb0ed56",
+     "prediction_sha256": "9491ca58f3528336c782cb0396153760101ad6d541a75bdf8e3a5f10520e6250"
+    },
+    {
+     "position_id": "new-0107",
+     "play_sha256": "1880de24c4dedac1e392f28533a6bc1c2914ca74055657945b3a0f45543b3e0a",
+     "prediction_sha256": "ec4cf423a5cf635626daaf20969e8065c07f114625e515742880f3de99155889"
+    },
+    {
+     "position_id": "new-0111",
+     "play_sha256": "43d0fefe50dea9dda605a16b3fc2a4c645164b48c8c2da8ef21a2fae8bab042e",
+     "prediction_sha256": "bfc2edb243c109608b64fe0a5e9ddab3923dbd4c63f9604d9cb1dece383ad758"
+    },
+    {
+     "position_id": "new-0112",
+     "play_sha256": "112f47481a0c5f7a7e0d38a31872c29426c9112a310da175d7a230c7f2166078",
+     "prediction_sha256": "7f3d092e3ca65b4e094d1099d22a53a632d415cd1fce22c4083c7d47538e4228"
+    },
+    {
+     "position_id": "new-0119",
+     "play_sha256": "0df84beb21f189ad4e343713e2d56c86f9bc790f5a82627a3ed436eabc1b6c01",
+     "prediction_sha256": "2b3666dc1da057dc4d9b66572c8078ffee113c37e9e8ae027cd888b31200f037"
+    },
+    {
+     "position_id": "new-0122",
+     "play_sha256": "43e8a038f428ec2d3725e2e51c38a1c4f1f88c847da127ef7ba91c90c77249b9",
+     "prediction_sha256": "2ba30b42a7dda681a006d101594f2bb124faaa3e77be33be9fc418dbb92bf90d"
+    },
+    {
+     "position_id": "new-0131",
+     "play_sha256": "2e27dc5b3faa7eb720289d766285832959774c472380bb357aaae7ade750d747",
+     "prediction_sha256": "72890beed32d2ed056dea9142158ade79e1083ea0bb0ef2887e2807ab47cefa9"
+    },
+    {
+     "position_id": "new-0147",
+     "play_sha256": "2aa2c9759bbde1be6274d45ab519c225cfb3b59f3cd7b2587911edd8e1cb15e0",
+     "prediction_sha256": "2aebd680ff77630915b918f07b52bb763143c62c311056770185465c9e77f197"
+    },
+    {
+     "position_id": "new-0149",
+     "play_sha256": "37ff1f606f239ae5b53a6820b2a9342f4e8d0edc3e79b9b9a629ffa7d88fc048",
+     "prediction_sha256": "872cb343c762861f5fdbee41cfc055246f667e70ca0a35da2e46251129b24610"
+    },
+    {
+     "position_id": "new-0155",
+     "play_sha256": "725480473679b89abfaa2415c63a54e83e08480fb704c4f811455d635b21764b",
+     "prediction_sha256": "976f2378975d2348fe1e30657eed8916b6ddbab8a816d0146ec29aeb45d18aeb"
+    },
+    {
+     "position_id": "new-0156",
+     "play_sha256": "01fbd0c07f6f5b50c86dc115988057a5cae1c83ee0043265fcbd07f622772b3b",
+     "prediction_sha256": "1b9bf7051dc293071d2022592aeff0513fdd8e1bb727a2ebd9f26f6918006911"
+    },
+    {
+     "position_id": "new-0160",
+     "play_sha256": "5d1d122b42b6523982f7c48994c6995f7539282d91e3046f1e3170612ee518e0",
+     "prediction_sha256": "9cd85c6d1d3c7a745c083e9a03b73690ead936c6afbb071d88ae9eccd2508ae3"
+    },
+    {
+     "position_id": "new-0165",
+     "play_sha256": "c56df07e358b8c4bd23dc0258f80e03e3cfc2336339930635f8fb3ea6437fdde",
+     "prediction_sha256": "32321f022b1bff2fac322b665a0cb579273fa4bd62f8c55e191aa2bbe64cd520"
+    },
+    {
+     "position_id": "new-0175",
+     "play_sha256": "a55ad813361511a9dfae62f488140c220b84ce27c22678b6d9ce6061e6a5052e",
+     "prediction_sha256": "aed09ceab2884e0180974b1dee034375a1da1527038af2b4fa9a476ca540d155"
+    },
+    {
+     "position_id": "new-0188",
+     "play_sha256": "6475d2c685c119a54b8bd71b149bd143cdfaee7ff4493ba982c3030c86c2f36f",
+     "prediction_sha256": "3c1661b6466828b23ad1b77b05e0fa74844e9b32523feeed5e3d1b4fb25706e7"
+    },
+    {
+     "position_id": "new-0190",
+     "play_sha256": "9e6b6b0b532e414ef493fd5e3ba992eb3c0b2b9089e3e1c57d013f777d847a16",
+     "prediction_sha256": "98c4f306eb57e26c81ca8a274ebb05ebe4ec19eca6340a815522122ada772ab2"
+    },
+    {
+     "position_id": "new-0200",
+     "play_sha256": "3a211af0ea417a4267cff567dc9b3176608e63ae83650e8a036b0a25b0b1fa26",
+     "prediction_sha256": "622bb166f6281d8c76217f708bbc4655bedd4056c231f39dda619ee6ecb2b0e6"
+    },
+    {
+     "position_id": "new-0237",
+     "play_sha256": "f8c36670bede85836b7b41b3189472222fccfec431a544d7c9242eb3eb9b7755",
+     "prediction_sha256": "28092b2a89898966865890b83c075d7f1b21621fb7179c912cc06be176237bb9"
+    },
+    {
+     "position_id": "new-0239",
+     "play_sha256": "dff66f2737a0be8baa102517ccb9a87b7b1c513964549752517e269c4d417277",
+     "prediction_sha256": "08c5c4fe2b57264d05f9afc4e6c2aba68f88807b82bd89c354259ae8536c06ca"
+    },
+    {
+     "position_id": "new-0244",
+     "play_sha256": "92805e0b249d7451e105ebdaad21c8e9a45aca754a1e85cfc8fdbfe828ddb522",
+     "prediction_sha256": "c1d75d785840cb32a64179b2de35c06a8bed62a6a9b4aa98bf8fe7f3684735be"
+    },
+    {
+     "position_id": "new-0249",
+     "play_sha256": "7647e8dfc52e9c16b1bc41818b326bc04220724fdd2128016953022420d18966",
+     "prediction_sha256": "14ca119313169fe9f0f8ba90e8ba0de90b8ae6015f32b29b4e45c79234360017"
+    },
+    {
+     "position_id": "new-0250",
+     "play_sha256": "c6a741a526d6de099d4c23da2e7c562977e72cf40dedb9cd48372531d4030a72",
+     "prediction_sha256": "dc15e1adb70691d7025b1c8e188e2db0a9a6202b410a49282628ca34d1bb98f3"
+    },
+    {
+     "position_id": "new-0254",
+     "play_sha256": "4db08e6ed1af38c8d947571e98bca3b2b5dc7e0b13ed649c0fe445d095f9e71e",
+     "prediction_sha256": "02fdf89a8e3cf153b82071e58aaff14c7f9d40f335e20e36c4dde2e6b734412d"
+    },
+    {
+     "position_id": "new-0256",
+     "play_sha256": "426060387eaa617e5e2bda25e8ca070fb80b2fcceebb74ea3e73609546cc962f",
+     "prediction_sha256": "b38a8193c1180e99ccd730759228aae4822e58c4930728b861c89b4ffcc62b7e"
+    },
+    {
+     "position_id": "new-0263",
+     "play_sha256": "8305735616b95865b5bf6786c4430a91561d8aae49d0eb0af2cf5fd610c1e7e4",
+     "prediction_sha256": "288276b711c118f56dcf6556a2c5d8222a3fbe923ba4249ad10db0f56467fe46"
+    },
+    {
+     "position_id": "new-0264",
+     "play_sha256": "ceb213fde90ce31d6c203215132d42630dcc8bc9cd781e21ae0769965dbe0720",
+     "prediction_sha256": "e0ca1540e4556f5616baf35b6ebffa3393b9765844841b42535f62647f5aefcd"
+    },
+    {
+     "position_id": "new-0270",
+     "play_sha256": "e8b2574d6ea2ed9b1dcf88d30bb060bc6c1869c2720a6721273b0ef1e913ac28",
+     "prediction_sha256": "8660f6cf6c5263d70e83d926240ec317ec918db5866d6dd63c12c7c584265c91"
+    },
+    {
+     "position_id": "new-0274",
+     "play_sha256": "761e49b0e777010e3c65894e9ca8d430f4a4e61a6184a050636f67d839267975",
+     "prediction_sha256": "edc801f84c240544b48c545cd636293c913403139fefa881f6110e58f80bc47c"
+    },
+    {
+     "position_id": "new-0278",
+     "play_sha256": "9fad28136c2f9295d1841c7dabaf6d7dfe2b6270e013c8206b24ae279df6180e",
+     "prediction_sha256": "b5c0969c67cc0509e50882d1552054d9bb002477c1344af082b73c8d97f108cb"
+    },
+    {
+     "position_id": "new-0281",
+     "play_sha256": "7da2d634b3c35b844885519b19db34a3a92a98ab26c59357d3ddf04c3c2c8715",
+     "prediction_sha256": "5ef87ee87aa9364e7409e2623d15755957e15d391cbbec8a5d205b6d57028a6f"
+    },
+    {
+     "position_id": "new-0297",
+     "play_sha256": "e9eb111d58d22f72584ffe9d5c1b011dd899556c3b442472b6b969078cdad8d2",
+     "prediction_sha256": "9a5fd435d1f1c044db0aa14bc6e1bec57c9ba01ed0a981fb40ab8984054c3ffb"
+    },
+    {
+     "position_id": "new-0307",
+     "play_sha256": "9c5332b0d6bd95f711a0fca66c48fd9dcb5efcbbc5446ac7f275d8b377ce6e83",
+     "prediction_sha256": "b4730ee93989970c1fb934350d655c3aa7ce19cbcac7e14b27c33f86b08f3cbf"
+    },
+    {
+     "position_id": "new-0328",
+     "play_sha256": "dba2369d04cb465c6b5e7d267c1adfe3327e6417ac8019bea7efccca58a93644",
+     "prediction_sha256": "d71940d4ecf0f4c89a949d9287076bca129ec68f60e534e00a77af2d90d784a2"
+    },
+    {
+     "position_id": "new-0329",
+     "play_sha256": "c76a27e57a75d9e9ba31eadec093f05752a4f5e9b7a26a7bfb6e43fbbe612e2b",
+     "prediction_sha256": "148e4e1928715e144ba56d1669935cc16553a9503fc8e757bb1031737e632711"
+    },
+    {
+     "position_id": "new-0330",
+     "play_sha256": "b23286e63d175584f9ac0dea4c2a087b72229c672c01257d837d3368a567533d",
+     "prediction_sha256": "4fef0d20b10027d6df7731d939d24db40cbba740995fef9d7d71e6bb7cd34edc"
+    },
+    {
+     "position_id": "new-0331",
+     "play_sha256": "f078d56ff4e8cae4a45f32d596509dc8c3f60e757311e821ec6211a3f77ce21c",
+     "prediction_sha256": "f9150bf96e0ef812f672401d1e99c135dd308e2944cb10991ae5fed2b9db7376"
+    },
+    {
+     "position_id": "new-0337",
+     "play_sha256": "c04b6d15ec6f62d7614e53b7a2415c9dc9e9918cdc15bdc2e0084a1e2a776d56",
+     "prediction_sha256": "f564bdc54d88df25836b607bea0e6ad88d8850472fe065c0dbff13c20f0cfb05"
+    },
+    {
+     "position_id": "new-0344",
+     "play_sha256": "32d6a042f718db3ed6985ce5b476b7e76c6ae4413e62efa8b61fb6fdc5734fef",
+     "prediction_sha256": "c03fc3979bc67748270e7aa7b0ee76926b7309bb7ba0b7455512c5de28b0a4c0"
+    },
+    {
+     "position_id": "new-0349",
+     "play_sha256": "7daf564c5e26abe6b1616786ca19f611b0886f16015fe7068ba75ec51d3085a6",
+     "prediction_sha256": "5ab3df0b45827dc129fb3d2d3eb4a325f11dabd5610e7d789dabfcb70eb07da3"
+    },
+    {
+     "position_id": "new-0353",
+     "play_sha256": "842e53b8707b02bbe30e43b0a229ab8799243e6c02deb4862bc90116b351a463",
+     "prediction_sha256": "a109027e664b7bd995aa2a3e242fa01b87b9a37e31486948b3bf1a04e53ed8ea"
+    },
+    {
+     "position_id": "new-0356",
+     "play_sha256": "86ec2f644e6c5fb1771d0b3c97e7d87721a4d866799562c68c59343870f83a46",
+     "prediction_sha256": "0b9728307e009900a7bab6dfea39e981a49071313ba4ca921efe16619ac11d31"
+    },
+    {
+     "position_id": "new-0361",
+     "play_sha256": "587a62827d77b040544f1e8f7ff4fa7388208ee61942922c010bd9dfd36fb112",
+     "prediction_sha256": "22ccf2ba3de98c59db3b97686c9fb6f2f6412ccc4c2368830e1409d492ee1da2"
+    },
+    {
+     "position_id": "new-0362",
+     "play_sha256": "7aaf696be5ac35e288430c73c4de250508236ee5f5ba33fe9d03ffb272909692",
+     "prediction_sha256": "f7f7ebfcc6813d173d04778994a3850805a3223b848a959bae9af6d4ae9b2731"
+    },
+    {
+     "position_id": "new-0371",
+     "play_sha256": "0bfbc5e4dfefee4f6c29c3d296a5b2f2be2b9f45abad707245411604c5231e55",
+     "prediction_sha256": "22f2f00a95b91f36dca35cfb3291e4336e60f743e208e4f5e4e184d3a45681d3"
+    },
+    {
+     "position_id": "new-0377",
+     "play_sha256": "ada41621731e6cd51caae3da99d20454509b66b4114b7589a3e9f286db26e703",
+     "prediction_sha256": "db7c89a57e54b5550a8814e135ce8d5d5970d8b2fa1f851edc8431166202776d"
+    },
+    {
+     "position_id": "new-0383",
+     "play_sha256": "27de0f4af7e4de56cf2823543fb0818b72b8677012b4ef5cd5709714cf265e7c",
+     "prediction_sha256": "2a4c3b6badc282f62461cf592247759172ac466ae558add63abade7dc5316bed"
+    },
+    {
+     "position_id": "new-0385",
+     "play_sha256": "cb826ea5bc456062c51a167b00c9ee8c00dfe728efd7f1a24b18390a3e3a8e34",
+     "prediction_sha256": "0acf351f3090b1962d2aae213f7d5227146e427c04138c970d73675783a90e0e"
+    },
+    {
+     "position_id": "new-0388",
+     "play_sha256": "83cfe8069a7d85fc2809a3b1f6de06a405bbc10620966f0fa9091641ebec37bc",
+     "prediction_sha256": "1dbbf65acd18e354ad0cf2d003452d45a67421181d15affd804e6738cf298d1f"
+    },
+    {
+     "position_id": "new-0410",
+     "play_sha256": "b240c395fa1972e4f04d7a9d500248edb726e6e8d74d42f43531ad28bd704e9c",
+     "prediction_sha256": "46e8ce9654d67fb2507fba9065fcc405adb7bbabd34171dbf3290b8fa8fea9da"
+    },
+    {
+     "position_id": "new-0413",
+     "play_sha256": "8ab83ec8779462508e4fa3c5c87f7995df874b3076ad42c2f3e0c391e37acf39",
+     "prediction_sha256": "ba820d1e00645c0b5ae0d37628ac19146d75521573479e5bb6c4f19bec1b7609"
+    },
+    {
+     "position_id": "new-0422",
+     "play_sha256": "11d547e5c4644519b9270df3646c64dc0db4a8022e619cf44291b9de4fc823c9",
+     "prediction_sha256": "bf30707362915a95c7376827d01b4198e1132baa156bfbc751d3470ab00fd3b3"
+    },
+    {
+     "position_id": "new-0430",
+     "play_sha256": "b007068f19d5540fe3dd9d6b7befb4607924f48eafb71f6e974b3c620a214460",
+     "prediction_sha256": "e43524123decf6a20fac44c3cc542e11aef5fac04ac318538c3bcf92fb77ca6d"
+    },
+    {
+     "position_id": "new-0447",
+     "play_sha256": "24fe0cfcdce4d6ad8e2265c9449ab54541f01fdc7067e598af91a5351517122c",
+     "prediction_sha256": "d63b99e5c2d3665bc036de35a78ba9279e8c839abd2811c1f92cce61377fbe93"
+    },
+    {
+     "position_id": "new-0459",
+     "play_sha256": "0dd37db26bcc6a6fc570c5568ddc8ef405e0973529d28913c31e1b2c53621d67",
+     "prediction_sha256": "86780499ca8cb314a8a16ee5390f02e07ee0d86b1cf80fd6ba4a60bd9bfd34a8"
+    },
+    {
+     "position_id": "new-0465",
+     "play_sha256": "a33faf2a1022f0e3754c94245dcd1fadc8849fde019881e738671dd5b4f44d0c",
+     "prediction_sha256": "e0e9ddf0c7c95c350e44cd6f8c3fe262dbfe548fed38c90bcba0cee2f8f571f2"
+    },
+    {
+     "position_id": "new-0467",
+     "play_sha256": "925b954d20bb0f360348cf480fda3f52153fc515e1e5676258747200c02f1920",
+     "prediction_sha256": "852339b1e664b051399c760362273e108591842dc345a3032b97fc8a3475771d"
+    },
+    {
+     "position_id": "new-0469",
+     "play_sha256": "a8ca62a13d18e09b80c5a1a263f0a78de84ecb9977c83108ff178067fad6b4c1",
+     "prediction_sha256": "5e6e667605800cf33a57db420096cbece8b74e569083fea37b8ed82b1fca8867"
+    },
+    {
+     "position_id": "new-0474",
+     "play_sha256": "1003eabf1e2eb8e83ffd283d438a05cf4db6b4f4124abb6ff64ab0e4538c4399",
+     "prediction_sha256": "753d5754a6432996a3ab76383b48544853e5091eba8687688a304fd6cfd19b91"
+    },
+    {
+     "position_id": "new-0494",
+     "play_sha256": "6949720699b96f55042b87ff1b78d0219eb91ffcf6062a3e091f975995aab782",
+     "prediction_sha256": "c04650862e810a46d80b6e2c9b4e0f5f105dde7a9d0e364f98e0d02769128fca"
+    },
+    {
+     "position_id": "new-0511",
+     "play_sha256": "52c3a2975f0ef3ff445056b5e5e9a06f6a2bb09706ced7f81688f99d5d5c6678",
+     "prediction_sha256": "5ac14cb7b92887b720b1f87f80aab547bdd22e922f7ad781444b422966311e55"
+    },
+    {
+     "position_id": "new-0513",
+     "play_sha256": "0069f79ba2e7018b13733fbe656172743b68ee527b14e60b8e5b1605e120d93e",
+     "prediction_sha256": "5740d0e4ee5438bb74e7fb8d3a257fbd36d6e70f9f1ceabbb485c60b5ea09e1d"
+    },
+    {
+     "position_id": "new-0518",
+     "play_sha256": "5cba909c879ccf4c382c9ec442c72290cdd69cfbe2fb93a2cc9d2ab145dc782b",
+     "prediction_sha256": "a4764000f140cb1def72419f238b50163c3b0d6cec68f7cf5ebe6e597e834554"
+    },
+    {
+     "position_id": "new-0525",
+     "play_sha256": "37b388307018549062b905b24e5347ca1fa940ef6dbbe09cbe1d354ca1fb58fc",
+     "prediction_sha256": "1603f930c362ef12a87b6fb0f03239807f8cb1aff2011bae8db3c8f90d388d97"
+    },
+    {
+     "position_id": "new-0529",
+     "play_sha256": "8eaa3633da3c2ebbe2c4ed2098e6e932ec2551ab9bc0f9bac8b9ef0c7595098d",
+     "prediction_sha256": "68d85584f89046d3e0eb6c1c411f044b83cfa963585471c25784424e5e149db8"
+    },
+    {
+     "position_id": "new-0532",
+     "play_sha256": "ddbeba6c8d38524b34df42274740086e566e49c867ab677dc79d887dbd19e958",
+     "prediction_sha256": "9536588851ebc410d7c5ea513c78562789c0fcf26026b5d8f889e87a25aa84ad"
+    },
+    {
+     "position_id": "new-0537",
+     "play_sha256": "b812bc7094f7ead6ada40c96bdf2181439463f2571bb1c2cff1c1cd19fd5a71a",
+     "prediction_sha256": "8b5b66153afb7d2cbc12de873d3822c2f9f01529c4ae9d737f96968bfae279a5"
+    },
+    {
+     "position_id": "new-0546",
+     "play_sha256": "882d686c4569c6f617366b86665f79edb69f9ef1bd33883ff1611439d206a4da",
+     "prediction_sha256": "1c9177601113d2f2dd5c284c68d4aac6644643b2f5affdad165d74514dc2a12b"
+    },
+    {
+     "position_id": "new-0550",
+     "play_sha256": "c5fd9c2da8147fe9a4c3a5c74be228e58dc797dce940acc85ded8f449955d3d1",
+     "prediction_sha256": "1340a4a70e79cc14747ad98f1b91d4dc3842378107598e13c1addbb2003f86e7"
+    },
+    {
+     "position_id": "new-0554",
+     "play_sha256": "0b9783b66046c3b786d7c2f18042897de4b6b3297fc8d5581ed1179b2111e2f5",
+     "prediction_sha256": "586f2b517265bddbb48171e44da91663e80f24791d4fafb6d935eabd8b4494d6"
+    },
+    {
+     "position_id": "new-0562",
+     "play_sha256": "e7f8424cadb67a1a5d8a8a284861741b9b2f493c1b387561188ca4c35ad995ad",
+     "prediction_sha256": "139dc52b920a79b970b004831136f059803c6f11ebc5e41fe596a200045806ea"
+    },
+    {
+     "position_id": "new-0564",
+     "play_sha256": "887cea680c998a81d8cb61775e622e07a7c89bb7918bf8aa93b5a56b25012633",
+     "prediction_sha256": "19730f31d2913ec6a3993e4146daaf6d937452e031a89c8ef247b1b8ee678180"
+    },
+    {
+     "position_id": "new-0572",
+     "play_sha256": "fc86ac64d46b4474666cf8bcb2de58454e6e069286f7e199c0467361e165bb76",
+     "prediction_sha256": "734b9ea136b0e923ec87111076d6feafcdd37f08c1b6625e5320ad1103603b36"
+    },
+    {
+     "position_id": "new-0575",
+     "play_sha256": "6c7983fcbc0368bbcb957147eaa8632282d22791c7f86caa28fb8ba7f095c9ae",
+     "prediction_sha256": "d093663a4c72b4fb21d990bc86cc2ab816b5bc60928427b760351c0cd9e4bc37"
+    },
+    {
+     "position_id": "new-0582",
+     "play_sha256": "9227b94efd9eed2ce51f13fdc5eb38970cf7af5e46134f8fdb60ea64d029cba0",
+     "prediction_sha256": "d93561f886238d1023d4990dd9a58fd26e6f3126d5a6eded565afcb4b5e0909a"
+    },
+    {
+     "position_id": "new-0588",
+     "play_sha256": "2263036c729bc0d15045d76a13ae2390e0fc5c812bc7d1592443b5812b207609",
+     "prediction_sha256": "172931180963d7a9b723941ae35b85de62fea380975f195deaf78baeedc91d8b"
+    },
+    {
+     "position_id": "new-0591",
+     "play_sha256": "f3fb007af06cb1b7cbe433fd46ed991fd25a9f0ada1154ec3b33d7597486a531",
+     "prediction_sha256": "4adfa3a2a1310eb8825a5e679ca4349283f53e760485017b98b556cccc938bd6"
+    },
+    {
+     "position_id": "new-0593",
+     "play_sha256": "d009e22e5c08917ac416943068383134a0a68e834116601b4e67980be5b004bb",
+     "prediction_sha256": "9b4a22a5de0cd392c4e864f86ad75ece471adffad4d624736c9a451cc5144a81"
+    },
+    {
+     "position_id": "new-0598",
+     "play_sha256": "52206e6c77cb0452362393d186d650c7c8bf54d1a4e87550aabf8a77690beb38",
+     "prediction_sha256": "cba40e23f38d6934b831c3fe5ab6ec0c6018f677c9709b9599a72c633299827c"
+    },
+    {
+     "position_id": "new-0618",
+     "play_sha256": "3aae7e1a52b6dc7e0d73d01271f879297fc5d08c2d2a148fd3fbb7c0ebb9fc26",
+     "prediction_sha256": "d487f907dfc9978efdc805bb9508aa6830f0eb2c6be1f8d20c043043c178a998"
+    },
+    {
+     "position_id": "new-0626",
+     "play_sha256": "47abf0c433635ab0fed673fa5f708126e719dcbbff40cfd289a110f60fa5d38c",
+     "prediction_sha256": "e0b6d50c411d2b03e1dc7bccdc56954d3b395e4ab8518254dbdc284ade045b23"
+    },
+    {
+     "position_id": "new-0679",
+     "play_sha256": "bcc14637d4f9c90baff9973b6686bdc7222a36e0ac9c18ce6f0b46c326f35c4b",
+     "prediction_sha256": "75528632de3f32341edc1face700aa51ea7d20786f323652d330ccd2bada8a70"
+    },
+    {
+     "position_id": "new-0706",
+     "play_sha256": "6af59f4564aa59a18096331120bab1147d84d6e32d85e2626b9fc09751c4b3dd",
+     "prediction_sha256": "bc78922cf9f7507a36288010cb9eb7bef27906668615ec545ea56906a7a55817"
+    },
+    {
+     "position_id": "new-0801",
+     "play_sha256": "97ce92ac44ef5e69aa6b3bfd454cf6e5d0c8f734dfd67fcad9d76fc2e827a139",
+     "prediction_sha256": "27d72bee4da0289ca16794c071b6652517c663b0421104303dc5070a6abdaa0e"
+    },
+    {
+     "position_id": "new-0814",
+     "play_sha256": "53daa7e11f40d21aefbfe5f1cdc7c608b12cf59f8b42b2d0535b4c13ada682bf",
+     "prediction_sha256": "24d28da4bac8c4cfd3909a336628701be5317134ec1aab6a9c05768989dc8a0c"
+    },
+    {
+     "position_id": "new-0919",
+     "play_sha256": "669488cbc7eb64c0bd456c684e427b3dcce7268e69052b6de3090e84aa8d05f6",
+     "prediction_sha256": "334e802b6c92e79fbf2c1123c202491aa33c744de5023326efe40e76cc0a2e6a"
+    },
+    {
+     "position_id": "new-0999",
+     "play_sha256": "f28d17185379fcbd23ce23b1808c8c48937724aff37f2e10b7ab76565002d399",
+     "prediction_sha256": "0b5f9ca5a79681bb39062ee43fead541f516dd950b39c89eaa7d23fdc916bc5b"
+    }
+   ],
+   "prediction_hashes_sha256": "34bff58969c8f2c0eae7d5a24f0da48af0d8dc4e757dcb4ddca2b26b30fbd2cc",
+   "play_hashes_sha256": "0c84a2239e76a009639bd6006cbb50d994493079070a16442e5bf2616d3eca39"
+  },
+  "GPT-6.1 Sol (high)": {
+   "spec": "openai/gpt-6.1-sol",
+   "route": "openai-subscription (Codex Responses API)",
+   "model": "gpt-6.1-sol",
+   "reasoning": "high",
+   "requests": [
+    {
+     "position_id": "new-0002",
+     "play_sha256": "c8e671f44c700431c79332a5f57f7b56d9cee2c377dbc4ec7cb2db943894f02f",
+     "prediction_sha256": "72c97f3f0495925c6937d12131036a252cc2f5adbd717e920e662793ada727f5"
+    },
+    {
+     "position_id": "new-0007",
+     "play_sha256": "f12edaf6450f7070199294cca4a1ffcf0e439aba91fe5efc6f3c4fb3a0806f6a",
+     "prediction_sha256": "b59ba66befb27de3197028ab9461397458cc2a4627bdb6999e700c113b3e8021"
+    },
+    {
+     "position_id": "new-0009",
+     "play_sha256": "bc1bc94d5f88f380f154e19b8cf2a33004c3a63014b5e9aac68e0f206b94b93e",
+     "prediction_sha256": "e7a780be978ad7da7a3bba87cfd0cfd7aaa35e23e6f53a9ae75ff6579e660a8c"
+    },
+    {
+     "position_id": "new-0016",
+     "play_sha256": "4bcf3df9d1ca603f35b50fd0f6cd679590d929f108ace9e625a799e8aedf7f22",
+     "prediction_sha256": "078f3c7878e4f53e3439b1f33e2aa6f753a7bba18f6a88b057b297272923686a"
+    },
+    {
+     "position_id": "new-0024",
+     "play_sha256": "2783cbb24d49abbdeb2516b29e2213724ca646dcdc4bf282ee43b99aeb4e6e9a",
+     "prediction_sha256": "83fbeb88a47bf8b59b6264475be06842ec610b10c13a7e9db09dce2020eb563b"
+    },
+    {
+     "position_id": "new-0040",
+     "play_sha256": "2d9ac02966a75c76c2502d0e1bc2551c1278987830f21fb824e3d24756e6b606",
+     "prediction_sha256": "294e9ec29d1f605e92e805b2876235d711710a92cb4c144045e31299cca872bf"
+    },
+    {
+     "position_id": "new-0041",
+     "play_sha256": "04e078bd5b9764093576e2b912e2fb13e6859355fbeba8cec84da9446e0d5b8c",
+     "prediction_sha256": "7ae3a7f77cff35ad0048e0395c73f89ffd8d2f0f67b353daff6ade09228437bd"
+    },
+    {
+     "position_id": "new-0043",
+     "play_sha256": "64655c0e8b7c966eaa2f644272aad7441841e44adbbfcacd5b1a85f9f51584ee",
+     "prediction_sha256": "fbd49378adf142f05a9488c864b34cd98425ff3519f00dedc9983738f9baa3e9"
+    },
+    {
+     "position_id": "new-0046",
+     "play_sha256": "fa34e3a6f3b9a69a4ed5f0b9b56aa45cb6f25fe07d9963e1d58f999e7b48d08b",
+     "prediction_sha256": "ec45ede9e1da07040178d5e66557fac62684dc5089a8a8e2ec2af2c9644d6238"
+    },
+    {
+     "position_id": "new-0050",
+     "play_sha256": "cd878b2ab20d5f78f02e92769f59399a46ff84ec71db0eb6544eeb9128c79560",
+     "prediction_sha256": "4667f58fd1d2c83a3fe7536897da38bb8ad248152db958f333f3897e9275cda3"
+    },
+    {
+     "position_id": "new-0053",
+     "play_sha256": "7703fa78ae11ddbdc9c042821d8ffa3bda3599d64213900682d03d3cf91aad9c",
+     "prediction_sha256": "1f1afbf21f28dd9397d7b5239330310fb775c231e8b5ae48f7c714ae2ade93a9"
+    },
+    {
+     "position_id": "new-0062",
+     "play_sha256": "84aa82e716e831978a9ccc424a1fbba168ced7d49f6d74e95d502e64dedc359c",
+     "prediction_sha256": "ef7014fb7b08bb34541f8cefe66d424c02b2e293492bc29a4c1f3af3ee9ba1df"
+    },
+    {
+     "position_id": "new-0069",
+     "play_sha256": "942e1cde8281f1d9795558002081c999896eafeade2c6d016bb8ac983b93ce01",
+     "prediction_sha256": "e6222782faa61964b967c6120f6eb47412dbc8038a40d2b428fc98ceba4e8f6c"
+    },
+    {
+     "position_id": "new-0070",
+     "play_sha256": "35fbf7413e2f96e3f6b721028a9d44c03621cfd1927f4772e076a72c3aded913",
+     "prediction_sha256": "045e5382b7e89d09a6ce3ccfaa6bdbe0e78dba76cbf6ebbd6351a31bbfc69e00"
+    },
+    {
+     "position_id": "new-0092",
+     "play_sha256": "46137231f52b2b2fab92cdb620aab08d75d5b8c23c609a664af37a93e947005a",
+     "prediction_sha256": "0780c4f1b4ce4223205984c29e7b71738e7ba89383919ab12f311c60c1cb81d0"
+    },
+    {
+     "position_id": "new-0107",
+     "play_sha256": "789f0dd70d8fe25779cba0ab74177892384e5be9aed1fa8d6bfdc2564688fd10",
+     "prediction_sha256": "060484d8a992e9446eac597efd1c5c172d860c3b274cf538a4664d5ca5a87e31"
+    },
+    {
+     "position_id": "new-0111",
+     "play_sha256": "cc922b3b4c54e252b533b0570aa3d4c3a9e55700f2c2b502c91863b3aa33b1c7",
+     "prediction_sha256": "678544f7123288f851b877e322e62b5fc07ceb3cd1b72fd4a43debf01de0d53a"
+    },
+    {
+     "position_id": "new-0112",
+     "play_sha256": "26a4cc9f2cf78dddfe43da0398d3980471c2bbadad2e9e0e8344d8b1e3f50e53",
+     "prediction_sha256": "650eb57550dd08de1c7a2ebc59a01a5924066e6d83f88296b160d2c6eec4d0f1"
+    },
+    {
+     "position_id": "new-0119",
+     "play_sha256": "64df13de8d46a80a9505ef32a6d8d2c312c722c975834f47e3a928103354fe8b",
+     "prediction_sha256": "aa2fdc2a5f4685d090eeb95b107434054f657c4f810b2c6f3296482159151af8"
+    },
+    {
+     "position_id": "new-0122",
+     "play_sha256": "28cffa80246e9d0ff4d8263a3f95821421a1e2a096f101b0438fa9e0e00e83e3",
+     "prediction_sha256": "5abb39eed97d51f878279b87e0c2c8b7e9ad84c6dc9bb691c9e9f15a0b457b69"
+    },
+    {
+     "position_id": "new-0131",
+     "play_sha256": "fafad782c4ec909f482a7e6eb3e493896cda8058a304ed718d05ebf2d10a801d",
+     "prediction_sha256": "7b3d8c95a0f814ae40c374a886a1ffad3a974359f58cb6f0fa9d7f77b3304d40"
+    },
+    {
+     "position_id": "new-0147",
+     "play_sha256": "555239987f50224cf189ef260d20fe96caf04dfe942c1cc382a4d25c13af074e",
+     "prediction_sha256": "5f38cf14d8914a96daee6be49e37eaa05d1c30ad06ba7ef3e9db8504f6a7948c"
+    },
+    {
+     "position_id": "new-0149",
+     "play_sha256": "c49493ab1244e474e9cf3f197b2b5c97cde330ef0b3fd094505e7f8b40eeb28c",
+     "prediction_sha256": "8aee57a16183388a080fe02ee25ef83f271a5edb260ab0416ff2e1f488af2aa7"
+    },
+    {
+     "position_id": "new-0155",
+     "play_sha256": "543a60d8477a8155a4e80de1d0031b92bf88f188eda93aef0f6baa0d87f358af",
+     "prediction_sha256": "922bea971b707d24e73852d4d6510293d20b51359276b80a5842f5d3782f6625"
+    },
+    {
+     "position_id": "new-0156",
+     "play_sha256": "bbfee70e43d4c5eb3e498d4fc3e46c338107d8d2d901fc6e3e1eda7c41268420",
+     "prediction_sha256": "48f3a9bde92ca3c92832e95a11d897f12a91e19ec8d5de207963d1ecead14eae"
+    },
+    {
+     "position_id": "new-0160",
+     "play_sha256": "c05146d351b71d040383e5de512c88bcb39afdbbd998ced18fd95ae8f7cb54e7",
+     "prediction_sha256": "492f11be0fade50313d59ee7b064809a823b0f33c28213677e204feb775d58af"
+    },
+    {
+     "position_id": "new-0165",
+     "play_sha256": "412d75b1ea7faae3ccd48953738054f2df16885f3c15ba8e96db09c54c4e0267",
+     "prediction_sha256": "7aa255fb6e973a31c2fff167f453bb0a50cf6cc4e4ead4c0ea52e9b10249192a"
+    },
+    {
+     "position_id": "new-0175",
+     "play_sha256": "e0c0425279a7f962d4e3affb69d18c9ed271b578d96ce385167989fcd1ab82dc",
+     "prediction_sha256": "b53654c0ec8151954cec8c9c5d06b1fa5d2a35f408e5459ea6e010537507dcea"
+    },
+    {
+     "position_id": "new-0188",
+     "play_sha256": "bf04017d2c53adfb76cc0cacf46eb3ebcfe76706094c0a968fc0bcc3506f4cbf",
+     "prediction_sha256": "097dfac09b550350a71f20545f624b1a0d23eb4a4bb6d8b67787c74813460f36"
+    },
+    {
+     "position_id": "new-0190",
+     "play_sha256": "ac23c85cb990a72a2332888e0103b3a02384a73296309050266ce64ab06d73f3",
+     "prediction_sha256": "b098e183618e711b660f8bf8de473a7a8f4da138567db75ecb0e9c6a5bae8264"
+    },
+    {
+     "position_id": "new-0200",
+     "play_sha256": "95a82db136c5b06537d8412b91b78d0ba80bd141bb0077c5a9b82eca4652f151",
+     "prediction_sha256": "31c0070b1df2afed6fbcb245bbe0b57b0ee5f919de99cb841862ea8dcb884aec"
+    },
+    {
+     "position_id": "new-0237",
+     "play_sha256": "b240c2781d368c30fdd9dd05b714c732ca06115cb041ccaf6b2ec067282d055e",
+     "prediction_sha256": "c7db3c82ff5664346ec1200b475d4167e3632d8eaa67a60646acb0407765cfd8"
+    },
+    {
+     "position_id": "new-0239",
+     "play_sha256": "1e195a7f907c1f9f31f8799417f3ecab53f540f8d315929689633f28adaa5dca",
+     "prediction_sha256": "160f8de868aaf7f7783745e3f0e0dad6b8920fb78955a2519ffb98e5991e82a5"
+    },
+    {
+     "position_id": "new-0244",
+     "play_sha256": "40e47133434529b9a530ee86ce0fa44a17d22db3874252902e346831e91048c8",
+     "prediction_sha256": "5bf2fe4a04b16db65eba9245f617d08f45e6bb63a9f5aa3ab388c715cece8008"
+    },
+    {
+     "position_id": "new-0249",
+     "play_sha256": "e4c1bb14a044c9649ad611d9b7171a7d44e4741979d375e83795da3bc793cef1",
+     "prediction_sha256": "8a7ae84d1945f0689e0aae70ef318de0b672ee500ed154579a94ef518c38da79"
+    },
+    {
+     "position_id": "new-0250",
+     "play_sha256": "e3353af70db2d09abe1858d353f4e5093d49246c2c4f636cc4c0aec5d9d45a26",
+     "prediction_sha256": "e8030fcf1e9385c4998a21c0bbff13d38fcc89fe4e6c45c05f1599798f5d36d0"
+    },
+    {
+     "position_id": "new-0254",
+     "play_sha256": "809d4a47294cddb388269f263a59a9e6e725c031252e6e5760dbbecf4d6216ca",
+     "prediction_sha256": "8c009425ebf69d0f56681a1bca7d25474c3c77b0fb1a9d797dd52fcac5c2abfd"
+    },
+    {
+     "position_id": "new-0256",
+     "play_sha256": "d6edf4f96de957b7f5d3faaabf33669cc693eedad7e523cbeb21e3892e60b181",
+     "prediction_sha256": "8a80a9ac31867f3f42f4e1d60dd1e82fc0e8bacb90453c98ed0f2e8b8372cf5e"
+    },
+    {
+     "position_id": "new-0263",
+     "play_sha256": "a41d77fa5ce11079c532360ccd50e0e13220091ab2f1383a454abc219468594c",
+     "prediction_sha256": "da2d3ee683c90ab6ae24f47beec63e7c49f2ef152b29ecf853cc5f6adad482f6"
+    },
+    {
+     "position_id": "new-0264",
+     "play_sha256": "8380e349353770e91c851605eaac17745d27bfee5d606d636fb11f99343b6edf",
+     "prediction_sha256": "1d11bbaf1ade961c607f7a7e25db68b41dd91026ff96c88342fba64256404e28"
+    },
+    {
+     "position_id": "new-0270",
+     "play_sha256": "80d3ab51268dc0564f442267ebacb5f57a96fa26c9ad7a99ec006f29c7088aa6",
+     "prediction_sha256": "42f38a8d4d985be161fbf85456c50ebe39b60291e18f4948034b86c0beb5c07c"
+    },
+    {
+     "position_id": "new-0274",
+     "play_sha256": "8310a878407cbb2fceb29b91d69639f4fc12fdb2fb7207a1a14d462da6e349d3",
+     "prediction_sha256": "9abe12c55bc7fb4c43821d5c3bdd051de0f2a7b60d65a893833fc9be5ef43e22"
+    },
+    {
+     "position_id": "new-0278",
+     "play_sha256": "e21c19742b14934583a7c5c4a8b536a36d60a79d815cea03733575de391a00fa",
+     "prediction_sha256": "e0909569dfbada4f4a0de07f95c361128164d69da021853f1b2b868151e1d83b"
+    },
+    {
+     "position_id": "new-0281",
+     "play_sha256": "e92b43dc61a9a48ee5729c49ae0d8a5b45d3018c41c7d6f1509dd6b8f97af2fa",
+     "prediction_sha256": "71892f5cd2c367f62407a990ea1edb528e35cba76ee773951e3529690bb4b9f0"
+    },
+    {
+     "position_id": "new-0297",
+     "play_sha256": "666b3210edf6829b3b842ef8ad410d80ab57d9917e2498c64041c3fcf9cc8aca",
+     "prediction_sha256": "02b1db83791628bce6804ccd78842067b31bb341953006e2a361b33734df794f"
+    },
+    {
+     "position_id": "new-0307",
+     "play_sha256": "8f3229da960bbef70a2998f6bcd41ce4b81cb956e51e190687c7a97f4eafdfb8",
+     "prediction_sha256": "e6cd552f4a935c9e29a446d0a1f8b8dc606029fff730e613da87023e7170cf25"
+    },
+    {
+     "position_id": "new-0328",
+     "play_sha256": "fbd9f79c87dd8dcc6b47c7ae92bb5eb878d5849e78e36cff6b21d1b5f8b5289c",
+     "prediction_sha256": "caa111509c70dfdff2b9bcac900eadbb53eb7928e31c43e16a0573d86f0f3471"
+    },
+    {
+     "position_id": "new-0329",
+     "play_sha256": "0d78e5741124e5a5075a1c9f140d3f480a5c4498a82def463ef72e55171a105e",
+     "prediction_sha256": "d0d1d28fc5f928c715c393aff7ed061214a784adddf8801bb259ae9923f487ad"
+    },
+    {
+     "position_id": "new-0330",
+     "play_sha256": "fae500747b8cdf3f5dbfed5b267cade4407c4232db56799b6200043393240592",
+     "prediction_sha256": "06644accbf330d68c2f96cb90691f6c501eeef1ce9617e3db514491c37975874"
+    },
+    {
+     "position_id": "new-0331",
+     "play_sha256": "89e4a30a292e10607d77052d0009d4855198f1bddce8b9b8257a2de252546c3f",
+     "prediction_sha256": "46fb7afa15bf0c3c120fbe279a4d094ea3ea00748b5d4def30325b8e3b026096"
+    },
+    {
+     "position_id": "new-0337",
+     "play_sha256": "7f4ca340dcb28a84fc3a7b9b59943394c37ce6f717a3e9d227e95725da862d3e",
+     "prediction_sha256": "d888d877270f283dd47e2f661bf3785a6d2c93912b794997c6868443af1fb984"
+    },
+    {
+     "position_id": "new-0344",
+     "play_sha256": "d7756ce59e388bff3e0daa48c26fefda7da672c77b1b5394743f9b612c0c44b7",
+     "prediction_sha256": "ea33dc03bf624d513703f93d1ef2a0188ed846580ecc84e5232405c146ea0b77"
+    },
+    {
+     "position_id": "new-0349",
+     "play_sha256": "181dadee8db5062a87ca80376e8acfcc19537bf7f77a6911aa0b8522e0a2589f",
+     "prediction_sha256": "a73b817e1c954a28aa3302d4fb0ceff0eeeec079d600875be9558963e1b6ae32"
+    },
+    {
+     "position_id": "new-0353",
+     "play_sha256": "fc0e369506bee0437c8e1536a28c6855455a6193bd2ca265103617e622daba7c",
+     "prediction_sha256": "e3b6a572b43b717532b99f462cafdaea2623be42d8007706bc3e490ef938369b"
+    },
+    {
+     "position_id": "new-0356",
+     "play_sha256": "2b249e1064962e7307aa62664d09a5a90cc0fa6331bb1b08774dae6da65b6327",
+     "prediction_sha256": "ee779e2ffb31d5048c5be5bd16b21cbadd6c46ed40f52a1414bdc4a17f3dde60"
+    },
+    {
+     "position_id": "new-0361",
+     "play_sha256": "969bea0511efa167664dbd3692ea7614d0522fc461674173cc254d9c2e3fa4c5",
+     "prediction_sha256": "a7c93af823190e99d7f5554058f28f7d3e5963823ed01786d9554e8988b28865"
+    },
+    {
+     "position_id": "new-0362",
+     "play_sha256": "dcead52fc66482df3e47a0467752b1dd4be64f71cb63f8ade28b8d034896cc96",
+     "prediction_sha256": "10c5c53b642f52a3fd12c5a09bcfaf2858852067061edcf4afdc57b1c8e942fa"
+    },
+    {
+     "position_id": "new-0371",
+     "play_sha256": "2700acded549c37e3d4d4bcb2b7ac63fee011768d031f100133a036debdf5548",
+     "prediction_sha256": "de4de4888aa00b6b37fa88272e7e6e5b7dc52dc9a83856139d80c94800a28d6a"
+    },
+    {
+     "position_id": "new-0377",
+     "play_sha256": "75b707008e78087cb304046b3b142bf666a01a06c7e71b67172d3e5a3387172d",
+     "prediction_sha256": "6a129dbf650cd67393dc2f31688544de8c1487d17e242d9d0606665664ce4148"
+    },
+    {
+     "position_id": "new-0383",
+     "play_sha256": "c3585e4c61c528b251c295b0adf9eb2bbc8ead4f2e070558b4a6477cada1aa58",
+     "prediction_sha256": "350e92ca7af08a9258f79d7689fb0d80d3d92ba41ed4e7aba7745a8d999a304c"
+    },
+    {
+     "position_id": "new-0385",
+     "play_sha256": "c6ee4e16695d81846239a86816bee24c1a917370f7f7242b97355b963ae3aa28",
+     "prediction_sha256": "8acb9ab8db85d394cd2af85eef6a93f111023c4a2045ece8bd4d202a5673b54a"
+    },
+    {
+     "position_id": "new-0388",
+     "play_sha256": "59abe89a7ca583a09df4d8897544e60a085453225f6b25582b87434d509a4a83",
+     "prediction_sha256": "0db52ea8978aba2dcd3a5caa632c9f7bc758604f4828b62eb37355503d7b5d2e"
+    },
+    {
+     "position_id": "new-0410",
+     "play_sha256": "33846f82ff7499713b33af34975ddc07dd44c998837a071625023336a3d90f5b",
+     "prediction_sha256": "38802e5034684445cf34dbd43a9ef1065a81b5f904d8a6edb04e46b175c9681e"
+    },
+    {
+     "position_id": "new-0413",
+     "play_sha256": "9d67f99323fc5cb019aeafef73059f0c8eb523cd0a65da2570c834d2116c6afd",
+     "prediction_sha256": "d96d188692b9aec264c061a3fc0467e1228030d4c2412e93fe9ad10ce74c8091"
+    },
+    {
+     "position_id": "new-0422",
+     "play_sha256": "359d1b9e11cccd8ace7edc50dfb74e44764bba5421c6196d02f1981ae6e2c8c2",
+     "prediction_sha256": "cbf3405f687eedaeeeb8354076e7f4bf11f88429cddf557ded7f077b91eb6832"
+    },
+    {
+     "position_id": "new-0430",
+     "play_sha256": "43a58a6d05212f178386bc9f91632695516a6ef8c7f182f20c2fb7f1ce9c28f1",
+     "prediction_sha256": "a6d8ff9badcad88227ec134cd9feb4bb44de201466396537c1a98f42809282e8"
+    },
+    {
+     "position_id": "new-0447",
+     "play_sha256": "a9475ea1aaceb74159fd8d51cac36049deaaaa9cdd4632723b8121325afb0481",
+     "prediction_sha256": "38ad5bf0318678cf678b2198251e20ec854e6ab575794c4308064d41eb69d46d"
+    },
+    {
+     "position_id": "new-0459",
+     "play_sha256": "f98fdac6b86c36ecc072766cf175059bb4e1b496f5de4392ee45d8a854a68d62",
+     "prediction_sha256": "a7a48194c5dd5d3f61c5ced77983de8c4d397314f29352e5a83d828b02bd9498"
+    },
+    {
+     "position_id": "new-0465",
+     "play_sha256": "f623a5e1dbd85b97667dda5657ef97d6d7b5360bdbfff4b705bbedf88ecd142d",
+     "prediction_sha256": "863722a74dd2b0ad95635fbe6e50e1ff80af56ca0ffb07eb5481d9a2e1fadd95"
+    },
+    {
+     "position_id": "new-0467",
+     "play_sha256": "ea3ac6ecb8e0d40d8f024b9fa7048595ddc4a1b89e6ecf732b03c14c1e2edcfc",
+     "prediction_sha256": "8f3c912bab842e20f6060d268bdac41fb2c6c93a8a409f89760788e297b3fb17"
+    },
+    {
+     "position_id": "new-0469",
+     "play_sha256": "15a5c78a4e7d6cbdbef55fb6cca0e14ccd1784b9b078c99e7ce0051b57411c3c",
+     "prediction_sha256": "10d1c904846ad5f6782446a31bee55afdbf6526885fb6c85dddb3167da6ba512"
+    },
+    {
+     "position_id": "new-0474",
+     "play_sha256": "8fb086e3c7e02ed0aa2a7693744814d2ff94aca29f535b025ad8da5c4233bcfe",
+     "prediction_sha256": "c5e58486a2cfa21a3cc31a509de899277703e1367c0703a2dd90af41a8d5bc55"
+    },
+    {
+     "position_id": "new-0494",
+     "play_sha256": "afd47e3b18ffab160db1cb6d4f51c50b7239b55e07b96240b0c8451db5fef66f",
+     "prediction_sha256": "e4b8ab3395917121603471635348c6753856e45ef578e2b657ef53726fda655d"
+    },
+    {
+     "position_id": "new-0511",
+     "play_sha256": "d0c716d2c840704596af2990b8813df4d167f8215e681860abd6cb396c847500",
+     "prediction_sha256": "147ebb7663c99d884e08bd0c5288cf3763cfbae0daa874a181c1e6fa6894728a"
+    },
+    {
+     "position_id": "new-0513",
+     "play_sha256": "cbce3fb1ccac36044c4bba0d1aa772b77adaecc805367d01de2b63d96ae5a86a",
+     "prediction_sha256": "8c89316378f3c132c6b5d4ce9c11954e1bc7a24e333dd55f9ada937f1730a1d5"
+    },
+    {
+     "position_id": "new-0518",
+     "play_sha256": "6c6a34d89bff98b59033e2afe63825aacbd0197e0eb6254b50e55183be7c9195",
+     "prediction_sha256": "0cb0079e53d8d4d1cc2f9143a2fda35133c6019fb69171af44fa7dea71617b74"
+    },
+    {
+     "position_id": "new-0525",
+     "play_sha256": "978d82ee4f95dd083fb492f3db3d76a2e3da77ce6637809a9b51f12807c2a7aa",
+     "prediction_sha256": "24978e4eceb32d36106e01d85b7ecdb1a5375507c51fcba71278ff396af81df8"
+    },
+    {
+     "position_id": "new-0529",
+     "play_sha256": "bddd7b7a7db32232e51445bd39291bdbd6cb64c347a14cf5b918d7b4c3cca603",
+     "prediction_sha256": "e606a0d579cee439193d62b7298a8137fb69bc463909f76f5eea584388a7bc85"
+    },
+    {
+     "position_id": "new-0532",
+     "play_sha256": "8fff59d3d8e53d417e0ab04a9d078229f0208160165d5d6bfe588f280843a9ea",
+     "prediction_sha256": "dae7083807284557dbe13fcb1206f4fd8060f92f897f03ce375e093cba49857b"
+    },
+    {
+     "position_id": "new-0537",
+     "play_sha256": "d8dd16123a6af01723c0dadce8b43ad3af8bd838d5ec0937ef30c6d5967bc581",
+     "prediction_sha256": "e8fe58d94c69c3f38132f3c995bd53d34ab1dbbd3371b0cb39a6ae480c5d7be5"
+    },
+    {
+     "position_id": "new-0546",
+     "play_sha256": "70950d2fff46d9fd92b2b7fcafa18258ace592fe1495df25abc9e30920bc7d2e",
+     "prediction_sha256": "3e0e71a55b999d032072efb44ef55a0dbdcfcb8314626ff77adb6ed86dbf243d"
+    },
+    {
+     "position_id": "new-0550",
+     "play_sha256": "cea8748ab0b0857192c3f9bc2ca780982a077126f0c6cd18ae5b3744b9e686db",
+     "prediction_sha256": "e983e49a51f8a6291ca637729ee8a7f203f1197fd93c2a531f0f7f76d20980a5"
+    },
+    {
+     "position_id": "new-0554",
+     "play_sha256": "a5ee700f698ebd77c768e033350a41d67df7a9f5057b3abd8ae40e526aa364b8",
+     "prediction_sha256": "670c4d19fb677875bb8fbd640d6f4dd541fdb5ffa28cde0dfa50f2aad9265f0a"
+    },
+    {
+     "position_id": "new-0562",
+     "play_sha256": "4ac73496188189e78e81d811da733f4ffbe33d456405f482dd94e82b72596878",
+     "prediction_sha256": "70cc266b9cf4968517cf1c1ae1304e05dd80325ce5575d7fc47c1d24783e076b"
+    },
+    {
+     "position_id": "new-0564",
+     "play_sha256": "663a50ebe0f42d295e5e110ccad9c610aaa394171dfbef51219ae21d08e5bcec",
+     "prediction_sha256": "33debf8147d50780055925de624c5facf413401d823d9214fbd507a3bcfad012"
+    },
+    {
+     "position_id": "new-0572",
+     "play_sha256": "9e1123f2dbf5e43c6d296c8d4ba7fad06d6ad3d286dfc0095918cd7adf4f2a3c",
+     "prediction_sha256": "2cfbc9b761002ef095224aa1923996b44a2aad7781b86e390fec39a7f12415b1"
+    },
+    {
+     "position_id": "new-0575",
+     "play_sha256": "50528c4f95b7eb228474a69997d1aa9bbe268df65d4cba4c1a0562b2a4690ac2",
+     "prediction_sha256": "5719a685553e6f6a5a50a0e01600c4ef04eb0987e7f75b4a81392d0497cafa3d"
+    },
+    {
+     "position_id": "new-0582",
+     "play_sha256": "9e109520cb853901321aafc81781ef9b1b5aed22b1c3e51b1e885ae65d31c01b",
+     "prediction_sha256": "953c90427d9dcec3c6b6230d84d85eb7495f16d78882ec608853caa78613e7b1"
+    },
+    {
+     "position_id": "new-0588",
+     "play_sha256": "cca400886499438311a19d9e6ff232ffb2bc8e7b78f5b0ac2add59690b89dfb3",
+     "prediction_sha256": "55cca5015d8d1727f25d980878c268e3ec7cb40e9de46b6dfd8c230c7b265246"
+    },
+    {
+     "position_id": "new-0591",
+     "play_sha256": "a3eaf307898efc821bf7d240c3f60351e89d4d2f5bc310037b41022f754af64e",
+     "prediction_sha256": "20f0c5f37715a8b015552706b71c6f0a71c9481b521f2406232de5ad3aa1f4e5"
+    },
+    {
+     "position_id": "new-0593",
+     "play_sha256": "5c41662b9913fc30da248f708c3b1e336fb8e052e2baf9b89aaa87790a15b73c",
+     "prediction_sha256": "73afe9f3ef5655804d6fc44ec5328c219f78ef455dd68429eae1a2c710e44eaf"
+    },
+    {
+     "position_id": "new-0598",
+     "play_sha256": "cc7654f44e454c645e2f7bbfa500eff5381186d3866790ade4ab36d9f14ac5c7",
+     "prediction_sha256": "3fd9bec171b58f44523576193e37d0d8903c969fc895a9d909bb788f99d09860"
+    },
+    {
+     "position_id": "new-0618",
+     "play_sha256": "c5dc2d37f02b8c2a674f0dcf4818a82f53f52e74ad23e5ac8b55b4051d8cb4b4",
+     "prediction_sha256": "bc42d094fb8be79868ac8f7bf993e55d481537e899d051d94c7505c7da154d77"
+    },
+    {
+     "position_id": "new-0626",
+     "play_sha256": "e4ecdd58415d5dffba3f10e4b127db1b14086558b29e3c5d32d963910ac995ee",
+     "prediction_sha256": "838ece1ec839661322abde663f852866234c903ff0462a3a2931fd03ad0d323c"
+    },
+    {
+     "position_id": "new-0679",
+     "play_sha256": "6692267c313f749407755db29988c462e8ac6c607f774ace0b3752e27987a203",
+     "prediction_sha256": "5d3c9d0be1ebfe1fa1a4c88089d2e5f762e7a020f445c84d61b5f0485a9a737f"
+    },
+    {
+     "position_id": "new-0706",
+     "play_sha256": "e338a814b25b86494b69dee6e05aa64ad48c5180cd4c3e340507f0c3d3413c1e",
+     "prediction_sha256": "3ccf40e8c05e79afecb64171a91e64ea9c8431c6dc1b8641dc4ba4a813907019"
+    },
+    {
+     "position_id": "new-0801",
+     "play_sha256": "0abccfb283917ae8563e74b398ee8f95ed8bc891f284fe90d8217c3787bdb360",
+     "prediction_sha256": "3ec0f80b4e6da6a5bb8838c04e538136dadc51793caf894db9c62bbf5ccb54d3"
+    },
+    {
+     "position_id": "new-0814",
+     "play_sha256": "752222ed040dca61392926db8c05577213b6a867fd1f57adb61947719f782a15",
+     "prediction_sha256": "26ebf5a8b06d026932bd11a13df6c8923a188f36e9f43715cd39568db12c6d45"
+    },
+    {
+     "position_id": "new-0919",
+     "play_sha256": "e1e683510be6d6f51b0af819dc7b6e679c798d3f53fafbc072f3cdaadccf32b3",
+     "prediction_sha256": "8b2ce8df6952c8141cd3c514555ff97939a1f64afa5ee3216ea840b13ec6c335"
+    },
+    {
+     "position_id": "new-0999",
+     "play_sha256": "268886d6a65de6e22f9bac25a41854a9d35bb0dce3bdfdaecfd6aa7be6013f0f",
+     "prediction_sha256": "8e6b461e47b1a184e812d74ae47bb42569b547347024081a767b91e63fe0ce4d"
+    }
+   ],
+   "prediction_hashes_sha256": "1c24ecf54bbc8d4c6eb1eb4ecf8874850de37e3196f48633e4f7e766e2265d8e",
+   "play_hashes_sha256": "6568f88d5481ce9d59fb18f2e78eceec13137a43bb889938492adcdd4e55893e"
+  },
+  "GPT-6 Astra (on)": {
+   "spec": "openai/gpt-6-astra",
+   "route": "openai-subscription (Codex Responses API)",
+   "model": "gpt-6-astra",
+   "reasoning": "medium",
+   "requests": [
+    {
+     "position_id": "new-0002",
+     "play_sha256": "573d0f98b2d4daadbad8992ada796cccb3d011982412c5d164e2ecad9aaed7f9",
+     "prediction_sha256": "c1440152e0b94e478fa5f30f57f69e3dcce30d68b0dc9ee87d7e2d926cb21298"
+    },
+    {
+     "position_id": "new-0007",
+     "play_sha256": "4a1212f970a8cc091c35309ca6cf36beab84f9912235d89bdcdb753b43990317",
+     "prediction_sha256": "7d9f4ee0ad8210889f7d27aa0ae384177307b5a9a215049c073cae3c634202b7"
+    },
+    {
+     "position_id": "new-0009",
+     "play_sha256": "056eb161f4d81768b1bdfffad716054ea8c9c52eae0fd0e335c09081b2426427",
+     "prediction_sha256": "319fcd03c9e71cf632829d257ef45e3d09d365bfddaf4ddf6ffe041b956ba937"
+    },
+    {
+     "position_id": "new-0016",
+     "play_sha256": "41a94d9f6941bdd2143e355b61b8497f23d440e546debfc5b11ca83fd95a9899",
+     "prediction_sha256": "a234483e454e72bf9b5b98413a17c38e26b84451a15dc67bc99a9309c2163f7f"
+    },
+    {
+     "position_id": "new-0024",
+     "play_sha256": "1f6e8c03d1383896d8254d37af364957e1f155d488627bc3f74494468f109f5f",
+     "prediction_sha256": "864ed34258a9ad6cb1da8e4c8dc6a5bce190771d69e3e3468f25be7a0cc791a2"
+    },
+    {
+     "position_id": "new-0040",
+     "play_sha256": "0cd14516d82ca56f049bc1f7c44308012db4263866b0950fec6cc42ce2c4a046",
+     "prediction_sha256": "2b0b10d36a1cdc1e76c20318aa75f907e4949907681005afcb22c256acc7e406"
+    },
+    {
+     "position_id": "new-0041",
+     "play_sha256": "170ad280e466e39915056d22bde0eac687bd62ba5e5e76662bd609fb9ccb8742",
+     "prediction_sha256": "d97b7bfa6005d4326b820fcbc6190cf51edd3e3175d9639fa039fb713eb600b7"
+    },
+    {
+     "position_id": "new-0043",
+     "play_sha256": "8209f24ccecf3810b0dcb2378028a6f082244b2ebed38913f6b49bdb0b981ed4",
+     "prediction_sha256": "3db4d1730c2e9857c4f0a7eca00829dfedfb2de8574f43d230598748d4df7a53"
+    },
+    {
+     "position_id": "new-0046",
+     "play_sha256": "7b3afcd9f79f32974baeddb6449b3042c990a399578687bef3d5832c2bb76bf7",
+     "prediction_sha256": "3abda5b2d840e2bd27ae1d4415e33462ec00c7ed42fe43246431803656b827f4"
+    },
+    {
+     "position_id": "new-0050",
+     "play_sha256": "b43832e6fe0252d3a8d16e060bdbb9c6d6b12be5fa1080b4d5b7f1dbc0febaa9",
+     "prediction_sha256": "75fd0276a420f826a6c0ae0dd04814cdbb0e01c84e5f426e483312e25bb7d9f5"
+    },
+    {
+     "position_id": "new-0053",
+     "play_sha256": "26a5c1d0e79174ec0d03103c59e26d927ac78e537e77d79c43f3d621b6ac3a9f",
+     "prediction_sha256": "08a39390177850706c880fc53258934d457e5ca8d267e773a9462b751739a651"
+    },
+    {
+     "position_id": "new-0062",
+     "play_sha256": "95a12793e2a4a6de334956ba41610a0d4d495681cc1d324803429f79d6a0f6f7",
+     "prediction_sha256": "3a40ba4c34f6ffe9fdef80c92fc7a85e018693c93b1b774f953937f38b377722"
+    },
+    {
+     "position_id": "new-0069",
+     "play_sha256": "54e3bca5363049802e13ff625098b3c3f44556c4aca28a827e991fcc29dfc550",
+     "prediction_sha256": "9ff648b0bb4b760679ca41be65efde7bd24eb7f86b5b3cd52509ecc268652df8"
+    },
+    {
+     "position_id": "new-0070",
+     "play_sha256": "a75ee35d38283f0fbf8f91518bf6f4755771ee6545944b363f031f8dc8471278",
+     "prediction_sha256": "518b1ac761046ac17e417706e2a26e18c134e038e7b6e3b2744d9d007d54d6de"
+    },
+    {
+     "position_id": "new-0092",
+     "play_sha256": "f510ca132da47407d8fc9ad4bd0644791b48be9febf3308dd1359354721a2e7d",
+     "prediction_sha256": "f582b493769557bd454b53125cb22236e9ce3bb6087cbe13f8dfedd64d93cde7"
+    },
+    {
+     "position_id": "new-0107",
+     "play_sha256": "7d6a2cadd0e8e8be2fdf8e09ead0a7b921679cbfd2319937f6457232480f345d",
+     "prediction_sha256": "5f0e9cb14c886c1614c921e4def022a5c6d421d17ea031432593b151f53687f8"
+    },
+    {
+     "position_id": "new-0111",
+     "play_sha256": "498c9d50e0832cc8324f1187cfc45cfa47ad687543d1142468fda0d51ebd6809",
+     "prediction_sha256": "4a8316471865846e94002a8bd9432ae6cb3f561b4a4c6cca6d0f700f4ee3e184"
+    },
+    {
+     "position_id": "new-0112",
+     "play_sha256": "b258963e250bc9906704d1db4e70bba3229d9b9ff12d1866faa925bc45127cc2",
+     "prediction_sha256": "aa431e8798502e303974ed455cf2eb4c3b5558e352603335d62f61f8dab9108b"
+    },
+    {
+     "position_id": "new-0119",
+     "play_sha256": "ce54314ca5fcc244eb6493405146ba2dd05ad357dcc4f578c551eb5a99e27860",
+     "prediction_sha256": "f0e7200afa6d016a9b708514800c0c12c90ee9bc79b45b59cfa726dd0713d70c"
+    },
+    {
+     "position_id": "new-0122",
+     "play_sha256": "55fa5b2edcaf51529d7a659277287c447c463725b34dc1e85194d82f760abc19",
+     "prediction_sha256": "68741d99a7fdbbdd797e75935facfde7ade8db101d59e6badac56bffd5894138"
+    },
+    {
+     "position_id": "new-0131",
+     "play_sha256": "ccc26428182dabc49217301476d9dae5e1d4fdca7aa1c5d700a68c73c18cf41a",
+     "prediction_sha256": "8df104071d30e06d3f4d69911e271444043b347068a2ec7a268dda41bcbb4c1e"
+    },
+    {
+     "position_id": "new-0147",
+     "play_sha256": "e336fd07b4bd3e7ad2af52d4e789e4aedd0f32afd7f7b560267a88f23c50f553",
+     "prediction_sha256": "655d42652a82993145f6ac5e1144e7cb5e3f3a4e0cf6c5b8bbca477e7ddee755"
+    },
+    {
+     "position_id": "new-0149",
+     "play_sha256": "4aa424f7bc85a8e0285366367d0f8fb133c3d5717679395d219a9b106ecf4957",
+     "prediction_sha256": "551f9335555b238da6d1b77b3909ed5249ef9130736558d9d57dbccb49a6101c"
+    },
+    {
+     "position_id": "new-0155",
+     "play_sha256": "b888a190fbd7416142b953f9fc810eac4b9ff692907a9b02426af67c35aa2757",
+     "prediction_sha256": "d21bff239b2bbcdc08cc2415de4fb8ae5708ada46fc085a29270e67843a03bbf"
+    },
+    {
+     "position_id": "new-0156",
+     "play_sha256": "2031800fea171b8edc252e7d7ce725e540298d152f97b94520d21223ee582794",
+     "prediction_sha256": "cc77bf0f639c3099a593b8b991a532557b92c2f210556ed80770a2a5ecb25343"
+    },
+    {
+     "position_id": "new-0160",
+     "play_sha256": "a5149418b7a84851ef4b5e152e7a96757eeabc5c4ebc5e6bc482310a6c169e94",
+     "prediction_sha256": "ac753d3d9e824e3de04e01758e72c07ce9feefeca2f1ddb8c29ab0c8130d43d1"
+    },
+    {
+     "position_id": "new-0165",
+     "play_sha256": "a32827740b604ee8c0c864d9ecdc5667e92b9f74a8769c178a58266f3e144837",
+     "prediction_sha256": "1e86efdbd510e851e064231c6e34472ef8ceaeda2270cf36036ffaac84ba5f44"
+    },
+    {
+     "position_id": "new-0175",
+     "play_sha256": "96b4c887777785d02d514416d09acea9fa00200532752d963985d3ed9acb793d",
+     "prediction_sha256": "0da7e36d66c7012803894518a058426c56bee07d19c6d69a543b2bcbe7f98e98"
+    },
+    {
+     "position_id": "new-0188",
+     "play_sha256": "a3cb02d483b200cbdb25b9104b5e1950adb8e33fea92cd0d444b76be00bbe0ca",
+     "prediction_sha256": "e6332fc56021b4cfb1b9c0cd6ea9453082c4a603ff0774be1d9980f575ffc005"
+    },
+    {
+     "position_id": "new-0190",
+     "play_sha256": "28da37563d7840bea4861666c32ccfa832e41b70a984c47ff8a3b63e5fc42a9d",
+     "prediction_sha256": "678bdce23e9fa6babd218ebb4b8d4b9a0fd3ea1482b91abe8fb32ddb002044e9"
+    },
+    {
+     "position_id": "new-0200",
+     "play_sha256": "fbf81f4b0ad54cb2112ae80d975de05f4368e2970bf1832b265ad278bf482365",
+     "prediction_sha256": "63b6b45f97060cbc5c14e73e881feb454f5facbc8085c3bd18677e886698cf82"
+    },
+    {
+     "position_id": "new-0237",
+     "play_sha256": "2387be3880fc9124dbbfc92e9891ff24acf200307b89d3d78678d0f70ead7ecc",
+     "prediction_sha256": "fd550b0f2b3c209815df6aa442b0202920973338865d4af622a19adad0895ac6"
+    },
+    {
+     "position_id": "new-0239",
+     "play_sha256": "836444140c36d7eebc7712aad79dffe05f084111c9de7d6e46e741bd798a3ede",
+     "prediction_sha256": "2d931ccd638697d8f089eb1be7000411c241294fbec6195782b560fddf61907a"
+    },
+    {
+     "position_id": "new-0244",
+     "play_sha256": "c45ca402f3930b63e515b06b532fd5ab5617c300289b55e59dcedf48d5acc401",
+     "prediction_sha256": "1780b32f743f7e5150b116ced420ea72e2ec4a7e06238c7d0bf26113e689cac6"
+    },
+    {
+     "position_id": "new-0249",
+     "play_sha256": "3b54b489365eaa6f480b0bc14e6d71fd369478e4425978a67e90796efcfdde15",
+     "prediction_sha256": "604305c15a3e853a518a8434af86c86f6783312458181179d0bbf4630ffe8452"
+    },
+    {
+     "position_id": "new-0250",
+     "play_sha256": "159623139589419fe9925c085781851f6c7104a980db865c94222b684c28bbdf",
+     "prediction_sha256": "cc8e6b0946a10cc9a1d2d351c80dbc5ffb8844cff1af718228c72ff808b8514c"
+    },
+    {
+     "position_id": "new-0254",
+     "play_sha256": "c4e4f752ae4e32fca7a35ba3b3b62bcbf5d379a7439f24b8c5de36989e1f5b8b",
+     "prediction_sha256": "d9789bb381a3510382ce70d98d71a55a56b89148f2d1dc866f924986e7306773"
+    },
+    {
+     "position_id": "new-0256",
+     "play_sha256": "c4ca3af892c98761fd3e6a9d6cefcef6befba99d6eafef73f839726187f915f2",
+     "prediction_sha256": "4d9278a3ca781262cf6e0bf173ddba4807a93d6cfb954b3edcac08cf7a03d92b"
+    },
+    {
+     "position_id": "new-0263",
+     "play_sha256": "af23514f3b0a32ddfed685f68d687dcfc242fa3d4a72eb852da2d746ac25c12f",
+     "prediction_sha256": "daed4a36e282be72f2cb7c5243298115f309f1732a0da4ec5500441b82c55cdc"
+    },
+    {
+     "position_id": "new-0264",
+     "play_sha256": "4e7e9eee93595e8c96057a07bf9265fcb033dec858b7daa4494555637594032b",
+     "prediction_sha256": "03c022413bfefabdd25542c95e5ca171ed9e063e3e8e41453349a31d01193e51"
+    },
+    {
+     "position_id": "new-0270",
+     "play_sha256": "87daabac8b8c878c46281195cf98a87412d6335b2ece5200d9eccf78c919e843",
+     "prediction_sha256": "87a6c9973349f55bc3690c7d3d0cb0c7c6ca9b83f796ed272be5e33ba5a1b9bb"
+    },
+    {
+     "position_id": "new-0274",
+     "play_sha256": "d848d14b2a649ea750c0564046d61f87be126b643ee1f39e1c804eae811f96e5",
+     "prediction_sha256": "cbbb2617011dd92635941e548fbf17f2ecf6df857af75a50f818882ec77b9dae"
+    },
+    {
+     "position_id": "new-0278",
+     "play_sha256": "5aa411020008a5b9c931a859684e7aac9c6f5db7dc8f869ef724b68136b1950f",
+     "prediction_sha256": "cf54ed6d605dcfbfcc9c992e3d18da6d0d69143406bde08cc8441ba92f1b4d3d"
+    },
+    {
+     "position_id": "new-0281",
+     "play_sha256": "65b9923c2adfafa583c971c7ff0ae331d27e87d411086e709ab36199fda95859",
+     "prediction_sha256": "fee487d76121226d754b8d0d06188ce46953b6fafc08533d53def4666ee991f3"
+    },
+    {
+     "position_id": "new-0297",
+     "play_sha256": "c099539dbd97d50e57d1dcb319bd25eb6b616687a96e5b203b5823945e567313",
+     "prediction_sha256": "86a0928d76712523c5d2b4f688a3fc0adfd9e0bc1716768cb4e12bfd49f25b5c"
+    },
+    {
+     "position_id": "new-0307",
+     "play_sha256": "995e28601d949b09b090f1bd21dca64847fdceaa39d80f02d6f5bc3cf042a6d8",
+     "prediction_sha256": "77c99ef32f412901a5afcb17ae71157ad84fafa7d904f448e0cae8af811b40d3"
+    },
+    {
+     "position_id": "new-0328",
+     "play_sha256": "b5acd8562ea5dd1a32d787810e7157fc2576bc0e8f617c06b7f47fab45f35623",
+     "prediction_sha256": "33059edd589dde55d18b4b446ed79b2ceab62da6a03e134d6add42c505b9087d"
+    },
+    {
+     "position_id": "new-0329",
+     "play_sha256": "f3ff7c1f4b75211037c35f55fb69897ae486445d2f082d65467d4a082d03e313",
+     "prediction_sha256": "b2c16e777a4c1a909f890b91ca02ca58d791d69f2920c9ec95d9ed4c5f348ff6"
+    },
+    {
+     "position_id": "new-0330",
+     "play_sha256": "5a28438abe68cd4d453e1afe57f476be5c10058d98eb4ffd0223dbbe1fcf4c75",
+     "prediction_sha256": "87e36a13f0417639882e2787aeed0bbb9bf1c81cdca2a666d4bdfb2cbdae7de6"
+    },
+    {
+     "position_id": "new-0331",
+     "play_sha256": "fc0eacb5c02b71365f792f0df57ee9fe223c0057b7018fec4948216f0929a490",
+     "prediction_sha256": "00fe10c47c42b88d58994135dea0dd7affd8a26e7940697f1f9ca227ce48249f"
+    },
+    {
+     "position_id": "new-0337",
+     "play_sha256": "9f48bae7aee8b4aaf0189ce8c0eb62f27428ada179a30aa9d23b8dd55fdcb8c5",
+     "prediction_sha256": "5f1f97f84eb9a01207e520739c19d768c095b724136bb94f6080372e7d620353"
+    },
+    {
+     "position_id": "new-0344",
+     "play_sha256": "000c50e5283ae8d123d2bb6319099ac536979bb2467016ae26753940c796bd8b",
+     "prediction_sha256": "a60383db0ebc785241f12b4184cc1e356b50f38a1ee90fc8c7dc0e6e54fca729"
+    },
+    {
+     "position_id": "new-0349",
+     "play_sha256": "a73fe797fbf5f846c181bfb30411868d08f68f846291bb4be9d8b26c30f07761",
+     "prediction_sha256": "54fe6234c42049a96159094b5c6ef51b4f6fe7fcead3698c0335399a74004002"
+    },
+    {
+     "position_id": "new-0353",
+     "play_sha256": "15a5604df444ff72f74a3ed0dcb41551f92d83d0b26bd84071f55b63217be283",
+     "prediction_sha256": "76ccc9483ea4442b2beb552ad4f5760c706f57c3e0dcc6c0e71e002a89580f9b"
+    },
+    {
+     "position_id": "new-0356",
+     "play_sha256": "d777540512bfa0235064cdba7a015ac743d91f725c6aae516d2cab420433eb7f",
+     "prediction_sha256": "6de109228467939f9afd54d2f36cc59c325bb91f5a7e915382637c904a16bdf0"
+    },
+    {
+     "position_id": "new-0361",
+     "play_sha256": "4b9c8e7392d586d3572c1d287d76334602bd62245312ef701de95197f5ef04a8",
+     "prediction_sha256": "bfffbbde891eb708e114c3f094e1a21878b4cf648afcf96c0ada58702bf4ed71"
+    },
+    {
+     "position_id": "new-0362",
+     "play_sha256": "8e47326fe117a05345eb99a3894607fa9b2391feb17af73c0599e5cf1bc9ef2c",
+     "prediction_sha256": "ee2ea952e689b9571f0773c362c0afc12be7ea686a377ee5eb0d5bdd2094829b"
+    },
+    {
+     "position_id": "new-0371",
+     "play_sha256": "a5cc9b6ce2178e3cc71912ffc50ae31e416cb605f67a987dd4eb008de739f055",
+     "prediction_sha256": "fcec90cf8690b85cdd72d5c575fb0e62aa29ffbfd1736b8b6152bed3f23548a4"
+    },
+    {
+     "position_id": "new-0377",
+     "play_sha256": "7bcfd66a99c853ceb289d7da3d47ae1bdb98161313565dc8ba8f41f20a2e1704",
+     "prediction_sha256": "bc034a6c18a3b03ad487adba96125ea9e7cea4d2033120d5a008e9cb5665020e"
+    },
+    {
+     "position_id": "new-0383",
+     "play_sha256": "de3c75c1cc276be1b2dc9acc705da23c43325f28d0a8a73aac6663c850ccf2bd",
+     "prediction_sha256": "cbb1826285bf103ba271c71ba80d042bc0c8b74635b580e2db1fd328e6362d38"
+    },
+    {
+     "position_id": "new-0385",
+     "play_sha256": "96349f9a343b426145636c23b4e9f33997586f8bc65a37d00fc6b94937c46c0b",
+     "prediction_sha256": "cecd641abaa639766c326ef1a0333ed528a5a29c0667e6189a13b61619ff735f"
+    },
+    {
+     "position_id": "new-0388",
+     "play_sha256": "23e0e38aca645e010f4906eb46d06a23fce8b57033b91e9c7003df6225eb37c1",
+     "prediction_sha256": "50f8f9f68e9907c67dc08460ad62e7603c9d06166da57124e030e9d704bb050e"
+    },
+    {
+     "position_id": "new-0410",
+     "play_sha256": "0f246786dca3a10f7b994c4103b1560f341949c2e3997d0f6265063971026578",
+     "prediction_sha256": "617f7905e84113d0fb7a23ac504efa34a6409372b5f4ec9a6b624b92fd06a1c5"
+    },
+    {
+     "position_id": "new-0413",
+     "play_sha256": "3ec804547a135e4c5cc714def4bd4045d595bfdfcfbfd143989a6ffc3f2ed66f",
+     "prediction_sha256": "a97a1487230e8ec48769f56c386625c4b37475f807046bd234b28ebcabb2aab4"
+    },
+    {
+     "position_id": "new-0422",
+     "play_sha256": "57baa8f6c426b0917c615c0b33c9be82a897550ad883ae1c60d1f6d871d6813a",
+     "prediction_sha256": "b412c2ac926c535aea54fd8d31e54e1e7ab931006fa264f85a60a140a0800234"
+    },
+    {
+     "position_id": "new-0430",
+     "play_sha256": "210dd1c2172b70974a3ac1192ab205d00c7faf40a5a600d5d184bfd1dc8370ac",
+     "prediction_sha256": "fd7bbe196c254077a358d5d4c5eb0fe73f2d2b5c7ddb5e6c54df969b0b2084d8"
+    },
+    {
+     "position_id": "new-0447",
+     "play_sha256": "6d6a3dbb34ed2a3d77e3f16d5348220c4c5937d3a6d9a3e4c63078f28d08c84c",
+     "prediction_sha256": "15561b8377ae1b8c70ec82a43dbaa981a83ad13e249afd4093491eb54ea0b454"
+    },
+    {
+     "position_id": "new-0459",
+     "play_sha256": "48ea86d001ff0d2b10484fe8c6c2eaba6c640b077c47acf77ff5356ef3ddac7a",
+     "prediction_sha256": "2fedb6d98d7cdc3f116ae7df2511b94c87f978e7a810538faab424efb943a464"
+    },
+    {
+     "position_id": "new-0465",
+     "play_sha256": "1fefd3065f70ce49b0ed0400c400cca1c64feb5da149bd67f3b7fc888d476b50",
+     "prediction_sha256": "7deb4025b17b70cc012d082aa32227a18572d4d736e1096edb016ddf4fd9f874"
+    },
+    {
+     "position_id": "new-0467",
+     "play_sha256": "bf7cc918418019065831854d2013ad7514c65dd16e6b067667f66163a8a1393b",
+     "prediction_sha256": "c8d90a9a89b8d90ac525e7318862e7f2d8bb461d3b1d3316e6de7c12c77ed312"
+    },
+    {
+     "position_id": "new-0469",
+     "play_sha256": "25d6953feff108bd7ef2e7a9366dfe5b059c2c712d190bfbcbb23ca415fd1ce5",
+     "prediction_sha256": "5356ac3ece46ff693662b81ffa3365bf1a89dca7240cd776f8d0f3dde16b49b0"
+    },
+    {
+     "position_id": "new-0474",
+     "play_sha256": "4ff6bbc61a28162e667f82990af804cd60499291a1c274691dfa3bc5bb309a87",
+     "prediction_sha256": "ce646f121438c7fdcd12d05964100bf31710168c415ea52c4b9caba1d0f03818"
+    },
+    {
+     "position_id": "new-0494",
+     "play_sha256": "07ff03b5e6bca02e264568d4ca5d4ae24b4b22d9c2e716a4c51bc1a9f4041dab",
+     "prediction_sha256": "30a8907f495f0412effa46fb3780d9d006f689cc1c3715fda070bbd5e31d7992"
+    },
+    {
+     "position_id": "new-0511",
+     "play_sha256": "e799591beeb01db4448e1936fd7e716afa63910e309dc62d995e82bb18e04faf",
+     "prediction_sha256": "5f3c4ff8ba753782a80def7340f218652cc8042eccf90866312ed5392aed5087"
+    },
+    {
+     "position_id": "new-0513",
+     "play_sha256": "29abe93bd5a4896eb71ee1354bcfb78ee0d67753cc04e1ad633b9510a64ef152",
+     "prediction_sha256": "ffa77c62aebbc095bf4c41b0d4e87370a7b6c094e9fc4ce4ab07326c8aa7bd23"
+    },
+    {
+     "position_id": "new-0518",
+     "play_sha256": "28e46fb143010f2fcbd3bdb2dccb0a8ff1b097bd71e08aced31f10a9fedc6b5f",
+     "prediction_sha256": "10414922de4b107d82f2411a3c24927a1e5f648a06daca24c2a4f5c1fbaa2732"
+    },
+    {
+     "position_id": "new-0525",
+     "play_sha256": "eec1aa361169e73ce972542c04907c3a5a8e8919648ddb3c650347a7a538dcc3",
+     "prediction_sha256": "b0e5928859282288f7eb35e6aab3190766165c7ba8b662f343f564b0f9a4d4ac"
+    },
+    {
+     "position_id": "new-0529",
+     "play_sha256": "59ea5fa4fa5d1fe945ba53578d665d84c29133d8784cb911b0d31410b2c1655b",
+     "prediction_sha256": "631a8308ddc8e3b4b9fe81832356979a17209a0c76ca5a27b7a050b0211a0144"
+    },
+    {
+     "position_id": "new-0532",
+     "play_sha256": "5c046cc114a875f2bbfd1d7de15c81395bb227bad4b7380b086d91ef9c266a97",
+     "prediction_sha256": "397a4bff0837ecb074f07ebce9d1a3671acbac6469b1a4a67c702cc2e22b141d"
+    },
+    {
+     "position_id": "new-0537",
+     "play_sha256": "7e56364421a26bb7757686c619598b17b459db0cc08f3e9d4c8326c6a9ebd443",
+     "prediction_sha256": "3716a11f411c65a89c1d66a88c6e4c5524396b996bcc161e6e63402603ecfeca"
+    },
+    {
+     "position_id": "new-0546",
+     "play_sha256": "32163c59bdbcac2e25a7b11ada94d7343e61273f23407acb036f8379f05a5ca7",
+     "prediction_sha256": "902a26f95357c63f56f5e55a399a847a51af1738bcd94ba9b05f32db39e62fbd"
+    },
+    {
+     "position_id": "new-0550",
+     "play_sha256": "bc78c7530da0c8a5cf4a0fb5bf630b9d48ee65112157d440b34ba90f9cb0cae6",
+     "prediction_sha256": "ff6ad24e8fe8517c5572ef7491e2bf75966b84e07d72cb47cfc4b052f0095953"
+    },
+    {
+     "position_id": "new-0554",
+     "play_sha256": "c6899fbf418aac90eb5384c81562dd6e875ec74b70dea87253686bea9780d4c2",
+     "prediction_sha256": "db7a8eb6e5733b5052070367f99f5ccf74fe9cf0f6f710b15f0866e88200ef20"
+    },
+    {
+     "position_id": "new-0562",
+     "play_sha256": "70419e608e1219967f7022ab39785cf7004bad3f7f1fab79d0070e6a9008525d",
+     "prediction_sha256": "a8aa1fc52fd288f793a93470e5cd330f04a869bc2e7027f0fac04a87a6c8a6b7"
+    },
+    {
+     "position_id": "new-0564",
+     "play_sha256": "748811dc5731f4d495204c22d0a60ee11d2bd625d35b9a9a1101e9f33056b6c9",
+     "prediction_sha256": "3d7ee5f8f38dc0b09c8e1d6cea1389ddb97f139d814fe7335069ecff3ba9ac81"
+    },
+    {
+     "position_id": "new-0572",
+     "play_sha256": "429e3b52829884d1ae568ea96d745a0bbf4d51c98a0b945b586e396d8b90f061",
+     "prediction_sha256": "7ec5d22c5bc4e652421eef249345fcedfad7bbe076b4e36be1a75de38b180d14"
+    },
+    {
+     "position_id": "new-0575",
+     "play_sha256": "c95671458454bd8fb52e5553d2578b0654d8166cc2dee439199b42c2aee47f4e",
+     "prediction_sha256": "764042e0252e75d6d1cbf3e4f2bd8998f20f5cdb2fcc8950e5ccc48743427fc8"
+    },
+    {
+     "position_id": "new-0582",
+     "play_sha256": "37dcee5ab1fd2e16fc82d837a9c1a023ccfa89a29360659a3915a94010758e52",
+     "prediction_sha256": "6e876d72de016fe00935fa83eacc1777fe7240fea84af89336a18887e29bc699"
+    },
+    {
+     "position_id": "new-0588",
+     "play_sha256": "b67a8512a418dbf9862ebf6d10b2ec229e99e2423ce84914c9f39d3723428c98",
+     "prediction_sha256": "e0d372bd62b810202c0792fe5bb77ef256ee844f949182987573dcb1f4272d7c"
+    },
+    {
+     "position_id": "new-0591",
+     "play_sha256": "556ab0e313b42e684cecaff41dc7fc84a28b5014c11c34de8a3ace6704f05b3a",
+     "prediction_sha256": "2f6435af1dccd3b9b8ad1cc42568d5fbf087beaf24b9115897b8df0043398039"
+    },
+    {
+     "position_id": "new-0593",
+     "play_sha256": "83260ad78dba1ade57254564fbad0d9605948bb1ceb2f01278dbc734a39f6ca4",
+     "prediction_sha256": "ea31675999d9b4a9f2f6d8499d458767a2a16fd897137266c5f0024bc90dfb96"
+    },
+    {
+     "position_id": "new-0598",
+     "play_sha256": "5338e621343c3daab0aa9be01769bb5554087181f106ba4e6318495ecbdc1130",
+     "prediction_sha256": "bfc87ade5eb0f74fdd7979336145ec84e9ce44c3ccc6ea2e909627f582dd2a32"
+    },
+    {
+     "position_id": "new-0618",
+     "play_sha256": "1e5b412fa05e79d9a7f907a1b9ea48465351c4b6867020118e1f8f279e332167",
+     "prediction_sha256": "d0777efe068eef2bfb0e03b82cf4b66a0ac664450159ae23ee172bf469fad4b1"
+    },
+    {
+     "position_id": "new-0626",
+     "play_sha256": "66096bd685b681907b0b9b91f7267a3b76b4a816ee0b1adaaac6255b53ee32ba",
+     "prediction_sha256": "5bc8114456b4f227cbbfa317273d796061019642b4c4bc30f7401b18f2d6f600"
+    },
+    {
+     "position_id": "new-0679",
+     "play_sha256": "b7673848636e3a580dc1275ebb64555fe535a96b5bcc3ec5fe48c933e7e522ab",
+     "prediction_sha256": "8e060543acf9cb507338397d03c692e7727651d4a5029ee39eecfa93b588d546"
+    },
+    {
+     "position_id": "new-0706",
+     "play_sha256": "f65bd08510cb74f9296b3588cf97725b3ecd53fd45bd2aaee2dc3592faa14957",
+     "prediction_sha256": "788ee6c29c9b0f43341333813363a8ac48c36ef8c482499a18b1fcb08f077db2"
+    },
+    {
+     "position_id": "new-0801",
+     "play_sha256": "10b8840997b5f0d73be789d339d6e0f9cac2605b81e55c965a12bfe25759cdbf",
+     "prediction_sha256": "2885627d00ca5a8a8fca44e6abda3068f92100bf04eb1145df894777af6b961c"
+    },
+    {
+     "position_id": "new-0814",
+     "play_sha256": "46a2d2b6f3d3a6cc98b22373936e445875dd3ea754277646ee7fbf4048fddb5c",
+     "prediction_sha256": "7a664705a65517ebc6a11a3b7d8d47a6116e035f826a426760f200ec4c714a13"
+    },
+    {
+     "position_id": "new-0919",
+     "play_sha256": "ba6c4c2fa93e635551682899480bb57420988ac03077c5f64b0c8ecfafc2ef9f",
+     "prediction_sha256": "b581d31a2dfc700a704d2fbca543647b9376d9d9095c6824424e2d2149a27ffc"
+    },
+    {
+     "position_id": "new-0999",
+     "play_sha256": "ee574bba3299a76c84b5e0830f682239742b20da464a1928ab1c14833623ac3d",
+     "prediction_sha256": "e54f2d877c0942ca49469ae3e46cbdd206a3b3a0a50d857d85f7413278dd4c8d"
+    }
+   ],
+   "prediction_hashes_sha256": "59f6d66bc402e3e7668b4713fef3664d457f5d92e8555445db9823577d72ba3f",
+   "play_hashes_sha256": "eabfb263db02983fe4eb864ba3a2ad16e39de7a57a367743fe1c5422319d35f5"
+  },
+  "Gemini 3.8 Flash (low)": {
+   "spec": "antigravity/gemini-3.8-flash",
+   "route": "antigravity-subscription (generateContent in a Cloud Code Assist envelope)",
+   "model": "gemini-3.8-flash-low",
+   "reasoning": "low",
+   "requests": [
+    {
+     "position_id": "new-0002",
+     "play_sha256": "02f529eb6608e9807d60d3ea848380dbe9c0a8b70bbe4f5ad078e7d53a6e7f80",
+     "prediction_sha256": "380bb7a9bbf3e26e4c1e7a5de04ee2aed76e917acd9d2079732e645480c234cf"
+    },
+    {
+     "position_id": "new-0007",
+     "play_sha256": "8b924996d2b6de55ca0c00814120ded6eb81d2204805f7ef54cb7cb610c118d0",
+     "prediction_sha256": "203a07124bcc52615b674d247bf4f550a68483bef9b466c49c744644c072c618"
+    },
+    {
+     "position_id": "new-0009",
+     "play_sha256": "f511f7046aa5476d5d71b068a6b23c32706bea3187810c3f0e10e002d58dfc11",
+     "prediction_sha256": "ed2686c1f5be0674071611153147119cc7959870c9f10113d0e2c120140deea5"
+    },
+    {
+     "position_id": "new-0016",
+     "play_sha256": "2b67171bd6758d67b993b8ca77c47478b6a5349b04ff316da47b9c7e755d1df7",
+     "prediction_sha256": "2c42575ba2ad4c82fccc17b2d826d6693530ef96de0a34d781dada4c78d48d8d"
+    },
+    {
+     "position_id": "new-0024",
+     "play_sha256": "f45cd0f7a762979a3c585b4351b60af38d8430473739ed69cbd68b9145a8573a",
+     "prediction_sha256": "b51374b7843467837f9c036542d31ad408397a67817aecff5eaa39dc229a09b0"
+    },
+    {
+     "position_id": "new-0040",
+     "play_sha256": "af0f7a4bb6a96a1d6b9b561efc5b7f04bc1d37d1500e84f2744c1a93ba8bcae0",
+     "prediction_sha256": "4b1f8dc9eeeea5caf0aa62eebc357c094d28eaf65ec442bd0507572b5e9aa241"
+    },
+    {
+     "position_id": "new-0041",
+     "play_sha256": "bdc8adcd6c093bd1b83dcd9c1258d8a9802aec3f24ea2975d3c19e3970d9467d",
+     "prediction_sha256": "bbf3541493b87d75d4cf6c8649a5dbe3c20bd1eadef3eaa1ff42f319211a47ee"
+    },
+    {
+     "position_id": "new-0043",
+     "play_sha256": "5e7f02b461e59d78ffb3bb299bcacb24075019ab6fc7cadc859dd6cb5e02d64f",
+     "prediction_sha256": "cca0a0a9c1a0191939da584ee03e1bec6552a2f49f93f1353200f4af134e7b5c"
+    },
+    {
+     "position_id": "new-0046",
+     "play_sha256": "ae3062a450a015a01a2fef6916058ed138b3095de43cafc1742518ef0a90d8ab",
+     "prediction_sha256": "b26348d07ace1a5ef91fa440170b3237a5801e0665c6917d4060ce964a742252"
+    },
+    {
+     "position_id": "new-0050",
+     "play_sha256": "47ba7c8e1c2d50f9544597f6b81691d61a5becc1c78d1b492b030586cdd7b697",
+     "prediction_sha256": "f8c641bdfdf719b423b71ea701e3c5e07ee2573974c2178a31b59d79cbdc195d"
+    },
+    {
+     "position_id": "new-0053",
+     "play_sha256": "7f93ec39383f6ff13cd05d2e4ece2158f776da6d49a93236011188a7c15fad43",
+     "prediction_sha256": "1acc301755d2f7083d816390f0c9ebc7384bba0732f5cccefcbea66e409bb8e7"
+    },
+    {
+     "position_id": "new-0062",
+     "play_sha256": "3cf85c35e24b5c103e493db0b41035bbbc092181a74620b577f49d22763f77f4",
+     "prediction_sha256": "7513db8201ac51215f5f522a52de90f465e19adde39a64212e099184af78bd52"
+    },
+    {
+     "position_id": "new-0069",
+     "play_sha256": "88cbb77355cde6f9e512e8dab2d02de5a54a51aa32917b7494423117aa44ef92",
+     "prediction_sha256": "18e15bfe400e8009b0284b717c3d90ee4874b6a68c2dfd13102eddb3f7eb543f"
+    },
+    {
+     "position_id": "new-0070",
+     "play_sha256": "8cec72ccd4914ca0cdf1055a942a3383b6084e41eaa330f8a216dc3ff2d963c9",
+     "prediction_sha256": "3544e0032e5b43d06ef4de491592f3ac1fa4e8ae7e388e810ba2f13857c79b65"
+    },
+    {
+     "position_id": "new-0092",
+     "play_sha256": "390902fdd01083538207ca864c287595fdad9403d094190e4bb20afcecc8f8fc",
+     "prediction_sha256": "dcc22a9870624d22fbeeb28f735db94f5d2101e27a1311eea8a9a46f21e203b8"
+    },
+    {
+     "position_id": "new-0107",
+     "play_sha256": "4ecf35c5231f55650e791c3ff2061530ab5f1585c2381cda9b9e29baf7e14ec9",
+     "prediction_sha256": "6ec0b5beae868cb55a5870a7755a4d7d4615f074f4ee1cf515485c75702c760e"
+    },
+    {
+     "position_id": "new-0111",
+     "play_sha256": "7c61bfe224e06df2df6b8178397358e1459d42ea66279bb309b04f6e101718a8",
+     "prediction_sha256": "64626d1d9426ece538e2c0732b4c715c51c59d05503bd02a7512f091d10828a9"
+    },
+    {
+     "position_id": "new-0112",
+     "play_sha256": "d2cd47201aa933ad33efe3794630812d2cd8ab195968e86680bc1a0fbaedf0db",
+     "prediction_sha256": "491391ffb30739aa63a5b438763343df45c50c445ea4a2ec54341ed6447c90da"
+    },
+    {
+     "position_id": "new-0119",
+     "play_sha256": "3f6e88b89f52c0d618db1144e9cb082ec96ba018f3f27121a7478462603b892f",
+     "prediction_sha256": "8b80db26105d25fe95146a166bc9435b1e3601c45cadda221d41893d3b80cb01"
+    },
+    {
+     "position_id": "new-0122",
+     "play_sha256": "287b840919ef4b8e851d8760a59253df7afb886891eb2635cf22395f4713a428",
+     "prediction_sha256": "594aa224387d31e66865965b803504c86c3f568918927fea42b8c160ca5e3ee6"
+    },
+    {
+     "position_id": "new-0131",
+     "play_sha256": "8d695fa32e74e7a25ec2fbb6f9f5fb1edb0dbf5fcbe1affe5d1b8630973c3d8a",
+     "prediction_sha256": "a0e217cd8210a91f5172852901c28a981d842ee2eb4ade7b23cb0797071278dc"
+    },
+    {
+     "position_id": "new-0147",
+     "play_sha256": "a89c3ac2bb855e7ebb0ce705e8916b7c8d69b131a8fe51cdd46ea4822be01a69",
+     "prediction_sha256": "96577925246ffba110aa194a15df3a20d52c32bcd047cf1fb9c29b74110f53ac"
+    },
+    {
+     "position_id": "new-0149",
+     "play_sha256": "af14b2564b69cf5c0eef478a97b4844a50e4b26d4c205656babd270e49cf3719",
+     "prediction_sha256": "32c4255917e3e0d99db5e9574be1bc79c6631083d5b894e1b9c7633290e1b154"
+    },
+    {
+     "position_id": "new-0155",
+     "play_sha256": "6091e79cc7862a36f0813943373ebdfe5359a86948ecf95fd185f188ed47971c",
+     "prediction_sha256": "88dbf117804599009e270684caaa07731c17f33ff8ba15d7143791b04a3f3bda"
+    },
+    {
+     "position_id": "new-0156",
+     "play_sha256": "810cf3f0fc4cc40cb3bf19ddedfd92e167a17f8851b7d3b9e2eb39ae1c82bf00",
+     "prediction_sha256": "e16cb1a042f47f763c9abf4701c746e28d824844790c961ab0c82690c3bea80c"
+    },
+    {
+     "position_id": "new-0160",
+     "play_sha256": "f36e00c756bb8ef93a626cd9f56a00a6c560855714971b46f52516d189417906",
+     "prediction_sha256": "a9aad08dbbabb64145a94c801056912f019badcf524952df48e2e6e8a12ee619"
+    },
+    {
+     "position_id": "new-0165",
+     "play_sha256": "3d0575438640fc5cf1865d10a23877311d78055c9ce283e4020abf5e418bb887",
+     "prediction_sha256": "609eaae2cbff60b0c4338ce42dd4acc567daa5efd264f358ea6217f28a2d8965"
+    },
+    {
+     "position_id": "new-0175",
+     "play_sha256": "320e9dce81e0da4650544bc02133a75041dec6a97e34eec97d4a1ad4179cdea2",
+     "prediction_sha256": "5a35433514c3521a238b5590d615986b47d4a0c0ac62418d3acb616e2b4e678f"
+    },
+    {
+     "position_id": "new-0188",
+     "play_sha256": "8547c24145e8f014d92bdc44d30a65d817a48445c847fb0e09f510ae60990158",
+     "prediction_sha256": "70d5fd6db1d431888b973c6a8ac8a8d86363419f0b9c02c5c6c96e820288cf10"
+    },
+    {
+     "position_id": "new-0190",
+     "play_sha256": "3b7625b114ac0a39e2cb1dcba901460bc8d579067845ac4c455e6fc982b62850",
+     "prediction_sha256": "8058320c873cb2b3aed14ad123569c56920384ad1438425f6dc1356b9cf07f14"
+    },
+    {
+     "position_id": "new-0200",
+     "play_sha256": "42f36b523cb4b3dd181d9bcb2c75f26a75aceecf179d9f7f9746811c461af2b8",
+     "prediction_sha256": "584a8c14e2c05b1d3a00df3b293a29f8de340592a770486d2d0a72deb7c3fe63"
+    },
+    {
+     "position_id": "new-0237",
+     "play_sha256": "f3e2e54ab869314b1b6712c1b4b00351f94740b8faa4d97d94742f844bd7795e",
+     "prediction_sha256": "33133e669d09bdb6d56b0aae3c3723cb60c50fd313f15ee55df88668b2c6b212"
+    },
+    {
+     "position_id": "new-0239",
+     "play_sha256": "de4aec07f725ca0cf832df844ae5b7323a0cf9691c2fb79256cfa8bc568474ef",
+     "prediction_sha256": "2225dcdd6b4f3abaecc65c7fc2b7188798c33064b38a32c5d999124e9a8a4fef"
+    },
+    {
+     "position_id": "new-0244",
+     "play_sha256": "113b5ed2610f7e7a6fb9342f6d0fc54e8a9173152f6507154494a38aa51a55b8",
+     "prediction_sha256": "7ddc138087e7d194d51c433774b699c04362886c06e967bcb2690b618eefe777"
+    },
+    {
+     "position_id": "new-0249",
+     "play_sha256": "e5be00a7e06159c2e88c2604db16268e2a3502c49d284ab38cd3147ad68e25ba",
+     "prediction_sha256": "bab1e00ae93ced24c4150400b8410f98670f79aa5a2a26d81b3f69004d5e519c"
+    },
+    {
+     "position_id": "new-0250",
+     "play_sha256": "9c0030ef3ec80772334f1a33bc8a4eefdb6970fbc47ee5960a0ff70db077b044",
+     "prediction_sha256": "9f1cf35979f2f878a7333440d9bdb428335c5f05e9f6b2092a1b93eed55d9bbd"
+    },
+    {
+     "position_id": "new-0254",
+     "play_sha256": "88966762452f58bb4c4477b50ab5b056db6c820a91789cb4c95e31c1b99ecae2",
+     "prediction_sha256": "e9c260ad032e674185c0c9be001562ce481ab5023ce20e25da8d389bf99f764c"
+    },
+    {
+     "position_id": "new-0256",
+     "play_sha256": "c59e086b084cf52541cf116fcd0d9c10398131a522152987a5a6e065e7393e25",
+     "prediction_sha256": "3d0d09d4e413d158adb4030eeee06e37fdd6c1b2c65512ad7dd96f3c6c2fe324"
+    },
+    {
+     "position_id": "new-0263",
+     "play_sha256": "0d21edb8e47fc87fda1043e517992222e5de02608cc8e492b4755f7d40d3eca1",
+     "prediction_sha256": "f7789a651859fd01a717223d07dd5ec0b8f785fcc0bc01d8eb17e5512bcad377"
+    },
+    {
+     "position_id": "new-0264",
+     "play_sha256": "61c5fea55c0c9bc8402c7b885759695417dde8fef1af3c5a9bdf5a7dcd4fbf89",
+     "prediction_sha256": "3fda4557839627c364a352f7afbe7953020b03ed59daf736d695aef06d5c4a34"
+    },
+    {
+     "position_id": "new-0270",
+     "play_sha256": "c75e9f7803eddb210964022cf56886f6c67840f45b78173ecf7478d1d2e9e312",
+     "prediction_sha256": "f189779b65514e797c9744e41894842c86c9c99b173834bdd6c7f99fc44ed904"
+    },
+    {
+     "position_id": "new-0274",
+     "play_sha256": "56f2766ada4886e2c5620e8d16f099242a9b183846af867f11e04b74469f7562",
+     "prediction_sha256": "5cfcf4b2feb200651107fe539b24f4bbfd78c700e877d4960693905a68626b25"
+    },
+    {
+     "position_id": "new-0278",
+     "play_sha256": "15b13b3d395aaa3e5aa616cc8061383e29c0bddaf62f1c7c04e0b9a5537282f8",
+     "prediction_sha256": "3ed6dedd66adf9d885670bf738c7e9fa687cf6ad26b84b68b3352653ac5a5a35"
+    },
+    {
+     "position_id": "new-0281",
+     "play_sha256": "5cbc3acf1cdb52d92ca3239cff7a6acb085b78700759ced969d5a0f55469ef2f",
+     "prediction_sha256": "fff41378037f12fa9163fc370b312501d64e678db198b0c3740349be836cd4ed"
+    },
+    {
+     "position_id": "new-0297",
+     "play_sha256": "1194a72eba9dba448700b5539ddd5de4294edf95844ef2085ff6e3ed239bf157",
+     "prediction_sha256": "14bc605b96d387318fc3041ed01adad65d0b02aa93e3a8b33025a36f9edbf06e"
+    },
+    {
+     "position_id": "new-0307",
+     "play_sha256": "7bea5ebd45b083368d2f5ef81edc70dc8c9a337d509911b892392efdc6739ca6",
+     "prediction_sha256": "8e25c796be33b82f4a7dca2eec4adebeff5a491026e347d1e90ba107ed56950b"
+    },
+    {
+     "position_id": "new-0328",
+     "play_sha256": "2455b317dc623dad034155d2174ebf704d8efe708ad30ef333af40ddb57f75b0",
+     "prediction_sha256": "9fb5dcb48744078e5fe5b611e74911fb9204edad60cd73fb0ede7de40d848a5a"
+    },
+    {
+     "position_id": "new-0329",
+     "play_sha256": "1fdd13db115f6834098461e16d542e74ade36337c39c7ca7ad6c9e8fd1cd77db",
+     "prediction_sha256": "a2b48fc9d767e48a1e2cd1d1ec2136f952580ab9e47a700813a47ee764c16767"
+    },
+    {
+     "position_id": "new-0330",
+     "play_sha256": "39809f3b923b7e062a5256805e1760108a537edc0db9ce545917b4742dbb309c",
+     "prediction_sha256": "9e1bfe8a8da5ee118ac2b985a02a6cfb8697db1d033402c08275cc7aa37905b2"
+    },
+    {
+     "position_id": "new-0331",
+     "play_sha256": "4a928329d1b83830518376036474ad3aa3be4465b2df82eefa33d59c92275403",
+     "prediction_sha256": "ee2436826b5376c38d9738a760a29e586278a075128d7ad2e0fe3a75aa769812"
+    },
+    {
+     "position_id": "new-0337",
+     "play_sha256": "0a04ba49573be0310741493d357350d5921ba23ee9ed60b2eb2c915b22492192",
+     "prediction_sha256": "05b31b35489104307bb9cbeda819582c3242e3a20312ba4936a05ba10c153ee0"
+    },
+    {
+     "position_id": "new-0344",
+     "play_sha256": "a0092b3f8bb3d12f0013884e5b0bcd659e6d2366b6029fe9c16d7efcbfdde1c4",
+     "prediction_sha256": "8f67f5264df7e699473921a7aa2929edeb62373e66b95b0faf89c3fbe0a5cd60"
+    },
+    {
+     "position_id": "new-0349",
+     "play_sha256": "80b4e5345beaa4a2ff4c9d69998eeb5a8d4291a8dfd98049106a4b306076ab8b",
+     "prediction_sha256": "a7be09743e7bf0dcedc50421095a0bf484c7a77984af3286e2e1d124681f7b84"
+    },
+    {
+     "position_id": "new-0353",
+     "play_sha256": "d011a1a952dc3ce88038ba28671255cc997f2fd2af49e762db1b035cdd7db23d",
+     "prediction_sha256": "1a53d0afe5232864991b780c0392844ca9ed425a3cbbe783ed7d61c288870fbc"
+    },
+    {
+     "position_id": "new-0356",
+     "play_sha256": "470d8cc74be21742f18be0bbd5ecc004c2498cc585547e93094e9c034450e0f9",
+     "prediction_sha256": "038250127200ff30603a628a1eb8d398328c33417fef977f92b1ad06e0166f91"
+    },
+    {
+     "position_id": "new-0361",
+     "play_sha256": "57db7301640e34591b733f5a024a7ddd475a0497b0497be4e1111acddccd03d7",
+     "prediction_sha256": "fe8c4daa3cfe331d7c59cc9f18034449925967a4c380d731cb00b5c9c3e20b55"
+    },
+    {
+     "position_id": "new-0362",
+     "play_sha256": "7ef976ef76350d5bcb05f0df2ec8702cbe30ace60561b6c0343a0f6d9942bcab",
+     "prediction_sha256": "afae25e7679efd453b45d433323523e5c87fec15ffab18073a7fed07cdfd2659"
+    },
+    {
+     "position_id": "new-0371",
+     "play_sha256": "07a5fefa56b87dba8493718d618c2f72941d4021bb20546727babd72abad4bd3",
+     "prediction_sha256": "5e7b7d9f1c786a0ee8579165b3abd52f9a106fe81b246663395f9394df973709"
+    },
+    {
+     "position_id": "new-0377",
+     "play_sha256": "a6b4580d579dd3f187327200142171b0aba704a1027d8f7fae9e24c106d7714f",
+     "prediction_sha256": "ec5e422944cb12ff6739414d114a14fb439d566173c63e82c3c9564b4f3ac959"
+    },
+    {
+     "position_id": "new-0383",
+     "play_sha256": "4b9c19926aff50636d48c34d26ddb33245cd1b4485f962f02b96e542ad90d3a4",
+     "prediction_sha256": "5d621624ecf0c3cc3ba4253976e0d2261edde67f3c05b80d65cc845213e88293"
+    },
+    {
+     "position_id": "new-0385",
+     "play_sha256": "2ec1a2cfd07462d519951ea5864f66f40a9300957cbddaf255ea8adf500fee6b",
+     "prediction_sha256": "70994ecdb9ac4673230c912d8474213ac099187da2efb0553c4ff9cfc0d04672"
+    },
+    {
+     "position_id": "new-0388",
+     "play_sha256": "fe913561a6a6e8903f322cc8426f5062999ccb0c1095857fa3270d74fe4b3afa",
+     "prediction_sha256": "775281e2668ea3414af36300cb284d05df1c006bb6ef58e8674f261209e25a72"
+    },
+    {
+     "position_id": "new-0410",
+     "play_sha256": "f95e313ca4fda8d5585b28c336e7536b304dea1ef2be8b024ee960f3f652a608",
+     "prediction_sha256": "6a9033b7a9105c2b87d0fcf1909dfc35530f69741f15b8d040aa508f802b1fff"
+    },
+    {
+     "position_id": "new-0413",
+     "play_sha256": "a13663fb1c780658be844b2fc1fb6ec3ca988318b70c3ba603590329c8daf851",
+     "prediction_sha256": "0ae850c81d86b09fb14f814c7836cf33efaf37112f1624c2b8e8d310076b526d"
+    },
+    {
+     "position_id": "new-0422",
+     "play_sha256": "b6d05071fcf177f95cb47f1148a926d85ab8f7be3639b7c9df7fbab06b2503af",
+     "prediction_sha256": "c3b4df63743a1cd0bcc73afd25e8b9b21676cbfb741491402af9c820d0b1cd56"
+    },
+    {
+     "position_id": "new-0430",
+     "play_sha256": "a732c4d49473a9335865f4afad05d8be7c8407fe01c7789be897876f41483425",
+     "prediction_sha256": "78b883fadcf4a5cc0a054a47b54a52631e67d79a33b9af66496b3064547e879e"
+    },
+    {
+     "position_id": "new-0447",
+     "play_sha256": "7eb1c508a7568f977c72800006996c826890715ade824fc6af16dba70255b950",
+     "prediction_sha256": "4a556708cad023177dd60c3f81aa335b622757e733154161faf0db1c43e6a6de"
+    },
+    {
+     "position_id": "new-0459",
+     "play_sha256": "3ac3fd07c64e6fe59c5bc7308d5273918f0ed229e053c27cec4b849c25878362",
+     "prediction_sha256": "dde9a44cde28ae2182bdf471f6d5f2b70224145ec1e54be4c1fa97336a21e623"
+    },
+    {
+     "position_id": "new-0465",
+     "play_sha256": "a717c7dde2f3b670c439787a554e8fccff2586725a0536362cb41b7e5b003f6b",
+     "prediction_sha256": "f8c4a46d68eff2240fc2b0b8eda6a93b790b9cb28c49f95f6993de291993f9ba"
+    },
+    {
+     "position_id": "new-0467",
+     "play_sha256": "dd8c21b92e4307991770fe4f79d4a5c70f4416c4c2d48344a97647d2b94ab678",
+     "prediction_sha256": "4d837436281bbd2484f1715b2d2ef0916725505ef2d1247cfb4230ffbce7ef68"
+    },
+    {
+     "position_id": "new-0469",
+     "play_sha256": "171b17c0b580e37768e7fa556667895b8eccd6796fa2d5b0103c1a98f0298798",
+     "prediction_sha256": "7799633c55c8a1811af392feed7a61dd0ae463820c9b2b1d505badca5bd26636"
+    },
+    {
+     "position_id": "new-0474",
+     "play_sha256": "6f5c4549ee2f3af9bd5000512501f61ef30857c16f735b9d99e439a222e712be",
+     "prediction_sha256": "e67ab4b645caf5c3f0d2a19eeb2cc2d82e1687e70346823e59d062f7788e3066"
+    },
+    {
+     "position_id": "new-0494",
+     "play_sha256": "bf09f5b9133a631bb856e10cfa165c47b0a05677600fd37fafe7a4e458fb888f",
+     "prediction_sha256": "c11419c57fb87775152cfe9e0b0d55d33d9e10b30d95905cbb9f8119f1f53e73"
+    },
+    {
+     "position_id": "new-0511",
+     "play_sha256": "7047b69ad9217d83f94f88a0134c11f73a625840e27177abe58244191d3e3c95",
+     "prediction_sha256": "529b42b2562a33d1c6259cc48ed6fdd9d03920a4f58d0d2f17b61c26f8dd65e6"
+    },
+    {
+     "position_id": "new-0513",
+     "play_sha256": "c437d93039f6a043318fbf0cd2a8bd65a43e29b8d9dfc8a917072978693521f5",
+     "prediction_sha256": "0ef4d73ea24f29b56d129968093a2bf871b940ca826eae941241f0e45f517af0"
+    },
+    {
+     "position_id": "new-0518",
+     "play_sha256": "9e9e43bf49a09916d129426a49a210173968b2bdf494b6e9bf4357dc77b9a38e",
+     "prediction_sha256": "f973fba5b2bb701a63edc159a5987e6492616e9cf4c89daba8d1c5292c00bc20"
+    },
+    {
+     "position_id": "new-0525",
+     "play_sha256": "1ebd152e422fe36c11dfcab6b2c55a962c846bae43e4d6a221edf27dee84bdf1",
+     "prediction_sha256": "aa52f24600fbd0984e1731b7650d7bfdfaf66bd8a9cbb14e24bb4e5a35ce0ec4"
+    },
+    {
+     "position_id": "new-0529",
+     "play_sha256": "f87dbe781ccad1e6dfea3fef6751171ba7c72d338ec19a034af2f52fa19316e2",
+     "prediction_sha256": "5d5937e66971d8f02306ae64aa0733b98e31dd637983e33c7de503c426b675c8"
+    },
+    {
+     "position_id": "new-0532",
+     "play_sha256": "29f48ffb8b73aec89cb1383d91065e2b2601e0cc7cf6dfdbb2c242c884574908",
+     "prediction_sha256": "d051504f8e51ee8731923a077132aeed32ce243fb6ac2083e0bf193c16a21709"
+    },
+    {
+     "position_id": "new-0537",
+     "play_sha256": "a475503968bb1d270857dd96a839a7ad22aa3293773c2f3d711ae7bc5e2627d0",
+     "prediction_sha256": "345eb1d8d2dac2379c2ce14c1412acd9d4f9ef869374b58dc89c639655023f4f"
+    },
+    {
+     "position_id": "new-0546",
+     "play_sha256": "08d7fef9cdadf3d49398e6ca8598a1acf5b91f39f9d2594c07ca1b38b1776954",
+     "prediction_sha256": "8b40fc4e0b99578be0565bf532c0883f07eaa6beba2a818432350d389ddb9cf0"
+    },
+    {
+     "position_id": "new-0550",
+     "play_sha256": "d60976ab7909dd862a4294863519a4aff4f5be75a32f5816fa0e3181972e53f8",
+     "prediction_sha256": "c39fb8f6f440b5ac60499be042c4cdc179d81983046f36c4d323b85ebc8a36de"
+    },
+    {
+     "position_id": "new-0554",
+     "play_sha256": "4841cb2452ccd5ae8018b90d85ce16e44f274685b593b61ceb0662c28334f177",
+     "prediction_sha256": "c6a4ee9551d83d0d7dd13bf90ab1d90bc9dc8885c30469e3a2e40ab69858a9d7"
+    },
+    {
+     "position_id": "new-0562",
+     "play_sha256": "f60e73e1d7b4c1bb737e98745f0f39199f9b54f70cea5ed459014eb12002f273",
+     "prediction_sha256": "2b046b9b07b28e112977077c488cc85b8d880328cf3707c0df0409dc106c457c"
+    },
+    {
+     "position_id": "new-0564",
+     "play_sha256": "2ebd60d49df0a9318ade879480a739fdeb2a9d0728b13ee227882829f41eb212",
+     "prediction_sha256": "b3b5304356cfc02ac903fd875c1ebe951908bf351f740268375a5fa9532e60b0"
+    },
+    {
+     "position_id": "new-0572",
+     "play_sha256": "da04009159ee21756d0864c4bd6a99c0900269fafd48d3738ef49ae17cfb344c",
+     "prediction_sha256": "5c28f04b1c55d68e44767cb4677c46fedc79495a3375ade74df127b1ff034a53"
+    },
+    {
+     "position_id": "new-0575",
+     "play_sha256": "cb0a5ba15114d2c214a5c2278b511b8542130f1a74b94d20715e42d59a33b9c4",
+     "prediction_sha256": "8bcab93aa6aa1a576c6b096231e9d1e24abc51a75875047e99e418a0e199202e"
+    },
+    {
+     "position_id": "new-0582",
+     "play_sha256": "068fc903a581b9a4c66cf8de83dd05d447010f1073eb2c36816e4989f3ded800",
+     "prediction_sha256": "6d4554349897805c49be773b96a32dac85f2a9c6c61ed93c318f0023f25f58e2"
+    },
+    {
+     "position_id": "new-0588",
+     "play_sha256": "cb0947e393f122fa846d389782aca6ed0e51dbef85c7db5e2c08a4a1a079f012",
+     "prediction_sha256": "0f64654365fd2cf833ca05ef38d1c93c8b4413e4d3862dc60bb09badeb3c7f7c"
+    },
+    {
+     "position_id": "new-0591",
+     "play_sha256": "85b710999f9a2c487954bab642d825444b4c0898397c83dbd96dad920fd7dbee",
+     "prediction_sha256": "ab7a5d3cc1287c71d8b36b1651565f4a6c5005e2ec0f1539f59379fd26ca0545"
+    },
+    {
+     "position_id": "new-0593",
+     "play_sha256": "3a3bbea567c56470d9a2e9460545e4c251b8b51b19ce20c609d673982ec07862",
+     "prediction_sha256": "235cb015971485667b0677c09699fd4e88179a3bf5cb46c3969fba6e2b1186a6"
+    },
+    {
+     "position_id": "new-0598",
+     "play_sha256": "95ed7a0b96890bf9aeb3cee48d5ea3602459516631981094abd737b28cc2d04b",
+     "prediction_sha256": "c27129c4d0b1bb8a64ea4e093d2bf520ec75ec346979d541bfbebe9f7a18a903"
+    },
+    {
+     "position_id": "new-0618",
+     "play_sha256": "090c228e00673ebdfa60c08ad7c04c7cfdde000ce290a8d4b8a5ba71cd91da0c",
+     "prediction_sha256": "2108cac5e429e46374c722e43ac1b80a4f0e10813cb5eb8058bd863df7df3994"
+    },
+    {
+     "position_id": "new-0626",
+     "play_sha256": "7b2b81cd1302c7eae795fd86ffcfa9a3c40d97c168c83b7ed4d63a41c332b9be",
+     "prediction_sha256": "1e7cd96fe8cb58db0933eb038e1757d912c794e15cfd24d8355e51887d912574"
+    },
+    {
+     "position_id": "new-0679",
+     "play_sha256": "60304a2357e4a76aa5718573081270193b27181b85b47dcc7f34a8aefef4e79a",
+     "prediction_sha256": "a2ba3efe898b1487547c83b2d93ba0cf06f2a33ced39354bfde34c8da6605d32"
+    },
+    {
+     "position_id": "new-0706",
+     "play_sha256": "a0e1540028642142837d29643ce3f55f305c0ac19187cd60ab2ebfe7342fa1ef",
+     "prediction_sha256": "98f5c9fb715d05bf9643ebb215414b2341c854d0a216ddc8e0592e29a05b0c4e"
+    },
+    {
+     "position_id": "new-0801",
+     "play_sha256": "bda24a8c6132021389ef992eebd7b4015ab68f1906f183fb438652334b3692bb",
+     "prediction_sha256": "68fe3198fd8e1797fb0a1b4609f43db82070bbffe612a11b3cc3321b7d399f42"
+    },
+    {
+     "position_id": "new-0814",
+     "play_sha256": "5ae416a44249168674003cca462131127e5b13781f835f1c9971192785e98842",
+     "prediction_sha256": "a4855e3d2e45ce059ecf884df703dae8e70f9f8decaa4d8010a7ac36af6388fb"
+    },
+    {
+     "position_id": "new-0919",
+     "play_sha256": "af13fc859c7603ed5d2d4ca3754f2f3fe4852d3b7519912455e7be5e21e484d0",
+     "prediction_sha256": "c564a45fbd6a1644b8a985eb6dcc6c197a0f9620302f3064f61f9a4c30db6e9d"
+    },
+    {
+     "position_id": "new-0999",
+     "play_sha256": "807ef02e2d729cf6626e4105f1ffa6010a87c63571e7bf27aae58b9c2b5a1711",
+     "prediction_sha256": "3942cd524317e0f403bb4accceee9d71d6d068940665eeb6341d69fb449acfde"
+    }
+   ],
+   "prediction_hashes_sha256": "f950466e84d04d09dba60208309a3959f863db5ceb66558fa0fcf2864549be09",
+   "play_hashes_sha256": "25bf8e97a4bf46ad031e64cceea7774ef55d9efeb93284ceadecb21ecc24b726"
+  },
+  "Claude Opus 5.5 (on)": {
+   "spec": "anthropic/claude-opus-5-5",
+   "route": "anthropic-subscription (Messages API)",
+   "model": "claude-opus-5-5",
+   "reasoning": "high",
+   "requests": [
+    {
+     "position_id": "new-0002",
+     "play_sha256": "9b50174c8705cbe61dd87e038159e7263e826d1b72eabdb53d419a08717abe6c",
+     "prediction_sha256": "0648222323c8fb424a83bb58dd0ae46a9af2ac0c0eacc63b4cdf5db1adc6924b"
+    },
+    {
+     "position_id": "new-0007",
+     "play_sha256": "837b110c6f7268b53d7bb0f7633a1280c2067bb2e77fbe67d296b1adc7687603",
+     "prediction_sha256": "20975746ad093e9c6e5b5754c226bcdbe59927734a59dfd14e3e94a1e96a332a"
+    },
+    {
+     "position_id": "new-0009",
+     "play_sha256": "f5d3b0fc35c19c5f12057f6f208b2297b9c91962936e1f03f108f04213903450",
+     "prediction_sha256": "5d74c65e106e7bd2bf1e2d917cc72c0327b7e7c0cad5a1a17d4bffb0d67aa090"
+    },
+    {
+     "position_id": "new-0016",
+     "play_sha256": "b7ad02a417ca0af149b6df92f19fb87c2c89b16c53de179a521724af511e2596",
+     "prediction_sha256": "48de9225bc5dfb699e78a4c8b8922906ac9365ef4e1039480b8a11921d561544"
+    },
+    {
+     "position_id": "new-0024",
+     "play_sha256": "8aec3d346af5321838521c580b290eb5ffaeb5079e172cb12cdbbbd71f6df5a9",
+     "prediction_sha256": "82034ea0c038fac538ebc534fd60afc7e403bc739aebff7d8f8d71397643a63c"
+    },
+    {
+     "position_id": "new-0040",
+     "play_sha256": "950cff98e134b1741cc7fa7a34b6d7fd9af542a58837fef710d6da41c71a0d10",
+     "prediction_sha256": "c83b1faaf174f0c8c790e862baa10b987fabb90141d3fe3424b1ca0fd5df6866"
+    },
+    {
+     "position_id": "new-0041",
+     "play_sha256": "7497374898aff16d3b34847db4f387fdfce4ca8cf89a3059d00687d5a6094d55",
+     "prediction_sha256": "2c9132238891e062354c013eb91ec9a414e30bd7e3baa04b76a019b7d5208708"
+    },
+    {
+     "position_id": "new-0043",
+     "play_sha256": "a54103ea3cde4241d4858e2e9c82268761e24739051c462e7776b5a9c586ef2b",
+     "prediction_sha256": "6d50c1757ab77111f5a6c98cb7cef629a91197326e8cbf6ede2e4fa65d942200"
+    },
+    {
+     "position_id": "new-0046",
+     "play_sha256": "3e6d833329cc5159bc30e1623b51b99ea41e6c09de5c1b245646463c012256f2",
+     "prediction_sha256": "ff60e29d574234e3287855fed1b555083bef475035957499953cf7f6cd825152"
+    },
+    {
+     "position_id": "new-0050",
+     "play_sha256": "48cf0d8f89afb2bb3bfa6887d58c9da1d0f87a91e1bad8e7b191a6e4315ec9ab",
+     "prediction_sha256": "5309ada15f338dd4aa96de3825b69a25609326a98af426cbee93f81b2c239902"
+    },
+    {
+     "position_id": "new-0053",
+     "play_sha256": "d6eab38c95ff0d1695625e82733938d31b169023b39be3f1df9ebc56e1954006",
+     "prediction_sha256": "111923cc933c66caa11b233c1d6932c72215de03f94d67706f1ebd5a2efa903d"
+    },
+    {
+     "position_id": "new-0062",
+     "play_sha256": "8a06d0f24ed5ae3fec27416abefcca12eaa51bd92fa96d9ba31d4180bb7cca5f",
+     "prediction_sha256": "319718a152c1417f39ed6ab306d759a42e38600761b567c484785d58e25e9264"
+    },
+    {
+     "position_id": "new-0069",
+     "play_sha256": "3981a3e803b3831623b590a9a9ad0ec7949db6bc8788423f1fc0323ba3176e16",
+     "prediction_sha256": "ea1a5b20bc48bc79f1f09d4aa0085d07efa440eeca17457c227c2aa0a2e8b73c"
+    },
+    {
+     "position_id": "new-0070",
+     "play_sha256": "15aff3123851980fc8af1b41937f538eff777643caeb676da465abbd988207cf",
+     "prediction_sha256": "482507fb4980c40f491b87c2fd03c9b193648b42e9c5d526491eb01fe934b6db"
+    },
+    {
+     "position_id": "new-0092",
+     "play_sha256": "d21857249cce61a008ae9d577e37e9aba7be14bcce1b7454154fa196a7f76fab",
+     "prediction_sha256": "58d6a01a64f61843ad8689d0972f37ffa14e77dc602f77386961a8aa902d0203"
+    },
+    {
+     "position_id": "new-0107",
+     "play_sha256": "1c99e3baef7891d8c0514376b526d06ba33095f32477f57c6ffed529f4f8fc37",
+     "prediction_sha256": "8e3085ee0b96696db0bca6ed0c7270b214e41629a4088410047bfe4884f0102a"
+    },
+    {
+     "position_id": "new-0111",
+     "play_sha256": "26715a5cf96fecce1543b0c7b910f0968f1beac8d6cced5ca9dd1e5cd3c18030",
+     "prediction_sha256": "685a685d02c448105e93a60d5f34d64b93445386574867ee4dd40b481bdaf0a7"
+    },
+    {
+     "position_id": "new-0112",
+     "play_sha256": "de7df4075a0385cc0e550a823daef387683cd9802eb01cd4ed96e4ca1e19eb83",
+     "prediction_sha256": "ca83b743c1288fb1b5b067e41d2074352d2b68face59ab827b3421f89d2d886e"
+    },
+    {
+     "position_id": "new-0119",
+     "play_sha256": "15a4748bcbc952c97726aef2c7abdacb3bc8c5a5be1abd7fb028c02b6e8356fd",
+     "prediction_sha256": "e09604b9792efb9884b262ff3ee2e7a49cc0df4ad673e7ceb3d0decbffefdc9a"
+    },
+    {
+     "position_id": "new-0122",
+     "play_sha256": "8a5e02048aa5d0020ff3e84a08179b74b08e42a88e9eb5869eddc7025940ef3e",
+     "prediction_sha256": "f4c9ca9742b0e2c943ef73dcf7591561b31e6d389f8cf4b1acdbf8c56cbf7846"
+    },
+    {
+     "position_id": "new-0131",
+     "play_sha256": "adb98eaab960af0103a46484dd7c2dd1eb2d10d700bf8be011f72bb321f752e6",
+     "prediction_sha256": "fd2d693f761e523cf5ceba8de9b35b91a1ef866ee7f9f6cb37cfbea3ec9b2fab"
+    },
+    {
+     "position_id": "new-0147",
+     "play_sha256": "edf720fcf8d1a9263d702a203b2894ccf0c3dfce3532f369728c9707cbec4e2e",
+     "prediction_sha256": "32d9f0e63f84d9b2b1352b1b45d499f92c4a2fde610d7df4c68c6d50b175ca99"
+    },
+    {
+     "position_id": "new-0149",
+     "play_sha256": "f03edecb8e9cb6e498bfe18a9c404eda6916b31bf3789128643c533dd31e26e4",
+     "prediction_sha256": "0ec4a7b170161cdd50d434c72b548906ae326f5384b767fb219d8b2a1ded249b"
+    },
+    {
+     "position_id": "new-0155",
+     "play_sha256": "80abd4a3eaf58398464fd42a64600d91b9cb576e7a689a0612f25fbe5fc577b7",
+     "prediction_sha256": "7ac9b037b744c8d206a64e1fb6974a42a471d1d331c3ad2cbef23ad52db36a93"
+    },
+    {
+     "position_id": "new-0156",
+     "play_sha256": "925ff50aa6c077bebb1a9d8846adff32aaeeaf390bfe98e0c333f99bb1f886b3",
+     "prediction_sha256": "2af614be23d6625b435a569ab5b6d98ce41c2b7e29354073e4cea4d46d0fa8d3"
+    },
+    {
+     "position_id": "new-0160",
+     "play_sha256": "58c8a4783b03023f6c6fdd6aff2675079e6c7d8642728d9aeea4f22029de49dd",
+     "prediction_sha256": "8fbe97fd71ed24ed4c52e08246b9126e083e844530af7e5343ce1bd63c725293"
+    },
+    {
+     "position_id": "new-0165",
+     "play_sha256": "9dc9c035648e6b24af48ac6460fdc45c2abcb905f668ae3cfa8a3a58ff235a86",
+     "prediction_sha256": "10c6cf816f6797d52835d3efd3ecd5045ae53cb6d0b52e0ab4c617f17a84dd43"
+    },
+    {
+     "position_id": "new-0175",
+     "play_sha256": "b3ce062bf1b9ff74481634254542a0b0f3339cb785fe4fdf21d182d4b13f6023",
+     "prediction_sha256": "97fbf8332366096c986fe9797d0d32074bf6586d48d748b37937db0733338a65"
+    },
+    {
+     "position_id": "new-0188",
+     "play_sha256": "84daf5f9b9b4b4796b1e86955f0789c4d7e3de56cc31575812a51bb2ce186097",
+     "prediction_sha256": "86bac7af4f324ac71342e15730213981f0c2fcd13dfd631f40fe0511cd42c13f"
+    },
+    {
+     "position_id": "new-0190",
+     "play_sha256": "27fddbeeddfa28a05f2661ad21a03d2fedee4e589bd798db5fb10e17c276a79f",
+     "prediction_sha256": "0e2bce3d228b19f34e70c4cb65382d6c176a9a8a1ecd4f116b0d88409bcbbef3"
+    },
+    {
+     "position_id": "new-0200",
+     "play_sha256": "1f939cde4388f642ce2496e83ab95f8a400d23ffd4931bc10c1a4bc5ad3ab146",
+     "prediction_sha256": "e247d25087292f77439461d50f350a87259c2c07c1ddc34758556e4b4893272a"
+    },
+    {
+     "position_id": "new-0237",
+     "play_sha256": "f55c5e92061f644c39186ab3aea9218ceacbcfdf7fa2850211ff5f66084692e6",
+     "prediction_sha256": "65650cdd8413c9e4b2d482349de3fcd869a6b7901e233fb8d2811eb35c770ca3"
+    },
+    {
+     "position_id": "new-0239",
+     "play_sha256": "457f6e8a7998268635754f6b67dee15dff2f9b02ac96bb820f592def440c1983",
+     "prediction_sha256": "710d669010c4cbbeccd5c823b858fec26d7a56c2369981079ced0e1792330fbe"
+    },
+    {
+     "position_id": "new-0244",
+     "play_sha256": "f5f28502f392a819021f9a505e7810d1427279c4bdafbad902de0c9bed8b17cf",
+     "prediction_sha256": "335bfd8aee64e060d9d2bae7a69ae77a91942e78c1bfe84b1d8e7a0b9f3d7bc4"
+    },
+    {
+     "position_id": "new-0249",
+     "play_sha256": "68aaf7f26fbf3f306c69626cbcd14062a541acaafbda2778e857431fd1133cc8",
+     "prediction_sha256": "a4c9da65a40d2e823a1772c71b91c848fbe5d24076a8d577c550700d26e5fbd1"
+    },
+    {
+     "position_id": "new-0250",
+     "play_sha256": "95b579fcb06905f49718e173fcf233b41a3aba3eebe77f1f00f9d959bbd38d72",
+     "prediction_sha256": "8a64a8ac2e3696653a8759a495f021cfe114547d1770efb1c495b97f1a60fe5c"
+    },
+    {
+     "position_id": "new-0254",
+     "play_sha256": "32bbefe655398420a2c1cc80e18de6c36b500b4e89138bd6be0f56706f120bf6",
+     "prediction_sha256": "40ab6e5e2f14372199a7d2af5a9df37bc5617e65184de3f8ae9e6e39813a9b52"
+    },
+    {
+     "position_id": "new-0256",
+     "play_sha256": "a761592c27d9ba053ba34a910715eb28e87c5d0264faaae40d0225ecf6329786",
+     "prediction_sha256": "1ddc2aea4ffbe9c86e3b5398a3eec36f2b84d6bd94f7ef0f1f3c707c043b6c64"
+    },
+    {
+     "position_id": "new-0263",
+     "play_sha256": "45eacf2bcc9c8693c19d06e81cc6618d97dc18550d8efc4be5b19404ef0d586e",
+     "prediction_sha256": "23970c84fdcb358a974498e73caf7c8eeda57ed1055ed00dbcf2a1ba682b2142"
+    },
+    {
+     "position_id": "new-0264",
+     "play_sha256": "c7d050a1155881266dc0cad70c97dcefd7df31ea52c411186bde7b46ee32615e",
+     "prediction_sha256": "186c7082c7ed3c89df2dc324ca503dbd76ea05dc8c8a9b934c2c038d1c2eb496"
+    },
+    {
+     "position_id": "new-0270",
+     "play_sha256": "c85c5dc0e02752ebb3452eb20bd0aecab0fb9da6dfa0cd12ca341ce454439e0f",
+     "prediction_sha256": "8b435ac6c793854b7b4cfbf70acd9fcb68e411e9af793310ffba4c08cb5e2e74"
+    },
+    {
+     "position_id": "new-0274",
+     "play_sha256": "39a9ea01dec63607643b14866da338ff8eb7e099914491ca702853a9bc683d7a",
+     "prediction_sha256": "88c6a6220290a25feef99a5aa3430436b7c3edd291de8db0e0ab5ccf72a32219"
+    },
+    {
+     "position_id": "new-0278",
+     "play_sha256": "0cc0483dd637f51cfc9c980ca3595f237a91fb1de2b353b27f365bde4768b778",
+     "prediction_sha256": "a465e3379319e314e96aa6cc375aa0091e827c7fac622a77ccfb47f2145d931a"
+    },
+    {
+     "position_id": "new-0281",
+     "play_sha256": "ade1b3fee2b1e4a745a6bce86ba770694928b6181182620f82ddd825454ab99e",
+     "prediction_sha256": "1a49e0e39fd47d283016d398fb533e1af2c0bf6197f762d687d0360fba24cf1d"
+    },
+    {
+     "position_id": "new-0297",
+     "play_sha256": "5b91e45970fa4c238ca941ea9ae105783d1b7d27397138d34be8a58cc5da36f9",
+     "prediction_sha256": "e286b79de6b1294f93567762031abdf3788e4031432d6cc145a7d6e04e822907"
+    },
+    {
+     "position_id": "new-0307",
+     "play_sha256": "bb3059467c2008dfa892c851c06b8902e169ea92225107170e82696a4baad4c8",
+     "prediction_sha256": "f1dd114a7f254654cd2c95d5cd64a3c6c1b9390a88a6629d00e8e3f8f0e02257"
+    },
+    {
+     "position_id": "new-0328",
+     "play_sha256": "bcdd76b6b8692ead6f6889cd2e7483396202b27621128aa3459cd881e83aff0e",
+     "prediction_sha256": "858b39fd5de2fc49f8c41d11024d8e376927b777aa3dca8f3706fa3705aae87a"
+    },
+    {
+     "position_id": "new-0329",
+     "play_sha256": "706b1dce8716abd61e7e20add965e851d49189623bc08759db5b698da4dc5147",
+     "prediction_sha256": "513a94f0323e14a5adc827b03ce2779cbb5c88372fca8723fc883db2c354fe44"
+    },
+    {
+     "position_id": "new-0330",
+     "play_sha256": "1d0382afd85c92721711d628eccaa82b01c7888d5d006bfcf245ac1eb91f39c1",
+     "prediction_sha256": "efa33ddbfa5e8b35b7b093f19f1aa7ece6bfebae60fa8c0c2e7c478a05675d47"
+    },
+    {
+     "position_id": "new-0331",
+     "play_sha256": "bdd875282cbf6ac16e8ab9383682e28967fa1480367a95178188d94f07293844",
+     "prediction_sha256": "4b31c03333457832e2c37ea67f4d690587ceefdd2c8dee55ae200970b1cbf3dc"
+    },
+    {
+     "position_id": "new-0337",
+     "play_sha256": "cd504ae5560176d9a07e456ac2e4e9d28a1fc7c2694c81643b46212b1530be9c",
+     "prediction_sha256": "a5f34e05d2cf2f8e0247ccaf01f16887efc0bb0fd56241ee98acad14dbba262f"
+    },
+    {
+     "position_id": "new-0344",
+     "play_sha256": "532901df792466c34e6ec94bbec837364be0bdd62b887cbb2b20b2ecc105e275",
+     "prediction_sha256": "50c73e40010301e410f89ec1926851ee94b744d43f6078a6f1ad0e64311bacb6"
+    },
+    {
+     "position_id": "new-0349",
+     "play_sha256": "c5e48f2fc729ea47a9ba73e4a4f6b7e9c3fb4aa9b5d65bcbd90feddbbcecb4bd",
+     "prediction_sha256": "ae9a81a9801b1b0882f36826bad38bec9059d83de0563f45d93c9ae1fc615bee"
+    },
+    {
+     "position_id": "new-0353",
+     "play_sha256": "7c4fd6ee68c46a9ac007f1ba1fb192dea116a16291616f4dfc5d29f425e7ffc0",
+     "prediction_sha256": "faae905a26935cc6a60447e264ba2bc0bc2cb75f3a1fa267245dff83caaa2e18"
+    },
+    {
+     "position_id": "new-0356",
+     "play_sha256": "9f8ac1fa25312ab617f80c16cc7f3eb222a52c8c015caf0b9279e74ca977cff2",
+     "prediction_sha256": "9453554f4e929f2225487f3a1a1a5f86c0848b0603153e5b972535a32a59f3de"
+    },
+    {
+     "position_id": "new-0361",
+     "play_sha256": "e02093c846ceb38566c40fdc627360bc0b60f16cd02ec381c382e7a411d40e02",
+     "prediction_sha256": "d3967fb8520727a456ea7333baec4b1a41413a4c88028c3fe34bc4bc481e0705"
+    },
+    {
+     "position_id": "new-0362",
+     "play_sha256": "334add9b3522b8e728cc42a343d3dacbaf08b026b9a50d7071b46d8034aca29c",
+     "prediction_sha256": "4be0b9ba42371b1b1b273dab418dbaab07dbb5eb489990ef63d85fcb711e4922"
+    },
+    {
+     "position_id": "new-0371",
+     "play_sha256": "33b046c1e8a19e66207fb07e5b3099b83e369e1f79a80e412de44ed35042027c",
+     "prediction_sha256": "386eb214354bdc11938e2d84c8b18f641608e7df8691f86f25bc16b35a44d2e1"
+    },
+    {
+     "position_id": "new-0377",
+     "play_sha256": "d3001c10c4faeec5317f355e9af579b6cde90610c6640f7911b3d520ae8539f6",
+     "prediction_sha256": "d250f12c1733bb91ebd2e505c58e862aac5ea6d6351e377df1dada807a7cbebb"
+    },
+    {
+     "position_id": "new-0383",
+     "play_sha256": "eadb4d47d99a79a8d7ae1dfb7c72c2a6bb1c12786bc47bf2689d9b19dabd5e29",
+     "prediction_sha256": "f97114248adb45da88d77bd3a216327e32ad4d908769fdb0d8a9b7fe7b3a96b7"
+    },
+    {
+     "position_id": "new-0385",
+     "play_sha256": "6f94f7b7918223c3dc1cffafcb44cf8585975db6d448504d1cc302ad29d93220",
+     "prediction_sha256": "dcea0634bdc7519822bcf0331baa3a8530cae22a7e322011ef7ac5101141bf7f"
+    },
+    {
+     "position_id": "new-0388",
+     "play_sha256": "88b1c7858b7015436da692c094c3078b61b74f60649d3ee3632069f3220827dd",
+     "prediction_sha256": "683c2e742f09a93fa92411007e5d1c137e08ce48d7a70f0cb8ead9a141f1cb46"
+    },
+    {
+     "position_id": "new-0410",
+     "play_sha256": "ecc9912ded43830062e3bdcb3cb5e41edab7fd91e8a97767dd045f025c7f6069",
+     "prediction_sha256": "633b5779b4e7756f2ee37088c177f1629b5e03ca45e69601778f20772abd0a90"
+    },
+    {
+     "position_id": "new-0413",
+     "play_sha256": "f4d255d6a1d1dd3e1368bb2bcd8c558f912b4fbc71e747f266ff3e9ed33d626b",
+     "prediction_sha256": "e077a2dfc99364ea388bc42a0e7b0621cf76f0a0ec450d6cea653a1fd5bd3e52"
+    },
+    {
+     "position_id": "new-0422",
+     "play_sha256": "fa5d2ffb0379bce978227987e0445c5bd130176191dad6275d2e7843c93e4d03",
+     "prediction_sha256": "5a08325edee2c9dc4a291ed5c750f13ba4bd49528604276e2fa45ba6d6707c04"
+    },
+    {
+     "position_id": "new-0430",
+     "play_sha256": "fb001c18e00d1ebe16f0429519646d0c89459eb9239bbdafa2a023efdd7a4c6d",
+     "prediction_sha256": "8638196495775c35af61fdf1f8d707f4605a178698a41680d3476b4d847ba595"
+    },
+    {
+     "position_id": "new-0447",
+     "play_sha256": "b18db04202ebd2fd3311f57774c1799bc3ed5090e55d1474e8d678fa0ae04a62",
+     "prediction_sha256": "9391f0ea36a6c1e09b8c21d91d696da5c67ff0f6c1e22f5a8653b32caf35f358"
+    },
+    {
+     "position_id": "new-0459",
+     "play_sha256": "78043c76814718be3eeb5a4f0640ad12731cd0aec1cf59935896b56d48444019",
+     "prediction_sha256": "3c871bc2a59d425b90885bd6a4a5600864fd51e61d3e653513f28781bbcf428b"
+    },
+    {
+     "position_id": "new-0465",
+     "play_sha256": "34d318c4e56b5ea06375511251f40a6da0126cb393d4ed2f18188b4f436b610b",
+     "prediction_sha256": "1d4c3c09b6547b811096956976bbc721c7bde8f7fd5e1482a21957d5e2a8ce67"
+    },
+    {
+     "position_id": "new-0467",
+     "play_sha256": "6a7e9d7dee47674b866b85fe4e497219c7174d37e3ba1faa1763ee4392fd5d0c",
+     "prediction_sha256": "ab550fb87c4e00ff7056c2e69e7347600c258f4f4eae95d86a0c27b971edec50"
+    },
+    {
+     "position_id": "new-0469",
+     "play_sha256": "97dda715876709d3d478fe73eaab0c6c3847bf14dde41033a0916d4d8f6718df",
+     "prediction_sha256": "37133e8f9b236f9d8858aa1945f959168dfe9cce24e295b9f46a8ee4bebfe3c2"
+    },
+    {
+     "position_id": "new-0474",
+     "play_sha256": "388f0a13cf938771ec06f9cd16496bab488631865bbf55a346b8459381597c91",
+     "prediction_sha256": "2a9e3f4ccd359ee31227742178354db4b1f00fc4425798221fb5a7c2613058d0"
+    },
+    {
+     "position_id": "new-0494",
+     "play_sha256": "b107d707ad80526fe51ed3e6ad15cf84db93d07721a532efa0eb947d2ad1fed7",
+     "prediction_sha256": "65ba90c55569269f8e28d94cbbd04ef1c6ba7bd797676d2c81ce7a453867998c"
+    },
+    {
+     "position_id": "new-0511",
+     "play_sha256": "22684e97808544f365f99f7217317cb7fea7d08241b42f1ca82f6331b3eed030",
+     "prediction_sha256": "8f800fd37b9dc314551f925fa1db88989960d6ca651177f649f238c961974186"
+    },
+    {
+     "position_id": "new-0513",
+     "play_sha256": "9f3cfd4fbda1b5e0bb28f38d21b8d24d54ff557a2d1879c9a05784b46dde8da0",
+     "prediction_sha256": "70dccee253b44ccf602f350c7e757938120696d44eb08141d79d1e53ed0d0769"
+    },
+    {
+     "position_id": "new-0518",
+     "play_sha256": "d2a671afff9216dfbe2650cfbf51d0186657278ee5d76c59571cbdf749e97ca8",
+     "prediction_sha256": "fcd1ceb4ccf6bf96639cc2dde50a1a6ab9097badaea7bdafd689e2b7624c5629"
+    },
+    {
+     "position_id": "new-0525",
+     "play_sha256": "b4bc6d65280bfb1facdfbc3f17206b1ac6dafff96c4328e06984da18cd9b9684",
+     "prediction_sha256": "9398145b22f0faa7d5d5cd9bf34b3c381370863fd7d0ac84f7f2ef86fb5ac9e0"
+    },
+    {
+     "position_id": "new-0529",
+     "play_sha256": "9b948a803965831c8f7d9c9efc8b56608a07a8579d61acaddd454f9d9a7f7abe",
+     "prediction_sha256": "aa2154bac1d05cf02e365730142eaac684b872e8cd18e0a2e5729210e926c0a6"
+    },
+    {
+     "position_id": "new-0532",
+     "play_sha256": "7866d3bc55fad0232ce9651478ed47917a1b3d59ec41b6ac748531a8b552885a",
+     "prediction_sha256": "e3068d262933f300c4322a3f4b76cfe5f671311e0ca9589c32feb06efb30ec9a"
+    },
+    {
+     "position_id": "new-0537",
+     "play_sha256": "163865478c63f18276e817d010431e6f66bed0f1725f0619706d6eb406152a8e",
+     "prediction_sha256": "70e7c98cd9b05ab27f3cfd5563a1cc3a13437a01c4b6b588dd7467142398d4ba"
+    },
+    {
+     "position_id": "new-0546",
+     "play_sha256": "5f1a5798f0832122601c47b7aedcea366dc8242e01a78bba285e846fa11e0004",
+     "prediction_sha256": "e5b4b256595c4cff999e08d4449ffa88414b10a3e4aaeaaa5a80eb3480e44afb"
+    },
+    {
+     "position_id": "new-0550",
+     "play_sha256": "99994487a68ad78887c03f5d25939ee3a6c59bdd2df15306df997d61d894c1dc",
+     "prediction_sha256": "3f900e7e0e58c59c58aabb00bfc6cb4925f4d63a9e12acff4065526a95b26f75"
+    },
+    {
+     "position_id": "new-0554",
+     "play_sha256": "17ad1d03842fc42abb45fe1f38c1c20f28e8a0e6ba960eb86054d686c55eb226",
+     "prediction_sha256": "42eaa61f26f5a31823dd9103229bf840fdb7681f3c17f74504f1cdc5d1b3791f"
+    },
+    {
+     "position_id": "new-0562",
+     "play_sha256": "0e3035e093407685218daf9f162cedf299e14e2c9a8a2a0d80bed56f42b175be",
+     "prediction_sha256": "c1174ad63052d09f27035d31c29172613410588c216f2ba681a4a48d6d6f991e"
+    },
+    {
+     "position_id": "new-0564",
+     "play_sha256": "ffbc843dce539f553fa374a96cd5efaf978e8784c5ef54687fd2bb044e172e8e",
+     "prediction_sha256": "df011bd004deab9e36c06da4c515f6124b75cd078afa25a5dd3d89f88eb500fc"
+    },
+    {
+     "position_id": "new-0572",
+     "play_sha256": "b05b55ade8396bd1d730aaf59c7e7c76f305cac994f8142b0186d5742db2692f",
+     "prediction_sha256": "2dbc83938490f7bfd16d4d58fd4536db2c2f39eeb4c521db65a97551a54e4ee5"
+    },
+    {
+     "position_id": "new-0575",
+     "play_sha256": "76d4bf07ba9cbc9faf30f0dc01c154d4b9a5a8aa2a84d636ffa25dc788021cda",
+     "prediction_sha256": "945da743f85a8bd36a57c6650882d447f704c5ca243d7db09b9dac06647fd286"
+    },
+    {
+     "position_id": "new-0582",
+     "play_sha256": "979821ae34eec6c655ef4753703df6d064dd693a07bfee090a88dbd40dbcebbb",
+     "prediction_sha256": "c05a847e3c258fc729217746ac5e703f63763cd3fec39b7a8acd124eaa7ac0f1"
+    },
+    {
+     "position_id": "new-0588",
+     "play_sha256": "77b8b0d5140e1dd5c313c07e86d0961dff0b28d093d06630a621ab09eb361aef",
+     "prediction_sha256": "64bac662bc70aacb3a3d5be13bde541f4bfb0f943f180d00e0cd5ccd0c0768c0"
+    },
+    {
+     "position_id": "new-0591",
+     "play_sha256": "8327ec2b660bbd8b5c02449b0f0a4951bc46e3ca22ff455a66ca451e582cf544",
+     "prediction_sha256": "bf1d25b86c12f444869c102c0cbc5f2e591615baeb53cbea5227132d5b940def"
+    },
+    {
+     "position_id": "new-0593",
+     "play_sha256": "f643f9e9301c6b66913b98a5ea3eebc37ecd78625e2c6b04baa480acade749ed",
+     "prediction_sha256": "baf42fa1925583d71d105d4a2180815c22986de9dade536a45e31b416ea6d5c2"
+    },
+    {
+     "position_id": "new-0598",
+     "play_sha256": "fe148e34283e000d3f92c4714e33add6ca8aab152e661b78be4968ad0a1a8901",
+     "prediction_sha256": "3089578b0be294fc1db616ddd7bee48a121cd2746e08636edf4b48adb97cb6fd"
+    },
+    {
+     "position_id": "new-0618",
+     "play_sha256": "0d040e46da26f34d9f41458295ed514793c0577f565fd86ec3c9741c39f554d5",
+     "prediction_sha256": "737920f0493f2501c2f58d6eca04a425fb35dde33f9d3f9b2d779f82e3e20267"
+    },
+    {
+     "position_id": "new-0626",
+     "play_sha256": "76edfbb7f967f8682e096d412f9eaef0d4210e61e8bc228f0ac61b428fd428c1",
+     "prediction_sha256": "62f76cc0a2666ecc365bc9019dff3ebfa6d76b5e7fc9ef49a1f00936d98fa138"
+    },
+    {
+     "position_id": "new-0679",
+     "play_sha256": "51e7737c933f41495f54fce38bf116266099f2508d59b8180c191e3fba422e79",
+     "prediction_sha256": "3ce02f5cfb722fbb584c97a07e0f16630a15414dceaf695acd7e2a233d0f35ca"
+    },
+    {
+     "position_id": "new-0706",
+     "play_sha256": "3a06b5d2dc34b12cc5d2345201c4e5ad8cefe336b1c88c8cc65f20239dca12c3",
+     "prediction_sha256": "b2da0b1d845f2c25756006921eb8c32f9bbaf9d3e7e29fd7525bb40a0d684cc3"
+    },
+    {
+     "position_id": "new-0801",
+     "play_sha256": "8d4683b093161d67c6cc7e661106b0fa6fb566842c7b2469509a0a74e43ca087",
+     "prediction_sha256": "38c98246c88987c06c70d270a6d8c3d9af3923dd09f6c6014aaf025fa3852cbf"
+    },
+    {
+     "position_id": "new-0814",
+     "play_sha256": "93de20254078d61e13b8a6ae17aa4a5f6506c29a1ee6229608f8b81754c22f99",
+     "prediction_sha256": "9d7a785883ef2c8dfba0783d552027a3aeb8c57f274fcbf53e54a0e9c0ca3ea0"
+    },
+    {
+     "position_id": "new-0919",
+     "play_sha256": "a3447632107e9415cf809637d70516665afdf6dfba713e90f6a2dc5e1bb89f17",
+     "prediction_sha256": "d3d153d01ce3dee7941e25a38941fd9a825fa0d8b137c5908f6eb93ddefd6c94"
+    },
+    {
+     "position_id": "new-0999",
+     "play_sha256": "a5a63a508896e44b013d4a7fc333431a7bb910b03d7989371472d48a726e3cd8",
+     "prediction_sha256": "2756f55c27a95de985e8fcd0edcc2e4a718e1fada8497d2259937fb24ef5ac1c"
+    }
+   ],
+   "prediction_hashes_sha256": "607cf6523efd8b2514db66c2c3945ac2ec2a9c29cceae290fa93f22156957d6b",
+   "play_hashes_sha256": "f0813b57fa86b40b70b93b98da11964a72e969c8c10e32155d49d620813ffdaf"
+  }
+ }
+}

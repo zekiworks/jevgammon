@@ -1,4 +1,5 @@
 {
+ "status": "SUPERSEDED 2026-10-25 by freeze/close-choices-b-v2-requests-r2.json (neutral prediction system prompt, Method \u00a79.13); never sent.",
  "set": "close-choices-b-v2 rendered requests (offline; no request was sent)",
  "rendered_at": "2026-10-25T08:57:59Z",
  "harness_commit": "ef991abd199dfde18846c55fe81f759286511f25",

@@ -12,7 +12,8 @@ positions/build-log.json and the play-order re-run from replay.db (both through 
 import json
 import re
 
-from common import (CONTENT, EARLIER, EARLIER_NOTE, NA, NOT_MEASURED, PENDING, PROVISIONAL, PUBLISHED, SPEC, TOO_FEW, esc,
+from common import (CLOSE_B_SCOPE_NOTE, CONTENT, EARLIER, EARLIER_NOTE, NA, NOT_MEASURED, PENDING, PROVISIONAL, PUBLISHED,
+                    SPEC, TOO_FEW, esc,
                     fmt, status_badge)
 
 ARCHIVE = CONTENT / "archive"
@@ -617,11 +618,11 @@ def _close(t: dict) -> str:
     """Close choices (Method spec 2026-10-24 §9), defined once here."""
     c = _load("close_choices_2026-10-24.json")
     b = c["stage_b"]
+    r = _load("close_choices_b_results.json")
+    status = f'{r["title"]}, results published. Gemma 4 31B (on) stopped, not reported.'
     return _section("close-choices", "Close choices", f"""
-<p class="note"><strong>Stage A: results published (Confidence tab, model pages, Every decision filter). Stage B:
-  the 5 subscription teams are done (2026-10-25, 10:23–11:02 UTC). Gemma 4 31B (on), on its League 2 server: interrupted
-  by reboots of its server at about 11:46 UTC (after 100 predictions and 23 of 500 play calls) and about 12:20 UTC (45 of 500
-  play calls stored); the 455 play calls never stored are being completed in a third session (approved by Can, 2026-10-25). Changed teams after the ladder settles.</strong></p>
+<p class="note"><strong>Stage A: results published (Confidence tab, model pages, Every decision filter). {esc(status)}
+  (<a href="../#close-choices-stage-b">home page, {esc(r["title"])}</a>).</strong></p>
 <p><strong>{esc(c["definition"])}</strong> {esc(c["label"])} The rules below were fixed and committed on
   {esc(c["fixed_on"][:10])} before any close-choice number was computed. Inspired by <a href="https://arxiv.org/abs/2610.21006">"Can LLMs Anticipate Their
   Cruxes?"</a>. They describe the probabilities a setup gave; they say nothing about how it reasoned or why it chose.</p>
@@ -654,12 +655,11 @@ def _close(t: dict) -> str:
     or ranked by it. Shares come with count and denominator; under {_value(c["small_group_below"])} decisions they are
     marked.</li>
 </ul>
-{_h3("close-choices-b", "Stage B: does a setup know where it hesitates? (running)")}
-<p>The 5 subscription teams are done (2026-10-25, 10:23–11:02 UTC). Gemma 4 31B (on), on its League 2 server: interrupted
-  by reboots of its server at about 11:46 UTC (after 100 predictions and 23 of 500 play calls) and about 12:20 UTC (45 of 500
-  play calls stored); the 455 play calls never stored are being completed in a third session (approved by Can, 2026-10-25). Changed teams after the ladder settles. Results
-  are published after the run is complete. The positions and the scoring rules were fixed on 2026-10-24, before
-  any stage B call; the run conditions below on 2026-10-25.</p>
+{_h3("close-choices-b", f"{esc(r['title'])}: does a setup know where it hesitates?")}
+<p>{esc(status)} The {len(r["complete"])} subscription teams ran on 2026-10-25, 10:23–11:02 UTC; their results are on the
+  <a href="../#close-choices-stage-b">home page</a>. <strong>Scope.</strong> {esc(CLOSE_B_SCOPE_NOTE)} (Ümit's decision,
+  2026-10-25, 16:05 UTC.) The positions and the scoring rules were fixed on 2026-10-24, before any stage B call; the run
+  conditions below on 2026-10-25.</p>
 <ul>
   <li><strong>Positions.</strong> {_value(b["positions"])} positions from the new half of the shared standard set, by
     risk class at the {_value(c["margins"][0])} margin: 40 Risk pays, 40 Safety pays and 20 No trade-off, spread over the
@@ -683,7 +683,7 @@ def _close(t: dict) -> str:
   <li><strong>Baseline.</strong> The predictions shuffled across positions within the same setup and phase,
     {_value(b["baseline_shuffles"])} seeded shuffles, scored the same way.</li>
   <li><strong>Limits.</strong> {_value(b["repeats"])} repeats are not a measure of a model's whole behaviour. Stage B
-    results go on the site separately, after the experiment is complete.</li>
+    results are shown separately from stage A, per team against its own baseline, never as a ranking.</li>
 </ul>""")
 
 

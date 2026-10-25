@@ -18,6 +18,10 @@ PUBLISHED, PROVISIONAL, EARLIER, PENDING, NOT_MEASURED, NA = (
     "Published", "Provisional", "Earlier version", "Analysis pending", "Not measured", "N/A")
 TOO_FEW = "Too few decisions"
 PROVISIONAL_NOTE = "Provisional: league still running"
+# Close choices, stage B: scope note (Ümit, 2026-10-25; Method spec 2026-10-24 §9.13 addendum of 16:05 UTC), verbatim on
+# the home page and the Method page.
+CLOSE_B_SCOPE_NOTE = ("Gemma 4 31B (on) was started but not completed: two reboots and a GPU fault interrupted it, and it "
+                      "was stopped after 311 of 500 play calls on 2026-10-25. Its partial data is not reported.")
 EARLIER_NOTE = ("Earlier version: plays were listed in the runner's order, which tends to put the best play early.")
 
 # B7 publishing rule: no internal hostnames, IP addresses, ports, server paths, keys, tokens or request headers in any

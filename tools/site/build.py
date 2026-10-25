@@ -134,6 +134,7 @@ def compute(args) -> dict:
                 disagreements=A.disagreements(v1)),
         smoke=smoke, shared=shared, thresholds=THRESHOLDS, counts=counts, hypothesis=hypothesis,
         close_spec=dict(fixed_on=CC.CC["fixed_on"], definition=CC.DEFINITION, label=CC.LABEL), _close=close_records,
+        close_b=json.loads((CONTENT / "close_choices_b_results.json").read_text()),
         status=json.loads((CONTENT / "analysis_status.json").read_text()),
         human_scale=json.loads((CONTENT / "human_scale.json").read_text()),
         _v1_raw=v1, _state=state)
@@ -212,6 +213,8 @@ def write_data(S: dict, out: Path) -> None:
     write_json(out, "data/v3/shared.json", dict(version="v3", status=PENDING, **S["shared"]))
     # Reviewed brief of 24 Oct 2026, item 5A: the recorded hypothesis, tested across setups of all leagues (ranks only).
     write_json(out, "data/v3/offline-hypothesis.json", dict(version="v3", label=O.REREAD_LABEL, **S["hypothesis"]))
+    # Close choices, stage B (Method spec 2026-10-24 §9.9-9.13): aggregates per complete team; pending teams by name only.
+    write_json(out, "data/v3/close-choices-b.json", dict(version="v3", **S["close_b"]))
     write_json(out, "data/smoke/part-a.json", dict(dataset="smoke-part-a", status="Smoke test", rows=S["smoke"]))
     write_json(out, "data/setups.json", dict(setups=[v for v in S["setups_meta"].values()]))
     write_json(out, "data/thresholds.json", S["thresholds"])

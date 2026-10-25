@@ -5,10 +5,11 @@ that the page loads when the Phase filter changes, so the page itself stays smal
 
 import json
 import math
+import textwrap
 
 import analysis as A
 import pages as P
-from common import NA, NOT_MEASURED, PENDING, PROVISIONAL, PROVISIONAL_NOTE, TOO_FEW, count, esc, fmt, nm, pct, status_badge
+from common import CLOSE_B_SCOPE_NOTE, NA, NOT_MEASURED, PENDING, PROVISIONAL, PROVISIONAL_NOTE, TOO_FEW, count, esc, fmt, nm, pct, status_badge
 
 TABS = [("risk", "Risk"), ("quality", "Quality"), ("confidence", "Confidence"), ("reasoning", "Reasoning"),
         ("cost", "Cost"), ("stability", "Stability")]
@@ -1125,6 +1126,136 @@ def pays_section(S) -> str:
             f'<figure class="chart-card" data-chart-panel>{chart}<p class="table-note">{esc(LIMIT_HIT)} {esc(LIMIT_PAIRED)}</p></figure></section>')
 
 
+# --- Close choices, stage B (Method spec 2026-10-24 §9.9-9.13): repeated answers, its own section --------------------
+
+CCB_VS = {"above": "above the baseline range", "within": "inside the baseline range: not clearly above it",
+          "below": "below the baseline range"}
+CCB_SHORT = {"above": "above", "within": "inside", "below": "below"}
+CCB_SUBTITLE = "Close choices: does a setup know where it hesitates?"
+CCB_RANKING = ("Not a ranking: each team is compared with its own shuffled baseline, never with another team. Rows are in "
+               "fixed alphabetical order and the table cannot be sorted.")
+
+
+def ccb_cells(B) -> dict:
+    """The published value of every cell of a team's row, keyed as in the table (close_choices_b_verify.py reads these
+    keys back from the page)."""
+    out = {}
+    for t in B["complete"]:
+        e, o = t["primary_exact"], t["secondary_overlap"]
+        out[t["team"]] = dict(
+            scored=count(t["scored"]), exact=fmt(e["observed"], 2),
+            exact_baseline=f'{fmt(e["baseline_mean"], 3)} [{fmt(e["baseline_lo"], 2)}, {fmt(e["baseline_hi"], 2)}]',
+            exact_p=fmt(e["p"], 3), exact_vs=CCB_VS[e["vs_baseline"]], overlap=fmt(o["observed"], 3),
+            overlap_baseline=f'{fmt(o["baseline_mean"], 3)} [{fmt(o["baseline_lo"], 3)}, {fmt(o["baseline_hi"], 3)}]',
+            overlap_p=fmt(o["p"], 3), overlap_vs=CCB_VS[o["vs_baseline"]], same_play=count(t["same_play"]),
+            changed_same_features=count(t["changed_same_features"]), observed_nonempty=count(t["observed_nonempty"]),
+            predicted_size_mean=fmt(t["predicted_size_mean"], 2),
+            excluded="; ".join(f"{r}: {count(n)}" for r, n in t["excluded"].items()) or "none")
+    return out
+
+
+CCB_COLS = [("scored", "Positions scored"), ("exact", "Exact agreement (primary score)"),
+            ("exact_baseline", "Shuffled baseline, mean [2.5\u201397.5%]"), ("exact_p", "p"),
+            ("exact_vs", "Exact agreement against its baseline"), ("overlap", "Partial overlap (secondary score)"),
+            ("overlap_baseline", "Shuffled baseline, mean [2.5\u201397.5%]"), ("overlap_p", "p"),
+            ("overlap_vs", "Partial overlap against its baseline"), ("same_play", "Same play in all 5 answers"),
+            ("changed_same_features", "Play changed, features identical"),
+            ("observed_nonempty", "Positions where a feature changed"),
+            ("predicted_size_mean", "Features predicted per position, mean"), ("excluded", "Left out, by reason")]
+
+
+CCB_TEXT = {"exact_vs", "overlap_vs", "excluded"}
+
+
+def close_b_chart(B) -> str:
+    """Per team: exact agreement (dot) against its own shuffled baseline (band 2.5-97.5%, tick at the mean); rows in the
+    table's fixed alphabetical order."""
+    W, LW, TOP, RH = 640, 210, 22, 34
+    rows = B["complete"]
+    cells = ccb_cells(B)
+    top = max([max(t["primary_exact"]["baseline_hi"], t["primary_exact"]["observed"]) for t in rows] or [0.1])
+    axis = math.ceil(top * 10 + 1e-9) / 10
+    x = lambda v: LW + (W - LW - 70) * v / axis
+    ticks = [axis * k / 4 for k in range(5)]
+    parts = [f'<line class="grid" x1="{x(t):.1f}" x2="{x(t):.1f}" y1="{TOP - 4}" y2="{TOP + len(rows) * RH}"/>'
+             f'<text class="muted" x="{x(t):.1f}" y="12" text-anchor="middle">{fmt(t, 2)}</text>' for t in ticks]
+    for i, t in enumerate(rows):
+        e, c = t["primary_exact"], cells[t["team"]]
+        tip = f'{t["team"]}: exact agreement {c["exact"]}; shuffled baseline {c["exact_baseline"]}; p {c["exact_p"]}; {c["exact_vs"]}'
+        parts.append(
+            f'<g class="ccb-row" transform="translate(0 {TOP + i * RH})" data-team="{esc(t["team"])}" data-observed="{e["observed"]}" '
+            f'data-baseline-mean="{e["baseline_mean"]}" data-baseline-lo="{e["baseline_lo"]}" data-baseline-hi="{e["baseline_hi"]}">'
+            f'<title>{esc(tip)}</title>' + _label(t["team"], f'p {c["exact_p"]}, {CCB_SHORT[e["vs_baseline"]]} the range', LW)
+            + f'<rect class="ccb-band" x="{x(e["baseline_lo"]):.1f}" y="9" width="{max(x(e["baseline_hi"]) - x(e["baseline_lo"]), 1):.1f}" height="14"/>'
+            f'<line class="ccb-mean" x1="{x(e["baseline_mean"]):.1f}" x2="{x(e["baseline_mean"]):.1f}" y1="6" y2="26"/>'
+            f'<circle class="ccb-dot ccb-{e["vs_baseline"]}" cx="{x(e["observed"]):.1f}" cy="16" r="5.5"/>'
+            f'<text x="{x(max(e["observed"], e["baseline_hi"])) + 9:.1f}" y="20">{c["exact"]}</text></g>')
+    H = TOP + len(rows) * RH + 6
+    note = " | ".join(" | ".join(textwrap.wrap(s, 110)) for s in (
+        f'{B["title"]}. {CCB_SUBTITLE}',
+        "Exact agreement (primary score) per team: dot = share of positions where the predicted feature set equals the "
+        "observed one; band = the team's own predictions shuffled within phase, 2.5\u201397.5%; tick = baseline mean.",
+        "Filled dot: above the band. Hollow dot: inside it, not clearly above the baseline (which does not make it equal "
+        "to the baseline).", CCB_RANKING, CLOSE_B_SCOPE_NOTE))
+    return (f'<svg class="chart-svg" data-chart="closeb" data-note="{esc(note)}" viewBox="0 0 {W} {H}" width="{W}" '
+            f'height="{H}" role="img" aria-label="{esc(B["title"])}: exact agreement against the shuffled baseline">'
+            + "".join(parts) + "</svg>")
+
+
+def close_b_section(S) -> str:
+    B = S["close_b"]
+    done = B["complete"]
+    head = [("Team and setting", " data-nosort"), ("Temperature", " data-nosort")] + [(l, " data-nosort") for _, l in CCB_COLS]
+    cells = ccb_cells(B)
+    rows = []
+    for t in done:
+        tp = t["temperature"]
+        temp = (f'known: {esc(tp["value"])}' if tp["known"] else "not disclosed") + f'<span class="small">{esc(tp["text"])}</span>'
+        rows.append(f'<tr data-team="{esc(t["team"])}"><th scope="row">{esc(t["team"])}<span class="small">{esc(t["setting"])}</span></th>'
+                    f'<td data-k="temperature">{temp}</td>'
+                    + "".join(f'<td{"" if k in CCB_TEXT else " class=num"} data-k="{k}">{esc(cells[t["team"]][k])}</td>'
+                              for k, _ in CCB_COLS) + "</tr>")
+    notes = [CCB_RANKING,
+             "A change, or no change, across five answers doesn't measure the model's whole behaviour.",
+             "Against its baseline: above the range = the observed mean is above the baseline's 97.5% point. Inside the "
+             "range = not clearly above the baseline; a result that is not significant is not evidence that the team "
+             "equals its baseline."]
+    if done and all(2 * t["observed_nonempty"] < t["scored"] for t in done):
+        lo, hi = min(t["same_play"] for t in done), max(t["same_play"] for t in done)
+        notes.append(f"Most positions have no changed feature: the five answers chose the same play ({count(lo)}\u2013"
+                     f"{count(hi)} positions per team), or changed play without changing a feature. So much of each score "
+                     "comes from predicting \u201cnone\u201d where the team does not hesitate.")
+    det = [t["team"] for t in done if t["deterministic"]]
+    notes.append(f'Deterministic on these positions (the same play in all five answers everywhere): {", ".join(det)}.' if det
+                 else "No team gave the same play in all five answers on every scored position.")
+    notes.append("Every team kept its league settings. Temperature: the value sent or the provider's documented default "
+                 "where known, otherwise not disclosed.")
+    return (f'<section class="card" id="close-choices-stage-b"><div class="section-head"><h2>{esc(B["title"])}</h2></div>'
+            f'<p class="subtitle-line"><strong>{esc(CCB_SUBTITLE)}</strong></p>'
+            f'<p class="note"><strong>Scope.</strong> {esc(CLOSE_B_SCOPE_NOTE)}</p>'
+            f'<p>Each team answered the same {count(B["positions"])} positions {count(B["repeats"])} times, and once more in '
+            f'a separate call naming the features it expects to differ between the plays it might choose (hitting risk, '
+            f'making a point, the race, the prime). Observed set: the features that differ between any of the '
+            f'{count(B["repeats"])} chosen plays. <strong>Primary score</strong>: exact agreement of the predicted set with '
+            f'the observed set. <strong>Secondary score</strong>, declared secondary: partial overlap of the two sets. '
+            f'Baseline: the team\'s own predictions shuffled within phase, {count(B["baseline_shuffles"])} seeded shuffles; '
+            f'p = the share of shuffles scoring at least the observed mean. Stage B asks again and looks at repeated '
+            f'answers; it is separate from stage A (Confidence tab), which reads recorded league decisions.</p>'
+            + P.SWIPE + P.table(head, rows, f'{esc(B["title"])}: per team, against its own shuffled baseline',
+                                cls="board list", attrs=' id="close-b-table"')
+            + "".join(f'<p class="table-note">{esc(n)}</p>' for n in notes)
+            + '<figure class="chart-card" data-static-chart id="chart-close-b"><div class="chart-head">'
+              '<h3>Exact agreement against the shuffled baseline</h3>'
+              '<button type="button" class="key" data-download-static>Download PNG</button></div>'
+            + close_b_chart(B)
+            + '<p class="chart-legend"><span><i class="swatch ccb-band"></i>shuffled baseline, 2.5\u201397.5%</span> '
+              '<span><i class="swatch ccb-mean"></i>baseline mean</span> <span><i class="swatch ccb-dot ccb-above"></i>'
+              'exact agreement, above the range</span> <span><i class="swatch ccb-dot ccb-within"></i>inside the range: not '
+              'clearly above</span> <span>Each team against its own baseline; not a ranking.</span></p></figure>'
+            + f'<p class="table-note">Data: <a href="data/v3/close-choices-b.json" download="close-choices-b.json">'
+              f'close-choices-b.json</a> · <a href="method/#close-choices-b">Method</a> ({esc(B["method"])})</p></section>')
+
+
 def home(S) -> str:
     tabs = "".join(f'<button type="button" role="tab" id="tab-{k}" class="mode" aria-controls="board" '
                    f'aria-selected="{str(i == 0).lower()}" data-tab="{k}"><span class="lamp" aria-hidden="true"></span>{l}</button>'
@@ -1157,6 +1288,7 @@ def home(S) -> str:
       {charts(S)}
     </section>
     {pays_section(S)}
+    {close_b_section(S)}
     <p class="downloads" id="downloads">Download: <a href="data/results.json" download="results.json">results.json</a> · <a href="decisions/index.json" download="decisions.json">decisions.json</a></p>"""
 
 

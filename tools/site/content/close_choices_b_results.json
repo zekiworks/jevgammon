@@ -1,0 +1,185 @@
+{
+ "title": "Stage B: five teams",
+ "method": "Method spec 2026-10-24 §9.9-9.13",
+ "score_file": "close-choices-b-score-5teams.json",
+ "positions": 100,
+ "repeats": 5,
+ "baseline_shuffles": 1000,
+ "complete": [
+  {
+   "team": "Claude Opus 5.5 (on)",
+   "setting": "effort high (default, adaptive thinking)",
+   "temperature": {
+    "known": true,
+    "value": "1.0",
+    "text": "none sent; 1.0 is Anthropic's documented default"
+   },
+   "positions": 100,
+   "scored": 100,
+   "exact_n": 34,
+   "excluded": {},
+   "excluded_positions": 0,
+   "primary_exact": {
+    "observed": 0.34,
+    "baseline_mean": 0.27542,
+    "baseline_lo": 0.23,
+    "baseline_hi": 0.32,
+    "p": 0.004,
+    "vs_baseline": "above"
+   },
+   "secondary_overlap": {
+    "observed": 0.4016666666666666,
+    "baseline_mean": 0.315355,
+    "baseline_lo": 0.2675,
+    "baseline_hi": 0.3650416666666666,
+    "p": 0.0,
+    "vs_baseline": "above"
+   },
+   "same_play": 71,
+   "changed_same_features": 10,
+   "observed_nonempty": 19,
+   "predicted_size_mean": 1.19,
+   "deterministic": false
+  },
+  {
+   "team": "GPT-6 Astra (on)",
+   "setting": "reasoning effort medium (the model's default)",
+   "temperature": {
+    "known": false,
+    "value": null,
+    "text": "none sent; not disclosed"
+   },
+   "positions": 100,
+   "scored": 100,
+   "exact_n": 20,
+   "excluded": {},
+   "excluded_positions": 0,
+   "primary_exact": {
+    "observed": 0.2,
+    "baseline_mean": 0.17623,
+    "baseline_lo": 0.15,
+    "baseline_hi": 0.2,
+    "p": 0.054,
+    "vs_baseline": "within"
+   },
+   "secondary_overlap": {
+    "observed": 0.21333333333333335,
+    "baseline_mean": 0.18890083333333332,
+    "baseline_lo": 0.16,
+    "baseline_hi": 0.21166666666666664,
+    "p": 0.023,
+    "vs_baseline": "above"
+   },
+   "same_play": 90,
+   "changed_same_features": 5,
+   "observed_nonempty": 5,
+   "predicted_size_mean": 1.72,
+   "deterministic": false
+  },
+  {
+   "team": "GPT-6.1 Sol (high)",
+   "setting": "reasoning effort high",
+   "temperature": {
+    "known": false,
+    "value": null,
+    "text": "none sent; not disclosed"
+   },
+   "positions": 100,
+   "scored": 100,
+   "exact_n": 20,
+   "excluded": {},
+   "excluded_positions": 0,
+   "primary_exact": {
+    "observed": 0.2,
+    "baseline_mean": 0.13851999999999998,
+    "baseline_lo": 0.11,
+    "baseline_hi": 0.17,
+    "p": 0.0,
+    "vs_baseline": "above"
+   },
+   "secondary_overlap": {
+    "observed": 0.22333333333333333,
+    "baseline_mean": 0.16269083333333334,
+    "baseline_lo": 0.12666666666666665,
+    "baseline_hi": 0.19333333333333333,
+    "p": 0.0,
+    "vs_baseline": "above"
+   },
+   "same_play": 80,
+   "changed_same_features": 10,
+   "observed_nonempty": 10,
+   "predicted_size_mean": 1.64,
+   "deterministic": false
+  },
+  {
+   "team": "GPT-6.1 Sol (low)",
+   "setting": "reasoning effort low",
+   "temperature": {
+    "known": false,
+    "value": null,
+    "text": "none sent; not disclosed"
+   },
+   "positions": 100,
+   "scored": 100,
+   "exact_n": 13,
+   "excluded": {},
+   "excluded_positions": 0,
+   "primary_exact": {
+    "observed": 0.13,
+    "baseline_mean": 0.11066000000000002,
+    "baseline_lo": 0.08,
+    "baseline_hi": 0.14,
+    "p": 0.154,
+    "vs_baseline": "within"
+   },
+   "secondary_overlap": {
+    "observed": 0.1691666666666667,
+    "baseline_mean": 0.13526999999999997,
+    "baseline_lo": 0.10247916666666666,
+    "baseline_hi": 0.165,
+    "p": 0.01,
+    "vs_baseline": "above"
+   },
+   "same_play": 80,
+   "changed_same_features": 10,
+   "observed_nonempty": 10,
+   "predicted_size_mean": 1.75,
+   "deterministic": false
+  },
+  {
+   "team": "Gemini 3.8 Flash (low)",
+   "setting": "thinking level low",
+   "temperature": {
+    "known": true,
+    "value": "1.0",
+    "text": "1.0, sent"
+   },
+   "positions": 100,
+   "scored": 100,
+   "exact_n": 6,
+   "excluded": {},
+   "excluded_positions": 0,
+   "primary_exact": {
+    "observed": 0.06,
+    "baseline_mean": 0.01768,
+    "baseline_lo": 0.01,
+    "baseline_hi": 0.04,
+    "p": 0.0,
+    "vs_baseline": "above"
+   },
+   "secondary_overlap": {
+    "observed": 0.065,
+    "baseline_mean": 0.036599999999999994,
+    "baseline_lo": 0.02416666666666667,
+    "baseline_hi": 0.05,
+    "p": 0.0,
+    "vs_baseline": "above"
+   },
+   "same_play": 92,
+   "changed_same_features": 2,
+   "observed_nonempty": 6,
+   "predicted_size_mean": 2.12,
+   "deterministic": false
+  }
+ ]
+}

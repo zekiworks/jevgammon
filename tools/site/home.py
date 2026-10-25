@@ -597,7 +597,7 @@ def hero_board(S) -> str:
     code = lambda p: f'<code>{esc(p["notation"])}</code>'
     text = (f'{esc(sc["label"])}, dice {sc["dice"][0]}-{sc["dice"][1]}, stake {P.eq(sc["stake"])}: the engine\'s best play '
             f'{code(b)} leaves {count(b["hitting_rolls"])} hitting rolls, the best safe play {code(s)} (dashed) '
-            f'{count(s["hitting_rolls"])}. {esc(sc["who"])} played {code(c)}: {esc(CALL_WORDS[sc["call"]])}.')
+            f'leaves {count(s["hitting_rolls"])}. {esc(sc["who"])} played {code(c)}: {esc(CALL_WORDS[sc["call"]])}.')
     href = f'decisions/?d={sc["dataset"]}&amp;s={sc["slug"]}&amp;p={sc["page"]}#d{sc["id"]}'
     return f'<figure class="hero-board">{svg}<figcaption>{text} <a href="{href}">Open this decision</a></figcaption></figure>'
 

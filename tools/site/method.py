@@ -619,7 +619,7 @@ def _close(t: dict) -> str:
     b = c["stage_b"]
     return _section("close-choices", "Close choices", f"""
 <p class="note"><strong>Stage A: results published (Confidence tab, model pages, Every decision filter). Stage B:
-  approved, not run.</strong></p>
+  approved, not run; starts after the ladder settles (Can, 2026-10-25).</strong></p>
 <p><strong>{esc(c["definition"])}</strong> {esc(c["label"])} The rules below were fixed and committed on
   {esc(c["fixed_on"][:10])} before any close-choice number was computed. Inspired by <a href="https://arxiv.org/abs/2610.21006">"Can LLMs Anticipate Their
   Cruxes?"</a>. They describe the probabilities a setup gave; they say nothing about how it reasoned or why it chose.</p>
@@ -653,12 +653,13 @@ def _close(t: dict) -> str:
     marked.</li>
 </ul>
 {_h3("close-choices-b", "Stage B: does a setup know where it hesitates? (planned, not run)")}
-<p>Approved, not run. No stage B call has been made. The positions and the scoring
-  rules were fixed on 2026-10-24, before any stage B call.</p>
+<p>Approved, not run; starts after the ladder settles (Can, 2026-10-25). No stage B call has been made. The positions
+  and the scoring rules were fixed on 2026-10-24, before any stage B call.</p>
 <ul>
   <li><strong>Positions.</strong> {_value(b["positions"])} positions from the new half of the shared standard set, by
     risk class at the {_value(c["margins"][0])} margin: 40 Risk pays, 40 Safety pays and 20 No trade-off, spread over the
-    phases and picked by a fixed hash rule. Race and bear-off positions have no contact, so they are all No trade-off;
+    phases. Within each risk class and phase, the positions are picked by a seeded hash rule (seed text
+    <code>close-choices-b-v2-2026-10-24:</code>); the frozen file's sha256 is <code>88bc3904…48410c</code>. Race and bear-off positions have no contact, so they are all No trade-off;
     the Risk pays and Safety pays places of those phases go to opening, contact and holding. Every call for a position
     uses the same option order.</li>
   <li><strong>Calls.</strong> Each setup answers every position {_value(b["repeats"])} times, and once more in a separate

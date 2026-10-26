@@ -215,8 +215,8 @@ def layout(S, base, path: str, title: str, body: str, description: str | None = 
     depth = path.count("/")
     rel = "../" * depth
     desc = description or S["description"]
-    full = f"{title} · Zeki Works" if title != TITLE else f"{TITLE} · Zeki Works"
-    social = full if title != TITLE else f"{TITLE} {SUBTITLE} · Zeki Works"
+    full = f"{title} · Hilde" if title != TITLE else f"{TITLE} · Hilde"
+    social = full if title != TITLE else f"{TITLE} {SUBTITLE} · Hilde"
     image = f'{base}{S["image"]}' if S.get("image") else None
     og = (f'<meta property="og:image" content="{image}"><meta property="og:image:width" content="1200">'
           f'<meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image">'
@@ -247,7 +247,7 @@ def layout(S, base, path: str, title: str, body: str, description: str | None = 
 <body class="v3 {body_class}" data-site-title="{esc(TITLE)}" data-site-subtitle="{esc(SUBTITLE)}">
   <a class="skip" href="#main">Skip to content</a>
   <header class="topbar">
-    <a class="brand" href="{rel or './'}">Zeki Works · Backgammon benchmark · v3</a>
+    <a class="brand" href="{rel or './'}">Hilde · Backgammon benchmark · v3</a>
     <nav class="nav" aria-label="Pages"><ul>{nav}</ul></nav>{page_png}
     <div class="theme-switch" role="group" aria-label="Colour theme" hidden><button type="button" class="key" data-theme-choice="dark" aria-pressed="true" aria-label="Dark background"><span class="lamp" aria-hidden="true"></span>Dark<span class="long"> background</span></button><button type="button" class="key" data-theme-choice="light" aria-pressed="false" aria-label="Light background"><span class="lamp" aria-hidden="true"></span>Light<span class="long"> background</span></button></div>
   </header>
@@ -947,7 +947,7 @@ ul{{list-style:none;padding:0;margin:0;display:flex;gap:28px}} li b{{display:blo
 <div class="l">{board}<p>{cap}</p></div>
 <div class="r"><h1>{esc(TITLE)}</h1><p class="s">{esc(SUBTITLE)}</p>
 <ul><li><b>{count(c["decisions_scored"])}</b>decisions</li><li><b>{c["leagues"]}</b>leagues</li><li><b>{c["model_setups"]}</b>setups</li><li><b>{c["models"]}</b>models</li></ul></div>
-<div class="f">Zeki Works · every decision is public</div></body></html>"""
+<div class="f">Hilde · every decision is public</div></body></html>"""
 
 
 def description(S) -> str:

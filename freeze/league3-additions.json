@@ -192,5 +192,27 @@
     },
     "entry_sha256": "bff098695bed7a58c2aa0bd9161d9c74189d1f2db17b99d1ca851513e208f3ec",
     "fixtures": []
+  },
+  {
+    "added_at": "2026-10-26T15:46:18Z",
+    "league": 3,
+    "db": "v3.db",
+    "name": "Gemini 4 Argon (off)",
+    "harness_commit": "67722f7edffd0287c500b6f6f4a9352f9e606115",
+    "harness_dirty": true,
+    "entry": {
+      "name": "Gemini 4 Argon (off)",
+      "spec": "antigravity/gemini-4-argon",
+      "provider": "antigravity-subscription",
+      "reasoning": "low",
+      "price": {
+        "input_per_mtok": 2.0,
+        "output_per_mtok": 10.0
+      },
+      "note": "thinking level low, the lowest (spends no reasoning tokens), labelled off. Google Antigravity subscription (Google AI Ultra, OMP's login; Antigravity model id gemini-4-argon-low; modelVersion gemini-4-argon); cost is API-list-price equivalent. Smoke check (10 positions x 2): same play as the Gemini API answers in 15 of 20 (Antigravity against itself 9 of 10), no reasoning tokens either way; list price $2/$10 per million tokens until 2026-12-01 ($4/$20 after)",
+      "parallel": 4
+    },
+    "entry_sha256": "9bff31913d1b7a4d762d49f7eb4961881d29fa3de4c98588e23b9048fe3d76db",
+    "fixtures": []
   }
 ]

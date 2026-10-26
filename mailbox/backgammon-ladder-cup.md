@@ -36,9 +36,9 @@ The leagues, from bottom to top: League 1 (decision models), League 2 (workhorse
 **Amendment, 2026-10-26 (Can): no lock; the ladder ends when a round needs no new matches.** This replaces the lock rule and the stop rule below, which are kept for the record, marked superseded.
 
 - **No lock.** The lock rule and its exception are dropped. Models move up and down by the normal rules every round, with no limit on repeats.
-- **End.** The ladder ends when a round would need no new matches: every pairing its moves create is already stored. That round is not played.
-- **Final placement.** At the end, a model whose position is oscillating (the end round would move it again) is placed in whichever of the two leagues it alternates between is closer to its original league (its league before any ladder move). A model that is not oscillating stays where it is. Programs never move (unchanged).
-- **Log:** placements are logged as moves with the reason "final placement".
+- **End.** The ladder ends when a round would need no new matches: every pairing its moves create is already stored.
+- **Final swap** (second decision, 2026-10-26, Can; replaces the final placement below): when the ladder ends, that last round's swap is made one final time, and every model stays where it puts it. Reason: models added later are like the next season, and the ladder continues from there. Logged as moves with the reason "final swap (ladder ended)". Programs never move (unchanged).
+- *Final placement (superseded 2026-10-26 by Can, by the final swap above):* At the end, a model whose position is oscillating (the end round would move it again) is placed in whichever of the two leagues it alternates between is closer to its original league (its league before any ladder move). A model that is not oscillating stays where it is. Programs never move (unchanged). Placements are logged as moves with the reason "final placement".
 
 **Lock rule** (superseded 2026-10-26 by Can, see the amendment above):
 
@@ -53,7 +53,7 @@ The leagues, from bottom to top: League 1 (decision models), League 2 (workhorse
 - Before each round, write the list of new pairings and their estimated cost to mailbox/.
 - Stop if the ladder's total cost goes past the budget. If no budget is set yet, ask in mailbox/ before round 1.
 
-**Log every move:** round, model, from league, to league, and reason (promoted, relegated, locked, or frozen boundary). Since the amendment of 2026-10-26: promoted, relegated, or final placement.
+**Log every move:** round, model, from league, to league, and reason (promoted, relegated, locked, or frozen boundary). Since the amendments of 2026-10-26: promoted, relegated, or final swap (ladder ended).
 
 **Error-rate flag:** flag each swap where the promoted model has a worse error rate than the model it replaced.
 
@@ -102,7 +102,7 @@ One Hype Cup runs for each steady state. A new model entering a league starts a 
 
 > **How the leagues connect.** Time is frozen here, so there are no new seasons. Instead, the leagues trade models until nothing changes. Each league's best model moves up one league, and its worst model moves down. Each model that moves plays every model in its new league once. Two models never play each other twice, because we already know that result. A model that drops out of the same league twice stays in the lower league, unless a model it has not played joins the upper league. Reference programs, like GNU Backgammon, stay in place. When no model moves, the leagues are settled.
 >
-> *(Superseded 2026-10-26 by Can: the "drops out twice" and "when no model moves" sentences. New text for them: "Models can move back and forth. The ladder ends when a round would need no new matches. A model still going back and forth then stays in whichever of its two leagues is closer to the league it started in.")*
+> *(Superseded 2026-10-26 by Can: the "drops out twice" and "when no model moves" sentences. New text for them: "Models can move back and forth. The ladder ends when a round would need no new matches: that last swap is made once more, and every model stays where it lands. Models added later start the next season, and the ladder goes on from there." An earlier replacement of the same day, "A model still going back and forth then stays in whichever of its two leagues is closer to the league it started in.", is superseded too.)*
 >
 > **The Hype Cup.** When the leagues settle, 8 models play a knockout cup: the top 2 of each league and the two best 3rd-placed models. Points do not compare across leagues of different sizes, so the 3rd places are picked by lowest error rate. In the quarter-finals, strong models meet weak models, never two models from the same league. If two models already played each other, the stored result counts. This is a benchmark, not a game: a replay would only change the dice.
 >

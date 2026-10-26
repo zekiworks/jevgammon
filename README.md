@@ -556,13 +556,13 @@ python3 tools/ladder.py cup-winner --db v3.db --match ID
   APIs, the reused pairings and where they were played, the playing order (API and
   subscription pairings first, then GPU blocks of at most four bariton GPUs) and the totals.
   It stops with an error while the site has not scored every decision. The ladder ends at the
-  first round whose moves would create no new pairing: that round is not played; each setup it
-  would move oscillates and is placed in whichever of its two leagues is closer to its original
-  league (before any ladder move), and the request ("Ladder ended: final placement") lists
-  those placement moves.
+  first round whose moves would create no new pairing: that round's swap is made one final
+  time and everyone stays where it puts them (Can, 2026-10-26; setups added later start the
+  next season), and the request is titled "Ladder ended: final swap".
 - **apply** records the moves with `league-remove` (reason "ladder round N: promoted to
-  league M", "relegated", or "final placement"; these notes are the ladder's
-  history) and `league-add` (the setup's stored settings), and switches a receiving league
+  league M", "relegated", or "final swap (ladder ended)"; these notes are the ladder's
+  history) and `league-add` (the setup's stored settings; the Jev, Fastino and Celeris keys
+  are read from their key files when the environment has none), and switches a receiving league
   that played its games in sequence (League 1) to both games of a round at once, the ladder
   and Cup format; earlier matches stay as played. Then `league --resume` plays only the new
   pairings.

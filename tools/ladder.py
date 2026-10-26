@@ -18,14 +18,12 @@ Rules (setups move, not models; one result per pair):
 - No lock (Can, 2026-10-26; the earlier lock rule is gone): setups move by these rules every round,
   as often as the tables say.
 - End: the ladder ends at the first round whose moves would create no new pairing (every pair they
-  create is already stored). That round is not played as a round; instead the final placement:
-  each setup it would move is oscillating between its league and the move's target, and is placed
-  in whichever of the two is closer to its original league (`league_web.league_origins`: the league
-  before any ladder move); every other setup stays. The placement's moves have the reason "final
-  placement" and are applied like a round's.
+  create is already stored). That round's moves are made one final time, with the reason "final
+  swap (ladder ended)", and everyone stays where they put them (Can, 2026-10-26: new setups added
+  later start the next season, and the ladder continues from there).
 - Every move is recorded in `league_players.note` of the league left, by `apply`, as
-  "ladder round N: <reason> to league M" (reasons: promoted, relegated, final placement); that is
-  the ladder's history (`history`).
+  "ladder round N: <reason> to league M" (reasons: promoted, relegated, final swap (ladder
+  ended)); that is the ladder's history (`history`).
 
 Hype Cup tie rule (for the Cup orchestrator): a Cup match that ends level (stored or new) goes to the
 setup with the lower error rate in that match (`cup_winner`); no extra rounds are played.
@@ -53,7 +51,8 @@ LADDER = [1, 2, 3]
 LEAGUE_NAMES = {1: "League 1 (decision models)", 2: "League 2 (workhorses)", 3: "League 3 (frontier models)"}
 # Players that are programs: they never move and never enter the Cup.
 PROGRAM_SPECS = {"random", "safest", "gnubg-weak"}
-MOVE_NOTE = re.compile(r"ladder round (\d+): (promoted|relegated|final placement) to league (\d+)")
+FINAL_SWAP = "final swap (ladder ended)"
+MOVE_NOTE = re.compile(r"ladder round (\d+): (promoted|relegated|final swap \(ladder ended\)) to league (\d+)")
 
 
 def short(lid: int) -> str:
@@ -177,20 +176,12 @@ def mover_pairs(moves: list[dict], after: dict[int, list[str]]) -> list[dict]:
     return out
 
 
-def final_placement(moves: list[dict], origin: dict[str, int], number: int) -> tuple[list[dict], list[dict]]:
-    """The end of the ladder: every setup the last round would move oscillates between its league and
-    the move's target, and is placed in whichever is closer to its original league (`origin`). Returns
-    the oscillating setups (setup, source, target, origin, placed) and the moves that placement makes."""
-    oscillating, placed_moves = [], []
-    for m in moves:
-        home = origin[m["setup"]]
-        placed = m["source"] if abs(home - m["source"]) <= abs(home - m["target"]) else m["target"]
-        oscillating.append(dict(setup=m["setup"], source=m["source"], target=m["target"], origin=home,
-                                placed=placed))
-        if placed != m["source"]:
-            placed_moves.append(dict(round=number, setup=m["setup"], source=m["source"], target=placed,
-                                     reason="final placement"))
-    return oscillating, placed_moves
+def end_check(moves: list[dict], pairs: list[dict], results: dict) -> tuple[bool, list[dict]]:
+    """The end rule: a round whose moves create no new pairing (every pair in `results`) ends the
+    ladder; its moves are then made one final time as the final swap. Returns (ended, the moves)."""
+    if all(frozenset((p["a"], p["b"])) in results for p in pairs):
+        return True, [{**m, "reason": FINAL_SWAP} for m in moves]
+    return False, moves
 
 
 def compute_round(conn, scores: Path) -> dict:
@@ -205,17 +196,7 @@ def compute_round(conn, scores: Path) -> dict:
     moves, notes, swaps = round_moves(current, people, number)
     after = lineups_after(names, moves)
     pairs = mover_pairs(moves, after)
-    # End rule: a round whose moves create no new pairing is not played; the final placement instead.
-    ended = all(frozenset((p["a"], p["b"])) in results for p in pairs)
-    oscillating = []
-    if ended:
-        origin = {}
-        for lid in LADDER:
-            origin.update(lw.league_origins(conn, lid))
-        oscillating, moves = final_placement(moves, origin, number)
-        swaps = []
-        after = lineups_after(names, moves)
-        pairs = mover_pairs(moves, after)
+    ended, moves = end_check(moves, pairs, results)
     new, reused = [], []
     for p in pairs:
         match = results.get(frozenset((p["a"], p["b"])))
@@ -224,8 +205,7 @@ def compute_round(conn, scores: Path) -> dict:
         else:
             new.append(p)
     return dict(number=number, moves=moves, notes=notes, swaps=swaps, new=new, reused=reused, before=current,
-                after=after, people=people, rates=rates_full, history=moves_before, ended=ended,
-                oscillating=oscillating)
+                after=after, people=people, rates=rates_full, history=moves_before, ended=ended)
 
 
 # --- Estimates -------------------------------------------------------------------------------------
@@ -416,25 +396,16 @@ def hours(x: float) -> str:
 def request(conn, plan: dict, db: Path) -> str:
     n, people, rates = plan["number"], plan["people"], plan["rates"]
     now = datetime.now(timezone.utc).strftime("%b %d, %Y %H:%M UTC")
-    title = f"# Ladder ended: final placement (round {n})" if plan["ended"] else f"# Ladder round {n}: request"
+    title = f"# Ladder ended: final swap (round {n})" if plan["ended"] else f"# Ladder round {n}: request"
     out = [title, "",
            f"{now} · computed by `tools/ladder.py plan` from `{db.name}` (read-only). Nothing has started. "
            "Nothing runs until Can approves this round.", ""]
     if plan["ended"]:
         out += ["## Ladder ended", "",
                 f"Round {n}'s moves would create no new pairing (every pair they make is already stored), so "
-                "the ladder ends (rule of 2026-10-26). Each setup round " + str(n) + " would move is oscillating "
-                "between its league and the move's target; it is placed in whichever of the two is closer to its "
-                "original league (its league before any ladder move). Every other setup stays. The moves below "
-                "are that placement (reason: final placement); the Hype Cup can be prepared once they are "
-                "applied.", ""]
-        if plan["oscillating"]:
-            out += ["| Setup | Oscillates between | Original league | Placed in |", "| --- | --- | --- | --- |"]
-            out += [f"| {o['setup']} | {short(o['source'])} and {short(o['target'])} | {short(o['origin'])} | "
-                    f"{short(o['placed'])} |" for o in plan["oscillating"]]
-        else:
-            out.append("No setup would move: nobody oscillates.")
-        out += [""]
+                f"the ladder ends (rule of 2026-10-26): round {n}'s swap is made one final time (reason: "
+                f"{FINAL_SWAP}) and every setup stays where it puts it. Setups added later start the next "
+                "season, and the ladder continues from there.", ""]
     else:
         out += ["## End check", "",
                 f"Round {n}'s moves create {len(plan['new'])} new pairing(s), so the ladder goes on (it ends at "
@@ -558,7 +529,7 @@ def request(conn, plan: dict, db: Path) -> str:
             "servers and release the GPUs.",
             ("4. When every pairing is played, the ladder is over; the Hype Cup can be prepared." if plan["ended"]
              else "4. When every pairing is played, the next `tools/ladder.py plan` writes round " + str(n + 1) +
-             "'s request (or the ladder's end and final placement)."), ""]
+             "'s request (or the ladder's end and final swap)."), ""]
     return "\n".join(out) + "\n"
 
 
@@ -605,7 +576,7 @@ def apply(db: Path, scores: Path, number: int, binary: Path, freeze: Path) -> No
         raise SystemExit(f"the next round is {plan['number']}, not {number}")
     moving = plan["moves"]
     if not moving:
-        raise SystemExit("the ladder has ended and its final placement moves nobody: nothing to apply")
+        raise SystemExit("no setup moves: nothing to apply")
     receiving = sorted({m["target"] for m in moving})
     conn = connect(db, write=True)
     for lid in receiving:

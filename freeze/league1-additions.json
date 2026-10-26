@@ -608,5 +608,26 @@
     "fixtures": [
       "matchday 19: Clef v DeepSeek V4.1 Flash (off)"
     ]
+  },
+  {
+    "added_at": "2026-10-26T15:46:18Z",
+    "league": 1,
+    "db": "v3.db",
+    "name": "Celeris-1 Decision",
+    "harness_commit": "67722f7edffd0287c500b6f6f4a9352f9e606115",
+    "harness_dirty": true,
+    "entry": {
+      "name": "Celeris-1 Decision",
+      "spec": "celeris/celeris-1-decision",
+      "provider": "celeris",
+      "price": {
+        "input_per_mtok": 0.04,
+        "output_per_mtok": 0.0
+      },
+      "note": "Celeris System One endpoint (inference.celeris.ai/celeris-1-decision); list price $0.04 per million input tokens, output free (docs.celeris.ai/pricing, 2026-10-10); probabilities come rounded to two decimals",
+      "parallel": 2
+    },
+    "entry_sha256": "428eeb5189b73a4b9718ef67cf263ea24966c18360ec362c42b9546a095ce7e3",
+    "fixtures": []
   }
 ]

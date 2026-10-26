@@ -1,5 +1,5 @@
-"""Ladder rules of 2026-10-26 (tools/ladder.py): moves without a lock, the pairs a round creates (the
-end check), and the final placement of oscillating setups.
+"""Ladder rules of 2026-10-26 (tools/ladder.py): moves without a lock, the pairs a round creates, and
+the end check with its final swap.
 
     python3 tools/test_ladder.py
 """
@@ -43,23 +43,24 @@ def test_pairs_and_end_check():
                                             ("C", "F"), ("C", "G"), ("H", "D"), ("H", "GNU")]}
 
 
-def test_final_placement_closer_to_origin():
-    moves = [dict(round=9, setup="A", source=1, target=2, reason="promoted"),     # from League 1: stays
-             dict(round=9, setup="E", source=2, target=1, reason="relegated"),    # from League 1: goes down
-             dict(round=9, setup="C", source=2, target=3, reason="promoted"),     # from League 3: goes up
-             dict(round=9, setup="H", source=3, target=2, reason="relegated")]    # from League 1: League 2
-    origin = {"A": 1, "E": 1, "C": 3, "H": 1}
-    oscillating, placed = ladder.final_placement(moves, origin, 9)
-    assert [(o["setup"], o["placed"]) for o in oscillating] == [("A", 1), ("E", 1), ("C", 3), ("H", 2)]
-    assert [(m["setup"], m["source"], m["target"], m["reason"]) for m in placed] == [
-        ("E", 2, 1, "final placement"), ("C", 2, 3, "final placement"), ("H", 3, 2, "final placement")]
+def test_final_swap():
+    moves = [dict(round=9, setup="A", source=1, target=2, reason="promoted"),
+             dict(round=9, setup="E", source=2, target=1, reason="relegated")]
+    pairs = [dict(league=2, a="A", b="D"), dict(league=1, a="E", b="B")]
+    ended, out = ladder.end_check(moves, pairs, {frozenset(("A", "D")): {}})
+    assert not ended and out == moves  # E v B is not stored: the ladder goes on
+    ended, out = ladder.end_check(moves, pairs, {frozenset(("A", "D")): {}, frozenset(("E", "B")): {}})
+    assert ended
+    assert [(m["setup"], m["source"], m["target"], m["reason"]) for m in out] == [
+        ("A", 1, 2, "final swap (ladder ended)"), ("E", 2, 1, "final swap (ladder ended)")]
 
 
 def test_move_note_reasons():
-    for reason in ("promoted", "relegated", "final placement"):
+    for reason in ("promoted", "relegated", "final swap (ladder ended)"):
         m = ladder.MOVE_NOTE.search(f"ladder round 5: {reason} to league 2")
         assert m and m.group(2) == reason
     assert not ladder.MOVE_NOTE.search("ladder round 5: frozen boundary to league 2")
+    assert not ladder.MOVE_NOTE.search("ladder round 5: final placement to league 2")
 
 
 if __name__ == "__main__":

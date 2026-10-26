@@ -1,19 +1,12 @@
-# Ladder ended: final placement (round 6)
+# Ladder ended: final swap (round 6)
 
-Oct 26, 2026 15:40 UTC · computed by `tools/ladder.py plan` from `v3.db` (read-only). Nothing has started. Nothing runs until Can approves this round.
+Oct 26, 2026 15:45 UTC · computed by `tools/ladder.py plan` from `v3.db` (read-only). Nothing has started. Nothing runs until Can approves this round.
 
-**Written after round 5 (Oct 26, 15:40 UTC; rules of 2026-10-26). Not applied: waiting for Can.** Round 6 would swap Clef (League 1's top setup) with Celeris-1 Decision (League 2's last), and Gemini 4 Argon (off) (League 2's top) with Gemini 3.8 Flash (low) (League 3's last). Every pair those swaps make is already stored, so the ladder ends here. All four setups oscillate and are placed nearer their original league. Clef and Celeris-1 Decision both started in League 1, so both are placed in League 1. Argon (off) started in League 3 and Flash (low) in League 2, so they swap back. **League sizes change: League 1 gets 20 setups and League 2 gets 18** (League 3 stays at 12), because the rule puts both setups of the League 1-League 2 swap in League 1. No match is needed.
+**Approved by Can (Oct 26), under his rule of 2026-10-26 for the end of the ladder** (which replaces the original-league placement of the earlier version of this file): the last swap is made one final time, and everyone stays where it puts them. Clef goes to League 2, Celeris-1 Decision to League 1, Gemini 4 Argon (off) to League 3, Gemini 3.8 Flash (low) to League 2; sizes stay 19/19/12. No match is needed.
 
 ## Ladder ended
 
-Round 6's moves would create no new pairing (every pair they make is already stored), so the ladder ends (rule of 2026-10-26). Each setup round 6 would move is oscillating between its league and the move's target; it is placed in whichever of the two is closer to its original league (its league before any ladder move). Every other setup stays. The moves below are that placement (reason: final placement); the Hype Cup can be prepared once they are applied.
-
-| Setup | Oscillates between | Original league | Placed in |
-| --- | --- | --- | --- |
-| Clef | League 1 and League 2 | League 1 | League 1 |
-| Celeris-1 Decision | League 2 and League 1 | League 1 | League 1 |
-| Gemini 4 Argon (off) | League 2 and League 3 | League 3 | League 3 |
-| Gemini 3.8 Flash (low) | League 3 and League 2 | League 2 | League 2 |
+Round 6's moves would create no new pairing (every pair they make is already stored), so the ladder ends (rule of 2026-10-26): round 6's swap is made one final time (reason: final swap (ladder ended)) and every setup stays where it puts it. Setups added later start the next season, and the ladder continues from there.
 
 ## Tables used
 
@@ -27,9 +20,10 @@ Ranking: points, then games won, then fewer games lost, then the lower error rat
 
 | Round | Setup | From | To | Reason |
 | --- | --- | --- | --- | --- |
-| 6 | Celeris-1 Decision | League 2 | League 1 | final placement |
-| 6 | Gemini 4 Argon (off) | League 2 | League 3 | final placement |
-| 6 | Gemini 3.8 Flash (low) | League 3 | League 2 | final placement |
+| 6 | Clef | League 1 | League 2 | final swap (ladder ended) |
+| 6 | Celeris-1 Decision | League 2 | League 1 | final swap (ladder ended) |
+| 6 | Gemini 4 Argon (off) | League 2 | League 3 | final swap (ladder ended) |
+| 6 | Gemini 3.8 Flash (low) | League 3 | League 2 | final swap (ladder ended) |
 
 - League 1: GNUbg weak ranks above Clef but is a program and never moves; the next setup is taken.
 - League 3: GNUbg weak ranks below Gemini 3.8 Flash (low) but is a program and never moves; the next setup is taken.
@@ -63,11 +57,13 @@ A swap is flagged when the promoted setup's error rate is worse (higher) than th
 
 | Boundary | Promoted | Error rate | Replaced | Error rate | Flag |
 | --- | --- | --- | --- | --- | --- |
+| League 1-League 2 | Clef | 37.0 (95% interval 34.7-39.3; 3,970 decisions) | Celeris-1 Decision | 33.1 (95% interval 30.8-35.4; 4,044 decisions) | **flagged: worse than the setup it replaces** |
+| League 2-League 3 | Gemini 4 Argon (off) | 15.9 (95% interval 14.2-17.6; 3,698 decisions) | Gemini 3.8 Flash (low) | 17.4 (95% interval 16.0-18.9; 3,620 decisions) | no |
 
 ## Lineups after the round
 
-- **League 1** (20 setups): joins Celeris-1 Decision; leaves nobody.
-- **League 2** (18 setups): joins Gemini 3.8 Flash (low); leaves Celeris-1 Decision, Gemini 4 Argon (off).
+- **League 1** (19 setups): joins Celeris-1 Decision; leaves Clef.
+- **League 2** (19 setups): joins Clef, Gemini 3.8 Flash (low); leaves Celeris-1 Decision, Gemini 4 Argon (off).
 - **League 3** (12 setups): joins Gemini 4 Argon (off); leaves Gemini 3.8 Flash (low).
 
 ## New pairings (0)
@@ -79,12 +75,30 @@ Estimates from each setup's stored valid matches: decisions per match (the mean 
 | # | League | Pairing | Money (API price) | API-equivalent (subscription) | Duration | Own hardware | APIs and subscriptions |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 
-## Reused pairings (47)
+## Reused pairings (64)
 
 Already played (valid match), so not played again; the stored result counts in the new league's table.
 
 | League | Pairing | Stored match | Played in | Result |
 | --- | --- | --- | --- | --- |
+| League 2 | Clef v Gemini 3.8 Flash (high) | #705 (2026-10-26) | League 2 | Clef 2-4 Gemini 3.8 Flash (high) |
+| League 2 | Clef v Claude Sonnet 5.5 (low) | #707 (2026-10-26) | League 2 | Clef 2-6 Claude Sonnet 5.5 (low) |
+| League 2 | Clef v Claude Sonnet 5.5 (high) | #704 (2026-10-26) | League 2 | Claude Sonnet 5.5 (high) 5-1 Clef |
+| League 2 | Clef v DeepSeek V4.1 Flash (on) | #709 (2026-10-26) | League 2 | Clef 0-6 DeepSeek V4.1 Flash (on) |
+| League 2 | Clef v GLM-5.3 (on) | #715 (2026-10-26) | League 2 | GLM-5.3 (on) 2-5 Clef |
+| League 2 | Clef v GNUbg weak | #78 (2026-10-16) | League 1 | Clef 2-5 GNUbg weak |
+| League 2 | Clef v Qwen3.8 Flash (off) | #716 (2026-10-26) | League 2 | Qwen3.8 Flash (off) 4-5 Clef |
+| League 2 | Clef v Gemma 4 31B (on) | #717 (2026-10-26) | League 2 | Clef 4-6 Gemma 4 31B (on) |
+| League 2 | Clef v Gemma 4 31B (off) | #718 (2026-10-26) | League 2 | Clef 0-5 Gemma 4 31B (off) |
+| League 2 | Clef v Qwen3.8-27B (on) | #719 (2026-10-26) | League 2 | Qwen3.8-27B (on) 5-1 Clef |
+| League 2 | Clef v Liquid d1-ultra | #180 (2026-10-19) | League 1 | Clef 1-5 Liquid d1-ultra |
+| League 2 | Clef v Claude Fable 5.1 (off) | #721 (2026-10-26) | League 2 | Claude Fable 5.1 (off) 7-2 Clef |
+| League 2 | Clef v Fastino GLiDE | #359 (2026-10-20) | League 1 | Fastino GLiDE 6-1 Clef |
+| League 2 | Clef v Grok 4.7 (off) | #722 (2026-10-26) | League 2 | Grok 4.7 (off) 7-1 Clef |
+| League 2 | Clef v DeepSeek V4.1 Flash 1017 (off) | #723 (2026-10-26) | League 2 | Clef 4-6 DeepSeek V4.1 Flash 1017 (off) |
+| League 2 | Clef v DeepSeek V4.1 Flash 1017 (on) | #724 (2026-10-26) | League 2 | Clef 0-8 DeepSeek V4.1 Flash 1017 (on) |
+| League 2 | Clef v Jev 1.14.0 | #245 (2026-10-19) | League 1 | Clef 3-4 Jev 1.14.0 |
+| League 2 | Clef v Gemini 3.8 Flash (low) | #727 (2026-10-26) | League 2 | Clef 2-5 Gemini 3.8 Flash (low) |
 | League 1 | Celeris-1 Decision v Decider v1.1 27B | #299 (2026-10-19) | League 1 | Celeris-1 Decision 3-4 Decider v1.1 27B |
 | League 1 | Celeris-1 Decision v SubQ Snap Preview | #243 (2026-10-19) | League 1 | SubQ Snap Preview 4-4 Celeris-1 Decision |
 | League 1 | Celeris-1 Decision v Open-Jev 27B v1.1 | #242 (2026-10-19) | League 1 | Open-Jev 27B v1.1 1-5 Celeris-1 Decision |
@@ -103,7 +117,6 @@ Already played (valid match), so not played again; the stored result counts in t
 | League 1 | Celeris-1 Decision v LFM2.5-24B-A2B (on) | #593 (2026-10-24) | League 1 | LFM2.5-24B-A2B (on) 2-4 Celeris-1 Decision |
 | League 1 | Celeris-1 Decision v Qwen3.8-27B (off) | #690 (2026-10-25) | League 1 | Qwen3.8-27B (off) 0-5 Celeris-1 Decision |
 | League 1 | Celeris-1 Decision v DeepSeek V4.1 Flash (off) | #725 (2026-10-26) | League 1 | Celeris-1 Decision 5-3 DeepSeek V4.1 Flash (off) |
-| League 1 | Celeris-1 Decision v Clef | #253 (2026-10-19) | League 1 | Celeris-1 Decision 4-4 Clef |
 | League 3 | Gemini 4 Argon (off) v GPT-6 Astra (off) | #425 (2026-10-20) | League 3 | Gemini 4 Argon (off) 5-5 GPT-6 Astra (off) |
 | League 3 | Gemini 4 Argon (off) v GPT-6 Astra (on) | #445 (2026-10-20) | League 3 | Gemini 4 Argon (off) 0-5 GPT-6 Astra (on) |
 | League 3 | Gemini 4 Argon (off) v Claude Opus 5.5 (off) | #450 (2026-10-20) | League 3 | Claude Opus 5.5 (off) 4-2 Gemini 4 Argon (off) |
@@ -140,7 +153,7 @@ API and subscription pairings first (no GPU), then the GPU pairings in blocks: e
 
 ## Totals
 
-- New pairings: **0**; reused: 47.
+- New pairings: **0**; reused: 64.
 - Money (API price): **$0.00**.
 - API-equivalent of the subscription matches (not billed): $0.00.
 - Match time: under 1 min in total.

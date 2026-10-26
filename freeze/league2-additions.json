@@ -847,5 +847,47 @@
     "fixtures": [
       "matchday 18: Gemini 4 Argon (off) v Celeris-1 Decision"
     ]
+  },
+  {
+    "added_at": "2026-10-26T15:46:18Z",
+    "league": 2,
+    "db": "v3.db",
+    "name": "Clef",
+    "harness_commit": "67722f7edffd0287c500b6f6f4a9352f9e606115",
+    "harness_dirty": true,
+    "entry": {
+      "name": "Clef",
+      "spec": "clef",
+      "provider": "local",
+      "quantization": "bf16",
+      "base_url": "http://127.0.0.1:18091",
+      "note": "moved to a DGX Spark at 2026-10-16 11:04 UTC, same checkpoint and server arguments; 20 League 1 requests replayed on both machines: same play 20/20, max |dp| 0.007",
+      "device": "NVIDIA GB10 (DGX Spark spark-002e) from 2026-10-16 11:04 UTC; RTX PRO 6000 (bariton) before; spark busy with others' servers, so from 2026-10-23 21:20 UTC (ladder round 1) RTX PRO 6000 (bariton GPU 0), clef.sh with CLEF_GPU=0; 20 stored League 1 requests replayed there: same play 20/20, max |dp| 0.026, median 0.003; from 2026-10-25 05:34 UTC (ladder round 2) bariton GPU 2 (CLEF_GPU=2), same script and arguments",
+      "parallel": 1
+    },
+    "entry_sha256": "a89599384217c1e5849b1758175f42b736dd8d81bb819123ee7f5734ec10da8b",
+    "fixtures": []
+  },
+  {
+    "added_at": "2026-10-26T15:46:18Z",
+    "league": 2,
+    "db": "v3.db",
+    "name": "Gemini 3.8 Flash (low)",
+    "harness_commit": "67722f7edffd0287c500b6f6f4a9352f9e606115",
+    "harness_dirty": true,
+    "entry": {
+      "name": "Gemini 3.8 Flash (low)",
+      "spec": "antigravity/gemini-3.8-flash",
+      "provider": "antigravity-subscription",
+      "reasoning": "low",
+      "price": {
+        "input_per_mtok": 0.75,
+        "output_per_mtok": 3.75
+      },
+      "note": "Google Antigravity subscription (Google AI Ultra, OMP's login; Antigravity model id gemini-3.8-flash-low) from 2026-10-19 12:46 UTC; its first League 2 decision came then: until then it waited, not ready, for a Gemini API key the league never had. Same model (modelVersion gemini-3.8-flash), prompt, thinking level and enum-constrained letter as the gemini/ smoke setup; cost is API-list-price equivalent. Smoke check (10 positions x 2): same play as the Gemini API answers in 19 of 20",
+      "parallel": 4
+    },
+    "entry_sha256": "bff098695bed7a58c2aa0bd9161d9c74189d1f2db17b99d1ca851513e208f3ec",
+    "fixtures": []
   }
 ]

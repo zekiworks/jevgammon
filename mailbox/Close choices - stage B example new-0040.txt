@@ -1,0 +1,42 @@
+Close choices, stage B: one position where Claude Opus 5.5 (on)'s 5 plays differed in a measured feature
+Source: smoke/close-choices-b.db (read-only) and smoke/close-choices-b-score-5teams.json (observed sets as scored per Method §9).
+Choice rule: of the 19 frozen positions where Claude Opus 5.5 (on)'s observed set is non-empty, the lowest position id.
+
+Position: new-0040 (set "new", standard backgammon, opening phase, turn 5)
+Dice: 6-5, black to play, 21 legal plays.
+Position key: sGfiADKYc+EBIg:65:black
+
+Claude Opus 5.5 (on)
+  5 plays: 1) 21/15* 8/3*   2) 21/15* 8/3*   3) 21/15* 8/3*   4) 9/3* 8/3   5) 21/15* 8/3*
+  Distinct plays: 2
+  Observed feature set (features that differ between the chosen plays): hitting, points, prime, race
+  Predicted set: hitting, points
+
+Every team's predicted set and 5 plays for new-0040:
+
+Claude Opus 5.5 (on)
+  Predicted: hitting, points
+  Plays: 21/15* 8/3* | 21/15* 8/3* | 21/15* 8/3* | 9/3* 8/3 | 21/15* 8/3*
+  Observed: hitting, points, prime, race
+
+GPT-6 Astra (on)
+  Predicted: hitting, points, race
+  Plays: 21/15* 8/3* (all 5)
+  Observed: none (same play every time)
+
+GPT-6.1 Sol (high)
+  Predicted: hitting, points, race
+  Plays: 21/15* 8/3* (all 5)
+  Observed: none (same play every time)
+
+GPT-6.1 Sol (low)
+  Predicted: hitting, points, race
+  Plays: 21/15* 8/3* (all 5)
+  Observed: none (same play every time)
+
+Gemini 3.8 Flash (low)
+  Predicted: hitting, points, race
+  Plays: 9/3* 8/3 (all 5)
+  Observed: none (same play every time)
+
+No answer was invalid. Gemma 4 31B (on) is not reported (stopped, partial data not used).

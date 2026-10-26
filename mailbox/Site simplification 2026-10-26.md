@@ -109,3 +109,93 @@ Effect:
   - phone, More options open: `mock-after-home-dark-open-390.webp`.
 
 Part 2 waiting for approval
+
+## update.sh publishes only committed site code (fix, before Part 2)
+On 26 Oct the 14:20 timer run published the Part 1 CSS from the working tree a few minutes before it was committed. The cause: `update.sh` named the committed `tools/site` in its change key, but it built from the working tree.
+
+- **Fix**: commit `1d59c08` changes `tools/site/update.sh`, and the change is pushed.
+  - Every step now runs from `~/.local/state/bg-site/src`: the snapshot, the GNUbg scoring, the build and checks, and the findings draft.
+  - That folder mirrors the repository with one symlink per top-level entry and per entry of `tools/`.
+  - Its `tools/site` is the committed tree, extracted with `git archive` from `HEAD:tools/site`. This is the same tree id the change key uses.
+  - It is rebuilt on every run, under the existing lock. Working-tree edits under `tools/site` cannot reach the site.
+  - When the working tree has some, the run logs: `tools/site has uncommitted changes; ignored: building the committed tree <id>`.
+  - Data files (v3.db, replay.db, positions, leagues, smoke) are read through the symlinks, as before.
+  - `update.sh` itself is still run from the working tree by systemd.
+- **Test with a dirty working tree**:
+  - I appended an uncommitted marker comment to `tools/site/assets/bg.css` and started `bg-site-preview.service` once (15:00 UTC).
+  - The log shows the "uncommitted changes; ignored" line, and the run deployed (analysis commit `5573ff448`).
+  - The marker was in neither the built `backgammon/bg.css` nor the live `bg.css` (curl: 0 matches). I then removed the marker.
+  - The 15:05 timer run hit the same case for real: my uncommitted Part 2 edits were in the working tree. It logged the same line, and the live HTML had no Part 2 markup until the commit below.
+- **Test with a clean working tree**: the committed Part 2 (below) was published by the next run.
+
+## Part 2 built (approved by Can with three additions)
+Commit `92da8a1` changes only `tools/site`: `pages.py`, `home.py`, `assets/site.css`, `bg.css`, `site.js` and `bg.js`. It is pushed.
+
+### What is on the site now
+- **More options (top bar, every page)**: a key at the top right. It opens a panel with:
+  - "Colour theme": Dark background / Light background;
+  - "Share": Export page as PNG.
+  - Only the page export moved. Each chart and table still has its own Download PNG where it was.
+  - The page export closes the panel before it reads the page, so the PNG never shows the open panel. I checked this in the browser: the panel was hidden at the moment png.js read the page.
+- **More filters (Filters panel on home)**: League and Model type stay in view. Phase, Reasoning, Runs on and Weights sit in a fold under a "More filters" key.
+  - While closed, the key names the active non-default values and counts them, e.g. "More filters · Reasoning: High (1 active)" or "More filters · Phase: Race, Reasoning: High (2 active)".
+  - With nothing active it reads "More filters · phase, reasoning, runs on, weights". When open it shows only the count.
+  - The setups count and Reset stay visible next to it.
+- **Auto-open**: the fold opens by itself when a folded filter is not at its default as the page is shown.
+  - Only the league is in the address, so in practice this is the Phase the browser keeps on back / forward.
+  - The browser fills that choice in after the scripts have run, so the page now loads that phase and opens the fold on `pageshow`.
+  - Before this, the select showed the kept phase while the tables showed all phases.
+  - Tested: Phase Race, fold closed, go to Method, then Back. The fold was open, the key read "More filters (1 active)" and Reset was active.
+- **Extra fix**: the line "Nothing to reset: the filters show the defaults." used to stay visible next to an active Reset, because `.small` overrode `[hidden]`. This was already the case on the live site. One CSS line fixes it.
+- **Old rules removed**: the earlier rules that gave Export page as PNG its own top-bar grid cell and its own row on phones are gone.
+
+### Keyboard, ARIA, tap targets (measured in the browser on the local build)
+- **Tab order** from the top: Skip to content → brand → More options → (when open) Dark background → Light background → Export page as PNG → the 7 nav links → the page.
+  - The menu now comes right after the brand in the HTML, so the order matches what is on screen.
+  - In the fold the order is: More filters → (when open) Phase → Reasoning keys → Runs on keys → Weights keys → Reset.
+- **Escape**:
+  - In the open menu, from the Light key: the menu closes, `aria-expanded` goes to `false` and the focus goes back to More options.
+  - Escape inside the open fold also closes it and focuses More filters.
+  - Tabbing out of the menu closes it (the focus moved on to "Every decision"), and so does a click outside.
+- **ARIA**:
+  - More options has `aria-expanded` and `aria-controls="more-options"`; the panel is `id="more-options" hidden` when closed. Same for More filters → `id="filters-more"`.
+  - Both targets exist and their ids are unique: checks.py checks ids and anchors.
+  - Each key's accessible name includes its summary.
+  - The theme group is labelled by "Colour theme" (`aria-labelledby`).
+- **Focus ring**: unchanged from Part 1 (2px `--focus`, offset 2px). `:focus-visible` was true on the focused key in every focus screenshot.
+- **Phone tap targets (390 px)**: I measured 29 controls in light and dark: the menu key, Dark, Light and Export page as PNG in the open menu, plus every key and the select in the Filters panel with the fold open. The smallest height is 44 px and the smallest width is 55 px.
+  - The rule `min-height/min-width: 2.75rem` applies on phones to `.more-menu .key`, `.filters .key` and `.filters select`.
+
+### First-screen controls (counted in the browser; skip link included)
+- **Desktop 1280×800: 38 → 23.**
+  - Skip, brand, More options, 7 nav links, 3 content links, League ×4, Model type ×4, More filters and Reset.
+  - Reset now fits above the fold because the Filters panel is shorter.
+- **Phone 390×844: 11 → 10.**
+  - Skip, brand, More options, 4 visible nav links (the rest scroll sideways) and 3 content links.
+  - Without the Export row, "Open this decision" now reaches the first screen.
+
+### Build, checks, deploy, live check
+- **Local build:** `build.py` with checks.py, run in a throwaway folder: exit 0, no failures. I rebuilt once more after the last CSS/JS change; it passed again, and the built assets are identical to the commit.
+- **Deploy:** I started `bg-site-preview.service` once (15:13:50–15:15:10 UTC) and it pushed analysis commit `d26deba63` (data as of 15:13Z, results 318f520b). That run built from a clean `tools/site`.
+- **Live curl** of `https://zekiworks.github.io/analysis/backgammon/`, with a cache-busting query string:
+  - `aria-expanded="false" aria-controls="more-options"` 1, `id="more-options" hidden` 1;
+  - `data-more-filters` 1, `aria-controls="filters-more"` 1, `id="filters-more" hidden` 1, `data-more-summary` 1;
+  - `data-page-png` 1 (inside the menu);
+  - the Method page has the menu too;
+  - the served `bg.js` has `showFold` and the served `site.js` has `moreOptions`.
+- **Live in the browser:**
+  - Enter on More options opens the menu;
+  - Escape closes it and gives the focus back to the key;
+  - with League 2 and Reasoning High, the closed key reads "More filters · Reasoning: High (1 active)".
+
+### Screenshots (`mailbox/site-simplification/part2/`, local build, 28 WebP files, 1.3 MB)
+Each set exists in `{light,dark}` × `{1280,390}`:
+- `p2-home-closed-*`: the first screen with both folds closed;
+- `p2-menu-open-*`: More options open;
+- `p2-filters-closed-*`: the Filters panel with More filters closed;
+- `p2-filters-open-*`: the fold open;
+- `p2-filters-active-*`: the closed key with an active non-default filter (League 2, Reasoning: High, "2 of 19 setups"). In League 1, Reasoning High matches no setup, which is why League 2 is shown.
+- `p2-focus-menu-*`: keyboard focus on the Light key inside the open menu;
+- `p2-focus-fold-*`: keyboard focus on the Reasoning "All" key inside the open fold.
+
+The "before" screenshots for this part are Part 1's `after-home-*` and `after-board-*` (the site with the flat style, before the folds).

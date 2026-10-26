@@ -23,6 +23,9 @@
 # The loop reports its own failures: any other failure (a crash, a push that keeps failing, a kill or timeout)
 # writes mailbox/Backgammon site preview - update loop failed.md (tools/site/report_failure.sh, from the ERR trap and
 # from systemd's OnFailure=); the next successful run removes it.
+# Only committed site code is published: every step runs from STATE/src, a mirror of the repository (one symlink per
+# top-level entry and per entry of tools/) whose tools/site is HEAD's tree, extracted with git archive; uncommitted
+# edits under tools/site never reach the site (a run that finds some logs that it ignored them).
 # Runs never overlap (flock). Log: STATE/update.log.
 set -euo pipefail
 
@@ -47,14 +50,31 @@ fi
 renice -n 19 $$ >/dev/null
 ionice -c 3 -p $$ 2>/dev/null || true
 trap 'log "failed (line $LINENO)"; "$ROOT/tools/site/report_failure.sh" "update.sh stopped at line $LINENO"' ERR
-cd "$ROOT"
 log "start"
+
+# 0. The committed site code (the tree the change key names) in a mirror of the repository.
+CODE=$(git -C "$ROOT" rev-parse HEAD:tools/site)
+SRC=$STATE/src
+rm -rf "$SRC"
+mkdir -p "$SRC/tools"
+shopt -s nullglob dotglob
+for e in "$ROOT"/*; do
+  case ${e##*/} in tools|.git) ;; *) ln -s "$e" "$SRC/" ;; esac
+done
+for e in "$ROOT"/tools/*; do
+  [ "${e##*/}" = site ] || ln -s "$e" "$SRC/tools/"
+done
+shopt -u nullglob dotglob
+git -C "$ROOT" archive --prefix=tools/site/ "$CODE" | tar -x -C "$SRC"
+if [ -n "$(git -C "$ROOT" status --porcelain -- tools/site)" ]; then
+  log "tools/site has uncommitted changes; ignored: building the committed tree $CODE"
+fi
+cd "$SRC"
 
 # 1. Snapshot and change key.
 SUMMARY=$(python3 tools/site/snapshot.py "$ROOT/v3.db" "$STATE" | tail -1)
 FP=$(python3 -c 'import json, sys; print(json.loads(sys.argv[1])["fingerprint"])' "$SUMMARY")
-CODE=$(git rev-parse HEAD:tools/site)
-KEY="$FP code:$CODE smoke:$(sha256sum smoke/part-a.json | cut -c1-12) v1:$(stat -c %Y replay.db)"
+KEY="$FP code:$CODE smoke:$(sha256sum "$ROOT/smoke/part-a.json" | cut -c1-12) v1:$(stat -c %Y "$ROOT/replay.db")"
 if [ "${1:-}" != "--force" ] && [ -f "$STATE/deployed.key" ] && [ "$(cat "$STATE/deployed.key")" = "$KEY" ]; then
   log "no change ($FP)"
   rm -f "$LOOP_FAILED"

@@ -1049,13 +1049,18 @@ def filters(S) -> str:
                 f'aria-hidden="true"></span>Shared positions</button>')
     phases = "".join(f'<option value="{p}">{esc(P.PHASE_LABEL[p])}</option>' for p in A.PHASES)
     totals = {lg["dataset"]: len(lg["setups"]) for lg in S["leagues"]}
+    # The league and the model type stay in view; phase, reasoning, runs on and weights fold behind "More filters", whose
+    # key names the active ones while it is closed (bg.js).
     return f"""<section class="panel filters is-open needs-js" id="filters" aria-labelledby="filters-title">
       <h2 id="filters-title" class="filters-title">Filters</h2>
       <div class="filters-body" id="filters-body">
         <div class="group league-pick" role="group" aria-labelledby="f-league"><span class="group-label" id="f-league">League</span><span class="keys">{leagues}</span></div>
         {group("kind", "Model type", [("all", "All"), ("decision", "Decision"), ("chat", "Chat"), ("program", "Program")])}
-        <label class="group"><span class="group-label">Phase</span> <select data-control="phase"><option value="all">All phases</option>{phases}</select></label>
-        {group("setting", "Reasoning", settings)}{group("runs", "Runs on", runs)}{group("weights", "Weights", weights)}
+        <div class="group more-filters"><button type="button" class="key fold-toggle" data-more-filters aria-expanded="false" aria-controls="filters-more"><span class="chevron" aria-hidden="true"></span>More filters<span class="fold-summary" data-more-summary> · phase, reasoning, runs on, weights</span></button></div>
+        <div class="filters-more" id="filters-more" hidden>
+          <label class="group"><span class="group-label">Phase</span> <select data-control="phase"><option value="all">All phases</option>{phases}</select></label>
+          {group("setting", "Reasoning", settings)}{group("runs", "Runs on", runs)}{group("weights", "Weights", weights)}
+        </div>
         <div class="group"><span class="setup-count" data-setups data-totals='{esc(json.dumps(totals))}' aria-live="polite">{count(totals[default_league(S)])} of {count(totals[default_league(S)])} setups</span>
         <button type="button" class="key reset" data-control="reset" aria-disabled="true" data-tip="Nothing to reset: the filters show the defaults.">Reset</button>
         <span class="small reset-why" data-reset-why>Nothing to reset: the filters show the defaults.</span></div>

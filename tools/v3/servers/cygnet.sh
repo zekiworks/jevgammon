@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Cygnet (wave B): frozen google/gemma-4-12B-it on vLLM (port 8892, GPU 0) behind Cygnet's
 # decision server ~/code/cygnet/shim/decision_server.py (port 18093, on BIND_HOST), as in v1.
-#   [CYGNET_UTIL=share] [BIND_HOST=0.0.0.0] tools/v3/servers/cygnet.sh start|stop|status
+#   [CYGNET_GPU=0] [CYGNET_UTIL=share] [BIND_HOST=0.0.0.0] tools/v3/servers/cygnet.sh start|stop|status
 source "$(dirname "$(readlink -f "$0")")/_lib.sh"
 
 NAME=v3-cygnet-vllm
@@ -12,7 +12,7 @@ PORT=18093
 case ${1:-} in
   start)
     # shellcheck disable=SC2046
-    docker_up "$NAME" "$VLLM_PORT" $(docker_gpu 0) --ipc host --network host \
+    docker_up "$NAME" "$VLLM_PORT" $(docker_gpu "${CYGNET_GPU:-0}") --ipc host --network host \
       -v "$HF_HUB:/root/.cache/huggingface/hub:ro" -e HF_HUB_OFFLINE=1 \
       --entrypoint vllm vllm/vllm-openai:v0.30.0 \
       serve google/gemma-4-12B-it --revision 707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7 \

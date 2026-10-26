@@ -117,5 +117,36 @@
       "matchday 12: GPT-6.1 Sol (low) v Kimi K3.1 Pro (off)",
       "matchday 12: GPT-6.1 Sol (high) v Kimi K3.1 Pro (off)"
     ]
+  },
+  {
+    "added_at": "2026-10-25T20:02:53Z",
+    "league": 3,
+    "db": "v3.db",
+    "name": "Gemini 3.8 Flash (low)",
+    "harness_commit": "ff11e8518d38ff9a3da9cf630633c5002512ea7f",
+    "harness_dirty": true,
+    "entry": {
+      "name": "Gemini 3.8 Flash (low)",
+      "spec": "antigravity/gemini-3.8-flash",
+      "provider": "antigravity-subscription",
+      "reasoning": "low",
+      "price": {
+        "input_per_mtok": 0.75,
+        "output_per_mtok": 3.75
+      },
+      "note": "Google Antigravity subscription (Google AI Ultra, OMP's login; Antigravity model id gemini-3.8-flash-low) from 2026-10-19 12:46 UTC; its first League 2 decision came then: until then it waited, not ready, for a Gemini API key the league never had. Same model (modelVersion gemini-3.8-flash), prompt, thinking level and enum-constrained letter as the gemini/ smoke setup; cost is API-list-price equivalent. Smoke check (10 positions x 2): same play as the Gemini API answers in 19 of 20",
+      "parallel": 4
+    },
+    "entry_sha256": "bff098695bed7a58c2aa0bd9161d9c74189d1f2db17b99d1ca851513e208f3ec",
+    "fixtures": [
+      "matchday 11: GPT-6 Astra (off) v Gemini 3.8 Flash (low)",
+      "matchday 11: Gemini 3.8 Flash (low) v GPT-6 Astra (on)",
+      "matchday 11: Gemini 3.8 Flash (low) v Claude Opus 5.5 (off)",
+      "matchday 11: Gemini 3.8 Flash (low) v Claude Opus 5.5 (on)",
+      "matchday 11: Gemini 3.8 Flash (low) v Claude Fable 5.1 (on)",
+      "matchday 11: Gemini 3.8 Flash (low) v Gemini 4 Argon (on)",
+      "matchday 11: Grok 4.7 (on) v Gemini 3.8 Flash (low)",
+      "matchday 11: Gemini 3.8 Flash (low) v Kimi K3.1 Pro (off)"
+    ]
   }
 ]

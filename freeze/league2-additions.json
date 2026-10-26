@@ -685,5 +685,63 @@
       "matchday 18: DeepSeek V4.1 Flash 1017 (on) v Grok 4.7 (off)",
       "matchday 18: DeepSeek V4.1 Flash 1017 (off) v DeepSeek V4.1 Flash 1017 (on)"
     ]
+  },
+  {
+    "added_at": "2026-10-25T20:02:53Z",
+    "league": 2,
+    "db": "v3.db",
+    "name": "Jev 1.14.0",
+    "harness_commit": "ff11e8518d38ff9a3da9cf630633c5002512ea7f",
+    "harness_dirty": false,
+    "entry": {
+      "name": "Jev 1.14.0",
+      "spec": "jev/jev-1.14.0",
+      "provider": "jev",
+      "price": {
+        "input_per_mtok": 0.042,
+        "output_per_mtok": 0.0
+      },
+      "note": "TypeSafe System One API; list price $0.042 per million input tokens, the same as 1.13.0 (docs.typesafe.ai/models, 2026-10-16)",
+      "parallel": 2
+    },
+    "entry_sha256": "cc84687319713d4fcce82f0b0f930bd13bff159cdf3473622473822f6488d174",
+    "fixtures": [
+      "matchday 18: Jev 1.14.0 v Gemini 3.8 Flash (high)",
+      "matchday 18: Claude Sonnet 5.5 (low) v Jev 1.14.0",
+      "matchday 18: Jev 1.14.0 v Claude Sonnet 5.5 (high)",
+      "matchday 18: DeepSeek V4.1 Flash (off) v Jev 1.14.0",
+      "matchday 18: DeepSeek V4.1 Flash (on) v Jev 1.14.0",
+      "matchday 18: GLM-5.3 (on) v Jev 1.14.0",
+      "matchday 18: Qwen3.8 Flash (off) v Jev 1.14.0",
+      "matchday 18: Jev 1.14.0 v Gemma 4 31B (on)",
+      "matchday 18: Gemma 4 31B (off) v Jev 1.14.0",
+      "matchday 18: Jev 1.14.0 v Qwen3.8-27B (on)",
+      "matchday 18: Jev 1.14.0 v Claude Fable 5.1 (off)",
+      "matchday 18: Grok 4.7 (off) v Jev 1.14.0",
+      "matchday 18: DeepSeek V4.1 Flash 1017 (off) v Jev 1.14.0",
+      "matchday 18: DeepSeek V4.1 Flash 1017 (on) v Jev 1.14.0"
+    ]
+  },
+  {
+    "added_at": "2026-10-25T20:02:53Z",
+    "league": 2,
+    "db": "v3.db",
+    "name": "Gemini 4 Argon (off)",
+    "harness_commit": "ff11e8518d38ff9a3da9cf630633c5002512ea7f",
+    "harness_dirty": true,
+    "entry": {
+      "name": "Gemini 4 Argon (off)",
+      "spec": "antigravity/gemini-4-argon",
+      "provider": "antigravity-subscription",
+      "reasoning": "low",
+      "price": {
+        "input_per_mtok": 2.0,
+        "output_per_mtok": 10.0
+      },
+      "note": "thinking level low, the lowest (spends no reasoning tokens), labelled off. Google Antigravity subscription (Google AI Ultra, OMP's login; Antigravity model id gemini-4-argon-low; modelVersion gemini-4-argon); cost is API-list-price equivalent. Smoke check (10 positions x 2): same play as the Gemini API answers in 15 of 20 (Antigravity against itself 9 of 10), no reasoning tokens either way; list price $2/$10 per million tokens until 2026-12-01 ($4/$20 after)",
+      "parallel": 4
+    },
+    "entry_sha256": "9bff31913d1b7a4d762d49f7eb4961881d29fa3de4c98588e23b9048fe3d76db",
+    "fixtures": []
   }
 ]

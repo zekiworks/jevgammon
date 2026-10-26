@@ -485,5 +485,49 @@
       "matchday 18: Decider v1.2 27B v LFM2.5-24B-A2B (on)",
       "matchday 18: Fastino GLiDE v1.2 (local) v LFM2.5-24B-A2B (on)"
     ]
+  },
+  {
+    "added_at": "2026-10-25T20:02:53Z",
+    "league": 1,
+    "db": "v3.db",
+    "name": "Qwen3.8-27B (off)",
+    "harness_commit": "ff11e8518d38ff9a3da9cf630633c5002512ea7f",
+    "harness_dirty": true,
+    "entry": {
+      "name": "Qwen3.8-27B (off)",
+      "spec": "openai-compatible/qwen3.8-27b",
+      "provider": "local-vllm",
+      "quantization": "fp16 (bf16 checkpoint served in fp16 by vLLM; fp16 KV cache)",
+      "base_url": "http://127.0.0.1:8897/v1",
+      "request": {
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        },
+        "response_format": null
+      },
+      "letter_readout": "answer",
+      "note": "thinking off; unconstrained letter, as on Cerebras (fp16 via OpenRouter) before 2026-10-19 22:26 UTC, where it finished no match; from then vLLM on our GPU (tools/v3/servers/qwen38-27b.sh); 20 stored (off) requests replayed there: same top letter 18/20 (bf16: 17/20; the others near-ties), max |dp| 0.15, median 0.034",
+      "device": "Cerebras (OpenRouter) until 2026-10-19 22:26 UTC; then RTX PRO 6000 (bariton GPU 1), the whole GPU (memory share 0.90, 32 sequences); paused 2026-10-20 (GPUs needed elsewhere); from 2026-10-20 20:16 UTC bariton GPU 3 (same model of GPU, image, checkpoint and arguments); from 2026-10-20 21:10 UTC NVIDIA GB10 (DGX Spark spark-002e), same image, checkpoint and arguments except memory share 0.85, while bariton's four GPUs serve DeepSeek V4.1 Flash; 20 stored League 2 (off) requests (bariton) replayed there: same top letter 20/20, max |dp| 0.005, median 0.002; from 2026-10-21 01:25 UTC back on bariton GPU 3, same script and arguments, while DeepSeek V4.1 Flash is paused (its four GPUs freed for League 2's non-DeepSeek thinking matches); 20 stored (off) requests: same top letter 20/20, max |dp| 0.009; from 2026-10-21 05:00 UTC NVIDIA GB10 (DGX Spark spark-002e) again, the same server as from 2026-10-20 21:10 UTC, while DeepSeek V4.1 Flash plays its last matches on bariton; from 2026-10-22 15:37 UTC back on RTX PRO 6000 (bariton GPU 3), same image, checkpoint and arguments (memory share 0.90); 20 stored League 2 (off) requests replayed there: same top letter 20/20, max |dp| 0.007, median 0.0008; from 2026-10-23 21:34 UTC (ladder round 1) bariton GPU 0, same script, image, checkpoint and arguments (QWEN27_GPU=0); 2026-10-23 23:09 UTC the server died (CUDA unknown error after another GPU fell off the bus); matches deferred until bariton is reset; from 2026-10-25 09:49 UTC (ladder round 2) bariton GPU 1 (QWEN27_GPU=1), same script, image, checkpoint and arguments",
+      "parallel": 8,
+      "max_matches": 16
+    },
+    "entry_sha256": "ed983433ef99f8cf85020ce9d1e4422b70513bd1b64e7c2b65de33c1df46bb3c",
+    "fixtures": [
+      "matchday 18: Qwen3.8-27B (off) v Decider v1.1 27B",
+      "matchday 18: SubQ Snap Preview v Qwen3.8-27B (off)",
+      "matchday 18: Qwen3.8-27B (off) v Clef",
+      "matchday 18: Open-Jev 27B v1.1 v Qwen3.8-27B (off)",
+      "matchday 18: Cygnet (Gemma 4 12B) v Qwen3.8-27B (off)",
+      "matchday 18: Qwen3.8-27B (off) v Random",
+      "matchday 18: Safest v Qwen3.8-27B (off)",
+      "matchday 18: Jev 1.13.0 v Qwen3.8-27B (off)",
+      "matchday 18: Qwen3.8-27B (off) v Celeris-1 Decision",
+      "matchday 18: Qwen3.8-27B (off) v GPT-6 Luna",
+      "matchday 18: Decider Flash v1.2 v Qwen3.8-27B (off)",
+      "matchday 18: Qwen3.8-27B (off) v Winnow-12B",
+      "matchday 18: Mercury Decide v Qwen3.8-27B (off)",
+      "matchday 18: Qwen3.8-27B (off) v Decider v1.2 27B",
+      "matchday 18: Qwen3.8-27B (off) v Fastino GLiDE v1.2 (local)"
+    ]
   }
 ]

@@ -549,18 +549,19 @@ python3 tools/ladder.py cup-winner --db v3.db --match ID
 
 - **plan** ranks every league (points, games won, fewer games lost, error rate), takes each
   lower league's winner and the upper league's last (programs never move: the next setup is
-  taken), applies the lock rule (a setup relegated from a league for the second time stays
-  below unless the upper league holds a setup it has not played; a locked winner that has
-  played them all freezes the boundary for the round), and writes the request: the move log
-  (round, setup, from, to, reason), the error-rate flag of each swap with 95% intervals
-  (resampling games, as the site), every new pairing with its estimated money (API price;
-  API-equivalent for subscriptions; own hardware), duration and servers or APIs, the
-  reused pairings and where they were played, the playing order (API and subscription
-  pairings first, then GPU blocks of at most four bariton GPUs) and the totals. It stops with
-  an error while the site has not scored every decision. A round without moves is the
-  steady state.
+  taken; there is no lock, as of Can's rule change of 2026-10-26), and writes the request: the
+  end check, the move log (round, setup, from, to, reason), the error-rate flag of each swap
+  with 95% intervals (resampling games, as the site), every new pairing with its estimated
+  money (API price; API-equivalent for subscriptions; own hardware), duration and servers or
+  APIs, the reused pairings and where they were played, the playing order (API and
+  subscription pairings first, then GPU blocks of at most four bariton GPUs) and the totals.
+  It stops with an error while the site has not scored every decision. The ladder ends at the
+  first round whose moves would create no new pairing: that round is not played; each setup it
+  would move oscillates and is placed in whichever of its two leagues is closer to its original
+  league (before any ladder move), and the request ("Ladder ended: final placement") lists
+  those placement moves.
 - **apply** records the moves with `league-remove` (reason "ladder round N: promoted to
-  league M", "relegated", or "promoted (lock exception)"; these notes are the ladder's
+  league M", "relegated", or "final placement"; these notes are the ladder's
   history) and `league-add` (the setup's stored settings), and switches a receiving league
   that played its games in sequence (League 1) to both games of a round at once, the ladder
   and Cup format; earlier matches stay as played. Then `league --resume` plays only the new

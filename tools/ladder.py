@@ -15,14 +15,17 @@ Rules (setups move, not models; one result per pair):
   matches (`league_web.error_rates`, the site's GNUbg scores). A pair's valid match counts in every
   league whatever league or rules it was played in, so a mover plays only the pairs it never played;
   every other pair of its new league is reused (order ignored).
-- Lock: a setup relegated from the same league a second time stays below. It moves up again only if
-  the upper league holds a setup it has not played (it then plays the missing matches and its count
-  starts again); a locked winner that has played every setup above freezes the boundary for the
-  round: nobody is promoted there, and nobody relegated.
-- Stop: a round without moves is the steady state.
+- No lock (Can, 2026-10-26; the earlier lock rule is gone): setups move by these rules every round,
+  as often as the tables say.
+- End: the ladder ends at the first round whose moves would create no new pairing (every pair they
+  create is already stored). That round is not played as a round; instead the final placement:
+  each setup it would move is oscillating between its league and the move's target, and is placed
+  in whichever of the two is closer to its original league (`league_web.league_origins`: the league
+  before any ladder move); every other setup stays. The placement's moves have the reason "final
+  placement" and are applied like a round's.
 - Every move is recorded in `league_players.note` of the league left, by `apply`, as
-  "ladder round N: <reason> to league M" (reasons: promoted, relegated, promoted (lock exception));
-  that is the ladder's history (`history`).
+  "ladder round N: <reason> to league M" (reasons: promoted, relegated, final placement); that is
+  the ladder's history (`history`).
 
 Hype Cup tie rule (for the Cup orchestrator): a Cup match that ends level (stored or new) goes to the
 setup with the lower error rate in that match (`cup_winner`); no extra rounds are played.
@@ -49,7 +52,7 @@ LADDER = [1, 2, 3]
 LEAGUE_NAMES = {1: "League 1 (decision models)", 2: "League 2 (workhorses)", 3: "League 3 (frontier models)"}
 # Players that are programs: they never move and never enter the Cup.
 PROGRAM_SPECS = {"random", "safest", "gnubg-weak"}
-MOVE_NOTE = re.compile(r"ladder round (\d+): (promoted \(lock exception\)|promoted|relegated) to league (\d+)")
+MOVE_NOTE = re.compile(r"ladder round (\d+): (promoted|relegated|final placement) to league (\d+)")
 
 
 def short(lid: int) -> str:
@@ -126,29 +129,11 @@ def history(conn) -> list[dict]:
     return out
 
 
-def relegations_since_reset(moves: list[dict], setup: str, upper: int) -> int:
-    """Relegations of `setup` from `upper` since its last promotion by the lock exception."""
-    n = 0
-    for m in sorted(moves, key=lambda m: m["round"]):
-        if m["setup"] != setup:
-            continue
-        if m["reason"] == "relegated" and m["source"] == upper:
-            n += 1
-        elif m["reason"] == "promoted (lock exception)" and m["target"] == upper:
-            n = 0
-    return n
-
-
 # --- The round -------------------------------------------------------------------------------------
 
-def compute_round(conn, scores: Path) -> dict:
-    people = players(conn)
-    rates_full = lw.error_rates(conn, scores)
-    rates = lw.tiebreak_rates(rates_full)
-    current = tables(conn, rates)
-    results = pair_matches(conn)
-    moves_before = history(conn)
-    number = 1 + max((m["round"] for m in moves_before), default=0)
+def round_moves(current: dict, people: dict, number: int) -> tuple[list[dict], list[str], list[dict]]:
+    """The round's moves at every boundary (the lower league's top setup swaps with the upper league's
+    last; programs are skipped), with notes on skipped programs and the swaps for the error-rate flag."""
     moves, notes, swaps = [], [], []
     for lower, upper in zip(LADDER, LADDER[1:]):
         lower_table = [r for r in current[lower]["table"] if not is_program(people[r["name"]])]
@@ -162,46 +147,84 @@ def compute_round(conn, scores: Path) -> dict:
         if skipped_up:
             notes.append(f"{short(upper)}: {', '.join(skipped_up)} ranks below {last['name']} but is a program "
                          "and never moves; the next setup is taken.")
-        reason = "promoted"
-        if relegations_since_reset(moves_before, winner["name"], upper) >= 2:
-            missing = [n for n in current[upper]["names"]
-                       if n != last["name"] and frozenset((winner["name"], n)) not in results]
-            if not missing:
-                moves.append(dict(round=number, setup=winner["name"], source=lower, target=lower,
-                                  reason="frozen boundary"))
-                notes.append(f"{short(lower)}-{short(upper)} boundary frozen: {winner['name']} is locked in "
-                             f"{short(lower)} and has played every setup of {short(upper)}.")
-                continue
-            reason = "promoted (lock exception)"
-            notes.append(f"{winner['name']} is locked in {short(lower)} but has not played {', '.join(missing)} "
-                         f"of {short(upper)}: it moves up (lock exception).")
-        moves.append(dict(round=number, setup=winner["name"], source=lower, target=upper, reason=reason))
+        moves.append(dict(round=number, setup=winner["name"], source=lower, target=upper, reason="promoted"))
         moves.append(dict(round=number, setup=last["name"], source=upper, target=lower, reason="relegated"))
         swaps.append(dict(lower=lower, upper=upper, promoted=winner["name"], replaced=last["name"],
                           promoted_row=winner, replaced_row=last))
-    # Memberships after the round, and the pairings each newcomer meets.
-    after = {lid: list(current[lid]["names"]) for lid in LADDER}
+    return moves, notes, swaps
+
+
+def lineups_after(names: dict[int, list[str]], moves: list[dict]) -> dict[int, list[str]]:
+    """Every ladder league's members after `moves`."""
+    after = {lid: list(names[lid]) for lid in LADDER}
     for m in moves:
-        if m["source"] != m["target"]:
-            after[m["source"]].remove(m["setup"])
-            after[m["target"]].append(m["setup"])
-    new, reused, seen = [], [], set()
+        after[m["source"]].remove(m["setup"])
+        after[m["target"]].append(m["setup"])
+    return after
+
+
+def mover_pairs(moves: list[dict], after: dict[int, list[str]]) -> list[dict]:
+    """Each pair a mover meets in its new league (once per pair), as {league, a (the mover), b}."""
+    out, seen = [], set()
     for m in moves:
-        if m["source"] == m["target"]:
-            continue
         for other in after[m["target"]]:
             pair = frozenset((m["setup"], other))
             if other == m["setup"] or pair in seen:
                 continue
             seen.add(pair)
-            entry = dict(league=m["target"], a=m["setup"], b=other)
-            if pair in results:
-                match = results[pair]
-                reused.append({**entry, "match": match, "played_in": played_in(conn, match)})
-            else:
-                new.append(entry)
+            out.append(dict(league=m["target"], a=m["setup"], b=other))
+    return out
+
+
+def final_placement(moves: list[dict], origin: dict[str, int], number: int) -> tuple[list[dict], list[dict]]:
+    """The end of the ladder: every setup the last round would move oscillates between its league and
+    the move's target, and is placed in whichever is closer to its original league (`origin`). Returns
+    the oscillating setups (setup, source, target, origin, placed) and the moves that placement makes."""
+    oscillating, placed_moves = [], []
+    for m in moves:
+        home = origin[m["setup"]]
+        placed = m["source"] if abs(home - m["source"]) <= abs(home - m["target"]) else m["target"]
+        oscillating.append(dict(setup=m["setup"], source=m["source"], target=m["target"], origin=home,
+                                placed=placed))
+        if placed != m["source"]:
+            placed_moves.append(dict(round=number, setup=m["setup"], source=m["source"], target=placed,
+                                     reason="final placement"))
+    return oscillating, placed_moves
+
+
+def compute_round(conn, scores: Path) -> dict:
+    people = players(conn)
+    rates_full = lw.error_rates(conn, scores)
+    rates = lw.tiebreak_rates(rates_full)
+    current = tables(conn, rates)
+    results = pair_matches(conn)
+    moves_before = history(conn)
+    number = 1 + max((m["round"] for m in moves_before), default=0)
+    names = {lid: current[lid]["names"] for lid in LADDER}
+    moves, notes, swaps = round_moves(current, people, number)
+    after = lineups_after(names, moves)
+    pairs = mover_pairs(moves, after)
+    # End rule: a round whose moves create no new pairing is not played; the final placement instead.
+    ended = all(frozenset((p["a"], p["b"])) in results for p in pairs)
+    oscillating = []
+    if ended:
+        origin = {}
+        for lid in LADDER:
+            origin.update(lw.league_origins(conn, lid))
+        oscillating, moves = final_placement(moves, origin, number)
+        swaps = []
+        after = lineups_after(names, moves)
+        pairs = mover_pairs(moves, after)
+    new, reused = [], []
+    for p in pairs:
+        match = results.get(frozenset((p["a"], p["b"])))
+        if match:
+            reused.append({**p, "match": match, "played_in": played_in(conn, match)})
+        else:
+            new.append(p)
     return dict(number=number, moves=moves, notes=notes, swaps=swaps, new=new, reused=reused, before=current,
-                after=after, people=people, rates=rates_full, history=moves_before)
+                after=after, people=people, rates=rates_full, history=moves_before, ended=ended,
+                oscillating=oscillating)
 
 
 # --- Estimates -------------------------------------------------------------------------------------
@@ -392,12 +415,29 @@ def hours(x: float) -> str:
 def request(conn, plan: dict, db: Path) -> str:
     n, people, rates = plan["number"], plan["people"], plan["rates"]
     now = datetime.now(timezone.utc).strftime("%b %d, %Y %H:%M UTC")
-    out = [f"# Ladder round {n}: request", "",
+    title = f"# Ladder ended: final placement (round {n})" if plan["ended"] else f"# Ladder round {n}: request"
+    out = [title, "",
            f"{now} · computed by `tools/ladder.py plan` from `{db.name}` (read-only). Nothing has started. "
            "Nothing runs until Can approves this round.", ""]
-    if not [m for m in plan["moves"] if m["source"] != m["target"]]:
-        out += ["## Steady state", "", "No setup moves in this round: the leagues are in a steady state. "
-                "The Hype Cup can be prepared.", ""]
+    if plan["ended"]:
+        out += ["## Ladder ended", "",
+                f"Round {n}'s moves would create no new pairing (every pair they make is already stored), so "
+                "the ladder ends (rule of 2026-10-26). Each setup round " + str(n) + " would move is oscillating "
+                "between its league and the move's target; it is placed in whichever of the two is closer to its "
+                "original league (its league before any ladder move). Every other setup stays. The moves below "
+                "are that placement (reason: final placement); the Hype Cup can be prepared once they are "
+                "applied.", ""]
+        if plan["oscillating"]:
+            out += ["| Setup | Oscillates between | Original league | Placed in |", "| --- | --- | --- | --- |"]
+            out += [f"| {o['setup']} | {short(o['source'])} and {short(o['target'])} | {short(o['origin'])} | "
+                    f"{short(o['placed'])} |" for o in plan["oscillating"]]
+        else:
+            out.append("No setup would move: nobody oscillates.")
+        out += [""]
+    else:
+        out += ["## End check", "",
+                f"Round {n}'s moves create {len(plan['new'])} new pairing(s), so the ladder goes on (it ends at "
+                "the first round whose moves would create no new pairing).", ""]
     out += ["## Tables used", "",
             "Ranking: points, then games won, then fewer games lost, then the lower error rate over all of a "
             "setup's valid matches (every league, ladder round and Cup; GNUbg 1.08 2-ply, 500 x mean equity loss, "
@@ -512,7 +552,7 @@ def request(conn, plan: dict, db: Path) -> str:
             "(`tools/v3/servers/`; the scripts take the GPU index), let the runners play the block, stop the "
             "servers and release the GPUs.",
             "4. When every pairing is played, the next `tools/ladder.py plan` writes round " + str(n + 1) + "'s request "
-            "(or the steady state).", ""]
+            "(or the ladder's end and final placement).", ""]
     return "\n".join(out) + "\n"
 
 
@@ -557,9 +597,9 @@ def apply(db: Path, scores: Path, number: int, binary: Path, freeze: Path) -> No
         plan = compute_round(conn, scores)
     if plan["number"] != number:
         raise SystemExit(f"the next round is {plan['number']}, not {number}")
-    moving = [m for m in plan["moves"] if m["source"] != m["target"]]
+    moving = plan["moves"]
     if not moving:
-        raise SystemExit("no moves: the leagues are in a steady state")
+        raise SystemExit("the ladder has ended and its final placement moves nobody: nothing to apply")
     receiving = sorted({m["target"] for m in moving})
     conn = connect(db, write=True)
     for lid in receiving:

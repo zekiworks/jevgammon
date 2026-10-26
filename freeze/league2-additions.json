@@ -743,5 +743,109 @@
     },
     "entry_sha256": "9bff31913d1b7a4d762d49f7eb4961881d29fa3de4c98588e23b9048fe3d76db",
     "fixtures": []
+  },
+  {
+    "added_at": "2026-10-26T08:59:30Z",
+    "league": 2,
+    "db": "v3.db",
+    "name": "Clef",
+    "harness_commit": "4a52ab08f82bd9e9c03d4b2183d53a54dbccf919",
+    "harness_dirty": true,
+    "entry": {
+      "name": "Clef",
+      "spec": "clef",
+      "provider": "local",
+      "quantization": "bf16",
+      "base_url": "http://127.0.0.1:18091",
+      "note": "moved to a DGX Spark at 2026-10-16 11:04 UTC, same checkpoint and server arguments; 20 League 1 requests replayed on both machines: same play 20/20, max |dp| 0.007",
+      "device": "NVIDIA GB10 (DGX Spark spark-002e) from 2026-10-16 11:04 UTC; RTX PRO 6000 (bariton) before; spark busy with others' servers, so from 2026-10-23 21:20 UTC (ladder round 1) RTX PRO 6000 (bariton GPU 0), clef.sh with CLEF_GPU=0; 20 stored League 1 requests replayed there: same play 20/20, max |dp| 0.026, median 0.003; from 2026-10-25 05:34 UTC (ladder round 2) bariton GPU 2 (CLEF_GPU=2), same script and arguments",
+      "parallel": 1
+    },
+    "entry_sha256": "a89599384217c1e5849b1758175f42b736dd8d81bb819123ee7f5734ec10da8b",
+    "fixtures": [
+      "matchday 17: Clef v Gemini 3.8 Flash (high)",
+      "matchday 17: Clef v Claude Sonnet 5.5 (low)",
+      "matchday 17: Claude Sonnet 5.5 (high) v Clef",
+      "matchday 17: Clef v DeepSeek V4.1 Flash (on)",
+      "matchday 17: GLM-5.3 (on) v Clef",
+      "matchday 17: Qwen3.8 Flash (off) v Clef",
+      "matchday 17: Clef v Gemma 4 31B (on)",
+      "matchday 17: Clef v Gemma 4 31B (off)",
+      "matchday 17: Qwen3.8-27B (on) v Clef",
+      "matchday 17: Claude Fable 5.1 (off) v Clef",
+      "matchday 17: Grok 4.7 (off) v Clef",
+      "matchday 17: Clef v DeepSeek V4.1 Flash 1017 (off)",
+      "matchday 17: Clef v DeepSeek V4.1 Flash 1017 (on)"
+    ]
+  },
+  {
+    "added_at": "2026-10-26T08:59:30Z",
+    "league": 2,
+    "db": "v3.db",
+    "name": "Gemini 3.8 Flash (low)",
+    "harness_commit": "4a52ab08f82bd9e9c03d4b2183d53a54dbccf919",
+    "harness_dirty": true,
+    "entry": {
+      "name": "Gemini 3.8 Flash (low)",
+      "spec": "antigravity/gemini-3.8-flash",
+      "provider": "antigravity-subscription",
+      "reasoning": "low",
+      "price": {
+        "input_per_mtok": 0.75,
+        "output_per_mtok": 3.75
+      },
+      "note": "Google Antigravity subscription (Google AI Ultra, OMP's login; Antigravity model id gemini-3.8-flash-low) from 2026-10-19 12:46 UTC; its first League 2 decision came then: until then it waited, not ready, for a Gemini API key the league never had. Same model (modelVersion gemini-3.8-flash), prompt, thinking level and enum-constrained letter as the gemini/ smoke setup; cost is API-list-price equivalent. Smoke check (10 positions x 2): same play as the Gemini API answers in 19 of 20",
+      "parallel": 4
+    },
+    "entry_sha256": "bff098695bed7a58c2aa0bd9161d9c74189d1f2db17b99d1ca851513e208f3ec",
+    "fixtures": [
+      "matchday 18: Gemini 3.8 Flash (low) v Jev 1.14.0",
+      "matchday 18: Clef v Gemini 3.8 Flash (low)"
+    ]
+  },
+  {
+    "added_at": "2026-10-26T15:26:20Z",
+    "league": 2,
+    "db": "v3.db",
+    "name": "Celeris-1 Decision",
+    "harness_commit": "8d64e12e78f0bcda0e76cba4ad8930a5dcf666d6",
+    "harness_dirty": true,
+    "entry": {
+      "name": "Celeris-1 Decision",
+      "spec": "celeris/celeris-1-decision",
+      "provider": "celeris",
+      "price": {
+        "input_per_mtok": 0.04,
+        "output_per_mtok": 0.0
+      },
+      "note": "Celeris System One endpoint (inference.celeris.ai/celeris-1-decision); list price $0.04 per million input tokens, output free (docs.celeris.ai/pricing, 2026-10-10); probabilities come rounded to two decimals",
+      "parallel": 2
+    },
+    "entry_sha256": "428eeb5189b73a4b9718ef67cf263ea24966c18360ec362c42b9546a095ce7e3",
+    "fixtures": []
+  },
+  {
+    "added_at": "2026-10-26T15:26:20Z",
+    "league": 2,
+    "db": "v3.db",
+    "name": "Gemini 4 Argon (off)",
+    "harness_commit": "8d64e12e78f0bcda0e76cba4ad8930a5dcf666d6",
+    "harness_dirty": true,
+    "entry": {
+      "name": "Gemini 4 Argon (off)",
+      "spec": "antigravity/gemini-4-argon",
+      "provider": "antigravity-subscription",
+      "reasoning": "low",
+      "price": {
+        "input_per_mtok": 2.0,
+        "output_per_mtok": 10.0
+      },
+      "note": "thinking level low, the lowest (spends no reasoning tokens), labelled off. Google Antigravity subscription (Google AI Ultra, OMP's login; Antigravity model id gemini-4-argon-low; modelVersion gemini-4-argon); cost is API-list-price equivalent. Smoke check (10 positions x 2): same play as the Gemini API answers in 15 of 20 (Antigravity against itself 9 of 10), no reasoning tokens either way; list price $2/$10 per million tokens until 2026-12-01 ($4/$20 after)",
+      "parallel": 4
+    },
+    "entry_sha256": "9bff31913d1b7a4d762d49f7eb4961881d29fa3de4c98588e23b9048fe3d76db",
+    "fixtures": [
+      "matchday 18: Gemini 4 Argon (off) v Celeris-1 Decision"
+    ]
   }
 ]

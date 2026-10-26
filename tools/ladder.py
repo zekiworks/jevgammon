@@ -33,6 +33,7 @@ setup with the lower error rate in that match (`cup_winner`); no extra rounds ar
 
 import argparse
 import json
+import os
 import re
 import sqlite3
 import subprocess
@@ -542,8 +543,12 @@ def request(conn, plan: dict, db: Path) -> str:
     out += ["", "## On approval", "",
             f"1. `python3 tools/ladder.py apply --db v3.db --round {n}`: records the moves (league-remove with "
             f"\"ladder round {n}: <reason> to league M\", then league-add with the setup's stored settings) and "
-            "sets the leagues that receive a mover to play both games of a round at the same time.",
-            "2. Block 1 (API and subscription): resume the leagues that hold those pairings "
+            "sets the leagues that receive a mover to play both games of a round at the same time."]
+    if plan["ended"] and not new:
+        out += ["2. No match is played: every pair of the final lineups is stored. The ladder is over; the "
+                "Hype Cup can be prepared from the final tables.", ""]
+        return "\n".join(out) + "\n"
+    out += ["2. Block 1 (API and subscription): resume the leagues that hold those pairings "
             "(`tools/v3/run_league<N>.sh` units); their runners play only the new pairings. A league that also "
             "holds GPU pairings starts them too: while their server is down they fail the warm-up and back off "
             "(2 minutes, doubling up to 1 hour) and resume once the server is up. A league whose pairings are "
@@ -551,8 +556,9 @@ def request(conn, plan: dict, db: Path) -> str:
             "3. GPU blocks: claim the GPUs with compactor over the agent bus, start the block's servers "
             "(`tools/v3/servers/`; the scripts take the GPU index), let the runners play the block, stop the "
             "servers and release the GPUs.",
-            "4. When every pairing is played, the next `tools/ladder.py plan` writes round " + str(n + 1) + "'s request "
-            "(or the ladder's end and final placement).", ""]
+            ("4. When every pairing is played, the ladder is over; the Hype Cup can be prepared." if plan["ended"]
+             else "4. When every pairing is played, the next `tools/ladder.py plan` writes round " + str(n + 1) +
+             "'s request (or the ladder's end and final placement)."), ""]
     return "\n".join(out) + "\n"
 
 
@@ -621,10 +627,21 @@ def apply(db: Path, scores: Path, number: int, binary: Path, freeze: Path) -> No
           f"{len(plan['new'])} new pairings")
 
 
+# Keys kept in their own files, read when the environment has none (as tools/v3/run_league1.sh):
+# `league-add` builds the setup's client, which needs its key.
+KEY_FILES = {"JEV_API_KEY": "~/code/jev/key", "FASTINO_API_KEY": "~/.config/fastino/key",
+             "CELERIS_API_KEY": "~/.config/celeris/key"}
+
+
 def run(cmd: list) -> None:
     cmd = [str(c) for c in cmd]
     print("$", " ".join(cmd[:3]), "...", flush=True)
-    subprocess.run(cmd, check=True, cwd=ROOT)
+    env = dict(os.environ)
+    for var, path in KEY_FILES.items():
+        key = Path(path).expanduser()
+        if not env.get(var) and key.is_file():
+            env[var] = key.read_text().strip()
+    subprocess.run(cmd, check=True, cwd=ROOT, env=env)
 
 
 # --- Main ------------------------------------------------------------------------------------------

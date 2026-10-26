@@ -1,0 +1,5872 @@
+{
+ "Claude Opus 5.5 (on)": {
+  "positions": 100,
+  "scored": 100,
+  "excluded": {},
+  "excluded_positions": 0,
+  "primary_exact": {
+   "observed": 0.34,
+   "baseline_mean": 0.27542,
+   "baseline_lo": 0.23,
+   "baseline_hi": 0.32,
+   "share_baseline_at_least_observed": 0.004
+  },
+  "secondary_overlap": {
+   "observed": 0.4016666666666666,
+   "baseline_mean": 0.315355,
+   "baseline_lo": 0.2675,
+   "baseline_hi": 0.3650416666666666,
+   "share_baseline_at_least_observed": 0.0
+  },
+  "exact_n": 34,
+  "same_play": 71,
+  "changed_same_features": 10,
+  "observed_nonempty": 19,
+  "deterministic": false,
+  "distinct_plays": {
+   "1": 71,
+   "2": 21,
+   "3": 8
+  },
+  "predicted_sets": {
+   "none": 30,
+   "hitting": 16,
+   "hitting,points": 14,
+   "hitting,race": 12,
+   "prime": 7,
+   "points,prime": 6,
+   "hitting,prime": 6,
+   "hitting,points,prime": 3,
+   "points": 2,
+   "hitting,points,race": 1,
+   "points,prime,race": 1,
+   "points,race": 1,
+   "race": 1
+  },
+  "observed_sets": {
+   "none": 81,
+   "hitting": 6,
+   "hitting,points": 3,
+   "points,prime": 3,
+   "hitting,race": 2,
+   "prime": 2,
+   "hitting,points,prime,race": 1,
+   "hitting,points,race": 1,
+   "hitting,points,prime": 1
+  },
+  "predicted_feature_share": {
+   "hitting": 0.52,
+   "points": 0.28,
+   "race": 0.16,
+   "prime": 0.23
+  },
+  "observed_feature_share": {
+   "hitting": 0.14,
+   "points": 0.09,
+   "race": 0.04,
+   "prime": 0.07
+  },
+  "predicted_size_mean": 1.19,
+  "by_phase": {
+   "opening": {
+    "scored": 31,
+    "exact": 6,
+    "same_play": 22
+   },
+   "contact": {
+    "scored": 31,
+    "exact": 9,
+    "same_play": 19
+   },
+   "holding": {
+    "scored": 30,
+    "exact": 12,
+    "same_play": 22
+   },
+   "race": {
+    "scored": 4,
+    "exact": 4,
+    "same_play": 4
+   },
+   "bear-off": {
+    "scored": 4,
+    "exact": 3,
+    "same_play": 4
+   }
+  },
+  "positions_scored": [
+   {
+    "id": "new-0002",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0007",
+    "phase": "opening",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0009",
+    "phase": "opening",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0016",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0024",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0040",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [
+     "hitting",
+     "points",
+     "prime",
+     "race"
+    ],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0041",
+    "phase": "opening",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0043",
+    "phase": "opening",
+    "P": [
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0046",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [
+     "hitting",
+     "points"
+    ],
+    "distinct_plays": 3
+   },
+   {
+    "id": "new-0050",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0053",
+    "phase": "opening",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0062",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 3
+   },
+   {
+    "id": "new-0069",
+    "phase": "opening",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0070",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0092",
+    "phase": "opening",
+    "P": [
+     "hitting"
+    ],
+    "O": [
+     "hitting",
+     "race"
+    ],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0107",
+    "phase": "opening",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0111",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0112",
+    "phase": "opening",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0119",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0122",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0131",
+    "phase": "opening",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0147",
+    "phase": "opening",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0149",
+    "phase": "opening",
+    "P": [
+     "hitting"
+    ],
+    "O": [
+     "hitting",
+     "points",
+     "race"
+    ],
+    "distinct_plays": 3
+   },
+   {
+    "id": "new-0155",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0156",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0160",
+    "phase": "opening",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0165",
+    "phase": "opening",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0175",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0188",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points",
+     "race"
+    ],
+    "O": [
+     "hitting",
+     "points"
+    ],
+    "distinct_plays": 3
+   },
+   {
+    "id": "new-0190",
+    "phase": "opening",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0200",
+    "phase": "opening",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0237",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0239",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0244",
+    "phase": "contact",
+    "P": [],
+    "O": [
+     "hitting"
+    ],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0249",
+    "phase": "contact",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0250",
+    "phase": "contact",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0254",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "prime"
+    ],
+    "O": [
+     "hitting"
+    ],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0256",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [
+     "hitting"
+    ],
+    "distinct_plays": 3
+   },
+   {
+    "id": "new-0263",
+    "phase": "contact",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0264",
+    "phase": "contact",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0270",
+    "phase": "contact",
+    "P": [
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0274",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [
+     "hitting"
+    ],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0278",
+    "phase": "contact",
+    "P": [
+     "points",
+     "prime",
+     "race"
+    ],
+    "O": [
+     "points",
+     "prime"
+    ],
+    "distinct_plays": 3
+   },
+   {
+    "id": "new-0281",
+    "phase": "contact",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0297",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0307",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [
+     "hitting"
+    ],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0328",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0329",
+    "phase": "contact",
+    "P": [
+     "points",
+     "race"
+    ],
+    "O": [
+     "points",
+     "prime"
+    ],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0330",
+    "phase": "contact",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0331",
+    "phase": "contact",
+    "P": [
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0337",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0344",
+    "phase": "contact",
+    "P": [
+     "hitting"
+    ],
+    "O": [
+     "hitting",
+     "race"
+    ],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0349",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0353",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0356",
+    "phase": "contact",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0361",
+    "phase": "contact",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0362",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [
+     "hitting",
+     "points"
+    ],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0371",
+    "phase": "contact",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0377",
+    "phase": "contact",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0383",
+    "phase": "contact",
+    "P": [
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0385",
+    "phase": "contact",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0388",
+    "phase": "contact",
+    "P": [
+     "prime"
+    ],
+    "O": [
+     "prime"
+    ],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0410",
+    "phase": "holding",
+    "P": [
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0413",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0422",
+    "phase": "holding",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0430",
+    "phase": "holding",
+    "P": [
+     "points",
+     "prime"
+    ],
+    "O": [
+     "points",
+     "prime"
+    ],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0447",
+    "phase": "holding",
+    "P": [
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0459",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0465",
+    "phase": "holding",
+    "P": [
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0467",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0469",
+    "phase": "holding",
+    "P": [
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0474",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0494",
+    "phase": "holding",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0511",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0513",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0518",
+    "phase": "holding",
+    "P": [],
+    "O": [],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0525",
+    "phase": "holding",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0529",
+    "phase": "holding",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0532",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0537",
+    "phase": "holding",
+    "P": [],
+    "O": [],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0546",
+    "phase": "holding",
+    "P": [
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0550",
+    "phase": "holding",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0554",
+    "phase": "holding",
+    "P": [
+     "prime"
+    ],
+    "O": [
+     "prime"
+    ],
+    "distinct_plays": 3
+   },
+   {
+    "id": "new-0562",
+    "phase": "holding",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0564",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 3
+   },
+   {
+    "id": "new-0572",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0575",
+    "phase": "holding",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0582",
+    "phase": "holding",
+    "P": [
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0588",
+    "phase": "holding",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0591",
+    "phase": "holding",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0593",
+    "phase": "holding",
+    "P": [
+     "points",
+     "prime"
+    ],
+    "O": [
+     "hitting"
+    ],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0598",
+    "phase": "holding",
+    "P": [
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0618",
+    "phase": "race",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0626",
+    "phase": "race",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0679",
+    "phase": "race",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0706",
+    "phase": "race",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0801",
+    "phase": "bear-off",
+    "P": [
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0814",
+    "phase": "bear-off",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0919",
+    "phase": "bear-off",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0999",
+    "phase": "bear-off",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   }
+  ]
+ },
+ "GPT-6 Astra (on)": {
+  "positions": 100,
+  "scored": 100,
+  "excluded": {},
+  "excluded_positions": 0,
+  "primary_exact": {
+   "observed": 0.2,
+   "baseline_mean": 0.17623,
+   "baseline_lo": 0.15,
+   "baseline_hi": 0.2,
+   "share_baseline_at_least_observed": 0.054
+  },
+  "secondary_overlap": {
+   "observed": 0.21333333333333335,
+   "baseline_mean": 0.18890083333333332,
+   "baseline_lo": 0.16,
+   "baseline_hi": 0.21166666666666664,
+   "share_baseline_at_least_observed": 0.023
+  },
+  "exact_n": 20,
+  "same_play": 90,
+  "changed_same_features": 5,
+  "observed_nonempty": 5,
+  "deterministic": false,
+  "distinct_plays": {
+   "1": 90,
+   "2": 8,
+   "3": 2
+  },
+  "predicted_sets": {
+   "hitting,race": 18,
+   "none": 18,
+   "hitting,points": 13,
+   "hitting": 10,
+   "hitting,points,race": 9,
+   "hitting,points,prime": 8,
+   "race": 8,
+   "points,prime,race": 4,
+   "hitting,prime,race": 4,
+   "points,prime": 3,
+   "points,race": 2,
+   "hitting,prime": 1,
+   "hitting,points,prime,race": 1,
+   "prime": 1
+  },
+  "observed_sets": {
+   "none": 95,
+   "hitting": 3,
+   "hitting,race": 1,
+   "points,prime": 1
+  },
+  "predicted_feature_share": {
+   "hitting": 0.64,
+   "points": 0.4,
+   "race": 0.46,
+   "prime": 0.22
+  },
+  "observed_feature_share": {
+   "hitting": 0.04,
+   "points": 0.01,
+   "race": 0.01,
+   "prime": 0.01
+  },
+  "predicted_size_mean": 1.72,
+  "by_phase": {
+   "opening": {
+    "scored": 31,
+    "exact": 7,
+    "same_play": 27
+   },
+   "contact": {
+    "scored": 31,
+    "exact": 5,
+    "same_play": 31
+   },
+   "holding": {
+    "scored": 30,
+    "exact": 7,
+    "same_play": 24
+   },
+   "race": {
+    "scored": 4,
+    "exact": 1,
+    "same_play": 4
+   },
+   "bear-off": {
+    "scored": 4,
+    "exact": 0,
+    "same_play": 4
+   }
+  },
+  "positions_scored": [
+   {
+    "id": "new-0002",
+    "phase": "opening",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0007",
+    "phase": "opening",
+    "P": [
+     "hitting"
+    ],
+    "O": [
+     "hitting"
+    ],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0009",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0016",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [
+     "hitting",
+     "race"
+    ],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0024",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0040",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0041",
+    "phase": "opening",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0043",
+    "phase": "opening",
+    "P": [
+     "points",
+     "prime",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0046",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points",
+     "race"
+    ],
+    "O": [
+     "hitting"
+    ],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0050",
+    "phase": "opening",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0053",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0062",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0069",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0070",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0092",
+    "phase": "opening",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0107",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0111",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0112",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0119",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0122",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0131",
+    "phase": "opening",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0147",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0149",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0155",
+    "phase": "opening",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0156",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0160",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0165",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0175",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0188",
+    "phase": "opening",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0190",
+    "phase": "opening",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0200",
+    "phase": "opening",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0237",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0239",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0244",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0249",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0250",
+    "phase": "contact",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0254",
+    "phase": "contact",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0256",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0263",
+    "phase": "contact",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0264",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0270",
+    "phase": "contact",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0274",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "prime",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0278",
+    "phase": "contact",
+    "P": [
+     "points",
+     "prime",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0281",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0297",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0307",
+    "phase": "contact",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0328",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0329",
+    "phase": "contact",
+    "P": [
+     "points",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0330",
+    "phase": "contact",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0331",
+    "phase": "contact",
+    "P": [
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0337",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points",
+     "prime",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0344",
+    "phase": "contact",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0349",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0353",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0356",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0361",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0362",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0371",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "prime",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0377",
+    "phase": "contact",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0383",
+    "phase": "contact",
+    "P": [
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0385",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0388",
+    "phase": "contact",
+    "P": [
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0410",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0413",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0422",
+    "phase": "holding",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0430",
+    "phase": "holding",
+    "P": [
+     "points",
+     "prime",
+     "race"
+    ],
+    "O": [
+     "points",
+     "prime"
+    ],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0447",
+    "phase": "holding",
+    "P": [],
+    "O": [],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0459",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0465",
+    "phase": "holding",
+    "P": [
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0467",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0469",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "prime",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 3
+   },
+   {
+    "id": "new-0474",
+    "phase": "holding",
+    "P": [
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0494",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0511",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "points",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0513",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "points",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0518",
+    "phase": "holding",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0525",
+    "phase": "holding",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0529",
+    "phase": "holding",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0532",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0537",
+    "phase": "holding",
+    "P": [
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0546",
+    "phase": "holding",
+    "P": [],
+    "O": [],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0550",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0554",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "prime",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 3
+   },
+   {
+    "id": "new-0562",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0564",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0572",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0575",
+    "phase": "holding",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0582",
+    "phase": "holding",
+    "P": [
+     "points",
+     "prime",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0588",
+    "phase": "holding",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0591",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0593",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [
+     "hitting"
+    ],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0598",
+    "phase": "holding",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0618",
+    "phase": "race",
+    "P": [
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0626",
+    "phase": "race",
+    "P": [
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0679",
+    "phase": "race",
+    "P": [
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0706",
+    "phase": "race",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0801",
+    "phase": "bear-off",
+    "P": [
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0814",
+    "phase": "bear-off",
+    "P": [
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0919",
+    "phase": "bear-off",
+    "P": [
+     "points",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0999",
+    "phase": "bear-off",
+    "P": [
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   }
+  ]
+ },
+ "GPT-6.1 Sol (high)": {
+  "positions": 100,
+  "scored": 100,
+  "excluded": {},
+  "excluded_positions": 0,
+  "primary_exact": {
+   "observed": 0.2,
+   "baseline_mean": 0.13851999999999998,
+   "baseline_lo": 0.11,
+   "baseline_hi": 0.17,
+   "share_baseline_at_least_observed": 0.0
+  },
+  "secondary_overlap": {
+   "observed": 0.22333333333333333,
+   "baseline_mean": 0.16269083333333334,
+   "baseline_lo": 0.12666666666666665,
+   "baseline_hi": 0.19333333333333333,
+   "share_baseline_at_least_observed": 0.0
+  },
+  "exact_n": 20,
+  "same_play": 80,
+  "changed_same_features": 10,
+  "observed_nonempty": 10,
+  "deterministic": false,
+  "distinct_plays": {
+   "1": 80,
+   "2": 16,
+   "3": 4
+  },
+  "predicted_sets": {
+   "hitting,points": 17,
+   "hitting": 16,
+   "hitting,race": 15,
+   "none": 14,
+   "hitting,points,prime": 10,
+   "race": 9,
+   "points,prime": 4,
+   "hitting,points,race": 3,
+   "points,race": 3,
+   "points,prime,race": 3,
+   "hitting,prime,race": 2,
+   "prime": 2,
+   "points": 1,
+   "hitting,points,prime,race": 1
+  },
+  "observed_sets": {
+   "none": 90,
+   "hitting": 4,
+   "points,prime": 3,
+   "hitting,race": 1,
+   "hitting,points": 1,
+   "hitting,points,prime": 1
+  },
+  "predicted_feature_share": {
+   "hitting": 0.64,
+   "points": 0.42,
+   "race": 0.36,
+   "prime": 0.22
+  },
+  "observed_feature_share": {
+   "hitting": 0.07,
+   "points": 0.05,
+   "race": 0.01,
+   "prime": 0.04
+  },
+  "predicted_size_mean": 1.64,
+  "by_phase": {
+   "opening": {
+    "scored": 31,
+    "exact": 6,
+    "same_play": 28
+   },
+   "contact": {
+    "scored": 31,
+    "exact": 6,
+    "same_play": 23
+   },
+   "holding": {
+    "scored": 30,
+    "exact": 8,
+    "same_play": 21
+   },
+   "race": {
+    "scored": 4,
+    "exact": 0,
+    "same_play": 4
+   },
+   "bear-off": {
+    "scored": 4,
+    "exact": 0,
+    "same_play": 4
+   }
+  },
+  "positions_scored": [
+   {
+    "id": "new-0002",
+    "phase": "opening",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0007",
+    "phase": "opening",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0009",
+    "phase": "opening",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0016",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [
+     "hitting",
+     "race"
+    ],
+    "distinct_plays": 3
+   },
+   {
+    "id": "new-0024",
+    "phase": "opening",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0040",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0041",
+    "phase": "opening",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0043",
+    "phase": "opening",
+    "P": [
+     "points",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0046",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0050",
+    "phase": "opening",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0053",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0062",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0069",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0070",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0092",
+    "phase": "opening",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0107",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0111",
+    "phase": "opening",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0112",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0119",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0122",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0131",
+    "phase": "opening",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0147",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0149",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0155",
+    "phase": "opening",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0156",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0160",
+    "phase": "opening",
+    "P": [
+     "hitting"
+    ],
+    "O": [
+     "hitting"
+    ],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0165",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0175",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0188",
+    "phase": "opening",
+    "P": [
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0190",
+    "phase": "opening",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0200",
+    "phase": "opening",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0237",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0239",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0244",
+    "phase": "contact",
+    "P": [
+     "hitting"
+    ],
+    "O": [
+     "hitting"
+    ],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0249",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0250",
+    "phase": "contact",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0254",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0256",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0263",
+    "phase": "contact",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0264",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0270",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0274",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [
+     "hitting"
+    ],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0278",
+    "phase": "contact",
+    "P": [
+     "points",
+     "prime",
+     "race"
+    ],
+    "O": [
+     "points",
+     "prime"
+    ],
+    "distinct_plays": 3
+   },
+   {
+    "id": "new-0281",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "prime",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0297",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0307",
+    "phase": "contact",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0328",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0329",
+    "phase": "contact",
+    "P": [
+     "points",
+     "prime",
+     "race"
+    ],
+    "O": [
+     "points",
+     "prime"
+    ],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0330",
+    "phase": "contact",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0331",
+    "phase": "contact",
+    "P": [
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0337",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points",
+     "prime",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0344",
+    "phase": "contact",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0349",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0353",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [
+     "hitting",
+     "points"
+    ],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0356",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0361",
+    "phase": "contact",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0362",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0371",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0377",
+    "phase": "contact",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0383",
+    "phase": "contact",
+    "P": [
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0385",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [
+     "hitting"
+    ],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0388",
+    "phase": "contact",
+    "P": [
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0410",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0413",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0422",
+    "phase": "holding",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0430",
+    "phase": "holding",
+    "P": [
+     "points",
+     "prime"
+    ],
+    "O": [
+     "points",
+     "prime"
+    ],
+    "distinct_plays": 3
+   },
+   {
+    "id": "new-0447",
+    "phase": "holding",
+    "P": [
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0459",
+    "phase": "holding",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0465",
+    "phase": "holding",
+    "P": [
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0467",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0469",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 3
+   },
+   {
+    "id": "new-0474",
+    "phase": "holding",
+    "P": [
+     "points",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0494",
+    "phase": "holding",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0511",
+    "phase": "holding",
+    "P": [
+     "points",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0513",
+    "phase": "holding",
+    "P": [
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0518",
+    "phase": "holding",
+    "P": [],
+    "O": [],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0525",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0529",
+    "phase": "holding",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0532",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0537",
+    "phase": "holding",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0546",
+    "phase": "holding",
+    "P": [],
+    "O": [],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0550",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0554",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "prime",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0562",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0564",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0572",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0575",
+    "phase": "holding",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0582",
+    "phase": "holding",
+    "P": [],
+    "O": [],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0588",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0591",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0593",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0598",
+    "phase": "holding",
+    "P": [
+     "points",
+     "prime",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0618",
+    "phase": "race",
+    "P": [
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0626",
+    "phase": "race",
+    "P": [
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0679",
+    "phase": "race",
+    "P": [
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0706",
+    "phase": "race",
+    "P": [
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0801",
+    "phase": "bear-off",
+    "P": [
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0814",
+    "phase": "bear-off",
+    "P": [
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0919",
+    "phase": "bear-off",
+    "P": [
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0999",
+    "phase": "bear-off",
+    "P": [
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   }
+  ]
+ },
+ "GPT-6.1 Sol (low)": {
+  "positions": 100,
+  "scored": 100,
+  "excluded": {},
+  "excluded_positions": 0,
+  "primary_exact": {
+   "observed": 0.13,
+   "baseline_mean": 0.11066000000000002,
+   "baseline_lo": 0.08,
+   "baseline_hi": 0.14,
+   "share_baseline_at_least_observed": 0.154
+  },
+  "secondary_overlap": {
+   "observed": 0.1691666666666667,
+   "baseline_mean": 0.13526999999999997,
+   "baseline_lo": 0.10247916666666666,
+   "baseline_hi": 0.165,
+   "share_baseline_at_least_observed": 0.01
+  },
+  "exact_n": 13,
+  "same_play": 80,
+  "changed_same_features": 10,
+  "observed_nonempty": 10,
+  "deterministic": false,
+  "distinct_plays": {
+   "1": 80,
+   "2": 17,
+   "3": 3
+  },
+  "predicted_sets": {
+   "hitting,points": 16,
+   "hitting": 15,
+   "hitting,race": 15,
+   "none": 11,
+   "hitting,points,prime": 10,
+   "race": 10,
+   "points,prime": 4,
+   "hitting,prime,race": 4,
+   "prime,race": 4,
+   "hitting,points,race": 3,
+   "points,prime,race": 2,
+   "points,race": 2,
+   "hitting,points,prime,race": 2,
+   "prime": 1,
+   "hitting,prime": 1
+  },
+  "observed_sets": {
+   "none": 90,
+   "hitting": 4,
+   "hitting,points,prime": 3,
+   "points,prime": 2,
+   "prime": 1
+  },
+  "predicted_feature_share": {
+   "hitting": 0.66,
+   "points": 0.39,
+   "race": 0.42,
+   "prime": 0.28
+  },
+  "observed_feature_share": {
+   "hitting": 0.07,
+   "points": 0.05,
+   "race": 0.0,
+   "prime": 0.06
+  },
+  "predicted_size_mean": 1.75,
+  "by_phase": {
+   "opening": {
+    "scored": 31,
+    "exact": 6,
+    "same_play": 27
+   },
+   "contact": {
+    "scored": 31,
+    "exact": 4,
+    "same_play": 24
+   },
+   "holding": {
+    "scored": 30,
+    "exact": 3,
+    "same_play": 21
+   },
+   "race": {
+    "scored": 4,
+    "exact": 0,
+    "same_play": 4
+   },
+   "bear-off": {
+    "scored": 4,
+    "exact": 0,
+    "same_play": 4
+   }
+  },
+  "positions_scored": [
+   {
+    "id": "new-0002",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0007",
+    "phase": "opening",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0009",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0016",
+    "phase": "opening",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0024",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0040",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0041",
+    "phase": "opening",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0043",
+    "phase": "opening",
+    "P": [
+     "points",
+     "prime",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0046",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0050",
+    "phase": "opening",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0053",
+    "phase": "opening",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0062",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0069",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0070",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0092",
+    "phase": "opening",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0107",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0111",
+    "phase": "opening",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0112",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0119",
+    "phase": "opening",
+    "P": [
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0122",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0131",
+    "phase": "opening",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0147",
+    "phase": "opening",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0149",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0155",
+    "phase": "opening",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0156",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0160",
+    "phase": "opening",
+    "P": [
+     "hitting"
+    ],
+    "O": [
+     "hitting"
+    ],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0165",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0175",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0188",
+    "phase": "opening",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0190",
+    "phase": "opening",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0200",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0237",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0239",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0244",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [
+     "hitting"
+    ],
+    "distinct_plays": 3
+   },
+   {
+    "id": "new-0249",
+    "phase": "contact",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0250",
+    "phase": "contact",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0254",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0256",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0263",
+    "phase": "contact",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0264",
+    "phase": "contact",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0270",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0274",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [
+     "hitting"
+    ],
+    "distinct_plays": 3
+   },
+   {
+    "id": "new-0278",
+    "phase": "contact",
+    "P": [
+     "points",
+     "prime",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0281",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0297",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0307",
+    "phase": "contact",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0328",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0329",
+    "phase": "contact",
+    "P": [
+     "points",
+     "race"
+    ],
+    "O": [
+     "points",
+     "prime"
+    ],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0330",
+    "phase": "contact",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0331",
+    "phase": "contact",
+    "P": [
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0337",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points",
+     "prime",
+     "race"
+    ],
+    "O": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0344",
+    "phase": "contact",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0349",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0353",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0356",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0361",
+    "phase": "contact",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0362",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points",
+     "prime",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0371",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "prime",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0377",
+    "phase": "contact",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0383",
+    "phase": "contact",
+    "P": [
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0385",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "prime",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0388",
+    "phase": "contact",
+    "P": [
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0410",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "prime",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0413",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0422",
+    "phase": "holding",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0430",
+    "phase": "holding",
+    "P": [
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0447",
+    "phase": "holding",
+    "P": [
+     "prime",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0459",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0465",
+    "phase": "holding",
+    "P": [
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0467",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0469",
+    "phase": "holding",
+    "P": [
+     "prime",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 3
+   },
+   {
+    "id": "new-0474",
+    "phase": "holding",
+    "P": [
+     "prime",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0494",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0511",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "points",
+     "race"
+    ],
+    "O": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0513",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0518",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0525",
+    "phase": "holding",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0529",
+    "phase": "holding",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0532",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0537",
+    "phase": "holding",
+    "P": [
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0546",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0550",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0554",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "prime",
+     "race"
+    ],
+    "O": [
+     "prime"
+    ],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0562",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0564",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0572",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [
+     "points",
+     "prime"
+    ],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0575",
+    "phase": "holding",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0582",
+    "phase": "holding",
+    "P": [
+     "prime",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0588",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0591",
+    "phase": "holding",
+    "P": [
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0593",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [
+     "hitting"
+    ],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0598",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0618",
+    "phase": "race",
+    "P": [
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0626",
+    "phase": "race",
+    "P": [
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0679",
+    "phase": "race",
+    "P": [
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0706",
+    "phase": "race",
+    "P": [
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0801",
+    "phase": "bear-off",
+    "P": [
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0814",
+    "phase": "bear-off",
+    "P": [
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0919",
+    "phase": "bear-off",
+    "P": [
+     "points",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0999",
+    "phase": "bear-off",
+    "P": [
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   }
+  ]
+ },
+ "Gemini 3.8 Flash (low)": {
+  "positions": 100,
+  "scored": 100,
+  "excluded": {},
+  "excluded_positions": 0,
+  "primary_exact": {
+   "observed": 0.06,
+   "baseline_mean": 0.01768,
+   "baseline_lo": 0.01,
+   "baseline_hi": 0.04,
+   "share_baseline_at_least_observed": 0.0
+  },
+  "secondary_overlap": {
+   "observed": 0.065,
+   "baseline_mean": 0.036599999999999994,
+   "baseline_lo": 0.02416666666666667,
+   "baseline_hi": 0.05,
+   "share_baseline_at_least_observed": 0.0
+  },
+  "exact_n": 6,
+  "same_play": 92,
+  "changed_same_features": 2,
+  "observed_nonempty": 6,
+  "deterministic": false,
+  "distinct_plays": {
+   "1": 92,
+   "2": 8
+  },
+  "predicted_sets": {
+   "hitting,points": 20,
+   "hitting,points,prime": 19,
+   "hitting,race": 16,
+   "hitting": 11,
+   "race": 7,
+   "hitting,points,race": 6,
+   "hitting,prime": 6,
+   "points,prime": 5,
+   "hitting,prime,race": 4,
+   "hitting,points,prime,race": 2,
+   "prime": 1,
+   "prime,race": 1,
+   "none": 1,
+   "points,race": 1
+  },
+  "observed_sets": {
+   "none": 94,
+   "hitting": 2,
+   "points,prime": 2,
+   "hitting,points": 1,
+   "hitting,points,prime": 1
+  },
+  "predicted_feature_share": {
+   "hitting": 0.84,
+   "points": 0.53,
+   "race": 0.37,
+   "prime": 0.38
+  },
+  "observed_feature_share": {
+   "hitting": 0.04,
+   "points": 0.04,
+   "race": 0.0,
+   "prime": 0.03
+  },
+  "predicted_size_mean": 2.12,
+  "by_phase": {
+   "opening": {
+    "scored": 31,
+    "exact": 1,
+    "same_play": 29
+   },
+   "contact": {
+    "scored": 31,
+    "exact": 4,
+    "same_play": 27
+   },
+   "holding": {
+    "scored": 30,
+    "exact": 0,
+    "same_play": 28
+   },
+   "race": {
+    "scored": 4,
+    "exact": 1,
+    "same_play": 4
+   },
+   "bear-off": {
+    "scored": 4,
+    "exact": 0,
+    "same_play": 4
+   }
+  },
+  "positions_scored": [
+   {
+    "id": "new-0002",
+    "phase": "opening",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0007",
+    "phase": "opening",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0009",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0016",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0024",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0040",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0041",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0043",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points",
+     "prime",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0046",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0050",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0053",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0062",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0069",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0070",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0092",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0107",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0111",
+    "phase": "opening",
+    "P": [
+     "hitting"
+    ],
+    "O": [
+     "hitting"
+    ],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0112",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0119",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0122",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0131",
+    "phase": "opening",
+    "P": [
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0147",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "prime",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0149",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points",
+     "prime",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0155",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0156",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0160",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "prime",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0165",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0175",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0188",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0190",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0200",
+    "phase": "opening",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0237",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0239",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0244",
+    "phase": "contact",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0249",
+    "phase": "contact",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0250",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0254",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0256",
+    "phase": "contact",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0263",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0264",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0270",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0274",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "prime",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0278",
+    "phase": "contact",
+    "P": [
+     "points",
+     "prime"
+    ],
+    "O": [
+     "points",
+     "prime"
+    ],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0281",
+    "phase": "contact",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0297",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0307",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0328",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0329",
+    "phase": "contact",
+    "P": [
+     "points",
+     "prime"
+    ],
+    "O": [
+     "points",
+     "prime"
+    ],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0330",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0331",
+    "phase": "contact",
+    "P": [
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0337",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0344",
+    "phase": "contact",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0349",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [
+     "hitting",
+     "points"
+    ],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0353",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0356",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0361",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0362",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0371",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "prime",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0377",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0383",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0385",
+    "phase": "contact",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0388",
+    "phase": "contact",
+    "P": [
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0410",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0413",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [
+     "hitting"
+    ],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0422",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0430",
+    "phase": "holding",
+    "P": [
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0447",
+    "phase": "holding",
+    "P": [
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0459",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0465",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0467",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0469",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0474",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0494",
+    "phase": "holding",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0511",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0513",
+    "phase": "holding",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0518",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0525",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0529",
+    "phase": "holding",
+    "P": [
+     "hitting"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0532",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0537",
+    "phase": "holding",
+    "P": [
+     "prime",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0546",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0550",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0554",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0562",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0564",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 2
+   },
+   {
+    "id": "new-0572",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "points"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0575",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0582",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0588",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "points",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0591",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0593",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0598",
+    "phase": "holding",
+    "P": [
+     "hitting",
+     "points",
+     "prime"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0618",
+    "phase": "race",
+    "P": [
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0626",
+    "phase": "race",
+    "P": [
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0679",
+    "phase": "race",
+    "P": [
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0706",
+    "phase": "race",
+    "P": [],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0801",
+    "phase": "bear-off",
+    "P": [
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0814",
+    "phase": "bear-off",
+    "P": [
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0919",
+    "phase": "bear-off",
+    "P": [
+     "points",
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   },
+   {
+    "id": "new-0999",
+    "phase": "bear-off",
+    "P": [
+     "race"
+    ],
+    "O": [],
+    "distinct_plays": 1
+   }
+  ]
+ },
+ "Gemma 4 31B (on)": {
+  "positions": 100,
+  "scored": 0,
+  "excluded": {
+   "play 1 not asked": {
+    "n": 55,
+    "ids": [
+     "new-0297",
+     "new-0328",
+     "new-0329",
+     "new-0330",
+     "new-0331",
+     "new-0337",
+     "new-0344",
+     "new-0349",
+     "new-0353",
+     "new-0356",
+     "new-0361",
+     "new-0362",
+     "new-0371",
+     "new-0377",
+     "new-0383",
+     "new-0385",
+     "new-0388",
+     "new-0410",
+     "new-0413",
+     "new-0422",
+     "new-0430",
+     "new-0447",
+     "new-0459",
+     "new-0465",
+     "new-0467",
+     "new-0469",
+     "new-0474",
+     "new-0494",
+     "new-0511",
+     "new-0513",
+     "new-0518",
+     "new-0525",
+     "new-0529",
+     "new-0532",
+     "new-0537",
+     "new-0546",
+     "new-0550",
+     "new-0554",
+     "new-0562",
+     "new-0564",
+     "new-0572",
+     "new-0575",
+     "new-0582",
+     "new-0588",
+     "new-0591",
+     "new-0593",
+     "new-0598",
+     "new-0618",
+     "new-0626",
+     "new-0679",
+     "new-0706",
+     "new-0801",
+     "new-0814",
+     "new-0919",
+     "new-0999"
+    ]
+   },
+   "play 2 not asked": {
+    "n": 100,
+    "ids": [
+     "new-0002",
+     "new-0007",
+     "new-0009",
+     "new-0016",
+     "new-0024",
+     "new-0040",
+     "new-0041",
+     "new-0043",
+     "new-0046",
+     "new-0050",
+     "new-0053",
+     "new-0062",
+     "new-0069",
+     "new-0070",
+     "new-0092",
+     "new-0107",
+     "new-0111",
+     "new-0112",
+     "new-0119",
+     "new-0122",
+     "new-0131",
+     "new-0147",
+     "new-0149",
+     "new-0155",
+     "new-0156",
+     "new-0160",
+     "new-0165",
+     "new-0175",
+     "new-0188",
+     "new-0190",
+     "new-0200",
+     "new-0237",
+     "new-0239",
+     "new-0244",
+     "new-0249",
+     "new-0250",
+     "new-0254",
+     "new-0256",
+     "new-0263",
+     "new-0264",
+     "new-0270",
+     "new-0274",
+     "new-0278",
+     "new-0281",
+     "new-0297",
+     "new-0307",
+     "new-0328",
+     "new-0329",
+     "new-0330",
+     "new-0331",
+     "new-0337",
+     "new-0344",
+     "new-0349",
+     "new-0353",
+     "new-0356",
+     "new-0361",
+     "new-0362",
+     "new-0371",
+     "new-0377",
+     "new-0383",
+     "new-0385",
+     "new-0388",
+     "new-0410",
+     "new-0413",
+     "new-0422",
+     "new-0430",
+     "new-0447",
+     "new-0459",
+     "new-0465",
+     "new-0467",
+     "new-0469",
+     "new-0474",
+     "new-0494",
+     "new-0511",
+     "new-0513",
+     "new-0518",
+     "new-0525",
+     "new-0529",
+     "new-0532",
+     "new-0537",
+     "new-0546",
+     "new-0550",
+     "new-0554",
+     "new-0562",
+     "new-0564",
+     "new-0572",
+     "new-0575",
+     "new-0582",
+     "new-0588",
+     "new-0591",
+     "new-0593",
+     "new-0598",
+     "new-0618",
+     "new-0626",
+     "new-0679",
+     "new-0706",
+     "new-0801",
+     "new-0814",
+     "new-0919",
+     "new-0999"
+    ]
+   },
+   "play 3 not asked": {
+    "n": 100,
+    "ids": [
+     "new-0002",
+     "new-0007",
+     "new-0009",
+     "new-0016",
+     "new-0024",
+     "new-0040",
+     "new-0041",
+     "new-0043",
+     "new-0046",
+     "new-0050",
+     "new-0053",
+     "new-0062",
+     "new-0069",
+     "new-0070",
+     "new-0092",
+     "new-0107",
+     "new-0111",
+     "new-0112",
+     "new-0119",
+     "new-0122",
+     "new-0131",
+     "new-0147",
+     "new-0149",
+     "new-0155",
+     "new-0156",
+     "new-0160",
+     "new-0165",
+     "new-0175",
+     "new-0188",
+     "new-0190",
+     "new-0200",
+     "new-0237",
+     "new-0239",
+     "new-0244",
+     "new-0249",
+     "new-0250",
+     "new-0254",
+     "new-0256",
+     "new-0263",
+     "new-0264",
+     "new-0270",
+     "new-0274",
+     "new-0278",
+     "new-0281",
+     "new-0297",
+     "new-0307",
+     "new-0328",
+     "new-0329",
+     "new-0330",
+     "new-0331",
+     "new-0337",
+     "new-0344",
+     "new-0349",
+     "new-0353",
+     "new-0356",
+     "new-0361",
+     "new-0362",
+     "new-0371",
+     "new-0377",
+     "new-0383",
+     "new-0385",
+     "new-0388",
+     "new-0410",
+     "new-0413",
+     "new-0422",
+     "new-0430",
+     "new-0447",
+     "new-0459",
+     "new-0465",
+     "new-0467",
+     "new-0469",
+     "new-0474",
+     "new-0494",
+     "new-0511",
+     "new-0513",
+     "new-0518",
+     "new-0525",
+     "new-0529",
+     "new-0532",
+     "new-0537",
+     "new-0546",
+     "new-0550",
+     "new-0554",
+     "new-0562",
+     "new-0564",
+     "new-0572",
+     "new-0575",
+     "new-0582",
+     "new-0588",
+     "new-0591",
+     "new-0593",
+     "new-0598",
+     "new-0618",
+     "new-0626",
+     "new-0679",
+     "new-0706",
+     "new-0801",
+     "new-0814",
+     "new-0919",
+     "new-0999"
+    ]
+   },
+   "play 4 not asked": {
+    "n": 100,
+    "ids": [
+     "new-0002",
+     "new-0007",
+     "new-0009",
+     "new-0016",
+     "new-0024",
+     "new-0040",
+     "new-0041",
+     "new-0043",
+     "new-0046",
+     "new-0050",
+     "new-0053",
+     "new-0062",
+     "new-0069",
+     "new-0070",
+     "new-0092",
+     "new-0107",
+     "new-0111",
+     "new-0112",
+     "new-0119",
+     "new-0122",
+     "new-0131",
+     "new-0147",
+     "new-0149",
+     "new-0155",
+     "new-0156",
+     "new-0160",
+     "new-0165",
+     "new-0175",
+     "new-0188",
+     "new-0190",
+     "new-0200",
+     "new-0237",
+     "new-0239",
+     "new-0244",
+     "new-0249",
+     "new-0250",
+     "new-0254",
+     "new-0256",
+     "new-0263",
+     "new-0264",
+     "new-0270",
+     "new-0274",
+     "new-0278",
+     "new-0281",
+     "new-0297",
+     "new-0307",
+     "new-0328",
+     "new-0329",
+     "new-0330",
+     "new-0331",
+     "new-0337",
+     "new-0344",
+     "new-0349",
+     "new-0353",
+     "new-0356",
+     "new-0361",
+     "new-0362",
+     "new-0371",
+     "new-0377",
+     "new-0383",
+     "new-0385",
+     "new-0388",
+     "new-0410",
+     "new-0413",
+     "new-0422",
+     "new-0430",
+     "new-0447",
+     "new-0459",
+     "new-0465",
+     "new-0467",
+     "new-0469",
+     "new-0474",
+     "new-0494",
+     "new-0511",
+     "new-0513",
+     "new-0518",
+     "new-0525",
+     "new-0529",
+     "new-0532",
+     "new-0537",
+     "new-0546",
+     "new-0550",
+     "new-0554",
+     "new-0562",
+     "new-0564",
+     "new-0572",
+     "new-0575",
+     "new-0582",
+     "new-0588",
+     "new-0591",
+     "new-0593",
+     "new-0598",
+     "new-0618",
+     "new-0626",
+     "new-0679",
+     "new-0706",
+     "new-0801",
+     "new-0814",
+     "new-0919",
+     "new-0999"
+    ]
+   },
+   "play 5 not asked": {
+    "n": 100,
+    "ids": [
+     "new-0002",
+     "new-0007",
+     "new-0009",
+     "new-0016",
+     "new-0024",
+     "new-0040",
+     "new-0041",
+     "new-0043",
+     "new-0046",
+     "new-0050",
+     "new-0053",
+     "new-0062",
+     "new-0069",
+     "new-0070",
+     "new-0092",
+     "new-0107",
+     "new-0111",
+     "new-0112",
+     "new-0119",
+     "new-0122",
+     "new-0131",
+     "new-0147",
+     "new-0149",
+     "new-0155",
+     "new-0156",
+     "new-0160",
+     "new-0165",
+     "new-0175",
+     "new-0188",
+     "new-0190",
+     "new-0200",
+     "new-0237",
+     "new-0239",
+     "new-0244",
+     "new-0249",
+     "new-0250",
+     "new-0254",
+     "new-0256",
+     "new-0263",
+     "new-0264",
+     "new-0270",
+     "new-0274",
+     "new-0278",
+     "new-0281",
+     "new-0297",
+     "new-0307",
+     "new-0328",
+     "new-0329",
+     "new-0330",
+     "new-0331",
+     "new-0337",
+     "new-0344",
+     "new-0349",
+     "new-0353",
+     "new-0356",
+     "new-0361",
+     "new-0362",
+     "new-0371",
+     "new-0377",
+     "new-0383",
+     "new-0385",
+     "new-0388",
+     "new-0410",
+     "new-0413",
+     "new-0422",
+     "new-0430",
+     "new-0447",
+     "new-0459",
+     "new-0465",
+     "new-0467",
+     "new-0469",
+     "new-0474",
+     "new-0494",
+     "new-0511",
+     "new-0513",
+     "new-0518",
+     "new-0525",
+     "new-0529",
+     "new-0532",
+     "new-0537",
+     "new-0546",
+     "new-0550",
+     "new-0554",
+     "new-0562",
+     "new-0564",
+     "new-0572",
+     "new-0575",
+     "new-0582",
+     "new-0588",
+     "new-0591",
+     "new-0593",
+     "new-0598",
+     "new-0618",
+     "new-0626",
+     "new-0679",
+     "new-0706",
+     "new-0801",
+     "new-0814",
+     "new-0919",
+     "new-0999"
+    ]
+   }
+  },
+  "excluded_positions": 100
+ }
+}

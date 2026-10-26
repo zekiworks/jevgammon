@@ -43,3 +43,5 @@ Per-phase counts, the predicted and observed sets and the per-position P/O are i
 ## Gemma 4 31B (on): stopped, not reported
 
 100 predictions (10:40:53-11:33:04 UTC). Play calls: session 1 11:33:49-11:45:01 (cut by a reboot ~11:46), session 2 12:08:07-12:17:53 (cut by a reboot ~12:20), session 3 13:55:48-16:01:51 (after a GPU fault at 13:05 and a third reboot), stopped on purpose at 16:02:00 UTC (Ümit). 311 of 500 play answers stored (count only). Not scored; the 5-team score JSON's Gemma entry is ignored. Journal: `smoke/close-choices-b-gemma-session3.log`.
+
+The mailbox copy `mailbox/close-choices-b-score-5teams.json` is filtered: it holds only the five reported teams, without the Gemma 4 31B (on) entry, because Gemma's partial data is not reported or used (Ümit). The unfiltered original stays unchanged in `smoke/close-choices-b-score-5teams.json`.

@@ -1,6 +1,6 @@
 # Ladder round 3: log
 
-Approved by Can; run as in `Ladder round 3 - request.md`. **Status (Oct 26, 03:30 UTC): 33 of 37 new pairings played; 4 are blocked by the OpenRouter key limit** ($100.02 of $100.00 used on the key, 403 "Key limit exceeded"; the account still has about $5 credit). The runners (`league2`, `league3`) keep retrying them hourly and play them once Can raises the key limit. Round 4 is not written yet: its plan depends on those 4 matches.
+Approved by Can; run as in `Ladder round 3 - request.md`. **Status (Oct 26, 08:45 UTC): round 3 is finished**: all 37 new pairings played (#667-703) and scored. 4 of them waited about 5 hours on the OpenRouter key limit (below). Round 4 is written: `Ladder round 4 - request.md`, not applied (it differs from my earlier preview; waiting for Can).
 
 ## Timeline (UTC)
 
@@ -16,21 +16,24 @@ Approved by Can; run as in `Ladder round 3 - request.md`. **Status (Oct 26, 03:3
 - 03:25: `tools/site/score.sh v3.db ~/.local/state/bg-site/plays` (on v3.db, no copy): 4 decisions newly scored.
 - No Xid 79 / GPU drop this round. Disk: / at 151 GB free at the start, 50 GB at 23:00 (not from us: v3.db 31 GB, logs small); reported to Main, nothing deleted.
 
-## Blocked (OpenRouter key limit)
+## Blocked by the OpenRouter key limit, then played
 
 - #675 DeepSeek V4.1 Flash (on) v Jev 1.14.0
 - #699 Gemini 3.8 Flash (low) v Kimi K3.1 Pro (off)
 - #702 DeepSeek V4.1 Flash 1017 (off) v Jev 1.14.0
 - #703 DeepSeek V4.1 Flash 1017 (on) v Jev 1.14.0
 
-All four are partly played and resume from their last stored turn. A trial `ladder.py plan` now (not written to the mailbox) gives round 4 as Clef L1→L2, Jev 1.14.0 L2→L1, Gemini 4 Argon (off) L2→L3, Kimi K3.1 Pro (off) L3→L2; Jev and Kimi both still have blocked matches, so this can change.
+All four were partly played and paused on 403 "Key limit exceeded" ($100.02 of $100.00 on the key). Can raised the key limit to $200 and topped up the credit ($115); Main restarted `league2` and `league3` at ~07:55 Oct 26 and the four resumed from their last stored turns: #699 Kimi K3.1 Pro (off) 5-3 Gemini 3.8 Flash (low) (07:52), #702 Jev 1.14.0 6-0 DeepSeek V4.1 Flash 1017 (off) (07:59), #675 DeepSeek V4.1 Flash (on) 7-2 Jev 1.14.0 (08:27), #703 Jev 1.14.0 5-3 DeepSeek V4.1 Flash 1017 (on) (08:42). Both runners then ended (no pairing left). 08:43: `score.sh v3.db ~/.local/state/bg-site/plays` (no copy): 44 decisions newly scored.
+
+My preview at 03:30 (Clef L1→L2, Jev 1.14.0 L2→L1, Argon (off) L2→L3, Kimi K3.1 Pro (off) L3→L2) no longer holds: with these results the plan relegates DeepSeek V4.1 Flash (off) and Gemini 3.8 Flash (low) instead of Jev and Kimi.
+
+The dashboard's stale "league1: pausing" state (from the 20:48 pause, which Main finished by hand) was replaced in `league_control.state` only (no server started): it now reads paused since 21:58 Oct 25, "League 1 finished its ladder round 3 matches; nothing is paused, no server is running for it". The control script derives the state from the `league1` unit, so the Resume button stays; pressing it would start the GPU servers.
 
 ## Spend
 
-- Round 3 at list price (turns.cost_usd, matches 667-703): OpenRouter-billed setups about $1.65 (DeepSeek V4.1 Flash (on) $0.78, Kimi K3.1 Pro (off) $0.49, GLM-5.3 (on) $0.29, DeepSeek (off) and Qwen3.8 Flash (off) a few cents); Jev, Luna, SubQ, Celeris, Mercury, Deciders a few cents each. Subscriptions (API-equivalent, not billed): Gemini 4 Argon (on) $36.83, Claude Fable 5.1 (on) $15.64, Grok 4.7 (on) $13.53, the rest smaller.
-- OpenRouter counter: $98.36 before the round, $100.02 now (key limit $100 reached).
+- Round 3 at list price (turns.cost_usd, matches 667-703): OpenRouter-billed setups about $3.70 (DeepSeek V4.1 Flash (on) $1.94, DeepSeek V4.1 Flash 1017 (on) $0.81, Kimi K3.1 Pro (off) $0.53, GLM-5.3 (on) $0.29, DeepSeek (off), 1017 (off) and Qwen3.8 Flash (off) a few cents); Jev, Luna, SubQ, Celeris, Mercury, Deciders a few cents each. Subscriptions (API-equivalent, not billed): Gemini 4 Argon (on) $36.83, Claude Fable 5.1 (on) $15.64, Grok 4.7 (on) $13.53, the rest smaller.
+- OpenRouter counter: $98.36 before the round, $102.06 after it (credit $115, key limit $200), so about $3.70 billed, matching the list price.
 
 ## Next
 
-- Can: raise the OpenRouter key limit; the 4 matches then play by themselves (hourly retry).
-- Then: score (`tools/site/score.sh v3.db ~/.local/state/bg-site/plays`), `tools/ladder.py plan --db v3.db --out "mailbox/Ladder round 4 - request.md"` (or "ladder settled").
+- Round 4: `Ladder round 4 - request.md` (29 new pairings, 35 reused; about $3.43; Clef's 14 League 2 matches need about 17 h of match time on the Clef server). It differs from my preview, so it is not applied until Can confirms. It includes the lock-rule check: no round-4 mover is locked. Argon (off) and Gemini 3.8 Flash (low) swap back; in round 5 Argon (off) is relegated from League 3 a second time and locked in League 2, and Flash (low) can be relegated from League 3 only once more before it is locked. The ladder settles after finitely many rounds under the current rules.

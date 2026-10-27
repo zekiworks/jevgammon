@@ -773,3 +773,12 @@ Everything else (for example GPT-6.1 Terra against GPT-6.1 Sol (low)) is explora
 
 A release bundle is prepared (positions with source game IDs, pairs, matching rules, prompts, settings, raw answers,
 scores and analysis code) and not published before Can's go.
+
+#### 10 addendum (2026-10-27, 18:05 UTC, Can's answers; written and committed before any model call of this test)
+
+- **Standard prompt (note to 10.8, Can's answer 2):** the standard-side prompt wording (`bg-v3-std-notable`) is
+  approved. It differs from the league prompt `bg-v2` (no opening table; the starting-setup sentence on its own line),
+  so the paired test's standard error rates are not compared directly with league error rates.
+- **Back-game tag (note to 10.4, Can's answer 3):** the frozen back-game rule is kept. In Nackgammon this tag partly
+  reflects the starting 23- and 24-point anchors, and the back-game row is too thin to read (main set: 10 Nackgammon
+  against 2 standard positions).

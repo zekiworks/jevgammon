@@ -1,0 +1,101 @@
+{
+  "note": "Nackgammon paired test, row d (extension, Can's go 2026-10-27, $2.55 OpenRouter in total): the OpenRouter setups of leagues/nack-paired.json with the same settings, answering positions/nack-paired/reserve.jsonl when the frozen rule extends them. Ledger setups under smoke/nack-paired-budget-d.db ($2.51 hard cap); Mercury Decide (no ledger possible) under `--max-cost 0.035`: $2.55 at most in total. Answers in smoke/nack-paired.db.",
+  "prompt_version": "bg-v3-std-notable",
+  "seed": 0,
+  "order_seed": 1190975713392774006,
+  "rounds": 3,
+  "clock": 0,
+  "delay": 30,
+  "max_turns": 300,
+  "players": [
+    {
+      "name": "DeepSeek V4.1 Flash (off)",
+      "spec": "openai-compatible/deepseek/deepseek-v4.1-flash",
+      "provider": "openrouter:fireworks",
+      "base_url": "https://openrouter.ai/api/v1",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "request": {
+        "provider": {
+          "order": [
+            "fireworks"
+          ],
+          "allow_fallbacks": false,
+          "require_parameters": true
+        },
+        "usage": {
+          "include": true
+        },
+        "reasoning": {
+          "enabled": false
+        }
+      },
+      "top_logprobs": 5,
+      "letter_readout": "answer",
+      "price": {
+        "input_per_mtok": 0.3,
+        "output_per_mtok": 1.2
+      },
+      "note": "Fireworks via OpenRouter; quantization not published; top_logprobs max 5; from 2026-10-20 21:56 UTC our SGLang server, thinking switched with chat_template_kwargs.thinking (false); top_logprobs kept at 5 as on Fireworks; price stays Fireworks' list price via OpenRouter, for comparison; no requests-per-minute cap locally (OpenRouter's was 18); from 2026-10-22 15:37 UTC back on Fireworks via OpenRouter (provider pinned: order [fireworks], allow_fallbacks false, require_parameters true; usage included), the entry as before 2026-10-20 21:56 UTC (rpm 18), so that bariton's GPUs serve the reasoning players for League 2's last matches; turns.provider shows where each decision ran",
+      "device": "Fireworks via OpenRouter until 2026-10-20 20:09 UTC; from 2026-10-20 21:56 UTC our own SGLang server on bariton's four RTX PRO 6000 (TP4/EP4, ~/code/deepseek-v4.1-flash-4x-rtx-pro-6000, launcher defaults: NVMe Engram offload with 64 GiB DDR5 cache, memory share 0.85, DSpark speculation, context 409,600), served name deepseek-v4.1-flash, checkpoint DeepSeek-V4.1-Flash-1017 @ 1bae0e10 (the launcher pins the 2026-10-17 revision; which revision Fireworks serves is not published), weights as published: FP4 routed experts, FP8/BF16 other weights, FP8 Engram; 20 stored Fireworks (off) requests (random from the last 400) replayed: local same top letter 16/20 and 17/20 in two runs (max |dp| 0.49, median 0.09; the local server is not deterministic, |dp| about 0.1 between runs), Fireworks against its own stored answers 18/20 (max |dp| 0.18), so local is within Fireworks' own spread; paused 2026-10-21 01:22-05:33 UTC (its four GPUs served the thinking players), then the same server again; 20 stored Fireworks (off) requests replayed: same top letter 17/20 (max |dp| 0.47, median 0.10); from 2026-10-22 15:37 UTC Fireworks via OpenRouter again",
+      "parallel": 8,
+      "rpm": 18,
+      "budget": {
+        "ledger": "smoke/nack-paired-budget-d.db",
+        "cap_usd": 2.51,
+        "input_per_mtok": 0.3,
+        "cached_input_per_mtok": 0.03,
+        "output_per_mtok": 1.2
+      }
+    },
+    {
+      "name": "Mercury Decide",
+      "spec": "openrouter-decisions/inception/mercury-decide",
+      "provider": "openrouter (inception)",
+      "price": {
+        "input_per_mtok": 0.02,
+        "output_per_mtok": 0.0
+      },
+      "note": "Inception's Mercury Decide through OpenRouter's System One route, its paid listing (not :free); list price $0.02 per million input tokens, the one output token not charged (openrouter.ai/inception/mercury-decide, 2026-10-17); latency includes OpenRouter's own time. Added while OpenRouter credit is exhausted (402 at the smoke test and warm-up): its matches defer until credit is added; the request format is the one the Turkish benchmark ran through OpenRouter on 2026-10-17 (runs 204, 210, 212, 214, 216: 0 invalid)",
+      "parallel": 2
+    },
+    {
+      "name": "GPT-6.1 Terra",
+      "spec": "openai-compatible/openai/gpt-6.1-terra",
+      "base_url": "https://openrouter.ai/api/v1",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "provider": "openrouter:openai",
+      "reasoning": "low",
+      "request": {
+        "provider": {
+          "order": [
+            "openai"
+          ],
+          "allow_fallbacks": false,
+          "require_parameters": true
+        },
+        "usage": {
+          "include": true
+        },
+        "temperature": null,
+        "logprobs": null,
+        "top_logprobs": null
+      },
+      "letter_readout": "answer",
+      "max_tokens": 8000,
+      "price": {
+        "input_per_mtok": 1.0,
+        "output_per_mtok": 5.0
+      },
+      "budget": {
+        "ledger": "smoke/nack-paired-budget-d.db",
+        "cap_usd": 2.51,
+        "input_per_mtok": 1.0,
+        "cached_input_per_mtok": 0.1,
+        "output_per_mtok": 5.0
+      },
+      "parallel": 4,
+      "rpm": 18,
+      "note": "GPT-6.1 Terra (openai/gpt-6.1-terra, released 2026-10-26; endpoint openai/gpt-6.1-terra-20261026) via OpenRouter pinned to OpenAI's standard endpoint (tag openai, $1/$5 per M, cache read $0.05; not flex, not fast), fallbacks off. Reasoning effort low, as GPT-6.1 Sol (low). max_tokens 8000 (bounds the budget ledger's worst case; Sol (low) uses ~76 output tokens per decision). Letter constrained by the JSON schema and read from the answer; the endpoint takes no temperature and no logprobs (OpenRouter 'Filter by Parameters' with require_parameters), so the request drops both (request: null), choice only, as GPT-6.1 Sol on the subscription. Hard cap: smoke test under ledger smoke/nack-paired-budget-abc.db ($1.88); paired start (row c) under ledger smoke/nack-paired-budget-c.db ($1.82 = the re-estimate's high end after the smoke test)."
+    }
+  ]
+}

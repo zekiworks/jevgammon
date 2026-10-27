@@ -17,7 +17,7 @@ This file replaces all earlier Champions Cup plans: the 9-team format, the group
 - **No repeats.** Two models play each other at most once, across leagues, ladder and Cup. Store every result by pairing. Reuse a stored result instead of playing the match again.
 - **Same match format.** Ladder and Cup matches use the league match rules: the same format and the same dice method.
 - **Programs never move.** GNU Backgammon (GNUbg) setups never move between leagues and never enter the Cup. When a rule picks a program, take the next model in the table.
-- **League ranking** stays as it is now: points, then games, then the lower error rate.
+- **League ranking** stays as it is now: points, then games, then the lower error rate. *(Superseded for the Cup 2026-10-27 by Can: the Cup uses the original-league tables and a tiebreak still to be decided; see the amendment in Part 2.)*
 
 ## Part 1: inter-league ladder
 
@@ -61,9 +61,17 @@ The leagues, from bottom to top: League 1 (decision models), League 2 (workhorse
 
 One Hype Cup runs for each steady state. A new model entering a league starts a new ladder, which leads to a new steady state and a new Cup.
 
+**Amendment, 2026-10-27 (Can): the Cup roster comes from the original-league tables.** Reason and figures: `mailbox/Original-league tables - what Can found 2026-10-27.md`. This replaces "the top 2 models from each league" meaning the final ladder tables; the text below is kept, read with this amendment.
+
+- **Original-league tables.** Each setup is counted in its original league: the league it was in before any ladder move. GNUbg weak, the anchor, is in all three leagues. Only matches between setups of the same original league count: 3 points for a win, 1 for a draw, 0 for a loss.
+- **Cup roster.** "League" in Teams and Seeds below means these original-league tables, not the final ladder tables.
+- **The ladder's final placement stays as its own result.** The ladder tables and the final swap are unchanged; they are not used for the Cup.
+- **Late entries.** Pairings missing because a setup joined after others had left its league are played (same rules and format as the leagues, stored as normal valid matches), so every original league is a complete round robin before the roster is built.
+- **Tiebreak: pending Can's decision.** Under discussion: points, then the head-to-head result, then the lower error rate. Games won is unsuitable, because match length varies (2–8 games: a match ends after the round in which someone reaches 5 points).
+
 **Teams (8):**
 
-- The top 2 models from each league.
+- The top 2 models from each league. *(Superseded in part 2026-10-27 by Can: "each league" is now each original-league table, see the amendment above.)*
 - The two 3rd-placed models with the lowest error rates. Points do not compare across leagues of different sizes, so error rate picks these two.
 
 **Seeds:**

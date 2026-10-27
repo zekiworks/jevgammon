@@ -1,0 +1,359 @@
+{
+  "note": "Nackgammon paired test (Method §10; Can's go 2026-10-27, rows b and c): every setup answers positions/nack-paired/main.jsonl (400; the reserve 600 only when extended by the frozen rule). Stored settings from v3.db players.settings unchanged; each row carries its prompt (bg-v3-std-notable / bg-v3-nack). OpenRouter setups under the shared hard-cap ledger smoke/nack-paired-budget-abc.db ($1.88, rows a+b+c). Not a league: `jevgammon ask` only; answers in smoke/nack-paired.db.",
+  "prompt_version": "bg-v3-std-notable",
+  "seed": 0,
+  "order_seed": 1190975713392774006,
+  "rounds": 3,
+  "clock": 0,
+  "delay": 30,
+  "max_turns": 300,
+  "players": [
+    {
+      "name": "GNUbg weak",
+      "spec": "gnubg-weak",
+      "provider": "local",
+      "note": "gnubg 1.08 Beginner level (0-ply, deterministic noise 0.060)",
+      "parallel": 1
+    },
+    {
+      "name": "Celeris-1 Decision",
+      "spec": "celeris/celeris-1-decision",
+      "provider": "celeris",
+      "price": {
+        "input_per_mtok": 0.04,
+        "output_per_mtok": 0.0
+      },
+      "note": "Celeris System One endpoint (inference.celeris.ai/celeris-1-decision); list price $0.04 per million input tokens, output free (docs.celeris.ai/pricing, 2026-10-10); probabilities come rounded to two decimals",
+      "parallel": 2
+    },
+    {
+      "name": "SubQ Snap Preview",
+      "spec": "subq/subq-snap-preview",
+      "provider": "subq",
+      "price": {
+        "input_per_mtok": 0.05,
+        "output_per_mtok": 0.0
+      }
+    },
+    {
+      "name": "Cygnet (Gemma 4 12B)",
+      "spec": "cygnet",
+      "provider": "local",
+      "quantization": "bf16",
+      "base_url": "http://127.0.0.1:18093",
+      "note": "moved to a DGX Spark at 2026-10-16 11:04 UTC, same checkpoint and server arguments; 20 League 1 requests replayed on both machines: same play 20/20, max |dp| 0.042",
+      "device": "NVIDIA GB10 (DGX Spark spark-002e) from 2026-10-16 11:04 UTC; RTX PRO 6000 (bariton) before; spark busy with others' servers, so from 2026-10-23 21:12 UTC (ladder round 1) RTX PRO 6000 (bariton GPU 0, next to GLiDE v1.2), cygnet.sh with CYGNET_UTIL=0.34 (as wave L1); 20 stored League 1 requests replayed there: same play 20/20, max |dp| 0.055, median 0.007; from 2026-10-24 21:10 UTC (ladder round 2) bariton GPU 0 again (CYGNET_UTIL=0.34), same script and arguments",
+      "parallel": 4
+    },
+    {
+      "name": "Decider v1.2 27B",
+      "spec": "pplx-local/pplx-decider-v1.2",
+      "provider": "local (pplx_decider_server.py)",
+      "quantization": "bf16",
+      "base_url": "http://127.0.0.1:18099",
+      "price": {
+        "input_per_mtok": 0.02,
+        "output_per_mtok": 0.0
+      },
+      "note": "Perplexity's pplx-decider-v1.2 (Hugging Face snapshot 225c913) on our GPU through the pplx_decider package its checkpoint ships, reference path, one request at a time (tools/v3/servers/decider-v1.2.sh 27b, DECIDER_V12_GPU=1); joined late overnight 2026-10-19/20 when bariton GPU 1 was freed by Qwen3.8-27B (tools/v3/swap_qwen_decider.sh); smoke test 10/10 answered with probabilities on 2026-10-19 (bariton GPU 2); price = Perplexity's list price for the same model (2026-10-18)",
+      "device": "RTX PRO 6000 (bariton GPU 1, after Qwen3.8-27B's League 2 matches); paused 2026-10-20 (GPUs needed elsewhere); from 2026-10-20 20:09 UTC bariton GPU 1 again, same script and arguments, next to Decider Flash v1.2 and Winnow-12B; from 2026-10-22 22:21 UTC bariton GPU 1 again (with Decider v1.2 27B, Decider Flash v1.2 and Winnow-12B), same scripts and arguments; from 2026-10-23 21:12 UTC (ladder round 1) bariton GPU 1 again (with Decider v1.2 27B, Decider Flash v1.2 and Winnow-12B), same scripts and arguments",
+      "parallel": 1
+    },
+    {
+      "name": "Fastino GLiDE v1.2 (local)",
+      "spec": "fastino/glide-v1.2",
+      "provider": "local (glide/server.py)",
+      "quantization": "bf16",
+      "base_url": "http://127.0.0.1:18101",
+      "note": "Fastino's GLiDE v1.2 (served model name glide-v1.2, package version 1.2.0) from its released weights: Hugging Face fastino/GLiDE @ a7e45896be7c96ba3354891da790c5ec99c30b6c (Fastino Community License; a Qwen3.8-27B modification, bf16, 255-way decision readout), run on our GPU through the glide/server.py its repository ships (tools/v3/servers/glide-v12.sh, GLIDE_GPU=0; Python 3.12.13, torch 2.14.0+cu130, transformers 5.17.0, flash-linear-attention 0.5.2; GLIDE_MAX_BATCH=1, so an answer never depends on other traffic); joined late 2026-10-22; smoke test 50/50 answered with probabilities (error rate 22.5; Fastino's API, League 1's \"Fastino GLiDE\", 20.0, same play 48/50, max |dp| 0.022). Not the same setup as \"Fastino GLiDE\", whose API responses name the model glide_v2",
+      "device": "RTX PRO 6000 (bariton GPU 0); paused 2026-10-22 17:22 UTC; from 2026-10-22 22:21 UTC bariton GPU 0 again, same script and arguments; from 2026-10-23 21:12 UTC (ladder round 1) bariton GPU 0 again, same script and arguments",
+      "parallel": 4
+    },
+    {
+      "name": "DeepSeek V4.1 Flash (off)",
+      "spec": "openai-compatible/deepseek/deepseek-v4.1-flash",
+      "provider": "openrouter:fireworks",
+      "base_url": "https://openrouter.ai/api/v1",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "request": {
+        "provider": {
+          "order": [
+            "fireworks"
+          ],
+          "allow_fallbacks": false,
+          "require_parameters": true
+        },
+        "usage": {
+          "include": true
+        },
+        "reasoning": {
+          "enabled": false
+        }
+      },
+      "top_logprobs": 5,
+      "letter_readout": "answer",
+      "price": {
+        "input_per_mtok": 0.3,
+        "output_per_mtok": 1.2
+      },
+      "note": "Fireworks via OpenRouter; quantization not published; top_logprobs max 5; from 2026-10-20 21:56 UTC our SGLang server, thinking switched with chat_template_kwargs.thinking (false); top_logprobs kept at 5 as on Fireworks; price stays Fireworks' list price via OpenRouter, for comparison; no requests-per-minute cap locally (OpenRouter's was 18); from 2026-10-22 15:37 UTC back on Fireworks via OpenRouter (provider pinned: order [fireworks], allow_fallbacks false, require_parameters true; usage included), the entry as before 2026-10-20 21:56 UTC (rpm 18), so that bariton's GPUs serve the reasoning players for League 2's last matches; turns.provider shows where each decision ran",
+      "device": "Fireworks via OpenRouter until 2026-10-20 20:09 UTC; from 2026-10-20 21:56 UTC our own SGLang server on bariton's four RTX PRO 6000 (TP4/EP4, ~/code/deepseek-v4.1-flash-4x-rtx-pro-6000, launcher defaults: NVMe Engram offload with 64 GiB DDR5 cache, memory share 0.85, DSpark speculation, context 409,600), served name deepseek-v4.1-flash, checkpoint DeepSeek-V4.1-Flash-1017 @ 1bae0e10 (the launcher pins the 2026-10-17 revision; which revision Fireworks serves is not published), weights as published: FP4 routed experts, FP8/BF16 other weights, FP8 Engram; 20 stored Fireworks (off) requests (random from the last 400) replayed: local same top letter 16/20 and 17/20 in two runs (max |dp| 0.49, median 0.09; the local server is not deterministic, |dp| about 0.1 between runs), Fireworks against its own stored answers 18/20 (max |dp| 0.18), so local is within Fireworks' own spread; paused 2026-10-21 01:22-05:33 UTC (its four GPUs served the thinking players), then the same server again; 20 stored Fireworks (off) requests replayed: same top letter 17/20 (max |dp| 0.47, median 0.10); from 2026-10-22 15:37 UTC Fireworks via OpenRouter again",
+      "parallel": 8,
+      "rpm": 18,
+      "budget": {
+        "ledger": "smoke/nack-paired-budget-abc.db",
+        "cap_usd": 1.88,
+        "input_per_mtok": 0.3,
+        "cached_input_per_mtok": 0.03,
+        "output_per_mtok": 1.2
+      }
+    },
+    {
+      "name": "Jev 1.13.0",
+      "spec": "jev/jev-1.13.0",
+      "provider": "jev",
+      "price": {
+        "input_per_mtok": 0.042,
+        "output_per_mtok": 0.0
+      },
+      "note": "TypeSafe System One API; list price $0.042 per million input tokens (typesafe.ai/blog/introducing-system-one-models-and-jev, 2026-10-08)",
+      "parallel": 2
+    },
+    {
+      "name": "GPT-6 Luna",
+      "spec": "openai-decisions/gpt-6-luna",
+      "provider": "openai-decisions",
+      "price": {
+        "input_per_mtok": 0.1,
+        "output_per_mtok": 0.0
+      },
+      "note": "OpenAI Decisions API (public beta), API key with billing; list price $0.10 per million input tokens, no cache or output charges (developers.openai.com/api/docs/guides/decisions, 2026-10-08). Its earlier League 1 entry (ChatGPT subscription, chat model) was removed on 2026-10-19",
+      "parallel": 2
+    },
+    {
+      "name": "Decider v1.1 27B",
+      "spec": "pplx-local",
+      "provider": "local (pplx-decider server.py)",
+      "quantization": "bf16",
+      "base_url": "http://127.0.0.1:18097",
+      "price": {
+        "input_per_mtok": 0.02,
+        "output_per_mtok": 0.0
+      },
+      "note": "runs on our GPUs (Perplexity hosting of v1.1 unverified); price = Perplexity list price; moved to a DGX Spark at 2026-10-16 11:04 UTC, same checkpoint and server arguments; 20 League 1 requests replayed on both machines: same play 20/20, max |dp| 0.029",
+      "device": "NVIDIA GB10 (DGX Spark spark-194d) from 2026-10-16 11:04 UTC; RTX PRO 6000 (bariton) before; spark3 server OOM-killed 2026-10-22 19:34 UTC and spark3 then short of memory, so from 2026-10-22 22:41 UTC back on RTX PRO 6000 (bariton GPU 2), same checkpoint and server arguments (decider.sh, DECIDER_GPU=2); 20 stored League 1 requests replayed there: same play 19/20 (the other a near-tie, 0.190 v 0.185), max |dp| 0.017, median 0.008; League 1 finished 2026-10-22 22:55 UTC; server stopped 22:57 UTC; from 2026-10-23 21:12 UTC (ladder round 1) bariton GPU 2 again (DECIDER_GPU=2), same checkpoint and arguments",
+      "parallel": 1
+    },
+    {
+      "name": "LFM2.5-24B-A2B (on)",
+      "spec": "openai-compatible/lfm2.5-24b-a2b",
+      "provider": "local-vllm",
+      "quantization": "bf16",
+      "base_url": "http://127.0.0.1:8898/v1",
+      "reasoning": "low",
+      "request": {},
+      "max_tokens": 32000,
+      "top_logprobs": 20,
+      "letter_readout": "prefill",
+      "note": "reasons on every answer (its template has no switch or effort knob; \"low\" is sent and ignored), then the letter continues a prefilled Answer:. Liquid AI's own API until its matches were voided on 2026-10-19 22:20 UTC; from 2026-10-19 22:26 UTC Liquid's bf16 checkpoint on our GPU (vLLM, tools/v3/servers/lfm25-24b.sh); (off) on the same server agreed with Liquid's API 14/20",
+      "device": "Liquid AI's API until 2026-10-19 22:20 UTC; from 22:26 UTC RTX PRO 6000 (bariton GPU 2), the whole GPU (memory share 0.90, 32 sequences); paused 2026-10-20; from 2026-10-20 20:16 UTC bariton GPU 2 again, same script and arguments; from 2026-10-20 21:10 UTC NVIDIA GB10 (DGX Spark spark-194d), same image, checkpoint and arguments except memory share 0.45 (next to Gemma 4 31B), while bariton's four GPUs serve DeepSeek V4.1 Flash; 20 stored League 2 (off) requests (bariton) replayed there: same top letter 20/20, max |dp| 0.10, median 0.05 (bariton against its own stored answers: 18/20); from 2026-10-21 01:25 UTC back on bariton GPU 2 (overnight server), same script and arguments, while DeepSeek V4.1 Flash is paused (its four GPUs freed for League 2's non-DeepSeek thinking matches); 20 stored (off) requests: same top letter 16/20, then 18/20 and 18/20 in two reruns, max |dp| 0.12 (LFM2.5 is not deterministic; bariton against its own stored answers gave 18/20 earlier); from 2026-10-21 05:00 UTC NVIDIA GB10 (DGX Spark spark-194d) again, the same server as from 2026-10-20 21:10 UTC, while DeepSeek V4.1 Flash plays its last matches on bariton; from 2026-10-22 15:37 UTC back on RTX PRO 6000 (bariton GPU 2), same image, checkpoint and arguments (memory share 0.90); 20 stored League 2 (off) requests replayed there: same top letter 17/20, max |dp| 0.15, median 0.046 (LFM2.5 is not deterministic: bariton against itself 18/20); paused 2026-10-22 16:20 UTC; from 2026-10-22 22:21 UTC bariton GPU 3, same script, image, checkpoint and arguments; from 2026-10-23 21:16 UTC (ladder round 1) bariton GPU 3, same script, image, checkpoint and arguments (LFM_GPU=3); from 2026-10-24 16:48 UTC (ladder round 2) bariton GPU 3, same script, image, checkpoint and arguments (LFM_GPU=3)",
+      "parallel": 16,
+      "max_matches": 16
+    },
+    {
+      "name": "Qwen3.8-27B (off)",
+      "spec": "openai-compatible/qwen3.8-27b",
+      "provider": "local-vllm",
+      "quantization": "fp16 (bf16 checkpoint served in fp16 by vLLM; fp16 KV cache)",
+      "base_url": "http://127.0.0.1:8897/v1",
+      "request": {
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        },
+        "response_format": null
+      },
+      "letter_readout": "answer",
+      "note": "thinking off; unconstrained letter, as on Cerebras (fp16 via OpenRouter) before 2026-10-19 22:26 UTC, where it finished no match; from then vLLM on our GPU (tools/v3/servers/qwen38-27b.sh); 20 stored (off) requests replayed there: same top letter 18/20 (bf16: 17/20; the others near-ties), max |dp| 0.15, median 0.034",
+      "device": "Cerebras (OpenRouter) until 2026-10-19 22:26 UTC; then RTX PRO 6000 (bariton GPU 1), the whole GPU (memory share 0.90, 32 sequences); paused 2026-10-20 (GPUs needed elsewhere); from 2026-10-20 20:16 UTC bariton GPU 3 (same model of GPU, image, checkpoint and arguments); from 2026-10-20 21:10 UTC NVIDIA GB10 (DGX Spark spark-002e), same image, checkpoint and arguments except memory share 0.85, while bariton's four GPUs serve DeepSeek V4.1 Flash; 20 stored League 2 (off) requests (bariton) replayed there: same top letter 20/20, max |dp| 0.005, median 0.002; from 2026-10-21 01:25 UTC back on bariton GPU 3, same script and arguments, while DeepSeek V4.1 Flash is paused (its four GPUs freed for League 2's non-DeepSeek thinking matches); 20 stored (off) requests: same top letter 20/20, max |dp| 0.009; from 2026-10-21 05:00 UTC NVIDIA GB10 (DGX Spark spark-002e) again, the same server as from 2026-10-20 21:10 UTC, while DeepSeek V4.1 Flash plays its last matches on bariton; from 2026-10-22 15:37 UTC back on RTX PRO 6000 (bariton GPU 3), same image, checkpoint and arguments (memory share 0.90); 20 stored League 2 (off) requests replayed there: same top letter 20/20, max |dp| 0.007, median 0.0008; from 2026-10-23 21:34 UTC (ladder round 1) bariton GPU 0, same script, image, checkpoint and arguments (QWEN27_GPU=0); 2026-10-23 23:09 UTC the server died (CUDA unknown error after another GPU fell off the bus); matches deferred until bariton is reset; from 2026-10-25 09:49 UTC (ladder round 2) bariton GPU 1 (QWEN27_GPU=1), same script, image, checkpoint and arguments",
+      "parallel": 8,
+      "max_matches": 16
+    },
+    {
+      "name": "Mercury Decide",
+      "spec": "openrouter-decisions/inception/mercury-decide",
+      "provider": "openrouter (inception)",
+      "price": {
+        "input_per_mtok": 0.02,
+        "output_per_mtok": 0.0
+      },
+      "note": "Inception's Mercury Decide through OpenRouter's System One route, its paid listing (not :free); list price $0.02 per million input tokens, the one output token not charged (openrouter.ai/inception/mercury-decide, 2026-10-17); latency includes OpenRouter's own time. Added while OpenRouter credit is exhausted (402 at the smoke test and warm-up): its matches defer until credit is added; the request format is the one the Turkish benchmark ran through OpenRouter on 2026-10-17 (runs 204, 210, 212, 214, 216: 0 invalid)",
+      "parallel": 2
+    },
+    {
+      "name": "Winnow-12B",
+      "spec": "winnow/winnow-12b",
+      "provider": "local (winnow-inference)",
+      "quantization": "Q8_0 (GGUF), Q8_0 KV cache",
+      "base_url": "http://127.0.0.1:8091",
+      "note": "EldanRing's Winnow-12B (Gemma 4 12B IT fine-tune) through its author's winnow-inference server (image winnow-inference:d4631fb) with the author's measured configuration (tools/v3/servers/winnow.sh); no published price",
+      "device": "RTX PRO 6000 (bariton GPU 3, next to Open-Jev); from 2026-10-20 20:10 UTC bariton GPU 1, next to Decider v1.2 27B and Decider Flash v1.2 (same image and arguments); from 2026-10-22 22:21 UTC bariton GPU 1 again (with Decider v1.2 27B, Decider Flash v1.2 and Winnow-12B), same scripts and arguments; from 2026-10-23 21:12 UTC (ladder round 1) bariton GPU 1 again (with Decider v1.2 27B, Decider Flash v1.2 and Winnow-12B), same scripts and arguments",
+      "parallel": 4
+    },
+    {
+      "name": "LFM2.5-24B-A2B (off)",
+      "spec": "openai-compatible/lfm2.5-24b-a2b",
+      "provider": "local-vllm",
+      "quantization": "bf16",
+      "base_url": "http://127.0.0.1:8898/v1",
+      "request": {},
+      "max_tokens": 32000,
+      "top_logprobs": 20,
+      "letter_readout": "prefill",
+      "answer_prefix": "<think></think>Answer:",
+      "note": "no reasoning: the letter continues a prefilled <think></think>Answer:. Liquid AI's own API until its matches were voided on 2026-10-19 22:20 UTC; from 2026-10-19 22:26 UTC Liquid's bf16 checkpoint on our GPU (vLLM, tools/v3/servers/lfm25-24b.sh). 20 stored (off) requests with this prefill: same top letter as Liquid's API 14/20 (max |dp| 0.21; Liquid against itself 19/20; Liquid's FP8 checkpoint here 12/20; bf16 against FP8 here 15/20, the distributions are flat: 7 of the 20 have Liquid's top two within 0.06)",
+      "device": "Liquid AI's API until 2026-10-19 22:20 UTC; from 22:26 UTC RTX PRO 6000 (bariton GPU 2), the whole GPU (memory share 0.90, 32 sequences); paused 2026-10-20; from 2026-10-20 20:16 UTC bariton GPU 2 again, same script and arguments; from 2026-10-20 21:10 UTC NVIDIA GB10 (DGX Spark spark-194d), same image, checkpoint and arguments except memory share 0.45 (next to Gemma 4 31B), while bariton's four GPUs serve DeepSeek V4.1 Flash; 20 stored League 2 (off) requests (bariton) replayed there: same top letter 20/20, max |dp| 0.10, median 0.05 (bariton against its own stored answers: 18/20); from 2026-10-21 01:25 UTC back on bariton GPU 2 (overnight server), same script and arguments, while DeepSeek V4.1 Flash is paused (its four GPUs freed for League 2's non-DeepSeek thinking matches); 20 stored (off) requests: same top letter 16/20, then 18/20 and 18/20 in two reruns, max |dp| 0.12 (LFM2.5 is not deterministic; bariton against its own stored answers gave 18/20 earlier); from 2026-10-21 05:00 UTC NVIDIA GB10 (DGX Spark spark-194d) again, the same server as from 2026-10-20 21:10 UTC, while DeepSeek V4.1 Flash plays its last matches on bariton; from 2026-10-22 15:37 UTC back on RTX PRO 6000 (bariton GPU 2), same image, checkpoint and arguments (memory share 0.90); 20 stored League 2 (off) requests replayed there: same top letter 17/20, max |dp| 0.15, median 0.046 (LFM2.5 is not deterministic: bariton against itself 18/20); paused 2026-10-22 16:20 UTC; from 2026-10-22 22:21 UTC bariton GPU 3, same script, image, checkpoint and arguments; from 2026-10-23 21:16 UTC (ladder round 1) bariton GPU 3, same script, image, checkpoint and arguments (LFM_GPU=3); from 2026-10-24 16:48 UTC (ladder round 2) bariton GPU 3, same script, image, checkpoint and arguments (LFM_GPU=3)",
+      "parallel": 16,
+      "max_matches": 16
+    },
+    {
+      "name": "Open-Jev 27B v1.1",
+      "spec": "open-jev",
+      "provider": "local",
+      "quantization": "bf16",
+      "device": "RTX PRO 6000 (bariton) throughout: on a DGX Spark it chose another play in 2 of 20 replayed League 1 requests (near-ties), so it did not move; from 2026-10-22 22:21 UTC bariton GPU 2 for its match against Fastino GLiDE v1.2 (local), same script and arguments; from 2026-10-23 21:20 UTC (ladder round 1) bariton GPU 2 (OPEN_JEV_GPU=2), same script and arguments; from 2026-10-25 05:09 UTC (ladder round 2) bariton GPU 1 (OPEN_JEV_GPU=1), same script and arguments",
+      "parallel": 1
+    },
+    {
+      "name": "Decider Flash v1.2",
+      "spec": "pplx-local/pplx-decider-flash-v1.2",
+      "provider": "local (pplx_decider_server.py)",
+      "quantization": "bf16",
+      "base_url": "http://127.0.0.1:18098",
+      "price": {
+        "input_per_mtok": 0.01,
+        "output_per_mtok": 0.0
+      },
+      "note": "Perplexity's pplx-decider-flash-v1.2 (from Qwen3.5-4B) on our GPU through the pplx_decider package its checkpoint ships, reference path, one request at a time (tools/v3/servers/decider-v1.2.sh flash); price = Perplexity's list price for the same model (2026-10-18)",
+      "device": "RTX PRO 6000 (bariton GPU 3, next to Open-Jev); from 2026-10-20 20:10 UTC bariton GPU 1, next to Decider v1.2 27B and Winnow-12B (same script and arguments); from 2026-10-22 22:21 UTC bariton GPU 1 again (with Decider v1.2 27B, Decider Flash v1.2 and Winnow-12B), same scripts and arguments; from 2026-10-23 21:12 UTC (ladder round 1) bariton GPU 1 again (with Decider v1.2 27B, Decider Flash v1.2 and Winnow-12B), same scripts and arguments",
+      "parallel": 1
+    },
+    {
+      "name": "Gemini 3.8 Flash (low)",
+      "spec": "antigravity/gemini-3.8-flash",
+      "provider": "antigravity-subscription",
+      "reasoning": "low",
+      "price": {
+        "input_per_mtok": 0.75,
+        "output_per_mtok": 3.75
+      },
+      "note": "Google Antigravity subscription (Google AI Ultra, OMP's login; Antigravity model id gemini-3.8-flash-low) from 2026-10-19 12:46 UTC; its first League 2 decision came then: until then it waited, not ready, for a Gemini API key the league never had. Same model (modelVersion gemini-3.8-flash), prompt, thinking level and enum-constrained letter as the gemini/ smoke setup; cost is API-list-price equivalent. Smoke check (10 positions x 2): same play as the Gemini API answers in 19 of 20",
+      "parallel": 4
+    },
+    {
+      "name": "Claude Sonnet 5.5 (low)",
+      "spec": "anthropic/claude-sonnet-5-5",
+      "provider": "claude-subscription",
+      "reasoning": "low",
+      "price": {
+        "input_per_mtok": 2.0,
+        "output_per_mtok": 10.0
+      },
+      "note": "subscription login; cost is API-list-price equivalent",
+      "parallel": 4
+    },
+    {
+      "name": "GPT-6.1 Sol (low)",
+      "spec": "openai/gpt-6.1-sol",
+      "provider": "chatgpt-subscription",
+      "reasoning": "low",
+      "price": {
+        "input_per_mtok": 2.0,
+        "output_per_mtok": 10.0
+      },
+      "note": "subscription login; cost is API-list-price equivalent",
+      "parallel": 4
+    },
+    {
+      "name": "GPT-6 Astra (on)",
+      "spec": "openai/gpt-6-astra",
+      "provider": "chatgpt-subscription",
+      "reasoning": "medium",
+      "price": {
+        "input_per_mtok": 10.0,
+        "output_per_mtok": 50.0
+      },
+      "note": "reasoning effort medium, the model's default (a request without an effort reports medium). ChatGPT subscription (Codex backend); subscription login; cost is API-list-price equivalent",
+      "parallel": 4
+    },
+    {
+      "name": "GPT-6.1 Sol (high)",
+      "spec": "openai/gpt-6.1-sol",
+      "provider": "chatgpt-subscription",
+      "reasoning": "high",
+      "price": {
+        "input_per_mtok": 2.0,
+        "output_per_mtok": 10.0
+      },
+      "note": "subscription login; cost is API-list-price equivalent",
+      "parallel": 4
+    },
+    {
+      "name": "Gemma 4 31B (on)",
+      "spec": "local/gemma-4-31B-it",
+      "provider": "local-vllm",
+      "quantization": "fp8 (bf16 checkpoint quantized by vLLM at load; fp8 KV cache)",
+      "base_url": "http://127.0.0.1:8894/v1",
+      "reasoning": "template default",
+      "request": {
+        "chat_template_kwargs": {
+          "enable_thinking": true
+        },
+        "reasoning_effort": null
+      },
+      "max_tokens": 24000,
+      "note": "thinking on (enable_thinking); no effort knob, template default",
+      "device": "RTX PRO 6000 (bariton): one GPU until 2026-10-16 11:11 UTC, then three replicas (GPUs 0, 1, 3, same image and arguments) behind a least-busy proxy at the same URL; from 2026-10-19 18:36 UTC one server on NVIDIA GB10 (DGX Spark spark-194d, next to Decider), same image, checkpoint and arguments (memory share 0.45); from 2026-10-19 22:26 UTC back on RTX PRO 6000 (bariton GPU 0): one replica (memory share 0.85, 24 sequences, 194,617-token FP8 KV cache) behind the least-busy proxy at http://127.0.0.1:8894/v1, same image, checkpoint and arguments; 20 stored League 2 (off) requests replayed there: same play 20/20, max |dp| 0.08; paused 2026-10-20; from 2026-10-20 20:16 UTC bariton GPU 0 again, same replica and proxy; from 2026-10-20 21:10 UTC NVIDIA GB10 (DGX Spark spark-194d) again, as on 2026-10-19 (memory share 0.45, 24 sequences), next to LFM2.5-24B-A2B, while bariton's four GPUs serve DeepSeek V4.1 Flash; 20 stored League 2 (off) requests (bariton) replayed there: same top letter 20/20, max |dp| 0.50, median 0.0000; from 2026-10-21 01:25 UTC back on bariton GPU 0 (overnight replica + proxy), same script and arguments, while DeepSeek V4.1 Flash is paused (its four GPUs freed for League 2's non-DeepSeek thinking matches); 20 stored (off) requests: same top letter 19/20, max |dp| 0.65; from 2026-10-21 05:00 UTC NVIDIA GB10 (DGX Spark spark-194d) again, the same server as from 2026-10-20 21:10 UTC, while DeepSeek V4.1 Flash plays its last matches on bariton; from 2026-10-22 15:37 UTC back on RTX PRO 6000 (bariton GPUs 0 and 1): two replicas (memory share 0.85, 24 sequences each) behind the least-busy proxy at http://127.0.0.1:8894/v1, same image, checkpoint and arguments; 20 stored League 2 (off) requests replayed there: same play 20/20, max |dp| 0.044, median 0.0000; paused 2026-10-22 16:20 UTC; from 2026-10-22 22:59 UTC bariton GPUs 0 and 1 again: the same two replicas (memory share 0.85, 24 sequences each) behind the least-busy proxy at http://127.0.0.1:8894/v1, same script, image, checkpoint and arguments as from 15:37 UTC; from 2026-10-23 21:31 UTC (ladder round 1) bariton GPU 1: one replica (memory share 0.85, 24 sequences) behind the least-busy proxy at http://127.0.0.1:8894/v1, same script, image, checkpoint and arguments (GEMMA_GPUS=1); 2026-10-23 22:36 UTC the GPU fell off the bus (Xid 79) and the server died; matches deferred until bariton is reset; from 2026-10-25 07:55 UTC (ladder round 2) bariton GPU 0: one replica (memory share 0.85, 24 sequences) behind the proxy at http://127.0.0.1:8894/v1, same script, image, checkpoint and arguments (GEMMA_GPUS=0)",
+      "parallel": 24,
+      "max_matches": 16
+    },
+    {
+      "name": "GPT-6.1 Terra",
+      "spec": "openai-compatible/openai/gpt-6.1-terra",
+      "base_url": "https://openrouter.ai/api/v1",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "provider": "openrouter:openai",
+      "reasoning": "low",
+      "request": {
+        "provider": {
+          "order": [
+            "openai"
+          ],
+          "allow_fallbacks": false,
+          "require_parameters": true
+        },
+        "usage": {
+          "include": true
+        },
+        "temperature": null,
+        "logprobs": null,
+        "top_logprobs": null
+      },
+      "letter_readout": "answer",
+      "max_tokens": 8000,
+      "price": {
+        "input_per_mtok": 1.0,
+        "output_per_mtok": 5.0
+      },
+      "budget": {
+        "ledger": "smoke/nack-paired-budget-abc.db",
+        "cap_usd": 1.88,
+        "input_per_mtok": 1.0,
+        "cached_input_per_mtok": 0.1,
+        "output_per_mtok": 5.0
+      },
+      "parallel": 4,
+      "rpm": 18,
+      "note": "GPT-6.1 Terra (openai/gpt-6.1-terra, released 2026-10-26; endpoint openai/gpt-6.1-terra-20261026) via OpenRouter pinned to OpenAI's standard endpoint (tag openai, $1/$5 per M, cache read $0.05; not flex, not fast), fallbacks off. Reasoning effort low, as GPT-6.1 Sol (low). max_tokens 8000 (bounds the budget ledger's worst case; Sol (low) uses ~76 output tokens per decision). Letter constrained by the JSON schema and read from the answer; the endpoint takes no temperature and no logprobs (OpenRouter 'Filter by Parameters' with require_parameters), so the request drops both (request: null), choice only, as GPT-6.1 Sol on the subscription. Hard cap: shared ledger smoke/nack-paired-budget-abc.db ($1.88 = rows a+b+c OpenRouter estimates, Can's go 2026-10-27)."
+    }
+  ]
+}

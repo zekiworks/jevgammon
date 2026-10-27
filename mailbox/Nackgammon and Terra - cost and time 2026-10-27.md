@@ -183,3 +183,65 @@ Only rows a, b, c, d and f cost OpenRouter money (e and g cost none).
 So a–e fit in $7.27 with $2.84 to spare at the worst case; f does not. All OpenRouter figures except b's two setups depend on Terra's real token use, known after a.
 
 Waiting for Can's go on every model-call row.
+
+## Update 2026-10-27 18:20 UTC: row a done (Terra smoke), Terra re-estimate, wall-clock times for c, d, e
+
+Can's go of 2026-10-27: a, b, c, d (d capped at $2.55 OpenRouter), e runner change only (no knockout), f skipped.
+OpenRouter credit at the start: $115.00 − $107.73 used = **$7.27** (`/api/v1/credits`, 18:05 UTC).
+
+### Row a: GPT-6.1 Terra smoke test (passed)
+
+`jevgammon ask --config leagues/smoke-terra.json --positions positions/smoke.jsonl --out smoke/terra-smoke.db --time-limit 600`
+(the 50 smoke positions, bg-v2, the leagues' option-order seed: the procedure of the Part A smoke tests and GLiDE v1.2).
+
+- Setup: `openai/gpt-6.1-terra` (endpoint `openai/gpt-6.1-terra-20261026`) via OpenRouter, pinned to OpenAI's standard
+  endpoint (`order: [openai]`, fallbacks off, `require_parameters`; served tier `default`, not flex or fast), reasoning
+  effort low, letter constrained by the JSON schema, `max_tokens` 8000 (bounds the budget ledger's worst case).
+- First attempt: all 50 refused by OpenRouter with 404 "Filter by Parameters" (no endpoint takes `temperature` or
+  `logprobs`; nothing billed). The entry now drops both (`request`: `temperature`, `logprobs`, `top_logprobs` null), so
+  Terra is choice only, as GPT-6.1 Sol on the subscription. Then:
+
+| Setup | Answers / failed / timed out | Invalid | p50 / p90 s | Tokens in / out (reasoning) per decision | $ per decision (billed) | Error rate [95% CI] | Δ vs GPT-6.1 Sol (low) (smoke, 2026-10-14) | Δ vs Gemini 3.8 Flash (low) [antigravity] |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| GPT-6.1 Terra | 50 / 0 / 0 | 0% | 2.4 / 3.7 | 3,087 / 79 (65); max out 446 | $0.00425 | 9.8 [3.4, 18.4] | +4.0 [−0.6, +11.6] (n=50) | −3.8 [−13.6, +4.3] (n=50) |
+
+- **Spent: $0.213 OpenRouter** (estimate was $0.17–0.18). Why higher: OpenRouter bills every Terra prompt as a
+  **cache write at $1.25 per M** (`cache_write_tokens` = the prompt, `cached_tokens` 0 in every response), not $1.00.
+
+### Terra re-estimate (from its real smoke tokens)
+
+Input per paired decision 2,943 (smoke 3,087 × Sol's paired/smoke ratio) to 3,087; output 79 to 95 (× 1.2); input at
+$1.25 per M (cache write), output $5 per M; +5% retries on the high end. **$0.0041–0.0046 per decision.**
+
+| Row | Terra decisions | Before (Sol-based) | **Re-estimate** | Wall time (18 rpm) |
+| --- | --- | --- | --- | --- |
+| c (start) | 400 | $1.25–1.34 | **$1.63–1.82** | 22–25 min |
+| d (extension, if Terra extends) | +600 | $1.87–2.01 | **$2.44–2.73** | 33–35 min |
+
+**Caps as run** (each enforced by a budget ledger: every attempt reserves its worst case first, `src/budget.rs`):
+
+- a + b: ledger `smoke/nack-paired-budget-abc.db`, cap $1.88 (Terra smoke, DeepSeek V4.1 Flash (off)). Mercury Decide
+  (`openrouter-decisions`, no ledger possible) runs under `--max-cost` (b $0.04; real $0.022).
+- c (Terra): ledger `smoke/nack-paired-budget-c.db`, **cap $1.82** = the re-estimate's high end.
+- d: ledger `smoke/nack-paired-budget-d.db`, cap $2.52 for the ledger setups plus Mercury `--max-cost` $0.03:
+  **$2.55 in total**. If Terra extends, its +600 alone may need more than the cap ($2.44–2.73): it then stops at the
+  cap and is reported with what it answered (no other spending).
+- Worst case a + b + c + d: $0.21 + $0.20 + $1.82 + $2.55 = **$4.78** of the $7.27.
+
+### Wall-clock times (sent before c starts)
+
+- **c (start: Gemini 3.8 Flash (low), Claude Sonnet 5.5 (low), GPT-6.1 Sol (low), GPT-6 Astra (on), GPT-6.1 Sol (high),
+  then Terra, Gemma 4 31B (on) last):** the five subscription setups one after another, 35–65 min; Terra 22–25 min;
+  Gemma 1.0–1.5 h, started last when its GPU is free. **About 1.5–2.5 h** from the start of c.
+- **Gemma 4 31B (on):** bariton **GPU 0**, one replica behind the proxy at `http://127.0.0.1:8894/v1`
+  (`GEMMA_GPUS=0 tools/v3/servers/gemma4-31b-replicas.sh`, memory share 0.85, 24 sequences): the League 2 server, same
+  image, checkpoint and arguments as League 2 and ladder round 2. Runs with **24 decisions in flight** (`parallel` 24).
+  Measured in League 2 on one replica (`v3.db`, 2026-10-19/20): 300–313 decisions per hour at about 17 in flight, about
+  200 s per decision; sequentially about 130–210 s per decision, so 400 decisions would be **14–23 h one at a time**.
+  With 24 in flight: **about 1.0–1.5 h for the 400** (paired decisions have ≤ 25 plays, no group splits), 1.5–2.3 h for
+  a +600 extension.
+- **d (extension, worst case: every setup extends):** the setups extend side by side, each after its own first look;
+  the long poles are LFM2.5-24B-A2B (on) (4.2–5.5 h on GPU 3) and Gemma 4 31B (on) (1.5–2.3 h); the API and
+  subscription setups 1–2 h. **About 5.5–6 h worst case**; only "unclear" setups extend, so likely less.
+- **e (knockout, not run now):** 5.0–15.1 h as in the table above (Gemma 4 31B (on) 4.7–5.3 h per match on the same
+  GPU 0 server); it waits for c and the roster.

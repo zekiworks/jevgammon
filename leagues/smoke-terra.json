@@ -1,0 +1,51 @@
+{
+  "note": "GPT-6.1 Terra smoke test (Can's go 2026-10-27, row a): the 50 smoke positions (positions/smoke.jsonl), the leagues' prompt bg-v2 and option-order seed, as for earlier new setups. Same entry as in leagues/nack-paired.json; shared hard-cap ledger. Not a league: `jevgammon ask` only.",
+  "prompt_version": "bg-v2",
+  "seed": 0,
+  "order_seed": 1190975713392774006,
+  "rounds": 3,
+  "clock": 0,
+  "delay": 30,
+  "max_turns": 300,
+  "players": [
+    {
+      "name": "GPT-6.1 Terra",
+      "spec": "openai-compatible/openai/gpt-6.1-terra",
+      "base_url": "https://openrouter.ai/api/v1",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "provider": "openrouter:openai",
+      "reasoning": "low",
+      "request": {
+        "provider": {
+          "order": [
+            "openai"
+          ],
+          "allow_fallbacks": false,
+          "require_parameters": true
+        },
+        "usage": {
+          "include": true
+        },
+        "temperature": null,
+        "logprobs": null,
+        "top_logprobs": null
+      },
+      "letter_readout": "answer",
+      "max_tokens": 8000,
+      "price": {
+        "input_per_mtok": 1.0,
+        "output_per_mtok": 5.0
+      },
+      "budget": {
+        "ledger": "smoke/nack-paired-budget-abc.db",
+        "cap_usd": 1.88,
+        "input_per_mtok": 1.0,
+        "cached_input_per_mtok": 0.1,
+        "output_per_mtok": 5.0
+      },
+      "parallel": 4,
+      "rpm": 18,
+      "note": "GPT-6.1 Terra (openai/gpt-6.1-terra, released 2026-10-26; endpoint openai/gpt-6.1-terra-20261026) via OpenRouter pinned to OpenAI's standard endpoint (tag openai, $1/$5 per M, cache read $0.05; not flex, not fast), fallbacks off. Reasoning effort low, as GPT-6.1 Sol (low). max_tokens 8000 (bounds the budget ledger's worst case; Sol (low) uses ~76 output tokens per decision). Letter constrained by the JSON schema and read from the answer; the endpoint takes no temperature and no logprobs (OpenRouter 'Filter by Parameters' with require_parameters), so the request drops both (request: null), choice only, as GPT-6.1 Sol on the subscription. Hard cap: shared ledger smoke/nack-paired-budget-abc.db ($1.88 = rows a+b+c OpenRouter estimates, Can's go 2026-10-27)."
+    }
+  ]
+}

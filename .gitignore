@@ -20,3 +20,5 @@ __pycache__/
 /league_control.state
 /league_control.lock
 /league_control.servers
+/positions/nack-paired/games/
+/positions/nack-paired/candidates/

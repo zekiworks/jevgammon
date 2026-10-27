@@ -1,0 +1,1392 @@
+{
+ "pool": {
+  "nackgammon": {
+   "candidates": 75251,
+   "games": 10000,
+   "per_cell": {
+    "bear-off/none": 11886,
+    "contact/none": 1559,
+    "contact/risk": 6939,
+    "contact/safety": 11502,
+    "holding/none": 889,
+    "holding/risk": 887,
+    "holding/safety": 4642,
+    "opening/none": 100,
+    "opening/risk": 14547,
+    "opening/safety": 5309,
+    "race/none": 16991
+   }
+  },
+  "standard": {
+   "candidates": 74062,
+   "games": 10000,
+   "per_cell": {
+    "bear-off/none": 11972,
+    "contact/none": 2426,
+    "contact/risk": 5342,
+    "contact/safety": 12163,
+    "holding/none": 642,
+    "holding/risk": 727,
+    "holding/safety": 3686,
+    "opening/none": 264,
+    "opening/risk": 12288,
+    "opening/safety": 7437,
+    "race/none": 17115
+   }
+  }
+ },
+ "main_shortfall_moves": [],
+ "reserve_shortfall_moves": [],
+ "main": {
+  "pairs": 200,
+  "per_phase_class": {
+   "opening": {
+    "safety": 30,
+    "risk": 30
+   },
+   "holding": {
+    "safety": 12,
+    "risk": 12,
+    "none": 6
+   },
+   "contact": {
+    "risk": 24,
+    "none": 12,
+    "safety": 24
+   },
+   "race": {
+    "none": 25
+   },
+   "bear-off": {
+    "none": 25
+   }
+  },
+  "class_matched": 200,
+  "balance": {
+   "legal_plays": {
+    "nackgammon": {
+     "mean": 11.055,
+     "median": 10.0
+    },
+    "standard": {
+     "mean": 11.035,
+     "median": 10.0
+    },
+    "smd": 0.003,
+    "n": 200
+   },
+   "gap": {
+    "nackgammon": {
+     "mean": 0.0616,
+     "median": 0.0171
+    },
+    "standard": {
+     "mean": 0.0587,
+     "median": 0.0172
+    },
+    "smd": 0.024,
+    "n": 200
+   },
+   "turn": {
+    "nackgammon": {
+     "mean": 31.9,
+     "median": 31.5
+    },
+    "standard": {
+     "mean": 24.975,
+     "median": 23.5
+    },
+    "smd": 0.289,
+    "n": 200
+   },
+   "pips": {
+    "nackgammon": {
+     "mean": 116.09,
+     "median": 116.0
+    },
+    "standard": {
+     "mean": 105.11,
+     "median": 99.5
+    },
+    "smd": 0.188,
+    "n": 200
+   },
+   "pip_lead": {
+    "nackgammon": {
+     "mean": -1.765,
+     "median": -5.0
+    },
+    "standard": {
+     "mean": -1.56,
+     "median": -2.5
+    },
+    "smd": -0.006,
+    "n": 200
+   },
+   "random_error_pr": {
+    "nackgammon": {
+     "mean": 82.8933,
+     "median": 67.7574
+    },
+    "standard": {
+     "mean": 87.4507,
+     "median": 64.5969
+    },
+    "smd": -0.051,
+    "n": 200
+   },
+   "stake": {
+    "nackgammon": {
+     "mean": 0.0586,
+     "median": 0.0011
+    },
+    "standard": {
+     "mean": 0.044,
+     "median": 0.0006
+    },
+    "smd": 0.144,
+    "n": 132
+   }
+  },
+  "balance_by_phase": {
+   "opening": {
+    "legal_plays": {
+     "nackgammon": {
+      "mean": 15.25,
+      "median": 16.0
+     },
+     "standard": {
+      "mean": 15.2,
+      "median": 16.0
+     },
+     "smd": 0.008,
+     "n": 60
+    },
+    "gap": {
+     "nackgammon": {
+      "mean": 0.0471,
+      "median": 0.0336
+     },
+     "standard": {
+      "mean": 0.0472,
+      "median": 0.0332
+     },
+     "smd": -0.001,
+     "n": 60
+    },
+    "turn": {
+     "nackgammon": {
+      "mean": 3.7167,
+      "median": 4.0
+     },
+     "standard": {
+      "mean": 4.0667,
+      "median": 4.0
+     },
+     "smd": -0.253,
+     "n": 60
+    },
+    "pips": {
+     "nackgammon": {
+      "mean": 188.1667,
+      "median": 188.5
+     },
+     "standard": {
+      "mean": 160.5,
+      "median": 160.0
+     },
+     "smd": 3.45,
+     "n": 60
+    },
+    "pip_lead": {
+     "nackgammon": {
+      "mean": -5.2333,
+      "median": -5.0
+     },
+     "standard": {
+      "mean": -5.2667,
+      "median": -6.5
+     },
+     "smd": 0.003,
+     "n": 60
+    },
+    "random_error_pr": {
+     "nackgammon": {
+      "mean": 84.3092,
+      "median": 76.31
+     },
+     "standard": {
+      "mean": 95.6253,
+      "median": 88.0159
+     },
+     "smd": -0.241,
+     "n": 60
+    },
+    "stake": {
+     "nackgammon": {
+      "mean": 0.046,
+      "median": 0.0011
+     },
+     "standard": {
+      "mean": 0.0347,
+      "median": 0.0008
+     },
+     "smd": 0.202,
+     "n": 60
+    }
+   },
+   "contact": {
+    "legal_plays": {
+     "nackgammon": {
+      "mean": 10.1333,
+      "median": 9.5
+     },
+     "standard": {
+      "mean": 10.15,
+      "median": 9.5
+     },
+     "smd": -0.003,
+     "n": 60
+    },
+    "gap": {
+     "nackgammon": {
+      "mean": 0.1044,
+      "median": 0.0425
+     },
+     "standard": {
+      "mean": 0.0934,
+      "median": 0.0425
+     },
+     "smd": 0.079,
+     "n": 60
+    },
+    "turn": {
+     "nackgammon": {
+      "mean": 32.8833,
+      "median": 30.5
+     },
+     "standard": {
+      "mean": 25.0,
+      "median": 21.0
+     },
+     "smd": 0.414,
+     "n": 60
+    },
+    "pips": {
+     "nackgammon": {
+      "mean": 124.3833,
+      "median": 135.5
+     },
+     "standard": {
+      "mean": 108.7,
+      "median": 107.0
+     },
+     "smd": 0.351,
+     "n": 60
+    },
+    "pip_lead": {
+     "nackgammon": {
+      "mean": -0.45,
+      "median": 0.0
+     },
+     "standard": {
+      "mean": 8.5167,
+      "median": 17.5
+     },
+     "smd": -0.2,
+     "n": 60
+    },
+    "random_error_pr": {
+     "nackgammon": {
+      "mean": 115.9866,
+      "median": 97.4202
+     },
+     "standard": {
+      "mean": 125.3091,
+      "median": 100.2198
+     },
+     "smd": -0.1,
+     "n": 60
+    },
+    "stake": {
+     "nackgammon": {
+      "mean": 0.0551,
+      "median": 0.0032
+     },
+     "standard": {
+      "mean": 0.0574,
+      "median": 0.0034
+     },
+     "smd": -0.025,
+     "n": 48
+    }
+   },
+   "holding": {
+    "legal_plays": {
+     "nackgammon": {
+      "mean": 10.8,
+      "median": 9.0
+     },
+     "standard": {
+      "mean": 10.7667,
+      "median": 9.0
+     },
+     "smd": 0.005,
+     "n": 30
+    },
+    "gap": {
+     "nackgammon": {
+      "mean": 0.0684,
+      "median": 0.0118
+     },
+     "standard": {
+      "mean": 0.0748,
+      "median": 0.0115
+     },
+     "smd": -0.034,
+     "n": 30
+    },
+    "turn": {
+     "nackgammon": {
+      "mean": 38.7,
+      "median": 37.0
+     },
+     "standard": {
+      "mean": 28.1333,
+      "median": 25.5
+     },
+     "smd": 0.846,
+     "n": 30
+    },
+    "pips": {
+     "nackgammon": {
+      "mean": 86.2667,
+      "median": 83.5
+     },
+     "standard": {
+      "mean": 90.9667,
+      "median": 89.5
+     },
+     "smd": -0.211,
+     "n": 30
+    },
+    "pip_lead": {
+     "nackgammon": {
+      "mean": 3.1667,
+      "median": -4.0
+     },
+     "standard": {
+      "mean": -4.5,
+      "median": -3.5
+     },
+     "smd": 0.214,
+     "n": 30
+    },
+    "random_error_pr": {
+     "nackgammon": {
+      "mean": 121.1771,
+      "median": 83.0857
+     },
+     "standard": {
+      "mean": 113.5651,
+      "median": 66.5898
+     },
+     "smd": 0.057,
+     "n": 30
+    },
+    "stake": {
+     "nackgammon": {
+      "mean": 0.0969,
+      "median": 0.0015
+     },
+     "standard": {
+      "mean": 0.0406,
+      "median": 0.0006
+     },
+     "smd": 0.32,
+     "n": 24
+    }
+   },
+   "race": {
+    "legal_plays": {
+     "nackgammon": {
+      "mean": 8.52,
+      "median": 6
+     },
+     "standard": {
+      "mean": 8.48,
+      "median": 6
+     },
+     "smd": 0.006,
+     "n": 25
+    },
+    "gap": {
+     "nackgammon": {
+      "mean": 0.0141,
+      "median": 0.0051
+     },
+     "standard": {
+      "mean": 0.0142,
+      "median": 0.0051
+     },
+     "smd": -0.004,
+     "n": 25
+    },
+    "turn": {
+     "nackgammon": {
+      "mean": 54.88,
+      "median": 53
+     },
+     "standard": {
+      "mean": 48.96,
+      "median": 46
+     },
+     "smd": 0.329,
+     "n": 25
+    },
+    "pips": {
+     "nackgammon": {
+      "mean": 47.28,
+      "median": 55
+     },
+     "standard": {
+      "mean": 52.04,
+      "median": 54
+     },
+     "smd": -0.198,
+     "n": 25
+    },
+    "pip_lead": {
+     "nackgammon": {
+      "mean": 6.96,
+      "median": 12
+     },
+     "standard": {
+      "mean": -7.64,
+      "median": -12
+     },
+     "smd": 0.272,
+     "n": 25
+    },
+    "random_error_pr": {
+     "nackgammon": {
+      "mean": 22.5688,
+      "median": 5.9505
+     },
+     "standard": {
+      "mean": 19.1667,
+      "median": 5.5885
+     },
+     "smd": 0.108,
+     "n": 25
+    },
+    "stake": null
+   },
+   "bear-off": {
+    "legal_plays": {
+     "nackgammon": {
+      "mean": 6.04,
+      "median": 4
+     },
+     "standard": {
+      "mean": 6.04,
+      "median": 4
+     },
+     "smd": 0.0,
+     "n": 25
+    },
+    "gap": {
+     "nackgammon": {
+      "mean": 0.0333,
+      "median": 0.0
+     },
+     "standard": {
+      "mean": 0.0286,
+      "median": 0.0
+     },
+     "smd": 0.034,
+     "n": 25
+    },
+    "turn": {
+     "nackgammon": {
+      "mean": 66.04,
+      "median": 61
+     },
+     "standard": {
+      "mean": 47.32,
+      "median": 42
+     },
+     "smd": 1.035,
+     "n": 25
+    },
+    "pips": {
+     "nackgammon": {
+      "mean": 27.8,
+      "median": 24
+     },
+     "standard": {
+      "mean": 33.6,
+      "median": 35
+     },
+     "smd": -0.32,
+     "n": 25
+    },
+    "pip_lead": {
+     "nackgammon": {
+      "mean": -11.24,
+      "median": -18
+     },
+     "standard": {
+      "mean": -7.24,
+      "median": -13
+     },
+     "smd": -0.13,
+     "n": 25
+    },
+    "random_error_pr": {
+     "nackgammon": {
+      "mean": 14.4553,
+      "median": 0.0004
+     },
+     "standard": {
+      "mean": 13.918,
+      "median": 0.0001
+     },
+     "smd": 0.015,
+     "n": 25
+    },
+    "stake": null
+   }
+  },
+  "gnubg_class_mix": {
+   "nackgammon": {
+    "10": 144,
+    "4": 4,
+    "6": 21,
+    "8": 25,
+    "9": 6
+   },
+   "standard": {
+    "10": 143,
+    "4": 2,
+    "6": 23,
+    "8": 25,
+    "9": 7
+   }
+  },
+  "tag_mix": {
+   "nackgammon": {
+    "None": 110,
+    "back game": 10,
+    "blitz": 17,
+    "holding": 30,
+    "low-anchor": 7,
+    "other": 11,
+    "priming": 15
+   },
+   "standard": {
+    "None": 110,
+    "back game": 2,
+    "blitz": 23,
+    "holding": 30,
+    "low-anchor": 8,
+    "other": 10,
+    "priming": 17
+   }
+  },
+  "first_roll_positions": {
+   "nackgammon": 3,
+   "standard": 1
+  },
+  "random": {
+   "all": {
+    "pairs": 200,
+    "standard_pr": 87.45,
+    "nackgammon_pr": 82.89,
+    "drop": -4.56,
+    "drop_95": [
+     -16.16,
+     6.42
+    ]
+   },
+   "by_phase": {
+    "opening": {
+     "pairs": 60,
+     "standard_pr": 95.63,
+     "nackgammon_pr": 84.31,
+     "drop": -11.32,
+     "drop_95": [
+      -23.3,
+      0.5
+     ]
+    },
+    "contact": {
+     "pairs": 60,
+     "standard_pr": 125.31,
+     "nackgammon_pr": 115.99,
+     "drop": -9.32,
+     "drop_95": [
+      -26.78,
+      9.09
+     ]
+    },
+    "holding": {
+     "pairs": 30,
+     "standard_pr": 113.57,
+     "nackgammon_pr": 121.18,
+     "drop": 7.61,
+     "drop_95": [
+      -54.88,
+      62.56
+     ]
+    },
+    "race": {
+     "pairs": 25,
+     "standard_pr": 19.17,
+     "nackgammon_pr": 22.57,
+     "drop": 3.4,
+     "drop_95": [
+      -7.72,
+      16.43
+     ]
+    },
+    "bear-off": {
+     "pairs": 25,
+     "standard_pr": 13.92,
+     "nackgammon_pr": 14.46,
+     "drop": 0.54,
+     "drop_95": [
+      -5.64,
+      7.0
+     ]
+    }
+   },
+   "by_class": {
+    "risk": {
+     "pairs": 66,
+     "standard_pr": 111.41,
+     "nackgammon_pr": 103.93,
+     "drop": -7.48,
+     "drop_95": [
+      -35.92,
+      16.34
+     ]
+    },
+    "safety": {
+     "pairs": 66,
+     "standard_pr": 132.11,
+     "nackgammon_pr": 126.86,
+     "drop": -5.24,
+     "drop_95": [
+      -25.69,
+      16.24
+     ]
+    },
+    "none": {
+     "pairs": 68,
+     "standard_pr": 20.85,
+     "nackgammon_pr": 19.8,
+     "drop": -1.05,
+     "drop_95": [
+      -6.95,
+      5.24
+     ]
+    }
+   }
+  }
+ },
+ "reserve": {
+  "pairs": 300,
+  "per_phase_class": {
+   "opening": {
+    "safety": 45,
+    "risk": 45
+   },
+   "holding": {
+    "none": 9,
+    "safety": 18,
+    "risk": 18
+   },
+   "contact": {
+    "safety": 36,
+    "none": 18,
+    "risk": 36
+   },
+   "bear-off": {
+    "none": 37
+   },
+   "race": {
+    "none": 38
+   }
+  },
+  "class_matched": 300,
+  "balance": {
+   "legal_plays": {
+    "nackgammon": {
+     "mean": 11.0833,
+     "median": 10.0
+    },
+    "standard": {
+     "mean": 11.1,
+     "median": 10.0
+    },
+    "smd": -0.002,
+    "n": 300
+   },
+   "gap": {
+    "nackgammon": {
+     "mean": 0.0664,
+     "median": 0.0226
+    },
+    "standard": {
+     "mean": 0.0644,
+     "median": 0.0226
+    },
+    "smd": 0.014,
+    "n": 300
+   },
+   "turn": {
+    "nackgammon": {
+     "mean": 30.2367,
+     "median": 30.0
+    },
+    "standard": {
+     "mean": 25.0567,
+     "median": 22.0
+    },
+    "smd": 0.235,
+    "n": 300
+   },
+   "pips": {
+    "nackgammon": {
+     "mean": 116.48,
+     "median": 114.0
+    },
+    "standard": {
+     "mean": 106.3933,
+     "median": 108.0
+    },
+    "smd": 0.179,
+    "n": 300
+   },
+   "pip_lead": {
+    "nackgammon": {
+     "mean": -0.7433,
+     "median": -4.0
+    },
+    "standard": {
+     "mean": -6.0333,
+     "median": -4.5
+    },
+    "smd": 0.142,
+    "n": 300
+   },
+   "random_error_pr": {
+    "nackgammon": {
+     "mean": 80.4566,
+     "median": 65.9533
+    },
+    "standard": {
+     "mean": 83.6281,
+     "median": 67.469
+    },
+    "smd": -0.038,
+    "n": 300
+   },
+   "stake": {
+    "nackgammon": {
+     "mean": 0.0762,
+     "median": 0.0027
+    },
+    "standard": {
+     "mean": 0.0593,
+     "median": 0.0017
+    },
+    "smd": 0.109,
+    "n": 198
+   }
+  },
+  "balance_by_phase": {
+   "opening": {
+    "legal_plays": {
+     "nackgammon": {
+      "mean": 13.2333,
+      "median": 13.0
+     },
+     "standard": {
+      "mean": 13.2778,
+      "median": 13.0
+     },
+     "smd": -0.007,
+     "n": 90
+    },
+    "gap": {
+     "nackgammon": {
+      "mean": 0.0571,
+      "median": 0.0356
+     },
+     "standard": {
+      "mean": 0.0566,
+      "median": 0.0366
+     },
+     "smd": 0.009,
+     "n": 90
+    },
+    "turn": {
+     "nackgammon": {
+      "mean": 3.9444,
+      "median": 4.0
+     },
+     "standard": {
+      "mean": 4.0444,
+      "median": 4.0
+     },
+     "smd": -0.079,
+     "n": 90
+    },
+    "pips": {
+     "nackgammon": {
+      "mean": 186.6333,
+      "median": 188.0
+     },
+     "standard": {
+      "mean": 160.8333,
+      "median": 160.0
+     },
+     "smd": 3.297,
+     "n": 90
+    },
+    "pip_lead": {
+     "nackgammon": {
+      "mean": -4.7556,
+      "median": -5.0
+     },
+     "standard": {
+      "mean": -5.0778,
+      "median": -5.0
+     },
+     "smd": 0.033,
+     "n": 90
+    },
+    "random_error_pr": {
+     "nackgammon": {
+      "mean": 77.5026,
+      "median": 75.3401
+     },
+     "standard": {
+      "mean": 84.769,
+      "median": 82.019
+     },
+     "smd": -0.18,
+     "n": 90
+    },
+    "stake": {
+     "nackgammon": {
+      "mean": 0.0581,
+      "median": 0.0027
+     },
+     "standard": {
+      "mean": 0.0404,
+      "median": 0.0016
+     },
+     "smd": 0.243,
+     "n": 90
+    }
+   },
+   "contact": {
+    "legal_plays": {
+     "nackgammon": {
+      "mean": 11.3444,
+      "median": 11.0
+     },
+     "standard": {
+      "mean": 11.3444,
+      "median": 11.0
+     },
+     "smd": 0.0,
+     "n": 90
+    },
+    "gap": {
+     "nackgammon": {
+      "mean": 0.0918,
+      "median": 0.0431
+     },
+     "standard": {
+      "mean": 0.087,
+      "median": 0.0432
+     },
+     "smd": 0.031,
+     "n": 90
+    },
+    "turn": {
+     "nackgammon": {
+      "mean": 30.1667,
+      "median": 27.5
+     },
+     "standard": {
+      "mean": 27.2,
+      "median": 23.0
+     },
+     "smd": 0.176,
+     "n": 90
+    },
+    "pips": {
+     "nackgammon": {
+      "mean": 125.2667,
+      "median": 132.5
+     },
+     "standard": {
+      "mean": 104.1556,
+      "median": 102.5
+     },
+     "smd": 0.525,
+     "n": 90
+    },
+    "pip_lead": {
+     "nackgammon": {
+      "mean": 2.0222,
+      "median": 1.5
+     },
+     "standard": {
+      "mean": 4.3222,
+      "median": 6.0
+     },
+     "smd": -0.051,
+     "n": 90
+    },
+    "random_error_pr": {
+     "nackgammon": {
+      "mean": 109.1133,
+      "median": 94.4047
+     },
+     "standard": {
+      "mean": 124.8579,
+      "median": 101.3882
+     },
+     "smd": -0.204,
+     "n": 90
+    },
+    "stake": {
+     "nackgammon": {
+      "mean": 0.0688,
+      "median": 0.004
+     },
+     "standard": {
+      "mean": 0.0656,
+      "median": 0.004
+     },
+     "smd": 0.022,
+     "n": 72
+    }
+   },
+   "holding": {
+    "legal_plays": {
+     "nackgammon": {
+      "mean": 12.0667,
+      "median": 11
+     },
+     "standard": {
+      "mean": 12.0889,
+      "median": 11
+     },
+     "smd": -0.003,
+     "n": 45
+    },
+    "gap": {
+     "nackgammon": {
+      "mean": 0.1051,
+      "median": 0.0269
+     },
+     "standard": {
+      "mean": 0.0692,
+      "median": 0.0269
+     },
+     "smd": 0.185,
+     "n": 45
+    },
+    "turn": {
+     "nackgammon": {
+      "mean": 39.1556,
+      "median": 36
+     },
+     "standard": {
+      "mean": 25.1333,
+      "median": 26
+     },
+     "smd": 1.469,
+     "n": 45
+    },
+    "pips": {
+     "nackgammon": {
+      "mean": 87.6444,
+      "median": 87
+     },
+     "standard": {
+      "mean": 101.2444,
+      "median": 100
+     },
+     "smd": -0.518,
+     "n": 45
+    },
+    "pip_lead": {
+     "nackgammon": {
+      "mean": 4.5778,
+      "median": -2
+     },
+     "standard": {
+      "mean": -9.3333,
+      "median": -6
+     },
+     "smd": 0.308,
+     "n": 45
+    },
+    "random_error_pr": {
+     "nackgammon": {
+      "mean": 120.3953,
+      "median": 99.8479
+     },
+     "standard": {
+      "mean": 96.0124,
+      "median": 50.135
+     },
+     "smd": 0.191,
+     "n": 45
+    },
+    "stake": {
+     "nackgammon": {
+      "mean": 0.1362,
+      "median": 0.0033
+     },
+     "standard": {
+      "mean": 0.0939,
+      "median": 0.0078
+     },
+     "smd": 0.151,
+     "n": 36
+    }
+   },
+   "race": {
+    "legal_plays": {
+     "nackgammon": {
+      "mean": 8.6579,
+      "median": 6.5
+     },
+     "standard": {
+      "mean": 8.6579,
+      "median": 6.5
+     },
+     "smd": 0.0,
+     "n": 38
+    },
+    "gap": {
+     "nackgammon": {
+      "mean": 0.0196,
+      "median": 0.0045
+     },
+     "standard": {
+      "mean": 0.0196,
+      "median": 0.0046
+     },
+     "smd": 0.001,
+     "n": 38
+    },
+    "turn": {
+     "nackgammon": {
+      "mean": 54.1579,
+      "median": 52.0
+     },
+     "standard": {
+      "mean": 45.3421,
+      "median": 43.0
+     },
+     "smd": 0.606,
+     "n": 38
+    },
+    "pips": {
+     "nackgammon": {
+      "mean": 45.4737,
+      "median": 49.5
+     },
+     "standard": {
+      "mean": 55.7368,
+      "median": 56.5
+     },
+     "smd": -0.438,
+     "n": 38
+    },
+    "pip_lead": {
+     "nackgammon": {
+      "mean": 5.6053,
+      "median": 0.5
+     },
+     "standard": {
+      "mean": -15.7105,
+      "median": -19.5
+     },
+     "smd": 0.448,
+     "n": 38
+    },
+    "random_error_pr": {
+     "nackgammon": {
+      "mean": 34.0889,
+      "median": 14.7478
+     },
+     "standard": {
+      "mean": 27.8216,
+      "median": 18.1904
+     },
+     "smd": 0.112,
+     "n": 38
+    },
+    "stake": null
+   },
+   "bear-off": {
+    "legal_plays": {
+     "nackgammon": {
+      "mean": 6.5135,
+      "median": 5
+     },
+     "standard": {
+      "mean": 6.5135,
+      "median": 5
+     },
+     "smd": 0.0,
+     "n": 37
+    },
+    "gap": {
+     "nackgammon": {
+      "mean": 0.0283,
+      "median": 0.0
+     },
+     "standard": {
+      "mean": 0.0689,
+      "median": 0.0
+     },
+     "smd": -0.168,
+     "n": 37
+    },
+    "turn": {
+     "nackgammon": {
+      "mean": 58.9459,
+      "median": 55
+     },
+     "standard": {
+      "mean": 50.027,
+      "median": 48
+     },
+     "smd": 0.535,
+     "n": 37
+    },
+    "pips": {
+     "nackgammon": {
+      "mean": 32.4595,
+      "median": 35
+     },
+     "standard": {
+      "mean": 37.7027,
+      "median": 34
+     },
+     "smd": -0.286,
+     "n": 37
+    },
+    "pip_lead": {
+     "nackgammon": {
+      "mean": -10.7027,
+      "median": -12
+     },
+     "standard": {
+      "mean": -19.5946,
+      "median": -25
+     },
+     "smd": 0.299,
+     "n": 37
+    },
+    "random_error_pr": {
+     "nackgammon": {
+      "mean": 16.9831,
+      "median": 0.1945
+     },
+     "standard": {
+      "mean": 22.817,
+      "median": 0.0001
+     },
+     "smd": -0.093,
+     "n": 37
+    },
+    "stake": null
+   }
+  },
+  "gnubg_class_mix": {
+   "nackgammon": {
+    "10": 219,
+    "4": 1,
+    "6": 36,
+    "8": 38,
+    "9": 6
+   },
+   "standard": {
+    "10": 212,
+    "4": 3,
+    "6": 34,
+    "8": 38,
+    "9": 13
+   }
+  },
+  "tag_mix": {
+   "nackgammon": {
+    "None": 165,
+    "back game": 11,
+    "blitz": 28,
+    "holding": 45,
+    "low-anchor": 4,
+    "other": 23,
+    "priming": 24
+   },
+   "standard": {
+    "None": 165,
+    "blitz": 32,
+    "holding": 45,
+    "low-anchor": 2,
+    "other": 19,
+    "priming": 37
+   }
+  },
+  "first_roll_positions": {
+   "nackgammon": 1,
+   "standard": 0
+  },
+  "random": {
+   "all": {
+    "pairs": 300,
+    "standard_pr": 83.63,
+    "nackgammon_pr": 80.46,
+    "drop": -3.17,
+    "drop_95": [
+     -11.25,
+     5.12
+    ]
+   },
+   "by_phase": {
+    "opening": {
+     "pairs": 90,
+     "standard_pr": 84.77,
+     "nackgammon_pr": 77.5,
+     "drop": -7.27,
+     "drop_95": [
+      -15.43,
+      1.08
+     ]
+    },
+    "contact": {
+     "pairs": 90,
+     "standard_pr": 124.86,
+     "nackgammon_pr": 109.11,
+     "drop": -15.74,
+     "drop_95": [
+      -31.37,
+      -0.6
+     ]
+    },
+    "holding": {
+     "pairs": 45,
+     "standard_pr": 96.01,
+     "nackgammon_pr": 120.4,
+     "drop": 24.38,
+     "drop_95": [
+      -6.44,
+      58.26
+     ]
+    },
+    "race": {
+     "pairs": 38,
+     "standard_pr": 27.82,
+     "nackgammon_pr": 34.09,
+     "drop": 6.27,
+     "drop_95": [
+      -11.59,
+      31.36
+     ]
+    },
+    "bear-off": {
+     "pairs": 37,
+     "standard_pr": 22.82,
+     "nackgammon_pr": 16.98,
+     "drop": -5.83,
+     "drop_95": [
+      -28.46,
+      7.93
+     ]
+    }
+   },
+   "by_class": {
+    "risk": {
+     "pairs": 99,
+     "standard_pr": 113.3,
+     "nackgammon_pr": 112.51,
+     "drop": -0.79,
+     "drop_95": [
+      -17.64,
+      17.03
+     ]
+    },
+    "safety": {
+     "pairs": 99,
+     "standard_pr": 112.29,
+     "nackgammon_pr": 103.53,
+     "drop": -8.77,
+     "drop_95": [
+      -21.33,
+      3.66
+     ]
+    },
+    "none": {
+     "pairs": 102,
+     "standard_pr": 27.01,
+     "nackgammon_pr": 26.95,
+     "drop": -0.05,
+     "drop_95": [
+      -11.53,
+      11.68
+     ]
+    }
+   }
+  }
+ },
+ "main_plus_reserve": {
+  "random": {
+   "pairs": 500,
+   "standard_pr": 85.16,
+   "nackgammon_pr": 81.43,
+   "drop": -3.73,
+   "drop_95": [
+    -10.38,
+    2.92
+   ]
+  },
+  "tag_mix": {
+   "nackgammon": {
+    "None": 275,
+    "back game": 21,
+    "blitz": 45,
+    "holding": 75,
+    "low-anchor": 11,
+    "other": 34,
+    "priming": 39
+   },
+   "standard": {
+    "None": 275,
+    "back game": 2,
+    "blitz": 55,
+    "holding": 75,
+    "low-anchor": 10,
+    "other": 29,
+    "priming": 54
+   }
+  }
+ },
+ "checks": {
+  "games_distinct": true,
+  "states_distinct": true,
+  "positions": 1000
+ }
+}

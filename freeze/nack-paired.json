@@ -1,0 +1,401 @@
+{
+ "set": "nack-paired",
+ "method": "tools/site/content/method-spec-2026-10-24.md \u00a710 (committed fa704da, before the build)",
+ "brief": "mailbox/Nackgammon and Terra - brief 2026-10-27.md",
+ "frozen_before_any_model_call": true,
+ "harness_commit": "fa704dac03c169dc069a09a66e838ab1958b45c2",
+ "tools": {
+  "gnubg": "GNU Backgammon 1.08.003 20260122",
+  "python": "3.12.13",
+  "numpy": "2.5.2",
+  "engine": "engine.PLY2: 2-ply, cubeless money equity, deterministic, prune on",
+  "selfplay": "tools/v3/selfplay.py, GNUbg expert level (0-ply, no noise, cubeless)"
+ },
+ "seeds": {
+  "selfplay_seed_token": "np20261027",
+  "games_per_variant": [
+   0,
+   10000
+  ],
+  "shards": 16,
+  "sampling_and_order_seed_text": "nack-paired-2026-10-27:",
+  "option_order_seed": "seeds.json option_order_seed",
+  "bootstrap_seed": "first 8 bytes of sha256('nack-paired-2026-10-27:bootstrap:<look>')"
+ },
+ "rules": {
+  "candidates_per_game_and_phase": 2,
+  "legal_plays": [
+   2,
+   25
+  ],
+  "class_margin": 0.001,
+  "gap_cap": 0.25,
+  "tol_legal_plays": "1 if n <= 10 else 2",
+  "tol_gap": "max(0.005, 0.1 * gap)",
+  "opening_turn_tolerance": 1,
+  "quotas": {
+   "main": {
+    "opening": [
+     30,
+     30,
+     0
+    ],
+    "contact": [
+     24,
+     24,
+     12
+    ],
+    "holding": [
+     12,
+     12,
+     6
+    ],
+    "race": [
+     0,
+     0,
+     25
+    ],
+    "bear-off": [
+     0,
+     0,
+     25
+    ]
+   },
+   "reserve": {
+    "opening": [
+     45,
+     45,
+     0
+    ],
+    "contact": [
+     36,
+     36,
+     18
+    ],
+    "holding": [
+     18,
+     18,
+     9
+    ],
+    "race": [
+     0,
+     0,
+     38
+    ],
+    "bear-off": [
+     0,
+     0,
+     37
+    ]
+   }
+  },
+  "engine_check_per_phase": {
+   "opening": 12,
+   "contact": 12,
+   "holding": 6,
+   "race": 5,
+   "bear-off": 5
+  },
+  "prompts": {
+   "standard": "bg-v3-std-notable",
+   "nackgammon": "bg-v3-nack"
+  }
+ },
+ "counts": {
+  "main": {
+   "pairs": 200,
+   "per_phase_class": {
+    "opening": {
+     "safety": 30,
+     "risk": 30
+    },
+    "holding": {
+     "safety": 12,
+     "risk": 12,
+     "none": 6
+    },
+    "contact": {
+     "risk": 24,
+     "none": 12,
+     "safety": 24
+    },
+    "race": {
+     "none": 25
+    },
+    "bear-off": {
+     "none": 25
+    }
+   },
+   "shortfall_moves": []
+  },
+  "reserve": {
+   "pairs": 300,
+   "per_phase_class": {
+    "opening": {
+     "safety": 45,
+     "risk": 45
+    },
+    "holding": {
+     "none": 9,
+     "safety": 18,
+     "risk": 18
+    },
+    "contact": {
+     "safety": 36,
+     "none": 18,
+     "risk": 36
+    },
+    "bear-off": {
+     "none": 37
+    },
+    "race": {
+     "none": 38
+    }
+   },
+   "shortfall_moves": []
+  }
+ },
+ "checks": {
+  "games_distinct": true,
+  "states_distinct": true,
+  "positions": 1000
+ },
+ "engine_check": {
+  "pairs": [
+   "np-0008",
+   "np-0012",
+   "np-0014",
+   "np-0015",
+   "np-0022",
+   "np-0024",
+   "np-0028",
+   "np-0035",
+   "np-0037",
+   "np-0040",
+   "np-0048",
+   "np-0049",
+   "np-0055",
+   "np-0057",
+   "np-0062",
+   "np-0064",
+   "np-0067",
+   "np-0068",
+   "np-0070",
+   "np-0074",
+   "np-0079",
+   "np-0080",
+   "np-0081",
+   "np-0082",
+   "np-0086",
+   "np-0090",
+   "np-0098",
+   "np-0103",
+   "np-0105",
+   "np-0144",
+   "np-0145",
+   "np-0153",
+   "np-0158",
+   "np-0160",
+   "np-0164",
+   "np-0171",
+   "np-0172",
+   "np-0173",
+   "np-0181",
+   "np-0182"
+  ],
+  "positions": [
+   "npn-0008",
+   "nps-0008",
+   "npn-0012",
+   "nps-0012",
+   "npn-0014",
+   "nps-0014",
+   "npn-0015",
+   "nps-0015",
+   "npn-0022",
+   "nps-0022",
+   "npn-0024",
+   "nps-0024",
+   "npn-0028",
+   "nps-0028",
+   "npn-0035",
+   "nps-0035",
+   "npn-0037",
+   "nps-0037",
+   "npn-0040",
+   "nps-0040",
+   "npn-0048",
+   "nps-0048",
+   "npn-0049",
+   "nps-0049",
+   "npn-0055",
+   "nps-0055",
+   "npn-0057",
+   "nps-0057",
+   "npn-0062",
+   "nps-0062",
+   "npn-0064",
+   "nps-0064",
+   "npn-0067",
+   "nps-0067",
+   "npn-0068",
+   "nps-0068",
+   "npn-0070",
+   "nps-0070",
+   "npn-0074",
+   "nps-0074",
+   "npn-0079",
+   "nps-0079",
+   "npn-0080",
+   "nps-0080",
+   "npn-0081",
+   "nps-0081",
+   "npn-0082",
+   "nps-0082",
+   "npn-0086",
+   "nps-0086",
+   "npn-0090",
+   "nps-0090",
+   "npn-0098",
+   "nps-0098",
+   "npn-0103",
+   "nps-0103",
+   "npn-0105",
+   "nps-0105",
+   "npn-0144",
+   "nps-0144",
+   "npn-0145",
+   "nps-0145",
+   "npn-0153",
+   "nps-0153",
+   "npn-0158",
+   "nps-0158",
+   "npn-0160",
+   "nps-0160",
+   "npn-0164",
+   "nps-0164",
+   "npn-0171",
+   "nps-0171",
+   "npn-0172",
+   "nps-0172",
+   "npn-0173",
+   "nps-0173",
+   "npn-0181",
+   "nps-0181",
+   "npn-0182",
+   "nps-0182"
+  ]
+ },
+ "files": {
+  "positions/nack-paired/build-log.json": {
+   "sha256": "4efa770118f85c8bb520a61f8d846c9c17fd47ff3536b905fc2a48230c6cca62",
+   "bytes": 22611
+  },
+  "positions/nack-paired/engine-check.json": {
+   "sha256": "bc9ffa6e57c11a8daa46bd27eca7ef41951cf3cec435629c98c64159f7366e4e",
+   "bytes": 2014
+  },
+  "positions/nack-paired/main.jsonl": {
+   "sha256": "45a1a18d50ee12b249b5165b5484e265d929b8fb2a3782453489886468f1c8a6",
+   "bytes": 277496,
+   "rows": 400
+  },
+  "positions/nack-paired/pairs.jsonl": {
+   "sha256": "cca51125915aec21e35a099c4057d70841689c32a1d75ae5789ff6282374e9f9",
+   "bytes": 131329,
+   "rows": 500
+  },
+  "positions/nack-paired/reserve.jsonl": {
+   "sha256": "0353f8c9701842fd5ae080301592a0d91614fafafb15c280184d8a5dfd210b1f",
+   "bytes": 417569,
+   "rows": 600
+  },
+  "positions/nack-paired/scores-2ply.jsonl": {
+   "sha256": "157d553ee9d92e87fe6d3910eaa3deaa8c4e77e60ce4c973f1fac8dec0dc9bfa",
+   "bytes": 1169272,
+   "rows": 1000
+  }
+ },
+ "raw_files_sha256": {
+  "positions/nack-paired/candidates/nackgammon-0.jsonl.gz": "f896d534d539d1430b1b775e6b7cd861c58fc8764efa00616191e16a403a3f73",
+  "positions/nack-paired/candidates/nackgammon-1.jsonl.gz": "6ddd3e5eb607bda9e2a1179282743e3073cff9d18be9522e90bc64a0a9edce22",
+  "positions/nack-paired/candidates/nackgammon-10.jsonl.gz": "9a4c649a78783c48069bdca651aaafd4f8298da2d7b251e8f5134d2e867bc1b7",
+  "positions/nack-paired/candidates/nackgammon-11.jsonl.gz": "2bc5a1803a6a26330b36b33de58a334b6bc374661f1915ffde34d5a6c3d4783d",
+  "positions/nack-paired/candidates/nackgammon-12.jsonl.gz": "b32419618473fb5bf9258582d7d81e848d8a770fe46fb0802966d07366f49d53",
+  "positions/nack-paired/candidates/nackgammon-13.jsonl.gz": "5c8b2f0ae1f9be85e0eb592c8e4fff1436351ecaedd8cfee1131ad5d45e4fa18",
+  "positions/nack-paired/candidates/nackgammon-14.jsonl.gz": "798b1b883b28f3e1501ed58a6eb99a9b5617a15ba1977f6d5636d8f6e7ccaa18",
+  "positions/nack-paired/candidates/nackgammon-15.jsonl.gz": "f29ff64a590a6c3399b4e2cb1a6c0621b9ea620bed2314a37a7e755102936801",
+  "positions/nack-paired/candidates/nackgammon-2.jsonl.gz": "9361d5fce33f08586e898f3451f666c57df7661feb1d316afb3f50d6664a7584",
+  "positions/nack-paired/candidates/nackgammon-3.jsonl.gz": "5e7c16967c774f0521852bf6247abbb11f8132544dc5e6cb7a6cd7b2401f26cb",
+  "positions/nack-paired/candidates/nackgammon-4.jsonl.gz": "3d6b35ab5c48910a33121ee4f364bf3579765f5019e28189a8cc5e445c0dab84",
+  "positions/nack-paired/candidates/nackgammon-5.jsonl.gz": "5c396e42c6da5fbc4ca53ba2bf59cc385200819e99098a8a9fd42c408bd4446c",
+  "positions/nack-paired/candidates/nackgammon-6.jsonl.gz": "4134c8d279260b69af6a68b9a20e65fec9a8cdec1fb5850a6ac3c139c5690c17",
+  "positions/nack-paired/candidates/nackgammon-7.jsonl.gz": "382712e1f140f94829217d5461c77fd01dffc4bccf46bb9afd244e398b763aa7",
+  "positions/nack-paired/candidates/nackgammon-8.jsonl.gz": "50b299870d829389b9e21461bad3417b0a6175835c6e707abc20bb3e73dcc22c",
+  "positions/nack-paired/candidates/nackgammon-9.jsonl.gz": "3cd077557941805929f639e62f06b031c763acde508834fc6c44608b33a34b9e",
+  "positions/nack-paired/candidates/standard-0.jsonl.gz": "49443a513cd004161d34edbdb7dcd3ce6c7c5590460257d3c2e36870894560e7",
+  "positions/nack-paired/candidates/standard-1.jsonl.gz": "43456ce014c066efca8ec82c2bb9cd3761da1883a7047c980316d4f47da82325",
+  "positions/nack-paired/candidates/standard-10.jsonl.gz": "a1f1cc90179283606dcc1aa89d9fe1611e064a94cf2ad0ef7389ea3d0c28d24d",
+  "positions/nack-paired/candidates/standard-11.jsonl.gz": "dcc33f443424e47b171aa7bde4bc524d189b4b3756ebc8235e628bf53f6a357f",
+  "positions/nack-paired/candidates/standard-12.jsonl.gz": "0aced0bbeed57ec64212d6a2fc022d34fc95e072652a767b65a81348402cc56d",
+  "positions/nack-paired/candidates/standard-13.jsonl.gz": "025a82a16c2eeb72b354c982d72fc274388e64a6216a2414ec435acb1a2efd85",
+  "positions/nack-paired/candidates/standard-14.jsonl.gz": "c915a1bebbf24901ad979e54aed7518d104e058b93ed8aec306888529604dc57",
+  "positions/nack-paired/candidates/standard-15.jsonl.gz": "7750581ce679f242fdee7da86e62e5bbafa344b532f4b8305e1476feae8f7b9d",
+  "positions/nack-paired/candidates/standard-2.jsonl.gz": "9fe8d81743de61ca1e28ce5a39acaead5c73877aba4298eaac0517342115cae8",
+  "positions/nack-paired/candidates/standard-3.jsonl.gz": "fe561ffdc327e5aee92a2a04d4ff8223b2518c1c990bbbd9582408d183cbe0f4",
+  "positions/nack-paired/candidates/standard-4.jsonl.gz": "d3813927ee1f62b11ca2eea65b7d8c6a1e598343056f7c113d7539fbeb1db579",
+  "positions/nack-paired/candidates/standard-5.jsonl.gz": "128477327188fc97e8de2020a8e6d325319d31c713658da21a7412deba956e6a",
+  "positions/nack-paired/candidates/standard-6.jsonl.gz": "4790e225276459e39cb39a822b337a936c3ac3f8581134d15b5904c3bee4659f",
+  "positions/nack-paired/candidates/standard-7.jsonl.gz": "3842e3223a592d45b5d1341f8f4a9c8745122eebbf0e072d625d0b652da46c3f",
+  "positions/nack-paired/candidates/standard-8.jsonl.gz": "bb871452217dc5989fb35940552448d867ef98a58ae35319494414d70f1cce75",
+  "positions/nack-paired/candidates/standard-9.jsonl.gz": "29d87b30dbc830aa8268bccd4b1256bfb1e9b60e7c2ee612deb5824e04784a86",
+  "positions/nack-paired/games/nackgammon-0.jsonl.gz": "04bbfa8d8ae2daf5cf8f952c4d4cac32f6fe6eb8c80d5f44cea262cabb64a20f",
+  "positions/nack-paired/games/nackgammon-1.jsonl.gz": "1778c12dcf0155cc37340d34fb46702da31aa50af3964c4b7c8aa3960443fb9a",
+  "positions/nack-paired/games/nackgammon-10.jsonl.gz": "1fa604f8e87b98a9bcd41522c37f0175a26857e0d48a2c4fa057d7b1a3ec2bb4",
+  "positions/nack-paired/games/nackgammon-11.jsonl.gz": "3b4045a972b1e2b8ddcf41d37f0ec38f5d79111d55aa4e5962f36cb7abf58988",
+  "positions/nack-paired/games/nackgammon-12.jsonl.gz": "9b382a7d32792976ee1a497bdea7cde87326dd550dbcd047a408850fc5165969",
+  "positions/nack-paired/games/nackgammon-13.jsonl.gz": "107d272fc20c4ac6af00413e026084be8c2b5cf4c01415e96d6669ef906a3a7e",
+  "positions/nack-paired/games/nackgammon-14.jsonl.gz": "317d28133d80e37f3a02188763048fbcaa54f9190666f8c2718dcf1f6c958fd1",
+  "positions/nack-paired/games/nackgammon-15.jsonl.gz": "f240295db9f23d8175401f4547448f232f88b1e4202db2ec58d5011a40c23beb",
+  "positions/nack-paired/games/nackgammon-2.jsonl.gz": "a704ec4a4d48da5fe6b8d669eb1ca173d866f2ee802fea6610ba57aa50a4205c",
+  "positions/nack-paired/games/nackgammon-3.jsonl.gz": "8b8018eea506f1b78b70e0a35c7f4acf7e5dcf22275b40781757a6366e37481b",
+  "positions/nack-paired/games/nackgammon-4.jsonl.gz": "8ebb440a446d393000c9a085f7922b727f3af25dc51fd6e52932b7035c8996e7",
+  "positions/nack-paired/games/nackgammon-5.jsonl.gz": "767d9d38cd1ee6aa5cb72f0abc99a531f65b057d37f623d6624c102761c2ecb0",
+  "positions/nack-paired/games/nackgammon-6.jsonl.gz": "c7a101f8923ad01ea59ad64c9c052f6a82d405f9500433f7196cdb1c5f044fad",
+  "positions/nack-paired/games/nackgammon-7.jsonl.gz": "1d3f6e172c060820588c50e14c5ce4dbaf2e91dab4ef5298162c86cf8fdd648f",
+  "positions/nack-paired/games/nackgammon-8.jsonl.gz": "b9d85de84ff9f57a2667f519142f3414a0c64a9d5a49abba5298a75107695529",
+  "positions/nack-paired/games/nackgammon-9.jsonl.gz": "27b708b179a62f4b40e74ef43c475fa1e9e52008eec64801f8690faa53719d1b",
+  "positions/nack-paired/games/standard-0.jsonl.gz": "d4b49d39a5662063d2ee64e5331fa81d6d4b85dccce79686277a1adb2f286644",
+  "positions/nack-paired/games/standard-1.jsonl.gz": "56c0d310164d41d263a251a1c0c6a92c957d2dfe042323a551f4497f2be90ce8",
+  "positions/nack-paired/games/standard-10.jsonl.gz": "c66b888e49a399237babf7ad2448106b507764241f6c50331674d6fa0f2116dc",
+  "positions/nack-paired/games/standard-11.jsonl.gz": "056b58723e145cfcae01fcd934d3b4f4d2c5822d108886fb8ca04175dbb2dc70",
+  "positions/nack-paired/games/standard-12.jsonl.gz": "dd01066f2a6d4bf177e912379fd851a92e10e02d3776767ddf5f96fae60c82ee",
+  "positions/nack-paired/games/standard-13.jsonl.gz": "470b957add5ada6d996ad7bcd72465bd30aa173683a322f57c34f21683e17d1d",
+  "positions/nack-paired/games/standard-14.jsonl.gz": "63efc39dfba1465583e0921232dba3fb417ce9c2e53bec721380d0004127de84",
+  "positions/nack-paired/games/standard-15.jsonl.gz": "ba17bef95313c6e37411751c0db2c6c74ce61a0e327e4c5afd5270ff1dd0a437",
+  "positions/nack-paired/games/standard-2.jsonl.gz": "3a1fd167bda0a4417a33171cb69c7dca772ecc485dba1ba1e32131b791ae53ce",
+  "positions/nack-paired/games/standard-3.jsonl.gz": "ae7634315b6413b4932dedb780ed48ac9b584d8b3fc37462bc7f791776ffb133",
+  "positions/nack-paired/games/standard-4.jsonl.gz": "174345e20fe6fcc960e02834c1c7cbd34633811b81e204a57898b25e105b0048",
+  "positions/nack-paired/games/standard-5.jsonl.gz": "71e6f1ab64c8063c83d85a33f5374918eba7e4c4430b6505f3f80fff677e5c37",
+  "positions/nack-paired/games/standard-6.jsonl.gz": "1a5e0dc2ec24255cdb337baf9aa91ee135e3a87644cc17d351b011945f88a704",
+  "positions/nack-paired/games/standard-7.jsonl.gz": "567733e4d289d64202e99887f088b6c058fc448792a1fb7e2a8b51bd3a0d8cb9",
+  "positions/nack-paired/games/standard-8.jsonl.gz": "d0d32b704757860b29a5a9906cbdd9a708044924cfc93a5fbafc6fdeddbdacb6",
+  "positions/nack-paired/games/standard-9.jsonl.gz": "4237581bd22c9d070de937e853ec6ca747751472c27b48b14e0843546aa09c82"
+ },
+ "code_and_prompts_sha256": {
+  "tools/v3/nack_paired.py": "a3a9b888b38ed38a24272952117df8889934926192620880179c4986ad3a22d3",
+  "tools/v3/selfplay.py": "e0e4e9fb5d6c4f817abfb13eabd13be04c280703b7a34424c0f419191e772b3d",
+  "tools/v3/classify.py": "67e506b40388a2f76c9a5569017562e6378792810ceb630bb9f62f60d02e11b1",
+  "tools/v3/engine.py": "511ab4b2490732632f7e810f2e3da616fb5da4cd91d75eb2cf1ac4604e50e046",
+  "tools/v3/rules.py": "18dd032837ff061f64d2af32a5e7e813ad187b64f28a5a6e139f7695202f8480",
+  "tools/v3/order.py": "e10161891e9f24fa0a0e052a5ebe3d282c66e9ed123407f174b32cbfc521a90f",
+  "tools/site/describe.py": "f022ec0ba89ff123473568405be98f10253f5c985388946b6fe84d57eb05d2a1",
+  "seeds.json": "2af25908d991bd3240a01a9767a1df299a5f11d5d6211b269ddf6e3f4f140e02",
+  "prompts/bg-v3-std-notable.md": "1a145a09713fdd694696cb16d826406711567394697f0938300c285e4cba703f",
+  "prompts/bg-v3-nack.md": "13c744f06613f4051888af99bf9d1692011cb95d6f301c1898f94e13d67fef33",
+  "prompts/instructions.txt": "445735bf10ff30e4cc7f1a90dbeaa0c8858f0cf0b7bfe3f9dd3a0da1f1f0ec2d",
+  "prompts/question.txt": "ef76def6baccec519ff9515c66b41d4c233b8e2927acf18115ad1e2e494211dc",
+  "prompts/letter-system.txt": "21059b268bae257dab3aa7f608d1545d9d6a610f6f2782fc4baa84e728a6c82e",
+  "src/players/prompt.rs": "7c5acfc7372b7af1fc95d01853dea7a54b18a0be15866a97ee69aff5e7c4082c"
+ }
+}

@@ -164,9 +164,18 @@ player carries what a spec alone cannot:
   for a decision service (e.g. `clef`, `pplx-local`) overrides its URL and its environment
   variable (`CLEF_BASE_URL`, ...): the server root, without `/v1/systemone`.
 
-The top-level settings override the command line; `seed`, `order_seed`, `prompt_version`
-and `mirror_concurrent` are stored with the league, so `--resume` keeps them. The v3 rosters
-are `leagues/league1.json`, `league2.json` and `league3.json`.
+The top-level settings override the command line; `seed`, `order_seed`, `prompt_version`,
+`mirror_concurrent` and `start_position` are stored with the league, so `--resume` keeps
+them. The v3 rosters are `leagues/league1.json`, `league2.json` and `league3.json`.
+
+`"start_position": "nackgammon"` (`--start-position nackgammon`; default `standard`) starts
+every game of the league's matches from the Nackgammon position (each side: 2 checkers on
+its 24-point, 2 on its 23-point, 4 on its 13-point, 3 on its 8-point, 4 on its 6-point);
+the format is otherwise the same, both games of a round still rolling the same dice with
+the seats swapped. The prompt's setup line must name the start: a Nackgammon start needs
+`"prompt_version": "bg-v3-nack"`, and bg-v3-nack needs the Nackgammon start; any other
+combination is refused before the league is created. Since one valid match per pair counts
+everywhere (see below), a Nackgammon league belongs in its own database.
 
 ### Stored positions
 
@@ -416,12 +425,13 @@ existed resumes with `bg-v2-history`, the prompt the runner then sent).
   results and plays only the pairs it never played. A pair's unfinished match started under
   other rules is not resumed (finish it where it started, or void it).
 - **Rules and seeds:** a league's rules are its rounds, clock bank and delay, turn limit,
-  prompt version, option-order seed and `mirror_concurrent`; its new matches are played and
-  stored under them. The dice seed of a pair's match comes from the two names (sorted) and a
-  hash of the rules (`Rules::pair_seed`), not from the league: the same pairing gets the
-  same dice in every league with the same rules, and which side is `model1` (white in the
-  first game of every round) is drawn from it too. A voided pair keeps its voided match's
-  seed and sides.
+  prompt version, option-order seed, `mirror_concurrent` and start position; its new
+  matches are played and stored under them (a standard start adds nothing to the rules
+  hash, so older leagues keep their dice). The dice seed of a pair's match comes from the
+  two names (sorted) and a hash of the rules (`Rules::pair_seed`), not from the league: the
+  same pairing gets the same dice in every league with the same rules, and which side is
+  `model1` (white in the first game of every round) is drawn from it too. A voided pair
+  keeps its voided match's seed and sides.
 - **Matches** use the normal format (`--rounds`, `--clock`, `--delay`, `--max-turns`). A
   match starts as soon as both its models are below their `max_matches` (default 4, local
   engines unlimited), in fixture order: earlier matchdays get the free places first, and
@@ -695,12 +705,12 @@ The database has these tables:
 
 | Table | Contents |
 | --- | --- |
-| `matches` | models, seed, planned and played rounds, clock bank and delay seconds (NULL = off), turn limit, score, winner (`1`, `2`, or NULL for draw), status `running\|finished\|aborted` (an aborted league match resumes, back to `running`), error (the last stop), prompt version, option-order seed, harness commit and dirty flag |
+| `matches` | models, seed, planned and played rounds, clock bank and delay seconds (NULL = off), turn limit, score, winner (`1`, `2`, or NULL for draw), status `running\|finished\|aborted` (an aborted league match resumes, back to `running`), error (the last stop), prompt version, option-order seed, harness commit and dirty flag, `start_position` (NULL = standard, `nackgammon`) |
 | `games` | round, leg, white player, dice seed, opening roll, winner, result (`single\|gammon\|backgammon\|timeout\|turn_limit`), points, turn count |
 | `turns` | side, player, dice, position before the move (JSON, white's perspective), number of legal plays, chosen index, move (mover's numbering), `decided_by` (`model\|forced\|no_move\|fallback\|timeout`; `fallback` = invalid answer, random play), latency, tokens, mover's bank left after the turn (`clock_ms`); per decision: `prompt_version`, `harness_commit` (`git rev-parse HEAD` at startup) and `harness_dirty`, `provider`, `quantization`, `option_order` (JSON: legal-play index shown as option k), `letter` and `chosen_position`, `probabilities` (JSON aligned with `option_order`), `probability_source` (`logprobs\|decision\|choice_only`), `request_ms`, `retry_ms`, `cost_usd`, `invalid`, `group_size`, `reasoning_tokens` |
 | `exchanges` | every model request body, reply text, rejection reason, latency; one row per request |
 | `players` | one row per setup: unique name, spec, provider, quantization, device, price, the full player config (`settings`) |
-| `leagues` | seed (orders the founders' round robin), rules (rounds, clock bank and delay, turn limit, prompt version, option-order seed, `mirror_concurrent`), `seed_rule`, status, final ranking, note (`--note` and every change since), runner heartbeat |
+| `leagues` | seed (orders the founders' round robin), rules (rounds, clock bank and delay, turn limit, prompt version, option-order seed, `mirror_concurrent`, `start_position`), `seed_rule`, status, final ranking, note (`--note` and every change since), runner heartbeat |
 | `league_players` | league, player, `joined_at`, `left_at` (NULL = current participant), note (why it joined late or left) |
 
 League matches also store `player1`, `player2`, `stage` (`league`; `playoff` for a legacy

@@ -24,6 +24,7 @@ use serde::Deserialize;
 use tokio::sync::mpsc;
 use tokio::task::JoinSet;
 
+use crate::board::StartPosition;
 use crate::db::{Db, MatchRow, NewMatch, Participant, Rules, Scope};
 use crate::dice::{Dice, derive_seed};
 use crate::players::prompt::PromptVersion;
@@ -78,6 +79,9 @@ pub struct LeagueConfig {
     /// Play the two games of each round at once (default false); both then show the score
     /// at the start of the round.
     pub mirror_concurrent: Option<bool>,
+    /// The position every game starts from: `standard` (default) or `nackgammon`. A
+    /// Nackgammon start needs a prompt version naming it (`bg-v3-nack`).
+    pub start_position: Option<StartPosition>,
     pub note: Option<String>,
     /// Play only this player's pairs (`Scope::only_pairs_of`); every pair when left out.
     pub only_pairs_of: Option<String>,
@@ -96,6 +100,17 @@ impl LeagueConfig {
 /// Prompt version of a league stored before versions existed: the runner then sent
 /// League #13's prompt, which is bg-v2-history.
 const LEGACY_VERSION: PromptVersion = PromptVersion::BgV2History;
+
+/// The prompt version matches under `rules` send; refused when its setup line names
+/// another starting position than the rules' start.
+fn match_version(rules: &Rules) -> Result<PromptVersion> {
+    let version = match &rules.prompt_version {
+        Some(id) => PromptVersion::parse(id)?,
+        None => LEGACY_VERSION,
+    };
+    version.check_start(rules.start_position)?;
+    Ok(version)
+}
 
 struct League {
     db_path: PathBuf,
@@ -653,7 +668,10 @@ async fn run_inner(
             rules,
             note,
             scope,
-        } => db.create_league(seed, &rules, &models, note.as_deref(), &scope)?,
+        } => {
+            match_version(&rules)?;
+            db.create_league(seed, &rules, &models, note.as_deref(), &scope)?
+        }
         Start::Resume(id) => {
             let activity = db.league_activity(id)?;
             if activity.playing() {
@@ -670,10 +688,7 @@ async fn run_inner(
     };
     *league_id = Some(id);
     let row = db.league(id)?;
-    let version = match &row.rules.prompt_version {
-        Some(id) => PromptVersion::parse(id)?,
-        None => LEGACY_VERSION,
-    };
+    let version = match_version(&row.rules)?;
     let protocol = Arc::new(Protocol {
         version,
         order_seed: row
@@ -743,6 +758,12 @@ async fn run_inner(
         },
         db_path.display()
     );
+    if league.rules.start_position != StartPosition::Standard {
+        println!(
+            "every game starts from the {} position",
+            league.rules.start_position.id()
+        );
+    }
     if let Some(name) = &league.only_pairs_of {
         println!("only the pairs of {name} are played");
     }
@@ -1248,6 +1269,7 @@ impl League {
                 clock: self.rules.clock(),
                 max_turns: self.rules.max_turns,
                 concurrent_mirror: self.rules.mirror_concurrent,
+                start_position: self.rules.start_position,
                 protocol: self.protocol.clone(),
             },
             events,

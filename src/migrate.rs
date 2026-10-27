@@ -929,6 +929,7 @@ mod tests {
                     3,
                     None,
                     Some(300),
+                    crate::board::StartPosition::Standard,
                     &protocol,
                 )
                 .unwrap();
@@ -1073,8 +1074,17 @@ mod tests {
         )
         .unwrap();
         // A single match outside leagues.
-        db.create_match("random", "safest", 99, 3, None, Some(300), &protocol)
-            .unwrap();
+        db.create_match(
+            "random",
+            "safest",
+            99,
+            3,
+            None,
+            Some(300),
+            crate::board::StartPosition::Standard,
+            &protocol,
+        )
+        .unwrap();
         assert_eq!(replaced, 1);
     }
 

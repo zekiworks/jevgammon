@@ -13,7 +13,7 @@ use anyhow::{Context, Result, bail};
 use rusqlite::{Connection, OptionalExtension, params};
 use serde_json::Value;
 
-use crate::board::{Board, Side, WinKind};
+use crate::board::{Board, Side, StartPosition, WinKind};
 use crate::dice::derive_seed;
 use crate::players::PlayerConfig;
 use crate::players::prompt::letter;
@@ -23,7 +23,7 @@ use crate::runner::{Clock, MatchResult, Protocol};
 /// holds both its players, whatever rules it was played under (one result per pair); the
 /// rules choose a new match's format and dice. Raw column values: a league stored before
 /// prompt versions keeps `prompt_version` and `order_seed` NULL here, and so do its
-/// matches.
+/// matches. `start_position` is NULL (standard) for every league and match before it.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Rules {
     pub rounds: u32,
@@ -33,6 +33,8 @@ pub struct Rules {
     pub prompt_version: Option<String>,
     pub order_seed: Option<u64>,
     pub mirror_concurrent: bool,
+    /// The position every game starts from.
+    pub start_position: StartPosition,
 }
 
 impl Rules {
@@ -43,6 +45,7 @@ impl Rules {
         prompt_version: &str,
         order_seed: u64,
         mirror_concurrent: bool,
+        start_position: StartPosition,
     ) -> Self {
         Rules {
             rounds,
@@ -52,6 +55,7 @@ impl Rules {
             prompt_version: Some(prompt_version.to_owned()),
             order_seed: Some(order_seed),
             mirror_concurrent,
+            start_position,
         }
     }
 
@@ -62,12 +66,14 @@ impl Rules {
         })
     }
 
-    /// The rules as one stable string (`tools/league_web.py` builds the same one).
+    /// The rules as one stable string (`tools/league_web.py` builds the same one). The
+    /// standard start adds nothing, so the rules of every league before start positions
+    /// keep their string, hash and dice.
     pub fn canonical(&self) -> String {
         fn opt<T: std::fmt::Display>(value: &Option<T>) -> String {
             value.as_ref().map_or("-".to_owned(), |v| v.to_string())
         }
-        format!(
+        let mut out = format!(
             "rules-v1 rounds={} clock={} delay={} max_turns={} prompt={} order_seed={} mirror={}",
             self.rounds,
             opt(&self.clock_seconds),
@@ -76,7 +82,12 @@ impl Rules {
             opt(&self.prompt_version),
             opt(&self.order_seed),
             u8::from(self.mirror_concurrent)
-        )
+        );
+        if self.start_position != StartPosition::Standard {
+            out.push_str(" start=");
+            out.push_str(self.start_position.id());
+        }
+        out
     }
 
     /// Hash of the rules, the root of every pair's dice seed.
@@ -103,7 +114,7 @@ impl Rules {
     }
 
     /// Column values in `RULES_COLUMNS` order.
-    fn values(&self) -> [rusqlite::types::Value; 7] {
+    fn values(&self) -> [rusqlite::types::Value; 8] {
         use rusqlite::types::Value;
         let int = |v: Option<i64>| v.map_or(Value::Null, Value::Integer);
         [
@@ -114,12 +125,32 @@ impl Rules {
             self.prompt_version.clone().map_or(Value::Null, Value::Text),
             int(self.order_seed.map(|s| s as i64)),
             Value::Integer(i64::from(self.mirror_concurrent)),
+            start_position_value(self.start_position),
         ]
     }
 }
 
+/// `start_position` column value: NULL for the standard start (as before the column).
+fn start_position_value(start: StartPosition) -> rusqlite::types::Value {
+    match start {
+        StartPosition::Standard => rusqlite::types::Value::Null,
+        other => rusqlite::types::Value::Text(other.id().to_owned()),
+    }
+}
+
+/// A `start_position` column: NULL is the standard start.
+impl rusqlite::types::FromSql for StartPosition {
+    fn column_result(value: rusqlite::types::ValueRef<'_>) -> rusqlite::types::FromSqlResult<Self> {
+        match value {
+            rusqlite::types::ValueRef::Null => Ok(StartPosition::Standard),
+            _ => StartPosition::parse(value.as_str()?)
+                .map_err(|error| rusqlite::types::FromSqlError::Other(error.into())),
+        }
+    }
+}
+
 /// Rule columns of `matches`, in `Rules::values` order (`leagues` names the first `rounds`).
-const RULES_COLUMNS: [&str; 7] = [
+const RULES_COLUMNS: [&str; 8] = [
     "rounds_planned",
     "clock_seconds",
     "delay_seconds",
@@ -127,6 +158,7 @@ const RULES_COLUMNS: [&str; 7] = [
     "prompt_version",
     "order_seed",
     "mirror_concurrent",
+    "start_position",
 ];
 
 /// The matches that are a pair's result (`m` aliases `matches`): valid, of any stage but the
@@ -240,7 +272,10 @@ CREATE TABLE IF NOT EXISTS matches (
     void_reason     TEXT,
     voided_at       TEXT,
     -- Last failure that deferred the match (the error is in `error`); kept once finished.
-    failed_at       TEXT
+    failed_at       TEXT,
+    -- Rule column (see `Rules`): the position every game starts from; NULL = standard,
+    -- `nackgammon` = the Nackgammon start.
+    start_position  TEXT
 );
 
 CREATE TABLE IF NOT EXISTS games (
@@ -357,7 +392,9 @@ CREATE TABLE IF NOT EXISTS leagues (
     -- 1: left out of the site, the dashboard and the ladder tools (`Scope::hidden`).
     hidden          INTEGER,
     -- Only this participant's pairs are played (`Scope::only_pairs_of`); NULL: every pair.
-    only_pairs_of   TEXT
+    only_pairs_of   TEXT,
+    -- The position every game starts from (as `matches.start_position`); NULL = standard.
+    start_position  TEXT
 );
 
 -- One row per setup: the name is the identity a league table shows.
@@ -411,7 +448,7 @@ JOIN players p2 ON p2.id = m.player2
 ";
 
 /// Columns added after the first release, for databases created before them.
-const ADDED_COLUMNS: [(&str, &str, &str); 41] = [
+const ADDED_COLUMNS: [(&str, &str, &str); 43] = [
     ("matches", "clock_seconds", "INTEGER"),
     ("turns", "clock_ms", "INTEGER"),
     ("matches", "delay_seconds", "INTEGER"),
@@ -453,6 +490,8 @@ const ADDED_COLUMNS: [(&str, &str, &str); 41] = [
     ("leagues", "seed_rule", "TEXT"),
     ("leagues", "hidden", "INTEGER"),
     ("leagues", "only_pairs_of", "TEXT"),
+    ("matches", "start_position", "TEXT"),
+    ("leagues", "start_position", "TEXT"),
 ];
 
 pub struct Db {
@@ -675,13 +714,14 @@ impl Db {
         rounds: u32,
         clock: Option<Clock>,
         max_turns: Option<u32>,
+        start_position: StartPosition,
         protocol: &Protocol,
     ) -> Result<i64> {
         self.conn.execute(
             "INSERT INTO matches (started_at, model1, model2, seed, rounds_planned, status,
                                   clock_seconds, delay_seconds, max_turns, prompt_version,
-                                  order_seed, harness_commit, harness_dirty)
-             VALUES (?1, ?2, ?3, ?4, ?5, 'running', ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
+                                  order_seed, harness_commit, harness_dirty, start_position)
+             VALUES (?1, ?2, ?3, ?4, ?5, 'running', ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
             params![
                 now(),
                 model1,
@@ -694,7 +734,8 @@ impl Db {
                 protocol.version.id(),
                 protocol.order_seed as i64,
                 protocol.harness.commit,
-                protocol.harness.dirty
+                protocol.harness.dirty,
+                start_position_value(start_position)
             ],
         )?;
         Ok(self.conn.last_insert_rowid())
@@ -1012,8 +1053,8 @@ impl Db {
         tx.execute(
             "INSERT INTO leagues (started_at, seed, note, seed_rule, hidden, only_pairs_of, status,
                                   rounds, clock_seconds, delay_seconds, max_turns,
-                                  prompt_version, order_seed, mirror_concurrent)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'running', ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
+                                  prompt_version, order_seed, mirror_concurrent, start_position)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'running', ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
             rusqlite::params_from_iter(values),
         )?;
         let id = tx.last_insert_rowid();
@@ -1032,7 +1073,7 @@ impl Db {
         self.conn
             .query_row(
                 "SELECT seed, rounds, clock_seconds, delay_seconds, max_turns, prompt_version,
-                        order_seed, mirror_concurrent, hidden, only_pairs_of
+                        order_seed, mirror_concurrent, hidden, only_pairs_of, start_position
                  FROM leagues WHERE id = ?1",
                 params![league_id],
                 |row| {
@@ -1046,6 +1087,7 @@ impl Db {
                             prompt_version: row.get(5)?,
                             order_seed: row.get::<_, Option<i64>>(6)?.map(|s| s as u64),
                             mirror_concurrent: row.get::<_, Option<bool>>(7)?.unwrap_or(false),
+                            start_position: row.get(10)?,
                         },
                         scope: Scope {
                             hidden: row.get::<_, Option<bool>>(8)?.unwrap_or(false),
@@ -1062,7 +1104,7 @@ impl Db {
         self.conn
             .query_row(
                 "SELECT rounds_planned, clock_seconds, delay_seconds, max_turns, prompt_version,
-                        order_seed, mirror_concurrent
+                        order_seed, mirror_concurrent, start_position
                  FROM matches WHERE id = ?1",
                 params![match_id],
                 |row| {
@@ -1074,6 +1116,7 @@ impl Db {
                         prompt_version: row.get(4)?,
                         order_seed: row.get::<_, Option<i64>>(5)?.map(|s| s as u64),
                         mirror_concurrent: row.get::<_, Option<bool>>(6)?.unwrap_or(false),
+                        start_position: row.get(7)?,
                     })
                 },
             )
@@ -1299,7 +1342,7 @@ impl Db {
                                       harness_dirty, player1, player2, stage, label, {})
                  VALUES (?1, 'running', ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, {})",
                 RULES_COLUMNS.join(", "),
-                (11..18)
+                (11..11 + RULES_COLUMNS.len())
                     .map(|i| format!("?{i}"))
                     .collect::<Vec<_>>()
                     .join(", ")
@@ -1520,6 +1563,7 @@ mod tests {
         );
         assert_eq!(participants[0].joined_at, "2026-10-09");
         assert_eq!(league.rules.prompt_version, None);
+        assert_eq!(league.rules.start_position, StartPosition::Standard);
         for (table, column, _) in ADDED_COLUMNS {
             let exists: bool = db
                 .conn
@@ -1549,5 +1593,84 @@ mod tests {
             let json: Value = serde_json::from_str(&position_json(&white, side)).unwrap();
             assert_eq!(parse_position(&json).unwrap(), (board, side));
         }
+    }
+
+    /// The standard start leaves the rules string (and so every pair's dice) and the stored
+    /// rows as they were; the Nackgammon start is part of the rules and stored by name.
+    #[test]
+    fn start_position_is_a_rule_and_standard_changes_nothing() {
+        let clock = Some(Clock {
+            bank: Duration::from_secs(300),
+            delay: Duration::from_secs(30),
+        });
+        let standard = Rules::new(
+            3,
+            clock,
+            Some(300),
+            "bg-v2",
+            9,
+            true,
+            StartPosition::Standard,
+        );
+        assert_eq!(
+            standard.canonical(),
+            "rules-v1 rounds=3 clock=300 delay=30 max_turns=300 prompt=bg-v2 order_seed=9 mirror=1"
+        );
+        let nack = Rules::new(
+            3,
+            clock,
+            Some(300),
+            "bg-v3-nack",
+            9,
+            true,
+            StartPosition::Nackgammon,
+        );
+        assert_eq!(
+            nack.canonical(),
+            "rules-v1 rounds=3 clock=300 delay=30 max_turns=300 prompt=bg-v3-nack order_seed=9 \
+             mirror=1 start=nackgammon"
+        );
+        let only_start = Rules {
+            start_position: StartPosition::Nackgammon,
+            ..standard.clone()
+        };
+        assert_ne!(only_start, standard);
+        assert_ne!(only_start.hash(), standard.hash());
+        // `tools/league_web.py`'s `rules_hash` of the same rules.
+        assert_eq!(standard.hash(), 9116972043994848190);
+        assert_eq!(nack.hash(), 762005135011512391);
+
+        let path = std::env::temp_dir().join(format!("jevgammon-start-{}.db", std::process::id()));
+        let _ = std::fs::remove_file(&path);
+        let mut db = Db::open(&path).unwrap();
+        let protocol = Protocol {
+            version: crate::players::prompt::PromptVersion::BgV3Nack,
+            order_seed: 9,
+            harness: crate::runner::Harness::default(),
+        };
+        for (rules, stored) in [(&standard, None), (&nack, Some("nackgammon"))] {
+            let id = db
+                .create_league(1, rules, &[], None, &Scope::default())
+                .unwrap();
+            assert_eq!(&db.league(id).unwrap().rules, rules);
+            let column: Option<String> = db
+                .conn
+                .query_row(
+                    "SELECT start_position FROM leagues WHERE id = ?1",
+                    [id],
+                    |r| r.get(0),
+                )
+                .unwrap();
+            assert_eq!(column.as_deref(), stored);
+            let match_id = db
+                .create_match("a", "b", 1, 3, None, None, rules.start_position, &protocol)
+                .unwrap();
+            assert_eq!(
+                db.match_rules(match_id).unwrap().start_position,
+                rules.start_position
+            );
+        }
+        drop(db);
+        let _ = std::fs::remove_file(&path);
     }
 }

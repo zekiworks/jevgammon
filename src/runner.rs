@@ -10,7 +10,7 @@ use anyhow::{Context as _, Result, bail};
 use parking_lot::Mutex;
 use tokio::sync::{Notify, mpsc};
 
-use crate::board::{Board, Side, WinKind};
+use crate::board::{Board, Side, StartPosition, WinKind};
 use crate::db::{Db, DecisionLog, StoredGame, TurnRecord};
 use crate::dice::{Dice, derive_seed, round_seed};
 use crate::http::RetryTime;
@@ -232,6 +232,8 @@ pub struct MatchSettings {
     /// Plays the two games of a round at once, both showing the score at the start of the
     /// round; otherwise game 2 starts after game 1 and shows the score after it.
     pub concurrent_mirror: bool,
+    /// The position every game starts from, also when a stored game is replayed.
+    pub start_position: StartPosition,
     pub protocol: Arc<Protocol>,
 }
 
@@ -436,7 +438,7 @@ impl Runner {
         } else {
             Side::Black
         };
-        let mut board = Board::start();
+        let mut board = self.settings.start_position.board();
         let mut clocks: Clocks = [self.settings.clock.map(|c| c.bank); 2];
         let mut turn_no = 1u32;
         let mut history: Vec<PastMove> = Vec::new();
@@ -792,9 +794,27 @@ mod tests {
 
     const SEED: u64 = 20_261_016;
 
-    /// Plays (or resumes) random v safest, three rounds; player `n`'s `fail_at[n - 1]`-th
-    /// decision fails.
+    /// Plays (or resumes) random v safest, three rounds, from the standard start; player
+    /// `n`'s `fail_at[n - 1]`-th decision fails.
     async fn play(
+        path: &Path,
+        match_id: Option<i64>,
+        concurrent_mirror: bool,
+        fail_at: [usize; 2],
+    ) -> (i64, Result<MatchResult>) {
+        play_from(
+            StartPosition::Standard,
+            path,
+            match_id,
+            concurrent_mirror,
+            fail_at,
+        )
+        .await
+    }
+
+    /// `play` with every game starting from `start`.
+    async fn play_from(
+        start: StartPosition,
         path: &Path,
         match_id: Option<i64>,
         concurrent_mirror: bool,
@@ -802,13 +822,25 @@ mod tests {
     ) -> (i64, Result<MatchResult>) {
         let db = Db::open(path).unwrap();
         let protocol = Arc::new(Protocol {
-            version: PromptVersion::BgV2,
+            version: match start {
+                StartPosition::Standard => PromptVersion::BgV2,
+                StartPosition::Nackgammon => PromptVersion::BgV3Nack,
+            },
             order_seed: 3,
             harness: Harness::default(),
         });
         let match_id = match_id.unwrap_or_else(|| {
-            db.create_match("random", "safest", SEED, 3, None, Some(300), &protocol)
-                .unwrap()
+            db.create_match(
+                "random",
+                "safest",
+                SEED,
+                3,
+                None,
+                Some(300),
+                start,
+                &protocol,
+            )
+            .unwrap()
         });
         let players = [
             (Baseline::Random, fail_at[0]),
@@ -835,6 +867,7 @@ mod tests {
                 clock: None,
                 max_turns: Some(300),
                 concurrent_mirror,
+                start_position: start,
                 protocol,
             },
             events,
@@ -1044,6 +1077,101 @@ mod tests {
             (expected.1.2, expected.1.3, expected.1.4)
         );
         let _ = std::fs::remove_file(&path);
+    }
+
+    /// The mover's board before turn 1 of every game, by round and leg.
+    fn first_boards(rows: &[TurnRow]) -> Vec<(u32, u8, Board)> {
+        rows.iter()
+            .filter(|t| t.2 == 1)
+            .map(|t| {
+                let json: serde_json::Value = serde_json::from_str(&t.7).unwrap();
+                let (board, _) = crate::db::parse_position(&json).unwrap();
+                (t.0, t.1, board)
+            })
+            .collect()
+    }
+
+    fn stored_start(path: &Path, match_id: i64) -> Option<String> {
+        rusqlite::Connection::open(path)
+            .unwrap()
+            .query_row(
+                "SELECT start_position FROM matches WHERE id = ?1",
+                [match_id],
+                |r| r.get(0),
+            )
+            .unwrap()
+    }
+
+    /// A Nackgammon-start match: every game starts from the Nackgammon position, the two
+    /// games of a round roll the same dice turn by turn with the seats swapped (as a
+    /// standard match with the same seed does), and the match row names the start. The
+    /// default start is the standard position, stored as NULL as before.
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn a_nackgammon_match_starts_every_game_there_with_the_same_dice() {
+        let standard_path = temp_db("start-standard");
+        let (standard_id, result) = play(&standard_path, None, false, [0, 0]).await;
+        result.unwrap();
+        let standard = turns(&standard_path, standard_id);
+        assert_eq!(stored_start(&standard_path, standard_id), None);
+
+        let path = temp_db("start-nackgammon");
+        let (id, result) = play_from(StartPosition::Nackgammon, &path, None, false, [0, 0]).await;
+        result.unwrap();
+        let nack = turns(&path, id);
+        assert_eq!(stored_start(&path, id).as_deref(), Some("nackgammon"));
+
+        for (rows, start) in [(&standard, Board::start()), (&nack, Board::nackgammon())] {
+            let firsts = first_boards(rows);
+            assert!(firsts.len() >= 2 && firsts.len().is_multiple_of(2));
+            assert!(firsts.iter().all(|(_, _, board)| *board == start));
+            let rounds: std::collections::BTreeSet<u32> = rows.iter().map(|t| t.0).collect();
+            for round in rounds {
+                let game = |leg: u8| -> Vec<&TurnRow> {
+                    rows.iter().filter(|t| t.0 == round && t.1 == leg).collect()
+                };
+                let (one, two) = (game(1), game(2));
+                assert!(!one.is_empty() && !two.is_empty());
+                for (a, b) in one.iter().zip(&two) {
+                    // Turn, side to move and dice alike; the other player in each seat.
+                    assert_eq!((a.2, &a.3, a.5, a.6), (b.2, &b.3, b.5, b.6));
+                    assert_eq!(a.4, 3 - b.4);
+                }
+            }
+        }
+        // Same seed, same rolls: the start alone changes the games. Round 1 game 1 rolls
+        // alike in both matches for as long as both games last.
+        let first_game = |rows: &[TurnRow]| -> Vec<(u32, u8, u8)> {
+            rows.iter()
+                .filter(|t| t.0 == 1 && t.1 == 1)
+                .map(|t| (t.2, t.5, t.6))
+                .collect()
+        };
+        let (d_std, d_nack) = (first_game(&standard), first_game(&nack));
+        let shared = d_std.len().min(d_nack.len());
+        assert!(shared > 10);
+        assert_eq!(d_std[..shared], d_nack[..shared]);
+        assert_ne!(standard, nack);
+
+        // Cut off and resumed: the stored turns replay from the Nackgammon start; replaying
+        // them from the standard start is refused.
+        let cut = temp_db("start-nackgammon-cut");
+        let (cut_id, cut_off) =
+            play_from(StartPosition::Nackgammon, &cut, None, false, [0, 5]).await;
+        assert!(cut_off.is_err());
+        let (_, wrong) =
+            play_from(StartPosition::Standard, &cut, Some(cut_id), false, [0, 0]).await;
+        assert!(
+            format!("{:#}", wrong.unwrap_err()).contains("differs from a replay"),
+            "a standard replay of Nackgammon turns"
+        );
+        let (_, resumed) =
+            play_from(StartPosition::Nackgammon, &cut, Some(cut_id), false, [0, 0]).await;
+        resumed.unwrap();
+        assert_eq!(turns(&cut, cut_id), nack);
+        assert_eq!(outcome(&cut, cut_id), outcome(&path, id));
+        for p in [&standard_path, &path, &cut] {
+            let _ = std::fs::remove_file(p);
+        }
     }
 
     #[test]

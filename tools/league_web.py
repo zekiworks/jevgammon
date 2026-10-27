@@ -134,22 +134,23 @@ class Dice:
 
 # Rule columns of `matches`; `leagues` names the first one `rounds` (see `db::Rules`).
 RULE_COLUMNS = ("rounds_planned", "clock_seconds", "delay_seconds", "max_turns", "prompt_version",
-                "order_seed", "mirror_concurrent")
+                "order_seed", "mirror_concurrent", "start_position")
 
 
 def league_rules(league: sqlite3.Row) -> tuple:
-    """The league's rules in RULE_COLUMNS order."""
+    """The league's rules in RULE_COLUMNS order (start_position NULL: standard, also before the column)."""
+    start = league["start_position"] if "start_position" in league.keys() else None
     return (league["rounds"], league["clock_seconds"], league["delay_seconds"], league["max_turns"],
-            league["prompt_version"], league["order_seed"], league["mirror_concurrent"] or 0)
+            league["prompt_version"], league["order_seed"], league["mirror_concurrent"] or 0, start)
 
 
 def rules_hash(rules: tuple) -> int:
-    """`Rules::hash`: the root of every pair's dice seed."""
+    """`Rules::hash`: the root of every pair's dice seed. The standard start adds nothing."""
     opt = lambda v: "-" if v is None else str(v & MASK if isinstance(v, int) and v < 0 else v)
-    rounds, clock, delay, max_turns, prompt, order_seed, mirror = rules
+    rounds, clock, delay, max_turns, prompt, order_seed, mirror, start = rules
     return derive_seed(0, f"rules-v1 rounds={rounds} clock={opt(clock)} delay={opt(delay)} "
                           f"max_turns={opt(max_turns)} prompt={opt(prompt)} order_seed={opt(order_seed)} "
-                          f"mirror={1 if mirror else 0}")
+                          f"mirror={1 if mirror else 0}" + (f" start={start}" if start else ""))
 
 
 def new_pair(rules: tuple, a: str, b: str) -> tuple[str, str, int]:

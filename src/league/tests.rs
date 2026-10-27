@@ -32,7 +32,15 @@ fn temp_db(tag: &str) -> PathBuf {
 }
 
 fn rules(mirror: bool) -> Rules {
-    Rules::new(1, None, Some(300), "bg-v2", 9, mirror)
+    Rules::new(
+        1,
+        None,
+        Some(300),
+        "bg-v2",
+        9,
+        mirror,
+        StartPosition::Standard,
+    )
 }
 
 #[test]
@@ -941,4 +949,87 @@ async fn a_failing_model_backs_off_while_the_others_play_on_and_its_matches_resu
     assert!(ranking.contains('F'));
     drop(db);
     let _ = std::fs::remove_file(&path);
+}
+
+/// A config without `start_position` starts from the standard position, as before; a
+/// Nackgammon start is refused unless the prompt version names it (bg-v3-nack).
+#[test]
+fn the_start_defaults_to_standard_and_needs_a_matching_prompt() {
+    let parse = |json: &str| serde_json::from_str::<LeagueConfig>(json).unwrap();
+    let plain = parse(r#"{"players": [], "prompt_version": "bg-v2"}"#);
+    assert_eq!(plain.start_position, None);
+    let nack =
+        parse(r#"{"players": [], "prompt_version": "bg-v3-nack", "start_position": "nackgammon"}"#);
+    assert_eq!(nack.start_position, Some(StartPosition::Nackgammon));
+    assert!(
+        serde_json::from_str::<LeagueConfig>(r#"{"players": [], "start_position": "nack"}"#)
+            .is_err()
+    );
+
+    assert_eq!(match_version(&rules(false)).unwrap(), PromptVersion::BgV2);
+    let with = |prompt: Option<&str>, start: StartPosition| Rules {
+        prompt_version: prompt.map(str::to_owned),
+        start_position: start,
+        ..rules(false)
+    };
+    assert_eq!(
+        match_version(&with(Some("bg-v3-nack"), StartPosition::Nackgammon)).unwrap(),
+        PromptVersion::BgV3Nack
+    );
+    // A league stored before prompt versions sent bg-v2-history: standard only.
+    assert_eq!(
+        match_version(&with(None, StartPosition::Standard)).unwrap(),
+        PromptVersion::BgV2History
+    );
+    for prompt in [
+        None,
+        Some("bg-v2"),
+        Some("nack-v2"),
+        Some("bg-v3-std-notable"),
+    ] {
+        assert!(match_version(&with(prompt, StartPosition::Nackgammon)).is_err());
+    }
+    assert!(match_version(&with(Some("bg-v3-nack"), StartPosition::Standard)).is_err());
+}
+
+/// A league whose rules refuse its prompt version is not created.
+#[tokio::test]
+async fn a_mismatched_nackgammon_league_is_not_created() {
+    let path = temp_db("nack-mismatch");
+    let setup = Setup::new(std::env::temp_dir(), "http://127.0.0.1:9/v1".into());
+    let start = Start::New {
+        models: vec![
+            PlayerConfig::new("random", "random"),
+            PlayerConfig::new("safest", "safest"),
+        ],
+        seed: 1,
+        rules: Rules {
+            start_position: StartPosition::Nackgammon,
+            ..rules(false)
+        },
+        note: None,
+        scope: Scope::default(),
+    };
+    let mut league_id = None;
+    let error = run_inner(
+        &path,
+        &setup,
+        start,
+        Harness::default(),
+        std::env::temp_dir(),
+        &mut league_id,
+    )
+    .await
+    .unwrap_err();
+    assert!(format!("{error:#}").contains("use bg-v3-nack"), "{error:#}");
+    assert_eq!(league_id, None);
+    let count: i64 = Db::open(&path)
+        .unwrap()
+        .conn()
+        .query_row("SELECT COUNT(*) FROM leagues", [], |r| r.get(0))
+        .unwrap();
+    assert_eq!(count, 0);
+    for suffix in ["", "-wal", "-shm"] {
+        let _ = std::fs::remove_file(format!("{}{suffix}", path.display()));
+    }
 }

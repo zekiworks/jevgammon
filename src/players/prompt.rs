@@ -13,7 +13,7 @@ use anyhow::{Result, bail};
 use serde_json::{Value, json};
 
 use super::DecisionRequest;
-use crate::board::{Board, Play};
+use crate::board::{Board, Play, StartPosition};
 use crate::runner::format_clock;
 
 /// Rules, strategy and match rules, with `{rounds}`, `{max_turns}`, `{delay}` and `{bank}`
@@ -105,6 +105,37 @@ impl PromptVersion {
             PromptVersion::BgV3Nack => V3_NACK_RULES,
             _ => BG_RULES,
         }
+    }
+
+    /// The starting position the version's setup line names: only bg-v3-nack names the
+    /// Nackgammon one (nack-v2 keeps bg-v2's standard setup line).
+    pub fn start_position(self) -> StartPosition {
+        match self {
+            PromptVersion::BgV3Nack => StartPosition::Nackgammon,
+            _ => StartPosition::Standard,
+        }
+    }
+
+    /// Refuses a version whose setup line names another starting position than the one
+    /// the match's games start from.
+    pub fn check_start(self, start: StartPosition) -> Result<()> {
+        let named = self.start_position();
+        if named != start {
+            bail!(
+                "prompt version {} names the {} starting position, but the games start from \
+                 the {} one; use {}",
+                self.id(),
+                named.id(),
+                start.id(),
+                Self::ALL
+                    .into_iter()
+                    .filter(|v| v.start_position() == start)
+                    .map(Self::id)
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            );
+        }
+        Ok(())
     }
 
     fn history(self) -> bool {
@@ -788,6 +819,48 @@ mod tests {
             assert_eq!(PromptVersion::parse(version.id()).unwrap(), version);
         }
         assert!(PromptVersion::parse("bg-v1").is_err());
+    }
+
+    /// Every version's setup line names the start `start_position` says, and a match must
+    /// use a version naming its start: a Nackgammon-start match renders the Nackgammon line.
+    #[test]
+    fn setup_line_names_the_match_start() {
+        let standard = "two on the 24-point, five on the 13-point (the midpoint), three on the \
+                        8-point, and five on the 6-point.";
+        let nack = "in the Nackgammon starting position: two on the 24-point, two on the \
+                    23-point, four on the 13-point (the midpoint), three on the 8-point, and four \
+                    on the 6-point.";
+        for version in PromptVersion::ALL {
+            let (named, other) = match version.start_position() {
+                StartPosition::Standard => (standard, nack),
+                StartPosition::Nackgammon => (nack, standard),
+            };
+            let rules = version.rules();
+            assert!(
+                rules.contains(named) && !rules.contains(other),
+                "{}",
+                version.id()
+            );
+            assert!(version.check_start(version.start_position()).is_ok());
+        }
+        for version in [
+            PromptVersion::BgV2,
+            PromptVersion::BgV2History,
+            PromptVersion::NackV2,
+            PromptVersion::BgV3StdNoTable,
+        ] {
+            let error = version.check_start(StartPosition::Nackgammon).unwrap_err();
+            assert!(error.to_string().ends_with("use bg-v3-nack"), "{error}");
+        }
+        let error = PromptVersion::BgV3Nack
+            .check_start(StartPosition::Standard)
+            .unwrap_err();
+        assert!(error.to_string().contains("use bg-v2, "), "{error}");
+
+        // The first decision of a Nackgammon game (opening 6-5).
+        let fixture = Fixture::new(Board::nackgammon(), (6, 5));
+        let rendered = state(&fixture.request(PromptVersion::BgV3Nack, (6, 5)));
+        assert!(rendered.contains(nack) && !rendered.contains(standard));
     }
 
     #[test]

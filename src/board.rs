@@ -7,6 +7,9 @@
 use std::collections::HashSet;
 use std::fmt::Write as _;
 
+use anyhow::{Result, bail};
+use serde::Deserialize;
+
 pub const CHECKERS: u8 = 15;
 /// Source index used for a checker entering from the bar.
 pub const BAR: u8 = 25;
@@ -32,6 +35,53 @@ impl Side {
             Side::White => "white",
             Side::Black => "black",
         }
+    }
+}
+
+/// The position every game of a match starts from (`id`: `standard`, `nackgammon`). Both
+/// are symmetric: the side to move and its opponent start alike, so
+/// [`StartPosition::board`] serves either side.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum StartPosition {
+    #[default]
+    Standard,
+    Nackgammon,
+}
+
+impl StartPosition {
+    pub const ALL: [StartPosition; 2] = [StartPosition::Standard, StartPosition::Nackgammon];
+
+    pub fn id(self) -> &'static str {
+        match self {
+            StartPosition::Standard => "standard",
+            StartPosition::Nackgammon => "nackgammon",
+        }
+    }
+
+    pub fn parse(id: &str) -> Result<Self> {
+        match Self::ALL.into_iter().find(|s| s.id() == id) {
+            Some(start) => Ok(start),
+            None => bail!(
+                "unknown start position `{id}`; use one of: {}",
+                Self::ALL.map(Self::id).join(", ")
+            ),
+        }
+    }
+
+    pub fn board(self) -> Board {
+        match self {
+            StartPosition::Standard => Board::start(),
+            StartPosition::Nackgammon => Board::nackgammon(),
+        }
+    }
+}
+
+impl std::str::FromStr for StartPosition {
+    type Err = anyhow::Error;
+
+    fn from_str(id: &str) -> Result<Self> {
+        Self::parse(id)
     }
 }
 
@@ -144,9 +194,22 @@ impl WinKind {
 }
 
 impl Board {
+    /// The standard starting position: 2 checkers on the 24-point, 5 on the 13-point, 3 on
+    /// the 8-point and 5 on the 6-point for each side.
     pub fn start() -> Self {
+        Self::symmetric(&[(24, 2), (13, 5), (8, 3), (6, 5)])
+    }
+
+    /// The Nackgammon starting position: 2 checkers on the 24-point, 2 on the 23-point, 4 on
+    /// the 13-point, 3 on the 8-point and 4 on the 6-point for each side.
+    pub fn nackgammon() -> Self {
+        Self::symmetric(&[(24, 2), (23, 2), (13, 4), (8, 3), (6, 4)])
+    }
+
+    /// Both sides with `(point, count)` checkers, each in its own numbering.
+    fn symmetric(layout: &[(usize, i8)]) -> Self {
         let mut pts = [0i8; 24];
-        for (point, count) in [(24, 2), (13, 5), (8, 3), (6, 5)] {
+        for &(point, count) in layout {
             pts[point - 1] = count;
             pts[24 - point] = -count;
         }
@@ -406,6 +469,49 @@ mod tests {
         assert_eq!(board.mover_pips(), 167);
         assert_eq!(board.opponent_pips(), 167);
         assert_eq!(board.flip(), board);
+    }
+
+    #[test]
+    fn nackgammon_position_is_symmetric_with_194_pips() {
+        let board = Board::nackgammon();
+        // 2x24 + 2x23 + 4x13 + 3x8 + 4x6.
+        assert_eq!(board.mover_pips(), 194);
+        assert_eq!(board.opponent_pips(), 194);
+        assert_eq!(board.flip(), board);
+        let mover: i32 = board
+            .pts
+            .iter()
+            .filter(|&&n| n > 0)
+            .map(|&n| n as i32)
+            .sum();
+        let opponent: i32 = board
+            .pts
+            .iter()
+            .filter(|&&n| n < 0)
+            .map(|&n| -n as i32)
+            .sum();
+        assert_eq!((mover, opponent), (15, 15));
+        for (point, count) in [(24, 2), (23, 2), (13, 4), (8, 3), (6, 4)] {
+            assert_eq!(board.pts[point - 1], count, "mover's {point}-point");
+            assert_eq!(board.pts[24 - point], -count, "opponent's {point}-point");
+        }
+        // GNUbg's Nackgammon start (`set variation nackgammon`), as in
+        // positions/nack-paired/games.
+        assert_eq!(
+            crate::players::order::gnubg_position_id(&board),
+            "4Dl4ADbgOXgANg"
+        );
+    }
+
+    #[test]
+    fn start_positions_parse_and_default_to_standard() {
+        assert_eq!(StartPosition::default(), StartPosition::Standard);
+        assert_eq!(StartPosition::Standard.board(), Board::start());
+        assert_eq!(StartPosition::Nackgammon.board(), Board::nackgammon());
+        for start in StartPosition::ALL {
+            assert_eq!(StartPosition::parse(start.id()).unwrap(), start);
+        }
+        assert!(StartPosition::parse("hypergammon").is_err());
     }
 
     #[test]

@@ -22,6 +22,7 @@ use clap::{Args, Parser, Subcommand};
 use sha2::Digest as _;
 use tokio::sync::mpsc;
 
+use crate::board::StartPosition;
 use crate::players::prompt::PromptVersion;
 use crate::players::{Player, PlayerConfig, Setup};
 use crate::runner::{Clock, Control, Event, Harness, MAX_SPEED, MatchSettings, Protocol, Runner};
@@ -292,8 +293,8 @@ struct LeagueArgs {
     models: Vec<String>,
     /// League config file (JSON): players with spec, provider, quantization, reasoning,
     /// request fields, price, parallel and max_matches, plus optional seed, order_seed,
-    /// prompt_version, rounds, clock, delay, max_turns, mirror_concurrent, note,
-    /// only_pairs_of and hidden, which override the command line.
+    /// prompt_version, rounds, clock, delay, max_turns, mirror_concurrent, start_position,
+    /// note, only_pairs_of and hidden, which override the command line.
     #[arg(long, conflicts_with_all = ["models", "resume"])]
     config: Option<PathBuf>,
     /// Continue a stopped league from this database; its models, rounds, clock, seeds and
@@ -366,6 +367,10 @@ struct Common {
     /// nack-v2 (no opening table).
     #[arg(long, default_value = "bg-v2")]
     prompt_version: PromptVersion,
+    /// The position every game starts from: standard, or nackgammon (needs
+    /// --prompt-version bg-v3-nack, whose setup line names it).
+    #[arg(long, default_value = "standard")]
+    start_position: StartPosition,
 }
 
 impl Common {
@@ -512,6 +517,7 @@ async fn run_league(args: LeagueArgs) -> Result<()> {
                         .or(args.order_seed)
                         .unwrap_or_else(random_seed),
                     config.mirror_concurrent.unwrap_or(args.mirror_concurrent),
+                    config.start_position.unwrap_or(common.start_position),
                 ),
                 note: config.note.or(args.note),
                 scope: db::Scope {
@@ -539,6 +545,7 @@ async fn run_league(args: LeagueArgs) -> Result<()> {
                     args.common.prompt_version.id(),
                     args.order_seed.unwrap_or_else(random_seed),
                     args.mirror_concurrent,
+                    args.common.start_position,
                 ),
                 note: args.note,
                 scope: db::Scope {
@@ -765,6 +772,8 @@ async fn run_match(args: MatchArgs) -> Result<()> {
     let (Some(model1), Some(model2)) = (args.model1, args.model2) else {
         bail!("--model1 and --model2 are required");
     };
+    let start_position = args.common.start_position;
+    args.common.prompt_version.check_start(start_position)?;
     let player1 = Arc::new(
         Player::from_spec(&model1, &setup)
             .await
@@ -793,7 +802,14 @@ async fn run_match(args: MatchArgs) -> Result<()> {
     let clock = args.common.clock();
     let max_turns = args.common.max_turns();
     let match_id = db.create_match(
-        &names[0], &names[1], seed, rounds, clock, max_turns, &protocol,
+        &names[0],
+        &names[1],
+        seed,
+        rounds,
+        clock,
+        max_turns,
+        start_position,
+        &protocol,
     )?;
     let control = Arc::new(Control::new(if args.quiet {
         MAX_SPEED
@@ -812,6 +828,7 @@ async fn run_match(args: MatchArgs) -> Result<()> {
             max_turns,
             // The board view follows one game at a time.
             concurrent_mirror: false,
+            start_position,
             protocol: protocol.clone(),
         },
         events,

@@ -17,9 +17,13 @@ use crate::board::{Board, Play};
 use crate::runner::format_clock;
 
 /// Rules, strategy and match rules, with `{rounds}`, `{max_turns}`, `{delay}` and `{bank}`
-/// filled in for the match. bg-v2 is League #8's text; nack-v2 drops its opening table.
+/// filled in for the match. bg-v2 is League #8's text; nack-v2 drops its opening table. The
+/// Nackgammon paired test's pair (Method spec 2026-10-24 §10) drops the table too and differs
+/// only in the line naming the starting setup.
 const BG_RULES: &str = include_str!("../../prompts/bg-v2.md");
 const NACK_RULES: &str = include_str!("../../prompts/nack-v2.md");
+const V3_STD_NOTABLE_RULES: &str = include_str!("../../prompts/bg-v3-std-notable.md");
+const V3_NACK_RULES: &str = include_str!("../../prompts/bg-v3-nack.md");
 const INSTRUCTIONS: &str = include_str!("../../prompts/instructions.txt");
 const NOTATION_INSTRUCTIONS: &str = include_str!("../../prompts/instructions-notation.txt");
 const QUESTION: &str = include_str!("../../prompts/question.txt");
@@ -55,14 +59,22 @@ pub enum PromptVersion {
     BgV2History,
     /// bg-v2 without the opening table: Nackgammon and the opening control.
     NackV2,
+    /// Nackgammon paired test, standard side: bg-v2 without the opening table, the setup line
+    /// naming the standard starting position.
+    BgV3StdNoTable,
+    /// Nackgammon paired test, Nackgammon side: bg-v3-std-notable with the setup line naming
+    /// the Nackgammon starting position, nothing else.
+    BgV3Nack,
 }
 
 impl PromptVersion {
-    pub const ALL: [PromptVersion; 4] = [
+    pub const ALL: [PromptVersion; 6] = [
         PromptVersion::BgV2,
         PromptVersion::BgV2Notation,
         PromptVersion::BgV2History,
         PromptVersion::NackV2,
+        PromptVersion::BgV3StdNoTable,
+        PromptVersion::BgV3Nack,
     ];
 
     pub fn id(self) -> &'static str {
@@ -71,6 +83,8 @@ impl PromptVersion {
             PromptVersion::BgV2Notation => "bg-v2-notation",
             PromptVersion::BgV2History => "bg-v2-history",
             PromptVersion::NackV2 => "nack-v2",
+            PromptVersion::BgV3StdNoTable => "bg-v3-std-notable",
+            PromptVersion::BgV3Nack => "bg-v3-nack",
         }
     }
 
@@ -87,6 +101,8 @@ impl PromptVersion {
     fn rules(self) -> &'static str {
         match self {
             PromptVersion::NackV2 => NACK_RULES,
+            PromptVersion::BgV3StdNoTable => V3_STD_NOTABLE_RULES,
+            PromptVersion::BgV3Nack => V3_NACK_RULES,
             _ => BG_RULES,
         }
     }
@@ -748,6 +764,21 @@ mod tests {
             nack_state,
             format!("{}{}", &bg_state[..start], &bg_state[end..])
         );
+
+        // Nackgammon paired test: both sides drop the opening table; the two differ only in
+        // the line naming the starting setup.
+        let std_state = state(&fixture.request(PromptVersion::BgV3StdNoTable, dice));
+        let nack3_state = state(&fixture.request(PromptVersion::BgV3Nack, dice));
+        assert!(!std_state.contains("## Opening rolls") && !nack3_state.contains("## Opening rolls"));
+        let differ: Vec<(&str, &str)> = std_state
+            .lines()
+            .zip(nack3_state.lines())
+            .filter(|(a, b)| a != b)
+            .collect();
+        assert_eq!(std_state.lines().count(), nack3_state.lines().count());
+        assert_eq!(differ.len(), 1);
+        assert!(differ[0].0.contains("in the standard starting position: two on the 24-point, five"));
+        assert!(differ[0].1.contains("in the Nackgammon starting position: two on the 24-point, two on the 23-point"));
 
         // Letters follow the request's order.
         let user = letter_user(&bg, bg.order);

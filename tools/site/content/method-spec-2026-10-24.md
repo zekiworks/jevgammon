@@ -529,3 +529,247 @@ league settings unchanged. Gemma 4 31B (on) and any changed team join after the 
 - The run was then stopped on purpose at 16:02:00 UTC, with 311 of 500 Gemma play answers stored (count only).
 - Gemma's partial data (100 predictions, 311 play answers) is never scored or reported. Stage B is reported for the
   five subscription teams only, scored by §9.9 unchanged; its title is "Stage B: five teams".
+
+
+## 10. Nackgammon paired test (amendment dated 2026-10-27, Can; written and committed before the position sets were built and before any model call)
+
+Brief: `mailbox/Nackgammon and Terra - brief 2026-10-27.md` (with Can's correction of the same day to the Bonferroni
+rule). Code: `tools/v3/nack_paired.py` (sets, scores, Random) and `tools/v3/selfplay.py` (games, unchanged). Freeze:
+`freeze/nack-paired.json`. Files: `positions/nack-paired/`. This section is never changed after the first model call; a
+bug found later is fixed in a dated addendum below it, the original text kept.
+
+### 10.0 What it replaces (superseded text kept)
+
+This test replaces the Nackgammon part of the shared positions (A12's 500 Nackgammon positions). The 200-position
+opening control stays in Method but is not part of this run. The old text, **superseded 2026-10-27 by Can (this
+section)**, kept for the record:
+
+- *Design (`mailbox/Backgammon benchmark v3 design final.md`), sets table:* "Nackgammon | 500 | GNUbg self-play from
+  the Nackgammon start: 300 from turns 1 to 6, including each of its 15 first-roll positions once, and 200 from later
+  turns | Tests how much known opening knowledge helps (A12)". *Split:* "Proposed Nackgammon split: 300 of the 500
+  come from turns 1 to 6, including its 15 first-roll positions; 200 come from later turns. The early 300 pair with
+  the standard opening phase in A12. The later 200 show whether the effect fades as games drift back into ordinary
+  middlegames." *A12 row:* "500 Nackgammon positions and the 200-position opening control; all setups … early
+  Nackgammon positions." (superseded for the Nackgammon part; the table on/off contrast on the opening control stays).
+- *Method page (`tools/site/method.py`, set list):* "Nackgammon: GNU Backgammon self-play from the Nackgammon starting
+  position (an unfamiliar start, same rules). Its prompt drops the opening table." The live page is not edited now (no
+  site change without Can's go); when it is, the line is kept and marked superseded by this section.
+- *Draft `mailbox/Method amendment draft - A12 matched 2026-10-24 v1.md`, section 3* (matched contrast against the
+  frozen 500): superseded by this section. `positions/nackgammon.jsonl` stays frozen in `freeze.json` and is not used.
+
+### 10.1 Question and hypothesis
+
+Nackgammon has the rules of backgammon; only the start differs: each side starts with 2 checkers on its 24-point, 2 on
+its 23-point, 4 on its midpoint (13), 3 on its 8-point and 4 on its 6-point. The test measures how much a new starting
+setup changes a setup's (model, settings and prompt) decision quality and risk calls: how well a whole setup transfers.
+A larger drop is consistent with relying on familiar positions but is not proof, because Nackgammon positions also
+differ in structure. "Performance kept" is a valid result.
+
+**Hypothesis (a):** error rates rise from standard to Nackgammon positions, most in the opening and less later in the
+game, and the rise differs between setups. It is examined through each setup's drop and label (10.8), the per-phase
+drops (descriptive, 10.9) and the primary comparisons (10.10).
+
+Error rate (PR) = 500 × mean GNUbg 1.08 2-ply cubeless equity loss of the chosen play against the best legal play.
+Drop = PR on the Nackgammon positions − PR on their paired standard positions, over the same pairs. Positive = worse on
+Nackgammon.
+
+### 10.2 Games, candidates and the one-position-per-game rule
+
+- **Self-play:** `tools/v3/selfplay.py` unchanged (GNUbg 1.08.003 expert level: 0-ply, no noise, cubeless), seed token
+  `np20261027`, games 0–9,999 of each variant (`standard`, `nackgammon`), 16 shards of 625 games per variant, CPU at
+  `nice -n 19`. Source game ID: `<variant>:np20261027:<game>`.
+- **Candidates:** every turn with 2 to 25 legal plays is eligible (the rule of every v3 set). Per game and phase (10.3),
+  at most 2 turns are drawn as candidates, at random with `random.Random("nack-paired-2026-10-27:<variant>:<game>:<phase>")`.
+  Every candidate gets 2-ply values for every legal play (10.6). No candidate is ever shown to a model.
+- **One position per source game** across the main set and the reserve together (per variant; the two variants'
+  games are different games). Every position records its source game ID.
+- **Repeated states removed:** a state is the board seen by the mover plus the dice (GNUbg position ID + dice, high die
+  first; the v3 dedupe key). No state appears twice anywhere in the main set and the reserve, across both variants.
+
+### 10.3 Phase definitions (`tools/v3/classify.py`, unchanged; first rule that matches)
+
+1. opening: turns 1 to 6 (turn 1 = the first move of the game, both sides' turns counted).
+2. bear-off: any of GNUbg's bear-off classes.
+3. race: GNUbg's race class.
+4. holding: a contact position (GNUbg contact or crashed class) where one side has escaped all its back checkers (none
+   on the bar or on its points 14 to 24) and the other keeps one high anchor: 2 or more checkers on its 18-, 20- or
+   21-point and no other checkers on its points 18 to 24 (nor on the bar).
+5. contact: everything else, including GNUbg's crashed class.
+
+### 10.4 Game-plan tags (`classify.tag`, unchanged)
+
+For contact and holding positions only; opening, race and bear-off positions carry no tag and are reported under their
+phase. First rule that matches, checked for both sides: 1. blitz: a checker on the bar against a home board with 3 or
+more made points; 2. back game: 2 or more anchors (2+ checkers) on the side's points 18 to 24; 3. holding: the holding
+rule of 10.3; 4. priming: 4 or more made points in a row; 5. low-anchor: the side's only anchor in the opponent's home
+board (its points 19 to 24) is on its 22-, 23- or 24-point; 6. other. Note fixed now: a Nackgammon side that still holds
+its starting 23- and 24-points meets the back-game rule; the tags are reported as the rule gives them. Tags are not a
+matching variable; the tag mix of both sets is reported.
+
+### 10.5 Position classes (existing rule, `analysis.play_call`, margin 0.001)
+
+Hitting rolls of a play = `describe.hitting_rolls` (= `Board::hitting_rolls`, the number the model is shown). A
+position is **No trade-off** when every legal play leaves the same number of hitting rolls. Otherwise its stake = the 2-ply
+loss of the best safe play (fewest hitting rolls) against the best play: **Risk pays** when the stake ≥ 0.001, else
+**Safety pays**. Risk calls of an answer: right risk, wrong risk, needless risk, missed risk, right safety (as on the site).
+
+### 10.6 Engine scoring
+
+GNUbg 1.08.003, `engine.PLY2` (2-ply, cubeless money equity, deterministic, prune on), every legal play of every
+position, through the same code as `tools/v3/score.py evaluate`. Gap = 2-ply equity of the best play − the second best.
+Stored with the sets (`scores-2ply.jsonl`). Random's error on a position = the mean loss over all its legal plays.
+
+### 10.7 Matching, pairs per phase and class, tolerances
+
+**Pairs per phase and class** (every pair has the same phase and class on both sides):
+
+| Phase | Main: Risk pays | Main: Safety pays | Main: No trade-off | Main total | Reserve: Risk pays | Reserve: Safety pays | Reserve: No trade-off | Reserve total |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| opening | 30 | 30 | 0 | 60 | 45 | 45 | 0 | 90 |
+| contact | 24 | 24 | 12 | 60 | 36 | 36 | 18 | 90 |
+| holding | 12 | 12 | 6 | 30 | 18 | 18 | 9 | 45 |
+| race | 0 | 0 | 25 | 25 | 0 | 0 | 38 | 38 |
+| bear-off | 0 | 0 | 25 | 25 | 0 | 0 | 37 | 37 |
+| **total** | 66 | 66 | 68 | **200** | 99 | 99 | 102 | **300** |
+
+**Tolerances** (a standard partner must meet all, against the Nackgammon position):
+
+- phase: equal; in the opening also |turn difference| ≤ 1;
+- position class: equal;
+- number of legal plays n: |Δn| ≤ 1 when the Nackgammon position has n ≤ 10, |Δn| ≤ 2 when n ≥ 11;
+- gap g (both capped at 0.25): |Δg| ≤ max(0.005, 0.1 × g of the Nackgammon position).
+
+**Procedure** (deterministic; `h(x)` = sha256 of `"nack-paired-2026-10-27:" + x`):
+
+1. Nackgammon candidates are taken in order of h(candidate key) (key = source game ID + turn). A candidate is taken when
+   its (phase, class) cell still has quota, its game and its state are unused, and some unused standard candidate (game
+   and state unused) meets every tolerance. Its partner is the one with the smallest distance
+   d = |Δn| / tol_n + |Δg| / tol_g; ties by h(partner key). Both games and both states are then used.
+2. Main set first, to its quotas; then the reserve with the same procedure on what remains.
+3. **Shortfall** (only if the pool cannot fill a cell): the missing pairs go to the other trade-off class of the same
+   phase, then to No trade-off of the same phase, then to the same class in contact; the procedure runs again for the
+   moved quota. Every move is logged in the freeze and reported. The tolerances are never loosened.
+4. **Order:** pair IDs `np-0001`…`np-0200` (main) and `np-0201`…`np-0500` (reserve) in order of h("order:" + Nackgammon
+   key) within each set. Position IDs `npn-NNNN` (Nackgammon) and `nps-NNNN` (standard). Every setup answers the main
+   400 positions; an extended setup answers the reserve 600 positions, all of them, in pair-ID order, the same for every
+   extended setup.
+5. Option order: `order.option_order` with `seeds.json`'s option-order seed, as every v3 set.
+
+Balance reported for both sets (main, reserve): per phase and overall, mean, median and standardised mean difference of
+n, gap, turn, pip count of the mover, the pip lead, Random's error and the stake; the class and GNUbg-class mix; the tag mix.
+
+### 10.8 Setups, order, invalid answers, stopping rule, labels
+
+**Setups** (each runs once, even when it is both in League 1 and in the Cup). Programs are yardsticks and belong to no
+group: **GNUbg weak** (GNUbg 1.08 Beginner, its stored League settings, answered through the harness) and **Random**
+(no calls: its error is the exact mean loss over all legal plays from the 2-ply values). Safest is not in the run.
+
+- **Decision models** (every League 1 model setup in the final table of 2026-10-26, including those in the Cup; 16):
+  Celeris-1 Decision, SubQ Snap Preview, Cygnet (Gemma 4 12B), Decider v1.2 27B, Fastino GLiDE v1.2 (local),
+  DeepSeek V4.1 Flash (off), Jev 1.13.0, GPT-6 Luna, Decider v1.1 27B, LFM2.5-24B-A2B (on), Qwen3.8-27B (off),
+  Mercury Decide, Winnow-12B, LFM2.5-24B-A2B (off), Open-Jev 27B v1.1, Decider Flash v1.2. (Four of them, DeepSeek V4.1
+  Flash (off), both LFM2.5-24B-A2B setups and Qwen3.8-27B (off), are chat models placed in League 1 by the ladder;
+  the group is League 1 as a whole.)
+- **Workhorses** (the Hype Cup teams from League 2; `mailbox/Hype Cup roster 2026-10-27.md`): Gemini 3.8 Flash (low),
+  Claude Sonnet 5.5 (low), Gemma 4 31B (on); plus **GPT-6.1 Terra** (openai/gpt-6.1-terra, effort low) only if its
+  smoke test passes after Can's go.
+- **Frontier** (the Hype Cup teams from League 3): GPT-6.1 Sol (low), GPT-6 Astra (on), GPT-6.1 Sol (high).
+
+Every setup runs with its stored settings (`players.settings`). **Order:** GNUbg weak and the decision models first,
+then the Cup teams not in League 1 (Gemini 3.8 Flash (low), Claude Sonnet 5.5 (low), GPT-6.1 Sol (low), GPT-6 Astra
+(on), GPT-6.1 Sol (high)), then Terra if it runs, and **Gemma 4 31B (on) last** (the slowest; it is one of the 8).
+
+**Prompts.** v3 is the leagues' prompt `bg-v2` (`leagues.prompt_version` of Leagues 1–3). Both sets use v3 without the
+standard opening table, and the two prompts differ only in the line naming the starting setup:
+`prompts/bg-v3-std-notable.md` (standard side, sha256 `1a145a09…`, prompt version `bg-v3-std-notable`) and
+`prompts/bg-v3-nack.md` (Nackgammon side, sha256 `13c744f0…`, `bg-v3-nack`). Against `bg-v2` the standard side drops
+the "Opening rolls" section and puts the setup sentence on its own line, naming the standard starting position. The
+existing `nack-v2` is not used here: it states the standard layout. The runner test
+`versions_differ_only_where_designed` checks that the two rendered states differ in exactly that line. Each row carries
+its prompt; `--prompt-version` is never passed. Answers go to a separate SQLite file, not `v3.db`.
+
+**Invalid or missing answers** (after the usual retries; also a timed-out or never-stored answer) are never dropped.
+Primary rule: such an answer scores the position's Random error (mean loss over all legal plays); in the risk analysis
+it counts with Random's weights (each legal play 1/n). Sensitivity checks, reported next to the primary result: (i)
+score it with the worst legal play's loss; (ii) leave its pair out for that setup. The count per setup and set is reported.
+
+**Intervals:** paired bootstrap over pairs, 10,000 resamples, percentile intervals; the resample indices are shared by
+all setups (numpy `default_rng`, seed = the first 8 bytes of h("bootstrap:<look>") as an integer), so group means and
+differences come from the same resamples. Bootstrap intervals are approximate.
+
+**Per-setup stopping rule (b), two looks.** First look after the 200 main pairs: the setup's drop with a 97.5%
+interval [lo, hi]. The setup is extended with the 300 reserve pairs only when lo ≤ 0 ≤ hi **and** (lo ≤ −5 or hi ≥ +5)
+PR. Examples: [−2, 6] is extended; [−2, 3] and [3, 9] are not. Final look: an extended setup's drop on all 500 pairs,
+97.5% interval; a setup not extended keeps its first-look interval as final. Splitting the error over the two looks
+targets about 95% coverage overall; this is approximate. Every setup's final 97.5% interval is reported. GNUbg weak
+follows the same rule. Random needs no calls: it is reported on the 200 and on all 500 pairs.
+
+**Outcome label (c)**, from the final 97.5% interval: **kept** when −5 ≤ lo and hi ≤ +5; **worse** when lo > 0 and not
+kept; **better** when hi < 0 and not kept; **unclear** otherwise. At the first look "unclear" is exactly what is extended.
+
+**Results per setup:** standard PR, Nackgammon PR and the drop, always shown together, never a ranking by drop alone;
+by phase and by game-plan tag; cost per decision (from the run's logs) alongside. Extensions refine each setup's own
+estimate and are reported per setup, separate from the primary comparisons. Chart: each setup's standard PR (x)
+against its Nackgammon PR (y), with GNUbg weak and Random marked and the diagonal drawn.
+
+### 10.9 Descriptive by phase (part of hypothesis (a), not a test)
+
+Per setup and per group: the drop by phase on the main 200 pairs, with 95% bootstrap intervals, and opening against the
+other four phases pooled. Labelled descriptive.
+
+### 10.10 Primary comparisons (main 200 pairs only, which every setup answered)
+
+Each is computed directly as A's drop − B's drop (group drop = mean of its setups' drops, each setup weighted equally),
+with a paired bootstrap interval over pairs (10.8). **Bonferroni (Can's correction, 2026-10-27):** the 5% error is
+divided by M; each interval's confidence level is 1 − 0.05/M. Both groups' (or setups') standard and Nackgammon PR are
+shown next to every difference. Scope, printed wherever group results appear: these results hold for these rosters
+only; League 1 is the full league; the other two groups are the Cup's selected top setups.
+
+The comparisons (M = 5):
+
+1. decision models − workhorses;
+2. decision models − frontier;
+3. workhorses − frontier;
+4. effort pair LFM2.5-24B-A2B (on) − LFM2.5-24B-A2B (off) (both League 1 decision models);
+5. effort pair GPT-6.1 Sol (high) − GPT-6.1 Sol (low) (both Cup teams).
+
+No other model is in the run at two settings: Gemma 4 31B (on), GPT-6 Astra (on), DeepSeek V4.1 Flash (off),
+Qwen3.8-27B (off), Gemini 3.8 Flash (low) and Claude Sonnet 5.5 (low) run at one setting only. **M = 5 with Terra and
+without Terra:** GPT-6.1 Terra runs at one setting (low) and is a different model from GPT-6.1 Sol, so it creates or
+completes no effort pair; it only joins the workhorse group, which changes comparisons 1 and 3, not M. **Level: 1 −
+0.05/5 = 99% for every primary interval**, whether or not Terra's go is given. M is final now, before the first model call.
+
+### 10.11 Secondary analyses (fixed now, labelled secondary, no extra model calls)
+
+1. **Kept advantage over random play:** K = (Random's Nackgammon PR − setup's Nackgammon PR) ÷ (Random's standard PR −
+   setup's standard PR), main 200 pairs (and all 500 for extended setups), 95% bootstrap interval. 1 = keeps its whole
+   advantage over random play; 0 = falls to random. Flagged "unstable" when the setup's standard advantage over random
+   is below 20 PR or its 95% interval reaches 0.
+2. **Ranking:** Spearman correlation across the model setups (yardsticks left out) between standard and Nackgammon PR on
+   the main 200 pairs, 95% bootstrap interval over pairs; the five largest rank changes by name (ties by name).
+3. **Risk:** every position classed by 10.5 and every answer's risk call. Per setup and set: ability d′ and caution c
+   (§2 rules: log-linear correction, missing-class N/A) and their change from standard to Nackgammon, with 95% paired
+   bootstrap intervals over pairs. The number of positions per class and set is reported; a class with fewer than 50
+   positions in an analysis is called thin and is not read into.
+
+Everything else (for example GPT-6.1 Terra against GPT-6.1 Sol (low)) is exploratory and labelled so.
+
+### 10.12 Engine check (no model calls; engine time only)
+
+- **Subset, frozen before any model call:** 40 of the 200 main pairs (80 positions, both sets): per phase opening 12,
+  contact 12, holding 6, race 5, bear-off 5, the pairs with the smallest h("engine:" + pair ID) in each phase. The list
+  is in `freeze/nack-paired.json`.
+- **After the answers:** GNUbg 1.08.003 rollouts of the top 5 plays at 2-ply plus every play any setup chose there.
+  Settings (as `tools/v3/score.py rollout`): 1,296 trials per play, cubeless, variance reduction on, quasi-random dice,
+  no truncation, no late evaluation, chequer play at 1-ply, seed 1, 8 threads, `nice -n 19`.
+- A play without a rollout (only Random and invalid answers need one) gets its 2-ply equity plus the position's mean
+  (rollout − 2-ply) shift over its rolled-out plays; its loss is floored at 0. Counted and labelled.
+- On the subset: PR, drops and the five primary comparisons with rollout values and with 2-ply values side by side;
+  reported whether any comparison changes direction (sign of the point estimate). GNUbg's network learned standard
+  play, so its scores for early Nackgammon positions are likely less accurate; this check bounds that, it does not
+  remove it.
+
+### 10.13 Release
+
+A release bundle is prepared (positions with source game IDs, pairs, matching rules, prompts, settings, raw answers,
+scores and analysis code) and not published before Can's go.

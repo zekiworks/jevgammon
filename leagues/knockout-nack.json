@@ -1,0 +1,113 @@
+{
+  "note": "Nackgammon knockout (Can's brief of 2026-10-27, point 3; runner change approved 2026-10-27): the 8 Hype Cup teams of mailbox/Hype Cup roster 2026-10-27.md, listed in seed order 1-8, every game from the Nackgammon start (start_position nackgammon, prompt bg-v3-nack), otherwise the league match rules (3 rounds, two games per round with seats swapped and the same dice, both at once as in the ladder and Cup, no clock, turn limit 300, the leagues' option-order seed). The bracket follows the Hype Cup draw: QF1 seed 1 v 8, QF2 2 v 6, QF3 3 v 7, QF4 4 v 5; SF A winner QF1 v winner QF4, SF B winner QF2 v winner QF3; final. No stored result applies: 7 new matches, in knockout-nack.db only (never v3.db). Seed 6 (SubQ Snap Preview, League 1 #2 model on games won over Cygnet at equal points) awaits Can's confirmation. Player settings are the stored v3.db players.settings. Not a league to run directly (a round robin would play all 28 pairs): tools/v3/run_knockout_nack.sh plays the bracket, one two-player league per tie.",
+  "prompt_version": "bg-v3-nack",
+  "start_position": "nackgammon",
+  "seed": 20261027,
+  "order_seed": 1190975713392774006,
+  "rounds": 3,
+  "clock": 0,
+  "delay": 30,
+  "max_turns": 300,
+  "mirror_concurrent": true,
+  "players": [
+    {
+      "name": "GPT-6.1 Sol (low)",
+      "spec": "openai/gpt-6.1-sol",
+      "provider": "chatgpt-subscription",
+      "reasoning": "low",
+      "price": {
+        "input_per_mtok": 2.0,
+        "output_per_mtok": 10.0
+      },
+      "note": "subscription login; cost is API-list-price equivalent",
+      "parallel": 4
+    },
+    {
+      "name": "GPT-6 Astra (on)",
+      "spec": "openai/gpt-6-astra",
+      "provider": "chatgpt-subscription",
+      "reasoning": "medium",
+      "price": {
+        "input_per_mtok": 10.0,
+        "output_per_mtok": 50.0
+      },
+      "note": "reasoning effort medium, the model's default (a request without an effort reports medium). ChatGPT subscription (Codex backend); subscription login; cost is API-list-price equivalent",
+      "parallel": 4
+    },
+    {
+      "name": "Gemini 3.8 Flash (low)",
+      "spec": "antigravity/gemini-3.8-flash",
+      "provider": "antigravity-subscription",
+      "reasoning": "low",
+      "price": {
+        "input_per_mtok": 0.75,
+        "output_per_mtok": 3.75
+      },
+      "note": "Google Antigravity subscription (Google AI Ultra, OMP's login; Antigravity model id gemini-3.8-flash-low) from 2026-10-19 12:46 UTC; its first League 2 decision came then: until then it waited, not ready, for a Gemini API key the league never had. Same model (modelVersion gemini-3.8-flash), prompt, thinking level and enum-constrained letter as the gemini/ smoke setup; cost is API-list-price equivalent. Smoke check (10 positions x 2): same play as the Gemini API answers in 19 of 20",
+      "parallel": 4
+    },
+    {
+      "name": "Claude Sonnet 5.5 (low)",
+      "spec": "anthropic/claude-sonnet-5-5",
+      "provider": "claude-subscription",
+      "reasoning": "low",
+      "price": {
+        "input_per_mtok": 2.0,
+        "output_per_mtok": 10.0
+      },
+      "note": "subscription login; cost is API-list-price equivalent",
+      "parallel": 4
+    },
+    {
+      "name": "Celeris-1 Decision",
+      "spec": "celeris/celeris-1-decision",
+      "provider": "celeris",
+      "price": {
+        "input_per_mtok": 0.04,
+        "output_per_mtok": 0.0
+      },
+      "note": "Celeris System One endpoint (inference.celeris.ai/celeris-1-decision); list price $0.04 per million input tokens, output free (docs.celeris.ai/pricing, 2026-10-10); probabilities come rounded to two decimals",
+      "parallel": 2
+    },
+    {
+      "name": "SubQ Snap Preview",
+      "spec": "subq/subq-snap-preview",
+      "provider": "subq",
+      "price": {
+        "input_per_mtok": 0.05,
+        "output_per_mtok": 0.0
+      }
+    },
+    {
+      "name": "GPT-6.1 Sol (high)",
+      "spec": "openai/gpt-6.1-sol",
+      "provider": "chatgpt-subscription",
+      "reasoning": "high",
+      "price": {
+        "input_per_mtok": 2.0,
+        "output_per_mtok": 10.0
+      },
+      "note": "subscription login; cost is API-list-price equivalent",
+      "parallel": 4
+    },
+    {
+      "name": "Gemma 4 31B (on)",
+      "spec": "local/gemma-4-31B-it",
+      "provider": "local-vllm",
+      "quantization": "fp8 (bf16 checkpoint quantized by vLLM at load; fp8 KV cache)",
+      "base_url": "http://127.0.0.1:8894/v1",
+      "reasoning": "template default",
+      "request": {
+        "chat_template_kwargs": {
+          "enable_thinking": true
+        },
+        "reasoning_effort": null
+      },
+      "max_tokens": 24000,
+      "note": "thinking on (enable_thinking); no effort knob, template default",
+      "device": "RTX PRO 6000 (bariton): one GPU until 2026-10-16 11:11 UTC, then three replicas (GPUs 0, 1, 3, same image and arguments) behind a least-busy proxy at the same URL; from 2026-10-19 18:36 UTC one server on NVIDIA GB10 (DGX Spark spark-194d, next to Decider), same image, checkpoint and arguments (memory share 0.45); from 2026-10-19 22:26 UTC back on RTX PRO 6000 (bariton GPU 0): one replica (memory share 0.85, 24 sequences, 194,617-token FP8 KV cache) behind the least-busy proxy at http://127.0.0.1:8894/v1, same image, checkpoint and arguments; 20 stored League 2 (off) requests replayed there: same play 20/20, max |dp| 0.08; paused 2026-10-20; from 2026-10-20 20:16 UTC bariton GPU 0 again, same replica and proxy; from 2026-10-20 21:10 UTC NVIDIA GB10 (DGX Spark spark-194d) again, as on 2026-10-19 (memory share 0.45, 24 sequences), next to LFM2.5-24B-A2B, while bariton's four GPUs serve DeepSeek V4.1 Flash; 20 stored League 2 (off) requests (bariton) replayed there: same top letter 20/20, max |dp| 0.50, median 0.0000; from 2026-10-21 01:25 UTC back on bariton GPU 0 (overnight replica + proxy), same script and arguments, while DeepSeek V4.1 Flash is paused (its four GPUs freed for League 2's non-DeepSeek thinking matches); 20 stored (off) requests: same top letter 19/20, max |dp| 0.65; from 2026-10-21 05:00 UTC NVIDIA GB10 (DGX Spark spark-194d) again, the same server as from 2026-10-20 21:10 UTC, while DeepSeek V4.1 Flash plays its last matches on bariton; from 2026-10-22 15:37 UTC back on RTX PRO 6000 (bariton GPUs 0 and 1): two replicas (memory share 0.85, 24 sequences each) behind the least-busy proxy at http://127.0.0.1:8894/v1, same image, checkpoint and arguments; 20 stored League 2 (off) requests replayed there: same play 20/20, max |dp| 0.044, median 0.0000; paused 2026-10-22 16:20 UTC; from 2026-10-22 22:59 UTC bariton GPUs 0 and 1 again: the same two replicas (memory share 0.85, 24 sequences each) behind the least-busy proxy at http://127.0.0.1:8894/v1, same script, image, checkpoint and arguments as from 15:37 UTC; from 2026-10-23 21:31 UTC (ladder round 1) bariton GPU 1: one replica (memory share 0.85, 24 sequences) behind the least-busy proxy at http://127.0.0.1:8894/v1, same script, image, checkpoint and arguments (GEMMA_GPUS=1); 2026-10-23 22:36 UTC the GPU fell off the bus (Xid 79) and the server died; matches deferred until bariton is reset; from 2026-10-25 07:55 UTC (ladder round 2) bariton GPU 0: one replica (memory share 0.85, 24 sequences) behind the proxy at http://127.0.0.1:8894/v1, same script, image, checkpoint and arguments (GEMMA_GPUS=0)",
+      "parallel": 24,
+      "max_matches": 16
+    }
+  ]
+}

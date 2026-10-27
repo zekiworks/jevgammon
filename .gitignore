@@ -17,6 +17,8 @@ __pycache__/
 /positions/games/
 /smoke/
 /v3.db*
+/knockout-nack.db*
+/knockout-nack/
 /league_control.state
 /league_control.lock
 /league_control.servers

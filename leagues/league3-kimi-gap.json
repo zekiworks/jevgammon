@@ -1,0 +1,73 @@
+{
+  "note": "Gap matches, approved by Can (2026-10-27): Kimi K3.1 Pro (off)'s League 3 pairs missing from League 3's round robin (vs Claude Fable 5.1 (off) and Grok 4.7 (off)). Hidden league (not on the site, the dashboard or the ladder tools); only Kimi K3.1 Pro (off)'s pairs are played; League 3's rules (so League 3's dice); stored pairs are reused. Roster settings unchanged.",
+  "prompt_version": "bg-v2",
+  "seed": 3685413082999515901,
+  "order_seed": 1190975713392774006,
+  "rounds": 3,
+  "clock": 0,
+  "delay": 30,
+  "max_turns": 300,
+  "mirror_concurrent": true,
+  "only_pairs_of": "Kimi K3.1 Pro (off)",
+  "hidden": true,
+  "players": [
+    {
+      "name": "Kimi K3.1 Pro (off)",
+      "spec": "openai-compatible/moonshotai/kimi-k3.1-pro",
+      "provider": "openrouter:moonshotai/mxfp4",
+      "quantization": "mxfp4",
+      "base_url": "https://openrouter.ai/api/v1",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "reasoning": "none",
+      "request": {
+        "provider": {
+          "order": [
+            "moonshotai/mxfp4"
+          ],
+          "allow_fallbacks": false
+        },
+        "usage": {
+          "include": true
+        }
+      },
+      "letter_readout": "answer",
+      "price": {
+        "input_per_mtok": 2.0,
+        "output_per_mtok": 10.0
+      },
+      "note": "Moonshot's Kimi K3.1 Pro (moonshotai/kimi-k3.1-pro, canonical moonshotai/kimi-k3.1-pro-20261023) via OpenRouter pinned to Moonshot AI's standard endpoint (tag moonshotai/mxfp4, service_tier null; not moonshotai/highspeed), fallbacks off. Off = reasoning_effort none, the lowest effort OpenRouter lists for this model on 2026-10-24 (supported_efforts max/high/low/none, default max). Letter constrained by JSON schema; logprobs asked, read when returned. Temperature 1.0. List price $2/$10 per million, cache read $0.20 (OpenRouter endpoints API, 2026-10-24). $30 hard cap shared with (on)",
+      "parallel": 4,
+      "budget": {
+        "ledger": "smoke/kimi-k31-budget.db",
+        "cap_usd": 30.0,
+        "input_per_mtok": 2.0,
+        "cached_input_per_mtok": 0.2,
+        "output_per_mtok": 10.0
+      }
+    },
+    {
+      "name": "Claude Fable 5.1 (off)",
+      "spec": "anthropic/claude-fable-5-1",
+      "provider": "claude-subscription",
+      "reasoning": "low",
+      "price": {
+        "input_per_mtok": 10.0,
+        "output_per_mtok": 50.0
+      },
+      "note": "claude-fable-5-1, the newest Fable the subscription serves; effort low, the lowest it accepts (thinking disabled is rejected: adaptive thinking only), labelled off. Claude subscription; subscription login; cost is API-list-price equivalent",
+      "parallel": 4
+    },
+    {
+      "name": "Grok 4.7 (off)",
+      "spec": "xai/grok-4.7",
+      "provider": "xai-subscription",
+      "reasoning": "low",
+      "price": {
+        "input_per_mtok": 2.0,
+        "output_per_mtok": 6.0
+      },
+      "note": "reasoning effort low, the lowest grok-4.7 takes (none is rejected; minimal is served as low), labelled off: it still reasons. xAI subscription (SuperGrok, OMP's xai-oauth login) on api.x.ai Responses API, letter constrained by JSON schema; subscription login; cost is API-list-price equivalent",
+      "parallel": 4
+    }
+  ]
+}

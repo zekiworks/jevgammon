@@ -782,3 +782,38 @@ scores and analysis code) and not published before Can's go.
 - **Back-game tag (note to 10.4, Can's answer 3):** the frozen back-game rule is kept. In Nackgammon this tag partly
   reflects the starting 23- and 24-point anchors, and the back-game row is too thin to read (main set: 10 Nackgammon
   against 2 standard positions).
+
+### 10.14 Groups by original league (amendment dated 2026-10-27, Can; replaces the group definitions in 10.8 and 10.10)
+
+**Why:** the Hype Cup is now built from the original-league tables (`mailbox/Original-league tables - what Can found
+2026-10-27.md`), not from the final ladder tables, so the groups follow the same principle.
+
+a) **Groups are defined by original league**: the league a setup was in before any ladder move
+   (`tools/league_web.py` `league_origins`; a move before the ladder, the League 1 reshape of Oct 19, does not count).
+   Each setup is weighted equally. Not by the Cup roster, not by the final league.
+b) **Membership rule:** every setup in the paired test, including Cup teams added later from the corrected roster, joins
+   its original league's group. Setups are added only because of the Cup roster, never because of paired-test results.
+   A setup with no original league (one that has played in no league before this test) belongs to no group and is
+   exploratory.
+c) **M stays 5:** the three group comparisons (decision models − workhorses, decision models − frontier, workhorses −
+   frontier) plus LFM2.5-24B-A2B (on) − (off) and GPT-6.1 Sol (high) − (low), each at 1 − 0.05/5 = 99%. Any effort pair
+   created by a later addition is exploratory. The scope note in 10.10 now reads: these results hold for these rosters
+   only; each group is the setups in the run from that original league.
+d) **Members as of now** (the 22 model setups started so far; programs belong to no group):
+   - **Decision models (original League 1, 12):** Celeris-1 Decision, SubQ Snap Preview, Cygnet (Gemma 4 12B), Decider
+     v1.2 27B, Fastino GLiDE v1.2 (local), Jev 1.13.0, GPT-6 Luna, Decider v1.1 27B, Mercury Decide, Winnow-12B,
+     Open-Jev 27B v1.1, Decider Flash v1.2.
+   - **Workhorses (original League 2, 9):** DeepSeek V4.1 Flash (off), LFM2.5-24B-A2B (on), LFM2.5-24B-A2B (off),
+     Qwen3.8-27B (off), Gemini 3.8 Flash (low), Claude Sonnet 5.5 (low), Gemma 4 31B (on), GPT-6.1 Sol (low), GPT-6.1
+     Sol (high).
+   - **Frontier (original League 3, 1):** GPT-6 Astra (on). The group grows only when the corrected Cup roster adds
+     original League 3 setups; until then comparisons 2 and 3 rest on one setup, and this is said wherever they appear.
+   - **No group:** GPT-6.1 Terra (it has played in no league; exploratory). Programs: GNUbg weak and Random (yardsticks).
+   Both effort pairs now lie inside the workhorse group; comparisons 4 and 5 are unchanged.
+e) **What had been opened before this amendment** (reported by the run's agent, 2026-10-27): per-setup first looks on
+   the main 200 pairs (standard PR, Nackgammon PR, drop, 97.5% interval, label, extension decision) for 21 setups plus
+   GNUbg weak and Random, all "unclear" and extended. These were needed for the frozen extension rule. Group means and
+   the primary comparisons under the old group definitions were computed twice by scripts on partial data
+   (`results.json` at 18:32 UTC; a local site build at ~19:00 UTC, checked by a verifier), but no person read a group
+   number; nothing was committed, deployed or published. No result under the groups defined here had been computed.
+   The amendment was written after those runs; this is stated wherever the primary comparisons are reported.

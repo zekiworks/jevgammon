@@ -19,6 +19,7 @@ import hashlib
 import json
 import math
 import os
+import re
 import sqlite3
 import sys
 from statistics import NormalDist
@@ -40,9 +41,26 @@ NOTE_E = ("Groups by original league (Method §10.14, amendment of 2026-10-27). 
           "definitions; one returned those results into an agent's context. Whether a person saw them is not "
           "established. Nothing was published. See §10.14(e) and its correction (f) of 2026-10-28.")
 
+# §10.14(h): the one-token letter readout (max_tokens 1) and the markers of a response stopped at its output limit.
+LETTER_READOUT = re.compile(r'"max_tokens"\s*:\s*1\s*[,}]')
+CUT_MARK = re.compile(r'"finish_reason"\s*:\s*"length"|"stop_reason"\s*:\s*"max_tokens"|'
+                      r'"finishReason"\s*:\s*"MAX_TOKENS"|"reason"\s*:\s*"max_output_tokens"')
+OUTPUT_LIMIT = 32768
+
+# §10.14(g) (2026-10-28, Can): a setup added for another reason than the Cup roster is in no group (exploratory).
+EXPLORATORY = {"Gemini 4 Argon (on)": "added by Can's decision of 2026-10-28, not because of the Cup roster (§10.14(g))"}
+# §10.14(d): the 22 grouped model setups before the §10.14(g) additions (comparison (i), original members only).
+ORIGINAL_MEMBERS = {
+    "Celeris-1 Decision", "SubQ Snap Preview", "Cygnet (Gemma 4 12B)", "Decider v1.2 27B", "Fastino GLiDE v1.2 (local)",
+    "Jev 1.13.0", "GPT-6 Luna", "Decider v1.1 27B", "Mercury Decide", "Winnow-12B", "Open-Jev 27B v1.1",
+    "Decider Flash v1.2", "DeepSeek V4.1 Flash (off)", "LFM2.5-24B-A2B (on)", "LFM2.5-24B-A2B (off)", "Qwen3.8-27B (off)",
+    "Gemini 3.8 Flash (low)", "Claude Sonnet 5.5 (low)", "Gemma 4 31B (on)", "GPT-6.1 Sol (low)", "GPT-6.1 Sol (high)",
+    "GPT-6 Astra (on)"}
+
 
 def original_league_groups(names, db="v3.db"):
-    """§10.14: group = the setup's original league (tools/league_web.py league_origins, read-only); none = no group."""
+    """§10.14: group = the setup's original league (tools/league_web.py league_origins, read-only); none = no group
+    (no original league, or exploratory under §10.14(g))."""
     sys.path.insert(0, "tools")
     import league_web
     con = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
@@ -52,9 +70,14 @@ def original_league_groups(names, db="v3.db"):
         origin.update(league_web.league_origins(con, lid))
     groups = {g: [] for g in GROUP_OF_LEAGUE.values()}
     for n in names:
-        if n in origin and origin[n] in GROUP_OF_LEAGUE:
+        if n in origin and origin[n] in GROUP_OF_LEAGUE and n not in EXPLORATORY:
             groups[GROUP_OF_LEAGUE[origin[n]]].append(n)
     return groups
+
+
+def original_members_only(groups):
+    """Comparison (i) of §10.14(g): the groups restricted to the 22 setups of §10.14(d)."""
+    return {g: [s for s in names if s in ORIGINAL_MEMBERS] for g, names in groups.items()}
 
 
 GROUPS = {}  # §10.14: filled by Data from the original leagues
@@ -116,8 +139,26 @@ class Data:
         for r in con.execute("SELECT * FROM answers WHERE repeat = 1"):
             self.answers.setdefault(r["setup"], {})[r["position_id"]] = r
         self.setups = [s for s in self.players if s in self.answers]
+        self.db = db
+        self._cutoff = None
         if not GROUPS:
             GROUPS.update(original_league_groups([s for s in self.setups if s not in YARDSTICKS]))
+
+    def cutoff(self):
+        """§10.14(h) output-limit rule: {setup: {position ids}} of answers cut off by the output limit, i.e. an
+        answering exchange (not the one-token letter readout, max_tokens 1) whose response reports the stop at the
+        limit (finish_reason length, stop_reason max_tokens, finishReason MAX_TOKENS, incomplete max_output_tokens)."""
+        if self._cutoff is None:
+            con = sqlite3.connect(f"file:{self.db}?mode=ro", uri=True)
+            self._cutoff = {}
+            for setup, pid, req, resp in con.execute(
+                    """SELECT a.setup, a.position_id, e.request, e.response FROM answers a
+                       JOIN answer_exchanges e ON e.answer_id = a.id WHERE a.repeat = 1"""):
+                if not resp or LETTER_READOUT.search(req or ""):
+                    continue
+                if CUT_MARK.search(resp):
+                    self._cutoff.setdefault(setup, set()).add(pid)
+        return self._cutoff
 
     def answered(self, setup, pairs):
         a = self.answers.get(setup, {})
@@ -143,9 +184,11 @@ class Data:
         return None, False, w
 
     def vectors(self, setup, pairs, rule="random"):
-        """Per pair: nack loss, std loss (×500), mask (both valid, for rule 'drop'), invalid counts."""
+        """Per pair: nack loss, std loss (×500), mask (both valid, for rule 'drop'; no answer cut off by the output
+        limit, for rule 'cutoff'), invalid counts."""
         nk, st, ok = [], [], []
         bad = {"nackgammon": 0, "standard": 0}
+        cut = self.cutoff().get(setup, set()) if rule == "cutoff" else set()
         for p in pairs:
             vals = []
             good = True
@@ -159,7 +202,7 @@ class Data:
                 vals.append(500 * loss)
             nk.append(vals[0])
             st.append(vals[1])
-            ok.append(good or rule != "drop")
+            ok.append((good or rule != "drop") and not (p["nackgammon"] in cut or p["standard"] in cut))
         return np.array(nk), np.array(st), np.array(ok, dtype=float), bad
 
 
@@ -349,11 +392,12 @@ def drops_matrix(d, setups, pairs, look, rule="random", loss_fn=None):
     return res
 
 
-def primary(d, res, level=1 - 0.05 / M):
+def primary(d, res, level=1 - 0.05 / M, groups=None):
+    groups = GROUPS if groups is None else groups
     out = []
     for kind, a, b in PRIMARY:
         def side(x):
-            names = [s for s in (GROUPS[x] if kind == "group" else [x]) if s in res]
+            names = [s for s in (groups[x] if kind == "group" else [x]) if s in res]
             if not names:
                 return None
             return {"members": names, "standard_pr": r2(np.mean([res[s][0] for s in names])),
@@ -463,15 +507,17 @@ def engine_check(d, setups, rollout_db):
     per = {s: {"2ply": {"standard_pr": r2(two[s][0]), "nackgammon_pr": r2(two[s][1]), "drop": r2(two[s][1] - two[s][0])},
                "rollout": {"standard_pr": r2(rol[s][0]), "nackgammon_pr": r2(rol[s][1]), "drop": r2(rol[s][1] - rol[s][0])}}
            for s in setups + ["Random"]}
-    p2, pr = primary(d, two), primary(d, rol)
-    comps = []
-    for a, b in zip(p2, pr):
-        if a.get("missing") or b.get("missing"):
-            continue
-        comps.append({"comparison": a["comparison"], "2ply": a["diff"], "rollout": b["diff"],
-                      "2ply_ci_99": a["ci_99"], "rollout_ci_99": b["ci_99"],
-                      "direction_changed": bool(np.sign(a["diff"]) != np.sign(b["diff"]))})
-    return {"pairs": len(pairs), "counts": counts, "per_setup": per, "primary": comps,
+    comps = {}
+    for key, groups in (("primary", GROUPS), ("primary_original_members", original_members_only(GROUPS))):
+        p2, pr = primary(d, two, groups=groups), primary(d, rol, groups=groups)
+        comps[key] = []
+        for a, b in zip(p2, pr):
+            if a.get("missing") or b.get("missing"):
+                continue
+            comps[key].append({"comparison": a["comparison"], "2ply": a["diff"], "rollout": b["diff"],
+                               "2ply_ci_99": a["ci_99"], "rollout_ci_99": b["ci_99"],
+                               "direction_changed": bool(np.sign(a["diff"]) != np.sign(b["diff"]))})
+    return {"pairs": len(pairs), "counts": counts, "per_setup": per, **comps,
             "settings": "GNUbg 1.08.003 rollout: 1,296 trials per play, cubeless, variance reduction on, "
                         "quasi-random dice, no truncation, no late evaluation, chequer play 1-ply, seed 1, 8 threads, "
                         "nice 19; candidates: top 5 at 2-ply plus every play any setup chose"}
@@ -519,7 +565,8 @@ def group_of(s):
 
 def report(args):
     d = Data()
-    os.makedirs(OUT, exist_ok=True)
+    out_dir = args.out or OUT
+    os.makedirs(out_dir, exist_ok=True)
     fl = first_look(d)
     setups = [s for s in d.setups if s in fl]
     res = {}
@@ -539,9 +586,21 @@ def report(args):
             r["extension_incomplete"] = f"{n} of 600 reserve positions answered"
         r["label"] = label(r["final_look"]["drop_975"])
         r["sensitivity_first"] = {}
-        for rule in ("worst", "drop"):
+        for rule in ("worst", "drop", "cutoff"):
             x, *_ = setup_look(d, s, d.main, "first", rule)
             r["sensitivity_first"][rule] = {k: x[k] for k in ("pairs", "standard_pr", "nackgammon_pr", "drop", "drop_975")}
+        if r["extended"]:
+            x, *_ = setup_look(d, s, d.pairs, "final", "cutoff")
+            r["sensitivity_final_cutoff"] = {k: x[k] for k in ("pairs", "standard_pr", "nackgammon_pr", "drop",
+                                                               "drop_975")}
+        if s != "Random":
+            # §10.14(h): answers cut off by the output limit (own column), and answers longer than 32,768 output
+            # tokens (possible only where no limit was sent; such a run stands as run).
+            cut = d.cutoff().get(s, set())
+            a = d.answers.get(s, {})
+            r["cut_off"] = {look: {side: sum(1 for p in prs if p[side] in cut) for side in ("nackgammon", "standard")}
+                            for look, prs in (("main", d.main), ("all", d.pairs))}
+            r["output_over_32768"] = sum(1 for x in a.values() if (x["output_tokens"] or 0) > OUTPUT_LIMIT)
         r["phases"] = phase_table(d, s)
         r["tags"] = tag_table(d, s)
         r["risk_main"] = risk_table(d, s, d.main, "first")
@@ -561,8 +620,15 @@ def report(args):
                          "original league.",
            "first_look": fl, "setups": res,
            "primary": {rule: primary(d, drops_matrix(d, setups + ["Random"], d.main, "first", rule))
-                       for rule in ("random", "worst", "drop")},
+                       for rule in ("random", "worst", "drop", "cutoff")},
+           "primary_original_members": {
+               rule: primary(d, drops_matrix(d, setups + ["Random"], d.main, "first", rule),
+                             groups=original_members_only(GROUPS))
+               for rule in ("random", "worst", "drop", "cutoff")},
            "groups": {g: [s for s in names if s in setups] for g, names in GROUPS.items()},
+           "groups_original_members": {g: [s for s in names if s in setups]
+                                       for g, names in original_members_only(GROUPS).items()},
+           "exploratory": {s: why for s, why in EXPLORATORY.items() if s in setups},
            "kept_advantage": kept_advantage(d, mat, setups),
            "spearman": spearman(d, mat, [s for s in setups if s not in YARDSTICKS])}
     ext = [s for s in setups if res[s]["extended"]]
@@ -572,8 +638,8 @@ def report(args):
     if args.rollouts:
         out["engine_check"] = engine_check(d, setups, args.rollouts)
     rows = [(s, mat[s][0], mat[s][1], group_of(s)) for s in setups + ["Random"]]
-    svg_chart(rows, os.path.join(OUT, "standard-vs-nackgammon.svg"))
-    with open(os.path.join(OUT, "results.json"), "w") as f:
+    svg_chart(rows, os.path.join(out_dir, "standard-vs-nackgammon.svg"))
+    with open(os.path.join(out_dir, "results.json"), "w") as f:
         json.dump(out, f, indent=1, ensure_ascii=False, default=lambda o: o.item() if hasattr(o, "item") else str(o))
     print(json.dumps({"first_look": {s: {k: fl[s][k] for k in ("standard_pr", "nackgammon_pr", "drop", "drop_975",
                                                                   "label_first", "extend", "invalid")} for s in fl}},
@@ -623,6 +689,7 @@ def main():
     elif sys.argv[1:2] == ["report"]:
         p = argparse.ArgumentParser()
         p.add_argument("--rollouts")
+        p.add_argument("--out", help="output directory (default positions/nack-paired/results)")
         report(p.parse_args(sys.argv[2:]))
     else:
         print(__doc__)

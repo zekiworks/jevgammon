@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="640" font-family="sans-serif" font-size="10">
+<rect width="640" height="640" fill="white"/>
+<line x1="60.0" y1="580.0" x2="580.0" y2="60.0" stroke="#bbb" stroke-dasharray="4"/>
+<line x1="60.0" y1="580.0" x2="580.0" y2="580.0" stroke="black"/>
+<line x1="60.0" y1="580.0" x2="60.0" y2="60.0" stroke="black"/>
+<text x="320.0" y="620" text-anchor="middle">Standard error rate (PR), main 200 pairs</text>
+<text x="18" y="320.0" transform="rotate(-90 18 320.0)" text-anchor="middle">Nackgammon error rate (PR)</text>
+<text x="60.0" y="594.0" text-anchor="middle">0</text>
+<text x="54.0" y="583.0" text-anchor="end">0</text>
+<text x="116.630569342201" y="594.0" text-anchor="middle">10</text>
+<text x="54.0" y="526.3694306577991" text-anchor="end">10</text>
+<text x="173.261138684402" y="594.0" text-anchor="middle">20</text>
+<text x="54.0" y="469.738861315598" text-anchor="end">20</text>
+<text x="229.891708026603" y="594.0" text-anchor="middle">30</text>
+<text x="54.0" y="413.108291973397" text-anchor="end">30</text>
+<text x="286.522277368804" y="594.0" text-anchor="middle">40</text>
+<text x="54.0" y="356.477722631196" text-anchor="end">40</text>
+<text x="343.152846711005" y="594.0" text-anchor="middle">50</text>
+<text x="54.0" y="299.847153288995" text-anchor="end">50</text>
+<text x="399.783416053206" y="594.0" text-anchor="middle">60</text>
+<text x="54.0" y="243.216583946794" text-anchor="end">60</text>
+<text x="456.413985395407" y="594.0" text-anchor="middle">70</text>
+<text x="54.0" y="186.586014604593" text-anchor="end">70</text>
+<text x="513.044554737608" y="594.0" text-anchor="middle">80</text>
+<text x="54.0" y="129.955445262392" text-anchor="end">80</text>
+<text x="569.6751240798089" y="594.0" text-anchor="middle">90</text>
+<text x="54.0" y="73.324875920191" text-anchor="end">90</text>
+<rect x="212.82716135122396" y="439.34026202243285" width="8" height="8" fill="#000"/>
+<text x="222.82716135122396" y="439.34026202243285">GNUbg weak</text>
+<circle cx="228.25138691576865" cy="418.7457902548865" r="4" fill="#1f77b4"/>
+<text x="234.25138691576865" y="414.7457902548865">Celeris-1 Decision</text>
+<circle cx="240.71932749024015" cy="412.01721875888194" r="4" fill="#1f77b4"/>
+<text x="246.71932749024015" y="408.01721875888194">SubQ Snap Preview</text>
+<circle cx="237.4037684000195" cy="441.3939399479275" r="4" fill="#1f77b4"/>
+<text x="243.4037684000195" y="437.3939399479275">Cygnet (Gemma 4 12B)</text>
+<circle cx="256.38026474810533" cy="450.86102007367344" r="4" fill="#1f77b4"/>
+<text x="262.38026474810533" y="446.86102007367344">Decider v1.2 27B</text>
+<circle cx="188.75565848861027" cy="438.90737031137127" r="4" fill="#1f77b4"/>
+<text x="194.75565848861027" y="434.90737031137127">Fastino GLiDE v1.2 (local)</text>
+<circle cx="195.43093466206756" cy="422.00609457675534" r="4" fill="#2ca02c"/>
+<text x="201.43093466206756" y="418.00609457675534">DeepSeek V4.1 Flash (off)</text>
+<circle cx="210.2653613086675" cy="443.1493991743793" r="4" fill="#1f77b4"/>
+<text x="216.2653613086675" y="439.1493991743793">Jev 1.13.0</text>
+<circle cx="220.11784763132874" cy="386.8235633162635" r="4" fill="#1f77b4"/>
+<text x="226.11784763132874" y="382.8235633162635">GPT-6 Luna</text>
+<circle cx="232.2862955219602" cy="417.82190987032095" r="4" fill="#1f77b4"/>
+<text x="238.2862955219602" y="413.82190987032095">Decider v1.1 27B</text>
+<circle cx="276.34283506740763" cy="367.33702049820243" r="4" fill="#2ca02c"/>
+<text x="282.34283506740763" y="363.33702049820243">LFM2.5-24B-A2B (on)</text>
+<circle cx="219.31474151161783" cy="418.97302352248175" r="4" fill="#2ca02c"/>
+<text x="225.31474151161783" y="414.97302352248175">Qwen3.8-27B (off)</text>
+<circle cx="245.3851704726747" cy="418.84576334011916" r="4" fill="#1f77b4"/>
+<text x="251.3851704726747" y="414.84576334011916">Mercury Decide</text>
+<circle cx="254.40248268262698" cy="390.66129572651744" r="4" fill="#1f77b4"/>
+<text x="260.402482682627" y="386.66129572651744">Winnow-12B</text>
+<circle cx="347.41881718324805" cy="274.2896077117444" r="4" fill="#2ca02c"/>
+<text x="353.41881718324805" y="270.2896077117444">LFM2.5-24B-A2B (off)</text>
+<circle cx="354.94540926918705" cy="348.01767331164206" r="4" fill="#1f77b4"/>
+<text x="360.94540926918705" y="344.01767331164206">Open-Jev 27B v1.1</text>
+<circle cx="285.2001792859431" cy="337.2827081246834" r="4" fill="#1f77b4"/>
+<text x="291.2001792859431" y="333.2827081246834">Decider Flash v1.2</text>
+<circle cx="150.16550751760323" cy="513.1263758170728" r="4" fill="#2ca02c"/>
+<text x="156.16550751760323" y="509.1263758170728">Gemini 3.8 Flash (low)</text>
+<circle cx="139.07031779705977" cy="497.8852114271449" r="4" fill="#2ca02c"/>
+<text x="145.07031779705977" y="493.8852114271449">Claude Sonnet 5.5 (low)</text>
+<circle cx="123.16297390031369" cy="523.9619288421792" r="4" fill="#2ca02c"/>
+<text x="129.1629739003137" y="519.9619288421792">GPT-6.1 Sol (low)</text>
+<circle cx="114.7269179552721" cy="538.6854198021482" r="4" fill="#d62728"/>
+<text x="120.7269179552721" y="534.6854198021482">GPT-6 Astra (on)</text>
+<circle cx="115.96913908645433" cy="532.2543389291864" r="4" fill="#2ca02c"/>
+<text x="121.96913908645433" y="528.2543389291864">GPT-6.1 Sol (high)</text>
+<circle cx="163.90442421701786" cy="504.2361060732827" r="4" fill="#2ca02c"/>
+<text x="169.90442421701786" y="500.2361060732827">Gemma 4 31B (on)</text>
+<circle cx="136.552676345702" cy="498.4260091867257" r="4" fill="#9467bd"/>
+<text x="142.552676345702" y="494.4260091867257">GPT-6.1 Terra</text>
+<circle cx="111.68033752637112" cy="526.1557174452857" r="4" fill="#d62728"/>
+<text x="117.68033752637112" y="522.1557174452857">Claude Fable 5.1 (on)</text>
+<circle cx="146.08590765690514" cy="497.7033408177995" r="4" fill="#d62728"/>
+<text x="152.08590765690514" y="493.7033408177995">Grok 4.7 (on)</text>
+<circle cx="197.34481027180775" cy="419.9214256708864" r="4" fill="#1f77b4"/>
+<text x="203.34481027180775" y="415.9214256708864">Liquid d1-ultra</text>
+<circle cx="189.85426034338727" cy="447.61160578113606" r="4" fill="#1f77b4"/>
+<text x="195.85426034338727" y="443.61160578113606">Fastino GLiDE</text>
+<circle cx="138.11988278692257" cy="491.0326210198093" r="4" fill="#9467bd"/>
+<text x="144.11988278692257" y="487.0326210198093">Gemini 4 Argon (off)</text>
+<rect x="551.2380952380952" y="106.57049542664237" width="8" height="8" fill="#000"/>
+<text x="561.2380952380952" y="106.57049542664237">Random</text>
+<circle cx="470" cy="60" r="4" fill="#1f77b4"/><text x="480" y="63">decision models</text>
+<circle cx="470" cy="74" r="4" fill="#2ca02c"/><text x="480" y="77">workhorses</text>
+<circle cx="470" cy="88" r="4" fill="#d62728"/><text x="480" y="91">frontier</text>
+<circle cx="470" cy="102" r="4" fill="#9467bd"/><text x="480" y="105">no group (exploratory)</text>
+<circle cx="470" cy="116" r="4" fill="#000"/><text x="480" y="119">yardstick</text>
+</svg>

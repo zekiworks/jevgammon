@@ -190,3 +190,103 @@ Spearman ρ = 0.87 [+0.7, +0.9] over 23 model setups. Largest rank changes (1 = 
 - Scorer `tools/v3/nack_paired_score.py`; results `positions/nack-paired/results/results.json` + `standard-vs-nackgammon.svg`.
 - Configs `leagues/nack-paired.json`, `leagues/nack-paired-d.json`, `leagues/smoke-terra.json`; rollouts `smoke/nack-engine-check.db`.
 - Release bundle (local, not published): `release/nack-paired/`.
+
+
+## Update 2026-10-28: Cup-roster additions (§10.14(g)) and Argon (low) (§10.14(h))
+
+Written 2026-10-28 by the run's agent. **Not published:** no site push (release candidate `d125adb` is held by Can; a new release goes to Zeki as a new candidate). The earlier text above is unchanged. Results file: `positions/nack-paired/results-2026-10-28/results.json` (sha256 `1c8af11dce2b2e18…`), built by `tools/v3/nack_paired_score.py report --rollouts smoke/nack-engine-check-g.db --out positions/nack-paired/results-2026-10-28`. The frozen 2026-10-27 results (`positions/nack-paired/results/`) are untouched.
+
+**Timing (stated wherever these results appear):** the additions were made after this test's results had been computed and read. They follow the Cup roster (§10.14(b), (g)), not the results. Method notes committed before the first call of each new setup: §10.14(g) `1acbdae`; §10.14(h) `cbb9c87` (Argon (on) dropped, Argon (low) exploratory, output-limit rule) and `97f782a` ("past 32,768, no limit sent" flag).
+
+**Display names:** after the relabel, the database setups "Grok 4.7 (on)" and "Gemini 4 Argon (off)" are displayed as Grok 4.7 (high) and Gemini 4 Argon (low). Both names are used below.
+
+### Runs
+
+| Setup | Group | Route | Run (UTC, 2026-10-28) | Records | No answer | Cut off at the limit | Past 32,768, no limit sent | Recorded cost, all 1,000 |
+|---|---|---|---|---|---|---|---|---|
+| Claude Fable 5.1 (on) | frontier | Claude subscription | 15:33–16:20 | 1,000 | 0 | 0 | 0 | $73.67 (API-equivalent, not billed) |
+| Grok 4.7 (high) | frontier | xAI subscription | 15:33–20:50 | 1,000 | 34 | 0 | 17 | $63.44 (API-equivalent, not billed) |
+| Liquid d1-ultra | decision models | Liquid API | 15:33–15:35 | 1,000 | 0 | 0 | 0 | $0.11 (billed) |
+| Fastino GLiDE | decision models | Fastino API (glide_v2) | 18:19–18:21 (after a new key; the first start at 15:33 got 401 and stored nothing) | 1,000 | 0 | 0 | 0 | $0.00 (billed) |
+| Gemini 4 Argon (low) | no group (exploratory) | Antigravity subscription | 21:08–21:23 | 1,000 | 0 | 0 | 0 | $5.91 (API-equivalent, not billed) |
+
+Grok 4.7 (high)'s 34 records without an answer all hit the 600 s time limit: 15 main, 19 reserve. They score the position's Random error under the frozen rule, with both sensitivity checks below. Its 17 answers past 32,768 output tokens come from a run that sent no limit and started before the rule. They are flagged and keep their scores. Gemini 4 Argon (on) was dropped after its smoke test: 7 of 50 answers were cut off at 32,768 tokens (`mailbox/Nackgammon - Argon (on) smoke 2026-10-28.md`). None of its paired positions was asked.
+
+### Per setup: first look, extension, final look (97.5% intervals)
+
+| Setup | Group | First look: std / Nack / drop [97.5%] | Extended | Final (500 pairs): std / Nack / drop [97.5%] | Label | Sensitivity (main 200): worst / pair dropped / cut-off left out |
+|---|---|---|---|---|---|---|
+| Claude Fable 5.1 (on) | frontier | 9.13 / 9.51 / +0.38 [-4.64, +5.07] | yes | 9.64 / 10.8 / +1.16 [-2.17, +4.40] | **kept** | +0.38 [-4.64, +5.07] / +0.38 [-4.64, +5.07] (200 pairs) / +0.38 [-4.64, +5.07] |
+| Grok 4.7 (high) | frontier | 15.2 / 14.53 / -0.67 [-6.58, +5.07] | yes | 15.68 / 16.53 / +0.85 [-3.74, +5.35] | **unclear** | -0.46 [-6.52, +5.59] / -0.84 [-7.17, +5.33] (186 pairs) / -0.67 [-6.58, +5.07] |
+| Liquid d1-ultra | decision models | 24.25 / 28.27 / +4.01 [-11.37, +17.17] | yes | 25.3 / 31.47 / +6.17 [-2.06, +13.95] | **unclear** | +4.01 [-11.37, +17.17] / +4.01 [-11.37, +17.17] (200 pairs) / +4.01 [-11.37, +17.17] |
+| Fastino GLiDE | decision models | 22.93 / 23.38 / +0.45 [-8.03, +8.77] | yes | 25.73 / 28.8 / +3.07 [-3.84, +9.81] | **unclear** | +0.45 [-8.03, +8.77] / +0.45 [-8.03, +8.77] (200 pairs) / +0.45 [-8.03, +8.77] |
+| Gemini 4 Argon (low) | no group (exploratory) | 13.79 / 15.71 / +1.92 [-4.33, +8.42] | yes | 14.71 / 17.42 / +2.71 [-2.06, +7.62] | **unclear** | +1.92 [-4.33, +8.42] / +1.92 [-4.33, +8.42] (200 pairs) / +1.92 [-4.33, +8.42] |
+
+**Claude Fable 5.1 (on) is the first setup in this test labelled "kept".** Its final 97.5% interval [−2.17, +4.40] lies within ±5 PR. Every other setup, old and new, stays "unclear". For every earlier setup, the per-setup first and final looks are identical to the frozen 2026-10-27 file: the bootstrap indices depend only on the look, and the check found 0 changes.
+
+### Primary comparisons (main 200 pairs, M = 5, 99% intervals)
+
+(ii), with the §10.14(g) additions, is the **primary result** per §10.14(b). (i), with the original members only (the 22 setups of §10.14(d)), reproduces the frozen 2026-10-27 primary results exactly. Argon (low) is in no group. Scope: these results hold for these rosters only; each group is the setups in the run from that original league. Frontier now has 3 setups (GPT-6 Astra (on), Claude Fable 5.1 (on), Grok 4.7 (high)) instead of 1. Decision models now has 14 (+ Liquid d1-ultra, Fastino GLiDE).
+
+| Comparison | (i) original members: diff [99%] | (ii) with additions (primary): diff [99%] | (ii) A drop / B drop | (ii) worst-play rule | (ii) pairs dropped | (ii) cut-off pairs left out |
+|---|---|---|---|---|---|---|
+| decision models − workhorses | -2.14 [-10.07, +4.88] | **-1.44 [-8.85, +4.96]** | -1.93 / -0.49 | -0.73 [-8.24, +5.88] | -1.77 [-9.22, +4.92] | -1.44 [-8.85, +4.96] |
+| decision models − frontier | -0.26 [-14.64, +12.04] | **-1.04 [-14.19, +10.26]** | -1.93 / -0.89 | -1.12 [-14.14, +10.21] | -0.99 [-14.18, +10.32] | -1.04 [-14.19, +10.26] |
+| workhorses − frontier | +1.88 [-5.73, +9.33] | **+0.40 [-6.68, +6.96]** | -0.49 / -0.89 | -0.39 [-7.62, +6.32] | +0.78 [-6.32, +7.42] | +0.40 [-6.68, +6.96] |
+| LFM2.5-24B-A2B (on) − LFM2.5-24B-A2B (off) | -3.88 [-26.98, +21.76] | **-3.88 [-26.98, +21.76]** | -0.65 / +3.23 | -10.33 [-38.92, +19.74] | -0.91 [-24.13, +25.20] | -3.88 [-26.98, +21.76] |
+| GPT-6.1 Sol (high) − GPT-6.1 Sol (low) | -0.19 [-3.00, +2.63] | **-0.19 [-3.00, +2.63]** | -1.45 / -1.26 | -0.19 [-3.00, +2.63] | -0.19 [-3.00, +2.63] | -0.19 [-3.00, +2.63] |
+
+**No primary interval excludes 0, either way or under any rule.** The effort pairs (comparisons 4 and 5) are unchanged by the additions.
+
+### Secondary (labelled secondary)
+
+**Kept advantage K** (95% intervals; none unstable):
+
+| Setup | K, main 200 | K, all 500 |
+|---|---|---|
+| Claude Fable 5.1 (on) | 0.94 [+0.80, +1.09] | 0.94 [+0.85, +1.03] |
+| Grok 4.7 (high) | 0.95 [+0.79, +1.12] | 0.93 [+0.83, +1.05] |
+| Liquid d1-ultra | 0.86 [+0.71, +1.05] | 0.83 [+0.74, +0.94] |
+| Fastino GLiDE | 0.92 [+0.75, +1.13] | 0.89 [+0.78, +1.00] |
+| Gemini 4 Argon (low) | 0.91 [+0.77, +1.07] | 0.91 [+0.81, +1.01] |
+
+**Ranking:** Spearman ρ over the 28 model setups (yardsticks left out; Argon (low) and Terra included as before) = **0.9 [+0.79, +0.92]** (95%). It was 0.87 over 23 setups. Largest rank changes: Decider v1.2 27B 24→11 (-13); GPT-6 Luna 17→24 (+7); Cygnet (Gemma 4 12B) 20→14 (-6); Fastino GLiDE v1.2 (local) 11→15 (+4); Gemini 3.8 Flash (low) 9→5 (-4).
+
+**Risk** (main 200 pairs; 66 Risk pays / 66 Safety pays per set, none thin; 95% paired intervals):
+
+| Setup | d′ std → Nack | Δd′ | c std → Nack | Δc |
+|---|---|---|---|---|
+| Claude Fable 5.1 (on) | 1.33 → 2.01 | +0.68 [+0.00, +1.47] | 0.55 → 0.78 | +0.23 [-0.11, +0.62] |
+| Grok 4.7 (high) | 0.63 → 1.47 | +0.84 [+0.16, +1.76] | 0.47 → 0.89 | +0.42 [+0.09, +0.87] |
+| Liquid d1-ultra | 0.91 → 0.52 | -0.39 [-1.15, +0.27] | 0.49 → 0.52 | +0.03 [-0.32, +0.37] |
+| Fastino GLiDE | 0.72 → 0.48 | -0.24 [-0.87, +0.38] | 0.59 → 0.71 | +0.12 [-0.19, +0.45] |
+| Gemini 4 Argon (low) | 1.17 → 1.26 | +0.09 [-0.48, +0.71] | 0.36 → 0.67 | +0.31 [+0.02, +0.61] |
+
+**By phase** (descriptive, main 200, 95%): per setup in `results.json` (`setups.<name>.phases`).
+
+### Engine check (40 frozen pairs)
+
+The new setups' chosen plays that had no rollout yet (6 plays on 5 positions) were rolled out with the §10.12 settings (GNUbg 1.08.003, 1,296 trials, cubeless, variance reduction, quasi-random dice, 1-ply chequer play, seed 1, 8 threads, nice 19). They were added to a copy of the stored rollouts: `smoke/nack-engine-check-g.db`, 442 plays. The 436 earlier rollouts are unchanged. These 6 plays were rolled out alone, not alongside the other candidates of their positions. Adjusted 2-ply values used: 441. Adding the 6 new rollouts changes each position's mean (rollout − 2-ply) shift, which feeds the imputed values. That moves one saved rollout figure in (i): LFM2.5-24B-A2B (on) − (off), −15.61 → −15.63.
+
+| Comparison | (i) 2-ply → rollout | (ii) 2-ply → rollout | Direction changed |
+|---|---|---|---|
+| decision models − workhorses | +6.36 → +6.17 | +5.57 → +5.35 | no |
+| decision models − frontier | +16.49 → +16.11 | +15.03 → +14.90 | no |
+| workhorses − frontier | +10.13 → +9.94 | +9.46 → +9.55 | no |
+| LFM2.5-24B-A2B (on) − LFM2.5-24B-A2B (off) | -14.59 → -15.63 | -14.59 → -15.63 | no |
+| GPT-6.1 Sol (high) − GPT-6.1 Sol (low) | +1.76 → +2.73 | +1.76 → +2.73 | no |
+
+**No comparison changes direction, either way.**
+
+### Cost and time of the new runs (all 1,000 recorded positions)
+
+| Setup | Recorded cost / decision | Kind | Median request s |
+|---|---|---|---|
+| Claude Fable 5.1 (on) | $0.07367 | API-equivalent (subscription, not billed) | 8.9825 |
+| Grok 4.7 (high) | $0.06344 | API-equivalent (subscription, not billed) | 94.778 |
+| Liquid d1-ultra | $0.00011 | billed | 0.22 |
+| Fastino GLiDE | $0.00000 | billed | 0.397 |
+| Gemini 4 Argon (low) | $0.00591 | API-equivalent (subscription, not billed) | 3.1865 |
+
+OpenRouter: $0 for these runs. GPU: none.
+

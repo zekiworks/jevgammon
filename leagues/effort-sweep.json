@@ -1,0 +1,219 @@
+{
+ "note": "Reasoning effort sweep (Can's go 2026-10-28; mailbox/Reasoning sweep - plan and estimate 2026-10-28.md): the 500 frozen standard positions of the Nackgammon paired test (positions/effort-sweep/standard.jsonl = the standard rows of positions/nack-paired/{main,reserve}.jsonl), same prompt, option-order seed and frozen rules. Exploratory. Not a league: `jevgammon ask` only, answers in smoke/effort-sweep.db. One job per subscription; top-effort rows carry output limit 32,768 (cut-off answers invalid).",
+ "prompt_version": "bg-v3-std-notable",
+ "seed": 0,
+ "order_seed": 1190975713392774006,
+ "rounds": 3,
+ "clock": 0,
+ "delay": 30,
+ "max_turns": 300,
+ "players": [
+  {
+   "name": "GPT-6 Astra (low)",
+   "spec": "openai/gpt-6-astra",
+   "provider": "chatgpt-subscription",
+   "reasoning": "low",
+   "price": {
+    "input_per_mtok": 10.0,
+    "output_per_mtok": 50.0
+   },
+   "note": "Effort sweep 2026-10-28 (Can's go): GPT-6 Astra (on)'s stored settings with reasoning 'low'. Exploratory.",
+   "parallel": 4
+  },
+  {
+   "name": "GPT-6.1 Terra (low)",
+   "spec": "openai/gpt-6.1-terra",
+   "provider": "chatgpt-subscription",
+   "reasoning": "low",
+   "price": {
+    "input_per_mtok": 1.0,
+    "output_per_mtok": 5.0
+   },
+   "note": "Effort sweep 2026-10-28 (Can's go): _terra's stored settings with reasoning 'low'. Exploratory.",
+   "parallel": 4
+  },
+  {
+   "name": "GPT-6.1 Terra (high)",
+   "spec": "openai/gpt-6.1-terra",
+   "provider": "chatgpt-subscription",
+   "reasoning": "high",
+   "price": {
+    "input_per_mtok": 1.0,
+    "output_per_mtok": 5.0
+   },
+   "note": "Effort sweep 2026-10-28 (Can's go): _terra's stored settings with reasoning 'high'. Exploratory.",
+   "parallel": 4
+  },
+  {
+   "name": "GPT-6 Astra (max)",
+   "spec": "openai/gpt-6-astra",
+   "provider": "chatgpt-subscription",
+   "reasoning": "max",
+   "price": {
+    "input_per_mtok": 10.0,
+    "output_per_mtok": 50.0
+   },
+   "note": "Effort sweep 2026-10-28 (Can's go): GPT-6 Astra (on)'s stored settings with reasoning 'max'; output limit 32768. Exploratory.",
+   "parallel": 4,
+   "request": {
+    "max_output_tokens": 32768
+   }
+  },
+  {
+   "name": "GPT-6.1 Sol (max)",
+   "spec": "openai/gpt-6.1-sol",
+   "provider": "chatgpt-subscription",
+   "reasoning": "max",
+   "price": {
+    "input_per_mtok": 2.0,
+    "output_per_mtok": 10.0
+   },
+   "note": "Effort sweep 2026-10-28 (Can's go): GPT-6.1 Sol (high)'s stored settings with reasoning 'max'; output limit 32768. Exploratory.",
+   "parallel": 4,
+   "request": {
+    "max_output_tokens": 32768
+   }
+  },
+  {
+   "name": "GPT-6.1 Terra (max)",
+   "spec": "openai/gpt-6.1-terra",
+   "provider": "chatgpt-subscription",
+   "reasoning": "max",
+   "price": {
+    "input_per_mtok": 1.0,
+    "output_per_mtok": 5.0
+   },
+   "note": "Effort sweep 2026-10-28 (Can's go): _terra's stored settings with reasoning 'max'; output limit 32768. Exploratory.",
+   "parallel": 4,
+   "request": {
+    "max_output_tokens": 32768
+   }
+  },
+  {
+   "name": "Claude Fable 5.1 (low)",
+   "spec": "anthropic/claude-fable-5-1",
+   "provider": "claude-subscription",
+   "reasoning": "low",
+   "price": {
+    "input_per_mtok": 10.0,
+    "output_per_mtok": 50.0
+   },
+   "note": "Effort sweep 2026-10-28 (Can's go): Claude Fable 5.1 (on)'s stored settings with reasoning 'low'. Exploratory.",
+   "parallel": 4
+  },
+  {
+   "name": "Claude Opus 5.5 (low)",
+   "spec": "anthropic/claude-opus-5-5",
+   "provider": "claude-subscription",
+   "reasoning": "low",
+   "price": {
+    "input_per_mtok": 4.0,
+    "output_per_mtok": 20.0
+   },
+   "note": "Effort sweep 2026-10-28 (Can's go): Claude Opus 5.5 (on)'s stored settings with reasoning 'low'. Exploratory.",
+   "parallel": 4
+  },
+  {
+   "name": "Claude Opus 5.5 (high)",
+   "spec": "anthropic/claude-opus-5-5",
+   "provider": "claude-subscription",
+   "reasoning": "high",
+   "price": {
+    "input_per_mtok": 4.0,
+    "output_per_mtok": 20.0
+   },
+   "note": "Effort sweep 2026-10-28 (Can's go): Claude Opus 5.5 (on)'s stored settings with reasoning 'high'. Exploratory.",
+   "parallel": 4
+  },
+  {
+   "name": "Claude Sonnet 5.5 (high)",
+   "spec": "anthropic/claude-sonnet-5-5",
+   "provider": "claude-subscription",
+   "reasoning": "high",
+   "price": {
+    "input_per_mtok": 2.0,
+    "output_per_mtok": 10.0
+   },
+   "note": "Effort sweep 2026-10-28 (Can's go): Claude Sonnet 5.5 (low)'s stored settings with reasoning 'high'. Exploratory.",
+   "parallel": 4
+  },
+  {
+   "name": "Claude Opus 5.5 (max)",
+   "spec": "anthropic/claude-opus-5-5",
+   "provider": "claude-subscription",
+   "reasoning": "max",
+   "price": {
+    "input_per_mtok": 4.0,
+    "output_per_mtok": 20.0
+   },
+   "note": "Effort sweep 2026-10-28 (Can's go): Claude Opus 5.5 (on)'s stored settings with reasoning 'max'; output limit 32768. Exploratory.",
+   "parallel": 4,
+   "max_tokens": 32768
+  },
+  {
+   "name": "Claude Sonnet 5.5 (max)",
+   "spec": "anthropic/claude-sonnet-5-5",
+   "provider": "claude-subscription",
+   "reasoning": "max",
+   "price": {
+    "input_per_mtok": 2.0,
+    "output_per_mtok": 10.0
+   },
+   "note": "Effort sweep 2026-10-28 (Can's go): Claude Sonnet 5.5 (low)'s stored settings with reasoning 'max'; output limit 32768. Exploratory.",
+   "parallel": 4,
+   "max_tokens": 32768
+  },
+  {
+   "name": "Claude Fable 5.1 (max)",
+   "spec": "anthropic/claude-fable-5-1",
+   "provider": "claude-subscription",
+   "reasoning": "max",
+   "price": {
+    "input_per_mtok": 10.0,
+    "output_per_mtok": 50.0
+   },
+   "note": "Effort sweep 2026-10-28 (Can's go): Claude Fable 5.1 (on)'s stored settings with reasoning 'max'; output limit 32768. Exploratory.",
+   "parallel": 4,
+   "max_tokens": 32768
+  },
+  {
+   "name": "Gemini 3.8 Flash (high)",
+   "spec": "antigravity/gemini-3.8-flash",
+   "provider": "antigravity-subscription",
+   "reasoning": "high",
+   "price": {
+    "input_per_mtok": 0.75,
+    "output_per_mtok": 3.75
+   },
+   "note": "Effort sweep 2026-10-28 (Can's go): Gemini 3.8 Flash (low)'s stored settings with reasoning 'high'. Exploratory.",
+   "parallel": 4
+  },
+  {
+   "name": "Grok 4.7 (low)",
+   "spec": "xai/grok-4.7",
+   "provider": "xai-subscription",
+   "reasoning": "low",
+   "price": {
+    "input_per_mtok": 2.0,
+    "output_per_mtok": 6.0
+   },
+   "note": "Effort sweep 2026-10-28 (Can's go): Grok 4.7 (on)'s stored settings with reasoning 'low'. Exploratory.",
+   "parallel": 8
+  },
+  {
+   "name": "Grok 4.7 (xhigh)",
+   "spec": "xai/grok-4.7",
+   "provider": "xai-subscription",
+   "reasoning": "xhigh",
+   "price": {
+    "input_per_mtok": 2.0,
+    "output_per_mtok": 6.0
+   },
+   "note": "Effort sweep 2026-10-28 (Can's go): Grok 4.7 (on)'s stored settings with reasoning 'xhigh'; output limit 32768. Exploratory.",
+   "parallel": 8,
+   "request": {
+    "max_output_tokens": 32768
+   }
+  }
+ ]
+}

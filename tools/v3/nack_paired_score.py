@@ -48,7 +48,8 @@ CUT_MARK = re.compile(r'"finish_reason"\s*:\s*"length"|"stop_reason"\s*:\s*"max_
 OUTPUT_LIMIT = 32768
 
 # §10.14(g) (2026-10-28, Can): a setup added for another reason than the Cup roster is in no group (exploratory).
-EXPLORATORY = {"Gemini 4 Argon (on)": "added by Can's decision of 2026-10-28, not because of the Cup roster (§10.14(g))"}
+EXPLORATORY = {"Gemini 4 Argon (off)": "Gemini 4 Argon (low), added by Can's decision of 2026-10-28 instead of Argon (on), "
+                                       "not because of the Cup roster (§10.14(h))"}
 # §10.14(d): the 22 grouped model setups before the §10.14(g) additions (comparison (i), original members only).
 ORIGINAL_MEMBERS = {
     "Celeris-1 Decision", "SubQ Snap Preview", "Cygnet (Gemma 4 12B)", "Decider v1.2 27B", "Fastino GLiDE v1.2 (local)",

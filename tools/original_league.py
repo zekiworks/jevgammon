@@ -27,6 +27,7 @@ Rules:
 """
 
 import argparse
+import json
 import sqlite3
 import sys
 from pathlib import Path
@@ -376,11 +377,86 @@ def render_cup(c: dict) -> str:
     return "\n".join(out)
 
 
+# Nackgammon paired test (smoke/nack-paired.db): every setup answered 500 pairs (200 main + 300 reserve,
+# the extension), each with the standard and the Nackgammon prompt: 1,000 answers.
+PAIRED_ANSWERS = 1000
+# The paired prompts drop the opening table: input x 0.89 (as `mailbox/Nackgammon and Terra - cost and
+# time 2026-10-27.md`); output as measured (low) to x 1.2 (high); attempts +2% (no thinking) or +5%.
+PAIRED_INPUT = 0.89
+
+
+def paired_estimate(conn, paired: Path, names: list[str]) -> list[dict]:
+    """For each of `names`: whether it is in the paired test, else the cost and time of adding it,
+    from its own league decisions (2-25 legal plays, no group split, as the paired sets)."""
+    done = set()
+    if paired.exists():
+        pconn = sqlite3.connect(f"file:{paired}?mode=ro", uri=True)
+        done = {n for (n,) in pconn.execute("SELECT DISTINCT setup FROM answers WHERE error IS NULL")}
+        pconn.close()
+    out = []
+    for name in names:
+        row = conn.execute("SELECT provider, settings FROM players WHERE name = ?", (name,)).fetchone()
+        settings = json.loads(row["settings"])
+        stats = conn.execute(
+            """SELECT COUNT(*), AVG(t.input_tokens), AVG(t.output_tokens), AVG(t.request_ms)
+               FROM turns t JOIN games g ON g.id = t.game_id JOIN matches m ON m.id = g.match_id
+               JOIN players p ON p.id = CASE t.player WHEN 1 THEN m.player1 ELSE m.player2 END
+               WHERE p.name = ? AND m.valid = 1 AND m.stage IS NOT NULL AND t.decided_by = 'model'
+                 AND t.legal_count BETWEEN 2 AND 25 AND t.group_size IS NULL""", (name,)).fetchone()
+        times = sorted(r[0] for r in conn.execute(
+            """SELECT t.request_ms FROM turns t JOIN games g ON g.id = t.game_id JOIN matches m ON m.id = g.match_id
+               JOIN players p ON p.id = CASE t.player WHEN 1 THEN m.player1 ELSE m.player2 END
+               WHERE p.name = ? AND m.valid = 1 AND m.stage IS NOT NULL AND t.decided_by = 'model'
+                 AND t.legal_count BETWEEN 2 AND 25 AND t.group_size IS NULL AND t.request_ms IS NOT NULL""",
+            (name,)))
+        n, inp, outp, mean_ms = stats
+        thinking = (outp or 0) > 50
+        attempts = 1.05 if thinking else 1.02
+        price = settings.get("price")
+        # Unset = unlimited in the runner; timed at 1 then (an upper bound).
+        parallel = settings.get("parallel") or 1
+        shown = str(settings["parallel"]) if settings.get("parallel") else "unset, timed at 1"
+        r = dict(name=name, in_test=name in done, provider=row["provider"], decisions=n, input=inp, output=outp,
+                 parallel=parallel, shown=shown, price=price)
+        if price and inp is not None:
+            unit = lambda o: (PAIRED_INPUT * inp * price["input_per_mtok"] + o * price["output_per_mtok"]) / 1e6
+            r["usd"] = (PAIRED_ANSWERS * unit(outp), PAIRED_ANSWERS * attempts * unit(1.2 * outp))
+        if times:
+            p50 = times[len(times) // 2] / 1000
+            r["hours"] = (PAIRED_ANSWERS * p50 / parallel / 3600,
+                          PAIRED_ANSWERS * attempts * mean_ms / 1000 * 1.2 / parallel / 3600)
+        out.append(r)
+    return out
+
+
+def render_paired(rows: list[dict]) -> str:
+    out = ["## Cup teams and the Nackgammon paired test\n",
+           f"Adding a setup = {PAIRED_ANSWERS} answers (500 positions × the standard and the Nackgammon prompt, "
+           "as every setup in the test). Estimated from the setup's own league decisions with 2–25 legal plays "
+           f"(no group split): input × {PAIRED_INPUT}, output as measured (low) to × 1.2 (high), +2% attempts "
+           "(+5% when it thinks); money at the roster list price; time = answers × p50 request time ÷ parallel "
+           "(low) to attempts × mean × 1.2 ÷ parallel (high). Not run.\n",
+           "| Team | In the paired test | Route | League decisions used | Input tok | Output tok | Cost of 1,000 answers "
+           "| Time (parallel) |", "|---|---|---|---|---|---|---|---|"]
+    for r in rows:
+        if r["in_test"]:
+            out.append(f"| {r['name']} | yes | {r['provider']} | – | – | – | – | – |")
+            continue
+        usd = f"${r['usd'][0]:.2f}–{r['usd'][1]:.2f} list price" if "usd" in r else "no list price"
+        hrs = (f"{r['hours'][0] * 60:.0f}–{r['hours'][1] * 60:.0f} min" if r["hours"][1] < 1.5 else
+               f"{r['hours'][0]:.1f}–{r['hours'][1]:.1f} h") if "hours" in r else "–"
+        out.append(f"| {r['name']} | **no** | {r['provider']} | {r['decisions']} | {r['input']:.0f} | "
+                   f"{r['output']:.0f} | {usd} | {hrs} ({r['shown']}) |")
+    return "\n".join(out)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("command", choices=["tables", "cup"])
     ap.add_argument("--db", type=Path, default=ROOT / "v3.db")
     ap.add_argument("--scores", type=Path, default=lw.default_scores())
+    ap.add_argument("--paired", type=Path, default=ROOT / "smoke" / "nack-paired.db",
+                    help="the Nackgammon paired test's answers (cup: which teams are in it)")
     args = ap.parse_args()
     conn = connect(args.db)
     losses = load_losses(args.scores)
@@ -390,7 +466,10 @@ def main() -> None:
     else:
         if any(t["missing"] for t in tables):
             print("Warning: an original league is not a complete round robin; the roster is provisional.\n")
-        print(render_cup(cup(tables, conn)))
+        c = cup(tables, conn)
+        print(render_cup(c))
+        print()
+        print(render_paired(paired_estimate(conn, args.paired, [s[0] for s in c["seeds"]])))
 
 
 if __name__ == "__main__":

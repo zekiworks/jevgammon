@@ -1,0 +1,108 @@
+{
+  "note": "Gap matches, approved by Can (2026-10-27, credit 2026-10-28): DeepSeek V4.1 Flash 1017 (on)'s League 2 pairs missing from League 2's round robin (vs GPT-6.1 Sol (low), Sol (high), LFM2.5-24B-A2B (on) and (off)). Hidden league (not on the site, the dashboard or the ladder tools); only 1017 (on)'s pairs are played; League 2's rules (so League 2's dice); stored pairs are reused. Roster settings unchanged except 1017 (on)'s budget: hard cap $3.60 on the ledger smoke/deepseek-1017-on-budget.db (added to players.settings 2026-10-28; it does not change play).",
+  "prompt_version": "bg-v2",
+  "seed": 8637860750269043463,
+  "order_seed": 1190975713392774006,
+  "rounds": 3,
+  "clock": 0,
+  "delay": 30,
+  "max_turns": 300,
+  "mirror_concurrent": true,
+  "only_pairs_of": "DeepSeek V4.1 Flash 1017 (on)",
+  "hidden": true,
+  "players": [
+    {
+      "name": "DeepSeek V4.1 Flash 1017 (on)",
+      "spec": "openai-compatible/deepseek/deepseek-v4.1-flash-1017",
+      "provider": "openrouter:deepseek",
+      "base_url": "https://openrouter.ai/api/v1",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "reasoning": "low",
+      "request": {
+        "provider": {
+          "order": [
+            "deepseek"
+          ],
+          "allow_fallbacks": false,
+          "require_parameters": true
+        },
+        "usage": {
+          "include": true
+        },
+        "response_format": null
+      },
+      "top_logprobs": 5,
+      "letter_readout": "answer",
+      "price": {
+        "input_per_mtok": 0.15,
+        "output_per_mtok": 0.6
+      },
+      "note": "reasoning effort low; letter logprobs read from the answer after reasoning; DeepSeek first-party via OpenRouter (model deepseek/deepseek-v4.1-flash-1017, the 2026-10-17 snapshot; provider pinned: order [deepseek], allow_fallbacks false, require_parameters true; usage included); quantization not published; top_logprobs 5; price $0.15 / $0.60 per M tokens in/out (cache read $0.003), OpenRouter endpoint list 2026-10-24; late League 2 entry; provider trains on paid prompts; allowed by Can, 2026-10-24; DeepSeek's endpoint takes no JSON schema (structured outputs), so from 2026-10-24 20:35 UTC no response_format is sent (request.response_format null): the answer letter is read from free text, as with logprobs; none of its decisions were played before",
+      "parallel": 8,
+      "rpm": 18,
+      "budget": {
+        "ledger": "smoke/deepseek-1017-on-budget.db",
+        "cap_usd": 3.6,
+        "input_per_mtok": 0.15,
+        "cached_input_per_mtok": 0.003,
+        "output_per_mtok": 0.6
+      }
+    },
+    {
+      "name": "GPT-6.1 Sol (low)",
+      "spec": "openai/gpt-6.1-sol",
+      "provider": "chatgpt-subscription",
+      "reasoning": "low",
+      "price": {
+        "input_per_mtok": 2.0,
+        "output_per_mtok": 10.0
+      },
+      "note": "subscription login; cost is API-list-price equivalent",
+      "parallel": 4
+    },
+    {
+      "name": "GPT-6.1 Sol (high)",
+      "spec": "openai/gpt-6.1-sol",
+      "provider": "chatgpt-subscription",
+      "reasoning": "high",
+      "price": {
+        "input_per_mtok": 2.0,
+        "output_per_mtok": 10.0
+      },
+      "note": "subscription login; cost is API-list-price equivalent",
+      "parallel": 4
+    },
+    {
+      "name": "LFM2.5-24B-A2B (on)",
+      "spec": "openai-compatible/lfm2.5-24b-a2b",
+      "provider": "local-vllm",
+      "quantization": "bf16",
+      "base_url": "http://127.0.0.1:8898/v1",
+      "reasoning": "low",
+      "request": {},
+      "max_tokens": 32000,
+      "top_logprobs": 20,
+      "letter_readout": "prefill",
+      "note": "reasons on every answer (its template has no switch or effort knob; \"low\" is sent and ignored), then the letter continues a prefilled Answer:. Liquid AI's own API until its matches were voided on 2026-10-19 22:20 UTC; from 2026-10-19 22:26 UTC Liquid's bf16 checkpoint on our GPU (vLLM, tools/v3/servers/lfm25-24b.sh); (off) on the same server agreed with Liquid's API 14/20",
+      "device": "Liquid AI's API until 2026-10-19 22:20 UTC; from 22:26 UTC RTX PRO 6000 (bariton GPU 2), the whole GPU (memory share 0.90, 32 sequences); paused 2026-10-20; from 2026-10-20 20:16 UTC bariton GPU 2 again, same script and arguments; from 2026-10-20 21:10 UTC NVIDIA GB10 (DGX Spark spark-194d), same image, checkpoint and arguments except memory share 0.45 (next to Gemma 4 31B), while bariton's four GPUs serve DeepSeek V4.1 Flash; 20 stored League 2 (off) requests (bariton) replayed there: same top letter 20/20, max |dp| 0.10, median 0.05 (bariton against its own stored answers: 18/20); from 2026-10-21 01:25 UTC back on bariton GPU 2 (overnight server), same script and arguments, while DeepSeek V4.1 Flash is paused (its four GPUs freed for League 2's non-DeepSeek thinking matches); 20 stored (off) requests: same top letter 16/20, then 18/20 and 18/20 in two reruns, max |dp| 0.12 (LFM2.5 is not deterministic; bariton against its own stored answers gave 18/20 earlier); from 2026-10-21 05:00 UTC NVIDIA GB10 (DGX Spark spark-194d) again, the same server as from 2026-10-20 21:10 UTC, while DeepSeek V4.1 Flash plays its last matches on bariton; from 2026-10-22 15:37 UTC back on RTX PRO 6000 (bariton GPU 2), same image, checkpoint and arguments (memory share 0.90); 20 stored League 2 (off) requests replayed there: same top letter 17/20, max |dp| 0.15, median 0.046 (LFM2.5 is not deterministic: bariton against itself 18/20); paused 2026-10-22 16:20 UTC; from 2026-10-22 22:21 UTC bariton GPU 3, same script, image, checkpoint and arguments; from 2026-10-23 21:16 UTC (ladder round 1) bariton GPU 3, same script, image, checkpoint and arguments (LFM_GPU=3); from 2026-10-24 16:48 UTC (ladder round 2) bariton GPU 3, same script, image, checkpoint and arguments (LFM_GPU=3)",
+      "parallel": 16,
+      "max_matches": 16
+    },
+    {
+      "name": "LFM2.5-24B-A2B (off)",
+      "spec": "openai-compatible/lfm2.5-24b-a2b",
+      "provider": "local-vllm",
+      "quantization": "bf16",
+      "base_url": "http://127.0.0.1:8898/v1",
+      "request": {},
+      "max_tokens": 32000,
+      "top_logprobs": 20,
+      "letter_readout": "prefill",
+      "answer_prefix": "<think></think>Answer:",
+      "note": "no reasoning: the letter continues a prefilled <think></think>Answer:. Liquid AI's own API until its matches were voided on 2026-10-19 22:20 UTC; from 2026-10-19 22:26 UTC Liquid's bf16 checkpoint on our GPU (vLLM, tools/v3/servers/lfm25-24b.sh). 20 stored (off) requests with this prefill: same top letter as Liquid's API 14/20 (max |dp| 0.21; Liquid against itself 19/20; Liquid's FP8 checkpoint here 12/20; bf16 against FP8 here 15/20, the distributions are flat: 7 of the 20 have Liquid's top two within 0.06)",
+      "device": "Liquid AI's API until 2026-10-19 22:20 UTC; from 22:26 UTC RTX PRO 6000 (bariton GPU 2), the whole GPU (memory share 0.90, 32 sequences); paused 2026-10-20; from 2026-10-20 20:16 UTC bariton GPU 2 again, same script and arguments; from 2026-10-20 21:10 UTC NVIDIA GB10 (DGX Spark spark-194d), same image, checkpoint and arguments except memory share 0.45 (next to Gemma 4 31B), while bariton's four GPUs serve DeepSeek V4.1 Flash; 20 stored League 2 (off) requests (bariton) replayed there: same top letter 20/20, max |dp| 0.10, median 0.05 (bariton against its own stored answers: 18/20); from 2026-10-21 01:25 UTC back on bariton GPU 2 (overnight server), same script and arguments, while DeepSeek V4.1 Flash is paused (its four GPUs freed for League 2's non-DeepSeek thinking matches); 20 stored (off) requests: same top letter 16/20, then 18/20 and 18/20 in two reruns, max |dp| 0.12 (LFM2.5 is not deterministic; bariton against its own stored answers gave 18/20 earlier); from 2026-10-21 05:00 UTC NVIDIA GB10 (DGX Spark spark-194d) again, the same server as from 2026-10-20 21:10 UTC, while DeepSeek V4.1 Flash plays its last matches on bariton; from 2026-10-22 15:37 UTC back on RTX PRO 6000 (bariton GPU 2), same image, checkpoint and arguments (memory share 0.90); 20 stored League 2 (off) requests replayed there: same top letter 17/20, max |dp| 0.15, median 0.046 (LFM2.5 is not deterministic: bariton against itself 18/20); paused 2026-10-22 16:20 UTC; from 2026-10-22 22:21 UTC bariton GPU 3, same script, image, checkpoint and arguments; from 2026-10-23 21:16 UTC (ladder round 1) bariton GPU 3, same script, image, checkpoint and arguments (LFM_GPU=3); from 2026-10-24 16:48 UTC (ladder round 2) bariton GPU 3, same script, image, checkpoint and arguments (LFM_GPU=3)",
+      "parallel": 16,
+      "max_matches": 16
+    }
+  ]
+}

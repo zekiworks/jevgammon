@@ -1,5 +1,5 @@
 {
-  "note": "Nackgammon knockout (Can's brief of 2026-10-27, point 3; runner change approved 2026-10-27): the 8 Hype Cup teams of mailbox/Hype Cup roster 2026-10-27.md, listed in seed order 1-8, every game from the Nackgammon start (start_position nackgammon, prompt bg-v3-nack), otherwise the league match rules (3 rounds, two games per round with seats swapped and the same dice, both at once as in the ladder and Cup, no clock, turn limit 300, the leagues' option-order seed). The bracket follows the Hype Cup draw: QF1 seed 1 v 8, QF2 2 v 6, QF3 3 v 7, QF4 4 v 5; SF A winner QF1 v winner QF4, SF B winner QF2 v winner QF3; final. No stored result applies: 7 new matches, in knockout-nack.db only (never v3.db). Seed 6 (SubQ Snap Preview, League 1 #2 model on games won over Cygnet at equal points) awaits Can's confirmation. Player settings are the stored v3.db players.settings. Not a league to run directly (a round robin would play all 28 pairs): tools/v3/run_knockout_nack.sh plays the bracket, one two-player league per tie.",
+  "note": "Nackgammon knockout (Can's brief of 2026-10-27, point 3; runner change approved 2026-10-27; new roster: Can's go 2026-10-28): the 8 Hype Cup teams of mailbox/Hype Cup roster 2026-10-28.md (from the original-league tables), listed in seed order 1-8, every game from the Nackgammon start (start_position nackgammon, prompt bg-v3-nack), otherwise the league match rules (3 rounds, two games per round with seats swapped and the same dice, both at once as in the ladder and Cup, no clock, turn limit 300, the leagues' option-order seed). The bracket follows the Hype Cup draw: QF1 seed 1 v 8, QF2 2 v 6, QF3 3 v 7, QF4 4 v 5; SF A winner QF1 v winner QF4, SF B winner QF2 v winner QF3; final. Stored standard-backgammon results do not count: 7 new matches, in knockout-nack.db only (never v3.db). Players: stored v3.db settings unchanged. Replaces the 2026-10-27 roster (Sol (low), Astra (on), Gemini 3.8 Flash (low), Sonnet 5.5 (low), Celeris-1 Decision, SubQ Snap Preview, Sol (high), Gemma 4 31B (on)); no match of it was played.",
   "prompt_version": "bg-v3-nack",
   "start_position": "nackgammon",
   "seed": 20261027,
@@ -10,18 +10,6 @@
   "max_turns": 300,
   "mirror_concurrent": true,
   "players": [
-    {
-      "name": "GPT-6.1 Sol (low)",
-      "spec": "openai/gpt-6.1-sol",
-      "provider": "chatgpt-subscription",
-      "reasoning": "low",
-      "price": {
-        "input_per_mtok": 2.0,
-        "output_per_mtok": 10.0
-      },
-      "note": "subscription login; cost is API-list-price equivalent",
-      "parallel": 4
-    },
     {
       "name": "GPT-6 Astra (on)",
       "spec": "openai/gpt-6-astra",
@@ -35,21 +23,21 @@
       "parallel": 4
     },
     {
-      "name": "Gemini 3.8 Flash (low)",
-      "spec": "antigravity/gemini-3.8-flash",
-      "provider": "antigravity-subscription",
-      "reasoning": "low",
+      "name": "Claude Fable 5.1 (on)",
+      "spec": "anthropic/claude-fable-5-1",
+      "provider": "claude-subscription",
+      "reasoning": "high",
       "price": {
-        "input_per_mtok": 0.75,
-        "output_per_mtok": 3.75
+        "input_per_mtok": 10.0,
+        "output_per_mtok": 50.0
       },
-      "note": "Google Antigravity subscription (Google AI Ultra, OMP's login; Antigravity model id gemini-3.8-flash-low) from 2026-10-19 12:46 UTC; its first League 2 decision came then: until then it waited, not ready, for a Gemini API key the league never had. Same model (modelVersion gemini-3.8-flash), prompt, thinking level and enum-constrained letter as the gemini/ smoke setup; cost is API-list-price equivalent. Smoke check (10 positions x 2): same play as the Gemini API answers in 19 of 20",
+      "note": "claude-fable-5-1; effort high, Anthropic's default effort (adaptive thinking). Claude subscription; subscription login; cost is API-list-price equivalent",
       "parallel": 4
     },
     {
-      "name": "Claude Sonnet 5.5 (low)",
-      "spec": "anthropic/claude-sonnet-5-5",
-      "provider": "claude-subscription",
+      "name": "GPT-6.1 Sol (low)",
+      "spec": "openai/gpt-6.1-sol",
+      "provider": "chatgpt-subscription",
       "reasoning": "low",
       "price": {
         "input_per_mtok": 2.0,
@@ -57,26 +45,6 @@
       },
       "note": "subscription login; cost is API-list-price equivalent",
       "parallel": 4
-    },
-    {
-      "name": "Celeris-1 Decision",
-      "spec": "celeris/celeris-1-decision",
-      "provider": "celeris",
-      "price": {
-        "input_per_mtok": 0.04,
-        "output_per_mtok": 0.0
-      },
-      "note": "Celeris System One endpoint (inference.celeris.ai/celeris-1-decision); list price $0.04 per million input tokens, output free (docs.celeris.ai/pricing, 2026-10-10); probabilities come rounded to two decimals",
-      "parallel": 2
-    },
-    {
-      "name": "SubQ Snap Preview",
-      "spec": "subq/subq-snap-preview",
-      "provider": "subq",
-      "price": {
-        "input_per_mtok": 0.05,
-        "output_per_mtok": 0.0
-      }
     },
     {
       "name": "GPT-6.1 Sol (high)",
@@ -89,6 +57,35 @@
       },
       "note": "subscription login; cost is API-list-price equivalent",
       "parallel": 4
+    },
+    {
+      "name": "Liquid d1-ultra",
+      "spec": "liquid/d1-ultra",
+      "provider": "liquid",
+      "price": {
+        "input_per_mtok": 0.042,
+        "output_per_mtok": 0.0
+      },
+      "note": "Liquid AI decisions API, paid tier; list price $0.042 per million input tokens (liquid.ai/blog/d1-ultra, 2026-10-15)",
+      "parallel": 2
+    },
+    {
+      "name": "Fastino GLiDE",
+      "spec": "fastino",
+      "provider": "fastino",
+      "note": "Fastino's hosted System One API; key added 2026-10-20"
+    },
+    {
+      "name": "Grok 4.7 (on)",
+      "spec": "xai/grok-4.7",
+      "provider": "xai-subscription",
+      "reasoning": "high",
+      "price": {
+        "input_per_mtok": 2.0,
+        "output_per_mtok": 6.0
+      },
+      "note": "reasoning effort high, grok-4.7's default (a request without an effort reports high); 8 decisions in flight (its smoke-test mean is 212 s), so its 4 concurrent matches with both mirror games play at once. xAI subscription (SuperGrok, OMP's xai-oauth login) on api.x.ai Responses API, letter constrained by JSON schema; subscription login; cost is API-list-price equivalent",
+      "parallel": 8
     },
     {
       "name": "Gemma 4 31B (on)",

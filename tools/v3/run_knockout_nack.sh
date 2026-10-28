@@ -2,11 +2,13 @@
 # Nackgammon knockout (leagues/knockout-nack.json; Can's brief of 2026-10-27, point 3): plays the
 # Hype Cup bracket with every game from the Nackgammon start, into knockout-nack.db only (never
 # v3.db), one two-player league per tie (as the ladder's early starts play one setup's pairs in a
-# league of their own). Only after Can's go (seed 6 awaits his confirmation):
+# league of their own). Can's go for the 2026-10-28 roster (Hype Cup roster 2026-10-28):
 #   systemd-run --user --unit=knockout-nack --working-directory=/home/cbasaran/code/jevgammon \
 #     bash -c 'tools/v3/run_knockout_nack.sh >> knockout-nack.log 2>&1'
 # `--check` validates the database, the config and the binary, writes the quarter-final configs and
-# prints the bracket, without a model call or a match.
+# prints the bracket, without a model call or a match. `--only QF1,QF4` plays (or resumes) only those
+# quarter-finals and stops, so ties on a busy subscription can wait (one job per subscription at a
+# time); a later full run reads the finished ties from the database.
 # Bracket (Hype Cup draw, players in seed order in the config): QF1 1 v 8, QF2 2 v 6, QF3 3 v 7,
 # QF4 4 v 5; SF A winner QF1 v winner QF4, SF B winner QF2 v winner QF3; final. The ties of a stage
 # play at once (logs knockout-nack/<TIE>.log). Running it again continues: a finished tie is read
@@ -25,10 +27,12 @@ BIN=./target/knockout/release/jevgammon
 SCORES=knockout-nack-scores
 TIES=knockout-nack
 
+ONLY=""
 case "${1:-}" in
   "") CHECK=0 ;;
   --check) CHECK=1 ;;
-  *) echo "usage: $0 [--check] (the database is always $DB)" >&2; exit 2 ;;
+  --only) CHECK=0; ONLY=${2:?usage: $0 --only QF1,QF4} ;;
+  *) echo "usage: $0 [--check | --only QF1,QF4] (the database is always $DB)" >&2; exit 2 ;;
 esac
 
 # Bracket bookkeeping: reads knockout-nack.db read-only, writes only the tie configs.
@@ -158,6 +162,17 @@ if [ "$CHECK" = 1 ]; then
   exit 0
 fi
 
+if [ -n "$ONLY" ]; then
+  ARGS=()
+  for t in "QF1 1 8" "QF2 2 6" "QF3 3 7" "QF4 4 5"; do
+    set -- $t
+    [[ ",$ONLY," == *",$1,"* ]] && ARGS+=("$1" "${S[$2]}" "${S[$3]}")
+  done
+  [ "${#ARGS[@]}" -gt 0 ] || { echo "--only: no quarter-final in '$ONLY'" >&2; exit 2; }
+  stage "${ARGS[@]}"
+  echo "$(date -u +%FT%TZ) --only $ONLY: done"
+  exit 0
+fi
 stage QF1 "${S[1]}" "${S[8]}" QF2 "${S[2]}" "${S[6]}" QF3 "${S[3]}" "${S[7]}" QF4 "${S[4]}" "${S[5]}"
 W1=$(kn winner QF1); W2=$(kn winner QF2); W3=$(kn winner QF3); W4=$(kn winner QF4)
 stage SFA "$W1" "$W4" SFB "$W2" "$W3"

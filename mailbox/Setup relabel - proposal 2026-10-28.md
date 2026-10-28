@@ -27,13 +27,13 @@ The "Used in" column abbreviates as follows: L1/L2/L3 = original league; site = 
 
 | # | Old name → **new name** | Level in the requests (logs; request counts) | Logged reasoning tok/dec | Old slug → new slug | Used in |
 |---|---|---|---|---|---|
-| 1 | GPT-6 Astra (off) → **GPT-6 Astra (low)** | Codex `reasoning.effort: "low"` (none/minimal rejected) | 78 | gpt-6-astra-off → gpt-6-astra-low | L3; site league-3 |
+| 1 | GPT-6 Astra (off) → **GPT-6 Astra (low)** | Codex `reasoning: {"effort": "low"}` on all 2,556 requests of valid matches (none/minimal rejected). It reasoned: reasoning tokens per decision min / median / max 0 / 42 / 1,329; 531 of 1,813 decisions had 0 | 78 | gpt-6-astra-off → gpt-6-astra-low | L3; site league-3 |
 | 2 | GPT-6 Astra (on) → **GPT-6 Astra (medium)** | `"medium"` (model default) | 87 | gpt-6-astra-on → gpt-6-astra-medium | L3; site league-3; NP (grouped member, `ORIGINAL_MEMBERS`); CCB team |
-| 3 | Claude Opus 5.5 (off) → **Claude Opus 5.5 (low)** | `output_config.effort: "low"` (thinking disabled rejected) | 251 | claude-opus-5-5-off → claude-opus-5-5-low | L3; site league-3 |
+| 3 | Claude Opus 5.5 (off) → **Claude Opus 5.5 (low)** | `output_config.effort: "low"` on all 2,485 (thinking disabled rejected). Reasoning tokens 0 / 187 / 3,869; 725 of 1,896 decisions had 0 | 251 | claude-opus-5-5-off → claude-opus-5-5-low | L3; site league-3 |
 | 4 | Claude Opus 5.5 (on) → **Claude Opus 5.5 (high)** | `"high"` (default) | 631 | claude-opus-5-5-on → claude-opus-5-5-high | L3; site league-3; CCB team |
-| 5 | Claude Fable 5.1 (off) → **Claude Fable 5.1 (low)** | `"low"` (thinking disabled rejected) | 101 | claude-fable-5-1-off → claude-fable-5-1-low | L3; site **league-2** |
+| 5 | Claude Fable 5.1 (off) → **Claude Fable 5.1 (low)** | `"low"` on all 5,235 (thinking disabled rejected). Reasoning tokens 0 / 0 / 7,344; 3,602 of 3,967 decisions had 0, so 365 reasoned | 101 | claude-fable-5-1-off → claude-fable-5-1-low | L3; site **league-2** |
 | 6 | Claude Fable 5.1 (on) → **Claude Fable 5.1 (high)** | `"high"` (default) | 1,346 | claude-fable-5-1-on → claude-fable-5-1-high | L3; site league-3; NP (§10.14(g) addition, running) |
-| 7 | Gemini 4 Argon (off) → **Gemini 4 Argon (low)** | `thinkingLevel: "low"`, id `gemini-4-argon-low` | **0** (the setting text should say "spends no reasoning tokens") | gemini-4-argon-off → gemini-4-argon-low | L3; site league-3 |
+| 7 | Gemini 4 Argon (off) → **Gemini 4 Argon (low)** | `thinkingLevel: "low"` on all 5,220, model id `gemini-4-argon-low`. The API reported **no thought tokens** (0 / 0 / 0; no `thoughtsTokenCount`), but its responses carry `thoughtSignature` parts | **0 reported**. By Can's rule it is named after the effort sent. The setting text says "reported thinking 0" | gemini-4-argon-off → gemini-4-argon-low | L3; site league-3 |
 | 8 | Gemini 4 Argon (on) → **Gemini 4 Argon (high)** | `"high"`, id `gemini-4-argon-high` (2,454; smoke 50) | 6,535 | gemini-4-argon-on → gemini-4-argon-high | L3; site league-3; `leagues/smoke-argon-on.json`. NP: left the paired roster under §10.14(h) (commit d3bf2a7); `nack_paired_score.py` now lists Argon (low) as exploratory |
 | 9 | Grok 4.7 (off) → **Grok 4.7 (low)** | xAI `reasoning: {"effort": "low"}` on all 4,742 requests (none rejected, minimal served as low). It reasoned on every one: reasoning tokens per request min / median / max **48 / 1,808 / 29,272** (request/response logs, Main) | 3,400 | grok-4-7-off → grok-4-7-low | L3; site **league-2** |
 | 10 | Grok 4.7 (on) → **Grok 4.7 (high)** | `"high"` (default) | 17,081 | grok-4-7-on → grok-4-7-high | L3; site league-3; NP (§10.14(g) addition, running) |
@@ -54,14 +54,14 @@ Request-log check for rows 1–13: Astra (off) `low` 2,529; Astra (on) `medium` 
 | GPT-6.1 Sol (low) / (high) | `"low"` / `"high"` | already effort-named; NP primary comparison 5 |
 | Claude Sonnet 5.5 (low) / (high) | `"low"` / `"high"` | already effort-named; NP (low) |
 | Gemini 3.8 Flash (low) / (high) | `"low"` / `"high"` + model id suffix | already effort-named; NP (low) |
-| DeepSeek V4.1 Flash (off) | `reasoning.enabled: false` (5,637; NP 1,000), on our SGLang `thinking: false` (232); 0 reasoning tok | real off; L1 site, NP grouped member |
-| DeepSeek V4.1 Flash 1017 (off) | `reasoning.enabled: false` (3,666); 0 | real off |
-| Qwen3.8 Flash (off) | `reasoning.enabled: false` (4,982, OpenRouter → Alibaba); 0 | real off |
-| Qwen3.8-27B (off) | `enable_thinking: false` (7,008; NP 1,000); `reasoning.enabled: false` before 10-19 (1,860); 0 | real off; NP grouped member |
-| Gemma 4 31B (off) | `enable_thinking: false` (5,342); 0 | real off |
-| LFM2.5-24B-A2B (off) | no level and no switch (5,471; NP 1,000): prefilled `<think></think>Answer:`; 0 | real off; NP grouped member (comparison 4) |
-| Kimi K3.1 Pro (off) | `reasoning_effort: "none"` on all 1,933 requests. OpenRouter reported **0 reasoning tokens on every response**, with 15–16 output tokens and no reasoning text (request/response logs, Main). Probe: 0 | **keep "(off)"**, the no-reasoning label (§1); site league-3 (fallback slug) |
-| Qwen3.8 Flash Next (off) | `enable_thinking: false` (1,012) | real off (withdrawn) |
+| DeepSeek V4.1 Flash (off) | `reasoning.enabled: false` on 4,992 requests of valid matches. 232 early requests carried no `reasoning` field: they went to our SGLang server with `chat_template_kwargs.thinking: false`. 0 reasoning tokens on all 5,224 (NP: `enabled:false`, 1,000) | real off: keep "(off)"; L1 site, NP grouped member |
+| DeepSeek V4.1 Flash 1017 (off) | `reasoning.enabled: false`; 0 on all 3,666 | real off: keep |
+| Qwen3.8 Flash (off) | `reasoning.enabled: false` (OpenRouter → Alibaba); 0 on all 3,625 | real off: keep |
+| Qwen3.8-27B (off) | `enable_thinking: false` (our vLLM; before 10-19 `reasoning.enabled: false` on Cerebras); 0 on all 5,053 (NP 1,000) | real off: keep; NP grouped member |
+| Gemma 4 31B (off) | `enable_thinking: false`; 0 on all 3,305 | real off: keep |
+| LFM2.5-24B-A2B (off) | no reasoning field sent (prefilled `<think></think>Answer:`); 0 on all 4,248 (NP 1,000) | real off: keep; NP grouped member (comparison 4) |
+| Kimi K3.1 Pro (off) | `reasoning_effort: "none"` on all 1,933 requests. OpenRouter reported **0 reasoning tokens on every response**, with 15–16 output tokens and no reasoning text. Probe: 0 | **keep "(off)"**, the no-reasoning label (§1); site league-3 (fallback slug) |
+| Qwen3.8 Flash Next (off) | `enable_thinking: false` (1,012 requests), but **no valid responses**: it was withdrawn and its matches do not count | keep "(off)" as named; nothing published to verify against |
 | **Gemma 4 31B (on)** | `enable_thinking: true` only, **no level** (12,198; NP 2,000); 5,476 reasoning tok | **keep "(on)"** (template default) |
 | **Qwen3.8 Flash Next (on)** | `enable_thinking: true` only, no level (108) | **keep "(on)"** (withdrawn) |
 | **Nemotron 3.5 Bolt (off) / (on)** (smoke-part-a) | `enable_thinking` false (50) / true only, no level (100) | real off / **keep "(on)"** |

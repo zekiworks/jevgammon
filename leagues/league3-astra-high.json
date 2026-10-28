@@ -1,0 +1,58 @@
+{
+  "note": "Late entry, approved by Can (2026-10-28): GPT-6 Astra (high) plays every setup of the original League 3 table once (12 matches, GNUbg weak and GPT-6 Astra (on) included). Hidden league (not on the site, the dashboard or the ladder tools); only GPT-6 Astra (high)'s pairs are played; League 3's rules (seed, pair-v1 dice, bg-v2, option-order seed, mirror_concurrent, 3 rounds, no clock, delay 30 s, 300 turns). Opponents join by league-add as their subscription is free (never two jobs on one subscription); Kimi K3.1 Pro (off) last. Roster settings unchanged. Not eligible for the Hype Cup.",
+  "prompt_version": "bg-v2",
+  "seed": 3685413082999515901,
+  "order_seed": 1190975713392774006,
+  "rounds": 3,
+  "clock": 0,
+  "delay": 30,
+  "max_turns": 300,
+  "mirror_concurrent": true,
+  "only_pairs_of": "GPT-6 Astra (high)",
+  "hidden": true,
+  "players": [
+    {
+      "name": "GPT-6 Astra (high)",
+      "spec": "openai/gpt-6-astra",
+      "provider": "chatgpt-subscription",
+      "reasoning": "high",
+      "price": {
+        "input_per_mtok": 10,
+        "output_per_mtok": 50
+      },
+      "parallel": 4,
+      "note": "reasoning effort high (GPT-6 Astra (on) = medium, the model default); otherwise GPT-6 Astra (on)'s stored settings. ChatGPT subscription (Codex backend); subscription login; cost is API-list-price equivalent. Late entry to the original League 3 table (Can, 2026-10-28); not eligible for the Hype Cup"
+    },
+    {
+      "name": "GPT-6 Astra (off)",
+      "spec": "openai/gpt-6-astra",
+      "provider": "chatgpt-subscription",
+      "reasoning": "low",
+      "price": {
+        "input_per_mtok": 10.0,
+        "output_per_mtok": 50.0
+      },
+      "note": "reasoning effort low, the lowest gpt-6-astra accepts (none and minimal are rejected), labelled off. ChatGPT subscription (Codex backend); subscription login; cost is API-list-price equivalent",
+      "parallel": 4
+    },
+    {
+      "name": "GPT-6 Astra (on)",
+      "spec": "openai/gpt-6-astra",
+      "provider": "chatgpt-subscription",
+      "reasoning": "medium",
+      "price": {
+        "input_per_mtok": 10.0,
+        "output_per_mtok": 50.0
+      },
+      "note": "reasoning effort medium, the model's default (a request without an effort reports medium). ChatGPT subscription (Codex backend); subscription login; cost is API-list-price equivalent",
+      "parallel": 4
+    },
+    {
+      "name": "GNUbg weak",
+      "spec": "gnubg-weak",
+      "provider": "local",
+      "note": "gnubg 1.08 Beginner level (0-ply, deterministic noise 0.060)",
+      "parallel": 1
+    }
+  ]
+}

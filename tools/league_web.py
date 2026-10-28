@@ -8,9 +8,9 @@ league in progress. The page shows the latest league (or ?league=N), the history
 league in the database with what each one tested (`leagues.note`), and links to the working
 copy of the published report (`--report`, served at /report/). The table follows `src/league.rs`: 3 points for a win, 1 for
 a draw, ties broken by more games won, then fewer games lost, then the lower error rate over all of a
-setup's valid matches (the site's GNUbg scores, `--scores`); only finished matches count: the valid
-match of every pair of current participants, whatever league or rules it was played under (one result
-per pair). The fixture is derived from the participants as the runner derives it (`pair_order`,
+setup's valid matches, late-entry matches left out (the site's GNUbg scores, `--scores`); only finished
+matches count: the valid match of every pair of current participants, whatever league or rules it was
+played under (one result per pair). The fixture is derived from the participants as the runner derives it (`pair_order`,
 `new_pair`).
 
 --control SCRIPT adds a Pause / Resume button: GET /api/control runs `SCRIPT status` (one JSON
@@ -348,7 +348,8 @@ def default_scores() -> Path:
 
 
 def error_rates(conn: sqlite3.Connection, plays_dir: Path) -> dict[str, dict]:
-    """Every setup's error rate over all of its valid matches (every league, ladder round and Cup), as
+    """Every setup's error rate over all of its valid matches (every league, ladder round and Cup; late-entry
+    matches, `matches.stage = 'late-entry'`, left out: they count in no other setup's numbers), as
     `src/scores.rs` computes it for the tiebreak: 500 x mean 2-ply equity loss of its decisions with two
     or more legal plays, invalid answers left out (site rule B11), from the site's score shards
     `plays_dir/s*.db`. Per name: rate (None without a scored decision), scored, skipped, pending (not
@@ -367,7 +368,8 @@ def error_rates(conn: sqlite3.Connection, plays_dir: Path) -> dict[str, dict]:
             """SELECT t.id, t.game_id, p.name FROM turns t JOIN games g ON g.id = t.game_id
                JOIN matches m ON m.id = g.match_id
                JOIN players p ON p.id = CASE t.player WHEN 1 THEN m.player1 ELSE m.player2 END
-               WHERE m.valid = 1 AND m.stage IS NOT NULL AND t.decided_by = 'model' AND t.legal_count >= 2"""):
+               WHERE m.valid = 1 AND m.stage IS NOT NULL AND m.stage <> 'late-entry'
+                 AND t.decided_by = 'model' AND t.legal_count >= 2"""):
         r = out.setdefault(name, dict(loss=0.0, scored=0, skipped=0, pending=0, games=defaultdict(lambda: [0.0, 0])))
         if turn in loss:
             r["loss"] += loss[turn]

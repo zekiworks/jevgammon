@@ -9,9 +9,9 @@
 //! matchday. A match that fails is deferred and resumed later from its last stored turn;
 //! only the failing model backs off, the others play on. The table ranks by points, then
 //! more games won, then fewer games lost, then the lower error rate over all of a setup's
-//! valid matches (`scores`); there are no playoffs. A league can play only one setup's pairs
-//! (an early start of its matches for a coming ladder round) and be hidden from the site,
-//! the dashboard and the ladder tools (`Scope`).
+//! valid matches, late-entry matches left out (`scores`); there are no playoffs. A league can
+//! play only one setup's pairs (an early start of its matches for a coming ladder round) and
+//! be hidden from the site, the dashboard and the ladder tools (`Scope`).
 
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;

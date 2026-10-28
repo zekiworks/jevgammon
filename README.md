@@ -446,8 +446,9 @@ existed resumes with `bg-v2-history`, the prompt the runner then sent).
   same way; the round's score is stored when both games have finished.
 - **Table:** a win is 3 league points, a draw (still tied after the extra round) 1. Ties
   are broken by more games won, then fewer games lost, then the **lower error rate** over
-  all of the setup's valid matches (every league, ladder round and Cup): 500 × the mean
-  GNUbg 1.08 2-ply equity loss of its decisions with two or more legal plays, invalid
+  all of the setup's valid matches (every league, ladder round and Cup; late-entry matches,
+  `matches.stage = 'late-entry'`, left out: they count in no other setup's numbers): 500 ×
+  the mean GNUbg 1.08 2-ply equity loss of its decisions with two or more legal plays, invalid
   answers left out, as on the site (rule B11). The runner reads the site update loop's
   scores (`--scores`, default `$XDG_STATE_HOME/bg-site/plays/s*.db`, written by
   `tools/site/score.sh`; `src/scores.rs`); a setup without scored decisions ranks after

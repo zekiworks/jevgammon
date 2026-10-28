@@ -337,7 +337,17 @@ def run(v3, state):
                              " AND tbl_name != 'exchanges'").fetchall():
         db.execute(sql)
     # Views (league_match_view) after the tables they read: their names resolve to main's copies.
-    for (sql,) in db.execute("SELECT sql FROM src.sqlite_master WHERE type = 'view' ORDER BY rowid").fetchall():
+    # Late-entry matches (matches.stage 'late-entry') are in no league's view on the site: league_match_view is
+    # v3.db's view with them left out (the full one stays as league_match_view_all). They stay in the snapshot,
+    # so they are still scored (plays.league_id NULL), but count in no other setup's numbers.
+    views = db.execute("SELECT name, sql FROM src.sqlite_master WHERE type = 'view' ORDER BY rowid").fetchall()
+    for name, sql in views:
+        if name == "league_match_view":
+            head = "CREATE VIEW league_match_view AS"
+            if not sql.startswith(head):
+                raise RuntimeError(f"league_match_view: unexpected definition in {v3}: {sql[:80]!r}")
+            db.execute("CREATE VIEW league_match_view_all AS" + sql[len(head):])
+            sql = "CREATE VIEW league_match_view AS SELECT * FROM league_match_view_all WHERE stage <> 'late-entry'"
         db.execute(sql)
     engines = engine_setups(db, "main.")
     targets = {}

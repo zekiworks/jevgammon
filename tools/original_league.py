@@ -61,13 +61,14 @@ def members(conn) -> dict[int, list[str]]:
 
 
 def counted_matches(conn, names: list[str]) -> tuple[dict[frozenset, dict], list[dict]]:
-    """The finished valid matches between the setups `names`, by pair, and the unfinished ones."""
+    """The finished valid matches between the setups `names`, by pair, and the unfinished ones (late-entry
+    matches left out: they count in no other setup's numbers)."""
     wanted = set(names)
     done, running = {}, []
     for r in conn.execute(
             """SELECT m.id, m.status, m.score1, m.score2, p1.name AS a, p2.name AS b
                FROM matches m JOIN players p1 ON p1.id = m.player1 JOIN players p2 ON p2.id = m.player2
-               WHERE m.valid = 1 AND m.stage IS NOT NULL AND m.stage <> 'playoff' ORDER BY m.id"""):
+               WHERE m.valid = 1 AND m.stage IS NOT NULL AND m.stage NOT IN ('playoff', 'late-entry') ORDER BY m.id"""):
         if r["a"] not in wanted or r["b"] not in wanted:
             continue
         key = frozenset((r["a"], r["b"]))
@@ -408,12 +409,14 @@ def paired_estimate(conn, paired: Path, names: list[str]) -> list[dict]:
             """SELECT COUNT(*), AVG(t.input_tokens), AVG(t.output_tokens), AVG(t.request_ms)
                FROM turns t JOIN games g ON g.id = t.game_id JOIN matches m ON m.id = g.match_id
                JOIN players p ON p.id = CASE t.player WHEN 1 THEN m.player1 ELSE m.player2 END
-               WHERE p.name = ? AND m.valid = 1 AND m.stage IS NOT NULL AND t.decided_by = 'model'
+               WHERE p.name = ? AND m.valid = 1 AND m.stage IS NOT NULL AND m.stage <> 'late-entry'
+                 AND t.decided_by = 'model'
                  AND t.legal_count BETWEEN 2 AND 25 AND t.group_size IS NULL""", (name,)).fetchone()
         times = sorted(r[0] for r in conn.execute(
             """SELECT t.request_ms FROM turns t JOIN games g ON g.id = t.game_id JOIN matches m ON m.id = g.match_id
                JOIN players p ON p.id = CASE t.player WHEN 1 THEN m.player1 ELSE m.player2 END
-               WHERE p.name = ? AND m.valid = 1 AND m.stage IS NOT NULL AND t.decided_by = 'model'
+               WHERE p.name = ? AND m.valid = 1 AND m.stage IS NOT NULL AND m.stage <> 'late-entry'
+                 AND t.decided_by = 'model'
                  AND t.legal_count BETWEEN 2 AND 25 AND t.group_size IS NULL AND t.request_ms IS NOT NULL""",
             (name,)))
         n, inp, outp, mean_ms = stats

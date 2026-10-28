@@ -376,7 +376,8 @@ CREATE TABLE IF NOT EXISTS leagues (
     -- running | finished
     status          TEXT NOT NULL,
     -- Final ranking (JSON array of "place. name", first place first): points, games won,
-    -- fewer games lost, then the lower error rate over all of a setup's valid matches.
+    -- fewer games lost, then the lower error rate over all of a setup's valid matches
+    -- (late-entry matches left out).
     ranking         TEXT,
     -- What the league tests (`--note`) and what changed since, shown in the web history.
     note            TEXT,

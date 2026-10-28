@@ -12,9 +12,9 @@ Rules (setups move, not models; one result per pair):
   league's winner swaps with the upper league's last. Programs (GNU Backgammon, Random, Safest) never
   move: when a rule picks a program, the next setup in the table is taken.
 - Tables: points, games won, fewer games lost, then the lower error rate over all of a setup's valid
-  matches (`league_web.error_rates`, the site's GNUbg scores). A pair's valid match counts in every
-  league whatever league or rules it was played in, so a mover plays only the pairs it never played;
-  every other pair of its new league is reused (order ignored).
+  matches, late-entry matches left out (`league_web.error_rates`, the site's GNUbg scores). A pair's
+  valid match counts in every league whatever league or rules it was played in, so a mover plays only
+  the pairs it never played; every other pair of its new league is reused (order ignored).
 - No lock (Can, 2026-10-26; the earlier lock rule is gone): setups move by these rules every round,
   as often as the tables say.
 - End: the ladder ends at the first round whose moves would create no new pairing (every pair they
@@ -212,12 +212,14 @@ def compute_round(conn, scores: Path) -> dict:
 
 def concurrent_factor(conn) -> float:
     """Median wall time of a match with both games of a round at once, over the summed decision time of
-    both sides (pauses over league_web.PAUSE_GAP left out): measured on the stored valid matches."""
+    both sides (pauses over league_web.PAUSE_GAP left out): measured on the stored valid matches, late-entry
+    matches left out."""
     ratios = []
     rows = conn.execute(
         """SELECT m.id, t.created_at, t.latency_ms, t.decided_by FROM turns t JOIN games g ON g.id = t.game_id
            JOIN matches m ON m.id = g.match_id
-           WHERE m.valid = 1 AND m.stage IS NOT NULL AND m.mirror_concurrent = 1 ORDER BY m.id, t.created_at""")
+           WHERE m.valid = 1 AND m.stage IS NOT NULL AND m.stage <> 'late-entry' AND m.mirror_concurrent = 1
+           ORDER BY m.id, t.created_at""")
     by = defaultdict(list)
     for r in rows:
         by[r["id"]].append(r)
@@ -231,15 +233,16 @@ def concurrent_factor(conn) -> float:
 
 
 def setup_stats(conn) -> dict[str, dict]:
-    """Per setup over its valid matches: decisions per match (its own side), seconds per decision, and
-    the cost per decision at its configured price (NULL prices count as unknown)."""
+    """Per setup over its valid matches (late-entry matches left out): decisions per match (its own side),
+    seconds per decision, and the cost per decision at its configured price (NULL prices count as unknown)."""
     out = {}
     for r in conn.execute(
             """SELECT p.name, COUNT(DISTINCT m.id) AS matches, COUNT(*) AS decisions,
                       AVG(t.latency_ms) / 1000.0 AS seconds, SUM(t.cost_usd) AS cost, COUNT(t.cost_usd) AS priced
                FROM turns t JOIN games g ON g.id = t.game_id JOIN matches m ON m.id = g.match_id
                JOIN players p ON p.id = CASE t.player WHEN 1 THEN m.player1 ELSE m.player2 END
-               WHERE m.valid = 1 AND m.stage IS NOT NULL AND t.decided_by IN ('model', 'fallback')
+               WHERE m.valid = 1 AND m.stage IS NOT NULL AND m.stage <> 'late-entry'
+                 AND t.decided_by IN ('model', 'fallback')
                GROUP BY p.name"""):
         out[r["name"]] = dict(per_match=r["decisions"] / r["matches"], seconds=r["seconds"],
                               cost=(r["cost"] / r["priced"]) if r["priced"] else None)
@@ -412,9 +415,9 @@ def request(conn, plan: dict, db: Path) -> str:
                 "the first round whose moves would create no new pairing).", ""]
     out += ["## Tables used", "",
             "Ranking: points, then games won, then fewer games lost, then the lower error rate over all of a "
-            "setup's valid matches (every league, ladder round and Cup; GNUbg 1.08 2-ply, 500 x mean equity loss, "
-            "decisions with two or more legal plays, invalid answers left out, as on the site). Programs never "
-            "move.", ""]
+            "setup's valid matches (every league, ladder round and Cup; late-entry matches left out; GNUbg 1.08 "
+            "2-ply, 500 x mean equity loss, decisions with two or more legal plays, invalid answers left out, as "
+            "on the site). Programs never move.", ""]
     for lid in LADDER:
         rows = plan["before"][lid]["table"]
         top = [r for r in rows if not is_program(people[r["name"]])]
@@ -436,8 +439,8 @@ def request(conn, plan: dict, db: Path) -> str:
             for m in plan["history"]]
     out += ["", "## Error-rate flag", "",
             "A swap is flagged when the promoted setup's error rate is worse (higher) than the error rate of the "
-            "setup it replaces. Error rates over all valid matches, 95% intervals by resampling games (site "
-            "method, 2,000 resamples).", "",
+            "setup it replaces. Error rates over all valid matches but late-entry ones, 95% intervals by resampling "
+            "games (site method, 2,000 resamples).", "",
             "| Boundary | Promoted | Error rate | Replaced | Error rate | Flag |", "| --- | --- | --- | --- | --- | --- |"]
     for s in plan["swaps"]:
         a, b = rates[s["promoted"]]["rate"], rates[s["replaced"]]["rate"]

@@ -5,8 +5,10 @@
 //! `<state>/bg-site/plays/s{0..31}.db`, table `plays (turn_id, loss, ...)`. The error rate of a
 //! setup is the site's (brief B11): 500 × the mean equity loss of its decisions with two or
 //! more legal plays, invalid answers (`decided_by = 'fallback'`) left out, over all of its
-//! valid matches (every league, ladder round and Cup, legacy playoffs included). Decisions
-//! not scored yet are counted, so a caller can tell a complete error rate from a partial one.
+//! valid matches (every league, ladder round and Cup, legacy playoffs included; late-entry
+//! matches, `matches.stage = 'late-entry'`, left out: they count in no other setup's numbers).
+//! Decisions not scored yet are counted, so a caller can tell a complete error rate from a
+//! partial one.
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -19,7 +21,7 @@ use crate::db::Db;
 /// Error rate = `SCALE` × mean equity loss (site thresholds `equity_scale`).
 pub const SCALE: f64 = 500.0;
 
-/// One setup's error rate over all of its valid matches.
+/// One setup's error rate over all of its valid matches (late-entry matches left out).
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct ErrorRate {
     /// Sum of the equity losses of the scored decisions.
@@ -77,7 +79,7 @@ pub fn error_rates(db: &Db, dir: &Path) -> Result<HashMap<String, ErrorRate>> {
          JOIN games g ON g.id = t.game_id
          JOIN matches m ON m.id = g.match_id
          JOIN players p ON p.id = CASE t.player WHEN 1 THEN m.player1 ELSE m.player2 END
-         WHERE m.valid = 1 AND m.stage IS NOT NULL
+         WHERE m.valid = 1 AND m.stage IS NOT NULL AND m.stage <> 'late-entry'
            AND t.decided_by = 'model' AND t.legal_count >= 2",
     )?;
     let mut rates: HashMap<String, ErrorRate> = HashMap::new();

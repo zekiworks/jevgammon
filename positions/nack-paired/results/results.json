@@ -1,0 +1,9437 @@
+{
+ "groups_rule": "Groups by original league (Method §10.14, amendment of 2026-10-27). It was written after the per-setup first looks and after six full-report calls on partial data had computed group results under the earlier group definitions; one returned those results into an agent's context. Whether a person saw them is not established. Nothing was published. See §10.14(e) and its correction (f) of 2026-10-28.",
+ "frontier_note": "The frontier group currently has 1 setup (GPT-6 Astra (on)); comparisons 2 and 3 rest on it.",
+ "scope_note": "These results hold for these rosters only; each group is the setups in the run from that original league.",
+ "first_look": {
+  "GNUbg weak": {
+   "pairs": 200,
+   "standard_pr": 27.69,
+   "nackgammon_pr": 24.13,
+   "drop": -3.56,
+   "drop_975": [
+    -13.92,
+    7.29
+   ],
+   "drop_95": [
+    -12.67,
+    5.75
+   ],
+   "invalid": {
+    "nackgammon": 0,
+    "standard": 0
+   },
+   "label_first": "unclear",
+   "extend": true
+  },
+  "Celeris-1 Decision": {
+   "pairs": 200,
+   "standard_pr": 29.71,
+   "nackgammon_pr": 28.47,
+   "drop": -1.24,
+   "drop_975": [
+    -18.27,
+    14.59
+   ],
+   "drop_95": [
+    -15.85,
+    12.71
+   ],
+   "invalid": {
+    "nackgammon": 0,
+    "standard": 0
+   },
+   "label_first": "unclear",
+   "extend": true
+  },
+  "SubQ Snap Preview": {
+   "pairs": 200,
+   "standard_pr": 31.91,
+   "nackgammon_pr": 29.66,
+   "drop": -2.25,
+   "drop_975": [
+    -18.09,
+    11.88
+   ],
+   "drop_95": [
+    -15.84,
+    10.11
+   ],
+   "invalid": {
+    "nackgammon": 0,
+    "standard": 0
+   },
+   "label_first": "unclear",
+   "extend": true
+  },
+  "Cygnet (Gemma 4 12B)": {
+   "pairs": 200,
+   "standard_pr": 31.33,
+   "nackgammon_pr": 24.48,
+   "drop": -6.85,
+   "drop_975": [
+    -22.36,
+    5.43
+   ],
+   "drop_95": [
+    -19.77,
+    4.16
+   ],
+   "invalid": {
+    "nackgammon": 0,
+    "standard": 0
+   },
+   "label_first": "unclear",
+   "extend": true
+  },
+  "Decider v1.2 27B": {
+   "pairs": 200,
+   "standard_pr": 34.68,
+   "nackgammon_pr": 22.8,
+   "drop": -11.87,
+   "drop_975": [
+    -27.93,
+    1.03
+   ],
+   "drop_95": [
+    -25.58,
+    -0.28
+   ],
+   "invalid": {
+    "nackgammon": 0,
+    "standard": 0
+   },
+   "label_first": "unclear",
+   "extend": true
+  },
+  "Fastino GLiDE v1.2 (local)": {
+   "pairs": 200,
+   "standard_pr": 22.74,
+   "nackgammon_pr": 24.91,
+   "drop": 2.18,
+   "drop_975": [
+    -7.28,
+    11.93
+   ],
+   "drop_95": [
+    -6.15,
+    10.44
+   ],
+   "invalid": {
+    "nackgammon": 0,
+    "standard": 0
+   },
+   "label_first": "unclear",
+   "extend": true
+  },
+  "DeepSeek V4.1 Flash (off)": {
+   "pairs": 200,
+   "standard_pr": 23.91,
+   "nackgammon_pr": 27.9,
+   "drop": 3.98,
+   "drop_975": [
+    -11.72,
+    17.96
+   ],
+   "drop_95": [
+    -9.7,
+    16.5
+   ],
+   "invalid": {
+    "nackgammon": 0,
+    "standard": 0
+   },
+   "label_first": "unclear",
+   "extend": true
+  },
+  "Jev 1.13.0": {
+   "pairs": 200,
+   "standard_pr": 26.53,
+   "nackgammon_pr": 24.17,
+   "drop": -2.37,
+   "drop_975": [
+    -17.72,
+    9.97
+   ],
+   "drop_95": [
+    -15.32,
+    8.77
+   ],
+   "invalid": {
+    "nackgammon": 0,
+    "standard": 0
+   },
+   "label_first": "unclear",
+   "extend": true
+  },
+  "GPT-6 Luna": {
+   "pairs": 200,
+   "standard_pr": 28.27,
+   "nackgammon_pr": 34.11,
+   "drop": 5.84,
+   "drop_975": [
+    -10.57,
+    20.46
+   ],
+   "drop_95": [
+    -8.47,
+    18.85
+   ],
+   "invalid": {
+    "nackgammon": 0,
+    "standard": 0
+   },
+   "label_first": "unclear",
+   "extend": true
+  },
+  "Decider v1.1 27B": {
+   "pairs": 200,
+   "standard_pr": 30.42,
+   "nackgammon_pr": 28.64,
+   "drop": -1.78,
+   "drop_975": [
+    -17.3,
+    11.94
+   ],
+   "drop_95": [
+    -15.21,
+    10.49
+   ],
+   "invalid": {
+    "nackgammon": 0,
+    "standard": 0
+   },
+   "label_first": "unclear",
+   "extend": true
+  },
+  "LFM2.5-24B-A2B (on)": {
+   "pairs": 200,
+   "standard_pr": 38.2,
+   "nackgammon_pr": 37.55,
+   "drop": -0.65,
+   "drop_975": [
+    -15.17,
+    14.42
+   ],
+   "drop_95": [
+    -13.34,
+    12.24
+   ],
+   "invalid": {
+    "nackgammon": 16,
+    "standard": 22
+   },
+   "label_first": "unclear",
+   "extend": true
+  },
+  "Qwen3.8-27B (off)": {
+   "pairs": 200,
+   "standard_pr": 28.13,
+   "nackgammon_pr": 28.43,
+   "drop": 0.3,
+   "drop_975": [
+    -14.48,
+    12.12
+   ],
+   "drop_95": [
+    -12.64,
+    10.8
+   ],
+   "invalid": {
+    "nackgammon": 0,
+    "standard": 0
+   },
+   "label_first": "unclear",
+   "extend": true
+  },
+  "Mercury Decide": {
+   "pairs": 200,
+   "standard_pr": 32.74,
+   "nackgammon_pr": 28.46,
+   "drop": -4.28,
+   "drop_975": [
+    -20.11,
+    8.75
+   ],
+   "drop_95": [
+    -18.02,
+    7.42
+   ],
+   "invalid": {
+    "nackgammon": 0,
+    "standard": 0
+   },
+   "label_first": "unclear",
+   "extend": true
+  },
+  "Winnow-12B": {
+   "pairs": 200,
+   "standard_pr": 34.33,
+   "nackgammon_pr": 33.43,
+   "drop": -0.89,
+   "drop_975": [
+    -17.96,
+    14.97
+   ],
+   "drop_95": [
+    -15.3,
+    12.97
+   ],
+   "invalid": {
+    "nackgammon": 0,
+    "standard": 0
+   },
+   "label_first": "unclear",
+   "extend": true
+  },
+  "LFM2.5-24B-A2B (off)": {
+   "pairs": 200,
+   "standard_pr": 50.75,
+   "nackgammon_pr": 53.98,
+   "drop": 3.23,
+   "drop_975": [
+    -16.93,
+    22.07
+   ],
+   "drop_95": [
+    -14.09,
+    19.88
+   ],
+   "invalid": {
+    "nackgammon": 0,
+    "standard": 0
+   },
+   "label_first": "unclear",
+   "extend": true
+  },
+  "Open-Jev 27B v1.1": {
+   "pairs": 200,
+   "standard_pr": 52.08,
+   "nackgammon_pr": 40.96,
+   "drop": -11.12,
+   "drop_975": [
+    -29.52,
+    6.79
+   ],
+   "drop_95": [
+    -26.93,
+    4.67
+   ],
+   "invalid": {
+    "nackgammon": 0,
+    "standard": 0
+   },
+   "label_first": "unclear",
+   "extend": true
+  },
+  "Decider Flash v1.2": {
+   "pairs": 200,
+   "standard_pr": 39.77,
+   "nackgammon_pr": 42.86,
+   "drop": 3.09,
+   "drop_975": [
+    -12.09,
+    20.11
+   ],
+   "drop_95": [
+    -10.03,
+    17.8
+   ],
+   "invalid": {
+    "nackgammon": 0,
+    "standard": 0
+   },
+   "label_first": "unclear",
+   "extend": true
+  },
+  "Gemini 3.8 Flash (low)": {
+   "pairs": 200,
+   "standard_pr": 15.92,
+   "nackgammon_pr": 11.81,
+   "drop": -4.11,
+   "drop_975": [
+    -9.72,
+    1.04
+   ],
+   "drop_95": [
+    -8.93,
+    0.45
+   ],
+   "invalid": {
+    "nackgammon": 0,
+    "standard": 0
+   },
+   "label_first": "unclear",
+   "extend": true
+  },
+  "Claude Sonnet 5.5 (low)": {
+   "pairs": 200,
+   "standard_pr": 13.96,
+   "nackgammon_pr": 14.5,
+   "drop": 0.54,
+   "drop_975": [
+    -5.04,
+    6.02
+   ],
+   "drop_95": [
+    -4.39,
+    5.32
+   ],
+   "invalid": {
+    "nackgammon": 0,
+    "standard": 0
+   },
+   "label_first": "unclear",
+   "extend": true
+  },
+  "GPT-6.1 Sol (low)": {
+   "pairs": 200,
+   "standard_pr": 11.15,
+   "nackgammon_pr": 9.9,
+   "drop": -1.26,
+   "drop_975": [
+    -5.7,
+    3.31
+   ],
+   "drop_95": [
+    -5.25,
+    2.67
+   ],
+   "invalid": {
+    "nackgammon": 0,
+    "standard": 0
+   },
+   "label_first": "unclear",
+   "extend": true
+  },
+  "GPT-6 Astra (on)": {
+   "pairs": 200,
+   "standard_pr": 9.66,
+   "nackgammon_pr": 7.3,
+   "drop": -2.37,
+   "drop_975": [
+    -6.69,
+    1.77
+   ],
+   "drop_95": [
+    -6.19,
+    1.16
+   ],
+   "invalid": {
+    "nackgammon": 0,
+    "standard": 0
+   },
+   "label_first": "unclear",
+   "extend": true
+  },
+  "GPT-6.1 Sol (high)": {
+   "pairs": 200,
+   "standard_pr": 9.88,
+   "nackgammon_pr": 8.43,
+   "drop": -1.45,
+   "drop_975": [
+    -5.57,
+    2.68
+   ],
+   "drop_95": [
+    -5.14,
+    2.07
+   ],
+   "invalid": {
+    "nackgammon": 0,
+    "standard": 0
+   },
+   "label_first": "unclear",
+   "extend": true
+  },
+  "Gemma 4 31B (on)": {
+   "pairs": 200,
+   "standard_pr": 18.35,
+   "nackgammon_pr": 13.38,
+   "drop": -4.97,
+   "drop_975": [
+    -11.81,
+    1.78
+   ],
+   "drop_95": [
+    -10.91,
+    0.89
+   ],
+   "invalid": {
+    "nackgammon": 0,
+    "standard": 0
+   },
+   "label_first": "unclear",
+   "extend": true
+  },
+  "GPT-6.1 Terra": {
+   "pairs": 200,
+   "standard_pr": 13.52,
+   "nackgammon_pr": 14.4,
+   "drop": 0.89,
+   "drop_975": [
+    -5.73,
+    8.59
+   ],
+   "drop_95": [
+    -4.96,
+    7.44
+   ],
+   "invalid": {
+    "nackgammon": 0,
+    "standard": 0
+   },
+   "label_first": "unclear",
+   "extend": true
+  },
+  "Random": {
+   "pairs": 200,
+   "standard_pr": 87.45,
+   "nackgammon_pr": 82.89,
+   "drop": -4.56,
+   "drop_975": [
+    -18.04,
+    7.86
+   ],
+   "drop_95": [
+    -15.96,
+    6.15
+   ],
+   "invalid": {
+    "nackgammon": 0,
+    "standard": 0
+   },
+   "label_first": "unclear",
+   "extend": false
+  }
+ },
+ "setups": {
+  "GNUbg weak": {
+   "group": "yardstick",
+   "first_look": {
+    "pairs": 200,
+    "standard_pr": 27.69,
+    "nackgammon_pr": 24.13,
+    "drop": -3.56,
+    "drop_975": [
+     -13.92,
+     7.29
+    ],
+    "drop_95": [
+     -12.67,
+     5.75
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "label_first": "unclear",
+    "extend": true
+   },
+   "final_look": {
+    "pairs": 500,
+    "standard_pr": 25.35,
+    "nackgammon_pr": 20.78,
+    "drop": -4.57,
+    "drop_975": [
+     -10.32,
+     1.34
+    ],
+    "drop_95": [
+     -9.63,
+     0.61
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "extended": true,
+   "label": "unclear",
+   "sensitivity_first": {
+    "worst": {
+     "pairs": 200,
+     "standard_pr": 27.69,
+     "nackgammon_pr": 24.13,
+     "drop": -3.56,
+     "drop_975": [
+      -13.92,
+      7.29
+     ]
+    },
+    "drop": {
+     "pairs": 200,
+     "standard_pr": 27.69,
+     "nackgammon_pr": 24.13,
+     "drop": -3.56,
+     "drop_975": [
+      -13.92,
+      7.29
+     ]
+    }
+   },
+   "phases": {
+    "opening": {
+     "pairs": 60,
+     "standard_pr": 38.78,
+     "nackgammon_pr": 31.32,
+     "drop": -7.46,
+     "drop_95": [
+      -21.3,
+      6.5
+     ]
+    },
+    "contact": {
+     "pairs": 60,
+     "standard_pr": 39.9,
+     "nackgammon_pr": 34.06,
+     "drop": -5.85,
+     "drop_95": [
+      -32.05,
+      20.17
+     ]
+    },
+    "holding": {
+     "pairs": 30,
+     "standard_pr": 22.63,
+     "nackgammon_pr": 26.0,
+     "drop": 3.37,
+     "drop_95": [
+      -12.48,
+      21.09
+     ]
+    },
+    "race": {
+     "pairs": 25,
+     "standard_pr": 0.39,
+     "nackgammon_pr": 3.4,
+     "drop": 3.01,
+     "drop_95": [
+      -0.03,
+      7.82
+     ]
+    },
+    "bear-off": {
+     "pairs": 25,
+     "standard_pr": 5.15,
+     "nackgammon_pr": 1.53,
+     "drop": -3.61,
+     "drop_95": [
+      -10.52,
+      0.66
+     ]
+    },
+    "opening minus other phases": {
+     "diff": -5.57,
+     "ci_95": [
+      -23.29,
+      11.9
+     ]
+    }
+   },
+   "tags": {
+    "(none: bear-off)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 1.53
+     },
+     "standard": {
+      "n": 25,
+      "pr": 5.15
+     }
+    },
+    "(none: opening)": {
+     "nackgammon": {
+      "n": 60,
+      "pr": 31.32
+     },
+     "standard": {
+      "n": 60,
+      "pr": 38.78
+     }
+    },
+    "(none: race)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 3.4
+     },
+     "standard": {
+      "n": 25,
+      "pr": 0.39
+     }
+    },
+    "back game": {
+     "nackgammon": {
+      "n": 10,
+      "pr": 22.11
+     },
+     "standard": {
+      "n": 2,
+      "pr": 17.04
+     }
+    },
+    "blitz": {
+     "nackgammon": {
+      "n": 17,
+      "pr": 56.39
+     },
+     "standard": {
+      "n": 23,
+      "pr": 43.29
+     }
+    },
+    "holding": {
+     "nackgammon": {
+      "n": 30,
+      "pr": 26.0
+     },
+     "standard": {
+      "n": 30,
+      "pr": 22.63
+     }
+    },
+    "low-anchor": {
+     "nackgammon": {
+      "n": 7,
+      "pr": 37.5
+     },
+     "standard": {
+      "n": 8,
+      "pr": 32.99
+     }
+    },
+    "other": {
+     "nackgammon": {
+      "n": 11,
+      "pr": 17.63
+     },
+     "standard": {
+      "n": 10,
+      "pr": 47.08
+     }
+    },
+    "priming": {
+     "nackgammon": {
+      "n": 15,
+      "pr": 27.14
+     },
+     "standard": {
+      "n": 17,
+      "pr": 37.05
+     }
+    }
+   },
+   "risk_main": {
+    "nackgammon": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 55.0,
+     "needless": 33.0,
+     "d_prime": 0.95,
+     "caution": -0.47
+    },
+    "standard": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 49.0,
+     "needless": 31.0,
+     "d_prime": 0.71,
+     "caution": -0.28
+    },
+    "change": {
+     "d_prime": 0.24,
+     "d_prime_95": [
+      -0.37,
+      0.82
+     ],
+     "caution": -0.19,
+     "caution_95": [
+      -0.48,
+      0.09
+     ]
+    },
+    "thin": false
+   },
+   "risk_all": {
+    "nackgammon": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 139.0,
+     "needless": 72.0,
+     "d_prime": 1.16,
+     "caution": -0.42
+    },
+    "standard": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 132.0,
+     "needless": 69.0,
+     "d_prime": 1.04,
+     "caution": -0.31
+    },
+    "change": {
+     "d_prime": 0.12,
+     "d_prime_95": [
+      -0.27,
+      0.5
+     ],
+     "caution": -0.11,
+     "caution_95": [
+      -0.3,
+      0.09
+     ]
+    },
+    "thin": false
+   },
+   "cost_main": {
+    "decisions": 400,
+    "billed_usd_per_decision": 0.0,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 0.0,
+    "median_request_s": 0.01,
+    "tokens_in": 0.0,
+    "tokens_out": 0.0
+   },
+   "cost_all": {
+    "decisions": 1000,
+    "billed_usd_per_decision": 0.0,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 0.0,
+    "median_request_s": 0.01,
+    "tokens_in": 0.0,
+    "tokens_out": 0.0
+   }
+  },
+  "Celeris-1 Decision": {
+   "group": "decision models",
+   "first_look": {
+    "pairs": 200,
+    "standard_pr": 29.71,
+    "nackgammon_pr": 28.47,
+    "drop": -1.24,
+    "drop_975": [
+     -18.27,
+     14.59
+    ],
+    "drop_95": [
+     -15.85,
+     12.71
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "label_first": "unclear",
+    "extend": true
+   },
+   "final_look": {
+    "pairs": 500,
+    "standard_pr": 26.86,
+    "nackgammon_pr": 30.93,
+    "drop": 4.08,
+    "drop_975": [
+     -4.58,
+     12.64
+    ],
+    "drop_95": [
+     -3.52,
+     11.55
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "extended": true,
+   "label": "unclear",
+   "sensitivity_first": {
+    "worst": {
+     "pairs": 200,
+     "standard_pr": 29.71,
+     "nackgammon_pr": 28.47,
+     "drop": -1.24,
+     "drop_975": [
+      -18.27,
+      14.59
+     ]
+    },
+    "drop": {
+     "pairs": 200,
+     "standard_pr": 29.71,
+     "nackgammon_pr": 28.47,
+     "drop": -1.24,
+     "drop_975": [
+      -18.27,
+      14.59
+     ]
+    }
+   },
+   "phases": {
+    "opening": {
+     "pairs": 60,
+     "standard_pr": 33.69,
+     "nackgammon_pr": 24.63,
+     "drop": -9.07,
+     "drop_95": [
+      -26.13,
+      6.22
+     ]
+    },
+    "contact": {
+     "pairs": 60,
+     "standard_pr": 33.67,
+     "nackgammon_pr": 28.66,
+     "drop": -5.01,
+     "drop_95": [
+      -22.42,
+      12.21
+     ]
+    },
+    "holding": {
+     "pairs": 30,
+     "standard_pr": 51.28,
+     "nackgammon_pr": 59.76,
+     "drop": 8.48,
+     "drop_95": [
+      -74.23,
+      83.54
+     ]
+    },
+    "race": {
+     "pairs": 25,
+     "standard_pr": 7.12,
+     "nackgammon_pr": 19.44,
+     "drop": 12.32,
+     "drop_95": [
+      -7.03,
+      45.44
+     ]
+    },
+    "bear-off": {
+     "pairs": 25,
+     "standard_pr": 7.35,
+     "nackgammon_pr": 8.75,
+     "drop": 1.4,
+     "drop_95": [
+      -9.03,
+      13.58
+     ]
+    },
+    "opening minus other phases": {
+     "diff": -11.19,
+     "ci_95": [
+      -36.43,
+      14.27
+     ]
+    }
+   },
+   "tags": {
+    "(none: bear-off)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 8.75
+     },
+     "standard": {
+      "n": 25,
+      "pr": 7.35
+     }
+    },
+    "(none: opening)": {
+     "nackgammon": {
+      "n": 60,
+      "pr": 24.63
+     },
+     "standard": {
+      "n": 60,
+      "pr": 33.69
+     }
+    },
+    "(none: race)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 19.44
+     },
+     "standard": {
+      "n": 25,
+      "pr": 7.12
+     }
+    },
+    "back game": {
+     "nackgammon": {
+      "n": 10,
+      "pr": 37.21
+     },
+     "standard": {
+      "n": 2,
+      "pr": 22.94
+     }
+    },
+    "blitz": {
+     "nackgammon": {
+      "n": 17,
+      "pr": 30.6
+     },
+     "standard": {
+      "n": 23,
+      "pr": 35.99
+     }
+    },
+    "holding": {
+     "nackgammon": {
+      "n": 30,
+      "pr": 59.76
+     },
+     "standard": {
+      "n": 30,
+      "pr": 51.28
+     }
+    },
+    "low-anchor": {
+     "nackgammon": {
+      "n": 7,
+      "pr": 40.57
+     },
+     "standard": {
+      "n": 8,
+      "pr": 31.16
+     }
+    },
+    "other": {
+     "nackgammon": {
+      "n": 11,
+      "pr": 14.27
+     },
+     "standard": {
+      "n": 10,
+      "pr": 23.29
+     }
+    },
+    "priming": {
+     "nackgammon": {
+      "n": 15,
+      "pr": 25.76
+     },
+     "standard": {
+      "n": 17,
+      "pr": 39.1
+     }
+    }
+   },
+   "risk_main": {
+    "nackgammon": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 27.0,
+     "needless": 9.0,
+     "d_prime": 0.85,
+     "caution": 0.65
+    },
+    "standard": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 17.0,
+     "needless": 9.0,
+     "d_prime": 0.43,
+     "caution": 0.86
+    },
+    "change": {
+     "d_prime": 0.42,
+     "d_prime_95": [
+      -0.32,
+      1.11
+     ],
+     "caution": -0.21,
+     "caution_95": [
+      -0.56,
+      0.15
+     ]
+    },
+    "thin": false
+   },
+   "risk_all": {
+    "nackgammon": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 64.0,
+     "needless": 31.0,
+     "d_prime": 0.6,
+     "caution": 0.58
+    },
+    "standard": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 49.0,
+     "needless": 23.0,
+     "d_prime": 0.54,
+     "caution": 0.8
+    },
+    "change": {
+     "d_prime": 0.06,
+     "d_prime_95": [
+      -0.38,
+      0.46
+     ],
+     "caution": -0.22,
+     "caution_95": [
+      -0.44,
+      -0.01
+     ]
+    },
+    "thin": false
+   },
+   "cost_main": {
+    "decisions": 400,
+    "billed_usd_per_decision": 0.00011233719999999999,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 0.0449,
+    "median_request_s": 0.171,
+    "tokens_in": 2808.43,
+    "tokens_out": 0.0
+   },
+   "cost_all": {
+    "decisions": 1000,
+    "billed_usd_per_decision": 0.0001123414399999999,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 0.1123,
+    "median_request_s": 0.171,
+    "tokens_in": 2808.536,
+    "tokens_out": 0.0
+   }
+  },
+  "SubQ Snap Preview": {
+   "group": "decision models",
+   "first_look": {
+    "pairs": 200,
+    "standard_pr": 31.91,
+    "nackgammon_pr": 29.66,
+    "drop": -2.25,
+    "drop_975": [
+     -18.09,
+     11.88
+    ],
+    "drop_95": [
+     -15.84,
+     10.11
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "label_first": "unclear",
+    "extend": true
+   },
+   "final_look": {
+    "pairs": 500,
+    "standard_pr": 31.25,
+    "nackgammon_pr": 32.87,
+    "drop": 1.62,
+    "drop_975": [
+     -7.07,
+     10.07
+    ],
+    "drop_95": [
+     -5.97,
+     9.05
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "extended": true,
+   "label": "unclear",
+   "sensitivity_first": {
+    "worst": {
+     "pairs": 200,
+     "standard_pr": 31.91,
+     "nackgammon_pr": 29.66,
+     "drop": -2.25,
+     "drop_975": [
+      -18.09,
+      11.88
+     ]
+    },
+    "drop": {
+     "pairs": 200,
+     "standard_pr": 31.91,
+     "nackgammon_pr": 29.66,
+     "drop": -2.25,
+     "drop_975": [
+      -18.09,
+      11.88
+     ]
+    }
+   },
+   "phases": {
+    "opening": {
+     "pairs": 60,
+     "standard_pr": 30.16,
+     "nackgammon_pr": 37.55,
+     "drop": 7.39,
+     "drop_95": [
+      -6.51,
+      21.06
+     ]
+    },
+    "contact": {
+     "pairs": 60,
+     "standard_pr": 42.13,
+     "nackgammon_pr": 38.64,
+     "drop": -3.49,
+     "drop_95": [
+      -23.46,
+      18.42
+     ]
+    },
+    "holding": {
+     "pairs": 30,
+     "standard_pr": 60.08,
+     "nackgammon_pr": 42.23,
+     "drop": -17.85,
+     "drop_95": [
+      -94.94,
+      42.28
+     ]
+    },
+    "race": {
+     "pairs": 25,
+     "standard_pr": 5.27,
+     "nackgammon_pr": 2.75,
+     "drop": -2.51,
+     "drop_95": [
+      -8.14,
+      2.98
+     ]
+    },
+    "bear-off": {
+     "pairs": 25,
+     "standard_pr": 4.44,
+     "nackgammon_pr": 1.02,
+     "drop": -3.41,
+     "drop_95": [
+      -7.89,
+      -0.15
+     ]
+    },
+    "opening minus other phases": {
+     "diff": 13.77,
+     "ci_95": [
+      -7.21,
+      37.11
+     ]
+    }
+   },
+   "tags": {
+    "(none: bear-off)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 1.02
+     },
+     "standard": {
+      "n": 25,
+      "pr": 4.44
+     }
+    },
+    "(none: opening)": {
+     "nackgammon": {
+      "n": 60,
+      "pr": 37.55
+     },
+     "standard": {
+      "n": 60,
+      "pr": 30.16
+     }
+    },
+    "(none: race)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 2.75
+     },
+     "standard": {
+      "n": 25,
+      "pr": 5.27
+     }
+    },
+    "back game": {
+     "nackgammon": {
+      "n": 10,
+      "pr": 51.48
+     },
+     "standard": {
+      "n": 2,
+      "pr": 17.04
+     }
+    },
+    "blitz": {
+     "nackgammon": {
+      "n": 17,
+      "pr": 34.81
+     },
+     "standard": {
+      "n": 23,
+      "pr": 42.33
+     }
+    },
+    "holding": {
+     "nackgammon": {
+      "n": 30,
+      "pr": 42.23
+     },
+     "standard": {
+      "n": 30,
+      "pr": 60.08
+     }
+    },
+    "low-anchor": {
+     "nackgammon": {
+      "n": 7,
+      "pr": 48.65
+     },
+     "standard": {
+      "n": 8,
+      "pr": 48.45
+     }
+    },
+    "other": {
+     "nackgammon": {
+      "n": 11,
+      "pr": 16.02
+     },
+     "standard": {
+      "n": 10,
+      "pr": 32.21
+     }
+    },
+    "priming": {
+     "nackgammon": {
+      "n": 15,
+      "pr": 46.33
+     },
+     "standard": {
+      "n": 17,
+      "pr": 47.68
+     }
+    }
+   },
+   "risk_main": {
+    "nackgammon": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 25.0,
+     "needless": 18.0,
+     "d_prime": 0.29,
+     "caution": 0.45
+    },
+    "standard": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 31.0,
+     "needless": 17.0,
+     "d_prime": 0.56,
+     "caution": 0.36
+    },
+    "change": {
+     "d_prime": -0.27,
+     "d_prime_95": [
+      -0.95,
+      0.34
+     ],
+     "caution": 0.09,
+     "caution_95": [
+      -0.23,
+      0.42
+     ]
+    },
+    "thin": false
+   },
+   "risk_all": {
+    "nackgammon": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 67.0,
+     "needless": 45.0,
+     "d_prime": 0.36,
+     "caution": 0.42
+    },
+    "standard": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 73.0,
+     "needless": 40.0,
+     "d_prime": 0.55,
+     "caution": 0.42
+    },
+    "change": {
+     "d_prime": -0.19,
+     "d_prime_95": [
+      -0.57,
+      0.19
+     ],
+     "caution": 0.0,
+     "caution_95": [
+      -0.2,
+      0.2
+     ]
+    },
+    "thin": false
+   },
+   "cost_main": {
+    "decisions": 400,
+    "billed_usd_per_decision": 0.00013990962500000004,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 0.056,
+    "median_request_s": 0.228,
+    "tokens_in": 2798.1925,
+    "tokens_out": 0.0
+   },
+   "cost_all": {
+    "decisions": 1000,
+    "billed_usd_per_decision": 0.00013990850000000023,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 0.1399,
+    "median_request_s": 0.228,
+    "tokens_in": 2798.17,
+    "tokens_out": 0.0
+   }
+  },
+  "Cygnet (Gemma 4 12B)": {
+   "group": "decision models",
+   "first_look": {
+    "pairs": 200,
+    "standard_pr": 31.33,
+    "nackgammon_pr": 24.48,
+    "drop": -6.85,
+    "drop_975": [
+     -22.36,
+     5.43
+    ],
+    "drop_95": [
+     -19.77,
+     4.16
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "label_first": "unclear",
+    "extend": true
+   },
+   "final_look": {
+    "pairs": 500,
+    "standard_pr": 28.46,
+    "nackgammon_pr": 28.66,
+    "drop": 0.2,
+    "drop_975": [
+     -7.64,
+     7.43
+    ],
+    "drop_95": [
+     -6.61,
+     6.63
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "extended": true,
+   "label": "unclear",
+   "sensitivity_first": {
+    "worst": {
+     "pairs": 200,
+     "standard_pr": 31.33,
+     "nackgammon_pr": 24.48,
+     "drop": -6.85,
+     "drop_975": [
+      -22.36,
+      5.43
+     ]
+    },
+    "drop": {
+     "pairs": 200,
+     "standard_pr": 31.33,
+     "nackgammon_pr": 24.48,
+     "drop": -6.85,
+     "drop_975": [
+      -22.36,
+      5.43
+     ]
+    }
+   },
+   "phases": {
+    "opening": {
+     "pairs": 60,
+     "standard_pr": 28.33,
+     "nackgammon_pr": 27.23,
+     "drop": -1.1,
+     "drop_95": [
+      -15.92,
+      13.25
+     ]
+    },
+    "contact": {
+     "pairs": 60,
+     "standard_pr": 38.19,
+     "nackgammon_pr": 31.5,
+     "drop": -6.69,
+     "drop_95": [
+      -24.72,
+      11.29
+     ]
+    },
+    "holding": {
+     "pairs": 30,
+     "standard_pr": 66.5,
+     "nackgammon_pr": 31.26,
+     "drop": -35.24,
+     "drop_95": [
+      -109.32,
+      15.97
+     ]
+    },
+    "race": {
+     "pairs": 25,
+     "standard_pr": 5.97,
+     "nackgammon_pr": 13.21,
+     "drop": 7.24,
+     "drop_95": [
+      -1.28,
+      18.07
+     ]
+    },
+    "bear-off": {
+     "pairs": 25,
+     "standard_pr": 5.2,
+     "nackgammon_pr": 4.13,
+     "drop": -1.06,
+     "drop_95": [
+      -5.91,
+      4.81
+     ]
+    },
+    "opening minus other phases": {
+     "diff": 8.22,
+     "ci_95": [
+      -12.67,
+      31.39
+     ]
+    }
+   },
+   "tags": {
+    "(none: bear-off)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 4.13
+     },
+     "standard": {
+      "n": 25,
+      "pr": 5.2
+     }
+    },
+    "(none: opening)": {
+     "nackgammon": {
+      "n": 60,
+      "pr": 27.23
+     },
+     "standard": {
+      "n": 60,
+      "pr": 28.33
+     }
+    },
+    "(none: race)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 13.21
+     },
+     "standard": {
+      "n": 25,
+      "pr": 5.97
+     }
+    },
+    "back game": {
+     "nackgammon": {
+      "n": 10,
+      "pr": 27.83
+     },
+     "standard": {
+      "n": 2,
+      "pr": 60.79
+     }
+    },
+    "blitz": {
+     "nackgammon": {
+      "n": 17,
+      "pr": 18.67
+     },
+     "standard": {
+      "n": 23,
+      "pr": 36.62
+     }
+    },
+    "holding": {
+     "nackgammon": {
+      "n": 30,
+      "pr": 31.26
+     },
+     "standard": {
+      "n": 30,
+      "pr": 66.5
+     }
+    },
+    "low-anchor": {
+     "nackgammon": {
+      "n": 7,
+      "pr": 40.66
+     },
+     "standard": {
+      "n": 8,
+      "pr": 49.87
+     }
+    },
+    "other": {
+     "nackgammon": {
+      "n": 11,
+      "pr": 17.92
+     },
+     "standard": {
+      "n": 10,
+      "pr": 46.3
+     }
+    },
+    "priming": {
+     "nackgammon": {
+      "n": 15,
+      "pr": 54.16
+     },
+     "standard": {
+      "n": 17,
+      "pr": 27.39
+     }
+    }
+   },
+   "risk_main": {
+    "nackgammon": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 22.0,
+     "needless": 11.0,
+     "d_prime": 0.52,
+     "caution": 0.69
+    },
+    "standard": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 23.0,
+     "needless": 10.0,
+     "d_prime": 0.62,
+     "caution": 0.7
+    },
+    "change": {
+     "d_prime": -0.1,
+     "d_prime_95": [
+      -0.79,
+      0.6
+     ],
+     "caution": -0.01,
+     "caution_95": [
+      -0.34,
+      0.35
+     ]
+    },
+    "thin": false
+   },
+   "risk_all": {
+    "nackgammon": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 59.0,
+     "needless": 35.0,
+     "d_prime": 0.43,
+     "caution": 0.58
+    },
+    "standard": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 61.0,
+     "needless": 24.0,
+     "d_prime": 0.72,
+     "caution": 0.69
+    },
+    "change": {
+     "d_prime": -0.29,
+     "d_prime_95": [
+      -0.7,
+      0.13
+     ],
+     "caution": -0.11,
+     "caution_95": [
+      -0.33,
+      0.09
+     ]
+    },
+    "thin": false
+   },
+   "cost_main": {
+    "decisions": 400,
+    "billed_usd_per_decision": 0.0,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 0.0,
+    "median_request_s": 0.3755,
+    "tokens_in": 3214.19,
+    "tokens_out": 1.26
+   },
+   "cost_all": {
+    "decisions": 1000,
+    "billed_usd_per_decision": 0.0,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 0.0,
+    "median_request_s": 0.641,
+    "tokens_in": 3206.989,
+    "tokens_out": 1.256
+   }
+  },
+  "Decider v1.2 27B": {
+   "group": "decision models",
+   "first_look": {
+    "pairs": 200,
+    "standard_pr": 34.68,
+    "nackgammon_pr": 22.8,
+    "drop": -11.87,
+    "drop_975": [
+     -27.93,
+     1.03
+    ],
+    "drop_95": [
+     -25.58,
+     -0.28
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "label_first": "unclear",
+    "extend": true
+   },
+   "final_look": {
+    "pairs": 500,
+    "standard_pr": 31.72,
+    "nackgammon_pr": 29.03,
+    "drop": -2.68,
+    "drop_975": [
+     -11.03,
+     5.25
+    ],
+    "drop_95": [
+     -10.0,
+     4.18
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "extended": true,
+   "label": "unclear",
+   "sensitivity_first": {
+    "worst": {
+     "pairs": 200,
+     "standard_pr": 34.68,
+     "nackgammon_pr": 22.8,
+     "drop": -11.87,
+     "drop_975": [
+      -27.93,
+      1.03
+     ]
+    },
+    "drop": {
+     "pairs": 200,
+     "standard_pr": 34.68,
+     "nackgammon_pr": 22.8,
+     "drop": -11.87,
+     "drop_975": [
+      -27.93,
+      1.03
+     ]
+    }
+   },
+   "phases": {
+    "opening": {
+     "pairs": 60,
+     "standard_pr": 27.28,
+     "nackgammon_pr": 27.14,
+     "drop": -0.14,
+     "drop_95": [
+      -13.61,
+      12.94
+     ]
+    },
+    "contact": {
+     "pairs": 60,
+     "standard_pr": 50.09,
+     "nackgammon_pr": 31.86,
+     "drop": -18.23,
+     "drop_95": [
+      -39.05,
+      1.11
+     ]
+    },
+    "holding": {
+     "pairs": 30,
+     "standard_pr": 66.47,
+     "nackgammon_pr": 26.41,
+     "drop": -40.06,
+     "drop_95": [
+      -113.99,
+      16.88
+     ]
+    },
+    "race": {
+     "pairs": 25,
+     "standard_pr": 7.57,
+     "nackgammon_pr": 8.51,
+     "drop": 0.94,
+     "drop_95": [
+      -9.24,
+      12.63
+     ]
+    },
+    "bear-off": {
+     "pairs": 25,
+     "standard_pr": 4.39,
+     "nackgammon_pr": 0.63,
+     "drop": -3.76,
+     "drop_95": [
+      -8.54,
+      -0.46
+     ]
+    },
+    "opening minus other phases": {
+     "diff": 16.76,
+     "ci_95": [
+      -4.0,
+      39.66
+     ]
+    }
+   },
+   "tags": {
+    "(none: bear-off)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 0.63
+     },
+     "standard": {
+      "n": 25,
+      "pr": 4.39
+     }
+    },
+    "(none: opening)": {
+     "nackgammon": {
+      "n": 60,
+      "pr": 27.14
+     },
+     "standard": {
+      "n": 60,
+      "pr": 27.28
+     }
+    },
+    "(none: race)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 8.51
+     },
+     "standard": {
+      "n": 25,
+      "pr": 7.57
+     }
+    },
+    "back game": {
+     "nackgammon": {
+      "n": 10,
+      "pr": 43.32
+     },
+     "standard": {
+      "n": 2,
+      "pr": 17.04
+     }
+    },
+    "blitz": {
+     "nackgammon": {
+      "n": 17,
+      "pr": 14.51
+     },
+     "standard": {
+      "n": 23,
+      "pr": 75.68
+     }
+    },
+    "holding": {
+     "nackgammon": {
+      "n": 30,
+      "pr": 26.41
+     },
+     "standard": {
+      "n": 30,
+      "pr": 66.47
+     }
+    },
+    "low-anchor": {
+     "nackgammon": {
+      "n": 7,
+      "pr": 51.9
+     },
+     "standard": {
+      "n": 8,
+      "pr": 47.99
+     }
+    },
+    "other": {
+     "nackgammon": {
+      "n": 11,
+      "pr": 20.23
+     },
+     "standard": {
+      "n": 10,
+      "pr": 21.48
+     }
+    },
+    "priming": {
+     "nackgammon": {
+      "n": 15,
+      "pr": 43.06
+     },
+     "standard": {
+      "n": 17,
+      "pr": 37.18
+     }
+    }
+   },
+   "risk_main": {
+    "nackgammon": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 28.0,
+     "needless": 9.0,
+     "d_prime": 0.88,
+     "caution": 0.63
+    },
+    "standard": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 23.0,
+     "needless": 16.0,
+     "d_prime": 0.3,
+     "caution": 0.53
+    },
+    "change": {
+     "d_prime": 0.58,
+     "d_prime_95": [
+      -0.1,
+      1.27
+     ],
+     "caution": 0.1,
+     "caution_95": [
+      -0.25,
+      0.45
+     ]
+    },
+    "thin": false
+   },
+   "risk_all": {
+    "nackgammon": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 64.0,
+     "needless": 30.0,
+     "d_prime": 0.62,
+     "caution": 0.59
+    },
+    "standard": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 59.0,
+     "needless": 40.0,
+     "d_prime": 0.33,
+     "caution": 0.53
+    },
+    "change": {
+     "d_prime": 0.29,
+     "d_prime_95": [
+      -0.1,
+      0.67
+     ],
+     "caution": 0.06,
+     "caution_95": [
+      -0.13,
+      0.27
+     ]
+    },
+    "thin": false
+   },
+   "cost_main": {
+    "decisions": 400,
+    "billed_usd_per_decision": 5.596385000000001e-05,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 0.0224,
+    "median_request_s": 1.0685,
+    "tokens_in": 2798.1925,
+    "tokens_out": 0.0
+   },
+   "cost_all": {
+    "decisions": 1000,
+    "billed_usd_per_decision": 5.596340000000007e-05,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 0.056,
+    "median_request_s": 1.0755,
+    "tokens_in": 2798.17,
+    "tokens_out": 0.0
+   }
+  },
+  "Fastino GLiDE v1.2 (local)": {
+   "group": "decision models",
+   "first_look": {
+    "pairs": 200,
+    "standard_pr": 22.74,
+    "nackgammon_pr": 24.91,
+    "drop": 2.18,
+    "drop_975": [
+     -7.28,
+     11.93
+    ],
+    "drop_95": [
+     -6.15,
+     10.44
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "label_first": "unclear",
+    "extend": true
+   },
+   "final_look": {
+    "pairs": 500,
+    "standard_pr": 26.33,
+    "nackgammon_pr": 27.93,
+    "drop": 1.6,
+    "drop_975": [
+     -5.33,
+     8.3
+    ],
+    "drop_95": [
+     -4.49,
+     7.55
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "extended": true,
+   "label": "unclear",
+   "sensitivity_first": {
+    "worst": {
+     "pairs": 200,
+     "standard_pr": 22.74,
+     "nackgammon_pr": 24.91,
+     "drop": 2.18,
+     "drop_975": [
+      -7.28,
+      11.93
+     ]
+    },
+    "drop": {
+     "pairs": 200,
+     "standard_pr": 22.74,
+     "nackgammon_pr": 24.91,
+     "drop": 2.18,
+     "drop_975": [
+      -7.28,
+      11.93
+     ]
+    }
+   },
+   "phases": {
+    "opening": {
+     "pairs": 60,
+     "standard_pr": 17.73,
+     "nackgammon_pr": 26.99,
+     "drop": 9.25,
+     "drop_95": [
+      -2.3,
+      20.66
+     ]
+    },
+    "contact": {
+     "pairs": 60,
+     "standard_pr": 39.49,
+     "nackgammon_pr": 29.34,
+     "drop": -10.16,
+     "drop_95": [
+      -28.79,
+      7.76
+     ]
+    },
+    "holding": {
+     "pairs": 30,
+     "standard_pr": 26.14,
+     "nackgammon_pr": 43.33,
+     "drop": 17.19,
+     "drop_95": [
+      -11.01,
+      52.43
+     ]
+    },
+    "race": {
+     "pairs": 25,
+     "standard_pr": 7.15,
+     "nackgammon_pr": 10.53,
+     "drop": 3.38,
+     "drop_95": [
+      -5.64,
+      14.63
+     ]
+    },
+    "bear-off": {
+     "pairs": 25,
+     "standard_pr": 6.03,
+     "nackgammon_pr": 1.62,
+     "drop": -4.41,
+     "drop_95": [
+      -9.76,
+      -0.42
+     ]
+    },
+    "opening minus other phases": {
+     "diff": 10.11,
+     "ci_95": [
+      -5.64,
+      25.57
+     ]
+    }
+   },
+   "tags": {
+    "(none: bear-off)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 1.62
+     },
+     "standard": {
+      "n": 25,
+      "pr": 6.03
+     }
+    },
+    "(none: opening)": {
+     "nackgammon": {
+      "n": 60,
+      "pr": 26.99
+     },
+     "standard": {
+      "n": 60,
+      "pr": 17.73
+     }
+    },
+    "(none: race)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 10.53
+     },
+     "standard": {
+      "n": 25,
+      "pr": 7.15
+     }
+    },
+    "back game": {
+     "nackgammon": {
+      "n": 10,
+      "pr": 44.17
+     },
+     "standard": {
+      "n": 2,
+      "pr": 22.94
+     }
+    },
+    "blitz": {
+     "nackgammon": {
+      "n": 17,
+      "pr": 8.8
+     },
+     "standard": {
+      "n": 23,
+      "pr": 48.46
+     }
+    },
+    "holding": {
+     "nackgammon": {
+      "n": 30,
+      "pr": 43.33
+     },
+     "standard": {
+      "n": 30,
+      "pr": 26.14
+     }
+    },
+    "low-anchor": {
+     "nackgammon": {
+      "n": 7,
+      "pr": 31.03
+     },
+     "standard": {
+      "n": 8,
+      "pr": 39.62
+     }
+    },
+    "other": {
+     "nackgammon": {
+      "n": 11,
+      "pr": 29.68
+     },
+     "standard": {
+      "n": 10,
+      "pr": 25.0
+     }
+    },
+    "priming": {
+     "nackgammon": {
+      "n": 15,
+      "pr": 41.69
+     },
+     "standard": {
+      "n": 17,
+      "pr": 37.78
+     }
+    }
+   },
+   "risk_main": {
+    "nackgammon": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 21.0,
+     "needless": 13.0,
+     "d_prime": 0.37,
+     "caution": 0.65
+    },
+    "standard": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 28.0,
+     "needless": 10.0,
+     "d_prime": 0.82,
+     "caution": 0.6
+    },
+    "change": {
+     "d_prime": -0.45,
+     "d_prime_95": [
+      -1.15,
+      0.19
+     ],
+     "caution": 0.05,
+     "caution_95": [
+      -0.29,
+      0.38
+     ]
+    },
+    "thin": false
+   },
+   "risk_all": {
+    "nackgammon": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 55.0,
+     "needless": 35.0,
+     "d_prime": 0.37,
+     "caution": 0.61
+    },
+    "standard": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 59.0,
+     "needless": 32.0,
+     "d_prime": 0.49,
+     "caution": 0.61
+    },
+    "change": {
+     "d_prime": -0.12,
+     "d_prime_95": [
+      -0.54,
+      0.3
+     ],
+     "caution": 0.0,
+     "caution_95": [
+      -0.21,
+      0.21
+     ]
+    },
+    "thin": false
+   },
+   "cost_main": {
+    "decisions": 400,
+    "billed_usd_per_decision": 0.0,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 0.0,
+    "median_request_s": 2.2975000000000003,
+    "tokens_in": 2772.1925,
+    "tokens_out": 0.0
+   },
+   "cost_all": {
+    "decisions": 1000,
+    "billed_usd_per_decision": 0.0,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 0.0,
+    "median_request_s": 2.351,
+    "tokens_in": 2772.17,
+    "tokens_out": 0.0
+   }
+  },
+  "DeepSeek V4.1 Flash (off)": {
+   "group": "workhorses",
+   "first_look": {
+    "pairs": 200,
+    "standard_pr": 23.91,
+    "nackgammon_pr": 27.9,
+    "drop": 3.98,
+    "drop_975": [
+     -11.72,
+     17.96
+    ],
+    "drop_95": [
+     -9.7,
+     16.5
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "label_first": "unclear",
+    "extend": true
+   },
+   "final_look": {
+    "pairs": 500,
+    "standard_pr": 23.35,
+    "nackgammon_pr": 29.29,
+    "drop": 5.94,
+    "drop_975": [
+     -2.48,
+     13.87
+    ],
+    "drop_95": [
+     -1.33,
+     12.87
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "extended": true,
+   "label": "unclear",
+   "sensitivity_first": {
+    "worst": {
+     "pairs": 200,
+     "standard_pr": 23.91,
+     "nackgammon_pr": 27.9,
+     "drop": 3.98,
+     "drop_975": [
+      -11.72,
+      17.96
+     ]
+    },
+    "drop": {
+     "pairs": 200,
+     "standard_pr": 23.91,
+     "nackgammon_pr": 27.9,
+     "drop": 3.98,
+     "drop_975": [
+      -11.72,
+      17.96
+     ]
+    }
+   },
+   "phases": {
+    "opening": {
+     "pairs": 60,
+     "standard_pr": 13.39,
+     "nackgammon_pr": 27.97,
+     "drop": 14.58,
+     "drop_95": [
+      3.87,
+      25.35
+     ]
+    },
+    "contact": {
+     "pairs": 60,
+     "standard_pr": 38.21,
+     "nackgammon_pr": 27.57,
+     "drop": -10.64,
+     "drop_95": [
+      -31.09,
+      9.0
+     ]
+    },
+    "holding": {
+     "pairs": 30,
+     "standard_pr": 47.28,
+     "nackgammon_pr": 62.5,
+     "drop": 15.21,
+     "drop_95": [
+      -64.76,
+      76.6
+     ]
+    },
+    "race": {
+     "pairs": 25,
+     "standard_pr": 6.31,
+     "nackgammon_pr": 13.97,
+     "drop": 7.66,
+     "drop_95": [
+      -3.66,
+      24.98
+     ]
+    },
+    "bear-off": {
+     "pairs": 25,
+     "standard_pr": 4.43,
+     "nackgammon_pr": 0.94,
+     "drop": -3.49,
+     "drop_95": [
+      -8.35,
+      -0.14
+     ]
+    },
+    "opening minus other phases": {
+     "diff": 15.13,
+     "ci_95": [
+      -4.89,
+      37.4
+     ]
+    }
+   },
+   "tags": {
+    "(none: bear-off)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 0.94
+     },
+     "standard": {
+      "n": 25,
+      "pr": 4.43
+     }
+    },
+    "(none: opening)": {
+     "nackgammon": {
+      "n": 60,
+      "pr": 27.97
+     },
+     "standard": {
+      "n": 60,
+      "pr": 13.39
+     }
+    },
+    "(none: race)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 13.97
+     },
+     "standard": {
+      "n": 25,
+      "pr": 6.31
+     }
+    },
+    "back game": {
+     "nackgammon": {
+      "n": 10,
+      "pr": 27.83
+     },
+     "standard": {
+      "n": 2,
+      "pr": 22.94
+     }
+    },
+    "blitz": {
+     "nackgammon": {
+      "n": 17,
+      "pr": 11.36
+     },
+     "standard": {
+      "n": 23,
+      "pr": 35.63
+     }
+    },
+    "holding": {
+     "nackgammon": {
+      "n": 30,
+      "pr": 62.5
+     },
+     "standard": {
+      "n": 30,
+      "pr": 47.28
+     }
+    },
+    "low-anchor": {
+     "nackgammon": {
+      "n": 7,
+      "pr": 45.54
+     },
+     "standard": {
+      "n": 8,
+      "pr": 40.47
+     }
+    },
+    "other": {
+     "nackgammon": {
+      "n": 11,
+      "pr": 27.94
+     },
+     "standard": {
+      "n": 10,
+      "pr": 25.0
+     }
+    },
+    "priming": {
+     "nackgammon": {
+      "n": 15,
+      "pr": 37.11
+     },
+     "standard": {
+      "n": 17,
+      "pr": 50.2
+     }
+    }
+   },
+   "risk_main": {
+    "nackgammon": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 24.0,
+     "needless": 11.0,
+     "d_prime": 0.6,
+     "caution": 0.65
+    },
+    "standard": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 30.0,
+     "needless": 12.0,
+     "d_prime": 0.78,
+     "caution": 0.5
+    },
+    "change": {
+     "d_prime": -0.18,
+     "d_prime_95": [
+      -0.9,
+      0.55
+     ],
+     "caution": 0.15,
+     "caution_95": [
+      -0.2,
+      0.49
+     ]
+    },
+    "thin": false
+   },
+   "risk_all": {
+    "nackgammon": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 62.0,
+     "needless": 29.0,
+     "d_prime": 0.61,
+     "caution": 0.62
+    },
+    "standard": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 65.0,
+     "needless": 22.0,
+     "d_prime": 0.83,
+     "caution": 0.68
+    },
+    "change": {
+     "d_prime": -0.22,
+     "d_prime_95": [
+      -0.67,
+      0.2
+     ],
+     "caution": -0.06,
+     "caution_95": [
+      -0.27,
+      0.15
+     ]
+    },
+    "thin": false
+   },
+   "cost_main": {
+    "decisions": 400,
+    "billed_usd_per_decision": 0.00029342845500000006,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 0.1174,
+    "median_request_s": 0.452,
+    "tokens_in": 2645.2725,
+    "tokens_out": 6.94
+   },
+   "cost_all": {
+    "decisions": 1000,
+    "billed_usd_per_decision": 0.0002672100875999999,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 0.2672,
+    "median_request_s": 0.457,
+    "tokens_in": 2646.709,
+    "tokens_out": 6.933
+   }
+  },
+  "Jev 1.13.0": {
+   "group": "decision models",
+   "first_look": {
+    "pairs": 200,
+    "standard_pr": 26.53,
+    "nackgammon_pr": 24.17,
+    "drop": -2.37,
+    "drop_975": [
+     -17.72,
+     9.97
+    ],
+    "drop_95": [
+     -15.32,
+     8.77
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "label_first": "unclear",
+    "extend": true
+   },
+   "final_look": {
+    "pairs": 500,
+    "standard_pr": 24.67,
+    "nackgammon_pr": 27.44,
+    "drop": 2.77,
+    "drop_975": [
+     -5.2,
+     10.44
+    ],
+    "drop_95": [
+     -4.2,
+     9.49
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "extended": true,
+   "label": "unclear",
+   "sensitivity_first": {
+    "worst": {
+     "pairs": 200,
+     "standard_pr": 26.53,
+     "nackgammon_pr": 24.17,
+     "drop": -2.37,
+     "drop_975": [
+      -17.72,
+      9.97
+     ]
+    },
+    "drop": {
+     "pairs": 200,
+     "standard_pr": 26.53,
+     "nackgammon_pr": 24.17,
+     "drop": -2.37,
+     "drop_975": [
+      -17.72,
+      9.97
+     ]
+    }
+   },
+   "phases": {
+    "opening": {
+     "pairs": 60,
+     "standard_pr": 20.21,
+     "nackgammon_pr": 23.69,
+     "drop": 3.49,
+     "drop_95": [
+      -7.33,
+      14.0
+     ]
+    },
+    "contact": {
+     "pairs": 60,
+     "standard_pr": 31.78,
+     "nackgammon_pr": 28.13,
+     "drop": -3.65,
+     "drop_95": [
+      -21.53,
+      13.76
+     ]
+    },
+    "holding": {
+     "pairs": 30,
+     "standard_pr": 63.62,
+     "nackgammon_pr": 42.43,
+     "drop": -21.19,
+     "drop_95": [
+      -97.45,
+      35.95
+     ]
+    },
+    "race": {
+     "pairs": 25,
+     "standard_pr": 6.34,
+     "nackgammon_pr": 10.79,
+     "drop": 4.46,
+     "drop_95": [
+      -4.55,
+      15.49
+     ]
+    },
+    "bear-off": {
+     "pairs": 25,
+     "standard_pr": 4.82,
+     "nackgammon_pr": 7.24,
+     "drop": 2.42,
+     "drop_95": [
+      -3.09,
+      11.88
+     ]
+    },
+    "opening minus other phases": {
+     "diff": 8.36,
+     "ci_95": [
+      -10.22,
+      29.77
+     ]
+    }
+   },
+   "tags": {
+    "(none: bear-off)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 7.24
+     },
+     "standard": {
+      "n": 25,
+      "pr": 4.82
+     }
+    },
+    "(none: opening)": {
+     "nackgammon": {
+      "n": 60,
+      "pr": 23.69
+     },
+     "standard": {
+      "n": 60,
+      "pr": 20.21
+     }
+    },
+    "(none: race)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 10.79
+     },
+     "standard": {
+      "n": 25,
+      "pr": 6.34
+     }
+    },
+    "back game": {
+     "nackgammon": {
+      "n": 10,
+      "pr": 35.43
+     },
+     "standard": {
+      "n": 2,
+      "pr": 22.94
+     }
+    },
+    "blitz": {
+     "nackgammon": {
+      "n": 17,
+      "pr": 13.43
+     },
+     "standard": {
+      "n": 23,
+      "pr": 33.9
+     }
+    },
+    "holding": {
+     "nackgammon": {
+      "n": 30,
+      "pr": 42.43
+     },
+     "standard": {
+      "n": 30,
+      "pr": 63.62
+     }
+    },
+    "low-anchor": {
+     "nackgammon": {
+      "n": 7,
+      "pr": 37.32
+     },
+     "standard": {
+      "n": 8,
+      "pr": 48.48
+     }
+    },
+    "other": {
+     "nackgammon": {
+      "n": 11,
+      "pr": 17.33
+     },
+     "standard": {
+      "n": 10,
+      "pr": 36.46
+     }
+    },
+    "priming": {
+     "nackgammon": {
+      "n": 15,
+      "pr": 43.56
+     },
+     "standard": {
+      "n": 17,
+      "pr": 19.34
+     }
+    }
+   },
+   "risk_main": {
+    "nackgammon": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 30.0,
+     "needless": 7.0,
+     "d_prime": 1.1,
+     "caution": 0.66
+    },
+    "standard": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 25.0,
+     "needless": 12.0,
+     "d_prime": 0.59,
+     "caution": 0.6
+    },
+    "change": {
+     "d_prime": 0.51,
+     "d_prime_95": [
+      -0.17,
+      1.25
+     ],
+     "caution": 0.06,
+     "caution_95": [
+      -0.28,
+      0.43
+     ]
+    },
+    "thin": false
+   },
+   "risk_all": {
+    "nackgammon": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 70.0,
+     "needless": 28.0,
+     "d_prime": 0.76,
+     "caution": 0.57
+    },
+    "standard": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 57.0,
+     "needless": 22.0,
+     "d_prime": 0.71,
+     "caution": 0.75
+    },
+    "change": {
+     "d_prime": 0.05,
+     "d_prime_95": [
+      -0.4,
+      0.48
+     ],
+     "caution": -0.18,
+     "caution_95": [
+      -0.39,
+      0.04
+     ]
+    },
+    "thin": false
+   },
+   "cost_main": {
+    "decisions": 400,
+    "billed_usd_per_decision": 0.00012907954500000014,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 0.0516,
+    "median_request_s": 0.152,
+    "tokens_in": 3073.3225,
+    "tokens_out": 192.0625
+   },
+   "cost_all": {
+    "decisions": 1000,
+    "billed_usd_per_decision": 0.0001290848160000002,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 0.1291,
+    "median_request_s": 0.151,
+    "tokens_in": 3073.448,
+    "tokens_out": 191.684
+   }
+  },
+  "GPT-6 Luna": {
+   "group": "decision models",
+   "first_look": {
+    "pairs": 200,
+    "standard_pr": 28.27,
+    "nackgammon_pr": 34.11,
+    "drop": 5.84,
+    "drop_975": [
+     -10.57,
+     20.46
+    ],
+    "drop_95": [
+     -8.47,
+     18.85
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "label_first": "unclear",
+    "extend": true
+   },
+   "final_look": {
+    "pairs": 500,
+    "standard_pr": 29.56,
+    "nackgammon_pr": 35.44,
+    "drop": 5.87,
+    "drop_975": [
+     -4.27,
+     15.07
+    ],
+    "drop_95": [
+     -2.86,
+     14.01
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "extended": true,
+   "label": "unclear",
+   "sensitivity_first": {
+    "worst": {
+     "pairs": 200,
+     "standard_pr": 28.27,
+     "nackgammon_pr": 34.11,
+     "drop": 5.84,
+     "drop_975": [
+      -10.57,
+      20.46
+     ]
+    },
+    "drop": {
+     "pairs": 200,
+     "standard_pr": 28.27,
+     "nackgammon_pr": 34.11,
+     "drop": 5.84,
+     "drop_975": [
+      -10.57,
+      20.46
+     ]
+    }
+   },
+   "phases": {
+    "opening": {
+     "pairs": 60,
+     "standard_pr": 16.69,
+     "nackgammon_pr": 35.63,
+     "drop": 18.94,
+     "drop_95": [
+      6.05,
+      31.44
+     ]
+    },
+    "contact": {
+     "pairs": 60,
+     "standard_pr": 40.34,
+     "nackgammon_pr": 30.85,
+     "drop": -9.49,
+     "drop_95": [
+      -31.25,
+      11.04
+     ]
+    },
+    "holding": {
+     "pairs": 30,
+     "standard_pr": 60.56,
+     "nackgammon_pr": 64.87,
+     "drop": 4.31,
+     "drop_95": [
+      -74.85,
+      63.66
+     ]
+    },
+    "race": {
+     "pairs": 25,
+     "standard_pr": 9.65,
+     "nackgammon_pr": 25.92,
+     "drop": 16.28,
+     "drop_95": [
+      -5.65,
+      51.13
+     ]
+    },
+    "bear-off": {
+     "pairs": 25,
+     "standard_pr": 7.01,
+     "nackgammon_pr": 9.57,
+     "drop": 2.57,
+     "drop_95": [
+      -6.03,
+      13.91
+     ]
+    },
+    "opening minus other phases": {
+     "diff": 18.72,
+     "ci_95": [
+      -2.72,
+      42.58
+     ]
+    }
+   },
+   "tags": {
+    "(none: bear-off)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 9.57
+     },
+     "standard": {
+      "n": 25,
+      "pr": 7.01
+     }
+    },
+    "(none: opening)": {
+     "nackgammon": {
+      "n": 60,
+      "pr": 35.63
+     },
+     "standard": {
+      "n": 60,
+      "pr": 16.69
+     }
+    },
+    "(none: race)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 25.92
+     },
+     "standard": {
+      "n": 25,
+      "pr": 9.65
+     }
+    },
+    "back game": {
+     "nackgammon": {
+      "n": 10,
+      "pr": 32.07
+     },
+     "standard": {
+      "n": 2,
+      "pr": 22.94
+     }
+    },
+    "blitz": {
+     "nackgammon": {
+      "n": 17,
+      "pr": 14.08
+     },
+     "standard": {
+      "n": 23,
+      "pr": 44.92
+     }
+    },
+    "holding": {
+     "nackgammon": {
+      "n": 30,
+      "pr": 64.87
+     },
+     "standard": {
+      "n": 30,
+      "pr": 60.56
+     }
+    },
+    "low-anchor": {
+     "nackgammon": {
+      "n": 7,
+      "pr": 45.54
+     },
+     "standard": {
+      "n": 8,
+      "pr": 36.76
+     }
+    },
+    "other": {
+     "nackgammon": {
+      "n": 11,
+      "pr": 30.99
+     },
+     "standard": {
+      "n": 10,
+      "pr": 63.71
+     }
+    },
+    "priming": {
+     "nackgammon": {
+      "n": 15,
+      "pr": 42.09
+     },
+     "standard": {
+      "n": 17,
+      "pr": 24.12
+     }
+    }
+   },
+   "risk_main": {
+    "nackgammon": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 18.0,
+     "needless": 15.0,
+     "d_prime": 0.14,
+     "caution": 0.66
+    },
+    "standard": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 28.0,
+     "needless": 8.0,
+     "d_prime": 0.95,
+     "caution": 0.66
+    },
+    "change": {
+     "d_prime": -0.81,
+     "d_prime_95": [
+      -1.57,
+      -0.11
+     ],
+     "caution": 0.0,
+     "caution_95": [
+      -0.36,
+      0.38
+     ]
+    },
+    "thin": false
+   },
+   "risk_all": {
+    "nackgammon": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 56.0,
+     "needless": 37.0,
+     "d_prime": 0.34,
+     "caution": 0.58
+    },
+    "standard": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 55.0,
+     "needless": 20.0,
+     "d_prime": 0.73,
+     "caution": 0.79
+    },
+    "change": {
+     "d_prime": -0.39,
+     "d_prime_95": [
+      -0.86,
+      0.02
+     ],
+     "caution": -0.21,
+     "caution_95": [
+      -0.43,
+      0.01
+     ]
+    },
+    "thin": false
+   },
+   "cost_main": {
+    "decisions": 400,
+    "billed_usd_per_decision": 0.0002671385,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 0.1069,
+    "median_request_s": 0.24,
+    "tokens_in": 2671.385,
+    "tokens_out": 0.0
+   },
+   "cost_all": {
+    "decisions": 1000,
+    "billed_usd_per_decision": 0.00026723609999999983,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 0.2672,
+    "median_request_s": 0.248,
+    "tokens_in": 2672.361,
+    "tokens_out": 0.0
+   }
+  },
+  "Decider v1.1 27B": {
+   "group": "decision models",
+   "first_look": {
+    "pairs": 200,
+    "standard_pr": 30.42,
+    "nackgammon_pr": 28.64,
+    "drop": -1.78,
+    "drop_975": [
+     -17.3,
+     11.94
+    ],
+    "drop_95": [
+     -15.21,
+     10.49
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "label_first": "unclear",
+    "extend": true
+   },
+   "final_look": {
+    "pairs": 500,
+    "standard_pr": 31.27,
+    "nackgammon_pr": 32.08,
+    "drop": 0.81,
+    "drop_975": [
+     -7.98,
+     9.24
+    ],
+    "drop_95": [
+     -6.92,
+     8.11
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "extended": true,
+   "label": "unclear",
+   "sensitivity_first": {
+    "worst": {
+     "pairs": 200,
+     "standard_pr": 30.42,
+     "nackgammon_pr": 28.64,
+     "drop": -1.78,
+     "drop_975": [
+      -17.3,
+      11.94
+     ]
+    },
+    "drop": {
+     "pairs": 200,
+     "standard_pr": 30.42,
+     "nackgammon_pr": 28.64,
+     "drop": -1.78,
+     "drop_975": [
+      -17.3,
+      11.94
+     ]
+    }
+   },
+   "phases": {
+    "opening": {
+     "pairs": 60,
+     "standard_pr": 19.69,
+     "nackgammon_pr": 37.37,
+     "drop": 17.68,
+     "drop_95": [
+      4.29,
+      31.27
+     ]
+    },
+    "contact": {
+     "pairs": 60,
+     "standard_pr": 43.35,
+     "nackgammon_pr": 29.99,
+     "drop": -13.36,
+     "drop_95": [
+      -30.51,
+      3.94
+     ]
+    },
+    "holding": {
+     "pairs": 30,
+     "standard_pr": 65.89,
+     "nackgammon_pr": 48.33,
+     "drop": -17.56,
+     "drop_95": [
+      -95.1,
+      44.28
+     ]
+    },
+    "race": {
+     "pairs": 25,
+     "standard_pr": 6.19,
+     "nackgammon_pr": 8.59,
+     "drop": 2.4,
+     "drop_95": [
+      -5.96,
+      13.24
+     ]
+    },
+    "bear-off": {
+     "pairs": 25,
+     "standard_pr": 6.83,
+     "nackgammon_pr": 0.85,
+     "drop": -5.98,
+     "drop_95": [
+      -14.04,
+      -0.23
+     ]
+    },
+    "opening minus other phases": {
+     "diff": 27.8,
+     "ci_95": [
+      7.23,
+      50.59
+     ]
+    }
+   },
+   "tags": {
+    "(none: bear-off)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 0.85
+     },
+     "standard": {
+      "n": 25,
+      "pr": 6.83
+     }
+    },
+    "(none: opening)": {
+     "nackgammon": {
+      "n": 60,
+      "pr": 37.37
+     },
+     "standard": {
+      "n": 60,
+      "pr": 19.69
+     }
+    },
+    "(none: race)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 8.59
+     },
+     "standard": {
+      "n": 25,
+      "pr": 6.19
+     }
+    },
+    "back game": {
+     "nackgammon": {
+      "n": 10,
+      "pr": 31.19
+     },
+     "standard": {
+      "n": 2,
+      "pr": 22.94
+     }
+    },
+    "blitz": {
+     "nackgammon": {
+      "n": 17,
+      "pr": 16.55
+     },
+     "standard": {
+      "n": 23,
+      "pr": 56.92
+     }
+    },
+    "holding": {
+     "nackgammon": {
+      "n": 30,
+      "pr": 48.33
+     },
+     "standard": {
+      "n": 30,
+      "pr": 65.89
+     }
+    },
+    "low-anchor": {
+     "nackgammon": {
+      "n": 7,
+      "pr": 35.51
+     },
+     "standard": {
+      "n": 8,
+      "pr": 37.56
+     }
+    },
+    "other": {
+     "nackgammon": {
+      "n": 11,
+      "pr": 25.86
+     },
+     "standard": {
+      "n": 10,
+      "pr": 25.72
+     }
+    },
+    "priming": {
+     "nackgammon": {
+      "n": 15,
+      "pr": 44.86
+     },
+     "standard": {
+      "n": 17,
+      "pr": 40.48
+     }
+    }
+   },
+   "risk_main": {
+    "nackgammon": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 23.0,
+     "needless": 13.0,
+     "d_prime": 0.45,
+     "caution": 0.61
+    },
+    "standard": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 24.0,
+     "needless": 14.0,
+     "d_prime": 0.44,
+     "caution": 0.56
+    },
+    "change": {
+     "d_prime": 0.01,
+     "d_prime_95": [
+      -0.67,
+      0.66
+     ],
+     "caution": 0.05,
+     "caution_95": [
+      -0.27,
+      0.38
+     ]
+    },
+    "thin": false
+   },
+   "risk_all": {
+    "nackgammon": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 53.0,
+     "needless": 35.0,
+     "d_prime": 0.33,
+     "caution": 0.63
+    },
+    "standard": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 56.0,
+     "needless": 39.0,
+     "d_prime": 0.3,
+     "caution": 0.56
+    },
+    "change": {
+     "d_prime": 0.03,
+     "d_prime_95": [
+      -0.38,
+      0.42
+     ],
+     "caution": 0.07,
+     "caution_95": [
+      -0.13,
+      0.27
+     ]
+    },
+    "thin": false
+   },
+   "cost_main": {
+    "decisions": 400,
+    "billed_usd_per_decision": 5.602385000000004e-05,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 0.0224,
+    "median_request_s": 0.5615000000000001,
+    "tokens_in": 2801.1925,
+    "tokens_out": 0.0
+   },
+   "cost_all": {
+    "decisions": 1000,
+    "billed_usd_per_decision": 5.6023399999999996e-05,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 0.056,
+    "median_request_s": 0.5654999999999999,
+    "tokens_in": 2801.17,
+    "tokens_out": 0.0
+   }
+  },
+  "LFM2.5-24B-A2B (on)": {
+   "group": "workhorses",
+   "first_look": {
+    "pairs": 200,
+    "standard_pr": 38.2,
+    "nackgammon_pr": 37.55,
+    "drop": -0.65,
+    "drop_975": [
+     -15.17,
+     14.42
+    ],
+    "drop_95": [
+     -13.34,
+     12.24
+    ],
+    "invalid": {
+     "nackgammon": 16,
+     "standard": 22
+    },
+    "label_first": "unclear",
+    "extend": true
+   },
+   "final_look": {
+    "pairs": 500,
+    "standard_pr": 37.78,
+    "nackgammon_pr": 42.54,
+    "drop": 4.77,
+    "drop_975": [
+     -4.14,
+     13.49
+    ],
+    "drop_95": [
+     -2.98,
+     12.48
+    ],
+    "invalid": {
+     "nackgammon": 52,
+     "standard": 55
+    }
+   },
+   "extended": true,
+   "label": "unclear",
+   "sensitivity_first": {
+    "worst": {
+     "pairs": 200,
+     "standard_pr": 52.06,
+     "nackgammon_pr": 44.97,
+     "drop": -7.1,
+     "drop_975": [
+      -27.35,
+      13.34
+     ]
+    },
+    "drop": {
+     "pairs": 166,
+     "standard_pr": 30.59,
+     "nackgammon_pr": 32.91,
+     "drop": 2.32,
+     "drop_975": [
+      -12.28,
+      18.07
+     ]
+    }
+   },
+   "phases": {
+    "opening": {
+     "pairs": 60,
+     "standard_pr": 33.94,
+     "nackgammon_pr": 37.1,
+     "drop": 3.16,
+     "drop_95": [
+      -13.56,
+      21.6
+     ]
+    },
+    "contact": {
+     "pairs": 60,
+     "standard_pr": 64.84,
+     "nackgammon_pr": 39.9,
+     "drop": -24.94,
+     "drop_95": [
+      -54.3,
+      5.53
+     ]
+    },
+    "holding": {
+     "pairs": 30,
+     "standard_pr": 42.82,
+     "nackgammon_pr": 72.2,
+     "drop": 29.38,
+     "drop_95": [
+      -14.29,
+      77.6
+     ]
+    },
+    "race": {
+     "pairs": 25,
+     "standard_pr": 11.24,
+     "nackgammon_pr": 19.24,
+     "drop": 8.0,
+     "drop_95": [
+      -7.23,
+      27.95
+     ]
+    },
+    "bear-off": {
+     "pairs": 25,
+     "standard_pr": 5.92,
+     "nackgammon_pr": 9.74,
+     "drop": 3.82,
+     "drop_95": [
+      -4.51,
+      14.94
+     ]
+    },
+    "opening minus other phases": {
+     "diff": 5.44,
+     "ci_95": [
+      -18.48,
+      29.98
+     ]
+    }
+   },
+   "tags": {
+    "(none: bear-off)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 9.74
+     },
+     "standard": {
+      "n": 25,
+      "pr": 5.92
+     }
+    },
+    "(none: opening)": {
+     "nackgammon": {
+      "n": 60,
+      "pr": 37.1
+     },
+     "standard": {
+      "n": 60,
+      "pr": 33.94
+     }
+    },
+    "(none: race)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 19.24
+     },
+     "standard": {
+      "n": 25,
+      "pr": 11.24
+     }
+    },
+    "back game": {
+     "nackgammon": {
+      "n": 10,
+      "pr": 34.16
+     },
+     "standard": {
+      "n": 2,
+      "pr": 68.33
+     }
+    },
+    "blitz": {
+     "nackgammon": {
+      "n": 17,
+      "pr": 14.94
+     },
+     "standard": {
+      "n": 23,
+      "pr": 58.45
+     }
+    },
+    "holding": {
+     "nackgammon": {
+      "n": 30,
+      "pr": 72.2
+     },
+     "standard": {
+      "n": 30,
+      "pr": 42.82
+     }
+    },
+    "low-anchor": {
+     "nackgammon": {
+      "n": 7,
+      "pr": 53.66
+     },
+     "standard": {
+      "n": 8,
+      "pr": 51.18
+     }
+    },
+    "other": {
+     "nackgammon": {
+      "n": 11,
+      "pr": 21.02
+     },
+     "standard": {
+      "n": 10,
+      "pr": 67.4
+     }
+    },
+    "priming": {
+     "nackgammon": {
+      "n": 15,
+      "pr": 79.43
+     },
+     "standard": {
+      "n": 17,
+      "pr": 77.99
+     }
+    }
+   },
+   "risk_main": {
+    "nackgammon": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 33.08,
+     "needless": 21.0,
+     "d_prime": 0.47,
+     "caution": 0.23
+    },
+    "standard": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 35.6,
+     "needless": 21.69,
+     "d_prime": 0.53,
+     "caution": 0.17
+    },
+    "change": {
+     "d_prime": -0.06,
+     "d_prime_95": [
+      -0.7,
+      0.52
+     ],
+     "caution": 0.06,
+     "caution_95": [
+      -0.24,
+      0.35
+     ]
+    },
+    "thin": false
+   },
+   "risk_all": {
+    "nackgammon": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 80.75,
+     "needless": 59.07,
+     "d_prime": 0.34,
+     "caution": 0.19
+    },
+    "standard": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 92.18,
+     "needless": 47.73,
+     "d_prime": 0.7,
+     "caution": 0.2
+    },
+    "change": {
+     "d_prime": -0.36,
+     "d_prime_95": [
+      -0.74,
+      0.0
+     ],
+     "caution": -0.01,
+     "caution_95": [
+      -0.19,
+      0.18
+     ]
+    },
+    "thin": false
+   },
+   "cost_main": {
+    "decisions": 400,
+    "billed_usd_per_decision": 0.0,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 0.0,
+    "median_request_s": 360.829,
+    "tokens_in": 18707.8325,
+    "tokens_out": 14067.9
+   },
+   "cost_all": {
+    "decisions": 1000,
+    "billed_usd_per_decision": 0.0,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 0.0,
+    "median_request_s": 374.25300000000004,
+    "tokens_in": 18141.684,
+    "tokens_out": 13578.844
+   }
+  },
+  "Qwen3.8-27B (off)": {
+   "group": "workhorses",
+   "first_look": {
+    "pairs": 200,
+    "standard_pr": 28.13,
+    "nackgammon_pr": 28.43,
+    "drop": 0.3,
+    "drop_975": [
+     -14.48,
+     12.12
+    ],
+    "drop_95": [
+     -12.64,
+     10.8
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "label_first": "unclear",
+    "extend": true
+   },
+   "final_look": {
+    "pairs": 500,
+    "standard_pr": 26.89,
+    "nackgammon_pr": 31.65,
+    "drop": 4.76,
+    "drop_975": [
+     -3.56,
+     12.53
+    ],
+    "drop_95": [
+     -2.43,
+     11.58
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "extended": true,
+   "label": "unclear",
+   "sensitivity_first": {
+    "worst": {
+     "pairs": 200,
+     "standard_pr": 28.13,
+     "nackgammon_pr": 28.43,
+     "drop": 0.3,
+     "drop_975": [
+      -14.48,
+      12.12
+     ]
+    },
+    "drop": {
+     "pairs": 200,
+     "standard_pr": 28.13,
+     "nackgammon_pr": 28.43,
+     "drop": 0.3,
+     "drop_975": [
+      -14.48,
+      12.12
+     ]
+    }
+   },
+   "phases": {
+    "opening": {
+     "pairs": 60,
+     "standard_pr": 19.21,
+     "nackgammon_pr": 32.36,
+     "drop": 13.15,
+     "drop_95": [
+      -0.07,
+      25.87
+     ]
+    },
+    "contact": {
+     "pairs": 60,
+     "standard_pr": 38.4,
+     "nackgammon_pr": 29.03,
+     "drop": -9.37,
+     "drop_95": [
+      -23.98,
+      4.78
+     ]
+    },
+    "holding": {
+     "pairs": 30,
+     "standard_pr": 61.66,
+     "nackgammon_pr": 49.21,
+     "drop": -12.45,
+     "drop_95": [
+      -88.96,
+      41.03
+     ]
+    },
+    "race": {
+     "pairs": 25,
+     "standard_pr": 7.24,
+     "nackgammon_pr": 11.56,
+     "drop": 4.32,
+     "drop_95": [
+      -4.51,
+      15.35
+     ]
+    },
+    "bear-off": {
+     "pairs": 25,
+     "standard_pr": 5.56,
+     "nackgammon_pr": 9.54,
+     "drop": 3.97,
+     "drop_95": [
+      -4.31,
+      15.03
+     ]
+    },
+    "opening minus other phases": {
+     "diff": 18.36,
+     "ci_95": [
+      -1.24,
+      39.95
+     ]
+    }
+   },
+   "tags": {
+    "(none: bear-off)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 9.54
+     },
+     "standard": {
+      "n": 25,
+      "pr": 5.56
+     }
+    },
+    "(none: opening)": {
+     "nackgammon": {
+      "n": 60,
+      "pr": 32.36
+     },
+     "standard": {
+      "n": 60,
+      "pr": 19.21
+     }
+    },
+    "(none: race)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 11.56
+     },
+     "standard": {
+      "n": 25,
+      "pr": 7.24
+     }
+    },
+    "back game": {
+     "nackgammon": {
+      "n": 10,
+      "pr": 23.84
+     },
+     "standard": {
+      "n": 2,
+      "pr": 22.94
+     }
+    },
+    "blitz": {
+     "nackgammon": {
+      "n": 17,
+      "pr": 11.86
+     },
+     "standard": {
+      "n": 23,
+      "pr": 47.64
+     }
+    },
+    "holding": {
+     "nackgammon": {
+      "n": 30,
+      "pr": 49.21
+     },
+     "standard": {
+      "n": 30,
+      "pr": 61.66
+     }
+    },
+    "low-anchor": {
+     "nackgammon": {
+      "n": 7,
+      "pr": 45.54
+     },
+     "standard": {
+      "n": 8,
+      "pr": 44.31
+     }
+    },
+    "other": {
+     "nackgammon": {
+      "n": 11,
+      "pr": 24.3
+     },
+     "standard": {
+      "n": 10,
+      "pr": 43.95
+     }
+    },
+    "priming": {
+     "nackgammon": {
+      "n": 15,
+      "pr": 47.71
+     },
+     "standard": {
+      "n": 17,
+      "pr": 21.69
+     }
+    }
+   },
+   "risk_main": {
+    "nackgammon": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 17.0,
+     "needless": 10.0,
+     "d_prime": 0.37,
+     "caution": 0.82
+    },
+    "standard": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 17.0,
+     "needless": 11.0,
+     "d_prime": 0.31,
+     "caution": 0.79
+    },
+    "change": {
+     "d_prime": 0.06,
+     "d_prime_95": [
+      -0.64,
+      0.78
+     ],
+     "caution": 0.03,
+     "caution_95": [
+      -0.29,
+      0.36
+     ]
+    },
+    "thin": false
+   },
+   "risk_all": {
+    "nackgammon": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 36.0,
+     "needless": 27.0,
+     "d_prime": 0.2,
+     "caution": 0.87
+    },
+    "standard": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 36.0,
+     "needless": 25.0,
+     "d_prime": 0.25,
+     "caution": 0.9
+    },
+    "change": {
+     "d_prime": -0.05,
+     "d_prime_95": [
+      -0.52,
+      0.37
+     ],
+     "caution": -0.03,
+     "caution_95": [
+      -0.24,
+      0.19
+     ]
+    },
+    "thin": false
+   },
+   "cost_main": {
+    "decisions": 400,
+    "billed_usd_per_decision": 0.0,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 0.0,
+    "median_request_s": 1.5514999999999999,
+    "tokens_in": 2705.6,
+    "tokens_out": 2.0
+   },
+   "cost_all": {
+    "decisions": 1000,
+    "billed_usd_per_decision": 0.0,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 0.0,
+    "median_request_s": 1.5805,
+    "tokens_in": 2706.166,
+    "tokens_out": 2.0
+   }
+  },
+  "Mercury Decide": {
+   "group": "decision models",
+   "first_look": {
+    "pairs": 200,
+    "standard_pr": 32.74,
+    "nackgammon_pr": 28.46,
+    "drop": -4.28,
+    "drop_975": [
+     -20.11,
+     8.75
+    ],
+    "drop_95": [
+     -18.02,
+     7.42
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "label_first": "unclear",
+    "extend": true
+   },
+   "final_look": {
+    "pairs": 500,
+    "standard_pr": 31.34,
+    "nackgammon_pr": 34.08,
+    "drop": 2.73,
+    "drop_975": [
+     -5.94,
+     10.85
+    ],
+    "drop_95": [
+     -4.75,
+     9.89
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "extended": true,
+   "label": "unclear",
+   "sensitivity_first": {
+    "worst": {
+     "pairs": 200,
+     "standard_pr": 32.74,
+     "nackgammon_pr": 28.46,
+     "drop": -4.28,
+     "drop_975": [
+      -20.11,
+      8.75
+     ]
+    },
+    "drop": {
+     "pairs": 200,
+     "standard_pr": 32.74,
+     "nackgammon_pr": 28.46,
+     "drop": -4.28,
+     "drop_975": [
+      -20.11,
+      8.75
+     ]
+    }
+   },
+   "phases": {
+    "opening": {
+     "pairs": 60,
+     "standard_pr": 26.72,
+     "nackgammon_pr": 30.21,
+     "drop": 3.49,
+     "drop_95": [
+      -10.13,
+      15.91
+     ]
+    },
+    "contact": {
+     "pairs": 60,
+     "standard_pr": 46.91,
+     "nackgammon_pr": 29.39,
+     "drop": -17.52,
+     "drop_95": [
+      -35.81,
+      -0.62
+     ]
+    },
+    "holding": {
+     "pairs": 30,
+     "standard_pr": 60.18,
+     "nackgammon_pr": 47.77,
+     "drop": -12.41,
+     "drop_95": [
+      -88.53,
+      41.14
+     ]
+    },
+    "race": {
+     "pairs": 25,
+     "standard_pr": 7.74,
+     "nackgammon_pr": 25.88,
+     "drop": 18.14,
+     "drop_95": [
+      -4.66,
+      52.55
+     ]
+    },
+    "bear-off": {
+     "pairs": 25,
+     "standard_pr": 5.22,
+     "nackgammon_pr": 1.42,
+     "drop": -3.8,
+     "drop_95": [
+      -8.36,
+      -0.66
+     ]
+    },
+    "opening minus other phases": {
+     "diff": 11.1,
+     "ci_95": [
+      -9.5,
+      33.39
+     ]
+    }
+   },
+   "tags": {
+    "(none: bear-off)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 1.42
+     },
+     "standard": {
+      "n": 25,
+      "pr": 5.22
+     }
+    },
+    "(none: opening)": {
+     "nackgammon": {
+      "n": 60,
+      "pr": 30.21
+     },
+     "standard": {
+      "n": 60,
+      "pr": 26.72
+     }
+    },
+    "(none: race)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 25.88
+     },
+     "standard": {
+      "n": 25,
+      "pr": 7.74
+     }
+    },
+    "back game": {
+     "nackgammon": {
+      "n": 10,
+      "pr": 35.43
+     },
+     "standard": {
+      "n": 2,
+      "pr": 22.94
+     }
+    },
+    "blitz": {
+     "nackgammon": {
+      "n": 17,
+      "pr": 10.87
+     },
+     "standard": {
+      "n": 23,
+      "pr": 58.55
+     }
+    },
+    "holding": {
+     "nackgammon": {
+      "n": 30,
+      "pr": 47.77
+     },
+     "standard": {
+      "n": 30,
+      "pr": 60.18
+     }
+    },
+    "low-anchor": {
+     "nackgammon": {
+      "n": 7,
+      "pr": 45.54
+     },
+     "standard": {
+      "n": 8,
+      "pr": 44.31
+     }
+    },
+    "other": {
+     "nackgammon": {
+      "n": 11,
+      "pr": 21.24
+     },
+     "standard": {
+      "n": 10,
+      "pr": 45.57
+     }
+    },
+    "priming": {
+     "nackgammon": {
+      "n": 15,
+      "pr": 44.77
+     },
+     "standard": {
+      "n": 17,
+      "pr": 36.0
+     }
+    }
+   },
+   "risk_main": {
+    "nackgammon": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 18.0,
+     "needless": 9.0,
+     "d_prime": 0.48,
+     "caution": 0.83
+    },
+    "standard": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 17.0,
+     "needless": 11.0,
+     "d_prime": 0.31,
+     "caution": 0.79
+    },
+    "change": {
+     "d_prime": 0.17,
+     "d_prime_95": [
+      -0.51,
+      0.86
+     ],
+     "caution": 0.04,
+     "caution_95": [
+      -0.29,
+      0.37
+     ]
+    },
+    "thin": false
+   },
+   "risk_all": {
+    "nackgammon": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 40.0,
+     "needless": 27.0,
+     "d_prime": 0.28,
+     "caution": 0.83
+    },
+    "standard": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 42.0,
+     "needless": 25.0,
+     "d_prime": 0.37,
+     "caution": 0.84
+    },
+    "change": {
+     "d_prime": -0.09,
+     "d_prime_95": [
+      -0.52,
+      0.33
+     ],
+     "caution": -0.01,
+     "caution_95": [
+      -0.23,
+      0.21
+     ]
+    },
+    "thin": false
+   },
+   "cost_main": {
+    "decisions": 400,
+    "billed_usd_per_decision": 5.580065000000003e-05,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 0.0223,
+    "median_request_s": 0.468,
+    "tokens_in": 2790.0325,
+    "tokens_out": 1.0
+   },
+   "cost_all": {
+    "decisions": 1000,
+    "billed_usd_per_decision": 5.583964e-05,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 0.0558,
+    "median_request_s": 0.481,
+    "tokens_in": 2791.982,
+    "tokens_out": 1.0
+   }
+  },
+  "Winnow-12B": {
+   "group": "decision models",
+   "first_look": {
+    "pairs": 200,
+    "standard_pr": 34.33,
+    "nackgammon_pr": 33.43,
+    "drop": -0.89,
+    "drop_975": [
+     -17.96,
+     14.97
+    ],
+    "drop_95": [
+     -15.3,
+     12.97
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "label_first": "unclear",
+    "extend": true
+   },
+   "final_look": {
+    "pairs": 500,
+    "standard_pr": 31.93,
+    "nackgammon_pr": 34.61,
+    "drop": 2.68,
+    "drop_975": [
+     -6.26,
+     11.16
+    ],
+    "drop_95": [
+     -4.91,
+     10.09
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "extended": true,
+   "label": "unclear",
+   "sensitivity_first": {
+    "worst": {
+     "pairs": 200,
+     "standard_pr": 34.33,
+     "nackgammon_pr": 33.43,
+     "drop": -0.89,
+     "drop_975": [
+      -17.96,
+      14.97
+     ]
+    },
+    "drop": {
+     "pairs": 200,
+     "standard_pr": 34.33,
+     "nackgammon_pr": 33.43,
+     "drop": -0.89,
+     "drop_975": [
+      -17.96,
+      14.97
+     ]
+    }
+   },
+   "phases": {
+    "opening": {
+     "pairs": 60,
+     "standard_pr": 24.97,
+     "nackgammon_pr": 32.92,
+     "drop": 7.95,
+     "drop_95": [
+      -6.25,
+      21.71
+     ]
+    },
+    "contact": {
+     "pairs": 60,
+     "standard_pr": 45.25,
+     "nackgammon_pr": 33.14,
+     "drop": -12.11,
+     "drop_95": [
+      -31.78,
+      7.01
+     ]
+    },
+    "holding": {
+     "pairs": 30,
+     "standard_pr": 73.23,
+     "nackgammon_pr": 76.68,
+     "drop": 3.45,
+     "drop_95": [
+      -84.49,
+      79.88
+     ]
+    },
+    "race": {
+     "pairs": 25,
+     "standard_pr": 11.29,
+     "nackgammon_pr": 12.97,
+     "drop": 1.68,
+     "drop_95": [
+      -7.12,
+      10.17
+     ]
+    },
+    "bear-off": {
+     "pairs": 25,
+     "standard_pr": 6.94,
+     "nackgammon_pr": 3.95,
+     "drop": -2.99,
+     "drop_95": [
+      -9.39,
+      3.76
+     ]
+    },
+    "opening minus other phases": {
+     "diff": 12.63,
+     "ci_95": [
+      -10.31,
+      37.0
+     ]
+    }
+   },
+   "tags": {
+    "(none: bear-off)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 3.95
+     },
+     "standard": {
+      "n": 25,
+      "pr": 6.94
+     }
+    },
+    "(none: opening)": {
+     "nackgammon": {
+      "n": 60,
+      "pr": 32.92
+     },
+     "standard": {
+      "n": 60,
+      "pr": 24.97
+     }
+    },
+    "(none: race)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 12.97
+     },
+     "standard": {
+      "n": 25,
+      "pr": 11.29
+     }
+    },
+    "back game": {
+     "nackgammon": {
+      "n": 10,
+      "pr": 27.91
+     },
+     "standard": {
+      "n": 2,
+      "pr": 54.89
+     }
+    },
+    "blitz": {
+     "nackgammon": {
+      "n": 17,
+      "pr": 10.87
+     },
+     "standard": {
+      "n": 23,
+      "pr": 41.91
+     }
+    },
+    "holding": {
+     "nackgammon": {
+      "n": 30,
+      "pr": 76.68
+     },
+     "standard": {
+      "n": 30,
+      "pr": 73.23
+     }
+    },
+    "low-anchor": {
+     "nackgammon": {
+      "n": 7,
+      "pr": 41.48
+     },
+     "standard": {
+      "n": 8,
+      "pr": 45.79
+     }
+    },
+    "other": {
+     "nackgammon": {
+      "n": 11,
+      "pr": 35.18
+     },
+     "standard": {
+      "n": 10,
+      "pr": 65.55
+     }
+    },
+    "priming": {
+     "nackgammon": {
+      "n": 15,
+      "pr": 56.47
+     },
+     "standard": {
+      "n": 17,
+      "pr": 36.43
+     }
+    }
+   },
+   "risk_main": {
+    "nackgammon": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 32.0,
+     "needless": 22.0,
+     "d_prime": 0.39,
+     "caution": 0.23
+    },
+    "standard": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 29.0,
+     "needless": 19.0,
+     "d_prime": 0.4,
+     "caution": 0.35
+    },
+    "change": {
+     "d_prime": -0.01,
+     "d_prime_95": [
+      -0.65,
+      0.6
+     ],
+     "caution": -0.12,
+     "caution_95": [
+      -0.43,
+      0.18
+     ]
+    },
+    "thin": false
+   },
+   "risk_all": {
+    "nackgammon": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 80.0,
+     "needless": 60.0,
+     "d_prime": 0.31,
+     "caution": 0.19
+    },
+    "standard": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 73.0,
+     "needless": 45.0,
+     "d_prime": 0.46,
+     "caution": 0.37
+    },
+    "change": {
+     "d_prime": -0.15,
+     "d_prime_95": [
+      -0.53,
+      0.22
+     ],
+     "caution": -0.18,
+     "caution_95": [
+      -0.38,
+      0.02
+     ]
+    },
+    "thin": false
+   },
+   "cost_main": {
+    "decisions": 400,
+    "billed_usd_per_decision": 0.0,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 0.0,
+    "median_request_s": 3.502,
+    "tokens_in": 2874.475,
+    "tokens_out": 0.0
+   },
+   "cost_all": {
+    "decisions": 1000,
+    "billed_usd_per_decision": 0.0,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 0.0,
+    "median_request_s": 3.5175,
+    "tokens_in": 2874.577,
+    "tokens_out": 0.0
+   }
+  },
+  "LFM2.5-24B-A2B (off)": {
+   "group": "workhorses",
+   "first_look": {
+    "pairs": 200,
+    "standard_pr": 50.75,
+    "nackgammon_pr": 53.98,
+    "drop": 3.23,
+    "drop_975": [
+     -16.93,
+     22.07
+    ],
+    "drop_95": [
+     -14.09,
+     19.88
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "label_first": "unclear",
+    "extend": true
+   },
+   "final_look": {
+    "pairs": 500,
+    "standard_pr": 46.44,
+    "nackgammon_pr": 50.87,
+    "drop": 4.43,
+    "drop_975": [
+     -6.53,
+     15.38
+    ],
+    "drop_95": [
+     -5.2,
+     14.0
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "extended": true,
+   "label": "unclear",
+   "sensitivity_first": {
+    "worst": {
+     "pairs": 200,
+     "standard_pr": 50.75,
+     "nackgammon_pr": 53.98,
+     "drop": 3.23,
+     "drop_975": [
+      -16.93,
+      22.07
+     ]
+    },
+    "drop": {
+     "pairs": 200,
+     "standard_pr": 50.75,
+     "nackgammon_pr": 53.98,
+     "drop": 3.23,
+     "drop_975": [
+      -16.93,
+      22.07
+     ]
+    }
+   },
+   "phases": {
+    "opening": {
+     "pairs": 60,
+     "standard_pr": 40.54,
+     "nackgammon_pr": 56.04,
+     "drop": 15.51,
+     "drop_95": [
+      -2.57,
+      33.81
+     ]
+    },
+    "contact": {
+     "pairs": 60,
+     "standard_pr": 65.65,
+     "nackgammon_pr": 65.61,
+     "drop": -0.04,
+     "drop_95": [
+      -28.23,
+      29.22
+     ]
+    },
+    "holding": {
+     "pairs": 30,
+     "standard_pr": 88.29,
+     "nackgammon_pr": 73.95,
+     "drop": -14.33,
+     "drop_95": [
+      -107.31,
+      69.03
+     ]
+    },
+    "race": {
+     "pairs": 25,
+     "standard_pr": 24.63,
+     "nackgammon_pr": 26.07,
+     "drop": 1.45,
+     "drop_95": [
+      -14.37,
+      21.51
+     ]
+    },
+    "bear-off": {
+     "pairs": 25,
+     "standard_pr": 20.6,
+     "nackgammon_pr": 25.09,
+     "drop": 4.49,
+     "drop_95": [
+      -6.96,
+      17.06
+     ]
+    },
+    "opening minus other phases": {
+     "diff": 17.54,
+     "ci_95": [
+      -10.83,
+      47.11
+     ]
+    }
+   },
+   "tags": {
+    "(none: bear-off)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 25.09
+     },
+     "standard": {
+      "n": 25,
+      "pr": 20.6
+     }
+    },
+    "(none: opening)": {
+     "nackgammon": {
+      "n": 60,
+      "pr": 56.04
+     },
+     "standard": {
+      "n": 60,
+      "pr": 40.54
+     }
+    },
+    "(none: race)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 26.07
+     },
+     "standard": {
+      "n": 25,
+      "pr": 24.63
+     }
+    },
+    "back game": {
+     "nackgammon": {
+      "n": 10,
+      "pr": 45.59
+     },
+     "standard": {
+      "n": 2,
+      "pr": 22.94
+     }
+    },
+    "blitz": {
+     "nackgammon": {
+      "n": 17,
+      "pr": 125.24
+     },
+     "standard": {
+      "n": 23,
+      "pr": 76.34
+     }
+    },
+    "holding": {
+     "nackgammon": {
+      "n": 30,
+      "pr": 73.95
+     },
+     "standard": {
+      "n": 30,
+      "pr": 88.29
+     }
+    },
+    "low-anchor": {
+     "nackgammon": {
+      "n": 7,
+      "pr": 45.08
+     },
+     "standard": {
+      "n": 8,
+      "pr": 62.22
+     }
+    },
+    "other": {
+     "nackgammon": {
+      "n": 11,
+      "pr": 21.21
+     },
+     "standard": {
+      "n": 10,
+      "pr": 90.4
+     }
+    },
+    "priming": {
+     "nackgammon": {
+      "n": 15,
+      "pr": 53.51
+     },
+     "standard": {
+      "n": 17,
+      "pr": 43.26
+     }
+    }
+   },
+   "risk_main": {
+    "nackgammon": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 39.0,
+     "needless": 27.0,
+     "d_prime": 0.45,
+     "caution": -0.0
+    },
+    "standard": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 31.0,
+     "needless": 25.0,
+     "d_prime": 0.23,
+     "caution": 0.19
+    },
+    "change": {
+     "d_prime": 0.22,
+     "d_prime_95": [
+      -0.39,
+      0.86
+     ],
+     "caution": -0.19,
+     "caution_95": [
+      -0.49,
+      0.11
+     ]
+    },
+    "thin": false
+   },
+   "risk_all": {
+    "nackgammon": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 105.0,
+     "needless": 66.0,
+     "d_prime": 0.6,
+     "caution": -0.05
+    },
+    "standard": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 77.0,
+     "needless": 64.0,
+     "d_prime": 0.2,
+     "caution": 0.18
+    },
+    "change": {
+     "d_prime": 0.4,
+     "d_prime_95": [
+      0.01,
+      0.8
+     ],
+     "caution": -0.23,
+     "caution_95": [
+      -0.44,
+      -0.03
+     ]
+    },
+    "thin": false
+   },
+   "cost_main": {
+    "decisions": 400,
+    "billed_usd_per_decision": 0.0,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 0.0,
+    "median_request_s": 0.326,
+    "tokens_in": 2589.5275,
+    "tokens_out": 1.0
+   },
+   "cost_all": {
+    "decisions": 1000,
+    "billed_usd_per_decision": 0.0,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 0.0,
+    "median_request_s": 0.339,
+    "tokens_in": 2590.836,
+    "tokens_out": 1.0
+   }
+  },
+  "Open-Jev 27B v1.1": {
+   "group": "decision models",
+   "first_look": {
+    "pairs": 200,
+    "standard_pr": 52.08,
+    "nackgammon_pr": 40.96,
+    "drop": -11.12,
+    "drop_975": [
+     -29.52,
+     6.79
+    ],
+    "drop_95": [
+     -26.93,
+     4.67
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "label_first": "unclear",
+    "extend": true
+   },
+   "final_look": {
+    "pairs": 500,
+    "standard_pr": 47.07,
+    "nackgammon_pr": 43.99,
+    "drop": -3.08,
+    "drop_975": [
+     -13.33,
+     6.76
+    ],
+    "drop_95": [
+     -12.09,
+     5.55
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "extended": true,
+   "label": "unclear",
+   "sensitivity_first": {
+    "worst": {
+     "pairs": 200,
+     "standard_pr": 52.08,
+     "nackgammon_pr": 40.96,
+     "drop": -11.12,
+     "drop_975": [
+      -29.52,
+      6.79
+     ]
+    },
+    "drop": {
+     "pairs": 200,
+     "standard_pr": 52.08,
+     "nackgammon_pr": 40.96,
+     "drop": -11.12,
+     "drop_975": [
+      -29.52,
+      6.79
+     ]
+    }
+   },
+   "phases": {
+    "opening": {
+     "pairs": 60,
+     "standard_pr": 45.6,
+     "nackgammon_pr": 29.7,
+     "drop": -15.9,
+     "drop_95": [
+      -34.91,
+      3.03
+     ]
+    },
+    "contact": {
+     "pairs": 60,
+     "standard_pr": 88.55,
+     "nackgammon_pr": 60.66,
+     "drop": -27.89,
+     "drop_95": [
+      -63.56,
+      5.21
+     ]
+    },
+    "holding": {
+     "pairs": 30,
+     "standard_pr": 63.23,
+     "nackgammon_pr": 81.96,
+     "drop": 18.72,
+     "drop_95": [
+      -49.4,
+      90.12
+     ]
+    },
+    "race": {
+     "pairs": 25,
+     "standard_pr": 11.32,
+     "nackgammon_pr": 10.76,
+     "drop": -0.56,
+     "drop_95": [
+      -13.57,
+      12.64
+     ]
+    },
+    "bear-off": {
+     "pairs": 25,
+     "standard_pr": 7.48,
+     "nackgammon_pr": 1.74,
+     "drop": -5.75,
+     "drop_95": [
+      -13.02,
+      -0.57
+     ]
+    },
+    "opening minus other phases": {
+     "diff": -6.83,
+     "ci_95": [
+      -35.83,
+      21.69
+     ]
+    }
+   },
+   "tags": {
+    "(none: bear-off)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 1.74
+     },
+     "standard": {
+      "n": 25,
+      "pr": 7.48
+     }
+    },
+    "(none: opening)": {
+     "nackgammon": {
+      "n": 60,
+      "pr": 29.7
+     },
+     "standard": {
+      "n": 60,
+      "pr": 45.6
+     }
+    },
+    "(none: race)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 10.76
+     },
+     "standard": {
+      "n": 25,
+      "pr": 11.32
+     }
+    },
+    "back game": {
+     "nackgammon": {
+      "n": 10,
+      "pr": 52.7
+     },
+     "standard": {
+      "n": 2,
+      "pr": 81.86
+     }
+    },
+    "blitz": {
+     "nackgammon": {
+      "n": 17,
+      "pr": 58.85
+     },
+     "standard": {
+      "n": 23,
+      "pr": 98.15
+     }
+    },
+    "holding": {
+     "nackgammon": {
+      "n": 30,
+      "pr": 81.96
+     },
+     "standard": {
+      "n": 30,
+      "pr": 63.23
+     }
+    },
+    "low-anchor": {
+     "nackgammon": {
+      "n": 7,
+      "pr": 70.45
+     },
+     "standard": {
+      "n": 8,
+      "pr": 42.77
+     }
+    },
+    "other": {
+     "nackgammon": {
+      "n": 11,
+      "pr": 40.1
+     },
+     "standard": {
+      "n": 10,
+      "pr": 81.2
+     }
+    },
+    "priming": {
+     "nackgammon": {
+      "n": 15,
+      "pr": 78.53
+     },
+     "standard": {
+      "n": 17,
+      "pr": 102.23
+     }
+    }
+   },
+   "risk_main": {
+    "nackgammon": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 30.0,
+     "needless": 24.0,
+     "d_prime": 0.23,
+     "caution": 0.23
+    },
+    "standard": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 37.0,
+     "needless": 26.0,
+     "d_prime": 0.42,
+     "caution": 0.06
+    },
+    "change": {
+     "d_prime": -0.19,
+     "d_prime_95": [
+      -0.82,
+      0.43
+     ],
+     "caution": 0.17,
+     "caution_95": [
+      -0.14,
+      0.46
+     ]
+    },
+    "thin": false
+   },
+   "risk_all": {
+    "nackgammon": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 82.0,
+     "needless": 68.0,
+     "d_prime": 0.21,
+     "caution": 0.11
+    },
+    "standard": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 91.0,
+     "needless": 59.0,
+     "d_prime": 0.49,
+     "caution": 0.12
+    },
+    "change": {
+     "d_prime": -0.28,
+     "d_prime_95": [
+      -0.66,
+      0.11
+     ],
+     "caution": -0.01,
+     "caution_95": [
+      -0.19,
+      0.19
+     ]
+    },
+    "thin": false
+   },
+   "cost_main": {
+    "decisions": 400,
+    "billed_usd_per_decision": 0.0,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 0.0,
+    "median_request_s": 1.1715,
+    "tokens_in": 21314.79,
+    "tokens_out": 0.0
+   },
+   "cost_all": {
+    "decisions": 1000,
+    "billed_usd_per_decision": 0.0,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 0.0,
+    "median_request_s": 1.1705,
+    "tokens_in": 21366.127,
+    "tokens_out": 0.0
+   }
+  },
+  "Decider Flash v1.2": {
+   "group": "decision models",
+   "first_look": {
+    "pairs": 200,
+    "standard_pr": 39.77,
+    "nackgammon_pr": 42.86,
+    "drop": 3.09,
+    "drop_975": [
+     -12.09,
+     20.11
+    ],
+    "drop_95": [
+     -10.03,
+     17.8
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "label_first": "unclear",
+    "extend": true
+   },
+   "final_look": {
+    "pairs": 500,
+    "standard_pr": 40.23,
+    "nackgammon_pr": 48.01,
+    "drop": 7.78,
+    "drop_975": [
+     -2.16,
+     18.39
+    ],
+    "drop_95": [
+     -0.91,
+     16.91
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "extended": true,
+   "label": "unclear",
+   "sensitivity_first": {
+    "worst": {
+     "pairs": 200,
+     "standard_pr": 39.77,
+     "nackgammon_pr": 42.86,
+     "drop": 3.09,
+     "drop_975": [
+      -12.09,
+      20.11
+     ]
+    },
+    "drop": {
+     "pairs": 200,
+     "standard_pr": 39.77,
+     "nackgammon_pr": 42.86,
+     "drop": 3.09,
+     "drop_975": [
+      -12.09,
+      20.11
+     ]
+    }
+   },
+   "phases": {
+    "opening": {
+     "pairs": 60,
+     "standard_pr": 32.27,
+     "nackgammon_pr": 33.12,
+     "drop": 0.86,
+     "drop_95": [
+      -15.82,
+      18.38
+     ]
+    },
+    "contact": {
+     "pairs": 60,
+     "standard_pr": 69.47,
+     "nackgammon_pr": 58.06,
+     "drop": -11.41,
+     "drop_95": [
+      -40.76,
+      18.75
+     ]
+    },
+    "holding": {
+     "pairs": 30,
+     "standard_pr": 46.43,
+     "nackgammon_pr": 75.18,
+     "drop": 28.75,
+     "drop_95": [
+      -24.0,
+      99.67
+     ]
+    },
+    "race": {
+     "pairs": 25,
+     "standard_pr": 10.73,
+     "nackgammon_pr": 24.51,
+     "drop": 13.78,
+     "drop_95": [
+      -1.66,
+      32.85
+     ]
+    },
+    "bear-off": {
+     "pairs": 25,
+     "standard_pr": 7.52,
+     "nackgammon_pr": 9.3,
+     "drop": 1.79,
+     "drop_95": [
+      -6.82,
+      11.56
+     ]
+    },
+    "opening minus other phases": {
+     "diff": -3.19,
+     "ci_95": [
+      -29.19,
+      21.46
+     ]
+    }
+   },
+   "tags": {
+    "(none: bear-off)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 9.3
+     },
+     "standard": {
+      "n": 25,
+      "pr": 7.52
+     }
+    },
+    "(none: opening)": {
+     "nackgammon": {
+      "n": 60,
+      "pr": 33.12
+     },
+     "standard": {
+      "n": 60,
+      "pr": 32.27
+     }
+    },
+    "(none: race)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 24.51
+     },
+     "standard": {
+      "n": 25,
+      "pr": 10.73
+     }
+    },
+    "back game": {
+     "nackgammon": {
+      "n": 10,
+      "pr": 47.05
+     },
+     "standard": {
+      "n": 2,
+      "pr": 35.25
+     }
+    },
+    "blitz": {
+     "nackgammon": {
+      "n": 17,
+      "pr": 51.71
+     },
+     "standard": {
+      "n": 23,
+      "pr": 85.22
+     }
+    },
+    "holding": {
+     "nackgammon": {
+      "n": 30,
+      "pr": 75.18
+     },
+     "standard": {
+      "n": 30,
+      "pr": 46.43
+     }
+    },
+    "low-anchor": {
+     "nackgammon": {
+      "n": 7,
+      "pr": 80.19
+     },
+     "standard": {
+      "n": 8,
+      "pr": 44.13
+     }
+    },
+    "other": {
+     "nackgammon": {
+      "n": 11,
+      "pr": 32.79
+     },
+     "standard": {
+      "n": 10,
+      "pr": 56.5
+     }
+    },
+    "priming": {
+     "nackgammon": {
+      "n": 15,
+      "pr": 80.81
+     },
+     "standard": {
+      "n": 17,
+      "pr": 71.75
+     }
+    }
+   },
+   "risk_main": {
+    "nackgammon": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 39.0,
+     "needless": 25.0,
+     "d_prime": 0.53,
+     "caution": 0.04
+    },
+    "standard": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 35.0,
+     "needless": 27.0,
+     "d_prime": 0.3,
+     "caution": 0.08
+    },
+    "change": {
+     "d_prime": 0.23,
+     "d_prime_95": [
+      -0.42,
+      0.85
+     ],
+     "caution": -0.04,
+     "caution_95": [
+      -0.35,
+      0.25
+     ]
+    },
+    "thin": false
+   },
+   "risk_all": {
+    "nackgammon": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 100.0,
+     "needless": 71.0,
+     "d_prime": 0.44,
+     "caution": -0.05
+    },
+    "standard": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 91.0,
+     "needless": 68.0,
+     "d_prime": 0.35,
+     "caution": 0.05
+    },
+    "change": {
+     "d_prime": 0.09,
+     "d_prime_95": [
+      -0.3,
+      0.48
+     ],
+     "caution": -0.1,
+     "caution_95": [
+      -0.29,
+      0.1
+     ]
+    },
+    "thin": false
+   },
+   "cost_main": {
+    "decisions": 400,
+    "billed_usd_per_decision": 2.7981925000000006e-05,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 0.0112,
+    "median_request_s": 0.5115000000000001,
+    "tokens_in": 2798.1925,
+    "tokens_out": 0.0
+   },
+   "cost_all": {
+    "decisions": 1000,
+    "billed_usd_per_decision": 2.7981700000000034e-05,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 0.028,
+    "median_request_s": 0.514,
+    "tokens_in": 2798.17,
+    "tokens_out": 0.0
+   }
+  },
+  "Gemini 3.8 Flash (low)": {
+   "group": "workhorses",
+   "first_look": {
+    "pairs": 200,
+    "standard_pr": 15.92,
+    "nackgammon_pr": 11.81,
+    "drop": -4.11,
+    "drop_975": [
+     -9.72,
+     1.04
+    ],
+    "drop_95": [
+     -8.93,
+     0.45
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "label_first": "unclear",
+    "extend": true
+   },
+   "final_look": {
+    "pairs": 500,
+    "standard_pr": 16.71,
+    "nackgammon_pr": 15.41,
+    "drop": -1.3,
+    "drop_975": [
+     -5.48,
+     2.9
+    ],
+    "drop_95": [
+     -4.96,
+     2.41
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "extended": true,
+   "label": "unclear",
+   "sensitivity_first": {
+    "worst": {
+     "pairs": 200,
+     "standard_pr": 15.92,
+     "nackgammon_pr": 11.81,
+     "drop": -4.11,
+     "drop_975": [
+      -9.72,
+      1.04
+     ]
+    },
+    "drop": {
+     "pairs": 200,
+     "standard_pr": 15.92,
+     "nackgammon_pr": 11.81,
+     "drop": -4.11,
+     "drop_975": [
+      -9.72,
+      1.04
+     ]
+    }
+   },
+   "phases": {
+    "opening": {
+     "pairs": 60,
+     "standard_pr": 14.94,
+     "nackgammon_pr": 16.01,
+     "drop": 1.07,
+     "drop_95": [
+      -5.51,
+      7.26
+     ]
+    },
+    "contact": {
+     "pairs": 60,
+     "standard_pr": 28.74,
+     "nackgammon_pr": 16.38,
+     "drop": -12.35,
+     "drop_95": [
+      -24.99,
+      -0.09
+     ]
+    },
+    "holding": {
+     "pairs": 30,
+     "standard_pr": 14.24,
+     "nackgammon_pr": 13.35,
+     "drop": -0.88,
+     "drop_95": [
+      -14.62,
+      10.17
+     ]
+    },
+    "race": {
+     "pairs": 25,
+     "standard_pr": 3.31,
+     "nackgammon_pr": 0.64,
+     "drop": -2.67,
+     "drop_95": [
+      -6.94,
+      0.62
+     ]
+    },
+    "bear-off": {
+     "pairs": 25,
+     "standard_pr": 2.15,
+     "nackgammon_pr": 0.07,
+     "drop": -2.08,
+     "drop_95": [
+      -6.01,
+      0.0
+     ]
+    },
+    "opening minus other phases": {
+     "diff": 7.4,
+     "ci_95": [
+      -1.46,
+      16.42
+     ]
+    }
+   },
+   "tags": {
+    "(none: bear-off)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 0.07
+     },
+     "standard": {
+      "n": 25,
+      "pr": 2.15
+     }
+    },
+    "(none: opening)": {
+     "nackgammon": {
+      "n": 60,
+      "pr": 16.01
+     },
+     "standard": {
+      "n": 60,
+      "pr": 14.94
+     }
+    },
+    "(none: race)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 0.64
+     },
+     "standard": {
+      "n": 25,
+      "pr": 3.31
+     }
+    },
+    "back game": {
+     "nackgammon": {
+      "n": 10,
+      "pr": 27.83
+     },
+     "standard": {
+      "n": 2,
+      "pr": 22.94
+     }
+    },
+    "blitz": {
+     "nackgammon": {
+      "n": 17,
+      "pr": 6.66
+     },
+     "standard": {
+      "n": 23,
+      "pr": 29.33
+     }
+    },
+    "holding": {
+     "nackgammon": {
+      "n": 30,
+      "pr": 13.35
+     },
+     "standard": {
+      "n": 30,
+      "pr": 14.24
+     }
+    },
+    "low-anchor": {
+     "nackgammon": {
+      "n": 7,
+      "pr": 29.48
+     },
+     "standard": {
+      "n": 8,
+      "pr": 36.72
+     }
+    },
+    "other": {
+     "nackgammon": {
+      "n": 11,
+      "pr": 15.09
+     },
+     "standard": {
+      "n": 10,
+      "pr": 21.48
+     }
+    },
+    "priming": {
+     "nackgammon": {
+      "n": 15,
+      "pr": 14.61
+     },
+     "standard": {
+      "n": 17,
+      "pr": 29.13
+     }
+    }
+   },
+   "risk_main": {
+    "nackgammon": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 26.0,
+     "needless": 0.0,
+     "d_prime": 2.17,
+     "caution": 1.35
+    },
+    "standard": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 20.0,
+     "needless": 6.0,
+     "d_prime": 0.79,
+     "caution": 0.9
+    },
+    "change": {
+     "d_prime": 1.38,
+     "d_prime_95": [
+      0.73,
+      1.92
+     ],
+     "caution": 0.45,
+     "caution_95": [
+      0.12,
+      0.72
+     ]
+    },
+    "thin": false
+   },
+   "risk_all": {
+    "nackgammon": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 60.0,
+     "needless": 7.0,
+     "d_prime": 1.35,
+     "caution": 1.02
+    },
+    "standard": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 51.0,
+     "needless": 11.0,
+     "d_prime": 0.99,
+     "caution": 0.99
+    },
+    "change": {
+     "d_prime": 0.36,
+     "d_prime_95": [
+      -0.12,
+      0.89
+     ],
+     "caution": 0.03,
+     "caution_95": [
+      -0.21,
+      0.3
+     ]
+    },
+    "thin": false
+   },
+   "cost_main": {
+    "decisions": 400,
+    "billed_usd_per_decision": 0.0028452768749999986,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 1.1381,
+    "median_request_s": 1.98,
+    "tokens_in": 2680.8525,
+    "tokens_out": 222.57
+   },
+   "cost_all": {
+    "decisions": 1000,
+    "billed_usd_per_decision": 0.002884798499999999,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 2.8848,
+    "median_request_s": 2.113,
+    "tokens_in": 2681.463,
+    "tokens_out": 232.987
+   }
+  },
+  "Claude Sonnet 5.5 (low)": {
+   "group": "workhorses",
+   "first_look": {
+    "pairs": 200,
+    "standard_pr": 13.96,
+    "nackgammon_pr": 14.5,
+    "drop": 0.54,
+    "drop_975": [
+     -5.04,
+     6.02
+    ],
+    "drop_95": [
+     -4.39,
+     5.32
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "label_first": "unclear",
+    "extend": true
+   },
+   "final_look": {
+    "pairs": 500,
+    "standard_pr": 16.45,
+    "nackgammon_pr": 15.3,
+    "drop": -1.15,
+    "drop_975": [
+     -5.89,
+     3.32
+    ],
+    "drop_95": [
+     -5.22,
+     2.79
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "extended": true,
+   "label": "unclear",
+   "sensitivity_first": {
+    "worst": {
+     "pairs": 200,
+     "standard_pr": 13.96,
+     "nackgammon_pr": 14.5,
+     "drop": 0.54,
+     "drop_975": [
+      -5.04,
+      6.02
+     ]
+    },
+    "drop": {
+     "pairs": 200,
+     "standard_pr": 13.96,
+     "nackgammon_pr": 14.5,
+     "drop": 0.54,
+     "drop_975": [
+      -5.04,
+      6.02
+     ]
+    }
+   },
+   "phases": {
+    "opening": {
+     "pairs": 60,
+     "standard_pr": 14.5,
+     "nackgammon_pr": 18.95,
+     "drop": 4.45,
+     "drop_95": [
+      -3.8,
+      13.62
+     ]
+    },
+    "contact": {
+     "pairs": 60,
+     "standard_pr": 24.43,
+     "nackgammon_pr": 24.37,
+     "drop": -0.07,
+     "drop_95": [
+      -12.53,
+      11.73
+     ]
+    },
+    "holding": {
+     "pairs": 30,
+     "standard_pr": 13.68,
+     "nackgammon_pr": 7.6,
+     "drop": -6.07,
+     "drop_95": [
+      -19.26,
+      3.64
+     ]
+    },
+    "race": {
+     "pairs": 25,
+     "standard_pr": 1.85,
+     "nackgammon_pr": 2.86,
+     "drop": 1.01,
+     "drop_95": [
+      -3.88,
+      7.07
+     ]
+    },
+    "bear-off": {
+     "pairs": 25,
+     "standard_pr": 0.0,
+     "nackgammon_pr": 0.07,
+     "drop": 0.07,
+     "drop_95": [
+      0.0,
+      0.21
+     ]
+    },
+    "opening minus other phases": {
+     "diff": 5.58,
+     "ci_95": [
+      -4.32,
+      16.34
+     ]
+    }
+   },
+   "tags": {
+    "(none: bear-off)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 0.07
+     },
+     "standard": {
+      "n": 25,
+      "pr": 0.0
+     }
+    },
+    "(none: opening)": {
+     "nackgammon": {
+      "n": 60,
+      "pr": 18.95
+     },
+     "standard": {
+      "n": 60,
+      "pr": 14.5
+     }
+    },
+    "(none: race)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 2.86
+     },
+     "standard": {
+      "n": 25,
+      "pr": 1.85
+     }
+    },
+    "back game": {
+     "nackgammon": {
+      "n": 10,
+      "pr": 39.47
+     },
+     "standard": {
+      "n": 2,
+      "pr": 11.09
+     }
+    },
+    "blitz": {
+     "nackgammon": {
+      "n": 17,
+      "pr": 10.09
+     },
+     "standard": {
+      "n": 23,
+      "pr": 24.68
+     }
+    },
+    "holding": {
+     "nackgammon": {
+      "n": 30,
+      "pr": 7.6
+     },
+     "standard": {
+      "n": 30,
+      "pr": 13.68
+     }
+    },
+    "low-anchor": {
+     "nackgammon": {
+      "n": 7,
+      "pr": 36.58
+     },
+     "standard": {
+      "n": 8,
+      "pr": 41.27
+     }
+    },
+    "other": {
+     "nackgammon": {
+      "n": 11,
+      "pr": 30.71
+     },
+     "standard": {
+      "n": 10,
+      "pr": 23.58
+     }
+    },
+    "priming": {
+     "nackgammon": {
+      "n": 15,
+      "pr": 20.13
+     },
+     "standard": {
+      "n": 17,
+      "pr": 18.25
+     }
+    }
+   },
+   "risk_main": {
+    "nackgammon": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 28.0,
+     "needless": 3.0,
+     "d_prime": 1.44,
+     "caution": 0.91
+    },
+    "standard": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 25.0,
+     "needless": 6.0,
+     "d_prime": 0.99,
+     "caution": 0.8
+    },
+    "change": {
+     "d_prime": 0.45,
+     "d_prime_95": [
+      -0.32,
+      1.27
+     ],
+     "caution": 0.11,
+     "caution_95": [
+      -0.25,
+      0.51
+     ]
+    },
+    "thin": false
+   },
+   "risk_all": {
+    "nackgammon": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 71.0,
+     "needless": 13.0,
+     "d_prime": 1.22,
+     "caution": 0.79
+    },
+    "standard": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 62.0,
+     "needless": 13.0,
+     "d_prime": 1.08,
+     "caution": 0.86
+    },
+    "change": {
+     "d_prime": 0.14,
+     "d_prime_95": [
+      -0.31,
+      0.58
+     ],
+     "caution": -0.07,
+     "caution_95": [
+      -0.29,
+      0.16
+     ]
+    },
+    "thin": false
+   },
+   "cost_main": {
+    "decisions": 400,
+    "billed_usd_per_decision": 0.008765045,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 3.506,
+    "median_request_s": 1.483,
+    "tokens_in": 3680.085,
+    "tokens_out": 140.4875
+   },
+   "cost_all": {
+    "decisions": 1000,
+    "billed_usd_per_decision": 0.008725733999999997,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 8.7257,
+    "median_request_s": 1.3399999999999999,
+    "tokens_in": 3682.072,
+    "tokens_out": 136.159
+   }
+  },
+  "GPT-6.1 Sol (low)": {
+   "group": "workhorses",
+   "first_look": {
+    "pairs": 200,
+    "standard_pr": 11.15,
+    "nackgammon_pr": 9.9,
+    "drop": -1.26,
+    "drop_975": [
+     -5.7,
+     3.31
+    ],
+    "drop_95": [
+     -5.25,
+     2.67
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "label_first": "unclear",
+    "extend": true
+   },
+   "final_look": {
+    "pairs": 500,
+    "standard_pr": 12.21,
+    "nackgammon_pr": 10.75,
+    "drop": -1.46,
+    "drop_975": [
+     -5.01,
+     2.05
+    ],
+    "drop_95": [
+     -4.6,
+     1.64
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "extended": true,
+   "label": "unclear",
+   "sensitivity_first": {
+    "worst": {
+     "pairs": 200,
+     "standard_pr": 11.15,
+     "nackgammon_pr": 9.9,
+     "drop": -1.26,
+     "drop_975": [
+      -5.7,
+      3.31
+     ]
+    },
+    "drop": {
+     "pairs": 200,
+     "standard_pr": 11.15,
+     "nackgammon_pr": 9.9,
+     "drop": -1.26,
+     "drop_975": [
+      -5.7,
+      3.31
+     ]
+    }
+   },
+   "phases": {
+    "opening": {
+     "pairs": 60,
+     "standard_pr": 12.75,
+     "nackgammon_pr": 16.48,
+     "drop": 3.73,
+     "drop_95": [
+      -4.12,
+      12.06
+     ]
+    },
+    "contact": {
+     "pairs": 60,
+     "standard_pr": 16.46,
+     "nackgammon_pr": 12.74,
+     "drop": -3.71,
+     "drop_95": [
+      -12.27,
+      4.62
+     ]
+    },
+    "holding": {
+     "pairs": 30,
+     "standard_pr": 13.7,
+     "nackgammon_pr": 7.37,
+     "drop": -6.33,
+     "drop_95": [
+      -19.68,
+      3.53
+     ]
+    },
+    "race": {
+     "pairs": 25,
+     "standard_pr": 1.1,
+     "nackgammon_pr": 0.18,
+     "drop": -0.91,
+     "drop_95": [
+      -2.57,
+      0.28
+     ]
+    },
+    "bear-off": {
+     "pairs": 25,
+     "standard_pr": 1.59,
+     "nackgammon_pr": 0.0,
+     "drop": -1.59,
+     "drop_95": [
+      -4.77,
+      0.0
+     ]
+    },
+    "opening minus other phases": {
+     "diff": 7.12,
+     "ci_95": [
+      -1.9,
+      16.65
+     ]
+    }
+   },
+   "tags": {
+    "(none: bear-off)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 0.0
+     },
+     "standard": {
+      "n": 25,
+      "pr": 1.59
+     }
+    },
+    "(none: opening)": {
+     "nackgammon": {
+      "n": 60,
+      "pr": 16.48
+     },
+     "standard": {
+      "n": 60,
+      "pr": 12.75
+     }
+    },
+    "(none: race)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 0.18
+     },
+     "standard": {
+      "n": 25,
+      "pr": 1.1
+     }
+    },
+    "back game": {
+     "nackgammon": {
+      "n": 10,
+      "pr": 17.22
+     },
+     "standard": {
+      "n": 2,
+      "pr": 22.94
+     }
+    },
+    "blitz": {
+     "nackgammon": {
+      "n": 17,
+      "pr": 12.98
+     },
+     "standard": {
+      "n": 23,
+      "pr": 11.77
+     }
+    },
+    "holding": {
+     "nackgammon": {
+      "n": 30,
+      "pr": 7.37
+     },
+     "standard": {
+      "n": 30,
+      "pr": 13.7
+     }
+    },
+    "low-anchor": {
+     "nackgammon": {
+      "n": 7,
+      "pr": 21.59
+     },
+     "standard": {
+      "n": 8,
+      "pr": 37.19
+     }
+    },
+    "other": {
+     "nackgammon": {
+      "n": 11,
+      "pr": 10.68
+     },
+     "standard": {
+      "n": 10,
+      "pr": 20.24
+     }
+    },
+    "priming": {
+     "nackgammon": {
+      "n": 15,
+      "pr": 6.89
+     },
+     "standard": {
+      "n": 17,
+      "pr": 10.05
+     }
+    }
+   },
+   "risk_main": {
+    "nackgammon": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 35.0,
+     "needless": 2.0,
+     "d_prime": 1.86,
+     "caution": 0.85
+    },
+    "standard": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 31.0,
+     "needless": 7.0,
+     "d_prime": 1.14,
+     "caution": 0.65
+    },
+    "change": {
+     "d_prime": 0.72,
+     "d_prime_95": [
+      0.04,
+      1.56
+     ],
+     "caution": 0.2,
+     "caution_95": [
+      -0.12,
+      0.63
+     ]
+    },
+    "thin": false
+   },
+   "risk_all": {
+    "nackgammon": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 82.0,
+     "needless": 12.0,
+     "d_prime": 1.43,
+     "caution": 0.72
+    },
+    "standard": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 80.0,
+     "needless": 15.0,
+     "d_prime": 1.28,
+     "caution": 0.68
+    },
+    "change": {
+     "d_prime": 0.15,
+     "d_prime_95": [
+      -0.32,
+      0.61
+     ],
+     "caution": 0.04,
+     "caution_95": [
+      -0.18,
+      0.28
+     ]
+    },
+    "thin": false
+   },
+   "cost_main": {
+    "decisions": 400,
+    "billed_usd_per_decision": 0.006021779999999994,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 2.4087,
+    "median_request_s": 4.596,
+    "tokens_in": 2605.1775,
+    "tokens_out": 81.1425
+   },
+   "cost_all": {
+    "decisions": 1000,
+    "billed_usd_per_decision": 0.006015522000000003,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 6.0155,
+    "median_request_s": 4.527,
+    "tokens_in": 2606.486,
+    "tokens_out": 80.255
+   }
+  },
+  "GPT-6 Astra (on)": {
+   "group": "frontier",
+   "first_look": {
+    "pairs": 200,
+    "standard_pr": 9.66,
+    "nackgammon_pr": 7.3,
+    "drop": -2.37,
+    "drop_975": [
+     -6.69,
+     1.77
+    ],
+    "drop_95": [
+     -6.19,
+     1.16
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "label_first": "unclear",
+    "extend": true
+   },
+   "final_look": {
+    "pairs": 500,
+    "standard_pr": 10.86,
+    "nackgammon_pr": 8.88,
+    "drop": -1.99,
+    "drop_975": [
+     -5.52,
+     1.47
+    ],
+    "drop_95": [
+     -5.08,
+     1.02
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "extended": true,
+   "label": "unclear",
+   "sensitivity_first": {
+    "worst": {
+     "pairs": 200,
+     "standard_pr": 9.66,
+     "nackgammon_pr": 7.3,
+     "drop": -2.37,
+     "drop_975": [
+      -6.69,
+      1.77
+     ]
+    },
+    "drop": {
+     "pairs": 200,
+     "standard_pr": 9.66,
+     "nackgammon_pr": 7.3,
+     "drop": -2.37,
+     "drop_975": [
+      -6.69,
+      1.77
+     ]
+    }
+   },
+   "phases": {
+    "opening": {
+     "pairs": 60,
+     "standard_pr": 8.84,
+     "nackgammon_pr": 12.14,
+     "drop": 3.3,
+     "drop_95": [
+      -3.03,
+      9.7
+     ]
+    },
+    "contact": {
+     "pairs": 60,
+     "standard_pr": 16.23,
+     "nackgammon_pr": 9.73,
+     "drop": -6.5,
+     "drop_95": [
+      -14.88,
+      1.78
+     ]
+    },
+    "holding": {
+     "pairs": 30,
+     "standard_pr": 13.57,
+     "nackgammon_pr": 4.68,
+     "drop": -8.88,
+     "drop_95": [
+      -22.08,
+      1.05
+     ]
+    },
+    "race": {
+     "pairs": 25,
+     "standard_pr": 0.83,
+     "nackgammon_pr": 0.18,
+     "drop": -0.64,
+     "drop_95": [
+      -2.22,
+      0.37
+     ]
+    },
+    "bear-off": {
+     "pairs": 25,
+     "standard_pr": 0.03,
+     "nackgammon_pr": 0.07,
+     "drop": 0.04,
+     "drop_95": [
+      0.0,
+      0.13
+     ]
+    },
+    "opening minus other phases": {
+     "diff": 8.1,
+     "ci_95": [
+      0.51,
+      16.05
+     ]
+    }
+   },
+   "tags": {
+    "(none: bear-off)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 0.07
+     },
+     "standard": {
+      "n": 25,
+      "pr": 0.03
+     }
+    },
+    "(none: opening)": {
+     "nackgammon": {
+      "n": 60,
+      "pr": 12.14
+     },
+     "standard": {
+      "n": 60,
+      "pr": 8.84
+     }
+    },
+    "(none: race)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 0.18
+     },
+     "standard": {
+      "n": 25,
+      "pr": 0.83
+     }
+    },
+    "back game": {
+     "nackgammon": {
+      "n": 10,
+      "pr": 17.22
+     },
+     "standard": {
+      "n": 2,
+      "pr": 11.09
+     }
+    },
+    "blitz": {
+     "nackgammon": {
+      "n": 17,
+      "pr": 10.78
+     },
+     "standard": {
+      "n": 23,
+      "pr": 10.2
+     }
+    },
+    "holding": {
+     "nackgammon": {
+      "n": 30,
+      "pr": 4.68
+     },
+     "standard": {
+      "n": 30,
+      "pr": 13.57
+     }
+    },
+    "low-anchor": {
+     "nackgammon": {
+      "n": 7,
+      "pr": 9.99
+     },
+     "standard": {
+      "n": 8,
+      "pr": 21.16
+     }
+    },
+    "other": {
+     "nackgammon": {
+      "n": 11,
+      "pr": 8.27
+     },
+     "standard": {
+      "n": 10,
+      "pr": 23.69
+     }
+    },
+    "priming": {
+     "nackgammon": {
+      "n": 15,
+      "pr": 4.48
+     },
+     "standard": {
+      "n": 17,
+      "pr": 18.28
+     }
+    }
+   },
+   "risk_main": {
+    "nackgammon": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 40.0,
+     "needless": 2.0,
+     "d_prime": 2.05,
+     "caution": 0.76
+    },
+    "standard": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 34.0,
+     "needless": 4.0,
+     "d_prime": 1.53,
+     "caution": 0.73
+    },
+    "change": {
+     "d_prime": 0.52,
+     "d_prime_95": [
+      -0.18,
+      1.32
+     ],
+     "caution": 0.03,
+     "caution_95": [
+      -0.32,
+      0.43
+     ]
+    },
+    "thin": false
+   },
+   "risk_all": {
+    "nackgammon": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 91.0,
+     "needless": 9.0,
+     "d_prime": 1.71,
+     "caution": 0.72
+    },
+    "standard": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 82.0,
+     "needless": 11.0,
+     "d_prime": 1.47,
+     "caution": 0.74
+    },
+    "change": {
+     "d_prime": 0.24,
+     "d_prime_95": [
+      -0.21,
+      0.72
+     ],
+     "caution": -0.02,
+     "caution_95": [
+      -0.25,
+      0.22
+     ]
+    },
+    "thin": false
+   },
+   "cost_main": {
+    "decisions": 400,
+    "billed_usd_per_decision": 0.029614274999999995,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 11.8457,
+    "median_request_s": 4.125,
+    "tokens_in": 2605.1775,
+    "tokens_out": 71.25
+   },
+   "cost_all": {
+    "decisions": 1000,
+    "billed_usd_per_decision": 0.029514810000000013,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 29.5148,
+    "median_request_s": 4.1555,
+    "tokens_in": 2606.486,
+    "tokens_out": 68.999
+   }
+  },
+  "GPT-6.1 Sol (high)": {
+   "group": "workhorses",
+   "first_look": {
+    "pairs": 200,
+    "standard_pr": 9.88,
+    "nackgammon_pr": 8.43,
+    "drop": -1.45,
+    "drop_975": [
+     -5.57,
+     2.68
+    ],
+    "drop_95": [
+     -5.14,
+     2.07
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "label_first": "unclear",
+    "extend": true
+   },
+   "final_look": {
+    "pairs": 500,
+    "standard_pr": 11.14,
+    "nackgammon_pr": 9.12,
+    "drop": -2.03,
+    "drop_975": [
+     -5.57,
+     1.38
+    ],
+    "drop_95": [
+     -5.1,
+     0.98
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "extended": true,
+   "label": "unclear",
+   "sensitivity_first": {
+    "worst": {
+     "pairs": 200,
+     "standard_pr": 9.88,
+     "nackgammon_pr": 8.43,
+     "drop": -1.45,
+     "drop_975": [
+      -5.57,
+      2.68
+     ]
+    },
+    "drop": {
+     "pairs": 200,
+     "standard_pr": 9.88,
+     "nackgammon_pr": 8.43,
+     "drop": -1.45,
+     "drop_975": [
+      -5.57,
+      2.68
+     ]
+    }
+   },
+   "phases": {
+    "opening": {
+     "pairs": 60,
+     "standard_pr": 12.39,
+     "nackgammon_pr": 13.21,
+     "drop": 0.82,
+     "drop_95": [
+      -6.57,
+      8.28
+     ]
+    },
+    "contact": {
+     "pairs": 60,
+     "standard_pr": 13.67,
+     "nackgammon_pr": 11.24,
+     "drop": -2.43,
+     "drop_95": [
+      -9.76,
+      5.0
+     ]
+    },
+    "holding": {
+     "pairs": 30,
+     "standard_pr": 13.41,
+     "nackgammon_pr": 7.15,
+     "drop": -6.26,
+     "drop_95": [
+      -19.56,
+      3.87
+     ]
+    },
+    "race": {
+     "pairs": 25,
+     "standard_pr": 0.43,
+     "nackgammon_pr": 0.18,
+     "drop": -0.24,
+     "drop_95": [
+      -1.01,
+      0.38
+     ]
+    },
+    "bear-off": {
+     "pairs": 25,
+     "standard_pr": 0.0,
+     "nackgammon_pr": 0.0,
+     "drop": 0.0,
+     "drop_95": [
+      0.0,
+      0.0
+     ]
+    },
+    "opening minus other phases": {
+     "diff": 3.24,
+     "ci_95": [
+      -5.08,
+      12.07
+     ]
+    }
+   },
+   "tags": {
+    "(none: bear-off)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 0.0
+     },
+     "standard": {
+      "n": 25,
+      "pr": 0.0
+     }
+    },
+    "(none: opening)": {
+     "nackgammon": {
+      "n": 60,
+      "pr": 13.21
+     },
+     "standard": {
+      "n": 60,
+      "pr": 12.39
+     }
+    },
+    "(none: race)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 0.18
+     },
+     "standard": {
+      "n": 25,
+      "pr": 0.43
+     }
+    },
+    "back game": {
+     "nackgammon": {
+      "n": 10,
+      "pr": 17.22
+     },
+     "standard": {
+      "n": 2,
+      "pr": 11.09
+     }
+    },
+    "blitz": {
+     "nackgammon": {
+      "n": 17,
+      "pr": 10.78
+     },
+     "standard": {
+      "n": 23,
+      "pr": 12.66
+     }
+    },
+    "holding": {
+     "nackgammon": {
+      "n": 30,
+      "pr": 7.15
+     },
+     "standard": {
+      "n": 30,
+      "pr": 13.41
+     }
+    },
+    "low-anchor": {
+     "nackgammon": {
+      "n": 7,
+      "pr": 9.99
+     },
+     "standard": {
+      "n": 8,
+      "pr": 13.16
+     }
+    },
+    "other": {
+     "nackgammon": {
+      "n": 11,
+      "pr": 12.75
+     },
+     "standard": {
+      "n": 10,
+      "pr": 20.29
+     }
+    },
+    "priming": {
+     "nackgammon": {
+      "n": 15,
+      "pr": 7.25
+     },
+     "standard": {
+      "n": 17,
+      "pr": 11.68
+     }
+    }
+   },
+   "risk_main": {
+    "nackgammon": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 40.0,
+     "needless": 2.0,
+     "d_prime": 2.05,
+     "caution": 0.76
+    },
+    "standard": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 32.0,
+     "needless": 7.0,
+     "d_prime": 1.18,
+     "caution": 0.63
+    },
+    "change": {
+     "d_prime": 0.87,
+     "d_prime_95": [
+      0.16,
+      1.71
+     ],
+     "caution": 0.13,
+     "caution_95": [
+      -0.22,
+      0.54
+     ]
+    },
+    "thin": false
+   },
+   "risk_all": {
+    "nackgammon": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 93.0,
+     "needless": 9.0,
+     "d_prime": 1.74,
+     "caution": 0.71
+    },
+    "standard": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 83.0,
+     "needless": 15.0,
+     "d_prime": 1.33,
+     "caution": 0.66
+    },
+    "change": {
+     "d_prime": 0.41,
+     "d_prime_95": [
+      -0.06,
+      0.89
+     ],
+     "caution": 0.05,
+     "caution_95": [
+      -0.18,
+      0.29
+     ]
+    },
+    "thin": false
+   },
+   "cost_main": {
+    "decisions": 400,
+    "billed_usd_per_decision": 0.00814825500000001,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 3.2593,
+    "median_request_s": 8.905999999999999,
+    "tokens_in": 2605.1775,
+    "tokens_out": 293.79
+   },
+   "cost_all": {
+    "decisions": 1000,
+    "billed_usd_per_decision": 0.008065802000000006,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 8.0658,
+    "median_request_s": 8.6765,
+    "tokens_in": 2606.486,
+    "tokens_out": 285.283
+   }
+  },
+  "Gemma 4 31B (on)": {
+   "group": "workhorses",
+   "first_look": {
+    "pairs": 200,
+    "standard_pr": 18.35,
+    "nackgammon_pr": 13.38,
+    "drop": -4.97,
+    "drop_975": [
+     -11.81,
+     1.78
+    ],
+    "drop_95": [
+     -10.91,
+     0.89
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "label_first": "unclear",
+    "extend": true
+   },
+   "final_look": {
+    "pairs": 500,
+    "standard_pr": 17.97,
+    "nackgammon_pr": 16.84,
+    "drop": -1.13,
+    "drop_975": [
+     -6.19,
+     4.39
+    ],
+    "drop_95": [
+     -5.59,
+     3.58
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "extended": true,
+   "label": "unclear",
+   "sensitivity_first": {
+    "worst": {
+     "pairs": 200,
+     "standard_pr": 18.35,
+     "nackgammon_pr": 13.38,
+     "drop": -4.97,
+     "drop_975": [
+      -11.81,
+      1.78
+     ]
+    },
+    "drop": {
+     "pairs": 200,
+     "standard_pr": 18.35,
+     "nackgammon_pr": 13.38,
+     "drop": -4.97,
+     "drop_975": [
+      -11.81,
+      1.78
+     ]
+    }
+   },
+   "phases": {
+    "opening": {
+     "pairs": 60,
+     "standard_pr": 19.52,
+     "nackgammon_pr": 19.53,
+     "drop": 0.01,
+     "drop_95": [
+      -9.76,
+      10.08
+     ]
+    },
+    "contact": {
+     "pairs": 60,
+     "standard_pr": 32.82,
+     "nackgammon_pr": 19.17,
+     "drop": -13.65,
+     "drop_95": [
+      -29.63,
+      2.24
+     ]
+    },
+    "holding": {
+     "pairs": 30,
+     "standard_pr": 13.15,
+     "nackgammon_pr": 11.62,
+     "drop": -1.54,
+     "drop_95": [
+      -15.22,
+      9.5
+     ]
+    },
+    "race": {
+     "pairs": 25,
+     "standard_pr": 3.36,
+     "nackgammon_pr": 0.18,
+     "drop": -3.17,
+     "drop_95": [
+      -6.88,
+      -0.32
+     ]
+    },
+    "bear-off": {
+     "pairs": 25,
+     "standard_pr": 2.02,
+     "nackgammon_pr": 0.03,
+     "drop": -1.99,
+     "drop_95": [
+      -5.93,
+      0.06
+     ]
+    },
+    "opening minus other phases": {
+     "diff": 7.11,
+     "ci_95": [
+      -5.19,
+      19.68
+     ]
+    }
+   },
+   "tags": {
+    "(none: bear-off)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 0.03
+     },
+     "standard": {
+      "n": 25,
+      "pr": 2.02
+     }
+    },
+    "(none: opening)": {
+     "nackgammon": {
+      "n": 60,
+      "pr": 19.53
+     },
+     "standard": {
+      "n": 60,
+      "pr": 19.52
+     }
+    },
+    "(none: race)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 0.18
+     },
+     "standard": {
+      "n": 25,
+      "pr": 3.36
+     }
+    },
+    "back game": {
+     "nackgammon": {
+      "n": 10,
+      "pr": 28.66
+     },
+     "standard": {
+      "n": 2,
+      "pr": 22.94
+     }
+    },
+    "blitz": {
+     "nackgammon": {
+      "n": 17,
+      "pr": 8.77
+     },
+     "standard": {
+      "n": 23,
+      "pr": 28.28
+     }
+    },
+    "holding": {
+     "nackgammon": {
+      "n": 30,
+      "pr": 11.62
+     },
+     "standard": {
+      "n": 30,
+      "pr": 13.15
+     }
+    },
+    "low-anchor": {
+     "nackgammon": {
+      "n": 7,
+      "pr": 27.07
+     },
+     "standard": {
+      "n": 8,
+      "pr": 38.14
+     }
+    },
+    "other": {
+     "nackgammon": {
+      "n": 11,
+      "pr": 16.96
+     },
+     "standard": {
+      "n": 10,
+      "pr": 40.99
+     }
+    },
+    "priming": {
+     "nackgammon": {
+      "n": 15,
+      "pr": 22.56
+     },
+     "standard": {
+      "n": 17,
+      "pr": 32.83
+     }
+    }
+   },
+   "risk_main": {
+    "nackgammon": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 27.0,
+     "needless": 2.0,
+     "d_prime": 1.56,
+     "caution": 1.0
+    },
+    "standard": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 13.0,
+     "needless": 4.0,
+     "d_prime": 0.66,
+     "caution": 1.17
+    },
+    "change": {
+     "d_prime": 0.9,
+     "d_prime_95": [
+      0.04,
+      1.81
+     ],
+     "caution": -0.17,
+     "caution_95": [
+      -0.61,
+      0.3
+     ]
+    },
+    "thin": false
+   },
+   "risk_all": {
+    "nackgammon": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 58.0,
+     "needless": 10.0,
+     "d_prime": 1.15,
+     "caution": 0.95
+    },
+    "standard": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 39.0,
+     "needless": 6.0,
+     "d_prime": 1.05,
+     "caution": 1.24
+    },
+    "change": {
+     "d_prime": 0.1,
+     "d_prime_95": [
+      -0.5,
+      0.65
+     ],
+     "caution": -0.29,
+     "caution_95": [
+      -0.57,
+      -0.02
+     ]
+    },
+    "thin": false
+   },
+   "cost_main": {
+    "decisions": 400,
+    "billed_usd_per_decision": 0.0,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 0.0,
+    "median_request_s": 212.0865,
+    "tokens_in": 9598.1775,
+    "tokens_out": 4213.1075
+   },
+   "cost_all": {
+    "decisions": 1000,
+    "billed_usd_per_decision": 0.0,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 0.0,
+    "median_request_s": 208.611,
+    "tokens_in": 9575.89,
+    "tokens_out": 4189.617
+   }
+  },
+  "GPT-6.1 Terra": {
+   "group": "no group (exploratory)",
+   "first_look": {
+    "pairs": 200,
+    "standard_pr": 13.52,
+    "nackgammon_pr": 14.4,
+    "drop": 0.89,
+    "drop_975": [
+     -5.73,
+     8.59
+    ],
+    "drop_95": [
+     -4.96,
+     7.44
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "label_first": "unclear",
+    "extend": true
+   },
+   "final_look": {
+    "pairs": 500,
+    "standard_pr": 13.18,
+    "nackgammon_pr": 16.22,
+    "drop": 3.04,
+    "drop_975": [
+     -0.94,
+     7.39
+    ],
+    "drop_95": [
+     -0.44,
+     6.74
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "extended": true,
+   "label": "unclear",
+   "sensitivity_first": {
+    "worst": {
+     "pairs": 200,
+     "standard_pr": 13.52,
+     "nackgammon_pr": 14.4,
+     "drop": 0.89,
+     "drop_975": [
+      -5.73,
+      8.59
+     ]
+    },
+    "drop": {
+     "pairs": 200,
+     "standard_pr": 13.52,
+     "nackgammon_pr": 14.4,
+     "drop": 0.89,
+     "drop_975": [
+      -5.73,
+      8.59
+     ]
+    }
+   },
+   "phases": {
+    "opening": {
+     "pairs": 60,
+     "standard_pr": 13.35,
+     "nackgammon_pr": 20.77,
+     "drop": 7.42,
+     "drop_95": [
+      1.12,
+      13.95
+     ]
+    },
+    "contact": {
+     "pairs": 60,
+     "standard_pr": 23.74,
+     "nackgammon_pr": 17.13,
+     "drop": -6.61,
+     "drop_95": [
+      -18.78,
+      5.67
+     ]
+    },
+    "holding": {
+     "pairs": 30,
+     "standard_pr": 14.0,
+     "nackgammon_pr": 19.69,
+     "drop": 5.69,
+     "drop_95": [
+      -18.06,
+      40.13
+     ]
+    },
+    "race": {
+     "pairs": 25,
+     "standard_pr": 0.56,
+     "nackgammon_pr": 0.64,
+     "drop": 0.08,
+     "drop_95": [
+      -0.99,
+      1.35
+     ]
+    },
+    "bear-off": {
+     "pairs": 25,
+     "standard_pr": 1.76,
+     "nackgammon_pr": 0.0,
+     "drop": -1.76,
+     "drop_95": [
+      -5.12,
+      0.0
+     ]
+    },
+    "opening minus other phases": {
+     "diff": 9.34,
+     "ci_95": [
+      -1.66,
+      19.61
+     ]
+    }
+   },
+   "tags": {
+    "(none: bear-off)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 0.0
+     },
+     "standard": {
+      "n": 25,
+      "pr": 1.76
+     }
+    },
+    "(none: opening)": {
+     "nackgammon": {
+      "n": 60,
+      "pr": 20.77
+     },
+     "standard": {
+      "n": 60,
+      "pr": 13.35
+     }
+    },
+    "(none: race)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 0.64
+     },
+     "standard": {
+      "n": 25,
+      "pr": 0.56
+     }
+    },
+    "back game": {
+     "nackgammon": {
+      "n": 10,
+      "pr": 31.19
+     },
+     "standard": {
+      "n": 2,
+      "pr": 39.75
+     }
+    },
+    "blitz": {
+     "nackgammon": {
+      "n": 17,
+      "pr": 6.51
+     },
+     "standard": {
+      "n": 23,
+      "pr": 18.82
+     }
+    },
+    "holding": {
+     "nackgammon": {
+      "n": 30,
+      "pr": 19.69
+     },
+     "standard": {
+      "n": 30,
+      "pr": 14.0
+     }
+    },
+    "low-anchor": {
+     "nackgammon": {
+      "n": 7,
+      "pr": 50.56
+     },
+     "standard": {
+      "n": 8,
+      "pr": 28.12
+     }
+    },
+    "other": {
+     "nackgammon": {
+      "n": 11,
+      "pr": 12.01
+     },
+     "standard": {
+      "n": 10,
+      "pr": 20.24
+     }
+    },
+    "priming": {
+     "nackgammon": {
+      "n": 15,
+      "pr": 7.94
+     },
+     "standard": {
+      "n": 17,
+      "pr": 28.52
+     }
+    }
+   },
+   "risk_main": {
+    "nackgammon": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 24.0,
+     "needless": 2.0,
+     "d_prime": 1.44,
+     "caution": 1.06
+    },
+    "standard": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 25.0,
+     "needless": 7.0,
+     "d_prime": 0.91,
+     "caution": 0.76
+    },
+    "change": {
+     "d_prime": 0.53,
+     "d_prime_95": [
+      -0.29,
+      1.45
+     ],
+     "caution": 0.3,
+     "caution_95": [
+      -0.07,
+      0.75
+     ]
+    },
+    "thin": false
+   },
+   "risk_all": {
+    "nackgammon": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 59.0,
+     "needless": 14.0,
+     "d_prime": 0.99,
+     "caution": 0.86
+    },
+    "standard": {
+     "risk_pays": 165,
+     "safety_pays": 165,
+     "risks_taken": 60.0,
+     "needless": 11.0,
+     "d_prime": 1.13,
+     "caution": 0.91
+    },
+    "change": {
+     "d_prime": -0.14,
+     "d_prime_95": [
+      -0.64,
+      0.36
+     ],
+     "caution": -0.05,
+     "caution_95": [
+      -0.31,
+      0.19
+     ]
+    },
+    "thin": false
+   },
+   "cost_main": {
+    "decisions": 400,
+    "billed_usd_per_decision": 0.0037234862500000036,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 1.4894,
+    "median_request_s": 2.6740000000000004,
+    "tokens_in": 2602.1775,
+    "tokens_out": 94.56
+   },
+   "cost_all": {
+    "decisions": 1000,
+    "billed_usd_per_decision": 0.003709463250000002,
+    "api_eq_usd_per_decision": 0.0,
+    "billed_usd_total": 3.7095,
+    "median_request_s": 2.5025,
+    "tokens_in": 2603.486,
+    "tokens_out": 91.274
+   }
+  },
+  "Random": {
+   "group": "yardstick",
+   "first_look": {
+    "pairs": 200,
+    "standard_pr": 87.45,
+    "nackgammon_pr": 82.89,
+    "drop": -4.56,
+    "drop_975": [
+     -18.04,
+     7.86
+    ],
+    "drop_95": [
+     -15.96,
+     6.15
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "label_first": "unclear",
+    "extend": false
+   },
+   "final_look": {
+    "pairs": 500,
+    "standard_pr": 85.16,
+    "nackgammon_pr": 81.43,
+    "drop": -3.73,
+    "drop_975": [
+     -11.43,
+     3.74
+    ],
+    "drop_95": [
+     -10.41,
+     2.81
+    ],
+    "invalid": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "extended": false,
+   "label": "unclear",
+   "sensitivity_first": {
+    "worst": {
+     "pairs": 200,
+     "standard_pr": 87.45,
+     "nackgammon_pr": 82.89,
+     "drop": -4.56,
+     "drop_975": [
+      -18.04,
+      7.86
+     ]
+    },
+    "drop": {
+     "pairs": 200,
+     "standard_pr": 87.45,
+     "nackgammon_pr": 82.89,
+     "drop": -4.56,
+     "drop_975": [
+      -18.04,
+      7.86
+     ]
+    }
+   },
+   "phases": {
+    "opening": {
+     "pairs": 60,
+     "standard_pr": 95.63,
+     "nackgammon_pr": 84.31,
+     "drop": -11.32,
+     "drop_95": [
+      -23.34,
+      0.42
+     ]
+    },
+    "contact": {
+     "pairs": 60,
+     "standard_pr": 125.31,
+     "nackgammon_pr": 115.99,
+     "drop": -9.32,
+     "drop_95": [
+      -27.33,
+      8.75
+     ]
+    },
+    "holding": {
+     "pairs": 30,
+     "standard_pr": 113.57,
+     "nackgammon_pr": 121.18,
+     "drop": 7.61,
+     "drop_95": [
+      -57.23,
+      63.11
+     ]
+    },
+    "race": {
+     "pairs": 25,
+     "standard_pr": 19.17,
+     "nackgammon_pr": 22.57,
+     "drop": 3.4,
+     "drop_95": [
+      -7.66,
+      16.86
+     ]
+    },
+    "bear-off": {
+     "pairs": 25,
+     "standard_pr": 13.92,
+     "nackgammon_pr": 14.46,
+     "drop": 0.54,
+     "drop_95": [
+      -5.63,
+      6.89
+     ]
+    },
+    "opening minus other phases": {
+     "diff": -9.66,
+     "ci_95": [
+      -28.68,
+      9.8
+     ]
+    }
+   },
+   "tags": {
+    "(none: bear-off)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 14.46
+     },
+     "standard": {
+      "n": 25,
+      "pr": 13.92
+     }
+    },
+    "(none: opening)": {
+     "nackgammon": {
+      "n": 60,
+      "pr": 84.31
+     },
+     "standard": {
+      "n": 60,
+      "pr": 95.63
+     }
+    },
+    "(none: race)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 22.57
+     },
+     "standard": {
+      "n": 25,
+      "pr": 19.17
+     }
+    },
+    "back game": {
+     "nackgammon": {
+      "n": 10,
+      "pr": 104.58
+     },
+     "standard": {
+      "n": 2,
+      "pr": 57.49
+     }
+    },
+    "blitz": {
+     "nackgammon": {
+      "n": 17,
+      "pr": 143.55
+     },
+     "standard": {
+      "n": 23,
+      "pr": 125.59
+     }
+    },
+    "holding": {
+     "nackgammon": {
+      "n": 30,
+      "pr": 121.18
+     },
+     "standard": {
+      "n": 30,
+      "pr": 113.57
+     }
+    },
+    "low-anchor": {
+     "nackgammon": {
+      "n": 7,
+      "pr": 113.21
+     },
+     "standard": {
+      "n": 8,
+      "pr": 92.05
+     }
+    },
+    "other": {
+     "nackgammon": {
+      "n": 11,
+      "pr": 81.52
+     },
+     "standard": {
+      "n": 10,
+      "pr": 135.92
+     }
+    },
+    "priming": {
+     "nackgammon": {
+      "n": 15,
+      "pr": 118.93
+     },
+     "standard": {
+      "n": 17,
+      "pr": 142.31
+     }
+    }
+   },
+   "risk_main": {
+    "nackgammon": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 55.93,
+     "needless": 48.96,
+     "d_prime": 0.37,
+     "caution": -0.82
+    },
+    "standard": {
+     "risk_pays": 66,
+     "safety_pays": 66,
+     "risks_taken": 54.16,
+     "needless": 48.81,
+     "d_prime": 0.27,
+     "caution": -0.77
+    },
+    "change": {
+     "d_prime": 0.1,
+     "d_prime_95": [
+      -0.11,
+      0.3
+     ],
+     "caution": -0.05,
+     "caution_95": [
+      -0.15,
+      0.04
+     ]
+    },
+    "thin": false
+   }
+  }
+ },
+ "primary": {
+  "random": [
+   {
+    "comparison": "decision models − workhorses",
+    "kind": "group",
+    "diff": -2.14,
+    "ci_99": [
+     -10.07,
+     4.88
+    ],
+    "A": {
+     "members": [
+      "Celeris-1 Decision",
+      "SubQ Snap Preview",
+      "Cygnet (Gemma 4 12B)",
+      "Decider v1.2 27B",
+      "Fastino GLiDE v1.2 (local)",
+      "Jev 1.13.0",
+      "GPT-6 Luna",
+      "Decider v1.1 27B",
+      "Mercury Decide",
+      "Winnow-12B",
+      "Open-Jev 27B v1.1",
+      "Decider Flash v1.2"
+     ],
+     "standard_pr": 32.88,
+     "nackgammon_pr": 30.25,
+     "drop": -2.63
+    },
+    "B": {
+     "members": [
+      "DeepSeek V4.1 Flash (off)",
+      "LFM2.5-24B-A2B (on)",
+      "Qwen3.8-27B (off)",
+      "LFM2.5-24B-A2B (off)",
+      "Gemini 3.8 Flash (low)",
+      "Claude Sonnet 5.5 (low)",
+      "GPT-6.1 Sol (low)",
+      "GPT-6.1 Sol (high)",
+      "Gemma 4 31B (on)"
+     ],
+     "standard_pr": 23.36,
+     "nackgammon_pr": 22.88,
+     "drop": -0.49
+    }
+   },
+   {
+    "comparison": "decision models − frontier",
+    "kind": "group",
+    "diff": -0.26,
+    "ci_99": [
+     -14.64,
+     12.04
+    ],
+    "A": {
+     "members": [
+      "Celeris-1 Decision",
+      "SubQ Snap Preview",
+      "Cygnet (Gemma 4 12B)",
+      "Decider v1.2 27B",
+      "Fastino GLiDE v1.2 (local)",
+      "Jev 1.13.0",
+      "GPT-6 Luna",
+      "Decider v1.1 27B",
+      "Mercury Decide",
+      "Winnow-12B",
+      "Open-Jev 27B v1.1",
+      "Decider Flash v1.2"
+     ],
+     "standard_pr": 32.88,
+     "nackgammon_pr": 30.25,
+     "drop": -2.63
+    },
+    "B": {
+     "members": [
+      "GPT-6 Astra (on)"
+     ],
+     "standard_pr": 9.66,
+     "nackgammon_pr": 7.3,
+     "drop": -2.37
+    }
+   },
+   {
+    "comparison": "workhorses − frontier",
+    "kind": "group",
+    "diff": 1.88,
+    "ci_99": [
+     -5.73,
+     9.33
+    ],
+    "A": {
+     "members": [
+      "DeepSeek V4.1 Flash (off)",
+      "LFM2.5-24B-A2B (on)",
+      "Qwen3.8-27B (off)",
+      "LFM2.5-24B-A2B (off)",
+      "Gemini 3.8 Flash (low)",
+      "Claude Sonnet 5.5 (low)",
+      "GPT-6.1 Sol (low)",
+      "GPT-6.1 Sol (high)",
+      "Gemma 4 31B (on)"
+     ],
+     "standard_pr": 23.36,
+     "nackgammon_pr": 22.88,
+     "drop": -0.49
+    },
+    "B": {
+     "members": [
+      "GPT-6 Astra (on)"
+     ],
+     "standard_pr": 9.66,
+     "nackgammon_pr": 7.3,
+     "drop": -2.37
+    }
+   },
+   {
+    "comparison": "LFM2.5-24B-A2B (on) − LFM2.5-24B-A2B (off)",
+    "kind": "setup",
+    "diff": -3.88,
+    "ci_99": [
+     -26.98,
+     21.76
+    ],
+    "A": {
+     "members": [
+      "LFM2.5-24B-A2B (on)"
+     ],
+     "standard_pr": 38.2,
+     "nackgammon_pr": 37.55,
+     "drop": -0.65
+    },
+    "B": {
+     "members": [
+      "LFM2.5-24B-A2B (off)"
+     ],
+     "standard_pr": 50.75,
+     "nackgammon_pr": 53.98,
+     "drop": 3.23
+    }
+   },
+   {
+    "comparison": "GPT-6.1 Sol (high) − GPT-6.1 Sol (low)",
+    "kind": "setup",
+    "diff": -0.19,
+    "ci_99": [
+     -3.0,
+     2.63
+    ],
+    "A": {
+     "members": [
+      "GPT-6.1 Sol (high)"
+     ],
+     "standard_pr": 9.88,
+     "nackgammon_pr": 8.43,
+     "drop": -1.45
+    },
+    "B": {
+     "members": [
+      "GPT-6.1 Sol (low)"
+     ],
+     "standard_pr": 11.15,
+     "nackgammon_pr": 9.9,
+     "drop": -1.26
+    }
+   }
+  ],
+  "worst": [
+   {
+    "comparison": "decision models − workhorses",
+    "kind": "group",
+    "diff": -1.43,
+    "ci_99": [
+     -9.56,
+     5.66
+    ],
+    "A": {
+     "members": [
+      "Celeris-1 Decision",
+      "SubQ Snap Preview",
+      "Cygnet (Gemma 4 12B)",
+      "Decider v1.2 27B",
+      "Fastino GLiDE v1.2 (local)",
+      "Jev 1.13.0",
+      "GPT-6 Luna",
+      "Decider v1.1 27B",
+      "Mercury Decide",
+      "Winnow-12B",
+      "Open-Jev 27B v1.1",
+      "Decider Flash v1.2"
+     ],
+     "standard_pr": 32.88,
+     "nackgammon_pr": 30.25,
+     "drop": -2.63
+    },
+    "B": {
+     "members": [
+      "DeepSeek V4.1 Flash (off)",
+      "LFM2.5-24B-A2B (on)",
+      "Qwen3.8-27B (off)",
+      "LFM2.5-24B-A2B (off)",
+      "Gemini 3.8 Flash (low)",
+      "Claude Sonnet 5.5 (low)",
+      "GPT-6.1 Sol (low)",
+      "GPT-6.1 Sol (high)",
+      "Gemma 4 31B (on)"
+     ],
+     "standard_pr": 24.9,
+     "nackgammon_pr": 23.7,
+     "drop": -1.2
+    }
+   },
+   {
+    "comparison": "decision models − frontier",
+    "kind": "group",
+    "diff": -0.26,
+    "ci_99": [
+     -14.64,
+     12.04
+    ],
+    "A": {
+     "members": [
+      "Celeris-1 Decision",
+      "SubQ Snap Preview",
+      "Cygnet (Gemma 4 12B)",
+      "Decider v1.2 27B",
+      "Fastino GLiDE v1.2 (local)",
+      "Jev 1.13.0",
+      "GPT-6 Luna",
+      "Decider v1.1 27B",
+      "Mercury Decide",
+      "Winnow-12B",
+      "Open-Jev 27B v1.1",
+      "Decider Flash v1.2"
+     ],
+     "standard_pr": 32.88,
+     "nackgammon_pr": 30.25,
+     "drop": -2.63
+    },
+    "B": {
+     "members": [
+      "GPT-6 Astra (on)"
+     ],
+     "standard_pr": 9.66,
+     "nackgammon_pr": 7.3,
+     "drop": -2.37
+    }
+   },
+   {
+    "comparison": "workhorses − frontier",
+    "kind": "group",
+    "diff": 1.17,
+    "ci_99": [
+     -6.49,
+     8.72
+    ],
+    "A": {
+     "members": [
+      "DeepSeek V4.1 Flash (off)",
+      "LFM2.5-24B-A2B (on)",
+      "Qwen3.8-27B (off)",
+      "LFM2.5-24B-A2B (off)",
+      "Gemini 3.8 Flash (low)",
+      "Claude Sonnet 5.5 (low)",
+      "GPT-6.1 Sol (low)",
+      "GPT-6.1 Sol (high)",
+      "Gemma 4 31B (on)"
+     ],
+     "standard_pr": 24.9,
+     "nackgammon_pr": 23.7,
+     "drop": -1.2
+    },
+    "B": {
+     "members": [
+      "GPT-6 Astra (on)"
+     ],
+     "standard_pr": 9.66,
+     "nackgammon_pr": 7.3,
+     "drop": -2.37
+    }
+   },
+   {
+    "comparison": "LFM2.5-24B-A2B (on) − LFM2.5-24B-A2B (off)",
+    "kind": "setup",
+    "diff": -10.33,
+    "ci_99": [
+     -38.92,
+     19.74
+    ],
+    "A": {
+     "members": [
+      "LFM2.5-24B-A2B (on)"
+     ],
+     "standard_pr": 52.06,
+     "nackgammon_pr": 44.97,
+     "drop": -7.1
+    },
+    "B": {
+     "members": [
+      "LFM2.5-24B-A2B (off)"
+     ],
+     "standard_pr": 50.75,
+     "nackgammon_pr": 53.98,
+     "drop": 3.23
+    }
+   },
+   {
+    "comparison": "GPT-6.1 Sol (high) − GPT-6.1 Sol (low)",
+    "kind": "setup",
+    "diff": -0.19,
+    "ci_99": [
+     -3.0,
+     2.63
+    ],
+    "A": {
+     "members": [
+      "GPT-6.1 Sol (high)"
+     ],
+     "standard_pr": 9.88,
+     "nackgammon_pr": 8.43,
+     "drop": -1.45
+    },
+    "B": {
+     "members": [
+      "GPT-6.1 Sol (low)"
+     ],
+     "standard_pr": 11.15,
+     "nackgammon_pr": 9.9,
+     "drop": -1.26
+    }
+   }
+  ],
+  "drop": [
+   {
+    "comparison": "decision models − workhorses",
+    "kind": "group",
+    "diff": -2.47,
+    "ci_99": [
+     -10.57,
+     4.72
+    ],
+    "A": {
+     "members": [
+      "Celeris-1 Decision",
+      "SubQ Snap Preview",
+      "Cygnet (Gemma 4 12B)",
+      "Decider v1.2 27B",
+      "Fastino GLiDE v1.2 (local)",
+      "Jev 1.13.0",
+      "GPT-6 Luna",
+      "Decider v1.1 27B",
+      "Mercury Decide",
+      "Winnow-12B",
+      "Open-Jev 27B v1.1",
+      "Decider Flash v1.2"
+     ],
+     "standard_pr": 32.88,
+     "nackgammon_pr": 30.25,
+     "drop": -2.63
+    },
+    "B": {
+     "members": [
+      "DeepSeek V4.1 Flash (off)",
+      "LFM2.5-24B-A2B (on)",
+      "Qwen3.8-27B (off)",
+      "LFM2.5-24B-A2B (off)",
+      "Gemini 3.8 Flash (low)",
+      "Claude Sonnet 5.5 (low)",
+      "GPT-6.1 Sol (low)",
+      "GPT-6.1 Sol (high)",
+      "Gemma 4 31B (on)"
+     ],
+     "standard_pr": 22.52,
+     "nackgammon_pr": 22.36,
+     "drop": -0.16
+    }
+   },
+   {
+    "comparison": "decision models − frontier",
+    "kind": "group",
+    "diff": -0.26,
+    "ci_99": [
+     -14.64,
+     12.04
+    ],
+    "A": {
+     "members": [
+      "Celeris-1 Decision",
+      "SubQ Snap Preview",
+      "Cygnet (Gemma 4 12B)",
+      "Decider v1.2 27B",
+      "Fastino GLiDE v1.2 (local)",
+      "Jev 1.13.0",
+      "GPT-6 Luna",
+      "Decider v1.1 27B",
+      "Mercury Decide",
+      "Winnow-12B",
+      "Open-Jev 27B v1.1",
+      "Decider Flash v1.2"
+     ],
+     "standard_pr": 32.88,
+     "nackgammon_pr": 30.25,
+     "drop": -2.63
+    },
+    "B": {
+     "members": [
+      "GPT-6 Astra (on)"
+     ],
+     "standard_pr": 9.66,
+     "nackgammon_pr": 7.3,
+     "drop": -2.37
+    }
+   },
+   {
+    "comparison": "workhorses − frontier",
+    "kind": "group",
+    "diff": 2.21,
+    "ci_99": [
+     -5.45,
+     9.55
+    ],
+    "A": {
+     "members": [
+      "DeepSeek V4.1 Flash (off)",
+      "LFM2.5-24B-A2B (on)",
+      "Qwen3.8-27B (off)",
+      "LFM2.5-24B-A2B (off)",
+      "Gemini 3.8 Flash (low)",
+      "Claude Sonnet 5.5 (low)",
+      "GPT-6.1 Sol (low)",
+      "GPT-6.1 Sol (high)",
+      "Gemma 4 31B (on)"
+     ],
+     "standard_pr": 22.52,
+     "nackgammon_pr": 22.36,
+     "drop": -0.16
+    },
+    "B": {
+     "members": [
+      "GPT-6 Astra (on)"
+     ],
+     "standard_pr": 9.66,
+     "nackgammon_pr": 7.3,
+     "drop": -2.37
+    }
+   },
+   {
+    "comparison": "LFM2.5-24B-A2B (on) − LFM2.5-24B-A2B (off)",
+    "kind": "setup",
+    "diff": -0.91,
+    "ci_99": [
+     -24.13,
+     25.2
+    ],
+    "A": {
+     "members": [
+      "LFM2.5-24B-A2B (on)"
+     ],
+     "standard_pr": 30.59,
+     "nackgammon_pr": 32.91,
+     "drop": 2.32
+    },
+    "B": {
+     "members": [
+      "LFM2.5-24B-A2B (off)"
+     ],
+     "standard_pr": 50.75,
+     "nackgammon_pr": 53.98,
+     "drop": 3.23
+    }
+   },
+   {
+    "comparison": "GPT-6.1 Sol (high) − GPT-6.1 Sol (low)",
+    "kind": "setup",
+    "diff": -0.19,
+    "ci_99": [
+     -3.0,
+     2.63
+    ],
+    "A": {
+     "members": [
+      "GPT-6.1 Sol (high)"
+     ],
+     "standard_pr": 9.88,
+     "nackgammon_pr": 8.43,
+     "drop": -1.45
+    },
+    "B": {
+     "members": [
+      "GPT-6.1 Sol (low)"
+     ],
+     "standard_pr": 11.15,
+     "nackgammon_pr": 9.9,
+     "drop": -1.26
+    }
+   }
+  ]
+ },
+ "groups": {
+  "decision models": [
+   "Celeris-1 Decision",
+   "SubQ Snap Preview",
+   "Cygnet (Gemma 4 12B)",
+   "Decider v1.2 27B",
+   "Fastino GLiDE v1.2 (local)",
+   "Jev 1.13.0",
+   "GPT-6 Luna",
+   "Decider v1.1 27B",
+   "Mercury Decide",
+   "Winnow-12B",
+   "Open-Jev 27B v1.1",
+   "Decider Flash v1.2"
+  ],
+  "workhorses": [
+   "DeepSeek V4.1 Flash (off)",
+   "LFM2.5-24B-A2B (on)",
+   "Qwen3.8-27B (off)",
+   "LFM2.5-24B-A2B (off)",
+   "Gemini 3.8 Flash (low)",
+   "Claude Sonnet 5.5 (low)",
+   "GPT-6.1 Sol (low)",
+   "GPT-6.1 Sol (high)",
+   "Gemma 4 31B (on)"
+  ],
+  "frontier": [
+   "GPT-6 Astra (on)"
+  ]
+ },
+ "kept_advantage": {
+  "GNUbg weak": {
+   "K": 0.98,
+   "ci_95": [
+    0.77,
+    1.25
+   ],
+   "standard_advantage": 59.76,
+   "advantage_95": [
+    47.61,
+    72.84
+   ],
+   "unstable": false
+  },
+  "Celeris-1 Decision": {
+   "K": 0.94,
+   "ci_95": [
+    0.76,
+    1.15
+   ],
+   "standard_advantage": 57.74,
+   "advantage_95": [
+    47.55,
+    68.65
+   ],
+   "unstable": false
+  },
+  "SubQ Snap Preview": {
+   "K": 0.96,
+   "ci_95": [
+    0.76,
+    1.19
+   ],
+   "standard_advantage": 55.54,
+   "advantage_95": [
+    45.29,
+    66.11
+   ],
+   "unstable": false
+  },
+  "Cygnet (Gemma 4 12B)": {
+   "K": 1.04,
+   "ci_95": [
+    0.86,
+    1.27
+   ],
+   "standard_advantage": 56.12,
+   "advantage_95": [
+    46.07,
+    66.46
+   ],
+   "unstable": false
+  },
+  "Decider v1.2 27B": {
+   "K": 1.14,
+   "ci_95": [
+    0.93,
+    1.39
+   ],
+   "standard_advantage": 52.77,
+   "advantage_95": [
+    42.9,
+    62.93
+   ],
+   "unstable": false
+  },
+  "Fastino GLiDE v1.2 (local)": {
+   "K": 0.9,
+   "ci_95": [
+    0.73,
+    1.09
+   ],
+   "standard_advantage": 64.71,
+   "advantage_95": [
+    52.87,
+    77.53
+   ],
+   "unstable": false
+  },
+  "DeepSeek V4.1 Flash (off)": {
+   "K": 0.87,
+   "ci_95": [
+    0.71,
+    1.05
+   ],
+   "standard_advantage": 63.54,
+   "advantage_95": [
+    53.09,
+    74.34
+   ],
+   "unstable": false
+  },
+  "Jev 1.13.0": {
+   "K": 0.96,
+   "ci_95": [
+    0.8,
+    1.16
+   ],
+   "standard_advantage": 60.92,
+   "advantage_95": [
+    50.62,
+    71.41
+   ],
+   "unstable": false
+  },
+  "GPT-6 Luna": {
+   "K": 0.82,
+   "ci_95": [
+    0.64,
+    1.03
+   ],
+   "standard_advantage": 59.18,
+   "advantage_95": [
+    49.11,
+    69.51
+   ],
+   "unstable": false
+  },
+  "Decider v1.1 27B": {
+   "K": 0.95,
+   "ci_95": [
+    0.76,
+    1.17
+   ],
+   "standard_advantage": 57.03,
+   "advantage_95": [
+    46.86,
+    67.46
+   ],
+   "unstable": false
+  },
+  "LFM2.5-24B-A2B (on)": {
+   "K": 0.92,
+   "ci_95": [
+    0.68,
+    1.22
+   ],
+   "standard_advantage": 49.25,
+   "advantage_95": [
+    38.34,
+    61.49
+   ],
+   "unstable": false
+  },
+  "Qwen3.8-27B (off)": {
+   "K": 0.92,
+   "ci_95": [
+    0.76,
+    1.1
+   ],
+   "standard_advantage": 59.32,
+   "advantage_95": [
+    49.48,
+    69.69
+   ],
+   "unstable": false
+  },
+  "Mercury Decide": {
+   "K": 0.99,
+   "ci_95": [
+    0.81,
+    1.21
+   ],
+   "standard_advantage": 54.71,
+   "advantage_95": [
+    45.13,
+    64.95
+   ],
+   "unstable": false
+  },
+  "Winnow-12B": {
+   "K": 0.93,
+   "ci_95": [
+    0.74,
+    1.16
+   ],
+   "standard_advantage": 53.12,
+   "advantage_95": [
+    43.32,
+    63.11
+   ],
+   "unstable": false
+  },
+  "LFM2.5-24B-A2B (off)": {
+   "K": 0.79,
+   "ci_95": [
+    0.51,
+    1.19
+   ],
+   "standard_advantage": 36.7,
+   "advantage_95": [
+    25.62,
+    47.88
+   ],
+   "unstable": false
+  },
+  "Open-Jev 27B v1.1": {
+   "K": 1.19,
+   "ci_95": [
+    0.84,
+    1.83
+   ],
+   "standard_advantage": 35.37,
+   "advantage_95": [
+    22.97,
+    48.64
+   ],
+   "unstable": false
+  },
+  "Decider Flash v1.2": {
+   "K": 0.84,
+   "ci_95": [
+    0.58,
+    1.16
+   ],
+   "standard_advantage": 47.68,
+   "advantage_95": [
+    36.5,
+    60.4
+   ],
+   "unstable": false
+  },
+  "Gemini 3.8 Flash (low)": {
+   "K": 0.99,
+   "ci_95": [
+    0.83,
+    1.18
+   ],
+   "standard_advantage": 71.53,
+   "advantage_95": [
+    59.26,
+    84.64
+   ],
+   "unstable": false
+  },
+  "Claude Sonnet 5.5 (low)": {
+   "K": 0.93,
+   "ci_95": [
+    0.78,
+    1.1
+   ],
+   "standard_advantage": 73.49,
+   "advantage_95": [
+    61.59,
+    86.24
+   ],
+   "unstable": false
+  },
+  "GPT-6.1 Sol (low)": {
+   "K": 0.96,
+   "ci_95": [
+    0.81,
+    1.12
+   ],
+   "standard_advantage": 76.3,
+   "advantage_95": [
+    64.19,
+    89.41
+   ],
+   "unstable": false
+  },
+  "GPT-6 Astra (on)": {
+   "K": 0.97,
+   "ci_95": [
+    0.83,
+    1.13
+   ],
+   "standard_advantage": 77.79,
+   "advantage_95": [
+    65.54,
+    90.83
+   ],
+   "unstable": false
+  },
+  "GPT-6.1 Sol (high)": {
+   "K": 0.96,
+   "ci_95": [
+    0.82,
+    1.11
+   ],
+   "standard_advantage": 77.57,
+   "advantage_95": [
+    65.47,
+    90.77
+   ],
+   "unstable": false
+  },
+  "Gemma 4 31B (on)": {
+   "K": 1.01,
+   "ci_95": [
+    0.84,
+    1.21
+   ],
+   "standard_advantage": 69.1,
+   "advantage_95": [
+    57.09,
+    82.14
+   ],
+   "unstable": false
+  },
+  "GPT-6.1 Terra": {
+   "K": 0.93,
+   "ci_95": [
+    0.78,
+    1.1
+   ],
+   "standard_advantage": 73.93,
+   "advantage_95": [
+    61.79,
+    86.84
+   ],
+   "unstable": false
+  }
+ },
+ "spearman": {
+  "setups": 23,
+  "rho": 0.87,
+  "ci_95": [
+   0.73,
+   0.91
+  ],
+  "largest_rank_changes": [
+   {
+    "setup": "Decider v1.2 27B",
+    "standard_rank": 19,
+    "nackgammon_rank": 8,
+    "change": -11
+   },
+   {
+    "setup": "GPT-6 Luna",
+    "standard_rank": 12,
+    "nackgammon_rank": 19,
+    "change": 7
+   },
+   {
+    "setup": "Cygnet (Gemma 4 12B)",
+    "standard_rank": 15,
+    "nackgammon_rank": 10,
+    "change": -5
+   },
+   {
+    "setup": "DeepSeek V4.1 Flash (off)",
+    "standard_rank": 9,
+    "nackgammon_rank": 12,
+    "change": 3
+   },
+   {
+    "setup": "Fastino GLiDE v1.2 (local)",
+    "standard_rank": 8,
+    "nackgammon_rank": 11,
+    "change": 3
+   }
+  ]
+ },
+ "kept_advantage_all_500": {
+  "GNUbg weak": {
+   "K": 1.01,
+   "ci_95": [
+    0.88,
+    1.16
+   ],
+   "standard_advantage": 59.81,
+   "advantage_95": [
+    52.45,
+    67.38
+   ],
+   "unstable": false
+  },
+  "Celeris-1 Decision": {
+   "K": 0.87,
+   "ci_95": [
+    0.76,
+    0.99
+   ],
+   "standard_advantage": 58.3,
+   "advantage_95": [
+    51.64,
+    65.13
+   ],
+   "unstable": false
+  },
+  "SubQ Snap Preview": {
+   "K": 0.9,
+   "ci_95": [
+    0.78,
+    1.03
+   ],
+   "standard_advantage": 53.91,
+   "advantage_95": [
+    47.3,
+    60.5
+   ],
+   "unstable": false
+  },
+  "Cygnet (Gemma 4 12B)": {
+   "K": 0.93,
+   "ci_95": [
+    0.83,
+    1.05
+   ],
+   "standard_advantage": 56.7,
+   "advantage_95": [
+    50.32,
+    63.36
+   ],
+   "unstable": false
+  },
+  "Decider v1.2 27B": {
+   "K": 0.98,
+   "ci_95": [
+    0.84,
+    1.14
+   ],
+   "standard_advantage": 53.44,
+   "advantage_95": [
+    46.69,
+    60.36
+   ],
+   "unstable": false
+  },
+  "Fastino GLiDE v1.2 (local)": {
+   "K": 0.91,
+   "ci_95": [
+    0.79,
+    1.05
+   ],
+   "standard_advantage": 58.83,
+   "advantage_95": [
+    52.1,
+    65.71
+   ],
+   "unstable": false
+  },
+  "DeepSeek V4.1 Flash (off)": {
+   "K": 0.84,
+   "ci_95": [
+    0.75,
+    0.95
+   ],
+   "standard_advantage": 61.8,
+   "advantage_95": [
+    55.23,
+    68.46
+   ],
+   "unstable": false
+  },
+  "Jev 1.13.0": {
+   "K": 0.89,
+   "ci_95": [
+    0.8,
+    1.0
+   ],
+   "standard_advantage": 60.49,
+   "advantage_95": [
+    54.05,
+    67.08
+   ],
+   "unstable": false
+  },
+  "GPT-6 Luna": {
+   "K": 0.83,
+   "ci_95": [
+    0.72,
+    0.96
+   ],
+   "standard_advantage": 55.6,
+   "advantage_95": [
+    49.0,
+    62.17
+   ],
+   "unstable": false
+  },
+  "Decider v1.1 27B": {
+   "K": 0.92,
+   "ci_95": [
+    0.8,
+    1.05
+   ],
+   "standard_advantage": 53.89,
+   "advantage_95": [
+    47.43,
+    60.46
+   ],
+   "unstable": false
+  },
+  "LFM2.5-24B-A2B (on)": {
+   "K": 0.82,
+   "ci_95": [
+    0.68,
+    0.98
+   ],
+   "standard_advantage": 47.38,
+   "advantage_95": [
+    40.64,
+    54.2
+   ],
+   "unstable": false
+  },
+  "Qwen3.8-27B (off)": {
+   "K": 0.85,
+   "ci_95": [
+    0.76,
+    0.96
+   ],
+   "standard_advantage": 58.27,
+   "advantage_95": [
+    51.96,
+    64.55
+   ],
+   "unstable": false
+  },
+  "Mercury Decide": {
+   "K": 0.88,
+   "ci_95": [
+    0.77,
+    1.01
+   ],
+   "standard_advantage": 53.81,
+   "advantage_95": [
+    47.34,
+    60.28
+   ],
+   "unstable": false
+  },
+  "Winnow-12B": {
+   "K": 0.88,
+   "ci_95": [
+    0.77,
+    1.01
+   ],
+   "standard_advantage": 53.22,
+   "advantage_95": [
+    46.79,
+    59.83
+   ],
+   "unstable": false
+  },
+  "LFM2.5-24B-A2B (off)": {
+   "K": 0.79,
+   "ci_95": [
+    0.61,
+    1.0
+   ],
+   "standard_advantage": 38.72,
+   "advantage_95": [
+    31.77,
+    45.62
+   ],
+   "unstable": false
+  },
+  "Open-Jev 27B v1.1": {
+   "K": 0.98,
+   "ci_95": [
+    0.81,
+    1.23
+   ],
+   "standard_advantage": 38.09,
+   "advantage_95": [
+    30.72,
+    45.47
+   ],
+   "unstable": false
+  },
+  "Decider Flash v1.2": {
+   "K": 0.74,
+   "ci_95": [
+    0.59,
+    0.92
+   ],
+   "standard_advantage": 44.93,
+   "advantage_95": [
+    37.85,
+    52.08
+   ],
+   "unstable": false
+  },
+  "Gemini 3.8 Flash (low)": {
+   "K": 0.96,
+   "ci_95": [
+    0.86,
+    1.08
+   ],
+   "standard_advantage": 68.45,
+   "advantage_95": [
+    61.28,
+    75.91
+   ],
+   "unstable": false
+  },
+  "Claude Sonnet 5.5 (low)": {
+   "K": 0.96,
+   "ci_95": [
+    0.86,
+    1.08
+   ],
+   "standard_advantage": 68.71,
+   "advantage_95": [
+    61.6,
+    76.16
+   ],
+   "unstable": false
+  },
+  "GPT-6.1 Sol (low)": {
+   "K": 0.97,
+   "ci_95": [
+    0.87,
+    1.08
+   ],
+   "standard_advantage": 72.95,
+   "advantage_95": [
+    65.81,
+    80.4
+   ],
+   "unstable": false
+  },
+  "GPT-6 Astra (on)": {
+   "K": 0.98,
+   "ci_95": [
+    0.88,
+    1.08
+   ],
+   "standard_advantage": 74.29,
+   "advantage_95": [
+    67.1,
+    81.78
+   ],
+   "unstable": false
+  },
+  "GPT-6.1 Sol (high)": {
+   "K": 0.98,
+   "ci_95": [
+    0.88,
+    1.08
+   ],
+   "standard_advantage": 74.01,
+   "advantage_95": [
+    66.8,
+    81.46
+   ],
+   "unstable": false
+  },
+  "Gemma 4 31B (on)": {
+   "K": 0.96,
+   "ci_95": [
+    0.85,
+    1.08
+   ],
+   "standard_advantage": 67.19,
+   "advantage_95": [
+    60.13,
+    74.56
+   ],
+   "unstable": false
+  },
+  "GPT-6.1 Terra": {
+   "K": 0.91,
+   "ci_95": [
+    0.81,
+    1.01
+   ],
+   "standard_advantage": 71.98,
+   "advantage_95": [
+    64.84,
+    79.45
+   ],
+   "unstable": false
+  }
+ },
+ "engine_check": {
+  "pairs": 40,
+  "counts": {
+   "rolled_out_plays": 436,
+   "adjusted_plays_used": 447
+  },
+  "per_setup": {
+   "GNUbg weak": {
+    "2ply": {
+     "standard_pr": 25.27,
+     "nackgammon_pr": 29.43,
+     "drop": 4.16
+    },
+    "rollout": {
+     "standard_pr": 28.12,
+     "nackgammon_pr": 28.1,
+     "drop": -0.02
+    }
+   },
+   "Celeris-1 Decision": {
+    "2ply": {
+     "standard_pr": 19.94,
+     "nackgammon_pr": 53.19,
+     "drop": 33.24
+    },
+    "rollout": {
+     "standard_pr": 20.9,
+     "nackgammon_pr": 51.27,
+     "drop": 30.37
+    }
+   },
+   "SubQ Snap Preview": {
+    "2ply": {
+     "standard_pr": 17.11,
+     "nackgammon_pr": 35.79,
+     "drop": 18.67
+    },
+    "rollout": {
+     "standard_pr": 18.47,
+     "nackgammon_pr": 34.63,
+     "drop": 16.16
+    }
+   },
+   "Cygnet (Gemma 4 12B)": {
+    "2ply": {
+     "standard_pr": 17.71,
+     "nackgammon_pr": 22.08,
+     "drop": 4.37
+    },
+    "rollout": {
+     "standard_pr": 19.07,
+     "nackgammon_pr": 19.93,
+     "drop": 0.85
+    }
+   },
+   "Decider v1.2 27B": {
+    "2ply": {
+     "standard_pr": 15.09,
+     "nackgammon_pr": 20.47,
+     "drop": 5.39
+    },
+    "rollout": {
+     "standard_pr": 16.17,
+     "nackgammon_pr": 19.36,
+     "drop": 3.19
+    }
+   },
+   "Fastino GLiDE v1.2 (local)": {
+    "2ply": {
+     "standard_pr": 13.43,
+     "nackgammon_pr": 20.28,
+     "drop": 6.86
+    },
+    "rollout": {
+     "standard_pr": 14.3,
+     "nackgammon_pr": 19.14,
+     "drop": 4.85
+    }
+   },
+   "DeepSeek V4.1 Flash (off)": {
+    "2ply": {
+     "standard_pr": 10.19,
+     "nackgammon_pr": 22.97,
+     "drop": 12.78
+    },
+    "rollout": {
+     "standard_pr": 11.05,
+     "nackgammon_pr": 20.58,
+     "drop": 9.53
+    }
+   },
+   "Jev 1.13.0": {
+    "2ply": {
+     "standard_pr": 14.66,
+     "nackgammon_pr": 25.27,
+     "drop": 10.61
+    },
+    "rollout": {
+     "standard_pr": 15.82,
+     "nackgammon_pr": 23.79,
+     "drop": 7.97
+    }
+   },
+   "GPT-6 Luna": {
+    "2ply": {
+     "standard_pr": 11.27,
+     "nackgammon_pr": 38.9,
+     "drop": 27.63
+    },
+    "rollout": {
+     "standard_pr": 12.17,
+     "nackgammon_pr": 36.34,
+     "drop": 24.17
+    }
+   },
+   "Decider v1.1 27B": {
+    "2ply": {
+     "standard_pr": 17.21,
+     "nackgammon_pr": 23.64,
+     "drop": 6.43
+    },
+    "rollout": {
+     "standard_pr": 18.36,
+     "nackgammon_pr": 21.31,
+     "drop": 2.95
+    }
+   },
+   "LFM2.5-24B-A2B (on)": {
+    "2ply": {
+     "standard_pr": 24.08,
+     "nackgammon_pr": 46.03,
+     "drop": 21.95
+    },
+    "rollout": {
+     "standard_pr": 25.81,
+     "nackgammon_pr": 44.33,
+     "drop": 18.51
+    }
+   },
+   "Qwen3.8-27B (off)": {
+    "2ply": {
+     "standard_pr": 9.63,
+     "nackgammon_pr": 23.71,
+     "drop": 14.08
+    },
+    "rollout": {
+     "standard_pr": 10.52,
+     "nackgammon_pr": 22.07,
+     "drop": 11.55
+    }
+   },
+   "Mercury Decide": {
+    "2ply": {
+     "standard_pr": 15.28,
+     "nackgammon_pr": 32.27,
+     "drop": 16.99
+    },
+    "rollout": {
+     "standard_pr": 16.11,
+     "nackgammon_pr": 30.64,
+     "drop": 14.54
+    }
+   },
+   "Winnow-12B": {
+    "2ply": {
+     "standard_pr": 19.4,
+     "nackgammon_pr": 40.94,
+     "drop": 21.54
+    },
+    "rollout": {
+     "standard_pr": 20.82,
+     "nackgammon_pr": 39.56,
+     "drop": 18.74
+    }
+   },
+   "LFM2.5-24B-A2B (off)": {
+    "2ply": {
+     "standard_pr": 36.14,
+     "nackgammon_pr": 72.68,
+     "drop": 36.54
+    },
+    "rollout": {
+     "standard_pr": 37.09,
+     "nackgammon_pr": 71.22,
+     "drop": 34.12
+    }
+   },
+   "Open-Jev 27B v1.1": {
+    "2ply": {
+     "standard_pr": 51.03,
+     "nackgammon_pr": 54.35,
+     "drop": 3.31
+    },
+    "rollout": {
+     "standard_pr": 52.1,
+     "nackgammon_pr": 52.82,
+     "drop": 0.72
+    }
+   },
+   "Decider Flash v1.2": {
+    "2ply": {
+     "standard_pr": 29.51,
+     "nackgammon_pr": 63.81,
+     "drop": 34.31
+    },
+    "rollout": {
+     "standard_pr": 32.15,
+     "nackgammon_pr": 60.75,
+     "drop": 28.6
+    }
+   },
+   "Gemini 3.8 Flash (low)": {
+    "2ply": {
+     "standard_pr": 15.21,
+     "nackgammon_pr": 10.19,
+     "drop": -5.02
+    },
+    "rollout": {
+     "standard_pr": 16.33,
+     "nackgammon_pr": 8.38,
+     "drop": -7.95
+    }
+   },
+   "Claude Sonnet 5.5 (low)": {
+    "2ply": {
+     "standard_pr": 12.96,
+     "nackgammon_pr": 18.62,
+     "drop": 5.66
+    },
+    "rollout": {
+     "standard_pr": 14.17,
+     "nackgammon_pr": 17.06,
+     "drop": 2.89
+    }
+   },
+   "GPT-6.1 Sol (low)": {
+    "2ply": {
+     "standard_pr": 13.56,
+     "nackgammon_pr": 10.52,
+     "drop": -3.04
+    },
+    "rollout": {
+     "standard_pr": 15.09,
+     "nackgammon_pr": 8.7,
+     "drop": -6.39
+    }
+   },
+   "GPT-6 Astra (on)": {
+    "2ply": {
+     "standard_pr": 8.46,
+     "nackgammon_pr": 7.75,
+     "drop": -0.71
+    },
+    "rollout": {
+     "standard_pr": 9.6,
+     "nackgammon_pr": 6.25,
+     "drop": -3.35
+    }
+   },
+   "GPT-6.1 Sol (high)": {
+    "2ply": {
+     "standard_pr": 11.73,
+     "nackgammon_pr": 10.46,
+     "drop": -1.28
+    },
+    "rollout": {
+     "standard_pr": 12.53,
+     "nackgammon_pr": 8.87,
+     "drop": -3.66
+    }
+   },
+   "Gemma 4 31B (on)": {
+    "2ply": {
+     "standard_pr": 14.93,
+     "nackgammon_pr": 18.07,
+     "drop": 3.13
+    },
+    "rollout": {
+     "standard_pr": 16.05,
+     "nackgammon_pr": 16.73,
+     "drop": 0.69
+    }
+   },
+   "GPT-6.1 Terra": {
+    "2ply": {
+     "standard_pr": 11.43,
+     "nackgammon_pr": 8.61,
+     "drop": -2.81
+    },
+    "rollout": {
+     "standard_pr": 12.64,
+     "nackgammon_pr": 6.74,
+     "drop": -5.9
+    }
+   },
+   "Random": {
+    "2ply": {
+     "standard_pr": 83.84,
+     "nackgammon_pr": 93.55,
+     "drop": 9.72
+    },
+    "rollout": {
+     "standard_pr": 86.1,
+     "nackgammon_pr": 92.24,
+     "drop": 6.14
+    }
+   }
+  },
+  "primary": [
+   {
+    "comparison": "decision models − workhorses",
+    "2ply": 6.36,
+    "rollout": 6.17,
+    "2ply_ci_99": [
+     -3.28,
+     18.64
+    ],
+    "rollout_ci_99": [
+     -3.57,
+     18.72
+    ],
+    "direction_changed": false
+   },
+   {
+    "comparison": "decision models − frontier",
+    "2ply": 16.49,
+    "rollout": 16.11,
+    "2ply_ci_99": [
+     -1.68,
+     40.04
+    ],
+    "rollout_ci_99": [
+     -2.2,
+     39.49
+    ],
+    "direction_changed": false
+   },
+   {
+    "comparison": "workhorses − frontier",
+    "2ply": 10.13,
+    "rollout": 9.94,
+    "2ply_ci_99": [
+     -1.63,
+     24.58
+    ],
+    "rollout_ci_99": [
+     -1.64,
+     24.21
+    ],
+    "direction_changed": false
+   },
+   {
+    "comparison": "LFM2.5-24B-A2B (on) − LFM2.5-24B-A2B (off)",
+    "2ply": -14.59,
+    "rollout": -15.61,
+    "2ply_ci_99": [
+     -55.64,
+     18.77
+    ],
+    "rollout_ci_99": [
+     -56.62,
+     17.0
+    ],
+    "direction_changed": false
+   },
+   {
+    "comparison": "GPT-6.1 Sol (high) − GPT-6.1 Sol (low)",
+    "2ply": 1.76,
+    "rollout": 2.73,
+    "2ply_ci_99": [
+     -2.81,
+     6.99
+    ],
+    "rollout_ci_99": [
+     -1.97,
+     8.46
+    ],
+    "direction_changed": false
+   }
+  ],
+  "settings": "GNUbg 1.08.003 rollout: 1,296 trials per play, cubeless, variance reduction on, quasi-random dice, no truncation, no late evaluation, chequer play 1-ply, seed 1, 8 threads, nice 19; candidates: top 5 at 2-ply plus every play any setup chose"
+ }
+}

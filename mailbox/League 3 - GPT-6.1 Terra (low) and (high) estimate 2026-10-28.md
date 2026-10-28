@@ -60,3 +60,7 @@ The only billed cost is Kimi K3.1 Pro (off), one match per late entry: ≈ $0.42
 GPT-6.1 Terra (low) is in the paired test through **OpenRouter** (OpenAI endpoint, choice only). A Terra (high) added there through **Codex** would change the route and the effort at once, so its drop would not be comparable with Terra (low)'s. Terra (high) in the paired test stays on hold.
 
 Waiting for Can's go on the Terra matches, and on the 12-or-14 question.
+
+## Update 2026-10-28: cancelled (Can)
+
+Can cancelled the League 3 entries of GPT-6.1 Terra (low) and (high): no Terra league match is played. They are to join a reasoning sweep on shared positions later. GPT-6 Astra (high)'s entry continues; its Kimi K3.1 Pro (off) match is the only Kimi match, played last after a credit check.

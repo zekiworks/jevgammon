@@ -361,11 +361,14 @@ def archive_pre_switch(out: Path) -> None:
 
 def preview_redirects(out: Path, target: Path) -> None:
     """The old preview path after the switch: every page redirects to the same page on the live address, keeping the
-    query and the anchor (stable links posted from the preview keep working)."""
+    query and the anchor (stable links posted from the preview keep working). Fixed snapshots (results/) postdate the
+    preview and get none."""
     if target.exists():
         shutil.rmtree(target)
     for page in out.rglob("index.html"):
         rel = page.parent.relative_to(out).as_posix()
+        if rel.split("/")[0] == "results":
+            continue
         rel = "" if rel == "." else rel + "/"
         url = BASE + rel
         stub = target / rel / "index.html"

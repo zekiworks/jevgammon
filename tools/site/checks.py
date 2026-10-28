@@ -297,9 +297,10 @@ def run(S: dict, out: Path) -> list[str]:
         rel = page.relative_to(out)
         tree = Tree()
         tree.feed(page.read_text())
-        # archive/: the page that was live before the switch, frozen with its own data file; only its links and the
-        # private-data scan apply (its numbers are that day's and trace to its v3-results.json, not to data/).
-        if rel.parts[0] != "archive":
+        # archive/: the page that was live before the switch, frozen with its own data file; results/<id>/: fixed
+        # snapshots of earlier results (cited elsewhere), frozen with their own data/. Only their links and the
+        # private-data scan apply (their numbers trace to their own data files, not to the current data/).
+        if rel.parts[0] not in ("archive", "results"):
             failures += check_numbers(rel, tree.root, nums)
             failures += check_mixing(rel, tree.root, S)
         failures += [f.replace(str(base), str(rel)) for f in check_links(base, tree.root, out, anchors=page == base)]

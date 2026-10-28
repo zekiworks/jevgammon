@@ -43,6 +43,7 @@ NOTE_E = ("Groups by original league (Method §10.14, amendment of 2026-10-27). 
 
 # §10.14(h): the one-token letter readout (max_tokens 1) and the markers of a response stopped at its output limit.
 LETTER_READOUT = re.compile(r'"max_tokens"\s*:\s*1\s*[,}]')
+ANY_LIMIT = re.compile(r'"(max_tokens|max_output_tokens|maxOutputTokens|max_completion_tokens)"\s*:')
 CUT_MARK = re.compile(r'"finish_reason"\s*:\s*"length"|"stop_reason"\s*:\s*"max_tokens"|'
                       r'"finishReason"\s*:\s*"MAX_TOKENS"|"reason"\s*:\s*"max_output_tokens"')
 OUTPUT_LIMIT = 32768
@@ -142,6 +143,7 @@ class Data:
         self.setups = [s for s in self.players if s in self.answers]
         self.db = db
         self._cutoff = None
+        self._past = None
         if not GROUPS:
             GROUPS.update(original_league_groups([s for s in self.setups if s not in YARDSTICKS]))
 
@@ -152,14 +154,28 @@ class Data:
         if self._cutoff is None:
             con = sqlite3.connect(f"file:{self.db}?mode=ro", uri=True)
             self._cutoff = {}
-            for setup, pid, req, resp in con.execute(
-                    """SELECT a.setup, a.position_id, e.request, e.response FROM answers a
+            limited = set()
+            for aid, setup, pid, req, resp in con.execute(
+                    """SELECT a.id, a.setup, a.position_id, e.request, e.response FROM answers a
                        JOIN answer_exchanges e ON e.answer_id = a.id WHERE a.repeat = 1"""):
+                if ANY_LIMIT.search(req or ""):
+                    limited.add(aid)
                 if not resp or LETTER_READOUT.search(req or ""):
                     continue
                 if CUT_MARK.search(resp):
                     self._cutoff.setdefault(setup, set()).add(pid)
+            # Flag (Can, 2026-10-28): runs that sent no limit and went past 32,768 output tokens; scores unchanged.
+            self._past = {}
+            for setup, a in self.answers.items():
+                for pid, r in a.items():
+                    if r["id"] not in limited and (r["output_tokens"] or 0) > OUTPUT_LIMIT:
+                        self._past.setdefault(setup, set()).add(pid)
         return self._cutoff
+
+    def past_limit_no_limit_sent(self):
+        """{setup: {position ids}} of answers past 32,768 output tokens from runs that sent no output limit."""
+        self.cutoff()
+        return self._past
 
     def answered(self, setup, pairs):
         a = self.answers.get(setup, {})
@@ -595,13 +611,13 @@ def report(args):
             r["sensitivity_final_cutoff"] = {k: x[k] for k in ("pairs", "standard_pr", "nackgammon_pr", "drop",
                                                                "drop_975")}
         if s != "Random":
-            # §10.14(h): answers cut off by the output limit (own column), and answers longer than 32,768 output
-            # tokens (possible only where no limit was sent; such a run stands as run).
+            # §10.14(h): answers cut off by the output limit (own column; invalid), and the flag "past 32,768, no limit
+            # sent" (runs that sent no output limit; scores unchanged).
             cut = d.cutoff().get(s, set())
-            a = d.answers.get(s, {})
-            r["cut_off"] = {look: {side: sum(1 for p in prs if p[side] in cut) for side in ("nackgammon", "standard")}
-                            for look, prs in (("main", d.main), ("all", d.pairs))}
-            r["output_over_32768"] = sum(1 for x in a.values() if (x["output_tokens"] or 0) > OUTPUT_LIMIT)
+            past = d.past_limit_no_limit_sent().get(s, set())
+            for key, ids in (("cut_off", cut), ("past_32768_no_limit_sent", past)):
+                r[key] = {look: {side: sum(1 for p in prs if p[side] in ids) for side in ("nackgammon", "standard")}
+                          for look, prs in (("main", d.main), ("all", d.pairs))}
         r["phases"] = phase_table(d, s)
         r["tags"] = tag_table(d, s)
         r["risk_main"] = risk_table(d, s, d.main, "first")

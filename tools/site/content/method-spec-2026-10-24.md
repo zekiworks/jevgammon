@@ -887,3 +887,7 @@ h) **Argon dropped, Argon (low) proposed, and the output-limit rule, dated 2026-
        v1.2 27B, Decider Flash v1.2, Winnow-12B, Open-Jev 27B v1.1, GNUbg weak.
    - **Cut-off answers in the stored runs:** none, for every setup (checked with the rule above). The new column will
      therefore show 0 for them, and their sensitivity check equals the primary rule.
+   - **Flag for runs that sent no limit (Can, 2026-10-28, same day):** old runs are not redone. An answer from a run
+     that sent no output limit and used more than 32,768 output tokens is flagged in the cut-off column as "past
+     32,768, no limit sent" (for example 2 of Grok 4.7 (on)'s first 178 answers). It is counted separately from
+     cut-off answers, and its score stays as it is: it is neither invalid nor left out.

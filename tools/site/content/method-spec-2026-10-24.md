@@ -856,3 +856,34 @@ g) **Cup-roster additions, dated 2026-10-28 (Can; written and committed before a
      frequent, over 5% in the smoke), under the same rules. It replaces the earlier Argon (high) plan (Argon (on) is
      thinking level high). It is not added because of the Cup roster, so it belongs to **no group** despite its original
      League 3: it enters no primary comparison and does not change M. It is reported per setup and labelled exploratory.
+h) **Argon dropped, Argon (low) proposed, and the output-limit rule, dated 2026-10-28 (Can; written and committed
+   before any new run of this test starts. Grok 4.7 (on)'s run, started at 15:33 UTC, continues as it was started).**
+   - **Gemini 4 Argon (on) is dropped from the test.** Its smoke test (the 50 standard smoke positions, `bg-v2`;
+     `mailbox/Nackgammon - Argon (on) smoke 2026-10-28.md`) had 7 of 50 answers (14%) still thinking when they reached
+     the 32,768-token output limit. The limit was 5%. Its 400 start decisions would take about 22 hours of request time
+     (201 s per decision; about 5.6 h at parallel 4). None of its paired-test positions was asked.
+   - **Gemini 4 Argon (low) instead, exploratory, not yet started.** This is the setup labelled "Gemini 4 Argon (off)",
+     which sends thinking level low. It covers Google's frontier model. Same rules as every setup; no group; it enters
+     no primary comparison and does not change M. An estimate comes first; there is no model call before Can's go.
+   - **Output-limit rule, fixed now.** The output limit is 32,768 tokens for every setup. An answer cut off by the
+     limit (the response reports the stop at the limit: `finish_reason` "length", `stop_reason` "max_tokens",
+     `finishReason` "MAX_TOKENS" or incomplete "max_output_tokens"; the one-token letter readout call is not counted)
+     is **invalid** under the frozen rule of 10.8 and scores the position's Random error. Each setup's cut-off count is
+     reported in its own column, next to a sensitivity check that leaves out the pairs with a cut-off answer.
+   - **Limits the runs so far actually used** (from the settings and the stored requests in `smoke/nack-paired.db`).
+     **These runs stand as run; the rule applies to new runs.**
+     - **32,000** (the Anthropic route's default `max_tokens`): Claude Sonnet 5.5 (low), Claude Fable 5.1 (on).
+     - **Set in the settings:** GPT-6.1 Terra 8,000; Gemma 4 31B (on) 24,000 for its reasoning call, then a one-token
+       letter readout; LFM2.5-24B-A2B (on) 32,000, then a one-token letter readout; DeepSeek V4.1 Flash (off) 16;
+       Qwen3.8-27B (off) 16; LFM2.5-24B-A2B (off) 1 (letter readout only).
+     - **No limit sent; the provider's own limit applies:**
+       - ChatGPT/Codex route: GPT-6.1 Sol (low), GPT-6.1 Sol (high), GPT-6 Astra (on).
+       - Antigravity route: Gemini 3.8 Flash (low). Argon (on)'s smoke test stopped at 32,768 there.
+       - xAI route: Grok 4.7 (on), whose run started before this rule. Two of its first 178 answers used more than
+         32,768 output tokens (at most 40,238).
+     - **Not applicable** (decision services, local decision models and the program answer with one choice; no text is
+       generated against a limit): Celeris-1 Decision, SubQ Snap Preview, Jev 1.13.0, GPT-6 Luna, Mercury Decide,
+       Liquid d1-ultra, Fastino GLiDE, Fastino GLiDE v1.2 (local), Cygnet (Gemma 4 12B), Decider v1.1 27B, Decider
+       v1.2 27B, Decider Flash v1.2, Winnow-12B, Open-Jev 27B v1.1, GNUbg weak.
+   - **Cut-off answers in the stored runs:** none, for every setup (checked with the rule above). The new column will
+     therefore show 0 for them, and their sensitivity check equals the primary rule.

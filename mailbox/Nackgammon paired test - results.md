@@ -132,9 +132,9 @@ Main 200 pairs, descriptive, 95% intervals.
 | GNUbg weak | -7.5 [-21.3, +6.5] | -5.8 [-32.0, +20.2] | +3.4 [-12.5, +21.1] | +3.0 [-0.0, +7.8] | -3.6 [-10.5, +0.7] | -5.6 [-23.3, +11.9] |
 | Random | -11.3 [-23.3, +0.4] | -9.3 [-27.3, +8.8] | +7.6 [-57.2, +63.1] | +3.4 [-7.7, +16.9] | +0.5 [-5.6, +6.9] | -9.7 [-28.7, +9.8] |
 
-Cost per recorded position over all 1,000 (billed and API-equivalent are never added; 0 = none of that kind; setups on our GPUs have no list price).
+Cost per recorded position over all 1,000 (recorded cost and API-equivalent are never added; 0 = none of that kind; setups on our GPUs have no list price). Recorded cost is the cost stored with each answer: the provider's reported cost per response where the route reports one, otherwise the runner's list-price computation (Mercury Decide; its provider-billed amount is unknown). No invoice was checked.
 
-| Setup | Positions recorded (all) | Billed $ per decision | API-equivalent $ per decision |
+| Setup | Positions recorded (all) | Recorded cost $ per decision (provider-reported; Mercury Decide: list price) | API-equivalent $ per decision |
 | --- | --- | --- | --- |
 | Fastino GLiDE v1.2 (local) | 1000 | 0.00000 | 0.00000 |
 | Jev 1.13.0 | 1000 | 0.00013 | 0.00000 |
@@ -368,7 +368,7 @@ ledger booked against the caps: per attempt the larger of the list-price cost an
 "Provider-reported" is OpenRouter's `usage.cost` per response. Mercury Decide is on no ledger (its route allows none):
 its recorded cost is the runner's list-price computation; its provider-billed amount was not retained (unknown).
 
-| Run | Row | Attempts recorded | Ledger-accounted $ (booked: max of list price and provider-reported) | Provider-reported $ | Source |
+| Run | Row | Ledger attempts (Mercury Decide: final answer records, no attempt ledger) | Ledger-accounted $ (booked: max of list price and provider-reported) | Provider-reported $ | Source |
 | --- | --- | --- | --- | --- | --- |
 | GPT-6.1 Terra smoke (50 positions) | a | 100 | $0.21256375 | $0.21256375 | budget ledger |
 | DeepSeek V4.1 Flash (off), main 400 | b | 403 | $0.17848470 | $0.11737138 | budget ledger |
@@ -382,7 +382,7 @@ its recorded cost is the runner's list-price computation; its provider-billed am
 - Row d, ledger setups only: ledger-accounted $2.45566229, provider-reported $2.36990746. Adding Mercury Decide's recorded reserve cost ($0.03351938, list price) gives $2.48918167: the "$2.489" quoted earlier was this ledger-accounted figure including Mercury, against the $2.55 cap (ledger cap $2.51 + Mercury limit $0.035). Provider-reported row d including Mercury is unknown (Mercury's billed amount was not retained); with Mercury at its list-price record it would be $2.40342684.
 - Rows a–d: ledger-accounted $4.39194488 (incl. Mercury at list price; the "$4.39" quoted earlier); provider-reported $4.18923709 for the ledger runs plus Mercury unknown (list-price record $0.05583964).
 - DeepSeek V4.1 Flash (off) books above its provider-reported cost because the ledger's list price ($0.30/$1.20 per M) exceeds what OpenRouter reported; GPT-6.1 Terra books at its provider-reported cost, which exceeds list price because OpenRouter billed each prompt as a cache write ($1.25 per M).
-- Not on any ledger: before the smoke test, direct probe requests to openai/gpt-6.1-terra outside the runner; one answered probe reported $0.000033, one answered probe's cost was not retained (unknown); the rest were refused by routing (404, not billed). The smoke test's first attempt (50 requests) was refused by routing (404) and booked at $0.
+- Not on any ledger: before the smoke test, direct probe requests to openai/gpt-6.1-terra outside the runner; one answered probe reported $0.000033, one answered probe's cost was not retained (unknown); the rest were refused by routing (404): none has a reported cost and none was booked; the billed amount is unknown. The smoke test's first attempt (50 requests) was refused by routing (404) and booked at $0 (no reported cost; the billed amount is unknown).
 - The OpenRouter account's usage rose by $4.99 between 18:05 UTC on 2026-10-27 and about 01:00 UTC on 2026-10-28; the difference from the figures above is not attributable from retained data (other runs on the same account in that window): unknown.
 
 ## Update 2026-10-28: Cup-roster additions (§10.14(g)) and Argon (low) (§10.14(h))

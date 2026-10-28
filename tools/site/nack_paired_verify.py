@@ -157,6 +157,25 @@ def check_home(out: Path, N: dict, bad: list):
                     bad.append(f"home table {tid} row {r.attrs['data-row']} [{c.attrs['data-k']}]: {err}")
     if not seen:
         bad.append("home page: no checked cells")
+    # Semantic checks (2026-10-28): the value check above only proves a printed number equals the key it names; these
+    # prove the key is the right one for what the row shows.
+    for t in tables:
+        if t.attrs.get("id") != "nack-table":
+            continue
+        for r in (x for x in walk(t) if x.tag == "tr" and "data-row" in x.attrs):
+            s = r.attrs["data-row"]
+            keys = [c.attrs["data-k"] for c in walk(r) if c.tag == "td" and "data-k" in c.attrs]
+            refs = [k for k in keys if k.startswith("@Random/")]
+            pairs = N["setups"][s]["final"]["pairs"]
+            look = refs[-1].split("/")[1] if refs else None
+            if len(refs) != 2 or refs[0] != "@Random/first/drop" or N["setups"]["Random"][look]["pairs"] != pairs:
+                bad.append(f"nack-table row {s}: Random's reference {refs} does not match its final look on {pairs} pairs")
+            if "invalid/final/standard|invalid/final/nackgammon" not in keys:
+                bad.append(f"nack-table row {s}: no final-look count of positions without a valid choice")
+    notes = {c.attrs.get("class", ""): text_of(c) for c in walk(sec) if c.tag == "p"}
+    for cls, key in (("table-note nack-missing-note", "missing_note"), ("table-note nack-cost-note", "cost_note")):
+        if norm(notes.get(cls, "")) != norm(N[key]):
+            bad.append(f"home: the {key} paragraph does not match the data file")
     pts = {g.attrs["data-setup"]: g for g in walk(sec) if g.tag == "g" and "data-setup" in g.attrs}
     if list(pts) != [p["setup"] for p in N["chart"]]:
         bad.append(f"chart: points {list(pts)} != {[p['setup'] for p in N['chart']]}")

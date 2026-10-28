@@ -7350,6 +7350,8 @@
    }
   }
  },
+ "cost_note": "Recorded cost (the field billed_usd_per_1000) is the cost stored with each answer: the provider's reported cost per response where the route reports one, otherwise the runner's list-price computation (Mercury Decide: list price; its provider-billed amount was not retained and is unknown). No invoice was checked. API-equivalent is a subscription setup priced at list price, not money paid. Setups on our GPUs have no list price.",
+ "missing_note": "LFM2.5-24B-A2B (on): 107 positions recorded without a valid choice (timeouts or missing choices), 38 in the main 200 pairs and 69 in the reserve; on its final 500 pairs 55 standard / 52 Nackgammon. They are not answers: each is scored by the primary rule (the position's Random error), with both sensitivity checks below. Every other asked setup gave a valid choice on every recorded position.",
  "primary": {
   "random": [
    {

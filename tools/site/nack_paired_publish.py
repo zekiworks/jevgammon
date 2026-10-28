@@ -36,6 +36,30 @@ def _risk(r: dict | None) -> dict | None:
     return {k: r[k] for k in ("standard", "nackgammon", "change", "thin")}
 
 
+COST_NOTE = ("Recorded cost (the field billed_usd_per_1000) is the cost stored with each answer: the provider's reported "
+             "cost per response where the route reports one, otherwise the runner's list-price computation (Mercury "
+             "Decide: list price; its provider-billed amount was not retained and is unknown). No invoice was checked. "
+             "API-equivalent is a subscription setup priced at list price, not money paid. Setups on our GPUs have no "
+             "list price.")
+
+
+def missing_note(setups: dict) -> str:
+    """The positions recorded without a valid choice, main versus final, from the saved counts (no rescoring)."""
+    parts = []
+    for s, v in setups.items():
+        f, m = v["invalid"]["final"], v["invalid"]["first"]
+        tot, main = f["standard"] + f["nackgammon"], m["standard"] + m["nackgammon"]
+        if tot:
+            parts.append(f"{s}: {tot:,} positions recorded without a valid choice (timeouts or missing choices), "
+                         f"{main:,} in the main 200 pairs and {tot - main:,} in the reserve; on its final "
+                         f"{v['final']['pairs']} pairs {f['standard']} standard / {f['nackgammon']} Nackgammon")
+    if not parts:
+        return "Every asked setup gave a valid choice on every recorded position."
+    return ("; ".join(parts) + ". They are not answers: each is scored by the primary rule (the position's Random "
+            "error), with both sensitivity checks below. Every other asked setup gave a valid choice on every recorded "
+            "position.")
+
+
 def build(R: dict) -> dict:
     """The published aggregates of a results.json (pure function of it)."""
     names = sorted(R["setups"], key=lambda s: (GROUP_ORDER.index(R["setups"][s]["group"]),
@@ -63,7 +87,7 @@ def build(R: dict) -> dict:
         title="Nackgammon paired test", method="Method spec 2026-10-24 §10 (groups: §10.14)",
         scope_note=R["scope_note"], groups_rule=R["groups_rule"], frontier_note=R["frontier_note"],
         in_progress=incomplete, primary_level=0.99, comparisons=5, intervals_first_final=0.975, interval_descriptive=0.95,
-        groups=R["groups"], setups=setups,
+        groups=R["groups"], setups=setups, cost_note=COST_NOTE, missing_note=missing_note(setups),
         primary={rule: [{k: v for k, v in c.items()} for c in R["primary"][rule]] for rule in ("random", "worst", "drop")},
         secondary=dict(kept_advantage=R["kept_advantage"], kept_advantage_all_500=R.get("kept_advantage_all_500"),
                        spearman=R["spearman"]),

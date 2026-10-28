@@ -96,10 +96,12 @@ table("By phase", "phases", setup_rows, [("Setup", "{}", [((), "row")])] + [
 table("By phase", "cost", model_rows, [
     ("Setup", "{}", [((), "row")]),
     ("Positions recorded (all)", "{}", [(("setups", "@", "cost_all", "decisions"), "d")]),
-    ("Billed $ per decision", "{}", [(("setups", "@", "cost_all", "billed_usd_per_decision"), ".5f")]),
+    ("Recorded cost $ per decision (provider-reported; Mercury Decide: list price)", "{}", [(("setups", "@", "cost_all", "billed_usd_per_decision"), ".5f")]),
     ("API-equivalent $ per decision", "{}", [(("setups", "@", "cost_all", "api_eq_usd_per_decision"), ".5f")]),
-], intro="Cost per recorded position over all 1,000 (billed and API-equivalent are never added; 0 = none of that kind; "
-         "setups on our GPUs have no list price).")
+], intro="Cost per recorded position over all 1,000 (recorded cost and API-equivalent are never added; 0 = none of "
+         "that kind; setups on our GPUs have no list price). Recorded cost is the cost stored with each answer: the "
+         "provider's reported cost per response where the route reports one, otherwise the runner's list-price "
+         "computation (Mercury Decide; its provider-billed amount is unknown). No invoice was checked.")
 
 
 def side(k):
@@ -166,7 +168,7 @@ A = ("accounting", "rows", "@")
 table("OpenRouter accounting", "accounting", lambda R: list(range(len(R["accounting"]["rows"]))), [
     ("Run", "{}", [(A + ("run",), "s")]),
     ("Row", "{}", [(A + ("row",), "s")]),
-    ("Attempts recorded", "{}", [(A + ("attempts",), "d")]),
+    ("Ledger attempts (Mercury Decide: final answer records, no attempt ledger)", "{}", [(A + ("attempts",), "d")]),
     ("Ledger-accounted $ (booked: max of list price and provider-reported)", "{}", [(A + ("ledger_usd",), "$8")]),
     ("Provider-reported $", "{}", [(A + ("provider_usd",), "$8")]),
     ("Source", "{}", [(A + ("source",), "s")]),
@@ -483,8 +485,8 @@ def accounting():
         "price because OpenRouter billed each prompt as a cache write ($1.25 per M).",
         "Not on any ledger: before the smoke test, direct probe requests to openai/gpt-6.1-terra outside the runner; one "
         "answered probe reported $0.000033, one answered probe's cost was not retained (unknown); the rest were refused "
-        "by routing (404, not billed). The smoke test's first attempt (50 requests) was refused by routing (404) and "
-        "booked at $0.",
+        "by routing (404): none has a reported cost and none was booked; the billed amount is unknown. The smoke test's first attempt (50 requests) was refused by routing (404) and "
+        "booked at $0 (no reported cost; the billed amount is unknown).",
         "The OpenRouter account's usage rose by $4.99 between 18:05 UTC on 2026-10-27 and about 01:00 UTC on "
         "2026-10-28; the difference from the figures above is not attributable from retained data (other runs on the "
         "same account in that window): unknown.",

@@ -73,10 +73,20 @@ def _setup_label(name, rec) -> str:
     return f'{esc(name)}<span class="small">{esc(rec["group"])}</span>'
 
 
+def random_ref(N, pairs) -> str:
+    """Random's drop on the same pair set as the row's final look: chosen by the number of pairs shown, never by the
+    paid-model extension flag (Random is computed, not extended)."""
+    rnd = N["setups"]["Random"]
+    for look in ("final", "first"):
+        if rnd[look]["pairs"] == pairs:
+            return f"@Random/{look}/drop"
+    raise ValueError(f"no Random look on {pairs} pairs")
+
+
 def main_table(N) -> str:
     rows = []
     for s, r in N["setups"].items():
-        rnd = "@Random/final/drop" if r["extended"] else "@Random/first/drop"
+        rnd = random_ref(N, r["final"]["pairs"])
         rows.append(row(s, _setup_label(s, r), [
             td(N, r, ["first/standard_pr"]), td(N, r, ["first/nackgammon_pr"]), td(N, r, ["first/drop"], signed=True),
             td(N, r, ["first/drop_975"], signed=True), td(N, r, ["@Random/first/drop"], signed=True),
@@ -84,11 +94,14 @@ def main_table(N) -> str:
             td(N, r, ["final/pairs"]), td(N, r, ["final/standard_pr"]), td(N, r, ["final/nackgammon_pr"]),
             td(N, r, ["final/drop"], signed=True), td(N, r, ["final/drop_975"], signed=True),
             td(N, r, [rnd], signed=True), td(N, r, ["label"], text=True),
-            td(N, r, ["invalid/first/standard", "invalid/first/nackgammon"], sep=" / ")]))
+            td(N, r, ["invalid/first/standard", "invalid/first/nackgammon"], sep=" / "),
+            td(N, r, ["invalid/final/standard", "invalid/final/nackgammon"], sep=" / ")]))
     head = ["Setup (group)", "Standard PR, main 200 pairs", "Nackgammon PR, main 200 pairs", "Drop, main 200 pairs",
             "First look 97.5% interval", "Random's drop, main 200 pairs", "Extended to 500 pairs",
             "Pairs, final look", "Standard PR, final", "Nackgammon PR, final", "Drop, final", "Final 97.5% interval",
-            "Random's drop, same pairs", "Label (final interval)", "Invalid answers, standard / Nackgammon"]
+            "Random's drop, same pairs as the final look", "Label (final interval)",
+            "Positions without a valid choice, main 200 pairs (standard / Nackgammon)",
+            "Positions without a valid choice, final pairs (standard / Nackgammon)"]
     return table("setups", head, rows, "Per setup: standard PR, Nackgammon PR and the drop (Nackgammon \u2212 standard; "
                                        "positive = worse on Nackgammon)", "nack-table")
 
@@ -142,12 +155,13 @@ def cost_table(N) -> str:
                                         for w in ("main", "all") for k in ("decisions", "billed_usd_per_1000",
                                                                            "api_eq_usd_per_1000")])
             for s, r in N["setups"].items() if r["cost"]]
-    head = ["Setup (group)", "Decisions, main", "Billed USD per 1,000 decisions, main",
+    head = ["Setup (group)", "Decisions, main", "Recorded cost, USD per 1,000 decisions, main",
             "API-equivalent USD per 1,000 decisions, main", "Positions recorded, all (incl. timed out)",
-            "Billed USD per 1,000, all",
+            "Recorded cost, USD per 1,000, all",
             "API-equivalent USD per 1,000, all"]
-    return table("setups", head, rows, "Cost per decision of the run (billed and API-equivalent never added; 0 = "
-                                       "nothing recorded of that kind)", "nack-cost")
+    return (table("setups", head, rows, "Cost per decision of the run (recorded cost and API-equivalent never added; "
+                                        "0 = nothing recorded of that kind)", "nack-cost")
+            + f'<p class="table-note nack-cost-note">{esc(N["cost_note"])}</p>')
 
 
 def risk_table(N, which) -> str:
@@ -322,6 +336,7 @@ def section(N) -> str:
             '<p class="table-note">Not a ranking: rows are in fixed order (group, then standard PR) and no table can be '
             'sorted.</p>'
             + main_table(N)
+            + f'<p class="table-note nack-missing-note">{esc(N["missing_note"])}</p>'
             + '<figure class="chart-card" data-static-chart id="chart-nack"><div class="chart-head">'
               '<h3>Standard against Nackgammon error rate</h3>'
               '<button type="button" class="key" data-download-static>Download PNG</button></div>' + chart(N)

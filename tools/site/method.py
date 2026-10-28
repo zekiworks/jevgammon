@@ -12,7 +12,7 @@ positions/build-log.json and the play-order re-run from replay.db (both through 
 import json
 import re
 
-from common import (CLOSE_B_SCOPE_NOTE, CONTENT, NACK_SCOPE_NOTE, EARLIER, EARLIER_NOTE, NA, NOT_MEASURED, PENDING, PROVISIONAL, PUBLISHED,
+from common import (CLOSE_B_SCOPE_NOTE, CONTENT, EARLIER, EARLIER_NOTE, NA, NOT_MEASURED, PENDING, PROVISIONAL, PUBLISHED,
                     SPEC, TOO_FEW, esc,
                     fmt, status_badge)
 
@@ -82,8 +82,7 @@ SETS = {
                      "Their plays are reshuffled with the option-order seed."),
     "new": ("New set", "GNU Backgammon self-play at expert level, the same number per phase."),
     "nackgammon": ("Nackgammon", "GNU Backgammon self-play from the Nackgammon starting position (an unfamiliar start, "
-                                 "same rules). Its prompt drops the opening table. "
-                                 "Superseded 2026-10-27 by the Nackgammon paired test (below)."),
+                                 "same rules). Its prompt drops the opening table."),
     "opening-control": ("Opening control", "The new set's opening positions, asked again with the opening table removed "
                                            "from the prompt."),
     "extension": ("League 1 extension", "More expert self-play positions with the same phase mix, for League 1 setups only."),
@@ -137,7 +136,6 @@ def _toc() -> str:
              ("risk", "Was it the right risk?"), ("statistics", "Statistics and verdicts"), ("thresholds", "Fixed thresholds"),
              ("status", "Status labels"), ("versions", "Versions and play order"), ("confidence", "Confidence"),
              ("offline", "Re-read, refit, bar and distributions"), ("close-choices", "Close choices"),
-             ("nackgammon-paired", "Nackgammon paired test"),
              ("cost", "Cost"), ("time", "Time"), ("limits", "Limits"), ("input", "What the input adds"),
              ("learning", "Learning from experience"), ("routing", "Routing and teams"), ("tail", "Tail risk"),
              ("v3-changes", "Runner changes during the leagues"),
@@ -689,90 +687,6 @@ def _close(t: dict) -> str:
 </ul>""")
 
 
-def _inline(text: str) -> str:
-    """Markdown inline marks of the spec (code, bold, italic) as HTML; everything else escaped."""
-    codes = re.findall(r"`([^`]*)`", text)
-    out = esc(re.sub(r"`[^`]*`", "\x00", text))
-    out = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", out)
-    out = re.sub(r"(?<![\w*])\*(?!\s)(.+?)(?<!\s)\*(?![\w*])", r"<em>\1</em>", out)
-    parts = out.split("\x00")
-    return parts[0] + "".join(f"<code>{esc(c)}</code>{rest}" for c, rest in zip(codes, parts[1:]))
-
-
-SPEC_ITEM = re.compile(r"(\s*)(- |\d+\. |[a-z]\) )")
-
-
-def _spec_list(items: list) -> str:
-    """Items (indent, marker, text) as nested lists: '- ' ul, '1. ' ol, 'a) ' ul with its letter kept in the text."""
-    out, i = [], 0
-    tag = "ol" if items[0][1][0].isdigit() else "ul"
-    base = items[0][0]
-    while i < len(items):
-        ind, marker, text = items[i]
-        j = i + 1
-        while j < len(items) and items[j][0] > base:
-            j += 1
-        label = marker if marker.endswith(") ") else ""
-        out.append(f"<li>{_inline(label + text)}{_spec_list(items[i + 1:j]) if j > i + 1 else ''}</li>")
-        i = j
-    cls = ' class="lettered"' if items[0][1].endswith(") ") else ""
-    return f"<{tag}{cls}>{''.join(out)}</{tag}>"
-
-
-def spec_markdown(md: str) -> str:
-    """The spec's Markdown subset (headings, paragraphs, nested bullet, numbered and lettered lists, tables) as HTML."""
-    html, lines, i = [], md.splitlines(), 0
-    while i < len(lines):
-        line = lines[i]
-        if not line.strip():
-            i += 1
-        elif line.startswith("#"):
-            level, title = len(line) - len(line.lstrip("#")), line.lstrip("#").strip()
-            html.append(f"<h{min(level + 1, 4)}>{_inline(title)}</h{min(level + 1, 4)}>")
-            i += 1
-        elif line.startswith("|"):
-            rows = []
-            while i < len(lines) and lines[i].startswith("|"):
-                cells = [c.strip() for c in lines[i].strip().strip("|").split("|")]
-                if not all(set(c) <= {"-", " "} for c in cells):
-                    rows.append(cells)
-                i += 1
-            html.append(_table([_inline(c) for c in rows[0]], [[_inline(c) for c in r] for r in rows[1:]]))
-        elif SPEC_ITEM.match(line):
-            items = []
-            while i < len(lines) and lines[i].strip() and (SPEC_ITEM.match(lines[i]) or lines[i][:1].isspace()):
-                m = SPEC_ITEM.match(lines[i])
-                if m:
-                    items.append([len(m.group(1)), m.group(2), lines[i][m.end():].strip()])
-                else:
-                    items[-1][2] += " " + lines[i].strip()
-                i += 1
-            html.append(_spec_list(items))
-        else:
-            para = []
-            while i < len(lines) and lines[i].strip() and not re.match(r"#|\|", lines[i]) and not SPEC_ITEM.match(lines[i]):
-                para.append(lines[i].strip())
-                i += 1
-            html.append(f"<p>{_inline(' '.join(para))}</p>")
-    return "\n".join(html)
-
-
-def nack_spec_text() -> str:
-    """§10 of the Method spec with its dated addendum, verbatim from the spec file (to its end)."""
-    text = (CONTENT / "method-spec-2026-10-24.md").read_text()
-    return text[text.index("## 10. Nackgammon paired test"):].strip()
-
-
-def _nack() -> str:
-    """Nackgammon paired test (Method spec 2026-10-24 §10), rendered from the spec file."""
-    body = nack_spec_text()
-    return _section("nackgammon-paired", "Nackgammon paired test", f"""
-<p class="note"><strong>Results on the <a href="../#nackgammon-paired">home page</a>.</strong> {esc(NACK_SCOPE_NOTE)}
-  The text below is §10 of the Method specification of 24 Oct 2026 as committed, with its dated notes and amendments;
-  §10.14 (groups by original league) says in (e) what had been opened before it was written, corrected in (f).</p>
-{spec_markdown(body)}""")
-
-
 def _cost() -> str:
     return _section("cost", "Cost", """
 <p>Cost per 1,000 decisions carries one of three labels. They are never mixed in one figure or ranking.</p>
@@ -901,7 +815,7 @@ def body(ctx: dict) -> str:
     return "\n".join([
         _intro(), _toc(), _setup(), _shared(ctx["shared_sets"]), _prompt(), _error_rate(t), _human_scale(),
         _risk(t, extra), _statistics(t), _thresholds(t), _status(), _versions(ctx["play_order"]),
-        _confidence(t, extra), _offline(t, extra), _close(t), _nack(), _cost(), _time(t), _limits(), _home_extras(extra), _archive("v3-notes.html"),
+        _confidence(t, extra), _offline(t, extra), _close(t), _cost(), _time(t), _limits(), _home_extras(extra), _archive("v3-notes.html"),
         _experiments(),
     ])
 

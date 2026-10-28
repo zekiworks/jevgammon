@@ -1,5 +1,5 @@
 {
-  "note": "Nackgammon paired test (Method §10; Can's go 2026-10-27, rows b and c): every setup answers positions/nack-paired/main.jsonl (400; the reserve 600 only when extended by the frozen rule). Stored settings from v3.db players.settings unchanged; each row carries its prompt (bg-v3-std-notable / bg-v3-nack). OpenRouter setups under the shared hard-cap ledger smoke/nack-paired-budget-abc.db ($1.88, rows a+b+c). Not a league: `jevgammon ask` only; answers in smoke/nack-paired.db.",
+  "note": "Nackgammon paired test (Method §10; Can's go 2026-10-27, rows b and c): every setup answers positions/nack-paired/main.jsonl (400; the reserve 600 only when extended by the frozen rule). Stored settings from v3.db players.settings unchanged; each row carries its prompt (bg-v3-std-notable / bg-v3-nack). OpenRouter setups under the shared hard-cap ledger smoke/nack-paired-budget-abc.db ($1.88, rows a+b+c). Not a league: `jevgammon ask` only; answers in smoke/nack-paired.db. Added 2026-10-28 under Method §10.14(g) (committed 1acbdae before their first call): Claude Fable 5.1 (on), Grok 4.7 (on), Liquid d1-ultra, Fastino GLiDE (Cup-roster additions) and Gemini 4 Argon (on) (exploratory, no group), each with its stored v3.db settings unchanged.",
   "prompt_version": "bg-v3-std-notable",
   "seed": 0,
   "order_seed": 1190975713392774006,
@@ -354,6 +354,59 @@
       "parallel": 4,
       "rpm": 18,
       "note": "GPT-6.1 Terra (openai/gpt-6.1-terra, released 2026-10-26; endpoint openai/gpt-6.1-terra-20261026) via OpenRouter pinned to OpenAI's standard endpoint (tag openai, $1/$5 per M, cache read $0.05; not flex, not fast), fallbacks off. Reasoning effort low, as GPT-6.1 Sol (low). max_tokens 8000 (bounds the budget ledger's worst case; Sol (low) uses ~76 output tokens per decision). Letter constrained by the JSON schema and read from the answer; the endpoint takes no temperature and no logprobs (OpenRouter 'Filter by Parameters' with require_parameters), so the request drops both (request: null), choice only, as GPT-6.1 Sol on the subscription. Hard cap: smoke test under ledger smoke/nack-paired-budget-abc.db ($1.88); paired start (row c) under ledger smoke/nack-paired-budget-c.db ($1.82 = the re-estimate's high end after the smoke test)."
+    },
+    {
+      "name": "Claude Fable 5.1 (on)",
+      "spec": "anthropic/claude-fable-5-1",
+      "provider": "claude-subscription",
+      "reasoning": "high",
+      "price": {
+        "input_per_mtok": 10.0,
+        "output_per_mtok": 50.0
+      },
+      "note": "claude-fable-5-1; effort high, Anthropic's default effort (adaptive thinking). Claude subscription; subscription login; cost is API-list-price equivalent",
+      "parallel": 4
+    },
+    {
+      "name": "Grok 4.7 (on)",
+      "spec": "xai/grok-4.7",
+      "provider": "xai-subscription",
+      "reasoning": "high",
+      "price": {
+        "input_per_mtok": 2.0,
+        "output_per_mtok": 6.0
+      },
+      "note": "reasoning effort high, grok-4.7's default (a request without an effort reports high); 8 decisions in flight (its smoke-test mean is 212 s), so its 4 concurrent matches with both mirror games play at once. xAI subscription (SuperGrok, OMP's xai-oauth login) on api.x.ai Responses API, letter constrained by JSON schema; subscription login; cost is API-list-price equivalent",
+      "parallel": 8
+    },
+    {
+      "name": "Liquid d1-ultra",
+      "spec": "liquid/d1-ultra",
+      "provider": "liquid",
+      "price": {
+        "input_per_mtok": 0.042,
+        "output_per_mtok": 0.0
+      },
+      "note": "Liquid AI decisions API, paid tier; list price $0.042 per million input tokens (liquid.ai/blog/d1-ultra, 2026-10-15)",
+      "parallel": 2
+    },
+    {
+      "name": "Fastino GLiDE",
+      "spec": "fastino",
+      "provider": "fastino",
+      "note": "Fastino's hosted System One API; key added 2026-10-20"
+    },
+    {
+      "name": "Gemini 4 Argon (on)",
+      "spec": "antigravity/gemini-4-argon",
+      "provider": "antigravity-subscription",
+      "reasoning": "high",
+      "price": {
+        "input_per_mtok": 2.0,
+        "output_per_mtok": 10.0
+      },
+      "note": "thinking level high, Gemini's default. Google Antigravity subscription (Google AI Ultra, OMP's login; Antigravity model id gemini-4-argon-high; modelVersion gemini-4-argon); cost is API-list-price equivalent. Smoke check (5 positions): same play as the Gemini API answers in 5 of 5; list price $2/$10 per million tokens until 2026-12-01 ($4/$20 after)",
+      "parallel": 4
     }
   ]
 }

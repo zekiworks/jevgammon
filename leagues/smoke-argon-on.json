@@ -1,0 +1,24 @@
+{
+  "note": "Gemini 4 Argon (on) smoke test (Can, 2026-10-28; Method §10.14(g)): the 50 smoke positions (positions/smoke.jsonl), the leagues' prompt bg-v2 and option-order seed, as for earlier new setups (Terra). Stored v3.db settings unchanged. Not a league: `jevgammon ask` only.",
+  "prompt_version": "bg-v2",
+  "seed": 0,
+  "order_seed": 1190975713392774006,
+  "rounds": 3,
+  "clock": 0,
+  "delay": 30,
+  "max_turns": 300,
+  "players": [
+    {
+      "name": "Gemini 4 Argon (on)",
+      "spec": "antigravity/gemini-4-argon",
+      "provider": "antigravity-subscription",
+      "reasoning": "high",
+      "price": {
+        "input_per_mtok": 2.0,
+        "output_per_mtok": 10.0
+      },
+      "note": "thinking level high, Gemini's default. Google Antigravity subscription (Google AI Ultra, OMP's login; Antigravity model id gemini-4-argon-high; modelVersion gemini-4-argon); cost is API-list-price equivalent. Smoke check (5 positions): same play as the Gemini API answers in 5 of 5; list price $2/$10 per million tokens until 2026-12-01 ($4/$20 after)",
+      "parallel": 4
+    }
+  ]
+}

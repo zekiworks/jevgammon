@@ -35,9 +35,10 @@ MARGIN = 0.001
 PHASES = ("opening", "contact", "holding", "race", "bear-off")
 YARDSTICKS = ["GNUbg weak", "Random"]
 GROUP_OF_LEAGUE = {1: "decision models", 2: "workhorses", 3: "frontier"}
-NOTE_E = ("Groups by original league (Method §10.14, amendment of 2026-10-27, written after per-setup first looks "
-          "and after two script runs on partial data had computed group results under the earlier group definitions; "
-          "no person read a group number, nothing was published; see §10.14(e)).")
+NOTE_E = ("Groups by original league (Method §10.14, amendment of 2026-10-27). It was written after the per-setup first "
+          "looks and after six full-report calls on partial data had computed group results under the earlier group "
+          "definitions; one returned those results into an agent's context. Whether a person saw them is not "
+          "established. Nothing was published. See §10.14(e) and its correction (f) of 2026-10-28.")
 
 
 def original_league_groups(names, db="v3.db"):

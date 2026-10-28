@@ -817,3 +817,21 @@ e) **What had been opened before this amendment** (reported by the run's agent, 
    (`results.json` at 18:32 UTC; a local site build at ~19:00 UTC, checked by a verifier), but no person read a group
    number; nothing was committed, deployed or published. No result under the groups defined here had been computed.
    The amendment was written after those runs; this is stated wherever the primary comparisons are reported.
+f) **Correction to (e), dated 2026-10-28** (Zeki's readback of the retained agent records; (e) above is kept as
+   written). The account in (e) ("computed twice", "no person read a group number") is incomplete:
+   - **Six full-report calls, not two.** Before this amendment was committed (2026-10-27 19:10:30 UTC), the run's agent
+     and its site sub-agent directly issued six calls that produce the full report (group means, the primary comparisons
+     and the secondary analyses under the earlier group definitions) on partial data: 18:32:52–18:32:58, the
+     report/publish sequence completed at 18:37:01.140, further report/build calls at 18:39:26.567 and 18:44:48.905, and
+     a snapshot-based call at 18:47:49.646 UTC. This counts invocations, not six independently verified complete
+     computations; recomputations inside the verifier are not counted.
+   - **The results reached an agent's context.** At 18:32:58 UTC one of these calls returned numeric old-group primary
+     results (differences, intervals and the groups' PR and drop fields) into the site sub-agent's context. They were not
+     only a hidden machine comparison. Whether a person saw them is not established; it is not claimed that a person saw
+     them, nor that they caused the change of groups.
+   - **What stays as stated:** the per-setup first looks were frozen extension looks, needed for the stopping rule; the
+     notes committed before the first model call stand. This amendment (groups by original league) was written after the
+     old-group results above had been computed and returned to an agent, so it is not result-blind.
+   - **Unchanged:** original-league groups with each setup weighted equally, M = 5 at 99% for the primary comparisons,
+     the 97.5% per-setup stopping rule, the frozen position samples, the prompt non-comparability note and the back-game
+     caveat.

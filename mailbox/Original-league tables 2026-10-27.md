@@ -1,12 +1,12 @@
 # Original-league tables (2026-10-27)
 
-**Provisional.** League 2 is not complete yet: DeepSeek V4.1 Flash 1017 (off) v LFM2.5-24B-A2B (on) (#752) is still being played, and the 4 DeepSeek V4.1 Flash 1017 (on) matches (vs GPT-6.1 Sol (low), Sol (high), LFM2.5-24B-A2B (on) and (off)) wait for OpenRouter credit (Can's decision after the Nackgammon test's extension spend is known). Leagues 1 and 3 are complete.
+**Provisional.** League 2 is not complete yet: the 4 DeepSeek V4.1 Flash 1017 (on) matches (vs GPT-6.1 Sol (low), Sol (high), LFM2.5-24B-A2B (on) and (off)) wait for OpenRouter credit (Can's decision after the Nackgammon test's extension spend is known). Leagues 1 and 3 are complete.
 
 Rule (Can): each setup in its original league (`league_web.league_origins`), GNUbg weak in all three; only matches between setups of the same original league count, 3 points for a win, 1 for a draw, 0 for a loss. Rows are ordered by points only, then name. **No tiebreak is applied** (still to be confirmed by Can: head-to-head, then error rate). Rosters unchanged. Points for/against are match points (game points, gammons 2, backgammons 3). Error rate = 500 × mean 2-ply equity loss over all the setup's valid matches (the dashboard's tiebreak figure, from the site's GNUbg score shards; decisions of the new matches are counted once scored).
 
 ## The new matches
 
-Played in two hidden leagues (league 7: League 2's rules and seed, only DeepSeek V4.1 Flash 1017 (off)'s pairs, `leagues/league2-1017off-gap.json`; league 6: League 3's rules and seed, only Kimi K3.1 Pro (off)'s pairs, `leagues/league3-kimi-gap.json`), started by `tools/v3/run_league2_early.sh`. Prompt bg-v2, games of a round at once, 3 rounds, turn limit 300, no clock. Stored as normal valid matches. LFM2.5-24B-A2B ran on NackRun's GPU 3 server (same script and arguments as the league), shared.
+Played in two hidden leagues (league 7: League 2's rules and seed, only DeepSeek V4.1 Flash 1017 (off)'s pairs, `leagues/league2-1017off-gap.json`; league 6: League 3's rules and seed, only Kimi K3.1 Pro (off)'s pairs, `leagues/league3-kimi-gap.json`), started by `tools/v3/run_league2_early.sh`. Prompt bg-v2, games of a round at once, 3 rounds, turn limit 300, no clock. Stored as normal valid matches. LFM2.5-24B-A2B ran on NackRun's GPU 3 server (same script and arguments as the league), shared; stopped after #752 and GPU 3 released to compactor.
 
 | # | Match | Result | Status |
 |---|---|---|---|
@@ -14,14 +14,14 @@ Played in two hidden leagues (league 7: League 2's rules and seed, only DeepSeek
 | 749 | DeepSeek V4.1 Flash 1017 (off) v GPT-6.1 Sol (low) | 1–5 (GPT-6.1 Sol (low) wins) | finished |
 | 750 | Kimi K3.1 Pro (off) v Grok 4.7 (off) | 0–5 (Grok 4.7 (off) wins) | finished |
 | 751 | Kimi K3.1 Pro (off) v Claude Fable 5.1 (off) | 5–1 (Kimi K3.1 Pro (off) wins) | finished |
-| 752 | DeepSeek V4.1 Flash 1017 (off) v LFM2.5-24B-A2B (on) | 0–0 | running, 1 game finished |
+| 752 | DeepSeek V4.1 Flash 1017 (off) v LFM2.5-24B-A2B (on) | 3–5 (LFM2.5-24B-A2B (on) wins) | finished |
 | 753 | DeepSeek V4.1 Flash 1017 (off) v LFM2.5-24B-A2B (off) | 6–1 (DeepSeek V4.1 Flash 1017 (off) wins) | finished |
 
 Not played yet (waiting for credit): DeepSeek V4.1 Flash 1017 (on) v GPT-6.1 Sol (low), v GPT-6.1 Sol (high), v LFM2.5-24B-A2B (on), v LFM2.5-24B-A2B (off).
 
 ## Spend
 
-OpenRouter: $0.77 for these matches (cap $1.20; estimate before starting $0.97: 1017 (off) $0.027 and Kimi K3.1 Pro (off) $0.43 per match on average in their logged matches). openrouter:deepseek: $0.088, openrouter:moonshotai/mxfp4: $0.677. Credits at the start: $6.79 left ($115.00 total, $108.21 used). GPT-6.1 Sol, Claude Fable and Grok on subscriptions; LFM2.5 on our GPU.
+OpenRouter: $0.79 for these matches (cap $1.20; estimate before starting $0.97: 1017 (off) $0.027 and Kimi K3.1 Pro (off) $0.43 per match on average in their logged matches). openrouter:deepseek: $0.116, openrouter:moonshotai/mxfp4: $0.677. Credits at the start: $6.79 left ($115.00 total, $108.21 used). GPT-6.1 Sol, Claude Fable and Grok on subscriptions; LFM2.5 on our GPU.
 
 ## League 1: 19 setups, 171 of 171 pairings played (complete)
 
@@ -47,9 +47,9 @@ OpenRouter: $0.77 for these matches (cap $1.20; estimate before starting $0.97: 
 | Decider Flash v1.2 | 6 | 18 | 2-0-16 | 36 | 97 | 59.9 |
 | Random | 0 | 18 | 0-0-18 | 6 | 119 | 119.4 |
 
-## League 2: 19 setups, 166 of 171 pairings played (5 pairings missing)
+## League 2: 19 setups, 167 of 171 pairings played (4 pairings missing)
 
-Missing: DeepSeek V4.1 Flash 1017 (off) v LFM2.5-24B-A2B (on); DeepSeek V4.1 Flash 1017 (on) v GPT-6.1 Sol (high); DeepSeek V4.1 Flash 1017 (on) v GPT-6.1 Sol (low); DeepSeek V4.1 Flash 1017 (on) v LFM2.5-24B-A2B (off); DeepSeek V4.1 Flash 1017 (on) v LFM2.5-24B-A2B (on).
+Missing: DeepSeek V4.1 Flash 1017 (on) v GPT-6.1 Sol (high); DeepSeek V4.1 Flash 1017 (on) v GPT-6.1 Sol (low); DeepSeek V4.1 Flash 1017 (on) v LFM2.5-24B-A2B (off); DeepSeek V4.1 Flash 1017 (on) v LFM2.5-24B-A2B (on).
 
 | Setup | Pts | P | W-D-L | For | Against | Error rate |
 |---|---|---|---|---|---|---|
@@ -66,11 +66,11 @@ Missing: DeepSeek V4.1 Flash 1017 (off) v LFM2.5-24B-A2B (on); DeepSeek V4.1 Fla
 | Gemma 4 31B (off) | 25 | 18 | 8-1-9 | 63 | 59 | 22.4 |
 | GNUbg weak | 24 | 18 | 8-0-10 | 67 | 66 | 25.5 |
 | GLM-5.3 (on) | 21 | 18 | 7-0-11 | 56 | 78 | 30.3 |
-| DeepSeek V4.1 Flash 1017 (off) | 15 | 17 | 5-0-12 | 53 | 77 | 34.1 |
+| DeepSeek V4.1 Flash 1017 (off) | 15 | 18 | 5-0-13 | 56 | 82 | 34.1 |
 | Qwen3.8 Flash (off) | 15 | 18 | 5-0-13 | 50 | 86 | 33.8 |
 | DeepSeek V4.1 Flash (off) | 13 | 18 | 4-1-13 | 56 | 83 | 33.7 |
 | Qwen3.8-27B (off) | 12 | 18 | 4-0-14 | 37 | 91 | 41.5 |
-| LFM2.5-24B-A2B (on) | 6 | 16 | 2-0-14 | 33 | 88 | 47.4 |
+| LFM2.5-24B-A2B (on) | 9 | 17 | 3-0-14 | 38 | 91 | 47.3 |
 | LFM2.5-24B-A2B (off) | 0 | 17 | 0-0-17 | 13 | 95 | 60.2 |
 
 ## League 3: 12 setups, 66 of 66 pairings played (complete)

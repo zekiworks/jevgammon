@@ -17,6 +17,8 @@
 # Gemma 4 31B (on) (QF1) needs its vLLM server up (http://127.0.0.1:8894/v1).
 cd /home/cbasaran/code/jevgammon
 set -a; . ~/.keys; set +a
+# The Grok setups have OMP refresh its xai-oauth login (`omp token`).
+export PATH=$HOME/.local/bin:$PATH
 # Keys kept in their own files, read when the environment has none (as run_league1.sh).
 [ -n "${CELERIS_API_KEY:-}" ] || { CELERIS_API_KEY="$(cat ~/.config/celeris/key)"; export CELERIS_API_KEY; }
 set -euo pipefail

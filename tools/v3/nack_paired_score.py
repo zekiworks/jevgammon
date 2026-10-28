@@ -36,10 +36,14 @@ MARGIN = 0.001
 PHASES = ("opening", "contact", "holding", "race", "bear-off")
 YARDSTICKS = ["GNUbg weak", "Random"]
 GROUP_OF_LEAGUE = {1: "decision models", 2: "workhorses", 3: "frontier"}
-NOTE_E = ("Groups by original league (Method §10.14, amendment of 2026-10-27). It was written after the per-setup first "
-          "looks and after six full-report calls on partial data had computed group results under the earlier group "
-          "definitions; one returned those results into an agent's context. Whether a person saw them is not "
-          "established. Nothing was published. See §10.14(e) and its correction (f) of 2026-10-28.")
+NOTE_E = ("Groups by original league (Method §10.14, amendment of 2026-10-27). Method §10 and its notes were committed "
+          "before any model call, and the per-setup first looks were computed under the frozen extension rule. "
+          "Separately, before the amendment, six full-report calls were issued on partial data under the earlier group "
+          "definitions; that all six completed successfully has not been independently established. One returned "
+          "numeric old-group primary results into the site agent's context before the amendment. Whether a person saw "
+          "them, and any causation, is not established. Nothing was published before the amendment; the aggregate "
+          "report and data were pushed to the public repository in commit 3e4f413 on 2026-10-28 (01:03 UTC), before "
+          "release approval. See §10.14(e) and its dated correction (f) of 2026-10-28.")
 
 # §10.14(h): the one-token letter readout (max_tokens 1) and the markers of a response stopped at its output limit.
 LETTER_READOUT = re.compile(r'"max_tokens"\s*:\s*1\s*[,}]')

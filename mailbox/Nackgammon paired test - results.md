@@ -1,76 +1,108 @@
 # Nackgammon paired test: results
 
 2026-10-28 · Method §10 (`tools/site/content/method-spec-2026-10-24.md`, with the addenda of 2026-10-27, §10.14 and its
-correction (f)). Brief: `mailbox/Nackgammon and Terra - brief 2026-10-27.md`. Scores: `positions/nack-paired/results/results.json`
-(sha256 `723da2a105624103198fc200406ddd384f034a0e442745bc7adf66964b68349a`), from `python3 tools/v3/nack_paired_score.py report --rollouts smoke/nack-engine-check.db`.
+dated correction (f) of 2026-10-28). Brief: `mailbox/Nackgammon and Terra - brief 2026-10-27.md`. Saved scores:
+`positions/nack-paired/results/results.json` (sha256 `0832f78d6e9dd85751013f62b0159ae67fbbc627751761865a5c9e977326e8dd`; the scorer's output of 2026-10-28 with one text field,
+`groups_rule`, corrected by a string edit on 2026-10-28; every number unchanged). This report is assembled from that
+file by data key (`tools/v3/nack_paired_report.py`; `verify` checks every table cell against it).
 
 **Scope:** These results hold for these rosters only; each group is the setups in the run from that original league. The frontier group currently has 1 setup (GPT-6 Astra (on)); comparisons 2 and 3 rest on it.
-**Groups:** Groups by original league (Method §10.14, amendment of 2026-10-27). It was written after the per-setup first looks and after six full-report calls on partial data had computed group results under the earlier group definitions; one returned those results into an agent's context. Whether a person saw them is not established. Nothing was published. See §10.14(e) and its correction (f) of 2026-10-28.
 
-What this measures: how much a new starting setup (same rules) changes each setup's (model, settings and prompt) decision quality.
-A larger drop is consistent with relying on familiar positions but is not proof, because Nackgammon positions also differ in
-structure. "Kept" is a valid result. The paired test's standard prompt (`bg-v3-std-notable`) differs from the league prompt (no
-opening table; the setup sentence on its own line), so the standard error rates here are not compared directly with league error rates.
-**Random is slightly better on Nackgammon** on these pairs: its own drop is shown next to every result.
+**Groups and disclosure:** Groups by original league (Method §10.14, amendment of 2026-10-27). Method §10 and its notes were committed before any model call, and the per-setup first looks were computed under the frozen extension rule. Separately, before the amendment, six full-report calls were issued on partial data under the earlier group definitions; that all six completed successfully has not been independently established. One returned numeric old-group primary results into the site agent's context before the amendment. Whether a person saw them, and any causation, is not established. Nothing was published before the amendment; the aggregate report and data were pushed to the public repository in commit 3e4f413 on 2026-10-28 (01:03 UTC), before release approval. See §10.14(e) and its dated correction (f) of 2026-10-28.
+
+What this measures: how much a new starting setup (same rules) changes each setup's (model, settings and prompt)
+decision quality. A larger drop is consistent with relying on familiar positions but is not proof, because Nackgammon
+positions also differ in structure. "Kept" is a valid result. The paired test's standard prompt (`bg-v3-std-notable`)
+differs from the league prompt (no opening table; the setup sentence on its own line), so the standard error rates
+here are not compared directly with league error rates. **Random is slightly better on Nackgammon** on these pairs: its
+own drop is shown next to every result.
 
 ## What ran
 
-- 24 setups + Random (no calls): 12 decision models, 9 workhorses, 1 frontier (original leagues, §10.14), GNUbg weak, and Terra. GPT-6.1 Terra
-  passed its smoke test (50/50 valid, 9.8 PR) and belongs to no group (exploratory).
-- Every setup answered the main 400 positions (200 pairs). **Every first look was "unclear"** (97.5% intervals about ±5 to ±20 PR),
-  so the frozen rule extended every setup with the 300 reserve pairs (600 positions); every setup answered all 1,000.
-- Answers: `smoke/nack-paired.db` (separate from v3.db). Runner built at 35cb13d; the stored `harness_commit` is the working tree's
-  HEAD at run time (35cb13d → fbe9095 → 80c9807, "dirty" from uncommitted files: the knockout start option and configs, none used by `ask`).
-- GPUs (bariton, claimed from compactor, released on the bus): GPU 0 GLiDE v1.2 + Cygnet, then Decider v1.1, Open-Jev, then
-  Gemma 4 31B (on) (one replica behind the :8894 proxy, League 2 settings, 24 in flight); GPU 1 Decider v1.2 27B, Decider Flash,
-  Winnow, then Qwen3.8-27B (off); GPU 3 LFM2.5-24B-A2B (on/off) (shared from ~01:00 with MissingPairs' gap matches; they stop it).
-- **Invalid or missing answers** (never dropped): only **LFM2.5-24B-A2B (on)**: 107 of 1,000 timed out (600 s limit, no answer;
-  main 200 pairs: 16 Nackgammon / 22 standard; all 500: 52 / 55). Every other setup: 0. Usual retries only.
-- **Money (OpenRouter):** smoke $0.213; start: DeepSeek V4.1 Flash (off) $0.18 (ledger; provider-reported $0.117), Mercury
-  Decide $0.022, Terra $1.489; extension (d): DeepSeek $0.236, Terra $2.220, Mercury $0.034 = **$2.489 of the $2.55 cap**.
-  Total ≈ $4.39. Caps enforced by ledgers (`smoke/nack-paired-budget-{abc,c,d}.db`); Terra's last 3 extension positions were
-  refused by the d ledger and finished at parallel 1 within it.
-- Wall time: start 18:07–20:53 UTC (LFM2.5 (on) the long pole: 2.6 h; Gemma 4 31B (on) 400 in 63 min at 24 in flight),
-  extensions to 00:59 UTC (LFM2.5 (on) +600: 4.1 h; Gemma +600: 93 min).
+- 24 asked setups: 12 decision models, 9 workhorses, 1 frontier setup (original leagues, §10.14), GPT-6.1 Terra (no
+  group, exploratory; passed its smoke test, 50/50 valid, 9.8 PR) and GNUbg weak (yardstick). **Random** (yardstick)
+  is computed exactly from GNUbg's 2-ply values (mean loss over all legal plays): it was never asked and is not
+  subject to the stopping rule; it is reported on the main 200 pairs and on all 500.
+- Every asked setup was asked the main 400 positions (200 pairs). Every first look was "unclear" (97.5% intervals
+  about ±4 to ±18 PR), so the frozen rule sent every asked setup the 300 reserve pairs (600 positions). **Each asked
+  setup has 1,000 recorded positions.** For 23 setups all 1,000 hold a valid answer. **LFM2.5-24B-A2B (on)** has 107
+  records without a choice (timed out at the 600 s limit: 38 of the main 400, 69 of the reserve 600; scored split
+  52 Nackgammon / 55 standard positions over all 500 pairs, 16 / 22 on the main 200). These are never dropped: they score the
+  position's Random error (primary rule), with both sensitivity checks below. Usual retries only, no re-asks.
+- Raw answers, logs and the per-attempt ledgers are kept privately; a release bundle is prepared locally and not published.
 
-## Per setup (standard, Nackgammon and the drop together; not a ranking)
+## Per setup
 
-Drop = Nackgammon PR − standard PR on the same pairs (positive = worse on Nackgammon). First look on the main 200 pairs; final
-on all 500 (every setup extended). Label from the final 97.5% interval. Bootstrap intervals are approximate. Rows by group, then
-standard PR. Cost per decision over all 1,000 decisions (billed or API-equivalent; GPU setups have no list price).
+Standard, Nackgammon and the drop together; not a ranking (rows by group, then standard PR). Drop = Nackgammon PR −
+standard PR on the same pairs (positive = worse on Nackgammon). First look on the main 200 pairs, final look on all 500.
+Label from the final 97.5% interval. Bootstrap intervals are approximate.
 
-| Setup | Group | Standard PR (200) | Nackgammon PR (200) | Drop [97.5%] (200) | Random's drop (200) | Standard / Nackgammon PR (500) | Drop [97.5%] (500) | Random's drop (500) | Label | Invalid N / S | $ per decision |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Fastino GLiDE v1.2 (local) | decision models | 22.74 | 24.91 | +2.18 [-7.3, +11.9] | -4.56 | 26.33 / 27.93 | +1.60 [-5.3, +8.3] | -3.73 | unclear | 0 / 0 | n/a (GPU) |
-| Jev 1.13.0 | decision models | 26.53 | 24.17 | -2.37 [-17.7, +10.0] | -4.56 | 24.67 / 27.44 | +2.77 [-5.2, +10.4] | -3.73 | unclear | 0 / 0 | $0.00013 billed |
-| GPT-6 Luna | decision models | 28.27 | 34.11 | +5.84 [-10.6, +20.5] | -4.56 | 29.56 / 35.44 | +5.87 [-4.3, +15.1] | -3.73 | unclear | 0 / 0 | $0.00027 billed |
-| Celeris-1 Decision | decision models | 29.71 | 28.47 | -1.24 [-18.3, +14.6] | -4.56 | 26.86 / 30.93 | +4.08 [-4.6, +12.6] | -3.73 | unclear | 0 / 0 | $0.00011 billed |
-| Decider v1.1 27B | decision models | 30.42 | 28.64 | -1.78 [-17.3, +11.9] | -4.56 | 31.27 / 32.08 | +0.81 [-8.0, +9.2] | -3.73 | unclear | 0 / 0 | $0.00006 billed |
-| Cygnet (Gemma 4 12B) | decision models | 31.33 | 24.48 | -6.85 [-22.4, +5.4] | -4.56 | 28.46 / 28.66 | +0.20 [-7.6, +7.4] | -3.73 | unclear | 0 / 0 | n/a (GPU) |
-| SubQ Snap Preview | decision models | 31.91 | 29.66 | -2.25 [-18.1, +11.9] | -4.56 | 31.25 / 32.87 | +1.62 [-7.1, +10.1] | -3.73 | unclear | 0 / 0 | $0.00014 billed |
-| Mercury Decide | decision models | 32.74 | 28.46 | -4.28 [-20.1, +8.8] | -4.56 | 31.34 / 34.08 | +2.73 [-5.9, +10.8] | -3.73 | unclear | 0 / 0 | $0.00006 billed |
-| Winnow-12B | decision models | 34.33 | 33.43 | -0.89 [-18.0, +15.0] | -4.56 | 31.93 / 34.61 | +2.68 [-6.3, +11.2] | -3.73 | unclear | 0 / 0 | n/a (GPU) |
-| Decider v1.2 27B | decision models | 34.68 | 22.80 | -11.87 [-27.9, +1.0] | -4.56 | 31.72 / 29.03 | -2.68 [-11.0, +5.2] | -3.73 | unclear | 0 / 0 | $0.00006 billed |
-| Decider Flash v1.2 | decision models | 39.77 | 42.86 | +3.09 [-12.1, +20.1] | -4.56 | 40.23 / 48.01 | +7.78 [-2.2, +18.4] | -3.73 | unclear | 0 / 0 | $0.00003 billed |
-| Open-Jev 27B v1.1 | decision models | 52.08 | 40.96 | -11.12 [-29.5, +6.8] | -4.56 | 47.07 / 43.99 | -3.08 [-13.3, +6.8] | -3.73 | unclear | 0 / 0 | n/a (GPU) |
-| GPT-6.1 Sol (high) | workhorses | 9.88 | 8.43 | -1.45 [-5.6, +2.7] | -4.56 | 11.14 / 9.12 | -2.03 [-5.6, +1.4] | -3.73 | unclear | 0 / 0 | $0.00807 billed |
-| GPT-6.1 Sol (low) | workhorses | 11.15 | 9.90 | -1.26 [-5.7, +3.3] | -4.56 | 12.21 / 10.75 | -1.46 [-5.0, +2.0] | -3.73 | unclear | 0 / 0 | $0.00602 billed |
-| Claude Sonnet 5.5 (low) | workhorses | 13.96 | 14.50 | +0.54 [-5.0, +6.0] | -4.56 | 16.45 / 15.30 | -1.15 [-5.9, +3.3] | -3.73 | unclear | 0 / 0 | $0.00873 billed |
-| Gemini 3.8 Flash (low) | workhorses | 15.92 | 11.81 | -4.11 [-9.7, +1.0] | -4.56 | 16.71 / 15.41 | -1.30 [-5.5, +2.9] | -3.73 | unclear | 0 / 0 | $0.00288 billed |
-| Gemma 4 31B (on) | workhorses | 18.35 | 13.38 | -4.97 [-11.8, +1.8] | -4.56 | 17.97 / 16.84 | -1.13 [-6.2, +4.4] | -3.73 | unclear | 0 / 0 | n/a (GPU) |
-| DeepSeek V4.1 Flash (off) | workhorses | 23.91 | 27.90 | +3.98 [-11.7, +18.0] | -4.56 | 23.35 / 29.29 | +5.94 [-2.5, +13.9] | -3.73 | unclear | 0 / 0 | $0.00027 billed |
-| Qwen3.8-27B (off) | workhorses | 28.13 | 28.43 | +0.30 [-14.5, +12.1] | -4.56 | 26.89 / 31.65 | +4.76 [-3.6, +12.5] | -3.73 | unclear | 0 / 0 | n/a (GPU) |
-| LFM2.5-24B-A2B (on) | workhorses | 38.20 | 37.55 | -0.65 [-15.2, +14.4] | -4.56 | 37.78 / 42.54 | +4.77 [-4.1, +13.5] | -3.73 | unclear | 52 / 55 | n/a (GPU) |
-| LFM2.5-24B-A2B (off) | workhorses | 50.75 | 53.98 | +3.23 [-16.9, +22.1] | -4.56 | 46.44 / 50.87 | +4.43 [-6.5, +15.4] | -3.73 | unclear | 0 / 0 | n/a (GPU) |
-| GPT-6 Astra (on) | frontier | 9.66 | 7.30 | -2.37 [-6.7, +1.8] | -4.56 | 10.86 / 8.88 | -1.99 [-5.5, +1.5] | -3.73 | unclear | 0 / 0 | $0.02951 billed |
-| GPT-6.1 Terra | no group (exploratory) | 13.52 | 14.40 | +0.89 [-5.7, +8.6] | -4.56 | 13.18 / 16.22 | +3.04 [-0.9, +7.4] | -3.73 | unclear | 0 / 0 | $0.00371 billed |
-| GNUbg weak | yardstick | 27.69 | 24.13 | -3.56 [-13.9, +7.3] | -4.56 | 25.35 / 20.78 | -4.57 [-10.3, +1.3] | -3.73 | unclear | 0 / 0 | — |
-| Random | yardstick | 87.45 | 82.89 | -4.56 [-18.0, +7.9] | -4.56 | 85.16 / 81.43 | -3.73 [-11.4, +3.7] | -3.73 | unclear | 0 / 0 | — |
+| Setup | Group | Standard PR (200) | Nackgammon PR (200) | Drop [97.5%] (200) | Random's drop (200) | Standard / Nackgammon PR (500) | Drop [97.5%] (500) | Random's drop (500) | Asked the reserve under the rule | Label (final) |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Fastino GLiDE v1.2 (local) | decision models | 22.74 | 24.91 | +2.18 [-7.3, +11.9] | -4.56 | 26.33 / 27.93 | +1.60 [-5.3, +8.3] | -3.73 | yes | unclear |
+| Jev 1.13.0 | decision models | 26.53 | 24.17 | -2.37 [-17.7, +10.0] | -4.56 | 24.67 / 27.44 | +2.77 [-5.2, +10.4] | -3.73 | yes | unclear |
+| GPT-6 Luna | decision models | 28.27 | 34.11 | +5.84 [-10.6, +20.5] | -4.56 | 29.56 / 35.44 | +5.87 [-4.3, +15.1] | -3.73 | yes | unclear |
+| Celeris-1 Decision | decision models | 29.71 | 28.47 | -1.24 [-18.3, +14.6] | -4.56 | 26.86 / 30.93 | +4.08 [-4.6, +12.6] | -3.73 | yes | unclear |
+| Decider v1.1 27B | decision models | 30.42 | 28.64 | -1.78 [-17.3, +11.9] | -4.56 | 31.27 / 32.08 | +0.81 [-8.0, +9.2] | -3.73 | yes | unclear |
+| Cygnet (Gemma 4 12B) | decision models | 31.33 | 24.48 | -6.85 [-22.4, +5.4] | -4.56 | 28.46 / 28.66 | +0.20 [-7.6, +7.4] | -3.73 | yes | unclear |
+| SubQ Snap Preview | decision models | 31.91 | 29.66 | -2.25 [-18.1, +11.9] | -4.56 | 31.25 / 32.87 | +1.62 [-7.1, +10.1] | -3.73 | yes | unclear |
+| Mercury Decide | decision models | 32.74 | 28.46 | -4.28 [-20.1, +8.8] | -4.56 | 31.34 / 34.08 | +2.73 [-5.9, +10.8] | -3.73 | yes | unclear |
+| Winnow-12B | decision models | 34.33 | 33.43 | -0.89 [-18.0, +15.0] | -4.56 | 31.93 / 34.61 | +2.68 [-6.3, +11.2] | -3.73 | yes | unclear |
+| Decider v1.2 27B | decision models | 34.68 | 22.80 | -11.87 [-27.9, +1.0] | -4.56 | 31.72 / 29.03 | -2.68 [-11.0, +5.2] | -3.73 | yes | unclear |
+| Decider Flash v1.2 | decision models | 39.77 | 42.86 | +3.09 [-12.1, +20.1] | -4.56 | 40.23 / 48.01 | +7.78 [-2.2, +18.4] | -3.73 | yes | unclear |
+| Open-Jev 27B v1.1 | decision models | 52.08 | 40.96 | -11.12 [-29.5, +6.8] | -4.56 | 47.07 / 43.99 | -3.08 [-13.3, +6.8] | -3.73 | yes | unclear |
+| GPT-6.1 Sol (high) | workhorses | 9.88 | 8.43 | -1.45 [-5.6, +2.7] | -4.56 | 11.14 / 9.12 | -2.03 [-5.6, +1.4] | -3.73 | yes | unclear |
+| GPT-6.1 Sol (low) | workhorses | 11.15 | 9.90 | -1.26 [-5.7, +3.3] | -4.56 | 12.21 / 10.75 | -1.46 [-5.0, +2.0] | -3.73 | yes | unclear |
+| Claude Sonnet 5.5 (low) | workhorses | 13.96 | 14.50 | +0.54 [-5.0, +6.0] | -4.56 | 16.45 / 15.30 | -1.15 [-5.9, +3.3] | -3.73 | yes | unclear |
+| Gemini 3.8 Flash (low) | workhorses | 15.92 | 11.81 | -4.11 [-9.7, +1.0] | -4.56 | 16.71 / 15.41 | -1.30 [-5.5, +2.9] | -3.73 | yes | unclear |
+| Gemma 4 31B (on) | workhorses | 18.35 | 13.38 | -4.97 [-11.8, +1.8] | -4.56 | 17.97 / 16.84 | -1.13 [-6.2, +4.4] | -3.73 | yes | unclear |
+| DeepSeek V4.1 Flash (off) | workhorses | 23.91 | 27.90 | +3.98 [-11.7, +18.0] | -4.56 | 23.35 / 29.29 | +5.94 [-2.5, +13.9] | -3.73 | yes | unclear |
+| Qwen3.8-27B (off) | workhorses | 28.13 | 28.43 | +0.30 [-14.5, +12.1] | -4.56 | 26.89 / 31.65 | +4.76 [-3.6, +12.5] | -3.73 | yes | unclear |
+| LFM2.5-24B-A2B (on) | workhorses | 38.20 | 37.55 | -0.65 [-15.2, +14.4] | -4.56 | 37.78 / 42.54 | +4.77 [-4.1, +13.5] | -3.73 | yes | unclear |
+| LFM2.5-24B-A2B (off) | workhorses | 50.75 | 53.98 | +3.23 [-16.9, +22.1] | -4.56 | 46.44 / 50.87 | +4.43 [-6.5, +15.4] | -3.73 | yes | unclear |
+| GPT-6 Astra (on) | frontier | 9.66 | 7.30 | -2.37 [-6.7, +1.8] | -4.56 | 10.86 / 8.88 | -1.99 [-5.5, +1.5] | -3.73 | yes | unclear |
+| GPT-6.1 Terra | no group (exploratory) | 13.52 | 14.40 | +0.89 [-5.7, +8.6] | -4.56 | 13.18 / 16.22 | +3.04 [-0.9, +7.4] | -3.73 | yes | unclear |
+| GNUbg weak | yardstick | 27.69 | 24.13 | -3.56 [-13.9, +7.3] | -4.56 | 25.35 / 20.78 | -4.57 [-10.3, +1.3] | -3.73 | yes | unclear |
+| Random | yardstick | 87.45 | 82.89 | -4.56 [-18.0, +7.9] | -4.56 | 85.16 / 81.43 | -3.73 [-11.4, +3.7] | -3.73 | no | unclear |
 
-**Labels:** every setup, GNUbg weak and Random are **"unclear"** at the final look: every 97.5% interval contains 0 and reaches
-past ±5 PR. No setup is "kept", "worse" or "better" on this evidence.
+**Labels:** every asked setup and GNUbg weak is **"unclear"** at the final look (Random too, reported for reference):
+every 97.5% interval contains 0 and reaches past ±5 PR. "Unclear" means the interval is too wide to decide; it is
+**not** evidence of equivalence ("kept" would need the whole interval within ±5 PR). No setup is "kept", "worse" or
+"better" on this evidence.
 
-### By phase (main 200 pairs; descriptive, 95%)
+## Invalid or missing answers and sensitivity
+
+| Setup | Invalid or missing, Nackgammon / standard (200 pairs) | Same (500 pairs) | Primary drop [97.5%] (200) | (i) worst play: drop [97.5%] | (ii) pairs left out: pairs, drop [97.5%] |
+| --- | --- | --- | --- | --- | --- |
+| Fastino GLiDE v1.2 (local) | 0 / 0 | 0 / 0 | +2.18 [-7.3, +11.9] | +2.18 [-7.3, +11.9] | 200, +2.18 [-7.3, +11.9] |
+| Jev 1.13.0 | 0 / 0 | 0 / 0 | -2.37 [-17.7, +10.0] | -2.37 [-17.7, +10.0] | 200, -2.37 [-17.7, +10.0] |
+| GPT-6 Luna | 0 / 0 | 0 / 0 | +5.84 [-10.6, +20.5] | +5.84 [-10.6, +20.5] | 200, +5.84 [-10.6, +20.5] |
+| Celeris-1 Decision | 0 / 0 | 0 / 0 | -1.24 [-18.3, +14.6] | -1.24 [-18.3, +14.6] | 200, -1.24 [-18.3, +14.6] |
+| Decider v1.1 27B | 0 / 0 | 0 / 0 | -1.78 [-17.3, +11.9] | -1.78 [-17.3, +11.9] | 200, -1.78 [-17.3, +11.9] |
+| Cygnet (Gemma 4 12B) | 0 / 0 | 0 / 0 | -6.85 [-22.4, +5.4] | -6.85 [-22.4, +5.4] | 200, -6.85 [-22.4, +5.4] |
+| SubQ Snap Preview | 0 / 0 | 0 / 0 | -2.25 [-18.1, +11.9] | -2.25 [-18.1, +11.9] | 200, -2.25 [-18.1, +11.9] |
+| Mercury Decide | 0 / 0 | 0 / 0 | -4.28 [-20.1, +8.8] | -4.28 [-20.1, +8.8] | 200, -4.28 [-20.1, +8.8] |
+| Winnow-12B | 0 / 0 | 0 / 0 | -0.89 [-18.0, +15.0] | -0.89 [-18.0, +15.0] | 200, -0.89 [-18.0, +15.0] |
+| Decider v1.2 27B | 0 / 0 | 0 / 0 | -11.87 [-27.9, +1.0] | -11.87 [-27.9, +1.0] | 200, -11.87 [-27.9, +1.0] |
+| Decider Flash v1.2 | 0 / 0 | 0 / 0 | +3.09 [-12.1, +20.1] | +3.09 [-12.1, +20.1] | 200, +3.09 [-12.1, +20.1] |
+| Open-Jev 27B v1.1 | 0 / 0 | 0 / 0 | -11.12 [-29.5, +6.8] | -11.12 [-29.5, +6.8] | 200, -11.12 [-29.5, +6.8] |
+| GPT-6.1 Sol (high) | 0 / 0 | 0 / 0 | -1.45 [-5.6, +2.7] | -1.45 [-5.6, +2.7] | 200, -1.45 [-5.6, +2.7] |
+| GPT-6.1 Sol (low) | 0 / 0 | 0 / 0 | -1.26 [-5.7, +3.3] | -1.26 [-5.7, +3.3] | 200, -1.26 [-5.7, +3.3] |
+| Claude Sonnet 5.5 (low) | 0 / 0 | 0 / 0 | +0.54 [-5.0, +6.0] | +0.54 [-5.0, +6.0] | 200, +0.54 [-5.0, +6.0] |
+| Gemini 3.8 Flash (low) | 0 / 0 | 0 / 0 | -4.11 [-9.7, +1.0] | -4.11 [-9.7, +1.0] | 200, -4.11 [-9.7, +1.0] |
+| Gemma 4 31B (on) | 0 / 0 | 0 / 0 | -4.97 [-11.8, +1.8] | -4.97 [-11.8, +1.8] | 200, -4.97 [-11.8, +1.8] |
+| DeepSeek V4.1 Flash (off) | 0 / 0 | 0 / 0 | +3.98 [-11.7, +18.0] | +3.98 [-11.7, +18.0] | 200, +3.98 [-11.7, +18.0] |
+| Qwen3.8-27B (off) | 0 / 0 | 0 / 0 | +0.30 [-14.5, +12.1] | +0.30 [-14.5, +12.1] | 200, +0.30 [-14.5, +12.1] |
+| LFM2.5-24B-A2B (on) | 16 / 22 | 52 / 55 | -0.65 [-15.2, +14.4] | -7.10 [-27.4, +13.3] | 166, +2.32 [-12.3, +18.1] |
+| LFM2.5-24B-A2B (off) | 0 / 0 | 0 / 0 | +3.23 [-16.9, +22.1] | +3.23 [-16.9, +22.1] | 200, +3.23 [-16.9, +22.1] |
+| GPT-6 Astra (on) | 0 / 0 | 0 / 0 | -2.37 [-6.7, +1.8] | -2.37 [-6.7, +1.8] | 200, -2.37 [-6.7, +1.8] |
+| GPT-6.1 Terra | 0 / 0 | 0 / 0 | +0.89 [-5.7, +8.6] | +0.89 [-5.7, +8.6] | 200, +0.89 [-5.7, +8.6] |
+| GNUbg weak | 0 / 0 | 0 / 0 | -3.56 [-13.9, +7.3] | -3.56 [-13.9, +7.3] | 200, -3.56 [-13.9, +7.3] |
+| Random | 0 / 0 | 0 / 0 | -4.56 [-18.0, +7.9] | -4.56 [-18.0, +7.9] | 200, -4.56 [-18.0, +7.9] |
+
+## By phase
+
+Main 200 pairs, descriptive, 95% intervals.
 
 | Setup | opening | contact | holding | race | bear-off | opening − other phases [95%] |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -100,97 +132,258 @@ past ±5 PR. No setup is "kept", "worse" or "better" on this evidence.
 | GNUbg weak | -7.5 [-21.3, +6.5] | -5.8 [-32.0, +20.2] | +3.4 [-12.5, +21.1] | +3.0 [-0.0, +7.8] | -3.6 [-10.5, +0.7] | -5.6 [-23.3, +11.9] |
 | Random | -11.3 [-23.3, +0.4] | -9.3 [-27.3, +8.8] | +7.6 [-57.2, +63.1] | +3.4 [-7.7, +16.9] | +0.5 [-5.6, +6.9] | -9.7 [-28.7, +9.8] |
 
-By game-plan tag: PR per tag and set in `results.json` (`setups.<name>.tags`; descriptive, tags are not matched; the back-game row
-is too thin to read, 10 Nackgammon vs 2 standard, and partly reflects Nackgammon's starting anchors).
+Cost per recorded position over all 1,000 (billed and API-equivalent are never added; 0 = none of that kind; setups on our GPUs have no list price).
 
-## Primary comparisons (main 200 pairs, M = 5, 99% each)
-
-Groups by original league (Method §10.14, amendment of 2026-10-27). It was written after the per-setup first looks and after six full-report calls on partial data had computed group results under the earlier group definitions; one returned those results into an agent's context. Whether a person saw them is not established. Nothing was published. See §10.14(e) and its correction (f) of 2026-10-28.
-The frontier group currently has 1 setup (GPT-6 Astra (on)); comparisons 2 and 3 rest on it.
-These results hold for these rosters only; each group is the setups in the run from that original league.
-
-**primary rule (invalid = Random's error)**
-
-| Comparison | A: standard / Nackgammon / drop | B: standard / Nackgammon / drop | A − B [99%] | Random's drop |
-| --- | --- | --- | --- | --- |
-| decision models − workhorses | 32.88 / 30.25 / -2.63 | 23.36 / 22.88 / -0.49 | -2.14 [-10.1, +4.9] | -4.56 |
-| decision models − frontier | 32.88 / 30.25 / -2.63 | 9.66 / 7.30 / -2.37 | -0.26 [-14.6, +12.0] | -4.56 |
-| workhorses − frontier | 23.36 / 22.88 / -0.49 | 9.66 / 7.30 / -2.37 | +1.88 [-5.7, +9.3] | -4.56 |
-| LFM2.5-24B-A2B (on) − LFM2.5-24B-A2B (off) | 38.20 / 37.55 / -0.65 | 50.75 / 53.98 / +3.23 | -3.88 [-27.0, +21.8] | -4.56 |
-| GPT-6.1 Sol (high) − GPT-6.1 Sol (low) | 9.88 / 8.43 / -1.45 | 11.15 / 9.90 / -1.26 | -0.19 [-3.0, +2.6] | -4.56 |
-
-**sensitivity (i): worst legal play**
-
-**No primary interval excludes 0**, under the primary rule or either sensitivity rule. The effort pairs and group differences are
-all small relative to their intervals.
-
-## Secondary analyses (labelled secondary)
-
-**1. Kept advantage over random play** (main 200; 1 = keeps its whole advantage over random play):
-
-| Comparison | A: standard / Nackgammon / drop | B: standard / Nackgammon / drop | A − B [99%] | Random's drop |
-| --- | --- | --- | --- | --- |
-| decision models − workhorses | 32.88 / 30.25 / -2.63 | 24.90 / 23.70 / -1.20 | -1.43 [-9.6, +5.7] | -4.56 |
-| decision models − frontier | 32.88 / 30.25 / -2.63 | 9.66 / 7.30 / -2.37 | -0.26 [-14.6, +12.0] | -4.56 |
-| workhorses − frontier | 24.90 / 23.70 / -1.20 | 9.66 / 7.30 / -2.37 | +1.17 [-6.5, +8.7] | -4.56 |
-| LFM2.5-24B-A2B (on) − LFM2.5-24B-A2B (off) | 52.06 / 44.97 / -7.10 | 50.75 / 53.98 / +3.23 | -10.33 [-38.9, +19.7] | -4.56 |
-| GPT-6.1 Sol (high) − GPT-6.1 Sol (low) | 9.88 / 8.43 / -1.45 | 11.15 / 9.90 / -1.26 | -0.19 [-3.0, +2.6] | -4.56 |
-
-**2. Ranking.** **sensitivity (ii): pairs left out**
-
-**3. Risk** (main 200 pairs; 66 Risk pays and 66 Safety pays positions per set, none thin; invalid answers with Random's weights):
-
-| Comparison | A: standard / Nackgammon / drop | B: standard / Nackgammon / drop | A − B [99%] | Random's drop |
-| --- | --- | --- | --- | --- |
-| decision models − workhorses | 32.88 / 30.25 / -2.63 | 22.52 / 22.36 / -0.16 | -2.47 [-10.6, +4.7] | -4.56 |
-| decision models − frontier | 32.88 / 30.25 / -2.63 | 9.66 / 7.30 / -2.37 | -0.26 [-14.6, +12.0] | -4.56 |
-| workhorses − frontier | 22.52 / 22.36 / -0.16 | 9.66 / 7.30 / -2.37 | +2.21 [-5.5, +9.6] | -4.56 |
-| LFM2.5-24B-A2B (on) − LFM2.5-24B-A2B (off) | 30.59 / 32.91 / +2.32 | 50.75 / 53.98 / +3.23 | -0.91 [-24.1, +25.2] | -4.56 |
-| GPT-6.1 Sol (high) − GPT-6.1 Sol (low) | 9.88 / 8.43 / -1.45 | 11.15 / 9.90 / -1.26 | -0.19 [-3.0, +2.6] | -4.56 |
-
-Exploratory (not tested): GPT-6.1 Terra against GPT-6.1 Sol (low) is in the tables above, no comparison is drawn.
-
-## Engine check (40 frozen pairs, 80 positions)
-
-Rollouts: GNUbg 1.08.003 rollout: 1,296 trials per play, cubeless, variance reduction on, quasi-random dice, no truncation, no late evaluation, chequer play 1-ply, seed 1, 8 threads, nice 19; candidates: top 5 at 2-ply plus every play any setup chose. 436 plays rolled out (45 min);
-plays without a rollout used 2-ply + the position's mean shift (447 uses, mostly Random's all-plays mean).
-**No comparison changes direction.**
-
-| Setup | K [95%] | Standard advantage over Random (PR) | unstable |
+| Setup | Positions recorded (all) | Billed $ per decision | API-equivalent $ per decision |
 | --- | --- | --- | --- |
-| GNUbg weak | 0.98 [+0.8, +1.2] | 59.8 | no |
-| Celeris-1 Decision | 0.94 [+0.8, +1.1] | 57.7 | no |
-| SubQ Snap Preview | 0.96 [+0.8, +1.2] | 55.5 | no |
-| Cygnet (Gemma 4 12B) | 1.04 [+0.9, +1.3] | 56.1 | no |
-| Decider v1.2 27B | 1.14 [+0.9, +1.4] | 52.8 | no |
-| Fastino GLiDE v1.2 (local) | 0.90 [+0.7, +1.1] | 64.7 | no |
-| DeepSeek V4.1 Flash (off) | 0.87 [+0.7, +1.1] | 63.5 | no |
-| Jev 1.13.0 | 0.96 [+0.8, +1.2] | 60.9 | no |
-| GPT-6 Luna | 0.82 [+0.6, +1.0] | 59.2 | no |
-| Decider v1.1 27B | 0.95 [+0.8, +1.2] | 57.0 | no |
-| LFM2.5-24B-A2B (on) | 0.92 [+0.7, +1.2] | 49.2 | no |
-| Qwen3.8-27B (off) | 0.92 [+0.8, +1.1] | 59.3 | no |
-| Mercury Decide | 0.99 [+0.8, +1.2] | 54.7 | no |
-| Winnow-12B | 0.93 [+0.7, +1.2] | 53.1 | no |
-| LFM2.5-24B-A2B (off) | 0.79 [+0.5, +1.2] | 36.7 | no |
-| Open-Jev 27B v1.1 | 1.19 [+0.8, +1.8] | 35.4 | no |
-| Decider Flash v1.2 | 0.84 [+0.6, +1.2] | 47.7 | no |
-| Gemini 3.8 Flash (low) | 0.99 [+0.8, +1.2] | 71.5 | no |
-| Claude Sonnet 5.5 (low) | 0.93 [+0.8, +1.1] | 73.5 | no |
-| GPT-6.1 Sol (low) | 0.96 [+0.8, +1.1] | 76.3 | no |
-| GPT-6 Astra (on) | 0.97 [+0.8, +1.1] | 77.8 | no |
-| GPT-6.1 Sol (high) | 0.96 [+0.8, +1.1] | 77.6 | no |
-| Gemma 4 31B (on) | 1.01 [+0.8, +1.2] | 69.1 | no |
-| GPT-6.1 Terra | 0.93 [+0.8, +1.1] | 73.9 | no |
+| Fastino GLiDE v1.2 (local) | 1000 | 0.00000 | 0.00000 |
+| Jev 1.13.0 | 1000 | 0.00013 | 0.00000 |
+| GPT-6 Luna | 1000 | 0.00027 | 0.00000 |
+| Celeris-1 Decision | 1000 | 0.00011 | 0.00000 |
+| Decider v1.1 27B | 1000 | 0.00006 | 0.00000 |
+| Cygnet (Gemma 4 12B) | 1000 | 0.00000 | 0.00000 |
+| SubQ Snap Preview | 1000 | 0.00014 | 0.00000 |
+| Mercury Decide | 1000 | 0.00006 | 0.00000 |
+| Winnow-12B | 1000 | 0.00000 | 0.00000 |
+| Decider v1.2 27B | 1000 | 0.00006 | 0.00000 |
+| Decider Flash v1.2 | 1000 | 0.00003 | 0.00000 |
+| Open-Jev 27B v1.1 | 1000 | 0.00000 | 0.00000 |
+| GPT-6.1 Sol (high) | 1000 | 0.00807 | 0.00000 |
+| GPT-6.1 Sol (low) | 1000 | 0.00602 | 0.00000 |
+| Claude Sonnet 5.5 (low) | 1000 | 0.00873 | 0.00000 |
+| Gemini 3.8 Flash (low) | 1000 | 0.00288 | 0.00000 |
+| Gemma 4 31B (on) | 1000 | 0.00000 | 0.00000 |
+| DeepSeek V4.1 Flash (off) | 1000 | 0.00027 | 0.00000 |
+| Qwen3.8-27B (off) | 1000 | 0.00000 | 0.00000 |
+| LFM2.5-24B-A2B (on) | 1000 | 0.00000 | 0.00000 |
+| LFM2.5-24B-A2B (off) | 1000 | 0.00000 | 0.00000 |
+| GPT-6 Astra (on) | 1000 | 0.02951 | 0.00000 |
+| GPT-6.1 Terra | 1000 | 0.00371 | 0.00000 |
+| GNUbg weak | 1000 | 0.00000 | 0.00000 |
 
-Spearman ρ = 0.87 [+0.7, +0.9] over 23 model setups. Largest rank changes (1 = lowest error rate): Decider v1.2 27B 19 → 8; GPT-6 Luna 12 → 19; Cygnet (Gemma 4 12B) 15 → 10; DeepSeek V4.1 Flash (off) 9 → 12; Fastino GLiDE v1.2 (local) 8 → 11.
+By game-plan tag: PR per tag and set in `results.json` (`setups.<name>.tags`; descriptive, tags are not matched; the
+back-game row is too thin to read, 10 Nackgammon against 2 standard, and partly reflects Nackgammon's starting anchors).
 
-## Files
+## Primary comparisons
 
-- Scorer `tools/v3/nack_paired_score.py`; results `positions/nack-paired/results/results.json` + `standard-vs-nackgammon.svg`.
-- Configs `leagues/nack-paired.json`, `leagues/nack-paired-d.json`, `leagues/smoke-terra.json`; rollouts `smoke/nack-engine-check.db`.
-- Release bundle (local, not published): `release/nack-paired/`.
+Main 200 pairs, M = 5, each interval at 99%.
 
+Groups by original league (Method §10.14, amendment of 2026-10-27). Method §10 and its notes were committed before any model call, and the per-setup first looks were computed under the frozen extension rule. Separately, before the amendment, six full-report calls were issued on partial data under the earlier group definitions; that all six completed successfully has not been independently established. One returned numeric old-group primary results into the site agent's context before the amendment. Whether a person saw them, and any causation, is not established. Nothing was published before the amendment; the aggregate report and data were pushed to the public repository in commit 3e4f413 on 2026-10-28 (01:03 UTC), before release approval. See §10.14(e) and its dated correction (f) of 2026-10-28.
+
+The frontier group currently has 1 setup (GPT-6 Astra (on)); comparisons 2 and 3 rest on it. These results hold for these rosters only; each group is the setups in the run from that original league.
+
+**Primary rule: an invalid or missing answer scores the position's Random error.**
+
+| Comparison | A: standard / Nackgammon / drop | B: standard / Nackgammon / drop | A − B [99%] | Random's drop (200) |
+| --- | --- | --- | --- | --- |
+| decision models − workhorses | 32.88 / 30.25 / -2.63 | 23.36 / 22.88 / -0.49 | -2.14 [-10.07, +4.88] | -4.56 |
+| decision models − frontier | 32.88 / 30.25 / -2.63 | 9.66 / 7.30 / -2.37 | -0.26 [-14.64, +12.04] | -4.56 |
+| workhorses − frontier | 23.36 / 22.88 / -0.49 | 9.66 / 7.30 / -2.37 | +1.88 [-5.73, +9.33] | -4.56 |
+| LFM2.5-24B-A2B (on) − LFM2.5-24B-A2B (off) | 38.20 / 37.55 / -0.65 | 50.75 / 53.98 / +3.23 | -3.88 [-26.98, +21.76] | -4.56 |
+| GPT-6.1 Sol (high) − GPT-6.1 Sol (low) | 9.88 / 8.43 / -1.45 | 11.15 / 9.90 / -1.26 | -0.19 [-3.00, +2.63] | -4.56 |
+
+**Sensitivity (i): an invalid or missing answer scores the worst legal play's loss.**
+
+| Comparison | A: standard / Nackgammon / drop | B: standard / Nackgammon / drop | A − B [99%] | Random's drop (200) |
+| --- | --- | --- | --- | --- |
+| decision models − workhorses | 32.88 / 30.25 / -2.63 | 24.90 / 23.70 / -1.20 | -1.43 [-9.56, +5.66] | -4.56 |
+| decision models − frontier | 32.88 / 30.25 / -2.63 | 9.66 / 7.30 / -2.37 | -0.26 [-14.64, +12.04] | -4.56 |
+| workhorses − frontier | 24.90 / 23.70 / -1.20 | 9.66 / 7.30 / -2.37 | +1.17 [-6.49, +8.72] | -4.56 |
+| LFM2.5-24B-A2B (on) − LFM2.5-24B-A2B (off) | 52.06 / 44.97 / -7.10 | 50.75 / 53.98 / +3.23 | -10.33 [-38.92, +19.74] | -4.56 |
+| GPT-6.1 Sol (high) − GPT-6.1 Sol (low) | 9.88 / 8.43 / -1.45 | 11.15 / 9.90 / -1.26 | -0.19 [-3.00, +2.63] | -4.56 |
+
+**Sensitivity (ii): the setup's pairs with an invalid or missing answer left out.**
+
+| Comparison | A: standard / Nackgammon / drop | B: standard / Nackgammon / drop | A − B [99%] | Random's drop (200) |
+| --- | --- | --- | --- | --- |
+| decision models − workhorses | 32.88 / 30.25 / -2.63 | 22.52 / 22.36 / -0.16 | -2.47 [-10.57, +4.72] | -4.56 |
+| decision models − frontier | 32.88 / 30.25 / -2.63 | 9.66 / 7.30 / -2.37 | -0.26 [-14.64, +12.04] | -4.56 |
+| workhorses − frontier | 22.52 / 22.36 / -0.16 | 9.66 / 7.30 / -2.37 | +2.21 [-5.45, +9.55] | -4.56 |
+| LFM2.5-24B-A2B (on) − LFM2.5-24B-A2B (off) | 30.59 / 32.91 / +2.32 | 50.75 / 53.98 / +3.23 | -0.91 [-24.13, +25.20] | -4.56 |
+| GPT-6.1 Sol (high) − GPT-6.1 Sol (low) | 9.88 / 8.43 / -1.45 | 11.15 / 9.90 / -1.26 | -0.19 [-3.00, +2.63] | -4.56 |
+
+No primary interval excludes 0, under the primary rule or either sensitivity rule.
+
+## Secondary 1: kept advantage over random play
+
+Labelled secondary. K = (Random's Nackgammon PR − setup's Nackgammon PR) ÷ (Random's standard PR − setup's standard
+PR); 1 = keeps its whole advantage over random play.
+
+**Main 200 pairs.**
+
+| Setup | K [95%] | Standard advantage over Random (PR) [95%] | Unstable |
+| --- | --- | --- | --- |
+| Fastino GLiDE v1.2 (local) | 0.90 [0.73, 1.09] | 64.7 [52.9, 77.5] | no |
+| Jev 1.13.0 | 0.96 [0.80, 1.16] | 60.9 [50.6, 71.4] | no |
+| GPT-6 Luna | 0.82 [0.64, 1.03] | 59.2 [49.1, 69.5] | no |
+| Celeris-1 Decision | 0.94 [0.76, 1.15] | 57.7 [47.5, 68.7] | no |
+| Decider v1.1 27B | 0.95 [0.76, 1.17] | 57.0 [46.9, 67.5] | no |
+| Cygnet (Gemma 4 12B) | 1.04 [0.86, 1.27] | 56.1 [46.1, 66.5] | no |
+| SubQ Snap Preview | 0.96 [0.76, 1.19] | 55.5 [45.3, 66.1] | no |
+| Mercury Decide | 0.99 [0.81, 1.21] | 54.7 [45.1, 65.0] | no |
+| Winnow-12B | 0.93 [0.74, 1.16] | 53.1 [43.3, 63.1] | no |
+| Decider v1.2 27B | 1.14 [0.93, 1.39] | 52.8 [42.9, 62.9] | no |
+| Decider Flash v1.2 | 0.84 [0.58, 1.16] | 47.7 [36.5, 60.4] | no |
+| Open-Jev 27B v1.1 | 1.19 [0.84, 1.83] | 35.4 [23.0, 48.6] | no |
+| GPT-6.1 Sol (high) | 0.96 [0.82, 1.11] | 77.6 [65.5, 90.8] | no |
+| GPT-6.1 Sol (low) | 0.96 [0.81, 1.12] | 76.3 [64.2, 89.4] | no |
+| Claude Sonnet 5.5 (low) | 0.93 [0.78, 1.10] | 73.5 [61.6, 86.2] | no |
+| Gemini 3.8 Flash (low) | 0.99 [0.83, 1.18] | 71.5 [59.3, 84.6] | no |
+| Gemma 4 31B (on) | 1.01 [0.84, 1.21] | 69.1 [57.1, 82.1] | no |
+| DeepSeek V4.1 Flash (off) | 0.87 [0.71, 1.05] | 63.5 [53.1, 74.3] | no |
+| Qwen3.8-27B (off) | 0.92 [0.76, 1.10] | 59.3 [49.5, 69.7] | no |
+| LFM2.5-24B-A2B (on) | 0.92 [0.68, 1.22] | 49.2 [38.3, 61.5] | no |
+| LFM2.5-24B-A2B (off) | 0.79 [0.51, 1.19] | 36.7 [25.6, 47.9] | no |
+| GPT-6 Astra (on) | 0.97 [0.83, 1.13] | 77.8 [65.5, 90.8] | no |
+| GPT-6.1 Terra | 0.93 [0.78, 1.10] | 73.9 [61.8, 86.8] | no |
+| GNUbg weak | 0.98 [0.77, 1.25] | 59.8 [47.6, 72.8] | no |
+
+**All 500 pairs.**
+
+| Setup | K [95%] | Standard advantage over Random (PR) [95%] | Unstable |
+| --- | --- | --- | --- |
+| Fastino GLiDE v1.2 (local) | 0.91 [0.79, 1.05] | 58.8 [52.1, 65.7] | no |
+| Jev 1.13.0 | 0.89 [0.80, 1.00] | 60.5 [54.0, 67.1] | no |
+| GPT-6 Luna | 0.83 [0.72, 0.96] | 55.6 [49.0, 62.2] | no |
+| Celeris-1 Decision | 0.87 [0.76, 0.99] | 58.3 [51.6, 65.1] | no |
+| Decider v1.1 27B | 0.92 [0.80, 1.05] | 53.9 [47.4, 60.5] | no |
+| Cygnet (Gemma 4 12B) | 0.93 [0.83, 1.05] | 56.7 [50.3, 63.4] | no |
+| SubQ Snap Preview | 0.90 [0.78, 1.03] | 53.9 [47.3, 60.5] | no |
+| Mercury Decide | 0.88 [0.77, 1.01] | 53.8 [47.3, 60.3] | no |
+| Winnow-12B | 0.88 [0.77, 1.01] | 53.2 [46.8, 59.8] | no |
+| Decider v1.2 27B | 0.98 [0.84, 1.14] | 53.4 [46.7, 60.4] | no |
+| Decider Flash v1.2 | 0.74 [0.59, 0.92] | 44.9 [37.9, 52.1] | no |
+| Open-Jev 27B v1.1 | 0.98 [0.81, 1.23] | 38.1 [30.7, 45.5] | no |
+| GPT-6.1 Sol (high) | 0.98 [0.88, 1.08] | 74.0 [66.8, 81.5] | no |
+| GPT-6.1 Sol (low) | 0.97 [0.87, 1.08] | 73.0 [65.8, 80.4] | no |
+| Claude Sonnet 5.5 (low) | 0.96 [0.86, 1.08] | 68.7 [61.6, 76.2] | no |
+| Gemini 3.8 Flash (low) | 0.96 [0.86, 1.08] | 68.5 [61.3, 75.9] | no |
+| Gemma 4 31B (on) | 0.96 [0.85, 1.08] | 67.2 [60.1, 74.6] | no |
+| DeepSeek V4.1 Flash (off) | 0.84 [0.75, 0.95] | 61.8 [55.2, 68.5] | no |
+| Qwen3.8-27B (off) | 0.85 [0.76, 0.96] | 58.3 [52.0, 64.5] | no |
+| LFM2.5-24B-A2B (on) | 0.82 [0.68, 0.98] | 47.4 [40.6, 54.2] | no |
+| LFM2.5-24B-A2B (off) | 0.79 [0.61, 1.00] | 38.7 [31.8, 45.6] | no |
+| GPT-6 Astra (on) | 0.98 [0.88, 1.08] | 74.3 [67.1, 81.8] | no |
+| GPT-6.1 Terra | 0.91 [0.81, 1.01] | 72.0 [64.8, 79.5] | no |
+| GNUbg weak | 1.01 [0.88, 1.16] | 59.8 [52.5, 67.4] | no |
+
+## Secondary 2: ranking
+
+Labelled secondary. Model setups only (yardsticks left out).
+
+| Model setups | Spearman ρ [95%] |
+| --- | --- |
+| 23 | 0.87 [0.73, 0.91] |
+
+Five largest rank changes (1 = lowest error rate; ties by name).
+
+| Setup | Standard rank | Nackgammon rank | Change |
+| --- | --- | --- | --- |
+| Decider v1.2 27B | 19 | 8 | -11 |
+| GPT-6 Luna | 12 | 19 | +7 |
+| Cygnet (Gemma 4 12B) | 15 | 10 | -5 |
+| DeepSeek V4.1 Flash (off) | 9 | 12 | +3 |
+| Fastino GLiDE v1.2 (local) | 8 | 11 | +3 |
+
+## Secondary 3: risk
+
+Labelled secondary. Main 200 pairs; invalid or missing answers with Random's weights; d′ ability, c caution (§2 rules).
+
+| Setup | Risk pays / Safety pays positions, Nackgammon; standard | d′ standard | d′ Nackgammon | Δd′ [95%] | c standard | c Nackgammon | Δc [95%] | Thin |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Fastino GLiDE v1.2 (local) | 66 / 66; 66 / 66 | 0.82 | 0.37 | -0.45 [-1.15, +0.19] | 0.60 | 0.65 | +0.05 [-0.29, +0.38] | no |
+| Jev 1.13.0 | 66 / 66; 66 / 66 | 0.59 | 1.10 | +0.51 [-0.17, +1.25] | 0.60 | 0.66 | +0.06 [-0.28, +0.43] | no |
+| GPT-6 Luna | 66 / 66; 66 / 66 | 0.95 | 0.14 | -0.81 [-1.57, -0.11] | 0.66 | 0.66 | +0.00 [-0.36, +0.38] | no |
+| Celeris-1 Decision | 66 / 66; 66 / 66 | 0.43 | 0.85 | +0.42 [-0.32, +1.11] | 0.86 | 0.65 | -0.21 [-0.56, +0.15] | no |
+| Decider v1.1 27B | 66 / 66; 66 / 66 | 0.44 | 0.45 | +0.01 [-0.67, +0.66] | 0.56 | 0.61 | +0.05 [-0.27, +0.38] | no |
+| Cygnet (Gemma 4 12B) | 66 / 66; 66 / 66 | 0.62 | 0.52 | -0.10 [-0.79, +0.60] | 0.70 | 0.69 | -0.01 [-0.34, +0.35] | no |
+| SubQ Snap Preview | 66 / 66; 66 / 66 | 0.56 | 0.29 | -0.27 [-0.95, +0.34] | 0.36 | 0.45 | +0.09 [-0.23, +0.42] | no |
+| Mercury Decide | 66 / 66; 66 / 66 | 0.31 | 0.48 | +0.17 [-0.51, +0.86] | 0.79 | 0.83 | +0.04 [-0.29, +0.37] | no |
+| Winnow-12B | 66 / 66; 66 / 66 | 0.40 | 0.39 | -0.01 [-0.65, +0.60] | 0.35 | 0.23 | -0.12 [-0.43, +0.18] | no |
+| Decider v1.2 27B | 66 / 66; 66 / 66 | 0.30 | 0.88 | +0.58 [-0.10, +1.27] | 0.53 | 0.63 | +0.10 [-0.25, +0.45] | no |
+| Decider Flash v1.2 | 66 / 66; 66 / 66 | 0.30 | 0.53 | +0.23 [-0.42, +0.85] | 0.08 | 0.04 | -0.04 [-0.35, +0.25] | no |
+| Open-Jev 27B v1.1 | 66 / 66; 66 / 66 | 0.42 | 0.23 | -0.19 [-0.82, +0.43] | 0.06 | 0.23 | +0.17 [-0.14, +0.46] | no |
+| GPT-6.1 Sol (high) | 66 / 66; 66 / 66 | 1.18 | 2.05 | +0.87 [+0.16, +1.71] | 0.63 | 0.76 | +0.13 [-0.22, +0.54] | no |
+| GPT-6.1 Sol (low) | 66 / 66; 66 / 66 | 1.14 | 1.86 | +0.72 [+0.04, +1.56] | 0.65 | 0.85 | +0.20 [-0.12, +0.63] | no |
+| Claude Sonnet 5.5 (low) | 66 / 66; 66 / 66 | 0.99 | 1.44 | +0.45 [-0.32, +1.27] | 0.80 | 0.91 | +0.11 [-0.25, +0.51] | no |
+| Gemini 3.8 Flash (low) | 66 / 66; 66 / 66 | 0.79 | 2.17 | +1.38 [+0.73, +1.92] | 0.90 | 1.35 | +0.45 [+0.12, +0.72] | no |
+| Gemma 4 31B (on) | 66 / 66; 66 / 66 | 0.66 | 1.56 | +0.90 [+0.04, +1.81] | 1.17 | 1.00 | -0.17 [-0.61, +0.30] | no |
+| DeepSeek V4.1 Flash (off) | 66 / 66; 66 / 66 | 0.78 | 0.60 | -0.18 [-0.90, +0.55] | 0.50 | 0.65 | +0.15 [-0.20, +0.49] | no |
+| Qwen3.8-27B (off) | 66 / 66; 66 / 66 | 0.31 | 0.37 | +0.06 [-0.64, +0.78] | 0.79 | 0.82 | +0.03 [-0.29, +0.36] | no |
+| LFM2.5-24B-A2B (on) | 66 / 66; 66 / 66 | 0.53 | 0.47 | -0.06 [-0.70, +0.52] | 0.17 | 0.23 | +0.06 [-0.24, +0.35] | no |
+| LFM2.5-24B-A2B (off) | 66 / 66; 66 / 66 | 0.23 | 0.45 | +0.22 [-0.39, +0.86] | 0.19 | -0.00 | -0.19 [-0.49, +0.11] | no |
+| GPT-6 Astra (on) | 66 / 66; 66 / 66 | 1.53 | 2.05 | +0.52 [-0.18, +1.32] | 0.73 | 0.76 | +0.03 [-0.32, +0.43] | no |
+| GPT-6.1 Terra | 66 / 66; 66 / 66 | 0.91 | 1.44 | +0.53 [-0.29, +1.45] | 0.76 | 1.06 | +0.30 [-0.07, +0.75] | no |
+| GNUbg weak | 66 / 66; 66 / 66 | 0.71 | 0.95 | +0.24 [-0.37, +0.82] | -0.28 | -0.47 | -0.19 [-0.48, +0.09] | no |
+| Random | 66 / 66; 66 / 66 | 0.27 | 0.37 | +0.10 [-0.11, +0.30] | -0.77 | -0.82 | -0.05 [-0.15, +0.04] | no |
+
+Exploratory (not tested): GPT-6.1 Terra against GPT-6.1 Sol (low) appears in the tables above; no comparison is drawn.
+
+## Engine check
+
+40 frozen pairs (80 positions). Rollouts: GNUbg 1.08.003 rollout: 1,296 trials per play, cubeless, variance reduction on, quasi-random dice, no truncation, no late evaluation, chequer play 1-ply, seed 1, 8 threads, nice 19; candidates: top 5 at 2-ply plus every play any setup chose. 436 plays rolled out;
+a play without a rollout used its 2-ply value plus the position's mean shift (447
+uses, mostly Random's all-plays mean). No comparison changes direction.
+
+| Comparison (40 pairs) | 2-ply A − B [99%] | Rollout A − B [99%] | Direction changed |
+| --- | --- | --- | --- |
+| decision models − workhorses | +6.36 [-3.28, +18.64] | +6.17 [-3.57, +18.72] | no |
+| decision models − frontier | +16.49 [-1.68, +40.04] | +16.11 [-2.20, +39.49] | no |
+| workhorses − frontier | +10.13 [-1.63, +24.58] | +9.94 [-1.64, +24.21] | no |
+| LFM2.5-24B-A2B (on) − LFM2.5-24B-A2B (off) | -14.59 [-55.64, +18.77] | -15.61 [-56.62, +17.00] | no |
+| GPT-6.1 Sol (high) − GPT-6.1 Sol (low) | +1.76 [-2.81, +6.99] | +2.73 [-1.97, +8.46] | no |
+
+| Setup | 2-ply standard / Nackgammon / drop | Rollout standard / Nackgammon / drop |
+| --- | --- | --- |
+| Fastino GLiDE v1.2 (local) | 13.43 / 20.28 / +6.86 | 14.30 / 19.14 / +4.85 |
+| Jev 1.13.0 | 14.66 / 25.27 / +10.61 | 15.82 / 23.79 / +7.97 |
+| GPT-6 Luna | 11.27 / 38.90 / +27.63 | 12.17 / 36.34 / +24.17 |
+| Celeris-1 Decision | 19.94 / 53.19 / +33.24 | 20.90 / 51.27 / +30.37 |
+| Decider v1.1 27B | 17.21 / 23.64 / +6.43 | 18.36 / 21.31 / +2.95 |
+| Cygnet (Gemma 4 12B) | 17.71 / 22.08 / +4.37 | 19.07 / 19.93 / +0.85 |
+| SubQ Snap Preview | 17.11 / 35.79 / +18.67 | 18.47 / 34.63 / +16.16 |
+| Mercury Decide | 15.28 / 32.27 / +16.99 | 16.11 / 30.64 / +14.54 |
+| Winnow-12B | 19.40 / 40.94 / +21.54 | 20.82 / 39.56 / +18.74 |
+| Decider v1.2 27B | 15.09 / 20.47 / +5.39 | 16.17 / 19.36 / +3.19 |
+| Decider Flash v1.2 | 29.51 / 63.81 / +34.31 | 32.15 / 60.75 / +28.60 |
+| Open-Jev 27B v1.1 | 51.03 / 54.35 / +3.31 | 52.10 / 52.82 / +0.72 |
+| GPT-6.1 Sol (high) | 11.73 / 10.46 / -1.28 | 12.53 / 8.87 / -3.66 |
+| GPT-6.1 Sol (low) | 13.56 / 10.52 / -3.04 | 15.09 / 8.70 / -6.39 |
+| Claude Sonnet 5.5 (low) | 12.96 / 18.62 / +5.66 | 14.17 / 17.06 / +2.89 |
+| Gemini 3.8 Flash (low) | 15.21 / 10.19 / -5.02 | 16.33 / 8.38 / -7.95 |
+| Gemma 4 31B (on) | 14.93 / 18.07 / +3.13 | 16.05 / 16.73 / +0.69 |
+| DeepSeek V4.1 Flash (off) | 10.19 / 22.97 / +12.78 | 11.05 / 20.58 / +9.53 |
+| Qwen3.8-27B (off) | 9.63 / 23.71 / +14.08 | 10.52 / 22.07 / +11.55 |
+| LFM2.5-24B-A2B (on) | 24.08 / 46.03 / +21.95 | 25.81 / 44.33 / +18.51 |
+| LFM2.5-24B-A2B (off) | 36.14 / 72.68 / +36.54 | 37.09 / 71.22 / +34.12 |
+| GPT-6 Astra (on) | 8.46 / 7.75 / -0.71 | 9.60 / 6.25 / -3.35 |
+| GPT-6.1 Terra | 11.43 / 8.61 / -2.81 | 12.64 / 6.74 / -5.90 |
+| GNUbg weak | 25.27 / 29.43 / +4.16 | 28.12 / 28.10 / -0.02 |
+| Random | 83.84 / 93.55 / +9.72 | 86.10 / 92.24 / +6.14 |
+
+## OpenRouter accounting
+
+From the retained budget ledgers and the answers' recorded costs only (no request). "Ledger-accounted" is what the
+ledger booked against the caps: per attempt the larger of the list-price cost and the provider-reported cost.
+"Provider-reported" is OpenRouter's `usage.cost` per response. Mercury Decide is on no ledger (its route allows none):
+its recorded cost is the runner's list-price computation; its provider-billed amount was not retained (unknown).
+
+| Run | Row | Attempts recorded | Ledger-accounted $ (booked: max of list price and provider-reported) | Provider-reported $ | Source |
+| --- | --- | --- | --- | --- | --- |
+| GPT-6.1 Terra smoke (50 positions) | a | 100 | $0.21256375 | $0.21256375 | budget ledger |
+| DeepSeek V4.1 Flash (off), main 400 | b | 403 | $0.17848470 | $0.11737138 | budget ledger |
+| GPT-6.1 Terra, main 400 | c | 400 | $1.48939450 | $1.48939450 | budget ledger |
+| DeepSeek V4.1 Flash (off), reserve 600 | d | 602 | $0.23559354 | $0.14983871 | budget ledger |
+| GPT-6.1 Terra, reserve 600 | d | 600 | $2.22006875 | $2.22006875 | budget ledger |
+| Mercury Decide, main 400 | b | 400 | $0.02232026 | unknown | answers' recorded cost (runner list price; no ledger) |
+| Mercury Decide, reserve 600 | d | 600 | $0.03351938 | unknown | answers' recorded cost (runner list price; no ledger) |
+
+- Open or lost reservations in the three ledgers: 0 (every attempt settled).
+- Row d, ledger setups only: ledger-accounted $2.45566229, provider-reported $2.36990746. Adding Mercury Decide's recorded reserve cost ($0.03351938, list price) gives $2.48918167: the "$2.489" quoted earlier was this ledger-accounted figure including Mercury, against the $2.55 cap (ledger cap $2.51 + Mercury limit $0.035). Provider-reported row d including Mercury is unknown (Mercury's billed amount was not retained); with Mercury at its list-price record it would be $2.40342684.
+- Rows a–d: ledger-accounted $4.39194488 (incl. Mercury at list price; the "$4.39" quoted earlier); provider-reported $4.18923709 for the ledger runs plus Mercury unknown (list-price record $0.05583964).
+- DeepSeek V4.1 Flash (off) books above its provider-reported cost because the ledger's list price ($0.30/$1.20 per M) exceeds what OpenRouter reported; GPT-6.1 Terra books at its provider-reported cost, which exceeds list price because OpenRouter billed each prompt as a cache write ($1.25 per M).
+- Not on any ledger: before the smoke test, direct probe requests to openai/gpt-6.1-terra outside the runner; one answered probe reported $0.000033, one answered probe's cost was not retained (unknown); the rest were refused by routing (404, not billed). The smoke test's first attempt (50 requests) was refused by routing (404) and booked at $0.
+- The OpenRouter account's usage rose by $4.99 between 18:05 UTC on 2026-10-27 and about 01:00 UTC on 2026-10-28; the difference from the figures above is not attributable from retained data (other runs on the same account in that window): unknown.
 
 ## Update 2026-10-28: Cup-roster additions (§10.14(g)) and Argon (low) (§10.14(h))
 

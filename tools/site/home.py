@@ -8,6 +8,7 @@ import math
 import textwrap
 
 import analysis as A
+import nack_section
 import pages as P
 from common import CLOSE_B_SCOPE_NOTE, NA, NOT_MEASURED, PENDING, PROVISIONAL, PROVISIONAL_NOTE, TOO_FEW, count, esc, fmt, nm, pct, status_badge
 
@@ -1300,6 +1301,7 @@ def home(S) -> str:
     </section>
     {pays_section(S)}
     {close_b_section(S)}
+    {nack_section.section(S["nack"])}
     <p class="downloads" id="downloads">Download: <a href="data/results.json" download="results.json">results.json</a> · <a href="decisions/index.json" download="decisions.json">decisions.json</a></p>"""
 
 

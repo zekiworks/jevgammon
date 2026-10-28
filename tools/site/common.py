@@ -22,6 +22,10 @@ PROVISIONAL_NOTE = "Provisional: league still running"
 # the home page and the Method page.
 CLOSE_B_SCOPE_NOTE = ("Gemma 4 31B (on) was started but not completed: two reboots and a GPU fault interrupted it, and it "
                       "was stopped after 311 of 500 play calls on 2026-10-25. Its partial data is not reported.")
+# Nackgammon paired test: scope note (Method spec 2026-10-24 §10.14(c), replacing §10.10's), verbatim wherever group
+# results appear; nack_paired_verify.py checks it against the scorer's "scope_note".
+NACK_SCOPE_NOTE = ("These results hold for these rosters only; each group is the setups in the run from that original "
+                   "league.")
 EARLIER_NOTE = ("Earlier version: plays were listed in the runner's order, which tends to put the best play early.")
 
 # B7 publishing rule: no internal hostnames, IP addresses, ports, server paths, keys, tokens or request headers in any

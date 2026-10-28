@@ -34,8 +34,8 @@ The "Used in" column abbreviates as follows: L1/L2/L3 = original league; site = 
 | 5 | Claude Fable 5.1 (off) → **Claude Fable 5.1 (low)** | `"low"` (thinking disabled rejected) | 101 | claude-fable-5-1-off → claude-fable-5-1-low | L3; site **league-2** |
 | 6 | Claude Fable 5.1 (on) → **Claude Fable 5.1 (high)** | `"high"` (default) | 1,346 | claude-fable-5-1-on → claude-fable-5-1-high | L3; site league-3; NP (§10.14(g) addition, running) |
 | 7 | Gemini 4 Argon (off) → **Gemini 4 Argon (low)** | `thinkingLevel: "low"`, id `gemini-4-argon-low` | **0** (the setting text should say "spends no reasoning tokens") | gemini-4-argon-off → gemini-4-argon-low | L3; site league-3 |
-| 8 | Gemini 4 Argon (on) → **Gemini 4 Argon (high)** | `"high"`, id `gemini-4-argon-high` | 6,535 | gemini-4-argon-on → gemini-4-argon-high | L3; site league-3; NP (exploratory, `EXPLORATORY`); `leagues/smoke-argon-on.json` |
-| 9 | Grok 4.7 (off) → **Grok 4.7 (low)** | xAI `reasoning.effort: "low"` (none rejected, minimal served as low) | 3,400 | grok-4-7-off → grok-4-7-low | L3; site **league-2** |
+| 8 | Gemini 4 Argon (on) → **Gemini 4 Argon (high)** | `"high"`, id `gemini-4-argon-high` (2,454; smoke 50) | 6,535 | gemini-4-argon-on → gemini-4-argon-high | L3; site league-3; `leagues/smoke-argon-on.json`. NP: left the paired roster under §10.14(h) (commit d3bf2a7); `nack_paired_score.py` now lists Argon (low) as exploratory |
+| 9 | Grok 4.7 (off) → **Grok 4.7 (low)** | xAI `reasoning: {"effort": "low"}` on all 4,742 requests (none rejected, minimal served as low). It reasoned on every one: reasoning tokens per request min / median / max **48 / 1,808 / 29,272** (request/response logs, Main) | 3,400 | grok-4-7-off → grok-4-7-low | L3; site **league-2** |
 | 10 | Grok 4.7 (on) → **Grok 4.7 (high)** | `"high"` (default) | 17,081 | grok-4-7-on → grok-4-7-high | L3; site league-3; NP (§10.14(g) addition, running) |
 | 11 | DeepSeek V4.1 Flash (on) → **DeepSeek V4.1 Flash (low)** | `reasoning_effort: "low"` (OpenRouter/Fireworks, then our SGLang) | 9,579 | deepseek-v4-1-flash-on → deepseek-v4-1-flash-low | L2; site league-2 |
 | 12 | DeepSeek V4.1 Flash 1017 (on) → **DeepSeek V4.1 Flash 1017 (low)** | `reasoning_effort: "low"` (OpenRouter → DeepSeek) | 7,026 | deepseek-v4-1-flash-1017-on → deepseek-v4-1-flash-1017-low | L2 (late entry); site league-2 (not in setups.json: uses the `slug(name)` fallback) |
@@ -60,7 +60,7 @@ Request-log check for rows 1–13: Astra (off) `low` 2,529; Astra (on) `medium` 
 | Qwen3.8-27B (off) | `enable_thinking: false` (7,008; NP 1,000); `reasoning.enabled: false` before 10-19 (1,860); 0 | real off; NP grouped member |
 | Gemma 4 31B (off) | `enable_thinking: false` (5,342); 0 | real off |
 | LFM2.5-24B-A2B (off) | no level and no switch (5,471; NP 1,000): prefilled `<think></think>Answer:`; 0 | real off; NP grouped member (comparison 4) |
-| Kimi K3.1 Pro (off) | `reasoning_effort: "none"` (1,933); 0 (probe: 0) | real off; site league-3 (fallback slug) |
+| Kimi K3.1 Pro (off) | `reasoning_effort: "none"` on all 1,933 requests. OpenRouter reported **0 reasoning tokens on every response**, with 15–16 output tokens and no reasoning text (request/response logs, Main). Probe: 0 | **keep "(off)"**, the no-reasoning label (§1); site league-3 (fallback slug) |
 | Qwen3.8 Flash Next (off) | `enable_thinking: false` (1,012) | real off (withdrawn) |
 | **Gemma 4 31B (on)** | `enable_thinking: true` only, **no level** (12,198; NP 2,000); 5,476 reasoning tok | **keep "(on)"** (template default) |
 | **Qwen3.8 Flash Next (on)** | `enable_thinking: true` only, no level (108) | **keep "(on)"** (withdrawn) |

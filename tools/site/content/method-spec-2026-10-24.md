@@ -835,3 +835,24 @@ f) **Correction to (e), dated 2026-10-28** (Zeki's readback of the retained agen
    - **Unchanged:** original-league groups with each setup weighted equally, M = 5 at 99% for the primary comparisons,
      the 97.5% per-setup stopping rule, the frozen position samples, the prompt non-comparability note and the back-game
      caveat.
+g) **Cup-roster additions, dated 2026-10-28 (Can; written and committed before any model call of the setups below).**
+   The corrected Hype Cup roster (`mailbox/Hype Cup roster 2026-10-28.md`, from the original-league tables) has four
+   teams not yet in this test. Under (b) they are added and join their original league's group:
+   - **Frontier (original League 3):** Claude Fable 5.1 (on) and Grok 4.7 (on).
+   - **Decision models (original League 1):** Liquid d1-ultra and Fastino GLiDE (the hosted Fastino API setup; a
+     different setup from Fastino GLiDE v1.2 (local), which stays in the group as before).
+   Group sizes with the additions: decision models 14, workhorses 9, frontier 3. Each runs with its stored settings
+   (`v3.db` `players.settings`, unchanged), on the same frozen pairs, prompts (`bg-v3-std-notable` / `bg-v3-nack`),
+   option-order seed, rules, retries and invalid-answer rule: first the 400 main positions, then the 600 reserve
+   positions when its first look calls for an extension under the frozen stopping rule (b) of 10.8.
+   - **Primary comparisons, reported both ways:** (i) original members only (the 22 setups of (d)) and (ii) with these
+     additions. (ii) is the primary result per (b). M stays 5, each interval at 99%.
+   - **Everything else** (per-setup results, secondary analyses 10.11, the 10.12 engine check) is recomputed under the
+     same frozen rules. For the engine check, the plays the new setups choose on the 40 frozen pairs are rolled out with
+     the 10.12 settings and added to the stored rollouts.
+   - **Timing, stated wherever these results appear:** these additions are made after this test's results had been
+     computed and read (2026-10-28). They follow the Cup roster, not the results.
+   - **Gemini 4 Argon (on), exploratory (Can, 2026-10-28):** added after a smoke test (stop if its invalid answers are
+     frequent, over 5% in the smoke), under the same rules. It replaces the earlier Argon (high) plan (Argon (on) is
+     thinking level high). It is not added because of the Cup roster, so it belongs to **no group** despite its original
+     League 3: it enters no primary comparison and does not change M. It is reported per setup and labelled exploratory.

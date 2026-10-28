@@ -1,0 +1,32 @@
+{
+  "prompt_version": "bg-v2",
+  "seed": 3685413082999515901,
+  "order_seed": 1190975713392774006,
+  "rounds": 3,
+  "clock": 0,
+  "delay": 30,
+  "max_turns": 300,
+  "mirror_concurrent": true,
+  "hidden": true,
+  "note": "Hype Cup 2026-10-28, quarter-final 2 (seed 2 v seed 6; mailbox/Hype Cup roster 2026-10-28.md, Can's go 2026-10-28): Claude Fable 5.1 (on) v Fastino GLiDE. Hidden league (not on the site, the dashboard or the ladder tools), one Cup tie, a valid match stored by pairing; the league match rules (League 3's seed and pair-v1 dice, bg-v2, option-order seed, mirror_concurrent, 3 rounds, no clock, delay 30 s, 300 turns). A level match goes to the lower error rate in that match (tools/ladder.py cup-winner); no extra rounds. Roster settings unchanged.",
+  "players": [
+    {
+      "name": "Claude Fable 5.1 (on)",
+      "spec": "anthropic/claude-fable-5-1",
+      "provider": "claude-subscription",
+      "reasoning": "high",
+      "price": {
+        "input_per_mtok": 10.0,
+        "output_per_mtok": 50.0
+      },
+      "note": "claude-fable-5-1; effort high, Anthropic's default effort (adaptive thinking). Claude subscription; subscription login; cost is API-list-price equivalent",
+      "parallel": 4
+    },
+    {
+      "name": "Fastino GLiDE",
+      "spec": "fastino",
+      "provider": "fastino",
+      "note": "Fastino's hosted System One API; key added 2026-10-20"
+    }
+  ]
+}

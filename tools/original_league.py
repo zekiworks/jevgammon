@@ -39,6 +39,8 @@ from ladder import PROGRAM_SPECS, pair_matches, played_in  # noqa: E402
 
 LEAGUES = [1, 2, 3]
 ANCHOR = "GNUbg weak"
+# Setups in an original-league table that may not enter this Cup; skipped like programs.
+NOT_IN_CUP = {"GPT-6 Astra (high)": "late entry to League 3, not eligible for the coming Hype Cup (Can, 2026-10-28)"}
 
 
 def connect(db: Path) -> sqlite3.Connection:
@@ -286,7 +288,8 @@ def render_tables(tables: list[dict]) -> str:
 def cup(tables: list[dict], conn) -> dict:
     """Roster, seeds, quarter-final draw and the stored results of every possible Cup pairing."""
     by = {t["lid"]: t for t in tables}
-    models = {lid: [r["name"] for r in by[lid]["rows"] if r["name"] not in by[lid]["programs"]] for lid in LEAGUES}
+    models = {lid: [r["name"] for r in by[lid]["rows"]
+                    if r["name"] not in by[lid]["programs"] and r["name"] not in NOT_IN_CUP] for lid in LEAGUES}
     thirds = sorted(((models[lid][2], lid) for lid in LEAGUES), key=lambda x: rate_key(by[x[1]]["rates"], x[0]))
     seeds = [(models[3][0], 3, "League 3 #1"), (models[3][1], 3, "League 3 #2"),
              (models[2][0], 2, "League 2 #1"), (models[2][1], 2, "League 2 #2"),
@@ -341,6 +344,10 @@ def render_cup(c: dict) -> str:
         out.append(f"| {i} | {name} | {why} | {fmt_rate(by[lid]['rates'], name)} |")
     out.append("\n3rd-placed models: " + "; ".join(
         f"League {lid} {name} {fmt_rate(by[lid]['rates'], name)}" for name, lid in c["thirds"]) + ".\n")
+    for name, why in NOT_IN_CUP.items():
+        where = [t["lid"] for t in by.values() if name in t["names"]]
+        out.append(f"Not eligible: {name}, {why}; " + (f"in the League {where[0]} table, skipped for the roster."
+                                                       if where else "not in any original-league table yet.") + "\n")
     out.append("## Quarter-final draw\n")
     for s, k, skipped in c["steps"]:
         note = ("the one left" if skipped == "forced" else

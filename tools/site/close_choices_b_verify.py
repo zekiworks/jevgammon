@@ -26,7 +26,7 @@ sys.path.insert(0, str(SITE))
 import home  # noqa: E402
 from checks import Tree, text_of, walk  # noqa: E402
 from close_choices_b_publish import NOT_REPORTED  # noqa: E402
-from common import CLOSE_B_SCOPE_NOTE, CONTENT  # noqa: E402
+from common import CLOSE_B_SCOPE_NOTE, CONTENT, label, relabel  # noqa: E402
 
 MD_COLS = ["scored", "exact", "exact_baseline", "exact_p", "overlap", "overlap_baseline", "overlap_p", "same_play",
            "changed_same_features", "observed_nonempty", "predicted_size_mean"]
@@ -74,7 +74,8 @@ def find(root, pred):
 def main():
     out, report, score = Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3])
     bad = []
-    pub = json.loads((CONTENT / "close_choices_b_results.json").read_text())
+    # Team names as the site shows them (content/labels.json); the sources keep the old names.
+    pub = relabel(json.loads((CONTENT / "close_choices_b_results.json").read_text()))
     site = json.loads((out / "data/v3/close-choices-b.json").read_text())
     site.pop("version", None)
     if site != pub:
@@ -82,8 +83,8 @@ def main():
     for team in NOT_REPORTED:
         if team in json.dumps(pub):
             bad.append(f"data file mentions the not-reported team {team}")
-    S = json.loads(score.read_text())
-    md = md_table(report)
+    S = relabel(json.loads(score.read_text()))
+    md = {label(k): v for k, v in md_table(report).items()}
     done = {t["team"]: t for t in pub["complete"]}
     if set(md) != set(done):
         bad.append(f"report teams {sorted(md)} != complete teams {sorted(done)}")

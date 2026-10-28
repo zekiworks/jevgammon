@@ -34,14 +34,24 @@ import checks  # noqa: E402
 import close_choices as CC  # noqa: E402
 import offline as O  # noqa: E402
 import pages  # noqa: E402
-from common import CONTENT, EARLIER, PENDING, PROVISIONAL, PUBLISHED, ROOT, SITE, THRESHOLDS, slug  # noqa: E402
+from common import (CONTENT, EARLIER, INTERNAL, PENDING, PROVISIONAL, PUBLISHED, ROOT, SITE, THRESHOLDS,  # noqa: E402
+                    aliases, relabel, setup_slug)
 
 BASE = "https://zekiworks.github.io/analysis/backgammon/"
 
 
 def load_setups() -> dict:
+    """Setup metadata keyed by (dataset, name the data uses): a renamed league setup is listed under its shown name
+    (content/labels.json) and keyed by its old name, the one the databases and the computation use."""
     data = json.loads((CONTENT / "setups.json").read_text())
-    return {(s["dataset"], s["name"]): s for s in data["setups"]}
+    out = {}
+    for s in data["setups"]:
+        if s["dataset"].startswith("league-") and aliases(s["name"]):
+            s = dict(s, aliases=aliases(s["name"]))
+            out[(s["dataset"], INTERNAL[s["name"]])] = s
+        else:
+            out[(s["dataset"], s["name"])] = s
+    return out
 
 
 def snapshot_time(snap: Path) -> str:
@@ -150,7 +160,7 @@ def league_reasoning(lg: dict, setups: dict, programs: set) -> list[dict]:
         if (lg["dataset"], n) in programs or not m or not m.get("setting"):
             continue
         by_model.setdefault(m["model"], []).append((m["setting"], n, s["quality"]))
-    order = {"off": 0, "low": 0, "on": 1, "high": 1}
+    order = {"off": 0, "low": 1, "on": 2, "medium": 2, "high": 3, "xhigh": 4, "max": 5}
     out = []
     for model, rows in sorted(by_model.items()):
         if len(rows) != 2:
@@ -197,7 +207,8 @@ def write_data(S: dict, out: Path) -> None:
         files.append(f"data/v3/{lg['dataset']}.json")
         for n, s in lg["setups"].items():
             rel = f"data/v3/{lg['dataset']}/{s['slug']}.json"
-            write_json(out, rel, dict(dataset=lg["dataset"], version="v3", status=lg["metric_status"], **s))
+            extra = {"aliases": aliases(n)} if aliases(n) else {}
+            write_json(out, rel, dict(dataset=lg["dataset"], version="v3", status=lg["metric_status"], **s, **extra))
         for n, r in lg["references"].items():
             write_json(out, f"data/v3/{lg['dataset']}/{r['slug']}.json",
                        dict(dataset=lg["dataset"], version="v3", status=lg["metric_status"], **r))
@@ -286,7 +297,8 @@ def showcase(S: dict, pool: dict) -> dict | None:
             med = stakes[len(stakes) // 2]
             d = min(rows, key=lambda r: (abs(r[0] - med), r[1]))[2]
             return dict(league=lg["id"], metric_status=lg["metric_status"], pool=len(rows), median_stake=med,
-                        **pages.hero_numbers(d, f"League {lg['id']}", d["setup"], slug(d["setup"]), d["page"]))
+                        **pages.hero_numbers(d, f"League {lg['id']}", d["setup"], setup_slug(lg["dataset"], d["setup"]),
+                                             d["page"]))
     return None
 
 
@@ -375,7 +387,8 @@ def main():
     args = ap.parse_args()
     out = Path(args.out).expanduser()
     out.mkdir(parents=True, exist_ok=True)
-    S = compute(args)
+    # Shown names (content/labels.json): everything is computed under the databases' names, then relabelled.
+    S = relabel(compute(args))
     S["base"] = BASE
     write_data(S, out)
     import decisions_export

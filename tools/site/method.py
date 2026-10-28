@@ -155,18 +155,20 @@ def _intro() -> str:
 def _setup() -> str:
     return _section("setup", "Setup", f"""
 <p>The question is which model, at which reasoning setting, makes better decisions in which positions. Two kinds of data
-  answer it: league games and shared positions. A <strong>setup</strong> is one model with one set of settings: a model
-  with reasoning off and the same model with reasoning on are two setups.</p>
+  answer it: league games and shared positions. A <strong>setup</strong> is one model with one set of settings: the
+  same model at a lower and a higher reasoning effort is two setups. A setup is named by what its requests sent, checked
+  in the request logs: (low), (medium), (high) = the effort level sent; (off) = reasoning turned off, no reasoning
+  tokens; (on) = thinking switched on where the model offers no effort levels (its chat template's default).</p>
 {_h3("setup-leagues", "Leagues")}
 <p>Setups play each other in leagues: each league is a single round robin. League tables compare players inside one
   league only, and leagues are never merged into one overall score. See <a href="{LEAGUES}">Leagues</a>.</p>
 <ul>
   <li><strong>League 1:</strong> decision models, plus two programs: Random (a random legal play) and Safest (the play
     that the fewest opponent rolls hit).</li>
-  <li><strong>League 2:</strong> workhorse chat models, closed and open, each in two settings (reasoning low and high,
-    or off and on).</li>
-  <li><strong>League 3:</strong> frontier chat models played through their subscriptions, each with reasoning off and
-    on.</li>
+  <li><strong>League 2:</strong> workhorse chat models, closed and open, each in two settings (two effort levels, or
+    reasoning off and a reasoning setting).</li>
+  <li><strong>League 3:</strong> frontier chat models played through their subscriptions, each at its lowest effort
+    (none of them accepts reasoning off) and at its default effort.</li>
   <li><strong>Anchor:</strong> GNU Backgammon at its weak Beginner level plays in all three leagues as a fixed
     reference player (see <a href="#exp-anchor">the reference-player checks</a>).</li>
 </ul>
@@ -525,7 +527,9 @@ def _versions(po: dict) -> str:
   positions, {esc(po["setup"])}'s error rate changed by {fmt(diff, 1, signed=True)} (95% interval {fmt(lo, 1)} to
   {fmt(hi, 1)}), {reading}. The current version shuffles the plays for every setup.</p>
 <p>The earlier version also scored differently: every legal play at 0-ply, then the five best and the chosen play again
-  at 2-ply. The current version evaluates every legal play at 2-ply.</p>""")
+  at 2-ply. The current version evaluates every legal play at 2-ply.</p>
+<p><strong>Changelog.</strong> 28 Oct 2026: setups renamed to the reasoning effort they sent. 5 setups changed from
+  (off) to (low). No score changed.</p>""")
 
 
 def _confidence(t: dict, extra: dict) -> str:

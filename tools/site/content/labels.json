@@ -1,0 +1,25 @@
+{
+ "_about": "Setup display names (Can, 28 Oct 2026): every setup is named by the reasoning effort its requests sent, checked against the request logs. The databases, league configs, freeze files and URL slugs keep the old names; the site computes with them (bootstrap seeds and slugs come from the old name) and shows the new one. Old names stay as aliases in the data files.",
+ "changed": "2026-10-28",
+ "renamed": {
+  "GPT-6 Astra (off)": {"name": "GPT-6 Astra (low)", "sent": "reasoning effort low"},
+  "GPT-6 Astra (on)": {"name": "GPT-6 Astra (medium)", "sent": "reasoning effort medium"},
+  "Claude Opus 5.5 (off)": {"name": "Claude Opus 5.5 (low)", "sent": "effort low"},
+  "Claude Opus 5.5 (on)": {"name": "Claude Opus 5.5 (high)", "sent": "effort high"},
+  "Claude Fable 5.1 (off)": {"name": "Claude Fable 5.1 (low)", "sent": "effort low"},
+  "Claude Fable 5.1 (on)": {"name": "Claude Fable 5.1 (high)", "sent": "effort high"},
+  "Gemini 4 Argon (off)": {"name": "Gemini 4 Argon (low)", "sent": "thinking level low"},
+  "Gemini 4 Argon (on)": {"name": "Gemini 4 Argon (high)", "sent": "thinking level high"},
+  "Grok 4.7 (off)": {"name": "Grok 4.7 (low)", "sent": "reasoning effort low"},
+  "Grok 4.7 (on)": {"name": "Grok 4.7 (high)", "sent": "reasoning effort high"},
+  "DeepSeek V4.1 Flash (on)": {"name": "DeepSeek V4.1 Flash (low)", "sent": "reasoning effort low"},
+  "DeepSeek V4.1 Flash 1017 (on)": {"name": "DeepSeek V4.1 Flash 1017 (low)", "sent": "reasoning effort low"},
+  "GLM-5.3 (on)": {"name": "GLM-5.3 (low)", "sent": "reasoning effort low"},
+  "Qwen3.8-27B (on)": {"name": "Qwen3.8-27B (low)", "sent": "reasoning effort low (the chat template's reasoning_effort)"}
+ },
+ "notes": {
+  "Gemini 4 Argon (low)": "The API reported 0 thinking tokens, but the responses carry thought signatures.",
+  "Claude Fable 5.1 (low)": "Reasoned on 365 of 3,967 decisions.",
+  "DeepSeek V4.1 Flash (off)": "232 early requests sent no reasoning field. All responses had 0 reasoning tokens."
+ }
+}

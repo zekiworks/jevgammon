@@ -35,6 +35,47 @@ def slug(name: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
 
 
+# Setup display names (content/labels.json, 28 Oct 2026): setups are named by the reasoning effort they sent. The
+# databases keep the old names; the site computes with them and shows the new ones.
+LABELS = json.loads((CONTENT / "labels.json").read_text())
+RENAMED = {old: v["name"] for old, v in LABELS["renamed"].items()}
+INTERNAL = {new: old for old, new in RENAMED.items()}
+# What a shown name does not tell (on the setup's model page), by shown name.
+NAME_NOTES = LABELS["notes"]
+
+
+def label(name: str) -> str:
+    """The name a setup is shown under."""
+    return RENAMED.get(name, name)
+
+
+def aliases(name: str) -> list[str]:
+    """Earlier names of a shown setup (empty when it was never renamed)."""
+    return [INTERNAL[name]] if name in INTERNAL else []
+
+
+def setup_slug(dataset: str, name: str) -> str:
+    """URL slug of a league setup: from its name before the relabel, so links keep working."""
+    return slug(INTERNAL.get(name, name) if dataset.startswith("league-") else name)
+
+
+def relabel(obj):
+    """`obj` with every string equal to a renamed setup's old name (as a value, a dict key or inside a tuple key)
+    replaced by its shown name. Exact matches only; numbers and other strings are untouched; an "aliases" list keeps
+    the old names."""
+    if isinstance(obj, str):
+        return RENAMED.get(obj, obj)
+    if isinstance(obj, dict):
+        return {relabel(k): v if k == "aliases" else relabel(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [relabel(x) for x in obj]
+    if isinstance(obj, tuple):
+        return tuple(relabel(x) for x in obj)
+    if isinstance(obj, (set, frozenset)):
+        return type(obj)(relabel(x) for x in obj)
+    return obj
+
+
 def esc(x) -> str:
     return html.escape(str(x), quote=True)
 

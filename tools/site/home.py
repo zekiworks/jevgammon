@@ -973,7 +973,7 @@ def tab_body(S, key: str) -> str:
         "risk": "Risk calls per setup: was each risk the right one, and was safe right when it played safe?",
         "quality": "How much equity each move gives away, judged by the engine, not by wins.",
         "confidence": "Does a setup's probability show when its play is likely wrong?",
-        "reasoning": "The same model at two reasoning settings.",
+        "reasoning": "The same model at a lower and a higher reasoning setting, each named by the effort its requests sent.",
         "cost": "Dollars per 1,000 decisions and seconds per decision.",
         "stability": "Does a setup repeat its play on the same position?"}[key]
     marks = ('<p class="table-note">\u00a7 list-price estimate; runs on our GPUs · \u2020 plays split into groups · '

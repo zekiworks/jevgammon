@@ -33,7 +33,7 @@ sys.path.insert(0, str(SITE.parent / "v3"))
 sys.path.insert(0, str(SITE.parent))
 
 import analysis  # noqa: E402  (module import: analysis imports this module too; risk_class is read at call time)
-from common import EARLIER, PROVISIONAL, PROVISIONAL_NOTE, slug  # noqa: E402
+from common import EARLIER, PROVISIONAL, PROVISIONAL_NOTE, label, setup_slug  # noqa: E402
 from rules import from_json, pips  # noqa: E402
 import replay  # noqa: E402
 
@@ -76,9 +76,10 @@ def board(pos):
 
 
 def write_page(root, ds, setup, page, pages, decisions):
-    path = root / ds / slug(setup) / f"{page}.json.gz"
+    path = root / ds / setup_slug(ds, setup) / f"{page}.json.gz"
     path.parent.mkdir(parents=True, exist_ok=True)
-    doc = {"dataset": ds, "setup": setup, "slug": slug(setup), "page": page, "pages": pages, "decisions": decisions}
+    doc = {"dataset": ds, "setup": setup, "slug": setup_slug(ds, setup), "page": page, "pages": pages,
+           "decisions": decisions}
     raw = json.dumps(doc, ensure_ascii=False, separators=(",", ":")).encode()
     path.write_bytes(gzip.compress(raw, compresslevel=9, mtime=0))
 
@@ -133,7 +134,7 @@ def write_risk_index(root, ds, setup, rows) -> dict:
     """rows: (page, id, decision['risk'], decision['close']); each item [page, id, class, call, band, close]; returns the
     counts per class and per call for index.json (the pre-deploy check compares them with the analysis) and the
     close-choice counts (Method spec 2026-10-24 §9)."""
-    path = root / ds / slug(setup) / "risk.json.gz"
+    path = root / ds / setup_slug(ds, setup) / "risk.json.gz"
     path.parent.mkdir(parents=True, exist_ok=True)
     cc = lambda c: None if c is None else int(c["close"])
     items = [([pg, i, RISK_CODE[r["class"]], CALL_CODE[r["call"]], BAND_CODE[r["band"]]] if r else [pg, i, None, None, None])
@@ -194,12 +195,14 @@ def close_mark(rec, order) -> dict | None:
 def export_league(root, ds, sdb, shards, pdb, contexts, close):
     league = ds["league_id"]
     # The league's current participants in join order (league_web.participants), programs by players.spec.
-    models = sdb.execute("""SELECT p.name, p.spec FROM league_players lp JOIN players p ON p.id = lp.player_id
-                            WHERE lp.league_id = ? AND lp.left_at IS NULL ORDER BY lp.id""", (league,)).fetchall()
+    # Names as shown (content/labels.json); slugs stay those of the databases' names.
+    models = [(label(name), spec) for name, spec in sdb.execute(
+        """SELECT p.name, p.spec FROM league_players lp JOIN players p ON p.id = lp.player_id
+           WHERE lp.league_id = ? AND lp.left_at IS NULL ORDER BY lp.id""", (league,)).fetchall()]
     programs = {name for name, spec in models if spec in PROGRAM_SPECS}
     turns, setup_of = {}, {}
     for r in sdb.execute(TURNS, (league,)):
-        turns[r[0]], setup_of[r[0]] = tuple(r[:-1]), r[-1]
+        turns[r[0]], setup_of[r[0]] = tuple(r[:-1]), label(r[-1])
     by_setup = {name: [] for name, _ in models}
     # The league's scored decisions: every scored turn of a match in the league's view (a setup that
     # moved leagues keeps its matches here, whatever league its plays row was scored under).
@@ -256,8 +259,9 @@ def export_league(root, ds, sdb, shards, pdb, contexts, close):
                 mark_risk(decisions[-1], entries, order, page)
                 risk_rows.append((page, tid, decisions[-1]["risk"], decisions[-1]["close"]))
             write_page(root, ds["id"], setup, page, len(chunks), decisions)
-        out[setup] = {"slug": slug(setup), "decisions": len(ids), "invalid": invalid, "pages": len(chunks),
-                      "program": program, "risk": write_risk_index(root, ds["id"], setup, risk_rows)}
+        out[setup] = {"slug": setup_slug(ds["id"], setup), "decisions": len(ids), "invalid": invalid,
+                      "pages": len(chunks), "program": program,
+                      "risk": write_risk_index(root, ds["id"], setup, risk_rows)}
     return out
 
 
@@ -338,8 +342,9 @@ def export_v1(root, ds, rdb, v1_positions, contexts):
                 mark_risk(decisions[-1], entries, range(len(names)), page)
                 risk_rows.append((page, lab["id"], decisions[-1]["risk"], None))
             write_page(root, ds["id"], model, page, len(chunks), decisions)
-        out[model] = {"slug": slug(model), "decisions": len(rows), "invalid": invalid, "pages": len(chunks),
-                      "program": False, "risk": write_risk_index(root, ds["id"], model, risk_rows)}
+        out[model] = {"slug": setup_slug(ds["id"], model), "decisions": len(rows), "invalid": invalid,
+                      "pages": len(chunks), "program": False,
+                      "risk": write_risk_index(root, ds["id"], model, risk_rows)}
     return out
 
 

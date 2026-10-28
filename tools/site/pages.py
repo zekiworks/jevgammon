@@ -5,8 +5,8 @@ import json
 from pathlib import Path
 
 import analysis as A
-from common import (EARLIER, EARLIER_NOTE, NA, NOT_MEASURED, PENDING, PROVISIONAL, PROVISIONAL_NOTE, PUBLISHED,
-                    TOO_FEW, count, esc, fmt, nm, pct, slug, status_badge)
+from common import (EARLIER, EARLIER_NOTE, NA, NAME_NOTES, NOT_MEASURED, PENDING, PROVISIONAL, PROVISIONAL_NOTE,
+                    PUBLISHED, TOO_FEW, aliases, count, esc, fmt, nm, pct, setup_slug, slug, status_badge)
 
 # B4: the nav of decision-models' form; model pages open from the table rows, New models is linked from Data.
 NAV = [("decisions/", "Every decision"), ("disagreements/", "Where models disagree"), ("phases/", "Phases"),
@@ -93,8 +93,9 @@ def meta(S, dataset, name) -> dict:
     m = S["setups_meta"].get((dataset, name))
     if m:
         return m
-    return dict(dataset=dataset, name=name, slug=slug(name), model=name, setting=None, model_type=None,
-                weights=None, runs_on=None, confidence_source=None, missing=["every B7 field"], sources=[])
+    return dict(dataset=dataset, name=name, slug=setup_slug(dataset, name), model=name, setting=None, model_type=None,
+                weights=None, runs_on=None, confidence_source=None, missing=["every B7 field"], sources=[],
+                aliases=aliases(name) if dataset.startswith("league-") else [])
 
 
 def model_href(rel, dataset, name, S) -> str:
@@ -295,7 +296,7 @@ def league_reasoning_table(S, lg) -> str:
         return f'<p>{nm(NA)}: no model plays this league at two reasoning settings.</p>'
     head = ["Model", "Error rate (PR), lower setting", "Error rate (PR), higher setting", "In league play",
             "Extra median s per decision", "Extra $ per 1,000 decisions"]
-    return (SWIPE + table(head, rows, "The same model at two settings in this league's games",
+    return (SWIPE + table(head, rows, "The same model at a lower and a higher reasoning setting in this league's games",
                           attrs=f' data-dataset="{lg["dataset"]}"')
             + '<p class="table-note">League games are not the same positions, so this comparison is not paired: it reads '
               '"lower/higher error rate in league play" only when the two 95% intervals do not overlap, and "no clear '
@@ -541,6 +542,11 @@ def facts(m: dict, q: dict | None) -> str:
         out.append(f"<dt>{label}</dt><dd>{esc(v) if v else nm('Missing')}</dd>")
     if m.get("play_order"):
         out.append(f"<dt>Play order</dt><dd>{esc(m['play_order'])}</dd>")
+    if m.get("aliases"):
+        out.append(f"<dt>Earlier name</dt><dd>{esc(', '.join(m['aliases']))} (renamed on 28 Oct 2026 to the reasoning "
+                   f"effort its requests sent)</dd>")
+    if m.get("dataset", "").startswith("league-") and NAME_NOTES.get(m.get("name")):
+        out.append(f"<dt>Reasoning, from the logs</dt><dd>{esc(NAME_NOTES[m['name']])}</dd>")
     return f'<dl class="facts">{"".join(out)}</dl>'
 
 
@@ -731,7 +737,7 @@ def model_page(S, dataset: str, name: str, entry: dict | None, smoke_row: dict |
         note = f'<p class="note">{esc(play_order_note(S))}</p>' if dataset == "v1-set" else ""
         parts.append(f'<section class="card" id="results"><h2>Results in {esc(where)}</h2>{note}<dl class="facts">{cells}</dl>'
                      f'<p><a href="{rel}decisions/?d={dataset}&amp;s={m["slug"] if dataset != "v1-set" else slug(name)}">Every decision of this setup</a> · '
-                     f'<a href="{rel}data/{"v1/v1-set" if dataset == "v1-set" else "v3/" + dataset}/{slug(name)}.json">JSON</a></p></section>')
+                     f'<a href="{rel}data/{"v1/v1-set" if dataset == "v1-set" else "v3/" + dataset}/{setup_slug(dataset, name)}.json">JSON</a></p></section>')
         if r["trade_off"]:
             top = max(r["calls"].values()) or 1
             bars = "".join(f'<div class="cc-row"><span class="cc-l">{esc(lab)}</span><span class="cc-bar {cls}" '

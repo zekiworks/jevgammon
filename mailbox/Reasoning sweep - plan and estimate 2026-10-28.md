@@ -52,9 +52,25 @@ OpenRouter does not echo the effort it applied, so a silent mapping cannot be se
 
 The server (127.0.0.1:8897) was **not up** at 16:03 (connection refused). Probe **pending**: no server started, no GPU taken.
 
-### 1c. Subscriptions (Codex, Claude, Antigravity, xAI): pending
+### 1c. Subscriptions
 
-Season2 owns the running jobs. Codex, Claude and Antigravity are expected free together at about 18:00 UTC; xAI after Grok's paired run. Each probe runs only when Season2 says that subscription is free. Results will go here.
+Season2 owns the running jobs. Each probe runs only when Season2 says that subscription is free, and the subscription is held until "done".
+
+**Claude (done 18:13–18:14 UTC; Season2 held the subscription).** 30 requests, `smoke/effort-probe.db` rows with route `claude`. Request: `output_config.effort` as the harness sends it, `max_tokens` 4,096. Anthropic echoes no effort, so mapping is judged from the thinking tokens reported (`usage.output_tokens_details.thinking_tokens`) and whether a thinking block is present.
+
+| Model | absent | none | minimal | low | medium | high | xhigh | max | `thinking: disabled` | `thinking: between_tools` |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Claude Fable 5.1 | ✓ 0 | ✗ 400 | ✗ 400 | ✓ 0 | ✓ 0 | ✓ 0 | ✓ **112** (thinking block) | ✓ **101** (thinking block) | ✗ 400 "not supported for this model. Use thinking.type.adaptive and output_config.effort" | ✗ 400 "not supported for this model" |
+| Claude Opus 5.5 | ✓ 53 | ✗ 400 | ✗ 400 | ✓ 57 | ✓ 53 | ✓ 53 | ✓ 61 | ✓ **114** | ✗ 400 (same) | ✗ 400 "not supported for this model" |
+| Claude Sonnet 5.5 | ✓ 0 | ✗ 400 | ✗ 400 | ✓ 0 | ✓ 0 | ✓ 0 | ✓ **59** (thinking block) | ✓ **200** (thinking block) | ✗ 400 "To turn thinking off on this model, send "thinking": {"type": "between_tools"} instead of {"type": "disabled"}" | ✓ **0 thinking tokens**, no thinking block (75 output tokens) |
+
+✓ = 200, followed by the thinking tokens reported. The 400 text for `none`/`minimal` is: "output_config.effort: Input should be 'low', 'medium', 'high', 'xhigh' or 'max'".
+- **Probed top: `max`, accepted on all three, not mapped down as far as the response shows.** Max used more thinking than high in every case: Fable 101 vs 0, Opus 114 vs 53, Sonnet 200 vs 0. `xhigh` is accepted too.
+- On this tiny prompt, low, medium and high cannot be told apart (Fable and Sonnet did not think at all). This is a single sample.
+- No response came near the limit: the largest was 203 output tokens, against `max_tokens` 4,096.
+- **No-reasoning setting:** only **Claude Sonnet 5.5**, through `thinking: {"type": "between_tools"}` (0 thinking tokens). Fable and Opus have none: adaptive thinking only, with low as the lowest effort.
+
+**ChatGPT (Codex), Antigravity, xAI:** pending. Season2 will free them (ChatGPT and Antigravity after the Astra (high) v Argon (on) match; xAI after Grok's paired run).
 
 ## 2. Sweep rows (b): missing partners on the 500 standard positions (estimates)
 
@@ -81,7 +97,8 @@ Not needed:
 
 **"If available" no-reasoning rows:**
 - **Terra (none), OpenRouter:** accepted. About $1.6 billed for 500, based on the logged (low) run of $1.853 minus the output it saves.
-- **Subscriptions:** wait for the probe. Notes already say Astra rejects none/minimal, Claude rejects thinking disabled, and Grok rejects none. For Gemini 3.8 Flash, Antigravity listed `minimal`; an estimate for it would be about the (low) cost.
+- **Claude Sonnet 5.5 (off), via `thinking: between_tools`:** available (probe). Per decision: input 3,672, output ≈ 11 (the answer only; logged non-thinking replies). For 500 decisions: about $3.7 API-equivalent (not money) and about 5 min. Fable and Opus have no off.
+- **Other subscriptions:** waiting for the probe. Notes already say Astra rejects none/minimal and Grok rejects none. For Gemini 3.8 Flash, Antigravity listed `minimal`; an estimate for it would be about the (low) cost.
 
 **Sum of (b):** API-equivalent about $87 (not money). Per subscription, serial: ChatGPT ≈ 0.6 h, Claude ≈ 0.9 h, Antigravity ≈ 1.2 h, xAI ≈ 0.5 h, GPU ≈ 2.3 h.
 
@@ -116,9 +133,9 @@ Credit: about $1.725 left, shared with the Turkish benchmark. After reserving $0
 | GPT-6 Astra (max), Codex | max | pending | if confirmed | high 172 | 2,599 | 690 [390–1,990] | 0.34 [0.19–1.0] | $30 [23–63] | 2.0 h [1.1–5.8] | low |
 | GPT-6.1 Sol (max), Codex | max | pending | if confirmed | high 302 | 2,599 | 1,210 [680–3,490] | 0.60 [0.34–1.7] | $8.6 [6.0–20] | 2.6 h [1.4–7.4] | low |
 | GPT-6.1 Terra (max), Codex | max | pending (OpenRouter: `max` accepted, listed) | if confirmed | high 209 | 2,599 | 840 [470–2,420] | 0.42 [0.24–1.2] | $3.4 [2.5–7.3] | 0.9 h [0.5–2.7] | low |
-| Claude Opus 5.5 (max) | max | pending | if confirmed | high 390 | 3,672 | 1,560 [880–4,510] | 0.78 [0.44–2.3] | $23 [16–52] | 1.2 h [0.7–3.6] | low |
-| Claude Sonnet 5.5 (max) | max | pending | if confirmed | high 510 | 3,672 | 2,040 [1,150–5,900] | 1.0 [0.57–2.9] | $14 [9–33] | 1.2 h [0.7–3.4] | low |
-| Claude Fable 5.1 (max) | max | pending | if confirmed | high 754 | 3,672 | 3,020 [1,700–8,720] | 1.5 [0.85–4.4] | $94 [61–236] | 1.6 h [0.9–4.7] | low–moderate (tail) |
+| Claude Opus 5.5 (max) | max | **max accepted**; not mapped down (thinking 114 vs 53 at high) | **yes** (wait for Can's go) | high 390 | 3,672 | 1,560 [880–4,510] | 0.78 [0.44–2.3] | $23 [16–52] | 1.2 h [0.7–3.6] | low (probe responses ≤ 203 tokens) |
+| Claude Sonnet 5.5 (max) | max | **max accepted**; not mapped down (200 vs 0 at high) | **yes** (wait for Can's go) | high 510 | 3,672 | 2,040 [1,150–5,900] | 1.0 [0.57–2.9] | $14 [9–33] | 1.2 h [0.7–3.4] | low |
+| Claude Fable 5.1 (max) | max | **max accepted**; not mapped down (101 vs 0 at high) | **yes** (wait for Can's go) | high 754 | 3,672 | 3,020 [1,700–8,720] | 1.5 [0.85–4.4] | $94 [61–236] | 1.6 h [0.9–4.7] | low–moderate (tail) |
 | Grok 4.7 (xhigh), xAI | xhigh | pending | if confirmed | high 9,107 | 3,868 | 18,200 [13,700–31,000] | 9.1 [6.8–15.5] | $58 [45–97] | 4.9 h [3.7–8.3] | **high**: the mean is already more than half the limit, and Grok (on)'s league tail reaches far beyond it |
 | Qwen3.8-27B (xhigh), our GPU | xhigh | pending (server down) | when the server is up | low 3,600 | ≈ 19,800 | 14,400 [8,100–41,600] | 7.2 [4.1–20.8] | $0 (≈ 9.3 GPU-h [5.2–27]) | ≈ 9.3 h | **high**: the upper range is above the limit |
 | DeepSeek 1017 (max), OpenRouter | max | **max accepted, listed** | after top-up | low 4,570 | 2,639 | 18,300 [10,300–52,800] | 9.1 [5.1–26] | billed $5.7 [3.3–16] | 2.0 h [1.1–5.8] | **high** |

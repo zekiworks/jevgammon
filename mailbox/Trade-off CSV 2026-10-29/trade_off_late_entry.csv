@@ -1,0 +1,2 @@
+setup_id,display_name,league,setting_sent,trade_off_decisions,risks_taken,risk_win,risk_loss,safe_plays,safe_win,safe_loss,usd_trade_off,tokens_in_mean,tokens_out_mean
+gpt-6-astra-high,GPT-6 Astra (high),league-3 (late entry),high,1018,279,25305.1725,1286.9224,739,52505.0602,6519.1463,64.8563,5171.2613,239.9391

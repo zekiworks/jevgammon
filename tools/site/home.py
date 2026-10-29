@@ -238,8 +238,8 @@ def robust_table(S, lg, phase="all") -> str:
 
 
 def reasoning_sdt_table(S, lg) -> str:
-    """Item 4 for Leagues 2 and 3: ability and caution of one model at its two reasoning settings in this league, with
-    the change and the time and tokens it costs. Different positions: UNPAIRED."""
+    """Item 4: ability and caution of one model at its two reasoning settings in this league (every model with both
+    settings in the league's games), with the change and the time and tokens it costs. Different positions: UNPAIRED."""
     if not lg["reasoning"]:
         return ""
     rows = []

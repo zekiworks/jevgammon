@@ -422,7 +422,7 @@ def _risk(t: dict, extra: dict) -> str:
     when d′ ≤ 0; "unstable: d′ near zero" (value shown, no mark) when the lower end of the d′ interval is 0 or below;
     "unstable" (value shown, no mark) when fewer than {_value(SPEC["cost_min_risks"])} needless or missed risks are
     behind a mean cost. Only the remaining values get the short reference mark on the chart.</li>
-  <li><strong>By reasoning setting</strong> (Leagues 2 and 3): ability and caution of the same model at its lower and
+  <li><strong>By reasoning setting</strong> (every model with both settings in one league's games): ability and caution of the same model at its lower and
     higher setting, the change, and the time and output tokens per decision. UNPAIRED: the two settings met different
     positions.</li>
   <li><strong>Limits</strong>: a simple model of the risk call (equal-variance signal detection); setups met different

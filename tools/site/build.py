@@ -156,12 +156,19 @@ def compute(args) -> dict:
 
 
 def league_reasoning(lg: dict, setups: dict, programs: set) -> list[dict]:
-    """One model at two reasoning settings inside one league. League games are not the same positions, so this is
-    not paired and gets no verdict label (B9): 'lower/higher error rate in league play' when the two 95% intervals
-    do not overlap, otherwise 'no clear difference in league play'."""
+    """One model at two reasoning settings inside one league: every model with both settings in this league's published
+    data. League games are not the same positions, so this is not paired and gets no verdict label (B9): 'lower/higher
+    error rate in league play' when the two 95% error-rate intervals do not overlap, otherwise 'no clear difference in
+    league play'. Risk judgement (margin 0.001) is kept separately, with its own intervals and whether they overlap."""
+    # A setup that moved league (ladder) keeps its identity: players.name is unique, so its setups.json entry under its
+    # original league gives its model and setting here too.
+    moved = {}
+    for (d, n), m in setups.items():
+        if d.startswith("league-"):
+            moved.setdefault(n, []).append(m)
     by_model = {}
     for n, s in lg["setups"].items():
-        m = setups.get((lg["dataset"], n))
+        m = setups.get((lg["dataset"], n)) or (moved[n][0] if len(moved.get(n, [])) == 1 else None)
         if (lg["dataset"], n) in programs or not m or not m.get("setting"):
             continue
         by_model.setdefault(m["model"], []).append((m["setting"], n, s["quality"]))
@@ -185,11 +192,18 @@ def league_reasoning(lg: dict, setups: dict, programs: set) -> list[dict]:
             a, b = lg["setups"][na]["risk"][m]["sdt"], lg["setups"][nb]["risk"][m]["sdt"]
             sdt[m] = None if a["na"] or b["na"] else dict(
                 dprime_change=b["dprime"] - a["dprime"], caution_change=b["caution"] - a["caution"])
+        # Risk judgement at margin 0.001 (the risk card's number), its saved 95% intervals and whether they overlap.
+        # Overlap is a description, not an effect test; the change is from the unrounded values.
+        ra, rb = lg["setups"][na]["risk"]["main"], lg["setups"][nb]["risk"]["main"]
+        risk = None if None in (ra["judgement"], rb["judgement"]) else dict(
+            change=rb["judgement"] - ra["judgement"],
+            overlap=not (rb["judgement_lo"] > ra["judgement_hi"] or rb["judgement_hi"] < ra["judgement_lo"]))
         out.append(dict(model=model, low=na, high=nb, low_setting=sa, high_setting=sb, reading=reading,
                         extra_time_median=(qb["time_median"] - qa["time_median"])
                         if None not in (qb.get("time_median"), qa.get("time_median")) else None,
                         extra_cost=(qb["usd_per_1000"] - qa["usd_per_1000"])
-                        if None not in (qb.get("usd_per_1000"), qa.get("usd_per_1000")) else None, sdt=sdt))
+                        if None not in (qb.get("usd_per_1000"), qa.get("usd_per_1000")) else None, sdt=sdt,
+                        risk=risk))
     return out
 
 

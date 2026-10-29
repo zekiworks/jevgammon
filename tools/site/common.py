@@ -42,6 +42,8 @@ RENAMED = {old: v["name"] for old, v in LABELS["renamed"].items()}
 INTERNAL = {new: old for old, new in RENAMED.items()}
 # What a shown name does not tell (on the setup's model page), by shown name.
 NAME_NOTES = LABELS["notes"]
+# What the Reasoning tab says about how a model's two settings differ, by model (where its names don't tell).
+REASONING_NOTES = LABELS["reasoning_notes"]
 
 
 def label(name: str) -> str:

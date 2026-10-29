@@ -6,7 +6,8 @@ from pathlib import Path
 
 import analysis as A
 from common import (EARLIER, EARLIER_NOTE, NA, NAME_NOTES, NOT_MEASURED, PENDING, PROVISIONAL, PROVISIONAL_NOTE,
-                    PUBLISHED, TOO_FEW, aliases, count, esc, fmt, nm, pct, setup_slug, slug, status_badge)
+                    PUBLISHED, REASONING_NOTES, TOO_FEW, aliases, count, esc, fmt, nm, pct, setup_slug, slug,
+                    status_badge)
 
 # B4: the nav of decision-models' form; model pages open from the table rows, New models is linked from Data.
 NAV = [("decisions/", "Every decision"), ("disagreements/", "Where models disagree"), ("phases/", "Phases"),
@@ -281,26 +282,52 @@ def readouts(S) -> str:
 
 
 def league_reasoning_table(S, lg) -> str:
-    """Reasoning inside one league: not paired, so no verdict label (B9)."""
-    rows = []
+    """Reasoning inside one league: every model with both settings in this league's games. Not paired, so no verdict
+    label (B9). Risk judgement and error rate are separate measures, read separately."""
+    def judgement(r):
+        if r["judgement"] is None:
+            return f'<td class="num">{nm(r["judgement_na"])}</td>'
+        return (f'<td class="num">{fmt(r["judgement"])}<span class="small">{fmt(r["judgement_lo"])} to '
+                f'{fmt(r["judgement_hi"])}</span></td>')
+    rows, notes = [], []
     for r in lg["reasoning"]:
-        qa, qb = lg["setups"][r["low"]]["quality"], lg["setups"][r["high"]]["quality"]
+        lo, hi = lg["setups"][r["low"]], lg["setups"][r["high"]]
+        qa, qb = lo["quality"], hi["quality"]
         reading = esc(r["reading"]) if r["reading"] else nm(TOO_FEW)
+        if r["risk"] is None:
+            change = overlap = f'<td class="num">{nm(NA)}</td>'
+        else:
+            change = f'<td class="num">{fmt(r["risk"]["change"], 1, True)}</td>'
+            overlap = f'<td>{"yes" if r["risk"]["overlap"] else "no"}</td>'
         rows.append(f'<tr data-dataset="{lg["dataset"]}"><td class="model"><span class="model-name">{esc(r["model"])}</span>'
                     f'<span class="small">{esc(r["low_setting"])} \u2192 {esc(r["high_setting"])}</span></td>'
+                    + judgement(lo["risk"]["main"]) + judgement(hi["risk"]["main"]) + change + overlap
                     + er_cell(qa) + er_cell(qb)
                     + f'<td>{reading}</td>'
+                    + f'<td class="num">{secs(qa.get("time_median"))} \u2192 {secs(qb.get("time_median"))}</td>'
                     + f'<td class="num">{fmt(r["extra_time_median"], 1, True) if r["extra_time_median"] is not None else nm(NOT_MEASURED)}</td>'
                     + f'<td class="num">{fmt(r["extra_cost"], 3, True) if r["extra_cost"] is not None else nm(NOT_MEASURED)}</td></tr>')
+        if REASONING_NOTES.get(r["model"]):
+            notes.append(f'<strong>{esc(r["model"])}</strong>: {esc(REASONING_NOTES[r["model"]])}')
     if not rows:
         return f'<p>{nm(NA)}: no model plays this league at two reasoning settings.</p>'
-    head = ["Model", "Error rate (PR), lower setting", "Error rate (PR), higher setting", "In league play",
-            "Extra median s per decision", "Extra $ per 1,000 decisions"]
+    head = ["Model", "Risk judgement, lower setting", "Risk judgement, higher setting", "Risk judgement change",
+            "Risk judgement intervals overlap", "Error rate (PR), lower setting", "Error rate (PR), higher setting",
+            "Error rate, in league play", "Median s per decision", "Extra median s per decision",
+            "Extra $ per 1,000 decisions"]
     return (SWIPE + table(head, rows, "The same model at a lower and a higher reasoning setting in this league's games",
                           attrs=f' data-dataset="{lg["dataset"]}"')
-            + '<p class="table-note">League games are not the same positions, so this comparison is not paired: it reads '
-              '"lower/higher error rate in league play" only when the two 95% intervals do not overlap, and "no clear '
-              'difference in league play" otherwise. The paired verdict waits for the shared positions.</p>')
+            + '<p class="table-note">Every model with both settings in this league\'s games is listed. Risk judgement '
+              '(margin 0.001, 95% intervals from resampling whole games) and error rate are two separate measures: the '
+              '"Error rate, in league play" column is about error rate only and says nothing about risk judgement. The '
+              'risk judgement change is the higher setting minus the lower, from unrounded values. Whether two intervals '
+              'overlap describes them; it is not a test of a difference.</p>'
+            + '<p class="table-note">League games are not the same positions, so this comparison is not paired and shows '
+              'no effect of the setting: a higher or lower value at the higher setting is not evidence that reasoning '
+              'caused it. For error rate it reads "lower/higher error rate in league play" only when the two 95% '
+              'intervals do not overlap, and "no clear difference in league play" otherwise. The paired verdict waits '
+              'for the shared positions.</p>'
+            + "".join(f'<p class="table-note">{n}</p>' for n in notes))
 
 
 SITE_CSS_DIR = Path(__file__).resolve().parent / "assets"

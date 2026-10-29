@@ -993,6 +993,10 @@ def champions(S) -> str:
         w = lg.get("winner")
         val = (f'<a href="{P.model_href("", lg["dataset"], w, S)}">{esc(w)}</a>' if w else nm(lg["status"]))
         items.append(f'<li class="readout"><span class="readout-label">League {lg["id"]}:</span> <span class="readout-value champ">{val}</span></li>')
+    # The Hype Cup champion: the cross-league champion (an event, not a ranking: the Cup card says so).
+    c = S["cup"]
+    val = f'<a href="leagues/#hype-cup">{esc(c["champion"])}</a>' if c["champion"] else nm("To play")
+    items.append(f'<li class="readout"><span class="readout-label">Hype Cup:</span> <span class="readout-value champ">{val}</span></li>')
     return (f'<div class="readout-row champions"><span class="readout-label">League winners · match results</span>'
             f'<ul class="readouts">{"".join(items)}</ul></div>')
 

@@ -1,0 +1,32 @@
+{
+ "source": "Hype Cup roster of 28 Oct 2026 (built by tools/original_league.py cup from the original-league tables); rules: backgammon-ladder-cup brief, Part 2, with the amendments of 27 and 28 Oct 2026",
+ "name": "Hype Cup",
+ "roster_rule": "Teams from the original-league tables: each setup in its original league, only matches within it count (3 points a win, 1 a draw, 0 a loss; tiebreak: head-to-head, then the lower error rate; rule set on 28 Oct, after the ties were known). The top 2 models of each table and the two best 3rd places by error rate; programs and late entries are not eligible.",
+ "honesty": "The Cup is an event. The error rate is the ranking.",
+ "stored_rule": "Two setups play each other once: a pairing already played in a league stands, and the bracket shows where it was played.",
+ "level_rule": "A level match goes to the setup with the lower error rate in that match.",
+ "seeds": [
+  {"seed": 1, "name": "GPT-6 Astra (on)", "league": 3, "place": "League 3, 1st"},
+  {"seed": 2, "name": "Claude Fable 5.1 (on)", "league": 3, "place": "League 3, 2nd"},
+  {"seed": 3, "name": "GPT-6.1 Sol (low)", "league": 2, "place": "League 2, 1st"},
+  {"seed": 4, "name": "GPT-6.1 Sol (high)", "league": 2, "place": "League 2, 2nd"},
+  {"seed": 5, "name": "Liquid d1-ultra", "league": 1, "place": "League 1, best model"},
+  {"seed": 6, "name": "Fastino GLiDE", "league": 1, "place": "League 1, 2nd model"},
+  {"seed": 7, "name": "Grok 4.7 (on)", "league": 3, "place": "League 3, better 3rd place"},
+  {"seed": 8, "name": "Gemma 4 31B (on)", "league": 2, "place": "League 2, other 3rd place"}
+ ],
+ "ties": [
+  {"tie": "QF1", "label": "Quarter-final 1", "seeds": [1, 8]},
+  {"tie": "QF2", "label": "Quarter-final 2", "seeds": [2, 6]},
+  {"tie": "QF3", "label": "Quarter-final 3", "seeds": [3, 7]},
+  {"tie": "QF4", "label": "Quarter-final 4", "seeds": [4, 5]},
+  {"tie": "SFA", "label": "Semi-final A", "winners_of": ["QF1", "QF4"]},
+  {"tie": "SFB", "label": "Semi-final B", "winners_of": ["QF2", "QF3"]},
+  {"tie": "FINAL", "label": "Final", "winners_of": ["SFA", "SFB"]}
+ ],
+ "knockout": {
+  "name": "Nackgammon knockout",
+  "label": "Nackgammon start; all 7 matches new (stored standard results don't count)",
+  "about": "The same 8 teams and the same draw, every game from the Nackgammon start; otherwise the league match rules."
+ }
+}

@@ -10,7 +10,8 @@
 #   systemctl --user enable --now bg-site-preview.timer
 #
 #   1. snapshot (tools/site/snapshot.py): league tables copied in one read transaction, plus the prompts of new
-#      decisions; its fingerprint, the smoke-test rows, the v1 set and the site code make the change key;
+#      decisions and the Nackgammon knockout's matches (knockout-nack.db, read-only, to STATE/knockout.db); its
+#      fingerprint (the knockout's included), the smoke-test rows, the v1 set and the site code make the change key;
 #      if the key equals the last deployed one, stop: nothing changed;
 #   2. GNUbg scores every legal play of the new decisions (tools/site/score.sh: 8 processes, nice 19, idle I/O);
 #   3. tools/site/build.py builds the site into this job's own clone of the analysis repository and runs the

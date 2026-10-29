@@ -10,7 +10,7 @@ from common import (EARLIER, EARLIER_NOTE, NA, NAME_NOTES, NOT_MEASURED, PENDING
 
 # B4: the nav of decision-models' form; model pages open from the table rows, New models is linked from Data.
 NAV = [("decisions/", "Every decision"), ("disagreements/", "Where models disagree"), ("phases/", "Phases"),
-       ("compare/", "Compare"), ("leagues/", "Leagues"), ("method/", "Method"), ("data/", "Data")]
+       ("compare/", "Compare"), ("leagues/", "Leagues"), ("matches/", "Matches"), ("method/", "Method"), ("data/", "Data")]
 TITLE = "Can a model tell when a risk is worth taking?"
 # Reviewed brief of 24 Oct 2026, item 2: the subtitle, used with the title in the hero, the meta description, the social
 # preview and the PNG headers (png.js, bg.js read both from the body's data attributes).
@@ -460,16 +460,181 @@ def leagues_page(S, archive_v1: str) -> str:
                       f'<h3 id="league-{lg["id"]}-quality">Decision quality</h3>{q}'
                       f'<h3 id="league-{lg["id"]}-cost">Time and cost</h3>{c}'
                       f'<details class="more" id="league-{lg["id"]}-matches"><summary>Matches ({count(lg["matches"])})</summary>'
-                      f'{matches_table(S, lg, rel)}</details></section>')
+                      f'{matches_table(S, lg, rel)}<p class="table-note">This league table\'s matches. Every match of every '
+                      f'stage (ladder rounds, gap matches, late entries, the Hype Cup, the Nackgammon knockout) and the '
+                      f'voided ones: <a href="../matches/">Matches</a>.</p></details></section>')
     intro = about("<p>One table per league. League tables compare only the players inside one league; they are never "
                   "merged into one overall score. A running league's numbers are Provisional and change as matches finish. "
                   "Click a row to open the setup, or a match to open its decisions.</p>", "About these tables")
-    return (page_head(S, "Leagues", "Leagues")
-            + "".join(blocks) + intro
+    links = ('<a href="#hype-cup">Hype Cup</a> · <a href="#nack-knockout">Nackgammon knockout</a> · '
+             '<a href="../matches/">Every match</a>')
+    return (page_head(S, "Leagues", "Leagues", links)
+            + "".join(blocks) + cup_card(S) + intro
             + f'<section class="card" id="earlier"><details class="more"><summary>Earlier version: v1 leagues and teams '
               f'{status_badge(EARLIER)}</summary><p class="note">{esc(play_order_note(S))}</p>{archive_v1}</details>'
               f'<p class="table-note" id="pre-switch">The page as it was before this site went live, with its final league '
               f'data: <a href="../archive/2026-10-23/">archive, 23 October 2026</a>.</p></section>')
+
+
+# --- Hype Cup and Nackgammon knockout (Can, 29 Oct 2026) ------------------------------------------------------
+
+TIE_STATE = {"played": "Played", "stored": "Stored", "to play": "To play", "waits": "To play", "playing": "Playing now"}
+ROUND_OF = {"QF": "Quarter-finals", "SF": "Semi-finals", "FI": "Final"}
+
+
+def match_anchor(source: str, match_id: int) -> str:
+    return f'{"k" if source == "knockout" else "m"}{match_id}'
+
+
+def match_ref(source: str, match_id: int) -> str:
+    return f'{"knockout match" if source == "knockout" else "match"} #{match_id}'
+
+
+def tie_box(t: dict, source: str, prefix: str, rel: str, labels: dict) -> str:
+    """One tie of a bracket: its two setups (seed, name, score), the winner marked, and how its result came about."""
+    sides = []
+    for k in ("1", "2"):
+        name = t["model" + k]
+        if name is None:
+            src = t["from_ties"][int(k) - 1]
+            sides.append(f'<li class="side tbd"><span class="seed"></span><span class="name">Winner of {esc(labels[src])}</span>'
+                         f'<span class="score"></span></li>')
+            continue
+        win = t.get("winner") == name
+        score = t.get("score" + k)
+        sides.append(f'<li class="side{" win" if win else ""}"><span class="seed">{t["seed" + k]}</span>'
+                     f'<span class="name">{esc(name)}{"<span class=visually-hidden> (winner)</span>" if win else ""}</span>'
+                     f'<span class="score">{score if score is not None else ""}</span></li>')
+    state = t.get("state")
+    head = f'<span class="tie-state state-{slug(state)}">{TIE_STATE[state]}</span>'
+    foot = ""
+    if t.get("match") is not None and state in ("played", "stored"):
+        link = f'<a href="{rel}matches/#{match_anchor(source, t["match"])}">{match_ref(source, t["match"])}</a>'
+        when = t["finished"][:10]
+        if state == "stored":
+            foot = f'Played in {esc(t["where"])}, {when}: {link}'
+        else:
+            foot = f'{when}: {link}'
+        if t.get("level"):
+            foot += (f'. Level; {esc(t["winner"])} goes through on the lower error rate in the match'
+                     if t.get("winner") else ". Level; the error rate in the match decides, not yet scored")
+    elif state == "playing":
+        foot = "In progress"
+    elif state == "waits":
+        foot = "Waits for " + " and ".join(esc(labels[x]) for x in t["from_ties"])
+    return (f'<li class="tie tie-{slug(state)}" id="{prefix}-{t["tie"].lower()}"><p class="tie-head">'
+            f'<span class="tie-name">{esc(t["label"])}</span>{head}</p><ol class="tie-sides">{"".join(sides)}</ol>'
+            f'{f"<p class=tie-foot>{foot}</p>" if foot else ""}</li>')
+
+
+def bracket(ties: list[dict], source: str, prefix: str, rel: str, caption: str) -> str:
+    rounds, labels = {}, {t["tie"]: t["label"] for t in ties}
+    for t in ties:
+        rounds.setdefault(ROUND_OF[t["tie"][:2]], []).append(t)
+    cols = "".join(f'<div class="bracket-round"><h4>{esc(name)}</h4><ol class="ties">'
+                   f'{"".join(tie_box(t, source, prefix, rel, labels) for t in ts)}</ol></div>' for name, ts in rounds.items())
+    return f'<div class="bracket" role="group" aria-label="{esc(caption)}">{cols}</div>'
+
+
+def cup_card(S, rel: str = "../") -> str:
+    c, k = S["cup"], S["knockout"]
+    champ = (f'<p class="cup-champion">Champion: <strong>{esc(c["champion"])}</strong></p>' if c["champion"]
+             else f'<p class="cup-champion">Champion: {nm("after the final")}</p>')
+    k_champ = (f'<p class="cup-champion">Champion: <strong>{esc(k["champion"])}</strong></p>' if k["champion"]
+               else f'<p class="cup-champion">{count(k["played"])} of {count(k["matches_total"])} matches played; '
+                    f'the rest to play. Champion: {nm("after the final")}</p>')
+    return (f'<section class="card cup-card" id="hype-cup"><div class="section-head"><h2>Hype Cup</h2>'
+            f'{status_badge("Finished" if c["state"] == "finished" else "In progress")}</div>'
+            f'<p class="cup-honesty"><strong>{esc(c["honesty"])}</strong></p>{champ}'
+            + bracket(c["ties"], "v3", "cup", rel, "Hype Cup bracket")
+            + f'<p class="table-note"><strong>Played</strong> ({count(c["new_matches"])}): a new Cup match. '
+              f'<strong>Stored</strong> ({count(c["stored_matches"])}): {esc(c["stored_rule"])} {esc(c["level_rule"])}</p>'
+              f'<p class="table-note"><strong>Roster.</strong> {esc(c["roster_rule"])}</p>'
+              f'<div class="section-head cup-sub"><h3 id="nack-knockout">{esc(k["name"])}</h3>'
+              f'{status_badge("Finished" if k["state"] == "finished" else "In progress")}</div>'
+              f'<p class="note"><strong>{esc(k["label"])}.</strong> {esc(k["about"])}</p>{k_champ}'
+            + bracket(k["ties"], "knockout", "nack", rel, "Nackgammon knockout bracket")
+            + f'<p class="table-note">Every match of both, with the leagues\' matches: <a href="{rel}matches/">Matches</a>. '
+              f'{esc(c["honesty"])}</p></section>')
+
+
+# --- Matches ------------------------------------------------------------------------------------------------
+
+def match_row(m: dict, rel: str) -> str:
+    links = []
+    for side in ("model1", "model2"):
+        first = (m.get("decisions") or {}).get(side)
+        if first:
+            links.append(f'<a href="{rel}decisions/?d={first["dataset"]}&amp;s={first["slug"]}&amp;p={first["page"]}'
+                         f'#d{first["id"]}">{esc(m[side])}</a>')
+    stage = esc(m["stage_label"]) + (f'<span class="small">{esc(m["note"])}</span>' if m.get("note") else "")
+    winner = esc(m["winner"]) if m["winner"] else "Draw"
+    num = f'K{m["id"]}' if m["source"] == "knockout" else str(m["id"])
+    return (f'<tr id="{match_anchor(m["source"], m["id"])}"{" class=late-entry" if m["stage"] == "late-entry" else ""}>'
+            f'<td class="model"><span class="model-name">{esc(m["model1"])} v {esc(m["model2"])}</span></td>'
+            f'<td class="num">{num}</td><td class="date">{m["finished"][:10]}</td><td>{stage}</td>'
+            f'<td class="num">{m["score1"]}\u2013{m["score2"]}</td><td>{winner}</td>'
+            f'<td>{" · ".join(links) if links else nm("not on the site")}</td></tr>')
+
+
+MATCH_HEAD = ["Match", "#", "Finished", "Stage", "Score", "Winner", "Decisions of each player"]
+
+
+def matches_page(S) -> str:
+    rel = "../"
+    M = S["matches"]
+    by = {}
+    for m in M["matches"]:
+        by.setdefault(m["stage"], []).append(m)
+    nav = "".join(f'<li><a href="#stage-{s["stage"]}">{esc(s["label"])}</a> ({count(s["matches"])})</li>' for s in M["stages"])
+    nav += f'<li><a href="#voided">Voided</a> ({count(M["voided_total"])})</li>'
+    blocks = []
+    for s in M["stages"]:
+        rows = by.get(s["stage"], [])
+        if s["stage"] == "season":
+            parts = {}
+            for m in rows:
+                parts.setdefault(f'League {m["league"]}', []).append(m)
+        elif s["stage"] == "ladder":
+            parts = {}
+            for m in sorted(rows, key=lambda m: (m["round"], m["id"])):
+                parts.setdefault(f'Ladder round {m["round"]}', []).append(m)
+        else:
+            parts = {"": rows}
+        inner = []
+        for title, ms in parts.items():
+            sid = f'stage-{s["stage"]}-{slug(title)}' if title else ""
+            inner.append((f'<h3 id="{sid}">{esc(title)} ({count(len(ms))})</h3>' if title else "")
+                         + SWIPE + table(MATCH_HEAD, [match_row(m, rel) for m in ms],
+                                         f'{s["label"]}{": " + title if title else ""}; in the order the matches started',
+                                         cls="board list"))
+        note = {"ladder": "Matches a ladder move made: the mover against the setups of its new league it had not met. "
+                          "Early starts of a round are in it.",
+                "gap": "Pairs missing from a league's round robin, played later under that league's rules.",
+                "late-entry": "Late entry, not in standings: these matches count in no table and in no other setup's "
+                              "numbers; only the results are shown here.",
+                "cup": 'New Hype Cup matches; the Cup\'s stored results are listed where they were played. Bracket: '
+                       '<a href="../leagues/#hype-cup">Leagues</a>.',
+                "knockout": 'From the Nackgammon start (its own database). Bracket: '
+                            '<a href="../leagues/#nack-knockout">Leagues</a>.'}.get(s["stage"], "")
+        blocks.append(f'<section class="card" id="stage-{s["stage"]}"><div class="section-head"><h2>{esc(s["label"])}</h2>'
+                      f'<span class="small">{count(s["matches"])} matches</span></div>'
+                      f'{f"<p class=note>{note}</p>" if note else ""}'
+                      + ("".join(inner) if rows else f'<p class="note">{nm("None yet")}</p>') + '</section>')
+    void_rows = [f'<tr><td class="model"><span class="model-name">{esc(m["model1"])} v {esc(m["model2"])}</span></td>'
+                 f'<td class="num">{m["id"]}</td><td class="date">{m["finished"][:10]}</td>'
+                 f'<td class="num">{m["score1"]}\u2013{m["score2"]}</td><td>{esc(m["reason"] or "")}</td></tr>'
+                 for m in M["voided"]]
+    blocks.append(f'<section class="card" id="voided"><details class="more"><summary>Voided matches '
+                  f'({count(M["voided_total"])}): finished, then voided; they count nowhere</summary>'
+                  + SWIPE + table(["Match", "#", "Finished", "Score", "Why voided"], void_rows,
+                                  "Voided matches, with the reason recorded when they were voided", cls="board list")
+                  + '</details></section>')
+    intro = (f'Every finished match: {count(M["total"])}, by stage. A match is listed once, where it was '
+             'played; the setups carry their current names. Results only: the standings and error rates are on '
+             '<a href="../leagues/">Leagues</a>.')
+    return (page_head(S, "Matches", "Every match", intro)
+            + f'<nav class="card stage-nav" aria-label="Stages"><ul class="subnav">{nav}</ul></nav>' + "".join(blocks))
 
 
 # --- Phases -------------------------------------------------------------------------------------------------
@@ -922,7 +1087,7 @@ def data_page(S, out: Path) -> str:
               f'<dt>v1</dt><dd>{status_badge(EARLIER)} Earlier prompt; plays listed in the runner\'s order. The v1 set of 1,000 positions answered by the v1 setups. Never in a v3 table or chart.</dd>'
               '<dt>Smoke tests</dt><dd>50 positions outside the shared sets, v3 prompt; only on New models: first look.</dd></dl></section>'
             + '<section class="card" id="recompute"><h2>How to recompute</h2><ol>'
-              '<li>Snapshot the league database: <code>python3 tools/site/snapshot.py v3.db STATE</code> (one read transaction; the prompts each model was sent go to <code>STATE/prompts.db</code>).</li>'
+              '<li>Snapshot the league database: <code>python3 tools/site/snapshot.py v3.db STATE</code> (one read transaction; the prompts each model was sent go to <code>STATE/prompts.db</code>; the Nackgammon knockout\'s matches, from <code>knockout-nack.db</code> next to it, to <code>STATE/knockout.db</code>).</li>'
               '<li>Score every legal play of every decision with GNUbg 1.08 at 2-ply: <code>tools/site/score.sh STATE/snap.db STATE/plays</code>.</li>'
               '<li>Build and check the site: <code>python3 tools/site/build.py --state STATE --out OUT</code>. The build fails, and nothing is deployed, if a number does not trace to a data file, counts do not add up, leagues or versions mix, a published finding no longer holds, or a file contains a private address or credential.</li>'
               '</ol><p>The scripts are in the jevgammon repository under <code>tools/site/</code>; the fixed thresholds are in <a href="thresholds.json">thresholds.json</a>.</p></section>')
@@ -984,6 +1149,9 @@ def write_all(S, out: Path, base: str) -> None:
     put("", TITLE, home.home(S), scripts=("bg.js",), styles=("decisions.css",), body_class="home")
     home.fragments(S, out)
     put("leagues/", "Leagues", leagues_page(S, method.archive_v1()), scripts=("bg.js",))
+    put("matches/", "Matches", matches_page(S), scripts=("bg.js",),
+        description="Every match of the backgammon benchmark: the leagues, the ladder rounds, gap matches, late "
+                    "entries, the Hype Cup and the Nackgammon knockout, with scores, winners and links to the decisions.")
     put("phases/", "Phases", phases_page(S), scripts=("bg.js",))
     put("compare/", "Compare", compare_page(S), scripts=("bg.js",))
     put("disagreements/", "Where models disagree", disagreements_page(S), scripts=("bg.js",))

@@ -529,7 +529,9 @@ def _versions(po: dict) -> str:
 <p>The earlier version also scored differently: every legal play at 0-ply, then the five best and the chosen play again
   at 2-ply. The current version evaluates every legal play at 2-ply.</p>
 <p><strong>Changelog.</strong> 28 Oct 2026: setups renamed to the reasoning effort they sent. 5 setups changed from
-  (off) to (low). No score changed.</p>""")
+  (off) to (low). No score changed. 29 Oct 2026: the Hype Cup and the Nackgammon knockout on
+  <a href="../leagues/#hype-cup">Leagues</a>, and every match on <a href="../matches/">Matches</a>. Match results
+  only: no score changed.</p>""")
 
 
 def _confidence(t: dict, extra: dict) -> str:

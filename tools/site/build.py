@@ -32,6 +32,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import analysis as A  # noqa: E402
 import checks  # noqa: E402
 import close_choices as CC  # noqa: E402
+import cup  # noqa: E402
 import offline as O  # noqa: E402
 import pages  # noqa: E402
 from common import (CONTENT, EARLIER, INTERNAL, PENDING, PROVISIONAL, PUBLISHED, ROOT, SITE, THRESHOLDS,  # noqa: E402
@@ -134,6 +135,8 @@ def compute(args) -> dict:
         lg["reasoning"] = league_reasoning(lg, setups, programs)
         # League winners · match results (B4): the league's first place once it finished; never a ranking.
         lg["winner"] = lg["standings"][0]["name"] if lg["state"] == "finished" and lg["standings"] else None
+    # Every match, the Hype Cup and the Nackgammon knockout (Can, 29 Oct 2026): match results only, no league number.
+    every = cup.compute(state, leagues)
     return dict(
         as_of=snapshot_time(snap), last_move=L["last_move"], leagues=leagues, setups_meta=setups,
         v1=dict(dataset="v1-set", version="v1", status=EARLIER, positions=len(v1["positions"]),
@@ -143,6 +146,8 @@ def compute(args) -> dict:
                                 hi=play_order["hi"], positions=play_order["positions"]),
                 disagreements=A.disagreements(v1)),
         smoke=smoke, shared=shared, thresholds=THRESHOLDS, counts=counts, hypothesis=hypothesis,
+        matches={k: every[k] for k in ("stages", "total", "voided_total", "matches", "voided")},
+        cup=every["cup"], knockout=every["knockout"],
         close_spec=dict(fixed_on=CC.CC["fixed_on"], definition=CC.DEFINITION, label=CC.LABEL), _close=close_records,
         close_b=json.loads((CONTENT / "close_choices_b_results.json").read_text()),
         status=json.loads((CONTENT / "analysis_status.json").read_text()),
@@ -247,6 +252,13 @@ def write_data(S: dict, out: Path) -> None:
                                                                   for m, x in r["risk"].items()})
                                                  for n, r in lg["references"].items()})
                  for lg in S["leagues"]}))
+    # Every finished match with where it was played (late entries marked; voided ones apart, with their reason), and
+    # the Hype Cup and Nackgammon knockout brackets: match results only.
+    write_json(out, "data/v3/matches.json", dict(
+        version="v3", note="Every valid finished match (v3 leagues, ladder, gap matches, late entries, Hype Cup) and "
+        "the Nackgammon knockout's (source knockout); voided matches apart, with their reason. Results only.",
+        **S["matches"]))
+    write_json(out, "data/v3/hype-cup.json", dict(version="v3", cup=S["cup"], knockout=S["knockout"]))
 
 
 def manifest(S: dict, out: Path) -> None:

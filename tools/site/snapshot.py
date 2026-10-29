@@ -17,8 +17,11 @@
    once in `contexts`, the turn part in `seen.requests`, and context + separator + text must give
    the original string back exactly. Identical requests of a decision (retries, the steps of a
    two-step reasoning flow) are kept once; group splits keep every distinct request in send order.
-4. Prints one line of JSON: decisions extracted, skipped by reason, contexts, and a fingerprint
-   that changes whenever the league data changes.
+4. The Nackgammon knockout database (KNOCKOUT_DB, next to V3_DB; never v3.db) is copied the same way, read-only
+   and in one read transaction, to STATE_DIR/knockout.db (its leagues, players, league_players and matches
+   only: the site shows its bracket and match results, not its decisions). Missing: no knockout.db.
+5. Prints one line of JSON: decisions extracted, skipped by reason, contexts, and a fingerprint
+   that changes whenever the league data or the knockout's matches change.
 
 Schema of prompts.db: see the site contract (local://site-contract.md). Anthropic requests send
 the Claude Code identity block before the system prompt: it is kept as "system_prefix" (list of
@@ -59,6 +62,10 @@ FROM {p}turns t JOIN {p}games g ON g.id = t.game_id JOIN {p}league_match_view lm
 JOIN {p}leagues l ON l.id = lm.league_id
 WHERE t.decided_by IN ('model', 'fallback') AND {shown}
 """
+
+# The Nackgammon knockout (tools/v3/run_knockout_nack.sh): its own database next to v3.db.
+KNOCKOUT_DB = "knockout-nack.db"
+KNOCKOUT_TABLES = ("leagues", "players", "league_players", "matches")
 
 
 def shown_leagues(db, prefix=""):
@@ -261,6 +268,36 @@ def fingerprint(db):
     return " ".join(parts)
 
 
+def snapshot_knockout(source, state):
+    """STATE/knockout.db: the knockout's leagues, players, league_players and matches, copied in one read
+    transaction on a read-only URI (written to a temporary file, renamed once complete). Returns its fingerprint
+    part: matches / finished matches / leagues, so a tie that starts or finishes changes the change key."""
+    target, tmp = os.path.join(state, "knockout.db"), os.path.join(state, "knockout.db.tmp")
+    if not os.path.exists(source):
+        if os.path.exists(target):
+            os.remove(target)
+        return "k-"
+    for path in (tmp, tmp + "-journal"):
+        if os.path.exists(path):
+            os.remove(path)
+    db = sqlite3.connect(tmp, isolation_level=None)
+    db.execute("ATTACH ? AS src", (f"file:{os.path.abspath(source)}?mode=ro",))
+    db.execute("BEGIN")
+    for name in KNOCKOUT_TABLES:
+        sql = db.execute("SELECT sql FROM src.sqlite_master WHERE type = 'table' AND name = ?", (name,)).fetchone()
+        if sql is None:
+            raise RuntimeError(f"{source}: no table {name}")
+        db.execute(sql[0])
+        db.execute(f'INSERT INTO main."{name}" SELECT * FROM src."{name}"')
+    db.execute("COMMIT")
+    db.execute("DETACH src")
+    total, finished = db.execute("SELECT count(*), coalesce(sum(status = 'finished'), 0) FROM matches").fetchone()
+    leagues = db.execute("SELECT count(*) FROM leagues").fetchone()[0]
+    db.close()
+    os.replace(tmp, target)
+    return f"k{total}/{finished}/{leagues}"
+
+
 def fetch(db, schema, turns):
     """{turn_id: [request, ...] in send order} for `turns` = [(turn_id, [exchange id, ...])]."""
     ids = [i for _, exchange_ids in turns for i in exchange_ids]
@@ -369,6 +406,7 @@ def run(v3, state):
     print_fingerprint = fingerprint(db)
     db.close()
     os.replace(tmp, snap)
+    print_fingerprint += " " + snapshot_knockout(os.path.join(os.path.dirname(os.path.abspath(v3)), KNOCKOUT_DB), state)
     snapshot_seconds = time.monotonic() - started
 
     # Decisions of models that sent nothing.

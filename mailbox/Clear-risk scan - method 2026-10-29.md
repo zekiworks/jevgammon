@@ -67,3 +67,29 @@ each play rolled out as the position after it with the opponent on roll. Keep (s
 ## Step-4 estimate
 
 CPU time per 1,296-game rollout of one play, measured on the Bray run on this machine, × 2 × flagged positions.
+
+## Amendment, 2026-10-29T18:10Z: Step 4 replaced (Can, 2026-10-29)
+
+Written, committed and pushed before any step-4 computation (no 3-ply value of any league position exists yet). It
+replaces the step-4 rollout rule above for the leagues; the Bray rollout already reported stays as it was.
+
+- **No rollouts.** For every flagged decision, both plays (best safe and best unsafe from step 3) are evaluated with
+  GNUbg 1.08 at **3-ply**: cubeless money equity, the position after the play with the opponent on roll, otherwise
+  the 2-ply scorer's settings: `{"cubeful": 0, "plies": 3, "deterministic": 1, "prune": 1, "noise": 0.0}` (`PLY2`
+  of `tools/v3/engine.py` with `plies` 3), money cube `gnubg.cubeinfo(1, 0, 1, 0)`, via `engine.equity` (a play
+  that ends the game keeps its exact 1, 2 or 3 points). GNUbg on CPU only, `nice -n 19`, at most 8 processes. Each
+  distinct (position, dice, play) is evaluated once and reused.
+- **Keep** a flagged decision only if (a) |gap| ≥ 0.04 at both 2-ply and 3-ply, (b) the two gaps have the same sign
+  (Risk wins or Safety wins at both), and (c) |gap3 − gap2| ≤ 0.02. Otherwise it is **unstable** and dropped,
+  counted by the first failing condition in the order (b), (a), (c). Unstable positions are rolled out only if Can
+  asks later.
+- **Rationale:** stability across search depths is used as the signal for positions GNUbg evaluates poorly; it is
+  not a substitute for a rollout and is not claimed to be one.
+- **Known weak spots:** back games, prime-vs-prime and containment positions. The repo has a simple classifier
+  (`tools/v3/classify.py`): kept and unstable positions are reported as counts only for its **back game** rule
+  (2+ anchors on the side's points 18–24, either side) and for **prime-vs-prime** defined with its `longest_prime`
+  (both sides have a prime of 4+). There is no containment classifier in the repo, so nothing is claimed about
+  containment positions.
+- **Bray first:** the Bray position is evaluated at 3-ply before the leagues and must be kept as Risk wins;
+  otherwise stop and report.
+- Steps 5 and 6 (shares per setup, bias, reference rows, hand-check samples) then run on kept positions only.

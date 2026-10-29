@@ -186,7 +186,8 @@ def check_home(out: Path, N: dict, bad: list):
                      ("table-note nack-limit-note", "limit_note")):
         if norm(notes.get(cls, "")) != norm(N[key]):
             bad.append(f"home: the {key} paragraph does not match the data file")
-    if norm(notes.get("note nack-additions-note", "")) != norm("Additions. " + N["additions_note"]):
+    if (f'<p class="note nack-additions-note"><strong>Additions.</strong> {esc(N["additions_note"])}</p>'
+            not in (out / "index.html").read_text()):
         bad.append("home: the additions paragraph does not match the data file")
     if norm(notes.get("table-note nack-no-group-note", "")) != norm(NS.no_group_note(N)):
         bad.append("home: the no-group paragraph does not match the data file")

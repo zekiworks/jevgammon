@@ -763,10 +763,18 @@ def spec_markdown(md: str) -> str:
     return "\n".join(html)
 
 
+# The run's local answers database is named in §10.14(h); the published page names what it is, not its path.
+NACK_SPEC_REDACT = {"`smoke/nack-paired.db`": "the run's answers database (not published)"}
+
+
 def nack_spec_text() -> str:
-    """§10 of the Method spec with its dated addendum, verbatim from the spec file (to its end)."""
+    """§10 of the Method spec with its dated addendum, verbatim from the spec file (to its end), except the local file
+    paths of NACK_SPEC_REDACT."""
     text = (CONTENT / "method-spec-2026-10-24.md").read_text()
-    return text[text.index("## 10. Nackgammon paired test"):].strip()
+    text = text[text.index("## 10. Nackgammon paired test"):].strip()
+    for path, what in NACK_SPEC_REDACT.items():
+        text = text.replace(path, what)
+    return text
 
 
 def _nack() -> str:
@@ -774,7 +782,8 @@ def _nack() -> str:
     body = nack_spec_text()
     return _section("nackgammon-paired", "Nackgammon paired test", f"""
 <p class="note"><strong>Results on the <a href="../#nackgammon-paired">home page</a>.</strong> {esc(NACK_SCOPE_NOTE)}
-  The text below is §10 of the Method specification of 24 Oct 2026 as committed, with its dated notes and amendments;
+  The text below is §10 of the Method specification of 24 Oct 2026 as committed, with its dated notes and amendments
+  (one local database path replaced by its description);
   §10.14 (groups by original league) says in (e) what had been opened before it was written, corrected in (f); (g)
   adds the Cup-roster setups after the results had been read, and (h) the exploratory Gemini 4 Argon setup and the
   output-limit rule. The spec keeps the setups' names from before the relabel of 28 Oct 2026; the results show the

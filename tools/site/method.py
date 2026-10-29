@@ -775,7 +775,11 @@ def _nack() -> str:
     return _section("nackgammon-paired", "Nackgammon paired test", f"""
 <p class="note"><strong>Results on the <a href="../#nackgammon-paired">home page</a>.</strong> {esc(NACK_SCOPE_NOTE)}
   The text below is §10 of the Method specification of 24 Oct 2026 as committed, with its dated notes and amendments;
-  §10.14 (groups by original league) says in (e) what had been opened before it was written, corrected in (f).</p>
+  §10.14 (groups by original league) says in (e) what had been opened before it was written, corrected in (f); (g)
+  adds the Cup-roster setups after the results had been read, and (h) the exploratory Gemini 4 Argon setup and the
+  output-limit rule. The spec keeps the setups' names from before the relabel of 28 Oct 2026; the results show the
+  current names: Claude Fable 5.1 (on) is Claude Fable 5.1 (high), Grok 4.7 (on) is Grok 4.7 (high), GPT-6 Astra (on)
+  is GPT-6 Astra (medium), Gemini 4 Argon (off) and (on) are Gemini 4 Argon (low) and (high).</p>
 {spec_markdown(body)}""")
 
 

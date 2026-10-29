@@ -3,13 +3,48 @@
  "method": "Method spec 2026-10-24 §10 (groups: §10.14)",
  "scope_note": "These results hold for these rosters only; each group is the setups in the run from that original league.",
  "groups_rule": "Groups by original league (Method §10.14, amendment of 2026-10-27). Method §10 and its notes were committed before any model call, and the per-setup first looks were computed under the frozen extension rule. Separately, before the amendment, six full-report calls were issued on partial data under the earlier group definitions; that all six completed successfully has not been independently established. One returned numeric old-group primary results into the site agent's context before the amendment. Whether a person saw them, and any causation, is not established. Nothing was published before the amendment; the aggregate report and data were pushed to the public repository in commit 3e4f413 on 2026-10-28 (01:03 UTC), before release approval. See §10.14(e) and its dated correction (f) of 2026-10-28.",
- "frontier_note": "The frontier group currently has 1 setup (GPT-6 Astra (on)); comparisons 2 and 3 rest on it.",
+ "frontier_note": "The frontier group currently has 3 setups (GPT-6 Astra (medium), Claude Fable 5.1 (high), Grok 4.7 (high)); comparisons 2 and 3 rest on them.",
+ "frontier_note_original_members": "Original members only: the frontier group has 1 setup (GPT-6 Astra (medium)); comparisons 2 and 3 rest on it.",
  "in_progress": false,
  "primary_level": 0.99,
  "comparisons": 5,
  "intervals_first_final": 0.975,
  "interval_descriptive": 0.95,
  "groups": {
+  "decision models": [
+   "Celeris-1 Decision",
+   "SubQ Snap Preview",
+   "Cygnet (Gemma 4 12B)",
+   "Decider v1.2 27B",
+   "Fastino GLiDE v1.2 (local)",
+   "Jev 1.13.0",
+   "GPT-6 Luna",
+   "Decider v1.1 27B",
+   "Mercury Decide",
+   "Winnow-12B",
+   "Open-Jev 27B v1.1",
+   "Decider Flash v1.2",
+   "Liquid d1-ultra",
+   "Fastino GLiDE"
+  ],
+  "workhorses": [
+   "DeepSeek V4.1 Flash (off)",
+   "LFM2.5-24B-A2B (on)",
+   "Qwen3.8-27B (off)",
+   "LFM2.5-24B-A2B (off)",
+   "Gemini 3.8 Flash (low)",
+   "Claude Sonnet 5.5 (low)",
+   "GPT-6.1 Sol (low)",
+   "GPT-6.1 Sol (high)",
+   "Gemma 4 31B (on)"
+  ],
+  "frontier": [
+   "GPT-6 Astra (medium)",
+   "Claude Fable 5.1 (high)",
+   "Grok 4.7 (high)"
+  ]
+ },
+ "groups_original_members": {
   "decision models": [
    "Celeris-1 Decision",
    "SubQ Snap Preview",
@@ -36,12 +71,24 @@
    "Gemma 4 31B (on)"
   ],
   "frontier": [
-   "GPT-6 Astra (on)"
+   "GPT-6 Astra (medium)"
   ]
+ },
+ "additions": [
+  "Liquid d1-ultra",
+  "Fastino GLiDE",
+  "Claude Fable 5.1 (high)",
+  "Grok 4.7 (high)"
+ ],
+ "additions_note": "Added under §10.14(g) after this test's results had been computed and read: Liquid d1-ultra and Fastino GLiDE (decision models); Claude Fable 5.1 (high) and Grok 4.7 (high) (frontier). They follow the Cup roster, not the results. The primary comparisons are shown both ways: with the additions (the primary result, §10.14(b)) and with the original members only (22 setups, §10.14(d)).",
+ "exploratory": {
+  "Gemini 4 Argon (low)": "Gemini 4 Argon (low), added by Can's decision of 2026-10-28 instead of Gemini 4 Argon (high), not because of the Cup roster (§10.14(h))"
  },
  "setups": {
   "Fastino GLiDE v1.2 (local)": {
    "group": "decision models",
+   "aliases": [],
+   "added": false,
    "first": {
     "pairs": 200,
     "standard_pr": 22.74,
@@ -84,6 +131,26 @@
      "standard": 0
     }
    },
+   "cut_off": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "past_32768_no_limit_sent": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
    "sensitivity": {
     "worst": {
      "pairs": 200,
@@ -104,7 +171,27 @@
       -7.28,
       11.93
      ]
+    },
+    "cutoff": {
+     "pairs": 200,
+     "standard_pr": 22.74,
+     "nackgammon_pr": 24.91,
+     "drop": 2.18,
+     "drop_975": [
+      -7.28,
+      11.93
+     ]
     }
+   },
+   "sensitivity_final_cutoff": {
+    "pairs": 500,
+    "standard_pr": 26.33,
+    "nackgammon_pr": 27.93,
+    "drop": 1.6,
+    "drop_975": [
+     -5.33,
+     8.3
+    ]
    },
    "phases": {
     "opening": {
@@ -334,8 +421,682 @@
     }
    }
   },
+  "Fastino GLiDE": {
+   "group": "decision models",
+   "aliases": [],
+   "added": true,
+   "first": {
+    "pairs": 200,
+    "standard_pr": 22.93,
+    "nackgammon_pr": 23.38,
+    "drop": 0.45,
+    "drop_975": [
+     -8.03,
+     8.77
+    ],
+    "drop_95": [
+     -7.03,
+     7.72
+    ]
+   },
+   "final": {
+    "pairs": 500,
+    "standard_pr": 25.73,
+    "nackgammon_pr": 28.8,
+    "drop": 3.07,
+    "drop_975": [
+     -3.84,
+     9.81
+    ],
+    "drop_95": [
+     -2.92,
+     8.95
+    ]
+   },
+   "extend_at_first_look": true,
+   "extended": true,
+   "extension_incomplete": null,
+   "label": "unclear",
+   "invalid": {
+    "first": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "final": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "cut_off": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "past_32768_no_limit_sent": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "sensitivity": {
+    "worst": {
+     "pairs": 200,
+     "standard_pr": 22.93,
+     "nackgammon_pr": 23.38,
+     "drop": 0.45,
+     "drop_975": [
+      -8.03,
+      8.77
+     ]
+    },
+    "drop": {
+     "pairs": 200,
+     "standard_pr": 22.93,
+     "nackgammon_pr": 23.38,
+     "drop": 0.45,
+     "drop_975": [
+      -8.03,
+      8.77
+     ]
+    },
+    "cutoff": {
+     "pairs": 200,
+     "standard_pr": 22.93,
+     "nackgammon_pr": 23.38,
+     "drop": 0.45,
+     "drop_975": [
+      -8.03,
+      8.77
+     ]
+    }
+   },
+   "sensitivity_final_cutoff": {
+    "pairs": 500,
+    "standard_pr": 25.73,
+    "nackgammon_pr": 28.8,
+    "drop": 3.07,
+    "drop_975": [
+     -3.84,
+     9.81
+    ]
+   },
+   "phases": {
+    "opening": {
+     "pairs": 60,
+     "standard_pr": 18.05,
+     "nackgammon_pr": 26.07,
+     "drop": 8.02,
+     "drop_95": [
+      -2.6,
+      18.11
+     ]
+    },
+    "contact": {
+     "pairs": 60,
+     "standard_pr": 40.73,
+     "nackgammon_pr": 31.12,
+     "drop": -9.62,
+     "drop_95": [
+      -28.23,
+      8.37
+     ]
+    },
+    "holding": {
+     "pairs": 30,
+     "standard_pr": 25.89,
+     "nackgammon_pr": 31.67,
+     "drop": 5.78,
+     "drop_95": [
+      -15.22,
+      30.11
+     ]
+    },
+    "race": {
+     "pairs": 25,
+     "standard_pr": 7.15,
+     "nackgammon_pr": 10.16,
+     "drop": 3.01,
+     "drop_95": [
+      -5.95,
+      14.23
+     ]
+    },
+    "bear-off": {
+     "pairs": 25,
+     "standard_pr": 4.14,
+     "nackgammon_pr": 1.62,
+     "drop": -2.53,
+     "drop_95": [
+      -6.4,
+      -0.04
+     ]
+    }
+   },
+   "opening_vs_rest": {
+    "diff": 10.81,
+    "ci_95": [
+     -3.54,
+     24.91
+    ]
+   },
+   "tags": {
+    "(none: bear-off)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 1.62
+     },
+     "standard": {
+      "n": 25,
+      "pr": 4.14
+     }
+    },
+    "(none: opening)": {
+     "nackgammon": {
+      "n": 60,
+      "pr": 26.07
+     },
+     "standard": {
+      "n": 60,
+      "pr": 18.05
+     }
+    },
+    "(none: race)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 10.16
+     },
+     "standard": {
+      "n": 25,
+      "pr": 7.15
+     }
+    },
+    "back game": {
+     "nackgammon": {
+      "n": 10,
+      "pr": 44.17
+     },
+     "standard": {
+      "n": 2,
+      "pr": 22.94
+     }
+    },
+    "blitz": {
+     "nackgammon": {
+      "n": 17,
+      "pr": 12.95
+     },
+     "standard": {
+      "n": 23,
+      "pr": 49.93
+     }
+    },
+    "holding": {
+     "nackgammon": {
+      "n": 30,
+      "pr": 31.67
+     },
+     "standard": {
+      "n": 30,
+      "pr": 25.89
+     }
+    },
+    "low-anchor": {
+     "nackgammon": {
+      "n": 7,
+      "pr": 31.03
+     },
+     "standard": {
+      "n": 8,
+      "pr": 39.62
+     }
+    },
+    "other": {
+     "nackgammon": {
+      "n": 11,
+      "pr": 29.68
+     },
+     "standard": {
+      "n": 10,
+      "pr": 29.05
+     }
+    },
+    "priming": {
+     "nackgammon": {
+      "n": 15,
+      "pr": 44.1
+     },
+     "standard": {
+      "n": 17,
+      "pr": 37.78
+     }
+    }
+   },
+   "cost": {
+    "main": {
+     "decisions": 400,
+     "billed_usd_per_1000": 0.0,
+     "api_eq_usd_per_1000": 0.0
+    },
+    "all": {
+     "decisions": 1000,
+     "billed_usd_per_1000": 0.0,
+     "api_eq_usd_per_1000": 0.0
+    }
+   },
+   "risk": {
+    "main": {
+     "standard": {
+      "risk_pays": 66,
+      "safety_pays": 66,
+      "risks_taken": 27.0,
+      "needless": 11.0,
+      "d_prime": 0.72,
+      "caution": 0.59
+     },
+     "nackgammon": {
+      "risk_pays": 66,
+      "safety_pays": 66,
+      "risks_taken": 21.0,
+      "needless": 11.0,
+      "d_prime": 0.48,
+      "caution": 0.71
+     },
+     "change": {
+      "d_prime": -0.24,
+      "d_prime_95": [
+       -0.87,
+       0.38
+      ],
+      "caution": 0.12,
+      "caution_95": [
+       -0.19,
+       0.45
+      ]
+     },
+     "thin": false
+    },
+    "all": {
+     "standard": {
+      "risk_pays": 165,
+      "safety_pays": 165,
+      "risks_taken": 55.0,
+      "needless": 29.0,
+      "d_prime": 0.5,
+      "caution": 0.68
+     },
+     "nackgammon": {
+      "risk_pays": 165,
+      "safety_pays": 165,
+      "risks_taken": 52.0,
+      "needless": 31.0,
+      "d_prime": 0.4,
+      "caution": 0.68
+     },
+     "change": {
+      "d_prime": -0.1,
+      "d_prime_95": [
+       -0.51,
+       0.33
+      ],
+      "caution": 0.0,
+      "caution_95": [
+       -0.19,
+       0.2
+      ]
+     },
+     "thin": false
+    }
+   }
+  },
+  "Liquid d1-ultra": {
+   "group": "decision models",
+   "aliases": [],
+   "added": true,
+   "first": {
+    "pairs": 200,
+    "standard_pr": 24.25,
+    "nackgammon_pr": 28.27,
+    "drop": 4.01,
+    "drop_975": [
+     -11.37,
+     17.17
+    ],
+    "drop_95": [
+     -9.32,
+     15.63
+    ]
+   },
+   "final": {
+    "pairs": 500,
+    "standard_pr": 25.3,
+    "nackgammon_pr": 31.47,
+    "drop": 6.17,
+    "drop_975": [
+     -2.06,
+     13.95
+    ],
+    "drop_95": [
+     -1.11,
+     13.09
+    ]
+   },
+   "extend_at_first_look": true,
+   "extended": true,
+   "extension_incomplete": null,
+   "label": "unclear",
+   "invalid": {
+    "first": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "final": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "cut_off": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "past_32768_no_limit_sent": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "sensitivity": {
+    "worst": {
+     "pairs": 200,
+     "standard_pr": 24.25,
+     "nackgammon_pr": 28.27,
+     "drop": 4.01,
+     "drop_975": [
+      -11.37,
+      17.17
+     ]
+    },
+    "drop": {
+     "pairs": 200,
+     "standard_pr": 24.25,
+     "nackgammon_pr": 28.27,
+     "drop": 4.01,
+     "drop_975": [
+      -11.37,
+      17.17
+     ]
+    },
+    "cutoff": {
+     "pairs": 200,
+     "standard_pr": 24.25,
+     "nackgammon_pr": 28.27,
+     "drop": 4.01,
+     "drop_975": [
+      -11.37,
+      17.17
+     ]
+    }
+   },
+   "sensitivity_final_cutoff": {
+    "pairs": 500,
+    "standard_pr": 25.3,
+    "nackgammon_pr": 31.47,
+    "drop": 6.17,
+    "drop_975": [
+     -2.06,
+     13.95
+    ]
+   },
+   "phases": {
+    "opening": {
+     "pairs": 60,
+     "standard_pr": 18.68,
+     "nackgammon_pr": 28.66,
+     "drop": 9.98,
+     "drop_95": [
+      -1.3,
+      21.21
+     ]
+    },
+    "contact": {
+     "pairs": 60,
+     "standard_pr": 32.73,
+     "nackgammon_pr": 28.98,
+     "drop": -3.75,
+     "drop_95": [
+      -19.32,
+      12.24
+     ]
+    },
+    "holding": {
+     "pairs": 30,
+     "standard_pr": 48.27,
+     "nackgammon_pr": 55.33,
+     "drop": 7.06,
+     "drop_95": [
+      -72.46,
+      68.47
+     ]
+    },
+    "race": {
+     "pairs": 25,
+     "standard_pr": 7.54,
+     "nackgammon_pr": 14.15,
+     "drop": 6.61,
+     "drop_95": [
+      -4.67,
+      24.16
+     ]
+    },
+    "bear-off": {
+     "pairs": 25,
+     "standard_pr": 5.16,
+     "nackgammon_pr": 7.24,
+     "drop": 2.08,
+     "drop_95": [
+      -3.98,
+      11.87
+     ]
+    }
+   },
+   "opening_vs_rest": {
+    "diff": 8.52,
+    "ci_95": [
+     -11.1,
+     29.64
+    ]
+   },
+   "tags": {
+    "(none: bear-off)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 7.24
+     },
+     "standard": {
+      "n": 25,
+      "pr": 5.16
+     }
+    },
+    "(none: opening)": {
+     "nackgammon": {
+      "n": 60,
+      "pr": 28.66
+     },
+     "standard": {
+      "n": 60,
+      "pr": 18.68
+     }
+    },
+    "(none: race)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 14.15
+     },
+     "standard": {
+      "n": 25,
+      "pr": 7.54
+     }
+    },
+    "back game": {
+     "nackgammon": {
+      "n": 10,
+      "pr": 27.83
+     },
+     "standard": {
+      "n": 2,
+      "pr": 60.79
+     }
+    },
+    "blitz": {
+     "nackgammon": {
+      "n": 17,
+      "pr": 16.11
+     },
+     "standard": {
+      "n": 23,
+      "pr": 27.25
+     }
+    },
+    "holding": {
+     "nackgammon": {
+      "n": 30,
+      "pr": 55.33
+     },
+     "standard": {
+      "n": 30,
+      "pr": 48.27
+     }
+    },
+    "low-anchor": {
+     "nackgammon": {
+      "n": 7,
+      "pr": 45.54
+     },
+     "standard": {
+      "n": 8,
+      "pr": 36.13
+     }
+    },
+    "other": {
+     "nackgammon": {
+      "n": 11,
+      "pr": 24.72
+     },
+     "standard": {
+      "n": 10,
+      "pr": 44.45
+     }
+    },
+    "priming": {
+     "nackgammon": {
+      "n": 15,
+      "pr": 39.74
+     },
+     "standard": {
+      "n": 17,
+      "pr": 28.36
+     }
+    }
+   },
+   "cost": {
+    "main": {
+     "decisions": 400,
+     "billed_usd_per_1000": 0.105,
+     "api_eq_usd_per_1000": 0.0
+    },
+    "all": {
+     "decisions": 1000,
+     "billed_usd_per_1000": 0.105,
+     "api_eq_usd_per_1000": 0.0
+    }
+   },
+   "risk": {
+    "main": {
+     "standard": {
+      "risk_pays": 66,
+      "safety_pays": 66,
+      "risks_taken": 32.0,
+      "needless": 11.0,
+      "d_prime": 0.91,
+      "caution": 0.49
+     },
+     "nackgammon": {
+      "risk_pays": 66,
+      "safety_pays": 66,
+      "risks_taken": 26.0,
+      "needless": 14.0,
+      "d_prime": 0.52,
+      "caution": 0.52
+     },
+     "change": {
+      "d_prime": -0.39,
+      "d_prime_95": [
+       -1.15,
+       0.27
+      ],
+      "caution": 0.03,
+      "caution_95": [
+       -0.32,
+       0.37
+      ]
+     },
+     "thin": false
+    },
+    "all": {
+     "standard": {
+      "risk_pays": 165,
+      "safety_pays": 165,
+      "risks_taken": 76.0,
+      "needless": 25.0,
+      "d_prime": 0.92,
+      "caution": 0.56
+     },
+     "nackgammon": {
+      "risk_pays": 165,
+      "safety_pays": 165,
+      "risks_taken": 63.0,
+      "needless": 38.0,
+      "d_prime": 0.43,
+      "caution": 0.52
+     },
+     "change": {
+      "d_prime": -0.49,
+      "d_prime_95": [
+       -0.92,
+       -0.09
+      ],
+      "caution": -0.04,
+      "caution_95": [
+       -0.25,
+       0.16
+      ]
+     },
+     "thin": false
+    }
+   }
+  },
   "Jev 1.13.0": {
    "group": "decision models",
+   "aliases": [],
+   "added": false,
    "first": {
     "pairs": 200,
     "standard_pr": 26.53,
@@ -378,6 +1139,26 @@
      "standard": 0
     }
    },
+   "cut_off": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "past_32768_no_limit_sent": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
    "sensitivity": {
     "worst": {
      "pairs": 200,
@@ -398,7 +1179,27 @@
       -17.72,
       9.97
      ]
+    },
+    "cutoff": {
+     "pairs": 200,
+     "standard_pr": 26.53,
+     "nackgammon_pr": 24.17,
+     "drop": -2.37,
+     "drop_975": [
+      -17.72,
+      9.97
+     ]
     }
+   },
+   "sensitivity_final_cutoff": {
+    "pairs": 500,
+    "standard_pr": 24.67,
+    "nackgammon_pr": 27.44,
+    "drop": 2.77,
+    "drop_975": [
+     -5.2,
+     10.44
+    ]
    },
    "phases": {
     "opening": {
@@ -630,6 +1431,8 @@
   },
   "GPT-6 Luna": {
    "group": "decision models",
+   "aliases": [],
+   "added": false,
    "first": {
     "pairs": 200,
     "standard_pr": 28.27,
@@ -672,6 +1475,26 @@
      "standard": 0
     }
    },
+   "cut_off": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "past_32768_no_limit_sent": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
    "sensitivity": {
     "worst": {
      "pairs": 200,
@@ -692,7 +1515,27 @@
       -10.57,
       20.46
      ]
+    },
+    "cutoff": {
+     "pairs": 200,
+     "standard_pr": 28.27,
+     "nackgammon_pr": 34.11,
+     "drop": 5.84,
+     "drop_975": [
+      -10.57,
+      20.46
+     ]
     }
+   },
+   "sensitivity_final_cutoff": {
+    "pairs": 500,
+    "standard_pr": 29.56,
+    "nackgammon_pr": 35.44,
+    "drop": 5.87,
+    "drop_975": [
+     -4.27,
+     15.07
+    ]
    },
    "phases": {
     "opening": {
@@ -924,6 +1767,8 @@
   },
   "Celeris-1 Decision": {
    "group": "decision models",
+   "aliases": [],
+   "added": false,
    "first": {
     "pairs": 200,
     "standard_pr": 29.71,
@@ -966,6 +1811,26 @@
      "standard": 0
     }
    },
+   "cut_off": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "past_32768_no_limit_sent": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
    "sensitivity": {
     "worst": {
      "pairs": 200,
@@ -986,7 +1851,27 @@
       -18.27,
       14.59
      ]
+    },
+    "cutoff": {
+     "pairs": 200,
+     "standard_pr": 29.71,
+     "nackgammon_pr": 28.47,
+     "drop": -1.24,
+     "drop_975": [
+      -18.27,
+      14.59
+     ]
     }
+   },
+   "sensitivity_final_cutoff": {
+    "pairs": 500,
+    "standard_pr": 26.86,
+    "nackgammon_pr": 30.93,
+    "drop": 4.08,
+    "drop_975": [
+     -4.58,
+     12.64
+    ]
    },
    "phases": {
     "opening": {
@@ -1218,6 +2103,8 @@
   },
   "Decider v1.1 27B": {
    "group": "decision models",
+   "aliases": [],
+   "added": false,
    "first": {
     "pairs": 200,
     "standard_pr": 30.42,
@@ -1260,6 +2147,26 @@
      "standard": 0
     }
    },
+   "cut_off": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "past_32768_no_limit_sent": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
    "sensitivity": {
     "worst": {
      "pairs": 200,
@@ -1280,7 +2187,27 @@
       -17.3,
       11.94
      ]
+    },
+    "cutoff": {
+     "pairs": 200,
+     "standard_pr": 30.42,
+     "nackgammon_pr": 28.64,
+     "drop": -1.78,
+     "drop_975": [
+      -17.3,
+      11.94
+     ]
     }
+   },
+   "sensitivity_final_cutoff": {
+    "pairs": 500,
+    "standard_pr": 31.27,
+    "nackgammon_pr": 32.08,
+    "drop": 0.81,
+    "drop_975": [
+     -7.98,
+     9.24
+    ]
    },
    "phases": {
     "opening": {
@@ -1512,6 +2439,8 @@
   },
   "Cygnet (Gemma 4 12B)": {
    "group": "decision models",
+   "aliases": [],
+   "added": false,
    "first": {
     "pairs": 200,
     "standard_pr": 31.33,
@@ -1554,6 +2483,26 @@
      "standard": 0
     }
    },
+   "cut_off": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "past_32768_no_limit_sent": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
    "sensitivity": {
     "worst": {
      "pairs": 200,
@@ -1574,7 +2523,27 @@
       -22.36,
       5.43
      ]
+    },
+    "cutoff": {
+     "pairs": 200,
+     "standard_pr": 31.33,
+     "nackgammon_pr": 24.48,
+     "drop": -6.85,
+     "drop_975": [
+      -22.36,
+      5.43
+     ]
     }
+   },
+   "sensitivity_final_cutoff": {
+    "pairs": 500,
+    "standard_pr": 28.46,
+    "nackgammon_pr": 28.66,
+    "drop": 0.2,
+    "drop_975": [
+     -7.64,
+     7.43
+    ]
    },
    "phases": {
     "opening": {
@@ -1806,6 +2775,8 @@
   },
   "SubQ Snap Preview": {
    "group": "decision models",
+   "aliases": [],
+   "added": false,
    "first": {
     "pairs": 200,
     "standard_pr": 31.91,
@@ -1848,6 +2819,26 @@
      "standard": 0
     }
    },
+   "cut_off": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "past_32768_no_limit_sent": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
    "sensitivity": {
     "worst": {
      "pairs": 200,
@@ -1868,7 +2859,27 @@
       -18.09,
       11.88
      ]
+    },
+    "cutoff": {
+     "pairs": 200,
+     "standard_pr": 31.91,
+     "nackgammon_pr": 29.66,
+     "drop": -2.25,
+     "drop_975": [
+      -18.09,
+      11.88
+     ]
     }
+   },
+   "sensitivity_final_cutoff": {
+    "pairs": 500,
+    "standard_pr": 31.25,
+    "nackgammon_pr": 32.87,
+    "drop": 1.62,
+    "drop_975": [
+     -7.07,
+     10.07
+    ]
    },
    "phases": {
     "opening": {
@@ -2100,6 +3111,8 @@
   },
   "Mercury Decide": {
    "group": "decision models",
+   "aliases": [],
+   "added": false,
    "first": {
     "pairs": 200,
     "standard_pr": 32.74,
@@ -2142,6 +3155,26 @@
      "standard": 0
     }
    },
+   "cut_off": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "past_32768_no_limit_sent": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
    "sensitivity": {
     "worst": {
      "pairs": 200,
@@ -2162,7 +3195,27 @@
       -20.11,
       8.75
      ]
+    },
+    "cutoff": {
+     "pairs": 200,
+     "standard_pr": 32.74,
+     "nackgammon_pr": 28.46,
+     "drop": -4.28,
+     "drop_975": [
+      -20.11,
+      8.75
+     ]
     }
+   },
+   "sensitivity_final_cutoff": {
+    "pairs": 500,
+    "standard_pr": 31.34,
+    "nackgammon_pr": 34.08,
+    "drop": 2.73,
+    "drop_975": [
+     -5.94,
+     10.85
+    ]
    },
    "phases": {
     "opening": {
@@ -2394,6 +3447,8 @@
   },
   "Winnow-12B": {
    "group": "decision models",
+   "aliases": [],
+   "added": false,
    "first": {
     "pairs": 200,
     "standard_pr": 34.33,
@@ -2436,6 +3491,26 @@
      "standard": 0
     }
    },
+   "cut_off": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "past_32768_no_limit_sent": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
    "sensitivity": {
     "worst": {
      "pairs": 200,
@@ -2456,7 +3531,27 @@
       -17.96,
       14.97
      ]
+    },
+    "cutoff": {
+     "pairs": 200,
+     "standard_pr": 34.33,
+     "nackgammon_pr": 33.43,
+     "drop": -0.89,
+     "drop_975": [
+      -17.96,
+      14.97
+     ]
     }
+   },
+   "sensitivity_final_cutoff": {
+    "pairs": 500,
+    "standard_pr": 31.93,
+    "nackgammon_pr": 34.61,
+    "drop": 2.68,
+    "drop_975": [
+     -6.26,
+     11.16
+    ]
    },
    "phases": {
     "opening": {
@@ -2688,6 +3783,8 @@
   },
   "Decider v1.2 27B": {
    "group": "decision models",
+   "aliases": [],
+   "added": false,
    "first": {
     "pairs": 200,
     "standard_pr": 34.68,
@@ -2730,6 +3827,26 @@
      "standard": 0
     }
    },
+   "cut_off": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "past_32768_no_limit_sent": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
    "sensitivity": {
     "worst": {
      "pairs": 200,
@@ -2750,7 +3867,27 @@
       -27.93,
       1.03
      ]
+    },
+    "cutoff": {
+     "pairs": 200,
+     "standard_pr": 34.68,
+     "nackgammon_pr": 22.8,
+     "drop": -11.87,
+     "drop_975": [
+      -27.93,
+      1.03
+     ]
     }
+   },
+   "sensitivity_final_cutoff": {
+    "pairs": 500,
+    "standard_pr": 31.72,
+    "nackgammon_pr": 29.03,
+    "drop": -2.68,
+    "drop_975": [
+     -11.03,
+     5.25
+    ]
    },
    "phases": {
     "opening": {
@@ -2982,6 +4119,8 @@
   },
   "Decider Flash v1.2": {
    "group": "decision models",
+   "aliases": [],
+   "added": false,
    "first": {
     "pairs": 200,
     "standard_pr": 39.77,
@@ -3024,6 +4163,26 @@
      "standard": 0
     }
    },
+   "cut_off": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "past_32768_no_limit_sent": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
    "sensitivity": {
     "worst": {
      "pairs": 200,
@@ -3044,7 +4203,27 @@
       -12.09,
       20.11
      ]
+    },
+    "cutoff": {
+     "pairs": 200,
+     "standard_pr": 39.77,
+     "nackgammon_pr": 42.86,
+     "drop": 3.09,
+     "drop_975": [
+      -12.09,
+      20.11
+     ]
     }
+   },
+   "sensitivity_final_cutoff": {
+    "pairs": 500,
+    "standard_pr": 40.23,
+    "nackgammon_pr": 48.01,
+    "drop": 7.78,
+    "drop_975": [
+     -2.16,
+     18.39
+    ]
    },
    "phases": {
     "opening": {
@@ -3276,6 +4455,8 @@
   },
   "Open-Jev 27B v1.1": {
    "group": "decision models",
+   "aliases": [],
+   "added": false,
    "first": {
     "pairs": 200,
     "standard_pr": 52.08,
@@ -3318,6 +4499,26 @@
      "standard": 0
     }
    },
+   "cut_off": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "past_32768_no_limit_sent": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
    "sensitivity": {
     "worst": {
      "pairs": 200,
@@ -3338,7 +4539,27 @@
       -29.52,
       6.79
      ]
+    },
+    "cutoff": {
+     "pairs": 200,
+     "standard_pr": 52.08,
+     "nackgammon_pr": 40.96,
+     "drop": -11.12,
+     "drop_975": [
+      -29.52,
+      6.79
+     ]
     }
+   },
+   "sensitivity_final_cutoff": {
+    "pairs": 500,
+    "standard_pr": 47.07,
+    "nackgammon_pr": 43.99,
+    "drop": -3.08,
+    "drop_975": [
+     -13.33,
+     6.76
+    ]
    },
    "phases": {
     "opening": {
@@ -3570,6 +4791,8 @@
   },
   "GPT-6.1 Sol (high)": {
    "group": "workhorses",
+   "aliases": [],
+   "added": false,
    "first": {
     "pairs": 200,
     "standard_pr": 9.88,
@@ -3612,6 +4835,26 @@
      "standard": 0
     }
    },
+   "cut_off": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "past_32768_no_limit_sent": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
    "sensitivity": {
     "worst": {
      "pairs": 200,
@@ -3632,7 +4875,27 @@
       -5.57,
       2.68
      ]
+    },
+    "cutoff": {
+     "pairs": 200,
+     "standard_pr": 9.88,
+     "nackgammon_pr": 8.43,
+     "drop": -1.45,
+     "drop_975": [
+      -5.57,
+      2.68
+     ]
     }
+   },
+   "sensitivity_final_cutoff": {
+    "pairs": 500,
+    "standard_pr": 11.14,
+    "nackgammon_pr": 9.12,
+    "drop": -2.03,
+    "drop_975": [
+     -5.57,
+     1.38
+    ]
    },
    "phases": {
     "opening": {
@@ -3864,6 +5127,8 @@
   },
   "GPT-6.1 Sol (low)": {
    "group": "workhorses",
+   "aliases": [],
+   "added": false,
    "first": {
     "pairs": 200,
     "standard_pr": 11.15,
@@ -3906,6 +5171,26 @@
      "standard": 0
     }
    },
+   "cut_off": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "past_32768_no_limit_sent": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
    "sensitivity": {
     "worst": {
      "pairs": 200,
@@ -3926,7 +5211,27 @@
       -5.7,
       3.31
      ]
+    },
+    "cutoff": {
+     "pairs": 200,
+     "standard_pr": 11.15,
+     "nackgammon_pr": 9.9,
+     "drop": -1.26,
+     "drop_975": [
+      -5.7,
+      3.31
+     ]
     }
+   },
+   "sensitivity_final_cutoff": {
+    "pairs": 500,
+    "standard_pr": 12.21,
+    "nackgammon_pr": 10.75,
+    "drop": -1.46,
+    "drop_975": [
+     -5.01,
+     2.05
+    ]
    },
    "phases": {
     "opening": {
@@ -4158,6 +5463,8 @@
   },
   "Claude Sonnet 5.5 (low)": {
    "group": "workhorses",
+   "aliases": [],
+   "added": false,
    "first": {
     "pairs": 200,
     "standard_pr": 13.96,
@@ -4200,6 +5507,26 @@
      "standard": 0
     }
    },
+   "cut_off": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "past_32768_no_limit_sent": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
    "sensitivity": {
     "worst": {
      "pairs": 200,
@@ -4220,7 +5547,27 @@
       -5.04,
       6.02
      ]
+    },
+    "cutoff": {
+     "pairs": 200,
+     "standard_pr": 13.96,
+     "nackgammon_pr": 14.5,
+     "drop": 0.54,
+     "drop_975": [
+      -5.04,
+      6.02
+     ]
     }
+   },
+   "sensitivity_final_cutoff": {
+    "pairs": 500,
+    "standard_pr": 16.45,
+    "nackgammon_pr": 15.3,
+    "drop": -1.15,
+    "drop_975": [
+     -5.89,
+     3.32
+    ]
    },
    "phases": {
     "opening": {
@@ -4452,6 +5799,8 @@
   },
   "Gemini 3.8 Flash (low)": {
    "group": "workhorses",
+   "aliases": [],
+   "added": false,
    "first": {
     "pairs": 200,
     "standard_pr": 15.92,
@@ -4494,6 +5843,26 @@
      "standard": 0
     }
    },
+   "cut_off": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "past_32768_no_limit_sent": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
    "sensitivity": {
     "worst": {
      "pairs": 200,
@@ -4514,7 +5883,27 @@
       -9.72,
       1.04
      ]
+    },
+    "cutoff": {
+     "pairs": 200,
+     "standard_pr": 15.92,
+     "nackgammon_pr": 11.81,
+     "drop": -4.11,
+     "drop_975": [
+      -9.72,
+      1.04
+     ]
     }
+   },
+   "sensitivity_final_cutoff": {
+    "pairs": 500,
+    "standard_pr": 16.71,
+    "nackgammon_pr": 15.41,
+    "drop": -1.3,
+    "drop_975": [
+     -5.48,
+     2.9
+    ]
    },
    "phases": {
     "opening": {
@@ -4746,6 +6135,8 @@
   },
   "Gemma 4 31B (on)": {
    "group": "workhorses",
+   "aliases": [],
+   "added": false,
    "first": {
     "pairs": 200,
     "standard_pr": 18.35,
@@ -4788,6 +6179,26 @@
      "standard": 0
     }
    },
+   "cut_off": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "past_32768_no_limit_sent": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
    "sensitivity": {
     "worst": {
      "pairs": 200,
@@ -4808,7 +6219,27 @@
       -11.81,
       1.78
      ]
+    },
+    "cutoff": {
+     "pairs": 200,
+     "standard_pr": 18.35,
+     "nackgammon_pr": 13.38,
+     "drop": -4.97,
+     "drop_975": [
+      -11.81,
+      1.78
+     ]
     }
+   },
+   "sensitivity_final_cutoff": {
+    "pairs": 500,
+    "standard_pr": 17.97,
+    "nackgammon_pr": 16.84,
+    "drop": -1.13,
+    "drop_975": [
+     -6.19,
+     4.39
+    ]
    },
    "phases": {
     "opening": {
@@ -5040,6 +6471,8 @@
   },
   "DeepSeek V4.1 Flash (off)": {
    "group": "workhorses",
+   "aliases": [],
+   "added": false,
    "first": {
     "pairs": 200,
     "standard_pr": 23.91,
@@ -5082,6 +6515,26 @@
      "standard": 0
     }
    },
+   "cut_off": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "past_32768_no_limit_sent": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
    "sensitivity": {
     "worst": {
      "pairs": 200,
@@ -5102,7 +6555,27 @@
       -11.72,
       17.96
      ]
+    },
+    "cutoff": {
+     "pairs": 200,
+     "standard_pr": 23.91,
+     "nackgammon_pr": 27.9,
+     "drop": 3.98,
+     "drop_975": [
+      -11.72,
+      17.96
+     ]
     }
+   },
+   "sensitivity_final_cutoff": {
+    "pairs": 500,
+    "standard_pr": 23.35,
+    "nackgammon_pr": 29.29,
+    "drop": 5.94,
+    "drop_975": [
+     -2.48,
+     13.87
+    ]
    },
    "phases": {
     "opening": {
@@ -5334,6 +6807,8 @@
   },
   "Qwen3.8-27B (off)": {
    "group": "workhorses",
+   "aliases": [],
+   "added": false,
    "first": {
     "pairs": 200,
     "standard_pr": 28.13,
@@ -5376,6 +6851,26 @@
      "standard": 0
     }
    },
+   "cut_off": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "past_32768_no_limit_sent": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
    "sensitivity": {
     "worst": {
      "pairs": 200,
@@ -5396,7 +6891,27 @@
       -14.48,
       12.12
      ]
+    },
+    "cutoff": {
+     "pairs": 200,
+     "standard_pr": 28.13,
+     "nackgammon_pr": 28.43,
+     "drop": 0.3,
+     "drop_975": [
+      -14.48,
+      12.12
+     ]
     }
+   },
+   "sensitivity_final_cutoff": {
+    "pairs": 500,
+    "standard_pr": 26.89,
+    "nackgammon_pr": 31.65,
+    "drop": 4.76,
+    "drop_975": [
+     -3.56,
+     12.53
+    ]
    },
    "phases": {
     "opening": {
@@ -5628,6 +7143,8 @@
   },
   "LFM2.5-24B-A2B (on)": {
    "group": "workhorses",
+   "aliases": [],
+   "added": false,
    "first": {
     "pairs": 200,
     "standard_pr": 38.2,
@@ -5670,6 +7187,26 @@
      "standard": 55
     }
    },
+   "cut_off": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "past_32768_no_limit_sent": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
    "sensitivity": {
     "worst": {
      "pairs": 200,
@@ -5690,7 +7227,27 @@
       -12.28,
       18.07
      ]
+    },
+    "cutoff": {
+     "pairs": 200,
+     "standard_pr": 38.2,
+     "nackgammon_pr": 37.55,
+     "drop": -0.65,
+     "drop_975": [
+      -15.17,
+      14.42
+     ]
     }
+   },
+   "sensitivity_final_cutoff": {
+    "pairs": 500,
+    "standard_pr": 37.78,
+    "nackgammon_pr": 42.54,
+    "drop": 4.77,
+    "drop_975": [
+     -4.14,
+     13.49
+    ]
    },
    "phases": {
     "opening": {
@@ -5922,6 +7479,8 @@
   },
   "LFM2.5-24B-A2B (off)": {
    "group": "workhorses",
+   "aliases": [],
+   "added": false,
    "first": {
     "pairs": 200,
     "standard_pr": 50.75,
@@ -5964,6 +7523,26 @@
      "standard": 0
     }
    },
+   "cut_off": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "past_32768_no_limit_sent": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
    "sensitivity": {
     "worst": {
      "pairs": 200,
@@ -5984,7 +7563,27 @@
       -16.93,
       22.07
      ]
+    },
+    "cutoff": {
+     "pairs": 200,
+     "standard_pr": 50.75,
+     "nackgammon_pr": 53.98,
+     "drop": 3.23,
+     "drop_975": [
+      -16.93,
+      22.07
+     ]
     }
+   },
+   "sensitivity_final_cutoff": {
+    "pairs": 500,
+    "standard_pr": 46.44,
+    "nackgammon_pr": 50.87,
+    "drop": 4.43,
+    "drop_975": [
+     -6.53,
+     15.38
+    ]
    },
    "phases": {
     "opening": {
@@ -6214,8 +7813,350 @@
     }
    }
   },
-  "GPT-6 Astra (on)": {
+  "Claude Fable 5.1 (high)": {
    "group": "frontier",
+   "aliases": [
+    "Claude Fable 5.1 (on)"
+   ],
+   "added": true,
+   "first": {
+    "pairs": 200,
+    "standard_pr": 9.13,
+    "nackgammon_pr": 9.51,
+    "drop": 0.38,
+    "drop_975": [
+     -4.64,
+     5.07
+    ],
+    "drop_95": [
+     -3.94,
+     4.42
+    ]
+   },
+   "final": {
+    "pairs": 500,
+    "standard_pr": 9.64,
+    "nackgammon_pr": 10.8,
+    "drop": 1.16,
+    "drop_975": [
+     -2.17,
+     4.4
+    ],
+    "drop_95": [
+     -1.75,
+     4.03
+    ]
+   },
+   "extend_at_first_look": true,
+   "extended": true,
+   "extension_incomplete": null,
+   "label": "kept",
+   "invalid": {
+    "first": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "final": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "cut_off": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "past_32768_no_limit_sent": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "sensitivity": {
+    "worst": {
+     "pairs": 200,
+     "standard_pr": 9.13,
+     "nackgammon_pr": 9.51,
+     "drop": 0.38,
+     "drop_975": [
+      -4.64,
+      5.07
+     ]
+    },
+    "drop": {
+     "pairs": 200,
+     "standard_pr": 9.13,
+     "nackgammon_pr": 9.51,
+     "drop": 0.38,
+     "drop_975": [
+      -4.64,
+      5.07
+     ]
+    },
+    "cutoff": {
+     "pairs": 200,
+     "standard_pr": 9.13,
+     "nackgammon_pr": 9.51,
+     "drop": 0.38,
+     "drop_975": [
+      -4.64,
+      5.07
+     ]
+    }
+   },
+   "sensitivity_final_cutoff": {
+    "pairs": 500,
+    "standard_pr": 9.64,
+    "nackgammon_pr": 10.8,
+    "drop": 1.16,
+    "drop_975": [
+     -2.17,
+     4.4
+    ]
+   },
+   "phases": {
+    "opening": {
+     "pairs": 60,
+     "standard_pr": 10.73,
+     "nackgammon_pr": 14.81,
+     "drop": 4.08,
+     "drop_95": [
+      -3.84,
+      12.23
+     ]
+    },
+    "contact": {
+     "pairs": 60,
+     "standard_pr": 12.57,
+     "nackgammon_pr": 14.1,
+     "drop": 1.53,
+     "drop_95": [
+      -8.4,
+      11.25
+     ]
+    },
+    "holding": {
+     "pairs": 30,
+     "standard_pr": 14.04,
+     "nackgammon_pr": 5.4,
+     "drop": -8.63,
+     "drop_95": [
+      -21.56,
+      1.07
+     ]
+    },
+    "race": {
+     "pairs": 25,
+     "standard_pr": 0.25,
+     "nackgammon_pr": 0.18,
+     "drop": -0.07,
+     "drop_95": [
+      -0.76,
+      0.55
+     ]
+    },
+    "bear-off": {
+     "pairs": 25,
+     "standard_pr": 0.0,
+     "nackgammon_pr": 0.0,
+     "drop": 0.0,
+     "drop_95": [
+      0.0,
+      0.0
+     ]
+    }
+   },
+   "opening_vs_rest": {
+    "diff": 5.29,
+    "ci_95": [
+     -4.0,
+     15.02
+    ]
+   },
+   "tags": {
+    "(none: bear-off)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 0.0
+     },
+     "standard": {
+      "n": 25,
+      "pr": 0.0
+     }
+    },
+    "(none: opening)": {
+     "nackgammon": {
+      "n": 60,
+      "pr": 14.81
+     },
+     "standard": {
+      "n": 60,
+      "pr": 10.73
+     }
+    },
+    "(none: race)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 0.18
+     },
+     "standard": {
+      "n": 25,
+      "pr": 0.25
+     }
+    },
+    "back game": {
+     "nackgammon": {
+      "n": 10,
+      "pr": 23.32
+     },
+     "standard": {
+      "n": 2,
+      "pr": 17.04
+     }
+    },
+    "blitz": {
+     "nackgammon": {
+      "n": 17,
+      "pr": 6.51
+     },
+     "standard": {
+      "n": 23,
+      "pr": 16.79
+     }
+    },
+    "holding": {
+     "nackgammon": {
+      "n": 30,
+      "pr": 5.4
+     },
+     "standard": {
+      "n": 30,
+      "pr": 14.04
+     }
+    },
+    "low-anchor": {
+     "nackgammon": {
+      "n": 7,
+      "pr": 19.97
+     },
+     "standard": {
+      "n": 8,
+      "pr": 16.31
+     }
+    },
+    "other": {
+     "nackgammon": {
+      "n": 11,
+      "pr": 18.6
+     },
+     "standard": {
+      "n": 10,
+      "pr": 5.79
+     }
+    },
+    "priming": {
+     "nackgammon": {
+      "n": 15,
+      "pr": 10.54
+     },
+     "standard": {
+      "n": 17,
+      "pr": 8.55
+     }
+    }
+   },
+   "cost": {
+    "main": {
+     "decisions": 400,
+     "billed_usd_per_1000": 72.906,
+     "api_eq_usd_per_1000": 0.0
+    },
+    "all": {
+     "decisions": 1000,
+     "billed_usd_per_1000": 73.67,
+     "api_eq_usd_per_1000": 0.0
+    }
+   },
+   "risk": {
+    "main": {
+     "standard": {
+      "risk_pays": 66,
+      "safety_pays": 66,
+      "risks_taken": 36.0,
+      "needless": 7.0,
+      "d_prime": 1.33,
+      "caution": 0.55
+     },
+     "nackgammon": {
+      "risk_pays": 66,
+      "safety_pays": 66,
+      "risks_taken": 39.0,
+      "needless": 2.0,
+      "d_prime": 2.01,
+      "caution": 0.78
+     },
+     "change": {
+      "d_prime": 0.68,
+      "d_prime_95": [
+       0.0,
+       1.47
+      ],
+      "caution": 0.23,
+      "caution_95": [
+       -0.11,
+       0.62
+      ]
+     },
+     "thin": false
+    },
+    "all": {
+     "standard": {
+      "risk_pays": 165,
+      "safety_pays": 165,
+      "risks_taken": 90.0,
+      "needless": 14.0,
+      "d_prime": 1.47,
+      "caution": 0.62
+     },
+     "nackgammon": {
+      "risk_pays": 165,
+      "safety_pays": 165,
+      "risks_taken": 93.0,
+      "needless": 16.0,
+      "d_prime": 1.44,
+      "caution": 0.56
+     },
+     "change": {
+      "d_prime": -0.03,
+      "d_prime_95": [
+       -0.47,
+       0.39
+      ],
+      "caution": -0.06,
+      "caution_95": [
+       -0.27,
+       0.15
+      ]
+     },
+     "thin": false
+    }
+   }
+  },
+  "GPT-6 Astra (medium)": {
+   "group": "frontier",
+   "aliases": [
+    "GPT-6 Astra (on)"
+   ],
+   "added": false,
    "first": {
     "pairs": 200,
     "standard_pr": 9.66,
@@ -6258,6 +8199,26 @@
      "standard": 0
     }
    },
+   "cut_off": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "past_32768_no_limit_sent": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
    "sensitivity": {
     "worst": {
      "pairs": 200,
@@ -6278,7 +8239,27 @@
       -6.69,
       1.77
      ]
+    },
+    "cutoff": {
+     "pairs": 200,
+     "standard_pr": 9.66,
+     "nackgammon_pr": 7.3,
+     "drop": -2.37,
+     "drop_975": [
+      -6.69,
+      1.77
+     ]
     }
+   },
+   "sensitivity_final_cutoff": {
+    "pairs": 500,
+    "standard_pr": 10.86,
+    "nackgammon_pr": 8.88,
+    "drop": -1.99,
+    "drop_975": [
+     -5.52,
+     1.47
+    ]
    },
    "phases": {
     "opening": {
@@ -6508,8 +8489,348 @@
     }
    }
   },
+  "Grok 4.7 (high)": {
+   "group": "frontier",
+   "aliases": [
+    "Grok 4.7 (on)"
+   ],
+   "added": true,
+   "first": {
+    "pairs": 200,
+    "standard_pr": 15.2,
+    "nackgammon_pr": 14.53,
+    "drop": -0.67,
+    "drop_975": [
+     -6.58,
+     5.07
+    ],
+    "drop_95": [
+     -5.81,
+     4.42
+    ]
+   },
+   "final": {
+    "pairs": 500,
+    "standard_pr": 15.68,
+    "nackgammon_pr": 16.53,
+    "drop": 0.85,
+    "drop_975": [
+     -3.74,
+     5.35
+    ],
+    "drop_95": [
+     -3.12,
+     4.78
+    ]
+   },
+   "extend_at_first_look": true,
+   "extended": true,
+   "extension_incomplete": null,
+   "label": "unclear",
+   "invalid": {
+    "first": {
+     "nackgammon": 9,
+     "standard": 6
+    },
+    "final": {
+     "nackgammon": 18,
+     "standard": 16
+    }
+   },
+   "cut_off": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "past_32768_no_limit_sent": {
+    "main": {
+     "nackgammon": 2,
+     "standard": 5
+    },
+    "all": {
+     "nackgammon": 10,
+     "standard": 7
+    }
+   },
+   "sensitivity": {
+    "worst": {
+     "pairs": 200,
+     "standard_pr": 15.57,
+     "nackgammon_pr": 15.11,
+     "drop": -0.46,
+     "drop_975": [
+      -6.52,
+      5.59
+     ]
+    },
+    "drop": {
+     "pairs": 186,
+     "standard_pr": 15.94,
+     "nackgammon_pr": 15.11,
+     "drop": -0.84,
+     "drop_975": [
+      -7.17,
+      5.33
+     ]
+    },
+    "cutoff": {
+     "pairs": 200,
+     "standard_pr": 15.2,
+     "nackgammon_pr": 14.53,
+     "drop": -0.67,
+     "drop_975": [
+      -6.58,
+      5.07
+     ]
+    }
+   },
+   "sensitivity_final_cutoff": {
+    "pairs": 500,
+    "standard_pr": 15.68,
+    "nackgammon_pr": 16.53,
+    "drop": 0.85,
+    "drop_975": [
+     -3.74,
+     5.35
+    ]
+   },
+   "phases": {
+    "opening": {
+     "pairs": 60,
+     "standard_pr": 12.73,
+     "nackgammon_pr": 22.83,
+     "drop": 10.09,
+     "drop_95": [
+      1.1,
+      19.52
+     ]
+    },
+    "contact": {
+     "pairs": 60,
+     "standard_pr": 28.56,
+     "nackgammon_pr": 17.57,
+     "drop": -10.99,
+     "drop_95": [
+      -21.81,
+      -0.91
+     ]
+    },
+    "holding": {
+     "pairs": 30,
+     "standard_pr": 16.84,
+     "nackgammon_pr": 14.39,
+     "drop": -2.45,
+     "drop_95": [
+      -20.92,
+      17.77
+     ]
+    },
+    "race": {
+     "pairs": 25,
+     "standard_pr": 2.3,
+     "nackgammon_pr": 0.93,
+     "drop": -1.37,
+     "drop_95": [
+      -5.37,
+      1.51
+     ]
+    },
+    "bear-off": {
+     "pairs": 25,
+     "standard_pr": 0.0,
+     "nackgammon_pr": 1.11,
+     "drop": 1.11,
+     "drop_95": [
+      0.0,
+      3.18
+     ]
+    }
+   },
+   "opening_vs_rest": {
+    "diff": 15.37,
+    "ci_95": [
+     4.49,
+     26.73
+    ]
+   },
+   "tags": {
+    "(none: bear-off)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 1.11
+     },
+     "standard": {
+      "n": 25,
+      "pr": 0.0
+     }
+    },
+    "(none: opening)": {
+     "nackgammon": {
+      "n": 60,
+      "pr": 22.83
+     },
+     "standard": {
+      "n": 60,
+      "pr": 12.73
+     }
+    },
+    "(none: race)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 0.93
+     },
+     "standard": {
+      "n": 25,
+      "pr": 2.3
+     }
+    },
+    "back game": {
+     "nackgammon": {
+      "n": 10,
+      "pr": 18.61
+     },
+     "standard": {
+      "n": 2,
+      "pr": 39.75
+     }
+    },
+    "blitz": {
+     "nackgammon": {
+      "n": 17,
+      "pr": 13.2
+     },
+     "standard": {
+      "n": 23,
+      "pr": 23.28
+     }
+    },
+    "holding": {
+     "nackgammon": {
+      "n": 30,
+      "pr": 14.39
+     },
+     "standard": {
+      "n": 30,
+      "pr": 16.84
+     }
+    },
+    "low-anchor": {
+     "nackgammon": {
+      "n": 7,
+      "pr": 45.54
+     },
+     "standard": {
+      "n": 8,
+      "pr": 40.59
+     }
+    },
+    "other": {
+     "nackgammon": {
+      "n": 11,
+      "pr": 19.01
+     },
+     "standard": {
+      "n": 10,
+      "pr": 20.82
+     }
+    },
+    "priming": {
+     "nackgammon": {
+      "n": 15,
+      "pr": 7.71
+     },
+     "standard": {
+      "n": 17,
+      "pr": 33.27
+     }
+    }
+   },
+   "cost": {
+    "main": {
+     "decisions": 400,
+     "billed_usd_per_1000": 64.087,
+     "api_eq_usd_per_1000": 0.0
+    },
+    "all": {
+     "decisions": 1000,
+     "billed_usd_per_1000": 63.44,
+     "api_eq_usd_per_1000": 0.0
+    }
+   },
+   "risk": {
+    "main": {
+     "standard": {
+      "risk_pays": 66,
+      "safety_pays": 66,
+      "risks_taken": 29.0,
+      "needless": 14.0,
+      "d_prime": 0.63,
+      "caution": 0.47
+     },
+     "nackgammon": {
+      "risk_pays": 66,
+      "safety_pays": 66,
+      "risks_taken": 28.96,
+      "needless": 3.0,
+      "d_prime": 1.47,
+      "caution": 0.89
+     },
+     "change": {
+      "d_prime": 0.84,
+      "d_prime_95": [
+       0.16,
+       1.76
+      ],
+      "caution": 0.42,
+      "caution_95": [
+       0.09,
+       0.87
+      ]
+     },
+     "thin": false
+    },
+    "all": {
+     "standard": {
+      "risk_pays": 165,
+      "safety_pays": 165,
+      "risks_taken": 65.71,
+      "needless": 20.6,
+      "d_prime": 0.88,
+      "caution": 0.7
+     },
+     "nackgammon": {
+      "risk_pays": 165,
+      "safety_pays": 165,
+      "risks_taken": 72.16,
+      "needless": 18.43,
+      "d_prime": 1.05,
+      "caution": 0.68
+     },
+     "change": {
+      "d_prime": 0.17,
+      "d_prime_95": [
+       -0.26,
+       0.6
+      ],
+      "caution": -0.02,
+      "caution_95": [
+       -0.23,
+       0.2
+      ]
+     },
+     "thin": false
+    }
+   }
+  },
   "GPT-6.1 Terra": {
    "group": "no group (exploratory)",
+   "aliases": [],
+   "added": false,
    "first": {
     "pairs": 200,
     "standard_pr": 13.52,
@@ -6552,6 +8873,26 @@
      "standard": 0
     }
    },
+   "cut_off": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "past_32768_no_limit_sent": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
    "sensitivity": {
     "worst": {
      "pairs": 200,
@@ -6572,7 +8913,27 @@
       -5.73,
       8.59
      ]
+    },
+    "cutoff": {
+     "pairs": 200,
+     "standard_pr": 13.52,
+     "nackgammon_pr": 14.4,
+     "drop": 0.89,
+     "drop_975": [
+      -5.73,
+      8.59
+     ]
     }
+   },
+   "sensitivity_final_cutoff": {
+    "pairs": 500,
+    "standard_pr": 13.18,
+    "nackgammon_pr": 16.22,
+    "drop": 3.04,
+    "drop_975": [
+     -0.94,
+     7.39
+    ]
    },
    "phases": {
     "opening": {
@@ -6802,8 +9163,348 @@
     }
    }
   },
+  "Gemini 4 Argon (low)": {
+   "group": "no group (exploratory)",
+   "aliases": [
+    "Gemini 4 Argon (off)"
+   ],
+   "added": false,
+   "first": {
+    "pairs": 200,
+    "standard_pr": 13.79,
+    "nackgammon_pr": 15.71,
+    "drop": 1.92,
+    "drop_975": [
+     -4.33,
+     8.42
+    ],
+    "drop_95": [
+     -3.5,
+     7.49
+    ]
+   },
+   "final": {
+    "pairs": 500,
+    "standard_pr": 14.71,
+    "nackgammon_pr": 17.42,
+    "drop": 2.71,
+    "drop_975": [
+     -2.06,
+     7.62
+    ],
+    "drop_95": [
+     -1.51,
+     7.03
+    ]
+   },
+   "extend_at_first_look": true,
+   "extended": true,
+   "extension_incomplete": null,
+   "label": "unclear",
+   "invalid": {
+    "first": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "final": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "cut_off": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "past_32768_no_limit_sent": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "sensitivity": {
+    "worst": {
+     "pairs": 200,
+     "standard_pr": 13.79,
+     "nackgammon_pr": 15.71,
+     "drop": 1.92,
+     "drop_975": [
+      -4.33,
+      8.42
+     ]
+    },
+    "drop": {
+     "pairs": 200,
+     "standard_pr": 13.79,
+     "nackgammon_pr": 15.71,
+     "drop": 1.92,
+     "drop_975": [
+      -4.33,
+      8.42
+     ]
+    },
+    "cutoff": {
+     "pairs": 200,
+     "standard_pr": 13.79,
+     "nackgammon_pr": 15.71,
+     "drop": 1.92,
+     "drop_975": [
+      -4.33,
+      8.42
+     ]
+    }
+   },
+   "sensitivity_final_cutoff": {
+    "pairs": 500,
+    "standard_pr": 14.71,
+    "nackgammon_pr": 17.42,
+    "drop": 2.71,
+    "drop_975": [
+     -2.06,
+     7.62
+    ]
+   },
+   "phases": {
+    "opening": {
+     "pairs": 60,
+     "standard_pr": 15.22,
+     "nackgammon_pr": 18.13,
+     "drop": 2.91,
+     "drop_95": [
+      -7.2,
+      12.64
+     ]
+    },
+    "contact": {
+     "pairs": 60,
+     "standard_pr": 23.0,
+     "nackgammon_pr": 17.18,
+     "drop": -5.83,
+     "drop_95": [
+      -16.79,
+      4.71
+     ]
+    },
+    "holding": {
+     "pairs": 30,
+     "standard_pr": 13.58,
+     "nackgammon_pr": 31.67,
+     "drop": 18.09,
+     "drop_95": [
+      0.69,
+      42.23
+     ]
+    },
+    "race": {
+     "pairs": 25,
+     "standard_pr": 2.09,
+     "nackgammon_pr": 2.6,
+     "drop": 0.5,
+     "drop_95": [
+      -4.03,
+      6.55
+     ]
+    },
+    "bear-off": {
+     "pairs": 25,
+     "standard_pr": 0.23,
+     "nackgammon_pr": 0.34,
+     "drop": 0.11,
+     "drop_95": [
+      -0.48,
+      0.81
+     ]
+    }
+   },
+   "opening_vs_rest": {
+    "diff": 1.42,
+    "ci_95": [
+     -10.49,
+     13.27
+    ]
+   },
+   "tags": {
+    "(none: bear-off)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 0.34
+     },
+     "standard": {
+      "n": 25,
+      "pr": 0.23
+     }
+    },
+    "(none: opening)": {
+     "nackgammon": {
+      "n": 60,
+      "pr": 18.13
+     },
+     "standard": {
+      "n": 60,
+      "pr": 15.22
+     }
+    },
+    "(none: race)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 2.6
+     },
+     "standard": {
+      "n": 25,
+      "pr": 2.09
+     }
+    },
+    "back game": {
+     "nackgammon": {
+      "n": 10,
+      "pr": 21.46
+     },
+     "standard": {
+      "n": 2,
+      "pr": 0.0
+     }
+    },
+    "blitz": {
+     "nackgammon": {
+      "n": 17,
+      "pr": 8.73
+     },
+     "standard": {
+      "n": 23,
+      "pr": 22.27
+     }
+    },
+    "holding": {
+     "nackgammon": {
+      "n": 30,
+      "pr": 31.67
+     },
+     "standard": {
+      "n": 30,
+      "pr": 13.58
+     }
+    },
+    "low-anchor": {
+     "nackgammon": {
+      "n": 7,
+      "pr": 35.49
+     },
+     "standard": {
+      "n": 8,
+      "pr": 32.68
+     }
+    },
+    "other": {
+     "nackgammon": {
+      "n": 11,
+      "pr": 28.54
+     },
+     "standard": {
+      "n": 10,
+      "pr": 15.73
+     }
+    },
+    "priming": {
+     "nackgammon": {
+      "n": 15,
+      "pr": 7.02
+     },
+     "standard": {
+      "n": 17,
+      "pr": 26.43
+     }
+    }
+   },
+   "cost": {
+    "main": {
+     "decisions": 400,
+     "billed_usd_per_1000": 5.906,
+     "api_eq_usd_per_1000": 0.0
+    },
+    "all": {
+     "decisions": 1000,
+     "billed_usd_per_1000": 5.907,
+     "api_eq_usd_per_1000": 0.0
+    }
+   },
+   "risk": {
+    "main": {
+     "standard": {
+      "risk_pays": 66,
+      "safety_pays": 66,
+      "risks_taken": 39.0,
+      "needless": 11.0,
+      "d_prime": 1.17,
+      "caution": 0.36
+     },
+     "nackgammon": {
+      "risk_pays": 66,
+      "safety_pays": 66,
+      "risks_taken": 32.0,
+      "needless": 6.0,
+      "d_prime": 1.26,
+      "caution": 0.67
+     },
+     "change": {
+      "d_prime": 0.09,
+      "d_prime_95": [
+       -0.48,
+       0.71
+      ],
+      "caution": 0.31,
+      "caution_95": [
+       0.02,
+       0.61
+      ]
+     },
+     "thin": false
+    },
+    "all": {
+     "standard": {
+      "risk_pays": 165,
+      "safety_pays": 165,
+      "risks_taken": 83.0,
+      "needless": 27.0,
+      "d_prime": 0.98,
+      "caution": 0.48
+     },
+     "nackgammon": {
+      "risk_pays": 165,
+      "safety_pays": 165,
+      "risks_taken": 84.0,
+      "needless": 20.0,
+      "d_prime": 1.18,
+      "caution": 0.57
+     },
+     "change": {
+      "d_prime": 0.2,
+      "d_prime_95": [
+       -0.21,
+       0.6
+      ],
+      "caution": 0.09,
+      "caution_95": [
+       -0.1,
+       0.29
+      ]
+     },
+     "thin": false
+    }
+   }
+  },
   "GNUbg weak": {
    "group": "yardstick",
+   "aliases": [],
+   "added": false,
    "first": {
     "pairs": 200,
     "standard_pr": 27.69,
@@ -6846,6 +9547,26 @@
      "standard": 0
     }
    },
+   "cut_off": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "past_32768_no_limit_sent": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
    "sensitivity": {
     "worst": {
      "pairs": 200,
@@ -6866,7 +9587,27 @@
       -13.92,
       7.29
      ]
+    },
+    "cutoff": {
+     "pairs": 200,
+     "standard_pr": 27.69,
+     "nackgammon_pr": 24.13,
+     "drop": -3.56,
+     "drop_975": [
+      -13.92,
+      7.29
+     ]
     }
+   },
+   "sensitivity_final_cutoff": {
+    "pairs": 500,
+    "standard_pr": 25.35,
+    "nackgammon_pr": 20.78,
+    "drop": -4.57,
+    "drop_975": [
+     -10.32,
+     1.34
+    ]
    },
    "phases": {
     "opening": {
@@ -7098,6 +9839,8 @@
   },
   "Random": {
    "group": "yardstick",
+   "aliases": [],
+   "added": false,
    "first": {
     "pairs": 200,
     "standard_pr": 87.45,
@@ -7140,6 +9883,8 @@
      "standard": 0
     }
    },
+   "cut_off": null,
+   "past_32768_no_limit_sent": null,
    "sensitivity": {
     "worst": {
      "pairs": 200,
@@ -7160,8 +9905,19 @@
       -18.04,
       7.86
      ]
+    },
+    "cutoff": {
+     "pairs": 200,
+     "standard_pr": 87.45,
+     "nackgammon_pr": 82.89,
+     "drop": -4.56,
+     "drop_975": [
+      -18.04,
+      7.86
+     ]
     }
    },
+   "sensitivity_final_cutoff": null,
    "phases": {
     "opening": {
      "pairs": 60,
@@ -7351,8 +10107,703 @@
   }
  },
  "cost_note": "Recorded cost (the field billed_usd_per_1000) is the cost stored with each answer: the provider's reported cost per response where the route reports one, otherwise the runner's list-price computation (Mercury Decide: list price; its provider-billed amount was not retained and is unknown). No invoice was checked. API-equivalent is a subscription setup priced at list price, not money paid. Setups on our GPUs have no list price.",
- "missing_note": "LFM2.5-24B-A2B (on): 107 positions recorded without a valid choice (timeouts or missing choices), 38 in the main 200 pairs and 69 in the reserve; on its final 500 pairs 55 standard / 52 Nackgammon. They are not answers: each is scored by the primary rule (the position's Random error), with both sensitivity checks below. Every other asked setup gave a valid choice on every recorded position.",
+ "missing_note": "LFM2.5-24B-A2B (on): 107 positions recorded without a valid choice (timeouts or missing choices), 38 in the main 200 pairs and 69 in the reserve; on its final 500 pairs 55 standard / 52 Nackgammon; Grok 4.7 (high): 34 positions recorded without a valid choice (timeouts or missing choices), 15 in the main 200 pairs and 19 in the reserve; on its final 500 pairs 16 standard / 18 Nackgammon. They are not answers: each is scored by the primary rule (the position's Random error), with both sensitivity checks below. Every other asked setup gave a valid choice on every recorded position.",
+ "limit_note": "Output limit (§10.14(h)): an answer cut off at 32,768 output tokens counts as invalid, with its own sensitivity check (cut-off pairs left out). No recorded answer was cut off at the limit. Past 32,768 output tokens from a run that sent no limit (flagged; the answers keep their scores): Grok 4.7 (high), 17 of its recorded positions (7 standard / 10 Nackgammon), 7 in the main 200 pairs.",
  "primary": {
+  "random": [
+   {
+    "comparison": "decision models − workhorses",
+    "kind": "group",
+    "diff": -1.44,
+    "ci_99": [
+     -8.85,
+     4.96
+    ],
+    "A": {
+     "members": [
+      "Celeris-1 Decision",
+      "SubQ Snap Preview",
+      "Cygnet (Gemma 4 12B)",
+      "Decider v1.2 27B",
+      "Fastino GLiDE v1.2 (local)",
+      "Jev 1.13.0",
+      "GPT-6 Luna",
+      "Decider v1.1 27B",
+      "Mercury Decide",
+      "Winnow-12B",
+      "Open-Jev 27B v1.1",
+      "Decider Flash v1.2",
+      "Liquid d1-ultra",
+      "Fastino GLiDE"
+     ],
+     "standard_pr": 31.55,
+     "nackgammon_pr": 29.61,
+     "drop": -1.93
+    },
+    "B": {
+     "members": [
+      "DeepSeek V4.1 Flash (off)",
+      "LFM2.5-24B-A2B (on)",
+      "Qwen3.8-27B (off)",
+      "LFM2.5-24B-A2B (off)",
+      "Gemini 3.8 Flash (low)",
+      "Claude Sonnet 5.5 (low)",
+      "GPT-6.1 Sol (low)",
+      "GPT-6.1 Sol (high)",
+      "Gemma 4 31B (on)"
+     ],
+     "standard_pr": 23.36,
+     "nackgammon_pr": 22.88,
+     "drop": -0.49
+    }
+   },
+   {
+    "comparison": "decision models − frontier",
+    "kind": "group",
+    "diff": -1.04,
+    "ci_99": [
+     -14.19,
+     10.26
+    ],
+    "A": {
+     "members": [
+      "Celeris-1 Decision",
+      "SubQ Snap Preview",
+      "Cygnet (Gemma 4 12B)",
+      "Decider v1.2 27B",
+      "Fastino GLiDE v1.2 (local)",
+      "Jev 1.13.0",
+      "GPT-6 Luna",
+      "Decider v1.1 27B",
+      "Mercury Decide",
+      "Winnow-12B",
+      "Open-Jev 27B v1.1",
+      "Decider Flash v1.2",
+      "Liquid d1-ultra",
+      "Fastino GLiDE"
+     ],
+     "standard_pr": 31.55,
+     "nackgammon_pr": 29.61,
+     "drop": -1.93
+    },
+    "B": {
+     "members": [
+      "GPT-6 Astra (medium)",
+      "Claude Fable 5.1 (high)",
+      "Grok 4.7 (high)"
+     ],
+     "standard_pr": 11.33,
+     "nackgammon_pr": 10.45,
+     "drop": -0.89
+    }
+   },
+   {
+    "comparison": "workhorses − frontier",
+    "kind": "group",
+    "diff": 0.4,
+    "ci_99": [
+     -6.68,
+     6.96
+    ],
+    "A": {
+     "members": [
+      "DeepSeek V4.1 Flash (off)",
+      "LFM2.5-24B-A2B (on)",
+      "Qwen3.8-27B (off)",
+      "LFM2.5-24B-A2B (off)",
+      "Gemini 3.8 Flash (low)",
+      "Claude Sonnet 5.5 (low)",
+      "GPT-6.1 Sol (low)",
+      "GPT-6.1 Sol (high)",
+      "Gemma 4 31B (on)"
+     ],
+     "standard_pr": 23.36,
+     "nackgammon_pr": 22.88,
+     "drop": -0.49
+    },
+    "B": {
+     "members": [
+      "GPT-6 Astra (medium)",
+      "Claude Fable 5.1 (high)",
+      "Grok 4.7 (high)"
+     ],
+     "standard_pr": 11.33,
+     "nackgammon_pr": 10.45,
+     "drop": -0.89
+    }
+   },
+   {
+    "comparison": "LFM2.5-24B-A2B (on) − LFM2.5-24B-A2B (off)",
+    "kind": "setup",
+    "diff": -3.88,
+    "ci_99": [
+     -26.98,
+     21.76
+    ],
+    "A": {
+     "members": [
+      "LFM2.5-24B-A2B (on)"
+     ],
+     "standard_pr": 38.2,
+     "nackgammon_pr": 37.55,
+     "drop": -0.65
+    },
+    "B": {
+     "members": [
+      "LFM2.5-24B-A2B (off)"
+     ],
+     "standard_pr": 50.75,
+     "nackgammon_pr": 53.98,
+     "drop": 3.23
+    }
+   },
+   {
+    "comparison": "GPT-6.1 Sol (high) − GPT-6.1 Sol (low)",
+    "kind": "setup",
+    "diff": -0.19,
+    "ci_99": [
+     -3.0,
+     2.63
+    ],
+    "A": {
+     "members": [
+      "GPT-6.1 Sol (high)"
+     ],
+     "standard_pr": 9.88,
+     "nackgammon_pr": 8.43,
+     "drop": -1.45
+    },
+    "B": {
+     "members": [
+      "GPT-6.1 Sol (low)"
+     ],
+     "standard_pr": 11.15,
+     "nackgammon_pr": 9.9,
+     "drop": -1.26
+    }
+   }
+  ],
+  "worst": [
+   {
+    "comparison": "decision models − workhorses",
+    "kind": "group",
+    "diff": -0.73,
+    "ci_99": [
+     -8.24,
+     5.88
+    ],
+    "A": {
+     "members": [
+      "Celeris-1 Decision",
+      "SubQ Snap Preview",
+      "Cygnet (Gemma 4 12B)",
+      "Decider v1.2 27B",
+      "Fastino GLiDE v1.2 (local)",
+      "Jev 1.13.0",
+      "GPT-6 Luna",
+      "Decider v1.1 27B",
+      "Mercury Decide",
+      "Winnow-12B",
+      "Open-Jev 27B v1.1",
+      "Decider Flash v1.2",
+      "Liquid d1-ultra",
+      "Fastino GLiDE"
+     ],
+     "standard_pr": 31.55,
+     "nackgammon_pr": 29.61,
+     "drop": -1.93
+    },
+    "B": {
+     "members": [
+      "DeepSeek V4.1 Flash (off)",
+      "LFM2.5-24B-A2B (on)",
+      "Qwen3.8-27B (off)",
+      "LFM2.5-24B-A2B (off)",
+      "Gemini 3.8 Flash (low)",
+      "Claude Sonnet 5.5 (low)",
+      "GPT-6.1 Sol (low)",
+      "GPT-6.1 Sol (high)",
+      "Gemma 4 31B (on)"
+     ],
+     "standard_pr": 24.9,
+     "nackgammon_pr": 23.7,
+     "drop": -1.2
+    }
+   },
+   {
+    "comparison": "decision models − frontier",
+    "kind": "group",
+    "diff": -1.12,
+    "ci_99": [
+     -14.14,
+     10.21
+    ],
+    "A": {
+     "members": [
+      "Celeris-1 Decision",
+      "SubQ Snap Preview",
+      "Cygnet (Gemma 4 12B)",
+      "Decider v1.2 27B",
+      "Fastino GLiDE v1.2 (local)",
+      "Jev 1.13.0",
+      "GPT-6 Luna",
+      "Decider v1.1 27B",
+      "Mercury Decide",
+      "Winnow-12B",
+      "Open-Jev 27B v1.1",
+      "Decider Flash v1.2",
+      "Liquid d1-ultra",
+      "Fastino GLiDE"
+     ],
+     "standard_pr": 31.55,
+     "nackgammon_pr": 29.61,
+     "drop": -1.93
+    },
+    "B": {
+     "members": [
+      "GPT-6 Astra (medium)",
+      "Claude Fable 5.1 (high)",
+      "Grok 4.7 (high)"
+     ],
+     "standard_pr": 11.45,
+     "nackgammon_pr": 10.64,
+     "drop": -0.81
+    }
+   },
+   {
+    "comparison": "workhorses − frontier",
+    "kind": "group",
+    "diff": -0.39,
+    "ci_99": [
+     -7.62,
+     6.32
+    ],
+    "A": {
+     "members": [
+      "DeepSeek V4.1 Flash (off)",
+      "LFM2.5-24B-A2B (on)",
+      "Qwen3.8-27B (off)",
+      "LFM2.5-24B-A2B (off)",
+      "Gemini 3.8 Flash (low)",
+      "Claude Sonnet 5.5 (low)",
+      "GPT-6.1 Sol (low)",
+      "GPT-6.1 Sol (high)",
+      "Gemma 4 31B (on)"
+     ],
+     "standard_pr": 24.9,
+     "nackgammon_pr": 23.7,
+     "drop": -1.2
+    },
+    "B": {
+     "members": [
+      "GPT-6 Astra (medium)",
+      "Claude Fable 5.1 (high)",
+      "Grok 4.7 (high)"
+     ],
+     "standard_pr": 11.45,
+     "nackgammon_pr": 10.64,
+     "drop": -0.81
+    }
+   },
+   {
+    "comparison": "LFM2.5-24B-A2B (on) − LFM2.5-24B-A2B (off)",
+    "kind": "setup",
+    "diff": -10.33,
+    "ci_99": [
+     -38.92,
+     19.74
+    ],
+    "A": {
+     "members": [
+      "LFM2.5-24B-A2B (on)"
+     ],
+     "standard_pr": 52.06,
+     "nackgammon_pr": 44.97,
+     "drop": -7.1
+    },
+    "B": {
+     "members": [
+      "LFM2.5-24B-A2B (off)"
+     ],
+     "standard_pr": 50.75,
+     "nackgammon_pr": 53.98,
+     "drop": 3.23
+    }
+   },
+   {
+    "comparison": "GPT-6.1 Sol (high) − GPT-6.1 Sol (low)",
+    "kind": "setup",
+    "diff": -0.19,
+    "ci_99": [
+     -3.0,
+     2.63
+    ],
+    "A": {
+     "members": [
+      "GPT-6.1 Sol (high)"
+     ],
+     "standard_pr": 9.88,
+     "nackgammon_pr": 8.43,
+     "drop": -1.45
+    },
+    "B": {
+     "members": [
+      "GPT-6.1 Sol (low)"
+     ],
+     "standard_pr": 11.15,
+     "nackgammon_pr": 9.9,
+     "drop": -1.26
+    }
+   }
+  ],
+  "drop": [
+   {
+    "comparison": "decision models − workhorses",
+    "kind": "group",
+    "diff": -1.77,
+    "ci_99": [
+     -9.22,
+     4.92
+    ],
+    "A": {
+     "members": [
+      "Celeris-1 Decision",
+      "SubQ Snap Preview",
+      "Cygnet (Gemma 4 12B)",
+      "Decider v1.2 27B",
+      "Fastino GLiDE v1.2 (local)",
+      "Jev 1.13.0",
+      "GPT-6 Luna",
+      "Decider v1.1 27B",
+      "Mercury Decide",
+      "Winnow-12B",
+      "Open-Jev 27B v1.1",
+      "Decider Flash v1.2",
+      "Liquid d1-ultra",
+      "Fastino GLiDE"
+     ],
+     "standard_pr": 31.55,
+     "nackgammon_pr": 29.61,
+     "drop": -1.93
+    },
+    "B": {
+     "members": [
+      "DeepSeek V4.1 Flash (off)",
+      "LFM2.5-24B-A2B (on)",
+      "Qwen3.8-27B (off)",
+      "LFM2.5-24B-A2B (off)",
+      "Gemini 3.8 Flash (low)",
+      "Claude Sonnet 5.5 (low)",
+      "GPT-6.1 Sol (low)",
+      "GPT-6.1 Sol (high)",
+      "Gemma 4 31B (on)"
+     ],
+     "standard_pr": 22.52,
+     "nackgammon_pr": 22.36,
+     "drop": -0.16
+    }
+   },
+   {
+    "comparison": "decision models − frontier",
+    "kind": "group",
+    "diff": -0.99,
+    "ci_99": [
+     -14.18,
+     10.32
+    ],
+    "A": {
+     "members": [
+      "Celeris-1 Decision",
+      "SubQ Snap Preview",
+      "Cygnet (Gemma 4 12B)",
+      "Decider v1.2 27B",
+      "Fastino GLiDE v1.2 (local)",
+      "Jev 1.13.0",
+      "GPT-6 Luna",
+      "Decider v1.1 27B",
+      "Mercury Decide",
+      "Winnow-12B",
+      "Open-Jev 27B v1.1",
+      "Decider Flash v1.2",
+      "Liquid d1-ultra",
+      "Fastino GLiDE"
+     ],
+     "standard_pr": 31.55,
+     "nackgammon_pr": 29.61,
+     "drop": -1.93
+    },
+    "B": {
+     "members": [
+      "GPT-6 Astra (medium)",
+      "Claude Fable 5.1 (high)",
+      "Grok 4.7 (high)"
+     ],
+     "standard_pr": 11.58,
+     "nackgammon_pr": 10.64,
+     "drop": -0.94
+    }
+   },
+   {
+    "comparison": "workhorses − frontier",
+    "kind": "group",
+    "diff": 0.78,
+    "ci_99": [
+     -6.32,
+     7.42
+    ],
+    "A": {
+     "members": [
+      "DeepSeek V4.1 Flash (off)",
+      "LFM2.5-24B-A2B (on)",
+      "Qwen3.8-27B (off)",
+      "LFM2.5-24B-A2B (off)",
+      "Gemini 3.8 Flash (low)",
+      "Claude Sonnet 5.5 (low)",
+      "GPT-6.1 Sol (low)",
+      "GPT-6.1 Sol (high)",
+      "Gemma 4 31B (on)"
+     ],
+     "standard_pr": 22.52,
+     "nackgammon_pr": 22.36,
+     "drop": -0.16
+    },
+    "B": {
+     "members": [
+      "GPT-6 Astra (medium)",
+      "Claude Fable 5.1 (high)",
+      "Grok 4.7 (high)"
+     ],
+     "standard_pr": 11.58,
+     "nackgammon_pr": 10.64,
+     "drop": -0.94
+    }
+   },
+   {
+    "comparison": "LFM2.5-24B-A2B (on) − LFM2.5-24B-A2B (off)",
+    "kind": "setup",
+    "diff": -0.91,
+    "ci_99": [
+     -24.13,
+     25.2
+    ],
+    "A": {
+     "members": [
+      "LFM2.5-24B-A2B (on)"
+     ],
+     "standard_pr": 30.59,
+     "nackgammon_pr": 32.91,
+     "drop": 2.32
+    },
+    "B": {
+     "members": [
+      "LFM2.5-24B-A2B (off)"
+     ],
+     "standard_pr": 50.75,
+     "nackgammon_pr": 53.98,
+     "drop": 3.23
+    }
+   },
+   {
+    "comparison": "GPT-6.1 Sol (high) − GPT-6.1 Sol (low)",
+    "kind": "setup",
+    "diff": -0.19,
+    "ci_99": [
+     -3.0,
+     2.63
+    ],
+    "A": {
+     "members": [
+      "GPT-6.1 Sol (high)"
+     ],
+     "standard_pr": 9.88,
+     "nackgammon_pr": 8.43,
+     "drop": -1.45
+    },
+    "B": {
+     "members": [
+      "GPT-6.1 Sol (low)"
+     ],
+     "standard_pr": 11.15,
+     "nackgammon_pr": 9.9,
+     "drop": -1.26
+    }
+   }
+  ],
+  "cutoff": [
+   {
+    "comparison": "decision models − workhorses",
+    "kind": "group",
+    "diff": -1.44,
+    "ci_99": [
+     -8.85,
+     4.96
+    ],
+    "A": {
+     "members": [
+      "Celeris-1 Decision",
+      "SubQ Snap Preview",
+      "Cygnet (Gemma 4 12B)",
+      "Decider v1.2 27B",
+      "Fastino GLiDE v1.2 (local)",
+      "Jev 1.13.0",
+      "GPT-6 Luna",
+      "Decider v1.1 27B",
+      "Mercury Decide",
+      "Winnow-12B",
+      "Open-Jev 27B v1.1",
+      "Decider Flash v1.2",
+      "Liquid d1-ultra",
+      "Fastino GLiDE"
+     ],
+     "standard_pr": 31.55,
+     "nackgammon_pr": 29.61,
+     "drop": -1.93
+    },
+    "B": {
+     "members": [
+      "DeepSeek V4.1 Flash (off)",
+      "LFM2.5-24B-A2B (on)",
+      "Qwen3.8-27B (off)",
+      "LFM2.5-24B-A2B (off)",
+      "Gemini 3.8 Flash (low)",
+      "Claude Sonnet 5.5 (low)",
+      "GPT-6.1 Sol (low)",
+      "GPT-6.1 Sol (high)",
+      "Gemma 4 31B (on)"
+     ],
+     "standard_pr": 23.36,
+     "nackgammon_pr": 22.88,
+     "drop": -0.49
+    }
+   },
+   {
+    "comparison": "decision models − frontier",
+    "kind": "group",
+    "diff": -1.04,
+    "ci_99": [
+     -14.19,
+     10.26
+    ],
+    "A": {
+     "members": [
+      "Celeris-1 Decision",
+      "SubQ Snap Preview",
+      "Cygnet (Gemma 4 12B)",
+      "Decider v1.2 27B",
+      "Fastino GLiDE v1.2 (local)",
+      "Jev 1.13.0",
+      "GPT-6 Luna",
+      "Decider v1.1 27B",
+      "Mercury Decide",
+      "Winnow-12B",
+      "Open-Jev 27B v1.1",
+      "Decider Flash v1.2",
+      "Liquid d1-ultra",
+      "Fastino GLiDE"
+     ],
+     "standard_pr": 31.55,
+     "nackgammon_pr": 29.61,
+     "drop": -1.93
+    },
+    "B": {
+     "members": [
+      "GPT-6 Astra (medium)",
+      "Claude Fable 5.1 (high)",
+      "Grok 4.7 (high)"
+     ],
+     "standard_pr": 11.33,
+     "nackgammon_pr": 10.45,
+     "drop": -0.89
+    }
+   },
+   {
+    "comparison": "workhorses − frontier",
+    "kind": "group",
+    "diff": 0.4,
+    "ci_99": [
+     -6.68,
+     6.96
+    ],
+    "A": {
+     "members": [
+      "DeepSeek V4.1 Flash (off)",
+      "LFM2.5-24B-A2B (on)",
+      "Qwen3.8-27B (off)",
+      "LFM2.5-24B-A2B (off)",
+      "Gemini 3.8 Flash (low)",
+      "Claude Sonnet 5.5 (low)",
+      "GPT-6.1 Sol (low)",
+      "GPT-6.1 Sol (high)",
+      "Gemma 4 31B (on)"
+     ],
+     "standard_pr": 23.36,
+     "nackgammon_pr": 22.88,
+     "drop": -0.49
+    },
+    "B": {
+     "members": [
+      "GPT-6 Astra (medium)",
+      "Claude Fable 5.1 (high)",
+      "Grok 4.7 (high)"
+     ],
+     "standard_pr": 11.33,
+     "nackgammon_pr": 10.45,
+     "drop": -0.89
+    }
+   },
+   {
+    "comparison": "LFM2.5-24B-A2B (on) − LFM2.5-24B-A2B (off)",
+    "kind": "setup",
+    "diff": -3.88,
+    "ci_99": [
+     -26.98,
+     21.76
+    ],
+    "A": {
+     "members": [
+      "LFM2.5-24B-A2B (on)"
+     ],
+     "standard_pr": 38.2,
+     "nackgammon_pr": 37.55,
+     "drop": -0.65
+    },
+    "B": {
+     "members": [
+      "LFM2.5-24B-A2B (off)"
+     ],
+     "standard_pr": 50.75,
+     "nackgammon_pr": 53.98,
+     "drop": 3.23
+    }
+   },
+   {
+    "comparison": "GPT-6.1 Sol (high) − GPT-6.1 Sol (low)",
+    "kind": "setup",
+    "diff": -0.19,
+    "ci_99": [
+     -3.0,
+     2.63
+    ],
+    "A": {
+     "members": [
+      "GPT-6.1 Sol (high)"
+     ],
+     "standard_pr": 9.88,
+     "nackgammon_pr": 8.43,
+     "drop": -1.45
+    },
+    "B": {
+     "members": [
+      "GPT-6.1 Sol (low)"
+     ],
+     "standard_pr": 11.15,
+     "nackgammon_pr": 9.9,
+     "drop": -1.26
+    }
+   }
+  ]
+ },
+ "primary_original_members": {
   "random": [
    {
     "comparison": "decision models − workhorses",
@@ -7427,7 +10878,7 @@
     },
     "B": {
      "members": [
-      "GPT-6 Astra (on)"
+      "GPT-6 Astra (medium)"
      ],
      "standard_pr": 9.66,
      "nackgammon_pr": 7.3,
@@ -7460,7 +10911,7 @@
     },
     "B": {
      "members": [
-      "GPT-6 Astra (on)"
+      "GPT-6 Astra (medium)"
      ],
      "standard_pr": 9.66,
      "nackgammon_pr": 7.3,
@@ -7592,7 +11043,7 @@
     },
     "B": {
      "members": [
-      "GPT-6 Astra (on)"
+      "GPT-6 Astra (medium)"
      ],
      "standard_pr": 9.66,
      "nackgammon_pr": 7.3,
@@ -7625,7 +11076,7 @@
     },
     "B": {
      "members": [
-      "GPT-6 Astra (on)"
+      "GPT-6 Astra (medium)"
      ],
      "standard_pr": 9.66,
      "nackgammon_pr": 7.3,
@@ -7757,7 +11208,7 @@
     },
     "B": {
      "members": [
-      "GPT-6 Astra (on)"
+      "GPT-6 Astra (medium)"
      ],
      "standard_pr": 9.66,
      "nackgammon_pr": 7.3,
@@ -7790,7 +11241,7 @@
     },
     "B": {
      "members": [
-      "GPT-6 Astra (on)"
+      "GPT-6 Astra (medium)"
      ],
      "standard_pr": 9.66,
      "nackgammon_pr": 7.3,
@@ -7812,6 +11263,171 @@
      "standard_pr": 30.59,
      "nackgammon_pr": 32.91,
      "drop": 2.32
+    },
+    "B": {
+     "members": [
+      "LFM2.5-24B-A2B (off)"
+     ],
+     "standard_pr": 50.75,
+     "nackgammon_pr": 53.98,
+     "drop": 3.23
+    }
+   },
+   {
+    "comparison": "GPT-6.1 Sol (high) − GPT-6.1 Sol (low)",
+    "kind": "setup",
+    "diff": -0.19,
+    "ci_99": [
+     -3.0,
+     2.63
+    ],
+    "A": {
+     "members": [
+      "GPT-6.1 Sol (high)"
+     ],
+     "standard_pr": 9.88,
+     "nackgammon_pr": 8.43,
+     "drop": -1.45
+    },
+    "B": {
+     "members": [
+      "GPT-6.1 Sol (low)"
+     ],
+     "standard_pr": 11.15,
+     "nackgammon_pr": 9.9,
+     "drop": -1.26
+    }
+   }
+  ],
+  "cutoff": [
+   {
+    "comparison": "decision models − workhorses",
+    "kind": "group",
+    "diff": -2.14,
+    "ci_99": [
+     -10.07,
+     4.88
+    ],
+    "A": {
+     "members": [
+      "Celeris-1 Decision",
+      "SubQ Snap Preview",
+      "Cygnet (Gemma 4 12B)",
+      "Decider v1.2 27B",
+      "Fastino GLiDE v1.2 (local)",
+      "Jev 1.13.0",
+      "GPT-6 Luna",
+      "Decider v1.1 27B",
+      "Mercury Decide",
+      "Winnow-12B",
+      "Open-Jev 27B v1.1",
+      "Decider Flash v1.2"
+     ],
+     "standard_pr": 32.88,
+     "nackgammon_pr": 30.25,
+     "drop": -2.63
+    },
+    "B": {
+     "members": [
+      "DeepSeek V4.1 Flash (off)",
+      "LFM2.5-24B-A2B (on)",
+      "Qwen3.8-27B (off)",
+      "LFM2.5-24B-A2B (off)",
+      "Gemini 3.8 Flash (low)",
+      "Claude Sonnet 5.5 (low)",
+      "GPT-6.1 Sol (low)",
+      "GPT-6.1 Sol (high)",
+      "Gemma 4 31B (on)"
+     ],
+     "standard_pr": 23.36,
+     "nackgammon_pr": 22.88,
+     "drop": -0.49
+    }
+   },
+   {
+    "comparison": "decision models − frontier",
+    "kind": "group",
+    "diff": -0.26,
+    "ci_99": [
+     -14.64,
+     12.04
+    ],
+    "A": {
+     "members": [
+      "Celeris-1 Decision",
+      "SubQ Snap Preview",
+      "Cygnet (Gemma 4 12B)",
+      "Decider v1.2 27B",
+      "Fastino GLiDE v1.2 (local)",
+      "Jev 1.13.0",
+      "GPT-6 Luna",
+      "Decider v1.1 27B",
+      "Mercury Decide",
+      "Winnow-12B",
+      "Open-Jev 27B v1.1",
+      "Decider Flash v1.2"
+     ],
+     "standard_pr": 32.88,
+     "nackgammon_pr": 30.25,
+     "drop": -2.63
+    },
+    "B": {
+     "members": [
+      "GPT-6 Astra (medium)"
+     ],
+     "standard_pr": 9.66,
+     "nackgammon_pr": 7.3,
+     "drop": -2.37
+    }
+   },
+   {
+    "comparison": "workhorses − frontier",
+    "kind": "group",
+    "diff": 1.88,
+    "ci_99": [
+     -5.73,
+     9.33
+    ],
+    "A": {
+     "members": [
+      "DeepSeek V4.1 Flash (off)",
+      "LFM2.5-24B-A2B (on)",
+      "Qwen3.8-27B (off)",
+      "LFM2.5-24B-A2B (off)",
+      "Gemini 3.8 Flash (low)",
+      "Claude Sonnet 5.5 (low)",
+      "GPT-6.1 Sol (low)",
+      "GPT-6.1 Sol (high)",
+      "Gemma 4 31B (on)"
+     ],
+     "standard_pr": 23.36,
+     "nackgammon_pr": 22.88,
+     "drop": -0.49
+    },
+    "B": {
+     "members": [
+      "GPT-6 Astra (medium)"
+     ],
+     "standard_pr": 9.66,
+     "nackgammon_pr": 7.3,
+     "drop": -2.37
+    }
+   },
+   {
+    "comparison": "LFM2.5-24B-A2B (on) − LFM2.5-24B-A2B (off)",
+    "kind": "setup",
+    "diff": -3.88,
+    "ci_99": [
+     -26.98,
+     21.76
+    ],
+    "A": {
+     "members": [
+      "LFM2.5-24B-A2B (on)"
+     ],
+     "standard_pr": 38.2,
+     "nackgammon_pr": 37.55,
+     "drop": -0.65
     },
     "B": {
      "members": [
@@ -8111,7 +11727,7 @@
     ],
     "unstable": false
    },
-   "GPT-6 Astra (on)": {
+   "GPT-6 Astra (medium)": {
     "K": 0.97,
     "ci_95": [
      0.83,
@@ -8160,6 +11776,71 @@
     "advantage_95": [
      61.79,
      86.84
+    ],
+    "unstable": false
+   },
+   "Claude Fable 5.1 (high)": {
+    "K": 0.94,
+    "ci_95": [
+     0.8,
+     1.09
+    ],
+    "standard_advantage": 78.32,
+    "advantage_95": [
+     66.07,
+     91.51
+    ],
+    "unstable": false
+   },
+   "Grok 4.7 (high)": {
+    "K": 0.95,
+    "ci_95": [
+     0.79,
+     1.12
+    ],
+    "standard_advantage": 72.25,
+    "advantage_95": [
+     60.31,
+     85.0
+    ],
+    "unstable": false
+   },
+   "Liquid d1-ultra": {
+    "K": 0.86,
+    "ci_95": [
+     0.71,
+     1.05
+    ],
+    "standard_advantage": 63.2,
+    "advantage_95": [
+     52.2,
+     74.21
+    ],
+    "unstable": false
+   },
+   "Fastino GLiDE": {
+    "K": 0.92,
+    "ci_95": [
+     0.75,
+     1.13
+    ],
+    "standard_advantage": 64.52,
+    "advantage_95": [
+     52.71,
+     77.38
+    ],
+    "unstable": false
+   },
+   "Gemini 4 Argon (low)": {
+    "K": 0.91,
+    "ci_95": [
+     0.77,
+     1.07
+    ],
+    "standard_advantage": 73.66,
+    "advantage_95": [
+     61.4,
+     86.7
     ],
     "unstable": false
    }
@@ -8425,7 +12106,7 @@
     ],
     "unstable": false
    },
-   "GPT-6 Astra (on)": {
+   "GPT-6 Astra (medium)": {
     "K": 0.98,
     "ci_95": [
      0.88,
@@ -8476,45 +12157,110 @@
      79.45
     ],
     "unstable": false
+   },
+   "Claude Fable 5.1 (high)": {
+    "K": 0.94,
+    "ci_95": [
+     0.85,
+     1.03
+    ],
+    "standard_advantage": 75.52,
+    "advantage_95": [
+     68.27,
+     83.14
+    ],
+    "unstable": false
+   },
+   "Grok 4.7 (high)": {
+    "K": 0.93,
+    "ci_95": [
+     0.83,
+     1.05
+    ],
+    "standard_advantage": 69.47,
+    "advantage_95": [
+     62.42,
+     76.93
+    ],
+    "unstable": false
+   },
+   "Liquid d1-ultra": {
+    "K": 0.83,
+    "ci_95": [
+     0.74,
+     0.94
+    ],
+    "standard_advantage": 59.85,
+    "advantage_95": [
+     53.18,
+     66.58
+    ],
+    "unstable": false
+   },
+   "Fastino GLiDE": {
+    "K": 0.89,
+    "ci_95": [
+     0.78,
+     1.0
+    ],
+    "standard_advantage": 59.43,
+    "advantage_95": [
+     52.73,
+     66.34
+    ],
+    "unstable": false
+   },
+   "Gemini 4 Argon (low)": {
+    "K": 0.91,
+    "ci_95": [
+     0.81,
+     1.01
+    ],
+    "standard_advantage": 70.45,
+    "advantage_95": [
+     63.31,
+     77.95
+    ],
+    "unstable": false
    }
   },
   "spearman": {
-   "setups": 23,
-   "rho": 0.87,
+   "setups": 28,
+   "rho": 0.9,
    "ci_95": [
-    0.73,
-    0.91
+    0.79,
+    0.92
    ],
    "largest_rank_changes": [
     {
      "setup": "Decider v1.2 27B",
-     "standard_rank": 19,
-     "nackgammon_rank": 8,
-     "change": -11
+     "standard_rank": 24,
+     "nackgammon_rank": 11,
+     "change": -13
     },
     {
      "setup": "GPT-6 Luna",
-     "standard_rank": 12,
-     "nackgammon_rank": 19,
+     "standard_rank": 17,
+     "nackgammon_rank": 24,
      "change": 7
     },
     {
      "setup": "Cygnet (Gemma 4 12B)",
-     "standard_rank": 15,
-     "nackgammon_rank": 10,
-     "change": -5
-    },
-    {
-     "setup": "DeepSeek V4.1 Flash (off)",
-     "standard_rank": 9,
-     "nackgammon_rank": 12,
-     "change": 3
+     "standard_rank": 20,
+     "nackgammon_rank": 14,
+     "change": -6
     },
     {
      "setup": "Fastino GLiDE v1.2 (local)",
-     "standard_rank": 8,
-     "nackgammon_rank": 11,
-     "change": 3
+     "standard_rank": 11,
+     "nackgammon_rank": 15,
+     "change": 4
+    },
+    {
+     "setup": "Gemini 3.8 Flash (low)",
+     "standard_rank": 9,
+     "nackgammon_rank": 5,
+     "change": -4
     }
    ]
   }
@@ -8522,8 +12268,8 @@
  "engine_check": {
   "pairs": 40,
   "counts": {
-   "rolled_out_plays": 436,
-   "adjusted_plays_used": 447
+   "rolled_out_plays": 442,
+   "adjusted_plays_used": 441
   },
   "per_setup": {
    "GNUbg weak": {
@@ -8654,8 +12400,8 @@
     },
     "rollout": {
      "standard_pr": 25.81,
-     "nackgammon_pr": 44.33,
-     "drop": 18.51
+     "nackgammon_pr": 44.3,
+     "drop": 18.49
     }
    },
    "Qwen3.8-27B (off)": {
@@ -8766,7 +12512,7 @@
      "drop": -6.39
     }
    },
-   "GPT-6 Astra (on)": {
+   "GPT-6 Astra (medium)": {
     "2ply": {
      "standard_pr": 8.46,
      "nackgammon_pr": 7.75,
@@ -8814,6 +12560,66 @@
      "drop": -5.9
     }
    },
+   "Claude Fable 5.1 (high)": {
+    "2ply": {
+     "standard_pr": 12.19,
+     "nackgammon_pr": 8.18,
+     "drop": -4.01
+    },
+    "rollout": {
+     "standard_pr": 13.13,
+     "nackgammon_pr": 6.25,
+     "drop": -6.88
+    }
+   },
+   "Grok 4.7 (high)": {
+    "2ply": {
+     "standard_pr": 11.77,
+     "nackgammon_pr": 16.37,
+     "drop": 4.6
+    },
+    "rollout": {
+     "standard_pr": 12.82,
+     "nackgammon_pr": 14.18,
+     "drop": 1.36
+    }
+   },
+   "Liquid d1-ultra": {
+    "2ply": {
+     "standard_pr": 13.92,
+     "nackgammon_pr": 25.38,
+     "drop": 11.46
+    },
+    "rollout": {
+     "standard_pr": 14.94,
+     "nackgammon_pr": 21.96,
+     "drop": 7.03
+    }
+   },
+   "Fastino GLiDE": {
+    "2ply": {
+     "standard_pr": 13.46,
+     "nackgammon_pr": 22.48,
+     "drop": 9.02
+    },
+    "rollout": {
+     "standard_pr": 14.23,
+     "nackgammon_pr": 21.32,
+     "drop": 7.08
+    }
+   },
+   "Gemini 4 Argon (low)": {
+    "2ply": {
+     "standard_pr": 8.73,
+     "nackgammon_pr": 11.33,
+     "drop": 2.6
+    },
+    "rollout": {
+     "standard_pr": 9.04,
+     "nackgammon_pr": 9.02,
+     "drop": -0.02
+    }
+   },
    "Random": {
     "2ply": {
      "standard_pr": 83.84,
@@ -8822,12 +12628,84 @@
     },
     "rollout": {
      "standard_pr": 86.1,
-     "nackgammon_pr": 92.24,
-     "drop": 6.14
+     "nackgammon_pr": 92.16,
+     "drop": 6.06
     }
    }
   },
   "primary": [
+   {
+    "comparison": "decision models − workhorses",
+    "2ply": 5.57,
+    "rollout": 5.35,
+    "2ply_ci_99": [
+     -2.33,
+     14.99
+    ],
+    "rollout_ci_99": [
+     -2.63,
+     15.07
+    ],
+    "direction_changed": false
+   },
+   {
+    "comparison": "decision models − frontier",
+    "2ply": 15.03,
+    "rollout": 14.9,
+    "2ply_ci_99": [
+     -1.57,
+     36.32
+    ],
+    "rollout_ci_99": [
+     -1.73,
+     35.94
+    ],
+    "direction_changed": false
+   },
+   {
+    "comparison": "workhorses − frontier",
+    "2ply": 9.46,
+    "rollout": 9.55,
+    "2ply_ci_99": [
+     -1.84,
+     23.64
+    ],
+    "rollout_ci_99": [
+     -1.79,
+     23.36
+    ],
+    "direction_changed": false
+   },
+   {
+    "comparison": "LFM2.5-24B-A2B (on) − LFM2.5-24B-A2B (off)",
+    "2ply": -14.59,
+    "rollout": -15.63,
+    "2ply_ci_99": [
+     -55.64,
+     18.77
+    ],
+    "rollout_ci_99": [
+     -56.64,
+     16.95
+    ],
+    "direction_changed": false
+   },
+   {
+    "comparison": "GPT-6.1 Sol (high) − GPT-6.1 Sol (low)",
+    "2ply": 1.76,
+    "rollout": 2.73,
+    "2ply_ci_99": [
+     -2.81,
+     6.99
+    ],
+    "rollout_ci_99": [
+     -1.97,
+     8.46
+    ],
+    "direction_changed": false
+   }
+  ],
+  "primary_original_members": [
    {
     "comparison": "decision models − workhorses",
     "2ply": 6.36,
@@ -8865,7 +12743,7 @@
      24.58
     ],
     "rollout_ci_99": [
-     -1.64,
+     -1.65,
      24.21
     ],
     "direction_changed": false
@@ -8873,14 +12751,14 @@
    {
     "comparison": "LFM2.5-24B-A2B (on) − LFM2.5-24B-A2B (off)",
     "2ply": -14.59,
-    "rollout": -15.61,
+    "rollout": -15.63,
     "2ply_ci_99": [
      -55.64,
      18.77
     ],
     "rollout_ci_99": [
-     -56.62,
-     17.0
+     -56.64,
+     16.95
     ],
     "direction_changed": false
    },
@@ -8907,6 +12785,18 @@
    "group": "decision models",
    "standard_pr": 22.74,
    "nackgammon_pr": 24.91
+  },
+  {
+   "setup": "Fastino GLiDE",
+   "group": "decision models",
+   "standard_pr": 22.93,
+   "nackgammon_pr": 23.38
+  },
+  {
+   "setup": "Liquid d1-ultra",
+   "group": "decision models",
+   "standard_pr": 24.25,
+   "nackgammon_pr": 28.27
   },
   {
    "setup": "Jev 1.13.0",
@@ -9029,16 +12919,34 @@
    "nackgammon_pr": 53.98
   },
   {
-   "setup": "GPT-6 Astra (on)",
+   "setup": "Claude Fable 5.1 (high)",
+   "group": "frontier",
+   "standard_pr": 9.13,
+   "nackgammon_pr": 9.51
+  },
+  {
+   "setup": "GPT-6 Astra (medium)",
    "group": "frontier",
    "standard_pr": 9.66,
    "nackgammon_pr": 7.3
+  },
+  {
+   "setup": "Grok 4.7 (high)",
+   "group": "frontier",
+   "standard_pr": 15.2,
+   "nackgammon_pr": 14.53
   },
   {
    "setup": "GPT-6.1 Terra",
    "group": "no group (exploratory)",
    "standard_pr": 13.52,
    "nackgammon_pr": 14.4
+  },
+  {
+   "setup": "Gemini 4 Argon (low)",
+   "group": "no group (exploratory)",
+   "standard_pr": 13.79,
+   "nackgammon_pr": 15.71
   },
   {
    "setup": "GNUbg weak",

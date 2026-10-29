@@ -3,18 +3,23 @@
 
     python3 tools/site/nack_paired_verify.py OUT_DIR RESULTS_JSON [--rollouts DB | --saved-only]
 
-OUT_DIR is a built site (build.py --out); RESULTS_JSON the scorer's output (positions/nack-paired/results/results.json);
+OUT_DIR is a built site (build.py --out); RESULTS_JSON the scorer's output
+(positions/nack-paired/results-2026-10-28/results.json, with the §10.14(g) additions);
 --rollouts the engine-check rollout database, needed once results.json has an engine check (as for the scorer). Checked:
 - the site's data file (OUT_DIR/data/v3/nack-paired.json) equals content/nack_paired_results.json, which equals
   nack_paired_publish.build() of RESULTS_JSON and of a fresh recomputation (tools/v3/nack_paired_score.py report run
   into a temporary directory from the scored data); the fresh results.json equals RESULTS_JSON;
-- the data file holds no position ids or answers;
+- the data file holds no position ids or answers, and renamed setups only under their shown names (old names only
+  as "aliases");
 - on the home page: every table cell with data-k (each printed number equals its data-file value at the printed
   decimals; yes/no and labels as text), the rows of every table, the fixed row order (group, then standard PR), every
   header unsortable, every chart point and its group class, the legend; the scope note verbatim and equal to the
-  scorer's; the §10.14(e) groups note and the frontier note verbatim after every table of primary comparisons, and
-  the frontier note next to every scope note; setups with no group labelled "no group (exploratory)"; the reading and
-  prompt notes, no forbidden wording;
+  scorer's; the §10.14(e) groups note and the frontier note verbatim after every table of primary comparisons (both
+  ways: with the additions, and the original members only with that roster's frontier note), and the frontier note
+  next to every scope note; setups with no group labelled "no group (exploratory)"; the §10.14(g) additions marked in
+  every row that names them (and no other setup); the additions, no-group, output-limit, missing-choice and cost
+  notes equal to the data file; the reading and prompt notes, no forbidden wording, no database name of a renamed
+  setup;
 - the Method page: every heading, paragraph, list item (nested and lettered too) and table cell of §10 through §10.14
   (with both dated notes) from the spec file;
 - no private artifact anywhere in OUT_DIR (local addresses, ports 8894/8095, artifact:// links, the answers database,
@@ -41,7 +46,7 @@ sys.path.insert(0, str(SITE))
 
 import nack_section as NS  # noqa: E402
 from checks import Tree, text_of, walk  # noqa: E402
-from common import BANNED, CONTENT, NACK_SCOPE_NOTE, esc  # noqa: E402
+from common import BANNED, CONTENT, NACK_SCOPE_NOTE, RENAMED, esc  # noqa: E402
 from method import nack_spec_text  # noqa: E402
 from nack_paired_publish import GROUP_ORDER, build  # noqa: E402
 
@@ -117,6 +122,10 @@ def check_home(out: Path, N: dict, bad: list):
         bad.append(f"scope note: published {NACK_SCOPE_NOTE!r}, scorer {N['scope_note']!r}")
     if FORBIDDEN.search(text):
         bad.append(f"home page: forbidden wording {FORBIDDEN.search(text).group(0)!r}")
+    # Shown names (content/labels.json): no database name of a renamed setup on the section.
+    old = [o for o in RENAMED if o in text]
+    if old:
+        bad.append(f"home page: database names instead of shown names: {old}")
     order = list(N["setups"])
     want_order = sorted(order, key=lambda s: (GROUP_ORDER.index(N["setups"][s]["group"]),
                                               N["setups"][s]["first"]["standard_pr"], s))
@@ -173,9 +182,25 @@ def check_home(out: Path, N: dict, bad: list):
             if "invalid/final/standard|invalid/final/nackgammon" not in keys:
                 bad.append(f"nack-table row {s}: no final-look count of positions without a valid choice")
     notes = {c.attrs.get("class", ""): text_of(c) for c in walk(sec) if c.tag == "p"}
-    for cls, key in (("table-note nack-missing-note", "missing_note"), ("table-note nack-cost-note", "cost_note")):
+    for cls, key in (("table-note nack-missing-note", "missing_note"), ("table-note nack-cost-note", "cost_note"),
+                     ("table-note nack-limit-note", "limit_note")):
         if norm(notes.get(cls, "")) != norm(N[key]):
             bad.append(f"home: the {key} paragraph does not match the data file")
+    if norm(notes.get("note nack-additions-note", "")) != norm("Additions. " + N["additions_note"]):
+        bad.append("home: the additions paragraph does not match the data file")
+    if norm(notes.get("table-note nack-no-group-note", "")) != norm(NS.no_group_note(N)):
+        bad.append("home: the no-group paragraph does not match the data file")
+    # §10.14(g): every addition is marked as one in every row that names it, and only the additions are.
+    orig = {s for m in N["groups_original_members"].values() for s in m}
+    if set(N["additions"]) != {s for m in N["groups"].values() for s in m} - orig:
+        bad.append(f"data file: additions {N['additions']} are not the groups minus the original members")
+    for s, v in N["setups"].items():
+        if v["added"] != (s in N["additions"]):
+            bad.append(f"data file: {s} added={v['added']} but additions {N['additions']}")
+        ths = [norm(text_of(n)) for n in walk(sec) if n.tag == "th" and n.parent is not None
+               and n.parent.attrs.get("data-row") == s]
+        if any((NS.ADDED in t) != v["added"] for t in ths):
+            bad.append(f"home tables: {s} {'not ' if v['added'] else ''}marked as an addition")
     pts = {g.attrs["data-setup"]: g for g in walk(sec) if g.tag == "g" and "data-setup" in g.attrs}
     if list(pts) != [p["setup"] for p in N["chart"]]:
         bad.append(f"chart: points {list(pts)} != {[p['setup'] for p in N['chart']]}")
@@ -204,16 +229,24 @@ def check_home(out: Path, N: dict, bad: list):
                    and n.parent.attrs.get("data-row") == s]
             if not ths or any("no group (exploratory)" not in t for t in ths):
                 bad.append(f"home tables: {s} not labelled 'no group (exploratory)'")
-    # §10.14: the groups-rule note and the frontier note, verbatim, right after every table of primary comparisons.
+    # §10.14: the groups-rule note and the frontier note, verbatim, right after every table of primary comparisons;
+    # after the original-members tables, the frontier note of that roster.
     page = (out / "index.html").read_text()
-    notes = (f'<p class="table-note nack-groups-rule">{esc(N["groups_rule"])}</p>'
-             f'<p class="table-note nack-frontier-note">{esc(N["frontier_note"])}</p>')
-    tids = [f"nack-primary-{r}" for r in ("random", "worst", "drop")] + (["nack-engine-primary"] if N["engine_check"] else [])
-    for tid in tids:
-        at = page.find(f'id="{tid}"')
-        end = page.find("</table></div>", at) + len("</table></div>")
-        if at < 0 or not page.startswith(notes, end):
-            bad.append(f"home table {tid}: the \u00a710.14(e) groups note and the frontier note do not follow it verbatim")
+    rules = list(N["primary"])
+    if rules != ["random", "worst", "drop", "cutoff"] or list(N["primary_original_members"]) != rules:
+        bad.append(f"data file: primary rules {rules} / {list(N['primary_original_members'])}")
+    tids = [f"nack-primary-{r}" for r in rules] + (["nack-engine-primary"] if N["engine_check"] else [])
+    orig_tids = [f"nack-primary-orig-{r}" for r in rules] + (
+        ["nack-engine-primary-orig"] if N["engine_check"] and "primary_original_members" in N["engine_check"] else [])
+    for ids, fr in ((tids, N["frontier_note"]), (orig_tids, N["frontier_note_original_members"])):
+        notes = (f'<p class="table-note nack-groups-rule">{esc(N["groups_rule"])}</p>'
+                 f'<p class="table-note nack-frontier-note">{esc(fr)}</p>')
+        for tid in ids:
+            at = page.find(f'id="{tid}"')
+            end = page.find("</table></div>", at) + len("</table></div>")
+            if at < 0 or not page.startswith(notes, end):
+                bad.append(f"home table {tid}: the \u00a710.14(e) groups note and the frontier note do not follow it "
+                           "verbatim")
     if text.count(N["frontier_note"]) < text.count(NACK_SCOPE_NOTE) + len(tids):
         bad.append("home page: the frontier note is not next to every scope note and every primary table")
 
@@ -295,6 +328,11 @@ def main():
         if build(F) != N:
             bad.append("content/nack_paired_results.json differs from the fresh recomputation")
     dump = json.dumps(N)
+    shown = json.dumps({k: v for k, v in N.items() if k != "setups"}, ensure_ascii=False) + json.dumps(
+        {s: {k: x for k, x in v.items() if k != "aliases"} for s, v in N["setups"].items()}, ensure_ascii=False)
+    old = [o for o in RENAMED if o in shown]
+    if old:
+        bad.append(f"data file: database names outside 'aliases': {old}")
     if "smoke/" in dump:
         bad.append("data file names a smoke/ path")
     for pat in (r"\bnp[ns]?-\d{4}\b", r'"(move|raw|answer|response|position_id|request_ms)"'):

@@ -483,3 +483,7 @@ The new setups' chosen plays that had no rollout yet (6 plays on 5 positions) we
 
 OpenRouter: $0 for these runs. GPU: none.
 
+
+### Publication 2026-10-29
+
+Published on the site with Can's go of 2026-10-29: `tools/site/nack_paired_publish.py` now reads `positions/nack-paired/results-2026-10-28/results.json` (primary comparisons both ways; the §10.14(g) additions marked; Gemini 4 Argon (low) exploratory; setups under their shown names, database names as aliases), with the R1–R3 corrections of `d125adb` kept. One text-only change to that results file: its `groups_rule` string is replaced by the corrected §10.14(e)/(f) disclosure (the scorer's `NOTE_E` since `d125adb`, the same string as in the frozen 2026-10-27 file); every other key and number is unchanged. Its sha256 is now `059663c7377ecc4baec862a0570cd31ba26519471b216702771d3fb5cad33075` (was `1c8af11dce2b2e18…`). No rescoring, no model calls.

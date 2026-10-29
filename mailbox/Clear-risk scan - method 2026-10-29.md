@@ -93,3 +93,27 @@ replaces the step-4 rollout rule above for the leagues; the Bray rollout already
 - **Bray first:** the Bray position is evaluated at 3-ply before the leagues and must be kept as Risk wins;
   otherwise stop and report.
 - Steps 5 and 6 (shares per setup, bias, reference rows, hand-check samples) then run on kept positions only.
+
+## Amendment, 2026-10-29T20:45Z: follow-up decisions (Can, "yes to all" as recommended)
+
+Written, committed and pushed before any rollout of the check-1 sample and before any Part 2 request.
+
+1. **Rollouts:** checker play at **2-ply**; 1,296 games per play, variance reduction on, cubeless, gammons and
+   backgammons counted (1/2/3 points). Settings otherwise as in `Clear-risk follow-up - part 1 2026-10-29.md`
+   (Jacoby set off explicitly).
+2. **Confirmation rule:** a sample position is confirmed if the rollout gap has the same direction as the scan's group
+   **and** |rollout gap| ≥ 0.04 **and** |rollout gap| > 3 standard errors of the gap (the two plays' SEs combined as
+   independent).
+3. **Oversample:** about 30 back-game and 30 prime-vs-prime kept positions (classifier rules of the step-4 amendment),
+   drawn with a fixed seed from kept positions not already in the 200, rolled out with the same settings. Agreement is
+   reported for them separately; they are **not used in Part 2**.
+4. **Decision models:** the top-probability option is the answer; an exact tie at the top counts as no answer.
+5. **Q2:** only items where exactly one option is true for B (best unsafe) and not for A (best safe); no "none"
+   option. Q2 is asked **board only** (the with-numbers prompt prints the answers). The random baseline for the items
+   used is reported.
+6. **Q3:** only plays that exist are shown (no in-between play → 3 plays; no play ≥ 0.10 below the others → no
+   blunder); none is invented. The extra plays get 3-ply values (computed).
+7. **Q3 scoring:** decision models: two values on the same play → the pairs involving that play count wrong. Chat
+   models: the prompt says to use each play once; an answer that is not one-to-one counts wrong.
+8. **Board only:** no pip count and no other computed number.
+9. **Temperature:** recorded as "not sent (provider default)" for all five models.

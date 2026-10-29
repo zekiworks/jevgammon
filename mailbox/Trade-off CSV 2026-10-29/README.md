@@ -46,7 +46,9 @@ All figures come from saved data. No model was called and no position was rescor
   - Subscriptions are priced the same way (API-list-price equivalent, not money paid).
   - OpenRouter chat setups are also priced at list price × logged tokens, for consistency, not at OpenRouter's billed `usage.cost`. These are DeepSeek V4.1 Flash, DeepSeek V4.1 Flash 1017, GLM-5.3, Qwen3.8 Flash and Kimi K3.1 Pro. The site's `turns.cost_usd` stores the billed amount, which is lower: for example GLM-5.3 $9.61 here against $4.46 billed, and Kimi $7.73 against $3.55.
   - For every other priced setup (Mercury Decide via OpenRouter included), the figure equals the sum of `turns.cost_usd` over the same decisions.
-  - Empty where no price exists: programs, "own hardware" setups on our GPUs, Fastino GLiDE (hosted API with no recorded price), Fastino GLiDE v1.2 (local), and Qwen3.8-27B (low).
+  - Empty for every setup whose trade-off decisions ran on our GPUs, whether or not the site shows a list price for it: the three Decider models (Decider v1.1 27B, Decider v1.2 27B, Decider Flash v1.2), Gemma 4 31B, LFM2.5-24B-A2B, Qwen3.8-27B (off) and (low), Open-Jev 27B v1.1, Cygnet, Winnow-12B, Clef and Fastino GLiDE v1.2 (local).
+  - Also empty for programs and for Fastino GLiDE (hosted API with no recorded price).
+  - Two setups ran partly on our GPUs: DeepSeek V4.1 Flash (off) and (low). Their `usd_trade_off` prices only the decisions that went to the API; see "Mixed routes" below.
 - `tokens_in_mean` and `tokens_out_mean`: mean `turns.input_tokens` and `turns.output_tokens` per trade-off decision. Every model row has tokens logged for all its trade-off decisions. Programs have none and are left empty.
   - Option groups: a turn already stores the sum over all of the decision's requests. `src/players/llm.rs` and `src/players/decision.rs` add every request's usage into the decision, and the runner writes that to the turn. Nothing more had to be summed.
 
@@ -64,13 +66,14 @@ All figures come from saved data. No model was called and no position was rescor
 | decision-model APIs and local decision servers | as reported (0 or 1; Jev about 300) | no reasoning reported |
 
 ## Missing data and caveats
-- Fastino GLiDE (League 2) and Fastino GLiDE v1.2 (local) (League 1) have no price in `setups.json`, so `usd_trade_off` is empty.
-- Mixed routes:
-  - DeepSeek V4.1 Flash (off), League 1: 80 of its 1,333 trade-off decisions ran on our SGLang server.
-  - DeepSeek V4.1 Flash (low), League 2: 494 of 1,709 ran there.
-  - All of these are priced at the setup's OpenRouter/Fireworks list price, as the site does.
-  - Qwen3.8-27B (low): 1 trade-off decision ran on OpenRouter/Cerebras. Its `usd_trade_off` is empty because `setups.json` marks it as own hardware.
-- Decider v1.1 27B, Decider v1.2 27B and Decider Flash v1.2 run on our GPUs but have a list price (the site labels it "list-price estimate; runs on our GPUs"). They are priced like the site, so `usd_trade_off` is filled for them. **Open point:** the request said "empty for models on our GPUs (no list price)". If Ümit wants these empty too, drop those three values.
+- Fastino GLiDE (League 2) has no price in `setups.json`, so `usd_trade_off` is empty.
+- Mixed routes (DeepSeek V4.1 Flash, partly on our SGLang server):
+  - DeepSeek V4.1 Flash (off), League 1: 80 of its 1,333 trade-off decisions ran on our server, 1,253 on OpenRouter/Fireworks.
+  - DeepSeek V4.1 Flash (low), League 2: 494 of 1,709 ran on our server, 1,215 on OpenRouter/Fireworks.
+  - `usd_trade_off` is the API decisions only, at the setup's list price ($1.5760 and $24.5694). The local decisions add nothing. Pricing all decisions as the site does would give $1.7019 and $27.6953.
+  - Every other column (counts, win/loss, token means) still covers all trade-off decisions, local ones included. To get dollars per API decision, divide by 1,253 or 1,215, not by `trade_off_decisions`.
+  - Qwen3.8-27B (low): 1 trade-off decision ran on OpenRouter/Cerebras. Its `usd_trade_off` stays empty because the setup runs on our GPUs.
+- Resolved (was open point 1): the Decider models run on our GPUs, and the site shows a list price for them ("list-price estimate; runs on our GPUs"). Ümit's spec says "empty for models on our GPUs", so their `usd_trade_off` is now empty.
 - GPT-6 Astra (high) is not in `setups.json`. Its late-entry row uses the price in its `players.settings` ($10 / $50 per M tokens, the same as GPT-6 Astra (low) and (medium)).
 
 ## Cross-check against the published site

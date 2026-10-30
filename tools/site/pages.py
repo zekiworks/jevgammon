@@ -1195,6 +1195,10 @@ def write_all(S, out: Path, base: str) -> None:
     ctx = dict(thresholds=S["thresholds"], play_order=S["v1"]["play_order"], shared_sets=S["shared"]["build_log"],
                data_as_of=as_of(S), extra=home.method_extras(S))
     put("method/", "Method", method.body(ctx), main_class="method-page")
+    import clear_risk_section
+    put("clear-risk/", "Clear risk (preliminary)", clear_risk_section.body(S),
+        description="Clear-risk scan of the backgammon benchmark (preliminary / partial): decisions where a risk or "
+                    "safety is clearly better, per setup, checks, a rollout check and a partial model quiz.")
     put("data/", "Data", data_page(S, out))
     put("decisions/", "Every decision", decisions_page(S, decisions_export.body()),
         scripts=("decisions.js",), styles=("decisions.css",))

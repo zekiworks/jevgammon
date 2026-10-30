@@ -137,7 +137,7 @@ def _toc() -> str:
              ("risk", "Was it the right risk?"), ("statistics", "Statistics and verdicts"), ("thresholds", "Fixed thresholds"),
              ("status", "Status labels"), ("versions", "Versions and play order"), ("confidence", "Confidence"),
              ("offline", "Re-read, refit, bar and distributions"), ("close-choices", "Close choices"),
-             ("nackgammon-paired", "Nackgammon paired test"),
+             ("nackgammon-paired", "Nackgammon paired test"), ("clear-risk", "Clear risk (preliminary)"),
              ("cost", "Cost"), ("time", "Time"), ("limits", "Limits"), ("input", "What the input adds"),
              ("learning", "Learning from experience"), ("routing", "Routing and teams"), ("tail", "Tail risk"),
              ("v3-changes", "Runner changes during the leagues"),
@@ -777,6 +777,15 @@ def nack_spec_text() -> str:
     return text
 
 
+def _clear_risk() -> str:
+    """Pointer to the Clear risk page (preliminary / partial); its method notes are on that page with the tables."""
+    return _section("clear-risk", "Clear risk (preliminary)", """
+<p class="note"><strong>Preliminary / partial.</strong> The clear-risk scan (decisions where GNU Backgammon finds the
+  risky or the safe play clearly better), its checks, a rollout check of a sample and a partial quiz of five models
+  (two or four plays shown, not league play) are on the <a href="../clear-risk/">Clear risk page</a>, each with its
+  definitions and settings.</p>""")
+
+
 def _nack() -> str:
     """Nackgammon paired test (Method spec 2026-10-24 §10), rendered from the spec file."""
     body = nack_spec_text()
@@ -920,7 +929,7 @@ def body(ctx: dict) -> str:
     return "\n".join([
         _intro(), _toc(), _setup(), _shared(ctx["shared_sets"]), _prompt(), _error_rate(t), _human_scale(),
         _risk(t, extra), _statistics(t), _thresholds(t), _status(), _versions(ctx["play_order"]),
-        _confidence(t, extra), _offline(t, extra), _close(t), _nack(), _cost(), _time(t), _limits(), _home_extras(extra), _archive("v3-notes.html"),
+        _confidence(t, extra), _offline(t, extra), _close(t), _nack(), _clear_risk(), _cost(), _time(t), _limits(), _home_extras(extra), _archive("v3-notes.html"),
         _experiments(),
     ])
 

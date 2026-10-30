@@ -151,6 +151,8 @@ def compute(args) -> dict:
         close_spec=dict(fixed_on=CC.CC["fixed_on"], definition=CC.DEFINITION, label=CC.LABEL), _close=close_records,
         close_b=json.loads((CONTENT / "close_choices_b_results.json").read_text()),
         nack=json.loads((CONTENT / "nack_paired_results.json").read_text()),
+        # Clear-risk scan and follow-up (preliminary / partial): saved aggregates (tools/site/clear_risk_publish.py).
+        clear_risk=json.loads((CONTENT / "clear_risk_results.json").read_text()),
         status=json.loads((CONTENT / "analysis_status.json").read_text()),
         human_scale=json.loads((CONTENT / "human_scale.json").read_text()),
         _v1_raw=v1, _state=state)
@@ -248,6 +250,8 @@ def write_data(S: dict, out: Path) -> None:
     write_json(out, "data/v3/close-choices-b.json", dict(version="v3", **S["close_b"]))
     # Nackgammon paired test (Method spec 2026-10-24 §10): aggregates only (tools/site/nack_paired_publish.py).
     write_json(out, "data/v3/nack-paired.json", dict(version="v3", **S["nack"]))
+    # Clear-risk scan and follow-up (preliminary / partial): aggregates only (tools/site/clear_risk_publish.py).
+    write_json(out, "data/v3/clear-risk.json", dict(version="v3", **S["clear_risk"]))
     write_json(out, "data/smoke/part-a.json", dict(dataset="smoke-part-a", status="Smoke test", rows=S["smoke"]))
     write_json(out, "data/setups.json", dict(setups=[v for v in S["setups_meta"].values()]))
     write_json(out, "data/thresholds.json", S["thresholds"])

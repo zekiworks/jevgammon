@@ -47,9 +47,9 @@ def settings_line(m: dict) -> str:
     return " · ".join(b for b in bits if b)
 
 
-def attrs(S, ds, name, ref=False, kind_=None) -> str:
+def attrs(S, ds, name, ref=False) -> str:
     m = P.meta(S, ds, name)
-    return (f' data-dataset="{esc(ds)}" data-setup="{esc(m["slug"])}" data-kind="{"reference" if ref else kind_ or kind(m)}"'
+    return (f' data-dataset="{esc(ds)}" data-setup="{esc(m["slug"])}" data-kind="{"reference" if ref else kind(type_meta(S, ds, name))}"'
             f' data-weights="{esc(m.get("weights") or "unknown")}" data-runs="{esc(m.get("runs_on") or "unknown")}"'
             f' data-setting="{esc(m.get("setting") or "none")}"')
 
@@ -282,7 +282,7 @@ def all_tr(S, lg, n, ref, cells: str) -> str:
             else f'<span class="model-name">{esc(n)}</span>')
     small = f"program · reference row, never ranked · {ref}" if ref else t if t != "unknown" else "model type not recorded"
     cls = ' class="reference"' if ref else ""
-    return (f'<tr{cls}{attrs(S, ds, slug_name(n), bool(ref), t)}><td class="model">{name}'
+    return (f'<tr{cls}{attrs(S, ds, slug_name(n), bool(ref))}><td class="model">{name}'
             f'<span class="small">{esc(small)}</span></td><td class="num" data-v="{lg["id"]}">League {lg["id"]}</td>'
             + cells + "</tr>")
 
@@ -352,9 +352,11 @@ def slug_name(n: str) -> str:
 
 
 def quality_table(S, lg, phase="all") -> str:
+    """Model setups by error rate, then the programs (GNUbg weak, Safest, Random) as reference rows, as in the Risk
+    tables."""
     ds = lg["dataset"]
     setups = lg["setups"] if phase == "all" else {n: dict(s, quality=s["quality_phases"][phase]) for n, s in lg["setups"].items()}
-    rows = []
+    rows, refs = [], []
     for n in P.by_error(setups):
         q = setups[n]["quality"]
         b = P.band(S, q["error_rate"]) if q.get("error_rate") is not None and not q.get("too_few") else None
@@ -366,7 +368,11 @@ def quality_table(S, lg, phase="all") -> str:
                  + (f'<span class="mark">\u2020</span><span class="small">{count(q["grouped"])} split into groups</span>'
                     if q.get("grouped") else "")
                  + f'</td><td class="num">{count(q["invalid"])}</td>')
-        rows.append(f"<tr{attrs(S, ds, n)}>{cell_model(S, ds, n)}{cells}</tr>")
+        ref = bool(ref_label(S, ds, n))
+        cls = ' class="reference"' if ref else ""
+        tr = f'<tr{cls}{attrs(S, ds, n, ref)}>{cell_model(S, ds, n)}{cells}</tr>'
+        (refs if ref else rows).append((n, tr))
+    rows = [r for _, r in rows] + [r for _, r in sorted(refs)]
     where = "all phases" if phase == "all" else P.PHASE_LABEL[phase]
     head = ["Model and setting", "Error rate (PR), 95% interval", "Band on the human scale (approx.)",
             "Engine's best play", "Blunder rate", "Median / P90 s per decision", "$ per 1,000 decisions",
@@ -1144,9 +1150,9 @@ def filters(S) -> str:
     leagues += ('<button type="button" class="key" data-league-pick="shared" aria-pressed="false"><span class="lamp" '
                 f'aria-hidden="true"></span>Shared positions</button>')
     phases = "".join(f'<option value="{p}">{esc(P.PHASE_LABEL[p])}</option>' for p in A.PHASES)
-    totals = {lg["dataset"]: len(lg["setups"]) for lg in S["leagues"]}
-    # All leagues: the model setups of its table (the programs are its reference rows, never counted).
-    totals = {ALL: sum(1 for lg in S["leagues"] for x in rows_of(S, lg) if not x[3]), **totals}
+    # The model setups of each league; the programs are reference rows, never counted.
+    totals = {lg["dataset"]: sum(1 for n in lg["setups"] if not ref_label(S, lg["dataset"], n)) for lg in S["leagues"]}
+    totals = {ALL: sum(totals.values()), **totals}
     # The league and the model type stay in view; phase, reasoning, runs on and weights fold behind "More filters", whose
     # key names the active ones while it is closed (bg.js).
     return f"""<section class="panel filters is-open needs-js" id="filters" aria-labelledby="filters-title">

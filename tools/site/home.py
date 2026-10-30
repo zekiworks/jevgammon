@@ -10,13 +10,14 @@ import textwrap
 import analysis as A
 import nack_section
 import pages as P
-from common import CLOSE_B_SCOPE_NOTE, NA, NOT_MEASURED, PENDING, PROVISIONAL, PROVISIONAL_NOTE, TOO_FEW, count, esc, fmt, nm, pct, status_badge
+from common import ALL_NOTE, CLOSE_B_SCOPE_NOTE, NA, NOT_MEASURED, PENDING, PROVISIONAL, PROVISIONAL_NOTE, TOO_FEW, count, esc, fmt, nm, pct, status_badge
 
 TABS = [("risk", "Risk"), ("quality", "Quality"), ("confidence", "Confidence"), ("reasoning", "Reasoning"),
         ("cost", "Cost"), ("stability", "Stability")]
 INTRO = ("Models play backgammon, and an engine scores every move they make. We measure whether each risk a model "
          "takes is the right one, and what that costs. Every decision is public.")
 LIMIT_PAIRED = "Setups played different positions; league comparisons are not paired."
+ALL = "all"
 LIMIT_HIT = "Hit risk only: being hit. Gammon risk and priming are not in it."
 LIMIT_HARD = ("Setups met different positions; risk judgement is not adjusted for how hard they were. Paired "
               "comparisons wait for the shared positions.")
@@ -46,11 +47,21 @@ def settings_line(m: dict) -> str:
     return " · ".join(b for b in bits if b)
 
 
-def attrs(S, ds, name, ref=False) -> str:
+def attrs(S, ds, name, ref=False, kind_=None) -> str:
     m = P.meta(S, ds, name)
-    return (f' data-dataset="{esc(ds)}" data-setup="{esc(m["slug"])}" data-kind="{"reference" if ref else kind(m)}"'
+    return (f' data-dataset="{esc(ds)}" data-setup="{esc(m["slug"])}" data-kind="{"reference" if ref else kind_ or kind(m)}"'
             f' data-weights="{esc(m.get("weights") or "unknown")}" data-runs="{esc(m.get("runs_on") or "unknown")}"'
             f' data-setting="{esc(m.get("setting") or "none")}"')
+
+
+def type_meta(S, ds, name) -> dict:
+    """The setup's setups.json entry for its model type; a setup that came into this league by a ladder move is listed
+    under the league it came from."""
+    m = S["setups_meta"].get((ds, name))
+    if m:
+        return m
+    return next((m for (d, n), m in S["setups_meta"].items() if n == name and d.startswith("league-")),
+                P.meta(S, ds, name))
 
 
 def cell_model(S, ds, name, ref=None) -> str:
@@ -205,24 +216,37 @@ def sdt_notes() -> str:
             'shows N/A. Intervals: 95%, blocks of two seat-swapped games resampled. <a href="method/#risk-ability">Definitions</a></p>')
 
 
+def risk_cells(r: dict) -> str:
+    return (judgement_td(r) + share_td(r["found"]) + share_td(r["right_safety"]) + share_td(r["good"])
+            + share_td(r["missed"]) + share_td(r["needless"]) + share_td(r["wrong"]) + split_td(r)
+            + classes_td(r) + share_td(r["stake"]["big"]["found"]) + share_td(r["needless_by_loss"]["big"])
+            + size_td(r) + conf_call_td(r) + sdt_cells(r))
+
+
+def robust_cells(r: dict) -> str:
+    return (judgement_td(r) + share_td(r["found"]) + share_td(r["right_safety"]) + share_td(r["good"])
+            + share_td(r["missed"]) + share_td(r["needless"]) + share_td(r["wrong"]) + sdt_cells(r))
+
+
+def risk_notes() -> str:
+    return (f'<p class="table-note">{esc(LIMIT_HIT)}</p><p class="table-note">{esc(LIMIT_HARD)}</p>'
+            + f'<p class="table-note">{esc(BIG_NOTE)}</p><p class="table-note">{esc(CONF_NOTE)} Confidence on the call: '
+              'ranking score only, no calibration gap (the probability is for the chosen play, not the risk). '
+              '<a href="method/#risk">Definitions</a></p>' + sdt_notes())
+
+
 def risk_table(S, lg, phase="all") -> str:
     ds = lg["dataset"]
     body = []
     for n, r, _, ref in rows_of(S, lg, phase):
         cls = ' class="reference"' if ref else ""
         body.append(f'<tr{cls}{attrs(S, ds, slug_name(n), bool(ref))}>{cell_model(S, ds, n, ref if n in lg["references"] else None)}'
-                    + judgement_td(r) + share_td(r["found"]) + share_td(r["right_safety"]) + share_td(r["good"])
-                    + share_td(r["missed"]) + share_td(r["needless"]) + share_td(r["wrong"]) + split_td(r)
-                    + classes_td(r) + share_td(r["stake"]["big"]["found"]) + share_td(r["needless_by_loss"]["big"])
-                    + size_td(r) + conf_call_td(r) + sdt_cells(r) + "</tr>")
+                    + risk_cells(r) + "</tr>")
     where = "all phases" if phase == "all" else P.PHASE_LABEL[phase]
     return (P.SWIPE + P.table(RISK_HEAD, body, f"Risk calls at the 0.001 margin, {esc(where)}; shares with count / "
                               "denominator, risk judgement with its 95% interval (games resampled)",
                               attrs=f' data-dataset="{ds}" data-margin="0.001"')
-            + f'<p class="table-note">{esc(LIMIT_HIT)}</p><p class="table-note">{esc(LIMIT_HARD)}</p>'
-            + f'<p class="table-note">{esc(BIG_NOTE)}</p><p class="table-note">{esc(CONF_NOTE)} Confidence on the call: '
-              'ranking score only, no calibration gap (the probability is for the chosen play, not the risk). '
-              '<a href="method/#risk">Definitions</a></p>' + sdt_notes())
+            + risk_notes())
 
 
 def robust_table(S, lg, phase="all") -> str:
@@ -231,11 +255,61 @@ def robust_table(S, lg, phase="all") -> str:
     for n, r, _, ref in rows_of(S, lg, phase, "robust"):
         cls = ' class="reference"' if ref else ""
         body.append(f'<tr{cls}{attrs(S, ds, slug_name(n), bool(ref))}>{cell_model(S, ds, n, ref if n in lg["references"] else None)}'
-                    + judgement_td(r) + share_td(r["found"]) + share_td(r["right_safety"]) + share_td(r["good"])
-                    + share_td(r["missed"]) + share_td(r["needless"]) + share_td(r["wrong"]) + sdt_cells(r) + "</tr>")
+                    + robust_cells(r) + "</tr>")
     return (f'<h3 class="table-title" id="risk-robust-{ds}{"" if phase == "all" else "-" + phase}">The same at the 0.02 margin (robustness)</h3>'
             + P.SWIPE + P.table(ROBUST_HEAD, body, "Every 0.001 in the definitions replaced by 0.02",
                                 attrs=f' data-dataset="{ds}" data-margin="0.02"'))
+
+
+# --- All leagues (Can, approved by Ümit, 30 Oct 2026): the default view of the Risk tab ---------------------------
+# Every league's setups in one table, one row per league table entry with its League, the model setups by risk
+# judgement (ties keep the league order, then each league's own order), the reference rows (programs) at the bottom.
+
+def all_rows(S, phase="all", margin="main") -> list:
+    models, refs = [], []
+    for lg in S["leagues"]:
+        for n, r, _, ref in rows_of(S, lg, phase, margin):
+            (refs if ref else models).append((lg, n, r, ref))
+    models.sort(key=lambda x: (x[2]["judgement"] is None, -(x[2]["judgement"] or 0)))
+    return models + refs
+
+
+def all_tr(S, lg, n, ref, cells: str) -> str:
+    """A row of the All leagues table: the name with the model type under it, the League, then the league table's cells."""
+    ds = lg["dataset"]
+    t = kind(type_meta(S, ds, n))
+    name = (f'<a class="model-name" href="{P.model_href("", ds, n, S)}">{esc(n)}</a>' if n in lg["setups"]
+            else f'<span class="model-name">{esc(n)}</span>')
+    small = f"program · reference row, never ranked · {ref}" if ref else t if t != "unknown" else "model type not recorded"
+    cls = ' class="reference"' if ref else ""
+    return (f'<tr{cls}{attrs(S, ds, slug_name(n), bool(ref), t)}><td class="model">{name}'
+            f'<span class="small">{esc(small)}</span></td><td class="num" data-v="{lg["id"]}">League {lg["id"]}</td>'
+            + cells + "</tr>")
+
+
+def all_risk_table(S, phase="all") -> str:
+    body = [all_tr(S, lg, n, ref, risk_cells(r)) for lg, n, r, ref in all_rows(S, phase)]
+    where = "all phases" if phase == "all" else P.PHASE_LABEL[phase]
+    return (P.SWIPE + P.table([RISK_HEAD[0], "League"] + RISK_HEAD[1:], body,
+                              f"All leagues: risk calls at the 0.001 margin, {esc(where)}; shares with count / "
+                              "denominator, risk judgement with its 95% interval (games resampled)",
+                              attrs=f' data-dataset="{ALL}" data-margin="0.001"')
+            + risk_notes())
+
+
+def all_robust_table(S, phase="all") -> str:
+    body = [all_tr(S, lg, n, ref, robust_cells(r)) for lg, n, r, ref in all_rows(S, phase, "robust")]
+    return (f'<h3 class="table-title" id="risk-robust-{ALL}{"" if phase == "all" else "-" + phase}">The same at the 0.02 margin (robustness)</h3>'
+            + P.SWIPE + P.table([ROBUST_HEAD[0], "League"] + ROBUST_HEAD[1:], body,
+                                "All leagues: every 0.001 in the definitions replaced by 0.02",
+                                attrs=f' data-dataset="{ALL}" data-margin="0.02"'))
+
+
+def all_head(S) -> str:
+    """The line above the All leagues table, then the Provisional label of every running league."""
+    return (f'<p class="table-note">{esc(ALL_NOTE)}</p>'
+            + "".join(f'<p class="table-note">League {lg["id"]}: {esc(PROVISIONAL_NOTE)}</p>' for lg in S["leagues"]
+                      if lg["metric_status"] == PROVISIONAL))
 
 
 def reasoning_sdt_table(S, lg) -> str:
@@ -905,12 +979,13 @@ def phase_slots(S, lg, phase) -> dict:
             "chart-risk": risk_panel_body(S, lg, phase)}
 
 
-def slot(lg, name, html) -> str:
-    return f'<div class="phase-slot" data-slot="{name}" data-dataset="{lg["dataset"]}">{html}</div>'
+def slot(ds, name, html) -> str:
+    return f'<div class="phase-slot" data-slot="{name}" data-dataset="{ds}">{html}</div>'
 
 
 def fragments(S, out) -> None:
-    """fragments/<league>-<phase>.html: the phase-dependent parts of a league view, loaded by the Phase filter."""
+    """fragments/<league>-<phase>.html: the phase-dependent parts of a league view, loaded by the Phase filter;
+    fragments/all-<phase>.html: the same for the All leagues view."""
     folder = out / "fragments"
     if folder.exists():
         for old in folder.glob("*.html"):
@@ -918,9 +993,13 @@ def fragments(S, out) -> None:
     folder.mkdir(exist_ok=True)
     for lg in S["leagues"]:
         for ph in A.PHASES:
-            parts = "".join(slot(lg, k, v) for k, v in phase_slots(S, lg, ph).items())
+            parts = "".join(slot(lg["dataset"], k, v) for k, v in phase_slots(S, lg, ph).items())
             (folder / f"{lg['dataset']}-{ph}.html").write_text(
                 f'<div data-league-view="{lg["dataset"]}" data-dataset="{lg["dataset"]}">{prov_note(lg)}{parts}</div>\n')
+    for ph in A.PHASES:
+        (folder / f"{ALL}-{ph}.html").write_text(
+            f'<div data-league-view="{ALL}" data-dataset="{ALL}">{all_head(S)}'
+            f'{slot(ALL, "risk", all_risk_table(S, ph) + all_robust_table(S, ph))}</div>\n')
 
 
 def prov_note(lg) -> str:
@@ -934,9 +1013,21 @@ def league_block(lg, inner: str) -> str:
 
 
 def view(S, lg, inner: str) -> str:
+    """One league's view. Under All leagues, the parts without a view of their own (every tab but Risk, the charts)
+    show every league's view one under the other, each under its League title (bg.js)."""
     off = "" if lg["dataset"] == default_league(S) else " data-off"
     prov = prov_note(lg)
-    return f'<div class="league-view" data-league-view="{lg["dataset"]}" data-dataset="{lg["dataset"]}"{off}>{prov}{inner}</div>'
+    return (f'<div class="league-view" data-league-view="{lg["dataset"]}" data-dataset="{lg["dataset"]}"{off}>'
+            f'<h3 class="table-title" data-stack-title hidden>League {lg["id"]}</h3>{prov}{inner}</div>')
+
+
+def all_view(S) -> str:
+    """The All leagues view of the Risk tab, the default view of the leaderboard."""
+    inner = (slot(ALL, "risk", all_risk_table(S) + all_robust_table(S))
+             + '<p class="table-note">Ability and caution by reasoning setting (UNPAIRED) are in each league\'s view: '
+               'League 1, 2 or 3.</p>')
+    off = "" if default_league(S) == ALL else " data-off"
+    return f'<div class="league-view" data-league-view="{ALL}" data-dataset="{ALL}"{off}>{all_head(S)}{inner}</div>'
 
 
 def shared_view(S, what: str) -> str:
@@ -945,19 +1036,19 @@ def shared_view(S, what: str) -> str:
 
 
 def default_league(S) -> str:
-    return S["leagues"][0]["dataset"]
+    return ALL
 
 
 def tab_body(S, key: str) -> str:
-    out = []
+    out = [all_view(S)] if key == "risk" else []
     for lg in S["leagues"]:
         if key == "risk":
-            inner = slot(lg, "risk", risk_table(S, lg) + robust_table(S, lg))
+            inner = slot(lg["dataset"], "risk", risk_table(S, lg) + robust_table(S, lg))
             extra = reasoning_sdt_table(S, lg)
             if extra:
                 inner += extra + '<p class="table-note">The Phase filter does not apply to this table: all phases.</p>'
         elif key == "quality":
-            inner = slot(lg, "quality", quality_table(S, lg)) + f'<p class="table-note">{esc(LIMIT_PAIRED)}</p>'
+            inner = slot(lg["dataset"], "quality", quality_table(S, lg)) + f'<p class="table-note">{esc(LIMIT_PAIRED)}</p>'
         elif key == "confidence":
             inner = confidence_table(S, lg) + close_details(S, lg) + offline_confidence(S, lg)
         elif key == "reasoning":
@@ -1047,20 +1138,22 @@ def filters(S) -> str:
     settings = [("all", "All")] + [(v, cap(v)) for v in sorted({m["setting"] for m in ms if m.get("setting")})] + [("none", "None")]
     runs = [("all", "All")] + [(v, cap(v)) for v in sorted({m["runs_on"] for m in ms if m.get("runs_on")})]
     weights = [("all", "All")] + [(v, cap(v)) for v in sorted({m["weights"] for m in ms if m.get("weights")})]
-    leagues = "".join(f'<button type="button" class="key" data-league-pick="{lg["dataset"]}" aria-pressed="'
-                      f'{str(lg["dataset"] == default_league(S)).lower()}"><span class="lamp" aria-hidden="true"></span>League {lg["id"]}</button>'
-                      for lg in S["leagues"])
+    pick = lambda ds, label: (f'<button type="button" class="key" data-league-pick="{ds}" aria-pressed="'
+                              f'{str(ds == default_league(S)).lower()}"><span class="lamp" aria-hidden="true"></span>{label}</button>')
+    leagues = pick(ALL, "All leagues") + "".join(pick(lg["dataset"], f'League {lg["id"]}') for lg in S["leagues"])
     leagues += ('<button type="button" class="key" data-league-pick="shared" aria-pressed="false"><span class="lamp" '
                 f'aria-hidden="true"></span>Shared positions</button>')
     phases = "".join(f'<option value="{p}">{esc(P.PHASE_LABEL[p])}</option>' for p in A.PHASES)
     totals = {lg["dataset"]: len(lg["setups"]) for lg in S["leagues"]}
+    # All leagues: the model setups of its table (the programs are its reference rows, never counted).
+    totals = {ALL: sum(1 for lg in S["leagues"] for x in rows_of(S, lg) if not x[3]), **totals}
     # The league and the model type stay in view; phase, reasoning, runs on and weights fold behind "More filters", whose
     # key names the active ones while it is closed (bg.js).
     return f"""<section class="panel filters is-open needs-js" id="filters" aria-labelledby="filters-title">
       <h2 id="filters-title" class="filters-title">Filters</h2>
       <div class="filters-body" id="filters-body">
         <div class="group league-pick" role="group" aria-labelledby="f-league"><span class="group-label" id="f-league">League</span><span class="keys">{leagues}</span></div>
-        {group("kind", "Model type", [("all", "All"), ("decision", "Decision"), ("chat", "Chat"), ("program", "Program")])}
+        {group("kind", "Model type", [("all", "All types"), ("decision", "Decision"), ("chat", "Chat"), ("program", "Program")])}
         <div class="group more-filters"><button type="button" class="key fold-toggle" data-more-filters aria-expanded="false" aria-controls="filters-more"><span class="chevron" aria-hidden="true"></span>More filters<span class="fold-summary" data-more-summary> · phase, reasoning, runs on, weights</span></button></div>
         <div class="filters-more" id="filters-more" hidden>
           <label class="group"><span class="group-label">Phase</span> <select data-control="phase"><option value="all">All phases</option>{phases}</select></label>
@@ -1089,7 +1182,7 @@ def chart_panel(pid: str, title: str, tabs: list[tuple[str, str]], body: str, ma
 
 
 def charts(S) -> str:
-    risk = "".join(view(S, lg, slot(lg, "chart-risk", risk_panel_body(S, lg))) for lg in S["leagues"])
+    risk = "".join(view(S, lg, slot(lg["dataset"], "chart-risk", risk_panel_body(S, lg))) for lg in S["leagues"])
     risk += shared_view(S, "Analysis pending.")
     cards = " · ".join(f'<a href="{S["risk_cards"][lg["dataset"]]}">League {lg["id"]}: {esc(lg["winner"])}</a>'
                        for lg in S["leagues"] if S.get("risk_cards", {}).get(lg["dataset"]))

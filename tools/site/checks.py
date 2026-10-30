@@ -8,7 +8,8 @@
    valid = decisions; risk cells and phase cells sum to the scored decisions; standings played = 2 x matches
    finished; the v1 set is setups x positions; exported decisions match the engine-scored decisions; the B6 marks
    on Every decision match the 2x2 counts.
-3. No mixing: no table holds rows of two datasets; v1 rows only inside an Earlier-version block; every block
+3. No mixing: no table holds rows of two datasets, except the home page's All leagues tables (data-dataset="all":
+   league rows only, the All leagues note in their block); v1 rows only inside an Earlier-version block; every block
    of a league that has not finished says "Provisional: league still running".
 4. No private addresses or credentials (B7): hostnames, IPs, ports, server paths, keys, tokens, request headers,
    the other benchmark's name, in any output file including the decompressed decision files.
@@ -24,7 +25,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 
 import findings
-from common import BANNED, CONTENT, PROVISIONAL, PROVISIONAL_NOTE
+from common import ALL_NOTE, BANNED, CONTENT, PROVISIONAL, PROVISIONAL_NOTE
 
 NUM = re.compile(r"(?<![\w.\u2212+-])([\u2212+-]?)(\d{1,3}(?:,\d{3})+|\d+)(\.\d+)?")
 DATE = re.compile(r"\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2})?(?:\.\d+)?Z?)?|\b\d{1,2}:\d{2}\b|"
@@ -244,14 +245,22 @@ def check_mixing(page: Path, root: Node, S: dict) -> list[str]:
         ds = {r.attrs["data-dataset"] for r in walk(t) if r.attrs.get("data-dataset")}
         in_v1 = any(a.attrs.get("data-version") == "v1" for a in [t] + list(ancestors(t)))
         what = "a table" if t.tag == "table" else "a chart"
-        if len(ds) > 1:
+        merged = t.tag == "table" and t.attrs.get("data-dataset") == "all"
+        if merged:
+            # The All leagues table (Can, approved by Ümit, 30 Oct 2026): every league's rows, each with its League.
+            ds -= {"all"}
+            if ds - {lg["dataset"] for lg in S["leagues"]}:
+                bad.append(f"{page}: the All leagues table holds rows outside the leagues {sorted(ds)}")
+            if not any(ALL_NOTE in text_of(a) for a in ancestors(t) if a.attrs.get("data-dataset") == "all"):
+                bad.append(f"{page}: the All leagues table without its note '{ALL_NOTE}' in its block")
+        elif len(ds) > 1:
             bad.append(f"{page}: {what} mixes datasets {sorted(ds)}")
         if in_v1 and ds - {"v1-set"}:
             bad.append(f"{page}: {what} in an Earlier-version block holds v3 rows {sorted(ds - {'v1-set'})}")
         if "v1-set" in ds and not in_v1:
             bad.append(f"{page}: v1 rows outside an Earlier-version block")
         for r in ds & running:
-            if not any(PROVISIONAL_NOTE in text_of(a) for a in ancestors(t) if a.attrs.get("data-dataset") == r
+            if not any(PROVISIONAL_NOTE in text_of(a) for a in ancestors(t) if a.attrs.get("data-dataset") in (r, "all" if merged else r)
                        or a.tag in ("section", "div") and a.attrs.get("id", "").startswith("league-")):
                 bad.append(f"{page}: {what} of running {r} without '{PROVISIONAL_NOTE}' in its block")
     return bad

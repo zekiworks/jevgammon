@@ -18,6 +18,8 @@ PUBLISHED, PROVISIONAL, EARLIER, PENDING, NOT_MEASURED, NA = (
     "Published", "Provisional", "Earlier version", "Analysis pending", "Not measured", "N/A")
 TOO_FEW = "Too few decisions"
 PROVISIONAL_NOTE = "Provisional: league still running"
+# The line above the home page's All leagues table (Can, approved by Ümit, 30 Oct 2026), verbatim.
+ALL_NOTE = "Leagues played different positions; close scores across leagues need not mean a real difference."
 # Close choices, stage B: scope note (Ümit, 2026-10-25; Method spec 2026-10-24 §9.13 addendum of 16:05 UTC), verbatim on
 # the home page and the Method page.
 CLOSE_B_SCOPE_NOTE = ("Gemma 4 31B (on) was started but not completed: two reboots and a GPU fault interrupted it, and it "

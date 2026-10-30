@@ -104,6 +104,13 @@ def rows_of(S, lg, phase="all", margin="main"):
     return model + refs
 
 
+def by_error_models_first(S, ds, setups: dict) -> list[str]:
+    """The setups by error rate (pages.by_error), the programs (GNUbg weak, Safest, Random) last as reference rows, by
+    name: every table and chart of the leaderboard keeps them below the model setups."""
+    order = P.by_error(setups)
+    return [n for n in order if not ref_label(S, ds, n)] + sorted(n for n in order if ref_label(S, ds, n))
+
+
 # --- Cells --------------------------------------------------------------------------------------------------
 
 def n_(x) -> str:
@@ -199,6 +206,8 @@ def sdt_cells(r: dict) -> str:
 
 SDT_HEAD = ["Ability d\u2032", "Caution c (+ cautious, \u2212 bold)", "Aim: right ÷ (right + wrong risks)",
             "Cost-derived SDT reference c*"]
+# bg.css shows the summary columns by position (model, judgement, risks found, right safety, missed, needless, wrong;
+# All columns adds the rest): keep it in step when these heads change.
 RISK_HEAD = ["Model and setting", "Risk judgement", "Risks found", "Right safety", "Good risks", "Missed risks",
              "Needless risks", "Wrong risks", "Error rate by risk-call category (PR)", "Decisions with a trade-off",
              "Big risks found", "Big needless risks", "Extra hitting rolls: right / wrong and needless",
@@ -356,8 +365,8 @@ def quality_table(S, lg, phase="all") -> str:
     tables."""
     ds = lg["dataset"]
     setups = lg["setups"] if phase == "all" else {n: dict(s, quality=s["quality_phases"][phase]) for n, s in lg["setups"].items()}
-    rows, refs = [], []
-    for n in P.by_error(setups):
+    rows = []
+    for n in by_error_models_first(S, ds, setups):
         q = setups[n]["quality"]
         b = P.band(S, q["error_rate"]) if q.get("error_rate") is not None and not q.get("too_few") else None
         cells = (P.er_cell(q) + f'<td class="num">{esc(b) + " (approx.)" if b else nm(NA)}</td>'
@@ -370,9 +379,7 @@ def quality_table(S, lg, phase="all") -> str:
                  + f'</td><td class="num">{count(q["invalid"])}</td>')
         ref = bool(ref_label(S, ds, n))
         cls = ' class="reference"' if ref else ""
-        tr = f'<tr{cls}{attrs(S, ds, n, ref)}>{cell_model(S, ds, n)}{cells}</tr>'
-        (refs if ref else rows).append((n, tr))
-    rows = [r for _, r in rows] + [r for _, r in sorted(refs)]
+        rows.append(f'<tr{cls}{attrs(S, ds, n, ref)}>{cell_model(S, ds, n)}{cells}</tr>')
     where = "all phases" if phase == "all" else P.PHASE_LABEL[phase]
     head = ["Model and setting", "Error rate (PR), 95% interval", "Band on the human scale (approx.)",
             "Engine's best play", "Blunder rate", "Median / P90 s per decision", "$ per 1,000 decisions",
@@ -385,7 +392,7 @@ def confidence_table(S, lg) -> str:
     ds = lg["dataset"]
     rows = []
     th = S["thresholds"]
-    for n in P.by_error(lg["setups"]):
+    for n in by_error_models_first(S, ds, lg["setups"]):
         s = lg["setups"][n]
         src = P.meta(S, ds, n).get("confidence_source") or "none"
         c = s.get("confidence")
@@ -409,7 +416,9 @@ def confidence_table(S, lg) -> str:
                      + f'<td class="num">{g(c["ece"], lambda v: fmt(100 * v, 1))}</td>'
                      + share_td(c["confident_badly_wrong"]))
         cells += close_td(S, ds, n, s.get("close"))
-        rows.append(f"<tr{attrs(S, ds, n)}>{cell_model(S, ds, n)}{cells}</tr>")
+        ref = bool(ref_label(S, ds, n))
+        cls = ' class="reference"' if ref else ""
+        rows.append(f"<tr{cls}{attrs(S, ds, n, ref)}>{cell_model(S, ds, n)}{cells}</tr>")
     head = ["Model and setting", "Confidence source", "Kept at 0.90", "Blunders among kept, 0.90",
             "Mean equity lost among kept, 0.90", "Kept at 0.99", "Blunders among kept, 0.99",
             "Mean equity lost among kept, 0.99", "Error rate in the surest quarter (PR)",
@@ -427,8 +436,12 @@ def confidence_table(S, lg) -> str:
 
 
 def cost_table(S, lg) -> str:
-    return P.SWIPE + P.table(P.COST_HEAD, P.cost_rows(S, "", lg["dataset"], lg["setups"]), "Time and cost in this league",
-                             attrs=f' data-dataset="{lg["dataset"]}"')
+    ds = lg["dataset"]
+    rows = []
+    for n in by_error_models_first(S, ds, lg["setups"]):
+        row = P.cost_rows(S, "", ds, {n: lg["setups"][n]})[0]
+        rows.append(row.replace("<tr", '<tr class="reference"', 1) if ref_label(S, ds, n) else row)
+    return P.SWIPE + P.table(P.COST_HEAD, rows, "Time and cost in this league", attrs=f' data-dataset="{ds}"')
 
 
 # --- Close choices (Method spec 2026-10-24 §9) ------------------------------------------------------------------
@@ -454,7 +467,7 @@ def close_details(S, lg) -> str:
     ds = lg["dataset"]
     label = S["close_spec"]["label"]
     out, na = [], []
-    for n in P.by_error(lg["setups"]):
+    for n in by_error_models_first(S, ds, lg["setups"]):
         c = lg["setups"][n].get("close")
         if not c or c["na"]:
             na.append(n)
@@ -797,7 +810,7 @@ def close_chart(S, lg, margin) -> str:
     """Close choices by stake band, Risk pays only (Method spec 2026-10-24 §9.6): the Confidence table's order, never
     ranked by the share; N/A for setups without a full probability distribution."""
     rows = []
-    for n in P.by_error(lg["setups"]):
+    for n in by_error_models_first(S, lg["dataset"], lg["setups"]):
         c = lg["setups"][n].get("close")
         ref = ref_label(S, lg["dataset"], n)
         if not c or c["na"]:
@@ -848,7 +861,7 @@ def pays_chart(S, lg) -> str:
 def measure_chart(S, lg, which) -> str:
     ds = lg["dataset"]
     rows = []
-    for n in P.by_error(lg["setups"]):
+    for n in by_error_models_first(S, ds, lg["setups"]):
         q = lg["setups"][n]["quality"]
         r = lg["setups"][n]["risk"]["main"]
         ref = ref_label(S, ds, n)
@@ -1076,7 +1089,13 @@ def tab_body(S, key: str) -> str:
         "stability": "Does a setup repeat its play on the same position?"}[key]
     marks = ('<p class="table-note">\u00a7 list-price estimate; runs on our GPUs · \u2020 plays split into groups · '
              f'{esc(NOT_MEASURED)}: no value recorded. <a href="method/#{key}">Method</a></p>')
-    return f'<p class="version-line">{esc(caption)}</p>' + "".join(out) + marks + f'<p class="table-note">{esc(LIMIT_PAIRED)}</p>'
+    cols = {"risk": "good risks, the error rate by risk-call category, stakes, extra hitting rolls, confidence on the call, "
+                    "ability and caution",
+            "quality": "time, cost, decisions scored and invalid answers"}.get(key)
+    cols_note = (f'<p class="table-note cols-note needs-js">Summary columns first; <strong>All columns</strong> adds '
+                 f'{esc(cols)}.</p>' if cols else "")
+    return (f'<p class="version-line">{esc(caption)}</p>{cols_note}' + "".join(out) + marks
+            + f'<p class="table-note">{esc(LIMIT_PAIRED)}</p>')
 
 
 # --- Hero, findings, filters -------------------------------------------------------------------------------
@@ -1090,6 +1109,8 @@ def champions(S) -> str:
     for lg in S["leagues"]:
         w = lg.get("winner")
         val = (f'<a href="{P.model_href("", lg["dataset"], w, S)}">{esc(w)}</a>' if w else nm(lg["status"]))
+        if w and ref_label(S, lg["dataset"], w):
+            val += ' <span class="champ-note">program, a reference row in the leaderboard</span>'
         items.append(f'<li class="readout"><span class="readout-label">League {lg["id"]}:</span> <span class="readout-value champ">{val}</span></li>')
     # The Hype Cup champion: the cross-league champion (an event, not a ranking: the Cup card says so).
     c = S["cup"]
@@ -1097,6 +1118,29 @@ def champions(S) -> str:
     items.append(f'<li class="readout"><span class="readout-label">Hype Cup:</span> <span class="readout-value champ">{val}</span></li>')
     return (f'<div class="readout-row champions"><span class="readout-label">League winners · match results</span>'
             f'<ul class="readouts">{"".join(items)}</ul></div>')
+
+
+def leaders(S) -> str:
+    """The highest stored risk judgement among the model setups (the leaderboard's order; programs are reference rows,
+    never ranked), overall, per model type and per league: kept apart from the match winners above it."""
+    models = [(lg, n, r) for lg, n, r, ref in all_rows(S) if not ref and r["judgement"] is not None]
+    groups = [("All model setups", "", lambda lg, n: True)]
+    groups += [(f"{t.capitalize()} models", f"?type={t}#board", lambda lg, n, t=t: kind(type_meta(S, lg["dataset"], n)) == t)
+               for t in ("decision", "chat")]
+    groups += [(f'League {lg["id"]}', f'?league={lg["dataset"]}#board', lambda x, n, d=lg["dataset"]: x["dataset"] == d)
+               for lg in S["leagues"]]
+    items = []
+    for label, href, keep in groups:
+        top = next(((lg, n, r) for lg, n, r in models if keep(lg, n)), None)
+        if not top:
+            continue
+        lg, n, r = top
+        items.append(f'<li class="readout"><span class="readout-label">{esc(label)}:</span> <span class="readout-value">'
+                     f'<a href="{P.model_href("", lg["dataset"], n, S)}">{esc(n)}</a></span> <span class="leader-detail">'
+                     f'League {lg["id"]} · {fmt(r["judgement"])}</span>'
+                     + (f' <a class="leader-view" href="{href or "#board"}">view</a>' if href else "") + '</li>')
+    return (f'<div class="readout-row leaders"><span class="readout-label">Risk judgement leaders · model setups; programs '
+            f'are reference rows, never ranked</span><ul class="readouts">{"".join(items)}</ul></div>')
 
 
 CALL_WORDS = {"right_risk": "a right risk", "wrong_risk": "a wrong risk", "missed": "a missed risk",
@@ -1160,6 +1204,7 @@ def filters(S) -> str:
       <div class="filters-body" id="filters-body">
         <div class="group league-pick" role="group" aria-labelledby="f-league"><span class="group-label" id="f-league">League</span><span class="keys">{leagues}</span></div>
         {group("kind", "Model type", [("all", "All types"), ("decision", "Decision"), ("chat", "Chat"), ("program", "Program")])}
+        <div class="group quick-view" role="group" aria-labelledby="f-quick"><span class="group-label" id="f-quick">Quick view</span><span class="keys"><button type="button" class="key" data-quick-view="decision" aria-pressed="false"><span class="lamp" aria-hidden="true"></span>Decision models · all leagues</button></span></div>
         <div class="group more-filters"><button type="button" class="key fold-toggle" data-more-filters aria-expanded="false" aria-controls="filters-more"><span class="chevron" aria-hidden="true"></span>More filters<span class="fold-summary" data-more-summary> · phase, reasoning, runs on, weights</span></button></div>
         <div class="filters-more" id="filters-more" hidden>
           <label class="group"><span class="group-label">Phase</span> <select data-control="phase"><option value="all">All phases</option>{phases}</select></label>
@@ -1384,6 +1429,7 @@ def home(S) -> str:
           <p class="version">{esc(version_line(S))}</p>
         </div>
         {champions(S)}
+        {leaders(S)}
       </div>
       {hero_board(S)}
     </header>
@@ -1393,6 +1439,7 @@ def home(S) -> str:
       <div class="section-head"><h2 id="board-title">Leaderboard</h2></div>
       <div class="modebar">
         <div class="keys view-switch needs-js" role="group" aria-label="Show the results as"><button type="button" class="key" data-view="table" aria-pressed="true"><span class="lamp" aria-hidden="true"></span>Table</button><button type="button" class="key" data-view="charts" aria-pressed="false"><span class="lamp" aria-hidden="true"></span>Charts</button></div>
+        <div class="keys col-switch needs-js" role="group" aria-label="Table columns"><button type="button" class="key" data-cols-all aria-pressed="false"><span class="lamp" aria-hidden="true"></span>All columns</button></div>
         <div class="modes" role="tablist" aria-label="Leaderboard">{tabs}</div>
       </div>
       <div id="board" role="tabpanel">{panels}</div>

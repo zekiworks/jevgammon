@@ -9,9 +9,13 @@ from common import (EARLIER, EARLIER_NOTE, NA, NAME_NOTES, NOT_MEASURED, PENDING
                     PUBLISHED, REASONING_NOTES, TOO_FEW, aliases, count, esc, fmt, nm, pct, setup_slug, slug,
                     status_badge)
 
-# B4: the nav of decision-models' form; model pages open from the table rows, New models is linked from Data.
-NAV = [("decisions/", "Every decision"), ("disagreements/", "Where models disagree"), ("phases/", "Phases"),
-       ("compare/", "Compare"), ("leagues/", "Leagues"), ("matches/", "Matches"), ("method/", "Method"), ("data/", "Data")]
+# The nav in four groups (Ümit, 30 Oct 2026): Results (the leaderboard), Analyses, Leagues and matches, Method and data.
+# Model pages open from the table rows; New models is linked from Data. "" is the home page.
+NAV = [("Results", [("", "Leaderboard")]),
+       ("Analyses", [("decisions/", "Every decision"), ("disagreements/", "Where models disagree"), ("phases/", "Phases"),
+                     ("compare/", "Compare"), ("clear-risk/", "Clear risk")]),
+       ("Leagues and matches", [("leagues/", "Leagues"), ("matches/", "Matches")]),
+       ("Method and data", [("method/", "Method"), ("data/", "Data")])]
 TITLE = "Can a model tell when a risk is worth taking?"
 # Reviewed brief of 24 Oct 2026, item 2: the subtitle, used with the title in the hero, the meta description, the social
 # preview and the PNG headers (png.js, bg.js read both from the body's data attributes).
@@ -223,8 +227,11 @@ def layout(S, base, path: str, title: str, body: str, description: str | None = 
     og = (f'<meta property="og:image" content="{image}"><meta property="og:image:width" content="1200">'
           f'<meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image">'
           f'<meta name="twitter:image" content="{image}">') if image else ""
-    nav = "".join(f'<li><a href="{rel}{href}"{" aria-current=page" if path.startswith(href) else ""}>{esc(label)}</a></li>'
-                  for href, label in NAV)
+    here = lambda href: href == path if not href else path.startswith(href)
+    nav = "".join(f'<li class="nav-group"><span class="nav-group-label">{esc(group)}</span><ul>'
+                  + "".join(f'<li><a href="{rel}{href or ("" if rel else "./")}"{" aria-current=page" if here(href) else ""}>'
+                            f'{esc(label)}</a></li>' for href, label in links) + '</ul></li>'
+                  for group, links in NAV)
     css = "".join(f'<link rel="stylesheet" href="{rel}{s}">' for s in ("site.css", "bg.css") + tuple(styles))
     js = "".join(f'<script src="{rel}{s}" defer></script>' for s in ("site.js", "tables.js", "png.js") + tuple(scripts))
     page_png = ('<p class="more-label">Share</p><button type="button" class="key page-png" data-page-png hidden>Export page as PNG</button>'

@@ -8,6 +8,7 @@ mod http;
 mod league;
 mod migrate;
 mod players;
+mod quiz;
 mod runner;
 mod scores;
 mod ui;
@@ -62,6 +63,10 @@ enum Command {
     /// Close choices, stage B: one prediction call per chosen player and stored position
     /// (table `predictions`); a stored row (valid, invalid or failed) is never asked again.
     Predict(PredictArgs),
+    /// Clear-risk follow-up, Part 2: sends prebuilt questions (JSON lines with a decision-
+    /// service form and a chat form each) to the players of a league config and stores every
+    /// answer (tables quiz_answers, quiz_exchanges); a rerun asks only what is missing or failed.
+    Quiz(QuizArgs),
     /// Adds a player to an existing league, running or finished: a participant (its
     /// `players` row is created, or reused when the name is known with the same settings),
     /// a note, and an entry in the additions freeze log. Its pairs with every current
@@ -206,6 +211,36 @@ struct PredictArgs {
     time_limit: Option<u64>,
     /// At most this many retries of network and server errors per call, counted over every
     /// send of the call (default: 3 per send, as in the leagues).
+    #[arg(long)]
+    retries: Option<u32>,
+    /// qfork/Glyph credential root read for subscription logins and API keys.
+    #[arg(long, env = "JEVGAMMON_QFORK_ROOT")]
+    qfork_root: Option<PathBuf>,
+}
+
+#[derive(Args)]
+struct QuizArgs {
+    /// League config file whose players answer (see `league --config`).
+    #[arg(long)]
+    config: PathBuf,
+    /// Questions file (JSON lines: id, name, state, instructions, options, system, user,
+    /// schema, schema_name).
+    #[arg(long)]
+    items: PathBuf,
+    /// SQLite file for the answers.
+    #[arg(long)]
+    out: PathBuf,
+    /// Player name in the config (repeatable); default: every player.
+    #[arg(long = "setup")]
+    setups: Vec<String>,
+    /// No new question is sent once the chosen setups' answers (stored and new) cost more
+    /// than this many dollars.
+    #[arg(long)]
+    max_cost: Option<f64>,
+    /// Longest wall-clock seconds per question; a longer one is stored as failed.
+    #[arg(long)]
+    time_limit: Option<u64>,
+    /// At most this many retries of network and server errors per call (default: 3 per send).
     #[arg(long)]
     retries: Option<u32>,
     /// qfork/Glyph credential root read for subscription logins and API keys.
@@ -443,6 +478,29 @@ async fn main() -> ExitCode {
                     positions: args.positions,
                     out: args.out,
                     setups: args.setups,
+                    time_limit: args.time_limit.map(std::time::Duration::from_secs),
+                },
+                &setup,
+            )
+            .await
+        }
+        Some(Command::Quiz(args)) => {
+            if let Some(retries) = args.retries {
+                http::limit_retries_per_call(retries);
+            }
+            let setup = Setup::new(
+                args.qfork_root
+                    .clone()
+                    .unwrap_or_else(auth::default_qfork_root),
+                "http://localhost:8080/v1".to_owned(),
+            );
+            quiz::quiz(
+                quiz::QuizArgs {
+                    config: args.config,
+                    items: args.items,
+                    out: args.out,
+                    setups: args.setups,
+                    max_cost: args.max_cost,
                     time_limit: args.time_limit.map(std::time::Duration::from_secs),
                 },
                 &setup,

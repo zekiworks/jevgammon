@@ -243,57 +243,11 @@ pub fn constrained_request(
         Answer::Letter(_) => letter_system(),
         Answer::Prediction => prediction_system(),
     };
-    let effort = options.reasoning.as_deref();
     let (name, compatible_name) = match answer {
         Answer::Letter(_) => ("backgammon_play", "play"),
         Answer::Prediction => ("backgammon_prediction", "prediction"),
     };
     match route {
-        Route::OpenAiSubscription => {
-            let mut body = json!({
-                "model": model,
-                "instructions": system,
-                "input": [{"type": "message", "role": "user", "content": [{"type": "input_text", "text": user}]}],
-                "stream": true,
-                "store": false,
-                "text": {"format": {"type": "json_schema", "name": name, "schema": answer_schema(answer), "strict": true}},
-            });
-            if let Some(effort) = effort {
-                body["reasoning"] = json!({"effort": effort});
-            }
-            body
-        }
-        Route::Xai => {
-            let mut body = json!({
-                "model": model,
-                "instructions": system,
-                "input": [{"role": "user", "content": user}],
-                "store": false,
-                "text": {"format": {"type": "json_schema", "name": name, "schema": answer_schema(answer), "strict": true}},
-            });
-            if let Some(effort) = effort {
-                body["reasoning"] = json!({"effort": effort});
-            }
-            body
-        }
-        Route::AnthropicSubscription => {
-            let mut output =
-                json!({"format": {"type": "json_schema", "schema": answer_schema(answer)}});
-            if let Some(effort) = effort {
-                output["effort"] = json!(effort);
-            }
-            json!({
-                "model": model,
-                // Room for adaptive thinking at high effort (1,024 ran out in the smoke test).
-                "max_tokens": options.max_tokens.unwrap_or(32000),
-                "system": [
-                    {"type": "text", "text": CLAUDE_CODE_IDENTITY},
-                    {"type": "text", "text": system},
-                ],
-                "messages": [{"role": "user", "content": user}],
-                "output_config": output,
-            })
-        }
         Route::Gemini | Route::Antigravity => {
             let mut config = match answer {
                 Answer::Letter(count) => json!({
@@ -311,13 +265,79 @@ pub fn constrained_request(
                     "temperature": 1.0,
                 }),
             };
-            if let Some(effort) = effort {
+            if let Some(effort) = options.reasoning.as_deref() {
                 config["thinkingConfig"] = json!({"thinkingLevel": effort});
             }
             json!({
                 "systemInstruction": {"parts": [{"text": system}]},
                 "contents": [{"role": "user", "parts": [{"text": user}]}],
                 "generationConfig": config,
+            })
+        }
+        _ => schema_body(route, model, options, system, user, name, compatible_name, &answer_schema(answer))
+            .expect("schema_body covers every route but Gemini's"),
+    }
+}
+
+/// A request whose answer the provider constrains to the JSON `schema` (named `name`, or
+/// `compatible_name` on OpenAI-compatible servers), with the player's reasoning effort,
+/// before the configured extra fields. `None` for the Gemini routes, whose schema dialect
+/// differs.
+#[allow(clippy::too_many_arguments)]
+pub fn schema_body(
+    route: Route,
+    model: &str,
+    options: &Options,
+    system: &str,
+    user: &str,
+    name: &str,
+    compatible_name: &str,
+    schema: &Value,
+) -> Option<Value> {
+    let effort = options.reasoning.as_deref();
+    Some(match route {
+        Route::OpenAiSubscription => {
+            let mut body = json!({
+                "model": model,
+                "instructions": system,
+                "input": [{"type": "message", "role": "user", "content": [{"type": "input_text", "text": user}]}],
+                "stream": true,
+                "store": false,
+                "text": {"format": {"type": "json_schema", "name": name, "schema": schema, "strict": true}},
+            });
+            if let Some(effort) = effort {
+                body["reasoning"] = json!({"effort": effort});
+            }
+            body
+        }
+        Route::Xai => {
+            let mut body = json!({
+                "model": model,
+                "instructions": system,
+                "input": [{"role": "user", "content": user}],
+                "store": false,
+                "text": {"format": {"type": "json_schema", "name": name, "schema": schema, "strict": true}},
+            });
+            if let Some(effort) = effort {
+                body["reasoning"] = json!({"effort": effort});
+            }
+            body
+        }
+        Route::AnthropicSubscription => {
+            let mut output = json!({"format": {"type": "json_schema", "schema": schema}});
+            if let Some(effort) = effort {
+                output["effort"] = json!(effort);
+            }
+            json!({
+                "model": model,
+                // Room for adaptive thinking at high effort (1,024 ran out in the smoke test).
+                "max_tokens": options.max_tokens.unwrap_or(32000),
+                "system": [
+                    {"type": "text", "text": CLAUDE_CODE_IDENTITY},
+                    {"type": "text", "text": system},
+                ],
+                "messages": [{"role": "user", "content": user}],
+                "output_config": output,
             })
         }
         Route::OpenAiCompatible => {
@@ -336,11 +356,12 @@ pub fn constrained_request(
             }
             body["response_format"] = json!({
                 "type": "json_schema",
-                "json_schema": {"name": compatible_name, "schema": answer_schema(answer), "strict": true},
+                "json_schema": {"name": compatible_name, "schema": schema, "strict": true},
             });
             body
         }
-    }
+        Route::Gemini | Route::Antigravity => return None,
+    })
 }
 
 /// JSON schema of a one-letter answer among `count` options.
@@ -466,7 +487,7 @@ impl LlmClient {
             }
             _ => {
                 let body = self.constrained_body(&user, count);
-                let completion = self.call(&body, req, decision).await?;
+                let completion = self.call(&body, req.retry, decision).await?;
                 self.constrained_letter(&completion, count, decision)
                     .map(|position| (position, None))
             }
@@ -519,7 +540,7 @@ impl LlmClient {
             if let Some(effort) = &self.options.reasoning {
                 body["reasoning_effort"] = json!(effort);
             }
-            let completion = self.call(&body, req, decision).await?;
+            let completion = self.call(&body, req.retry, decision).await?;
             let (picked, note) = answer_decision(&completion, count);
             if let Some(note) = note {
                 mark(decision, &note);
@@ -538,7 +559,7 @@ impl LlmClient {
                     "reasoning_effort": effort,
                     "response_format": schema,
                 });
-                let completion = self.call(&body, req, decision).await?;
+                let completion = self.call(&body, req.retry, decision).await?;
                 constrained = self.constrained_letter(&completion, count, decision);
                 format!(
                     "<think>{}</think>{ANSWER_PREFIX}",
@@ -566,7 +587,7 @@ impl LlmClient {
                 "logprobs": true,
                 "top_logprobs": top_logprobs,
             });
-            let completion = self.call(&body, req, decision).await?;
+            let completion = self.call(&body, req.retry, decision).await?;
             match completion.prefill_top() {
                 Some(top) => match letter_probabilities(top, count) {
                     Some(probabilities) => {
@@ -583,7 +604,7 @@ impl LlmClient {
         // No probabilities: the constrained letter, asked now when reasoning is off.
         if self.options.reasoning.is_none() {
             let body = self.constrained_body(user, count);
-            let completion = self.call(&body, req, decision).await?;
+            let completion = self.call(&body, req.retry, decision).await?;
             constrained = self.constrained_letter(&completion, count, decision);
         }
         Ok(constrained.map(|position| (position, None)))
@@ -632,7 +653,7 @@ impl LlmClient {
             &user,
             Answer::Prediction,
         );
-        let completion = self.call(&body, req, decision).await?;
+        let completion = self.call(&body, req.retry, decision).await?;
         let parsed = parse_prediction(&completion.text);
         if let Err(reason) = &parsed {
             mark(decision, &format!("invalid prediction: {reason}"));
@@ -640,24 +661,41 @@ impl LlmClient {
         Ok(parsed)
     }
 
+    /// One free-form question (Clear-risk Part 2): `user` under `system`, the answer
+    /// constrained to the JSON `schema` named `name`. Returns the answer text (parsed by the
+    /// caller). Gemini routes are not supported (their schema dialect differs).
+    pub async fn ask_schema(
+        &self,
+        system: &str,
+        user: &str,
+        name: &str,
+        schema: &Value,
+        retry: &http::RetryTime,
+        decision: &mut Decision,
+    ) -> Result<String> {
+        let body = schema_body(self.kind.route(), &self.model, &self.options, system, user, name, name, schema)
+            .ok_or_else(|| anyhow!("{}: free-form questions are not supported on Gemini routes", self.model))?;
+        Ok(self.call(&body, retry, decision).await?.text)
+    }
+
     /// Sends `body` (with the configured extra fields) and records the exchange and tokens.
     async fn call(
         &self,
         body: &Value,
-        req: &DecisionRequest<'_>,
+        retry: &http::RetryTime,
         decision: &mut Decision,
     ) -> Result<Completion> {
         let body = merged(body.clone(), self.options.request.as_ref());
         if let Some(pacer) = &self.options.pacer {
             // Not thinking time: logged with the retries, off the clock.
-            req.retry.add(pacer.wait().await);
+            retry.add(pacer.wait().await);
         }
         let started = Instant::now();
-        let retry_before = req.retry.get();
-        let result = self.send(&body, req).await;
+        let retry_before = retry.get();
+        let result = self.send(&body, retry).await;
         let latency_ms = started
             .elapsed()
-            .saturating_sub(req.retry.get() - retry_before)
+            .saturating_sub(retry.get() - retry_before)
             .as_millis() as u64;
         let (raw, completion) = match result {
             Ok(done) => done,
@@ -689,9 +727,8 @@ impl LlmClient {
     async fn send(
         &self,
         body: &Value,
-        req: &DecisionRequest<'_>,
+        retry: &http::RetryTime,
     ) -> Result<(String, Completion), CallError> {
-        let retry = req.retry;
         match &self.kind {
             Kind::OpenAiSubscription(creds) => {
                 let mut token = creds.token().await?;

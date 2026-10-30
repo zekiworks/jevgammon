@@ -198,6 +198,10 @@ def build(p2_md: Path, p2_new: Path | None = None, added: tuple = ()) -> dict:
         pend_note += (" Added after the first publication (Zeki / Ümit, 30 Oct): Kimi K3.1 Pro (off) and GLM-5.3 (low) "
                       "via OpenRouter and Claude Opus 5.5 (high) on the Claude subscription, at league settings, same "
                       "items and frozen scoring.")
+    if "GLM-5.3 (on)" in added:
+        pend_note += (" GLM-5.3 (low) (v3 setup name GLM-5.3 (on)) stopped at its $3.00 cost cap with 558 of 816 "
+                      "answers and was resumed with a $4.60 total cap, asking only the missing items on the same "
+                      "OpenRouter route (Fireworks), model id and reasoning setting.")
     sections.append(dict(id="clear-risk-part2", title="Part 2: asking the models" + (" (partial)" if pending else ""),
                          notes=[
         LABEL,
@@ -228,10 +232,12 @@ def build(p2_md: Path, p2_new: Path | None = None, added: tuple = ()) -> dict:
         "(position and version) where two values went to one play, not pairs and not failed requests. Answer-row "
         "error counts are rows whose request failed after retries, not attempts.",
         "Cost: hosted decision models at list price (the cash cap was $3; the stored list-price total is about "
-        "$0.59); OpenRouter models at the cost OpenRouter reports per response (cap $3.00 per model); subscription "
-        "models shown as API-equivalent, not money paid."],
+        "$0.59); OpenRouter models at the cost OpenRouter reports per response (cap $3.00 per model, raised to $4.60 "
+        "for GLM-5.3 (low)); subscription models shown as API-equivalent, not money paid."],
         tables=part2 + [usage]))
-    status = "Preliminary" + (" / partial" if pending else "")
+    # Stays "partial" with every model in: the scan is frozen at 1082e024 and the hand-check lists are not published;
+    # the status note is in every section, so the frozen scan sections stay byte-identical.
+    status = "Preliminary / partial"
     return dict(label=f"{status}. {LABEL}", status=status, sections=sections,
                 scan_as_of=SCAN_AS_OF,
                 pending=[dict(what=f"Part 2: {m}", blocker="answers not yet collected") for m in pending],

@@ -20,8 +20,8 @@
 | Claude Sonnet 5.5 (high) | 816 | complete |
 | Kimi K3.1 Pro (off) | 816 | complete ($1.39 provider-reported) |
 | Claude Opus 5.5 (high) (league setup "Claude Opus 5.5 (on)") | 816 | complete ($19.26 API-equivalent) |
-| GLM-5.3 (low) (league setup "GLM-5.3 (on)") | 558 of 816 | **stopped by its $3.00 cap** ($3.04 recorded, so the cap was overshot by the requests already running). Not published: pending. Finishing it needs about $1.40 more and a new go (budget). |
-| GPT-6.1 Sol (high) | see the last section | it was running on the ChatGPT subscription when this file was written |
+| GLM-5.3 (low) (league setup "GLM-5.3 (on)") | 816 | complete. It first stopped at its $3.00 cap with 558 answers ($3.04). After Can's go it was resumed (unit `clearrisk-glm2`, 14:18–14:33 UTC, cap $4.60 total) on the same route (`openrouter:fireworks`, reasoning low): 258 asked, 0 failed. Total $4.30 as reported by OpenRouter. |
+| GPT-6.1 Sol (high) | 816 | complete (ended 12:06 UTC); 1 row has a request error (`136:Q3:board`). It is kept, because no retries are allowed. |
 
 ## How to resume after the reboot
 
@@ -74,3 +74,11 @@ changes in `src/`):
 
 `season2-resume` waits for the line "Sol ended" in `/tmp/clearrisk/part2.log`. If Sol does not finish, that queue
 stays blocked until someone writes the line or restarts Sol.
+
+## After the reboot (updated 30 Oct, about 14:45 UTC)
+
+- **Scratch:** the scratch directory moved to `workspace/clearrisk-scratch` (not committed). It replaces `/tmp/clearrisk` and `/tmp/cr-pub` in every command above.
+- **Deploy 2:** 12:12:41 UTC. Source commit `271ab96`, mirror commit `267b4b616`, results 656dc3d3. It added Sol (high), Kimi K3.1 Pro (off) and Opus 5.5 (high).
+- **Deploy 3:** adds GLM-5.3 (low) and replaces the wrong "answers not yet collected" line. The status stays "Preliminary / partial", because the scan is frozen at 1082e024 and the hand-check lists are not published. The scan sections are byte-identical to 1082e024.
+- **Final report:** `mailbox/Clear-risk follow-up - part 2 2026-10-30.md`.
+- **Quiz runner code:** on branch `quiz-command` (pushed), not on main.

@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """Clear-risk scan and follow-up (preliminary): the site's data file from the saved, checked reports.
 
-    python3 tools/site/clear_risk_publish.py P2_REPORT_MD [OUT_JSON]
+    python3 tools/site/clear_risk_publish.py P2_REPORT_MD [--new P2_NEW_MD --added "MODEL" ...] [--out OUT_JSON]
 
 Assembles existing aggregate outputs only, nothing is recomputed: the tables of the mailbox reports
-(Clear-risk scan - steps 0-3 / results, Clear-risk follow-up - part 1 / rollouts) and the saved Part 2 score report
-(P2_REPORT_MD: the report written 2026-10-30T06:25:50Z, after the Q3 random-baseline edit; Part 2 is partial, GPT-6.1
-Sol (high) is pending and its rows are removed, never shown as 0). Left out: the hand-check position lists (position-to-
-choice records stay private) and every local path. OUT_JSON defaults to tools/site/content/clear_risk_results.json.
+(Clear-risk scan - steps 0-3 / results, Clear-risk follow-up - part 1 / rollouts; the scan sections are frozen as of
+results 1082e024) and the saved Part 2 score reports. P2_REPORT_MD is the frozen report written 2026-10-30T06:25:50Z
+(after the Q3 random-baseline edit); the models answered later (LATER) are taken from P2_NEW_MD, scored by the same
+frozen code, only for the models named with --added (complete ones); the frozen models' rows of P2_NEW_MD must equal
+the frozen report's. Pending models are NA, never 0. Left out: the hand-check position lists (position-to-choice
+records stay private) and every local path. OUT_JSON defaults to tools/site/content/clear_risk_results.json.
 """
 
 import json
@@ -19,8 +21,14 @@ SITE = Path(__file__).resolve().parent
 ROOT = SITE.parent.parent
 MB = ROOT / "mailbox"
 OUT = SITE / "content" / "clear_risk_results.json"
-PENDING_MODEL = "GPT-6.1 Sol (high)"
-LABEL = "Preliminary / partial. Two or four plays shown, not league play."
+# Models whose Part 2 answers came after the frozen report: Sol (high) waited for its subscription; EXTRA were added
+# on 30 Oct (Zeki / Ümit).
+EXTRA = ["Kimi K3.1 Pro (off)", "GLM-5.3 (on)", "Claude Opus 5.5 (on)"]
+LATER = ["GPT-6.1 Sol (high)"] + EXTRA
+CHAT = {"Claude Sonnet 5.5 (high)", *LATER}
+LABEL = "Two or four plays shown, not league play."
+SCAN_AS_OF = ("The scan, its checks and the rollout check are as of results 1082e024 (league games up to then); they "
+              "are not recomputed with later league games.")
 
 
 def section(md: str, heading: str) -> str:
@@ -64,7 +72,7 @@ def one(text: str, caption: str, k: int = 0) -> dict:
     return dict(tables(text)[k], caption=caption)
 
 
-def build(p2_md: Path) -> dict:
+def build(p2_md: Path, p2_new: Path | None = None, added: tuple = ()) -> dict:
     s03 = (MB / "Clear-risk scan - steps 0-3 2026-10-29.md").read_text()
     res = (MB / "Clear-risk scan - results 2026-10-29.md").read_text()
     p1 = (MB / "Clear-risk follow-up - part 1 2026-10-29.md").read_text()
@@ -144,32 +152,54 @@ def build(p2_md: Path) -> dict:
                     "Agreement per group and band (the 200)"),
                 one(section(ro, "## Back games and prime-vs-prime"), "Back game and prime-vs-prime")]))
 
-    part2 = [t for t in tables(p2)]
+    part2 = tables(p2)
     caps = ["Q1: share right per group, missed and needless, bias (two plays shown, not league play)",
             "Q2 (board only): share right vs random", "Q3: share of pairs in the right order (pairs 0.04 or more "
             "apart at 3-ply)", "Risk wins cross-table (counts)", "Answers, failures, tokens"]
     assert len(part2) == len(caps)
-    for t, cap in zip(part2, caps):
+    pending = [m for m in LATER if m not in added]
+    new = tables(p2_new.read_text()) if p2_new else None
+    for k, (t, cap) in enumerate(zip(part2, caps)):
         t["caption"] = cap
-        t["rows"] = [r for r in t["rows"] if r[0] != PENDING_MODEL]
+        t["rows"] = [r for r in t["rows"] if r[0] not in LATER]
+        if new:
+            # Frozen scoring: the frozen models' rows of the new report must equal the frozen report's.
+            frozen = [r for r in new[k]["rows"] if r[0] not in LATER]
+            assert frozen == t["rows"], f"table {k}: frozen rows differ"
+            base = [r for r in t["rows"] if not r[0].startswith("random")]
+            tail = [r for r in t["rows"] if r[0].startswith("random")]
+            t["rows"] = base + [r for m in added for r in new[k]["rows"] if r[0] == m] + tail
     usage = part2.pop()
-    expected = {"Celeris-1 Decision": 1782, "Jev 1.14.0": 1782, "Liquid d1-ultra": 1782,
-                "Claude Sonnet 5.5 (high)": 816}
     den_rows = []
     for r in usage["rows"]:
         name, stored, failed, invalid, ties = r[0], int(r[1]), int(r[2]), r[3], int(r[4])
-        bad = sum(int(n) for n in re.findall(r"(?:^|· )(?:invalid|failed or missing) (\d+)", invalid))
-        den_rows.append([name, f"{expected[name]:,}", f"{stored:,}", str(failed), f"{stored - failed - bad - ties:,}",
+        bad = sum(int(n) for n in re.findall(r"(?:^|· )(?:invalid|failed or missing|Q3 not one-to-one) (\d+)", invalid))
+        expected = 816 if name in CHAT else 1782
+        den_rows.append([name, f"{expected:,}", f"{stored:,}", str(failed), f"{stored - failed - bad - ties:,}",
                          re.sub(r"Q3 two values on one play \(pairs\) (\d+)", r"\1 Q3 items with two values on one play",
                                 invalid) if invalid != "0" else "0", str(ties), r[5], r[6], r[7], r[8]])
-    den_rows.append([PENDING_MODEL, "816", "pending (not collected)", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA"])
-    usage = dict(caption="Denominators, failures and tokens per model (list-price cost, not billed spending, for the "
-                         "hosted models; API-equivalent for Sonnet, not money paid)",
+    for m in pending:
+        den_rows.append([m, "816", "pending (not collected)", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA"])
+    usage = dict(caption="Denominators, failures and tokens per model (list-price cost for the hosted decision "
+                         "models, provider-reported cost for the OpenRouter models, API-equivalent for subscription "
+                         "models: not money paid; none of these is billed spending checked against an invoice)",
                  head=["model", "expected requests", "recorded answer rows", "answer rows with a request error",
                        "usable answers", "item-level flags (see notes)", "exact ties at the top (no answer)",
                        "input tokens", "output tokens", "reasoning tokens", "cost"],
                  rows=den_rows)
-    sections.append(dict(id="clear-risk-part2", title="Part 2: asking the models (partial)", notes=[
+    pend_note = (" ".join(f"{m}: pending, not collected; its rows are NA, never 0%." for m in pending)
+                 + (" GPT-6.1 Sol (high) here is separate from the Codex effort sweep, whose GPT-6.1 Sol (max) row is "
+                    "a different run." if "GPT-6.1 Sol (high)" in pending else "")) if pending else \
+        "All models asked so far are complete."
+    if "GPT-6.1 Sol (high)" not in pending:
+        pend_note += (" GPT-6.1 Sol (high) here is separate from the Codex effort sweep, whose GPT-6.1 Sol (max) row "
+                      "is a different run.")
+    if any(m in added for m in EXTRA):
+        pend_note += (" Added after the first publication (Zeki / Ümit, 30 Oct): Kimi K3.1 Pro (off) and GLM-5.3 (low) "
+                      "via OpenRouter and Claude Opus 5.5 (high) on the Claude subscription, at league settings, same "
+                      "items and frozen scoring.")
+    sections.append(dict(id="clear-risk-part2", title="Part 2: asking the models" + (" (partial)" if pending else ""),
+                         notes=[
         LABEL,
         "Positions: the 189 rollout-confirmed sample positions (93 Risk wins, 96 Safety wins). Each question is its "
         "own request with no shared context. Not paired across models beyond these shared items, and the league "
@@ -186,8 +216,7 @@ def build(p2_md: Path) -> dict:
         "top-probability option is the answer; an exact tie at the top is no answer. Q3 scoring: only pairs 0.04 or "
         "more apart at 3-ply; a decision model that puts two values on one play gets the pairs of that play wrong; a "
         "chat answer that is not one-to-one counts every pair wrong.",
-        "GPT-6.1 Sol (high): pending, not collected (its subscription was busy with other queued jobs). Its rows are "
-        "NA, never 0%. This is separate from the Codex effort sweep, whose GPT-6.1 Sol (max) row is a different run.",
+        pend_note,
         "Q3 random baselines were added AFTER the first score output: first score 2026-10-30T06:25:29.387Z, baseline "
         "edit 2026-10-30T06:25:46.496Z, baseline output 2026-10-30T06:25:50.444Z. Not pre-registered and not exact: "
         "a simulation with seed 2026103005, 200 draws per item (4000 // 20), rounded to whole percent. Scoring was "
@@ -199,11 +228,13 @@ def build(p2_md: Path) -> dict:
         "(position and version) where two values went to one play, not pairs and not failed requests. Answer-row "
         "error counts are rows whose request failed after retries, not attempts.",
         "Cost: hosted decision models at list price (the cash cap was $3; the stored list-price total is about "
-        "$0.59); Claude Sonnet 5.5 (high) on a subscription, shown as API-equivalent, not money paid."],
+        "$0.59); OpenRouter models at the cost OpenRouter reports per response (cap $3.00 per model); subscription "
+        "models shown as API-equivalent, not money paid."],
         tables=part2 + [usage]))
-    return dict(label=LABEL, status="Preliminary / partial", sections=sections,
-                pending=[dict(what="Part 2: GPT-6.1 Sol (high)", blocker="ChatGPT subscription busy with the "
-                              "season-2 queue (Codex effort sweep); runs once it is free")],
+    status = "Preliminary" + (" / partial" if pending else "")
+    return dict(label=f"{status}. {LABEL}", status=status, sections=sections,
+                scan_as_of=SCAN_AS_OF,
+                pending=[dict(what=f"Part 2: {m}", blocker="answers not yet collected") for m in pending],
                 omitted=[dict(what="Hand-check position lists", why="position-to-choice records stay private")])
 
 
@@ -215,11 +246,17 @@ def _appendix(md: str, heading_prefix: str, lg: int) -> str:
 
 
 def main():
-    p2 = Path(sys.argv[1])
-    out = Path(sys.argv[2]) if len(sys.argv) > 2 else OUT
-    data = build(p2)
-    out.write_text(json.dumps(data, indent=1, ensure_ascii=False) + "\n")
-    print(out, sum(len(t["rows"]) for s in data["sections"] for t in s["tables"]), "rows")
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("frozen")
+    ap.add_argument("--new")
+    ap.add_argument("--added", action="append", default=[])
+    ap.add_argument("--out", default=str(OUT))
+    a = ap.parse_args()
+    assert all(m in LATER for m in a.added)
+    data = build(Path(a.frozen), Path(a.new) if a.new else None, tuple(m for m in LATER if m in a.added))
+    Path(a.out).write_text(json.dumps(data, indent=1, ensure_ascii=False) + "\n")
+    print(a.out, sum(len(t["rows"]) for s in data["sections"] for t in s["tables"]), "rows")
 
 
 if __name__ == "__main__":

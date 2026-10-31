@@ -412,14 +412,18 @@ CONTENT_DIR = Path(__file__).resolve().parent / "content"
 # --- Leagues ------------------------------------------------------------------------------------------------
 
 def standings(S, lg, rel) -> str:
+    """A league's standings as published, each row with its starting group and its recorded league moves."""
+    import starting_groups as SG
     rows = []
     for t in lg["standings"]:
         cells = (f'<td class="num">{t["place"]}</td><td class="num">{t["played"]}</td>'
                  f'<td class="num">{t["won"]}-{t["drawn"]}-{t["lost"]}</td>'
                  f'<td class="num">{t["points"]}</td><td class="num">{t["games_won"]}-{t["games_lost"]}</td>'
-                 f'<td class="num">{t["gammons_won"]}</td><td class="num">{t["to_play"]}</td>')
+                 f'<td class="num">{t["gammons_won"]}</td><td class="num">{t["to_play"]}</td>'
+                 + SG.standing_cells(S, t["name"]))
         rows.append(tr(S, lg["dataset"], t["name"], cells, rel))
-    head = ["Model and setting", "Place", "Played", "Won-drawn-lost", "Points", "Games won-lost", "Gammons won", "To play"]
+    head = ["Model and setting", "Place", "Played", "Won-drawn-lost", "Points", "Games won-lost", "Gammons won", "To play",
+            "Starting group", ("League moves", " data-nosort")]
     return SWIPE + table(head, rows, "Standings: 3 points a win, 1 a draw; only finished league-stage matches count",
                          attrs=f' data-dataset="{lg["dataset"]}"')
 
@@ -504,10 +508,12 @@ def leagues_page(S, archive_v1: str) -> str:
     intro = about("<p>One table per league. League tables compare only the players inside one league; they are never "
                   "merged into one overall score. A running league's numbers are Provisional and change as matches finish. "
                   "Click a row to open the setup, or a match to open its decisions.</p>", "About these tables")
-    links = ('<a href="#hype-cup">Hype Cup</a> · <a href="#nack-knockout">Nackgammon knockout</a> · '
+    links = ('<a href="#starting-groups">Starting groups</a> · <a href="#after-league-moves">After league moves</a> · '
+             '<a href="#cups">Cups</a>: <a href="#hype-cup">Hype Cup</a> · <a href="#nack-knockout">Nackgammon knockout</a> · '
              '<a href="../matches/">Every match</a>')
+    import starting_groups as SG
     return (page_head(S, "Leagues", "Leagues", links)
-            + "".join(blocks) + cup_card(S) + intro
+            + SG.section(S) + SG.after_moves_intro(S) + "".join(blocks) + SG.cups_intro() + cup_card(S) + intro
             + f'<section class="card" id="earlier"><details class="more"><summary>Earlier version: v1 leagues and teams '
               f'{status_badge(EARLIER)}</summary><p class="note">{esc(play_order_note(S))}</p>{archive_v1}</details>'
               f'<p class="table-note" id="pre-switch">The page as it was before this site went live, with its final league '

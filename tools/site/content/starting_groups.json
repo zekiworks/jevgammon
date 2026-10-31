@@ -1,0 +1,987 @@
+{
+ "_about": "Starting groups: the original leagues' own-group standings (Can's rule of 2026-10-27: each setup counted in its original league, the league it played in before any ladder move (tools/league_web.py league_origins); only valid matches between setups of the same original league count, from any league, ladder round or hidden gap league; late entries and playoffs left out; GNUbg weak, the anchor, in all three; 3 points a win, 1 a draw. Ranking (Can, 2026-10-28, set after the ties were known): points, then head-to-head (a mini-table of the matches among three or more), then the lower error rate; no final position needed the error rate.",
+ "source": "mailbox/Original-league tables 2026-10-28.md (python3 tools/original_league.py tables), checked on 2026-10-31 by a read-only tally of the recorded match results in v3.db with the same tool's membership, counted matches and tiebreak (no error rate computed): every row identical.",
+ "moves_source": "mailbox/Ladder ended - final placement.md (rounds 1-6), checked on 2026-10-31 against the ladder notes of league_players in v3.db (24 moves, identical). Names are the recorded (database) names; the site shows content/labels.json names.",
+ "groups": [
+  {
+   "league": 1,
+   "name": "Decision models",
+   "pairings": 171,
+   "rows": [
+    {
+     "place": 1,
+     "name": "GNUbg weak",
+     "pts": 48,
+     "p": 18,
+     "w": 16,
+     "d": 0,
+     "l": 2,
+     "f": 101,
+     "a": 36
+    },
+    {
+     "place": 2,
+     "name": "Liquid d1-ultra",
+     "pts": 48,
+     "p": 18,
+     "w": 16,
+     "d": 0,
+     "l": 2,
+     "f": 90,
+     "a": 43
+    },
+    {
+     "place": 3,
+     "name": "Fastino GLiDE",
+     "pts": 37,
+     "p": 18,
+     "w": 12,
+     "d": 1,
+     "l": 5,
+     "f": 77,
+     "a": 49
+    },
+    {
+     "place": 4,
+     "name": "Jev 1.13.0",
+     "pts": 36,
+     "p": 18,
+     "w": 12,
+     "d": 0,
+     "l": 6,
+     "f": 81,
+     "a": 47
+    },
+    {
+     "place": 5,
+     "name": "Jev 1.14.0",
+     "pts": 36,
+     "p": 18,
+     "w": 12,
+     "d": 0,
+     "l": 6,
+     "f": 77,
+     "a": 52
+    },
+    {
+     "place": 6,
+     "name": "Decider v1.2 27B",
+     "pts": 36,
+     "p": 18,
+     "w": 12,
+     "d": 0,
+     "l": 6,
+     "f": 84,
+     "a": 46
+    },
+    {
+     "place": 7,
+     "name": "Cygnet (Gemma 4 12B)",
+     "pts": 34,
+     "p": 18,
+     "w": 11,
+     "d": 1,
+     "l": 6,
+     "f": 75,
+     "a": 59
+    },
+    {
+     "place": 8,
+     "name": "Clef",
+     "pts": 32,
+     "p": 18,
+     "w": 10,
+     "d": 2,
+     "l": 6,
+     "f": 69,
+     "a": 53
+    },
+    {
+     "place": 9,
+     "name": "Fastino GLiDE v1.2 (local)",
+     "pts": 30,
+     "p": 18,
+     "w": 10,
+     "d": 0,
+     "l": 8,
+     "f": 69,
+     "a": 55
+    },
+    {
+     "place": 10,
+     "name": "Celeris-1 Decision",
+     "pts": 30,
+     "p": 18,
+     "w": 9,
+     "d": 3,
+     "l": 6,
+     "f": 74,
+     "a": 63
+    },
+    {
+     "place": 11,
+     "name": "SubQ Snap Preview",
+     "pts": 28,
+     "p": 18,
+     "w": 9,
+     "d": 1,
+     "l": 8,
+     "f": 76,
+     "a": 58
+    },
+    {
+     "place": 12,
+     "name": "GPT-6 Luna",
+     "pts": 27,
+     "p": 18,
+     "w": 9,
+     "d": 0,
+     "l": 9,
+     "f": 62,
+     "a": 65
+    },
+    {
+     "place": 13,
+     "name": "Decider v1.1 27B",
+     "pts": 27,
+     "p": 18,
+     "w": 9,
+     "d": 0,
+     "l": 9,
+     "f": 69,
+     "a": 60
+    },
+    {
+     "place": 14,
+     "name": "Mercury Decide",
+     "pts": 19,
+     "p": 18,
+     "w": 6,
+     "d": 1,
+     "l": 11,
+     "f": 51,
+     "a": 78
+    },
+    {
+     "place": 15,
+     "name": "Winnow-12B",
+     "pts": 12,
+     "p": 18,
+     "w": 4,
+     "d": 0,
+     "l": 14,
+     "f": 51,
+     "a": 77
+    },
+    {
+     "place": 16,
+     "name": "Safest",
+     "pts": 12,
+     "p": 18,
+     "w": 3,
+     "d": 3,
+     "l": 12,
+     "f": 50,
+     "a": 83
+    },
+    {
+     "place": 17,
+     "name": "Open-Jev 27B v1.1",
+     "pts": 8,
+     "p": 18,
+     "w": 2,
+     "d": 2,
+     "l": 14,
+     "f": 38,
+     "a": 96
+    },
+    {
+     "place": 18,
+     "name": "Decider Flash v1.2",
+     "pts": 6,
+     "p": 18,
+     "w": 2,
+     "d": 0,
+     "l": 16,
+     "f": 36,
+     "a": 97
+    },
+    {
+     "place": 19,
+     "name": "Random",
+     "pts": 0,
+     "p": 18,
+     "w": 0,
+     "d": 0,
+     "l": 18,
+     "f": 6,
+     "a": 119
+    }
+   ],
+   "ties": [
+    {
+     "points": 48,
+     "kind": "head-to-head",
+     "setups": [
+      "GNUbg weak",
+      "Liquid d1-ultra"
+     ],
+     "matches": [
+      {
+       "id": 192,
+       "a": "Liquid d1-ultra",
+       "b": "GNUbg weak",
+       "score": [
+        5,
+        6
+       ]
+      }
+     ]
+    },
+    {
+     "points": 36,
+     "kind": "mini-table",
+     "setups": [
+      "Jev 1.13.0",
+      "Jev 1.14.0",
+      "Decider v1.2 27B"
+     ],
+     "matches": [
+      {
+       "id": 416,
+       "a": "Decider v1.2 27B",
+       "b": "Jev 1.13.0",
+       "score": [
+        0,
+        7
+       ]
+      },
+      {
+       "id": 415,
+       "a": "Decider v1.2 27B",
+       "b": "Jev 1.14.0",
+       "score": [
+        3,
+        4
+       ]
+      },
+      {
+       "id": 287,
+       "a": "Jev 1.13.0",
+       "b": "Jev 1.14.0",
+       "score": [
+        5,
+        1
+       ]
+      }
+     ]
+    },
+    {
+     "points": 30,
+     "kind": "head-to-head",
+     "setups": [
+      "Fastino GLiDE v1.2 (local)",
+      "Celeris-1 Decision"
+     ],
+     "matches": [
+      {
+       "id": 493,
+       "a": "Celeris-1 Decision",
+       "b": "Fastino GLiDE v1.2 (local)",
+       "score": [
+        1,
+        5
+       ]
+      }
+     ]
+    },
+    {
+     "points": 27,
+     "kind": "head-to-head",
+     "setups": [
+      "GPT-6 Luna",
+      "Decider v1.1 27B"
+     ],
+     "matches": [
+      {
+       "id": 254,
+       "a": "Decider v1.1 27B",
+       "b": "GPT-6 Luna",
+       "score": [
+        2,
+        4
+       ]
+      }
+     ]
+    },
+    {
+     "points": 12,
+     "kind": "head-to-head",
+     "setups": [
+      "Winnow-12B",
+      "Safest"
+     ],
+     "matches": [
+      {
+       "id": 238,
+       "a": "Winnow-12B",
+       "b": "Safest",
+       "score": [
+        5,
+        3
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "league": 2,
+   "name": "Workhorses",
+   "pairings": 171,
+   "rows": [
+    {
+     "place": 1,
+     "name": "GPT-6.1 Sol (low)",
+     "pts": 48,
+     "p": 18,
+     "w": 16,
+     "d": 0,
+     "l": 2,
+     "f": 92,
+     "a": 37
+    },
+    {
+     "place": 2,
+     "name": "GPT-6.1 Sol (high)",
+     "pts": 42,
+     "p": 18,
+     "w": 14,
+     "d": 0,
+     "l": 4,
+     "f": 80,
+     "a": 41
+    },
+    {
+     "place": 3,
+     "name": "Gemma 4 31B (on)",
+     "pts": 39,
+     "p": 18,
+     "w": 13,
+     "d": 0,
+     "l": 5,
+     "f": 79,
+     "a": 54
+    },
+    {
+     "place": 4,
+     "name": "Claude Sonnet 5.5 (high)",
+     "pts": 39,
+     "p": 18,
+     "w": 13,
+     "d": 0,
+     "l": 5,
+     "f": 82,
+     "a": 46
+    },
+    {
+     "place": 5,
+     "name": "Gemini 3.8 Flash (low)",
+     "pts": 38,
+     "p": 18,
+     "w": 12,
+     "d": 2,
+     "l": 4,
+     "f": 84,
+     "a": 47
+    },
+    {
+     "place": 6,
+     "name": "Claude Sonnet 5.5 (low)",
+     "pts": 37,
+     "p": 18,
+     "w": 12,
+     "d": 1,
+     "l": 5,
+     "f": 82,
+     "a": 48
+    },
+    {
+     "place": 7,
+     "name": "DeepSeek V4.1 Flash 1017 (on)",
+     "pts": 37,
+     "p": 18,
+     "w": 12,
+     "d": 1,
+     "l": 5,
+     "f": 88,
+     "a": 54
+    },
+    {
+     "place": 8,
+     "name": "Gemini 3.8 Flash (high)",
+     "pts": 36,
+     "p": 18,
+     "w": 12,
+     "d": 0,
+     "l": 6,
+     "f": 77,
+     "a": 48
+    },
+    {
+     "place": 9,
+     "name": "DeepSeek V4.1 Flash (on)",
+     "pts": 33,
+     "p": 18,
+     "w": 11,
+     "d": 0,
+     "l": 7,
+     "f": 77,
+     "a": 55
+    },
+    {
+     "place": 10,
+     "name": "Qwen3.8-27B (on)",
+     "pts": 27,
+     "p": 18,
+     "w": 9,
+     "d": 0,
+     "l": 9,
+     "f": 58,
+     "a": 61
+    },
+    {
+     "place": 11,
+     "name": "Gemma 4 31B (off)",
+     "pts": 25,
+     "p": 18,
+     "w": 8,
+     "d": 1,
+     "l": 9,
+     "f": 63,
+     "a": 59
+    },
+    {
+     "place": 12,
+     "name": "GNUbg weak",
+     "pts": 24,
+     "p": 18,
+     "w": 8,
+     "d": 0,
+     "l": 10,
+     "f": 67,
+     "a": 66
+    },
+    {
+     "place": 13,
+     "name": "GLM-5.3 (on)",
+     "pts": 21,
+     "p": 18,
+     "w": 7,
+     "d": 0,
+     "l": 11,
+     "f": 56,
+     "a": 78
+    },
+    {
+     "place": 14,
+     "name": "DeepSeek V4.1 Flash 1017 (off)",
+     "pts": 15,
+     "p": 18,
+     "w": 5,
+     "d": 0,
+     "l": 13,
+     "f": 56,
+     "a": 82
+    },
+    {
+     "place": 15,
+     "name": "Qwen3.8 Flash (off)",
+     "pts": 15,
+     "p": 18,
+     "w": 5,
+     "d": 0,
+     "l": 13,
+     "f": 50,
+     "a": 86
+    },
+    {
+     "place": 16,
+     "name": "DeepSeek V4.1 Flash (off)",
+     "pts": 13,
+     "p": 18,
+     "w": 4,
+     "d": 1,
+     "l": 13,
+     "f": 56,
+     "a": 83
+    },
+    {
+     "place": 17,
+     "name": "Qwen3.8-27B (off)",
+     "pts": 12,
+     "p": 18,
+     "w": 4,
+     "d": 0,
+     "l": 14,
+     "f": 37,
+     "a": 91
+    },
+    {
+     "place": 18,
+     "name": "LFM2.5-24B-A2B (on)",
+     "pts": 9,
+     "p": 18,
+     "w": 3,
+     "d": 0,
+     "l": 15,
+     "f": 39,
+     "a": 98
+    },
+    {
+     "place": 19,
+     "name": "LFM2.5-24B-A2B (off)",
+     "pts": 0,
+     "p": 18,
+     "w": 0,
+     "d": 0,
+     "l": 18,
+     "f": 13,
+     "a": 102
+    }
+   ],
+   "ties": [
+    {
+     "points": 39,
+     "kind": "head-to-head",
+     "setups": [
+      "Gemma 4 31B (on)",
+      "Claude Sonnet 5.5 (high)"
+     ],
+     "matches": [
+      {
+       "id": 202,
+       "a": "Gemma 4 31B (on)",
+       "b": "Claude Sonnet 5.5 (high)",
+       "score": [
+        4,
+        2
+       ]
+      }
+     ]
+    },
+    {
+     "points": 37,
+     "kind": "head-to-head",
+     "setups": [
+      "Claude Sonnet 5.5 (low)",
+      "DeepSeek V4.1 Flash 1017 (on)"
+     ],
+     "matches": [
+      {
+       "id": 613,
+       "a": "Claude Sonnet 5.5 (low)",
+       "b": "DeepSeek V4.1 Flash 1017 (on)",
+       "score": [
+        7,
+        4
+       ]
+      }
+     ]
+    },
+    {
+     "points": 15,
+     "kind": "head-to-head",
+     "setups": [
+      "DeepSeek V4.1 Flash 1017 (off)",
+      "Qwen3.8 Flash (off)"
+     ],
+     "matches": [
+      {
+       "id": 629,
+       "a": "DeepSeek V4.1 Flash 1017 (off)",
+       "b": "Qwen3.8 Flash (off)",
+       "score": [
+        6,
+        1
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "league": 3,
+   "name": "Frontier",
+   "pairings": 66,
+   "rows": [
+    {
+     "place": 1,
+     "name": "GPT-6 Astra (on)",
+     "pts": 27,
+     "p": 11,
+     "w": 9,
+     "d": 0,
+     "l": 2,
+     "f": 49,
+     "a": 30
+    },
+    {
+     "place": 2,
+     "name": "Claude Fable 5.1 (on)",
+     "pts": 24,
+     "p": 11,
+     "w": 8,
+     "d": 0,
+     "l": 3,
+     "f": 51,
+     "a": 31
+    },
+    {
+     "place": 3,
+     "name": "Grok 4.7 (on)",
+     "pts": 19,
+     "p": 11,
+     "w": 6,
+     "d": 1,
+     "l": 4,
+     "f": 39,
+     "a": 40
+    },
+    {
+     "place": 4,
+     "name": "Claude Opus 5.5 (on)",
+     "pts": 18,
+     "p": 11,
+     "w": 6,
+     "d": 0,
+     "l": 5,
+     "f": 48,
+     "a": 37
+    },
+    {
+     "place": 5,
+     "name": "GPT-6 Astra (off)",
+     "pts": 17,
+     "p": 11,
+     "w": 5,
+     "d": 2,
+     "l": 4,
+     "f": 44,
+     "a": 33
+    },
+    {
+     "place": 6,
+     "name": "Gemini 4 Argon (on)",
+     "pts": 16,
+     "p": 11,
+     "w": 5,
+     "d": 1,
+     "l": 5,
+     "f": 36,
+     "a": 43
+    },
+    {
+     "place": 7,
+     "name": "Gemini 4 Argon (off)",
+     "pts": 16,
+     "p": 11,
+     "w": 5,
+     "d": 1,
+     "l": 5,
+     "f": 38,
+     "a": 45
+    },
+    {
+     "place": 8,
+     "name": "Claude Opus 5.5 (off)",
+     "pts": 15,
+     "p": 11,
+     "w": 5,
+     "d": 0,
+     "l": 6,
+     "f": 38,
+     "a": 42
+    },
+    {
+     "place": 9,
+     "name": "Kimi K3.1 Pro (off)",
+     "pts": 15,
+     "p": 11,
+     "w": 5,
+     "d": 0,
+     "l": 6,
+     "f": 38,
+     "a": 38
+    },
+    {
+     "place": 10,
+     "name": "Grok 4.7 (off)",
+     "pts": 12,
+     "p": 11,
+     "w": 4,
+     "d": 0,
+     "l": 7,
+     "f": 33,
+     "a": 40
+    },
+    {
+     "place": 11,
+     "name": "GNUbg weak",
+     "pts": 8,
+     "p": 11,
+     "w": 2,
+     "d": 2,
+     "l": 7,
+     "f": 32,
+     "a": 54
+    },
+    {
+     "place": 12,
+     "name": "Claude Fable 5.1 (off)",
+     "pts": 7,
+     "p": 11,
+     "w": 2,
+     "d": 1,
+     "l": 8,
+     "f": 37,
+     "a": 50
+    }
+   ],
+   "ties": [
+    {
+     "points": 16,
+     "kind": "head-to-head",
+     "setups": [
+      "Gemini 4 Argon (on)",
+      "Gemini 4 Argon (off)"
+     ],
+     "matches": [
+      {
+       "id": 432,
+       "a": "Gemini 4 Argon (off)",
+       "b": "Gemini 4 Argon (on)",
+       "score": [
+        2,
+        4
+       ]
+      }
+     ]
+    },
+    {
+     "points": 15,
+     "kind": "head-to-head",
+     "setups": [
+      "Claude Opus 5.5 (off)",
+      "Kimi K3.1 Pro (off)"
+     ],
+     "matches": [
+      {
+       "id": 603,
+       "a": "Kimi K3.1 Pro (off)",
+       "b": "Claude Opus 5.5 (off)",
+       "score": [
+        4,
+        5
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "moves": [
+  {
+   "round": 1,
+   "name": "Liquid d1-ultra",
+   "from_league": 1,
+   "to_league": 2,
+   "reason": "promoted",
+   "date": "2026-10-23"
+  },
+  {
+   "round": 1,
+   "name": "LFM2.5-24B-A2B (off)",
+   "from_league": 2,
+   "to_league": 1,
+   "reason": "relegated",
+   "date": "2026-10-23"
+  },
+  {
+   "round": 1,
+   "name": "GPT-6.1 Sol (low)",
+   "from_league": 2,
+   "to_league": 3,
+   "reason": "promoted",
+   "date": "2026-10-23"
+  },
+  {
+   "round": 1,
+   "name": "Claude Fable 5.1 (off)",
+   "from_league": 3,
+   "to_league": 2,
+   "reason": "relegated",
+   "date": "2026-10-23"
+  },
+  {
+   "round": 2,
+   "name": "Fastino GLiDE",
+   "from_league": 1,
+   "to_league": 2,
+   "reason": "promoted",
+   "date": "2026-10-24"
+  },
+  {
+   "round": 2,
+   "name": "LFM2.5-24B-A2B (on)",
+   "from_league": 2,
+   "to_league": 1,
+   "reason": "relegated",
+   "date": "2026-10-24"
+  },
+  {
+   "round": 2,
+   "name": "GPT-6.1 Sol (high)",
+   "from_league": 2,
+   "to_league": 3,
+   "reason": "promoted",
+   "date": "2026-10-24"
+  },
+  {
+   "round": 2,
+   "name": "Grok 4.7 (off)",
+   "from_league": 3,
+   "to_league": 2,
+   "reason": "relegated",
+   "date": "2026-10-24"
+  },
+  {
+   "round": 3,
+   "name": "Jev 1.14.0",
+   "from_league": 1,
+   "to_league": 2,
+   "reason": "promoted",
+   "date": "2026-10-25"
+  },
+  {
+   "round": 3,
+   "name": "Qwen3.8-27B (off)",
+   "from_league": 2,
+   "to_league": 1,
+   "reason": "relegated",
+   "date": "2026-10-25"
+  },
+  {
+   "round": 3,
+   "name": "Gemini 3.8 Flash (low)",
+   "from_league": 2,
+   "to_league": 3,
+   "reason": "promoted",
+   "date": "2026-10-25"
+  },
+  {
+   "round": 3,
+   "name": "Gemini 4 Argon (off)",
+   "from_league": 3,
+   "to_league": 2,
+   "reason": "relegated",
+   "date": "2026-10-25"
+  },
+  {
+   "round": 4,
+   "name": "Clef",
+   "from_league": 1,
+   "to_league": 2,
+   "reason": "promoted",
+   "date": "2026-10-26"
+  },
+  {
+   "round": 4,
+   "name": "DeepSeek V4.1 Flash (off)",
+   "from_league": 2,
+   "to_league": 1,
+   "reason": "relegated",
+   "date": "2026-10-26"
+  },
+  {
+   "round": 4,
+   "name": "Gemini 4 Argon (off)",
+   "from_league": 2,
+   "to_league": 3,
+   "reason": "promoted",
+   "date": "2026-10-26"
+  },
+  {
+   "round": 4,
+   "name": "Gemini 3.8 Flash (low)",
+   "from_league": 3,
+   "to_league": 2,
+   "reason": "relegated",
+   "date": "2026-10-26"
+  },
+  {
+   "round": 5,
+   "name": "Celeris-1 Decision",
+   "from_league": 1,
+   "to_league": 2,
+   "reason": "promoted",
+   "date": "2026-10-26"
+  },
+  {
+   "round": 5,
+   "name": "Clef",
+   "from_league": 2,
+   "to_league": 1,
+   "reason": "relegated",
+   "date": "2026-10-26"
+  },
+  {
+   "round": 5,
+   "name": "Gemini 3.8 Flash (low)",
+   "from_league": 2,
+   "to_league": 3,
+   "reason": "promoted",
+   "date": "2026-10-26"
+  },
+  {
+   "round": 5,
+   "name": "Gemini 4 Argon (off)",
+   "from_league": 3,
+   "to_league": 2,
+   "reason": "relegated",
+   "date": "2026-10-26"
+  },
+  {
+   "round": 6,
+   "name": "Clef",
+   "from_league": 1,
+   "to_league": 2,
+   "reason": "final swap (ladder ended)",
+   "date": "2026-10-26"
+  },
+  {
+   "round": 6,
+   "name": "Celeris-1 Decision",
+   "from_league": 2,
+   "to_league": 1,
+   "reason": "final swap (ladder ended)",
+   "date": "2026-10-26"
+  },
+  {
+   "round": 6,
+   "name": "Gemini 4 Argon (off)",
+   "from_league": 2,
+   "to_league": 3,
+   "reason": "final swap (ladder ended)",
+   "date": "2026-10-26"
+  },
+  {
+   "round": 6,
+   "name": "Gemini 3.8 Flash (low)",
+   "from_league": 3,
+   "to_league": 2,
+   "reason": "final swap (ladder ended)",
+   "date": "2026-10-26"
+  }
+ ]
+}

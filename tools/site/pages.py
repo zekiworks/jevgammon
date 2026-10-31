@@ -234,8 +234,12 @@ def layout(S, base, path: str, title: str, body: str, description: str | None = 
                   for group, links in NAV)
     css = "".join(f'<link rel="stylesheet" href="{rel}{s}">' for s in ("site.css", "bg.css") + tuple(styles))
     js = "".join(f'<script src="{rel}{s}" defer></script>' for s in ("site.js", "tables.js", "png.js") + tuple(scripts))
-    page_png = ('<p class="more-label">Share</p><button type="button" class="key page-png" data-page-png hidden>Export page as PNG</button>'
-                if EXPORT_PAGE_PNG else "")
+    # The Dark / Light switch sits in the top bar itself, as on the Decision models site (Ümit, 31 Oct 2026); More options
+    # keeps the page export.
+    more = ('<div class="more-menu needs-js"><button type="button" class="key more-toggle" data-more-toggle aria-expanded="false" '
+            'aria-controls="more-options">More options<span class="chevron" aria-hidden="true"></span></button>'
+            '<div class="more-pop" id="more-options" hidden><p class="more-label">Share</p><button type="button" class="key '
+            'page-png" data-page-png hidden>Export page as PNG</button></div></div>' if EXPORT_PAGE_PNG else "")
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -257,8 +261,8 @@ def layout(S, base, path: str, title: str, body: str, description: str | None = 
   <a class="skip" href="#main">Skip to content</a>
   <header class="topbar">
     <a class="brand" href="{rel or './'}">Hilde · Backgammon benchmark · v3</a>
-    <div class="more-menu needs-js"><button type="button" class="key more-toggle" data-more-toggle aria-expanded="false" aria-controls="more-options">More options<span class="chevron" aria-hidden="true"></span></button>
-      <div class="more-pop" id="more-options" hidden><p class="more-label" id="theme-label">Colour theme</p><div class="theme-switch" role="group" aria-labelledby="theme-label" hidden><button type="button" class="key" data-theme-choice="dark" aria-pressed="true" aria-label="Dark background"><span class="lamp" aria-hidden="true"></span>Dark<span class="long"> background</span></button><button type="button" class="key" data-theme-choice="light" aria-pressed="false" aria-label="Light background"><span class="lamp" aria-hidden="true"></span>Light<span class="long"> background</span></button></div>{page_png}</div></div>
+    <div class="theme-switch" role="group" aria-label="Colour theme" hidden><button type="button" class="key" data-theme-choice="dark" aria-pressed="true" aria-label="Dark background"><span class="lamp" aria-hidden="true"></span>Dark<span class="long"> background</span></button><button type="button" class="key" data-theme-choice="light" aria-pressed="false" aria-label="Light background"><span class="lamp" aria-hidden="true"></span>Light<span class="long"> background</span></button></div>
+    {more}
     <nav class="nav" aria-label="Pages"><ul>{nav}</ul></nav>
   </header>
   <main id="main"{f' class="{main_class}"' if main_class else ''}>

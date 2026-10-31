@@ -388,51 +388,83 @@ def quality_table(S, lg, phase="all") -> str:
                              attrs=f' data-dataset="{ds}"')
 
 
-def confidence_table(S, lg) -> str:
-    ds = lg["dataset"]
-    rows = []
-    th = S["thresholds"]
-    for n in by_error_models_first(S, ds, lg["setups"]):
-        s = lg["setups"][n]
-        src = P.meta(S, ds, n).get("confidence_source") or "none"
-        c = s.get("confidence")
-        if not c:
-            cells = f"<td>{esc(src)}</td>" + "".join(f'<td class="num">{nm(NA)}</td>' for _ in range(10))
-        else:
-            cut = []
-            for k in (str(x) for x in th["confidence_cutoffs"]):
-                x = c["cutoffs"][k]
-                mean = nm(TOO_FEW) if x["too_few"] else (P.eq(x["mean_loss"]) if x["mean_loss"] is not None else "0")
-                cut.append(f'<td class="num">{count(x["kept"]["n"])}<span class="small">{pct(x["kept"]["share"])} of '
-                           f'{count(x["kept"]["den"])}</span></td>' + share_td(x["blunders"])
-                           + f'<td class="num">{mean}</td>')
-            tf = c["too_few"]
-            g = lambda v, f: nm(TOO_FEW) if tf else (f(v) if v is not None else nm(NA))
-            sure = nm(TOO_FEW) if c["surest"]["too_few"] else fmt(c["surest"]["error_rate"])
-            cells = (f"<td>{esc(src)}</td>" + "".join(cut)
-                     + f'<td class="num">{sure}<span class="small">{count(c["surest"]["n"])} decisions</span></td>'
-                     + f'<td class="num">{g(c["auroc_best"], lambda v: fmt(v, 2))}<span class="small">warning before a blunder '
-                       f'{g(c["auroc_blunder"], lambda v: fmt(v, 2))}</span></td>'
-                     + f'<td class="num">{g(c["ece"], lambda v: fmt(100 * v, 1))}</td>'
-                     + share_td(c["confident_badly_wrong"]))
-        cells += close_td(S, ds, n, s.get("close"))
-        ref = bool(ref_label(S, ds, n))
-        cls = ' class="reference"' if ref else ""
-        rows.append(f"<tr{cls}{attrs(S, ds, n, ref)}>{cell_model(S, ds, n)}{cells}</tr>")
-    head = ["Model and setting", "Confidence source", "Kept at 0.90", "Blunders among kept, 0.90",
+def conf_head() -> list:
+    """The Confidence table's columns after the name (and the League, in the All leagues table)."""
+    return ["Confidence source", "Kept at 0.90", "Blunders among kept, 0.90",
             "Mean equity lost among kept, 0.90", "Kept at 0.99", "Blunders among kept, 0.99",
             "Mean equity lost among kept, 0.99", "Error rate in the surest quarter (PR)",
             "Ranking score (AUROC) for the engine's best play", "Calibration gap (ECE, points)",
             "Confident and badly wrong",
             (f'Close choices<span class="small th-note">{esc(CC_HEAD_NOTE)}</span>',
              ' data-nosort title="Not sortable: setups are never ranked by close choices"')]
-    return (P.SWIPE + P.table(head, rows, "Confidence: the probability a setup gave its chosen play; N/A for setups "
-                              "without probabilities", attrs=f' data-dataset="{ds}"')
-            + '<p class="table-note">The cutoff chosen on half of the games and tested on the other half: '
-              '<a href="method/#confidence">Method</a>.</p>'
-            + f'<p class="table-note cc-label">Close choices: {esc(S["close_spec"]["label"])} Click a value for its '
-              f'details; this column cannot be sorted. <a href="method/#close-choices">Method</a></p>'
-            + P.subset_note(ds))
+
+
+def confidence_cells(S, ds, n, s) -> str:
+    """The Confidence cells of one setup after its name. The source is the setup's own setups.json entry, looked up as
+    the model type is: a setup that moved league in the ladder is listed under the league it came from."""
+    th = S["thresholds"]
+    src = type_meta(S, ds, n).get("confidence_source") or "none"
+    c = s.get("confidence")
+    if not c:
+        cells = f"<td>{esc(src)}</td>" + "".join(f'<td class="num">{nm(NA)}</td>' for _ in range(10))
+    else:
+        cut = []
+        for k in (str(x) for x in th["confidence_cutoffs"]):
+            x = c["cutoffs"][k]
+            mean = nm(TOO_FEW) if x["too_few"] else (P.eq(x["mean_loss"]) if x["mean_loss"] is not None else "0")
+            cut.append(f'<td class="num">{count(x["kept"]["n"])}<span class="small">{pct(x["kept"]["share"])} of '
+                       f'{count(x["kept"]["den"])}</span></td>' + share_td(x["blunders"])
+                       + f'<td class="num">{mean}</td>')
+        tf = c["too_few"]
+        g = lambda v, f: nm(TOO_FEW) if tf else (f(v) if v is not None else nm(NA))
+        sure = nm(TOO_FEW) if c["surest"]["too_few"] else fmt(c["surest"]["error_rate"])
+        cells = (f"<td>{esc(src)}</td>" + "".join(cut)
+                 + f'<td class="num">{sure}<span class="small">{count(c["surest"]["n"])} decisions</span></td>'
+                 + f'<td class="num">{g(c["auroc_best"], lambda v: fmt(v, 2))}<span class="small">warning before a blunder '
+                   f'{g(c["auroc_blunder"], lambda v: fmt(v, 2))}</span></td>'
+                 + f'<td class="num">{g(c["ece"], lambda v: fmt(100 * v, 1))}</td>'
+                 + share_td(c["confident_badly_wrong"]))
+    return cells + close_td(S, ds, n, s.get("close"))
+
+
+def conf_notes(S) -> str:
+    return ('<p class="table-note">The cutoff chosen on half of the games and tested on the other half: '
+            '<a href="method/#confidence">Method</a>.</p>'
+            f'<p class="table-note cc-label">Close choices: {esc(S["close_spec"]["label"])} Click a value for its '
+            f'details; this column cannot be sorted. <a href="method/#close-choices">Method</a></p>')
+
+
+def confidence_table(S, lg) -> str:
+    ds = lg["dataset"]
+    rows = []
+    for n in by_error_models_first(S, ds, lg["setups"]):
+        ref = bool(ref_label(S, ds, n))
+        cls = ' class="reference"' if ref else ""
+        rows.append(f"<tr{cls}{attrs(S, ds, n, ref)}>{cell_model(S, ds, n)}{confidence_cells(S, ds, n, lg['setups'][n])}</tr>")
+    return (P.SWIPE + P.table(["Model and setting"] + conf_head(), rows, "Confidence: the probability a setup gave its "
+                              "chosen play; N/A for setups without probabilities", attrs=f' data-dataset="{ds}"')
+            + conf_notes(S) + P.subset_note(ds))
+
+
+def all_confidence_table(S) -> str:
+    """Every league's setups in one Confidence table, one row per league table entry with its League: the model
+    setups by stored error rate (pages.by_error, as each league's table; ties keep the league order), then the programs
+    as reference rows, league by league."""
+    models, refs = [], []
+    for lg in S["leagues"]:
+        ds = lg["dataset"]
+        for n in by_error_models_first(S, ds, lg["setups"]):
+            (refs if ref_label(S, ds, n) else models).append((lg, n))
+    def key(x):
+        q = x[0]["setups"][x[1]]["quality"]
+        return (q.get("error_rate") is None or q.get("too_few", False), q.get("error_rate") or 0)
+    models.sort(key=key)
+    body = [all_tr(S, lg, n, ref_label(S, lg["dataset"], n), confidence_cells(S, lg["dataset"], n, lg["setups"][n]))
+            for lg, n in models + refs]
+    return (P.SWIPE + P.table(["Model and setting", "League"] + conf_head(), body, "All leagues: confidence, the "
+                              "probability a setup gave its chosen play; N/A for setups without probabilities",
+                              attrs=f' data-dataset="{ALL}"')
+            + conf_notes(S) + "".join(P.subset_note(lg["dataset"]) for lg in S["leagues"]))
 
 
 def cost_table(S, lg) -> str:
@@ -1040,13 +1072,16 @@ def view(S, lg, inner: str) -> str:
             f'<h3 class="table-title" data-stack-title hidden>League {lg["id"]}</h3>{prov}{inner}</div>')
 
 
-def all_view(S) -> str:
-    """The All leagues view of the Risk tab, the default view of the leaderboard."""
-    inner = (slot(ALL, "risk", all_risk_table(S) + all_robust_table(S))
-             + '<p class="table-note">Ability and caution by reasoning setting (UNPAIRED) are in each league\'s view: '
-               'League 1, 2 or 3.</p>')
+def all_view(S, inner: str) -> str:
+    """An All leagues view (Risk, Confidence): the default view of the leaderboard, with the All leagues note on top."""
     off = "" if default_league(S) == ALL else " data-off"
     return f'<div class="league-view" data-league-view="{ALL}" data-dataset="{ALL}"{off}>{all_head(S)}{inner}</div>'
+
+
+def risk_all_view(S) -> str:
+    return all_view(S, slot(ALL, "risk", all_risk_table(S) + all_robust_table(S))
+                    + '<p class="table-note">Ability and caution by reasoning setting (UNPAIRED) are in each league\'s '
+                      'view: League 1, 2 or 3.</p>')
 
 
 def shared_view(S, what: str) -> str:
@@ -1059,7 +1094,7 @@ def default_league(S) -> str:
 
 
 def tab_body(S, key: str) -> str:
-    out = [all_view(S)] if key == "risk" else []
+    out = [risk_all_view(S)] if key == "risk" else []
     for lg in S["leagues"]:
         if key == "risk":
             inner = slot(lg["dataset"], "risk", risk_table(S, lg) + robust_table(S, lg))
@@ -1069,16 +1104,26 @@ def tab_body(S, key: str) -> str:
         elif key == "quality":
             inner = slot(lg["dataset"], "quality", quality_table(S, lg)) + f'<p class="table-note">{esc(LIMIT_PAIRED)}</p>'
         elif key == "confidence":
-            inner = confidence_table(S, lg) + close_details(S, lg) + offline_confidence(S, lg)
+            # One table of every league under All leagues; each league's own table under its League key. The Close
+            # choices details and the offline check stay per league, under the tables, in a group of their own, so
+            # they show for every league under All leagues (one under the other) and the table's links reach them.
+            out.append(view(S, lg, confidence_table(S, lg)))
+            continue
         elif key == "reasoning":
             inner = P.league_reasoning_table(S, lg)
         elif key == "cost":
             inner = cost_table(S, lg) + cheapest_section(S, lg)
         else:
             inner = f'<p class="pending">{status_badge(NOT_MEASURED)} League games never repeat a position.</p>'
-        if key in ("confidence", "reasoning", "cost", "stability"):
+        if key in ("reasoning", "cost", "stability"):
             inner += '<p class="table-note phase-all" hidden>The Phase filter does not apply to this tab: all phases.</p>'
         out.append(view(S, lg, inner))
+    if key == "confidence":
+        extras = "".join(view(S, lg, close_details(S, lg) + offline_confidence(S, lg)
+                              + '<p class="table-note phase-all" hidden>The Phase filter does not apply to this tab: all '
+                                'phases.</p>') for lg in S["leagues"])
+        out = [f'<div class="view-group">{all_view(S, all_confidence_table(S))}{"".join(out)}</div>',
+               f'<div class="view-group">{extras}</div>']
     out.append(shared_view(S, "Analysis pending; no setup has answered them yet."))
     caption = {
         "risk": "Risk calls per setup: was each risk the right one, and was safe right when it played safe?",

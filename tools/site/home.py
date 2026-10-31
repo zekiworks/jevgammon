@@ -1172,18 +1172,37 @@ def version_line(S) -> str:
 
 
 def champions(S) -> str:
+    """The match winners strip (Can, 31 Oct 2026): the winner of each starting group's own table, the first games
+    (content/starting_groups.json, its place, points and recorded tiebreak), each linking to its tab under the hero; a
+    program on top is named as the reference it is, with the group's top model beside it; then the Hype Cup."""
+    import starting_groups as SG
     items = []
-    for lg in S["leagues"]:
-        w = lg.get("winner")
-        val = (f'<a href="{P.model_href("", lg["dataset"], w, S)}">{esc(w)}</a>' if w else nm(lg["status"]))
-        if w and ref_label(S, lg["dataset"], w):
-            val += ' <span class="champ-note">program, a reference row in the leaderboard</span>'
-        items.append(f'<li class="readout"><span class="readout-label">League {lg["id"]}:</span> <span class="readout-value champ">{val}</span></li>')
+    for g in SG.load()["groups"]:
+        top = g["rows"][0]
+        val = f'<a href="#{P.HOME_PREFIX}group-{g["name"].lower()}">{esc(top["name"])}</a>'
+        tie = next((t for t in g["ties"] if t["points"] == top["pts"] and t["setups"][0] == top["name"]), None)
+        how = ""
+        if tie and tie["kind"] == "head-to-head":
+            m = tie["matches"][0]
+            us, them = (m["score"][0], m["score"][1]) if m["a"] == top["name"] else (m["score"][1], m["score"][0])
+            how = f', 1st on head-to-head ({us}\u2013{them}, match #{m["id"]})'
+        elif tie:
+            how = ", 1st on the mini-table of the tied setups' matches"
+        note = f'{top["pts"]} pts{how}'
+        if SG.is_program(S, top["name"]):
+            model = next(r for r in g["rows"] if not SG.is_program(S, r["name"]))
+            val += (f' <span class="champ-note">(program, reference)</span> <span class="leader-detail">{esc(note)}</span>'
+                    f' · top model: <a href="#{P.HOME_PREFIX}group-{g["name"].lower()}">{esc(model["name"])}</a> '
+                    f'<span class="leader-detail">{model["pts"]} pts</span>')
+        else:
+            val += f' <span class="leader-detail">{esc(note)}</span>'
+        items.append(f'<li class="readout"><span class="readout-label">{esc(g["name"])}:</span> '
+                     f'<span class="readout-value champ">{val}</span></li>')
     # The Hype Cup champion: the cross-league champion (an event, not a ranking: the Cup card says so).
     c = S["cup"]
-    val = f'<a href="leagues/#hype-cup">{esc(c["champion"])}</a>' if c["champion"] else nm("To play")
+    val = f'<a href="#{P.HOME_PREFIX}hype-cup">{esc(c["champion"])}</a>' if c["champion"] else nm("To play")
     items.append(f'<li class="readout"><span class="readout-label">Hype Cup:</span> <span class="readout-value champ">{val}</span></li>')
-    return (f'<div class="readout-row champions"><span class="readout-label">League winners · match results</span>'
+    return (f'<div class="readout-row champions"><span class="readout-label">Starting-group winners · match results</span>'
             f'<ul class="readouts">{"".join(items)}</ul></div>')
 
 

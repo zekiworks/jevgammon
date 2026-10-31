@@ -1500,6 +1500,7 @@ def home(S) -> str:
       </div>
       {hero_board(S)}
     </header>
+    <div class="home-leagues" id="leagues-tabs">{P.home_league_sections(S)}</div>
     {findings_block(S)}
     {filters(S)}
     <section class="panel board-panel" id="board-panel" aria-labelledby="board-title">

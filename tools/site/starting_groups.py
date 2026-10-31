@@ -120,10 +120,15 @@ def group_table(S, G: dict, g: dict, moves: dict, rel: str) -> str:
 
 
 def section(S, rel: str = "../") -> str:
+    """The Starting groups card: the shared subtitle and notes, then one sub-tab per group (Decision first)."""
     G = load()
     moves = moves_of(G)
-    blocks = "".join(f'<h3 id="group-{g["league"]}">{esc(g["name"])} <span class="small inline">starting group, the original '
-                     f'League {g["league"]}</span></h3>{group_table(S, G, g, moves, rel)}' for g in G["groups"])
+    tabs = [(f'group-{g["name"].lower()}', g["name"], f'group-{g["name"].lower()}') for g in G["groups"]]
+    blocks = (P.link_tabs(tabs, "sub", "Starting groups", "modes sub-tabs")
+              + "".join(P.tab_panel(pid, f"sub-tab-{key}", f'<h3 id="group-{g["league"]}">{esc(g["name"])} <span class="small '
+                                    f'inline">starting group, the original League {g["league"]}</span></h3>'
+                                    f'{group_table(S, G, g, moves, rel)}', "sub-panel")
+                        for (key, _, pid), g in zip(tabs, G["groups"])))
     return (f'<section class="card" id="starting-groups"><div class="section-head"><h2>Starting groups</h2></div>'
             f'<p class="subtitle-line"><strong>{esc(SUBTITLE)}</strong></p>'
             f'<p class="note cohort-note">{esc(COHORT_NOTE)}</p>'

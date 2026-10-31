@@ -2,6 +2,7 @@
 writes to data/; nothing here holds a result number. Status words follow brief B10."""
 
 import json
+import re
 from pathlib import Path
 
 import analysis as A
@@ -479,7 +480,9 @@ def league_notes(S, lg) -> str:
     return f'<ul class="league-notes">{"".join(f"<li>{n}</li>" for n in notes)}</ul>'
 
 
-def leagues_page(S, archive_v1: str) -> str:
+def league_sections(S) -> str:
+    """The Leagues page's tab bar and its sections (Starting groups, After league moves, Cups), written for the Leagues
+    page (links relative to leagues/); the home page shows the same block through home_league_sections."""
     rel = "../"
     blocks = []
     for lg in S["leagues"]:
@@ -505,19 +508,70 @@ def leagues_page(S, archive_v1: str) -> str:
                       f'{matches_table(S, lg, rel)}<p class="table-note">This league table\'s matches. Every match of every '
                       f'stage (ladder rounds, gap matches, late entries, the Hype Cup, the Nackgammon knockout) and the '
                       f'voided ones: <a href="../matches/">Matches</a>.</p></details></section>')
+    import starting_groups as SG
+    leagues = [(f'league-{lg["id"]}', f'League {lg["id"]}', f'sub-panel-league-{lg["id"]}') for lg in S["leagues"]]
+    after = (SG.after_moves_intro(S) + link_tabs(leagues, "sub", "Leagues after the moves", "modes sub-tabs")
+             + "".join(tab_panel(pid, f"sub-tab-{key}", b, "sub-panel") for (key, _, pid), b in zip(leagues, blocks)))
+    return league_tabs({"starting-groups": SG.section(S), "after-league-moves": after, "cups": SG.cups_intro() + cup_card(S)})
+
+
+HOME_PREFIX = "lg-"
+
+
+def home_league_sections(S) -> str:
+    """The Leagues page's tab block on the home page (Can, 31 Oct 2026), under the hero: the same HTML with every id and
+    in-block reference prefixed (#lg-starting-groups, #lg-group-decision, #lg-league-3 …), so it never meets the
+    leaderboard's own ids and hashes, and its links made relative to the site's root."""
+    html = league_sections(S)
+    ref = r'(\s(?:id|aria-controls|aria-labelledby|data-tab|data-tab-part)=")([^"]+)"'
+    html = re.sub(ref, lambda m: f'{m.group(1)}{HOME_PREFIX}{m.group(2)}"', html)
+    html = re.sub(r'(\shref=")#([^"]+)"', lambda m: f'{m.group(1)}#{HOME_PREFIX}{m.group(2)}"', html)
+    return html.replace('="../"', '="./"').replace('="../', '="')
+
+
+def leagues_page(S, archive_v1: str) -> str:
     intro = about("<p>One table per league. League tables compare only the players inside one league; they are never "
                   "merged into one overall score. A running league's numbers are Provisional and change as matches finish. "
                   "Click a row to open the setup, or a match to open its decisions.</p>", "About these tables")
-    links = ('<a href="#starting-groups">Starting groups</a> · <a href="#after-league-moves">After league moves</a> · '
-             '<a href="#cups">Cups</a>: <a href="#hype-cup">Hype Cup</a> · <a href="#nack-knockout">Nackgammon knockout</a> · '
-             '<a href="../matches/">Every match</a>')
-    import starting_groups as SG
-    return (page_head(S, "Leagues", "Leagues", links)
-            + SG.section(S) + SG.after_moves_intro(S) + "".join(blocks) + SG.cups_intro() + cup_card(S) + intro
+    return (page_head(S, "Leagues", "Leagues") + league_sections(S) + intro
             + f'<section class="card" id="earlier"><details class="more"><summary>Earlier version: v1 leagues and teams '
               f'{status_badge(EARLIER)}</summary><p class="note">{esc(play_order_note(S))}</p>{archive_v1}</details>'
               f'<p class="table-note" id="pre-switch">The page as it was before this site went live, with its final league '
               f'data: <a href="../archive/2026-10-23/">archive, 23 October 2026</a>.</p></section>')
+
+
+# --- Leagues page tabs (Can, 31 Oct 2026): the home page's tab keys as links, one section at a time (bg.js), with a
+# smaller second level (the starting groups, the leagues after the moves); the URL hash picks the tabs; without the
+# script every section shows and the tabs are plain jump links. ---------------------------------------------------
+
+LEAGUE_TABS = [("starting-groups", "Starting groups", "league-panel-starting-groups"),
+               ("after-league-moves", "After league moves", "league-panel-after-league-moves"),
+               ("hype-cup", "Hype Cup", "league-panel-cups"), ("nack-knockout", "Nackgammon knockout", "league-panel-cups")]
+
+
+def link_tabs(items: list[tuple[str, str, str]], kind: str, label: str, cls: str = "modes") -> str:
+    """A tablist of links drawn as the home page's tab keys: (target id, label, panel id); the first is selected."""
+    return (f'<div class="{cls}" role="tablist" aria-label="{esc(label)}">'
+            + "".join(f'<a class="mode" role="tab" id="{kind}-tab-{key}" href="#{key}" aria-selected="{str(i == 0).lower()}" '
+                      f'aria-controls="{pid}" data-tab="{key}"><span class="lamp" aria-hidden="true"></span>{esc(text)}</a>'
+                      for i, (key, text, pid) in enumerate(items))
+            + '</div>')
+
+
+def tab_panel(pid: str, tab_id: str, html: str, cls: str) -> str:
+    return f'<div class="tabpanel {cls}" role="tabpanel" id="{pid}" aria-labelledby="{tab_id}">{html}</div>'
+
+
+def league_tabs(panels: dict[str, str]) -> str:
+    """The Leagues page's tab bar (Every match links to the Matches page) and its sections, one tabpanel each."""
+    first = {}
+    for key, _, pid in LEAGUE_TABS:
+        first.setdefault(pid, key)
+    nav = (f'<nav class="league-tabs" aria-label="Leagues sections" data-league-tabs>'
+           f'{link_tabs(LEAGUE_TABS, "league", "Leagues sections")}'
+           f'<a class="mode" href="../matches/"><span class="lamp" aria-hidden="true"></span>Every match</a></nav>')
+    return nav + "".join(tab_panel(f"league-panel-{key}", f"league-tab-{first[f'league-panel-{key}']}", html, "league-panel")
+                         for key, html in panels.items())
 
 
 # --- Hype Cup and Nackgammon knockout (Can, 29 Oct 2026) ------------------------------------------------------
@@ -587,18 +641,18 @@ def cup_card(S, rel: str = "../") -> str:
     k_champ = (f'<p class="cup-champion">Champion: <strong>{esc(k["champion"])}</strong></p>' if k["champion"]
                else f'<p class="cup-champion">{count(k["played"])} of {count(k["matches_total"])} matches played; '
                     f'the rest to play. Champion: {nm("after the final")}</p>')
-    return (f'<section class="card cup-card" id="hype-cup"><div class="section-head"><h2>Hype Cup</h2>'
+    return (f'<section class="card cup-card" id="hype-cup"><div data-tab-part="hype-cup"><div class="section-head"><h2>Hype Cup</h2>'
             f'{status_badge("Finished" if c["state"] == "finished" else "In progress")}</div>'
             f'<p class="cup-honesty"><strong>{esc(c["honesty"])}</strong></p>{champ}'
             + bracket(c["ties"], "v3", "cup", rel, "Hype Cup bracket")
             + f'<p class="table-note"><strong>Played</strong> ({count(c["new_matches"])}): a new Cup match. '
               f'<strong>Stored</strong> ({count(c["stored_matches"])}): {esc(c["stored_rule"])} {esc(c["level_rule"])}</p>'
-              f'<p class="table-note"><strong>Roster.</strong> {esc(c["roster_rule"])}</p>'
-              f'<div class="section-head cup-sub"><h3 id="nack-knockout">{esc(k["name"])}</h3>'
+              f'<p class="table-note"><strong>Roster.</strong> {esc(c["roster_rule"])}</p></div>'
+              f'<div data-tab-part="nack-knockout"><div class="section-head cup-sub"><h3 id="nack-knockout">{esc(k["name"])}</h3>'
               f'{status_badge("Finished" if k["state"] == "finished" else "In progress")}</div>'
               f'<p class="note"><strong>{esc(k["label"])}.</strong> {esc(k["about"])}</p>{k_champ}'
             + bracket(k["ties"], "knockout", "nack", rel, "Nackgammon knockout bracket")
-            + f'<p class="table-note">Every match of both, with the leagues\' matches: <a href="{rel}matches/">Matches</a>. '
+            + f'</div><p class="table-note">Every match of both, with the leagues\' matches: <a href="{rel}matches/">Matches</a>. '
               f'{esc(c["honesty"])}</p></section>')
 
 

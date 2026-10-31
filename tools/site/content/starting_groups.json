@@ -5,7 +5,7 @@
  "groups": [
   {
    "league": 1,
-   "name": "Decision models",
+   "name": "Decision",
    "pairings": 171,
    "rows": [
     {
@@ -337,7 +337,7 @@
   },
   {
    "league": 2,
-   "name": "Workhorses",
+   "name": "Workhorse",
    "pairings": 171,
    "rows": [
     {

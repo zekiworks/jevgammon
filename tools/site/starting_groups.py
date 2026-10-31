@@ -9,8 +9,9 @@ import json
 import pages as P
 from common import CONTENT, count, esc
 
-SUBTITLE = ("Groups reflect model profiles, not tournament rankings. These are fixed starting cohorts, not current ladder "
-            "ranks or mutually exclusive universal model types.")
+SUBTITLE = "Groups reflect model profiles, not tournament rankings."
+COHORT_NOTE = ("These are fixed starting cohorts, not current ladder ranks or mutually exclusive universal model "
+               "types.")
 PROGRAM_NOTE = "program, a reference row: an official place in the match standings, not a model type"
 
 
@@ -49,9 +50,14 @@ def moves_of(G: dict) -> dict[str, list[dict]]:
     return out
 
 
-def origin_of(G: dict) -> dict[str, dict]:
-    """Each setup's starting group (programs, in all three, left out)."""
-    return {r["name"]: g for g in G["groups"] for r in g["rows"] if r["name"] != "GNUbg weak"}
+def groups_of(G: dict) -> dict[str, list[dict]]:
+    """Each setup's starting group(s), from the saved memberships: one for a model setup; a program is in every group
+    whose saved table holds it (GNUbg weak, the anchor: all three; Safest and Random: the original League 1 only)."""
+    out = {}
+    for g in G["groups"]:
+        for r in g["rows"]:
+            out.setdefault(r["name"], []).append(g)
+    return out
 
 
 def move_badge(moves: list[dict]) -> str:
@@ -120,6 +126,7 @@ def section(S, rel: str = "../") -> str:
                      f'League {g["league"]}</span></h3>{group_table(S, G, g, moves, rel)}' for g in G["groups"])
     return (f'<section class="card" id="starting-groups"><div class="section-head"><h2>Starting groups</h2></div>'
             f'<p class="subtitle-line"><strong>{esc(SUBTITLE)}</strong></p>'
+            f'<p class="note cohort-note">{esc(COHORT_NOTE)}</p>'
             f'<p class="note">Each setup stays in the group it started in, the original league it played in before any '
             f'league move, with that group\'s own match points: only matches between setups of the same starting group '
             f'count, wherever they were played (league season, ladder round or gap match); late entries are left out. '
@@ -147,13 +154,18 @@ def after_moves_intro(S) -> str:
 
 
 def standing_cells(S, name: str) -> str:
-    """The Starting group and Moves cells of a row of the current league standings."""
+    """The Starting group and Moves cells of a row of the current league standings; a program's starting groups are
+    the saved groups whose tables hold it."""
     G = load()
+    gs = groups_of(G).get(name, [])
+    if not gs:
+        return '<td>not in a starting group</td><td class="badges"></td>'
+    names = ", ".join(esc(g["name"]) for g in gs)
+    where = ", ".join(str(g["league"]) for g in gs)
+    league = f'original League{"s" if len(gs) > 1 else ""} {where}'
     if is_program(S, name):
-        return '<td>all three (program)</td><td></td>'
-    g = origin_of(G).get(name)
-    group = f'{esc(g["name"])} <span class="small">original League {g["league"]}</span>' if g else "not in a starting group"
-    return f'<td>{group}</td><td class="badges">{move_badge(moves_of(G).get(name, []))}</td>'
+        return f'<td>{names} <span class="small">program, {league}</span></td><td></td>'
+    return f'<td>{names} <span class="small">{league}</span></td><td class="badges">{move_badge(moves_of(G).get(name, []))}</td>'
 
 
 def cups_intro() -> str:

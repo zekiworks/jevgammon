@@ -388,15 +388,46 @@ def quality_table(S, lg, phase="all") -> str:
                              attrs=f' data-dataset="{ds}"')
 
 
+# The Confidence tables open sorted by one recorded measure (Ümit, 31 Oct 2026): the ranking score (AUROC) for the
+# engine's best play, highest first. It is the measure that asks whether a setup's own stated probability tells its right
+# plays from the rest; it is shown as one measure of confidence, not an overall confidence ranking.
+CONF_SORT_HEAD = "Ranking score (AUROC) for the engine's best play"
+CONF_ORDER = ("Sorted by the ranking score (AUROC) for the engine's best play, highest first: how well a setup's own "
+              "stated probability separates the decisions where it played the engine's best play from those where it "
+              "did not (1 = always, 0.5 = no better than chance). One measure of confidence, not an overall ranking. "
+              "Then setups with too few decisions, then N/A (no probabilities recorded; not a failure), then the "
+              "programs as reference rows.")
+
+
 def conf_head() -> list:
-    """The Confidence table's columns after the name (and the League, in the All leagues table)."""
+    """The Confidence table's columns after the name (and the League, in the All leagues table); the default sort
+    column carries its state (aria-sort) at load, and the header click toggles it (tables.js)."""
     return ["Confidence source", "Kept at 0.90", "Blunders among kept, 0.90",
             "Mean equity lost among kept, 0.90", "Kept at 0.99", "Blunders among kept, 0.99",
             "Mean equity lost among kept, 0.99", "Error rate in the surest quarter (PR)",
-            "Ranking score (AUROC) for the engine's best play", "Calibration gap (ECE, points)",
+            (CONF_SORT_HEAD, ' aria-sort="descending" data-sort-default="descending"'), "Calibration gap (ECE, points)",
             "Confident and badly wrong",
             (f'Close choices<span class="small th-note">{esc(CC_HEAD_NOTE)}</span>',
              ' data-nosort title="Not sortable: setups are never ranked by close choices"')]
+
+
+def conf_order(S, entries: list) -> list:
+    """(league, name) pairs in the Confidence tables' order: the model setups with a measured ranking score for the
+    engine's best play, highest first; then those with too few decisions; then N/A (no probabilities); each of the last
+    two by league, then name; then the programs as reference rows, league by league, by name."""
+    def key(e):
+        lg, n = e
+        c = lg["setups"][n].get("confidence")
+        if ref_label(S, lg["dataset"], n):
+            group, v = 3, 0
+        elif c and not c["too_few"] and c.get("auroc_best") is not None:
+            group, v = 0, -c["auroc_best"]
+        elif c and c["too_few"]:
+            group, v = 1, 0
+        else:
+            group, v = 2, 0
+        return (group, v, lg["id"], n)
+    return sorted(entries, key=key)
 
 
 def confidence_cells(S, ds, n, s) -> str:
@@ -437,32 +468,23 @@ def conf_notes(S) -> str:
 def confidence_table(S, lg) -> str:
     ds = lg["dataset"]
     rows = []
-    for n in by_error_models_first(S, ds, lg["setups"]):
+    for _, n in conf_order(S, [(lg, n) for n in lg["setups"]]):
         ref = bool(ref_label(S, ds, n))
         cls = ' class="reference"' if ref else ""
         rows.append(f"<tr{cls}{attrs(S, ds, n, ref)}>{cell_model(S, ds, n)}{confidence_cells(S, ds, n, lg['setups'][n])}</tr>")
     return (P.SWIPE + P.table(["Model and setting"] + conf_head(), rows, "Confidence: the probability a setup gave its "
-                              "chosen play; N/A for setups without probabilities", attrs=f' data-dataset="{ds}"')
+                              f"chosen play. {esc(CONF_ORDER)}", attrs=f' data-dataset="{ds}"')
             + conf_notes(S) + P.subset_note(ds))
 
 
 def all_confidence_table(S) -> str:
-    """Every league's setups in one Confidence table, one row per league table entry with its League: the model
-    setups by stored error rate (pages.by_error, as each league's table; ties keep the league order), then the programs
-    as reference rows, league by league."""
-    models, refs = [], []
-    for lg in S["leagues"]:
-        ds = lg["dataset"]
-        for n in by_error_models_first(S, ds, lg["setups"]):
-            (refs if ref_label(S, ds, n) else models).append((lg, n))
-    def key(x):
-        q = x[0]["setups"][x[1]]["quality"]
-        return (q.get("error_rate") is None or q.get("too_few", False), q.get("error_rate") or 0)
-    models.sort(key=key)
+    """Every league's setups in one Confidence table, one row per league table entry with its League, in the Confidence
+    tables' order (conf_order)."""
+    entries = conf_order(S, [(lg, n) for lg in S["leagues"] for n in lg["setups"]])
     body = [all_tr(S, lg, n, ref_label(S, lg["dataset"], n), confidence_cells(S, lg["dataset"], n, lg["setups"][n]))
-            for lg, n in models + refs]
+            for lg, n in entries]
     return (P.SWIPE + P.table(["Model and setting", "League"] + conf_head(), body, "All leagues: confidence, the "
-                              "probability a setup gave its chosen play; N/A for setups without probabilities",
+                              f"probability a setup gave its chosen play. {esc(CONF_ORDER)}",
                               attrs=f' data-dataset="{ALL}"')
             + conf_notes(S) + "".join(P.subset_note(lg["dataset"]) for lg in S["leagues"]))
 

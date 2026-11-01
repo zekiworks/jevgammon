@@ -20,6 +20,10 @@ TOO_FEW = "Too few decisions"
 PROVISIONAL_NOTE = "Provisional: league still running"
 # The line above the home page's All leagues table (Can, approved by Ümit, 30 Oct 2026), verbatim.
 ALL_NOTE = "Leagues played different positions; close scores across leagues need not mean a real difference."
+# Late entries (matches.stage 'late-entry'): their own dataset id, label and status note; never in a standings table.
+LATE_ENTRY = "late-entry"
+LATE_ENTRY_LABEL = "Late entry, not in standings"
+LATE_ENTRY_NOTE = "Provisional: late entry still playing"
 # Close choices, stage B: scope note (Ümit, 2026-10-25; Method spec 2026-10-24 §9.13 addendum of 16:05 UTC), verbatim on
 # the home page and the Method page.
 CLOSE_B_SCOPE_NOTE = ("Gemma 4 31B (on) was started but not completed: two reboots and a GPU fault interrupted it, and it "

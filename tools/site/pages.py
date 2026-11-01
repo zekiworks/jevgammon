@@ -6,9 +6,9 @@ import re
 from pathlib import Path
 
 import analysis as A
-from common import (EARLIER, EARLIER_NOTE, NA, NAME_NOTES, NOT_MEASURED, PENDING, PROVISIONAL, PROVISIONAL_NOTE,
-                    PUBLISHED, REASONING_NOTES, TOO_FEW, aliases, count, esc, fmt, nm, pct, setup_slug, slug,
-                    status_badge)
+from common import (EARLIER, EARLIER_NOTE, LATE_ENTRY, LATE_ENTRY_LABEL, LATE_ENTRY_NOTE, NA, NAME_NOTES, NOT_MEASURED,
+                    PENDING, PROVISIONAL, PROVISIONAL_NOTE, PUBLISHED, REASONING_NOTES, TOO_FEW, aliases, count, esc, fmt,
+                    nm, pct, setup_slug, slug, status_badge)
 
 # The nav in four groups (Ümit, 30 Oct 2026): Results (the leaderboard), Analyses, Leagues and matches, Method and data.
 # Model pages open from the table rows; New models is linked from Data. "" is the home page.
@@ -481,8 +481,8 @@ def league_notes(S, lg) -> str:
 
 
 def league_sections(S) -> str:
-    """The Leagues page's tab bar and its sections (Starting groups, After league moves, Cups), written for the Leagues
-    page (links relative to leagues/); the home page shows the same block through home_league_sections."""
+    """The Leagues page's tab bar and its sections (Starting groups, After league moves, Cups, Late entries), written for
+    the Leagues page (links relative to leagues/); the home page shows the same block through home_league_sections."""
     rel = "../"
     blocks = []
     for lg in S["leagues"]:
@@ -512,7 +512,9 @@ def league_sections(S) -> str:
     leagues = [(f'league-{lg["id"]}', f'League {lg["id"]}', f'sub-panel-league-{lg["id"]}') for lg in S["leagues"]]
     after = (SG.after_moves_intro(S) + link_tabs(leagues, "sub", "Leagues after the moves", "modes sub-tabs")
              + "".join(tab_panel(pid, f"sub-tab-{key}", b, "sub-panel") for (key, _, pid), b in zip(leagues, blocks)))
-    return league_tabs({"starting-groups": SG.section(S), "after-league-moves": after, "cups": SG.cups_intro() + cup_card(S)})
+    late = late_entries_section(S, rel)
+    return league_tabs({"starting-groups": SG.section(S), "after-league-moves": after, "cups": SG.cups_intro() + cup_card(S),
+                        **({"late-entries": late} if late else {})})
 
 
 HOME_PREFIX = "lg-"
@@ -546,7 +548,8 @@ def leagues_page(S, archive_v1: str) -> str:
 
 LEAGUE_TABS = [("starting-groups", "Starting groups", "league-panel-starting-groups"),
                ("after-league-moves", "After league moves", "league-panel-after-league-moves"),
-               ("hype-cup", "Hype Cup", "league-panel-cups"), ("nack-knockout", "Nackgammon knockout", "league-panel-cups")]
+               ("hype-cup", "Hype Cup", "league-panel-cups"), ("nack-knockout", "Nackgammon knockout", "league-panel-cups"),
+               ("late-entries", "Late entries", "league-panel-late-entries")]
 
 
 def link_tabs(items: list[tuple[str, str, str]], kind: str, label: str, cls: str = "modes") -> str:
@@ -563,12 +566,14 @@ def tab_panel(pid: str, tab_id: str, html: str, cls: str) -> str:
 
 
 def league_tabs(panels: dict[str, str]) -> str:
-    """The Leagues page's tab bar (Every match links to the Matches page) and its sections, one tabpanel each."""
+    """The Leagues page's tab bar (Every match links to the Matches page) and its sections, one tabpanel each; a tab
+    whose section has nothing to show (no late entry) is left out."""
+    tabs = [t for t in LEAGUE_TABS if t[2][len("league-panel-"):] in panels]
     first = {}
-    for key, _, pid in LEAGUE_TABS:
+    for key, _, pid in tabs:
         first.setdefault(pid, key)
     nav = (f'<nav class="league-tabs" aria-label="Leagues sections" data-league-tabs>'
-           f'{link_tabs(LEAGUE_TABS, "league", "Leagues sections")}'
+           f'{link_tabs(tabs, "league", "Leagues sections")}'
            f'<a class="mode" href="../matches/"><span class="lamp" aria-hidden="true"></span>Every match</a></nav>')
     return nav + "".join(tab_panel(f"league-panel-{key}", f"league-tab-{first[f'league-panel-{key}']}", html, "league-panel")
                          for key, html in panels.items())
@@ -733,6 +738,124 @@ def matches_page(S) -> str:
              '<a href="../leagues/">Leagues</a>.')
     return (page_head(S, "Matches", "Every match", intro)
             + f'<nav class="card stage-nav" aria-label="Stages"><ul class="subnav">{nav}</ul></nav>' + "".join(blocks))
+
+
+# --- Late entries (Can's go of 28 Oct 2026, live after GPT-6 Astra (high)'s 12th late-entry match): a tab of the
+# Leagues block after the Nackgammon knockout; their own rows, never in a standings table. ------------------------
+
+LATE_ABOUT = ("A late entry joins an original league table after it was played and plays every setup of that table "
+              "once, in matches of its own. Its games count in no standings table, no league table, no Hype Cup input "
+              "and no other setup's numbers. The numbers here come from its own late-entry games only, computed as for "
+              "a setup in a league.")
+LATE_METHOD = ("Error rate and risk judgement: 95% intervals, whole games resampled. Ability d\u2032 and caution c at "
+               "the 0.001 margin: rates corrected by adding 0.5 to the counts and 1 to the totals; 95% intervals, blocks "
+               "of two seat-swapped games resampled. Cut off: answers that stopped at an output limit the request sent "
+               "(finish reason length, stop reason max_tokens, finishReason MAX_TOKENS, incomplete max_output_tokens), "
+               "in the stored response or error. Effort: the reasoning effort the requests sent.")
+
+
+def late_status(e) -> str:
+    return status_badge(LATE_ENTRY_NOTE if e["status"] == PROVISIONAL else PUBLISHED)
+
+
+def late_cells(e) -> dict:
+    """The late-entry numbers as cell contents, shared by the Leagues table and the setup's page."""
+    import home
+    q, r, x, route = e["quality"], e["risk"]["main"], e["exchanges"], e["route"]
+    td = lambda cell: cell[16:-5]  # the contents of a <td class="num"> cell
+    effort = "; ".join(f"{esc(k)} in {count(v)} of {count(x['with_exchanges'])} decisions" for k, v in x["efforts"].items())
+    return dict(
+        entry=f'{esc(e["entry"][:10])}<span class="small">first match {esc(e["entry"][11:16])} UTC</span>',
+        field=f'League {e["field_league"]} (original table)<span class="small">{count(e["total"])} setups</span>',
+        played=(f'{count(e["played"])} / {count(e["total"])}'
+                + (f'<span class="small">{count(e["running"])} running</span>' if e["running"] else "")),
+        record=(f'{count(e["record"]["won"])}\u2013{count(e["record"]["drawn"])}\u2013{count(e["record"]["lost"])}'
+                f'<span class="small">won\u2013drawn\u2013lost</span>'),
+        error=td(er_cell(q)), judgement=td(home.judgement_td(r)), ability=td(home.ability_td(r)),
+        caution=td(home.caution_td(r)),
+        invalid=f'{count(q["invalid"])}<span class="small">of {count(q["decisions"])} decisions</span>',
+        cut=(f'{count(x["cut_off"])}<span class="small">{count(x["limit_sent"])} of {count(x["with_exchanges"])} '
+             f'decisions sent an output limit; {count(x["past_limit_no_limit_sent"])} over '
+             f'{count(x["output_limit"])} output tokens without one</span>'),
+        route=(f'{esc(route["provider"] or NOT_MEASURED)}<span class="small">{esc(route["spec"] or "")} · effort '
+               f'{effort or nm("not in the requests")}</span>'))
+
+
+LATE_HEAD = ["Setup", "Entry date", "League field played", "Matches played", "Record (W\u2013D\u2013L)",
+             "Error rate (PR), 95% interval", "Risk judgement, margin 0.001", "Ability d\u2032",
+             "Caution c (+ cautious, \u2212 bold)", "Invalid answers", "Cut off at the output limit", "Route and effort sent"]
+LATE_RESULT = {1: "Won", 0: "Draw", -1: "Lost"}
+
+
+def late_href(rel, e) -> str:
+    return f"{rel}models/{LATE_ENTRY}/{e['slug']}/"
+
+
+def late_results(e, rel) -> str:
+    """A late entry's matches, one row per opponent in the order they started: score (its own first), result, match."""
+    rows = []
+    for m in e["matches"]:
+        done = m["status"] == "finished"
+        res = LATE_RESULT[(m["score_for"] > m["score_against"]) - (m["score_for"] < m["score_against"])] if done else None
+        rows.append(f'<tr data-dataset="{LATE_ENTRY}"><td class="model"><span class="model-name">{esc(m["opponent"])}</span></td>'
+                    f'<td class="num">{m["score_for"]}\u2013{m["score_against"]}</td>'
+                    f'<td>{res or esc(MATCH_STATE.get(m["status"], m["status"]))}</td>'
+                    f'<td class="num">' + (f'<a href="{rel}matches/#{match_anchor("v3", m["id"])}">{m["id"]}</a>' if done
+                                           else str(m["id"])) + '</td>'
+                    f'<td class="date">{(m["finished"] or "")[:10]}</td></tr>')
+    r = e["record"]
+    return (SWIPE + table(["Opponent", "Score", "Result", "#", "Finished"], rows,
+                          f"{esc(e['name'])} against each opponent, its score first: {count(r['won'])} won, "
+                          f"{count(r['drawn'])} drawn, {count(r['lost'])} lost; none counts in a standings table",
+                          cls="board list", attrs=f' data-dataset="{LATE_ENTRY}"'))
+
+
+def late_entries_section(S, rel) -> str:
+    """The Late entries tab: every late entry in its own table, then each one's results per opponent; outside every
+    league table and standings."""
+    if not S["late_entries"]:
+        return ""
+    rows, results = [], []
+    for e in S["late_entries"]:
+        c = late_cells(e)
+        rows.append(f'<tr data-dataset="{LATE_ENTRY}"><td class="model"><a class="model-name" href="{late_href(rel, e)}">'
+                    f'{esc(e["name"])}</a><span class="small">{late_status(e)}</span></td><td class="date">{c["entry"]}</td>'
+                    f'<td>{c["field"]}</td>'
+                    + "".join(f'<td class="num">{c[k]}</td>' for k in ("played", "record", "error", "judgement", "ability",
+                                                                       "caution", "invalid", "cut"))
+                    + f'<td>{c["route"]}</td></tr>')
+        results.append(f'<h3 id="late-{e["slug"]}">{esc(e["name"])}: results per opponent</h3>' + late_results(e, rel))
+    return (f'<section class="card" id="late-entries" data-dataset="{LATE_ENTRY}"><div class="section-head">'
+            f'<h2>Late entries (not in standings)</h2></div><p class="note">{esc(LATE_ABOUT)}</p>'
+            + SWIPE + table(LATE_HEAD, rows, "Late entries: each one's own late-entry games; never ranked",
+                            attrs=f' data-dataset="{LATE_ENTRY}"')
+            + "".join(results)
+            + f'<p class="table-note">{esc(LATE_METHOD)} Every match of every stage: <a href="{rel}matches/">Matches</a>.</p>'
+              f'</section>')
+
+
+def late_entry_page(S, e) -> str:
+    """The page of a late entry: what it is, the same numbers as its Leagues row, and its matches."""
+    rel = "../../../"
+    c = late_cells(e)
+    q = e["quality"]
+    facts = [("Late entry", f'{esc(LATE_ENTRY_LABEL)}: its games count in no standings table, no league table, no Hype '
+                            f'Cup input and no other setup\'s numbers'),
+             ("Entry date", c["entry"]), ("League field played", c["field"]), ("Matches played", c["played"]),
+             ("Record", c["record"]), ("Error rate (PR), 95% interval", c["error"]),
+             ("Decisions", f'{count(q["decisions"])} ({count(q["scored"])} scored)'),
+             ("Risk judgement, margin 0.001", c["judgement"]), ("Ability d\u2032", c["ability"]),
+             ("Caution c (+ cautious, \u2212 bold)", c["caution"]), ("Invalid answers", c["invalid"]),
+             ("Cut off at the output limit", c["cut"]), ("Route and effort sent", c["route"])]
+    return (f'<section class="card"><p class="eyebrow">{esc(LATE_ENTRY_LABEL)} · League {e["field_league"]} field</p>'
+            f'<h1>{esc(e["name"])}</h1><p class="subtitle">{late_status(e)}</p><p class="version">{esc(version_line(S))}</p></section>'
+            f'<section class="card" id="late-entry" data-dataset="{LATE_ENTRY}"><h2>{esc(LATE_ENTRY_LABEL)}</h2>'
+            f'<p class="note">{esc(LATE_ABOUT)}</p><dl class="facts">'
+            + "".join(f"<dt>{k}</dt><dd>{v}</dd>" for k, v in facts)
+            + f'</dl><p class="table-note">{esc(LATE_METHOD)}</p>'
+            f'<p><a href="{rel}leagues/#late-entries">Late entries on the Leagues page</a> · '
+            f'<a href="{rel}data/v3/late-entries/{e["slug"]}.json">JSON</a></p></section>'
+            f'<section class="card" id="late-entry-matches"><h2>Matches</h2>' + late_results(e, rel) + "</section>")
 
 
 # --- Phases -------------------------------------------------------------------------------------------------
@@ -1260,6 +1383,8 @@ def write_all(S, out: Path, base: str) -> None:
             put(f"models/{lg['dataset']}/{meta(S, lg['dataset'], n)['slug']}/", n, model_page(S, lg["dataset"], n, e, None))
     for n, e in S["v1"]["setups"].items():
         put(f"models/v1-set/{meta(S, 'v1-set', n)['slug']}/", f"{n} (v1)", model_page(S, "v1-set", n, e, None))
+    for e in S["late_entries"]:
+        put(late_href("", e), f"{e['name']} (late entry)", late_entry_page(S, e))
     for r in S["smoke"]:
         put(f"models/smoke-part-a/{meta(S, 'smoke-part-a', r['setup'])['slug']}/", r["setup"],
             model_page(S, "smoke-part-a", r["setup"], None, r))

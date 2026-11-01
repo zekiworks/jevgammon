@@ -10,10 +10,11 @@ replay.db + positions/v1.jsonl (earlier-version v1 set), positions/*.jsonl + pos
 metadata, human scale, analysis status, method experiments) and the archived sections of the earlier
 page (tools/site/content/archive/).
 
-Output OUT: every page, the data files under data/ (split per version, league and model), the decision
-files under decisions/ and the link preview image under share/. Every number on a page comes from the
-dicts that are also written to data/; tools/site/checks.py then checks the build (numbers trace to
-data files, counts add up, no mixing of leagues or versions, no banned strings, links resolve).
+Output OUT: every page, the data files under data/ (split per version, league and model; late entries, which are
+in no league's tables, in data/v3/late-entries*), the decision files under decisions/ and the link preview image
+under share/. Every number on a page comes from the dicts that are also written to data/; tools/site/checks.py
+then checks the build (numbers trace to data files, counts add up, no mixing of leagues or versions, no banned
+strings, links resolve).
 Exit status 0 = built and checked; 2 = a check failed (details in OUT/../site-check-failures.json).
 """
 
@@ -35,8 +36,8 @@ import close_choices as CC  # noqa: E402
 import cup  # noqa: E402
 import offline as O  # noqa: E402
 import pages  # noqa: E402
-from common import (CONTENT, EARLIER, INTERNAL, PENDING, PROVISIONAL, PUBLISHED, ROOT, SITE, THRESHOLDS,  # noqa: E402
-                    aliases, relabel, setup_slug)
+from common import (CONTENT, EARLIER, INTERNAL, LATE_ENTRY, PENDING, PROVISIONAL, PUBLISHED, ROOT, SITE,  # noqa: E402
+                    THRESHOLDS, aliases, relabel, setup_slug)
 
 BASE = "https://zekiworks.github.io/analysis/backgammon/"
 
@@ -137,6 +138,7 @@ def compute(args) -> dict:
         lg["winner"] = lg["standings"][0]["name"] if lg["state"] == "finished" and lg["standings"] else None
     # Every match, the Hype Cup and the Nackgammon knockout (Can, 29 Oct 2026): match results only, no league number.
     every = cup.compute(state, leagues)
+    late = late_entry_summaries(L["late_entries"])
     return dict(
         as_of=snapshot_time(snap), last_move=L["last_move"], leagues=leagues, setups_meta=setups,
         v1=dict(dataset="v1-set", version="v1", status=EARLIER, positions=len(v1["positions"]),
@@ -145,7 +147,7 @@ def compute(args) -> dict:
                 play_order=dict(setup="Gemini 4 Argon", diff=play_order["diff"], lo=play_order["lo"],
                                 hi=play_order["hi"], positions=play_order["positions"]),
                 disagreements=A.disagreements(v1)),
-        smoke=smoke, shared=shared, thresholds=THRESHOLDS, counts=counts, hypothesis=hypothesis,
+        smoke=smoke, shared=shared, thresholds=THRESHOLDS, counts=counts, hypothesis=hypothesis, late_entries=late,
         matches={k: every[k] for k in ("stages", "total", "voided_total", "matches", "voided")},
         cup=every["cup"], knockout=every["knockout"],
         close_spec=dict(fixed_on=CC.CC["fixed_on"], definition=CC.DEFINITION, label=CC.LABEL), _close=close_records,
@@ -156,6 +158,22 @@ def compute(args) -> dict:
         status=json.loads((CONTENT / "analysis_status.json").read_text()),
         human_scale=json.loads((CONTENT / "human_scale.json").read_text()),
         _v1_raw=v1, _state=state)
+
+
+def late_entry_summaries(entries: list[dict]) -> list[dict]:
+    """Late entries (analysis.late_entries): the same per-setup computation as a league's, fed with the entrant's own
+    late-entry decisions only; in no standings table, league table, Cup input or other setup's numbers. Record: its
+    finished late-entry matches won, drawn (level score) and lost."""
+    late = []
+    for e in entries:
+        decs = e.pop("decisions")
+        done = [m for m in e["matches"] if m["status"] == "finished"]
+        record = dict(won=sum(m["score_for"] > m["score_against"] for m in done),
+                      drawn=sum(m["score_for"] == m["score_against"] for m in done),
+                      lost=sum(m["score_for"] < m["score_against"] for m in done))
+        late.append(dict(e, status=PUBLISHED if e["played"] == e["total"] else PROVISIONAL, record=record,
+                         **A.dataset_summary(LATE_ENTRY, decs, [e["name"]])[e["name"]]))
+    return late
 
 
 def league_reasoning(lg: dict, setups: dict, programs: set) -> list[dict]:
@@ -234,6 +252,14 @@ def write_data(S: dict, out: Path) -> None:
         for n, r in lg["references"].items():
             write_json(out, f"data/v3/{lg['dataset']}/{r['slug']}.json",
                        dict(dataset=lg["dataset"], version="v3", status=lg["metric_status"], **r))
+    # Late entries: one file for all (risk without phases, as in a league file), one per entrant with everything.
+    write_json(out, "data/v3/late-entries.json", dict(
+        version="v3", note="Late entries: not in any standings table, league table or other setup's numbers; each "
+                           "entrant's own late-entry games only.",
+        entries=[dict({k: v for k, v in e.items() if k not in ("risk", "phases", "tags", "options", "gaps",
+                                                                 "quality_phases")}, **brief(e)) for e in S["late_entries"]]))
+    for e in S["late_entries"]:
+        write_json(out, f"data/v3/late-entries/{e['slug']}.json", dict(dataset=LATE_ENTRY, version="v3", **e))
     v1 = S["v1"]
     write_json(out, "data/v1/v1-set.json", dict(
         {k: v for k, v in v1.items() if k not in ("setups", "pairs", "disagreements")},

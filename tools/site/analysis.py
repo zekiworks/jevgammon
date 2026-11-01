@@ -34,8 +34,11 @@ from common import EARLIER, PROVISIONAL, PUBLISHED, ROOT, SPEC, THRESHOLDS as T,
 from decisions_export import PAGE_SIZE as DECISION_PAGE
 
 sys.path.insert(0, str(ROOT / "tools"))
-from league_web import (error_rates, last_activity, league_fixtures, league_state, league_table,  # noqa: E402
-                        participants, shown, tiebreak_rates)
+from league_web import (error_rates, last_activity, league_fixtures, league_origins, league_state,  # noqa: E402
+                        league_table, participants, shown, tiebreak_rates)
+
+sys.path.append(str(ROOT / "tools" / "v3"))
+from nack_paired_score import OUTPUT_LIMIT  # noqa: E402
 
 SCALE = T["equity_scale"]
 PHASES = ["opening", "contact", "holding", "race", "bear-off"]
@@ -83,6 +86,38 @@ def decision_from_plays(p: dict) -> dict:
                 gap=(top[0] - top[1]) if len(top) > 1 else None)
 
 
+DECISION_COLUMNS = """t.id, g.id AS game_id, g.match_id, g.round_no, t.decided_by, t.legal_count, t.probability_source,
+    t.probabilities, t.chosen_position, t.option_order, t.request_ms, t.latency_ms, t.retry_ms, t.cost_usd, t.group_size,
+    t.created_at, t.input_tokens, t.output_tokens, t.reasoning_tokens"""
+
+
+def decision(r, plays: dict) -> dict:
+    """One decision (a turns row with DECISION_COLUMNS and `name`) as every measure reads it."""
+    p = plays.get(r["id"])
+    prob = pvec = rank = None
+    if r["probability_source"] in REAL_PROBS and r["probabilities"] and r["chosen_position"] is not None:
+        probs = json.loads(r["probabilities"])
+        if r["chosen_position"] < len(probs):
+            prob = probs[r["chosen_position"]]
+        # The whole vector in legal order, and each legal play's place in the shown order (offline.py).
+        order = json.loads(r["option_order"]) if r["option_order"] else list(range(len(probs)))
+        if not r["group_size"] and len(order) == len(probs) == r["legal_count"]:
+            pvec, rank = [None] * len(order), [0] * len(order)
+            for k, li in enumerate(order):
+                pvec[li], rank[li] = probs[k], k
+    # Block: the two games of a round (seats swapped, same dice) stay together in every resample and split.
+    d = dict(id=r["id"], setup=r["name"], cluster=r["game_id"], match=r["match_id"], invalid=r["decided_by"] == "fallback",
+             block=f'{r["match_id"]}/{r["round_no"]}', pvec=pvec, rank=rank,
+             scored=p is not None, n=r["legal_count"], source=r["probability_source"], p=prob,
+             req_s=(r["request_ms"] if r["request_ms"] is not None else r["latency_ms"]) / 1000,
+             retry_s=(r["retry_ms"] or 0) / 1000, cost=r["cost_usd"], group=r["group_size"],
+             at=r["created_at"], tin=r["input_tokens"], tout=r["output_tokens"], treason=r["reasoning_tokens"])
+    if p is not None:
+        d.update(loss=p["loss"], phase=p["phase"], tag=p["tag"], **decision_from_plays(p))
+        d["chosen"] = p["chosen"]
+    return d
+
+
 def load_leagues(snap: Path, plays_dir: Path) -> dict:
     conn = sqlite3.connect(f"file:{snap}?mode=ro", uri=True)
     conn.row_factory = sqlite3.Row
@@ -109,38 +144,11 @@ def load_leagues(snap: Path, plays_dir: Path) -> dict:
             if f["status"] != "finished":
                 left[f["model1"]] += 1
                 left[f["model2"]] += 1
-        decisions = []
-        for r in conn.execute(
-            """SELECT t.id, g.id AS game_id, g.match_id, g.round_no, CASE t.player WHEN 1 THEN lm.model1 ELSE lm.model2 END AS name,
-                      t.decided_by, t.legal_count, t.probability_source, t.probabilities, t.chosen_position, t.option_order,
-                      t.request_ms, t.latency_ms, t.retry_ms, t.cost_usd, t.group_size, t.created_at,
-                      t.input_tokens, t.output_tokens, t.reasoning_tokens
+        decisions = [decision(r, plays) for r in conn.execute(
+            f"""SELECT {DECISION_COLUMNS}, CASE t.player WHEN 1 THEN lm.model1 ELSE lm.model2 END AS name
                FROM turns t JOIN games g ON g.id = t.game_id JOIN league_match_view lm ON lm.match_id = g.match_id
                WHERE lm.league_id = ? AND t.decided_by IN ('model', 'fallback')
-               ORDER BY lm.label, g.id, t.turn_no""", (lid,)):
-            p = plays.get(r["id"])
-            prob = pvec = rank = None
-            if r["probability_source"] in REAL_PROBS and r["probabilities"] and r["chosen_position"] is not None:
-                probs = json.loads(r["probabilities"])
-                if r["chosen_position"] < len(probs):
-                    prob = probs[r["chosen_position"]]
-                # The whole vector in legal order, and each legal play's place in the shown order (offline.py).
-                order = json.loads(r["option_order"]) if r["option_order"] else list(range(len(probs)))
-                if not r["group_size"] and len(order) == len(probs) == r["legal_count"]:
-                    pvec, rank = [None] * len(order), [0] * len(order)
-                    for k, li in enumerate(order):
-                        pvec[li], rank[li] = probs[k], k
-            # Block: the two games of a round (seats swapped, same dice) stay together in every resample and split.
-            d = dict(id=r["id"], setup=r["name"], cluster=r["game_id"], match=r["match_id"], invalid=r["decided_by"] == "fallback",
-                     block=f'{r["match_id"]}/{r["round_no"]}', pvec=pvec, rank=rank,
-                     scored=p is not None, n=r["legal_count"], source=r["probability_source"], p=prob,
-                     req_s=(r["request_ms"] if r["request_ms"] is not None else r["latency_ms"]) / 1000,
-                     retry_s=(r["retry_ms"] or 0) / 1000, cost=r["cost_usd"], group=r["group_size"],
-                     at=r["created_at"], tin=r["input_tokens"], tout=r["output_tokens"], treason=r["reasoning_tokens"])
-            if p is not None:
-                d.update(loss=p["loss"], phase=p["phase"], tag=p["tag"], **decision_from_plays(p))
-                d["chosen"] = p["chosen"]
-            decisions.append(d)
+               ORDER BY lm.label, g.id, t.turn_no""", (lid,))]
         # Where each match's decisions sit in Every decision: per setup, scored decisions in turn order, 50 a page.
         order = defaultdict(list)
         for d in decisions:
@@ -181,8 +189,91 @@ def load_leagues(snap: Path, plays_dir: Path) -> dict:
             decisions=decisions))
     turns_total = conn.execute("SELECT COUNT(*) FROM turns").fetchone()[0]
     last = conn.execute("SELECT MAX(created_at) FROM turns").fetchone()[0]
+    late = late_entries(conn, plays)
     conn.close()
-    return dict(leagues=leagues, plays=len(plays), turns_total=turns_total, last_move=last)
+    return dict(leagues=leagues, plays=len(plays), turns_total=turns_total, last_move=last, late_entries=late)
+
+
+def original_fields(conn) -> dict[int, set[str]]:
+    """Every shown league's original table: each current member of a shown league counted in the league it played in
+    before any ladder move (league_web.league_origins; a setup in several shown leagues, the anchor, is in each)."""
+    fields = defaultdict(set)
+    for (lid,) in conn.execute(f"SELECT id FROM leagues WHERE {shown(conn)} ORDER BY id").fetchall():
+        for name, origin in league_origins(conn, lid).items():
+            fields[origin].add(name)
+    return dict(fields)
+
+
+def late_entries(conn, plays: dict) -> list[dict]:
+    """Setups that joined an original league table late: every one of their matches carries matches.stage
+    'late-entry' (league_match_view_all; league_match_view leaves them out), each pairs it with one setup of that
+    table, and none counts in any standings table or any other setup's numbers. Per entrant: the setup its late-entry
+    league plays only the pairs of (leagues.only_pairs_of), else the side outside every original table; its field: the
+    original table holding all its opponents (ties broken by the league's seed, the dice of that table); entry: the
+    start of its first late-entry match; its decisions: its own, in its late-entry matches only."""
+    rows = conn.execute(
+        """SELECT DISTINCT lm.match_id, lm.model1, lm.model2, lm.player1, lm.player2, m.status, m.score1, m.score2,
+                  m.started_at, m.finished_at, l.only_pairs_of, l.seed
+           FROM league_match_view_all lm JOIN matches m ON m.id = lm.match_id JOIN leagues l ON l.id = lm.league_id
+           WHERE lm.stage = 'late-entry' ORDER BY m.started_at, lm.match_id""").fetchall()
+    if not rows:
+        return []
+    fields = original_fields(conn)
+    seeds = dict(conn.execute(f"SELECT id, seed FROM leagues WHERE {shown(conn)}").fetchall())
+    in_field = set().union(*fields.values())
+    by = defaultdict(list)
+    for r in rows:
+        if r["only_pairs_of"] in (r["model1"], r["model2"]):
+            name = r["only_pairs_of"]
+        else:
+            outside = [n for n in (r["model1"], r["model2"]) if n not in in_field]
+            if len(outside) != 1:
+                raise RuntimeError(f"late-entry match {r['match_id']}: no single entrant ({r['model1']} v {r['model2']})")
+            name = outside[0]
+        by[name].append(r)
+    out = []
+    for name, ms in by.items():
+        seat = {r["match_id"]: 1 if r["model1"] == name else 2 for r in ms}
+        opponents = {r["model2"] if seat[r["match_id"]] == 1 else r["model1"] for r in ms}
+        cands = [lid for lid, f in sorted(fields.items()) if opponents <= f]
+        if len(cands) > 1:
+            cands = [lid for lid in cands if seeds.get(lid) == ms[0]["seed"]]
+        if len(cands) != 1:
+            raise RuntimeError(f"late entry {name}: no single original table holds its opponents {sorted(opponents)}")
+        field = sorted(fields[cands[0]] - {name})
+        player = ms[0]["player1"] if seat[ms[0]["match_id"]] == 1 else ms[0]["player2"]
+        settings = json.loads(conn.execute("SELECT settings FROM players WHERE id = ?", (player,)).fetchone()[0] or "{}")
+        decisions, flags = [], {}
+        for r in ms:
+            for t in conn.execute(
+                    f"""SELECT {DECISION_COLUMNS}, ? AS name, x.exchanges, x.limit_sent, x.cut_off, x.efforts
+                        FROM turns t JOIN games g ON g.id = t.game_id
+                        LEFT JOIN late_entry_exchanges x ON x.turn_id = t.id
+                        WHERE g.match_id = ? AND t.player = ? AND t.decided_by IN ('model', 'fallback')
+                        ORDER BY g.id, t.turn_no""", (name, r["match_id"], seat[r["match_id"]])):
+                decisions.append(decision(t, plays))
+                flags[t["id"]] = t
+        sent = [x for x in flags.values() if x["exchanges"]]
+        efforts = Counter(e for x in sent for e in json.loads(x["efforts"] or "[]"))
+        out.append(dict(
+            name=name, slug=slug(name), field_league=cands[0], field=field,
+            total=len(field), entry=ms[0]["started_at"],
+            played=sum(r["status"] == "finished" for r in ms), running=sum(r["status"] == "running" for r in ms),
+            matches=[dict(id=r["match_id"], opponent=r["model2"] if seat[r["match_id"]] == 1 else r["model1"],
+                          status=r["status"],
+                          score_for=r["score1"] if seat[r["match_id"]] == 1 else r["score2"],
+                          score_against=r["score2"] if seat[r["match_id"]] == 1 else r["score1"],
+                          started=r["started_at"], finished=r["finished_at"]) for r in ms],
+            route=dict(provider=settings.get("provider"), spec=settings.get("spec"), reasoning=settings.get("reasoning")),
+            # Output limit (rule of tools/v3/nack_paired_score.py §10.14(h)): answers stopped at a limit that was sent
+            # (cut off), and answers past OUTPUT_LIMIT tokens from requests that sent no limit (flag only).
+            exchanges=dict(decisions=len(flags), with_exchanges=len(sent), limit_sent=sum(x["limit_sent"] for x in sent),
+                           cut_off=sum(x["cut_off"] for x in sent), output_limit=OUTPUT_LIMIT,
+                           past_limit_no_limit_sent=sum(1 for x in sent if not x["limit_sent"]
+                                                        and (x["output_tokens"] or 0) > OUTPUT_LIMIT),
+                           efforts=dict(sorted(efforts.items()))),
+            decisions=decisions))
+    return out
 
 
 def load_v1(replay_db: Path, v1_positions: Path) -> dict:

@@ -17,10 +17,14 @@
    once in `contexts`, the turn part in `seen.requests`, and context + separator + text must give
    the original string back exactly. Identical requests of a decision (retries, the steps of a
    two-step reasoning flow) are kept once; group splits keep every distinct request in send order.
-4. The Nackgammon knockout database (KNOCKOUT_DB, next to V3_DB; never v3.db) is copied the same way, read-only
+4. Late-entry decisions (matches.stage 'late-entry'): in the same read transaction, the
+   table `late_entry_exchanges` of snap.db gets one row per decision with what its answering
+   exchanges sent and how they ended (output-limit rule of tools/v3/nack_paired_score.py
+   §10.14(h)); the site shows these per late entry, outside every standings table.
+5. The Nackgammon knockout database (KNOCKOUT_DB, next to V3_DB; never v3.db) is copied the same way, read-only
    and in one read transaction, to STATE_DIR/knockout.db (its leagues, players, league_players and matches
    only: the site shows its bracket and match results, not its decisions). Missing: no knockout.db.
-5. Prints one line of JSON: decisions extracted, skipped by reason, contexts, and a fingerprint
+6. Prints one line of JSON: decisions extracted, skipped by reason, contexts, and a fingerprint
    that changes whenever the league data or the knockout's matches change.
 
 Schema of prompts.db: see the site contract (local://site-contract.md). Anthropic requests send
@@ -61,6 +65,12 @@ SELECT t.id, lm.league_id, CASE t.player WHEN 1 THEN lm.model1 ELSE lm.model2 EN
 FROM {p}turns t JOIN {p}games g ON g.id = t.game_id JOIN {p}league_match_view lm ON lm.match_id = g.match_id
 JOIN {p}leagues l ON l.id = lm.league_id
 WHERE t.decided_by IN ('model', 'fallback') AND {shown}
+"""
+# Per late-entry decision: answering exchanges (the one-token letter readout left out), whether any sent an output
+# limit, whether any stopped at it, and the reasoning efforts its requests sent.
+LATE_ENTRY_EXCHANGES = """
+CREATE TABLE late_entry_exchanges(turn_id INTEGER PRIMARY KEY, exchanges INTEGER NOT NULL, limit_sent INTEGER NOT NULL,
+    cut_off INTEGER NOT NULL, efforts TEXT)
 """
 
 # The Nackgammon knockout (tools/v3/run_knockout_nack.sh): its own database next to v3.db.
@@ -347,6 +357,49 @@ def batches(listed):
         yield batch
 
 
+def sent_effort(request):
+    """The reasoning effort a request body sent (OpenAI Responses `reasoning.effort`, Chat Completions
+    `reasoning_effort`), or None."""
+    try:
+        body = json.loads(request)
+    except ValueError:
+        return None
+    if not isinstance(body, dict):
+        return None
+    reasoning = body.get("reasoning")
+    return (reasoning.get("effort") if isinstance(reasoning, dict) else None) or body.get("reasoning_effort")
+
+
+def late_entry_exchanges(db):
+    """Fills main.late_entry_exchanges from src.exchanges for every decision of a late-entry match (both sides; the
+    site picks the entrant's). Cut off: a response or stored error with a stop at the output limit (CUT_MARK)."""
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "v3"))
+    from nack_paired_score import ANY_LIMIT, CUT_MARK, LETTER_READOUT
+
+    db.execute(LATE_ENTRY_EXCHANGES)
+    turns = """SELECT t.id FROM main.turns t JOIN main.games g ON g.id = t.game_id JOIN main.matches m ON m.id = g.match_id
+               WHERE m.stage = 'late-entry' AND t.decided_by IN ('model', 'fallback')"""
+    first = db.execute(f"SELECT MIN(id) FROM ({turns})").fetchone()[0]
+    if first is None:
+        return
+    rows = {}
+    for turn_id, request, response, error in db.execute(
+            f"SELECT turn_id, request, response, error FROM src.exchanges WHERE turn_id >= ? AND turn_id IN ({turns})"
+            " ORDER BY id", (first,)):
+        if LETTER_READOUT.search(request):
+            continue
+        r = rows.setdefault(turn_id, [0, 0, 0, set()])
+        r[0] += 1
+        r[1] |= bool(ANY_LIMIT.search(request))
+        r[2] |= bool(CUT_MARK.search((response or "") + "\n" + (error or "")))
+        effort = sent_effort(request)
+        if effort:
+            r[3].add(str(effort))
+    db.executemany("INSERT INTO main.late_entry_exchanges VALUES (?, ?, ?, ?, ?)",
+                   [(t, n, limit, cut, json.dumps(sorted(eff)) if eff else None)
+                    for t, (n, limit, cut, eff) in sorted(rows.items())])
+
+
 def run(v3, state):
     started = time.monotonic()
     os.makedirs(state, exist_ok=True)
@@ -386,6 +439,7 @@ def run(v3, state):
             db.execute("CREATE VIEW league_match_view_all AS" + sql[len(head):])
             sql = "CREATE VIEW league_match_view AS SELECT * FROM league_match_view_all WHERE stage <> 'late-entry'"
         db.execute(sql)
+    late_entry_exchanges(db)
     engines = engine_setups(db, "main.")
     targets = {}
     for turn_id, league_id, setup in db.execute(LEAGUE_DECISIONS.format(p="main.", shown=shown_leagues(db, "main."))):

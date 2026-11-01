@@ -7,7 +7,8 @@
 2. Counts add up: per league, setup decisions sum to the league's decisions and match the snapshot; invalid +
    valid = decisions; risk cells and phase cells sum to the scored decisions; standings played = 2 x matches
    finished; the v1 set is setups x positions; exported decisions match the engine-scored decisions; the B6 marks
-   on Every decision match the 2x2 counts.
+   on Every decision match the 2x2 counts; a late entry's decisions match the snapshot, its risk and phase cells
+   add up, and it is in no league's setups or standings.
 3. No mixing: no table holds rows of two datasets, except the home page's All leagues tables (data-dataset="all":
    league rows only, the All leagues note in their block); v1 rows only inside an Earlier-version block; every block
    of a league that has not finished says "Provisional: league still running".
@@ -25,7 +26,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 
 import findings
-from common import ALL_NOTE, BANNED, CONTENT, PROVISIONAL, PROVISIONAL_NOTE
+from common import ALL_NOTE, BANNED, CONTENT, INTERNAL, LATE_ENTRY, PROVISIONAL, PROVISIONAL_NOTE
 
 NUM = re.compile(r"(?<![\w.\u2212+-])([\u2212+-]?)(\d{1,3}(?:,\d{3})+|\d+)(\.\d+)?")
 DATE = re.compile(r"\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2})?(?:\.\d+)?Z?)?|\b\d{1,2}:\d{2}\b|"
@@ -172,8 +173,23 @@ def check_counts(S: dict) -> list[str]:
         played = sum(t["played"] for t in lg["standings"])
         if played != 2 * lg["matches_done"]:
             bad.append(f"league {lg['id']}: standings played {played} != 2 x {lg['matches_done']} finished matches")
+    # Late entries: their own decisions add up, and they are in no league's standings or setups (S carries the shown
+    # names; the snapshot the databases').
+    for e in S["late_entries"]:
+        n = snap.execute("""SELECT COUNT(*) FROM turns t JOIN games g ON g.id = t.game_id JOIN matches m ON m.id = g.match_id
+                            JOIN players p ON p.id = CASE t.player WHEN 1 THEN m.player1 ELSE m.player2 END
+                            WHERE m.valid = 1 AND m.stage = 'late-entry' AND p.name = ?
+                              AND t.decided_by IN ('model', 'fallback')""", (INTERNAL.get(e["name"], e["name"]),)).fetchone()[0]
+        if n != e["quality"]["decisions"]:
+            bad.append(f"late entry {e['name']}: snapshot {n}, setup {e['quality']['decisions']} decisions")
+        if e["played"] + e["running"] > e["total"]:
+            bad.append(f"late entry {e['name']}: {e['played'] + e['running']} matches for a field of {e['total']}")
+        for lg in S["leagues"]:
+            if e["name"] in lg["setups"] or any(t["name"] == e["name"] for t in lg["standings"]):
+                bad.append(f"late entry {e['name']} is in league {lg['id']}")
     snap.close()
-    sets = [(lg["dataset"], lg["setups"]) for lg in S["leagues"]] + [("v1-set", S["v1"]["setups"])]
+    sets = ([(lg["dataset"], lg["setups"]) for lg in S["leagues"]] + [(LATE_ENTRY, {e["name"]: e for e in S["late_entries"]})]
+            + [("v1-set", S["v1"]["setups"])])
     for ds, setups in sets:
         for name, s in setups.items():
             q = s["quality"]

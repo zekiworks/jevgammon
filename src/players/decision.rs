@@ -239,6 +239,25 @@ pub const SERVICES: &[Service] = &[
         openai_format: false,
         max_choices: 200,
     },
+    // Base Labs' elephant-1 and mammoth-1 (open weights, Qwen3.5 backbones) served by the
+    // decision-models runner's servers/baselabs_server.py: qev's own app around the model card's
+    // loader, one request at a time. The model field must name the loaded checkpoint
+    // (`baselabs/baselabs/elephant-1` sends `baselabs/elephant-1`), and a request over the engine's
+    // limit (32,768 tokens per question) gets 422. The card's trained length is 16,384 tokens: a
+    // state is at most about 2,400 tokens and a described option at most about 110 (the
+    // checkpoint's tokenizer on stored League 1 requests), so 120 options stay within it.
+    Service {
+        provider: "baselabs",
+        label: "Base Labs (local)",
+        base_url: "http://127.0.0.1:18102",
+        url_var: "BASELABS_BASE_URL",
+        path: "/v1/systemone",
+        key_vars: &[],
+        key_required: false,
+        default_model: Some("baselabs/elephant-1"),
+        openai_format: false,
+        max_choices: 120,
+    },
 ];
 
 pub fn service(provider: &str) -> Option<&'static Service> {
@@ -495,4 +514,33 @@ fn refused(error: &anyhow::Error) -> bool {
         e.downcast_ref::<http::StatusError>()
             .is_some_and(|s| s.status.is_client_error() && s.status.as_u16() != 425)
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn baselabs_sends_the_checkpoint_name_to_the_configured_server() {
+        let service = service("baselabs").expect("baselabs service");
+        assert_eq!(service.max_choices, 120);
+        assert!(!service.key_required && service.key_vars.is_empty());
+        let client = DecisionClient::new(
+            reqwest::Client::new(),
+            service,
+            Some("baselabs/mammoth-1".into()),
+            Some("http://127.0.0.1:18103/"),
+        )
+        .unwrap();
+        assert_eq!(client.url, "http://127.0.0.1:18103/v1/systemone");
+        assert_eq!(client.max_choices(), 120);
+        let plays = [
+            ("13/11 6/5".to_owned(), "a".to_owned()),
+            ("24/18".to_owned(), "b".to_owned()),
+        ];
+        let body = client.body("state", "pick", &plays);
+        assert_eq!(body["model"], "baselabs/mammoth-1");
+        let criteria = body.pointer(&format!("/questions/{QUESTION}/criteria")).unwrap();
+        assert_eq!(criteria.as_object().unwrap().len(), 2);
+    }
 }

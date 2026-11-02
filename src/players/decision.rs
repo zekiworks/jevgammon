@@ -538,7 +538,9 @@ mod tests {
         ];
         let body = client.body("state", "pick", &plays);
         assert_eq!(body["model"], "baselabs/mammoth-1");
-        let criteria = body.pointer(&format!("/questions/{QUESTION}/criteria")).unwrap();
+        let criteria = body
+            .pointer(&format!("/questions/{QUESTION}/criteria"))
+            .unwrap();
         assert_eq!(criteria.as_object().unwrap().len(), 2);
     }
 }

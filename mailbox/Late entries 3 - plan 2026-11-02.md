@@ -2,6 +2,10 @@
 
 Nov 2, 2026 · for Can. **Prepared only.** No match, model request, GPU start or server start has run. Nothing was spent and the site is unchanged. v3.db was only read. The one exception is that a Docker container of `baselabs-serve:81ce62f` was created and removed, without being started, to read qev's source. Can approves the roster, the GPUs and any spend.
 
+**Update (later on Nov 2): Ümit chose Plan B.**
+- The `baselabs` runner service is now implemented on branch `late3-baselabs`, not on main (see "Plan B: status" at the end).
+- Can's approval is still missing, so still nothing has run.
+
 Entrants: **Base Labs Elephant-1** and **Base Labs Mammoth-1** (local, Docker), and **SubQ Snap 1.1** (API). They come in as late entries to the **original League 1 table** (the Decision group), in the same way as GPT-6 Astra (high) joined League 3 (hidden league #9, `matches.stage = 'late-entry'`; `mailbox/Late entries on the site - proposal 2026-10-28.md`).
 
 Files, in `workspace/late3/` (not committed; this file is the only commit):
@@ -29,7 +33,7 @@ They use the same fields as the stored decision-model players: SubQ Snap 1.1 has
 - **Ports.** 18102 and 18103. The server's default, 18101, is Fastino GLiDE v1.2 (local)'s stored `base_url`.
 - **Price and quantization.** Price is Baseten's list price for the same model, as the Turkish runner's `PRICES` has it. It is recorded as API-equivalent, as with Decider's Perplexity price; nothing is billed. Quantization is `bf16`.
 
-### Code change needed for Base Labs (described, not made)
+### Code change for Base Labs (now made on branch `late3-baselabs`; see "Plan B: status")
 
 **The runner has no decision service that matches Base Labs today** (`src/players/decision.rs` `SERVICES`). The spec `baselabs/…` fails at start with "unknown provider". There are two ways to run it:
 
@@ -217,12 +221,80 @@ These are Plan A's 8, plus 3 engines (GNUbg weak, Random, Safest: CPU, no server
 
 > Claim (jevgammon, Can's go): **all four bariton GPUs** for ≈ 3 h (late entries v the whole original League 1 table). GPU 0 Mammoth-1; GPU 1 Decider v1.2 27B + Flash v1.2 + Winnow-12B; GPU 2 Clef + Cygnet, later Open-Jev; GPU 3 Elephant-1 + GLiDE v1.2, later Decider v1.1 (lfm3-audio's 6.4 GB stays). **Needs GPU 1 freed (pplx decider_server :8960, vLLM cmp-qwen25-14b) and GPU 2 freed (ComfyUI, ai-toolkit) by their owners first.** I post the release when the servers stop.
 
-## Blockers and decisions for Can
+## Plan B: status (Nov 2, after Ümit's choice)
 
-1. **Base Labs route:** the code change (`baselabs` service, cap 120, rebuild into `target/late3`) or `BASELABS_ROUTE=d3` (no rebuild, cap 200, misleading spec). Without one of them, neither Base Labs entrant can start.
-2. **Plan A or B.**
-   - Plan B needs GPUs 1 and 2 freed by others.
-   - Plan A leaves the late-entry card at "8 of 19" (provisional) unless the site's total rule changes.
-3. **SubQ Snap Preview is probably retired** (not on SubQ's models page today). If `/v1/models` confirms it at go, every plan loses one opponent per entrant.
-4. **Mercury Decide** depends on OpenRouter credit (checked at go).
-5. **Base Labs memory and speed are unmeasured.** The smoke step measures them; Plan B's GPU 3 co-location (Elephant-1 + GLiDE v1.2, then + Decider v1.1) relies on them.
+### Runner: `baselabs` service built (branch, not main)
+
+- **Branch.** `late3-baselabs` (pushed; `origin/main` f32636a + 2 commits):
+  - 6d66b04 adds the `baselabs` service to `src/players/decision.rs` as described above (cap 120), with a unit test, plus a README provider row;
+  - 104103a is rustfmt only.
+- **Worktree.** `/home/cbasaran/code/jevgammon-late3`, made clean from `origin/main` and not from the dirty main checkout.
+  - The runner records its harness commit from this directory, so it must stay.
+  - It records 104103a, clean.
+- **Binary.** `target/late3/release/jevgammon`. It contains "Base Labs (local)", which is what `start_B.sh` checks.
+- **Tests.**
+  - `cargo test --release --bin jevgammon players::`: 31 passed, including the new `decision::tests::baselabs_sends_the_checkpoint_name_to_the_configured_server` (URL from `base_url`, `model` = `baselabs/mammoth-1`, cap 120, no key).
+  - `rustfmt --check` on `decision.rs` is clean.
+- **Route.** `BASELABS_ROUTE=d3` is no longer needed. Plan B uses `spec baselabs/baselabs/{elephant,mammoth}-1`.
+
+### Opponent check (read-only, no calls, Nov 2)
+
+All 19 setups of the original League 1 table are ready per their stored settings:
+- every API key is set (non-empty);
+- every local server's script, venv, checkpoint and Docker image is on disk;
+- every port is free (nothing listening on 18091, 18093, 8892, 18097, 18098, 18099, 8091, 18101, 8791, 18102 or 18103);
+- `/usr/games/gnubg` is present.
+
+| # | opponent | route (stored spec) | ready without a call | server / port / GPU in plan B |
+|---|---|---|---|---|
+| 1 | Celeris-1 Decision | `celeris/celeris-1-decision` | key in `~/.config/celeris/key` | API |
+| 2 | Fastino GLiDE | `fastino` (model `fastino/GLiDE`) | `FASTINO_API_KEY` set | API |
+| 3 | GPT-6 Luna | `openai-decisions/gpt-6-luna` | `OPENAI_API_KEY` set | API |
+| 4 | Jev 1.13.0 | `jev/jev-1.13.0` | `JEV_API_KEY` set | API |
+| 5 | Jev 1.14.0 | `jev/jev-1.14.0` | `JEV_API_KEY` set | API |
+| 6 | Liquid d1-ultra | `liquid/d1-ultra` | `LIQUIDAI_API_KEY` set | API |
+| 7 | Mercury Decide | `openrouter-decisions/inception/mercury-decide` | `OPENROUTER_API_KEY` set; **credit checked at go** (dropped below $0.10) | API |
+| 8 | SubQ Snap Preview | `subq/subq-snap-preview` | `SUBQ_API_KEY` set; **model probably retired** (SubQ's models page); `/v1/models` checked at go, dropped if absent | API |
+| 9 | GNUbg weak | `gnubg-weak` | `/usr/games/gnubg` | CPU |
+| 10 | Random | `random` | built in | CPU |
+| 11 | Safest | `safest` | built in | CPU |
+| 12 | Decider v1.2 27B | `pplx-local/pplx-decider-v1.2` | `.venv-v1.2`, HF snapshot 225c913 | `DECIDER_V12_GPU=1 decider-v1.2.sh 27b`, :18099, **GPU 1**, wave 1 |
+| 13 | Decider Flash v1.2 | `pplx-local/pplx-decider-flash-v1.2` | `.venv-v1.2`, `checkpoint-flash-v1.2` | `DECIDER_V12_GPU=1 decider-v1.2.sh flash`, :18098, **GPU 1**, wave 1 |
+| 14 | Winnow-12B | `winnow/winnow-12b` | image `winnow-inference:d4631fb`, `~/code/winnow/models` | `WINNOW_GPU=1 winnow.sh`, :8091, **GPU 1**, wave 1 |
+| 15 | Clef | `clef` | `~/code/clef/.venv`, `~/code/clef/model` | `CLEF_GPU=2 clef.sh`, :18091, **GPU 2**, wave 1 |
+| 16 | Cygnet (Gemma 4 12B) | `cygnet` | image `vllm/vllm-openai:v0.30.0`, gemma-4-12B-it @ 707f0a3b, shim | `CYGNET_GPU=2 CYGNET_UTIL=0.34 cygnet.sh`, :18093 (+ vLLM :8892), **GPU 2**, wave 1 |
+| 17 | Fastino GLiDE v1.2 (local) | `fastino/glide-v1.2` (base_url :18101) | `~/code/glide/.venv`, HF fastino/GLiDE @ a7e45896 | `GLIDE_GPU=3 glide-v12.sh`, :18101, **GPU 3**, wave 1 |
+| 18 | Open-Jev 27B v1.1 | `open-jev` | `~/code/Open-Jev/.venv`, checkpoint, Qwen3.8-27B @ 1d4bf0f2 | `OPEN_JEV_GPU=2 open-jev.sh`, :8791, **GPU 2**, wave 2 |
+| 19 | Decider v1.1 27B | `pplx-local` (base_url :18097) | `~/code/pplx-decider/.venv`, `checkpoint` | `DECIDER_GPU=3 decider.sh`, :18097, **GPU 3**, wave 2 |
+
+The entrants are ready too:
+- Mammoth-1 on **GPU 0** (`baselabs.sh mammoth`, :18103) and Elephant-1 on **GPU 3** (`baselabs.sh elephant`, :18102), both waves;
+- image `baselabs-serve:81ce62f` and both snapshots are present;
+- SubQ Snap 1.1 runs through the API with `SUBQ_API_KEY`.
+
+### GPUs now (`nvidia-smi`, read only, Nov 2) and what plan B needs
+
+| GPU | held now by | plan B wave 1 | plan B wave 2 |
+|---|---|---|---|
+| 0 | free (41 MiB) | Mammoth-1 | Mammoth-1 |
+| 1 | **compactor**: pplx-decider venv `decider_server.py --port 8960` (pid 146742, cwd `~/code/compactor/exp-grpo`, 60.6 GB, up 3 days) and docker vLLM `cmp-qwen25-14b` (33.9 GB, up 22 h); 94.6 GB, idle (0%) | Decider v1.2 27B + Decider Flash v1.2 + Winnow-12B (73.5 GiB) | the same three, until the leagues end |
+| 2 | **ComfyUI** (`main.py --listen`, 51.5 GB, up 1 d 19 h) and **ai-toolkit** training job `output/nsfw_perreal` (25.9 GB, running 3 h 47 min, 100% busy); 78.5 GB | Clef + Cygnet (≈ 88 GiB) | Open-Jev (52.8 GiB) |
+| 3 | **lfm3-audio** llama-server (`lfm3-audio-llama.service`, 6.6 GB) | Elephant-1 (≈ 25 GB [INFERENCE]) + GLiDE v1.2 (53.6 GiB) next to lfm3-audio | Elephant-1 + Decider v1.1 (51.6 GiB) next to lfm3-audio |
+
+`start_B.sh` refuses to start unless GPUs 0, 1 and 2 have at most 2 GB in use and GPU 3 at most 8 GB.
+
+### Remaining blockers (each needs Can or another owner)
+
+1. **Can's approval** of three things:
+   - the roster: the three entrants against the 19-setup original League 1 table, 57 matches;
+   - the GPUs: all four of bariton's for ≈ 2.5–3 h;
+   - the spend: ≈ $0.79 billed, across OpenAI, TypeSafe, SubQ, Celeris, Liquid, Fastino and OpenRouter.
+2. **GPU 1 freed by compactor's owner.** That means stopping `decider_server.py --port 8960` (pid 146742) and the `cmp-qwen25-14b` container.
+3. **GPU 2 freed by Can.** That means stopping or moving ComfyUI and the running ai-toolkit `nsfw_perreal` training job.
+4. **GPU 3:** lfm3-audio's owner keeps its 6.6 GB but adds nothing more there for the duration. No stop is needed.
+
+Not blockers, handled at go by `start_B.sh`, but for Can to know:
+- SubQ Snap Preview is dropped if SubQ no longer lists it, which makes 18 opponents.
+- Mercury Decide is dropped if OpenRouter has less than $0.10 free; a top-up is Can's choice.
+- Base Labs memory and speed are measured by the smoke step before any league starts.
+- Merging `late3-baselabs` into main is not needed for the run.

@@ -1,6 +1,6 @@
 # Late entries Drex - plan 2026-11-05
 
-Nov 5, 2026 · for Can and Ümit (Ümit's request, bus #1159; Zeki's review of 7f8f38e, bus #1167, applied). **Prepared only.**
+Nov 5, 2026 · for Can and Ümit (Ümit's request, bus #1159; Zeki's reviews of 7f8f38e and eb1db8c, bus #1167 and #1169, applied). **Prepared only.**
 
 - **Nothing run:** no match, no model request, no server, no GPU use, no download, no spend. v3.db was only read.
 - **HTTP reads, all free:** Nace's docs and pricing pages, Hugging Face metadata (no weights), the Decision Models page, and one read of an account's free credit.
@@ -28,9 +28,9 @@ Can's decisions are reserved: rosters, model servers and money. The source is hi
 
 ## 1. Runner (branch `late-drex`, not main)
 
-- **Commits.** Branch `late-drex` is pushed at `eea4de5`: `late3-baselabs` (unmerged) with `origin/main` merged in, then `ec18e90` (services) and `eea4de5` (review fixes).
+- **Commits.** Branch `late-drex` is pushed at `e58fc6c`: `late3-baselabs` (unmerged) with `origin/main` merged in, then `ec18e90` (services), `eea4de5` (25 options; budget for decision services) and `e58fc6c` (error-status booking, worst-case margin, tests).
 - **Worktree and binary.** Clean worktree `/home/cbasaran/code/jevgammon-drex`; the harness commit is read from it at run time. Binary `target/drex/release/jevgammon`.
-- **Tests.** `cargo test --release --bin jevgammon`: **77 passed**, including 3 new tests in `players::decision`.
+- **Tests.** `cargo test --release --bin jevgammon`: **80 passed**. The new tests are in `players::decision` and `http` (section 6).
 - **Clients.** All three use the System One request and answer parsing of every other decision service. The hosted endpoint is Nace's, as the Turkish runner uses it.
 
 | provider | for | endpoint | options per request |
@@ -85,16 +85,24 @@ Can's decisions are reserved: rosters, model servers and money. The source is hi
 - **Position.** The k-th option of group g is `option_order[g × group_size + k]`, so a play's id (its index in `turns.option_order`) is recovered without recomputing the legal plays.
 - **Coverage.** Every returned probability, in every group and in the final, is in `exchanges.response` as returned.
 
-**Worked example, turn 219740** (Decider v1.1 27B, 69 legal plays, `group_size` 23):
+**Aggregates over the 1,384 split turns.**
+- **Requests per turn** (groups plus the final):
 
-| request | options | first option = play | probabilities sum | group winner (p) |
+  | requests | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 |
+  |---|---|---|---|---|---|---|---|---|---|
+  | turns | 978 | 227 | 96 | 33 | 20 | 14 | 6 | 8 | 2 |
+
+- **4,928 requests in all.** Each request's returned probabilities sum to between 0.99 and 1.0005, as stored.
+
+**Synthetic example (made-up plays and numbers, the same layout).** A turn with 50 legal plays at a cap of 25 gives 2 groups of 25:
+
+| request | options | options map to | stored response holds | winner |
 |---|---|---|---|---|
-| 1 | 23 | `16/15 15/14 4/3 3/2` = `option_order[0]` | 1.000000 | `6/5 6/5 4/3 4/3` (0.4106) |
-| 2 | 23 | `16/15 15/14 8/7 4/3` = `option_order[23]` | 1.000000 | `16/15 16/15 8/7 8/7` (0.4167) |
-| 3 | 23 | `8/7 4/3 4/3 3/2` = `option_order[46]` | 1.000000 | `6/5 6/5 4/3 3/2` (0.2603) |
-| final | 3 | the three winners | 1.000000 | `6/5 6/5 4/3 4/3` (0.7953) = `chosen_index` 63 |
+| 1 | 25 | `option_order[0..25]` | 25 probabilities, by notation | play P (p = 0.6) |
+| 2 | 25 | `option_order[25..50]` | 25 probabilities, by notation | play Q (p = 0.5) |
+| final | 2 | P, Q | 2 probabilities | P (p = 0.7) = `chosen_index` |
 
-- **`turns.probabilities` keeps only the final's three values**, with 66 nulls, by design.
+- **`turns.probabilities` keeps only the final's values** (here 2 values and 48 nulls), by design. A worked example from stored answers is kept privately, not in this public plan.
 - **No global distribution is ever built from the groups.** Readers take each request's probabilities from `exchanges`.
 - **No storage addition is needed.** The protocol and the tables are unchanged.
 - **Limit.** A failed HTTP attempt that was retried has no row: only the answered attempt's request and response are stored, and the retry time is in `turns.retry_ms`. That loses no probability.
@@ -157,19 +165,42 @@ Each entrant plays the same 19 setups as plan B.
 - **Stopping.** Each opponent server stops once it has played every entrant, and Drex Max v1 once it has played all 19. The release text goes to the status file.
 - **Drex 2.0 (local)** (`DREX_LOCAL=yes`) needs a whole free GPU first.
 
-## 6. Spend cap: what is hard and what is soft
+## 6. Spend cap: what is guarded before sending, and what is only a soft stop
 
-- **Hard pre-send cap on the Drex entrants' Nace requests.**
-  - Drex Max 1.1 and Drex 2.0 carry a `budget` in their configs: one ledger shared by both, **cap $1.25**, at the billed prices.
-  - The runner's existing budget ledger (`src/budget.rs`, until now for openai-compatible chat servers) now also meters decision services.
-  - **Before each attempt, retries included**, it reserves the worst case: every request byte counted as an input token, and as many output tokens. It refuses the call when spent + reserved + the new reservation would pass the cap; nothing is sent.
-  - An answered attempt is booked at its reported `usage`. One with no response or unreadable usage keeps its worst case, so failed and retried calls are counted conservatively.
-  - Test: `budget_refuses_a_request_before_sending_it_past_the_cap`, a local test server. The first request goes out and is booked at its usage; the second is refused with "BUDGET CAP" and the server sees no second request; a second process on the same ledger sees the same spend.
-  - $1.25 covers the estimated Nace spend (≈ $0.79) with margin and leaves room within $2 for the opponents.
-- **Opponents' spend: soft stop only.** The 8 API opponents are not metered before sending: their stored settings must stay unchanged, and a `budget` would change them.
-  - Their spend, ≈ $0.45–0.60 estimated, is covered by a **periodic soft stop**. Every 5 minutes, `drex.py billed` totals the billed cost of every late-entry match since the first one, entrants and opponents.
-  - Above $2, our leagues and servers stop. Spend between two checks is not prevented.
-  - **The $2 total is therefore a soft stop, not a hard cap.** Only the Nace part ($1.25) is hard.
+### Pre-send guard on the Drex entrants' Nace requests (branch `late-drex` `e58fc6c`)
+
+- **Config.** Drex Max 1.1 and Drex 2.0 carry a `budget`: one ledger shared by both, **cap $1.25**, at the billed prices ($0.03 and $0.06 per million input tokens; output $0, as Nace bills).
+  - The runner's budget ledger (`src/budget.rs`, until now only for openai-compatible chat servers) now also meters decision services.
+- **Before each attempt, retries included,** it reserves the attempt's worst case and refuses the call, unsent, when spent + reserved + that reservation would pass the cap.
+  - The worst case is one input token per byte of the JSON body, plus **4,096 tokens**.
+- **Booking of each attempt:**
+
+  | outcome | booked at |
+  |---|---|
+  | 200 with `usage.input_tokens` | its reported usage |
+  | 200 without readable usage | the worst case |
+  | 401, 402, 422, 429, 500, 529 | nothing. Nace: "Only a `200` response is debited. A request that ends in `401`, `402`, `422`, `429`, `500`, or `529` costs nothing." (https://console.nace.ai/docs/drex/reference/pricing, read 2026-11-05) |
+  | any other error status (e.g. 400, 403, 404, 502, 503, 504) | the worst case |
+  | no response (timeout, refused or dropped connection, body cut off) | the worst case |
+
+- **The worst-case bound rests on these assumptions** (stated, not proven for Nace's own server):
+  - **Tokens.** Nace's models are built on Qwen tokenizers, which are byte-level BPE. Such a token never covers less than one byte of the UTF-8 text it encodes. The JSON body holds every byte of the state, instructions and options the model reads, and JSON escaping only adds bytes.
+  - **Margin.** Nace does not publish the system prompt and chat template it adds, hence the 4,096-token margin. For Drex Max v1's open loader, prompt and template included, the measured overhead is about 80 tokens.
+  - **Measured.** On 776 stored League 1 requests at 2–25 options, the body's bytes exceed Drex Max v1's prompt tokens by at least 6,064. For billed services, 2,000 stored requests each from SubQ, Jev, Liquid and Celeris show at least 2.13 body bytes per billed input token.
+  - **Billing.** It assumes Nace bills what it reports in `usage` and as its pricing page states. A charge outside that is not covered.
+- **Tests (synthetic, local servers, no provider call):**
+  - `http::tests::nace_error_statuses_are_booked_as_documented`: 429, 500 and 529 are booked at $0; 503, 400 and 403 at the worst case; a timeout and a refused connection at the worst case.
+  - `decision::tests::budget_refuses_a_request_before_sending_it_past_the_cap`: a 200 with usage is booked at that usage; the next request is refused with "BUDGET CAP" and never reaches the server; a second process on the same ledger sees the same spend.
+  - `decision::tests::budget_books_an_answer_without_usage_at_its_worst_case`: a 200 without usage is booked at the worst case.
+  - `decision::tests::only_nace_documents_unbilled_error_statuses`: Nace's six statuses are unbilled, other statuses are not, and the local services list none.
+  - The earlier `budget` and `metered_attempts` tests still pass: 80 unit tests in all.
+- **Within those assumptions,** the Drex entrants' booked Nace spend cannot pass $1.25. That covers the estimated ≈ $0.79 with margin and leaves room within $2 for the opponents.
+
+### Opponents: periodic soft stop only
+
+- The 8 API opponents are not metered before sending: their stored settings must stay unchanged, and a `budget` would change them.
+- Their spend, ≈ $0.45–0.60 estimated, is covered only by a **periodic soft stop**. Every 5 minutes, `drex.py billed` totals the billed cost of every late-entry match since the first one, entrants and opponents. Above $2, our leagues and servers stop.
+- Spend between two checks is not prevented. **The $2 total is a soft stop, not a hard cap.**
 
 ## 7. Estimates
 

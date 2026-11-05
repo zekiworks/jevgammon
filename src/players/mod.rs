@@ -189,7 +189,8 @@ pub struct PlayerConfig {
     pub rpm: Option<u32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub rate_group: Option<String>,
-    /// Hard spending cap with a shared ledger (OpenAI-compatible servers only).
+    /// Hard spending cap with a shared ledger (OpenAI-compatible servers and decision
+    /// services): every request attempt reserves its worst case before it is sent.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub budget: Option<crate::budget::BudgetConfig>,
 }
@@ -313,11 +314,18 @@ impl Setup {
 /// prediction call (`LlmClient::predict`), each as sent (configured extra fields merged in).
 /// `shown` is the option order (at most 26). OpenAI-compatible servers' play calls (letter
 /// probabilities in two steps) are not rendered here: `play` is null for them.
-pub fn render_stage_b(config: &PlayerConfig, req: &DecisionRequest<'_>, shown: &[usize]) -> Result<Value> {
+pub fn render_stage_b(
+    config: &PlayerConfig,
+    req: &DecisionRequest<'_>,
+    shown: &[usize],
+) -> Result<Value> {
     use serde_json::json;
     let spec = config.spec.as_str();
     let Some((provider, model)) = spec.split_once('/').filter(|(_, m)| !m.is_empty()) else {
-        bail!("{}: `{spec}` is not a chat model (no prediction call)", config.name);
+        bail!(
+            "{}: `{spec}` is not a chat model (no prediction call)",
+            config.name
+        );
     };
     let (route, model) = match provider.to_ascii_lowercase().as_str() {
         "openai" => (llm::Route::OpenAiSubscription, model.to_ascii_lowercase()),
@@ -328,11 +336,20 @@ pub fn render_stage_b(config: &PlayerConfig, req: &DecisionRequest<'_>, shown: &
             llm::antigravity_model(model, config.reasoning.as_deref()),
         ),
         "xai" | "xai-oauth" | "grok" => (llm::Route::Xai, model.to_owned()),
-        "local" | "openai-compatible" | "ollama" => (llm::Route::OpenAiCompatible, model.to_owned()),
-        other => bail!("{}: provider `{other}` is not a chat model (no prediction call)", config.name),
+        "local" | "openai-compatible" | "ollama" => {
+            (llm::Route::OpenAiCompatible, model.to_owned())
+        }
+        other => bail!(
+            "{}: provider `{other}` is not a chat model (no prediction call)",
+            config.name
+        ),
     };
     if shown.len() > prompt::LETTERS.len() {
-        bail!("{}: {} options, more than one request holds", config.name, shown.len());
+        bail!(
+            "{}: {} options, more than one request holds",
+            config.name,
+            shown.len()
+        );
     }
     let options = llm::Options {
         reasoning: config.reasoning.clone(),
@@ -348,12 +365,24 @@ pub fn render_stage_b(config: &PlayerConfig, req: &DecisionRequest<'_>, shown: &
     let prediction_user = prompt::prediction_user(req, shown);
     let play = (route != llm::Route::OpenAiCompatible).then(|| {
         llm::as_sent(
-            llm::constrained_request(route, &model, &options, &play_user, llm::Answer::Letter(shown.len())),
+            llm::constrained_request(
+                route,
+                &model,
+                &options,
+                &play_user,
+                llm::Answer::Letter(shown.len()),
+            ),
             &options,
         )
     });
     let prediction = llm::as_sent(
-        llm::constrained_request(route, &model, &options, &prediction_user, llm::Answer::Prediction),
+        llm::constrained_request(
+            route,
+            &model,
+            &options,
+            &prediction_user,
+            llm::Answer::Prediction,
+        ),
         &options,
     );
     Ok(json!({
@@ -414,6 +443,21 @@ impl Player {
             Some(model) => Ok(model),
             None => bail!("model spec `{spec}` needs a model name: {provider}/<model>"),
         };
+        // A hard spending cap (`budget`) for chat requests to an openai-compatible server and
+        // for decision services: each attempt reserves its worst case before it is sent.
+        let budget = match &config.budget {
+            Some(budget)
+                if provider.eq_ignore_ascii_case("openai-compatible")
+                    || decision::service(provider).is_some() =>
+            {
+                Some(crate::budget::Ledger::open(budget, &config.name)?)
+            }
+            Some(_) => bail!(
+                "{}: a budget needs an openai-compatible spec or a decision service",
+                config.name
+            ),
+            None => None,
+        };
         let options = llm::Options {
             reasoning: config.reasoning.clone(),
             request: config.request.clone(),
@@ -427,13 +471,7 @@ impl Player {
                 });
                 setup.pacer(group, rpm)
             }),
-            budget: match &config.budget {
-                Some(budget) if provider.eq_ignore_ascii_case("openai-compatible") => {
-                    Some(crate::budget::Ledger::open(budget, &config.name)?)
-                }
-                Some(_) => bail!("{}: a budget needs an openai-compatible spec", config.name),
-                None => None,
-            },
+            budget: budget.clone(),
         };
         let player = |backend| Player {
             spec: spec.to_owned(),
@@ -453,6 +491,7 @@ impl Player {
                 service,
                 model,
                 config.base_url.as_deref(),
+                budget,
             )?)));
         }
         let backend = match provider.to_ascii_lowercase().as_str() {
@@ -622,7 +661,10 @@ impl Player {
         let _slot = match &self.requests {
             Some(slots) => {
                 let started = Instant::now();
-                let slot = slots.acquire().await.expect("the semaphore is never closed");
+                let slot = slots
+                    .acquire()
+                    .await
+                    .expect("the semaphore is never closed");
                 req.retry.add(started.elapsed());
                 Some(slot)
             }

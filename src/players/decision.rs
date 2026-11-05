@@ -2,6 +2,7 @@
 //! OpenAI's Decisions API. The legal plays become the options of one `choice` question, in
 //! the seeded option order, and the service returns its probability for each.
 
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use anyhow::{Result, bail};
@@ -9,6 +10,7 @@ use serde_json::{Map, Value, json};
 
 use super::prompt::{instructions, option_text, state};
 use super::{Decision, DecisionRequest};
+use crate::budget::{Ledger, Usage};
 use crate::db::Exchange;
 use crate::http::{self, RetryTime};
 
@@ -260,9 +262,10 @@ pub const SERVICES: &[Service] = &[
     },
     // Nace.AI's hosted Drex models (drex-max-v1.1, drex-v2.0) through its System One endpoint
     // (console.nace.ai/docs/drex): the same request and answers, plus a `request_id`; output
-    // tokens are reported but not billed. At most 255 options per choice question (Limits), and
-    // the token limits (262,144 per request or row) are far above a backgammon prompt. 529
-    // (overloaded: the model missed Nace's 55-second timeout) and 429 are retried.
+    // tokens are reported but not billed. 529 (overloaded: the model missed Nace's 55-second
+    // timeout) and 429 are retried. Nace takes up to 255 options per question; the Drex late
+    // entries' protocol (Ümit, 2026-11-05) asks at most 25 per request, as the Deciders, with
+    // longer lists split into groups and a final.
     Service {
         provider: "nace",
         label: "Nace.AI",
@@ -273,14 +276,13 @@ pub const SERVICES: &[Service] = &[
         key_required: true,
         default_model: Some("drex-v2.0"),
         openai_format: false,
-        max_choices: 255,
+        max_choices: 25,
     },
     // Nace.AI's open Drex Max v1 weights (nace-ai/drex-max-v1) scored by Nace's own loader
     // (drex_max) behind the decision-models runner's servers/drex_max_server.py, one request at
-    // a time; the model field must name the loaded checkpoint (drex-max-v1). The loader refuses
-    // (400) a request over its default 16,384 tokens: with its prompt and the checkpoint's
-    // tokenizer, the largest stored League 1 requests take 14,527 tokens at 110 options and
-    // 16,486 at 128.
+    // a time; the model field must name the loaded checkpoint (drex-max-v1). At most 25 options
+    // per request, as for the hosted Drex models (the loader's 16,384-token default limit would
+    // allow 110 for League 1's prompts).
     Service {
         provider: "drex-max",
         label: "Drex Max (local)",
@@ -291,11 +293,11 @@ pub const SERVICES: &[Service] = &[
         key_required: false,
         default_model: Some("drex-max-v1"),
         openai_format: false,
-        max_choices: 110,
+        max_choices: 25,
     },
     // Nace.AI's open Drex 2.0 weights (nace-ai/drex-v2.0) behind the serve.py its checkpoint
-    // ships (Nace's kev loader), which accepts and ignores the model field. Its default limit is
-    // 16,384 tokens per request (KEV_CONTEXT), as Drex Max v1's, so the same 110 options.
+    // ships (Nace's kev loader), which accepts and ignores the model field; at most 25 options
+    // per request, as for the other Drex setups.
     Service {
         provider: "drex-local",
         label: "Drex 2.0 (local)",
@@ -306,7 +308,7 @@ pub const SERVICES: &[Service] = &[
         key_required: false,
         default_model: Some("drex-v2.0"),
         openai_format: false,
-        max_choices: 110,
+        max_choices: 25,
     },
 ];
 
@@ -323,17 +325,21 @@ pub struct DecisionClient {
     /// `None` when the service takes no `model` field.
     model: Option<String>,
     url: String,
+    /// Hard spending cap: every attempt reserves its worst case before it is sent.
+    budget: Option<Arc<Ledger>>,
 }
 
 impl DecisionClient {
     /// `model` overrides the service's default; it is ignored by services without a
     /// `model` field. `base_url` (a player config's) overrides the service's URL and its
-    /// environment variable. Fails when a required API key is missing.
+    /// environment variable. `budget` meters every request attempt. Fails when a required
+    /// API key is missing.
     pub fn new(
         http: reqwest::Client,
         service: &'static Service,
         model: Option<String>,
         base_url: Option<&str>,
+        budget: Option<Arc<Ledger>>,
     ) -> Result<Self> {
         let key = service
             .key_vars
@@ -358,6 +364,7 @@ impl DecisionClient {
                 .default_model
                 .map(|default| model.unwrap_or_else(|| default.to_owned())),
             url: format!("{}{}", base.trim_end_matches('/'), service.path),
+            budget,
         })
     }
 
@@ -402,23 +409,49 @@ impl DecisionClient {
         }
     }
 
+    /// With a budget, each attempt (retries included) first reserves its worst case: every
+    /// body byte an input token and as many output tokens (a token is never shorter than a
+    /// byte), and is refused before the call when spent + reserved would pass the cap. An
+    /// answer is booked at its reported usage; one without readable usage keeps its worst case.
     async fn send(&self, body: &Value, retry: &RetryTime) -> Result<String> {
-        http::send(
-            || {
-                let request = self.http.post(&self.url).json(body);
-                match &self.key {
-                    Some(key) => request.bearer_auth(key),
-                    None => request,
-                }
-            },
-            retry,
-            http::Guard::default(),
-        )
-        .await
-        .map_err(|e| {
+        let make = || {
+            let request = self.http.post(&self.url).json(body);
+            match &self.key {
+                Some(key) => request.bearer_auth(key),
+                None => request,
+            }
+        };
+        let failed = |e: http::CallError| {
             e.into_anyhow()
                 .context(format!("{} request failed", self.service.label))
-        })
+        };
+        let Some(ledger) = &self.budget else {
+            return http::send(make, retry, http::Guard::default()).await.map_err(failed);
+        };
+        let bytes = body.to_string().len();
+        let worst = ledger.worst_case(bytes, bytes as u64);
+        let (text, hold) = http::send_metered(make, retry, ledger, worst, http::Guard::default())
+            .await
+            .map_err(failed)?;
+        let value: Option<Value> = serde_json::from_str(&text).ok();
+        let tokens = |key: &str| {
+            value
+                .as_ref()
+                .and_then(|v| v.pointer(&format!("/usage/{key}")))
+                .and_then(Value::as_u64)
+        };
+        if let Some(input_tokens) = tokens("input_tokens") {
+            hold.settle(
+                Usage {
+                    input_tokens,
+                    cached_tokens: 0,
+                    output_tokens: tokens("output_tokens").unwrap_or(0),
+                    reasoning_tokens: 0,
+                },
+                None,
+            );
+        }
+        Ok(text)
     }
 
     /// `plays`: `(notation, description)`; the notation identifies the option in the answer
@@ -580,6 +613,7 @@ mod tests {
             service,
             Some("baselabs/mammoth-1".into()),
             Some("http://127.0.0.1:18103/"),
+            None,
         )
         .unwrap();
         assert_eq!(client.url, "http://127.0.0.1:18103/v1/systemone");
@@ -610,6 +644,7 @@ mod tests {
             key: key.map(str::to_owned),
             model: Some(model.to_owned()),
             url: format!("{}{}", base.trim_end_matches('/'), service.path),
+            budget: None,
         }
     }
 
@@ -618,7 +653,7 @@ mod tests {
         let service = service("nace").expect("nace service");
         assert!(service.key_required);
         assert_eq!(service.key_vars, ["NACE_API_KEY", "NACEAI_API_KEY"]);
-        assert_eq!(service.max_choices, 255);
+        assert_eq!(service.max_choices, 25);
         let client = client("nace", "drex-max-v1.1", None, Some("k"));
         assert_eq!(client.url, "https://console.nace.ai/v1/systemone");
         let plays = [
@@ -644,10 +679,10 @@ mod tests {
     }
 
     #[test]
-    fn local_drex_servers_take_110_options_at_their_configured_url() {
+    fn local_drex_servers_take_25_options_at_their_configured_url() {
         for (provider, model) in [("drex-max", "drex-max-v1"), ("drex-local", "drex-v2.0")] {
             let service = service(provider).expect("local drex service");
-            assert_eq!(service.max_choices, 110);
+            assert_eq!(service.max_choices, 25);
             assert!(!service.key_required && service.key_vars.is_empty());
             assert_eq!(service.default_model, Some(model));
         }
@@ -663,5 +698,67 @@ mod tests {
             ("24/18".to_owned(), "b".to_owned()),
         ];
         assert_eq!(client.body("state", "pick", &plays)["model"], "drex-max-v1");
+    }
+
+    /// A server answering every request 200 with `body`; returns its URL and request count.
+    fn serve(body: &'static str) -> (String, Arc<std::sync::atomic::AtomicUsize>) {
+        use std::io::{Read, Write};
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let url = format!("http://{}", listener.local_addr().unwrap());
+        let count = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let seen = count.clone();
+        std::thread::spawn(move || {
+            for stream in listener.incoming() {
+                let mut stream = stream.unwrap();
+                let mut buffer = [0u8; 65536];
+                let _ = stream.read(&mut buffer);
+                seen.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                let _ = write!(
+                    stream,
+                    "HTTP/1.1 200 OK\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{body}",
+                    body.len()
+                );
+            }
+        });
+        (url, count)
+    }
+
+    /// The budget refuses a request before it is sent once spent + its worst case would pass
+    /// the cap, and books an answered request at its reported usage.
+    #[tokio::test]
+    async fn budget_refuses_a_request_before_sending_it_past_the_cap() {
+        let (url, count) = serve(
+            r#"{"model":"drex-v2.0","answers":{"play":{"type":"choice","choice":"yes","probabilities":{"yes":0.9,"no":0.1}}},"usage":{"input_tokens":20,"output_tokens":5}}"#,
+        );
+        let dir = std::env::temp_dir().join(format!("decision-budget-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let config = |cap| crate::budget::BudgetConfig {
+            ledger: dir.join("ledger.db").to_string_lossy().into_owned(),
+            cap_usd: cap,
+            input_per_mtok: 10_000.0,
+            cached_input_per_mtok: 10_000.0,
+            output_per_mtok: 0.0,
+        };
+        let mut client = client("nace", "drex-v2.0", Some(&url), Some("k"));
+        let plays = [
+            ("yes".to_owned(), "yes".to_owned()),
+            ("no".to_owned(), "no".to_owned()),
+        ];
+        let body = client.body("state", "pick", &plays);
+        // Worst case of one attempt: every body byte an input token at $10,000 per million.
+        let worst = body.to_string().len() as f64 * 10_000.0 / 1e6;
+        // Room for one worst case and 0.1 more; the answer costs 20 tokens = $0.2.
+        let ledger = Ledger::open(&config(worst + 0.1), "Drex 2.0").unwrap();
+        client.budget = Some(ledger);
+        let retry = RetryTime::default();
+        assert!(client.send(&body, &retry).await.is_ok());
+        assert_eq!(count.load(std::sync::atomic::Ordering::SeqCst), 1);
+        // $0.2 spent + the worst case passes the cap: refused, and nothing is sent.
+        let error = client.send(&body, &retry).await.unwrap_err();
+        assert!(format!("{error:#}").contains("BUDGET CAP"), "{error:#}");
+        assert_eq!(count.load(std::sync::atomic::Ordering::SeqCst), 1);
+        // Another process on the same ledger sees the same spend.
+        let other = Ledger::open(&config(worst + 0.1), "other").unwrap();
+        assert!(other.reserve(worst).is_err() && other.reserve(0.09).is_ok());
     }
 }

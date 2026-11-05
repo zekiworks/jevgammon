@@ -144,21 +144,27 @@ pub async fn send(
     Ok(body)
 }
 
+/// Error statuses a metered provider documents as not billed: such an attempt is booked at
+/// nothing; any other error status keeps the attempt's worst case.
+pub type FreeStatus = fn(StatusCode) -> bool;
+
 /// As `send`, under a budget: every attempt first reserves `worst_case` dollars in `ledger`
 /// (refused, before the call, when that would pass the cap). An attempt answered with an
-/// error status is booked at nothing; one without a response keeps its worst case. The
-/// successful attempt's reservation is returned for the caller to settle at its cost.
+/// error status for which `free` holds is booked at nothing; one answered with any other
+/// error status, or without a response, keeps its worst case. The successful attempt's
+/// reservation is returned for the caller to settle at its cost.
 pub async fn send_metered(
     make: impl Fn() -> RequestBuilder,
     retry: &RetryTime,
     ledger: &Arc<Ledger>,
     worst_case: f64,
+    free: FreeStatus,
     guard: Guard<'_>,
 ) -> Result<(String, Hold), CallError> {
     let (body, hold) = send_until(
         make,
         retry,
-        Some((ledger, worst_case)),
+        Some((ledger, worst_case, free)),
         FIRST_BACKOFF,
         RATE_LIMIT_BACKOFF,
         RetryPolicy::current(),
@@ -172,7 +178,7 @@ pub async fn send_metered(
 async fn send_with_backoff(
     make: impl Fn() -> RequestBuilder,
     retry: &RetryTime,
-    budget: Option<(&Arc<Ledger>, f64)>,
+    budget: Option<(&Arc<Ledger>, f64, FreeStatus)>,
     first_backoff: Duration,
     rate_limit_backoff: Duration,
     policy: RetryPolicy,
@@ -192,7 +198,7 @@ pub struct Guard<'a> {
 async fn send_until(
     make: impl Fn() -> RequestBuilder,
     retry: &RetryTime,
-    budget: Option<(&Arc<Ledger>, f64)>,
+    budget: Option<(&Arc<Ledger>, f64, FreeStatus)>,
     first_backoff: Duration,
     rate_limit_backoff: Duration,
     policy: RetryPolicy,
@@ -210,7 +216,7 @@ async fn send_until(
             )));
         }
         let hold = match budget {
-            Some((ledger, amount)) => Some(ledger.reserve(amount)?),
+            Some((ledger, amount, _)) => Some(ledger.reserve(amount)?),
             None => None,
         };
         let started = Instant::now();
@@ -236,8 +242,14 @@ async fn send_until(
                 if status.is_success() {
                     return Ok((body, hold));
                 }
-                if let Some(hold) = hold {
-                    hold.refused(&format!("{status}"));
+                if let (Some(hold), Some((_, _, free))) = (hold, budget) {
+                    if free(status) {
+                        hold.refused(&format!("{status}"));
+                    } else {
+                        hold.kept(&format!(
+                            "{status}: not documented as unbilled; booked at the worst case"
+                        ));
+                    }
                 }
                 if matches!(status, StatusCode::UNAUTHORIZED | StatusCode::FORBIDDEN) {
                     return Err(CallError::Auth(format!("{status}: {}", snippet(&body))));
@@ -458,7 +470,7 @@ mod tests {
         let (_, hold) = send_with_backoff(
             || http.get(&url),
             &retry,
-            Some((&ledger, 0.7)),
+            Some((&ledger, 0.7, ANY_ERROR_FREE)),
             backoff,
             backoff,
             LEAGUE,
@@ -471,7 +483,7 @@ mod tests {
         let error = send_with_backoff(
             || http.get(&url),
             &retry,
-            Some((&ledger, 0.4)),
+            Some((&ledger, 0.4, ANY_ERROR_FREE)),
             backoff,
             backoff,
             LEAGUE,
@@ -492,7 +504,7 @@ mod tests {
             send_with_backoff(
                 || http.get(&url),
                 &retry,
-                Some((&ledger, 0.4)),
+                Some((&ledger, 0.4, ANY_ERROR_FREE)),
                 backoff,
                 backoff,
                 LEAGUE
@@ -522,7 +534,7 @@ mod tests {
         let error = send_until(
             || http.get(&url),
             &retry,
-            Some((&ledger, 0.1)),
+            Some((&ledger, 0.1, |_| true)),
             Duration::from_millis(5),
             Duration::from_millis(5),
             LEAGUE,
@@ -581,6 +593,109 @@ mod tests {
         assert!(send_until(|| http.get(&url), &retry, None, Duration::from_millis(5), Duration::from_millis(5),
                            LEAGUE, Guard::default()).await.is_ok());
         assert_eq!(count.load(Ordering::SeqCst), 2);
+    }
+
+    /// The earlier behaviour (openai-compatible chat servers): every error status unbilled.
+    const ANY_ERROR_FREE: FreeStatus = |_| true;
+    /// One attempt, no retry.
+    const ONCE: RetryPolicy = RetryPolicy {
+        limit: 0,
+        per_call: false,
+    };
+
+    fn nace_ledger(cap: f64) -> Arc<Ledger> {
+        let dir = std::env::temp_dir().join(format!("budget-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        Ledger::open(
+            &crate::budget::BudgetConfig {
+                ledger: dir.join("ledger.db").to_string_lossy().into_owned(),
+                cap_usd: cap,
+                input_per_mtok: 0.06,
+                cached_input_per_mtok: 0.06,
+                output_per_mtok: 0.0,
+            },
+            "Drex 2.0",
+        )
+        .unwrap()
+    }
+
+    /// The Nace path's error statuses: 429, 500 and 529 are booked at nothing (Nace's pricing
+    /// page: only a 200 is debited; 401, 402, 422, 429, 500 and 529 cost nothing); any other
+    /// error status (here 503, 400, 403) and an attempt without a response (a timeout, a refused
+    /// connection) keep the reservation's worst case.
+    #[tokio::test]
+    async fn nace_error_statuses_are_booked_as_documented() {
+        let nace = crate::players::decision::nace_unbilled;
+        let http = reqwest::Client::new();
+        let backoff = Duration::from_millis(5);
+        let retry = RetryTime::default();
+        for (status, booked) in [
+            (429, 0.0),
+            (500, 0.0),
+            (529, 0.0),
+            (503, 0.25),
+            (400, 0.25),
+            (403, 0.25),
+        ] {
+            let ledger = nace_ledger(1.0);
+            let (url, count) = serve(vec![status]);
+            let result = send_with_backoff(
+                || http.get(&url),
+                &retry,
+                Some((&ledger, 0.25, nace)),
+                backoff,
+                backoff,
+                ONCE,
+            )
+            .await;
+            assert!(result.is_err(), "{status}");
+            assert_eq!(count.load(Ordering::SeqCst), 1, "{status}");
+            let (spent, reserved) = ledger.totals().unwrap();
+            assert_eq!((spent, reserved), (booked, 0.0), "{status}");
+        }
+        // Timeout: the server takes the request and never answers.
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let url = format!("http://{}/", listener.local_addr().unwrap());
+        std::thread::spawn(move || {
+            let _held: Vec<_> = listener.incoming().take(1).collect();
+            std::thread::sleep(Duration::from_secs(5));
+        });
+        let slow = reqwest::Client::builder()
+            .timeout(Duration::from_millis(200))
+            .build()
+            .unwrap();
+        let ledger = nace_ledger(1.0);
+        assert!(
+            send_with_backoff(
+                || slow.get(&url),
+                &retry,
+                Some((&ledger, 0.25, nace)),
+                backoff,
+                backoff,
+                ONCE
+            )
+            .await
+            .is_err()
+        );
+        assert_eq!(ledger.totals().unwrap(), (0.25, 0.0));
+        // No response at all: nothing listens on the port.
+        let closed = TcpListener::bind("127.0.0.1:0").unwrap();
+        let url = format!("http://{}/", closed.local_addr().unwrap());
+        drop(closed);
+        let ledger = nace_ledger(1.0);
+        assert!(
+            send_with_backoff(
+                || http.get(&url),
+                &retry,
+                Some((&ledger, 0.25, nace)),
+                backoff,
+                backoff,
+                ONCE
+            )
+            .await
+            .is_err()
+        );
+        assert_eq!(ledger.totals().unwrap(), (0.25, 0.0));
     }
 }
 

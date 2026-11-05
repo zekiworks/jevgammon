@@ -139,6 +139,12 @@ impl Ledger {
             / 1e6
     }
 
+    /// Spent (settled + lost) and reserved (open) dollars in the whole ledger (tests).
+    #[cfg(test)]
+    pub fn totals(&self) -> Result<(f64, f64)> {
+        totals(&self.conn.lock())
+    }
+
     /// Reserves `amount` for one attempt, or refuses it (an error naming the cap) when
     /// spent + reserved + amount would pass the cap.
     pub fn reserve(self: &Arc<Self>, amount: f64) -> Result<Hold> {
@@ -243,6 +249,13 @@ impl Hold {
     /// The provider answered with an error status (nothing generated, nothing billed).
     pub fn refused(mut self, note: &str) {
         self.ledger.finish(self.id, "settled", None, note);
+        self.done = true;
+    }
+
+    /// The provider answered with an error status it does not document as unbilled: the
+    /// attempt keeps its worst case (`lost`), as one without a response does.
+    pub fn kept(mut self, note: &str) {
+        self.ledger.finish(self.id, "lost", None, note);
         self.done = true;
     }
 }

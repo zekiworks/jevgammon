@@ -2,7 +2,7 @@
 //! one of them; an invalid answer is replaced by a random legal play.
 
 pub mod baseline;
-mod decision;
+pub(crate) mod decision;
 pub mod gnubg;
 mod llm;
 pub mod order;

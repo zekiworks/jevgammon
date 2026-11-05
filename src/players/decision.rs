@@ -17,6 +17,10 @@ use crate::http::{self, RetryTime};
 const QUESTION: &str = "play";
 /// Longest wait for a service to answer its warm-up request.
 const WARM_UP_LIMIT: Duration = Duration::from_secs(900);
+/// Budget worst case: input tokens a provider may add to a request's own bytes for its
+/// system prompt and chat template (unpublished for the hosted services; Drex Max v1's own
+/// loader adds about 80, measured with its tokenizer on an empty two-option question).
+const TEMPLATE_MARGIN: usize = 4096;
 
 /// A decision service and how to call it.
 pub struct Service {
@@ -318,6 +322,25 @@ pub fn service(provider: &str) -> Option<&'static Service> {
         .find(|s| s.provider.eq_ignore_ascii_case(provider))
 }
 
+/// Nace.AI's unbilled error statuses: "Only a `200` response is debited. A request that ends
+/// in `401`, `402`, `422`, `429`, `500`, or `529` costs nothing."
+/// (https://console.nace.ai/docs/drex/reference/pricing, read 2026-11-05). Every other error
+/// status keeps the attempt's worst case.
+pub fn nace_unbilled(status: reqwest::StatusCode) -> bool {
+    matches!(status.as_u16(), 401 | 402 | 422 | 429 | 500 | 529)
+}
+
+impl Service {
+    /// Error statuses this service documents as unbilled, for the budget: Nace's list; none
+    /// for the others, so a metered request answered with an error keeps its worst case.
+    fn unbilled(&self) -> http::FreeStatus {
+        match self.provider {
+            "nace" => nace_unbilled,
+            _ => |_| false,
+        }
+    }
+}
+
 pub struct DecisionClient {
     http: reqwest::Client,
     service: &'static Service,
@@ -409,10 +432,16 @@ impl DecisionClient {
         }
     }
 
-    /// With a budget, each attempt (retries included) first reserves its worst case: every
-    /// body byte an input token and as many output tokens (a token is never shorter than a
-    /// byte), and is refused before the call when spent + reserved would pass the cap. An
-    /// answer is booked at its reported usage; one without readable usage keeps its worst case.
+    /// With a budget, each attempt (retries included) first reserves its worst case, and is
+    /// refused before the call when spent + reserved + that would pass the cap. Worst case:
+    /// one input token per byte of the JSON body plus `TEMPLATE_MARGIN` tokens, and as many
+    /// output tokens as body bytes. A byte-level BPE tokenizer (the Qwen family Drex is
+    /// built on) never makes a token of less than one byte of the UTF-8 text it encodes, and
+    /// the body holds every byte of the state, instructions and options the model reads (JSON
+    /// escaping only adds bytes); the margin covers the provider's own system prompt and chat
+    /// template, which it does not publish. An answer with usage is booked at it; a 200
+    /// without readable usage, an error status the service does not document as unbilled
+    /// (`Service::unbilled`), and an attempt without a response keep the worst case.
     async fn send(&self, body: &Value, retry: &RetryTime) -> Result<String> {
         let make = || {
             let request = self.http.post(&self.url).json(body);
@@ -429,8 +458,8 @@ impl DecisionClient {
             return http::send(make, retry, http::Guard::default()).await.map_err(failed);
         };
         let bytes = body.to_string().len();
-        let worst = ledger.worst_case(bytes, bytes as u64);
-        let (text, hold) = http::send_metered(make, retry, ledger, worst, http::Guard::default())
+        let worst = ledger.worst_case(bytes + TEMPLATE_MARGIN, bytes as u64);
+        let (text, hold) = http::send_metered(make, retry, ledger, worst, self.service.unbilled(), http::Guard::default())
             .await
             .map_err(failed)?;
         let value: Option<Value> = serde_json::from_str(&text).ok();
@@ -440,16 +469,19 @@ impl DecisionClient {
                 .and_then(|v| v.pointer(&format!("/usage/{key}")))
                 .and_then(Value::as_u64)
         };
-        if let Some(input_tokens) = tokens("input_tokens") {
-            hold.settle(
-                Usage {
-                    input_tokens,
-                    cached_tokens: 0,
-                    output_tokens: tokens("output_tokens").unwrap_or(0),
-                    reasoning_tokens: 0,
-                },
-                None,
-            );
+        match tokens("input_tokens") {
+            Some(input_tokens) => {
+                hold.settle(
+                    Usage {
+                        input_tokens,
+                        cached_tokens: 0,
+                        output_tokens: tokens("output_tokens").unwrap_or(0),
+                        reasoning_tokens: 0,
+                    },
+                    None,
+                );
+            }
+            None => hold.kept("200 without readable usage: booked at the worst case"),
         }
         Ok(text)
     }
@@ -745,14 +777,21 @@ mod tests {
             ("no".to_owned(), "no".to_owned()),
         ];
         let body = client.body("state", "pick", &plays);
-        // Worst case of one attempt: every body byte an input token at $10,000 per million.
-        let worst = body.to_string().len() as f64 * 10_000.0 / 1e6;
+        // Worst case of one attempt: every body byte an input token, plus the template margin,
+        // at $10,000 per million.
+        let worst = (body.to_string().len() + TEMPLATE_MARGIN) as f64 * 10_000.0 / 1e6;
         // Room for one worst case and 0.1 more; the answer costs 20 tokens = $0.2.
         let ledger = Ledger::open(&config(worst + 0.1), "Drex 2.0").unwrap();
         client.budget = Some(ledger);
         let retry = RetryTime::default();
         assert!(client.send(&body, &retry).await.is_ok());
         assert_eq!(count.load(std::sync::atomic::Ordering::SeqCst), 1);
+        // Booked at its reported usage: 20 input tokens = $0.2.
+        let (spent, reserved) = client.budget.as_ref().unwrap().totals().unwrap();
+        assert!(
+            (spent - 0.2).abs() < 1e-9 && reserved == 0.0,
+            "{spent} {reserved}"
+        );
         // $0.2 spent + the worst case passes the cap: refused, and nothing is sent.
         let error = client.send(&body, &retry).await.unwrap_err();
         assert!(format!("{error:#}").contains("BUDGET CAP"), "{error:#}");
@@ -760,5 +799,56 @@ mod tests {
         // Another process on the same ledger sees the same spend.
         let other = Ledger::open(&config(worst + 0.1), "other").unwrap();
         assert!(other.reserve(worst).is_err() && other.reserve(0.09).is_ok());
+    }
+
+    /// A 200 without readable usage is booked at the attempt's worst case.
+    #[tokio::test]
+    async fn budget_books_an_answer_without_usage_at_its_worst_case() {
+        let (url, _) = serve(
+            r#"{"model":"drex-v2.0","answers":{"play":{"type":"choice","choice":"yes","probabilities":{"yes":0.9,"no":0.1}}}}"#,
+        );
+        let dir = std::env::temp_dir().join(format!("decision-budget-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let ledger = Ledger::open(
+            &crate::budget::BudgetConfig {
+                ledger: dir.join("ledger.db").to_string_lossy().into_owned(),
+                cap_usd: 1.0,
+                input_per_mtok: 0.06,
+                cached_input_per_mtok: 0.06,
+                output_per_mtok: 0.0,
+            },
+            "Drex 2.0",
+        )
+        .unwrap();
+        let mut client = client("nace", "drex-v2.0", Some(&url), Some("k"));
+        client.budget = Some(ledger);
+        let plays = [
+            ("yes".to_owned(), "yes".to_owned()),
+            ("no".to_owned(), "no".to_owned()),
+        ];
+        let body = client.body("state", "pick", &plays);
+        assert!(client.send(&body, &RetryTime::default()).await.is_ok());
+        let worst = (body.to_string().len() + TEMPLATE_MARGIN) as f64 * 0.06 / 1e6;
+        let (spent, reserved) = client.budget.as_ref().unwrap().totals().unwrap();
+        assert!(
+            (spent - worst).abs() < 1e-12 && reserved == 0.0,
+            "{spent} {worst}"
+        );
+    }
+
+    #[test]
+    fn only_nace_documents_unbilled_error_statuses() {
+        let nace = service("nace").unwrap().unbilled();
+        for code in [401, 402, 422, 429, 500, 529] {
+            assert!(nace(reqwest::StatusCode::from_u16(code).unwrap()), "{code}");
+        }
+        for code in [400, 403, 404, 408, 502, 503, 504] {
+            assert!(
+                !nace(reqwest::StatusCode::from_u16(code).unwrap()),
+                "{code}"
+            );
+        }
+        let local = service("drex-max").unwrap().unbilled();
+        assert!(!local(reqwest::StatusCode::TOO_MANY_REQUESTS));
     }
 }

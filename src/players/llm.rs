@@ -1147,7 +1147,9 @@ impl LlmClient {
                     .and_then(Value::as_u64)
                     .unwrap_or(32768);
                 let worst = ledger.worst_case(body.to_string().len(), max_output);
-                let (raw, hold) = http::send_metered(make, retry, ledger, worst, self.guard()).await?;
+                // As before: an error status from the openai-compatible server is booked at
+                // nothing (no answer is generated).
+                let (raw, hold) = http::send_metered(make, retry, ledger, worst, |_| true, self.guard()).await?;
                 match parse_chat_completion(&raw) {
                     Ok(completion) => {
                         hold.settle(

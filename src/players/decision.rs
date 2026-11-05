@@ -258,6 +258,56 @@ pub const SERVICES: &[Service] = &[
         openai_format: false,
         max_choices: 120,
     },
+    // Nace.AI's hosted Drex models (drex-max-v1.1, drex-v2.0) through its System One endpoint
+    // (console.nace.ai/docs/drex): the same request and answers, plus a `request_id`; output
+    // tokens are reported but not billed. At most 255 options per choice question (Limits), and
+    // the token limits (262,144 per request or row) are far above a backgammon prompt. 529
+    // (overloaded: the model missed Nace's 55-second timeout) and 429 are retried.
+    Service {
+        provider: "nace",
+        label: "Nace.AI",
+        base_url: "https://console.nace.ai",
+        url_var: "NACE_BASE_URL",
+        path: "/v1/systemone",
+        key_vars: &["NACE_API_KEY", "NACEAI_API_KEY"],
+        key_required: true,
+        default_model: Some("drex-v2.0"),
+        openai_format: false,
+        max_choices: 255,
+    },
+    // Nace.AI's open Drex Max v1 weights (nace-ai/drex-max-v1) scored by Nace's own loader
+    // (drex_max) behind the decision-models runner's servers/drex_max_server.py, one request at
+    // a time; the model field must name the loaded checkpoint (drex-max-v1). The loader refuses
+    // (400) a request over its default 16,384 tokens: with its prompt and the checkpoint's
+    // tokenizer, the largest stored League 1 requests take 14,527 tokens at 110 options and
+    // 16,486 at 128.
+    Service {
+        provider: "drex-max",
+        label: "Drex Max (local)",
+        base_url: "http://127.0.0.1:18104",
+        url_var: "DREX_MAX_BASE_URL",
+        path: "/v1/systemone",
+        key_vars: &[],
+        key_required: false,
+        default_model: Some("drex-max-v1"),
+        openai_format: false,
+        max_choices: 110,
+    },
+    // Nace.AI's open Drex 2.0 weights (nace-ai/drex-v2.0) behind the serve.py its checkpoint
+    // ships (Nace's kev loader), which accepts and ignores the model field. Its default limit is
+    // 16,384 tokens per request (KEV_CONTEXT), as Drex Max v1's, so the same 110 options.
+    Service {
+        provider: "drex-local",
+        label: "Drex 2.0 (local)",
+        base_url: "http://127.0.0.1:18105",
+        url_var: "DREX_LOCAL_BASE_URL",
+        path: "/v1/systemone",
+        key_vars: &[],
+        key_required: false,
+        default_model: Some("drex-v2.0"),
+        openai_format: false,
+        max_choices: 110,
+    },
 ];
 
 pub fn service(provider: &str) -> Option<&'static Service> {
@@ -544,5 +594,74 @@ mod tests {
             .pointer(&format!("/questions/{QUESTION}/criteria"))
             .unwrap();
         assert_eq!(criteria.as_object().unwrap().len(), 2);
+    }
+
+    fn client(
+        provider: &str,
+        model: &str,
+        base_url: Option<&str>,
+        key: Option<&str>,
+    ) -> DecisionClient {
+        let service = service(provider).expect("service");
+        let base = base_url.unwrap_or(service.base_url);
+        DecisionClient {
+            http: reqwest::Client::new(),
+            service,
+            key: key.map(str::to_owned),
+            model: Some(model.to_owned()),
+            url: format!("{}{}", base.trim_end_matches('/'), service.path),
+        }
+    }
+
+    #[test]
+    fn nace_is_the_hosted_system_one_endpoint_with_its_key() {
+        let service = service("nace").expect("nace service");
+        assert!(service.key_required);
+        assert_eq!(service.key_vars, ["NACE_API_KEY", "NACEAI_API_KEY"]);
+        assert_eq!(service.max_choices, 255);
+        let client = client("nace", "drex-max-v1.1", None, Some("k"));
+        assert_eq!(client.url, "https://console.nace.ai/v1/systemone");
+        let plays = [
+            ("8/2 6/2".to_owned(), "a".to_owned()),
+            ("24/18".to_owned(), "b".to_owned()),
+        ];
+        assert_eq!(
+            client.body("state", "pick", &plays)["model"],
+            "drex-max-v1.1"
+        );
+        // Nace's answer: probabilities by option name, request_id beside the answers.
+        let response = json!({"model": "drex-max-v1.1", "request_id": "req_1",
+            "answers": {QUESTION: {"type": "choice", "choice": "24/18", "confidence": 0.9,
+                "probabilities": {"8/2 6/2": 0.05, "24/18": 0.95}}},
+            "usage": {"input_tokens": 3000, "output_tokens": 160}});
+        let answer = client.answer(&response).expect("answer");
+        let mut probabilities = client.probabilities(answer);
+        probabilities.sort_by(|a, b| a.0.cmp(&b.0));
+        assert_eq!(
+            probabilities,
+            [("24/18".to_owned(), 0.95), ("8/2 6/2".to_owned(), 0.05)]
+        );
+    }
+
+    #[test]
+    fn local_drex_servers_take_110_options_at_their_configured_url() {
+        for (provider, model) in [("drex-max", "drex-max-v1"), ("drex-local", "drex-v2.0")] {
+            let service = service(provider).expect("local drex service");
+            assert_eq!(service.max_choices, 110);
+            assert!(!service.key_required && service.key_vars.is_empty());
+            assert_eq!(service.default_model, Some(model));
+        }
+        let client = client(
+            "drex-max",
+            "drex-max-v1",
+            Some("http://127.0.0.1:18104/"),
+            None,
+        );
+        assert_eq!(client.url, "http://127.0.0.1:18104/v1/systemone");
+        let plays = [
+            ("13/11 6/5".to_owned(), "a".to_owned()),
+            ("24/18".to_owned(), "b".to_owned()),
+        ];
+        assert_eq!(client.body("state", "pick", &plays)["model"], "drex-max-v1");
     }
 }

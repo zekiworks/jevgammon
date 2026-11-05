@@ -13,6 +13,10 @@ matches count: the valid match of every pair of current participants, whatever l
 played under (one result per pair). The fixture is derived from the participants as the runner derives it (`pair_order`,
 `new_pair`).
 
+/cups shows the Hype Cup and the Nackgammon knockout as the public site computes them (tools/site/cup.py; the
+knockout from `--knockout`, read-only) and the hidden late-entry leagues (not in standings): each entrant's record
+and result against every opponent.
+
 --control SCRIPT adds a Pause / Resume button: GET /api/control runs `SCRIPT status` (one JSON
 line: unit, state, since, message) and POST /api/control {"action": "pause"|"resume"} starts
 `SCRIPT pause|resume` in its own systemd user unit (league-control) and returns at once. POSTs
@@ -27,6 +31,7 @@ import os
 import re
 import sqlite3
 import subprocess
+import sys
 import time
 from collections import defaultdict
 from datetime import datetime
@@ -749,6 +754,66 @@ def turn_context(db: Path, turn_id: int) -> dict:
     return {"turn": dict(turn), "exchanges": exchanges}
 
 
+def cups(db: Path, knockout_db: Path, plays: Path | None) -> dict:
+    """The Hype Cup and the Nackgammon knockout as the public site computes them (tools/site/cup.py, imported, so the
+    numbers are the site's): the Cup from `db` (v3.db), the knockout from `knockout_db`, both opened read-only; and
+    the late-entry leagues of `db`. Names as the site shows them (renamed setups under their shown name)."""
+    site = str(Path(__file__).resolve().parent / "site")
+    if site not in sys.path:
+        sys.path.insert(0, site)
+    import cup
+    from common import relabel
+    conn = cup.ro(db)
+    try:
+        matches, _ = cup.classify(conn)
+        hype = cup.hype_cup(conn, plays or default_scores(), matches)
+    finally:
+        conn.close()
+    knockout, _ = cup.knockout(knockout_db)
+    return relabel({"cup": hype, "knockout": knockout, "knockout_db": knockout_db.name,
+                    "late_entries": late_entry_leagues(db)})
+
+
+def late_entry_leagues(db: Path) -> list[dict]:
+    """The hidden late-entry leagues (note "Late entry ..."): per league its entrant (`only_pairs_of`), the entrant's
+    late-entry matches against each opponent and its record (3 points a win, 1 a draw: a level score). In no
+    standings table."""
+    conn = connect(db)
+    try:
+        out = []
+        for lg in conn.execute("""SELECT id, status, only_pairs_of, note FROM leagues
+                                  WHERE hidden = 1 AND note LIKE 'Late entry%' ORDER BY id""").fetchall():
+            name = lg["only_pairs_of"]
+            rows = conn.execute(
+                """SELECT DISTINCT lm.match_id, lm.model1, lm.model2, m.status, m.score1, m.score2, m.finished_at
+                   FROM league_match_view lm JOIN matches m ON m.id = lm.match_id
+                   WHERE lm.league_id = ? AND lm.stage = 'late-entry' AND ? IN (lm.model1, lm.model2)
+                   ORDER BY lm.match_id""", (lg["id"], name)).fetchall()
+            record = dict(won=0, drawn=0, lost=0, points=0, pf=0, pa=0)
+            opponents = []
+            for r in rows:
+                first = r["model1"] == name
+                mine, theirs = (r["score1"], r["score2"]) if first else (r["score2"], r["score1"])
+                result = None
+                if r["status"] == "finished":
+                    result = "W" if mine > theirs else "D" if mine == theirs else "L"
+                    record[{"W": "won", "D": "drawn", "L": "lost"}[result]] += 1
+                    record["points"] += WIN_POINTS if result == "W" else DRAW_POINTS if result == "D" else 0
+                    record["pf"] += mine
+                    record["pa"] += theirs
+                opponents.append(dict(match=r["match_id"], opponent=r["model2"] if first else r["model1"],
+                                      status=r["status"], score_for=mine, score_against=theirs, result=result,
+                                      finished=r["finished_at"]))
+            field = re.search(r"original League (\d)", lg["note"] or "")
+            out.append(dict(league=lg["id"], name=name, status=lg["status"], field_league=int(field.group(1)) if field else None,
+                            played=sum(o["result"] is not None for o in opponents), matches=len(opponents),
+                            opponents=opponents, **record))
+        return out
+    finally:
+        conn.close()
+
+
+
 PAGE = r"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>jevgammon league</title>
@@ -819,7 +884,7 @@ td.lgo{font-weight:700;box-shadow:inset -2px 0 0 rgba(0,0,0,.15)}
 .ltab{width:80ch;max-width:100%}
 </style></head><body>
 <dialog id="ctx"><div class="head"><h3 id="ctxTitle"></h3><button onclick="$('ctx').close()">close</button></div><div id="ctxBody"></div></dialog>
-<header><h1>jevgammon league <span id="lid"></span></h1><span id="status"></span><span class="meta" id="rules"></span><span class="meta" id="updated"></span><a href="report/" target="_blank" id="report" hidden>report (working copy)</a><a href="#" id="latest" hidden>back to the latest league</a><div id="control" hidden><span id="ctlButtons"></span><span class="meta" id="ctlStatus"></span></div><div id="note" class="note"></div></header>
+<header><h1>jevgammon league <span id="lid"></span></h1><span id="status"></span><span class="meta" id="rules"></span><span class="meta" id="updated"></span><a href="cups">cups</a><a href="report/" target="_blank" id="report" hidden>report (working copy)</a><a href="#" id="latest" hidden>back to the latest league</a><div id="control" hidden><span id="ctlButtons"></span><span class="meta" id="ctlStatus"></span></div><div id="note" class="note"></div></header>
 <main>
 <section class="wide"><h2>History</h2><table id="history"></table><div class="mute" style="margin-top:8px">Click a league to view it. Live: moved in the last 10 minutes; stopped: ended before its last match, so only its finished matches count.</div></section>
 <section class="wide"><div class="ltab"><h2><span id="tabTitle" class="tabtitle">Table</span> <span class="seasons"><button id="prevSeason" title="previous league">&lsaquo;</button><span id="season"></span><button id="nextSeason" title="next league">&rsaquo;</button></span></h2><table id="table"></table><div class="mute lgkey" id="lgkey"></div><div class="mute" style="margin-top:8px">3 points per win, 1 per draw; ties: more games won, then fewer games lost. PF/PA are backgammon points. The arrows step through all leagues.</div></div></section>
@@ -1022,6 +1087,75 @@ fetch('report/',{method:'HEAD',cache:'no-store'}).then(r=>{if(r.ok)$('report').h
 </script></body></html>"""
 
 
+CUPS_PAGE = r"""<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>jevgammon cups</title>
+<style>
+:root{--bg:#0f1115;--panel:#171a21;--line:#2a2f3a;--fg:#e6e8ec;--mute:#8a91a0;--acc:#6aa9ff;--win:#4cc38a;--draw:#d9b44a;--loss:#e5636b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.45 system-ui,-apple-system,Segoe UI,sans-serif}
+header{padding:14px 20px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:8px 24px;align-items:baseline}
+h1{font-size:18px;margin:0}h2{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--mute);margin:0 0 10px}
+h3{font-size:14px;margin:0 0 6px}a{color:var(--acc)}.meta,.mute{color:var(--mute)}
+main{display:grid;gap:16px;padding:16px 20px}section{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px}
+table{border-collapse:collapse;width:100%}th,td{padding:5px 8px;text-align:left;white-space:nowrap}
+th{color:var(--mute);font-weight:500;border-bottom:1px solid var(--line)}tbody tr+tr td{border-top:1px solid #20242d}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}td.s,th.s{text-align:center;font-variant-numeric:tabular-nums}
+.w{color:var(--win);font-weight:600}.champ{font-size:15px;margin:0 0 10px}.champ b{color:var(--win)}
+.pill{display:inline-block;padding:1px 7px;border-radius:9px;font-size:12px;background:#232836;color:var(--mute)}
+.played{background:#1c3327;color:#8fe0b3}.stored{background:#16324f;color:#9cc7ff}.playing{background:#3d331d;color:#ffd27a}
+.late{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(420px,1fr))}.card{border:1px solid var(--line);border-radius:8px;padding:10px}
+.r-W{color:var(--win);font-weight:600}.r-D{color:var(--draw);font-weight:600}.r-L{color:var(--loss);font-weight:600}
+.rules{white-space:normal;font-size:13px;margin:8px 0 0}
+</style></head><body>
+<header><h1>jevgammon cups</h1><a href="./">← leagues</a><span class="meta" id="updated"></span></header>
+<main>
+<section><h2 id="cupName">Hype Cup</h2><div id="cup"></div></section>
+<section><h2 id="koName">Nackgammon knockout</h2><div id="ko"></div></section>
+<section><h2>Late entries, not in standings</h2><div class="late" id="late"></div></section>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const side=(seed,name,winner)=>name?`<span class="mute">${seed!=null?'#'+seed:''}</span> <span class="${name===winner?'w':''}">${esc(name)}</span>`:'<span class="mute">to be decided</span>';
+function how(t){
+  if(t.state==='played')return `<span class="pill played">played</span> match #${t.match}`+(t.where?` <span class="mute">(${esc(t.where)})</span>`:'');
+  if(t.state==='stored')return `<span class="pill stored">stored</span> match #${t.match} <span class="mute">(${esc(t.where)})</span>`;
+  if(t.state==='playing')return `<span class="pill playing">playing</span> match #${t.match}`;
+  return `<span class="pill">${esc(t.state)}</span>`;
+}
+function bracket(c){
+  const rows=c.ties.map(t=>{
+    const score=t.score1!=null?`${t.score1}–${t.score2}`:'';
+    const level=t.level?` <span class="mute">level${t.rate1!=null&&t.rate2!=null?`; error rate ${t.rate1.toFixed(2)} v ${t.rate2.toFixed(2)}`:''}</span>`:'';
+    return `<tr><td>${esc(t.tie)}</td><td class="mute">${esc(t.label)}${t.from_ties?` (winners of ${t.from_ties.join(', ')})`:''}</td>
+      <td>${side(t.seed1,t.model1,t.winner)}</td><td class="s">${score}</td><td>${side(t.seed2,t.model2,t.winner)}</td>
+      <td class="w">${esc(t.winner||'')}${level}</td><td>${how(t)}</td></tr>`}).join('');
+  return `<p class="champ">${c.champion?`Champion: <b>${esc(c.champion)}</b>`:`<span class="mute">${esc(c.state)}</span>`}</p>
+    <table><thead><tr><th>tie</th><th>round</th><th>entrant 1</th><th class="s">score</th><th>entrant 2</th><th>winner</th><th>result</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+function render(d){
+  if(d.error){$('updated').textContent=d.error;return}
+  const c=d.cup,k=d.knockout;
+  $('cupName').textContent=c.name;
+  $('cup').innerHTML=bracket(c)+`<p class="rules mute">${c.new_matches} played in Cup leagues, ${c.stored_matches} stored results. ${esc(c.stored_rule)} ${esc(c.level_rule)}</p>`
+    +`<p class="rules mute">Seeds: ${c.seeds.map(s=>`#${s.seed} ${esc(s.name)} (${esc(s.place)})`).join(' · ')}</p>`;
+  $('koName').textContent=k.name;
+  $('ko').innerHTML=bracket(k)+`<p class="rules mute">${k.played} of ${k.matches_total} matches played (${esc(d.knockout_db)}). ${esc(k.about)}</p>`;
+  $('late').innerHTML=d.late_entries.map(e=>{
+    const rows=e.opponents.map(o=>`<tr><td>${esc(o.opponent)}</td><td class="s">${o.result?`${o.score_for}–${o.score_against}`:''}</td>
+      <td class="r-${o.result||''}">${o.result||esc(o.status)}</td><td class="n mute">#${o.match}</td></tr>`).join('');
+    return `<div class="card"><h3>#${e.league} ${esc(e.name)}</h3>
+      <p class="meta">${e.field_league?`original League ${e.field_league} table · `:''}${e.played}/${e.matches} played · ${esc(e.status)}</p>
+      <p><b>${e.won}-${e.drawn}-${e.lost}</b> W-D-L · <b>${e.points}</b> points · games ${e.pf}–${e.pa}</p>
+      <table><thead><tr><th>opponent</th><th class="s">score</th><th>result</th><th class="n">match</th></tr></thead><tbody>${rows}</tbody></table></div>`}).join('')
+    ||'<p class="mute">no late-entry leagues</p>';
+  $('updated').textContent='updated '+new Date().toLocaleTimeString();
+}
+async function tick(){try{render(await (await fetch('api/cups',{cache:'no-store'})).json())}catch(e){$('updated').textContent='update failed: '+e}}
+tick();setInterval(tick,30000);
+</script></body></html>"""
+
+
 class Handler(BaseHTTPRequestHandler):
     db: Path
     league_id: int | None
@@ -1031,7 +1165,9 @@ class Handler(BaseHTTPRequestHandler):
     scores: Path | None = None
     # --report: the working copy of the published report page, served at /report/.
     report: Path | None = None
-    # Rendered JSON per key ("state:<league>", "history"), with the time it was built.
+    # --knockout: the Nackgammon knockout's database, for /cups.
+    knockout: Path | None = None
+    # Rendered JSON per key ("state:<league>", "history", "cups"), with the time it was built.
     cache: dict[str, tuple[float, bytes]] = {}
 
     def cached(self, key: str, build) -> bytes:
@@ -1042,6 +1178,8 @@ class Handler(BaseHTTPRequestHandler):
                 body = json.dumps(build()).encode()
             except sqlite3.Error as error:
                 body = json.dumps({"error": f"database: {error}"}).encode()
+            except RuntimeError as error:
+                body = json.dumps({"error": str(error)}).encode()
             hit = self.cache[key] = (now, body)
         return hit[1]
 
@@ -1049,6 +1187,8 @@ class Handler(BaseHTTPRequestHandler):
         path = self.path.split("?", 1)[0]
         if path == "/":
             self.reply(200, "text/html; charset=utf-8", PAGE.encode())
+        elif path == "/cups":
+            self.reply(200, "text/html; charset=utf-8", CUPS_PAGE.encode())
         elif path in ("/report", "/report/"):
             if not self.report or not self.report.is_file():
                 self.reply(404, "text/plain", b"no report page (--report)")
@@ -1089,6 +1229,8 @@ class Handler(BaseHTTPRequestHandler):
             self.reply(200, "application/json", body)
         elif path == "/api/history":
             self.reply(200, "application/json", self.cached("history", lambda: history(self.db, self.scores)))
+        elif path == "/api/cups":
+            self.reply(200, "application/json", self.cached("cups", lambda: cups(self.db, self.knockout, self.scores)))
         elif path == "/api/control":
             status = control_status(self.control) if self.control else {"enabled": False}
             self.reply(200, "application/json", json.dumps(status).encode())
@@ -1164,6 +1306,9 @@ def main():
     parser.add_argument("--scores", type=Path, default=default_scores(),
                         help="the site's GNUbg score shards s*.db, for the error-rate tiebreak "
                              "(default: $XDG_STATE_HOME/bg-site/plays)")
+    parser.add_argument("--knockout", type=Path, metavar="DB",
+                        default=Path(__file__).resolve().parent.parent / "knockout-nack.db",
+                        help="the Nackgammon knockout's database, opened read-only for /cups (default: knockout-nack.db)")
     args = parser.parse_args()
     if not args.db.exists():
         parser.error(f"{args.db} does not exist")
@@ -1173,6 +1318,7 @@ def main():
             parser.error(f"{args.control} does not exist")
         Handler.control = args.control.resolve()
     Handler.report = args.report.resolve()
+    Handler.knockout = args.knockout.resolve()
     server = ThreadingHTTPServer((args.host, args.port), Handler)
     print(f"serving {args.db} on http://{args.host}:{args.port}", flush=True)
     server.serve_forever()

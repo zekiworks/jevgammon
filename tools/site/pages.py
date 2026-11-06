@@ -10,9 +10,11 @@ from common import (EARLIER, EARLIER_NOTE, LATE_ENTRY, LATE_ENTRY_LABEL, LATE_EN
                     PENDING, PROVISIONAL, PROVISIONAL_NOTE, PUBLISHED, REASONING_NOTES, TOO_FEW, aliases, count, esc, fmt,
                     nm, pct, setup_slug, slug, status_badge)
 
-# The nav in four groups (Ümit, 30 Oct 2026): Results (the leaderboard), Analyses, Leagues and matches, Method and data.
-# Model pages open from the table rows; New models is linked from Data. "" is the home page.
-NAV = [("Results", [("", "Leaderboard")]),
+# The nav in groups (Ümit, 30 Oct 2026): Home (the leaderboard), Analyses, Leagues and matches, Method and data.
+# Model pages open from the table rows; New models is linked from Data. "" is the home page, first and without a group
+# label: the one navigation of every page (Zeki, bus #1860: the pages row and the old text menu merged), as keys in the
+# sibling site's pages-row style, the current page filled.
+NAV = [("", [("", "Home")]),
        ("Analyses", [("decisions/", "Every decision"), ("disagreements/", "Where models disagree"), ("phases/", "Phases"),
                      ("compare/", "Compare"), ("clear-risk/", "Clear risk")]),
        ("Leagues and matches", [("leagues/", "Leagues"), ("matches/", "Matches")]),
@@ -217,19 +219,19 @@ COST_HEAD = ["Model and setting", "$ per 1,000 decisions", "Median / P90 s per d
 
 # --- Layout -------------------------------------------------------------------------------------------------
 
-# The view bar's first row (Ümit, bus #1831: the sibling site's look; Zeki #1834: a visible way back to Home from every
-# page, the page navigation apart from the filters): the main pages as keys, Home first, the page in view filled. The
-# grouped navigation of the top bar under it keeps every page.
-VIEW_PAGES = [("", "Home"), ("leagues/", "Leagues"), ("matches/", "Matches"), ("decisions/", "Every decision"),
-              ("clear-risk/", "Clear risk"), ("method/", "Method")]
+# The view bar (the sibling site's sticky bar), on the home page only: its League and Models filter rows and its
+# Measure row. The pages are the top bar's navigation (NAV), on every page.
+def view_bar(rows: str) -> str:
+    return f'<div class="view-bar"><div class="view-rows">{rows}</div></div>' if rows else ""
 
 
-def view_bar(rel: str, path: str, rows: str = "") -> str:
-    """The sticky bar at the top of every page: row 1 the pages; `rows`, the home page's filter and part rows."""
-    keys = "".join(f'<li><a class="view-key" href="{rel}{href or ("" if rel else "./")}"'
-                   f'{" aria-current=page" if href == path else ""}>{esc(label)}</a></li>' for href, label in VIEW_PAGES)
-    return (f'<div class="view-bar"><div class="view-rows"><nav class="view-row view-pages" aria-labelledby="view-page">'
-            f'<span class="view-label" id="view-page">Page</span><ul>{keys}</ul></nav>{rows}</div></div>')
+def nav_items(rel: str, path: str) -> str:
+    """The pages row's groups and keys (NAV), the page in view marked."""
+    here = lambda href: href == path if not href else path.startswith(href)
+    return "".join(f'<li class="nav-group">{f"<span class=nav-group-label>{esc(group)}</span>" if group else ""}<ul>'
+                   + "".join(f'<li><a href="{rel}{href or ("" if rel else "./")}"{" aria-current=page" if here(href) else ""}>'
+                             f'{esc(label)}</a></li>' for href, label in links) + '</ul></li>'
+                   for group, links in NAV)
 
 
 def layout(S, base, path: str, title: str, body: str, description: str | None = None, main_class: str = "",
@@ -243,11 +245,7 @@ def layout(S, base, path: str, title: str, body: str, description: str | None = 
     og = (f'<meta property="og:image" content="{image}"><meta property="og:image:width" content="1200">'
           f'<meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image">'
           f'<meta name="twitter:image" content="{image}">') if image else ""
-    here = lambda href: href == path if not href else path.startswith(href)
-    nav = "".join(f'<li class="nav-group"><span class="nav-group-label">{esc(group)}</span><ul>'
-                  + "".join(f'<li><a href="{rel}{href or ("" if rel else "./")}"{" aria-current=page" if here(href) else ""}>'
-                            f'{esc(label)}</a></li>' for href, label in links) + '</ul></li>'
-                  for group, links in NAV)
+    nav = nav_items(rel, path)
     css = "".join(f'<link rel="stylesheet" href="{rel}{s}">' for s in ("site.css", "bg.css") + tuple(styles))
     js = "".join(f'<script src="{rel}{s}" defer></script>' for s in ("site.js", "tables.js", "png.js") + tuple(scripts))
     # The Dark / Light switch sits in the top bar itself, as on the Decision models site (Ümit, 31 Oct 2026); More options
@@ -275,12 +273,12 @@ def layout(S, base, path: str, title: str, body: str, description: str | None = 
 </head>
 <body class="v3 {body_class}" data-site-title="{esc(TITLE)}" data-site-subtitle="{esc(SUBTITLE)}">
   <a class="skip" href="#main">Skip to content</a>
-  {view_bar(rel, path, view_rows)}
+  {view_bar(view_rows)}
   <header class="topbar">
     <a class="brand" href="{rel or './'}">Hilde · Backgammon benchmark · v3</a>
     <div class="theme-switch" role="group" aria-label="Colour theme" hidden><button type="button" class="key" data-theme-choice="dark" aria-pressed="true" aria-label="Dark background"><span class="lamp" aria-hidden="true"></span>Dark<span class="long"> background</span></button><button type="button" class="key" data-theme-choice="light" aria-pressed="false" aria-label="Light background"><span class="lamp" aria-hidden="true"></span>Light<span class="long"> background</span></button></div>
     {more}
-    <nav class="nav" aria-label="All pages"><ul>{nav}</ul></nav>
+    <nav class="nav" aria-label="Pages"><ul>{nav}</ul></nav>
   </header>
   <main id="main"{f' class="{main_class}"' if main_class else ''}>
 {body}

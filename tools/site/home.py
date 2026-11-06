@@ -1613,9 +1613,11 @@ def _value(S, lg, n, measure, v, lo, hi, r, q) -> tuple[str, str]:
             f"{n}: median {P.secs(v)} s, P90 {P.secs(q.get('time_p90'))} s per decision")
 
 
-def hbars(S, measure: str, entries: list, pos, ticks, merged: bool) -> str:
+def hbars(S, measure: str, entries: list, pos, ticks, merged: bool, lines=()) -> str:
     """One chart's rows, as the sibling site's HTML bars: the setup's name with its family's icon, the bar in its
-    family's colour (programs grey), the 95% interval as a line on it, the value; grouped by model type, programs last."""
+    family's colour (programs grey), the 95% interval as a line on it, the value; grouped by model type, programs last.
+    `lines`: (position %, label) of the named program reference lines drawn across every row, each label on a line of
+    its own above the axis."""
     best_first = measure == "risk-judgement"
     out = []
     for g, glabel in GROUPS:
@@ -1639,23 +1641,47 @@ def hbars(S, measure: str, entries: list, pos, ticks, merged: bool) -> str:
                     track += f'<span class="hbar-interval" style="left:{pos(lo):.2f}%;width:{max(pos(hi) - pos(lo), 0.3):.2f}%"></span>'
             if measure == "risk-judgement":
                 track += '<span class="hbar-marker" style="left:50%"></span>'
+            track += "".join(f'<span class="hbar-refline" style="left:{p:.2f}%"></span>' for p, _ in lines)
             out.append(f'<li class="hbar" title="{esc(tip)}"{attrs(S, ds, slug_name(n) if ref else n, bool(ref))} '
                        f'data-group="{g}"><span class="hbar-label">{icon}{name}{where}</span>'
                        f'<span class="hbar-track">{track}</span><span class="hbar-value">{value}</span></li>')
     long_, short = HEADS[measure]
     axis = "".join(f'<span class="hbar-tick" style="left:{p:.2f}%">{esc(t)}</span>' for p, t in ticks)
-    return (f'<div class="hbar hbar-axis headed" aria-hidden="true"><span></span><span class="hbar-track">{axis}</span>'
+    refs = "".join(f'<div class="hbar hbar-refrow" aria-hidden="true"><span></span><span class="hbar-track">'
+                   f'<span class="hbar-reflabel{" end" if p > 60 else ""}" style="left:{p:.2f}%">{esc(t)}</span></span>'
+                   f'<span></span></div>' for p, t in lines)
+    return (f'{refs}<div class="hbar hbar-axis headed" aria-hidden="true"><span></span><span class="hbar-track">{axis}</span>'
             f'<span class="hbar-head"><span class="head-long">{long_}</span><span class="head-short">{short}</span></span></div>'
             f'<ol class="hbars headed">{"".join(out)}</ol>')
 
 
+def program_lines(entries: list, pos, merged: bool) -> list:
+    """The error-rate chart's reference lines (Zeki, bus #1860): the programs' own stored error rates, each named; no
+    other threshold."""
+    rows = sorted((e for e in entries if e[2] and e[3] is not None), key=lambda e: e[3])
+    return [(pos(v), f'{n}{f" · League {lg["id"]}" if merged else ""}: {fmt(v)}') for lg, n, ref, v, *_ in rows]
+
+
 def measure_chart_card(S, measure: str, title: str) -> str:
     per = {lg["dataset"]: [(lg, *e) for e in chart_rows(S, lg, measure)] for lg in S["leagues"]}
+    unmeasured = []
+    if measure in ("cost", "time"):
+        # A program without a value has no bar and no row: it is listed under the chart, Not measured.
+        unmeasured = [e for rows in per.values() for e in rows if e[2] and e[3] is None]
+        per = {ds: [e for e in rows if not (e[2] and e[3] is None)] for ds, rows in per.items()}
     every = [e for rows in per.values() for e in rows]
     pos, ticks = _axis(measure, [x for e in every for x in (e[3], e[4], e[5])])
-    views = all_view(S, hbars(S, measure, every, pos, ticks, True))
-    views += "".join(view(S, lg, hbars(S, measure, per[lg["dataset"]], pos, ticks, False)) for lg in S["leagues"])
+    lines = (lambda rows, merged: program_lines(rows, pos, merged)) if measure == "error-rate" else (lambda rows, merged: [])
+    views = all_view(S, hbars(S, measure, every, pos, ticks, True, lines(every, True)))
+    views += "".join(view(S, lg, hbars(S, measure, per[lg["dataset"]], pos, ticks, False, lines(per[lg["dataset"]], False)))
+                     for lg in S["leagues"])
     views += shared_view(S, "Analysis pending.")
+    if unmeasured:
+        names = {}
+        for lg, n, *_ in unmeasured:
+            names.setdefault(n, []).append(str(lg["id"]))
+        listed = "; ".join(f'{esc(n)} (League {", ".join(ids)})' for n, ids in sorted(names.items()))
+        views += f'<p class="table-note unmeasured">Programs, {esc(NOT_MEASURED)}: {listed}.</p>'
     fams = []
     for f in FAMILIES:
         if any(not e[2] and family(e[1]) is f for e in every):
@@ -1675,7 +1701,8 @@ def measure_chart_card(S, measure: str, title: str) -> str:
             'data-cost-unit-choice="1m" aria-pressed="false">per 1M decisions</button></span>' if measure == "cost" else "")
     extra = {"risk-judgement": ('<i class="swatch swatch-interval"></i>95% interval</span> <span><i class="swatch swatch-marker">'
                                 '</i>50 = always safe'),
-             "error-rate": '<i class="swatch swatch-interval"></i>95% interval'}.get(measure)
+             "error-rate": ('<i class="swatch swatch-interval"></i>95% interval</span> <span><i class="swatch swatch-refline">'
+                            '</i>a program\'s error rate (reference row, named above the axis)')}.get(measure)
     notes = {"risk-judgement": [LIMIT_HIT, LIMIT_HARD],
              "error-rate": [LIMIT_PAIRED],
              "cost": ["\u00a7 list-price estimate; runs on our GPUs: each setup's price label is in its row's tooltip and "
@@ -1703,17 +1730,22 @@ def result_cards(S) -> str:
            if not ref_label(S, lg["dataset"], n) and s["quality"].get("error_rate") is not None and not s["quality"].get("too_few")]
     low = min(ers, key=lambda x: x[2]["error_rate"]) if ers else None
     cards = []
-    for title, top, value, lo, hi in (
-            ("Best risk judgement, every model setup", best, "judgement", "judgement_lo", "judgement_hi"),
-            ("Best risk judgement, decision models", dec, "judgement", "judgement_lo", "judgement_hi"),
-            ("Lowest error rate (PR), every model setup", low, "error_rate", "error_lo", "error_hi")):
+    for title, top, value, lo, hi, unit in (
+            ("Highest observed risk judgement, every model setup", best, "judgement", "judgement_lo", "judgement_hi",
+             "/100, higher is better"),
+            ("Highest observed risk judgement, decision models", dec, "judgement", "judgement_lo", "judgement_hi",
+             "/100, higher is better"),
+            ("Lowest observed error rate, every model setup", low, "error_rate", "error_lo", "error_hi",
+             "PR, lower is better")):
         if not top:
             continue
         lg, n, x = top
-        cards.append(f'<div class="result-card"><h2>{esc(title)}</h2><p class="result-main">{fmt(x[value])}</p>'
+        cards.append(f'<div class="result-card"><h2>{esc(title)}</h2><p class="result-main">{fmt(x[value])} '
+                     f'<span class="result-unit">{esc(unit)}</span></p>'
                      f'<p class="result-cost"><a href="{P.model_href("", lg["dataset"], n, S)}">{esc(n)}</a> · League '
                      f'{lg["id"]} · 95% interval {fmt(x[lo])} to {fmt(x[hi])}</p></div>')
-    return f'<h2 class="board-group">Model setups, all leagues</h2><div class="result-cards">{"".join(cards)}</div>'
+    return (f'<h2 class="board-group">Model setups, all leagues</h2><div class="result-cards">{"".join(cards)}</div>'
+            f'<p class="table-note cards-note">{esc(ALL_NOTE)}</p>')
 
 
 def facts(S) -> str:
@@ -1736,7 +1768,7 @@ WHAT_THIS_MEASURES = ("Risk calls per setup: was each risk the right one, and wa
 
 def hero_card(S) -> str:
     face = "".join(f'<a href="#{k}">{esc(l)}</a>' for k, l in MEASURES)
-    face += ('<a href="#board-panel">Every number</a><a href="#leagues-tabs">Leagues and matches</a>'
+    face += ('<a href="#leagues-tabs">Leagues and matches</a><a href="#board-panel">Every number</a>'
              '<a href="#findings">Findings</a><a href="method/">Method</a>')
     return f"""
     <section class="card hero hero-card">
@@ -1771,15 +1803,15 @@ def home(S) -> str:
     return f"""
     {FAMILY_ICONS}
     {hero_card(S)}
-    <div class="home-leagues" id="leagues-tabs">{P.home_league_sections(S)}</div>
     {findings_block(S)}
     {filters(S)}
     {measure_charts(S)}
-    <section class="panel board-panel cols-all" id="board-panel" aria-labelledby="board-title">
+    <div class="home-leagues" id="leagues-tabs">{P.home_league_sections(S)}</div>
+    <section class="panel board-panel" id="board-panel" aria-labelledby="board-title">
       <div class="chart-head"><h2 id="board-title">Every number, setup by setup</h2><p class="chart-sub">The leaderboard: every measure of every setup, one tab per measure; each value with its 95% interval, its count and denominator or its price label under it.</p></div>
       <div class="modebar">
         <div class="keys view-switch needs-js" role="group" aria-label="Show the results as"><button type="button" class="key" data-view="table" aria-pressed="true"><span class="lamp" aria-hidden="true"></span>Table</button><button type="button" class="key" data-view="charts" aria-pressed="false"><span class="lamp" aria-hidden="true"></span>Charts</button></div>
-        <div class="keys col-switch needs-js" role="group" aria-label="Table columns"><button type="button" class="key" data-cols-all aria-pressed="true"><span class="lamp" aria-hidden="true"></span>All columns</button></div>
+        <div class="keys col-switch needs-js" role="group" aria-label="Table columns"><button type="button" class="key" data-cols-all aria-pressed="false"><span class="lamp" aria-hidden="true"></span>All columns</button></div>
         <div class="modes" role="tablist" aria-label="Leaderboard">{tabs}</div>
       </div>
       <div id="board" role="tabpanel">{panels}</div>

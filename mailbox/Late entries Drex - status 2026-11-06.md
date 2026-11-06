@@ -199,5 +199,5 @@ Every opponent gave 0 invalid answers too.
 
 **Incidents:**
 - **GLiDE v1.2 (local):** its first league-add failed because keys were missing from the orchestrator's environment. It was fixed before the pause and played on resume.
-- **Pause:** 02:2x–06:49 UTC, for Turkce.
+- **Pause:** 01:50–06:49 UTC, for Turkce. The orchestrator stopped at 01:50:03 and our last servers at 01:51:54.
 - **Drex 2.0 (local) server:** its first start failed at 07:27–07:37 because of the import path. After the fix it passed its 20-request smoke test and played.

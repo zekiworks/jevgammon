@@ -72,15 +72,27 @@
    decisions. The choice comes from ?cost-unit= (1k or 1m), else localStorage ("costUnit"), and sits in
    <html data-cost-unit>, which a line in each page's <head> sets before it renders; site.css shows the chosen unit. The
    page carries each cost per 1,000 decisions as printed (a stored value); the per-1M text is written here from the
-   cost's data-usd (per 1,000 decisions), so the page itself holds no number that is not in a data file. Without JavaScript costs read
-   per 1,000 decisions. */
+   cost's data-usd (per 1,000 decisions), so the page itself holds no number that is not in a data file: the values, a
+   cost chart's axis ticks (data-tick: whole dollars) and the tooltips of its rows (li[data-usd]). Without JavaScript
+   costs read per 1,000 decisions. */
 (function setupCostUnit() {
   const root = document.documentElement;
   const unit = () => (root.dataset.costUnit === '1m' ? '1m' : '1k');
+  const perMillion = (usd, tick) => {
+    const v = Number(usd) * 1000;
+    return `$${v.toLocaleString('en-US', tick || v >= 100 ? { maximumFractionDigits: v < 1 ? 2 : 0 } : { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
   document.querySelectorAll('.cost-1m[data-usd]').forEach(el => {
-    const v = Number(el.dataset.usd) * 1000;
-    el.textContent = `${el.dataset.prefix || ''}$${v.toLocaleString('en-US', v < 100 ? { minimumFractionDigits: 2, maximumFractionDigits: 2 } : { maximumFractionDigits: 0 })}`;
+    el.textContent = `${el.dataset.prefix || ''}${perMillion(el.dataset.usd, el.hasAttribute('data-tick'))}`;
   });
+  // A cost row's tooltip names its cost in the chosen unit.
+  const tips = () => document.querySelectorAll('li.hbar[data-usd]').forEach(li => {
+    if (!li.dataset.tip1k) li.dataset.tip1k = li.title;
+    li.title = unit() === '1m'
+      ? li.dataset.tip1k.replace(/\$[\d.,]+ per 1,000 decisions/, `${perMillion(li.dataset.usd, false)} per 1M decisions`)
+      : li.dataset.tip1k;
+  });
+  tips();
   const press = () => document.querySelectorAll('[data-cost-unit-choice]').forEach(key => {
     key.setAttribute('aria-pressed', String(key.dataset.costUnitChoice === unit()));
   });
@@ -107,15 +119,17 @@
     url.searchParams.set('cost-unit', choice);
     history.replaceState(history.state, '', url);
     press();
+    tips();
   });
 })();
 
-/* Every page: the view bar, the first thing on the page and sticky at the top of the window (the sibling site's).
-   Its height is kept in --view-bar-h, so links to a part of a page land below it. On the home page its Measure row
-   marks the part in view: the part that crosses a line a quarter of the way down the window below the bar, or the key
-   just pressed until the reader scrolls on; between parts no key is marked. */
+/* Every page: the page bar, sticky at the top of the window: the pages row (Home first) and, on the home page, the view
+   bar's filter and Measure rows under it (Zeki, bus #1878: Home stays in view everywhere). Its height is kept in
+   --view-bar-h, so links to a part of a page land below it. On the home page the Measure row marks the part in view:
+   the part that crosses a line a quarter of the way down the window below the bar, or the key just pressed until the
+   reader scrolls on; between parts no key is marked. */
 (function setupViewBar() {
-  const bar = document.querySelector('.view-bar');
+  const bar = document.querySelector('.page-bar');
   if (!bar) return;
   const measure = () => document.documentElement.style.setProperty('--view-bar-h', `${bar.offsetHeight}px`);
   measure();

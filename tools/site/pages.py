@@ -219,10 +219,13 @@ COST_HEAD = ["Model and setting", "$ per 1,000 decisions", "Median / P90 s per d
 
 # --- Layout -------------------------------------------------------------------------------------------------
 
-# The view bar (the sibling site's sticky bar), on the home page only: its League and Models filter rows and its
-# Measure row. The pages are the top bar's navigation (NAV), on every page.
-def view_bar(rows: str) -> str:
-    return f'<div class="view-bar"><div class="view-rows">{rows}</div></div>' if rows else ""
+# The page bar, sticky at the top of the window on every page (Zeki, bus #1878: Home stays in view): the pages row
+# (NAV, Home first) and, on the home page, the view bar's League and Models filter rows and Measure row under it. The
+# top bar above it (the site's name, the theme, More options) scrolls away.
+def page_bar(nav: str, rows: str = "") -> str:
+    view = f'<div class="view-bar"><div class="view-rows">{rows}</div></div>' if rows else ""
+    return (f'<div class="page-bar"><div class="page-bar-in"><nav class="nav" aria-label="Pages"><ul>{nav}</ul></nav>'
+            f'{view}</div></div>')
 
 
 def nav_items(rel: str, path: str) -> str:
@@ -273,13 +276,12 @@ def layout(S, base, path: str, title: str, body: str, description: str | None = 
 </head>
 <body class="v3 {body_class}" data-site-title="{esc(TITLE)}" data-site-subtitle="{esc(SUBTITLE)}">
   <a class="skip" href="#main">Skip to content</a>
-  {view_bar(view_rows)}
   <header class="topbar">
     <a class="brand" href="{rel or './'}">Hilde · Backgammon benchmark · v3</a>
     <div class="theme-switch" role="group" aria-label="Colour theme" hidden><button type="button" class="key" data-theme-choice="dark" aria-pressed="true" aria-label="Dark background"><span class="lamp" aria-hidden="true"></span>Dark<span class="long"> background</span></button><button type="button" class="key" data-theme-choice="light" aria-pressed="false" aria-label="Light background"><span class="lamp" aria-hidden="true"></span>Light<span class="long"> background</span></button></div>
     {more}
-    <nav class="nav" aria-label="Pages"><ul>{nav}</ul></nav>
   </header>
+  {page_bar(nav, view_rows)}
   <main id="main"{f' class="{main_class}"' if main_class else ''}>
 {body}
   </main>

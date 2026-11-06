@@ -1565,7 +1565,7 @@ def _axis(measure: str, values: list) -> tuple:
     """(position of a value in % of the track, ticks with their labels, the column head) of one measure's axis: Risk
     judgement 0 to 100; the others on a log scale over the values' powers of ten (error rate in 1-2-5 steps)."""
     if measure == "risk-judgement":
-        return (lambda v: v), [(t, str(t)) for t in (0, 25, 50, 75, 100)]
+        return (lambda v: v), [(t, str(t), t) for t in (0, 25, 50, 75, 100)]
     vals = [v for v in values if v]
     steps = [1, 2, 5] if measure == "error-rate" else [1]
     grid = [m * 10 ** e for e in range(-4, 5) for m in steps]
@@ -1578,7 +1578,7 @@ def _axis(measure: str, values: list) -> tuple:
     unit = {"cost": "$", "error-rate": "", "time": ""}[measure]
     suffix = " s" if measure == "time" else ""
     label = lambda g: f"{unit}{g:g}{suffix}" if g >= 1 else f"{unit}{g:.{max(0, -math.floor(math.log10(g)))}f}{suffix}"
-    return pos, [(pos(g), label(g)) for g in grid if lo <= g <= hi]
+    return pos, [(pos(g), label(g), g) for g in grid if lo <= g <= hi]
 
 
 HEADS = {"risk-judgement": ("Risk judgement | 95% interval", "Judgement | 95%"),
@@ -1642,13 +1642,21 @@ def hbars(S, measure: str, entries: list, pos, ticks, merged: bool, lines=()) ->
             if measure == "risk-judgement":
                 track += '<span class="hbar-marker" style="left:50%"></span>'
             track += "".join(f'<span class="hbar-refline" style="left:{p:.2f}%"></span>' for p, _ in lines)
-            out.append(f'<li class="hbar" title="{esc(tip)}"{attrs(S, ds, slug_name(n) if ref else n, bool(ref))} '
+            usd = f' data-usd="{v!r}"' if measure == "cost" and v is not None else ""
+            out.append(f'<li class="hbar" title="{esc(tip)}"{usd}{attrs(S, ds, slug_name(n) if ref else n, bool(ref))} '
                        f'data-group="{g}"><span class="hbar-label">{icon}{name}{where}</span>'
                        f'<span class="hbar-track">{track}</span><span class="hbar-value">{value}</span></li>')
     long_, short = HEADS[measure]
-    axis = "".join(f'<span class="hbar-tick" style="left:{p:.2f}%">{esc(t)}</span>' for p, t in ticks)
+    # A cost tick carries its per-1,000 value; site.js writes its per-1M label (Zeki, bus #1878), as for the values.
+    tick = (lambda t, g: f'<span class="cost-1k">{esc(t)}</span><span class="cost-1m" data-usd="{g!r}" data-tick>{esc(t)}</span>'
+            if measure == "cost" else esc(t))
+    axis = "".join(f'<span class="hbar-tick" style="left:{p:.2f}%">{tick(t, g)}</span>' for p, t, g in ticks)
+    # A program line's name stays inside the plot area at every width (Zeki, bus #1878): it is shifted left by as much of
+    # its own width as its line is far across (none at the left edge, all of it at the right) and wraps where the area is
+    # narrower than the name; a tick marks the line's place above it.
     refs = "".join(f'<div class="hbar hbar-refrow" aria-hidden="true"><span></span><span class="hbar-track">'
-                   f'<span class="hbar-reflabel{" end" if p > 60 else ""}" style="left:{p:.2f}%">{esc(t)}</span></span>'
+                   f'<span class="hbar-reftick" style="left:{p:.2f}%"></span>'
+                   f'<span class="hbar-reflabel" style="margin-left:{p:.2f}%;transform:translateX(-{p:.2f}%)">{esc(t)}</span></span>'
                    f'<span></span></div>' for p, t in lines)
     return (f'{refs}<div class="hbar hbar-axis headed" aria-hidden="true"><span></span><span class="hbar-track">{axis}</span>'
             f'<span class="hbar-head"><span class="head-long">{long_}</span><span class="head-short">{short}</span></span></div>'

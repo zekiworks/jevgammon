@@ -87,3 +87,117 @@ The Drex runs are stopped cleanly and **GPUs 0 and 2 hold none of our processes*
     CAN_GO=yes DREX_GPUS="0 2" DREX_LOCAL=yes workspace/drex/start_gpu.sh
 
 It restarts Drex Max v1 first (smoke test, then its league). It then starts the servers that still have pairs (GLiDE v1.2, Open-Jev, Decider v1.1) and resumes leagues #15–#17. Then Drex 2.0 (local) runs on a whole GPU, with every local opponent started again for it.
+- 2026-11-06T06:49:54Z RESUME on Main's word (GPUs 0 and 2; Turkce released the GPUs at 06:48 UTC)
+- 2026-11-06T06:49:54Z orchestrator up, mode gpu (first match #829; GPUs 0 2)
+- 2026-11-06T06:49:54Z drex-drex-max-1-1 (re)started for Drex Max 1.1
+- 2026-11-06T06:49:54Z drex-drex-2-0 (re)started for Drex 2.0
+- 2026-11-06T06:50:40Z started drexmax on GPU 0 (0, 50406 MiB 1, 85887 MiB 2, 20 MiB 3, 35844 MiB )
+- 2026-11-06T06:51:09Z Drex Max v1: smoke test passed (20/20 passed); its league starts
+- 2026-11-06T06:51:10Z drex-drex-max-v1 (re)started for Drex Max v1
+- 2026-11-06T06:56:27Z started glide on GPU 2 (0, 52700 MiB 1, 85887 MiB 2, 52810 MiB 3, 58588 MiB )
+- 2026-11-06T06:56:27Z Fastino GLiDE v1.2 (local) added to league #15 (Drex Max 1.1)
+- 2026-11-06T06:56:27Z Fastino GLiDE v1.2 (local) added to league #16 (Drex 2.0)
+- 2026-11-06T06:56:27Z Fastino GLiDE v1.2 (local) added to league #17 (Drex Max v1)
+- 2026-11-06T07:06:32Z stopped glide on GPU 2: all its pairs played
+- 2026-11-06T07:06:52Z started openjev on GPU 2 (0, 52700 MiB 1, 85887 MiB 2, 53052 MiB 3, 58588 MiB )
+- 2026-11-06T07:06:52Z Open-Jev 27B v1.1 added to league #15 (Drex Max 1.1)
+- 2026-11-06T07:06:52Z Open-Jev 27B v1.1 added to league #16 (Drex 2.0)
+- 2026-11-06T07:06:53Z Open-Jev 27B v1.1 added to league #17 (Drex Max v1)
+- 2026-11-06T07:16:56Z stopped openjev on GPU 2: all its pairs played
+- 2026-11-06T07:17:22Z started dv11 on GPU 2 (0, 52700 MiB 1, 85887 MiB 2, 50384 MiB 3, 58588 MiB )
+- 2026-11-06T07:17:22Z Decider v1.1 27B added to league #15 (Drex Max 1.1)
+- 2026-11-06T07:17:22Z Decider v1.1 27B added to league #16 (Drex 2.0)
+- 2026-11-06T07:17:22Z Decider v1.1 27B added to league #17 (Drex Max v1)
+- 2026-11-06T07:27:26Z stopped drexmax on GPU 0: all its pairs played
+- 2026-11-06T07:27:26Z stopped dv11 on GPU 2: all its pairs played
+- 2026-11-06T07:27:32Z start of drexv2 on GPU 0 failed (try 1 of 3; state/servers.log)
+- 2026-11-06T07:32:39Z start of drexv2 on GPU 0 failed (try 2 of 3; state/servers.log)
+- 2026-11-06T07:37:45Z start of drexv2 on GPU 0 failed (try 3 of 3; state/servers.log)
+- 2026-11-06T07:37:45Z drexv2 given up after 3 failed starts
+- 2026-11-06T07:42:49Z INCOMPLETE SCOPE (gpu): 3 pairs missing and nothing else left to play; billed $1.1708
+- 2026-11-06T07:42:49Z Release (jevgammon Drex late entries, incomplete 2026-11-06T07:42:49Z): all our servers are stopped; GPU(s) 0 2 are free of us again (no other process touched).
+- 2026-11-06T07:42:49Z   missing: Drex Max 1.1 v GPT-6 Luna (match #829): player 1: warming up GPT-6 Luna: OpenAI Decisions did not answer within 900 s of warm-up: OpenAI Decisions request failed: gave up after 4 attempts: 429 Too Many Requests: {"error":{"message":"You hav
+- 2026-11-06T07:42:49Z   missing: Drex 2.0 v GPT-6 Luna (match #835): player 2: warming up GPT-6 Luna: OpenAI Decisions did not answer within 900 s of warm-up: OpenAI Decisions request failed: gave up after 4 attempts: 429 Too Many Requests: {"error":{"message":"You hav
+- 2026-11-06T07:42:49Z   missing: Drex Max v1 v GPT-6 Luna (match #846): player 1: warming up GPT-6 Luna: OpenAI Decisions did not answer within 900 s of warm-up: OpenAI Decisions request failed: gave up after 4 attempts: 429 Too Many Requests: {"error":{"message":"You hav
+- 2026-11-06T07:44:06Z Drex 2.0 (local): its server failed to start at 07:27–07:37 (serve.py could not import its own modules: the snapshot's symlinked files resolve to the cache's blobs). Fixed in drexv2.sh (import path = the snapshot folders); on Main's go it starts on GPU 0 with a smoke test first
+- 2026-11-06T07:44:06Z orchestrator up, mode gpu (first match #829; GPUs 0 2)
+- 2026-11-06T07:44:06Z drex-drex-max-1-1 (re)started for Drex Max 1.1
+- 2026-11-06T07:44:07Z drex-drex-2-0 (re)started for Drex 2.0
+- 2026-11-06T07:44:37Z started drexv2 on GPU 0 (0, 65756 MiB 1, 85887 MiB 2, 20 MiB 3, 58588 MiB )
+- 2026-11-06T07:44:55Z Drex 2.0 (local): smoke test passed (20/20 passed); its league starts
+- 2026-11-06T07:44:56Z drex-drex-2-0-local (re)started for Drex 2.0 (local)
+- 2026-11-06T07:50:50Z started trio on GPU 2 (0, 69426 MiB 1, 85887 MiB 2, 73102 MiB 3, 58588 MiB )
+- 2026-11-06T07:50:50Z Decider v1.2 27B added to league #18 (Drex 2.0 (local))
+- 2026-11-06T07:50:51Z Decider Flash v1.2 added to league #18 (Drex 2.0 (local))
+- 2026-11-06T07:50:51Z Winnow-12B added to league #18 (Drex 2.0 (local))
+- 2026-11-06T08:00:56Z stopped trio on GPU 2: all its pairs played
+- 2026-11-06T08:03:23Z started cygnet on GPU 2 (0, 69426 MiB 1, 85887 MiB 2, 32584 MiB 3, 58588 MiB )
+- 2026-11-06T08:03:23Z Cygnet (Gemma 4 12B) added to league #18 (Drex 2.0 (local))
+- 2026-11-06T08:03:44Z started clef on GPU 2 (0, 69426 MiB 1, 85887 MiB 2, 86423 MiB 3, 58588 MiB )
+- 2026-11-06T08:03:44Z Clef added to league #18 (Drex 2.0 (local))
+- 2026-11-06T08:08:48Z stopped cygnet on GPU 2: all its pairs played
+- 2026-11-06T08:08:48Z stopped clef on GPU 2: all its pairs played
+- 2026-11-06T08:09:09Z started glide on GPU 2 (0, 69426 MiB 1, 85887 MiB 2, 52810 MiB 3, 58588 MiB )
+- 2026-11-06T08:09:09Z Fastino GLiDE v1.2 (local) added to league #18 (Drex 2.0 (local))
+- 2026-11-06T08:14:11Z stopped glide on GPU 2: all its pairs played
+- 2026-11-06T08:14:27Z started openjev on GPU 2 (0, 69426 MiB 1, 85887 MiB 2, 53052 MiB 3, 58588 MiB )
+- 2026-11-06T08:14:27Z Open-Jev 27B v1.1 added to league #18 (Drex 2.0 (local))
+- 2026-11-06T08:19:30Z stopped openjev on GPU 2: all its pairs played
+- 2026-11-06T08:19:55Z started dv11 on GPU 2 (0, 69426 MiB 1, 85887 MiB 2, 50384 MiB 3, 58588 MiB )
+- 2026-11-06T08:19:55Z Decider v1.1 27B added to league #18 (Drex 2.0 (local))
+- 2026-11-06T08:24:58Z stopped drexv2 on GPU 0: all its pairs played
+- 2026-11-06T08:24:58Z stopped dv11 on GPU 2: all its pairs played
+- 2026-11-06T08:34:32Z INCOMPLETE SCOPE (gpu): 4 pairs missing and nothing else left to play; billed $1.3129
+- 2026-11-06T08:34:32Z Release (jevgammon Drex late entries, incomplete 2026-11-06T08:34:32Z): all our servers are stopped; GPU(s) 0 2 are free of us again (no other process touched).
+- 2026-11-06T08:34:32Z   missing: Drex Max 1.1 v GPT-6 Luna (match #829): player 1: warming up GPT-6 Luna: OpenAI Decisions did not answer within 900 s of warm-up: OpenAI Decisions request failed: gave up after 4 attempts: 429 Too Many Requests: {"error":{"message":"You hav
+- 2026-11-06T08:34:32Z   missing: Drex 2.0 v GPT-6 Luna (match #835): player 2: warming up GPT-6 Luna: OpenAI Decisions did not answer within 900 s of warm-up: OpenAI Decisions request failed: gave up after 4 attempts: 429 Too Many Requests: {"error":{"message":"You hav
+- 2026-11-06T08:34:32Z   missing: Drex Max v1 v GPT-6 Luna (match #846): player 1: warming up GPT-6 Luna: OpenAI Decisions did not answer within 900 s of warm-up: OpenAI Decisions request failed: gave up after 4 attempts: 429 Too Many Requests: {"error":{"message":"You hav
+- 2026-11-06T08:34:32Z   missing: Drex 2.0 (local) v GPT-6 Luna (match #886): player 1: warming up GPT-6 Luna: OpenAI Decisions did not answer within 900 s of warm-up: OpenAI Decisions request failed: gave up after 4 attempts: 429 Too Many Requests: {"error":{"message":"You hav
+
+## Final (2026-11-06 08:34 UTC): done except the GPT-6 Luna pairs
+
+The run ended as **INCOMPLETE SCOPE**: 72 of 76 pairs were played. The 4 missing pairs are each entrant's pair with GPT-6 Luna.
+- **Why Luna is blocked:** its API answered "429 no credits remaining", and no top-up was decided.
+- **The 4 matches:** #829, #835, #846 and #886. They stay deferred, are valid and resume as they are.
+
+**Servers.** All of ours are stopped. GPUs 0 and 2 are free of us since 08:34:32 UTC (41 MiB and 20 MiB, no compute process). GPUs 1 and 3 were never used.
+
+**Matches #829–#904:** 72 finished and valid, 4 deferred.
+- **Leagues:** #15 Drex Max 1.1, #16 Drex 2.0, #17 Drex Max v1, #18 Drex 2.0 (local). All are hidden, stage late-entry, League 1's rules.
+
+| entrant | route | played | W-D-L | points | game points for–against | decisions | invalid | lists split (25-option cap) | s per decision |
+|---|---|---|---|---|---|---|---|---|---|
+| Drex Max 1.1 | Nace API | 18 of 19 | **12-2-4** | 38 | 88–53 | 2,154 | 0 | 221 | 0.54 |
+| Drex Max v1 | our GPU | 18 of 19 | 11-0-7 | 33 | 79–52 | 2,148 | 0 | 244 | 0.95 |
+| Drex 2.0 | Nace API | 18 of 19 | 10-0-8 | 30 | 66–65 | 1,937 | 0 | 212 | 0.53 |
+| Drex 2.0 (local) | our GPU | 18 of 19 | 7-0-11 | 21 | 60–70 | 1,993 | 0 | 172 | 0.51 |
+
+Every opponent gave 0 invalid answers too.
+
+**Billed: $1.31.**
+
+| who | billed |
+|---|---|
+| Drex entrants' Nace requests, booked by the pre-send guard (5,585 attempts, cap $1.25) | $0.79 |
+| API opponents | $0.53 |
+
+- **The API opponents' share:**
+
+  | opponent | billed |
+  |---|---|
+  | Jev 1.13.0 | $0.10 |
+  | SubQ Snap Preview | $0.09 |
+  | Jev 1.14.0 | $0.09 |
+  | Fastino GLiDE | ≈ $0.08 (estimated at $0.04 per million input tokens; no price in its settings) |
+  | Liquid | $0.07 |
+  | Celeris | $0.07 |
+  | Mercury Decide | $0.03 |
+  | GPT-6 Luna | $0 (blocked) |
+
+- **Not billed (list-price equivalent):** Drex Max v1 $0.58, Drex 2.0 (local) $0.50, the local Deciders $0.10.
+- **Spend limits:** the $2 soft stop never fired, and no request was refused by the guard.
+
+**Incidents:**
+- **GLiDE v1.2 (local):** its first league-add failed because keys were missing from the orchestrator's environment. It was fixed before the pause and played on resume.
+- **Pause:** 02:2x–06:49 UTC, for Turkce.
+- **Drex 2.0 (local) server:** its first start failed at 07:27–07:37 because of the import path. After the fix it passed its 20-request smoke test and played.

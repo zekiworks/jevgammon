@@ -75,7 +75,7 @@ The Drex runs are stopped cleanly and **GPUs 0 and 2 hold none of our processes*
   - Decider v1.1 27B, Open-Jev 27B v1.1 and Fastino GLiDE v1.2 (local): GPU, paused.
 - Drex 2.0 (local): all 19 (GPU, paused; Luna blocked as above).
 
-**GLiDE v1.2 (local).** Its server was up 01:41–02:0x but played no Drex pair: `league-add` failed. The orchestrator ran `league-add` without the key variables in its environment, and the runner checks every player's service settings, a local GLiDE's included. Fixed in `workspace/drex/orchestrate.sh` for the resume.
+**GLiDE v1.2 (local).** Its server was up from 01:41 UTC until the pause but played no Drex pair: `league-add` failed. The orchestrator ran `league-add` without the key variables in its environment, and the runner checks every player's service settings, a local GLiDE's included. Fixed in `workspace/drex/orchestrate.sh` for the resume.
 
 **Billed so far: $1.03.**
 - The Drex entrants' Nace requests: $0.64, booked by the pre-send guard (cap $1.25).

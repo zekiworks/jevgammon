@@ -332,7 +332,9 @@ button.mode[aria-selected="true"]::after, a.mode[aria-selected="true"]::after { 
 .view-filter a.view-key[data-league-pick="all"][aria-current], .view-filter a.view-key[data-filter-kind="all"][aria-current],
 #filters button.key[aria-pressed="true"]:is([data-league-pick="all"], [data-filter-kind="all"], [data-filter-setting="all"],
   [data-filter-runs="all"], [data-filter-weights="all"]) { color: var(--view-text); background: var(--view-key);
-  border: 1px solid var(--view-key-edge); box-shadow: var(--key-shadow); font-weight: 400; }
+  border: 1px solid var(--view-key-edge); box-shadow: var(--key-shadow); font-weight: 600; }
+#filters button.key[aria-pressed="true"]:is([data-league-pick="all"], [data-filter-kind="all"], [data-filter-setting="all"],
+  [data-filter-runs="all"], [data-filter-weights="all"]) { font-weight: 400; }
 .view-filter a.view-key[aria-current]:is([data-league-pick="all"], [data-filter-kind="all"])::before,
 #filters button.key[aria-pressed="true"]:is([data-league-pick="all"], [data-filter-kind="all"], [data-filter-setting="all"],
   [data-filter-runs="all"], [data-filter-weights="all"])::before { content: none; }

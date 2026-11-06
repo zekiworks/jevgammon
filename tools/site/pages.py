@@ -751,11 +751,36 @@ LATE_METHOD = ("Error rate and risk judgement: 95% intervals, whole games resamp
                "the 0.001 margin: rates corrected by adding 0.5 to the counts and 1 to the totals; 95% intervals, blocks "
                "of two seat-swapped games resampled. Cut off: answers that stopped at an output limit the request sent "
                "(finish reason length, stop reason max_tokens, finishReason MAX_TOKENS, incomplete max_output_tokens), "
-               "in the stored response or error. Effort: the reasoning effort the requests sent.")
+               "in the stored response or error. Effort: the reasoning effort the requests sent. Engine's best play: "
+               "the share of its scored decisions that chose the engine's best play (equity loss under the best-play "
+               "threshold). Time: median request seconds per decision (waits between retries not included). Cost per "
+               "1,000 decisions: the recorded tokens at the price shown, as labelled there (list or billed price; for a "
+               "setup on our GPUs the hosted model's list price, not billed).")
 
 
 def late_status(e) -> str:
-    return status_badge(LATE_ENTRY_NOTE if e["status"] == PROVISIONAL else PUBLISHED)
+    """Published when every pair of its field was played; a pair not played for a recorded reason (content/
+    late_entries.json) is named as such, never as a loss; otherwise still playing."""
+    if e["status"] != PROVISIONAL:
+        return status_badge(PUBLISHED)
+    gone = e.get("not_played") or []
+    if gone and not e["running"] and e["played"] + len(gone) == e["total"]:
+        return status_badge(f"{PROVISIONAL}: {count(len(gone))} {'pair' if len(gone) == 1 else 'pairs'} not played")
+    return status_badge(LATE_ENTRY_NOTE)
+
+
+def late_cost(e) -> str:
+    """$ per 1,000 decisions at the price its setups.json entry records (label, source, date read), and, where it was
+    billed at another price, the billed figure (build.late_entry_summaries) beside it."""
+    q, p = e["quality"], e.get("price") or {}
+    if q.get("usd_per_1000") is None or not p:
+        return cost_cell({"setups_meta": {}}, LATE_ENTRY, e["name"], q)[16:-5]
+    tokens = f'${p["input_per_mtok"]} per million input tokens' + (
+        f', ${p["output_per_mtok"]} per million output tokens' if p.get("output_per_mtok") else "")
+    src = (f'; {esc(p["source"])}' if p.get("source") else "") + (f', read {esc(p["date"])}' if p.get("date") else "")
+    billed = (f'<span class="small">{esc(p["billed_label"])}, ${p["billed_input_per_mtok"]} per million input tokens: '
+              f'{fmt(e["usd_per_1000_billed"], 3)}</span>' if e.get("usd_per_1000_billed") is not None else "")
+    return f'{fmt(q["usd_per_1000"], 3)}<span class="small">{esc(p["label"])}, {tokens}{src}</span>{billed}'
 
 
 def late_cells(e) -> dict:
@@ -764,15 +789,20 @@ def late_cells(e) -> dict:
     q, r, x, route = e["quality"], e["risk"]["main"], e["exchanges"], e["route"]
     td = lambda cell: cell[16:-5]  # the contents of a <td class="num"> cell
     effort = "; ".join(f"{esc(k)} in {count(v)} of {count(x['with_exchanges'])} decisions" for k, v in x["efforts"].items())
+    gone = e.get("not_played") or []
     return dict(
         entry=f'{esc(e["entry"][:10])}<span class="small">first match {esc(e["entry"][11:16])} UTC</span>',
         field=f'League {e["field_league"]} (original table)<span class="small">{count(e["total"])} setups</span>',
         played=(f'{count(e["played"])} / {count(e["total"])}'
-                + (f'<span class="small">{count(e["running"])} running</span>' if e["running"] else "")),
+                + (f'<span class="small">{count(e["running"])} running</span>' if e["running"] else "")
+                + "".join(f'<span class="small">not played: {esc(g["opponent"])} ({esc(g["reason"])})</span>'
+                          for g in gone)),
         record=(f'{count(e["record"]["won"])}\u2013{count(e["record"]["drawn"])}\u2013{count(e["record"]["lost"])}'
                 f'<span class="small">won\u2013drawn\u2013lost</span>'),
         error=td(er_cell(q)), judgement=td(home.judgement_td(r)), ability=td(home.ability_td(r)),
         caution=td(home.caution_td(r)),
+        best=pct(q["best_share"]) if q.get("best_share") is not None and not q.get("too_few") else nm(NA),
+        time=secs(q.get("time_median")), cost=late_cost(e),
         invalid=f'{count(q["invalid"])}<span class="small">of {count(q["decisions"])} decisions</span>',
         cut=(f'{count(x["cut_off"])}<span class="small">{count(x["limit_sent"])} of {count(x["with_exchanges"])} '
              f'decisions sent an output limit; {count(x["past_limit_no_limit_sent"])} over '
@@ -783,7 +813,10 @@ def late_cells(e) -> dict:
 
 LATE_HEAD = ["Setup", "Entry date", "League field played", "Matches played", "Record (W\u2013D\u2013L)",
              "Error rate (PR), 95% interval", "Risk judgement, margin 0.001", "Ability d\u2032",
-             "Caution c (+ cautious, \u2212 bold)", "Invalid answers", "Cut off at the output limit", "Route and effort sent"]
+             "Caution c (+ cautious, \u2212 bold)", "Engine's best play", "Median s per decision",
+             "$ per 1,000 decisions", "Invalid answers", "Cut off at the output limit", "Route and effort sent"]
+
+
 LATE_RESULT = {1: "Won", 0: "Draw", -1: "Lost"}
 
 
@@ -792,10 +825,14 @@ def late_href(rel, e) -> str:
 
 
 def late_results(e, rel) -> str:
-    """A late entry's matches, one row per opponent in the order they started: score (its own first), result, match."""
+    """A late entry's matches, one row per opponent in the order they started: score (its own first), result, match.
+    A pair not played for a recorded reason (its stopped match, if any, included) shows the reason, no score."""
+    gone = {g["opponent"]: g["reason"] for g in e.get("not_played") or []}
     rows = []
     for m in e["matches"]:
         done = m["status"] == "finished"
+        if not done and m["opponent"] in gone:
+            continue
         res = LATE_RESULT[(m["score_for"] > m["score_against"]) - (m["score_for"] < m["score_against"])] if done else None
         rows.append(f'<tr data-dataset="{LATE_ENTRY}"><td class="model"><span class="model-name">{esc(m["opponent"])}</span></td>'
                     f'<td class="num">{m["score_for"]}\u2013{m["score_against"]}</td>'
@@ -803,10 +840,15 @@ def late_results(e, rel) -> str:
                     f'<td class="num">' + (f'<a href="{rel}matches/#{match_anchor("v3", m["id"])}">{m["id"]}</a>' if done
                                            else str(m["id"])) + '</td>'
                     f'<td class="date">{(m["finished"] or "")[:10]}</td></tr>')
+    for opp, why in gone.items():
+        rows.append(f'<tr data-dataset="{LATE_ENTRY}"><td class="model"><span class="model-name">{esc(opp)}</span></td>'
+                    f'<td class="num">{nm("No score")}</td><td>Not played ({esc(why)})</td><td class="num">{nm(NA)}</td>'
+                    f'<td class="date"></td></tr>')
     r = e["record"]
+    unplayed = f"; {count(len(gone))} not played, not a loss" if gone else ""
     return (SWIPE + table(["Opponent", "Score", "Result", "#", "Finished"], rows,
                           f"{esc(e['name'])} against each opponent, its score first: {count(r['won'])} won, "
-                          f"{count(r['drawn'])} drawn, {count(r['lost'])} lost; none counts in a standings table",
+                          f"{count(r['drawn'])} drawn, {count(r['lost'])} lost{unplayed}; none counts in a standings table",
                           cls="board list", attrs=f' data-dataset="{LATE_ENTRY}"'))
 
 
@@ -822,7 +864,7 @@ def late_entries_section(S, rel) -> str:
                     f'{esc(e["name"])}</a><span class="small">{late_status(e)}</span></td><td class="date">{c["entry"]}</td>'
                     f'<td>{c["field"]}</td>'
                     + "".join(f'<td class="num">{c[k]}</td>' for k in ("played", "record", "error", "judgement", "ability",
-                                                                       "caution", "invalid", "cut"))
+                                                                       "caution", "best", "time", "cost", "invalid", "cut"))
                     + f'<td>{c["route"]}</td></tr>')
         results.append(f'<h3 id="late-{e["slug"]}">{esc(e["name"])}: results per opponent</h3>' + late_results(e, rel))
     return (f'<section class="card" id="late-entries" data-dataset="{LATE_ENTRY}"><div class="section-head">'
@@ -839,23 +881,27 @@ def late_entry_page(S, e) -> str:
     rel = "../../../"
     c = late_cells(e)
     q = e["quality"]
-    facts = [("Late entry", f'{esc(LATE_ENTRY_LABEL)}: its games count in no standings table, no league table, no Hype '
+    items = [("Late entry", f'{esc(LATE_ENTRY_LABEL)}: its games count in no standings table, no league table, no Hype '
                             f'Cup input and no other setup\'s numbers'),
              ("Entry date", c["entry"]), ("League field played", c["field"]), ("Matches played", c["played"]),
              ("Record", c["record"]), ("Error rate (PR), 95% interval", c["error"]),
              ("Decisions", f'{count(q["decisions"])} ({count(q["scored"])} scored)'),
              ("Risk judgement, margin 0.001", c["judgement"]), ("Ability d\u2032", c["ability"]),
-             ("Caution c (+ cautious, \u2212 bold)", c["caution"]), ("Invalid answers", c["invalid"]),
+             ("Caution c (+ cautious, \u2212 bold)", c["caution"]), ("Engine's best play", c["best"]),
+             ("Median s per decision", c["time"]), ("$ per 1,000 decisions", c["cost"]),
+             ("Invalid answers", c["invalid"]),
              ("Cut off at the output limit", c["cut"]), ("Route and effort sent", c["route"])]
+    m = S["setups_meta"].get((LATE_ENTRY, e["name"]))
+    setup = (f'<section class="card" id="setup"><h2>How we called it</h2>{facts(m, q)}</section>' if m else "")
     return (f'<section class="card"><p class="eyebrow">{esc(LATE_ENTRY_LABEL)} · League {e["field_league"]} field</p>'
             f'<h1>{esc(e["name"])}</h1><p class="subtitle">{late_status(e)}</p><p class="version">{esc(version_line(S))}</p></section>'
             f'<section class="card" id="late-entry" data-dataset="{LATE_ENTRY}"><h2>{esc(LATE_ENTRY_LABEL)}</h2>'
             f'<p class="note">{esc(LATE_ABOUT)}</p><dl class="facts">'
-            + "".join(f"<dt>{k}</dt><dd>{v}</dd>" for k, v in facts)
+            + "".join(f"<dt>{k}</dt><dd>{v}</dd>" for k, v in items)
             + f'</dl><p class="table-note">{esc(LATE_METHOD)}</p>'
             f'<p><a href="{rel}leagues/#late-entries">Late entries on the Leagues page</a> · '
-            f'<a href="{rel}data/v3/late-entries/{e["slug"]}.json">JSON</a></p></section>'
-            f'<section class="card" id="late-entry-matches"><h2>Matches</h2>' + late_results(e, rel) + "</section>")
+            f'<a href="{rel}data/v3/late-entries/{e["slug"]}.json">JSON</a></p></section>' + setup
+            + f'<section class="card" id="late-entry-matches"><h2>Matches</h2>' + late_results(e, rel) + "</section>")
 
 
 # --- Phases -------------------------------------------------------------------------------------------------
@@ -918,7 +964,10 @@ def facts(m: dict, q: dict | None) -> str:
         if k == "price" and v:
             tokens = (f"${v['input_per_mtok']} / ${v['output_per_mtok']} per million tokens in / out"
                       if v.get("input_per_mtok") is not None else "no price per token")
-            v = f"{tokens}; {v['label']}; price date {v.get('date') or 'not recorded'}"
+            v = (f"{tokens}; {v['label']}" + (f"; source {v['source']}" if v.get("source") else "")
+                 + f"; price date {v.get('date') or 'not recorded'}"
+                 + (f"; {v['billed_label']}: ${v['billed_input_per_mtok']} per million input tokens"
+                    if v.get("billed_input_per_mtok") is not None else ""))
         if k == "date_run" and not v and q and q.get("first_date"):
             v = q["first_date"] if q["first_date"] == q["last_date"] else f"{q['first_date']} to {q['last_date']}"
         if k == "option_groups" and q is not None:

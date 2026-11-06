@@ -163,7 +163,13 @@ def compute(args) -> dict:
 def late_entry_summaries(entries: list[dict]) -> list[dict]:
     """Late entries (analysis.late_entries): the same per-setup computation as a league's, fed with the entrant's own
     late-entry decisions only; in no standings table, league table, Cup input or other setup's numbers. Record: its
-    finished late-entry matches won, drawn (level score) and lost."""
+    finished late-entry matches won, drawn (level score) and lost. Not played: the pairs of its field that
+    content/late_entries.json lists with a reason (no score, never a loss); a listed pair that was played, or an
+    opponent outside its field, stops the build."""
+    reasons = {}
+    for p in json.loads((CONTENT / "late_entries.json").read_text())["not_played"]:
+        reasons.setdefault(p["entrant"], {})[p["opponent"]] = p["reason"]
+    meta = load_setups()
     late = []
     for e in entries:
         decs = e.pop("decisions")
@@ -171,8 +177,21 @@ def late_entry_summaries(entries: list[dict]) -> list[dict]:
         record = dict(won=sum(m["score_for"] > m["score_against"] for m in done),
                       drawn=sum(m["score_for"] == m["score_against"] for m in done),
                       lost=sum(m["score_for"] < m["score_against"] for m in done))
-        late.append(dict(e, status=PUBLISHED if e["played"] == e["total"] else PROVISIONAL, record=record,
-                         **A.dataset_summary(LATE_ENTRY, decs, [e["name"]])[e["name"]]))
+        not_played = []
+        for opp, why in sorted(reasons.pop(e["name"], {}).items()):
+            if opp not in e["field"] or any(m["opponent"] == opp for m in done):
+                raise RuntimeError(f"content/late_entries.json: {e['name']} v {opp} is not an unplayed pair of its field")
+            not_played.append(dict(opponent=opp, reason=why))
+        s = dict(e, status=PUBLISHED if e["played"] == e["total"] else PROVISIONAL, record=record,
+                 not_played=not_played, **A.dataset_summary(LATE_ENTRY, decs, [e["name"]])[e["name"]])
+        # Price: its setups.json entry's (label, source, date read); billed at another price: that figure too.
+        price = (meta.get((LATE_ENTRY, e["name"])) or {}).get("price")
+        s["price"] = price
+        if price and price.get("billed_input_per_mtok") is not None and s["quality"].get("usd_per_1000") is not None:
+            s["usd_per_1000_billed"] = s["quality"]["usd_per_1000"] * price["billed_input_per_mtok"] / price["input_per_mtok"]
+        late.append(s)
+    if reasons:
+        raise RuntimeError(f"content/late_entries.json: no late entry named {sorted(reasons)}")
     return late
 
 

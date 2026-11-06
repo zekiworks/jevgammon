@@ -1,0 +1,13 @@
+{
+ "_about": "Late-entry pairs of the original field that were not played, with the reason shown on the site (never a loss, no score). build.late_entry_summaries attaches them to the entrant; a pair listed here that was played, or an opponent outside the entrant's field, stops the build.",
+ "not_played": [
+  {"entrant": "Drex Max 1.1", "opponent": "GPT-6 Luna", "reason": "opponent's API out of credit",
+   "source": "mailbox/Late entries Drex - status 2026-11-06.md (match #829 blocked: OpenAI 429, no credit; deferred)"},
+  {"entrant": "Drex 2.0", "opponent": "GPT-6 Luna", "reason": "opponent's API out of credit",
+   "source": "mailbox/Late entries Drex - status 2026-11-06.md (match #835 blocked: OpenAI 429, no credit; deferred)"},
+  {"entrant": "Drex Max v1", "opponent": "GPT-6 Luna", "reason": "opponent's API out of credit",
+   "source": "mailbox/Late entries Drex - status 2026-11-06.md (match #846 blocked: OpenAI 429, no credit; deferred)"},
+  {"entrant": "Drex 2.0 (local)", "opponent": "GPT-6 Luna", "reason": "opponent's API out of credit",
+   "source": "mailbox/Late entries Drex - status 2026-11-06.md (match #886 blocked: OpenAI 429, no credit; deferred)"}
+ ]
+}

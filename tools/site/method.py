@@ -533,7 +533,12 @@ def _versions(po: dict) -> str:
 <p><strong>Changelog.</strong> 28 Oct 2026: setups renamed to the reasoning effort they sent. 5 setups changed from
   (off) to (low). No score changed. 29 Oct 2026: the Hype Cup and the Nackgammon knockout on
   <a href="../leagues/#hype-cup">Leagues</a>, and every match on <a href="../matches/">Matches</a>. Match results
-  only: no score changed.</p>""")
+  only: no score changed. 6 Nov 2026: seven late entries to the original League 1 table on
+  <a href="../leagues/#late-entries">Leagues</a> (Late entries): SubQ Snap 1.1, Base Labs Elephant-1 and Base Labs
+  Mammoth-1 (played 2 Nov), Drex Max 1.1, Drex 2.0, Drex Max v1 and Drex 2.0 (local) (played 6 Nov; their pairs with
+  GPT-6 Luna not played, its API out of credit), each with a page of its own; the late-entry table gains the engine's
+  best play, median seconds and $ per 1,000 decisions, with each price's label, source and date read. Late entries
+  count in no standings table and no other setup's numbers: no score changed.</p>""")
 
 
 def _confidence(t: dict, extra: dict) -> str:

@@ -1,0 +1,137 @@
+{
+ "about": "Each league setup's model family, whose colour its bar takes in the home page's charts, and its icon beside the setup's name: the families, colours and icons of the sibling Decision models site (its page_config.json model_families and family icons of 6 Nov 2026), so a maker's line of models reads the same on both sites. A setup belongs to the first family whose match (a regular expression on the setup's shown name) fits; the programs (GNUbg weak, Safest, Random) belong to none and take the neutral grey.",
+ "families": [
+  {
+   "name": "Gemini",
+   "colour": "#3d7ff0",
+   "icon": "fi-gemini",
+   "match": "^(?:Gemini)"
+  },
+  {
+   "name": "Gemma",
+   "colour": "#dca2ff",
+   "icon": "fi-gemma",
+   "match": "^(?:Gemma)"
+  },
+  {
+   "name": "GPT",
+   "colour": "#18a37a",
+   "icon": "fi-gpt",
+   "match": "^(?:GPT)"
+  },
+  {
+   "name": "Claude",
+   "colour": "#f08a3c",
+   "icon": "fi-claude",
+   "match": "^(?:Claude)"
+  },
+  {
+   "name": "Grok",
+   "colour": "#8da523",
+   "icon": "fi-grok",
+   "match": "^(?:Grok)"
+  },
+  {
+   "name": "Qwen",
+   "colour": "#00829a",
+   "icon": "fi-qwen",
+   "match": "^(?:Qwen)"
+  },
+  {
+   "name": "DeepSeek",
+   "colour": "#b74771",
+   "icon": "fi-deepseek",
+   "match": "^(?:DeepSeek)"
+  },
+  {
+   "name": "GLM",
+   "colour": "#7dd67d",
+   "icon": "fi-glm",
+   "match": "^(?:GLM)"
+  },
+  {
+   "name": "Kimi",
+   "colour": "#14d3f7",
+   "icon": "fi-kimi",
+   "match": "^(?:Kimi)"
+  },
+  {
+   "name": "Liquid",
+   "colour": "#f2c12e",
+   "icon": "fi-liquid",
+   "match": "^(?:Liquid|LFM)"
+  },
+  {
+   "name": "Fastino",
+   "colour": "#b85207",
+   "icon": "fi-fastino",
+   "match": "^(?:Fastino)"
+  },
+  {
+   "name": "Mammoth",
+   "colour": "#ce8703",
+   "icon": "fi-mammoth",
+   "match": "^(?:Base Labs Mammoth|Mammoth)"
+  },
+  {
+   "name": "Elephant",
+   "colour": "#1aa2eb",
+   "icon": "fi-elephant",
+   "match": "^(?:Base Labs Elephant|Elephant)"
+  },
+  {
+   "name": "Drex",
+   "colour": "#6b7f09",
+   "icon": "fi-drex",
+   "match": "^(?:Drex)"
+  },
+  {
+   "name": "SubQ",
+   "colour": "#fd9cba",
+   "icon": "fi-subq",
+   "match": "^(?:SubQ)"
+  },
+  {
+   "name": "Perplexity",
+   "colour": "#9256b3",
+   "icon": "fi-perplexity",
+   "match": "^(?:Decider)"
+  },
+  {
+   "name": "Jev",
+   "colour": "#466fcb",
+   "icon": "fi-jev",
+   "match": "^(?:Jev|Open-Jev)"
+  },
+  {
+   "name": "Celeris",
+   "colour": "#9dbdff",
+   "icon": "fi-celeris",
+   "match": "^(?:Celeris)"
+  },
+  {
+   "name": "Clef",
+   "colour": "#9f6700",
+   "icon": "fi-clef",
+   "match": "^(?:Clef)"
+  },
+  {
+   "name": "Cygnet",
+   "colour": "#ffa475",
+   "icon": "fi-cygnet",
+   "match": "^(?:Cygnet)"
+  },
+  {
+   "name": "Winnow",
+   "colour": "#57b058",
+   "icon": "fi-winnow",
+   "match": "^(?:Winnow)"
+  },
+  {
+   "name": "Inception",
+   "colour": "#d071bb",
+   "icon": "fi-inception",
+   "match": "^(?:Mercury)"
+  }
+ ]
+}

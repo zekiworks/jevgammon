@@ -389,7 +389,7 @@ def export(out: Path, snap: Path, plays_dir: Path, prompts_db: Path, replay_db: 
 
 
 def body() -> str:
-    return f"""<section class="hero">
+    return f"""<section class="card hero page-head">
 <p class="eyebrow">Every decision</p>
 <h1>What did each model see, and what did it play?</h1>
 </section>

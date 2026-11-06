@@ -217,8 +217,23 @@ COST_HEAD = ["Model and setting", "$ per 1,000 decisions", "Median / P90 s per d
 
 # --- Layout -------------------------------------------------------------------------------------------------
 
+# The view bar's first row (Ümit, bus #1831: the sibling site's look; Zeki #1834: a visible way back to Home from every
+# page, the page navigation apart from the filters): the main pages as keys, Home first, the page in view filled. The
+# grouped navigation of the top bar under it keeps every page.
+VIEW_PAGES = [("", "Home"), ("leagues/", "Leagues"), ("matches/", "Matches"), ("decisions/", "Every decision"),
+              ("clear-risk/", "Clear risk"), ("method/", "Method")]
+
+
+def view_bar(rel: str, path: str, rows: str = "") -> str:
+    """The sticky bar at the top of every page: row 1 the pages; `rows`, the home page's filter and part rows."""
+    keys = "".join(f'<li><a class="view-key" href="{rel}{href or ("" if rel else "./")}"'
+                   f'{" aria-current=page" if href == path else ""}>{esc(label)}</a></li>' for href, label in VIEW_PAGES)
+    return (f'<div class="view-bar"><div class="view-rows"><nav class="view-row view-pages" aria-labelledby="view-page">'
+            f'<span class="view-label" id="view-page">Page</span><ul>{keys}</ul></nav>{rows}</div></div>')
+
+
 def layout(S, base, path: str, title: str, body: str, description: str | None = None, main_class: str = "",
-           scripts=(), styles=(), body_class: str = "") -> str:
+           scripts=(), styles=(), body_class: str = "", view_rows: str = "") -> str:
     depth = path.count("/")
     rel = "../" * depth
     desc = description or S["description"]
@@ -254,17 +269,18 @@ def layout(S, base, path: str, title: str, body: str, description: str | None = 
   <meta name="twitter:title" content="{esc(social)}"><meta name="twitter:description" content="{esc(desc)}">
   {og}
   <meta name="color-scheme" content="dark light">
-  <script>document.documentElement.classList.add("js"); try {{ var t = localStorage.getItem("theme") || (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark"); if (t === "light") document.documentElement.dataset.theme = "light"; }} catch (e) {{}}</script>
+  <script>document.documentElement.classList.add("js"); try {{ var t = localStorage.getItem("theme") || (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark"); if (t === "light") document.documentElement.dataset.theme = "light"; if ((new URLSearchParams(location.search).get("cost-unit") || localStorage.getItem("costUnit")) === "1m") document.documentElement.dataset.costUnit = "1m"; }} catch (e) {{}}</script>
   {css}
   {js}
 </head>
 <body class="v3 {body_class}" data-site-title="{esc(TITLE)}" data-site-subtitle="{esc(SUBTITLE)}">
   <a class="skip" href="#main">Skip to content</a>
+  {view_bar(rel, path, view_rows)}
   <header class="topbar">
     <a class="brand" href="{rel or './'}">Hilde · Backgammon benchmark · v3</a>
     <div class="theme-switch" role="group" aria-label="Colour theme" hidden><button type="button" class="key" data-theme-choice="dark" aria-pressed="true" aria-label="Dark background"><span class="lamp" aria-hidden="true"></span>Dark<span class="long"> background</span></button><button type="button" class="key" data-theme-choice="light" aria-pressed="false" aria-label="Light background"><span class="lamp" aria-hidden="true"></span>Light<span class="long"> background</span></button></div>
     {more}
-    <nav class="nav" aria-label="Pages"><ul>{nav}</ul></nav>
+    <nav class="nav" aria-label="All pages"><ul>{nav}</ul></nav>
   </header>
   <main id="main"{f' class="{main_class}"' if main_class else ''}>
 {body}
@@ -279,7 +295,8 @@ def layout(S, base, path: str, title: str, body: str, description: str | None = 
 
 
 def page_head(S, eyebrow: str, title: str, intro: str = "") -> str:
-    return (f'<header class="hero"><p class="eyebrow">{esc(eyebrow)}</p><h1>{esc(title)}</h1>'
+    """A page's first card, as the sibling site's: the eyebrow, the title, the intro and the results version."""
+    return (f'<header class="card hero page-head"><p class="eyebrow">{esc(eyebrow)}</p><h1>{esc(title)}</h1>'
             f'{f"<p class=intro>{intro}</p>" if intro else ""}<p class="version">{esc(version_line(S))}</p></header>')
 
 
@@ -1416,7 +1433,7 @@ def write_all(S, out: Path, base: str) -> None:
         import shutil
         if (out / stale).exists():
             shutil.rmtree(out / stale)
-    put("", TITLE, home.home(S), scripts=("bg.js",), styles=("decisions.css",), body_class="home")
+    put("", TITLE, home.home(S), scripts=("bg.js",), styles=("decisions.css",), body_class="home", view_rows=home.view_rows(S))
     home.fragments(S, out)
     put("leagues/", "Leagues", leagues_page(S, method.archive_v1()), scripts=("bg.js",))
     put("matches/", "Matches", matches_page(S), scripts=("bg.js",),

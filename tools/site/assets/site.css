@@ -740,6 +740,8 @@ table.paired tr.label-row { display: none; }
 .heatmap-table thead th:first-child { z-index: 3; box-shadow: 1px 0 0 var(--edge), inset 0 -1px 0 var(--control-edge); }
 pre.citation { overflow-x: auto; padding: .75rem; background: var(--sunk); border: 1px solid var(--edge); border-radius: 6px; font-size: .8rem;
   white-space: pre-wrap; overflow-wrap: anywhere; }
+blockquote { margin: .75rem 0; padding: .5rem .9rem; border-left: 3px solid var(--edge); background: var(--sunk); border-radius: 0 6px 6px 0; }
+blockquote > :first-child { margin-top: 0; } blockquote > :last-child { margin-bottom: 0; }
 body.v3 p code, body.v3 td code, body.v3 li code { overflow-wrap: anywhere; word-break: break-all; }
 .prose p, .prose li { max-width: 80ch; }
 .prose ul { padding-left: 1.25rem; }

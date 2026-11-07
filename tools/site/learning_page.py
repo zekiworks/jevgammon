@@ -43,6 +43,7 @@ sys.path.insert(0, str(SITE))
 from common import BANNED, NA, ROOT, count, esc, fmt, nm, status_badge  # noqa: E402
 
 import pages as P  # noqa: E402
+from method import spec_markdown  # noqa: E402
 
 PATH = "learning/"
 DATA = "data/v3/learning-pilot.json"
@@ -61,10 +62,17 @@ CHECKPOINTS = ("T0", "T5", "T10")
 METRICS = [("error_rate", "Error rate (PR)", 1, ""), ("risk_judgement", "Risk judgement", 1, ""),
            ("risks_found", "Risks found", 1, "%"), ("right_safety", "Right safety", 1, "%"),
            ("risk_appetite", "Risk appetite", 1, "%"), ("invalid", "Invalid answers", 0, ""),
-           ("failed", "Failed requests", 0, ""), ("input_tokens_per_decision", "Input tokens per decision", 0, ""),
-           ("request_seconds", "Request s", 1, ""), ("cost_usd", "Cost $", 2, ""), ("series", "Series", 0, "")]
+           ("failed", "Failed requests", 0, ""), ("records_dropped", "Game records dropped from context", 0, ""),
+           ("input_tokens_per_decision", "Input tokens per decision", 0, ""),
+           ("latency_median_s", "Median s per request", 2, ""), ("request_seconds", "Request s", 1, ""),
+           ("cost_usd", "API spend $", 2, ""), ("series", "Series", 0, "")]
 GAME_METRICS = [("series", "Series", 0), ("games", "Games", 0), ("wins", "Wins", 0), ("decisions", "Decisions", 0),
-                ("invalid", "Invalid answers", 0), ("error_rate", "Error rate (PR)", 1)]
+                ("invalid", "Invalid answers", 0), ("error_rate", "Error rate (PR)", 1),
+                ("records_dropped", "Game records dropped from context", 0),
+                ("input_tokens_per_decision", "Input tokens per decision", 0),
+                ("latency_median_s", "Median s per request", 2), ("cost_usd", "API spend $", 2)]
+# Cost wording (Zeki #2531): never "$0 because local".
+COST_NOTE = "$0 API spend; local compute cost not estimated."
 GAME_KEYS = ("game", "won", "result", "points")
 # Column names of the learning-lift and signal tables (pilot.py summary); any other key is shown as written.
 RESULT_LABELS = {"lift": "Learning lift", "lift_ci": "95% interval", "vs_control": "Minus control's lift",
@@ -198,64 +206,6 @@ def from_state(state: Path) -> dict:
 
 # --- Page ---------------------------------------------------------------------------------------------------
 
-def inline(s: str) -> str:
-    s = esc(s)
-    s = re.sub(r"`([^`]*)`", r"<code>\1</code>", s)
-    return re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", s)
-
-
-def md_table(rows: list[str], caption: str) -> str:
-    cells = [[c.strip() for c in r.strip().strip("|").split("|")] for r in rows]
-    body = [r for r in cells[1:] if not all(set(c) <= set("-: ") for c in r)]
-    return P.table([inline(c) for c in cells[0]],
-                   ["<tr>" + "".join(f"<td>{inline(c)}</td>" for c in r) + "</tr>" for r in body],
-                   esc(caption), cls="board list")
-
-
-def markdown(text: str, caption: str) -> str:
-    """The plan's Markdown as the plan uses it: paragraphs, nested "- " lists, pipe tables, `code` and **bold**."""
-    out, para, rows, depth = [], [], [], 0
-
-    def close(level=0):
-        """Ends the paragraph and the table, and closes lists deeper than level."""
-        nonlocal depth
-        if para:
-            out.append(f"<p>{inline(' '.join(para))}</p>")
-            para.clear()
-        if rows:
-            out.append(md_table(rows, caption))
-            rows.clear()
-        if depth > level:
-            out.append("</li></ul>" * (depth - level))
-            depth = level
-
-    for line in text.splitlines():
-        item = re.match(r"^( *)- (.*)", line)
-        if not line.strip():
-            close()
-        elif line.lstrip().startswith("|"):
-            if not rows:
-                close()
-            rows.append(line)
-        elif item:
-            level = len(item.group(1)) // 2 + 1
-            if para or rows:
-                close(depth)
-            if level > depth:
-                out.append("<ul>" * (level - depth))
-                depth = level
-            else:
-                close(level)
-                out.append("</li>")
-            out.append(f"<li>{inline(item.group(2))}")
-        elif depth:
-            out.append(" " + inline(line.strip()))
-        else:
-            para.append(line.strip())
-    close()
-    return "".join(out)
-
-
 def num(v, digits, unit="") -> str:
     return nm(NA) if v is None else fmt(v, digits) + unit
 
@@ -338,6 +288,7 @@ def results(L) -> str:
     out = [results_table(R)]
     if R.get("games"):
         out.append(games_table(R))
+    out.append(f'<p class="table-note">{esc(COST_NOTE)}</p>')
     if not R["complete"]:
         out.append('<p class="note">The learning lift and any verdict are shown only when every planned series of '
                    'every arm is done.</p>')
@@ -386,11 +337,11 @@ def body(L) -> str:
     parts = [("learning-status", "Status and progress", progress(L)), ("learning-results", "Results", results(L)),
              ("learning-lessons", "Lessons the model wrote", lessons(L)),
              ("learning-prompt", "Lesson prompt", prompt(L))]
-    parts += [(section_id(s["title"]), s["title"], markdown(s["markdown"], s["title"])) for s in plan["sections"]]
+    parts += [(section_id(s["title"]), s["title"], spec_markdown(s["markdown"])) for s in plan["sections"]]
     toc = "".join(f'<li><a href="#{i}">{esc(t)}</a></li>' for i, t, _ in parts)
     withheld = (f'<p class="note">{count(L["redacted"])} private address(es) in the plan are withheld here.</p>'
                 if L["redacted"] else "")
-    status = f'<p class="note">{inline(plan["status"])}</p>' if plan["status"] else ""
+    status = f'<div class="note">{spec_markdown(plan["status"])}</div>' if plan["status"] else ""
     head = (f'<header class="card hero page-head"><p class="eyebrow">Preliminary · running</p><h1>{esc(TITLE)}</h1>'
             f'<p class="intro"><strong>{esc(plan["commitment"])}</strong></p>'
             f'<p class="intro">The pre-registered plan, the lesson prompt and the results as they come in. Data: '

@@ -72,11 +72,31 @@ def type_meta(S, ds, name) -> dict:
                 P.meta(S, ds, name))
 
 
-def type_meta_by_name(S, name) -> dict:
-    """type_meta for a setup known by name only (the Nackgammon test's rows): its league entry first, as for a ladder
-    move, else any entry of that name, else none."""
-    return (next((m for (d, n), m in S["setups_meta"].items() if n == name and d.startswith("league-")), None)
-            or next((m for (d, n), m in S["setups_meta"].items() if n == name), {}))
+NACK_TYPES = json.loads((CONTENT / "nack_setup_types.json").read_text())["setups"]
+
+
+def nack_views(S) -> tuple[dict, list]:
+    """The Nackgammon section's views: each setup's model type (decision / chat / program; its setups.json entry, a
+    league entry first as for a ladder move, else content/nack_setup_types.json for a setup that played in no league),
+    and the one setting per model of the per-model view: the model's setting with the highest stored All-leagues risk
+    judgement (the leaderboard's rule, from league play, never from this test). A model with one setting keeps it."""
+    N = S["nack"]
+    judged = {n: r["judgement"] for lg, n, r, ref in all_rows(S) if not ref and r["judgement"] is not None}
+    kinds, models = {}, {}
+    for n in N["setups"]:
+        m = (next((m for (d, x), m in S["setups_meta"].items() if x == n and d.startswith("league-")), None)
+             or next((m for (d, x), m in S["setups_meta"].items() if x == n), None) or NACK_TYPES.get(n))
+        if m is None:
+            raise ValueError(f"Nackgammon setup {n!r}: no model type (setups.json or content/nack_setup_types.json)")
+        kinds[n] = kind(m)
+        if kinds[n] != "program":
+            models.setdefault(m.get("model") or n, []).append(n)
+    chosen = []
+    for model, names in models.items():
+        if len(names) > 1 and any(judged.get(x) is None for x in names):
+            raise ValueError(f"Nackgammon model {model!r}: a setting without a league risk judgement among {names}")
+        chosen.append(max(names, key=lambda x: (judged.get(x) or 0, x)))
+    return kinds, chosen
 
 
 def cell_model(S, ds, name, ref=None) -> str:
@@ -1857,7 +1877,7 @@ def home(S) -> str:
     </section>
     {pays_section(S)}
     {close_b_section(S)}
-    {nack_section.section(S["nack"], {n: kind(type_meta_by_name(S, n)) for n in S["nack"]["setups"]})}
+    {nack_section.section(S["nack"], *nack_views(S))}
     <p class="downloads" id="downloads">Download: <a href="data/results.json" download="results.json">results.json</a> · <a href="decisions/index.json" download="decisions.json">decisions.json</a></p>"""
 
 

@@ -365,8 +365,10 @@ def chart(N) -> str:
             + "".join(parts) + "</svg>")
 
 
-def section(N, kinds: dict) -> str:
-    """kinds: setup name -> decision / chat / program (setups.json model_type), for the Decision / Chat / All keys."""
+def section(N, kinds: dict, chosen: list) -> str:
+    """kinds: setup name -> decision / chat / program (its model type), for the Decision / Chat / All keys; chosen: the
+    one setting per model of the per-model view (home.nack_views). Both govern the summary table only; every table
+    below it keeps every setup."""
     rnd = N["setups"]["Random"]
     rd1, rdf = rnd["first"]["drop"], rnd["final"]["drop"]
     rnd_text = (f"Random's own drop: {fmt(rd1, 2, True)} PR on the main 200 pairs, {fmt(rdf, 2, True)} on all 500 "
@@ -394,13 +396,23 @@ def section(N, kinds: dict) -> str:
                  "the new start with how hard the positions are; the test cannot separate the two.")
     keys = ('<span class="keys needs-js" role="group" aria-label="Model type">' + "".join(
         f'<button type="button" class="key" data-nack-kind-pick="{k}" aria-pressed="{str(k == "all").lower()}">{lab}'
-        '</button>' for k, lab in (("decision", "Decision"), ("chat", "Chat"), ("all", "All"))) + '</span>')
-    return (f'<section class="card" id="{SECTION_ID}" data-nack-kinds="{esc(json.dumps(kinds))}">'
+        '</button>' for k, lab in (("decision", "Decision"), ("chat", "Chat"), ("all", "All"))) + '</span>'
+        '<span class="keys needs-js" role="group" aria-label="Rows">' + "".join(
+        f'<button type="button" class="key" data-nack-view="{k}" aria-pressed="{str(k == "model").lower()}">{lab}'
+        '</button>' for k, lab in (("model", "One setting per model"), ("all", "All settings"))) + '</span>')
+    multi = len([n for n, k in kinds.items() if k != "program"]) - len(chosen)
+    view_note = (f"One setting per model: a model asked at several settings shows the one with its highest stored "
+                 f"risk judgement in league play (the leaderboard's rule; chosen from league results, never from this "
+                 f"test); All settings shows every setup asked ({count(multi)} more rows). Decision / Chat is the model "
+                 f"type; the group under each name is the paired test's original league group, so a chat model can "
+                 f"sit in the decision models group. Every table further down shows every setup.")
+    return (f'<section class="card" id="{SECTION_ID}" data-nack-kinds="{esc(json.dumps(kinds))}" '
+            f'data-nack-chosen="{esc(json.dumps(chosen))}">'
             f'<div class="section-head"><p class="eyebrow">{esc(TITLE)}</p><h2>{esc(QUESTION)}</h2>{keys}</div>'
             f'<p class="note nack-always"><strong>{esc(UNCLEAR_NOTE)}</strong> {count(n_added)} setups were added after '
             'the results were read; the primary results are shown with and without them.</p>'
             f'<p class="table-note">{esc(head_note)}</p>'
-            + summary_table(N) +
+            + summary_table(N) + f'<p class="table-note nack-view-note">{esc(view_note)}</p>' +
             f'<p class="section-label">{esc(N["method"])}</p>{status}{scope}'
             f'<p class="note nack-additions-note"><strong>Additions.</strong> {esc(N["additions_note"])}</p>'
             "<p>Nackgammon has the rules of backgammon; only the starting position differs. Each setup was asked 200 "

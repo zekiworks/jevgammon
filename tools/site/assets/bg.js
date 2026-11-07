@@ -529,18 +529,25 @@ async function savePng(panel, svg, title, lines, filename) {
   keys.forEach(k => k.addEventListener('click', () => show(k.dataset.headlineView)));
 })();
 
-/* Home page: the Nackgammon section's Decision / Chat / All keys (nack_section.py, Ümit #2647). Rows and chart points of
-   another model type are hidden; programs (the yardsticks) always shown; notes are never touched. */
-(function nackKinds() {
+/* Home page: the Nackgammon summary table's keys (nack_section.py; Ümit #2647, #2651): Decision / Chat / All by model
+   type, and One setting per model / All settings. Programs (the yardsticks) are always shown; the notes and every
+   table below the summary keep every setup. */
+(function nackViews() {
   const sec = document.getElementById('nackgammon-paired');
-  const keys = sec ? [...sec.querySelectorAll('[data-nack-kind-pick]')] : [];
-  if (!keys.length) return;
+  const table = sec && sec.querySelector('#nack-summary');
+  if (!table) return;
   const kinds = JSON.parse(sec.dataset.nackKinds);
-  const show = pick => {
-    keys.forEach(k => k.setAttribute('aria-pressed', String(k.dataset.nackKindPick === pick)));
-    const on = name => pick === 'all' || !(name in kinds) || kinds[name] === 'program' || kinds[name] === pick;
-    sec.querySelectorAll('tr[data-row]').forEach(tr => { tr.hidden = !on(tr.dataset.row); });
-    sec.querySelectorAll('g[data-setup]').forEach(g => { g.style.display = on(g.dataset.setup) ? '' : 'none'; });
+  const chosen = new Set(JSON.parse(sec.dataset.nackChosen));
+  const state = { kind: 'all', view: 'model' };
+  const apply = () => {
+    sec.querySelectorAll('[data-nack-kind-pick]').forEach(k => k.setAttribute('aria-pressed', String(k.dataset.nackKindPick === state.kind)));
+    sec.querySelectorAll('[data-nack-view]').forEach(k => k.setAttribute('aria-pressed', String(k.dataset.nackView === state.view)));
+    table.querySelectorAll('tbody tr[data-row]').forEach(tr => {
+      const k = kinds[tr.dataset.row];
+      tr.hidden = k !== 'program' && ((state.kind !== 'all' && k !== state.kind) || (state.view === 'model' && !chosen.has(tr.dataset.row)));
+    });
   };
-  keys.forEach(k => k.addEventListener('click', () => show(k.dataset.nackKindPick)));
+  sec.querySelectorAll('[data-nack-kind-pick]').forEach(k => k.addEventListener('click', () => { state.kind = k.dataset.nackKindPick; apply(); }));
+  sec.querySelectorAll('[data-nack-view]').forEach(k => k.addEventListener('click', () => { state.view = k.dataset.nackView; apply(); }));
+  apply();
 })();

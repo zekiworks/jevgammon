@@ -241,6 +241,18 @@ def nav_items(rel: str, path: str) -> str:
                    for group, links in NAV)
 
 
+# The first script of every page, before the stylesheets apply (Zeki, bus #2310): the theme is always named on <html>
+# (data-theme "light" or "dark"; the suite strip, suite-bar.css, follows it, and without it the reader's system), first
+# from the system's setting (dark when it asks for dark, else light), then from the reader's stored choice where storage
+# can be read; a browser that refuses storage keeps the first. The cost unit: ?cost-unit=, else the stored choice.
+HEAD_SCRIPT = ('<script>(function () { var d = document.documentElement; d.classList.add("js"); '
+               'd.dataset.theme = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"; '
+               'var u = new URLSearchParams(location.search).get("cost-unit"); '
+               'try { var t = localStorage.getItem("theme"); if (t === "light" || t === "dark") d.dataset.theme = t; '
+               'if (!u) u = localStorage.getItem("costUnit"); } catch (e) {} '
+               'if (u === "1m") d.dataset.costUnit = "1m"; })();</script>')
+
+
 def layout(S, base, path: str, title: str, body: str, description: str | None = None, main_class: str = "",
            scripts=(), styles=(), body_class: str = "", view_rows: str = "") -> str:
     depth = path.count("/")
@@ -274,7 +286,7 @@ def layout(S, base, path: str, title: str, body: str, description: str | None = 
   <meta name="twitter:title" content="{esc(social)}"><meta name="twitter:description" content="{esc(desc)}">
   {og}
   <meta name="color-scheme" content="dark light">
-  <script>document.documentElement.classList.add("js"); try {{ var t = localStorage.getItem("theme") || (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark"); document.documentElement.dataset.theme = t === "light" ? "light" : "dark"; if ((new URLSearchParams(location.search).get("cost-unit") || localStorage.getItem("costUnit")) === "1m") document.documentElement.dataset.costUnit = "1m"; }} catch (e) {{}}</script>
+  {HEAD_SCRIPT}
   {css}
   {js}
 </head>

@@ -14,8 +14,8 @@
    of a league that has not finished says "Provisional: league still running".
 4. No private addresses or credentials (B7): hostnames, IPs, ports, server paths, keys, tokens, request headers,
    the other benchmark's name, in any output file including the decompressed decision files. One exception: the
-   suite strip at the top of a page, exactly as published (common.SUITE_BAR), once per page (bus #2270, #2287);
-   selftest_suite_bar.py tests it.
+   suite strip at the top of a page, exactly as published (common.SUITE_BAR), once per HTML page (bus #2270, #2287,
+   #2310); data files, decompressed .gz files and other text get the complete scan. selftest_suite_bar.py tests it.
 5. Every relative link resolves; ids are unique per page and every #anchor exists.
 6. Every published finding still holds (B4): findings.py reruns each finding's machine check on the built data.
 """
@@ -323,9 +323,18 @@ def without_suite_bar(text: str) -> str:
     return text.replace(SUITE_BAR, "", 1)
 
 
-def banned_in(text: str):
-    """The first private string (common.BANNED) in a published file's text, the exact suite strip left out once."""
-    return BANNED.search(without_suite_bar(text))
+def banned_in(text: str, page: bool):
+    """The first private string (common.BANNED) in a published file's text. Only an HTML page (`page`) has the exact
+    suite strip left out, once (Zeki, bus #2310): a data file, a decompressed .gz file or any other text gets the
+    complete scan, the strip included."""
+    return BANNED.search(without_suite_bar(text) if page else text)
+
+
+def scan_file(p: Path):
+    """Check 4 for one output file: the first private string in it, or None. .gz files are scanned decompressed; only
+    a file ending .html is an HTML page."""
+    data = gzip.decompress(p.read_bytes()) if p.suffix == ".gz" else p.read_bytes()
+    return banned_in(data.decode("utf-8", "replace"), page=p.suffix == ".html")
 
 
 def run(S: dict, out: Path) -> list[str]:
@@ -349,8 +358,7 @@ def run(S: dict, out: Path) -> list[str]:
     for p in out.rglob("*"):
         if not p.is_file() or p.suffix == ".png":
             continue
-        data = gzip.decompress(p.read_bytes()) if p.suffix == ".gz" else p.read_bytes()
-        m = banned_in(data.decode("utf-8", "replace"))
+        m = scan_file(p)
         if m:
             failures.append(f"{p.relative_to(out)}: banned string {m.group(0)!r}")
     failures += findings.failures(out)

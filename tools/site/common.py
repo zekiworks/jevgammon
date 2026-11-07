@@ -40,6 +40,15 @@ BANNED = re.compile(r"192\.168\.|127\.0\.0|\b10\.\d{1,3}\.\d{1,3}\.\d{1,3}\b|\b1
                     r"https?://[\w.-]+:\d{2,5}|/home/|/root/|/mnt/|bariton|spark-|\bsk-[\w-]{8}|base_url|"
                     r"api[_-]key|Bearer [\w.-]{8}|[Aa]uthorization:|x-api-key|decision-models")
 
+# The suite strip at the top of every page (Ümit, bus #2270; the shared component of the Decision models site, #2290):
+# content/suite-bar.html is its snippet, copied verbatim; this site marks its own link (Backgammon) as the current page.
+# Its first link names the other benchmark's address, which BANNED forbids; the one exception (Zeki, bus #2287, from
+# Ümit #2270) is this exact element, once per page, which checks.py takes out of a page before its private-strings scan.
+_SUITE_HTML = (CONTENT / "suite-bar.html").read_text()
+SUITE_BAR = re.search(r'<nav class="suite-bar".*?</nav>', _SUITE_HTML, re.S).group(0).replace(
+    '<a href="/analysis/backgammon/">', '<a href="/analysis/backgammon/" aria-current="page">')
+assert SUITE_BAR.count('aria-current="page"') == 1
+
 
 def slug(name: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")

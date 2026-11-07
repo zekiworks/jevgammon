@@ -1,70 +1,89 @@
-/* The suite header shared by the three benchmark sites (English & Turkish Reading, Logic & Math, Backgammon; Ümit via
-   Zeki #2270, specification #2274). DRAFT for the backgammon site, to be replaced verbatim by the shared suite-bar.css
-   that the Decision models site publishes: the sizes are variables here so the two can be compared line by line.
-   Sticky at the top of every page: the suite strip (one line, ~27 px, the current site filled; sideways scroll on a
-   phone), then the compact view bar (keys 26 px tall, 12.5 px text, 4 px gaps; one line on a wide screen: Home, then
-   the home page's League, Models and Measure rows). The pages row under it, in the top bar, takes the same key size
-   and scrolls away. Whole header at most 72 px at 1280 px and about 110 px at 390 px. Colours are the site's
-   --view-* variables (site.css), both themes. */
+/* The suite strip: one thin row of links to the three benchmark sites (English & Turkish Reading, Logic & Math,
+   Backgammon), identical on every page of all three. Self-contained: it needs no other stylesheet. The snippet is
+   suite-bar.html; put it as the first row of the page's sticky header (or at the very top of <body>).
 
-:root {
-  --sb-strip-h: 27px;
-  --sb-strip-font: 12px;
-  --sb-key-h: 26px;
-  --sb-key-font: 12.5px;
-  --sb-key-pad: 8px;
-  --sb-gap: 4px;
-  --sb-group-gap: 14px;
-  --sb-label-font: 10.5px;
-  --sb-pad-y: 5px;
+   Theme: it follows data-theme on <html> ("light" or "dark"), as the sites' own stylesheets do; without the attribute
+   it follows the reader's system setting (prefers-color-scheme). The current site's link carries aria-current="page"
+   and is filled like a selected key; the others are plain links. About 27 px tall, one line; on a narrow screen the
+   links scroll sideways inside the strip, never the page. */
+.suite-bar {
+  --suite-bg: #ecebe6;
+  --suite-edge: #c9c6bf;
+  --suite-text: #23221f;
+  --suite-hover: #000000;
+  --suite-current-bg: #14213d;
+  --suite-current-edge: #14213d;
+  --suite-current-text: #ffffff;
+  --suite-focus: #1f5fbf;
 }
-
-.suite-head { position: sticky; top: 0; z-index: 20; margin: 0 -1rem; background: var(--view-bg);
-  border-bottom: 2px solid var(--view-edge); box-shadow: var(--shadow); }
-
-/* The suite strip. */
-.suite-bar { border-bottom: 1px solid var(--view-edge); }
-.suite-bar ul { display: flex; gap: var(--sb-gap); max-width: 1100px; height: var(--sb-strip-h); margin: 0 auto; padding: 0;
-  list-style: none; align-items: center; overflow-x: auto; scrollbar-width: none; }
-.suite-bar ul::-webkit-scrollbar { display: none; }
-.suite-bar li { flex: none; }
-.suite-bar a { display: inline-flex; align-items: center; height: calc(var(--sb-strip-h) - 5px); padding: 0 10px;
-  color: var(--view-text); border-radius: 5px; font-size: var(--sb-strip-font); font-weight: 700; line-height: 1;
-  text-decoration: none; white-space: nowrap; }
-.suite-bar a:hover { background: var(--view-key); }
-.suite-bar a[aria-current] { color: var(--view-current-text); background: var(--view-current-bg);
-  box-shadow: inset 0 -2px 0 var(--view-current-edge); }
-
-/* The compact view bar: Home, then the rows, each row's name small before its keys; one line where it fits. */
-.suite-head .view-bar { position: static; margin: 0; padding: var(--sb-pad-y) 1rem; background: none; border: 0; box-shadow: none; }
-.suite-head .view-rows { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sb-gap) var(--sb-group-gap);
-  max-width: 1100px; margin: 0 auto; }
-.suite-head .view-row, .suite-head .view-row.view-filter, .suite-head .view-row.view-measures { display: flex; align-items: center;
-  gap: 6px; margin: 0; padding: 0; border: 0; grid-column: auto; }
-.suite-head .view-row ul, .suite-head .view-row.view-leagues ul, .suite-head .view-row.view-groups ul,
-.suite-head .view-row.view-measures ul { display: flex; gap: var(--sb-gap); }
-.suite-head .view-label { position: static; width: auto; height: auto; margin: 0; overflow: visible; clip: auto;
-  font-size: var(--sb-label-font); }
-.suite-head .view-row a.view-key, .suite-head a.view-key.view-home { min-height: var(--sb-key-h); height: var(--sb-key-h);
-  padding: 0 var(--sb-key-pad); font-size: var(--sb-key-font); line-height: 1; white-space: nowrap; }
-.suite-head a.view-key { flex: none; }
-.suite-head a.view-key.view-home { display: inline-flex; gap: 4px; }
-.suite-head .home-mark { width: 12px; height: 12px; flex: none; fill: currentColor; }
-.suite-head .view-more { display: none; }
-
-/* The pages row (top bar, not sticky), in the same key size. */
-.topbar .nav a { min-height: var(--sb-key-h); padding: 0 var(--sb-key-pad); font-size: var(--sb-key-font); }
-.topbar .nav ul, .topbar .nav-group > ul { gap: var(--sb-gap); }
-
-@media (max-width: 640px) {
-  .suite-head { margin: 0 -.6rem; }
-  .suite-bar ul { padding: 0 .6rem; }
-  .suite-bar a { padding: 0 7px; }
-  .suite-head .view-bar { padding: var(--sb-pad-y) .6rem; }
-  /* Home and the League row share a line, the Models row the next; the keys read All, 1, 2, 3 and All, Decision,
-     Chat after their row's name, as on a wide screen. */
-  .suite-head .view-row.view-groups { flex-basis: 100%; }
-  .suite-head .view-row.view-filter .view-more { display: none; }
-  /* The Measure row stays off the phone bar: the first card links the parts. */
-  .suite-head .view-row.view-measures { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .suite-bar {
+    --suite-bg: #111110;
+    --suite-edge: #3a3935;
+    --suite-text: #dedbd4;
+    --suite-hover: #ffffff;
+    --suite-current-bg: #24508f;
+    --suite-current-edge: #9cc8ff;
+    --suite-current-text: #ffffff;
+    --suite-focus: #9cc8ff;
+  }
 }
+:root[data-theme="dark"] .suite-bar {
+  --suite-bg: #111110;
+  --suite-edge: #3a3935;
+  --suite-text: #dedbd4;
+  --suite-hover: #ffffff;
+  --suite-current-bg: #24508f;
+  --suite-current-edge: #9cc8ff;
+  --suite-current-text: #ffffff;
+  --suite-focus: #9cc8ff;
+}
+.suite-bar {
+  box-sizing: border-box;
+  display: block;
+  height: 27px;
+  margin: 0;
+  padding: 0 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  background: var(--suite-bg);
+  border-bottom: 1px solid var(--suite-edge);
+  font: 600 12px/1 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  letter-spacing: 0;
+}
+.suite-bar::-webkit-scrollbar { display: none; }
+.suite-bar ul {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 100%;
+  max-width: 1248px;
+  margin: 0 auto;
+  padding: 0;
+  list-style: none;
+}
+.suite-bar li { flex: none; margin: 0; padding: 0; }
+.suite-bar a {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  height: 21px;
+  padding: 0 8px;
+  color: var(--suite-text);
+  border: 1px solid transparent;
+  border-radius: 5px;
+  white-space: nowrap;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+.suite-bar a:hover { color: var(--suite-hover); border-color: var(--suite-edge); }
+.suite-bar a:focus-visible { outline: 2px solid var(--suite-focus); outline-offset: 1px; }
+.suite-bar a[aria-current="page"] {
+  color: var(--suite-current-text);
+  background: var(--suite-current-bg);
+  border-color: var(--suite-current-edge);
+  text-decoration: none;
+}
+@media print { .suite-bar { display: none; } }

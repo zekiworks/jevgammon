@@ -1517,8 +1517,8 @@ def family(name: str) -> dict | None:
 
 
 def view_rows(S) -> str:
-    """The home page's rows of the view bar under the pages: the League and Models filters (the filters panel's League and
-    Model type, kept in step by bg.js; ?league= and ?type= as before) and the parts of the page."""
+    """The home page's rows of the view bar, after its Home key: the League and Models filters (the filters panel's League
+    and Model type, kept in step by bg.js; ?league= and ?type= as before) and the parts of the page."""
     def row(cls, rid, label, keys):
         return (f'<div class="view-row {cls}" role="group" aria-labelledby="{rid}"><span class="view-label" id="{rid}">'
                 f'{label}</span><ul>{"".join(f"<li>{k}</li>" for k in keys)}</ul></div>')
@@ -1528,7 +1528,7 @@ def view_rows(S) -> str:
                                                 f'{lg["dataset"]}"><span><span class="view-more">League </span>{lg["id"]}</span></a>'
                                                 for lg in S["leagues"]]
     kinds = [f'<a class="view-key" href="{"./" if k == ALL else f"?type={k}"}" data-filter-kind="{k}"'
-             f'{" aria-current=true" if k == ALL else ""}><span>{l}<span class="view-more"> models</span></span></a>'
+             f'{" aria-current=true" if k == ALL else ""}>{l}</a>'
              for k, l in ((ALL, "All"), ("decision", "Decision"), ("chat", "Chat"))]
     parts = [f'<a class="view-key" href="#{k}" data-view-measure="{k}">{esc(l)}</a>' for k, l in MEASURES]
     parts.append('<a class="view-key" href="#board-panel" data-view-measure="board-panel">Every number</a>')

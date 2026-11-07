@@ -13,7 +13,9 @@
    league rows only, the All leagues note in their block); v1 rows only inside an Earlier-version block; every block
    of a league that has not finished says "Provisional: league still running".
 4. No private addresses or credentials (B7): hostnames, IPs, ports, server paths, keys, tokens, request headers,
-   the other benchmark's name, in any output file including the decompressed decision files.
+   the other benchmark's name, in any output file including the decompressed decision files. One exception: the
+   suite strip at the top of a page, exactly as published (common.SUITE_BAR), once per page (bus #2270, #2287);
+   selftest_suite_bar.py tests it.
 5. Every relative link resolves; ids are unique per page and every #anchor exists.
 6. Every published finding still holds (B4): findings.py reruns each finding's machine check on the built data.
 """
@@ -26,7 +28,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 
 import findings
-from common import ALL_NOTE, BANNED, CONTENT, INTERNAL, LATE_ENTRY, PROVISIONAL, PROVISIONAL_NOTE
+from common import ALL_NOTE, BANNED, CONTENT, INTERNAL, LATE_ENTRY, PROVISIONAL, PROVISIONAL_NOTE, SUITE_BAR
 
 NUM = re.compile(r"(?<![\w.\u2212+-])([\u2212+-]?)(\d{1,3}(?:,\d{3})+|\d+)(\.\d+)?")
 DATE = re.compile(r"\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2})?(?:\.\d+)?Z?)?|\b\d{1,2}:\d{2}\b|"
@@ -312,6 +314,20 @@ def check_links(page: Path, root: Node, out: Path, anchors: bool = True) -> list
     return bad
 
 
+def without_suite_bar(text: str) -> str:
+    """The page without its suite strip, when the strip is exactly the shared one (common.SUITE_BAR), once. The one
+    exception to the private-strings rule (Ümit, bus #2270; Zeki, bus #2287): the strip's first link names the other
+    benchmark's address. Any other occurrence of that address or name, or a strip whose text or links differ by one
+    character, stays in the scan and fails. The same strip is left out of the link check: its three links are the
+    suite's sites at the server's root (/analysis/...), outside this site's files."""
+    return text.replace(SUITE_BAR, "", 1)
+
+
+def banned_in(text: str):
+    """The first private string (common.BANNED) in a published file's text, the exact suite strip left out once."""
+    return BANNED.search(without_suite_bar(text))
+
+
 def run(S: dict, out: Path) -> list[str]:
     failures = []
     nums = allowed_numbers(out, S)
@@ -321,7 +337,7 @@ def run(S: dict, out: Path) -> list[str]:
     for page, base in pages:
         rel = page.relative_to(out)
         tree = Tree()
-        tree.feed(page.read_text())
+        tree.feed(without_suite_bar(page.read_text()))
         # archive/: the page that was live before the switch, frozen with its own data file; results/<id>/: fixed
         # snapshots of earlier results (cited elsewhere), frozen with their own data/. Only their links and the
         # private-data scan apply (their numbers trace to their own data files, not to the current data/).
@@ -334,7 +350,7 @@ def run(S: dict, out: Path) -> list[str]:
         if not p.is_file() or p.suffix == ".png":
             continue
         data = gzip.decompress(p.read_bytes()) if p.suffix == ".gz" else p.read_bytes()
-        m = BANNED.search(data.decode("utf-8", "replace"))
+        m = banned_in(data.decode("utf-8", "replace"))
         if m:
             failures.append(f"{p.relative_to(out)}: banned string {m.group(0)!r}")
     failures += findings.failures(out)

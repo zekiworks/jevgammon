@@ -1,7 +1,8 @@
 'use strict';
 
 /* Every page: the Dark / Light switch, with one memory for the whole site: the choice is kept in localStorage ("theme")
-   and applied by a line in each page's <head> before it renders; without JavaScript the page stays dark. */
+   and applied by a line in each page's <head> before it renders, as data-theme="light" or "dark" on <html>; without
+   JavaScript the page stays dark. */
 (function setupTheme() {
   const control = document.querySelector('.theme-switch');
   if (!control) return;
@@ -15,8 +16,8 @@
   control.addEventListener('click', event => {
     const choice = event.target.closest('button')?.dataset.themeChoice;
     if (!choice) return;
-    if (choice === 'light') document.documentElement.dataset.theme = 'light';
-    else delete document.documentElement.dataset.theme;
+    // Always named, light or dark: the suite strip (suite-bar.css) follows data-theme, and without it the reader's system.
+    document.documentElement.dataset.theme = choice === 'light' ? 'light' : 'dark';
     try {
       localStorage.setItem('theme', choice);
     } catch (error) {
@@ -129,7 +130,7 @@
    the part that crosses a line a quarter of the way down the window below the bar, or the key just pressed until the
    reader scrolls on; between parts no key is marked. */
 (function setupViewBar() {
-  const bar = document.querySelector('.suite-head');
+  const bar = document.querySelector('.site-header');
   if (!bar) return;
   const measure = () => document.documentElement.style.setProperty('--view-bar-h', `${bar.offsetHeight}px`);
   measure();

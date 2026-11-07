@@ -74,6 +74,12 @@ python3 "$S/make_fixture.py" "$TOOLS" "$I/state-dry/learning" "$I/fix-complete" 
   python3 "$S/injected_faults.py" "$TOOLS" "$I/page-synthetic-running" "$SITE" "$TS" 2>&1
   echo; echo "# (c2) injected source faults. $(stamp)"
   python3 "$S/injected_source_faults.py" "$TOOLS" "$I/fix-complete" "$TS" 2>&1
+  # (c3) Zeki's synthetic_checks.py (SYNTHETIC in-memory data only), against the candidate's committed tools/site.
+  Z=/home/cbasaran/.agent-bus/received/jevgammon/f_7f2d02645d854171985de0ea21a21889-synthetic_checks.py
+  echo; echo "# (c3) Zeki's synthetic_checks.py (sha256 $(sha256sum "$Z" | cut -c1-64)) on $(git -C "$WT" rev-parse --short HEAD):tools/site. $(stamp)"
+  rm -rf "$I/zeki" && mkdir -p "$I/zeki" && cp "$Z" "$I/zeki/synthetic_checks.py"
+  git -C "$WT" archive --prefix=tools/site/ HEAD:tools/site | tar -x -C "$I/zeki"
+  (cd "$I/zeki" && python3 synthetic_checks.py 2>&1); echo "exit code: $?"
   echo; echo "# Finished $(stamp)"
 } 2>&1 | tee "$D/03-injected-faults.txt"
 

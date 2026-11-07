@@ -1,0 +1,31 @@
+# (b) learning_page.py --check in four states. Started 2026-11-07 17:16:19 UTC
+
+## none: python3 tools/site/learning_page.py --out /tmp/inv/page-none --src /tmp/inv/state-none/learning --check /home/cbasaran/.local/state/bg-site/analysis/backgammon --test-set <test_set.json>
+/tmp/inv/page-none/learning/index.html
+checks: 0 failure(s)
+validation: None
+results: None | lift/signal in data: []
+complete-only blocks in page: 
+
+## dry-running: python3 tools/site/learning_page.py --out /tmp/inv/page-dry-running --src /tmp/inv/state-dry/learning --check /home/cbasaran/.local/state/bg-site/analysis/backgammon --test-set <test_set.json>
+/tmp/inv/page-dry-running/learning/index.html
+checks: 0 failure(s)
+validation: {'accepted': True, 'producer_complete': False, 'complete': False, 'problems': []}
+results: {'complete': False, 'series_total_done': 2, 'series_total_planned': 40} | lift/signal in data: []
+complete-only blocks in page: 
+
+## synthetic-running: python3 tools/site/learning_page.py --out /tmp/inv/page-synthetic-running --src /tmp/inv/fix-running --check /home/cbasaran/.local/state/bg-site/analysis/backgammon --test-set <test_set.json>
+/tmp/inv/page-synthetic-running/learning/index.html
+checks: 0 failure(s)
+validation: {'accepted': True, 'producer_complete': False, 'complete': False, 'problems': []}
+results: {'complete': False, 'series_total_done': 20, 'series_total_planned': 40} | lift/signal in data: []
+complete-only blocks in page: 
+
+## synthetic-complete: python3 tools/site/learning_page.py --out /tmp/inv/page-synthetic-complete --src /tmp/inv/fix-complete --check /home/cbasaran/.local/state/bg-site/analysis/backgammon --test-set <test_set.json>
+/tmp/inv/page-synthetic-complete/learning/index.html
+checks: 0 failure(s)
+validation: {'accepted': True, 'producer_complete': True, 'complete': True, 'problems': []}
+results: {'complete': True, 'series_total_done': 40, 'series_total_planned': 40} | lift/signal in data: ['learning_lift', 'paired_series', 'signal']
+complete-only blocks in page: id="learning-leaders" id="learning-lift" id="learning-signal" 
+
+# Finished 2026-11-07 17:16:27 UTC

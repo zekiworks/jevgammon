@@ -1,0 +1,17 @@
+main render:   /tmp/inv/out-main (2542 files)
+branch render: /tmp/inv/out-branch (2544 files)
+
+added: 2
+explained: 113
+identical: 2429
+
+explained changes, by reason (files):
+    107  site title (new home title; the <title>, social tags, meta description and data-site-title of every page); Part row in the view bar (Risk calls / Learning across games, on every page); view bar label names the Part row; Analyses nav link to learning/
+      1  bg.css: the Learning chart's arm colours and the tab rule box
+      1  site title (new home title; the <title>, social tags, meta description and data-site-title of every page); Part row in the view bar (Risk calls / Learning across games, on every page); view bar label names the Part row; Analyses nav link to learning/; data page: row for data/v3/learning-pilot.json
+      1  manifest entry for data/v3/learning-pilot.json
+      1  site title (new home title; the <title>, social tags, meta description and data-site-title of every page); Part row in the view bar (Risk calls / Learning across games, on every page); view bar label names the Part row; Analyses nav link to learning/; home: the four main links under the title; home: 'How the numbers work' (Method sentences); home: ranking note under the risk judgement chart (Zeki #2578)
+      1  site title (new home title; the <title>, social tags, meta description and data-site-title of every page); Part row in the view bar (Risk calls / Learning across games, on every page); view bar label names the Part row; Analyses nav link to learning/; method: 'Learning from experience' status 'Running (preliminary)' linking to learning/, was 'Not measured' (Main, commit 678b225; expected)
+      1  site.css: hero links, how-numbers, blockquote and phone Part-row rules
+
+unexplained: 0

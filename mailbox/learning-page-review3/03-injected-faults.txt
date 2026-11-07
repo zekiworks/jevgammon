@@ -1,0 +1,107 @@
+# (c1) injected page faults. Started 2026-11-07 17:16:27 UTC
+baseline (/tmp/inv/page-synthetic-running): 0 failure(s)
+
+== made-up number in the page: DETECTED (1 failure(s))
+    learning/index.html: number '4.567' not found in any data file (in 'Lift 4.567 points.')
+
+== private address in the page: DETECTED (2 failure(s))
+    learning/index.html: number '192.168' not found in any data file (in 'Served from 192.168.7.7.')
+    learning/index.html: banned string '192.168.'
+
+== dead anchor in the page: DETECTED (1 failure(s))
+    learning/index.html: anchor #no-such-block missing
+
+== learning-lift block before complete: DETECTED (1 failure(s))
+    learning/: block #learning-lift shown before the results are complete
+
+== signal key in the data file before complete: DETECTED (1 failure(s))
+    data/v3/learning-pilot.json: signal published before the results are complete
+
+== evaluation-set id in a published lesson (data file): DETECTED (1 failure(s))
+    data/v3/learning-pilot.json: evaluation-set position [REDACTED]…
+
+== evaluation-set board string in the page: DETECTED (1 failure(s))
+    learning/: evaluation-set position [REDACTED]…
+
+7 / 7 injected faults detected
+
+# (c2) injected source faults. 2026-11-07 17:16:46 UTC
+baseline (synthetic complete fixture): accepted=True complete=True problems=0
+
+== complete as the string "true": expected file refused, got file refused: OK
+    learning-pilot.json: complete is not a JSON bool
+
+== an unknown top-level key: expected file refused, got file refused: OK
+    learning-pilot.json: unknown key 'verdict'
+
+== a fifth arm: expected file refused, got file refused: OK
+    protocol.arms differs from the site's copy of the protocol
+
+== planned series 2 instead of 10: expected file refused, got file refused: OK
+    planned_series_per_arm differs from the protocol
+
+== another lesson prompt hash: expected file refused, got file refused: OK
+    protocol.lesson_prompt_sha256 is not the hash the plan states
+    protocol.lesson_prompt_sha256 is not the hash of the lesson prompt files
+    lesson_prompt_sha256 differs from protocol.lesson_prompt_sha256
+
+== another evaluation set hash: expected file refused, got file refused: OK
+    protocol.test_set_sha256 is not the hash of the evaluation set present at build time
+
+== an inventory entry with another evaluation set hash: expected file refused, got file refused: OK
+    inventory.records.3: evaluation set hash differs from the set present at build time
+
+== t0_done as 1, not true: expected file refused, got file refused: OK
+    learning-pilot.json: t0_done is not a JSON bool
+
+== a dry run claiming complete: expected complete refused, got complete refused: OK
+    a dry run
+
+== series 10 of budget not finished: expected complete refused, got complete refused: OK
+    budget: not every series 1-10 finished
+
+== a tampered learning lift: expected complete refused, got complete refused: OK
+    learning_lift.records.vs_control does not follow from the aggregates
+
+== a signal flag not following the rule: expected complete refused, got complete refused: OK
+    signal.records.signal is not the plan's rule applied to its changes
+
+== T10 answered 199 of 200 (records s04): expected complete refused, got complete refused: OK
+    records s04: T10 did not answer every evaluation position
+
+== games 8-10 error rate not following from the games (lessons s02): expected complete refused, got complete refused: OK
+    lessons s02: games 1-3 / 8-10 error rates do not follow from its games
+
+== a lesson file changed after the inventory (lessons s05 game 3): expected complete refused, got complete refused: OK
+    lessons s05: lesson file of game 3 missing or not the inventory's
+    lessons s05 game 3: file missing or not the inventory's (not shown)
+
+== the T0 aggregate missing: expected complete refused, got complete refused: OK
+    the T0 aggregate is missing
+
+== a budget point with tokens as a string (budget s01): expected complete refused, got complete refused: OK
+    budget s01: budget_points[0]: tokens is not a JSON int
+    budget s01: budget_points[0]: tokens is not a JSON int
+
+17 / 17 source faults handled as expected; baseline accepted
+
+# (c3) Zeki's synthetic_checks.py (sha256 80760a6b5a74b17057509f81785745ec0d765b8084043da048e75f6ea7f98811) on 678b225:tools/site. 2026-11-07 17:16:46 UTC
+Traceback (most recent call last):
+  File "/tmp/inv/zeki/synthetic_checks.py", line 72, in <module>
+    extract('tools/site/learning_page.py',
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            ('pick', 'read_results', 'read_lessons', 'read_prompt', 'progress', 'num', 'results_table',
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+             'games_table', 'flat', 'by_arm', 'arm_table', 'results', 'lessons'),
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            ('PATH', 'DATA', 'COMPLETE_ONLY_IDS', 'COMPLETE_ONLY_KEYS', 'CHECKPOINTS', 'METRICS',
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+             'GAME_METRICS', 'GAME_KEYS', 'RESULT_LABELS'), E)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/inv/zeki/synthetic_checks.py", line 63, in extract
+    assert found == set(functions), (relative, found, functions)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('tools/site/learning_page.py', {'results_table', 'pick', 'num', 'read_prompt', 'games_table', 'results', 'by_arm', 'flat', 'arm_table', 'read_results', 'progress', 'lessons'}, ('pick', 'read_results', 'read_lessons', 'read_prompt', 'progress', 'num', 'results_table', 'games_table', 'flat', 'by_arm', 'arm_table', 'results', 'lessons'))
+exit code: 1
+
+# Finished 2026-11-07 17:16:46 UTC

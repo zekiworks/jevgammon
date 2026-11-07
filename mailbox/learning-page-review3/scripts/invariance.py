@@ -60,6 +60,12 @@ RULES = [
     ("data page: row for data/v3/learning-pilot.json", "data/index.html",
      sub(r'<tr><td><a href="\.\./data/v3/learning-pilot\.json">data/v3/learning-pilot\.json</a></td>'
          r'<td class="num">[\d,]+</td><td><code>[0-9a-f]{12}</code></td></tr>', count=1)),
+    ("method: 'Learning from experience' status 'Running (preliminary)' linking to learning/, was 'Not measured' "
+     "(Main, commit 678b225; expected)", "method/index.html",
+     lambda t: t.replace('Learning from experience <span class="status status-running">Running (preliminary)</span>',
+                         'Learning from experience <span class="status status-not-measured">Not measured</span>')
+     .replace('<p>Running (preliminary): see <a href="../learning/">Learning across games</a>.</p>',
+              '<p>Every decision is a separate request; models are not told how earlier games went.</p>')),
     ("site.css: hero links, how-numbers, blockquote and phone Part-row rules", "site.css",
      lambda t: css_block("  .view-row.view-parts ul", 2)(css_block("blockquote {", 2)(
          css_block("/* The home page's main links under the title", 8)(t)))),

@@ -1,7 +1,27 @@
 # Learning page, review 3 (Review3, 2026-11-07, after the 17:00 UTC bariton reboot)
 
-**Candidate:** branch `learning-page`, commit **678b225** (on origin/main 7719e1a; origin/main is now d62ec9e, which
-adds mailbox notes only: `tools/site` is identical in 7719e1a and d62ec9e). Not merged.
+**Candidate:** branch `learning-page`, commit **9d8c29b** (678b225 + the top-label fix below; on origin/main 7719e1a;
+origin/main has since gained mailbox notes only: `tools/site` is identical in 7719e1a and current main). Not merged.
+
+### 9d8c29b: what changed, why, and what was rerun
+
+- **Change** (`tools/site/learning_page.py`, `body`): the Learning page's top label follows the validated status:
+  "Complete" when `learning_validate` accepts complete (`validation.complete`), otherwise "Preliminary · running".
+- **Why:** review 3 at 678b225 found the label fixed at "Preliminary · running" even in the SYNTHETIC complete state
+  (Main's instruction).
+- **Rerun at 9d8c29b:** 02 (all 4 states; each now also prints the top label: "Preliminary · running" in none, dry
+  run and SYNTHETIC running, "Complete" in SYNTHETIC complete; 0 failures in all 4), 04 (branch render redone from
+  9d8c29b with 01's state copy and results hash 1279974c, against 01's main render: 0 unexplained), and the four
+  `learning-tab-SYNTHETIC-complete-*` screenshots. Command: `PATH=/usr/bin:$PATH bash
+  mailbox/learning-page-review3/scripts/rerun_02_04.sh` (17:23 UTC), then `screenshots.py /tmp/inv
+  learning-tab-SYNTHETIC-complete` (17:24 UTC).
+- **Not rerun, still from 678b225:** 01, 03 and the other 24 screenshots. The fix changes only the label of a
+  complete page, which none of those shows (01 and the screenshots render the no-results state; 03's page faults use
+  the running state).
+- A first rerun at 17:21 hit the live site's own timer republish: 3 link failures (`../decisions/`, `../data/` not
+  resolving while the live directories were replaced) and, because the live results hash had moved, hundreds of
+  unexplained files in 04. `rerun_02_04.sh` now pins 01's hash; the final rerun above is clean. Those outputs were
+  overwritten.
 
 Render-only: no `build.py`/`update.sh` on the live site, no HTTP server, no timer/service action, no model call. The
 live state and the live site (`~/.local/state/bg-site`) were only read; renders, fixtures and the state copy are
@@ -12,11 +32,11 @@ scratch in `/tmp/inv`. Every output below is a file in this folder.
 | File | What | Result |
 |---|---|---|
 | `01-full-checks-run.txt` | whole-site render, main (origin/main d62ec9e tools/site) vs branch (678b225), same state copy, results hash 1279974c, full `checks.run` | main 0 failures; branch 0 failures |
-| `02-page-checks.txt` | `learning_page.py --check` in 4 states: none (real workspace, no results), dry run (running), SYNTHETIC running, SYNTHETIC complete | 0 failures in all 4; validator accepts all; lift/signal/leaders blocks and keys only in the complete state |
+| `02-page-checks.txt` (**9d8c29b**) | `learning_page.py --check` in 4 states: none (real workspace, no results), dry run (running), SYNTHETIC running, SYNTHETIC complete | 0 failures in all 4; validator accepts all; lift/signal/leaders blocks and keys only in the complete state; top label "Complete" only in the complete state |
 | `03-injected-faults.txt` (c1) | 7 faults injected into the rendered page (SYNTHETIC running) | 7/7 detected |
 | `03-injected-faults.txt` (c2) | 17 faults injected into the pilot's files (SYNTHETIC complete fixture) | 17/17 handled (8 file refused, 9 "complete" refused); baseline accepted |
 | `03-injected-faults.txt` (c3) | Zeki's `synthetic_checks.py` (sha256 80760a6b…8811) on 678b225's `tools/site` | **did not run: AssertionError at extraction.** It extracts `read_lessons` from `learning_page.py`; that function was removed in 97aaa78 (lessons now come from `learning_validate.py`'s reconciliation with the inventory). Every other function and constant it extracts is present. Zeki's script was not modified. Needs an updated script from Zeki, or his call that the removed path is covered by c2. |
-| `04-invariance-inventory.csv`, `04-invariance-summary.txt` | file-by-file inventory of the two whole-site renders | 2,544 vs 2,542 files: 2,429 identical, 2 added (learning page + its data), 113 explained, **0 unexplained** |
+| `04-invariance-inventory.csv`, `04-invariance-summary.txt` (**9d8c29b**) | file-by-file inventory of the two whole-site renders | 2,544 vs 2,542 files: 2,429 identical, 2 added (learning page + its data), 113 explained, **0 unexplained** |
 | `05-screenshots-log.txt`, `screenshots/` | 7 views × 1280/390 × light/dark = 28 PNGs | all written |
 
 ### The Method change (Main, 678b225), classified
@@ -83,9 +103,11 @@ PATH=/usr/bin:$PATH bash mailbox/learning-page-review3/scripts/run_review.sh    
 | screenshots, 05 | `scripts/screenshots.py` (Playwright Chromium, file:// URLs, prefers-color-scheme light/dark) | out-branch; SYNTHETIC complete = out-branch with page-synthetic-complete's learning page and data file |
 
 Changes to the review scripts in this session: `invariance.py` gained the Method rule; `run_review.sh` gained c3;
-`screenshots.py` is new. The obsolete partial 01 from before the reboot is not included.
+`screenshots.py` is new (optional name prefix to retake some shots); `rerun_02_04.sh` is new. The obsolete partial 01
+from before the reboot is not included.
 
 ## Observations (not changed; for the page owner / Zeki)
 
-- In the SYNTHETIC complete state the page kicker still reads "Preliminary · running" while the status says all
-  planned series are done (`screenshots/learning-tab-SYNTHETIC-complete-*.png`).
+- Fixed in 9d8c29b: the top label. Still fixed text in every state: the page title and `<h1>` "Learning from
+  experience (preliminary, running)" and the site-wide nav link of the same wording
+  (`screenshots/learning-tab-SYNTHETIC-complete-*.png`).

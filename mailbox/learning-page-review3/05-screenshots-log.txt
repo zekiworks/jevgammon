@@ -26,3 +26,8 @@
 2026-11-07 17:18:39 UTC  method-learning-row-1280-dark.png  <- file:///tmp/inv/out-branch/method/index.html #learning
 2026-11-07 17:18:39 UTC  method-learning-row-390-light.png  <- file:///tmp/inv/out-branch/method/index.html #learning
 2026-11-07 17:18:39 UTC  method-learning-row-390-dark.png  <- file:///tmp/inv/out-branch/method/index.html #learning
+# rerun after 9d8c29b (top label fix): learning-tab-SYNTHETIC-complete only
+2026-11-07 17:24:08 UTC  learning-tab-SYNTHETIC-complete-1280-light.png  <- file:///tmp/inv/synthetic-complete-site/learning/index.html
+2026-11-07 17:24:10 UTC  learning-tab-SYNTHETIC-complete-1280-dark.png  <- file:///tmp/inv/synthetic-complete-site/learning/index.html
+2026-11-07 17:24:12 UTC  learning-tab-SYNTHETIC-complete-390-light.png  <- file:///tmp/inv/synthetic-complete-site/learning/index.html
+2026-11-07 17:24:15 UTC  learning-tab-SYNTHETIC-complete-390-dark.png  <- file:///tmp/inv/synthetic-complete-site/learning/index.html

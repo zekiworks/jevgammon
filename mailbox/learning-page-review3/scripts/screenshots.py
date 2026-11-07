@@ -14,9 +14,10 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright
 
 I = Path(sys.argv[1] if len(sys.argv) > 1 else "/tmp/inv")
+ONLY = sys.argv[2] if len(sys.argv) > 2 else ""  # optional: retake only the shots whose name starts with this
 D = Path(__file__).resolve().parent.parent / "screenshots"
 D.mkdir(exist_ok=True)
-for old in D.glob("*.png"):
+for old in D.glob(f"{ONLY}*.png"):
     old.unlink()
 
 site = I / "synthetic-complete-site"
@@ -38,7 +39,7 @@ SHOTS = [
 ]
 with sync_playwright() as p:
     b = p.chromium.launch()
-    for name, page, sel in SHOTS:
+    for name, page, sel in (s for s in SHOTS if s[0].startswith(ONLY)):
         for w in (1280, 390):
             for theme in ("light", "dark"):
                 ctx = b.new_context(viewport={"width": w, "height": 900}, color_scheme=theme)

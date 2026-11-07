@@ -123,13 +123,13 @@
   });
 })();
 
-/* Every page: the page bar, sticky at the top of the window: the pages row (Home first) and, on the home page, the view
-   bar's filter and Measure rows under it (Zeki, bus #1878: Home stays in view everywhere). Its height is kept in
+/* Every page: the suite header, sticky at the top of the window: the suite strip, then the view bar with Home and, on
+   the home page, its League, Models and Measure rows (Zeki #2270, #2274). Its height is kept in
    --view-bar-h, so links to a part of a page land below it. On the home page the Measure row marks the part in view:
    the part that crosses a line a quarter of the way down the window below the bar, or the key just pressed until the
    reader scrolls on; between parts no key is marked. */
 (function setupViewBar() {
-  const bar = document.querySelector('.page-bar');
+  const bar = document.querySelector('.suite-head');
   if (!bar) return;
   const measure = () => document.documentElement.style.setProperty('--view-bar-h', `${bar.offsetHeight}px`);
   measure();

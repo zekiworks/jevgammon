@@ -219,13 +219,23 @@ COST_HEAD = ["Model and setting", "$ per 1,000 decisions", "Median / P90 s per d
 
 # --- Layout -------------------------------------------------------------------------------------------------
 
-# The page bar, sticky at the top of the window on every page (Zeki, bus #1878: Home stays in view): the pages row
-# (NAV, Home first) and, on the home page, the view bar's League and Models filter rows and Measure row under it. The
-# top bar above it (the site's name, the theme, More options) scrolls away.
-def page_bar(nav: str, rows: str = "") -> str:
-    view = f'<div class="view-bar"><div class="view-rows">{rows}</div></div>' if rows else ""
-    return (f'<div class="page-bar"><div class="page-bar-in"><nav class="nav" aria-label="Pages"><ul>{nav}</ul></nav>'
-            f'{view}</div></div>')
+# The suite header, sticky at the top of every page (Ümit via Zeki #2270, the shared bar of the three benchmark sites,
+# #2274): first the suite strip (the three sites, this one filled), then the compact view bar: Home on every page and,
+# on the home page, its League, Models and Measure rows. The pages row (NAV) sits in the top bar under it, which
+# scrolls away. Its look is suite-bar.css, the sites' shared file.
+SUITE = [("decision-models/", "English & Turkish Reading"), ("logic/", "Logic & Math"), ("backgammon/", "Backgammon")]
+
+
+def suite_head(base: str, rel: str, path: str, rows: str = "") -> str:
+    root = base[:base.rindex("backgammon/")]
+    here = rel or "./"
+    sites = "".join(f'<li><a href="{here if href == "backgammon/" else root + href}"'
+                    f'{" aria-current=page" if href == "backgammon/" else ""}>{esc(label)}</a></li>' for href, label in SUITE)
+    home = (f'<a class="view-key view-home" href="{here}"{" aria-current=page" if path == "" else ""}>'
+            f'<svg class="home-mark" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 1.6 1 7.6h2v6.8h3.8v-4.2'
+            f'h2.4v4.2H13V7.6h2z"/></svg>Home</a>')
+    return (f'<div class="suite-head"><nav class="suite-bar" aria-label="Benchmarks"><ul>{sites}</ul></nav>'
+            f'<div class="view-bar"><div class="view-rows">{home}{rows}</div></div></div>')
 
 
 def nav_items(rel: str, path: str) -> str:
@@ -249,7 +259,7 @@ def layout(S, base, path: str, title: str, body: str, description: str | None = 
           f'<meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image">'
           f'<meta name="twitter:image" content="{image}">') if image else ""
     nav = nav_items(rel, path)
-    css = "".join(f'<link rel="stylesheet" href="{rel}{s}">' for s in ("site.css", "bg.css") + tuple(styles))
+    css = "".join(f'<link rel="stylesheet" href="{rel}{s}">' for s in ("site.css", "bg.css", "suite-bar.css") + tuple(styles))
     js = "".join(f'<script src="{rel}{s}" defer></script>' for s in ("site.js", "tables.js", "png.js") + tuple(scripts))
     # The Dark / Light switch sits in the top bar itself, as on the Decision models site (Ümit, 31 Oct 2026); More options
     # keeps the page export.
@@ -276,12 +286,13 @@ def layout(S, base, path: str, title: str, body: str, description: str | None = 
 </head>
 <body class="v3 {body_class}" data-site-title="{esc(TITLE)}" data-site-subtitle="{esc(SUBTITLE)}">
   <a class="skip" href="#main">Skip to content</a>
+  {suite_head(base, rel, path, view_rows)}
   <header class="topbar">
     <a class="brand" href="{rel or './'}">Hilde · Backgammon benchmark · v3</a>
     <div class="theme-switch" role="group" aria-label="Colour theme" hidden><button type="button" class="key" data-theme-choice="dark" aria-pressed="true" aria-label="Dark background"><span class="lamp" aria-hidden="true"></span>Dark<span class="long"> background</span></button><button type="button" class="key" data-theme-choice="light" aria-pressed="false" aria-label="Light background"><span class="lamp" aria-hidden="true"></span>Light<span class="long"> background</span></button></div>
     {more}
+    <nav class="nav" aria-label="Pages"><ul>{nav}</ul></nav>
   </header>
-  {page_bar(nav, view_rows)}
   <main id="main"{f' class="{main_class}"' if main_class else ''}>
 {body}
   </main>

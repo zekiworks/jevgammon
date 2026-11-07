@@ -275,7 +275,7 @@ HEADLINE_HEAD = [(h, " data-nosort") for h in (
     '<span class="cost-1k">$ per 1,000 decisions</span><span class="cost-1m">$ per 1M decisions</span>', "Decisions")]
 
 
-def too_safe(chart: list) -> str:
+def too_safe(S, chart: list) -> str:
     """"Too safe" (Ümit #2745 item 6): per row of the table, right safety (played safe when safe was right) and risks
     found (took the risk when it paid), the stored shares; GNUbg weak as the grey reference pair."""
     bars = []
@@ -283,13 +283,15 @@ def too_safe(chart: list) -> str:
     for kind, label, x, colour in chart:
         rs, rf = x["r"]["right_safety"], x["r"]["found"]
         grey = kind != "model"
+        slug = x["late"]["slug"] if x["late"] else P.meta(S, x["ds"], x["name"])["slug"]
         val = lambda s: s["share"] * 100 if s["den"] else 0
         text = lambda s: pct(s["share"]) if s["den"] else nm(NA)
         where = (f' · League {x["lg"]["id"]}' if x["lg"] else " · late entry")
         bars.append((f'{esc(label)}<span class="hbar-where">{esc(where)}</span>',
                      [(val(rs), "ts-safety" + (" ts-grey" if grey else ""), None if grey else colour),
                       (val(rf), "ts-found" + (" ts-grey" if grey else ""), None if grey else colour)],
-                     f'{text(rs)} | {text(rf)}', f' data-setup="{esc(x["name"])}"' + (' data-program="yes"' if kind == "program" else "")))
+                     f'{text(rs)} | {text(rf)}', f' data-dataset="{esc(x["ds"])}" data-setup="{esc(slug)}"'
+                     + (' data-program="yes"' if kind == "program" else "")))
     chart_html = _bars(bars, 0, 100, [(0, "0%"), (25, "25%"), (50, "50%"), (75, "75%"), (100, "100%")],
                        '<span class="head-long">Right safety | risks found</span><span class="head-short">Safety | found</span>',
                        zero=False)
@@ -330,7 +332,7 @@ def headline(S) -> str:
             'without levels; a decision model\'s single setup), not its best score; at the same setting in two places, '
             'the one with the higher stored risk judgement (on an exact tie, the first in league order). Version names '
             'are separate models; a dated checkpoint shares its model\'s row. Tap a model for its decisions.</p>'
-            f'<div data-headline-panel="model">{P.SWIPE}{table}{caveat(NOTE, "statistics")}{note}{too_safe(chart)}</div>'
+            f'<div data-headline-panel="model">{P.SWIPE}{table}{caveat(NOTE, "statistics")}{note}{too_safe(S, chart)}</div>'
             f'<div data-headline-panel="all" hidden>{H.all_risk_table(S)}{caveat(H.RANK_NOTE, "statistics")}</div>'
             f'</section>')
 

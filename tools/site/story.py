@@ -122,7 +122,7 @@ def leaderboard_rows(S) -> tuple[list, list, list]:
         out.append((chosen, [x for x in g if x is not chosen], base, g))
     out.sort(key=lambda t: (t[0]["r"]["judgement"] is None, -(t[0]["r"]["judgement"] or 0), t[2]))
     prog_rows = []
-    for name in PROGRAMS:
+    for name in ("GNUbg weak", "Safest", "Random"):  # Ümit's order (#2745 item 5)
         g = progs.get(name, [])
         if g:
             chosen = _first_best([x for x in g if x["q"] is not None] or g)

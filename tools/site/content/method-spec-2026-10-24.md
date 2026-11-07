@@ -891,3 +891,18 @@ h) **Argon dropped, Argon (low) proposed, and the output-limit rule, dated 2026-
      that sent no output limit and used more than 32,768 output tokens is flagged in the cut-off column as "past
      32,768, no limit sent" (for example 2 of Grok 4.7 (on)'s first 178 answers). It is counted separately from
      cut-off answers, and its score stays as it is: it is neither invalid nor left out.
+i) **Late entries, exploratory, dated 2026-11-07 (Ümit's go, bus #2646; written and committed before any model call
+   of the setups below).** Eight league late entries are added: SubQ Snap 1.1, Base Labs Elephant-1, Base Labs
+   Mammoth-1, Drex Max 1.1, Drex 2.0, Drex Max v1, Drex 2.0 (local) and REAX 1.3 (REAX 1.3 only if Can approves
+   reusing its container exception; until then it is not run).
+   - **Exploratory, no group.** They are not Cup-roster additions under (b)/(g). Like Gemini 4 Argon (low) under (h),
+     they belong to no group: they enter no primary comparison and do not change M (M stays 5).
+   - **Timing, stated wherever these results appear:** they are added after this test's results had been computed
+     and read (2026-10-27/28, and the additions of 2026-10-28).
+   - **Same rules and scoring as every setup:** the frozen pairs, prompts (`bg-v3-std-notable` / `bg-v3-nack`),
+     option-order seed, each setup's stored league settings and option cap, the invalid-answer rule of 10.8, the
+     output-limit rule of (h), the stopping rule (b) of 10.8 (400 main positions first, then the 600 reserve when the
+     first look calls for it), and the 10.12 engine check (their new plays on the 40 frozen pairs rolled out with
+     the 10.12 settings).
+   - **Unchanged:** the 28 published setups and their results (`results/`, `results-2026-10-28/`). The late entries'
+     results go to a separate results directory and a separate dated section.

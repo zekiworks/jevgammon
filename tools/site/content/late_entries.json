@@ -8,6 +8,8 @@
   {"entrant": "Drex Max v1", "opponent": "GPT-6 Luna", "reason": "opponent's API out of credit",
    "source": "mailbox/Late entries Drex - status 2026-11-06.md (match #846 blocked: OpenAI 429, no credit; deferred)"},
   {"entrant": "Drex 2.0 (local)", "opponent": "GPT-6 Luna", "reason": "opponent's API out of credit",
-   "source": "mailbox/Late entries Drex - status 2026-11-06.md (match #886 blocked: OpenAI 429, no credit; deferred)"}
+   "source": "mailbox/Late entries Drex - status 2026-11-06.md (match #886 blocked: OpenAI 429, no credit; deferred)"},
+  {"entrant": "REAX 1.3", "opponent": "GPT-6 Luna", "reason": "opponent's API out of credit",
+   "source": "mailbox/Late entries REAX - status 2026-11-07.md (paid run 17:13-17:44 UTC: GPT-6 Luna deferred, no OpenAI credit)"}
  ]
 }

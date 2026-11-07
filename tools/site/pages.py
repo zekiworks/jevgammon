@@ -819,6 +819,9 @@ def late_cost(e) -> str:
     """$ per 1,000 decisions at the price its setups.json entry records (label, source, date read), and, where it was
     billed at another price, the billed figure (build.late_entry_summaries) beside it."""
     q, p = e["quality"], e.get("price") or {}
+    if p and p.get("input_per_mtok") is None:
+        src = (f'; {esc(p["source"])}' if p.get("source") else "") + (f', read {esc(p["date"])}' if p.get("date") else "")
+        return f'{nm("No price")}<span class="small">{esc(p["label"])}{src}</span>'
     if q.get("usd_per_1000") is None or not p:
         return cost_cell({"setups_meta": {}}, LATE_ENTRY, e["name"], q)[16:-5]
     tokens = f'${p["input_per_mtok"]} per million input tokens' + (

@@ -528,3 +528,19 @@ async function savePng(panel, svg, title, lines, filename) {
   };
   keys.forEach(k => k.addEventListener('click', () => show(k.dataset.headlineView)));
 })();
+
+/* Home page: the Nackgammon section's Decision / Chat / All keys (nack_section.py, Ümit #2647). Rows and chart points of
+   another model type are hidden; programs (the yardsticks) always shown; notes are never touched. */
+(function nackKinds() {
+  const sec = document.getElementById('nackgammon-paired');
+  const keys = sec ? [...sec.querySelectorAll('[data-nack-kind-pick]')] : [];
+  if (!keys.length) return;
+  const kinds = JSON.parse(sec.dataset.nackKinds);
+  const show = pick => {
+    keys.forEach(k => k.setAttribute('aria-pressed', String(k.dataset.nackKindPick === pick)));
+    const on = name => pick === 'all' || !(name in kinds) || kinds[name] === 'program' || kinds[name] === pick;
+    sec.querySelectorAll('tr[data-row]').forEach(tr => { tr.hidden = !on(tr.dataset.row); });
+    sec.querySelectorAll('g[data-setup]').forEach(g => { g.style.display = on(g.dataset.setup) ? '' : 'none'; });
+  };
+  keys.forEach(k => k.addEventListener('click', () => show(k.dataset.nackKindPick)));
+})();

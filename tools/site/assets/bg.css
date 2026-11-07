@@ -231,6 +231,10 @@ a.cc-open { font-weight: 600; }
 #chart-nack { margin: 1rem 0 .5rem; }
 #nackgammon-paired thead th[data-nosort] { cursor: default; }
 #nackgammon-paired ul.lettered { list-style: none; padding-left: 1rem; }
+#nackgammon-paired .section-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: .25rem 1rem; }
+#nackgammon-paired .section-head .eyebrow { flex-basis: 100%; margin: 0; }
+#nackgammon-paired .section-head .keys { margin-left: auto; }
+#nackgammon-paired tr.nack-yardstick, #nackgammon-paired tr.nack-yardstick a { color: var(--text-2); }
 .section-label { margin: .15rem 0 .6rem; font-size: .8rem; color: var(--text-2); }
 
 /* Hype Cup and Nackgammon knockout brackets (Leagues page) and the Matches page. Rounds side by side on a wide screen,

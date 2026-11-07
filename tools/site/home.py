@@ -72,6 +72,13 @@ def type_meta(S, ds, name) -> dict:
                 P.meta(S, ds, name))
 
 
+def type_meta_by_name(S, name) -> dict:
+    """type_meta for a setup known by name only (the Nackgammon test's rows): its league entry first, as for a ladder
+    move, else any entry of that name, else none."""
+    return (next((m for (d, n), m in S["setups_meta"].items() if n == name and d.startswith("league-")), None)
+            or next((m for (d, n), m in S["setups_meta"].items() if n == name), {}))
+
+
 def cell_model(S, ds, name, ref=None) -> str:
     if ref:
         return (f'<td class="model"><span class="model-name">{esc(name)}</span>'
@@ -1850,7 +1857,7 @@ def home(S) -> str:
     </section>
     {pays_section(S)}
     {close_b_section(S)}
-    {nack_section.section(S["nack"])}
+    {nack_section.section(S["nack"], {n: kind(type_meta_by_name(S, n)) for n in S["nack"]["setups"]})}
     <p class="downloads" id="downloads">Download: <a href="data/results.json" download="results.json">results.json</a> · <a href="decisions/index.json" download="decisions.json">decisions.json</a></p>"""
 
 

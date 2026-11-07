@@ -5,6 +5,7 @@ row data-row (its key under the table's data-src); nack_paired_verify.py reads t
 against the data file. Rows are in the data file's fixed order (group, then standard PR); no header can be sorted.
 """
 
+import json
 import math
 
 import pages as P
@@ -12,6 +13,8 @@ from common import NACK_SCOPE_NOTE, count, esc, fmt
 
 SECTION_ID = "nackgammon-paired"
 TITLE = "Nackgammon paired test"
+QUESTION = "Does a model still play well when the starting position changes?"
+UNCLEAR_NOTE = "Unclear means the test can\u2019t tell, not that the scores are equal."
 READING = ("A larger drop is consistent with relying on familiar positions but is not proof: Nackgammon positions also "
            "differ in structure. \u201cKept\u201d is a valid result.")
 PROMPT_NOTE = ("The paired test's standard-side prompt differs from the league prompt (no opening table; the starting "
@@ -67,8 +70,9 @@ def table(src, head, rows, caption, tid) -> str:
     return P.SWIPE + P.table(head, rows, esc(caption), cls="board list", attrs=f' id="{tid}" data-src="{esc(src)}"')
 
 
-def row(key, label, cells) -> str:
-    return f'<tr data-row="{esc(key)}"><th scope="row">{label}</th>{"".join(cells)}</tr>'
+def row(key, label, cells, cls="") -> str:
+    c = f' class="{cls}"' if cls else ""
+    return f'<tr data-row="{esc(key)}"{c}><th scope="row">{label}</th>{"".join(cells)}</tr>'
 
 
 def _setup_label(name, rec) -> str:
@@ -116,6 +120,21 @@ def main_table(N) -> str:
             "Positions without a valid choice, final pairs (standard / Nackgammon)"]
     return table("setups", head, rows, "Per setup: standard PR, Nackgammon PR and the drop (Nackgammon \u2212 standard; "
                                        "positive = worse on Nackgammon)", "nack-table")
+
+
+def summary_table(N) -> str:
+    """The question's answer per setup, primary rule, final look: standard PR, Nackgammon PR, drop and the label;
+    GNUbg weak and Random as grey yardstick rows. Fixed data-file order, like every table of the section."""
+    rows = [row(s, _setup_label(s, r), [
+        td(N, r, ["final/pairs"]), td(N, r, ["final/standard_pr"]), td(N, r, ["final/nackgammon_pr"]),
+        td(N, r, ["final/drop"], signed=True), td(N, r, ["final/drop_975"], signed=True), td(N, r, ["label"], text=True)],
+        "nack-yardstick" if r["group"] == "yardstick" else "") for s, r in N["setups"].items()]
+    head = ["Setup (group)", "Pairs", "Standard PR", "Nackgammon PR", "Drop (Nackgammon \u2212 standard)",
+            "97.5% interval", "Label"]
+    return table("setups", head, rows, "Per setup, the primary rule (an invalid answer scores the position's Random "
+                                       "error), final look: positive drop = worse on Nackgammon; label from the 97.5% "
+                                       "interval (kept = within \u00b15 PR). Grey rows: the GNUbg weak and Random "
+                                       "yardsticks.", "nack-summary")
 
 
 def _limit_cells(N, r) -> list:
@@ -346,7 +365,8 @@ def chart(N) -> str:
             + "".join(parts) + "</svg>")
 
 
-def section(N) -> str:
+def section(N, kinds: dict) -> str:
+    """kinds: setup name -> decision / chat / program (setups.json model_type), for the Decision / Chat / All keys."""
     rnd = N["setups"]["Random"]
     rd1, rdf = rnd["first"]["drop"], rnd["final"]["drop"]
     rnd_text = (f"Random's own drop: {fmt(rd1, 2, True)} PR on the main 200 pairs, {fmt(rdf, 2, True)} on all 500 "
@@ -368,7 +388,19 @@ def section(N) -> str:
         kept += kept_table(N, "kept_advantage_all_500", "Secondary: kept advantage, all 500 pairs (extended setups)")
     risk = risk_table(N, "main") + (risk_table(N, "all") if any(r["risk"]["all"] for r in N["setups"].values()) else "")
     scope = scope_notes(N)
-    return (f'<section class="card" id="{SECTION_ID}"><div class="section-head"><h2>{esc(TITLE)}</h2></div>'
+    n_added = len(N["additions"])
+    head_note = (f"Random play's own drop is {fmt(rd1, 1, True)} PR on the main 200 pairs: the Nackgammon positions were "
+                 f"{'slightly easier' if rd1 < 0 else 'harder'} for random play, so a drop mixes how a model copes with "
+                 "the new start with how hard the positions are; the test cannot separate the two.")
+    keys = ('<span class="keys needs-js" role="group" aria-label="Model type">' + "".join(
+        f'<button type="button" class="key" data-nack-kind-pick="{k}" aria-pressed="{str(k == "all").lower()}">{lab}'
+        '</button>' for k, lab in (("decision", "Decision"), ("chat", "Chat"), ("all", "All"))) + '</span>')
+    return (f'<section class="card" id="{SECTION_ID}" data-nack-kinds="{esc(json.dumps(kinds))}">'
+            f'<div class="section-head"><p class="eyebrow">{esc(TITLE)}</p><h2>{esc(QUESTION)}</h2>{keys}</div>'
+            f'<p class="note nack-always"><strong>{esc(UNCLEAR_NOTE)}</strong> {count(n_added)} setups were added after '
+            'the results were read; the primary results are shown with and without them.</p>'
+            f'<p class="table-note">{esc(head_note)}</p>'
+            + summary_table(N) +
             f'<p class="section-label">{esc(N["method"])}</p>{status}{scope}'
             f'<p class="note nack-additions-note"><strong>Additions.</strong> {esc(N["additions_note"])}</p>'
             "<p>Nackgammon has the rules of backgammon; only the starting position differs. Each setup was asked 200 "

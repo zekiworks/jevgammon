@@ -523,8 +523,8 @@ async function savePng(panel, svg, title, lines, filename) {
   fromHash(location.hash.length > 1);
 })();
 
-/* Home page: the headline table's two views (story.py): the best setting per model, or every setup (the All leagues risk
-   table). */
+/* Home page: the headline table's two views (story.py): one row per model, or every setup (the All leagues risk table);
+   and each row's "other settings" expander, which shows or hides the rows it names (aria-controls). */
 (function headlineViews() {
   const keys = [...document.querySelectorAll('[data-headline-view]')];
   if (!keys.length) return;
@@ -533,6 +533,11 @@ async function savePng(panel, svg, title, lines, filename) {
     document.querySelectorAll('[data-headline-panel]').forEach(p => { p.hidden = p.dataset.headlinePanel !== view; });
   };
   keys.forEach(k => k.addEventListener('click', () => show(k.dataset.headlineView)));
+  document.querySelectorAll('#headline-table .hl-more').forEach(b => b.addEventListener('click', () => {
+    const open = b.getAttribute('aria-expanded') !== 'true';
+    b.setAttribute('aria-expanded', String(open));
+    b.getAttribute('aria-controls').split(' ').forEach(id => { const r = document.getElementById(id); if (r) r.hidden = !open; });
+  }));
 })();
 
 /* Home page: the Nackgammon summary table's keys (nack_section.py; Ümit #2647, #2651): Decision / Chat / All by model

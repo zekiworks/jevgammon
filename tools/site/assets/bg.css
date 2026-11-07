@@ -372,10 +372,9 @@ button.mode[aria-selected="true"]::after, a.mode[aria-selected="true"]::after { 
 /* The measures, one chart card each in one column; the leaderboard's own chart panels keep their two columns. */
 .charts.measures { grid-template-columns: minmax(0, 1fr); margin: 0 0 1rem; }
 .board-panel .chart-head h2 { font-size: 1.15rem; }
-/* The bars: a program grey and striped (a reference row, never ranked); a setup without a recorded family grey; the 95%
-   interval a line across the bar; the league beside the name under All leagues. */
+/* The bars: in the maker's colour (content/maker_colors.json); a program grey and striped (a reference row, never
+   ranked); the 95% interval a line across the bar; the league beside the name under All leagues. */
 .hbar-fill.program { background-color: var(--data-grey); background-image: repeating-linear-gradient(135deg, rgba(255, 255, 255, .55) 0 3px, rgba(0, 0, 0, .12) 3px 6px); }
-.hbar-fill.other { background: var(--data-grey); }
 .hbar-track { position: relative; }
 .hbar-interval { position: absolute; top: 50%; height: 2px; margin-top: -1px; background: var(--text); box-shadow: 0 0 0 1px var(--panel); }
 .hbar-interval::before, .hbar-interval::after { content: ""; position: absolute; top: -4px; width: 2px; height: 10px; background: var(--text); }
@@ -422,8 +421,26 @@ td.hl-judgement { min-width: 13rem; }
 .hl-int { position: absolute; top: 50%; height: 2px; margin-top: -1px; background: var(--text); box-shadow: 0 0 0 1px var(--panel); }
 .hl-safe { position: absolute; left: 50%; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; background: var(--text-2); }
 .hl-val { font-family: var(--mono); font-size: .84rem; }
-td.hl-release { white-space: nowrap; }
 .js [data-headline-panel][hidden] { display: none; }
+/* The leaderboard rows (Ümit, bus #2745): the maker dot, the setting, a row's other settings (shown without script, behind
+   the row's expander with it), the programs and late entries grey and unranked under a group heading. */
+table.headline td:nth-child(9) .small { max-width: 11rem; white-space: normal; }
+table.headline td.model .hl-dot { width: .7rem; height: .7rem; border-radius: 50%; }
+td.hl-setting { white-space: nowrap; }
+.hl-more { display: block; margin-top: .2rem; padding: 0; border: 0; background: none; color: var(--link, var(--text-2));
+  font: inherit; font-size: .8rem; cursor: pointer; text-decoration: underline dotted; }
+.hl-more::before { content: "\25B8\00a0"; }
+.hl-more[aria-expanded="true"]::before { content: "\25BE\00a0"; }
+tr.hl-sub[hidden] { display: table-row; }
+.js tr.hl-sub[hidden] { display: none; }
+tr.hl-sub td { background: var(--sunk); }
+tr.hl-sub td.model { padding-left: 1.6rem; }
+tr.hl-group th { padding-top: .8rem; text-align: left; font-size: .8rem; font-weight: 600; color: var(--text-2); }
+table.headline tr.reference td, table.headline tr.late td { color: var(--text-2); }
+.hbar-fill.ts-found, i.swatch-ts-found { background-image: repeating-linear-gradient(135deg, rgba(255, 255, 255, .55) 0 3px, rgba(0, 0, 0, .12) 3px 6px); }
+.hbar-fill.ts-grey, i.swatch-ts-grey { background-color: var(--data-grey); }
+i.swatch-ts-safety, i.swatch-ts-found { background-color: var(--text-2); }
+.too-safe { margin-top: 1rem; }
 .finding h2 { font-size: 1.25rem; }
 .finding-text { max-width: 80ch; margin: 0 0 .75rem; }
 .finding-chart { margin: 0; }

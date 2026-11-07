@@ -873,6 +873,18 @@ def late_href(rel, e) -> str:
     return f"{rel}models/{LATE_ENTRY}/{e['slug']}/"
 
 
+SUBQ_PREVIEW = "SubQ Snap Preview"
+SUBQ_SAME = ("SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 "
+             "identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and "
+             "probabilities). These pairs may be 1.1 against 1.1.")
+
+
+def subq_note(name, tag="span", same="SubQ Snap 1.1") -> str:
+    """The note on SubQ Snap 1.1's row and page and on every late-entry pair against SubQ Snap Preview (presentation
+    only; no result changes)."""
+    return f'<{tag} class="small">{esc(SUBQ_SAME)}</{tag}>' if name == same else ""
+
+
 def late_results(e, rel) -> str:
     """A late entry's matches, one row per opponent in the order they started: score (its own first), result, match.
     A pair not played for a recorded reason (its stopped match, if any, included) shows the reason, no score."""
@@ -883,7 +895,8 @@ def late_results(e, rel) -> str:
         if not done and m["opponent"] in gone:
             continue
         res = LATE_RESULT[(m["score_for"] > m["score_against"]) - (m["score_for"] < m["score_against"])] if done else None
-        rows.append(f'<tr data-dataset="{LATE_ENTRY}"><td class="model"><span class="model-name">{esc(m["opponent"])}</span></td>'
+        rows.append(f'<tr data-dataset="{LATE_ENTRY}"><td class="model"><span class="model-name">{esc(m["opponent"])}</span>'
+                    f'{subq_note(m["opponent"], same=SUBQ_PREVIEW)}</td>'
                     f'<td class="num">{m["score_for"]}\u2013{m["score_against"]}</td>'
                     f'<td>{res or esc(MATCH_STATE.get(m["status"], m["status"]))}</td>'
                     f'<td class="num">' + (f'<a href="{rel}matches/#{match_anchor("v3", m["id"])}">{m["id"]}</a>' if done
@@ -910,7 +923,8 @@ def late_entries_section(S, rel) -> str:
     for e in S["late_entries"]:
         c = late_cells(e)
         rows.append(f'<tr data-dataset="{LATE_ENTRY}"><td class="model"><a class="model-name" href="{late_href(rel, e)}">'
-                    f'{esc(e["name"])}</a><span class="small">{late_status(e)}</span></td><td class="date">{c["entry"]}</td>'
+                    f'{esc(e["name"])}</a><span class="small">{late_status(e)}</span>{subq_note(e["name"])}</td>'
+                    f'<td class="date">{c["entry"]}</td>'
                     f'<td>{c["field"]}</td>'
                     + "".join(f'<td class="num">{c[k]}</td>' for k in ("played", "record", "error", "judgement", "ability",
                                                                        "caution", "best", "time", "cost", "invalid", "cut"))
@@ -943,7 +957,8 @@ def late_entry_page(S, e) -> str:
     m = S["setups_meta"].get((LATE_ENTRY, e["name"]))
     setup = (f'<section class="card" id="setup"><h2>How we called it</h2>{facts(m, q)}</section>' if m else "")
     return (f'<section class="card"><p class="eyebrow">{esc(LATE_ENTRY_LABEL)} · League {e["field_league"]} field</p>'
-            f'<h1>{esc(e["name"])}</h1><p class="subtitle">{late_status(e)}</p><p class="version">{esc(version_line(S))}</p></section>'
+            f'<h1>{esc(e["name"])}</h1><p class="subtitle">{late_status(e)}</p>{subq_note(e["name"], "p")}'
+            f'<p class="version">{esc(version_line(S))}</p></section>'
             f'<section class="card" id="late-entry" data-dataset="{LATE_ENTRY}"><h2>{esc(LATE_ENTRY_LABEL)}</h2>'
             f'<p class="note">{esc(LATE_ABOUT)}</p><dl class="facts">'
             + "".join(f"<dt>{k}</dt><dd>{v}</dd>" for k, v in items)

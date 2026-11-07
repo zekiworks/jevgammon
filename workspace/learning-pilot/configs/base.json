@@ -1,0 +1,23 @@
+{
+ "players": [
+  {
+   "name": "Gemma 4 31B (off)",
+   "spec": "local/gemma-4-31B-it",
+   "provider": "local-vllm",
+   "quantization": "fp8 (bf16 checkpoint quantized by vLLM at load; fp8 KV cache)",
+   "base_url": "http://192.168.1.139:8010/v1",
+   "request": {
+    "chat_template_kwargs": {
+     "enable_thinking": false
+    }
+   },
+   "note": "League 2's Gemma 4 31B (off) settings; served on spark3 (same image, checkpoint and vLLM flags; max-num-seqs 8); learning pilot",
+   "parallel": 2
+  }
+ ],
+ "prompt_version": "bg-v2",
+ "order_seed": 1190975713392774006,
+ "rounds": 3,
+ "max_turns": 300,
+ "clock": 0
+}

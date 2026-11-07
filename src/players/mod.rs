@@ -163,6 +163,15 @@ pub struct PlayerConfig {
     /// reasoning block on every answer and has no switch to turn it off.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub answer_prefix: Option<String>,
+    /// Learning pilot: text appended to the play call's system prompt (chat models), e.g. a
+    /// feedback note from earlier games; `None` = the league's prompt.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub prompt_note: Option<String>,
+    /// Learning pilot: a file read before every play call whose text, when not empty, is
+    /// appended like `prompt_note` (in its place when both are set): the note can change
+    /// between games of one match.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub prompt_note_file: Option<std::path::PathBuf>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub price: Option<Price>,
     /// Free text kept with the roster (how the setup was pinned, what a level means).
@@ -341,6 +350,8 @@ pub fn render_stage_b(config: &PlayerConfig, req: &DecisionRequest<'_>, shown: &
         top_logprobs: config.top_logprobs,
         readout: llm::Readout::parse(config.letter_readout.as_deref())?,
         answer_prefix: config.answer_prefix.clone(),
+        prompt_note: config.prompt_note.clone(),
+        prompt_note_file: config.prompt_note_file.clone(),
         pacer: None,
         budget: None,
     };
@@ -359,7 +370,7 @@ pub fn render_stage_b(config: &PlayerConfig, req: &DecisionRequest<'_>, shown: &
     Ok(json!({
         "route": route.id(),
         "model": model,
-        "play": {"system": prompt::letter_system(), "user": play_user, "body": play},
+        "play": {"system": llm::play_system(&options), "user": play_user, "body": play},
         "prediction": {"system": prompt::prediction_system(), "user": prediction_user, "body": prediction},
     }))
 }
@@ -421,6 +432,8 @@ impl Player {
             top_logprobs: config.top_logprobs,
             readout: llm::Readout::parse(config.letter_readout.as_deref())?,
             answer_prefix: config.answer_prefix.clone(),
+            prompt_note: config.prompt_note.clone(),
+            prompt_note_file: config.prompt_note_file.clone(),
             pacer: config.rpm.filter(|&rpm| rpm > 0).map(|rpm| {
                 let group = config.rate_group.clone().unwrap_or_else(|| {
                     format!("{}|{spec}", config.base_url.as_deref().unwrap_or(""))

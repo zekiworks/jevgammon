@@ -1,0 +1,9 @@
+You just finished game {game} of a series of games against the same opponent.
+
+Your current lessons (written after your earlier games in this series):
+{lessons}
+
+The record of game {game}: every decision you made, with the GNUbg engine's verdict (2-ply). Boards are given in your point numbering.
+{record}
+
+Rewrite your lessons for your next games in this series. Keep what still holds, fix what this game showed to be wrong, and add what it taught you. At most 10 short bullet points of general advice (not about one specific position). Reply with the bullet points only.

@@ -265,8 +265,18 @@ struct MatchArgs {
     /// xai/<model>, ollama/<model>, local/<model>, random, safest, gnubg-weak, or a decision service: jev, fastino,
     /// openai-decisions, perplexity, liquid, clef, open-jev, cygnet, gemma, pplx-local, d3
     /// (optionally /<model>). Reasoning, prices and other providers need a league --config.
-    #[arg(long, required = true)]
+    #[arg(long, required_unless_present = "model1_config", conflicts_with = "model1_config")]
     model1: Option<String>,
+    /// First player from a player config entry (JSON file, `{name, spec, ...}` as in a league
+    /// config: base_url, request fields, prompt_note); its name is the match's model1.
+    #[arg(long)]
+    model1_config: Option<PathBuf>,
+    /// Play exactly --rounds rounds: no early end at 5 points, no tie-break round.
+    #[arg(long)]
+    fixed_rounds: bool,
+    /// Shell command run after every game and waited for (MATCH_ID, GAME_ROUND, GAME_LEG set).
+    #[arg(long)]
+    after_game: Option<String>,
     /// Second player (same forms as --model1).
     #[arg(long, required = true)]
     model2: Option<String>,
@@ -769,22 +779,34 @@ fn checked(models: Vec<PlayerConfig>) -> Result<Vec<PlayerConfig>> {
 
 async fn run_match(args: MatchArgs) -> Result<()> {
     let setup = args.common.setup();
-    let (Some(model1), Some(model2)) = (args.model1, args.model2) else {
-        bail!("--model1 and --model2 are required");
+    let Some(model2) = args.model2 else {
+        bail!("--model2 is required");
     };
+    let (player1, name1) = match (&args.model1_config, &args.model1) {
+        (Some(path), _) => {
+            let config: PlayerConfig = serde_json::from_str(
+                &std::fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))?,
+            )
+            .context("--model1-config")?;
+            let player = Player::from_config(&config, &setup).await.context("--model1-config")?;
+            (player, config.name)
+        }
+        (None, Some(model1)) => {
+            let player = Player::from_spec(model1, &setup).await.context("--model1")?;
+            let name = player.spec.clone();
+            (player, name)
+        }
+        (None, None) => bail!("--model1 or --model1-config is required"),
+    };
+    let player1 = Arc::new(player1);
     let start_position = args.common.start_position;
     args.common.prompt_version.check_start(start_position)?;
-    let player1 = Arc::new(
-        Player::from_spec(&model1, &setup)
-            .await
-            .context("--model1")?,
-    );
     let player2 = Arc::new(
         Player::from_spec(&model2, &setup)
             .await
             .context("--model2")?,
     );
-    let names = [player1.spec.clone(), player2.spec.clone()];
+    let names = [name1, player2.spec.clone()];
     for (name, player) in names.iter().zip([&player1, &player2]) {
         player
             .warm_up()
@@ -828,6 +850,8 @@ async fn run_match(args: MatchArgs) -> Result<()> {
             max_turns,
             // The board view follows one game at a time.
             concurrent_mirror: false,
+            fixed_rounds: args.fixed_rounds,
+            after_game: args.after_game.clone(),
             start_position,
             protocol: protocol.clone(),
         },

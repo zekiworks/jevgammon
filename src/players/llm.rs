@@ -10,6 +10,7 @@
 //! to the constrained letter (choice only). Subscription models return no probabilities and
 //! answer with one constrained letter.
 
+use std::borrow::Cow;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Instant;
@@ -84,6 +85,12 @@ pub struct Options {
     pub readout: Readout,
     /// Prefill text before the letter when reasoning is off (default `Answer:`).
     pub answer_prefix: Option<String>,
+    /// Learning pilot: text appended to the play call's system prompt after a blank line
+    /// (the note carries its own delimiters); `None` = the league's system prompt alone.
+    pub prompt_note: Option<String>,
+    /// Learning pilot: read before every play call; its text, when not empty, replaces
+    /// `prompt_note`.
+    pub prompt_note_file: Option<std::path::PathBuf>,
     /// Rate-limit pacing shared with the other players of the group.
     pub pacer: Option<Arc<super::Pacer>>,
     /// Hard spending cap (OpenAI-compatible servers): every attempt reserves its worst case.
@@ -229,6 +236,22 @@ pub fn as_sent(body: Value, options: &Options) -> Value {
     merged(body, options.request.as_ref())
 }
 
+/// The play call's system prompt: the letter readout's, then the player's prompt note (learning
+/// pilot) after a blank line when it has one.
+pub fn play_system(options: &Options) -> Cow<'static, str> {
+    let from_file = options.prompt_note_file.as_ref().map(|path| {
+        std::fs::read_to_string(path)
+            .unwrap_or_else(|error| panic!("prompt_note_file {}: {error}", path.display()))
+    });
+    let note = from_file
+        .filter(|text| !text.trim().is_empty())
+        .or_else(|| options.prompt_note.clone());
+    match note {
+        Some(note) => Cow::Owned(format!("{}\n\n{}", letter_system(), note.trim_end())),
+        None => Cow::Borrowed(letter_system()),
+    }
+}
+
 /// A request constrained by the provider to `answer`, before the configured extra fields
 /// (`as_sent`). The play call (`Answer::Letter`) is the league request; the prediction differs
 /// only in its user text, its system prompt (neutral, Method §9.13) and its answer format.
@@ -240,8 +263,8 @@ pub fn constrained_request(
     answer: Answer,
 ) -> Value {
     let system = match answer {
-        Answer::Letter(_) => letter_system(),
-        Answer::Prediction => prediction_system(),
+        Answer::Letter(_) => play_system(options),
+        Answer::Prediction => Cow::Borrowed(prediction_system()),
     };
     let effort = options.reasoning.as_deref();
     let (name, compatible_name) = match answer {
@@ -494,7 +517,7 @@ impl LlmClient {
         decision: &mut Decision,
     ) -> Result<Option<(usize, Option<Vec<f64>>)>> {
         let messages = json!([
-            {"role": "system", "content": letter_system()},
+            {"role": "system", "content": play_system(&self.options)},
             {"role": "user", "content": user},
         ]);
         let top_logprobs = self.options.top_logprobs.unwrap_or(TOP_LOGPROBS);
@@ -1528,6 +1551,8 @@ mod tests {
                 top_logprobs: None,
                 readout: Readout::Prefill,
                 answer_prefix: None,
+                prompt_note: None,
+                prompt_note_file: None,
                 pacer: None,
                 budget: None,
             },
@@ -1598,6 +1623,8 @@ mod tests {
             top_logprobs: None,
             readout: Readout::Prefill,
             answer_prefix: None,
+            prompt_note: None,
+            prompt_note_file: None,
             pacer: None,
             budget: None,
         };
@@ -1725,6 +1752,8 @@ mod tests {
             top_logprobs: None,
             readout: Readout::Prefill,
             answer_prefix: None,
+            prompt_note: None,
+            prompt_note_file: None,
             pacer: None,
             budget: None,
         };

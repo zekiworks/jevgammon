@@ -126,6 +126,9 @@ def headline(S) -> str:
             f'Risk judgement: 100 = every call right, 50 = always safe; the line on each bar is its 95% interval, the mark '
             f'at 50 the always-safe line · higher is better</p></div>'
             f'<p class="table-note">{esc(ALL_NOTE)}</p>'
+            '<p class="table-note headline-scope"><strong>A fixed table:</strong> all leagues, all phases, every model; '
+            'the filter row below does not change it. A model with several settings shows the one with the highest '
+            'stored risk judgement (on an exact tie, the first in league order).</p>'
             f'<div data-headline-panel="best">{P.SWIPE}{table}{note}</div>'
             f'<div data-headline-panel="all" hidden>{H.all_risk_table(S)}</div>'
             f'{caveat(H.RANK_NOTE, "statistics")}</section>')
@@ -244,5 +247,5 @@ def flinch(S) -> str:
     return finding("finding-flinch", heading, text, chart, legend, "Two plays shown, not league play.", "clear-risk")
 
 
-def sections(S) -> str:
-    return headline(S) + cautious(S) + flinch(S)
+def findings(S) -> str:
+    return cautious(S) + flinch(S)

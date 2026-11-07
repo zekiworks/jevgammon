@@ -46,6 +46,10 @@ function rowShown(el) {
   return el.dataset.kind === 'reference' || Object.keys(f).every(g => f[g] === 'all' || el.dataset[g] === f[g]);
 }
 
+/* Parts of the home page the filter row does not govern (bus #2718): the leaderboard is fixed (all leagues, all phases,
+   every setup) and the Nackgammon section has its own Decision / Chat / All and per-model keys. */
+const OWN_SCOPE = '#leaderboard, #nackgammon-paired';
+
 function activeFilters() {
   const on = Object.keys(HOME.filters).filter(g => HOME.filters[g] !== 'all').map(g => `${FILTER_LABEL[g]}: ${HOME.filters[g]}`);
   if (HOME.phase !== 'all') on.push(`Phase: ${HOME.phase}`);
@@ -120,12 +124,14 @@ function applyHome() {
   document.querySelectorAll('[data-league-view]').forEach(v => v.toggleAttribute('data-off', !viewOn(v, lg)));
   document.querySelectorAll('[data-stack-title]').forEach(h => { h.hidden = lg !== 'all'; });
   document.querySelectorAll('[data-league-pick]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.leaguePick === lg)));
-  document.querySelectorAll('tr[data-kind], li.hbar[data-kind]').forEach(tr => { tr.hidden = !rowShown(tr); });
+  // The leaderboard (a fixed global table) and the Nackgammon section (its own keys) are outside the filters' scope.
+  const filtered = el => !el.closest(OWN_SCOPE);
+  document.querySelectorAll('tr[data-kind], li.hbar[data-kind]').forEach(tr => { if (filtered(tr)) tr.hidden = !rowShown(tr); });
   // A chart's group heading shows while one of its rows does.
   document.querySelectorAll('li.hbar-group').forEach(h => {
     h.hidden = !h.parentElement.querySelector(`li.hbar[data-group="${h.dataset.group}"]:not([hidden])`);
   });
-  document.querySelectorAll('svg.chart-svg').forEach(layoutChart);
+  document.querySelectorAll('svg.chart-svg').forEach(svg => { if (filtered(svg)) layoutChart(svg); });
   document.querySelectorAll('.phase-all').forEach(p => { p.hidden = HOME.phase === 'all'; });
   const box = document.getElementById('filters');
   if (!box) return;

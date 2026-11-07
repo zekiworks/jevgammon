@@ -161,6 +161,8 @@ def check_home(out: Path, N: dict, bad: list):
                 seen += 1
                 vals = [x for p in c.attrs["data-k"].split("|") for x in leaves(NS.resolve(N, rec, p))
                         if x is not None]
+                if c.attrs["data-k"] == "label":  # the shown word for the data's label (Ümit #2651: worse -> dropped)
+                    vals = [NS.LABELS[v] for v in vals]
                 err = check_cell(norm(text_of(c)), vals)
                 if err:
                     bad.append(f"home table {tid} row {r.attrs['data-row']} [{c.attrs['data-k']}]: {err}")

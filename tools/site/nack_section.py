@@ -19,7 +19,13 @@ READING = ("A larger drop is consistent with relying on familiar positions but i
            "differ in structure. \u201cKept\u201d is a valid result.")
 PROMPT_NOTE = ("The paired test's standard-side prompt differs from the league prompt (no opening table; the starting "
                "setup on its own line), so the standard error rates here are not compared with league error rates.")
-LABELS = {"kept": "kept", "worse": "worse", "better": "better", "unclear": "unclear"}
+# Shown words for the data file's outcome labels (Ümit #2651: kept / unclear / dropped). The data keeps "worse";
+# nack_paired_verify.py checks a label cell against LABELS[its data value].
+LABELS = {"kept": "kept", "worse": "dropped", "better": "better", "unclear": "unclear"}
+LABEL_LEGEND = ("Labels, from the final 97.5% interval (Method \u00a710, outcome label (c)): kept = the interval lies "
+                "within \u00b15 PR; dropped = the data file's label \u201cworse\u201d: the interval lies above 0 (lower "
+                "end > 0) and the setup is not kept; better = the interval lies below 0 and the setup is not kept; "
+                "unclear = anything else.")
 RULES = [("random", "Primary rule: an invalid or missing answer scores the position's Random error"),
          ("worst", "Sensitivity (i): an invalid or missing answer scores the worst legal play's loss"),
          ("drop", "Sensitivity (ii): the pair is left out for that setup"),
@@ -63,6 +69,12 @@ def td(data, rec, paths, digits=2, signed=False, sep=" ", text=False) -> str:
     shown = sep.join(show(v, digits, signed) for v in vals if v is not None) or DASH
     cls = "" if text else " class=num"
     return f'<td{cls} data-k="{esc("|".join(paths))}">{esc(shown)}</td>'
+
+
+def label_td(data, rec) -> str:
+    """The outcome label cell: the shown word for the data file's label (LABELS)."""
+    v = resolve(data, rec, "label")
+    return f'<td data-k="label" data-label="{esc(v)}">{esc(LABELS[v])}</td>'
 
 
 def table(src, head, rows, caption, tid) -> str:
@@ -109,7 +121,7 @@ def main_table(N) -> str:
             td(N, r, ["extended", "extension_incomplete"], sep="; ", text=True),
             td(N, r, ["final/pairs"]), td(N, r, ["final/standard_pr"]), td(N, r, ["final/nackgammon_pr"]),
             td(N, r, ["final/drop"], signed=True), td(N, r, ["final/drop_975"], signed=True),
-            td(N, r, [rnd], signed=True), td(N, r, ["label"], text=True),
+            td(N, r, [rnd], signed=True), label_td(N, r),
             td(N, r, ["invalid/first/standard", "invalid/first/nackgammon"], sep=" / "),
             td(N, r, ["invalid/final/standard", "invalid/final/nackgammon"], sep=" / ")]))
     head = ["Setup (group)", "Standard PR, main 200 pairs", "Nackgammon PR, main 200 pairs", "Drop, main 200 pairs",
@@ -127,14 +139,14 @@ def summary_table(N) -> str:
     GNUbg weak and Random as grey yardstick rows. Fixed data-file order, like every table of the section."""
     rows = [row(s, _setup_label(s, r), [
         td(N, r, ["final/pairs"]), td(N, r, ["final/standard_pr"]), td(N, r, ["final/nackgammon_pr"]),
-        td(N, r, ["final/drop"], signed=True), td(N, r, ["final/drop_975"], signed=True), td(N, r, ["label"], text=True)],
+        td(N, r, ["final/drop"], signed=True), td(N, r, ["final/drop_975"], signed=True), label_td(N, r)],
         "nack-yardstick" if r["group"] == "yardstick" else "") for s, r in N["setups"].items()]
     head = ["Setup (group)", "Pairs", "Standard PR", "Nackgammon PR", "Drop (Nackgammon \u2212 standard)",
             "97.5% interval", "Label"]
-    return table("setups", head, rows, "Per setup, the primary rule (an invalid answer scores the position's Random "
-                                       "error), final look: positive drop = worse on Nackgammon; label from the 97.5% "
-                                       "interval (kept = within \u00b15 PR). Grey rows: the GNUbg weak and Random "
-                                       "yardsticks.", "nack-summary")
+    return (table("setups", head, rows, "The primary rule (an invalid answer scores the position's Random error), final "
+                                        "look: positive drop = worse on Nackgammon. Grey rows: the GNUbg weak and Random "
+                                        "yardsticks.", "nack-summary")
+            + f'<p class="table-note nack-label-legend">{esc(LABEL_LEGEND)}</p>')
 
 
 def _limit_cells(N, r) -> list:
@@ -422,8 +434,8 @@ def section(N, kinds: dict, chosen: list) -> str:
             "first-look 97.5% interval was wide and contained 0 was asked the 300 reserve pairs too (500 pairs). Every "
             "recorded position is scored: an invalid, timed-out or missing answer scores the position's Random error, "
             "with the sensitivity checks below. Label from the final 97.5% "
-            "interval: kept (within \u00b15 PR), worse, better or unclear. \u201cUnclear\u201d means the interval is "
-            "too wide to decide; it is not evidence of equivalence.</p>"
+            "interval: kept (within \u00b15 PR), dropped (the data's \u201cworse\u201d), better or unclear. "
+            "\u201cUnclear\u201d means the interval is too wide to decide; it is not evidence of equivalence.</p>"
             f'<p class="note">{esc(READING)}</p><p class="table-note">{esc(PROMPT_NOTE)}</p>'
             f'<p class="table-note">{esc(rnd_text)}</p>'
             f'<p class="table-note nack-no-group-note">{esc(no_group_note(N))}</p>'

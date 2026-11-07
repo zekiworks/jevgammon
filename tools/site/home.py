@@ -1859,8 +1859,9 @@ def home(S) -> str:
     return f"""
     {FAMILY_ICONS}
     {hero_card(S)}
+    {story.headline(S)}
     {filters(S)}
-    {story.sections(S)}
+    {story.findings(S)}
     {how_numbers(S)}
     {findings_block(S)}
     {measure_charts(S)}

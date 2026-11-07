@@ -30,7 +30,7 @@ This is measured in two places: in games against GNU Backgammon's Beginner level
 - **Where the context goes:** after the league's system prompt and a blank line, between the lines `=== NOTES FROM YOUR EARLIER GAMES IN THIS SERIES ===` and `=== END OF NOTES ===`. The user prompt is unchanged. With no context, the request is exactly the league's.
 - **Context limit:** the context may use 26,879 tokens, counted with Gemma's tokenizer. That is 32,768, minus the largest evaluation prompt measured (4,389 tokens), minus a 1,500-token margin. When a context would exceed it, the oldest games are dropped first, and every drop is logged.
 - **Load:** each arm has at most one model request in flight, so the server never has more than 4. Games are played one after another, the evaluation asks one position at a time, and the lesson call runs between games. The one exception is the shared evaluation before game 1: it runs alone, with 4 requests in flight.
-- **Cost:** $0, because the model runs locally. Time is recorded for every evaluation, game decision and lesson call.
+- **Cost:** $0 API spend; local compute cost not estimated. Time is recorded for every evaluation, game decision and lesson call.
 
 ## 3. Opponent
 
@@ -45,7 +45,7 @@ There are exactly four arms. Every series starts with an empty context, and noth
 | **control** | None (no history). |
 | **records** | Full records of all earlier games of this series, with GNU Backgammon's evaluation of each decision. |
 | **lessons** | Every lesson the model has written so far in this series, and nothing else. |
-| **budget** | Budget-matched records: the most recent records of this series that fit within the lessons arm's context size at the same point of the same series. |
+| **budget** | Budget-matched records: the most recent full game records of this series (whole games) that fit within the lessons arm's context size at the same point of the same series. |
 
 ### Records (records and budget arms)
 
@@ -75,7 +75,8 @@ After each game there is exactly ONE lesson call.
 
 - After game g of series s, the budget arm's context is no longer, in Gemma tokens, than the lessons arm's context after game g of series s.
 - That makes the budget arm's series s start only after the lessons arm's series s has finished.
-- The unit is the decision line. The newest lines are taken first, while the whole context, including the delimiters and headers, still fits. They are then shown in game order under their game headers.
+- The unit is the whole game record (amended before any model call; see section 11). Whole earlier games are taken newest first, as long as the whole context, including the delimiters and headers, still fits. They are shown in game order.
+- If not even the newest game fits, the context is empty at that point, and this is logged.
 
 ### Lesson prompt
 
@@ -141,8 +142,8 @@ The definitions are the site's (`tools/site/analysis.py`). Every share is taken 
 - **Risk appetite:** the share of the Risk pays and Safety pays positions where the chosen play leaves more hitting rolls than the best safe play, right or wrong.
 - **Invalid answers:** answers that name no option. They are left out of every quality number, as on the site. Failed requests are counted separately.
 - **Tokens per decision.**
-- **Records dropped:** older games or decision lines that were left out of the context.
-- **Cost** ($0) and **time**.
+- **Records dropped:** earlier games of the series whose full record was left out of the context. This applies to records (over the context limit) and to budget (over the lessons arm's token count).
+- **Cost** ($0 API spend; local compute cost not estimated) and **time**.
 
 **For each arm, from its games:**
 
@@ -214,4 +215,22 @@ Scripts in `workspace/learning-pilot/`:
 - `pilot.py`: the shared T0, the series, contexts, lesson calls, evaluations, aggregates, `learning.jsonl` and `seeds.json`;
 - `report.py`: the table.
 
-**Dry run:** an offline run with the Safest program in Gemma's seat played series of all four arms end to end, with no model call. Evaluations and lessons were stubbed.
+**Dry run:** an offline run with the Safest program in Gemma's seat played series of all four arms end to end, with no model call. Evaluations were stubbed. Lessons were stubbed at the allowed maximum (5 lessons, 150 words), so that the budget arm's matching runs.
+
+## 11. Amendment before any model call (7 Nov, Zeki #2531)
+
+Made after Zeki's review of the page candidate and before any model call of the pilot. No series, evaluation or lesson call had run.
+
+- **Budget arm unit.** The budget-matched arm now uses A17's unit: the most recent FULL game records (whole games, newest first) that fit within the lessons arm's token count at the same point of the same series.
+  - The first version used decision lines.
+  - If not even the newest whole game fits, the context is empty at that point, and this is logged.
+  - "Records dropped" now counts whole games, for both records and budget.
+- **Cost wording.** "$0 API spend; local compute cost not estimated" replaces "$0, because the model runs locally".
+- **Plan hashes.**
+  - Before this amendment (commit 5af8842): `3839eae1c1411ef82e20fe9ef18fdf4818192a7e44c034a07fea1e6bbfaa0861`.
+  - The hash of this amended file is recorded in the commit message and in the review packet. A file cannot contain its own hash.
+- **Consequence measured in the dry run, with no model call.** These sizes come from Safest's games, not Gemma's; Gemma's will differ.
+  - One full game record is 1,891–3,946 tokens (median 2,706; 20 cases).
+  - The lessons arm's context at the cap of 5 lessons and 150 words per game grows from 226 tokens after game 1 to 1,951 after game 10.
+  - So under the whole-game rule the budget arm's context is expected to be empty at most or all points, and every empty point is logged.
+- **Lesson prompt:** unchanged (sha256 `d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e`).

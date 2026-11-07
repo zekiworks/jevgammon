@@ -21,13 +21,10 @@ Branch `front-story` is at 8f84e36. `delta-vs-ef3ed0e.patch` is `git diff ef3ed0
 The tests import the branch's `tools/site` modules (home, story) and rebuild S from the last branch render's published data files: `data/v3/league-N.json` and `data/setups.json` from `/tmp/fs/out-branch`, plus the content file `nack_paired_results.json`. These are the inputs `nack_views` and `best_settings` read.
 
 There was **no build, no `compute()`, no full re-render, and no model or statistics run.** A re-render was not needed: test (c) shows the fixed rule gives the same per-model selection as the rendered page, so the page HTML does not change. `data-nack-chosen` in the render matches the new `chosen` exactly.
+- **(c) PASS, 26 models:** each per-model setup is checked by identity (model, setup and league).
   - 19 equal the leaderboard's selected setup.
   - GPT-6.1 Terra has no leaderboard row, because it played in no league.
   - 6 models' leaderboard setting was not asked in the Nackgammon test: Claude Sonnet 5.5, DeepSeek V4.1 Flash, GPT-6 Astra, Gemini 3.8 Flash, Gemini 4 Argon, Qwen3.8-27B (each leaderboard-selected at a setting the test did not ask). For each, the per-model view equals the same rule run over the asked settings.
-- **(c) PASS, 26 models:** each per-model setup is checked by identity (model, setup and league).
-  - 18 equal the leaderboard's selected setup.
-  - GPT-6.1 Terra has no leaderboard row, because it played in no league.
-  - 7 models' leaderboard setting was not asked in the Nackgammon test: Claude Sonnet 5.5, DeepSeek V4.1 Flash, GPT-6 Astra, Gemini 3.8 Flash, Gemini 4 Argon, Qwen3.8-27B (each leaderboard-selected at a setting the test did not ask). For each, the per-model view equals the same rule run over the asked settings.
 - **(d) PASS, synthetic:** model M with A (League 1, 70), C (League 1, 75; League 2, 50) and B (League 2, 70).
   - Both views pick C at League 1. The old name-keyed rule picked B, because C's League 2 row overwrote its League 1 score.
   - With C in League 1 lowered to 60, A and B tie at 70. Both views pick A (first in league order); the old rule picked B (alphabetically last).

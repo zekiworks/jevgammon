@@ -155,7 +155,7 @@ def check_home(out: Path, N: dict, bad: list):
         rows = [n for n in walk(t) if n.tag == "tr" and "data-row" in n.attrs]
         keys = [r.attrs["data-row"] for r in rows]
         if src == "setups":
-            want = list(D["setups"]) if is_late else [
+            want = D["late_entries"] + ["Random"] if is_late else [
                 s for s in order if tid not in ("nack-cost", "nack-risk-main", "nack-risk-all")
                 or (tid == "nack-cost" and N["setups"][s]["cost"])
                 or (tid.startswith("nack-risk") and N["setups"][s]["risk"][tid[10:]])]

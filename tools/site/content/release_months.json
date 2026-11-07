@@ -1,0 +1,229 @@
+{
+ "about": "Release months for the headline-table models. A month only where the maker's own page gives an explicit dated release or public-availability statement for that exact model (quote copied verbatim); a mention in another model's post or an undated 'today' does not count; null otherwise. Read 2026-11-07, re-audited the same day (Zeki #2714; mailbox/front-story/evidence/release-audit.json).",
+ "models": {
+  "Celeris-1 Decision": {
+   "month": "2026-10",
+   "url": "https://celeris.ai/celeris-1-decision",
+   "quote": "Tom Hamer · October 8, 2026",
+   "read": "2026-11-07",
+   "note": "Byline date of Celeris's own launch post."
+  },
+  "Claude Fable 5.1": {
+   "month": "2026-09",
+   "url": "https://www.anthropic.com/claude-fable-and-mythos-5-1",
+   "quote": "September 2026",
+   "read": "2026-11-07",
+   "note": "Page header gives month only, above 'We’re introducing Claude Fable 5.1 and Claude Mythos 5.1.'"
+  },
+  "Claude Opus 5.5": {
+   "month": "2026-09",
+   "url": "https://www.anthropic.com/claude-opus-5-5",
+   "quote": "September 22, 2026",
+   "read": "2026-11-07",
+   "note": "Date line directly under the '# Claude Opus 5.5' heading of the launch post."
+  },
+  "Claude Sonnet 5.5": {
+   "month": "2026-09",
+   "url": "https://www.anthropic.com/claude-sonnet-5-5",
+   "quote": "September 28, 2026",
+   "read": "2026-11-07",
+   "note": "Date line directly under the '# Claude Sonnet 5.5' heading of the launch post."
+  },
+  "Clef": {
+   "month": "2026-10",
+   "url": "https://developers.cloudflare.com/changelog/post/2026-10-01-clef-workers-ai/",
+   "quote": "October 1, 2026",
+   "read": "2026-11-07",
+   "note": "Date of Cloudflare changelog post 'Introducing Clef: Cloudflare's first open-source decision models, now on Workers AI'."
+  },
+  "Cygnet (Gemma 4 12B)": {
+   "month": null,
+   "url": null,
+   "quote": null,
+   "read": "2026-11-07",
+   "note": "Cygnet's own repo (https://github.com/blockbrain-ai/cygnet-recipe) was read; it states no release date (only 'retrieved 2026-09-30' for benchmark data). Gemma 4 12B dates not used per instructions."
+  },
+  "Decider Flash v1.2": {
+   "month": "2026-10",
+   "url": "https://docs.perplexity.ai/changelog",
+   "quote": "`pplx-decider-flash-v1.2` is a new 4B decision model at \\$0.01 per million input tokens.",
+   "read": "2026-11-07",
+   "note": "Entry sits under the '**October 2026**' heading of Perplexity's API changelog (exact day not given there)."
+  },
+  "Decider v1.1 27B": {
+   "month": "2026-10",
+   "url": "https://docs.perplexity.ai/changelog",
+   "quote": "`pplx-decider-v1.1-27b` replaces `pplx-decider-v1-27b` as the Decisions API model.",
+   "read": "2026-11-07",
+   "note": "Entry sits under the '**October 2026**' heading of Perplexity's API changelog; HF model card states no date."
+  },
+  "Decider v1.2 27B": {
+   "month": "2026-10",
+   "url": "https://docs.perplexity.ai/changelog",
+   "quote": "`pplx-decider-v1.2` replaces `pplx-decider-v1.1-27b` as the 27B decision model, at \\$0.02 per million input tokens.",
+   "read": "2026-11-07",
+   "note": "Entry sits under the '**October 2026**' heading; perplexity.ai/changelog index also dates the announcing post 10/19/26."
+  },
+  "DeepSeek V4.1 Flash": {
+   "month": "2026-09",
+   "url": "https://api-docs.deepseek.com/updates/",
+   "quote": "Today, we officially release the DeepSeek-V4.1-Flash model.",
+   "read": "2026-11-07",
+   "note": "Sentence is under the '## Date: 2026-09-10' / 'DeepSeek-V4.1-Flash Release' heading of the official change log."
+  },
+  "DeepSeek V4.1 Flash 1017": {
+   "month": "2026-10",
+   "url": "https://api-docs.deepseek.com/updates/",
+   "quote": "DeepSeek V4.1 Flash has been upgraded to DeepSeek-V4.1-Flash-1017.",
+   "read": "2026-11-07",
+   "note": "Under the change log's 'Date: 2026-10-17' entry (re-audited 2026-11-07); the dedicated news page news261017 ('DeepSeek-V4.1-Flash-1017 is here!') was also read."
+  },
+  "Fastino GLiDE": {
+   "month": "2026-09",
+   "url": "https://fastino.ai/blog/introducing-glide-the-first-thinking-decision-model",
+   "quote": "Today we release the Generalized Lightweight Decision Engine (GLiDE), a model trained specifically for difficult, structured decisions.",
+   "read": "2026-11-07",
+   "note": "Post dated September 30, 2026."
+  },
+  "Fastino GLiDE v1.2": {
+   "month": "2026-10",
+   "url": "https://fastino.ai/blog/training-glide-sota-decision-model",
+   "quote": "At the time of its October 22 launch, GLiDE v1.2 ranked #1 on the [Hugging Face Decision Index v0.4.1](https://huggingface.co/spaces/multimodalart/jev-decision-index) with a score of 71.5.",
+   "read": "2026-11-07",
+   "note": "Post dated October 22, 2026."
+  },
+  "GLM-5.3": {
+   "month": "2026-08",
+   "url": "https://docs.z.ai/release-notes/new-released",
+   "quote": "**2026-08-18**",
+   "read": "2026-11-07",
+   "note": "Z.ai 'New Released' entry dated 2026-08-18 for GLM-5.3 (blog z.ai/blog/glm-5.3 says 'Today we are releasing GLM-5.3' but shows no readable date)."
+  },
+  "GPT-6 Astra": {
+   "month": "2026-09",
+   "url": "https://openai.com/research/index/release/",
+   "quote": "Sep 3, 2026\n\n[GPT-6 Astra: A new generation of intelligence",
+   "read": "2026-11-07",
+   "note": "OpenAI's release index lists Astra's own launch post (/index/gpt-6-astra/) at Sep 3, 2026; the post itself shows no date. Re-audited 2026-11-07 (Zeki #2714): a related-posts card on another post is not used."
+  },
+  "GPT-6 Luna": {
+   "month": "2026-09",
+   "url": "https://openai.com/index/gpt-6-astra/",
+   "quote": "***Update on September 22, 2026:*** *We are expanding our GPT‑6 family with GPT‑6 Sol and GPT‑6 Luna.*",
+   "read": "2026-11-07",
+   "note": "Luna launch post (introducing-gpt-6-sol-and-luna) says 'available ... starting today' and is listed as Sep 22, 2026."
+  },
+  "GPT-6.1 Sol": {
+   "month": "2026-09",
+   "url": "https://openai.com/index/gpt-6-astra/",
+   "quote": "***Update on September 29, 2026:*** *Learn about OpenAI's latest model:* [*GPT‑6 .1 Sol*⁠](/index/introducing-gpt-6-1-sol/)*.*",
+   "read": "2026-11-07",
+   "note": "Sol post says 'GPT-6.1 Sol is available starting today' but has no date; date taken from this update note."
+  },
+  "Gemini 3.8 Flash": {
+   "month": "2026-09",
+   "url": "https://blog.google/innovation-and-ai/models-and-research/gemini-models/3-8-flash-and-3-8-flash-cyber/",
+   "quote": "Sep 02, 2026",
+   "read": "2026-11-07",
+   "note": "Date under '# Introducing Gemini 3.8 Flash and 3.8 Flash Cyber'."
+  },
+  "Gemini 4 Argon": {
+   "month": "2026-10",
+   "url": "https://blog.google/innovation-and-ai/technology/developers-tools/build-with-gemini-4-argon/",
+   "quote": "Starting today, developers can build with [Gemini 4 Argon]",
+   "read": "2026-11-07",
+   "note": "Post dated Oct 13, 2026. Doubt: announced Sep 30, 2026 (gemini-4-argon post) but then only 'rolling out to trusted cyber defenders through the Fairwind Program'; Oct 13 used as public availability."
+  },
+  "Gemma 4 31B": {
+   "month": "2026-04",
+   "url": "https://blog.google/innovation-and-ai/technology/developers-tools/gemma-4/",
+   "quote": "Apr 02, 2026",
+   "read": "2026-11-07",
+   "note": "Gemma 4 launch post (lists the 31B Dense model)."
+  },
+  "Grok 4.7": {
+   "month": "2026-09",
+   "url": "https://x.ai/news/grok-4-7",
+   "quote": "[Back to news](/news)Sep 21, 2026",
+   "read": "2026-11-07",
+   "note": "Date header of 'Introducing Grok 4.7'."
+  },
+  "Jev 1.13.0": {
+   "month": null,
+   "url": null,
+   "quote": null,
+   "read": "2026-11-07",
+   "note": "No official page found stating when jev-1.13.0 was released; typesafe.ai/blog/introducing-system-one-models-and-jev (Sep 15, 2026) and docs.typesafe.ai/models, /changelog were read and do not date 1.13.0."
+  },
+  "Jev 1.14.0": {
+   "month": "2026-10",
+   "url": "https://docs.typesafe.ai/models",
+   "quote": "Jev 1.14 is the newest Jev release, available from October 14, 2026.",
+   "read": "2026-11-07",
+   "note": "Also typesafe.ai/blog/jev-1-14 dated Oct 14, 2026."
+  },
+  "Kimi K3.1 Pro": {
+   "month": "2026-10",
+   "url": "https://forum.moonshot.ai/t/kimi-k3-1-pro-has-launched-start-exploring-now/629",
+   "quote": "### Post 1 - @Zoe - 2026-10-23 - Likes: 0",
+   "read": "2026-11-07",
+   "note": "Moonshot's official forum announcement 'Kimi K3.1 Pro has launched!'; date is the post timestamp."
+  },
+  "LFM2.5-24B-A2B": {
+   "month": "2026-10",
+   "url": "https://www.liquid.ai/blog/lfm2-5-24b-a2b",
+   "quote": "Today, we release **LFM2.5-24B-A2B**, a 24B-parameter reasoning model with just 2B active parameters, built for fast, private agents on-device.",
+   "read": "2026-11-07",
+   "note": "Post dated OCT 13, 2026."
+  },
+  "Liquid d1-ultra": {
+   "month": "2026-10",
+   "url": "https://www.liquid.ai/blog/d1-ultra",
+   "quote": "Today, we release d1-ultra, our new multimodal **decision model with state-of-the-art performance**.",
+   "read": "2026-11-07",
+   "note": "Post dated OCT 15, 2026."
+  },
+  "Mercury Decide": {
+   "month": null,
+   "url": null,
+   "quote": null,
+   "read": "2026-11-07",
+   "note": "Re-audited 2026-11-07 (Zeki #2714): only a portfolio mention in the Mercury 3 post (inceptionlabs.ai/blog/introducing-mercury-3); the maker's blog index, models page and home page give no dated release of Mercury Decide itself, so no month."
+  },
+  "Open-Jev 27B v1.1": {
+   "month": null,
+   "url": null,
+   "quote": null,
+   "read": "2026-11-07",
+   "note": "HF card ZefanCai/Open-Jev-27B-v1.1 read; it states no release date (commit dates not counted)."
+  },
+  "Qwen3.8 Flash": {
+   "month": null,
+   "url": null,
+   "quote": null,
+   "read": "2026-11-07",
+   "note": "Not used: the page does not name this exact model (Alibaba Cloud Model Studio new-models page; assumes our 'Qwen3.8 Flash' is the API model qwen3.8-flash (open-weight Qwen3.8-Flash-Next also dated 2026-08-26 on its GitHub).); a month shown must be stated for the exact model name (Ümit #2570: never guess). Was 2026-08 from https://www.alibabacloud.com/help/en/model-studio/newly-released-models."
+  },
+  "Qwen3.8-27B": {
+   "month": "2026-08",
+   "url": "https://github.com/QwenLM/Qwen3.8",
+   "quote": "- 2026-08-14: Qwen3.8-27B is now available on [Hugging Face Hub](https://huggingface.co/collections/Qwen/qwen38) and [ModelScope](https://www.modelscope.cn/collections/Qwen/Qwen38).",
+   "read": "2026-11-07",
+   "note": "Official QwenLM GitHub news list."
+  },
+  "SubQ Snap Preview": {
+   "month": null,
+   "url": null,
+   "quote": null,
+   "read": "2026-11-07",
+   "note": "Not used: the page does not name this exact model (Post dated October 12, 2026. Doubt: page names the model 'SubQ Snap' and its status 'Public Preview', not literally 'SubQ Snap Preview'.); a month shown must be stated for the exact model name (Ümit #2570: never guess). Was 2026-10 from https://subq.ai/introducing-subq-snap."
+  },
+  "Winnow-12B": {
+   "month": null,
+   "url": null,
+   "quote": null,
+   "read": "2026-11-07",
+   "note": "HF card EldanRing/Winnow-12B read; it states no release date."
+  }
+ }
+}

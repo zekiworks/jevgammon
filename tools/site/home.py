@@ -24,9 +24,11 @@ LIMIT_HARD = ("Setups met different positions; risk judgement is not adjusted fo
               "comparisons wait for the shared positions.")
 # Under the risk leaderboard chart (Ümit #2564; wording Zeki #2578).
 RANK_NOTE = "Ranks show observed scores; small gaps need not be meaningful."
-# The hero's prominent links (Ümit #2564): existing pages and anchors only.
-HERO_LINKS = [("Risk calls leaderboard", "#risk-judgement"), (P.TAB_LEARNING, P.TAB_LEARNING_PATH),
-              ("Every decision", "decisions/"), ("Leagues and matches", "#leagues-tabs")]
+# The hero's three buttons (Ümit #2564, #2570 item 1), existing pages only and named for what they open: there is no
+# write-up yet, so the first opens the Method page; Every decision has no filter for the engine's best play, so the
+# second opens its existing right-risk filter (the setup in view is named there, and any other can be picked).
+HERO_LINKS = [("Read the method", "method/"), ("Right risk calls, decision by decision", "decisions/?r=risk&c=rr"),
+              ("Every decision", "decisions/")]
 GNUBG_WEAK = "x86-64 build: its noise is shifted, so it overplays gammons"
 CALL_LABEL = {"needless": "needless risks", "missed": "missed risks", "wrong_risk": "wrong risks",
               "right_risk": "right risks", "right_safety": "right safety", "none": "No trade-off"}
@@ -68,6 +70,64 @@ def type_meta(S, ds, name) -> dict:
         return m
     return next((m for (d, n), m in S["setups_meta"].items() if n == name and d.startswith("league-")),
                 P.meta(S, ds, name))
+
+
+NACK_TYPES = json.loads((CONTENT / "nack_setup_types.json").read_text())["setups"]
+# The model types a Nackgammon setup may have, and the key they file under (Zeki #2737: anything else fails the
+# build). The first four are setups.json's; "chat model" is content/nack_setup_types.json's, for a chat model that
+# played in no league (its answer form is not on record).
+NACK_KINDS = {"decision model": "decision", "chat model, answer-letter probabilities": "chat",
+              "chat model, one letter": "chat", "chat model": "chat", "program": "program"}
+
+
+def model_of(S, ds, name) -> str:
+    """The model a setup belongs to (setups.json "model", via type_meta for a ladder move); else its own name."""
+    return type_meta(S, ds, name).get("model") or name
+
+
+def best_per_model(S, eligible=None) -> dict:
+    """{model: (league, setup name, risk metrics)}: each model's setup with the highest stored All-leagues risk
+    judgement; on an exact tie the first in league order (all_rows' order) is kept. Programs and setups without a risk
+    judgement are left out; eligible(league, name), when given, restricts the candidates. The one rule behind the
+    leaderboard (story.best_settings) and the Nackgammon per-model view (nack_views)."""
+    best = {}
+    for lg, n, r, ref in all_rows(S):
+        if ref or r["judgement"] is None or (eligible and not eligible(lg, n)):
+            continue
+        m = model_of(S, lg["dataset"], n)
+        if m not in best or r["judgement"] > best[m][2]["judgement"]:
+            best[m] = (lg, n, r)
+    return best
+
+
+def nack_views(S) -> tuple[dict, list]:
+    """The Nackgammon section's views: each setup's model type (decision / chat / program; its setups.json entry, a
+    league entry first as for a ladder move, else content/nack_setup_types.json for a setup that played in no league;
+    a missing or unknown type fails the build), and the one setting per model of the per-model view: best_per_model,
+    the leaderboard's rule, over the settings this test asked (from league play, never from this test)."""
+    N = S["nack"]
+    kinds, models = {}, {}
+    for n in N["setups"]:
+        lg = next((d for (d, x) in S["setups_meta"] if x == n and d.startswith("league-")), None)
+        m = (type_meta(S, lg, n) if lg else
+             next((m for (d, x), m in S["setups_meta"].items() if x == n), None) or NACK_TYPES.get(n))
+        t = (m or {}).get("model_type")
+        if t not in NACK_KINDS:
+            raise ValueError(f"Nackgammon setup {n!r}: model type {t!r} is not one of {sorted(NACK_KINDS)} "
+                             "(setups.json or content/nack_setup_types.json)")
+        kinds[n] = NACK_KINDS[t]
+        if kinds[n] != "program":
+            models.setdefault(model_of(S, lg, n) if lg else (m.get("model") or n), []).append(n)
+    best = best_per_model(S, lambda lg, n: n in N["setups"])
+    chosen = []
+    for model, names in models.items():
+        if model in best:
+            chosen.append(best[model][1])
+        elif len(names) == 1:
+            chosen.append(names[0])  # one setting, no league risk judgement (e.g. a setup that played in no league)
+        else:
+            raise ValueError(f"Nackgammon model {model!r}: several settings {names} and none with a league risk judgement")
+    return kinds, chosen
 
 
 def cell_model(S, ds, name, ref=None) -> str:
@@ -1280,33 +1340,37 @@ def filters(S) -> str:
     settings = [("all", "All")] + [(v, cap(v)) for v in sorted({m["setting"] for m in ms if m.get("setting")})] + [("none", "None")]
     runs = [("all", "All")] + [(v, cap(v)) for v in sorted({m["runs_on"] for m in ms if m.get("runs_on")})]
     weights = [("all", "All")] + [(v, cap(v)) for v in sorted({m["weights"] for m in ms if m.get("weights")})]
-    pick = lambda ds, label: (f'<button type="button" class="key" data-league-pick="{ds}" aria-pressed="'
-                              f'{str(ds == default_league(S)).lower()}"><span class="lamp" aria-hidden="true"></span>{label}</button>')
-    leagues = pick(ALL, "All leagues") + "".join(pick(lg["dataset"], f'League {lg["id"]}') for lg in S["leagues"])
-    leagues += ('<button type="button" class="key" data-league-pick="shared" aria-pressed="false"><span class="lamp" '
-                f'aria-hidden="true"></span>Shared positions</button>')
+    pick = lambda ds, label, full: (f'<button type="button" class="key" data-league-pick="{ds}" aria-pressed="'
+                                    f'{str(ds == default_league(S)).lower()}" aria-label="{full}"><span class="lamp" '
+                                    f'aria-hidden="true"></span>{label}</button>')
+    leagues = pick(ALL, "All", "All leagues") + "".join(pick(lg["dataset"], lg["id"], f'League {lg["id"]}') for lg in S["leagues"])
+    leagues += pick("shared", "Shared", "Shared positions").replace('aria-pressed="true"', 'aria-pressed="false"')
     phases = "".join(f'<option value="{p}">{esc(P.PHASE_LABEL[p])}</option>' for p in A.PHASES)
     # The model setups of each league; the programs are reference rows, never counted.
     totals = {lg["dataset"]: sum(1 for n in lg["setups"] if not ref_label(S, lg["dataset"], n)) for lg in S["leagues"]}
     totals = {ALL: sum(totals.values()), **totals}
-    # The league and the model type stay in view; phase, reasoning, runs on and weights fold behind "More filters", whose
-    # key names the active ones while it is closed (bg.js).
-    return f"""<section class="panel filters is-open needs-js" id="filters" aria-labelledby="filters-title">
-      <h2 id="filters-title" class="filters-title">Filters</h2>
+    parts = ([("leaderboard", "Leaderboard")] + MEASURES + [("board-panel", "Every number")])
+    links = "".join(f'<a href="#{k}">{esc(l)}</a>' for k, l in parts)
+    # One compact row on the Risk calls part (Ümit, bus #2570, item 1), out of the sticky header: the league and the
+    # model type, the parts of the page, and behind "More filters" the quick view, phase, reasoning, runs on and weights,
+    # whose key names the active ones while it is closed (bg.js); the setup count and Reset at the end.
+    return f"""<nav class="panel filters filter-row" id="filters" aria-labelledby="filters-title">
+      <h2 id="filters-title" class="visually-hidden">Filters and parts of this page</h2>
       <div class="filters-body" id="filters-body">
-        <div class="group league-pick" role="group" aria-labelledby="f-league"><span class="group-label" id="f-league">League</span><span class="keys">{leagues}</span></div>
-        {group("kind", "Model type", [("all", "All types"), ("decision", "Decision"), ("chat", "Chat"), ("program", "Program")])}
-        <div class="group quick-view" role="group" aria-labelledby="f-quick"><span class="group-label" id="f-quick">Quick view</span><span class="keys"><button type="button" class="key" data-quick-view="decision" aria-pressed="false"><span class="lamp" aria-hidden="true"></span>Decision models · all leagues</button></span></div>
-        <div class="group more-filters"><button type="button" class="key fold-toggle" data-more-filters aria-expanded="false" aria-controls="filters-more"><span class="chevron" aria-hidden="true"></span>More filters<span class="fold-summary" data-more-summary> · phase, reasoning, runs on, weights</span></button></div>
-        <div class="filters-more" id="filters-more" hidden>
+        <div class="group league-pick needs-js" role="group" aria-labelledby="f-league"><span class="group-label" id="f-league">League</span><span class="keys">{leagues}</span></div>
+        <div class="needs-js">{group("kind", "Models", [("all", "All"), ("decision", "Decision"), ("chat", "Chat"), ("program", "Program")])}</div>
+        <div class="group part-links"><span class="group-label">Measure</span><span class="face-nav">{links}</span></div>
+        <div class="group more-filters needs-js"><button type="button" class="key fold-toggle" data-more-filters aria-expanded="false" aria-controls="filters-more"><span class="chevron" aria-hidden="true"></span>More filters<span class="fold-summary" data-more-summary> · phase, reasoning, runs on, weights</span></button></div>
+        <div class="group filters-count needs-js"><span class="setup-count" data-setups data-totals='{esc(json.dumps(totals))}' aria-live="polite">{count(totals[default_league(S)])} of {count(totals[default_league(S)])} setups</span>
+        <button type="button" class="key reset" data-control="reset" aria-disabled="true" data-tip="Nothing to reset: the filters show the defaults.">Reset</button>
+        <span class="small reset-why" data-reset-why hidden>Nothing to reset: the filters show the defaults.</span></div>
+        <div class="filters-more needs-js" id="filters-more" hidden>
+          <div class="group quick-view" role="group" aria-labelledby="f-quick"><span class="group-label" id="f-quick">Quick view</span><span class="keys"><button type="button" class="key" data-quick-view="decision" aria-pressed="false"><span class="lamp" aria-hidden="true"></span>Decision models · all leagues</button></span></div>
           <label class="group"><span class="group-label">Phase</span> <select data-control="phase"><option value="all">All phases</option>{phases}</select></label>
           {group("setting", "Reasoning", settings)}{group("runs", "Runs on", runs)}{group("weights", "Weights", weights)}
         </div>
-        <div class="group"><span class="setup-count" data-setups data-totals='{esc(json.dumps(totals))}' aria-live="polite">{count(totals[default_league(S)])} of {count(totals[default_league(S)])} setups</span>
-        <button type="button" class="key reset" data-control="reset" aria-disabled="true" data-tip="Nothing to reset: the filters show the defaults.">Reset</button>
-        <span class="small reset-why" data-reset-why>Nothing to reset: the filters show the defaults.</span></div>
       </div>
-    </section>"""
+    </nav>"""
 
 
 # --- Chart panels ----------------------------------------------------------------------------------------------
@@ -1521,27 +1585,6 @@ def family(name: str) -> dict | None:
     return next((f for f in FAMILIES if re.match(f["match"], name)), None)
 
 
-def view_rows(S) -> str:
-    """The home page's rows of the view bar, after its Home key: the League and Models filters (the filters panel's League
-    and Model type, kept in step by bg.js; ?league= and ?type= as before) and the parts of the page."""
-    def row(cls, rid, label, keys):
-        return (f'<div class="view-row {cls}" role="group" aria-labelledby="{rid}"><span class="view-label" id="{rid}">'
-                f'{label}</span><ul>{"".join(f"<li>{k}</li>" for k in keys)}</ul></div>')
-    # Each label in one span, so the key's flex box keeps the space before the words a phone shows (as the sibling's).
-    leagues = [f'<a class="view-key" href="./" data-league-pick="{ALL}" aria-current="true"><span>All<span class="view-more">'
-               f' leagues</span></span></a>'] + [f'<a class="view-key" href="?league={lg["dataset"]}" data-league-pick="'
-                                                f'{lg["dataset"]}"><span><span class="view-more">League </span>{lg["id"]}</span></a>'
-                                                for lg in S["leagues"]]
-    kinds = [f'<a class="view-key" href="{"./" if k == ALL else f"?type={k}"}" data-filter-kind="{k}"'
-             f'{" aria-current=true" if k == ALL else ""}>{l}</a>'
-             for k, l in ((ALL, "All"), ("decision", "Decision"), ("chat", "Chat"))]
-    parts = [f'<a class="view-key" href="#{k}" data-view-measure="{k}">{esc(l)}</a>' for k, l in MEASURES]
-    parts.append('<a class="view-key" href="#board-panel" data-view-measure="board-panel">Every number</a>')
-    return (row("view-leagues view-filter", "view-league", "League", leagues)
-            + row("view-groups view-filter", "view-models", "Models", kinds)
-            + row("view-measures", "view-measure", "Measure", parts))
-
-
 def chart_rows(S, lg, measure: str) -> list:
     """(name, reference label, value, low, high, setup's quality or None) for one league and measure: Risk judgement
     every setup and reference row of the Risk table; the other measures the setups of the Quality and Cost tables."""
@@ -1716,15 +1759,15 @@ def measure_chart_card(S, measure: str, title: str) -> str:
                                 '</i>50 = always safe'),
              "error-rate": ('<i class="swatch swatch-interval"></i>95% interval</span> <span><i class="swatch swatch-refline">'
                             '</i>a program\'s error rate (reference row, named above the axis)')}.get(measure)
-    notes = {"risk-judgement": [RANK_NOTE, LIMIT_HIT, LIMIT_HARD],
-             "error-rate": [LIMIT_PAIRED],
-             "cost": ["\u00a7 list-price estimate; runs on our GPUs: each setup's price label is in its row's tooltip and "
-                      "in the Cost tab.", LIMIT_PAIRED],
-             "time": [LIMIT_PAIRED]}[measure]
+    # One caveat per section (Ümit, bus #2570 item 4); the others are on the Method page (Limits, Cost), linked.
+    caveat = {"risk-judgement": (RANK_NOTE, "statistics"), "error-rate": (LIMIT_PAIRED, "limits"),
+              "cost": ("\u00a7 list-price estimate; runs on our GPUs: each setup's price label is in its row's tooltip "
+                       "and in the Cost tab.", "cost"),
+              "time": (LIMIT_PAIRED, "limits")}[measure]
     return (f'<section class="measure" id="{measure}" aria-label="{esc(title)}"><figure class="panel chart-card chart-wide" '
             f'id="chart-{measure}"><div class="chart-head"><h2>{esc(title)}</h2><p class="chart-sub">{sub}</p>{keys}</div>'
             f'{views}<p class="chart-legend">{legend}{f"<span>{extra}</span>" if extra else ""}</p>'
-            + "".join(f'<p class="table-note">{esc(x)}</p>' for x in notes)
+            + f'<p class="table-note section-caveat">{esc(caveat[0])} <a href="method/#{caveat[1]}">More caveats: Method</a></p>'
             + f'<p class="table-note phase-all" hidden>{esc(PHASE_ALL_CHARTS)}</p></figure></section>')
 
 
@@ -1780,7 +1823,7 @@ WHAT_THIS_MEASURES = ("Risk calls per setup: was each risk the right one, and wa
 
 
 def how_numbers(S) -> str:
-    """'How the numbers work' (Ümit #2564): sentences of the Method page only, quoted as published there, each with the
+    """'How the scoring works' (Ümit #2564; the heading #2570 item 5): sentences of the Method page only, quoted as published there, each with the
     Method section it comes from (mailbox/learning-page-review3/README.md lists them). No new claim."""
     t = S["thresholds"]
     items = [
@@ -1803,7 +1846,7 @@ def how_numbers(S) -> str:
          "for how hard the positions were.")]
     lis = "".join(f'<li><strong>{esc(k)}.</strong> {esc(v)} <a class="small" href="method/#{a}">Method: {esc(s)}</a></li>'
                   for k, a, s, v in items)
-    return (f'<section class="card how-numbers" id="how-numbers"><h2>How the numbers work</h2><ul>{lis}</ul>'
+    return (f'<section class="card how-numbers" id="how-numbers"><h2>How the scoring works</h2><ul>{lis}</ul>'
             f'<p class="table-note">Quoted from the <a href="method/">Method</a> page.</p></section>')
 
 
@@ -1838,6 +1881,7 @@ def hero_card(S) -> str:
 
 
 def home(S) -> str:
+    import story
     tabs = "".join(f'<button type="button" role="tab" id="tab-{k}" class="mode" aria-controls="board" '
                    f'aria-selected="{str(i == 0).lower()}" data-tab="{k}"><span class="lamp" aria-hidden="true"></span>{l}</button>'
                    for i, (k, l) in enumerate(TABS))
@@ -1846,10 +1890,12 @@ def home(S) -> str:
     return f"""
     {FAMILY_ICONS}
     {hero_card(S)}
-    {findings_block(S)}
+    {story.headline(S)}
     {filters(S)}
-    {measure_charts(S)}
+    {story.findings(S)}
     {how_numbers(S)}
+    {findings_block(S)}
+    {measure_charts(S)}
     <div class="home-leagues" id="leagues-tabs">{P.home_league_sections(S)}</div>
     <section class="panel board-panel" id="board-panel" aria-labelledby="board-title">
       <div class="chart-head"><h2 id="board-title">Every number, setup by setup</h2><p class="chart-sub">The leaderboard: every measure of every setup, one tab per measure; each value with its 95% interval, its count and denominator or its price label under it.</p></div>
@@ -1863,7 +1909,7 @@ def home(S) -> str:
     </section>
     {pays_section(S)}
     {close_b_section(S)}
-    {nack_section.section(S["nack"])}
+    {nack_section.section(S["nack"], *nack_views(S), S["nack_late"])}
     <p class="downloads" id="downloads">Download: <a href="data/results.json" download="results.json">results.json</a> · <a href="decisions/index.json" download="decisions.json">decisions.json</a></p>"""
 
 

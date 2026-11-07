@@ -154,6 +154,7 @@ def compute(args) -> dict:
         close_spec=dict(fixed_on=CC.CC["fixed_on"], definition=CC.DEFINITION, label=CC.LABEL), _close=close_records,
         close_b=json.loads((CONTENT / "close_choices_b_results.json").read_text()),
         nack=json.loads((CONTENT / "nack_paired_results.json").read_text()),
+        nack_late=json.loads((CONTENT / "nack_paired_late.json").read_text()),
         # Clear-risk scan and follow-up (preliminary / partial): saved aggregates (tools/site/clear_risk_publish.py).
         clear_risk=json.loads((CONTENT / "clear_risk_results.json").read_text()),
         # Learning from experience (preliminary, running): the plan and the pilot's aggregates, lessons and lesson
@@ -299,6 +300,8 @@ def write_data(S: dict, out: Path) -> None:
     write_json(out, "data/v3/close-choices-b.json", dict(version="v3", **S["close_b"]))
     # Nackgammon paired test (Method spec 2026-10-24 §10): aggregates only (tools/site/nack_paired_publish.py).
     write_json(out, "data/v3/nack-paired.json", dict(version="v3", **S["nack"]))
+    # Its late entries (§10.14(i), exploratory): a separate file, never merged into the 28 Oct setups.
+    write_json(out, "data/v3/nack-paired-late.json", dict(version="v3", **S["nack_late"]))
     # Clear-risk scan and follow-up (preliminary / partial): aggregates only (tools/site/clear_risk_publish.py).
     write_json(out, "data/v3/clear-risk.json", dict(version="v3", **S["clear_risk"]))
     # Learning from experience (preliminary, running): aggregates only (tools/site/learning_page.py).

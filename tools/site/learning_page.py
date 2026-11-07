@@ -43,6 +43,7 @@ sys.path.insert(0, str(SITE))
 
 from common import BANNED, NA, ROOT, count, esc, fmt, nm, status_badge  # noqa: E402
 
+import learning_validate as V  # noqa: E402
 import pages as P  # noqa: E402
 from method import spec_markdown  # noqa: E402
 
@@ -61,6 +62,11 @@ COMPLETE_ONLY_IDS = ("learning-lift", "learning-signal", "learning-leaders")
 COMPLETE_ONLY_KEYS = ("learning_lift", "signal", "paired_series")
 # The plan's bullet that fixes the Learning tab's order (section 9, amended before any model call, 09bcbc4).
 TAB_ORDER = "Learning tab order"
+# The plan's fixed reading of an empty budget context (section 11, Zeki #2577), shown with the budget arm's points.
+BUDGET_READING = "Interpretation, fixed now"
+# The pilot's evaluation set: private, never published; read at build time only for its hash (learning_validate) and
+# for checks.check_learning (no evaluation position on the page).
+TEST_SET = ROOT / "workspace/learning-pilot/test_set.json"
 CHECKPOINTS = ("T0", "T5", "T10")
 CHECKPOINT_LABEL = {"T0": "Before game 1", "T5": "After game 5", "T10": "After game 10"}
 # The chart's measures (the evaluation set, per arm and checkpoint): key, label, unit.
@@ -141,21 +147,23 @@ def read_plan(path: Path) -> dict:
         s["markdown"] = "\n".join(s.pop("lines")).strip()
     return dict(file=path.name, title=title, status=status, commitment=COMMITMENT,
                 sha256=hashlib.sha256(text.encode()).hexdigest(), sections=sections, redacted=redacted,
-                hashes=HEX64.findall(text), tab_order=tab_order(sections))
+                hashes=HEX64.findall(text), tab_order=plan_bullet(sections, TAB_ORDER),
+                budget_reading=plan_bullet(sections, BUDGET_READING))
 
 
-def tab_order(sections: list) -> dict:
-    """The plan's 'Learning tab order' bullet with its sub-bullets (plan section 9, amended before any model call):
-    the Learning tab states it as written, and leaders() applies it."""
+def plan_bullet(sections: list, label: str) -> dict:
+    """The plan's bullet whose bold label starts with `label`, with its sub-bullets, as written (any depth, dedented):
+    the page shows it where it applies. A plan without it stops the render."""
     for s in sections:
         lines = s["markdown"].splitlines()
         for i, line in enumerate(lines):
-            if line.startswith(f"- **{TAB_ORDER}"):
+            ind = len(line) - len(line.lstrip(" "))
+            if line.lstrip(" ").startswith(f"- **{label}"):
                 j = i + 1
-                while j < len(lines) and lines[j].startswith("  "):
+                while j < len(lines) and len(lines[j]) - len(lines[j].lstrip(" ")) > ind:
                     j += 1
-                return dict(section=s["title"], markdown="\n".join(lines[i:j]))
-    raise SystemExit(f"the plan has no '{TAB_ORDER}' bullet")
+                return dict(section=s["title"], markdown="\n".join(x[ind:] for x in lines[i:j]))
+    raise SystemExit(f"the plan has no '{label}' bullet")
 
 
 def read_prompt(src: Path, plan: dict) -> dict | None:
@@ -175,52 +183,74 @@ def pick(row, keys):
         {"shared": True} if row.get("shared") else {})
 
 
-def read_results(path: Path) -> dict | None:
-    """The results file, cut down to what the page shows. The learning lift and the signal stay out unless complete."""
-    if not path.exists():
-        return None
-    R = json.loads(path.read_text())
+def shown_results(R: dict, complete: bool) -> dict:
+    """The validated results file, cut down to what the page shows. The learning lift and the signal stay out unless
+    the site accepts complete."""
     keys = [k for k, *_ in METRICS]
     out = dict(updated_at=R["updated_at"], planned_series_per_arm=R["planned_series_per_arm"],
-               series_done=R["series_done"], complete=bool(R["complete"]),
+               series_done=R["series_done"], complete=complete,
                table={arm: {cp: pick(by_cp.get(cp), keys) for cp in CHECKPOINTS if cp in by_cp}
                       for arm, by_cp in R["table"].items()})
     if "t0_done" in R:
         out["t0_done"] = R["t0_done"]
     # "running, n of N series" on the Learning tab: every arm's finished series of all arms' planned ones.
-    out["series_total_done"] = sum(R["series_done"].values())
-    out["series_total_planned"] = R["planned_series_per_arm"] * len(R["series_done"])
+    out["series_total_done"] = sum(len(v) for v in R["series_finished"].values())
+    out["series_total_planned"] = R["planned_series_per_arm"] * len(R["series_finished"])
+    out["series_finished"] = R["series_finished"]
     if R.get("games"):
         out["games"] = {arm: pick(g, [k for k, *_ in GAME_METRICS]) for arm, g in R["games"].items()}
-    if out["complete"]:
+    if "budget_empty_points" in R:
+        out["budget_empty_points"] = R["budget_empty_points"]
+    if complete:
         for k in COMPLETE_ONLY_KEYS:
             if k in R:
                 out[k] = R[k]
     return out
 
 
-def read_lessons(runs: Path) -> list:
-    """Every lesson file of a finished series (one with its aggregate.json) of the lessons arm, with its game's result
-    from that aggregate's games."""
-    out = []
-    for agg in sorted((runs / "lessons").glob("s*/aggregate.json")):
-        A = json.loads(agg.read_text())
-        games = {g["game"]: g for g in A.get("games", [])}
-        for f in sorted(agg.parent.glob("lessons-g*.txt")):
-            g = int(f.stem.removeprefix("lessons-g"))
-            text = f.read_text().strip()
-            if text:
-                out.append(dict(series=A["series"], text=text,
-                                **{k: games.get(g, {}).get(k) for k in GAME_KEYS} | {"game": g}))
-    return out
+def read_results(src: Path, plan: dict, prompt: dict | None, test_set: Path) -> dict:
+    """results, validation, lessons and the budget arm's points from src, after learning_validate's checks."""
+    path = src / "learning-pilot.json"
+    none = dict(results=None, validation=None, lessons=[], budget=[])
+    if not path.exists():
+        return none
+    try:
+        R = json.loads(path.read_text())
+    except ValueError:
+        return none | dict(validation=dict(accepted=False, problems=["learning-pilot.json is not JSON"]))
+    test_sha = V.sha256(test_set) if test_set.exists() else None
+    bad = (V.schema(R, prompt["sha256"] if prompt else None, plan["hashes"], test_sha) if isinstance(R, dict)
+           else ["learning-pilot.json is not an object"])
+    if bad:
+        return none | dict(validation=dict(accepted=False, problems=bad))
+    not_complete = V.completeness(R, src, test_sha) if R["complete"] else []
+    files, lesson_bad = V.lessons_shown(R, src)
+    complete = R["complete"] and not not_complete and not lesson_bad
+    lessons = []
+    for s, g, f in files:
+        A = V.aggregate(src, "lessons", s) or {}
+        game = next((x for x in A.get("games", []) if x.get("game") == g), {})
+        text = f.read_text().strip()
+        if text:
+            lessons.append(dict(series=s, text=text, **{k: game.get(k) for k in GAME_KEYS} | {"game": g}))
+    budget, budget_bad = [], []
+    for s in sorted(R["series_finished"]["budget"]):
+        A = V.aggregate(src, "budget", s) or {}
+        e = V.budget_points(A, f"budget s{s:02d}")
+        budget_bad += e
+        if not e and A.get("budget_points") is not None:
+            budget.append(dict(series=s, points=A["budget_points"]))
+    return dict(results=shown_results(R, complete), lessons=lessons, budget=budget,
+                validation=dict(accepted=True, producer_complete=R["complete"], complete=complete,
+                                problems=not_complete + lesson_bad + budget_bad))
 
 
-def data(plan_path: Path, src: Path) -> dict:
+def data(plan_path: Path, src: Path, test_set: Path = TEST_SET) -> dict:
     """The page's data from the plan and src (the STATE/learning layout; missing or empty: no results yet)."""
     plan = read_plan(plan_path)
+    prompt = read_prompt(src, plan)
     L = dict(version="v3", plan={k: v for k, v in plan.items() if k not in ("redacted", "hashes")},
-             redacted=plan["redacted"], lesson_prompt=read_prompt(src, plan),
-             results=read_results(src / "learning-pilot.json"), lessons=read_lessons(src / "runs"))
+             redacted=plan["redacted"], lesson_prompt=prompt, **read_results(src, plan, prompt, test_set))
     L["source_sha256"] = hashlib.sha256(json.dumps(L, sort_keys=True).encode()).hexdigest()
     return L
 
@@ -235,19 +265,36 @@ def num(v, digits, unit="") -> str:
     return nm(NA) if v is None else fmt(v, digits) + unit
 
 
+def validation_note(L) -> str:
+    """What the site did not accept of the results file (learning_validate), named field by field."""
+    v = L["validation"]
+    if not v or not v["problems"]:
+        return ""
+    items = "".join(f"<li>{esc(p)}</li>" for p in v["problems"])
+    if not v["accepted"]:
+        head = ("<strong>Results file not accepted.</strong> It failed the site's checks against the pre-registered "
+                "protocol, so none of its numbers are shown:")
+    elif v["producer_complete"] and not v["complete"]:
+        head = ("<strong>Not accepted as complete.</strong> The results file says every series is done; the site's "
+                "checks do not confirm it, so the numbers are shown as running, with no lift, signal or ranking:")
+    else:
+        head = "<strong>Not shown:</strong>"
+    return f'<div class="note validation-note"><p>{head}</p><ul>{items}</ul></div>'
+
+
 def progress(L) -> str:
     R = L["results"]
     if R is None:
-        return ('<p class="note"><strong>No results yet.</strong></p><p>Progress: 0 / planned series per arm '
-                '(the planned count appears with the first results file).</p>')
+        return validation_note(L) or ('<p class="note"><strong>No results yet.</strong></p><p>Progress: 0 / planned '
+                                      'series per arm (the planned count appears with the first results file).</p>')
     planned = R["planned_series_per_arm"]
-    rows = [f'<tr><th scope="row">{esc(a)}</th><td class="num">{count(n)} / {count(planned)}</td></tr>'
-            for a, n in R["series_done"].items()]
+    rows = [f'<tr><th scope="row">{esc(a)}</th><td class="num">{count(len(s))} / {count(planned)}</td></tr>'
+            for a, s in R["series_finished"].items()]
     t0 = (f'<p class="note">Shared T0 test (before any context): {"done" if R["t0_done"] else "not yet done"}.</p>'
           if "t0_done" in R else "")
     state = "All planned series are done." if R["complete"] else "Running: not all planned series are done."
     return (f'<p class="note">{status_badge("Preliminary")} {esc(state)} Updated {esc(R["updated_at"])}.</p>{t0}'
-            + P.table(["Arm", "Series done / planned"], rows, "Progress per arm"))
+            + validation_note(L) + P.table(["Arm", "Series finished / planned"], rows, "Progress per arm"))
 
 
 def results_table(R) -> str:
@@ -309,6 +356,8 @@ def arm_table(d: dict, arms, caption: str) -> str:
 def results(L) -> str:
     R = L["results"]
     if R is None:
+        if L["validation"]:
+            return '<p class="note"><strong>Results file not accepted:</strong> see Status and progress.</p>'
         return '<p class="note"><strong>No results yet.</strong> Numbers appear here as each series finishes.</p>'
     out = [results_table(R)]
     if R.get("games"):
@@ -389,19 +438,21 @@ def tab_card(L) -> str:
         block = (f'<div id="learning-leaders"><h3>Arms in order</h3><ol class="leaders-list">{items}</ol>'
                  '<p class="table-note">control: the reference, not ranked.</p></div>')
     else:
-        state = ("Not started: no series has finished." if R is None else
+        state = (("Results file not accepted: see Status and progress." if L["validation"] else
+                  "Not started: no series has finished.") if R is None else
                  f'Running, {count(R["series_total_done"])} of {count(R["series_total_planned"])} series.')
         rows = []
         for arm, by_cp in (R["table"].items() if R else []):
             cp, row = latest(by_cp)
             g = (R.get("games") or {}).get(arm) or {}
             rows.append(f'<tr><th scope="row">{esc(arm)}</th>'
-                        f'<td class="num">{count(R["series_done"].get(arm, 0))} / {count(R["planned_series_per_arm"])}</td>'
+                        f'<td class="num">{count(len(R["series_finished"][arm]))} / '
+                        f'{count(R["planned_series_per_arm"])}</td>'
                         f'<td>{esc(CHECKPOINT_LABEL[cp]) if cp else nm(NA)}</td>'
                         f'<td class="num">{num(row.get("error_rate") if row else None, 1)}</td>'
                         f'<td class="num">{num(row.get("risks_found") if row else None, 1, "%")}</td>'
                         f'<td class="num">{num(g.get("error_rate"), 1)}</td></tr>')
-        table = (P.SWIPE + P.table(["Arm", "Series done / planned", "Latest test round", "Error rate (PR)",
+        table = (P.SWIPE + P.table(["Arm", "Series finished / planned", "Latest test round", "Error rate (PR)",
                                     "Risks found", "Error rate in games (PR)"], rows,
                                    "Interim numbers per arm, in the plan's arm order (not a ranking)", cls="board list")
                  if rows else "")
@@ -471,11 +522,36 @@ def section_id(title: str) -> str:
     return "plan-" + re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")
 
 
+def budget(L) -> str:
+    """The budget arm at every point (plan section 11, Zeki #2577): after each game of each finished series, the whole
+    games its context included and dropped and the tokens used against the lessons arm's count; the plan's fixed reading
+    of an empty context beside it."""
+    reading = (f'<div class="tab-rule">{spec_markdown(L["plan"]["budget_reading"]["markdown"])}<p class="table-note">'
+               f'Plan section {esc(L["plan"]["budget_reading"]["section"])}, as pre-registered.</p></div>')
+    R = L["results"]
+    empty = (R or {}).get("budget_empty_points", {}).get("budget")
+    out = ([f'<p class="note">Points where the budget arm\'s context was empty: {count(empty)}.</p>']
+           if empty is not None else [])
+    for b in L["budget"]:
+        rows = [f'<tr><th scope="row">{count(p["after_game"])}</th>'
+                f'<td>{", ".join(str(g) for g in p["games_shown"]) or nm("none: empty")}</td>'
+                f'<td class="num">{count(p["games_dropped"])}</td>'
+                f'<td class="num">{count(p["tokens"])} / {count(p["budget_tokens"])}</td></tr>' for p in b["points"]]
+        out.append(P.SWIPE + P.table(["After game", "Games included", "Games dropped",
+                                      "Tokens used / lessons arm's tokens"], rows,
+                                     f'Budget arm, series {b["series"]}', cls="board list"))
+    if not L["budget"]:
+        out.append('<p class="note">No finished budget series yet: its points appear here, after every game, as each '
+                   'series finishes.</p>')
+    return "".join(out) + reading
+
+
 def body(L) -> str:
     plan = L["plan"]
     parts = [("learning-tab", f"{P.TAB_LEARNING}: arms, not models", tab_card(L)),
              ("learning-chart", "Before and after: the evaluation set by checkpoint", chart(L)),
              ("learning-status", "Status and progress", progress(L)), ("learning-results", "Results", results(L)),
+             ("learning-budget", "Budget arm: what its context held", budget(L)),
              ("learning-lessons", "Lessons the model wrote", lessons(L)),
              ("learning-prompt", "Lesson prompt", prompt(L))]
     parts += [(section_id(s["title"]), s["title"], spec_markdown(s["markdown"])) for s in plan["sections"]]
@@ -552,7 +628,7 @@ def check(out: Path, site: Path, L: dict, test_set: Path | None = None) -> list[
         m = checks.scan_file(p)
         if m:
             bad.append(f"{p.relative_to(out)}: banned string {m.group(0)!r}")
-    test_set = test_set or checks.LEARNING_TEST_SET
+    test_set = test_set or TEST_SET
     if not test_set.exists():
         print(f"note: {test_set} not found: the evaluation-set check did not run", file=sys.stderr)
     return bad + checks.check_learning(out, test_set)
@@ -565,15 +641,18 @@ def main():
     ap.add_argument("--src", default=str(Path("~/.local/state/bg-site").expanduser() / SOURCE),
                     help="the pilot's files in snapshot.py's STATE/learning layout; missing or empty: no results yet")
     ap.add_argument("--check", metavar="SITE", help="run checks.py's page checks, links resolved against SITE")
-    ap.add_argument("--test-set", help="the private evaluation set for the check (default: checks.LEARNING_TEST_SET)")
+    ap.add_argument("--test-set", default=str(TEST_SET),
+                    help="the private evaluation set: its hash for the results' validation, its positions for the check")
     a = ap.parse_args()
     out = Path(a.out) if a.out else Path(tempfile.mkdtemp(prefix="learning-page-"))
-    L = data(Path(a.plan), Path(a.src))
+    L = data(Path(a.plan), Path(a.src), Path(a.test_set))
     if L["redacted"]:
         print(f"warning: {L['redacted']} private address(es) in the plan withheld", file=sys.stderr)
+    if L["validation"] and L["validation"]["problems"]:
+        print("validation: " + "; ".join(L["validation"]["problems"]), file=sys.stderr)
     print(render(out, L))
     if a.check:
-        bad = check(out, Path(a.check), L, Path(a.test_set) if a.test_set else None)
+        bad = check(out, Path(a.check), L, Path(a.test_set))
         for b in bad:
             print(b)
         print(f"checks: {len(bad)} failure(s)")

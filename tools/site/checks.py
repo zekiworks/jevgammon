@@ -344,9 +344,6 @@ def scan_file(p: Path):
 
 # --- 7. Learning page ---------------------------------------------------------------------------------------
 
-# The learning pilot's evaluation set: private, never published; read only to check that nothing of it is.
-LEARNING_TEST_SET = ROOT / "workspace/learning-pilot/test_set.json"
-
 
 def _test_set_strings(path: Path) -> list[str]:
     """What would reveal an evaluation position: its id (lp-<turn id>), its board key, and its whole board as the pilot
@@ -365,11 +362,13 @@ def _test_set_strings(path: Path) -> list[str]:
     return out
 
 
-def check_learning(out: Path, test_set: Path = LEARNING_TEST_SET) -> list[str]:
-    """The learning page (learning_page.py; plan §9): (a) no learning lift, signal or verdict block, in the page or its
-    data file, unless the results file says complete; (b) no evaluation-set position (id, board key or board) in the
-    page or its data file. (b) runs where the private test set is present (the build machine)."""
-    from learning_page import COMPLETE_ONLY_IDS, COMPLETE_ONLY_KEYS, DATA, PATH
+def check_learning(out: Path, test_set: Path | None = None) -> list[str]:
+    """The learning page (learning_page.py; plan §9): (a) no learning lift, signal, verdict or Learning-tab leaders
+    block, in the page or its data file, unless the site accepted the results as complete; (b) no evaluation-set
+    position (id, board key or board) in the page or its data file. (b) runs where the private test set
+    (learning_page.TEST_SET) is present (the build machine)."""
+    from learning_page import COMPLETE_ONLY_IDS, COMPLETE_ONLY_KEYS, DATA, PATH, TEST_SET
+    test_set = test_set or TEST_SET
     page, data = out / PATH / "index.html", out / DATA
     if not page.exists():
         return []

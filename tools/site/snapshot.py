@@ -88,7 +88,7 @@ KNOCKOUT_TABLES = ("leagues", "players", "league_players", "matches")
 # where each goes under STATE_DIR/learning.
 LEARNING_SOURCE = os.path.join("workspace", "learning-pilot")
 LEARNING_FILES = [("out/learning-pilot.json", lambda rel: "learning-pilot.json"),
-                  ("runs/*/s*/aggregate.json", lambda rel: rel),
+                  ("runs/*/s*/aggregate.json", lambda rel: rel), ("runs/t0/aggregate.json", lambda rel: rel),
                   ("runs/lessons/s*/lessons-g*.txt", lambda rel: rel),
                   ("lessons_system.txt", lambda rel: rel), ("lessons_user.txt", lambda rel: rel)]
 LEARNING_PLAN = os.path.join("mailbox", "Learning pilot - plan 2026-11-07.md")

@@ -51,6 +51,11 @@ PATH = P.TAB_LEARNING_PATH
 DATA = "data/v3/learning-pilot.json"
 TITLE = "Learning from experience (preliminary, running)"
 TITLE_COMPLETE = "Learning from experience (complete)"
+TITLE_PREREG = "Learning from experience (pre-registered)"
+# Pre-registration only (default ON): the build never reads the pilot's results, aggregates, lesson files or the
+# private test set, and the page shows the protocol and the pre-registered lesson prompt only. Results and lessons are
+# published only after this is switched off in a reviewed commit.
+PREREGISTRATION_ONLY = True
 COMMITMENT = "Results will be published whichever way they go, including no lift."
 PLAN = ROOT / "mailbox/Learning pilot - plan 2026-11-07.md"
 # The pilot's files as snapshot.py copies them (STATE/learning): the build's only source besides the plan.
@@ -226,6 +231,8 @@ def is_complete(L) -> bool:
 
 def title(L) -> str:
     """The page title and heading follow the validated status, like the top label."""
+    if L.get("preregistration_only"):
+        return TITLE_PREREG
     return TITLE_COMPLETE if is_complete(L) else TITLE
 
 
@@ -282,12 +289,19 @@ def read_results(src: Path, plan: dict, prompt: dict | None, test_set: Path) -> 
                                 problems=not_complete + lesson_bad + budget_bad))
 
 
-def data(plan_path: Path, src: Path, test_set: Path = TEST_SET) -> dict:
-    """The page's data from the plan and src (the STATE/learning layout; missing or empty: no results yet)."""
+def data(plan_path: Path, src: Path, test_set: Path = TEST_SET,
+         preregistration_only: bool | None = None) -> dict:
+    """The page's data from the plan and src (the STATE/learning layout; missing or empty: no results yet). In
+    pre-registration-only mode (PREREGISTRATION_ONLY, the default) no results file, aggregate, lesson file or test set
+    is read at all: the page is the protocol and the pre-registered lesson prompt only."""
+    prereg = PREREGISTRATION_ONLY if preregistration_only is None else preregistration_only
     plan = read_plan(plan_path)
     prompt = read_prompt(src, plan)
-    L = dict(version="v3", plan={k: v for k, v in plan.items() if k not in ("redacted", "hashes")},
-             redacted=plan["redacted"], lesson_prompt=prompt, **read_results(src, plan, prompt, test_set))
+    shown = (dict(results=None, validation=None, lessons=[], budget=[]) if prereg
+             else read_results(src, plan, prompt, test_set))
+    L = dict(version="v3", preregistration_only=prereg,
+             plan={k: v for k, v in plan.items() if k not in ("redacted", "hashes")},
+             redacted=plan["redacted"], lesson_prompt=prompt, **shown)
     L["source_sha256"] = hashlib.sha256(json.dumps(L, sort_keys=True).encode()).hexdigest()
     return L
 
@@ -589,22 +603,27 @@ def budget(L) -> str:
 
 def body(L) -> str:
     plan = L["plan"]
-    parts = [("learning-tab", f"{P.TAB_LEARNING}: arms, not models", tab_card(L)),
-             ("learning-chart", "Before and after: the evaluation set by checkpoint", chart(L)),
-             ("learning-status", "Status and progress", progress(L)), ("learning-results", "Results", results(L)),
-             ("learning-budget", "Budget arm: what its context held", budget(L)),
-             ("learning-lessons", "Lessons the model wrote", lessons(L)),
-             ("learning-prompt", "Lesson prompt", prompt(L))]
+    prereg = L.get("preregistration_only")
+    parts = [] if prereg else [
+        ("learning-tab", f"{P.TAB_LEARNING}: arms, not models", tab_card(L)),
+        ("learning-chart", "Before and after: the evaluation set by checkpoint", chart(L)),
+        ("learning-status", "Status and progress", progress(L)), ("learning-results", "Results", results(L)),
+        ("learning-budget", "Budget arm: what its context held", budget(L)),
+        ("learning-lessons", "Lessons the model wrote", lessons(L))]
+    parts += [("learning-prompt", "Lesson prompt", prompt(L))]
     parts += [(section_id(s["title"]), s["title"], spec_markdown(s["markdown"])) for s in plan["sections"]]
     toc = "".join(f'<li><a href="#{i}">{esc(t)}</a></li>' for i, t, _ in parts)
     withheld = (f'<p class="note">{count(L["redacted"])} private address(es) in the plan are withheld here.</p>'
                 if L["redacted"] else "")
     status = f'<div class="note">{spec_markdown(plan["status"])}</div>' if plan["status"] else ""
     # The top label follows the validated status: "Complete" only when learning_validate accepts complete.
-    label = "Complete" if is_complete(L) else "Preliminary · running"
+    label = ("Pre-registration" if prereg else "Complete" if is_complete(L) else "Preliminary · running")
+    intro = ("The pre-registered plan and lesson prompt. No results or lessons are published on this page yet: they "
+             "are not read by the build." if prereg else
+             "The pre-registered plan, the lesson prompt and the results as they come in.")
     head = (f'<header class="card hero page-head"><p class="eyebrow">{label}</p><h1>{esc(title(L))}</h1>'
             f'<p class="intro"><strong>{esc(plan["commitment"])}</strong></p>'
-            f'<p class="intro">The pre-registered plan, the lesson prompt and the results as they come in. Data: '
+            f'<p class="intro">{intro} Data: '
             f'<a href="../{DATA}">learning-pilot.json</a>.</p>{status}'
             f'<p class="small">Plan: {esc(plan["file"])}, sha256 <code>{plan["sha256"]}</code></p>{withheld}</header>')
     return "\n".join([head, f'<nav class="toc card" aria-label="On this page"><ul>{toc}</ul></nav>']
@@ -683,10 +702,12 @@ def main():
     ap.add_argument("--check", metavar="SITE", help="run checks.py's page checks, links resolved against SITE")
     ap.add_argument("--test-set", default=str(TEST_SET),
                     help="the private evaluation set: its hash for the results' validation, its positions for the check")
+    ap.add_argument("--with-results", action="store_true",
+                    help="review renders only: read results and lessons although PREREGISTRATION_ONLY is on")
     a = ap.parse_args()
     out = Path(a.out) if a.out else Path(tempfile.mkdtemp(prefix="learning-page-"))
     try:
-        L = data(Path(a.plan), Path(a.src), Path(a.test_set))
+        L = data(Path(a.plan), Path(a.src), Path(a.test_set), preregistration_only=False if a.with_results else None)
     except TestSetRequired as e:
         print(f"build failed: {e}", file=sys.stderr)
         sys.exit(2)

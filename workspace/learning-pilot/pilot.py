@@ -270,28 +270,30 @@ def ctx_records(decs, results, exclude, arm, s, g):
         n = tokens(text)
         if n <= NOTE_BUDGET:
             return text, dict(games_shown=games, games_dropped=g - len(games),
-                              records_dropped=sum(1 for d in ok if d["game"] not in games))
+                              records_dropped=g - len(games))
         log(arm, s, "context_drop", after_game=g, dropped_game=games[0], tokens=n, budget=NOTE_BUDGET)
         games = games[1:]
-    return "", dict(games_shown=[], games_dropped=g, records_dropped=len(ok))
+    return "", dict(games_shown=[], games_dropped=g, records_dropped=g)
 
 
 def ctx_budget(decs, results, exclude, arm, s, g, budget_tokens):
-    """The most recent records (decision lines, newest first, kept in game order) whose context fits in the token
-    count of the lessons arm's context after the same game of the same series."""
+    """A17's budget-matched records: the most recent FULL game records (whole games, newest first) whose context
+    fits in the token count of the lessons arm's context after the same game of the same series. If not even the
+    newest game fits, the context is empty at that point (logged)."""
     ok = eligible(decs, exclude)
-    newest_first = sorted(ok, key=lambda d: (d["game"], d["turn_no"]), reverse=True)
-    chosen = []
-    text = ""
-    for d in newest_first:
-        trial = chosen + [d]
-        t = records_text({k: [record_line(x) for x in sorted(trial, key=lambda x: (x["game"], x["turn_no"]))
-                              if x["game"] == k] for k in {x["game"] for x in trial}}, results)
-        if tokens(t) > min(budget_tokens, NOTE_BUDGET):
+    limit = min(budget_tokens, NOTE_BUDGET)
+    shown, text = [], ""
+    for k in range(g, 0, -1):  # newest game first; stop at the first game that does not fit
+        trial = [k] + shown
+        t = records_text({x: [record_line(d) for d in ok if d["game"] == x] for x in trial}, results)
+        if tokens(t) > limit:
             break
-        chosen, text = trial, t
-    return text, dict(budget_tokens=budget_tokens, decisions_shown=len(chosen), decisions_available=len(ok),
-                      records_dropped=len(ok) - len(chosen))
+        shown, text = trial, t
+    if not shown:
+        log(arm, s, "budget_context_empty", after_game=g, budget_tokens=budget_tokens,
+            newest_game_tokens=tokens(records_text({g: [record_line(d) for d in ok if d["game"] == g]}, results)))
+    return text, dict(budget_tokens=budget_tokens, games_shown=shown, games_dropped=g - len(shown),
+                      records_dropped=g - len(shown))
 
 
 def chat(messages, max_tokens):
@@ -338,7 +340,9 @@ def write_lessons(decs, results, exclude, arm, s, g):
     user = LESSONS_USER.read_text().format(game=g, record=record)
     messages = [{"role": "system", "content": LESSONS_SYSTEM.read_text().strip()}, {"role": "user", "content": user}]
     if DRY:
-        raw, secs, usage, finish, body, out = f"- (dry run) lesson after game {g}", 0.0, {}, "dry", None, None
+        # Dry run: lessons at the allowed maximum (5 lessons, 150 words), so the budget arm's matching is exercised.
+        raw = "\n".join(f"- (dry run) game {g} lesson {k}: " + " ".join(["placeholder"] * 24) for k in range(1, 6))
+        secs, usage, finish, body, out = 0.0, {}, "dry", None, None
     else:
         out, secs, body = chat(messages, LESSONS_MAX_TOKENS)
         raw = (out["choices"][0]["message"].get("content") or "").strip()
@@ -590,6 +594,7 @@ def write_aggregate(arm, s, wall):
         games=games, games_error_rate_1_3=pooled_rate(games, 1, 3), games_error_rate_8_10=pooled_rate(games, 8, 10),
         context_tokens_after_game={e["after_game"]: e["tokens"] for e in ev if e["event"] == "context"},
         records_dropped_after_game={e["after_game"]: e.get("records_dropped", 0) for e in ev if e["event"] == "context"},
+        budget_context_empty_after_game=[e["after_game"] for e in ev if e["event"] == "budget_context_empty"],
         context_drops=[{k: e[k] for k in ("after_game", "dropped_game", "tokens", "budget")} for e in ev
                        if e["event"] == "context_drop"],
         evaluation_positions_excluded=sum(e["n"] for e in ev if e["event"] == "evaluation_positions_excluded"),

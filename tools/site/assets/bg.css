@@ -441,6 +441,19 @@ table.headline tr.reference td, table.headline tr.late td { color: var(--text-2)
 .hbar-fill.ts-grey, i.swatch-ts-grey { background-color: var(--data-grey); }
 i.swatch-ts-safety, i.swatch-ts-found { background-color: var(--text-2); }
 .too-safe { margin-top: 1rem; }
+/* At phone width (Zeki #2790): the model, not the rank, is the sticky first column, and the bar column is narrower,
+   so the risk judgement of the top rows is on the first screen without sideways scrolling. */
+@media (max-width: 640px) {
+  table.headline th:first-child, table.headline td:first-child { position: static; width: auto; min-width: 0; max-width: none;
+    box-shadow: none; }
+  table.headline thead th:nth-child(2), table.headline td.model { position: sticky; left: 0; z-index: 2; background: var(--panel);
+    width: min(115px, 30vw); min-width: min(115px, 30vw); max-width: min(115px, 30vw); box-shadow: 1px 0 0 var(--edge); }
+  table.headline thead th:nth-child(3), table.headline thead th:nth-child(4) { min-width: 0; }
+  table.headline th, table.headline td { padding-left: .35rem; padding-right: .35rem; }
+  table.headline thead th:nth-child(2) { z-index: 3; }
+  table.headline tr.hl-sub td.model { background: var(--sunk); padding-left: .6rem; }
+  table.headline td.hl-judgement { min-width: 8rem; }
+}
 .finding h2 { font-size: 1.25rem; }
 .finding-text { max-width: 80ch; margin: 0 0 .75rem; }
 .finding-chart { margin: 0; }

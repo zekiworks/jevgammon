@@ -75,17 +75,16 @@ def model_of(S, ds, name) -> str:
     return P.origin_meta(S, ds, name).get("model") or name
 
 
-def best_per_model(S, eligible=None, group=None) -> dict:
+def best_per_model(S, eligible=None) -> dict:
     """{model: (league, setup name, risk metrics)}: each model's setup with the highest stored All-leagues risk
     judgement; on an exact tie the first in league order (all_rows' order) is kept. Programs and setups without a risk
-    judgement are left out; eligible(league, name), when given, restricts the candidates; group(league, name), when
-    given, names the row a setup belongs to instead of its model. The Nackgammon per-model view's rule (nack_views) and
-    the leaderboard's tie rule among the setups at a model's highest reasoning setting (story.leaderboard_rows)."""
+    judgement are left out; eligible(league, name), when given, restricts the candidates. The Nackgammon per-model
+    view's rule (nack_views); the leaderboard does not use it (story.leaderboard_rows: no score in its choice)."""
     best = {}
     for lg, n, r, ref in all_rows(S):
         if ref or r["judgement"] is None or (eligible and not eligible(lg, n)):
             continue
-        m = group(lg, n) if group else model_of(S, lg["dataset"], n)
+        m = model_of(S, lg["dataset"], n)
         if m not in best or r["judgement"] > best[m][2]["judgement"]:
             best[m] = (lg, n, r)
     return best

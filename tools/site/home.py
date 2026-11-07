@@ -75,16 +75,17 @@ def model_of(S, ds, name) -> str:
     return P.origin_meta(S, ds, name).get("model") or name
 
 
-def best_per_model(S, eligible=None) -> dict:
+def best_per_model(S, eligible=None, group=None) -> dict:
     """{model: (league, setup name, risk metrics)}: each model's setup with the highest stored All-leagues risk
     judgement; on an exact tie the first in league order (all_rows' order) is kept. Programs and setups without a risk
-    judgement are left out; eligible(league, name), when given, restricts the candidates. The one rule behind the
-    leaderboard (story.best_settings) and the Nackgammon per-model view (nack_views)."""
+    judgement are left out; eligible(league, name), when given, restricts the candidates; group(league, name), when
+    given, names the row a setup belongs to instead of its model. The Nackgammon per-model view's rule (nack_views) and
+    the leaderboard's tie rule among the setups at a model's highest reasoning setting (story.leaderboard_rows)."""
     best = {}
     for lg, n, r, ref in all_rows(S):
         if ref or r["judgement"] is None or (eligible and not eligible(lg, n)):
             continue
-        m = model_of(S, lg["dataset"], n)
+        m = group(lg, n) if group else model_of(S, lg["dataset"], n)
         if m not in best or r["judgement"] > best[m][2]["judgement"]:
             best[m] = (lg, n, r)
     return best
@@ -93,8 +94,8 @@ def best_per_model(S, eligible=None) -> dict:
 def nack_views(S) -> tuple[dict, list]:
     """The Nackgammon section's views: each setup's model type (decision / chat / program; its setups.json entry, a
     league entry first as for a ladder move, else content/nack_setup_types.json for a setup that played in no league;
-    a missing or unknown type fails the build), and the one setting per model of the per-model view: best_per_model,
-    the leaderboard's rule, over the settings this test asked (from league play, never from this test)."""
+    a missing or unknown type fails the build), and the one setting per model of the per-model view: best_per_model
+    over the settings this test asked (from league play, never from this test)."""
     N = S["nack"]
     kinds, models = {}, {}
     for n in N["setups"]:
@@ -1565,6 +1566,8 @@ def close_b_section(S) -> str:
 
 FAMILIES = json.loads((CONTENT / "families.json").read_text())["families"]
 FAMILY_ICONS = (CONTENT / "family_icons.svg").read_text().strip()
+_MAKERS = json.loads((CONTENT / "maker_colors.json").read_text())
+MAKERS, SETUP_MAKER = _MAKERS["makers"], _MAKERS["setups"]
 GROUPS = [("decision", "Decision models"), ("chat", "Chat models"), ("unknown", "Model type not recorded"),
           ("program", "Programs: reference rows, never ranked")]
 MEASURES = [("risk-judgement", "Risk judgement"), ("error-rate", "Error rate"), ("cost", "Cost"), ("time", "Time")]
@@ -1572,7 +1575,24 @@ PHASE_ALL_CHARTS = "The Phase filter does not apply to these charts: all phases.
 
 
 def family(name: str) -> dict | None:
+    """The setup's family (families.json): its icon."""
     return next((f for f in FAMILIES if re.match(f["match"], name)), None)
+
+
+def maker(name: str) -> tuple[str, str]:
+    """(maker, colour) of a model setup (content/maker_colors.json, Ümit #2745 item 7): the one colour of its setups on
+    every chart and in the leaderboard. A setup missing there fails the build; programs have none (callers skip them)."""
+    if name not in SETUP_MAKER:
+        raise ValueError(f"content/maker_colors.json: no maker for setup {name!r}")
+    m = SETUP_MAKER[name]
+    return m, MAKERS[m]["colour"]
+
+
+def maker_legend(names) -> str:
+    """A swatch per maker of the given setups, in maker_colors.json's order."""
+    present = {maker(n)[0] for n in names}
+    return "".join(f'<span><i class="swatch" style="background:{v["colour"]}"></i>{esc(m)}</span>'
+                   for m, v in MAKERS.items() if m in present)
 
 
 def chart_rows(S, lg, measure: str) -> list:
@@ -1673,8 +1693,8 @@ def hbars(S, measure: str, entries: list, pos, ticks, merged: bool, lines=()) ->
             value, tip = _value(S, lg, n, measure, v, lo, hi, r, q)
             track = ""
             if v is not None and (measure == "risk-judgement" or v > 0):
-                colour = f' style="width:{pos(v):.2f}%;background-color:{fam["colour"]}"' if fam else f' style="width:{pos(v):.2f}%"'
-                track = f'<span class="hbar-fill{"" if fam else " program" if ref else " other"}"{colour}></span>'
+                colour = f' style="width:{pos(v):.2f}%;background-color:{maker(n)[1]}"' if not ref else f' style="width:{pos(v):.2f}%"'
+                track = f'<span class="hbar-fill{" program" if ref else ""}"{colour}></span>'
                 if lo is not None and hi is not None and (measure == "risk-judgement" or lo > 0):
                     track += f'<span class="hbar-interval" style="left:{pos(lo):.2f}%;width:{max(pos(hi) - pos(lo), 0.3):.2f}%"></span>'
             if measure == "risk-judgement":
@@ -1728,12 +1748,8 @@ def measure_chart_card(S, measure: str, title: str) -> str:
             names.setdefault(n, []).append(str(lg["id"]))
         listed = "; ".join(f'{esc(n)} (League {", ".join(ids)})' for n, ids in sorted(names.items()))
         views += f'<p class="table-note unmeasured">Programs, {esc(NOT_MEASURED)}: {listed}.</p>'
-    fams = []
-    for f in FAMILIES:
-        if any(not e[2] and family(e[1]) is f for e in every):
-            fams.append(f'<span><i class="swatch" style="background:{f["colour"]}"></i><svg class="fam-icon" aria-hidden="true" '
-                        f'focusable="false"><use href="#{f["icon"]}"/></svg>{esc(f["name"])}</span>')
-    legend = (f'<span class="families">{"".join(fams)}<span><i class="swatch swatch-program"></i>program (reference row)</span></span>')
+    legend = (f'<span class="families">{maker_legend(e[1] for e in every if not e[2])}'
+              f'<span><i class="swatch swatch-program"></i>program (reference row)</span></span>')
     sub = {"risk-judgement": "Risk calls per setup: was each risk the right one, and was safe right when it played safe? "
                              "100 = every call right, 50 = always safe; the line on each bar is its 95% interval (games "
                              "resampled) · higher is better",

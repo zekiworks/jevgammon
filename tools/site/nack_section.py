@@ -446,8 +446,8 @@ def section(N, kinds: dict, chosen: list, L: dict) -> str:
         '</button>' for k, lab in (("model", "One setting per model"), ("all", "All settings"))) + '</span>')
     multi = len([n for n, k in kinds.items() if k != "program"]) - len(chosen)
     view_note = (f"One setting per model: a model asked at several settings shows the one with its highest stored "
-                 f"risk judgement in league play, on an exact tie the first in league order (the leaderboard's rule; "
-                 f"chosen from league results, never from this "
+                 f"risk judgement in league play, on an exact tie the first in league order (chosen from league "
+                 f"results, never from this "
                  f"test); All settings shows every setup asked ({count(multi)} more rows). Decision / Chat is the model "
                  f"type; the group under each name is the paired test's original league group, so a chat model can "
                  f"sit in the decision models group. Every table further down shows every setup.")

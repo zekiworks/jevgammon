@@ -1,23 +1,30 @@
-"""Learning pilot (learning track, four arms): series of 10 games of Gemma 4 31B (off) against GNUbg weak, the
-200-position test before game 1, after game 5 and after game 10 of each series, each with the arm's current
-context. Plan: mailbox/Learning pilot - plan 2026-11-07.md (the single source of every rule used here).
+"""Learning pilot (v5 design A17, learning track): series of 10 games of Gemma 4 31B (off) against GNUbg weak (GNU
+Backgammon 1.08 Beginner, the league anchor) in four arms, and the 200-position evaluation with each arm's current
+context. Plan and rules: mailbox/Learning pilot - plan 2026-11-07.md (the single source).
 
-    python3 workspace/learning-pilot/pilot.py run --series 1-3 [--arms control,records,lessons,top10]
-    python3 workspace/learning-pilot/pilot.py summary
+    python3 workspace/learning-pilot/pilot.py t0                     # the shared evaluation before game 1 (once)
+    python3 workspace/learning-pilot/pilot.py run --series 1-3       # smoke; later --series 4-10
+    python3 workspace/learning-pilot/pilot.py summary [--planned 10]
 
-Run from the repo root. One worker per arm, all arms side by side; each arm has one model request in flight at
-a time (games are sequential, the test asks one position at a time, the lessons call runs between games), so
-spark3 sees at most four. Dice: series s uses one seed in every arm; game g is round ceil(g/2), leg 2 - g % 2
-of a 5-round match with --fixed-rounds, so games 2k-1 and 2k are a mirrored pair (same dice, seats swapped).
+Run from the repo root. Arms: control (no context), records (all earlier games of the series with GNUbg's evaluation
+of each decision), lessons (one lesson call after each game; the context is every lesson written so far in the
+series), budget (the most recent records that fit the token count of the lessons arm's context at the same point of
+the same series; runs after the lessons arm's series). One worker per arm, one model request in flight per arm, so
+spark3 sees at most four. Series s uses one dice seed in every arm; game g is round ceil(g/2), leg 2 - g % 2 of a
+5-round match with --fixed-rounds (games 2k-1 and 2k: same dice, seats swapped). Evaluations: T0 once in total (no
+context: every arm's starting point and the control's evaluation), then after games 5 and 10 for the three
+non-control arms.
 
-Private outputs only: smoke/learning-pilot.db (games, test answers), smoke/learning-pilot-plays.db (2-ply
-scores), workspace/learning-pilot/runs/ (contexts, logs, per-series aggregates). Nothing here is committed.
+Private outputs (never committed): smoke/learning-pilot.db (games, evaluation answers, every request),
+smoke/learning-pilot-plays.db (2-ply scores), workspace/learning-pilot/runs/ (contexts, lessons, logs, per-series
+aggregates), learning.jsonl, seeds.json, learning-pilot.json.
 """
 
 import argparse
 import hashlib
 import json
 import os
+import random
 import sqlite3
 import subprocess
 import sys
@@ -30,39 +37,49 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 BIN = ROOT.parent / "jevgammon-learning-pilot/target/release/jevgammon"
-# PILOT_DRY=1: an offline harness check with no model call: the `safest` program plays in Gemma's seat, tests
-# and lesson calls are skipped, and everything goes to separate -dry files.
+# PILOT_DRY=1: an offline harness check with no model call: the `safest` program plays in Gemma's seat, evaluations
+# are skipped and lessons are canned; everything goes to separate -dry files.
 DRY = os.environ.get("PILOT_DRY") == "1"
 SUFFIX = "-dry" if DRY else ""
 DB = ROOT / f"smoke/learning-pilot{SUFFIX}.db"
 PLAYS = ROOT / f"smoke/learning-pilot-plays{SUFFIX}.db"
 RUNS = HERE / f"runs{SUFFIX}"
+OUTPUTS = HERE / f"out{SUFFIX}"
 TEST_SET = HERE / "test_set.json"
 TEST_POSITIONS = HERE / "test_positions.jsonl"
 BASE = json.loads((HERE / "configs/base.json").read_text())
 PLAYER = dict(BASE["players"][0], spec="safest") if DRY else BASE["players"][0]
 ORDER_SEED = BASE["order_seed"]
-SERVER = PLAYER["base_url"]
+SERVER = BASE["players"][0]["base_url"]
 MODEL = "gemma-4-31B-it"
 MASTER_SEED = "learning-pilot 2026-11-07"
+BOOT_SEED = 20261107
+BOOT = 10000
 GAMES = 10
-TESTS_AFTER = (5, 10)  # plus T0 before game 1
-ARMS = ["control", "records", "lessons", "top10"]
-MARGIN = 0.001  # the site's risk margin (content/thresholds.json risk_margin)
+CHECKPOINTS = (5, 10)  # after these games, for the non-control arms; T0 is shared
+ARMS = ["control", "records", "lessons", "budget"]
+MARGIN = 0.001  # the site's risk margin
 SCALE = 500  # the site's equity scale: error rate = 500 x mean 2-ply equity loss
 CONTEXT_LIMIT = 32768  # spark3's max_model_len
-PROMPT_MAX = 4389  # largest test prompt (system + user, tokens), measured; game prompts are the same format
-NOTE_BUDGET = CONTEXT_LIMIT - PROMPT_MAX - 1500  # tokens left for a context; the rest is margin
-TOP_N = 10
-# GNUbg's default skill marks (equity lost): doubtful 0.04, bad 0.08, very bad 0.16.
-MARKS = [(0.16, "very bad"), (0.08, "bad"), (0.04, "doubtful")]
+PROMPT_MAX = 4389  # largest evaluation prompt (system + user, Gemma tokens), measured
+NOTE_BUDGET = CONTEXT_LIMIT - PROMPT_MAX - 1500  # tokens for a context; the rest is margin
+MARKS = [(0.16, "very bad"), (0.08, "bad"), (0.04, "doubtful")]  # GNUbg's default skill marks
 OPEN = "=== NOTES FROM YOUR EARLIER GAMES IN THIS SERIES ==="
 CLOSE = "=== END OF NOTES ==="
+LESSONS_SYSTEM = HERE / "lessons_system.txt"
+LESSONS_USER = HERE / "lessons_user.txt"
+LESSONS_MAX_TOKENS = 400
+MAX_LESSONS, MAX_WORDS = 5, 150
 LOCK = threading.Lock()
+T0_NAME = "Gemma 4 31B (off) | T0 shared"
 
 
 def now():
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+
+def lesson_prompt_sha256() -> str:
+    return hashlib.sha256(LESSONS_SYSTEM.read_bytes() + LESSONS_USER.read_bytes()).hexdigest()
 
 
 def series_seed(s: int) -> int:
@@ -84,20 +101,25 @@ def log(arm, s, event, **kw):
         f.write(json.dumps(dict(at=now(), event=event, **kw)) + "\n")
 
 
-# --- Tokens ------------------------------------------------------------------------------------------------
+def events(arm, s):
+    f = run_dir(arm, s) / "log.jsonl"
+    return [json.loads(x) for x in f.read_text().splitlines()] if f.exists() else []
+
 
 _TOK = None
 
 
 def tokens(text: str) -> int:
     global _TOK
+    if not text:
+        return 0
     if _TOK is None:
         from tokenizers import Tokenizer
         _TOK = Tokenizer.from_file("/home/cbasaran/code/models/gemma-4-31B-it/tokenizer.json")
     return len(_TOK.encode(text).ids)
 
 
-# --- Test set and scoring ----------------------------------------------------------------------------------
+# --- Evaluation set and scoring ----------------------------------------------------------------------------
 
 def test_set():
     return json.loads(TEST_SET.read_text())
@@ -108,42 +130,40 @@ def test_board_keys():
 
 
 def play_call(shots, losses, i, margin=MARGIN):
-    """tools/site/analysis.py play_call: (class, call, stake, extra hitting rolls)."""
+    """tools/site/analysis.py play_call: (class, call)."""
     least = min(shots)
     if all(s == least for s in shots):
-        return "none", "none", 0.0, 0
+        return "none", "none"
     stake = min(losses[j] for j, s in enumerate(shots) if s == least)
     cls = "safety" if stake < margin else "risk"
     if shots[i] > least:
         call = "needless" if cls == "safety" else ("right_risk" if stake - losses[i] >= margin else "wrong_risk")
     else:
         call = "missed" if cls == "risk" else "right_safety"
-    return cls, call, stake, shots[i] - least
+    return cls, call
 
 
 LABELS = {"missed": "missed risk", "needless": "needless risk", "wrong_risk": "wrong risk",
-          "right_risk": "right risk call (a weaker risky play)", "right_safety": "right safety call (a weaker safe play)",
-          "none": "no risk trade-off"}
+          "right_risk": "right risk call", "right_safety": "right safety call", "none": "no risk trade-off"}
 
 
 def score_match(match_id: int):
-    """2-ply scores of the match's model decisions (gnubg, tools/site rules), incremental."""
     env = dict(os.environ, SCORE_ARGS=f"{DB} {PLAYS} {match_id}")
-    r = subprocess.run(["gnubg", "-t", "-q", "-p", str(HERE / "score_games.py")], cwd=ROOT, env=env,
-                       capture_output=True, text=True)
+    r = subprocess.run(["nice", "-n", "19", "gnubg", "-t", "-q", "-p", str(HERE / "score_games.py")], cwd=ROOT,
+                       env=env, capture_output=True, text=True)
     if r.returncode != 0:
         raise RuntimeError(f"gnubg scoring failed: {r.stderr[-2000:]}")
 
 
-def game_decisions(match_id: int, upto: int):
-    """Scored model decisions of games 1..upto of the match, oldest first, with the game number."""
+def game_decisions(match_id: int, upto: int = GAMES):
     db = sqlite3.connect(f"file:{DB}?mode=ro", uri=True, timeout=60)
     db.row_factory = sqlite3.Row
     turns = db.execute("""
-        SELECT t.id, t.turn_no, t.die1, t.die2, t.position, t.side, t.decided_by, g.round_no, g.leg
+        SELECT t.id, t.turn_no, t.die1, t.die2, t.position, t.side, t.decided_by, t.latency_ms, t.request_ms,
+               t.input_tokens, t.output_tokens, t.option_order, g.round_no, g.leg
         FROM turns t JOIN games g ON g.id = t.game_id
-        WHERE g.match_id = ? AND t.player = 1 AND t.decided_by IN ('model', 'fallback') ORDER BY g.round_no, g.leg, t.turn_no""",
-                       (match_id,)).fetchall()
+        WHERE g.match_id = ? AND t.player = 1 AND t.decided_by IN ('model', 'fallback')
+        ORDER BY g.round_no, g.leg, t.turn_no""", (match_id,)).fetchall()
     db.close()
     pdb = sqlite3.connect(f"file:{PLAYS}?mode=ro", uri=True, timeout=60)
     scored = {r[0]: r for r in pdb.execute("SELECT turn_id, chosen, loss, board_key, data FROM plays WHERE match_id = ?",
@@ -157,16 +177,18 @@ def game_decisions(match_id: int, upto: int):
         s = scored.get(t["id"])
         d = dict(turn_id=t["id"], game=g, turn_no=t["turn_no"], dice=(t["die1"], t["die2"]),
                  position=json.loads(t["position"]), side=t["side"], invalid=t["decided_by"] == "fallback",
-                 scored=s is not None)
+                 scored=s is not None, request_ms=t["request_ms"] if t["request_ms"] is not None else t["latency_ms"],
+                 input_tokens=t["input_tokens"], output_tokens=t["output_tokens"],
+                 option_order=json.loads(t["option_order"]) if t["option_order"] else None)
         if s is not None:
             data = json.loads(s[4])
             eq = [x[1] for x in data]
             best = max(eq)
             losses = [best - e for e in eq]
             shots = [x[2] for x in data]
-            cls, call, stake, extra = play_call(shots, losses, s[1])
-            d.update(chosen=s[1], loss=s[2], board_key=s[3], plays=[x[0] for x in data], descriptions=[x[3] for x in data],
-                     best=eq.index(best), losses=losses, shots=shots, cls=cls, call=call)
+            cls, call = play_call(shots, losses, s[1])
+            d.update(chosen=s[1], loss=s[2], board_key=s[3], plays=[x[0] for x in data], best=eq.index(best),
+                     cls=cls, call=call)
         out.append(d)
     return out
 
@@ -194,66 +216,75 @@ def board_text(position: dict, side: str) -> str:
 
 def verdict(d) -> str:
     if d["loss"] < 1e-9:
-        return "GNUbg's best play"
+        return "best play"
     for edge, mark in MARKS:
         if d["loss"] >= edge:
             return mark
     return "small error"
 
 
-def record_line(d, with_verdict: bool) -> str:
-    head = f"Turn {d['turn_no']}, dice {d['dice'][0]}-{d['dice'][1]}; {board_text(d['position'], d['side'])}. You played {d['plays'][d['chosen']] or 'no move'}."
-    if not with_verdict:
-        return head
-    return (head + f" GNUbg's best play: {d['plays'][d['best']]}. Equity lost: {d['loss']:.3f} ({verdict(d)}; "
-            f"risk call: {LABELS[d['call']]}).")
+def record_line(d) -> str:
+    return (f"- Turn {d['turn_no']}, dice {d['dice'][0]}-{d['dice'][1]}; {board_text(d['position'], d['side'])}. "
+            f"You played {d['plays'][d['chosen']]}. GNUbg's best play: {d['plays'][d['best']]}. "
+            f"Equity lost: {d['loss']:.3f} ({verdict(d)}; risk call: {LABELS[d['call']]}).")
 
 
-def game_record(g: int, decs: list, result: dict, with_verdict: bool) -> str:
-    res = result.get(g, {})
-    outcome = (f"you {'won' if res.get('won') else 'lost'} {res.get('points')} point(s) ({res.get('result')})"
-               if res else "result unknown")
-    lines = [f"Game {g} ({outcome}):"]
-    lines += ["- " + record_line(d, with_verdict) for d in decs]
-    return "\n".join(lines)
+def game_header(g, results):
+    res = results.get(g)
+    outcome = (f"you {'won' if res['won'] else 'lost'} {res['points']} point(s), {res['result']}" if res
+               else "result unknown")
+    return f"Game {g} ({outcome}):"
 
 
 def eligible(decs, exclude):
-    """Scored, valid decisions whose board is not a test position (leakage rule)."""
+    """Scored, valid decisions whose board is not an evaluation position (leakage rule)."""
     return [d for d in decs if d["scored"] and not d["invalid"] and d["board_key"] not in exclude]
 
 
-def ctx_records(decs, results, exclude, arm, s):
-    games = sorted({d["game"] for d in decs})
-    blocks = {g: game_record(g, [d for d in eligible(decs, exclude) if d["game"] == g], results, True) for g in games}
-    intro = ("Below are the full records of your earlier games in this series against the same opponent: every "
-             "decision you made, with the GNUbg engine's verdict (2-ply). Boards are given in your point numbering.")
-    kept = list(games)
-    while kept:
-        text = "\n".join([OPEN, intro, ""] + [blocks[g] + "\n" for g in kept] + [CLOSE])
-        if tokens(text) <= NOTE_BUDGET:
-            return text
-        log(arm, s, "context_truncated", dropped_game=kept[0], tokens=tokens(text), budget=NOTE_BUDGET)
-        kept = kept[1:]
-    return ""
+RECORDS_INTRO = ("Below are the records of your earlier games in this series against the same opponent: each decision "
+                 "you made, with the GNU Backgammon engine's evaluation of it (2-ply). Boards are given in your point "
+                 "numbering.")
 
 
-def ctx_top10(decs, exclude):
-    items = sorted(eligible(decs, exclude), key=lambda d: (-d["loss"], d["turn_id"]))[:TOP_N]
-    if not items:
-        return ""
-    lines = [OPEN, f"The {len(items)} decisions from your earlier games in this series that lost the most equity, "
-                   "as judged by the GNUbg engine (2-ply). Boards are given in your point numbering.", ""]
-    for k, d in enumerate(items, 1):
-        lines.append(f"{k}. Dice {d['dice'][0]}-{d['dice'][1]}; {board_text(d['position'], d['side'])}. "
-                     f"Your play: {d['plays'][d['chosen']]}. GNUbg's best play: {d['plays'][d['best']]}. "
-                     f"Equity lost: {d['loss']:.3f}. Risk call: {LABELS[d['call']]}.")
-    lines += ["", CLOSE]
-    return "\n".join(lines)
+def records_text(lines_by_game, results):
+    body = []
+    for g in sorted(lines_by_game):
+        if lines_by_game[g]:
+            body += [game_header(g, results)] + lines_by_game[g] + [""]
+    return "\n".join([OPEN, RECORDS_INTRO, ""] + body + [CLOSE]) if body else ""
 
 
-LESSONS_SYSTEM = (HERE / "lessons_system.txt")
-LESSONS_USER = (HERE / "lessons_user.txt")
+def ctx_records(decs, results, exclude, arm, s, g):
+    """Every earlier game in full; the oldest games are dropped first if the context limit is exceeded."""
+    ok = eligible(decs, exclude)
+    games = list(range(1, g + 1))
+    while games:
+        text = records_text({k: [record_line(d) for d in ok if d["game"] == k] for k in games}, results)
+        n = tokens(text)
+        if n <= NOTE_BUDGET:
+            return text, dict(games_shown=games, games_dropped=g - len(games),
+                              records_dropped=sum(1 for d in ok if d["game"] not in games))
+        log(arm, s, "context_drop", after_game=g, dropped_game=games[0], tokens=n, budget=NOTE_BUDGET)
+        games = games[1:]
+    return "", dict(games_shown=[], games_dropped=g, records_dropped=len(ok))
+
+
+def ctx_budget(decs, results, exclude, arm, s, g, budget_tokens):
+    """The most recent records (decision lines, newest first, kept in game order) whose context fits in the token
+    count of the lessons arm's context after the same game of the same series."""
+    ok = eligible(decs, exclude)
+    newest_first = sorted(ok, key=lambda d: (d["game"], d["turn_no"]), reverse=True)
+    chosen = []
+    text = ""
+    for d in newest_first:
+        trial = chosen + [d]
+        t = records_text({k: [record_line(x) for x in sorted(trial, key=lambda x: (x["game"], x["turn_no"]))
+                              if x["game"] == k] for k in {x["game"] for x in trial}}, results)
+        if tokens(t) > min(budget_tokens, NOTE_BUDGET):
+            break
+        chosen, text = trial, t
+    return text, dict(budget_tokens=budget_tokens, decisions_shown=len(chosen), decisions_available=len(ok),
+                      records_dropped=len(ok) - len(chosen))
 
 
 def chat(messages, max_tokens):
@@ -262,131 +293,162 @@ def chat(messages, max_tokens):
     req = urllib.request.Request(f"{SERVER}/chat/completions", data=json.dumps(body).encode(),
                                  headers={"Content-Type": "application/json"})
     started = time.time()
-    for attempt in range(4):
+    for attempt in range(4):  # network and server errors: 3 retries, as in the leagues
         try:
-            with urllib.request.urlopen(req, timeout=600) as r:
-                out = json.loads(r.read())
-            return out, time.time() - started, body
-        except Exception as e:  # network or server error: retried as the runner does (3 retries)
+            with urllib.request.urlopen(req, timeout=900) as r:
+                return json.loads(r.read()), time.time() - started, body
+        except Exception:
             if attempt == 3:
                 raise
             time.sleep(5 * (attempt + 1))
 
 
-def ctx_lessons(decs, results, exclude, arm, s, g, previous):
-    """The model rewrites its lessons after game g from that game's record (lessons_user.txt says what it sees)."""
-    record = game_record(g, [d for d in eligible(decs, exclude) if d["game"] == g], results,
-                         with_verdict=LESSONS_VERDICT)
-    user = LESSONS_USER.read_text().format(lessons=previous or "(none yet)", record=record, game=g)
+def limit_lessons(text):
+    """At most 5 lessons and 150 words: lines starting with '- ' are lessons; extra lessons, then extra words, are cut."""
+    items = [x.strip() for x in text.splitlines() if x.strip().startswith("- ")]
+    if not items:
+        items = ["- " + x.strip().lstrip("-*0123456789. ") for x in text.splitlines() if x.strip()]
+    cut = dict(lessons_written=len(items), words_written=sum(len(x[2:].split()) for x in items))
+    items = items[:MAX_LESSONS]
+    out, words = [], 0
+    for x in items:
+        w = x[2:].split()
+        if words + len(w) > MAX_WORDS:
+            w = w[:MAX_WORDS - words]
+        if w:
+            out.append("- " + " ".join(w))
+        words += len(w)
+        if words >= MAX_WORDS:
+            break
+    cut.update(lessons_kept=len(out), words_kept=words, cut=cut["lessons_written"] > len(out) or cut["words_written"] > words)
+    return "\n".join(out), cut
+
+
+def write_lessons(decs, results, exclude, arm, s, g):
+    """One lesson call after game g: that game's record with GNUbg's evaluation of each decision, nothing else."""
+    ok = [d for d in eligible(decs, exclude) if d["game"] == g]
+    record = "\n".join([game_header(g, results)] + [record_line(d) for d in ok])
+    user = LESSONS_USER.read_text().format(game=g, record=record)
     messages = [{"role": "system", "content": LESSONS_SYSTEM.read_text().strip()}, {"role": "user", "content": user}]
     if DRY:
-        return f"- (dry run) lesson after game {g}"
-    out, secs, body = chat(messages, LESSONS_MAX_TOKENS)
-    text = (out["choices"][0]["message"].get("content") or "").strip()
-    usage = out.get("usage", {})
+        raw, secs, usage, finish, body, out = f"- (dry run) lesson after game {g}", 0.0, {}, "dry", None, None
+    else:
+        out, secs, body = chat(messages, LESSONS_MAX_TOKENS)
+        raw = (out["choices"][0]["message"].get("content") or "").strip()
+        usage, finish = out.get("usage", {}), out["choices"][0].get("finish_reason")
+    text, cut = limit_lessons(raw)
+    d = run_dir(arm, s)
+    (d / f"lessons-g{g:02d}.txt").write_text(text + "\n")
+    (d / f"lessons-g{g:02d}.json").write_text(json.dumps(dict(prompt_sha256=lesson_prompt_sha256(), request=body,
+                                                              response=out, raw=raw, kept=text, **cut), indent=1))
     log(arm, s, "lessons_call", game=g, seconds=round(secs, 2), input_tokens=usage.get("prompt_tokens"),
-        output_tokens=usage.get("completion_tokens"), finish=out["choices"][0].get("finish_reason"))
-    (run_dir(arm, s) / f"lessons-g{g:02d}.json").write_text(json.dumps(dict(request=body, response=out), indent=1))
+        output_tokens=usage.get("completion_tokens"), finish=finish, **cut)
     return text
 
 
-LESSONS_VERDICT = True  # whether the game record shown for lesson writing carries GNUbg's verdicts (A17 decides)
-LESSONS_MAX_TOKENS = 1024
+LESSONS_INTRO = "Lessons you wrote for yourself after your earlier games in this series, oldest first:"
 
 
-def lessons_note(lessons: str) -> str:
-    if not lessons:
-        return ""
-    return "\n".join([OPEN, "Lessons you wrote for yourself after your earlier games in this series:", "", lessons,
-                      "", CLOSE])
+def ctx_lessons(arm, s, g):
+    d = run_dir(arm, s)
+    blocks = [(k, (d / f"lessons-g{k:02d}.txt").read_text().strip()) for k in range(1, g + 1)]
+    blocks = [(k, t) for k, t in blocks if t]
+    while blocks:
+        text = "\n".join([OPEN, LESSONS_INTRO, ""] + [f"After game {k}:\n{t}\n" for k, t in blocks] + [CLOSE])
+        n = tokens(text)
+        if n <= NOTE_BUDGET:
+            return text, dict(lessons_games=[k for k, _ in blocks])
+        log(arm, s, "context_drop", after_game=g, dropped_game=blocks[0][0], tokens=n, budget=NOTE_BUDGET)
+        blocks = blocks[1:]
+    return "", dict(lessons_games=[])
+
+
+def lessons_tokens_after(s, g):
+    for e in events("lessons", s):
+        if e["event"] == "context" and e["after_game"] == g:
+            return e["tokens"]
+    raise RuntimeError(f"lessons arm, series {s}: no context after game {g} yet")
 
 
 def build_context(arm, s, match_id, g):
-    """The arm's context after game g (written to note.txt; read before every play call of the next game)."""
-    d = run_dir(arm, s)
     if arm == "control":
-        return ""
+        return "", {}
     exclude = test_board_keys()
     decs = game_decisions(match_id, g)
-    excluded = sum(1 for x in decs if x["scored"] and x["board_key"] in exclude)
+    excluded = sum(1 for x in decs if x["scored"] and x["game"] == g and x["board_key"] in exclude)
     if excluded:
-        log(arm, s, "test_positions_excluded", game=g, n=excluded)
+        log(arm, s, "evaluation_positions_excluded", game=g, n=excluded)
     results = game_results(match_id)
     if arm == "records":
-        return ctx_records(decs, results, exclude, arm, s)
-    if arm == "top10":
-        return ctx_top10(decs, exclude)
+        return ctx_records(decs, results, exclude, arm, s, g)
     if arm == "lessons":
-        prev_file = d / "lessons.txt"
-        previous = prev_file.read_text() if prev_file.exists() else ""
-        lessons = ctx_lessons(decs, results, exclude, arm, s, g, previous)
-        prev_file.write_text(lessons)
-        return lessons_note(lessons)
+        write_lessons(decs, results, exclude, arm, s, g)
+        return ctx_lessons(arm, s, g)
+    if arm == "budget":
+        return ctx_budget(decs, results, exclude, arm, s, g, lessons_tokens_after(s, g))
     raise ValueError(arm)
 
 
-def write_note(arm, s, g, text):
+def write_context(arm, s, g, text, info):
     d = run_dir(arm, s)
     tmp = d / "note.txt.tmp"
     tmp.write_text(text)
     tmp.replace(d / "note.txt")
     (d / "contexts").mkdir(exist_ok=True)
     (d / "contexts" / f"after-g{g:02d}.txt").write_text(text)
-    log(arm, s, "context", after_game=g, tokens=tokens(text) if text else 0, chars=len(text))
+    log(arm, s, "context", after_game=g, tokens=tokens(text), chars=len(text),
+        sha256=hashlib.sha256(text.encode()).hexdigest(), **info)
 
 
-# --- Test rounds -------------------------------------------------------------------------------------------
+# --- Evaluations -------------------------------------------------------------------------------------------
 
-def test_name(arm, s, cp):
-    return f"{player_name(arm, s)} | T{cp}"
-
-
-def run_test(arm, s, cp, note):
-    d = run_dir(arm, s)
+def run_eval(name, note, workdir, parallel=1):
+    workdir.mkdir(parents=True, exist_ok=True)
+    tag = name.split(" | ")[-1]
     if DRY:
-        log(arm, s, "test_done", checkpoint=cp, wall_seconds=0, note_tokens=tokens(note) if note else 0, dry=True)
-        return 0
+        return dict(name=name, wall_seconds=0.0, dry=True)
     cfg = dict(BASE)
-    p = dict(PLAYER, name=test_name(arm, s, cp), parallel=1)
+    p = dict(PLAYER, name=name, parallel=parallel)
     if note:
         p["prompt_note"] = note
     cfg["players"] = [p]
-    path = d / f"test-T{cp}.json"
+    path = workdir / f"eval-{tag}.json"
     path.write_text(json.dumps(cfg, indent=1))
     started = time.time()
     r = subprocess.run([str(BIN), "ask", "--config", str(path), "--positions", str(TEST_POSITIONS), "--out", str(DB),
-                        "--setup", p["name"]], cwd=ROOT, capture_output=True, text=True)
-    (d / f"test-T{cp}.log").write_text(r.stdout + r.stderr)
+                        "--setup", name], cwd=ROOT, capture_output=True, text=True)
+    (workdir / f"eval-{tag}.log").write_text(r.stdout + r.stderr)
     if r.returncode != 0:
-        raise RuntimeError(f"test T{cp} failed: {r.stderr[-2000:]}")
-    log(arm, s, "test_done", checkpoint=cp, wall_seconds=round(time.time() - started, 1),
-        note_tokens=tokens(note) if note else 0)
-    return time.time() - started
+        raise RuntimeError(f"evaluation {name} failed: {r.stderr[-2000:]}")
+    return dict(name=name, wall_seconds=round(time.time() - started, 1))
 
 
-def test_metrics(name):
-    ts = {p["id"]: p for p in test_set()["positions"]}
+def eval_answers(name):
+    if not DB.exists():
+        return []
     db = sqlite3.connect(f"file:{DB}?mode=ro", uri=True, timeout=60)
     db.row_factory = sqlite3.Row
     try:
         rows = db.execute("SELECT * FROM answers WHERE setup = ? AND repeat = 1 ORDER BY id", (name,)).fetchall()
-    except sqlite3.OperationalError:  # no test asked yet (dry run)
+    except sqlite3.OperationalError:
         rows = []
     db.close()
     latest = {}
     for r in rows:
         latest[r["position_id"]] = r
-    return position_metrics([(ts[pid], r) for pid, r in latest.items()], expected=len(ts))
+    return list(latest.values())
 
 
-def position_metrics(pairs, expected):
+def eval_metrics(name):
+    ts = {p["id"]: p for p in test_set()["positions"]}
+    rows = eval_answers(name)
     calls = dict(right_risk=0, wrong_risk=0, needless=0, missed=0, right_safety=0, none=0)
     rp = sp = 0
-    losses = []
-    invalid = failed = 0
-    req_ms = tin = tout = 0
-    for p, r in pairs:
-        req_ms += r["request_ms"] or 0
+    losses, req_ms = [], []
+    invalid = failed = tin = tout = 0
+    for r in rows:
+        p = ts[r["position_id"]]
+        req_ms.append(r["request_ms"] or 0)
         tin += r["input_tokens"] or 0
         tout += r["output_tokens"] or 0
         if r["error"]:
@@ -397,19 +459,22 @@ def position_metrics(pairs, expected):
             continue
         i = r["chosen_index"]
         losses.append(p["losses"][i])
-        cls, call, _, _ = play_call(p["shots"], p["losses"], i)
+        cls, call = play_call(p["shots"], p["losses"], i)
         calls[call] += 1
         rp += cls == "risk"
         sp += cls == "safety"
     taken = calls["right_risk"] + calls["wrong_risk"] + calls["needless"]
     pct = lambda n, d: 100 * n / d if d else None  # noqa: E731
+    n = len(rows)
     return dict(
-        answered=len(pairs), expected=expected, valid=len(losses), invalid=invalid, failed=failed,
+        answered=n, expected=len(ts), valid=len(losses), invalid=invalid, failed=failed,
         error_rate=SCALE * sum(losses) / len(losses) if losses else None,
         risk_judgement=50 * (calls["right_risk"] / rp + calls["right_safety"] / sp) if rp and sp else None,
         risks_found=pct(calls["right_risk"], rp), right_safety=pct(calls["right_safety"], sp),
         risk_appetite=pct(taken, rp + sp), risk_pays=rp, safety_pays=sp, calls=calls,
-        request_seconds=round(req_ms / 1000, 1), input_tokens=tin, output_tokens=tout, cost_usd=0.0)
+        input_tokens_per_decision=tin / n if n else None, output_tokens_per_decision=tout / n if n else None,
+        request_seconds=round(sum(req_ms) / 1000, 1),
+        latency_median_s=sorted(req_ms)[len(req_ms) // 2] / 1000 if req_ms else None, cost_usd=0.0)
 
 
 # --- Series ------------------------------------------------------------------------------------------------
@@ -427,20 +492,32 @@ def match_of(arm, s):
     return row
 
 
+def run_t0():
+    d = RUNS / "t0"
+    if (d / "aggregate.json").exists():
+        return
+    info = run_eval(T0_NAME, "", d, parallel=4)
+    (d / "aggregate.json").write_text(json.dumps(dict(info, finished_at=now(), metrics=eval_metrics(T0_NAME)), indent=1))
+
+
 def run_series(arm, s):
     d = run_dir(arm, s)
     if (d / "aggregate.json").exists():
         return
+    if arm == "budget":
+        while not (run_dir("lessons", s) / "aggregate.json").exists():
+            if (run_dir("lessons", s) / "failed").exists():
+                raise RuntimeError(f"lessons arm series {s} failed; the budget arm cannot run it")
+            time.sleep(30)
     prior = match_of(arm, s)
     if prior is not None:
         # A series cut off part-way is played again from game 1 with the same dice (logged); its old match stays.
         log(arm, s, "series_restarted", old_match=prior[0], old_status=prior[1])
-        for f in ["note.txt", "lessons.txt"]:
-            (d / f).unlink(missing_ok=True)
+        for f in list(d.glob("lessons-g*")) + list(d.glob("contexts/*")) + [d / "note.txt", d / "failed"]:
+            f.unlink(missing_ok=True)
     d.mkdir(parents=True, exist_ok=True)
     started = time.time()
-    log(arm, s, "series_start", seed=series_seed(s))
-    run_test(arm, s, 0, "")
+    log(arm, s, "series_start", seed=series_seed(s), lesson_prompt_sha256=lesson_prompt_sha256())
     (d / "note.txt").write_text("")
     cfg = dict(PLAYER, name=player_name(arm, s), prompt_note_file=str(d / "note.txt"), parallel=1)
     (d / "player.json").write_text(json.dumps(cfg, indent=1))
@@ -449,10 +526,11 @@ def run_series(arm, s):
                         "--seed", str(series_seed(s)), "--order-seed", str(ORDER_SEED), "--rounds", str(GAMES // 2),
                         "--fixed-rounds", "--clock", "0", "--max-turns", str(BASE["max_turns"]),
                         "--prompt-version", BASE["prompt_version"], "--quiet", "--db", str(DB), "--after-game", hook],
-                       cwd=ROOT, capture_output=True, text=True)
+                       cwd=ROOT, capture_output=True, text=True, env=dict(os.environ))
     (d / "match.log").write_text(r.stdout + r.stderr)
     if r.returncode != 0:
         log(arm, s, "series_failed", stderr=r.stderr[-2000:])
+        (d / "failed").write_text(r.stderr[-2000:])
         raise RuntimeError(f"{arm} s{s}: match failed: {r.stderr[-1000:]}")
     write_aggregate(arm, s, time.time() - started)
 
@@ -461,24 +539,29 @@ def after_game(arm, s):
     match_id = int(os.environ["MATCH_ID"])
     g = 2 * (int(os.environ["GAME_ROUND"]) - 1) + int(os.environ["GAME_LEG"])
     score_match(match_id)
-    text = build_context(arm, s, match_id, g)
-    write_note(arm, s, g, text)
-    if g in TESTS_AFTER:
-        run_test(arm, s, g, text)
+    text, info = build_context(arm, s, match_id, g)
+    write_context(arm, s, g, text, info)
+    if arm != "control" and g in CHECKPOINTS:
+        info = run_eval(f"{player_name(arm, s)} | T{g}", text, run_dir(arm, s))
+        log(arm, s, "evaluation_done", checkpoint=g, context_tokens=tokens(text), **info)
 
 
 def game_metrics(match_id):
-    decs = game_decisions(match_id, GAMES)
+    decs = game_decisions(match_id)
     results = game_results(match_id)
     out = []
     for g in range(1, GAMES + 1):
         gd = [d for d in decs if d["game"] == g]
         valid = [d for d in gd if d["scored"] and not d["invalid"]]
+        lat = sorted(d["request_ms"] or 0 for d in gd)
         out.append(dict(game=g, decisions=len(gd), invalid=sum(d["invalid"] for d in gd),
-                        unscored=sum(not d["scored"] for d in gd),
+                        unscored=sum(not d["scored"] for d in gd), valid=len(valid),
+                        loss_sum=sum(d["loss"] for d in valid),
                         error_rate=SCALE * sum(d["loss"] for d in valid) / len(valid) if valid else None,
-                        loss_sum=sum(d["loss"] for d in valid), valid=len(valid),
-                        **{k: v for k, v in results.get(g, {}).items() if k in ("won", "result", "points", "turns")}))
+                        input_tokens_per_decision=sum(d["input_tokens"] for d in gd) / len(gd) if gd else None,
+                        latency_median_s=lat[len(lat) // 2] / 1000 if lat else None,
+                        request_seconds=sum(lat) / 1000,
+                        **{k: v for k, v in results.get(g, {}).items()}))
     return out
 
 
@@ -492,57 +575,159 @@ def write_aggregate(arm, s, wall):
     d = run_dir(arm, s)
     m = match_of(arm, s)
     games = game_metrics(m[0])
-    events = [json.loads(l) for l in (d / "log.jsonl").read_text().splitlines()]
-    ctx = [e for e in events if e["event"] == "context"]
+    ev = events(arm, s)
     agg = dict(
-        arm=arm, series=s, seed=series_seed(s), match_id=m[0], finished_at=now(), wall_seconds=round(wall, 1),
-        tests={f"T{cp}": test_metrics(test_name(arm, s, cp)) for cp in (0,) + TESTS_AFTER},
-        games=[{k: v for k, v in x.items() if k != "loss_sum"} for x in games],
-        games_error_rate_1_3=pooled_rate(games, 1, 3), games_error_rate_8_10=pooled_rate(games, 8, 10),
-        context_tokens_after_game={e["after_game"]: e["tokens"] for e in ctx},
-        context_truncations=[{k: e[k] for k in ("dropped_game", "tokens", "budget")} for e in events
-                             if e["event"] == "context_truncated"],
-        test_positions_excluded=sum(e["n"] for e in events if e["event"] == "test_positions_excluded"),
-        lessons_calls=[{k: e.get(k) for k in ("game", "seconds", "input_tokens", "output_tokens", "finish")}
-                       for e in events if e["event"] == "lessons_call"],
-        restarts=sum(e["event"] == "series_restarted" for e in events), cost_usd=0.0)
-    a, b = agg["games_error_rate_1_3"], agg["games_error_rate_8_10"]
-    agg["games_lift"] = a - b if a is not None and b is not None else None
+        arm=arm, series=s, seed=series_seed(s), finished_at=now(), wall_seconds=round(wall, 1),
+        evaluations={f"T{cp}": eval_metrics(f"{player_name(arm, s)} | T{cp}") for cp in CHECKPOINTS}
+        if arm != "control" else {},
+        games=games, games_error_rate_1_3=pooled_rate(games, 1, 3), games_error_rate_8_10=pooled_rate(games, 8, 10),
+        context_tokens_after_game={e["after_game"]: e["tokens"] for e in ev if e["event"] == "context"},
+        records_dropped_after_game={e["after_game"]: e.get("records_dropped", 0) for e in ev if e["event"] == "context"},
+        context_drops=[{k: e[k] for k in ("after_game", "dropped_game", "tokens", "budget")} for e in ev
+                       if e["event"] == "context_drop"],
+        evaluation_positions_excluded=sum(e["n"] for e in ev if e["event"] == "evaluation_positions_excluded"),
+        lessons_calls=[{k: e.get(k) for k in ("game", "seconds", "input_tokens", "output_tokens", "finish",
+                                              "lessons_written", "words_written", "cut")}
+                       for e in ev if e["event"] == "lessons_call"],
+        restarts=sum(e["event"] == "series_restarted" for e in ev), lesson_prompt_sha256=lesson_prompt_sha256(),
+        cost_usd=0.0)
     (d / "aggregate.json").write_text(json.dumps(agg, indent=1))
 
 
 # --- Summary -----------------------------------------------------------------------------------------------
 
+KEYS = ["error_rate", "risk_judgement", "risks_found", "right_safety", "risk_appetite"]
+
+
+def mean(xs):
+    xs = [x for x in xs if x is not None]
+    return sum(xs) / len(xs) if xs else None
+
+
+def sub(a, b):
+    return a - b if a is not None and b is not None else None
+
+
+def boot_ci(values_by_series, rng_seed):
+    """95% percentile interval of the mean, resampling whole series by index: the same seed draws the same series
+    for every arm and measure, so the dice schedules stay paired across arms. A series without a value is left
+    out of the resample's mean."""
+    n = len(values_by_series)
+    if sum(v is not None for v in values_by_series) < 2:
+        return None
+    rng = random.Random(rng_seed)
+    means = []
+    for _ in range(BOOT):
+        draw = [values_by_series[rng.randrange(n)] for _ in range(n)]
+        draw = [v for v in draw if v is not None]
+        if draw:
+            means.append(sum(draw) / len(draw))
+    means.sort()
+    return [means[int(0.025 * len(means))], means[int(0.975 * len(means)) - 1]]
+
+
 def summary(planned: int):
-    aggs = {arm: [] for arm in ARMS}
+    t0 = json.loads((RUNS / "t0/aggregate.json").read_text()) if (RUNS / "t0/aggregate.json").exists() else None
+    aggs = {arm: {} for arm in ARMS}
     for arm in ARMS:
         for f in sorted((RUNS / arm).glob("s*/aggregate.json")) if (RUNS / arm).exists() else []:
-            aggs[arm].append(json.loads(f.read_text()))
-    keys = ["error_rate", "risk_judgement", "risks_found", "right_safety", "risk_appetite"]
-    mean = lambda xs: sum(xs) / len(xs) if xs else None  # noqa: E731
-    table = {}
-    for arm, rows in aggs.items():
-        table[arm] = {}
-        for cp in ["T0", "T5", "T10"]:
-            ms = [r["tests"][cp] for r in rows]
-            table[arm][cp] = {k: mean([m[k] for m in ms if m[k] is not None]) for k in keys}
-            table[arm][cp].update(invalid=sum(m["invalid"] for m in ms), failed=sum(m["failed"] for m in ms),
-                                  request_seconds=sum(m["request_seconds"] for m in ms), cost_usd=0.0,
-                                  series=len(ms))
-    done = {arm: len(rows) for arm, rows in aggs.items()}
-    complete = all(n >= planned for n in done.values())
+            a = json.loads(f.read_text())
+            aggs[arm][a["series"]] = a
+    table = {arm: {} for arm in ARMS}
+    t0m = t0["metrics"] if t0 else None
+    for arm in ARMS:
+        table[arm]["T0"] = dict(t0m, shared=True) if t0m else None
+        if arm == "control":
+            continue
+        for cp in CHECKPOINTS:
+            ms = [a["evaluations"][f"T{cp}"] for a in aggs[arm].values()]
+            row = {k: mean([m[k] for m in ms]) for k in KEYS + ["input_tokens_per_decision", "latency_median_s"]}
+            row.update(invalid=sum(m["invalid"] for m in ms), failed=sum(m["failed"] for m in ms),
+                       request_seconds=round(sum(m["request_seconds"] for m in ms), 1), cost_usd=0.0, series=len(ms),
+                       records_dropped=sum(a["records_dropped_after_game"].get(str(cp), a["records_dropped_after_game"]
+                                                                                .get(cp, 0)) for a in aggs[arm].values()))
+            table[arm][f"T{cp}"] = row
+    games = {}
+    for arm in ARMS:
+        gs = [g for a in aggs[arm].values() for g in a["games"]]
+        lat = [g["latency_median_s"] for g in gs if g["latency_median_s"] is not None]
+        games[arm] = dict(series=len(aggs[arm]), games=len(gs), decisions=sum(g["decisions"] for g in gs),
+                          invalid=sum(g["invalid"] for g in gs),
+                          error_rate=SCALE * sum(g["loss_sum"] for g in gs) / max(1, sum(g["valid"] for g in gs)) if gs else None,
+                          input_tokens_per_decision=mean([g["input_tokens_per_decision"] for g in gs]),
+                          latency_median_s=sorted(lat)[len(lat) // 2] if lat else None,
+                          records_dropped=sum(max(a["records_dropped_after_game"].values() or [0]) for a in aggs[arm].values()),
+                          context_drops=sum(len(a["context_drops"]) for a in aggs[arm].values()),
+                          wins=sum(bool(g.get("won")) for g in gs), cost_usd=0.0)
+    done = {arm: len(aggs[arm]) for arm in ARMS}
+    complete = all(n >= planned for n in done.values()) and t0 is not None
     out = dict(updated_at=now(), planned_series_per_arm=planned, series_done=done, complete=complete,
-               display_rule="Numbers per arm x test round as series finish; no verdict and no learning lift until "
-                            "all planned series of every arm are done.",
-               table=table,
-               series=[{k: v for k, v in r.items()} for rows in aggs.values() for r in rows])
+               lesson_prompt_sha256=lesson_prompt_sha256(), t0_done=t0 is not None,
+               display_rule="Numbers per arm and evaluation as series finish; no verdict and no learning lift until "
+                            "every planned series of every arm is done.",
+               table=table, games=games,
+               series=[{k: v for k, v in a.items() if k != "games"} | dict(games=[{k: v for k, v in g.items()
+                                                                                    if k != "loss_sum"}
+                                                                                   for g in a["games"]])
+                       for arm in ARMS for a in aggs[arm].values()])
     if complete:
-        lift = {arm: mean([r["games_lift"] for r in rows if r["games_lift"] is not None]) for arm, rows in aggs.items()}
-        out["learning_lift"] = dict(per_arm=lift, vs_control={a: (lift[a] - lift["control"]) if lift[a] is not None
-                                                               and lift["control"] is not None else None
-                                                               for a in ARMS if a != "control"})
-    (HERE / "learning-pilot.json").write_text(json.dumps(out, indent=1))
+        series = sorted(set.intersection(*(set(aggs[a]) for a in ARMS)))
+        signal, lift = {}, {}
+        for arm in ARMS[1:]:
+            rf = [sub(aggs[arm][s]["evaluations"]["T10"]["risks_found"], t0m["risks_found"]) for s in series]
+            rs = [sub(aggs[arm][s]["evaluations"]["T10"]["right_safety"], t0m["right_safety"]) for s in series]
+            ok = mean(rf) is not None and mean(rs) is not None
+            signal[arm] = dict(risks_found_change=mean(rf), risks_found_ci=boot_ci(rf, BOOT_SEED),
+                               right_safety_change=mean(rs), right_safety_ci=boot_ci(rs, BOOT_SEED),
+                               signal=(mean(rf) >= 10 and mean(rs) >= -5) if ok else None)
+        for arm in ARMS:
+            own = [sub(aggs[arm][s]["games_error_rate_1_3"], aggs[arm][s]["games_error_rate_8_10"]) for s in series]
+            row = dict(lift=mean(own), lift_ci=boot_ci(own, BOOT_SEED))
+            if arm != "control":
+                vs = [sub(o, sub(aggs["control"][s]["games_error_rate_1_3"], aggs["control"][s]["games_error_rate_8_10"]))
+                      for o, s in zip(own, series)]
+                row.update(vs_control=mean(vs), vs_control_ci=boot_ci(vs, BOOT_SEED))
+            lift[arm] = row
+        out.update(signal=signal, learning_lift=lift, paired_series=series)
+    OUTPUTS.mkdir(exist_ok=True)
+    (OUTPUTS / "learning-pilot.json").write_text(json.dumps(out, indent=1))
+    write_records(aggs, t0)
     return out
+
+
+def write_records(aggs, t0):
+    """learning.jsonl: every pilot game and evaluation by arm and series, the context each decision saw, the lessons;
+    seeds.json: dice seeds per series, the option-order seed and the option order of every position."""
+    ts = test_set()["positions"]
+    seeds = dict(master=MASTER_SEED, option_order_seed=ORDER_SEED, evaluation_set_seed=test_set()["meta"]["seed"],
+                 series={s: series_seed(s) for s in sorted({s for a in aggs.values() for s in a})},
+                 evaluation_option_order={p["id"]: p["option_order"] for p in ts}, game_option_order={})
+    with open(OUTPUTS / "learning.jsonl", "w") as f:
+        if t0:
+            f.write(json.dumps(dict(kind="evaluation", arm="all", series=None, checkpoint="T0", context="",
+                                    answers=[dict(position=r["position_id"], chosen_index=r["chosen_index"],
+                                                  invalid=r["invalid"], error=r["error"])
+                                             for r in eval_answers(T0_NAME)])) + "\n")
+        for arm, by_s in aggs.items():
+            for s in sorted(by_s):
+                d = run_dir(arm, s)
+                m = match_of(arm, s)
+                decs = game_decisions(m[0])
+                ctx = lambda g: (d / "contexts" / f"after-g{g:02d}.txt").read_text() if g and (d / "contexts" / f"after-g{g:02d}.txt").exists() else ""  # noqa: E731,E501
+                for g in range(1, GAMES + 1):
+                    gd = [x for x in decs if x["game"] == g]
+                    seeds["game_option_order"][f"{arm}/s{s:02d}/g{g:02d}"] = {x["turn_id"]: x["option_order"] for x in gd}
+                    lessons = (d / f"lessons-g{g:02d}.txt").read_text().strip() if (d / f"lessons-g{g:02d}.txt").exists() else None
+                    f.write(json.dumps(dict(kind="game", arm=arm, series=s, game=g, context=ctx(g - 1),
+                                            decisions=[dict(turn_id=x["turn_id"], chosen=x.get("chosen"),
+                                                            loss=x.get("loss"), invalid=x["invalid"]) for x in gd],
+                                            lessons_written=lessons)) + "\n")
+                for cp in CHECKPOINTS if arm != "control" else ():
+                    f.write(json.dumps(dict(kind="evaluation", arm=arm, series=s, checkpoint=f"T{cp}", context=ctx(cp),
+                                            answers=[dict(position=r["position_id"], chosen_index=r["chosen_index"],
+                                                          invalid=r["invalid"], error=r["error"])
+                                                     for r in eval_answers(f"{player_name(arm, s)} | T{cp}")])) + "\n")
+    (OUTPUTS / "seeds.json").write_text(json.dumps(seeds, indent=1))
 
 
 def main():
@@ -552,6 +737,7 @@ def main():
     r.add_argument("--series", required=True, help="e.g. 1-3")
     r.add_argument("--arms", default=",".join(ARMS))
     r.add_argument("--planned", type=int, default=10)
+    sub.add_parser("t0")
     h = sub.add_parser("after-game")
     h.add_argument("--arm", required=True)
     h.add_argument("--series", type=int, required=True)
@@ -560,9 +746,13 @@ def main():
     a = ap.parse_args()
     if a.cmd == "after-game":
         after_game(a.arm, a.series)
+    elif a.cmd == "t0":
+        run_t0()
     elif a.cmd == "summary":
         print(json.dumps(summary(a.planned)["series_done"]))
     else:
+        if not (RUNS / "t0/aggregate.json").exists():
+            sys.exit("run the shared T0 evaluation first: pilot.py t0")
         lo, hi = (int(x) for x in a.series.split("-"))
         errors = []
 
@@ -580,7 +770,8 @@ def main():
             t.start()
         for t in threads:
             t.join()
-        summary(a.planned)
+        with LOCK:
+            summary(a.planned)
         if errors:
             print("\n".join(errors), file=sys.stderr)
             sys.exit(1)

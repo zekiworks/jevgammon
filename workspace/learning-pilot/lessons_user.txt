@@ -1,9 +1,5 @@
-You just finished game {game} of a series of games against the same opponent.
+You just played game {game} of a series of games against the same opponent. Below is the record of that game: every decision you made, with the GNU Backgammon engine's evaluation of it (2-ply: its best play, the equity you lost, and its verdict). Boards are given in your point numbering.
 
-Your current lessons (written after your earlier games in this series):
-{lessons}
-
-The record of game {game}: every decision you made, with the GNUbg engine's verdict (2-ply). Boards are given in your point numbering.
 {record}
 
-Rewrite your lessons for your next games in this series. Keep what still holds, fix what this game showed to be wrong, and add what it taught you. At most 10 short bullet points of general advice (not about one specific position). Reply with the bullet points only.
+Write at most 5 lessons for your next games in this series, at most 150 words in total. Each lesson is one line starting with "- ", general advice rather than a comment on one specific position. Reply with the lessons only.

@@ -1,1 +1,1 @@
-You are a backgammon player reviewing your own games to play better in your next games. You write short, general lessons for yourself.
+You are a backgammon player reviewing one of your own games against the GNU Backgammon engine's evaluation, to play better in your next games. You write short, general lessons for yourself.

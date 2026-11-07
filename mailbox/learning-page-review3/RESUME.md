@@ -19,7 +19,13 @@ The lesson prompt sha256 is unchanged: d755001513b60546cbcc4159db0965dbeda09a65d
 
 - The working copies of the scripts are in `/home/cbasaran/code/jevgammon/workspace/learning-pilot/` (untracked). They are identical to the branch's copies at ba8b011.
 - Private and untracked, on disk: `test_set.json` (sha256 6c92e741…18e6), `test_positions.jsonl`, `configs/base.json`, and the dry-run outputs in `runs-dry/` and `out-dry/`.
-- The last dry run, started about 16:25 UTC to verify `budget_points` and the schema-init fix, may not have finished before the reboot. To rerun it (no model call):
+- The last dry run finished at about 16:30 UTC with exit code 0: 4 arms × 2 series, no model call, harness ba8b011. Results:
+  - `complete` false;
+  - `series_finished` lists control only;
+  - the budget arm's `budget_points` show an empty context at all 20 points, with budget tokens rising from 226 to 1,951;
+  - no schema race.
+
+  To rerun it:
 
   ```
   cd /home/cbasaran/code/jevgammon/workspace/learning-pilot

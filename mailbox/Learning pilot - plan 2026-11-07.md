@@ -185,6 +185,10 @@ For each non-control arm (records, lessons, budget), averaged over its series:
 - Numbers (a table per arm and evaluation, and progress as series done out of planned) update after each series.
 - No verdict ("learns" / "doesn't learn") and **no learning lift** are published until all planned series of every arm are done, even if games 8–10 already exist for some series.
 - Every lesson the model wrote is published next to the game it came from.
+- **Learning tab order (amended before any model call, 7 Nov):** one model, Gemma 4 31B, is tested across 4 arms, so the tab orders arms, not models, and only after all planned series are done. Before that it shows no ranking or leader: only "running, n of N series" and per-arm interim numbers.
+  - Order: the non-control arms that meet the signal rule (section 8) come first, then those that do not.
+  - Within each group, arms are ordered by the learning lift minus control's lift, higher first.
+  - The control arm is the reference and is not ranked.
 
 **What is committed:**
 

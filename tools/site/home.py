@@ -57,19 +57,9 @@ def settings_line(m: dict) -> str:
 
 def attrs(S, ds, name, ref=False) -> str:
     m = P.meta(S, ds, name)
-    return (f' data-dataset="{esc(ds)}" data-setup="{esc(m["slug"])}" data-kind="{"reference" if ref else kind(type_meta(S, ds, name))}"'
+    return (f' data-dataset="{esc(ds)}" data-setup="{esc(m["slug"])}" data-kind="{"reference" if ref else kind(P.origin_meta(S, ds, name))}"'
             f' data-weights="{esc(m.get("weights") or "unknown")}" data-runs="{esc(m.get("runs_on") or "unknown")}"'
             f' data-setting="{esc(m.get("setting") or "none")}"')
-
-
-def type_meta(S, ds, name) -> dict:
-    """The setup's setups.json entry for its model type; a setup that came into this league by a ladder move is listed
-    under the league it came from."""
-    m = S["setups_meta"].get((ds, name))
-    if m:
-        return m
-    return next((m for (d, n), m in S["setups_meta"].items() if n == name and d.startswith("league-")),
-                P.meta(S, ds, name))
 
 
 NACK_TYPES = json.loads((CONTENT / "nack_setup_types.json").read_text())["setups"]
@@ -81,8 +71,8 @@ NACK_KINDS = {"decision model": "decision", "chat model, answer-letter probabili
 
 
 def model_of(S, ds, name) -> str:
-    """The model a setup belongs to (setups.json "model", via type_meta for a ladder move); else its own name."""
-    return type_meta(S, ds, name).get("model") or name
+    """The model a setup belongs to (setups.json "model", via P.origin_meta for a ladder move); else its own name."""
+    return P.origin_meta(S, ds, name).get("model") or name
 
 
 def best_per_model(S, eligible=None) -> dict:
@@ -109,7 +99,7 @@ def nack_views(S) -> tuple[dict, list]:
     kinds, models = {}, {}
     for n in N["setups"]:
         lg = next((d for (d, x) in S["setups_meta"] if x == n and d.startswith("league-")), None)
-        m = (type_meta(S, lg, n) if lg else
+        m = (P.origin_meta(S, lg, n) if lg else
              next((m for (d, x), m in S["setups_meta"].items() if x == n), None) or NACK_TYPES.get(n))
         t = (m or {}).get("model_type")
         if t not in NACK_KINDS:
@@ -352,7 +342,7 @@ def all_rows(S, phase="all", margin="main") -> list:
 def all_tr(S, lg, n, ref, cells: str) -> str:
     """A row of the All leagues table: the name with the model type under it, the League, then the league table's cells."""
     ds = lg["dataset"]
-    t = kind(type_meta(S, ds, n))
+    t = kind(P.origin_meta(S, ds, n))
     name = (f'<a class="model-name" href="{P.model_href("", ds, n, S)}">{esc(n)}</a>' if n in lg["setups"]
             else f'<span class="model-name">{esc(n)}</span>')
     small = f"program · reference row, never ranked · {ref}" if ref else t if t != "unknown" else "model type not recorded"
@@ -500,7 +490,7 @@ def confidence_cells(S, ds, n, s) -> str:
     """The Confidence cells of one setup after its name. The source is the setup's own setups.json entry, looked up as
     the model type is: a setup that moved league in the ladder is listed under the league it came from."""
     th = S["thresholds"]
-    src = type_meta(S, ds, n).get("confidence_source") or "none"
+    src = P.origin_meta(S, ds, n).get("confidence_source") or "none"
     c = s.get("confidence")
     if not c:
         cells = f"<td>{esc(src)}</td>" + "".join(f'<td class="num">{nm(NA)}</td>' for _ in range(10))
@@ -1277,7 +1267,7 @@ def leaders(S) -> str:
     never ranked), overall, per model type and per league: kept apart from the match winners above it."""
     models = [(lg, n, r) for lg, n, r, ref in all_rows(S) if not ref and r["judgement"] is not None]
     groups = [("All model setups", "", lambda lg, n: True)]
-    groups += [(f"{t.capitalize()} models", f"?type={t}#board", lambda lg, n, t=t: kind(type_meta(S, lg["dataset"], n)) == t)
+    groups += [(f"{t.capitalize()} models", f"?type={t}#board", lambda lg, n, t=t: kind(P.origin_meta(S, lg["dataset"], n)) == t)
                for t in ("decision", "chat")]
     groups += [(f'League {lg["id"]}', f'?league={lg["dataset"]}#board', lambda x, n, d=lg["dataset"]: x["dataset"] == d)
                for lg in S["leagues"]]
@@ -1606,7 +1596,7 @@ def chart_rows(S, lg, measure: str) -> list:
 
 
 def group_of(S, lg, n, ref) -> str:
-    return "program" if ref else kind(type_meta(S, lg["dataset"], n))
+    return "program" if ref else kind(P.origin_meta(S, lg["dataset"], n))
 
 
 def _axis(measure: str, values: list) -> tuple:
@@ -1652,7 +1642,7 @@ def _value(S, lg, n, measure, v, lo, hi, r, q) -> tuple[str, str]:
         if v is None:
             why = NOT_MEASURED if q.get("cost_coverage", 0) == 0 else f"Priced for {pct(q['cost_coverage'], 0)} of decisions"
             return nm(why), f"{n}: {why}"
-        label = (P.meta(S, lg["dataset"], n).get("price") or {}).get("label") or "label missing"
+        label = (P.origin_meta(S, lg["dataset"], n).get("price") or {}).get("label") or "label missing"
         return (f'<span class="cost-1k">${fmt(v, 3)}</span><span class="cost-1m" data-usd="{v!r}">${fmt(v, 3)}</span>',
                 f"{n}: ${fmt(v, 3)} per 1,000 decisions ({label})")
     if v is None:
@@ -1781,7 +1771,7 @@ def result_cards(S) -> str:
     risk judgement of every model setup and of the decision models, and the lowest error rate."""
     models = [(lg, n, r) for lg, n, r, ref in all_rows(S) if not ref and r["judgement"] is not None]
     best = models[0] if models else None
-    dec = next(((lg, n, r) for lg, n, r in models if kind(type_meta(S, lg["dataset"], n)) == "decision"), None)
+    dec = next(((lg, n, r) for lg, n, r in models if kind(P.origin_meta(S, lg["dataset"], n)) == "decision"), None)
     ers = [(lg, n, s["quality"]) for lg in S["leagues"] for n, s in lg["setups"].items()
            if not ref_label(S, lg["dataset"], n) and s["quality"].get("error_rate") is not None and not s["quality"].get("too_few")]
     low = min(ers, key=lambda x: x[2]["error_rate"]) if ers else None

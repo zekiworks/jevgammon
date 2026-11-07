@@ -111,6 +111,16 @@ def meta(S, dataset, name) -> dict:
                 aliases=aliases(name) if dataset.startswith("league-") else [])
 
 
+def origin_meta(S, dataset, name) -> dict:
+    """The setup's setups.json entry for its model facts (model type, confidence source, price); a setup that came into
+    this league by a ladder move is listed under the league it came from."""
+    m = S["setups_meta"].get((dataset, name))
+    if m:
+        return m
+    return next((m for (d, n), m in S["setups_meta"].items() if n == name and d.startswith("league-")),
+                meta(S, dataset, name))
+
+
 def model_href(rel, dataset, name, S) -> str:
     return f"{rel}models/{dataset}/{meta(S, dataset, name)['slug']}/"
 
@@ -142,8 +152,7 @@ def by_error(setups: dict) -> list[str]:
 
 
 def cost_cell(S, dataset, name, q) -> str:
-    m = meta(S, dataset, name)
-    label = (m.get("price") or {}).get("label")
+    label = (origin_meta(S, dataset, name).get("price") or {}).get("label")
     if q.get("usd_per_1000") is None:
         why = NOT_MEASURED if q.get("cost_coverage", 0) == 0 else f"Priced for {pct(q['cost_coverage'], 0)} of decisions"
         return f'<td class="num">{nm(why)}</td>'

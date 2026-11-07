@@ -79,7 +79,7 @@ def headline_rows(S) -> tuple[list, list]:
         q = lg["setups"][n]["quality"]
         er = (f'<td class="num">{fmt(q["error_rate"])}<span class="small">{fmt(q["error_lo"])} to {fmt(q["error_hi"])}'
               f'</span></td>' if q.get("error_rate") is not None and not q.get("too_few") else f'<td class="num">{nm(NA)}</td>')
-        label = (P.meta(S, ds, n).get("price") or {}).get("label")
+        label = (P.origin_meta(S, ds, n).get("price") or {}).get("label")
         cost = (f'<td class="num"><span class="cost-1k">${fmt(q["usd_per_1000"], 3)}</span><span class="cost-1m" '
                 f'data-usd="{q["usd_per_1000"]!r}">${fmt(q["usd_per_1000"], 3)}</span>'
                 f'<span class="small">{esc(label or "label missing")}</span></td>'

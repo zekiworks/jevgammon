@@ -831,6 +831,7 @@ def main():
     else:
         if not (RUNS / "t0/aggregate.json").exists():
             sys.exit("run the shared T0 evaluation first: pilot.py t0")
+        tokens("check")  # the after-game hook runs with this interpreter and needs the tokenizer; fail before any game
         init_runner_db()
         lo, hi = (int(x) for x in a.series.split("-"))
         for arm in a.arms.split(","):

@@ -32,11 +32,17 @@ for f in snap.db plays knockout.db shared prompts.db; do rm -rf "$I/state/$f"; c
   echo "# checks.run on whole-site renders. Started $(stamp)"
   echo "# main: $(git -C "$R" rev-parse --short origin/main)  leaderboard-ct: $(git -C "$WT" rev-parse --short HEAD)  results hash fixed: $HASH"
   echo "# live mirror: $(git -C "$LIVE/analysis" rev-parse --short HEAD), data as of $($PY -c 'import json,sys; print(json.load(open(sys.argv[1]))["data_as_of"])' "$SITE/data/manifest.json")"
+  status=0
   for v in main branch; do
     echo; echo "## $v: render_site.py $I/src-$v $I/state $I/out-$v $HASH --checks"
     rm -rf "$I/out-$v"
     (cd "$I/src-$v" && nice $PY "$D/scripts/render_site.py" "$I/src-$v" "$I/state" "$I/out-$v" "$HASH" --checks 2>&1 \
-      | grep -v -e RuntimeWarning -e 'np.where')
+      | grep -v -e RuntimeWarning -e 'np.where'; exit "${PIPESTATUS[0]}")
+    rc=$?
+    echo "exit status ($v): $rc"
+    [ "$rc" -eq 0 ] || status=1
   done
-  echo; echo "# Finished $(stamp)"
-} 2>&1 | tee "$D/checks-run.txt"
+  echo; echo "# Finished $(stamp); exit status: $status"
+  exit "$status"
+} 2>&1 | tee "${OUT:-$D/checks-run.txt}"
+exit "${PIPESTATUS[0]}"

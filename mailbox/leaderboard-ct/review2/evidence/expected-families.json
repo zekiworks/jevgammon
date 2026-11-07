@@ -1,0 +1,71 @@
+{
+ "league-1/celeris-1-decision": [],
+ "league-1/cygnet-gemma-4-12b": [],
+ "league-1/decider-flash-v1-2": [],
+ "league-1/decider-v1-1-27b": [],
+ "league-1/decider-v1-2-27b": [],
+ "league-2/deepseek-v4-1-flash-on": [
+  "league-1/deepseek-v4-1-flash-off",
+  "league-2/deepseek-v4-1-flash-1017-off",
+  "league-2/deepseek-v4-1-flash-1017-on"
+ ],
+ "league-1/fastino-glide-v1-2-local": [],
+ "league-1/gpt-6-luna": [],
+ "league-1/jev-1-13-0": [],
+ "league-1/lfm2-5-24b-a2b-on": [
+  "league-1/lfm2-5-24b-a2b-off"
+ ],
+ "league-1/mercury-decide": [],
+ "league-1/open-jev-27b-v1-1": [],
+ "league-2/qwen3-8-27b-on": [
+  "league-1/qwen3-8-27b-off"
+ ],
+ "league-1/subq-snap-preview": [],
+ "league-1/winnow-12b": [],
+ "league-3/claude-fable-5-1-on": [
+  "league-2/claude-fable-5-1-off"
+ ],
+ "league-2/claude-sonnet-5-5-high": [
+  "league-2/claude-sonnet-5-5-low"
+ ],
+ "league-2/clef": [],
+ "league-2/fastino-glide": [],
+ "league-2/glm-5-3-on": [],
+ "league-2/gemini-3-8-flash-high": [
+  "league-2/gemini-3-8-flash-low"
+ ],
+ "league-2/gemma-4-31b-on": [
+  "league-2/gemma-4-31b-off"
+ ],
+ "league-3/grok-4-7-on": [
+  "league-2/grok-4-7-off"
+ ],
+ "league-2/jev-1-14-0": [],
+ "league-2/liquid-d1-ultra": [],
+ "league-2/qwen3-8-flash-off": [],
+ "league-3/claude-opus-5-5-on": [
+  "league-3/claude-opus-5-5-off"
+ ],
+ "league-3/gpt-6-astra-on": [
+  "league-3/gpt-6-astra-off"
+ ],
+ "league-3/gpt-6-1-sol-high": [
+  "league-3/gpt-6-1-sol-low"
+ ],
+ "league-3/gemini-4-argon-on": [
+  "league-3/gemini-4-argon-off"
+ ],
+ "league-3/kimi-k3-1-pro-off": [],
+ "league-1/gnubg-weak": [
+  "league-2/gnubg-weak",
+  "league-3/gnubg-weak"
+ ],
+ "league-1/random": [
+  "league-2/random-computed",
+  "league-3/random-computed"
+ ],
+ "league-1/safest": [
+  "league-2/safest-computed",
+  "league-3/safest-computed"
+ ]
+}

@@ -1,7 +1,8 @@
 """leaderboard-ct review packet (Ümit #2745): numbers, links and deep links, browser tests from file://, screenshots,
 from the branch render, origin/main's render and the live mirror; reads only. Method of mailbox/front-story/scripts/
 review.py, adapted to the new leaderboard (one row per model at its highest setting, expanders, programs, Too safe).
-Usage: review.py WORKTREE LIVE_DIR MAIN_RENDER_DIR BRANCH_RENDER_DIR LATE_PREVIEW_DIR OUT_DIR
+Usage: review.py WORKTREE LIVE_DIR MAIN_RENDER_DIR BRANCH_RENDER_DIR LATE_PREVIEW_DIR OUT_DIR EXPECTED_FAMILIES_JSON
+Exits 1 if any number differs or any check is not in an accepted state.
 Writes OUT_DIR/{source.patch, numbers.csv, numbers.md, page-diffs.md, links.csv, links.md, browser.csv, browser.md,
 screenshots/}. No HTTP server: file:// for the browser tests; Playwright request routing for the live-vs-branch
 addresses and for tapping into Every decision (its script fetches its JSON, which file:// does not allow)."""
@@ -25,6 +26,8 @@ git = lambda *a: subprocess.run(["git", "-C", str(work), *a], check=True, captur
 
 # --- 1. Source diff -----------------------------------------------------------------------------------------------
 (pk / "source.patch").write_text(git("diff", "origin/main...HEAD", "--", "tools/site"))
+# 5ca56de as rebased onto fix-filters is 3094aa5: the delta is this review's change only (fix-filters is its own branch).
+(pk / "delta-vs-5ca56de.patch").write_text(git("diff", "3094aa5", "HEAD", "--", "tools/site"))
 
 
 # --- 2. Numbers ---------------------------------------------------------------------------------------------------
@@ -431,6 +434,10 @@ cnt = Counter(r[-1] for r in results)
 by = Counter((r[1], r[-1]) for r in results)
 (pk / "links.md").write_text(
     "# Links and deep links: leaderboard-ct render\n\n"
+    "**No new errors among the checked links.** Not every link is verified functional: 823 hrefs cannot be resolved "
+    "statically in either live or branch (the #d… anchors Every decision's script makes, paths into the sibling "
+    "site), 21 external links were not fetched, and 3 share images are made by build.py main only (absent from the "
+    "origin/main render too).\n\n"
     f"{len(results)} checks: " + ", ".join(f"{v} {k}" for k, v in sorted(cnt.items())) + ". links.csv has every one.\n\n"
     "| Check | Result | Count |\n|---|---|---:|\n" + "".join(f"| {k} | {r} | {v} |\n" for (k, r), v in sorted(by.items())) +
     "\nExisting links: every href of the live home page must still be on the branch home page (count ≥ 1). Branch "
@@ -444,33 +451,50 @@ by = Counter((r[1], r[-1]) for r in results)
     "found) and show decision cards.\n")
 print("links:", dict(cnt))
 
-# --- 4. Browser tests from file:// (Ümit: expanders, links, filters don't break the table) ------------------------
+# --- 4. Browser tests (Ümit: expanders, links, filters don't break the table; Zeki #2790) -------------------------
+# Each parent's alternatives come from evidence.py's expected-families.json (derived from the data files, not from the
+# page's aria-controls): every expander is clicked and the rows it shows must be exactly those.
+FAMILIES = json.loads(Path(sys.argv[7]).read_text())
 STATE_HL = """() => {
   const t = document.getElementById('headline-table');
   const vis = e => !!(e.offsetParent || e.getClientRects().length);
   const main = [...t.querySelectorAll('tbody tr[data-setup]:not(.hl-sub)')];
   const sub = [...t.querySelectorAll('tbody tr.hl-sub')];
   return { main: main.length, main_shown: main.filter(vis).length, sub: sub.length, sub_shown: sub.filter(vis).length,
-           buttons: t.querySelectorAll('.hl-more').length, ts: document.querySelectorAll('#too-safe li.hbar').length,
            ts_shown: [...document.querySelectorAll('#too-safe li.hbar')].filter(vis).length,
            quality_rows: [...document.querySelectorAll('#panel-quality tbody tr[data-kind]:not([data-kind="reference"])')].filter(r => !r.hidden).length,
-           panel: [...document.querySelectorAll('[data-headline-panel]')].filter(p => !p.hidden).map(p => p.dataset.headlinePanel).join('|') };
+           panel: [...document.querySelectorAll('[data-headline-panel]')].filter(p => !p.hidden).map(p => p.dataset.headlinePanel).join('|'),
+           text: main.filter(vis).map(r => r.textContent.replace(/\\s+/g, ' ').trim()).join(' | ') + ' || ' +
+                 [...document.querySelectorAll('#too-safe li.hbar')].map(r => r.textContent.replace(/\\s+/g, ' ').trim()).join(' | ') };
 }"""
-EXPAND = """async () => {
+EXPAND = """() => {
+  const vis = e => !!(e.offsetParent || e.getClientRects().length);
+  const shownSubs = () => [...document.querySelectorAll('#headline-table tr.hl-sub')].filter(vis).map(r => `${r.dataset.dataset}/${r.dataset.setup}`).sort();
   const out = [];
-  for (const b of document.querySelectorAll('#headline-table .hl-more')) {
-    const ids = b.getAttribute('aria-controls').split(' ');
-    const vis = id => { const r = document.getElementById(id); return !!(r && (r.offsetParent || r.getClientRects().length)); };
-    const before = ids.filter(vis).length;
+  for (const tr of document.querySelectorAll('#headline-table tbody tr[data-setup]:not(.hl-sub)')) {
+    const key = `${tr.dataset.dataset}/${tr.dataset.setup}`, b = tr.querySelector('.hl-more');
+    const before = shownSubs();
+    if (!b) { out.push({ key, button: false, before, open: [], closed: before }); continue; }
     b.click();
-    const open = ids.filter(vis).length, exp1 = b.getAttribute('aria-expanded');
-    const others = [...document.querySelectorAll('#headline-table tr.hl-sub')].filter(r => !ids.includes(r.id) && (r.offsetParent || r.getClientRects().length)).length;
+    const open = shownSubs(), exp1 = b.getAttribute('aria-expanded');
     b.click();
-    const closed = ids.filter(vis).length, exp2 = b.getAttribute('aria-expanded');
-    out.push({ row: b.closest('tr').dataset.setup, n: ids.length, before, open, closed, others, exp1, exp2 });
+    out.push({ key, button: true, before, open, closed: shownSubs(), exp1, exp2: b.getAttribute('aria-expanded') });
   }
   return out;
 }"""
+
+
+def expanders_ok(ex):
+    bad = []
+    for e in ex:
+        want = FAMILIES.get(e["key"])
+        ok = (want is not None and e["before"] == [] and e["closed"] == [] and e["open"] == want
+              and (e["button"] == bool(want)) and (not e["button"] or (e["exp1"] == "true" and e["exp2"] == "false")))
+        if not ok:
+            bad.append(f"{e['key']}: expected {want}, shown {e['open']}")
+    return bad
+
+
 browser_rows = []
 n_main = len(hl.select("tbody tr[data-setup]:not(.hl-sub)"))
 n_sub = len(hl.select("tbody tr.hl-sub"))
@@ -485,7 +509,7 @@ with sync_playwright() as p:
             page.on("pageerror", lambda e: errs.append(str(e)))
             url = (cand / "index.html").resolve().as_uri()
             for state in ("", "?type=chat", "?type=decision", "?type=program", "?league=league-2", "?league=league-3&type=chat",
-                          "?phase=race", "click:[data-filter-kind=\"decision\"]", "click:[data-league-pick=\"league-1\"]"):
+                          "click:[data-filter-kind=\"decision\"]", "click:[data-league-pick=\"league-1\"]"):
                 page.goto(url + ("" if state.startswith("click:") else state))
                 page.wait_for_timeout(300)
                 if state.startswith("click:"):
@@ -494,32 +518,94 @@ with sync_playwright() as p:
                         loc.first.evaluate("b => b.click()")  # a key folded under More filters: clicked by script
                         page.wait_for_timeout(200)
                 st = page.evaluate(STATE_HL)
-                ex = page.evaluate(EXPAND)
-                ex_ok = all(e["before"] == 0 and e["open"] == e["n"] and e["closed"] == 0 and e["others"] == 0
-                            and e["exp1"] == "true" and e["exp2"] == "false" for e in ex)
+                bad = expanders_ok(page.evaluate(EXPAND))
                 ok = (st["main"] == n_main and st["main_shown"] == n_main and st["sub"] == n_sub and st["sub_shown"] == 0
-                      and st["ts_shown"] == n_ts and st["panel"] == "model" and ex_ok and len(ex) == st["buttons"])
+                      and st["ts_shown"] == n_ts and st["panel"] == "model" and not bad)
                 browser_rows.append([width, theme, state or "(no filter)",
                                      f"rows shown {st['main_shown']}/{n_main}; other-setting rows hidden {st['sub'] - st['sub_shown']}/{n_sub}; "
-                                     f"expanders {len(ex)}: each opens exactly its rows ({sum(e['n'] for e in ex)} rows) and closes them; "
-                                     f"Too safe bars {st['ts_shown']}/{n_ts}; Every number Quality rows shown {st['quality_rows']}",
+                                     f"each of {n_main} parent rows: its expander shows exactly its expected alternatives "
+                                     f"(expected-families.json) and hides them again" + (f"; WRONG: {'; '.join(bad)}" if bad else "")
+                                     + f"; Too safe bars {st['ts_shown']}/{n_ts}; Every number Quality rows shown {st['quality_rows']}",
                                      "ok" if ok else "WRONG"])
             # All setups and back; an expander left open survives the round trip.
             page.goto(url)
             page.wait_for_timeout(300)
-            page.locator("#headline-table .hl-more").first.click()
+            first = page.locator("#headline-table .hl-more").first
+            first_key = first.evaluate("b => `${b.closest('tr').dataset.dataset}/${b.closest('tr').dataset.setup}`")
+            first.click()
             page.click('[data-headline-view="all"]')
             a = page.evaluate(STATE_HL)
             page.click('[data-headline-view="model"]')
             m = page.evaluate(STATE_HL)
-            first_n = len(page.locator("#headline-table .hl-more").first.get_attribute("aria-controls").split())
-            ok = a["panel"] == "all" and m["panel"] == "model" and m["main_shown"] == n_main and m["sub_shown"] == first_n
+            ok = a["panel"] == "all" and m["panel"] == "model" and m["main_shown"] == n_main and m["sub_shown"] == len(FAMILIES[first_key])
             browser_rows.append([width, theme, "One row per model → All setups → back, first expander open",
-                                 f"panels {a['panel']} → {m['panel']}; rows {m['main_shown']}/{n_main}; open rows {m['sub_shown']}",
-                                 "ok" if ok else "WRONG"])
+                                 f"panels {a['panel']} → {m['panel']}; rows {m['main_shown']}/{n_main}; open rows {m['sub_shown']} "
+                                 f"(expected {len(FAMILIES[first_key])}, {first_key})", "ok" if ok else "WRONG"])
             bad = [e for e in errs if "fetch" not in e.lower()]
-            browser_rows.append([width, theme, "script errors (file://)", "; ".join(bad) or "none", "ok" if not bad else "ERRORS"])
+            browser_rows.append([width, theme, "script errors (file://; Every number's own fetches excluded)",
+                                 "; ".join(errs) or "none", "ok" if not bad else "ERRORS"])
             ctx.close()
+
+    # The Phase filter (Zeki #2790 item 3): bg.js loads fragments/<league>-<phase>.html by fetch, which file:// refuses,
+    # so this test runs on the same render through request routing (no server). The real control is used: the More
+    # filters key, then the Phase select. Expected slot contents come from the fragment files themselves.
+    def slot_expect(phase):
+        out = {}
+        for f in sorted((cand / "fragments").glob(f"*-{phase}.html")):
+            ds = f.name[:-len(f"-{phase}.html")]
+            for s in BeautifulSoup(f.read_text(), "html.parser").select(".phase-slot[data-slot]"):
+                out[(ds, s["data-slot"])] = (len(s.select("tr[data-kind]")), [norm(c.get_text("")) for c in s.select("td, th")])
+        return out
+    SLOTS = """() => [...document.querySelectorAll('.phase-slot[data-slot]')].map(s => [s.dataset.dataset, s.dataset.slot,
+      s.querySelectorAll('tr[data-kind]').length, [...s.querySelectorAll('td, th')].map(c => c.textContent.replace(/\\s+/g, ' ').trim())])"""
+    phases = [o["value"] for o in BeautifulSoup(str(C.select_one('#filters [data-control="phase"]')), "html.parser").select("option")]
+    for width in (1280, 390):
+        ctx = context(b, cand, width, "light")
+        page = ctx.new_page()
+        errs, dialogs = [], []
+        page.on("pageerror", lambda e: errs.append(str(e)))
+        page.on("dialog", lambda d: (dialogs.append(d.message), d.dismiss()))
+        page.goto(BASE)
+        page.wait_for_timeout(400)
+        original = {(d, s): (n, c) for d, s, n, c in page.evaluate(SLOTS)}
+        ds_row = '#headline-table tr[data-dataset="league-2"][data-setup="deepseek-v4-1-flash-on"]:not(.hl-sub)'
+        page.locator(ds_row + " .hl-more").click()
+        base_hl = page.evaluate(STATE_HL)
+        # The real, visible control (fix-filters made the filter row visible): Playwright clicks More filters, then
+        # chooses each phase in the Phase select; both fail if the element cannot be seen. No script fallback.
+        if page.get_attribute("#filters [data-more-filters]", "aria-expanded") != "true":
+            page.click("#filters [data-more-filters]", timeout=5000)
+        visible = page.locator('#filters [data-control="phase"]').is_visible()
+        how = "More filters clicked, Phase select used (visible)" if visible else "Phase select NOT visible"
+        for ph in phases[1:] + ["all"]:
+            if visible:
+                page.select_option('#filters [data-control="phase"]', ph, timeout=5000)
+            page.wait_for_timeout(900)
+            got = {(d, s): (n, c) for d, s, n, c in page.evaluate(SLOTS)}
+            want = original if ph == "all" else slot_expect(ph)
+            slot_bad = [f"{k}" for k in got if want.get(k) != got[k]]
+            hl_now = page.evaluate(STATE_HL)
+            value = page.eval_on_selector('#filters [data-control="phase"]', "s => s.value")
+            ok = (visible and value == ph and not slot_bad and len(got) > 0 and hl_now["text"] == base_hl["text"]
+                  and hl_now["sub_shown"] == len(FAMILIES["league-2/deepseek-v4-1-flash-on"]) and not dialogs and not errs)
+            browser_rows.append([width, "light", f"Phase via the control: {ph}",
+                                 f"{how}; select value {value}; {len(got)} phase slots, {len(got) - len(slot_bad)} equal to "
+                                 f"{'the page as loaded' if ph == 'all' else f'fragments/*-{ph}.html'} (rows and every cell)"
+                                 + (f", differing: {slot_bad[:6]}" if slot_bad else "")
+                                 + f"; leaderboard rows and Too safe unchanged: {hl_now['text'] == base_hl['text']}; "
+                                 f"DeepSeek expander still open ({hl_now['sub_shown']} rows); dialogs {dialogs or 'none'}; "
+                                 f"script errors {errs or 'none'}", "ok" if ok else "WRONG"])
+        # The address: bg.js reads ?league= and ?type= only, so the phase is not in the address; ?phase= must leave the
+        # page at All phases, every slot as loaded.
+        page.goto(BASE + "?phase=race")
+        page.wait_for_timeout(500)
+        value = page.eval_on_selector('#filters [data-control="phase"]', "s => s.value")
+        got = {(d, s): (n, c) for d, s, n, c in page.evaluate(SLOTS)}
+        ok = value == "all" and got == original
+        browser_rows.append([width, "light", "Phase via the address: ?phase=race (no such parameter)",
+                             f"select value {value}; every phase slot as loaded: {got == original} (the address carries "
+                             "league and type only; the phase is chosen with the control)", "ok" if ok else "WRONG"])
+        ctx.close()
     b.close()
 with (pk / "browser.csv").open("w", newline="") as fh:
     w = csv.writer(fh)
@@ -527,13 +613,20 @@ with (pk / "browser.csv").open("w", newline="") as fh:
     w.writerows(browser_rows)
 bc = Counter(r[-1] for r in browser_rows)
 (pk / "browser.md").write_text(
-    "# Browser tests from file:// (1280 and 390 px, light and dark)\n\n"
+    "# Browser tests (1280 and 390 px)\n\n"
     f"{len(browser_rows)} checks: " + ", ".join(f"{v} {k}" for k, v in sorted(bc.items())) + ". browser.csv has every one.\n\n"
-    "The branch render's index.html opened from file:// (no server, no routing). For each filter state (by address: "
-    "type, league, phase; by clicking a key of the filter row) the leaderboard must keep every row shown and every "
-    "other-settings row hidden, the Too safe chart every bar; then every row's expander is clicked: it must show "
-    "exactly its own rows (aria-expanded true), no other row, and hide them again on a second click. Then the All "
-    "setups key and back with an expander open. Expected counts come from the static HTML.\n")
+    "Filters and expanders: the render's index.html opened from file:// (no server), light and dark. For each filter "
+    "state (by address: type, league; by clicking a key of the filter row) the leaderboard must keep every row shown "
+    "and every other-settings row hidden, and the Too safe chart every bar. Then every parent row's expander is "
+    "clicked: the rows it shows must equal that parent's expected alternatives in evidence/expected-families.json "
+    "(derived from the data files by evidence.py, not from the page's aria-controls), and a second click must hide "
+    "them. Then All setups and back with an expander open.\n\n"
+    "Phase: the same render through request routing (bg.js fetches fragments/<league>-<phase>.html, which file:// "
+    "refuses). The real control is used (More filters, then the Phase select) for every phase and back to All "
+    "phases: the select's value, every phase slot's rows and cells against that phase's fragment file (All phases: "
+    "against the page as loaded), the leaderboard and Too safe text unchanged, the DeepSeek row's open expander still "
+    "open, no dialog, no script error (none excluded). The address does not carry the phase (bg.js reads ?league= and "
+    "?type= only): ?phase=race is checked to leave All phases and every slot as loaded.\n")
 print("browser:", dict(bc))
 
 # --- 5. Screenshots -----------------------------------------------------------------------------------------------
@@ -579,3 +672,13 @@ with sync_playwright() as p:
                 ctx.close()
     b.close()
 print("screenshots:", len(list(shots.glob("*.png"))))
+
+# --- Exit status (Zeki #2790): non-zero when any compared number differs or any check is not in an accepted state.
+ACCEPTED = {"ok", "equal", "same", "external", "same as live (unresolved statically in both)",
+            "build.py-only asset, absent from the origin/main render too"}
+bad_numbers = sum(d for _, _, d, _ in summary)
+bad_links = [r for r in results if r[-1] not in ACCEPTED]
+bad_browser = [r for r in browser_rows if r[-1] != "ok"]
+print(f"review: {bad_numbers} number difference(s), {len(bad_links)} link check(s) and {len(bad_browser)} browser "
+      "check(s) not accepted")
+sys.exit(1 if bad_numbers or bad_links or bad_browser else 0)

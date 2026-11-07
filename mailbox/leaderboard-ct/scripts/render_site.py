@@ -50,3 +50,4 @@ if "--checks" in sys.argv[5:]:
     print(f"checks.run: {len(failures)} failure(s)")
     for f in failures:
         print(" -", f)
+    sys.exit(1 if failures else 0)  # a failing check fails the process (Zeki #2790)

@@ -1,5 +1,10 @@
 # leaderboard-ct: the leaderboard as Ümit specified it (bus #2745)
 
+> **Review 1 (5ca56de).** It is superseded where `review2/README.md` differs (Zeki #2790). In particular:
+> - The tie rule at the top setting is now score-free.
+> - The checkpoint identity now comes from an approved list, not a name pattern.
+> - The links wording and the late-entries question below were corrected in place.
+
 Branch `leaderboard-ct`, HEAD 5ca56de, on origin/main a25b75e. That base already has CostLabels' cost-label fix: cost labels are looked up through `pages.origin_meta`. This is a **candidate**. It is not merged and not deployed.
 
 ## What ran
@@ -47,7 +52,7 @@ Other changes:
 | Data files, byte for byte | 105 | 0 |
 
 - **Leaderboard cell sources:** judgement, found and right safety come from the live All leagues Risk table; error rate is compared on every number; cost is compared as the whole cell **with its price label**; decisions are checked against the live Cost tab and Every decision's index; setting against setups.json.
-- **Links** (`review/links.md`, 3,604 checks, no broken or lost link):
+- **Links** (`review/links.md`, 3,604 checks): **no new errors among the checked links.** This does not verify every link: 823 hrefs are unresolvable statically in both live and branch, and the 21 external links were not fetched.
   - Every live home link is still on the branch page, except the 3 `share/risk-card-*.png` previews. build.py main makes those, so they are absent from origin/main's render too.
   - 867 decision links point to a dataset and setup that are in Every decision's index.
   - 68 taps (34 rows × 1280/390) open Every decision with that setup and show decision cards. These used routed http, because Every decision fetches JSON and file:// cannot.
@@ -67,7 +72,7 @@ Other changes:
 
 ## Open questions for Ümit
 
-1. **Late entries:** should they appear in the table? The default is no, and the constant is ready. If they counted for the rule, GPT-6 Astra's highest setting would be **high** (a late entry) instead of medium. See `evidence/3-late-entries-question.md`.
+1. **Late entries:** should the table show a separate group of late entries? The default is no; the constant is ready. Turning it on (`LATE_ROWS = True`) **adds** a grey, unranked "Late entries" group under the programs and changes **no ranked row**. GPT-6 Astra stays ranked at medium (League 3); its late entry GPT-6 Astra (high) appears only as an extra row in that group. See `review2/evidence/3-late-entries-question.md`.
 2. **The note:** your overlap sentence was replaced by Zeki's accepted rank sentence (#2578). Please confirm.
 3. **Other makers' colours:** grey on every site, or the sibling site's family colours? Each sibling colour is recorded in the file, so the switch is one edit. These makers are grey now: Perplexity, SubQ, TypeSafe (Jev, named from its API), Celeris, Inception, Fastino, Z.ai, Alibaba (Qwen), Base Labs, Nace.AI, REAX Labs, and "maker not recorded" (Clef, Open-Jev 27B v1.1, Winnow-12B). Two of these are judgement calls: Cygnet counts as **Google**, because it is gemma-4-12B-it unchanged behind our server, and Winnow is not counted as Google. This also turns Qwen, GLM, Fastino, Jev and the others grey on the existing charts.
 4. **Nackgammon "one setting per model"** still uses the best-score rule. Should it switch to the highest-setting rule?

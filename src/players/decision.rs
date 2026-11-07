@@ -314,6 +314,26 @@ pub const SERVICES: &[Service] = &[
         openai_format: false,
         max_choices: 25,
     },
+    // REAX 1.3 (decisionmodels/REAX-1.3 @ fa4bf7e, Apache-2.0) on one of our GPUs behind the REAX
+    // Engine's own server (reax13/serve.py of github.com/reaxlabs/reax-engine @ ff8f595, image
+    // reax13-runtime): both FP8 parts on one GPU, each option's probability the 50/50 mean of
+    // the two parts'. Requests are serialized by the server; the model field, when sent, must
+    // be `reax13`, and only `model`, `state` and `questions` are accepted. Its card allows 2 to
+    // 255 options per choice question and at most 32,000 proxy tokens (characters of the compact
+    // request JSON / 4); the largest stored League 1 full-list requests (251 options) measure
+    // 15,424, so the server's 255 is the cap and longer lists are split into groups and a final.
+    Service {
+        provider: "reax",
+        label: "REAX 1.3",
+        base_url: "http://127.0.0.1:18106",
+        url_var: "REAX_BASE_URL",
+        path: "/v1/systemone",
+        key_vars: &[],
+        key_required: false,
+        default_model: Some("reax13"),
+        openai_format: false,
+        max_choices: 255,
+    },
 ];
 
 pub fn service(provider: &str) -> Option<&'static Service> {
@@ -729,6 +749,38 @@ mod tests {
             ("24/18".to_owned(), "b".to_owned()),
         ];
         assert_eq!(client.body("state", "pick", &plays)["model"], "drex-max-v1");
+    }
+
+    #[test]
+    fn reax_sends_only_model_state_and_questions_with_up_to_255_options() {
+        let service = service("reax").expect("reax service");
+        assert_eq!(service.max_choices, 255);
+        assert!(!service.key_required && service.key_vars.is_empty());
+        assert_eq!(service.default_model, Some("reax13"));
+        let client = client("reax", "reax13", Some("http://127.0.0.1:18106/"), None);
+        assert_eq!(client.url, "http://127.0.0.1:18106/v1/systemone");
+        let plays = [
+            ("13/11 6/5".to_owned(), "a".to_owned()),
+            ("24/18".to_owned(), "b".to_owned()),
+        ];
+        let body = client.body("state", "pick", &plays);
+        // serve.py's validate_request refuses any other top-level field.
+        let mut fields: Vec<_> = body.as_object().unwrap().keys().cloned().collect();
+        fields.sort();
+        assert_eq!(fields, ["model", "questions", "state"]);
+        assert_eq!(body["model"], "reax13");
+        assert_eq!(body["questions"][QUESTION]["type"], "choice");
+        // serve.py's answer: the choice and every option's probability, no usage.
+        let response = json!({"model": "reax13",
+            "answers": {QUESTION: {"type": "choice", "choice": "24/18",
+                "probabilities": {"13/11 6/5": 0.25, "24/18": 0.75}}}});
+        let answer = client.answer(&response).expect("answer");
+        let mut probabilities = client.probabilities(answer);
+        probabilities.sort_by(|a, b| a.0.cmp(&b.0));
+        assert_eq!(
+            probabilities,
+            [("13/11 6/5".to_owned(), 0.25), ("24/18".to_owned(), 0.75)]
+        );
     }
 
     /// A server answering every request 200 with `body`; returns its URL and request count.

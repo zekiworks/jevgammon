@@ -4,7 +4,7 @@ context. Plan and rules: mailbox/Learning pilot - plan 2026-11-07.md (the single
 
     python3 workspace/learning-pilot/pilot.py t0                     # the shared evaluation before game 1 (once)
     python3 workspace/learning-pilot/pilot.py run --series 1-3       # smoke; later --series 4-10
-    python3 workspace/learning-pilot/pilot.py summary [--planned 10]
+    python3 workspace/learning-pilot/pilot.py summary
 
 Run from the repo root. Arms: control (no context), records (all earlier games of the series with GNUbg's evaluation
 of each decision), lessons (one lesson call after each game; the context is every lesson written so far in the
@@ -56,6 +56,7 @@ MASTER_SEED = "learning-pilot 2026-11-07"
 BOOT_SEED = 20261107
 BOOT = 10000
 GAMES = 10
+PLANNED = 10  # series per arm, fixed by the plan; a smoke summary can never be complete
 CHECKPOINTS = (5, 10)  # after these games, for the non-control arms; T0 is shared
 ARMS = ["control", "records", "lessons", "budget"]
 MARGIN = 0.001  # the site's risk margin
@@ -490,6 +491,19 @@ def eval_metrics(name):
 
 # --- Series ------------------------------------------------------------------------------------------------
 
+def init_runner_db():
+    """Create the runner's schema once before the arms start: several runner processes creating it at the same time
+    on a fresh file race on CREATE VIEW. `jevgammon rank` opens (and so creates) the database, then stops with "no such
+    league"; only the schema is checked."""
+    subprocess.run([str(BIN), "rank", "--db", str(DB), "--dry-run", "--scores", str(HERE)], cwd=ROOT,
+                   capture_output=True, text=True)
+    db = sqlite3.connect(f"file:{DB}?mode=ro", uri=True, timeout=60)
+    tables = {r[0] for r in db.execute("SELECT name FROM sqlite_master")}
+    db.close()
+    if not {"matches", "games", "turns", "league_match_view"} <= tables:
+        sys.exit(f"could not create the runner schema in {DB}")
+
+
 def match_of(arm, s):
     if not DB.exists():
         return None
@@ -508,7 +522,8 @@ def run_t0():
     if (d / "aggregate.json").exists():
         return
     info = run_eval(T0_NAME, "", d, parallel=4)
-    write_atomic(d / "aggregate.json", json.dumps(dict(info, finished_at=now(), metrics=eval_metrics(T0_NAME)), indent=1))
+    write_atomic(d / "aggregate.json", json.dumps(dict(info, finished_at=now(), metrics=eval_metrics(T0_NAME),
+                                                       test_set_sha256=file_sha256(TEST_SET)), indent=1))
 
 
 def run_series(arm, s):
@@ -595,6 +610,10 @@ def write_aggregate(arm, s, wall):
         context_tokens_after_game={e["after_game"]: e["tokens"] for e in ev if e["event"] == "context"},
         records_dropped_after_game={e["after_game"]: e.get("records_dropped", 0) for e in ev if e["event"] == "context"},
         budget_context_empty_after_game=[e["after_game"] for e in ev if e["event"] == "budget_context_empty"],
+        budget_points=[dict(after_game=e["after_game"], games_shown=e.get("games_shown", []),
+                            games_dropped=e.get("games_dropped", 0), tokens=e["tokens"],
+                            budget_tokens=e.get("budget_tokens"))
+                       for e in ev if e["event"] == "context"] if arm == "budget" else [],
         context_drops=[{k: e[k] for k in ("after_game", "dropped_game", "tokens", "budget")} for e in ev
                        if e["event"] == "context_drop"],
         evaluation_positions_excluded=sum(e["n"] for e in ev if e["event"] == "evaluation_positions_excluded"),
@@ -602,6 +621,9 @@ def write_aggregate(arm, s, wall):
                                               "lessons_written", "words_written", "cut")}
                        for e in ev if e["event"] == "lessons_call"],
         restarts=sum(e["event"] == "series_restarted" for e in ev), lesson_prompt_sha256=lesson_prompt_sha256(),
+        test_set_sha256=file_sha256(TEST_SET),
+        lessons_files={str(g): file_sha256(d / f"lessons-g{g:02d}.txt") for g in range(1, GAMES + 1)
+                       if (d / f"lessons-g{g:02d}.txt").exists()},
         cost_usd=0.0)
     write_atomic(d / "aggregate.json", json.dumps(agg, indent=1))
 
@@ -638,7 +660,33 @@ def boot_ci(values_by_series, rng_seed):
     return [means[int(0.025 * len(means))], means[int(0.975 * len(means)) - 1]]
 
 
-def summary(planned: int):
+def file_sha256(path: Path):
+    return hashlib.sha256(path.read_bytes()).hexdigest() if path.exists() else None
+
+
+def protocol():
+    """The registered protocol this run is bound to; the site compares it with its own fixed copy."""
+    return dict(arms=ARMS, planned_series_per_arm=PLANNED, games_per_series=GAMES,
+                checkpoints=dict(shared=["T0"], non_control=[f"T{cp}" for cp in CHECKPOINTS]),
+                evaluation_positions=len(test_set()["positions"]), lesson_prompt_sha256=lesson_prompt_sha256(),
+                test_set_sha256=file_sha256(TEST_SET), dry_run=DRY)
+
+
+def series_finished(arm, a):
+    """A series counts only with all 10 games, both evaluations answered in full (non-control arms) and, for the
+    lessons arm, a lesson file after every game."""
+    if [g["game"] for g in a["games"]] != list(range(1, GAMES + 1)) or any(not g["decisions"] for g in a["games"]):
+        return False
+    if arm != "control" and any(a["evaluations"].get(f"T{cp}", {}).get("answered") != len(test_set()["positions"])
+                                for cp in CHECKPOINTS):
+        return False
+    if arm == "lessons" and sorted(int(g) for g in a.get("lessons_files", {})) != list(range(1, GAMES + 1)):
+        return False
+    return a.get("test_set_sha256") == file_sha256(TEST_SET) and a.get("lesson_prompt_sha256") == lesson_prompt_sha256()
+
+
+def summary():
+    planned = PLANNED
     t0 = json.loads((RUNS / "t0/aggregate.json").read_text()) if (RUNS / "t0/aggregate.json").exists() else None
     aggs = {arm: {} for arm in ARMS}
     for arm in ARMS:
@@ -670,11 +718,21 @@ def summary(planned: int):
                           latency_median_s=sorted(lat)[len(lat) // 2] if lat else None,
                           records_dropped=sum(max(a["records_dropped_after_game"].values() or [0]) for a in aggs[arm].values()),
                           context_drops=sum(len(a["context_drops"]) for a in aggs[arm].values()),
+                          budget_empty_points=sum(len(a.get("budget_context_empty_after_game", []))
+                                                  for a in aggs[arm].values()),
                           wins=sum(bool(g.get("won")) for g in gs), cost_usd=0.0)
     done = {arm: len(aggs[arm]) for arm in ARMS}
-    complete = all(n >= planned for n in done.values()) and t0 is not None
-    out = dict(updated_at=now(), planned_series_per_arm=planned, series_done=done, complete=complete,
-               lesson_prompt_sha256=lesson_prompt_sha256(), t0_done=t0 is not None,
+    finished = {arm: sorted(s for s, a in aggs[arm].items() if series_finished(arm, a)) for arm in ARMS}
+    t0_ok = bool(t0) and t0["metrics"]["answered"] == len(test_set()["positions"])
+    complete = (not DRY and t0_ok and all(finished[arm] == list(range(1, PLANNED + 1)) for arm in ARMS))
+    out = dict(updated_at=now(), protocol=protocol(), planned_series_per_arm=planned, series_done=done,
+               series_finished=finished, complete=complete,
+               lesson_prompt_sha256=lesson_prompt_sha256(), t0_done=t0_ok,
+               inventory={arm: {str(s): dict(games=[g["game"] for g in a["games"]],
+                                             lessons_files=a.get("lessons_files", {}),
+                                             test_set_sha256=a.get("test_set_sha256"),
+                                             lesson_prompt_sha256=a.get("lesson_prompt_sha256"))
+                                for s, a in sorted(aggs[arm].items())} for arm in ARMS},
                display_rule="Numbers per arm and evaluation as series finish; no verdict and no learning lift until "
                             "every planned series of every arm is done.",
                table=table, games=games,
@@ -748,23 +806,22 @@ def main():
     r = sub.add_parser("run")
     r.add_argument("--series", required=True, help="e.g. 1-3")
     r.add_argument("--arms", default=",".join(ARMS))
-    r.add_argument("--planned", type=int, default=10)
     sub.add_parser("t0")
     h = sub.add_parser("after-game")
     h.add_argument("--arm", required=True)
     h.add_argument("--series", type=int, required=True)
-    sm = sub.add_parser("summary")
-    sm.add_argument("--planned", type=int, default=10)
+    sub.add_parser("summary")
     a = ap.parse_args()
     if a.cmd == "after-game":
         after_game(a.arm, a.series)
     elif a.cmd == "t0":
         run_t0()
     elif a.cmd == "summary":
-        print(json.dumps(summary(a.planned)["series_done"]))
+        print(json.dumps(summary()["series_finished"]))
     else:
         if not (RUNS / "t0/aggregate.json").exists():
             sys.exit("run the shared T0 evaluation first: pilot.py t0")
+        init_runner_db()
         lo, hi = (int(x) for x in a.series.split("-"))
         errors = []
 
@@ -773,7 +830,7 @@ def main():
                 try:
                     run_series(arm, s)
                     with LOCK:
-                        summary(a.planned)
+                        summary()
                 except Exception as e:  # stop this arm; the others go on
                     errors.append(f"{arm} s{s}: {e}")
                     return
@@ -783,7 +840,7 @@ def main():
         for t in threads:
             t.join()
         with LOCK:
-            summary(a.planned)
+            summary()
         if errors:
             print("\n".join(errors), file=sys.stderr)
             sys.exit(1)

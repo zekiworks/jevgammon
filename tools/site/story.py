@@ -12,7 +12,7 @@ import re
 
 import home as H
 import pages as P
-from common import ALL_NOTE, CONTENT, LATE_ENTRY, NA, count, esc, fmt, nm, pct
+from common import CONTENT, LATE_ENTRY, NA, count, esc, fmt, nm, pct
 
 RELEASES = json.loads((CONTENT / "release_months.json").read_text())["models"]
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
@@ -28,12 +28,13 @@ def caveat(text: str, anchor: str = "limits") -> str:
 # One row per model at its highest reasoning setting played: a fixed rule, never the best score. The settings in order,
 # as the requests sent them (setups.json "setting"; "none" is off). "on" is the setting of a model without levels
 # (thinking on or off only): above off, and a model with "on" and a level fails the build. A decision model sends no
-# setting: its single setup. Version names are separate models (Jev 1.13.0, Jev 1.14.0).
+# setting: its single setup. Version names are separate models (Jev 1.13.0, Jev 1.14.0). Several setups at that
+# setting: the first in league order (the league of its setups.json entry, then the setup name); no score (Zeki #2790).
 LEVELS = {"off": 0, "none": 0, "minimal": 1, "low": 2, "medium": 3, "high": 4, "xhigh": 5, "max": 6}
 ON = "on"
-# A dated checkpoint ("DeepSeek V4.1 Flash 1017": the model name, a space, MMDD) is the same model as the name before
-# the date when that is a model in the standings: one row, named and dated by the original (its first release).
-CHECKPOINT = re.compile(r"^(.+) (\d{4})$")
+# Models that are one row (content/model_identity.json: an approved list, nothing inferred from names): a dated
+# checkpoint under its original, which names and dates the row.
+SAME_MODEL = json.loads((CONTENT / "model_identity.json").read_text())["same_model"]
 # Late entries (not in standings) as a grey, unranked group under the ranked rows, never in the ranking: an open
 # question to Ümit (bus #2745), off until he decides.
 LATE_ROWS = False
@@ -71,61 +72,45 @@ def setting_of(S, ds, n) -> str | None:
 def _entry(S, lg, n, r) -> dict:
     ds = lg["dataset"]
     return dict(lg=lg, ds=ds, name=n, r=r, q=lg["setups"][n]["quality"] if n in lg["setups"] else None,
-                model=H.model_of(S, ds, n), setting=setting_of(S, ds, n), late=None)
+                model=H.model_of(S, ds, n), setting=setting_of(S, ds, n), late=None,
+                origin=int(P.origin_meta(S, ds, n).get("dataset", ds).rsplit("-", 1)[1]))
 
 
-def _first_best(entries: list) -> dict:
-    """best_per_model's rule for rows it does not take (programs, late entries): the highest stored risk judgement, on
-    an exact tie the first in the given order."""
-    best = None
-    for x in entries:
-        j = x["r"]["judgement"]
-        if best is None or (j is not None and (best["r"]["judgement"] is None or j > best["r"]["judgement"])):
-            best = x
-    return best
+def _first(entries: list) -> dict:
+    """The representative among setups of equal standing: the first in league order (the league of its setups.json
+    entry), then by setup name. No score."""
+    return min(entries, key=lambda x: (x["origin"], x["name"]))
 
 
-def _top(group: list, base: str) -> list:
-    """The setups of a row at the model's highest reasoning setting; the original's (not a dated checkpoint's) where it
-    has one there."""
+def _top(group: list) -> list:
+    """The setups of a row at the model's highest reasoning setting."""
     levelled = any(level(x["setting"], False) > 0 for x in group if x["setting"] != ON)
     top = max(level(x["setting"], levelled) for x in group)
-    cands = [x for x in group if level(x["setting"], levelled) == top]
-    return [x for x in cands if x["model"] == base] or cands
+    return [x for x in group if level(x["setting"], levelled) == top]
 
 
 def leaderboard_rows(S) -> tuple[list, list, list]:
     """(model rows, program rows, late-entry rows): each a (chosen setup, the row's other setups, row name, settings
     played) tuple. Model rows ranked by the chosen setup's stored risk judgement; programs (GNUbg weak, Safest, Random)
-    one row each, their played setup by best_per_model's rule (computed reference rows under it); late entries (only
+    one row each, their first played setup in league order (computed reference rows under it); late entries (only
     with LATE_ROWS) by the same rule as the models over their own setups."""
     groups, progs = {}, {}
-    rows = H.all_rows(S)
-    models = {H.model_of(S, lg["dataset"], n) for lg, n, r, ref in rows if not ref}
-    base_of = {}
-    for lg, n, r, ref in rows:
+    for lg, n, r, ref in H.all_rows(S):
         x = _entry(S, lg, n, r)
         if ref:
             progs.setdefault(n.removesuffix(" (computed)"), []).append(x)
             continue
-        c = CHECKPOINT.match(x["model"])
-        base = c.group(1) if c and c.group(1) in models else x["model"]
-        base_of[(x["ds"], n)] = base
-        groups.setdefault(base, []).append(x)
-    top = {(x["ds"], x["name"]) for base, g in groups.items() for x in _top(g, base)}
-    best = H.best_per_model(S, lambda lg, n: (lg["dataset"], n) in top, lambda lg, n: base_of[(lg["dataset"], n)])
+        groups.setdefault(SAME_MODEL.get(x["model"], x["model"]), []).append(x)
     out = []
     for base, g in groups.items():
-        cands = _top(g, base)
-        chosen = next((x for x in cands if base in best and (x["ds"], x["name"]) == (best[base][0]["dataset"], best[base][1])),
-                      cands[0])
+        chosen = _first(_top(g))
         out.append((chosen, [x for x in g if x is not chosen], base, g))
     out.sort(key=lambda t: (t[0]["r"]["judgement"] is None, -(t[0]["r"]["judgement"] or 0), t[2]))
     prog_rows = []
     for name in ("GNUbg weak", "Safest", "Random"):  # Ümit's order (#2745 item 5)
         g = progs.get(name, [])
         if g:
-            chosen = _first_best([x for x in g if x["q"] is not None] or g)
+            chosen = _first([x for x in g if x["q"] is not None] or g)
             prog_rows.append((chosen, [x for x in g if x is not chosen], name, g))
     late = []
     if LATE_ROWS:
@@ -133,10 +118,10 @@ def leaderboard_rows(S) -> tuple[list, list, list]:
         for e in S["late_entries"]:
             m = S["setups_meta"].get((LATE_ENTRY, e["name"])) or {}
             x = dict(lg=None, ds=LATE_ENTRY, name=e["name"], r=e["risk"]["main"], q=e["quality"],
-                     model=m.get("model") or e["name"], setting=m.get("setting"), late=e)
-            lgroups.setdefault(x["model"], []).append(x)
+                     model=m.get("model") or e["name"], setting=m.get("setting"), late=e, origin=e["field_league"])
+            lgroups.setdefault(SAME_MODEL.get(x["model"], x["model"]), []).append(x)
         for base, g in lgroups.items():
-            chosen = _first_best(_top(g, base))
+            chosen = _first(_top(g))
             late.append((chosen, [x for x in g if x is not chosen], base, g))
     return out, prog_rows, late
 
@@ -310,9 +295,8 @@ def headline(S) -> str:
     table (every setup, programs as reference rows) in its place. The Too safe chart under it."""
     rows, missing, chart = headline_rows(S)
     n_models = len(leaderboard_rows(S)[0])
-    table = P.table(HEADLINE_HEAD, rows, "One row per model: the model's highest reasoning setting played (a fixed "
-                    "rule, not its best score; every cell of a row is that setup's own); its other settings under the row's "
-                    "expander and under All setups. All leagues, all phases.", cls="board headline",
+    table = P.table(HEADLINE_HEAD, rows, "One row per model at its highest reasoning setting; all leagues, all phases",
+                    cls="board headline",
                     attrs=' data-dataset="all" id="headline-table"')
     note = (f'<p class="table-note">Released: the month of the maker\'s own dated statement that this exact model was '
             f'released or became available to the public (an announcement before public availability does not count), '
@@ -321,18 +305,19 @@ def headline(S) -> str:
     keys = ('<span class="keys needs-js" role="group" aria-label="Rows"><button type="button" class="key" '
             'data-headline-view="model" aria-pressed="true">One row per model</button><button type="button" '
             'class="key" data-headline-view="all" aria-pressed="false">All setups</button></span>')
+    rule = ('<p class="table-note headline-rule">Each model\'s row is its highest reasoning setting played, by the effort '
+            'the requests sent (off &lt; minimal &lt; low &lt; medium &lt; high &lt; xhigh &lt; max; on above off for a '
+            'model without levels; a decision model\'s single setup), never its best score. Several setups at that '
+            'setting: the first in league order, then by setup name (no score). Every cell of a row is that setup\'s '
+            'own; its other settings are under the row\'s expander and under All setups. Version names are separate '
+            'models; ' + "; ".join(f"{esc(k)} is under {esc(v)}" for k, v in SAME_MODEL.items()) + ' (a dated checkpoint '
+            'under its original).</p>')
     return (f'<section class="card headline" id="leaderboard" data-dataset="all" aria-labelledby="leaderboard-title">'
             f'<div class="chart-head"><h2 id="leaderboard-title">Risk calls leaderboard</h2>{keys}<p class="chart-sub">'
-            f'Risk judgement: 100 = every call right, 50 = always safe; the bar runs to the score, the whisker is its 95% '
-            f'interval, the mark at 50 the always-safe line · higher is better</p></div>'
-            f'<p class="table-note">{esc(ALL_NOTE)}</p>'
-            '<p class="table-note headline-scope"><strong>A fixed table:</strong> all leagues, all phases, every model; '
-            'the filter row below does not change it. Each model\'s row is its highest reasoning setting played, by the '
-            'effort the requests sent (off &lt; minimal &lt; low &lt; medium &lt; high &lt; xhigh &lt; max; on above off for a model '
-            'without levels; a decision model\'s single setup), not its best score; at the same setting in two places, '
-            'the one with the higher stored risk judgement (on an exact tie, the first in league order). Version names '
-            'are separate models; a dated checkpoint shares its model\'s row. Tap a model for its decisions.</p>'
-            f'<div data-headline-panel="model">{P.SWIPE}{table}{caveat(NOTE, "statistics")}{note}{too_safe(S, chart)}</div>'
+            f'Risk judgement: 100 = every call right, 50 = always safe · higher is better</p></div>'
+            '<p class="table-note headline-scope"><strong>A fixed table:</strong> the filters below do not change it. '
+            'Tap a model for its decisions; how each row is chosen is under the table.</p>'
+            f'<div data-headline-panel="model">{P.SWIPE}{table}{caveat(NOTE, "statistics")}{rule}{note}{too_safe(S, chart)}</div>'
             f'<div data-headline-panel="all" hidden>{H.all_risk_table(S)}{caveat(H.RANK_NOTE, "statistics")}</div>'
             f'</section>')
 

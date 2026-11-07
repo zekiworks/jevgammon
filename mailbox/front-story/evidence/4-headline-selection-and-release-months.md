@@ -1,6 +1,6 @@
 # Headline table: one row per model, its setting with the highest stored risk judgement
 
-Source: the live site's published data files (results 04493cf3, data as of 2026-11-07T17:35Z): data/v3/league-N.json (risk.main.judgement per setup) and data/setups.json (model). Read-only; every number below is copied from those files as printed.
+Source: the live site's published data files (results f45081f6, data as of 2026-11-07T17:50Z): data/v3/league-N.json (risk.main.judgement per setup) and data/setups.json (model). Read-only; every number below is copied from those files as printed.
 
 Each row is ONE named setup, the model's setting with the highest stored risk judgement (Zeki #2578): every cell of the row (risk judgement and interval, risks found, right safety, error rate, cost) is that setup's own; the model's other settings are under All setups. A selection for display, not a separate run.
 

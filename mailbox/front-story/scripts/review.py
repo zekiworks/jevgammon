@@ -23,7 +23,7 @@ pk.mkdir(parents=True, exist_ok=True)
 
 # --- 1. Source diff -----------------------------------------------------------------------------------------------
 (pk / "source.patch").write_text(subprocess.run(
-    ["git", "-C", str(work), "diff", "origin/learning-page...front-story", "--", "tools/site"],
+    ["git", "-C", str(work), "diff", "origin/main...front-story", "--", "tools/site"],
     check=True, capture_output=True, text=True).stdout)
 
 

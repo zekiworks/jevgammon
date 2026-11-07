@@ -1,6 +1,6 @@
 # Heading asked for: "A number on screen makes models flinch"
 
-Source: the live site's published data files (results 04493cf3, data as of 2026-11-07T17:35Z): data/v3/clear-risk.json, section clear-risk-part2, table "Q1: share right per group, missed and needless, bias (two plays shown, not league play)". Read-only; every number below is copied from those files as printed.
+Source: the live site's published data files (results f45081f6, data as of 2026-11-07T17:50Z): data/v3/clear-risk.json, section clear-risk-part2, table "Q1: share right per group, missed and needless, bias (two plays shown, not league play)". Read-only; every number below is copied from those files as printed.
 
 Claim checked: on Q1 (best safe vs best unsafe play, the same 189 rollout-confirmed positions asked twice), each model's bias is higher (more cautious) with numbers than board only.
 

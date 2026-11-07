@@ -1,8 +1,8 @@
 diff --git a/tools/site/assets/bg.css b/tools/site/assets/bg.css
-index 6d4ddde..162a92e 100644
+index 87cfd0d..e6b731e 100644
 --- a/tools/site/assets/bg.css
 +++ b/tools/site/assets/bg.css
-@@ -230,6 +230,10 @@ a.cc-open { font-weight: 600; }
+@@ -231,6 +231,10 @@ a.cc-open { font-weight: 600; }
  #chart-nack { margin: 1rem 0 .5rem; }
  #nackgammon-paired thead th[data-nosort] { cursor: default; }
  #nackgammon-paired ul.lettered { list-style: none; padding-left: 1rem; }
@@ -13,7 +13,7 @@ index 6d4ddde..162a92e 100644
  .section-label { margin: .15rem 0 .6rem; font-size: .8rem; color: var(--text-2); }
  
  /* Hype Cup and Nackgammon knockout brackets (Leagues page) and the Matches page. Rounds side by side on a wide screen,
-@@ -404,3 +408,41 @@ i.swatch-refline { width: 0; height: .8rem; border-left: 2px dashed var(--text-2
+@@ -405,3 +409,41 @@ i.swatch-refline { width: 0; height: .8rem; border-left: 2px dashed var(--text-2
    .nav-group > ul { overflow: visible; margin: 0; padding: 0; }
    .hbar-where { display: block; }
  }
@@ -644,10 +644,10 @@ index 12d6ac9..3d9a6d0 100644
              f'<p class="note nack-additions-note"><strong>Additions.</strong> {esc(N["additions_note"])}</p>'
              "<p>Nackgammon has the rules of backgammon; only the starting position differs. Each setup was asked 200 "
 diff --git a/tools/site/pages.py b/tools/site/pages.py
-index a0ab0f6..cdf12b6 100644
+index b0c244e..f603f60 100644
 --- a/tools/site/pages.py
 +++ b/tools/site/pages.py
-@@ -1462,7 +1462,7 @@ def write_all(S, out: Path, base: str) -> None:
+@@ -1480,7 +1480,7 @@ def write_all(S, out: Path, base: str) -> None:
          import shutil
          if (out / stale).exists():
              shutil.rmtree(out / stale)

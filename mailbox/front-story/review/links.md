@@ -1,13 +1,13 @@
 # Links and deep links: front-story render
 
-2782 checks: 26 external, 1741 ok, 192 same, 823 same as live (unresolved statically in both). links.csv has every one.
+2786 checks: 26 external, 1745 ok, 192 same, 823 same as live (unresolved statically in both). links.csv has every one.
 
 | Check | Result | Count |
 |---|---|---:|
 | address, branch only | ok | 32 |
 | address, live vs branch | same | 192 |
 | headline toggle | ok | 2 |
-| home link | ok | 1697 |
+| home link | ok | 1701 |
 | home link | same as live (unresolved statically in both) | 823 |
 | home link (external, not fetched) | external | 26 |
 | nackgammon type keys | ok | 8 |

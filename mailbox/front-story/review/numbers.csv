@@ -1147,6 +1147,21 @@ home table cell,lg-group-workhorse,,Qwen3.8-27B (off),Place,17,17,equal
 home table cell,lg-group-workhorse,,Qwen3.8-27B (off),Played,18,18,equal
 home table cell,lg-group-workhorse,,Qwen3.8-27B (off),Score for-against,37-91,37-91,equal
 home table cell,lg-group-workhorse,,Qwen3.8-27B (off),Won-drawn-lost,4-0-14,4-0-14,equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap 1.1 Published SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",Engine's best play,42.9%,42.9%,equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap 1.1 Published SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.","$ per 1,000 decisions","0.150 API price (billed); output free, $0.04 per million input tokens; docs.subq.ai/using-the-api/models, read 2026-11-01","0.150 API price (billed); output free, $0.04 per million input tokens; docs.subq.ai/using-the-api/models, read 2026-11-01",equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap 1.1 Published SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",Ability d′,"0.71 0.61 to 0.82 · risks taken 412 / 798 Risk pays · needless 253 / 1,003 Safety pays","0.71 0.61 to 0.82 · risks taken 412 / 798 Risk pays · needless 253 / 1,003 Safety pays",equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap 1.1 Published SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.","Caution c (+ cautious, − bold)",+0.31 +0.25 to +0.38 · cautious,+0.31 +0.25 to +0.38 · cautious,equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap 1.1 Published SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",Cut off at the output limit,"0 0 of 2,326 decisions sent an output limit; 0 over 32,768 output tokens without one","0 0 of 2,326 decisions sent an output limit; 0 over 32,768 output tokens without one",equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap 1.1 Published SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",Entry date,2026-11-02 first match 18:29 UTC,2026-11-02 first match 18:29 UTC,equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap 1.1 Published SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.","Error rate (PR), 95% interval",40.2 36.7 to 43.8,40.2 36.7 to 43.8,equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap 1.1 Published SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",Invalid answers,"0 of 2,326 decisions","0 of 2,326 decisions",equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap 1.1 Published SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",League field played,League 1 (original table) 19 setups,League 1 (original table) 19 setups,equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap 1.1 Published SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",Matches played,19 / 19,19 / 19,equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap 1.1 Published SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",Median s per decision,0.23,0.23,equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap 1.1 Published SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",Record (W–D–L),12–0–7 won–drawn–lost,12–0–7 won–drawn–lost,equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap 1.1 Published SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.","Risk judgement, margin 0.001",56.7 54.8 to 58.6,56.7 54.8 to 58.6,equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap 1.1 Published SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",Route and effort sent,subq subq/subq-snap-1.1 · effort not in the requests,subq subq/subq-snap-1.1 · effort not in the requests,equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap 1.1 Published SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",Setup,"SubQ Snap 1.1 Published SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.","SubQ Snap 1.1 Published SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",equal
 home table cell,lg-late-entries,late-entry,Base Labs Elephant-1 Published,Engine's best play,41.8%,41.8%,equal
 home table cell,lg-late-entries,late-entry,Base Labs Elephant-1 Published,"$ per 1,000 decisions","0.133 Baseten list price for the hosted model, not billed, $0.035 per million input tokens; Baseten Model API list price for the same model, read 2026-11-01","0.133 Baseten list price for the hosted model, not billed, $0.035 per million input tokens; Baseten Model API list price for the same model, read 2026-11-01",equal
 home table cell,lg-late-entries,late-entry,Base Labs Elephant-1 Published,Ability d′,0.91 0.80 to 1.04 · risks taken 337 / 812 Risk pays · needless 102 / 784 Safety pays,0.91 0.80 to 1.04 · risks taken 337 / 812 Risk pays · needless 102 / 784 Safety pays,equal
@@ -1252,36 +1267,26 @@ home table cell,lg-late-entries,late-entry,GPT-6 Astra (high) Published,Record (
 home table cell,lg-late-entries,late-entry,GPT-6 Astra (high) Published,"Risk judgement, margin 0.001",74.4 71.8 to 77.0,74.4 71.8 to 77.0,equal
 home table cell,lg-late-entries,late-entry,GPT-6 Astra (high) Published,Route and effort sent,"chatgpt-subscription openai/gpt-6-astra · effort high in 1,489 of 1,489 decisions","chatgpt-subscription openai/gpt-6-astra · effort high in 1,489 of 1,489 decisions",equal
 home table cell,lg-late-entries,late-entry,GPT-6 Astra (high) Published,Setup,GPT-6 Astra (high) Published,GPT-6 Astra (high) Published,equal
-home table cell,lg-late-entries,late-entry,REAX 1.3 Provisional: late entry still playing,Engine's best play,51.8%,51.8%,equal
-home table cell,lg-late-entries,late-entry,REAX 1.3 Provisional: late entry still playing,"$ per 1,000 decisions",Not measured,Not measured,equal
-home table cell,lg-late-entries,late-entry,REAX 1.3 Provisional: late entry still playing,Ability d′,0.93 0.80 to 1.08 · risks taken 229 / 599 Risk pays · needless 83 / 766 Safety pays,0.93 0.80 to 1.08 · risks taken 229 / 599 Risk pays · needless 83 / 766 Safety pays,equal
-home table cell,lg-late-entries,late-entry,REAX 1.3 Provisional: late entry still playing,"Caution c (+ cautious, − bold)",+0.77 +0.69 to +0.85 · cautious,+0.77 +0.69 to +0.85 · cautious,equal
-home table cell,lg-late-entries,late-entry,REAX 1.3 Provisional: late entry still playing,Cut off at the output limit,"0 0 of 1,757 decisions sent an output limit; 0 over 32,768 output tokens without one","0 0 of 1,757 decisions sent an output limit; 0 over 32,768 output tokens without one",equal
-home table cell,lg-late-entries,late-entry,REAX 1.3 Provisional: late entry still playing,Entry date,2026-11-07 first match 11:33 UTC,2026-11-07 first match 11:33 UTC,equal
-home table cell,lg-late-entries,late-entry,REAX 1.3 Provisional: late entry still playing,"Error rate (PR), 95% interval",28.1 25.1 to 31.4,28.1 25.1 to 31.4,equal
-home table cell,lg-late-entries,late-entry,REAX 1.3 Provisional: late entry still playing,Invalid answers,"0 of 1,757 decisions","0 of 1,757 decisions",equal
-home table cell,lg-late-entries,late-entry,REAX 1.3 Provisional: late entry still playing,League field played,League 1 (original table) 19 setups,League 1 (original table) 19 setups,equal
-home table cell,lg-late-entries,late-entry,REAX 1.3 Provisional: late entry still playing,Matches played,14 / 19 4 running,14 / 19 4 running,equal
-home table cell,lg-late-entries,late-entry,REAX 1.3 Provisional: late entry still playing,Median s per decision,1.75,1.75,equal
-home table cell,lg-late-entries,late-entry,REAX 1.3 Provisional: late entry still playing,Record (W–D–L),9–1–4 won–drawn–lost,9–1–4 won–drawn–lost,equal
-home table cell,lg-late-entries,late-entry,REAX 1.3 Provisional: late entry still playing,"Risk judgement, margin 0.001",60.8 58.8 to 62.6,60.8 58.8 to 62.6,equal
-home table cell,lg-late-entries,late-entry,REAX 1.3 Provisional: late entry still playing,Route and effort sent,local (reax13 serve.py) reax/reax13 · effort not in the requests,local (reax13 serve.py) reax/reax13 · effort not in the requests,equal
-home table cell,lg-late-entries,late-entry,REAX 1.3 Provisional: late entry still playing,Setup,REAX 1.3 Provisional: late entry still playing,REAX 1.3 Provisional: late entry still playing,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap 1.1 Published,Engine's best play,42.9%,42.9%,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap 1.1 Published,"$ per 1,000 decisions","0.150 API price (billed); output free, $0.04 per million input tokens; docs.subq.ai/using-the-api/models, read 2026-11-01","0.150 API price (billed); output free, $0.04 per million input tokens; docs.subq.ai/using-the-api/models, read 2026-11-01",equal
-home table cell,lg-late-entries,late-entry,SubQ Snap 1.1 Published,Ability d′,"0.71 0.61 to 0.82 · risks taken 412 / 798 Risk pays · needless 253 / 1,003 Safety pays","0.71 0.61 to 0.82 · risks taken 412 / 798 Risk pays · needless 253 / 1,003 Safety pays",equal
-home table cell,lg-late-entries,late-entry,SubQ Snap 1.1 Published,"Caution c (+ cautious, − bold)",+0.31 +0.25 to +0.38 · cautious,+0.31 +0.25 to +0.38 · cautious,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap 1.1 Published,Cut off at the output limit,"0 0 of 2,326 decisions sent an output limit; 0 over 32,768 output tokens without one","0 0 of 2,326 decisions sent an output limit; 0 over 32,768 output tokens without one",equal
-home table cell,lg-late-entries,late-entry,SubQ Snap 1.1 Published,Entry date,2026-11-02 first match 18:29 UTC,2026-11-02 first match 18:29 UTC,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap 1.1 Published,"Error rate (PR), 95% interval",40.2 36.7 to 43.8,40.2 36.7 to 43.8,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap 1.1 Published,Invalid answers,"0 of 2,326 decisions","0 of 2,326 decisions",equal
-home table cell,lg-late-entries,late-entry,SubQ Snap 1.1 Published,League field played,League 1 (original table) 19 setups,League 1 (original table) 19 setups,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap 1.1 Published,Matches played,19 / 19,19 / 19,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap 1.1 Published,Median s per decision,0.23,0.23,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap 1.1 Published,Record (W–D–L),12–0–7 won–drawn–lost,12–0–7 won–drawn–lost,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap 1.1 Published,"Risk judgement, margin 0.001",56.7 54.8 to 58.6,56.7 54.8 to 58.6,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap 1.1 Published,Route and effort sent,subq subq/subq-snap-1.1 · effort not in the requests,subq subq/subq-snap-1.1 · effort not in the requests,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap 1.1 Published,Setup,SubQ Snap 1.1 Published,SubQ Snap 1.1 Published,equal
+home table cell,lg-late-entries,late-entry,REAX 1.3 Provisional: 1 pair not played,Engine's best play,51.7%,51.7%,equal
+home table cell,lg-late-entries,late-entry,REAX 1.3 Provisional: 1 pair not played,"$ per 1,000 decisions","No price no price (our GPU); no list price published for REAX 1.3, read 2026-11-07","No price no price (our GPU); no list price published for REAX 1.3, read 2026-11-07",equal
+home table cell,lg-late-entries,late-entry,REAX 1.3 Provisional: 1 pair not played,Ability d′,0.93 0.78 to 1.06 · risks taken 249 / 666 Risk pays · needless 90 / 850 Safety pays,0.93 0.78 to 1.06 · risks taken 249 / 666 Risk pays · needless 90 / 850 Safety pays,equal
+home table cell,lg-late-entries,late-entry,REAX 1.3 Provisional: 1 pair not played,"Caution c (+ cautious, − bold)",+0.78 +0.70 to +0.87 · cautious,+0.78 +0.70 to +0.87 · cautious,equal
+home table cell,lg-late-entries,late-entry,REAX 1.3 Provisional: 1 pair not played,Cut off at the output limit,"0 0 of 1,998 decisions sent an output limit; 0 over 32,768 output tokens without one","0 0 of 1,998 decisions sent an output limit; 0 over 32,768 output tokens without one",equal
+home table cell,lg-late-entries,late-entry,REAX 1.3 Provisional: 1 pair not played,Entry date,2026-11-07 first match 11:33 UTC,2026-11-07 first match 11:33 UTC,equal
+home table cell,lg-late-entries,late-entry,REAX 1.3 Provisional: 1 pair not played,"Error rate (PR), 95% interval",27.8 24.9 to 30.6,27.8 24.9 to 30.6,equal
+home table cell,lg-late-entries,late-entry,REAX 1.3 Provisional: 1 pair not played,Invalid answers,"0 of 1,998 decisions","0 of 1,998 decisions",equal
+home table cell,lg-late-entries,late-entry,REAX 1.3 Provisional: 1 pair not played,League field played,League 1 (original table) 19 setups,League 1 (original table) 19 setups,equal
+home table cell,lg-late-entries,late-entry,REAX 1.3 Provisional: 1 pair not played,Matches played,18 / 19 not played: GPT-6 Luna (opponent's API out of credit),18 / 19 not played: GPT-6 Luna (opponent's API out of credit),equal
+home table cell,lg-late-entries,late-entry,REAX 1.3 Provisional: 1 pair not played,Median s per decision,1.74,1.74,equal
+home table cell,lg-late-entries,late-entry,REAX 1.3 Provisional: 1 pair not played,Record (W–D–L),11–1–6 won–drawn–lost,11–1–6 won–drawn–lost,equal
+home table cell,lg-late-entries,late-entry,REAX 1.3 Provisional: 1 pair not played,"Risk judgement, margin 0.001",60.5 58.7 to 62.4,60.5 58.7 to 62.4,equal
+home table cell,lg-late-entries,late-entry,REAX 1.3 Provisional: 1 pair not played,Route and effort sent,local (reax13 serve.py) reax/reax13 · effort not in the requests,local (reax13 serve.py) reax/reax13 · effort not in the requests,equal
+home table cell,lg-late-entries,late-entry,REAX 1.3 Provisional: 1 pair not played,Setup,REAX 1.3 Provisional: 1 pair not played,REAX 1.3 Provisional: 1 pair not played,equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",#,776,776,equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",Finished,2026-11-02,2026-11-02,equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",Opponent,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.","SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",Result,Lost,Lost,equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",Score,2–6,2–6,equal
 home table cell,lg-late-entries,late-entry,Celeris-1 Decision,#,778,778,equal
 home table cell,lg-late-entries,late-entry,Celeris-1 Decision,Finished,2026-11-02,2026-11-02,equal
 home table cell,lg-late-entries,late-entry,Celeris-1 Decision,Opponent,Celeris-1 Decision,Celeris-1 Decision,equal
@@ -1367,16 +1372,16 @@ home table cell,lg-late-entries,late-entry,Safest,Finished,2026-11-02,2026-11-02
 home table cell,lg-late-entries,late-entry,Safest,Opponent,Safest,Safest,equal
 home table cell,lg-late-entries,late-entry,Safest,Result,Won,Won,equal
 home table cell,lg-late-entries,late-entry,Safest,Score,5–3,5–3,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap Preview,#,776,776,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap Preview,Finished,2026-11-02,2026-11-02,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap Preview,Opponent,SubQ Snap Preview,SubQ Snap Preview,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap Preview,Result,Lost,Lost,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap Preview,Score,2–6,2–6,equal
 home table cell,lg-late-entries,late-entry,Winnow-12B,#,799,799,equal
 home table cell,lg-late-entries,late-entry,Winnow-12B,Finished,2026-11-02,2026-11-02,equal
 home table cell,lg-late-entries,late-entry,Winnow-12B,Opponent,Winnow-12B,Winnow-12B,equal
 home table cell,lg-late-entries,late-entry,Winnow-12B,Result,Lost,Lost,equal
 home table cell,lg-late-entries,late-entry,Winnow-12B,Score,1–5,1–5,equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",#,780,780,equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",Finished,2026-11-02,2026-11-02,equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",Opponent,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.","SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",Result,Won,Won,equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",Score,5–2,5–2,equal
 home table cell,lg-late-entries,late-entry,Celeris-1 Decision,#,781,781,equal
 home table cell,lg-late-entries,late-entry,Celeris-1 Decision,Finished,2026-11-02,2026-11-02,equal
 home table cell,lg-late-entries,late-entry,Celeris-1 Decision,Opponent,Celeris-1 Decision,Celeris-1 Decision,equal
@@ -1462,16 +1467,16 @@ home table cell,lg-late-entries,late-entry,Safest,Finished,2026-11-02,2026-11-02
 home table cell,lg-late-entries,late-entry,Safest,Opponent,Safest,Safest,equal
 home table cell,lg-late-entries,late-entry,Safest,Result,Draw,Draw,equal
 home table cell,lg-late-entries,late-entry,Safest,Score,5–5,5–5,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap Preview,#,780,780,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap Preview,Finished,2026-11-02,2026-11-02,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap Preview,Opponent,SubQ Snap Preview,SubQ Snap Preview,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap Preview,Result,Won,Won,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap Preview,Score,5–2,5–2,equal
 home table cell,lg-late-entries,late-entry,Winnow-12B,#,810,810,equal
 home table cell,lg-late-entries,late-entry,Winnow-12B,Finished,2026-11-02,2026-11-02,equal
 home table cell,lg-late-entries,late-entry,Winnow-12B,Opponent,Winnow-12B,Winnow-12B,equal
 home table cell,lg-late-entries,late-entry,Winnow-12B,Result,Won,Won,equal
 home table cell,lg-late-entries,late-entry,Winnow-12B,Score,5–1,5–1,equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",#,887,887,equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",Finished,2026-11-06,2026-11-06,equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",Opponent,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.","SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",Result,Lost,Lost,equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",Score,2–5,2–5,equal
 home table cell,lg-late-entries,late-entry,Celeris-1 Decision,#,892,892,equal
 home table cell,lg-late-entries,late-entry,Celeris-1 Decision,Finished,2026-11-06,2026-11-06,equal
 home table cell,lg-late-entries,late-entry,Celeris-1 Decision,Opponent,Celeris-1 Decision,Celeris-1 Decision,equal
@@ -1557,16 +1562,16 @@ home table cell,lg-late-entries,late-entry,Safest,Finished,2026-11-06,2026-11-06
 home table cell,lg-late-entries,late-entry,Safest,Opponent,Safest,Safest,equal
 home table cell,lg-late-entries,late-entry,Safest,Result,Won,Won,equal
 home table cell,lg-late-entries,late-entry,Safest,Score,5–3,5–3,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap Preview,#,887,887,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap Preview,Finished,2026-11-06,2026-11-06,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap Preview,Opponent,SubQ Snap Preview,SubQ Snap Preview,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap Preview,Result,Lost,Lost,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap Preview,Score,2–5,2–5,equal
 home table cell,lg-late-entries,late-entry,Winnow-12B,#,899,899,equal
 home table cell,lg-late-entries,late-entry,Winnow-12B,Finished,2026-11-06,2026-11-06,equal
 home table cell,lg-late-entries,late-entry,Winnow-12B,Opponent,Winnow-12B,Winnow-12B,equal
 home table cell,lg-late-entries,late-entry,Winnow-12B,Result,Lost,Lost,equal
 home table cell,lg-late-entries,late-entry,Winnow-12B,Score,2–5,2–5,equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",#,833,833,equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",Finished,2026-11-06,2026-11-06,equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",Opponent,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.","SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",Result,Lost,Lost,equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",Score,0–5,0–5,equal
 home table cell,lg-late-entries,late-entry,Celeris-1 Decision,#,840,840,equal
 home table cell,lg-late-entries,late-entry,Celeris-1 Decision,Finished,2026-11-06,2026-11-06,equal
 home table cell,lg-late-entries,late-entry,Celeris-1 Decision,Opponent,Celeris-1 Decision,Celeris-1 Decision,equal
@@ -1652,16 +1657,16 @@ home table cell,lg-late-entries,late-entry,Safest,Finished,2026-11-06,2026-11-06
 home table cell,lg-late-entries,late-entry,Safest,Opponent,Safest,Safest,equal
 home table cell,lg-late-entries,late-entry,Safest,Result,Lost,Lost,equal
 home table cell,lg-late-entries,late-entry,Safest,Score,3–5,3–5,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap Preview,#,833,833,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap Preview,Finished,2026-11-06,2026-11-06,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap Preview,Opponent,SubQ Snap Preview,SubQ Snap Preview,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap Preview,Result,Lost,Lost,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap Preview,Score,0–5,0–5,equal
 home table cell,lg-late-entries,late-entry,Winnow-12B,#,860,860,equal
 home table cell,lg-late-entries,late-entry,Winnow-12B,Finished,2026-11-06,2026-11-06,equal
 home table cell,lg-late-entries,late-entry,Winnow-12B,Opponent,Winnow-12B,Winnow-12B,equal
 home table cell,lg-late-entries,late-entry,Winnow-12B,Result,Won,Won,equal
 home table cell,lg-late-entries,late-entry,Winnow-12B,Score,7–6,7–6,equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",#,831,831,equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",Finished,2026-11-06,2026-11-06,equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",Opponent,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.","SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",Result,Lost,Lost,equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",Score,3–5,3–5,equal
 home table cell,lg-late-entries,late-entry,Celeris-1 Decision,#,844,844,equal
 home table cell,lg-late-entries,late-entry,Celeris-1 Decision,Finished,2026-11-06,2026-11-06,equal
 home table cell,lg-late-entries,late-entry,Celeris-1 Decision,Opponent,Celeris-1 Decision,Celeris-1 Decision,equal
@@ -1747,16 +1752,16 @@ home table cell,lg-late-entries,late-entry,Safest,Finished,2026-11-06,2026-11-06
 home table cell,lg-late-entries,late-entry,Safest,Opponent,Safest,Safest,equal
 home table cell,lg-late-entries,late-entry,Safest,Result,Won,Won,equal
 home table cell,lg-late-entries,late-entry,Safest,Score,6–2,6–2,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap Preview,#,831,831,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap Preview,Finished,2026-11-06,2026-11-06,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap Preview,Opponent,SubQ Snap Preview,SubQ Snap Preview,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap Preview,Result,Lost,Lost,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap Preview,Score,3–5,3–5,equal
 home table cell,lg-late-entries,late-entry,Winnow-12B,#,869,869,equal
 home table cell,lg-late-entries,late-entry,Winnow-12B,Finished,2026-11-06,2026-11-06,equal
 home table cell,lg-late-entries,late-entry,Winnow-12B,Opponent,Winnow-12B,Winnow-12B,equal
 home table cell,lg-late-entries,late-entry,Winnow-12B,Result,Won,Won,equal
 home table cell,lg-late-entries,late-entry,Winnow-12B,Score,5–2,5–2,equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",#,848,848,equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",Finished,2026-11-06,2026-11-06,equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",Opponent,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.","SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",Result,Won,Won,equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",Score,5–4,5–4,equal
 home table cell,lg-late-entries,late-entry,Celeris-1 Decision,#,857,857,equal
 home table cell,lg-late-entries,late-entry,Celeris-1 Decision,Finished,2026-11-06,2026-11-06,equal
 home table cell,lg-late-entries,late-entry,Celeris-1 Decision,Opponent,Celeris-1 Decision,Celeris-1 Decision,equal
@@ -1842,11 +1847,6 @@ home table cell,lg-late-entries,late-entry,Safest,Finished,2026-11-06,2026-11-06
 home table cell,lg-late-entries,late-entry,Safest,Opponent,Safest,Safest,equal
 home table cell,lg-late-entries,late-entry,Safest,Result,Won,Won,equal
 home table cell,lg-late-entries,late-entry,Safest,Score,5–3,5–3,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap Preview,#,848,848,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap Preview,Finished,2026-11-06,2026-11-06,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap Preview,Opponent,SubQ Snap Preview,SubQ Snap Preview,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap Preview,Result,Won,Won,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap Preview,Score,5–4,5–4,equal
 home table cell,lg-late-entries,late-entry,Winnow-12B,#,872,872,equal
 home table cell,lg-late-entries,late-entry,Winnow-12B,Finished,2026-11-06,2026-11-06,equal
 home table cell,lg-late-entries,late-entry,Winnow-12B,Opponent,Winnow-12B,Winnow-12B,equal
@@ -1912,6 +1912,11 @@ home table cell,lg-late-entries,late-entry,Kimi K3.1 Pro (off),Finished,2026-10-
 home table cell,lg-late-entries,late-entry,Kimi K3.1 Pro (off),Opponent,Kimi K3.1 Pro (off),Kimi K3.1 Pro (off),equal
 home table cell,lg-late-entries,late-entry,Kimi K3.1 Pro (off),Result,Won,Won,equal
 home table cell,lg-late-entries,late-entry,Kimi K3.1 Pro (off),Score,6–2,6–2,equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",#,922,922,equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",Finished,2026-11-07,2026-11-07,equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",Opponent,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.","SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",Result,Lost,Lost,equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",Score,2–6,2–6,equal
 home table cell,lg-late-entries,late-entry,Celeris-1 Decision,#,916,916,equal
 home table cell,lg-late-entries,late-entry,Celeris-1 Decision,Finished,2026-11-07,2026-11-07,equal
 home table cell,lg-late-entries,late-entry,Celeris-1 Decision,Opponent,Celeris-1 Decision,Celeris-1 Decision,equal
@@ -1957,26 +1962,31 @@ home table cell,lg-late-entries,late-entry,GNUbg weak,Finished,2026-11-07,2026-1
 home table cell,lg-late-entries,late-entry,GNUbg weak,Opponent,GNUbg weak,GNUbg weak,equal
 home table cell,lg-late-entries,late-entry,GNUbg weak,Result,Lost,Lost,equal
 home table cell,lg-late-entries,late-entry,GNUbg weak,Score,1–5,1–5,equal
+home table cell,lg-late-entries,late-entry,GPT-6 Luna,#,N/A,N/A,equal
+home table cell,lg-late-entries,late-entry,GPT-6 Luna,Finished,,,equal
+home table cell,lg-late-entries,late-entry,GPT-6 Luna,Opponent,GPT-6 Luna,GPT-6 Luna,equal
+home table cell,lg-late-entries,late-entry,GPT-6 Luna,Result,Not played (opponent's API out of credit),Not played (opponent's API out of credit),equal
+home table cell,lg-late-entries,late-entry,GPT-6 Luna,Score,No score,No score,equal
 home table cell,lg-late-entries,late-entry,Jev 1.13.0,#,918,918,equal
 home table cell,lg-late-entries,late-entry,Jev 1.13.0,Finished,2026-11-07,2026-11-07,equal
 home table cell,lg-late-entries,late-entry,Jev 1.13.0,Opponent,Jev 1.13.0,Jev 1.13.0,equal
 home table cell,lg-late-entries,late-entry,Jev 1.13.0,Result,Won,Won,equal
 home table cell,lg-late-entries,late-entry,Jev 1.13.0,Score,5–0,5–0,equal
 home table cell,lg-late-entries,late-entry,Jev 1.14.0,#,919,919,equal
-home table cell,lg-late-entries,late-entry,Jev 1.14.0,Finished,,,equal
+home table cell,lg-late-entries,late-entry,Jev 1.14.0,Finished,2026-11-07,2026-11-07,equal
 home table cell,lg-late-entries,late-entry,Jev 1.14.0,Opponent,Jev 1.14.0,Jev 1.14.0,equal
-home table cell,lg-late-entries,late-entry,Jev 1.14.0,Result,Running,Running,equal
-home table cell,lg-late-entries,late-entry,Jev 1.14.0,Score,4–4,4–4,equal
+home table cell,lg-late-entries,late-entry,Jev 1.14.0,Result,Lost,Lost,equal
+home table cell,lg-late-entries,late-entry,Jev 1.14.0,Score,5–6,5–6,equal
 home table cell,lg-late-entries,late-entry,Liquid d1-ultra,#,920,920,equal
-home table cell,lg-late-entries,late-entry,Liquid d1-ultra,Finished,,,equal
+home table cell,lg-late-entries,late-entry,Liquid d1-ultra,Finished,2026-11-07,2026-11-07,equal
 home table cell,lg-late-entries,late-entry,Liquid d1-ultra,Opponent,Liquid d1-ultra,Liquid d1-ultra,equal
-home table cell,lg-late-entries,late-entry,Liquid d1-ultra,Result,Running,Running,equal
-home table cell,lg-late-entries,late-entry,Liquid d1-ultra,Score,3–1,3–1,equal
+home table cell,lg-late-entries,late-entry,Liquid d1-ultra,Result,Won,Won,equal
+home table cell,lg-late-entries,late-entry,Liquid d1-ultra,Score,5–3,5–3,equal
 home table cell,lg-late-entries,late-entry,Mercury Decide,#,921,921,equal
-home table cell,lg-late-entries,late-entry,Mercury Decide,Finished,,,equal
+home table cell,lg-late-entries,late-entry,Mercury Decide,Finished,2026-11-07,2026-11-07,equal
 home table cell,lg-late-entries,late-entry,Mercury Decide,Opponent,Mercury Decide,Mercury Decide,equal
-home table cell,lg-late-entries,late-entry,Mercury Decide,Result,Running,Running,equal
-home table cell,lg-late-entries,late-entry,Mercury Decide,Score,0–0,0–0,equal
+home table cell,lg-late-entries,late-entry,Mercury Decide,Result,Won,Won,equal
+home table cell,lg-late-entries,late-entry,Mercury Decide,Score,6–1,6–1,equal
 home table cell,lg-late-entries,late-entry,Open-Jev 27B v1.1,#,914,914,equal
 home table cell,lg-late-entries,late-entry,Open-Jev 27B v1.1,Finished,2026-11-07,2026-11-07,equal
 home table cell,lg-late-entries,late-entry,Open-Jev 27B v1.1,Opponent,Open-Jev 27B v1.1,Open-Jev 27B v1.1,equal
@@ -1992,16 +2002,16 @@ home table cell,lg-late-entries,late-entry,Safest,Finished,2026-11-07,2026-11-07
 home table cell,lg-late-entries,late-entry,Safest,Opponent,Safest,Safest,equal
 home table cell,lg-late-entries,late-entry,Safest,Result,Won,Won,equal
 home table cell,lg-late-entries,late-entry,Safest,Score,6–0,6–0,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap Preview,#,922,922,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap Preview,Finished,,,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap Preview,Opponent,SubQ Snap Preview,SubQ Snap Preview,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap Preview,Result,Running,Running,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap Preview,Score,0–0,0–0,equal
 home table cell,lg-late-entries,late-entry,Winnow-12B,#,909,909,equal
 home table cell,lg-late-entries,late-entry,Winnow-12B,Finished,2026-11-07,2026-11-07,equal
 home table cell,lg-late-entries,late-entry,Winnow-12B,Opponent,Winnow-12B,Winnow-12B,equal
 home table cell,lg-late-entries,late-entry,Winnow-12B,Result,Won,Won,equal
 home table cell,lg-late-entries,late-entry,Winnow-12B,Score,6–3,6–3,equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",#,772,772,equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",Finished,2026-11-02,2026-11-02,equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",Opponent,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.","SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",Result,Won,Won,equal
+home table cell,lg-late-entries,late-entry,"SubQ Snap Preview SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and probabilities). These pairs may be 1.1 against 1.1.",Score,7–4,7–4,equal
 home table cell,lg-late-entries,late-entry,Celeris-1 Decision,#,774,774,equal
 home table cell,lg-late-entries,late-entry,Celeris-1 Decision,Finished,2026-11-02,2026-11-02,equal
 home table cell,lg-late-entries,late-entry,Celeris-1 Decision,Opponent,Celeris-1 Decision,Celeris-1 Decision,equal
@@ -2087,11 +2097,6 @@ home table cell,lg-late-entries,late-entry,Safest,Finished,2026-11-02,2026-11-02
 home table cell,lg-late-entries,late-entry,Safest,Opponent,Safest,Safest,equal
 home table cell,lg-late-entries,late-entry,Safest,Result,Won,Won,equal
 home table cell,lg-late-entries,late-entry,Safest,Score,6–2,6–2,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap Preview,#,772,772,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap Preview,Finished,2026-11-02,2026-11-02,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap Preview,Opponent,SubQ Snap Preview,SubQ Snap Preview,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap Preview,Result,Won,Won,equal
-home table cell,lg-late-entries,late-entry,SubQ Snap Preview,Score,7–4,7–4,equal
 home table cell,lg-late-entries,late-entry,Winnow-12B,#,788,788,equal
 home table cell,lg-late-entries,late-entry,Winnow-12B,Finished,2026-11-02,2026-11-02,equal
 home table cell,lg-late-entries,late-entry,Winnow-12B,Opponent,Winnow-12B,Winnow-12B,equal
@@ -17545,6 +17550,3 @@ finding sentence: finding-flinch,number in the text,,,value,in clear-risk.json,-
 finding sentence: finding-flinch,number in the text,,,value,in clear-risk.json,+92 pp,equal
 finding sentence: finding-flinch,number in the text,,,value,in clear-risk.json,+46 pp,equal
 finding sentence: finding-flinch,number in the text,,,value,in clear-risk.json,+56 pp,equal
-other page,data/index.html,,,main content,live,branch,DIFF
-other page,method/index.html,,,main content,live,branch,DIFF
-data file (branch only),data/v3/learning-pilot.json,,,bytes,,branch,new

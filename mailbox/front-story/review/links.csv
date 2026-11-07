@@ -5,7 +5,7 @@ any,home link,/analysis/logic/,,,absolute path outside the render,absolute path 
 any,home link,/analysis/backgammon/,,,absolute path outside the render,absolute path outside the render,same as live (unresolved statically in both)
 any,home link,./,,,file found,file found,ok
 any,home link,./,,,file found,file found,ok
-any,home link,learning/,,,file MISSING,file found,ok
+any,home link,learning/,,,file found,file found,ok
 any,home link,./,,,file found,file found,ok
 any,home link,./,,,file found,file found,ok
 any,home link,decisions/,,,file found,file found,ok
@@ -13,7 +13,7 @@ any,home link,disagreements/,,,file found,file found,ok
 any,home link,phases/,,,file found,file found,ok
 any,home link,compare/,,,file found,file found,ok
 any,home link,clear-risk/,,,file found,file found,ok
-any,home link,learning/,,,file MISSING,file found,ok
+any,home link,learning/,,,file found,file found,ok
 any,home link,leagues/,,,file found,file found,ok
 any,home link,matches/,,,file found,file found,ok
 any,home link,method/,,,file found,file found,ok
@@ -1799,6 +1799,10 @@ any,home link,matches/#m915,,,"file found, #m915 found","file found, #m915 found
 any,home link,matches/#m916,,,"file found, #m916 found","file found, #m916 found",ok
 any,home link,matches/#m917,,,"file found, #m917 found","file found, #m917 found",ok
 any,home link,matches/#m918,,,"file found, #m918 found","file found, #m918 found",ok
+any,home link,matches/#m919,,,"file found, #m919 found","file found, #m919 found",ok
+any,home link,matches/#m920,,,"file found, #m920 found","file found, #m920 found",ok
+any,home link,matches/#m921,,,"file found, #m921 found","file found, #m921 found",ok
+any,home link,matches/#m922,,,"file found, #m922 found","file found, #m922 found",ok
 any,home link,matches/,,,file found,file found,ok
 any,home link,models/league-3/gpt-6-astra-off/,,,file found,file found,ok
 any,home link,models/league-3/gpt-6-astra-on/,,,file found,file found,ok

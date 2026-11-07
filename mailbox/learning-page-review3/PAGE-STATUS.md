@@ -35,3 +35,31 @@ Whole-site `checks.run` on 97aaa78.
 4. The invariance CSV and summary, into file 04. The rules are ready in `scripts/invariance.py`.
 5. Screenshots of home, the Learning tab and the protocol section, at 1280 and 390 wide, light and dark.
 6. A README with the commands, timestamps, the Method sections quoted, and the 4 plan hashes. Then copy to the mailbox, commit and push.
+
+## Addendum (LearningPage, just before the reboot)
+
+`origin/learning-page` is now at **47d96f5** (work in progress). It adds two scripts under review3:
+
+- `scripts/make_fixture.py` builds a SYNTHETIC complete or running fixture from the dry aggregates. The validator accepts it as complete.
+- `scripts/injected_source_faults.py` handled 17 of 17 source faults:
+  - **8 make the validator refuse the file:**
+    - the string "true" instead of a boolean;
+    - an unknown key;
+    - a 5th arm;
+    - planned set to 2;
+    - a wrong prompt hash;
+    - a wrong test-set hash;
+    - a wrong inventory hash;
+    - `t0_done` set to 1.
+  - **9 make the validator refuse "complete":**
+    - `dry_run`;
+    - budget series 10 missing;
+    - a tampered vs_control value;
+    - a wrong signal flag;
+    - T10 answered 199 of 200;
+    - a wrong games 8–10 rate;
+    - an edited lesson file;
+    - the T0 aggregate missing;
+    - a wrong type for `budget_points`.
+
+That output was not saved to a review file; it has to be rerun after the reboot.

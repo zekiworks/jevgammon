@@ -12,7 +12,7 @@ import re
 
 import home as H
 import pages as P
-from common import CONTENT, LATE_ENTRY, NA, count, esc, fmt, nm, pct
+from common import ALL_NOTE, CONTENT, LATE_ENTRY, NA, count, esc, fmt, nm, pct
 
 RELEASES = json.loads((CONTENT / "release_months.json").read_text())["models"]
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
@@ -319,7 +319,7 @@ def headline(S) -> str:
             'Tap a model for its decisions; how each row is chosen is under the table.</p>'
             f'<div data-headline-panel="model">{P.SWIPE}{table}{caveat(NOTE, "statistics")}{rule}{note}{too_safe(S, chart)}</div>'
             f'<div data-headline-panel="all" hidden>{H.all_risk_table(S)}{caveat(H.RANK_NOTE, "statistics")}</div>'
-            f'</section>')
+            f'<p class="table-note">{esc(ALL_NOTE)}</p></section>')
 
 
 # --- Finding sections ----------------------------------------------------------------------------------------------

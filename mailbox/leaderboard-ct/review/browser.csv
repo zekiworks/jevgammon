@@ -1,0 +1,45 @@
+width,theme,state,observed,result
+1280,light,(no filter),rows shown 34/34; other-setting rows hidden 20/20; expanders 15: each opens exactly its rows (20 rows) and closes them; Too safe bars 32/32; Every number Quality rows shown 45,ok
+1280,light,?type=chat,rows shown 34/34; other-setting rows hidden 20/20; expanders 15: each opens exactly its rows (20 rows) and closes them; Too safe bars 32/32; Every number Quality rows shown 30,ok
+1280,light,?type=decision,rows shown 34/34; other-setting rows hidden 20/20; expanders 15: each opens exactly its rows (20 rows) and closes them; Too safe bars 32/32; Every number Quality rows shown 15,ok
+1280,light,?type=program,rows shown 34/34; other-setting rows hidden 20/20; expanders 15: each opens exactly its rows (20 rows) and closes them; Too safe bars 32/32; Every number Quality rows shown 0,ok
+1280,light,?league=league-2,rows shown 34/34; other-setting rows hidden 20/20; expanders 15: each opens exactly its rows (20 rows) and closes them; Too safe bars 32/32; Every number Quality rows shown 45,ok
+1280,light,?league=league-3&type=chat,rows shown 34/34; other-setting rows hidden 20/20; expanders 15: each opens exactly its rows (20 rows) and closes them; Too safe bars 32/32; Every number Quality rows shown 30,ok
+1280,light,?phase=race,rows shown 34/34; other-setting rows hidden 20/20; expanders 15: each opens exactly its rows (20 rows) and closes them; Too safe bars 32/32; Every number Quality rows shown 45,ok
+1280,light,"click:[data-filter-kind=""decision""]",rows shown 34/34; other-setting rows hidden 20/20; expanders 15: each opens exactly its rows (20 rows) and closes them; Too safe bars 32/32; Every number Quality rows shown 15,ok
+1280,light,"click:[data-league-pick=""league-1""]",rows shown 34/34; other-setting rows hidden 20/20; expanders 15: each opens exactly its rows (20 rows) and closes them; Too safe bars 32/32; Every number Quality rows shown 45,ok
+1280,light,"One row per model → All setups → back, first expander open",panels all → model; rows 34/34; open rows 1,ok
+1280,light,script errors (file://),none,ok
+1280,dark,(no filter),rows shown 34/34; other-setting rows hidden 20/20; expanders 15: each opens exactly its rows (20 rows) and closes them; Too safe bars 32/32; Every number Quality rows shown 45,ok
+1280,dark,?type=chat,rows shown 34/34; other-setting rows hidden 20/20; expanders 15: each opens exactly its rows (20 rows) and closes them; Too safe bars 32/32; Every number Quality rows shown 30,ok
+1280,dark,?type=decision,rows shown 34/34; other-setting rows hidden 20/20; expanders 15: each opens exactly its rows (20 rows) and closes them; Too safe bars 32/32; Every number Quality rows shown 15,ok
+1280,dark,?type=program,rows shown 34/34; other-setting rows hidden 20/20; expanders 15: each opens exactly its rows (20 rows) and closes them; Too safe bars 32/32; Every number Quality rows shown 0,ok
+1280,dark,?league=league-2,rows shown 34/34; other-setting rows hidden 20/20; expanders 15: each opens exactly its rows (20 rows) and closes them; Too safe bars 32/32; Every number Quality rows shown 45,ok
+1280,dark,?league=league-3&type=chat,rows shown 34/34; other-setting rows hidden 20/20; expanders 15: each opens exactly its rows (20 rows) and closes them; Too safe bars 32/32; Every number Quality rows shown 30,ok
+1280,dark,?phase=race,rows shown 34/34; other-setting rows hidden 20/20; expanders 15: each opens exactly its rows (20 rows) and closes them; Too safe bars 32/32; Every number Quality rows shown 45,ok
+1280,dark,"click:[data-filter-kind=""decision""]",rows shown 34/34; other-setting rows hidden 20/20; expanders 15: each opens exactly its rows (20 rows) and closes them; Too safe bars 32/32; Every number Quality rows shown 15,ok
+1280,dark,"click:[data-league-pick=""league-1""]",rows shown 34/34; other-setting rows hidden 20/20; expanders 15: each opens exactly its rows (20 rows) and closes them; Too safe bars 32/32; Every number Quality rows shown 45,ok
+1280,dark,"One row per model → All setups → back, first expander open",panels all → model; rows 34/34; open rows 1,ok
+1280,dark,script errors (file://),none,ok
+390,light,(no filter),rows shown 34/34; other-setting rows hidden 20/20; expanders 15: each opens exactly its rows (20 rows) and closes them; Too safe bars 32/32; Every number Quality rows shown 45,ok
+390,light,?type=chat,rows shown 34/34; other-setting rows hidden 20/20; expanders 15: each opens exactly its rows (20 rows) and closes them; Too safe bars 32/32; Every number Quality rows shown 30,ok
+390,light,?type=decision,rows shown 34/34; other-setting rows hidden 20/20; expanders 15: each opens exactly its rows (20 rows) and closes them; Too safe bars 32/32; Every number Quality rows shown 15,ok
+390,light,?type=program,rows shown 34/34; other-setting rows hidden 20/20; expanders 15: each opens exactly its rows (20 rows) and closes them; Too safe bars 32/32; Every number Quality rows shown 0,ok
+390,light,?league=league-2,rows shown 34/34; other-setting rows hidden 20/20; expanders 15: each opens exactly its rows (20 rows) and closes them; Too safe bars 32/32; Every number Quality rows shown 45,ok
+390,light,?league=league-3&type=chat,rows shown 34/34; other-setting rows hidden 20/20; expanders 15: each opens exactly its rows (20 rows) and closes them; Too safe bars 32/32; Every number Quality rows shown 30,ok
+390,light,?phase=race,rows shown 34/34; other-setting rows hidden 20/20; expanders 15: each opens exactly its rows (20 rows) and closes them; Too safe bars 32/32; Every number Quality rows shown 45,ok
+390,light,"click:[data-filter-kind=""decision""]",rows shown 34/34; other-setting rows hidden 20/20; expanders 15: each opens exactly its rows (20 rows) and closes them; Too safe bars 32/32; Every number Quality rows shown 15,ok
+390,light,"click:[data-league-pick=""league-1""]",rows shown 34/34; other-setting rows hidden 20/20; expanders 15: each opens exactly its rows (20 rows) and closes them; Too safe bars 32/32; Every number Quality rows shown 45,ok
+390,light,"One row per model → All setups → back, first expander open",panels all → model; rows 34/34; open rows 1,ok
+390,light,script errors (file://),none,ok
+390,dark,(no filter),rows shown 34/34; other-setting rows hidden 20/20; expanders 15: each opens exactly its rows (20 rows) and closes them; Too safe bars 32/32; Every number Quality rows shown 45,ok
+390,dark,?type=chat,rows shown 34/34; other-setting rows hidden 20/20; expanders 15: each opens exactly its rows (20 rows) and closes them; Too safe bars 32/32; Every number Quality rows shown 30,ok
+390,dark,?type=decision,rows shown 34/34; other-setting rows hidden 20/20; expanders 15: each opens exactly its rows (20 rows) and closes them; Too safe bars 32/32; Every number Quality rows shown 15,ok
+390,dark,?type=program,rows shown 34/34; other-setting rows hidden 20/20; expanders 15: each opens exactly its rows (20 rows) and closes them; Too safe bars 32/32; Every number Quality rows shown 0,ok
+390,dark,?league=league-2,rows shown 34/34; other-setting rows hidden 20/20; expanders 15: each opens exactly its rows (20 rows) and closes them; Too safe bars 32/32; Every number Quality rows shown 45,ok
+390,dark,?league=league-3&type=chat,rows shown 34/34; other-setting rows hidden 20/20; expanders 15: each opens exactly its rows (20 rows) and closes them; Too safe bars 32/32; Every number Quality rows shown 30,ok
+390,dark,?phase=race,rows shown 34/34; other-setting rows hidden 20/20; expanders 15: each opens exactly its rows (20 rows) and closes them; Too safe bars 32/32; Every number Quality rows shown 45,ok
+390,dark,"click:[data-filter-kind=""decision""]",rows shown 34/34; other-setting rows hidden 20/20; expanders 15: each opens exactly its rows (20 rows) and closes them; Too safe bars 32/32; Every number Quality rows shown 15,ok
+390,dark,"click:[data-league-pick=""league-1""]",rows shown 34/34; other-setting rows hidden 20/20; expanders 15: each opens exactly its rows (20 rows) and closes them; Too safe bars 32/32; Every number Quality rows shown 45,ok
+390,dark,"One row per model → All setups → back, first expander open",panels all → model; rows 34/34; open rows 1,ok
+390,dark,script errors (file://),none,ok

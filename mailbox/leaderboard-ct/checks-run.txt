@@ -1,0 +1,13 @@
+# checks.run on whole-site renders. Started 2026-11-07 19:35:34 UTC
+# main: a25b75e  leaderboard-ct: 5ca56de  results hash fixed: 7b40b30e
+# live mirror: 37700c55f, data as of 2026-11-07T19:20Z
+
+## main: render_site.py /tmp/lct/src-main /tmp/lct/state /tmp/lct/out-main 7b40b30e --checks
+rendered /tmp/lct/out-main with /tmp/lct/src-main/tools/site
+checks.run: 0 failure(s)
+
+## branch: render_site.py /tmp/lct/src-branch /tmp/lct/state /tmp/lct/out-branch 7b40b30e --checks
+rendered /tmp/lct/out-branch with /tmp/lct/src-branch/tools/site
+checks.run: 0 failure(s)
+
+# Finished 2026-11-07 19:39:58 UTC

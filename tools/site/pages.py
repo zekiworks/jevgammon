@@ -16,7 +16,8 @@ from common import (EARLIER, EARLIER_NOTE, LATE_ENTRY, LATE_ENTRY_LABEL, LATE_EN
 # sibling site's pages-row style, the current page filled.
 NAV = [("", [("", "Home")]),
        ("Analyses", [("decisions/", "Every decision"), ("disagreements/", "Where models disagree"), ("phases/", "Phases"),
-                     ("compare/", "Compare"), ("clear-risk/", "Clear risk")]),
+                     ("compare/", "Compare"), ("clear-risk/", "Clear risk"),
+                     ("learning/", "Learning from experience (preliminary, running)")]),
        ("Leagues and matches", [("leagues/", "Leagues"), ("matches/", "Matches")]),
        ("Method and data", [("method/", "Method"), ("data/", "Data")])]
 TITLE = "Can a model tell when a risk is worth taking?"
@@ -1478,6 +1479,9 @@ def write_all(S, out: Path, base: str) -> None:
     put("clear-risk/", "Clear risk (preliminary)", clear_risk_section.body(S),
         description="Clear-risk scan of the backgammon benchmark (preliminary / partial): decisions where a risk or "
                     "safety is clearly better, per setup, checks, a rollout check and a partial model quiz.")
+    import learning_page
+    put(learning_page.PATH, learning_page.TITLE, learning_page.body(S["learning"]),
+        description=learning_page.DESCRIPTION)
     put("data/", "Data", data_page(S, out))
     put("decisions/", "Every decision", decisions_page(S, decisions_export.body()),
         scripts=("decisions.js",), styles=("decisions.css",))

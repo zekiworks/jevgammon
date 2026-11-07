@@ -1,29 +1,30 @@
 #!/usr/bin/env python3
-"""Learning from experience (preliminary, running): the learning pilot's page, render-only candidate.
+"""Learning from experience (preliminary, running): the learning pilot's page (learning/) and its data file
+(data/v3/learning-pilot.json).
 
-    python3 tools/site/learning_page.py [--out DIR] [--plan MD] [--results JSON] [--runs DIR] [--prompts DIR]
-                                        [--check SITE]
+    python3 tools/site/learning_page.py [--out DIR] [--plan MD] [--src DIR] [--check SITE]
 
-Writes OUT/learning/index.html and its data file OUT/data/v3/learning-pilot.json (OUT defaults to a new temporary
-directory, never the live site). Every source is read at render time:
+build.py renders the page with the site (S["learning"] = from_state(STATE)); this command renders the page alone, for
+review: OUT/learning/index.html and OUT/data/v3/learning-pilot.json (OUT defaults to a new temporary directory, never
+the live site). Every source is read at render time:
 
-- the plan (--plan, default mailbox/Learning pilot - plan 2026-11-07.md): the single source of the protocol text, shown
-  section by section, with its commitment line near the top;
-- the lesson prompt (--prompts, default workspace/learning-pilot: lessons_system.txt and lessons_user.txt) and its
-  sha256, one hash over the system file's bytes immediately followed by the user file's bytes; when the plan states a
-  64-hex hash, the render fails unless the files hash to it;
-- the results (--results, default workspace/learning-pilot/out/learning-pilot.json), absent before the first series:
-  "No results yet" and progress 0 / planned. Numbers per arm x test round and progress appear as series finish; the
-  learning lift and the signal rule's result only once "complete" is true (plan §9); never positions, answers or
-  contexts;
-- the lessons the model wrote (--runs, default workspace/learning-pilot/runs: lessons/sNN/lessons-gKK.txt), each next
-  to its game (series, game, result from the series aggregate's games), for finished series only.
+- the plan (--plan, default mailbox/Learning pilot - plan 2026-11-07.md, committed): the single source of the protocol
+  text, shown section by section, with its commitment line near the top;
+- the pilot's files as snapshot.py copies them to STATE/learning (--src, default ~/.local/state/bg-site/learning; a
+  missing or empty directory means no results yet):
+  - learning-pilot.json, the harness's summary, absent before the first series: "No results yet" and progress
+    0 / planned. Numbers per arm x test round and progress appear as series finish; the learning lift and the signal
+    rule's result only once "complete" is true (plan §9);
+  - runs/lessons/sNN/aggregate.json and lessons-gKK.txt: every lesson the model wrote, next to its game (series, game,
+    result from the series aggregate's games), for finished series only;
+  - lessons_system.txt and lessons_user.txt, the lesson prompt, and its sha256: one hash over the system file's bytes
+    immediately followed by the user file's bytes; when the plan states a 64-hex hash, the render fails unless the
+    files hash to it.
 
-Only what the page shows goes into the data file (aggregates; whitelisted keys), so every number on the page traces to
-it (checks.py check 1). --check SITE runs checks.py's page checks on the output: numbers trace (against the output's
-own data file and the site's content files), no mixing, links and ids (resolved with the built site SITE laid under
-the output, read-only), and the private-strings scan of every output file. The page is not in the site's navigation
-or build: build.py would wire it as the Clear risk page is (data(), body(), a put() and a write_json()).
+Only what the page shows goes into the data file (aggregates; whitelisted keys): never positions, answers or contexts.
+--check SITE runs checks.py's page checks on the output: numbers trace (against the output's own data file and the
+site's content files), no mixing, links and ids (resolved with the built site SITE laid under the output, read-only),
+the private-strings scan of every output file, and the learning page's own checks (checks.check_learning).
 """
 
 import argparse
@@ -48,7 +49,13 @@ DATA = "data/v3/learning-pilot.json"
 TITLE = "Learning from experience (preliminary, running)"
 COMMITMENT = "Results will be published whichever way they go, including no lift."
 PLAN = ROOT / "mailbox/Learning pilot - plan 2026-11-07.md"
-PILOT = ROOT / "workspace/learning-pilot"
+# The pilot's files as snapshot.py copies them (STATE/learning): the build's only source besides the plan.
+SOURCE = "learning"
+DESCRIPTION = ("The learning pilot of the backgammon benchmark (preliminary, running): does a model play better after "
+               "seeing its own earlier games? The pre-registered plan, the lesson prompt and the results as they come in.")
+# Ids of the blocks that only a complete results file may carry (checks.check_learning).
+COMPLETE_ONLY_IDS = ("learning-lift", "learning-signal")
+COMPLETE_ONLY_KEYS = ("learning_lift", "signal", "paired_series")
 CHECKPOINTS = ("T0", "T5", "T10")
 # Shown per arm x test round; the keys copied to the data file are exactly these.
 METRICS = [("error_rate", "Error rate (PR)", 1, ""), ("risk_judgement", "Risk judgement", 1, ""),
@@ -121,8 +128,12 @@ def read_plan(path: Path) -> dict:
                 hashes=HEX64.findall(text))
 
 
-def read_prompt(prompts: Path, plan: dict) -> dict:
-    system, user = (prompts / "lessons_system.txt").read_bytes(), (prompts / "lessons_user.txt").read_bytes()
+def read_prompt(src: Path, plan: dict) -> dict | None:
+    """The lesson prompt and its hash; None when the files are not in src (no snapshot yet)."""
+    files = [src / "lessons_system.txt", src / "lessons_user.txt"]
+    if not all(f.exists() for f in files):
+        return None
+    system, user = (f.read_bytes() for f in files)
     sha = hashlib.sha256(system + user).hexdigest()
     if plan["hashes"] and sha not in plan["hashes"]:
         raise SystemExit(f"lesson prompt sha256 {sha} is not the one the plan states ({', '.join(plan['hashes'])})")
@@ -134,9 +145,9 @@ def pick(row, keys):
         {"shared": True} if row.get("shared") else {})
 
 
-def read_results(path: Path | None) -> dict | None:
+def read_results(path: Path) -> dict | None:
     """The results file, cut down to what the page shows. The learning lift and the signal stay out unless complete."""
-    if path is None or not path.exists():
+    if not path.exists():
         return None
     R = json.loads(path.read_text())
     keys = [k for k, *_ in METRICS]
@@ -149,35 +160,40 @@ def read_results(path: Path | None) -> dict | None:
     if R.get("games"):
         out["games"] = {arm: pick(g, [k for k, *_ in GAME_METRICS]) for arm, g in R["games"].items()}
     if out["complete"]:
-        for k in ("learning_lift", "signal", "paired_series"):
+        for k in COMPLETE_ONLY_KEYS:
             if k in R:
                 out[k] = R[k]
     return out
 
 
-def read_lessons(runs: Path | None, results_path: Path | None) -> list:
-    """Every lesson file of a finished series of the lessons arm, with its game's result from the series aggregate."""
-    if runs is None or results_path is None or not results_path.exists():
-        return []
-    finished = {s["series"]: s for s in json.loads(results_path.read_text()).get("series", []) if s["arm"] == "lessons"}
+def read_lessons(runs: Path) -> list:
+    """Every lesson file of a finished series (one with its aggregate.json) of the lessons arm, with its game's result
+    from that aggregate's games."""
     out = []
-    for s in sorted(finished):
-        games = {g["game"]: g for g in finished[s].get("games", [])}
-        for f in sorted((runs / "lessons" / f"s{s:02d}").glob("lessons-g*.txt")):
+    for agg in sorted((runs / "lessons").glob("s*/aggregate.json")):
+        A = json.loads(agg.read_text())
+        games = {g["game"]: g for g in A.get("games", [])}
+        for f in sorted(agg.parent.glob("lessons-g*.txt")):
             g = int(f.stem.removeprefix("lessons-g"))
             text = f.read_text().strip()
             if text:
-                out.append(dict(series=s, text=text, **{k: games.get(g, {}).get(k) for k in GAME_KEYS} | {"game": g}))
+                out.append(dict(series=A["series"], text=text,
+                                **{k: games.get(g, {}).get(k) for k in GAME_KEYS} | {"game": g}))
     return out
 
 
-def data(plan_path: Path, results_path: Path | None, runs: Path | None, prompts: Path) -> dict:
+def data(plan_path: Path, src: Path) -> dict:
+    """The page's data from the plan and src (the STATE/learning layout; missing or empty: no results yet)."""
     plan = read_plan(plan_path)
     L = dict(version="v3", plan={k: v for k, v in plan.items() if k not in ("redacted", "hashes")},
-             redacted=plan["redacted"], lesson_prompt=read_prompt(prompts, plan),
-             results=read_results(results_path), lessons=read_lessons(runs, results_path))
+             redacted=plan["redacted"], lesson_prompt=read_prompt(src, plan),
+             results=read_results(src / "learning-pilot.json"), lessons=read_lessons(src / "runs"))
     L["source_sha256"] = hashlib.sha256(json.dumps(L, sort_keys=True).encode()).hexdigest()
     return L
+
+
+def from_state(state: Path) -> dict:
+    return data(PLAN, state / SOURCE)
 
 
 # --- Page ---------------------------------------------------------------------------------------------------
@@ -247,8 +263,8 @@ def num(v, digits, unit="") -> str:
 def progress(L) -> str:
     R = L["results"]
     if R is None:
-        return (f'<p class="note"><strong>No results yet.</strong></p><p>Progress: 0 / planned series per arm '
-                f'(the planned count appears with the first results file).</p>')
+        return ('<p class="note"><strong>No results yet.</strong></p><p>Progress: 0 / planned series per arm '
+                '(the planned count appears with the first results file).</p>')
     planned = R["planned_series_per_arm"]
     rows = [f'<tr><th scope="row">{esc(a)}</th><td class="num">{count(n)} / {count(planned)}</td></tr>'
             for a, n in R["series_done"].items()]
@@ -328,11 +344,13 @@ def results(L) -> str:
         return "".join(out)
     arms = list(R["table"])
     if "learning_lift" in R:
-        out.append("<h3>Learning lift</h3>" + arm_table(R["learning_lift"], arms,
-                                                       "Learning lift per arm (definition: the plan's Metrics)"))
+        out.append('<div id="learning-lift"><h3>Learning lift</h3>'
+                   + arm_table(R["learning_lift"], arms, "Learning lift per arm (definition: the plan's Metrics)")
+                   + "</div>")
     if "signal" in R:
-        out.append("<h3>Signal rule</h3>" + arm_table(R["signal"], arms,
-                                                      "Signal rule per arm (definition: the plan's Signal rule)"))
+        out.append('<div id="learning-signal"><h3>Signal rule</h3>'
+                   + arm_table(R["signal"], arms, "Signal rule per arm (definition: the plan's Signal rule)")
+                   + "</div>")
     return "".join(out)
 
 
@@ -350,6 +368,8 @@ def lessons(L) -> str:
 
 def prompt(L) -> str:
     p = L["lesson_prompt"]
+    if p is None:
+        return '<p class="note">The lesson prompt files are not in this build yet.</p>'
     stated = ("" if p["stated_in_plan"] else
               '<p class="note">The plan does not state this hash yet.</p>')
     return (f'<p>sha256 of the system file\'s bytes immediately followed by the user file\'s bytes: '
@@ -392,10 +412,7 @@ def render(out: Path, L: dict) -> Path:
     S = site_state(L)
     page = out / PATH / "index.html"
     page.parent.mkdir(parents=True, exist_ok=True)
-    page.write_text(P.layout(S, site_base(), PATH, TITLE, body(L),
-                             description="The learning pilot of the backgammon benchmark (preliminary, running): does "
-                                         "a model play better after seeing its own earlier games? The pre-registered "
-                                         "plan, the lesson prompt and the results as they come in."))
+    page.write_text(P.layout(S, site_base(), PATH, TITLE, body(L), description=DESCRIPTION))
     (out / DATA).parent.mkdir(parents=True, exist_ok=True)
     (out / DATA).write_text(json.dumps(L, indent=1, ensure_ascii=False))
     return page
@@ -426,7 +443,7 @@ def overlay(site: Path, out: Path, tmp: Path) -> None:
             (tmp / e.name).symlink_to(e)
 
 
-def check(out: Path, site: Path, L: dict) -> list[str]:
+def check(out: Path, site: Path, L: dict, test_set: Path | None = None) -> list[str]:
     import checks
     S = site_state(L)
     page = out / PATH / "index.html"
@@ -443,26 +460,28 @@ def check(out: Path, site: Path, L: dict) -> list[str]:
         m = checks.scan_file(p)
         if m:
             bad.append(f"{p.relative_to(out)}: banned string {m.group(0)!r}")
-    return bad
+    test_set = test_set or checks.LEARNING_TEST_SET
+    if not test_set.exists():
+        print(f"note: {test_set} not found: the evaluation-set check did not run", file=sys.stderr)
+    return bad + checks.check_learning(out, test_set)
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--out", help="output directory (default: a new temporary directory)")
     ap.add_argument("--plan", default=str(PLAN))
-    ap.add_argument("--results", default=str(PILOT / "out/learning-pilot.json"),
-                    help="the harness's learning-pilot.json; a missing file means no results yet")
-    ap.add_argument("--runs", default=str(PILOT / "runs"), help="the harness's runs directory (lessons/sNN/)")
-    ap.add_argument("--prompts", default=str(PILOT), help="directory of lessons_system.txt and lessons_user.txt")
+    ap.add_argument("--src", default=str(Path("~/.local/state/bg-site").expanduser() / SOURCE),
+                    help="the pilot's files in snapshot.py's STATE/learning layout; missing or empty: no results yet")
     ap.add_argument("--check", metavar="SITE", help="run checks.py's page checks, links resolved against SITE")
+    ap.add_argument("--test-set", help="the private evaluation set for the check (default: checks.LEARNING_TEST_SET)")
     a = ap.parse_args()
     out = Path(a.out) if a.out else Path(tempfile.mkdtemp(prefix="learning-page-"))
-    L = data(Path(a.plan), Path(a.results), Path(a.runs), Path(a.prompts))
+    L = data(Path(a.plan), Path(a.src))
     if L["redacted"]:
         print(f"warning: {L['redacted']} private address(es) in the plan withheld", file=sys.stderr)
     print(render(out, L))
     if a.check:
-        bad = check(out, Path(a.check), L)
+        bad = check(out, Path(a.check), L, Path(a.test_set) if a.test_set else None)
         for b in bad:
             print(b)
         print(f"checks: {len(bad)} failure(s)")

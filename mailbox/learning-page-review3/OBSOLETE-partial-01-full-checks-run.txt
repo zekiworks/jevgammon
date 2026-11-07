@@ -1,0 +1,4 @@
+# (a) checks.run on whole-site renders (no-results state). Started 2026-11-07 16:09:53 UTC
+# main: e9475b3  branch: 8ac5d46  results hash fixed: 1279974c
+
+## main: python3 render_site.py /tmp/inv/src-main /tmp/inv/state /tmp/inv/out-main 1279974c --checks

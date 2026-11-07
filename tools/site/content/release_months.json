@@ -1,5 +1,5 @@
 {
- "about": "Release months for the headline-table models, each confirmed by reading the maker's own page (quote copied verbatim), read 2026-11-07; null where no official dated statement was found.",
+ "about": "Release months for the headline-table models. A month only where the maker's own page gives an explicit dated release or public-availability statement for that exact model (quote copied verbatim); a mention in another model's post or an undated 'today' does not count; null otherwise. Read 2026-11-07, re-audited the same day (Zeki #2714; mailbox/front-story/evidence/release-audit.json).",
  "models": {
   "Celeris-1 Decision": {
    "month": "2026-10",
@@ -74,9 +74,9 @@
   "DeepSeek V4.1 Flash 1017": {
    "month": "2026-10",
    "url": "https://api-docs.deepseek.com/updates/",
-   "quote": "## Date: 2026-10-17",
+   "quote": "DeepSeek V4.1 Flash has been upgraded to DeepSeek-V4.1-Flash-1017.",
    "read": "2026-11-07",
-   "note": "Top change-log entry dated 2026-10-17; the dedicated news page news261017 ('DeepSeek-V4.1-Flash-1017 is here!') was also read."
+   "note": "Under the change log's 'Date: 2026-10-17' entry (re-audited 2026-11-07); the dedicated news page news261017 ('DeepSeek-V4.1-Flash-1017 is here!') was also read."
   },
   "Fastino GLiDE": {
    "month": "2026-09",
@@ -101,10 +101,10 @@
   },
   "GPT-6 Astra": {
    "month": "2026-09",
-   "url": "https://openai.com/index/introducing-gpt-6-1-sol/",
-   "quote": "[GPT-6 Astra: A new generation of intelligence ResearchSep 3, 2026](/index/gpt-6-astra/)",
+   "url": "https://openai.com/research/index/release/",
+   "quote": "Sep 3, 2026\n\n[GPT-6 Astra: A new generation of intelligence",
    "read": "2026-11-07",
-   "note": "Date from OpenAI's related-posts listing; the Astra post itself shows no date in reader output."
+   "note": "OpenAI's release index lists Astra's own launch post (/index/gpt-6-astra/) at Sep 3, 2026; the post itself shows no date. Re-audited 2026-11-07 (Zeki #2714): a related-posts card on another post is not used."
   },
   "GPT-6 Luna": {
    "month": "2026-09",
@@ -184,11 +184,11 @@
    "note": "Post dated OCT 15, 2026."
   },
   "Mercury Decide": {
-   "month": "2026-10",
-   "url": "https://www.inceptionlabs.ai/blog/introducing-mercury-3",
-   "quote": "- **Mercury Decide:** Mercury Decide is a decision model built for high-volume classification.",
+   "month": null,
+   "url": null,
+   "quote": null,
    "read": "2026-11-07",
-   "note": "Doubt: only mentioned in the Mercury 3 post (dated Oct 19, 2026 on inceptionlabs.ai/blog) as part of the portfolio; no standalone launch date for Mercury Decide found."
+   "note": "Re-audited 2026-11-07 (Zeki #2714): only a portfolio mention in the Mercury 3 post (inceptionlabs.ai/blog/introducing-mercury-3); the maker's blog index, models page and home page give no dated release of Mercury Decide itself, so no month."
   },
   "Open-Jev 27B v1.1": {
    "month": null,

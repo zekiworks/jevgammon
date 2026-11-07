@@ -14,7 +14,6 @@ import home as H
 import pages as P
 from common import ALL_NOTE, CONTENT, NA, NOT_MEASURED, count, esc, fmt, nm, pct
 
-RANKS = "Ranks show observed scores; small gaps need not be meaningful."
 RELEASES = json.loads((CONTENT / "release_months.json").read_text())["models"]
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 PROGRAMS = ("GNUbg weak", "Random", "Safest")
@@ -125,7 +124,7 @@ def headline(S) -> str:
             f'<p class="table-note">{esc(ALL_NOTE)}</p>'
             f'<div data-headline-panel="best">{P.SWIPE}{table}{note}</div>'
             f'<div data-headline-panel="all" hidden>{H.all_risk_table(S)}</div>'
-            f'{caveat(RANKS, "statistics")}</section>')
+            f'{caveat(H.RANK_NOTE, "statistics")}</section>')
 
 
 # --- Finding sections ----------------------------------------------------------------------------------------------
@@ -203,7 +202,7 @@ def cautious(S) -> str:
         fam = None if n in PROGRAMS else H.family(n)
         cls = "program" if n in PROGRAMS else ("" if fam else "other")
         bars.append((f'{esc(n)}<span class="hbar-where"> · League {lg}</span>', [(v, cls, fam["colour"] if fam else None)],
-                     esc(t), f' data-kind="{"reference" if n in PROGRAMS else "model"}"'))
+                     esc(t), f' data-program="{"yes" if n in PROGRAMS else "no"}"'))
     chart = _bars(bars, -50, 100, [(-50, "\u221250"), (0, "0"), (50, "+50"), (100, "+100 pp")], "Bias (pp)")
     legend = ('<span>Bias = missed risks (a clear Risk win played safe) minus needless risks (a clear Safety win played '
               'unsafe), in percentage points; right of 0 = too cautious</span> <span><i class="swatch swatch-program">'

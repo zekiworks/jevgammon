@@ -425,3 +425,21 @@ td.hl-release { white-space: nowrap; }
 .finding-chart { margin: 0; }
 .section-caveat { margin-top: .6rem; }
 .hbar-fill.q1-board, i.swatch-q1-board { background-color: var(--data-grey); background-image: repeating-linear-gradient(135deg, rgba(255, 255, 255, .55) 0 3px, rgba(0, 0, 0, .12) 3px 6px); }
+/* The Risk calls part's compact filter row (home.filters; Ümit, bus #2570 item 1): league, models, the parts of the page,
+   More filters, the setup count and Reset on one line where they fit, in the view bar's compact key size. */
+.filter-row { padding: 6px 10px; }
+.filter-row .filters-body { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; margin: 0; padding: 0; border: 0; }
+.filter-row .group { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
+.filter-row .group-label { color: var(--view-label); font-size: 10px; font-weight: 700; }
+.filter-row .key { min-height: 26px; padding: 2px 8px; gap: 5px; font-size: 12.5px; }
+.filter-row .face-nav { gap: 4px; }
+.filter-row .face-nav a { min-height: 26px; padding: 2px 8px; border-width: 1.5px; border-radius: 6px; font-size: 12.5px; }
+.filter-row .filters-more { flex: 1 1 100%; gap: 4px 18px; padding-top: 4px; border-top: 1px dashed var(--edge); }
+.filter-row .filters-count { margin-left: auto; }
+.filter-row .reset-why { display: none; }
+@media (max-width: 640px) {
+  .filter-row .group-label { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .filter-row .key { min-height: 24px; padding: 1px 7px; font-size: 12px; }
+  .filter-row .part-links .face-nav { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .filter-row .filters-count { margin-left: 0; }
+}

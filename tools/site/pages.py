@@ -1488,7 +1488,7 @@ def write_all(S, out: Path, base: str) -> None:
         import shutil
         if (out / stale).exists():
             shutil.rmtree(out / stale)
-    put("", TITLE, home.home(S), scripts=("bg.js",), styles=("decisions.css",), body_class="home", view_rows=home.view_rows(S))
+    put("", TITLE, home.home(S), scripts=("bg.js",), styles=("decisions.css",), body_class="home")
     home.fragments(S, out)
     put("leagues/", "Leagues", leagues_page(S, method.archive_v1()), scripts=("bg.js",))
     put("matches/", "Matches", matches_page(S), scripts=("bg.js",),

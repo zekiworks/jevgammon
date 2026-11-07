@@ -1,0 +1,13 @@
+# checks.run on whole-site renders. Started 2026-11-07 17:38:37 UTC
+# main: b06431e  front-story: b43fe74  results hash fixed: 04493cf3
+# live mirror: 4e40dc81c, data as of 2026-11-07T17:35Z
+
+## main: python3 render_site.py /tmp/fs/src-main /tmp/fs/state /tmp/fs/out-main 04493cf3 --checks
+rendered /tmp/fs/out-main with /tmp/fs/src-main/tools/site
+checks.run: 0 failure(s)
+
+## branch: python3 render_site.py /tmp/fs/src-branch /tmp/fs/state /tmp/fs/out-branch 04493cf3 --checks
+rendered /tmp/fs/out-branch with /tmp/fs/src-branch/tools/site
+checks.run: 0 failure(s)
+
+# Finished 2026-11-07 17:43:53 UTC

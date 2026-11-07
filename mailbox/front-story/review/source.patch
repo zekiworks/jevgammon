@@ -1,0 +1,908 @@
+diff --git a/tools/site/assets/bg.css b/tools/site/assets/bg.css
+index 6d4ddde..162a92e 100644
+--- a/tools/site/assets/bg.css
++++ b/tools/site/assets/bg.css
+@@ -230,6 +230,10 @@ a.cc-open { font-weight: 600; }
+ #chart-nack { margin: 1rem 0 .5rem; }
+ #nackgammon-paired thead th[data-nosort] { cursor: default; }
+ #nackgammon-paired ul.lettered { list-style: none; padding-left: 1rem; }
++#nackgammon-paired .section-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: .25rem 1rem; }
++#nackgammon-paired .section-head .eyebrow { flex-basis: 100%; margin: 0; }
++#nackgammon-paired .section-head .keys { margin-left: auto; }
++#nackgammon-paired tr.nack-yardstick, #nackgammon-paired tr.nack-yardstick a { color: var(--text-2); }
+ .section-label { margin: .15rem 0 .6rem; font-size: .8rem; color: var(--text-2); }
+ 
+ /* Hype Cup and Nackgammon knockout brackets (Leagues page) and the Matches page. Rounds side by side on a wide screen,
+@@ -404,3 +408,41 @@ i.swatch-refline { width: 0; height: .8rem; border-left: 2px dashed var(--text-2
+   .nav-group > ul { overflow: visible; margin: 0; padding: 0; }
+   .hbar-where { display: block; }
+ }
++
++/* --- The home page as a story (Ümit, bus #2570; story.py): the headline table and the finding sections. --------------- */
++.headline .chart-head .keys { margin-left: auto; }
++table.headline td.model { min-width: 15rem; }
++table.headline td.model .swatch { margin-right: .3rem; }
++td.hl-judgement { min-width: 13rem; }
++.hl-bar { position: relative; display: block; height: .8rem; margin: .2rem 0 .25rem; background: var(--sunk);
++  border-radius: 2px; box-shadow: inset 0 0 0 1px var(--edge); }
++.hl-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 2px; box-shadow: inset 0 0 0 1px var(--mark-edge); }
++.hl-fill.other { background: var(--data-grey); }
++.hl-int { position: absolute; top: 50%; height: 2px; margin-top: -1px; background: var(--text); box-shadow: 0 0 0 1px var(--panel); }
++.hl-safe { position: absolute; left: 50%; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; background: var(--text-2); }
++.hl-val { font-family: var(--mono); font-size: .84rem; }
++td.hl-release { white-space: nowrap; }
++.js [data-headline-panel][hidden] { display: none; }
++.finding h2 { font-size: 1.25rem; }
++.finding-text { max-width: 80ch; margin: 0 0 .75rem; }
++.finding-chart { margin: 0; }
++.section-caveat { margin-top: .6rem; }
++.hbar-fill.q1-board, i.swatch-q1-board { background-color: var(--data-grey); background-image: repeating-linear-gradient(135deg, rgba(255, 255, 255, .55) 0 3px, rgba(0, 0, 0, .12) 3px 6px); }
++/* The Risk calls part's compact filter row (home.filters; Ümit, bus #2570 item 1): league, models, the parts of the page,
++   More filters, the setup count and Reset on one line where they fit, in the view bar's compact key size. */
++.filter-row { padding: 6px 10px; }
++.filter-row .filters-body { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; margin: 0; padding: 0; border: 0; }
++.filter-row .group { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
++.filter-row .group-label { color: var(--view-label); font-size: 10px; font-weight: 700; }
++.filter-row .key { min-height: 26px; padding: 2px 8px; gap: 5px; font-size: 12.5px; }
++.filter-row .face-nav { gap: 4px; }
++.filter-row .face-nav a { min-height: 26px; padding: 2px 8px; border-width: 1.5px; border-radius: 6px; font-size: 12.5px; }
++.filter-row .filters-more { flex: 1 1 100%; gap: 4px 18px; padding-top: 4px; border-top: 1px dashed var(--edge); }
++.filter-row .filters-count { margin-left: auto; }
++.filter-row .reset-why { display: none; }
++@media (max-width: 640px) {
++  .filter-row .group-label { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); }
++  .filter-row .key { min-height: 24px; padding: 1px 7px; font-size: 12px; }
++  .filter-row .part-links .face-nav { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
++  .filter-row .filters-count { margin-left: 0; }
++}
+diff --git a/tools/site/assets/bg.js b/tools/site/assets/bg.js
+index 80d2471..f4d1fe5 100644
+--- a/tools/site/assets/bg.js
++++ b/tools/site/assets/bg.js
+@@ -115,22 +115,11 @@ function viewOn(v, lg) {
+     && !v.parentElement.querySelector(':scope > [data-league-view="all"]'));
+ }
+ 
+-/* A key in the view bar is a link (it works without the script: ?league=, ?type=): marked with aria-current, not
+-   aria-pressed. */
+-function markKey(key, on) {
+-  if (key.tagName === 'A') {
+-    if (on) key.setAttribute('aria-current', 'true'); else key.removeAttribute('aria-current');
+-  } else {
+-    key.setAttribute('aria-pressed', String(on));
+-  }
+-}
+-
+ function applyHome() {
+   const lg = HOME.league;
+   document.querySelectorAll('[data-league-view]').forEach(v => v.toggleAttribute('data-off', !viewOn(v, lg)));
+   document.querySelectorAll('[data-stack-title]').forEach(h => { h.hidden = lg !== 'all'; });
+-  document.querySelectorAll('[data-league-pick]').forEach(b => markKey(b, b.dataset.leaguePick === lg));
+-  document.querySelectorAll('a[data-filter-kind]').forEach(a => markKey(a, a.dataset.filterKind === HOME.filters.kind));
++  document.querySelectorAll('[data-league-pick]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.leaguePick === lg)));
+   document.querySelectorAll('tr[data-kind], li.hbar[data-kind]').forEach(tr => { tr.hidden = !rowShown(tr); });
+   // A chart's group heading shows while one of its rows does.
+   document.querySelectorAll('li.hbar-group').forEach(h => {
+@@ -192,17 +181,10 @@ async function loadPhase(phase) {
+   HOME.league = picks.some(b => b.dataset.leaguePick === wanted) ? wanted : HOME.defaultLeague;
+   // ?type=decision (or chat, program): the Model type filter.
+   if (document.querySelector(`[data-filter-kind="${CSS.escape(params.get('type') || '')}"]`)) HOME.filters.kind = params.get('type');
+-  // The view bar's League and Models keys are links (?league=, ?type=); with the script they filter in place.
+-  picks.forEach(b => b.addEventListener('click', event => {
+-    if (b.tagName === 'A') event.preventDefault();
++  picks.forEach(b => b.addEventListener('click', () => {
+     HOME.league = b.dataset.leaguePick;
+     applyHome();
+   }));
+-  document.querySelectorAll('a[data-filter-kind]').forEach(a => a.addEventListener('click', event => {
+-    event.preventDefault();
+-    HOME.filters.kind = a.dataset.filterKind;
+-    applyHome();
+-  }));
+   document.querySelectorAll('[data-quick-view]').forEach(b => b.addEventListener('click', () => {
+     HOME.league = 'all';
+     HOME.filters.kind = b.dataset.quickView;
+@@ -534,3 +516,31 @@ async function savePng(panel, svg, title, lines, filename) {
+   window.addEventListener('hashchange', () => fromHash(true));
+   fromHash(location.hash.length > 1);
+ })();
++
++/* Home page: the headline table's two views (story.py): the best setting per model, or every setup (the All leagues risk
++   table). */
++(function headlineViews() {
++  const keys = [...document.querySelectorAll('[data-headline-view]')];
++  if (!keys.length) return;
++  const show = view => {
++    keys.forEach(k => k.setAttribute('aria-pressed', String(k.dataset.headlineView === view)));
++    document.querySelectorAll('[data-headline-panel]').forEach(p => { p.hidden = p.dataset.headlinePanel !== view; });
++  };
++  keys.forEach(k => k.addEventListener('click', () => show(k.dataset.headlineView)));
++})();
++
++/* Home page: the Nackgammon section's Decision / Chat / All keys (nack_section.py, Ümit #2647). Rows and chart points of
++   another model type are hidden; programs (the yardsticks) always shown; notes are never touched. */
++(function nackKinds() {
++  const sec = document.getElementById('nackgammon-paired');
++  const keys = sec ? [...sec.querySelectorAll('[data-nack-kind-pick]')] : [];
++  if (!keys.length) return;
++  const kinds = JSON.parse(sec.dataset.nackKinds);
++  const show = pick => {
++    keys.forEach(k => k.setAttribute('aria-pressed', String(k.dataset.nackKindPick === pick)));
++    const on = name => pick === 'all' || !(name in kinds) || kinds[name] === 'program' || kinds[name] === pick;
++    sec.querySelectorAll('tr[data-row]').forEach(tr => { tr.hidden = !on(tr.dataset.row); });
++    sec.querySelectorAll('g[data-setup]').forEach(g => { g.style.display = on(g.dataset.setup) ? '' : 'none'; });
++  };
++  keys.forEach(k => k.addEventListener('click', () => show(k.dataset.nackKindPick)));
++})();
+diff --git a/tools/site/content/release_months.json b/tools/site/content/release_months.json
+new file mode 100644
+index 0000000..3745d4d
+--- /dev/null
++++ b/tools/site/content/release_months.json
+@@ -0,0 +1,229 @@
++{
++ "about": "Release months for the headline-table models, each confirmed by reading the maker's own page (quote copied verbatim), read 2026-11-07; null where no official dated statement was found.",
++ "models": {
++  "Celeris-1 Decision": {
++   "month": "2026-10",
++   "url": "https://celeris.ai/celeris-1-decision",
++   "quote": "Tom Hamer · October 8, 2026",
++   "read": "2026-11-07",
++   "note": "Byline date of Celeris's own launch post."
++  },
++  "Claude Fable 5.1": {
++   "month": "2026-09",
++   "url": "https://www.anthropic.com/claude-fable-and-mythos-5-1",
++   "quote": "September 2026",
++   "read": "2026-11-07",
++   "note": "Page header gives month only, above 'We’re introducing Claude Fable 5.1 and Claude Mythos 5.1.'"
++  },
++  "Claude Opus 5.5": {
++   "month": "2026-09",
++   "url": "https://www.anthropic.com/claude-opus-5-5",
++   "quote": "September 22, 2026",
++   "read": "2026-11-07",
++   "note": "Date line directly under the '# Claude Opus 5.5' heading of the launch post."
++  },
++  "Claude Sonnet 5.5": {
++   "month": "2026-09",
++   "url": "https://www.anthropic.com/claude-sonnet-5-5",
++   "quote": "September 28, 2026",
++   "read": "2026-11-07",
++   "note": "Date line directly under the '# Claude Sonnet 5.5' heading of the launch post."
++  },
++  "Clef": {
++   "month": "2026-10",
++   "url": "https://developers.cloudflare.com/changelog/post/2026-10-01-clef-workers-ai/",
++   "quote": "October 1, 2026",
++   "read": "2026-11-07",
++   "note": "Date of Cloudflare changelog post 'Introducing Clef: Cloudflare's first open-source decision models, now on Workers AI'."
++  },
++  "Cygnet (Gemma 4 12B)": {
++   "month": null,
++   "url": null,
++   "quote": null,
++   "read": "2026-11-07",
++   "note": "Cygnet's own repo (https://github.com/blockbrain-ai/cygnet-recipe) was read; it states no release date (only 'retrieved 2026-09-30' for benchmark data). Gemma 4 12B dates not used per instructions."
++  },
++  "Decider Flash v1.2": {
++   "month": "2026-10",
++   "url": "https://docs.perplexity.ai/changelog",
++   "quote": "`pplx-decider-flash-v1.2` is a new 4B decision model at \\$0.01 per million input tokens.",
++   "read": "2026-11-07",
++   "note": "Entry sits under the '**October 2026**' heading of Perplexity's API changelog (exact day not given there)."
++  },
++  "Decider v1.1 27B": {
++   "month": "2026-10",
++   "url": "https://docs.perplexity.ai/changelog",
++   "quote": "`pplx-decider-v1.1-27b` replaces `pplx-decider-v1-27b` as the Decisions API model.",
++   "read": "2026-11-07",
++   "note": "Entry sits under the '**October 2026**' heading of Perplexity's API changelog; HF model card states no date."
++  },
++  "Decider v1.2 27B": {
++   "month": "2026-10",
++   "url": "https://docs.perplexity.ai/changelog",
++   "quote": "`pplx-decider-v1.2` replaces `pplx-decider-v1.1-27b` as the 27B decision model, at \\$0.02 per million input tokens.",
++   "read": "2026-11-07",
++   "note": "Entry sits under the '**October 2026**' heading; perplexity.ai/changelog index also dates the announcing post 10/19/26."
++  },
++  "DeepSeek V4.1 Flash": {
++   "month": "2026-09",
++   "url": "https://api-docs.deepseek.com/updates/",
++   "quote": "Today, we officially release the DeepSeek-V4.1-Flash model.",
++   "read": "2026-11-07",
++   "note": "Sentence is under the '## Date: 2026-09-10' / 'DeepSeek-V4.1-Flash Release' heading of the official change log."
++  },
++  "DeepSeek V4.1 Flash 1017": {
++   "month": "2026-10",
++   "url": "https://api-docs.deepseek.com/updates/",
++   "quote": "## Date: 2026-10-17",
++   "read": "2026-11-07",
++   "note": "Top change-log entry dated 2026-10-17; the dedicated news page news261017 ('DeepSeek-V4.1-Flash-1017 is here!') was also read."
++  },
++  "Fastino GLiDE": {
++   "month": "2026-09",
++   "url": "https://fastino.ai/blog/introducing-glide-the-first-thinking-decision-model",
++   "quote": "Today we release the Generalized Lightweight Decision Engine (GLiDE), a model trained specifically for difficult, structured decisions.",
++   "read": "2026-11-07",
++   "note": "Post dated September 30, 2026."
++  },
++  "Fastino GLiDE v1.2": {
++   "month": "2026-10",
++   "url": "https://fastino.ai/blog/training-glide-sota-decision-model",
++   "quote": "At the time of its October 22 launch, GLiDE v1.2 ranked #1 on the [Hugging Face Decision Index v0.4.1](https://huggingface.co/spaces/multimodalart/jev-decision-index) with a score of 71.5.",
++   "read": "2026-11-07",
++   "note": "Post dated October 22, 2026."
++  },
++  "GLM-5.3": {
++   "month": "2026-08",
++   "url": "https://docs.z.ai/release-notes/new-released",
++   "quote": "**2026-08-18**",
++   "read": "2026-11-07",
++   "note": "Z.ai 'New Released' entry dated 2026-08-18 for GLM-5.3 (blog z.ai/blog/glm-5.3 says 'Today we are releasing GLM-5.3' but shows no readable date)."
++  },
++  "GPT-6 Astra": {
++   "month": "2026-09",
++   "url": "https://openai.com/index/introducing-gpt-6-1-sol/",
++   "quote": "[GPT-6 Astra: A new generation of intelligence ResearchSep 3, 2026](/index/gpt-6-astra/)",
++   "read": "2026-11-07",
++   "note": "Date from OpenAI's related-posts listing; the Astra post itself shows no date in reader output."
++  },
++  "GPT-6 Luna": {
++   "month": "2026-09",
++   "url": "https://openai.com/index/gpt-6-astra/",
++   "quote": "***Update on September 22, 2026:*** *We are expanding our GPT‑6 family with GPT‑6 Sol and GPT‑6 Luna.*",
++   "read": "2026-11-07",
++   "note": "Luna launch post (introducing-gpt-6-sol-and-luna) says 'available ... starting today' and is listed as Sep 22, 2026."
++  },
++  "GPT-6.1 Sol": {
++   "month": "2026-09",
++   "url": "https://openai.com/index/gpt-6-astra/",
++   "quote": "***Update on September 29, 2026:*** *Learn about OpenAI's latest model:* [*GPT‑6 .1 Sol*⁠](/index/introducing-gpt-6-1-sol/)*.*",
++   "read": "2026-11-07",
++   "note": "Sol post says 'GPT-6.1 Sol is available starting today' but has no date; date taken from this update note."
++  },
++  "Gemini 3.8 Flash": {
++   "month": "2026-09",
++   "url": "https://blog.google/innovation-and-ai/models-and-research/gemini-models/3-8-flash-and-3-8-flash-cyber/",
++   "quote": "Sep 02, 2026",
++   "read": "2026-11-07",
++   "note": "Date under '# Introducing Gemini 3.8 Flash and 3.8 Flash Cyber'."
++  },
++  "Gemini 4 Argon": {
++   "month": "2026-10",
++   "url": "https://blog.google/innovation-and-ai/technology/developers-tools/build-with-gemini-4-argon/",
++   "quote": "Starting today, developers can build with [Gemini 4 Argon]",
++   "read": "2026-11-07",
++   "note": "Post dated Oct 13, 2026. Doubt: announced Sep 30, 2026 (gemini-4-argon post) but then only 'rolling out to trusted cyber defenders through the Fairwind Program'; Oct 13 used as public availability."
++  },
++  "Gemma 4 31B": {
++   "month": "2026-04",
++   "url": "https://blog.google/innovation-and-ai/technology/developers-tools/gemma-4/",
++   "quote": "Apr 02, 2026",
++   "read": "2026-11-07",
++   "note": "Gemma 4 launch post (lists the 31B Dense model)."
++  },
++  "Grok 4.7": {
++   "month": "2026-09",
++   "url": "https://x.ai/news/grok-4-7",
++   "quote": "[Back to news](/news)Sep 21, 2026",
++   "read": "2026-11-07",
++   "note": "Date header of 'Introducing Grok 4.7'."
++  },
++  "Jev 1.13.0": {
++   "month": null,
++   "url": null,
++   "quote": null,
++   "read": "2026-11-07",
++   "note": "No official page found stating when jev-1.13.0 was released; typesafe.ai/blog/introducing-system-one-models-and-jev (Sep 15, 2026) and docs.typesafe.ai/models, /changelog were read and do not date 1.13.0."
++  },
++  "Jev 1.14.0": {
++   "month": "2026-10",
++   "url": "https://docs.typesafe.ai/models",
++   "quote": "Jev 1.14 is the newest Jev release, available from October 14, 2026.",
++   "read": "2026-11-07",
++   "note": "Also typesafe.ai/blog/jev-1-14 dated Oct 14, 2026."
++  },
++  "Kimi K3.1 Pro": {
++   "month": "2026-10",
++   "url": "https://forum.moonshot.ai/t/kimi-k3-1-pro-has-launched-start-exploring-now/629",
++   "quote": "### Post 1 - @Zoe - 2026-10-23 - Likes: 0",
++   "read": "2026-11-07",
++   "note": "Moonshot's official forum announcement 'Kimi K3.1 Pro has launched!'; date is the post timestamp."
++  },
++  "LFM2.5-24B-A2B": {
++   "month": "2026-10",
++   "url": "https://www.liquid.ai/blog/lfm2-5-24b-a2b",
++   "quote": "Today, we release **LFM2.5-24B-A2B**, a 24B-parameter reasoning model with just 2B active parameters, built for fast, private agents on-device.",
++   "read": "2026-11-07",
++   "note": "Post dated OCT 13, 2026."
++  },
++  "Liquid d1-ultra": {
++   "month": "2026-10",
++   "url": "https://www.liquid.ai/blog/d1-ultra",
++   "quote": "Today, we release d1-ultra, our new multimodal **decision model with state-of-the-art performance**.",
++   "read": "2026-11-07",
++   "note": "Post dated OCT 15, 2026."
++  },
++  "Mercury Decide": {
++   "month": "2026-10",
++   "url": "https://www.inceptionlabs.ai/blog/introducing-mercury-3",
++   "quote": "- **Mercury Decide:** Mercury Decide is a decision model built for high-volume classification.",
++   "read": "2026-11-07",
++   "note": "Doubt: only mentioned in the Mercury 3 post (dated Oct 19, 2026 on inceptionlabs.ai/blog) as part of the portfolio; no standalone launch date for Mercury Decide found."
++  },
++  "Open-Jev 27B v1.1": {
++   "month": null,
++   "url": null,
++   "quote": null,
++   "read": "2026-11-07",
++   "note": "HF card ZefanCai/Open-Jev-27B-v1.1 read; it states no release date (commit dates not counted)."
++  },
++  "Qwen3.8 Flash": {
++   "month": null,
++   "url": null,
++   "quote": null,
++   "read": "2026-11-07",
++   "note": "Not used: the page does not name this exact model (Alibaba Cloud Model Studio new-models page; assumes our 'Qwen3.8 Flash' is the API model qwen3.8-flash (open-weight Qwen3.8-Flash-Next also dated 2026-08-26 on its GitHub).); a month shown must be stated for the exact model name (Ümit #2570: never guess). Was 2026-08 from https://www.alibabacloud.com/help/en/model-studio/newly-released-models."
++  },
++  "Qwen3.8-27B": {
++   "month": "2026-08",
++   "url": "https://github.com/QwenLM/Qwen3.8",
++   "quote": "- 2026-08-14: Qwen3.8-27B is now available on [Hugging Face Hub](https://huggingface.co/collections/Qwen/qwen38) and [ModelScope](https://www.modelscope.cn/collections/Qwen/Qwen38).",
++   "read": "2026-11-07",
++   "note": "Official QwenLM GitHub news list."
++  },
++  "SubQ Snap Preview": {
++   "month": null,
++   "url": null,
++   "quote": null,
++   "read": "2026-11-07",
++   "note": "Not used: the page does not name this exact model (Post dated October 12, 2026. Doubt: page names the model 'SubQ Snap' and its status 'Public Preview', not literally 'SubQ Snap Preview'.); a month shown must be stated for the exact model name (Ümit #2570: never guess). Was 2026-10 from https://subq.ai/introducing-subq-snap."
++  },
++  "Winnow-12B": {
++   "month": null,
++   "url": null,
++   "quote": null,
++   "read": "2026-11-07",
++   "note": "HF card EldanRing/Winnow-12B read; it states no release date."
++  }
++ }
++}
+diff --git a/tools/site/home.py b/tools/site/home.py
+index 5ecfed1..aba1a67 100644
+--- a/tools/site/home.py
++++ b/tools/site/home.py
+@@ -24,9 +24,11 @@ LIMIT_HARD = ("Setups met different positions; risk judgement is not adjusted fo
+               "comparisons wait for the shared positions.")
+ # Under the risk leaderboard chart (Ümit #2564; wording Zeki #2578).
+ RANK_NOTE = "Ranks show observed scores; small gaps need not be meaningful."
+-# The hero's prominent links (Ümit #2564): existing pages and anchors only.
+-HERO_LINKS = [("Risk calls leaderboard", "#risk-judgement"), (P.TAB_LEARNING, P.TAB_LEARNING_PATH),
+-              ("Every decision", "decisions/"), ("Leagues and matches", "#leagues-tabs")]
++# The hero's three buttons (Ümit #2564, #2570 item 1), existing pages only and named for what they open: there is no
++# write-up yet, so the first opens the Method page; Every decision has no filter for the engine's best play, so the
++# second opens its existing right-risk filter (the setup in view is named there, and any other can be picked).
++HERO_LINKS = [("Read the method", "method/"), ("Right risk calls, decision by decision", "decisions/?r=risk&c=rr"),
++              ("Every decision", "decisions/")]
+ GNUBG_WEAK = "x86-64 build: its noise is shifted, so it overplays gammons"
+ CALL_LABEL = {"needless": "needless risks", "missed": "missed risks", "wrong_risk": "wrong risks",
+               "right_risk": "right risks", "right_safety": "right safety", "none": "No trade-off"}
+@@ -70,6 +72,13 @@ def type_meta(S, ds, name) -> dict:
+                 P.meta(S, ds, name))
+ 
+ 
++def type_meta_by_name(S, name) -> dict:
++    """type_meta for a setup known by name only (the Nackgammon test's rows): its league entry first, as for a ladder
++    move, else any entry of that name, else none."""
++    return (next((m for (d, n), m in S["setups_meta"].items() if n == name and d.startswith("league-")), None)
++            or next((m for (d, n), m in S["setups_meta"].items() if n == name), {}))
++
++
+ def cell_model(S, ds, name, ref=None) -> str:
+     if ref:
+         return (f'<td class="model"><span class="model-name">{esc(name)}</span>'
+@@ -1280,33 +1289,37 @@ def filters(S) -> str:
+     settings = [("all", "All")] + [(v, cap(v)) for v in sorted({m["setting"] for m in ms if m.get("setting")})] + [("none", "None")]
+     runs = [("all", "All")] + [(v, cap(v)) for v in sorted({m["runs_on"] for m in ms if m.get("runs_on")})]
+     weights = [("all", "All")] + [(v, cap(v)) for v in sorted({m["weights"] for m in ms if m.get("weights")})]
+-    pick = lambda ds, label: (f'<button type="button" class="key" data-league-pick="{ds}" aria-pressed="'
+-                              f'{str(ds == default_league(S)).lower()}"><span class="lamp" aria-hidden="true"></span>{label}</button>')
+-    leagues = pick(ALL, "All leagues") + "".join(pick(lg["dataset"], f'League {lg["id"]}') for lg in S["leagues"])
+-    leagues += ('<button type="button" class="key" data-league-pick="shared" aria-pressed="false"><span class="lamp" '
+-                f'aria-hidden="true"></span>Shared positions</button>')
++    pick = lambda ds, label, full: (f'<button type="button" class="key" data-league-pick="{ds}" aria-pressed="'
++                                    f'{str(ds == default_league(S)).lower()}" aria-label="{full}"><span class="lamp" '
++                                    f'aria-hidden="true"></span>{label}</button>')
++    leagues = pick(ALL, "All", "All leagues") + "".join(pick(lg["dataset"], lg["id"], f'League {lg["id"]}') for lg in S["leagues"])
++    leagues += pick("shared", "Shared", "Shared positions").replace('aria-pressed="true"', 'aria-pressed="false"')
+     phases = "".join(f'<option value="{p}">{esc(P.PHASE_LABEL[p])}</option>' for p in A.PHASES)
+     # The model setups of each league; the programs are reference rows, never counted.
+     totals = {lg["dataset"]: sum(1 for n in lg["setups"] if not ref_label(S, lg["dataset"], n)) for lg in S["leagues"]}
+     totals = {ALL: sum(totals.values()), **totals}
+-    # The league and the model type stay in view; phase, reasoning, runs on and weights fold behind "More filters", whose
+-    # key names the active ones while it is closed (bg.js).
+-    return f"""<section class="panel filters is-open needs-js" id="filters" aria-labelledby="filters-title">
+-      <h2 id="filters-title" class="filters-title">Filters</h2>
++    parts = ([("leaderboard", "Leaderboard")] + MEASURES + [("board-panel", "Every number")])
++    links = "".join(f'<a href="#{k}">{esc(l)}</a>' for k, l in parts)
++    # One compact row on the Risk calls part (Ümit, bus #2570, item 1), out of the sticky header: the league and the
++    # model type, the parts of the page, and behind "More filters" the quick view, phase, reasoning, runs on and weights,
++    # whose key names the active ones while it is closed (bg.js); the setup count and Reset at the end.
++    return f"""<nav class="panel filters filter-row" id="filters" aria-labelledby="filters-title">
++      <h2 id="filters-title" class="visually-hidden">Filters and parts of this page</h2>
+       <div class="filters-body" id="filters-body">
+-        <div class="group league-pick" role="group" aria-labelledby="f-league"><span class="group-label" id="f-league">League</span><span class="keys">{leagues}</span></div>
+-        {group("kind", "Model type", [("all", "All types"), ("decision", "Decision"), ("chat", "Chat"), ("program", "Program")])}
+-        <div class="group quick-view" role="group" aria-labelledby="f-quick"><span class="group-label" id="f-quick">Quick view</span><span class="keys"><button type="button" class="key" data-quick-view="decision" aria-pressed="false"><span class="lamp" aria-hidden="true"></span>Decision models · all leagues</button></span></div>
+-        <div class="group more-filters"><button type="button" class="key fold-toggle" data-more-filters aria-expanded="false" aria-controls="filters-more"><span class="chevron" aria-hidden="true"></span>More filters<span class="fold-summary" data-more-summary> · phase, reasoning, runs on, weights</span></button></div>
+-        <div class="filters-more" id="filters-more" hidden>
++        <div class="group league-pick needs-js" role="group" aria-labelledby="f-league"><span class="group-label" id="f-league">League</span><span class="keys">{leagues}</span></div>
++        <div class="needs-js">{group("kind", "Models", [("all", "All"), ("decision", "Decision"), ("chat", "Chat"), ("program", "Program")])}</div>
++        <div class="group part-links"><span class="group-label">Measure</span><span class="face-nav">{links}</span></div>
++        <div class="group more-filters needs-js"><button type="button" class="key fold-toggle" data-more-filters aria-expanded="false" aria-controls="filters-more"><span class="chevron" aria-hidden="true"></span>More filters<span class="fold-summary" data-more-summary> · phase, reasoning, runs on, weights</span></button></div>
++        <div class="group filters-count needs-js"><span class="setup-count" data-setups data-totals='{esc(json.dumps(totals))}' aria-live="polite">{count(totals[default_league(S)])} of {count(totals[default_league(S)])} setups</span>
++        <button type="button" class="key reset" data-control="reset" aria-disabled="true" data-tip="Nothing to reset: the filters show the defaults.">Reset</button>
++        <span class="small reset-why" data-reset-why hidden>Nothing to reset: the filters show the defaults.</span></div>
++        <div class="filters-more needs-js" id="filters-more" hidden>
++          <div class="group quick-view" role="group" aria-labelledby="f-quick"><span class="group-label" id="f-quick">Quick view</span><span class="keys"><button type="button" class="key" data-quick-view="decision" aria-pressed="false"><span class="lamp" aria-hidden="true"></span>Decision models · all leagues</button></span></div>
+           <label class="group"><span class="group-label">Phase</span> <select data-control="phase"><option value="all">All phases</option>{phases}</select></label>
+           {group("setting", "Reasoning", settings)}{group("runs", "Runs on", runs)}{group("weights", "Weights", weights)}
+         </div>
+-        <div class="group"><span class="setup-count" data-setups data-totals='{esc(json.dumps(totals))}' aria-live="polite">{count(totals[default_league(S)])} of {count(totals[default_league(S)])} setups</span>
+-        <button type="button" class="key reset" data-control="reset" aria-disabled="true" data-tip="Nothing to reset: the filters show the defaults.">Reset</button>
+-        <span class="small reset-why" data-reset-why>Nothing to reset: the filters show the defaults.</span></div>
+       </div>
+-    </section>"""
++    </nav>"""
+ 
+ 
+ # --- Chart panels ----------------------------------------------------------------------------------------------
+@@ -1521,27 +1534,6 @@ def family(name: str) -> dict | None:
+     return next((f for f in FAMILIES if re.match(f["match"], name)), None)
+ 
+ 
+-def view_rows(S) -> str:
+-    """The home page's rows of the view bar, after its Home key: the League and Models filters (the filters panel's League
+-    and Model type, kept in step by bg.js; ?league= and ?type= as before) and the parts of the page."""
+-    def row(cls, rid, label, keys):
+-        return (f'<div class="view-row {cls}" role="group" aria-labelledby="{rid}"><span class="view-label" id="{rid}">'
+-                f'{label}</span><ul>{"".join(f"<li>{k}</li>" for k in keys)}</ul></div>')
+-    # Each label in one span, so the key's flex box keeps the space before the words a phone shows (as the sibling's).
+-    leagues = [f'<a class="view-key" href="./" data-league-pick="{ALL}" aria-current="true"><span>All<span class="view-more">'
+-               f' leagues</span></span></a>'] + [f'<a class="view-key" href="?league={lg["dataset"]}" data-league-pick="'
+-                                                f'{lg["dataset"]}"><span><span class="view-more">League </span>{lg["id"]}</span></a>'
+-                                                for lg in S["leagues"]]
+-    kinds = [f'<a class="view-key" href="{"./" if k == ALL else f"?type={k}"}" data-filter-kind="{k}"'
+-             f'{" aria-current=true" if k == ALL else ""}>{l}</a>'
+-             for k, l in ((ALL, "All"), ("decision", "Decision"), ("chat", "Chat"))]
+-    parts = [f'<a class="view-key" href="#{k}" data-view-measure="{k}">{esc(l)}</a>' for k, l in MEASURES]
+-    parts.append('<a class="view-key" href="#board-panel" data-view-measure="board-panel">Every number</a>')
+-    return (row("view-leagues view-filter", "view-league", "League", leagues)
+-            + row("view-groups view-filter", "view-models", "Models", kinds)
+-            + row("view-measures", "view-measure", "Measure", parts))
+-
+-
+ def chart_rows(S, lg, measure: str) -> list:
+     """(name, reference label, value, low, high, setup's quality or None) for one league and measure: Risk judgement
+     every setup and reference row of the Risk table; the other measures the setups of the Quality and Cost tables."""
+@@ -1716,15 +1708,15 @@ def measure_chart_card(S, measure: str, title: str) -> str:
+                                 '</i>50 = always safe'),
+              "error-rate": ('<i class="swatch swatch-interval"></i>95% interval</span> <span><i class="swatch swatch-refline">'
+                             '</i>a program\'s error rate (reference row, named above the axis)')}.get(measure)
+-    notes = {"risk-judgement": [RANK_NOTE, LIMIT_HIT, LIMIT_HARD],
+-             "error-rate": [LIMIT_PAIRED],
+-             "cost": ["\u00a7 list-price estimate; runs on our GPUs: each setup's price label is in its row's tooltip and "
+-                      "in the Cost tab.", LIMIT_PAIRED],
+-             "time": [LIMIT_PAIRED]}[measure]
++    # One caveat per section (Ümit, bus #2570 item 4); the others are on the Method page (Limits, Cost), linked.
++    caveat = {"risk-judgement": (RANK_NOTE, "statistics"), "error-rate": (LIMIT_PAIRED, "limits"),
++              "cost": ("\u00a7 list-price estimate; runs on our GPUs: each setup's price label is in its row's tooltip "
++                       "and in the Cost tab.", "cost"),
++              "time": (LIMIT_PAIRED, "limits")}[measure]
+     return (f'<section class="measure" id="{measure}" aria-label="{esc(title)}"><figure class="panel chart-card chart-wide" '
+             f'id="chart-{measure}"><div class="chart-head"><h2>{esc(title)}</h2><p class="chart-sub">{sub}</p>{keys}</div>'
+             f'{views}<p class="chart-legend">{legend}{f"<span>{extra}</span>" if extra else ""}</p>'
+-            + "".join(f'<p class="table-note">{esc(x)}</p>' for x in notes)
++            + f'<p class="table-note section-caveat">{esc(caveat[0])} <a href="method/#{caveat[1]}">More caveats: Method</a></p>'
+             + f'<p class="table-note phase-all" hidden>{esc(PHASE_ALL_CHARTS)}</p></figure></section>')
+ 
+ 
+@@ -1780,7 +1772,7 @@ WHAT_THIS_MEASURES = ("Risk calls per setup: was each risk the right one, and wa
+ 
+ 
+ def how_numbers(S) -> str:
+-    """'How the numbers work' (Ümit #2564): sentences of the Method page only, quoted as published there, each with the
++    """'How the scoring works' (Ümit #2564; the heading #2570 item 5): sentences of the Method page only, quoted as published there, each with the
+     Method section it comes from (mailbox/learning-page-review3/README.md lists them). No new claim."""
+     t = S["thresholds"]
+     items = [
+@@ -1803,7 +1795,7 @@ def how_numbers(S) -> str:
+          "for how hard the positions were.")]
+     lis = "".join(f'<li><strong>{esc(k)}.</strong> {esc(v)} <a class="small" href="method/#{a}">Method: {esc(s)}</a></li>'
+                   for k, a, s, v in items)
+-    return (f'<section class="card how-numbers" id="how-numbers"><h2>How the numbers work</h2><ul>{lis}</ul>'
++    return (f'<section class="card how-numbers" id="how-numbers"><h2>How the scoring works</h2><ul>{lis}</ul>'
+             f'<p class="table-note">Quoted from the <a href="method/">Method</a> page.</p></section>')
+ 
+ 
+@@ -1838,6 +1830,7 @@ def hero_card(S) -> str:
+ 
+ 
+ def home(S) -> str:
++    import story
+     tabs = "".join(f'<button type="button" role="tab" id="tab-{k}" class="mode" aria-controls="board" '
+                    f'aria-selected="{str(i == 0).lower()}" data-tab="{k}"><span class="lamp" aria-hidden="true"></span>{l}</button>'
+                    for i, (k, l) in enumerate(TABS))
+@@ -1846,10 +1839,11 @@ def home(S) -> str:
+     return f"""
+     {FAMILY_ICONS}
+     {hero_card(S)}
+-    {findings_block(S)}
+     {filters(S)}
+-    {measure_charts(S)}
++    {story.sections(S)}
+     {how_numbers(S)}
++    {findings_block(S)}
++    {measure_charts(S)}
+     <div class="home-leagues" id="leagues-tabs">{P.home_league_sections(S)}</div>
+     <section class="panel board-panel" id="board-panel" aria-labelledby="board-title">
+       <div class="chart-head"><h2 id="board-title">Every number, setup by setup</h2><p class="chart-sub">The leaderboard: every measure of every setup, one tab per measure; each value with its 95% interval, its count and denominator or its price label under it.</p></div>
+@@ -1863,7 +1857,7 @@ def home(S) -> str:
+     </section>
+     {pays_section(S)}
+     {close_b_section(S)}
+-    {nack_section.section(S["nack"])}
++    {nack_section.section(S["nack"], {n: kind(type_meta_by_name(S, n)) for n in S["nack"]["setups"]})}
+     <p class="downloads" id="downloads">Download: <a href="data/results.json" download="results.json">results.json</a> · <a href="decisions/index.json" download="decisions.json">decisions.json</a></p>"""
+ 
+ 
+diff --git a/tools/site/nack_section.py b/tools/site/nack_section.py
+index 12d6ac9..3d9a6d0 100644
+--- a/tools/site/nack_section.py
++++ b/tools/site/nack_section.py
+@@ -5,6 +5,7 @@ row data-row (its key under the table's data-src); nack_paired_verify.py reads t
+ against the data file. Rows are in the data file's fixed order (group, then standard PR); no header can be sorted.
+ """
+ 
++import json
+ import math
+ 
+ import pages as P
+@@ -12,6 +13,8 @@ from common import NACK_SCOPE_NOTE, count, esc, fmt
+ 
+ SECTION_ID = "nackgammon-paired"
+ TITLE = "Nackgammon paired test"
++QUESTION = "Does a model still play well when the starting position changes?"
++UNCLEAR_NOTE = "Unclear means the test can\u2019t tell, not that the scores are equal."
+ READING = ("A larger drop is consistent with relying on familiar positions but is not proof: Nackgammon positions also "
+            "differ in structure. \u201cKept\u201d is a valid result.")
+ PROMPT_NOTE = ("The paired test's standard-side prompt differs from the league prompt (no opening table; the starting "
+@@ -67,8 +70,9 @@ def table(src, head, rows, caption, tid) -> str:
+     return P.SWIPE + P.table(head, rows, esc(caption), cls="board list", attrs=f' id="{tid}" data-src="{esc(src)}"')
+ 
+ 
+-def row(key, label, cells) -> str:
+-    return f'<tr data-row="{esc(key)}"><th scope="row">{label}</th>{"".join(cells)}</tr>'
++def row(key, label, cells, cls="") -> str:
++    c = f' class="{cls}"' if cls else ""
++    return f'<tr data-row="{esc(key)}"{c}><th scope="row">{label}</th>{"".join(cells)}</tr>'
+ 
+ 
+ def _setup_label(name, rec) -> str:
+@@ -118,6 +122,21 @@ def main_table(N) -> str:
+                                        "positive = worse on Nackgammon)", "nack-table")
+ 
+ 
++def summary_table(N) -> str:
++    """The question's answer per setup, primary rule, final look: standard PR, Nackgammon PR, drop and the label;
++    GNUbg weak and Random as grey yardstick rows. Fixed data-file order, like every table of the section."""
++    rows = [row(s, _setup_label(s, r), [
++        td(N, r, ["final/pairs"]), td(N, r, ["final/standard_pr"]), td(N, r, ["final/nackgammon_pr"]),
++        td(N, r, ["final/drop"], signed=True), td(N, r, ["final/drop_975"], signed=True), td(N, r, ["label"], text=True)],
++        "nack-yardstick" if r["group"] == "yardstick" else "") for s, r in N["setups"].items()]
++    head = ["Setup (group)", "Pairs", "Standard PR", "Nackgammon PR", "Drop (Nackgammon \u2212 standard)",
++            "97.5% interval", "Label"]
++    return table("setups", head, rows, "Per setup, the primary rule (an invalid answer scores the position's Random "
++                                       "error), final look: positive drop = worse on Nackgammon; label from the 97.5% "
++                                       "interval (kept = within \u00b15 PR). Grey rows: the GNUbg weak and Random "
++                                       "yardsticks.", "nack-summary")
++
++
+ def _limit_cells(N, r) -> list:
+     """Output-limit counts (§10.14(h)), main 200 pairs and all recorded positions; Random is never asked."""
+     if not r["cut_off"]:
+@@ -346,7 +365,8 @@ def chart(N) -> str:
+             + "".join(parts) + "</svg>")
+ 
+ 
+-def section(N) -> str:
++def section(N, kinds: dict) -> str:
++    """kinds: setup name -> decision / chat / program (setups.json model_type), for the Decision / Chat / All keys."""
+     rnd = N["setups"]["Random"]
+     rd1, rdf = rnd["first"]["drop"], rnd["final"]["drop"]
+     rnd_text = (f"Random's own drop: {fmt(rd1, 2, True)} PR on the main 200 pairs, {fmt(rdf, 2, True)} on all 500 "
+@@ -368,7 +388,19 @@ def section(N) -> str:
+         kept += kept_table(N, "kept_advantage_all_500", "Secondary: kept advantage, all 500 pairs (extended setups)")
+     risk = risk_table(N, "main") + (risk_table(N, "all") if any(r["risk"]["all"] for r in N["setups"].values()) else "")
+     scope = scope_notes(N)
+-    return (f'<section class="card" id="{SECTION_ID}"><div class="section-head"><h2>{esc(TITLE)}</h2></div>'
++    n_added = len(N["additions"])
++    head_note = (f"Random play's own drop is {fmt(rd1, 1, True)} PR on the main 200 pairs: the Nackgammon positions were "
++                 f"{'slightly easier' if rd1 < 0 else 'harder'} for random play, so a drop mixes how a model copes with "
++                 "the new start with how hard the positions are; the test cannot separate the two.")
++    keys = ('<span class="keys needs-js" role="group" aria-label="Model type">' + "".join(
++        f'<button type="button" class="key" data-nack-kind-pick="{k}" aria-pressed="{str(k == "all").lower()}">{lab}'
++        '</button>' for k, lab in (("decision", "Decision"), ("chat", "Chat"), ("all", "All"))) + '</span>')
++    return (f'<section class="card" id="{SECTION_ID}" data-nack-kinds="{esc(json.dumps(kinds))}">'
++            f'<div class="section-head"><p class="eyebrow">{esc(TITLE)}</p><h2>{esc(QUESTION)}</h2>{keys}</div>'
++            f'<p class="note nack-always"><strong>{esc(UNCLEAR_NOTE)}</strong> {count(n_added)} setups were added after '
++            'the results were read; the primary results are shown with and without them.</p>'
++            f'<p class="table-note">{esc(head_note)}</p>'
++            + summary_table(N) +
+             f'<p class="section-label">{esc(N["method"])}</p>{status}{scope}'
+             f'<p class="note nack-additions-note"><strong>Additions.</strong> {esc(N["additions_note"])}</p>'
+             "<p>Nackgammon has the rules of backgammon; only the starting position differs. Each setup was asked 200 "
+diff --git a/tools/site/pages.py b/tools/site/pages.py
+index a0ab0f6..cdf12b6 100644
+--- a/tools/site/pages.py
++++ b/tools/site/pages.py
+@@ -1462,7 +1462,7 @@ def write_all(S, out: Path, base: str) -> None:
+         import shutil
+         if (out / stale).exists():
+             shutil.rmtree(out / stale)
+-    put("", TITLE, home.home(S), scripts=("bg.js",), styles=("decisions.css",), body_class="home", view_rows=home.view_rows(S))
++    put("", TITLE, home.home(S), scripts=("bg.js",), styles=("decisions.css",), body_class="home")
+     home.fragments(S, out)
+     put("leagues/", "Leagues", leagues_page(S, method.archive_v1()), scripts=("bg.js",))
+     put("matches/", "Matches", matches_page(S), scripts=("bg.js",),
+diff --git a/tools/site/story.py b/tools/site/story.py
+new file mode 100644
+index 0000000..fea414c
+--- /dev/null
++++ b/tools/site/story.py
+@@ -0,0 +1,244 @@
++"""The home page as a story (Ümit, bus #2570): one headline table, one row per model at its best-scoring setting, and
++sections whose headings state what the published numbers show, each with one chart, two sentences and one caveat. Every number is a
++stored value as the site's tables print it: risk judgement, risks found, right safety, error rate and cost from the
++league results; the bias of the clear-risk scan and of its Part 2 question Q1 from the published clear-risk data
++(data/v3/clear-risk.json). A third heading asked for, on reasoning, is not shown: the Reasoning tab's comparison is not
++paired and shows no effect of the setting (its own note). The check of each heading against these
++numbers is mailbox/front-story/evidence (made by evidence.py there), not code here: a heading that the data stops
++supporting must be reworded by hand."""
++
++import json
++import re
++
++import home as H
++import pages as P
++from common import ALL_NOTE, CONTENT, NA, count, esc, fmt, nm, pct
++
++RELEASES = json.loads((CONTENT / "release_months.json").read_text())["models"]
++MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
++PROGRAMS = ("GNUbg weak", "Random", "Safest")
++
++
++def caveat(text: str, anchor: str = "limits") -> str:
++    """The one caveat of a section (Ümit, bus #2570 item 4); the others are on the Method page."""
++    return (f'<p class="table-note section-caveat">{esc(text)} <a href="method/#{anchor}">More caveats: Method</a></p>')
++
++
++# --- The headline table ------------------------------------------------------------------------------------------
++
++def model_of(S, lg, n) -> str:
++    return H.type_meta(S, lg["dataset"], n).get("model") or n
++
++
++def best_settings(S) -> list:
++    """(league, setup name, risk metrics) of each model's setup with the highest stored risk judgement, best first.
++    Programs are not models; a setup without a risk judgement is left out (Too few decisions)."""
++    best = {}
++    for lg, n, r, ref in H.all_rows(S):
++        if ref or r["judgement"] is None:
++            continue
++        m = model_of(S, lg, n)
++        if m not in best or r["judgement"] > best[m][2]["judgement"]:
++            best[m] = (lg, n, r)
++    return sorted(best.values(), key=lambda x: (-x[2]["judgement"], x[1]))
++
++
++def release(model: str) -> tuple[str, str | None]:
++    """The model's release month as its maker's page states it (content/release_months.json), else a dash."""
++    e = RELEASES.get(model) or {}
++    if not e.get("month"):
++        return "\u2014", None
++    y, m = e["month"].split("-")
++    return f"{MONTHS[int(m) - 1]} {y}", e["url"]
++
++
++def share(s: dict) -> str:
++    if not s["den"]:
++        return f'<td class="num">{nm(NA)}<span class="small">0 / 0</span></td>'
++    return f'<td class="num">{pct(s["share"])}<span class="small">{H.n_(s["n"])} / {H.n_(s["den"])}</span></td>'
++
++
++def judgement_cell(r: dict, colour: str | None) -> str:
++    """The risk judgement as a bar on 0 to 100 with its 95% interval and the line at 50 (always safe)."""
++    j, lo, hi = r["judgement"], r["judgement_lo"], r["judgement_hi"]
++    fill = f' style="width:{j:.2f}%;background-color:{colour}"' if colour else f' style="width:{j:.2f}%"'
++    return (f'<td class="hl-judgement" data-v="{j}"><span class="hl-bar" aria-hidden="true"><span class="hl-fill'
++            f'{"" if colour else " other"}"{fill}></span><span class="hl-int" style="left:{lo:.2f}%;width:{hi - lo:.2f}%">'
++            f'</span><span class="hl-safe"></span></span><span class="hl-val">{fmt(j)}<span class="small">{fmt(lo)} to '
++            f'{fmt(hi)}</span></span></td>')
++
++
++def headline_rows(S) -> tuple[list, list]:
++    rows, missing = [], []
++    settings = {}
++    for lg, n, r, ref in H.all_rows(S):
++        if not ref:
++            settings[model_of(S, lg, n)] = settings.get(model_of(S, lg, n), 0) + 1
++    for rank, (lg, n, r) in enumerate(best_settings(S), 1):
++        ds, model = lg["dataset"], model_of(S, lg, n)
++        fam = H.family(n)
++        icon = f'<svg class="fam-icon" aria-hidden="true" focusable="false"><use href="#{fam["icon"]}"/></svg>' if fam else ""
++        swatch = f'<i class="swatch" style="background:{fam["colour"]}" title="{esc(fam["name"])}"></i>' if fam else ""
++        month, url = release(model)
++        if not url:
++            missing.append(model)
++        q = lg["setups"][n]["quality"]
++        er = (f'<td class="num">{fmt(q["error_rate"])}<span class="small">{fmt(q["error_lo"])} to {fmt(q["error_hi"])}'
++              f'</span></td>' if q.get("error_rate") is not None and not q.get("too_few") else f'<td class="num">{nm(NA)}</td>')
++        cost = (f'<td class="num"><span class="cost-1k">${fmt(q["usd_per_1000"], 3)}</span><span class="cost-1m" '
++                f'data-usd="{q["usd_per_1000"]!r}">${fmt(q["usd_per_1000"], 3)}</span></td>'
++                if q.get("usd_per_1000") is not None else P.cost_cell(S, ds, n, q))
++        when = (f'<td class="hl-release"><a href="{esc(url)}">{month}</a></td>' if url else
++                f'<td class="hl-release"><span class="muted" title="No release date from the maker on record">{month}</span></td>')
++        others = settings[model] - 1
++        rows.append(f'<tr{H.attrs(S, ds, n)}><td class="num">{rank}</td><td class="model">{swatch}{icon}'
++                    f'<a class="model-name" href="{P.model_href("", ds, n, S)}">{esc(n)}</a><span class="small">League '
++                    f'{lg["id"]} · {"its setting with the highest risk judgement; " + count(others) + " other setting" + ("s" if others > 1 else "") + " under All setups" if others else "its only setting"}'
++                    f'</span></td>{when}'
++                    f'{judgement_cell(r, fam["colour"] if fam else None)}{share(r["found"])}{share(r["right_safety"])}{er}{cost}</tr>')
++    return rows, missing
++
++
++HEADLINE_HEAD = ["Rank", "Model: its setting with the highest risk judgement", ("Released", " data-nosort"), "Risk judgement (95% interval)", "Risks found",
++                 "Right safety", "Error rate (PR)",
++                 '<span class="cost-1k">$ per 1,000 decisions</span><span class="cost-1m">$ per 1M decisions</span>']
++
++
++def headline(S) -> str:
++    """One row per model at its setting with the highest stored risk judgement; the All setups key shows the full
++    All leagues risk table (every setup, programs as reference rows) in its place."""
++    rows, missing = headline_rows(S)
++    table = P.table(HEADLINE_HEAD, rows, "One row per model: one named setup, the model's setting with the highest stored "
++                    "risk judgement (a selection for display; every cell of a row is that setup's own; all setups under All "
++                    "setups). All leagues, all phases.", cls="board headline",
++                    attrs=' data-dataset="all" id="headline-table"')
++    note = (f'<p class="table-note">Released: the month the maker\'s own page gives, linked; \u2014 where none is on '
++            f'record ({count(len(missing))} of {count(len(rows))} models).</p>' if missing else "")
++    keys = ('<span class="keys needs-js" role="group" aria-label="Rows"><button type="button" class="key" '
++            'data-headline-view="best" aria-pressed="true">Best setting per model</button><button type="button" '
++            'class="key" data-headline-view="all" aria-pressed="false">All setups</button></span>')
++    return (f'<section class="card headline" id="leaderboard" data-dataset="all" aria-labelledby="leaderboard-title">'
++            f'<div class="chart-head"><h2 id="leaderboard-title">Risk calls leaderboard</h2>{keys}<p class="chart-sub">'
++            f'Risk judgement: 100 = every call right, 50 = always safe; the line on each bar is its 95% interval, the mark '
++            f'at 50 the always-safe line · higher is better</p></div>'
++            f'<p class="table-note">{esc(ALL_NOTE)}</p>'
++            f'<div data-headline-panel="best">{P.SWIPE}{table}{note}</div>'
++            f'<div data-headline-panel="all" hidden>{H.all_risk_table(S)}</div>'
++            f'{caveat(H.RANK_NOTE, "statistics")}</section>')
++
++
++# --- Finding sections ----------------------------------------------------------------------------------------------
++
++def _num(s: str) -> float:
++    return float(s.replace("\u2212", "-").replace("pp", "").replace("+", "").strip())
++
++
++def scan_bias(S) -> list:
++    """(league id, setup, bias text, bias) of the clear-risk scan's per-setup tables (kept decisions only); the
++    league's reference rows (Safest program, Random legal play expected) left out."""
++    sec = next(s for s in S["clear_risk"]["sections"] if s["id"] == "clear-risk-setups")
++    out = []
++    for t in sec["tables"]:
++        m = re.match(r"League (\d)", t["caption"])
++        i = t["head"].index("bias = missed \u2212 needless")
++        for row in t["rows"]:
++            if "(reference)" in row[0] or "(expected)" in row[0]:
++                continue
++            out.append((int(m.group(1)), row[0], row[i], _num(row[i])))
++    return out
++
++
++def q1_bias(S) -> list:
++    """(model, bias with numbers text, value, bias board only text, value) of Clear risk Part 2, question Q1."""
++    sec = next(s for s in S["clear_risk"]["sections"] if s["id"] == "clear-risk-part2")
++    t = next(t for t in sec["tables"] if t["caption"].startswith("Q1"))
++    i = t["head"].index("bias")
++    by = {}
++    for row in t["rows"]:
++        by.setdefault(row[0], {})[row[1]] = row[i]
++    return [(m, v["with numbers"], _num(v["with numbers"]), v["board only"], _num(v["board only"])) for m, v in by.items()]
++
++
++def _bars(rows: list, lo: float, hi: float, ticks: list, head: str, zero: bool = True) -> str:
++    """Bars from zero on a lo..hi axis (the sibling site's HTML bars): rows are (label html, [(value, class, colour)],
++    value text, attrs)."""
++    pos = lambda v: 100 * (v - lo) / (hi - lo)
++    z = pos(0)
++    out = []
++    for label, bars, text, attrs in rows:
++        fills = "".join(f'<span class="hbar-fill {cls}" style="margin-left:{min(pos(v), z):.2f}%;width:{abs(pos(v) - z):.2f}%'
++                        f'{";background-color:" + colour if colour else ""}"></span>' for v, cls, colour in bars)
++        mark = f'<span class="hbar-marker" style="left:{z:.2f}%"></span>' if zero else ""
++        out.append(f'<li class="hbar"{attrs}><span class="hbar-label">{label}</span><span class="hbar-track">{fills}{mark}'
++                   f'</span><span class="hbar-value">{text}</span></li>')
++    axis = "".join(f'<span class="hbar-tick" style="left:{pos(t):.2f}%">{esc(lab)}</span>' for t, lab in ticks)
++    return (f'<div class="hbar hbar-axis headed" aria-hidden="true"><span></span><span class="hbar-track">{axis}</span>'
++            f'<span class="hbar-head">{head}</span></div><ol class="hbars headed">{"".join(out)}</ol>')
++
++
++def finding(fid: str, heading: str, sentences: str, chart: str, legend: str, warn: str, anchor: str) -> str:
++    return (f'<section class="card finding" id="{fid}" aria-labelledby="{fid}-title"><h2 id="{fid}-title">{esc(heading)}</h2>'
++            f'<p class="finding-text">{sentences}</p><figure class="chart-card chart-wide finding-chart">{chart}'
++            f'<p class="chart-legend">{legend}</p></figure>{caveat(warn, anchor)}</section>')
++
++
++def cautious(S) -> str:
++    rows = scan_bias(S)
++    models = sorted((x for x in rows if x[1] not in PROGRAMS), key=lambda x: -x[3])
++    progs = sorted((x for x in rows if x[1] in PROGRAMS), key=lambda x: -x[3])
++    lo_m, hi_m = models[-1], models[0]
++    gnu = [x for x in progs if x[1] == "GNUbg weak"]
++    rnd = next(x for x in progs if x[1] == "Random")
++    scanned = next(s for s in S["clear_risk"]["sections"] if s["id"] == "clear-risk-scan")
++    kept = re.search(r"Kept: ([\d,]+) of", " ".join(scanned["notes"])).group(1)
++    text = (f'In the clear-risk scan ({kept} league decisions where the engine\'s call is clear and stable), every one of '
++            f'the {count(len(models))} model setups missed more risks than it took needlessly: its bias (missed minus '
++            f'needless) runs from {esc(lo_m[2])} ({esc(lo_m[1])}, League {lo_m[0]}) to {esc(hi_m[2])} ({esc(hi_m[1])}, '
++            f'League {hi_m[0]}). The programs are not like that: GNUbg weak\'s bias is negative in all three leagues '
++            f'({", ".join(esc(x[2]) for x in sorted(gnu, key=lambda x: x[0]))}), and so is Random\'s ({esc(rnd[2])}); '
++            f'Safest, which never takes a risk, is {esc(next(x[2] for x in progs if x[1] == "Safest"))} by construction.')
++    bars = []
++    for lg, n, t, v in models + progs:
++        fam = None if n in PROGRAMS else H.family(n)
++        cls = "program" if n in PROGRAMS else ("" if fam else "other")
++        bars.append((f'{esc(n)}<span class="hbar-where"> · League {lg}</span>', [(v, cls, fam["colour"] if fam else None)],
++                     esc(t), f' data-program="{"yes" if n in PROGRAMS else "no"}"'))
++    chart = _bars(bars, -50, 100, [(-50, "\u221250"), (0, "0"), (50, "+50"), (100, "+100 pp")], "Bias (pp)")
++    legend = ('<span>Bias = missed risks (a clear Risk win played safe) minus needless risks (a clear Safety win played '
++              'unsafe), in percentage points; right of 0 = too cautious</span> <span><i class="swatch swatch-program">'
++              '</i>program (reference row)</span>')
++    return finding("finding-cautious", "Models are too cautious", text, chart, legend,
++                   "Not paired: setups met different positions, so the rows compare only loosely.", "clear-risk")
++
++
++def flinch(S) -> str:
++    rows = q1_bias(S)
++    safer = [r for r in rows if r[2] > r[4]]
++    neg = [r for r in rows if r[4] < 0]
++    all_ = len(safer) == len(rows)
++    # Observed, not tested (Zeki, bus #2578: no new statistics): the heading says what the two versions showed.
++    heading = ("With the numbers on screen, every model asked played safer" if all_ else
++               f"With the numbers on screen, {count(len(safer))} of {count(len(rows))} models asked played safer")
++    big = max(rows, key=lambda r: r[2] - r[4])
++    small = min(rows, key=lambda r: r[2] - r[4])
++    text = (f'Asked which of two plays is better on the same rollout-confirmed positions, '
++            f'{"all " + count(len(rows)) if all_ else count(len(safer)) + " of " + count(len(rows))} models chose the safe '
++            f'play more often when the prompt showed each play\'s computed numbers than from the board alone: the bias '
++            f'(missed minus needless) moves from {esc(big[3])} to {esc(big[1])} for {esc(big[0])} and from {esc(small[3])} '
++            f'to {esc(small[1])} for {esc(small[0])}. From the board alone, {count(len(neg))} of them '
++            f'({", ".join(esc(r[0]) for r in neg)}) took more needless risks than they missed.')
++    bars = []
++    for m, tn, vn, tb, vb in sorted(rows, key=lambda r: -r[2]):
++        fam = H.family(m)
++        bars.append((esc(m), [(vn, "q1-numbers", fam["colour"] if fam else None), (vb, "q1-board", None)],
++                     f'{esc(tn)} | {esc(tb)}', ""))
++    chart = _bars(bars, -50, 100, [(-50, "\u221250"), (0, "0"), (50, "+50"), (100, "+100 pp")],
++                  '<span class="head-long">With numbers | board only (pp)</span><span class="head-short">Numbers | board</span>')
++    legend = ('<span><i class="swatch" style="background:var(--text-2)"></i>with numbers (the league prompt, each play\'s '
++              'computed consequences)</span> <span><i class="swatch swatch-q1-board"></i>board only (notation, no computed '
++              'number)</span> <span>Bias: missed minus needless, Q1 of Clear risk Part 2</span>')
++    return finding("finding-flinch", heading, text, chart, legend, "Two plays shown, not league play.", "clear-risk")
++
++
++def sections(S) -> str:
++    return headline(S) + cautious(S) + flinch(S)

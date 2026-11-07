@@ -189,28 +189,27 @@ def pick(row, keys):
         {"shared": True} if row.get("shared") else {})
 
 
-def shown_results(R: dict, complete: bool) -> dict:
-    """The validated results file, cut down to what the page shows. The learning lift and the signal stay out unless
-    the site accepts complete."""
+# The complete-only blocks' fields, exactly (learning_validate recomputes them; nothing else is published).
+LIFT_KEYS = ("lift", "lift_ci", "vs_control", "vs_control_ci")
+SIGNAL_KEYS = ("risks_found_change", "risks_found_ci", "right_safety_change", "right_safety_ci", "signal")
+
+
+def shown_results(pub: dict) -> dict:
+    """learning_validate's public projection (rebuilt from the finished series' validated aggregates), cut down to
+    the fields the page shows, by explicit keys. The learning lift and the signal are there only when complete."""
     keys = [k for k, *_ in METRICS]
-    out = dict(updated_at=R["updated_at"], planned_series_per_arm=R["planned_series_per_arm"],
-               series_done=R["series_done"], complete=complete,
+    out = dict(updated_at=pub["updated_at"], planned_series_per_arm=pub["planned_series_per_arm"],
+               series_done=pub["series_done"], complete=pub["complete"], t0_done=pub["t0_done"],
                table={arm: {cp: pick(by_cp.get(cp), keys) for cp in CHECKPOINTS if cp in by_cp}
-                      for arm, by_cp in R["table"].items()})
-    if "t0_done" in R:
-        out["t0_done"] = R["t0_done"]
-    # "running, n of N series" on the Learning tab: every arm's finished series of all arms' planned ones.
-    out["series_total_done"] = sum(len(v) for v in R["series_finished"].values())
-    out["series_total_planned"] = R["planned_series_per_arm"] * len(R["series_finished"])
-    out["series_finished"] = R["series_finished"]
-    if R.get("games"):
-        out["games"] = {arm: pick(g, [k for k, *_ in GAME_METRICS]) for arm, g in R["games"].items()}
-    if "budget_empty_points" in R:
-        out["budget_empty_points"] = R["budget_empty_points"]
-    if complete:
-        for k in COMPLETE_ONLY_KEYS:
-            if k in R:
-                out[k] = R[k]
+                      for arm, by_cp in pub["table"].items()},
+               series_total_done=pub["series_total_done"], series_total_planned=pub["series_total_planned"],
+               series_finished=pub["series_finished"],
+               games={arm: pick(g, [k for k, *_ in GAME_METRICS]) for arm, g in pub["games"].items()},
+               budget_empty_points=pub["budget_empty_points"], provenance=pub["provenance"])
+    if pub["complete"]:
+        out.update(learning_lift={arm: pick(r, LIFT_KEYS) for arm, r in pub["learning_lift"].items()},
+                   signal={arm: pick(r, SIGNAL_KEYS) for arm, r in pub["signal"].items()},
+                   paired_series=pub["paired_series"])
     return out
 
 
@@ -251,13 +250,15 @@ def require_test_set(test_set: Path, why: str) -> str:
 
 
 def read_results(src: Path, plan: dict, prompt: dict | None, test_set: Path) -> dict:
-    """results, validation, lessons and the budget arm's points from src, after learning_validate's checks. With a
-    results file or lesson files present, the evaluation set must be present and be the results' (TestSetRequired)."""
+    """results, validation, lessons and the budget arm's points from src, after learning_validate. With a results
+    file, an aggregate or a lesson file present, the evaluation set must be present, readable and the one the results
+    were made with, else the build fails (TestSetRequired); only the no-results state builds without it."""
     path = src / "learning-pilot.json"
     none = dict(results=None, validation=None, lessons=[], budget=[])
+    runs = src / "runs"
     if not path.exists():
-        if any((src / "runs" / "lessons").glob("s*/lessons-g*.txt")):
-            require_test_set(test_set, "lesson files are present")
+        if any(runs.rglob("aggregate.json")) or any(runs.rglob("lessons-g*.txt")):
+            require_test_set(test_set, "aggregates or lesson files are present")
         return none
     test_sha = require_test_set(test_set, "a results file is present")
     try:
@@ -269,30 +270,19 @@ def read_results(src: Path, plan: dict, prompt: dict | None, test_set: Path) -> 
     if stated is not None and stated != test_sha:
         raise TestSetRequired(f"the results were made with evaluation set {str(stated)[:12]}…, but {test_set} hashes "
                               f"to {test_sha[:12]}…: the leakage check would test the wrong set")
-    bad = (V.schema(R, prompt["sha256"] if prompt else None, plan["hashes"], test_sha) if isinstance(R, dict)
-           else ["learning-pilot.json is not an object"])
-    if bad:
-        return none | dict(validation=rejected(bad))
-    not_complete = V.completeness(R, src, test_sha) if R["complete"] else []
-    files, lesson_bad = V.lessons_shown(R, src)
-    complete = R["complete"] and not not_complete and not lesson_bad
+    v = V.validate(R, src, prompt, plan["hashes"], test_sha)
+    validation = dict(accepted=v["accepted"], producer_complete=v["producer_complete"], complete=v["complete"],
+                      problems=v["problems"])
+    if not v["accepted"]:
+        return none | dict(validation=validation)
     lessons = []
-    for s, g, f in files:
-        A = V.aggregate(src, "lessons", s) or {}
-        game = next((x for x in A.get("games", []) if x.get("game") == g), {})
+    for s, g, f, game in v["lessons"]:
         text = f.read_text().strip()
         if text:
             lessons.append(dict(series=s, text=text, **{k: game.get(k) for k in GAME_KEYS} | {"game": g}))
-    budget, budget_bad = [], []
-    for s in sorted(R["series_finished"]["budget"]):
-        A = V.aggregate(src, "budget", s) or {}
-        e = V.budget_points(A, f"budget s{s:02d}")
-        budget_bad += e
-        if not e and A.get("budget_points") is not None:
-            budget.append(dict(series=s, points=A["budget_points"]))
-    return dict(results=shown_results(R, complete), lessons=lessons, budget=budget,
-                validation=dict(accepted=True, producer_complete=R["complete"], complete=complete,
-                                problems=not_complete + lesson_bad + budget_bad))
+    budget = [dict(series=s, points=[pick(p, ("after_game", "games_shown", "games_dropped", "tokens",
+                                              "budget_tokens")) for p in points]) for s, points in v["budget"]]
+    return dict(results=shown_results(v["public"]), lessons=lessons, budget=budget, validation=validation)
 
 
 def data(plan_path: Path, src: Path, test_set: Path = TEST_SET,
@@ -323,19 +313,14 @@ def num(v, digits, unit="") -> str:
 
 
 def validation_note(L) -> str:
-    """What the site did not accept of the results file (learning_validate), named field by field."""
+    """Why the site refused the results file (learning_validate), named field by field. An accepted file has no
+    problems: its summary agreed with the aggregates field by field."""
     v = L["validation"]
-    if not v or not v["problems"]:
+    if not v or v.get("accepted") or not v.get("problems"):
         return ""
     items = "".join(f"<li>{esc(p)}</li>" for p in v["problems"])
-    if not v["accepted"]:
-        head = ("<strong>Results file not accepted.</strong> It failed the site's checks against the pre-registered "
-                "protocol, so none of its numbers are shown:")
-    elif v["producer_complete"] and not v["complete"]:
-        head = ("<strong>Not accepted as complete.</strong> The results file says every series is done; the site's "
-                "checks do not confirm it, so the numbers are shown as running, with no lift, signal or ranking:")
-    else:
-        head = "<strong>Not shown:</strong>"
+    head = ("<strong>Results file not accepted.</strong> It failed the site's checks against the pre-registered "
+            "protocol and the series' own files, so none of its numbers, lessons or budget points are shown:")
     return f'<div class="note validation-note"><p>{head}</p><ul>{items}</ul></div>'
 
 
@@ -443,7 +428,7 @@ def lessons(L) -> str:
     for x in L["lessons"]:
         res = (f'{"won" if x["won"] else "lost"} {count(x["points"])} point{"s" if x["points"] != 1 else ""}'
                f' ({esc(x["result"])})' if x["won"] is not None else nm(NA))
-        out.append(f'<li><p class="small">Series {x["series"]}, game {x["game"]}: {res}</p>'
+        out.append(f'<li><p class="small">Series {esc(str(x["series"]))}, game {esc(str(x["game"]))}: {res}</p>'
                    f'<pre class="citation">{esc(x["text"])}</pre></li>')
     return f'<ul class="notes">{"".join(out)}</ul>'
 
@@ -595,12 +580,12 @@ def budget(L) -> str:
            if empty is not None else [])
     for b in L["budget"]:
         rows = [f'<tr><th scope="row">{count(p["after_game"])}</th>'
-                f'<td>{", ".join(str(g) for g in p["games_shown"]) or nm("none: empty")}</td>'
+                f'<td>{esc(", ".join(str(g) for g in p["games_shown"])) or nm("none: empty")}</td>'
                 f'<td class="num">{count(p["games_dropped"])}</td>'
-                f'<td class="num">{count(p["tokens"])} / {count(p["budget_tokens"])}</td></tr>' for p in b["points"]]
+                f'<td class="num">{count(p["tokens"])} / {num(p["budget_tokens"], 0)}</td></tr>' for p in b["points"]]
         out.append(P.SWIPE + P.table(["After game", "Games included", "Games dropped",
                                       "Tokens used / lessons arm's tokens"], rows,
-                                     f'Budget arm, series {b["series"]}', cls="board list"))
+                                     f'Budget arm, series {esc(str(b["series"]))}', cls="board list"))
     if not L["budget"]:
         out.append('<p class="note">No finished budget series yet: its points appear here, after every game, as each '
                    'series finishes.</p>')

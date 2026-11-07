@@ -534,3 +534,15 @@ async function savePng(panel, svg, title, lines, filename) {
   window.addEventListener('hashchange', () => fromHash(true));
   fromHash(location.hash.length > 1);
 })();
+
+/* Home page: the headline table's two views (story.py): the best setting per model, or every setup (the All leagues risk
+   table). */
+(function headlineViews() {
+  const keys = [...document.querySelectorAll('[data-headline-view]')];
+  if (!keys.length) return;
+  const show = view => {
+    keys.forEach(k => k.setAttribute('aria-pressed', String(k.dataset.headlineView === view)));
+    document.querySelectorAll('[data-headline-panel]').forEach(p => { p.hidden = p.dataset.headlinePanel !== view; });
+  };
+  keys.forEach(k => k.addEventListener('click', () => show(k.dataset.headlineView)));
+})();

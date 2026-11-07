@@ -405,3 +405,23 @@ i.swatch-refline { width: 0; height: .8rem; border-left: 2px dashed var(--text-2
   .nav-group > ul { overflow: visible; margin: 0; padding: 0; }
   .hbar-where { display: block; }
 }
+
+/* --- The home page as a story (Ümit, bus #2570; story.py): the headline table and the finding sections. --------------- */
+.headline .chart-head .keys { margin-left: auto; }
+table.headline td.model { min-width: 15rem; }
+table.headline td.model .swatch { margin-right: .3rem; }
+td.hl-judgement { min-width: 13rem; }
+.hl-bar { position: relative; display: block; height: .8rem; margin: .2rem 0 .25rem; background: var(--sunk);
+  border-radius: 2px; box-shadow: inset 0 0 0 1px var(--edge); }
+.hl-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 2px; box-shadow: inset 0 0 0 1px var(--mark-edge); }
+.hl-fill.other { background: var(--data-grey); }
+.hl-int { position: absolute; top: 50%; height: 2px; margin-top: -1px; background: var(--text); box-shadow: 0 0 0 1px var(--panel); }
+.hl-safe { position: absolute; left: 50%; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; background: var(--text-2); }
+.hl-val { font-family: var(--mono); font-size: .84rem; }
+td.hl-release { white-space: nowrap; }
+.js [data-headline-panel][hidden] { display: none; }
+.finding h2 { font-size: 1.25rem; }
+.finding-text { max-width: 80ch; margin: 0 0 .75rem; }
+.finding-chart { margin: 0; }
+.section-caveat { margin-top: .6rem; }
+.hbar-fill.q1-board, i.swatch-q1-board { background-color: var(--data-grey); background-image: repeating-linear-gradient(135deg, rgba(255, 255, 255, .55) 0 3px, rgba(0, 0, 0, .12) 3px 6px); }

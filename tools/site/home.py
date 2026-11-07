@@ -1838,6 +1838,7 @@ def hero_card(S) -> str:
 
 
 def home(S) -> str:
+    import story
     tabs = "".join(f'<button type="button" role="tab" id="tab-{k}" class="mode" aria-controls="board" '
                    f'aria-selected="{str(i == 0).lower()}" data-tab="{k}"><span class="lamp" aria-hidden="true"></span>{l}</button>'
                    for i, (k, l) in enumerate(TABS))
@@ -1846,6 +1847,7 @@ def home(S) -> str:
     return f"""
     {FAMILY_ICONS}
     {hero_card(S)}
+    {story.sections(S)}
     {findings_block(S)}
     {filters(S)}
     {measure_charts(S)}

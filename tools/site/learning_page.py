@@ -517,7 +517,7 @@ def chart(L) -> str:
                 'risks found before game 1, after game 5 and after game 10, one line per arm.</p>')
     # One small chart per measure, side by side on wide screens and stacked on phones (bg.css .lp-charts), so each
     # keeps readable text at 390 px.
-    W, H, L0, R0, T, B = 380, 260, 46, 30, 28, 40
+    W, H, L0, R0, T, B = 360, 260, 46, 46, 28, 40  # R0 = L0: the last checkpoint label ("After game 10") fits
     pw = W - L0 - R0
     svgs = []
     for key, label, unit in CHART_MEASURES:

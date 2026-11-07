@@ -37,7 +37,7 @@ The lesson prompt sha256 is unchanged: d755001513b60546cbcc4159db0965dbeda09a65d
 
 **Page:** branch `learning-page`, worktree `/home/cbasaran/code/jevgammon-learning-page`. The LearningPage subagent was working on it; see "Page status" below.
 
-- The last commit is 47d96f5 (work in progress; 97aaa78 before it), on origin/main 7719e1a. 587e57f already had the tabs, the home title, HERO_LINKS, how_numbers and RANK_NOTE (#2578 wording). It is NOT the review candidate.
+- The last commit is 7033cd3 (work in progress; 47d96f5 and 97aaa78 before it), on origin/main 7719e1a. 587e57f already had the tabs, the home title, HERO_LINKS, how_numbers and RANK_NOTE (#2578 wording). It is NOT the review candidate.
 - Still to do:
   - #2575 P1/P2: strict, typed, plan-bound completion; the leakage check must require the private test set (hash bound to the run); provenance hashes; a closed output schema; lessons reconciled with the inventory.
   - #2531: records dropped shown, cost wording, markdown rendering of the protocol.

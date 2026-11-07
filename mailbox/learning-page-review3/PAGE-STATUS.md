@@ -63,3 +63,24 @@ Whole-site `checks.run` on 97aaa78.
     - a wrong type for `budget_points`.
 
 That output was not saved to a review file; it has to be rerun after the reboot.
+
+## Final note before the reboot (LearningPage)
+
+`origin/learning-page` is now at **7033cd3** (work in progress, on origin/main 7719e1a).
+
+**After the reboot:**
+
+1. From the worktree, run `bash mailbox/learning-page-review3/scripts/run_review.sh`. It writes:
+   - 01: whole-site checks, main vs branch;
+   - 02: page checks in four states;
+   - 03: page and file faults, with evaluation values redacted;
+   - 04: the invariance CSV and summary.
+2. Take screenshots at 1280 and 390 wide, light and dark: the home page (tabs, title, links, the "How the numbers work" box, the rank note), the Learning tab, and the protocol section.
+3. Write a README with:
+   - timestamps and the commands used;
+   - the Method sections quoted in the "How the numbers work" box: Error rate; Was it the right risk?; Statistics and verdicts; Limits;
+   - the four plan hashes;
+   - the label "SYNTHETIC" on the complete-state fixture.
+4. Copy review3 into the main checkout's mailbox, zip it, commit and push.
+
+**Open decision:** the Method page still lists "Learning from experience" as "Not measured". This contradicts the new page and was left unchanged.

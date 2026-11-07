@@ -20,7 +20,11 @@ NAV = [("", [("", "Home")]),
                      ("learning/", "Learning from experience (preliminary, running)")]),
        ("Leagues and matches", [("leagues/", "Leagues"), ("matches/", "Matches")]),
        ("Method and data", [("method/", "Method"), ("data/", "Data")])]
-TITLE = "Can a model tell when a risk is worth taking?"
+TITLE = "Backgammon: do models take the right risks, and do they learn from their games?"
+# The site's two parts (Ümit #2553/#2557), as the Logic site's Test row: one constant each, so the labels can change.
+TAB_RISK = "Risk calls"
+TAB_LEARNING = "Learning across games"
+TAB_LEARNING_PATH = "learning/"
 # Reviewed brief of 24 Oct 2026, item 2: the subtitle, used with the title in the hero, the meta description, the social
 # preview and the PNG headers (png.js, bg.js read both from the body's data attributes).
 SUBTITLE = "And when does playing safe cost more?"
@@ -222,15 +226,22 @@ COST_HEAD = ["Model and setting", "$ per 1,000 decisions", "Median / P90 s per d
 
 # The sticky header at the top of every page (Ümit via Zeki #2270; the suite's shared component, #2290), as on the
 # Decision models site: the suite strip (common.SUITE_BAR, the shared snippet with Backgammon marked; its look is
-# suite-bar.css, copied verbatim), then the compact view bar: Home on every page and, on the home page, its League,
+# suite-bar.css, copied verbatim), then the compact view bar: Home, the Part row (the site's two parts, Risk calls and
+# Learning across games, as the Logic site's Test row: Ümit #2553) on every page and, on the home page, its League,
 # Models and Measure rows. The pages row (NAV) sits in the top bar under it, which scrolls away.
 def site_header(rel: str, path: str, rows: str = "") -> str:
     home = (f'<a class="view-key view-home" href="{rel or "./"}"{" aria-current=page" if path == "" else ""}>'
             f'<svg class="home-mark" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 1.6 1 7.6h2v6.8h3.8v-4.2'
             f'h2.4v4.2H13V7.6h2z"/></svg>Home</a>')
-    label = "View: league, models and measure" if rows else "View"
+    learning = path.startswith(TAB_LEARNING_PATH)
+    parts = ((TAB_RISK, rel or "./", not learning), (TAB_LEARNING, rel + TAB_LEARNING_PATH, learning))
+    tabs = ('<div class="view-row view-tests view-parts" role="group" aria-labelledby="view-part"><span class="view-label" '
+            'id="view-part">Part</span><ul>'
+            + "".join(f'<li><a class="view-key" href="{href}"{" aria-current=true" if on else ""}>{esc(label)}</a></li>'
+                      for label, href, on in parts) + "</ul></div>")
+    label = "View: part, league, models and measure" if rows else "View: part"
     return (f'<div class="site-header">\n  {SUITE_BAR}\n  <nav class="view-bar" aria-label="{label}"><div class="view-rows">'
-            f'{home}{rows}</div></nav>\n  </div>')
+            f'{home}{tabs}{rows}</div></nav>\n  </div>')
 
 
 def nav_items(rel: str, path: str) -> str:

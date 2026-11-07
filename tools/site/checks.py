@@ -18,9 +18,9 @@
    #2310); data files, decompressed .gz files and other text get the complete scan. selftest_suite_bar.py tests it.
 5. Every relative link resolves; ids are unique per page and every #anchor exists.
 6. Every published finding still holds (B4): findings.py reruns each finding's machine check on the built data.
-7. The learning page (learning_page.py, plan §9): no learning lift, signal or verdict block in the page or its data
-   file unless the results are complete; no evaluation-set position (id, board key, board) in either (where the
-   private test set is present).
+7. The learning page (learning_page.py, plan §9): no learning lift, signal, verdict or Learning-tab ranking/leader block
+   in the page or its data file unless the results are complete; no evaluation-set position (id, board key, board) in
+   either (where the private test set is present).
 """
 
 import gzip

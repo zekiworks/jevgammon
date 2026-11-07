@@ -30,6 +30,7 @@ the private-strings scan of every output file, and the learning page's own check
 import argparse
 import hashlib
 import json
+import math
 import re
 import shutil
 import sys
@@ -45,7 +46,7 @@ from common import BANNED, NA, ROOT, count, esc, fmt, nm, status_badge  # noqa: 
 import pages as P  # noqa: E402
 from method import spec_markdown  # noqa: E402
 
-PATH = "learning/"
+PATH = P.TAB_LEARNING_PATH
 DATA = "data/v3/learning-pilot.json"
 TITLE = "Learning from experience (preliminary, running)"
 COMMITMENT = "Results will be published whichever way they go, including no lift."
@@ -54,10 +55,17 @@ PLAN = ROOT / "mailbox/Learning pilot - plan 2026-11-07.md"
 SOURCE = "learning"
 DESCRIPTION = ("The learning pilot of the backgammon benchmark (preliminary, running): does a model play better after "
                "seeing its own earlier games? The pre-registered plan, the lesson prompt and the results as they come in.")
-# Ids of the blocks that only a complete results file may carry (checks.check_learning).
-COMPLETE_ONLY_IDS = ("learning-lift", "learning-signal")
+# Ids of the blocks that only a complete results file may carry (checks.check_learning): the lift, the signal rule's
+# result and the Learning tab's leaders.
+COMPLETE_ONLY_IDS = ("learning-lift", "learning-signal", "learning-leaders")
 COMPLETE_ONLY_KEYS = ("learning_lift", "signal", "paired_series")
+# The plan's bullet that fixes the Learning tab's order (section 9, amended before any model call, 09bcbc4).
+TAB_ORDER = "Learning tab order"
 CHECKPOINTS = ("T0", "T5", "T10")
+CHECKPOINT_LABEL = {"T0": "Before game 1", "T5": "After game 5", "T10": "After game 10"}
+# The chart's measures (the evaluation set, per arm and checkpoint): key, label, unit.
+CHART_MEASURES = [("error_rate", "Error rate (PR), lower is better", ""),
+                  ("risks_found", "Risks found, higher is better", "%")]
 # Shown per arm x test round; the keys copied to the data file are exactly these.
 METRICS = [("error_rate", "Error rate (PR)", 1, ""), ("risk_judgement", "Risk judgement", 1, ""),
            ("risks_found", "Risks found", 1, "%"), ("right_safety", "Right safety", 1, "%"),
@@ -133,7 +141,21 @@ def read_plan(path: Path) -> dict:
         s["markdown"] = "\n".join(s.pop("lines")).strip()
     return dict(file=path.name, title=title, status=status, commitment=COMMITMENT,
                 sha256=hashlib.sha256(text.encode()).hexdigest(), sections=sections, redacted=redacted,
-                hashes=HEX64.findall(text))
+                hashes=HEX64.findall(text), tab_order=tab_order(sections))
+
+
+def tab_order(sections: list) -> dict:
+    """The plan's 'Learning tab order' bullet with its sub-bullets (plan section 9, amended before any model call):
+    the Learning tab states it as written, and leaders() applies it."""
+    for s in sections:
+        lines = s["markdown"].splitlines()
+        for i, line in enumerate(lines):
+            if line.startswith(f"- **{TAB_ORDER}"):
+                j = i + 1
+                while j < len(lines) and lines[j].startswith("  "):
+                    j += 1
+                return dict(section=s["title"], markdown="\n".join(lines[i:j]))
+    raise SystemExit(f"the plan has no '{TAB_ORDER}' bullet")
 
 
 def read_prompt(src: Path, plan: dict) -> dict | None:
@@ -165,6 +187,9 @@ def read_results(path: Path) -> dict | None:
                       for arm, by_cp in R["table"].items()})
     if "t0_done" in R:
         out["t0_done"] = R["t0_done"]
+    # "running, n of N series" on the Learning tab: every arm's finished series of all arms' planned ones.
+    out["series_total_done"] = sum(R["series_done"].values())
+    out["series_total_planned"] = R["planned_series_per_arm"] * len(R["series_done"])
     if R.get("games"):
         out["games"] = {arm: pick(g, [k for k, *_ in GAME_METRICS]) for arm, g in R["games"].items()}
     if out["complete"]:
@@ -328,13 +353,129 @@ def prompt(L) -> str:
             f'<h3>User</h3><pre class="citation">{esc(p["user"])}</pre>')
 
 
+def leader_order(R: dict) -> list:
+    """The plan's Learning tab order (section 9): the non-control arms that meet the signal rule first, then the others;
+    within each group by learning lift minus control's lift, higher first. Control is the reference, never ranked."""
+    lift = by_arm(R.get("learning_lift") or {}, list(R["table"]))
+    met = {a: bool(((R.get("signal") or {}).get(a) or {}).get("signal")) for a in R["table"]}
+    vs = {a: (lift.get(a) or {}).get("vs_control") for a in R["table"]}
+    return sorted((a for a in R["table"] if a != "control"),
+                  key=lambda a: (not met[a], vs[a] is None, -(vs[a] or 0)))
+
+
+def latest(by_cp: dict) -> tuple:
+    """The arm's latest test round with a value: (checkpoint, row)."""
+    for cp in reversed(CHECKPOINTS):
+        row = by_cp.get(cp)
+        if row and row.get("error_rate") is not None:
+            return cp, row
+    return None, None
+
+
+def tab_card(L) -> str:
+    """The Learning tab's leaders (Ümit #2553/#2557; plan section 9, Learning tab order): none until every planned
+    series is done, only 'running, n of N series' and per-arm interim numbers in the plan's arm order; then the arms in
+    the plan's order. The plan's bullet is shown as written."""
+    order = L["plan"]["tab_order"]
+    rule = (f'<div class="tab-rule">{spec_markdown(order["markdown"])}<p class="table-note">Plan section '
+            f'{esc(order["section"])}, as pre-registered.</p></div>')
+    R = L["results"]
+    if R and R["complete"]:
+        lift = by_arm(R.get("learning_lift") or {}, list(R["table"]))
+        sig = R.get("signal") or {}
+        items = "".join(f'<li><strong>{esc(a)}</strong>: signal rule {flat((sig.get(a) or {}).get("signal"))}; '
+                        f'learning lift minus control\'s {flat((lift.get(a) or {}).get("vs_control"))}</li>'
+                        for a in leader_order(R))
+        block = (f'<div id="learning-leaders"><h3>Arms in order</h3><ol class="leaders-list">{items}</ol>'
+                 '<p class="table-note">control: the reference, not ranked.</p></div>')
+    else:
+        state = ("Not started: no series has finished." if R is None else
+                 f'Running, {count(R["series_total_done"])} of {count(R["series_total_planned"])} series.')
+        rows = []
+        for arm, by_cp in (R["table"].items() if R else []):
+            cp, row = latest(by_cp)
+            g = (R.get("games") or {}).get(arm) or {}
+            rows.append(f'<tr><th scope="row">{esc(arm)}</th>'
+                        f'<td class="num">{count(R["series_done"].get(arm, 0))} / {count(R["planned_series_per_arm"])}</td>'
+                        f'<td>{esc(CHECKPOINT_LABEL[cp]) if cp else nm(NA)}</td>'
+                        f'<td class="num">{num(row.get("error_rate") if row else None, 1)}</td>'
+                        f'<td class="num">{num(row.get("risks_found") if row else None, 1, "%")}</td>'
+                        f'<td class="num">{num(g.get("error_rate"), 1)}</td></tr>')
+        table = (P.SWIPE + P.table(["Arm", "Series done / planned", "Latest test round", "Error rate (PR)",
+                                    "Risks found", "Error rate in games (PR)"], rows,
+                                   "Interim numbers per arm, in the plan's arm order (not a ranking)", cls="board list")
+                 if rows else "")
+        block = (f'<div id="learning-interim"><p class="note"><strong>No ranking or leader yet.</strong> '
+                 f'{esc(state)}</p>{table}</div>')
+    return block + rule
+
+
+def nice_step(span: float) -> float:
+    raw = span / 4 if span > 0 else 1
+    mag = 10 ** math.floor(math.log10(raw))
+    return next(m * mag for m in (1, 2, 5, 10) if m * mag >= raw)
+
+
+def chart(L) -> str:
+    """Error rate and risks found on the evaluation set by checkpoint (before game 1, after game 5, after game 10), one
+    line per arm, filled as series finish (Ümit #2564, after 'The village learns, or doesn't'). Values from the data
+    file only; no lift or verdict line."""
+    R = L["results"]
+    arms = list(R["table"]) if R else []
+    vals = [(arm, cp, k, row[k]) for arm in arms for cp in CHECKPOINTS for k, *_ in CHART_MEASURES
+            if (row := R["table"][arm].get(cp)) and row.get(k) is not None]
+    if not vals:
+        return ('<p class="note"><strong>No results yet.</strong> The chart fills in as series finish: error rate and '
+                'risks found before game 1, after game 5 and after game 10, one line per arm.</p>')
+    W, H, L0, R0, T, B, gap = 760, 300, 46, 12, 28, 40, 40
+    pw = (W - L0 - R0 - gap - L0) / 2
+    parts = []
+    for i, (key, label, unit) in enumerate(CHART_MEASURES):
+        ys = [v for _, _, k, v in vals if k == key]
+        if not ys:
+            continue
+        lo, hi = min(ys), max(ys)
+        step = nice_step(hi - lo)
+        pad = step if lo == hi else 0
+        lo, hi = math.floor(lo / step) * step - pad, math.ceil(hi / step) * step + pad
+        x0 = L0 + i * (pw + gap + L0)
+        x = lambda c, x0=x0: x0 + pw * CHECKPOINTS.index(c) / (len(CHECKPOINTS) - 1)  # noqa: E731
+        y = lambda v, lo=lo, hi=hi: H - B - (H - B - T) * (v - lo) / ((hi - lo) or 1)  # noqa: E731
+        parts.append(f'<text x="{x0:.1f}" y="{T - 12}" class="lp-title">{esc(label)}</text>')
+        v = lo
+        while v <= hi + step / 2:
+            parts.append(f'<line class="grid" x1="{x0:.1f}" x2="{x0 + pw:.1f}" y1="{y(v):.1f}" y2="{y(v):.1f}"/>'
+                         f'<text class="muted" x="{x0 - 6:.1f}" y="{y(v) + 4:.1f}" text-anchor="end">{v:g}{unit}</text>')
+            v += step
+        for c in CHECKPOINTS:
+            parts.append(f'<text class="muted" x="{x(c):.1f}" y="{H - B + 16}" text-anchor="middle">'
+                         f'{esc(CHECKPOINT_LABEL[c])}</text>')
+        for arm in arms:
+            pts = [(c, val) for a, c, k, val in vals if a == arm and k == key]
+            if len(pts) > 1:
+                d = " ".join(f"{x(c):.1f},{y(val):.1f}" for c, val in pts)
+                parts.append(f'<polyline class="lp-line lp-{esc(arm)}" points="{d}"/>')
+            for c, val in pts:
+                parts.append(f'<circle class="lp-dot lp-{esc(arm)}" cx="{x(c):.1f}" cy="{y(val):.1f}" r="4">'
+                             f'<title>{esc(arm)}, {esc(CHECKPOINT_LABEL[c])}: {fmt(val, 1)}{unit}</title></circle>')
+    legend = "".join(f'<span><i class="swatch lp-swatch lp-{esc(a)}"></i>{esc(a)}</span>' for a in arms)
+    return (f'<figure class="lp-chart"><svg class="chart-svg" data-chart="learning" viewBox="0 0 {W} {H}" '
+            f'role="img" aria-label="Error rate and risks found on the evaluation set, before game 1, after game 5 and '
+            f'after game 10, one line per arm">' + "".join(parts) + "</svg>"
+            f'<p class="chart-legend">{legend}</p><p class="table-note">Means over each arm\'s finished series. Before '
+            'game 1 is one shared run with no context; control has no later test rounds. No lift or verdict is drawn '
+            'until every planned series is done.</p></figure>')
+
+
 def section_id(title: str) -> str:
     return "plan-" + re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")
 
 
 def body(L) -> str:
     plan = L["plan"]
-    parts = [("learning-status", "Status and progress", progress(L)), ("learning-results", "Results", results(L)),
+    parts = [("learning-tab", f"{P.TAB_LEARNING}: arms, not models", tab_card(L)),
+             ("learning-chart", "Before and after: the evaluation set by checkpoint", chart(L)),
+             ("learning-status", "Status and progress", progress(L)), ("learning-results", "Results", results(L)),
              ("learning-lessons", "Lessons the model wrote", lessons(L)),
              ("learning-prompt", "Lesson prompt", prompt(L))]
     parts += [(section_id(s["title"]), s["title"], spec_markdown(s["markdown"])) for s in plan["sections"]]

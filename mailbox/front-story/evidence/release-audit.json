@@ -1,0 +1,466 @@
+[
+ {
+  "model": "Celeris-1 Decision",
+  "stored_month": "2026-10",
+  "url_checked": [
+   "https://celeris.ai/celeris-1-decision"
+  ],
+  "quote_found_verbatim": true,
+  "best_url": "https://celeris.ai/celeris-1-decision",
+  "best_quote": "Tom Hamer · October 8, 2026",
+  "date_on_page": "October 8, 2026",
+  "verdict": "keep",
+  "month": "2026-10",
+  "reason": "Byline date on Celeris's own launch post for Celeris-1 Decision."
+ },
+ {
+  "model": "Claude Fable 5.1",
+  "stored_month": "2026-09",
+  "url_checked": [
+   "https://www.anthropic.com/claude-fable-and-mythos-5-1"
+  ],
+  "quote_found_verbatim": true,
+  "best_url": "https://www.anthropic.com/claude-fable-and-mythos-5-1",
+  "best_quote": "September 2026\n\n# :Claude: Fable 5.1and Mythos 5.1\n\nMade with Fable 5.1\n\nWe’re introducing Claude Fable 5.1 and Claude Mythos 5.1.",
+  "date_on_page": "September 2026",
+  "verdict": "keep",
+  "month": "2026-09",
+  "reason": "Anthropic launch page header 'September 2026' above the introduction of Fable 5.1 (month only)."
+ },
+ {
+  "model": "Claude Opus 5.5",
+  "stored_month": "2026-09",
+  "url_checked": [
+   "https://www.anthropic.com/claude-opus-5-5"
+  ],
+  "quote_found_verbatim": true,
+  "best_url": "https://www.anthropic.com/claude-opus-5-5",
+  "best_quote": "# Claude Opus 5.5\n\nSeptember 22, 2026",
+  "date_on_page": "September 22, 2026",
+  "verdict": "keep",
+  "month": "2026-09",
+  "reason": "Dated Anthropic launch post."
+ },
+ {
+  "model": "Claude Sonnet 5.5",
+  "stored_month": "2026-09",
+  "url_checked": [
+   "https://www.anthropic.com/claude-sonnet-5-5"
+  ],
+  "quote_found_verbatim": true,
+  "best_url": "https://www.anthropic.com/claude-sonnet-5-5",
+  "best_quote": "# Claude Sonnet 5.5\n\nSeptember 28, 2026",
+  "date_on_page": "September 28, 2026",
+  "verdict": "keep",
+  "month": "2026-09",
+  "reason": "Dated Anthropic launch post."
+ },
+ {
+  "model": "Clef",
+  "stored_month": "2026-10",
+  "url_checked": [
+   "https://developers.cloudflare.com/changelog/post/2026-10-01-clef-workers-ai/"
+  ],
+  "quote_found_verbatim": true,
+  "best_url": "https://developers.cloudflare.com/changelog/post/2026-10-01-clef-workers-ai/",
+  "best_quote": "October 1, 2026\n\n## Introducing Clef: Cloudflare's first open-source decision models, now on Workers AI",
+  "date_on_page": "October 1, 2026",
+  "verdict": "keep",
+  "month": "2026-10",
+  "reason": "Dated Cloudflare changelog post introducing Clef."
+ },
+ {
+  "model": "Cygnet (Gemma 4 12B)",
+  "stored_month": null,
+  "url_checked": [
+   "https://github.com/blockbrain-ai/cygnet-recipe"
+  ],
+  "quote_found_verbatim": false,
+  "best_url": null,
+  "best_quote": null,
+  "date_on_page": null,
+  "verdict": "dash",
+  "month": null,
+  "reason": "Maker repo gives no release date (only 'retrieved 2026-09-30' for benchmark data)."
+ },
+ {
+  "model": "Decider Flash v1.2",
+  "stored_month": "2026-10",
+  "url_checked": [
+   "https://docs.perplexity.ai/changelog"
+  ],
+  "quote_found_verbatim": true,
+  "best_url": "https://docs.perplexity.ai/changelog",
+  "best_quote": "**October 2026**\n\n**Decisions API: pplx-decider-v1.2 and pplx-decider-flash-v1.2**\n\n`pplx-decider-v1.2` replaces `pplx-decider-v1.1-27b` as the 27B decision model, at \\$0.02 per million input tokens. `pplx-decider-flash-v1.2` is a new 4B decision model",
+  "date_on_page": "October 2026",
+  "verdict": "keep",
+  "month": "2026-10",
+  "reason": "Perplexity changelog entry under the October 2026 heading names pplx-decider-flash-v1.2 as new (month only)."
+ },
+ {
+  "model": "Decider v1.1 27B",
+  "stored_month": "2026-10",
+  "url_checked": [
+   "https://docs.perplexity.ai/changelog"
+  ],
+  "quote_found_verbatim": true,
+  "best_url": "https://docs.perplexity.ai/changelog",
+  "best_quote": "**October 2026**\n\n**Decisions API: pplx-decider-v1.1-27b replaces v1**\n\n`pplx-decider-v1.1-27b` replaces `pplx-decider-v1-27b` as the Decisions API model.",
+  "date_on_page": "October 2026",
+  "verdict": "keep",
+  "month": "2026-10",
+  "reason": "Perplexity changelog entry under the October 2026 heading names pplx-decider-v1.1-27b (month only)."
+ },
+ {
+  "model": "Decider v1.2 27B",
+  "stored_month": "2026-10",
+  "url_checked": [
+   "https://docs.perplexity.ai/changelog"
+  ],
+  "quote_found_verbatim": true,
+  "best_url": "https://docs.perplexity.ai/changelog",
+  "best_quote": "**October 2026**\n\n**Decisions API: pplx-decider-v1.2 and pplx-decider-flash-v1.2**\n\n`pplx-decider-v1.2` replaces `pplx-decider-v1.1-27b` as the 27B decision model",
+  "date_on_page": "October 2026",
+  "verdict": "keep",
+  "month": "2026-10",
+  "reason": "Perplexity changelog entry under the October 2026 heading names pplx-decider-v1.2 (month only)."
+ },
+ {
+  "model": "DeepSeek V4.1 Flash",
+  "stored_month": "2026-09",
+  "url_checked": [
+   "https://api-docs.deepseek.com/updates/"
+  ],
+  "quote_found_verbatim": true,
+  "best_url": "https://api-docs.deepseek.com/updates/",
+  "best_quote": "Today, we officially release the DeepSeek-V4.1-Flash model.",
+  "date_on_page": "2026-09-10",
+  "verdict": "keep",
+  "month": "2026-09",
+  "reason": "Sentence sits under the 'Date: 2026-09-10' / 'DeepSeek-V4.1-Flash Release' change-log entry."
+ },
+ {
+  "model": "DeepSeek V4.1 Flash 1017",
+  "stored_month": "2026-10",
+  "url_checked": [
+   "https://api-docs.deepseek.com/updates/"
+  ],
+  "quote_found_verbatim": true,
+  "best_url": "https://api-docs.deepseek.com/updates/",
+  "best_quote": "DeepSeek V4.1 Flash has been upgraded to DeepSeek-V4.1-Flash-1017.",
+  "date_on_page": "2026-10-17",
+  "verdict": "keep",
+  "month": "2026-10",
+  "reason": "The 'DeepSeek-V4.1-Flash-1017 Update' subsection is inside the 'Date: 2026-10-17' change-log entry (stored quote is only the date header, whose first subsection is about the search API)."
+ },
+ {
+  "model": "Fastino GLiDE",
+  "stored_month": "2026-09",
+  "url_checked": [
+   "https://fastino.ai/blog/introducing-glide-the-first-thinking-decision-model"
+  ],
+  "quote_found_verbatim": true,
+  "best_url": "https://fastino.ai/blog/introducing-glide-the-first-thinking-decision-model",
+  "best_quote": "September 30, 2026\n\nToday we release the Generalized Lightweight Decision Engine (GLiDE)",
+  "date_on_page": "September 30, 2026",
+  "verdict": "keep",
+  "month": "2026-09",
+  "reason": "Dated Fastino launch post."
+ },
+ {
+  "model": "Fastino GLiDE v1.2",
+  "stored_month": "2026-10",
+  "url_checked": [
+   "https://fastino.ai/blog/training-glide-sota-decision-model"
+  ],
+  "quote_found_verbatim": true,
+  "best_url": "https://fastino.ai/blog/training-glide-sota-decision-model",
+  "best_quote": "At the time of its October 22 launch, GLiDE v1.2 ranked #1",
+  "date_on_page": "October 22, 2026",
+  "verdict": "keep",
+  "month": "2026-10",
+  "reason": "Dated Fastino post releasing GLiDE v1.2 and naming its October 22 launch."
+ },
+ {
+  "model": "GLM-5.3",
+  "stored_month": "2026-08",
+  "url_checked": [
+   "https://docs.z.ai/release-notes/new-released"
+  ],
+  "quote_found_verbatim": true,
+  "best_url": "https://docs.z.ai/release-notes/new-released",
+  "best_quote": "**2026-08-18**\n\nGLM-5.3",
+  "date_on_page": "2026-08-18",
+  "verdict": "keep",
+  "month": "2026-08",
+  "reason": "Dated entry for GLM-5.3 in Z.ai's New Released notes."
+ },
+ {
+  "model": "GPT-6 Astra",
+  "stored_month": "2026-09",
+  "url_checked": [
+   "https://openai.com/index/gpt-6-astra/",
+   "https://openai.com/index/introducing-gpt-6-1-sol/",
+   "https://openai.com/research/index/release/",
+   "https://developers.openai.com/api/docs/models/gpt-6-astra"
+  ],
+  "quote_found_verbatim": true,
+  "best_url": "https://openai.com/research/index/release/",
+  "best_quote": "Sep 3, 2026\n\n[GPT-6 Astra: A new generation of intelligence",
+  "date_on_page": "Sep 3, 2026",
+  "verdict": "keep",
+  "month": "2026-09",
+  "reason": "Astra post itself is undated; the stored date is a related-posts card on the Sol post (not evidence alone), but OpenAI's own release index lists Astra's own launch post (/index/gpt-6-astra/) dated Sep 3, 2026, which counts."
+ },
+ {
+  "model": "GPT-6 Luna",
+  "stored_month": "2026-09",
+  "url_checked": [
+   "https://openai.com/index/gpt-6-astra/",
+   "https://openai.com/index/introducing-gpt-6-sol-and-luna/",
+   "https://openai.com/research/index/release/"
+  ],
+  "quote_found_verbatim": true,
+  "best_url": "https://openai.com/index/gpt-6-astra/",
+  "best_quote": "***Update on September 22, 2026:*** *We are expanding our GPT‑6 family with GPT‑6 Sol and GPT‑6 Luna.*",
+  "date_on_page": "September 22, 2026",
+  "verdict": "keep",
+  "month": "2026-09",
+  "reason": "Dated update note on OpenAI's site explicitly announcing GPT-6 Luna; release index also lists the Sol and Luna post at Sep 22, 2026."
+ },
+ {
+  "model": "GPT-6.1 Sol",
+  "stored_month": "2026-09",
+  "url_checked": [
+   "https://openai.com/index/gpt-6-astra/",
+   "https://openai.com/index/introducing-gpt-6-1-sol/",
+   "https://openai.com/research/index/release/",
+   "https://developers.openai.com/api/docs/models/gpt-6.1-sol"
+  ],
+  "quote_found_verbatim": true,
+  "best_url": "https://openai.com/research/index/release/",
+  "best_quote": "Sep 29, 2026\n\n[Introducing GPT-6.1 Sol",
+  "date_on_page": "Sep 29, 2026",
+  "verdict": "keep",
+  "month": "2026-09",
+  "reason": "Dated update note on the Astra post naming GPT-6.1 Sol counts, and OpenAI's release index lists Sol's own launch post at Sep 29, 2026 (Sol post says 'available starting today')."
+ },
+ {
+  "model": "Gemini 3.8 Flash",
+  "stored_month": "2026-09",
+  "url_checked": [
+   "https://blog.google/innovation-and-ai/models-and-research/gemini-models/3-8-flash-and-3-8-flash-cyber/"
+  ],
+  "quote_found_verbatim": true,
+  "best_url": "https://blog.google/innovation-and-ai/models-and-research/gemini-models/3-8-flash-and-3-8-flash-cyber/",
+  "best_quote": "# Introducing Gemini 3.8 Flash and 3.8 Flash Cyber\n\nSep 02, 2026",
+  "date_on_page": "Sep 02, 2026",
+  "verdict": "keep",
+  "month": "2026-09",
+  "reason": "Dated Google launch post."
+ },
+ {
+  "model": "Gemini 4 Argon",
+  "stored_month": "2026-10",
+  "url_checked": [
+   "https://blog.google/innovation-and-ai/technology/developers-tools/build-with-gemini-4-argon/"
+  ],
+  "quote_found_verbatim": true,
+  "best_url": "https://blog.google/innovation-and-ai/technology/developers-tools/build-with-gemini-4-argon/",
+  "best_quote": "# Gemini 4 Argon is now available for developers.\n\nOct 13, 2026",
+  "date_on_page": "Oct 13, 2026",
+  "verdict": "keep",
+  "month": "2026-10",
+  "reason": "Dated Google post stating general developer availability from Oct 13 (Sep 30 announcement was trusted-defender rollout only; that page did not fetch)."
+ },
+ {
+  "model": "Gemma 4 31B",
+  "stored_month": "2026-04",
+  "url_checked": [
+   "https://blog.google/innovation-and-ai/technology/developers-tools/gemma-4/"
+  ],
+  "quote_found_verbatim": true,
+  "best_url": "https://blog.google/innovation-and-ai/technology/developers-tools/gemma-4/",
+  "best_quote": "# Gemma 4: Byte for byte, the most capable open models\n\nApr 02, 2026",
+  "date_on_page": "Apr 02, 2026",
+  "verdict": "keep",
+  "month": "2026-04",
+  "reason": "Dated Gemma 4 launch post that names and links the 31B Dense model."
+ },
+ {
+  "model": "Grok 4.7",
+  "stored_month": "2026-09",
+  "url_checked": [
+   "https://x.ai/news/grok-4-7"
+  ],
+  "quote_found_verbatim": true,
+  "best_url": "https://x.ai/news/grok-4-7",
+  "best_quote": "[Back to news](/news)Sep 21, 2026\n\n# Introducing Grok 4.7",
+  "date_on_page": "Sep 21, 2026",
+  "verdict": "keep",
+  "month": "2026-09",
+  "reason": "Dated x.ai launch post."
+ },
+ {
+  "model": "Jev 1.13.0",
+  "stored_month": null,
+  "url_checked": [
+   "https://typesafe.ai/blog/introducing-system-one-models-and-jev",
+   "https://docs.typesafe.ai/models",
+   "https://docs.typesafe.ai/changelog",
+   "https://typesafe.ai/blog/jev-1-14"
+  ],
+  "quote_found_verbatim": false,
+  "best_url": null,
+  "best_quote": null,
+  "date_on_page": null,
+  "verdict": "dash",
+  "month": null,
+  "reason": "Sep 15, 2026 post launches 'Jev' without naming version 1.13.0; no TypeSafe page dates jev-1.13.0 itself."
+ },
+ {
+  "model": "Jev 1.14.0",
+  "stored_month": "2026-10",
+  "url_checked": [
+   "https://docs.typesafe.ai/models",
+   "https://docs.typesafe.ai/changelog",
+   "https://typesafe.ai/blog/jev-1-14"
+  ],
+  "quote_found_verbatim": true,
+  "best_url": "https://docs.typesafe.ai/models",
+  "best_quote": "Jev 1.14 is the newest Jev release, available from October 14, 2026.",
+  "date_on_page": "October 14, 2026",
+  "verdict": "keep",
+  "month": "2026-10",
+  "reason": "Dated 'available from' line on TypeSafe docs; changelog and Oct 14, 2026 blog agree."
+ },
+ {
+  "model": "Kimi K3.1 Pro",
+  "stored_month": "2026-10",
+  "url_checked": [
+   "https://forum.moonshot.ai/t/kimi-k3-1-pro-has-launched-start-exploring-now/629"
+  ],
+  "quote_found_verbatim": true,
+  "best_url": "https://forum.moonshot.ai/t/kimi-k3-1-pro-has-launched-start-exploring-now/629",
+  "best_quote": "### Post 1 - @Zoe - 2026-10-23 - Likes: 0",
+  "date_on_page": "2026-10-23",
+  "verdict": "keep",
+  "month": "2026-10",
+  "reason": "Timestamp of Moonshot's official forum launch announcement for Kimi K3.1 Pro."
+ },
+ {
+  "model": "LFM2.5-24B-A2B",
+  "stored_month": "2026-10",
+  "url_checked": [
+   "https://www.liquid.ai/blog/lfm2-5-24b-a2b"
+  ],
+  "quote_found_verbatim": true,
+  "best_url": "https://www.liquid.ai/blog/lfm2-5-24b-a2b",
+  "best_quote": "OCT 13, 2026\n\nToday, we release **LFM2.5-24B-A2B**",
+  "date_on_page": "OCT 13, 2026",
+  "verdict": "keep",
+  "month": "2026-10",
+  "reason": "Dated Liquid launch post."
+ },
+ {
+  "model": "Liquid d1-ultra",
+  "stored_month": "2026-10",
+  "url_checked": [
+   "https://www.liquid.ai/blog/d1-ultra"
+  ],
+  "quote_found_verbatim": true,
+  "best_url": "https://www.liquid.ai/blog/d1-ultra",
+  "best_quote": "OCT 15, 2026\n\nToday, we release d1-ultra",
+  "date_on_page": "OCT 15, 2026",
+  "verdict": "keep",
+  "month": "2026-10",
+  "reason": "Dated Liquid launch post."
+ },
+ {
+  "model": "Mercury Decide",
+  "stored_month": "2026-10",
+  "url_checked": [
+   "https://www.inceptionlabs.ai/blog/introducing-mercury-3",
+   "https://www.inceptionlabs.ai/blog",
+   "https://www.inceptionlabs.ai/models",
+   "https://www.inceptionlabs.ai/"
+  ],
+  "quote_found_verbatim": true,
+  "best_url": null,
+  "best_quote": null,
+  "date_on_page": null,
+  "verdict": "dash",
+  "month": null,
+  "reason": "Only a portfolio mention in the Mercury 3 post; Inception blog index, models page and homepage show no dated Mercury Decide launch (LinkedIn post exists but is not the maker's site)."
+ },
+ {
+  "model": "Open-Jev 27B v1.1",
+  "stored_month": null,
+  "url_checked": [
+   "https://huggingface.co/ZefanCai/Open-Jev-27B-v1.1"
+  ],
+  "quote_found_verbatim": false,
+  "best_url": null,
+  "best_quote": null,
+  "date_on_page": null,
+  "verdict": "dash",
+  "month": null,
+  "reason": "HF card states no release date."
+ },
+ {
+  "model": "Qwen3.8 Flash",
+  "stored_month": null,
+  "url_checked": [
+   "https://www.alibabacloud.com/help/en/model-studio/newly-released-models"
+  ],
+  "quote_found_verbatim": false,
+  "best_url": "https://www.alibabacloud.com/help/en/model-studio/newly-released-models",
+  "best_quote": "[2026-08-26](#intl-region-0-2026-08-26)\n\n#### qwen3.8-flash",
+  "date_on_page": "2026-08-26",
+  "verdict": "change",
+  "month": "2026-08",
+  "reason": "Alibaba's dated new-models entry 2026-08-26 names qwen3.8-flash ('Qwen3.8-Flash'); only caveat is confirming our label means this API model rather than open-weight Qwen3.8-Flash-Next."
+ },
+ {
+  "model": "Qwen3.8-27B",
+  "stored_month": "2026-08",
+  "url_checked": [
+   "https://github.com/QwenLM/Qwen3.8"
+  ],
+  "quote_found_verbatim": true,
+  "best_url": "https://github.com/QwenLM/Qwen3.8",
+  "best_quote": "- 2026-08-14: Qwen3.8-27B is now available on",
+  "date_on_page": "2026-08-14",
+  "verdict": "keep",
+  "month": "2026-08",
+  "reason": "Dated entry in the official QwenLM GitHub news list."
+ },
+ {
+  "model": "SubQ Snap Preview",
+  "stored_month": null,
+  "url_checked": [
+   "https://subq.ai/introducing-subq-snap"
+  ],
+  "quote_found_verbatim": false,
+  "best_url": "https://subq.ai/introducing-subq-snap",
+  "best_quote": "Date\n\nOctober 12, 2026",
+  "date_on_page": "October 12, 2026",
+  "verdict": "change",
+  "month": "2026-10",
+  "reason": "Dated SubQ launch post for 'SubQ Snap', available in 'Public Preview'; counts if our 'SubQ Snap Preview' label is that preview release (page never uses the literal name)."
+ },
+ {
+  "model": "Winnow-12B",
+  "stored_month": null,
+  "url_checked": [
+   "https://huggingface.co/EldanRing/Winnow-12B"
+  ],
+  "quote_found_verbatim": false,
+  "best_url": null,
+  "best_quote": null,
+  "date_on_page": null,
+  "verdict": "dash",
+  "month": null,
+  "reason": "HF card states no release date."
+ }
+]

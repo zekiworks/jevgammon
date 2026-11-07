@@ -1,6 +1,6 @@
 # Heading: "Models are too cautious"
 
-Source: the live site's published data files (results f45081f6, data as of 2026-11-07T17:50Z): data/v3/clear-risk.json, section clear-risk-setups ("Missed and needless risks per setup", kept decisions only). Read-only; every number below is copied from those files as printed.
+Source: the live site's published data files (results f45081f6, data as of 2026-11-07T18:20Z): data/v3/clear-risk.json, section clear-risk-setups ("Missed and needless risks per setup", kept decisions only). Read-only; every number below is copied from those files as printed.
 
 Claim checked: in the clear-risk scan, bias = missed − needless is positive for every model setup, and not for the programs.
 

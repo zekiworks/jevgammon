@@ -89,9 +89,10 @@ def live_col(pred, col):
 
 risk_all = lambda col: live_col(lambda t: t[0] == "panel-risk" and t[1] == "all" and t[2] == "0.001", col)
 qual = lambda col: live_col(lambda t: t[0] == "panel-quality", col)
-SRC = {"Risk judgement (95% interval)": (risk_all("Risk judgement"), 3), "Risks found": (risk_all("Risks found"), 9),
-       "Right safety": (risk_all("Right safety"), 9), "Error rate (PR)": (qual("Error rate (PR), 95% interval"), 3),
-       "$ per 1,000 decisions $ per 1M decisions": (qual("$ per 1,000 decisions"), 1)}
+COST_HEAD = "$ per 1,000 decisions $ per 1M decisions"
+SRC = {"Risk judgement (95% interval)": risk_all("Risk judgement"), "Risks found": risk_all("Risks found"),
+       "Right safety": risk_all("Right safety"), "Error rate (PR)": qual("Error rate (PR), 95% interval"),
+       COST_HEAD: qual("$ per 1,000 decisions")}
 hl = C.select_one("#headline-table")
 head = [norm(th.get_text(" ")) for th in hl.thead.find_all("th")]
 hl_n = hl_d = 0
@@ -101,17 +102,25 @@ for tr in hl.tbody.find_all("tr", recursive=False):
     for h, c in zip(head, cells):
         if h not in SRC:
             continue
-        table, n = SRC[h]
-        text = norm((c.select_one(".cost-1k") or c).get_text(" "))
-        exp = table.get(k)
-        ok = exp is not None and nums(text)[:n] == nums(exp)[:n] and (nums(text) or norm(text) in exp)
+        exp = SRC[h].get(k)
+        if h == COST_HEAD:
+            # The whole cell, the price label included: the per-1M copy (written by the browser) and the $ sign aside.
+            c = BeautifulSoup(str(c), "html.parser")
+            for x in c.select(".cost-1m"):
+                x.decompose()
+            text = norm(c.get_text(" ").replace("$", ""))
+            ok = exp is not None and text == norm(exp)
+        else:
+            # Every number of the cell, in order; a cell without numbers by its words.
+            text = norm(c.get_text(" "))
+            ok = exp is not None and (nums(text) == nums(exp) if nums(exp) else text == norm(exp))
         hl_n += 1
         hl_d += not ok
         rows_csv.append(["headline cell (new)", h, k[0], k[1], h, exp if exp is not None else "MISSING IN LIVE", text,
                          "equal" if ok else "DIFF"])
-summary.append(("Headline table (new): risk judgement and interval, risks found, right safety (All leagues Risk table, "
-                "margin 0.001), error rate and interval, $ per 1,000 decisions (the league's Quality table) against the "
-                "live cell of the same setup", hl_n, hl_d, 0))
+summary.append(("Headline table (new) against the live cell of the same setup: risk judgement and interval, risks "
+                "found, right safety (All leagues Risk table, margin 0.001), error rate and interval (every number of the "
+                "cell); $ per 1,000 decisions with its price label (the whole cell, the label included)", hl_n, hl_d, 0))
 
 # 2c. Finding sections: every value beside a bar against the clear-risk data file.
 CR = json.loads((live / "data" / "v3" / "clear-risk.json").read_text())
@@ -322,6 +331,16 @@ KEYS = ("tabs", "league", "type", "rows", "target")
 LEAGUE_LABEL = {"All leagues": "All", "League 1": "1", "League 2": "2", "League 3": "3", "Shared positions": "Shared",
                 "All types": "All"}  # the compact filter row's shorter key labels
 lab = lambda s: "|".join(LEAGUE_LABEL.get(x, x) for x in s.split("|")) if s else s
+# Expected type and model of each Nackgammon setup: setups.json (a league entry first), else the worktree's
+# content/nack_setup_types.json (a setup that played in no league).
+_meta = json.loads((live / "data" / "setups.json").read_text())["setups"]
+_extra = json.loads((work / "tools/site/content/nack_setup_types.json").read_text())["setups"]
+NK = {}
+for _n in json.loads((live / "data" / "v3" / "nack-paired.json").read_text())["setups"]:
+    _m = sorted((m for m in _meta if m["name"] == _n), key=lambda m: not m["dataset"].startswith("league-"))
+    _m = _m[0] if _m else _extra[_n]
+    _t = _m.get("model_type") or ""
+    NK[_n] = ("program" if _t == "program" else "decision" if _t.startswith("decision") else "chat", _m.get("model") or _n)
 with sync_playwright() as p:
     b = p.chromium.launch()
     for width in (1280, 390):
@@ -349,29 +368,38 @@ with sync_playwright() as p:
                 ok = seq == ["best", "all", "best"]
                 results.append([width, "headline toggle", "All setups, then Best setting", "", "", "", " → ".join(seq),
                                 "ok" if ok else "WRONG"])
-                # Nackgammon Decision / Chat / All (Ümit #2647, Zeki #2656): the Unclear and additions note visible
-                # in every state; rows of the summary table shown per state.
-                page.goto(BASE + "#nackgammon-paired")
-                page.wait_for_timeout(250)
-                for pick in ("decision", "chat", "all", "decision"):
+                # Nackgammon summary keys (Ümit #2647, #2651; Zeki #2656, #2714): every type x view state. Expected rows
+                # come from setups.json (model_type, model) and content/nack_setup_types.json, not from the page: each
+                # shown row is of the picked type; one row per model in "One setting per model"; every setup of that
+                # type in "All settings"; the yardsticks always; the Unclear / additions note visible in every state.
+                for pick, view in (("all", "model"), ("decision", "model"), ("chat", "model"), ("chat", "all"),
+                                   ("decision", "all"), ("all", "all"), ("all", "model")):
+                    page.goto(BASE + "#nackgammon-paired")
+                    page.wait_for_timeout(200)
                     page.click(f'[data-nack-kind-pick="{pick}"]')
+                    page.click(f'[data-nack-view="{view}"]')
                     page.wait_for_timeout(120)
                     st = page.evaluate("""() => {
                       const n = document.querySelector('#nackgammon-paired .nack-always');
                       const vis = e => !!e && !!(e.offsetParent || e.getClientRects().length) && getComputedStyle(e).visibility !== 'hidden';
                       const rows = [...document.querySelectorAll('#nack-summary tbody tr')];
-                      return { note: vis(n) ? n.textContent.trim() : 'NOT VISIBLE',
-                               shown: rows.filter(r => !r.hidden).map(r => r.dataset.row),
-                               points: [...document.querySelectorAll('#chart-nack g[data-setup]')].filter(g => g.style.display !== 'none').length,
-                               pressed: [...document.querySelectorAll('[data-nack-kind-pick]')].filter(b => b.getAttribute('aria-pressed') === 'true').map(b => b.dataset.nackKindPick).join('|') };
+                      const pressed = s => [...document.querySelectorAll(s)].filter(b => b.getAttribute('aria-pressed') === 'true').map(b => b.textContent.trim()).join('|');
+                      return { note: vis(n) ? n.textContent.trim() : 'NOT VISIBLE', shown: rows.filter(r => !r.hidden).map(r => r.dataset.row),
+                               pressed: pressed('[data-nack-kind-pick]') + ' / ' + pressed('[data-nack-view]') };
                     }""")
-                    ok = (st["note"].startswith("Unclear means the test can\u2019t tell, not that the scores are equal.")
+                    shown = [x for x in st["shown"] if NK[x][0] != "program"]
+                    want_all = [x for x in NK if NK[x][0] != "program" and (pick == "all" or NK[x][0] == pick)]
+                    models = Counter(NK[x][1] for x in shown)
+                    rows_ok = (all(x in want_all for x in shown) and
+                               (set(shown) == set(want_all) if view == "all"
+                                else set(models) == {NK[x][1] for x in want_all} and max(models.values(), default=1) == 1))
+                    ok = (rows_ok and st["note"].startswith("Unclear means the test can\u2019t tell, not that the scores are equal.")
                           and "were added after the results were read; the primary results are shown with and without them" in st["note"]
-                          and st["pressed"] == pick and "Random" in st["shown"] and "GNUbg weak" in st["shown"])
-                    results.append([width, "nackgammon type keys", f"click {pick}", "", "", "",
+                          and "Random" in st["shown"] and "GNUbg weak" in st["shown"])
+                    results.append([width, "nackgammon keys", f"{pick} / {view}", "", "",
+                                    f"expected: {len(want_all) if view == 'all' else len({NK[x][1] for x in want_all})} model rows + 2 yardsticks",
                                     f"pressed={st['pressed']}; rows shown={len(st['shown'])} ({', '.join(st['shown'])}); "
-                                    f"chart points={st['points']}; note visible={st['note'] != 'NOT VISIBLE'}",
-                                    "ok" if ok else "WRONG"])
+                                    f"note visible={st['note'] != 'NOT VISIBLE'}", "ok" if ok else "WRONG"])
             out[name] = (states, errors)
             ctx.close()
         for u, a, c in zip(URLS, out["live"][0], out["branch"][0]):
@@ -407,12 +435,77 @@ by = Counter((r[1], r[-1]) for r in results)
     "bar. Branch-only addresses (new anchors, hero buttons' targets): loaded, target in view, no horizontal overflow.\n")
 print("links:", dict(cnt))
 
+# --- 3c. Filter scope (bus #2718), opened from file:// ----------------------------------------------------------------
+# The global filter row against the two parts outside its scope: the leaderboard (fixed) and the Nackgammon section
+# (its own keys). Each case: global filter state first, then the local keys; expected from setups.json, not the page.
+SCOPE_STATE = """() => {
+  const shown = s => [...document.querySelectorAll(s)].filter(e => !e.closest('[hidden]') && e.style.display !== 'none' && getComputedStyle(e).display !== 'none');
+  const n = document.querySelector('#nackgammon-paired .nack-always');
+  return { headline: shown('#headline-table tbody tr').length, all_setups: document.querySelectorAll('[data-headline-panel="all"] tbody tr[hidden]').length,
+           nack_rows: shown('#nack-summary tbody tr').map(r => r.dataset.row),
+           nack_points: shown('#chart-nack g[data-setup]').length, nack_points_all: document.querySelectorAll('#chart-nack g[data-setup]').length,
+           detail_rows_hidden: document.querySelectorAll('#nackgammon-paired table:not(#nack-summary) tr[hidden]').length,
+           note: !!n && !!(n.offsetParent || n.getClientRects().length),
+           quality_rows: [...document.querySelectorAll('#panel-quality tbody tr[data-kind]:not([data-kind="reference"])')].filter(r => !r.hidden).length };
+}"""
+n_headline = len(C.select("#headline-table tbody tr"))
+scope_rows = []
+with sync_playwright() as p:
+    b = p.chromium.launch()
+    for width in (1280, 390):
+        ctx = b.new_context(viewport={"width": width, "height": 900 if width > 500 else 844})
+        page = ctx.new_page()
+        errs = []
+        page.on("pageerror", lambda e: errs.append(str(e)))
+        url = (cand / "index.html").resolve().as_uri()
+        for gtype in ("all", "program", "decision", "chat"):
+            for pick, view in (("all", "model"), ("chat", "model"), ("chat", "all"), ("decision", "model")):
+                page.goto(url + ("" if gtype == "all" else f"?type={gtype}"))
+                page.wait_for_timeout(300)
+                page.click(f'[data-nack-kind-pick="{pick}"]')
+                page.click(f'[data-nack-view="{view}"]')
+                page.wait_for_timeout(100)
+                st = page.evaluate(SCOPE_STATE)
+                want = [x for x in NK if NK[x][0] != "program" and (pick == "all" or NK[x][0] == pick)]
+                shown = [x for x in st["nack_rows"] if NK[x][0] != "program"]
+                rows_ok = (set(shown) == set(want) if view == "all" else
+                           all(x in want for x in shown) and len(shown) == len({NK[x][1] for x in want})
+                           and len({NK[x][1] for x in shown}) == len(shown))
+                ok = (rows_ok and "Random" in st["nack_rows"] and "GNUbg weak" in st["nack_rows"]
+                      and st["nack_points"] == st["nack_points_all"] and st["detail_rows_hidden"] == 0 and st["note"]
+                      and st["headline"] == n_headline and st["all_setups"] == 0
+                      and (gtype != "program" or st["quality_rows"] == 0))
+                scope_rows.append([width, f"global type={gtype}", f"Nackgammon {pick} / {view}",
+                                   f"headline rows {st['headline']}/{n_headline}; All setups rows hidden {st['all_setups']}; "
+                                   f"Nackgammon rows {len(st['nack_rows'])} ({', '.join(st['nack_rows'])}); chart points "
+                                   f"{st['nack_points']}/{st['nack_points_all']}; detail-table rows hidden "
+                                   f"{st['detail_rows_hidden']}; note visible {st['note']}; Every number Quality rows shown "
+                                   f"{st['quality_rows']}", "ok" if ok else "WRONG"])
+        scope_rows.append([width, "script errors (file://)", "", "; ".join(e for e in errs if "fetch" not in e) or "none",
+                           "ok" if not [e for e in errs if "fetch" not in e] else "ERRORS"])
+        ctx.close()
+    b.close()
+with (pk / "filter-scope.csv").open("w", newline="") as fh:
+    w = csv.writer(fh)
+    w.writerow(["width", "global filter", "local keys", "state", "result"])
+    w.writerows(scope_rows)
+sc = Counter(r[-1] for r in scope_rows)
+(pk / "filter-scope.md").write_text(
+    "# Filter scope: leaderboard and Nackgammon against the global filter row (file://)\n\n"
+    f"{len(scope_rows)} checks: " + ", ".join(f"{v} {k}" for k, v in sorted(sc.items())) + ". filter-scope.csv has every one.\n\n"
+    "Opened from file:// (no server, no routing) at 1280 and 390 px. For each global Model type filter (All, program "
+    "= every model hidden in the global tables, Decision, Chat) the Nackgammon keys are set; expected: the leaderboard "
+    "keeps all its rows and its All setups panel hides none (fixed table); the Nackgammon summary shows the rows of "
+    "its own keys only (types and models from setups.json and content/nack_setup_types.json), the yardsticks always; "
+    "every Nackgammon chart point and every row of the detail tables stays shown; the Unclear / additions note is "
+    "visible; meanwhile the global tables do follow the global filter (Quality rows shown).\n")
+print("filter scope:", dict(sc))
+
 # --- 4. Screenshots -----------------------------------------------------------------------------------------------
 shots = pk / "screenshots"
 shots.mkdir(exist_ok=True)
 SHOTS = [("home-top", None), ("leaderboard", "#leaderboard"), ("finding-cautious", "#finding-cautious"),
-         ("finding-flinch", "#finding-flinch"), ("risk-judgement", "#risk-judgement"), ("every-number", "#board-panel"),
-         ("nackgammon-all", "#nackgammon-paired")]
+         ("finding-flinch", "#finding-flinch"), ("risk-judgement", "#risk-judgement"), ("every-number", "#board-panel")]
 with sync_playwright() as p:
     b = p.chromium.launch()
     for width in (1280, 390):
@@ -423,11 +516,13 @@ with sync_playwright() as p:
                 page.goto(BASE + (target or ""))
                 page.wait_for_timeout(400)
                 page.screenshot(path=str(shots / f"{name}-{width}-{theme}.png"))
-            for pick in ("decision", "chat"):
+            for pick, view in (("all", "model"), ("decision", "model"), ("chat", "model"), ("chat", "all"), ("all", "all")):
                 page.click(f'[data-nack-kind-pick="{pick}"]')
+                page.click(f'[data-nack-view="{view}"]')
                 page.wait_for_timeout(150)
                 page.evaluate("document.getElementById('nackgammon-paired').scrollIntoView()")
-                page.screenshot(path=str(shots / f"nackgammon-{pick}-{width}-{theme}.png"))
+                page.screenshot(path=str(shots / f"nackgammon-{pick}-{view}-{width}-{theme}.png"))
+                page.locator("#nack-summary").screenshot(path=str(shots / f"nackgammon-table-{pick}-{view}-{width}-{theme}.png"))
             page.goto(BASE)
             page.wait_for_timeout(400)
             page.screenshot(path=str(shots / f"home-full-{width}-{theme}.png"), full_page=True)

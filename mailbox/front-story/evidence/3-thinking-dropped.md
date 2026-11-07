@@ -1,6 +1,6 @@
 # Heading asked for: "Thinking helps open models, not frontier ones"
 
-Source: the live site's published data files (results f45081f6, data as of 2026-11-07T17:50Z): data/v3/league-1.json, league-2.json, league-3.json ("reasoning": every model with two reasoning settings in that league's games) and data/setups.json (weights). Read-only; every number below is copied from those files as printed.
+Source: the live site's published data files (results f45081f6, data as of 2026-11-07T18:20Z): data/v3/league-1.json, league-2.json, league-3.json ("reasoning": every model with two reasoning settings in that league's games) and data/setups.json (weights). Read-only; every number below is copied from those files as printed.
 
 Pairs: 9 (3 open weights, 6 closed). Error-rate reading as published on the Reasoning tab; risk-judgement change = higher setting minus lower; overlap of the two risk-judgement intervals as published.
 

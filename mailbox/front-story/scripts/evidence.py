@@ -1,7 +1,7 @@
 """Evidence for the front page's finding headings (Ümit, bus #2570 item 3; Zeki #2578): each heading checked against the
 published data files of the live site, one Markdown file per heading, plus the headline table's selection and the
 release months. Reads only; numbers are copied from the files, not recomputed.
-Usage: evidence.py LIVE_SITE_DIR TOOLS_SITE_DIR OUT_DIR"""
+Usage: evidence.py LIVE_SITE_DIR TOOLS_SITE_DIR OUT_DIR BRANCH_RENDER_DIR"""
 import json
 import re
 import sys
@@ -125,31 +125,36 @@ L += ["", "Result: **not shown on the page**.",
       "data cannot show. Dropped, as the brief allows (\"reword or drop\"); the Reasoning tab keeps the table."]
 (out / "3-thinking-dropped.md").write_text("\n".join(L) + "\n")
 
-# Headline table selection and release months ----------------------------------------------------------------------
-by_model = {}
-for lg in LG:
-    for n, s in lg["setups"].items():
-        m = (META.get((lg["dataset"], n)) or {}).get("model") or n
-        if m in PROGRAMS or (META.get((lg["dataset"], n)) or {}).get("model_type") == "program":
-            continue
-        r = s["risk"]["main"]
-        by_model.setdefault(m, []).append((r["judgement"], n, lg["id"]))
+# Headline table selection and release months: read from the rendered branch home page (the production selection and
+# projection, story.headline), not re-derived here.
+from bs4 import BeautifulSoup  # noqa: E402
+
+home = BeautifulSoup((Path(sys.argv[4]) / "index.html").read_text(), "html.parser")
+rows = home.select("#headline-table tbody tr")
 L = ["# Headline table: one row per model, its setting with the highest stored risk judgement", "",
-     SRC.format(files="data/v3/league-N.json (risk.main.judgement per setup) and data/setups.json (model)"), "",
+     f"Source: the rendered branch home page ({sys.argv[4]}/index.html, #headline-table, {len(rows)} rows), i.e. the "
+     "production selection (story.best_settings) as printed; release months from tools/site/content/release_months.json.", "",
      "Each row is ONE named setup, the model's setting with the highest stored risk judgement (Zeki #2578): every cell "
-     "of the row (risk judgement and interval, risks found, right safety, error rate, cost) is that setup's own; the "
-     "model's other settings are under All setups. A selection for display, not a separate run.", "",
-     "| Model | Shown setup (league) | Its risk judgement | Other settings: risk judgement |", "|---|---|---:|---|"]
-for m, v in sorted(by_model.items(), key=lambda x: -max(j or -1 for j, _, _ in x[1])):
-    v = sorted(v, key=lambda x: -(x[0] if x[0] is not None else -1))
-    j, n, lid = v[0]
-    L.append(f"| {m} | {n} (L{lid}) | {j:.1f} | {'; '.join(f'{nn} (L{ll}) {jj:.1f}' for jj, nn, ll in v[1:] if jj is not None) or '—'} |")
+     "of the row (risk judgement and interval, risks found, right safety, error rate, cost and its price label) is that "
+     "setup's own; the model's other settings are under All setups. A selection for display, not a separate run.", "",
+     "| Rank | Shown setup | Dataset | League and other settings | Risk judgement (95% interval) | Released |",
+     "|---:|---|---|---|---|---|"]
+norm_ = lambda t: " ".join(t.split())
+for tr in rows:
+    td = tr.find_all("td")
+    name = norm_(td[1].select_one(".model-name").get_text())
+    small = norm_(td[1].select_one(".small").get_text())
+    L.append(f"| {norm_(td[0].get_text())} | {name} | {tr['data-dataset']} | {small} | {norm_(td[3].select_one('.hl-val').get_text(' '))} "
+             f"| {norm_(td[2].get_text())} |")
 L += ["", "## Release months (column Released)", "",
-      "From the maker's own page, read on 2026-11-07, quote copied verbatim (tools/site/content/release_months.json). "
-      "\u2014 where no official dated statement for the exact model name was found:", "",
-      "| Model | Month | Source |", "|---|---|---|"]
-for m in sorted(by_model):
-    e = REL.get(m) or {}
-    L.append(f"| {m} | {e.get('month') or '\u2014'} | {e.get('url') or (e.get('note') or 'no entry')} |")
+      "Rule (Zeki #2714): a month only where the maker's own page gives an explicit dated release or availability "
+      "statement for that exact model; otherwise \u2014. Each entry with its source URL and the verbatim quote "
+      "(tools/site/content/release_months.json; re-audited 2026-11-07, release-audit.json):", "",
+      "| Model | Month | Source | Quote | Note |", "|---|---|---|---|---|"]
+cell = lambda t: (t or "").replace("|", "\\|").replace("\n", " ")
+for m in sorted(REL):
+    e = REL[m]
+    L.append(f"| {m} | {e.get('month') or '\u2014'} | {cell(e.get('url')) or '\u2014'} | {cell(e.get('quote')) or '\u2014'} "
+             f"| {cell(e.get('note'))} |")
 (out / "4-headline-selection-and-release-months.md").write_text("\n".join(L) + "\n")
 print("written", sorted(p.name for p in out.iterdir()))

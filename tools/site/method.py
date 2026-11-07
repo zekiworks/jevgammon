@@ -731,7 +731,8 @@ def _spec_list(items: list) -> str:
 
 
 def spec_markdown(md: str) -> str:
-    """The spec's Markdown subset (headings, paragraphs, nested bullet, numbered and lettered lists, tables) as HTML."""
+    """The spec's Markdown subset (headings, paragraphs, nested bullet, numbered and lettered lists, tables, fenced code
+    blocks, block quotes) as HTML."""
     html, lines, i = [], md.splitlines(), 0
     while i < len(lines):
         line = lines[i]
@@ -741,6 +742,20 @@ def spec_markdown(md: str) -> str:
             level, title = len(line) - len(line.lstrip("#")), line.lstrip("#").strip()
             html.append(f"<h{min(level + 1, 4)}>{_inline(title)}</h{min(level + 1, 4)}>")
             i += 1
+        elif line.startswith("```"):
+            j = i + 1
+            while j < len(lines) and not lines[j].startswith("```"):
+                j += 1
+            code = "\n".join(lines[i + 1:j])
+            html.append(f'<pre class="citation">{esc(code)}</pre>')
+            i = j + 1
+        elif line.startswith(">"):
+            j = i
+            while j < len(lines) and lines[j].startswith(">"):
+                j += 1
+            quoted = "\n".join(re.sub(r"^> ?", "", x) for x in lines[i:j])
+            html.append(f"<blockquote>{spec_markdown(quoted)}</blockquote>")
+            i = j
         elif line.startswith("|"):
             rows = []
             while i < len(lines) and lines[i].startswith("|"):
@@ -761,7 +776,8 @@ def spec_markdown(md: str) -> str:
             html.append(_spec_list(items))
         else:
             para = []
-            while i < len(lines) and lines[i].strip() and not re.match(r"#|\|", lines[i]) and not SPEC_ITEM.match(lines[i]):
+            while (i < len(lines) and lines[i].strip() and not re.match(r"#|\||```|>", lines[i])
+                   and not SPEC_ITEM.match(lines[i])):
                 para.append(lines[i].strip())
                 i += 1
             html.append(f"<p>{_inline(' '.join(para))}</p>")
@@ -864,8 +880,8 @@ def _limits() -> str:
 def _home_extras(extra: dict) -> str:
     """What B4 moves off the home page: what the input adds, learning from experience, routing and teams, tail risk."""
     return (_section("input", f"What the input adds {status_badge(EARLIER)}", extra["input"])
-            + _section("learning", f"Learning from experience {status_badge(NOT_MEASURED)}",
-                       "<p>Every decision is a separate request; models are not told how earlier games went.</p>")
+            + _section("learning", f"Learning from experience {status_badge('Running (preliminary)')}",
+                       "<p>Running (preliminary): see <a href=\"../learning/\">Learning across games</a>.</p>")
             + _section("routing", f"Routing and teams {status_badge(PENDING)}",
                        "<p>Which decisions a cheap model can handle before handing over to a strong one, and whether a team "
                        "picks better plays than its best member, wait for the shared-position answers. A team \"oracle\", "

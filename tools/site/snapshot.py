@@ -24,8 +24,13 @@
 5. The Nackgammon knockout database (KNOCKOUT_DB, next to V3_DB; never v3.db) is copied the same way, read-only
    and in one read transaction, to STATE_DIR/knockout.db (its leagues, players, league_players and matches
    only: the site shows its bracket and match results, not its decisions). Missing: no knockout.db.
-6. Prints one line of JSON: decisions extracted, skipped by reason, contexts, and a fingerprint
-   that changes whenever the league data or the knockout's matches change.
+6. The learning pilot (workspace/learning-pilot/ next to V3_DB, read only): its summary out/learning-pilot.json, every
+   finished series' runs/<arm>/sNN/aggregate.json, the lessons arm's runs/lessons/sNN/lessons-gKK.txt and the lesson
+   prompt (lessons_system.txt, lessons_user.txt) are copied to STATE_DIR/learning, replacing the last copy (a missing
+   source leaves it empty: the page shows "No results yet"). Its key, a hash of the copied files and of the plan
+   (mailbox/Learning pilot - plan 2026-11-07.md), goes into update.sh's change key, so a finished series rebuilds.
+7. Prints one line of JSON: decisions extracted, skipped by reason, contexts, a fingerprint that changes whenever
+   the league data or the knockout's matches change, and the learning pilot's key ("learning").
 
 Schema of prompts.db: see the site contract (local://site-contract.md). Anthropic requests send
 the Claude Code identity block before the system prompt: it is kept as "system_prefix" (list of
@@ -37,11 +42,13 @@ match turns.legal_count / group_size and the shown order (turns.option_order ove
 tools/v3/rules.py legal_plays). Prints a JSON report.
 """
 
+import glob
 import hashlib
 import json
 import os
 import random
 import re
+import shutil
 import sqlite3
 import subprocess
 import sys
@@ -76,6 +83,15 @@ CREATE TABLE late_entry_exchanges(turn_id INTEGER PRIMARY KEY, exchanges INTEGER
 # The Nackgammon knockout (tools/v3/run_knockout_nack.sh): its own database next to v3.db.
 KNOCKOUT_DB = "knockout-nack.db"
 KNOCKOUT_TABLES = ("leagues", "players", "league_players", "matches")
+
+# The learning pilot (tools/site/learning_page.py): its files, relative to workspace/learning-pilot/ next to V3_DB, and
+# where each goes under STATE_DIR/learning.
+LEARNING_SOURCE = os.path.join("workspace", "learning-pilot")
+LEARNING_FILES = [("out/learning-pilot.json", lambda rel: "learning-pilot.json"),
+                  ("runs/*/s*/aggregate.json", lambda rel: rel), ("runs/t0/aggregate.json", lambda rel: rel),
+                  ("runs/lessons/s*/lessons-g*.txt", lambda rel: rel),
+                  ("lessons_system.txt", lambda rel: rel), ("lessons_user.txt", lambda rel: rel)]
+LEARNING_PLAN = os.path.join("mailbox", "Learning pilot - plan 2026-11-07.md")
 
 
 def shown_leagues(db, prefix=""):
@@ -308,6 +324,32 @@ def snapshot_knockout(source, state):
     return f"k{total}/{finished}/{leagues}"
 
 
+def snapshot_learning(root, state):
+    """Copies the learning pilot's published inputs (LEARNING_FILES) from ROOT/workspace/learning-pilot to
+    STATE/learning, replacing the last copy whole; returns a hash of the copied files and the plan (first 12 hex)."""
+    source, target = os.path.join(root, LEARNING_SOURCE), os.path.join(state, "learning")
+    tmp = target + ".tmp"
+    shutil.rmtree(tmp, ignore_errors=True)
+    os.makedirs(tmp)
+    h = hashlib.sha256()
+    for pattern, dest in LEARNING_FILES:
+        for path in sorted(glob.glob(os.path.join(source, pattern))):
+            rel = dest(os.path.relpath(path, source))
+            os.makedirs(os.path.dirname(os.path.join(tmp, rel)), exist_ok=True)
+            with open(path, "rb") as f:
+                data = f.read()
+            with open(os.path.join(tmp, rel), "wb") as f:
+                f.write(data)
+            h.update(rel.encode() + b"\0" + data)
+    plan = os.path.join(root, LEARNING_PLAN)
+    if os.path.exists(plan):
+        with open(plan, "rb") as f:
+            h.update(b"plan\0" + f.read())
+    shutil.rmtree(target, ignore_errors=True)
+    os.replace(tmp, target)
+    return h.hexdigest()[:12]
+
+
 def fetch(db, schema, turns):
     """{turn_id: [request, ...] in send order} for `turns` = [(turn_id, [exchange id, ...])]."""
     ids = [i for _, exchange_ids in turns for i in exchange_ids]
@@ -461,6 +503,7 @@ def run(v3, state):
     db.close()
     os.replace(tmp, snap)
     print_fingerprint += " " + snapshot_knockout(os.path.join(os.path.dirname(os.path.abspath(v3)), KNOCKOUT_DB), state)
+    learning = snapshot_learning(os.path.dirname(os.path.abspath(v3)), state)
     snapshot_seconds = time.monotonic() - started
 
     # Decisions of models that sent nothing.
@@ -493,6 +536,7 @@ def run(v3, state):
         "skipped_total": prompts.execute("SELECT count(*) FROM skipped").fetchone()[0],
         "contexts": prompts.execute("SELECT count(*) FROM contexts").fetchone()[0],
         "fingerprint": print_fingerprint,
+        "learning": learning,
         "snapshot_seconds": round(snapshot_seconds, 1),
         "seconds": round(time.monotonic() - started, 1),
     }

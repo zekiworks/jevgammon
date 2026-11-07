@@ -18,17 +18,22 @@
    #2310); data files, decompressed .gz files and other text get the complete scan. selftest_suite_bar.py tests it.
 5. Every relative link resolves; ids are unique per page and every #anchor exists.
 6. Every published finding still holds (B4): findings.py reruns each finding's machine check on the built data.
+7. The learning page (learning_page.py, plan §9): no learning lift, signal, verdict or Learning-tab ranking/leader block
+   in the page or its data file unless the results are complete; no evaluation-set position (id, board key, board) in
+   either (where the private test set is present).
 """
 
 import gzip
+import html
 import json
 import re
 import sqlite3
+import sys
 from html.parser import HTMLParser
 from pathlib import Path
 
 import findings
-from common import ALL_NOTE, BANNED, CONTENT, INTERNAL, LATE_ENTRY, PROVISIONAL, PROVISIONAL_NOTE, SUITE_BAR
+from common import ALL_NOTE, BANNED, CONTENT, INTERNAL, LATE_ENTRY, PROVISIONAL, PROVISIONAL_NOTE, ROOT, SUITE_BAR
 
 NUM = re.compile(r"(?<![\w.\u2212+-])([\u2212+-]?)(\d{1,3}(?:,\d{3})+|\d+)(\.\d+)?")
 DATE = re.compile(r"\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2})?(?:\.\d+)?Z?)?|\b\d{1,2}:\d{2}\b|"
@@ -337,6 +342,61 @@ def scan_file(p: Path):
     return banned_in(data.decode("utf-8", "replace"), page=p.suffix == ".html")
 
 
+# --- 7. Learning page ---------------------------------------------------------------------------------------
+
+
+def _test_set_strings(path: Path) -> list[str]:
+    """What would reveal an evaluation position: its id (lp-<turn id>), its board key, and its whole board as the pilot
+    writes boards in prompts, records and notes (the mover's side, the mover's point numbering). One side alone is not
+    checked: the plan's own format example (the starting setup) matches one side of some positions."""
+    if str(ROOT / "tools/v3") not in sys.path:
+        sys.path.append(str(ROOT / "tools/v3"))  # appended: tools/v3 has its own build.py
+    from rules import from_json
+    out = []
+    for p in json.loads(path.read_text())["positions"]:
+        pts, bar, off = from_json(p["position"], p["side"])
+        mine = " ".join(f"{i + 1}:{n}" for i, n in enumerate(pts) if n > 0)
+        theirs = " ".join(f"{i + 1}:{-n}" for i, n in enumerate(pts) if n < 0)
+        out += [p["id"], p["board_key"], f"your checkers {mine or '-'} (bar {bar[0]}, off {off[0]}); "
+                f"opponent's checkers {theirs or '-'} (bar {bar[1]}, off {off[1]})"]
+    return out
+
+
+def check_learning(out: Path, test_set: Path | None = None) -> list[str]:
+    """The learning page (learning_page.py; plan §9): (a) no learning lift, signal, verdict or Learning-tab leaders
+    block, in the page or its data file, unless the site accepted the results as complete; (b) no evaluation-set
+    position (id, board key or board) in the page or its data file. (b) needs the private test set
+    (learning_page.TEST_SET) whenever results, a validation or lessons are present: missing or unreadable is a failure,
+    not a skip; only the no-results state passes without it."""
+    from learning_page import COMPLETE_ONLY_IDS, COMPLETE_ONLY_KEYS, DATA, PATH, TEST_SET
+    test_set = test_set or TEST_SET
+    page, data = out / PATH / "index.html", out / DATA
+    if not page.exists():
+        return []
+    bad = []
+    L = json.loads(data.read_text())
+    if not (L["results"] or {}).get("complete"):
+        tree = Tree()
+        tree.feed(page.read_text())
+        ids = {n.attrs.get("id") for n in walk(tree.root)}
+        bad += [f"{PATH}: block #{i} shown before the results are complete" for i in COMPLETE_ONLY_IDS if i in ids]
+        bad += [f"{DATA}: {k} published before the results are complete" for k in COMPLETE_ONLY_KEYS
+                if k in (L["results"] or {})]
+    no_results = L.get("results") is None and not L.get("validation") and not L.get("lessons")
+    try:
+        strings = _test_set_strings(test_set)
+    except (OSError, ValueError, KeyError) as e:
+        if not no_results:
+            bad.append(f"{PATH}: results or lessons present but the evaluation set is missing or unreadable "
+                       f"({type(e).__name__}): the leakage check cannot run")
+        return bad
+    texts = {PATH: html.unescape(page.read_text()), DATA: data.read_text()}
+    for s in strings:
+        hit = re.compile(r"(?<![\w-])" + re.escape(s) + r"(?!\w)")
+        bad += [f"{name}: evaluation-set position {s[:24]!r}\u2026" for name, t in texts.items() if hit.search(t)]
+    return bad
+
+
 def run(S: dict, out: Path) -> list[str]:
     failures = []
     nums = allowed_numbers(out, S)
@@ -362,4 +422,5 @@ def run(S: dict, out: Path) -> list[str]:
         if m:
             failures.append(f"{p.relative_to(out)}: banned string {m.group(0)!r}")
     failures += findings.failures(out)
+    failures += check_learning(out)
     return failures

@@ -22,6 +22,11 @@ ALL = "all"
 LIMIT_HIT = "Hit risk only: being hit. Gammon risk and priming are not in it."
 LIMIT_HARD = ("Setups met different positions; risk judgement is not adjusted for how hard they were. Paired "
               "comparisons wait for the shared positions.")
+# Under the risk leaderboard chart (Ümit #2564; wording Zeki #2578).
+RANK_NOTE = "Ranks show observed scores; small gaps need not be meaningful."
+# The hero's prominent links (Ümit #2564): existing pages and anchors only.
+HERO_LINKS = [("Risk calls leaderboard", "#risk-judgement"), (P.TAB_LEARNING, P.TAB_LEARNING_PATH),
+              ("Every decision", "decisions/"), ("Leagues and matches", "#leagues-tabs")]
 GNUBG_WEAK = "x86-64 build: its noise is shifted, so it overplays gammons"
 CALL_LABEL = {"needless": "needless risks", "missed": "missed risks", "wrong_risk": "wrong risks",
               "right_risk": "right risks", "right_safety": "right safety", "none": "No trade-off"}
@@ -1711,7 +1716,7 @@ def measure_chart_card(S, measure: str, title: str) -> str:
                                 '</i>50 = always safe'),
              "error-rate": ('<i class="swatch swatch-interval"></i>95% interval</span> <span><i class="swatch swatch-refline">'
                             '</i>a program\'s error rate (reference row, named above the axis)')}.get(measure)
-    notes = {"risk-judgement": [LIMIT_HIT, LIMIT_HARD],
+    notes = {"risk-judgement": [RANK_NOTE, LIMIT_HIT, LIMIT_HARD],
              "error-rate": [LIMIT_PAIRED],
              "cost": ["\u00a7 list-price estimate; runs on our GPUs: each setup's price label is in its row's tooltip and "
                       "in the Cost tab.", LIMIT_PAIRED],
@@ -1774,10 +1779,39 @@ WHAT_THIS_MEASURES = ("Risk calls per setup: was each risk the right one, and wa
                       "gives away, judged by the engine, not by wins. " + LIMIT_HIT + " " + LIMIT_HARD)
 
 
+def how_numbers(S) -> str:
+    """'How the numbers work' (Ümit #2564): sentences of the Method page only, quoted as published there, each with the
+    Method section it comes from (mailbox/learning-page-review3/README.md lists them). No new claim."""
+    t = S["thresholds"]
+    items = [
+        ("Who scores", "error-rate", "Error rate",
+         "GNU Backgammon 1.08 evaluates every legal play at 2-ply, in cubeless money equity (expected points per game, "
+         "match score ignored). The loss of a decision is the equity of the best play minus the equity of the play "
+         "made."),
+        ("Error rate", "error-rate", "Error rate",
+         f"{t['equity_scale']} × mean 2-ply equity loss per decision. Lower is better. This is the checker-play "
+         "performance rating (PR) that backgammon players use."),
+        ("Risk judgement", "risk-metrics", "Was it the right risk?",
+         "The average of risks found and right safety, × 100. It does not depend on how many positions of each class "
+         "a setup met. With both classes present, the Safest program scores exactly 50, the \"always safe\" line."),
+        ("Intervals", "statistics", "Statistics and verdicts",
+         f"Intervals are {t['interval']} bootstrap intervals with {t['bootstrap_resamples']} resamples and a fixed seed "
+         f"({t['bootstrap_seed']}). League decisions resample whole games, because moves within a game are not "
+         "independent."),
+        ("Different positions", "limits", "Limits",
+         "Setups played different positions; league comparisons are not paired, and risk judgement is not adjusted "
+         "for how hard the positions were.")]
+    lis = "".join(f'<li><strong>{esc(k)}.</strong> {esc(v)} <a class="small" href="method/#{a}">Method: {esc(s)}</a></li>'
+                  for k, a, s, v in items)
+    return (f'<section class="card how-numbers" id="how-numbers"><h2>How the numbers work</h2><ul>{lis}</ul>'
+            f'<p class="table-note">Quoted from the <a href="method/">Method</a> page.</p></section>')
+
+
 def hero_card(S) -> str:
     face = "".join(f'<a href="#{k}">{esc(l)}</a>' for k, l in MEASURES)
     face += ('<a href="#leagues-tabs">Leagues and matches</a><a href="#board-panel">Every number</a>'
              '<a href="#findings">Findings</a><a href="method/">Method</a>')
+    links = "".join(f'<a href="{href}">{esc(label)}</a>' for label, href in HERO_LINKS)
     return f"""
     <section class="card hero hero-card">
       <div class="hero-split">
@@ -1785,6 +1819,7 @@ def hero_card(S) -> str:
           <p class="eyebrow">Experiment</p>
           <h1>{esc(P.TITLE)}</h1>
           <p class="subtitle">{esc(P.SUBTITLE)}</p>
+          <nav class="hero-links" aria-label="Main parts">{links}</nav>
           <p class="intro">{esc(INTRO)}</p>
           <div class="readout-row">
             <ul class="readouts">{P.readouts(S)}</ul>
@@ -1814,6 +1849,7 @@ def home(S) -> str:
     {findings_block(S)}
     {filters(S)}
     {measure_charts(S)}
+    {how_numbers(S)}
     <div class="home-leagues" id="leagues-tabs">{P.home_league_sections(S)}</div>
     <section class="panel board-panel" id="board-panel" aria-labelledby="board-title">
       <div class="chart-head"><h2 id="board-title">Every number, setup by setup</h2><p class="chart-sub">The leaderboard: every measure of every setup, one tab per measure; each value with its 95% interval, its count and denominator or its price label under it.</p></div>

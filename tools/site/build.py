@@ -34,6 +34,7 @@ import analysis as A  # noqa: E402
 import checks  # noqa: E402
 import close_choices as CC  # noqa: E402
 import cup  # noqa: E402
+import learning_page  # noqa: E402
 import offline as O  # noqa: E402
 import pages  # noqa: E402
 from common import (CONTENT, EARLIER, INTERNAL, LATE_ENTRY, PENDING, PROVISIONAL, PUBLISHED, ROOT, SITE,  # noqa: E402
@@ -155,6 +156,9 @@ def compute(args) -> dict:
         nack=json.loads((CONTENT / "nack_paired_results.json").read_text()),
         # Clear-risk scan and follow-up (preliminary / partial): saved aggregates (tools/site/clear_risk_publish.py).
         clear_risk=json.loads((CONTENT / "clear_risk_results.json").read_text()),
+        # Learning from experience (preliminary, running): the plan and the pilot's aggregates, lessons and lesson
+        # prompt as snapshot.py copied them to STATE/learning (tools/site/learning_page.py).
+        learning=learning_page.from_state(state),
         status=json.loads((CONTENT / "analysis_status.json").read_text()),
         human_scale=json.loads((CONTENT / "human_scale.json").read_text()),
         _v1_raw=v1, _state=state)
@@ -297,6 +301,8 @@ def write_data(S: dict, out: Path) -> None:
     write_json(out, "data/v3/nack-paired.json", dict(version="v3", **S["nack"]))
     # Clear-risk scan and follow-up (preliminary / partial): aggregates only (tools/site/clear_risk_publish.py).
     write_json(out, "data/v3/clear-risk.json", dict(version="v3", **S["clear_risk"]))
+    # Learning from experience (preliminary, running): aggregates only (tools/site/learning_page.py).
+    write_json(out, learning_page.DATA, S["learning"])
     write_json(out, "data/smoke/part-a.json", dict(dataset="smoke-part-a", status="Smoke test", rows=S["smoke"]))
     write_json(out, "data/setups.json", dict(setups=[v for v in S["setups_meta"].values()]))
     write_json(out, "data/thresholds.json", S["thresholds"])

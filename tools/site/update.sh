@@ -10,9 +10,11 @@
 #   systemctl --user enable --now bg-site-preview.timer
 #
 #   1. snapshot (tools/site/snapshot.py): league tables copied in one read transaction, plus the prompts of new
-#      decisions and the Nackgammon knockout's matches (knockout-nack.db, read-only, to STATE/knockout.db); its
-#      fingerprint (the knockout's included), the smoke-test rows, the v1 set and the site code make the change key;
-#      if the key equals the last deployed one, stop: nothing changed;
+#      decisions, the Nackgammon knockout's matches (knockout-nack.db, read-only, to STATE/knockout.db) and the
+#      learning pilot's aggregates, lessons and lesson prompt (workspace/learning-pilot, read-only, to STATE/learning);
+#      its fingerprint (the knockout's included), the learning pilot's key (its copied files and the plan), the
+#      smoke-test rows, the v1 set and the site code make the change key; if the key equals the last deployed one,
+#      stop: nothing changed;
 #   2. GNUbg scores every legal play of the new decisions (tools/site/score.sh: 8 processes, nice 19, idle I/O);
 #   3. tools/site/build.py builds the site into this job's own clone of the analysis repository and runs the
 #      pre-deploy checks (numbers trace, counts add up, no mixing, every published finding still holds, no private
@@ -75,7 +77,8 @@ cd "$SRC"
 # 1. Snapshot and change key.
 SUMMARY=$(python3 tools/site/snapshot.py "$ROOT/v3.db" "$STATE" | tail -1)
 FP=$(python3 -c 'import json, sys; print(json.loads(sys.argv[1])["fingerprint"])' "$SUMMARY")
-KEY="$FP code:$CODE smoke:$(sha256sum "$ROOT/smoke/part-a.json" | cut -c1-12) v1:$(stat -c %Y "$ROOT/replay.db")"
+LEARNING=$(python3 -c 'import json, sys; print(json.loads(sys.argv[1])["learning"])' "$SUMMARY")
+KEY="$FP learning:$LEARNING code:$CODE smoke:$(sha256sum "$ROOT/smoke/part-a.json" | cut -c1-12) v1:$(stat -c %Y "$ROOT/replay.db")"
 if [ "${1:-}" != "--force" ] && [ -f "$STATE/deployed.key" ] && [ "$(cat "$STATE/deployed.key")" = "$KEY" ]; then
   log "no change ($FP)"
   rm -f "$LOOP_FAILED"

@@ -86,6 +86,7 @@ printed and stored in `matches.error`), `2` for invalid arguments.
 | `nace/<model>` | Nace.AI's hosted System One API, `https://console.nace.ai` (`drex-max-v1.1`, `drex-v2.0`; `drex-v2.0` default); at most 25 options per request (the Drex late entries' protocol; Nace takes 255) | `NACE_API_KEY` or `NACEAI_API_KEY` |
 | `drex-max/<model>` | Self-hosted Nace.AI Drex Max v1 (`nace-ai/drex-max-v1`, Nace's `drex_max` loader behind the decision-models runner's `servers/drex_max_server.py`), `http://127.0.0.1:18104` (`base_url` picks another); the model must name the loaded checkpoint (`drex-max-v1` default); at most 25 options per request | none |
 | `drex-local/<model>` | Self-hosted Nace.AI Drex 2.0 (`nace-ai/drex-v2.0`, the `serve.py` its checkpoint ships), `http://127.0.0.1:18105` (`base_url` picks another; model name accepted and ignored; `drex-v2.0` default); at most 25 options per request | none |
+| `reax`, `reax/<model>` | Self-hosted REAX 1.3 (`decisionmodels/REAX-1.3` @ fa4bf7e, both FP8 parts on one GPU) behind the REAX Engine's own `reax13/serve.py` (image `reax13-runtime`), `http://127.0.0.1:18106` (`base_url` picks another); the model field must be `reax13` (the default); at most 255 options per request (the server's per-question limit; League 1's largest full lists stay under half the card's 32,000 proxy-token cap) | none |
 | `openai/<model>` | ChatGPT subscription (Codex backend) | qfork store or `~/.codex/auth.json` |
 | `anthropic/<model>`, `claude/<model>` | Claude subscription | qfork store or `~/.claude/.credentials.json` |
 | `gemini/<model>`, `google/<model>` | Gemini API | `GEMINI_API_KEY`, `GOOGLE_API_KEY`, or qfork `credentials/gemini.json` |
@@ -106,7 +107,7 @@ per thinking level, so the config's `reasoning` is appended to the model id
 inside Antigravity's envelope. Each decision service's host can be
 overridden: `TYPESAFE_BASE_URL`, `FASTINO_BASE_URL`, `OPENAI_DECISIONS_BASE_URL`,
 `PERPLEXITY_BASE_URL`, `LIQUID_BASE_URL`, `CLEF_BASE_URL`, `OPEN_JEV_BASE_URL`,
-`CYGNET_BASE_URL`, `GEMMA_BASE_URL`, `SUBQ_BASE_URL`, `CELERIS_BASE_URL`, `PPLX_LOCAL_BASE_URL` (`pplx-local`: pplx-decider-v1.1-27b served by `~/code/pplx-decider/server.py` on port 18097), `D3_BASE_URL` (`d3`: vllm-sr/d3-turbo on port 18100), `BASELABS_BASE_URL` (`baselabs`: port 18102), `NACE_BASE_URL`, `DREX_MAX_BASE_URL` (`drex-max`: port 18104), `DREX_LOCAL_BASE_URL` (`drex-local`: port 18105).
+`CYGNET_BASE_URL`, `GEMMA_BASE_URL`, `SUBQ_BASE_URL`, `CELERIS_BASE_URL`, `PPLX_LOCAL_BASE_URL` (`pplx-local`: pplx-decider-v1.1-27b served by `~/code/pplx-decider/server.py` on port 18097), `D3_BASE_URL` (`d3`: vllm-sr/d3-turbo on port 18100), `BASELABS_BASE_URL` (`baselabs`: port 18102), `NACE_BASE_URL`, `DREX_MAX_BASE_URL` (`drex-max`: port 18104), `DREX_LOCAL_BASE_URL` (`drex-local`: port 18105), `REAX_BASE_URL` (`reax`: port 18106).
 
 Missing credentials are reported at startup, before a match is created.
 

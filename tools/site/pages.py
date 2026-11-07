@@ -873,16 +873,24 @@ def late_href(rel, e) -> str:
     return f"{rel}models/{LATE_ENTRY}/{e['slug']}/"
 
 
-SUBQ_PREVIEW = "SubQ Snap Preview"
-SUBQ_SAME = ("SubQ's API returned answers identical to SubQ Snap 1.1 under the 'subq-snap-preview' name: on 1,000 "
-             "identical paired positions, Preview's answers of 27 Oct and 1.1's of 7 Nov match exactly (letters and "
-             "probabilities). These pairs may be 1.1 against 1.1.")
+SUBQ_PREVIEW, SUBQ_11 = "SubQ Snap Preview", "SubQ Snap 1.1"
+SUBQ_SELF = ("This pair may be SubQ Snap 1.1 against itself: under the 'subq-snap-preview' name the API returned answers "
+             "identical to SubQ Snap 1.1 (1,000 identical paired positions: letters and probabilities).")
+SUBQ_OTHER = ("The opponent was requested as SubQ Snap Preview; under that name the API returned answers identical to "
+              "SubQ Snap 1.1 on 1,000 paired positions, so the opponent's model identity is not verified.")
 
 
-def subq_note(name, tag="span", same="SubQ Snap 1.1") -> str:
-    """The note on SubQ Snap 1.1's row and page and on every late-entry pair against SubQ Snap Preview (presentation
-    only; no result changes)."""
-    return f'<{tag} class="small">{esc(SUBQ_SAME)}</{tag}>' if name == same else ""
+def subq_note(entrant, opponent=None, tag="span") -> str:
+    """Presentation only, no result changes. SubQ Snap 1.1's row and page, and its pair against SubQ Snap Preview: the
+    pair may be 1.1 against itself; every other late-entry pair against SubQ Snap Preview: the opponent's model
+    identity is not verified."""
+    if (opponent is None or opponent == SUBQ_PREVIEW) and entrant == SUBQ_11:
+        text = SUBQ_SELF
+    elif opponent == SUBQ_PREVIEW:
+        text = SUBQ_OTHER
+    else:
+        return ""
+    return f'<{tag} class="small">{esc(text)}</{tag}>'
 
 
 def late_results(e, rel) -> str:
@@ -896,7 +904,7 @@ def late_results(e, rel) -> str:
             continue
         res = LATE_RESULT[(m["score_for"] > m["score_against"]) - (m["score_for"] < m["score_against"])] if done else None
         rows.append(f'<tr data-dataset="{LATE_ENTRY}"><td class="model"><span class="model-name">{esc(m["opponent"])}</span>'
-                    f'{subq_note(m["opponent"], same=SUBQ_PREVIEW)}</td>'
+                    f'{subq_note(e["name"], m["opponent"])}</td>'
                     f'<td class="num">{m["score_for"]}\u2013{m["score_against"]}</td>'
                     f'<td>{res or esc(MATCH_STATE.get(m["status"], m["status"]))}</td>'
                     f'<td class="num">' + (f'<a href="{rel}matches/#{match_anchor("v3", m["id"])}">{m["id"]}</a>' if done
@@ -957,7 +965,7 @@ def late_entry_page(S, e) -> str:
     m = S["setups_meta"].get((LATE_ENTRY, e["name"]))
     setup = (f'<section class="card" id="setup"><h2>How we called it</h2>{facts(m, q)}</section>' if m else "")
     return (f'<section class="card"><p class="eyebrow">{esc(LATE_ENTRY_LABEL)} · League {e["field_league"]} field</p>'
-            f'<h1>{esc(e["name"])}</h1><p class="subtitle">{late_status(e)}</p>{subq_note(e["name"], "p")}'
+            f'<h1>{esc(e["name"])}</h1><p class="subtitle">{late_status(e)}</p>{subq_note(e["name"], tag="p")}'
             f'<p class="version">{esc(version_line(S))}</p></section>'
             f'<section class="card" id="late-entry" data-dataset="{LATE_ENTRY}"><h2>{esc(LATE_ENTRY_LABEL)}</h2>'
             f'<p class="note">{esc(LATE_ABOUT)}</p><dl class="facts">'

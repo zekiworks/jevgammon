@@ -559,7 +559,9 @@ def body(L) -> str:
     withheld = (f'<p class="note">{count(L["redacted"])} private address(es) in the plan are withheld here.</p>'
                 if L["redacted"] else "")
     status = f'<div class="note">{spec_markdown(plan["status"])}</div>' if plan["status"] else ""
-    head = (f'<header class="card hero page-head"><p class="eyebrow">Preliminary · running</p><h1>{esc(TITLE)}</h1>'
+    # The top label follows the validated status: "Complete" only when learning_validate accepts complete.
+    label = "Complete" if L["validation"] and L["validation"]["complete"] else "Preliminary · running"
+    head = (f'<header class="card hero page-head"><p class="eyebrow">{label}</p><h1>{esc(TITLE)}</h1>'
             f'<p class="intro"><strong>{esc(plan["commitment"])}</strong></p>'
             f'<p class="intro">The pre-registered plan, the lesson prompt and the results as they come in. Data: '
             f'<a href="../{DATA}">learning-pilot.json</a>.</p>{status}'

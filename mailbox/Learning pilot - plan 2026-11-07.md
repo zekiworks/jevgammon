@@ -236,5 +236,8 @@ Made after Zeki's review of the page candidate and before any model call of the 
 - **Consequence measured in the dry run, with no model call.** These sizes come from Safest's games, not Gemma's; Gemma's will differ.
   - One full game record is 1,891–3,946 tokens (median 2,706; 20 cases).
   - The lessons arm's context at the cap of 5 lessons and 150 words per game grows from 226 tokens after game 1 to 1,951 after game 10.
-  - So under the whole-game rule the budget arm's context is expected to be empty at most or all points, and every empty point is logged.
+  - In that dry run, **no whole game ever fit the budget**: the budget arm's context was empty after every game of both dry series. Under the whole-game rule it is expected to be empty at most or all points of the real run too.
+- **Decision (Zeki #2577, before any model call): keep A17's whole-game unit.** The alternatives (decision lines, or the newest game cut to fit) were not chosen.
+  - In the real run, every point of every budget series is logged and shown: the games included, the games dropped, and the tokens used against the lessons arm's token count.
+  - **Interpretation, fixed now:** if the budget arm's context stays empty in the real run, the reading is "with this budget, record memory could not be provided", NOT "record memory didn't help". The budget arm's results are then reported with that wording on the page.
 - **Lesson prompt:** unchanged (sha256 `d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e`).

@@ -149,6 +149,38 @@ def summary_table(N) -> str:
             + f'<p class="table-note nack-label-legend">{esc(LABEL_LEGEND)}</p>')
 
 
+LATE_ID = "nackgammon-late"
+LATE_NOTE = "Added after the results were known; exploratory; not in any group comparison (\u00a710.14(i))."
+# From the run's report (mailbox "Nackgammon paired test - results.md", Update 2026-11-07), not from the data file.
+LATE_ROW_NOTES = {"SubQ Snap 1.1": "its answers equal SubQ Snap Preview's answers of 27 October on all 1,000 positions "
+                                   "(the same letters and probability vectors)"}
+LATE_NOT_RUN = "REAX 1.3: not run (pending approval)."
+
+
+def late_block(L) -> str:
+    """The late entries (§10.14(i)): their own table from data/v3/nack-paired-late.json, separate from the 28 Oct
+    setups and their additions note; Random as the grey yardstick row."""
+    rows = []
+    for s, r in L["setups"].items():
+        note = LATE_ROW_NOTES.get(s)
+        label = (f'{esc(s)}<span class="small">{"yardstick" if s == "Random" else "late entry, exploratory"}'
+                 f'{" \u00b7 " + esc(note) if note else ""}</span>')
+        rows.append(row(s, label, [
+            td(L, r, ["final/pairs"]), td(L, r, ["final/standard_pr"]), td(L, r, ["final/nackgammon_pr"]),
+            td(L, r, ["final/drop"], signed=True), td(L, r, ["final/drop_975"], signed=True), label_td(L, r)],
+            "nack-yardstick" if s == "Random" else ""))
+    head = ["Setup", "Pairs", "Standard PR", "Nackgammon PR", "Change (Nackgammon \u2212 standard)", "97.5% interval",
+            "Label"]
+    t = (P.SWIPE + P.table([(h, " data-nosort") for h in head], rows,
+                           esc("Late entries, the primary rule, final look; Random on the same pairs as the grey row."),
+                           cls="board list", attrs=' id="nack-late" data-src="setups" data-file="nack-paired-late"'))
+    return (f'<h3 id="{LATE_ID}">Late entries / exploratory</h3>'
+            f'<p class="note nack-late-note"><strong>{esc(LATE_NOTE)}</strong> {esc(L["late_entries_note"])}</p>'
+            + t + f'<p class="table-note">{esc(LABEL_LEGEND)}</p><p class="table-note">{esc(LATE_NOT_RUN)}</p>'
+            '<p class="table-note">Data: <a href="data/v3/nack-paired-late.json" download="nack-paired-late.json">'
+            'nack-paired-late.json</a></p>')
+
+
 def _limit_cells(N, r) -> list:
     """Output-limit counts (§10.14(h)), main 200 pairs and all recorded positions; Random is never asked."""
     if not r["cut_off"]:
@@ -377,7 +409,7 @@ def chart(N) -> str:
             + "".join(parts) + "</svg>")
 
 
-def section(N, kinds: dict, chosen: list) -> str:
+def section(N, kinds: dict, chosen: list, L: dict) -> str:
     """kinds: setup name -> decision / chat / program (its model type), for the Decision / Chat / All keys; chosen: the
     one setting per model of the per-model view (home.nack_views). Both govern the summary table only; every table
     below it keeps every setup."""
@@ -424,7 +456,7 @@ def section(N, kinds: dict, chosen: list) -> str:
             f'<p class="note nack-always"><strong>{esc(UNCLEAR_NOTE)}</strong> {count(n_added)} setups were added after '
             'the results were read; the primary results are shown with and without them.</p>'
             f'<p class="table-note">{esc(head_note)}</p>'
-            + summary_table(N) + f'<p class="table-note nack-view-note">{esc(view_note)}</p>' +
+            + summary_table(N) + f'<p class="table-note nack-view-note">{esc(view_note)}</p>' + late_block(L) +
             f'<p class="section-label">{esc(N["method"])}</p>{status}{scope}'
             f'<p class="note nack-additions-note"><strong>Additions.</strong> {esc(N["additions_note"])}</p>'
             "<p>Nackgammon has the rules of backgammon; only the starting position differs. Each setup was asked 200 "

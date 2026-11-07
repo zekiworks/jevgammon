@@ -1878,7 +1878,7 @@ def home(S) -> str:
     </section>
     {pays_section(S)}
     {close_b_section(S)}
-    {nack_section.section(S["nack"], *nack_views(S))}
+    {nack_section.section(S["nack"], *nack_views(S), S["nack_late"])}
     <p class="downloads" id="downloads">Download: <a href="data/results.json" download="results.json">results.json</a> · <a href="decisions/index.json" download="decisions.json">decisions.json</a></p>"""
 
 

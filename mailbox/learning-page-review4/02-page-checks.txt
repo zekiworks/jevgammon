@@ -1,0 +1,55 @@
+# (b) learning_page.py --check, at ad2fb4d. Started 2026-11-07 17:50:50 UTC
+
+## preregistration-default: python3 tools/site/learning_page.py --out /tmp/inv/page-preregistration-default --src /tmp/inv/fix-complete --check /tmp/inv/out-branch --test-set <test_set.json> 
+/tmp/inv/page-preregistration-default/learning/index.html
+checks: 0 failure(s)
+preregistration_only: True | validation: None
+results: None | lift/signal in data: [] | lessons: 0 | budget series: 0
+complete-only blocks in page: 
+top label: Pre-registration | heading: Learning from experience (pre-registered)
+
+## none: python3 tools/site/learning_page.py --out /tmp/inv/page-none --src /tmp/inv/state-none/learning --check /tmp/inv/out-branch --test-set <test_set.json> --with-results
+/tmp/inv/page-none/learning/index.html
+checks: 0 failure(s)
+preregistration_only: False | validation: None
+results: None | lift/signal in data: [] | lessons: 0 | budget series: 0
+complete-only blocks in page: 
+top label: Preliminary · running | heading: Learning from experience (preliminary, running)
+
+## dry-running: python3 tools/site/learning_page.py --out /tmp/inv/page-dry-running --src /tmp/inv/state-dry/learning --check /tmp/inv/out-branch --test-set <test_set.json> --with-results
+/tmp/inv/page-dry-running/learning/index.html
+checks: 0 failure(s)
+preregistration_only: False | validation: {'accepted': True, 'producer_complete': False, 'complete': False, 'problems': []}
+results: {'complete': False, 'series_total_done': 2, 'series_total_planned': 40} | lift/signal in data: [] | lessons: 0 | budget series: 0
+complete-only blocks in page: 
+top label: Preliminary · running | heading: Learning from experience (preliminary, running)
+
+## synthetic-running: python3 tools/site/learning_page.py --out /tmp/inv/page-synthetic-running --src /tmp/inv/fix-running --check /tmp/inv/out-branch --test-set <test_set.json> --with-results
+/tmp/inv/page-synthetic-running/learning/index.html
+checks: 0 failure(s)
+preregistration_only: False | validation: {'accepted': True, 'producer_complete': False, 'complete': False, 'problems': []}
+results: {'complete': False, 'series_total_done': 20, 'series_total_planned': 40} | lift/signal in data: [] | lessons: 50 | budget series: 5
+complete-only blocks in page: 
+top label: Preliminary · running | heading: Learning from experience (preliminary, running)
+
+## synthetic-complete: python3 tools/site/learning_page.py --out /tmp/inv/page-synthetic-complete --src /tmp/inv/fix-complete --check /tmp/inv/out-branch --test-set <test_set.json> --with-results
+/tmp/inv/page-synthetic-complete/learning/index.html
+checks: 0 failure(s)
+preregistration_only: False | validation: {'accepted': True, 'producer_complete': True, 'complete': True, 'problems': []}
+results: {'complete': True, 'series_total_done': 40, 'series_total_planned': 40} | lift/signal in data: ['learning_lift', 'paired_series', 'signal'] | lessons: 100 | budget series: 10
+complete-only blocks in page: id="learning-leaders" id="learning-lift" id="learning-signal" 
+top label: Complete | heading: Learning from experience (complete)
+
+## synthetic-rejected: python3 tools/site/learning_page.py --out /tmp/inv/page-synthetic-rejected --src /tmp/inv/fix-rejected --check /tmp/inv/out-branch --test-set <test_set.json> --with-results
+validation: learning-pilot.json: unknown key 'verdict'
+/tmp/inv/page-synthetic-rejected/learning/index.html
+checks: 0 failure(s)
+preregistration_only: False | validation: {'accepted': False, 'producer_complete': False, 'complete': False, 'problems': ["learning-pilot.json: unknown key 'verdict'"]}
+results: None | lift/signal in data: [] | lessons: 0 | budget series: 0
+complete-only blocks in page: 
+top label: Preliminary · running | heading: Learning from experience (preliminary, running)
+
+## the default build reads no results: files opened under the source or the test set while building
+['<src>/lessons_system.txt', '<src>/lessons_user.txt']
+
+# Finished 2026-11-07 17:51:01 UTC

@@ -880,8 +880,8 @@ def _limits() -> str:
 def _home_extras(extra: dict) -> str:
     """What B4 moves off the home page: what the input adds, learning from experience, routing and teams, tail risk."""
     return (_section("input", f"What the input adds {status_badge(EARLIER)}", extra["input"])
-            + _section("learning", f"Learning from experience {status_badge(NOT_MEASURED)}",
-                       "<p>Every decision is a separate request; models are not told how earlier games went.</p>")
+            + _section("learning", f"Learning from experience {status_badge('Running (preliminary)')}",
+                       "<p>Running (preliminary): see <a href=\"../learning/\">Learning across games</a>.</p>")
             + _section("routing", f"Routing and teams {status_badge(PENDING)}",
                        "<p>Which decisions a cheap model can handle before handing over to a strong one, and whether a team "
                        "picks better plays than its best member, wait for the shared-position answers. A team \"oracle\", "

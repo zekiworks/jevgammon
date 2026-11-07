@@ -12,7 +12,7 @@ import re
 
 import home as H
 import pages as P
-from common import ALL_NOTE, CONTENT, NA, NOT_MEASURED, count, esc, fmt, nm, pct
+from common import ALL_NOTE, CONTENT, NA, count, esc, fmt, nm, pct
 
 RELEASES = json.loads((CONTENT / "release_months.json").read_text())["models"]
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
@@ -87,7 +87,7 @@ def headline_rows(S) -> tuple[list, list]:
               f'</span></td>' if q.get("error_rate") is not None and not q.get("too_few") else f'<td class="num">{nm(NA)}</td>')
         cost = (f'<td class="num"><span class="cost-1k">${fmt(q["usd_per_1000"], 3)}</span><span class="cost-1m" '
                 f'data-usd="{q["usd_per_1000"]!r}">${fmt(q["usd_per_1000"], 3)}</span></td>'
-                if q.get("usd_per_1000") is not None else f'<td class="num">{nm(NOT_MEASURED)}</td>')
+                if q.get("usd_per_1000") is not None else P.cost_cell(S, ds, n, q))
         when = (f'<td class="hl-release"><a href="{esc(url)}">{month}</a></td>' if url else
                 f'<td class="hl-release"><span class="muted" title="No release date from the maker on record">{month}</span></td>')
         others = settings[model] - 1

@@ -1491,7 +1491,7 @@ def write_all(S, out: Path, base: str) -> None:
         description="Clear-risk scan of the backgammon benchmark (preliminary / partial): decisions where a risk or "
                     "safety is clearly better, per setup, checks, a rollout check and a partial model quiz.")
     import learning_page
-    put(learning_page.PATH, learning_page.TITLE, learning_page.body(S["learning"]),
+    put(learning_page.PATH, learning_page.title(S["learning"]), learning_page.body(S["learning"]),
         description=learning_page.DESCRIPTION)
     put("data/", "Data", data_page(S, out))
     put("decisions/", "Every decision", decisions_page(S, decisions_export.body()),

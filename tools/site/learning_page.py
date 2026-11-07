@@ -50,6 +50,7 @@ from method import spec_markdown  # noqa: E402
 PATH = P.TAB_LEARNING_PATH
 DATA = "data/v3/learning-pilot.json"
 TITLE = "Learning from experience (preliminary, running)"
+TITLE_COMPLETE = "Learning from experience (complete)"
 COMMITMENT = "Results will be published whichever way they go, including no lift."
 PLAN = ROOT / "mailbox/Learning pilot - plan 2026-11-07.md"
 # The pilot's files as snapshot.py copies them (STATE/learning): the build's only source besides the plan.
@@ -208,21 +209,57 @@ def shown_results(R: dict, complete: bool) -> dict:
     return out
 
 
+class TestSetRequired(RuntimeError):
+    """Results or lessons are present but the private evaluation set is missing, unreadable or not the one the results
+    were made with: the leakage check cannot run, so the build fails (only the no-results state builds without it)."""
+
+
+def rejected(problems: list) -> dict:
+    """The validation of a results file the site refused: every field present, nothing complete."""
+    return dict(accepted=False, producer_complete=False, complete=False, problems=problems)
+
+
+def is_complete(L) -> bool:
+    v = L["validation"]
+    return bool(v and v.get("complete"))
+
+
+def title(L) -> str:
+    """The page title and heading follow the validated status, like the top label."""
+    return TITLE_COMPLETE if is_complete(L) else TITLE
+
+
+def require_test_set(test_set: Path, why: str) -> str:
+    try:
+        return V.sha256(test_set)
+    except OSError as e:
+        raise TestSetRequired(f"{why}, but the evaluation set {test_set} is missing or unreadable ({e.strerror}): "
+                              "the leakage check cannot run") from None
+
+
 def read_results(src: Path, plan: dict, prompt: dict | None, test_set: Path) -> dict:
-    """results, validation, lessons and the budget arm's points from src, after learning_validate's checks."""
+    """results, validation, lessons and the budget arm's points from src, after learning_validate's checks. With a
+    results file or lesson files present, the evaluation set must be present and be the results' (TestSetRequired)."""
     path = src / "learning-pilot.json"
     none = dict(results=None, validation=None, lessons=[], budget=[])
     if not path.exists():
+        if any((src / "runs" / "lessons").glob("s*/lessons-g*.txt")):
+            require_test_set(test_set, "lesson files are present")
         return none
+    test_sha = require_test_set(test_set, "a results file is present")
     try:
         R = json.loads(path.read_text())
     except ValueError:
-        return none | dict(validation=dict(accepted=False, problems=["learning-pilot.json is not JSON"]))
-    test_sha = V.sha256(test_set) if test_set.exists() else None
+        return none | dict(validation=rejected(["learning-pilot.json is not JSON"]))
+    stated = R.get("protocol", {}).get("test_set_sha256") if isinstance(R, dict) and isinstance(
+        R.get("protocol"), dict) else None
+    if stated is not None and stated != test_sha:
+        raise TestSetRequired(f"the results were made with evaluation set {str(stated)[:12]}…, but {test_set} hashes "
+                              f"to {test_sha[:12]}…: the leakage check would test the wrong set")
     bad = (V.schema(R, prompt["sha256"] if prompt else None, plan["hashes"], test_sha) if isinstance(R, dict)
            else ["learning-pilot.json is not an object"])
     if bad:
-        return none | dict(validation=dict(accepted=False, problems=bad))
+        return none | dict(validation=rejected(bad))
     not_complete = V.completeness(R, src, test_sha) if R["complete"] else []
     files, lesson_bad = V.lessons_shown(R, src)
     complete = R["complete"] and not not_complete and not lesson_bad
@@ -478,18 +515,21 @@ def chart(L) -> str:
     if not vals:
         return ('<p class="note"><strong>No results yet.</strong> The chart fills in as series finish: error rate and '
                 'risks found before game 1, after game 5 and after game 10, one line per arm.</p>')
-    W, H, L0, R0, T, B, gap = 760, 300, 46, 12, 28, 40, 40
-    pw = (W - L0 - R0 - gap - L0) / 2
-    parts = []
-    for i, (key, label, unit) in enumerate(CHART_MEASURES):
+    # One small chart per measure, side by side on wide screens and stacked on phones (bg.css .lp-charts), so each
+    # keeps readable text at 390 px.
+    W, H, L0, R0, T, B = 380, 260, 46, 30, 28, 40
+    pw = W - L0 - R0
+    svgs = []
+    for key, label, unit in CHART_MEASURES:
         ys = [v for _, _, k, v in vals if k == key]
         if not ys:
             continue
+        parts = []
         lo, hi = min(ys), max(ys)
         step = nice_step(hi - lo)
         pad = step if lo == hi else 0
         lo, hi = math.floor(lo / step) * step - pad, math.ceil(hi / step) * step + pad
-        x0 = L0 + i * (pw + gap + L0)
+        x0 = L0
         x = lambda c, x0=x0: x0 + pw * CHECKPOINTS.index(c) / (len(CHECKPOINTS) - 1)  # noqa: E731
         y = lambda v, lo=lo, hi=hi: H - B - (H - B - T) * (v - lo) / ((hi - lo) or 1)  # noqa: E731
         parts.append(f'<text x="{x0:.1f}" y="{T - 12}" class="lp-title">{esc(label)}</text>')
@@ -509,10 +549,11 @@ def chart(L) -> str:
             for c, val in pts:
                 parts.append(f'<circle class="lp-dot lp-{esc(arm)}" cx="{x(c):.1f}" cy="{y(val):.1f}" r="4">'
                              f'<title>{esc(arm)}, {esc(CHECKPOINT_LABEL[c])}: {fmt(val, 1)}{unit}</title></circle>')
+        svgs.append(f'<svg class="chart-svg" data-chart="learning-{esc(key)}" viewBox="0 0 {W} {H}" role="img" '
+                    f'aria-label="{esc(label)}: the evaluation set before game 1, after game 5 and after game 10, one '
+                    f'line per arm">' + "".join(parts) + "</svg>")
     legend = "".join(f'<span><i class="swatch lp-swatch lp-{esc(a)}"></i>{esc(a)}</span>' for a in arms)
-    return (f'<figure class="lp-chart"><svg class="chart-svg" data-chart="learning" viewBox="0 0 {W} {H}" '
-            f'role="img" aria-label="Error rate and risks found on the evaluation set, before game 1, after game 5 and '
-            f'after game 10, one line per arm">' + "".join(parts) + "</svg>"
+    return (f'<figure class="lp-chart"><div class="lp-charts">' + "".join(svgs) + "</div>"
             f'<p class="chart-legend">{legend}</p><p class="table-note">Means over each arm\'s finished series. Before '
             'game 1 is one shared run with no context; control has no later test rounds. No lift or verdict is drawn '
             'until every planned series is done.</p></figure>')
@@ -560,8 +601,8 @@ def body(L) -> str:
                 if L["redacted"] else "")
     status = f'<div class="note">{spec_markdown(plan["status"])}</div>' if plan["status"] else ""
     # The top label follows the validated status: "Complete" only when learning_validate accepts complete.
-    label = "Complete" if L["validation"] and L["validation"]["complete"] else "Preliminary · running"
-    head = (f'<header class="card hero page-head"><p class="eyebrow">{label}</p><h1>{esc(TITLE)}</h1>'
+    label = "Complete" if is_complete(L) else "Preliminary · running"
+    head = (f'<header class="card hero page-head"><p class="eyebrow">{label}</p><h1>{esc(title(L))}</h1>'
             f'<p class="intro"><strong>{esc(plan["commitment"])}</strong></p>'
             f'<p class="intro">The pre-registered plan, the lesson prompt and the results as they come in. Data: '
             f'<a href="../{DATA}">learning-pilot.json</a>.</p>{status}'
@@ -582,7 +623,7 @@ def render(out: Path, L: dict) -> Path:
     S = site_state(L)
     page = out / PATH / "index.html"
     page.parent.mkdir(parents=True, exist_ok=True)
-    page.write_text(P.layout(S, site_base(), PATH, TITLE, body(L), description=DESCRIPTION))
+    page.write_text(P.layout(S, site_base(), PATH, title(L), body(L), description=DESCRIPTION))
     (out / DATA).parent.mkdir(parents=True, exist_ok=True)
     (out / DATA).write_text(json.dumps(L, indent=1, ensure_ascii=False))
     return page
@@ -630,10 +671,7 @@ def check(out: Path, site: Path, L: dict, test_set: Path | None = None) -> list[
         m = checks.scan_file(p)
         if m:
             bad.append(f"{p.relative_to(out)}: banned string {m.group(0)!r}")
-    test_set = test_set or TEST_SET
-    if not test_set.exists():
-        print(f"note: {test_set} not found: the evaluation-set check did not run", file=sys.stderr)
-    return bad + checks.check_learning(out, test_set)
+    return bad + checks.check_learning(out, test_set or TEST_SET)
 
 
 def main():
@@ -647,7 +685,11 @@ def main():
                     help="the private evaluation set: its hash for the results' validation, its positions for the check")
     a = ap.parse_args()
     out = Path(a.out) if a.out else Path(tempfile.mkdtemp(prefix="learning-page-"))
-    L = data(Path(a.plan), Path(a.src), Path(a.test_set))
+    try:
+        L = data(Path(a.plan), Path(a.src), Path(a.test_set))
+    except TestSetRequired as e:
+        print(f"build failed: {e}", file=sys.stderr)
+        sys.exit(2)
     if L["redacted"]:
         print(f"warning: {L['redacted']} private address(es) in the plan withheld", file=sys.stderr)
     if L["validation"] and L["validation"]["problems"]:

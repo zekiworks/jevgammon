@@ -365,8 +365,9 @@ def _test_set_strings(path: Path) -> list[str]:
 def check_learning(out: Path, test_set: Path | None = None) -> list[str]:
     """The learning page (learning_page.py; plan §9): (a) no learning lift, signal, verdict or Learning-tab leaders
     block, in the page or its data file, unless the site accepted the results as complete; (b) no evaluation-set
-    position (id, board key or board) in the page or its data file. (b) runs where the private test set
-    (learning_page.TEST_SET) is present (the build machine)."""
+    position (id, board key or board) in the page or its data file. (b) needs the private test set
+    (learning_page.TEST_SET) whenever results, a validation or lessons are present: missing or unreadable is a failure,
+    not a skip; only the no-results state passes without it."""
     from learning_page import COMPLETE_ONLY_IDS, COMPLETE_ONLY_KEYS, DATA, PATH, TEST_SET
     test_set = test_set or TEST_SET
     page, data = out / PATH / "index.html", out / DATA
@@ -381,11 +382,18 @@ def check_learning(out: Path, test_set: Path | None = None) -> list[str]:
         bad += [f"{PATH}: block #{i} shown before the results are complete" for i in COMPLETE_ONLY_IDS if i in ids]
         bad += [f"{DATA}: {k} published before the results are complete" for k in COMPLETE_ONLY_KEYS
                 if k in (L["results"] or {})]
-    if test_set.exists():
-        texts = {PATH: html.unescape(page.read_text()), DATA: data.read_text()}
-        for s in _test_set_strings(test_set):
-            hit = re.compile(r"(?<![\w-])" + re.escape(s) + r"(?!\w)")
-            bad += [f"{name}: evaluation-set position {s[:24]!r}\u2026" for name, t in texts.items() if hit.search(t)]
+    no_results = L.get("results") is None and not L.get("validation") and not L.get("lessons")
+    try:
+        strings = _test_set_strings(test_set)
+    except (OSError, ValueError, KeyError) as e:
+        if not no_results:
+            bad.append(f"{PATH}: results or lessons present but the evaluation set is missing or unreadable "
+                       f"({type(e).__name__}): the leakage check cannot run")
+        return bad
+    texts = {PATH: html.unescape(page.read_text()), DATA: data.read_text()}
+    for s in strings:
+        hit = re.compile(r"(?<![\w-])" + re.escape(s) + r"(?!\w)")
+        bad += [f"{name}: evaluation-set position {s[:24]!r}\u2026" for name, t in texts.items() if hit.search(t)]
     return bad
 
 

@@ -66,3 +66,12 @@ See `PAGE-STATUS.md` in this folder, if it was written in time.
    - Then `pilot.py summary` and `python3 workspace/learning-pilot/report.py`.
    - If the smoke is technically clean and the protocol is unchanged, continue with `--series 4-10`.
    - Results go to `mailbox/Learning pilot - results 2026-11-07.md`. The table is aggregates only.
+
+## Added (Main): Method page status
+
+The Method section "Learning from experience" now reads "Running (preliminary): see Learning across games", with a link to `../learning/` and no results text. Its badge is `status_badge('Running (preliminary)')`, styled by `.status-running`. It replaces "Not measured".
+
+- Committed on `learning-page` (the commit after 7033cd3; see `git log`).
+- In review3, this is an **expected** change in `method/index.html`. `scripts/invariance.py` must classify it with a reason rather than leave it unexplained.
+- It must also show in the screenshots and the README.
+- The "Memory" limit in Method ("models are not told how earlier games went") stays: it describes the leagues.

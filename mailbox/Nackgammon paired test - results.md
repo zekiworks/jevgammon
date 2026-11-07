@@ -487,3 +487,28 @@ OpenRouter: $0 for these runs. GPU: none.
 ### Publication 2026-10-29
 
 Published on the site with Can's go of 2026-10-29: `tools/site/nack_paired_publish.py` now reads `positions/nack-paired/results-2026-10-28/results.json` (primary comparisons both ways; the §10.14(g) additions marked; Gemini 4 Argon (low) exploratory; setups under their shown names, database names as aliases), with the R1–R3 corrections of `d125adb` kept. One text-only change to that results file: its `groups_rule` string is replaced by the corrected §10.14(e)/(f) disclosure (the scorer's `NOTE_E` since `d125adb`, the same string as in the frozen 2026-10-27 file); every other key and number is unchanged. Its sha256 is now `059663c7377ecc4baec862a0570cd31ba26519471b216702771d3fb5cad33075` (was `1c8af11dce2b2e18…`). No rescoring, no model calls.
+
+## Update 2026-11-07: late entries, exploratory (§10.14(i))
+
+Written 2026-11-07 by the run's agent (NackLate). **Not published.** The text above, the frozen results (`results/`) and the 2026-10-28 additions (`results-2026-10-28/`) are unchanged. As a check, a fresh report from `smoke/nack-paired.db` with `smoke/nack-engine-check-g.db` reproduces `results-2026-10-28/` byte for byte (results.json and SVG). The late entries form their own group of setups. They are separate from the 2026-10-28 additions and are not merged into that note.
+
+**Timing (stated wherever these results appear):** these 7 setups were added after this test's results had been computed and read. The Method note §10.14(i) (`6a64eb8`) was committed and pushed before their first call. They are exploratory: no group, no primary comparison, M unchanged. They use the same pairs, prompts, option-order seed, stored settings, invalid-answer rule, output-limit rule, stopping rule and scorer as every setup. REAX 1.3 was not run, because it needs Can's OK to reuse its container exception.
+
+Results file: `positions/nack-paired/results-late-2026-11-07/results.json` (sha256 `4582a56b54965d92…`). It was built by `NACK_DB=smoke/nack-paired-late.db NACK_ROSTER=leagues/nack-paired-late.json tools/v3/nack_paired_score.py report --rollouts smoke/nack-engine-check-late.db --out positions/nack-paired/results-late-2026-11-07`.
+
+All 7 were extended by the frozen first look: 1,000 answers each (500 pairs), 0 failed, 0 invalid, 0 cut off. The final look is on 500 pairs; PR = 500 × mean 2-ply loss; the interval is 97.5%; "drop" = Nackgammon − standard.
+
+| Setup | Route | Standard PR | Nackgammon PR | Drop [97.5%] | Label | First look (main 200): drop [97.5%] |
+|---|---|---|---|---|---|---|
+| SubQ Snap 1.1 | SubQ API | 31.25 | 32.87 | +1.62 [−7.07, +10.07] | unclear | −2.25 [−18.09, +11.88] |
+| Drex Max 1.1 | Nace API | 28.40 | 29.09 | +0.69 [−6.03, +7.48] | unclear | −3.63 [−12.96, +6.07] |
+| Drex 2.0 | Nace API | 29.39 | 31.35 | +1.95 [−6.39, +9.95] | unclear | −5.77 [−20.96, +6.76] |
+| Base Labs Elephant-1 | local GPU | 25.23 | 33.89 | +8.66 [+0.42, +16.02] | **worse** | +5.00 [−10.13, +17.27] |
+| Base Labs Mammoth-1 | local GPU | 22.97 | 24.81 | +1.84 [−5.72, +8.72] | unclear | −3.66 [−18.14, +7.38] |
+| Drex Max v1 | local GPU | 26.21 | 27.92 | +1.71 [−6.67, +9.37] | unclear | +1.35 [−14.05, +14.41] |
+| Drex 2.0 (local) | local GPU | 29.19 | 30.79 | +1.60 [−6.90, +9.75] | unclear | −5.06 [−20.32, +7.69] |
+| Random (yardstick) | | 85.16 | 81.43 | −3.73 [−11.43, +3.74] | | |
+
+- **SubQ Snap 1.1 = SubQ Snap Preview on this test.** On all 1,000 positions its chosen letters and probability vectors are identical to the stored SubQ Snap Preview answers of 2026-10-27, with the same prompt, option order and seed (bus #2695 context).
+- **Engine check (§10.12, 40 pairs).** 3 chosen plays had no rollout yet (3 positions). They were rolled out alone with the §10.12 settings, except with 4 threads instead of 8 (Main: the CPU was shared), and added to a copy: `smoke/nack-engine-check-late.db`, 445 plays (the 442 earlier unchanged). Drop at 2-ply → rollout: SubQ Snap 1.1 18.67 → 16.16; Drex Max 1.1 8.66 → 5.97; Drex 2.0 8.64 → 5.04; Elephant-1 21.93 → 19.37; Mammoth-1 9.50 → 5.67; Drex Max v1 11.61 → 9.05; Drex 2.0 (local) 10.34 → 8.65. No sign changes.
+- **Money billed: $0.359** against a cap of $0.54 (Zeki #2656). SubQ $0.112. Nace (pre-send ledger `smoke/nack-paired-late-nace-budget.db`, cap $0.39): Drex Max 1.1 $0.084 at the $0.03 launch price, Drex 2.0 $0.163. The `cost_usd` in the answers for Drex Max 1.1 ($0.168) is at the $0.06 list price. The local setups' costs in results.json are list-price equivalents, not billed. The GPU was GPU-7a85a208 (index 2), one setup at a time, 17:44–18:17 UTC.

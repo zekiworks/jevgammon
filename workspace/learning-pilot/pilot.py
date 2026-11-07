@@ -78,6 +78,13 @@ def now():
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
+def write_atomic(path: Path, text: str):
+    """Write then rename, so the site's snapshot never copies a half-written file."""
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(text)
+    tmp.replace(path)
+
+
 def lesson_prompt_sha256() -> str:
     return hashlib.sha256(LESSONS_SYSTEM.read_bytes() + LESSONS_USER.read_bytes()).hexdigest()
 
@@ -338,7 +345,7 @@ def write_lessons(decs, results, exclude, arm, s, g):
         usage, finish = out.get("usage", {}), out["choices"][0].get("finish_reason")
     text, cut = limit_lessons(raw)
     d = run_dir(arm, s)
-    (d / f"lessons-g{g:02d}.txt").write_text(text + "\n")
+    write_atomic(d / f"lessons-g{g:02d}.txt", text + "\n")
     (d / f"lessons-g{g:02d}.json").write_text(json.dumps(dict(prompt_sha256=lesson_prompt_sha256(), request=body,
                                                               response=out, raw=raw, kept=text, **cut), indent=1))
     log(arm, s, "lessons_call", game=g, seconds=round(secs, 2), input_tokens=usage.get("prompt_tokens"),
@@ -497,7 +504,7 @@ def run_t0():
     if (d / "aggregate.json").exists():
         return
     info = run_eval(T0_NAME, "", d, parallel=4)
-    (d / "aggregate.json").write_text(json.dumps(dict(info, finished_at=now(), metrics=eval_metrics(T0_NAME)), indent=1))
+    write_atomic(d / "aggregate.json", json.dumps(dict(info, finished_at=now(), metrics=eval_metrics(T0_NAME)), indent=1))
 
 
 def run_series(arm, s):
@@ -591,7 +598,7 @@ def write_aggregate(arm, s, wall):
                        for e in ev if e["event"] == "lessons_call"],
         restarts=sum(e["event"] == "series_restarted" for e in ev), lesson_prompt_sha256=lesson_prompt_sha256(),
         cost_usd=0.0)
-    (d / "aggregate.json").write_text(json.dumps(agg, indent=1))
+    write_atomic(d / "aggregate.json", json.dumps(agg, indent=1))
 
 
 # --- Summary -----------------------------------------------------------------------------------------------
@@ -690,7 +697,7 @@ def summary(planned: int):
             lift[arm] = row
         out.update(signal=signal, learning_lift=lift, paired_series=series)
     OUTPUTS.mkdir(exist_ok=True)
-    (OUTPUTS / "learning-pilot.json").write_text(json.dumps(out, indent=1))
+    write_atomic(OUTPUTS / "learning-pilot.json", json.dumps(out, indent=1))
     write_records(aggs, t0)
     return out
 

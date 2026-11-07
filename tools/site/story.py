@@ -27,20 +27,14 @@ def caveat(text: str, anchor: str = "limits") -> str:
 # --- The headline table ------------------------------------------------------------------------------------------
 
 def model_of(S, lg, n) -> str:
-    return H.type_meta(S, lg["dataset"], n).get("model") or n
+    return H.model_of(S, lg["dataset"], n)
 
 
 def best_settings(S) -> list:
-    """(league, setup name, risk metrics) of each model's setup with the highest stored risk judgement, best first.
-    Programs are not models; a setup without a risk judgement is left out (Too few decisions)."""
-    best = {}
-    for lg, n, r, ref in H.all_rows(S):
-        if ref or r["judgement"] is None:
-            continue
-        m = model_of(S, lg, n)
-        if m not in best or r["judgement"] > best[m][2]["judgement"]:
-            best[m] = (lg, n, r)
-    return sorted(best.values(), key=lambda x: (-x[2]["judgement"], x[1]))
+    """(league, setup name, risk metrics) of each model's setup with the highest stored risk judgement (H.best_per_model,
+    the rule shared with the Nackgammon per-model view), best first. Programs are not models; a setup without a risk
+    judgement is left out (Too few decisions)."""
+    return sorted(H.best_per_model(S).values(), key=lambda x: (-x[2]["judgement"], x[1]))
 
 
 def release(model: str) -> tuple[str, str | None]:

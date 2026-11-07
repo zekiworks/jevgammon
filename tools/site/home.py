@@ -73,29 +73,60 @@ def type_meta(S, ds, name) -> dict:
 
 
 NACK_TYPES = json.loads((CONTENT / "nack_setup_types.json").read_text())["setups"]
+# The model types a Nackgammon setup may have, and the key they file under (Zeki #2737: anything else fails the
+# build). The first four are setups.json's; "chat model" is content/nack_setup_types.json's, for a chat model that
+# played in no league (its answer form is not on record).
+NACK_KINDS = {"decision model": "decision", "chat model, answer-letter probabilities": "chat",
+              "chat model, one letter": "chat", "chat model": "chat", "program": "program"}
+
+
+def model_of(S, ds, name) -> str:
+    """The model a setup belongs to (setups.json "model", via type_meta for a ladder move); else its own name."""
+    return type_meta(S, ds, name).get("model") or name
+
+
+def best_per_model(S, eligible=None) -> dict:
+    """{model: (league, setup name, risk metrics)}: each model's setup with the highest stored All-leagues risk
+    judgement; on an exact tie the first in league order (all_rows' order) is kept. Programs and setups without a risk
+    judgement are left out; eligible(league, name), when given, restricts the candidates. The one rule behind the
+    leaderboard (story.best_settings) and the Nackgammon per-model view (nack_views)."""
+    best = {}
+    for lg, n, r, ref in all_rows(S):
+        if ref or r["judgement"] is None or (eligible and not eligible(lg, n)):
+            continue
+        m = model_of(S, lg["dataset"], n)
+        if m not in best or r["judgement"] > best[m][2]["judgement"]:
+            best[m] = (lg, n, r)
+    return best
 
 
 def nack_views(S) -> tuple[dict, list]:
     """The Nackgammon section's views: each setup's model type (decision / chat / program; its setups.json entry, a
-    league entry first as for a ladder move, else content/nack_setup_types.json for a setup that played in no league),
-    and the one setting per model of the per-model view: the model's setting with the highest stored All-leagues risk
-    judgement (the leaderboard's rule, from league play, never from this test). A model with one setting keeps it."""
+    league entry first as for a ladder move, else content/nack_setup_types.json for a setup that played in no league;
+    a missing or unknown type fails the build), and the one setting per model of the per-model view: best_per_model,
+    the leaderboard's rule, over the settings this test asked (from league play, never from this test)."""
     N = S["nack"]
-    judged = {n: r["judgement"] for lg, n, r, ref in all_rows(S) if not ref and r["judgement"] is not None}
     kinds, models = {}, {}
     for n in N["setups"]:
-        m = (next((m for (d, x), m in S["setups_meta"].items() if x == n and d.startswith("league-")), None)
-             or next((m for (d, x), m in S["setups_meta"].items() if x == n), None) or NACK_TYPES.get(n))
-        if m is None:
-            raise ValueError(f"Nackgammon setup {n!r}: no model type (setups.json or content/nack_setup_types.json)")
-        kinds[n] = kind(m)
+        lg = next((d for (d, x) in S["setups_meta"] if x == n and d.startswith("league-")), None)
+        m = (type_meta(S, lg, n) if lg else
+             next((m for (d, x), m in S["setups_meta"].items() if x == n), None) or NACK_TYPES.get(n))
+        t = (m or {}).get("model_type")
+        if t not in NACK_KINDS:
+            raise ValueError(f"Nackgammon setup {n!r}: model type {t!r} is not one of {sorted(NACK_KINDS)} "
+                             "(setups.json or content/nack_setup_types.json)")
+        kinds[n] = NACK_KINDS[t]
         if kinds[n] != "program":
-            models.setdefault(m.get("model") or n, []).append(n)
+            models.setdefault(model_of(S, lg, n) if lg else (m.get("model") or n), []).append(n)
+    best = best_per_model(S, lambda lg, n: n in N["setups"])
     chosen = []
     for model, names in models.items():
-        if len(names) > 1 and any(judged.get(x) is None for x in names):
-            raise ValueError(f"Nackgammon model {model!r}: a setting without a league risk judgement among {names}")
-        chosen.append(max(names, key=lambda x: (judged.get(x) or 0, x)))
+        if model in best:
+            chosen.append(best[model][1])
+        elif len(names) == 1:
+            chosen.append(names[0])  # one setting, no league risk judgement (e.g. a setup that played in no league)
+        else:
+            raise ValueError(f"Nackgammon model {model!r}: several settings {names} and none with a league risk judgement")
     return kinds, chosen
 
 

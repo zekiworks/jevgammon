@@ -1022,6 +1022,13 @@ def check_inputs():
 def run(key, until=None, balance_reader=openrouter_balance):
     """Runs the model's next steps in order; returns 0 (done or reached `until`), STOP or PAUSE."""
     m = MODELS[key]
+    hold = mdir(key) / "hold.json"  # an operator hold (e.g. shared-balance priority): pause before the next step
+    if hold.exists():
+        why = json.loads(hold.read_text())["reason"]
+        write_atomic(mdir(key) / "paused.json", json.dumps(dict(at=now(), reason=why), indent=1))
+        log(key, "paused", reason=why)
+        print(f"PAUSED {key}: {why}", file=sys.stderr)
+        return PAUSE
     check_inputs()
     mdir(key).mkdir(parents=True, exist_ok=True)
     lock = open(mdir(key) / "lock", "w")
@@ -1034,14 +1041,6 @@ def run(key, until=None, balance_reader=openrouter_balance):
         lock.close()
         return STOP
     (mdir(key) / "paused.json").unlink(missing_ok=True)
-    hold = mdir(key) / "hold.json"  # an operator hold (e.g. shared-balance priority): pause before the next step
-    if hold.exists():
-        why = json.loads(hold.read_text())["reason"]
-        write_atomic(mdir(key) / "paused.json", json.dumps(dict(at=now(), reason=why), indent=1))
-        log(key, "paused", reason=why)
-        print(f"PAUSED {key}: {why}", file=sys.stderr)
-        lock.close()
-        return PAUSE
     ensure_runner_db(key)
     bind_plan(key)
     if m["lane"] == "local" and not DRY:

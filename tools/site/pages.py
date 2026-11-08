@@ -798,6 +798,9 @@ LATE_ABOUT = ("A late entry joins an original league table after it was played a
               "once, in matches of its own. Its games count in no standings table, no league table, no Hype Cup input "
               "and no other setup's numbers. The numbers here come from its own late-entry games only, computed as for "
               "a setup in a league.")
+# On About and Leagues only (Zeki #2930, explaining Ümit #2921).
+LATE_RANKED = ("Late entries are ranked on the risk leaderboard; they do not change league match-points standings, "
+               "Cups, or other setups' results.")
 LATE_METHOD = ("Error rate and risk judgement: 95% intervals, whole games resampled. Ability d\u2032 and caution c at "
                "the 0.001 margin: rates corrected by adding 0.5 to the counts and 1 to the totals; 95% intervals, blocks "
                "of two seat-swapped games resampled. Cut off: answers that stopped at an output limit the request sent "
@@ -944,7 +947,7 @@ def late_entries_section(S, rel) -> str:
                     + f'<td>{c["route"]}</td></tr>')
         results.append(f'<h3 id="late-{e["slug"]}">{esc(e["name"])}: results per opponent</h3>' + late_results(e, rel))
     return (f'<section class="card" id="late-entries" data-dataset="{LATE_ENTRY}"><div class="section-head">'
-            f'<h2>Late entries (not in standings)</h2></div><p class="note">{esc(LATE_ABOUT)}</p>'
+            f'<h2>Late entries (not in standings)</h2></div><p class="note">{esc(LATE_ABOUT)} {esc(LATE_RANKED)}</p>'
             + SWIPE + table(LATE_HEAD, rows, "Late entries: each one's own late-entry games; never ranked",
                             attrs=f' data-dataset="{LATE_ENTRY}"')
             + "".join(results)
@@ -1528,7 +1531,7 @@ def about_page(S, method_html: str) -> str:
                   f'<ul class="columns">{method_links}</ul>',
         "data": f'{DOWNLOADS}<p>Every data file, with its size and hash: <a href="../data/">Data</a>.</p>',
         "how-to-run": recompute("../data/thresholds.json"),
-        "late-entries": f'<p>{esc(LATE_ABOUT)}</p><p>{esc(LATE_METHOD)}</p><p>Every late entry, its numbers and its '
+        "late-entries": f'<p>{esc(LATE_ABOUT)} {esc(LATE_RANKED)}</p><p>{esc(LATE_METHOD)}</p><p>Every late entry, its numbers and its '
                         f'matches: <a href="../leagues/#late-entries">Leagues: Late entries</a>.</p>',
         "open-questions": f'<p>What is not settled yet: every analysis in the plan with its status, and the limits on '
                           f'the <a href="../method/#limits">Method page</a>.</p>{status_list(S)}',

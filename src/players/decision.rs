@@ -303,6 +303,7 @@ impl DecisionClient {
     pub async fn warm_up(&self) -> Result<Duration> {
         let started = Instant::now();
         let body = self.body(
+            QUESTION,
             "Warm-up request before a backgammon match.",
             "Answer yes.",
             &[
@@ -351,48 +352,50 @@ impl DecisionClient {
         })
     }
 
-    /// `plays`: `(notation, description)`; the notation identifies the option in the answer
-    /// and the description is the option text the model reads.
-    fn body(&self, state: &str, instructions: &str, plays: &[(String, String)]) -> Value {
+    /// `options`: `(value, description)`; the value identifies the option in the answer and
+    /// the description is the option text the model reads. `name` names the question.
+    fn body(&self, name: &str, state: &str, instructions: &str, options: &[(String, String)]) -> Value {
         let mut body = Map::new();
         if let Some(model) = &self.model {
             body.insert("model".into(), model.as_str().into());
         }
         if self.service.openai_format {
-            let choices: Vec<Value> = plays
+            let choices: Vec<Value> = options
                 .iter()
                 .map(|(play, text)| json!({"value": play, "description": text}))
                 .collect();
             body.insert("input".into(), state.into());
             body.insert(
                 "questions".into(),
-                json!([{"type": "choice", "name": QUESTION, "instructions": instructions, "choices": choices}]),
+                json!([{"type": "choice", "name": name, "instructions": instructions, "choices": choices}]),
             );
         } else {
             // Keys keep the shown order (serde_json's `preserve_order`).
             let mut criteria = Map::new();
-            for (play, text) in plays {
+            for (play, text) in options {
                 criteria.insert(play.clone(), text.as_str().into());
             }
-            body.insert("state".into(), state.into());
-            body.insert(
-                "questions".into(),
-                json!({QUESTION: {"type": "choice", "instructions": instructions, "criteria": criteria}}),
+            let mut questions = Map::new();
+            questions.insert(
+                name.to_owned(),
+                json!({"type": "choice", "instructions": instructions, "criteria": criteria}),
             );
+            body.insert("state".into(), state.into());
+            body.insert("questions".into(), Value::Object(questions));
         }
         Value::Object(body)
     }
 
-    /// The answer object for the play question, in either response format.
-    fn answer<'v>(&self, value: &'v Value) -> Option<&'v Value> {
+    /// The answer object for question `name`, in either response format.
+    fn answer<'v>(&self, value: &'v Value, name: &str) -> Option<&'v Value> {
         if self.service.openai_format {
             value
                 .get("answers")?
                 .as_array()?
                 .iter()
-                .find(|a| a.get("name").and_then(Value::as_str) == Some(QUESTION))
+                .find(|a| a.get("name").and_then(Value::as_str) == Some(name))
         } else {
-            value.pointer(&format!("/answers/{QUESTION}"))
+            value.get("answers")?.get(name)
         }
     }
 
@@ -432,39 +435,11 @@ impl DecisionClient {
             .iter()
             .map(|&i| (req.notations[i].clone(), option_text(req, i)))
             .collect();
-        let body = self.body(&state(req), instructions(req), &plays);
-        let started = Instant::now();
-        let retry_before = req.retry.get();
-        let text = self.send(&body, req.retry).await?;
-        let latency_ms = started
-            .elapsed()
-            .saturating_sub(req.retry.get() - retry_before)
-            .as_millis() as u64;
-        let value: Option<Value> = serde_json::from_str(&text).ok();
-        let usage = |key: &str| {
-            value
-                .as_ref()
-                .and_then(|v| v.pointer(&format!("/usage/{key}")))
-                .and_then(Value::as_u64)
-                .unwrap_or(0)
-        };
-        decision.input_tokens += usage("input_tokens");
-        decision.output_tokens += usage("output_tokens");
-        let answer = value.as_ref().and_then(|v| self.answer(v));
-        let refused = answer.and_then(|a| a.get("type")).and_then(Value::as_str) == Some("refusal");
-        let choice = answer
-            .filter(|_| !refused)
-            .and_then(|a| a.get("choice"))
-            .and_then(Value::as_str)
-            .and_then(|choice| shown.iter().copied().find(|&i| req.notations[i] == choice));
-        let error = match (&value, refused, choice) {
-            (None, _, _) => Some("response is not JSON".to_owned()),
-            (_, true, _) => Some("refusal".to_owned()),
-            (_, _, None) => Some(format!("no {QUESTION} choice among the candidates")),
-            _ => None,
-        };
+        let (choice, probabilities) = self
+            .ask(QUESTION, &state(req), instructions(req), &plays, req.retry, decision)
+            .await?;
+        let choice = choice.and_then(|choice| shown.iter().copied().find(|&i| req.notations[i] == choice));
         if choice.is_some() {
-            let probabilities = answer.map(|a| self.probabilities(a)).unwrap_or_default();
             decision.probabilities = shown
                 .iter()
                 .filter_map(|&i| {
@@ -477,13 +452,65 @@ impl DecisionClient {
             decision.probability_source =
                 (!decision.probabilities.is_empty()).then_some("decision");
         }
+        Ok(choice)
+    }
+
+    /// One choice question `name` over `options` (`(value, text)`, in the shown order): the
+    /// chosen value (`None` for an invalid answer: a refusal, a reply that is not JSON or names
+    /// no option) and the service's probabilities by value. The exchange and tokens go to
+    /// `decision`.
+    pub async fn ask(
+        &self,
+        name: &str,
+        state: &str,
+        instructions: &str,
+        options: &[(String, String)],
+        retry: &RetryTime,
+        decision: &mut Decision,
+    ) -> Result<(Option<String>, Vec<(String, f64)>)> {
+        let body = self.body(name, state, instructions, options);
+        let started = Instant::now();
+        let retry_before = retry.get();
+        let text = self.send(&body, retry).await?;
+        let latency_ms = started
+            .elapsed()
+            .saturating_sub(retry.get() - retry_before)
+            .as_millis() as u64;
+        let value: Option<Value> = serde_json::from_str(&text).ok();
+        let usage = |key: &str| {
+            value
+                .as_ref()
+                .and_then(|v| v.pointer(&format!("/usage/{key}")))
+                .and_then(Value::as_u64)
+                .unwrap_or(0)
+        };
+        decision.input_tokens += usage("input_tokens");
+        decision.output_tokens += usage("output_tokens");
+        let answer = value.as_ref().and_then(|v| self.answer(v, name));
+        let refused = answer.and_then(|a| a.get("type")).and_then(Value::as_str) == Some("refusal");
+        let choice = answer
+            .filter(|_| !refused)
+            .and_then(|a| a.get("choice"))
+            .and_then(Value::as_str)
+            .filter(|choice| options.iter().any(|(v, _)| v == choice))
+            .map(str::to_owned);
+        let error = match (&value, refused, &choice) {
+            (None, _, _) => Some("response is not JSON".to_owned()),
+            (_, true, _) => Some("refusal".to_owned()),
+            (_, _, None) => Some(format!("no {name} choice among the candidates")),
+            _ => None,
+        };
+        let probabilities = match &choice {
+            Some(_) => answer.map(|a| self.probabilities(a)).unwrap_or_default(),
+            None => Vec::new(),
+        };
         decision.exchanges.push(Exchange {
             request: body.to_string(),
             response: Some(text),
             error,
             latency_ms,
         });
-        Ok(choice)
+        Ok((choice, probabilities))
     }
 }
 

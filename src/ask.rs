@@ -656,7 +656,7 @@ fn store(
 
 /// The chosen players of a config (every player when `setups` is empty); an error for a name
 /// the config does not hold.
-fn chosen_players(
+pub(crate) fn chosen_players(
     config: &LeagueConfig,
     path: &Path,
     setups: &[String],

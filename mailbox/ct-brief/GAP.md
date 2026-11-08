@@ -30,7 +30,7 @@ the brief changes. The branch changes only what is not **done**.
 | b Release-date chart, documented months only, heading only if data shows it | missing | missing | chart; heading **neutral** ("Risk judgement by release date") |
 | c Clear risk kept | yes | done | link to Clear risk (preliminary) instead of Method |
 | d Reasoning across models with ≥2 settings | missing | missing | chart over the 9 such models; heading **neutral** ("What thinking adds") |
-| e Nackgammon, Random as reference, keep "unclear means…" | paired test section on home (no finding heading) | partly | finding section with the test's own chart; heading "A new starting position: no clear drop in any group"; the full test moved to its own page |
+| e Nackgammon, Random as reference, keep "unclear means…" | paired test section on home (no finding heading) | partly | finding section with the test's own chart; neutral heading "A new starting position" (Zeki #2961: the data test only between-group differences); the full test moved to its own page |
 | f Learning status + chart | missing on home | missing | status line, the published verdict sentence, the risks-found chart |
 | "How the scores work": 5 bullets | "How the scoring works": 5 Method quotes | conflict | Ümit's 5 bullets; the Method quotes moved to About under "How the scores work" |
 | Footer About · Method · Data · GitHub | downloads + version only | missing | footer link row on every page (GitHub = https://github.com/zekiworks/jevgammon, public) |

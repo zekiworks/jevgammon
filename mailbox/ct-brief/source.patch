@@ -973,7 +973,7 @@ index f76278a..80c525d 100644
 +        description="About the backgammon benchmark: backgammon in one page, how the benchmark works, how the scores "
 +                    "work, the leaderboard rules, the method, the data, how to run it, late entries and open questions.")
 diff --git a/tools/site/story.py b/tools/site/story.py
-index c997965..f47a1da 100644
+index c997965..ad164f0 100644
 --- a/tools/site/story.py
 +++ b/tools/site/story.py
 @@ -8,6 +8,7 @@ numbers is mailbox/front-story/evidence (made by evidence.py there), not code he
@@ -1192,7 +1192,7 @@ index c997965..f47a1da 100644
  
  
  def flinch(S) -> str:
-@@ -479,8 +515,285 @@ def flinch(S) -> str:
+@@ -479,8 +515,288 @@ def flinch(S) -> str:
      legend = ('<span><i class="swatch" style="background:var(--text-2)"></i>with numbers (the league prompt, each play\'s '
                'computed consequences)</span> <span><i class="swatch swatch-q1-board"></i>board only (notation, no computed '
                'number)</span> <span>Bias: missed minus needless, Q1 of Clear risk Part 2</span>')
@@ -1425,19 +1425,22 @@ index c997965..f47a1da 100644
 +
 +def nack_finding(S) -> str:
 +    """e. Nackgammon: standard against Nackgammon error rate per setup and group, Random as the reference (the paired
-+    test's own chart). Heading rule: "no clear drop" only if every group comparison's interval (every rule, with and
-+    without the additions) includes 0."""
++    test's own chart). Heading: always the neutral "A new starting position" (Zeki #2961). The data hold no interval for
++    a group's own drop, only the 99% intervals of BETWEEN-group drop differences (primary, primary_original_members);
++    those can say whether groups differ, not whether a group dropped. The sentence reports that comparison as such."""
 +    import nack_section as NS
 +    N, Lt = S["nack"], S["nack_late"]
 +    comps = [c for key in ("primary", "primary_original_members") for rule in (N.get(key) or {}).values()
 +             for c in rule if c.get("kind") == "group"]
 +    clear = bool(comps) and all(c["ci_99"][0] <= 0 <= c["ci_99"][1] for c in comps)
-+    heading = "A new starting position: no clear drop in any group" if clear else "A new starting position"
++    heading = "A new starting position"
 +    rd1 = N["setups"]["Random"]["first"]["drop"]
 +    worse = [(s, r) for s, r in ((Lt or {}).get("setups") or {}).items() if r.get("label") == "worse"]
 +    text = ("Each model was asked Nackgammon positions and standard positions matched to them. "
-+            + ("Every comparison between the groups (decision models, workhorses, frontier) has an interval that "
-+               "includes 0. " if clear else "Not every comparison between the groups has an interval that includes 0. ")
++            + ("Compared group against group (one group's drop minus another's: decision models, workhorses, "
++               "frontier), every 99% interval includes 0, so the test does not show the groups' drops to differ. "
++               if clear else "Compared group against group (one group's drop minus another's), not every 99% "
++               "interval includes 0. ")
 +            + f"Random play's own drop is {fmt(rd1, 1, True)} PR on the main 200 pairs: the Nackgammon positions were "
 +            f"{'slightly easier' if rd1 < 0 else 'harder'} for random play.")
 +    if worse:

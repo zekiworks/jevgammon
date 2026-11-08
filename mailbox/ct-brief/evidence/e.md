@@ -58,9 +58,18 @@ Note to keep (nack_section.py:17, live index.html): 'Unclear means the test can�
 
 Result: every group interval includes 0, and every grouped setup's interval includes 0 (26 unclear, 1 kept: Claude Fable 5.1 (high)). Exception outside the groups: late entry Base Labs Elephant-1 (a ranked model) +8.66 [+0.42, +16.02], label 'worse' (shown as 'dropped').
 
-Verdict: **KEEP** by the stated criterion (groups) — heading: **A new starting position: no clear drop.** Caveat for Main: one ranked late entry (Base Labs Elephant-1, exploratory) did show a clear drop; if the heading is read as covering every ranked model, use the neutral 'A new starting position' instead, or say 'no clear drop in any group'.
+Verdict (superseded, see below): KEEP 'A new starting position: no clear drop.' — this was wrong: see the correction.
 
-**Used on the site (CTBrief):** "A new starting position: no clear drop in any group" — the brief's heading narrowed to
-what the criterion tests, and the section names the exception: "Outside the groups, the late entry Base Labs Elephant-1
-dropped (+8.66 PR, 97.5% interval +0.42 to +16.02)." The rule is code (story.nack_finding): every group comparison's
-99% interval, every rule, with and without the additions, includes 0; else the neutral "A new starting position".
+**Correction (Zeki #2961; site from commit after ace14d5): heading NEUTRAL, "A new starting position".** What the data
+test, exactly: `primary.<rule>` and `primary_original_members.<rule>` hold, for kind "group", three BETWEEN-group
+comparisons (decision models − workhorses, decision models − frontier, workhorses − frontier), each the difference of
+two group drops with a 99% interval (`ci_99`). All of them include 0 (every rule, with and without the additions). That
+says the test cannot show the groups' drops to DIFFER; it says nothing about whether a group's own drop is unclear —
+there is no interval for a single group's drop in the data (line 3 above). So "no clear drop" in any form is not
+supported. The two kind "setup" comparisons (GPT-6.1 Sol high − low, LFM2.5 on − off) are not used.
+
+On the site (story.nack_finding): heading always "A new starting position"; the sentence reports the comparison as a
+between-group one ("Compared group against group (one group's drop minus another's: …), every 99% interval includes 0,
+so the test does not show the groups' drops to differ."); kept: Random's drop as the reference, the Elephant-1
+exception (+8.66 PR, 97.5% interval +0.42 to +16.02) and "Unclear means the test can't tell, not that the scores are
+equal."

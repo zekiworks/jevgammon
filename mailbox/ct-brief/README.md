@@ -28,7 +28,7 @@ Diff: `source.patch` (tools/site only: 9 files, +777 −202). What the brief ask
 | b | Risk judgement by release date | **neutral**: 24/38 dated; Google rises, Fastino falls (60.4 → 58.8) |
 | c | With the numbers on screen, every model asked played safer | kept as live ("asked": 8 models), Clear risk preliminary |
 | d | What thinking adds | **neutral**: 9 models; lower error at highest setting 9/9, but higher risk judgement 7/9. Astra 75.8/74.7/74.4, 11.8/11.1/8.8 match the brief |
-| e | A new starting position: no clear drop in any group | kept, narrowed: every group interval includes 0; late entry Base Labs Elephant-1 dropped (+8.66, 97.5% +0.42 to +16.02), said in the section |
+| e | A new starting position | **neutral** (Zeki #2961): the data hold only between-group drop differences (all 99% intervals include 0: groups not shown to differ), no per-group drop interval; late entry Base Labs Elephant-1 dropped (+8.66, 97.5% +0.42 to +16.02), said in the section |
 | f | Does the model learn from its games? | question; status "Done" + the published verdict sentence, risks-found chart |
 
 ## Highlights fact check (evidence/highlight-108669.md)
@@ -48,3 +48,12 @@ the data say 53.3%, 248 of 465 (live shows the same). Not changed.
 ## Checks to run before merge
 Full `build.py` (image step, results hash will be unchanged: no data file changed), checks.run, and a look at the
 risk-call-card line on Leagues.
+
+## Update: Zeki #2961 (branch HEAD 2c41357)
+Finding (e) heading is now the neutral **"A new starting position"**: the data hold only between-group drop differences
+(99% intervals, all including 0 = the groups are not shown to differ), no interval for a group's own drop. The sentence
+says that; Random's drop, the Elephant-1 exception and the "unclear" note are kept (`evidence/e.md`, correction).
+Re-rendered from the retained state: checks.run 0 (`review-render-run-2961.txt`). `review/delta-2961.txt`: against the
+ace14d5 render every file is identical except `index.html`, and the home page is identical outside
+`#finding-nackgammon`; the section has no new number (only the interval level, 99%, now named; it is nack-paired.json's
+`primary_level`). The other review results above are for ace14d5 and still hold for everything outside that section.

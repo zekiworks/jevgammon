@@ -1,0 +1,7740 @@
+{
+ "generated_at": "2026-11-08T07:31:15+00:00",
+ "note": "Counts, hashes, times and token sizes only; no outcome numbers.",
+ "hashes": {
+  "plan_sha256": "1e9bc932e0f6e72605868582510e4c8026885f19153a562cf1ed493a046ce8f6",
+  "lesson_prompt_sha256": "d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e",
+  "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+  "test_positions_sha256": "ff509ea102b4fcd2faca3402d585b05ba6d7dc0014a7c5f9dabbe48b13a3467f",
+  "base_config_sha256": "6f2ab1da2ebbd84a378c2fb7b13a8e27d47d1b8f112a4c1e0617ad49f543f3f1",
+  "pilot_py_sha256_by_commit": {
+   "ba8b011": "caca8ef0c4b8e2ff9c8e94bcf823e99e0d0044bdfd32d74f5009d4c103344012",
+   "e18ff59": "454092f7842a504643c0a9d9a3570f091ce5395161d978d441032d34bc140670"
+  },
+  "pilot_py_sha256_now": "454092f7842a504643c0a9d9a3570f091ce5395161d978d441032d34bc140670",
+  "runner_binary_sha256": "5c376bfa07f73968309b0438b931490e2bd67b92aa325f215061eded67c00a40"
+ },
+ "harness": {
+  "first_start": "ba8b011 (pilot.py as committed there), 2026-11-07T17:57:04Z: T0 and control s1-s3",
+  "restart": "e18ff59, 2026-11-07T18:20:13Z: records s1-s3, lessons s1-s3, budget s1-s3",
+  "series_4_10": "e18ff59, 2026-11-07T22:31:14Z to 2026-11-08T07:28:06Z: all arms s4-s10 (systemd unit learning-pilot-main, run_main.sh)",
+  "differences_ba8b011_to_e18ff59": "restart bookkeeping (attempt-N archive, stale failure markers cleared) and a tokenizer check before any game; prompt, scoring, arms and evaluation set unchanged"
+ },
+ "t0": {
+  "answers": 200,
+  "failed": 0,
+  "invalid": 0,
+  "first_answer_at": "2026-11-07T17:57:19.741Z",
+  "last_answer_at": "2026-11-07T18:01:22.504Z",
+  "wall_seconds": 258.1,
+  "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+  "aggregate_sha256": "b0711cfde4787ee03e2fa97e5d4f9f64269044af7d46a3369f509c644cd117cc"
+ },
+ "series": [
+  {
+   "arm": "control",
+   "series": 1,
+   "dice_seed": 5588155524604542475,
+   "match_id": 1,
+   "match_status": "finished",
+   "started_at": "2026-11-07T18:01:22+00:00",
+   "finished_at": "2026-11-07T18:05:53+00:00",
+   "wall_seconds": 270.6,
+   "games": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "game_rows": [
+    {
+     "game": 1,
+     "game_id": 2,
+     "turns": 63,
+     "started_at": "2026-11-07T18:01:22.864Z",
+     "finished_at": "2026-11-07T18:01:46.287Z"
+    },
+    {
+     "game": 2,
+     "game_id": 4,
+     "turns": 42,
+     "started_at": "2026-11-07T18:01:52.550Z",
+     "finished_at": "2026-11-07T18:02:10.079Z"
+    },
+    {
+     "game": 3,
+     "game_id": 5,
+     "turns": 42,
+     "started_at": "2026-11-07T18:02:13.641Z",
+     "finished_at": "2026-11-07T18:02:34.913Z"
+    },
+    {
+     "game": 4,
+     "game_id": 6,
+     "turns": 51,
+     "started_at": "2026-11-07T18:02:41.151Z",
+     "finished_at": "2026-11-07T18:03:00.581Z"
+    },
+    {
+     "game": 5,
+     "game_id": 7,
+     "turns": 72,
+     "started_at": "2026-11-07T18:03:07.642Z",
+     "finished_at": "2026-11-07T18:03:22.231Z"
+    },
+    {
+     "game": 6,
+     "game_id": 8,
+     "turns": 56,
+     "started_at": "2026-11-07T18:03:26.292Z",
+     "finished_at": "2026-11-07T18:03:49.737Z"
+    },
+    {
+     "game": 7,
+     "game_id": 9,
+     "turns": 71,
+     "started_at": "2026-11-07T18:03:56.607Z",
+     "finished_at": "2026-11-07T18:04:18.204Z"
+    },
+    {
+     "game": 8,
+     "game_id": 10,
+     "turns": 108,
+     "started_at": "2026-11-07T18:04:24.401Z",
+     "finished_at": "2026-11-07T18:04:42.189Z"
+    },
+    {
+     "game": 9,
+     "game_id": 11,
+     "turns": 57,
+     "started_at": "2026-11-07T18:04:46.990Z",
+     "finished_at": "2026-11-07T18:05:23.726Z"
+    },
+    {
+     "game": 10,
+     "game_id": 12,
+     "turns": 168,
+     "started_at": "2026-11-07T18:05:36.771Z",
+     "finished_at": "2026-11-07T18:05:49.469Z"
+    }
+   ],
+   "decisions_per_game": [
+    25,
+    17,
+    20,
+    21,
+    21,
+    25,
+    26,
+    19,
+    25,
+    18
+   ],
+   "invalid_decisions": 0,
+   "unscored_decisions": 0,
+   "evaluations": {},
+   "lessons_files": {},
+   "lessons_calls": 0,
+   "lessons_cut": 0,
+   "context_tokens_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0,
+    "10": 0
+   },
+   "records_dropped_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0,
+    "10": 0
+   },
+   "budget_points": [],
+   "evaluation_positions_excluded": 0,
+   "restarts": 0,
+   "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+   "lesson_prompt_sha256": "d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e",
+   "aggregate_sha256": "bdf7a5d5d7a6d7a746dcf84cc801a53c7cc269ab4f69430e969bb450bbc80c63",
+   "log_sha256": "1e04d758920af503492346ea533dba995996c15ce6d09bec55e5d6a6bb7953b3",
+   "match_log_sha256": "f83efc5fc84a2c9ba68123c978a7c19912736742a0dc8a7967050cbb4652a39e"
+  },
+  {
+   "arm": "control",
+   "series": 2,
+   "dice_seed": 9059240225405464449,
+   "match_id": 4,
+   "match_status": "finished",
+   "started_at": "2026-11-07T18:05:53+00:00",
+   "finished_at": "2026-11-07T18:11:16+00:00",
+   "wall_seconds": 323.6,
+   "games": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "game_rows": [
+    {
+     "game": 1,
+     "game_id": 13,
+     "turns": 49,
+     "started_at": "2026-11-07T18:05:53.434Z",
+     "finished_at": "2026-11-07T18:06:23.651Z"
+    },
+    {
+     "game": 2,
+     "game_id": 14,
+     "turns": 53,
+     "started_at": "2026-11-07T18:06:34.393Z",
+     "finished_at": "2026-11-07T18:07:03.538Z"
+    },
+    {
+     "game": 3,
+     "game_id": 15,
+     "turns": 75,
+     "started_at": "2026-11-07T18:07:11.631Z",
+     "finished_at": "2026-11-07T18:07:48.739Z"
+    },
+    {
+     "game": 4,
+     "game_id": 16,
+     "turns": 62,
+     "started_at": "2026-11-07T18:07:59.926Z",
+     "finished_at": "2026-11-07T18:08:10.671Z"
+    },
+    {
+     "game": 5,
+     "game_id": 17,
+     "turns": 63,
+     "started_at": "2026-11-07T18:08:13.647Z",
+     "finished_at": "2026-11-07T18:08:36.314Z"
+    },
+    {
+     "game": 6,
+     "game_id": 18,
+     "turns": 52,
+     "started_at": "2026-11-07T18:08:43.400Z",
+     "finished_at": "2026-11-07T18:09:03.257Z"
+    },
+    {
+     "game": 7,
+     "game_id": 19,
+     "turns": 70,
+     "started_at": "2026-11-07T18:09:09.985Z",
+     "finished_at": "2026-11-07T18:09:32.908Z"
+    },
+    {
+     "game": 8,
+     "game_id": 20,
+     "turns": 77,
+     "started_at": "2026-11-07T18:09:40.696Z",
+     "finished_at": "2026-11-07T18:10:04.708Z"
+    },
+    {
+     "game": 9,
+     "game_id": 21,
+     "turns": 67,
+     "started_at": "2026-11-07T18:10:11.722Z",
+     "finished_at": "2026-11-07T18:10:36.921Z"
+    },
+    {
+     "game": 10,
+     "game_id": 22,
+     "turns": 55,
+     "started_at": "2026-11-07T18:10:43.850Z",
+     "finished_at": "2026-11-07T18:11:09.573Z"
+    }
+   ],
+   "decisions_per_game": [
+    20,
+    24,
+    19,
+    17,
+    28,
+    21,
+    22,
+    29,
+    25,
+    22
+   ],
+   "invalid_decisions": 0,
+   "unscored_decisions": 0,
+   "evaluations": {},
+   "lessons_files": {},
+   "lessons_calls": 0,
+   "lessons_cut": 0,
+   "context_tokens_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0,
+    "10": 0
+   },
+   "records_dropped_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0,
+    "10": 0
+   },
+   "budget_points": [],
+   "evaluation_positions_excluded": 0,
+   "restarts": 0,
+   "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+   "lesson_prompt_sha256": "d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e",
+   "aggregate_sha256": "a6e2dd016140b468ffed445c0fc2ba306c4425142d8d8c2d443dd409052d915a",
+   "log_sha256": "87c38bbe61bb8b8aed53466623092f4c6f67de347c850ac72919a55d431ed05e",
+   "match_log_sha256": "a6891817a0ba6fb0fba8a2b27e843d339d70ee35a115f236a78511a369c0e6cb"
+  },
+  {
+   "arm": "control",
+   "series": 3,
+   "dice_seed": 756822699230296250,
+   "match_id": 5,
+   "match_status": "finished",
+   "started_at": "2026-11-07T18:11:16+00:00",
+   "finished_at": "2026-11-07T18:17:23+00:00",
+   "wall_seconds": 366.1,
+   "games": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "game_rows": [
+    {
+     "game": 1,
+     "game_id": 23,
+     "turns": 106,
+     "started_at": "2026-11-07T18:11:17.056Z",
+     "finished_at": "2026-11-07T18:11:47.042Z"
+    },
+    {
+     "game": 2,
+     "game_id": 24,
+     "turns": 86,
+     "started_at": "2026-11-07T18:11:57.749Z",
+     "finished_at": "2026-11-07T18:12:37.529Z"
+    },
+    {
+     "game": 3,
+     "game_id": 25,
+     "turns": 48,
+     "started_at": "2026-11-07T18:12:48.515Z",
+     "finished_at": "2026-11-07T18:13:18.326Z"
+    },
+    {
+     "game": 4,
+     "game_id": 26,
+     "turns": 67,
+     "started_at": "2026-11-07T18:13:28.582Z",
+     "finished_at": "2026-11-07T18:13:45.318Z"
+    },
+    {
+     "game": 5,
+     "game_id": 27,
+     "turns": 72,
+     "started_at": "2026-11-07T18:13:49.761Z",
+     "finished_at": "2026-11-07T18:14:25.899Z"
+    },
+    {
+     "game": 6,
+     "game_id": 28,
+     "turns": 49,
+     "started_at": "2026-11-07T18:14:38.250Z",
+     "finished_at": "2026-11-07T18:14:55.375Z"
+    },
+    {
+     "game": 7,
+     "game_id": 29,
+     "turns": 53,
+     "started_at": "2026-11-07T18:15:00.954Z",
+     "finished_at": "2026-11-07T18:15:30.428Z"
+    },
+    {
+     "game": 8,
+     "game_id": 30,
+     "turns": 51,
+     "started_at": "2026-11-07T18:15:40.799Z",
+     "finished_at": "2026-11-07T18:15:59.518Z"
+    },
+    {
+     "game": 9,
+     "game_id": 31,
+     "turns": 78,
+     "started_at": "2026-11-07T18:16:06.584Z",
+     "finished_at": "2026-11-07T18:16:36.858Z"
+    },
+    {
+     "game": 10,
+     "game_id": 32,
+     "turns": 50,
+     "started_at": "2026-11-07T18:16:45.435Z",
+     "finished_at": "2026-11-07T18:17:14.279Z"
+    }
+   ],
+   "decisions_per_game": [
+    27,
+    31,
+    24,
+    18,
+    30,
+    20,
+    19,
+    21,
+    22,
+    19
+   ],
+   "invalid_decisions": 0,
+   "unscored_decisions": 0,
+   "evaluations": {},
+   "lessons_files": {},
+   "lessons_calls": 0,
+   "lessons_cut": 0,
+   "context_tokens_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0,
+    "10": 0
+   },
+   "records_dropped_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0,
+    "10": 0
+   },
+   "budget_points": [],
+   "evaluation_positions_excluded": 0,
+   "restarts": 0,
+   "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+   "lesson_prompt_sha256": "d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e",
+   "aggregate_sha256": "d13141b59c4d4c200390ed4ffeebeb2752543a2d73eb9ed656da2337ef8e36a4",
+   "log_sha256": "5205d93fa877a628728e568765c60eedd0e490d5c9f633a40ab7853e187d6954",
+   "match_log_sha256": "c2e55de6410f4526ab780f2b152d0116034a0bc5d9f59695d9ac1c0b19d4f920"
+  },
+  {
+   "arm": "control",
+   "series": 4,
+   "dice_seed": 3088749300669629816,
+   "match_id": 17,
+   "match_status": "finished",
+   "started_at": "2026-11-07T22:31:16+00:00",
+   "finished_at": "2026-11-07T22:50:33+00:00",
+   "wall_seconds": 1157.5,
+   "games": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "game_rows": [
+    {
+     "game": 1,
+     "game_id": 125,
+     "turns": 79,
+     "started_at": "2026-11-07T22:31:16.181Z",
+     "finished_at": "2026-11-07T22:31:39.806Z"
+    },
+    {
+     "game": 2,
+     "game_id": 126,
+     "turns": 61,
+     "started_at": "2026-11-07T22:31:43.971Z",
+     "finished_at": "2026-11-07T22:33:06.948Z"
+    },
+    {
+     "game": 3,
+     "game_id": 128,
+     "turns": 91,
+     "started_at": "2026-11-07T22:33:13.525Z",
+     "finished_at": "2026-11-07T22:34:53.897Z"
+    },
+    {
+     "game": 4,
+     "game_id": 132,
+     "turns": 90,
+     "started_at": "2026-11-07T22:34:59.956Z",
+     "finished_at": "2026-11-07T22:37:49.841Z"
+    },
+    {
+     "game": 5,
+     "game_id": 135,
+     "turns": 69,
+     "started_at": "2026-11-07T22:38:01.584Z",
+     "finished_at": "2026-11-07T22:40:09.032Z"
+    },
+    {
+     "game": 6,
+     "game_id": 136,
+     "turns": 58,
+     "started_at": "2026-11-07T22:40:13.990Z",
+     "finished_at": "2026-11-07T22:41:15.488Z"
+    },
+    {
+     "game": 7,
+     "game_id": 137,
+     "turns": 94,
+     "started_at": "2026-11-07T22:41:17.605Z",
+     "finished_at": "2026-11-07T22:44:18.906Z"
+    },
+    {
+     "game": 8,
+     "game_id": 139,
+     "turns": 102,
+     "started_at": "2026-11-07T22:44:25.369Z",
+     "finished_at": "2026-11-07T22:46:36.138Z"
+    },
+    {
+     "game": 9,
+     "game_id": 140,
+     "turns": 53,
+     "started_at": "2026-11-07T22:46:42.771Z",
+     "finished_at": "2026-11-07T22:48:08.549Z"
+    },
+    {
+     "game": 10,
+     "game_id": 141,
+     "turns": 65,
+     "started_at": "2026-11-07T22:48:12.221Z",
+     "finished_at": "2026-11-07T22:50:27.547Z"
+    }
+   ],
+   "decisions_per_game": [
+    23,
+    15,
+    30,
+    34,
+    26,
+    17,
+    34,
+    34,
+    17,
+    23
+   ],
+   "invalid_decisions": 0,
+   "unscored_decisions": 0,
+   "evaluations": {},
+   "lessons_files": {},
+   "lessons_calls": 0,
+   "lessons_cut": 0,
+   "context_tokens_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0,
+    "10": 0
+   },
+   "records_dropped_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0,
+    "10": 0
+   },
+   "budget_points": [],
+   "evaluation_positions_excluded": 0,
+   "restarts": 0,
+   "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+   "lesson_prompt_sha256": "d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e",
+   "aggregate_sha256": "74d8433a408b1e5b9f46aa17f4943330d98d813dae2326003dfcf38649af798b",
+   "log_sha256": "c2f7cd10e21b1a0307225a56caf76ec71b8f299c773ce3be44ab8125a4c4a9b3",
+   "match_log_sha256": "d9a661738b9190c7a42e90a40ac7481cd1c7b42305dad707882fdb4a90f03ff9"
+  },
+  {
+   "arm": "control",
+   "series": 5,
+   "dice_seed": 2763205551746403990,
+   "match_id": 18,
+   "match_status": "finished",
+   "started_at": "2026-11-07T22:50:34+00:00",
+   "finished_at": "2026-11-07T23:18:47+00:00",
+   "wall_seconds": 1693.4,
+   "games": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "game_rows": [
+    {
+     "game": 1,
+     "game_id": 143,
+     "turns": 81,
+     "started_at": "2026-11-07T22:50:34.124Z",
+     "finished_at": "2026-11-07T22:52:34.294Z"
+    },
+    {
+     "game": 2,
+     "game_id": 144,
+     "turns": 60,
+     "started_at": "2026-11-07T22:52:37.866Z",
+     "finished_at": "2026-11-07T22:55:25.505Z"
+    },
+    {
+     "game": 3,
+     "game_id": 145,
+     "turns": 90,
+     "started_at": "2026-11-07T22:55:30.965Z",
+     "finished_at": "2026-11-07T22:57:37.747Z"
+    },
+    {
+     "game": 4,
+     "game_id": 146,
+     "turns": 98,
+     "started_at": "2026-11-07T22:57:40.138Z",
+     "finished_at": "2026-11-07T22:59:56.629Z"
+    },
+    {
+     "game": 5,
+     "game_id": 148,
+     "turns": 46,
+     "started_at": "2026-11-07T23:00:02.876Z",
+     "finished_at": "2026-11-07T23:04:03.092Z"
+    },
+    {
+     "game": 6,
+     "game_id": 150,
+     "turns": 43,
+     "started_at": "2026-11-07T23:04:12.704Z",
+     "finished_at": "2026-11-07T23:06:42.137Z"
+    },
+    {
+     "game": 7,
+     "game_id": 152,
+     "turns": 50,
+     "started_at": "2026-11-07T23:06:47.076Z",
+     "finished_at": "2026-11-07T23:09:32.862Z"
+    },
+    {
+     "game": 8,
+     "game_id": 154,
+     "turns": 54,
+     "started_at": "2026-11-07T23:09:36.679Z",
+     "finished_at": "2026-11-07T23:12:00.292Z"
+    },
+    {
+     "game": 9,
+     "game_id": 156,
+     "turns": 70,
+     "started_at": "2026-11-07T23:12:03.725Z",
+     "finished_at": "2026-11-07T23:16:06.004Z"
+    },
+    {
+     "game": 10,
+     "game_id": 157,
+     "turns": 49,
+     "started_at": "2026-11-07T23:16:10.833Z",
+     "finished_at": "2026-11-07T23:18:42.457Z"
+    }
+   ],
+   "decisions_per_game": [
+    29,
+    25,
+    30,
+    26,
+    21,
+    17,
+    21,
+    25,
+    27,
+    23
+   ],
+   "invalid_decisions": 0,
+   "unscored_decisions": 0,
+   "evaluations": {},
+   "lessons_files": {},
+   "lessons_calls": 0,
+   "lessons_cut": 0,
+   "context_tokens_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0,
+    "10": 0
+   },
+   "records_dropped_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0,
+    "10": 0
+   },
+   "budget_points": [],
+   "evaluation_positions_excluded": 0,
+   "restarts": 0,
+   "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+   "lesson_prompt_sha256": "d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e",
+   "aggregate_sha256": "6bd100f80527bc8aeeb96dc8406e389061f515aa4d3c1e045021676b5386e556",
+   "log_sha256": "83f51132a7dd19580a6e566859e116948b606fe18f0c0b8874351628a88f8dd6",
+   "match_log_sha256": "aaf801149d8c12617c233eff5c5354c1c54b0b7ae22a2325e59eb1903d96673a"
+  },
+  {
+   "arm": "control",
+   "series": 6,
+   "dice_seed": 187514327728090754,
+   "match_id": 19,
+   "match_status": "finished",
+   "started_at": "2026-11-07T23:18:47+00:00",
+   "finished_at": "2026-11-07T23:40:13+00:00",
+   "wall_seconds": 1286.2,
+   "games": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "game_rows": [
+    {
+     "game": 1,
+     "game_id": 159,
+     "turns": 45,
+     "started_at": "2026-11-07T23:18:47.783Z",
+     "finished_at": "2026-11-07T23:20:50.327Z"
+    },
+    {
+     "game": 2,
+     "game_id": 160,
+     "turns": 50,
+     "started_at": "2026-11-07T23:20:53.085Z",
+     "finished_at": "2026-11-07T23:22:43.167Z"
+    },
+    {
+     "game": 3,
+     "game_id": 161,
+     "turns": 90,
+     "started_at": "2026-11-07T23:22:47.693Z",
+     "finished_at": "2026-11-07T23:26:31.173Z"
+    },
+    {
+     "game": 4,
+     "game_id": 163,
+     "turns": 52,
+     "started_at": "2026-11-07T23:26:36.218Z",
+     "finished_at": "2026-11-07T23:28:38.107Z"
+    },
+    {
+     "game": 5,
+     "game_id": 164,
+     "turns": 48,
+     "started_at": "2026-11-07T23:28:42.106Z",
+     "finished_at": "2026-11-07T23:31:15.178Z"
+    },
+    {
+     "game": 6,
+     "game_id": 166,
+     "turns": 59,
+     "started_at": "2026-11-07T23:31:21.076Z",
+     "finished_at": "2026-11-07T23:34:07.551Z"
+    },
+    {
+     "game": 7,
+     "game_id": 167,
+     "turns": 48,
+     "started_at": "2026-11-07T23:34:12.391Z",
+     "finished_at": "2026-11-07T23:35:52.301Z"
+    },
+    {
+     "game": 8,
+     "game_id": 168,
+     "turns": 47,
+     "started_at": "2026-11-07T23:35:56.583Z",
+     "finished_at": "2026-11-07T23:37:03.154Z"
+    },
+    {
+     "game": 9,
+     "game_id": 170,
+     "turns": 49,
+     "started_at": "2026-11-07T23:37:05.776Z",
+     "finished_at": "2026-11-07T23:38:25.335Z"
+    },
+    {
+     "game": 10,
+     "game_id": 172,
+     "turns": 55,
+     "started_at": "2026-11-07T23:38:30.794Z",
+     "finished_at": "2026-11-07T23:40:08.824Z"
+    }
+   ],
+   "decisions_per_game": [
+    18,
+    21,
+    31,
+    19,
+    22,
+    20,
+    21,
+    16,
+    18,
+    24
+   ],
+   "invalid_decisions": 0,
+   "unscored_decisions": 0,
+   "evaluations": {},
+   "lessons_files": {},
+   "lessons_calls": 0,
+   "lessons_cut": 0,
+   "context_tokens_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0,
+    "10": 0
+   },
+   "records_dropped_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0,
+    "10": 0
+   },
+   "budget_points": [],
+   "evaluation_positions_excluded": 0,
+   "restarts": 0,
+   "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+   "lesson_prompt_sha256": "d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e",
+   "aggregate_sha256": "0a4007204d9cde7ddfbab6f9aa6eaabf0b8a882587ffa544954ceb6351b98b39",
+   "log_sha256": "76909953ed8d26d237626c01f70bb58ce6331ca98b1b7e886a98c41abc2daa90",
+   "match_log_sha256": "c35e238b5ecef478d6f43d2fa6881aa0a96d576236bf491c18be4e2f1844998c"
+  },
+  {
+   "arm": "control",
+   "series": 7,
+   "dice_seed": 4993853979471497236,
+   "match_id": 21,
+   "match_status": "finished",
+   "started_at": "2026-11-07T23:40:14+00:00",
+   "finished_at": "2026-11-08T00:07:01+00:00",
+   "wall_seconds": 1607.0,
+   "games": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "game_rows": [
+    {
+     "game": 1,
+     "game_id": 175,
+     "turns": 48,
+     "started_at": "2026-11-07T23:40:14.254Z",
+     "finished_at": "2026-11-07T23:41:46.074Z"
+    },
+    {
+     "game": 2,
+     "game_id": 178,
+     "turns": 58,
+     "started_at": "2026-11-07T23:41:51.412Z",
+     "finished_at": "2026-11-07T23:44:24.546Z"
+    },
+    {
+     "game": 3,
+     "game_id": 179,
+     "turns": 139,
+     "started_at": "2026-11-07T23:44:30.926Z",
+     "finished_at": "2026-11-07T23:47:19.754Z"
+    },
+    {
+     "game": 4,
+     "game_id": 181,
+     "turns": 77,
+     "started_at": "2026-11-07T23:47:23.250Z",
+     "finished_at": "2026-11-07T23:50:17.576Z"
+    },
+    {
+     "game": 5,
+     "game_id": 182,
+     "turns": 68,
+     "started_at": "2026-11-07T23:50:23.064Z",
+     "finished_at": "2026-11-07T23:52:33.731Z"
+    },
+    {
+     "game": 6,
+     "game_id": 183,
+     "turns": 109,
+     "started_at": "2026-11-07T23:52:37.799Z",
+     "finished_at": "2026-11-07T23:56:26.144Z"
+    },
+    {
+     "game": 7,
+     "game_id": 184,
+     "turns": 119,
+     "started_at": "2026-11-07T23:56:33.535Z",
+     "finished_at": "2026-11-07T23:59:11.087Z"
+    },
+    {
+     "game": 8,
+     "game_id": 185,
+     "turns": 61,
+     "started_at": "2026-11-07T23:59:15.183Z",
+     "finished_at": "2026-11-08T00:02:15.228Z"
+    },
+    {
+     "game": 9,
+     "game_id": 186,
+     "turns": 52,
+     "started_at": "2026-11-08T00:02:22.265Z",
+     "finished_at": "2026-11-08T00:04:48.726Z"
+    },
+    {
+     "game": 10,
+     "game_id": 189,
+     "turns": 48,
+     "started_at": "2026-11-08T00:04:52.708Z",
+     "finished_at": "2026-11-08T00:06:57.409Z"
+    }
+   ],
+   "decisions_per_game": [
+    20,
+    20,
+    39,
+    32,
+    25,
+    39,
+    31,
+    18,
+    23,
+    19
+   ],
+   "invalid_decisions": 0,
+   "unscored_decisions": 0,
+   "evaluations": {},
+   "lessons_files": {},
+   "lessons_calls": 0,
+   "lessons_cut": 0,
+   "context_tokens_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0,
+    "10": 0
+   },
+   "records_dropped_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0,
+    "10": 0
+   },
+   "budget_points": [],
+   "evaluation_positions_excluded": 0,
+   "restarts": 0,
+   "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+   "lesson_prompt_sha256": "d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e",
+   "aggregate_sha256": "b7f436d2a0e54b4495819f4a9ff8ba2ca2849fa7e5634f8ef07cd1650ca2d138",
+   "log_sha256": "b7d3cb907ded84f111476c6e3d784e4f4883bce3eff267d04c67a0996bf4b476",
+   "match_log_sha256": "86c57f625c56faa108bd114690e51253b1a4924029f5360e20fef1925bbc14d2"
+  },
+  {
+   "arm": "control",
+   "series": 8,
+   "dice_seed": 5308720830707305012,
+   "match_id": 24,
+   "match_status": "finished",
+   "started_at": "2026-11-08T00:07:01+00:00",
+   "finished_at": "2026-11-08T00:34:45+00:00",
+   "wall_seconds": 1663.8,
+   "games": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "game_rows": [
+    {
+     "game": 1,
+     "game_id": 191,
+     "turns": 54,
+     "started_at": "2026-11-08T00:07:01.548Z",
+     "finished_at": "2026-11-08T00:09:31.583Z"
+    },
+    {
+     "game": 2,
+     "game_id": 195,
+     "turns": 49,
+     "started_at": "2026-11-08T00:09:36.416Z",
+     "finished_at": "2026-11-08T00:11:12.814Z"
+    },
+    {
+     "game": 3,
+     "game_id": 197,
+     "turns": 63,
+     "started_at": "2026-11-08T00:11:14.880Z",
+     "finished_at": "2026-11-08T00:14:03.205Z"
+    },
+    {
+     "game": 4,
+     "game_id": 200,
+     "turns": 63,
+     "started_at": "2026-11-08T00:14:08.106Z",
+     "finished_at": "2026-11-08T00:16:37.955Z"
+    },
+    {
+     "game": 5,
+     "game_id": 204,
+     "turns": 67,
+     "started_at": "2026-11-08T00:16:41.443Z",
+     "finished_at": "2026-11-08T00:19:39.509Z"
+    },
+    {
+     "game": 6,
+     "game_id": 206,
+     "turns": 56,
+     "started_at": "2026-11-08T00:19:42.807Z",
+     "finished_at": "2026-11-08T00:20:48.924Z"
+    },
+    {
+     "game": 7,
+     "game_id": 208,
+     "turns": 50,
+     "started_at": "2026-11-08T00:20:51.323Z",
+     "finished_at": "2026-11-08T00:25:11.966Z"
+    },
+    {
+     "game": 8,
+     "game_id": 209,
+     "turns": 58,
+     "started_at": "2026-11-08T00:25:16.879Z",
+     "finished_at": "2026-11-08T00:27:35.855Z"
+    },
+    {
+     "game": 9,
+     "game_id": 210,
+     "turns": 71,
+     "started_at": "2026-11-08T00:27:38.580Z",
+     "finished_at": "2026-11-08T00:29:42.637Z"
+    },
+    {
+     "game": 10,
+     "game_id": 212,
+     "turns": 137,
+     "started_at": "2026-11-08T00:29:45.397Z",
+     "finished_at": "2026-11-08T00:34:39.913Z"
+    }
+   ],
+   "decisions_per_game": [
+    24,
+    14,
+    28,
+    19,
+    25,
+    20,
+    22,
+    18,
+    25,
+    38
+   ],
+   "invalid_decisions": 0,
+   "unscored_decisions": 0,
+   "evaluations": {},
+   "lessons_files": {},
+   "lessons_calls": 0,
+   "lessons_cut": 0,
+   "context_tokens_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0,
+    "10": 0
+   },
+   "records_dropped_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0,
+    "10": 0
+   },
+   "budget_points": [],
+   "evaluation_positions_excluded": 0,
+   "restarts": 0,
+   "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+   "lesson_prompt_sha256": "d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e",
+   "aggregate_sha256": "f9b763fe2b2e281ccedd3a9e133951a9094379f24d45b9e51e3d798a472ba9be",
+   "log_sha256": "8c5fb5b3348c23d83f8a92d72aed5ed7e829b5d5ba95ec9a05c9010439e44205",
+   "match_log_sha256": "773b769718595869bba7a0126894f723140a66b04407b7f078d6565220b1804b"
+  },
+  {
+   "arm": "control",
+   "series": 9,
+   "dice_seed": 6788811015730745052,
+   "match_id": 25,
+   "match_status": "finished",
+   "started_at": "2026-11-08T00:34:45+00:00",
+   "finished_at": "2026-11-08T01:04:26+00:00",
+   "wall_seconds": 1781.0,
+   "games": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "game_rows": [
+    {
+     "game": 1,
+     "game_id": 213,
+     "turns": 86,
+     "started_at": "2026-11-08T00:34:45.651Z",
+     "finished_at": "2026-11-08T00:41:20.015Z"
+    },
+    {
+     "game": 2,
+     "game_id": 214,
+     "turns": 67,
+     "started_at": "2026-11-08T00:41:30.110Z",
+     "finished_at": "2026-11-08T00:45:34.479Z"
+    },
+    {
+     "game": 3,
+     "game_id": 215,
+     "turns": 97,
+     "started_at": "2026-11-08T00:45:38.748Z",
+     "finished_at": "2026-11-08T00:48:30.446Z"
+    },
+    {
+     "game": 4,
+     "game_id": 216,
+     "turns": 77,
+     "started_at": "2026-11-08T00:48:34.256Z",
+     "finished_at": "2026-11-08T00:50:59.014Z"
+    },
+    {
+     "game": 5,
+     "game_id": 220,
+     "turns": 56,
+     "started_at": "2026-11-08T00:51:02.699Z",
+     "finished_at": "2026-11-08T00:52:31.965Z"
+    },
+    {
+     "game": 6,
+     "game_id": 222,
+     "turns": 100,
+     "started_at": "2026-11-08T00:52:35.389Z",
+     "finished_at": "2026-11-08T00:54:13.399Z"
+    },
+    {
+     "game": 7,
+     "game_id": 225,
+     "turns": 62,
+     "started_at": "2026-11-08T00:54:15.707Z",
+     "finished_at": "2026-11-08T00:56:19.605Z"
+    },
+    {
+     "game": 8,
+     "game_id": 228,
+     "turns": 60,
+     "started_at": "2026-11-08T00:56:23.301Z",
+     "finished_at": "2026-11-08T00:58:43.931Z"
+    },
+    {
+     "game": 9,
+     "game_id": 231,
+     "turns": 58,
+     "started_at": "2026-11-08T00:58:47.525Z",
+     "finished_at": "2026-11-08T01:01:17.964Z"
+    },
+    {
+     "game": 10,
+     "game_id": 233,
+     "turns": 55,
+     "started_at": "2026-11-08T01:01:22.252Z",
+     "finished_at": "2026-11-08T01:04:19.487Z"
+    }
+   ],
+   "decisions_per_game": [
+    39,
+    27,
+    27,
+    30,
+    20,
+    27,
+    29,
+    21,
+    26,
+    24
+   ],
+   "invalid_decisions": 0,
+   "unscored_decisions": 0,
+   "evaluations": {},
+   "lessons_files": {},
+   "lessons_calls": 0,
+   "lessons_cut": 0,
+   "context_tokens_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0,
+    "10": 0
+   },
+   "records_dropped_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0,
+    "10": 0
+   },
+   "budget_points": [],
+   "evaluation_positions_excluded": 0,
+   "restarts": 0,
+   "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+   "lesson_prompt_sha256": "d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e",
+   "aggregate_sha256": "fbdb80567646bf611eccbee369585aa15120298e950ddd8f07e257eec0bdf708",
+   "log_sha256": "93850ceeaa231806e125c05b62c5767c04c7d5aa9c87a2449d41043a4748f0fc",
+   "match_log_sha256": "11b724fb93a872af825ca59ce59ac1c6f87249633e8684d7f5f797698205c805"
+  },
+  {
+   "arm": "control",
+   "series": 10,
+   "dice_seed": 2110657280462155743,
+   "match_id": 27,
+   "match_status": "finished",
+   "started_at": "2026-11-08T01:04:27+00:00",
+   "finished_at": "2026-11-08T01:27:53+00:00",
+   "wall_seconds": 1406.7,
+   "games": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "game_rows": [
+    {
+     "game": 1,
+     "game_id": 234,
+     "turns": 78,
+     "started_at": "2026-11-08T01:04:27.439Z",
+     "finished_at": "2026-11-08T01:06:05.618Z"
+    },
+    {
+     "game": 2,
+     "game_id": 236,
+     "turns": 52,
+     "started_at": "2026-11-08T01:06:10.167Z",
+     "finished_at": "2026-11-08T01:08:57.203Z"
+    },
+    {
+     "game": 3,
+     "game_id": 237,
+     "turns": 61,
+     "started_at": "2026-11-08T01:09:04.753Z",
+     "finished_at": "2026-11-08T01:10:08.789Z"
+    },
+    {
+     "game": 4,
+     "game_id": 238,
+     "turns": 56,
+     "started_at": "2026-11-08T01:10:11.851Z",
+     "finished_at": "2026-11-08T01:11:58.883Z"
+    },
+    {
+     "game": 5,
+     "game_id": 239,
+     "turns": 68,
+     "started_at": "2026-11-08T01:12:04.862Z",
+     "finished_at": "2026-11-08T01:15:27.156Z"
+    },
+    {
+     "game": 6,
+     "game_id": 241,
+     "turns": 66,
+     "started_at": "2026-11-08T01:15:36.109Z",
+     "finished_at": "2026-11-08T01:17:27.547Z"
+    },
+    {
+     "game": 7,
+     "game_id": 242,
+     "turns": 99,
+     "started_at": "2026-11-08T01:17:32.277Z",
+     "finished_at": "2026-11-08T01:21:57.421Z"
+    },
+    {
+     "game": 8,
+     "game_id": 247,
+     "turns": 51,
+     "started_at": "2026-11-08T01:22:06.335Z",
+     "finished_at": "2026-11-08T01:24:17.183Z"
+    },
+    {
+     "game": 9,
+     "game_id": 249,
+     "turns": 62,
+     "started_at": "2026-11-08T01:24:22.092Z",
+     "finished_at": "2026-11-08T01:25:48.475Z"
+    },
+    {
+     "game": 10,
+     "game_id": 251,
+     "turns": 49,
+     "started_at": "2026-11-08T01:25:51.666Z",
+     "finished_at": "2026-11-08T01:27:49.342Z"
+    }
+   ],
+   "decisions_per_game": [
+    23,
+    23,
+    17,
+    24,
+    28,
+    23,
+    39,
+    19,
+    22,
+    23
+   ],
+   "invalid_decisions": 0,
+   "unscored_decisions": 0,
+   "evaluations": {},
+   "lessons_files": {},
+   "lessons_calls": 0,
+   "lessons_cut": 0,
+   "context_tokens_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0,
+    "10": 0
+   },
+   "records_dropped_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0,
+    "10": 0
+   },
+   "budget_points": [],
+   "evaluation_positions_excluded": 0,
+   "restarts": 0,
+   "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+   "lesson_prompt_sha256": "d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e",
+   "aggregate_sha256": "f6737b80545fe795fe7e41b69029c7b832180ff8346f00f43172abfe52fef70e",
+   "log_sha256": "771620a89760bf0cdb9667cd1ddc557332c86b70d69b46dbea58644a8cc83bc8",
+   "match_log_sha256": "f5c4a4ef67e00acd4670cc0381cbdbaf25f2ee168c190ae153f61360b830a91c"
+  },
+  {
+   "arm": "records",
+   "series": 1,
+   "dice_seed": 5588155524604542475,
+   "match_id": 7,
+   "match_status": "finished",
+   "started_at": "2026-11-07T18:20:14+00:00",
+   "finished_at": "2026-11-07T19:12:39+00:00",
+   "wall_seconds": 3144.5,
+   "games": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "game_rows": [
+    {
+     "game": 1,
+     "game_id": 34,
+     "turns": 63,
+     "started_at": "2026-11-07T18:20:14.728Z",
+     "finished_at": "2026-11-07T18:20:37.547Z"
+    },
+    {
+     "game": 2,
+     "game_id": 35,
+     "turns": 68,
+     "started_at": "2026-11-07T18:20:44.060Z",
+     "finished_at": "2026-11-07T18:21:18.547Z"
+    },
+    {
+     "game": 3,
+     "game_id": 36,
+     "turns": 50,
+     "started_at": "2026-11-07T18:21:24.180Z",
+     "finished_at": "2026-11-07T18:22:26.258Z"
+    },
+    {
+     "game": 4,
+     "game_id": 38,
+     "turns": 45,
+     "started_at": "2026-11-07T18:22:33.197Z",
+     "finished_at": "2026-11-07T18:23:44.877Z"
+    },
+    {
+     "game": 5,
+     "game_id": 40,
+     "turns": 52,
+     "started_at": "2026-11-07T18:23:52.470Z",
+     "finished_at": "2026-11-07T18:24:51.546Z"
+    },
+    {
+     "game": 6,
+     "game_id": 43,
+     "turns": 58,
+     "started_at": "2026-11-07T18:39:44.150Z",
+     "finished_at": "2026-11-07T18:41:38.888Z"
+    },
+    {
+     "game": 7,
+     "game_id": 44,
+     "turns": 71,
+     "started_at": "2026-11-07T18:41:46.061Z",
+     "finished_at": "2026-11-07T18:44:02.514Z"
+    },
+    {
+     "game": 8,
+     "game_id": 45,
+     "turns": 84,
+     "started_at": "2026-11-07T18:44:08.986Z",
+     "finished_at": "2026-11-07T18:46:11.198Z"
+    },
+    {
+     "game": 9,
+     "game_id": 46,
+     "turns": 47,
+     "started_at": "2026-11-07T18:46:17.876Z",
+     "finished_at": "2026-11-07T18:49:20.737Z"
+    },
+    {
+     "game": 10,
+     "game_id": 48,
+     "turns": 57,
+     "started_at": "2026-11-07T18:49:31.801Z",
+     "finished_at": "2026-11-07T18:51:56.786Z"
+    }
+   ],
+   "decisions_per_game": [
+    25,
+    23,
+    21,
+    22,
+    19,
+    25,
+    26,
+    24,
+    21,
+    21
+   ],
+   "invalid_decisions": 0,
+   "unscored_decisions": 0,
+   "evaluations": {
+    "T5": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-07T18:25:10.994Z",
+     "last_answer_at": "2026-11-07T18:39:44.041Z"
+    },
+    "T10": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-07T18:52:47.419Z",
+     "last_answer_at": "2026-11-07T19:12:38.879Z"
+    }
+   },
+   "lessons_files": {},
+   "lessons_calls": 0,
+   "lessons_cut": 0,
+   "context_tokens_after_game": {
+    "1": 3688,
+    "2": 7045,
+    "3": 10010,
+    "4": 13183,
+    "5": 15833,
+    "6": 19581,
+    "7": 23335,
+    "8": 26600,
+    "9": 25902,
+    "10": 25572
+   },
+   "records_dropped_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 1,
+    "10": 2
+   },
+   "budget_points": [],
+   "evaluation_positions_excluded": 0,
+   "restarts": 1,
+   "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+   "lesson_prompt_sha256": "d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e",
+   "aggregate_sha256": "51bb95f74ae99612fc72b6554f72c72ede32d29d4def35e438a60e27e0f32b42",
+   "log_sha256": "287546948ce1c7df004e4b719ca0cfbea955885c67eafdb4f4b5e29808ff39da",
+   "match_log_sha256": "959c66b3f08eb72989e393a11981b80798dff4d0c8c72b2e796a18ddf0abb440"
+  },
+  {
+   "arm": "records",
+   "series": 2,
+   "dice_seed": 9059240225405464449,
+   "match_id": 8,
+   "match_status": "finished",
+   "started_at": "2026-11-07T19:12:39+00:00",
+   "finished_at": "2026-11-07T20:18:17+00:00",
+   "wall_seconds": 3938.0,
+   "games": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "game_rows": [
+    {
+     "game": 1,
+     "game_id": 53,
+     "turns": 49,
+     "started_at": "2026-11-07T19:12:39.306Z",
+     "finished_at": "2026-11-07T19:13:35.833Z"
+    },
+    {
+     "game": 2,
+     "game_id": 54,
+     "turns": 84,
+     "started_at": "2026-11-07T19:13:43.991Z",
+     "finished_at": "2026-11-07T19:14:40.872Z"
+    },
+    {
+     "game": 3,
+     "game_id": 55,
+     "turns": 40,
+     "started_at": "2026-11-07T19:14:46.608Z",
+     "finished_at": "2026-11-07T19:16:15.604Z"
+    },
+    {
+     "game": 4,
+     "game_id": 56,
+     "turns": 46,
+     "started_at": "2026-11-07T19:16:25.663Z",
+     "finished_at": "2026-11-07T19:17:32.616Z"
+    },
+    {
+     "game": 5,
+     "game_id": 57,
+     "turns": 58,
+     "started_at": "2026-11-07T19:17:38.874Z",
+     "finished_at": "2026-11-07T19:19:11.919Z"
+    },
+    {
+     "game": 6,
+     "game_id": 66,
+     "turns": 52,
+     "started_at": "2026-11-07T19:38:13.334Z",
+     "finished_at": "2026-11-07T19:39:57.393Z"
+    },
+    {
+     "game": 7,
+     "game_id": 67,
+     "turns": 62,
+     "started_at": "2026-11-07T19:40:03.154Z",
+     "finished_at": "2026-11-07T19:42:01.446Z"
+    },
+    {
+     "game": 8,
+     "game_id": 68,
+     "turns": 65,
+     "started_at": "2026-11-07T19:42:06.830Z",
+     "finished_at": "2026-11-07T19:44:23.512Z"
+    },
+    {
+     "game": 9,
+     "game_id": 70,
+     "turns": 67,
+     "started_at": "2026-11-07T19:44:29.964Z",
+     "finished_at": "2026-11-07T19:47:25.681Z"
+    },
+    {
+     "game": 10,
+     "game_id": 72,
+     "turns": 56,
+     "started_at": "2026-11-07T19:47:32.398Z",
+     "finished_at": "2026-11-07T19:51:27.026Z"
+    }
+   ],
+   "decisions_per_game": [
+    20,
+    24,
+    18,
+    17,
+    29,
+    21,
+    23,
+    22,
+    25,
+    25
+   ],
+   "invalid_decisions": 0,
+   "unscored_decisions": 0,
+   "evaluations": {
+    "T5": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-07T19:19:31.874Z",
+     "last_answer_at": "2026-11-07T19:38:13.228Z"
+    },
+    "T10": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-07T19:52:22.309Z",
+     "last_answer_at": "2026-11-07T20:18:17.057Z"
+    }
+   },
+   "lessons_files": {},
+   "lessons_calls": 0,
+   "lessons_cut": 0,
+   "context_tokens_after_game": {
+    "1": 2833,
+    "2": 6229,
+    "3": 8888,
+    "4": 11323,
+    "5": 15466,
+    "6": 18482,
+    "7": 21781,
+    "8": 25008,
+    "9": 26090,
+    "10": 26399
+   },
+   "records_dropped_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 1,
+    "10": 2
+   },
+   "budget_points": [],
+   "evaluation_positions_excluded": 0,
+   "restarts": 0,
+   "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+   "lesson_prompt_sha256": "d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e",
+   "aggregate_sha256": "3e33dc0b349f4c047f15d4f38a86d4056bc43c285c311546dca7d71df62c0237",
+   "log_sha256": "d61efc030763e24befceb9b85975a81307f838f4b5f89ece0d15b5ad069399e7",
+   "match_log_sha256": "b19d09afa8ee5065e59a6aefc1c63e635aeef175102e120c7f55f7c78bb62edc"
+  },
+  {
+   "arm": "records",
+   "series": 3,
+   "dice_seed": 756822699230296250,
+   "match_id": 11,
+   "match_status": "finished",
+   "started_at": "2026-11-07T20:18:17+00:00",
+   "finished_at": "2026-11-07T21:29:02+00:00",
+   "wall_seconds": 4245.4,
+   "games": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "game_rows": [
+    {
+     "game": 1,
+     "game_id": 78,
+     "turns": 63,
+     "started_at": "2026-11-07T20:18:17.480Z",
+     "finished_at": "2026-11-07T20:19:52.255Z"
+    },
+    {
+     "game": 2,
+     "game_id": 80,
+     "turns": 51,
+     "started_at": "2026-11-07T20:19:58.787Z",
+     "finished_at": "2026-11-07T20:20:53.358Z"
+    },
+    {
+     "game": 3,
+     "game_id": 81,
+     "turns": 50,
+     "started_at": "2026-11-07T20:20:59.030Z",
+     "finished_at": "2026-11-07T20:23:10.898Z"
+    },
+    {
+     "game": 4,
+     "game_id": 83,
+     "turns": 36,
+     "started_at": "2026-11-07T20:23:20.943Z",
+     "finished_at": "2026-11-07T20:24:16.410Z"
+    },
+    {
+     "game": 5,
+     "game_id": 84,
+     "turns": 42,
+     "started_at": "2026-11-07T20:24:20.533Z",
+     "finished_at": "2026-11-07T20:26:08.703Z"
+    },
+    {
+     "game": 6,
+     "game_id": 88,
+     "turns": 124,
+     "started_at": "2026-11-07T20:40:30.475Z",
+     "finished_at": "2026-11-07T20:42:03.248Z"
+    },
+    {
+     "game": 7,
+     "game_id": 89,
+     "turns": 37,
+     "started_at": "2026-11-07T20:42:08.523Z",
+     "finished_at": "2026-11-07T20:44:46.146Z"
+    },
+    {
+     "game": 8,
+     "game_id": 90,
+     "turns": 47,
+     "started_at": "2026-11-07T20:44:57.884Z",
+     "finished_at": "2026-11-07T20:46:38.845Z"
+    },
+    {
+     "game": 9,
+     "game_id": 91,
+     "turns": 63,
+     "started_at": "2026-11-07T20:46:42.861Z",
+     "finished_at": "2026-11-07T20:50:13.664Z"
+    },
+    {
+     "game": 10,
+     "game_id": 92,
+     "turns": 96,
+     "started_at": "2026-11-07T20:50:20.118Z",
+     "finished_at": "2026-11-07T20:56:01.970Z"
+    }
+   ],
+   "decisions_per_game": [
+    28,
+    15,
+    21,
+    13,
+    17,
+    28,
+    14,
+    11,
+    23,
+    31
+   ],
+   "invalid_decisions": 0,
+   "unscored_decisions": 0,
+   "evaluations": {
+    "T5": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-07T20:26:36.047Z",
+     "last_answer_at": "2026-11-07T20:40:30.371Z"
+    },
+    "T10": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-07T20:57:05.874Z",
+     "last_answer_at": "2026-11-07T21:29:02.622Z"
+    }
+   },
+   "lessons_files": {},
+   "lessons_calls": 0,
+   "lessons_cut": 0,
+   "context_tokens_after_game": {
+    "1": 4126,
+    "2": 6262,
+    "3": 9328,
+    "4": 11194,
+    "5": 13667,
+    "6": 17738,
+    "7": 19817,
+    "8": 21301,
+    "9": 24718,
+    "10": 25143
+   },
+   "records_dropped_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0,
+    "10": 1
+   },
+   "budget_points": [],
+   "evaluation_positions_excluded": 0,
+   "restarts": 0,
+   "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+   "lesson_prompt_sha256": "d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e",
+   "aggregate_sha256": "7f28740c401109bb11c9a554ca62821486bae23bab43d25d76d784ec24cb1a71",
+   "log_sha256": "bffa1063ed100a3f241277e25acb9167c4f04c1d7c5895fc535dbb22e25dffa7",
+   "match_log_sha256": "f2573beebaba6d091a39195d3499b668db5771a5368df8a2d2b35500e88884c3"
+  },
+  {
+   "arm": "records",
+   "series": 4,
+   "dice_seed": 3088749300669629816,
+   "match_id": 16,
+   "match_status": "finished",
+   "started_at": "2026-11-07T22:31:16+00:00",
+   "finished_at": "2026-11-07T23:37:25+00:00",
+   "wall_seconds": 3969.8,
+   "games": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "game_rows": [
+    {
+     "game": 1,
+     "game_id": 124,
+     "turns": 79,
+     "started_at": "2026-11-07T22:31:16.166Z",
+     "finished_at": "2026-11-07T22:31:39.787Z"
+    },
+    {
+     "game": 2,
+     "game_id": 127,
+     "turns": 55,
+     "started_at": "2026-11-07T22:31:44.885Z",
+     "finished_at": "2026-11-07T22:33:14.359Z"
+    },
+    {
+     "game": 3,
+     "game_id": 130,
+     "turns": 75,
+     "started_at": "2026-11-07T22:33:23.499Z",
+     "finished_at": "2026-11-07T22:34:49.194Z"
+    },
+    {
+     "game": 4,
+     "game_id": 131,
+     "turns": 47,
+     "started_at": "2026-11-07T22:34:54.126Z",
+     "finished_at": "2026-11-07T22:36:47.073Z"
+    },
+    {
+     "game": 5,
+     "game_id": 133,
+     "turns": 79,
+     "started_at": "2026-11-07T22:36:55.499Z",
+     "finished_at": "2026-11-07T22:38:55.235Z"
+    },
+    {
+     "game": 6,
+     "game_id": 147,
+     "turns": 88,
+     "started_at": "2026-11-07T22:58:37.600Z",
+     "finished_at": "2026-11-07T23:00:39.389Z"
+    },
+    {
+     "game": 7,
+     "game_id": 149,
+     "turns": 69,
+     "started_at": "2026-11-07T23:00:44.459Z",
+     "finished_at": "2026-11-07T23:04:36.676Z"
+    },
+    {
+     "game": 8,
+     "game_id": 151,
+     "turns": 70,
+     "started_at": "2026-11-07T23:04:48.198Z",
+     "finished_at": "2026-11-07T23:07:46.586Z"
+    },
+    {
+     "game": 9,
+     "game_id": 153,
+     "turns": 52,
+     "started_at": "2026-11-07T23:07:53.340Z",
+     "finished_at": "2026-11-07T23:11:12.111Z"
+    },
+    {
+     "game": 10,
+     "game_id": 155,
+     "turns": 49,
+     "started_at": "2026-11-07T23:11:16.828Z",
+     "finished_at": "2026-11-07T23:14:14.147Z"
+    }
+   ],
+   "decisions_per_game": [
+    23,
+    19,
+    25,
+    21,
+    24,
+    29,
+    27,
+    23,
+    18,
+    22
+   ],
+   "invalid_decisions": 0,
+   "unscored_decisions": 0,
+   "evaluations": {
+    "T5": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-07T22:39:27.329Z",
+     "last_answer_at": "2026-11-07T22:58:37.418Z"
+    },
+    "T10": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-07T23:14:56.283Z",
+     "last_answer_at": "2026-11-07T23:37:25.777Z"
+    }
+   },
+   "lessons_files": {},
+   "lessons_calls": 0,
+   "lessons_cut": 0,
+   "context_tokens_after_game": {
+    "1": 3441,
+    "2": 6390,
+    "3": 10116,
+    "4": 13153,
+    "5": 16707,
+    "6": 20791,
+    "7": 24763,
+    "8": 24774,
+    "9": 24440,
+    "10": 23735
+   },
+   "records_dropped_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 1,
+    "9": 2,
+    "10": 3
+   },
+   "budget_points": [],
+   "evaluation_positions_excluded": 0,
+   "restarts": 0,
+   "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+   "lesson_prompt_sha256": "d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e",
+   "aggregate_sha256": "083ab016ffdbf9d0ad62f7aaa54c10027382a3215ae1401c31f2080d2fdb91ef",
+   "log_sha256": "bce6d1c829b8160f4ac30868ce34f836b8c80d7c65adf1f258086d173c9a6906",
+   "match_log_sha256": "a89ec57e46089ebd4be9047755010224adc9ff53edd804c0edfa4178bea00f48"
+  },
+  {
+   "arm": "records",
+   "series": 5,
+   "dice_seed": 2763205551746403990,
+   "match_id": 20,
+   "match_status": "finished",
+   "started_at": "2026-11-07T23:37:26+00:00",
+   "finished_at": "2026-11-08T00:50:23+00:00",
+   "wall_seconds": 4377.0,
+   "games": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "game_rows": [
+    {
+     "game": 1,
+     "game_id": 171,
+     "turns": 81,
+     "started_at": "2026-11-07T23:37:26.169Z",
+     "finished_at": "2026-11-07T23:38:30.350Z"
+    },
+    {
+     "game": 2,
+     "game_id": 173,
+     "turns": 64,
+     "started_at": "2026-11-07T23:38:34.426Z",
+     "finished_at": "2026-11-07T23:40:16.088Z"
+    },
+    {
+     "game": 3,
+     "game_id": 176,
+     "turns": 47,
+     "started_at": "2026-11-07T23:40:22.103Z",
+     "finished_at": "2026-11-07T23:41:44.063Z"
+    },
+    {
+     "game": 4,
+     "game_id": 177,
+     "turns": 47,
+     "started_at": "2026-11-07T23:41:48.433Z",
+     "finished_at": "2026-11-07T23:44:29.010Z"
+    },
+    {
+     "game": 5,
+     "game_id": 180,
+     "turns": 39,
+     "started_at": "2026-11-07T23:44:36.788Z",
+     "finished_at": "2026-11-07T23:46:21.813Z"
+    },
+    {
+     "game": 6,
+     "game_id": 192,
+     "turns": 68,
+     "started_at": "2026-11-08T00:07:35.388Z",
+     "finished_at": "2026-11-08T00:09:40.311Z"
+    },
+    {
+     "game": 7,
+     "game_id": 196,
+     "turns": 42,
+     "started_at": "2026-11-08T00:09:44.158Z",
+     "finished_at": "2026-11-08T00:11:48.519Z"
+    },
+    {
+     "game": 8,
+     "game_id": 199,
+     "turns": 46,
+     "started_at": "2026-11-08T00:11:51.943Z",
+     "finished_at": "2026-11-08T00:14:56.770Z"
+    },
+    {
+     "game": 9,
+     "game_id": 202,
+     "turns": 53,
+     "started_at": "2026-11-08T00:15:02.406Z",
+     "finished_at": "2026-11-08T00:17:16.594Z"
+    },
+    {
+     "game": 10,
+     "game_id": 205,
+     "turns": 57,
+     "started_at": "2026-11-08T00:17:19.803Z",
+     "finished_at": "2026-11-08T00:20:43.510Z"
+    }
+   ],
+   "decisions_per_game": [
+    29,
+    25,
+    22,
+    22,
+    19,
+    19,
+    21,
+    18,
+    12,
+    28
+   ],
+   "invalid_decisions": 0,
+   "unscored_decisions": 0,
+   "evaluations": {
+    "T5": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-07T23:46:41.763Z",
+     "last_answer_at": "2026-11-08T00:07:35.328Z"
+    },
+    "T10": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-08T00:21:37.324Z",
+     "last_answer_at": "2026-11-08T00:50:23.032Z"
+    }
+   },
+   "lessons_files": {},
+   "lessons_calls": 0,
+   "lessons_cut": 0,
+   "context_tokens_after_game": {
+    "1": 4258,
+    "2": 7968,
+    "3": 11121,
+    "4": 14235,
+    "5": 16837,
+    "6": 19573,
+    "7": 22475,
+    "8": 25103,
+    "9": 26830,
+    "10": 26593
+   },
+   "records_dropped_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0,
+    "10": 1
+   },
+   "budget_points": [],
+   "evaluation_positions_excluded": 0,
+   "restarts": 0,
+   "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+   "lesson_prompt_sha256": "d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e",
+   "aggregate_sha256": "4e389f6f2c51088c5f8f7766d8415ab5910ed7eb983dd1fa14b869d05645dda1",
+   "log_sha256": "9498c52a333f7459f31c1da733c076317a956d3b1710633f75406210098cd2ee",
+   "match_log_sha256": "0cc2a6439ebc06276adc178a95d1cb0a143174da81d95620d54be8c185907068"
+  },
+  {
+   "arm": "records",
+   "series": 6,
+   "dice_seed": 187514327728090754,
+   "match_id": 26,
+   "match_status": "finished",
+   "started_at": "2026-11-08T00:50:23+00:00",
+   "finished_at": "2026-11-08T01:53:41+00:00",
+   "wall_seconds": 3798.1,
+   "games": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "game_rows": [
+    {
+     "game": 1,
+     "game_id": 218,
+     "turns": 45,
+     "started_at": "2026-11-08T00:50:23.505Z",
+     "finished_at": "2026-11-08T00:51:28.588Z"
+    },
+    {
+     "game": 2,
+     "game_id": 221,
+     "turns": 43,
+     "started_at": "2026-11-08T00:51:31.904Z",
+     "finished_at": "2026-11-08T00:52:47.210Z"
+    },
+    {
+     "game": 3,
+     "game_id": 224,
+     "turns": 58,
+     "started_at": "2026-11-08T00:52:50.902Z",
+     "finished_at": "2026-11-08T00:54:49.583Z"
+    },
+    {
+     "game": 4,
+     "game_id": 226,
+     "turns": 60,
+     "started_at": "2026-11-08T00:54:57.361Z",
+     "finished_at": "2026-11-08T00:56:21.570Z"
+    },
+    {
+     "game": 5,
+     "game_id": 229,
+     "turns": 51,
+     "started_at": "2026-11-08T00:56:24.871Z",
+     "finished_at": "2026-11-08T00:58:45.853Z"
+    },
+    {
+     "game": 6,
+     "game_id": 244,
+     "turns": 74,
+     "started_at": "2026-11-08T01:19:16.733Z",
+     "finished_at": "2026-11-08T01:21:13.567Z"
+    },
+    {
+     "game": 7,
+     "game_id": 245,
+     "turns": 47,
+     "started_at": "2026-11-08T01:21:18.828Z",
+     "finished_at": "2026-11-08T01:23:15.902Z"
+    },
+    {
+     "game": 8,
+     "game_id": 248,
+     "turns": 47,
+     "started_at": "2026-11-08T01:23:19.861Z",
+     "finished_at": "2026-11-08T01:24:46.734Z"
+    },
+    {
+     "game": 9,
+     "game_id": 250,
+     "turns": 51,
+     "started_at": "2026-11-08T01:24:49.761Z",
+     "finished_at": "2026-11-08T01:28:12.399Z"
+    },
+    {
+     "game": 10,
+     "game_id": 252,
+     "turns": 44,
+     "started_at": "2026-11-08T01:28:20.699Z",
+     "finished_at": "2026-11-08T01:30:49.740Z"
+    }
+   ],
+   "decisions_per_game": [
+    18,
+    17,
+    25,
+    15,
+    21,
+    23,
+    20,
+    16,
+    25,
+    20
+   ],
+   "invalid_decisions": 0,
+   "unscored_decisions": 0,
+   "evaluations": {
+    "T5": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-08T00:59:12.092Z",
+     "last_answer_at": "2026-11-08T01:19:16.671Z"
+    },
+    "T10": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-08T01:31:40.637Z",
+     "last_answer_at": "2026-11-08T01:53:41.430Z"
+    }
+   },
+   "lessons_files": {},
+   "lessons_calls": 0,
+   "lessons_cut": 0,
+   "context_tokens_after_game": {
+    "1": 2543,
+    "2": 4987,
+    "3": 8627,
+    "4": 10776,
+    "5": 13776,
+    "6": 17086,
+    "7": 20007,
+    "8": 22280,
+    "9": 25684,
+    "10": 26059
+   },
+   "records_dropped_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0,
+    "10": 1
+   },
+   "budget_points": [],
+   "evaluation_positions_excluded": 0,
+   "restarts": 0,
+   "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+   "lesson_prompt_sha256": "d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e",
+   "aggregate_sha256": "46b29ffaa3778b71680fc53a79934f22139864503a100135e8b89385a58a1a54",
+   "log_sha256": "834a47019a67cbcf3de5419fd9f6ec2f4b1e68087c76b2e8e0263d12596c022c",
+   "match_log_sha256": "8d0da50ac91acf0479fea04dc6f26f906608c585dbd560a7c748d30701f622e6"
+  },
+  {
+   "arm": "records",
+   "series": 7,
+   "dice_seed": 4993853979471497236,
+   "match_id": 30,
+   "match_status": "finished",
+   "started_at": "2026-11-08T01:53:41+00:00",
+   "finished_at": "2026-11-08T02:59:32+00:00",
+   "wall_seconds": 3950.2,
+   "games": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "game_rows": [
+    {
+     "game": 1,
+     "game_id": 256,
+     "turns": 48,
+     "started_at": "2026-11-08T01:53:42.015Z",
+     "finished_at": "2026-11-08T01:54:54.597Z"
+    },
+    {
+     "game": 2,
+     "game_id": 259,
+     "turns": 58,
+     "started_at": "2026-11-08T01:55:00.471Z",
+     "finished_at": "2026-11-08T01:56:22.555Z"
+    },
+    {
+     "game": 3,
+     "game_id": 261,
+     "turns": 86,
+     "started_at": "2026-11-08T01:56:29.581Z",
+     "finished_at": "2026-11-08T01:58:21.584Z"
+    },
+    {
+     "game": 4,
+     "game_id": 264,
+     "turns": 53,
+     "started_at": "2026-11-08T01:58:28.642Z",
+     "finished_at": "2026-11-08T02:00:10.327Z"
+    },
+    {
+     "game": 5,
+     "game_id": 266,
+     "turns": 53,
+     "started_at": "2026-11-08T02:00:14.696Z",
+     "finished_at": "2026-11-08T02:01:55.316Z"
+    },
+    {
+     "game": 6,
+     "game_id": 271,
+     "turns": 46,
+     "started_at": "2026-11-08T02:21:54.397Z",
+     "finished_at": "2026-11-08T02:24:01.727Z"
+    },
+    {
+     "game": 7,
+     "game_id": 273,
+     "turns": 86,
+     "started_at": "2026-11-08T02:24:09.090Z",
+     "finished_at": "2026-11-08T02:26:27.803Z"
+    },
+    {
+     "game": 8,
+     "game_id": 275,
+     "turns": 62,
+     "started_at": "2026-11-08T02:26:32.147Z",
+     "finished_at": "2026-11-08T02:31:07.746Z"
+    },
+    {
+     "game": 9,
+     "game_id": 277,
+     "turns": 58,
+     "started_at": "2026-11-08T02:31:16.198Z",
+     "finished_at": "2026-11-08T02:34:32.769Z"
+    },
+    {
+     "game": 10,
+     "game_id": 278,
+     "turns": 44,
+     "started_at": "2026-11-08T02:34:37.175Z",
+     "finished_at": "2026-11-08T02:38:13.492Z"
+    }
+   ],
+   "decisions_per_game": [
+    20,
+    20,
+    32,
+    23,
+    22,
+    22,
+    22,
+    27,
+    25,
+    18
+   ],
+   "invalid_decisions": 0,
+   "unscored_decisions": 0,
+   "evaluations": {
+    "T5": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-08T02:02:15.614Z",
+     "last_answer_at": "2026-11-08T02:21:54.330Z"
+    },
+    "T10": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-08T02:38:55.947Z",
+     "last_answer_at": "2026-11-08T02:59:31.951Z"
+    }
+   },
+   "lessons_files": {},
+   "lessons_calls": 0,
+   "lessons_cut": 0,
+   "context_tokens_after_game": {
+    "1": 3043,
+    "2": 5921,
+    "3": 10745,
+    "4": 13938,
+    "5": 17077,
+    "6": 20180,
+    "7": 23393,
+    "8": 24303,
+    "9": 25006,
+    "10": 22884
+   },
+   "records_dropped_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 1,
+    "9": 2,
+    "10": 3
+   },
+   "budget_points": [],
+   "evaluation_positions_excluded": 0,
+   "restarts": 0,
+   "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+   "lesson_prompt_sha256": "d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e",
+   "aggregate_sha256": "40a40fc92b5f2200d1bd8b62cd37348429551d623c251f93a80f6c64603b3c05",
+   "log_sha256": "750200cdca798df273070fb9e36d3c1066b61b4e665ae56afaa0c8dbb6194c44",
+   "match_log_sha256": "37186d591982fa870c22cc3ea315b63e484bc52953582e76cd167ed5cc4d4543"
+  },
+  {
+   "arm": "records",
+   "series": 8,
+   "dice_seed": 5308720830707305012,
+   "match_id": 31,
+   "match_status": "finished",
+   "started_at": "2026-11-08T02:59:33+00:00",
+   "finished_at": "2026-11-08T03:59:42+00:00",
+   "wall_seconds": 3609.7,
+   "games": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "game_rows": [
+    {
+     "game": 1,
+     "game_id": 283,
+     "turns": 54,
+     "started_at": "2026-11-08T02:59:33.201Z",
+     "finished_at": "2026-11-08T03:00:30.733Z"
+    },
+    {
+     "game": 2,
+     "game_id": 284,
+     "turns": 49,
+     "started_at": "2026-11-08T03:00:36.055Z",
+     "finished_at": "2026-11-08T03:01:10.817Z"
+    },
+    {
+     "game": 3,
+     "game_id": 285,
+     "turns": 108,
+     "started_at": "2026-11-08T03:01:13.497Z",
+     "finished_at": "2026-11-08T03:03:15.545Z"
+    },
+    {
+     "game": 4,
+     "game_id": 286,
+     "turns": 49,
+     "started_at": "2026-11-08T03:03:23.862Z",
+     "finished_at": "2026-11-08T03:04:39.028Z"
+    },
+    {
+     "game": 5,
+     "game_id": 287,
+     "turns": 53,
+     "started_at": "2026-11-08T03:04:42.446Z",
+     "finished_at": "2026-11-08T03:06:10.764Z"
+    },
+    {
+     "game": 6,
+     "game_id": 296,
+     "turns": 56,
+     "started_at": "2026-11-08T03:23:50.641Z",
+     "finished_at": "2026-11-08T03:25:14.510Z"
+    },
+    {
+     "game": 7,
+     "game_id": 297,
+     "turns": 54,
+     "started_at": "2026-11-08T03:25:17.541Z",
+     "finished_at": "2026-11-08T03:27:09.658Z"
+    },
+    {
+     "game": 8,
+     "game_id": 298,
+     "turns": 45,
+     "started_at": "2026-11-08T03:27:13.657Z",
+     "finished_at": "2026-11-08T03:29:14.813Z"
+    },
+    {
+     "game": 9,
+     "game_id": 300,
+     "turns": 109,
+     "started_at": "2026-11-08T03:29:18.696Z",
+     "finished_at": "2026-11-08T03:31:59.452Z"
+    },
+    {
+     "game": 10,
+     "game_id": 301,
+     "turns": 57,
+     "started_at": "2026-11-08T03:32:04.392Z",
+     "finished_at": "2026-11-08T03:35:59.829Z"
+    }
+   ],
+   "decisions_per_game": [
+    24,
+    14,
+    40,
+    13,
+    21,
+    20,
+    19,
+    18,
+    34,
+    28
+   ],
+   "invalid_decisions": 0,
+   "unscored_decisions": 0,
+   "evaluations": {
+    "T5": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-08T03:06:28.523Z",
+     "last_answer_at": "2026-11-08T03:23:50.571Z"
+    },
+    "T10": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-08T03:36:41.072Z",
+     "last_answer_at": "2026-11-08T03:59:42.735Z"
+    }
+   },
+   "lessons_files": {},
+   "lessons_calls": 0,
+   "lessons_cut": 0,
+   "context_tokens_after_game": {
+    "1": 3639,
+    "2": 5586,
+    "3": 11519,
+    "4": 13435,
+    "5": 16340,
+    "6": 19150,
+    "7": 21891,
+    "8": 24571,
+    "9": 25813,
+    "10": 21931
+   },
+   "records_dropped_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 1,
+    "10": 3
+   },
+   "budget_points": [],
+   "evaluation_positions_excluded": 0,
+   "restarts": 0,
+   "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+   "lesson_prompt_sha256": "d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e",
+   "aggregate_sha256": "b9b34de45b87a6f35f51de91df362ba36fadb96ee533351b9a221264bd608a7f",
+   "log_sha256": "3c9fd49d7632c8a87aed215aa56673671c8a66bcabb38b49b24ec3a3459099d0",
+   "match_log_sha256": "9c40d14954943c7556ba346dd0b58470d331df704ea9c27cf37df97166699253"
+  },
+  {
+   "arm": "records",
+   "series": 9,
+   "dice_seed": 6788811015730745052,
+   "match_id": 34,
+   "match_status": "finished",
+   "started_at": "2026-11-08T03:59:43+00:00",
+   "finished_at": "2026-11-08T05:07:36+00:00",
+   "wall_seconds": 4073.3,
+   "games": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "game_rows": [
+    {
+     "game": 1,
+     "game_id": 308,
+     "turns": 92,
+     "started_at": "2026-11-08T03:59:43.415Z",
+     "finished_at": "2026-11-08T04:02:54.099Z"
+    },
+    {
+     "game": 2,
+     "game_id": 310,
+     "turns": 89,
+     "started_at": "2026-11-08T04:03:07.023Z",
+     "finished_at": "2026-11-08T04:05:02.208Z"
+    },
+    {
+     "game": 3,
+     "game_id": 312,
+     "turns": 97,
+     "started_at": "2026-11-08T04:05:08.266Z",
+     "finished_at": "2026-11-08T04:06:59.546Z"
+    },
+    {
+     "game": 4,
+     "game_id": 314,
+     "turns": 60,
+     "started_at": "2026-11-08T04:07:03.901Z",
+     "finished_at": "2026-11-08T04:09:12.187Z"
+    },
+    {
+     "game": 5,
+     "game_id": 315,
+     "turns": 60,
+     "started_at": "2026-11-08T04:09:16.769Z",
+     "finished_at": "2026-11-08T04:11:31.469Z"
+    },
+    {
+     "game": 6,
+     "game_id": 318,
+     "turns": 71,
+     "started_at": "2026-11-08T04:30:00.601Z",
+     "finished_at": "2026-11-08T04:32:25.534Z"
+    },
+    {
+     "game": 7,
+     "game_id": 319,
+     "turns": 64,
+     "started_at": "2026-11-08T04:32:31.110Z",
+     "finished_at": "2026-11-08T04:34:29.907Z"
+    },
+    {
+     "game": 8,
+     "game_id": 320,
+     "turns": 58,
+     "started_at": "2026-11-08T04:34:32.977Z",
+     "finished_at": "2026-11-08T04:37:37.190Z"
+    },
+    {
+     "game": 9,
+     "game_id": 321,
+     "turns": 60,
+     "started_at": "2026-11-08T04:37:42.481Z",
+     "finished_at": "2026-11-08T04:40:02.252Z"
+    },
+    {
+     "game": 10,
+     "game_id": 322,
+     "turns": 57,
+     "started_at": "2026-11-08T04:40:05.981Z",
+     "finished_at": "2026-11-08T04:44:14.198Z"
+    }
+   ],
+   "decisions_per_game": [
+    42,
+    27,
+    28,
+    28,
+    25,
+    28,
+    18,
+    22,
+    22,
+    25
+   ],
+   "invalid_decisions": 0,
+   "unscored_decisions": 0,
+   "evaluations": {
+    "T5": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-08T04:11:57.947Z",
+     "last_answer_at": "2026-11-08T04:30:00.531Z"
+    },
+    "T10": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-08T04:45:01.990Z",
+     "last_answer_at": "2026-11-08T05:07:36.585Z"
+    }
+   },
+   "lessons_files": {},
+   "lessons_calls": 0,
+   "lessons_cut": 0,
+   "context_tokens_after_game": {
+    "1": 5992,
+    "2": 10053,
+    "3": 14036,
+    "4": 17937,
+    "5": 21634,
+    "6": 25760,
+    "7": 22375,
+    "8": 25709,
+    "9": 24849,
+    "10": 24436
+   },
+   "records_dropped_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 1,
+    "8": 1,
+    "9": 2,
+    "10": 3
+   },
+   "budget_points": [],
+   "evaluation_positions_excluded": 0,
+   "restarts": 0,
+   "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+   "lesson_prompt_sha256": "d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e",
+   "aggregate_sha256": "42c821dabd1304069ed66aca4036c1bb06fdfc24b5b02696ceb8ff1420d070cf",
+   "log_sha256": "86125df0af45e6aaf0b29bd9dc83cfcd43e2d1fb54db0610934a802bfeddd647",
+   "match_log_sha256": "53d9f48c5ef1ed14d0ac0de94775f8314e423fb20465c1176f8edce8c546c42d"
+  },
+  {
+   "arm": "records",
+   "series": 10,
+   "dice_seed": 2110657280462155743,
+   "match_id": 37,
+   "match_status": "finished",
+   "started_at": "2026-11-08T05:07:37+00:00",
+   "finished_at": "2026-11-08T06:15:44+00:00",
+   "wall_seconds": 4087.0,
+   "games": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "game_rows": [
+    {
+     "game": 1,
+     "game_id": 333,
+     "turns": 78,
+     "started_at": "2026-11-08T05:07:37.342Z",
+     "finished_at": "2026-11-08T05:08:35.533Z"
+    },
+    {
+     "game": 2,
+     "game_id": 334,
+     "turns": 59,
+     "started_at": "2026-11-08T05:08:39.643Z",
+     "finished_at": "2026-11-08T05:09:37.665Z"
+    },
+    {
+     "game": 3,
+     "game_id": 335,
+     "turns": 61,
+     "started_at": "2026-11-08T05:09:42.558Z",
+     "finished_at": "2026-11-08T05:10:40.072Z"
+    },
+    {
+     "game": 4,
+     "game_id": 336,
+     "turns": 54,
+     "started_at": "2026-11-08T05:10:42.869Z",
+     "finished_at": "2026-11-08T05:12:34.432Z"
+    },
+    {
+     "game": 5,
+     "game_id": 337,
+     "turns": 71,
+     "started_at": "2026-11-08T05:12:39.889Z",
+     "finished_at": "2026-11-08T05:15:19.718Z"
+    },
+    {
+     "game": 6,
+     "game_id": 345,
+     "turns": 50,
+     "started_at": "2026-11-08T05:34:27.598Z",
+     "finished_at": "2026-11-08T05:36:53.921Z"
+    },
+    {
+     "game": 7,
+     "game_id": 347,
+     "turns": 101,
+     "started_at": "2026-11-08T05:37:00.371Z",
+     "finished_at": "2026-11-08T05:41:02.069Z"
+    },
+    {
+     "game": 8,
+     "game_id": 349,
+     "turns": 113,
+     "started_at": "2026-11-08T05:41:11.368Z",
+     "finished_at": "2026-11-08T05:45:09.528Z"
+    },
+    {
+     "game": 9,
+     "game_id": 350,
+     "turns": 57,
+     "started_at": "2026-11-08T05:45:15.662Z",
+     "finished_at": "2026-11-08T05:49:34.394Z"
+    },
+    {
+     "game": 10,
+     "game_id": 352,
+     "turns": 60,
+     "started_at": "2026-11-08T05:49:40.640Z",
+     "finished_at": "2026-11-08T05:52:52.731Z"
+    }
+   ],
+   "decisions_per_game": [
+    23,
+    12,
+    17,
+    25,
+    28,
+    21,
+    41,
+    40,
+    26,
+    25
+   ],
+   "invalid_decisions": 0,
+   "unscored_decisions": 0,
+   "evaluations": {
+    "T5": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-08T05:15:48.109Z",
+     "last_answer_at": "2026-11-08T05:34:27.534Z"
+    },
+    "T10": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-08T05:53:41.836Z",
+     "last_answer_at": "2026-11-08T06:15:44.154Z"
+    }
+   },
+   "lessons_files": {},
+   "lessons_calls": 0,
+   "lessons_cut": 0,
+   "context_tokens_after_game": {
+    "1": 3453,
+    "2": 5218,
+    "3": 7659,
+    "4": 11153,
+    "5": 15257,
+    "6": 18127,
+    "7": 24198,
+    "8": 26459,
+    "9": 25971,
+    "10": 26115
+   },
+   "records_dropped_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 1,
+    "9": 3,
+    "10": 4
+   },
+   "budget_points": [],
+   "evaluation_positions_excluded": 0,
+   "restarts": 0,
+   "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+   "lesson_prompt_sha256": "d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e",
+   "aggregate_sha256": "09cd3c7bdc8ef06f23b362489b3adc7f999086db799a530d7cabffb3f5843000",
+   "log_sha256": "83b0a44fdd759ea56ae01dd622b4de2017dc6d19c722ea41bba3b968a8d9ab5d",
+   "match_log_sha256": "5d175cc15dc3fa62f74f7e0d9d011a5cba6a7bcc2f8393e3f06e4aa17281622e"
+  },
+  {
+   "arm": "lessons",
+   "series": 1,
+   "dice_seed": 5588155524604542475,
+   "match_id": 6,
+   "match_status": "finished",
+   "started_at": "2026-11-07T18:20:14+00:00",
+   "finished_at": "2026-11-07T19:26:36+00:00",
+   "wall_seconds": 3982.0,
+   "games": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "game_rows": [
+    {
+     "game": 1,
+     "game_id": 33,
+     "turns": 63,
+     "started_at": "2026-11-07T18:20:14.708Z",
+     "finished_at": "2026-11-07T18:20:37.358Z"
+    },
+    {
+     "game": 2,
+     "game_id": 37,
+     "turns": 42,
+     "started_at": "2026-11-07T18:21:33.323Z",
+     "finished_at": "2026-11-07T18:22:12.963Z"
+    },
+    {
+     "game": 3,
+     "game_id": 39,
+     "turns": 64,
+     "started_at": "2026-11-07T18:23:11.822Z",
+     "finished_at": "2026-11-07T18:23:49.598Z"
+    },
+    {
+     "game": 4,
+     "game_id": 41,
+     "turns": 45,
+     "started_at": "2026-11-07T18:25:25.204Z",
+     "finished_at": "2026-11-07T18:26:50.395Z"
+    },
+    {
+     "game": 5,
+     "game_id": 42,
+     "turns": 71,
+     "started_at": "2026-11-07T18:28:37.249Z",
+     "finished_at": "2026-11-07T18:29:44.161Z"
+    },
+    {
+     "game": 6,
+     "game_id": 47,
+     "turns": 64,
+     "started_at": "2026-11-07T18:47:49.161Z",
+     "finished_at": "2026-11-07T18:49:23.961Z"
+    },
+    {
+     "game": 7,
+     "game_id": 49,
+     "turns": 71,
+     "started_at": "2026-11-07T18:51:58.603Z",
+     "finished_at": "2026-11-07T18:55:08.404Z"
+    },
+    {
+     "game": 8,
+     "game_id": 50,
+     "turns": 92,
+     "started_at": "2026-11-07T18:58:05.173Z",
+     "finished_at": "2026-11-07T19:00:21.564Z"
+    },
+    {
+     "game": 9,
+     "game_id": 51,
+     "turns": 57,
+     "started_at": "2026-11-07T19:03:25.419Z",
+     "finished_at": "2026-11-07T19:06:25.033Z"
+    },
+    {
+     "game": 10,
+     "game_id": 52,
+     "turns": 168,
+     "started_at": "2026-11-07T19:09:47.121Z",
+     "finished_at": "2026-11-07T19:11:00.438Z"
+    }
+   ],
+   "decisions_per_game": [
+    25,
+    17,
+    21,
+    22,
+    23,
+    21,
+    26,
+    30,
+    25,
+    18
+   ],
+   "invalid_decisions": 0,
+   "unscored_decisions": 0,
+   "evaluations": {
+    "T5": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-07T18:31:46.127Z",
+     "last_answer_at": "2026-11-07T18:47:49.061Z"
+    },
+    "T10": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-07T19:12:55.051Z",
+     "last_answer_at": "2026-11-07T19:26:36.396Z"
+    }
+   },
+   "lessons_files": {
+    "1": "a8eeaea031a37cf1f1e12eed0de46e5ca5068557409026f252deafd4adbd7228",
+    "2": "9b471f10042563a91ce70efdb5a404b7d7c88f3a5be044835586231aec83d475",
+    "3": "0bb8814ba5291fbad7377adcd93aa01554e7feeae6f6b1c723547fea256b2a5a",
+    "4": "8315388296c989e8a546fb5b18166869102c4dcbc742b9135d0d24d8962355e8",
+    "5": "c624951a3a78063bcda708a89d239320645f9bf2faa7e5f9fe7967eca37f6c7c",
+    "6": "44d0e809ecacc2eb2685dc7503a261d6d1b5daad633a2a5664d7541edeb5422a",
+    "7": "c36b2696b03e8d8eb0d9e84b82a4ac3b13773aeb975d9ef441ede0384ed2c07f",
+    "8": "fd84cf2f1be71440d2c803b08f5c2b24bdab46212b522fbc65ce3dfbe922584d",
+    "9": "8ffa81c14c162f6579ed78a47910d45aadd2a6a6b5e0af82bf578e994fe9103c",
+    "10": "ba64597235a3ae3a7133130c6400a035dfd9c9e40c026606b2296c4f589afbd8"
+   },
+   "lessons_calls": 10,
+   "lessons_cut": 0,
+   "context_tokens_after_game": {
+    "1": 158,
+    "2": 277,
+    "3": 394,
+    "4": 509,
+    "5": 623,
+    "6": 729,
+    "7": 860,
+    "8": 988,
+    "9": 1130,
+    "10": 1252
+   },
+   "records_dropped_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0,
+    "10": 0
+   },
+   "budget_points": [],
+   "evaluation_positions_excluded": 0,
+   "restarts": 1,
+   "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+   "lesson_prompt_sha256": "d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e",
+   "aggregate_sha256": "93e9a5ef1c78185d75c40251ff5eb35b52d79de2177165db5e4c74f56ae8312d",
+   "log_sha256": "cee9b7f677d730c47cc793440bf523654c359953167972cc1692ab6b8f05ffe9",
+   "match_log_sha256": "2e7b2d405fae6bd9b5b9eba2156654d8fdb0a4935d50baf22268d2097c87d03d"
+  },
+  {
+   "arm": "lessons",
+   "series": 2,
+   "dice_seed": 9059240225405464449,
+   "match_id": 9,
+   "match_status": "finished",
+   "started_at": "2026-11-07T19:26:36+00:00",
+   "finished_at": "2026-11-07T20:59:12+00:00",
+   "wall_seconds": 5555.6,
+   "games": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "game_rows": [
+    {
+     "game": 1,
+     "game_id": 58,
+     "turns": 49,
+     "started_at": "2026-11-07T19:26:36.908Z",
+     "finished_at": "2026-11-07T19:29:19.241Z"
+    },
+    {
+     "game": 2,
+     "game_id": 63,
+     "turns": 76,
+     "started_at": "2026-11-07T19:31:47.635Z",
+     "finished_at": "2026-11-07T19:34:54.816Z"
+    },
+    {
+     "game": 3,
+     "game_id": 65,
+     "turns": 66,
+     "started_at": "2026-11-07T19:36:48.209Z",
+     "finished_at": "2026-11-07T19:39:51.194Z"
+    },
+    {
+     "game": 4,
+     "game_id": 69,
+     "turns": 44,
+     "started_at": "2026-11-07T19:42:46.522Z",
+     "finished_at": "2026-11-07T19:43:44.699Z"
+    },
+    {
+     "game": 5,
+     "game_id": 71,
+     "turns": 65,
+     "started_at": "2026-11-07T19:46:29.391Z",
+     "finished_at": "2026-11-07T19:50:18.486Z"
+    },
+    {
+     "game": 6,
+     "game_id": 79,
+     "turns": 54,
+     "started_at": "2026-11-07T20:18:40.760Z",
+     "finished_at": "2026-11-07T20:19:39.453Z"
+    },
+    {
+     "game": 7,
+     "game_id": 82,
+     "turns": 83,
+     "started_at": "2026-11-07T20:21:07.742Z",
+     "finished_at": "2026-11-07T20:22:58.629Z"
+    },
+    {
+     "game": 8,
+     "game_id": 85,
+     "turns": 111,
+     "started_at": "2026-11-07T20:24:47.922Z",
+     "finished_at": "2026-11-07T20:26:51.857Z"
+    },
+    {
+     "game": 9,
+     "game_id": 86,
+     "turns": 80,
+     "started_at": "2026-11-07T20:28:47.597Z",
+     "finished_at": "2026-11-07T20:30:09.016Z"
+    },
+    {
+     "game": 10,
+     "game_id": 87,
+     "turns": 55,
+     "started_at": "2026-11-07T20:31:44.689Z",
+     "finished_at": "2026-11-07T20:33:34.225Z"
+    }
+   ],
+   "decisions_per_game": [
+    20,
+    23,
+    26,
+    11,
+    28,
+    21,
+    28,
+    26,
+    23,
+    22
+   ],
+   "invalid_decisions": 0,
+   "unscored_decisions": 0,
+   "evaluations": {
+    "T5": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-07T19:53:36.387Z",
+     "last_answer_at": "2026-11-07T20:18:40.692Z"
+    },
+    "T10": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-07T20:35:13.157Z",
+     "last_answer_at": "2026-11-07T20:59:12.277Z"
+    }
+   },
+   "lessons_files": {
+    "1": "7d955e7e73e5ff36870d92148fca26d61bd56b3715e3a6e621c9d42d5595ad0b",
+    "2": "1b1de84d9505c4ee65f4efd280c7766874b5a478ea2f2b718fdaab57b74cd71f",
+    "3": "613e2106e9da4b53a70d71838b3b2362df918fec64d0b64f06264b765337998a",
+    "4": "7ec11a21efc1db7d24230c497e8776ffd01c860c4a3fbfa7eb8f9b6d5581d959",
+    "5": "ac8e7a17cec7462c2f39c540028422205d1cf9176be464299cdce2635fc88a86",
+    "6": "fdf9853bd2ebbe63842843e411f932f628d7e34a6968a290d03def53b9616ccf",
+    "7": "b4e1cc4967f5f062d48260244d3728c4f54b2b7f8eb31ae3079fb91c13bb7e5a",
+    "8": "69f5c961c3c192bad0e56ac2bd14f873bd42773801a54646ccc9b8a51795606a",
+    "9": "b9405b363414937b64713ad691d04d4d53e71ef792fca4c1cea71dea6c34c7b8",
+    "10": "409c991e2b4c37ceb5585b71c9af47a3b06d1cca65015a2f4f8250de6a554ef1"
+   },
+   "lessons_calls": 10,
+   "lessons_cut": 0,
+   "context_tokens_after_game": {
+    "1": 169,
+    "2": 275,
+    "3": 405,
+    "4": 527,
+    "5": 645,
+    "6": 763,
+    "7": 884,
+    "8": 997,
+    "9": 1118,
+    "10": 1225
+   },
+   "records_dropped_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0,
+    "10": 0
+   },
+   "budget_points": [],
+   "evaluation_positions_excluded": 0,
+   "restarts": 0,
+   "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+   "lesson_prompt_sha256": "d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e",
+   "aggregate_sha256": "295a51fc2916d4ddf992ab12f8900b8ed35fc7414214706e638975a0e782c0e3",
+   "log_sha256": "e1154eed5bb2e0e546953ca20f724840518564a6bc07939bf796a788ab11e47c",
+   "match_log_sha256": "4da0c53380e32ee025718de6258503c09e1ca4fb14de8bf616ca0cf341d8c8bd"
+  },
+  {
+   "arm": "lessons",
+   "series": 3,
+   "dice_seed": 756822699230296250,
+   "match_id": 12,
+   "match_status": "finished",
+   "started_at": "2026-11-07T20:59:12+00:00",
+   "finished_at": "2026-11-07T21:53:02+00:00",
+   "wall_seconds": 3230.2,
+   "games": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "game_rows": [
+    {
+     "game": 1,
+     "game_id": 93,
+     "turns": 45,
+     "started_at": "2026-11-07T20:59:12.725Z",
+     "finished_at": "2026-11-07T21:03:34.118Z"
+    },
+    {
+     "game": 2,
+     "game_id": 96,
+     "turns": 77,
+     "started_at": "2026-11-07T21:07:26.052Z",
+     "finished_at": "2026-11-07T21:10:02.358Z"
+    },
+    {
+     "game": 3,
+     "game_id": 100,
+     "turns": 46,
+     "started_at": "2026-11-07T21:13:25.087Z",
+     "finished_at": "2026-11-07T21:17:33.153Z"
+    },
+    {
+     "game": 4,
+     "game_id": 101,
+     "turns": 50,
+     "started_at": "2026-11-07T21:22:24.078Z",
+     "finished_at": "2026-11-07T21:26:46.344Z"
+    },
+    {
+     "game": 5,
+     "game_id": 102,
+     "turns": 69,
+     "started_at": "2026-11-07T21:29:17.843Z",
+     "finished_at": "2026-11-07T21:30:16.774Z"
+    },
+    {
+     "game": 6,
+     "game_id": 108,
+     "turns": 47,
+     "started_at": "2026-11-07T21:40:58.257Z",
+     "finished_at": "2026-11-07T21:41:37.013Z"
+    },
+    {
+     "game": 7,
+     "game_id": 109,
+     "turns": 53,
+     "started_at": "2026-11-07T21:42:29.894Z",
+     "finished_at": "2026-11-07T21:43:31.393Z"
+    },
+    {
+     "game": 8,
+     "game_id": 110,
+     "turns": 53,
+     "started_at": "2026-11-07T21:44:24.191Z",
+     "finished_at": "2026-11-07T21:44:44.914Z"
+    },
+    {
+     "game": 9,
+     "game_id": 111,
+     "turns": 63,
+     "started_at": "2026-11-07T21:45:39.322Z",
+     "finished_at": "2026-11-07T21:46:36.628Z"
+    },
+    {
+     "game": 10,
+     "game_id": 112,
+     "turns": 50,
+     "started_at": "2026-11-07T21:47:26.225Z",
+     "finished_at": "2026-11-07T21:48:00.773Z"
+    }
+   ],
+   "decisions_per_game": [
+    22,
+    19,
+    22,
+    22,
+    24,
+    20,
+    19,
+    8,
+    23,
+    19
+   ],
+   "invalid_decisions": 0,
+   "unscored_decisions": 0,
+   "evaluations": {
+    "T5": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-07T21:32:09.981Z",
+     "last_answer_at": "2026-11-07T21:40:58.083Z"
+    },
+    "T10": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-07T21:48:30.367Z",
+     "last_answer_at": "2026-11-07T21:53:02.692Z"
+    }
+   },
+   "lessons_files": {
+    "1": "43eb9506a5ecd75e24c1fc469bf23ea31b0c234d7e254cd2fb49e939fcb4783a",
+    "2": "82b4612956f720260242654122ae6f848537e60e55030fb06b2b095255c978ee",
+    "3": "4c399be605a3aa443a125ca5a1f1ea5c7f20880e30bea74e982b5f0045b257e9",
+    "4": "45851c86d9486a8ad493b8c0c766e58663afaad62131322152ccb8a0a0e8c87f",
+    "5": "b325cc33abf69542f324599e7fbca9b6ec7bd61adb48f0ec861950bd35dd1379",
+    "6": "18aa39c13c964843c89c4c82422a108d753ef5bf9e8ad8ae875833863552f5d3",
+    "7": "40b8bac129e9993318e0cc2cf9a4dc9250020a562eba1fe6313cb3ae0dbfa036",
+    "8": "850991667f063524fdbab304edb977720d4fc22627f9e9b602ccfaef44c24d6a",
+    "9": "37cd0caa06bc716c92628e1dc412ace61483c97cd946d01ecc5f0733eaee47e6",
+    "10": "42fd1a4e7d4e50636cfe452c4b39eb62aa1d6a04fb978cf83abb8885d7b8098b"
+   },
+   "lessons_calls": 10,
+   "lessons_cut": 0,
+   "context_tokens_after_game": {
+    "1": 156,
+    "2": 285,
+    "3": 392,
+    "4": 510,
+    "5": 637,
+    "6": 764,
+    "7": 875,
+    "8": 1005,
+    "9": 1142,
+    "10": 1278
+   },
+   "records_dropped_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0,
+    "10": 0
+   },
+   "budget_points": [],
+   "evaluation_positions_excluded": 0,
+   "restarts": 0,
+   "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+   "lesson_prompt_sha256": "d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e",
+   "aggregate_sha256": "90572acd916a256bee3ee5ed19a9f3496f2d4acd5d48446bfd73dd778fea2792",
+   "log_sha256": "0655172b6ebb4c2748579346a00e2fbba206ae66517b005c34399ef2c233be4c",
+   "match_log_sha256": "01517598c67aa029f99bb3d7e33281aa75ec4dac7b75f408e1dfdc3768b0a463"
+  },
+  {
+   "arm": "lessons",
+   "series": 4,
+   "dice_seed": 3088749300669629816,
+   "match_id": 15,
+   "match_status": "finished",
+   "started_at": "2026-11-07T22:31:16+00:00",
+   "finished_at": "2026-11-08T00:03:11+00:00",
+   "wall_seconds": 5515.7,
+   "games": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "game_rows": [
+    {
+     "game": 1,
+     "game_id": 123,
+     "turns": 79,
+     "started_at": "2026-11-07T22:31:16.146Z",
+     "finished_at": "2026-11-07T22:31:39.600Z"
+    },
+    {
+     "game": 2,
+     "game_id": 129,
+     "turns": 53,
+     "started_at": "2026-11-07T22:33:15.777Z",
+     "finished_at": "2026-11-07T22:35:35.297Z"
+    },
+    {
+     "game": 3,
+     "game_id": 134,
+     "turns": 101,
+     "started_at": "2026-11-07T22:37:17.142Z",
+     "finished_at": "2026-11-07T22:39:00.573Z"
+    },
+    {
+     "game": 4,
+     "game_id": 138,
+     "turns": 130,
+     "started_at": "2026-11-07T22:41:30.379Z",
+     "finished_at": "2026-11-07T22:45:55.283Z"
+    },
+    {
+     "game": 5,
+     "game_id": 142,
+     "turns": 79,
+     "started_at": "2026-11-07T22:48:27.155Z",
+     "finished_at": "2026-11-07T22:50:28.896Z"
+    },
+    {
+     "game": 6,
+     "game_id": 158,
+     "turns": 96,
+     "started_at": "2026-11-07T23:17:34.898Z",
+     "finished_at": "2026-11-07T23:20:12.549Z"
+    },
+    {
+     "game": 7,
+     "game_id": 162,
+     "turns": 86,
+     "started_at": "2026-11-07T23:22:48.578Z",
+     "finished_at": "2026-11-07T23:26:46.251Z"
+    },
+    {
+     "game": 8,
+     "game_id": 165,
+     "turns": 102,
+     "started_at": "2026-11-07T23:30:14.291Z",
+     "finished_at": "2026-11-07T23:33:56.133Z"
+    },
+    {
+     "game": 9,
+     "game_id": 169,
+     "turns": 67,
+     "started_at": "2026-11-07T23:36:59.545Z",
+     "finished_at": "2026-11-07T23:38:03.191Z"
+    },
+    {
+     "game": 10,
+     "game_id": 174,
+     "turns": 42,
+     "started_at": "2026-11-07T23:39:30.198Z",
+     "finished_at": "2026-11-07T23:41:09.302Z"
+    }
+   ],
+   "decisions_per_game": [
+    23,
+    19,
+    29,
+    43,
+    22,
+    26,
+    38,
+    34,
+    16,
+    20
+   ],
+   "invalid_decisions": 0,
+   "unscored_decisions": 0,
+   "evaluations": {
+    "T5": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-07T22:52:48.516Z",
+     "last_answer_at": "2026-11-07T23:17:34.830Z"
+    },
+    "T10": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-07T23:42:53.978Z",
+     "last_answer_at": "2026-11-08T00:03:11.648Z"
+    }
+   },
+   "lessons_files": {
+    "1": "f3a2408649788ec0a5429c916d6c863bebfa53b31325d6ade5cd6e9f885fdc41",
+    "2": "349fbeb9af3bf6fb8084bf555c6e8a7be8926351c404915d5e202f6517dcbb16",
+    "3": "2af503b4d152270309bf18991a55a8d425c9f8f9cf67143c27e6f986ceafbdc6",
+    "4": "c796d0108795c89663c2cef2df10a3c244ed3000b3caf580e1f9c2eb3c95c011",
+    "5": "0a4bf06793b77fa202dd2a572598f16e6feceb5da6c925766eb8fb019f990e43",
+    "6": "7c895c85f0c659e0c6df144c4c48751b7e26ac884253afa14b75d5e509c6a3ed",
+    "7": "e54c636730233d7017dcaaf46b8fe625f75bc0abfb2ffff0d4331b2e4a2c5014",
+    "8": "17c3418adb83c8eabd57560899612323f34c8d3f9d5bfd065a102c4e0c116000",
+    "9": "e666d5922f26caf2491959b221191522da327bf426929719fc0b4162f775b39c",
+    "10": "2a4d4b3bc88ee1f319c82e3dbf8fa637a9de9ec6116cd295f6bde95f5a5aacbe"
+   },
+   "lessons_calls": 10,
+   "lessons_cut": 0,
+   "context_tokens_after_game": {
+    "1": 161,
+    "2": 277,
+    "3": 394,
+    "4": 512,
+    "5": 629,
+    "6": 749,
+    "7": 893,
+    "8": 1035,
+    "9": 1166,
+    "10": 1274
+   },
+   "records_dropped_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0,
+    "10": 0
+   },
+   "budget_points": [],
+   "evaluation_positions_excluded": 0,
+   "restarts": 0,
+   "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+   "lesson_prompt_sha256": "d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e",
+   "aggregate_sha256": "7655b4b3c55ca3cc0f332cbef603e109269ce060570f4ba5ced75e84058a0b06",
+   "log_sha256": "3ec2ba5a77e4aa3d1aecda8c2d63a80ca26e8f8f1632c3a68a5f4b3a5ec81f28",
+   "match_log_sha256": "674f16530d246371c6e7224c4e2da9c00b077733b9116120a0bd7017b4e24654"
+  },
+  {
+   "arm": "lessons",
+   "series": 5,
+   "dice_seed": 2763205551746403990,
+   "match_id": 22,
+   "match_status": "finished",
+   "started_at": "2026-11-08T00:03:12+00:00",
+   "finished_at": "2026-11-08T01:50:28+00:00",
+   "wall_seconds": 6436.9,
+   "games": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "game_rows": [
+    {
+     "game": 1,
+     "game_id": 187,
+     "turns": 81,
+     "started_at": "2026-11-08T00:03:12.122Z",
+     "finished_at": "2026-11-08T00:05:59.584Z"
+    },
+    {
+     "game": 2,
+     "game_id": 194,
+     "turns": 75,
+     "started_at": "2026-11-08T00:08:27.546Z",
+     "finished_at": "2026-11-08T00:11:35.990Z"
+    },
+    {
+     "game": 3,
+     "game_id": 201,
+     "turns": 60,
+     "started_at": "2026-11-08T00:14:37.314Z",
+     "finished_at": "2026-11-08T00:17:59.291Z"
+    },
+    {
+     "game": 4,
+     "game_id": 207,
+     "turns": 81,
+     "started_at": "2026-11-08T00:20:50.985Z",
+     "finished_at": "2026-11-08T00:25:34.322Z"
+    },
+    {
+     "game": 5,
+     "game_id": 211,
+     "turns": 46,
+     "started_at": "2026-11-08T00:29:26.247Z",
+     "finished_at": "2026-11-08T00:33:47.578Z"
+    },
+    {
+     "game": 6,
+     "game_id": 232,
+     "turns": 46,
+     "started_at": "2026-11-08T01:00:36.240Z",
+     "finished_at": "2026-11-08T01:03:06.605Z"
+    },
+    {
+     "game": 7,
+     "game_id": 235,
+     "turns": 100,
+     "started_at": "2026-11-08T01:05:29.661Z",
+     "finished_at": "2026-11-08T01:09:01.435Z"
+    },
+    {
+     "game": 8,
+     "game_id": 240,
+     "turns": 72,
+     "started_at": "2026-11-08T01:12:05.945Z",
+     "finished_at": "2026-11-08T01:15:30.906Z"
+    },
+    {
+     "game": 9,
+     "game_id": 243,
+     "turns": 63,
+     "started_at": "2026-11-08T01:17:56.742Z",
+     "finished_at": "2026-11-08T01:19:39.574Z"
+    },
+    {
+     "game": 10,
+     "game_id": 246,
+     "turns": 48,
+     "started_at": "2026-11-08T01:21:57.389Z",
+     "finished_at": "2026-11-08T01:24:20.677Z"
+    }
+   ],
+   "decisions_per_game": [
+    29,
+    25,
+    26,
+    27,
+    20,
+    20,
+    39,
+    30,
+    16,
+    24
+   ],
+   "invalid_decisions": 0,
+   "unscored_decisions": 0,
+   "evaluations": {
+    "T5": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-08T00:37:21.264Z",
+     "last_answer_at": "2026-11-08T01:00:36.083Z"
+    },
+    "T10": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-08T01:27:39.219Z",
+     "last_answer_at": "2026-11-08T01:50:28.890Z"
+    }
+   },
+   "lessons_files": {
+    "1": "155e925080929141720658d3ebd40e7d50655235074446ace13211ca7a1884bd",
+    "2": "d8831f5fd3d81629a664582834fe722bb98851592f9ea8a883c6c6e7603b0073",
+    "3": "643f6cd0ab908aba19875756d7094d4440e2f95bb1c432c05b558d84657cbb76",
+    "4": "0b2e7a77ca48ddf7d1d36304b32ab603a62a1bb01b67d11c42b68b1cee2b25d1",
+    "5": "4a4a66dacf6a6c206ff2d8c57d253b39b4b15713e27698cb70da21c278a82ebc",
+    "6": "0a1c689c1357181db2214265da95e1e3a46becedf5e1e303385bf34c5ae36b2f",
+    "7": "d193a26fa6e49ef33f3d564b3462f3e778148784d022c44b2f7d046e3e99a50a",
+    "8": "ce1016ab73f8659059631982ab672eaec8871847a15cd5875689f2d66d303d7a",
+    "9": "2bfe2b76f7a6bd0b1a038d144106d9d770ee451920b4d49e5f932a81f31b32ba",
+    "10": "c5e37f3bfce719b2f0f1457739293d2f0d6f7af8fc2eaf4f74e644bb04021358"
+   },
+   "lessons_calls": 10,
+   "lessons_cut": 0,
+   "context_tokens_after_game": {
+    "1": 146,
+    "2": 256,
+    "3": 380,
+    "4": 511,
+    "5": 632,
+    "6": 748,
+    "7": 888,
+    "8": 1010,
+    "9": 1123,
+    "10": 1258
+   },
+   "records_dropped_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0,
+    "10": 0
+   },
+   "budget_points": [],
+   "evaluation_positions_excluded": 0,
+   "restarts": 0,
+   "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+   "lesson_prompt_sha256": "d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e",
+   "aggregate_sha256": "ec0c44b1b3087a9948f235c0c32c025f18dffba868b66d74fc482d5b8b7ec3b8",
+   "log_sha256": "7b50fea02fd13fdc4ad4dffffeb27d7f195bc7e0c7bf44f139e96f7271d55aef",
+   "match_log_sha256": "19047357fc554947d271bc00ae9b15f723b92c77025545514fecf88c8cfb7c16"
+  },
+  {
+   "arm": "lessons",
+   "series": 6,
+   "dice_seed": 187514327728090754,
+   "match_id": 28,
+   "match_status": "finished",
+   "started_at": "2026-11-08T01:50:29+00:00",
+   "finished_at": "2026-11-08T03:11:56+00:00",
+   "wall_seconds": 4887.5,
+   "games": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "game_rows": [
+    {
+     "game": 1,
+     "game_id": 253,
+     "turns": 45,
+     "started_at": "2026-11-08T01:50:29.482Z",
+     "finished_at": "2026-11-08T01:52:11.545Z"
+    },
+    {
+     "game": 2,
+     "game_id": 257,
+     "turns": 58,
+     "started_at": "2026-11-08T01:54:24.503Z",
+     "finished_at": "2026-11-08T01:55:21.292Z"
+    },
+    {
+     "game": 3,
+     "game_id": 262,
+     "turns": 52,
+     "started_at": "2026-11-08T01:56:53.042Z",
+     "finished_at": "2026-11-08T01:58:03.798Z"
+    },
+    {
+     "game": 4,
+     "game_id": 265,
+     "turns": 50,
+     "started_at": "2026-11-08T01:59:38.615Z",
+     "finished_at": "2026-11-08T02:01:30.559Z"
+    },
+    {
+     "game": 5,
+     "game_id": 267,
+     "turns": 48,
+     "started_at": "2026-11-08T02:03:45.534Z",
+     "finished_at": "2026-11-08T02:06:42.947Z"
+    },
+    {
+     "game": 6,
+     "game_id": 276,
+     "turns": 53,
+     "started_at": "2026-11-08T02:30:47.471Z",
+     "finished_at": "2026-11-08T02:33:52.345Z"
+    },
+    {
+     "game": 7,
+     "game_id": 279,
+     "turns": 61,
+     "started_at": "2026-11-08T02:37:08.925Z",
+     "finished_at": "2026-11-08T02:39:56.604Z"
+    },
+    {
+     "game": 8,
+     "game_id": 280,
+     "turns": 59,
+     "started_at": "2026-11-08T02:42:09.196Z",
+     "finished_at": "2026-11-08T02:44:19.844Z"
+    },
+    {
+     "game": 9,
+     "game_id": 281,
+     "turns": 71,
+     "started_at": "2026-11-08T02:47:19.211Z",
+     "finished_at": "2026-11-08T02:50:23.427Z"
+    },
+    {
+     "game": 10,
+     "game_id": 282,
+     "turns": 84,
+     "started_at": "2026-11-08T02:53:00.518Z",
+     "finished_at": "2026-11-08T02:56:44.047Z"
+    }
+   ],
+   "decisions_per_game": [
+    18,
+    24,
+    23,
+    21,
+    22,
+    23,
+    19,
+    22,
+    28,
+    38
+   ],
+   "invalid_decisions": 0,
+   "unscored_decisions": 0,
+   "evaluations": {
+    "T5": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-08T02:09:24.433Z",
+     "last_answer_at": "2026-11-08T02:30:47.413Z"
+    },
+    "T10": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-08T02:58:47.975Z",
+     "last_answer_at": "2026-11-08T03:11:56.813Z"
+    }
+   },
+   "lessons_files": {
+    "1": "7243b21cdf3f52b5a97db6756417289e7dc46c8e4aa68908ca36321c96292336",
+    "2": "e9f2b99ec2537a9e5072193df8d6d13b9808456796f9733d518b6bb5fcf172e3",
+    "3": "d3efe021ca24eea9f072aed50cbd93b2ac17e7b703a6576cd3b8b7d9f763dff0",
+    "4": "c2bf05517c2e1d79e41f104488d48bee7c9d632a6da92d14efadcc4708306a83",
+    "5": "b79b71da25d2e6d400764fe27228292f9d64ce6178725cbc2e31d73ab1eabd51",
+    "6": "3d6e8f62f9e3ec9302799c7f6d3e3b43701124045ebf1a95c59c6cfd1605bad7",
+    "7": "aeb978b3f7fbab3f9c21a00e3bfa85e47593d823c8342be50bea03ad7640aac5",
+    "8": "fa6410aad3a20ac0e9ab5302dac08cd0d7084a78c6ac7e4382873b0741fbd6b4",
+    "9": "fbdc525f035fdb7fe87ea1a5acc39d141cb3c392f620a10779962ecbd6373a99",
+    "10": "9eb13644967ca19c0b3355736a52fd2b15a3e796f3f47fbc887d27d093dd2880"
+   },
+   "lessons_calls": 10,
+   "lessons_cut": 0,
+   "context_tokens_after_game": {
+    "1": 160,
+    "2": 289,
+    "3": 406,
+    "4": 527,
+    "5": 661,
+    "6": 780,
+    "7": 882,
+    "8": 1018,
+    "9": 1135,
+    "10": 1239
+   },
+   "records_dropped_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0,
+    "10": 0
+   },
+   "budget_points": [],
+   "evaluation_positions_excluded": 0,
+   "restarts": 0,
+   "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+   "lesson_prompt_sha256": "d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e",
+   "aggregate_sha256": "f8f17adef95af90386a38f77bc7d557e21e48a6d2feb1ecb39b4ac51d0c78d6b",
+   "log_sha256": "2aa800c87ec7381399bb1d3a0ee49f7e5ecfafa3b2a56c01246483818fc6f432",
+   "match_log_sha256": "5895e4ce12dfa1321a33f879925a2a9e3f70f61249caeb14fce56e6f8f6bbc5b"
+  },
+  {
+   "arm": "lessons",
+   "series": 7,
+   "dice_seed": 4993853979471497236,
+   "match_id": 32,
+   "match_status": "finished",
+   "started_at": "2026-11-08T03:11:57+00:00",
+   "finished_at": "2026-11-08T04:42:07+00:00",
+   "wall_seconds": 5410.4,
+   "games": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "game_rows": [
+    {
+     "game": 1,
+     "game_id": 288,
+     "turns": 50,
+     "started_at": "2026-11-08T03:11:57.505Z",
+     "finished_at": "2026-11-08T03:14:27.191Z"
+    },
+    {
+     "game": 2,
+     "game_id": 293,
+     "turns": 55,
+     "started_at": "2026-11-08T03:17:10.459Z",
+     "finished_at": "2026-11-08T03:19:26.131Z"
+    },
+    {
+     "game": 3,
+     "game_id": 295,
+     "turns": 91,
+     "started_at": "2026-11-08T03:21:35.108Z",
+     "finished_at": "2026-11-08T03:24:51.777Z"
+    },
+    {
+     "game": 4,
+     "game_id": 299,
+     "turns": 66,
+     "started_at": "2026-11-08T03:27:50.152Z",
+     "finished_at": "2026-11-08T03:30:59.424Z"
+    },
+    {
+     "game": 5,
+     "game_id": 302,
+     "turns": 53,
+     "started_at": "2026-11-08T03:34:27.256Z",
+     "finished_at": "2026-11-08T03:36:07.445Z"
+    },
+    {
+     "game": 6,
+     "game_id": 309,
+     "turns": 45,
+     "started_at": "2026-11-08T04:00:59.253Z",
+     "finished_at": "2026-11-08T04:02:03.852Z"
+    },
+    {
+     "game": 7,
+     "game_id": 311,
+     "turns": 86,
+     "started_at": "2026-11-08T04:03:30.357Z",
+     "finished_at": "2026-11-08T04:04:49.983Z"
+    },
+    {
+     "game": 8,
+     "game_id": 313,
+     "turns": 61,
+     "started_at": "2026-11-08T04:06:42.007Z",
+     "finished_at": "2026-11-08T04:09:45.634Z"
+    },
+    {
+     "game": 9,
+     "game_id": 316,
+     "turns": 57,
+     "started_at": "2026-11-08T04:11:37.518Z",
+     "finished_at": "2026-11-08T04:13:57.735Z"
+    },
+    {
+     "game": 10,
+     "game_id": 317,
+     "turns": 116,
+     "started_at": "2026-11-08T04:16:16.157Z",
+     "finished_at": "2026-11-08T04:18:13.341Z"
+    }
+   ],
+   "decisions_per_game": [
+    20,
+    21,
+    33,
+    28,
+    22,
+    19,
+    22,
+    18,
+    19,
+    27
+   ],
+   "invalid_decisions": 0,
+   "unscored_decisions": 0,
+   "evaluations": {
+    "T5": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-08T03:39:18.603Z",
+     "last_answer_at": "2026-11-08T04:00:59.195Z"
+    },
+    "T10": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-08T04:20:54.984Z",
+     "last_answer_at": "2026-11-08T04:42:07.745Z"
+    }
+   },
+   "lessons_files": {
+    "1": "2bb4470972e08e8d339cf41b1d9dc5c10c8be4d43d89e58082e204f26d8635b8",
+    "2": "a207c61765bb5c1ed137d98f9609adcdf41a47dc643be8f6944a48688577faf7",
+    "3": "02ae3e21559ace7e1dab568f0b15dd40eb680e1e2ebca90dda570d1816a6bcea",
+    "4": "d1c4b2c2b004ed3d5ea51e525e74ab99933e0baa8d2ba08083f789d83e903121",
+    "5": "791e4669abd1987fb7f73f57ac825c9ca88ab18904805d8a2d4847291307f295",
+    "6": "ac19dc6e65c29dd4cfc2562be3b0edb013efe028cdfb24bcf50f16e91d4fc954",
+    "7": "1bf6aeccd09b517c533a841af5babceaaa7e3ee265b5c92c60089d0de64da551",
+    "8": "98d05899f762d3a05780b9d8e987aaed27e47ce221bdfb065db178d1d98fc8f2",
+    "9": "1aa678889d1d702abf82ebc28edad18bed37fcd28ff4b3fbe36dc021c4591693",
+    "10": "ab49b8e7836afec1f173a5b0f8c32cd89e7c31d24f07cd9fcf3577c5b2d6f343"
+   },
+   "lessons_calls": 10,
+   "lessons_cut": 0,
+   "context_tokens_after_game": {
+    "1": 184,
+    "2": 287,
+    "3": 419,
+    "4": 549,
+    "5": 655,
+    "6": 785,
+    "7": 911,
+    "8": 1047,
+    "9": 1173,
+    "10": 1297
+   },
+   "records_dropped_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0,
+    "10": 0
+   },
+   "budget_points": [],
+   "evaluation_positions_excluded": 0,
+   "restarts": 0,
+   "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+   "lesson_prompt_sha256": "d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e",
+   "aggregate_sha256": "ea0c820761f0c7355cc3b1084b72162edbeb83db3ead2417e0f1c3f24436a3cb",
+   "log_sha256": "c2e779c8b6ff7f0e562c32a97e888dc15597e017a9010bf67aba43e8add52496",
+   "match_log_sha256": "b826c40a9b3a19bb1b10853f01682bed6b2330e1843c1b760d100defa6ebfb90"
+  },
+  {
+   "arm": "lessons",
+   "series": 8,
+   "dice_seed": 5308720830707305012,
+   "match_id": 35,
+   "match_status": "finished",
+   "started_at": "2026-11-08T04:42:08+00:00",
+   "finished_at": "2026-11-08T06:15:46+00:00",
+   "wall_seconds": 5618.2,
+   "games": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "game_rows": [
+    {
+     "game": 1,
+     "game_id": 323,
+     "turns": 54,
+     "started_at": "2026-11-08T04:42:08.515Z",
+     "finished_at": "2026-11-08T04:45:44.452Z"
+    },
+    {
+     "game": 2,
+     "game_id": 326,
+     "turns": 49,
+     "started_at": "2026-11-08T04:48:25.178Z",
+     "finished_at": "2026-11-08T04:50:06.228Z"
+    },
+    {
+     "game": 3,
+     "game_id": 329,
+     "turns": 101,
+     "started_at": "2026-11-08T04:52:26.773Z",
+     "finished_at": "2026-11-08T04:56:21.444Z"
+    },
+    {
+     "game": 4,
+     "game_id": 331,
+     "turns": 63,
+     "started_at": "2026-11-08T04:59:29.212Z",
+     "finished_at": "2026-11-08T05:01:12.781Z"
+    },
+    {
+     "game": 5,
+     "game_id": 332,
+     "turns": 70,
+     "started_at": "2026-11-08T05:04:25.329Z",
+     "finished_at": "2026-11-08T05:08:15.692Z"
+    },
+    {
+     "game": 6,
+     "game_id": 343,
+     "turns": 56,
+     "started_at": "2026-11-08T05:28:34.482Z",
+     "finished_at": "2026-11-08T05:29:50.090Z"
+    },
+    {
+     "game": 7,
+     "game_id": 344,
+     "turns": 67,
+     "started_at": "2026-11-08T05:32:03.039Z",
+     "finished_at": "2026-11-08T05:33:28.572Z"
+    },
+    {
+     "game": 8,
+     "game_id": 346,
+     "turns": 55,
+     "started_at": "2026-11-08T05:35:48.352Z",
+     "finished_at": "2026-11-08T05:38:03.254Z"
+    },
+    {
+     "game": 9,
+     "game_id": 348,
+     "turns": 70,
+     "started_at": "2026-11-08T05:40:35.167Z",
+     "finished_at": "2026-11-08T05:44:09.126Z"
+    },
+    {
+     "game": 10,
+     "game_id": 351,
+     "turns": 105,
+     "started_at": "2026-11-08T05:47:05.798Z",
+     "finished_at": "2026-11-08T05:51:40.557Z"
+    }
+   ],
+   "decisions_per_game": [
+    24,
+    14,
+    34,
+    19,
+    30,
+    20,
+    21,
+    20,
+    29,
+    37
+   ],
+   "invalid_decisions": 0,
+   "unscored_decisions": 0,
+   "evaluations": {
+    "T5": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-08T05:10:02.282Z",
+     "last_answer_at": "2026-11-08T05:28:34.405Z"
+    },
+    "T10": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-08T05:54:33.926Z",
+     "last_answer_at": "2026-11-08T06:15:46.550Z"
+    }
+   },
+   "lessons_files": {
+    "1": "9bfd1c696f3f802e92a1bbaef1d43723e0648d93eb3d788c18b8499c6d52a643",
+    "2": "6634e79727687015b305668cf692031a99dbeb3a4d19370b5cf6c46fd5f90865",
+    "3": "cac24cdd22110528a8d887b7aea453fe9683d4b2d56c0f662758b34a995b21b7",
+    "4": "3aba724a2dbd79c5767ac1738bf0bc7292c04ad5418e114d9418df41c42d6868",
+    "5": "bafe00c0e39e40b82c2cbf5c50eb4b63b8ca348099afa38f7e5246ef261431b5",
+    "6": "542092d06a2691ccfeb0ed9c2efc0baa0b794924ede38a33c63c662e2bd5da94",
+    "7": "48e680e4b9caa8d00765c07fd0926a02c171732f3c104c258a04184208417348",
+    "8": "18ce6aece50609942a17bee722986b21450e8d0cc2ec3591b640ab421a6f513b",
+    "9": "6161a2a8005d3e21ebde8cc3ae1777267459a3fd2c9d44da5b886f5c352817ad",
+    "10": "4ab425ae05607bf15d589c881bf64609e96756f84336350c8c23916992b6d18c"
+   },
+   "lessons_calls": 10,
+   "lessons_cut": 0,
+   "context_tokens_after_game": {
+    "1": 152,
+    "2": 262,
+    "3": 393,
+    "4": 513,
+    "5": 634,
+    "6": 743,
+    "7": 861,
+    "8": 991,
+    "9": 1120,
+    "10": 1246
+   },
+   "records_dropped_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0,
+    "10": 0
+   },
+   "budget_points": [],
+   "evaluation_positions_excluded": 0,
+   "restarts": 0,
+   "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+   "lesson_prompt_sha256": "d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e",
+   "aggregate_sha256": "78c7eef6797c82f2609039d6f99cbc0d72ca6aab4a9ab4409591d7ad94f49301",
+   "log_sha256": "c88be955527f104f121ea1b95303a2739f1253a9d3136154f13d9f0862a3ad2d",
+   "match_log_sha256": "7584883f9ad546acbaa75214836f2182c13aac701f5ec3e0d0bf7a7bf2259bdf"
+  },
+  {
+   "arm": "lessons",
+   "series": 9,
+   "dice_seed": 6788811015730745052,
+   "match_id": 38,
+   "match_status": "finished",
+   "started_at": "2026-11-08T06:15:47+00:00",
+   "finished_at": "2026-11-08T06:44:35+00:00",
+   "wall_seconds": 1728.6,
+   "games": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "game_rows": [
+    {
+     "game": 1,
+     "game_id": 353,
+     "turns": 86,
+     "started_at": "2026-11-08T06:15:47.395Z",
+     "finished_at": "2026-11-08T06:17:33.534Z"
+    },
+    {
+     "game": 2,
+     "game_id": 358,
+     "turns": 78,
+     "started_at": "2026-11-08T06:18:23.482Z",
+     "finished_at": "2026-11-08T06:19:07.095Z"
+    },
+    {
+     "game": 3,
+     "game_id": 360,
+     "turns": 118,
+     "started_at": "2026-11-08T06:19:56.789Z",
+     "finished_at": "2026-11-08T06:21:08.239Z"
+    },
+    {
+     "game": 4,
+     "game_id": 361,
+     "turns": 75,
+     "started_at": "2026-11-08T06:22:06.747Z",
+     "finished_at": "2026-11-08T06:23:02.222Z"
+    },
+    {
+     "game": 5,
+     "game_id": 362,
+     "turns": 62,
+     "started_at": "2026-11-08T06:23:52.894Z",
+     "finished_at": "2026-11-08T06:24:51.944Z"
+    },
+    {
+     "game": 6,
+     "game_id": 368,
+     "turns": 100,
+     "started_at": "2026-11-08T06:33:33.943Z",
+     "finished_at": "2026-11-08T06:34:14.691Z"
+    },
+    {
+     "game": 7,
+     "game_id": 369,
+     "turns": 63,
+     "started_at": "2026-11-08T06:35:04.631Z",
+     "finished_at": "2026-11-08T06:36:08.297Z"
+    },
+    {
+     "game": 8,
+     "game_id": 370,
+     "turns": 62,
+     "started_at": "2026-11-08T06:36:59.246Z",
+     "finished_at": "2026-11-08T06:37:47.134Z"
+    },
+    {
+     "game": 9,
+     "game_id": 371,
+     "turns": 56,
+     "started_at": "2026-11-08T06:38:13.699Z",
+     "finished_at": "2026-11-08T06:38:37.807Z"
+    },
+    {
+     "game": 10,
+     "game_id": 372,
+     "turns": 55,
+     "started_at": "2026-11-08T06:39:02.080Z",
+     "finished_at": "2026-11-08T06:39:40.260Z"
+    }
+   ],
+   "decisions_per_game": [
+    39,
+    23,
+    38,
+    30,
+    25,
+    27,
+    31,
+    20,
+    24,
+    24
+   ],
+   "invalid_decisions": 0,
+   "unscored_decisions": 0,
+   "evaluations": {
+    "T5": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-08T06:25:54.300Z",
+     "last_answer_at": "2026-11-08T06:33:33.878Z"
+    },
+    "T10": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-08T06:40:05.552Z",
+     "last_answer_at": "2026-11-08T06:44:35.849Z"
+    }
+   },
+   "lessons_files": {
+    "1": "da03af06a83b242cd4e24cd5cf867363d9acf0aaba13a4f1e2340a7bb5a023dc",
+    "2": "6278b234e9f0eed2772cba9caa482ee642164fec2fa38550f51b10cef4f2613e",
+    "3": "161c684a1652f8edf498ca5186e4f4653d661c1f9511bc2c4ab9f871d678fee5",
+    "4": "25c1b1a5db1e0599b26c7c78393b5dd94b1475cac3cb9b890d187db1c3be5a4f",
+    "5": "4311b3efa0088337be396cf01d13e2c0df5358dd438cbc3ed3323e46b2058cde",
+    "6": "749e9b33808836bd004f7c74f08b2bb993ace44665944c4eb52a7ff7f1f75c1d",
+    "7": "2e9d42a372659bb899d0a99e891c53b7d1479898f9d4a8424b6faea039efbbe9",
+    "8": "137b637ff851ce9f46ad3c8be3589fa4f5cdd57f097cf8da273369461b21ad57",
+    "9": "d9704c79823bb67c91c4a02d7316ebd96cfb8ee7ed3647fd853075ddb7007835",
+    "10": "f67da41e9c6953515347f1a8d98753d72b4e9c4e4a42146d16e45a4695e7e636"
+   },
+   "lessons_calls": 10,
+   "lessons_cut": 0,
+   "context_tokens_after_game": {
+    "1": 161,
+    "2": 293,
+    "3": 419,
+    "4": 533,
+    "5": 675,
+    "6": 789,
+    "7": 909,
+    "8": 1037,
+    "9": 1160,
+    "10": 1260
+   },
+   "records_dropped_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0,
+    "10": 0
+   },
+   "budget_points": [],
+   "evaluation_positions_excluded": 0,
+   "restarts": 0,
+   "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+   "lesson_prompt_sha256": "d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e",
+   "aggregate_sha256": "373c1b5b813946118bf460b1eed8a5e1e0c531a77d92754977e1cbc27c6e7147",
+   "log_sha256": "6be2c5c7393eb8ada36bd9c44a53bfbd8332b2ac56f193ce9598b1c3c7157a77",
+   "match_log_sha256": "44bcb22b767b53caed581c64f64c28676d08a130be35d1bddfd8771eac29fa2e"
+  },
+  {
+   "arm": "lessons",
+   "series": 10,
+   "dice_seed": 2110657280462155743,
+   "match_id": 40,
+   "match_status": "finished",
+   "started_at": "2026-11-08T06:44:36+00:00",
+   "finished_at": "2026-11-08T07:13:52+00:00",
+   "wall_seconds": 1756.2,
+   "games": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "game_rows": [
+    {
+     "game": 1,
+     "game_id": 373,
+     "turns": 78,
+     "started_at": "2026-11-08T06:44:36.752Z",
+     "finished_at": "2026-11-08T06:44:58.220Z"
+    },
+    {
+     "game": 2,
+     "game_id": 375,
+     "turns": 69,
+     "started_at": "2026-11-08T06:45:38.409Z",
+     "finished_at": "2026-11-08T06:46:43.585Z"
+    },
+    {
+     "game": 3,
+     "game_id": 377,
+     "turns": 61,
+     "started_at": "2026-11-08T06:47:27.720Z",
+     "finished_at": "2026-11-08T06:47:47.878Z"
+    },
+    {
+     "game": 4,
+     "game_id": 380,
+     "turns": 64,
+     "started_at": "2026-11-08T06:48:30.712Z",
+     "finished_at": "2026-11-08T06:49:14.778Z"
+    },
+    {
+     "game": 5,
+     "game_id": 382,
+     "turns": 68,
+     "started_at": "2026-11-08T06:49:56.240Z",
+     "finished_at": "2026-11-08T06:51:07.000Z"
+    },
+    {
+     "game": 6,
+     "game_id": 386,
+     "turns": 78,
+     "started_at": "2026-11-08T07:00:04.833Z",
+     "finished_at": "2026-11-08T07:01:02.243Z"
+    },
+    {
+     "game": 7,
+     "game_id": 389,
+     "turns": 93,
+     "started_at": "2026-11-08T07:01:56.200Z",
+     "finished_at": "2026-11-08T07:03:03.196Z"
+    },
+    {
+     "game": 8,
+     "game_id": 390,
+     "turns": 80,
+     "started_at": "2026-11-08T07:04:06.116Z",
+     "finished_at": "2026-11-08T07:05:15.992Z"
+    },
+    {
+     "game": 9,
+     "game_id": 391,
+     "turns": 66,
+     "started_at": "2026-11-08T07:06:15.947Z",
+     "finished_at": "2026-11-08T07:07:21.714Z"
+    },
+    {
+     "game": 10,
+     "game_id": 392,
+     "turns": 58,
+     "started_at": "2026-11-08T07:08:10.148Z",
+     "finished_at": "2026-11-08T07:08:55.283Z"
+    }
+   ],
+   "decisions_per_game": [
+    23,
+    24,
+    17,
+    22,
+    28,
+    25,
+    36,
+    29,
+    25,
+    20
+   ],
+   "invalid_decisions": 0,
+   "unscored_decisions": 0,
+   "evaluations": {
+    "T5": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-08T06:52:09.114Z",
+     "last_answer_at": "2026-11-08T07:00:04.764Z"
+    },
+    "T10": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-08T07:09:22.349Z",
+     "last_answer_at": "2026-11-08T07:13:52.734Z"
+    }
+   },
+   "lessons_files": {
+    "1": "e00115bb8b5a34e3bc6e065ed971fc7f7bff200b110a6e4ced26149e54d38baa",
+    "2": "758b29e910b4fa37cf97031c7b302281f7d56b51bf55b5b56cad6f54184c95ac",
+    "3": "2db937c81be46ff4c67f43b8b3ffda1c9e48a738ca218d844ea0ceb30c0f4aac",
+    "4": "52c748c04c514f60367f47ba150db62e30a12f63f5428833eeb118e91cd8a18f",
+    "5": "ff35389633177a5f9c79f47916ebf897a27e2c85a8de672ff0a94242be7b8f91",
+    "6": "56549256e9c7dc650901f960a90fb54d63eccbe8ba5537f921009030095be23c",
+    "7": "35bc91efeeffe08c9ccf4cb51777f6d106919cdcbedc871e3c4f8dabc2525f0d",
+    "8": "41c181fb0625cc1140bba14d8eec63b2f86e8758e8c1b139d829e23830c3b5e2",
+    "9": "e760990d4376da95b94ecffd603e1a3541b80dc49f271af24303f0b2b337cf55",
+    "10": "8fd2e483eb4e9b6e0f9b5861233cca484aa414f83db209053e6e922e66726490"
+   },
+   "lessons_calls": 10,
+   "lessons_cut": 0,
+   "context_tokens_after_game": {
+    "1": 140,
+    "2": 259,
+    "3": 387,
+    "4": 499,
+    "5": 630,
+    "6": 764,
+    "7": 905,
+    "8": 1033,
+    "9": 1147,
+    "10": 1268
+   },
+   "records_dropped_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0,
+    "10": 0
+   },
+   "budget_points": [],
+   "evaluation_positions_excluded": 0,
+   "restarts": 0,
+   "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+   "lesson_prompt_sha256": "d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e",
+   "aggregate_sha256": "9be8c089d3c47aa384fdc920df2a6937ff53af5ce9dc18b86f75eb9ae2406a1d",
+   "log_sha256": "d97a3dcd33962ee10f6a8f9ddec8969ec216c5854a727f43181e8c56117f4cc2",
+   "match_log_sha256": "775d186ab08f0a98457419be4710529d460962cc53d82d9c81b87c54209616ad"
+  },
+  {
+   "arm": "budget",
+   "series": 1,
+   "dice_seed": 5588155524604542475,
+   "match_id": 10,
+   "match_status": "finished",
+   "started_at": "2026-11-07T19:26:44+00:00",
+   "finished_at": "2026-11-07T20:28:54+00:00",
+   "wall_seconds": 3729.7,
+   "games": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "game_rows": [
+    {
+     "game": 1,
+     "game_id": 59,
+     "turns": 48,
+     "started_at": "2026-11-07T19:26:44.775Z",
+     "finished_at": "2026-11-07T19:29:07.608Z"
+    },
+    {
+     "game": 2,
+     "game_id": 60,
+     "turns": 42,
+     "started_at": "2026-11-07T19:29:13.929Z",
+     "finished_at": "2026-11-07T19:30:05.659Z"
+    },
+    {
+     "game": 3,
+     "game_id": 61,
+     "turns": 42,
+     "started_at": "2026-11-07T19:30:09.617Z",
+     "finished_at": "2026-11-07T19:31:23.311Z"
+    },
+    {
+     "game": 4,
+     "game_id": 62,
+     "turns": 45,
+     "started_at": "2026-11-07T19:31:30.367Z",
+     "finished_at": "2026-11-07T19:33:14.539Z"
+    },
+    {
+     "game": 5,
+     "game_id": 64,
+     "turns": 53,
+     "started_at": "2026-11-07T19:33:20.138Z",
+     "finished_at": "2026-11-07T19:35:18.040Z"
+    },
+    {
+     "game": 6,
+     "game_id": 73,
+     "turns": 64,
+     "started_at": "2026-11-07T19:58:23.596Z",
+     "finished_at": "2026-11-07T20:00:40.699Z"
+    },
+    {
+     "game": 7,
+     "game_id": 74,
+     "turns": 71,
+     "started_at": "2026-11-07T20:00:46.395Z",
+     "finished_at": "2026-11-07T20:03:47.474Z"
+    },
+    {
+     "game": 8,
+     "game_id": 75,
+     "turns": 108,
+     "started_at": "2026-11-07T20:03:52.795Z",
+     "finished_at": "2026-11-07T20:05:45.166Z"
+    },
+    {
+     "game": 9,
+     "game_id": 76,
+     "turns": 56,
+     "started_at": "2026-11-07T20:05:49.490Z",
+     "finished_at": "2026-11-07T20:09:04.505Z"
+    },
+    {
+     "game": 10,
+     "game_id": 77,
+     "turns": 70,
+     "started_at": "2026-11-07T20:09:13.140Z",
+     "finished_at": "2026-11-07T20:13:02.032Z"
+    }
+   ],
+   "decisions_per_game": [
+    22,
+    17,
+    20,
+    22,
+    22,
+    21,
+    26,
+    19,
+    24,
+    27
+   ],
+   "invalid_decisions": 0,
+   "unscored_decisions": 0,
+   "evaluations": {
+    "T5": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-07T19:35:28.499Z",
+     "last_answer_at": "2026-11-07T19:58:23.498Z"
+    },
+    "T10": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-07T20:13:21.050Z",
+     "last_answer_at": "2026-11-07T20:28:54.212Z"
+    }
+   },
+   "lessons_files": {},
+   "lessons_calls": 0,
+   "lessons_cut": 0,
+   "context_tokens_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0,
+    "10": 0
+   },
+   "records_dropped_after_game": {
+    "1": 1,
+    "2": 2,
+    "3": 3,
+    "4": 4,
+    "5": 5,
+    "6": 6,
+    "7": 7,
+    "8": 8,
+    "9": 9,
+    "10": 10
+   },
+   "budget_points": [
+    {
+     "after_game": 1,
+     "games_shown": [],
+     "games_dropped": 1,
+     "tokens": 0,
+     "budget_tokens": 158
+    },
+    {
+     "after_game": 2,
+     "games_shown": [],
+     "games_dropped": 2,
+     "tokens": 0,
+     "budget_tokens": 277
+    },
+    {
+     "after_game": 3,
+     "games_shown": [],
+     "games_dropped": 3,
+     "tokens": 0,
+     "budget_tokens": 394
+    },
+    {
+     "after_game": 4,
+     "games_shown": [],
+     "games_dropped": 4,
+     "tokens": 0,
+     "budget_tokens": 509
+    },
+    {
+     "after_game": 5,
+     "games_shown": [],
+     "games_dropped": 5,
+     "tokens": 0,
+     "budget_tokens": 623
+    },
+    {
+     "after_game": 6,
+     "games_shown": [],
+     "games_dropped": 6,
+     "tokens": 0,
+     "budget_tokens": 729
+    },
+    {
+     "after_game": 7,
+     "games_shown": [],
+     "games_dropped": 7,
+     "tokens": 0,
+     "budget_tokens": 860
+    },
+    {
+     "after_game": 8,
+     "games_shown": [],
+     "games_dropped": 8,
+     "tokens": 0,
+     "budget_tokens": 988
+    },
+    {
+     "after_game": 9,
+     "games_shown": [],
+     "games_dropped": 9,
+     "tokens": 0,
+     "budget_tokens": 1130
+    },
+    {
+     "after_game": 10,
+     "games_shown": [],
+     "games_dropped": 10,
+     "tokens": 0,
+     "budget_tokens": 1252
+    }
+   ],
+   "evaluation_positions_excluded": 0,
+   "restarts": 0,
+   "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+   "lesson_prompt_sha256": "d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e",
+   "aggregate_sha256": "e4a4fb9286b063e22b94c96d40c038dfe7cf56053b97c678198ae79b4bb353ae",
+   "log_sha256": "5b8171f28552c47d99cda834337df7f2ef8fc941d3a455a3ecc600467859b51b",
+   "match_log_sha256": "acca7d5653de1499cb31f6a5eb9f17299c47046512c25a91f39e3b671b31e9ef"
+  },
+  {
+   "arm": "budget",
+   "series": 2,
+   "dice_seed": 9059240225405464449,
+   "match_id": 13,
+   "match_status": "finished",
+   "started_at": "2026-11-07T20:59:24+00:00",
+   "finished_at": "2026-11-07T21:47:20+00:00",
+   "wall_seconds": 2875.9,
+   "games": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "game_rows": [
+    {
+     "game": 1,
+     "game_id": 94,
+     "turns": 49,
+     "started_at": "2026-11-07T20:59:24.666Z",
+     "finished_at": "2026-11-07T21:03:57.171Z"
+    },
+    {
+     "game": 2,
+     "game_id": 95,
+     "turns": 53,
+     "started_at": "2026-11-07T21:04:05.317Z",
+     "finished_at": "2026-11-07T21:07:41.735Z"
+    },
+    {
+     "game": 3,
+     "game_id": 97,
+     "turns": 44,
+     "started_at": "2026-11-07T21:07:48.750Z",
+     "finished_at": "2026-11-07T21:11:07.184Z"
+    },
+    {
+     "game": 4,
+     "game_id": 98,
+     "turns": 72,
+     "started_at": "2026-11-07T21:11:15.273Z",
+     "finished_at": "2026-11-07T21:12:35.298Z"
+    },
+    {
+     "game": 5,
+     "game_id": 99,
+     "turns": 65,
+     "started_at": "2026-11-07T21:12:38.459Z",
+     "finished_at": "2026-11-07T21:15:03.010Z"
+    },
+    {
+     "game": 6,
+     "game_id": 103,
+     "turns": 47,
+     "started_at": "2026-11-07T21:35:47.644Z",
+     "finished_at": "2026-11-07T21:36:27.676Z"
+    },
+    {
+     "game": 7,
+     "game_id": 104,
+     "turns": 70,
+     "started_at": "2026-11-07T21:36:33.509Z",
+     "finished_at": "2026-11-07T21:37:22.080Z"
+    },
+    {
+     "game": 8,
+     "game_id": 105,
+     "turns": 60,
+     "started_at": "2026-11-07T21:37:27.874Z",
+     "finished_at": "2026-11-07T21:38:21.342Z"
+    },
+    {
+     "game": 9,
+     "game_id": 106,
+     "turns": 55,
+     "started_at": "2026-11-07T21:38:26.898Z",
+     "finished_at": "2026-11-07T21:39:23.018Z"
+    },
+    {
+     "game": 10,
+     "game_id": 107,
+     "turns": 47,
+     "started_at": "2026-11-07T21:39:29.342Z",
+     "finished_at": "2026-11-07T21:40:29.738Z"
+    }
+   ],
+   "decisions_per_game": [
+    20,
+    24,
+    18,
+    20,
+    27,
+    19,
+    24,
+    26,
+    23,
+    23
+   ],
+   "invalid_decisions": 0,
+   "unscored_decisions": 0,
+   "evaluations": {
+    "T5": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-07T21:15:14.756Z",
+     "last_answer_at": "2026-11-07T21:35:47.502Z"
+    },
+    "T10": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-07T21:40:43.912Z",
+     "last_answer_at": "2026-11-07T21:47:20.409Z"
+    }
+   },
+   "lessons_files": {},
+   "lessons_calls": 0,
+   "lessons_cut": 0,
+   "context_tokens_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0,
+    "10": 0
+   },
+   "records_dropped_after_game": {
+    "1": 1,
+    "2": 2,
+    "3": 3,
+    "4": 4,
+    "5": 5,
+    "6": 6,
+    "7": 7,
+    "8": 8,
+    "9": 9,
+    "10": 10
+   },
+   "budget_points": [
+    {
+     "after_game": 1,
+     "games_shown": [],
+     "games_dropped": 1,
+     "tokens": 0,
+     "budget_tokens": 169
+    },
+    {
+     "after_game": 2,
+     "games_shown": [],
+     "games_dropped": 2,
+     "tokens": 0,
+     "budget_tokens": 275
+    },
+    {
+     "after_game": 3,
+     "games_shown": [],
+     "games_dropped": 3,
+     "tokens": 0,
+     "budget_tokens": 405
+    },
+    {
+     "after_game": 4,
+     "games_shown": [],
+     "games_dropped": 4,
+     "tokens": 0,
+     "budget_tokens": 527
+    },
+    {
+     "after_game": 5,
+     "games_shown": [],
+     "games_dropped": 5,
+     "tokens": 0,
+     "budget_tokens": 645
+    },
+    {
+     "after_game": 6,
+     "games_shown": [],
+     "games_dropped": 6,
+     "tokens": 0,
+     "budget_tokens": 763
+    },
+    {
+     "after_game": 7,
+     "games_shown": [],
+     "games_dropped": 7,
+     "tokens": 0,
+     "budget_tokens": 884
+    },
+    {
+     "after_game": 8,
+     "games_shown": [],
+     "games_dropped": 8,
+     "tokens": 0,
+     "budget_tokens": 997
+    },
+    {
+     "after_game": 9,
+     "games_shown": [],
+     "games_dropped": 9,
+     "tokens": 0,
+     "budget_tokens": 1118
+    },
+    {
+     "after_game": 10,
+     "games_shown": [],
+     "games_dropped": 10,
+     "tokens": 0,
+     "budget_tokens": 1225
+    }
+   ],
+   "evaluation_positions_excluded": 0,
+   "restarts": 0,
+   "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+   "lesson_prompt_sha256": "d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e",
+   "aggregate_sha256": "330d6eb60526870d19e8cd4832fd017aef27f4d83884b7b955d7b88b7ceb466b",
+   "log_sha256": "e344b99ce37c4c508c5bf69198f9b732dd2dc60ba040a6ef9ac48bd6c3225d3f",
+   "match_log_sha256": "6f1a167f17dbf39988b6454b964a18c8283aeddfc9afb92d64b5c8f5fa04aa9d"
+  },
+  {
+   "arm": "budget",
+   "series": 3,
+   "dice_seed": 756822699230296250,
+   "match_id": 14,
+   "match_status": "finished",
+   "started_at": "2026-11-07T21:53:20+00:00",
+   "finished_at": "2026-11-07T22:06:48+00:00",
+   "wall_seconds": 807.7,
+   "games": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "game_rows": [
+    {
+     "game": 1,
+     "game_id": 113,
+     "turns": 45,
+     "started_at": "2026-11-07T21:53:20.742Z",
+     "finished_at": "2026-11-07T21:53:44.375Z"
+    },
+    {
+     "game": 2,
+     "game_id": 114,
+     "turns": 86,
+     "started_at": "2026-11-07T21:53:48.580Z",
+     "finished_at": "2026-11-07T21:54:29.768Z"
+    },
+    {
+     "game": 3,
+     "game_id": 115,
+     "turns": 48,
+     "started_at": "2026-11-07T21:54:37.073Z",
+     "finished_at": "2026-11-07T21:55:06.803Z"
+    },
+    {
+     "game": 4,
+     "game_id": 116,
+     "turns": 67,
+     "started_at": "2026-11-07T21:55:12.350Z",
+     "finished_at": "2026-11-07T21:55:30.300Z"
+    },
+    {
+     "game": 5,
+     "game_id": 117,
+     "turns": 72,
+     "started_at": "2026-11-07T21:55:33.905Z",
+     "finished_at": "2026-11-07T21:56:09.772Z"
+    },
+    {
+     "game": 6,
+     "game_id": 118,
+     "turns": 49,
+     "started_at": "2026-11-07T22:00:26.022Z",
+     "finished_at": "2026-11-07T22:00:43.702Z"
+    },
+    {
+     "game": 7,
+     "game_id": 119,
+     "turns": 53,
+     "started_at": "2026-11-07T22:00:47.238Z",
+     "finished_at": "2026-11-07T22:01:16.756Z"
+    },
+    {
+     "game": 8,
+     "game_id": 120,
+     "turns": 53,
+     "started_at": "2026-11-07T22:01:22.368Z",
+     "finished_at": "2026-11-07T22:01:30.190Z"
+    },
+    {
+     "game": 9,
+     "game_id": 121,
+     "turns": 63,
+     "started_at": "2026-11-07T22:01:32.249Z",
+     "finished_at": "2026-11-07T22:01:58.724Z"
+    },
+    {
+     "game": 10,
+     "game_id": 122,
+     "turns": 50,
+     "started_at": "2026-11-07T22:02:03.877Z",
+     "finished_at": "2026-11-07T22:02:32.801Z"
+    }
+   ],
+   "decisions_per_game": [
+    22,
+    31,
+    24,
+    18,
+    30,
+    20,
+    19,
+    8,
+    23,
+    19
+   ],
+   "invalid_decisions": 0,
+   "unscored_decisions": 0,
+   "evaluations": {
+    "T5": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-07T21:56:18.808Z",
+     "last_answer_at": "2026-11-07T22:00:25.950Z"
+    },
+    "T10": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-07T22:02:40.405Z",
+     "last_answer_at": "2026-11-07T22:06:48.240Z"
+    }
+   },
+   "lessons_files": {},
+   "lessons_calls": 0,
+   "lessons_cut": 0,
+   "context_tokens_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0,
+    "10": 0
+   },
+   "records_dropped_after_game": {
+    "1": 1,
+    "2": 2,
+    "3": 3,
+    "4": 4,
+    "5": 5,
+    "6": 6,
+    "7": 7,
+    "8": 8,
+    "9": 9,
+    "10": 10
+   },
+   "budget_points": [
+    {
+     "after_game": 1,
+     "games_shown": [],
+     "games_dropped": 1,
+     "tokens": 0,
+     "budget_tokens": 156
+    },
+    {
+     "after_game": 2,
+     "games_shown": [],
+     "games_dropped": 2,
+     "tokens": 0,
+     "budget_tokens": 285
+    },
+    {
+     "after_game": 3,
+     "games_shown": [],
+     "games_dropped": 3,
+     "tokens": 0,
+     "budget_tokens": 392
+    },
+    {
+     "after_game": 4,
+     "games_shown": [],
+     "games_dropped": 4,
+     "tokens": 0,
+     "budget_tokens": 510
+    },
+    {
+     "after_game": 5,
+     "games_shown": [],
+     "games_dropped": 5,
+     "tokens": 0,
+     "budget_tokens": 637
+    },
+    {
+     "after_game": 6,
+     "games_shown": [],
+     "games_dropped": 6,
+     "tokens": 0,
+     "budget_tokens": 764
+    },
+    {
+     "after_game": 7,
+     "games_shown": [],
+     "games_dropped": 7,
+     "tokens": 0,
+     "budget_tokens": 875
+    },
+    {
+     "after_game": 8,
+     "games_shown": [],
+     "games_dropped": 8,
+     "tokens": 0,
+     "budget_tokens": 1005
+    },
+    {
+     "after_game": 9,
+     "games_shown": [],
+     "games_dropped": 9,
+     "tokens": 0,
+     "budget_tokens": 1142
+    },
+    {
+     "after_game": 10,
+     "games_shown": [],
+     "games_dropped": 10,
+     "tokens": 0,
+     "budget_tokens": 1278
+    }
+   ],
+   "evaluation_positions_excluded": 0,
+   "restarts": 0,
+   "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+   "lesson_prompt_sha256": "d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e",
+   "aggregate_sha256": "55df0af3f06387153b9d969eab74b291aaa97cc8b7d53f3119c29e6adb36ad1e",
+   "log_sha256": "ef5d2ae1af9db906c17400141eb20f124d276229d871c182abd090252d025fe6",
+   "match_log_sha256": "63c5dcb8480fa30549687a67dad593edf9e9dc44f403effb78ab976de9a51237"
+  },
+  {
+   "arm": "budget",
+   "series": 4,
+   "dice_seed": 3088749300669629816,
+   "match_id": 23,
+   "match_status": "finished",
+   "started_at": "2026-11-08T00:03:16+00:00",
+   "finished_at": "2026-11-08T01:19:50+00:00",
+   "wall_seconds": 4594.5,
+   "games": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "game_rows": [
+    {
+     "game": 1,
+     "game_id": 188,
+     "turns": 79,
+     "started_at": "2026-11-08T00:03:16.185Z",
+     "finished_at": "2026-11-08T00:04:59.583Z"
+    },
+    {
+     "game": 2,
+     "game_id": 190,
+     "turns": 61,
+     "started_at": "2026-11-08T00:05:03.690Z",
+     "finished_at": "2026-11-08T00:07:33.283Z"
+    },
+    {
+     "game": 3,
+     "game_id": 193,
+     "turns": 103,
+     "started_at": "2026-11-08T00:07:38.925Z",
+     "finished_at": "2026-11-08T00:11:22.880Z"
+    },
+    {
+     "game": 4,
+     "game_id": 198,
+     "turns": 90,
+     "started_at": "2026-11-08T00:11:27.594Z",
+     "finished_at": "2026-11-08T00:16:30.192Z"
+    },
+    {
+     "game": 5,
+     "game_id": 203,
+     "turns": 79,
+     "started_at": "2026-11-08T00:16:38.432Z",
+     "finished_at": "2026-11-08T00:19:49.029Z"
+    },
+    {
+     "game": 6,
+     "game_id": 217,
+     "turns": 58,
+     "started_at": "2026-11-08T00:48:40.631Z",
+     "finished_at": "2026-11-08T00:50:23.872Z"
+    },
+    {
+     "game": 7,
+     "game_id": 219,
+     "turns": 78,
+     "started_at": "2026-11-08T00:50:26.452Z",
+     "finished_at": "2026-11-08T00:52:42.071Z"
+    },
+    {
+     "game": 8,
+     "game_id": 223,
+     "turns": 121,
+     "started_at": "2026-11-08T00:52:49.109Z",
+     "finished_at": "2026-11-08T00:55:24.183Z"
+    },
+    {
+     "game": 9,
+     "game_id": 227,
+     "turns": 67,
+     "started_at": "2026-11-08T00:55:29.889Z",
+     "finished_at": "2026-11-08T00:56:54.757Z"
+    },
+    {
+     "game": 10,
+     "game_id": 230,
+     "turns": 46,
+     "started_at": "2026-11-08T00:56:58.517Z",
+     "finished_at": "2026-11-08T00:59:33.882Z"
+    }
+   ],
+   "decisions_per_game": [
+    23,
+    15,
+    38,
+    34,
+    27,
+    17,
+    31,
+    38,
+    16,
+    23
+   ],
+   "invalid_decisions": 0,
+   "unscored_decisions": 0,
+   "evaluations": {
+    "T5": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-08T00:20:02.185Z",
+     "last_answer_at": "2026-11-08T00:48:40.572Z"
+    },
+    "T10": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-08T00:59:45.355Z",
+     "last_answer_at": "2026-11-08T01:19:50.567Z"
+    }
+   },
+   "lessons_files": {},
+   "lessons_calls": 0,
+   "lessons_cut": 0,
+   "context_tokens_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0,
+    "10": 0
+   },
+   "records_dropped_after_game": {
+    "1": 1,
+    "2": 2,
+    "3": 3,
+    "4": 4,
+    "5": 5,
+    "6": 6,
+    "7": 7,
+    "8": 8,
+    "9": 9,
+    "10": 10
+   },
+   "budget_points": [
+    {
+     "after_game": 1,
+     "games_shown": [],
+     "games_dropped": 1,
+     "tokens": 0,
+     "budget_tokens": 161
+    },
+    {
+     "after_game": 2,
+     "games_shown": [],
+     "games_dropped": 2,
+     "tokens": 0,
+     "budget_tokens": 277
+    },
+    {
+     "after_game": 3,
+     "games_shown": [],
+     "games_dropped": 3,
+     "tokens": 0,
+     "budget_tokens": 394
+    },
+    {
+     "after_game": 4,
+     "games_shown": [],
+     "games_dropped": 4,
+     "tokens": 0,
+     "budget_tokens": 512
+    },
+    {
+     "after_game": 5,
+     "games_shown": [],
+     "games_dropped": 5,
+     "tokens": 0,
+     "budget_tokens": 629
+    },
+    {
+     "after_game": 6,
+     "games_shown": [],
+     "games_dropped": 6,
+     "tokens": 0,
+     "budget_tokens": 749
+    },
+    {
+     "after_game": 7,
+     "games_shown": [],
+     "games_dropped": 7,
+     "tokens": 0,
+     "budget_tokens": 893
+    },
+    {
+     "after_game": 8,
+     "games_shown": [],
+     "games_dropped": 8,
+     "tokens": 0,
+     "budget_tokens": 1035
+    },
+    {
+     "after_game": 9,
+     "games_shown": [],
+     "games_dropped": 9,
+     "tokens": 0,
+     "budget_tokens": 1166
+    },
+    {
+     "after_game": 10,
+     "games_shown": [],
+     "games_dropped": 10,
+     "tokens": 0,
+     "budget_tokens": 1274
+    }
+   ],
+   "evaluation_positions_excluded": 0,
+   "restarts": 0,
+   "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+   "lesson_prompt_sha256": "d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e",
+   "aggregate_sha256": "f5eca3f2d6009b8bd37003161761b0931b19b3c64fde5a1c249b8247fff0b9f8",
+   "log_sha256": "39aa651575d3abb5306962e85e1c870b7dc63228942b4035f91a416bfafd7973",
+   "match_log_sha256": "9d92de8bdabd13ef71371a55200ea14933e46165d7abda5acc3293f662ee6c26"
+  },
+  {
+   "arm": "budget",
+   "series": 5,
+   "dice_seed": 2763205551746403990,
+   "match_id": 29,
+   "match_status": "finished",
+   "started_at": "2026-11-08T01:50:51+00:00",
+   "finished_at": "2026-11-08T02:52:28+00:00",
+   "wall_seconds": 3697.2,
+   "games": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "game_rows": [
+    {
+     "game": 1,
+     "game_id": 254,
+     "turns": 81,
+     "started_at": "2026-11-08T01:50:51.107Z",
+     "finished_at": "2026-11-08T01:53:05.859Z"
+    },
+    {
+     "game": 2,
+     "game_id": 255,
+     "turns": 60,
+     "started_at": "2026-11-08T01:53:09.992Z",
+     "finished_at": "2026-11-08T01:54:53.825Z"
+    },
+    {
+     "game": 3,
+     "game_id": 258,
+     "turns": 88,
+     "started_at": "2026-11-08T01:54:59.879Z",
+     "finished_at": "2026-11-08T01:55:53.891Z"
+    },
+    {
+     "game": 4,
+     "game_id": 260,
+     "turns": 98,
+     "started_at": "2026-11-08T01:55:56.640Z",
+     "finished_at": "2026-11-08T01:57:19.153Z"
+    },
+    {
+     "game": 5,
+     "game_id": 263,
+     "turns": 39,
+     "started_at": "2026-11-08T01:57:24.315Z",
+     "finished_at": "2026-11-08T01:58:22.951Z"
+    },
+    {
+     "game": 6,
+     "game_id": 268,
+     "turns": 43,
+     "started_at": "2026-11-08T02:17:41.856Z",
+     "finished_at": "2026-11-08T02:19:26.032Z"
+    },
+    {
+     "game": 7,
+     "game_id": 269,
+     "turns": 50,
+     "started_at": "2026-11-08T02:19:32.379Z",
+     "finished_at": "2026-11-08T02:21:07.205Z"
+    },
+    {
+     "game": 8,
+     "game_id": 270,
+     "turns": 54,
+     "started_at": "2026-11-08T02:21:11.514Z",
+     "finished_at": "2026-11-08T02:23:14.603Z"
+    },
+    {
+     "game": 9,
+     "game_id": 272,
+     "turns": 72,
+     "started_at": "2026-11-08T02:23:19.299Z",
+     "finished_at": "2026-11-08T02:26:00.402Z"
+    },
+    {
+     "game": 10,
+     "game_id": 274,
+     "turns": 70,
+     "started_at": "2026-11-08T02:26:05.827Z",
+     "finished_at": "2026-11-08T02:28:06.642Z"
+    }
+   ],
+   "decisions_per_game": [
+    29,
+    25,
+    22,
+    26,
+    19,
+    17,
+    21,
+    25,
+    27,
+    22
+   ],
+   "invalid_decisions": 0,
+   "unscored_decisions": 0,
+   "evaluations": {
+    "T5": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-08T01:58:29.415Z",
+     "last_answer_at": "2026-11-08T02:17:41.789Z"
+    },
+    "T10": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-08T02:28:17.014Z",
+     "last_answer_at": "2026-11-08T02:52:28.135Z"
+    }
+   },
+   "lessons_files": {},
+   "lessons_calls": 0,
+   "lessons_cut": 0,
+   "context_tokens_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0,
+    "10": 0
+   },
+   "records_dropped_after_game": {
+    "1": 1,
+    "2": 2,
+    "3": 3,
+    "4": 4,
+    "5": 5,
+    "6": 6,
+    "7": 7,
+    "8": 8,
+    "9": 9,
+    "10": 10
+   },
+   "budget_points": [
+    {
+     "after_game": 1,
+     "games_shown": [],
+     "games_dropped": 1,
+     "tokens": 0,
+     "budget_tokens": 146
+    },
+    {
+     "after_game": 2,
+     "games_shown": [],
+     "games_dropped": 2,
+     "tokens": 0,
+     "budget_tokens": 256
+    },
+    {
+     "after_game": 3,
+     "games_shown": [],
+     "games_dropped": 3,
+     "tokens": 0,
+     "budget_tokens": 380
+    },
+    {
+     "after_game": 4,
+     "games_shown": [],
+     "games_dropped": 4,
+     "tokens": 0,
+     "budget_tokens": 511
+    },
+    {
+     "after_game": 5,
+     "games_shown": [],
+     "games_dropped": 5,
+     "tokens": 0,
+     "budget_tokens": 632
+    },
+    {
+     "after_game": 6,
+     "games_shown": [],
+     "games_dropped": 6,
+     "tokens": 0,
+     "budget_tokens": 748
+    },
+    {
+     "after_game": 7,
+     "games_shown": [],
+     "games_dropped": 7,
+     "tokens": 0,
+     "budget_tokens": 888
+    },
+    {
+     "after_game": 8,
+     "games_shown": [],
+     "games_dropped": 8,
+     "tokens": 0,
+     "budget_tokens": 1010
+    },
+    {
+     "after_game": 9,
+     "games_shown": [],
+     "games_dropped": 9,
+     "tokens": 0,
+     "budget_tokens": 1123
+    },
+    {
+     "after_game": 10,
+     "games_shown": [],
+     "games_dropped": 10,
+     "tokens": 0,
+     "budget_tokens": 1258
+    }
+   ],
+   "evaluation_positions_excluded": 0,
+   "restarts": 0,
+   "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+   "lesson_prompt_sha256": "d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e",
+   "aggregate_sha256": "db486081a2056587ae939f3bdb27bb9407a9e5191cfd3faca6020b9f12741df3",
+   "log_sha256": "ba70f829d0ed0e87520e9a1956a8375d2ad75dace84c1e311d1ea4848e861918",
+   "match_log_sha256": "a343dc901ef528c00fdf553c1cbc8c8db3ea78c73a343f068dedb2e0a396be9d"
+  },
+  {
+   "arm": "budget",
+   "series": 6,
+   "dice_seed": 187514327728090754,
+   "match_id": 33,
+   "match_status": "finished",
+   "started_at": "2026-11-08T03:11:58+00:00",
+   "finished_at": "2026-11-08T04:11:24+00:00",
+   "wall_seconds": 3566.2,
+   "games": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "game_rows": [
+    {
+     "game": 1,
+     "game_id": 289,
+     "turns": 45,
+     "started_at": "2026-11-08T03:11:58.746Z",
+     "finished_at": "2026-11-08T03:13:57.868Z"
+    },
+    {
+     "game": 2,
+     "game_id": 290,
+     "turns": 61,
+     "started_at": "2026-11-08T03:14:01.135Z",
+     "finished_at": "2026-11-08T03:15:25.473Z"
+    },
+    {
+     "game": 3,
+     "game_id": 291,
+     "turns": 63,
+     "started_at": "2026-11-08T03:15:30.450Z",
+     "finished_at": "2026-11-08T03:16:58.300Z"
+    },
+    {
+     "game": 4,
+     "game_id": 292,
+     "turns": 54,
+     "started_at": "2026-11-08T03:17:02.577Z",
+     "finished_at": "2026-11-08T03:18:49.744Z"
+    },
+    {
+     "game": 5,
+     "game_id": 294,
+     "turns": 48,
+     "started_at": "2026-11-08T03:18:54.085Z",
+     "finished_at": "2026-11-08T03:21:18.469Z"
+    },
+    {
+     "game": 6,
+     "game_id": 303,
+     "turns": 59,
+     "started_at": "2026-11-08T03:43:40.843Z",
+     "finished_at": "2026-11-08T03:46:19.316Z"
+    },
+    {
+     "game": 7,
+     "game_id": 304,
+     "turns": 61,
+     "started_at": "2026-11-08T03:46:24.697Z",
+     "finished_at": "2026-11-08T03:48:14.891Z"
+    },
+    {
+     "game": 8,
+     "game_id": 305,
+     "turns": 47,
+     "started_at": "2026-11-08T03:48:18.847Z",
+     "finished_at": "2026-11-08T03:49:49.325Z"
+    },
+    {
+     "game": 9,
+     "game_id": 306,
+     "turns": 66,
+     "started_at": "2026-11-08T03:49:52.269Z",
+     "finished_at": "2026-11-08T03:52:36.650Z"
+    },
+    {
+     "game": 10,
+     "game_id": 307,
+     "turns": 55,
+     "started_at": "2026-11-08T03:52:42.452Z",
+     "finished_at": "2026-11-08T03:56:05.585Z"
+    }
+   ],
+   "decisions_per_game": [
+    18,
+    19,
+    19,
+    24,
+    22,
+    20,
+    19,
+    16,
+    25,
+    24
+   ],
+   "invalid_decisions": 0,
+   "unscored_decisions": 0,
+   "evaluations": {
+    "T5": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-08T03:21:28.712Z",
+     "last_answer_at": "2026-11-08T03:43:40.783Z"
+    },
+    "T10": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-08T03:56:14.139Z",
+     "last_answer_at": "2026-11-08T04:11:24.829Z"
+    }
+   },
+   "lessons_files": {},
+   "lessons_calls": 0,
+   "lessons_cut": 0,
+   "context_tokens_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0,
+    "10": 0
+   },
+   "records_dropped_after_game": {
+    "1": 1,
+    "2": 2,
+    "3": 3,
+    "4": 4,
+    "5": 5,
+    "6": 6,
+    "7": 7,
+    "8": 8,
+    "9": 9,
+    "10": 10
+   },
+   "budget_points": [
+    {
+     "after_game": 1,
+     "games_shown": [],
+     "games_dropped": 1,
+     "tokens": 0,
+     "budget_tokens": 160
+    },
+    {
+     "after_game": 2,
+     "games_shown": [],
+     "games_dropped": 2,
+     "tokens": 0,
+     "budget_tokens": 289
+    },
+    {
+     "after_game": 3,
+     "games_shown": [],
+     "games_dropped": 3,
+     "tokens": 0,
+     "budget_tokens": 406
+    },
+    {
+     "after_game": 4,
+     "games_shown": [],
+     "games_dropped": 4,
+     "tokens": 0,
+     "budget_tokens": 527
+    },
+    {
+     "after_game": 5,
+     "games_shown": [],
+     "games_dropped": 5,
+     "tokens": 0,
+     "budget_tokens": 661
+    },
+    {
+     "after_game": 6,
+     "games_shown": [],
+     "games_dropped": 6,
+     "tokens": 0,
+     "budget_tokens": 780
+    },
+    {
+     "after_game": 7,
+     "games_shown": [],
+     "games_dropped": 7,
+     "tokens": 0,
+     "budget_tokens": 882
+    },
+    {
+     "after_game": 8,
+     "games_shown": [],
+     "games_dropped": 8,
+     "tokens": 0,
+     "budget_tokens": 1018
+    },
+    {
+     "after_game": 9,
+     "games_shown": [],
+     "games_dropped": 9,
+     "tokens": 0,
+     "budget_tokens": 1135
+    },
+    {
+     "after_game": 10,
+     "games_shown": [],
+     "games_dropped": 10,
+     "tokens": 0,
+     "budget_tokens": 1239
+    }
+   ],
+   "evaluation_positions_excluded": 0,
+   "restarts": 0,
+   "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+   "lesson_prompt_sha256": "d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e",
+   "aggregate_sha256": "1de47793f4a3eb75377c9a28d2df5fa8fd39962390006304dde2f3182e8817ee",
+   "log_sha256": "a21635c0b70bd5763e18d6812afc400d9f624e953b8273cf65a469892b295d42",
+   "match_log_sha256": "611c33e56a9c96420fdb43b93d8dc34d6d7b03d86eb83e16e5df9b789a08eee0"
+  },
+  {
+   "arm": "budget",
+   "series": 7,
+   "dice_seed": 4993853979471497236,
+   "match_id": 36,
+   "match_status": "finished",
+   "started_at": "2026-11-08T04:42:25+00:00",
+   "finished_at": "2026-11-08T05:51:21+00:00",
+   "wall_seconds": 4136.0,
+   "games": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "game_rows": [
+    {
+     "game": 1,
+     "game_id": 324,
+     "turns": 48,
+     "started_at": "2026-11-08T04:42:25.556Z",
+     "finished_at": "2026-11-08T04:45:48.715Z"
+    },
+    {
+     "game": 2,
+     "game_id": 325,
+     "turns": 58,
+     "started_at": "2026-11-08T04:45:54.658Z",
+     "finished_at": "2026-11-08T04:48:25.456Z"
+    },
+    {
+     "game": 3,
+     "game_id": 327,
+     "turns": 139,
+     "started_at": "2026-11-08T04:48:32.429Z",
+     "finished_at": "2026-11-08T04:51:41.942Z"
+    },
+    {
+     "game": 4,
+     "game_id": 328,
+     "turns": 192,
+     "started_at": "2026-11-08T04:51:45.803Z",
+     "finished_at": "2026-11-08T04:57:26.165Z"
+    },
+    {
+     "game": 5,
+     "game_id": 330,
+     "turns": 66,
+     "started_at": "2026-11-08T04:57:34.880Z",
+     "finished_at": "2026-11-08T05:00:17.954Z"
+    },
+    {
+     "game": 6,
+     "game_id": 338,
+     "turns": 88,
+     "started_at": "2026-11-08T05:18:19.750Z",
+     "finished_at": "2026-11-08T05:20:44.075Z"
+    },
+    {
+     "game": 7,
+     "game_id": 339,
+     "turns": 61,
+     "started_at": "2026-11-08T05:20:48.877Z",
+     "finished_at": "2026-11-08T05:22:34.891Z"
+    },
+    {
+     "game": 8,
+     "game_id": 340,
+     "turns": 61,
+     "started_at": "2026-11-08T05:22:39.369Z",
+     "finished_at": "2026-11-08T05:26:08.051Z"
+    },
+    {
+     "game": 9,
+     "game_id": 341,
+     "turns": 52,
+     "started_at": "2026-11-08T05:26:17.934Z",
+     "finished_at": "2026-11-08T05:28:10.121Z"
+    },
+    {
+     "game": 10,
+     "game_id": 342,
+     "turns": 48,
+     "started_at": "2026-11-08T05:28:14.647Z",
+     "finished_at": "2026-11-08T05:29:45.478Z"
+    }
+   ],
+   "decisions_per_game": [
+    20,
+    20,
+    39,
+    62,
+    31,
+    22,
+    24,
+    20,
+    23,
+    19
+   ],
+   "invalid_decisions": 0,
+   "unscored_decisions": 0,
+   "evaluations": {
+    "T5": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-08T05:00:27.741Z",
+     "last_answer_at": "2026-11-08T05:18:19.683Z"
+    },
+    "T10": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-08T05:29:57.456Z",
+     "last_answer_at": "2026-11-08T05:51:21.446Z"
+    }
+   },
+   "lessons_files": {},
+   "lessons_calls": 0,
+   "lessons_cut": 0,
+   "context_tokens_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0,
+    "10": 0
+   },
+   "records_dropped_after_game": {
+    "1": 1,
+    "2": 2,
+    "3": 3,
+    "4": 4,
+    "5": 5,
+    "6": 6,
+    "7": 7,
+    "8": 8,
+    "9": 9,
+    "10": 10
+   },
+   "budget_points": [
+    {
+     "after_game": 1,
+     "games_shown": [],
+     "games_dropped": 1,
+     "tokens": 0,
+     "budget_tokens": 184
+    },
+    {
+     "after_game": 2,
+     "games_shown": [],
+     "games_dropped": 2,
+     "tokens": 0,
+     "budget_tokens": 287
+    },
+    {
+     "after_game": 3,
+     "games_shown": [],
+     "games_dropped": 3,
+     "tokens": 0,
+     "budget_tokens": 419
+    },
+    {
+     "after_game": 4,
+     "games_shown": [],
+     "games_dropped": 4,
+     "tokens": 0,
+     "budget_tokens": 549
+    },
+    {
+     "after_game": 5,
+     "games_shown": [],
+     "games_dropped": 5,
+     "tokens": 0,
+     "budget_tokens": 655
+    },
+    {
+     "after_game": 6,
+     "games_shown": [],
+     "games_dropped": 6,
+     "tokens": 0,
+     "budget_tokens": 785
+    },
+    {
+     "after_game": 7,
+     "games_shown": [],
+     "games_dropped": 7,
+     "tokens": 0,
+     "budget_tokens": 911
+    },
+    {
+     "after_game": 8,
+     "games_shown": [],
+     "games_dropped": 8,
+     "tokens": 0,
+     "budget_tokens": 1047
+    },
+    {
+     "after_game": 9,
+     "games_shown": [],
+     "games_dropped": 9,
+     "tokens": 0,
+     "budget_tokens": 1173
+    },
+    {
+     "after_game": 10,
+     "games_shown": [],
+     "games_dropped": 10,
+     "tokens": 0,
+     "budget_tokens": 1297
+    }
+   ],
+   "evaluation_positions_excluded": 0,
+   "restarts": 0,
+   "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+   "lesson_prompt_sha256": "d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e",
+   "aggregate_sha256": "8887e47f1bd2b0c7de440e48cffd41bc9c6353b3d28e856609d82c49726ae1f7",
+   "log_sha256": "23c0f17f84538f53e96202e6b36fa6d9a3d960b61c7ab395345622ccd8a1044a",
+   "match_log_sha256": "d34431731a61d1a94ba75fce04311871db1a854718625341d471b3677c426234"
+  },
+  {
+   "arm": "budget",
+   "series": 8,
+   "dice_seed": 5308720830707305012,
+   "match_id": 39,
+   "match_status": "finished",
+   "started_at": "2026-11-08T06:15:52+00:00",
+   "finished_at": "2026-11-08T06:37:34+00:00",
+   "wall_seconds": 1302.7,
+   "games": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "game_rows": [
+    {
+     "game": 1,
+     "game_id": 354,
+     "turns": 54,
+     "started_at": "2026-11-08T06:15:52.173Z",
+     "finished_at": "2026-11-08T06:16:43.079Z"
+    },
+    {
+     "game": 2,
+     "game_id": 355,
+     "turns": 49,
+     "started_at": "2026-11-08T06:16:48.552Z",
+     "finished_at": "2026-11-08T06:17:16.332Z"
+    },
+    {
+     "game": 3,
+     "game_id": 356,
+     "turns": 63,
+     "started_at": "2026-11-08T06:17:19.047Z",
+     "finished_at": "2026-11-08T06:17:57.759Z"
+    },
+    {
+     "game": 4,
+     "game_id": 357,
+     "turns": 63,
+     "started_at": "2026-11-08T06:18:03.234Z",
+     "finished_at": "2026-11-08T06:18:35.698Z"
+    },
+    {
+     "game": 5,
+     "game_id": 359,
+     "turns": 67,
+     "started_at": "2026-11-08T06:18:39.863Z",
+     "finished_at": "2026-11-08T06:19:14.514Z"
+    },
+    {
+     "game": 6,
+     "game_id": 363,
+     "turns": 56,
+     "started_at": "2026-11-08T06:25:46.986Z",
+     "finished_at": "2026-11-08T06:26:18.529Z"
+    },
+    {
+     "game": 7,
+     "game_id": 364,
+     "turns": 50,
+     "started_at": "2026-11-08T06:26:21.536Z",
+     "finished_at": "2026-11-08T06:27:12.294Z"
+    },
+    {
+     "game": 8,
+     "game_id": 365,
+     "turns": 49,
+     "started_at": "2026-11-08T06:27:17.726Z",
+     "finished_at": "2026-11-08T06:27:42.935Z"
+    },
+    {
+     "game": 9,
+     "game_id": 366,
+     "turns": 87,
+     "started_at": "2026-11-08T06:27:45.802Z",
+     "finished_at": "2026-11-08T06:28:49.920Z"
+    },
+    {
+     "game": 10,
+     "game_id": 367,
+     "turns": 109,
+     "started_at": "2026-11-08T06:28:56.302Z",
+     "finished_at": "2026-11-08T06:30:05.256Z"
+    }
+   ],
+   "decisions_per_game": [
+    24,
+    14,
+    28,
+    19,
+    25,
+    20,
+    22,
+    14,
+    35,
+    39
+   ],
+   "invalid_decisions": 0,
+   "unscored_decisions": 0,
+   "evaluations": {
+    "T5": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-08T06:19:20.756Z",
+     "last_answer_at": "2026-11-08T06:25:46.915Z"
+    },
+    "T10": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-08T06:30:14.531Z",
+     "last_answer_at": "2026-11-08T06:37:34.676Z"
+    }
+   },
+   "lessons_files": {},
+   "lessons_calls": 0,
+   "lessons_cut": 0,
+   "context_tokens_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0,
+    "10": 0
+   },
+   "records_dropped_after_game": {
+    "1": 1,
+    "2": 2,
+    "3": 3,
+    "4": 4,
+    "5": 5,
+    "6": 6,
+    "7": 7,
+    "8": 8,
+    "9": 9,
+    "10": 10
+   },
+   "budget_points": [
+    {
+     "after_game": 1,
+     "games_shown": [],
+     "games_dropped": 1,
+     "tokens": 0,
+     "budget_tokens": 152
+    },
+    {
+     "after_game": 2,
+     "games_shown": [],
+     "games_dropped": 2,
+     "tokens": 0,
+     "budget_tokens": 262
+    },
+    {
+     "after_game": 3,
+     "games_shown": [],
+     "games_dropped": 3,
+     "tokens": 0,
+     "budget_tokens": 393
+    },
+    {
+     "after_game": 4,
+     "games_shown": [],
+     "games_dropped": 4,
+     "tokens": 0,
+     "budget_tokens": 513
+    },
+    {
+     "after_game": 5,
+     "games_shown": [],
+     "games_dropped": 5,
+     "tokens": 0,
+     "budget_tokens": 634
+    },
+    {
+     "after_game": 6,
+     "games_shown": [],
+     "games_dropped": 6,
+     "tokens": 0,
+     "budget_tokens": 743
+    },
+    {
+     "after_game": 7,
+     "games_shown": [],
+     "games_dropped": 7,
+     "tokens": 0,
+     "budget_tokens": 861
+    },
+    {
+     "after_game": 8,
+     "games_shown": [],
+     "games_dropped": 8,
+     "tokens": 0,
+     "budget_tokens": 991
+    },
+    {
+     "after_game": 9,
+     "games_shown": [],
+     "games_dropped": 9,
+     "tokens": 0,
+     "budget_tokens": 1120
+    },
+    {
+     "after_game": 10,
+     "games_shown": [],
+     "games_dropped": 10,
+     "tokens": 0,
+     "budget_tokens": 1246
+    }
+   ],
+   "evaluation_positions_excluded": 0,
+   "restarts": 0,
+   "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+   "lesson_prompt_sha256": "d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e",
+   "aggregate_sha256": "6f93d3737535865debbc03bbc71b1b0ed1f59949350b7ebe8aaa4ad8159a81ce",
+   "log_sha256": "e9eb534fe6a3e34799256d8f1e27ca2902bb544d2fb12a320221008125d773ee",
+   "match_log_sha256": "3678ffff3d38f1200f5929751935e61f287dbb419d3fe392fbac795931b94491"
+  },
+  {
+   "arm": "budget",
+   "series": 9,
+   "dice_seed": 6788811015730745052,
+   "match_id": 41,
+   "match_status": "finished",
+   "started_at": "2026-11-08T06:45:05+00:00",
+   "finished_at": "2026-11-08T07:08:49+00:00",
+   "wall_seconds": 1423.9,
+   "games": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "game_rows": [
+    {
+     "game": 1,
+     "game_id": 374,
+     "turns": 86,
+     "started_at": "2026-11-08T06:45:05.581Z",
+     "finished_at": "2026-11-08T06:46:46.048Z"
+    },
+    {
+     "game": 2,
+     "game_id": 376,
+     "turns": 91,
+     "started_at": "2026-11-08T06:46:56.810Z",
+     "finished_at": "2026-11-08T06:47:42.970Z"
+    },
+    {
+     "game": 3,
+     "game_id": 378,
+     "turns": 62,
+     "started_at": "2026-11-08T06:47:48.346Z",
+     "finished_at": "2026-11-08T06:48:24.025Z"
+    },
+    {
+     "game": 4,
+     "game_id": 379,
+     "turns": 49,
+     "started_at": "2026-11-08T06:48:29.126Z",
+     "finished_at": "2026-11-08T06:49:16.037Z"
+    },
+    {
+     "game": 5,
+     "game_id": 381,
+     "turns": 85,
+     "started_at": "2026-11-08T06:49:21.369Z",
+     "finished_at": "2026-11-08T06:49:54.476Z"
+    },
+    {
+     "game": 6,
+     "game_id": 383,
+     "turns": 100,
+     "started_at": "2026-11-08T06:57:48.738Z",
+     "finished_at": "2026-11-08T06:58:32.931Z"
+    },
+    {
+     "game": 7,
+     "game_id": 384,
+     "turns": 67,
+     "started_at": "2026-11-08T06:58:35.799Z",
+     "finished_at": "2026-11-08T06:59:21.648Z"
+    },
+    {
+     "game": 8,
+     "game_id": 385,
+     "turns": 60,
+     "started_at": "2026-11-08T06:59:25.995Z",
+     "finished_at": "2026-11-08T07:00:15.798Z"
+    },
+    {
+     "game": 9,
+     "game_id": 387,
+     "turns": 58,
+     "started_at": "2026-11-08T07:00:20.028Z",
+     "finished_at": "2026-11-08T07:01:03.660Z"
+    },
+    {
+     "game": 10,
+     "game_id": 388,
+     "turns": 55,
+     "started_at": "2026-11-08T07:01:07.649Z",
+     "finished_at": "2026-11-08T07:01:52.858Z"
+    }
+   ],
+   "decisions_per_game": [
+    39,
+    27,
+    26,
+    21,
+    26,
+    27,
+    26,
+    21,
+    26,
+    24
+   ],
+   "invalid_decisions": 0,
+   "unscored_decisions": 0,
+   "evaluations": {
+    "T5": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-08T06:50:03.008Z",
+     "last_answer_at": "2026-11-08T06:57:48.668Z"
+    },
+    "T10": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-08T07:02:01.233Z",
+     "last_answer_at": "2026-11-08T07:08:49.291Z"
+    }
+   },
+   "lessons_files": {},
+   "lessons_calls": 0,
+   "lessons_cut": 0,
+   "context_tokens_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0,
+    "10": 0
+   },
+   "records_dropped_after_game": {
+    "1": 1,
+    "2": 2,
+    "3": 3,
+    "4": 4,
+    "5": 5,
+    "6": 6,
+    "7": 7,
+    "8": 8,
+    "9": 9,
+    "10": 10
+   },
+   "budget_points": [
+    {
+     "after_game": 1,
+     "games_shown": [],
+     "games_dropped": 1,
+     "tokens": 0,
+     "budget_tokens": 161
+    },
+    {
+     "after_game": 2,
+     "games_shown": [],
+     "games_dropped": 2,
+     "tokens": 0,
+     "budget_tokens": 293
+    },
+    {
+     "after_game": 3,
+     "games_shown": [],
+     "games_dropped": 3,
+     "tokens": 0,
+     "budget_tokens": 419
+    },
+    {
+     "after_game": 4,
+     "games_shown": [],
+     "games_dropped": 4,
+     "tokens": 0,
+     "budget_tokens": 533
+    },
+    {
+     "after_game": 5,
+     "games_shown": [],
+     "games_dropped": 5,
+     "tokens": 0,
+     "budget_tokens": 675
+    },
+    {
+     "after_game": 6,
+     "games_shown": [],
+     "games_dropped": 6,
+     "tokens": 0,
+     "budget_tokens": 789
+    },
+    {
+     "after_game": 7,
+     "games_shown": [],
+     "games_dropped": 7,
+     "tokens": 0,
+     "budget_tokens": 909
+    },
+    {
+     "after_game": 8,
+     "games_shown": [],
+     "games_dropped": 8,
+     "tokens": 0,
+     "budget_tokens": 1037
+    },
+    {
+     "after_game": 9,
+     "games_shown": [],
+     "games_dropped": 9,
+     "tokens": 0,
+     "budget_tokens": 1160
+    },
+    {
+     "after_game": 10,
+     "games_shown": [],
+     "games_dropped": 10,
+     "tokens": 0,
+     "budget_tokens": 1260
+    }
+   ],
+   "evaluation_positions_excluded": 0,
+   "restarts": 0,
+   "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+   "lesson_prompt_sha256": "d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e",
+   "aggregate_sha256": "3e2bbd0f817d460f8c915c9fa854b548f6d7684da0880a0beecd85ace7f49d96",
+   "log_sha256": "1c96b40ba3b2af69f030a49b3f57c15f6bd5e8688fa208244b6723e20f6a5d30",
+   "match_log_sha256": "4037499bac86389cd593496eec7af0b54a8707a361bf95ebb14515a96d2b23e0"
+  },
+  {
+   "arm": "budget",
+   "series": 10,
+   "dice_seed": 2110657280462155743,
+   "match_id": 42,
+   "match_status": "finished",
+   "started_at": "2026-11-08T07:14:20+00:00",
+   "finished_at": "2026-11-08T07:28:04+00:00",
+   "wall_seconds": 824.1,
+   "games": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "game_rows": [
+    {
+     "game": 1,
+     "game_id": 393,
+     "turns": 78,
+     "started_at": "2026-11-08T07:14:20.191Z",
+     "finished_at": "2026-11-08T07:14:41.500Z"
+    },
+    {
+     "game": 2,
+     "game_id": 394,
+     "turns": 52,
+     "started_at": "2026-11-08T07:14:45.593Z",
+     "finished_at": "2026-11-08T07:15:17.990Z"
+    },
+    {
+     "game": 3,
+     "game_id": 395,
+     "turns": 61,
+     "started_at": "2026-11-08T07:15:24.224Z",
+     "finished_at": "2026-11-08T07:15:36.455Z"
+    },
+    {
+     "game": 4,
+     "game_id": 396,
+     "turns": 56,
+     "started_at": "2026-11-08T07:15:39.250Z",
+     "finished_at": "2026-11-08T07:16:03.457Z"
+    },
+    {
+     "game": 5,
+     "game_id": 397,
+     "turns": 68,
+     "started_at": "2026-11-08T07:16:08.655Z",
+     "finished_at": "2026-11-08T07:16:44.119Z"
+    },
+    {
+     "game": 6,
+     "game_id": 398,
+     "turns": 66,
+     "started_at": "2026-11-08T07:21:03.062Z",
+     "finished_at": "2026-11-08T07:21:30.083Z"
+    },
+    {
+     "game": 7,
+     "game_id": 399,
+     "turns": 99,
+     "started_at": "2026-11-08T07:21:35.234Z",
+     "finished_at": "2026-11-08T07:22:21.230Z"
+    },
+    {
+     "game": 8,
+     "game_id": 400,
+     "turns": 51,
+     "started_at": "2026-11-08T07:22:29.460Z",
+     "finished_at": "2026-11-08T07:22:56.861Z"
+    },
+    {
+     "game": 9,
+     "game_id": 401,
+     "turns": 62,
+     "started_at": "2026-11-08T07:23:02.224Z",
+     "finished_at": "2026-11-08T07:23:19.576Z"
+    },
+    {
+     "game": 10,
+     "game_id": 402,
+     "turns": 49,
+     "started_at": "2026-11-08T07:23:23.224Z",
+     "finished_at": "2026-11-08T07:23:47.514Z"
+    }
+   ],
+   "decisions_per_game": [
+    23,
+    23,
+    17,
+    24,
+    28,
+    23,
+    39,
+    19,
+    22,
+    23
+   ],
+   "invalid_decisions": 0,
+   "unscored_decisions": 0,
+   "evaluations": {
+    "T5": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-08T07:16:53.369Z",
+     "last_answer_at": "2026-11-08T07:21:03.005Z"
+    },
+    "T10": {
+     "answers": 200,
+     "failed": 0,
+     "invalid": 0,
+     "first_answer_at": "2026-11-08T07:23:54.827Z",
+     "last_answer_at": "2026-11-08T07:28:04.078Z"
+    }
+   },
+   "lessons_files": {},
+   "lessons_calls": 0,
+   "lessons_cut": 0,
+   "context_tokens_after_game": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0,
+    "10": 0
+   },
+   "records_dropped_after_game": {
+    "1": 1,
+    "2": 2,
+    "3": 3,
+    "4": 4,
+    "5": 5,
+    "6": 6,
+    "7": 7,
+    "8": 8,
+    "9": 9,
+    "10": 10
+   },
+   "budget_points": [
+    {
+     "after_game": 1,
+     "games_shown": [],
+     "games_dropped": 1,
+     "tokens": 0,
+     "budget_tokens": 140
+    },
+    {
+     "after_game": 2,
+     "games_shown": [],
+     "games_dropped": 2,
+     "tokens": 0,
+     "budget_tokens": 259
+    },
+    {
+     "after_game": 3,
+     "games_shown": [],
+     "games_dropped": 3,
+     "tokens": 0,
+     "budget_tokens": 387
+    },
+    {
+     "after_game": 4,
+     "games_shown": [],
+     "games_dropped": 4,
+     "tokens": 0,
+     "budget_tokens": 499
+    },
+    {
+     "after_game": 5,
+     "games_shown": [],
+     "games_dropped": 5,
+     "tokens": 0,
+     "budget_tokens": 630
+    },
+    {
+     "after_game": 6,
+     "games_shown": [],
+     "games_dropped": 6,
+     "tokens": 0,
+     "budget_tokens": 764
+    },
+    {
+     "after_game": 7,
+     "games_shown": [],
+     "games_dropped": 7,
+     "tokens": 0,
+     "budget_tokens": 905
+    },
+    {
+     "after_game": 8,
+     "games_shown": [],
+     "games_dropped": 8,
+     "tokens": 0,
+     "budget_tokens": 1033
+    },
+    {
+     "after_game": 9,
+     "games_shown": [],
+     "games_dropped": 9,
+     "tokens": 0,
+     "budget_tokens": 1147
+    },
+    {
+     "after_game": 10,
+     "games_shown": [],
+     "games_dropped": 10,
+     "tokens": 0,
+     "budget_tokens": 1268
+    }
+   ],
+   "evaluation_positions_excluded": 0,
+   "restarts": 0,
+   "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+   "lesson_prompt_sha256": "d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e",
+   "aggregate_sha256": "997d41b2fcbf45e1e18b7aa0167c87fbf74d893ce5d3e93058b7bdfe312e9ab2",
+   "log_sha256": "a4743ee00980d37a3e61c69ed28924c1eed6f27d1c71c36c266ed7372ec8471c",
+   "match_log_sha256": "8929e978fddf845ec696b2081db7384ae2e64881a6c03c04b4b2ccadc6c554ba"
+  }
+ ],
+ "replays": [
+  {
+   "arm": "records",
+   "series": 1,
+   "restarted_at": "2026-11-07T18:20:14+00:00",
+   "aborted_match_id": 3,
+   "aborted_match_status": "aborted",
+   "aborted_match_started_at": "2026-11-07T18:01:22.849Z",
+   "aborted_match_games_started": 1,
+   "aborted_match_games_finished": 1,
+   "aborted_match_error": "after-game command failed (exit status: 1) after round 1 game 1",
+   "replacement_match_id": 7,
+   "aborted_match_seed": 5588155524604542475,
+   "replacement_match_seed": 5588155524604542475,
+   "match_seed_equal": true,
+   "games_compared": [
+    {
+     "round": 1,
+     "leg": 1,
+     "aborted_game_id": 3,
+     "replacement_game_id": 34,
+     "aborted_dice_seed": -6539351782433714421,
+     "replacement_dice_seed": -6539351782433714421,
+     "dice_seed_equal": true,
+     "aborted_opening": [
+      4,
+      1
+     ],
+     "replacement_opening": [
+      4,
+      1
+     ],
+     "opening_equal": true,
+     "aborted_turns": 63,
+     "replacement_turns": 63,
+     "compared_turns": 63,
+     "rolls_sha256_aborted": "e6790921bf645733db07d52306beb28a7f7b6773f439eaec02fc797598a92541",
+     "rolls_sha256_replacement": "e6790921bf645733db07d52306beb28a7f7b6773f439eaec02fc797598a92541",
+     "rolls_equal_over_compared_turns": true,
+     "first_unequal_turn": null
+    }
+   ],
+   "same_dice": true,
+   "archive_path": "workspace/learning-pilot/runs/records/s01/attempt-1",
+   "archive_files": {
+    "failed.previous": "7e57abde9469d241f71648b0e5b48ff86a77d878cb12964e9178e6852f12c5e5",
+    "log.jsonl": "d477e7a7e0b6945c86bbad6742cf6e3d5dee7ee00c84c9a8d9a04c56bfe5a5bd",
+    "match.log": "19256850999d5d0d9cf76ff4095513bb1a0e4479ac104b26c3a919f5e3e031d7",
+    "note.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "player.json": "92026fdd3d00222835a71e83d62ae8f732e13b7b199583df0911d2459339de10"
+   },
+   "failure_reason": "ne 271, in ctx_records\n    n = tokens(text)\n  File \"/home/cbasaran/code/jevgammon/workspace/learning-pilot/pilot.py\", line 125, in tokens\n    from tokenizers import Tokenizer\nModuleNotFoundError: No module named 'tokenizers'\njevgammon: after-game command failed (exit status: 1) after round 1 game 1\n"
+  },
+  {
+   "arm": "lessons",
+   "series": 1,
+   "restarted_at": "2026-11-07T18:20:14+00:00",
+   "aborted_match_id": 2,
+   "aborted_match_status": "aborted",
+   "aborted_match_started_at": "2026-11-07T18:01:22.854Z",
+   "aborted_match_games_started": 1,
+   "aborted_match_games_finished": 1,
+   "aborted_match_error": "after-game command failed (exit status: 1) after round 1 game 1",
+   "replacement_match_id": 6,
+   "aborted_match_seed": 5588155524604542475,
+   "replacement_match_seed": 5588155524604542475,
+   "match_seed_equal": true,
+   "games_compared": [
+    {
+     "round": 1,
+     "leg": 1,
+     "aborted_game_id": 1,
+     "replacement_game_id": 33,
+     "aborted_dice_seed": -6539351782433714421,
+     "replacement_dice_seed": -6539351782433714421,
+     "dice_seed_equal": true,
+     "aborted_opening": [
+      4,
+      1
+     ],
+     "replacement_opening": [
+      4,
+      1
+     ],
+     "opening_equal": true,
+     "aborted_turns": 63,
+     "replacement_turns": 63,
+     "compared_turns": 63,
+     "rolls_sha256_aborted": "e6790921bf645733db07d52306beb28a7f7b6773f439eaec02fc797598a92541",
+     "rolls_sha256_replacement": "e6790921bf645733db07d52306beb28a7f7b6773f439eaec02fc797598a92541",
+     "rolls_equal_over_compared_turns": true,
+     "first_unequal_turn": null
+    }
+   ],
+   "same_dice": true,
+   "archive_path": "workspace/learning-pilot/runs/lessons/s01/attempt-1",
+   "archive_files": {
+    "failed.previous": "6873aec5ebf8cd4f2ca09460083dcc7182254db6f3e6caa5e0b546ca2fb2c156",
+    "lessons-g01.json": "d713afc4aaa08eb20ef8e2f51112f0a923684642f408281ca33d84d47346a058",
+    "lessons-g01.txt": "5689aa28dd11ffd92f227ffd702218eafdda76054de70a9815e1833714db3a0b",
+    "log.jsonl": "1bf3377a9e066845376fe085723b61d3a4facdce0540ecd8ca415e9706822e05",
+    "match.log": "b91d2322770020e1306009d4bc80a5f7fd732f91222c17e41d0166de21884538",
+    "note.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "player.json": "71d93be11c87551efb85c75d354b513310ebfffa2f5554f4ba47261fd956e423"
+   },
+   "failure_reason": "ne 370, in ctx_lessons\n    n = tokens(text)\n  File \"/home/cbasaran/code/jevgammon/workspace/learning-pilot/pilot.py\", line 125, in tokens\n    from tokenizers import Tokenizer\nModuleNotFoundError: No module named 'tokenizers'\njevgammon: after-game command failed (exit status: 1) after round 1 game 1\n"
+  }
+ ],
+ "records_context_limit_events": [
+  {
+   "series": 1,
+   "after_game": 9,
+   "budget_tokens": 26879,
+   "steps": [
+    {
+     "tokens_before_drop": 29525,
+     "dropped_whole_game": 1
+    }
+   ],
+   "games_shown_after": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "tokens_after": 25902,
+   "rule": "the oldest whole game is dropped while the context exceeds the budget; nothing is trimmed, skipped or refused"
+  },
+  {
+   "series": 1,
+   "after_game": 10,
+   "budget_tokens": 26879,
+   "steps": [
+    {
+     "tokens_before_drop": 32552,
+     "dropped_whole_game": 1
+    },
+    {
+     "tokens_before_drop": 28929,
+     "dropped_whole_game": 2
+    }
+   ],
+   "games_shown_after": [
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "tokens_after": 25572,
+   "rule": "the oldest whole game is dropped while the context exceeds the budget; nothing is trimmed, skipped or refused"
+  },
+  {
+   "series": 2,
+   "after_game": 9,
+   "budget_tokens": 26879,
+   "steps": [
+    {
+     "tokens_before_drop": 28858,
+     "dropped_whole_game": 1
+    }
+   ],
+   "games_shown_after": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "tokens_after": 26090,
+   "rule": "the oldest whole game is dropped while the context exceeds the budget; nothing is trimmed, skipped or refused"
+  },
+  {
+   "series": 2,
+   "after_game": 10,
+   "budget_tokens": 26879,
+   "steps": [
+    {
+     "tokens_before_drop": 32563,
+     "dropped_whole_game": 1
+    },
+    {
+     "tokens_before_drop": 29795,
+     "dropped_whole_game": 2
+    }
+   ],
+   "games_shown_after": [
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "tokens_after": 26399,
+   "rule": "the oldest whole game is dropped while the context exceeds the budget; nothing is trimmed, skipped or refused"
+  },
+  {
+   "series": 3,
+   "after_game": 10,
+   "budget_tokens": 26879,
+   "steps": [
+    {
+     "tokens_before_drop": 29204,
+     "dropped_whole_game": 1
+    }
+   ],
+   "games_shown_after": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "tokens_after": 25143,
+   "rule": "the oldest whole game is dropped while the context exceeds the budget; nothing is trimmed, skipped or refused"
+  },
+  {
+   "series": 4,
+   "after_game": 8,
+   "budget_tokens": 26879,
+   "steps": [
+    {
+     "tokens_before_drop": 28150,
+     "dropped_whole_game": 1
+    }
+   ],
+   "games_shown_after": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8
+   ],
+   "tokens_after": 24774,
+   "rule": "the oldest whole game is dropped while the context exceeds the budget; nothing is trimmed, skipped or refused"
+  },
+  {
+   "series": 4,
+   "after_game": 9,
+   "budget_tokens": 26879,
+   "steps": [
+    {
+     "tokens_before_drop": 30765,
+     "dropped_whole_game": 1
+    },
+    {
+     "tokens_before_drop": 27389,
+     "dropped_whole_game": 2
+    }
+   ],
+   "games_shown_after": [
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "tokens_after": 24440,
+   "rule": "the oldest whole game is dropped while the context exceeds the budget; nothing is trimmed, skipped or refused"
+  },
+  {
+   "series": 4,
+   "after_game": 10,
+   "budget_tokens": 26879,
+   "steps": [
+    {
+     "tokens_before_drop": 33786,
+     "dropped_whole_game": 1
+    },
+    {
+     "tokens_before_drop": 30410,
+     "dropped_whole_game": 2
+    },
+    {
+     "tokens_before_drop": 27461,
+     "dropped_whole_game": 3
+    }
+   ],
+   "games_shown_after": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "tokens_after": 23735,
+   "rule": "the oldest whole game is dropped while the context exceeds the budget; nothing is trimmed, skipped or refused"
+  },
+  {
+   "series": 5,
+   "after_game": 10,
+   "budget_tokens": 26879,
+   "steps": [
+    {
+     "tokens_before_drop": 30786,
+     "dropped_whole_game": 1
+    }
+   ],
+   "games_shown_after": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "tokens_after": 26593,
+   "rule": "the oldest whole game is dropped while the context exceeds the budget; nothing is trimmed, skipped or refused"
+  },
+  {
+   "series": 6,
+   "after_game": 10,
+   "budget_tokens": 26879,
+   "steps": [
+    {
+     "tokens_before_drop": 28537,
+     "dropped_whole_game": 1
+    }
+   ],
+   "games_shown_after": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "tokens_after": 26059,
+   "rule": "the oldest whole game is dropped while the context exceeds the budget; nothing is trimmed, skipped or refused"
+  },
+  {
+   "series": 7,
+   "after_game": 8,
+   "budget_tokens": 26879,
+   "steps": [
+    {
+     "tokens_before_drop": 27281,
+     "dropped_whole_game": 1
+    }
+   ],
+   "games_shown_after": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8
+   ],
+   "tokens_after": 24303,
+   "rule": "the oldest whole game is dropped while the context exceeds the budget; nothing is trimmed, skipped or refused"
+  },
+  {
+   "series": 7,
+   "after_game": 9,
+   "budget_tokens": 26879,
+   "steps": [
+    {
+     "tokens_before_drop": 30862,
+     "dropped_whole_game": 1
+    },
+    {
+     "tokens_before_drop": 27884,
+     "dropped_whole_game": 2
+    }
+   ],
+   "games_shown_after": [
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "tokens_after": 25006,
+   "rule": "the oldest whole game is dropped while the context exceeds the budget; nothing is trimmed, skipped or refused"
+  },
+  {
+   "series": 7,
+   "after_game": 10,
+   "budget_tokens": 26879,
+   "steps": [
+    {
+     "tokens_before_drop": 33564,
+     "dropped_whole_game": 1
+    },
+    {
+     "tokens_before_drop": 30586,
+     "dropped_whole_game": 2
+    },
+    {
+     "tokens_before_drop": 27708,
+     "dropped_whole_game": 3
+    }
+   ],
+   "games_shown_after": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "tokens_after": 22884,
+   "rule": "the oldest whole game is dropped while the context exceeds the budget; nothing is trimmed, skipped or refused"
+  },
+  {
+   "series": 8,
+   "after_game": 9,
+   "budget_tokens": 26879,
+   "steps": [
+    {
+     "tokens_before_drop": 29387,
+     "dropped_whole_game": 1
+    }
+   ],
+   "games_shown_after": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "tokens_after": 25813,
+   "rule": "the oldest whole game is dropped while the context exceeds the budget; nothing is trimmed, skipped or refused"
+  },
+  {
+   "series": 8,
+   "after_game": 10,
+   "budget_tokens": 26879,
+   "steps": [
+    {
+     "tokens_before_drop": 33385,
+     "dropped_whole_game": 1
+    },
+    {
+     "tokens_before_drop": 29811,
+     "dropped_whole_game": 2
+    },
+    {
+     "tokens_before_drop": 27864,
+     "dropped_whole_game": 3
+    }
+   ],
+   "games_shown_after": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "tokens_after": 21931,
+   "rule": "the oldest whole game is dropped while the context exceeds the budget; nothing is trimmed, skipped or refused"
+  },
+  {
+   "series": 9,
+   "after_game": 7,
+   "budget_tokens": 26879,
+   "steps": [
+    {
+     "tokens_before_drop": 28302,
+     "dropped_whole_game": 1
+    }
+   ],
+   "games_shown_after": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "tokens_after": 22375,
+   "rule": "the oldest whole game is dropped while the context exceeds the budget; nothing is trimmed, skipped or refused"
+  },
+  {
+   "series": 9,
+   "after_game": 8,
+   "budget_tokens": 26879,
+   "steps": [
+    {
+     "tokens_before_drop": 31636,
+     "dropped_whole_game": 1
+    }
+   ],
+   "games_shown_after": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8
+   ],
+   "tokens_after": 25709,
+   "rule": "the oldest whole game is dropped while the context exceeds the budget; nothing is trimmed, skipped or refused"
+  },
+  {
+   "series": 9,
+   "after_game": 9,
+   "budget_tokens": 26879,
+   "steps": [
+    {
+     "tokens_before_drop": 34837,
+     "dropped_whole_game": 1
+    },
+    {
+     "tokens_before_drop": 28910,
+     "dropped_whole_game": 2
+    }
+   ],
+   "games_shown_after": [
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "tokens_after": 24849,
+   "rule": "the oldest whole game is dropped while the context exceeds the budget; nothing is trimmed, skipped or refused"
+  },
+  {
+   "series": 9,
+   "after_game": 10,
+   "budget_tokens": 26879,
+   "steps": [
+    {
+     "tokens_before_drop": 38407,
+     "dropped_whole_game": 1
+    },
+    {
+     "tokens_before_drop": 32480,
+     "dropped_whole_game": 2
+    },
+    {
+     "tokens_before_drop": 28419,
+     "dropped_whole_game": 3
+    }
+   ],
+   "games_shown_after": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "tokens_after": 24436,
+   "rule": "the oldest whole game is dropped while the context exceeds the budget; nothing is trimmed, skipped or refused"
+  },
+  {
+   "series": 10,
+   "after_game": 8,
+   "budget_tokens": 26879,
+   "steps": [
+    {
+     "tokens_before_drop": 29847,
+     "dropped_whole_game": 1
+    }
+   ],
+   "games_shown_after": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8
+   ],
+   "tokens_after": 26459,
+   "rule": "the oldest whole game is dropped while the context exceeds the budget; nothing is trimmed, skipped or refused"
+  },
+  {
+   "series": 10,
+   "after_game": 9,
+   "budget_tokens": 26879,
+   "steps": [
+    {
+     "tokens_before_drop": 33565,
+     "dropped_whole_game": 1
+    },
+    {
+     "tokens_before_drop": 30177,
+     "dropped_whole_game": 2
+    },
+    {
+     "tokens_before_drop": 28412,
+     "dropped_whole_game": 3
+    }
+   ],
+   "games_shown_after": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "tokens_after": 25971,
+   "rule": "the oldest whole game is dropped while the context exceeds the budget; nothing is trimmed, skipped or refused"
+  },
+  {
+   "series": 10,
+   "after_game": 10,
+   "budget_tokens": 26879,
+   "steps": [
+    {
+     "tokens_before_drop": 37203,
+     "dropped_whole_game": 1
+    },
+    {
+     "tokens_before_drop": 33815,
+     "dropped_whole_game": 2
+    },
+    {
+     "tokens_before_drop": 32050,
+     "dropped_whole_game": 3
+    },
+    {
+     "tokens_before_drop": 29609,
+     "dropped_whole_game": 4
+    }
+   ],
+   "games_shown_after": [
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "tokens_after": 26115,
+   "rule": "the oldest whole game is dropped while the context exceeds the budget; nothing is trimmed, skipped or refused"
+  }
+ ],
+ "records_context_limit_event_count": 40
+}

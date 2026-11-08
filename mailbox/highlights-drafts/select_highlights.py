@@ -39,8 +39,7 @@ LABELS = json.load(open(ROOT / "tools/site/content/labels.json"))["renamed"]
 NAME = lambda n: LABELS.get(n, {}).get("name", n)  # noqa: E731
 PROGRAMS = {"GNUbg weak", "Safest", "Random"}
 MARGIN = 0.001  # thresholds.json risk_margin
-SLOT4_NEEDLESS_MARGIN = 0.25  # slot 4: prefer a needless risk if its loss is within this of the overall largest
-MOST = 0.70  # "most models" (slot 3 wording, used for slot 5 too)
+MOST = 0.70  # "most models" in slot 3 (Umit's 70%+)
 
 
 def ro(path):
@@ -229,50 +228,53 @@ for f in glob.glob(str(SITE / "decisions/league-3/*/*.json.gz")):
             L3.append(d | {"slug": p["slug"], "page": int(p["page"])})
 L3.sort(key=lambda d: -d["plays"][d["chosen"]]["loss"])
 need = [d for d in L3 if d["risk"] and d["risk"]["call"] == "needless"]
-top, topn = L3[0], need[0]
 lossof = lambda d: d["plays"][d["chosen"]]["loss"]  # noqa: E731
-use_needless = lossof(top) - lossof(topn) <= SLOT4_NEEDLESS_MARGIN
-F["slot4"] = dict(rule=f"League 3 non-program decisions; largest loss; needless risk preferred if within "
-                       f"{SLOT4_NEEDLESS_MARGIN} of the overall largest",
+F["slot4"] = dict(rule="League 3 non-program decisions; largest loss (the largest needless risk is listed as an "
+                       "editorial alternative only)",
                   overall=[(d["id"], d["setup"], round(lossof(d), 4), d["risk"] and d["risk"]["call"]) for d in L3[:5]],
                   needless=[(d["id"], d["setup"], round(lossof(d), 4)) for d in need[:3]],
-                  difference=round(lossof(top) - lossof(topn), 4), needless_chosen=use_needless,
-                  pick=topn if use_needless else top, runner_up=top if use_needless else topn, second_overall=L3[1])
+                  pick=L3[0], needless_alternative=need[0], second_overall=L3[1])
 
 # ---------------------------------------------------------------- slot 5: decision model right risk, frontier safe
-DM_Q = "Liquid d1-ultra"  # the only one of d1-ultra / Mammoth-1 / Drex Max v1 / REAX 1.3 in the quiz
+# "Most" = more than half of the named cohort's answers (2 of 3 counts). Two cohorts, both reported:
+COHORTS = {"quiz5": ["Claude Sonnet 5.5 (high)", "GPT-6.1 Sol (high)", "Kimi K3.1 Pro (off)", "GLM-5.3 (on)",
+                     "Claude Opus 5.5 (on)"],  # the five quiz chat models (v3 setup names)
+           "league3": ["GPT-6.1 Sol (high)", "Kimi K3.1 Pro (off)", "Claude Opus 5.5 (on)"]}  # the League 3 ones
 DM_L = {"Liquid d1-ultra", "Base Labs Mammoth-1", "Drex Max v1", "REAX 1.3"}
-L3N = {d["setup"] for d in L3}
-c5q = []
-for version in ("numbers", "board"):
-    for sid, m in meta.items():
-        if m["grp"] != "Risk wins" or pick(DM_Q, f"{sid}:Q1:{version}") != m["q1"]["unsafe"]:
+DM_Q = sorted(DM_L & set(QM))  # only Liquid d1-ultra took the quiz
+S5 = {}
+for cname, cohort in COHORTS.items():
+    quiz = []
+    for version in ("numbers", "board"):
+        for sid, m in meta.items():
+            if m["grp"] != "Risk wins":
+                continue
+            takers = [d for d in DM_Q if pick(d, f"{sid}:Q1:{version}") == m["q1"]["unsafe"]]
+            a = {k: v for k, v in q1(sid, version).items() if k in cohort and v is not None}
+            safe = [k for k, v in a.items() if v == m["q1"]["safe"]]
+            if takers and a and 2 * len(safe) > len(a):
+                quiz.append(dict(gap=round(SAMPLE[sid]["gap"], 4), item=sid, version=version, n=len(a),
+                                 safe=len(safe), risk_takers_in_cohort=[NAME(k) for k in a if k not in safe],
+                                 decision_models=takers))
+    league = []
+    for k, v in SAME.items():
+        if v[0]["cls"] != "risk":
             continue
-        a = {k: v for k, v in q1(sid, version).items() if k in QCHAT and v is not None}
-        safe = [k for k, v in a.items() if v == m["q1"]["safe"]]
-        c5q.append((SAMPLE[sid]["gap"], sid, version, len(a), len(safe)))
-c5q.sort(reverse=True)
-c5q70 = [x for x in c5q if x[3] and x[4] / x[3] >= MOST]
-c5qmaj = [x for x in c5q if x[3] and x[4] / x[3] > 0.5]
-c5l = []
-for k, v in SAME.items():
-    if v[0]["cls"] != "risk":
-        continue
-    dm = [d for d in v if d["model"] in DM_L and d["call"] == "right_risk"]
-    fr = [d for d in v if d["name"] in L3N]
-    if dm and fr:
-        c5l.append((max(d["data"][d["chosen"]][1] - best_safe_eq(d) for d in dm), dm[0]["tid"], len(fr),
-                    sum(d["call"] == "missed" for d in fr)))
-c5l.sort(reverse=True)
-F["slot5"] = dict(rule=f"Risk wins; {DM_Q} took the risky play; >= {MOST:.0%} of the five quiz chat models safe; max gap",
-                  quiz_70=[(round(g, 4), s, v, n, ns) for g, s, v, n, ns in c5q70[:6]],
-                  quiz_majority=[(round(g, 4), s, v, n, ns) for g, s, v, n, ns in c5qmaj[:6]],
-                  league_any=[(round(x[0], 4),) + x[1:] for x in c5l[:5]],
-                  league_frontier_mostly_safe_n2plus=[(round(x[0], 4),) + x[1:] for x in c5l
-                                                     if x[2] >= 2 and x[3] / x[2] >= MOST],
-                  pick=quiz_facts(c5q70[0][1]) | {"version": c5q70[0][2]},
-                  runner_up=quiz_facts(c5q70[1][1]) | {"version": c5q70[1][2]},
-                  majority_alternative=quiz_facts(c5qmaj[0][1]) | {"version": c5qmaj[0][2]})
+        dm = [d for d in v if d["model"] in DM_L and d["call"] == "right_risk"]
+        co = [d for d in v if d["model"] in cohort]
+        safe = [d for d in co if d["call"] == "missed"]
+        if dm and co and 2 * len(safe) > len(co):
+            league.append(dict(gap=round(max(d["data"][d["chosen"]][1] - best_safe_eq(d) for d in dm), 4),
+                               dice=v[0]["dice"], turn_no=min(d["turn_no"] for d in v), n=len(co), safe=len(safe),
+                               decision_models=sorted({(d["name"], d["tid"], d["data"][d["chosen"]][0]) for d in dm}),
+                               cohort=[(d["name"], d["tid"], d["data"][d["chosen"]][0], d["call"]) for d in co]))
+    S5[cname] = dict(quiz=sorted(quiz, key=lambda x: -x["gap"]), league=sorted(league, key=lambda x: -x["gap"]))
+# Our criterion among qualifiers (not Umit's): the largest gap, over both cohorts and both populations.
+best = max((x for c in S5.values() for x in c["quiz"]), key=lambda x: x["gap"])
+F["slot5"] = dict(rule="Risk wins / Risk pays; a named decision model took the right risk; more than half of the "
+                       "cohort's answers safe; cohorts: quiz5 and league3; our pick criterion: largest gap",
+                  cohorts={k: [NAME(m) for m in v] for k, v in COHORTS.items()}, qualifiers=S5,
+                  pick=quiz_facts(best["item"]) | {"version": best["version"]})
 
 # ---------------------------------------------------------------- slot 6: learning pilot divergence points
 LP, LPP = ro(ROOT / "smoke/learning-pilot.db"), ro(ROOT / "smoke/learning-pilot-plays.db")
@@ -376,7 +378,7 @@ render(f"hl4-frontier-blunder-{d['id']}", d["board"], d["dice"], d["pips"], d["p
        f"{d['plays'][d['chosen']]['notation']}.")
 x = F["slot5"]["pick"]
 render(f"hl5-decision-model-clearrisk-{x['sid']}", x["board"], x["dice"], x["pips"], x["risk"]["play"],
-       x["safe"]["play"], f"Solid: {x['risk']['play']}, Liquid d1-ultra's answer (the risk). "
+       x["safe"]["play"], f"Solid: {x['risk']['play']}, Liquid d1-ultra's answer with the board only (the risk). "
        f"Dashed: {x['safe']['play']}, the safe play.")
 x = F["slot6"]["pick"]
 render(f"hl6-learning-pilot-s{x['series']:02d}g{x['game']:02d}", x["board"], x["dice"], x["pips"],

@@ -19,21 +19,25 @@
    - It is labelled "Two or four plays shown, not league play." Any caption must keep that label.
    - The site publishes only aggregate quiz results. `clear_risk_publish.py` says the position-to-choice records stay private.
    - So a quiz highlight would be **the first per-position quiz answer made public**. Publishing one needs Ümit's or Can's OK.
-2. **Slot 5 — met only in the quiz, and only by Liquid d1-ultra.**
-   - Liquid d1-ultra is the only one of the four named decision models that took the quiz. In league play, Mammoth-1, Drex Max v1 and REAX 1.3 never share a position with League 3 models where those models mostly played safe.
-   - **League play: no position meets the rule.** In identical positions (same board and dice), I found 65 positions where one of the four took the right risk and at least one League 3 model faced the same board. In none of them did 2 or more League 3 decisions face it with 70% or more playing safe. The only cases where the League 3 models mostly played safe have n = 1 League 3 decision (5 positions, all d1-ultra, gains 0.011–0.046).
-   - **Who counts as "frontier" matters.** The quiz has five chat models: Claude Sonnet 5.5 (high), GPT-6.1 Sol (high), Kimi K3.1 Pro (off), GLM-5.3 (low) and Claude Opus 5.5 (high). Only three of them are League 3 setups (Sol, Kimi, Opus).
-     - With all five chat models as the population, the pick is item 89 (board only, 4 of 5 played safe).
-     - With only the three League 3 setups, item 89 is 2 of 3 (67%) and fails the rule. The pick is then item 50 (all 3 of 3, and all 5 of 5, played safe; gap 0.136). Both are below.
-3. **Slot 4: the needless-risk preference did not apply.**
-   - I set the margin at 0.25 before looking.
-   - The largest needless risk (Kimi K3.1 Pro (off), 1.0309) is 0.4627 below the overall largest loss (Gemini 4 Argon (low), 1.4936).
-   - So the pick is the overall largest, which is a **missed risk**, not a needless one. The needless risk is the runner-up, and I wrote an alternative draft for it in case the margin is widened (any margin of at least 0.47 flips the pick).
+2. **Slot 5 (revised per Zeki #3216): "most" = more than half; two named cohorts.**
+   - Cohort A: the five quiz chat models: Claude Sonnet 5.5 (high), GPT-6.1 Sol (high), Kimi K3.1 Pro (off), GLM-5.3 (low), Claude Opus 5.5 (high). Cohort B: the three of them that are League 3 setups: Sol (high), Kimi K3.1 Pro (off), Opus 5.5 (high).
+   - Decision models allowed: Liquid d1-ultra, Base Labs Mammoth-1, Drex Max v1, REAX 1.3. Only d1-ultra took the quiz, so every quiz qualifier is d1-ultra.
+   - Quiz qualifiers: 26 item-versions (cohort A), 21 (cohort B). League-play qualifiers: 11 positions (A), 5 (B), all opening replies or turn 3, gaps ≤ 0.097, and most have n = 1 cohort decision.
+   - My pick (my criterion, not Ümit's: the largest gap among qualifiers): **quiz item 74, board only**, gap 0.370. It qualifies in both cohorts (A 3 of 5, B 2 of 3).
+3. **Slot 4 (revised per Zeki #3216): the pick is the largest loss, as requested.** The 0.25 margin was my addition and is removed. Kimi K3.1 Pro (off) 153929, the largest needless risk, is shown only as an optional editorial alternative, for Ümit to choose ("preferably a needless risk").
 4. **Slot 3: the strict "exactly one model took the risk" rule was applied.**
    - "Most" means 70% or more of the answers in the same-position population.
    - Without "exactly one", the best league-play group would have two risk-takers.
    - The quiz pick (n = 8) beats every league-play group, where the largest gain with exactly one risk-taker is 0.148, n = 4.
 5. **Slot 6: the pick meets every part of the rule.** It is in series 1, game 5, after the game-3 lesson. Board, dice, turn and the prompt's match score are all identical in both arms. It also has the largest gain of the 14 qualifying divergence points.
+
+## Changes in this revision (Zeki #3216; no new inference, existing data only)
+
+- **Slot 2:** the draft text cut from 5 sentences to 3; it keeps the warning that the engine's overall best was not one of the two plays shown.
+- **Slot 4:** the 0.25 needless-risk margin is removed from the rule. The pick (Argon 108032) is unchanged. Kimi 153929 is now an optional editorial alternative, not a margin result.
+- **Slot 5:** re-evaluated with "most" = majority for both named cohorts, quiz and league play, every qualifier listed. The pick changed from item 89 (which came from a 70% threshold that slot 5 does not have) to item 74 (board only). The board was re-rendered (`hl5-decision-model-clearrisk-74.png`; the item-89 PNG was removed).
+- `select_highlights.py` and `facts.json` updated to match. Slots 3 and 6 are unchanged.
+- Quiz examples stay private: these are mailbox drafts only; nothing is published.
 
 ---
 
@@ -65,7 +69,7 @@
 | Other models on this item | Board only: all 8 chose the risky play. With numbers: Sonnet, GLM and Opus chose it; Celeris, Jev, d1-ultra, Sol and Kimi chose the safe play |
 
 **Draft text (DRAFT)**
-> White is far behind in the race, 86 pips to 44, with two checkers still back on its 22 point and an opponent blot on 18. Shown only the board and two plays, GPT-6.1 Sol (high) chose 2/1 22/18\*, hitting the blot and leaving a shot on 12 of 36 rolls. Shown the same two plays with their computed numbers, it chose 4/3 5/1, which leaves no shot. The hit is worth 0.729 more in equity (GNU Backgammon 2-ply). The engine's best play, 22/18\* 18/17, was not one of the two shown.
+> White trails the race 86 pips to 44, with two checkers back on its 22 point and an opponent blot on 18. Shown only the board and two plays, GPT-6.1 Sol (high) chose 2/1 22/18\*, hitting and leaving a shot on 12 of 36 rolls; shown the same two plays with their computed numbers, it chose 4/3 5/1, which leaves no shot. The hit is worth 0.729 more in equity (GNU Backgammon 2-ply), though the engine's best play, 22/18\* 18/17, was not one of the two shown.
 
 Label to keep: "Two plays shown, not league play."
 Board: `mailbox/highlights-drafts/hl2-sol-clearrisk-98.png` (solid: 2/1 22/18\*; dashed: 4/3 5/1).
@@ -115,7 +119,7 @@ Board: `mailbox/highlights-drafts/hl3-great-risk-clearrisk-79.png` (solid: 2/1 2
 
 **Selection** (section "slot 4"):
 - **Population:** every published League 3 decision (`decisions/league-3/*/N.json.gz`), excluding programs and invalid answers. The loss is the chosen play's `loss`.
-- **Rule:** a needless risk is preferred if its loss is within **0.25** of the overall largest.
+- **Rule:** the largest loss (Ümit: "largest equity loss by a League 3 model, preferably a needless risk"). The largest needless risk is listed separately as an optional editorial alternative.
 
 **Ranking:**
 
@@ -127,7 +131,7 @@ Board: `mailbox/highlights-drafts/hl3-great-risk-clearrisk-79.png` (solid: 2/1 2
 | 4 | 153929 | Kimi K3.1 Pro (off) | 1.0309 | **largest needless risk** |
 | 5 | 155214 | Kimi K3.1 Pro (off) | 1.0004 | needless risk |
 
-The largest needless risk is 1.4936 − 1.0309 = 0.4627 below the overall largest, which is more than the 0.25 margin. **Pick: 108032 (a missed risk, not a needless one). Runner-up: 153929 (the largest needless risk).**
+**Pick: 108032, the largest loss (a missed risk, not a needless one).** Optional editorial alternative: 153929, the largest needless risk (loss 1.0309, 0.4627 smaller). Ümit may prefer it under "preferably a needless risk".
 
 **Facts (pick)**
 
@@ -145,7 +149,7 @@ The largest needless risk is 1.4936 − 1.0309 = 0.4627 below the overall larges
 
 Board: `mailbox/highlights-drafts/hl4-frontier-blunder-108032.png` (solid: 3/1\* 21/18\*; dashed: 5/3 5/2).
 
-**Runner-up / alternative if the margin is widened: 153929, a needless risk**
+**Optional editorial alternative (Ümit's choice): 153929, the largest needless risk**
 - Kimi K3.1 Pro (off), game 3062, turn 41, white, dice 2-4, pips 30 vs 154; the opponent has 2 checkers on the bar.
 - `decisions/?d=league-3&s=kimi-k3-1-pro-off&p=10#d153929`.
 - Kimi played 2/off 4/off: equity +0.6988; 2 blots, hit on 20 of 36 rolls. The engine's best is 4/2 4/off: +1.7297, 0 rolls. Loss 1.0309.
@@ -155,45 +159,127 @@ Board: `mailbox/highlights-drafts/hl4-frontier-blunder-108032.png` (solid: 3/1\*
 
 ## Slot 5: a decision-model surprise: the right risk while the frontier models played safe
 
-**Selection** (section "slot 5"):
-- **Named decision models:** Liquid d1-ultra, Base Labs Mammoth-1, Drex Max v1, REAX 1.3.
-- **League play** (identical board and dice, League 3 setups as "frontier"): **no position meets the rule** (see flag 2).
-- **Quiz** (only d1-ultra took it):
-  - Risk-wins items where d1-ultra's Q1 answer was the risky play.
-  - Population: the five chat models (Sonnet 5.5 (high), Sol (high), Kimi K3.1 Pro (off), GLM-5.3 (low), Opus 5.5 (high)); n = 5.
-  - "Most" means 70% or more, as in slot 3.
-  - Pick = the largest gap.
+**Selection** (`select_highlights.py`, section "slot 5"; revised per Zeki #3216):
+- **Decision models:** Liquid d1-ultra, Base Labs Mammoth-1, Drex Max v1, REAX 1.3. A position counts if one of them took the right risk (the engine's class is "risk", call right risk; in the quiz, the risky play of a Risk-wins item).
+- **"Most frontier models played safe":** more than half of the named cohort's answers on that same position were safe (2 of 3 counts). There is no 70% threshold here.
+  - **Cohort A**, the 5 quiz chat models: Claude Sonnet 5.5 (high), GPT-6.1 Sol (high), Kimi K3.1 Pro (off), GLM-5.3 (low), Claude Opus 5.5 (high).
+  - **Cohort B**, the 3 League 3 models among them: GPT-6.1 Sol (high), Kimi K3.1 Pro (off), Claude Opus 5.5 (high).
+- **Populations:**
+  - **Quiz:** each version of each Risk-wins item; n = cohort answers (5 or 3). Only d1-ultra of the four took the quiz.
+  - **League play:** identical board (mover's side) and dice across all leagues and late-entry matches; n = cohort decisions on that position (a setup can appear more than once).
+- **Gap:** quiz = the risky play minus the safe play shown; league = the decision model's play minus the best safe play (2-ply).
+- **Selection among qualifiers (my criterion, not Ümit's):** the largest gap. All qualifiers are listed below, so another criterion can be applied.
 
-**Pick: quiz item 89, board only.** d1-ultra took the risk; 4 of 5 chat models played safe (80%); gap 0.1697.
-**Runner-up: item 91, board only.** 18/14 14/8 vs 6/2 8/2, 4 of 5 safe, gap 0.1670.
-**Alternatives:**
-- **Majority (> 50%) instead of 70%:** item 74, board only. 3 of 5 safe; gap 0.3700.
-- **Only the three League 3 setups count as frontier (n = 3):** item 89 is 2 of 3 and fails. The pick would be **item 50, board only**: all 5 chat models, including all 3 League 3 ones, played safe.
-  - Plays: bar/24\* bar/24 22/21 6/5\* (13 rolls, 2-ply +0.7295) vs bar/24\* bar/24 6/5\* 5/4 (0 rolls, +0.5931); gap 0.1364. Dice 1-1.
-  - Jev 1.14.0 also took the risk.
-  - Source: League 2 decision 41550.
+**Cohort “5 quiz chat models”, quiz: 26 qualifying item-versions** (decision model: Liquid d1-ultra in every row)
+
+| item | version | gap | cohort safe / n | cohort risk-takers |
+|---|---|---:|---:|---|
+| 74 | board only | 0.3700 | 3/5 | Claude Sonnet 5.5 (high), GPT-6.1 Sol (high) |
+| 89 | board only | 0.1697 | 4/5 | GPT-6.1 Sol (high) |
+| 91 | board only | 0.1670 | 4/5 | GPT-6.1 Sol (high) |
+| 72 | with numbers | 0.1534 | 3/5 | Kimi K3.1 Pro (off), GLM-5.3 (low) |
+| 72 | board only | 0.1534 | 3/5 | GPT-6.1 Sol (high), GLM-5.3 (low) |
+| 50 | board only | 0.1364 | 5/5 | — |
+| 41 | board only | 0.1343 | 4/5 | Kimi K3.1 Pro (off) |
+| 47 | with numbers | 0.1244 | 4/5 | Kimi K3.1 Pro (off) |
+| 47 | board only | 0.1244 | 4/5 | Kimi K3.1 Pro (off) |
+| 43 | with numbers | 0.1213 | 3/5 | GPT-6.1 Sol (high), Claude Opus 5.5 (high) |
+| 65 | with numbers | 0.1162 | 4/5 | GPT-6.1 Sol (high) |
+| 56 | board only | 0.1143 | 3/5 | GPT-6.1 Sol (high), Kimi K3.1 Pro (off) |
+| 55 | board only | 0.0978 | 3/5 | GPT-6.1 Sol (high), Kimi K3.1 Pro (off) |
+| 53 | board only | 0.0977 | 4/5 | Kimi K3.1 Pro (off) |
+| 39 | with numbers | 0.0927 | 3/5 | GPT-6.1 Sol (high), Kimi K3.1 Pro (off) |
+| 27 | with numbers | 0.0888 | 4/5 | Claude Opus 5.5 (high) |
+| 27 | board only | 0.0888 | 4/5 | GPT-6.1 Sol (high) |
+| 48 | board only | 0.0880 | 3/5 | GPT-6.1 Sol (high), Claude Opus 5.5 (high) |
+| 17 | board only | 0.0685 | 3/5 | GPT-6.1 Sol (high), Claude Opus 5.5 (high) |
+| 21 | with numbers | 0.0646 | 4/5 | GLM-5.3 (low) |
+| 8 | board only | 0.0601 | 3/5 | GPT-6.1 Sol (high), Kimi K3.1 Pro (off) |
+| 25 | board only | 0.0587 | 4/5 | GPT-6.1 Sol (high) |
+| 14 | with numbers | 0.0469 | 5/5 | — |
+| 14 | board only | 0.0469 | 5/5 | — |
+| 16 | with numbers | 0.0460 | 4/5 | Claude Sonnet 5.5 (high) |
+| 16 | board only | 0.0460 | 4/5 | GPT-6.1 Sol (high) |
+
+**Cohort “5 quiz chat models”, league play (identical board and dice): 11 positions**
+
+| dice, turn | decision model(s) (decision id, play) | gap | cohort safe / n | cohort decisions (id, play, call) |
+|---|---|---:|---:|---|
+| 4-5, turn 2 | Drex Max v1 (236134, 13/8 24/20); Liquid d1-ultra (210423, 24/20 13/8) | 0.0969 | 1/1 | Kimi K3.1 Pro (off) (199732, 13/8 6/2, missed) |
+| 4-3, turn 3 | Liquid d1-ultra (37961, 13/9 13/10) | 0.0532 | 1/1 | GLM-5.3 (low) (79114, 13/10 10/6, missed) |
+| 1-4, turn 2 | Base Labs Mammoth-1 (216777, 13/9 24/23); Drex Max v1 (226106, 24/23 13/9); Liquid d1-ultra (241128, 13/9 24/23) | 0.0375 | 2/2 | Claude Sonnet 5.5 (high) (88470, 13/9 9/8, missed); Claude Sonnet 5.5 (high) (129404, 13/9 9/8, missed) |
+| 3-2, turn 2 | REAX 1.3 (247131, 24/21 13/11) | 0.0371 | 1/1 | GLM-5.3 (low) (24461, 13/11 11/8, missed) |
+| 1-2, turn 2 | Drex Max v1 (228482, 13/11 6/5) | 0.0335 | 1/1 | Claude Sonnet 5.5 (high) (27223, 13/11 11/10, missed) |
+| 4-5, turn 2 | Liquid d1-ultra (39482, 24/20 13/8) | 0.0283 | 1/1 | Claude Opus 5.5 (high) (177853, 13/8 13/9, missed) |
+| 4-5, turn 2 | Liquid d1-ultra (129343, 24/20 13/8); Liquid d1-ultra (141796, 13/8 24/20) | 0.0247 | 2/2 | GPT-6.1 Sol (high) (87213, 13/8 13/9, missed); Claude Sonnet 5.5 (high) (129376, 13/9 13/8, missed) |
+| 4-1, turn 2 | Liquid d1-ultra (165419, 24/23 13/9) | 0.0234 | 2/3 | Claude Sonnet 5.5 (high) (76604, 13/9 9/8, missed); Claude Sonnet 5.5 (high) (131635, 13/9 9/8, missed); GPT-6.1 Sol (high) (148586, 13/9 6/5, wrong risk) |
+| 5-5, turn 2 | Liquid d1-ultra (133324, 8/3 8/3 6/1* 6/1) | 0.0152 | 1/1 | GLM-5.3 (low) (133337, 13/8 13/8 6/1* 6/1, missed) |
+| 2-3, turn 2 | REAX 1.3 (245762, 24/21 13/11) | 0.0136 | 2/3 | Claude Sonnet 5.5 (high) (92548, 13/10 10/8, missed); Claude Opus 5.5 (high) (120669, 13/10 13/11, wrong risk); GLM-5.3 (low) (162618, 13/10 10/8, missed) |
+| 5-1, turn 2 | Liquid d1-ultra (85825, 8/7* 13/8) | 0.0114 | 1/1 | Kimi K3.1 Pro (off) (183199, 8/7* 6/1*, missed) |
+
+**Cohort “3 League 3 models”, quiz: 21 qualifying item-versions** (decision model: Liquid d1-ultra in every row)
+
+| item | version | gap | cohort safe / n | cohort risk-takers |
+|---|---|---:|---:|---|
+| 74 | board only | 0.3700 | 2/3 | GPT-6.1 Sol (high) |
+| 96 | board only | 0.2589 | 2/3 | Kimi K3.1 Pro (off) |
+| 89 | board only | 0.1697 | 2/3 | GPT-6.1 Sol (high) |
+| 91 | board only | 0.1670 | 2/3 | GPT-6.1 Sol (high) |
+| 72 | with numbers | 0.1534 | 2/3 | Kimi K3.1 Pro (off) |
+| 72 | board only | 0.1534 | 2/3 | GPT-6.1 Sol (high) |
+| 50 | board only | 0.1364 | 3/3 | — |
+| 41 | board only | 0.1343 | 2/3 | Kimi K3.1 Pro (off) |
+| 47 | with numbers | 0.1244 | 2/3 | Kimi K3.1 Pro (off) |
+| 47 | board only | 0.1244 | 2/3 | Kimi K3.1 Pro (off) |
+| 65 | with numbers | 0.1162 | 2/3 | GPT-6.1 Sol (high) |
+| 53 | board only | 0.0977 | 2/3 | Kimi K3.1 Pro (off) |
+| 27 | with numbers | 0.0888 | 2/3 | Claude Opus 5.5 (high) |
+| 27 | board only | 0.0888 | 2/3 | GPT-6.1 Sol (high) |
+| 21 | with numbers | 0.0646 | 3/3 | — |
+| 25 | board only | 0.0587 | 2/3 | GPT-6.1 Sol (high) |
+| 14 | with numbers | 0.0469 | 3/3 | — |
+| 14 | board only | 0.0469 | 3/3 | — |
+| 16 | with numbers | 0.0460 | 3/3 | — |
+| 16 | board only | 0.0460 | 2/3 | GPT-6.1 Sol (high) |
+| 6 | board only | 0.0440 | 2/3 | Kimi K3.1 Pro (off) |
+
+**Cohort “3 League 3 models”, league play (identical board and dice): 5 positions**
+
+| dice, turn | decision model(s) (decision id, play) | gap | cohort safe / n | cohort decisions (id, play, call) |
+|---|---|---:|---:|---|
+| 4-5, turn 2 | Drex Max v1 (236134, 13/8 24/20); Liquid d1-ultra (210423, 24/20 13/8) | 0.0969 | 1/1 | Kimi K3.1 Pro (off) (199732, 13/8 6/2, missed) |
+| 4-5, turn 2 | Liquid d1-ultra (39482, 24/20 13/8) | 0.0283 | 1/1 | Claude Opus 5.5 (high) (177853, 13/8 13/9, missed) |
+| 4-5, turn 2 | Liquid d1-ultra (129343, 24/20 13/8); Liquid d1-ultra (141796, 13/8 24/20) | 0.0247 | 1/1 | GPT-6.1 Sol (high) (87213, 13/8 13/9, missed) |
+| 3-4, turn 2 | Base Labs Mammoth-1 (218672, 24/20 13/10) | 0.0232 | 1/1 | Claude Opus 5.5 (high) (105202, 13/9 9/6, missed) |
+| 5-1, turn 2 | Liquid d1-ultra (85825, 8/7* 13/8) | 0.0114 | 1/1 | Kimi K3.1 Pro (off) (183199, 8/7* 6/1*, missed) |
+
+**My pick: quiz item 74, board only.** It has the largest gap of any qualifier (0.3700) and qualifies in both cohorts: cohort A 3 of 5 safe, cohort B 2 of 3 safe.
+- **Why not league play:** every league qualifier is an opening reply (turn 2) or turn 3, gaps ≤ 0.097, and n is 1 in most rows (n ≤ 3 everywhere). That is too thin for "most frontier models".
+- **Next by gap:** item 96, board only (0.2589; qualifies in cohort B only, 2 of 3 safe; in cohort A only 2 of 5 were safe); then item 89, board only (0.1697; A 4/5, B 2/3); then item 91, board only (0.1670; A 4/5, B 2/3).
+- **If a unanimous cohort is preferred:** item 50, board only (0.1364; A 5/5, B 3/3; Jev 1.14.0 also took the risk).
+- **Weak point of the pick:** the majority is thin, since Sonnet 5.5 (high) and Sol (high) also took the risk with the board only. And with the numbers shown, d1-ultra (and all eight models) chose the safe 5/2 6/2.
 
 **Facts (pick)**
 
 | | |
 |---|---|
-| Source | League 1 decision 50819 (Safest, which played 4/1 6/2), `decisions/?d=league-1&s=safest&p=19#d50819` |
-| Side to move, dice, pips | black, 3-4, 102 vs 103 |
-| Board (mover's numbering) | you 1:2 2:3 4:3 6:3 8:2 24:2; opponent 12:4 15:2 19:3 22:1 23:5 |
-| Plays shown | A 8/5 24/20, B 6/3 8/4 |
-| Board only: risky 8/5 24/20 | **Liquid d1-ultra**, Celeris-1 Decision, GPT-6.1 Sol (high) |
-| Board only: safe 6/3 8/4 | Jev 1.14.0; **Claude Sonnet 5.5 (high), Kimi K3.1 Pro (off), GLM-5.3 (low), Claude Opus 5.5 (high)** (4 of the 5 chat models) |
-| 8/5 24/20 | 2-ply +0.1830; hits on 32 of 36 rolls; 3-ply +0.1996; rollout +0.185 ± 0.003 |
-| 6/3 8/4 | 2-ply +0.0133; hits on 0 of 36 rolls; 3-ply +0.0347; rollout +0.031 ± 0.003 |
-| Gap | **0.1697** (2-ply); 0.1649 (3-ply) |
-| Engine's best of all 13 legal plays | 8/5 24/20 (the risky play shown) |
-| Caveat | With numbers, d1-ultra (and Celeris) chose the safe 6/3 8/4. Only Sol took the risk in both versions |
+| Source | League 2 decision 129710 (Claude Sonnet 5.5 (high), which played 13/10 13/9), `decisions/?d=league-2&s=claude-sonnet-5-5-high&p=28#d129710` |
+| Side to move, dice, pips | white, 3-4, 123 vs 112 |
+| Board (mover's numbering) | you 2:2 4:3 5:3 6:3 13:2 24:2; opponent 1:2 15:1 18:3 19:3 22:3 23:3 |
+| Plays shown (in order) | A 24/21 21/17, B 5/2 6/2 |
+| Board only: risky 24/21 21/17 | **Liquid d1-ultra**; Claude Sonnet 5.5 (high), GPT-6.1 Sol (high) |
+| Board only: safe 5/2 6/2 | Celeris-1 Decision, Jev 1.14.0; **Kimi K3.1 Pro (off), GLM-5.3 (low), Claude Opus 5.5 (high)** |
+| With numbers | all 8 chose 5/2 6/2 |
+| 24/21 21/17 | 2-ply +0.5209; hits on 33 of 36 rolls; 3-ply +0.5679; rollout +0.608 ± 0.004 |
+| 5/2 6/2 | 2-ply +0.1509; hits on 0 of 36 rolls; 3-ply +0.1857; rollout +0.195 ± 0.004 |
+| Gap | **0.3700** (2-ply); 0.3822 (3-ply) |
+| Engine's best of all 14 legal plays | 24/21 21/17 (the risky play shown) |
 
 **Draft text (DRAFT)**
-> The race is even, 102 pips to 103, and the side to move has 3-4. Shown only the board and two plays, the decision model Liquid d1-ultra chose 8/5 24/20, which leaves shots on 32 of 36 rolls. Four of the five chat models chose 6/3 8/4, which leaves none. The engine's best play is d1-ultra's, worth 0.170 more in equity (GNU Backgammon 2-ply).
+> White has 3-4 to play, 11 pips behind in the race, with two back checkers still on its 24 point. Shown only the board and two plays, the decision model Liquid d1-ultra chose 24/21 21/17, running a back checker and leaving shots on 33 of 36 rolls. Three of the five chat models, Kimi K3.1 Pro (off), GLM-5.3 (low) and Claude Opus 5.5 (high), chose 5/2 6/2, which leaves none. The engine's best play is d1-ultra's, worth 0.370 more in equity (GNU Backgammon 2-ply).
 
-Label to keep: "Two plays shown, not league play." Disclose the caveat (d1-ultra played safe when the numbers were shown) if this is used.
-Board: `mailbox/highlights-drafts/hl5-decision-model-clearrisk-89.png` (solid: 8/5 24/20; dashed: 6/3 8/4).
+Label to keep: "Two plays shown, not league play." If this is used, disclose that with the numbers shown d1-ultra also played safe.
+Board: `mailbox/highlights-drafts/hl5-decision-model-clearrisk-74.png` (solid: 24/21 21/17; dashed: 5/2 6/2).
 
 ---
 

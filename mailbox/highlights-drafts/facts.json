@@ -555,7 +555,7 @@
   }
  },
  "slot4": {
-  "rule": "League 3 non-program decisions; largest loss; needless risk preferred if within 0.25 of the overall largest",
+  "rule": "League 3 non-program decisions; largest loss (the largest needless risk is listed as an editorial alternative only)",
   "overall": [
    [
     108032,
@@ -605,8 +605,6 @@
     0.7359
    ]
   ],
-  "difference": 0.4627,
-  "needless_chosen": false,
   "pick": {
    "id": 108032,
    "dataset": "league-3",
@@ -829,7 +827,7 @@
    "slug": "gemini-4-argon-off",
    "page": 11
   },
-  "runner_up": {
+  "needless_alternative": {
    "id": 153929,
    "dataset": "league-3",
    "setup": "Kimi K3.1 Pro (off)",
@@ -1131,337 +1129,1107 @@
   }
  },
  "slot5": {
-  "rule": "Risk wins; Liquid d1-ultra took the risky play; >= 70% of the five quiz chat models safe; max gap",
-  "quiz_70": [
-   [
-    0.1697,
-    89,
-    "board",
-    5,
-    4
+  "rule": "Risk wins / Risk pays; a named decision model took the right risk; more than half of the cohort's answers safe; cohorts: quiz5 and league3; our pick criterion: largest gap",
+  "cohorts": {
+   "quiz5": [
+    "Claude Sonnet 5.5 (high)",
+    "GPT-6.1 Sol (high)",
+    "Kimi K3.1 Pro (off)",
+    "GLM-5.3 (low)",
+    "Claude Opus 5.5 (high)"
    ],
-   [
-    0.167,
-    91,
-    "board",
-    5,
-    4
-   ],
-   [
-    0.1364,
-    50,
-    "board",
-    5,
-    5
-   ],
-   [
-    0.1343,
-    41,
-    "board",
-    5,
-    4
-   ],
-   [
-    0.1244,
-    47,
-    "numbers",
-    5,
-    4
-   ],
-   [
-    0.1244,
-    47,
-    "board",
-    5,
-    4
+   "league3": [
+    "GPT-6.1 Sol (high)",
+    "Kimi K3.1 Pro (off)",
+    "Claude Opus 5.5 (high)"
    ]
-  ],
-  "quiz_majority": [
-   [
-    0.37,
-    74,
-    "board",
-    5,
-    3
-   ],
-   [
-    0.1697,
-    89,
-    "board",
-    5,
-    4
-   ],
-   [
-    0.167,
-    91,
-    "board",
-    5,
-    4
-   ],
-   [
-    0.1534,
-    72,
-    "numbers",
-    5,
-    3
-   ],
-   [
-    0.1534,
-    72,
-    "board",
-    5,
-    3
-   ],
-   [
-    0.1364,
-    50,
-    "board",
-    5,
-    5
-   ]
-  ],
-  "league_any": [
-   [
-    0.3073,
-    217043,
-    1,
-    0
-   ],
-   [
-    0.2606,
-    231439,
-    2,
-    0
-   ],
-   [
-    0.2042,
-    40821,
-    1,
-    0
-   ],
-   [
-    0.1719,
-    131663,
-    1,
-    0
-   ],
-   [
-    0.1653,
-    38267,
-    1,
-    0
-   ]
-  ],
-  "league_frontier_mostly_safe_n2plus": [],
+  },
+  "qualifiers": {
+   "quiz5": {
+    "quiz": [
+     {
+      "gap": 0.37,
+      "item": 74,
+      "version": "board",
+      "n": 5,
+      "safe": 3,
+      "risk_takers_in_cohort": [
+       "Claude Sonnet 5.5 (high)",
+       "GPT-6.1 Sol (high)"
+      ],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     },
+     {
+      "gap": 0.1697,
+      "item": 89,
+      "version": "board",
+      "n": 5,
+      "safe": 4,
+      "risk_takers_in_cohort": [
+       "GPT-6.1 Sol (high)"
+      ],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     },
+     {
+      "gap": 0.167,
+      "item": 91,
+      "version": "board",
+      "n": 5,
+      "safe": 4,
+      "risk_takers_in_cohort": [
+       "GPT-6.1 Sol (high)"
+      ],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     },
+     {
+      "gap": 0.1534,
+      "item": 72,
+      "version": "numbers",
+      "n": 5,
+      "safe": 3,
+      "risk_takers_in_cohort": [
+       "Kimi K3.1 Pro (off)",
+       "GLM-5.3 (low)"
+      ],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     },
+     {
+      "gap": 0.1534,
+      "item": 72,
+      "version": "board",
+      "n": 5,
+      "safe": 3,
+      "risk_takers_in_cohort": [
+       "GPT-6.1 Sol (high)",
+       "GLM-5.3 (low)"
+      ],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     },
+     {
+      "gap": 0.1364,
+      "item": 50,
+      "version": "board",
+      "n": 5,
+      "safe": 5,
+      "risk_takers_in_cohort": [],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     },
+     {
+      "gap": 0.1343,
+      "item": 41,
+      "version": "board",
+      "n": 5,
+      "safe": 4,
+      "risk_takers_in_cohort": [
+       "Kimi K3.1 Pro (off)"
+      ],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     },
+     {
+      "gap": 0.1244,
+      "item": 47,
+      "version": "numbers",
+      "n": 5,
+      "safe": 4,
+      "risk_takers_in_cohort": [
+       "Kimi K3.1 Pro (off)"
+      ],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     },
+     {
+      "gap": 0.1244,
+      "item": 47,
+      "version": "board",
+      "n": 5,
+      "safe": 4,
+      "risk_takers_in_cohort": [
+       "Kimi K3.1 Pro (off)"
+      ],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     },
+     {
+      "gap": 0.1213,
+      "item": 43,
+      "version": "numbers",
+      "n": 5,
+      "safe": 3,
+      "risk_takers_in_cohort": [
+       "GPT-6.1 Sol (high)",
+       "Claude Opus 5.5 (high)"
+      ],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     },
+     {
+      "gap": 0.1162,
+      "item": 65,
+      "version": "numbers",
+      "n": 5,
+      "safe": 4,
+      "risk_takers_in_cohort": [
+       "GPT-6.1 Sol (high)"
+      ],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     },
+     {
+      "gap": 0.1143,
+      "item": 56,
+      "version": "board",
+      "n": 5,
+      "safe": 3,
+      "risk_takers_in_cohort": [
+       "GPT-6.1 Sol (high)",
+       "Kimi K3.1 Pro (off)"
+      ],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     },
+     {
+      "gap": 0.0978,
+      "item": 55,
+      "version": "board",
+      "n": 5,
+      "safe": 3,
+      "risk_takers_in_cohort": [
+       "GPT-6.1 Sol (high)",
+       "Kimi K3.1 Pro (off)"
+      ],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     },
+     {
+      "gap": 0.0977,
+      "item": 53,
+      "version": "board",
+      "n": 5,
+      "safe": 4,
+      "risk_takers_in_cohort": [
+       "Kimi K3.1 Pro (off)"
+      ],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     },
+     {
+      "gap": 0.0927,
+      "item": 39,
+      "version": "numbers",
+      "n": 5,
+      "safe": 3,
+      "risk_takers_in_cohort": [
+       "GPT-6.1 Sol (high)",
+       "Kimi K3.1 Pro (off)"
+      ],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     },
+     {
+      "gap": 0.0888,
+      "item": 27,
+      "version": "numbers",
+      "n": 5,
+      "safe": 4,
+      "risk_takers_in_cohort": [
+       "Claude Opus 5.5 (high)"
+      ],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     },
+     {
+      "gap": 0.0888,
+      "item": 27,
+      "version": "board",
+      "n": 5,
+      "safe": 4,
+      "risk_takers_in_cohort": [
+       "GPT-6.1 Sol (high)"
+      ],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     },
+     {
+      "gap": 0.088,
+      "item": 48,
+      "version": "board",
+      "n": 5,
+      "safe": 3,
+      "risk_takers_in_cohort": [
+       "GPT-6.1 Sol (high)",
+       "Claude Opus 5.5 (high)"
+      ],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     },
+     {
+      "gap": 0.0685,
+      "item": 17,
+      "version": "board",
+      "n": 5,
+      "safe": 3,
+      "risk_takers_in_cohort": [
+       "GPT-6.1 Sol (high)",
+       "Claude Opus 5.5 (high)"
+      ],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     },
+     {
+      "gap": 0.0646,
+      "item": 21,
+      "version": "numbers",
+      "n": 5,
+      "safe": 4,
+      "risk_takers_in_cohort": [
+       "GLM-5.3 (low)"
+      ],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     },
+     {
+      "gap": 0.0601,
+      "item": 8,
+      "version": "board",
+      "n": 5,
+      "safe": 3,
+      "risk_takers_in_cohort": [
+       "GPT-6.1 Sol (high)",
+       "Kimi K3.1 Pro (off)"
+      ],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     },
+     {
+      "gap": 0.0587,
+      "item": 25,
+      "version": "board",
+      "n": 5,
+      "safe": 4,
+      "risk_takers_in_cohort": [
+       "GPT-6.1 Sol (high)"
+      ],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     },
+     {
+      "gap": 0.0469,
+      "item": 14,
+      "version": "numbers",
+      "n": 5,
+      "safe": 5,
+      "risk_takers_in_cohort": [],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     },
+     {
+      "gap": 0.0469,
+      "item": 14,
+      "version": "board",
+      "n": 5,
+      "safe": 5,
+      "risk_takers_in_cohort": [],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     },
+     {
+      "gap": 0.046,
+      "item": 16,
+      "version": "numbers",
+      "n": 5,
+      "safe": 4,
+      "risk_takers_in_cohort": [
+       "Claude Sonnet 5.5 (high)"
+      ],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     },
+     {
+      "gap": 0.046,
+      "item": 16,
+      "version": "board",
+      "n": 5,
+      "safe": 4,
+      "risk_takers_in_cohort": [
+       "GPT-6.1 Sol (high)"
+      ],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     }
+    ],
+    "league": [
+     {
+      "gap": 0.0969,
+      "dice": [
+       4,
+       5
+      ],
+      "turn_no": 2,
+      "n": 1,
+      "safe": 1,
+      "decision_models": [
+       [
+        "Drex Max v1",
+        236134,
+        "13/8 24/20"
+       ],
+       [
+        "Liquid d1-ultra",
+        210423,
+        "24/20 13/8"
+       ]
+      ],
+      "cohort": [
+       [
+        "Kimi K3.1 Pro (off)",
+        199732,
+        "13/8 6/2",
+        "missed"
+       ]
+      ]
+     },
+     {
+      "gap": 0.0532,
+      "dice": [
+       4,
+       3
+      ],
+      "turn_no": 3,
+      "n": 1,
+      "safe": 1,
+      "decision_models": [
+       [
+        "Liquid d1-ultra",
+        37961,
+        "13/9 13/10"
+       ]
+      ],
+      "cohort": [
+       [
+        "GLM-5.3 (low)",
+        79114,
+        "13/10 10/6",
+        "missed"
+       ]
+      ]
+     },
+     {
+      "gap": 0.0375,
+      "dice": [
+       1,
+       4
+      ],
+      "turn_no": 2,
+      "n": 2,
+      "safe": 2,
+      "decision_models": [
+       [
+        "Base Labs Mammoth-1",
+        216777,
+        "13/9 24/23"
+       ],
+       [
+        "Drex Max v1",
+        226106,
+        "24/23 13/9"
+       ],
+       [
+        "Liquid d1-ultra",
+        241128,
+        "13/9 24/23"
+       ]
+      ],
+      "cohort": [
+       [
+        "Claude Sonnet 5.5 (high)",
+        88470,
+        "13/9 9/8",
+        "missed"
+       ],
+       [
+        "Claude Sonnet 5.5 (high)",
+        129404,
+        "13/9 9/8",
+        "missed"
+       ]
+      ]
+     },
+     {
+      "gap": 0.0371,
+      "dice": [
+       3,
+       2
+      ],
+      "turn_no": 2,
+      "n": 1,
+      "safe": 1,
+      "decision_models": [
+       [
+        "REAX 1.3",
+        247131,
+        "24/21 13/11"
+       ]
+      ],
+      "cohort": [
+       [
+        "GLM-5.3 (low)",
+        24461,
+        "13/11 11/8",
+        "missed"
+       ]
+      ]
+     },
+     {
+      "gap": 0.0335,
+      "dice": [
+       1,
+       2
+      ],
+      "turn_no": 2,
+      "n": 1,
+      "safe": 1,
+      "decision_models": [
+       [
+        "Drex Max v1",
+        228482,
+        "13/11 6/5"
+       ]
+      ],
+      "cohort": [
+       [
+        "Claude Sonnet 5.5 (high)",
+        27223,
+        "13/11 11/10",
+        "missed"
+       ]
+      ]
+     },
+     {
+      "gap": 0.0283,
+      "dice": [
+       4,
+       5
+      ],
+      "turn_no": 2,
+      "n": 1,
+      "safe": 1,
+      "decision_models": [
+       [
+        "Liquid d1-ultra",
+        39482,
+        "24/20 13/8"
+       ]
+      ],
+      "cohort": [
+       [
+        "Claude Opus 5.5 (high)",
+        177853,
+        "13/8 13/9",
+        "missed"
+       ]
+      ]
+     },
+     {
+      "gap": 0.0247,
+      "dice": [
+       4,
+       5
+      ],
+      "turn_no": 2,
+      "n": 2,
+      "safe": 2,
+      "decision_models": [
+       [
+        "Liquid d1-ultra",
+        129343,
+        "24/20 13/8"
+       ],
+       [
+        "Liquid d1-ultra",
+        141796,
+        "13/8 24/20"
+       ]
+      ],
+      "cohort": [
+       [
+        "GPT-6.1 Sol (high)",
+        87213,
+        "13/8 13/9",
+        "missed"
+       ],
+       [
+        "Claude Sonnet 5.5 (high)",
+        129376,
+        "13/9 13/8",
+        "missed"
+       ]
+      ]
+     },
+     {
+      "gap": 0.0234,
+      "dice": [
+       4,
+       1
+      ],
+      "turn_no": 2,
+      "n": 3,
+      "safe": 2,
+      "decision_models": [
+       [
+        "Liquid d1-ultra",
+        165419,
+        "24/23 13/9"
+       ]
+      ],
+      "cohort": [
+       [
+        "Claude Sonnet 5.5 (high)",
+        76604,
+        "13/9 9/8",
+        "missed"
+       ],
+       [
+        "Claude Sonnet 5.5 (high)",
+        131635,
+        "13/9 9/8",
+        "missed"
+       ],
+       [
+        "GPT-6.1 Sol (high)",
+        148586,
+        "13/9 6/5",
+        "wrong_risk"
+       ]
+      ]
+     },
+     {
+      "gap": 0.0152,
+      "dice": [
+       5,
+       5
+      ],
+      "turn_no": 2,
+      "n": 1,
+      "safe": 1,
+      "decision_models": [
+       [
+        "Liquid d1-ultra",
+        133324,
+        "8/3 8/3 6/1* 6/1"
+       ]
+      ],
+      "cohort": [
+       [
+        "GLM-5.3 (low)",
+        133337,
+        "13/8 13/8 6/1* 6/1",
+        "missed"
+       ]
+      ]
+     },
+     {
+      "gap": 0.0136,
+      "dice": [
+       2,
+       3
+      ],
+      "turn_no": 2,
+      "n": 3,
+      "safe": 2,
+      "decision_models": [
+       [
+        "REAX 1.3",
+        245762,
+        "24/21 13/11"
+       ]
+      ],
+      "cohort": [
+       [
+        "Claude Sonnet 5.5 (high)",
+        92548,
+        "13/10 10/8",
+        "missed"
+       ],
+       [
+        "Claude Opus 5.5 (high)",
+        120669,
+        "13/10 13/11",
+        "wrong_risk"
+       ],
+       [
+        "GLM-5.3 (low)",
+        162618,
+        "13/10 10/8",
+        "missed"
+       ]
+      ]
+     },
+     {
+      "gap": 0.0114,
+      "dice": [
+       5,
+       1
+      ],
+      "turn_no": 2,
+      "n": 1,
+      "safe": 1,
+      "decision_models": [
+       [
+        "Liquid d1-ultra",
+        85825,
+        "8/7* 13/8"
+       ]
+      ],
+      "cohort": [
+       [
+        "Kimi K3.1 Pro (off)",
+        183199,
+        "8/7* 6/1*",
+        "missed"
+       ]
+      ]
+     }
+    ]
+   },
+   "league3": {
+    "quiz": [
+     {
+      "gap": 0.37,
+      "item": 74,
+      "version": "board",
+      "n": 3,
+      "safe": 2,
+      "risk_takers_in_cohort": [
+       "GPT-6.1 Sol (high)"
+      ],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     },
+     {
+      "gap": 0.2589,
+      "item": 96,
+      "version": "board",
+      "n": 3,
+      "safe": 2,
+      "risk_takers_in_cohort": [
+       "Kimi K3.1 Pro (off)"
+      ],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     },
+     {
+      "gap": 0.1697,
+      "item": 89,
+      "version": "board",
+      "n": 3,
+      "safe": 2,
+      "risk_takers_in_cohort": [
+       "GPT-6.1 Sol (high)"
+      ],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     },
+     {
+      "gap": 0.167,
+      "item": 91,
+      "version": "board",
+      "n": 3,
+      "safe": 2,
+      "risk_takers_in_cohort": [
+       "GPT-6.1 Sol (high)"
+      ],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     },
+     {
+      "gap": 0.1534,
+      "item": 72,
+      "version": "numbers",
+      "n": 3,
+      "safe": 2,
+      "risk_takers_in_cohort": [
+       "Kimi K3.1 Pro (off)"
+      ],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     },
+     {
+      "gap": 0.1534,
+      "item": 72,
+      "version": "board",
+      "n": 3,
+      "safe": 2,
+      "risk_takers_in_cohort": [
+       "GPT-6.1 Sol (high)"
+      ],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     },
+     {
+      "gap": 0.1364,
+      "item": 50,
+      "version": "board",
+      "n": 3,
+      "safe": 3,
+      "risk_takers_in_cohort": [],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     },
+     {
+      "gap": 0.1343,
+      "item": 41,
+      "version": "board",
+      "n": 3,
+      "safe": 2,
+      "risk_takers_in_cohort": [
+       "Kimi K3.1 Pro (off)"
+      ],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     },
+     {
+      "gap": 0.1244,
+      "item": 47,
+      "version": "numbers",
+      "n": 3,
+      "safe": 2,
+      "risk_takers_in_cohort": [
+       "Kimi K3.1 Pro (off)"
+      ],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     },
+     {
+      "gap": 0.1244,
+      "item": 47,
+      "version": "board",
+      "n": 3,
+      "safe": 2,
+      "risk_takers_in_cohort": [
+       "Kimi K3.1 Pro (off)"
+      ],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     },
+     {
+      "gap": 0.1162,
+      "item": 65,
+      "version": "numbers",
+      "n": 3,
+      "safe": 2,
+      "risk_takers_in_cohort": [
+       "GPT-6.1 Sol (high)"
+      ],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     },
+     {
+      "gap": 0.0977,
+      "item": 53,
+      "version": "board",
+      "n": 3,
+      "safe": 2,
+      "risk_takers_in_cohort": [
+       "Kimi K3.1 Pro (off)"
+      ],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     },
+     {
+      "gap": 0.0888,
+      "item": 27,
+      "version": "numbers",
+      "n": 3,
+      "safe": 2,
+      "risk_takers_in_cohort": [
+       "Claude Opus 5.5 (high)"
+      ],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     },
+     {
+      "gap": 0.0888,
+      "item": 27,
+      "version": "board",
+      "n": 3,
+      "safe": 2,
+      "risk_takers_in_cohort": [
+       "GPT-6.1 Sol (high)"
+      ],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     },
+     {
+      "gap": 0.0646,
+      "item": 21,
+      "version": "numbers",
+      "n": 3,
+      "safe": 3,
+      "risk_takers_in_cohort": [],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     },
+     {
+      "gap": 0.0587,
+      "item": 25,
+      "version": "board",
+      "n": 3,
+      "safe": 2,
+      "risk_takers_in_cohort": [
+       "GPT-6.1 Sol (high)"
+      ],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     },
+     {
+      "gap": 0.0469,
+      "item": 14,
+      "version": "numbers",
+      "n": 3,
+      "safe": 3,
+      "risk_takers_in_cohort": [],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     },
+     {
+      "gap": 0.0469,
+      "item": 14,
+      "version": "board",
+      "n": 3,
+      "safe": 3,
+      "risk_takers_in_cohort": [],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     },
+     {
+      "gap": 0.046,
+      "item": 16,
+      "version": "numbers",
+      "n": 3,
+      "safe": 3,
+      "risk_takers_in_cohort": [],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     },
+     {
+      "gap": 0.046,
+      "item": 16,
+      "version": "board",
+      "n": 3,
+      "safe": 2,
+      "risk_takers_in_cohort": [
+       "GPT-6.1 Sol (high)"
+      ],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     },
+     {
+      "gap": 0.044,
+      "item": 6,
+      "version": "board",
+      "n": 3,
+      "safe": 2,
+      "risk_takers_in_cohort": [
+       "Kimi K3.1 Pro (off)"
+      ],
+      "decision_models": [
+       "Liquid d1-ultra"
+      ]
+     }
+    ],
+    "league": [
+     {
+      "gap": 0.0969,
+      "dice": [
+       4,
+       5
+      ],
+      "turn_no": 2,
+      "n": 1,
+      "safe": 1,
+      "decision_models": [
+       [
+        "Drex Max v1",
+        236134,
+        "13/8 24/20"
+       ],
+       [
+        "Liquid d1-ultra",
+        210423,
+        "24/20 13/8"
+       ]
+      ],
+      "cohort": [
+       [
+        "Kimi K3.1 Pro (off)",
+        199732,
+        "13/8 6/2",
+        "missed"
+       ]
+      ]
+     },
+     {
+      "gap": 0.0283,
+      "dice": [
+       4,
+       5
+      ],
+      "turn_no": 2,
+      "n": 1,
+      "safe": 1,
+      "decision_models": [
+       [
+        "Liquid d1-ultra",
+        39482,
+        "24/20 13/8"
+       ]
+      ],
+      "cohort": [
+       [
+        "Claude Opus 5.5 (high)",
+        177853,
+        "13/8 13/9",
+        "missed"
+       ]
+      ]
+     },
+     {
+      "gap": 0.0247,
+      "dice": [
+       4,
+       5
+      ],
+      "turn_no": 2,
+      "n": 1,
+      "safe": 1,
+      "decision_models": [
+       [
+        "Liquid d1-ultra",
+        129343,
+        "24/20 13/8"
+       ],
+       [
+        "Liquid d1-ultra",
+        141796,
+        "13/8 24/20"
+       ]
+      ],
+      "cohort": [
+       [
+        "GPT-6.1 Sol (high)",
+        87213,
+        "13/8 13/9",
+        "missed"
+       ]
+      ]
+     },
+     {
+      "gap": 0.0232,
+      "dice": [
+       3,
+       4
+      ],
+      "turn_no": 2,
+      "n": 1,
+      "safe": 1,
+      "decision_models": [
+       [
+        "Base Labs Mammoth-1",
+        218672,
+        "24/20 13/10"
+       ]
+      ],
+      "cohort": [
+       [
+        "Claude Opus 5.5 (high)",
+        105202,
+        "13/9 9/6",
+        "missed"
+       ]
+      ]
+     },
+     {
+      "gap": 0.0114,
+      "dice": [
+       5,
+       1
+      ],
+      "turn_no": 2,
+      "n": 1,
+      "safe": 1,
+      "decision_models": [
+       [
+        "Liquid d1-ultra",
+        85825,
+        "8/7* 13/8"
+       ]
+      ],
+      "cohort": [
+       [
+        "Kimi K3.1 Pro (off)",
+        183199,
+        "8/7* 6/1*",
+        "missed"
+       ]
+      ]
+     }
+    ]
+   }
+  },
   "pick": {
-   "sid": 89,
-   "group": "Risk wins",
-   "source_league": 1,
-   "source_decision": 50819,
-   "source_setup": "Safest",
-   "source_play": "4/1 6/2",
-   "side": "black",
-   "dice": [
-    3,
-    4
-   ],
-   "board": {
-    "points": [
-     2,
-     3,
-     0,
-     3,
-     0,
-     3,
-     0,
-     2,
-     0,
-     0,
-     0,
-     -4,
-     0,
-     0,
-     -2,
-     0,
-     0,
-     0,
-     -3,
-     0,
-     0,
-     -1,
-     -5,
-     2
-    ],
-    "bar": [
-     0,
-     0
-    ],
-    "off": [
-     0,
-     0
-    ]
-   },
-   "pips": [
-    102,
-    103
-   ],
-   "shown_order": [
-    "8/5 24/20",
-    "6/3 8/4"
-   ],
-   "safe": {
-    "play": "6/3 8/4",
-    "eq2": 0.013321280479431152,
-    "hits": 0,
-    "eq3": 0.03470408916473389,
-    "rollout": 0.031,
-    "rollout_se": 0.003
-   },
-   "risk": {
-    "play": "8/5 24/20",
-    "eq2": 0.18302488327026367,
-    "hits": 32,
-    "eq3": 0.19962263107299805,
-    "rollout": 0.185,
-    "rollout_se": 0.003
-   },
-   "gap2": 0.16970360279083252,
-   "gap3": 0.16491854190826416,
-   "legal": 13,
-   "engine_best": {
-    "play": "8/5 24/20",
-    "eq2": 0.18302488327026367,
-    "hits": 32
-   },
-   "answers": {
-    "board": {
-     "Celeris-1 Decision": "8/5 24/20",
-     "Jev 1.14.0": "6/3 8/4",
-     "Liquid d1-ultra": "8/5 24/20",
-     "Claude Sonnet 5.5 (high)": "6/3 8/4",
-     "GPT-6.1 Sol (high)": "8/5 24/20",
-     "Kimi K3.1 Pro (off)": "6/3 8/4",
-     "GLM-5.3 (on)": "6/3 8/4",
-     "Claude Opus 5.5 (on)": "6/3 8/4"
-    },
-    "numbers": {
-     "Celeris-1 Decision": "6/3 8/4",
-     "Jev 1.14.0": "6/3 8/4",
-     "Liquid d1-ultra": "6/3 8/4",
-     "Claude Sonnet 5.5 (high)": "6/3 8/4",
-     "GPT-6.1 Sol (high)": "8/5 24/20",
-     "Kimi K3.1 Pro (off)": "6/3 8/4",
-     "GLM-5.3 (on)": "6/3 8/4",
-     "Claude Opus 5.5 (on)": "6/3 8/4"
-    }
-   },
-   "version": "board"
-  },
-  "runner_up": {
-   "sid": 91,
-   "group": "Risk wins",
-   "source_league": 1,
-   "source_decision": 152085,
-   "source_setup": "Jev 1.13.0",
-   "source_play": "6/2 8/2",
-   "side": "white",
-   "dice": [
-    4,
-    6
-   ],
-   "board": {
-    "points": [
-     -2,
-     3,
-     0,
-     -2,
-     -2,
-     3,
-     2,
-     3,
-     0,
-     0,
-     0,
-     -2,
-     2,
-     0,
-     0,
-     0,
-     -1,
-     2,
-     0,
-     0,
-     0,
-     -2,
-     0,
-     -4
-    ],
-    "bar": [
-     0,
-     0
-    ],
-    "off": [
-     0,
-     0
-    ]
-   },
-   "pips": [
-    124,
-    174
-   ],
-   "shown_order": [
-    "6/2 8/2",
-    "18/14 14/8"
-   ],
-   "safe": {
-    "play": "6/2 8/2",
-    "eq2": 0.7207380533218384,
-    "hits": 0,
-    "eq3": 0.663783073425293,
-    "rollout": 0.781,
-    "rollout_se": 0.005
-   },
-   "risk": {
-    "play": "18/14 14/8",
-    "eq2": 0.8876953125,
-    "hits": 24,
-    "eq3": 0.8388209939002991,
-    "rollout": 0.943,
-    "rollout_se": 0.004
-   },
-   "gap2": 0.16695725917816162,
-   "gap3": 0.1750379204750061,
-   "legal": 9,
-   "engine_best": {
-    "play": "18/14 14/8",
-    "eq2": 0.8876953125,
-    "hits": 24
-   },
-   "answers": {
-    "board": {
-     "Celeris-1 Decision": "6/2 8/2",
-     "Jev 1.14.0": "6/2 8/2",
-     "Liquid d1-ultra": "18/14 14/8",
-     "Claude Sonnet 5.5 (high)": "6/2 8/2",
-     "GPT-6.1 Sol (high)": "18/14 14/8",
-     "Kimi K3.1 Pro (off)": "6/2 8/2",
-     "GLM-5.3 (on)": "6/2 8/2",
-     "Claude Opus 5.5 (on)": "6/2 8/2"
-    },
-    "numbers": {
-     "Celeris-1 Decision": "6/2 8/2",
-     "Jev 1.14.0": "6/2 8/2",
-     "Liquid d1-ultra": "6/2 8/2",
-     "Claude Sonnet 5.5 (high)": "6/2 8/2",
-     "GPT-6.1 Sol (high)": "6/2 8/2",
-     "Kimi K3.1 Pro (off)": "6/2 8/2",
-     "GLM-5.3 (on)": "6/2 8/2",
-     "Claude Opus 5.5 (on)": "6/2 8/2"
-    }
-   },
-   "version": "board"
-  },
-  "majority_alternative": {
    "sid": 74,
    "group": "Risk wins",
    "source_league": 2,

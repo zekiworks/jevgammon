@@ -48,9 +48,9 @@ Examples (from #3057, with the 5-point floor): empty runs 28, 28, 28 (range 0) �
 | 14 | GPT-6.1 Sol (high) | OpenAI | high | ChatGPT Pro subscription (Codex backend) | blocked until the weekly reset 2026-11-13 11:38 UTC |
 | 15 | GPT-6 Astra (high), late entry | OpenAI | high | ChatGPT Pro subscription only (paid API on hold) | blocked until 2026-11-13 11:38 UTC; the Astra (high) re-ask is cancelled, so this experiment uses the allowance |
 
-**Cygnet (Gemma 4 12B): UNRESOLVED.** "Cygnet: in scope or not is pending Ümit's decision; its route does not currently pass lessons to the model." (Zeki #3066.) It is not run and not replaced by another model. If Ümit puts it in scope, a verified change is needed first (the stored request to the underlying vLLM contains the note, and the empty-note request is byte-identical to the league's); that change and its check are then added to this file as a dated amendment before any Cygnet call.
-
 **Decision models: not tested: cannot write lessons.** They return probabilities over the options and cannot write text. The 22: Liquid d1-ultra, Base Labs Mammoth-1, Base Labs Elephant-1, Drex Max v1, Drex Max 1.1, Drex 2.0 (and its local setting), REAX 1.3, Fastino GLiDE, Fastino GLiDE v1.2, Jev 1.13.0, Jev 1.14.0, Open-Jev 27B v1.1, Decider v1.2 27B, Decider v1.1 27B, Decider Flash v1.2, Celeris-1 Decision, Clef, SubQ Snap 1.1, SubQ Snap Preview, GPT-6 Luna, Winnow-12B, Mercury Decide.
+
+**Cygnet (Gemma 4 12B): not tested** (Ümit #3111), listed with the decision models: it plays through a layer that never sees the lessons (decision models can't write lessons). Not replaced by another model. Scope = the 15 chat models above.
 
 **The Gemma pilot row: "pilot (different design)".** Gemma 4 31B (off), from the learning pilot; no new calls.
 - It shows the pilot's own pre-registered verdict (pilot plan §8: T10 − T0 ≥ +10 risks found and ≥ −5 right safety, lessons arm): **not met**. Risks found 25.0 → 33.3 (+8.3), right safety 96.0 → 97.1 (+1.1), error rate 55.6 → 46.4: T0 (one run) against the mean of 10 lessons series at T10.

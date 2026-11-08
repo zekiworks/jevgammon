@@ -743,19 +743,22 @@ def reasoning(S) -> str:
 
 def nack_finding(S) -> str:
     """e. Nackgammon: standard against Nackgammon error rate per setup and group, Random as the reference (the paired
-    test's own chart). Heading rule: "no clear drop" only if every group comparison's interval (every rule, with and
-    without the additions) includes 0."""
+    test's own chart). Heading: always the neutral "A new starting position" (Zeki #2961). The data hold no interval for
+    a group's own drop, only the 99% intervals of BETWEEN-group drop differences (primary, primary_original_members);
+    those can say whether groups differ, not whether a group dropped. The sentence reports that comparison as such."""
     import nack_section as NS
     N, Lt = S["nack"], S["nack_late"]
     comps = [c for key in ("primary", "primary_original_members") for rule in (N.get(key) or {}).values()
              for c in rule if c.get("kind") == "group"]
     clear = bool(comps) and all(c["ci_99"][0] <= 0 <= c["ci_99"][1] for c in comps)
-    heading = "A new starting position: no clear drop in any group" if clear else "A new starting position"
+    heading = "A new starting position"
     rd1 = N["setups"]["Random"]["first"]["drop"]
     worse = [(s, r) for s, r in ((Lt or {}).get("setups") or {}).items() if r.get("label") == "worse"]
     text = ("Each model was asked Nackgammon positions and standard positions matched to them. "
-            + ("Every comparison between the groups (decision models, workhorses, frontier) has an interval that "
-               "includes 0. " if clear else "Not every comparison between the groups has an interval that includes 0. ")
+            + ("Compared group against group (one group's drop minus another's: decision models, workhorses, "
+               "frontier), every 99% interval includes 0, so the test does not show the groups' drops to differ. "
+               if clear else "Compared group against group (one group's drop minus another's), not every 99% "
+               "interval includes 0. ")
             + f"Random play's own drop is {fmt(rd1, 1, True)} PR on the main 200 pairs: the Nackgammon positions were "
             f"{'slightly easier' if rd1 < 0 else 'harder'} for random play.")
     if worse:

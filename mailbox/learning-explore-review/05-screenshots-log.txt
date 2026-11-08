@@ -1,0 +1,28 @@
+2026-11-08 11:15:45 UTC  learning-explore-top-line-1280-light.png  <- file://$SCRATCH/out-branch/learning/index.html #learning-run-line
+2026-11-08 11:15:45 UTC  learning-explore-top-line-1280-dark.png  <- file://$SCRATCH/out-branch/learning/index.html #learning-run-line
+2026-11-08 11:15:45 UTC  learning-explore-top-line-390-light.png  <- file://$SCRATCH/out-branch/learning/index.html #learning-run-line
+2026-11-08 11:15:46 UTC  learning-explore-top-line-390-dark.png  <- file://$SCRATCH/out-branch/learning/index.html #learning-run-line
+2026-11-08 11:15:46 UTC  learning-explore-charts-and-tables-1280-light.png  <- file://$SCRATCH/out-branch/learning/index.html #learning-results
+2026-11-08 11:15:46 UTC  learning-explore-charts-and-tables-1280-dark.png  <- file://$SCRATCH/out-branch/learning/index.html #learning-results
+2026-11-08 11:15:46 UTC  learning-explore-charts-and-tables-390-light.png  <- file://$SCRATCH/out-branch/learning/index.html #learning-results
+2026-11-08 11:15:46 UTC  learning-explore-charts-and-tables-390-dark.png  <- file://$SCRATCH/out-branch/learning/index.html #learning-results
+2026-11-08 11:15:47 UTC  learning-explore-verdict-1280-light.png  <- file://$SCRATCH/out-branch/learning/index.html #learning-verdict-section
+2026-11-08 11:15:47 UTC  learning-explore-verdict-1280-dark.png  <- file://$SCRATCH/out-branch/learning/index.html #learning-verdict-section
+2026-11-08 11:15:47 UTC  learning-explore-verdict-390-light.png  <- file://$SCRATCH/out-branch/learning/index.html #learning-verdict-section
+2026-11-08 11:15:47 UTC  learning-explore-verdict-390-dark.png  <- file://$SCRATCH/out-branch/learning/index.html #learning-verdict-section
+2026-11-08 11:15:48 UTC  learning-explore-exploratory-block-1280-light.png  <- file://$SCRATCH/out-branch/learning/index.html #learning-explore
+2026-11-08 11:15:48 UTC  learning-explore-exploratory-block-1280-dark.png  <- file://$SCRATCH/out-branch/learning/index.html #learning-explore
+2026-11-08 11:15:48 UTC  learning-explore-exploratory-block-390-light.png  <- file://$SCRATCH/out-branch/learning/index.html #learning-explore
+2026-11-08 11:15:48 UTC  learning-explore-exploratory-block-390-dark.png  <- file://$SCRATCH/out-branch/learning/index.html #learning-explore
+2026-11-08 11:15:49 UTC  learning-explore-full-page-1280-light.png  <- file://$SCRATCH/out-branch/learning/index.html
+2026-11-08 11:15:50 UTC  learning-explore-full-page-1280-dark.png  <- file://$SCRATCH/out-branch/learning/index.html
+2026-11-08 11:15:50 UTC  learning-explore-full-page-390-light.png  <- file://$SCRATCH/out-branch/learning/index.html
+2026-11-08 11:15:51 UTC  learning-explore-full-page-390-dark.png  <- file://$SCRATCH/out-branch/learning/index.html
+2026-11-08 11:15:51 UTC  learning-SYNTHETIC-malformed-explore-exploratory-block-1280-light.png  <- file://$SCRATCH/malformed-explore-site/learning/index.html #learning-explore
+2026-11-08 11:15:51 UTC  learning-SYNTHETIC-malformed-explore-exploratory-block-1280-dark.png  <- file://$SCRATCH/malformed-explore-site/learning/index.html #learning-explore
+2026-11-08 11:15:51 UTC  learning-SYNTHETIC-malformed-explore-exploratory-block-390-light.png  <- file://$SCRATCH/malformed-explore-site/learning/index.html #learning-explore
+2026-11-08 11:15:51 UTC  learning-SYNTHETIC-malformed-explore-exploratory-block-390-dark.png  <- file://$SCRATCH/malformed-explore-site/learning/index.html #learning-explore
+2026-11-08 11:15:52 UTC  learning-no-explore-full-page-1280-light.png  <- file://$SCRATCH/no-explore-site/learning/index.html
+2026-11-08 11:15:53 UTC  learning-no-explore-full-page-1280-dark.png  <- file://$SCRATCH/no-explore-site/learning/index.html
+2026-11-08 11:15:53 UTC  learning-no-explore-full-page-390-light.png  <- file://$SCRATCH/no-explore-site/learning/index.html
+2026-11-08 11:15:54 UTC  learning-no-explore-full-page-390-dark.png  <- file://$SCRATCH/no-explore-site/learning/index.html

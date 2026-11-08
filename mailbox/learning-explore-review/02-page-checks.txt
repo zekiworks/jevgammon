@@ -1,0 +1,44 @@
+# (b) learning_page.py --check at bbcd644 (links against the branch's whole-site render). Started 2026-11-08 11:12:00 UTC
+
+## no-explore: python3 tools/site/learning_page.py --out $SCRATCH/page-no-explore --src $SCRATCH/states/no-explore/learning --check $SCRATCH/out-branch --test-set <test_set.json>
+$SCRATCH/page-no-explore/learning/index.html
+checks: 0 failure(s)
+preregistration_only: False | validation: {'accepted': True, 'complete': True}
+status line: Done | top line: True
+chart titles: ['Gemma 4 31B: risks found, % (higher is better)', 'Gemma 4 31B: error rate per game (PR, lower is better)']
+legend: ['budget (empty: no game fit)', 'full records', 'no memory', 'own lessons']
+explore in data: None
+explore block: False | after the verdict: False | explore cells: 0
+
+## explore: python3 tools/site/learning_page.py --out $SCRATCH/page-explore --src $SCRATCH/states/explore/learning --check $SCRATCH/out-branch --test-set <test_set.json>
+$SCRATCH/page-explore/learning/index.html
+checks: 0 failure(s)
+preregistration_only: False | validation: {'accepted': True, 'complete': True}
+status line: Done | top line: True
+chart titles: ['Gemma 4 31B: risks found, % (higher is better)', 'Gemma 4 31B: error rate per game (PR, lower is better)']
+legend: ['budget (empty: no game fit)', 'full records', 'no memory', 'own lessons']
+explore in data: {'accepted': True, 'problems': [], 'label': '...', 'generated_at': '...', 'arm_minus_budget': '...', 'series': '...', 'runs': '...', 'retest_answer_counts': '...', 'spread': '...', 'agreement': '...', 'sampling': '...'}
+explore block: True | after the verdict: True | explore cells: 268
+
+## malformed-explore: python3 tools/site/learning_page.py --out $SCRATCH/page-malformed-explore --src $SCRATCH/states/malformed-explore/learning --check $SCRATCH/out-branch --test-set <test_set.json>
+learning_validate explore (private): explore: unknown key 'SYNTHETIC_unknown_key'
+$SCRATCH/page-malformed-explore/learning/index.html
+checks: 0 failure(s)
+preregistration_only: False | validation: {'accepted': True, 'complete': True}
+status line: Done | top line: True
+chart titles: ['Gemma 4 31B: risks found, % (higher is better)', 'Gemma 4 31B: error rate per game (PR, lower is better)']
+legend: ['budget (empty: no game fit)', 'full records', 'no memory', 'own lessons']
+explore in data: {'accepted': False, 'problems': ['explore.schema: the file does not match its schema']}
+explore block: True | after the verdict: True | explore cells: 0
+
+## SYNTHETIC-running: python3 tools/site/learning_page.py --out $SCRATCH/page-SYNTHETIC-running --src $SCRATCH/states5/SYNTHETIC-running/learning --check $SCRATCH/out-branch --test-set <test_set.json>
+$SCRATCH/page-SYNTHETIC-running/learning/index.html
+checks: 0 failure(s)
+preregistration_only: False | validation: {'accepted': True, 'complete': False}
+status line: Running: 5 of 10 series per arm | top line: True
+chart titles: ['Gemma 4 31B: risks found, % (higher is better)', 'Gemma 4 31B: error rate per game (PR, lower is better)']
+legend: ['budget (empty: no game fit)', 'full records', 'no memory', 'own lessons']
+explore in data: None
+explore block: False | after the verdict: False | explore cells: 0
+
+# Finished 2026-11-08 11:12:09 UTC

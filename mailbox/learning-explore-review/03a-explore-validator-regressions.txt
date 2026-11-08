@@ -1,0 +1,172 @@
+# (c0) explore_regressions.py on origin/main 4e9b06e (before) and on bbcd644 (after). Started 2026-11-08 11:12:09 UTC
+
+## before: origin/main 4e9b06e:tools/site (expected: every fault case FAILs; the 2 control cases
+## differ: the real file is not shown before, so 'accepted' FAILs; 'no exploratory file' PASSes)
+
+== [control] the real exploratory file: expected accepted, got no block: FAIL
+
+== [control] no exploratory file: expected no block, got no block: PASS
+
+== [schema] an unknown top-level key (a canary name): expected schema, got no block: FAIL
+    the refused file is not reduced to its codes in the data file
+    no refusal note on the page
+
+== [schema] the label changed: expected schema, got no block: FAIL
+    the refused file is not reduced to its codes in the data file
+    no refusal note on the page
+
+== [schema] lessons T10 risks found with 9 series: expected schema, got no block: FAIL
+    the refused file is not reduced to its codes in the data file
+    no refusal note on the page
+
+== [schema] a run with an extra key: expected schema, got no block: FAIL
+    the refused file is not reduced to its codes in the data file
+    no refusal note on the page
+
+== [schema] a run's risks found as a string: expected schema, got no block: FAIL
+    the refused file is not reduced to its codes in the data file
+    no refusal note on the page
+
+== [test-set] another evaluation set's hash: expected test-set, got no block: FAIL
+    the refused file is not reduced to its codes in the data file
+    no refusal note on the page
+
+== [counts] budget s02 T5 answered 199 (valid 199), spread recomputed: expected counts, got no block: FAIL
+    the refused file is not reduced to its codes in the data file
+    no refusal note on the page
+
+== [counts] T0 invalid 1 with valid 200 (201 of 200): expected counts, got no block: FAIL
+    the refused file is not reduced to its codes in the data file
+    no refusal note on the page
+
+== [arm-minus-budget] records T5 risks found mean +0.1: expected arm-minus-budget, got no block: FAIL
+    the refused file is not reduced to its codes in the data file
+    no refusal note on the page
+
+== [arm-minus-budget] lessons T10 error rate interval's upper bound moved: expected arm-minus-budget, got no block: FAIL
+    the refused file is not reduced to its codes in the data file
+    no refusal note on the page
+
+== [arm-minus-budget] records T10 right safety series 4 changed (mean kept): expected arm-minus-budget, got no block: FAIL
+    the refused file is not reduced to its codes in the data file
+    no refusal note on the page
+
+== [rows] budget s03 T5 risks found +1 (spread recomputed): expected rows, got no block: FAIL
+    the refused file is not reduced to its codes in the data file
+    no refusal note on the page
+
+== [rows] the T0 row's error rate +0.5 (spread recomputed): expected rows, got no block: FAIL
+    the refused file is not reduced to its codes in the data file
+    no refusal note on the page
+
+== [rows] budget s10 T10 row missing (spread recomputed): expected rows, got no block: FAIL
+    the refused file is not reduced to its codes in the data file
+    no refusal note on the page
+
+== [retests] retest r2 counted 150 answers but its row is there: expected retests, got no block: FAIL
+    the refused file is not reduced to its codes in the data file
+    no refusal note on the page
+
+== [retests] retest r3 counted 200 answers but no row (spread recomputed): expected retests, got no block: FAIL
+    the refused file is not reduced to its codes in the data file
+    no refusal note on the page
+
+== [agreement] pairwise not symmetric (r1 vs T0 changed only): expected agreement, got no block: FAIL
+    the refused file is not reduced to its codes in the data file
+    no refusal note on the page
+
+== [agreement] summary mean changed (T0 vs retests): expected agreement, got no block: FAIL
+    the refused file is not reduced to its codes in the data file
+    no refusal note on the page
+
+== [agreement] a run name outside the known set (budget s11 T5): expected schema, got no block: FAIL
+    the refused file is not reduced to its codes in the data file
+    no refusal note on the page
+
+== [agreement] a count above 200: expected schema, got no block: FAIL
+    the refused file is not reduced to its codes in the data file
+    no refusal note on the page
+
+== [agreement] a run of the rows missing from the counts (r5): expected agreement, got no block: FAIL
+    the refused file is not reduced to its codes in the data file
+    no refusal note on the page
+
+== [agreement] positions not unanimous across retests below the largest retest-vs-retest count: expected agreement, got no block: FAIL
+    the refused file is not reduced to its codes in the data file
+    no refusal note on the page
+
+== [spread] budget risks found SD changed: expected spread, got no block: FAIL
+    the refused file is not reduced to its codes in the data file
+    no refusal note on the page
+
+== [spread] all-runs error rate max changed: expected spread, got no block: FAIL
+    the refused file is not reduced to its codes in the data file
+    no refusal note on the page
+
+== [unreadable] not JSON: expected unreadable, got no block: FAIL
+    the refused file is not reduced to its codes in the data file
+    no refusal note on the page
+
+1 / 27 pass ($SCRATCH/src-before/tools/site)
+exit code: 1
+
+## after: bbcd644:tools/site (expected: every case PASSes)
+
+== [control] the real exploratory file: expected accepted, got accepted: PASS
+
+== [control] no exploratory file: expected no block, got no block: PASS
+
+== [schema] an unknown top-level key (a canary name): expected schema, got schema: PASS
+
+== [schema] the label changed: expected schema, got schema: PASS
+
+== [schema] lessons T10 risks found with 9 series: expected schema, got schema: PASS
+
+== [schema] a run with an extra key: expected schema, got schema: PASS
+
+== [schema] a run's risks found as a string: expected schema, got schema: PASS
+
+== [test-set] another evaluation set's hash: expected test-set, got test-set: PASS
+
+== [counts] budget s02 T5 answered 199 (valid 199), spread recomputed: expected counts, got counts, rows: PASS
+
+== [counts] T0 invalid 1 with valid 200 (201 of 200): expected counts, got counts, rows: PASS
+
+== [arm-minus-budget] records T5 risks found mean +0.1: expected arm-minus-budget, got arm-minus-budget: PASS
+
+== [arm-minus-budget] lessons T10 error rate interval's upper bound moved: expected arm-minus-budget, got arm-minus-budget: PASS
+
+== [arm-minus-budget] records T10 right safety series 4 changed (mean kept): expected arm-minus-budget, got arm-minus-budget: PASS
+
+== [rows] budget s03 T5 risks found +1 (spread recomputed): expected rows, got rows: PASS
+
+== [rows] the T0 row's error rate +0.5 (spread recomputed): expected rows, got rows: PASS
+
+== [rows] budget s10 T10 row missing (spread recomputed): expected rows, got rows: PASS
+
+== [retests] retest r2 counted 150 answers but its row is there: expected retests, got retests: PASS
+
+== [retests] retest r3 counted 200 answers but no row (spread recomputed): expected retests, got retests: PASS
+
+== [agreement] pairwise not symmetric (r1 vs T0 changed only): expected agreement, got agreement: PASS
+
+== [agreement] summary mean changed (T0 vs retests): expected agreement, got agreement: PASS
+
+== [agreement] a run name outside the known set (budget s11 T5): expected schema, got schema: PASS
+
+== [agreement] a count above 200: expected schema, got schema: PASS
+
+== [agreement] a run of the rows missing from the counts (r5): expected agreement, got agreement: PASS
+
+== [agreement] positions not unanimous across retests below the largest retest-vs-retest count: expected agreement, got agreement: PASS
+
+== [spread] budget risks found SD changed: expected spread, got spread: PASS
+
+== [spread] all-runs error rate max changed: expected spread, got spread: PASS
+
+== [unreadable] not JSON: expected unreadable, got unreadable: PASS
+
+27 / 27 pass (/home/cbasaran/code/jevgammon-learning-explore/tools/site)
+exit code: 0
+
+# Finished 2026-11-08 11:13:56 UTC

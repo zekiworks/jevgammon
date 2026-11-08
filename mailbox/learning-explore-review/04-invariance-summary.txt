@@ -1,0 +1,18 @@
+main render:   /tmp/inv6/out-main (2550 files)
+branch render: /tmp/inv6/out-branch (2550 files)
+
+explained: 4
+identical: 2544
+subject: 2
+
+explained changes, by reason (files):
+      1  bg.css: the Learning block gains the top line's and the exploratory block's rules (4 lines)
+      1  data page: the size and hash of data/v3/learning-pilot.json
+      1  manifest: the entry of data/v3/learning-pilot.json (its size and hash)
+      1  home page, finding f: the learning page's risks chart (shared code) with the arms' display names and the model in its title
+
+the change under review (subject):
+  data/v3/learning-pilot.json: the learning page's data file: the change under review (02, 03)
+  learning/index.html: the learning page: the change under review (Ümit #2950/#2952; 02, 03)
+
+unexplained: 0

@@ -422,7 +422,7 @@ table.headline td.model .hl-dot { width: .7rem; height: .7rem; border-radius: 50
 table.headline .hl-type { display: block; }
 .hl-filter { display: flex; flex-wrap: wrap; gap: .3rem; margin: .1rem 0 .2rem; }
 .hl-filter .key { min-height: 1.9rem; padding: .15rem .65rem; font-size: .82rem; }
-.hl-tag::before { content: " \00b7 "; font-weight: 400; }
+.hl-tag::before { content: " \00b7\0020"; font-weight: 400; }
 .hl-tag { font-weight: 600; }
 tr.hl-off { display: none !important; }
 table.headline tbody tr.hl-open > td { background: var(--row-hover); }

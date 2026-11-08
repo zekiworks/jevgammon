@@ -1241,8 +1241,8 @@ PROGRESS_REASONS = ("shared-balance priority", "waiting for the ChatGPT reset 13
 
 
 # The page has no "waiting for a GPU" text yet (requested from ImproveStatus): until it does, a local model held for
-# its GPU shows the nearest fixed text. Switch to "waiting for a GPU" when the page's list has it.
-GPU_WAIT_TEXT = "waiting for its turn"
+# its GPU shows this fixed text (accepted by the page since improve-status 6522002, live 20:22 UTC 8 Nov; Zeki GO #3303).
+GPU_WAIT_TEXT = "waiting for a GPU"
 
 
 def progress_reason(reason):

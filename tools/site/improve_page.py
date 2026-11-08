@@ -369,7 +369,7 @@ def others(L) -> str:
              f'found {fmt(rf[0], 1)} → {fmt(rf[1], 1)} ({fmt(rf[2], 1, signed=True)}), right safety {fmt(rs[0], 1)} → '
              f'{fmt(rs[1], 1)} ({fmt(rs[2], 1, signed=True)}), error rate {fmt(er[0], 1)} → {fmt(er[1], 1)}</td>'
              f'<td><strong>not comparable (different design)</strong></td></tr>')
-    rows_ = [f'<tr data-row="decision-models"><th scope="row">Decision models</th><td>{_inline(plan["decision_models"])}'
+    rows_ = [f'<tr data-row="decision"><th scope="row">Decision models</th><td>{_inline(plan["decision_models"])}'
              '</td><td>not tested: cannot write lessons</td></tr>',
              f'<tr data-row="cygnet"><th scope="row">Cygnet</th><td>{_inline(plan["cygnet"])}</td>'
              '<td>not tested</td></tr>', pilot]

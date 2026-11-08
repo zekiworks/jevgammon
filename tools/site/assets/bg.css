@@ -415,14 +415,15 @@ td.hl-judgement { width: 55%; min-width: 13rem; }
 .hl-safe { position: absolute; left: 50%; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; background: var(--text-2); }
 .hl-val { font-family: var(--mono); font-size: .84rem; }
 .js [data-headline-panel][hidden] { display: none; }
-/* The leaderboard rows (Ümit, bus #2745; #2904, #2907): the rank, the model (maker dot, its type under the name, the
-   expander of its other settings, shown without script) and the risk judgement; the programs and late entries grey and
-   unranked under a group heading. */
+/* The leaderboard rows (Ümit, bus #2745; #2904, #2907; #2921): the rank, the model (maker dot, its type under the name
+   with a late entry's tag, the expander of its other settings, shown without script) and the risk judgement; the
+   programs grey and unranked under a group heading. */
 table.headline td.model .hl-dot { width: .7rem; height: .7rem; border-radius: 50%; }
 table.headline .hl-type { display: block; }
 .hl-filter { display: flex; flex-wrap: wrap; gap: .3rem; margin: .1rem 0 .2rem; }
 .hl-filter .key { min-height: 1.9rem; padding: .15rem .65rem; font-size: .82rem; }
-.hl-legend { margin-top: 0; }
+.hl-tag::before { content: " \00b7 "; font-weight: 400; }
+.hl-tag { font-weight: 600; }
 tr.hl-off { display: none !important; }
 table.headline tbody tr.hl-open > td { background: var(--row-hover); }
 /* A row's details box (bg.js): every value of the setup, a line per kind; in its row without script, else over the page
@@ -443,7 +444,7 @@ tr.hl-sub[hidden] { display: table-row; }
 tr.hl-sub td { background: var(--sunk); }
 tr.hl-sub td.model { padding-left: 1.6rem; }
 tr.hl-group th { padding-top: .8rem; text-align: left; font-size: .8rem; font-weight: 600; color: var(--text-2); }
-table.headline tr.reference td, table.headline tr.late td { color: var(--text-2); }
+table.headline tr.reference td { color: var(--text-2); }
 .hbar-fill.ts-found, i.swatch-ts-found { background-image: repeating-linear-gradient(135deg, rgba(255, 255, 255, .55) 0 3px, rgba(0, 0, 0, .12) 3px 6px); }
 .hbar-fill.ts-grey, i.swatch-ts-grey { background-color: var(--data-grey); }
 i.swatch-ts-safety, i.swatch-ts-found { background-color: var(--text-2); }

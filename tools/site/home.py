@@ -11,7 +11,7 @@ import textwrap
 import analysis as A
 import nack_section
 import pages as P
-from common import ALL_NOTE, CLOSE_B_SCOPE_NOTE, CONTENT, NA, NOT_MEASURED, PENDING, PROVISIONAL, PROVISIONAL_NOTE, TOO_FEW, count, esc, fmt, nm, pct, status_badge
+from common import ALL_NOTE, CLOSE_B_SCOPE_NOTE, CONTENT, LATE_ENTRY, NA, NOT_MEASURED, PENDING, PROVISIONAL, PROVISIONAL_NOTE, TOO_FEW, count, esc, fmt, nm, pct, status_badge
 
 TABS = [("risk", "Risk"), ("quality", "Quality"), ("confidence", "Confidence"), ("reasoning", "Reasoning"),
         ("cost", "Cost"), ("stability", "Stability")]
@@ -1782,29 +1782,33 @@ def measure_charts(S) -> str:
 
 
 def result_cards(S) -> str:
-    """Three cards, stored values only and model setups only (programs are reference rows, never leaders): the highest
-    risk judgement of every model setup and of the decision models, and the lowest error rate."""
-    models = [(lg, n, r) for lg, n, r, ref in all_rows(S) if not ref and r["judgement"] is not None]
-    best = models[0] if models else None
-    dec = next(((lg, n, r) for lg, n, r in models if kind(P.origin_meta(S, lg["dataset"], n)) == "decision"), None)
-    ers = [(lg, n, s["quality"]) for lg in S["leagues"] for n, s in lg["setups"].items()
-           if not ref_label(S, lg["dataset"], n) and s["quality"].get("error_rate") is not None and not s["quality"].get("too_few")]
-    low = min(ers, key=lambda x: x[2]["error_rate"]) if ers else None
+    """Three cards, stored values only and model setups only (programs are reference rows, never leaders), late entries
+    counted (Ümit #2921 item 4): the highest risk judgement of every model setup and of the decision models, and the
+    lowest error rate."""
+    late = [(P.late_href("", e), e["name"], f'late entry, League {e["field_league"]} field',
+             S["setups_meta"].get((LATE_ENTRY, e["name"])) or {}, e["risk"]["main"], e["quality"]) for e in S["late_entries"]]
+    league = [(P.model_href("", lg["dataset"], n, S), n, f'League {lg["id"]}', P.origin_meta(S, lg["dataset"], n), r,
+               lg["setups"][n]["quality"] if n in lg["setups"] else None) for lg, n, r, ref in all_rows(S) if not ref]
+    models = [x for x in league + late if x[4]["judgement"] is not None]
+    best = max(models, key=lambda x: x[4]["judgement"], default=None)
+    dec = max((x for x in models if kind(x[3]) == "decision"), key=lambda x: x[4]["judgement"], default=None)
+    ers = [x for x in league + late if x[5] and x[5].get("error_rate") is not None and not x[5].get("too_few")]
+    low = min(ers, key=lambda x: x[5]["error_rate"], default=None)
     cards = []
-    for title, top, value, lo, hi, unit in (
-            ("Highest observed risk judgement, every model setup", best, "judgement", "judgement_lo", "judgement_hi",
+    for title, top, i, value, lo, hi, unit in (
+            ("Highest observed risk judgement, every model setup", best, 4, "judgement", "judgement_lo", "judgement_hi",
              "/100, higher is better"),
-            ("Highest observed risk judgement, decision models", dec, "judgement", "judgement_lo", "judgement_hi",
+            ("Highest observed risk judgement, decision models", dec, 4, "judgement", "judgement_lo", "judgement_hi",
              "/100, higher is better"),
-            ("Lowest observed error rate, every model setup", low, "error_rate", "error_lo", "error_hi",
+            ("Lowest observed error rate, every model setup", low, 5, "error_rate", "error_lo", "error_hi",
              "PR, lower is better")):
         if not top:
             continue
-        lg, n, x = top
+        href, n, where, x = top[0], top[1], top[2], top[i]
         cards.append(f'<div class="result-card"><h2>{esc(title)}</h2><p class="result-main">{fmt(x[value])} '
                      f'<span class="result-unit">{esc(unit)}</span></p>'
-                     f'<p class="result-cost"><a href="{P.model_href("", lg["dataset"], n, S)}">{esc(n)}</a> · League '
-                     f'{lg["id"]} · 95% interval {fmt(x[lo])} to {fmt(x[hi])}</p></div>')
+                     f'<p class="result-cost"><a href="{href}">{esc(n)}</a> · {esc(where)} · 95% interval '
+                     f'{fmt(x[lo])} to {fmt(x[hi])}</p></div>')
     return (f'<h2 class="board-group">Model setups, all leagues</h2><div class="result-cards">{"".join(cards)}</div>'
             f'<p class="table-note cards-note">{esc(ALL_NOTE)}</p>')
 

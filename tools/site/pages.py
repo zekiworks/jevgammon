@@ -1515,10 +1515,13 @@ def method_sections(method_html: str) -> list[tuple[str, str]]:
 
 
 def about_page(S, method_html: str) -> str:
-    toc = [("rules", "Rules of backgammon"), ("method", "Method"), ("data", "Data"), ("how-to-run", "How to run it"),
-           ("late-entries", "Late entries"), ("open-questions", "Open questions"), ("pages", "More pages")]
+    import story
+    toc = [("leaderboard", "How the leaderboard is built"), ("rules", "Rules of backgammon"), ("method", "Method"),
+           ("data", "Data"), ("how-to-run", "How to run it"), ("late-entries", "Late entries"),
+           ("open-questions", "Open questions"), ("pages", "More pages")]
     method_links = "".join(f'<li><a href="../method/#{i}">{h}</a></li>' for i, h in method_sections(method_html))
     parts = {
+        "leaderboard": story.about_text("../"),
         "rules": f'<p class="note">The rules as every player reads them in the prompt (bg-v2, the current version: '
                  f'<a href="../method/#prompt">Method: The prompt</a>), quoted unchanged.</p>{rules_text()}',
         "method": f'<p>Every definition, threshold and caveat is on the <a href="../method/">Method</a> page:</p>'

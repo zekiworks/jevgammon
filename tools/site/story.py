@@ -24,23 +24,44 @@ def caveat(text: str, anchor: str = "limits") -> str:
     return (f'<p class="table-note section-caveat">{esc(text)} <a href="method/#{anchor}">More caveats: Method</a></p>')
 
 
-# --- The headline table (Ümit, bus #2745) -----------------------------------------------------------------------------
-# One row per model at its highest reasoning setting played: a fixed rule, never the best score. The settings in order,
+# --- The headline table (Ümit, bus #2745; late entries ranked, #2921) --------------------------------------------------
+# One row per model at its highest reasoning setting played, late-entry setups included: a fixed rule, never the best
+# score. The settings in order,
 # as the requests sent them (setups.json "setting"; "none" is off). "on" is the setting of a model without levels
 # (thinking on or off only): above off, and a model with "on" and a level fails the build. A decision model sends no
 # setting: its single setup. Version names are separate models (Jev 1.13.0, Jev 1.14.0). Several setups at that
-# setting: the first in league order (the league of its setups.json entry, then the setup name); no score (Zeki #2790).
+# setting: the first in league order, then the setup name; no score (Zeki #2790). A late entry stands in the league
+# order of the league whose field it played (Ümit #2921 (b): late entries join the ranking, each tagged).
 LEVELS = {"off": 0, "none": 0, "minimal": 1, "low": 2, "medium": 3, "high": 4, "xhigh": 5, "max": 6}
 ON = "on"
 # Models that are one row (content/model_identity.json: an approved list, nothing inferred from names): a dated
 # checkpoint under its original, which names and dates the row.
 SAME_MODEL = json.loads((CONTENT / "model_identity.json").read_text())["same_model"]
-# Late entries (not in standings) as a grey, unranked group under the ranked rows, never in the ranking: an open
-# question to Ümit (bus #2745), off until he decides.
-LATE_ROWS = False
 # Under the table (Ümit #2745 item 3, with Zeki #2578's accepted rank sentence in place of the whisker-overlap one).
 NOTE = ("Bars run to each score; the whisker is its 95% interval. Ranks show observed scores; small gaps need not be "
         "meaningful. Leagues played different positions.")
+# The row rule, one line under the table (Ümit #2921 items 1 and 5); the longer explanation is on About (about_text).
+RULE = ("Row rule: each model's highest reasoning setting (off < minimal < low < medium < high < xhigh < max), late "
+        "entries included; a model with one setup uses it; several setups at that setting: the first in league order, "
+        "then by setup name, never by score.")
+
+
+def about_text(rel: str) -> str:
+    """How the leaderboard is built, for the About page: the text that stood above and under the table before
+    Ümit #2921 item 5, unchanged but for the late entries now in the ranking."""
+    return ('<p><strong>A fixed table:</strong> the filters below the leaderboard do not change it. Tap a model (or '
+            'point at it) for its details and its decisions.</p>'
+            '<p># is the rank among all models, in every view of the table\'s All · Chat models · Decision models '
+            'filter; the programs are reference rows in every view.</p>'
+            '<p>Each model\'s row is its highest reasoning setting played, by the effort the requests sent (off &lt; '
+            'minimal &lt; low &lt; medium &lt; high &lt; xhigh &lt; max; on above off for a model without levels; a '
+            'decision model\'s single setup), never its best score; late-entry setups count as the model\'s setups '
+            '(a late entry stands in the league order of the league whose field it played). Several setups at that '
+            'setting: the first in league order, then by setup name (no score). Every value of a row and of its details '
+            'is that setup\'s own; its other settings are under the row\'s expander and under All setups. Version names '
+            'are separate models; ' + "; ".join(f"{esc(k)} is under {esc(v)}" for k, v in SAME_MODEL.items()) + ' (a '
+            f'dated checkpoint under its original). Every column of every setup: <a href="{rel}#board-panel">Every '
+            'number</a>.</p>')
 
 
 def level(setting: str | None, levelled: bool) -> int:
@@ -89,17 +110,26 @@ def _top(group: list) -> list:
     return [x for x in group if level(x["setting"], levelled) == top]
 
 
-def leaderboard_rows(S) -> tuple[list, list, list]:
-    """(model rows, program rows, late-entry rows): each a (chosen setup, the row's other setups, row name, settings
-    played) tuple. Model rows ranked by the chosen setup's stored risk judgement; programs (GNUbg weak, Safest, Random)
-    one row each, their first played setup in league order (computed reference rows under it); late entries (only
-    with LATE_ROWS) by the same rule as the models over their own setups."""
+def _late_entry(S, e) -> dict:
+    m = S["setups_meta"].get((LATE_ENTRY, e["name"])) or {}
+    return dict(lg=None, ds=LATE_ENTRY, name=e["name"], r=e["risk"]["main"], q=e["quality"],
+                model=m.get("model") or e["name"], setting=m.get("setting"), late=e, origin=e["field_league"])
+
+
+def leaderboard_rows(S) -> tuple[list, list]:
+    """(model rows, program rows): each a (chosen setup, the row's other setups, row name, settings played) tuple.
+    Model rows, late-entry setups among their model's setups, ranked by the chosen setup's stored risk judgement;
+    programs (GNUbg weak, Safest, Random) one row each, their first played setup in league order (computed reference
+    rows under it)."""
     groups, progs = {}, {}
     for lg, n, r, ref in H.all_rows(S):
         x = _entry(S, lg, n, r)
         if ref:
             progs.setdefault(n.removesuffix(" (computed)"), []).append(x)
             continue
+        groups.setdefault(SAME_MODEL.get(x["model"], x["model"]), []).append(x)
+    for e in S["late_entries"]:
+        x = _late_entry(S, e)
         groups.setdefault(SAME_MODEL.get(x["model"], x["model"]), []).append(x)
     out = []
     for base, g in groups.items():
@@ -112,18 +142,15 @@ def leaderboard_rows(S) -> tuple[list, list, list]:
         if g:
             chosen = _first([x for x in g if x["q"] is not None] or g)
             prog_rows.append((chosen, [x for x in g if x is not chosen], name, g))
-    late = []
-    if LATE_ROWS:
-        lgroups = {}
-        for e in S["late_entries"]:
-            m = S["setups_meta"].get((LATE_ENTRY, e["name"])) or {}
-            x = dict(lg=None, ds=LATE_ENTRY, name=e["name"], r=e["risk"]["main"], q=e["quality"],
-                     model=m.get("model") or e["name"], setting=m.get("setting"), late=e, origin=e["field_league"])
-            lgroups.setdefault(SAME_MODEL.get(x["model"], x["model"]), []).append(x)
-        for base, g in lgroups.items():
-            chosen = _first(_top(g))
-            late.append((chosen, [x for x in g if x is not chosen], base, g))
-    return out, prog_rows, late
+    return out, prog_rows
+
+
+def late_tag(x) -> str | None:
+    """"late entry", or "late entry · provisional" while a pair of its field is not played."""
+    e = x["late"]
+    if not e:
+        return None
+    return "late entry \u00b7 provisional" if e["status"] == P.PROVISIONAL else "late entry"
 
 
 def judgement_cell(r: dict, colour: str | None) -> str:
@@ -195,16 +222,19 @@ def details_box(S, x, kind: str, bid: str, extra: list) -> str:
     href, page = decisions_href(S, x), page_href(S, x)
     lines = [
         join([f'<strong>{esc(x["name"])}</strong>', esc(H.maker(x["name"])[0]) if kind != "program" else None]),
-        join([f'Setting {esc(x["setting"])}' if x["setting"] else None,
-              f'Late entry, League {e["field_league"]} field' if e else f'League {x["lg"]["id"]}']),
+        join([f'Setting {esc(x["setting"])}' if x["setting"] else None, None if e else f'League {x["lg"]["id"]}']),
+        (f'Played the original League {e["field_league"]} field after the league finished (late entry)' if e else None),
+        (join([f'Provisional: {count(e["played"])} of {count(e["total"])} matches'] + [
+            f'not played: {esc(g["opponent"])} ({esc(g["reason"])})' for g in e.get("not_played") or []])
+         if e and e["status"] == P.PROVISIONAL else None),
+        (esc(P.SUBQ_SELF) if e and x["name"] == P.SUBQ_11 else None),
         (f'Risk judgement {fmt(r["judgement"])} (95%: {fmt(r["judgement_lo"])}\u2013{fmt(r["judgement_hi"])})'
          if r["judgement"] is not None else None),
         join([f'Risks found {pct(found["share"])}' if found["den"] else None,
               f'safe right {pct(safe["share"])}' if safe["den"] else None]),
         join([f'Took {H.n_(found["n"])} of {H.n_(found["den"])} risks that paid' if found["den"] else None,
               f'played safe in {H.n_(safe["n"])} of {H.n_(safe["den"])} positions where safe paid' if safe["den"] else None]),
-        join([er, f'record {count(rec["won"])}\u2013{count(rec["drawn"])}\u2013{count(rec["lost"])}' if rec else None,
-              "late entry" if e else None]),
+        join([er, f'record {count(rec["won"])}\u2013{count(rec["drawn"])}\u2013{count(rec["lost"])}' if rec else None]),
         join([cost_text(S, x), f'{count(q["decisions"])} decisions' if q else None]),
         *extra,
         join([f'<a href="{href}">{"Its late-entry page" if e else "Open its decisions"} \u2192</a>' if href else None,
@@ -227,15 +257,12 @@ def tr_attrs(S, x, kind, typ) -> str:
 
 def headline_rows(S) -> tuple[list, list, list]:
     """The table rows (each followed by its hidden other-settings rows) and the models without a release month."""
-    ranked, progs, late = leaderboard_rows(S)
+    ranked, progs = leaderboard_rows(S)
     body, missing, chart = [], [], []
-    for kind, rows in (("model", ranked), ("program", progs), ("late", late)):
+    for kind, rows in (("model", ranked), ("program", progs)):
         if kind == "program" and rows:
             body.append(f'<tr class="hl-group"><th scope="rowgroup" colspan="{len(HEADLINE_HEAD)}">Programs: reference rows, '
                         f'never ranked</th></tr>')
-        if kind == "late" and rows:
-            body.append(f'<tr class="hl-group"><th scope="rowgroup" colspan="{len(HEADLINE_HEAD)}">Late entries (not ranked): '
-                        f'added after the standings, their own late-entry games, never in the ranking</th></tr>')
         for i, (x, others, name, group) in enumerate(rows, 1):
             mk, colour = H.maker(x["name"]) if kind == "model" else (None, None)
             fam = H.family(x["name"]) if kind != "program" else None
@@ -244,6 +271,7 @@ def headline_rows(S) -> tuple[list, list, list]:
                 '<i class="swatch hl-dot swatch-program"></i>'
             typ = "program" if kind == "program" else model_type(S, x)
             under = esc(H.ref_label(S, x["ds"], x["name"]) or "") if kind == "program" else esc(TYPE_LABEL.get(typ, ""))
+            tag = f'<span class="hl-tag">{esc(late_tag(x))}</span>' if x["late"] else ""
             extra = []
             if kind == "model":
                 month, url = release(name)
@@ -254,24 +282,25 @@ def headline_rows(S) -> tuple[list, list, list]:
                 ckpt = sorted({y["model"] for y in group if y["model"] != name})
                 if ckpt:
                     extra.append("With its dated checkpoint " + ", ".join(esc(c) for c in ckpt) + " (under the expander)")
-            rid = f'hl-{"p-" if kind == "program" else "l-" if kind == "late" else ""}{i}'
+            rid = f'hl-{"p-" if kind == "program" else ""}{i}'
             sub_ids = [f"{rid}-{k}" for k in range(1, len(others) + 1)]
             what = "league" if kind == "program" else "setting"
             more = (f'<button type="button" class="hl-more needs-js" aria-expanded="false" aria-controls="{" ".join(sub_ids)}">'
                     f'{count(len(others))} other {what}{"s" if len(others) > 1 else ""}</button>' if others else "")
             rank = f'<td class="num">{i}</td>' if kind == "model" else '<td class="num"><span class="muted" title="never ranked">\u2013</span></td>'
-            cls = {"model": "", "program": ' class="reference"', "late": ' class="late"'}[kind]
+            cls = ' class="reference"' if kind == "program" else ""
             label = x["name"] if kind == "program" else name
             bid = f"{rid}-box"
             body.append(f'<tr{cls}{tr_attrs(S, x, kind, typ)} data-box="{bid}">{rank}<td class="model">{dot}{icon}'
-                        f'{name_link(S, x, label, bid)}<span class="small hl-type">{under}</span>{more}'
+                        f'{name_link(S, x, label, bid)}<span class="small hl-type">{under}{tag}</span>{more}'
                         f'{details_box(S, x, kind, bid, extra)}</td>{judgement_cell(x["r"], colour)}</tr>')
             for sid, y in zip(sub_ids, others):
                 ycol = H.maker(y["name"])[1] if kind == "model" else None
                 ybid = f"{sid}-box"
-                body.append(f'<tr class="hl-sub{"" if kind == "model" else " reference" if kind == "program" else " late"}" '
+                ytag = f'<span class="hl-tag">{esc(late_tag(y))}</span>' if y["late"] else ""
+                body.append(f'<tr class="hl-sub{"" if kind == "model" else " reference"}" '
                             f'id="{sid}" hidden{tr_attrs(S, y, kind, typ)} data-box="{ybid}"><td class="num"></td><td class="model">'
-                            f'{name_link(S, y, y["name"], ybid)}<span class="small">other {what} of {esc(label)}</span>'
+                            f'{name_link(S, y, y["name"], ybid)}<span class="small">other {what} of {esc(label)}{ytag}</span>'
                             f'{details_box(S, y, kind, ybid, [])}</td>{judgement_cell(y["r"], ycol)}</tr>')
             if kind != "program" or x["name"] == "GNUbg weak":
                 chart.append((kind, label, x, colour))
@@ -330,21 +359,14 @@ def headline(S) -> str:
     types = ('<div class="keys hl-filter needs-js" role="group" aria-label="Model type">'
              + "".join(f'<button type="button" class="key" data-hl-filter="{k}" aria-pressed="{str(k == "all").lower()}">'
                        f'{l}</button>' for k, l in (("all", "All"), ("chat", "Chat models"), ("decision", "Decision models")))
-             + '</div><p class="table-note hl-legend"># is the rank among all models, in every view; the programs are '
-               'reference rows in every view.</p>')
-    rule = ('<p class="table-note headline-rule">Each model\'s row is its highest reasoning setting played, by the effort '
-            'the requests sent (off &lt; minimal &lt; low &lt; medium &lt; high &lt; xhigh &lt; max; on above off for a '
-            'model without levels; a decision model\'s single setup), never its best score. Several setups at that '
-            'setting: the first in league order, then by setup name (no score). Every value of a row and of its details '
-            'is that setup\'s own; its other settings are under the row\'s expander and under All setups. Version names '
-            'are separate models; ' + "; ".join(f"{esc(k)} is under {esc(v)}" for k, v in SAME_MODEL.items()) + ' (a '
-            'dated checkpoint under its original). Every column of every setup: <a href="#board-panel">Every number</a>.</p>')
+             + '</div>')
     return (f'<section class="card headline" id="leaderboard" data-dataset="all" aria-labelledby="leaderboard-title">'
             f'<div class="chart-head"><h2 id="leaderboard-title">Risk calls leaderboard</h2>{keys}<p class="chart-sub">'
             f'Risk judgement: 100 = every call right, 50 = always safe · higher is better</p></div>'
-            '<p class="table-note headline-scope"><strong>A fixed table:</strong> the filters below do not change it. '
-            'Tap a model (or point at it) for its details and its decisions; how each row is chosen is under the table.</p>'
-            f'<div data-headline-panel="model">{types}{table}{caveat(NOTE, "statistics")}{rule}{note}{too_safe(S, chart)}</div>'
+            '<p class="table-note headline-scope">One row per model: its highest reasoning setting, late entries '
+            'included, never its best score (<a href="about/#leaderboard">more in About</a>).</p>'
+            f'<div data-headline-panel="model">{types}{table}{caveat(NOTE, "statistics")}'
+            f'<p class="table-note headline-rule">{esc(RULE)}</p>{note}{too_safe(S, chart)}</div>'
             f'<div data-headline-panel="all" hidden>{H.all_risk_table(S)}{caveat(H.RANK_NOTE, "statistics")}</div>'
             f'<p class="table-note">{esc(ALL_NOTE)}</p></section>')
 

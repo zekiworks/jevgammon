@@ -434,7 +434,8 @@ table.headline td.model > .hl-tag { color: var(--text-2); font-size: .78rem; whi
 tr.hl-off { display: none !important; }
 table.headline tbody tr.hl-open > td { background: var(--row-hover); }
 /* A row's details box (bg.js): every value of the setup, a line per kind; in its row without script, else over the page
-   under its row (fixed to the window, within its width), opened by a tap, hover or the focus. */
+   beside its row where the window has room, else under it (fixed to the window, within its width), opened by a tap,
+   hover or the focus. */
 .hl-box { margin: .35rem 0 0; color: var(--text); font-size: .82rem; line-height: 1.4; white-space: normal; }
 .hl-box p { margin: .12rem 0; }
 .hl-box p:first-child { margin-top: 0; }
@@ -442,7 +443,6 @@ table.headline tbody tr.hl-open > td { background: var(--row-hover); }
   overflow: auto; overscroll-behavior: contain;
   background: var(--panel); border: 1px solid var(--control-edge); border-radius: 8px; box-shadow: var(--shadow); }
 .js .hl-box.open { display: block; }
-.js .hl-box.open.hl-hover { pointer-events: none; }
 .hl-more { display: block; margin-top: .2rem; padding: 0; border: 0; background: none; color: var(--link, var(--text-2));
   font: inherit; font-size: .8rem; cursor: pointer; text-decoration: underline dotted; }
 .hl-more::before { content: "\25B8\00a0"; }

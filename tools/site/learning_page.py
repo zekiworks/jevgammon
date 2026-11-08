@@ -317,6 +317,10 @@ def read_results(src: Path, plan: dict, prompt: dict | None, test_set: Path) -> 
     validation = dict(accepted=v["accepted"], producer_complete=v["producer_complete"], complete=v["complete"],
                       problems=v["problems"])
     if not v["accepted"]:
+        # The public problems name no key or directory taken from the pilot's files; the private ones, which do, go to
+        # the build's stderr (its log) only, never to the page or its data file.
+        for p in v["private_problems"]:
+            print(f"learning_validate (private): {p}", file=sys.stderr)
         return none | dict(validation=validation)
     lessons = []
     for s, g, f, game in v["lessons"]:

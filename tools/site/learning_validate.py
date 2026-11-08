@@ -3,15 +3,17 @@ harness wrote is trusted or passed through:
 
 - every per-series aggregate (runs/<arm>/sNN/aggregate.json) and the shared T0 aggregate is checked against a closed,
   recursive schema (every key, type and range), against its place (arm and series), the series' dice seed, the lesson
-  prompt files present at build time and the private evaluation set present at build time;
+  prompt files present at build time and the private evaluation set present at build time, and against pilot.py's own
+  counting (Zeki #2931): each evaluation's valid + invalid + failed = answered and its calls = valid; the budget arm's
+  points one per game played, agreeing with the context records and with its empty points;
 - the harness's summary (learning-pilot.json) is recomputed here from those aggregates exactly as pilot.py's summary()
   writes it, and refused unless every field agrees (table, games, series, inventory, finished series, completion, and
   once complete the learning lift, the signal and their intervals);
 - what the page publishes is not the summary: it is a projection built here from the validated aggregates of finished
   series only, each with the sha256 of its aggregate (provenance).
 
-validate() returns a Result. A refused summary publishes nothing of it. Problem texts name fields, never values of
-private files.
+validate() returns a Result. A refused summary publishes nothing of it. Public problem texts name fields of the schema,
+never values or names (keys, directories) taken from the pilot's files: those are in the private problems only (stderr).
 """
 
 import hashlib
@@ -118,9 +120,27 @@ SUMMARY_TOP = dict(updated_at=ISO, protocol=PROTOCOL_SPEC, planned_series_per_ar
 SUMMARY_COMPLETE = dict(signal=("any",), learning_lift=("any",), paired_series=("any",))
 
 
+# Problem texts are public (the page and its data file show why a file was refused), so a name taken from the
+# pilot's files (an unknown key, a key outside a map's pattern, a directory name) never goes into them: it is wrapped by
+# untrusted() and replaced by WITHHELD_NAME in the public text; the private text (stderr) keeps it (Zeki #2931, 2).
+WITHHELD_NAME = "[name withheld]"
+
+
+def untrusted(name) -> str:
+    return f"\x1f{str(name)!r}\x1f"
+
+
+def public_problems(problems: list) -> list:
+    return [re.sub("\x1f[^\x1f]*\x1f", WITHHELD_NAME, p) for p in problems]
+
+
+def private_problems(problems: list) -> list:
+    return [p.replace("\x1f", "") for p in problems]
+
+
 def check(v, spec, where: str) -> list:
     """Problems of v against spec (empty: it conforms). bool is never an int; an int is a number, a float is not an
-    int; NaN and infinities are refused."""
+    int; NaN and infinities are refused. `where` only ever holds names of the schema or keys that matched it."""
     kind = spec[0]
     if kind == "any":
         return []
@@ -149,13 +169,14 @@ def check(v, spec, where: str) -> list:
     if kind == "map":
         if not isinstance(v, dict):
             return [f"{where}: not a JSON object"]
-        bad = [f"{where}: key not allowed" for k in v if not re.fullmatch(spec[1], k)]
-        return bad + ([p for k, x in v.items() for p in check(x, spec[2], f"{where}.{k}")] if spec[2] else [])
+        bad = [f"{where}: key {untrusted(k)} not allowed" for k in v if not re.fullmatch(spec[1], k)]
+        return bad + ([p for k, x in v.items() if re.fullmatch(spec[1], k)
+                       for p in check(x, spec[2], f"{where}.{k}")] if spec[2] else [])
     if kind == "dict":
         if not isinstance(v, dict):
             return [f"{where}: not a JSON object"]
         req, opt = spec[1], spec[2]
-        bad = [f"{where}: unknown key {k!r}" for k in v if k not in req and k not in opt]
+        bad = [f"{where}: unknown key {untrusted(k)}" for k in v if k not in req and k not in opt]
         bad += [f"{where}: {k} missing" for k in req if k not in v]
         return bad + [p for k, x in v.items() if k in req or k in opt for p in check(x, (req | opt)[k], f"{where}.{k}")]
     if kind == "evaluations":  # control: none; the other arms: exactly T5 and T10
@@ -307,8 +328,38 @@ def same(a, b) -> bool:
 # --- Validation and the public projection --------------------------------------------------------------------------
 
 def rejected(problems: list) -> dict:
-    return dict(accepted=False, producer_complete=False, complete=False, problems=problems, public=None, lessons=[],
-                budget=[])
+    """A refused file: the public problems (no name from the pilot's files) and the private ones (stderr only)."""
+    return dict(accepted=False, producer_complete=False, complete=False, problems=public_problems(problems),
+                private_problems=private_problems(problems), public=None, lessons=[], budget=[])
+
+
+def eval_counts(m: dict, where: str) -> list:
+    """pilot.py eval_metrics partitions the answered positions: each is failed, invalid or valid (exactly one), and each
+    valid answer gets exactly one call. Failures and invalid answers may be nonzero; the totals must add up."""
+    bad = []
+    if m["valid"] + m["invalid"] + m["failed"] != m["answered"]:
+        bad.append(f"{where}: valid + invalid + failed is not answered")
+    if sum(m["calls"].values()) != m["valid"]:
+        bad.append(f"{where}: the calls do not add up to the valid answers")
+    return bad
+
+
+def budget_coverage(A: dict, arm: str, where: str) -> list:
+    """The budget arm's points as pilot.py records them, one context event after each game played: exactly one point
+    per game 1..n in order (n = 10 for a finished series), each agreeing with the same event's tokens and dropped games
+    in context_tokens_after_game and records_dropped_after_game, and the empty points exactly those with no game shown.
+    The other arms have no empty budget point."""
+    if arm != "budget":
+        return [f"{where}: empty budget points outside the budget arm"] if A["budget_context_empty_after_game"] else []
+    pts = A["budget_points"]
+    if [p["after_game"] for p in pts] != list(range(1, len(A["games"]) + 1)):
+        return [f"{where}: budget points are not one per game played, in order"]
+    bad = [f"{where}: budget point after game {p['after_game']} disagrees with the context records" for p in pts
+           if A["context_tokens_after_game"].get(str(p["after_game"])) != p["tokens"]
+           or A["records_dropped_after_game"].get(str(p["after_game"])) != p["games_dropped"]]
+    if A["budget_context_empty_after_game"] != [p["after_game"] for p in pts if not p["games_shown"]]:
+        bad.append(f"{where}: empty budget points are not the points with no game shown")
+    return bad
 
 
 def load(p: Path):
@@ -326,23 +377,25 @@ def aggregates(src: Path, test_sha: str, prompt_sha: str) -> tuple:
     if (runs / "t0" / "aggregate.json").exists():
         t0, e = load(runs / "t0" / "aggregate.json")
         bad += [f"T0 aggregate: {e}"] if e else check(t0, T0_AGG, "T0 aggregate")
-        if not e and not bad and t0["test_set_sha256"] != test_sha:
-            bad.append("T0 aggregate: made with another evaluation set")
+        if not e and not bad:
+            bad += eval_counts(t0["metrics"], "T0 aggregate metrics")
+            if t0["test_set_sha256"] != test_sha:
+                bad.append("T0 aggregate: made with another evaluation set")
         t0_sha = sha256(runs / "t0" / "aggregate.json")
     for arm_dir in sorted(runs.iterdir()) if runs.is_dir() else []:
         if arm_dir.name == "t0":
             continue
         if arm_dir.name not in ARMS:
             if any(arm_dir.rglob("aggregate.json")):
-                bad.append(f"runs/{arm_dir.name}: not an arm of the protocol")
+                bad.append(f"runs/{untrusted(arm_dir.name)}: not an arm of the protocol")
             continue
         arm = arm_dir.name
         for p in sorted(arm_dir.glob("*/aggregate.json")):
             m = re.fullmatch(r"s(\d\d)", p.parent.name)
-            where = f"{arm} {p.parent.name}"
             if not m or not 1 <= int(m.group(1)) <= N:
-                bad.append(f"{where}: not a series 1-{N} of the protocol")
+                bad.append(f"{arm} {untrusted(p.parent.name)}: not a series 1-{N} of the protocol")
                 continue
+            where = f"{arm} {p.parent.name}"
             s = int(m.group(1))
             A, e = load(p)
             e = [f"{where}: {e}"] if e else check(A, SERIES_AGG, f"{where} aggregate")
@@ -375,6 +428,9 @@ def aggregates(src: Path, test_sha: str, prompt_sha: str) -> tuple:
                 bad.append(f"{where}: budget points outside the budget arm")
             if arm != "lessons" and A["lessons_files"]:
                 bad.append(f"{where}: lesson files outside the lessons arm")
+            for cp, m in A["evaluations"].items():
+                bad += eval_counts(m, f"{where} {cp}")
+            bad += budget_coverage(A, arm, where)
             for i, bp in enumerate(A["budget_points"]):
                 shown = bp["games_shown"]
                 if len(set(shown)) != len(shown) or any(x > bp["after_game"] for x in shown) or (
@@ -443,7 +499,7 @@ def validate(R, src: Path, prompt: dict | None, plan_hashes: list, test_sha: str
     # The summary agreed field by field, so the file's "complete" is the recomputed one: nothing left to note.
     return dict(accepted=True, producer_complete=R["complete"], complete=want["complete"], problems=[],
                 public=public(R["updated_at"], t0, t0_sha, aggs, shas, fin, want, test_sha, prompt_sha),
-                lessons=lessons, budget=budget)
+                lessons=lessons, budget=budget, private_problems=[])
 
 
 def game_curve(done: dict) -> dict:

@@ -1263,6 +1263,47 @@ def summary(only_if_changed=False):
     return out
 
 
+def receipts():
+    """Per model, from the private files: first call (time, served identity, tokens, cost), cost check, pauses and
+    stops, binaries per step. For reports; no outcome numbers."""
+    for k in MODELS:
+        ev = events(k)
+        if not ev and not (mdir(k) / "hold.json").exists():
+            continue
+        st, why = model_state(k)
+        print(f"== {MODELS[k]['setup']} [{k}]: {st}{' (' + why + ')' if why else ''}; "
+              f"steps done {[x for x in STEPS if step_done(k, x)]}")
+        first = None
+        if db_path(k).exists():
+            db = sqlite3.connect(f"file:{db_path(k)}?mode=ro", uri=True, timeout=60)
+            try:
+                first = db.execute("SELECT a.created_at, a.cost_usd, x.response FROM answers a JOIN answer_exchanges x "
+                                   "ON x.answer_id = a.id ORDER BY x.id LIMIT 1").fetchone()
+            except sqlite3.OperationalError:
+                first = None
+            db.close()
+        if first:
+            exp = MODELS[k].get("expect") or {}
+            try:
+                v = json.loads(first[2])
+                ident = dict(model=pointer(v, exp.get("model_pointer") or "/model"),
+                             provider=pointer(v, exp.get("provider_pointer") or "/provider"))
+            except (TypeError, ValueError):
+                ident = "not JSON"
+            print(f"   first call {first[0]}: identity {ident}, cost ${first[1] or 0:.6f}")
+        cc = cost_check(k)
+        if cc:
+            print(f"   cost check {cc['at']}: S1 ${cc['S1']:.4f}, E1 ${cc['E1']:.4f}, projected ${cc['projected']:.2f} "
+                  f"vs limit ${cc['limit']:.2f}: {'FIRED ' + cc['fired'] if cc['fired'] else 'continue'}")
+        for e in ev:
+            if e["event"] in ("paused", "stopped", "series_restarted", "fit_check"):
+                print(f"   {e['at']} {e['event']}: {e.get('reason') or e.get('sequences') or ''}")
+            if e["event"] == "step_start" and e.get("binary"):
+                b = e["binary"]
+                print(f"   {e['at']} {e['step']} binary {b.get('commit')} {str(b.get('sha256'))[:16]}")
+        print(f"   billed ${billed(k):.4f}, API-equivalent ${api_equivalent(k):.4f}")
+
+
 def status(key=None):
     for k in [key] if key else MODELS:
         if not mdir(k).exists():
@@ -1289,6 +1330,7 @@ def main():
     st = sub.add_parser("status")
     st.add_argument("--model")
     sub.add_parser("summary")
+    sub.add_parser("receipts", help="first calls, cost checks, pauses and stops per model")
     sub.add_parser("export", help="write improve.json from the run directories (for a timer or path trigger)")
     a = ap.parse_args()
     if a.cmd == "after-game":
@@ -1297,6 +1339,8 @@ def main():
         status(a.model)
     elif a.cmd == "summary":
         summary()
+    elif a.cmd == "receipts":
+        receipts()
     elif a.cmd == "export":
         summary(only_if_changed=True)
     elif a.cmd == "share-cap":

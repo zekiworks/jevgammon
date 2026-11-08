@@ -1,0 +1,2 @@
+sweep main: 32/32 ok
+sweep main exit status: 0

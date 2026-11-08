@@ -1,0 +1,5 @@
+# /usr/bin/python3 tools/site/build.py --state /tmp/chip-state --out /tmp/chip-out-cand --no-image; tools/site at name-chip fc31b85
+/tmp/name-chip/tools/site/offline.py:213: RuntimeWarning: invalid value encountered in multiply
+  return np.where(ok, d * (c - cs), np.nan)
+{"results": "5aaf6587", "data_as_of": "2026-11-08T16:05Z", "decision_files": 2298, "scored": {"league-1": 36995, "league-2": 39538, "league-3": 16355}}
+exit status: 0

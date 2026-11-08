@@ -1,0 +1,113 @@
+diff --git a/tools/site/assets/bg.css b/tools/site/assets/bg.css
+index 4bc2644..9bbaea7 100644
+--- a/tools/site/assets/bg.css
++++ b/tools/site/assets/bg.css
+@@ -425,16 +425,17 @@ td.hl-judgement { width: 55%; min-width: 13rem; }
+   box-shadow: 0 0 0 1px rgba(0, 0, 0, .45); }
+ .hl-val { font-family: var(--mono); font-size: .84rem; }
+ .js [data-headline-panel][hidden] { display: none; }
+-/* The leaderboard rows (Ümit, bus #2745; #2904, #2907; #2921; #3039): the rank, the model (maker dot, a late entry's
+-   tag small after the name, the expander of its other settings, shown without script; nothing under the name, its
+-   maker, type and setting are in its details box) and the risk judgement; the programs grey and unranked under a group
+-   heading. */
++/* The leaderboard rows (Ümit, bus #2745; #2904, #2907; #2921; #3039; #3193): the rank, the model (maker dot, the name,
++   one small grey chip after it: setting · type, a late entry's tag in it, 'program' for a program; the expander of its
++   other settings, shown without script; nothing under the name, its maker is in the dot and its details box) and the
++   risk judgement; the programs grey and unranked under a group heading. */
+ table.headline td.model .hl-dot { width: .7rem; height: .7rem; border-radius: 50%; }
+-table.headline td.model > .hl-tag { color: var(--text-2); font-size: .78rem; white-space: nowrap; }
++table.headline td.model > .hl-tag { display: inline-block; margin: .1rem 0 0 .35rem; padding: 0 .4rem; color: var(--text-2);
++  font-size: .74rem; line-height: 1.35; white-space: nowrap; vertical-align: .05rem; background: var(--sunk);
++  border: 1px solid var(--edge); border-radius: 999px; }
++tr.hl-sub td.model > .hl-tag { background: var(--panel); }
+ .hl-filter { display: flex; flex-wrap: wrap; gap: .3rem; margin: .1rem 0 .2rem; }
+ .hl-filter .key { min-height: 1.9rem; padding: .15rem .65rem; font-size: .82rem; }
+-.hl-tag::before { content: " \00b7\0020"; font-weight: 400; }
+-.hl-tag { font-weight: 600; }
+ tr.hl-off { display: none !important; }
+ table.headline tbody tr.hl-open > td { background: var(--row-hover); }
+ /* A row's details box (bg.js): every value of the setup, a line per kind; in its row without script, else over the page
+@@ -467,6 +468,10 @@ table.headline th[data-wide], table.headline td.hl-wide, .hl-wide-note { display
+   td.hl-judgement { width: 40%; }
+   .hl-wide-note { display: inline; }
+ }
++/* Wide desktop windows: the model column wide enough for the name and its chip on one line (Ümit #3193). */
++@media (min-width: 1200px) {
++  table.headline td.model { min-width: 22.5rem; }
++}
+ /* At phone width: the three columns fit the width (no sticky column, no sideways scrolling), the bar column narrower. */
+ @media (max-width: 640px) {
+   table.headline th:first-child, table.headline td:first-child { position: static; width: auto; min-width: 0; max-width: none;
+diff --git a/tools/site/story.py b/tools/site/story.py
+index 4c5d13f..2c347a0 100644
+--- a/tools/site/story.py
++++ b/tools/site/story.py
+@@ -164,6 +164,23 @@ def late_tag(x) -> str | None:
+     return "late entry \u00b7 provisional" if e["status"] == P.PROVISIONAL else "late entry"
+ 
+ 
++def chip_text(S, x, kind: str, league: bool = False) -> str:
++    """The one small grey chip after a row's name (Ümit #3193): '<setting> · <chat|decision>' (the setting left out
++    where the setup has none), then its late-entry tag; a program 'program' (an other-league row of a program: its
++    league first)."""
++    if kind == "program":
++        parts = [f'League {x["lg"]["id"]}' if league and x["lg"] else None, "program"]
++    else:
++        typ = model_type(S, x)
++        parts = [x["setting"], typ if typ in TYPE_LABEL else None]
++    return " \u00b7 ".join(p for p in parts + [late_tag(x)] if p)
++
++
++def row_name(text: str, setting: str | None) -> str:
++    """The name a row shows: without a trailing '(<setting>)', which its chip carries (data and links keep the name)."""
++    return text.removesuffix(f" ({setting})") if setting else text
++
++
+ def judgement_cell(r: dict, colour: str | None) -> str:
+     """The risk judgement as a bar on 0 to 100 to the score, its 95% interval as the whisker, the line at 50 (always
+     safe), and the number."""
+@@ -195,9 +212,9 @@ def page_href(S, x) -> str | None:
+ 
+ # The row's details box (Ümit #2904, as Clocktower Bench's): opened by a tap on a phone, by hover or the keyboard focus on
+ # a desktop (bg.js), each line filled only from the setup's stored values, a line or part left out where the data has
+-# none (never "n/a"). The row itself shows the rank, the model (maker dot, a late entry's tag after the name) and the
+-# risk judgement; every other value of the setup is in its box, its maker, type and setting on the first line (Ümit
+-# #3039: nothing under the name).
++# none (never "n/a"). The row itself shows the rank, the model (maker dot, the name, one chip after it: setting · type,
++# a late entry's tag) and the risk judgement; every other value of the setup is in its box, its maker, type and setting
++# on the first line (Ümit #3039: nothing under the name; #3193: the chip).
+ TYPE_LABEL = {"chat": "chat model", "decision": "decision model"}
+ 
+ 
+@@ -289,9 +306,9 @@ def headline_rows(S) -> tuple[list, list, list]:
+             dot = f'<i class="swatch hl-dot" style="background:{colour}" title="{esc(mk)}"></i>' if colour else \
+                 '<i class="swatch hl-dot swatch-program"></i>'
+             typ = "program" if kind == "program" else model_type(S, x)
+-            # Nothing under the name (Ümit #3039): maker, type and setting are on the box's first line; a late entry's
+-            # tag stays after the name, small (a caveat on its rank).
+-            tag = f'<span class="hl-tag">{esc(late_tag(x))}</span>' if x["late"] else ""
++            # Nothing under the name (Ümit #3039); after it one small grey chip (Ümit #3193): setting · type, a late
++            # entry's tag in it (a caveat on its rank); the maker only in the dot and the box.
++            tag = f'<span class="hl-tag">{esc(chip_text(S, x, kind))}</span>'
+             ref = H.ref_label(S, x["ds"], x["name"]) if kind == "program" else None
+             extra = []
+             if kind == "model":
+@@ -313,15 +330,15 @@ def headline_rows(S) -> tuple[list, list, list]:
+             label = x["name"] if kind == "program" else name
+             bid = f"{rid}-box"
+             body.append(f'<tr{cls}{tr_attrs(S, x, kind, typ)} data-box="{bid}">{rank}<td class="model">{dot}{icon}'
+-                        f'{name_link(S, x, label, bid)}{tag}{more}'
++                        f'{name_link(S, x, row_name(label, x["setting"]), bid)}{tag}{more}'
+                         f'{details_box(S, x, kind, bid, extra, ref)}</td>{judgement_cell(x["r"], colour)}{wide_cells(x)}</tr>')
+             for sid, y in zip(sub_ids, others):
+                 ycol = H.maker(y["name"])[1] if kind == "model" else None
+                 ybid = f"{sid}-box"
+-                ytag = f'<span class="hl-tag">{esc(late_tag(y))}</span>' if y["late"] else ""
++                ytag = f'<span class="hl-tag">{esc(chip_text(S, y, kind, league=True))}</span>'
+                 body.append(f'<tr class="hl-sub{"" if kind == "model" else " reference"}" '
+                             f'id="{sid}" hidden{tr_attrs(S, y, kind, typ)} data-box="{ybid}"><td class="num"></td><td class="model">'
+-                            f'{name_link(S, y, y["name"], ybid)}<span class="small">other {what} of {esc(label)}{ytag}</span>'
++                            f'{name_link(S, y, row_name(y["name"], y["setting"]), ybid)}{ytag}'
+                             f'{details_box(S, y, kind, ybid, [], ref)}</td>{judgement_cell(y["r"], ycol)}{wide_cells(y)}</tr>')
+             if kind != "program" or x["name"] == "GNUbg weak":
+                 chart.append((kind, label, x, colour))

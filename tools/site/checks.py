@@ -270,9 +270,11 @@ def check_mixing(page: Path, root: Node, S: dict) -> list[str]:
         what = "a table" if t.tag == "table" else "a chart"
         merged = t.tag == "table" and t.attrs.get("data-dataset") == "all"
         if merged:
-            # The All leagues table (Can, approved by Ümit, 30 Oct 2026): every league's rows, each with its League.
+            # The All leagues table (Can, approved by Ümit, 30 Oct 2026): every league's rows, each with its League. The
+            # leaderboard (id headline-table) also ranks the late entries, each tagged (Ümit #2921 (b)).
             ds -= {"all"}
-            if ds - {lg["dataset"] for lg in S["leagues"]}:
+            allowed = {lg["dataset"] for lg in S["leagues"]} | ({LATE_ENTRY} if t.attrs.get("id") == "headline-table" else set())
+            if ds - allowed:
                 bad.append(f"{page}: the All leagues table holds rows outside the leagues {sorted(ds)}")
             if not any(ALL_NOTE in text_of(a) for a in ancestors(t) if a.attrs.get("data-dataset") == "all"):
                 bad.append(f"{page}: the All leagues table without its note '{ALL_NOTE}' in its block")

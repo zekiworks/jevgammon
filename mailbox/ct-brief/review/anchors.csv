@@ -1,0 +1,346 @@
+width,old home id,lands on,exists,visible,in view,note
+1280,more-options,#more-options,True,False,False,
+1280,view-part,#view-part,True,True,True,
+1280,main,#main,True,True,True,
+1280,fi-gemini,#fi-gemini,True,False,False,
+1280,fi-gemma,#fi-gemma,True,False,False,
+1280,fi-gpt,#fi-gpt,True,False,False,
+1280,fi-claude,#fi-claude,True,False,False,
+1280,fi-grok,#fi-grok,True,False,False,
+1280,fi-qwen,#fi-qwen,True,False,False,
+1280,fi-deepseek,#fi-deepseek,True,False,False,
+1280,fi-glm,#fi-glm,True,False,False,
+1280,fi-liquid,#fi-liquid,True,False,False,
+1280,fi-fastino,#fi-fastino,True,False,False,
+1280,fi-mammoth,#fi-mammoth,True,False,False,
+1280,fi-elephant,#fi-elephant,True,False,False,
+1280,fi-drex,#fi-drex,True,False,False,
+1280,fi-subq,#fi-subq,True,False,False,
+1280,fi-perplexity,#fi-perplexity,True,False,False,
+1280,fi-jev,#fi-jev,True,False,False,
+1280,fi-celeris,#fi-celeris,True,False,False,
+1280,fi-clef,#fi-clef,True,False,False,
+1280,fi-cygnet,#fi-cygnet,True,False,False,
+1280,fi-winnow,#fi-winnow,True,False,False,
+1280,fi-inception,#fi-inception,True,False,False,
+1280,fi-kimi,#fi-kimi,True,False,False,
+1280,bd-arrow,#bd-arrow,True,False,False,
+1280,bd-arrow-alt,#bd-arrow-alt,True,False,False,
+1280,leaderboard,#leaderboard,True,True,True,
+1280,leaderboard-title,#leaderboard-title,True,True,True,
+1280,headline-table,#headline-table,True,True,True,
+1280,hl-1-box,#hl-1-box,True,False,False,details box (opens on tap / hover)
+1280,hl-1-1,#hl-1-1,True,False,False,other-settings row (opens with its expander)
+1280,hl-1-1-box,#hl-1-1-box,True,False,False,details box (opens on tap / hover)
+1280,hl-1-2,#hl-1-2,True,False,False,other-settings row (opens with its expander)
+1280,hl-1-2-box,#hl-1-2-box,True,False,False,details box (opens on tap / hover)
+1280,hl-2-box,#hl-2-box,True,False,False,details box (opens on tap / hover)
+1280,hl-2-1,#hl-2-1,True,False,False,other-settings row (opens with its expander)
+1280,hl-2-1-box,#hl-2-1-box,True,False,False,details box (opens on tap / hover)
+1280,hl-3-box,#hl-3-box,True,False,False,details box (opens on tap / hover)
+1280,hl-3-1,#hl-3-1,True,False,False,other-settings row (opens with its expander)
+1280,hl-3-1-box,#hl-3-1-box,True,False,False,details box (opens on tap / hover)
+1280,hl-4-box,#hl-4-box,True,False,False,details box (opens on tap / hover)
+1280,hl-4-1,#hl-4-1,True,False,False,other-settings row (opens with its expander)
+1280,hl-4-1-box,#hl-4-1-box,True,False,False,details box (opens on tap / hover)
+1280,hl-5-box,#hl-5-box,True,False,False,details box (opens on tap / hover)
+1280,hl-5-1,#hl-5-1,True,False,False,other-settings row (opens with its expander)
+1280,hl-5-1-box,#hl-5-1-box,True,False,False,details box (opens on tap / hover)
+1280,hl-6-box,#hl-6-box,True,False,False,details box (opens on tap / hover)
+1280,hl-6-1,#hl-6-1,True,False,False,other-settings row (opens with its expander)
+1280,hl-6-1-box,#hl-6-1-box,True,False,False,details box (opens on tap / hover)
+1280,hl-6-2,#hl-6-2,True,False,False,other-settings row (opens with its expander)
+1280,hl-6-2-box,#hl-6-2-box,True,False,False,details box (opens on tap / hover)
+1280,hl-6-3,#hl-6-3,True,False,False,other-settings row (opens with its expander)
+1280,hl-6-3-box,#hl-6-3-box,True,False,False,details box (opens on tap / hover)
+1280,hl-7-box,#hl-7-box,True,False,False,details box (opens on tap / hover)
+1280,hl-7-1,#hl-7-1,True,False,False,other-settings row (opens with its expander)
+1280,hl-7-1-box,#hl-7-1-box,True,False,False,details box (opens on tap / hover)
+1280,hl-8-box,#hl-8-box,True,False,False,details box (opens on tap / hover)
+1280,hl-8-1,#hl-8-1,True,False,False,other-settings row (opens with its expander)
+1280,hl-8-1-box,#hl-8-1-box,True,False,False,details box (opens on tap / hover)
+1280,hl-9-box,#hl-9-box,True,False,False,details box (opens on tap / hover)
+1280,hl-9-1,#hl-9-1,True,False,False,other-settings row (opens with its expander)
+1280,hl-9-1-box,#hl-9-1-box,True,False,False,details box (opens on tap / hover)
+1280,hl-10-box,#hl-10-box,True,False,False,details box (opens on tap / hover)
+1280,hl-11-box,#hl-11-box,True,False,False,details box (opens on tap / hover)
+1280,hl-11-1,#hl-11-1,True,False,False,other-settings row (opens with its expander)
+1280,hl-11-1-box,#hl-11-1-box,True,False,False,details box (opens on tap / hover)
+1280,hl-12-box,#hl-12-box,True,False,False,details box (opens on tap / hover)
+1280,hl-13-box,#hl-13-box,True,False,False,details box (opens on tap / hover)
+1280,hl-14-box,#hl-14-box,True,False,False,details box (opens on tap / hover)
+1280,hl-15-box,#hl-15-box,True,False,False,details box (opens on tap / hover)
+1280,hl-15-1,#hl-15-1,True,False,False,other-settings row (opens with its expander)
+1280,hl-15-1-box,#hl-15-1-box,True,False,False,details box (opens on tap / hover)
+1280,hl-16-box,#hl-16-box,True,False,False,details box (opens on tap / hover)
+1280,hl-17-box,#hl-17-box,True,False,False,details box (opens on tap / hover)
+1280,hl-18-box,#hl-18-box,True,False,False,details box (opens on tap / hover)
+1280,hl-19-box,#hl-19-box,True,False,False,details box (opens on tap / hover)
+1280,hl-20-box,#hl-20-box,True,False,False,details box (opens on tap / hover)
+1280,hl-21-box,#hl-21-box,True,False,False,details box (opens on tap / hover)
+1280,hl-22-box,#hl-22-box,True,False,False,details box (opens on tap / hover)
+1280,hl-23-box,#hl-23-box,True,False,False,details box (opens on tap / hover)
+1280,hl-24-box,#hl-24-box,True,False,False,details box (opens on tap / hover)
+1280,hl-24-1,#hl-24-1,True,False,False,other-settings row (opens with its expander)
+1280,hl-24-1-box,#hl-24-1-box,True,False,False,details box (opens on tap / hover)
+1280,hl-25-box,#hl-25-box,True,False,False,details box (opens on tap / hover)
+1280,hl-26-box,#hl-26-box,True,False,False,details box (opens on tap / hover)
+1280,hl-27-box,#hl-27-box,True,False,False,details box (opens on tap / hover)
+1280,hl-28-box,#hl-28-box,True,False,False,details box (opens on tap / hover)
+1280,hl-29-box,#hl-29-box,True,False,False,details box (opens on tap / hover)
+1280,hl-30-box,#hl-30-box,True,False,False,details box (opens on tap / hover)
+1280,hl-31-box,#hl-31-box,True,False,False,details box (opens on tap / hover)
+1280,hl-32-box,#hl-32-box,True,False,False,details box (opens on tap / hover)
+1280,hl-33-box,#hl-33-box,True,False,False,details box (opens on tap / hover)
+1280,hl-34-box,#hl-34-box,True,False,False,details box (opens on tap / hover)
+1280,hl-35-box,#hl-35-box,True,False,False,details box (opens on tap / hover)
+1280,hl-36-box,#hl-36-box,True,False,False,details box (opens on tap / hover)
+1280,hl-36-1,#hl-36-1,True,False,False,other-settings row (opens with its expander)
+1280,hl-36-1-box,#hl-36-1-box,True,False,False,details box (opens on tap / hover)
+1280,hl-37-box,#hl-37-box,True,False,False,details box (opens on tap / hover)
+1280,hl-38-box,#hl-38-box,True,False,False,details box (opens on tap / hover)
+1280,hl-p-1-box,#hl-p-1-box,True,False,False,details box (opens on tap / hover)
+1280,hl-p-1-1,#hl-p-1-1,True,False,False,other-settings row (opens with its expander)
+1280,hl-p-1-1-box,#hl-p-1-1-box,True,False,False,details box (opens on tap / hover)
+1280,hl-p-1-2,#hl-p-1-2,True,False,False,other-settings row (opens with its expander)
+1280,hl-p-1-2-box,#hl-p-1-2-box,True,False,False,details box (opens on tap / hover)
+1280,hl-p-2-box,#hl-p-2-box,True,False,False,details box (opens on tap / hover)
+1280,hl-p-2-1,#hl-p-2-1,True,False,False,other-settings row (opens with its expander)
+1280,hl-p-2-1-box,#hl-p-2-1-box,True,False,False,details box (opens on tap / hover)
+1280,hl-p-2-2,#hl-p-2-2,True,False,False,other-settings row (opens with its expander)
+1280,hl-p-2-2-box,#hl-p-2-2-box,True,False,False,details box (opens on tap / hover)
+1280,hl-p-3-box,#hl-p-3-box,True,False,False,details box (opens on tap / hover)
+1280,hl-p-3-1,#hl-p-3-1,True,False,False,other-settings row (opens with its expander)
+1280,hl-p-3-1-box,#hl-p-3-1-box,True,False,False,details box (opens on tap / hover)
+1280,hl-p-3-2,#hl-p-3-2,True,False,False,other-settings row (opens with its expander)
+1280,hl-p-3-2-box,#hl-p-3-2-box,True,False,False,details box (opens on tap / hover)
+1280,too-safe,#too-safe,True,True,True,
+1280,filters,leagues/#filters,True,True,True,
+1280,filters-title,leagues/#filters,True,True,True,
+1280,filters-body,leagues/#filters-body,True,True,True,
+1280,f-league,leagues/#f-league,True,True,True,
+1280,f-kind,leagues/#f-kind,True,True,True,
+1280,filters-more,leagues/#filters-more,True,False,False,
+1280,f-quick,leagues/#f-quick,True,False,False,
+1280,f-setting,leagues/#f-setting,True,False,False,
+1280,f-runs,leagues/#f-runs,True,False,False,
+1280,f-weights,leagues/#f-weights,True,False,False,
+1280,finding-cautious,#finding-cautious,True,True,True,
+1280,finding-cautious-title,#finding-cautious-title,True,True,True,
+1280,finding-flinch,#finding-flinch,True,True,True,
+1280,finding-flinch-title,#finding-flinch-title,True,True,True,
+1280,how-numbers,#how-numbers,True,True,True,
+1280,findings,#findings,True,True,True,
+1280,risk-judgement,leagues/#risk-judgement,True,True,True,
+1280,chart-risk-judgement,leagues/#chart-risk-judgement,True,True,True,
+1280,error-rate,leagues/#error-rate,True,True,True,
+1280,chart-error-rate,leagues/#chart-error-rate,True,True,True,
+1280,cost,leagues/#cost,True,True,True,
+1280,chart-cost,leagues/#chart-cost,True,True,True,
+1280,time,leagues/#time,True,True,True,
+1280,chart-time,leagues/#chart-time,True,True,True,
+1280,leagues-tabs,leagues/#leagues-tabs,True,True,True,
+1280,lg-league-tab-starting-groups,leagues/#league-tab-starting-groups,True,True,True,
+1280,lg-league-tab-after-league-moves,leagues/#league-tab-after-league-moves,True,True,True,
+1280,lg-league-tab-hype-cup,leagues/#league-tab-hype-cup,True,True,True,
+1280,lg-league-tab-nack-knockout,leagues/#league-tab-nack-knockout,True,True,True,
+1280,lg-league-tab-late-entries,leagues/#league-tab-late-entries,True,True,True,
+1280,lg-league-panel-starting-groups,leagues/#league-panel-starting-groups,True,True,True,
+1280,lg-starting-groups,leagues/#starting-groups,True,True,True,
+1280,lg-sub-tab-group-decision,leagues/#sub-tab-group-decision,True,True,True,
+1280,lg-sub-tab-group-workhorse,leagues/#sub-tab-group-workhorse,True,True,True,
+1280,lg-sub-tab-group-frontier,leagues/#sub-tab-group-frontier,True,True,True,
+1280,lg-group-decision,leagues/#group-decision,True,True,True,
+1280,lg-group-1,leagues/#group-1,True,True,True,
+1280,lg-group-workhorse,leagues/#group-workhorse,True,True,True,
+1280,lg-group-2,leagues/#group-2,True,True,True,
+1280,lg-group-frontier,leagues/#group-frontier,True,True,True,
+1280,lg-group-3,leagues/#group-3,True,True,True,
+1280,lg-league-panel-after-league-moves,leagues/#league-panel-after-league-moves,True,True,True,
+1280,lg-after-league-moves,leagues/#after-league-moves,True,True,True,
+1280,lg-sub-tab-league-1,leagues/#sub-tab-league-1,True,True,True,
+1280,lg-sub-tab-league-2,leagues/#sub-tab-league-2,True,True,True,
+1280,lg-sub-tab-league-3,leagues/#sub-tab-league-3,True,True,True,
+1280,lg-sub-panel-league-1,leagues/#sub-panel-league-1,True,True,True,
+1280,lg-league-1,leagues/#league-1,True,True,True,
+1280,lg-league-1-notes,leagues/#league-1-notes,True,True,True,
+1280,lg-league-1-quality,leagues/#league-1-quality,True,True,True,
+1280,lg-league-1-cost,leagues/#league-1-cost,True,True,True,
+1280,lg-league-1-matches,leagues/#league-1-matches,True,True,True,
+1280,lg-sub-panel-league-2,leagues/#sub-panel-league-2,True,True,True,
+1280,lg-league-2,leagues/#league-2,True,True,True,
+1280,lg-league-2-notes,leagues/#league-2-notes,True,True,True,
+1280,lg-league-2-quality,leagues/#league-2-quality,True,True,True,
+1280,lg-league-2-cost,leagues/#league-2-cost,True,True,True,
+1280,lg-league-2-matches,leagues/#league-2-matches,True,True,True,
+1280,lg-sub-panel-league-3,leagues/#sub-panel-league-3,True,True,True,
+1280,lg-league-3,leagues/#league-3,True,True,True,
+1280,lg-league-3-notes,leagues/#league-3-notes,True,True,True,
+1280,lg-league-3-quality,leagues/#league-3-quality,True,True,True,
+1280,lg-league-3-cost,leagues/#league-3-cost,True,True,True,
+1280,lg-league-3-matches,leagues/#league-3-matches,True,True,True,
+1280,lg-league-panel-cups,leagues/#league-panel-cups,True,True,True,
+1280,lg-cups,leagues/#cups,True,True,True,
+1280,lg-hype-cup,leagues/#hype-cup,True,True,True,
+1280,lg-cup-qf1,leagues/#cup-qf1,True,True,True,
+1280,lg-cup-qf2,leagues/#cup-qf2,True,True,True,
+1280,lg-cup-qf3,leagues/#cup-qf3,True,True,True,
+1280,lg-cup-qf4,leagues/#cup-qf4,True,True,True,
+1280,lg-cup-sfa,leagues/#cup-sfa,True,True,True,
+1280,lg-cup-sfb,leagues/#cup-sfb,True,True,True,
+1280,lg-cup-final,leagues/#cup-final,True,True,True,
+1280,lg-nack-knockout,leagues/#nack-knockout,True,True,True,
+1280,lg-nack-qf1,leagues/#nack-qf1,True,True,True,
+1280,lg-nack-qf2,leagues/#nack-qf2,True,True,True,
+1280,lg-nack-qf3,leagues/#nack-qf3,True,True,True,
+1280,lg-nack-qf4,leagues/#nack-qf4,True,True,True,
+1280,lg-nack-sfa,leagues/#nack-sfa,True,True,True,
+1280,lg-nack-sfb,leagues/#nack-sfb,True,True,True,
+1280,lg-nack-final,leagues/#nack-final,True,True,True,
+1280,lg-league-panel-late-entries,leagues/#league-panel-late-entries,True,True,True,
+1280,lg-late-entries,leagues/#late-entries,True,True,True,
+1280,lg-late-gpt-6-astra-high,leagues/#late-gpt-6-astra-high,True,True,True,
+1280,lg-late-subq-snap-1-1,leagues/#late-subq-snap-1-1,True,True,True,
+1280,lg-late-base-labs-elephant-1,leagues/#late-base-labs-elephant-1,True,True,True,
+1280,lg-late-base-labs-mammoth-1,leagues/#late-base-labs-mammoth-1,True,True,True,
+1280,lg-late-drex-max-1-1,leagues/#late-drex-max-1-1,True,True,True,
+1280,lg-late-drex-2-0,leagues/#late-drex-2-0,True,True,True,
+1280,lg-late-drex-max-v1,leagues/#late-drex-max-v1,True,True,True,
+1280,lg-late-drex-2-0-local,leagues/#late-drex-2-0-local,True,True,True,
+1280,lg-late-reax-1-3,leagues/#late-reax-1-3,True,True,True,
+1280,board-panel,leagues/#board-panel,True,True,True,
+1280,board-title,leagues/#board,True,True,True,
+1280,tab-risk,leagues/#tab-risk,True,True,True,
+1280,tab-quality,leagues/#tab-quality,True,True,True,
+1280,tab-confidence,leagues/#tab-confidence,True,True,True,
+1280,tab-reasoning,leagues/#tab-reasoning,True,True,True,
+1280,tab-cost,leagues/#tab-cost,True,True,True,
+1280,tab-stability,leagues/#tab-stability,True,True,True,
+1280,board,leagues/#board,True,True,True,
+1280,panel-risk,leagues/#panel-risk,True,True,True,
+1280,risk-robust-all,leagues/#risk-robust-all,True,True,True,
+1280,risk-robust-league-1,leagues/#risk-robust-league-1,True,False,False,
+1280,risk-reasoning-league-1,leagues/#risk-reasoning-league-1,True,False,False,
+1280,risk-robust-league-2,leagues/#risk-robust-league-2,True,False,False,
+1280,risk-reasoning-league-2,leagues/#risk-reasoning-league-2,True,False,False,
+1280,risk-robust-league-3,leagues/#risk-robust-league-3,True,False,False,
+1280,risk-reasoning-league-3,leagues/#risk-reasoning-league-3,True,False,False,
+1280,panel-quality,leagues/#panel-quality,True,False,False,
+1280,panel-confidence,leagues/#panel-confidence,True,False,False,
+1280,close-league-1,leagues/#close-league-1,True,False,False,
+1280,cc-league-1-jev-1-13-0,leagues/#cc-league-1-jev-1-13-0,True,False,False,
+1280,cc-league-1-fastino-glide-v1-2-local,leagues/#cc-league-1-fastino-glide-v1-2-local,True,False,False,
+1280,cc-league-1-deepseek-v4-1-flash-off,leagues/#cc-league-1-deepseek-v4-1-flash-off,True,False,False,
+1280,cc-league-1-celeris-1-decision,leagues/#cc-league-1-celeris-1-decision,True,False,False,
+1280,cc-league-1-decider-v1-2-27b,leagues/#cc-league-1-decider-v1-2-27b,True,False,False,
+1280,cc-league-1-cygnet-gemma-4-12b,leagues/#cc-league-1-cygnet-gemma-4-12b,True,False,False,
+1280,cc-league-1-decider-v1-1-27b,leagues/#cc-league-1-decider-v1-1-27b,True,False,False,
+1280,cc-league-1-gpt-6-luna,leagues/#cc-league-1-gpt-6-luna,True,False,False,
+1280,cc-league-1-subq-snap-preview,leagues/#cc-league-1-subq-snap-preview,True,False,False,
+1280,cc-league-1-qwen3-8-27b-off,leagues/#cc-league-1-qwen3-8-27b-off,True,False,False,
+1280,cc-league-1-lfm2-5-24b-a2b-on,leagues/#cc-league-1-lfm2-5-24b-a2b-on,True,False,False,
+1280,cc-league-1-mercury-decide,leagues/#cc-league-1-mercury-decide,True,False,False,
+1280,cc-league-1-winnow-12b,leagues/#cc-league-1-winnow-12b,True,False,False,
+1280,cc-league-1-decider-flash-v1-2,leagues/#cc-league-1-decider-flash-v1-2,True,False,False,
+1280,cc-league-1-lfm2-5-24b-a2b-off,leagues/#cc-league-1-lfm2-5-24b-a2b-off,True,False,False,
+1280,cc-league-1-open-jev-27b-v1-1,leagues/#cc-league-1-open-jev-27b-v1-1,True,False,False,
+1280,support-league-1,leagues/#support-league-1,True,False,False,
+1280,reread-league-1,leagues/#reread-league-1,True,False,False,
+1280,calibration-league-1,leagues/#calibration-league-1,True,False,False,
+1280,distributions-league-1,leagues/#distributions-league-1,True,False,False,
+1280,close-league-2,leagues/#close-league-2,True,False,False,
+1280,cc-league-2-deepseek-v4-1-flash-1017-on,leagues/#cc-league-2-deepseek-v4-1-flash-1017-on,True,False,False,
+1280,cc-league-2-deepseek-v4-1-flash-on,leagues/#cc-league-2-deepseek-v4-1-flash-on,True,False,False,
+1280,cc-league-2-gemma-4-31b-on,leagues/#cc-league-2-gemma-4-31b-on,True,False,False,
+1280,cc-league-2-gemma-4-31b-off,leagues/#cc-league-2-gemma-4-31b-off,True,False,False,
+1280,cc-league-2-qwen3-8-27b-on,leagues/#cc-league-2-qwen3-8-27b-on,True,False,False,
+1280,cc-league-2-liquid-d1-ultra,leagues/#cc-league-2-liquid-d1-ultra,True,False,False,
+1280,cc-league-2-glm-5-3-on,leagues/#cc-league-2-glm-5-3-on,True,False,False,
+1280,cc-league-2-jev-1-14-0,leagues/#cc-league-2-jev-1-14-0,True,False,False,
+1280,cc-league-2-fastino-glide,leagues/#cc-league-2-fastino-glide,True,False,False,
+1280,cc-league-2-qwen3-8-flash-off,leagues/#cc-league-2-qwen3-8-flash-off,True,False,False,
+1280,cc-league-2-deepseek-v4-1-flash-1017-off,leagues/#cc-league-2-deepseek-v4-1-flash-1017-off,True,False,False,
+1280,cc-league-2-clef,leagues/#cc-league-2-clef,True,False,False,
+1280,support-league-2,leagues/#support-league-2,True,False,False,
+1280,reread-league-2,leagues/#reread-league-2,True,False,False,
+1280,calibration-league-2,leagues/#calibration-league-2,True,False,False,
+1280,distributions-league-2,leagues/#distributions-league-2,True,False,False,
+1280,close-league-3,leagues/#close-league-3,True,False,False,
+1280,support-league-3,leagues/#support-league-3,True,False,False,
+1280,reread-league-3,leagues/#reread-league-3,True,False,False,
+1280,panel-reasoning,leagues/#panel-reasoning,True,False,False,
+1280,panel-cost,leagues/#panel-cost,True,False,False,
+1280,cheapest-league-1,leagues/#cheapest-league-1,True,False,False,
+1280,cheapest-league-2,leagues/#cheapest-league-2,True,False,False,
+1280,cheapest-league-3,leagues/#cheapest-league-3,True,False,False,
+1280,panel-stability,leagues/#panel-stability,True,False,False,
+1280,charts,leagues/#charts,True,True,True,
+1280,chart-risk,leagues/#chart-risk,True,True,True,
+1280,chart-measures,leagues/#chart-measures,True,True,True,
+1280,chart-tradeoff,leagues/#chart-tradeoff,True,True,True,
+1280,chart-confidence,leagues/#chart-confidence,True,True,True,
+1280,risk-pays-vs-safety-pays,leagues/#risk-pays-vs-safety-pays,True,True,True,
+1280,close-choices-stage-b,leagues/#close-choices-stage-b,True,True,True,
+1280,close-b-table,leagues/#close-b-table,True,True,True,
+1280,chart-close-b,leagues/#chart-close-b,True,True,True,
+1280,nackgammon-paired,nackgammon/#nackgammon-paired,True,True,True,
+1280,nack-summary,nackgammon/#nack-summary,True,True,True,
+1280,nackgammon-late,nackgammon/#nackgammon-late,True,True,True,
+1280,nack-late,nackgammon/#nack-late,True,True,True,
+1280,nack-table,nackgammon/#nack-table,True,True,True,
+1280,chart-nack,nackgammon/#chart-nack,True,True,True,
+1280,nack-primary-random,nackgammon/#nack-primary-random,True,True,True,
+1280,nack-primary-worst,nackgammon/#nack-primary-worst,True,True,True,
+1280,nack-primary-drop,nackgammon/#nack-primary-drop,True,True,True,
+1280,nack-primary-cutoff,nackgammon/#nack-primary-cutoff,True,True,True,
+1280,nack-primary-orig-random,nackgammon/#nack-primary-orig-random,True,True,True,
+1280,nack-primary-orig-worst,nackgammon/#nack-primary-orig-worst,True,True,True,
+1280,nack-primary-orig-drop,nackgammon/#nack-primary-orig-drop,True,True,True,
+1280,nack-primary-orig-cutoff,nackgammon/#nack-primary-orig-cutoff,True,True,True,
+1280,nack-sensitivity,nackgammon/#nack-sensitivity,True,True,True,
+1280,nack-phases,nackgammon/#nack-phases,True,True,True,
+1280,nack-tags,nackgammon/#nack-tags,True,True,True,
+1280,nack-cost,nackgammon/#nack-cost,True,True,True,
+1280,nack-kept-advantage,nackgammon/#nack-kept-advantage,True,True,True,
+1280,nack-kept-advantage-all-500,nackgammon/#nack-kept-advantage-all-500,True,True,True,
+1280,nack-spearman,nackgammon/#nack-spearman,True,True,True,
+1280,nack-rank-changes,nackgammon/#nack-rank-changes,True,True,True,
+1280,nack-risk-main,nackgammon/#nack-risk-main,True,True,True,
+1280,nack-risk-all,nackgammon/#nack-risk-all,True,True,True,
+1280,nack-engine,nackgammon/#nack-engine,True,True,True,
+1280,nack-engine-primary,nackgammon/#nack-engine-primary,True,True,True,
+1280,nack-engine-primary-orig,nackgammon/#nack-engine-primary-orig,True,True,True,
+1280,nack-engine-counts,nackgammon/#nack-engine-counts,True,True,True,
+1280,downloads,#downloads,True,True,True,
+390,more-options,#more-options,True,False,False,
+390,fi-glm,#fi-glm,True,False,False,
+390,fi-clef,#fi-clef,True,False,False,
+390,hl-1-box,#hl-1-box,True,False,False,details box (opens on tap / hover)
+390,hl-3-1-box,#hl-3-1-box,True,False,False,details box (opens on tap / hover)
+390,hl-6-2,#hl-6-2,True,False,False,other-settings row (opens with its expander)
+390,hl-9-box,#hl-9-box,True,False,False,details box (opens on tap / hover)
+390,hl-15-box,#hl-15-box,True,False,False,details box (opens on tap / hover)
+390,hl-23-box,#hl-23-box,True,False,False,details box (opens on tap / hover)
+390,hl-31-box,#hl-31-box,True,False,False,details box (opens on tap / hover)
+390,hl-p-1-box,#hl-p-1-box,True,False,False,details box (opens on tap / hover)
+390,hl-p-3-box,#hl-p-3-box,True,False,False,details box (opens on tap / hover)
+390,f-kind,leagues/#f-kind,True,True,True,
+390,how-numbers,#how-numbers,True,True,True,
+390,leagues-tabs,leagues/#leagues-tabs,True,True,True,
+390,lg-sub-tab-group-frontier,leagues/#sub-tab-group-frontier,True,True,True,
+390,lg-sub-tab-league-2,leagues/#sub-tab-league-2,True,True,True,
+390,lg-league-2-notes,leagues/#league-2-notes,True,True,True,
+390,lg-league-panel-cups,leagues/#league-panel-cups,True,True,True,
+390,lg-nack-knockout,leagues/#nack-knockout,True,True,True,
+390,lg-late-gpt-6-astra-high,leagues/#late-gpt-6-astra-high,True,True,True,
+390,board-title,leagues/#board,True,True,True,
+390,risk-robust-league-1,leagues/#risk-robust-league-1,True,False,False,
+390,cc-league-1-fastino-glide-v1-2-local,leagues/#cc-league-1-fastino-glide-v1-2-local,True,False,False,
+390,cc-league-1-mercury-decide,leagues/#cc-league-1-mercury-decide,True,False,False,
+390,cc-league-2-deepseek-v4-1-flash-1017-on,leagues/#cc-league-2-deepseek-v4-1-flash-1017-on,True,False,False,
+390,cc-league-2-deepseek-v4-1-flash-1017-off,leagues/#cc-league-2-deepseek-v4-1-flash-1017-off,True,False,False,
+390,panel-cost,leagues/#panel-cost,True,False,False,
+390,risk-pays-vs-safety-pays,leagues/#risk-pays-vs-safety-pays,True,True,True,
+390,nack-primary-random,nackgammon/#nack-primary-random,True,True,True,
+390,nack-tags,nackgammon/#nack-tags,True,True,True,
+390,nack-engine-primary-orig,nackgammon/#nack-engine-primary-orig,True,True,True,

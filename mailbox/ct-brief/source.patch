@@ -1,0 +1,1482 @@
+diff --git a/tools/site/assets/bg.css b/tools/site/assets/bg.css
+index 0421e80..ce88889 100644
+--- a/tools/site/assets/bg.css
++++ b/tools/site/assets/bg.css
+@@ -331,6 +331,7 @@ td.badges .small { display: block; white-space: normal; }
+ /* Highlights and Experiments (Ümit #2901). */
+ .highlight-slots, .experiment-cards { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); }
+ .highlight-slot { border-style: dashed; }
++.highlight-slot[data-slot="filled"] { grid-column: 1 / -1; border-style: solid; }
+ .highlight-candidate { color: var(--text-2); }
+ .experiment-card .status { margin-bottom: .3rem; }
+ /* Three kinds of choice, three looks, in both themes and without hovering (Zeki, bus #1860):
+@@ -398,9 +399,6 @@ i.swatch-refline { width: 0; height: .8rem; border-left: 2px dashed var(--text-2
+   .chart-wide .hbar-value, .chart-wide .hbar-head { font-size: .7rem; }
+   .chart-wide .hbar-value { white-space: nowrap; }
+   .hbar-label a { overflow-wrap: anywhere; }
+-  /* The filter row's part links scroll sideways inside the row instead of widening the page. */
+-  .filter-row .part-links { min-width: 0; max-width: 100%; }
+-  .filter-row .part-links .face-nav { min-width: 0; }
+ }
+ 
+ /* --- The home page as a story (Ümit, bus #2570; story.py): the headline table and the finding sections. --------------- */
+@@ -414,7 +412,9 @@ td.hl-judgement { width: 55%; min-width: 13rem; }
+ .hl-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 2px; box-shadow: inset 0 0 0 1px var(--mark-edge); }
+ .hl-fill.other { background: var(--data-grey); }
+ .hl-int { position: absolute; top: 50%; height: 2px; margin-top: -1px; background: var(--text); box-shadow: 0 0 0 1px var(--panel); }
+-.hl-safe { position: absolute; left: 50%; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; background: var(--text-2); }
++/* The line at 50 (always safe): a white tick with a thin edge, so it shows on every fill and in both themes. */
++.hl-safe { position: absolute; left: 50%; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; background: #fff;
++  box-shadow: 0 0 0 1px rgba(0, 0, 0, .45); }
+ .hl-val { font-family: var(--mono); font-size: .84rem; }
+ .js [data-headline-panel][hidden] { display: none; }
+ /* The leaderboard rows (Ümit, bus #2745; #2904, #2907; #2921): the rank, the model (maker dot, its type under the name
+@@ -450,7 +450,12 @@ table.headline tr.reference td { color: var(--text-2); }
+ .hbar-fill.ts-found, i.swatch-ts-found { background-image: repeating-linear-gradient(135deg, rgba(255, 255, 255, .55) 0 3px, rgba(0, 0, 0, .12) 3px 6px); }
+ .hbar-fill.ts-grey, i.swatch-ts-grey { background-color: var(--data-grey); }
+ i.swatch-ts-safety, i.swatch-ts-found { background-color: var(--text-2); }
+-.too-safe { margin-top: 1rem; }
++/* Wide screens: four more columns (Ümit #2938 item 3: risks found, safe right, error rate, $ per 1,000). */
++table.headline th[data-wide], table.headline td.hl-wide { display: none; }
++@media (min-width: 900px) {
++  table.headline th[data-wide], table.headline td.hl-wide { display: table-cell; white-space: nowrap; }
++  td.hl-judgement { width: 40%; }
++}
+ /* At phone width: the three columns fit the width (no sticky column, no sideways scrolling), the bar column narrower. */
+ @media (max-width: 640px) {
+   table.headline th:first-child, table.headline td:first-child { position: static; width: auto; min-width: 0; max-width: none;
+@@ -465,7 +470,28 @@ i.swatch-ts-safety, i.swatch-ts-found { background-color: var(--text-2); }
+ .finding-chart { margin: 0; }
+ .section-caveat { margin-top: .6rem; }
+ .hbar-fill.q1-board, i.swatch-q1-board { background-color: var(--data-grey); background-image: repeating-linear-gradient(135deg, rgba(255, 255, 255, .55) 0 3px, rgba(0, 0, 0, .12) 3px 6px); }
+-/* The Risk calls part's compact filter row (home.filters; Ümit, bus #2570 item 1): league, models, the parts of the page,
++/* The finding sections' own charts (story.py, Ümit #2938 item 2): one dot per model in its maker's colour, programs grey. */
++.finding-svg { max-width: 640px; }
++.chart-svg .sk-dot { stroke: var(--panel); stroke-width: 1; }
++.chart-svg .sk-ref { fill: var(--data-grey); stroke: var(--panel); }
++.chart-svg .sk-label { font-size: 10.5px; }
++.chart-svg .sk-head { font-weight: 600; }
++.chart-svg .sk-row { font-size: 10.5px; }
++.chart-svg .rd-line, .chart-svg .th-line { fill: none; stroke-width: 2; opacity: .8; }
++.chart-svg .th-dot { stroke-width: 2; }
++.finding #too-safe-values { margin-top: .6rem; }
++.finding .lp-chart { margin: 0; }
++/* The front page's hero (Ümit #2938 item 2 (1)): the question, the description, the counts line and three buttons. */
++.hero-card h1 { margin-top: 0; }
++.counts-line { margin: .3rem 0 .5rem; color: var(--text-2); font-size: .9rem; }
++.counts-line .readout-value { color: var(--text); font-weight: 700; }
++.footer-links { margin: .25rem 0 .4rem; }
++.decisions-links, .about-links { margin: 0 0 1rem; }
++/* Highlights: a filled slot shows its board beside the plays. */
++.highlight-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1rem 1.5rem; align-items: start; }
++.highlight-body svg.hl-board { width: 100%; max-width: 460px; height: auto; display: block; }
++@media (max-width: 760px) { .highlight-body { grid-template-columns: minmax(0, 1fr); } }
++/* The compact filter row (home.filters; Ümit, bus #2570 item 1; on the Leagues page since #2938): league, models,
+    More filters, the setup count and Reset on one line where they fit, in a compact key size. The row is
+    always open: its body's selector outranks site.css's `.filters:not(.is-open) .filters-body { display: none }`
+    (the collapsible filter panel, which this row is not), which had hidden the whole row. */
+@@ -482,6 +508,5 @@ nav.filters.filter-row .filters-body { display: flex; flex-wrap: wrap; align-ite
+ @media (max-width: 640px) {
+   .filter-row .group-label { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); }
+   .filter-row .key { min-height: 24px; padding: 1px 7px; font-size: 12px; }
+-  .filter-row .part-links .face-nav { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+   .filter-row .filters-count { margin-left: 0; }
+ }
+diff --git a/tools/site/assets/bg.js b/tools/site/assets/bg.js
+index 78c1c7f..5ca97e3 100644
+--- a/tools/site/assets/bg.js
++++ b/tools/site/assets/bg.js
+@@ -21,10 +21,13 @@ const FILTER_LABEL = { kind: 'Model type', setting: 'Reasoning', runs: 'Runs on'
+ const FOLDED = ['setting', 'runs', 'weights'];
+ const TOP_N = 8;
+ 
+-/* The anchors of the page that was live here before the switch (B2) open where that content lives now. */
++/* Old anchors of the home page open where that content lives now: the blocks that moved to the Leagues and Nackgammon
++   pages in Ümit #2938 (the map the build writes into #moved-anchors: every id of those blocks, and the old home league
++   block's lg- ids), then the anchors of the page that was live here before the switch (B2). The query string goes
++   along (?tab=, ?league=, ?type= work on the Leagues page too). */
+ (function oldAnchors() {
+   if (!document.body.classList.contains('home')) return;
+-  const MOVED = {
++  const BEFORE_SWITCH = {
+     v3: 'leagues/', 'v3-title': 'leagues/', 'v3-l1': 'leagues/#league-1', 'v3-league1': 'leagues/#league-1',
+     'v3-l2': 'leagues/#league-2', 'v3-league2': 'leagues/#league-2', 'v3-l3': 'leagues/#league-3',
+     'v3-league3': 'leagues/#league-3', 'v3-anchor': 'method/#v3-anchor', 'v3-dice': 'method/#exp-dice',
+@@ -33,9 +36,13 @@ const TOP_N = 8;
+     results: 'leagues/#v1-results', allstar: 'leagues/#v1-allstar', 'speed-cost': 'leagues/#v1-speed-cost',
+     limits: 'leagues/#v1-limits',
+   };
++  const map = document.getElementById('moved-anchors');
++  const MOVED = Object.assign({}, BEFORE_SWITCH, map ? JSON.parse(map.textContent) : {});
+   const go = () => {
+     const id = decodeURIComponent(location.hash.slice(1)).replace(/-title$/, '');
+-    if (id && !document.getElementById(id) && MOVED[id]) location.replace(MOVED[id]);
++    if (!id || document.getElementById(id) || !MOVED[id]) return;
++    const [path, hash] = MOVED[id].split('#');
++    location.replace(path + location.search + (hash ? '#' + hash : ''));
+   };
+   go();
+   window.addEventListener('hashchange', go);
+@@ -165,7 +172,8 @@ async function loadPhase(phase) {
+   } else {
+     const leagues = [...new Set([...slots].map(s => s.dataset.dataset))];
+     await Promise.all(leagues.map(async ds => {
+-      const res = await fetch(`fragments/${ds}-${phase}.html`);
++      const base = document.getElementById('filters')?.dataset.fragments || 'fragments/';
++      const res = await fetch(`${base}${ds}-${phase}.html`);
+       if (!res.ok) throw new Error(`fragments/${ds}-${phase}.html: ${res.status}`);
+       const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
+       doc.querySelectorAll('.phase-slot').forEach(src => {
+@@ -500,7 +508,11 @@ async function savePng(panel, svg, title, lines, filename) {
+   const fromHash = scroll => {
+     const id = decodeURIComponent(location.hash.slice(1));
+     const el = id && document.getElementById(id);
+-    if (!el || !route(el, scroll)) route(document.getElementById(tabs[0].getAttribute('aria-controls')), false);
++    if (el && route(el, scroll)) return;
++    route(document.getElementById(tabs[0].getAttribute('aria-controls')), false);
++    // An anchor outside the tabs (the blocks moved here from the home page, #board-panel, #risk-judgement …): the tabs
++    // above it just changed height, so scroll to it again.
++    if (el && scroll) el.scrollIntoView();
+   };
+   tabs.forEach(t => t.addEventListener('click', event => {
+     event.preventDefault();
+diff --git a/tools/site/checks.py b/tools/site/checks.py
+index 3e96fcb..fb69c53 100644
+--- a/tools/site/checks.py
++++ b/tools/site/checks.py
+@@ -554,8 +554,9 @@ def check_learning(out: Path, test_set: Path | None = None) -> list[str]:
+ def run(S: dict, out: Path) -> list[str]:
+     failures = []
+     nums = allowed_numbers(out, S)
+-    # The home page's per-league, per-phase views load as fragments into the home page: checked as part of it.
+-    pages = [(p, p) for p in sorted(out.rglob("index.html"))] + [(p, out / "index.html")
++    # The per-league, per-phase views load as fragments into the Leagues page (the home page's until Ümit #2938):
++    # checked as part of it.
++    pages = [(p, p) for p in sorted(out.rglob("index.html"))] + [(p, out / "leagues/index.html")
+                                                                  for p in sorted((out / "fragments").glob("*.html"))]
+     for page, base in pages:
+         rel = page.relative_to(out)
+diff --git a/tools/site/content/about.md b/tools/site/content/about.md
+new file mode 100644
+index 0000000..b9d3daa
+--- /dev/null
++++ b/tools/site/content/about.md
+@@ -0,0 +1,58 @@
++<!-- About page text: Ümit, bus #2939 (backgammon_rules_page.md), with the [check] lines fixed and the two flagged
++     rank sentences (mailbox/ct-brief/CHECK-LINES.md). Sections in order; the 'Leaderboard box' section is the home
++     page's 'How the scores work' (pages.about_sections). -->
++
++## 1. Backgammon in one page
++
++**The goal.** Two players race their 15 checkers around the board and off it. The first player to bear off all 15 checkers wins.
++
++**The board.** The board has 24 narrow triangles, called **points**. Each player moves in the opposite direction. Each player's last six points are their **home board**.
++
++**Moving.** A player rolls two dice and moves checkers by those two numbers. One checker can take both numbers, or two checkers can take one each. A roll of doubles (for example 4-4) is played four times. A checker cannot land on a point that holds two or more of the opponent's checkers.
++
++**Hitting.** A single checker alone on a point is a **blot**. If the opponent lands on it, the blot is **hit**: it goes to the middle of the board (the **bar**). It must come back in through the opponent's home board before any other checker can move. Being hit costs a lot of time in the race.
++
++**Bearing off.** When all 15 of a player's checkers are in their home board, that player can start taking them off the board.
++
++**Gammons.** If the loser has borne off no checkers, the winner wins a **gammon**, worth 2 points. If the loser also still has a checker on the bar or in the winner's home board, it is a **backgammon**, worth 3 points.
++
++**Why this is a test of risk.** Almost every turn asks the same question. A safe play leaves no blot. A bolder play leaves a blot but builds a better position. The dice decide whether the risk pays off this time. A strong player takes the risk when it is worth it on average, not only when it feels safe.
++
++**Nackgammon.** Nackgammon is backgammon with a different starting position. Each player moves one checker from the 13-point and one from the 6-point to their opponent's side, so each side starts with four back checkers instead of two. We use it to test whether a model still plays well when the opening positions are new.
++
++## 2. How the benchmark works
++
++- **Leagues of full games.** Each model setup plays full games against every other setup in its league. There are three leagues, and they are never merged.
++- **One decision, one request.** Every move is sent as its own request. A model sees the match score, but not the moves of earlier turns or earlier games.
++- **What the model sees.** Each request shows the score, the board with pip counts, the race, the dice and every legal play. Next to each play the program lists: checkers hit, points made, blots left and how many of the opponent's 36 rolls hit them, points held, longest prime and pip counts.
++- **Two kinds of model.** Decision models return a probability for every legal play. Chat models choose one play.
++- **A program judges, not a model.** GNU Backgammon 1.08 scores every legal play in every position at 2-ply. No language model judges any move.
++- **Settings.** Each setup is one model at one reasoning setting (off, low, medium, high). We record the time and the tokens of every decision, and its cost where a price is known.
++- **Reference programs.** Three programs are shown as yardsticks and are never ranked: GNUbg weak (a weak setting of the engine, played in every league), Safest and Random. In League 1, Safest picks the play that leaves the fewest hitting rolls, then the fewest blots, then the biggest pip lead. In Leagues 2 and 3, Safest and Random are computed, not played: Safest is the engine's best of the safest plays, Random the average of all legal plays.
++- **Late entries.** A setup added after a league finished plays that league's original field. It is ranked on the risk leaderboard, but it does not change league match-points standings, Cups, or other setups' results.
++- **Everything is public.** Every position, every legal play, the engine's value for each play and every model's choice.
++
++## 3. How the scores work
++
++- **Risk call.** A position is a risk call when its legal plays leave different numbers of hitting rolls. The engine compares its best play with the best safe play: if the best play is at least 0.001 better, **risk pays**; otherwise **safety pays**.
++- **Risks found.** The share of risk-pays positions where the model took the risk.
++- **Safe right.** The share of safety-pays positions where the model played safe.
++- **Risk judgement.** The average of risks found and safe right, from 0 to 100. A model that always plays safe scores 50. A model that gets every call right scores 100.
++- **Error rate.** How much a model's moves give away, as judged by the engine: the PR scale that human players use. Lower is better. A move that matches the engine's best play costs nothing.
++- **Uncertainty.** Each score has a 95% interval. Intervals resample whole games, not single moves, because moves inside one game are not independent. Ranks show observed scores; small gaps need not be meaningful.
++
++## 4. Leaderboard rules
++
++- **One row per model.** The row uses a setting fixed by rule, not the best score: the model's highest reasoning setting. A model with one setup uses that setup.
++- **Versions.** Different version names (Jev 1.13.0 and 1.14.0) are separate rows. A dated checkpoint of the same model (DeepSeek V4.1 Flash 1017) is the same model, and its row shows the original.
++- **Late entries count on the leaderboard,** with a "late entry" tag, because they play the same league field.
++- **Order.** Rows are sorted by risk judgement. The rank is a sort order, not a verdict. Ranks show observed scores; small gaps need not be meaningful.
++- **Tap a row** to see both halves of its score, the raw counts, its error rate, its record and a link to every decision it made.
++
++## Leaderboard box
++
++1. Models play full games of backgammon. GNU Backgammon scores every move.
++2. Risk judgement: did the model take the risk when it paid, and play safe when safe was right? 50 = always plays safe, 100 = every call right.
++3. Error rate: how much a move gives away, judged by the engine (lower is better).
++4. Everything is public: every position, every legal play, the engine's value for each.
++5. Leagues played different positions, so close scores across leagues are not a clear ranking.
+diff --git a/tools/site/content/highlights.json b/tools/site/content/highlights.json
+new file mode 100644
+index 0000000..e30519a
+--- /dev/null
++++ b/tools/site/content/highlights.json
+@@ -0,0 +1,15 @@
++{
++ "_about": "Highlights page slots (Ümit #2938 item 4; pages.highlights_page). A filled slot names one exported decision (dataset, setup slug, decision id); its 'facts' are the brief's claims as the export states them and must equal the exported decision (the model's play and its hitting rolls, the engine's best play and its hitting rolls, best equity minus the played equity, 4 decimals), or the build fails. 'story': null until the text comes from Ümit / Claude (shown as Story coming). Other slots: a candidate Can or Ümit listed, not chosen yet.",
++ "slots": [
++  {"title": "GPT-6 Astra (low) · League 3 · decision 108669", "dataset": "league-3", "setup": "gpt-6-astra-off",
++   "decision": 108669,
++   "facts": {"model_play": "7/3 7/4", "model_hitting_rolls": 0, "best_play": "6/2 24/21", "best_hitting_rolls": 36,
++             "equity_difference": 0.2238},
++   "story": null},
++  {"candidate": "Candidate (listed by Ümit, not chosen yet): GPT-6.1 Sol (high), Clear risk: the same boards with and without the numbers"},
++  {"candidate": "Candidate (listed by Ümit, not chosen yet): one great risk taken"},
++  {"candidate": "Candidate (listed by Ümit, not chosen yet): one blunder"},
++  {"candidate": "Candidate (listed by Ümit, not chosen yet): one decision-model surprise"},
++  {"candidate": "Candidate (listed by Ümit, later): one lesson from the learning run"}
++ ]
++}
+diff --git a/tools/site/home.py b/tools/site/home.py
+index a1b121d..366e91c 100644
+--- a/tools/site/home.py
++++ b/tools/site/home.py
+@@ -24,11 +24,8 @@ LIMIT_HARD = ("Setups met different positions; risk judgement is not adjusted fo
+               "comparisons wait for the shared positions.")
+ # Under the risk leaderboard chart (Ümit #2564; wording Zeki #2578).
+ RANK_NOTE = "Ranks show observed scores; small gaps need not be meaningful."
+-# The hero's three buttons (Ümit #2564, #2570 item 1), existing pages only and named for what they open: there is no
+-# write-up yet, so the first opens the Method page; Every decision has no filter for the engine's best play, so the
+-# second opens its existing right-risk filter (the setup in view is named there, and any other can be picked).
+-HERO_LINKS = [("Read the method", "method/"), ("Right risk calls, decision by decision", "decisions/?r=risk&c=rr"),
+-              ("Every decision", "decisions/")]
++# The hero's three buttons (Ümit #2938 item 2): Every decision, Highlights, Read the method.
++HERO_LINKS = [("Every decision", "decisions/"), ("Highlights", "highlights/"), ("Read the method", "method/")]
+ GNUBG_WEAK = "x86-64 build: its noise is shifted, so it overplays gammons"
+ CALL_LABEL = {"needless": "needless risks", "missed": "missed risks", "wrong_risk": "wrong risks",
+               "right_risk": "right risks", "right_safety": "right safety", "none": "No trade-off"}
+@@ -1114,7 +1111,8 @@ def slot(ds, name, html) -> str:
+ 
+ def fragments(S, out) -> None:
+     """fragments/<league>-<phase>.html: the phase-dependent parts of a league view, loaded by the Phase filter;
+-    fragments/all-<phase>.html: the same for the All leagues view."""
++    fragments/all-<phase>.html: the same for the All leagues view. Loaded into the Leagues page (since Ümit #2938), so
++    their links are written relative to leagues/."""
+     folder = out / "fragments"
+     if folder.exists():
+         for old in folder.glob("*.html"):
+@@ -1123,12 +1121,12 @@ def fragments(S, out) -> None:
+     for lg in S["leagues"]:
+         for ph in A.PHASES:
+             parts = "".join(slot(lg["dataset"], k, v) for k, v in phase_slots(S, lg, ph).items())
+-            (folder / f"{lg['dataset']}-{ph}.html").write_text(
+-                f'<div data-league-view="{lg["dataset"]}" data-dataset="{lg["dataset"]}">{prov_note(lg)}{parts}</div>\n')
++            (folder / f"{lg['dataset']}-{ph}.html").write_text(P.rebase(
++                f'<div data-league-view="{lg["dataset"]}" data-dataset="{lg["dataset"]}">{prov_note(lg)}{parts}</div>\n', "../"))
+     for ph in A.PHASES:
+-        (folder / f"{ALL}-{ph}.html").write_text(
++        (folder / f"{ALL}-{ph}.html").write_text(P.rebase(
+             f'<div data-league-view="{ALL}" data-dataset="{ALL}">{all_head(S)}'
+-            f'{slot(ALL, "risk", all_risk_table(S, ph) + all_robust_table(S, ph))}</div>\n')
++            f'{slot(ALL, "risk", all_risk_table(S, ph) + all_robust_table(S, ph))}</div>\n', "../"))
+ 
+ 
+ def prov_note(lg) -> str:
+@@ -1223,10 +1221,6 @@ def tab_body(S, key: str) -> str:
+ 
+ # --- Hero, findings, filters -------------------------------------------------------------------------------
+ 
+-def version_line(S) -> str:
+-    return P.version_line(S)
+-
+-
+ def champions(S) -> str:
+     """The match winners strip (Can, 31 Oct 2026): the winner of each starting group's own table, the first games
+     (content/starting_groups.json, its place, points and recorded tiebreak), each linking to its tab under the hero; a
+@@ -1235,7 +1229,7 @@ def champions(S) -> str:
+     items = []
+     for g in SG.load()["groups"]:
+         top = g["rows"][0]
+-        val = f'<a href="#{P.HOME_PREFIX}group-{g["name"].lower()}">{esc(top["name"])}</a>'
++        val = f'<a href="#group-{g["name"].lower()}">{esc(top["name"])}</a>'
+         tie = next((t for t in g["ties"] if t["points"] == top["pts"] and t["setups"][0] == top["name"]), None)
+         how = ""
+         if tie and tie["kind"] == "head-to-head":
+@@ -1248,7 +1242,7 @@ def champions(S) -> str:
+         if SG.is_program(S, top["name"]):
+             model = next(r for r in g["rows"] if not SG.is_program(S, r["name"]))
+             val += (f' <span class="champ-note">(program, reference)</span> <span class="leader-detail">{esc(note)}</span>'
+-                    f' · top model: <a href="#{P.HOME_PREFIX}group-{g["name"].lower()}">{esc(model["name"])}</a> '
++                    f' · top model: <a href="#group-{g["name"].lower()}">{esc(model["name"])}</a> '
+                     f'<span class="leader-detail">{model["pts"]} pts</span>')
+         else:
+             val += f' <span class="leader-detail">{esc(note)}</span>'
+@@ -1256,7 +1250,7 @@ def champions(S) -> str:
+                      f'<span class="readout-value champ">{val}</span></li>')
+     # The Hype Cup champion: the cross-league champion (an event, not a ranking: the Cup card says so).
+     c = S["cup"]
+-    val = f'<a href="#{P.HOME_PREFIX}hype-cup">{esc(c["champion"])}</a>' if c["champion"] else nm("To play")
++    val = f'<a href="#hype-cup">{esc(c["champion"])}</a>' if c["champion"] else nm("To play")
+     items.append(f'<li class="readout"><span class="readout-label">Hype Cup:</span> <span class="readout-value champ">{val}</span></li>')
+     return (f'<div class="readout-row champions"><span class="readout-label">Starting-group winners · match results</span>'
+             f'<ul class="readouts">{"".join(items)}</ul></div>')
+@@ -1306,14 +1300,16 @@ def hero_board(S) -> str:
+ 
+ 
+ def findings_block(S) -> str:
++    """The findings Ümit approved (content/findings.json, each machine-checked by findings.py), under the finding
++    sections; nothing while none is approved (the sections above carry the page's findings since #2938)."""
+     import findings as F
+     approved = F.published()
+     lead = F.lead_in()
+     if not approved or not lead:
+-        return '<div class="summary" id="findings"><p class="summary-lead findings-wait">Findings will be published after review.</p></div>'
+-    items = "".join(f'<li><a href="?tab={esc(f["tab"])}#board" data-goto-tab="{esc(f["tab"])}">{esc(f["label"])}</a>: '
++        return ""
++    items = "".join(f'<li><a href="leagues/?tab={esc(f["tab"])}#board">{esc(f["label"])}</a>: '
+                     f'{esc(f["text"])}</li>' for f in approved)
+-    return (f'<div class="summary" id="findings"><p class="summary-lead">{esc(lead["text"])}</p>'
++    return (f'<div class="summary" id="findings-approved"><p class="summary-lead">{esc(lead["text"])}</p>'
+             f'<ul class="summary-list">{items}</ul></div>')
+ 
+ 
+@@ -1339,17 +1335,15 @@ def filters(S) -> str:
+     # The model setups of each league; the programs are reference rows, never counted.
+     totals = {lg["dataset"]: sum(1 for n in lg["setups"] if not ref_label(S, lg["dataset"], n)) for lg in S["leagues"]}
+     totals = {ALL: sum(totals.values()), **totals}
+-    parts = ([("leaderboard", "Leaderboard")] + MEASURES + [("board-panel", "Every number")])
+-    links = "".join(f'<a href="#{k}">{esc(l)}</a>' for k, l in parts)
+-    # One compact row on the Risk calls part (Ümit, bus #2570, item 1), out of the sticky header: the league and the
+-    # model type, the parts of the page, and behind "More filters" the quick view, phase, reasoning, runs on and weights,
+-    # whose key names the active ones while it is closed (bg.js); the setup count and Reset at the end.
+-    return f"""<nav class="panel filters filter-row" id="filters" aria-labelledby="filters-title">
+-      <h2 id="filters-title" class="visually-hidden">Filters and parts of this page</h2>
++    # One compact row (Ümit, bus #2570, item 1), on the Leagues page above the measure sections and Every number since
++    # #2938 (its part links, a chip row, removed): the league and the model type, and behind "More filters" the quick
++    # view, phase, reasoning, runs on and weights, whose key names the active ones while it is closed (bg.js); the setup
++    # count and Reset at the end. data-fragments: where the Phase filter loads its fragments from.
++    return f"""<nav class="panel filters filter-row" id="filters" aria-labelledby="filters-title" data-fragments="../fragments/">
++      <h2 id="filters-title" class="visually-hidden">Filters</h2>
+       <div class="filters-body" id="filters-body">
+         <div class="group league-pick needs-js" role="group" aria-labelledby="f-league"><span class="group-label" id="f-league">League</span><span class="keys">{leagues}</span></div>
+         <div class="needs-js">{group("kind", "Models", [("all", "All"), ("decision", "Decision"), ("chat", "Chat"), ("program", "Program")])}</div>
+-        <div class="group part-links"><span class="group-label">Measure</span><span class="face-nav">{links}</span></div>
+         <div class="group more-filters needs-js"><button type="button" class="key fold-toggle" data-more-filters aria-expanded="false" aria-controls="filters-more"><span class="chevron" aria-hidden="true"></span>More filters<span class="fold-summary" data-more-summary> · phase, reasoning, runs on, weights</span></button></div>
+         <div class="group filters-count needs-js"><span class="setup-count" data-setups data-totals='{esc(json.dumps(totals))}' aria-live="polite">{count(totals[default_league(S)])} of {count(totals[default_league(S)])} setups</span>
+         <button type="button" class="key reset" data-control="reset" aria-disabled="true" data-tip="Nothing to reset: the filters show the defaults.">Reset</button>
+@@ -1831,9 +1825,10 @@ WHAT_THIS_MEASURES = ("Risk calls per setup: was each risk the right one, and wa
+                       "gives away, judged by the engine, not by wins. " + LIMIT_HIT + " " + LIMIT_HARD)
+ 
+ 
+-def how_numbers(S) -> str:
+-    """'How the scoring works' (Ümit #2564; the heading #2570 item 5): sentences of the Method page only, quoted as published there, each with the
+-    Method section it comes from (mailbox/learning-page-review3/README.md lists them). No new claim."""
++def how_numbers(S, rel: str) -> str:
++    """The scoring as the Method page states it (Ümit #2564; on About under "How the scores work" since #2938):
++    sentences of the Method page only, quoted as published there, each with the Method section it comes from
++    (mailbox/learning-page-review3/README.md lists them). No new claim."""
+     t = S["thresholds"]
+     items = [
+         ("Who scores", "error-rate", "Error rate",
+@@ -1853,74 +1848,96 @@ def how_numbers(S) -> str:
+         ("Different positions", "limits", "Limits",
+          "Setups played different positions; league comparisons are not paired, and risk judgement is not adjusted "
+          "for how hard the positions were.")]
+-    lis = "".join(f'<li><strong>{esc(k)}.</strong> {esc(v)} <a class="small" href="method/#{a}">Method: {esc(s)}</a></li>'
++    lis = "".join(f'<li><strong>{esc(k)}.</strong> {esc(v)} <a class="small" href="{rel}method/#{a}">Method: {esc(s)}</a></li>'
+                   for k, a, s, v in items)
+-    return (f'<section class="card how-numbers" id="how-numbers"><h2>How the scoring works</h2><ul>{lis}</ul>'
+-            f'<p class="table-note">Quoted from the <a href="method/">Method</a> page.</p></section>')
++    return (f'<div class="how-method" id="how-method"><h3>As the Method page states it</h3><ul>{lis}</ul>'
++            f'<p class="table-note">Quoted from the <a href="{rel}method/">Method</a> page.</p></div>')
++
++
++def how_scores(S) -> str:
++    """"How the scores work" (Ümit #2938 item 2 (4)): the five short bullets of About's text (content/about.md, its
++    Leaderboard box section), with a link to the whole section on About."""
++    import method
++    md = next(md for i, _, md in P.about_sections() if i == "short")
++    return (f'<section class="card how-numbers" id="how-numbers"><h2>How the scores work</h2>{method.spec_markdown(md)}'
++            f'<p class="table-note"><a href="about/#scores">More in About</a></p></section>')
++
++
++def counts_line(S) -> str:
++    """The hero's counts line (Ümit #2938 item 2 (1)): decisions scored, leagues, setups, models and the update date."""
++    c = S["counts"]
++    items = [(count(c["decisions_scored"]), "decisions scored"), (count(c["leagues"]), "leagues"),
++             (count(c["model_setups"]), "setups"), (count(c["models"]), "models")]
++    return ('<p class="counts-line">' + " · ".join(f'<span class="readout-value">{v}</span> {l}' for v, l in items)
++            + f' · updated {esc(P.as_of(S).split(",")[0])}</p>')
+ 
+ 
+ def hero_card(S) -> str:
+-    face = "".join(f'<a href="#{k}">{esc(l)}</a>' for k, l in MEASURES)
+-    face += ('<a href="#leagues-tabs">Leagues and matches</a><a href="#board-panel">Every number</a>'
+-             '<a href="#findings">Findings</a><a href="method/">Method</a>')
+-    links = "".join(f'<a href="{href}">{esc(label)}</a>' for label, href in HERO_LINKS)
++    links = "".join(f'<a class="key" href="{href}">{esc(label)}</a>' for label, href in HERO_LINKS)
+     return f"""
+     <section class="card hero hero-card">
+       <div class="hero-split">
+         <div class="hero-text">
+-          <p class="eyebrow">Experiment</p>
+           <h1>{esc(P.TITLE)}</h1>
+-          <p class="subtitle">{esc(P.SUBTITLE)}</p>
+-          <nav class="hero-links" aria-label="Main parts">{links}</nav>
+           <p class="intro">{esc(INTRO)}</p>
+-          <div class="readout-row">
+-            <ul class="readouts">{P.readouts(S)}</ul>
+-            <p class="version">{esc(version_line(S))}</p>
+-          </div>
++          {counts_line(S)}
++          <nav class="hero-links" aria-label="Main parts">{links}</nav>
+         </div>
+         {hero_board(S)}
+       </div>
+-      {result_cards(S)}
+-      <p class="framing"><strong>What this measures.</strong> {esc(WHAT_THIS_MEASURES)}</p>
+-      {champions(S)}
+-      {leaders(S)}
+-      {facts(S)}
+-      <nav class="face-nav" aria-label="On this page">{face}</nav>
+-      {P.more_pages("")}
+     </section>"""
+ 
+ 
+-def home(S) -> str:
+-    import story
++# The home page's content that moved to the Leagues page (Ümit #2938 item 2): what each block is, for the old anchors.
++def leagues_moved(S) -> tuple[str, str]:
++    """(top, bottom): the blocks of the old home page that now sit on the Leagues page, written relative to the site's
++    root (pages.rebase moves them under leagues/). top: the three result boxes, the match winners and the leaders, the
++    Scorer / Results / Published facts, What this measures. bottom: the filters (the measure charts and Every number
++    follow them), the measure sections, Every number, Risk pays vs safety pays, Close choices stage B."""
+     tabs = "".join(f'<button type="button" role="tab" id="tab-{k}" class="mode" aria-controls="board" '
+                    f'aria-selected="{str(i == 0).lower()}" data-tab="{k}"><span class="lamp" aria-hidden="true"></span>{l}</button>'
+                    for i, (k, l) in enumerate(TABS))
+     panels = "".join(f'<div class="tabpanel" id="panel-{k}" data-panel="{k}"{" hidden" if i else ""}>{tab_body(S, k)}</div>'
+                      for i, (k, _) in enumerate(TABS))
+-    return f"""
++    top = f"""
+     {FAMILY_ICONS}
+-    {hero_card(S)}
+-    {story.headline(S)}
++    <section class="card overview" id="overview">
++      {result_cards(S)}
++      <p class="framing"><strong>What this measures.</strong> {esc(WHAT_THIS_MEASURES)}</p>
++      {champions(S)}
++      {leaders(S)}
++      {facts(S)}
++    </section>"""
++    bottom = f"""
+     {filters(S)}
+-    {story.findings(S)}
+-    {how_numbers(S)}
+-    {findings_block(S)}
+     {measure_charts(S)}
+-    <div class="home-leagues" id="leagues-tabs">{P.home_league_sections(S)}</div>
+     <section class="panel board-panel" id="board-panel" aria-labelledby="board-title">
+-      <div class="chart-head"><h2 id="board-title">Every number, setup by setup</h2><p class="chart-sub">The leaderboard: every measure of every setup, one tab per measure; each value with its 95% interval, its count and denominator or its price label under it.</p></div>
++      <div class="chart-head"><h2 id="board-title">Every number, setup by setup</h2><p class="chart-sub">Every measure of every setup, one tab per measure; each value with its 95% interval, its count and denominator or its price label under it.</p></div>
+       <div class="modebar">
+         <div class="keys view-switch needs-js" role="group" aria-label="Show the results as"><button type="button" class="key" data-view="table" aria-pressed="true"><span class="lamp" aria-hidden="true"></span>Table</button><button type="button" class="key" data-view="charts" aria-pressed="false"><span class="lamp" aria-hidden="true"></span>Charts</button></div>
+         <div class="keys col-switch needs-js" role="group" aria-label="Table columns"><button type="button" class="key" data-cols-all aria-pressed="false"><span class="lamp" aria-hidden="true"></span>All columns</button></div>
+-        <div class="modes" role="tablist" aria-label="Leaderboard">{tabs}</div>
++        <div class="modes" role="tablist" aria-label="Every number">{tabs}</div>
+       </div>
+       <div id="board" role="tabpanel">{panels}</div>
+       {charts(S)}
+     </section>
+     {pays_section(S)}
+-    {close_b_section(S)}
+-    {nack_section.section(S["nack"], *nack_views(S), S["nack_late"])}
+-    <p class="downloads" id="downloads">Download: <a href="data/results.json" download="results.json">results.json</a> · <a href="decisions/index.json" download="decisions.json">decisions.json</a></p>"""
++    {close_b_section(S)}"""
++    return top, bottom
++
++
++def home(S) -> str:
++    """The front page (Ümit #2938 item 2): the hero, the leaderboard, the finding sections a-f, How the scores work.
++    Everything else of the old front page is on the Leagues page (leagues_moved) or the Nackgammon page; the old
++    anchors are sent there (pages.moved_anchors, bg.js)."""
++    import story
++    return f"""
++    {FAMILY_ICONS}
++    {hero_card(S)}
++    {story.headline(S)}
++    {story.findings(S)}
++    {findings_block(S)}
++    {how_scores(S)}"""
+ 
+ 
+ # --- Risk call card (B6.5): one image per league winner, made to post on X ---------------------------------------
+diff --git a/tools/site/learning_page.py b/tools/site/learning_page.py
+index 3c462d5..f75b77f 100755
+--- a/tools/site/learning_page.py
++++ b/tools/site/learning_page.py
+@@ -491,11 +491,9 @@ def verdict(L) -> str:
+     arms = list(R["table"])
+     rule, sig = R["signal_rule"], R["signal"]
+     lift = by_arm(R["learning_lift"], arms)
+-    met = [a for a in arms if (sig.get(a) or {}).get("signal")]
+     # Wording as the results file (mailbox, Zeki #2929): "threshold", never "effect"; the lift differences only as
+     # observed; nothing stronger than the data.
+-    head = ("No arm reached the pre-registered signal threshold (plan section 8)." if not met else
+-            f"Arms that reached the pre-registered signal threshold (plan section 8): {', '.join(met)}.")
++    head = verdict_head(R)
+     items = "".join(
+         f'<li data-arm="{esc(a)}"><strong>{esc(a)}</strong>: '
+         f'{"threshold reached" if s["signal"] else "threshold not reached"}. '
+@@ -731,6 +729,38 @@ def chart_table(name: str, caption: str, xs: list, R, cells: dict) -> str:
+                              cls=f"board list lp-numbers lp-{name}")
+ 
+ 
++def verdict_head(R) -> str:
++    """The verdict's first sentence (the page's, and the home page's learning section quotes it)."""
++    met = [a for a in R["table"] if (R["signal"].get(a) or {}).get("signal")]
++    return ("No arm reached the pre-registered signal threshold (plan section 8)." if not met else
++            f"Arms that reached the pre-registered signal threshold (plan section 8): {', '.join(met)}.")
++
++
++def risks_figure(R, fid: str = "learning-chart-risks") -> str:
++    """Chart (a) of the Results section with its numbers table; "" while no arm has a risks-found value."""
++    arms = list(R["table"])
++    xs = [(cp, CHECKPOINT_LABEL[cp]) for cp in CHECKPOINTS]
++    risks = risks_points(R)
++    if not any(risks.values()):
++        return ""
++    lines = []
++    for a in arms:
++        pts = risks[a]
++        if a == "control" and pts:  # control: T0 only, drawn flat at its T0 value across every checkpoint
++            lines.append((a, [(0, pts[0][1]), (len(xs) - 1, pts[0][1])], pts, True))
++        else:
++            lines.append((a, pts, pts, False))
++    cells = {a: {cp: (num(dict(risks[a]).get(i), 1) if a != "control" or cp == "T0" else nm("T0 only"))
++                 for i, (cp, _) in enumerate(xs)} for a in arms}
++    return (f'<figure class="lp-chart" id="{fid}">'
++            + line_chart("learning-risks", "Risks found, % (higher is better)", "%", xs, lines)
++            + legend(arms, ("control",)) + chart_table("risks", "Risks found (%) on the 200 evaluation "
++                                                       "positions: means over each arm's finished series; "
++                                                       "before game 1 is one shared run", xs, R, cells)
++            + '<p class="table-note">Control is tested before game 1 only (the shared run): its line is drawn '
++              'flat and dashed at that value.</p></figure>')
++
++
+ def results_charts(L) -> str:
+     """The two charts of the Results section (Ümit #2925 item 2), each with its numbers table, from the data file's
+     validated projection only and empty until the first finished series: (a) risks found on the 200 evaluation
+@@ -742,26 +772,7 @@ def results_charts(L) -> str:
+                 'finished series: risks found on the evaluation set before game 1, after game 5 and after game 10, '
+                 'and the error rate of each game, one line per arm.</p>')
+     arms = list(R["table"])
+-    out = []
+-    xs = [(cp, CHECKPOINT_LABEL[cp]) for cp in CHECKPOINTS]
+-    risks = risks_points(R)
+-    if any(risks.values()):
+-        lines = []
+-        for a in arms:
+-            pts = risks[a]
+-            if a == "control" and pts:  # control: T0 only, drawn flat at its T0 value across every checkpoint
+-                lines.append((a, [(0, pts[0][1]), (len(xs) - 1, pts[0][1])], pts, True))
+-            else:
+-                lines.append((a, pts, pts, False))
+-        cells = {a: {cp: (num(dict(risks[a]).get(i), 1) if a != "control" or cp == "T0" else nm("T0 only"))
+-                     for i, (cp, _) in enumerate(xs)} for a in arms}
+-        out.append('<figure class="lp-chart" id="learning-chart-risks">'
+-                   + line_chart("learning-risks", "Risks found, % (higher is better)", "%", xs, lines)
+-                   + legend(arms, ("control",)) + chart_table("risks", "Risks found (%) on the 200 evaluation "
+-                                                              "positions: means over each arm's finished series; "
+-                                                              "before game 1 is one shared run", xs, R, cells)
+-                   + '<p class="table-note">Control is tested before game 1 only (the shared run): its line is drawn '
+-                     'flat and dashed at that value.</p></figure>')
++    out = [f] if (f := risks_figure(R)) else []
+     games = games_points(R)
+     gx = [(str(g), str(g)) for g in range(1, V.G + 1)]
+     if any(games.values()):
+diff --git a/tools/site/pages.py b/tools/site/pages.py
+index f76278a..80c525d 100644
+--- a/tools/site/pages.py
++++ b/tools/site/pages.py
+@@ -16,7 +16,8 @@ from common import (EARLIER, EARLIER_NOTE, LATE_ENTRY, LATE_ENTRY_LABEL, LATE_EN
+ # Leaderboard and the About page (MORE_PAGES).
+ TABS = [("", "Leaderboard"), ("decisions/", "Decisions"), ("highlights/", "Highlights"), ("experiments/", "Experiments"),
+         ("about/", "About")]
+-SECTION = {"clear-risk/": "experiments/", "learning/": "experiments/", "method/": "about/", "data/": "about/"}
++SECTION = {"clear-risk/": "experiments/", "learning/": "experiments/", "nackgammon/": "experiments/", "method/": "about/",
++           "data/": "about/"}
+ MORE_PAGES = [("matches/", "Matches"), ("phases/", "Phases"), ("compare/", "Compare"),
+               ("disagreements/", "Where models disagree"), ("leagues/", "Leagues"), ("models/", "Every model setup"),
+               ("method/", "Method"), ("data/", "Data")]
+@@ -320,7 +321,8 @@ def layout(S, base, path: str, title: str, body: str, description: str | None =
+ {body}
+   </main>
+   <footer class="footer">
+-    <p>Download: <a href="{rel}data/results.json" download="results.json">results.json</a> · <a href="{rel}decisions/index.json" download="decisions.json">decisions.json</a> · <a href="{rel}data/">every data file</a></p>
++    <nav class="footer-links" aria-label="Site"><a href="{rel}about/">About</a> · <a href="{rel}method/">Method</a> · <a href="{rel}data/">Data</a> · <a href="{GITHUB}">GitHub</a></nav>
++    <p{' id="downloads"' if not path else ""}>Download: <a href="{rel}data/results.json" download="results.json">results.json</a> · <a href="{rel}decisions/index.json" download="decisions.json">decisions.json</a> · <a href="{rel}data/">every data file</a></p>
+     <p>{esc(version_line(S))}</p>
+   </footer>
+ </body>
+@@ -336,14 +338,6 @@ def page_head(S, eyebrow: str, title: str, intro: str = "") -> str:
+ 
+ # --- Home ---------------------------------------------------------------------------------------------------
+ 
+-def readouts(S) -> str:
+-    c = S["counts"]
+-    items = [(count(c["decisions_scored"]), "decisions scored"), (count(c["leagues"]), "leagues"),
+-             (count(c["model_setups"]), "setups"), (count(c["models"]), "models")]
+-    return "".join(f'<li class="readout"><span class="readout-value">{v}</span> <span class="readout-label">{l}</span></li>'
+-                   for v, l in items)
+-
+-
+ def league_reasoning_table(S, lg) -> str:
+     """Reasoning inside one league: every model with both settings in this league's games. Not paired, so no verdict
+     label (B9). Risk judgement and error rate are separate measures, read separately."""
+@@ -533,7 +527,7 @@ def league_notes(S, lg) -> str:
+ 
+ def league_sections(S) -> str:
+     """The Leagues page's tab bar and its sections (Starting groups, After league moves, Cups, Late entries), written for
+-    the Leagues page (links relative to leagues/); the home page shows the same block through home_league_sections."""
++    the Leagues page (links relative to leagues/)."""
+     rel = "../"
+     blocks = []
+     for lg in S["leagues"]:
+@@ -568,29 +562,55 @@ def league_sections(S) -> str:
+                         **({"late-entries": late} if late else {})})
+ 
+ 
++# The home page's league block had every id prefixed "lg-" (#lg-starting-groups, #lg-hype-cup …) until Ümit #2938; its
++# old anchors land on the same section of the Leagues page (moved_anchors).
+ HOME_PREFIX = "lg-"
+ 
+ 
+-def home_league_sections(S) -> str:
+-    """The Leagues page's tab block on the home page (Can, 31 Oct 2026), under the hero: the same HTML with every id and
+-    in-block reference prefixed (#lg-starting-groups, #lg-group-decision, #lg-league-3 …), so it never meets the
+-    leaderboard's own ids and hashes, and its links made relative to the site's root."""
+-    html = league_sections(S)
+-    ref = r'(\s(?:id|aria-controls|aria-labelledby|data-tab|data-tab-part)=")([^"]+)"'
+-    html = re.sub(ref, lambda m: f'{m.group(1)}{HOME_PREFIX}{m.group(2)}"', html)
+-    html = re.sub(r'(\shref=")#([^"]+)"', lambda m: f'{m.group(1)}#{HOME_PREFIX}{m.group(2)}"', html)
+-    return html.replace('="../"', '="./"').replace('="../', '="')
++def rebase(html: str, rel: str, local_ids: set | None = None) -> str:
++    """HTML written relative to the site's root, moved to a page `rel` deep (rel "../"): every relative href and src
++    gets rel in front; a same-page anchor (#id) does too unless the id is in local_ids (None: anchors stay)."""
++    def fix(m):
++        attr, v = m.group(1), m.group(2)
++        if v.startswith(("http:", "https:", "mailto:", "data:", "/", "?", "../", "javascript:")):
++            return m.group(0)
++        if v.startswith("#") and (local_ids is None or v[1:] in local_ids):
++            return m.group(0)
++        return f'{attr}"{rel}{v}"'
++    return re.sub(r'(\s(?:href|src)=)"([^"]*)"', fix, html)
++
+ 
++def ids_of(html: str) -> set:
++    return set(re.findall(r'\sid="([^"]+)"', html))
++
++
++def moved_anchors(moved: dict, league_ids: set) -> dict:
++    """{old home id: new address}: every id of each block that left the home page (moved: {page path: ids of the block
++    now on that page}), and the old home league block's lg- ids, each to the same id on the Leagues page."""
++    out = {i: f"{path}#{i}" for path, ids in moved.items() for i in sorted(ids)}
++    out.update({HOME_PREFIX + i: f"leagues/#{i}" for i in sorted(league_ids)})
++    out["leagues-tabs"] = "leagues/#leagues-tabs"  # the old home block's wrapper: the Leagues page's tab bar
++    return out
+ 
+-def leagues_page(S, archive_v1: str) -> str:
++
++def leagues_page(S, archive_v1: str) -> tuple[str, set, set]:
++    """(page, ids of the blocks moved here from the home page, ids of the league sections). The moved blocks (Ümit
++    #2938 item 2; home.leagues_moved) frame the league sections: the overview first, then the sections, then the
++    filters, the measure sections and Every number."""
++    import home
++    top, bottom = home.leagues_moved(S)
++    sections = league_sections(S)
+     intro = about("<p>One table per league. League tables compare only the players inside one league; they are never "
+                   "merged into one overall score. A running league's numbers are Provisional and change as matches finish. "
+                   "Click a row to open the setup, or a match to open its decisions.</p>", "About these tables")
+-    return (page_head(S, "Leagues", "Leagues") + league_sections(S) + intro
+-            + f'<section class="card" id="earlier"><details class="more"><summary>Earlier version: v1 leagues and teams '
+-              f'{status_badge(EARLIER)}</summary><p class="note">{esc(play_order_note(S))}</p>{archive_v1}</details>'
+-              f'<p class="table-note" id="pre-switch">The page as it was before this site went live, with its final league '
+-              f'data: <a href="../archive/2026-10-23/">archive, 23 October 2026</a>.</p></section>')
++    earlier = (f'<section class="card" id="earlier"><details class="more"><summary>Earlier version: v1 leagues and teams '
++               f'{status_badge(EARLIER)}</summary><p class="note">{esc(play_order_note(S))}</p>{archive_v1}</details>'
++               f'<p class="table-note" id="pre-switch">The page as it was before this site went live, with its final league '
++               f'data: <a href="../archive/2026-10-23/">archive, 23 October 2026</a>.</p></section>')
++    head = page_head(S, "Leagues", "Leagues", "The leagues, their matches and every number, setup by setup.")
++    local = ids_of(head + top + sections + bottom + intro + earlier)
++    page = head + rebase(top, "../", local) + sections + rebase(bottom, "../", local) + intro + earlier
++    return page, ids_of(top) | ids_of(bottom), ids_of(sections)
+ 
+ 
+ # --- Leagues page tabs (Can, 31 Oct 2026): the home page's tab keys as links, one section at a time (bg.js), with a
+@@ -623,7 +643,7 @@ def league_tabs(panels: dict[str, str]) -> str:
+     first = {}
+     for key, _, pid in tabs:
+         first.setdefault(pid, key)
+-    nav = (f'<nav class="league-tabs" aria-label="Leagues sections" data-league-tabs>'
++    nav = (f'<nav class="league-tabs" id="leagues-tabs" aria-label="Leagues sections" data-league-tabs>'
+            f'{link_tabs(tabs, "league", "Leagues sections")}'
+            f'<a class="mode" href="../matches/"><span class="lamp" aria-hidden="true"></span>Every match</a></nav>')
+     return nav + "".join(tab_panel(f"league-panel-{key}", f"league-tab-{first[f'league-panel-{key}']}", html, "league-panel")
+@@ -1459,40 +1479,76 @@ def more_pages(rel: str, label: str = "More pages") -> str:
+ 
+ # --- Highlights, Experiments, About (Ümit #2901) --------------------------------------------------------------------
+ 
+-# Highlights: decision slots, each for one decision and its short story. The stories come from Can and Ümit; until
+-# then each slot is an empty, marked placeholder. A slot may name a candidate only if Can or Ümit listed it; none is a
+-# picked position and none links a decision yet.
+-HIGHLIGHT_SLOTS = ["Candidate (listed by Can and Ümit, not chosen yet): Astra 36/36 rolls",
+-                   "Candidate (listed by Can and Ümit, not chosen yet): Sol board-only vs with numbers",
+-                   "Candidate (listed by Can and Ümit, not chosen yet): one good risk",
+-                   "Candidate (listed by Can and Ümit, not chosen yet): one blunder", None, None]
++# Highlights (Ümit #2938 item 4): decision slots, each one decision (board, the model's play, the engine's play) and its
++# short story; content/highlights.json names them. A filled slot's decision is read from the Every decision export and
++# its stated facts (content/highlights.json "facts") must be the exported decision's, or the build fails; its story
++# comes from Ümit / Claude, until then it is marked Story coming. Other slots name only candidates Can or Ümit listed.
++HIGHLIGHTS = json.loads((CONTENT_DIR / "highlights.json").read_text())["slots"]
+ STORY_COMING = "Story coming"
+ 
+ 
+-def highlights_page(S) -> str:
+-    slots = "".join(
+-        f'<section class="card highlight-slot" id="highlight-{i}" data-slot="empty"><h2>Highlight {i}</h2>'
+-        f'<p class="highlight-candidate">{esc(c) if c else nm("No decision chosen yet")}</p>'
+-        f'<p class="note">{status_badge(STORY_COMING)} The decision and its story will be added here.</p></section>'
+-        for i, c in enumerate(HIGHLIGHT_SLOTS, 1))
+-    return (page_head(S, "Highlights", "Highlights", "Decisions, each with a short story. The stories are not written "
+-                      'yet; every decision is on <a href="../decisions/">Decisions</a>.')
++def exported_decision(out: Path, dataset: str, slug: str, did: int) -> tuple[dict, int]:
++    """(the decision as exported, its page number) from decisions/<dataset>/<slug>/<page>.json.gz."""
++    import gzip
++    files = [p for p in (out / "decisions" / dataset / slug).glob("*.json.gz") if re.fullmatch(r"\d+\.json\.gz", p.name)]
++    for p in sorted(files, key=lambda p: int(p.name.split(".")[0])):
++        for d in json.loads(gzip.decompress(p.read_bytes()))["decisions"]:
++            if d["id"] == did:
++                return d, int(p.name.split(".")[0])
++    raise ValueError(f"content/highlights.json: decision {did} is not in the {dataset}/{slug} export")
++
++
++def highlight_slot(S, out: Path, i: int, h: dict) -> str:
++    head = f'<section class="card highlight-slot" id="highlight-{i}"'
++    coming = f'<p class="note">{status_badge(STORY_COMING)} The story will be added here.</p>'
++    if "decision" not in h:
++        return (f'{head} data-slot="empty"><h2>Highlight {i}</h2><p class="highlight-candidate">'
++                f'{esc(h["candidate"]) if h.get("candidate") else nm("No decision chosen yet")}</p>'
++                f'{coming.replace("story", "decision and its story")}</section>')
++    from board import board_svg
++    d, page = exported_decision(out, h["dataset"], h["setup"], h["decision"])
++    me, best = d["plays"][d["chosen"]], d["plays"][d["best"]]
++    f = h["facts"]
++    shown = dict(model_play=me["notation"], model_hitting_rolls=me["hitting_rolls"], best_play=best["notation"],
++                 best_hitting_rolls=best["hitting_rolls"], equity_difference=round(best["equity"] - me["equity"], 4))
++    if shown != f:
++        raise ValueError(f"content/highlights.json slot {i}: stated facts {f} are not the exported decision's {shown}")
++    svg = board_svg(d["board"], d["dice"], d["pips"], play=best["notation"], alt=me["notation"], cls="bd hl-board",
++                    label_extra=f"Solid arrows: the engine's best play, {best['notation']}. Dashed: the model's play, "
++                                f"{me['notation']}.")
++    href = f'../decisions/?d={h["dataset"]}&amp;s={h["setup"]}&amp;p={page}#d{h["decision"]}'
++    shot = lambda n: f"the opponent hits with {count(n)} of 36 rolls"  # noqa: E731  (Every decision's wording)
++    facts = (f'<dl class="facts"><dt>Dice</dt><dd>{d["dice"][0]}-{d["dice"][1]}</dd>'
++             f'<dt>The model played</dt><dd><code>{esc(me["notation"])}</code>: {shot(me["hitting_rolls"])}</dd>'
++             f'<dt>The engine\'s best play</dt><dd><code>{esc(best["notation"])}</code>: {shot(best["hitting_rolls"])}, '
++             f'worth {fmt(f["equity_difference"], 3)} more in equity (GNU Backgammon 2-ply)</dd></dl>')
++    return (f'{head} data-slot="filled"><h2>{esc(h["title"])}</h2><div class="highlight-body">'
++            f'<figure class="hero-board">{svg}</figure><div>{facts}{coming}'
++            f'<p><a href="{href}">Open this decision</a></p></div></div></section>')
++
++
++def highlights_page(S, out: Path) -> str:
++    slots = "".join(highlight_slot(S, out, i, h) for i, h in enumerate(HIGHLIGHTS, 1))
++    return (page_head(S, "Highlights", "Highlights", "Single decisions, each with the board, the model's play and the "
++                      'engine\'s play, and a short story. The stories are not written yet; every decision is on '
++                      '<a href="../decisions/">Decisions</a>.')
+             + f'<div class="highlight-slots">{slots}</div>')
+ 
+ 
+ def experiments_page(S) -> str:
+     import learning_page
+     L = S["learning"]
++    lstatus = "Pre-registration" if L.get("preregistration_only") else L["status"]["line"]
+     cards = [
+-        ("clear-risk", "Clear risk", "Preliminary / partial",
++        ("clear-risk", "Clear risk", "Preliminary",
+          "Clear-risk scan: decisions where a risk or safety is clearly better, per setup, checks, a rollout check and a "
+          "partial model quiz.", [("../clear-risk/", "Open Clear risk")]),
+-        ("nackgammon", "Nackgammon", None,
++        ("nackgammon", "Nackgammon", "Finished",
+          "Does a model still play well when the starting position changes? Nackgammon has the rules of backgammon; only "
+          "the starting position differs.",
+-         [("../#nackgammon-paired", "The paired test"), ("../leagues/#nack-knockout", "The knockout"),
++         [("../nackgammon/", "Open Nackgammon"), ("../leagues/#nack-knockout", "The knockout"),
+           ("../matches/#stage-knockout", "Its matches")]),
+-        ("learning", "Learning from experience", learning_page.status_label(L),
++        ("learning", "Learning from experience", lstatus,
+          "Does a model play better after seeing its own earlier games? " + esc(L["plan"]["commitment"]),
+          [(f"../{learning_page.PATH}", "Open Learning from experience")])]
+     out = "".join(
+@@ -1504,6 +1560,17 @@ def experiments_page(S) -> str:
+         f'<div class="experiment-cards">{out}</div>'
+ 
+ 
++def nackgammon_page(S) -> str:
++    """The Nackgammon paired test on its own page (Ümit #2938 item 5): the home page's section as it was (its per-setup
++    tables, chart and method text, from nack-paired.json), moved here."""
++    import home
++    import nack_section
++    sec = nack_section.section(S["nack"], *home.nack_views(S), S["nack_late"])
++    return (page_head(S, "Experiments", "Nackgammon", "Finished. Does a model still play well when the starting "
++                      "position changes? The knockout: <a href=\"../leagues/#nack-knockout\">Leagues</a>.")
++            + rebase(sec, "../", ids_of(sec)))
++
++
+ def rules_text() -> str:
+     """The rules of backgammon as every player is given them: the Rules part of the current prompt (bg-v2), verbatim."""
+     md = (ROOT / "prompts/bg-v2.md").read_text()
+@@ -1517,14 +1584,43 @@ def method_sections(method_html: str) -> list[tuple[str, str]]:
+     return re.findall(r'<section class="card" id="([\w-]+)"[^>]*>\s*<h2 id="[\w-]+-title">(.*?)</h2>', method_html)
+ 
+ 
++# About's text (Ümit, bus #2939): content/about.md, four sections in order, then the "Leaderboard box" section that the
++# home page shows as "How the scores work". Each section's id: the old About anchors keep landing (#leaderboard is the
++# leaderboard rules, with the longer leaderboard notes under them).
++ABOUT_IDS = {"Backgammon in one page": "backgammon", "How the benchmark works": "how-it-works",
++             "How the scores work": "scores", "Leaderboard rules": "leaderboard", "Leaderboard box": "short"}
++GITHUB = "https://github.com/zekiworks/jevgammon"
++
++
++def about_sections() -> list[tuple[str, str, str]]:
++    """(id, heading, markdown) of content/about.md's sections, in order; the "1. " numbering of a heading is dropped."""
++    md = re.sub(r"<!--.*?-->", "", (CONTENT_DIR / "about.md").read_text(), flags=re.S)
++    out = []
++    for block in re.split(r"^## ", md, flags=re.M)[1:]:
++        head, _, body = block.partition("\n")
++        head = re.sub(r"^\d+\.\s*", "", head.strip())
++        out.append((ABOUT_IDS[head], head, body.strip()))
++    return out
++
++
++def about_links(rel: str) -> str:
++    """About's links (Ümit #2938 item 6): Method, Data, Leagues, Matches, GitHub."""
++    items = [(f"{rel}method/", "Method"), (f"{rel}data/", "Data"), (f"{rel}leagues/", "Leagues"),
++             (f"{rel}matches/", "Matches"), (GITHUB, "GitHub")]
++    return ('<nav class="face-nav about-links" aria-label="About links">'
++            + "".join(f'<a href="{h}">{esc(t)}</a>' for h, t in items) + '</nav>')
++
++
+ def about_page(S, method_html: str) -> str:
++    import home
++    import method
+     import story
+-    toc = [("leaderboard", "How the leaderboard is built"), ("rules", "Rules of backgammon"), ("method", "Method"),
+-           ("data", "Data"), ("how-to-run", "How to run it"), ("late-entries", "Late entries"),
+-           ("open-questions", "Open questions"), ("pages", "More pages")]
++    ours = [(i, h, method.spec_markdown(md)) for i, h, md in about_sections() if i != "short"]
++    more = [("rules", "Rules of backgammon, as the prompt states them"), ("method", "Method"), ("data", "Data"),
++            ("how-to-run", "How to run it"), ("late-entries", "Late entries"), ("open-questions", "Open questions"),
++            ("pages", "More pages")]
+     method_links = "".join(f'<li><a href="../method/#{i}">{h}</a></li>' for i, h in method_sections(method_html))
+     parts = {
+-        "leaderboard": story.about_text("../"),
+         "rules": f'<p class="note">The rules as every player reads them in the prompt (bg-v2, the current version: '
+                  f'<a href="../method/#prompt">Method: The prompt</a>), quoted unchanged.</p>{rules_text()}',
+         "method": f'<p>Every definition, threshold and caveat is on the <a href="../method/">Method</a> page:</p>'
+@@ -1536,14 +1632,27 @@ def about_page(S, method_html: str) -> str:
+         "open-questions": f'<p>What is not settled yet: every analysis in the plan with its status, and the limits on '
+                           f'the <a href="../method/#limits">Method page</a>.</p>{status_list(S)}',
+         "pages": more_pages("../")}
+-    nav = "".join(f'<a href="#{i}">{esc(t)}</a>' for i, t in toc)
+-    return (page_head(S, "About", "About the benchmark", "The rules, the method, the data and how to run it.")
++    extra = {"scores": home.how_numbers(S, "../"),
++             "leaderboard": '<h3 id="leaderboard-notes">How the leaderboard is built</h3>' + story.about_text(S, "../")}
++    nav = "".join(f'<a href="#{i}">{esc(t)}</a>' for i, t, _ in ours) + "".join(f'<a href="#{i}">{esc(t)}</a>' for i, t in more)
++    return (page_head(S, "About", "About the benchmark", "Backgammon in one page, how the benchmark works, how the "
++                      "scores work and the leaderboard rules; then the method, the data and how to run it.")
++            + about_links("../")
+             + f'<nav class="face-nav" aria-label="On this page">{nav}</nav>'
+-            + "".join(f'<section class="card" id="{i}"><h2>{esc(t)}</h2>{parts[i]}</section>' for i, t in toc))
++            + "".join(f'<section class="card about-text" id="{i}"><h2>{esc(t)}</h2>{body}{extra.get(i, "")}</section>'
++                      for i, t, body in ours)
++            + "".join(f'<section class="card" id="{i}"><h2>{esc(t)}</h2>{parts[i]}</section>' for i, t in more))
++
++
++# The Decisions tab's other pages (Ümit #2938 item 1): linked under its first card.
++DECISION_PAGES = [("disagreements/", "Where models disagree"), ("phases/", "Phases"), ("compare/", "Compare")]
+ 
+ 
+ def decisions_page(S, body: str) -> str:
+-    return body + f'<p class="version version-line">{esc(version_line(S))}</p>'
++    links = ('<nav class="face-nav decisions-links" aria-label="More on decisions">'
++             + "".join(f'<a href="../{h}">{esc(t)}</a>' for h, t in DECISION_PAGES) + '</nav>')
++    head_end = body.index("</section>") + len("</section>")
++    return body[:head_end] + links + body[head_end:] + f'<p class="version version-line">{esc(version_line(S))}</p>'
+ 
+ 
+ def share_card(S) -> str:
+@@ -1595,9 +1704,21 @@ def write_all(S, out: Path, base: str) -> None:
+         import shutil
+         if (out / stale).exists():
+             shutil.rmtree(out / stale)
+-    put("", TITLE, home.home(S), scripts=("bg.js",), styles=("decisions.css",), body_class="home")
++    import story
++    leagues, moved_ids, league_ids = leagues_page(S, method.archive_v1())
++    nack = nackgammon_page(S)
++    # The old home anchors (#risk-judgement, #lg-hype-cup, #board-panel, #nackgammon-paired …): bg.js sends each to
++    # the same id on its new page; ids that stayed on the home page are not in the map.
++    home_html = home.home(S)
++    moved = moved_anchors({"leagues/": moved_ids, "nackgammon/": ids_of(nack)}, league_ids)
++    moved = {k: v for k, v in moved.items() if k not in ids_of(home_html)}
++    home_html += f'<script type="application/json" id="moved-anchors">{json.dumps(moved, sort_keys=True)}</script>'
++    put("", TITLE, home_html, scripts=("bg.js",), styles=("decisions.css",), body_class="home")
+     home.fragments(S, out)
+-    put("leagues/", "Leagues", leagues_page(S, method.archive_v1()), scripts=("bg.js",))
++    put("leagues/", "Leagues", leagues, scripts=("bg.js",), styles=("decisions.css",))
++    put("nackgammon/", "Nackgammon", nack, scripts=("bg.js",),
++        description="The Nackgammon paired test of the backgammon benchmark (finished): does a model still play well "
++                    "when the starting position changes? Per-setup tables, the chart and the method.")
+     put("matches/", "Matches", matches_page(S), scripts=("bg.js",),
+         description="Every match of the backgammon benchmark: the leagues, the ladder rounds, gap matches, late "
+                     "entries, the Hype Cup and the Nackgammon knockout, with scores, winners and links to the decisions.")
+@@ -1621,7 +1742,9 @@ def write_all(S, out: Path, base: str) -> None:
+     method_html = method.body(ctx)
+     put("method/", "Method", method_html, main_class="method-page")
+     import clear_risk_section
+-    put("clear-risk/", "Clear risk (preliminary)", clear_risk_section.body(S),
++    # The clear-risk scan's bias chart, a finding section of the home page until Ümit #2938, sits under the scan.
++    bias = story.cautious(S)
++    put("clear-risk/", "Clear risk (preliminary)", clear_risk_section.body(S) + rebase(bias, "../", ids_of(bias)),
+         description="Clear-risk scan of the backgammon benchmark (preliminary / partial): decisions where a risk or "
+                     "safety is clearly better, per setup, checks, a rollout check and a partial model quiz.")
+     import learning_page
+@@ -1630,11 +1753,11 @@ def write_all(S, out: Path, base: str) -> None:
+     put("data/", "Data", data_page(S, out))
+     put("decisions/", "Every decision", decisions_page(S, decisions_export.body()),
+         scripts=("decisions.js",), styles=("decisions.css",))
+-    put("highlights/", "Highlights", highlights_page(S),
+-        description="Highlights of the backgammon benchmark: single decisions, each with a short story (the stories "
+-                    "are not written yet).")
++    put("highlights/", "Highlights", highlights_page(S, out), styles=("decisions.css",),
++        description="Highlights of the backgammon benchmark: single decisions, each with the board, the model's play, "
++                    "the engine's play and a short story (the stories are not written yet).")
+     put("experiments/", "Experiments", experiments_page(S),
+         description="Experiments of the backgammon benchmark: Clear risk, Nackgammon and Learning from experience.")
+     put("about/", "About", about_page(S, method_html),
+-        description="About the backgammon benchmark: the rules of backgammon, the method, the data, how to run it, late "
+-                    "entries and open questions.")
++        description="About the backgammon benchmark: backgammon in one page, how the benchmark works, how the scores "
++                    "work, the leaderboard rules, the method, the data, how to run it, late entries and open questions.")
+diff --git a/tools/site/story.py b/tools/site/story.py
+index c997965..f47a1da 100644
+--- a/tools/site/story.py
++++ b/tools/site/story.py
+@@ -8,6 +8,7 @@ numbers is mailbox/front-story/evidence (made by evidence.py there), not code he
+ supporting must be reworded by hand."""
+ 
+ import json
++import math
+ import re
+ 
+ import home as H
+@@ -17,6 +18,7 @@ from common import ALL_NOTE, CONTENT, LATE_ENTRY, NA, count, esc, fmt, nm, pct
+ RELEASES = json.loads((CONTENT / "release_months.json").read_text())["models"]
+ MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+ PROGRAMS = ("GNUbg weak", "Random", "Safest")
++NO_MAKER = "Maker not recorded"  # content/maker_colors.json's entry for setups whose maker is not on record
+ 
+ 
+ def caveat(text: str, anchor: str = "limits") -> str:
+@@ -37,22 +39,31 @@ ON = "on"
+ # Models that are one row (content/model_identity.json: an approved list, nothing inferred from names): a dated
+ # checkpoint under its original, which names and dates the row.
+ SAME_MODEL = json.loads((CONTENT / "model_identity.json").read_text())["same_model"]
+-# Under the table (Ümit #2745 item 3, with Zeki #2578's accepted rank sentence in place of the whisker-overlap one).
++# Beside the table until Ümit #2938 item 3; on About since (Zeki #2578's accepted rank sentence in place of the
++# whisker-overlap one).
+ NOTE = ("Bars run to each score; the whisker is its 95% interval. Ranks show observed scores; small gaps need not be "
+         "meaningful. Leagues played different positions.")
+-# The row rule, one line under the table (Ümit #2921 items 1 and 5); the longer explanation is on About (about_text).
++# The full row rule (Ümit #2921 items 1 and 5); the table's own line is ROW_LINE.
+ RULE = ("Row rule: each model's highest reasoning setting (off < minimal < low < medium < high < xhigh < max), late "
+         "entries included; a model with one setup uses it; several setups at that setting: the first in league order, "
+         "then by setup name, never by score.")
+ 
+ 
+-def about_text(rel: str) -> str:
++def about_text(S, rel: str) -> str:
+     """How the leaderboard is built, for the About page: the text that stood above and under the table before
+-    Ümit #2921 item 5, unchanged but for the late entries now in the ranking."""
+-    return ('<p><strong>A fixed table:</strong> the filters below the leaderboard do not change it. Tap a model (or '
++    Ümit #2921 item 5, and the notes that stood beside it before #2938 item 3 (bars and ranks, the row rule, Released),
++    unchanged but for where the filters and Every number now are (Leagues)."""
++    n_models = len(leaderboard_rows(S)[0])
++    missing = headline_rows(S)[1]
++    released = (f'<p>Released (in a row\'s details): the month of the maker\'s own dated statement that this exact model '
++                f'was released or became available to the public (an announcement before public availability does not '
++                f'count), linked; left out where no such statement is on record ({count(len(missing))} of '
++                f'{count(n_models)} models).</p>' if missing else "")
++    return ('<p><strong>A fixed table:</strong> the filters on the Leagues page do not change it. Tap a model (or '
+             'point at it) for its details and its decisions.</p>'
+             '<p># is the rank among all models, in every view of the table\'s All · Chat models · Decision models '
+             'filter; the programs are reference rows in every view.</p>'
++            f'<p>{esc(NOTE)}</p><p>{esc(RULE)}</p>'
+             '<p>Each model\'s row is its highest reasoning setting played, by the effort the requests sent (off &lt; '
+             'minimal &lt; low &lt; medium &lt; high &lt; xhigh &lt; max; on above off for a model without levels; a '
+             'decision model\'s single setup), never its best score; late-entry setups count as the model\'s setups '
+@@ -60,8 +71,8 @@ def about_text(rel: str) -> str:
+             'setting: the first in league order, then by setup name (no score). Every value of a row and of its details '
+             'is that setup\'s own; its other settings are under the row\'s expander and under All setups. Version names '
+             'are separate models; ' + "; ".join(f"{esc(k)} is under {esc(v)}" for k, v in SAME_MODEL.items()) + ' (a '
+-            f'dated checkpoint under its original). Every column of every setup: <a href="{rel}#board-panel">Every '
+-            'number</a>.</p>')
++            f'dated checkpoint under its original). Every column of every setup: <a href="{rel}leagues/#board-panel">Every '
++            'number</a>.</p>' + released)
+ 
+ 
+ def level(setting: str | None, levelled: bool) -> int:
+@@ -220,21 +231,24 @@ def details_box(S, x, kind: str, bid: str, extra: list) -> str:
+     er = (f'Error rate {fmt(q["error_rate"])} (95%: {fmt(q["error_lo"])}\u2013{fmt(q["error_hi"])})'
+           if q and q.get("error_rate") is not None and not q.get("too_few") else None)
+     href, page = decisions_href(S, x), page_href(S, x)
++    # The lines in the order of Ümit's example (#2938 item 3): name · maker / risk judgement / both halves / the raw
++    # counts / error rate · record · late entry; then the setup's other stored facts; then the links.
+     lines = [
+         join([f'<strong>{esc(x["name"])}</strong>', esc(H.maker(x["name"])[0]) if kind != "program" else None]),
+-        join([f'Setting {esc(x["setting"])}' if x["setting"] else None, None if e else f'League {x["lg"]["id"]}']),
+-        (f'Played the original League {e["field_league"]} field after the league finished (late entry)' if e else None),
+-        (join([f'Provisional: {count(e["played"])} of {count(e["total"])} matches'] + [
+-            f'not played: {esc(g["opponent"])} ({esc(g["reason"])})' for g in e.get("not_played") or []])
+-         if e and e["status"] == P.PROVISIONAL else None),
+-        (esc(P.SUBQ_SELF) if e and x["name"] == P.SUBQ_11 else None),
+         (f'Risk judgement {fmt(r["judgement"])} (95%: {fmt(r["judgement_lo"])}\u2013{fmt(r["judgement_hi"])})'
+          if r["judgement"] is not None else None),
+         join([f'Risks found {pct(found["share"])}' if found["den"] else None,
+               f'safe right {pct(safe["share"])}' if safe["den"] else None]),
+         join([f'Took {H.n_(found["n"])} of {H.n_(found["den"])} risks that paid' if found["den"] else None,
+               f'played safe in {H.n_(safe["n"])} of {H.n_(safe["den"])} positions where safe paid' if safe["den"] else None]),
+-        join([er, f'record {count(rec["won"])}\u2013{count(rec["drawn"])}\u2013{count(rec["lost"])}' if rec else None]),
++        join([er, f'record {count(rec["won"])}\u2013{count(rec["drawn"])}\u2013{count(rec["lost"])}' if rec else None,
++              esc(late_tag(x)) if e else None]),
++        join([f'Setting {esc(x["setting"])}' if x["setting"] else None, None if e else f'League {x["lg"]["id"]}']),
++        (f'Played the original League {e["field_league"]} field after the league finished (late entry)' if e else None),
++        (join([f'Provisional: {count(e["played"])} of {count(e["total"])} matches'] + [
++            f'not played: {esc(g["opponent"])} ({esc(g["reason"])})' for g in e.get("not_played") or []])
++         if e and e["status"] == P.PROVISIONAL else None),
++        (esc(P.SUBQ_SELF) if e and x["name"] == P.SUBQ_11 else None),
+         join([cost_text(S, x), f'{count(q["decisions"])} decisions' if q else None]),
+         *extra,
+         join([f'<a href="{href}">{"Its late-entry page" if e else "Open its decisions"} \u2192</a>' if href else None,
+@@ -293,7 +307,7 @@ def headline_rows(S) -> tuple[list, list, list]:
+             bid = f"{rid}-box"
+             body.append(f'<tr{cls}{tr_attrs(S, x, kind, typ)} data-box="{bid}">{rank}<td class="model">{dot}{icon}'
+                         f'{name_link(S, x, label, bid)}<span class="small hl-type">{under}{tag}</span>{more}'
+-                        f'{details_box(S, x, kind, bid, extra)}</td>{judgement_cell(x["r"], colour)}</tr>')
++                        f'{details_box(S, x, kind, bid, extra)}</td>{judgement_cell(x["r"], colour)}{wide_cells(x)}</tr>')
+             for sid, y in zip(sub_ids, others):
+                 ycol = H.maker(y["name"])[1] if kind == "model" else None
+                 ybid = f"{sid}-box"
+@@ -301,13 +315,31 @@ def headline_rows(S) -> tuple[list, list, list]:
+                 body.append(f'<tr class="hl-sub{"" if kind == "model" else " reference"}" '
+                             f'id="{sid}" hidden{tr_attrs(S, y, kind, typ)} data-box="{ybid}"><td class="num"></td><td class="model">'
+                             f'{name_link(S, y, y["name"], ybid)}<span class="small">other {what} of {esc(label)}{ytag}</span>'
+-                            f'{details_box(S, y, kind, ybid, [])}</td>{judgement_cell(y["r"], ycol)}</tr>')
++                            f'{details_box(S, y, kind, ybid, [])}</td>{judgement_cell(y["r"], ycol)}{wide_cells(y)}</tr>')
+             if kind != "program" or x["name"] == "GNUbg weak":
+                 chart.append((kind, label, x, colour))
+     return body, missing, chart
+ 
+ 
+-HEADLINE_HEAD = [(h, " data-nosort") for h in ("#", "Model", "Risk judgement (95% interval)")]
++# Wide screens add four columns (Ümit #2938 item 3): risks found, safe right, error rate, $ per 1,000 decisions; bg.css
++# hides the hl-wide cells below 900 px, where the details box holds the same values.
++WIDE_HEAD = ["Risks found", "Safe right", "Error rate (PR)",
++             '<span class="cost-1k">$ per 1,000</span><span class="cost-1m">$ per 1M</span>']
++HEADLINE_HEAD = ([(h, " data-nosort") for h in ("#", "Model", "Risk judgement (95% interval)")]
++                 + [(h, " data-nosort data-wide") for h in WIDE_HEAD])
++
++
++def wide_cells(x) -> str:
++    """The four wide-screen cells of a row, each the setup's stored value as its details box prints it; a dash where
++    the data has none."""
++    r, q = x["r"], x["q"]
++    dash = '<span class="muted">\u2013</span>'
++    share = lambda s: pct(s["share"]) if s["den"] else dash  # noqa: E731
++    er = fmt(q["error_rate"]) if q and q.get("error_rate") is not None and not q.get("too_few") else dash
++    usd = q.get("usd_per_1000") if q else None
++    cost = (f'<span class="cost-1k">${fmt(usd, 3)}</span><span class="cost-1m" data-usd="{usd!r}">${fmt(usd, 3)}</span>'
++            if usd is not None else dash)
++    return "".join(f'<td class="num hl-wide">{v}</td>' for v in (share(r["found"]), share(r["right_safety"]), er, cost))
+ 
+ 
+ def too_safe(S, chart: list) -> str:
+@@ -339,19 +371,21 @@ def too_safe(S, chart: list) -> str:
+             f'and of the risks it found, as in the table</p></div>{chart_html}<p class="chart-legend">{legend}</p></figure>')
+ 
+ 
++# The two lines around the table (Ümit #2938 item 3): the score's meaning above it, the row rule (with the All leagues
++# note the merged table carries) under it. The longer notes (bars and whisker, ranks, Released, the full rule) are on
++# About (about_text).
++MEANING = "Risk judgement: 100 = every call right, 50 = always safe; higher is better."
++ROW_LINE = "One row per model at its highest reasoning setting, never its best score; late entries included."
++
++
+ def headline(S) -> str:
+     """One row per model at its highest reasoning setting (a fixed rule, not the best score), its other settings
+     behind a per-row expander, the programs as grey unranked rows; the All setups key shows the full All leagues risk
+-    table (every setup, programs as reference rows) in its place. The Too safe chart under it."""
+-    rows, missing, chart = headline_rows(S)
+-    n_models = len(leaderboard_rows(S)[0])
++    table (every setup, programs as reference rows) in its place."""
++    rows = headline_rows(S)[0]
+     table = P.table(HEADLINE_HEAD, rows, "One row per model at its highest reasoning setting; all leagues, all phases",
+                     cls="board headline",
+                     attrs=' data-dataset="all" id="headline-table"')
+-    note = (f'<p class="table-note">Released (in a row\'s details): the month of the maker\'s own dated statement that '
+-            f'this exact model was released or became available to the public (an announcement before public '
+-            f'availability does not count), linked; left out where no such statement is on record '
+-            f'({count(len(missing))} of {count(n_models)} models).</p>' if missing else "")
+     keys = ('<span class="keys needs-js" role="group" aria-label="Rows"><button type="button" class="key" '
+             'data-headline-view="model" aria-pressed="true">One row per model</button><button type="button" '
+             'class="key" data-headline-view="all" aria-pressed="false">All setups</button></span>')
+@@ -361,14 +395,12 @@ def headline(S) -> str:
+                        f'{l}</button>' for k, l in (("all", "All"), ("chat", "Chat models"), ("decision", "Decision models")))
+              + '</div>')
+     return (f'<section class="card headline" id="leaderboard" data-dataset="all" aria-labelledby="leaderboard-title">'
+-            f'<div class="chart-head"><h2 id="leaderboard-title">Risk calls leaderboard</h2>{keys}<p class="chart-sub">'
+-            f'Risk judgement: 100 = every call right, 50 = always safe · higher is better</p></div>'
+-            '<p class="table-note headline-scope">One row per model: its highest reasoning setting, late entries '
+-            'included, never its best score (<a href="about/#leaderboard">more in About</a>).</p>'
+-            f'<div data-headline-panel="model">{types}{table}{caveat(NOTE, "statistics")}'
+-            f'<p class="table-note headline-rule">{esc(RULE)}</p>{note}{too_safe(S, chart)}</div>'
++            f'<div class="chart-head"><h2 id="leaderboard-title">Risk calls leaderboard</h2>{keys}'
++            f'<p class="chart-sub">{esc(MEANING)}</p></div>'
++            f'<div data-headline-panel="model">{types}{table}</div>'
+             f'<div data-headline-panel="all" hidden>{H.all_risk_table(S)}{caveat(H.RANK_NOTE, "statistics")}</div>'
+-            f'<p class="table-note">{esc(ALL_NOTE)}</p></section>')
++            f'<p class="table-note headline-rule">{esc(ROW_LINE)} {esc(ALL_NOTE)} '
++            '<a href="about/#leaderboard">How rows are chosen</a></p></section>')
+ 
+ 
+ # --- Finding sections ----------------------------------------------------------------------------------------------
+@@ -420,10 +452,13 @@ def _bars(rows: list, lo: float, hi: float, ticks: list, head: str, zero: bool =
+             f'<span class="hbar-head">{head}</span></div><ol class="hbars headed">{"".join(out)}</ol>')
+ 
+ 
+-def finding(fid: str, heading: str, sentences: str, chart: str, legend: str, warn: str, anchor: str) -> str:
++def finding(fid: str, heading: str, sentences: str, chart: str, legend: str, warn: str, link: tuple[str, str]) -> str:
++    """A finding section (Ümit #2938 item 2): the heading states the finding, one chart, two or three sentences and one
++    link (href relative to the site's root, label)."""
+     return (f'<section class="card finding" id="{fid}" aria-labelledby="{fid}-title"><h2 id="{fid}-title">{esc(heading)}</h2>'
+             f'<p class="finding-text">{sentences}</p><figure class="chart-card chart-wide finding-chart">{chart}'
+-            f'<p class="chart-legend">{legend}</p></figure>{caveat(warn, anchor)}</section>')
++            + (f'<p class="chart-legend">{legend}</p>' if legend else "") + '</figure>'
++            f'<p class="table-note section-caveat">{esc(warn)} <a href="{link[0]}">{esc(link[1])}</a></p></section>')
+ 
+ 
+ def cautious(S) -> str:
+@@ -450,8 +485,9 @@ def cautious(S) -> str:
+     legend = ('<span>Bias = missed risks (a clear Risk win played safe) minus needless risks (a clear Safety win played '
+               'unsafe), in percentage points; right of 0 = too cautious</span> <span><i class="swatch swatch-program">'
+               '</i>program (reference row)</span>')
+-    return finding("finding-cautious", "Models are too cautious", text, chart, legend,
+-                   "Not paired: setups met different positions, so the rows compare only loosely.", "clear-risk")
++    return finding("clear-risk-bias", "Models are too cautious: the clear-risk scan", text, chart, legend,
++                   "Not paired: setups met different positions, so the rows compare only loosely.",
++                   ("method/#clear-risk", "More caveats: Method"))
+ 
+ 
+ def flinch(S) -> str:
+@@ -479,8 +515,285 @@ def flinch(S) -> str:
+     legend = ('<span><i class="swatch" style="background:var(--text-2)"></i>with numbers (the league prompt, each play\'s '
+               'computed consequences)</span> <span><i class="swatch swatch-q1-board"></i>board only (notation, no computed '
+               'number)</span> <span>Bias: missed minus needless, Q1 of Clear risk Part 2</span>')
+-    return finding("finding-flinch", heading, text, chart, legend, "Two plays shown, not league play.", "clear-risk")
++    return finding("finding-flinch", heading, text, chart, legend, "Preliminary: two plays shown, not league play.",
++                   ("clear-risk/", "Clear risk (preliminary)"))
++
++
++# --- The front page's finding sections a-f (Ümit #2938 item 2). Every heading is decided from the same stored values
++# the section shows (the rule beside each); where the rule fails the section keeps a neutral heading. The check of each
++# rule against the data, with its numbers, is mailbox/ct-brief/evidence/a.md ... f.md. --------------------------------
++
++def _svg(label: str, w: int, h: int, body: str) -> str:
++    """A finding's SVG in the site's chart style. Its points carry no dataset (they come from several leagues, like the
++    leaderboard's rows, and the section says so)."""
++    return f'<svg class="chart-svg finding-svg" viewBox="0 0 {w} {h}" role="img" aria-label="{esc(label)}">{body}</svg>'
++
++
++def _rows_chart(S) -> list:
++    """The leaderboard's model rows and GNUbg weak: (kind, row name, chosen setup, maker colour)."""
++    return headline_rows(S)[2]
++
++
++def two_skill(S) -> str:
++    """a. Risks found (x) against safe right (y), one dot per leaderboard row in its maker's colour, GNUbg weak the grey
++    reference. Heading rule: most ranked models found a smaller share of the risks that paid than they played safe
++    right where safety paid."""
++    rows = _rows_chart(S)
++    models = [(label, x, c) for kind, label, x, c in rows if kind == "model"
++              and x["r"]["found"]["den"] and x["r"]["right_safety"]["den"]]
++    gnu = next((x for kind, label, x, c in rows if kind == "program"), None)
++    below = [m for m in models if m[1]["r"]["found"]["share"] < m[1]["r"]["right_safety"]["share"]]
++    heading = "Models are too cautious." if 2 * len(below) > len(models) else "Risks found and safe right"
++    f = sorted(m[1]["r"]["found"]["share"] for m in models)
++    s = sorted(m[1]["r"]["right_safety"]["share"] for m in models)
++    who = f"Every one of the {count(len(models))}" if len(below) == len(models) else \
++        f"{count(len(below))} of the {count(len(models))}"
++    text = (f'{who} ranked models took a smaller share of the risks that paid than the share of safe positions they '
++            f'played right: risks found runs from {pct(f[0])} to {pct(f[-1])}, safe right from {pct(s[0])} to {pct(s[-1])}.')
++    if gnu:
++        g = gnu["r"]
++        text += (f' GNUbg weak, a weak setting of the engine (grey square), is close to even: {pct(g["right_safety"]["share"])} '
++                 f'safe right, {pct(g["found"]["share"])} risks found.')
++    text += ' Above the diagonal, a model plays safe more often than the positions reward.'
++    W, Hh, L, B, T, R = 520, 420, 52, 44, 12, 14
++    x = lambda v: L + (W - L - R) * v  # noqa: E731
++    y = lambda v: Hh - B - (Hh - B - T) * v  # noqa: E731
++    parts = []
++    for t in range(0, 101, 25):
++        v = t / 100
++        parts.append(f'<line class="grid" x1="{x(v):.1f}" x2="{x(v):.1f}" y1="{T}" y2="{Hh - B}"/>'
++                     f'<line class="grid" x1="{L}" x2="{W - R}" y1="{y(v):.1f}" y2="{y(v):.1f}"/>'
++                     f'<text class="muted" x="{x(v):.1f}" y="{Hh - B + 14}" text-anchor="middle">{t}%</text>'
++                     f'<text class="muted" x="{L - 6}" y="{y(v) + 4:.1f}" text-anchor="end">{t}%</text>')
++    parts.append(f'<line class="rm-diag" x1="{x(0):.1f}" y1="{y(0):.1f}" x2="{x(1):.1f}" y2="{y(1):.1f}"/>'
++                 f'<text x="{(L + W - R) / 2}" y="{Hh - 8}" text-anchor="middle">Risks found: took the risk when it paid</text>'
++                 f'<text x="14" y="{(T + Hh - B) / 2}" transform="rotate(-90 14 {(T + Hh - B) / 2})" text-anchor="middle">'
++                 'Safe right: played safe when safe paid</text>')
++    for label, xr, c in models:
++        fx, sy = xr["r"]["found"]["share"], xr["r"]["right_safety"]["share"]
++        parts.append(f'<circle class="sk-dot" cx="{x(fx):.1f}" cy="{y(sy):.1f}" r="5" style="fill:{c}">'
++                     f'<title>{esc(label)}: risks found {pct(fx)}, safe right {pct(sy)}</title></circle>')
++    if gnu:
++        g = gnu["r"]
++        cx, cy = x(g["found"]["share"]), y(g["right_safety"]["share"])
++        parts.append(f'<rect class="sk-ref" x="{cx - 5:.1f}" y="{cy - 5:.1f}" width="10" height="10">'
++                     f'<title>GNUbg weak: risks found {pct(g["found"]["share"])}, safe right '
++                     f'{pct(g["right_safety"]["share"])}</title></rect>'
++                     f'<text class="sk-label" x="{cx + 9:.1f}" y="{cy + 4:.1f}">GNUbg weak</text>')
++    chart = _svg("Risks found against safe right, one dot per model", W, Hh, "".join(parts))
++    chart += ('<details class="more" id="too-safe-values"><summary>Every model\'s two values</summary>'
++              f'{too_safe(S, rows)}</details>')
++    legend = (H.maker_legend(xr["name"] for _, xr, _ in models)
++              + ' <span><i class="swatch swatch-ts-grey"></i>GNUbg weak (program, reference)</span>'
++              ' <span>Dashed diagonal: as often right on both</span>')
++    return finding("finding-cautious", heading, text, chart, legend,
++                   "Not paired: models met different positions in different leagues.",
++                   ("method/#risk-metrics", "How risks found and safe right are counted"))
++
++
++def release_chart(S) -> str:
++    """b. Risk judgement against release month, one line per maker, documented months only (content/release_months.json).
++    Heading rule: "Newer models judge risk better" only if every maker with models in two or more months scores higher
++    with each later month, and at least two makers do; else the neutral heading."""
++    rows = [(label, x, c) for kind, label, x, c in _rows_chart(S) if kind == "model" and x["r"]["judgement"] is not None]
++    dated = [(RELEASES[label]["month"], label, x["r"]["judgement"], H.maker(x["name"])[0], c)
++             for label, x, c in rows if (RELEASES.get(label) or {}).get("month")]
++    by = {}
++    for m, label, j, mk, c in sorted(dated):
++        by.setdefault(mk, []).append((m, label, j, c))
++    # A line joins a maker's models only where they span two or more months ("Maker not recorded" is no maker).
++    spread = {mk: pts for mk, pts in by.items() if len({p[0] for p in pts}) > 1 and mk != NO_MAKER}
++
++    def rising(pts):
++        months = sorted({p[0] for p in pts})
++        return all(min(p[2] for p in pts if p[0] == b) > max(p[2] for p in pts if p[0] == a)
++                   for a, b in zip(months, months[1:]))
++    ok = len(spread) >= 2 and all(rising(p) for p in spread.values())
++    heading = "Newer models judge risk better" if ok else "Risk judgement by release date"
++    lines = "; ".join(f'{esc(mk)} {", ".join(fmt(p[2]) for p in pts)}' for mk, pts in spread.items())
++    text = (f'A release month is documented for {count(len(dated))} of the {count(len(rows))} ranked models; only those '
++            'are shown, each at the month of its maker\'s own dated statement.')
++    if spread:
++        text += (f' Makers with models in different months, earliest first: {lines}.'
++                 + ("" if ok else " Not every maker\'s newer model scores higher, so the dates show no clear trend."))
++    months = sorted({d[0] for d in dated})
++    if not months:
++        return ""
++    W, Hh, L, B, T, R = 560, 340, 44, 40, 12, 120
++    js = [d[2] for d in dated]
++    lo, hi = math.floor(min(js) / 5) * 5, math.ceil(max(js) / 5) * 5
++    idx = lambda m: (int(m[:4]) * 12 + int(m[5:7]))  # noqa: E731
++    m0, m1 = idx(months[0]), idx(months[-1])
++    x = lambda m: L + (W - L - R) * ((idx(m) - m0) / ((m1 - m0) or 1))  # noqa: E731
++    y = lambda v: Hh - B - (Hh - B - T) * (v - lo) / ((hi - lo) or 1)  # noqa: E731
++    parts = []
++    for v in range(lo, hi + 1, 5):
++        parts.append(f'<line class="grid" x1="{L}" x2="{W - R}" y1="{y(v):.1f}" y2="{y(v):.1f}"/>'
++                     f'<text class="muted" x="{L - 6}" y="{y(v) + 4:.1f}" text-anchor="end">{v}</text>')
++    for k in range(m0, m1 + 1):
++        m = f"{(k - 1) // 12}-{(k - 1) % 12 + 1:02d}"
++        parts.append(f'<text class="muted" x="{x(m):.1f}" y="{Hh - B + 14}" text-anchor="middle">{MONTHS[int(m[5:]) - 1]}</text>')
++    parts.append(f'<text class="muted" x="{L}" y="{Hh - B + 30}">{months[0][:4]}</text>'
++                 f'<text x="14" y="{(T + Hh - B) / 2}" transform="rotate(-90 14 {(T + Hh - B) / 2})" text-anchor="middle">'
++                 'Risk judgement</text>')
++    for mk, pts in by.items():
++        c = pts[0][3]
++        if mk in spread:
++            parts.append(f'<polyline class="rd-line" style="stroke:{c}" points="'
++                         + " ".join(f"{x(p[0]):.1f},{y(p[2]):.1f}" for p in pts) + '"/>')
++        for m, label, j, _ in pts:
++            parts.append(f'<circle class="sk-dot" cx="{x(m):.1f}" cy="{y(j):.1f}" r="4.5" style="fill:{c}">'
++                         f'<title>{esc(label)} ({esc(mk)}), released {MONTHS[int(m[5:]) - 1]} {m[:4]}: risk judgement '
++                         f'{fmt(j)}</title></circle>')
++        last = pts[-1]
++        parts.append(f'<text class="sk-label" x="{W - R + 8}" y="{y(last[2]) + 4:.1f}" style="fill:{c}">{esc(mk)}</text>'
++                     if mk in spread else "")
++    chart = _svg("Risk judgement against release month, one line per maker", W, Hh, "".join(parts))
++    legend = H.maker_legend(x["name"] for label, x, _ in rows if (RELEASES.get(label) or {}).get("month"))
++    return finding("finding-release", heading, text, chart, legend,
++                   "Models without a documented release month are left out.",
++                   ("about/#leaderboard", "How release months are dated"))
++
++
++def reasoning_groups(S) -> list:
++    """Every model with two or more reasoning settings in the same league (late entries in the league whose field they
++    played): (model, league id, [setups from lowest to highest setting])."""
++    groups = {}
++    for lg, n, r, ref in H.all_rows(S):
++        if not ref:
++            x = _entry(S, lg, n, r)
++            groups.setdefault((x["model"], lg["id"]), []).append(x)
++    for e in S["late_entries"]:
++        x = _late_entry(S, e)
++        groups.setdefault((x["model"], e["field_league"]), []).append(x)
++    out = []
++    for (model, lid), g in groups.items():
++        levelled = any(level(x["setting"], False) > 0 for x in g if x["setting"] != ON)
++        by_level = {}
++        for x in g:
++            by_level.setdefault(level(x["setting"], levelled), []).append(x)
++        if len(by_level) > 1:
++            out.append((model, lid, [_first(by_level[k]) for k in sorted(by_level)]))
++    return sorted(out, key=lambda t: (t[1], t[0]))
++
++
++def _er(x):
++    q = x["q"]
++    return q["error_rate"] if q and q.get("error_rate") is not None and not q.get("too_few") else None
++
++
++def reasoning(S) -> str:
++    """d. The same model at different reasoning settings, in one league. Heading rule: "More thinking: better moves, not
++    better risk calls" only if most such models have a lower error rate at their highest setting and most do not have a
++    higher risk judgement there; else "What thinking adds"."""
++    groups = [(m, lid, xs) for m, lid, xs in reasoning_groups(S)
++              if _er(xs[0]) is not None and _er(xs[-1]) is not None and xs[0]["r"]["judgement"] is not None
++              and xs[-1]["r"]["judgement"] is not None]
++    if not groups:
++        return ""
++    n = len(groups)
++    er_lower = sum(_er(xs[-1]) < _er(xs[0]) for _, _, xs in groups)
++    rj_higher = sum(xs[-1]["r"]["judgement"] > xs[0]["r"]["judgement"] for _, _, xs in groups)
++    ok = 2 * er_lower > n and 2 * rj_higher <= n
++    heading = "More thinking: better moves, not better risk calls" if ok else "What thinking adds"
++    ex = max(groups, key=lambda t: (len(t[2]), -t[1]))
++    text = (f'{count(n)} models played two or more reasoning settings in the same league. At the highest setting, '
++            f'{count(er_lower)} of the {count(n)} had a lower error rate than at the lowest, and {count(rj_higher)} of '
++            f'the {count(n)} a higher risk judgement. {esc(ex[0])}, {esc(ex[2][0]["setting"] or "")} to '
++            f'{esc(ex[2][-1]["setting"] or "")}: risk judgement {", ".join(fmt(x["r"]["judgement"]) for x in ex[2])}; '
++            f'error rate {", ".join(fmt(_er(x)) for x in ex[2])}.')
++    rj = [x["r"]["judgement"] for _, _, xs in groups for x in xs]
++    er = [_er(x) for _, _, xs in groups for x in xs]
++    W, RH, L, T, B, GAP = 640, 26, 200, 30, 26, 24
++    PW = (W - L - GAP - 10) / 2
++    Hh = T + RH * n + B
++    rlo, rhi = math.floor(min(rj) / 10) * 10, math.ceil(max(rj) / 10) * 10
++    ehi = math.ceil(max(er) / 10) * 10
++    xr = lambda v: L + PW * (v - rlo) / ((rhi - rlo) or 1)  # noqa: E731
++    xe = lambda v: L + PW + GAP + PW * v / (ehi or 1)  # noqa: E731
++    parts = [f'<text class="sk-head" x="{L}" y="{T - 14}">Risk judgement (higher is better)</text>'
++             f'<text class="sk-head" x="{L + PW + GAP}" y="{T - 14}">Error rate, PR (lower is better)</text>']
++    for v in range(rlo, rhi + 1, 10):
++        parts.append(f'<line class="grid" x1="{xr(v):.1f}" x2="{xr(v):.1f}" y1="{T - 6}" y2="{Hh - B}"/>'
++                     f'<text class="muted" x="{xr(v):.1f}" y="{Hh - B + 14}" text-anchor="middle">{v}</text>')
++    step = 10 if ehi <= 60 else 20
++    for v in range(0, ehi + 1, step):
++        parts.append(f'<line class="grid" x1="{xe(v):.1f}" x2="{xe(v):.1f}" y1="{T - 6}" y2="{Hh - B}"/>'
++                     f'<text class="muted" x="{xe(v):.1f}" y="{Hh - B + 14}" text-anchor="middle">{v}</text>')
++    for i, (m, lid, xs) in enumerate(groups):
++        cy = T + RH * i + RH / 2
++        c = H.maker(xs[-1]["name"])[1]
++        parts.append(f'<text class="sk-row" x="{L - 8}" y="{cy + 4:.1f}" text-anchor="end">{esc(m)} · L{lid}</text>')
++        for xf, val in ((xr, lambda x: x["r"]["judgement"]), (xe, _er)):
++            pts = [(xf(val(x)), x) for x in xs]
++            parts.append(f'<line class="th-line" x1="{pts[0][0]:.1f}" x2="{pts[-1][0]:.1f}" y1="{cy:.1f}" y2="{cy:.1f}" '
++                         f'style="stroke:{c}"/>')
++            for k, (px, x) in enumerate(pts):
++                top = k == len(pts) - 1
++                parts.append(f'<circle class="th-dot{" th-top" if top else ""}" cx="{px:.1f}" cy="{cy:.1f}" r="4.5" '
++                             f'style="stroke:{c};fill:{c if top else "var(--panel)"}"><title>{esc(x["name"])}: '
++                             f'{fmt(val(x))}</title></circle>')
++    chart = _svg("The same model at its reasoning settings: risk judgement and error rate", W, Hh, "".join(parts))
++    legend = ('<span>One row per model and league; hollow dots: its lower settings, filled dot: its highest setting.</span> '
++              + H.maker_legend(xs[-1]["name"] for _, _, xs in groups))
++    return finding("finding-reasoning", heading, text, chart, legend,
++                   "Not paired: each setting played its own games; these are observed differences.",
++                   ("leagues/?tab=reasoning#board", "Every setting, league by league"))
++
++
++def nack_finding(S) -> str:
++    """e. Nackgammon: standard against Nackgammon error rate per setup and group, Random as the reference (the paired
++    test's own chart). Heading rule: "no clear drop" only if every group comparison's interval (every rule, with and
++    without the additions) includes 0."""
++    import nack_section as NS
++    N, Lt = S["nack"], S["nack_late"]
++    comps = [c for key in ("primary", "primary_original_members") for rule in (N.get(key) or {}).values()
++             for c in rule if c.get("kind") == "group"]
++    clear = bool(comps) and all(c["ci_99"][0] <= 0 <= c["ci_99"][1] for c in comps)
++    heading = "A new starting position: no clear drop in any group" if clear else "A new starting position"
++    rd1 = N["setups"]["Random"]["first"]["drop"]
++    worse = [(s, r) for s, r in ((Lt or {}).get("setups") or {}).items() if r.get("label") == "worse"]
++    text = ("Each model was asked Nackgammon positions and standard positions matched to them. "
++            + ("Every comparison between the groups (decision models, workhorses, frontier) has an interval that "
++               "includes 0. " if clear else "Not every comparison between the groups has an interval that includes 0. ")
++            + f"Random play's own drop is {fmt(rd1, 1, True)} PR on the main 200 pairs: the Nackgammon positions were "
++            f"{'slightly easier' if rd1 < 0 else 'harder'} for random play.")
++    if worse:
++        text += " Outside the groups, " + "; ".join(
++            f'the late entry {esc(s)} dropped ({fmt(r["final"]["drop"], 2, True)} PR, 97.5% interval '
++            f'{fmt(r["final"]["drop_975"][0], 2, True)} to {fmt(r["final"]["drop_975"][1], 2, True)})' for s, r in worse) + "."
++    text += f" <strong>{esc(NS.UNCLEAR_NOTE)}</strong>"
++    legend = ('<span><i class="swatch nack-dot nack-dm"></i>decision models</span> '
++              '<span><i class="swatch nack-dot nack-wh"></i>workhorses</span> '
++              '<span><i class="swatch nack-dot nack-fr"></i>frontier</span> '
++              '<span><i class="swatch nack-dot nack-ng"></i>no group (exploratory)</span> '
++              '<span><i class="swatch nack-yard"></i>GNUbg weak, Random</span> '
++              '<span>Above the dashed diagonal: higher error on Nackgammon.</span>')
++    return finding("finding-nackgammon", heading, text, NS.chart(N), legend,
++                   "Paired positions, not league play; a drop mixes the new start with how hard the positions are.",
++                   ("nackgammon/", "The Nackgammon test"))
++
++
++def learning_finding(S) -> str:
++    """f. Learning from experience: the page's status line, its verdict's first sentence (published wording only) and
++    its risks-found chart. A question, not a claim."""
++    import learning_page as LP
++    L = S["learning"]
++    R = L.get("results")
++    if L.get("preregistration_only"):
++        return ""
++    st = L["status"]
++    text = f'Status: {esc(st["line"])}.'
++    if R and R["complete"] and LP.is_complete(L):
++        text += f' {esc(LP.verdict_head(R))}'
++    chart = (LP.risks_figure(R, "finding-learning-chart") if R and R.get("series_total_done") else "") or \
++        '<p class="note">No finished series yet.</p>'
++    return finding("finding-learning", "Does the model learn from its games?", text, chart, "",
++                   "One model, a small pilot; the plan, every number and the lessons are on its page.",
++                   (LP.PATH, "Learning from experience"))
+ 
+ 
+ def findings(S) -> str:
+-    return cautious(S) + flinch(S)
++    """The finding sections a-f, in Ümit's order (#2938 item 2); the wrapper keeps the old #findings anchor."""
++    return ('<div class="findings" id="findings">' + two_skill(S) + release_chart(S) + flinch(S) + reasoning(S)
++            + nack_finding(S) + learning_finding(S) + '</div>')

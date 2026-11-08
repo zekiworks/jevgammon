@@ -619,6 +619,41 @@ def spread_cell(s: dict) -> str:
     return f'{fmt(s["mean"], 1)} ({fmt(s["min"], 1)}-{fmt(s["max"], 1)}; SD {sd})'
 
 
+def explore_agreement(X: dict, B: str) -> str:
+    """How often two empty-context runs chose different plays (counts of positions, of 200; which positions stays
+    private), per group of run pairs, and the facts that follow from the data file's numbers only."""
+    A, runs = X["agreement"], X["runs"]
+    G = A["summary"]
+    label = {"T0 vs retests": "T0 vs each retest", "retest vs retest": "Retest vs retest",
+             "T0 vs budget": f"T0 vs each {B} evaluation", "retests vs budget": f"Each retest vs each {B} evaluation",
+             "budget vs budget": f"{B} evaluation vs {B} evaluation"}
+    rows = [f'<tr><th scope="row">{label[g]}</th>'
+            f'<td class="num" data-agree="{g}" data-k="n">{fmt(s["n"], 0)}</td>'
+            f'<td class="num" data-agree="{g}" data-k="mean">{fmt(s["mean"], 1)}</td>'
+            f'<td class="num" data-agree="{g}" data-k="range">{fmt(s["min"], 0)}-{fmt(s["max"], 0)}</td>'
+            f'<td class="num" data-agree="{g}" data-k="sd">{fmt(s["sd"], 2) if s["sd"] is not None else NA}</td></tr>'
+            for g, s in G.items()]
+    table = P.SWIPE + P.table(["Pairs of runs", "Pairs", "Mean", "Min-max", "SD"], rows,
+                              "Positions (of 200) where two empty-context runs chose different plays",
+                              cls="board list lp-explore-agree")
+    rr, tr = G["retest vs retest"], G["T0 vs retests"]
+    t0 = next(r for r in runs if r["kind"] == "t0")
+    ret = [r for r in runs if r["kind"] == "retest"]
+    facts = [f'The retests differ from each other on {fmt(rr["min"], 0)}-{fmt(rr["max"], 0)} positions; T0 differs '
+             f'from each retest on {fmt(tr["min"], 0)}-{fmt(tr["max"], 0)}.'] if ret else []
+    if ret and len({(r["risks_found"], r["right_safety"]) for r in ret}) == 1:
+        facts.append(f'Every retest has risks found {fmt(ret[0]["risks_found"], 1)} and right safety '
+                     f'{fmt(ret[0]["right_safety"], 1)}, against T0\'s {fmt(t0["risks_found"], 1)} and '
+                     f'{fmt(t0["right_safety"], 1)}.')
+    if ret and tr["min"] > rr["max"]:
+        facts.append("T0 differs from the later empty-context runs; the cause was not verified.")
+    k = A["positions_not_unanimous_across_retests"]
+    facts.append(f"Positions where the {fmt(len(ret), 0)} retests do not all choose the same play: {fmt(k, 0)} of "
+                 f"{fmt(X['sampling']['positions'], 0)}.")
+    return ('<h3>Do the empty-context runs choose the same plays?</h3>' + table
+            + f'<p id="learning-explore-agreement">{esc(" ".join(facts))}</p>')
+
+
 def explore(L) -> str:
     """The exploratory block, after the verdict and apart from it: each arm minus budget (the noise baseline), the
     empty-context runs and their spread, the evaluation requests' settings and the next version's note. Shown only as
@@ -670,6 +705,7 @@ def explore(L) -> str:
              if n != S["positions"]]
     pending = (f'<p class="table-note">Retests not yet answered in full are not in the table: {esc(", ".join(short))}.'
                '</p>' if short else "")
+    agree = explore_agreement(X, B)
     return (head
             + f'<h3>Each arm minus {B}, paired by series</h3>'
             f'<p>The {B} arm\'s context was empty at every point, so its evaluations after games 5 and 10 are '
@@ -683,7 +719,7 @@ def explore(L) -> str:
             f'{B} arm, whose context was always empty, with their spread. The retests measure the variability between '
             'empty-context runs; they do not establish its cause. The cause of the differences between empty-context '
             'runs was not verified; any sampling or numerical explanation is a hypothesis only.</p>'
-            + runs_table + pending + spread_table
+            + runs_table + pending + spread_table + agree
             + '<h3>How the evaluation requests were made</h3>'
             '<p><strong>Sent</strong> with every evaluation request:</p><ul>'
             f'<li>temperature {fmt(S["temperature"], 1)};</li><li>max_tokens {count(S["max_tokens"])};</li>'

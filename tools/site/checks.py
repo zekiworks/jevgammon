@@ -579,6 +579,11 @@ def _learning_explore(nodes, ids, L, complete: bool) -> list[str]:
             s = s[a["data-m"]]
             sd = fmt(s["sd"], 2) if s["sd"] is not None else NA
             return f'{fmt(s["mean"], 1)} ({fmt(s["min"], 1)}-{fmt(s["max"], 1)}; SD {sd})'
+        if "data-agree" in a:
+            s = X["agreement"]["summary"][a["data-agree"]]
+            return {"n": lambda: fmt(s["n"], 0), "mean": lambda: fmt(s["mean"], 1),
+                    "range": lambda: f'{fmt(s["min"], 0)}-{fmt(s["max"], 0)}',
+                    "sd": lambda: fmt(s["sd"], 2) if s["sd"] is not None else NA}[a["data-k"]]()
         return None
     seen = set()
     for n in cells:
@@ -592,9 +597,15 @@ def _learning_explore(nodes, ids, L, complete: bool) -> list[str]:
             if text_of(n).strip() != w:
                 bad.append(f"{PATH}: exploratory cell {text_of(n).strip()!r} is not the data's {w!r}")
     expected = (sum(len(m) for cp in X["arm_minus_budget"].values() for m in cp.values())
-                + len(X["runs"]) * 9 + len(X["spread"]) * 6)
+                + len(X["runs"]) * 9 + len(X["spread"]) * 6 + len(X["agreement"]["summary"]) * 4)
     if len(seen) != expected:
         bad.append(f"{PATH}: the exploratory tables show {len(seen)} of the data's {expected} values")
+    # "T0 differs from the later empty-context runs" only where the counts say so: every T0-vs-retest count above
+    # every retest-vs-retest count.
+    G = X["agreement"]["summary"]
+    if "t0 differs from the later empty-context runs" in text and not (
+            G["T0 vs retests"]["n"] and G["T0 vs retests"]["min"] > G["retest vs retest"]["max"]):
+        bad.append(f"{PATH}: 'T0 differs from the later empty-context runs' is not what the agreement counts show")
     return bad
 
 

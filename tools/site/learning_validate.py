@@ -565,7 +565,14 @@ EXPLORE_CODES = {
     "rows": "explore.rows: the T0 or budget rows are not the validated aggregates",
     "retests": "explore.retests: the retest rows do not match their answer counts",
     "spread": "explore.spread: does not follow from the rows",
+    "agreement": "explore.agreement: the agreement counts are not symmetric, not the runs', or not their summary",
 }
+# agreement (LearningPilot, after the final retests): positions (of 200) where two runs chose different plays, counts
+# only. Run names: "T0", "r1".."r5", "budget sNN T5|T10" (the rows' runs, short).
+AGREE_NAME = r"T0|r[1-5]|budget s(0[1-9]|10) T(5|10)"
+AGREE_UNIT = "positions (of 200) where two runs chose different plays"
+AGREE_GROUPS = ("T0 vs retests", "retest vs retest", "T0 vs budget", "retests vs budget", "budget vs budget")
+_PAIRS = (1 + RETESTS + 2 * N) ** 2
 _SNUM = NUM(None, None)
 EXPLORE_SPEC = DICT(dict(
     generated_at=ISO, label=("const", EXPLORE_LABEL), note=("str", r"[^<>&]{1,600}"), test_set_sha256=HEX64,
@@ -578,7 +585,48 @@ EXPLORE_SPEC = DICT(dict(
                             1 + RETESTS + 2 * N),
     retest_answer_counts=("map", r"[1-5]", INT(0, POSITIONS)),
     spread=DICT({g: DICT({m: DICT(dict(n=INT(0, 1 + RETESTS + 2 * N), mean=_SNUM, min=_SNUM, max=_SNUM,
-                                       sd=OPT(NUM()))) for m in RUN_METRICS}) for g in SPREAD_GROUPS})))
+                                       sd=OPT(NUM()))) for m in RUN_METRICS}) for g in SPREAD_GROUPS}),
+    agreement=DICT(dict(unit=("const", AGREE_UNIT),
+                        pairwise=("map", AGREE_NAME, ("map", AGREE_NAME, INT(0, POSITIONS))),
+                        summary=DICT({g: DICT(dict(n=INT(0, _PAIRS), mean=_SNUM, min=_SNUM, max=_SNUM, sd=OPT(NUM())))
+                                      for g in AGREE_GROUPS}),
+                        positions_not_unanimous_across_retests=INT(0, POSITIONS)))))
+
+
+def short_name(run: str) -> str:
+    """A row's run as the agreement counts name it."""
+    mt = RUN_NAME.fullmatch(run)
+    return "T0" if run.startswith("T0") else f"r{mt.group(1)}" if mt.group(1) else f"budget s{mt.group(2)} {mt.group(3)}"
+
+
+def agreement_problems(A: dict, runs: list) -> list:
+    """The agreement counts: one count per pair of the rows' runs (no other name), symmetric; the summary recomputed
+    from the counts as explore.py groups them; the positions where the retests are not unanimous between the largest
+    retest-vs-retest count and the sum of r1's counts against the other retests (as it must be)."""
+    names, P, bad = [short_name(r["run"]) for r in runs], A["pairwise"], []
+    if set(P) != set(names) or any(set(P[a]) != set(names) - {a} for a in P):
+        return ["agreement.pairwise: not exactly one count for each pair of the rows' runs"]
+    bad += [f"agreement.pairwise: {a} vs {b} not symmetric" for a in P for b in P[a] if P[a][b] != P[b][a]]
+    retests = sorted(n for n in names if n.startswith("r"))
+    budgets = [n for n in names if n.startswith("budget")]
+
+    def pair(xs, ys):
+        return [P[a][b] for a in xs for b in ys if a != b]
+
+    def tri(xs):
+        return [P[a][b] for i, a in enumerate(xs) for b in xs[i + 1:]]
+    groups = {"T0 vs retests": pair(["T0"], retests), "retest vs retest": tri(retests),
+              "T0 vs budget": pair(["T0"], budgets), "retests vs budget": pair(retests, budgets),
+              "budget vs budget": tri(budgets)}
+    for g, xs in groups.items():
+        want = dict(n=len(xs), mean=fmean(xs), min=min(xs), max=max(xs), sd=stdev(xs) if len(xs) > 1 else None) \
+            if xs else None
+        if want is None or not same(A["summary"][g], want):
+            bad.append(f"agreement.summary.{g}: does not follow from the pairwise counts")
+    k = A["positions_not_unanimous_across_retests"]
+    if retests and not max(tri(retests) or [0]) <= k <= sum(P[retests[0]][b] for b in retests[1:]):
+        bad.append("agreement.positions_not_unanimous_across_retests: outside what the pairwise counts allow")
+    return bad
 
 
 def fmean(xs):
@@ -677,6 +725,8 @@ def validate_explore(path: Path, pilot: dict, test_sha: str) -> dict:
                     if xs else None)
             if want is None or not same(E["spread"][g][m], want):
                 fail("spread", f"spread.{g}.{m} does not follow from the rows")
+    for d in agreement_problems(E["agreement"], runs) if not codes else []:
+        fail("agreement", d)
     if codes:
         return explore_refused(codes, details)
     order = {"t0": 0, "retest": 1, "budget": 2}
@@ -693,4 +743,6 @@ def validate_explore(path: Path, pilot: dict, test_sha: str) -> dict:
         arm_minus_budget={a: {cp: {m: {k: E["arm_minus_budget"][a][cp][m][k] for k in ("mean", "ci")}
                                    for m in EXPLORE_METRICS} for cp in EXPLORE_CPS} for a in EXPLORE_ARMS},
         series=N, runs=public_rows, retest_answer_counts={k: counts[k] for k in sorted(counts)},
-        spread=E["spread"]))
+        spread=E["spread"],
+        agreement=dict(unit=AGREE_UNIT, summary=E["agreement"]["summary"],
+                       positions_not_unanimous_across_retests=E["agreement"]["positions_not_unanimous_across_retests"])))

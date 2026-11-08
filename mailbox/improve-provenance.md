@@ -6,9 +6,9 @@ Written 2026-11-08 by the experiment's agent. This is a disclosure of a gap: the
 
 | Build | Written at (UTC) | Built from | sha256 | Copy kept |
 |---|---|---|---|---|
-| B0 | about 16:09–16:10 (exact mtime lost: overwritten) | branch `improve`, worktree clean at 88e5da0 (= src of 0c9270c; 88e5da0 only adds run_queue.sh) | **unknown** | no |
-| B1 | 16:24:05.8 (seen as the file's mtime at the time) | working tree = the non-test src of 1270c04, before its tests were added [INFERENCE: edit order in my session; see below] | `2360ace5669d12055e3610c552ee3cd94c10df7e59e6ab30149a23a0d8cbaa9a` | yes: `target/improve-bin/jevgammon-B1-recovered-from-pid3875115` (copied from `/proc/3875115/exe` of the running S1 match) |
-| B2 | 16:26:50.165 | 1270c04 (committed, clean) | `19357c4e46af78eb07bc8125d7bf7f99e9b463464951caea41d5f4f18dd7fa11` | yes: identical to `target/improve-bin/jevgammon-1270c04` (the local and subscription lanes' pinned copy) |
+| B0 | about 16:09–16:10 (exact mtime lost: overwritten) | from my session record: `git status` showed no tracked change, then `cargo build --release` at 88e5da0 (= src of 0c9270c; 88e5da0 only adds run_queue.sh). Not attested by a kept binary | **unknown** | no |
+| B1 | 16:24:05.8 (seen as the file's mtime at the time) | **INFERRED**: an uncommitted working tree that I believe equals the non-test src of 1270c04, before its tests were added. The basis is the order of my edits in the session; no commit or build record ties B1 to a source | `2360ace5669d12055e3610c552ee3cd94c10df7e59e6ab30149a23a0d8cbaa9a` | yes: `target/improve-bin/jevgammon-B1-recovered-from-pid3875115` (copied from `/proc/3875115/exe` of the running S1 match) |
+| B2 | 16:26:50.165 | built by `cargo build --release` right after committing 1270c04 (session record) | `19357c4e46af78eb07bc8125d7bf7f99e9b463464951caea41d5f4f18dd7fa11` | yes: identical to `target/improve-bin/jevgammon-1270c04` (the local and subscription lanes' pinned copy) |
 
 The path has not changed since 16:26:50: its mtime is 16:26:50.165 and its sha256 equals B2's, checked at 16:36. Later builds went to separate target directories (`target/codex`). I will not rebuild `target/release` again while the lane uses it.
 
@@ -22,33 +22,42 @@ Rule: a process ran the build present at the path when it started.
 | E1 (200 answers, empty context) | one `jevgammon ask` process, one round only: `test-E1.log` has a single "round 1" header; all 200 answered by 16:26:08 | 16:10:46 | **B0** | started before 16:24:05 and ran as one process to the end. B0's hash cannot be given: no copy was kept and the path was overwritten |
 | S1 games (10 games) | the match process, pid 3875115 | 16:26:08 | **B1** | `ps` start time 16:26:08 lies between 16:24:05 and 16:26:50. `/proc/3875115/exe` → `target/release/jevgammon (deleted)`, sha256 2360ace5…, copied |
 | S1 lesson calls (`jevgammon lesson`, one per game) | started from the after-game hook | game 1's at 16:28:55, later ones after it | **B2** | started after 16:26:50, and the path has held B2 since |
-| S1 T10 (asked in the hook after game 10; any re-ask) | `jevgammon ask` | after game 10 | **B2** | after 16:26:50 |
-| S2 to S5, E2, E3 | match, lesson and ask processes | after 16:26:50 | **B2** | the path holds B2 for the rest of Qwen's run; nothing rebuilds it |
+| S1 T10 (asked in the hook after game 10; any re-ask) | `jevgammon ask` | after game 10 | **expected B2** | it starts after 16:26:50; confirmed only when its receipt is appended below |
+| S2 to S5, E2, E3 | match, lesson and ask processes | after 16:26:50 | **expected B2** | the path is expected to hold B2 for the rest of Qwen's run (nothing is to rebuild it); each step's receipt is appended below as it happens |
 
-Exact: the S1 games (B1, hash from the live process) and everything from S1's lessons onward (B2, hash).
-Not exact: E1's binary. The build source (0c9270c) is known; the hash is not.
+Observed: the S1 games (B1, hash read from the live process) and S1's lesson calls (B2: they started after 16:26:50, and the path held B2 when checked at 16:36).
+Not exact: E1's binary (hash unknown; source from my session record only), and B1's source (inferred).
+Expected, not yet observed: the later steps (see the receipts below).
 
 ## Source differences, 0c9270c → 1270c04, limited to what Qwen3.8 Flash sends and receives
 
 `git diff 0c9270c 1270c04 -- src` touches src/http.rs, src/players/llm.rs, src/players/mod.rs and src/players/decision.rs (133+, 36−). The non-test parts:
 
 1. **http.rs:** `send` and `send_metered` take a `Guard { stop, quota_fatal }` in place of the stop latch alone. `quota_fatal` makes a 429 final at once. Qwen's player config does not set `quota_pause`, so `quota_fatal` is false and 429 handling is the league's, as in B0. The stop latch is checked exactly as in B0.
-2. **llm.rs `ExpectRoute`:** `provider` became optional and the model/provider fields are read by JSON pointer, defaulting to `/model` and `/provider`. Qwen's config sets `models` and `provider: "Alibaba"` with no pointers, so the same two fields are compared against the same values. New fields (`model_pointer`, `provider_pointer`, `allow_dated`) default to off.
+2. **llm.rs `ExpectRoute`:** `provider` became optional and the model/provider fields are read by JSON pointer, defaulting to `/model` and `/provider`. Qwen's config sets `models` and `provider: "Alibaba"` with no pointers, so the same two fields are compared against the same values. The new pointer fields (`model_pointer`, `provider_pointer`) default to off. (`allow_dated` is not in this diff: it came in the later Codex commit 6e5a15e, which no OpenRouter-lane binary contains.)
 3. **llm.rs/mod.rs:** a `quota_pause` option, false for Qwen. `LlmClient::guard()` builds the Guard from the latch and that option.
 4. **decision.rs:** decision services pass an empty Guard; Qwen does not use them.
 
 Not touched between the builds: the request builders (`constrained_request`/`schema_body`, `choose_compatible`'s readout requests, `free_text_request`), `merged` (the setup's extra fields), the prompts, the option order, the ledger, `parse_chat_completion`, and how answers are stored.
 
-## Check on the stored requests
+## Check on the stored requests (two samples, not an audit)
 
-The first stored E1 request (B0) and the first stored game request (B1) have identical fields except the letter enum, which follows the position's option count: keys `logprobs, max_tokens, messages, model, provider, reasoning, response_format, temperature, top_logprobs, usage`. The values are the same: `max_tokens` 16, `model` qwen/qwen3.8-flash, provider `{order: [alibaba], allow_fallbacks: false, require_parameters: true}`, `reasoning {enabled: false}`, temperature 1.0, `top_logprobs` 5, `usage {include: true}`. The system prompt is identical.
+This compares two requests only; it is not an audit of all requests. The first stored E1 request (B0) and the first stored game request (B1) have identical fields except the letter enum, which follows the position's option count: keys `logprobs, max_tokens, messages, model, provider, reasoning, response_format, temperature, top_logprobs, usage`. The values are the same: `max_tokens` 16, `model` qwen/qwen3.8-flash, provider `{order: [alibaba], allow_fallbacks: false, require_parameters: true}`, `reasoning {enabled: false}`, temperature 1.0, `top_logprobs` 5, `usage {include: true}`. The system prompt is identical.
 
 ## Conclusion
 
-Nothing Qwen3.8 Flash sends changed between the builds, and the identity check on what it receives compares the same fields. This rests on the source diff above and the stored-request comparison. E1 was answered by a binary whose source is known (0c9270c) but whose hash is not, and this note says so.
+Nothing Qwen3.8 Flash sends changed between the builds, and the identity check on what it receives compares the same fields. This rests on the source diff above (B0 and B1 sources as qualified above) and a two-request sample. E1 was answered by a binary whose hash is unknown; its source comes from my session record only. Per Zeki and Ümit, the runs are kept as they are, the unknowns are marked here, and nothing is replayed or invalidated because the builds changed.
 
 ## From now on
 
-- Every lane runs a pinned, immutable copy named by commit: `target/improve-bin/jevgammon-<commit>`. Local and subscription lanes: `jevgammon-1270c04` (sha256 19357c4e…). The Codex lane: `jevgammon-6e5a15e`, built in its own target directory.
-- `improve.py` (5ac479e and later) writes the binary's path, sha256, commit and mtime into every step's `step_start` log line. It refuses a real run on an unpinned binary.
+- Every lane runs a pinned, immutable copy named by commit: `target/improve-bin/jevgammon-<commit>`. Local and subscription lanes: `jevgammon-1270c04` (sha256 19357c4e…). The Codex lane: `jevgammon-938c842` (sha256 0a342d9e…; Zeki's GO #3245), built in its own target directory.
+- `improve.py` (5ac479e and later) writes the binary's path, sha256, commit and mtime into every step's `step_start` log line. It refuses a real run on an unpinned binary. **Limitation:** the commit and the "pinned" flag come from the file name. That is a naming convention, not a build attestation; the sha256 identifies the file but does not prove which source built it.
 - The OpenRouter lane will be restarted on a pinned copy when its held models (GLM-5.3, Kimi K3.1 Pro, DeepSeek) are released. Qwen3.8 Flash's remaining steps keep running in the already-started process on the path, which holds B2. Its later step lines therefore carry no binary field (the module was loaded before 5ac479e); this note covers them.
+
+## Correction to the Codex review notes
+
+`mailbox/improve-codex-review2/README.md` said rejected replies are logged "with … the raw reply and the reported cost. This includes a Codex stream without `response.completed`". For that case the log line has `response` and `reported_cost_usd` null: the stream could not be parsed, so no raw reply or cost is kept for it. Nothing recovers a truncated stream. Its spend, if any, is not in that log line; a Codex lane is $0 billed (subscription).
+
+## Receipts of later Qwen3.8 Flash steps (appended as they happen)
+
+Each receipt names the `jevgammon` process that started the step and the binary it ran: `/proc/<pid>/exe` and its sha256 when the process could be caught; otherwise the binary at the path at its start time.

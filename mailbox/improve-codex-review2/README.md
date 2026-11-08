@@ -13,7 +13,7 @@ Branch `improve`, commit 938c842. `diff-6e5a15e-938c842.patch` shows everything 
 
 ## 2. Served identity persisted per exchange
 - Every checked reply's identity record is stored with its exchange: `exchanges.identity` for games, `answer_exchanges.identity` for tests. Lesson calls carry it in the exchange list of their JSON. The record is `{"result": "accepted" | "accepted_dated", "fields": {"model", "provider"}}`, with the raw identity fields as served. For Codex the field is `response.completed.response.model`.
-- Rejected replies are not used. They go to the rejection log with `{"result": "wrong" | "missing", "fields", "reason"}`, the raw reply and the reported cost. This includes a Codex stream without `response.completed`.
+- Rejected replies are not used. They go to the rejection log with `{"result": "wrong" | "missing", "fields", "reason"}`, the raw reply and the reported cost. **Correction:** for a Codex stream without `response.completed`, `response` and `reported_cost_usd` are null in that log line (the stream could not be parsed); nothing recovers a truncated stream.
 - Tests:
   - `the_served_identity_is_persisted_per_exchange`: a Codex dated reply is stored as accepted_dated with its served model. A wrong model, a null model and a missing `response.completed` are logged with result and fields. An OpenRouter reply is stored as accepted with its model and provider.
   - `db::tests::exchange_identity_is_stored`: round trip through `record_turn`.

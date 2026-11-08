@@ -142,7 +142,9 @@ def states() -> dict:
                 why=V.PROGRESS_REASONS[1])
     sol["progress"]["status"] = "not started"
     paused = [model(kimi, "paused", ["E1", "S1"], [test(40, 85, 25.0)], [test(41, 86, 24.1)], billed_usd=6.2,
-                    reason="SYNTHETIC: zz_free_text_reason_91c"), sol]
+                    reason="SYNTHETIC: zz_free_text_reason_91c"), sol,
+              model(by["Claude Opus 5.5 (on)"], "paused", ["E1"], [test(42, 90, 20.0)], [],
+                    reason="SYNTHETIC: 429", why="usage limit")]
     return {"none": None, "running-1": document([running], plan_sha),
             "complete-yes": document([qwen_yes(q)], plan_sha), "complete-no": document([glm_no(g)], plan_sha),
             "mixed": document(mixed, plan_sha), "paused": document(paused, plan_sha)}
@@ -188,6 +190,8 @@ def progress_faults() -> list:
         ("progress: paused without a reason", mutation(lambda d: p0(d).update(status="paused")), None),
         ("progress: done with a reason", mutation(lambda d: p0(d).update(reason=V.PROGRESS_REASONS[2])), None),
         ("progress: done with 4 series", mutation(lambda d: p0(d).update(series_done=4)), None),
+        ("progress: usage limit while not paused",
+         mutation(lambda d: p0(d).update(status="stopped", reason="usage limit")), None),
         ("progress: unknown key (canary)", mutation(lambda d: p0(d).update({CANARY_KEY: 1})), CANARY_KEY),
     ]
 
@@ -305,7 +309,8 @@ def main():
     # fields only, no outcome number and no free text from the file on the page or in its data file.
     want = {"none": {}, "running-1": {"Qwen3.8 Flash (off)": ("running", "1 / 5")},
             "paused": {"Kimi K3.1 Pro (off)": ("paused (shared-balance priority)", "1 / 5"),
-                       "GPT-6.1 Sol (high)": ("not started (waiting for the ChatGPT reset 13 Nov)", "0 / 5")},
+                       "GPT-6.1 Sol (high)": ("not started (waiting for the ChatGPT reset 13 Nov)", "0 / 5"),
+                       "Claude Opus 5.5 (on)": ("paused (usage limit)", "0 / 5")},
             "complete-yes": {"Qwen3.8 Flash (off)": ("done", "5 / 5")}}
     for name, rows_ in want.items():
         src = write_state(base / "states" / name, S[name])

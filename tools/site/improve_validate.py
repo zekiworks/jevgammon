@@ -58,7 +58,9 @@ TEXT = ("str", r"[^<>&\x00-\x1f]{1,400}")
 # The page's "Models and status" table (Ümit #3219): each model's progress, closed values only (no free text, no
 # outcome number), published even while the page is pre-registration only.
 PROGRESS_STATUSES = ("not started", "running", "paused", "stopped", "done")
-PROGRESS_REASONS = ("shared-balance priority", "waiting for the ChatGPT reset 13 Nov", "waiting for its turn")
+PROGRESS_REASONS = ("shared-balance priority", "waiting for the ChatGPT reset 13 Nov", "waiting for its turn",
+                    "usage limit")
+PAUSE_ONLY_REASONS = ("usage limit",)  # a subscription usage-limit (429) pause: allowed with status paused only
 PROGRESS = DICT(dict(status=("enum", PROGRESS_STATUSES), reason=OPT(("enum", PROGRESS_REASONS)),
                      series_done=INT(0, SERIES), updated_at=ISO))
 # The harness's state each progress status may stand with (full validation only).
@@ -136,6 +138,8 @@ def progress_problems(p: dict, where: str) -> list:
     bad = []
     if p["status"] == "paused" and p["reason"] is None:
         bad.append(f"{where}.reason: required when paused")
+    if p["reason"] in PAUSE_ONLY_REASONS and p["status"] != "paused":
+        bad.append(f"{where}.reason: allowed only when paused")
     if p["status"] in ("running", "done") and p["reason"] is not None:
         bad.append(f"{where}.reason: not allowed when running or done")
     if p["status"] == "done" and p["series_done"] != SERIES:

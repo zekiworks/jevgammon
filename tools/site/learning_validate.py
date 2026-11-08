@@ -596,7 +596,9 @@ EXPLORE_SPEC = DICT(dict(
 def short_name(run: str) -> str:
     """A row's run as the agreement counts name it."""
     mt = RUN_NAME.fullmatch(run)
-    return "T0" if run.startswith("T0") else f"r{mt.group(1)}" if mt.group(1) else f"budget s{mt.group(2)} {mt.group(3)}"
+    if run.startswith("T0"):
+        return "T0"
+    return f"r{mt.group(1)}" if mt.group(1) else f"budget s{mt.group(2)} {mt.group(3)}"
 
 
 def agreement_problems(A: dict, runs: list) -> list:
@@ -744,5 +746,5 @@ def validate_explore(path: Path, pilot: dict, test_sha: str) -> dict:
                                    for m in EXPLORE_METRICS} for cp in EXPLORE_CPS} for a in EXPLORE_ARMS},
         series=N, runs=public_rows, retest_answer_counts={k: counts[k] for k in sorted(counts)},
         spread=E["spread"],
-        agreement=dict(unit=AGREE_UNIT, summary=E["agreement"]["summary"],
-                       positions_not_unanimous_across_retests=E["agreement"]["positions_not_unanimous_across_retests"])))
+        agreement=dict(unit=AGREE_UNIT, summary=E["agreement"]["summary"], positions_not_unanimous_across_retests=E[
+            "agreement"]["positions_not_unanimous_across_retests"])))

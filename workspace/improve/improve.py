@@ -154,7 +154,7 @@ def lesson_prompt_sha256() -> str:
 
 def write_atomic(path: Path, text: str):
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(path.name + ".tmp")
+    tmp = path.with_name(f"{path.name}.{os.getpid()}.tmp")  # writers in several processes never share a temp file
     tmp.write_text(text)
     tmp.replace(path)
 
@@ -1094,14 +1094,53 @@ def run(key, until=None, balance_reader=openrouter_balance):
 
 # --- Summary (the page's data; plan §6, contract in tools/site/improve_validate.py) ----------------------------
 
+CHATGPT_RESET = "waiting for the ChatGPT reset 2026-11-13 11:38 UTC"
+TURN = "waiting for its turn in its lane"
+
+
+def started(key):
+    return any(e["event"] == "step_start" for e in events(key))
+
+
 def model_state(key):
+    """(state, reason): stopped / paused / complete / running from the run directory; a model whose first step has
+    not started is paused: held (hold.json), Codex before the ChatGPT reset, or waiting for its turn in its lane."""
     if (mdir(key) / "stopped.json").exists():
         return "stopped", json.loads((mdir(key) / "stopped.json").read_text())["reason"]
     if (mdir(key) / "paused.json").exists():
         return "paused", json.loads((mdir(key) / "paused.json").read_text())["reason"]
     if all(step_done(key, s) for s in STEPS):
         return "complete", None
+    if not started(key):
+        if (mdir(key) / "hold.json").exists():
+            return "paused", json.loads((mdir(key) / "hold.json").read_text())["reason"]
+        if key in ("gpt-6.1-sol-high", "gpt-6-astra-high") and now() < "2026-11-13T11:38":
+            return "paused", CHATGPT_RESET
+        return "paused", TURN
     return "running", None
+
+
+# The page's fixed status reasons (improve_validate, Ümit #3219).
+PROGRESS_REASONS = ("shared-balance priority", "waiting for the ChatGPT reset 13 Nov", "waiting for its turn")
+
+
+def progress_reason(reason):
+    """The page's fixed reason for a paused model's free-text reason."""
+    if reason == CHATGPT_RESET:
+        return "waiting for the ChatGPT reset 13 Nov"
+    if reason == TURN:
+        return "waiting for its turn"
+    if "shared-balance" in reason or "balance" in reason or "share limit" in reason:
+        return "shared-balance priority"
+    raise ValueError(f"no page reason for a pause: {reason!r}")  # e.g. a Claude usage limit: needs a page text
+
+
+def progress(key, state, reason):
+    status = {"complete": "done", "stopped": "stopped", "paused": "paused", "running": "running"}[state]
+    ev = events(key)
+    return dict(status=status, reason=progress_reason(reason) if status == "paused" else None,
+                series_done=sum(step_done(key, f"S{s}") for s in range(1, SERIES + 1)),
+                updated_at=ev[-1]["at"] if ev else now())
 
 
 def api_equivalent(key):
@@ -1143,6 +1182,7 @@ def model_summary(key):
     settings = {} if DRY else league_settings(m["setup"])
     route = settings.get("provider") or m["lane"]
     return dict(key=key, setup=m["setup"], route=route, billed=bool(m.get("billed")), state=state, reason=reason,
+                progress=progress(key, state, reason),
                 steps_done=[s for s in STEPS if step_done(key, s)], empty=empty, series=series,
                 cost=dict(billed_usd=round(billed(key), 4) if m.get("billed") else 0.0,
                           reported_usd=round(reported(key), 4) if m.get("billed") else None,
@@ -1162,9 +1202,10 @@ def bound_plan(keys):
     return stored.pop() if stored else PLAN_SHA256
 
 
-def summary():
-    keys = [k for k in MODELS if mdir(k).exists() and any(step_done(k, s) for s in STEPS)
-            or (mdir(k) / "stopped.json").exists() or (mdir(k) / "paused.json").exists()]
+def summary(only_if_changed=False):
+    """The page's file: every plan model, with its progress. `only_if_changed`: leave the file alone when nothing but
+    `updated_at` would change (the exporter's path trigger fires on its own write)."""
+    keys = list(MODELS) if not DRY else [k for k in MODELS if mdir(k).exists()]
     out = dict(updated_at=now(),
                protocol=dict(plan_sha256=bound_plan(keys), lesson_prompt_sha256=lesson_prompt_sha256(),
                              test_set_sha256=sha256_file(TEST_SET), series_per_model=SERIES,
@@ -1176,6 +1217,13 @@ def summary():
     (OUT / "prompt").mkdir(exist_ok=True)
     shutil.copyfile(LESSONS_SYSTEM, OUT / "prompt/lessons_system.txt")
     shutil.copyfile(LESSONS_USER, OUT / "prompt/lessons_user.txt")
+    if only_if_changed and (OUT / "improve.json").exists():
+        try:
+            old = json.loads((OUT / "improve.json").read_text())
+        except ValueError:
+            old = None
+        if old is not None and {**old, "updated_at": None} == {**out, "updated_at": None}:
+            return out
     write_atomic(OUT / "improve.json", json.dumps(out, indent=1))
     return out
 
@@ -1206,6 +1254,7 @@ def main():
     st = sub.add_parser("status")
     st.add_argument("--model")
     sub.add_parser("summary")
+    sub.add_parser("export", help="write improve.json from the run directories (for a timer or path trigger)")
     a = ap.parse_args()
     if a.cmd == "after-game":
         after_game(a.model, a.series)
@@ -1213,6 +1262,8 @@ def main():
         status(a.model)
     elif a.cmd == "summary":
         summary()
+    elif a.cmd == "export":
+        summary(only_if_changed=True)
     elif a.cmd == "share-cap":
         write_atomic(RUNS / "share_cap.json", json.dumps(dict(usd=a.usd, note=a.note, at=now()), indent=1))
         with open(RUNS / "share_cap.log", "a") as f:

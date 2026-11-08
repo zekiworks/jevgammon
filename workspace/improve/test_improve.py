@@ -91,6 +91,23 @@ class Schedule(Isolated):
         self.done(KEY, *I.STEPS)
         self.assertIsNone(I.next_step(KEY))
 
+    def test_every_plan_model_has_a_progress_object(self):
+        I.write_atomic(I.mdir("glm-5.3-on") / "hold.json", json.dumps(dict(reason="paused: shared-balance priority, Ümit #3215")))
+        self.done(KEY, "E1", "S1")
+        I.log(KEY, "step_start", step="S2")
+        rows = {k: I.progress(k, *I.model_state(k)) for k in I.MODELS}
+        self.assertEqual(len(rows), 15)
+        self.assertEqual((rows[KEY]["status"], rows[KEY]["reason"], rows[KEY]["series_done"]), ("running", None, 1))
+        self.assertEqual((rows["glm-5.3-on"]["status"], rows["glm-5.3-on"]["reason"]), ("paused", "shared-balance priority"))
+        self.assertEqual(rows["claude-opus-5.5-on"]["reason"], "waiting for its turn")
+        self.assertIn(rows["gpt-6.1-sol-high"]["reason"], ("waiting for the ChatGPT reset 13 Nov", "waiting for its turn"))
+        self.assertTrue(all(r["reason"] in (None,) + I.PROGRESS_REASONS for r in rows.values()))
+        self.done(KEY, *I.STEPS)
+        self.assertEqual(I.progress(KEY, *I.model_state(KEY)), dict(status="done", reason=None, series_done=5,
+                                                                    updated_at=I.events(KEY)[-1]["at"]))
+        with self.assertRaises(ValueError):  # a pause the page has no text for is not hidden
+            I.progress_reason("usage limit (429) on the subscription")
+
     def test_restarted_series_is_archived_with_new_names(self):
         d = I.step_dir(KEY, "S2")
         d.mkdir(parents=True)

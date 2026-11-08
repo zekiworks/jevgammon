@@ -118,6 +118,7 @@ The 20 budget evaluations ran with 1 request in flight, during the pilot.
 
 | Spread (min–max, SD) | n | Risks found % | Right safety % | Error rate (PR) | Risk judgement |
 |---|---:|---:|---:|---:|---:|
+| 5 retests only (r1–r5) | 5 | 28.0–28.0 (SD 0.00) | 97.0–97.0 (SD 0.00) | 54.4–54.7 (SD 0.11) | 62.5–62.5 (SD 0.00) |
 | T0 + 5 retests | 6 | 25.0–28.0 (SD 1.22) | 96.0–97.0 (SD 0.41) | 54.4–55.6 (SD 0.39) | 60.5–62.5 (SD 0.82) |
 | 20 budget evaluations (T5, T10) | 20 | 24.0–30.0 (SD 1.41) | 95.0–97.0 (SD 0.52) | 52.5–56.9 (SD 0.85) | 59.5–63.5 (SD 0.85) |
 | all 26 empty-context runs | 26 | 24.0–30.0 (SD 1.38) | 95.0–97.0 (SD 0.49) | 52.5–56.9 (SD 0.78) | 59.5–63.5 (SD 0.84) |
@@ -152,9 +153,15 @@ Taken from the request code (`src/players/llm.rs`, prefill readout with reasonin
 - No seed was sent. The server's seed behaviour was not checked.
 
 **How the answer is chosen:**
-- The play is the option letter with the highest probability, read from the returned top logprobs (argmax). It is not the sampled token. Temperature, top_k and top_p therefore cannot change which option is chosen.
+- The play is the argmax of the returned option-letter probabilities; several tokens per letter are summed (`src/players/prompt.rs`). The cause of differences between empty-context runs was not verified.
 - Positions with more than 26 options (32 of the 200) are asked in groups, then among the group winners. Each request is read the same way.
-- The retests measure variability; they do not establish its cause. Differences between identical empty-context requests must come from differences in the returned probabilities. Server-side numerical variation (batching, fp8) is a hypothesis only; it was not verified.
+- **What was checked in the stored records** (T0, the 5 retests, the 20 budget evaluations):
+  - all 5,200 answers have probability source `logprobs`;
+  - all 7,202 requests are the prefill readout (max_tokens 1, continue_final_message);
+  - none carries `response_format`, so the constrained-letter fallback (`src/players/llm.rs`) never fired;
+  - no request recorded an error.
+- Whether vLLM returned raw or processed logprobs (before or after temperature, top_k and top_p) cannot be shown from the stored records; it was not determined.
+- The retests measure variability; they do not establish its cause. Server-side numerical variation (batching, fp8) is a hypothesis only.
 
 ### 4. Next version (not run)
 

@@ -16,6 +16,10 @@ or value taken from the file, the full text on stderr only):
   (at most 5 lines starting "- ", 150 words) and holding no test position;
 - the verdict gate (plan section 7): a model marked complete must have all 3 empty runs and all 5 tests after game 10
   answered 200 of 200 with no failed request, and all 5 series of 10 games with 10 lesson entries each;
+- every model's progress (the "Models and status" table, Ümit #3219): status one of not started, running, paused,
+  stopped, done; reason one of the fixed texts (PROGRESS_REASONS), required when paused, absent when running or
+  done; series_done 0-5, the finished series in steps_done (5 when done); updated_at an ISO time; the status agreeing
+  with the model's state. status_view() checks these fields alone for pre-registration-only builds;
 - the money block: the billed total is the sum of the models' billed amounts, within the total cap $110 (no interim
   cap, plan section 9); a model that is not billed has $0 billed.
 
@@ -51,15 +55,30 @@ SERIES_SPEC = DICT(dict(series=INT(1, SERIES), finished=BOOL, games=INT(0, GAMES
 COST = DICT(dict(billed_usd=NUM(0), reported_usd=OPT(NUM(0)), api_equivalent_usd=OPT(NUM(0)),
                  estimate_usd=OPT(NUM(0))))
 TEXT = ("str", r"[^<>&\x00-\x1f]{1,400}")
+# The page's "Models and status" table (Ümit #3219): each model's progress, closed values only (no free text, no
+# outcome number), published even while the page is pre-registration only.
+PROGRESS_STATUSES = ("not started", "running", "paused", "stopped", "done")
+PROGRESS_REASONS = ("shared-balance priority", "waiting for the ChatGPT reset 13 Nov", "waiting for its turn")
+PROGRESS = DICT(dict(status=("enum", PROGRESS_STATUSES), reason=OPT(("enum", PROGRESS_REASONS)),
+                     series_done=INT(0, SERIES), updated_at=ISO))
+# The harness's state each progress status may stand with (full validation only).
+PROGRESS_STATE = {"not started": ("running", "paused"), "running": ("running",), "paused": ("paused",),
+                  "stopped": ("stopped", "incomplete"), "done": ("complete",)}
 MODEL = DICT(dict(key=("str", r"[a-z0-9.-]{1,60}"), setup=("str", r"[^<>&\x00-\x1f]{1,120}"), route=TEXT,
                   billed=BOOL, state=("enum", STATES), reason=OPT(TEXT), steps_done=LIST(("enum", tuple(STEPS)), 8),
-                  empty=LIST(TEST, EMPTY_RUNS), series=LIST(SERIES_SPEC, SERIES), cost=COST))
+                  empty=LIST(TEST, EMPTY_RUNS), series=LIST(SERIES_SPEC, SERIES), cost=COST, progress=PROGRESS))
 PROTOCOL = DICT(dict(plan_sha256=HEX64, lesson_prompt_sha256=HEX64, test_set_sha256=HEX64,
                      series_per_model=INT(), games_per_series=INT(), empty_runs=INT(), test_positions=INT(),
                      steps=LIST(("str", r"[A-Z]\d"), 16), floor_points=NUM(), safety_drop_points=NUM(),
                      dry_run=BOOL))
 MONEY = DICT(dict(total_cap_usd=NUM(0), billed_total_usd=NUM(0)))
 TOP = DICT(dict(updated_at=ISO, protocol=PROTOCOL, money=MONEY, models=LIST(MODEL, 15)))
+# The status view (pre-registration-only builds): the progress fields only; every other key of the file is allowed by
+# name and never read.
+STATUS_TOP = DICT(dict(updated_at=ISO, models=LIST(DICT(dict(setup=MODEL[1]["setup"], progress=PROGRESS),
+                                                         {k: ("any",) for k in MODEL[1] if k not in ("setup", "progress")}),
+                                                    15)),
+                  {k: ("any",) for k in TOP[1] if k not in ("updated_at", "models")})
 SHARES = ("risks_found", "right_safety", "error_rate")
 
 
@@ -109,6 +128,52 @@ def lesson_problems(text: str, where: str, leaks: list) -> list:
     if any(s in text for s in leaks):
         bad.append(f"{where}: holds a test position")
     return bad
+
+
+def progress_problems(p: dict, where: str) -> list:
+    """A model's progress fields among themselves: a reason exactly when paused (never when running or done), done
+    with all 5 series, not started with none."""
+    bad = []
+    if p["status"] == "paused" and p["reason"] is None:
+        bad.append(f"{where}.reason: required when paused")
+    if p["status"] in ("running", "done") and p["reason"] is not None:
+        bad.append(f"{where}.reason: not allowed when running or done")
+    if p["status"] == "done" and p["series_done"] != SERIES:
+        bad.append(f"{where}.series_done: done without all {SERIES} series")
+    if p["status"] == "not started" and p["series_done"] != 0:
+        bad.append(f"{where}.series_done: series done before the start")
+    return bad
+
+
+def setups_problems(models: list, plan_models: dict, fields=("key", "setup")) -> list:
+    bad = [f"models[{i}].setup: {untrusted(m['setup'])} is not one of the plan's chat models"
+           for i, m in enumerate(models) if m["setup"] not in plan_models]
+    for field in fields:
+        vals = [m[field] for m in models]
+        if len(set(vals)) != len(vals):
+            bad.append(f"models: a {field} appears twice")
+    return bad
+
+
+def progress_rows(R: dict) -> dict:
+    return dict(updated_at=R["updated_at"], models=[dict(setup=m["setup"], **m["progress"]) for m in R["models"]])
+
+
+def status_view(R, plan_models: dict) -> dict:
+    """Pre-registration-only builds: improve.json's progress fields only (STATUS_TOP, progress_problems, setups from
+    the plan, once each). public: {updated_at, models: [{setup, status, reason, series_done, updated_at}]}."""
+    if not isinstance(R, dict):
+        return rejected(["improve.json is not an object"])
+    bad = check(R, STATUS_TOP, "improve.json")
+    if bad:
+        return rejected(bad)
+    bad = setups_problems(R["models"], plan_models, ("setup",))
+    for i, m in enumerate(R["models"]):
+        bad += progress_problems(m["progress"], f"models[{i}].progress")
+    if bad:
+        return rejected(bad)
+    return dict(accepted=True, problems=[], private_problems=[], public=progress_rows(R))
+
 
 
 def model_problems(m: dict, i: int, plan_models: dict, dry: bool, leaks: list) -> list:
@@ -178,6 +243,12 @@ def model_problems(m: dict, i: int, plan_models: dict, dry: bool, leaks: list) -
         bad.append(f"{where}: every step done but still running")
     if not m["billed"] and (m["cost"]["billed_usd"] != 0 or m["cost"]["reported_usd"]):
         bad.append(f"{where}.cost: billed money on a route that is not billed")
+    p = m["progress"]
+    bad += progress_problems(p, f"{where}.progress")
+    if p["series_done"] != n_s:
+        bad.append(f"{where}.progress.series_done: not the finished series in steps_done")
+    if m["state"] not in PROGRESS_STATE[p["status"]] or (p["status"] == "not started" and done):
+        bad.append(f"{where}.progress.status: does not match the model's state and steps")
     return bad
 
 
@@ -267,7 +338,7 @@ def validate(R, plan_sha: str, prompt_sha: str, test_sha: str, harness_prompt_sh
         return rejected(bad)
     models = []
     for m in R["models"]:
-        out = {k: m[k] for k in ("key", "setup", "state", "reason", "steps_done", "cost")}
+        out = {k: m[k] for k in ("key", "setup", "state", "reason", "steps_done", "cost", "progress")}
         out["empty"] = m["empty"]
         out["series"] = [{k: v for k, v in s.items()} for s in m["series"]]
         out.update(scores(m, P["dry_run"], plan_models[m["setup"]]["route"].startswith("local")))

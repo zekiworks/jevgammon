@@ -15,10 +15,13 @@ site). It follows the learning page (learning_page.py) in every convention. Sour
     the render fails unless they hash to the plan's stated sha256 (one hash over the system file's bytes immediately
     followed by the user file's);
   - harness-prompt/: the harness's own copy of the prompt (workspace/improve/out/prompt), checked by the validator;
-  - improve.json (workspace/improve/out/improve.json), absent before the first model call. Read only outside
-    pre-registration-only mode (PREREGISTRATION_ONLY), and shown only after improve_validate accepts it; refused,
-    the page is the pre-registration view with a "data refused" note naming the failed fields (names taken from the
-    file withheld; the full text on stderr only).
+  - improve.json (workspace/improve/out/improve.json), absent before the first model call. Outside
+    pre-registration-only mode (PREREGISTRATION_ONLY) read whole and shown only after improve_validate accepts it;
+    refused, the page is the pre-registration view with a "data refused" note naming the failed fields (names taken
+    from the file withheld; the full text on stderr only). In pre-registration-only mode only its progress fields are
+    read (improve_validate.status_view), for the "Models and status" table at the top (Ümit #3219): per plan chat
+    model its route (OpenRouter, subscription, our GPU), status (with a fixed reason), series done of 5 and last
+    update; never an outcome number.
 
 The producer writes no before, after or verdict: improve_validate computes them (plan sections 2, 6 and 7). A model
 gets Yes or No only past the verdict gate; until then its row shows live numbers and "running, n of 5 series", or
@@ -254,6 +257,30 @@ def read_results(src: Path, plan: dict, test_set: Path) -> dict:
     return dict(results=v["public"], validation=dict(accepted=v["accepted"], problems=v["problems"]))
 
 
+def read_progress(src: Path, plan: dict) -> dict:
+    """Pre-registration-only builds: the "Models and status" table's data from src/improve.json, its progress fields
+    only (improve_validate.status_view): {progress, progress_refused}; no outcome number, no free text is read."""
+    path = src / "improve.json"
+    if not path.exists():
+        return dict(progress=None, progress_refused=None)
+    try:
+        R = json.loads(path.read_text())
+    except ValueError:
+        return dict(progress=None, progress_refused=["improve.json is not JSON"])
+    v = V.status_view(R, {m["setup"]: m for m in plan["models"]})
+    for p in v["private_problems"]:
+        print(f"improve_validate status view (private): {p}", file=sys.stderr)
+    return dict(progress=v["public"], progress_refused=None if v["accepted"] else v["problems"])
+
+
+def progress_from_results(shown: dict) -> dict:
+    R, v = shown["results"], shown["validation"]
+    rows_ = (dict(updated_at=R["updated_at"], models=[dict(setup=m["setup"], **m["progress"]) for m in R["models"]])
+             if R else None)
+    return dict(progress=rows_, progress_refused=v["problems"] if v and not v["accepted"] else None)
+
+
+
 def rows(L) -> list:
     """The table's rows: one per plan model, its validated data or None; sorted by the change in risks found (largest
     first), rows without a change after, in the plan's order (plan section 6)."""
@@ -287,14 +314,15 @@ def status(L) -> dict:
 
 
 def data(plan_path: Path, src: Path, test_set: Path = TEST_SET, preregistration_only: bool | None = None) -> dict:
-    """The page's data from the plan and src (the STATE/improve layout). In pre-registration-only mode no results file
-    or test set is read at all."""
+    """The page's data from the plan and src (the STATE/improve layout). In pre-registration-only mode no test set is
+    read and of the results file only its progress fields (read_progress)."""
     prereg = PREREGISTRATION_ONLY if preregistration_only is None else preregistration_only
     plan = read_plan(plan_path)
     prompt = read_prompt(src)
     shown = dict(results=None, validation=None) if prereg else read_results(src, plan, test_set)
+    progress = read_progress(src, plan) if prereg else progress_from_results(shown)
     L = dict(version="v3", preregistration_only=prereg, plan={k: v for k, v in plan.items() if k != "redacted"},
-             redacted=plan["redacted"], lesson_prompt=prompt, **shown)
+             redacted=plan["redacted"], lesson_prompt=prompt, **shown, **progress)
     if not prereg:
         L["status"] = status(L)
     L["source_sha256"] = hashlib.sha256(json.dumps(L, sort_keys=True).encode()).hexdigest()
@@ -411,7 +439,7 @@ def models_section(L) -> str:
         cap = (f'{count(len(plan["models"]))} chat models, sorted by the change in risks found (rows without a change '
                'after); tap a model for its lessons')
     else:
-        head = ["Model (v3.db setup)", "Maker", "Setting", "Route", "Status (8 Nov)", "Improved?"]
+        head = ["Model (v3.db setup)", "Maker", "Setting", "Route", "Status in the plan (8 Nov)", "Improved?"]
         cap = f'{count(len(plan["models"]))} chat models (in scope), in the plan\'s order'
     body = P.SWIPE + P.table(head, [model_row(pm, m, results) for pm, m in rows(L)], esc(cap),
                              cls="board list improve-models")
@@ -422,6 +450,49 @@ def models_section(L) -> str:
               'shares over valid answers. Yes or No only once every run is complete (plan section 7).</p>'
               if results else "")
     return seed + before + body + f'<ul class="notes improve-notes">{notes}</ul>' + others(L)
+
+
+def route_class(pm) -> str:
+    """The status table's route: OpenRouter (billed), a subscription, or a local server ("our GPU"), from the plan."""
+    if pm["billed"]:
+        return "OpenRouter"
+    if "subscription" in pm["route"]:
+        return "subscription"
+    if pm["route"].startswith("local"):
+        return "our GPU"
+    raise SystemExit(f"{pm['setup']}: the plan's route {pm['route']!r} is none of OpenRouter, subscription, local")
+
+
+def progress_status(p) -> str:
+    return p["status"] + (f' ({p["reason"]})' if p["reason"] else "")
+
+
+def progress_section(L) -> str:
+    """The "Models and status" table (Ümit #3219): one row per plan chat model, in the plan's order; status, series
+    done and last update from the validated progress fields only, no outcome number. A model the file does not list
+    has not started; with the file refused, every status is unknown."""
+    refused, prog = L["progress_refused"], L["progress"]
+    by = {m["setup"]: m for m in (prog or {}).get("models", [])}
+    out = []
+    for pm in L["plan"]["models"]:
+        p = by.get(pm["setup"])
+        if refused:
+            status_, done, when = nm(NA), nm(NA), nm(NA)
+        elif p is None:
+            status_, done, when = "not started", f"0 / {V.SERIES}", nm(NA)
+        else:
+            status_, done = esc(progress_status(p)), f'{p["series_done"]} / {V.SERIES}'
+            when = f'<time datetime="{esc(p["updated_at"])}">{LP.utc(p["updated_at"])}</time>'
+        out.append(f'<tr data-progress-setup="{esc(pm["setup"])}"><th scope="row">{esc(pm["setup"])}</th>'
+                   f'<td>{route_class(pm)}</td><td data-progress="status">{status_}</td>'
+                   f'<td class="num" data-progress="series">{done}</td><td data-progress="updated">{when}</td></tr>')
+    note = ('<p class="note" id="improve-progress-refused"><strong>Status unavailable.</strong> The latest results '
+            'file\'s status fields failed the site\'s checks:</p><ul class="notes">'
+            + "".join(f"<li>{esc(p)}</li>" for p in refused) + "</ul>" if refused else "")
+    cap = (f'{count(len(L["plan"]["models"]))} chat models, in the plan\'s order; status only, no results. The '
+           'decision models and Cygnet are not tested (below).')
+    return note + P.SWIPE + P.table(["Model", "Route", "Status", f"Series done (of {V.SERIES})", "Last update (UTC)"],
+                                    out, esc(cap), cls="board list improve-progress")
 
 
 def validation_note(L) -> str:
@@ -524,8 +595,9 @@ def title(L) -> str:
 def body(L) -> str:
     plan = L["plan"]
     rule = section(plan["sections"], RULE_SECTION)
-    parts = [("improve-rule", rule["title"], spec_markdown(rule["markdown"])),
-             ("improve-models", "Models" if results_shown(L) else "Models and status", models_section(L))]
+    parts = [("improve-status", "Models and status", progress_section(L)),
+             ("improve-rule", rule["title"], spec_markdown(rule["markdown"])),
+             ("improve-models", "Models", models_section(L))]
     if results_shown(L):
         parts.append(("improve-lessons", "Lessons and every test, per model", lessons(L)))
     parts.append(("improve-prompt", "Lesson prompt and test set", prompt(L)))

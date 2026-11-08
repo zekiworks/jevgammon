@@ -1,5 +1,5 @@
-# (a) whole-site renders: origin/main abef366 and branch improve-page c7fa237, same state, results hash
-# 1279974c; checks.run (the full pre-deploy checks) on the branch's. Started 2026-11-08 15:34:34 UTC
+# (a) whole-site renders: origin/main 7e2bf78 and branch improve-page 2dce5ce, same state, results hash
+# 1279974c; checks.run (the full pre-deploy checks) on the branch's. Started 2026-11-08 15:44:16 UTC
 rendered $SCRATCH/out-main with $SCRATCH/src-main/tools/site
 rendered $SCRATCH/out-branch with $SCRATCH/src-branch/tools/site
 checks.run: 0 failure(s)
@@ -11,4 +11,4 @@ Files out-main/data/manifest.json and out-branch/data/manifest.json differ
 Only in out-branch/data/v3: improve.json
 Files out-main/experiments/index.html and out-branch/experiments/index.html differ
 Only in out-branch: improve
-# Finished 2026-11-08 15:37:13 UTC
+# Finished 2026-11-08 15:46:59 UTC

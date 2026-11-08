@@ -1,7 +1,8 @@
 # "Did they improve?" page candidate: review (ImprovePage, 2026-11-08)
 
-**Candidate:** branch `improve-page`, commit **c7fa237**, on origin/main eb8d8c0 (plan `mailbox/Did they improve - plan
-2026-11-08.md` at 0799b46, sha256 `1edda547494e4fa85d678ba36d2619b2e1a77de6f9554d404f16eff59c4d4864`). Pushed, not
+**Candidate:** branch `improve-page`, commit **2dce5ce**, on origin/main 7e2bf78 (plan `mailbox/Did they improve - plan
+2026-11-08.md` at 7e2bf78, sha256 `85a970d09cf1ae40d5567a7540ec0f607133314589119391bd71584b5ef78542`; the page reads
+the plan file at build time and binds `improve.json`'s `protocol.plan_sha256` to that file's sha256). Pushed, not
 merged. `improve_page.PREREGISTRATION_ONLY = True` is the default: the live build never reads `improve.json`; the
 results view is rendered here with the review flag `--with-results` only. Render-only: no `build.py`/`update.sh`, no
 server, timer, deploy or model call. Rerun: `bash mailbox/improve-page-review/scripts/run_review.sh` (main checkout).
@@ -16,7 +17,7 @@ server, timer, deploy or model call. Rerun: `bash mailbox/improve-page-review/sc
 | `tools/site/snapshot.py`, `update.sh` | `snapshot_improve`: `workspace/improve/out/improve.json` and `out/prompt/` (→ `STATE/improve/harness-prompt/`), the plan's lesson prompt (`workspace/learning-pilot/lessons_*.txt` → `STATE/improve/prompt/`); key `"improve"` in the summary and `improve:$IMPROVE` in the change key, so each new `improve.json` rebuilds the site live |
 | `tools/site/build.py`, `pages.py` | `S["improve"]`, the data file, the page, the Experiments card (`#improve`; status "Pre-registration"), `improve/` under the Experiments tab |
 | `tools/site/assets/bg.css` | 3 lines: room for the long cells of the models table |
-| `tools/site/selftest_improve.py` | SYNTHETIC states, 29 injected faults in `improve.json`, 12 injected page faults |
+| `tools/site/selftest_improve.py` | SYNTHETIC states, 29 injected faults in `improve.json`, 14 injected page faults |
 
 Note: `content/experiments.json` holds the Method page's method-experiment numbers, not the Experiments cards; the
 cards are `pages.experiments_page`'s list (where the learning page's card is), so the card was added there.
@@ -39,9 +40,14 @@ and its sha256; then
 3. **Lesson prompt and test set**: the prompt's sha256 `d7550015…` (render fails unless the files hash to the plan's),
    both prompt files verbatim, the test set's sha256 `6c92e741…` ("200 positions (never published)");
 4. every other plan section verbatim (§1, §3–§11: routes and settings table, design, money stop rules with the $110
-   cap, the $55 share and the pause rules, schedule, outputs). Private strings in the plan (3 occurrences: the GPU
-   host's name, `base_url`) are replaced by "[withheld: private address]" by the learning page's redaction, as the
-   site's private-strings rule requires.
+   cap, the $55 share and the pause rules, schedule, outputs).
+
+**No host on the page (Main):** the page's copy of the plan text names no server, GPU id or server-address key:
+`improve_page.HOST_REWRITES` rewrites them (the plan file is unchanged): "for local servers, `base_url`" → "for local
+servers, the server address"; §10's local lane "<host> GPU 3 by UUID `…`" → "our GPU" (and "; GPU set to that UUID"
+dropped). A running local model shows "running on our GPU, n of 5 series"; waiting local models show the plan's
+"waiting for a GPU". `check_improve` fails on any "withheld", "bariton" or "GPU-" in the page or its data file (two
+selftest page faults prove it); the learning page's redaction stays only as a safety net (0 uses with this plan).
 
 **Results view (`--with-results`; shown only when improve_validate accepts the file):** a status line ("N of 15 models
 with a verdict · running · paused · incomplete or stopped", last update), billed so far against $110; the models table
@@ -67,7 +73,7 @@ file; checks.check_improve recomputes them independently from the data file and 
 | running-1 | SYNTHETIC: Qwen3.8 Flash (off), E1 + S1 done | live numbers, "running, 1 of 5 series", no Yes/No |
 | complete-yes | SYNTHETIC: Qwen complete, +6.0 > threshold 5.0, safety −1.4 | Yes |
 | complete-no | SYNTHETIC: GLM-5.3 complete, +5.1 vs own range 6.0 | No |
-| mixed | SYNTHETIC: Qwen Yes, GLM No, Kimi paused, DeepSeek running mid-series, Gemini stopped | order and every status |
+| mixed | SYNTHETIC: Qwen Yes, GLM No, Kimi paused, DeepSeek running mid-series, Gemini stopped, Gemma 4 31B (on) running locally | order and every status; "running on our GPU, 0 of 5 series" |
 | refused | complete-yes with a test position's board in a lesson | refused; pre-registration view + note |
 | REAL-dry-run-asis | the harness's own `workspace/improve/out-dry/improve.json` (dry run, no model call), as written | refused: `protocol.plan_sha256` is the earlier plan's (309adc7a…) |
 | REAL-dry-run-rehashed | the same with `plan_sha256` set to the current plan's (the only change) | accepted: "running, 2 of 5 series" |
@@ -77,14 +83,11 @@ file; checks.check_improve recomputes them independently from the data file and 
 | `00-states.txt` | STATE/improve as snapshot_improve writes it | prompt/ only (no improve.json on disk yet) |
 | `01-site-renders-and-checks-run.txt` | whole-site renders of origin/main and the branch (same state), `checks.run` on the branch's, `diff -rq` | 0 failures; only `data/index.html`, `data/manifest.json`, `experiments/index.html` differ, `improve/` and `data/v3/improve.json` added |
 | `02-page-checks.txt` | `improve_page.py --check` in all 9 states (numbers trace, links/ids, private strings, check_improve with the leak scan); audit-hook proof that the default build opens no improve.json; leak scan of the whole built site | 0 failures in every state; default build opens only `prompt/lessons_*.txt`; leak scan: 600 strings (200 positions × id, board key, board) over 2,552 files, 0 hits |
-| `03-selftest-faults.txt` | `selftest_improve.py`: 5 states, 29 injected `improve.json` faults (bad plan/prompt/test-set hash, counts that do not add up, denominators, answer rate, share range, unknown keys with canaries, setup outside the plan, verdict gate: 4 series / 199 of 200 / 9 lessons / 2 empty runs, steps order, test position (board, board key) in a lesson, cut rule, billing, $110, missing reason, removed `cumulative_cap_usd`, duplicate setup, not JSON) + the harness prompt missing; 12 page faults | 52/52 as expected (exit 0) |
-| `05-screenshots-log.txt`, `screenshots/` | Playwright Chromium, light, 1280 and 375 wide (the learning reviews' method) | 44 PNGs (22 shots × 1280/375), no page wider than the viewport |
+| `03-selftest-faults.txt` | `selftest_improve.py`: 5 states, 29 injected `improve.json` faults (bad plan/prompt/test-set hash, counts that do not add up, denominators, answer rate, share range, unknown keys with canaries, setup outside the plan, verdict gate: 4 series / 199 of 200 / 9 lessons / 2 empty runs, steps order, test position (board, board key) in a lesson, cut rule, billing, $110, missing reason, removed `cumulative_cap_usd`, duplicate setup, not JSON) + the harness prompt missing; 14 page faults (incl. a withheld mark and a host name on the page) | 55/55 as expected (exit 0) |
+| `05-screenshots-log.txt`, `screenshots/` | Playwright Chromium, light, 1280 and 375 wide (the learning reviews' method) | 44 PNGs (22 shots × 1280/375), no page wider than the viewport. Built site (branch) and every page render: 0 files contain "withheld", "bariton", "faulty", "impossible" or the GPU id |
 
 ## Not rendered / open
 
-- The plan's §3 status cells are rendered as written; Improve's note that the local models' status is "waiting: GPU 3
-  (bariton)" is not in the plan's table (it says "waiting for a GPU"), and "bariton" is a private string the site
-  withholds anyway.
 - Every number in the results states is SYNTHETIC; no real run exists yet. The REAL dry-run file is the harness's dry
   run (placeholder lessons, no model call).
 - The page checks rely on the private `workspace/learning-pilot/test_set.json` (as the learning page's): with

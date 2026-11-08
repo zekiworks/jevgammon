@@ -1,5 +1,5 @@
-# (b) selftest_improve.py at c7fa237: SYNTHETIC states rendered with the results view, injected faults in
-# improve.json (refused) and in the rendered page (detected). Started 2026-11-08 15:37:13 UTC
+# (b) selftest_improve.py at 2dce5ce: SYNTHETIC states rendered with the results view, injected faults in
+# improve.json (refused) and in the rendered page (detected). Started 2026-11-08 15:46:59 UTC
 PASS  state none: accepted=None, check_improve clean
 PASS  state running-1: accepted=True, check_improve clean  Qwen3.8 Flash (off)=running, 1 of 5 series
 PASS  running-1: no Yes/No, 'running, 1 of 5 series'
@@ -7,7 +7,8 @@ PASS  state complete-yes: accepted=True, check_improve clean  Qwen3.8 Flash (off
 PASS  complete-yes: Yes
 PASS  state complete-no: accepted=True, check_improve clean  GLM-5.3 (on)=No
 PASS  complete-no: No
-PASS  state mixed: accepted=True, check_improve clean  DeepSeek V4.1 Flash (on)=running, 2 of 5 series, GLM-5.3 (on)=No, Gemini 3.8 Flash (high)=stopped: SYNTHETIC: quota exhausted, Kimi K3.1 Pro (off)=paused: balance minus the $5 reserve does not cover step S2; waiting for a top-up, Qwen3.8 Flash (off)=Yes
+PASS  state mixed: accepted=True, check_improve clean  DeepSeek V4.1 Flash (on)=running, 2 of 5 series, GLM-5.3 (on)=No, Gemini 3.8 Flash (high)=stopped: SYNTHETIC: quota exhausted, Gemma 4 31B (on)=running on our GPU, 0 of 5 series, Kimi K3.1 Pro (off)=paused: balance minus the $5 reserve does not cover step S2; waiting for a top-up, Qwen3.8 Flash (off)=Yes
+PASS  mixed: a local model 'running on our GPU', no host named
 PASS  default build: pre-registration only, results not read
 PASS  default build: check_improve clean
 PASS  fault: bad plan hash  protocol.plan_sha256: not the pre-registered value
@@ -51,8 +52,10 @@ PASS  page fault (complete-yes): DeepSeek label removed  improve/: missing the p
 PASS  page fault (complete-yes): not-comparable cell removed  improve/: missing the pre-registered text 'not comparable (different design)'
 PASS  page fault (complete-yes): a test position in the page  improve/: test position 'your checkers 1:2 2:1 5:'…
 PASS  page fault (complete-yes): a test position id in the page  improve/: test position 'lp-165051'…
+PASS  page fault (complete-yes): a withheld mark on the page  improve/: names a host or shows a withheld mark ('withheld')
+PASS  page fault (complete-yes): a host named on the page  improve/: names a host or shows a withheld mark ('bariton')
 PASS  page fault (complete-yes): a model row removed  improve/: the model table is not one row per plan model
-52/52 cases as expected; renders in $SCRATCH/self
+55/55 cases as expected; renders in $SCRATCH/self
 exit code: 0
 
 ## stderr: the private problem texts (names from the file in full; never on the page): first 12 lines
@@ -68,4 +71,4 @@ improve_validate (private): improve.json.models[0].empty[2].risks_found: out of 
 improve_validate (private): models[0].series[0].t10: right_safety must be given exactly when safety_pays is not zero
 improve_validate (private): models[0]: complete, but the verdict gate fails (plan section 7)
 improve_validate (private): improve.json: unknown key 'zz_canary_key_7f3a'
-# Finished 2026-11-08 15:37:48 UTC
+# Finished 2026-11-08 15:47:35 UTC

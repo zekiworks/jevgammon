@@ -1,5 +1,11 @@
 # nav-ct: the site's navigation as Clocktower Bench's (Ümit #2901, with #2904 and #2907)
 
+> **Review 1 (d345323).** Superseded where `review2/README.md` differs (Zeki #2918). nav-ct is now 90cd56e:
+> - a details box holding keyboard focus stays open under pointer movement;
+> - a box on a short screen is capped and scrolls inside;
+> - `#view-part` is kept, and the URL check no longer has the header-id exception.
+> Review 2 rendered from the retained computed state: no compute ran.
+
 Branch `nav-ct`, HEAD d345323. It is a **candidate**: not merged, not deployed. It holds leaderboard-ct (approved, not merged) and this change, **rebased onto origin/main ff652d8** (the mobile fix, MobileFix). See "Conflicts" below.
 
 ## What ran

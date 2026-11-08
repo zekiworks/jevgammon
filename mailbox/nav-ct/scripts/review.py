@@ -370,11 +370,6 @@ SITE = "http://site.test/"
 urls = []
 ids = lambda f: {t["id"] for t in BeautifulSoup(f.read_text(), "html.parser").find_all(id=True)}
 
-
-def header_ids(f):
-    """The ids inside the old page header itself (its Part row's label), not part of any page's content."""
-    s = BeautifulSoup(f.read_text(), "html.parser")
-    return {t["id"] for h in s.select(".site-header, .topbar") for t in h.find_all(id=True)}
 # 3a. Every page of live and of the base render is a page of nav-ct, and every id (anchor) on it is still there.
 for name, ref in (("live", live), ("leaderboard-ct render", baser)):
     pages_n = anchors_n = 0
@@ -387,20 +382,17 @@ for name, ref in (("live", live), ("leaderboard-ct render", baser)):
         if not g.is_file():
             urls.append(["static", f"page of {name}", str(rel.parent) + "/", "", "MISSING"])
             continue
-        old, new, chrome = ids(f), ids(g), header_ids(f)
-        lost = sorted(old - new - chrome)
-        gone = sorted((old - new) & chrome)
+        old, new = ids(f), ids(g)
+        lost = sorted(old - new)
         anchors_n += len(old)
-        urls.append(["static", f"page of {name}: the page and every one of its {len(old - chrome)} content ids",
-                     str(rel.parent) + "/", (f"lost: {lost[:12]}" if lost else "all kept")
-                     + (f"; the old header's own id {gone} went with the old header (a link to it opens the page at "
-                        "its top)" if gone else ""), "ok" if not lost else "LOST"])
+        urls.append(["static", f"page of {name}: the page and every one of its {len(old)} ids", str(rel.parent) + "/",
+                     f"lost: {lost[:12]}" if lost else "all kept", "ok" if not lost else "LOST"])
     print(f"{name}: {pages_n} pages, {anchors_n} anchors checked")
 # 3b. The old navigation (the leaderboard-ct pages row and Part row) and the home page's face links, in the browser at
 # 1280 and 390: each address loads, its #anchor exists and lands below the sticky header.
 old_nav = sorted({a["href"] for a in B.select(".topbar a[href], .site-header a[href]") if not a["href"].startswith("/")} |
                  {a["href"] for a in B.select(".face-nav a[href], .hero-links a[href]")})
-deep = ["#leaderboard", "#too-safe", "#finding-cautious", "#finding-flinch", "#how-numbers", "#findings", "#board-panel",
+deep = ["#view-part", "method/#view-part", "about/#view-part", "#leaderboard", "#too-safe", "#finding-cautious", "#finding-flinch", "#how-numbers", "#findings", "#board-panel",
         "#leagues-tabs", "#filters", "#close-choices-stage-b", "#nackgammon-paired", "#downloads", "#risk-judgement",
         "#error-rate", "#cost", "#time", "method/#limits", "method/#prompt", "method/#nackgammon-paired",
         "leagues/#late-entries", "leagues/#nack-knockout", "leagues/#hype-cup", "matches/#stage-knockout",
@@ -412,7 +404,7 @@ TARGET = """() => {
   const head = document.querySelector('.site-header').getBoundingClientRect().bottom;
   const box = t && t.getBoundingClientRect();
   return { path: location.pathname + location.search + location.hash, title: document.title,
-           target: id ? (t ? ((t.offsetParent || t.getClientRects().length) ? (box.top >= head - 2 && box.top < innerHeight ? 'below the header, in view' : `exists, top ${Math.round(box.top)} vs header ${Math.round(head)}`) : 'hidden') : 'missing') : '',
+           target: id ? (t ? ((t.offsetParent || t.getClientRects().length) ? (t.closest('.site-header') ? (box.top >= 0 && box.bottom <= head + 0.5 ? 'in the sticky header, in view' : 'in the header, NOT in view') : box.top >= head - 2 && box.top < innerHeight ? 'below the header, in view' : `exists, top ${Math.round(box.top)} vs header ${Math.round(head)}`) : 'hidden') : 'missing') : '',
            tab: [...document.querySelectorAll('.site-tabs a[aria-current]')].map(a => a.textContent).join('|') };
 }"""
 TAB_OF = {"": "Leaderboard", "decisions/": "Decisions", "highlights/": "Highlights", "experiments/": "Experiments",
@@ -431,7 +423,7 @@ with sync_playwright() as p:
             st = page.evaluate(TARGET)
             path = urlparse(u).path
             want_tab = next((v for k, v in TAB_OF.items() if k and path.startswith(k)), "Leaderboard")
-            ok = resp.status == 200 and st["target"] in ("", "below the header, in view") and st["tab"] == want_tab
+            ok = resp.status == 200 and st["target"] in ("", "below the header, in view", "in the sticky header, in view") and st["tab"] == want_tab
             urls.append([width, "old address in the browser", u, f"{resp.status}; {st['target'] or 'no anchor'}; tab {st['tab']} "
                          f"(expected {want_tab})", "ok" if ok else "WRONG"])
         urls.append([width, "script errors on these addresses", "", "; ".join(errs) or "none", "ok" if not errs else "ERRORS"])

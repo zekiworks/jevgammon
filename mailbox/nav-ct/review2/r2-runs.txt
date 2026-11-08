@@ -1,0 +1,14 @@
+## d345323 (d345323): render_retained.py from /tmp/lct/S.pkl --checks
+rendered /tmp/nav/out-r2-d345323 with /tmp/nav/src-r2-d345323/tools/site
+checks.run: 0 failure(s)
+exit status: 0
+## HEAD (90cd56e): render_retained.py from /tmp/lct/S.pkl --checks
+rendered /tmp/nav/out-r2-head with /tmp/nav/src-r2-head/tools/site
+checks.run: 0 failure(s)
+exit status: 0
+# overall exit status: 0
+
+## render diff: d345323 vs HEAD (both from the retained S)
+2549 / 2549 files; only in one: []
+identical 2433; differing only by the tab row's id="view-part" 114; other differences: ['bg.css', 'bg.js']
+exit status: 0

@@ -1,0 +1,94 @@
+diff --git a/tools/site/assets/bg.css b/tools/site/assets/bg.css
+index b8e15fd..0d73c04 100644
+--- a/tools/site/assets/bg.css
++++ b/tools/site/assets/bg.css
+@@ -431,6 +431,7 @@ table.headline tbody tr.hl-open > td { background: var(--row-hover); }
+ .hl-box p { margin: .12rem 0; }
+ .hl-box p:first-child { margin-top: 0; }
+ .js .hl-box { display: none; position: fixed; z-index: 30; max-width: calc(100vw - 16px); margin: 0; padding: .6rem .75rem;
++  overflow: auto; overscroll-behavior: contain;
+   background: var(--panel); border: 1px solid var(--control-edge); border-radius: 8px; box-shadow: var(--shadow); }
+ .js .hl-box.open { display: block; }
+ .hl-more { display: block; margin-top: .2rem; padding: 0; border: 0; background: none; color: var(--link, var(--text-2));
+diff --git a/tools/site/assets/bg.js b/tools/site/assets/bg.js
+index 1e052aa..78c1c7f 100644
+--- a/tools/site/assets/bg.js
++++ b/tools/site/assets/bg.js
+@@ -575,10 +575,25 @@ async function savePng(panel, svg, title, lines, filename) {
+     const width = Math.min(380, vw - 16);
+     box.style.width = `${width}px`;
+     box.style.left = `${Math.max(8, Math.min(cell.left, vw - width - 8))}px`;
++    // Height: below the row if it fits, else above it. If it fits neither way, capped to the larger side of the row,
++    // scrolling inside (its links stay reachable by scrolling it or with Tab), so the row itself stays uncovered for a
++    // second tap; only where neither side has 120 px does it take the window under the header.
++    box.style.maxHeight = '';
+     const height = box.offsetHeight;
+     const header = document.querySelector('.site-header')?.getBoundingClientRect().bottom || 0;
+     const below = row.bottom;  // no gap: the pointer moves from the row into its box without leaving the row
+-    box.style.top = `${below + height > innerHeight - 8 && row.top - height > header ? row.top - height : below}px`;
++    const bottom = innerHeight - 8;
++    const roomBelow = bottom - below, roomAbove = row.top - header - 4;
++    if (height <= roomBelow) box.style.top = `${below}px`;
++    else if (height <= roomAbove) box.style.top = `${row.top - height}px`;
++    else if (Math.max(roomBelow, roomAbove) >= 120) {
++      box.style.maxHeight = `${Math.max(roomBelow, roomAbove)}px`;
++      box.style.top = `${roomBelow >= roomAbove ? below : row.top - roomAbove}px`;
++    } else {
++      const room = Math.max(bottom - header - 4, 80);
++      box.style.maxHeight = `${room}px`;
++      box.style.top = `${header + 4}px`;
++    }
+   };
+   const hide = () => {
+     if (!open) return;
+@@ -598,11 +613,25 @@ async function savePng(panel, svg, title, lines, filename) {
+     place();
+   };
+   const rows = [...table.querySelectorAll('tbody tr[data-box]')];
+-  table.addEventListener('pointerdown', event => { pointer = event.pointerType || 'mouse'; }, true);
++  // Keyboard focus in the open row (its name or its box) keeps the box: the pointer leaving the row or entering another
++  // row does not take it away until the focus leaves the row, Escape, a second tap or a click outside. Focus that a
++  // press of the pointer gives (pointing) neither opens a box nor holds one: the press itself decides.
++  let pointing = false, keyed = false;
++  const held = () => !!open && keyed && open.contains(document.activeElement);
++  document.addEventListener('pointerdown', event => {
++    pointing = true;
++    if (table.contains(event.target)) pointer = event.pointerType || 'mouse';
++  }, true);
++  const released = () => setTimeout(() => { pointing = false; });
++  document.addEventListener('pointerup', released, true);
++  document.addEventListener('pointercancel', released, true);
+   rows.forEach(tr => {
+-    tr.addEventListener('pointerenter', event => { if (event.pointerType === 'mouse' && !pinned) show(tr, false); });
+-    tr.addEventListener('pointerleave', event => { if (event.pointerType === 'mouse' && !pinned && open === tr) hide(); });
+-    tr.addEventListener('focusin', () => { if (open !== tr && !quiet) show(tr, false); });
++    tr.addEventListener('pointerenter', event => { if (event.pointerType === 'mouse' && !pinned && !held()) show(tr, false); });
++    tr.addEventListener('pointerleave', event => { if (event.pointerType === 'mouse' && !pinned && open === tr && !held()) hide(); });
++    tr.addEventListener('focusin', () => {
++      keyed = !pointing;
++      if (keyed && open !== tr && !quiet) show(tr, false);
++    });
+     tr.addEventListener('focusout', event => { if (open === tr && !pinned && !tr.contains(event.relatedTarget)) hide(); });
+     tr.addEventListener('click', event => {
+       // A mouse click or a key (detail 0) follows the link; a link or key in the box or the expander does its own job.
+diff --git a/tools/site/pages.py b/tools/site/pages.py
+index a0a4b09..e4f32f2 100644
+--- a/tools/site/pages.py
++++ b/tools/site/pages.py
+@@ -247,6 +247,7 @@ def tab_of(path: str) -> str:
+     return next((href for href, _ in TABS if href and path.startswith(href)), "")
+ 
+ 
++# The tab row keeps the id of the old Part row (view-part), so an old link to #view-part still lands on the site's parts.
+ def site_header(rel: str, path: str, controls: str) -> str:
+     here = tab_of(path)
+     tabs = "".join(f'<li><a href="{rel}{href or ("" if rel else "./")}"'
+@@ -255,7 +256,7 @@ def site_header(rel: str, path: str, controls: str) -> str:
+     return (f'<div class="site-header">\n  {SUITE_BAR}\n  <header class="site-bar"><div class="site-bar-in">'
+             f'<div class="site-title-row"><a class="site-title" href="{rel or "./"}"><img class="site-leaf" '
+             f'src="{rel}{LEAF}" width="18" height="21" alt="">{esc(SITE_NAME)}</a>{controls}</div>'
+-            f'<nav class="site-tabs" aria-label="Sections"><ul>{tabs}</ul></nav></div></header>\n  </div>')
++            f'<nav class="site-tabs" id="view-part" aria-label="Sections"><ul>{tabs}</ul></nav></div></header>\n  </div>')
+ 
+ 
+ # The first script of every page, before the stylesheets apply (Zeki, bus #2310): the theme is always named on <html>

@@ -1,0 +1,35 @@
+viewport,theme,check,observed,result
+1280x900,light,"mixed keyboard + mouse, every ranked row (31)",focus in the box; pointer leaves the row: still open; pointer on another row: still only that box; Escape closes,ok
+1280x900,light,"focused box, click outside, then hover another row",open after the click []; after hover ['hl-3-box'],ok
+1280x900,light,script errors,none,ok
+1280x500,light,"short window, every ranked row (31)",box inside the window below the header; 31 boxes capped and scrolling; Open its decisions reachable (Tab),ok
+1280x500,light,short window: Open its decisions → (Enter),http://site.test/decisions/?d=league-3&s=gpt-6-astra-on&p=1: decision cards 50,ok
+1280x500,light,script errors,none,ok
+390x500,light,"short window, every ranked row (31)",box inside the window below the header; 31 boxes capped and scrolling; Open its decisions reachable (scrolling the box),ok
+390x500,light,short window: Open its decisions → (tap),http://site.test/decisions/?d=league-3&s=gpt-6-astra-on&p=1: decision cards 50,ok
+390x500,light,script errors,none,ok
+1280,light,old anchor #view-part,"status 200; tab row, in the header, in view, unique: true true true 1",ok
+1280,light,old anchor method/#view-part,"status 200; tab row, in the header, in view, unique: true true true 1",ok
+1280,light,old anchor learning/#view-part,"status 200; tab row, in the header, in view, unique: true true true 1",ok
+1280,light,old anchor decisions/#view-part,"status 200; tab row, in the header, in view, unique: true true true 1",ok
+390,light,old anchor #view-part,"status 200; tab row, in the header, in view, unique: true true true 1",ok
+390,light,old anchor method/#view-part,"status 200; tab row, in the header, in view, unique: true true true 1",ok
+390,light,old anchor learning/#view-part,"status 200; tab row, in the header, in view, unique: true true true 1",ok
+390,light,old anchor decisions/#view-part,"status 200; tab row, in the header, in view, unique: true true true 1",ok
+1280x900,dark,"mixed keyboard + mouse, every ranked row (31)",focus in the box; pointer leaves the row: still open; pointer on another row: still only that box; Escape closes,ok
+1280x900,dark,"focused box, click outside, then hover another row",open after the click []; after hover ['hl-3-box'],ok
+1280x900,dark,script errors,none,ok
+1280x500,dark,"short window, every ranked row (31)",box inside the window below the header; 31 boxes capped and scrolling; Open its decisions reachable (Tab),ok
+1280x500,dark,short window: Open its decisions → (Enter),http://site.test/decisions/?d=league-3&s=gpt-6-astra-on&p=1: decision cards 50,ok
+1280x500,dark,script errors,none,ok
+390x500,dark,"short window, every ranked row (31)",box inside the window below the header; 31 boxes capped and scrolling; Open its decisions reachable (scrolling the box),ok
+390x500,dark,short window: Open its decisions → (tap),http://site.test/decisions/?d=league-3&s=gpt-6-astra-on&p=1: decision cards 50,ok
+390x500,dark,script errors,none,ok
+1280,dark,old anchor #view-part,"status 200; tab row, in the header, in view, unique: true true true 1",ok
+1280,dark,old anchor method/#view-part,"status 200; tab row, in the header, in view, unique: true true true 1",ok
+1280,dark,old anchor learning/#view-part,"status 200; tab row, in the header, in view, unique: true true true 1",ok
+1280,dark,old anchor decisions/#view-part,"status 200; tab row, in the header, in view, unique: true true true 1",ok
+390,dark,old anchor #view-part,"status 200; tab row, in the header, in view, unique: true true true 1",ok
+390,dark,old anchor method/#view-part,"status 200; tab row, in the header, in view, unique: true true true 1",ok
+390,dark,old anchor learning/#view-part,"status 200; tab row, in the header, in view, unique: true true true 1",ok
+390,dark,old anchor decisions/#view-part,"status 200; tab row, in the header, in view, unique: true true true 1",ok

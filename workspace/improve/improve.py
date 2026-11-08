@@ -29,7 +29,9 @@ import fcntl
 import hashlib
 import json
 import os
+import re
 import shutil
+import signal
 import sqlite3
 import subprocess
 import sys
@@ -607,13 +609,15 @@ def run_test(key, step, name, note, workdir, ledger=None, rounds=30):
     route = answer_error(key, name, "ROUTE CHECK") if db_path(key).exists() else None
     if route:  # never re-ask a test whose replies failed the route check
         raise Stop(f"{step}: {route[:600]}")
+    held(key, step)  # a key/credit-limit hold: nothing is dispatched until the operator lifts it
     load_before = vllm_load(key)
     started = time.time()
     for k in range(rounds):
-        r = subprocess.run([str(BIN), "ask", "--config", str(path), "--positions", str(TEST_POSITIONS), "--out",
-                            str(db_path(key)), "--setup", name], cwd=CODE, capture_output=True, text=True)
+        r = ask_watched(key, name, path, ledger)
         with open(workdir / f"test-{step}.log", "a") as f:
             f.write(f"--- {now()} round {k + 1}\n{r.stdout}{r.stderr}")
+        if r.key_limit:
+            key_limit_pause(key, step, r.key_limit)
         m = test_metrics(key, name)
         route = answer_error(key, name, "ROUTE CHECK")
         if route:
@@ -632,6 +636,100 @@ def run_test(key, step, name, note, workdir, ledger=None, rounds=30):
     m = test_metrics(key, name)
     m.update(wall_seconds=round(time.time() - started, 1), load_before=load_before, load_after=vllm_load(key))
     return m
+
+
+# The provider's account limit, not a model's fault: OpenRouter's 403 "Key limit exceeded" (a key's spending cap) and
+# 402 Payment Required (insufficient credits). Other 403s (an invalid key) stay failed requests.
+KEY_LIMIT = re.compile(r"403 Forbidden[^\n]*(?:key limit exceeded|credit limit)|402 Payment Required|insufficient credits",
+                       re.IGNORECASE)
+
+
+def key_limit_text(text):
+    m = KEY_LIMIT.search(text or "")
+    return text[max(0, m.start() - 80):m.end() + 300] if m else None
+
+
+def key_limit_pause(key, step, provider_text):
+    """Pause the model at once: an operator hold (reason 'shared-balance priority'), the provider's text in the log.
+    Failed positions stay stored and are asked again when the hold is lifted."""
+    reason = "paused: shared-balance priority (provider account limit: HTTP 403 key limit / 402 credits)"
+    write_atomic(mdir(key) / "hold.json", json.dumps(dict(reason=reason, at=now(), step=step), indent=1))
+    log(key, "key_limit", step=step, provider_text=provider_text[:1000])
+    raise Pause(f"{step}: {reason}: {provider_text[:300]}")
+
+
+def held(key, step):
+    if (mdir(key) / "hold.json").exists():
+        raise Pause(f"{step}: {json.loads((mdir(key) / 'hold.json').read_text())['reason']}")
+
+
+class Asked:
+    def __init__(self, returncode, stdout, stderr, key_limit):
+        self.returncode, self.stdout, self.stderr, self.key_limit = returncode, stdout, stderr, key_limit
+
+
+def last_answer_id(key):
+    if not db_path(key).exists():
+        return 0
+    db = sqlite3.connect(f"file:{db_path(key)}?mode=ro", uri=True, timeout=60)
+    try:
+        return db.execute("SELECT COALESCE(MAX(id), 0) FROM answers").fetchone()[0]
+    except sqlite3.OperationalError:
+        return 0
+    finally:
+        db.close()
+
+
+def key_limit_answer(key, name, after_id=0):
+    """The provider text of an answer stored after `after_id` (this asking's own rows) that failed on the account
+    limit, or None. Earlier failures, kept for re-asking, do not count."""
+    db = sqlite3.connect(f"file:{db_path(key)}?mode=ro", uri=True, timeout=60)
+    try:
+        rows = db.execute("SELECT error FROM answers WHERE setup = ? AND id > ? AND error IS NOT NULL "
+                          "ORDER BY id DESC LIMIT 50", (name, after_id)).fetchall()
+    except sqlite3.OperationalError:
+        rows = []
+    db.close()
+    return next((t for (e,) in rows if (t := key_limit_text(e))), None)
+
+
+def open_reservations(ledger_path, pid):
+    try:
+        db = sqlite3.connect(f"file:{ledger_path}?mode=ro", uri=True, timeout=5)
+        n = db.execute("SELECT COUNT(*) FROM attempts WHERE status = 'open' AND pid = ?", (pid,)).fetchone()[0]
+        db.close()
+        return n
+    except sqlite3.OperationalError:
+        return 0
+
+
+def ask_watched(key, name, config_path, ledger, poll=0.05, settle_timeout=5.0):
+    """`jevgammon ask`, watched: at the first stored answer that failed on the provider's account limit, the process
+    is stopped (nothing more is dispatched once no reservation of it is open, so in-flight requests settle first;
+    after `settle_timeout` it is stopped anyway and an open reservation keeps its worst case, the ledger's rule)."""
+    import tempfile
+    start_id = last_answer_id(key)
+    with tempfile.TemporaryFile("w+") as out, tempfile.TemporaryFile("w+") as err:
+        proc = subprocess.Popen([str(BIN), "ask", "--config", str(config_path), "--positions", str(TEST_POSITIONS),
+                                 "--out", str(db_path(key)), "--setup", name], cwd=CODE, stdout=out, stderr=err,
+                                text=True)
+        found = None
+        while proc.poll() is None:
+            time.sleep(poll)
+            if found is None and db_path(key).exists():
+                found = key_limit_answer(key, name, start_id)
+                if found is not None:
+                    deadline = time.time() + settle_timeout
+                    while ledger and open_reservations(ledger["path"], proc.pid) and time.time() < deadline:
+                        time.sleep(0.01)
+                    proc.send_signal(signal.SIGKILL)
+        proc.wait()
+        out.seek(0)
+        err.seek(0)
+        stdout, stderr = out.read(), err.read()
+    if found is None:
+        found = key_limit_text(stderr) or (key_limit_answer(key, name, start_id) if db_path(key).exists() else None)
+    return Asked(proc.returncode, stdout, stderr, found)
 
 
 class BudgetRefused(Exception):
@@ -765,6 +863,7 @@ def run_series(key, step, gate):
     if ledger:
         write_atomic(d / "ledger.json", json.dumps(dict(ledger, path=str(ledger["path"]), gate=gate), indent=1))
     player = player_config(key, name, 1, note_file=d / "note.txt", ledger=ledger, base_url=base_url_of(key))
+    held(key, step)
     if not (d / "match.done").exists():
         log(key, "series_start", step=step, attempt=attempt, seed=series_seed(s),
             lesson_prompt_sha256=lesson_prompt_sha256())
@@ -783,6 +882,9 @@ def run_series(key, step, gate):
             log(key, "series_failed", step=step, attempt=attempt, stderr=r.stderr[-1000:])
             if "ROUTE CHECK" in r.stderr:
                 raise Stop(f"{step}: {r.stderr[-600:]}")
+            if (text := key_limit_text(r.stderr)) or "KEY LIMIT:" in r.stderr:
+                # The series is replayed from game 1 with the same dice on resume (the plan's rule).
+                key_limit_pause(key, step, text or r.stderr[-600:])
             if "QUOTA:" in r.stderr:
                 raise Pause(f"{step}: usage limit (429) on the subscription: {r.stderr[-600:]}")
             if "BUDGET CAP" in r.stderr:
@@ -867,6 +969,12 @@ def write_lessons(key, step, g, record):
                 raise SystemExit(f"ROUTE CHECK: lesson call rejected: {r.stderr[-600:]}")
             if "QUOTA:" in r.stderr:
                 raise SystemExit(f"QUOTA: lesson call hit the usage limit: {r.stderr[-600:]}")
+            if text := key_limit_text(r.stderr):
+                write_atomic(mdir(key) / "hold.json", json.dumps(dict(
+                    reason="paused: shared-balance priority (provider account limit: HTTP 403 key limit / 402 credits)",
+                    at=now(), step=step), indent=1))
+                log(key, "key_limit", step=step, game=g, provider_text=text[:1000])
+                raise SystemExit(f"KEY LIMIT: lesson call after game {g}: {text[:300]}")
             if "BUDGET CAP" in r.stderr:
                 raise SystemExit(f"BUDGET CAP: lesson call refused: {r.stderr[-300:]}")
             time.sleep(min(600, 30 * (k + 1)))

@@ -5,6 +5,7 @@
 
 import hashlib
 import json
+import os
 import sqlite3
 import sys
 import tempfile
@@ -317,6 +318,86 @@ class Metrics(unittest.TestCase):
         m = I.metrics_from(rows + [row("s1", None, error="HTTP 500")], positions)
         self.assertEqual(m["failed"], 1)
         self.assertFalse(I.test_complete(m))
+
+
+class KeyLimit(Isolated):
+    """Zeki/Main: a provider account limit (403 key limit, 402 credits) pauses the model at once; other 403s do not."""
+
+    def setUp(self):
+        super().setUp()
+        root = Path(self.tmp.name)
+        self.saved_bin = I.BIN
+        fake = root / "jevgammon"
+        fake.write_text(f"#!/bin/sh\nexec {sys.executable} {Path(I.__file__).with_name('fake_ask.py')} \"$@\"\n")
+        fake.chmod(0o755)
+        I.BIN = fake
+        I.SMOKE.mkdir(parents=True)
+        self.ledger = root / "ledger.db"
+        db = sqlite3.connect(self.ledger)
+        db.execute("CREATE TABLE attempts (id INTEGER PRIMARY KEY, status TEXT, pid INTEGER, reserved_usd REAL, "
+                   "cost_usd REAL, reported_cost_usd REAL)")
+        db.commit()
+        db.close()
+        self.dispatch = root / "dispatch.log"
+        os.environ.update(FAKE_LEDGER=str(self.ledger), FAKE_DISPATCH_LOG=str(self.dispatch))
+
+    def tearDown(self):
+        I.BIN = self.saved_bin
+        for k in ("FAKE_MODE", "FAKE_LEDGER", "FAKE_DISPATCH_LOG"):
+            os.environ.pop(k, None)
+        super().tearDown()
+
+    def ask(self, mode, rounds=1):
+        os.environ["FAKE_MODE"] = mode
+        d = I.step_dir(KEY, "E1")
+        return I.run_test(KEY, "E1", I.test_name(KEY, "E1"), "", d, ledger=dict(path=str(self.ledger), cap=1.0),
+                          rounds=rounds)
+
+    def dispatched(self):
+        return self.dispatch.read_text().split() if self.dispatch.exists() else []
+
+    def test_key_limit_pauses_at_once_and_resume_reasks_only_failed_positions(self):
+        with self.assertRaises(I.Pause):
+            self.ask("keylimit", rounds=30)
+        sent = self.dispatched()
+        # 3 answered, then the first refusal; dispatch stops right after (no retry loop, no sweep of 200).
+        self.assertLessEqual(len(sent), 3 + 1 + 4, sent)
+        hold = json.loads((I.mdir(KEY) / "hold.json").read_text())
+        self.assertIn("shared-balance priority", hold["reason"])
+        event = [e for e in I.events(KEY) if e["event"] == "key_limit"][0]
+        self.assertIn("Key limit exceeded", event["provider_text"])
+        db = sqlite3.connect(I.db_path(KEY))
+        failed = {r[0] for r in db.execute("SELECT position_id FROM answers WHERE error IS NOT NULL")}
+        db.close()
+        self.assertTrue(failed)  # failed positions are kept for the re-ask
+        led = sqlite3.connect(self.ledger)
+        self.assertEqual(led.execute("SELECT COUNT(*) FROM attempts WHERE status = 'open'").fetchone()[0], 0)
+        self.assertEqual(led.execute("SELECT SUM(cost_usd) FROM attempts WHERE cost_usd = 0").fetchone()[0] or 0, 0)
+        led.close()
+        # While held, nothing is dispatched.
+        with self.assertRaises(I.Pause):
+            self.ask("resume")
+        self.assertEqual(len(self.dispatched()), len(sent))
+        # Hold lifted: only the failed and unasked positions are asked; the answered ones are not asked again.
+        (I.mdir(KEY) / "hold.json").unlink()
+        answered = set(sent[:3])
+        m = self.ask("resume")
+        again = self.dispatched()[len(sent):]
+        self.assertFalse(answered & set(again))
+        self.assertTrue(failed <= set(again))
+        self.assertEqual((m["answered"], m["failed"]), (200, 0))
+
+    def test_an_ordinary_403_is_a_failed_request_as_before(self):
+        m = self.ask("plain403")
+        self.assertEqual((m["answered"], m["failed"]), (200, 200))
+        self.assertFalse((I.mdir(KEY) / "hold.json").exists())
+        self.assertFalse([e for e in I.events(KEY) if e["event"] == "key_limit"])
+
+    def test_key_limit_texts(self):
+        self.assertIsNotNone(I.key_limit_text('credential rejected: 403 Forbidden: {"error":{"message":"Key limit exceeded (total limit)"}}'))
+        self.assertIsNotNone(I.key_limit_text("request failed: 402 Payment Required: Insufficient credits"))
+        self.assertIsNone(I.key_limit_text('credential rejected: 403 Forbidden: {"error":{"message":"Invalid API key"}}'))
+        self.assertIsNone(I.key_limit_text("429 Too Many Requests: rate limit exceeded"))
 
 
 class FitCheck(Isolated):

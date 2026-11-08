@@ -18,9 +18,10 @@ or value taken from the file, the full text on stderr only):
   answered 200 of 200 with no failed request, and all 5 series of 10 games with 10 lesson entries each;
 - every model's progress (the "Models and status" table, Ümit #3219): status one of not started, running, paused,
   stopped, done; reason one of the fixed texts (PROGRESS_REASONS), required when paused, absent when running or
-  done, "usage limit" only when paused; series_done 0-5, the finished series in steps_done (5 when done; 5 only when
-  done or stopped; 0 when not started); updated_at a real UTC calendar time (calendar_time); the status agreeing
-  with the model's state. status_view() checks these fields alone for pre-registration-only builds;
+  done, "usage limit" and "waiting for a GPU" only when paused; series_done 0-5, the finished series in steps_done
+  (5 when done; 5 only when done or stopped; 0 when not started); updated_at a real UTC calendar time
+  (calendar_time); the status agreeing with the model's state. status_view() checks these fields alone for
+  pre-registration-only builds;
 - the money block: the billed total is the sum of the models' billed amounts, within the total cap $110 (no interim
   cap, plan section 9); a model that is not billed has $0 billed.
 
@@ -61,8 +62,9 @@ TEXT = ("str", r"[^<>&\x00-\x1f]{1,400}")
 # outcome number), published even while the page is pre-registration only.
 PROGRESS_STATUSES = ("not started", "running", "paused", "stopped", "done")
 PROGRESS_REASONS = ("shared-balance priority", "waiting for the ChatGPT reset 13 Nov", "waiting for its turn",
-                    "usage limit")
-PAUSE_ONLY_REASONS = ("usage limit",)  # a subscription usage-limit (429) pause: allowed with status paused only
+                    "usage limit", "waiting for a GPU")
+# Allowed with status paused only: a subscription usage-limit (429) pause; a local model held for a GPU.
+PAUSE_ONLY_REASONS = ("usage limit", "waiting for a GPU")
 PROGRESS = DICT(dict(status=("enum", PROGRESS_STATUSES), reason=OPT(("enum", PROGRESS_REASONS)),
                      series_done=INT(0, SERIES), updated_at=ISO))
 # The harness's state each progress status may stand with (full validation only).

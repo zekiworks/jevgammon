@@ -23,6 +23,9 @@
    either (where the private test set is present); outside pre-registration-only mode, the status line, both charts and
    their tables, the verdict, the arms' display names, every lesson and the exploratory block (Ümit #2925, #2950)
    against the page's own data file.
+8. The "Did they improve?" page (improve_page.py): the pre-registered texts, one row per plan model in the plan's sort
+   order, no Yes/No before a model's verdict gate, every shown score recomputed from the data file's tests, no results
+   block in pre-registration-only mode, and no test position in the page or its data file (check_improve).
 """
 
 import gzip
@@ -656,6 +659,113 @@ def check_learning(out: Path, test_set: Path | None = None) -> list[str]:
     return bad
 
 
+# --- 8. Did they improve? -----------------------------------------------------------------------------------
+
+def _improve_expect(m: dict) -> dict:
+    """Before, after, change, range, threshold and the verdict of one model, recomputed here from the data file's own
+    tests (plan sections 2, 6 and 7), independently of improve_validate."""
+    from improve_validate import EMPTY_RUNS, FLOOR, GAMES, POSITIONS, SAFETY_DROP, SERIES
+
+    def mean(xs):
+        return sum(xs) / len(xs) if xs and None not in xs else None
+    t10 = [s["t10"] for s in m["series"] if s["t10"] is not None]
+    keys = ("risks_found", "right_safety", "error_rate")
+    before = {k: mean([t[k] for t in m["empty"]]) for k in keys}
+    after = {k: mean([t[k] for t in t10]) for k in keys}
+    change = {k: after[k] - before[k] if None not in (after[k], before[k]) else None for k in keys}
+    rf = [t["risks_found"] for t in m["empty"]]
+    rng = max(rf) - min(rf) if len(rf) == EMPTY_RUNS and None not in rf else None
+    thr = max(rng, FLOOR) if rng is not None else None
+    full = [t["answered"] == POSITIONS and t["failed"] == 0 and None not in (t[k] for k in keys)
+            for t in m["empty"] + t10]
+    gate = (m["state"] == "complete" and len(m["empty"]) == EMPTY_RUNS and len(m["series"]) == SERIES
+            and all(s["finished"] and s["games"] == GAMES and len(s["lessons"]) == GAMES for s in m["series"])
+            and len(t10) == SERIES and all(full))
+    improved = (round(change["risks_found"], 9) > round(thr, 9) and round(change["right_safety"], 9) >= -SAFETY_DROP
+                if gate else None)
+    return dict(before=before, after=after, change=change, range=rng, threshold=thr, gate=gate, improved=improved)
+
+
+def check_improve(out: Path, test_set: Path | None = None) -> list[str]:
+    """The "Did they improve?" page (improve_page.py) against its data file: (a) every phrase the pre-registration
+    requires is on the page (the commitment line, the rule's "operational threshold" sentence, the seed line, every
+    plan model with its label, the not-tested groups, the pilot row and "not comparable (different design)", the
+    notes, the lesson prompt's and the test set's hashes); (b) one row per plan model, sorted by the change in risks
+    found, rows without a change after; (c) no Yes/No for a model before its verdict gate passes, every shown number
+    the one recomputed here from the data's tests; no results block in pre-registration-only mode; (d) no test
+    position (id, board key or board) in the page or its data file: the private test set is required whenever
+    results or a validation are present."""
+    from common import NA, fmt
+    from improve_page import COMMITMENT, DATA, PATH, REQUIRED, TEST_SET
+    page, data = out / PATH / "index.html", out / DATA
+    if not page.exists():
+        return []
+    bad, L = [], json.loads(data.read_text())
+    tree = Tree()
+    tree.feed(page.read_text())
+    nodes = list(walk(tree.root))
+    text = " ".join(text_of(tree.root).split())
+    plan = L["plan"]
+    want = [COMMITMENT, *REQUIRED, plan["seed_line"] or "(seed line missing in the plan)", plan["prompt_sha256"],
+            plan["test_set_sha256"], "Cygnet"]
+    want += [m["setup"] for m in plan["models"]] + [m["label"] for m in plan["models"] if m["label"]]
+    bad += [f"{PATH}: missing the pre-registered text {w!r}" for w in want if w not in text]
+    rows = [n for n in nodes if n.tag == "tr" and n.attrs.get("data-setup")]
+    setups = [n.attrs["data-setup"] for n in rows]
+    if sorted(setups) != sorted(m["setup"] for m in plan["models"]):
+        bad.append(f"{PATH}: the model table is not one row per plan model")
+    results = None if L.get("preregistration_only") else L.get("results")
+    by = {m["setup"]: m for m in (results or {}).get("models", [])}
+    changes = [by[s]["change"]["risks_found"] if s in by else None for s in setups]
+    seen_none = False
+    for i, c in enumerate(changes):
+        seen_none |= c is None
+        if c is not None and (seen_none or (i and changes[i - 1] is not None and changes[i - 1] < c)):
+            bad.append(f"{PATH}: rows not sorted by the change in risks found (rows without a change after)")
+            break
+    if results is None:
+        if any(n.attrs.get("data-verdict") or n.attrs.get("data-cell") for n in nodes) or any(
+                n.attrs.get("id") == "improve-lessons" for n in nodes):
+            bad.append(f"{PATH}: results shown without validated results")
+    for n in rows:
+        m = by.get(n.attrs["data-setup"])
+        verdict = next((c for c in walk(n) if c.attrs.get("data-verdict")), None)
+        if m is None:
+            if verdict is not None:
+                bad.append(f"{PATH}: {n.attrs['data-setup']}: a verdict without data")
+            continue
+        e = _improve_expect(m)
+        if verdict is not None and (not e["gate"] or L["results"].get("dry_run")
+                                    or verdict.attrs["data-verdict"] != ("yes" if e["improved"] else "no")):
+            bad.append(f"{PATH}: {m['setup']}: verdict {verdict.attrs['data-verdict']!r} not what the data gives")
+        if verdict is None and e["gate"] and not L["results"].get("dry_run"):
+            bad.append(f"{PATH}: {m['setup']}: complete past the gate, but no verdict")
+        cells = {c.attrs["data-cell"]: " ".join(text_of(c).split()) for c in walk(n) if c.attrs.get("data-cell")}
+
+        def f(v, signed=False):
+            return fmt(v, 1, signed=signed) if v is not None else NA
+        expect = {"rf": f"{f(e['before']['risks_found'])} → {f(e['after']['risks_found'])}",
+                  "rf-change": f(e["change"]["risks_found"], True), "range": f(e["range"]),
+                  "threshold": f(e["threshold"]),
+                  "er": f"{f(e['before']['error_rate'])} → {f(e['after']['error_rate'])}"}
+        for k, v in expect.items():
+            if cells.get(k) != v:
+                bad.append(f"{PATH}: {m['setup']}: cell {k} is {cells.get(k)!r}, the data gives {v!r}")
+    no_results = L.get("results") is None and not L.get("validation")
+    try:
+        strings = _test_set_strings(test_set or TEST_SET)
+    except (OSError, ValueError, KeyError) as e:
+        if not no_results:
+            bad.append(f"{PATH}: results present but the test set is missing or unreadable ({type(e).__name__}): "
+                       "the leakage check cannot run")
+        return bad
+    texts = {PATH: html.unescape(page.read_text()), DATA: data.read_text()}
+    for s in strings:
+        hit = re.compile(r"(?<![\w-])" + re.escape(s) + r"(?!\w)")
+        bad += [f"{name}: test position {s[:24]!r}\u2026" for name, t in texts.items() if hit.search(t)]
+    return bad
+
+
 def run(S: dict, out: Path) -> list[str]:
     failures = []
     nums = allowed_numbers(out, S)
@@ -683,4 +793,5 @@ def run(S: dict, out: Path) -> list[str]:
             failures.append(f"{p.relative_to(out)}: banned string {m.group(0)!r}")
     failures += findings.failures(out)
     failures += check_learning(out)
+    failures += check_improve(out)
     return failures

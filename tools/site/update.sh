@@ -12,7 +12,9 @@
 #   1. snapshot (tools/site/snapshot.py): league tables copied in one read transaction, plus the prompts of new
 #      decisions, the Nackgammon knockout's matches (knockout-nack.db, read-only, to STATE/knockout.db) and the
 #      learning pilot's aggregates, lessons and lesson prompt (workspace/learning-pilot, read-only, to STATE/learning);
+#      "Did they improve?"'s improve.json and lesson prompt (workspace/improve/out, read-only, to STATE/improve);
 #      its fingerprint (the knockout's included), the learning pilot's key (its copied files and the plan), the
+#      improve key (likewise), the
 #      smoke-test rows, the v1 set and the site code make the change key; if the key equals the last deployed one,
 #      stop: nothing changed;
 #   2. GNUbg scores every legal play of the new decisions (tools/site/score.sh: 8 processes, nice 19, idle I/O);
@@ -78,7 +80,8 @@ cd "$SRC"
 SUMMARY=$(python3 tools/site/snapshot.py "$ROOT/v3.db" "$STATE" | tail -1)
 FP=$(python3 -c 'import json, sys; print(json.loads(sys.argv[1])["fingerprint"])' "$SUMMARY")
 LEARNING=$(python3 -c 'import json, sys; print(json.loads(sys.argv[1])["learning"])' "$SUMMARY")
-KEY="$FP learning:$LEARNING code:$CODE smoke:$(sha256sum "$ROOT/smoke/part-a.json" | cut -c1-12) v1:$(stat -c %Y "$ROOT/replay.db")"
+IMPROVE=$(python3 -c 'import json, sys; print(json.loads(sys.argv[1])["improve"])' "$SUMMARY")
+KEY="$FP learning:$LEARNING improve:$IMPROVE code:$CODE smoke:$(sha256sum "$ROOT/smoke/part-a.json" | cut -c1-12) v1:$(stat -c %Y "$ROOT/replay.db")"
 if [ "${1:-}" != "--force" ] && [ -f "$STATE/deployed.key" ] && [ "$(cat "$STATE/deployed.key")" = "$KEY" ]; then
   log "no change ($FP)"
   rm -f "$LOOP_FAILED"

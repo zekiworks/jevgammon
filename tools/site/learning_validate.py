@@ -713,9 +713,12 @@ def validate_explore(path: Path, pilot: dict, test_sha: str) -> dict:
         elif r["kind"] != want_rows[r["run"]][0]:
             fail("rows", f"row {r['run']!r}: kind")
     counts = E["retest_answer_counts"]
+    # Every planned retest is named (Zeki #2993): a missing key would otherwise drop silently out of "pending".
     for k in map(str, range(1, RETESTS + 1)):
         full = counts.get(k) == POSITIONS
-        if full != (k in retests):
+        if k not in counts:
+            fail("retests", f"retest r{k}: no answer count")
+        elif full != (k in retests):
             fail("retests", f"retest r{k}: a row {'missing' if full else 'without 200 answers'}")
     # The spread, from the rows.
     groups = {"all": runs, "t0+retests": [r for r in runs if r["kind"] in ("t0", "retest")],

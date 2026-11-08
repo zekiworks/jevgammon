@@ -661,12 +661,21 @@ def explore_agreement(X: dict, B: str) -> str:
     facts.append(f"Positions where the {fmt(len(ret), 0)} retests do not all choose the same play: {fmt(k, 0)} of "
                  f"{fmt(X['sampling']['positions'], 0)}.")
     return ('<h3>Do the empty-context runs choose the same plays?</h3>' + table
-            + f'<p id="learning-explore-agreement">{esc(" ".join(facts))}</p>')
+            + f'<p id="learning-explore-agreement">{esc(" ".join(facts))}</p>'
+            '<p class="table-note">The pairwise counts, like the retests\' rates and the count of positions where the '
+            'retests are not unanimous, come from the runs\' private answers: the site checks that the counts are '
+            'within range, symmetric and complete and recomputes this summary from them, but cannot recompute the '
+            'counts themselves.</p>')
+
+
+# The two comparisons of the exploratory block (Zeki #2993): no memory has only the shared T0, no T5/T10 of its own.
+COMPARISON = {"records": "full records − budget", "lessons": "own lessons − budget"}
 
 
 def explore(L) -> str:
-    """The exploratory block, after the verdict and apart from it: each arm minus budget (the noise baseline), the
-    empty-context runs and their spread, the evaluation requests' settings and the next version's note. Shown only as
+    """The exploratory block, after the verdict and apart from it: own lessons − budget and full records − budget (the
+    budget arm as the noise baseline), the empty-context runs and their spread, the agreement between them, the
+    evaluation requests' settings and the next version's note. Shown only as
     learning_validate.validate_explore accepted it; refused, only its fixed problem codes."""
     X = L["explore"]
     head = (f'<p class="lp-explore-label"><strong>{esc(V.EXPLORE_LABEL.capitalize())}.</strong> Not part of the '
@@ -677,14 +686,15 @@ def explore(L) -> str:
                 f'the site\'s checks, so none of it is shown:</p><ul>{items}</ul></div>')
     B, S = esc(ARM_LABEL["budget"]), X["sampling"]
     rows = []
-    for a in V.EXPLORE_ARMS:
+    for a in ("lessons", "records"):  # own lessons − budget first, as named
         for cp in V.EXPLORE_CPS:
-            rows.append(f'<tr><th scope="row">{arm_name(a)}</th><td>{esc(CHECKPOINT_LABEL[cp])}</td>'
+            rows.append(f'<tr><th scope="row">{esc(COMPARISON[a])}</th><td>{esc(CHECKPOINT_LABEL[cp])}</td>'
                         + "".join(f'<td class="num" data-arm="{a}" data-cp="{cp}" data-m="{m}">'
                                   f'{amb_cell(X["arm_minus_budget"][a][cp][m])}</td>' for m in V.EXPLORE_METRICS)
                         + "</tr>")
-    amb = P.SWIPE + P.table(["Arm", "Test"] + [EXPLORE_METRIC_LABEL[m] for m in V.EXPLORE_METRICS],
-                            rows, f"Each arm minus {B} in the same series, mean over {count(X['series'])} series "
+    amb = P.SWIPE + P.table(["Comparison", "Test"] + [EXPLORE_METRIC_LABEL[m] for m in V.EXPLORE_METRICS],
+                            rows, f"{esc(COMPARISON['lessons'])} and {esc(COMPARISON['records'])}, in the same "
+                                  f"series: mean over {count(X['series'])} series "
                                   "[95% interval]; risks found and right safety in percentage points",
                             cls="board list lp-explore-amb")
     runs, ncols = [], 1 + len(V.RUN_COUNTS) + len(V.RUN_METRICS)
@@ -725,13 +735,14 @@ def explore(L) -> str:
                '</p>' if short else "")
     agree = explore_agreement(X, B)
     return (head
-            + f'<h3>Each arm minus {B}, paired by series</h3>'
+            + f'<h3>{esc(COMPARISON["lessons"])} and {esc(COMPARISON["records"])}, paired by series</h3>'
             f'<p>The {B} arm\'s context was empty at every point, so its evaluations after games 5 and 10 are '
-            'empty-context retests of the T0 prompts: here it is the noise baseline. Each value is the arm\'s '
-            f'evaluation minus {B}\'s, paired by series (same series id and dice seed; the games differ once plays '
-            f'differ), averaged over the {count(X["series"])} series, with a 95% interval (10,000 resamples of whole '
-            'series, the pilot\'s bootstrap). The calibration of the intervals was not determined in this pilot. This '
-            'is not part of the pre-registered verdict.</p>' + amb
+            'empty-context retests of the T0 prompts: here it is the noise baseline. Each value is the own lessons or '
+            f'full records arm\'s evaluation minus {B}\'s, paired by series (same series id and dice seed; the games '
+            f'differ once plays differ), averaged over the {count(X["series"])} series, with a 95% interval (10,000 '
+            'resamples of whole series, the pilot\'s bootstrap). The no memory arm is not compared here: it has only '
+            'the shared T0, no evaluations after games 5 and 10 of its own. The calibration of the intervals was not '
+            'determined in this pilot. This is not part of the pre-registered verdict.</p>' + amb
             + '<h3>Empty-context runs: the same prompts, again</h3>'
             '<p>The shared T0 run, the retests of the T0 prompts and the evaluations of the '
             f'{B} arm, whose context was always empty, with their spread. The retests measure the variability between '

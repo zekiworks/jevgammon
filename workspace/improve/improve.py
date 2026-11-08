@@ -58,6 +58,7 @@ OUT = STATE_ROOT / f"workspace/improve/out{SUFFIX}"
 PLAN = STATE_ROOT / "mailbox/Did they improve - plan 2026-11-08.md"
 
 # Fixed by the plan.
+PLAN_SHA256 = "85a970d09cf1ae40d5567a7540ec0f607133314589119391bd71584b5ef78542"  # main 7e2bf78
 LESSON_PROMPT_SHA256 = "d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e"
 TEST_SET_SHA256 = "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6"
 TEST_POSITIONS_SHA256 = "ff509ea102b4fcd2faca3402d585b05ba6d7dc0014a7c5f9dabbe48b13a3467f"
@@ -922,6 +923,8 @@ def route_check(key, ids):
 # --- Run -------------------------------------------------------------------------------------------------------
 
 def check_inputs():
+    if sha256_file(PLAN) != PLAN_SHA256:
+        raise SystemExit(f"{PLAN} differs from the pre-registration this harness is bound to ({PLAN_SHA256[:8]}…)")
     if lesson_prompt_sha256() != LESSON_PROMPT_SHA256:
         raise SystemExit("lesson prompt hash differs from the plan's")
     if sha256_file(TEST_SET) != TEST_SET_SHA256 or sha256_file(TEST_POSITIONS) != TEST_POSITIONS_SHA256:

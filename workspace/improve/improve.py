@@ -1240,8 +1240,8 @@ PROGRESS_REASONS = ("shared-balance priority", "waiting for the ChatGPT reset 13
                     "usage limit")
 
 
-# The page has no "waiting for a GPU" text yet (requested from ImproveStatus): until it does, a local model held for
-# its GPU shows this fixed text (accepted by the page since improve-status 6522002, live 20:22 UTC 8 Nov; Zeki GO #3303).
+# A local model held for its GPU shows this fixed text (accepted by the page since improve-status 6522002,
+# live 20:22 UTC 8 Nov; Zeki GO #3303).
 GPU_WAIT_TEXT = "waiting for a GPU"
 
 

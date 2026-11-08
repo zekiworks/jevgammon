@@ -1,0 +1,102 @@
+# (c) improve_page.py --check (numbers trace, links and ids against the branch's whole-site render, private-
+# strings scan, check_improve incl. the test-position leak scan) in every state, at c7fa237. Started 2026-11-08 15:37:48 UTC
+REAL dry-run: plan_sha256 as written 309adc7a0a51 -> current plan 1edda547494e
+
+## default-preregistration: improve_page.py --out $SCRATCH/page-default-preregistration --src <default-preregistration> --check $SCRATCH/out-branch 
+warning: 3 private address(es) in the plan withheld
+$SCRATCH/page-default-preregistration/improve/index.html
+checks: 0 failure(s)
+preregistration_only: True | validation: None
+top label: Pre-registration | heading: Did they improve? (pre-registered) | status line: None
+rows (in page order): [('Qwen3.8 Flash (off)', ''), ('GLM-5.3 (on)', ''), ('Kimi K3.1 Pro (off)', ''), ('DeepSeek V4.1 Flash (on)', ''), ('Gemini 3.8 Flash (high)', ''), ('Claude Sonnet 5.5 (high)', '')]
+models with data: []
+refused note: False | lessons block: False
+
+## none: improve_page.py --out $SCRATCH/page-none --src <none> --check $SCRATCH/out-branch --with-results
+warning: 3 private address(es) in the plan withheld
+$SCRATCH/page-none/improve/index.html
+checks: 0 failure(s)
+preregistration_only: False | validation: None
+top label: Pre-registration | heading: Did they improve? (pre-registered) | status line: Not started
+rows (in page order): [('Qwen3.8 Flash (off)', ''), ('GLM-5.3 (on)', ''), ('Kimi K3.1 Pro (off)', ''), ('DeepSeek V4.1 Flash (on)', ''), ('Gemini 3.8 Flash (high)', ''), ('Claude Sonnet 5.5 (high)', '')]
+models with data: []
+refused note: False | lessons block: False
+
+## running-1: improve_page.py --out $SCRATCH/page-running-1 --src <running-1> --check $SCRATCH/out-branch --with-results
+warning: 3 private address(es) in the plan withheld
+$SCRATCH/page-running-1/improve/index.html
+checks: 0 failure(s)
+preregistration_only: False | validation: {'accepted': True, 'problems': 0}
+top label: Preliminary · running | heading: Did they improve? | status line: 0 of 15 models with a verdict · 1 running · 0 paused · 0 incomplete or stopped
+rows (in page order): [('Qwen3.8 Flash (off)', ''), ('GLM-5.3 (on)', ''), ('Kimi K3.1 Pro (off)', ''), ('DeepSeek V4.1 Flash (on)', ''), ('Gemini 3.8 Flash (high)', ''), ('Claude Sonnet 5.5 (high)', '')]
+models with data: [('Qwen3.8 Flash (off)', 'running, 1 of 5 series')]
+refused note: False | lessons block: True
+
+## complete-yes: improve_page.py --out $SCRATCH/page-complete-yes --src <complete-yes> --check $SCRATCH/out-branch --with-results
+warning: 3 private address(es) in the plan withheld
+$SCRATCH/page-complete-yes/improve/index.html
+checks: 0 failure(s)
+preregistration_only: False | validation: {'accepted': True, 'problems': 0}
+top label: Preliminary · running | heading: Did they improve? | status line: 1 of 15 models with a verdict · 0 running · 0 paused · 0 incomplete or stopped
+rows (in page order): [('Qwen3.8 Flash (off)', 'yes'), ('GLM-5.3 (on)', ''), ('Kimi K3.1 Pro (off)', ''), ('DeepSeek V4.1 Flash (on)', ''), ('Gemini 3.8 Flash (high)', ''), ('Claude Sonnet 5.5 (high)', '')]
+models with data: [('Qwen3.8 Flash (off)', 'Yes')]
+refused note: False | lessons block: True
+
+## complete-no: improve_page.py --out $SCRATCH/page-complete-no --src <complete-no> --check $SCRATCH/out-branch --with-results
+warning: 3 private address(es) in the plan withheld
+$SCRATCH/page-complete-no/improve/index.html
+checks: 0 failure(s)
+preregistration_only: False | validation: {'accepted': True, 'problems': 0}
+top label: Preliminary · running | heading: Did they improve? | status line: 1 of 15 models with a verdict · 0 running · 0 paused · 0 incomplete or stopped
+rows (in page order): [('GLM-5.3 (on)', 'no'), ('Qwen3.8 Flash (off)', ''), ('Kimi K3.1 Pro (off)', ''), ('DeepSeek V4.1 Flash (on)', ''), ('Gemini 3.8 Flash (high)', ''), ('Claude Sonnet 5.5 (high)', '')]
+models with data: [('GLM-5.3 (on)', 'No')]
+refused note: False | lessons block: True
+
+## mixed: improve_page.py --out $SCRATCH/page-mixed --src <mixed> --check $SCRATCH/out-branch --with-results
+warning: 3 private address(es) in the plan withheld
+$SCRATCH/page-mixed/improve/index.html
+checks: 0 failure(s)
+preregistration_only: False | validation: {'accepted': True, 'problems': 0}
+top label: Preliminary · running | heading: Did they improve? | status line: 2 of 15 models with a verdict · 1 running · 1 paused · 1 incomplete or stopped
+rows (in page order): [('Qwen3.8 Flash (off)', 'yes'), ('GLM-5.3 (on)', 'no'), ('Kimi K3.1 Pro (off)', ''), ('DeepSeek V4.1 Flash (on)', ''), ('Gemini 3.8 Flash (high)', ''), ('Claude Sonnet 5.5 (high)', '')]
+models with data: [('Qwen3.8 Flash (off)', 'Yes'), ('GLM-5.3 (on)', 'No'), ('Kimi K3.1 Pro (off)', 'paused: balance minus the $5 reserve does not cover step S2; waiting for a top-up'), ('DeepSeek V4.1 Flash (on)', 'running, 2 of 5 series'), ('Gemini 3.8 Flash (high)', 'stopped: SYNTHETIC: quota exhausted')]
+refused note: False | lessons block: True
+
+## refused: improve_page.py --out $SCRATCH/page-refused --src <refused> --check $SCRATCH/out-branch --with-results
+warning: 3 private address(es) in the plan withheld
+validation: models[0].series[0].lessons[2]: holds a test position
+$SCRATCH/page-refused/improve/index.html
+checks: 0 failure(s)
+preregistration_only: False | validation: {'accepted': False, 'problems': 1}
+top label: Pre-registration | heading: Did they improve? (pre-registered) | status line: Not started
+rows (in page order): [('Qwen3.8 Flash (off)', ''), ('GLM-5.3 (on)', ''), ('Kimi K3.1 Pro (off)', ''), ('DeepSeek V4.1 Flash (on)', ''), ('Gemini 3.8 Flash (high)', ''), ('Claude Sonnet 5.5 (high)', '')]
+models with data: []
+refused note: True | lessons block: False
+
+## REAL-dry-run-asis: improve_page.py --out $SCRATCH/page-REAL-dry-run-asis --src <REAL-dry-run-asis> --check $SCRATCH/out-branch --with-results
+warning: 3 private address(es) in the plan withheld
+validation: protocol.plan_sha256: not the pre-registered value
+$SCRATCH/page-REAL-dry-run-asis/improve/index.html
+checks: 0 failure(s)
+preregistration_only: False | validation: {'accepted': False, 'problems': 1}
+top label: Pre-registration | heading: Did they improve? (pre-registered) | status line: Not started
+rows (in page order): [('Qwen3.8 Flash (off)', ''), ('GLM-5.3 (on)', ''), ('Kimi K3.1 Pro (off)', ''), ('DeepSeek V4.1 Flash (on)', ''), ('Gemini 3.8 Flash (high)', ''), ('Claude Sonnet 5.5 (high)', '')]
+models with data: []
+refused note: True | lessons block: False
+
+## REAL-dry-run-rehashed: improve_page.py --out $SCRATCH/page-REAL-dry-run-rehashed --src <REAL-dry-run-rehashed> --check $SCRATCH/out-branch --with-results
+warning: 3 private address(es) in the plan withheld
+$SCRATCH/page-REAL-dry-run-rehashed/improve/index.html
+checks: 0 failure(s)
+preregistration_only: False | validation: {'accepted': True, 'problems': 0}
+top label: Preliminary · running | heading: Did they improve? | status line: 0 of 15 models with a verdict · 1 running · 0 paused · 0 incomplete or stopped
+rows (in page order): [('Qwen3.8 Flash (off)', ''), ('GLM-5.3 (on)', ''), ('Kimi K3.1 Pro (off)', ''), ('DeepSeek V4.1 Flash (on)', ''), ('Gemini 3.8 Flash (high)', ''), ('Claude Sonnet 5.5 (high)', '')]
+models with data: [('Qwen3.8 Flash (off)', 'running, 2 of 5 series')]
+refused note: False | lessons block: True
+
+## the default build reads no improve.json: files opened under the state or the test set while building
+['<src>/prompt/lessons_system.txt', '<src>/prompt/lessons_user.txt']
+
+## leak scan of the whole built site (branch): every test position (id, board key, board) in every file
+600 strings (200 positions x id, board key, board) over 2552 files: 0 hit(s)
+# Finished 2026-11-08 15:40:10 UTC

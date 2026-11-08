@@ -718,6 +718,24 @@ def check_improve(out: Path, test_set: Path | None = None) -> list[str]:
     setups = [n.attrs["data-setup"] for n in rows]
     if sorted(setups) != sorted(m["setup"] for m in plan["models"]):
         bad.append(f"{PATH}: the model table is not one row per plan model")
+    # The "Models and status" table (Ümit #3219): one row per plan model in the plan's order, each cell the data's
+    # progress (a model the data does not list: not started), every cell unknown when the data was refused.
+    prog = {m["setup"]: m for m in (L.get("progress") or {}).get("models", [])}
+    prows = [n for n in nodes if n.tag == "tr" and n.attrs.get("data-progress-setup")]
+    if [n.attrs["data-progress-setup"] for n in prows] != [m["setup"] for m in plan["models"]]:
+        bad.append(f"{PATH}: the status table is not one row per plan model in the plan's order")
+    for n in prows:
+        cells = {c.attrs["data-progress"]: " ".join(text_of(c).split()) for c in walk(n) if c.attrs.get("data-progress")}
+        p = prog.get(n.attrs["data-progress-setup"])
+        if L.get("progress_refused"):
+            want_s, want_d = NA, NA
+        elif p is None:
+            want_s, want_d = "not started", "0 / 5"
+        else:
+            want_s = p["status"] + (f' ({p["reason"]})' if p["reason"] else "")
+            want_d = f'{p["series_done"]} / 5'
+        if cells.get("status") != want_s or cells.get("series") != want_d:
+            bad.append(f"{PATH}: {n.attrs['data-progress-setup']}: status row not what the data gives")
     results = None if L.get("preregistration_only") else L.get("results")
     by = {m["setup"]: m for m in (results or {}).get("models", [])}
     changes = [by[s]["change"]["risks_found"] if s in by else None for s in setups]

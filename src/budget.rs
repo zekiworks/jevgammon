@@ -306,4 +306,37 @@ mod tests {
         // Another cap for the same ledger is refused.
         assert!(Ledger::open(&config(&path, 2.0), "c").is_err());
     }
+
+    /// "Did they improve?" (Zeki #3085): before a request starts, spent + every request in
+    /// flight + its own worst case must fit the cap; the boundary is enforced before sending,
+    /// so settling can never take the ledger past the cap.
+    #[test]
+    fn requests_in_flight_count_before_a_new_request_starts() {
+        let dir = std::env::temp_dir().join(format!("budget-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("ledger.db");
+        let ledger = Ledger::open(&config(&path, 1.0), "test").unwrap();
+        // A request of 100 body bytes and 16,000 output tokens: 0.0002 + 0.16 worst case.
+        let worst = ledger.worst_case(100, 16_000);
+        assert!((worst - 0.1602).abs() < 1e-12);
+        // Four in flight at once, then spend 0.3 settled: 0.3 + 4 x 0.1602 = 0.9408.
+        let held: Vec<Hold> = (0..4).map(|_| ledger.reserve(worst).unwrap()).collect();
+        let spent = ledger.reserve(0.3).unwrap();
+        spent.settle(Usage { output_tokens: 30_000, ..Usage::default() }, None);
+        // A fifth would make 1.1010 with the four still in flight: refused unsent.
+        let refused = ledger.reserve(worst);
+        assert!(refused.unwrap_err().to_string().contains("BUDGET CAP"));
+        // Exactly up to the cap is allowed; a cent more is not.
+        let (s, r) = totals(&ledger.conn.lock()).unwrap();
+        let room = 1.0 - s - r;
+        assert!(ledger.reserve(room + 0.01).is_err());
+        let edge = ledger.reserve(room).unwrap();
+        edge.refused("test");
+        // Each in-flight request settles at most at its worst case: the total stays within the cap.
+        for hold in held {
+            hold.settle(Usage { input_tokens: 100, output_tokens: 16_000, ..Usage::default() }, Some(0.1));
+        }
+        let (s, r) = totals(&ledger.conn.lock()).unwrap();
+        assert!(r == 0.0 && s <= 1.0 + 1e-12, "spent {s}");
+    }
 }

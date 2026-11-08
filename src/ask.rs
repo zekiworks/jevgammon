@@ -283,6 +283,8 @@ CREATE TABLE IF NOT EXISTS answers (
     output_tokens      INTEGER,
     reasoning_tokens   INTEGER,
     cost_usd           REAL,
+    -- The setup's decisions in flight when this one started, itself included.
+    in_flight          INTEGER,
     -- The request failed after its retries; asked again on the next run.
     error              TEXT,
     created_at         TEXT NOT NULL,
@@ -372,6 +374,15 @@ pub async fn ask(args: AskArgs, setup: &Setup) -> Result<()> {
         Connection::open(&args.out).with_context(|| format!("opening {}", args.out.display()))?;
     conn.busy_timeout(Duration::from_secs(60))?;
     conn.execute_batch(SCHEMA)?;
+    // Answer files from before `in_flight` was stored get the column (NULL in old rows).
+    let has_in_flight: bool = conn.query_row(
+        "SELECT COUNT(*) FROM pragma_table_info('answers') WHERE name = 'in_flight'",
+        [],
+        |row| row.get::<_, i64>(0),
+    )? > 0;
+    if !has_in_flight {
+        conn.execute("ALTER TABLE answers ADD COLUMN in_flight INTEGER", [])?;
+    }
     let conn = Arc::new(Mutex::new(conn));
     println!(
         "asking {} positions × {} repeat(s) of {} · {} setup(s) · option-order seed {order_seed} · \
@@ -597,9 +608,9 @@ fn store(
              position_set, repeat, prompt_version, order_seed, harness_commit, harness_dirty,
              legal_count, option_order, chosen_index, move, letter, chosen_position,
              probabilities, probability_source, invalid, group_size, request_ms, retry_ms,
-             input_tokens, output_tokens, reasoning_tokens, cost_usd, error, created_at)
+             input_tokens, output_tokens, reasoning_tokens, cost_usd, error, created_at, in_flight)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17,
-                 ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28, ?29, ?30)",
+                 ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28, ?29, ?30, ?31)",
         params![
             answer.setup,
             player.spec,
@@ -631,6 +642,7 @@ fn store(
             decision.and_then(|d| player.cost(d)),
             error,
             chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Millis, true),
+            decision.and_then(|d| d.in_flight).map(|n| n as i64),
         ],
     )?;
     let id = tx.last_insert_rowid();
@@ -656,7 +668,7 @@ fn store(
 
 /// The chosen players of a config (every player when `setups` is empty); an error for a name
 /// the config does not hold.
-pub(crate) fn chosen_players(
+fn chosen_players(
     config: &LeagueConfig,
     path: &Path,
     setups: &[String],

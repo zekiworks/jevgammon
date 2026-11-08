@@ -11,6 +11,7 @@ pub mod prompt;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
 
 use anyhow::{Result, bail};
@@ -95,6 +96,8 @@ pub struct Decision {
     pub reasoning_tokens: Option<u64>,
     /// Dollars the provider reported for the decision's requests (OpenRouter).
     pub reported_cost: Option<f64>,
+    /// This player's decisions in flight when this one started, itself included.
+    pub in_flight: Option<usize>,
 }
 
 impl Decision {
@@ -213,30 +216,6 @@ impl PlayerConfig {
     }
 }
 
-/// A prebuilt question (Clear-risk Part 2): the decision-service form (`name`, `state`,
-/// `instructions`, `options` as `(value, text)`) and the chat form (`system`, `user`, answer
-/// `schema` named `schema_name`).
-pub struct QuizQuestion<'a> {
-    pub name: &'a str,
-    pub state: &'a str,
-    pub instructions: &'a str,
-    pub options: &'a [(String, String)],
-    pub system: &'a str,
-    pub user: &'a str,
-    pub schema: &'a serde_json::Value,
-    pub schema_name: &'a str,
-}
-
-/// A decision service's chosen value (`None` = invalid) and probabilities by value, or a
-/// chat model's answer text.
-pub enum QuizReply {
-    Choice {
-        value: Option<String>,
-        probabilities: Vec<(String, f64)>,
-    },
-    Text(String),
-}
-
 pub struct Player {
     pub spec: String,
     pub provider: String,
@@ -246,6 +225,8 @@ pub struct Player {
     pub price: Option<Price>,
     /// Permits for decisions in flight (`PlayerConfig::parallel`); `None` = unlimited.
     requests: Option<tokio::sync::Semaphore>,
+    /// Decisions in flight now (`Decision::in_flight`).
+    in_flight: AtomicUsize,
     backend: Backend,
 }
 
@@ -404,6 +385,15 @@ pub fn random_play(req: &DecisionRequest<'_>) -> usize {
     Dice::new(derive_seed(req.seed, "invalid answer")).below(req.plays.len())
 }
 
+/// Counts one decision in flight until dropped.
+struct InFlight<'a>(&'a AtomicUsize);
+
+impl Drop for InFlight<'_> {
+    fn drop(&mut self) {
+        self.0.fetch_sub(1, Ordering::SeqCst);
+    }
+}
+
 impl Player {
     /// A local engine player (baselines, GNUbg).
     pub fn engine(spec: &str, engine: Box<dyn Engine>) -> Self {
@@ -414,6 +404,7 @@ impl Player {
             reasoning: None,
             price: None,
             requests: None,
+            in_flight: AtomicUsize::new(0),
             backend: Backend::Engine(engine),
         }
     }
@@ -482,6 +473,7 @@ impl Player {
             reasoning: config.reasoning.clone(),
             price: config.price,
             requests: None,
+            in_flight: AtomicUsize::new(0),
             backend,
         };
         if let Some(service) = decision::service(provider) {
@@ -676,40 +668,6 @@ impl Player {
         Ok((decision, parsed))
     }
 
-    /// Clear-risk Part 2: one prebuilt question, once a request slot is free. Decision
-    /// services get `name`, `state`, `instructions` and `options` natively and answer with a
-    /// choice and probabilities; chat models get `system` and `user` with the answer
-    /// constrained to `schema`, and their answer text is returned unparsed.
-    pub async fn quiz(&self, question: &QuizQuestion<'_>, retry: &RetryTime) -> Result<(Decision, QuizReply)> {
-        let _slot = match &self.requests {
-            Some(slots) => Some(slots.acquire().await.expect("the semaphore is never closed")),
-            None => None,
-        };
-        let mut decision = Decision::default();
-        let reply = match &self.backend {
-            Backend::Decision(client) => {
-                let (value, probabilities) = client
-                    .ask(
-                        question.name,
-                        question.state,
-                        question.instructions,
-                        question.options,
-                        retry,
-                        &mut decision,
-                    )
-                    .await?;
-                QuizReply::Choice { value, probabilities }
-            }
-            Backend::Llm(client) => QuizReply::Text(
-                client
-                    .ask_schema(question.system, question.user, question.schema_name, question.schema, retry, &mut decision)
-                    .await?,
-            ),
-            _ => bail!("{}: only decision services and chat models answer quiz questions", self.spec),
-        };
-        Ok((decision, reply))
-    }
-
     pub async fn decide(&self, req: &DecisionRequest<'_>) -> Result<Decision> {
         let _slot = match &self.requests {
             Some(slots) => {
@@ -723,6 +681,17 @@ impl Player {
             }
             None => None,
         };
+        // Decisions of this player in flight when this one starts, itself included (stored
+        // with the decision as `in_flight`).
+        let in_flight = self.in_flight.fetch_add(1, Ordering::SeqCst) + 1;
+        let _active = InFlight(&self.in_flight);
+        let mut decision = self.decide_held(req).await?;
+        decision.in_flight = Some(in_flight);
+        Ok(decision)
+    }
+
+    /// `decide` once its request slot is held.
+    async fn decide_held(&self, req: &DecisionRequest<'_>) -> Result<Decision> {
         if let Backend::Engine(engine) = &self.backend {
             return tokio::task::block_in_place(|| engine.decide(req));
         }
@@ -757,6 +726,30 @@ impl Player {
         }
         decision.index = candidates[0];
         Ok(decision)
+    }
+
+    /// "Did they improve?" lesson call: one free-text request through the chat model's own
+    /// route (`llm::free_text_request`), once a request slot is free. Returns the decision
+    /// (tokens, cost, exchange), the answer text and the separate reasoning, if any.
+    pub async fn free_text(
+        &self,
+        system: &str,
+        user: &str,
+        retry: &RetryTime,
+    ) -> Result<(Decision, String, Option<String>)> {
+        let _slot = match &self.requests {
+            Some(slots) => Some(slots.acquire().await.expect("the semaphore is never closed")),
+            None => None,
+        };
+        let Backend::Llm(client) = &self.backend else {
+            bail!("{}: not a chat model, it cannot write free text", self.spec);
+        };
+        let in_flight = self.in_flight.fetch_add(1, Ordering::SeqCst) + 1;
+        let _active = InFlight(&self.in_flight);
+        let mut decision = Decision::default();
+        let (text, reasoning) = client.free_text(system, user, retry, &mut decision).await?;
+        decision.in_flight = Some(in_flight);
+        Ok((decision, text, reasoning))
     }
 
     /// Dollars for this decision: what the provider reported, else the tokens at the
@@ -804,6 +797,7 @@ mod tests {
             reasoning: None,
             price: None,
             requests: None,
+            in_flight: AtomicUsize::new(0),
             backend: Backend::Scripted {
                 max,
                 answers: parking_lot::Mutex::new(answers),
@@ -931,6 +925,7 @@ mod tests {
                 output_per_mtok: 10.0,
             }),
             requests: None,
+            in_flight: AtomicUsize::new(0),
             backend: Backend::Engine(Box::new(baseline::Baseline::Random)),
         };
         let mut decision = Decision::new(0);

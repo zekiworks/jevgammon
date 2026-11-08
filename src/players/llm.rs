@@ -266,11 +266,57 @@ pub fn constrained_request(
         Answer::Letter(_) => play_system(options),
         Answer::Prediction => Cow::Borrowed(prediction_system()),
     };
+    let effort = options.reasoning.as_deref();
     let (name, compatible_name) = match answer {
         Answer::Letter(_) => ("backgammon_play", "play"),
         Answer::Prediction => ("backgammon_prediction", "prediction"),
     };
     match route {
+        Route::OpenAiSubscription => {
+            let mut body = json!({
+                "model": model,
+                "instructions": system,
+                "input": [{"type": "message", "role": "user", "content": [{"type": "input_text", "text": user}]}],
+                "stream": true,
+                "store": false,
+                "text": {"format": {"type": "json_schema", "name": name, "schema": answer_schema(answer), "strict": true}},
+            });
+            if let Some(effort) = effort {
+                body["reasoning"] = json!({"effort": effort});
+            }
+            body
+        }
+        Route::Xai => {
+            let mut body = json!({
+                "model": model,
+                "instructions": system,
+                "input": [{"role": "user", "content": user}],
+                "store": false,
+                "text": {"format": {"type": "json_schema", "name": name, "schema": answer_schema(answer), "strict": true}},
+            });
+            if let Some(effort) = effort {
+                body["reasoning"] = json!({"effort": effort});
+            }
+            body
+        }
+        Route::AnthropicSubscription => {
+            let mut output =
+                json!({"format": {"type": "json_schema", "schema": answer_schema(answer)}});
+            if let Some(effort) = effort {
+                output["effort"] = json!(effort);
+            }
+            json!({
+                "model": model,
+                // Room for adaptive thinking at high effort (1,024 ran out in the smoke test).
+                "max_tokens": options.max_tokens.unwrap_or(32000),
+                "system": [
+                    {"type": "text", "text": CLAUDE_CODE_IDENTITY},
+                    {"type": "text", "text": system},
+                ],
+                "messages": [{"role": "user", "content": user}],
+                "output_config": output,
+            })
+        }
         Route::Gemini | Route::Antigravity => {
             let mut config = match answer {
                 Answer::Letter(count) => json!({
@@ -288,79 +334,13 @@ pub fn constrained_request(
                     "temperature": 1.0,
                 }),
             };
-            if let Some(effort) = options.reasoning.as_deref() {
+            if let Some(effort) = effort {
                 config["thinkingConfig"] = json!({"thinkingLevel": effort});
             }
             json!({
                 "systemInstruction": {"parts": [{"text": system}]},
                 "contents": [{"role": "user", "parts": [{"text": user}]}],
                 "generationConfig": config,
-            })
-        }
-        _ => schema_body(route, model, options, system, user, name, compatible_name, &answer_schema(answer))
-            .expect("schema_body covers every route but Gemini's"),
-    }
-}
-
-/// A request whose answer the provider constrains to the JSON `schema` (named `name`, or
-/// `compatible_name` on OpenAI-compatible servers), with the player's reasoning effort,
-/// before the configured extra fields. `None` for the Gemini routes, whose schema dialect
-/// differs.
-#[allow(clippy::too_many_arguments)]
-pub fn schema_body(
-    route: Route,
-    model: &str,
-    options: &Options,
-    system: &str,
-    user: &str,
-    name: &str,
-    compatible_name: &str,
-    schema: &Value,
-) -> Option<Value> {
-    let effort = options.reasoning.as_deref();
-    Some(match route {
-        Route::OpenAiSubscription => {
-            let mut body = json!({
-                "model": model,
-                "instructions": system,
-                "input": [{"type": "message", "role": "user", "content": [{"type": "input_text", "text": user}]}],
-                "stream": true,
-                "store": false,
-                "text": {"format": {"type": "json_schema", "name": name, "schema": schema, "strict": true}},
-            });
-            if let Some(effort) = effort {
-                body["reasoning"] = json!({"effort": effort});
-            }
-            body
-        }
-        Route::Xai => {
-            let mut body = json!({
-                "model": model,
-                "instructions": system,
-                "input": [{"role": "user", "content": user}],
-                "store": false,
-                "text": {"format": {"type": "json_schema", "name": name, "schema": schema, "strict": true}},
-            });
-            if let Some(effort) = effort {
-                body["reasoning"] = json!({"effort": effort});
-            }
-            body
-        }
-        Route::AnthropicSubscription => {
-            let mut output = json!({"format": {"type": "json_schema", "schema": schema}});
-            if let Some(effort) = effort {
-                output["effort"] = json!(effort);
-            }
-            json!({
-                "model": model,
-                // Room for adaptive thinking at high effort (1,024 ran out in the smoke test).
-                "max_tokens": options.max_tokens.unwrap_or(32000),
-                "system": [
-                    {"type": "text", "text": CLAUDE_CODE_IDENTITY},
-                    {"type": "text", "text": system},
-                ],
-                "messages": [{"role": "user", "content": user}],
-                "output_config": output,
             })
         }
         Route::OpenAiCompatible => {
@@ -379,12 +359,89 @@ pub fn schema_body(
             }
             body["response_format"] = json!({
                 "type": "json_schema",
-                "json_schema": {"name": compatible_name, "schema": schema, "strict": true},
+                "json_schema": {"name": compatible_name, "schema": answer_schema(answer), "strict": true},
             });
             body
         }
-        Route::Gemini | Route::Antigravity => return None,
-    })
+    }
+}
+
+/// "Did they improve?" lesson call: one free-text request (no answer format) through the
+/// route, before the configured extra fields (`as_sent`). Everything else is the route's
+/// league request: the player's reasoning setting, the temperature the league sends (1.0 on
+/// Gemini/Antigravity and OpenAI-compatible servers, none elsewhere) and the league's output
+/// limit (Anthropic `max_tokens`, default 32,000; OpenAI-compatible `max_tokens`, default
+/// 32,768, the cap of the league's free reasoning request; none on Codex, xAI and Gemini).
+pub fn free_text_request(route: Route, model: &str, options: &Options, system: &str, user: &str) -> Value {
+    let effort = options.reasoning.as_deref();
+    match route {
+        Route::OpenAiSubscription => {
+            let mut body = json!({
+                "model": model,
+                "instructions": system,
+                "input": [{"type": "message", "role": "user", "content": [{"type": "input_text", "text": user}]}],
+                "stream": true,
+                "store": false,
+            });
+            if let Some(effort) = effort {
+                body["reasoning"] = json!({"effort": effort});
+            }
+            body
+        }
+        Route::Xai => {
+            let mut body = json!({
+                "model": model,
+                "instructions": system,
+                "input": [{"role": "user", "content": user}],
+                "store": false,
+            });
+            if let Some(effort) = effort {
+                body["reasoning"] = json!({"effort": effort});
+            }
+            body
+        }
+        Route::AnthropicSubscription => {
+            let mut body = json!({
+                "model": model,
+                "max_tokens": options.max_tokens.unwrap_or(32000),
+                "system": [
+                    {"type": "text", "text": CLAUDE_CODE_IDENTITY},
+                    {"type": "text", "text": system},
+                ],
+                "messages": [{"role": "user", "content": user}],
+            });
+            if let Some(effort) = effort {
+                body["output_config"] = json!({"effort": effort});
+            }
+            body
+        }
+        Route::Gemini | Route::Antigravity => {
+            let mut config = json!({"temperature": 1.0});
+            if let Some(effort) = effort {
+                config["thinkingConfig"] = json!({"thinkingLevel": effort});
+            }
+            json!({
+                "systemInstruction": {"parts": [{"text": system}]},
+                "contents": [{"role": "user", "parts": [{"text": user}]}],
+                "generationConfig": config,
+            })
+        }
+        Route::OpenAiCompatible => {
+            let mut body = json!({
+                "model": model,
+                "messages": [
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": user},
+                ],
+                "temperature": 1.0,
+                "max_tokens": options.max_tokens.unwrap_or(32768),
+            });
+            if let Some(effort) = effort {
+                body["reasoning_effort"] = json!(effort);
+            }
+            body
+        }
+    }
 }
 
 /// JSON schema of a one-letter answer among `count` options.
@@ -684,21 +741,19 @@ impl LlmClient {
         Ok(parsed)
     }
 
-    /// One free-form question (Clear-risk Part 2): `user` under `system`, the answer
-    /// constrained to the JSON `schema` named `name`. Returns the answer text (parsed by the
-    /// caller). Gemini routes are not supported (their schema dialect differs).
-    pub async fn ask_schema(
+    /// "Did they improve?" lesson call: `user` under `system` as free text
+    /// (`free_text_request`). Returns the answer text and the reasoning, when the route returns
+    /// it separately.
+    pub async fn free_text(
         &self,
         system: &str,
         user: &str,
-        name: &str,
-        schema: &Value,
         retry: &http::RetryTime,
         decision: &mut Decision,
-    ) -> Result<String> {
-        let body = schema_body(self.kind.route(), &self.model, &self.options, system, user, name, name, schema)
-            .ok_or_else(|| anyhow!("{}: free-form questions are not supported on Gemini routes", self.model))?;
-        Ok(self.call(&body, retry, decision).await?.text)
+    ) -> Result<(String, Option<String>)> {
+        let body = free_text_request(self.kind.route(), &self.model, &self.options, system, user);
+        let completion = self.call(&body, retry, decision).await?;
+        Ok((completion.text, completion.reasoning))
     }
 
     /// Sends `body` (with the configured extra fields) and records the exchange and tokens.
@@ -1818,5 +1873,61 @@ mod tests {
         assert_eq!(sent.to_string(), play_reasoning.to_string());
         assert!(sent.get("reasoning_effort").is_none());
         assert_eq!(sent["chat_template_kwargs"]["enable_thinking"], true);
+    }
+
+    /// "Did they improve?": the lesson call is the route's league request without its answer
+    /// format (same model, reasoning setting, temperature and output limit); the setup's
+    /// extra fields are merged in as in the league.
+    #[test]
+    fn free_text_request_is_the_league_request_without_an_answer_format() {
+        let options = |reasoning: Option<&str>, max_tokens: Option<u32>| Options {
+            reasoning: reasoning.map(str::to_owned),
+            request: None,
+            max_tokens,
+            top_logprobs: None,
+            readout: Readout::Prefill,
+            answer_prefix: None,
+            prompt_note: None,
+            prompt_note_file: None,
+            pacer: None,
+            budget: None,
+        };
+        let cases: [(Route, Option<&str>, Option<u32>, &[&str]); 7] = [
+            (Route::OpenAiSubscription, Some("high"), None, &["/text"]),
+            (Route::Xai, Some("high"), None, &["/text"]),
+            (Route::AnthropicSubscription, Some("high"), None, &["/output_config/format"]),
+            (Route::Antigravity, Some("high"), None, &["/generationConfig/responseMimeType", "/generationConfig/responseSchema"]),
+            (Route::Gemini, None, None, &["/generationConfig/responseMimeType", "/generationConfig/responseSchema"]),
+            (Route::OpenAiCompatible, Some("low"), None, &["/response_format"]),
+            (Route::OpenAiCompatible, Some("template default"), Some(24000), &["/response_format"]),
+        ];
+        for (route, reasoning, max_tokens, format) in cases {
+            let o = options(reasoning, max_tokens);
+            let system = play_system(&o);
+            let mut league = constrained_request(route, "m", &o, "U", Answer::Letter(3));
+            for pointer in format {
+                let (parent, key) = pointer.rsplit_once('/').unwrap();
+                let parent = if parent.is_empty() { &mut league } else { league.pointer_mut(parent).unwrap() };
+                parent.as_object_mut().unwrap().remove(key).expect("the league request has the format");
+            }
+            let free = free_text_request(route, "m", &o, &system, "U");
+            assert_eq!(free, league, "{route:?}");
+        }
+        // OpenAI-compatible without reasoning (Qwen3.8 Flash (off)): the league's one-letter play
+        // call sends max_tokens 16; the lesson call gets the route's default limit instead.
+        let free = free_text_request(Route::OpenAiCompatible, "m", &options(None, None), "S", "U");
+        assert_eq!(free["max_tokens"], 32768);
+        assert_eq!(free["temperature"], 1.0);
+        assert!(free.get("reasoning_effort").is_none() && free.get("response_format").is_none());
+        // The setup's extra fields (provider pinning, a removed field) are merged as in the league.
+        let mut o = options(Some("low"), None);
+        o.request = Some(json!({"provider": {"order": ["fireworks"], "allow_fallbacks": false}, "reasoning_effort": null}));
+        let sent = as_sent(free_text_request(Route::OpenAiCompatible, "m", &o, "S", "U"), &o);
+        assert_eq!(sent["provider"]["order"][0], "fireworks");
+        assert!(sent.get("reasoning_effort").is_none());
+        // Codex and xAI: no output cap; Anthropic: the league's 32,000.
+        let o = options(Some("high"), None);
+        assert!(free_text_request(Route::OpenAiSubscription, "m", &o, "S", "U").get("max_output_tokens").is_none());
+        assert_eq!(free_text_request(Route::AnthropicSubscription, "m", &o, "S", "U")["max_tokens"], 32000);
     }
 }

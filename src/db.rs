@@ -349,6 +349,8 @@ CREATE TABLE IF NOT EXISTS turns (
     group_size      INTEGER,
     -- Reasoning tokens of the decision, when the provider reports them.
     reasoning_tokens INTEGER,
+    -- The player's decisions in flight when this one started, itself included.
+    in_flight       INTEGER,
     UNIQUE (game_id, turn_no)
 );
 
@@ -449,7 +451,7 @@ JOIN players p2 ON p2.id = m.player2
 ";
 
 /// Columns added after the first release, for databases created before them.
-const ADDED_COLUMNS: [(&str, &str, &str); 43] = [
+const ADDED_COLUMNS: [(&str, &str, &str); 44] = [
     ("matches", "clock_seconds", "INTEGER"),
     ("turns", "clock_ms", "INTEGER"),
     ("matches", "delay_seconds", "INTEGER"),
@@ -477,6 +479,7 @@ const ADDED_COLUMNS: [(&str, &str, &str); 43] = [
     ("turns", "invalid", "INTEGER"),
     ("turns", "group_size", "INTEGER"),
     ("turns", "reasoning_tokens", "INTEGER"),
+    ("turns", "in_flight", "INTEGER"),
     ("leagues", "heartbeat_at", "TEXT"),
     ("leagues", "mirror_concurrent", "INTEGER"),
     ("matches", "player1", "INTEGER REFERENCES players(id)"),
@@ -593,6 +596,7 @@ pub struct DecisionLog<'a> {
     pub invalid: bool,
     pub group_size: Option<usize>,
     pub reasoning_tokens: Option<u64>,
+    pub in_flight: Option<usize>,
 }
 
 #[derive(Clone, Debug)]
@@ -967,9 +971,9 @@ impl Db {
                                 harness_commit, harness_dirty, provider, quantization,
                                 option_order, letter, chosen_position, probabilities,
                                 probability_source, request_ms, retry_ms, cost_usd, invalid,
-                                group_size, reasoning_tokens)
+                                group_size, reasoning_tokens, in_flight)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17,
-                     ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28, ?29, ?30, ?31, ?32)",
+                     ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28, ?29, ?30, ?31, ?32, ?33)",
             params![
                 turn.game_id,
                 turn.turn_no,
@@ -1004,6 +1008,7 @@ impl Db {
                 log.map(|l| l.invalid),
                 log.and_then(|l| l.group_size).map(|g| g as i64),
                 log.and_then(|l| l.reasoning_tokens).map(|r| r as i64),
+                log.and_then(|l| l.in_flight).map(|n| n as i64),
             ],
         )?;
         let turn_id = tx.last_insert_rowid();

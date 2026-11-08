@@ -704,6 +704,7 @@ impl Runner {
                 invalid: decision.as_ref().is_some_and(|d| d.invalid),
                 group_size: decision.as_ref().and_then(|d| d.group_size),
                 reasoning_tokens: decision.as_ref().and_then(|d| d.reasoning_tokens),
+                in_flight: decision.as_ref().and_then(|d| d.in_flight),
             });
             let (input_tokens, output_tokens) = decision
                 .as_ref()

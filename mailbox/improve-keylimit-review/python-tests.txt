@@ -1,4 +1,11 @@
 test_kv_capacity_must_hold_four_full_sequences (workspace.improve.test_improve.FitCheck.test_kv_capacity_must_hold_four_full_sequences) ... ok
+test_a_fresh_key_limit_on_the_highest_id_retry_pauses (workspace.improve.test_improve.KeyLimit.test_a_fresh_key_limit_on_the_highest_id_retry_pauses)
+Zeki #3285: the re-asked position reuses the highest row id; its fresh failure is still this asking's. ... /home/cbasaran/code/jevgammon-improve/workspace/improve/test_improve.py:393: ResourceWarning: unclosed file <_io.TextIOWrapper name='/home/cbasaran/code/jevgammon/workspace/learning-pilot/test_positions.jsonl' mode='r' encoding='UTF-8'>
+  ids = [json.loads(line)["id"] for line in open(I.TEST_POSITIONS)]
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_a_key_limit_printed_on_stdout_only_is_detected (workspace.improve.test_improve.KeyLimit.test_a_key_limit_printed_on_stdout_only_is_detected) ... ok
+test_a_successful_resume_ignores_stale_failures (workspace.improve.test_improve.KeyLimit.test_a_successful_resume_ignores_stale_failures) ... ok
 test_an_ordinary_403_is_a_failed_request_as_before (workspace.improve.test_improve.KeyLimit.test_an_ordinary_403_is_a_failed_request_as_before) ... ok
 test_key_limit_pauses_at_once_and_resume_reasks_only_failed_positions (workspace.improve.test_improve.KeyLimit.test_key_limit_pauses_at_once_and_resume_reasks_only_failed_positions) ... ok
 test_key_limit_texts (workspace.improve.test_improve.KeyLimit.test_key_limit_texts) ... ok
@@ -31,7 +38,7 @@ test_restarted_series_is_archived_with_new_names (workspace.improve.test_improve
 test_step_order_and_next_step (workspace.improve.test_improve.Schedule.test_step_order_and_next_step) ... ok
 
 ----------------------------------------------------------------------
-Ran 25 tests in 50.526s
+Ran 28 tests in 50.899s
 
 OK
 exit 0

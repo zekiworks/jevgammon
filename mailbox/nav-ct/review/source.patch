@@ -1,0 +1,1211 @@
+diff --git a/tools/site/assets/bg.css b/tools/site/assets/bg.css
+index 119553d..b8e15fd 100644
+--- a/tools/site/assets/bg.css
++++ b/tools/site/assets/bg.css
+@@ -321,51 +321,42 @@ td.badges .small { display: block; white-space: normal; }
+ }
+ 
+ /* --- The sibling site's face (Ümit, bus #1831; Zeki #1833, #1834, #1836, #1860). -------------------------------- */
+-/* One navigation: the top bar's pages row (site.css, the sibling's keys), in its groups, Home first; group names small
+-   before their keys, keys centred on them. */
+-.nav-group { align-items: center; }
+-/* The view bar (site.css: the sibling's compact sticky header, one line at 1280 px): Home on every page; on the home page
+-   the League and Models rows, which filter, and the Measure row, the parts of the page. The League keys read All, 1, 2,
+-   3 after the row's name; on a phone, where the names are for screen readers only, they read All leagues, League 1 … */
+-.view-more { display: none; }
+-/* The title strip under the header, as the sibling's: the theme keys read Dark and Light (their full names in their
+-   labels) and More options takes their size; the pages row keeps one line at 1280 px, its groups apart by spacing and
+-   their names for screen readers only (the row's PAGES label is the visible one). */
++/* The theme keys read Dark and Light (their full names in their labels). */
+ .theme-switch .long { display: none; }
+-.topbar .more-menu .key { min-height: 24px; padding: 1px 8px; gap: 5px; font-size: 12px; }
+-.nav-group { position: relative; }
+-.nav-group-label { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0);
+-  white-space: nowrap; border: 0; }
++/* The pages that are not tabs (Ümit #2901), on the Leaderboard and About: their group name before the keys. */
++.more-pages { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem; margin-top: .6rem; }
++.more-pages .view-label { margin-right: .2rem; }
++/* Highlights and Experiments (Ümit #2901). */
++.highlight-slots, .experiment-cards { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); }
++.highlight-slot { border-style: dashed; }
++.highlight-candidate { color: var(--text-2); }
++.experiment-card .status { margin-bottom: .3rem; }
+ /* Three kinds of choice, three looks, in both themes and without hovering (Zeki, bus #1860):
+-   - the page in view: the pages row's key filled navy (light) or blue with a light blue edge (dark), site.css;
+-   - a part of a page (in-page tabs: the leaderboard's and the leagues' tabs, the part links, the Measure row): keys
++   - the page in view: its tab in the site's bar underlined in the link colour (site.css);
++   - a part of a page (in-page tabs: the leaderboard's and the leagues' tabs, the part links): keys
+      tinted with the link colour, the one in view filled with it (the sibling's --tab-* colours);
+-   - a filter (League, Models, the Filters panel, the cost unit and the other keys that switch a view): rounded keys, the
++   - a filter (the Filters panel, the cost unit and the other keys that switch a view): rounded keys, the
+      chosen one with a thick edge in the link colour on its tint and a check mark; a filter at its default (All) looks
+      unpressed, as on the sibling site, its lamp still lit. */
+-button.mode, a.mode, .view-measures a.view-key { color: var(--tab-text); background: var(--tab-bg); border: 2px solid var(--tab-edge);
++button.mode, a.mode { color: var(--tab-text); background: var(--tab-bg); border: 2px solid var(--tab-edge);
+   border-radius: 7px; font-weight: 700; box-shadow: var(--key-shadow); }
+-/* In the compact view bar every key keeps the bar's 1.5 px edge and 6 px corners (filters stay round). */
+-.view-bar a.view-key, .view-bar .view-filter a.view-key[aria-current] { border-width: 1.5px; }
+-.view-measures a.view-key { border-radius: 6px; }
+-button.mode:hover, a.mode:hover, .view-measures a.view-key:hover { border-color: var(--view-key-hover); }
+-button.mode[aria-selected="true"], a.mode[aria-selected="true"], .view-measures a.view-key[aria-current] {
++button.mode:hover, a.mode:hover { border-color: var(--view-key-hover); }
++button.mode[aria-selected="true"], a.mode[aria-selected="true"] {
+   color: var(--tab-current-text); background: var(--tab-current-bg); border-color: var(--tab-current-bg); box-shadow: none; }
+ button.mode[aria-selected="true"]::after, a.mode[aria-selected="true"]::after { background: var(--tab-current-bg); }
+-.view-filter a.view-key, #filters button.key, .cost-unit button.key, .view-switch button.key, .col-switch button.key { border-radius: 999px; }
+-.view-filter a.view-key[aria-current], button.key[aria-pressed="true"] { color: var(--tab-text); background: var(--tab-bg);
++#filters button.key, .cost-unit button.key, .view-switch button.key, .col-switch button.key, .hl-filter button.key { border-radius: 999px; }
++button.key[aria-pressed="true"] { color: var(--tab-text); background: var(--tab-bg);
+   border: 2px solid var(--tab-edge); box-shadow: var(--key-inset); font-weight: 700; }
+-.view-filter a.view-key[aria-current]::before, button.key[aria-pressed="true"]::before { content: "\2713"; margin-right: .3rem; }
+-.view-filter a.view-key[data-league-pick="all"][aria-current], .view-filter a.view-key[data-filter-kind="all"][aria-current],
++button.key[aria-pressed="true"]::before { content: "\2713"; margin-right: .3rem; }
+ #filters button.key[aria-pressed="true"]:is([data-league-pick="all"], [data-filter-kind="all"], [data-filter-setting="all"],
+-  [data-filter-runs="all"], [data-filter-weights="all"]) { color: var(--view-text); background: var(--view-key);
+-  border: 1.5px solid var(--view-key-edge); box-shadow: var(--key-shadow); font-weight: 700; }
++  [data-filter-runs="all"], [data-filter-weights="all"]), .hl-filter button.key[aria-pressed="true"][data-hl-filter="all"] {
++  color: var(--view-text); background: var(--view-key); border: 1.5px solid var(--view-key-edge); box-shadow: var(--key-shadow);
++  font-weight: 700; }
+ #filters button.key[aria-pressed="true"]:is([data-league-pick="all"], [data-filter-kind="all"], [data-filter-setting="all"],
+   [data-filter-runs="all"], [data-filter-weights="all"]) { border-width: 1px; font-weight: 400; }
+-.view-filter a.view-key[aria-current]:is([data-league-pick="all"], [data-filter-kind="all"])::before,
+ #filters button.key[aria-pressed="true"]:is([data-league-pick="all"], [data-filter-kind="all"], [data-filter-setting="all"],
+-  [data-filter-runs="all"], [data-filter-weights="all"])::before { content: none; }
+-.view-filter a.view-key { font-weight: 700; }
++  [data-filter-runs="all"], [data-filter-weights="all"])::before,
++.hl-filter button.key[aria-pressed="true"][data-hl-filter="all"]::before { content: none; }
+ /* The theme keys keep the sibling's look: a lit lamp says which theme is on. */
+ .theme-switch button.key[aria-pressed="true"] { border-radius: 6px; }
+ .theme-switch button.key[aria-pressed="true"]::before { content: none; }
+@@ -398,22 +389,24 @@ i.swatch-refline { width: 0; height: .8rem; border-left: 2px dashed var(--text-2
+ .cards-note { margin: .4rem 0 .2rem; }
+ .unmeasured { margin-top: .6rem; }
+ @media (max-width: 640px) {
+-  /* The view bar on a phone, as the sibling's three short rows (site.css): the leagues across the width, the Home key
+-     beside All, Decision and Chat, the measures across the width. */
+-  .view-row.view-leagues { grid-column: 1 / -1; }
+-  .view-row.view-leagues ul { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+-  .view-row.view-leagues .view-more { display: inline; }
+-  .view-row.view-measures ul { grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr) minmax(0, .7fr) minmax(0, .7fr) minmax(0, 1.35fr); }
+-  /* The pages row scrolls sideways as one line (site.css); the groups' own lists do not scroll inside it. */
+-  .nav-group > ul { overflow: visible; margin: 0; padding: 0; }
+-  .hbar-where { display: block; }
++  /* The bars on a phone in two lines, as the sibling's Math accuracy chart (Ümit via Zeki #2895, #2898): the icon and
++     the name (its league after it, small) across the width, then the bar from the left edge with the value and its
++     interval right-aligned beside it, in a narrower value column so the bar gets the width. */
++  .chart-wide .hbar { grid-template-columns: minmax(0, 1fr) 7.4rem; }
++  .chart-wide .hbar-value, .chart-wide .hbar-head { font-size: .7rem; }
++  .chart-wide .hbar-value { white-space: nowrap; }
++  .hbar-label a { overflow-wrap: anywhere; }
++  /* The filter row's part links scroll sideways inside the row instead of widening the page. */
++  .filter-row .part-links { min-width: 0; max-width: 100%; }
++  .filter-row .part-links .face-nav { min-width: 0; }
+ }
+ 
+ /* --- The home page as a story (Ümit, bus #2570; story.py): the headline table and the finding sections. --------------- */
+ .headline .chart-head .keys { margin-left: auto; }
+ table.headline td.model { min-width: 15rem; }
+ table.headline td.model .swatch { margin-right: .3rem; }
+-td.hl-judgement { min-width: 13rem; }
++table.headline thead th:nth-child(2) { text-align: left; }
++td.hl-judgement { width: 55%; min-width: 13rem; }
+ .hl-bar { position: relative; display: block; height: .8rem; margin: .2rem 0 .25rem; background: var(--sunk);
+   border-radius: 2px; box-shadow: inset 0 0 0 1px var(--edge); }
+ .hl-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 2px; box-shadow: inset 0 0 0 1px var(--mark-edge); }
+@@ -422,11 +415,24 @@ td.hl-judgement { min-width: 13rem; }
+ .hl-safe { position: absolute; left: 50%; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; background: var(--text-2); }
+ .hl-val { font-family: var(--mono); font-size: .84rem; }
+ .js [data-headline-panel][hidden] { display: none; }
+-/* The leaderboard rows (Ümit, bus #2745): the maker dot, the setting, a row's other settings (shown without script, behind
+-   the row's expander with it), the programs and late entries grey and unranked under a group heading. */
+-table.headline td:nth-child(9) .small { max-width: 11rem; white-space: normal; }
++/* The leaderboard rows (Ümit, bus #2745; #2904, #2907): the rank, the model (maker dot, its type under the name, the
++   expander of its other settings, shown without script) and the risk judgement; the programs and late entries grey and
++   unranked under a group heading. */
+ table.headline td.model .hl-dot { width: .7rem; height: .7rem; border-radius: 50%; }
+-td.hl-setting { white-space: nowrap; }
++table.headline .hl-type { display: block; }
++.hl-filter { display: flex; flex-wrap: wrap; gap: .3rem; margin: .1rem 0 .2rem; }
++.hl-filter .key { min-height: 1.9rem; padding: .15rem .65rem; font-size: .82rem; }
++.hl-legend { margin-top: 0; }
++tr.hl-off { display: none !important; }
++table.headline tbody tr.hl-open > td { background: var(--row-hover); }
++/* A row's details box (bg.js): every value of the setup, a line per kind; in its row without script, else over the page
++   under its row (fixed to the window, within its width), opened by a tap, hover or the focus. */
++.hl-box { margin: .35rem 0 0; color: var(--text); font-size: .82rem; line-height: 1.4; white-space: normal; }
++.hl-box p { margin: .12rem 0; }
++.hl-box p:first-child { margin-top: 0; }
++.js .hl-box { display: none; position: fixed; z-index: 30; max-width: calc(100vw - 16px); margin: 0; padding: .6rem .75rem;
++  background: var(--panel); border: 1px solid var(--control-edge); border-radius: 8px; box-shadow: var(--shadow); }
++.js .hl-box.open { display: block; }
+ .hl-more { display: block; margin-top: .2rem; padding: 0; border: 0; background: none; color: var(--link, var(--text-2));
+   font: inherit; font-size: .8rem; cursor: pointer; text-decoration: underline dotted; }
+ .hl-more::before { content: "\25B8\00a0"; }
+@@ -441,17 +447,13 @@ table.headline tr.reference td, table.headline tr.late td { color: var(--text-2)
+ .hbar-fill.ts-grey, i.swatch-ts-grey { background-color: var(--data-grey); }
+ i.swatch-ts-safety, i.swatch-ts-found { background-color: var(--text-2); }
+ .too-safe { margin-top: 1rem; }
+-/* At phone width (Zeki #2790): the model, not the rank, is the sticky first column, and the bar column is narrower,
+-   so the risk judgement of the top rows is on the first screen without sideways scrolling. */
++/* At phone width: the three columns fit the width (no sticky column, no sideways scrolling), the bar column narrower. */
+ @media (max-width: 640px) {
+   table.headline th:first-child, table.headline td:first-child { position: static; width: auto; min-width: 0; max-width: none;
+     box-shadow: none; }
+-  table.headline thead th:nth-child(2), table.headline td.model { position: sticky; left: 0; z-index: 2; background: var(--panel);
+-    width: min(115px, 30vw); min-width: min(115px, 30vw); max-width: min(115px, 30vw); box-shadow: 1px 0 0 var(--edge); }
+-  table.headline thead th:nth-child(3), table.headline thead th:nth-child(4) { min-width: 0; }
++  table.headline td.model { min-width: 0; }
+   table.headline th, table.headline td { padding-left: .35rem; padding-right: .35rem; }
+-  table.headline thead th:nth-child(2) { z-index: 3; }
+-  table.headline tr.hl-sub td.model { background: var(--sunk); padding-left: .6rem; }
++  table.headline tr.hl-sub td.model { padding-left: .6rem; }
+   table.headline td.hl-judgement { min-width: 8rem; }
+ }
+ .finding h2 { font-size: 1.25rem; }
+@@ -460,7 +462,7 @@ i.swatch-ts-safety, i.swatch-ts-found { background-color: var(--text-2); }
+ .section-caveat { margin-top: .6rem; }
+ .hbar-fill.q1-board, i.swatch-q1-board { background-color: var(--data-grey); background-image: repeating-linear-gradient(135deg, rgba(255, 255, 255, .55) 0 3px, rgba(0, 0, 0, .12) 3px 6px); }
+ /* The Risk calls part's compact filter row (home.filters; Ümit, bus #2570 item 1): league, models, the parts of the page,
+-   More filters, the setup count and Reset on one line where they fit, in the view bar's compact key size. The row is
++   More filters, the setup count and Reset on one line where they fit, in a compact key size. The row is
+    always open: its body's selector outranks site.css's `.filters:not(.is-open) .filters-body { display: none }`
+    (the collapsible filter panel, which this row is not), which had hidden the whole row. */
+ .filter-row { padding: 6px 10px; }
+diff --git a/tools/site/assets/bg.js b/tools/site/assets/bg.js
+index 87ca46e..1e052aa 100644
+--- a/tools/site/assets/bg.js
++++ b/tools/site/assets/bg.js
+@@ -540,6 +540,90 @@ async function savePng(panel, svg, title, lines, filename) {
+   }));
+ })();
+ 
++/* Home page: the leaderboard's own filter (Ümit #2907): All, Chat models or Decision models, local to the table (the
++   page's filters never change it). A row of the other type and its other-settings rows go out of view (class hl-off),
++   whatever their expander says; the programs stay in every view; the ranks are the ranks among all models. */
++(function headlineFilter() {
++  const table = document.getElementById('headline-table');
++  const keys = [...document.querySelectorAll('[data-hl-filter]')];
++  if (!table || !keys.length) return;
++  keys.forEach(k => k.addEventListener('click', () => {
++    const type = k.dataset.hlFilter;
++    keys.forEach(x => x.setAttribute('aria-pressed', String(x === k)));
++    table.querySelectorAll('tbody tr[data-hl-type]').forEach(tr => {
++      const t = tr.dataset.hlType;
++      tr.classList.toggle('hl-off', type !== 'all' && t !== 'program' && t !== type);
++    });
++    table.dispatchEvent(new CustomEvent('hl-filter'));
++  }));
++})();
++
++/* Home page: a leaderboard row's details box (Ümit #2904, as Clocktower Bench's). A tap on a phone opens it and a
++   second tap on the row, a tap outside it or Escape closes it; with a mouse it shows while the pointer is on the row;
++   with the keyboard while the focus is in the row (the model's name, then the box's links). The box is placed under
++   the row (above it near the bottom of the window), within the window's width. Without JavaScript every box is shown
++   in its row. */
++(function headlineDetails() {
++  const table = document.getElementById('headline-table');
++  if (!table) return;
++  let open = null, pinned = false, pointer = 'mouse', quiet = false;
++  const boxOf = tr => document.getElementById(tr.dataset.box);
++  const place = () => {
++    if (!open) return;
++    const box = boxOf(open), row = open.getBoundingClientRect(), cell = open.querySelector('td.model').getBoundingClientRect();
++    const vw = document.documentElement.clientWidth;  // the visible width, even where something overflows the page
++    const width = Math.min(380, vw - 16);
++    box.style.width = `${width}px`;
++    box.style.left = `${Math.max(8, Math.min(cell.left, vw - width - 8))}px`;
++    const height = box.offsetHeight;
++    const header = document.querySelector('.site-header')?.getBoundingClientRect().bottom || 0;
++    const below = row.bottom;  // no gap: the pointer moves from the row into its box without leaving the row
++    box.style.top = `${below + height > innerHeight - 8 && row.top - height > header ? row.top - height : below}px`;
++  };
++  const hide = () => {
++    if (!open) return;
++    boxOf(open).classList.remove('open');
++    open.classList.remove('hl-open');
++    open = null;
++    pinned = false;
++  };
++  const show = (tr, pin) => {
++    if (open !== tr) hide();
++    const box = boxOf(tr);
++    if (!box) return;
++    open = tr;
++    pinned = pin;
++    tr.classList.add('hl-open');
++    box.classList.add('open');
++    place();
++  };
++  const rows = [...table.querySelectorAll('tbody tr[data-box]')];
++  table.addEventListener('pointerdown', event => { pointer = event.pointerType || 'mouse'; }, true);
++  rows.forEach(tr => {
++    tr.addEventListener('pointerenter', event => { if (event.pointerType === 'mouse' && !pinned) show(tr, false); });
++    tr.addEventListener('pointerleave', event => { if (event.pointerType === 'mouse' && !pinned && open === tr) hide(); });
++    tr.addEventListener('focusin', () => { if (open !== tr && !quiet) show(tr, false); });
++    tr.addEventListener('focusout', event => { if (open === tr && !pinned && !tr.contains(event.relatedTarget)) hide(); });
++    tr.addEventListener('click', event => {
++      // A mouse click or a key (detail 0) follows the link; a link or key in the box or the expander does its own job.
++      if (pointer === 'mouse' || event.detail === 0 || boxOf(tr).contains(event.target) || event.target.closest('.hl-more')) return;
++      event.preventDefault();  // a tap opens the box; its own link opens the decisions
++      if (open === tr && pinned) hide(); else show(tr, true);
++    });
++  });
++  document.addEventListener('click', event => { if (open && !open.contains(event.target)) hide(); });
++  document.addEventListener('keydown', event => {
++    if (event.key !== 'Escape' || !open) return;
++    const name = open.querySelector('.model-name');
++    const inside = open.contains(document.activeElement);
++    hide();
++    if (inside && name) { quiet = true; name.focus(); quiet = false; }
++  });
++  addEventListener('scroll', place, { passive: true });
++  addEventListener('resize', place);
++  table.addEventListener('hl-filter', () => { if (open && open.classList.contains('hl-off')) hide(); });
++})();
++
+ /* Home page: the Nackgammon summary table's keys (nack_section.py; Ümit #2647, #2651): Decision / Chat / All by model
+    type, and One setting per model / All settings. Programs (the yardsticks) are always shown; the notes and every
+    table below the summary keep every setup. */
+diff --git a/tools/site/assets/hilde-leaf.svg b/tools/site/assets/hilde-leaf.svg
+new file mode 100644
+index 0000000..ccf5a1b
+--- /dev/null
++++ b/tools/site/assets/hilde-leaf.svg
+@@ -0,0 +1 @@
++<svg xmlns="http://www.w3.org/2000/svg" viewBox="22 17.5 56 65"><defs><linearGradient id="reader-leaf-copper" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F2B48A"/><stop offset="0.55" stop-color="#D98A5C"/><stop offset="1" stop-color="#B9643F"/></linearGradient></defs><path fill="url(#reader-leaf-copper)" fill-rule="evenodd" d="M 22.49 18.00 C 40.24 20.34, 60.34 23.46, 70.10 34.78 C 78.29 44.54, 76.73 66.00, 77.51 82.00 C 66.59 77.71, 50.20 70.68, 38.49 61.71 C 27.56 52.73, 23.66 36.34, 22.49 18.00 Z M 25.61 20.73 C 43.56 39.46, 60.54 59.37, 75.76 80.24 C 58.20 61.51, 41.22 41.41, 25.61 20.73 Z"/></svg>
+diff --git a/tools/site/assets/site.css b/tools/site/assets/site.css
+index 4b07003..2bc9508 100644
+--- a/tools/site/assets/site.css
++++ b/tools/site/assets/site.css
+@@ -104,7 +104,7 @@
+ /* Images drawn for one theme only (the Method page's charts exist in both). */
+ @media screen { :root:not([data-theme="light"]) .theme-light { display: none !important; } }
+ :root[data-theme="light"] .theme-dark { display: none !important; }
+-@media print { .theme-dark, .theme-switch, .view-bar, .needs-js, .skip { display: none !important; } }
++@media print { .theme-dark, .theme-switch, .site-tabs, .needs-js, .skip { display: none !important; } }
+ /* Controls that need the script stay out of the page without it; the plain table shows every setup instead. */
+ html:not(.js) .needs-js { display: none !important; }
+ 
+@@ -115,10 +115,10 @@ main, .footer { max-width: 1100px; margin: 0 auto; }
+ a { color: var(--link); text-underline-offset: 2px; }
+ code { font-family: var(--mono); font-size: .85em; }
+ h1, h2, h3 { line-height: 1.2; }
+-/* The sticky header (the suite strip and the view bar) stays at the top of the window: links to a part of a page, and
++/* The sticky header (the suite strip and the site's bar) stays at the top of the window: links to a part of a page, and
+    the page's own scrolling, land below it. site.js keeps --view-bar-h at the header's height; the value here holds
+    until it runs. */
+-html { --view-bar-h: 63px; scroll-padding-top: var(--view-bar-h); }
++html { --view-bar-h: 96px; scroll-padding-top: var(--view-bar-h); }
+ [id] { scroll-margin-top: 1rem; }
+ :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+ .visually-hidden { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0);
+@@ -127,31 +127,35 @@ html { --view-bar-h: 63px; scroll-padding-top: var(--view-bar-h); }
+   border: 1px solid var(--control-edge); border-radius: 6px; }
+ .skip:focus { left: 1rem; }
+ 
+-/* Title strip, under the sticky header, scrolling away: the site's crumb and the theme switch on one short line, the
+-   pages row under them: compact keys in the view bar's style after a small PAGES label, the current page filled like a
+-   selected key, on one line at 1280 px (on a phone one line that scrolls sideways). The theme keys read Dark and Light,
+-   their full names in their labels. */
+-.topbar { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "brand theme" "nav nav";
+-  align-items: center; gap: 4px .9rem; max-width: 1100px; margin: 0 auto .6rem; padding: 5px 0 6px;
+-  border-bottom: 1px solid var(--edge); }
+-.brand { grid-area: brand; flex: none; color: var(--text-2); font-size: 11px; font-weight: 600; letter-spacing: .04em;
+-  text-transform: uppercase; text-decoration: none; }
+-.brand:hover { color: var(--text); }
+-.nav { grid-area: nav; display: flex; align-items: center; gap: 6px; min-width: 0; }
+-.nav-label { flex: none; }
+-.nav ul { display: flex; flex: 1 1 auto; flex-wrap: wrap; gap: 4px; min-width: 0; list-style: none; margin: 0; padding: 0; }
+-/* The pages row's keys: the view bar's compact key size. */
+-.nav a { display: inline-flex; align-items: center; min-height: 26px; padding: 2px 8px; color: var(--view-text);
+-  background: var(--view-key); border: 1.5px solid var(--view-key-edge); border-radius: 6px; font-size: 12.5px;
+-  font-weight: 700; line-height: 1.1; white-space: nowrap; text-decoration: none; box-shadow: var(--key-shadow); }
++/* The site's bar, in the sticky header under the suite strip (Ümit #2901, as Clocktower Bench's): the Hilde leaf and the
++   site's name, the theme keys and More options at the right of the same line; under them the tabs, one line that
++   scrolls sideways where it does not fit, the tab of the page in view underlined in the link colour. The theme keys
++   read Dark and Light, their full names in their labels. */
++.site-bar { padding: 0 1rem; background: var(--view-bg); border-bottom: 1px solid var(--view-edge); }
++.site-bar-in { max-width: 1100px; margin: 0 auto; }
++.site-title-row { display: flex; align-items: center; gap: .6rem; padding: 6px 0 0; }
++.site-title { display: inline-flex; align-items: center; gap: .45rem; min-width: 0; color: var(--text); font-size: 1.15rem;
++  font-weight: 700; line-height: 1.2; white-space: nowrap; text-decoration: none; }
++.site-leaf { flex: none; width: 18px; height: 21px; }
++.site-controls { display: flex; align-items: center; gap: 4px; margin-left: auto; }
++.site-controls .key { min-height: 24px; padding: 1px 8px; gap: 5px; font-size: 12px; }
++.site-tabs ul { display: flex; gap: .2rem; list-style: none; margin: 0 -.35rem; padding: 0 .35rem; overflow-x: auto;
++  scrollbar-width: none; scroll-padding-inline: .35rem; }
++.site-tabs ul::-webkit-scrollbar { display: none; }
++.site-tabs li { flex: none; }
++.site-tabs a { display: block; padding: 6px 10px 4px; color: var(--text-2); font-size: .92rem; font-weight: 600;
++  line-height: 1.25; white-space: nowrap; text-decoration: none; border-bottom: 3px solid transparent; }
++.site-tabs a:hover { color: var(--text); border-bottom-color: var(--edge); }
++.site-tabs a[aria-current] { color: var(--text); border-bottom-color: var(--link); }
++.site-tabs a:focus-visible { outline-offset: -2px; }
+ /* The in-page link rows that work as tabs (.face-nav: a page's own parts, the habits steps): bordered keys a little
+    larger than the bars' keys. */
+ .face-nav a { display: inline-flex; align-items: center; min-height: 1.85rem; padding: .15rem .6rem;
+   color: var(--view-text); background: var(--view-key); border: 2px solid var(--view-key-edge); border-radius: 7px;
+   font-size: .86rem; font-weight: 700; line-height: 1.15; text-decoration: none; box-shadow: var(--key-shadow); }
+-.nav a:hover, .face-nav a:hover { border-color: var(--view-key-hover); }
++.face-nav a:hover { border-color: var(--view-key-hover); }
+ /* In-page tab rows (a page's own parts, the habits steps) are tinted and edged with the link colour, so they stand apart
+-   from the page text and from the pages row. Each theme sets its own tab colours (--tab-*) so the text keeps its
++   from the page text and from the site's tabs. Each theme sets its own tab colours (--tab-*) so the text keeps its
+    contrast: a light blue tint with blue text in the light theme, a dark blue with near-white text in the dark one. */
+ .face-nav a { color: var(--tab-text); background: var(--tab-bg); border-color: var(--tab-edge); }
+ .face-nav a:focus-visible { border-color: var(--view-key-hover); }
+@@ -165,19 +169,12 @@ html { --view-bar-h: 63px; scroll-padding-top: var(--view-bar-h); }
+ .hero-links a:hover, .hero-links a:focus-visible { border-color: var(--view-key-hover); }
+ .how-numbers ul { margin: .4rem 0 .6rem; padding-left: 1.2rem; }
+ .how-numbers li { max-width: 92ch; margin: .3rem 0; }
+-.nav a[aria-current="page"] { color: var(--view-current-text); background: var(--view-current-bg);
+-  border-color: var(--view-current-edge); box-shadow: inset 0 -2px 0 var(--view-current-edge); }
+-.theme-switch { grid-area: theme; display: inline-flex; gap: 4px; margin-left: auto; }
+-.topbar .theme-switch .key { min-height: 24px; padding: 1px 8px; gap: 5px; font-size: 12px; }
++.theme-switch { display: inline-flex; gap: 4px; }
+ .theme-switch[hidden] { display: none; }
+ /* With the script, the switch shows from the first paint, so nothing moves when site.js wires it. */
+ .js .theme-switch[hidden] { display: inline-flex; }
+ 
+-/* The sticky header, the first thing on every page: the suite strip (suite-bar.css), then the view bar: the Home key,
+-   the test (a page), the models (?models=) and the measure (a part of the page), each group's small name before its
+-   compact keys, the groups set apart by spacing, on one line across the window at 1280 px (wrapping onto a second line
+-   where they do not fit). The title strip under it scrolls away. The current choice is filled: in the dark theme white
+-   text on blue with a light blue edge, in the light theme white text on near-black navy. */
++/* The colours of the sticky header's bar, of the keys and of the in-page tabs, in the light and the dark theme. */
+ :root {
+   --view-bg: #f7f6f2;
+   --view-edge: #7c7871;
+@@ -186,9 +183,6 @@ html { --view-bar-h: 63px; scroll-padding-top: var(--view-bar-h); }
+   --view-key: #e9e7e2;
+   --view-key-edge: #7c7871;
+   --view-key-hover: #23221f;
+-  --view-current-bg: #14213d;
+-  --view-current-edge: #14213d;
+-  --view-current-text: #ffffff;
+   --tab-text: #1d4ed8;
+   --tab-bg: #d0d5e3;
+   --tab-edge: #1d4ed8;
+@@ -206,9 +200,6 @@ html { --view-bar-h: 63px; scroll-padding-top: var(--view-bar-h); }
+     --view-key: #34322e;
+     --view-key-edge: #a29d93;
+     --view-key-hover: #f2f0ea;
+-    --view-current-bg: #24508f;
+-    --view-current-edge: #9cc8ff;
+-    --view-current-text: #ffffff;
+     --tab-text: #d6e8ff;
+     --tab-bg: #1f3a5f;
+     --tab-edge: #86b9f3;
+@@ -216,28 +207,9 @@ html { --view-bar-h: 63px; scroll-padding-top: var(--view-bar-h); }
+     --tab-current-text: #10161f;
+   }
+ }
+-.site-header { position: sticky; top: 0; z-index: 20; margin: 0 -1rem; box-shadow: var(--shadow); }
+-.view-bar { padding: 4px 1rem; background: var(--view-bg); border-bottom: 2px solid var(--view-edge); }
+-.view-rows { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; max-width: 1248px; margin: 0 auto; }
+-.view-row { display: flex; align-items: center; gap: 6px; min-width: 0; }
++.site-header { position: sticky; top: 0; z-index: 20; margin: 0 -1rem .75rem; box-shadow: var(--shadow); }
++/* A small group name before a row of keys (the Leaderboard's and About's More pages). */
+ .view-label { color: var(--view-label); font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+-.view-row ul { display: flex; gap: 4px; list-style: none; margin: 0; padding: 0; }
+-.view-row li { display: flex; }
+-a.view-key { display: flex; align-items: center; justify-content: center; min-height: 26px; padding: 2px 8px;
+-  color: var(--view-text); background: var(--view-key); border: 1.5px solid var(--view-key-edge); border-radius: 6px;
+-  font-size: 12.5px; font-weight: 700; line-height: 1.1; text-align: center; white-space: nowrap; text-decoration: none;
+-  box-shadow: var(--key-shadow); }
+-a.view-key:hover { border-color: var(--view-key-hover); }
+-a.view-key[aria-current] { color: var(--view-current-text); background: var(--view-current-bg); border-color: var(--view-current-edge);
+-  box-shadow: inset 0 -2px 0 var(--view-current-edge); }
+-/* The Home key comes first, with a house mark (marked on the root index, the page it opens). */
+-a.view-key.view-home { gap: 4px; }
+-.home-mark { width: 12px; height: 12px; flex: none; fill: currentColor; }
+-/* One active tab: a filter looks active only away from its default. All, the default group, keeps its aria-current for
+-   screen readers but looks like an unpressed key; Decision or Chat, when chosen, is filled. */
+-a.view-key[data-view-group="all"][aria-current] { color: var(--view-text); background: var(--view-key);
+-  border-color: var(--view-key-edge); box-shadow: var(--key-shadow); }
+-a.view-key[data-view-group="all"][aria-current]:hover { border-color: var(--view-key-hover); }
+ /* The cost unit (site.js): each cost carries both units and the chosen one shows; per 1,000 questions without the
+    script. The keys sit in the head of each chart or table with costs. */
+ .cost-1m { display: none; }
+@@ -827,40 +799,18 @@ ul.price-list { padding-left: 1.25rem; }
+   .chart-wide .hbar-value, .chart-wide .hbar-head { font-size: .72rem; }
+   .chart-wide .hbar-axis .hbar-tick:nth-child(even) { display: none; }
+   body { padding: 0 .6rem 1.5rem; }
+-  /* The first screen reaches the results: the site name and the theme switch share a row, the pages row is one line
+-     that scrolls sideways, the title is smaller, the counters take one line and the versions move under the table. */
+-  .topbar { gap: 4px .6rem; margin-bottom: .55rem; padding: 5px 0 5px; }
+-  /* The view bar on a phone: three short rows, the group names for screen readers only: the tests across the width
+-     (their labels may wrap onto two tight lines inside their keys), the Home key beside All, Decision and Chat, the
+-     measures across the width. */
+-  html { --view-bar-h: 112px; }
+-  .site-header { margin: 0 -.6rem; }
+-  .view-bar { padding: 2px .6rem; }
+-  .view-rows { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 4px; }
+-  .view-row { display: block; }
+-  .view-row.view-tests, .view-row.view-measures { grid-column: 1 / -1; }
+-  a.view-key.view-home { grid-column: 1; grid-row: 2; padding: 1px 8px; }
+-  .view-row.view-groups { grid-column: 2; grid-row: 2; }
+-  .view-label { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0);
+-    white-space: nowrap; border: 0; }
+-  .view-row ul { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+-  .view-row.view-tests ul { grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr) minmax(0, 1fr); }
+-  .view-row.view-parts ul { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+-  .hero-links a { min-height: 2.1rem; padding: .25rem .7rem; font-size: .92rem; }
+-  .view-row li { min-width: 0; }
+-  a.view-key { flex: 1; min-height: 24px; padding: 1px 4px; font-size: 12px; line-height: 1.1; white-space: normal; }
+-  .view-tests a.view-key { font-size: 11px; line-height: 1.05; }
+-  /* The measures' four keys share one row: Non-hallucination, the longest label, takes more room. */
+-  .view-row.view-measures ul { grid-template-columns: minmax(0, 1fr) minmax(0, 1.55fr) minmax(0, .8fr) minmax(0, 1fr); }
+-  .brand { font-size: 10.5px; letter-spacing: .04em; }
+-  .theme-switch { gap: 4px; }
+-  .theme-switch .key { min-height: 24px; padding: 1px 7px; gap: 5px; font-size: 11.5px; }
+-  /* Padding inside the scrolling bar keeps a focused link's outline unclipped; the negative margin keeps the row's size. */
+-  .nav ul { flex-wrap: nowrap; gap: 4px; overflow-x: auto; scrollbar-width: none; margin: -.3rem -.35rem; padding: .3rem .35rem;
+-    scroll-padding-inline: .35rem; }
+-  .nav ul::-webkit-scrollbar { display: none; }
+-  .nav li { flex: none; }
+-  .nav a { white-space: nowrap; }
++  /* The first screen reaches the results: one compact sticky header (the suite strip, the site's name with the theme
++     keys and More, the tabs scrolling sideways on one line), the title is smaller, the counters take one line and the
++     versions move under the table. */
++  html { --view-bar-h: 104px; }
++  .site-header { margin: 0 -.6rem .55rem; }
++  .site-bar { padding: 0 .6rem; }
++  .site-title-row { gap: .3rem; padding-top: 4px; }
++  .site-title { gap: .3rem; font-size: .95rem; }
++  .site-leaf { width: 15px; height: 18px; }
++  .more-long, .more-toggle .chevron { display: none; }
++  .site-tabs a { padding: 5px 8px 4px; font-size: .88rem; }
++  .theme-switch .key, .more-menu .key { padding: 1px 6px; gap: 4px; font-size: 11.5px; }
+   .panel, .card { padding: .75rem; border-radius: 8px; }
+   .hero h1 { font-size: 1.45rem; margin-bottom: .35rem; }
+   .hero .intro { font-size: .95rem; line-height: 1.36; margin-bottom: .5rem; }
+@@ -953,19 +903,14 @@ ul.price-list { padding-left: 1.25rem; }
+   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+ }
+ 
+-/* --- Backgammon pages: the rules the sibling stylesheet has no counterpart for (the grouped navigation, More options,
+-   the leaderboard's Table / Charts switch and its chart panels, table PNGs, the setups table on a phone). --------- */
++/* --- Backgammon pages: the rules the sibling stylesheet has no counterpart for (More options, the leaderboard's
++   Table / Charts switch and its chart panels, table PNGs, the setups table on a phone). ------------------------- */
+ :root { --data-chat: #64748b; }
+ @media screen { :root:not([data-theme="light"]) { --data-chat: #a8a6a0; } }
+ @media print {
+   .theme-dark, .theme-switch, .more-menu, .needs-js, .skip { display: none !important; }
+ }
+-.nav > ul { display: flex; flex-wrap: wrap; gap: 4px 18px; list-style: none; margin: 0; padding: 0; }
+-.nav-group { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
+-.nav-group-label { color: var(--view-label); font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+-.nav-group > ul { display: flex; flex-wrap: wrap; gap: 4px; list-style: none; margin: 0; padding: 0; }
+-.more-menu { grid-area: more; position: relative; justify-self: end; }
+-.topbar { grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: "brand theme more" "nav nav nav"; }
++.more-menu { position: relative; }
+ .more-pop { position: absolute; right: 0; top: calc(100% + .35rem); z-index: 25; display: flex; flex-direction: column; align-items: flex-start; gap: .45rem; width: max-content; max-width: calc(100vw - 1.2rem); padding: .75rem; background: var(--panel); border: 1px solid var(--control-edge); border-radius: 8px; }
+ .more-pop[hidden] { display: none; }
+ .more-label { margin: 0; color: var(--text-2); font-size: .72rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+@@ -1002,11 +947,9 @@ html.png-page :is(.table-wrap, .dec-pre, .dec-options, .chart-scroll) { max-heig
+ }
+ @media (max-width: 640px) {
+   .theme-switch .long { display: none; }
+-  .theme-switch .key, .more-menu .key, .filters .key, .filters select { min-height: 2.75rem; min-width: 2.75rem; }
+-  .nav > ul { flex-wrap: nowrap; gap: .8rem; overflow-x: auto; scrollbar-width: none; margin: -.3rem -.35rem; padding: .3rem .35rem; scroll-padding-inline: .35rem; }
+-  .nav > ul::-webkit-scrollbar { display: none; }
+-  .nav-group, .nav-group > ul { flex-wrap: nowrap; }
+-  .nav li, .nav-group-label { flex: none; white-space: nowrap; }
++  .filters .key, .filters select { min-height: 2.75rem; min-width: 2.75rem; }
++  /* The header's keys stay compact (Ümit #2901), still well over the 24 px minimum target. */
++  .theme-switch .key, .more-menu .key { min-height: 2.25rem; min-width: 2.25rem; }
+   .filters { padding: .45rem .6rem; margin-bottom: .5rem; }
+   .view-switch { grid-area: view; display: inline-flex; }
+   .view-switch .key { min-height: 1.9rem; padding: .15rem .55rem; font-size: .8rem; }
+@@ -1014,7 +957,6 @@ html.png-page :is(.table-wrap, .dec-pre, .dec-options, .chart-scroll) { max-heig
+   table.setups thead { display: none; }
+   table.setups, table.setups tbody, table.setups tr, table.setups th[scope="row"], table.setups td { display: block; }
+   table.setups th[scope="row"] { min-width: 0; border-bottom: none; padding-bottom: .2rem; }
+-  .topbar { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "brand brand" "theme more" "nav nav"; gap: .3rem .6rem; margin-bottom: .55rem; padding: .45rem 0 .3rem; }
+-  .theme-switch { justify-self: start; gap: .25rem; }
++  .theme-switch { gap: .25rem; }
+   .modebar { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "view count" "tabs tabs"; gap: .35rem .5rem; margin-bottom: .4rem; padding-bottom: .45rem; }
+ }
+diff --git a/tools/site/assets/site.js b/tools/site/assets/site.js
+index 26ee717..c8d8600 100644
+--- a/tools/site/assets/site.js
++++ b/tools/site/assets/site.js
+@@ -56,12 +56,12 @@
+   if (pagePng) pagePng.addEventListener('click', () => { set(false); toggle.focus(); });
+ })();
+ 
+-/* On a phone the navigation bar scrolls sideways: the current page's link starts in the middle of the bar, and a link
+-   that takes the keyboard focus is brought fully into view. */
++/* On a phone the tab row scrolls sideways: the current tab starts in the middle of the row, and a tab that takes the
++   keyboard focus is brought fully into view. */
+ (function keepNavLinksInView() {
+-  const bar = document.querySelector('.nav ul');
++  const bar = document.querySelector('.site-tabs ul');
+   if (!bar) return;
+-  const current = bar.querySelector('[aria-current="page"]');
++  const current = bar.querySelector('[aria-current]');
+   if (current && bar.scrollWidth > bar.clientWidth) {
+     const a = current.getBoundingClientRect(), b = bar.getBoundingClientRect();
+     bar.scrollLeft += a.left - b.left - (b.width - a.width) / 2;
+@@ -124,61 +124,12 @@
+   });
+ })();
+ 
+-/* Every page: the suite header, sticky at the top of the window: the suite strip, then the view bar with Home and, on
+-   the home page, its League, Models and Measure rows (Zeki #2270, #2274). Its height is kept in
+-   --view-bar-h, so links to a part of a page land below it. On the home page the Measure row marks the part in view:
+-   the part that crosses a line a quarter of the way down the window below the bar, or the key just pressed until the
+-   reader scrolls on; between parts no key is marked. */
++/* Every page: the sticky header (the suite strip and the site's bar with its tabs, Ümit #2901). Its height is kept in
++   --view-bar-h, so links to a part of a page land below it. */
+ (function setupViewBar() {
+   const bar = document.querySelector('.site-header');
+   if (!bar) return;
+   const measure = () => document.documentElement.style.setProperty('--view-bar-h', `${bar.offsetHeight}px`);
+   measure();
+   if ('ResizeObserver' in window) new ResizeObserver(measure).observe(bar);
+-  const links = [...bar.querySelectorAll('a[data-view-measure]')];
+-  const parts = links.map(link => ({ link, part: document.getElementById(link.dataset.viewMeasure) })).filter(x => x.part);
+-  if (!parts.length) return;
+-  const mark = key => links.forEach(link => {
+-    if (link.dataset.viewMeasure === key) link.setAttribute('aria-current', 'true');
+-    else link.removeAttribute('aria-current');
+-  });
+-  let pressed = null;
+-  let pressedAt = 0;
+-  const inView = () => {
+-    const top = bar.offsetHeight;
+-    const line = top + (innerHeight - top) / 4;
+-    const found = parts.find(({ part }) => {
+-      if (!part.offsetParent) return false;
+-      const box = part.getBoundingClientRect();
+-      return box.top <= line && box.bottom > line;
+-    });
+-    return found ? found.link.dataset.viewMeasure : null;
+-  };
+-  const press = key => {
+-    pressed = key;
+-    mark(key);
+-    requestAnimationFrame(() => { pressedAt = scrollY; });
+-  };
+-  let queued = false;
+-  addEventListener('scroll', () => {
+-    if (queued) return;
+-    queued = true;
+-    requestAnimationFrame(() => {
+-      queued = false;
+-      if (pressed && Math.abs(scrollY - pressedAt) < 48) return;
+-      pressed = null;
+-      mark(inView());
+-    });
+-  }, { passive: true });
+-  bar.addEventListener('click', event => {
+-    const key = event.target.closest('a[data-view-measure]')?.dataset.viewMeasure;
+-    if (key) press(key);
+-  });
+-  const fromHash = () => {
+-    const key = decodeURIComponent(location.hash.slice(1));
+-    if (parts.some(({ link }) => link.dataset.viewMeasure === key)) press(key);
+-    else mark(inView());
+-  };
+-  addEventListener('hashchange', fromHash);
+-  fromHash();
+ })();
+diff --git a/tools/site/build.py b/tools/site/build.py
+index ae96a64..d52c42c 100755
+--- a/tools/site/build.py
++++ b/tools/site/build.py
+@@ -41,6 +41,9 @@ from common import (CONTENT, EARLIER, INTERNAL, LATE_ENTRY, PENDING, PROVISIONAL
+                     THRESHOLDS, aliases, relabel, setup_slug)
+ 
+ BASE = "https://zekiworks.github.io/analysis/backgammon/"
++# The files of tools/site/assets/ copied to the site's root (hilde-leaf.svg: the top bar's mark, Ümit #2901).
++ASSETS = ("site.css", "site.js", "tables.js", "png.js", "bg.css", "suite-bar.css", "bg.js", "decisions.css", "decisions.js",
++          "hilde-leaf.svg")
+ 
+ 
+ def load_setups() -> dict:
+@@ -502,7 +505,7 @@ def main():
+     if S["image"] is None:
+         old = sorted((out / "share").glob("preview-*.png")) if (out / "share").exists() else []
+         S["image"] = f"share/{old[0].name}" if old else None
+-    for name in ("site.css", "site.js", "tables.js", "png.js", "bg.css", "suite-bar.css", "bg.js", "decisions.css", "decisions.js"):
++    for name in ASSETS:
+         if (SITE / "assets" / name).exists():
+             shutil.copy(SITE / "assets" / name, out / name)
+     pages.write_all(S, out, BASE)
+diff --git a/tools/site/home.py b/tools/site/home.py
+index da1e45e..c3b22f0 100644
+--- a/tools/site/home.py
++++ b/tools/site/home.py
+@@ -1882,6 +1882,7 @@ def hero_card(S) -> str:
+       {leaders(S)}
+       {facts(S)}
+       <nav class="face-nav" aria-label="On this page">{face}</nav>
++      {P.more_pages("")}
+     </section>"""
+ 
+ 
+diff --git a/tools/site/learning_page.py b/tools/site/learning_page.py
+index dc220e0..9ae5780 100755
+--- a/tools/site/learning_page.py
++++ b/tools/site/learning_page.py
+@@ -236,6 +236,12 @@ def title(L) -> str:
+     return TITLE_COMPLETE if is_complete(L) else TITLE
+ 
+ 
++def status_label(L) -> str:
++    """The page's top label, from the validated status: "Complete" only when learning_validate accepts complete. The
++    Experiments page's card shows the same label."""
++    return "Pre-registration" if L.get("preregistration_only") else "Complete" if is_complete(L) else "Preliminary · running"
++
++
+ def require_test_set(test_set: Path, why: str) -> str:
+     try:
+         return V.sha256(test_set)
+@@ -616,8 +622,7 @@ def body(L) -> str:
+     withheld = (f'<p class="note">{count(L["redacted"])} private address(es) in the plan are withheld here.</p>'
+                 if L["redacted"] else "")
+     status = f'<div class="note">{spec_markdown(plan["status"])}</div>' if plan["status"] else ""
+-    # The top label follows the validated status: "Complete" only when learning_validate accepts complete.
+-    label = ("Pre-registration" if prereg else "Complete" if is_complete(L) else "Preliminary · running")
++    label = status_label(L)
+     intro = ("The pre-registered plan and lesson prompt. No results or lessons are published on this page yet: they "
+              "are not read by the build." if prereg else
+              "The pre-registered plan, the lesson prompt and the results as they come in.")
+diff --git a/tools/site/pages.py b/tools/site/pages.py
+index 91d9b3e..a0a4b09 100644
+--- a/tools/site/pages.py
++++ b/tools/site/pages.py
+@@ -7,22 +7,24 @@ from pathlib import Path
+ 
+ import analysis as A
+ from common import (EARLIER, EARLIER_NOTE, LATE_ENTRY, LATE_ENTRY_LABEL, LATE_ENTRY_NOTE, NA, NAME_NOTES, NOT_MEASURED,
+-                    PENDING, PROVISIONAL, PROVISIONAL_NOTE, PUBLISHED, REASONING_NOTES, SUITE_BAR, TOO_FEW, aliases, count, esc, fmt,
++                    PENDING, PROVISIONAL, PROVISIONAL_NOTE, PUBLISHED, REASONING_NOTES, ROOT, SUITE_BAR, TOO_FEW, aliases, count, esc, fmt,
+                     nm, pct, setup_slug, slug, status_badge)
+ 
+-# The nav in groups (Ümit, 30 Oct 2026): Home (the leaderboard), Analyses, Leagues and matches, Method and data.
+-# Model pages open from the table rows; New models is linked from Data. "" is the home page, first and without a group
+-# label: the one navigation of every page (Zeki, bus #1860: the pages row and the old text menu merged), as keys in the
+-# sibling site's pages-row style, the current page filled.
+-NAV = [("", [("", "Home")]),
+-       ("Analyses", [("decisions/", "Every decision"), ("disagreements/", "Where models disagree"), ("phases/", "Phases"),
+-                     ("compare/", "Compare"), ("clear-risk/", "Clear risk"),
+-                     ("learning/", "Learning from experience (preliminary, running)")]),
+-       ("Leagues and matches", [("leagues/", "Leagues"), ("matches/", "Matches")]),
+-       ("Method and data", [("method/", "Method"), ("data/", "Data")])]
++# The site's top bar (Ümit #2901, as Clocktower Bench's): the Hilde leaf and the site's name, then one row of tabs. Each
++# tab is a page; every other page sits under one tab (SECTION), which is marked while it is in view. The pages that are
++# not tabs (Matches, Phases, Compare, Where models disagree, Leagues, Models, Data, Method) are linked from the
++# Leaderboard and the About page (MORE_PAGES).
++TABS = [("", "Leaderboard"), ("decisions/", "Decisions"), ("highlights/", "Highlights"), ("experiments/", "Experiments"),
++        ("about/", "About")]
++SECTION = {"clear-risk/": "experiments/", "learning/": "experiments/", "method/": "about/", "data/": "about/"}
++MORE_PAGES = [("matches/", "Matches"), ("phases/", "Phases"), ("compare/", "Compare"),
++              ("disagreements/", "Where models disagree"), ("leagues/", "Leagues"), ("models/", "Every model setup"),
++              ("method/", "Method"), ("data/", "Data")]
++SITE_NAME = "Backgammon bench"
++# The Hilde leaf: Hilde Reader's bare copper leaf (hilde repository, assets/reader-leaf.svg), copied byte for byte.
++LEAF = "hilde-leaf.svg"
+ TITLE = "Backgammon: do models take the right risks, and do they learn from their games?"
+-# The site's two parts (Ümit #2553/#2557), as the Logic site's Test row: one constant each, so the labels can change.
+-TAB_RISK = "Risk calls"
++# The learning pilot's tab name inside its page (Ümit #2553/#2557) and its address.
+ TAB_LEARNING = "Learning across games"
+ TAB_LEARNING_PATH = "learning/"
+ # Reviewed brief of 24 Oct 2026, item 2: the subtitle, used with the title in the hero, the meta description, the social
+@@ -233,33 +235,27 @@ COST_HEAD = ["Model and setting", "$ per 1,000 decisions", "Median / P90 s per d
+ 
+ # --- Layout -------------------------------------------------------------------------------------------------
+ 
+-# The sticky header at the top of every page (Ümit via Zeki #2270; the suite's shared component, #2290), as on the
+-# Decision models site: the suite strip (common.SUITE_BAR, the shared snippet with Backgammon marked; its look is
+-# suite-bar.css, copied verbatim), then the compact view bar: Home, the Part row (the site's two parts, Risk calls and
+-# Learning across games, as the Logic site's Test row: Ümit #2553) on every page and, on the home page, its League,
+-# Models and Measure rows. The pages row (NAV) sits in the top bar under it, which scrolls away.
+-def site_header(rel: str, path: str, rows: str = "") -> str:
+-    home = (f'<a class="view-key view-home" href="{rel or "./"}"{" aria-current=page" if path == "" else ""}>'
+-            f'<svg class="home-mark" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 1.6 1 7.6h2v6.8h3.8v-4.2'
+-            f'h2.4v4.2H13V7.6h2z"/></svg>Home</a>')
+-    learning = path.startswith(TAB_LEARNING_PATH)
+-    parts = ((TAB_RISK, rel or "./", not learning), (TAB_LEARNING, rel + TAB_LEARNING_PATH, learning))
+-    tabs = ('<div class="view-row view-tests view-parts" role="group" aria-labelledby="view-part"><span class="view-label" '
+-            'id="view-part">Part</span><ul>'
+-            + "".join(f'<li><a class="view-key" href="{href}"{" aria-current=true" if on else ""}>{esc(label)}</a></li>'
+-                      for label, href, on in parts) + "</ul></div>")
+-    label = "View: part, league, models and measure" if rows else "View: part"
+-    return (f'<div class="site-header">\n  {SUITE_BAR}\n  <nav class="view-bar" aria-label="{label}"><div class="view-rows">'
+-            f'{home}{tabs}{rows}</div></nav>\n  </div>')
+-
+-
+-def nav_items(rel: str, path: str) -> str:
+-    """The pages row's groups and keys (NAV), the page in view marked."""
+-    here = lambda href: href == path if not href else path.startswith(href)
+-    return "".join(f'<li class="nav-group">{f"<span class=nav-group-label>{esc(group)}</span>" if group else ""}<ul>'
+-                   + "".join(f'<li><a href="{rel}{href or ("" if rel else "./")}"{" aria-current=page" if here(href) else ""}>'
+-                             f'{esc(label)}</a></li>' for href, label in links) + '</ul></li>'
+-                   for group, links in NAV)
++# The one sticky header of every page (Ümit #2901; the suite's shared component, Zeki #2270, #2290): the suite strip
++# (common.SUITE_BAR, the shared snippet with Backgammon marked; its look is suite-bar.css, copied verbatim), then the
++# site's bar: the Hilde leaf and the site's name (the Leaderboard's link) with the colour theme and More options, and
++# under them the tabs (TABS), one row that scrolls sideways on a phone, the tab of the page in view underlined.
++def tab_of(path: str) -> str:
++    """The tab a page sits under: its own, its SECTION's, else the Leaderboard's."""
++    for prefix, tab in SECTION.items():
++        if path.startswith(prefix):
++            return tab
++    return next((href for href, _ in TABS if href and path.startswith(href)), "")
++
++
++def site_header(rel: str, path: str, controls: str) -> str:
++    here = tab_of(path)
++    tabs = "".join(f'<li><a href="{rel}{href or ("" if rel else "./")}"'
++                   f'{(" aria-current=page" if href == path else " aria-current=true") if href == here else ""}>'
++                   f'{esc(label)}</a></li>' for href, label in TABS)
++    return (f'<div class="site-header">\n  {SUITE_BAR}\n  <header class="site-bar"><div class="site-bar-in">'
++            f'<div class="site-title-row"><a class="site-title" href="{rel or "./"}"><img class="site-leaf" '
++            f'src="{rel}{LEAF}" width="18" height="21" alt="">{esc(SITE_NAME)}</a>{controls}</div>'
++            f'<nav class="site-tabs" aria-label="Sections"><ul>{tabs}</ul></nav></div></header>\n  </div>')
+ 
+ 
+ # The first script of every page, before the stylesheets apply (Zeki, bus #2310): the theme is always named on <html>
+@@ -275,7 +271,7 @@ HEAD_SCRIPT = ('<script>(function () { var d = document.documentElement; d.class
+ 
+ 
+ def layout(S, base, path: str, title: str, body: str, description: str | None = None, main_class: str = "",
+-           scripts=(), styles=(), body_class: str = "", view_rows: str = "") -> str:
++           scripts=(), styles=(), body_class: str = "") -> str:
+     depth = path.count("/")
+     rel = "../" * depth
+     desc = description or S["description"]
+@@ -285,13 +281,18 @@ def layout(S, base, path: str, title: str, body: str, description: str | None =
+     og = (f'<meta property="og:image" content="{image}"><meta property="og:image:width" content="1200">'
+           f'<meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image">'
+           f'<meta name="twitter:image" content="{image}">') if image else ""
+-    nav = nav_items(rel, path)
+     css = "".join(f'<link rel="stylesheet" href="{rel}{s}">' for s in ("suite-bar.css", "site.css", "bg.css") + tuple(styles))
+     js = "".join(f'<script src="{rel}{s}" defer></script>' for s in ("site.js", "tables.js", "png.js") + tuple(scripts))
+-    # The Dark / Light switch sits in the top bar itself, as on the Decision models site (Ümit, 31 Oct 2026); More options
+-    # keeps the page export.
++    # The Dark / Light switch sits in the site's bar beside its name, as on the Decision models site (Ümit, 31 Oct 2026);
++    # More options keeps the page export ("More" on a phone, its name unchanged).
++    theme = ('<div class="theme-switch" role="group" aria-label="Colour theme" hidden><button type="button" class="key" '
++             'data-theme-choice="dark" aria-pressed="true" aria-label="Dark background"><span class="lamp" aria-hidden="true">'
++             '</span>Dark<span class="long"> background</span></button><button type="button" class="key" '
++             'data-theme-choice="light" aria-pressed="false" aria-label="Light background"><span class="lamp" '
++             'aria-hidden="true"></span>Light<span class="long"> background</span></button></div>')
+     more = ('<div class="more-menu needs-js"><button type="button" class="key more-toggle" data-more-toggle aria-expanded="false" '
+-            'aria-controls="more-options">More options<span class="chevron" aria-hidden="true"></span></button>'
++            'aria-controls="more-options" aria-label="More options">More<span class="more-long"> options</span><span '
++            'class="chevron" aria-hidden="true"></span></button>'
+             '<div class="more-pop" id="more-options" hidden><p class="more-label">Share</p><button type="button" class="key '
+             'page-png" data-page-png hidden>Export page as PNG</button></div></div>' if EXPORT_PAGE_PNG else "")
+     return f"""<!doctype html>
+@@ -313,13 +314,7 @@ def layout(S, base, path: str, title: str, body: str, description: str | None =
+ </head>
+ <body class="v3 {body_class}" data-site-title="{esc(TITLE)}" data-site-subtitle="{esc(SUBTITLE)}">
+   <a class="skip" href="#main">Skip to content</a>
+-  {site_header(rel, path, view_rows)}
+-  <header class="topbar">
+-    <a class="brand" href="{rel or './'}">Hilde · Backgammon benchmark · v3</a>
+-    <div class="theme-switch" role="group" aria-label="Colour theme" hidden><button type="button" class="key" data-theme-choice="dark" aria-pressed="true" aria-label="Dark background"><span class="lamp" aria-hidden="true"></span>Dark<span class="long"> background</span></button><button type="button" class="key" data-theme-choice="light" aria-pressed="false" aria-label="Light background"><span class="lamp" aria-hidden="true"></span>Light<span class="long"> background</span></button></div>
+-    {more}
+-    <nav class="nav" aria-label="Pages"><span class="view-label nav-label" aria-hidden="true">Pages</span><ul>{nav}</ul></nav>
+-  </header>
++  {site_header(rel, path, f'<div class="site-controls">{theme}{more}</div>')}
+   <main id="main"{f' class="{main_class}"' if main_class else ''}>
+ {body}
+   </main>
+@@ -1415,19 +1410,31 @@ def status_list(S) -> str:
+                          "Every analysis in the plan, with its status and data file", cls="board list")
+ 
+ 
++# The Data page's downloads and how-to-recompute text, also on the About page (both pages are one level down, so the
++# links are the same).
++DOWNLOADS = ('<p class="hero-links"><a class="key" href="../data/results.json" download="results.json">results.json</a> '
++             '<a class="key" href="../decisions/index.json" download="decisions.json">decisions.json</a> '
++             '<a class="key" href="../new-models/">New models: first look</a> <a class="key" href="../models/">Every model setup</a></p>'
++             '<p>results.json: every league\'s results per setup, one league per key, every risk metric at both margins. '
++             'decisions.json: the index of every decision file, one gzip JSON file per setup and page of 50 decisions, '
++             'with the board, the plays as shown, the engine\'s equities, the model\'s choice and its position class, '
++             'stake and risk call.</p>')
++
++
++def recompute(thresholds_href: str) -> str:
++    return ('<ol>'
++            '<li>Snapshot the league database: <code>python3 tools/site/snapshot.py v3.db STATE</code> (one read transaction; the prompts each model was sent go to <code>STATE/prompts.db</code>; the Nackgammon knockout\'s matches, from <code>knockout-nack.db</code> next to it, to <code>STATE/knockout.db</code>).</li>'
++            '<li>Score every legal play of every decision with GNUbg 1.08 at 2-ply: <code>tools/site/score.sh STATE/snap.db STATE/plays</code>.</li>'
++            '<li>Build and check the site: <code>python3 tools/site/build.py --state STATE --out OUT</code>. The build fails, and nothing is deployed, if a number does not trace to a data file, counts do not add up, leagues or versions mix, a published finding no longer holds, or a file contains a private address or credential.</li>'
++            f'</ol><p>The scripts are in the jevgammon repository under <code>tools/site/</code>; the fixed thresholds are in <a href="{thresholds_href}">thresholds.json</a>.</p>')
++
++
+ def data_page(S, out: Path) -> str:
+     man = json.loads((out / "data/manifest.json").read_text())
+     rows = "".join(f'<tr><td><a href="../{esc(f["path"])}">{esc(f["path"])}</a></td><td class="num">{count(f["bytes"])}</td>'
+                    f'<td><code>{f["sha256"][:12]}</code></td></tr>' for f in man["files"])
+     return (page_head(S, "Data", "Data, versions and how to recompute")
+-            + f'<section class="card" id="downloads"><h2>Downloads</h2>'
+-              f'<p class="hero-links"><a class="key" href="../data/results.json" download="results.json">results.json</a> '
+-              f'<a class="key" href="../decisions/index.json" download="decisions.json">decisions.json</a> '
+-              f'<a class="key" href="../new-models/">New models: first look</a> <a class="key" href="../models/">Every model setup</a></p>'
+-              f'<p>results.json: every league\'s results per setup, one league per key, every risk metric at both margins. '
+-              f'decisions.json: the index of every decision file, one gzip JSON file per setup and page of 50 decisions, '
+-              f'with the board, the plays as shown, the engine\'s equities, the model\'s choice and its position class, '
+-              f'stake and risk call.</p>'
++            + f'<section class="card" id="downloads"><h2>Downloads</h2>{DOWNLOADS}'
+               + SWIPE + table(["File", "Bytes", "sha256"], [rows], "Data files of this build", cls="board list")
+               + f'<p class="table-note">Data files are split per version, league and model, '
+               f'so each loads on a phone. Every number on the site is in one of them. The decision files behind '
+@@ -1437,11 +1444,95 @@ def data_page(S, out: Path) -> str:
+               '<dt>v3</dt><dd>Prompt bg-v2, plays in a seeded random order, invalid answers not retried. Leagues 1 to 3 and the shared positions.</dd>'
+               f'<dt>v1</dt><dd>{status_badge(EARLIER)} Earlier prompt; plays listed in the runner\'s order. The v1 set of 1,000 positions answered by the v1 setups. Never in a v3 table or chart.</dd>'
+               '<dt>Smoke tests</dt><dd>50 positions outside the shared sets, v3 prompt; only on New models: first look.</dd></dl></section>'
+-            + '<section class="card" id="recompute"><h2>How to recompute</h2><ol>'
+-              '<li>Snapshot the league database: <code>python3 tools/site/snapshot.py v3.db STATE</code> (one read transaction; the prompts each model was sent go to <code>STATE/prompts.db</code>; the Nackgammon knockout\'s matches, from <code>knockout-nack.db</code> next to it, to <code>STATE/knockout.db</code>).</li>'
+-              '<li>Score every legal play of every decision with GNUbg 1.08 at 2-ply: <code>tools/site/score.sh STATE/snap.db STATE/plays</code>.</li>'
+-              '<li>Build and check the site: <code>python3 tools/site/build.py --state STATE --out OUT</code>. The build fails, and nothing is deployed, if a number does not trace to a data file, counts do not add up, leagues or versions mix, a published finding no longer holds, or a file contains a private address or credential.</li>'
+-              '</ol><p>The scripts are in the jevgammon repository under <code>tools/site/</code>; the fixed thresholds are in <a href="thresholds.json">thresholds.json</a>.</p></section>')
++            + f'<section class="card" id="recompute"><h2>How to recompute</h2>{recompute("thresholds.json")}</section>')
++
++
++def more_pages(rel: str, label: str = "More pages") -> str:
++    """The pages that are not tabs (MORE_PAGES), as the in-page link keys: linked from the Leaderboard and About."""
++    return (f'<nav class="face-nav more-pages" aria-label="{esc(label)}"><span class="view-label">{esc(label)}</span>'
++            + "".join(f'<a href="{rel}{href}">{esc(text)}</a>' for href, text in MORE_PAGES) + '</nav>')
++
++
++# --- Highlights, Experiments, About (Ümit #2901) --------------------------------------------------------------------
++
++# Highlights: decision slots, each for one decision and its short story. The stories come from Can and Ümit; until
++# then each slot is an empty, marked placeholder. A slot may name a candidate only if Can or Ümit listed it; none is a
++# picked position and none links a decision yet.
++HIGHLIGHT_SLOTS = ["Candidate (listed by Can and Ümit, not chosen yet): Astra 36/36 rolls",
++                   "Candidate (listed by Can and Ümit, not chosen yet): Sol board-only vs with numbers",
++                   "Candidate (listed by Can and Ümit, not chosen yet): one good risk",
++                   "Candidate (listed by Can and Ümit, not chosen yet): one blunder", None, None]
++STORY_COMING = "Story coming"
++
++
++def highlights_page(S) -> str:
++    slots = "".join(
++        f'<section class="card highlight-slot" id="highlight-{i}" data-slot="empty"><h2>Highlight {i}</h2>'
++        f'<p class="highlight-candidate">{esc(c) if c else nm("No decision chosen yet")}</p>'
++        f'<p class="note">{status_badge(STORY_COMING)} The decision and its story will be added here.</p></section>'
++        for i, c in enumerate(HIGHLIGHT_SLOTS, 1))
++    return (page_head(S, "Highlights", "Highlights", "Decisions, each with a short story. The stories are not written "
++                      'yet; every decision is on <a href="../decisions/">Decisions</a>.')
++            + f'<div class="highlight-slots">{slots}</div>')
++
++
++def experiments_page(S) -> str:
++    import learning_page
++    L = S["learning"]
++    cards = [
++        ("clear-risk", "Clear risk", "Preliminary / partial",
++         "Clear-risk scan: decisions where a risk or safety is clearly better, per setup, checks, a rollout check and a "
++         "partial model quiz.", [("../clear-risk/", "Open Clear risk")]),
++        ("nackgammon", "Nackgammon", None,
++         "Does a model still play well when the starting position changes? Nackgammon has the rules of backgammon; only "
++         "the starting position differs.",
++         [("../#nackgammon-paired", "The paired test"), ("../leagues/#nack-knockout", "The knockout"),
++          ("../matches/#stage-knockout", "Its matches")]),
++        ("learning", "Learning from experience", learning_page.status_label(L),
++         "Does a model play better after seeing its own earlier games? " + esc(L["plan"]["commitment"]),
++         [(f"../{learning_page.PATH}", "Open Learning from experience")])]
++    out = "".join(
++        f'<section class="card experiment-card" id="{cid}"><h2>{esc(title)}</h2>'
++        f'{status_badge(status) if status else ""}<p>{text}</p><p class="hero-links">'
++        + "".join(f'<a href="{href}">{esc(label)}</a>' for href, label in links) + '</p></section>'
++        for cid, title, status, text, links in cards)
++    return page_head(S, "Experiments", "Experiments", "Tests beside the leagues, each opened from its card.") + \
++        f'<div class="experiment-cards">{out}</div>'
++
++
++def rules_text() -> str:
++    """The rules of backgammon as every player is given them: the Rules part of the current prompt (bg-v2), verbatim."""
++    md = (ROOT / "prompts/bg-v2.md").read_text()
++    md = md[md.index("## Rules\n") + len("## Rules\n"):md.index("## Strategy principles")]
++    import method
++    return method.spec_markdown(md)
++
++
++def method_sections(method_html: str) -> list[tuple[str, str]]:
++    """(id, heading) of the Method page's sections, in order."""
++    return re.findall(r'<section class="card" id="([\w-]+)"[^>]*>\s*<h2 id="[\w-]+-title">(.*?)</h2>', method_html)
++
++
++def about_page(S, method_html: str) -> str:
++    toc = [("rules", "Rules of backgammon"), ("method", "Method"), ("data", "Data"), ("how-to-run", "How to run it"),
++           ("late-entries", "Late entries"), ("open-questions", "Open questions"), ("pages", "More pages")]
++    method_links = "".join(f'<li><a href="../method/#{i}">{h}</a></li>' for i, h in method_sections(method_html))
++    parts = {
++        "rules": f'<p class="note">The rules as every player reads them in the prompt (bg-v2, the current version: '
++                 f'<a href="../method/#prompt">Method: The prompt</a>), quoted unchanged.</p>{rules_text()}',
++        "method": f'<p>Every definition, threshold and caveat is on the <a href="../method/">Method</a> page:</p>'
++                  f'<ul class="columns">{method_links}</ul>',
++        "data": f'{DOWNLOADS}<p>Every data file, with its size and hash: <a href="../data/">Data</a>.</p>',
++        "how-to-run": recompute("../data/thresholds.json"),
++        "late-entries": f'<p>{esc(LATE_ABOUT)}</p><p>{esc(LATE_METHOD)}</p><p>Every late entry, its numbers and its '
++                        f'matches: <a href="../leagues/#late-entries">Leagues: Late entries</a>.</p>',
++        "open-questions": f'<p>What is not settled yet: every analysis in the plan with its status, and the limits on '
++                          f'the <a href="../method/#limits">Method page</a>.</p>{status_list(S)}',
++        "pages": more_pages("../")}
++    nav = "".join(f'<a href="#{i}">{esc(t)}</a>' for i, t in toc)
++    return (page_head(S, "About", "About the benchmark", "The rules, the method, the data and how to run it.")
++            + f'<nav class="face-nav" aria-label="On this page">{nav}</nav>'
++            + "".join(f'<section class="card" id="{i}"><h2>{esc(t)}</h2>{parts[i]}</section>' for i, t in toc))
+ 
+ 
+ def decisions_page(S, body: str) -> str:
+@@ -1520,7 +1611,8 @@ def write_all(S, out: Path, base: str) -> None:
+             model_page(S, "smoke-part-a", r["setup"], None, r))
+     ctx = dict(thresholds=S["thresholds"], play_order=S["v1"]["play_order"], shared_sets=S["shared"]["build_log"],
+                data_as_of=as_of(S), extra=home.method_extras(S))
+-    put("method/", "Method", method.body(ctx), main_class="method-page")
++    method_html = method.body(ctx)
++    put("method/", "Method", method_html, main_class="method-page")
+     import clear_risk_section
+     put("clear-risk/", "Clear risk (preliminary)", clear_risk_section.body(S),
+         description="Clear-risk scan of the backgammon benchmark (preliminary / partial): decisions where a risk or "
+@@ -1531,3 +1623,11 @@ def write_all(S, out: Path, base: str) -> None:
+     put("data/", "Data", data_page(S, out))
+     put("decisions/", "Every decision", decisions_page(S, decisions_export.body()),
+         scripts=("decisions.js",), styles=("decisions.css",))
++    put("highlights/", "Highlights", highlights_page(S),
++        description="Highlights of the backgammon benchmark: single decisions, each with a short story (the stories "
++                    "are not written yet).")
++    put("experiments/", "Experiments", experiments_page(S),
++        description="Experiments of the backgammon benchmark: Clear risk, Nackgammon and Learning from experience.")
++    put("about/", "About", about_page(S, method_html),
++        description="About the backgammon benchmark: the rules of backgammon, the method, the data, how to run it, late "
++                    "entries and open questions.")
+diff --git a/tools/site/story.py b/tools/site/story.py
+index e942c6c..02e7966 100644
+--- a/tools/site/story.py
++++ b/tools/site/story.py
+@@ -126,12 +126,6 @@ def leaderboard_rows(S) -> tuple[list, list, list]:
+     return out, prog_rows, late
+ 
+ 
+-def share(s: dict) -> str:
+-    if not s["den"]:
+-        return f'<td class="num">{nm(NA)}<span class="small">0 / 0</span></td>'
+-    return f'<td class="num">{pct(s["share"])}<span class="small">{H.n_(s["n"])} / {H.n_(s["den"])}</span></td>'
+-
+-
+ def judgement_cell(r: dict, colour: str | None) -> str:
+     """The risk judgement as a bar on 0 to 100 to the score, its 95% interval as the whisker, the line at 50 (always
+     safe), and the number."""
+@@ -161,42 +155,74 @@ def page_href(S, x) -> str | None:
+     return P.model_href("", x["ds"], x["name"], S) if x["q"] is not None else None
+ 
+ 
+-def setting_label(x) -> str:
+-    return esc(x["setting"]) if x["setting"] else '<span class="muted">\u2014</span>'
++# The row's details box (Ümit #2904, as Clocktower Bench's): opened by a tap on a phone, by hover or the keyboard focus on
++# a desktop (bg.js), each line filled only from the setup's stored values, a line or part left out where the data has
++# none (never "n/a"). The row itself shows the rank, the model (maker dot, its type under the name) and the risk
++# judgement; every other value of the setup is in its box.
++TYPE_LABEL = {"chat": "chat model", "decision": "decision model"}
++
++
++def model_type(S, x) -> str:
++    """"chat", "decision", "program" or "unknown" (home.kind of the setup's setups.json entry)."""
++    return H.kind((S["setups_meta"].get((LATE_ENTRY, x["name"])) or {}) if x["late"] else P.origin_meta(S, x["ds"], x["name"]))
++
++
++def record(x) -> dict | None:
++    """The setup's won, drawn and lost matches: its league standing, or its late-entry record."""
++    if x["late"]:
++        return x["late"].get("record")
++    return next((s for s in x["lg"]["standings"] if s["name"] == x["name"]), None)
++
++
++def cost_text(S, x) -> str | None:
++    q = x["q"]
++    if q is None or q.get("usd_per_1000") is None:
++        return None
++    label = ((x["late"].get("price") or {}) if x["late"] else (P.origin_meta(S, x["ds"], x["name"]).get("price") or {})).get("label")
++    return (f'<span class="cost-1k">${fmt(q["usd_per_1000"], 3)} per 1,000 decisions</span><span class="cost-1m" '
++            f'data-usd="{q["usd_per_1000"]!r}">${fmt(q["usd_per_1000"], 3)}</span><span class="cost-1m"> per 1M decisions</span>'
++            + (f' ({esc(label)})' if label else ""))
+ 
+ 
+-def cells(S, x, colour) -> str:
+-    """Setting, league and the numbers of one setup, as the league tables print them."""
++def details_box(S, x, kind: str, bid: str, extra: list) -> str:
++    """The lines of one setup's details box; extra: lines about the row's model (release month, checkpoint)."""
+     r, q, e = x["r"], x["q"], x["late"]
+-    league = (f'Late entry<span class="small">League {e["field_league"]} field</span>' if e else f'League {x["lg"]["id"]}')
+-    if q is None:
+-        er = cost = dec = f'<td class="num">{nm(NA)}</td>'
+-    else:
+-        er = (f'<td class="num">{fmt(q["error_rate"])}<span class="small">{fmt(q["error_lo"])} to {fmt(q["error_hi"])}'
+-              f'</span></td>' if q.get("error_rate") is not None and not q.get("too_few") else f'<td class="num">{nm(NA)}</td>')
+-        if e:
+-            cost = f'<td class="num">{P.late_cost(e)}</td>'
+-        elif q.get("usd_per_1000") is not None:
+-            label = (P.origin_meta(S, x["ds"], x["name"]).get("price") or {}).get("label")
+-            cost = (f'<td class="num"><span class="cost-1k">${fmt(q["usd_per_1000"], 3)}</span><span class="cost-1m" '
+-                    f'data-usd="{q["usd_per_1000"]!r}">${fmt(q["usd_per_1000"], 3)}</span>'
+-                    f'<span class="small">{esc(label or "label missing")}</span></td>')
+-        else:
+-            cost = P.cost_cell(S, x["ds"], x["name"], q)
+-        dec = f'<td class="num"><a href="{decisions_href(S, x)}">{count(q["decisions"])}</a></td>'
+-    return (f'<td class="hl-setting">{setting_label(x)}</td><td class="num" data-v="{x["lg"]["id"] if x["lg"] else 9}">'
+-            f'{league}</td>{judgement_cell(r, colour)}{share(r["found"])}{share(r["right_safety"])}{er}{cost}{dec}')
+-
+-
+-def name_link(S, x, text) -> str:
++    found, safe = r["found"], r["right_safety"]
++    join = lambda parts: " \u00b7 ".join(p for p in parts if p)
++    rec = record(x)
++    er = (f'Error rate {fmt(q["error_rate"])} (95%: {fmt(q["error_lo"])}\u2013{fmt(q["error_hi"])})'
++          if q and q.get("error_rate") is not None and not q.get("too_few") else None)
++    href, page = decisions_href(S, x), page_href(S, x)
++    lines = [
++        join([f'<strong>{esc(x["name"])}</strong>', esc(H.maker(x["name"])[0]) if kind != "program" else None]),
++        join([f'Setting {esc(x["setting"])}' if x["setting"] else None,
++              f'Late entry, League {e["field_league"]} field' if e else f'League {x["lg"]["id"]}']),
++        (f'Risk judgement {fmt(r["judgement"])} (95%: {fmt(r["judgement_lo"])}\u2013{fmt(r["judgement_hi"])})'
++         if r["judgement"] is not None else None),
++        join([f'Risks found {pct(found["share"])}' if found["den"] else None,
++              f'safe right {pct(safe["share"])}' if safe["den"] else None]),
++        join([f'Took {H.n_(found["n"])} of {H.n_(found["den"])} risks that paid' if found["den"] else None,
++              f'played safe in {H.n_(safe["n"])} of {H.n_(safe["den"])} positions where safe paid' if safe["den"] else None]),
++        join([er, f'record {count(rec["won"])}\u2013{count(rec["drawn"])}\u2013{count(rec["lost"])}' if rec else None,
++              "late entry" if e else None]),
++        join([cost_text(S, x), f'{count(q["decisions"])} decisions' if q else None]),
++        *extra,
++        join([f'<a href="{href}">{"Its late-entry page" if e else "Open its decisions"} \u2192</a>' if href else None,
++              f'<a href="{page}">Model page</a>' if page else None])]
++    return (f'<div class="hl-box" id="{bid}" role="group" aria-label="{esc(x["name"])}: details">'
++            + "".join(f"<p>{line}</p>" for line in lines if line) + "</div>")
++
++
++def name_link(S, x, text, bid) -> str:
+     href = decisions_href(S, x)
+-    return (f'<a class="model-name" href="{href}">{esc(text)}</a>' if href else f'<span class="model-name">{esc(text)}</span>')
++    return (f'<a class="model-name" href="{href}" aria-describedby="{bid}">{esc(text)}</a>' if href else
++            f'<span class="model-name" tabindex="0" aria-describedby="{bid}">{esc(text)}</span>')
+ 
+ 
+-def tr_attrs(S, x, kind) -> str:
++def tr_attrs(S, x, kind, typ) -> str:
+     if x["late"]:
+-        return f' data-dataset="{LATE_ENTRY}" data-setup="{esc(x["late"]["slug"])}" data-kind="late"'
+-    return H.attrs(S, x["ds"], H.slug_name(x["name"]), kind == "program")
++        return f' data-dataset="{LATE_ENTRY}" data-setup="{esc(x["late"]["slug"])}" data-kind="late" data-hl-type="{typ}"'
++    return H.attrs(S, x["ds"], H.slug_name(x["name"]), kind == "program") + f' data-hl-type="{typ}"'
+ 
+ 
+ def headline_rows(S) -> tuple[list, list, list]:
+@@ -216,21 +242,18 @@ def headline_rows(S) -> tuple[list, list, list]:
+             icon = f'<svg class="fam-icon" aria-hidden="true" focusable="false"><use href="#{fam["icon"]}"/></svg>' if fam else ""
+             dot = f'<i class="swatch hl-dot" style="background:{colour}" title="{esc(mk)}"></i>' if colour else \
+                 '<i class="swatch hl-dot swatch-program"></i>'
+-            bits = []
++            typ = "program" if kind == "program" else model_type(S, x)
++            under = esc(H.ref_label(S, x["ds"], x["name"]) or "") if kind == "program" else esc(TYPE_LABEL.get(typ, ""))
++            extra = []
+             if kind == "model":
+                 month, url = release(name)
+-                if not url:
++                if url:
++                    extra.append(f'Released <a href="{esc(url)}">{month}</a>')
++                else:
+                     missing.append(name)
+-                bits.append(f'Released <a href="{esc(url)}">{month}</a>' if url else
+-                            f'Released <span class="muted" title="No release date from the maker on record">{month}</span>')
+                 ckpt = sorted({y["model"] for y in group if y["model"] != name})
+                 if ckpt:
+-                    bits.append("with its dated checkpoint " + ", ".join(esc(c) for c in ckpt))
+-            elif kind == "program":
+-                bits.append(esc(H.ref_label(S, x["ds"], x["name"]) or ""))
+-            page = page_href(S, x)
+-            if page:
+-                bits.append(f'<a href="{page}">model page</a>')
++                    extra.append("With its dated checkpoint " + ", ".join(esc(c) for c in ckpt) + " (under the expander)")
+             rid = f'hl-{"p-" if kind == "program" else "l-" if kind == "late" else ""}{i}'
+             sub_ids = [f"{rid}-{k}" for k in range(1, len(others) + 1)]
+             what = "league" if kind == "program" else "setting"
+@@ -239,25 +262,23 @@ def headline_rows(S) -> tuple[list, list, list]:
+             rank = f'<td class="num">{i}</td>' if kind == "model" else '<td class="num"><span class="muted" title="never ranked">\u2013</span></td>'
+             cls = {"model": "", "program": ' class="reference"', "late": ' class="late"'}[kind]
+             label = x["name"] if kind == "program" else name
+-            body.append(f'<tr{cls}{tr_attrs(S, x, kind)}>{rank}<td class="model">{dot}{icon}{name_link(S, x, label)}'
+-                        f'<span class="small">{" · ".join(b for b in bits if b)}</span>{more}</td>'
+-                        f'{cells(S, x, colour)}</tr>')
++            bid = f"{rid}-box"
++            body.append(f'<tr{cls}{tr_attrs(S, x, kind, typ)} data-box="{bid}">{rank}<td class="model">{dot}{icon}'
++                        f'{name_link(S, x, label, bid)}<span class="small hl-type">{under}</span>{more}'
++                        f'{details_box(S, x, kind, bid, extra)}</td>{judgement_cell(x["r"], colour)}</tr>')
+             for sid, y in zip(sub_ids, others):
+                 ycol = H.maker(y["name"])[1] if kind == "model" else None
+-                ypage = page_href(S, y)
+-                page_link = f' · <a href="{ypage}">model page</a>' if ypage else ""
++                ybid = f"{sid}-box"
+                 body.append(f'<tr class="hl-sub{"" if kind == "model" else " reference" if kind == "program" else " late"}" '
+-                            f'id="{sid}" hidden{tr_attrs(S, y, kind)}><td class="num"></td><td class="model">'
+-                            f'{name_link(S, y, y["name"])}<span class="small">other {what} of {esc(label)}'
+-                            f'{page_link}</span></td>{cells(S, y, ycol)}</tr>')
++                            f'id="{sid}" hidden{tr_attrs(S, y, kind, typ)} data-box="{ybid}"><td class="num"></td><td class="model">'
++                            f'{name_link(S, y, y["name"], ybid)}<span class="small">other {what} of {esc(label)}</span>'
++                            f'{details_box(S, y, kind, ybid, [])}</td>{judgement_cell(y["r"], ycol)}</tr>')
+             if kind != "program" or x["name"] == "GNUbg weak":
+                 chart.append((kind, label, x, colour))
+     return body, missing, chart
+ 
+ 
+-HEADLINE_HEAD = [(h, " data-nosort") for h in (
+-    "#", "Model", "Setting", "League", "Risk judgement (95% interval)", "Risks found", "Right safety", "Error rate (PR)",
+-    '<span class="cost-1k">$ per 1,000 decisions</span><span class="cost-1m">$ per 1M decisions</span>', "Decisions")]
++HEADLINE_HEAD = [(h, " data-nosort") for h in ("#", "Model", "Risk judgement (95% interval)")]
+ 
+ 
+ def too_safe(S, chart: list) -> str:
+@@ -298,26 +319,32 @@ def headline(S) -> str:
+     table = P.table(HEADLINE_HEAD, rows, "One row per model at its highest reasoning setting; all leagues, all phases",
+                     cls="board headline",
+                     attrs=' data-dataset="all" id="headline-table"')
+-    note = (f'<p class="table-note">Released: the month of the maker\'s own dated statement that this exact model was '
+-            f'released or became available to the public (an announcement before public availability does not count), '
+-            f'linked; \u2014 where no such statement is on record ({count(len(missing))} of {count(n_models)} models).</p>'
+-            if missing else "")
++    note = (f'<p class="table-note">Released (in a row\'s details): the month of the maker\'s own dated statement that '
++            f'this exact model was released or became available to the public (an announcement before public '
++            f'availability does not count), linked; left out where no such statement is on record '
++            f'({count(len(missing))} of {count(n_models)} models).</p>' if missing else "")
+     keys = ('<span class="keys needs-js" role="group" aria-label="Rows"><button type="button" class="key" '
+             'data-headline-view="model" aria-pressed="true">One row per model</button><button type="button" '
+             'class="key" data-headline-view="all" aria-pressed="false">All setups</button></span>')
++    # The table's own filter (Ümit #2907): local to this table, never the page's filters; programs stay in every view.
++    types = ('<div class="keys hl-filter needs-js" role="group" aria-label="Model type">'
++             + "".join(f'<button type="button" class="key" data-hl-filter="{k}" aria-pressed="{str(k == "all").lower()}">'
++                       f'{l}</button>' for k, l in (("all", "All"), ("chat", "Chat models"), ("decision", "Decision models")))
++             + '</div><p class="table-note hl-legend"># is the rank among all models, in every view; the programs are '
++               'reference rows in every view.</p>')
+     rule = ('<p class="table-note headline-rule">Each model\'s row is its highest reasoning setting played, by the effort '
+             'the requests sent (off &lt; minimal &lt; low &lt; medium &lt; high &lt; xhigh &lt; max; on above off for a '
+             'model without levels; a decision model\'s single setup), never its best score. Several setups at that '
+-            'setting: the first in league order, then by setup name (no score). Every cell of a row is that setup\'s '
+-            'own; its other settings are under the row\'s expander and under All setups. Version names are separate '
+-            'models; ' + "; ".join(f"{esc(k)} is under {esc(v)}" for k, v in SAME_MODEL.items()) + ' (a dated checkpoint '
+-            'under its original).</p>')
++            'setting: the first in league order, then by setup name (no score). Every value of a row and of its details '
++            'is that setup\'s own; its other settings are under the row\'s expander and under All setups. Version names '
++            'are separate models; ' + "; ".join(f"{esc(k)} is under {esc(v)}" for k, v in SAME_MODEL.items()) + ' (a '
++            'dated checkpoint under its original). Every column of every setup: <a href="#board-panel">Every number</a>.</p>')
+     return (f'<section class="card headline" id="leaderboard" data-dataset="all" aria-labelledby="leaderboard-title">'
+             f'<div class="chart-head"><h2 id="leaderboard-title">Risk calls leaderboard</h2>{keys}<p class="chart-sub">'
+             f'Risk judgement: 100 = every call right, 50 = always safe · higher is better</p></div>'
+             '<p class="table-note headline-scope"><strong>A fixed table:</strong> the filters below do not change it. '
+-            'Tap a model for its decisions; how each row is chosen is under the table.</p>'
+-            f'<div data-headline-panel="model">{P.SWIPE}{table}{caveat(NOTE, "statistics")}{rule}{note}{too_safe(S, chart)}</div>'
++            'Tap a model (or point at it) for its details and its decisions; how each row is chosen is under the table.</p>'
++            f'<div data-headline-panel="model">{types}{table}{caveat(NOTE, "statistics")}{rule}{note}{too_safe(S, chart)}</div>'
+             f'<div data-headline-panel="all" hidden>{H.all_risk_table(S)}{caveat(H.RANK_NOTE, "statistics")}</div>'
+             f'<p class="table-note">{esc(ALL_NOTE)}</p></section>')
+ 

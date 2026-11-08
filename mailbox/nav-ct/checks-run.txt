@@ -1,0 +1,15 @@
+# checks.run on whole-site renders. Started 2026-11-08 02:49:04 UTC
+# base (leaderboard-ct): a99a1ce  nav-ct: d345323  results hash fixed: 7b40b30e
+# live mirror: 5fe2f8a44, data as of 2026-11-08T02:20Z
+
+## base: render_site.py /tmp/nav/src-base /tmp/nav/state /tmp/nav/out-base 7b40b30e --checks
+rendered /tmp/nav/out-base with /tmp/nav/src-base/tools/site
+checks.run: 0 failure(s)
+exit status (base): 0
+
+## nav: render_site.py /tmp/nav/src-nav /tmp/nav/state /tmp/nav/out-nav 7b40b30e --checks
+rendered /tmp/nav/out-nav with /tmp/nav/src-nav/tools/site
+checks.run: 0 failure(s)
+exit status (nav): 0
+
+# Finished 2026-11-08 02:52:27 UTC; exit status: 0

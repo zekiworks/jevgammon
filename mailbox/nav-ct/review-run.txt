@@ -1,0 +1,8 @@
+numbers: [('Home page: every live table cell, by tab', 17377, 0, 0), ('Home page: every leaderboard-ct render t', 17377, 0, 0), ('Leaderboard rows (ranked, other settings', 54, 0, 0), ("Details boxes: every line of every row's", 445, 0, 0), ("Details boxes against the live page's ow", 208, 0, 0), ('Measure charts (Risk judgement, Error ra', 398, 0, 0), ('Finding sections: every bar, label and v', 58, 0, 0), ('Too safe chart: every bar, label and val', 32, 0, 0), ('Every other page (live): the main conten', 111, 0, 0), ('Every other page (leaderboard-ct render)', 111, 0, 0), ('Data files under data/ (live), byte for ', 105, 0, 0), ('Data files under data/ (leaderboard-ct r', 105, 0, 0)]
+live: 112 pages, 2037 anchors checked
+leaderboard-ct render: 112 pages, 2058 anchors checked
+urls: {'ok': 328}
+browser: {'ok': 118}
+screenshots: 48
+review: 0 number difference(s), 0 URL check(s) and 0 browser check(s) not accepted
+exit status: 0

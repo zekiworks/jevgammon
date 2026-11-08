@@ -21,7 +21,8 @@
 7. The learning page (learning_page.py, plan §9): no verdict, learning lift, signal or Learning-tab ranking/leader block
    in the page or its data file unless the results are complete; no evaluation-set position (id, board key, board) in
    either (where the private test set is present); outside pre-registration-only mode, the status line, both charts and
-   their tables, the verdict and every lesson against the page's own data file (Ümit #2925).
+   their tables, the verdict, the arms' display names, every lesson and the exploratory block (Ümit #2925, #2950)
+   against the page's own data file.
 """
 
 import gzip
@@ -390,7 +391,7 @@ def _learning_results(root, L) -> list[str]:
     chart at its T0 value, no other line dashed) and the tables under them; the verdict only as the data allows; every
     lesson next to its game, its text exactly the data file's (escaped)."""
     from common import NA, fmt
-    from learning_page import ARM_COLOUR, CHECKPOINTS, CONTROL_DASH, PATH
+    from learning_page import ARM_COLOUR, ARM_LABEL, CHECKPOINTS, CONTROL_DASH, MODEL, PATH, RUN_LINE
     bad, R, ids = [], L.get("results"), {}
     nodes = list(walk(root))
     for n in nodes:
@@ -484,6 +485,28 @@ def _learning_results(root, L) -> list[str]:
             empty, total = R["budget_empty_points"]["budget"], R["budget_points_total"]["budget"]
             if (BUDGET_VERDICT in text_of(el)) != bool(total and empty == total):
                 bad.append(f"{PATH}: the budget reading (plan section 11) does not follow the budget points")
+    # Display names (Ümit #2950): every legend entry, chart-table row and verdict line names its arm by ARM_LABEL; the
+    # one line at the top of Results; the model in every chart title.
+    for n in nodes:
+        cls = n.attrs.get("class", "").split()
+        if "lp-swatch" in cls and text_of(n.parent).strip() != ARM_LABEL.get(n.attrs.get("data-arm")):
+            bad.append(f"{PATH}: legend entry {text_of(n.parent).strip()!r} is not its arm's name")
+        if n.tag == "tr" and any("lp-numbers" in a.attrs.get("class", "").split() for a in ancestors(n)):
+            arm = next((c.attrs.get("data-arm") for c in n.children if c.attrs.get("data-arm")), None)
+            th = next((c for c in n.children if c.tag == "th"), None)
+            if arm and (th is None or text_of(th).strip() != ARM_LABEL.get(arm)):
+                bad.append(f"{PATH}: chart table row of {arm!r} is not named by its arm's name")
+        if n.tag == "li" and n.attrs.get("data-arm") and any(a.attrs.get("id") == "learning-verdict"
+                                                            for a in ancestors(n)):
+            strong = next((c for c in n.children if c.tag == "strong"), None)
+            if strong is None or text_of(strong).strip() != ARM_LABEL.get(n.attrs["data-arm"]):
+                bad.append(f"{PATH}: verdict line of {n.attrs['data-arm']!r} is not named by its arm's name")
+        if n.tag == "text" and "lp-title" in cls and MODEL not in text_of(n):
+            bad.append(f"{PATH}: chart title {text_of(n).strip()!r} does not name {MODEL}")
+    run_line = ids.get("learning-run-line")
+    if R is not None and R["series_total_done"] and (run_line is None or text_of(run_line).strip() != RUN_LINE):
+        bad.append(f"{PATH}: the line at the top of Results is missing or not the fixed one")
+    bad += _learning_explore(nodes, ids, L, complete)
     # Lessons: each next to its game, exactly the data's text, finished lessons series only.
     fin = set((R or {}).get("series_finished", {}).get("lessons", []))
     data_lessons = {(x["series"], x["game"]): x for x in L.get("lessons") or []}
@@ -510,13 +533,77 @@ def _learning_results(root, L) -> list[str]:
     return bad
 
 
+def _learning_explore(nodes, ids, L, complete: bool) -> list[str]:
+    """The exploratory block (Ümit #2950/#2952) against the data file: absent when the data has none; when present,
+    right after the verdict and outside it, labelled "exploratory, after the results" and "not part of the
+    pre-registered verdict"; accepted only with complete results, every cell exactly the data's (each arm minus budget,
+    the runs, the spread); refused, no number of it at all (only the fixed problem codes)."""
+    from common import NA, fmt
+    from learning_page import PATH
+    X, el, bad = L.get("explore"), ids.get("learning-explore"), []
+    if X is None:
+        return [f"{PATH}: an exploratory block without exploratory data"] if el is not None else []
+    if el is None:
+        return [f"{PATH}: exploratory data but no exploratory block"]
+    verdict = ids.get("learning-verdict-section")
+    if verdict is None or nodes.index(el) < nodes.index(verdict) or any(a is verdict for a in ancestors(el)):
+        bad.append(f"{PATH}: the exploratory block is not after the verdict, apart from it")
+    text = " ".join(text_of(el).split()).lower()
+    if "exploratory, after the results" not in text or "not part of the pre-registered verdict" not in text:
+        bad.append(f"{PATH}: the exploratory block is not labelled as exploratory, after the results")
+    cells = [n for n in walk(el) if n.tag == "td"]
+    if not X.get("accepted"):
+        if set(X) - {"accepted", "problems"}:
+            bad.append(f"{PATH}: a refused exploratory file publishes more than its problem codes")
+        if cells or "exploratory file not accepted" not in text:
+            bad.append(f"{PATH}: a refused exploratory file shows numbers or no refusal note")
+        return bad
+    if not complete:
+        bad.append(f"{PATH}: exploratory block shown before the results are complete")
+
+    def want(n):
+        a = n.attrs
+        if "data-cp" in a:
+            s = X["arm_minus_budget"][a["data-arm"]][a["data-cp"]][a["data-m"]]
+            return f'{fmt(s["mean"], 1, signed=True)} [{fmt(s["ci"][0], 1)}, {fmt(s["ci"][1], 1)}]'
+        if "data-run" in a:
+            v = X["runs"][int(a["data-run"])][a["data-k"]]
+            return f"{v:,}" if a["data-k"] in ("answered", "valid", "invalid", "failed") else (
+                NA if v is None else fmt(v, 1))
+        if "data-group" in a:
+            s = X["spread"][a["data-group"]]
+            if a.get("data-k") == "n":
+                return f'{s["risks_found"]["n"]:,}'
+            s = s[a["data-m"]]
+            sd = fmt(s["sd"], 2) if s["sd"] is not None else NA
+            return f'{fmt(s["mean"], 1)} ({fmt(s["min"], 1)}-{fmt(s["max"], 1)}; SD {sd})'
+        return None
+    seen = set()
+    for n in cells:
+        try:
+            w = want(n)
+        except (KeyError, IndexError, ValueError, TypeError):
+            bad.append(f"{PATH}: an exploratory cell names no value of the data file")
+            continue
+        if w is not None:
+            seen.add(tuple(sorted(n.attrs.items())))
+            if text_of(n).strip() != w:
+                bad.append(f"{PATH}: exploratory cell {text_of(n).strip()!r} is not the data's {w!r}")
+    expected = (sum(len(m) for cp in X["arm_minus_budget"].values() for m in cp.values())
+                + len(X["runs"]) * 9 + len(X["spread"]) * 6)
+    if len(seen) != expected:
+        bad.append(f"{PATH}: the exploratory tables show {len(seen)} of the data's {expected} values")
+    return bad
+
+
+
 def check_learning(out: Path, test_set: Path | None = None) -> list[str]:
     """The learning page (learning_page.py; plan §9): (a) no verdict, learning lift, signal or Learning-tab leaders
     block, in the page or its data file, unless the site accepted the results as complete; (b) no evaluation-set
     position (id, board key or board) in the page or its data file. (b) needs the private test set
     (learning_page.TEST_SET) whenever results, a validation or lessons are present: missing or unreadable is a failure,
     not a skip; only the no-results state passes without it. (c) Outside pre-registration-only mode, the results view
-    against its data file (_learning_results: status line, charts and tables, verdict, lessons)."""
+    against its data file (_learning_results: status line, charts and tables, verdict, names, lessons, exploratory)."""
     from learning_page import COMPLETE_ONLY_IDS, COMPLETE_ONLY_KEYS, DATA, PATH, TEST_SET
     test_set = test_set or TEST_SET
     page, data = out / PATH / "index.html", out / DATA

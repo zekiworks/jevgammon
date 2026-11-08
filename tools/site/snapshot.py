@@ -27,8 +27,10 @@
 6. The learning pilot (workspace/learning-pilot/ next to V3_DB, read only): its summary out/learning-pilot.json, every
    finished series' runs/<arm>/sNN/aggregate.json, the lessons arm's runs/lessons/sNN/lessons-gKK.txt and the lesson
    prompt (lessons_system.txt, lessons_user.txt) are copied to STATE_DIR/learning, replacing the last copy (a missing
-   source leaves it empty: the page shows "No results yet"). Its key, a hash of the copied files and of the plan
-   (mailbox/Learning pilot - plan 2026-11-07.md), goes into update.sh's change key, so a finished series rebuilds.
+   source leaves it empty: the page shows "No results yet"); the exploratory file workspace/learning-retest/out/
+   explore.json, when present, goes to STATE_DIR/learning/explore/explore.json. Its key, a hash of the copied files and
+   of the plan (mailbox/Learning pilot - plan 2026-11-07.md), goes into update.sh's change key, so a finished series
+   or a new exploratory file rebuilds.
 7. Prints one line of JSON: decisions extracted, skipped by reason, contexts, a fingerprint that changes whenever
    the league data or the knockout's matches change, and the learning pilot's key ("learning").
 
@@ -92,6 +94,9 @@ LEARNING_FILES = [("out/learning-pilot.json", lambda rel: "learning-pilot.json")
                   ("runs/lessons/s*/lessons-g*.txt", lambda rel: rel),
                   ("lessons_system.txt", lambda rel: rel), ("lessons_user.txt", lambda rel: rel)]
 LEARNING_PLAN = os.path.join("mailbox", "Learning pilot - plan 2026-11-07.md")
+# The exploratory file (Ümit #2950/#2952; workspace/learning-retest/explore.py), relative to the same root, and where it
+# goes under STATE_DIR/learning: copied read-only with the pilot's files, in the same key (a missing file: no block).
+LEARNING_EXPLORE = (os.path.join("workspace", "learning-retest", "out", "explore.json"), "explore/explore.json")
 
 
 def shown_leagues(db, prefix=""):
@@ -325,22 +330,25 @@ def snapshot_knockout(source, state):
 
 
 def snapshot_learning(root, state):
-    """Copies the learning pilot's published inputs (LEARNING_FILES) from ROOT/workspace/learning-pilot to
-    STATE/learning, replacing the last copy whole; returns a hash of the copied files and the plan (first 12 hex)."""
+    """Copies the learning pilot's published inputs (LEARNING_FILES) from ROOT/workspace/learning-pilot, and the
+    exploratory file (LEARNING_EXPLORE) when present, to STATE/learning, replacing the last copy whole; returns a hash
+    of the copied files and the plan (first 12 hex)."""
     source, target = os.path.join(root, LEARNING_SOURCE), os.path.join(state, "learning")
     tmp = target + ".tmp"
     shutil.rmtree(tmp, ignore_errors=True)
     os.makedirs(tmp)
     h = hashlib.sha256()
-    for pattern, dest in LEARNING_FILES:
-        for path in sorted(glob.glob(os.path.join(source, pattern))):
-            rel = dest(os.path.relpath(path, source))
-            os.makedirs(os.path.dirname(os.path.join(tmp, rel)), exist_ok=True)
-            with open(path, "rb") as f:
-                data = f.read()
-            with open(os.path.join(tmp, rel), "wb") as f:
-                f.write(data)
-            h.update(rel.encode() + b"\0" + data)
+    files = [(path, dest(os.path.relpath(path, source))) for pattern, dest in LEARNING_FILES
+             for path in sorted(glob.glob(os.path.join(source, pattern)))]
+    explore = os.path.join(root, LEARNING_EXPLORE[0])
+    files += [(explore, LEARNING_EXPLORE[1])] if os.path.exists(explore) else []
+    for path, rel in files:
+        os.makedirs(os.path.dirname(os.path.join(tmp, rel)), exist_ok=True)
+        with open(path, "rb") as f:
+            data = f.read()
+        with open(os.path.join(tmp, rel), "wb") as f:
+            f.write(data)
+        h.update(rel.encode() + b"\0" + data)
     plan = os.path.join(root, LEARNING_PLAN)
     if os.path.exists(plan):
         with open(plan, "rb") as f:

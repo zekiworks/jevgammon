@@ -499,7 +499,9 @@ def validate(R, src: Path, prompt: dict | None, plan_hashes: list, test_sha: str
     # The summary agreed field by field, so the file's "complete" is the recomputed one: nothing left to note.
     return dict(accepted=True, producer_complete=R["complete"], complete=want["complete"], problems=[],
                 public=public(R["updated_at"], t0, t0_sha, aggs, shas, fin, want, test_sha, prompt_sha),
-                lessons=lessons, budget=budget, private_problems=[])
+                lessons=lessons, budget=budget, private_problems=[],
+                # The validated aggregates themselves, for validate_explore only (never published as they are).
+                t0=t0, aggs={arm: {s: aggs[arm][s] for s in fin[arm]} for arm in ARMS})
 
 
 def game_curve(done: dict) -> dict:
@@ -534,3 +536,161 @@ def public(updated_at, t0, t0_sha, aggs, shas, fin, want, test_sha, prompt_sha) 
     if want["complete"]:
         out.update({k: want[k] for k in ("signal", "learning_lift", "paired_series")})
     return out
+
+
+# --- The exploratory file (Ümit #2950/#2952): workspace/learning-retest/out/explore.json --------------------------
+# Exploratory, after the results; not part of the pre-registered verdict. explore.py derives it from the pilot's
+# aggregates (each arm minus budget, paired by series; the budget and T0 evaluations) and from 5 empty-context retests
+# whose answers are private (only their counts and rates are in the file). Everything that follows from the validated
+# aggregates is recomputed here and must agree; the retests are checked for schema, counts and their spread.
+
+EXPLORE_LABEL = "exploratory, after the results"
+EXPLORE_ARMS, EXPLORE_CPS = ("records", "lessons"), ("T5", "T10")
+EXPLORE_METRICS = ("risks_found", "right_safety", "error_rate", "risk_judgement")
+RUN_METRICS = EXPLORE_METRICS + ("risk_appetite",)
+RUN_COUNTS = ("answered", "valid", "invalid", "failed")
+RETESTS = 5
+SPREAD_GROUPS = ("all", "t0+retests", "budget")
+RUN_NAME = re.compile(r"T0 \(shared, 4 in flight\)|retest r([1-5]) \(4 in flight\)|"
+                      r"budget s(0[1-9]|10) (T5|T10) \(1 in flight\)")
+# Public problem texts of a refused exploratory file: fixed codes only; the details are private (stderr).
+EXPLORE_CODES = {
+    "unreadable": "explore.unreadable: the file is not readable JSON",
+    "schema": "explore.schema: the file does not match its schema",
+    "test-set": "explore.test-set: made with another evaluation set",
+    "pilot": "explore.pilot: the pilot's results are not accepted as complete",
+    "budget-not-empty": "explore.budget-not-empty: the budget arm's context was not empty at every point",
+    "counts": "explore.counts: a run's answers do not add up to 200",
+    "arm-minus-budget": "explore.arm-minus-budget: does not follow from the validated aggregates",
+    "rows": "explore.rows: the T0 or budget rows are not the validated aggregates",
+    "retests": "explore.retests: the retest rows do not match their answer counts",
+    "spread": "explore.spread: does not follow from the rows",
+}
+_SNUM = NUM(None, None)
+EXPLORE_SPEC = DICT(dict(
+    generated_at=ISO, label=("const", EXPLORE_LABEL), note=("str", r"[^<>&]{1,600}"), test_set_sha256=HEX64,
+    arm_minus_budget=DICT({arm: DICT({cp: DICT({m: DICT(dict(mean=_SNUM, ci=LIST(_SNUM, 2), per_series=LIST(_SNUM, N)))
+                                                for m in EXPLORE_METRICS}) for cp in EXPLORE_CPS})
+                           for arm in EXPLORE_ARMS}),
+    empty_context_runs=LIST(DICT(dict(run=("str", RUN_NAME.pattern), kind=("enum", ("t0", "retest", "budget")),
+                                      **{k: INT(0, POSITIONS) for k in RUN_COUNTS},
+                                      **{m: OPT(NUM()) if m == "error_rate" else PCT for m in RUN_METRICS})),
+                            1 + RETESTS + 2 * N),
+    retest_answer_counts=("map", r"[1-5]", INT(0, POSITIONS)),
+    spread=DICT({g: DICT({m: DICT(dict(n=INT(0, 1 + RETESTS + 2 * N), mean=_SNUM, min=_SNUM, max=_SNUM,
+                                       sd=OPT(NUM()))) for m in RUN_METRICS}) for g in SPREAD_GROUPS})))
+
+
+def fmean(xs):
+    return sum(xs) / len(xs)
+
+
+def stdev(xs):
+    m = fmean(xs)
+    return (sum((x - m) ** 2 for x in xs) / (len(xs) - 1)) ** 0.5
+
+
+def explore_refused(codes: list, details: list) -> dict:
+    return dict(accepted=False, problems=[EXPLORE_CODES[c] for c in dict.fromkeys(codes)],
+                private_problems=private_problems(details), public=None)
+
+
+def validate_explore(path: Path, pilot: dict, test_sha: str) -> dict:
+    """The exploratory file against its schema and the validated pilot (pilot: validate()'s accepted result). Refused:
+    public problems are fixed codes (EXPLORE_CODES), details only in private_problems. Accepted: `public`, the
+    projection the page shows."""
+    try:
+        E = json.loads(path.read_text())
+    except (OSError, ValueError):
+        return explore_refused(["unreadable"], [])
+    bad = check(E, EXPLORE_SPEC, "explore")
+    if not bad:
+        bad += [f"explore.arm_minus_budget.{a}.{cp}.{m}: not {N} series or not 2 bounds"
+                for a in EXPLORE_ARMS for cp in EXPLORE_CPS for m in EXPLORE_METRICS
+                if len(E["arm_minus_budget"][a][cp][m]["per_series"]) != N
+                or len(E["arm_minus_budget"][a][cp][m]["ci"]) != 2]
+    if bad:
+        return explore_refused(["schema"], bad)
+    if E["test_set_sha256"] != test_sha:
+        return explore_refused(["test-set"], ["explore.test_set_sha256 is not the evaluation set's"])
+    if not (pilot.get("accepted") and pilot.get("complete")):
+        return explore_refused(["pilot"], [])
+    pub = pilot["public"]
+    if not (pub["budget_points_total"]["budget"] and
+            pub["budget_empty_points"]["budget"] == pub["budget_points_total"]["budget"]):
+        return explore_refused(["budget-not-empty"], [])
+    t0, aggs = pilot["t0"]["metrics"], pilot["aggs"]
+    codes, details = [], []
+
+    def fail(code, detail):
+        codes.append(code)
+        details.append(detail)
+    runs = E["empty_context_runs"]
+    for i, r in enumerate(runs):
+        if not (r["valid"] + r["invalid"] + r["failed"] == r["answered"] == POSITIONS):
+            fail("counts", f"empty_context_runs[{i}]: valid + invalid + failed = answered = {POSITIONS} fails")
+    # Each arm minus budget, recomputed from the validated aggregates (paired by series, pilot.py boot_ci).
+    for a in EXPLORE_ARMS:
+        for cp in EXPLORE_CPS:
+            for m in EXPLORE_METRICS:
+                got = E["arm_minus_budget"][a][cp][m]
+                d = [sub(aggs[a][s]["evaluations"][cp][m], aggs["budget"][s]["evaluations"][cp][m])
+                     for s in range(1, N + 1)]
+                want = dict(mean=mean(d), ci=boot_ci(d, BOOT_SEED), per_series=d)
+                for k in ("per_series", "mean", "ci"):
+                    if not same(got[k], want[k]):
+                        fail("arm-minus-budget", f"arm_minus_budget.{a}.{cp}.{m}.{k} does not follow")
+    # The T0 and budget rows are the validated aggregates; every run name agrees with its kind, once.
+    names = [r["run"] for r in runs]
+    if len(set(names)) != len(names):
+        fail("rows", "a run appears twice")
+    want_rows = {"T0 (shared, 4 in flight)": ("t0", t0)}
+    want_rows |= {f"budget s{s:02d} {cp} (1 in flight)": ("budget", aggs["budget"][s]["evaluations"][cp])
+                  for s in range(1, N + 1) for cp in EXPLORE_CPS}
+    by_name = {r["run"]: r for r in runs}
+    for name, (kind, m) in want_rows.items():
+        r = by_name.get(name)
+        if r is None or r["kind"] != kind or any(not same(r[k], m[k]) for k in RUN_COUNTS + RUN_METRICS):
+            fail("rows", f"row {name!r} missing or not the aggregate's")
+    retests = {}
+    for r in runs:
+        mt = RUN_NAME.fullmatch(r["run"])
+        if r["run"] not in want_rows:
+            if r["kind"] != "retest" or not mt.group(1):
+                fail("rows", f"row {r['run']!r}: not a T0, budget or retest row of its kind")
+            else:
+                retests[mt.group(1)] = r
+        elif r["kind"] != want_rows[r["run"]][0]:
+            fail("rows", f"row {r['run']!r}: kind")
+    counts = E["retest_answer_counts"]
+    for k in map(str, range(1, RETESTS + 1)):
+        full = counts.get(k) == POSITIONS
+        if full != (k in retests):
+            fail("retests", f"retest r{k}: a row {'missing' if full else 'without 200 answers'}")
+    # The spread, from the rows.
+    groups = {"all": runs, "t0+retests": [r for r in runs if r["kind"] in ("t0", "retest")],
+              "budget": [r for r in runs if r["kind"] == "budget"]}
+    for g, rows in groups.items():
+        for m in RUN_METRICS:
+            xs = [r[m] for r in rows if r[m] is not None]
+            want = (dict(n=len(xs), mean=fmean(xs), min=min(xs), max=max(xs), sd=stdev(xs) if len(xs) > 1 else None)
+                    if xs else None)
+            if want is None or not same(E["spread"][g][m], want):
+                fail("spread", f"spread.{g}.{m} does not follow from the rows")
+    if codes:
+        return explore_refused(codes, details)
+    order = {"t0": 0, "retest": 1, "budget": 2}
+
+    def place(r):
+        mt = RUN_NAME.fullmatch(r["run"])
+        return dict(kind=r["kind"], retest=int(mt.group(1)) if mt.group(1) else None,
+                    series=int(mt.group(2)) if mt.group(2) else None, checkpoint=mt.group(3))
+    rows = sorted(runs, key=lambda r: (order[r["kind"]], place(r)["retest"] or 0, place(r)["series"] or 0,
+                                       place(r)["checkpoint"] or ""))
+    public_rows = [place(r) | {k: r[k] for k in RUN_COUNTS + RUN_METRICS} for r in rows]
+    return dict(accepted=True, problems=[], private_problems=[], public=dict(
+        label=EXPLORE_LABEL, generated_at=E["generated_at"],
+        arm_minus_budget={a: {cp: {m: {k: E["arm_minus_budget"][a][cp][m][k] for k in ("mean", "ci")}
+                                   for m in EXPLORE_METRICS} for cp in EXPLORE_CPS} for a in EXPLORE_ARMS},
+        series=N, runs=public_rows, retest_answer_counts={k: counts[k] for k in sorted(counts)},
+        spread=E["spread"]))

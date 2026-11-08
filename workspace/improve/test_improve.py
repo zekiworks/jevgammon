@@ -161,7 +161,8 @@ class Money(Isolated):
 
     def test_run_stops_or_pauses_by_the_binding_limit_and_applies_rule_a(self):
         calls = []
-        saved = (I.check_inputs, I.ensure_runner_db, I.run_empty, I.run_series, I.summary, I.response_ids)
+        saved = (I.check_inputs, I.ensure_runner_db, I.run_empty, I.run_series, I.summary, I.response_ids,
+                 I.bind_plan)
         rich = lambda: dict(balance=500.0, total_credits=600.0, total_usage=100.0, at="t")  # noqa: E731
         poor = lambda: dict(balance=5.50, total_credits=5.5, total_usage=0.0, at="t")  # noqa: E731
 
@@ -171,7 +172,7 @@ class Money(Isolated):
             self.done(key, step)
 
         try:
-            I.check_inputs = I.ensure_runner_db = lambda *a: None
+            I.check_inputs = I.ensure_runner_db = I.bind_plan = lambda *a: None
             I.summary = lambda: None
             I.response_ids = lambda key, step: [("qwen/qwen3.8-flash", "Alibaba")]
             I.run_empty = I.run_series = fake_step
@@ -190,7 +191,8 @@ class Money(Isolated):
             self.assertTrue((I.mdir(other) / "paused.json").exists())
             self.assertEqual(I.run(other, balance_reader=rich), I.STOP)  # rule (a) limit binds
         finally:
-            (I.check_inputs, I.ensure_runner_db, I.run_empty, I.run_series, I.summary, I.response_ids) = saved
+            (I.check_inputs, I.ensure_runner_db, I.run_empty, I.run_series, I.summary, I.response_ids,
+             I.bind_plan) = saved
 
     def test_share_limit_pauses(self):
         rich = lambda: dict(balance=500.0, total_credits=600.0, total_usage=100.0, at="t")  # noqa: E731
@@ -202,6 +204,30 @@ class Money(Isolated):
         self.assertEqual(gate["binding"], "share")
         self.assertAlmostEqual(gate["cap"], 0.20)
 
+    def test_plan_identity_is_stored_and_resume_refuses_a_changed_plan(self):
+        plan = Path(self.tmp.name) / "plan.md"
+        plan.write_text("published plan")
+        saved = (I.PLAN, I.PLAN_SHA256)
+        try:
+            I.PLAN, I.PLAN_SHA256 = plan, I.sha256_file(plan)
+            I.SMOKE.mkdir(parents=True)
+            bound = I.bind_plan(KEY)
+            self.assertEqual(bound, I.PLAN_SHA256)
+            db = sqlite3.connect(I.db_path(KEY))
+            self.assertEqual(db.execute("SELECT value FROM improve_identity").fetchone()[0], bound)
+            db.close()
+            self.assertEqual(I.bind_plan(KEY), bound)  # resume with the same plan
+            plan.write_text("edited plan")
+            with self.assertRaises(SystemExit):
+                I.bind_plan(KEY)  # resume refused
+            self.assertEqual(I.bound_plan([KEY]), bound)  # summaries keep the stored identity
+            self.assertEqual(I.summary()["protocol"]["plan_sha256"], bound)
+            # A model that has not started cannot start under a plan that is not the published one.
+            with self.assertRaises(SystemExit):
+                I.bind_plan("glm-5.3-on")
+        finally:
+            I.PLAN, I.PLAN_SHA256 = saved
+
     def test_route_check(self):
         self.assertIsNone(I.route_check("deepseek-v4.1-flash-on", [("deepseek/deepseek-v4.1-flash", "Fireworks")]))
         self.assertIn("route check", I.route_check("deepseek-v4.1-flash-on",
@@ -209,6 +235,28 @@ class Money(Isolated):
         self.assertIn("route check", I.route_check("deepseek-v4.1-flash-on",
                                                    [("deepseek/deepseek-v4.1-flash", "Alibaba")]))
         self.assertIsNone(I.route_check("claude-opus-5.5-on", [("x", "y")]))  # not billed: no check
+        self.assertIn("fails closed", I.route_check("deepseek-v4.1-flash-on", []))  # no evidence
+        self.assertIn("route check", I.route_check("deepseek-v4.1-flash-on", [(None, None)]))
+
+    def test_billed_players_carry_the_route_guard(self):
+        p = I.player_config("deepseek-v4.1-flash-on", "n", 1)
+        self.assertEqual(p["expect_route"]["models"][0], "deepseek/deepseek-v4.1-flash")
+        self.assertEqual(p["expect_route"]["provider"], "Fireworks")
+        self.assertTrue(p["expect_route"]["reject_log"].endswith("route-rejections.jsonl"))
+        self.assertNotIn("expect_route", I.player_config("claude-opus-5.5-on", "n", 1))
+
+    def test_a_rejected_route_stops_before_any_step(self):
+        I.write_atomic(I.mdir(KEY) / "route-rejections.jsonl", '{"reason": "wrong model"}\n')
+        saved = (I.check_inputs, I.ensure_runner_db, I.bind_plan, I.summary, I.run_empty)
+        try:
+            I.check_inputs = I.ensure_runner_db = I.bind_plan = lambda *a: None
+            I.summary = lambda: None
+            I.run_empty = lambda *a: self.fail("a step ran after a route rejection")
+            rich = lambda: dict(balance=500.0, total_credits=600.0, total_usage=100.0, at="t")  # noqa: E731
+            self.assertEqual(I.run(KEY, balance_reader=rich), I.STOP)
+            self.assertIn("wrong model", json.loads((I.mdir(KEY) / "stopped.json").read_text())["reason"])
+        finally:
+            (I.check_inputs, I.ensure_runner_db, I.bind_plan, I.summary, I.run_empty) = saved
 
 
 class Metrics(unittest.TestCase):

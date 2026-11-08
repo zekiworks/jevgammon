@@ -228,6 +228,11 @@ def player_config(key, name, parallel, note_file=None, ledger=None, base_url=Non
         cin, ccached, cout = m["price"]
         p["budget"] = dict(ledger=str(ledger["path"]), cap_usd=round(ledger["cap"], 6), input_per_mtok=cin,
                            cached_input_per_mtok=ccached, output_per_mtok=cout)
+    if m.get("expect") and not DRY:
+        # Every response is checked by the runner before it is used (llm::route_identity); a failure stops the
+        # player's requests and is logged with its raw response here.
+        p["expect_route"] = dict(models=m["expect"]["models"], provider=m["expect"]["provider"],
+                                 reject_log=str(mdir(key) / "route-rejections.jsonl"))
     return p
 
 
@@ -586,6 +591,9 @@ def run_test(key, step, name, note, workdir, ledger=None, rounds=30):
                              **({"prompt_note": note} if note else {}))])
     path = workdir / f"test-{step}.json"
     path.write_text(json.dumps(cfg, indent=1))
+    route = answer_error(key, name, "ROUTE CHECK") if db_path(key).exists() else None
+    if route:  # never re-ask a test whose replies failed the route check
+        raise Stop(f"{step}: {route[:600]}")
     load_before = vllm_load(key)
     started = time.time()
     for k in range(rounds):
@@ -594,7 +602,10 @@ def run_test(key, step, name, note, workdir, ledger=None, rounds=30):
         with open(workdir / f"test-{step}.log", "a") as f:
             f.write(f"--- {now()} round {k + 1}\n{r.stdout}{r.stderr}")
         m = test_metrics(key, name)
-        budget = budget_errors(key, name)
+        route = answer_error(key, name, "ROUTE CHECK")
+        if route:
+            raise Stop(f"{step}: {route[:600]}")
+        budget = answer_error(key, name, "BUDGET CAP")
         if budget:
             raise BudgetRefused(budget)
         if r.returncode != 0 and m["answered"] == 0:
@@ -611,11 +622,12 @@ class BudgetRefused(Exception):
     """The step ledger refused a request (its cap): stop or pause, by the binding limit."""
 
 
-def budget_errors(key, name):
+def answer_error(key, name, marker):
+    """The first stored test error of `name` carrying `marker` (BUDGET CAP, ROUTE CHECK), or None."""
     db = sqlite3.connect(f"file:{db_path(key)}?mode=ro", uri=True, timeout=60)
     try:
-        row = db.execute("SELECT error FROM answers WHERE setup = ? AND error LIKE '%BUDGET CAP%' LIMIT 1",
-                         (name,)).fetchone()
+        row = db.execute("SELECT error FROM answers WHERE setup = ? AND error LIKE ? LIMIT 1",
+                         (name, f"%{marker}%")).fetchone()
     except sqlite3.OperationalError:
         row = None
     db.close()
@@ -753,6 +765,8 @@ def run_series(key, step, gate):
         if r.returncode != 0:
             (d / "failed").write_text(r.stderr[-2000:])
             log(key, "series_failed", step=step, attempt=attempt, stderr=r.stderr[-1000:])
+            if "ROUTE CHECK" in r.stderr:
+                raise Stop(f"{step}: {r.stderr[-600:]}")
             if "BUDGET CAP" in r.stderr:
                 raise BudgetRefused(r.stderr[-500:])
             raise RuntimeError(f"{key} {step}: match failed: {r.stderr[-800:]}")
@@ -831,6 +845,8 @@ def write_lessons(key, step, g, record):
             if r.returncode == 0:
                 break
             log(key, "lesson_call_failed", step=step, game=g, attempt=k + 1, stderr=r.stderr[-500:])
+            if "ROUTE CHECK" in r.stderr:
+                raise SystemExit(f"ROUTE CHECK: lesson call rejected: {r.stderr[-600:]}")
             if "BUDGET CAP" in r.stderr:
                 raise SystemExit(f"BUDGET CAP: lesson call refused: {r.stderr[-300:]}")
             time.sleep(min(600, 30 * (k + 1)))
@@ -914,6 +930,8 @@ def route_check(key, ids):
     exp = MODELS[key].get("expect")
     if not exp:
         return None
+    if not ids:
+        return "route check: no response identity found for the step (fails closed)"
     bad = sorted({(m, p) for m, p in ids if m not in exp["models"] or p != exp["provider"]}, key=str)
     if bad:
         return f"route check: responses named {bad[:5]}, expected model in {exp['models']} on {exp['provider']}"
@@ -921,6 +939,34 @@ def route_check(key, ids):
 
 
 # --- Run -------------------------------------------------------------------------------------------------------
+
+def plan_identity(key):
+    """The plan hash stored for a model before its first call (None before)."""
+    f = mdir(key) / "plan.json"
+    return json.loads(f.read_text())["plan_sha256"] if f.exists() else None
+
+
+def bind_plan(key):
+    """Before a model's first call, store the published plan's hash in its run directory and database; on every
+    start and resume, the current plan file must still have that hash (else the run is refused)."""
+    current = sha256_file(PLAN)
+    stored = plan_identity(key)
+    if stored is None:
+        if current != PLAN_SHA256:
+            raise SystemExit(f"{PLAN} ({current}) is not the published pre-registration {PLAN_SHA256}")
+        write_atomic(mdir(key) / "plan.json", json.dumps(dict(plan_sha256=current, bound_at=now()), indent=1))
+        db = sqlite3.connect(db_path(key), timeout=60)
+        db.execute("CREATE TABLE IF NOT EXISTS improve_identity (key TEXT PRIMARY KEY, value TEXT NOT NULL)")
+        db.execute("INSERT OR REPLACE INTO improve_identity VALUES ('plan_sha256', ?)", (current,))
+        db.commit()
+        db.close()
+        log(key, "plan_bound", plan_sha256=current)
+        return current
+    if current != stored:
+        raise SystemExit(f"{key}: the plan file now hashes {current}, but this model's run is bound to {stored}: "
+                         f"resume refused")
+    return stored
+
 
 def check_inputs():
     if sha256_file(PLAN) != PLAN_SHA256:
@@ -945,14 +991,19 @@ def run(key, until=None, balance_reader=openrouter_balance):
         raise SystemExit(f"{key}: another run holds the lock") from None
     if (mdir(key) / "stopped.json").exists():
         print(f"{key}: stopped: {json.loads((mdir(key) / 'stopped.json').read_text())['reason']}")
+        lock.close()
         return STOP
     (mdir(key) / "paused.json").unlink(missing_ok=True)
     ensure_runner_db(key)
+    bind_plan(key)
     if m["lane"] == "local" and not DRY:
         fit_check(key)
     billed_model = m.get("billed") and not DRY
     try:
         while (step := next_step(key)) is not None:
+            rejected = mdir(key) / "route-rejections.jsonl"
+            if rejected.exists() and rejected.stat().st_size:
+                raise Stop(f"route check: {rejected.read_text().splitlines()[0][:600]}")
             gate = money_gate(key, step, balance_reader) if billed_model else None
             log(key, "step_start", step=step, gate=gate)
             try:
@@ -991,6 +1042,7 @@ def run(key, until=None, balance_reader=openrouter_balance):
         return PAUSE
     finally:
         summary()
+        lock.close()
 
 
 # --- Summary (the page's data; plan §6, contract in tools/site/improve_validate.py) ----------------------------
@@ -1054,11 +1106,20 @@ TEST_KEYS = ("answered", "expected", "valid", "invalid", "failed", "risk_pays", 
              "right_safety", "error_rate", "answer_rate", "in_flight_max", "wall_seconds")
 
 
+def bound_plan(keys):
+    """The plan identity the results are bound to: the hash stored per model before its first call (never the
+    current file's); the harness's own bound hash while no model has started."""
+    stored = {plan_identity(k) for k in keys} - {None}
+    if len(stored) > 1:
+        raise SystemExit(f"models are bound to different plans: {sorted(stored)}")
+    return stored.pop() if stored else PLAN_SHA256
+
+
 def summary():
     keys = [k for k in MODELS if mdir(k).exists() and any(step_done(k, s) for s in STEPS)
             or (mdir(k) / "stopped.json").exists() or (mdir(k) / "paused.json").exists()]
     out = dict(updated_at=now(),
-               protocol=dict(plan_sha256=sha256_file(PLAN), lesson_prompt_sha256=lesson_prompt_sha256(),
+               protocol=dict(plan_sha256=bound_plan(keys), lesson_prompt_sha256=lesson_prompt_sha256(),
                              test_set_sha256=sha256_file(TEST_SET), series_per_model=SERIES,
                              games_per_series=GAMES, empty_runs=EMPTY_RUNS, test_positions=POSITIONS, steps=STEPS,
                              floor_points=FLOOR_POINTS, safety_drop_points=SAFETY_DROP, dry_run=DRY),

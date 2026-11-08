@@ -95,6 +95,38 @@ pub struct Options {
     pub pacer: Option<Arc<super::Pacer>>,
     /// Hard spending cap (OpenAI-compatible servers): every attempt reserves its worst case.
     pub budget: Option<Arc<crate::budget::Ledger>>,
+    /// "Did they improve?": the model and provider every response must name (OpenRouter's
+    /// `model` and `provider` fields); `None` = no check.
+    pub expect_route: Option<ExpectRoute>,
+}
+
+/// "Did they improve?" route identity: the response's `model` must be one of `models` and its
+/// `provider` must be `provider`; a failing reply is appended to `reject_log` (JSON lines).
+#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct ExpectRoute {
+    pub models: Vec<String>,
+    pub provider: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reject_log: Option<std::path::PathBuf>,
+}
+
+/// Whether a raw response names the expected model and provider. Missing or unreadable
+/// identity fails closed.
+pub fn route_identity(raw: &str, expect: &ExpectRoute) -> std::result::Result<(), String> {
+    let value: Value =
+        serde_json::from_str(raw).map_err(|_| "the response is not JSON: no identity".to_owned())?;
+    let model = value.get("model").and_then(Value::as_str);
+    let provider = value.get("provider").and_then(Value::as_str);
+    match (model, provider) {
+        (Some(m), Some(p)) if expect.models.iter().any(|x| x == m) && p == expect.provider => Ok(()),
+        (Some(m), Some(p)) => Err(format!(
+            "the response names model {m:?} on {p:?}, expected one of {:?} on {:?}",
+            expect.models, expect.provider
+        )),
+        _ => Err(format!(
+            "the response lacks its identity (model {model:?}, provider {provider:?})"
+        )),
+    }
 }
 
 enum Kind {
@@ -121,6 +153,8 @@ pub struct LlmClient {
     /// Set when the server answered a logprobs request without logprobs; later decisions
     /// skip that request and use the constrained letter.
     no_logprobs: AtomicBool,
+    /// Set when a response failed the route check: no further request is sent.
+    route_rejected: AtomicBool,
 }
 
 #[derive(Debug, Default, PartialEq)]
@@ -493,6 +527,7 @@ impl LlmClient {
             session_id: uuid::Uuid::new_v4().to_string(),
             options,
             no_logprobs: AtomicBool::new(false),
+            route_rejected: AtomicBool::new(false),
         }
     }
 
@@ -763,6 +798,12 @@ impl LlmClient {
         retry: &http::RetryTime,
         decision: &mut Decision,
     ) -> Result<Completion> {
+        if self.route_rejected.load(Ordering::SeqCst) {
+            return Err(anyhow!(
+                "ROUTE CHECK: an earlier response of {} failed the route check; no further request is sent",
+                self.model
+            ));
+        }
         let body = merged(body.clone(), self.options.request.as_ref());
         if let Some(pacer) = &self.options.pacer {
             // Not thinking time: logged with the retries, off the clock.
@@ -783,6 +824,44 @@ impl LlmClient {
                     .context(format!("{} request failed", self.model)));
             }
         };
+        // Before the reply is used or another request is sent: the response must name the
+        // pre-registered model and provider. Its cost is already booked (`send`); the raw reply
+        // is kept in the rejection log and the error.
+        if let Some(expect) = &self.options.expect_route {
+            if let Err(reason) = route_identity(&raw, expect) {
+                self.route_rejected.store(true, Ordering::SeqCst);
+                if let Some(log) = &expect.reject_log {
+                    let line = json!({
+                        "at": chrono::Utc::now().to_rfc3339(),
+                        "reason": reason,
+                        "request": body,
+                        "response": raw,
+                        "reported_cost_usd": completion.cost,
+                        "input_tokens": completion.input_tokens,
+                        "output_tokens": completion.output_tokens,
+                    });
+                    use std::io::Write as _;
+                    let written = std::fs::OpenOptions::new()
+                        .create(true)
+                        .append(true)
+                        .open(log)
+                        .and_then(|mut f| writeln!(f, "{line}"));
+                    if let Err(error) = written {
+                        eprintln!("route check: rejection log {}: {error}", log.display());
+                    }
+                }
+                let shown: String = raw.chars().take(1500).collect();
+                return Err(anyhow!("ROUTE CHECK: {reason}; response: {shown}"));
+            }
+            // A request already in flight when another reply failed the check: answered (and
+            // booked), but its reply is not used either.
+            if self.route_rejected.load(Ordering::SeqCst) {
+                return Err(anyhow!(
+                    "ROUTE CHECK: a reply of {} arrived after another failed the route check; not used",
+                    self.model
+                ));
+            }
+        }
         decision.input_tokens += completion.input_tokens;
         decision.output_tokens += completion.output_tokens;
         if let Some(reasoning) = completion.reasoning_tokens {
@@ -1647,6 +1726,7 @@ mod tests {
                 prompt_note_file: None,
                 pacer: None,
                 budget: None,
+                expect_route: None,
             },
         );
         let body = client.constrained_body("the position", 3);
@@ -1719,6 +1799,7 @@ mod tests {
             prompt_note_file: None,
             pacer: None,
             budget: None,
+            expect_route: None,
         };
         let routes = [
             (Route::OpenAiSubscription, Some("high"), "/text/format"),
@@ -1848,6 +1929,7 @@ mod tests {
             prompt_note_file: None,
             pacer: None,
             budget: None,
+            expect_route: None,
         };
         let sent = as_sent(
             constrained_request(
@@ -1891,6 +1973,7 @@ mod tests {
             prompt_note_file: None,
             pacer: None,
             budget: None,
+            expect_route: None,
         };
         let cases: [(Route, Option<&str>, Option<u32>, &[&str]); 7] = [
             (Route::OpenAiSubscription, Some("high"), None, &["/text"]),
@@ -1929,5 +2012,111 @@ mod tests {
         let o = options(Some("high"), None);
         assert!(free_text_request(Route::OpenAiSubscription, "m", &o, "S", "U").get("max_output_tokens").is_none());
         assert_eq!(free_text_request(Route::AnthropicSubscription, "m", &o, "S", "U")["max_tokens"], 32000);
+    }
+
+    /// A local server answering every request with `body` (status 200); counts the requests.
+    fn serve_json(body: &'static str) -> (String, Arc<std::sync::atomic::AtomicUsize>) {
+        use std::io::{Read as _, Write as _};
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let url = format!("http://{}/v1", listener.local_addr().unwrap());
+        let count = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let seen = count.clone();
+        std::thread::spawn(move || {
+            for stream in listener.incoming() {
+                let mut stream = stream.unwrap();
+                let mut buffer = [0u8; 65536];
+                let _ = stream.read(&mut buffer);
+                seen.fetch_add(1, Ordering::SeqCst);
+                let _ = write!(
+                    stream,
+                    "HTTP/1.1 200 OK\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{body}",
+                    body.len()
+                );
+            }
+        });
+        (url, count)
+    }
+
+    fn guarded(url: String, reject_log: std::path::PathBuf) -> LlmClient {
+        LlmClient::openai_compatible(
+            reqwest::Client::new(),
+            "deepseek/deepseek-v4.1-flash".into(),
+            url,
+            None,
+            Options {
+                reasoning: Some("low".into()),
+                request: None,
+                max_tokens: None,
+                top_logprobs: None,
+                readout: Readout::Answer,
+                answer_prefix: None,
+                prompt_note: None,
+                prompt_note_file: None,
+                pacer: None,
+                budget: None,
+                expect_route: Some(ExpectRoute {
+                    models: vec!["deepseek/deepseek-v4.1-flash".into()],
+                    provider: "Fireworks".into(),
+                    reject_log: Some(reject_log),
+                }),
+            },
+        )
+    }
+
+    const RIGHT: &str = r#"{"model":"deepseek/deepseek-v4.1-flash","provider":"Fireworks","choices":[{"message":{"content":"- keep it simple"},"finish_reason":"stop"}],"usage":{"prompt_tokens":10,"completion_tokens":5,"cost":0.001}}"#;
+    const WRONG: &str = r#"{"model":"deepseek/deepseek-v4.1-flash-1017","provider":"Fireworks","choices":[{"message":{"content":"- keep it simple"},"finish_reason":"stop"}],"usage":{"prompt_tokens":10,"completion_tokens":5,"cost":0.001}}"#;
+    const ANONYMOUS: &str = r#"{"choices":[{"message":{"content":"- keep it simple"},"finish_reason":"stop"}],"usage":{"prompt_tokens":10,"completion_tokens":5}}"#;
+
+    #[test]
+    fn route_identity_fails_closed() {
+        let expect = ExpectRoute {
+            models: vec!["deepseek/deepseek-v4.1-flash".into(), "deepseek/deepseek-v4.1-flash-20260910".into()],
+            provider: "Fireworks".into(),
+            reject_log: None,
+        };
+        assert!(route_identity(RIGHT, &expect).is_ok());
+        assert!(route_identity(WRONG, &expect).unwrap_err().contains("1017"));
+        assert!(route_identity(&RIGHT.replace("Fireworks", "Alibaba"), &expect).is_err());
+        assert!(route_identity(ANONYMOUS, &expect).unwrap_err().contains("lacks its identity"));
+        assert!(route_identity("data: not json", &expect).is_err());
+        assert!(route_identity("", &expect).is_err());
+    }
+
+    /// "Did they improve?" (Zeki #3179): a reply naming the wrong model is rejected before its
+    /// text is used, logged with its raw response and cost, and no further request is sent.
+    #[tokio::test]
+    async fn a_wrong_route_stops_before_the_reply_is_used_and_nothing_more_is_sent() {
+        let dir = std::env::temp_dir().join(format!("route-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let retry = http::RetryTime::default();
+        // The first response names the 1017 checkpoint: rejected, nothing returned.
+        let (url, count) = serve_json(WRONG);
+        let client = guarded(url, dir.join("reject.jsonl"));
+        let mut decision = Decision::default();
+        let error = client.free_text("S", "U", &retry, &mut decision).await.unwrap_err();
+        assert!(format!("{error:#}").contains("ROUTE CHECK"), "{error:#}");
+        assert!(decision.exchanges.is_empty(), "the rejected reply is not used");
+        assert_eq!(count.load(Ordering::SeqCst), 1);
+        let log = std::fs::read_to_string(dir.join("reject.jsonl")).unwrap();
+        let line: Value = serde_json::from_str(log.lines().next().unwrap()).unwrap();
+        assert!(line["response"].as_str().unwrap().contains("1017"));
+        assert_eq!(line["reported_cost_usd"], 0.001);
+        // No further dispatch from this player.
+        let error = client.free_text("S", "U", &retry, &mut decision).await.unwrap_err();
+        assert!(format!("{error:#}").contains("no further request"));
+        assert_eq!(count.load(Ordering::SeqCst), 1);
+        // A response without identity fails closed too.
+        let (url, count) = serve_json(ANONYMOUS);
+        let client = guarded(url, dir.join("reject2.jsonl"));
+        assert!(client.free_text("S", "U", &retry, &mut Decision::default()).await.is_err());
+        assert_eq!(count.load(Ordering::SeqCst), 1);
+        // The right identity passes and its text is used.
+        let (url, _) = serve_json(RIGHT);
+        let client = guarded(url, dir.join("reject3.jsonl"));
+        let mut decision = Decision::default();
+        let (text, _) = client.free_text("S", "U", &retry, &mut decision).await.unwrap();
+        assert_eq!(text, "- keep it simple");
+        assert_eq!(decision.exchanges.len(), 1);
+        assert!(!dir.join("reject3.jsonl").exists());
     }
 }

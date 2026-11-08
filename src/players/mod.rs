@@ -204,6 +204,10 @@ pub struct PlayerConfig {
     /// Hard spending cap with a shared ledger (OpenAI-compatible servers only).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub budget: Option<crate::budget::BudgetConfig>,
+    /// "Did they improve?": the model and provider every response must name; a response that
+    /// does not is rejected before it is used and no further request is sent.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub expect_route: Option<llm::ExpectRoute>,
 }
 
 impl PlayerConfig {
@@ -359,6 +363,7 @@ pub fn render_stage_b(config: &PlayerConfig, req: &DecisionRequest<'_>, shown: &
         prompt_note_file: config.prompt_note_file.clone(),
         pacer: None,
         budget: None,
+        expect_route: None,
     };
     let play_user = prompt::letter_user(req, shown);
     let prediction_user = prompt::prediction_user(req, shown);
@@ -462,6 +467,7 @@ impl Player {
                 Some(_) => bail!("{}: a budget needs an openai-compatible spec", config.name),
                 None => None,
             },
+            expect_route: config.expect_route.clone(),
         };
         let player = |backend| Player {
             spec: spec.to_owned(),

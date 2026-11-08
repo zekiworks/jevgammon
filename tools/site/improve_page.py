@@ -145,7 +145,7 @@ def pilot_row(md: str) -> dict:
         raise SystemExit("the plan's Gemma pilot row has no numbers")
     f = [float(x.replace("−", "-")) for x in m.groups()]
     verdict = re.search(r"\*\*(not met|met)\*\*", text)
-    setup = re.search(r"\n?(Gemma [^,]*?\(off\))", text)
+    setup = re.search(r"\*\*\s+([^,*]+?\([a-z]+\))", text)  # the setup named right after the bold label
     return dict(markdown=text, setup=setup.group(1) if setup else "Gemma 4 31B (off)",
                 risks_found=f[0:3], right_safety=f[3:6], error_rate=f[6:8],
                 own_verdict=verdict.group(1) if verdict else None)

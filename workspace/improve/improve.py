@@ -116,7 +116,7 @@ MODELS = {
     "claude-opus-5.5-on": dict(setup="Claude Opus 5.5 (on)", lane="subscription", quota_pause=True,
                                expect=dict(models=["claude-opus-5-5"])),
     "gemini-4-argon-on": dict(setup="Gemini 4 Argon (on)", lane="subscription",
-                              expect=dict(models=["gemini-4-argon-d"], model_pointer="/response/modelVersion")),
+                              expect=dict(models=["gemini-4-argon", "gemini-4-argon-d"], model_pointer="/response/modelVersion")),
     "grok-4.7-on": dict(setup="Grok 4.7 (on)", lane="subscription", expect=dict(models=["grok-4.7"])),
     "claude-fable-5.1-on": dict(setup="Claude Fable 5.1 (on)", lane="subscription", quota_pause=True,
                                 expect=dict(models=["claude-fable-5-1"])),

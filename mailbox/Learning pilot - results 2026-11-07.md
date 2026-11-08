@@ -13,7 +13,7 @@ The plan for this run is `mailbox/Learning pilot - plan 2026-11-07.md` (sha256 `
 
 ## Verdict
 
-**No arm meets the pre-registered signal rule (plan §8).** The rule requires two things, each averaged over the arm's 10 series:
+**No arm reached the pre-registered signal threshold (plan §8).** The rule requires two things, each averaged over the arm's 10 series:
 - risks found after game 10 minus before game 1 is at least +10 points;
 - right safety after game 10 minus before game 1 is at least −5 points.
 
@@ -25,9 +25,9 @@ The plan for this run is `mailbox/Learning pilot - plan 2026-11-07.md` (sha256 `
 
 Right safety held up in every arm.
 
-**A17 learning lift: no arm improved in its games more than control did.** The lift is the error rate in games 1–3 minus games 8–10, compared with control's lift and paired by series. All three arms come out at −2.0 to −3.9 PR relative to control. For records and lessons the intervals include zero.
+**A17 learning lift: all observed game-lift differences are below control.** The lift is the error rate in games 1–3 minus games 8–10, compared with control's lift and paired by series. All three arms come out at −2.0 to −3.9 PR relative to control. For records and lessons the intervals include zero. This is not a finding of "no effect"; it is what was observed in this pilot.
 
-The budget arm's interval does not include zero, but that comparison is A/A: budget and control saw the same input (caveat 2). That interval therefore reflects variation from repeated identical runs, not an effect, and these intervals should be read as narrower than the true uncertainty.
+The budget arm's interval does not include zero, although budget and control had the same memory policy (an empty context) and the same dice seeds (caveat 2). The source of this unexpected difference and the calibration of the intervals were not determined in this pilot.
 
 ## Evaluation set (200 positions: 100 Risk wins, 100 Safety wins), by arm and checkpoint
 
@@ -74,15 +74,15 @@ How to read the table:
 | lessons | −3.37 [−7.88, 1.52] | −3.85 [−11.09, 3.93] |
 | budget | −2.57 [−9.09, 3.11] | −3.05 [−4.92, −1.18] |
 
-Secondary comparison (records vs lessons vs budget, descriptive): on the evaluation set, lessons moved most from T0. Its error rate fell 9.2 PR and risks found rose 8.3 pp at T10. Records and budget moved about a third as much. In the games, no arm's error rate fell from early games to late ones by more than control's did.
+Secondary comparison (records vs lessons vs budget, descriptive): on the evaluation set, lessons moved most from T0. Its error rate fell 9.2 PR and risks found rose 8.3 pp at T10. Records and budget moved about a third as much. How much of each change comes from the batch change between T0 and the later evaluations was not measured (caveat 2). In the games, every observed lift difference against control is below zero.
 
 ## Caveats
 
 1. **Small and narrow.** There are 10 series per arm, one model (Gemma 4 31B with reasoning off), one opponent (GNU Backgammon Beginner) and a single run. All numbers here are descriptive and outside the Holm correction.
-2. **The budget arm never received records.** Its context was empty at all 100 of 100 points, because no whole game record ever fit within the lessons arm's token count. The plan's fixed reading (§11) applies: **"with this budget, record memory could not be provided"**, not "record memory didn't help". That makes budget an A/A comparison in two ways:
-   - **In the games**, budget and control received the same input. Their differences come only from server-side numerical non-determinism: requests are batched differently, and the model runs fp8 on vLLM. The interval on budget's lift minus control's lift excludes zero all the same (−3.05 [−4.92, −1.18]). These series-bootstrap intervals therefore understate the true uncertainty.
-   - **In the evaluations**, budget's T5 and T10 requests are identical to the T0 requests. Its change from T0 (+2.8 pp risks found, +0.8 pp right safety, −0.9 PR) therefore measures how much repeated runs of the same prompts differ from the single shared T0 run. T0 ran with 4 requests in flight, the later evaluations with 1. Part of every arm's change from T0 is this shift. Taken against budget rather than against T0, lessons is about +5.5 pp risks found and records about +0.5 pp. This comparison was not pre-registered and is descriptive only.
-3. **T0 is one run.** The signal rule compares each arm's T10 mean, taken over 10 series, with a single shared T0 run. The bootstrap over series does not include T0's own measurement error.
+2. **The budget arm never received records.** Its context was empty at all 100 of 100 points, because no whole game record ever fit within the lessons arm's token count. The plan's fixed reading (§11) applies: **"with this budget, record memory could not be provided"**, not "record memory didn't help". So in the games budget had the same memory policy as control, and in the evaluations it repeated the T0 prompts:
+   - **In the games**, budget and control had the same memory policy (an empty context) and the same dice seeds. That does not make their realized game prompts the same: once a play differs, the games diverge. The interval on budget's lift minus control's lift excludes zero (−3.05 [−4.92, −1.18]). One hypothesis is server-side numerical non-determinism (requests batched differently, fp8 on vLLM) starting the divergence; it was not tested, and no controlled decomposition was done. The source of this unexpected difference and the calibration of the intervals were not determined in this pilot.
+   - **In the evaluations**, budget's T5 and T10 requests are identical to the T0 requests. Its change from T0 (+2.8 pp risks found, +0.8 pp right safety, −0.9 PR) is therefore the difference between repeated runs of the same prompts and the single shared T0 run. T0 ran with 4 requests in flight, the later evaluations with 1; how much this batch change contributes to each arm's difference from T0 was not measured. **Exploratory, not pre-registered:** taken against budget rather than against T0, lessons is about +5.5 pp risks found and records about +0.5 pp.
+3. **T0 is one run.** The signal rule compares each arm's T10 mean, taken over 10 series, with a single shared T0 run. T0's own uncertainty is not in the bootstrap, so the T10 − T0 intervals are conditional on the one observed T0. This applies to the signal-rule intervals only; the game-lift intervals do not use T0.
 4. **Records arm.** The context limit (26,879 tokens) was hit 40 times, and each time the oldest whole game was dropped. After game 10, between 1 and 4 earlier games were left out per series (23 in total: 2, 2, 1, 3, 1, 1, 3, 3, 3, 4). Records decisions carried about 23k input tokens on average, against about 4.4k for control.
 5. **Smoke incident.** At the first smoke start, the systemd unit's Python had no `tokenizers` module.
    - The hook that runs after each game crashed after game 1 of records s1 and lessons s1.

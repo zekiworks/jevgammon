@@ -343,6 +343,7 @@ impl DecisionClient {
                 }
             },
             retry,
+            None,
         )
         .await
         .map_err(|e| {

@@ -906,7 +906,7 @@ impl LlmClient {
                         }
                         builder
                     };
-                    match http::send(request, retry).await {
+                    match http::send(request, retry, Some(&self.route_rejected)).await {
                         Err(CallError::Auth(_)) if !refreshed => {
                             token = creds.refresh_after_rejection(&token.access).await?;
                             refreshed = true;
@@ -930,7 +930,7 @@ impl LlmClient {
                             .header("anthropic-beta", "claude-code-20250219,oauth-2025-04-20")
                             .json(body)
                     };
-                    match http::send(request, retry).await {
+                    match http::send(request, retry, Some(&self.route_rejected)).await {
                         Err(CallError::Auth(_)) if !refreshed => {
                             token = creds.refresh_after_rejection(&token.access).await?;
                             refreshed = true;
@@ -953,7 +953,7 @@ impl LlmClient {
                             .bearer_auth(&token.access)
                             .json(body)
                     };
-                    match http::send(request, retry).await {
+                    match http::send(request, retry, Some(&self.route_rejected)).await {
                         Err(CallError::Auth(_)) if !refreshed => {
                             token = creds.refresh_after_rejection(&token.access).await?;
                             refreshed = true;
@@ -976,6 +976,7 @@ impl LlmClient {
                             .json(body)
                     },
                     retry,
+                    Some(&self.route_rejected),
                 )
                 .await?;
                 let completion = parse_gemini(&raw)?;
@@ -1000,7 +1001,7 @@ impl LlmClient {
                             .header("User-Agent", ANTIGRAVITY_USER_AGENT)
                             .json(&envelope)
                     };
-                    match http::send(request, retry).await {
+                    match http::send(request, retry, Some(&self.route_rejected)).await {
                         Err(CallError::Auth(_)) if !refreshed => {
                             token = creds.refresh_after_rejection(&token.access).await?;
                             refreshed = true;
@@ -1027,7 +1028,7 @@ impl LlmClient {
                     }
                 };
                 let Some(ledger) = &self.options.budget else {
-                    let raw = http::send(make, retry).await?;
+                    let raw = http::send(make, retry, Some(&self.route_rejected)).await?;
                     let completion = parse_chat_completion(&raw)?;
                     return Ok((raw, completion));
                 };
@@ -1036,7 +1037,7 @@ impl LlmClient {
                     .and_then(Value::as_u64)
                     .unwrap_or(32768);
                 let worst = ledger.worst_case(body.to_string().len(), max_output);
-                let (raw, hold) = http::send_metered(make, retry, ledger, worst).await?;
+                let (raw, hold) = http::send_metered(make, retry, ledger, worst, Some(&self.route_rejected)).await?;
                 match parse_chat_completion(&raw) {
                     Ok(completion) => {
                         hold.settle(
@@ -2119,4 +2120,58 @@ mod tests {
         assert_eq!(decision.exchanges.len(), 1);
         assert!(!dir.join("reject3.jsonl").exists());
     }
+
+    /// A server answering request k with `replies[k]` (status, body; the last repeats).
+    fn serve_seq(replies: Vec<(u16, &'static str)>) -> (String, Arc<std::sync::atomic::AtomicUsize>) {
+        use std::io::{Read as _, Write as _};
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let url = format!("http://{}/v1", listener.local_addr().unwrap());
+        let count = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let seen = count.clone();
+        std::thread::spawn(move || {
+            for stream in listener.incoming() {
+                let mut stream = stream.unwrap();
+                let mut buffer = [0u8; 65536];
+                let _ = stream.read(&mut buffer);
+                let k = seen.fetch_add(1, Ordering::SeqCst);
+                let (status, body) = replies[k.min(replies.len() - 1)];
+                let _ = write!(
+                    stream,
+                    "HTTP/1.1 {status} X\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{body}",
+                    body.len()
+                );
+            }
+        });
+        (url, count)
+    }
+
+    /// Zeki #3184: request A is waiting to retry (503, backoff) when request B's reply fails the
+    /// route check; when A wakes it makes no further HTTP attempt.
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn a_request_in_backoff_sends_nothing_after_another_fails_the_route_check() {
+        let dir = std::env::temp_dir().join(format!("route-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let (url, count) = serve_seq(vec![(503, "busy"), (200, WRONG), (200, RIGHT)]);
+        let client = guarded(url, dir.join("reject.jsonl"));
+        let a = async {
+            let retry = http::RetryTime::default();
+            client.free_text("S", "A", &retry, &mut Decision::default()).await
+        };
+        let b = async {
+            // B starts once A has had its 503 and is in its backoff (2 s).
+            while count.load(Ordering::SeqCst) < 1 {
+                tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+            }
+            let retry = http::RetryTime::default();
+            client.free_text("S", "B", &retry, &mut Decision::default()).await
+        };
+        let (a, b) = tokio::join!(a, b);
+        assert!(format!("{:#}", b.unwrap_err()).contains("ROUTE CHECK"));
+        let a = format!("{:#}", a.unwrap_err());
+        assert!(a.contains("no further HTTP attempt"), "{a}");
+        // A's 503 and B's rejected reply: nothing after the latch reached the server.
+        std::thread::sleep(std::time::Duration::from_millis(200));
+        assert_eq!(count.load(Ordering::SeqCst), 2);
+    }
 }
+

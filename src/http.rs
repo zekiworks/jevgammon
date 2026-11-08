@@ -125,17 +125,21 @@ pub fn retryable(status: StatusCode) -> bool {
 
 /// Sends the request built by `make`, retrying network and server errors; the failed
 /// attempts and the waits are added to `retry`. Returns the body of a successful response.
+/// `stop`: a latch read immediately before every HTTP attempt (the first, and each retry after
+/// its backoff); once set, no further attempt is made.
 pub async fn send(
     make: impl Fn() -> RequestBuilder,
     retry: &RetryTime,
+    stop: Option<&AtomicBool>,
 ) -> Result<String, CallError> {
-    let (body, _) = send_with_backoff(
+    let (body, _) = send_until(
         make,
         retry,
         None,
         FIRST_BACKOFF,
         RATE_LIMIT_BACKOFF,
         RetryPolicy::current(),
+        stop,
     )
     .await?;
     Ok(body)
@@ -150,19 +154,22 @@ pub async fn send_metered(
     retry: &RetryTime,
     ledger: &Arc<Ledger>,
     worst_case: f64,
+    stop: Option<&AtomicBool>,
 ) -> Result<(String, Hold), CallError> {
-    let (body, hold) = send_with_backoff(
+    let (body, hold) = send_until(
         make,
         retry,
         Some((ledger, worst_case)),
         FIRST_BACKOFF,
         RATE_LIMIT_BACKOFF,
         RetryPolicy::current(),
+        stop,
     )
     .await?;
     Ok((body, hold.expect("a metered attempt holds a reservation")))
 }
 
+#[cfg(test)]
 async fn send_with_backoff(
     make: impl Fn() -> RequestBuilder,
     retry: &RetryTime,
@@ -171,9 +178,29 @@ async fn send_with_backoff(
     rate_limit_backoff: Duration,
     policy: RetryPolicy,
 ) -> Result<(String, Option<Hold>), CallError> {
+    send_until(make, retry, budget, first_backoff, rate_limit_backoff, policy, None).await
+}
+
+async fn send_until(
+    make: impl Fn() -> RequestBuilder,
+    retry: &RetryTime,
+    budget: Option<(&Arc<Ledger>, f64)>,
+    first_backoff: Duration,
+    rate_limit_backoff: Duration,
+    policy: RetryPolicy,
+    stop: Option<&AtomicBool>,
+) -> Result<(String, Option<Hold>), CallError> {
     let mut backoff = first_backoff;
     let mut attempt = 0;
     loop {
+        // Immediately before every HTTP attempt (after pacing and after each backoff), before
+        // any reservation: a set latch ends the call with nothing sent.
+        if stop.is_some_and(|latch| latch.load(Ordering::SeqCst)) {
+            return Err(CallError::Fatal(anyhow::anyhow!(
+                "ROUTE CHECK: the player is stopped; no further HTTP attempt (attempt {})",
+                attempt + 1
+            )));
+        }
         let hold = match budget {
             Some((ledger, amount)) => Some(ledger.reserve(amount)?),
             None => None,
@@ -460,4 +487,60 @@ mod tests {
             .is_ok()
         );
     }
+
+    /// Zeki #3184: a set stop latch ends the call before any reservation or HTTP attempt.
+    #[tokio::test]
+    async fn a_set_latch_sends_and_reserves_nothing() {
+        let http = reqwest::Client::new();
+        let dir = std::env::temp_dir().join(format!("budget-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let config = crate::budget::BudgetConfig {
+            ledger: dir.join("ledger.db").to_string_lossy().into_owned(),
+            cap_usd: 1.0,
+            input_per_mtok: 2.0,
+            cached_input_per_mtok: 0.2,
+            output_per_mtok: 10.0,
+        };
+        let ledger = Ledger::open(&config, "t").unwrap();
+        let (url, count) = serve(vec![200]);
+        let retry = RetryTime::default();
+        let latch = AtomicBool::new(true);
+        let error = send_until(
+            || http.get(&url),
+            &retry,
+            Some((&ledger, 0.1)),
+            Duration::from_millis(5),
+            Duration::from_millis(5),
+            LEAGUE,
+            Some(&latch),
+        )
+        .await
+        .unwrap_err();
+        assert!(format!("{error:?}").contains("no further HTTP attempt"));
+        assert_eq!(count.load(Ordering::SeqCst), 0);
+        // Nothing was reserved: the whole cap is still available.
+        assert!(ledger.reserve(1.0).is_ok());
+        // A latch set while a retry waits: the 503 is the only attempt.
+        let (url, count) = serve(vec![503, 200]);
+        let latch = AtomicBool::new(false);
+        let call = send_until(
+            || http.get(&url),
+            &retry,
+            None,
+            Duration::from_millis(300),
+            Duration::from_millis(300),
+            LEAGUE,
+            Some(&latch),
+        );
+        let set = async {
+            while count.load(Ordering::SeqCst) < 1 {
+                tokio::time::sleep(Duration::from_millis(5)).await;
+            }
+            latch.store(true, Ordering::SeqCst);
+        };
+        let (result, ()) = tokio::join!(call, set);
+        assert!(result.is_err());
+        assert_eq!(count.load(Ordering::SeqCst), 1);
+    }
 }
+

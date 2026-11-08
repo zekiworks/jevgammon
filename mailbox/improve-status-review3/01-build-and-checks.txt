@@ -1,0 +1,37 @@
+Fresh frozen copy of live state, full build with branch improve-status 6522002 (= origin/main d2a24e1 + fix 0a1f5bb):
+  cp -a ~/.local/state/bg-site $STATE; snapshot.snapshot_improve(repo, $STATE) -> key afc7bb9d46a1; cmp same (STATE/improve/improve.json vs workspace/improve/out/improve.json); copied 2026-11-08T20:14:35Z; file "updated_at": "2026-11-08T20:13:48+00:00",
+  /usr/bin/python3 tools/site/build.py --state $STATE --out $SITE --no-image  (checks.run inside)
+    build exit 0
+    {"results": "41680c87", "data_as_of": "2026-11-08T20:05Z", "decision_files": 2298, "scored": {"league-1": 36995, "league-2": 39538, "league-3": 16355}}
+    stderr (warnings dropped): (nothing else)
+
+Page check: improve_page.py --src $STATE/improve --out $OUT --check $SITE
+  $OUT/improve/index.html
+  checks: 0 failure(s)
+  page check exit 0
+
+Leak scan of the full build's improve/index.html and data/v3/improve.json, and the real status table as rendered (shown names):
+  check_improve on the full build's improve page + data file (test positions: id, board key, board; host/withheld marks): 0 failure(s)
+  scan_file (private strings) improve/index.html: clean
+  scan_file (private strings) data/v3/improve.json: clean
+  literal 'bariton': 0
+  literal 'GPU-': 0
+  literal 'withheld': 0
+  literal 'SYNTHETIC': 0
+  refused note: 0
+    Qwen3.8 Flash (off)          paused (shared-balance priority)               3 / 5  2026-11-08 19:26 UTC
+    GLM-5.3 (low)                paused (shared-balance priority)               0 / 5  2026-11-08 16:26 UTC
+    Kimi K3.1 Pro (off)          paused (shared-balance priority)               0 / 5  2026-11-08 16:26 UTC
+    DeepSeek V4.1 Flash (low)    paused (shared-balance priority)               0 / 5  2026-11-08 16:26 UTC
+    Gemini 3.8 Flash (high)      running                                        2 / 5  2026-11-08 20:08 UTC
+    Claude Sonnet 5.5 (high)     paused (waiting for its turn)                  0 / 5  2026-11-08 16:10 UTC
+    Claude Opus 5.5 (high)       paused (waiting for its turn)                  0 / 5  2026-11-08 16:10 UTC
+    Gemini 4 Argon (high)        paused (waiting for its turn)                  0 / 5  2026-11-08 16:10 UTC
+    Grok 4.7 (high)              paused (waiting for its turn)                  0 / 5  2026-11-08 16:10 UTC
+    Claude Fable 5.1 (high)      paused (waiting for its turn)                  0 / 5  2026-11-08 16:10 UTC
+    Gemma 4 31B (on)             paused (waiting for its turn)                  0 / 5  2026-11-08 20:09 UTC
+    Qwen3.8-27B (low)            paused (waiting for its turn)                  0 / 5  2026-11-08 20:09 UTC
+    LFM2.5-24B-A2B (on)          paused (waiting for its turn)                  0 / 5  2026-11-08 20:09 UTC
+    GPT-6.1 Sol (high)           paused (waiting for the ChatGPT reset 13 Nov)  0 / 5  2026-11-08 16:10 UTC
+    GPT-6 Astra (high)           paused (waiting for the ChatGPT reset 13 Nov)  0 / 5  2026-11-08 16:10 UTC
+  exit 0

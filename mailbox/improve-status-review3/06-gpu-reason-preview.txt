@@ -1,0 +1,7 @@
+REAL file copy with the 3 local holds' reason set to 'waiting for a GPU' (what the exporter will write once switched):
+  status view refused: None
+  check_improve: []
+  Gemma 4 31B (on)         paused (waiting for a GPU)
+  Qwen3.8-27B (on)         paused (waiting for a GPU)
+  LFM2.5-24B-A2B (on)      paused (waiting for a GPU)
+exit 0

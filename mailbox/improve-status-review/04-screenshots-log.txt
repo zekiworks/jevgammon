@@ -1,12 +1,12 @@
-2026-11-08 16:39:09 UTC  improve-REAL-frozen-page-1280.png  <- $SITE/improve/index.html
-2026-11-08 16:39:09 UTC  improve-REAL-frozen-page-375.png  <- $SITE/improve/index.html
-2026-11-08 16:39:09 UTC  improve-REAL-frozen-status-1280.png  <- $SITE/improve/index.html #improve-status
-2026-11-08 16:39:09 UTC  improve-REAL-frozen-status-375.png  <- $SITE/improve/index.html #improve-status
-2026-11-08 16:39:10 UTC  improve-SYNTHETIC-none-status-1280.png  <- file:///tmp/status-shots/none/improve/index.html #improve-status
-2026-11-08 16:39:10 UTC  improve-SYNTHETIC-none-status-375.png  <- file:///tmp/status-shots/none/improve/index.html #improve-status
-2026-11-08 16:39:10 UTC  improve-SYNTHETIC-running-1-status-1280.png  <- file:///tmp/status-shots/running-1/improve/index.html #improve-status
-2026-11-08 16:39:10 UTC  improve-SYNTHETIC-running-1-status-375.png  <- file:///tmp/status-shots/running-1/improve/index.html #improve-status
-2026-11-08 16:39:10 UTC  improve-SYNTHETIC-paused-status-1280.png  <- file:///tmp/status-shots/paused/improve/index.html #improve-status
-2026-11-08 16:39:11 UTC  improve-SYNTHETIC-paused-status-375.png  <- file:///tmp/status-shots/paused/improve/index.html #improve-status
-2026-11-08 16:39:11 UTC  improve-SYNTHETIC-done-status-1280.png  <- file:///tmp/status-shots/complete-yes/improve/index.html #improve-status
-2026-11-08 16:39:11 UTC  improve-SYNTHETIC-done-status-375.png  <- file:///tmp/status-shots/complete-yes/improve/index.html #improve-status
+2026-11-08 16:48:23 UTC  improve-REAL-frozen-page-1280.png  <- $SITE/improve/index.html
+2026-11-08 16:48:23 UTC  improve-REAL-frozen-page-375.png  <- $SITE/improve/index.html
+2026-11-08 16:48:23 UTC  improve-REAL-frozen-status-1280.png  <- $SITE/improve/index.html #improve-status
+2026-11-08 16:48:24 UTC  improve-REAL-frozen-status-375.png  <- $SITE/improve/index.html #improve-status
+2026-11-08 16:48:24 UTC  improve-SYNTHETIC-none-status-1280.png  <- file:///tmp/status-shots/none/improve/index.html #improve-status
+2026-11-08 16:48:24 UTC  improve-SYNTHETIC-none-status-375.png  <- file:///tmp/status-shots/none/improve/index.html #improve-status
+2026-11-08 16:48:24 UTC  improve-SYNTHETIC-running-1-status-1280.png  <- file:///tmp/status-shots/running-1/improve/index.html #improve-status
+2026-11-08 16:48:25 UTC  improve-SYNTHETIC-running-1-status-375.png  <- file:///tmp/status-shots/running-1/improve/index.html #improve-status
+2026-11-08 16:48:25 UTC  improve-SYNTHETIC-paused-status-1280.png  <- file:///tmp/status-shots/paused/improve/index.html #improve-status
+2026-11-08 16:48:25 UTC  improve-SYNTHETIC-paused-status-375.png  <- file:///tmp/status-shots/paused/improve/index.html #improve-status
+2026-11-08 16:48:25 UTC  improve-SYNTHETIC-done-status-1280.png  <- file:///tmp/status-shots/complete-yes/improve/index.html #improve-status
+2026-11-08 16:48:26 UTC  improve-SYNTHETIC-done-status-375.png  <- file:///tmp/status-shots/complete-yes/improve/index.html #improve-status

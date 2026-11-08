@@ -1,0 +1,2 @@
+links: 36/36 ok
+links exit status: 0

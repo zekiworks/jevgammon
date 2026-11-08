@@ -1,29 +1,27 @@
-build.py --no-image on a frozen copy of live state (2026-11-08T16:39:51Z):
-  cp -a ~/.local/state/bg-site $STATE (copied 2026-11-08 16:36 UTC); snapshot.snapshot_improve(repo, $STATE) -> key b24371b861df (STATE/improve/improve.json == workspace/improve/out/improve.json, cmp same)
-  /usr/bin/python3 tools/site/build.py --state $STATE --out $SITE --no-image   (code of 85ebd52, identical to branch d2b9897; checks.run inside; exit 0)
+build.py --no-image on a fresh frozen copy of live state (2026-11-08T16:46:02Z):
+  cp -a ~/.local/state/bg-site $STATE; snapshot.snapshot_improve(repo, $STATE) -> key 32e2d1415a5c
+  (STATE/improve/improve.json == workspace/improve/out/improve.json, cmp same; REAL, with progress, updated_at 2026-11-08T16:45:28+00:00)
+  /usr/bin/python3 tools/site/build.py --state $STATE --out $SITE --no-image   (code of branch ffc5b50; checks.run inside): exit 0
 stdout:
-  {"results": "15a79632", "data_as_of": "2026-11-08T16:35Z", "decision_files": 2298, "scored": {"league-1": 36995, "league-2": 39538, "league-3": 16355}}
-stderr (warnings dropped):
-  improve_validate status view (private): improve.json.models[0]: progress missing
+  {"results": "9400ab77", "data_as_of": "2026-11-08T16:35Z", "decision_files": 2298, "scored": {"league-1": 36995, "league-2": 39538, "league-3": 16355}}
+stderr (warnings dropped): (nothing)
 
 improve_page.py --src $STATE/improve --out $OUT --check $SITE (default build, pre-registration only):
-  improve_validate status view (private): improve.json.models[0]: progress missing
-  $OUT/improve/index.html
-  checks: 0 failure(s)
+  checks: 0 failure(s); status view accepted (no "Status unavailable" note)
 
 Status table as rendered (REAL, frozen):
-  Qwen3.8 Flash (off)          N/A                                      N/A    N/A
-  GLM-5.3 (low)                N/A                                      N/A    N/A
-  Kimi K3.1 Pro (off)          N/A                                      N/A    N/A
-  DeepSeek V4.1 Flash (low)    N/A                                      N/A    N/A
-  Gemini 3.8 Flash (high)      N/A                                      N/A    N/A
-  Claude Sonnet 5.5 (high)     N/A                                      N/A    N/A
-  Claude Opus 5.5 (high)       N/A                                      N/A    N/A
-  Gemini 4 Argon (high)        N/A                                      N/A    N/A
-  Grok 4.7 (high)              N/A                                      N/A    N/A
-  Claude Fable 5.1 (high)      N/A                                      N/A    N/A
-  Gemma 4 31B (on)             N/A                                      N/A    N/A
-  Qwen3.8-27B (low)            N/A                                      N/A    N/A
-  LFM2.5-24B-A2B (on)          N/A                                      N/A    N/A
-  GPT-6.1 Sol (high)           N/A                                      N/A    N/A
-  GPT-6 Astra (high)           N/A                                      N/A    N/A
+  Qwen3.8 Flash (off)          running                                  0 / 5  2026-11-08 16:45 UTC
+  GLM-5.3 (low)                paused (shared-balance priority)         0 / 5  2026-11-08 16:26 UTC
+  Kimi K3.1 Pro (off)          paused (shared-balance priority)         0 / 5  2026-11-08 16:26 UTC
+  DeepSeek V4.1 Flash (low)    paused (shared-balance priority)         0 / 5  2026-11-08 16:26 UTC
+  Gemini 3.8 Flash (high)      running                                  0 / 5  2026-11-08 16:29 UTC
+  Claude Sonnet 5.5 (high)     paused (waiting for its turn)            0 / 5  2026-11-08 16:10 UTC
+  Claude Opus 5.5 (high)       paused (waiting for its turn)            0 / 5  2026-11-08 16:10 UTC
+  Gemini 4 Argon (high)        paused (waiting for its turn)            0 / 5  2026-11-08 16:10 UTC
+  Grok 4.7 (high)              paused (waiting for its turn)            0 / 5  2026-11-08 16:10 UTC
+  Claude Fable 5.1 (high)      paused (waiting for its turn)            0 / 5  2026-11-08 16:10 UTC
+  Gemma 4 31B (on)             running                                  0 / 5  2026-11-08 16:30 UTC
+  Qwen3.8-27B (low)            paused (waiting for its turn)            0 / 5  2026-11-08 16:10 UTC
+  LFM2.5-24B-A2B (on)          paused (waiting for its turn)            0 / 5  2026-11-08 16:10 UTC
+  GPT-6.1 Sol (high)           paused (waiting for the ChatGPT reset 13 Nov) 0 / 5  2026-11-08 16:10 UTC
+  GPT-6 Astra (high)           paused (waiting for the ChatGPT reset 13 Nov) 0 / 5  2026-11-08 16:10 UTC

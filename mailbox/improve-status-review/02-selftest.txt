@@ -11,7 +11,7 @@ PASS  default build: pre-registration only, results not read
 PASS  default build: check_improve clean
 PASS  status table (none): 15 rows as the data, at the top, no outcome or free text, check_improve clean  got {}, leaked []
 PASS  status table (running-1): 15 rows as the data, at the top, no outcome or free text, check_improve clean  got {'Qwen3.8 Flash (off)': ('running', '1 / 5')}, leaked []
-PASS  status table (paused): 15 rows as the data, at the top, no outcome or free text, check_improve clean  got {'Kimi K3.1 Pro (off)': ('paused (shared-balance priority)', '1 / 5'), 'GPT-6.1 Sol (high)': ('not started (waiting for the ChatGPT reset 13 Nov)', '0 / 5')}, leaked []
+PASS  status table (paused): 15 rows as the data, at the top, no outcome or free text, check_improve clean  got {'Kimi K3.1 Pro (off)': ('paused (shared-balance priority)', '1 / 5'), 'Claude Opus 5.5 (on)': ('paused (usage limit)', '0 / 5'), 'GPT-6.1 Sol (high)': ('not started (waiting for the ChatGPT reset 13 Nov)', '0 / 5')}, leaked []
 PASS  status table (complete-yes): 15 rows as the data, at the top, no outcome or free text, check_improve clean  got {'Qwen3.8 Flash (off)': ('done', '5 / 5')}, leaked []
 improve_validate status view (private): improve.json.models[0].progress.status: not an allowed value
 PASS  status fault (default build): progress: status outside the enum (canary)  improve.json.models[0].progress.status: not an allowed value
@@ -25,6 +25,12 @@ improve_validate status view (private): improve.json.models[0].progress: series_
 PASS  status fault (default build): progress: series_done missing  improve.json.models[0].progress: series_done missing
 improve_validate status view (private): improve.json.models[0].progress.updated_at: not an allowed string
 PASS  status fault (default build): progress: updated_at not ISO  improve.json.models[0].progress.updated_at: not an allowed string
+improve_validate status view (private): models[0].progress.updated_at: not a real UTC calendar time
+PASS  status fault (default build): progress: updated_at 30 February (not a calendar day)  models[0].progress.updated_at: not a real UTC calendar time
+improve_validate status view (private): models[0].progress.updated_at: not a real UTC calendar time
+PASS  status fault (default build): progress: updated_at hour 29  models[0].progress.updated_at: not a real UTC calendar time
+improve_validate status view (private): improve.json.models[0].progress.updated_at: not an allowed string
+PASS  status fault (default build): progress: updated_at without a timezone  improve.json.models[0].progress.updated_at: not an allowed string
 improve_validate status view (private): improve.json.models[0].progress.reason: not an allowed value
 PASS  status fault (default build): progress: reason outside the fixed list (canary)  improve.json.models[0].progress.reason: not an allowed value
 improve_validate status view (private): models[0].progress.reason: required when paused
@@ -33,6 +39,10 @@ improve_validate status view (private): models[0].progress.reason: not allowed w
 PASS  status fault (default build): progress: done with a reason  models[0].progress.reason: not allowed when running or done
 improve_validate status view (private): models[0].progress.series_done: done without all 5 series
 PASS  status fault (default build): progress: done with 4 series  models[0].progress.series_done: done without all 5 series
+improve_validate status view (private): models[0].progress.series_done: all 5 series, but neither done nor stopped
+PASS  status fault (default build): progress: running with all 5 series  models[0].progress.series_done: all 5 series, but neither done nor stopped
+improve_validate status view (private): models[0].progress.reason: allowed only when paused
+PASS  status fault (default build): progress: usage limit while not paused  models[0].progress.reason: allowed only when paused
 improve_validate status view (private): improve.json.models[0].progress: unknown key 'zz_canary_key_7f3a'
 PASS  status fault (default build): progress: unknown key (canary)  improve.json.models[0].progress: unknown key [name withheld]
 improve_validate (private): protocol.plan_sha256: not the pre-registered value
@@ -111,16 +121,29 @@ improve_validate (private): improve.json.models[0].progress: series_done missing
 PASS  fault: progress: series_done missing  improve.json.models[0].progress: series_done missing
 improve_validate (private): improve.json.models[0].progress.updated_at: not an allowed string
 PASS  fault: progress: updated_at not ISO  improve.json.models[0].progress.updated_at: not an allowed string
+improve_validate (private): models[0].progress.updated_at: not a real UTC calendar time
+PASS  fault: progress: updated_at 30 February (not a calendar day)  models[0].progress.updated_at: not a real UTC calendar time
+improve_validate (private): models[0].progress.updated_at: not a real UTC calendar time
+PASS  fault: progress: updated_at hour 29  models[0].progress.updated_at: not a real UTC calendar time
+improve_validate (private): improve.json.models[0].progress.updated_at: not an allowed string
+PASS  fault: progress: updated_at without a timezone  improve.json.models[0].progress.updated_at: not an allowed string
 improve_validate (private): improve.json.models[0].progress.reason: not an allowed value
 PASS  fault: progress: reason outside the fixed list (canary)  improve.json.models[0].progress.reason: not an allowed value
 improve_validate (private): models[0].progress.reason: required when paused
+improve_validate (private): models[0].progress.series_done: not the finished series in steps_done
 improve_validate (private): models[0].progress.status: does not match the model's state and steps
-PASS  fault: progress: paused without a reason  models[0].progress.reason: required when paused; models[0].progress.status: does not match the model's state and steps
+PASS  fault: progress: paused without a reason  models[0].progress.reason: required when paused; models[0].progress.series_done: not the finished series in steps_done
 improve_validate (private): models[0].progress.reason: not allowed when running or done
 PASS  fault: progress: done with a reason  models[0].progress.reason: not allowed when running or done
 improve_validate (private): models[0].progress.series_done: done without all 5 series
 improve_validate (private): models[0].progress.series_done: not the finished series in steps_done
 PASS  fault: progress: done with 4 series  models[0].progress.series_done: done without all 5 series; models[0].progress.series_done: not the finished series in steps_done
+improve_validate (private): models[0].progress.series_done: all 5 series, but neither done nor stopped
+improve_validate (private): models[0].progress.status: does not match the model's state and steps
+PASS  fault: progress: running with all 5 series  models[0].progress.series_done: all 5 series, but neither done nor stopped; models[0].progress.status: does not match the model's state and steps
+improve_validate (private): models[0].progress.reason: allowed only when paused
+improve_validate (private): models[0].progress.status: does not match the model's state and steps
+PASS  fault: progress: usage limit while not paused  models[0].progress.reason: allowed only when paused; models[0].progress.status: does not match the model's state and steps
 improve_validate (private): improve.json.models[0].progress: unknown key 'zz_canary_key_7f3a'
 PASS  fault: progress: unknown key (canary)  improve.json.models[0].progress: unknown key [name withheld]
 improve_validate (private): money.billed_total_usd: not the sum of the models' billed amounts
@@ -147,4 +170,5 @@ PASS  page fault (complete-yes): a model row removed  improve/: the model table 
 PASS  page fault (status-paused): status row: a wrong status  improve/: Kimi K3.1 Pro (off): status row not what the data gives
 PASS  page fault (status-paused): status row: a wrong series count  improve/: Kimi K3.1 Pro (off): status row not what the data gives
 PASS  page fault (status-paused): status row removed  improve/: the status table is not one row per plan model in the plan's order
-84/84 cases as expected; renders in $SELFTEST
+94/94 cases as expected; renders in $SELFTEST
+exit 0

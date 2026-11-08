@@ -1,8 +1,11 @@
 a4301470ee6465b083759e2283e703364fce006ae8eeaee5db4dc3d98327e416  ./01-build-and-checks.txt
-70e8ebe1367aca3f20f7d9fe2ca39f5a616bf81ba5dea518b08cd54bd52df643  ./02-selftest.txt
-ec7c06140693975ea1d44fe7d87301e477084bc181e641e3579912c49d138a5f  ./03-diff.patch
+33a1f692337fb082a0fb116aa044030a985469132b4736d77a491305b242c0ac  ./02-selftest.txt
+1eb15077ece7c3e7fabc7d65c064b8a3479a98d280a211a0cd4bab5d1563f9b2  ./03-diff.patch
 75d20c0f58335f25522e6f214070a4dad0beef9ff9a14c7bb77e6e4cef01c7ae  ./04-screenshots-log.txt
-d73c5c6995e96e766c7f3d19369f6ceae5cfec706b43a5b47901c2961b81a943  ./README.md
+bc5e10237f84b501d058bc1f566fbcaeec536b755e38f281b69411e367fa8fe8  ./05-fix-vs-ffc5b50.patch
+1268d968bd6c081a7a9bd90208fc86dea7e3f946bffdcac99032deba946a9f7d  ./06-regression-control.txt
+e3a1d16bcd9d67750510b5908e59326adeaccf555717460ce2ea5d70f263cb8d  ./producer-status-sample.json
+145b59545e96ce13eeb5db207f47b21bad24cbf4bb0b8c22849c915ed2d101e6  ./README.md
 126a998828d825fa026e3c0e3337a40d0b858a82f4488a21fefbb7ecac01396b  ./screenshots/improve-REAL-frozen-page-1280.png
 2938f74256fd3886667e3bf6a210dd4d31cf873b0e38bb940d79fa1fe806cdaf  ./screenshots/improve-REAL-frozen-page-375.png
 7c5ad3812597a42e9c1b479c634c9d21eb909413554f45980cc1276e9c3e97ef  ./screenshots/improve-REAL-frozen-status-1280.png

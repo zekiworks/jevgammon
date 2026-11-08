@@ -1,0 +1,14 @@
+Regression control (Zeki #3267 P2): the same selftest (a59d633) run against ffc5b50's improve_validate.py (only that file swapped, in a scratch copy):
+  exit 1; the default-build render raises instead of falling back:
+    File "$CTL/tools/site/learning_page.py", line 425, in utc
+      return datetime.fromisoformat(t).astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+             ~~~~~~~~~~~~~~~~~~~~~~^^^
+  ValueError: day 30 must be in range 1..28 for month 2 in year 2026
+
+With a59d633: selftest exit 0, 94/94 (02-selftest.txt).
+
+REAL current improve.json (checked 2026-11-08T17:13:52Z; snapshot.snapshot_improve -> key 1d10a90f14e6, cmp same as workspace/improve/out/improve.json):
+  improve_page.py --src $STATE/improve --out $OUT --check $SITE (a59d633, default build; SITE = the 16:46 frozen full build): exit 0
+  $OUT/improve/index.html
+  checks: 0 failure(s)
+  status view accepted (no Status unavailable note); e.g. Qwen3.8 Flash (off) running 1 / 5, updated 2026-11-08T17:11:18+00:00

@@ -171,21 +171,30 @@ index 9ba4103..c932035 100755
          parts.append(("improve-lessons", "Lessons and every test, per model", lessons(L)))
      parts.append(("improve-prompt", "Lesson prompt and test set", prompt(L)))
 diff --git a/tools/site/improve_validate.py b/tools/site/improve_validate.py
-index a9c64a4..97628d4 100644
+index a9c64a4..ed5e7d2 100644
 --- a/tools/site/improve_validate.py
 +++ b/tools/site/improve_validate.py
-@@ -16,6 +16,10 @@ or value taken from the file, the full text on stderr only):
+@@ -16,6 +16,11 @@ or value taken from the file, the full text on stderr only):
    (at most 5 lines starting "- ", 150 words) and holding no test position;
  - the verdict gate (plan section 7): a model marked complete must have all 3 empty runs and all 5 tests after game 10
    answered 200 of 200 with no failed request, and all 5 series of 10 games with 10 lesson entries each;
 +- every model's progress (the "Models and status" table, Ümit #3219): status one of not started, running, paused,
 +  stopped, done; reason one of the fixed texts (PROGRESS_REASONS), required when paused, absent when running or
-+  done; series_done 0-5, the finished series in steps_done (5 when done); updated_at an ISO time; the status agreeing
++  done, "usage limit" only when paused; series_done 0-5, the finished series in steps_done (5 when done; 5 only when
++  done or stopped; 0 when not started); updated_at a real UTC calendar time (calendar_time); the status agreeing
 +  with the model's state. status_view() checks these fields alone for pre-registration-only builds;
  - the money block: the billed total is the sum of the models' billed amounts, within the total cap $110 (no interim
    cap, plan section 9); a model that is not billed has $0 billed.
  
-@@ -51,15 +55,32 @@ SERIES_SPEC = DICT(dict(series=INT(1, SERIES), finished=BOOL, games=INT(0, GAMES
+@@ -24,6 +29,7 @@ projection validate() returns ("public"), for the page and its data file.
+ """
+ 
+ import re
++from datetime import datetime, timedelta
+ 
+ from learning_validate import (BOOL, DICT, HEX64, INT, ISO, LIST, NUM, OPT, check, private_problems,  # noqa: F401
+                                public_problems, untrusted)
+@@ -51,15 +57,32 @@ SERIES_SPEC = DICT(dict(series=INT(1, SERIES), finished=BOOL, games=INT(0, GAMES
  COST = DICT(dict(billed_usd=NUM(0), reported_usd=OPT(NUM(0)), api_equivalent_usd=OPT(NUM(0)),
                   estimate_usd=OPT(NUM(0))))
  TEXT = ("str", r"[^<>&\x00-\x1f]{1,400}")
@@ -219,13 +228,24 @@ index a9c64a4..97628d4 100644
  SHARES = ("risks_found", "right_safety", "error_rate")
  
  
-@@ -111,6 +132,54 @@ def lesson_problems(text: str, where: str, leaks: list) -> list:
+@@ -111,6 +134,69 @@ def lesson_problems(text: str, where: str, leaks: list) -> list:
      return bad
  
  
++def calendar_time(s: str) -> bool:
++    """s (already of the ISO shape) is a real UTC time: datetime.fromisoformat accepts it (every field in its calendar
++    range: no 30 February, no hour 29), it has a zero UTC offset, and its year is 2026-2099."""
++    try:
++        t = datetime.fromisoformat(s)
++    except ValueError:
++        return False
++    return t.tzinfo is not None and t.utcoffset() == timedelta(0) and 2026 <= t.year <= 2099
++
++
 +def progress_problems(p: dict, where: str) -> list:
 +    """A model's progress fields among themselves: a reason exactly when paused (never when running or done), done
-+    with all 5 series, not started with none."""
++    with all 5 series and all 5 series only when done or stopped (S5 is the last step: running, paused or not started
++    leave a series to play), not started with none; updated_at a real UTC calendar time (calendar_time)."""
 +    bad = []
 +    if p["status"] == "paused" and p["reason"] is None:
 +        bad.append(f"{where}.reason: required when paused")
@@ -235,8 +255,12 @@ index a9c64a4..97628d4 100644
 +        bad.append(f"{where}.reason: not allowed when running or done")
 +    if p["status"] == "done" and p["series_done"] != SERIES:
 +        bad.append(f"{where}.series_done: done without all {SERIES} series")
++    if p["series_done"] == SERIES and p["status"] not in ("done", "stopped"):
++        bad.append(f"{where}.series_done: all {SERIES} series, but neither done nor stopped")
 +    if p["status"] == "not started" and p["series_done"] != 0:
 +        bad.append(f"{where}.series_done: series done before the start")
++    if not calendar_time(p["updated_at"]):
++        bad.append(f"{where}.updated_at: not a real UTC calendar time")
 +    return bad
 +
 +
@@ -274,7 +298,7 @@ index a9c64a4..97628d4 100644
  def model_problems(m: dict, i: int, plan_models: dict, dry: bool, leaks: list) -> list:
      where = f"models[{i}]"
      bad = []
-@@ -178,6 +247,12 @@ def model_problems(m: dict, i: int, plan_models: dict, dry: bool, leaks: list) -
+@@ -178,6 +264,12 @@ def model_problems(m: dict, i: int, plan_models: dict, dry: bool, leaks: list) -
          bad.append(f"{where}: every step done but still running")
      if not m["billed"] and (m["cost"]["billed_usd"] != 0 or m["cost"]["reported_usd"]):
          bad.append(f"{where}.cost: billed money on a route that is not billed")
@@ -287,7 +311,7 @@ index a9c64a4..97628d4 100644
      return bad
  
  
-@@ -267,7 +342,7 @@ def validate(R, plan_sha: str, prompt_sha: str, test_sha: str, harness_prompt_sh
+@@ -267,7 +359,7 @@ def validate(R, plan_sha: str, prompt_sha: str, test_sha: str, harness_prompt_sh
          return rejected(bad)
      models = []
      for m in R["models"]:
@@ -297,7 +321,7 @@ index a9c64a4..97628d4 100644
          out["series"] = [{k: v for k, v in s.items()} for s in m["series"]]
          out.update(scores(m, P["dry_run"], plan_models[m["setup"]]["route"].startswith("local")))
 diff --git a/tools/site/selftest_improve.py b/tools/site/selftest_improve.py
-index 92defa2..b5ac1a5 100755
+index 92defa2..c9ea77f 100755
 --- a/tools/site/selftest_improve.py
 +++ b/tools/site/selftest_improve.py
 @@ -17,6 +17,14 @@ States (every number and lesson SYNTHETIC; never results):
@@ -367,7 +391,7 @@ index 92defa2..b5ac1a5 100755
  
  
  def write_state(d: Path, doc) -> Path:
-@@ -143,6 +167,35 @@ def leak_strings():
+@@ -143,6 +167,42 @@ def leak_strings():
      return checks._test_set_strings(TS())
  
  
@@ -389,11 +413,18 @@ index 92defa2..b5ac1a5 100755
 +        ("progress: missing", mutation(lambda d: d["models"][0].pop("progress")), None),
 +        ("progress: series_done missing", mutation(lambda d: p0(d).pop("series_done")), None),
 +        ("progress: updated_at not ISO", mutation(lambda d: p0(d).update(updated_at="yesterday")), None),
++        ("progress: updated_at 30 February (not a calendar day)",
++         mutation(lambda d: p0(d).update(updated_at="2026-02-30T17:03:01+00:00")), None),
++        ("progress: updated_at hour 29", mutation(lambda d: p0(d).update(updated_at="2026-11-08T29:03:01+00:00")),
++         None),
++        ("progress: updated_at without a timezone", mutation(lambda d: p0(d).update(updated_at="2026-11-08T17:03:01")),
++         None),
 +        ("progress: reason outside the fixed list (canary)",
 +         mutation(lambda d: p0(d).update(status="paused", reason=CANARY_SETUP)), CANARY_SETUP),
-+        ("progress: paused without a reason", mutation(lambda d: p0(d).update(status="paused")), None),
++        ("progress: paused without a reason", mutation(lambda d: p0(d).update(status="paused", series_done=1)), None),
 +        ("progress: done with a reason", mutation(lambda d: p0(d).update(reason=V.PROGRESS_REASONS[2])), None),
 +        ("progress: done with 4 series", mutation(lambda d: p0(d).update(series_done=4)), None),
++        ("progress: running with all 5 series", mutation(lambda d: p0(d).update(status="running")), None),
 +        ("progress: usage limit while not paused",
 +         mutation(lambda d: p0(d).update(status="stopped", reason="usage limit")), None),
 +        ("progress: unknown key (canary)", mutation(lambda d: p0(d).update({CANARY_KEY: 1})), CANARY_KEY),
@@ -403,7 +434,7 @@ index 92defa2..b5ac1a5 100755
  def faults(doc: dict) -> list:
      """(name, mutate(doc) -> doc or raw text, canary that must not reach the page or None)."""
      leaks = leak_strings()
-@@ -191,6 +244,7 @@ def faults(doc: dict) -> list:
+@@ -191,6 +251,7 @@ def faults(doc: dict) -> list:
          ("stopped without a reason", m(lambda d: d["models"][0].update(state="stopped")), None),
          ("a removed field (money.cumulative_cap_usd) present", m(lambda d: d["money"].update(cumulative_cap_usd=25.0)),
           None),
@@ -411,7 +442,7 @@ index 92defa2..b5ac1a5 100755
          ("same setup twice", m(lambda d: d["models"].append(copy.deepcopy(d["models"][0]))), None),
          ("not JSON", lambda d: "{not json", None),
      ]
-@@ -217,7 +271,9 @@ def main():
+@@ -217,7 +278,9 @@ def main():
          print(f"{'PASS' if ok else 'FAIL'}  {name}{'  ' + detail if detail else ''}")
  
      S = states()
@@ -422,7 +453,7 @@ index 92defa2..b5ac1a5 100755
          src = write_state(base / "states" / name, doc)
          out = base / "pages" / name
          shutil.rmtree(out, ignore_errors=True)
-@@ -238,7 +294,7 @@ def main():
+@@ -238,7 +301,7 @@ def main():
                   and "withheld" not in page and "bariton" not in page)
          if name == "complete-no":
              case("complete-no: No", 'data-verdict="no"' in page and 'data-verdict="yes"' not in page)
@@ -431,7 +462,7 @@ index 92defa2..b5ac1a5 100755
      src = base / "states" / "complete-yes" / "improve"
      Lp = IP.data(IP.PLAN, src, TS())
      case("default build: pre-registration only, results not read", Lp["preregistration_only"]
-@@ -249,6 +305,51 @@ def main():
+@@ -249,6 +312,51 @@ def main():
      bad = checks.check_improve(out, TS())
      case("default build: check_improve clean", not bad, "; ".join(bad))
  
@@ -483,7 +514,7 @@ index 92defa2..b5ac1a5 100755
      # Injected faults in improve.json: each refused, the pre-registration view with the note, no canary on the page.
      good = S["complete-yes"]
      fdir = base / "faults"
-@@ -274,7 +375,6 @@ def main():
+@@ -274,7 +382,6 @@ def main():
      case("fault: harness prompt files missing", not L["validation"]["accepted"])
  
      # Page faults: injected into the complete-yes page (and the mixed page for the order), each detected.
@@ -491,7 +522,7 @@ index 92defa2..b5ac1a5 100755
      leaks = leak_strings()
      page_faults = [
          ("complete-yes", "verdict flipped", lambda t: t.replace('data-verdict="yes"', 'data-verdict="no"')),
-@@ -296,6 +396,12 @@ def main():
+@@ -296,6 +403,12 @@ def main():
          ("complete-yes", "a host named on the page", lambda t: t.replace("</main>", "<p>bariton</p></main>")),
          ("complete-yes", "a model row removed", lambda t: re.sub(r'<tr data-setup="Grok 4.7 \(on\)".*?</tr>', "", t,
                                                                   flags=re.S)),
@@ -504,7 +535,7 @@ index 92defa2..b5ac1a5 100755
      ]
      for state, name, f in page_faults:
          src_page = base / "pages" / state
-@@ -314,7 +420,6 @@ def main():
+@@ -314,7 +427,6 @@ def main():
  
  
  def swap_rows(t: str) -> str:

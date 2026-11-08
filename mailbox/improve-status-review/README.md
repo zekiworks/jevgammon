@@ -1,8 +1,18 @@
 # "Models and status" table on the improve page: review (ImproveStatus, 2026-11-08, Ümit #3219)
 
-**Candidate:** branch `improve-status`, commit **ffc5b50** on origin/main (pushed, not merged). Code-only diff
-against main: 4 files, +289 −19 (`03-diff.patch`): `tools/site/improve_validate.py`, `improve_page.py`, `checks.py`,
-`selftest_improve.py`. No CSS, plan, snapshot, build or harness change.
+**Candidate:** branch `improve-status`, commit **a59d633** (pushed, not merged; = ffc5b50 + one fix commit for Zeki
+#3267, `05-fix-vs-ffc5b50.patch`: 2 files, +27 −3). Code-only diff against main: 4 files, +313 −19 (`03-diff.patch`):
+`tools/site/improve_validate.py`, `improve_page.py`, `checks.py`, `selftest_improve.py`. No CSS, plan, snapshot, build
+or harness change.
+
+**Rev 3 (Zeki #3267):** `progress.updated_at` must be a real UTC calendar time (`improve_validate.calendar_time`:
+`datetime.fromisoformat` accepts it, zero UTC offset, year 2026–2099), checked in `progress_problems`, so in both the
+full validation and the status-only read; 2026-02-30T17:03:01+00:00, 2026-11-08T29:03:01+00:00 and the
+timezone-less 2026-11-08T17:03:01 are refused and the page shows "Status unavailable"/N/A instead of raising in
+`learning_page.utc`. Control: the same selftest against ffc5b50's validator exits 1 with that ValueError
+(`06-regression-control.txt`). Also implemented: all 5 series only when done or stopped (below). Rev 1–2 evidence
+(01, 04, screenshots) is unchanged: from ffc5b50; the fix only refuses more inputs, and the REAL current file still
+passes (06).
 
 ## What the page shows
 
@@ -31,18 +41,33 @@ If the status fields are refused: every cell N/A and a "Status unavailable" note
 ```
 
 - `status` ∈ {`not started`, `running`, `paused`, `stopped`, `done`}; `reason` null or one of the four texts; required
-  when paused, refused when running or done; `usage limit` only when paused; `series_done` int 0..5 (5 when done, 0
-  when not started); `updated_at`
-  ISO (the site's ISO pattern). Missing, extra key, bad enum, 6, a string → refused.
+  when paused, refused when running or done; `usage limit` only when paused; `series_done` int 0..5: done ⇒ 5, and 5
+  ⇒ done or stopped (S5 is the last step, so running, paused or not started still have a series to play; stopped may
+  follow the last series), not started ⇒ 0; `updated_at` the site's ISO shape and a real UTC calendar time (above).
+  Missing, extra key, bad enum, 6, a string → refused.
 - Full validation also: `series_done` = finished series in `steps_done`; status agrees with `state` (not started ↔
   running/paused with no step done; running ↔ running; paused ↔ paused; stopped ↔ stopped/incomplete; done ↔ complete).
 
 The producer side is live (Improve's exporter, improve aeba664/dad1a47): the current `improve.json` carries `progress`
-for all 15 models and passes both the status view and the page check (below).
+for all 15 models and passes both the status view and the page check (below; again at 17:13 UTC with a59d633, 06).
+If a build copies a file written without `progress` (the producer's short legacy-write window, not reviewed here),
+the table shows "Status unavailable" until the next build; snapshot.py copies one atomically written file, which is
+not a coordinated multi-file snapshot.
+
+**Shown names vs raw setup ids.** `improve.json`, the plan, the validator and the standalone `improve_page.py` render
+use the raw v3.db setup ids. The full build (`build.py`, `S = relabel(compute(args))`) passes the whole site state,
+the improve page and its data file included, through `common.relabel` (exact-match renames from
+`tools/site/content/labels.json`, setups named by the reasoning effort they sent). On this page that shows 7 of the 15
+under another name: GLM-5.3 (on) → (low), DeepSeek V4.1 Flash (on) → (low), Qwen3.8-27B (on) → (low), Claude Opus 5.5
+(on) → (high), Gemini 4 Argon (on) → (high), Grok 4.7 (on) → (high), Claude Fable 5.1 (on) → (high) (observed: plan
+models in the standalone render's data file vs the full build's). The screenshots `REAL-frozen` are full-build output
+and show the shown names; the mapping to the raw ids is unchanged.
 
 ## What ran
 
-- `selftest_improve.py` (`02-selftest.txt`): **86/86**. New: state `paused` (Kimi paused (shared-balance priority),
+- `selftest_improve.py` (`02-selftest.txt`, a59d633): **94/94, exit 0** (rev 2: 86/86 at ffc5b50; rev 3 adds the three
+  timestamps and "running with all 5 series", each refused by the full validation and by the status view with the
+  fallback render). New in rev 1–2: state `paused` (Kimi paused (shared-balance priority),
   GPT-6.1 Sol not started (waiting for the ChatGPT reset 13 Nov), Claude Opus 5.5 paused (usage limit)); status table
   in the default build for none / running-1 / paused / complete-yes (done): 15 rows equal to the data, section before
   the rule, no outcome marker (`data-cell`, `data-verdict`, `#improve-lessons`) and no free-text reason from the file in

@@ -1,0 +1,5 @@
+# (a) whole-site renders, default build. origin/main dc00eca and branch 34ef85e. Started 2026-11-08 08:01:58 UTC
+rendered /tmp/inv5/out-main with /tmp/inv5/src-main/tools/site
+rendered /tmp/inv5/out-branch with /tmp/inv5/src-branch/tools/site
+checks.run: 0 failure(s)
+# Finished 2026-11-08 08:03:53 UTC

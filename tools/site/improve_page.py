@@ -151,6 +151,29 @@ def pilot_row(md: str) -> dict:
                 own_verdict=verdict.group(1) if verdict else None)
 
 
+# The page never names a host or a device (Main, via Improve): where the plan names our servers, their GPUs or a
+# server-address key, the page's copy of the plan text says "our GPU" instead. Applied to the plan's text for the page
+# only (the plan file is unchanged; its sha256 is the file's). Specific phrases first, then general ones; anything the
+# site's private-strings rule would still withhold fails checks.check_improve (no "withheld" on the page).
+HOST_REWRITES = [
+    (r"bariton GPU \d+ by UUID `GPU-[0-9a-f-]+`", "our GPU"),
+    (r"\(bariton [^)]*\)", "(our GPUs; not possible now)"),
+    (r";? ?\bspark\d*\b is not used", ""),
+    (r"; GPU set to that UUID", ""),
+    (r"`base_url`", "the server address"),
+    (r"`?GPU-[0-9a-f]{8}-[0-9a-f-]+`?", "our GPU"),
+    (r"\bbariton(?:'s)? GPUs?(?: \d+)?", "our GPU"),
+    (r"\b[Bb]ariton\b", "our GPU server"),
+    (r"\bspark-?\d+\b", "our other server"),
+]
+
+
+def unhost(line: str) -> str:
+    for pat, new in HOST_REWRITES:
+        line = re.sub(pat, new, line)
+    return line
+
+
 def read_plan(path: Path) -> dict:
     text = path.read_text()
     if COMMITMENT not in text:
@@ -160,7 +183,7 @@ def read_plan(path: Path) -> dict:
             raise SystemExit(f"{path}: the plan does not state {h}")
     title, sections, cur, redacted, intro = None, [], None, 0, []
     for raw in text.splitlines():
-        line, n = LP.redact(raw)
+        line, n = LP.redact(unhost(raw))
         redacted += n
         if line.startswith("# ") and title is None:
             title = line[2:].strip()

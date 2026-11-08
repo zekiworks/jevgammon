@@ -201,7 +201,7 @@ def summed(tests: list) -> dict | None:
     return out
 
 
-def scores(m: dict, dry: bool) -> dict:
+def scores(m: dict, dry: bool, local: bool = False) -> dict:
     """Plan sections 2 and 6: before = mean of the empty runs, after = mean of the tests after game 10, change = after
     - before; range = max - min of the empty runs' risks found; threshold = max(range, 5); Improved = change in risks
     found > threshold and change in right safety >= -5. Live numbers while running; the verdict only past the gate."""
@@ -222,8 +222,8 @@ def scores(m: dict, dry: bool) -> dict:
         status = "Yes" if improved else "No"
     elif m["state"] == "complete":
         status = "complete (dry run): no verdict"
-    elif m["state"] == "running":
-        status = f"running, {finished} of {SERIES} series"
+    elif m["state"] == "running":  # a local model runs on our GPU (the page names no host)
+        status = f"running{' on our GPU' if local else ''}, {finished} of {SERIES} series"
     else:
         status = f"{m['state']}: {m['reason']}"
     return dict(before=before, after=after, change=change, range=rng, threshold=threshold, verdict=passed,
@@ -235,8 +235,8 @@ def validate(R, plan_sha: str, prompt_sha: str, test_sha: str, harness_prompt_sh
              plan_models: dict, leaks: list) -> dict:
     """R: improve.json, parsed. plan_sha: the plan file's sha256; prompt_sha and test_sha: the hashes the plan states
     (equal to the files present at build time, checked by the caller); harness_prompt_sha: the sha256 of the harness's
-    own copy of the lesson prompt (out/prompt), None when it is missing; plan_models: {setup: {"billed": bool}} from the
-    plan's section 3 table; leaks: the strings that would reveal a test position (checks._test_set_strings)."""
+    own copy of the lesson prompt (out/prompt), None when it is missing; plan_models: {setup: {"billed": bool, "route":
+    str}} from the plan's section 3 table; leaks: the strings that would reveal a test position (checks._test_set_strings)."""
     if not isinstance(R, dict):
         return rejected(["improve.json is not an object"])
     bad = check(R, TOP, "improve.json")
@@ -270,7 +270,7 @@ def validate(R, plan_sha: str, prompt_sha: str, test_sha: str, harness_prompt_sh
         out = {k: m[k] for k in ("key", "setup", "state", "reason", "steps_done", "cost")}
         out["empty"] = m["empty"]
         out["series"] = [{k: v for k, v in s.items()} for s in m["series"]]
-        out.update(scores(m, P["dry_run"]))
+        out.update(scores(m, P["dry_run"], plan_models[m["setup"]]["route"].startswith("local")))
         models.append(out)
     return dict(accepted=True, problems=[], private_problems=[],
                 public=dict(updated_at=R["updated_at"], dry_run=P["dry_run"], money=M, models=models))

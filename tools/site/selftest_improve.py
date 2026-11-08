@@ -15,8 +15,8 @@ States (every number and lesson SYNTHETIC; never results):
   complete-yes   Qwen3.8 Flash (off) complete, change in risks found +6.0 against a threshold of 5, right safety -1.4:
                  Yes;
   complete-no    GLM-5.3 (on) complete, change +5.0 against its own range 6: No;
-  mixed          Qwen Yes, GLM No, Kimi paused (balance), DeepSeek running mid-series 3, Gemini stopped: the sort order
-                 and every status;
+  mixed          Qwen Yes, GLM No, Kimi paused (balance), DeepSeek running mid-series 3, Gemini stopped, Gemma 4 31B
+                 (on) running locally ("running on our GPU, 0 of 5 series"): the sort order and every status;
   faults         complete-yes with one injected fault each (bad hashes, counts that do not add up, unknown keys, a
                  setup outside the plan, a verdict-gate violation, a test position in a lesson, ...): each refused,
                  the page the pre-registration view with the "Data refused" note, no name from the file in it;
@@ -119,7 +119,8 @@ def states() -> dict:
                    reason="balance minus the $5 reserve does not cover step S2; waiting for a top-up"),
              model(ds, "running", ["E1", "S1", "S2", "E2"], [test(38, 88, 27.3), test(36, 90, 26.9)],
                    [test(37, 89, 27.0), test(35, 90, 26.4)], partial=3, billed_usd=14.0),
-             model(gem, "stopped", ["E1"], [test(45, 80, 22.0)], [], reason="SYNTHETIC: quota exhausted", api=3.5)]
+             model(gem, "stopped", ["E1"], [test(45, 80, 22.0)], [], reason="SYNTHETIC: quota exhausted", api=3.5),
+             model(by["Gemma 4 31B (on)"], "running", ["E1"], [test(30, 95, 33.0)], [])]
     return {"none": None, "running-1": document([running], plan_sha),
             "complete-yes": document([qwen_yes(q)], plan_sha), "complete-no": document([glm_no(g)], plan_sha),
             "mixed": document(mixed, plan_sha)}
@@ -232,6 +233,9 @@ def main():
                  and "running, 1 of 5 series" in page)
         if name == "complete-yes":
             case("complete-yes: Yes", 'data-verdict="yes"' in page and 'data-verdict="no"' not in page)
+        if name == "mixed":
+            case("mixed: a local model 'running on our GPU', no host named", "running on our GPU, 0 of 5 series" in page
+                 and "withheld" not in page and "bariton" not in page)
         if name == "complete-no":
             case("complete-no: No", 'data-verdict="no"' in page and 'data-verdict="yes"' not in page)
     # The default build (pre-registration only) reads no improve.json even when one is present.
@@ -287,6 +291,9 @@ def main():
         ("complete-yes", "not-comparable cell removed", lambda t: t.replace("not comparable (different design)", "")),
         ("complete-yes", "a test position in the page", lambda t: t.replace("</main>", f"<p>{leaks[2]}</p></main>")),
         ("complete-yes", "a test position id in the page", lambda t: t.replace("</main>", f"<p>{leaks[0]}</p></main>")),
+        ("complete-yes", "a withheld mark on the page",
+         lambda t: t.replace("</main>", "<p>[withheld: private address]</p></main>")),
+        ("complete-yes", "a host named on the page", lambda t: t.replace("</main>", "<p>bariton</p></main>")),
         ("complete-yes", "a model row removed", lambda t: re.sub(r'<tr data-setup="Grok 4.7 \(on\)".*?</tr>', "", t,
                                                                  flags=re.S)),
     ]

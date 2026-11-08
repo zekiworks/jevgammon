@@ -710,6 +710,10 @@ def check_improve(out: Path, test_set: Path | None = None) -> list[str]:
             plan["test_set_sha256"], "Cygnet"]
     want += [m["setup"] for m in plan["models"]] + [m["label"] for m in plan["models"] if m["label"]]
     bad += [f"{PATH}: missing the pre-registered text {w!r}" for w in want if w not in text]
+    # The page names no host or device and shows no withheld mark (improve_page.HOST_REWRITES).
+    raw = page.read_text() + data.read_text()
+    bad += [f"{PATH}: names a host or shows a withheld mark ({w!r})" for w in ("withheld", "bariton", "GPU-")
+            if w in raw.replace("[name withheld]", "")]
     rows = [n for n in nodes if n.tag == "tr" and n.attrs.get("data-setup")]
     setups = [n.attrs["data-setup"] for n in rows]
     if sorted(setups) != sorted(m["setup"] for m in plan["models"]):

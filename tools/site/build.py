@@ -41,6 +41,9 @@ from common import (CONTENT, EARLIER, INTERNAL, LATE_ENTRY, PENDING, PROVISIONAL
                     THRESHOLDS, aliases, relabel, setup_slug)
 
 BASE = "https://zekiworks.github.io/analysis/backgammon/"
+# The files of tools/site/assets/ copied to the site's root (hilde-leaf.svg: the top bar's mark, Ümit #2901).
+ASSETS = ("site.css", "site.js", "tables.js", "png.js", "bg.css", "suite-bar.css", "bg.js", "decisions.css", "decisions.js",
+          "hilde-leaf.svg")
 
 
 def load_setups() -> dict:
@@ -502,7 +505,7 @@ def main():
     if S["image"] is None:
         old = sorted((out / "share").glob("preview-*.png")) if (out / "share").exists() else []
         S["image"] = f"share/{old[0].name}" if old else None
-    for name in ("site.css", "site.js", "tables.js", "png.js", "bg.css", "suite-bar.css", "bg.js", "decisions.css", "decisions.js"):
+    for name in ASSETS:
         if (SITE / "assets" / name).exists():
             shutil.copy(SITE / "assets" / name, out / name)
     pages.write_all(S, out, BASE)

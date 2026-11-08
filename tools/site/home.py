@@ -11,7 +11,7 @@ import textwrap
 import analysis as A
 import nack_section
 import pages as P
-from common import ALL_NOTE, CLOSE_B_SCOPE_NOTE, CONTENT, NA, NOT_MEASURED, PENDING, PROVISIONAL, PROVISIONAL_NOTE, TOO_FEW, count, esc, fmt, nm, pct, status_badge
+from common import ALL_NOTE, CLOSE_B_SCOPE_NOTE, CONTENT, LATE_ENTRY, NA, NOT_MEASURED, PENDING, PROVISIONAL, PROVISIONAL_NOTE, TOO_FEW, count, esc, fmt, nm, pct, status_badge
 
 TABS = [("risk", "Risk"), ("quality", "Quality"), ("confidence", "Confidence"), ("reasoning", "Reasoning"),
         ("cost", "Cost"), ("stability", "Stability")]
@@ -78,8 +78,8 @@ def model_of(S, ds, name) -> str:
 def best_per_model(S, eligible=None) -> dict:
     """{model: (league, setup name, risk metrics)}: each model's setup with the highest stored All-leagues risk
     judgement; on an exact tie the first in league order (all_rows' order) is kept. Programs and setups without a risk
-    judgement are left out; eligible(league, name), when given, restricts the candidates. The one rule behind the
-    leaderboard (story.best_settings) and the Nackgammon per-model view (nack_views)."""
+    judgement are left out; eligible(league, name), when given, restricts the candidates. The Nackgammon per-model
+    view's rule (nack_views); the leaderboard does not use it (story.leaderboard_rows: no score in its choice)."""
     best = {}
     for lg, n, r, ref in all_rows(S):
         if ref or r["judgement"] is None or (eligible and not eligible(lg, n)):
@@ -93,8 +93,8 @@ def best_per_model(S, eligible=None) -> dict:
 def nack_views(S) -> tuple[dict, list]:
     """The Nackgammon section's views: each setup's model type (decision / chat / program; its setups.json entry, a
     league entry first as for a ladder move, else content/nack_setup_types.json for a setup that played in no league;
-    a missing or unknown type fails the build), and the one setting per model of the per-model view: best_per_model,
-    the leaderboard's rule, over the settings this test asked (from league play, never from this test)."""
+    a missing or unknown type fails the build), and the one setting per model of the per-model view: best_per_model
+    over the settings this test asked (from league play, never from this test)."""
     N = S["nack"]
     kinds, models = {}, {}
     for n in N["setups"]:
@@ -1565,6 +1565,8 @@ def close_b_section(S) -> str:
 
 FAMILIES = json.loads((CONTENT / "families.json").read_text())["families"]
 FAMILY_ICONS = (CONTENT / "family_icons.svg").read_text().strip()
+_MAKERS = json.loads((CONTENT / "maker_colors.json").read_text())
+MAKERS, SETUP_MAKER = _MAKERS["makers"], _MAKERS["setups"]
 GROUPS = [("decision", "Decision models"), ("chat", "Chat models"), ("unknown", "Model type not recorded"),
           ("program", "Programs: reference rows, never ranked")]
 MEASURES = [("risk-judgement", "Risk judgement"), ("error-rate", "Error rate"), ("cost", "Cost"), ("time", "Time")]
@@ -1572,7 +1574,24 @@ PHASE_ALL_CHARTS = "The Phase filter does not apply to these charts: all phases.
 
 
 def family(name: str) -> dict | None:
+    """The setup's family (families.json): its icon."""
     return next((f for f in FAMILIES if re.match(f["match"], name)), None)
+
+
+def maker(name: str) -> tuple[str, str]:
+    """(maker, colour) of a model setup (content/maker_colors.json, Ümit #2745 item 7): the one colour of its setups on
+    every chart and in the leaderboard. A setup missing there fails the build; programs have none (callers skip them)."""
+    if name not in SETUP_MAKER:
+        raise ValueError(f"content/maker_colors.json: no maker for setup {name!r}")
+    m = SETUP_MAKER[name]
+    return m, MAKERS[m]["colour"]
+
+
+def maker_legend(names) -> str:
+    """A swatch per maker of the given setups, in maker_colors.json's order."""
+    present = {maker(n)[0] for n in names}
+    return "".join(f'<span><i class="swatch" style="background:{v["colour"]}"></i>{esc(m)}</span>'
+                   for m, v in MAKERS.items() if m in present)
 
 
 def chart_rows(S, lg, measure: str) -> list:
@@ -1673,8 +1692,8 @@ def hbars(S, measure: str, entries: list, pos, ticks, merged: bool, lines=()) ->
             value, tip = _value(S, lg, n, measure, v, lo, hi, r, q)
             track = ""
             if v is not None and (measure == "risk-judgement" or v > 0):
-                colour = f' style="width:{pos(v):.2f}%;background-color:{fam["colour"]}"' if fam else f' style="width:{pos(v):.2f}%"'
-                track = f'<span class="hbar-fill{"" if fam else " program" if ref else " other"}"{colour}></span>'
+                colour = f' style="width:{pos(v):.2f}%;background-color:{maker(n)[1]}"' if not ref else f' style="width:{pos(v):.2f}%"'
+                track = f'<span class="hbar-fill{" program" if ref else ""}"{colour}></span>'
                 if lo is not None and hi is not None and (measure == "risk-judgement" or lo > 0):
                     track += f'<span class="hbar-interval" style="left:{pos(lo):.2f}%;width:{max(pos(hi) - pos(lo), 0.3):.2f}%"></span>'
             if measure == "risk-judgement":
@@ -1728,12 +1747,8 @@ def measure_chart_card(S, measure: str, title: str) -> str:
             names.setdefault(n, []).append(str(lg["id"]))
         listed = "; ".join(f'{esc(n)} (League {", ".join(ids)})' for n, ids in sorted(names.items()))
         views += f'<p class="table-note unmeasured">Programs, {esc(NOT_MEASURED)}: {listed}.</p>'
-    fams = []
-    for f in FAMILIES:
-        if any(not e[2] and family(e[1]) is f for e in every):
-            fams.append(f'<span><i class="swatch" style="background:{f["colour"]}"></i><svg class="fam-icon" aria-hidden="true" '
-                        f'focusable="false"><use href="#{f["icon"]}"/></svg>{esc(f["name"])}</span>')
-    legend = (f'<span class="families">{"".join(fams)}<span><i class="swatch swatch-program"></i>program (reference row)</span></span>')
+    legend = (f'<span class="families">{maker_legend(e[1] for e in every if not e[2])}'
+              f'<span><i class="swatch swatch-program"></i>program (reference row)</span></span>')
     sub = {"risk-judgement": "Risk calls per setup: was each risk the right one, and was safe right when it played safe? "
                              "100 = every call right, 50 = always safe; the line on each bar is its 95% interval (games "
                              "resampled) · higher is better",
@@ -1767,29 +1782,33 @@ def measure_charts(S) -> str:
 
 
 def result_cards(S) -> str:
-    """Three cards, stored values only and model setups only (programs are reference rows, never leaders): the highest
-    risk judgement of every model setup and of the decision models, and the lowest error rate."""
-    models = [(lg, n, r) for lg, n, r, ref in all_rows(S) if not ref and r["judgement"] is not None]
-    best = models[0] if models else None
-    dec = next(((lg, n, r) for lg, n, r in models if kind(P.origin_meta(S, lg["dataset"], n)) == "decision"), None)
-    ers = [(lg, n, s["quality"]) for lg in S["leagues"] for n, s in lg["setups"].items()
-           if not ref_label(S, lg["dataset"], n) and s["quality"].get("error_rate") is not None and not s["quality"].get("too_few")]
-    low = min(ers, key=lambda x: x[2]["error_rate"]) if ers else None
+    """Three cards, stored values only and model setups only (programs are reference rows, never leaders), late entries
+    counted (Ümit #2921 item 4): the highest risk judgement of every model setup and of the decision models, and the
+    lowest error rate."""
+    late = [(P.late_href("", e), e["name"], f'late entry, League {e["field_league"]} field',
+             S["setups_meta"].get((LATE_ENTRY, e["name"])) or {}, e["risk"]["main"], e["quality"]) for e in S["late_entries"]]
+    league = [(P.model_href("", lg["dataset"], n, S), n, f'League {lg["id"]}', P.origin_meta(S, lg["dataset"], n), r,
+               lg["setups"][n]["quality"] if n in lg["setups"] else None) for lg, n, r, ref in all_rows(S) if not ref]
+    models = [x for x in league + late if x[4]["judgement"] is not None]
+    best = max(models, key=lambda x: x[4]["judgement"], default=None)
+    dec = max((x for x in models if kind(x[3]) == "decision"), key=lambda x: x[4]["judgement"], default=None)
+    ers = [x for x in league + late if x[5] and x[5].get("error_rate") is not None and not x[5].get("too_few")]
+    low = min(ers, key=lambda x: x[5]["error_rate"], default=None)
     cards = []
-    for title, top, value, lo, hi, unit in (
-            ("Highest observed risk judgement, every model setup", best, "judgement", "judgement_lo", "judgement_hi",
+    for title, top, i, value, lo, hi, unit in (
+            ("Highest observed risk judgement, every model setup", best, 4, "judgement", "judgement_lo", "judgement_hi",
              "/100, higher is better"),
-            ("Highest observed risk judgement, decision models", dec, "judgement", "judgement_lo", "judgement_hi",
+            ("Highest observed risk judgement, decision models", dec, 4, "judgement", "judgement_lo", "judgement_hi",
              "/100, higher is better"),
-            ("Lowest observed error rate, every model setup", low, "error_rate", "error_lo", "error_hi",
+            ("Lowest observed error rate, every model setup", low, 5, "error_rate", "error_lo", "error_hi",
              "PR, lower is better")):
         if not top:
             continue
-        lg, n, x = top
+        href, n, where, x = top[0], top[1], top[2], top[i]
         cards.append(f'<div class="result-card"><h2>{esc(title)}</h2><p class="result-main">{fmt(x[value])} '
                      f'<span class="result-unit">{esc(unit)}</span></p>'
-                     f'<p class="result-cost"><a href="{P.model_href("", lg["dataset"], n, S)}">{esc(n)}</a> · League '
-                     f'{lg["id"]} · 95% interval {fmt(x[lo])} to {fmt(x[hi])}</p></div>')
+                     f'<p class="result-cost"><a href="{href}">{esc(n)}</a> · {esc(where)} · 95% interval '
+                     f'{fmt(x[lo])} to {fmt(x[hi])}</p></div>')
     return (f'<h2 class="board-group">Model setups, all leagues</h2><div class="result-cards">{"".join(cards)}</div>'
             f'<p class="table-note cards-note">{esc(ALL_NOTE)}</p>')
 
@@ -1867,6 +1886,7 @@ def hero_card(S) -> str:
       {leaders(S)}
       {facts(S)}
       <nav class="face-nav" aria-label="On this page">{face}</nav>
+      {P.more_pages("")}
     </section>"""
 
 

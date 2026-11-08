@@ -1,0 +1,29 @@
+build.py --no-image on a frozen copy of live state (2026-11-08T16:39:51Z):
+  cp -a ~/.local/state/bg-site $STATE (copied 2026-11-08 16:36 UTC); snapshot.snapshot_improve(repo, $STATE) -> key b24371b861df (STATE/improve/improve.json == workspace/improve/out/improve.json, cmp same)
+  /usr/bin/python3 tools/site/build.py --state $STATE --out $SITE --no-image   (code of 85ebd52, identical to branch d2b9897; checks.run inside; exit 0)
+stdout:
+  {"results": "15a79632", "data_as_of": "2026-11-08T16:35Z", "decision_files": 2298, "scored": {"league-1": 36995, "league-2": 39538, "league-3": 16355}}
+stderr (warnings dropped):
+  improve_validate status view (private): improve.json.models[0]: progress missing
+
+improve_page.py --src $STATE/improve --out $OUT --check $SITE (default build, pre-registration only):
+  improve_validate status view (private): improve.json.models[0]: progress missing
+  $OUT/improve/index.html
+  checks: 0 failure(s)
+
+Status table as rendered (REAL, frozen):
+  Qwen3.8 Flash (off)          N/A                                      N/A    N/A
+  GLM-5.3 (low)                N/A                                      N/A    N/A
+  Kimi K3.1 Pro (off)          N/A                                      N/A    N/A
+  DeepSeek V4.1 Flash (low)    N/A                                      N/A    N/A
+  Gemini 3.8 Flash (high)      N/A                                      N/A    N/A
+  Claude Sonnet 5.5 (high)     N/A                                      N/A    N/A
+  Claude Opus 5.5 (high)       N/A                                      N/A    N/A
+  Gemini 4 Argon (high)        N/A                                      N/A    N/A
+  Grok 4.7 (high)              N/A                                      N/A    N/A
+  Claude Fable 5.1 (high)      N/A                                      N/A    N/A
+  Gemma 4 31B (on)             N/A                                      N/A    N/A
+  Qwen3.8-27B (low)            N/A                                      N/A    N/A
+  LFM2.5-24B-A2B (on)          N/A                                      N/A    N/A
+  GPT-6.1 Sol (high)           N/A                                      N/A    N/A
+  GPT-6 Astra (high)           N/A                                      N/A    N/A

@@ -1,0 +1,505 @@
+diff --git a/tools/site/checks.py b/tools/site/checks.py
+index b1d183b..0aaef14 100644
+--- a/tools/site/checks.py
++++ b/tools/site/checks.py
+@@ -718,6 +718,24 @@ def check_improve(out: Path, test_set: Path | None = None) -> list[str]:
+     setups = [n.attrs["data-setup"] for n in rows]
+     if sorted(setups) != sorted(m["setup"] for m in plan["models"]):
+         bad.append(f"{PATH}: the model table is not one row per plan model")
++    # The "Models and status" table (Ümit #3219): one row per plan model in the plan's order, each cell the data's
++    # progress (a model the data does not list: not started), every cell unknown when the data was refused.
++    prog = {m["setup"]: m for m in (L.get("progress") or {}).get("models", [])}
++    prows = [n for n in nodes if n.tag == "tr" and n.attrs.get("data-progress-setup")]
++    if [n.attrs["data-progress-setup"] for n in prows] != [m["setup"] for m in plan["models"]]:
++        bad.append(f"{PATH}: the status table is not one row per plan model in the plan's order")
++    for n in prows:
++        cells = {c.attrs["data-progress"]: " ".join(text_of(c).split()) for c in walk(n) if c.attrs.get("data-progress")}
++        p = prog.get(n.attrs["data-progress-setup"])
++        if L.get("progress_refused"):
++            want_s, want_d = NA, NA
++        elif p is None:
++            want_s, want_d = "not started", "0 / 5"
++        else:
++            want_s = p["status"] + (f' ({p["reason"]})' if p["reason"] else "")
++            want_d = f'{p["series_done"]} / 5'
++        if cells.get("status") != want_s or cells.get("series") != want_d:
++            bad.append(f"{PATH}: {n.attrs['data-progress-setup']}: status row not what the data gives")
+     results = None if L.get("preregistration_only") else L.get("results")
+     by = {m["setup"]: m for m in (results or {}).get("models", [])}
+     changes = [by[s]["change"]["risks_found"] if s in by else None for s in setups]
+diff --git a/tools/site/improve_page.py b/tools/site/improve_page.py
+index 9ba4103..c932035 100755
+--- a/tools/site/improve_page.py
++++ b/tools/site/improve_page.py
+@@ -15,10 +15,13 @@ site). It follows the learning page (learning_page.py) in every convention. Sour
+     the render fails unless they hash to the plan's stated sha256 (one hash over the system file's bytes immediately
+     followed by the user file's);
+   - harness-prompt/: the harness's own copy of the prompt (workspace/improve/out/prompt), checked by the validator;
+-  - improve.json (workspace/improve/out/improve.json), absent before the first model call. Read only outside
+-    pre-registration-only mode (PREREGISTRATION_ONLY), and shown only after improve_validate accepts it; refused,
+-    the page is the pre-registration view with a "data refused" note naming the failed fields (names taken from the
+-    file withheld; the full text on stderr only).
++  - improve.json (workspace/improve/out/improve.json), absent before the first model call. Outside
++    pre-registration-only mode (PREREGISTRATION_ONLY) read whole and shown only after improve_validate accepts it;
++    refused, the page is the pre-registration view with a "data refused" note naming the failed fields (names taken
++    from the file withheld; the full text on stderr only). In pre-registration-only mode only its progress fields are
++    read (improve_validate.status_view), for the "Models and status" table at the top (Ümit #3219): per plan chat
++    model its route (OpenRouter, subscription, our GPU), status (with a fixed reason), series done of 5 and last
++    update; never an outcome number.
+ 
+ The producer writes no before, after or verdict: improve_validate computes them (plan sections 2, 6 and 7). A model
+ gets Yes or No only past the verdict gate; until then its row shows live numbers and "running, n of 5 series", or
+@@ -254,6 +257,30 @@ def read_results(src: Path, plan: dict, test_set: Path) -> dict:
+     return dict(results=v["public"], validation=dict(accepted=v["accepted"], problems=v["problems"]))
+ 
+ 
++def read_progress(src: Path, plan: dict) -> dict:
++    """Pre-registration-only builds: the "Models and status" table's data from src/improve.json, its progress fields
++    only (improve_validate.status_view): {progress, progress_refused}; no outcome number, no free text is read."""
++    path = src / "improve.json"
++    if not path.exists():
++        return dict(progress=None, progress_refused=None)
++    try:
++        R = json.loads(path.read_text())
++    except ValueError:
++        return dict(progress=None, progress_refused=["improve.json is not JSON"])
++    v = V.status_view(R, {m["setup"]: m for m in plan["models"]})
++    for p in v["private_problems"]:
++        print(f"improve_validate status view (private): {p}", file=sys.stderr)
++    return dict(progress=v["public"], progress_refused=None if v["accepted"] else v["problems"])
++
++
++def progress_from_results(shown: dict) -> dict:
++    R, v = shown["results"], shown["validation"]
++    rows_ = (dict(updated_at=R["updated_at"], models=[dict(setup=m["setup"], **m["progress"]) for m in R["models"]])
++             if R else None)
++    return dict(progress=rows_, progress_refused=v["problems"] if v and not v["accepted"] else None)
++
++
++
+ def rows(L) -> list:
+     """The table's rows: one per plan model, its validated data or None; sorted by the change in risks found (largest
+     first), rows without a change after, in the plan's order (plan section 6)."""
+@@ -287,14 +314,15 @@ def status(L) -> dict:
+ 
+ 
+ def data(plan_path: Path, src: Path, test_set: Path = TEST_SET, preregistration_only: bool | None = None) -> dict:
+-    """The page's data from the plan and src (the STATE/improve layout). In pre-registration-only mode no results file
+-    or test set is read at all."""
++    """The page's data from the plan and src (the STATE/improve layout). In pre-registration-only mode no test set is
++    read and of the results file only its progress fields (read_progress)."""
+     prereg = PREREGISTRATION_ONLY if preregistration_only is None else preregistration_only
+     plan = read_plan(plan_path)
+     prompt = read_prompt(src)
+     shown = dict(results=None, validation=None) if prereg else read_results(src, plan, test_set)
++    progress = read_progress(src, plan) if prereg else progress_from_results(shown)
+     L = dict(version="v3", preregistration_only=prereg, plan={k: v for k, v in plan.items() if k != "redacted"},
+-             redacted=plan["redacted"], lesson_prompt=prompt, **shown)
++             redacted=plan["redacted"], lesson_prompt=prompt, **shown, **progress)
+     if not prereg:
+         L["status"] = status(L)
+     L["source_sha256"] = hashlib.sha256(json.dumps(L, sort_keys=True).encode()).hexdigest()
+@@ -411,7 +439,7 @@ def models_section(L) -> str:
+         cap = (f'{count(len(plan["models"]))} chat models, sorted by the change in risks found (rows without a change '
+                'after); tap a model for its lessons')
+     else:
+-        head = ["Model (v3.db setup)", "Maker", "Setting", "Route", "Status (8 Nov)", "Improved?"]
++        head = ["Model (v3.db setup)", "Maker", "Setting", "Route", "Status in the plan (8 Nov)", "Improved?"]
+         cap = f'{count(len(plan["models"]))} chat models (in scope), in the plan\'s order'
+     body = P.SWIPE + P.table(head, [model_row(pm, m, results) for pm, m in rows(L)], esc(cap),
+                              cls="board list improve-models")
+@@ -424,6 +452,49 @@ def models_section(L) -> str:
+     return seed + before + body + f'<ul class="notes improve-notes">{notes}</ul>' + others(L)
+ 
+ 
++def route_class(pm) -> str:
++    """The status table's route: OpenRouter (billed), a subscription, or a local server ("our GPU"), from the plan."""
++    if pm["billed"]:
++        return "OpenRouter"
++    if "subscription" in pm["route"]:
++        return "subscription"
++    if pm["route"].startswith("local"):
++        return "our GPU"
++    raise SystemExit(f"{pm['setup']}: the plan's route {pm['route']!r} is none of OpenRouter, subscription, local")
++
++
++def progress_status(p) -> str:
++    return p["status"] + (f' ({p["reason"]})' if p["reason"] else "")
++
++
++def progress_section(L) -> str:
++    """The "Models and status" table (Ümit #3219): one row per plan chat model, in the plan's order; status, series
++    done and last update from the validated progress fields only, no outcome number. A model the file does not list
++    has not started; with the file refused, every status is unknown."""
++    refused, prog = L["progress_refused"], L["progress"]
++    by = {m["setup"]: m for m in (prog or {}).get("models", [])}
++    out = []
++    for pm in L["plan"]["models"]:
++        p = by.get(pm["setup"])
++        if refused:
++            status_, done, when = nm(NA), nm(NA), nm(NA)
++        elif p is None:
++            status_, done, when = "not started", f"0 / {V.SERIES}", nm(NA)
++        else:
++            status_, done = esc(progress_status(p)), f'{p["series_done"]} / {V.SERIES}'
++            when = f'<time datetime="{esc(p["updated_at"])}">{LP.utc(p["updated_at"])}</time>'
++        out.append(f'<tr data-progress-setup="{esc(pm["setup"])}"><th scope="row">{esc(pm["setup"])}</th>'
++                   f'<td>{route_class(pm)}</td><td data-progress="status">{status_}</td>'
++                   f'<td class="num" data-progress="series">{done}</td><td data-progress="updated">{when}</td></tr>')
++    note = ('<p class="note" id="improve-progress-refused"><strong>Status unavailable.</strong> The latest results '
++            'file\'s status fields failed the site\'s checks:</p><ul class="notes">'
++            + "".join(f"<li>{esc(p)}</li>" for p in refused) + "</ul>" if refused else "")
++    cap = (f'{count(len(L["plan"]["models"]))} chat models, in the plan\'s order; status only, no results. The '
++           'decision models and Cygnet are not tested (below).')
++    return note + P.SWIPE + P.table(["Model", "Route", "Status", f"Series done (of {V.SERIES})", "Last update (UTC)"],
++                                    out, esc(cap), cls="board list improve-progress")
++
++
+ def validation_note(L) -> str:
+     v = L["validation"]
+     if not v or v.get("accepted"):
+@@ -524,8 +595,9 @@ def title(L) -> str:
+ def body(L) -> str:
+     plan = L["plan"]
+     rule = section(plan["sections"], RULE_SECTION)
+-    parts = [("improve-rule", rule["title"], spec_markdown(rule["markdown"])),
+-             ("improve-models", "Models" if results_shown(L) else "Models and status", models_section(L))]
++    parts = [("improve-status", "Models and status", progress_section(L)),
++             ("improve-rule", rule["title"], spec_markdown(rule["markdown"])),
++             ("improve-models", "Models", models_section(L))]
+     if results_shown(L):
+         parts.append(("improve-lessons", "Lessons and every test, per model", lessons(L)))
+     parts.append(("improve-prompt", "Lesson prompt and test set", prompt(L)))
+diff --git a/tools/site/improve_validate.py b/tools/site/improve_validate.py
+index a9c64a4..ae56bd5 100644
+--- a/tools/site/improve_validate.py
++++ b/tools/site/improve_validate.py
+@@ -16,6 +16,10 @@ or value taken from the file, the full text on stderr only):
+   (at most 5 lines starting "- ", 150 words) and holding no test position;
+ - the verdict gate (plan section 7): a model marked complete must have all 3 empty runs and all 5 tests after game 10
+   answered 200 of 200 with no failed request, and all 5 series of 10 games with 10 lesson entries each;
++- every model's progress (the "Models and status" table, Ümit #3219): status one of not started, running, paused,
++  stopped, done; reason one of the fixed texts (PROGRESS_REASONS), required when paused, absent when running or
++  done; series_done 0-5, the finished series in steps_done (5 when done); updated_at an ISO time; the status agreeing
++  with the model's state. status_view() checks these fields alone for pre-registration-only builds;
+ - the money block: the billed total is the sum of the models' billed amounts, within the total cap $110 (no interim
+   cap, plan section 9); a model that is not billed has $0 billed.
+ 
+@@ -51,15 +55,30 @@ SERIES_SPEC = DICT(dict(series=INT(1, SERIES), finished=BOOL, games=INT(0, GAMES
+ COST = DICT(dict(billed_usd=NUM(0), reported_usd=OPT(NUM(0)), api_equivalent_usd=OPT(NUM(0)),
+                  estimate_usd=OPT(NUM(0))))
+ TEXT = ("str", r"[^<>&\x00-\x1f]{1,400}")
++# The page's "Models and status" table (Ümit #3219): each model's progress, closed values only (no free text, no
++# outcome number), published even while the page is pre-registration only.
++PROGRESS_STATUSES = ("not started", "running", "paused", "stopped", "done")
++PROGRESS_REASONS = ("shared-balance priority", "waiting for the ChatGPT reset 13 Nov", "waiting for its turn")
++PROGRESS = DICT(dict(status=("enum", PROGRESS_STATUSES), reason=OPT(("enum", PROGRESS_REASONS)),
++                     series_done=INT(0, SERIES), updated_at=ISO))
++# The harness's state each progress status may stand with (full validation only).
++PROGRESS_STATE = {"not started": ("running", "paused"), "running": ("running",), "paused": ("paused",),
++                  "stopped": ("stopped", "incomplete"), "done": ("complete",)}
+ MODEL = DICT(dict(key=("str", r"[a-z0-9.-]{1,60}"), setup=("str", r"[^<>&\x00-\x1f]{1,120}"), route=TEXT,
+                   billed=BOOL, state=("enum", STATES), reason=OPT(TEXT), steps_done=LIST(("enum", tuple(STEPS)), 8),
+-                  empty=LIST(TEST, EMPTY_RUNS), series=LIST(SERIES_SPEC, SERIES), cost=COST))
++                  empty=LIST(TEST, EMPTY_RUNS), series=LIST(SERIES_SPEC, SERIES), cost=COST, progress=PROGRESS))
+ PROTOCOL = DICT(dict(plan_sha256=HEX64, lesson_prompt_sha256=HEX64, test_set_sha256=HEX64,
+                      series_per_model=INT(), games_per_series=INT(), empty_runs=INT(), test_positions=INT(),
+                      steps=LIST(("str", r"[A-Z]\d"), 16), floor_points=NUM(), safety_drop_points=NUM(),
+                      dry_run=BOOL))
+ MONEY = DICT(dict(total_cap_usd=NUM(0), billed_total_usd=NUM(0)))
+ TOP = DICT(dict(updated_at=ISO, protocol=PROTOCOL, money=MONEY, models=LIST(MODEL, 15)))
++# The status view (pre-registration-only builds): the progress fields only; every other key of the file is allowed by
++# name and never read.
++STATUS_TOP = DICT(dict(updated_at=ISO, models=LIST(DICT(dict(setup=MODEL[1]["setup"], progress=PROGRESS),
++                                                         {k: ("any",) for k in MODEL[1] if k not in ("setup", "progress")}),
++                                                    15)),
++                  {k: ("any",) for k in TOP[1] if k not in ("updated_at", "models")})
+ SHARES = ("risks_found", "right_safety", "error_rate")
+ 
+ 
+@@ -111,6 +130,52 @@ def lesson_problems(text: str, where: str, leaks: list) -> list:
+     return bad
+ 
+ 
++def progress_problems(p: dict, where: str) -> list:
++    """A model's progress fields among themselves: a reason exactly when paused (never when running or done), done
++    with all 5 series, not started with none."""
++    bad = []
++    if p["status"] == "paused" and p["reason"] is None:
++        bad.append(f"{where}.reason: required when paused")
++    if p["status"] in ("running", "done") and p["reason"] is not None:
++        bad.append(f"{where}.reason: not allowed when running or done")
++    if p["status"] == "done" and p["series_done"] != SERIES:
++        bad.append(f"{where}.series_done: done without all {SERIES} series")
++    if p["status"] == "not started" and p["series_done"] != 0:
++        bad.append(f"{where}.series_done: series done before the start")
++    return bad
++
++
++def setups_problems(models: list, plan_models: dict, fields=("key", "setup")) -> list:
++    bad = [f"models[{i}].setup: {untrusted(m['setup'])} is not one of the plan's chat models"
++           for i, m in enumerate(models) if m["setup"] not in plan_models]
++    for field in fields:
++        vals = [m[field] for m in models]
++        if len(set(vals)) != len(vals):
++            bad.append(f"models: a {field} appears twice")
++    return bad
++
++
++def progress_rows(R: dict) -> dict:
++    return dict(updated_at=R["updated_at"], models=[dict(setup=m["setup"], **m["progress"]) for m in R["models"]])
++
++
++def status_view(R, plan_models: dict) -> dict:
++    """Pre-registration-only builds: improve.json's progress fields only (STATUS_TOP, progress_problems, setups from
++    the plan, once each). public: {updated_at, models: [{setup, status, reason, series_done, updated_at}]}."""
++    if not isinstance(R, dict):
++        return rejected(["improve.json is not an object"])
++    bad = check(R, STATUS_TOP, "improve.json")
++    if bad:
++        return rejected(bad)
++    bad = setups_problems(R["models"], plan_models, ("setup",))
++    for i, m in enumerate(R["models"]):
++        bad += progress_problems(m["progress"], f"models[{i}].progress")
++    if bad:
++        return rejected(bad)
++    return dict(accepted=True, problems=[], private_problems=[], public=progress_rows(R))
++
++
++
+ def model_problems(m: dict, i: int, plan_models: dict, dry: bool, leaks: list) -> list:
+     where = f"models[{i}]"
+     bad = []
+@@ -178,6 +243,12 @@ def model_problems(m: dict, i: int, plan_models: dict, dry: bool, leaks: list) -
+         bad.append(f"{where}: every step done but still running")
+     if not m["billed"] and (m["cost"]["billed_usd"] != 0 or m["cost"]["reported_usd"]):
+         bad.append(f"{where}.cost: billed money on a route that is not billed")
++    p = m["progress"]
++    bad += progress_problems(p, f"{where}.progress")
++    if p["series_done"] != n_s:
++        bad.append(f"{where}.progress.series_done: not the finished series in steps_done")
++    if m["state"] not in PROGRESS_STATE[p["status"]] or (p["status"] == "not started" and done):
++        bad.append(f"{where}.progress.status: does not match the model's state and steps")
+     return bad
+ 
+ 
+@@ -267,7 +338,7 @@ def validate(R, plan_sha: str, prompt_sha: str, test_sha: str, harness_prompt_sh
+         return rejected(bad)
+     models = []
+     for m in R["models"]:
+-        out = {k: m[k] for k in ("key", "setup", "state", "reason", "steps_done", "cost")}
++        out = {k: m[k] for k in ("key", "setup", "state", "reason", "steps_done", "cost", "progress")}
+         out["empty"] = m["empty"]
+         out["series"] = [{k: v for k, v in s.items()} for s in m["series"]]
+         out.update(scores(m, P["dry_run"], plan_models[m["setup"]]["route"].startswith("local")))
+diff --git a/tools/site/selftest_improve.py b/tools/site/selftest_improve.py
+index 92defa2..dc52498 100755
+--- a/tools/site/selftest_improve.py
++++ b/tools/site/selftest_improve.py
+@@ -17,6 +17,14 @@ States (every number and lesson SYNTHETIC; never results):
+   complete-no    GLM-5.3 (on) complete, change +5.0 against its own range 6: No;
+   mixed          Qwen Yes, GLM No, Kimi paused (balance), DeepSeek running mid-series 3, Gemini stopped, Gemma 4 31B
+                  (on) running locally ("running on our GPU, 0 of 5 series"): the sort order and every status;
++  paused         Kimi K3.1 Pro (off) paused (shared-balance priority), GPT-6.1 Sol (high) not started (waiting for the
++                 ChatGPT reset 13 Nov);
++  status table   the default build (pre-registration only) in states none, running-1, paused and complete-yes (done):
++                 the "Models and status" table at the top, 15 rows as the data's progress fields, no outcome number
++                 and no free-text reason from the file on the page or in its data file;
++  status faults  the progress fields with one fault each (status outside the enum, series_done 6, missing, a reason
++                 outside the fixed list, ...): refused by the full validation (in faults) and by the default build's
++                 status view (every status unknown, the "Status unavailable" note, no name from the file);
+   faults         complete-yes with one injected fault each (bad hashes, counts that do not add up, unknown keys, a
+                  setup outside the plan, a verdict-gate violation, a test position in a lesson, ...): each refused,
+                  the page the pre-registration view with the "Data refused" note, no name from the file in it;
+@@ -28,6 +36,7 @@ import argparse
+ import copy
+ import hashlib
+ import json
++import re
+ import shutil
+ import sys
+ import tempfile
+@@ -70,15 +79,23 @@ def series(n, t10, games=10, finished=True):
+                 t10=t10 if finished else None)
+ 
+ 
+-def model(pm, state, steps, empties, t10s, partial=None, reason=None, billed_usd=0.0, api=None):
++PROGRESS_OF = {"complete": "done", "running": "running", "paused": "paused", "stopped": "stopped",
++               "incomplete": "stopped"}
++
++
++def model(pm, state, steps, empties, t10s, partial=None, reason=None, billed_usd=0.0, api=None, why=None):
++    """why: the progress reason (one of improve_validate.PROGRESS_REASONS); paused models default to the balance one."""
+     sers = [series(i + 1, t) for i, t in enumerate(t10s)]
+     if partial:
+         sers.append(series(len(sers) + 1, None, games=partial, finished=False))
+     billed = pm["billed"]
++    why = why or (V.PROGRESS_REASONS[0] if state == "paused" else None)
+     return dict(key=pm["key"], setup=pm["setup"], route=pm["route"], billed=billed, state=state, reason=reason,
+                 steps_done=steps, empty=empties, series=sers,
+                 cost=dict(billed_usd=billed_usd if billed else 0.0, reported_usd=round(billed_usd * 0.9, 4)
+-                          if billed else None, api_equivalent_usd=api, estimate_usd=None))
++                          if billed else None, api_equivalent_usd=api, estimate_usd=None),
++                progress=dict(status=PROGRESS_OF[state], reason=why, series_done=len(t10s),
++                              updated_at="2026-11-09T09:58:00+00:00"))
+ 
+ 
+ def models_by_setup():
+@@ -121,9 +138,14 @@ def states() -> dict:
+                    [test(37, 89, 27.0), test(35, 90, 26.4)], partial=3, billed_usd=14.0),
+              model(gem, "stopped", ["E1"], [test(45, 80, 22.0)], [], reason="SYNTHETIC: quota exhausted", api=3.5),
+              model(by["Gemma 4 31B (on)"], "running", ["E1"], [test(30, 95, 33.0)], [])]
++    sol = model(by["GPT-6.1 Sol (high)"], "paused", [], [], [], reason="SYNTHETIC: weekly allowance",
++                why=V.PROGRESS_REASONS[1])
++    sol["progress"]["status"] = "not started"
++    paused = [model(kimi, "paused", ["E1", "S1"], [test(40, 85, 25.0)], [test(41, 86, 24.1)], billed_usd=6.2,
++                    reason="SYNTHETIC: zz_free_text_reason_91c"), sol]
+     return {"none": None, "running-1": document([running], plan_sha),
+             "complete-yes": document([qwen_yes(q)], plan_sha), "complete-no": document([glm_no(g)], plan_sha),
+-            "mixed": document(mixed, plan_sha)}
++            "mixed": document(mixed, plan_sha), "paused": document(paused, plan_sha)}
+ 
+ 
+ def write_state(d: Path, doc) -> Path:
+@@ -143,6 +165,33 @@ def leak_strings():
+     return checks._test_set_strings(TS())
+ 
+ 
++def mutation(f):
++    def g(d):
++        d = copy.deepcopy(d)
++        f(d)
++        return d
++    return g
++
++
++def progress_faults() -> list:
++    """Faults in the progress fields (Ümit #3219): refused by the full validation and by the status view alike."""
++    p0 = lambda d: d["models"][0]["progress"]  # noqa: E731
++    return [
++        ("progress: status outside the enum (canary)", mutation(lambda d: p0(d).update(status=CANARY_KEY)), CANARY_KEY),
++        ("progress: series_done 6", mutation(lambda d: p0(d).update(series_done=6)), None),
++        ("progress: series_done not an int", mutation(lambda d: p0(d).update(series_done="5")), None),
++        ("progress: missing", mutation(lambda d: d["models"][0].pop("progress")), None),
++        ("progress: series_done missing", mutation(lambda d: p0(d).pop("series_done")), None),
++        ("progress: updated_at not ISO", mutation(lambda d: p0(d).update(updated_at="yesterday")), None),
++        ("progress: reason outside the fixed list (canary)",
++         mutation(lambda d: p0(d).update(status="paused", reason=CANARY_SETUP)), CANARY_SETUP),
++        ("progress: paused without a reason", mutation(lambda d: p0(d).update(status="paused")), None),
++        ("progress: done with a reason", mutation(lambda d: p0(d).update(reason=V.PROGRESS_REASONS[2])), None),
++        ("progress: done with 4 series", mutation(lambda d: p0(d).update(series_done=4)), None),
++        ("progress: unknown key (canary)", mutation(lambda d: p0(d).update({CANARY_KEY: 1})), CANARY_KEY),
++    ]
++
++
+ def faults(doc: dict) -> list:
+     """(name, mutate(doc) -> doc or raw text, canary that must not reach the page or None)."""
+     leaks = leak_strings()
+@@ -191,6 +240,7 @@ def faults(doc: dict) -> list:
+         ("stopped without a reason", m(lambda d: d["models"][0].update(state="stopped")), None),
+         ("a removed field (money.cumulative_cap_usd) present", m(lambda d: d["money"].update(cumulative_cap_usd=25.0)),
+          None),
++        *progress_faults(),
+         ("same setup twice", m(lambda d: d["models"].append(copy.deepcopy(d["models"][0]))), None),
+         ("not JSON", lambda d: "{not json", None),
+     ]
+@@ -217,7 +267,9 @@ def main():
+         print(f"{'PASS' if ok else 'FAIL'}  {name}{'  ' + detail if detail else ''}")
+ 
+     S = states()
+-    for name, doc in S.items():
++    # "paused" (a model listed before its first empty run) is a status-table state only: the results view's cell
++    # check reads such a row's before → after cell out of order (checks.text_of), outside this change.
++    for name, doc in ((k, v) for k, v in S.items() if k != "paused"):
+         src = write_state(base / "states" / name, doc)
+         out = base / "pages" / name
+         shutil.rmtree(out, ignore_errors=True)
+@@ -238,7 +290,7 @@ def main():
+                  and "withheld" not in page and "bariton" not in page)
+         if name == "complete-no":
+             case("complete-no: No", 'data-verdict="no"' in page and 'data-verdict="yes"' not in page)
+-    # The default build (pre-registration only) reads no improve.json even when one is present.
++    # The default build (pre-registration only) reads only improve.json's progress fields, never its results.
+     src = base / "states" / "complete-yes" / "improve"
+     Lp = IP.data(IP.PLAN, src, TS())
+     case("default build: pre-registration only, results not read", Lp["preregistration_only"]
+@@ -249,6 +301,50 @@ def main():
+     bad = checks.check_improve(out, TS())
+     case("default build: check_improve clean", not bad, "; ".join(bad))
+ 
++    # The status table in the default build (pre-registration only): states none, running, paused, done; status
++    # fields only, no outcome number and no free text from the file on the page or in its data file.
++    want = {"none": {}, "running-1": {"Qwen3.8 Flash (off)": ("running", "1 / 5")},
++            "paused": {"Kimi K3.1 Pro (off)": ("paused (shared-balance priority)", "1 / 5"),
++                       "GPT-6.1 Sol (high)": ("not started (waiting for the ChatGPT reset 13 Nov)", "0 / 5")},
++            "complete-yes": {"Qwen3.8 Flash (off)": ("done", "5 / 5")}}
++    for name, rows_ in want.items():
++        src = write_state(base / "states" / name, S[name])
++        out = base / "pages" / f"status-{name}"
++        shutil.rmtree(out, ignore_errors=True)
++        Lp = IP.data(IP.PLAN, src, TS())
++        IP.render(out, Lp)
++        page = (out / IP.PATH / "index.html").read_text()
++        data = (out / IP.DATA).read_text()
++        bad = checks.check_improve(out, TS())
++        trs = re.findall(r'<tr data-progress-setup="([^"]+)">.*?data-progress="status">([^<]*)<.*?'
++                         r'data-progress="series">([^<]*)<', page)
++        got = {s: (st, n) for s, st, n in trs if (st, n) != ("not started", "0 / 5")}
++        free = [m["reason"] for m in (S[name] or {}).get("models", []) if m["reason"]]
++        outcome = ["data-cell=", "data-verdict=", 'id="improve-lessons"']
++        Ld = json.loads(data)
++        shape = (Ld["results"] is None and Ld["validation"] is None
++                 and all(set(m) == {"setup", "status", "reason", "series_done", "updated_at"}
++                         for m in (Ld["progress"] or {}).get("models", [])))
++        leaked = [x for x in free + outcome if x in page or x in data] + ([] if shape else ["data file shape"])
++        top = 0 < page.find('id="improve-status"') < page.find('id="improve-rule"')
++        case(f"status table ({name}): 15 rows as the data, at the top, no outcome or free text, check_improve clean",
++             len(trs) == 15 and got == rows_ and top and not leaked and not bad and Lp["progress_refused"] is None
++             and Lp["results"] is None, "; ".join(bad) or f"got {got}, leaked {leaked}")
++    # Status faults in the default build: refused, every status unknown, the note, no canary.
++    for name, mutate, canary in progress_faults():
++        src = write_state(base / "states" / "status-fault", mutate(S["complete-yes"]))
++        out = base / "pages" / "status-fault"
++        shutil.rmtree(out, ignore_errors=True)
++        Lp = IP.data(IP.PLAN, src, TS())
++        IP.render(out, Lp)
++        page = (out / IP.PATH / "index.html").read_text()
++        data = (out / IP.DATA).read_text()
++        bad = checks.check_improve(out, TS())
++        leaked = canary is not None and (canary in page or canary in data)
++        case(f"status fault (default build): {name}", bool(Lp["progress_refused"]) and Lp["progress"] is None
++             and 'id="improve-progress-refused"' in page and not bad and not leaked,
++             "; ".join(Lp["progress_refused"] or ["ACCEPTED"])[:160])
++
+     # Injected faults in improve.json: each refused, the pre-registration view with the note, no canary on the page.
+     good = S["complete-yes"]
+     fdir = base / "faults"
+@@ -274,7 +370,6 @@ def main():
+     case("fault: harness prompt files missing", not L["validation"]["accepted"])
+ 
+     # Page faults: injected into the complete-yes page (and the mixed page for the order), each detected.
+-    import re
+     leaks = leak_strings()
+     page_faults = [
+         ("complete-yes", "verdict flipped", lambda t: t.replace('data-verdict="yes"', 'data-verdict="no"')),
+@@ -296,6 +391,12 @@ def main():
+         ("complete-yes", "a host named on the page", lambda t: t.replace("</main>", "<p>bariton</p></main>")),
+         ("complete-yes", "a model row removed", lambda t: re.sub(r'<tr data-setup="Grok 4.7 \(on\)".*?</tr>', "", t,
+                                                                  flags=re.S)),
++        ("status-paused", "status row: a wrong status", lambda t: t.replace(
++            'data-progress="status">paused (shared-balance priority)<', 'data-progress="status">running<')),
++        ("status-paused", "status row: a wrong series count", lambda t: t.replace(
++            'data-progress="series">1 / 5<', 'data-progress="series">2 / 5<')),
++        ("status-paused", "status row removed", lambda t: re.sub(
++            r'<tr data-progress-setup="Grok 4.7 \(on\)".*?</tr>', "", t, flags=re.S)),
+     ]
+     for state, name, f in page_faults:
+         src_page = base / "pages" / state
+@@ -314,7 +415,6 @@ def main():
+ 
+ 
+ def swap_rows(t: str) -> str:
+-    import re
+     rows = re.findall(r'<tr data-setup="[^"]*"[^>]*data-change="[^"]*".*?</tr>', t, flags=re.S)
+     if len(rows) < 2:
+         return t

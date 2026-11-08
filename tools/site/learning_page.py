@@ -56,7 +56,8 @@ TITLE_PREREG = "Learning from experience (pre-registered)"
 # Pre-registration only (default ON): the build never reads the pilot's results, aggregates, lesson files or the
 # private test set, and the page shows the protocol and the pre-registered lesson prompt only. Results and lessons are
 # published only after this is switched off in a reviewed commit.
-PREREGISTRATION_ONLY = True
+# Switched off on Zeki's GO for 34ef85e (bus #2935): the completed pilot's validated results and lessons are published.
+PREREGISTRATION_ONLY = False
 COMMITMENT = "Results will be published whichever way they go, including no lift."
 PLAN = ROOT / "mailbox/Learning pilot - plan 2026-11-07.md"
 # The pilot's files as snapshot.py copies them (STATE/learning): the build's only source besides the plan.

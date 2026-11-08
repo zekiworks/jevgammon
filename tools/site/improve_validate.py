@@ -18,7 +18,8 @@ or value taken from the file, the full text on stderr only):
   answered 200 of 200 with no failed request, and all 5 series of 10 games with 10 lesson entries each;
 - every model's progress (the "Models and status" table, Ümit #3219): status one of not started, running, paused,
   stopped, done; reason one of the fixed texts (PROGRESS_REASONS), required when paused, absent when running or
-  done; series_done 0-5, the finished series in steps_done (5 when done); updated_at an ISO time; the status agreeing
+  done, "usage limit" only when paused; series_done 0-5, the finished series in steps_done (5 when done; 5 only when
+  done or stopped; 0 when not started); updated_at a real UTC calendar time (calendar_time); the status agreeing
   with the model's state. status_view() checks these fields alone for pre-registration-only builds;
 - the money block: the billed total is the sum of the models' billed amounts, within the total cap $110 (no interim
   cap, plan section 9); a model that is not billed has $0 billed.
@@ -28,6 +29,7 @@ projection validate() returns ("public"), for the page and its data file.
 """
 
 import re
+from datetime import datetime, timedelta
 
 from learning_validate import (BOOL, DICT, HEX64, INT, ISO, LIST, NUM, OPT, check, private_problems,  # noqa: F401
                                public_problems, untrusted)
@@ -132,9 +134,20 @@ def lesson_problems(text: str, where: str, leaks: list) -> list:
     return bad
 
 
+def calendar_time(s: str) -> bool:
+    """s (already of the ISO shape) is a real UTC time: datetime.fromisoformat accepts it (every field in its calendar
+    range: no 30 February, no hour 29), it has a zero UTC offset, and its year is 2026-2099."""
+    try:
+        t = datetime.fromisoformat(s)
+    except ValueError:
+        return False
+    return t.tzinfo is not None and t.utcoffset() == timedelta(0) and 2026 <= t.year <= 2099
+
+
 def progress_problems(p: dict, where: str) -> list:
     """A model's progress fields among themselves: a reason exactly when paused (never when running or done), done
-    with all 5 series, not started with none."""
+    with all 5 series and all 5 series only when done or stopped (S5 is the last step: running, paused or not started
+    leave a series to play), not started with none; updated_at a real UTC calendar time (calendar_time)."""
     bad = []
     if p["status"] == "paused" and p["reason"] is None:
         bad.append(f"{where}.reason: required when paused")
@@ -144,8 +157,12 @@ def progress_problems(p: dict, where: str) -> list:
         bad.append(f"{where}.reason: not allowed when running or done")
     if p["status"] == "done" and p["series_done"] != SERIES:
         bad.append(f"{where}.series_done: done without all {SERIES} series")
+    if p["series_done"] == SERIES and p["status"] not in ("done", "stopped"):
+        bad.append(f"{where}.series_done: all {SERIES} series, but neither done nor stopped")
     if p["status"] == "not started" and p["series_done"] != 0:
         bad.append(f"{where}.series_done: series done before the start")
+    if not calendar_time(p["updated_at"]):
+        bad.append(f"{where}.updated_at: not a real UTC calendar time")
     return bad
 
 

@@ -1,0 +1,502 @@
+diff --git a/src/ask.rs b/src/ask.rs
+index e7c1e52..dc0722d 100644
+--- a/src/ask.rs
++++ b/src/ask.rs
+@@ -297,7 +297,9 @@ CREATE TABLE IF NOT EXISTS answer_exchanges (
+     request     TEXT NOT NULL,
+     response    TEXT,
+     error       TEXT,
+-    latency_ms  INTEGER NOT NULL
++    latency_ms  INTEGER NOT NULL,
++    -- "Did they improve?": the reply's checked identity (served model fields and the result).
++    identity    TEXT
+ );
+ "#;
+ 
+@@ -383,6 +385,14 @@ pub async fn ask(args: AskArgs, setup: &Setup) -> Result<()> {
+     if !has_in_flight {
+         conn.execute("ALTER TABLE answers ADD COLUMN in_flight INTEGER", [])?;
+     }
++    let has_identity: bool = conn.query_row(
++        "SELECT COUNT(*) FROM pragma_table_info('answer_exchanges') WHERE name = 'identity'",
++        [],
++        |row| row.get::<_, i64>(0),
++    )? > 0;
++    if !has_identity {
++        conn.execute("ALTER TABLE answer_exchanges ADD COLUMN identity TEXT", [])?;
++    }
+     let conn = Arc::new(Mutex::new(conn));
+     println!(
+         "asking {} positions × {} repeat(s) of {} · {} setup(s) · option-order seed {order_seed} · \
+@@ -650,15 +660,16 @@ fn store(
+     for (attempt, exchange) in exchanges.iter().enumerate() {
+         tx.execute(
+             "INSERT INTO answer_exchanges (answer_id, attempt, request, response, error,
+-                                           latency_ms)
+-             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
++                                           latency_ms, identity)
++             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+             params![
+                 id,
+                 (attempt + 1) as i64,
+                 exchange.request,
+                 exchange.response,
+                 exchange.error,
+-                exchange.latency_ms as i64
++                exchange.latency_ms as i64,
++                exchange.identity
+             ],
+         )?;
+     }
+diff --git a/src/db.rs b/src/db.rs
+index d5820c7..530c444 100644
+--- a/src/db.rs
++++ b/src/db.rs
+@@ -361,7 +361,9 @@ CREATE TABLE IF NOT EXISTS exchanges (
+     request         TEXT NOT NULL,
+     response        TEXT,
+     error           TEXT,
+-    latency_ms      INTEGER NOT NULL
++    latency_ms      INTEGER NOT NULL,
++    -- "Did they improve?": the reply's checked identity (served model fields and the result).
++    identity        TEXT
+ );
+ 
+ CREATE TABLE IF NOT EXISTS leagues (
+@@ -451,7 +453,7 @@ JOIN players p2 ON p2.id = m.player2
+ ";
+ 
+ /// Columns added after the first release, for databases created before them.
+-const ADDED_COLUMNS: [(&str, &str, &str); 44] = [
++const ADDED_COLUMNS: [(&str, &str, &str); 45] = [
+     ("matches", "clock_seconds", "INTEGER"),
+     ("turns", "clock_ms", "INTEGER"),
+     ("matches", "delay_seconds", "INTEGER"),
+@@ -480,6 +482,7 @@ const ADDED_COLUMNS: [(&str, &str, &str); 44] = [
+     ("turns", "group_size", "INTEGER"),
+     ("turns", "reasoning_tokens", "INTEGER"),
+     ("turns", "in_flight", "INTEGER"),
++    ("exchanges", "identity", "TEXT"),
+     ("leagues", "heartbeat_at", "TEXT"),
+     ("leagues", "mirror_concurrent", "INTEGER"),
+     ("matches", "player1", "INTEGER REFERENCES players(id)"),
+@@ -605,6 +608,8 @@ pub struct Exchange {
+     pub response: Option<String>,
+     pub error: Option<String>,
+     pub latency_ms: u64,
++    /// "Did they improve?": the checked identity of the reply (JSON), when a route check applies.
++    pub identity: Option<String>,
+ }
+ 
+ /// A game of a match as stored, for resuming the match.
+@@ -1014,15 +1019,16 @@ impl Db {
+         let turn_id = tx.last_insert_rowid();
+         for (attempt, exchange) in exchanges.iter().enumerate() {
+             tx.execute(
+-                "INSERT INTO exchanges (turn_id, attempt, request, response, error, latency_ms)
+-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
++                "INSERT INTO exchanges (turn_id, attempt, request, response, error, latency_ms, identity)
++                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+                 params![
+                     turn_id,
+                     (attempt + 1) as i64,
+                     exchange.request,
+                     exchange.response,
+                     exchange.error,
+-                    exchange.latency_ms as i64
++                    exchange.latency_ms as i64,
++                    exchange.identity
+                 ],
+             )?;
+         }
+@@ -1585,6 +1591,49 @@ mod tests {
+         let _ = std::fs::remove_file(&path);
+     }
+ 
++    /// "Did they improve?" (Zeki #3236): a reply's checked identity is stored with its exchange.
++    #[test]
++    fn exchange_identity_is_stored() {
++        let path = std::env::temp_dir().join(format!("identity-{}.db", uuid::Uuid::new_v4()));
++        let mut db = Db::open(&path).unwrap();
++        // The turn stands alone here (no match or game rows): only the exchange's storage is tested.
++        db.conn.pragma_update(None, "foreign_keys", false).unwrap();
++        let board = Board::start();
++        let turn = TurnRecord {
++            game_id: 1,
++            turn_no: 1,
++            side: Side::White,
++            player: 1,
++            dice: (3, 1),
++            position: &board,
++            legal_count: 2,
++            chosen_index: Some(0),
++            notation: "8/5 6/5",
++            decided_by: "model",
++            latency_ms: 10,
++            input_tokens: 5,
++            output_tokens: 2,
++            clock_ms: None,
++            decision: None,
++        };
++        let identity = r#"{"result":"accepted_dated","fields":{"model":"gpt-6.1-sol-2026-10-01","provider":null}}"#;
++        let exchange = Exchange {
++            request: "{}".into(),
++            response: Some("- text".into()),
++            error: None,
++            latency_ms: 10,
++            identity: Some(identity.into()),
++        };
++        db.record_turn(&turn, &[exchange]).unwrap();
++        let stored: String = db
++            .conn
++            .query_row("SELECT identity FROM exchanges", [], |r| r.get(0))
++            .unwrap();
++        assert_eq!(stored, identity);
++        drop(db);
++        let _ = std::fs::remove_file(&path);
++    }
++
+     #[test]
+     fn positions_round_trip() {
+         let mut board = Board::start();
+diff --git a/src/players/decision.rs b/src/players/decision.rs
+index ffd79b5..cc748da 100644
+--- a/src/players/decision.rs
++++ b/src/players/decision.rs
+@@ -483,6 +483,7 @@ impl DecisionClient {
+             response: Some(text),
+             error,
+             latency_ms,
++            identity: None,
+         });
+         Ok(choice)
+     }
+diff --git a/src/players/llm.rs b/src/players/llm.rs
+index a157bfa..8cddc88 100644
+--- a/src/players/llm.rs
++++ b/src/players/llm.rs
+@@ -123,9 +123,34 @@ pub struct ExpectRoute {
+     pub allow_dated: bool,
+ }
+ 
+-/// Whether a raw response names the expected model (and provider). Missing or unreadable
+-/// identity fails closed.
+-pub fn route_identity(raw: &str, expect: &ExpectRoute) -> std::result::Result<(), String> {
++/// A dated snapshot suffix, exactly `-YYYY-MM-DD` with a valid calendar date and nothing after
++/// (byte-safe: anything that is not that ASCII shape is rejected).
++fn is_dated_suffix(rest: &str) -> bool {
++    let b = rest.as_bytes();
++    b.len() == 11
++        && b[0] == b'-'
++        && b[5] == b'-'
++        && b[8] == b'-'
++        && [1, 2, 3, 4, 6, 7, 9, 10].iter().all(|&i| b[i].is_ascii_digit())
++        && chrono::NaiveDate::parse_from_str(&rest[1..], "%Y-%m-%d").is_ok()
++}
++
++/// The identity fields of a reply (`model`, `provider` at the expected pointers), whatever they
++/// hold, for the record.
++pub fn identity_fields(raw: &str, expect: &ExpectRoute) -> Value {
++    let value: Value = serde_json::from_str(raw).unwrap_or(Value::Null);
++    let model_at = expect.model_pointer.as_deref().unwrap_or("/model");
++    let provider_at = expect.provider_pointer.as_deref().unwrap_or("/provider");
++    json!({
++        "model": value.pointer(model_at).cloned().unwrap_or(Value::Null),
++        "provider": if expect.provider.is_some() { value.pointer(provider_at).cloned().unwrap_or(Value::Null) } else { Value::Null },
++    })
++}
++
++/// Whether a raw response names the expected model (and provider): `Ok("accepted")` for a listed
++/// model, `Ok("accepted_dated")` for a listed model plus a dated snapshot suffix (when allowed).
++/// Missing or unreadable identity fails closed.
++pub fn route_identity(raw: &str, expect: &ExpectRoute) -> std::result::Result<&'static str, String> {
+     let value: Value =
+         serde_json::from_str(raw).map_err(|_| "the response is not JSON: no identity".to_owned())?;
+     let model_at = expect.model_pointer.as_deref().unwrap_or("/model");
+@@ -133,16 +158,18 @@ pub fn route_identity(raw: &str, expect: &ExpectRoute) -> std::result::Result<()
+     let Some(model) = model else {
+         return Err(format!("the response lacks its identity (no model at {model_at})"));
+     };
+-    let dated = |x: &String| {
+-        expect.allow_dated
+-            && model
+-                .strip_prefix(x.as_str())
+-                .and_then(|rest| rest.strip_prefix('-'))
+-                .is_some_and(|rest| rest.len() >= 4 && rest[..4].bytes().all(|b| b.is_ascii_digit()))
+-    };
+-    if !expect.models.iter().any(|x| x == model || dated(x)) {
++    let verdict = if expect.models.iter().any(|x| x == model) {
++        "accepted"
++    } else if expect.allow_dated
++        && expect
++            .models
++            .iter()
++            .any(|x| model.strip_prefix(x.as_str()).is_some_and(is_dated_suffix))
++    {
++        "accepted_dated"
++    } else {
+         return Err(format!("the response names model {model:?}, expected one of {:?}", expect.models));
+-    }
++    };
+     if let Some(want) = &expect.provider {
+         let provider_at = expect.provider_pointer.as_deref().unwrap_or("/provider");
+         match value.pointer(provider_at).and_then(Value::as_str) {
+@@ -151,7 +178,7 @@ pub fn route_identity(raw: &str, expect: &ExpectRoute) -> std::result::Result<()
+             None => return Err(format!("the response lacks its identity (no provider at {provider_at})")),
+         }
+     }
+-    Ok(())
++    Ok(verdict)
+ }
+ 
+ enum Kind {
+@@ -822,6 +849,31 @@ impl LlmClient {
+         Ok((completion.text, completion.reasoning))
+     }
+ 
++    /// A reply failed the route check: set the latch (no further request) and append the
++    /// rejection, with its identity fields, raw reply and cost, to the rejection log.
++    fn reject(&self, expect: &ExpectRoute, identity: Value, request: &Value, raw: Option<&str>, cost: Option<f64>) {
++        self.route_rejected.store(true, Ordering::SeqCst);
++        let Some(log) = &expect.reject_log else {
++            return;
++        };
++        let line = json!({
++            "at": chrono::Utc::now().to_rfc3339(),
++            "identity": identity,
++            "request": request,
++            "response": raw,
++            "reported_cost_usd": cost,
++        });
++        use std::io::Write as _;
++        let written = std::fs::OpenOptions::new()
++            .create(true)
++            .append(true)
++            .open(log)
++            .and_then(|mut f| writeln!(f, "{line}"));
++        if let Err(error) = written {
++            eprintln!("route check: rejection log {}: {error}", log.display());
++        }
++    }
++
+     /// The stops of every HTTP attempt: the route-check latch and, when set, the quota pause.
+     fn guard(&self) -> http::Guard<'_> {
+         http::Guard {
+@@ -864,10 +916,17 @@ impl LlmClient {
+                     && matches!(self.kind, Kind::OpenAiSubscription(_))
+                     && format!("{error:#}").contains("before response.completed") =>
+             {
+-                self.route_rejected.store(true, Ordering::SeqCst);
+-                return Err(anyhow!(
+-                    "ROUTE CHECK: the Codex stream ended without response.completed (no served model): {error:#}"
+-                ));
++                let reason = format!("the Codex stream ended without response.completed (no served model): {error:#}");
++                if let Some(expect) = &self.options.expect_route {
++                    self.reject(
++                        expect,
++                        json!({"result": "missing", "fields": {"model": null, "provider": null}, "reason": reason}),
++                        &body,
++                        None,
++                        None,
++                    );
++                }
++                return Err(anyhow!("ROUTE CHECK: {reason}"));
+             }
+             Err(error) => {
+                 return Err(error
+@@ -878,36 +937,30 @@ impl LlmClient {
+         // Before the reply is used or another request is sent: the response must name the
+         // pre-registered model and provider. Its cost is already booked (`send`); the raw reply
+         // is kept in the rejection log and the error.
++        let mut identity_record = None;
+         if let Some(expect) = &self.options.expect_route {
+             // Codex stores the answer text only: its identity is the stream's served model.
+             let identity = match self.kind {
+                 Kind::OpenAiSubscription(_) => json!({"model": completion.served_model}).to_string(),
+                 _ => raw.clone(),
+             };
+-            if let Err(reason) = route_identity(&identity, expect) {
+-                self.route_rejected.store(true, Ordering::SeqCst);
+-                if let Some(log) = &expect.reject_log {
+-                    let line = json!({
+-                        "at": chrono::Utc::now().to_rfc3339(),
+-                        "reason": reason,
+-                        "request": body,
+-                        "response": raw,
+-                        "reported_cost_usd": completion.cost,
+-                        "input_tokens": completion.input_tokens,
+-                        "output_tokens": completion.output_tokens,
+-                    });
+-                    use std::io::Write as _;
+-                    let written = std::fs::OpenOptions::new()
+-                        .create(true)
+-                        .append(true)
+-                        .open(log)
+-                        .and_then(|mut f| writeln!(f, "{line}"));
+-                    if let Err(error) = written {
+-                        eprintln!("route check: rejection log {}: {error}", log.display());
+-                    }
++            let fields = identity_fields(&identity, expect);
++            match route_identity(&identity, expect) {
++                Ok(verdict) => {
++                    identity_record = Some(json!({"result": verdict, "fields": fields}).to_string());
++                }
++                Err(reason) => {
++                    let result = if reason.contains("lacks") || reason.contains("not JSON") { "missing" } else { "wrong" };
++                    self.reject(
++                        expect,
++                        json!({"result": result, "fields": fields, "reason": reason}),
++                        &body,
++                        Some(&raw),
++                        completion.cost,
++                    );
++                    let shown: String = raw.chars().take(1500).collect();
++                    return Err(anyhow!("ROUTE CHECK: {reason}; identity {fields}; response: {shown}"));
+                 }
+-                let shown: String = raw.chars().take(1500).collect();
+-                return Err(anyhow!("ROUTE CHECK: {reason}; response: {shown}"));
+             }
+             // A request already in flight when another reply failed the check: answered (and
+             // booked), but its reply is not used either.
+@@ -931,6 +984,7 @@ impl LlmClient {
+             response: Some(raw),
+             error: None,
+             latency_ms,
++            identity: identity_record,
+         });
+         Ok(completion)
+     }
+@@ -2366,5 +2420,68 @@ mod tests {
+             assert_eq!(count.load(Ordering::SeqCst), 1, "nothing further sent");
+         }
+     }
++
++    /// Zeki #3236: the dated grammar is exactly `-YYYY-MM-DD`, a real date, nothing after;
++    /// byte-safe on any input.
++    #[test]
++    fn dated_suffix_is_a_complete_valid_date() {
++        for good in ["-2026-10-01", "-2024-02-29"] {
++            assert!(is_dated_suffix(good), "{good}");
++        }
++        for bad in [
++            "", "-", "-2026", "-1234", "-2026-10", "-2026-10-1", "-2026-1-01", "-2026-10-01x", "-2026-10-01-mini",
++            "-2026-other-model", "-2026-13-01", "-2026-02-30", "-2025-02-29", "2026-10-01", "-2026/10/01",
++            "-２０２６-10-01", "-2026-10-0é", "-é", "-202é-10-01", "-2026-10-01\u{0301}",
++        ] {
++            assert!(!is_dated_suffix(bad), "{bad:?}");
++        }
++        let expect = ExpectRoute { models: vec!["gpt-6.1-sol".into()], provider: None, model_pointer: None,
++                                   provider_pointer: None, reject_log: None, allow_dated: true };
++        assert_eq!(route_identity(r#"{"model":"gpt-6.1-sol"}"#, &expect), Ok("accepted"));
++        assert_eq!(route_identity(r#"{"model":"gpt-6.1-sol-2026-10-01"}"#, &expect), Ok("accepted_dated"));
++        for model in ["gpt-6.1-sol-2026-other-model", "gpt-6.1-sol-1234", "gpt-6.1-sol-2026-10-01-mini",
++                      "gpt-6.1-sol-２０２６-10-01", "gpt-6.1-solé", "gpt-6.1-sol-"] {
++            assert!(route_identity(&json!({"model": model}).to_string(), &expect).is_err(), "{model}");
++        }
++    }
++
++    /// Zeki #3236: the served model and the check's result are kept with the exchange (accepted),
++    /// or in the rejection log with the raw identity fields (wrong, missing).
++    #[tokio::test]
++    async fn the_served_identity_is_persisted_per_exchange() {
++        let dir = std::env::temp_dir().join(format!("route-{}", uuid::Uuid::new_v4()));
++        std::fs::create_dir_all(&dir).unwrap();
++        let retry = http::RetryTime::default();
++        let dated: &'static str = Box::leak(codex_stream(Some("gpt-6.1-sol-2026-10-01"), true).into_boxed_str());
++        let (url, _) = serve_json(dated);
++        let client = codex_client(url.replace("/v1", "/codex"));
++        let mut decision = Decision::default();
++        client.free_text("S", "U", &retry, &mut decision).await.unwrap();
++        let identity: Value = serde_json::from_str(decision.exchanges[0].identity.as_deref().unwrap()).unwrap();
++        assert_eq!(identity["result"], "accepted_dated");
++        assert_eq!(identity["fields"]["model"], "gpt-6.1-sol-2026-10-01");
++        for (stream, result, model) in [
++            (codex_stream(Some("gpt-6-astra"), true), "wrong", json!("gpt-6-astra")),
++            (codex_stream(None, true), "missing", Value::Null),
++            (codex_stream(Some("gpt-6.1-sol"), false), "missing", Value::Null),
++        ] {
++            let (url, _) = serve_json(Box::leak(stream.into_boxed_str()));
++            let mut client = codex_client(url.replace("/v1", "/codex"));
++            let log = dir.join(format!("reject-{}.jsonl", uuid::Uuid::new_v4()));
++            client.options.expect_route.as_mut().unwrap().reject_log = Some(log.clone());
++            assert!(client.free_text("S", "U", &retry, &mut Decision::default()).await.is_err());
++            let line: Value = serde_json::from_str(std::fs::read_to_string(&log).unwrap().lines().next().unwrap()).unwrap();
++            assert_eq!(line["identity"]["result"], result);
++            assert_eq!(line["identity"]["fields"]["model"], model);
++        }
++        // Other routes: the identity is recorded the same way, from the raw reply.
++        let (url, _) = serve_json(RIGHT);
++        let client = guarded(url, dir.join("r.jsonl"));
++        let mut decision = Decision::default();
++        client.free_text("S", "U", &retry, &mut decision).await.unwrap();
++        let identity: Value = serde_json::from_str(decision.exchanges[0].identity.as_deref().unwrap()).unwrap();
++        assert_eq!(identity["result"], "accepted");
++        assert_eq!(identity["fields"], json!({"model": "deepseek/deepseek-v4.1-flash", "provider": "Fireworks"}));
++    }
+ }
+ 
+diff --git a/workspace/improve/improve.py b/workspace/improve/improve.py
+index bfbe031..70147c4 100644
+--- a/workspace/improve/improve.py
++++ b/workspace/improve/improve.py
+@@ -997,6 +997,15 @@ def bind_plan(key):
+     return stored
+ 
+ 
++def binary_identity():
++    """The runner binary of this step: path, sha256, and the commit it was built from (a lane's pinned copy is named
++    jevgammon-<commit>; anything else is recorded as unpinned)."""
++    name = BIN.name
++    commit = name.split("-", 1)[1] if name.startswith("jevgammon-") else None
++    return dict(path=str(BIN), sha256=sha256_file(BIN), commit=commit, pinned=commit is not None,
++                mtime=datetime.fromtimestamp(BIN.stat().st_mtime, timezone.utc).isoformat(timespec="seconds"))
++
++
+ def check_inputs():
+     if sha256_file(PLAN) != PLAN_SHA256:
+         raise SystemExit(f"{PLAN} differs from the pre-registration this harness is bound to ({PLAN_SHA256[:8]}…)")
+@@ -1006,11 +1015,20 @@ def check_inputs():
+         raise SystemExit("test set hash differs from the plan's")
+     if not BIN.exists():
+         raise SystemExit(f"build the runner first: {BIN}")
++    if not DRY and not binary_identity()["pinned"]:
++        raise SystemExit(f"{BIN}: real runs use a pinned binary copy named by commit (IMPROVE_BIN=.../jevgammon-<commit>)")
+ 
+ 
+ def run(key, until=None, balance_reader=openrouter_balance):
+     """Runs the model's next steps in order; returns 0 (done or reached `until`), STOP or PAUSE."""
+     m = MODELS[key]
++    hold = mdir(key) / "hold.json"  # an operator hold (e.g. shared-balance priority): pause before the next step
++    if hold.exists():
++        why = json.loads(hold.read_text())["reason"]
++        write_atomic(mdir(key) / "paused.json", json.dumps(dict(at=now(), reason=why), indent=1))
++        log(key, "paused", reason=why)
++        print(f"PAUSED {key}: {why}", file=sys.stderr)
++        return PAUSE
+     check_inputs()
+     mdir(key).mkdir(parents=True, exist_ok=True)
+     lock = open(mdir(key) / "lock", "w")
+@@ -1023,14 +1041,6 @@ def run(key, until=None, balance_reader=openrouter_balance):
+         lock.close()
+         return STOP
+     (mdir(key) / "paused.json").unlink(missing_ok=True)
+-    hold = mdir(key) / "hold.json"  # an operator hold (e.g. shared-balance priority): pause before the next step
+-    if hold.exists():
+-        why = json.loads(hold.read_text())["reason"]
+-        write_atomic(mdir(key) / "paused.json", json.dumps(dict(at=now(), reason=why), indent=1))
+-        log(key, "paused", reason=why)
+-        print(f"PAUSED {key}: {why}", file=sys.stderr)
+-        lock.close()
+-        return PAUSE
+     ensure_runner_db(key)
+     bind_plan(key)
+     if m["lane"] == "local" and not DRY:
+@@ -1042,7 +1052,7 @@ def run(key, until=None, balance_reader=openrouter_balance):
+             if rejected.exists() and rejected.stat().st_size:
+                 raise Stop(f"route check: {rejected.read_text().splitlines()[0][:600]}")
+             gate = money_gate(key, step, balance_reader) if billed_model else None
+-            log(key, "step_start", step=step, gate=gate)
++            log(key, "step_start", step=step, gate=gate, binary=binary_identity())
+             try:
+                 (run_empty if step.startswith("E") else run_series)(key, step, gate)
+             except BudgetRefused as e:

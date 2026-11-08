@@ -84,8 +84,9 @@ EVAL = DICT(dict(answered=INT(0, POSITIONS), expected=INT(POSITIONS, POSITIONS),
                                                             "right_safety", "none")}),
                  input_tokens_per_decision=OPT(NUM()), output_tokens_per_decision=OPT(NUM()), request_seconds=NUM(),
                  latency_median_s=OPT(NUM()), cost_usd=NUM(0, 0)))
-T0_AGG = DICT(dict(name=("str", r"[^<>&]{1,120}"), wall_seconds=NUM(), dry=BOOL, finished_at=ISO, metrics=EVAL,
-                   test_set_sha256=HEX64))
+# dry: written by pilot.py's dry run only (dry=True); a real T0 aggregate has no such key (absent: not dry).
+T0_AGG = DICT(dict(name=("str", r"[^<>&]{1,120}"), wall_seconds=NUM(), finished_at=ISO, metrics=EVAL,
+                   test_set_sha256=HEX64), dict(dry=BOOL))
 GAME = DICT(dict(game=GAME_NO, decisions=INT(), invalid=INT(), unscored=INT(), valid=INT(), loss_sum=NUM(),
                  error_rate=OPT(NUM()), input_tokens_per_decision=OPT(NUM()), latency_median_s=OPT(NUM()),
                  request_seconds=NUM()),
@@ -415,7 +416,7 @@ def validate(R, src: Path, prompt: dict | None, plan_hashes: list, test_sha: str
     if bad:
         return rejected(bad)
     t0, t0_sha, aggs, shas, bad = aggregates(src, test_sha, prompt_sha)
-    if t0 is not None and t0["dry"] != P["dry_run"]:
+    if not bad and t0 is not None and t0.get("dry", False) != P["dry_run"]:
         bad.append("T0 aggregate: dry flag differs from the protocol's")
     if bad:
         return rejected(bad)
@@ -445,16 +446,32 @@ def validate(R, src: Path, prompt: dict | None, plan_hashes: list, test_sha: str
                 lessons=lessons, budget=budget)
 
 
+def game_curve(done: dict) -> dict:
+    """Per arm, the error rate of game 1..10 averaged over the finished series (the mean of the series' own game error
+    rates; a game with no valid decision is left out of its mean): {arm: {"1": rate or None, ..., "10": ...}}."""
+    return {arm: {str(g): mean([x["error_rate"] for a in done[arm].values() for x in a["games"] if x["game"] == g])
+                  for g in range(1, G + 1)} for arm in ARMS}
+
+
+def last_update(t0, done: dict):
+    """The latest finished_at of the validated aggregates behind the page (the shared T0 and the finished series), as
+    written (ISO, UTC); None when there is none."""
+    times = ([t0["finished_at"]] if t0 else []) + [a["finished_at"] for arm in ARMS for a in done[arm].values()]
+    return max(times, key=datetime.fromisoformat) if times else None
+
+
 def public(updated_at, t0, t0_sha, aggs, shas, fin, want, test_sha, prompt_sha) -> dict:
     """What the page and its data file publish: rebuilt from the finished series' validated aggregates only."""
     done = {arm: {s: aggs[arm][s] for s in fin[arm]} for arm in ARMS}
-    out = dict(updated_at=updated_at, planned_series_per_arm=N,
+    out = dict(updated_at=updated_at, last_update=last_update(t0, done), planned_series_per_arm=N,
                series_done={arm: len(fin[arm]) for arm in ARMS}, complete=want["complete"],
                t0_done=want["t0_done"], table=table_rows(t0["metrics"] if t0 else None, done),
-               games=games_rows(done), series_finished=fin,
+               games=games_rows(done), game_error_rate=game_curve(done), series_finished=fin,
                series_total_done=sum(len(v) for v in fin.values()), series_total_planned=N * len(ARMS),
                budget_empty_points={"budget": sum(len(a["budget_context_empty_after_game"])
                                                   for a in done["budget"].values())},
+               budget_points_total={"budget": sum(len(a["budget_points"]) for a in done["budget"].values())},
+               signal_rule=dict(SIGNAL),
                provenance=dict(test_set_sha256=test_sha, lesson_prompt_sha256=prompt_sha, t0_aggregate_sha256=t0_sha,
                                series_aggregate_sha256={arm: {str(s): shas[arm][s] for s in fin[arm]}
                                                         for arm in ARMS}))

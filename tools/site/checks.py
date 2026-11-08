@@ -18,9 +18,10 @@
    #2310); data files, decompressed .gz files and other text get the complete scan. selftest_suite_bar.py tests it.
 5. Every relative link resolves; ids are unique per page and every #anchor exists.
 6. Every published finding still holds (B4): findings.py reruns each finding's machine check on the built data.
-7. The learning page (learning_page.py, plan §9): no learning lift, signal, verdict or Learning-tab ranking/leader block
+7. The learning page (learning_page.py, plan §9): no verdict, learning lift, signal or Learning-tab ranking/leader block
    in the page or its data file unless the results are complete; no evaluation-set position (id, board key, board) in
-   either (where the private test set is present).
+   either (where the private test set is present); outside pre-registration-only mode, the status line, both charts and
+   their tables, the verdict and every lesson against the page's own data file (Ümit #2925).
 """
 
 import gzip
@@ -364,12 +365,158 @@ def _test_set_strings(path: Path) -> list[str]:
     return out
 
 
+def _learning_status(R, validation) -> str:
+    """The status line the validated data implies (learning_page.status, derived again here from the data file):
+    "Done" only when complete, else "Not started", "Smoke running: N of 3 series per arm" or "Running: N of 10 series
+    per arm", N the series finished in every arm."""
+    from learning_page import SMOKE_SERIES
+    if R and R.get("complete") and (validation or {}).get("complete"):
+        return "Done"
+    if not R or (not R["series_total_done"] and not R["t0_done"]):
+        return "Not started"
+    n = min(len(s) for s in R["series_finished"].values())
+    if n < SMOKE_SERIES:
+        return f"Smoke running: {n} of {SMOKE_SERIES} series per arm"
+    return f"Running: {n} of {R['planned_series_per_arm']} series per arm"
+
+
+def _poly(n) -> list:
+    return [tuple(float(c) for c in p.split(",")) for p in n.attrs.get("points", "").split()]
+
+
+def _learning_results(root, L) -> list[str]:
+    """The results view of the learning page (Ümit #2925) against its own data file: the status line; both charts
+    (every dot is the data file's value, no other dot; the arms' fixed colours; control flat and dashed in the risks
+    chart at its T0 value, no other line dashed) and the tables under them; the verdict only as the data allows; every
+    lesson next to its game, its text exactly the data file's (escaped)."""
+    from common import NA, fmt
+    from learning_page import ARM_COLOUR, CHECKPOINTS, CONTROL_DASH, PATH
+    bad, R, ids = [], L.get("results"), {}
+    nodes = list(walk(root))
+    for n in nodes:
+        ids.setdefault(n.attrs.get("id"), n)
+    # Status line.
+    want = _learning_status(R, L.get("validation"))
+    el = ids.get("learning-status-line")
+    strong = next((c for c in walk(el) if c.tag == "strong"), None) if el else None
+    if strong is None:
+        bad.append(f"{PATH}: status line missing")
+    elif text_of(strong).strip() != want:
+        bad.append(f"{PATH}: status line says {text_of(strong).strip()!r}, the data imply {want!r}")
+    else:
+        t = next((c.attrs.get("datetime") for c in walk(el) if c.tag == "time"), None)
+        if t != (R or {}).get("last_update"):
+            bad.append(f"{PATH}: status line time {t!r} is not the data's last update")
+    if (L.get("status") or {}).get("line") != want:
+        bad.append(f"{PATH}: the data file's status line is not the one its data imply")
+    # Charts and their tables.
+    expect = {}
+    if R and R["series_total_done"]:
+        for arm, by_cp in R["table"].items():
+            for cp in CHECKPOINTS:
+                row = by_cp.get(cp)
+                if row and row.get("risks_found") is not None and (arm != "control" or cp == "T0"):
+                    expect[("learning-risks", arm, cp)] = row["risks_found"]
+        for arm, per in R["game_error_rate"].items():
+            for g, v in per.items():
+                if v is not None:
+                    expect[("learning-games", arm, g)] = v
+    for chart in ("learning-risks", "learning-games"):
+        svg = next((n for n in nodes if n.tag == "svg" and n.attrs.get("data-chart") == chart), None)
+        want_dots = {(a, x): f"{v:.1f}" for (c, a, x), v in expect.items() if c == chart}
+        if svg is None:
+            if want_dots:
+                bad.append(f"{PATH}: chart {chart} missing")
+            continue
+        dots = {(n.attrs.get("data-arm"), n.attrs.get("data-x")): n.attrs.get("data-value")
+                for n in walk(svg) if n.tag == "circle"}
+        for k in sorted(set(dots) | set(want_dots), key=str):
+            if dots.get(k) != want_dots.get(k):
+                bad.append(f"{PATH}: chart {chart} point {k}: {dots.get(k)!r}, data {want_dots.get(k)!r}")
+        lines = [n for n in walk(svg) if n.tag == "polyline"]
+        for n in lines:
+            dashed = n.attrs.get("stroke-dasharray")
+            if chart == "learning-risks" and n.attrs.get("data-arm") == "control":
+                pts = _poly(n)
+                cy = next((float(c.attrs["cy"]) for c in walk(svg) if c.tag == "circle"
+                           and c.attrs.get("data-arm") == "control" and c.attrs.get("data-x") == "T0"), None)
+                if dashed != CONTROL_DASH or len(pts) < 2 or any(abs(p[1] - pts[0][1]) > 1e-6 for p in pts) or (
+                        cy is None or abs(pts[0][1] - cy) > 1e-6):
+                    bad.append(f"{PATH}: chart {chart}: control is not a flat dashed line at its T0 value")
+            elif dashed:
+                bad.append(f"{PATH}: chart {chart}: {n.attrs.get('data-arm')!r} line is dashed (only control's is)")
+        if chart == "learning-risks" and ("control", "T0") in want_dots and not any(
+                n.attrs.get("data-arm") == "control" for n in lines):
+            bad.append(f"{PATH}: chart {chart}: control's flat dashed line missing")
+        cells = {(n.attrs.get("data-arm"), n.attrs.get("data-x")): text_of(n).strip() for n in nodes
+                 if n.tag == "td" and "data-x" in n.attrs and any(
+                     a.tag == "table" and f"lp-{chart.split('-')[1]}" in a.attrs.get("class", "").split()
+                     for a in ancestors(n))}
+        bad += [f"{PATH}: table under {chart}: no cell for {k}" for k in want_dots if k not in cells]
+        for k, txt in cells.items():
+            v = expect.get((chart, *k))
+            if not (txt == fmt(v, 1) if v is not None else txt in (NA, "T0 only")):
+                bad.append(f"{PATH}: table under {chart}, {k}: {txt!r} is not the data's "
+                           f"{fmt(v, 1) if v is not None else NA}")
+    for n in nodes:
+        if {"lp-dot", "lp-line", "lp-swatch"} & set(n.attrs.get("class", "").split()):
+            arm = n.attrs.get("data-arm")
+            if arm not in ARM_COLOUR or n.attrs.get("style") != f"--lp:{ARM_COLOUR[arm]}":
+                bad.append(f"{PATH}: arm {arm!r} not in its fixed colour")
+    # Verdict: before complete only "N of 10 series done"; when complete, as the data's signal and budget points.
+    complete = bool((R or {}).get("complete") and (L.get("validation") or {}).get("complete"))
+    if not complete:
+        n = min(len(s) for s in R["series_finished"].values()) if R else 0
+        planned = R["planned_series_per_arm"] if R else (L.get("status") or {}).get("planned")
+        el = ids.get("learning-verdict-pending")
+        if el is None or f"{n} of {planned} series done" not in text_of(el):
+            bad.append(f"{PATH}: the verdict section does not say '{n} of {planned} series done'")
+    else:
+        from learning_page import BUDGET_VERDICT
+        el = ids.get("learning-verdict")
+        if el is None:
+            bad.append(f"{PATH}: complete, but no verdict")
+        else:
+            for li in (n for n in walk(el) if n.tag == "li" and n.attrs.get("data-arm")):
+                met = bool((R["signal"].get(li.attrs["data-arm"]) or {}).get("signal"))
+                if ("threshold not reached" in text_of(li)) == met:
+                    bad.append(f"{PATH}: verdict for {li.attrs['data-arm']!r} contradicts the data's signal")
+            empty, total = R["budget_empty_points"]["budget"], R["budget_points_total"]["budget"]
+            if (BUDGET_VERDICT in text_of(el)) != bool(total and empty == total):
+                bad.append(f"{PATH}: the budget reading (plan section 11) does not follow the budget points")
+    # Lessons: each next to its game, exactly the data's text, finished lessons series only.
+    fin = set((R or {}).get("series_finished", {}).get("lessons", []))
+    data_lessons = {(x["series"], x["game"]): x for x in L.get("lessons") or []}
+    for (s, g), x in data_lessons.items():
+        if s not in fin or x.get("won") is None or not x.get("result") or not x.get("points"):
+            bad.append(f"{PATH}: lesson of series {s} game {g} without its game")
+    shown = {}
+    for li in (n for n in nodes if n.tag == "li" and "lp-lesson" in n.attrs.get("class", "").split()):
+        try:
+            k = (int(li.attrs.get("data-series")), int(li.attrs.get("data-game")))
+        except (TypeError, ValueError):
+            bad.append(f"{PATH}: a lesson without its series and game")
+            continue
+        shown[k] = li
+        pre = next((c for c in walk(li) if c.tag == "pre"), None)
+        x = data_lessons.get(k)
+        if x is None:
+            bad.append(f"{PATH}: lesson of series {k[0]} game {k[1]} is not in the data file")
+        elif pre is None or text_of(pre) != x["text"] or any(c.tag != "pre" for c in walk(pre) if c is not pre):
+            bad.append(f"{PATH}: lesson of series {k[0]} game {k[1]}: text is not the data's, as written and escaped")
+        elif f"game {k[1]}" not in text_of(li) or ("won" if x["won"] else "lost") not in text_of(li):
+            bad.append(f"{PATH}: lesson of series {k[0]} game {k[1]} not shown with its game and result")
+    bad += [f"{PATH}: lesson of series {s} game {g} missing from the page" for s, g in data_lessons if (s, g) not in shown]
+    return bad
+
+
 def check_learning(out: Path, test_set: Path | None = None) -> list[str]:
-    """The learning page (learning_page.py; plan §9): (a) no learning lift, signal, verdict or Learning-tab leaders
+    """The learning page (learning_page.py; plan §9): (a) no verdict, learning lift, signal or Learning-tab leaders
     block, in the page or its data file, unless the site accepted the results as complete; (b) no evaluation-set
     position (id, board key or board) in the page or its data file. (b) needs the private test set
     (learning_page.TEST_SET) whenever results, a validation or lessons are present: missing or unreadable is a failure,
-    not a skip; only the no-results state passes without it."""
+    not a skip; only the no-results state passes without it. (c) Outside pre-registration-only mode, the results view
+    against its data file (_learning_results: status line, charts and tables, verdict, lessons)."""
     from learning_page import COMPLETE_ONLY_IDS, COMPLETE_ONLY_KEYS, DATA, PATH, TEST_SET
     test_set = test_set or TEST_SET
     page, data = out / PATH / "index.html", out / DATA
@@ -377,13 +524,18 @@ def check_learning(out: Path, test_set: Path | None = None) -> list[str]:
         return []
     bad = []
     L = json.loads(data.read_text())
-    if not (L["results"] or {}).get("complete"):
-        tree = Tree()
-        tree.feed(page.read_text())
+    tree = Tree()
+    tree.feed(page.read_text())
+    if not ((L["results"] or {}).get("complete") and (L.get("validation") or {}).get("complete")):
         ids = {n.attrs.get("id") for n in walk(tree.root)}
         bad += [f"{PATH}: block #{i} shown before the results are complete" for i in COMPLETE_ONLY_IDS if i in ids]
         bad += [f"{DATA}: {k} published before the results are complete" for k in COMPLETE_ONLY_KEYS
                 if k in (L["results"] or {})]
+    if not L.get("preregistration_only"):
+        bad += _learning_results(tree.root, L)
+        if L["results"] is not None and bool(L["results"].get("complete")) != bool(
+                (L.get("validation") or {}).get("complete")):
+            bad.append(f"{DATA}: results.complete and validation.complete disagree")
     no_results = L.get("results") is None and not L.get("validation") and not L.get("lessons")
     try:
         strings = _test_set_strings(test_set)

@@ -16,8 +16,8 @@ from common import (EARLIER, EARLIER_NOTE, LATE_ENTRY, LATE_ENTRY_LABEL, LATE_EN
 # Leaderboard and the About page (MORE_PAGES).
 TABS = [("", "Leaderboard"), ("decisions/", "Decisions"), ("highlights/", "Highlights"), ("experiments/", "Experiments"),
         ("about/", "About")]
-SECTION = {"clear-risk/": "experiments/", "learning/": "experiments/", "nackgammon/": "experiments/", "method/": "about/",
-           "data/": "about/"}
+SECTION = {"clear-risk/": "experiments/", "learning/": "experiments/", "improve/": "experiments/",
+           "nackgammon/": "experiments/", "method/": "about/", "data/": "about/"}
 MORE_PAGES = [("matches/", "Matches"), ("phases/", "Phases"), ("compare/", "Compare"),
               ("disagreements/", "Where models disagree"), ("leagues/", "Leagues"), ("models/", "Every model setup"),
               ("method/", "Method"), ("data/", "Data")]
@@ -1536,8 +1536,9 @@ def highlights_page(S, out: Path) -> str:
 
 
 def experiments_page(S) -> str:
+    import improve_page
     import learning_page
-    L = S["learning"]
+    L, I = S["learning"], S["improve"]
     lstatus = "Pre-registration" if L.get("preregistration_only") else L["status"]["line"]
     cards = [
         ("clear-risk", "Clear risk", "Preliminary",
@@ -1550,7 +1551,11 @@ def experiments_page(S) -> str:
           ("../matches/#stage-knockout", "Its matches")]),
         ("learning", "Learning from experience", lstatus,
          "Does a model play better after seeing its own earlier games? " + esc(L["plan"]["commitment"]),
-         [(f"../{learning_page.PATH}", "Open Learning from experience")])]
+         [(f"../{learning_page.PATH}", "Open Learning from experience")]),
+        ("improve", improve_page.TITLE, improve_page.eyebrow(I) if I["preregistration_only"] or not I.get("status")
+         else I["status"]["line"],
+         "Does each chat model on the leaderboard take risks better after writing its own lessons over 10 games? "
+         + esc(I["plan"]["commitment"]), [(f"../{improve_page.PATH}", "Open Did they improve?")])]
     out = "".join(
         f'<section class="card experiment-card" id="{cid}"><h2>{esc(title)}</h2>'
         f'{status_badge(status) if status else ""}<p>{text}</p><p class="hero-links">'
@@ -1750,6 +1755,9 @@ def write_all(S, out: Path, base: str) -> None:
     import learning_page
     put(learning_page.PATH, learning_page.title(S["learning"]), learning_page.body(S["learning"]),
         description=learning_page.DESCRIPTION)
+    import improve_page
+    put(improve_page.PATH, improve_page.title(S["improve"]), improve_page.body(S["improve"]),
+        description=improve_page.DESCRIPTION)
     put("data/", "Data", data_page(S, out))
     put("decisions/", "Every decision", decisions_page(S, decisions_export.body()),
         scripts=("decisions.js",), styles=("decisions.css",))

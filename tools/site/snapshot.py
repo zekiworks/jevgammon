@@ -31,8 +31,14 @@
    explore.json, when present, goes to STATE_DIR/learning/explore/explore.json. Its key, a hash of the copied files and
    of the plan (mailbox/Learning pilot - plan 2026-11-07.md), goes into update.sh's change key, so a finished series
    or a new exploratory file rebuilds.
-7. Prints one line of JSON: decisions extracted, skipped by reason, contexts, a fingerprint that changes whenever
-   the league data or the knockout's matches change, and the learning pilot's key ("learning").
+7. "Did they improve?" (workspace/improve/ next to V3_DB, read only): the harness's out/improve.json and its copy of
+   the lesson prompt (out/prompt/lessons_*.txt, to harness-prompt/), and the lesson prompt the plan names (the learning
+   pilot's lessons_system.txt and lessons_user.txt, to prompt/), are copied to STATE_DIR/improve, replacing the last
+   copy. Its key, a hash of the copied files and of the plan (mailbox/Did they improve - plan 2026-11-08.md), goes
+   into update.sh's change key, so every new improve.json (each model's step) rebuilds the page.
+8. Prints one line of JSON: decisions extracted, skipped by reason, contexts, a fingerprint that changes whenever
+   the league data or the knockout's matches change, the learning pilot's key ("learning") and the improve key
+   ("improve").
 
 Schema of prompts.db: see the site contract (local://site-contract.md). Anthropic requests send
 the Claude Code identity block before the system prompt: it is kept as "system_prefix" (list of
@@ -97,6 +103,15 @@ LEARNING_PLAN = os.path.join("mailbox", "Learning pilot - plan 2026-11-07.md")
 # The exploratory file (Ümit #2950/#2952; workspace/learning-retest/explore.py), relative to the same root, and where it
 # goes under STATE_DIR/learning: copied read-only with the pilot's files, in the same key (a missing file: no block).
 LEARNING_EXPLORE = (os.path.join("workspace", "learning-retest", "out", "explore.json"), "explore/explore.json")
+# "Did they improve?" (tools/site/improve_page.py): (source relative to ROOT, destination under STATE_DIR/improve).
+IMPROVE_FILES = [(os.path.join("workspace", "improve", "out", "improve.json"), "improve.json"),
+                 (os.path.join("workspace", "improve", "out", "prompt", "lessons_system.txt"),
+                  "harness-prompt/lessons_system.txt"),
+                 (os.path.join("workspace", "improve", "out", "prompt", "lessons_user.txt"),
+                  "harness-prompt/lessons_user.txt"),
+                 (os.path.join(LEARNING_SOURCE, "lessons_system.txt"), "prompt/lessons_system.txt"),
+                 (os.path.join(LEARNING_SOURCE, "lessons_user.txt"), "prompt/lessons_user.txt")]
+IMPROVE_PLAN = os.path.join("mailbox", "Did they improve - plan 2026-11-08.md")
 
 
 def shown_leagues(db, prefix=""):
@@ -358,6 +373,38 @@ def snapshot_learning(root, state):
     return h.hexdigest()[:12]
 
 
+def copy_files(root, files, target, plan):
+    """Copies files = [(source relative to root, destination relative to target)] that exist to target, replacing the
+    last copy whole (written to target.tmp, renamed); returns a hash of the copied files and the plan (first 12 hex)."""
+    tmp = target + ".tmp"
+    shutil.rmtree(tmp, ignore_errors=True)
+    os.makedirs(tmp)
+    h = hashlib.sha256()
+    for path, rel in files:
+        path = os.path.join(root, path)
+        if not os.path.exists(path):
+            continue
+        os.makedirs(os.path.dirname(os.path.join(tmp, rel)), exist_ok=True)
+        with open(path, "rb") as f:
+            data = f.read()
+        with open(os.path.join(tmp, rel), "wb") as f:
+            f.write(data)
+        h.update(rel.encode() + b"\0" + data)
+    plan = os.path.join(root, plan)
+    if os.path.exists(plan):
+        with open(plan, "rb") as f:
+            h.update(b"plan\0" + f.read())
+    shutil.rmtree(target, ignore_errors=True)
+    os.replace(tmp, target)
+    return h.hexdigest()[:12]
+
+
+def snapshot_improve(root, state):
+    """Copies "Did they improve?"'s published inputs (IMPROVE_FILES) to STATE/improve; returns its change key.
+    improve.json is written atomically by the harness, so a copy is never half a file."""
+    return copy_files(root, IMPROVE_FILES, os.path.join(state, "improve"), IMPROVE_PLAN)
+
+
 def fetch(db, schema, turns):
     """{turn_id: [request, ...] in send order} for `turns` = [(turn_id, [exchange id, ...])]."""
     ids = [i for _, exchange_ids in turns for i in exchange_ids]
@@ -512,6 +559,7 @@ def run(v3, state):
     os.replace(tmp, snap)
     print_fingerprint += " " + snapshot_knockout(os.path.join(os.path.dirname(os.path.abspath(v3)), KNOCKOUT_DB), state)
     learning = snapshot_learning(os.path.dirname(os.path.abspath(v3)), state)
+    improve = snapshot_improve(os.path.dirname(os.path.abspath(v3)), state)
     snapshot_seconds = time.monotonic() - started
 
     # Decisions of models that sent nothing.
@@ -545,6 +593,7 @@ def run(v3, state):
         "contexts": prompts.execute("SELECT count(*) FROM contexts").fetchone()[0],
         "fingerprint": print_fingerprint,
         "learning": learning,
+        "improve": improve,
         "snapshot_seconds": round(snapshot_seconds, 1),
         "seconds": round(time.monotonic() - started, 1),
     }

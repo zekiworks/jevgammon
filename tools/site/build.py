@@ -34,6 +34,7 @@ import analysis as A  # noqa: E402
 import checks  # noqa: E402
 import close_choices as CC  # noqa: E402
 import cup  # noqa: E402
+import improve_page  # noqa: E402
 import learning_page  # noqa: E402
 import offline as O  # noqa: E402
 import pages  # noqa: E402
@@ -163,6 +164,9 @@ def compute(args) -> dict:
         # Learning from experience (preliminary, running): the plan and the pilot's aggregates, lessons and lesson
         # prompt as snapshot.py copied them to STATE/learning (tools/site/learning_page.py).
         learning=learning_page.from_state(state),
+        # Did they improve? (pre-registered): the plan, the lesson prompt and, once published, the validated
+        # improve.json as snapshot.py copied them to STATE/improve (tools/site/improve_page.py).
+        improve=improve_page.from_state(state),
         status=json.loads((CONTENT / "analysis_status.json").read_text()),
         human_scale=json.loads((CONTENT / "human_scale.json").read_text()),
         _v1_raw=v1, _state=state)
@@ -309,6 +313,8 @@ def write_data(S: dict, out: Path) -> None:
     write_json(out, "data/v3/clear-risk.json", dict(version="v3", **S["clear_risk"]))
     # Learning from experience (preliminary, running): aggregates only (tools/site/learning_page.py).
     write_json(out, learning_page.DATA, S["learning"])
+    # Did they improve?: the plan's model list and, once published, the validated aggregates and lessons only.
+    write_json(out, improve_page.DATA, S["improve"])
     write_json(out, "data/smoke/part-a.json", dict(dataset="smoke-part-a", status="Smoke test", rows=S["smoke"]))
     write_json(out, "data/setups.json", dict(setups=[v for v in S["setups_meta"].values()]))
     write_json(out, "data/thresholds.json", S["thresholds"])

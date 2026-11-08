@@ -123,8 +123,12 @@ MODELS = {
     "gemma-4-31b-on": dict(setup="Gemma 4 31B (on)", lane="local", expect=dict(models=["gemma-4-31B-it"])),
     "qwen3.8-27b-on": dict(setup="Qwen3.8-27B (on)", lane="local", expect=dict(models=["qwen3.8-27b"])),
     "lfm2.5-24b-a2b-on": dict(setup="LFM2.5-24B-A2B (on)", lane="local", expect=dict(models=["lfm2.5-24b-a2b"])),
-    "gpt-6.1-sol-high": dict(setup="GPT-6.1 Sol (high)", lane="subscription"),
-    "gpt-6-astra-high": dict(setup="GPT-6 Astra (high)", lane="subscription"),
+    # Codex: the stream's served model (response.completed -> response.model), checked against the requested id (a
+    # dated snapshot of it allowed): the league stored the answer text only, so there is no league evidence.
+    "gpt-6.1-sol-high": dict(setup="GPT-6.1 Sol (high)", lane="subscription",
+                             expect=dict(models=["gpt-6.1-sol"], allow_dated=True)),
+    "gpt-6-astra-high": dict(setup="GPT-6 Astra (high)", lane="subscription",
+                             expect=dict(models=["gpt-6-astra"], allow_dated=True)),
 }
 
 

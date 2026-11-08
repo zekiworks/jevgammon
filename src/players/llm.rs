@@ -117,6 +117,10 @@ pub struct ExpectRoute {
     pub provider_pointer: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reject_log: Option<std::path::PathBuf>,
+    /// Also accept a listed model followed by a dated snapshot suffix (`<model>-2026...`): for
+    /// routes whose league records hold no served model (Codex).
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub allow_dated: bool,
 }
 
 /// Whether a raw response names the expected model (and provider). Missing or unreadable
@@ -129,7 +133,14 @@ pub fn route_identity(raw: &str, expect: &ExpectRoute) -> std::result::Result<()
     let Some(model) = model else {
         return Err(format!("the response lacks its identity (no model at {model_at})"));
     };
-    if !expect.models.iter().any(|x| x == model) {
+    let dated = |x: &String| {
+        expect.allow_dated
+            && model
+                .strip_prefix(x.as_str())
+                .and_then(|rest| rest.strip_prefix('-'))
+                .is_some_and(|rest| rest.len() >= 4 && rest[..4].bytes().all(|b| b.is_ascii_digit()))
+    };
+    if !expect.models.iter().any(|x| x == model || dated(x)) {
         return Err(format!("the response names model {model:?}, expected one of {:?}", expect.models));
     }
     if let Some(want) = &expect.provider {
@@ -169,6 +180,8 @@ pub struct LlmClient {
     no_logprobs: AtomicBool,
     /// Set when a response failed the route check: no further request is sent.
     route_rejected: AtomicBool,
+    /// The Codex endpoint (`CODEX_URL`; a mock server in tests).
+    codex_url: String,
 }
 
 #[derive(Debug, Default, PartialEq)]
@@ -192,6 +205,9 @@ struct Completion {
     reasoning_tokens: Option<u64>,
     /// Dollars, when the provider reports them (OpenRouter's `usage.cost`).
     cost: Option<f64>,
+    /// The served model of a Codex stream (`response.completed` → `response.model`), whose
+    /// stored reply is the answer text only.
+    served_model: Option<String>,
 }
 
 impl Completion {
@@ -542,6 +558,7 @@ impl LlmClient {
             options,
             no_logprobs: AtomicBool::new(false),
             route_rejected: AtomicBool::new(false),
+            codex_url: CODEX_URL.to_owned(),
         }
     }
 
@@ -840,6 +857,18 @@ impl LlmClient {
             .as_millis() as u64;
         let (raw, completion) = match result {
             Ok(done) => done,
+            // A Codex stream without `response.completed` carries no served model: under a route
+            // check that is a missing identity, so it fails closed like a wrong one.
+            Err(CallError::Fatal(error))
+                if self.options.expect_route.is_some()
+                    && matches!(self.kind, Kind::OpenAiSubscription(_))
+                    && format!("{error:#}").contains("before response.completed") =>
+            {
+                self.route_rejected.store(true, Ordering::SeqCst);
+                return Err(anyhow!(
+                    "ROUTE CHECK: the Codex stream ended without response.completed (no served model): {error:#}"
+                ));
+            }
             Err(error) => {
                 return Err(error
                     .into_anyhow()
@@ -850,7 +879,12 @@ impl LlmClient {
         // pre-registered model and provider. Its cost is already booked (`send`); the raw reply
         // is kept in the rejection log and the error.
         if let Some(expect) = &self.options.expect_route {
-            if let Err(reason) = route_identity(&raw, expect) {
+            // Codex stores the answer text only: its identity is the stream's served model.
+            let identity = match self.kind {
+                Kind::OpenAiSubscription(_) => json!({"model": completion.served_model}).to_string(),
+                _ => raw.clone(),
+            };
+            if let Err(reason) = route_identity(&identity, expect) {
                 self.route_rejected.store(true, Ordering::SeqCst);
                 if let Some(log) = &expect.reject_log {
                     let line = json!({
@@ -916,7 +950,7 @@ impl LlmClient {
                     let request = || {
                         let mut builder = self
                             .http
-                            .post(CODEX_URL)
+                            .post(&self.codex_url)
                             .bearer_auth(&token.access)
                             .header("OAI-Product-Sku", "codex")
                             .header("originator", "codex_cli_rs")
@@ -1200,6 +1234,7 @@ fn parse_codex_sse(stream: &str) -> Result<Completion> {
     let mut text = String::new();
     let mut done_text = None;
     let mut usage = Value::Null;
+    let mut served_model = None;
     for line in stream.lines() {
         let Some(data) = line.strip_prefix("data:") else {
             continue;
@@ -1223,7 +1258,11 @@ fn parse_codex_sse(stream: &str) -> Result<Completion> {
                 usage = event
                     .pointer("/response/usage")
                     .cloned()
-                    .unwrap_or_default()
+                    .unwrap_or_default();
+                served_model = event
+                    .pointer("/response/model")
+                    .and_then(Value::as_str)
+                    .map(str::to_owned);
             }
             Some("response.failed" | "response.incomplete" | "error") => {
                 return Err(anyhow!("OpenAI response failed: {event}"));
@@ -1239,6 +1278,7 @@ fn parse_codex_sse(stream: &str) -> Result<Completion> {
         input_tokens: tokens(&usage, "/input_tokens"),
         output_tokens: tokens(&usage, "/output_tokens"),
         reasoning_tokens: optional(&usage, "/output_tokens_details/reasoning_tokens"),
+        served_model,
         ..Completion::default()
     })
 }
@@ -1428,6 +1468,7 @@ fn parse_chat_completion(body: &str) -> Result<Completion> {
         reasoning_tokens: optional(&value, "/usage/completion_tokens_details/reasoning_tokens")
             .or_else(|| optional(&value, "/usage/reasoning_tokens")),
         cost: value.pointer("/usage/cost").and_then(Value::as_f64),
+        served_model: None,
     })
 }
 
@@ -2087,6 +2128,7 @@ mod tests {
                     model_pointer: None,
                     provider_pointer: None,
                     reject_log: Some(reject_log),
+                    allow_dated: false,
                 }),
                 quota_pause: false,
             },
@@ -2105,6 +2147,7 @@ mod tests {
             model_pointer: None,
             provider_pointer: None,
             reject_log: None,
+            allow_dated: false,
         };
         assert!(route_identity(RIGHT, &expect).is_ok());
         assert!(route_identity(WRONG, &expect).unwrap_err().contains("1017"));
@@ -2215,14 +2258,113 @@ mod tests {
             model_pointer: Some("/response/modelVersion".into()),
             provider_pointer: None,
             reject_log: None,
+            allow_dated: false,
         };
         assert!(route_identity(r#"{"response":{"modelVersion":"gemini-3.8-flash"},"traceId":"x"}"#, &antigravity).is_ok());
         assert!(route_identity(r#"{"response":{"modelVersion":"gemini-4-argon"}}"#, &antigravity).is_err());
         assert!(route_identity(r#"{"response":{}}"#, &antigravity).unwrap_err().contains("lacks"));
         let claude = ExpectRoute { models: vec!["claude-sonnet-5-5".into()], provider: None, model_pointer: None,
-                                   provider_pointer: None, reject_log: None };
+                                   provider_pointer: None, reject_log: None, allow_dated: false };
         assert!(route_identity(r#"{"model":"claude-sonnet-5-5","content":[]}"#, &claude).is_ok());
         assert!(route_identity(r#"{"model":"claude-opus-5-5","content":[]}"#, &claude).is_err());
+    }
+
+    /// Codex: the served model comes from `response.completed`; a dated snapshot of the requested
+    /// id is accepted only when asked; a stream without it fails closed.
+    #[test]
+    fn codex_identity_is_the_streams_served_model() {
+        let stream = "data: {\"type\":\"response.output_text.done\",\"text\":\"{\\\"choice\\\":\\\"B\\\"}\"}\n\
+                      data: {\"type\":\"response.completed\",\"response\":{\"model\":\"gpt-6.1-sol-2026-10-01\",\"usage\":{\"input_tokens\":5,\"output_tokens\":2}}}\n";
+        let completion = parse_codex_sse(stream).unwrap();
+        assert_eq!(completion.served_model.as_deref(), Some("gpt-6.1-sol-2026-10-01"));
+        let mut expect = ExpectRoute { models: vec!["gpt-6.1-sol".into()], provider: None, model_pointer: None,
+                                       provider_pointer: None, reject_log: None, allow_dated: true };
+        let identity = json!({"model": completion.served_model}).to_string();
+        assert!(route_identity(&identity, &expect).is_ok());
+        assert!(route_identity(r#"{"model":"gpt-6.1-sol-mini"}"#, &expect).is_err());
+        assert!(route_identity(r#"{"model":"gpt-6-astra"}"#, &expect).is_err());
+        assert!(route_identity(r#"{"model":null}"#, &expect).is_err());
+        expect.allow_dated = false;
+        assert!(route_identity(&identity, &expect).is_err());
+    }
+
+    fn codex_stream(model: Option<&str>, completed: bool) -> String {
+        let mut out = String::from(
+            "data: {\"type\":\"response.output_text.done\",\"text\":\"- keep it simple\"}\n\n",
+        );
+        if completed {
+            let model = model.map_or("null".to_owned(), |m| format!("\"{m}\""));
+            out += &format!(
+                "data: {{\"type\":\"response.completed\",\"response\":{{\"model\":{model},\"usage\":{{\"input_tokens\":5,\"output_tokens\":2}}}}}}\n\n"
+            );
+        }
+        out
+    }
+
+    fn codex_client(url: String) -> LlmClient {
+        let creds = Arc::new(Credentials::fixed(crate::auth::Subscription::OpenAi, "test-token"));
+        let mut client = LlmClient::openai_subscription(
+            reqwest::Client::new(),
+            "gpt-6.1-sol".into(),
+            creds,
+            Options {
+                reasoning: Some("high".into()),
+                request: None,
+                max_tokens: None,
+                top_logprobs: None,
+                readout: Readout::Prefill,
+                answer_prefix: None,
+                prompt_note: None,
+                prompt_note_file: None,
+                pacer: None,
+                budget: None,
+                expect_route: Some(ExpectRoute {
+                    models: vec!["gpt-6.1-sol".into()],
+                    provider: None,
+                    model_pointer: None,
+                    provider_pointer: None,
+                    reject_log: None,
+                    allow_dated: true,
+                }),
+                quota_pause: false,
+            },
+        );
+        client.codex_url = url;
+        client
+    }
+
+    /// Codex (Zeki/Main before 13 Nov): the stream's served model is checked before the text is
+    /// used; a wrong model, a dated snapshot of another id, a stream without response.completed
+    /// or without response.model fail closed: nothing used, nothing further sent.
+    #[tokio::test]
+    async fn codex_replies_are_used_only_with_the_requested_model() {
+        let retry = http::RetryTime::default();
+        let ok = |m: &'static str| Box::leak(codex_stream(Some(m), true).into_boxed_str()) as &'static str;
+        for good in ["gpt-6.1-sol", "gpt-6.1-sol-2026-10-01"] {
+            let (url, count) = serve_json(ok(good));
+            let client = codex_client(url.replace("/v1", "/codex"));
+            let mut decision = Decision::default();
+            let (text, _) = client.free_text("S", "U", &retry, &mut decision).await.unwrap();
+            assert_eq!(text, "- keep it simple");
+            assert_eq!((decision.exchanges.len(), count.load(Ordering::SeqCst)), (1, 1));
+        }
+        let bad: [&'static str; 4] = [
+            ok("gpt-6-astra"),
+            ok("gpt-6-astra-2026-10-01"),
+            Box::leak(codex_stream(None, true).into_boxed_str()),
+            Box::leak(codex_stream(Some("gpt-6.1-sol"), false).into_boxed_str()),
+        ];
+        for stream in bad {
+            let (url, count) = serve_json(stream);
+            let client = codex_client(url.replace("/v1", "/codex"));
+            let mut decision = Decision::default();
+            let error = client.free_text("S", "U", &retry, &mut decision).await.unwrap_err();
+            assert!(format!("{error:#}").contains("ROUTE CHECK"), "{stream}: {error:#}");
+            assert!(decision.exchanges.is_empty(), "nothing used");
+            let again = client.free_text("S", "U", &retry, &mut Decision::default()).await.unwrap_err();
+            assert!(format!("{again:#}").contains("no further"), "{again:#}");
+            assert_eq!(count.load(Ordering::SeqCst), 1, "nothing further sent");
+        }
     }
 }
 

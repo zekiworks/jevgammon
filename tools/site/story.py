@@ -164,6 +164,23 @@ def late_tag(x) -> str | None:
     return "late entry \u00b7 provisional" if e["status"] == P.PROVISIONAL else "late entry"
 
 
+def chip_text(S, x, kind: str, league: bool = False) -> str:
+    """The one small grey chip after a row's name (Ümit #3193): '<setting> · <chat|decision>' (the setting left out
+    where the setup has none), then its late-entry tag; a program 'program' (an other-league row of a program: its
+    league first)."""
+    if kind == "program":
+        parts = [f'League {x["lg"]["id"]}' if league and x["lg"] else None, "program"]
+    else:
+        typ = model_type(S, x)
+        parts = [x["setting"], typ if typ in TYPE_LABEL else None]
+    return " \u00b7 ".join(p for p in parts + [late_tag(x)] if p)
+
+
+def row_name(text: str, setting: str | None) -> str:
+    """The name a row shows: without a trailing '(<setting>)', which its chip carries (data and links keep the name)."""
+    return text.removesuffix(f" ({setting})") if setting else text
+
+
 def judgement_cell(r: dict, colour: str | None) -> str:
     """The risk judgement as a bar on 0 to 100 to the score, its 95% interval as the whisker, the line at 50 (always
     safe), and the number."""
@@ -195,9 +212,9 @@ def page_href(S, x) -> str | None:
 
 # The row's details box (Ümit #2904, as Clocktower Bench's): opened by a tap on a phone, by hover or the keyboard focus on
 # a desktop (bg.js), each line filled only from the setup's stored values, a line or part left out where the data has
-# none (never "n/a"). The row itself shows the rank, the model (maker dot, a late entry's tag after the name) and the
-# risk judgement; every other value of the setup is in its box, its maker, type and setting on the first line (Ümit
-# #3039: nothing under the name).
+# none (never "n/a"). The row itself shows the rank, the model (maker dot, the name, one chip after it: setting · type,
+# a late entry's tag) and the risk judgement; every other value of the setup is in its box, its maker, type and setting
+# on the first line (Ümit #3039: nothing under the name; #3193: the chip).
 TYPE_LABEL = {"chat": "chat model", "decision": "decision model"}
 
 
@@ -289,9 +306,9 @@ def headline_rows(S) -> tuple[list, list, list]:
             dot = f'<i class="swatch hl-dot" style="background:{colour}" title="{esc(mk)}"></i>' if colour else \
                 '<i class="swatch hl-dot swatch-program"></i>'
             typ = "program" if kind == "program" else model_type(S, x)
-            # Nothing under the name (Ümit #3039): maker, type and setting are on the box's first line; a late entry's
-            # tag stays after the name, small (a caveat on its rank).
-            tag = f'<span class="hl-tag">{esc(late_tag(x))}</span>' if x["late"] else ""
+            # Nothing under the name (Ümit #3039); after it one small grey chip (Ümit #3193): setting · type, a late
+            # entry's tag in it (a caveat on its rank); the maker only in the dot and the box.
+            tag = f'<span class="hl-tag">{esc(chip_text(S, x, kind))}</span>'
             ref = H.ref_label(S, x["ds"], x["name"]) if kind == "program" else None
             extra = []
             if kind == "model":
@@ -313,15 +330,15 @@ def headline_rows(S) -> tuple[list, list, list]:
             label = x["name"] if kind == "program" else name
             bid = f"{rid}-box"
             body.append(f'<tr{cls}{tr_attrs(S, x, kind, typ)} data-box="{bid}">{rank}<td class="model">{dot}{icon}'
-                        f'{name_link(S, x, label, bid)}{tag}{more}'
+                        f'{name_link(S, x, row_name(label, x["setting"]), bid)}{tag}{more}'
                         f'{details_box(S, x, kind, bid, extra, ref)}</td>{judgement_cell(x["r"], colour)}{wide_cells(x)}</tr>')
             for sid, y in zip(sub_ids, others):
                 ycol = H.maker(y["name"])[1] if kind == "model" else None
                 ybid = f"{sid}-box"
-                ytag = f'<span class="hl-tag">{esc(late_tag(y))}</span>' if y["late"] else ""
+                ytag = f'<span class="hl-tag">{esc(chip_text(S, y, kind, league=True))}</span>'
                 body.append(f'<tr class="hl-sub{"" if kind == "model" else " reference"}" '
                             f'id="{sid}" hidden{tr_attrs(S, y, kind, typ)} data-box="{ybid}"><td class="num"></td><td class="model">'
-                            f'{name_link(S, y, y["name"], ybid)}<span class="small">other {what} of {esc(label)}{ytag}</span>'
+                            f'{name_link(S, y, row_name(y["name"], y["setting"]), ybid)}{ytag}'
                             f'{details_box(S, y, kind, ybid, [], ref)}</td>{judgement_cell(y["r"], ycol)}{wide_cells(y)}</tr>')
             if kind != "program" or x["name"] == "GNUbg weak":
                 chart.append((kind, label, x, colour))

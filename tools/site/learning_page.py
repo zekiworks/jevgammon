@@ -13,8 +13,9 @@ the live site). Every source is read at render time:
 - the pilot's files as snapshot.py copies them to STATE/learning (--src, default ~/.local/state/bg-site/learning; a
   missing or empty directory means no results yet):
   - learning-pilot.json, the harness's summary, absent before the first series: "No results yet" and progress
-    0 / planned. Numbers per arm x test round and progress appear as series finish; the learning lift and the signal
-    rule's result only once "complete" is true (plan §9);
+    0 / planned. The status line (status()), the two charts with their tables and progress appear as series finish;
+    the verdict (the signal rule per arm, the budget arm's fixed reading) and the learning lift only once the site
+    accepts the results as complete (plan §9);
   - runs/lessons/sNN/aggregate.json and lessons-gKK.txt: every lesson the model wrote, next to its game (series, game,
     result from the series aggregate's games), for finished series only;
   - lessons_system.txt and lessons_user.txt, the lesson prompt, and its sha256: one hash over the system file's bytes
@@ -55,17 +56,28 @@ TITLE_PREREG = "Learning from experience (pre-registered)"
 # Pre-registration only (default ON): the build never reads the pilot's results, aggregates, lesson files or the
 # private test set, and the page shows the protocol and the pre-registered lesson prompt only. Results and lessons are
 # published only after this is switched off in a reviewed commit.
-PREREGISTRATION_ONLY = True
+# Switched off on Zeki's GO for 34ef85e (bus #2935): the completed pilot's validated results and lessons are published.
+PREREGISTRATION_ONLY = False
 COMMITMENT = "Results will be published whichever way they go, including no lift."
 PLAN = ROOT / "mailbox/Learning pilot - plan 2026-11-07.md"
 # The pilot's files as snapshot.py copies them (STATE/learning): the build's only source besides the plan.
 SOURCE = "learning"
 DESCRIPTION = ("The learning pilot of the backgammon benchmark (preliminary, running): does a model play better after "
                "seeing its own earlier games? The pre-registered plan, the lesson prompt and the results as they come in.")
-# Ids of the blocks that only a complete results file may carry (checks.check_learning): the lift, the signal rule's
-# result and the Learning tab's leaders.
-COMPLETE_ONLY_IDS = ("learning-lift", "learning-signal", "learning-leaders")
+# Ids of the blocks that only a complete results file may carry (checks.check_learning): the verdict, the lift, the
+# signal rule's result and the Learning tab's leaders.
+COMPLETE_ONLY_IDS = ("learning-verdict", "learning-lift", "learning-signal", "learning-leaders")
 COMPLETE_ONLY_KEYS = ("learning_lift", "signal", "paired_series")
+# Plan section 5: the smoke is the first 3 series of every arm; the run then continues to 10 in total per arm.
+SMOKE_SERIES = 3
+# The arms' colours, fixed (Ümit #2925): the one map behind every line, dot and legend swatch of both charts (the CSS
+# custom property --lp of each element). Control is also dashed (CONTROL_DASH): in the risks chart it is the flat line
+# at its T0 value, as control has no later test round.
+ARM_COLOUR = {"control": "var(--text-2)", "records": "var(--reading)", "lessons": "var(--good)",
+              "budget": "var(--wrong)"}
+CONTROL_DASH = "6 4"
+# The plan's verdict wording for an always-empty budget context (section 11, Interpretation, fixed now).
+BUDGET_VERDICT = "with this budget, record memory could not be provided"
 # The plan's bullet that fixes the Learning tab's order (section 9, amended before any model call, 09bcbc4).
 TAB_ORDER = "Learning tab order"
 # The plan's fixed reading of an empty budget context (section 11, Zeki #2577), shown with the budget arm's points.
@@ -75,9 +87,6 @@ BUDGET_READING = "Interpretation, fixed now"
 TEST_SET = ROOT / "workspace/learning-pilot/test_set.json"
 CHECKPOINTS = ("T0", "T5", "T10")
 CHECKPOINT_LABEL = {"T0": "Before game 1", "T5": "After game 5", "T10": "After game 10"}
-# The chart's measures (the evaluation set, per arm and checkpoint): key, label, unit.
-CHART_MEASURES = [("error_rate", "Error rate (PR), lower is better", ""),
-                  ("risks_found", "Risks found, higher is better", "%")]
 # Shown per arm x test round; the keys copied to the data file are exactly these.
 METRICS = [("error_rate", "Error rate (PR)", 1, ""), ("risk_judgement", "Risk judgement", 1, ""),
            ("risks_found", "Risks found", 1, "%"), ("right_safety", "Right safety", 1, "%"),
@@ -189,28 +198,30 @@ def pick(row, keys):
         {"shared": True} if row.get("shared") else {})
 
 
-def shown_results(R: dict, complete: bool) -> dict:
-    """The validated results file, cut down to what the page shows. The learning lift and the signal stay out unless
-    the site accepts complete."""
+# The complete-only blocks' fields, exactly (learning_validate recomputes them; nothing else is published).
+LIFT_KEYS = ("lift", "lift_ci", "vs_control", "vs_control_ci")
+SIGNAL_KEYS = ("risks_found_change", "risks_found_ci", "right_safety_change", "right_safety_ci", "signal")
+
+
+def shown_results(pub: dict) -> dict:
+    """learning_validate's public projection (rebuilt from the finished series' validated aggregates), cut down to
+    the fields the page shows, by explicit keys. The learning lift and the signal are there only when complete."""
     keys = [k for k, *_ in METRICS]
-    out = dict(updated_at=R["updated_at"], planned_series_per_arm=R["planned_series_per_arm"],
-               series_done=R["series_done"], complete=complete,
+    out = dict(updated_at=pub["updated_at"], last_update=pub["last_update"],
+               planned_series_per_arm=pub["planned_series_per_arm"],
+               series_done=pub["series_done"], complete=pub["complete"], t0_done=pub["t0_done"],
                table={arm: {cp: pick(by_cp.get(cp), keys) for cp in CHECKPOINTS if cp in by_cp}
-                      for arm, by_cp in R["table"].items()})
-    if "t0_done" in R:
-        out["t0_done"] = R["t0_done"]
-    # "running, n of N series" on the Learning tab: every arm's finished series of all arms' planned ones.
-    out["series_total_done"] = sum(len(v) for v in R["series_finished"].values())
-    out["series_total_planned"] = R["planned_series_per_arm"] * len(R["series_finished"])
-    out["series_finished"] = R["series_finished"]
-    if R.get("games"):
-        out["games"] = {arm: pick(g, [k for k, *_ in GAME_METRICS]) for arm, g in R["games"].items()}
-    if "budget_empty_points" in R:
-        out["budget_empty_points"] = R["budget_empty_points"]
-    if complete:
-        for k in COMPLETE_ONLY_KEYS:
-            if k in R:
-                out[k] = R[k]
+                      for arm, by_cp in pub["table"].items()},
+               series_total_done=pub["series_total_done"], series_total_planned=pub["series_total_planned"],
+               series_finished=pub["series_finished"],
+               games={arm: pick(g, [k for k, *_ in GAME_METRICS]) for arm, g in pub["games"].items()},
+               game_error_rate=pub["game_error_rate"], budget_empty_points=pub["budget_empty_points"],
+               budget_points_total=pub["budget_points_total"], signal_rule=pub["signal_rule"],
+               provenance=pub["provenance"])
+    if pub["complete"]:
+        out.update(learning_lift={arm: pick(r, LIFT_KEYS) for arm, r in pub["learning_lift"].items()},
+                   signal={arm: pick(r, SIGNAL_KEYS) for arm, r in pub["signal"].items()},
+                   paired_series=pub["paired_series"])
     return out
 
 
@@ -229,6 +240,35 @@ def is_complete(L) -> bool:
     return bool(v and v.get("complete"))
 
 
+def status(L) -> dict:
+    """The status line at the top of the page (Ümit #2925), derived from the validated state only, exactly one of:
+
+    - "Done": learning_validate accepts the results as complete (every planned series of every arm finished, the shared
+      T0 answered in full, not a dry run);
+    - "Not started": no accepted results file, or one with no finished series in any arm and no shared T0 run;
+    - "Smoke running: N of 3 series per arm": N, the series finished in EVERY arm (the minimum over the arms of the
+      validated finished series), is below 3. Plan section 5 runs 3 series per arm first (the smoke) and only then
+      continues, so the run is in its smoke phase exactly until every arm has finished 3 series;
+    - "Running: N of 10 series per arm": N is 3 or more and the results are not accepted as complete (this includes
+      10 of 10 when, say, the shared T0 is not answered in full).
+
+    The time is the latest finished_at of the validated aggregates behind the page (the shared T0 and the finished
+    series: learning_validate.last_update), in UTC; none before the first one."""
+    R = L["results"]
+    planned = R["planned_series_per_arm"] if R else V.N
+    n = min(len(s) for s in R["series_finished"].values()) if R else 0
+    if is_complete(L):
+        phase, line = "done", "Done"
+    elif R is None or (not R["series_total_done"] and not R["t0_done"]):
+        phase, line = "not-started", "Not started"
+    elif n < SMOKE_SERIES:
+        phase, line = "smoke", f"Smoke running: {n} of {SMOKE_SERIES} series per arm"
+    else:
+        phase, line = "running", f"Running: {n} of {planned} series per arm"
+    return dict(phase=phase, line=line, series_per_arm=n, planned=planned, smoke_series=SMOKE_SERIES,
+                last_update=R["last_update"] if R else None)
+
+
 def title(L) -> str:
     """The page title and heading follow the validated status, like the top label."""
     if L.get("preregistration_only"):
@@ -237,9 +277,12 @@ def title(L) -> str:
 
 
 def status_label(L) -> str:
-    """The page's top label, from the validated status: "Complete" only when learning_validate accepts complete. The
-    Experiments page's card shows the same label."""
-    return "Pre-registration" if L.get("preregistration_only") else "Complete" if is_complete(L) else "Preliminary · running"
+    """The page's top label, from the validated status (status()): "Complete" only when learning_validate accepts
+    complete, "Not started" before anything validated has run. The Experiments page's card shows the same label."""
+    if L.get("preregistration_only"):
+        return "Pre-registration"
+    phase = L["status"]["phase"]
+    return "Complete" if phase == "done" else "Not started" if phase == "not-started" else "Preliminary · running"
 
 
 def require_test_set(test_set: Path, why: str) -> str:
@@ -251,13 +294,15 @@ def require_test_set(test_set: Path, why: str) -> str:
 
 
 def read_results(src: Path, plan: dict, prompt: dict | None, test_set: Path) -> dict:
-    """results, validation, lessons and the budget arm's points from src, after learning_validate's checks. With a
-    results file or lesson files present, the evaluation set must be present and be the results' (TestSetRequired)."""
+    """results, validation, lessons and the budget arm's points from src, after learning_validate. With a results
+    file, an aggregate or a lesson file present, the evaluation set must be present, readable and the one the results
+    were made with, else the build fails (TestSetRequired); only the no-results state builds without it."""
     path = src / "learning-pilot.json"
     none = dict(results=None, validation=None, lessons=[], budget=[])
+    runs = src / "runs"
     if not path.exists():
-        if any((src / "runs" / "lessons").glob("s*/lessons-g*.txt")):
-            require_test_set(test_set, "lesson files are present")
+        if any(runs.rglob("aggregate.json")) or any(runs.rglob("lessons-g*.txt")):
+            require_test_set(test_set, "aggregates or lesson files are present")
         return none
     test_sha = require_test_set(test_set, "a results file is present")
     try:
@@ -269,30 +314,23 @@ def read_results(src: Path, plan: dict, prompt: dict | None, test_set: Path) -> 
     if stated is not None and stated != test_sha:
         raise TestSetRequired(f"the results were made with evaluation set {str(stated)[:12]}…, but {test_set} hashes "
                               f"to {test_sha[:12]}…: the leakage check would test the wrong set")
-    bad = (V.schema(R, prompt["sha256"] if prompt else None, plan["hashes"], test_sha) if isinstance(R, dict)
-           else ["learning-pilot.json is not an object"])
-    if bad:
-        return none | dict(validation=rejected(bad))
-    not_complete = V.completeness(R, src, test_sha) if R["complete"] else []
-    files, lesson_bad = V.lessons_shown(R, src)
-    complete = R["complete"] and not not_complete and not lesson_bad
+    v = V.validate(R, src, prompt, plan["hashes"], test_sha)
+    validation = dict(accepted=v["accepted"], producer_complete=v["producer_complete"], complete=v["complete"],
+                      problems=v["problems"])
+    if not v["accepted"]:
+        # The public problems name no key or directory taken from the pilot's files; the private ones, which do, go to
+        # the build's stderr (its log) only, never to the page or its data file.
+        for p in v["private_problems"]:
+            print(f"learning_validate (private): {p}", file=sys.stderr)
+        return none | dict(validation=validation)
     lessons = []
-    for s, g, f in files:
-        A = V.aggregate(src, "lessons", s) or {}
-        game = next((x for x in A.get("games", []) if x.get("game") == g), {})
+    for s, g, f, game in v["lessons"]:
         text = f.read_text().strip()
         if text:
             lessons.append(dict(series=s, text=text, **{k: game.get(k) for k in GAME_KEYS} | {"game": g}))
-    budget, budget_bad = [], []
-    for s in sorted(R["series_finished"]["budget"]):
-        A = V.aggregate(src, "budget", s) or {}
-        e = V.budget_points(A, f"budget s{s:02d}")
-        budget_bad += e
-        if not e and A.get("budget_points") is not None:
-            budget.append(dict(series=s, points=A["budget_points"]))
-    return dict(results=shown_results(R, complete), lessons=lessons, budget=budget,
-                validation=dict(accepted=True, producer_complete=R["complete"], complete=complete,
-                                problems=not_complete + lesson_bad + budget_bad))
+    budget = [dict(series=s, points=[pick(p, ("after_game", "games_shown", "games_dropped", "tokens",
+                                              "budget_tokens")) for p in points]) for s, points in v["budget"]]
+    return dict(results=shown_results(v["public"]), lessons=lessons, budget=budget, validation=validation)
 
 
 def data(plan_path: Path, src: Path, test_set: Path = TEST_SET,
@@ -308,6 +346,8 @@ def data(plan_path: Path, src: Path, test_set: Path = TEST_SET,
     L = dict(version="v3", preregistration_only=prereg,
              plan={k: v for k, v in plan.items() if k not in ("redacted", "hashes")},
              redacted=plan["redacted"], lesson_prompt=prompt, **shown)
+    if not prereg:  # pre-registration only: nothing of the run is read, so there is no status to state
+        L["status"] = status(L)
     L["source_sha256"] = hashlib.sha256(json.dumps(L, sort_keys=True).encode()).hexdigest()
     return L
 
@@ -323,20 +363,30 @@ def num(v, digits, unit="") -> str:
 
 
 def validation_note(L) -> str:
-    """What the site did not accept of the results file (learning_validate), named field by field."""
+    """Why the site refused the results file (learning_validate), named field by field. An accepted file has no
+    problems: its summary agreed with the aggregates field by field."""
     v = L["validation"]
-    if not v or not v["problems"]:
+    if not v or v.get("accepted") or not v.get("problems"):
         return ""
     items = "".join(f"<li>{esc(p)}</li>" for p in v["problems"])
-    if not v["accepted"]:
-        head = ("<strong>Results file not accepted.</strong> It failed the site's checks against the pre-registered "
-                "protocol, so none of its numbers are shown:")
-    elif v["producer_complete"] and not v["complete"]:
-        head = ("<strong>Not accepted as complete.</strong> The results file says every series is done; the site's "
-                "checks do not confirm it, so the numbers are shown as running, with no lift, signal or ranking:")
-    else:
-        head = "<strong>Not shown:</strong>"
+    head = ("<strong>Results file not accepted.</strong> It failed the site's checks against the pre-registered "
+            "protocol and the series' own files, so none of its numbers, lessons or budget points are shown:")
     return f'<div class="note validation-note"><p>{head}</p><ul>{items}</ul></div>'
+
+
+def utc(t: str) -> str:
+    return datetime.fromisoformat(t).astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+
+
+def status_line(L) -> str:
+    """The status line (status()): one of the four phrases and the time of the last update, at the top of the page."""
+    st = L["status"]
+    t = st["last_update"]
+    when = f'<time datetime="{esc(t)}">{utc(t)}</time>' if t else "none yet"
+    refused = (' <span class="small">The latest results file was not accepted: see Status and progress.</span>'
+               if L["validation"] and not L["validation"].get("accepted") else "")
+    return (f'<p class="lp-status" id="learning-status-line"><strong data-phase="{st["phase"]}">{esc(st["line"])}'
+            f'</strong> <span class="small">· Last update: {when}</span>{refused}</p>')
 
 
 def progress(L) -> str:
@@ -349,9 +399,9 @@ def progress(L) -> str:
             for a, s in R["series_finished"].items()]
     t0 = (f'<p class="note">Shared T0 test (before any context): {"done" if R["t0_done"] else "not yet done"}.</p>'
           if "t0_done" in R else "")
-    state = "All planned series are done." if R["complete"] else "Running: not all planned series are done."
-    return (f'<p class="note">{status_badge("Preliminary")} {esc(state)} Updated {esc(R["updated_at"])}.</p>{t0}'
-            + validation_note(L) + P.table(["Arm", "Series finished / planned"], rows, "Progress per arm"))
+    badge = "" if R["complete"] else status_badge("Preliminary") + " "
+    return (f'<p class="note">{badge}{esc(L["status"]["line"])}. Results file updated {esc(R["updated_at"])}.</p>'
+            f'{t0}' + validation_note(L) + P.table(["Arm", "Series finished / planned"], rows, "Progress per arm"))
 
 
 def results_table(R) -> str:
@@ -411,6 +461,7 @@ def arm_table(d: dict, arms, caption: str) -> str:
 
 
 def results(L) -> str:
+    """Every number per arm and test round, and per arm from the games (finished series only); no lift or verdict."""
     R = L["results"]
     if R is None:
         if L["validation"]:
@@ -420,32 +471,112 @@ def results(L) -> str:
     if R.get("games"):
         out.append(games_table(R))
     out.append(f'<p class="table-note">{esc(COST_NOTE)}</p>')
-    if not R["complete"]:
-        out.append('<p class="note">The learning lift and any verdict are shown only when every planned series of '
-                   'every arm is done.</p>')
-        return "".join(out)
-    arms = list(R["table"])
-    if "learning_lift" in R:
-        out.append('<div id="learning-lift"><h3>Learning lift</h3>'
-                   + arm_table(R["learning_lift"], arms, "Learning lift per arm (definition: the plan's Metrics)")
-                   + "</div>")
-    if "signal" in R:
-        out.append('<div id="learning-signal"><h3>Signal rule</h3>'
-                   + arm_table(R["signal"], arms, "Signal rule per arm (definition: the plan's Signal rule)")
-                   + "</div>")
     return "".join(out)
 
 
+def ci(v) -> str:
+    return f"95% interval {flat(v)}" if v else f"95% interval {nm(NA)}"
+
+
+def verdict(L) -> str:
+    """The verdict (Ümit #2925 item 3): only when learning_validate accepts the results as complete, the pre-registered
+    signal rule per non-control arm (plan section 8), the plan's fixed reading of the budget arm (section 11) and the
+    learning lift with its intervals; before that, only how many series are done (the numbers are in Results)."""
+    R, st = L["results"], L["status"]
+    if not (R and R["complete"] and is_complete(L)):
+        return (f'<p class="note" id="learning-verdict-pending"><strong>No verdict and no learning lift yet.</strong> '
+                'They are shown only when every planned series of every arm is done (plan section 9): '
+                f'{count(st["series_per_arm"])} of {count(st["planned"])} series done in every arm. The numbers so '
+                'far are under Results.</p>')
+    arms = list(R["table"])
+    rule, sig = R["signal_rule"], R["signal"]
+    lift = by_arm(R["learning_lift"], arms)
+    met = [a for a in arms if (sig.get(a) or {}).get("signal")]
+    # Wording as the results file (mailbox, Zeki #2929): "threshold", never "effect"; the lift differences only as
+    # observed; nothing stronger than the data.
+    head = ("No arm reached the pre-registered signal threshold (plan section 8)." if not met else
+            f"Arms that reached the pre-registered signal threshold (plan section 8): {', '.join(met)}.")
+    items = "".join(
+        f'<li data-arm="{esc(a)}"><strong>{esc(a)}</strong>: '
+        f'{"threshold reached" if s["signal"] else "threshold not reached"}. '
+        f'Risks found {fmt(s["risks_found_change"], 1, signed=True)} points ({ci(s["risks_found_ci"])}); right safety '
+        f'{fmt(s["right_safety_change"], 1, signed=True)} points ({ci(s["right_safety_ci"])}).</li>'
+        for a in arms if (s := sig.get(a)))
+    vs = {a: (lift.get(a) or {}).get("vs_control") for a in arms if a != "control"}
+    vs_ci = {a: (lift.get(a) or {}).get("vs_control_ci") for a in vs}
+    if vs and all(v is not None and v < 0 for v in vs.values()):
+        lift_head = "All observed game-lift differences are below control."
+    elif vs and all(v is not None and v > 0 for v in vs.values()):
+        lift_head = "All observed game-lift differences are above control."
+    else:
+        lift_head = "The observed game-lift differences against control differ in sign between the arms."
+    with_zero = [a for a, c in vs_ci.items() if c and c[0] <= 0 <= c[1]]
+    names = ", ".join(with_zero[:-1]) + " and " + with_zero[-1] if len(with_zero) > 1 else "".join(with_zero)
+    lift_notes = [f"For {names}, the intervals of the difference include zero."] if with_zero else []
+    empty, total = R["budget_empty_points"]["budget"], R["budget_points_total"]["budget"]
+    always_empty = bool(total and empty == total)
+    if always_empty:
+        budget_text = (f'<strong>budget</strong>: its context was empty at all {count(empty)} of {count(total)} points '
+                       '(no whole game record fit within the lessons arm\'s token count). The plan\'s fixed reading '
+                       f'(section 11): <strong>{esc(BUDGET_VERDICT)}</strong>, not "record memory didn\'t help".')
+        c = vs_ci.get("budget")
+        if c and not c[0] <= 0 <= c[1]:
+            lift_notes.append(
+                "The budget arm's interval does not include zero, although budget and control had the same memory "
+                "policy (an empty context) and the same dice seeds; that does not make their realized game prompts "
+                "the same, as the games diverge once a play differs. The source of this unexpected difference and "
+                "the calibration of the intervals were not determined in this pilot.")
+    else:
+        budget_text = (f'<strong>budget</strong>: its context was empty at {count(empty)} of {count(total)} points, '
+                       'so the plan\'s fixed reading for an always-empty context (section 11) does not apply.')
+    return ('<div id="learning-verdict">'
+            f'<p><strong>{esc(head)}</strong></p>'
+            f'<p class="small">Signal rule (plan section 8, pre-registered), per non-control arm averaged over its '
+            f'series: risks found after game 10 minus before game 1 at least '
+            f'{fmt(rule["risks_found_at_least"], 0, signed=True)} points, and right safety after game 10 minus before '
+            f'game 1 at least {fmt(rule["right_safety_at_least"], 0, signed=True)} points.</p>'
+            f'<ul class="notes lp-verdict">{items}</ul>'
+            '<p class="small">Before game 1 (T0) is one run: the after-game-10 minus before-game-1 intervals are '
+            'conditional on that single observed T0. This does not apply to the game-lift intervals.</p>'
+            f'<p id="learning-budget-verdict">{budget_text}</p>'
+            f'<p id="learning-lift-verdict"><strong>{esc(lift_head)}</strong> '
+            + " ".join(esc(n) for n in lift_notes) + '</p></div>'
+            '<div id="learning-signal"><h3>Signal rule per arm</h3>'
+            + arm_table(R["signal"], arms, "Signal rule per arm (definition: the plan's Signal rule)") + "</div>"
+            '<div id="learning-lift"><h3>Learning lift</h3><p class="small">Error rate in games 1-3 minus games 8-10 '
+            '(decisions pooled; positive: the arm played better later), and the same minus control\'s, paired by '
+            'series (plan section 7). 95% intervals: 10,000 resamples of whole series.</p>'
+            + arm_table(R["learning_lift"], arms, "Learning lift per arm (definition: the plan's Metrics)") + "</div>")
+
+
+def game_result(x) -> str:
+    if x["won"] is None:
+        return nm(NA)
+    return (f'{"won" if x["won"] else "lost"} {count(x["points"])} point{"s" if x["points"] != 1 else ""}'
+            f' ({esc(x["result"])})')
+
+
 def lessons(L) -> str:
+    """Every lesson the lessons arm wrote, next to its game: series, game and the game's result, from the validated
+    lesson files of finished series only (learning_validate binds each file to its aggregate's hash). One box per
+    series, the first open; the text is escaped and shown as written."""
     if not L["lessons"]:
         return '<p class="note">No lessons yet: they appear with each finished series of the lessons arm.</p>'
-    out = []
+    by_series = {}
     for x in L["lessons"]:
-        res = (f'{"won" if x["won"] else "lost"} {count(x["points"])} point{"s" if x["points"] != 1 else ""}'
-               f' ({esc(x["result"])})' if x["won"] is not None else nm(NA))
-        out.append(f'<li><p class="small">Series {x["series"]}, game {x["game"]}: {res}</p>'
-                   f'<pre class="citation">{esc(x["text"])}</pre></li>')
-    return f'<ul class="notes">{"".join(out)}</ul>'
+        by_series.setdefault(x["series"], []).append(x)
+    out = []
+    for i, (s, xs) in enumerate(by_series.items()):
+        items = "".join(
+            f'<li class="lp-lesson" data-series="{esc(str(x["series"]))}" data-game="{esc(str(x["game"]))}">'
+            f'<p class="small"><strong>Series {esc(str(x["series"]))}, game {esc(str(x["game"]))}</strong>: '
+            f'{game_result(x)}. Lessons written after this game:</p><pre class="citation">{esc(x["text"])}</pre></li>'
+            for x in xs)
+        out.append(f'<details class="lp-series"{" open" if i == 0 else ""}><summary>Series {esc(str(s))}: '
+                   f'lessons after games {esc(str(xs[0]["game"]))}-{esc(str(xs[-1]["game"]))}</summary>'
+                   f'<ul class="notes">{items}</ul></details>')
+    return ('<p class="small">The lessons arm only. Each series starts with no lessons; after each game the model '
+            'wrote its lessons, which the next game read.</p>' + "".join(out))
 
 
 def prompt(L) -> str:
@@ -524,59 +655,126 @@ def nice_step(span: float) -> float:
     return next(m * mag for m in (1, 2, 5, 10) if m * mag >= raw)
 
 
-def chart(L) -> str:
-    """Error rate and risks found on the evaluation set by checkpoint (before game 1, after game 5, after game 10), one
-    line per arm, filled as series finish (Ümit #2564, after 'The village learns, or doesn't'). Values from the data
-    file only; no lift or verdict line."""
-    R = L["results"]
-    arms = list(R["table"]) if R else []
-    vals = [(arm, cp, k, row[k]) for arm in arms for cp in CHECKPOINTS for k, *_ in CHART_MEASURES
-            if (row := R["table"][arm].get(cp)) and row.get(k) is not None]
-    if not vals:
-        return ('<p class="note"><strong>No results yet.</strong> The chart fills in as series finish: error rate and '
-                'risks found before game 1, after game 5 and after game 10, one line per arm.</p>')
-    # One small chart per measure, side by side on wide screens and stacked on phones (bg.css .lp-charts), so each
-    # keeps readable text at 390 px.
-    W, H, L0, R0, T, B = 360, 260, 46, 46, 28, 40  # R0 = L0: the last checkpoint label ("After game 10") fits
+def arm_style(arm: str) -> str:
+    return f'style="--lp:{ARM_COLOUR[arm]}"'
+
+
+def line_chart(key: str, label: str, unit: str, xs: list, lines: list, xtitle: str = "") -> str:
+    """One line chart in the site's SVG chart style (chart-svg: grid, muted axis text, a bold title), one line per arm
+    in its fixed colour (ARM_COLOUR). xs: [(x key, x label)]; lines: [(arm, line points, dots, dashed)] with points as
+    [(x index, value)]. Every dot carries its arm, x and value (one decimal, as in the table under the chart) for
+    checks.check_learning; the values are the data file's."""
+    W, H, L0, R0, T = 360, 260, 46, 46, 28  # R0 = L0: the last x label ("After game 10") fits
+    B = 52 if xtitle else 40
     pw = W - L0 - R0
-    svgs = []
-    for key, label, unit in CHART_MEASURES:
-        ys = [v for _, _, k, v in vals if k == key]
-        if not ys:
-            continue
-        parts = []
-        lo, hi = min(ys), max(ys)
-        step = nice_step(hi - lo)
-        pad = step if lo == hi else 0
-        lo, hi = math.floor(lo / step) * step - pad, math.ceil(hi / step) * step + pad
-        x0 = L0
-        x = lambda c, x0=x0: x0 + pw * CHECKPOINTS.index(c) / (len(CHECKPOINTS) - 1)  # noqa: E731
-        y = lambda v, lo=lo, hi=hi: H - B - (H - B - T) * (v - lo) / ((hi - lo) or 1)  # noqa: E731
-        parts.append(f'<text x="{x0:.1f}" y="{T - 12}" class="lp-title">{esc(label)}</text>')
-        v = lo
-        while v <= hi + step / 2:
-            parts.append(f'<line class="grid" x1="{x0:.1f}" x2="{x0 + pw:.1f}" y1="{y(v):.1f}" y2="{y(v):.1f}"/>'
-                         f'<text class="muted" x="{x0 - 6:.1f}" y="{y(v) + 4:.1f}" text-anchor="end">{v:g}{unit}</text>')
-            v += step
-        for c in CHECKPOINTS:
-            parts.append(f'<text class="muted" x="{x(c):.1f}" y="{H - B + 16}" text-anchor="middle">'
-                         f'{esc(CHECKPOINT_LABEL[c])}</text>')
-        for arm in arms:
-            pts = [(c, val) for a, c, k, val in vals if a == arm and k == key]
-            if len(pts) > 1:
-                d = " ".join(f"{x(c):.1f},{y(val):.1f}" for c, val in pts)
-                parts.append(f'<polyline class="lp-line lp-{esc(arm)}" points="{d}"/>')
-            for c, val in pts:
-                parts.append(f'<circle class="lp-dot lp-{esc(arm)}" cx="{x(c):.1f}" cy="{y(val):.1f}" r="4">'
-                             f'<title>{esc(arm)}, {esc(CHECKPOINT_LABEL[c])}: {fmt(val, 1)}{unit}</title></circle>')
-        svgs.append(f'<svg class="chart-svg" data-chart="learning-{esc(key)}" viewBox="0 0 {W} {H}" role="img" '
-                    f'aria-label="{esc(label)}: the evaluation set before game 1, after game 5 and after game 10, one '
-                    f'line per arm">' + "".join(parts) + "</svg>")
-    legend = "".join(f'<span><i class="swatch lp-swatch lp-{esc(a)}"></i>{esc(a)}</span>' for a in arms)
-    return (f'<figure class="lp-chart"><div class="lp-charts">' + "".join(svgs) + "</div>"
-            f'<p class="chart-legend">{legend}</p><p class="table-note">Means over each arm\'s finished series. Before '
-            'game 1 is one shared run with no context; control has no later test rounds. No lift or verdict is drawn '
-            'until every planned series is done.</p></figure>')
+    ys = [v for _, line, dots, _ in lines for _, v in line + dots]
+    lo, hi = min(ys), max(ys)
+    step = nice_step(hi - lo)
+    pad = step if lo == hi else 0
+    lo, hi = math.floor(lo / step) * step - pad, math.ceil(hi / step) * step + pad
+    x = lambda i: L0 + pw * i / (len(xs) - 1)  # noqa: E731
+    y = lambda v: H - B - (H - B - T) * (v - lo) / ((hi - lo) or 1)  # noqa: E731
+    parts = [f'<text x="{L0}" y="{T - 12}" class="lp-title">{esc(label)}</text>']
+    v = lo
+    while v <= hi + step / 2:
+        parts.append(f'<line class="grid" x1="{L0}" x2="{L0 + pw}" y1="{y(v):.1f}" y2="{y(v):.1f}"/>'
+                     f'<text class="muted" x="{L0 - 6}" y="{y(v) + 4:.1f}" text-anchor="end">{v:g}{unit}</text>')
+        v += step
+    for i, (_, xl) in enumerate(xs):
+        parts.append(f'<text class="muted" x="{x(i):.1f}" y="{H - B + 16}" text-anchor="middle">{esc(xl)}</text>')
+    if xtitle:
+        parts.append(f'<text class="muted" x="{L0 + pw / 2:.1f}" y="{H - B + 34}" text-anchor="middle">'
+                     f'{esc(xtitle)}</text>')
+    for arm, line, dots, dashed in lines:
+        if len(line) > 1:
+            dash = f' stroke-dasharray="{CONTROL_DASH}"' if dashed else ""
+            parts.append(f'<polyline class="lp-line" data-arm="{esc(arm)}" {arm_style(arm)}{dash} points="'
+                         + " ".join(f"{x(i):.1f},{y(val):.1f}" for i, val in line) + '"/>')
+        for i, val in dots:
+            parts.append(f'<circle class="lp-dot" data-arm="{esc(arm)}" data-x="{esc(xs[i][0])}" '
+                         f'data-value="{val:.1f}" {arm_style(arm)} cx="{x(i):.1f}" cy="{y(val):.1f}" r="4">'
+                         f'<title>{esc(arm)}, {esc(xs[i][1])}: {fmt(val, 1)}{unit}</title></circle>')
+    return (f'<svg class="chart-svg" data-chart="{esc(key)}" viewBox="0 0 {W} {H}" role="img" '
+            f'aria-label="{esc(label)}, one line per arm">' + "".join(parts) + "</svg>")
+
+
+def legend(arms, dashed: tuple = ()) -> str:
+    return '<p class="chart-legend">' + "".join(
+        f'<span><i class="swatch lp-swatch{" lp-dashed" if a in dashed else ""}" data-arm="{esc(a)}" '
+        f'{arm_style(a)}></i>{esc(a)}</span>' for a in arms) + "</p>"
+
+
+def risks_points(R) -> dict:
+    """{arm: [(checkpoint index, risks found)]} from the data file's table: the shared T0 and, for the non-control arms,
+    T5 and T10 of their finished series. Control has T0 only."""
+    out = {}
+    for arm, by_cp in R["table"].items():
+        out[arm] = [(i, row["risks_found"]) for i, cp in enumerate(CHECKPOINTS)
+                    if (row := by_cp.get(cp)) and row.get("risks_found") is not None
+                    and (arm != "control" or cp == "T0")]
+    return out
+
+
+def games_points(R) -> dict:
+    """{arm: [(game index, error rate)]}: each game's error rate averaged over the arm's finished series."""
+    return {arm: [(g - 1, v) for g in range(1, V.G + 1) if (v := per.get(str(g))) is not None]
+            for arm, per in R["game_error_rate"].items()}
+
+
+def chart_table(name: str, caption: str, xs: list, R, cells: dict) -> str:
+    """The numbers under a chart: arm x checkpoint or arm x game, each cell tagged with its arm and x for
+    checks.check_learning. cells: {arm: {x key: html}}."""
+    rows = [f'<tr><th scope="row">{esc(a)}</th><td class="num">{count(len(R["series_finished"][a]))}</td>'
+            + "".join(f'<td class="num" data-arm="{esc(a)}" data-x="{esc(k)}">{cells[a][k]}</td>' for k, _ in xs)
+            + "</tr>" for a in R["table"]]
+    return P.SWIPE + P.table(["Arm", "Series"] + [esc(lab) for _, lab in xs], rows, esc(caption),
+                             cls=f"board list lp-numbers lp-{name}")
+
+
+def results_charts(L) -> str:
+    """The two charts of the Results section (Ümit #2925 item 2), each with its numbers table, from the data file's
+    validated projection only and empty until the first finished series: (a) risks found on the 200 evaluation
+    positions before game 1 (T0), after game 5 and after game 10, one line per arm, control a dashed flat line at its
+    T0 value; (b) the error rate of each game 1-10, averaged over each arm's finished series. No lift or verdict."""
+    R = L["results"]
+    if not R or not R["series_total_done"]:
+        return ('<p class="note"><strong>No finished series yet.</strong> Two charts appear here with the first '
+                'finished series: risks found on the evaluation set before game 1, after game 5 and after game 10, '
+                'and the error rate of each game, one line per arm.</p>')
+    arms = list(R["table"])
+    out = []
+    xs = [(cp, CHECKPOINT_LABEL[cp]) for cp in CHECKPOINTS]
+    risks = risks_points(R)
+    if any(risks.values()):
+        lines = []
+        for a in arms:
+            pts = risks[a]
+            if a == "control" and pts:  # control: T0 only, drawn flat at its T0 value across every checkpoint
+                lines.append((a, [(0, pts[0][1]), (len(xs) - 1, pts[0][1])], pts, True))
+            else:
+                lines.append((a, pts, pts, False))
+        cells = {a: {cp: (num(dict(risks[a]).get(i), 1) if a != "control" or cp == "T0" else nm("T0 only"))
+                     for i, (cp, _) in enumerate(xs)} for a in arms}
+        out.append('<figure class="lp-chart" id="learning-chart-risks">'
+                   + line_chart("learning-risks", "Risks found, % (higher is better)", "%", xs, lines)
+                   + legend(arms, ("control",)) + chart_table("risks", "Risks found (%) on the 200 evaluation "
+                                                              "positions: means over each arm's finished series; "
+                                                              "before game 1 is one shared run", xs, R, cells)
+                   + '<p class="table-note">Control is tested before game 1 only (the shared run): its line is drawn '
+                     'flat and dashed at that value.</p></figure>')
+    games = games_points(R)
+    gx = [(str(g), str(g)) for g in range(1, V.G + 1)]
+    if any(games.values()):
+        lines = [(a, games[a], games[a], False) for a in arms]
+        cells = {a: {k: num(dict(games[a]).get(int(k) - 1), 1) for k, _ in gx} for a in arms}
+        out.append('<figure class="lp-chart" id="learning-chart-games">'
+                   + line_chart("learning-games", "Error rate per game (PR, lower is better)", "", gx, lines, "Game")
+                   + legend(arms) + chart_table("games", "Error rate (PR) of game 1 to 10, averaged over each arm's "
+                                                "finished series", [(k, f"Game {k}") for k, _ in gx], R, cells)
+                   + "</figure>")
+    note = ("" if R["complete"] else '<p class="table-note">Numbers so far: the verdict and the learning lift are '
+                                     'shown only when every planned series of every arm is done.</p>')
+    return '<div class="lp-charts">' + "".join(out) + "</div>" + note
 
 
 def section_id(title: str) -> str:
@@ -595,12 +793,12 @@ def budget(L) -> str:
            if empty is not None else [])
     for b in L["budget"]:
         rows = [f'<tr><th scope="row">{count(p["after_game"])}</th>'
-                f'<td>{", ".join(str(g) for g in p["games_shown"]) or nm("none: empty")}</td>'
+                f'<td>{esc(", ".join(str(g) for g in p["games_shown"])) or nm("none: empty")}</td>'
                 f'<td class="num">{count(p["games_dropped"])}</td>'
-                f'<td class="num">{count(p["tokens"])} / {count(p["budget_tokens"])}</td></tr>' for p in b["points"]]
+                f'<td class="num">{count(p["tokens"])} / {num(p["budget_tokens"], 0)}</td></tr>' for p in b["points"]]
         out.append(P.SWIPE + P.table(["After game", "Games included", "Games dropped",
                                       "Tokens used / lessons arm's tokens"], rows,
-                                     f'Budget arm, series {b["series"]}', cls="board list"))
+                                     f'Budget arm, series {esc(str(b["series"]))}', cls="board list"))
     if not L["budget"]:
         out.append('<p class="note">No finished budget series yet: its points appear here, after every game, as each '
                    'series finishes.</p>')
@@ -611,9 +809,11 @@ def body(L) -> str:
     plan = L["plan"]
     prereg = L.get("preregistration_only")
     parts = [] if prereg else [
+        ("learning-results", "Results", results_charts(L)),
+        ("learning-verdict-section", "Verdict and learning lift", verdict(L)),
         ("learning-tab", f"{P.TAB_LEARNING}: arms, not models", tab_card(L)),
-        ("learning-chart", "Before and after: the evaluation set by checkpoint", chart(L)),
-        ("learning-status", "Status and progress", progress(L)), ("learning-results", "Results", results(L)),
+        ("learning-status", "Status and progress", progress(L)),
+        ("learning-numbers", "All numbers", results(L)),
         ("learning-budget", "Budget arm: what its context held", budget(L)),
         ("learning-lessons", "Lessons the model wrote", lessons(L))]
     parts += [("learning-prompt", "Lesson prompt", prompt(L))]
@@ -621,15 +821,16 @@ def body(L) -> str:
     toc = "".join(f'<li><a href="#{i}">{esc(t)}</a></li>' for i, t, _ in parts)
     withheld = (f'<p class="note">{count(L["redacted"])} private address(es) in the plan are withheld here.</p>'
                 if L["redacted"] else "")
-    status = f'<div class="note">{spec_markdown(plan["status"])}</div>' if plan["status"] else ""
+    plan_status = f'<div class="note">{spec_markdown(plan["status"])}</div>' if plan["status"] else ""
     label = status_label(L)
     intro = ("The pre-registered plan and lesson prompt. No results or lessons are published on this page yet: they "
              "are not read by the build." if prereg else
              "The pre-registered plan, the lesson prompt and the results as they come in.")
     head = (f'<header class="card hero page-head"><p class="eyebrow">{label}</p><h1>{esc(title(L))}</h1>'
-            f'<p class="intro"><strong>{esc(plan["commitment"])}</strong></p>'
+            + ("" if prereg else status_line(L))
+            + f'<p class="intro"><strong>{esc(plan["commitment"])}</strong></p>'
             f'<p class="intro">{intro} Data: '
-            f'<a href="../{DATA}">learning-pilot.json</a>.</p>{status}'
+            f'<a href="../{DATA}">learning-pilot.json</a>.</p>{plan_status}'
             f'<p class="small">Plan: {esc(plan["file"])}, sha256 <code>{plan["sha256"]}</code></p>{withheld}</header>')
     return "\n".join([head, f'<nav class="toc card" aria-label="On this page"><ul>{toc}</ul></nav>']
                      + [f'<section class="card" id="{i}"><h2>{esc(t)}</h2>{h}</section>' for i, t, h in parts])

@@ -1,0 +1,3 @@
+exit 0
+qwen3.8-flash-off: running; done ['E1', 'S1', 'S2', 'E2']; next S3; billed $0.0000
+billed total $0.0000 of $110

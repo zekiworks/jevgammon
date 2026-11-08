@@ -1,0 +1,31 @@
+test_kv_capacity_must_hold_four_full_sequences (workspace.improve.test_improve.FitCheck.test_kv_capacity_must_hold_four_full_sequences) ... ok
+test_context_is_the_pilots (workspace.improve.test_improve.Lessons.test_context_is_the_pilots) ... ok
+test_cut_rule_keeps_five_lessons_and_150_words (workspace.improve.test_improve.Lessons.test_cut_rule_keeps_five_lessons_and_150_words) ... ok
+test_cut_rule_without_dash_lines_and_empty (workspace.improve.test_improve.Lessons.test_cut_rule_without_dash_lines_and_empty) ... ok
+test_lesson_prompt_and_seeds_are_the_pilots (workspace.improve.test_improve.Lessons.test_lesson_prompt_and_seeds_are_the_pilots) ... ok
+test_shares_over_valid_answers_with_counts (workspace.improve.test_improve.Metrics.test_shares_over_valid_answers_with_counts) ... ok
+test_a_rejected_route_stops_before_any_step (workspace.improve.test_improve.Money.test_a_rejected_route_stops_before_any_step) ... STOPPED qwen3.8-flash-off: route check: {"reason": "wrong model"}
+ok
+test_billed_counts_settled_lost_and_in_flight (workspace.improve.test_improve.Money.test_billed_counts_settled_lost_and_in_flight) ... ok
+test_billed_players_carry_the_route_guard (workspace.improve.test_improve.Money.test_billed_players_carry_the_route_guard) ... ok
+test_ledger_cap_takes_the_binding_limit (workspace.improve.test_improve.Money.test_ledger_cap_takes_the_binding_limit) ... ok
+test_money_gate_stops_pauses_or_caps (workspace.improve.test_improve.Money.test_money_gate_stops_pauses_or_caps) ... ok
+test_plan_identity_is_stored_and_resume_refuses_a_changed_plan (workspace.improve.test_improve.Money.test_plan_identity_is_stored_and_resume_refuses_a_changed_plan) ... ok
+test_route_check (workspace.improve.test_improve.Money.test_route_check) ... ok
+test_rule_a_projection_at_the_boundary (workspace.improve.test_improve.Money.test_rule_a_projection_at_the_boundary) ... ok
+test_rule_b_and_balance (workspace.improve.test_improve.Money.test_rule_b_and_balance) ... ok
+test_run_stops_or_pauses_by_the_binding_limit_and_applies_rule_a (workspace.improve.test_improve.Money.test_run_stops_or_pauses_by_the_binding_limit_and_applies_rule_a) ... STOPPED qwen3.8-flash-off: rule (a): projected full cost $3.95 (5 x S1 $0.70 + 3 x E1 $0.15) > 1.5 x estimate $2.30 = $3.45
+qwen3.8-flash-off: stopped: rule (a): projected full cost $3.95 (5 x S1 $0.70 + 3 x E1 $0.15) > 1.5 x estimate $2.30 = $3.45
+PAUSED glm-5.3-on: balance $5.50 - $5 reserve does not cover the step's expected cost $1.75
+STOPPED glm-5.3-on: E1: rule (a) limit reached before a request: BUDGET CAP: refused
+ok
+test_share_limit_pauses (workspace.improve.test_improve.Money.test_share_limit_pauses) ... ok
+test_step_estimate_switches_to_measured_after_the_cost_check (workspace.improve.test_improve.Money.test_step_estimate_switches_to_measured_after_the_cost_check) ... ok
+test_restarted_series_is_archived_with_new_names (workspace.improve.test_improve.Schedule.test_restarted_series_is_archived_with_new_names) ... ok
+test_step_order_and_next_step (workspace.improve.test_improve.Schedule.test_step_order_and_next_step) ... ok
+
+----------------------------------------------------------------------
+Ran 20 tests in 0.015s
+
+OK
+exit 0

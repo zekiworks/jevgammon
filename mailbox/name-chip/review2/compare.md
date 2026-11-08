@@ -1,0 +1,82 @@
+# Render comparison
+
+## 1. Files
+2552 files in origin/main's render, 2552 in the candidate's; only in one: none; different: ['bg.css', 'index.html']
+
+## 2. Numbers and boxes
+Leaderboard rows with a details box: origin/main 63, candidate 63.
+
+Boxes differing: 0. Rows whose numbers (row + box, chip and old small line out) differ: 0.
+
+Home page outside the leaderboard table: text identical.
+
+## 3. Chip and name vs data
+63 of 63 rows ok (one chip, no other small line; chip = setting · type from the box's first line + origin/main's late tag; programs 'program' / 'League n · program'; name = origin/main's minus ' (<setting>)'; link unchanged).
+
+| Box | Row | Name (main) | Name (candidate) | Chip | Expected | OK |
+|---|---|---|---|---|---|---|
+| hl-1-box | model/main | GPT-6 Astra | GPT-6 Astra | high · chat · late entry | high · chat · late entry | yes |
+| hl-1-1-box | model/other | GPT-6 Astra (low) | GPT-6 Astra | low · chat | low · chat | yes |
+| hl-1-2-box | model/other | GPT-6 Astra (medium) | GPT-6 Astra | medium · chat | medium · chat | yes |
+| hl-2-box | model/main | Gemini 4 Argon | Gemini 4 Argon | high · chat | high · chat | yes |
+| hl-2-1-box | model/other | Gemini 4 Argon (low) | Gemini 4 Argon | low · chat | low · chat | yes |
+| hl-3-box | model/main | Claude Fable 5.1 | Claude Fable 5.1 | high · chat | high · chat | yes |
+| hl-3-1-box | model/other | Claude Fable 5.1 (low) | Claude Fable 5.1 | low · chat | low · chat | yes |
+| hl-4-box | model/main | GPT-6.1 Sol | GPT-6.1 Sol | high · chat | high · chat | yes |
+| hl-4-1-box | model/other | GPT-6.1 Sol (low) | GPT-6.1 Sol | low · chat | low · chat | yes |
+| hl-5-box | model/main | Claude Opus 5.5 | Claude Opus 5.5 | high · chat | high · chat | yes |
+| hl-5-1-box | model/other | Claude Opus 5.5 (low) | Claude Opus 5.5 | low · chat | low · chat | yes |
+| hl-6-box | model/main | DeepSeek V4.1 Flash | DeepSeek V4.1 Flash | low · chat | low · chat | yes |
+| hl-6-1-box | model/other | DeepSeek V4.1 Flash 1017 (low) | DeepSeek V4.1 Flash 1017 | low · chat | low · chat | yes |
+| hl-6-2-box | model/other | DeepSeek V4.1 Flash (off) | DeepSeek V4.1 Flash | off · chat | off · chat | yes |
+| hl-6-3-box | model/other | DeepSeek V4.1 Flash 1017 (off) | DeepSeek V4.1 Flash 1017 | off · chat | off · chat | yes |
+| hl-7-box | model/main | Grok 4.7 | Grok 4.7 | high · chat | high · chat | yes |
+| hl-7-1-box | model/other | Grok 4.7 (low) | Grok 4.7 | low · chat | low · chat | yes |
+| hl-8-box | model/main | Claude Sonnet 5.5 | Claude Sonnet 5.5 | high · chat | high · chat | yes |
+| hl-8-1-box | model/other | Claude Sonnet 5.5 (low) | Claude Sonnet 5.5 | low · chat | low · chat | yes |
+| hl-9-box | model/main | Gemini 3.8 Flash | Gemini 3.8 Flash | high · chat | high · chat | yes |
+| hl-9-1-box | model/other | Gemini 3.8 Flash (low) | Gemini 3.8 Flash | low · chat | low · chat | yes |
+| hl-10-box | model/main | Kimi K3.1 Pro | Kimi K3.1 Pro | off · chat | off · chat | yes |
+| hl-11-box | model/main | Gemma 4 31B | Gemma 4 31B | on · chat | on · chat | yes |
+| hl-11-1-box | model/other | Gemma 4 31B (off) | Gemma 4 31B | off · chat | off · chat | yes |
+| hl-12-box | model/main | Liquid d1-ultra | Liquid d1-ultra | decision | decision | yes |
+| hl-13-box | model/main | Base Labs Mammoth-1 | Base Labs Mammoth-1 | decision · late entry | decision · late entry | yes |
+| hl-14-box | model/main | Drex Max v1 | Drex Max v1 | decision · late entry · provisional | decision · late entry · provisional | yes |
+| hl-15-box | model/main | Qwen3.8-27B | Qwen3.8-27B | low · chat | low · chat | yes |
+| hl-15-1-box | model/other | Qwen3.8-27B (off) | Qwen3.8-27B | off · chat | off · chat | yes |
+| hl-16-box | model/main | GLM-5.3 | GLM-5.3 | low · chat | low · chat | yes |
+| hl-17-box | model/main | REAX 1.3 | REAX 1.3 | decision · late entry · provisional | decision · late entry · provisional | yes |
+| hl-18-box | model/main | Fastino GLiDE | Fastino GLiDE | decision | decision | yes |
+| hl-19-box | model/main | Jev 1.13.0 | Jev 1.13.0 | decision | decision | yes |
+| hl-20-box | model/main | Qwen3.8 Flash | Qwen3.8 Flash | off · chat | off · chat | yes |
+| hl-21-box | model/main | Jev 1.14.0 | Jev 1.14.0 | decision | decision | yes |
+| hl-22-box | model/main | Drex Max 1.1 | Drex Max 1.1 | decision · late entry · provisional | decision · late entry · provisional | yes |
+| hl-23-box | model/main | Fastino GLiDE v1.2 | Fastino GLiDE v1.2 | decision | decision | yes |
+| hl-24-box | model/main | Drex 2.0 | Drex 2.0 | decision · late entry · provisional | decision · late entry · provisional | yes |
+| hl-24-1-box | model/other | Drex 2.0 (local) | Drex 2.0 (local) | decision · late entry · provisional | decision · late entry · provisional | yes |
+| hl-25-box | model/main | Decider v1.2 27B | Decider v1.2 27B | decision | decision | yes |
+| hl-26-box | model/main | Celeris-1 Decision | Celeris-1 Decision | decision | decision | yes |
+| hl-27-box | model/main | Base Labs Elephant-1 | Base Labs Elephant-1 | decision · late entry | decision · late entry | yes |
+| hl-28-box | model/main | Clef | Clef | decision | decision | yes |
+| hl-29-box | model/main | Cygnet (Gemma 4 12B) | Cygnet (Gemma 4 12B) | chat | chat | yes |
+| hl-30-box | model/main | Decider v1.1 27B | Decider v1.1 27B | decision | decision | yes |
+| hl-31-box | model/main | SubQ Snap 1.1 | SubQ Snap 1.1 | decision · late entry | decision · late entry | yes |
+| hl-32-box | model/main | SubQ Snap Preview | SubQ Snap Preview | decision | decision | yes |
+| hl-33-box | model/main | GPT-6 Luna | GPT-6 Luna | decision | decision | yes |
+| hl-34-box | model/main | Winnow-12B | Winnow-12B | decision | decision | yes |
+| hl-35-box | model/main | Mercury Decide | Mercury Decide | decision | decision | yes |
+| hl-36-box | model/main | LFM2.5-24B-A2B | LFM2.5-24B-A2B | on · chat | on · chat | yes |
+| hl-36-1-box | model/other | LFM2.5-24B-A2B (off) | LFM2.5-24B-A2B | off · chat | off · chat | yes |
+| hl-37-box | model/main | Decider Flash v1.2 | Decider Flash v1.2 | decision | decision | yes |
+| hl-38-box | model/main | Open-Jev 27B v1.1 | Open-Jev 27B v1.1 | decision | decision | yes |
+| hl-p-1-box | program/main | GNUbg weak | GNUbg weak | program | program | yes |
+| hl-p-1-1-box | program/other | GNUbg weak | GNUbg weak | League 2 · program | League 2 · program | yes |
+| hl-p-1-2-box | program/other | GNUbg weak | GNUbg weak | League 3 · program | League 3 · program | yes |
+| hl-p-2-box | program/main | Safest | Safest | program | program | yes |
+| hl-p-2-1-box | program/other | Safest (computed) | Safest (computed) | League 2 · program | League 2 · program | yes |
+| hl-p-2-2-box | program/other | Safest (computed) | Safest (computed) | League 3 · program | League 3 · program | yes |
+| hl-p-3-box | program/main | Random | Random | program | program | yes |
+| hl-p-3-1-box | program/other | Random (computed) | Random (computed) | League 2 · program | League 2 · program | yes |
+| hl-p-3-2-box | program/other | Random (computed) | Random (computed) | League 3 · program | League 3 · program | yes |
+
+**Failures: 0**

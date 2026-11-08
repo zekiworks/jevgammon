@@ -1,0 +1,2 @@
+compare: 0 failures
+compare exit status: 0

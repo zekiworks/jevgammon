@@ -1,0 +1,14 @@
+--- /tmp/chip-out-cand/bg.css	2026-11-08 16:22:29.239178156 +0000
++++ /tmp/chip-out-cand3/bg.css	2026-11-08 16:55:40.103303651 +0000
+@@ -479,7 +479,10 @@
+   table.headline td.model { min-width: 0; }
+   table.headline th, table.headline td { padding-left: .35rem; padding-right: .35rem; }
+   table.headline tr.hl-sub td.model { padding-left: .6rem; }
+-  table.headline td.hl-judgement { min-width: 8rem; }
++  /* The bar column takes only what the model column leaves (min 8rem), and the chip may wrap between its parts, so
++     names stay readable and the chip never pushes the score and its interval past the table's frame (Zeki #3240). */
++  table.headline td.hl-judgement { width: auto; min-width: 8rem; }
++  table.headline td.model > .hl-tag { white-space: normal; border-radius: .6rem; }
+ }
+ .finding h2 { font-size: 1.25rem; }
+ .finding-text { max-width: 80ch; margin: 0 0 .75rem; }

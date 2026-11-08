@@ -997,6 +997,15 @@ def bind_plan(key):
     return stored
 
 
+def binary_identity():
+    """The runner binary of this step: path, sha256, and the commit it was built from (a lane's pinned copy is named
+    jevgammon-<commit>; anything else is recorded as unpinned)."""
+    name = BIN.name
+    commit = name.split("-", 1)[1] if name.startswith("jevgammon-") else None
+    return dict(path=str(BIN), sha256=sha256_file(BIN), commit=commit, pinned=commit is not None,
+                mtime=datetime.fromtimestamp(BIN.stat().st_mtime, timezone.utc).isoformat(timespec="seconds"))
+
+
 def check_inputs():
     if sha256_file(PLAN) != PLAN_SHA256:
         raise SystemExit(f"{PLAN} differs from the pre-registration this harness is bound to ({PLAN_SHA256[:8]}…)")
@@ -1006,6 +1015,8 @@ def check_inputs():
         raise SystemExit("test set hash differs from the plan's")
     if not BIN.exists():
         raise SystemExit(f"build the runner first: {BIN}")
+    if not DRY and not binary_identity()["pinned"]:
+        raise SystemExit(f"{BIN}: real runs use a pinned binary copy named by commit (IMPROVE_BIN=.../jevgammon-<commit>)")
 
 
 def run(key, until=None, balance_reader=openrouter_balance):
@@ -1042,7 +1053,7 @@ def run(key, until=None, balance_reader=openrouter_balance):
             if rejected.exists() and rejected.stat().st_size:
                 raise Stop(f"route check: {rejected.read_text().splitlines()[0][:600]}")
             gate = money_gate(key, step, balance_reader) if billed_model else None
-            log(key, "step_start", step=step, gate=gate)
+            log(key, "step_start", step=step, gate=gate, binary=binary_identity())
             try:
                 (run_empty if step.startswith("E") else run_series)(key, step, gate)
             except BudgetRefused as e:

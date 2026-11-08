@@ -1,0 +1,1813 @@
+{
+ "slot2": {
+  "rule": "Risk wins item; Sol (high) Q1 board only = risky play, Q1 with numbers = safe play; max 2-ply gap",
+  "n_meeting": 36,
+  "ranking": [
+   [
+    0.7289,
+    98
+   ],
+   [
+    0.3941,
+    71
+   ],
+   [
+    0.384,
+    97
+   ],
+   [
+    0.37,
+    74
+   ],
+   [
+    0.2908,
+    76
+   ]
+  ],
+  "pick": {
+   "sid": 98,
+   "group": "Risk wins",
+   "source_league": 2,
+   "source_decision": 33340,
+   "source_setup": "Claude Sonnet 5.5 (high)",
+   "source_play": "22/18* 18/17",
+   "side": "white",
+   "dice": [
+    1,
+    4
+   ],
+   "board": {
+    "points": [
+     2,
+     2,
+     3,
+     3,
+     3,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     -1,
+     0,
+     -4,
+     0,
+     2,
+     -7,
+     -3
+    ],
+    "bar": [
+     0,
+     0
+    ],
+    "off": [
+     0,
+     0
+    ]
+   },
+   "pips": [
+    86,
+    44
+   ],
+   "shown_order": [
+    "2/1 22/18*",
+    "4/3 5/1"
+   ],
+   "safe": {
+    "play": "4/3 5/1",
+    "eq2": -0.8221060037612915,
+    "hits": 0,
+    "eq3": -0.8374123573303223,
+    "rollout": -0.838,
+    "rollout_se": 0.001
+   },
+   "risk": {
+    "play": "2/1 22/18*",
+    "eq2": -0.09322530031204224,
+    "hits": 12,
+    "eq3": -0.10491126775741577,
+    "rollout": -0.074,
+    "rollout_se": 0.002
+   },
+   "gap2": 0.7288807034492493,
+   "gap3": 0.7325010895729065,
+   "legal": 12,
+   "engine_best": {
+    "play": "22/18* 18/17",
+    "eq2": 0.17545688152313232,
+    "hits": 2
+   },
+   "answers": {
+    "board": {
+     "Celeris-1 Decision": "2/1 22/18*",
+     "Jev 1.14.0": "2/1 22/18*",
+     "Liquid d1-ultra": "2/1 22/18*",
+     "Claude Sonnet 5.5 (high)": "2/1 22/18*",
+     "GPT-6.1 Sol (high)": "2/1 22/18*",
+     "Kimi K3.1 Pro (off)": "2/1 22/18*",
+     "GLM-5.3 (on)": "2/1 22/18*",
+     "Claude Opus 5.5 (on)": "2/1 22/18*"
+    },
+    "numbers": {
+     "Celeris-1 Decision": "4/3 5/1",
+     "Jev 1.14.0": "4/3 5/1",
+     "Liquid d1-ultra": "4/3 5/1",
+     "Claude Sonnet 5.5 (high)": "2/1 22/18*",
+     "GPT-6.1 Sol (high)": "4/3 5/1",
+     "Kimi K3.1 Pro (off)": "4/3 5/1",
+     "GLM-5.3 (on)": "2/1 22/18*",
+     "Claude Opus 5.5 (on)": "2/1 22/18*"
+    }
+   }
+  },
+  "runner_up": {
+   "sid": 71,
+   "group": "Risk wins",
+   "source_league": 2,
+   "source_decision": 30614,
+   "source_setup": "Gemini 3.8 Flash (high)",
+   "source_play": "6/3 24/22*",
+   "side": "black",
+   "dice": [
+    3,
+    2
+   ],
+   "board": {
+    "points": [
+     3,
+     5,
+     2,
+     2,
+     0,
+     1,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     -2,
+     -2,
+     -4,
+     -1,
+     -5,
+     2
+    ],
+    "bar": [
+     0,
+     0
+    ],
+    "off": [
+     0,
+     1
+    ]
+   },
+   "pips": [
+    81,
+    51
+   ],
+   "shown_order": [
+    "6/3 24/22*",
+    "6/3 3/1"
+   ],
+   "safe": {
+    "play": "6/3 3/1",
+    "eq2": -0.8802134394645691,
+    "hits": 0,
+    "eq3": -0.8716222643852234,
+    "rollout": -0.854,
+    "rollout_se": 0.002
+   },
+   "risk": {
+    "play": "6/3 24/22*",
+    "eq2": -0.4860941767692566,
+    "hits": 20,
+    "eq3": -0.4864083528518677,
+    "rollout": -0.472,
+    "rollout_se": 0.002
+   },
+   "gap2": 0.3941192626953125,
+   "gap3": 0.3852139115333557,
+   "legal": 6,
+   "engine_best": {
+    "play": "6/3 24/22*",
+    "eq2": -0.4860941767692566,
+    "hits": 20
+   },
+   "answers": {
+    "board": {
+     "Celeris-1 Decision": "6/3 24/22*",
+     "Jev 1.14.0": "6/3 24/22*",
+     "Liquid d1-ultra": "6/3 24/22*",
+     "Claude Sonnet 5.5 (high)": "6/3 24/22*",
+     "GPT-6.1 Sol (high)": "6/3 24/22*",
+     "Kimi K3.1 Pro (off)": "6/3 24/22*",
+     "GLM-5.3 (on)": "6/3 24/22*",
+     "Claude Opus 5.5 (on)": "6/3 24/22*"
+    },
+    "numbers": {
+     "Celeris-1 Decision": "6/3 3/1",
+     "Jev 1.14.0": "6/3 3/1",
+     "Liquid d1-ultra": "6/3 3/1",
+     "Claude Sonnet 5.5 (high)": "6/3 24/22*",
+     "GPT-6.1 Sol (high)": "6/3 3/1",
+     "Kimi K3.1 Pro (off)": "6/3 24/22*",
+     "GLM-5.3 (on)": "6/3 24/22*",
+     "Claude Opus 5.5 (on)": "6/3 3/1"
+    }
+   }
+  }
+ },
+ "slot3": {
+  "rule": "Risk wins / Risk pays; >= 70% of same-position answers safe; exactly one model took the risk; max gain (risk play - best safe play, 2-ply)",
+  "quiz": [
+   [
+    0.5082,
+    79,
+    "numbers",
+    8,
+    7,
+    "Claude Opus 5.5 (on)"
+   ],
+   [
+    0.384,
+    97,
+    "numbers",
+    8,
+    7,
+    "Claude Sonnet 5.5 (high)"
+   ],
+   [
+    0.2933,
+    95,
+    "board",
+    8,
+    7,
+    "Celeris-1 Decision"
+   ],
+   [
+    0.2579,
+    85,
+    "numbers",
+    8,
+    7,
+    "GPT-6.1 Sol (high)"
+   ],
+   [
+    0.1697,
+    89,
+    "numbers",
+    8,
+    7,
+    "GPT-6.1 Sol (high)"
+   ],
+   [
+    0.1364,
+    50,
+    "numbers",
+    8,
+    7,
+    "GPT-6.1 Sol (high)"
+   ]
+  ],
+  "league": [
+   [
+    0.1484,
+    199003,
+    4,
+    4,
+    3,
+    "DeepSeek V4.1 Flash (off)",
+    "13/11 11/5",
+    3
+   ],
+   [
+    0.1326,
+    201076,
+    10,
+    9,
+    9,
+    "LFM2.5-24B-A2B (on)",
+    "24/20* 20/18",
+    2
+   ],
+   [
+    0.1122,
+    162400,
+    4,
+    4,
+    3,
+    "DeepSeek V4.1 Flash 1017 (off)",
+    "13/8 13/11",
+    3
+   ],
+   [
+    0.083,
+    150665,
+    9,
+    9,
+    8,
+    "Claude Fable 5.1 (high)",
+    "24/20 20/16* 6/2* 6/2",
+    2
+   ],
+   [
+    0.0524,
+    245752,
+    5,
+    5,
+    4,
+    "Jev 1.13.0",
+    "24/18 13/11",
+    2
+   ],
+   [
+    0.0515,
+    232675,
+    4,
+    4,
+    3,
+    "Liquid d1-ultra",
+    "13/10 13/9",
+    3
+   ]
+  ],
+  "pick": {
+   "sid": 79,
+   "group": "Risk wins",
+   "source_league": 2,
+   "source_decision": 160825,
+   "source_setup": "DeepSeek V4.1 Flash 1017 (off)",
+   "source_play": "2/1 3/1",
+   "side": "white",
+   "dice": [
+    1,
+    2
+   ],
+   "board": {
+    "points": [
+     0,
+     4,
+     3,
+     2,
+     -2,
+     2,
+     0,
+     0,
+     0,
+     0,
+     2,
+     -2,
+     0,
+     0,
+     0,
+     -1,
+     -2,
+     0,
+     -3,
+     -1,
+     -2,
+     2,
+     -2,
+     0
+    ],
+    "bar": [
+     0,
+     0
+    ],
+    "off": [
+     0,
+     0
+    ]
+   },
+   "pips": [
+    103,
+    126
+   ],
+   "shown_order": [
+    "2/1 3/1",
+    "2/1 22/20*"
+   ],
+   "safe": {
+    "play": "2/1 3/1",
+    "eq2": -0.15566539764404297,
+    "hits": 0,
+    "eq3": -0.16589421033859253,
+    "rollout": -0.183,
+    "rollout_se": 0.003
+   },
+   "risk": {
+    "play": "2/1 22/20*",
+    "eq2": 0.3525737524032593,
+    "hits": 18,
+    "eq3": 0.32713866233825684,
+    "rollout": 0.359,
+    "rollout_se": 0.004
+   },
+   "gap2": 0.5082391500473022,
+   "gap3": 0.49303287267684937,
+   "legal": 20,
+   "engine_best": {
+    "play": "2/1 22/20*",
+    "eq2": 0.3525737524032593,
+    "hits": 18
+   },
+   "answers": {
+    "board": {
+     "Celeris-1 Decision": "2/1 22/20*",
+     "Jev 1.14.0": "2/1 22/20*",
+     "Liquid d1-ultra": "2/1 22/20*",
+     "Claude Sonnet 5.5 (high)": "2/1 22/20*",
+     "GPT-6.1 Sol (high)": "2/1 3/1",
+     "Kimi K3.1 Pro (off)": "2/1 22/20*",
+     "GLM-5.3 (on)": "2/1 3/1",
+     "Claude Opus 5.5 (on)": "2/1 22/20*"
+    },
+    "numbers": {
+     "Celeris-1 Decision": "2/1 3/1",
+     "Jev 1.14.0": "2/1 3/1",
+     "Liquid d1-ultra": "2/1 3/1",
+     "Claude Sonnet 5.5 (high)": "2/1 3/1",
+     "GPT-6.1 Sol (high)": "2/1 3/1",
+     "Kimi K3.1 Pro (off)": "2/1 3/1",
+     "GLM-5.3 (on)": "2/1 3/1",
+     "Claude Opus 5.5 (on)": "2/1 22/20*"
+    }
+   },
+   "version": "numbers"
+  },
+  "runner_up": {
+   "sid": 97,
+   "group": "Risk wins",
+   "source_league": 2,
+   "source_decision": 156402,
+   "source_setup": "Grok 4.7 (low)",
+   "source_play": "8/5 5/1*",
+   "side": "white",
+   "dice": [
+    3,
+    4
+   ],
+   "board": {
+    "points": [
+     -1,
+     3,
+     2,
+     -2,
+     2,
+     2,
+     2,
+     2,
+     0,
+     0,
+     0,
+     -2,
+     0,
+     0,
+     0,
+     0,
+     0,
+     2,
+     -1,
+     -3,
+     0,
+     0,
+     -3,
+     -3
+    ],
+    "bar": [
+     0,
+     0
+    ],
+    "off": [
+     0,
+     0
+    ]
+   },
+   "pips": [
+    100,
+    122
+   ],
+   "shown_order": [
+    "6/3 6/2",
+    "18/15 15/11"
+   ],
+   "safe": {
+    "play": "6/3 6/2",
+    "eq2": 0.5075883865356445,
+    "hits": 0,
+    "eq3": 0.5228002071380615,
+    "rollout": 0.514,
+    "rollout_se": 0.003
+   },
+   "risk": {
+    "play": "18/15 15/11",
+    "eq2": 0.891636073589325,
+    "hits": 19,
+    "eq3": 0.8978976607322693,
+    "rollout": 0.909,
+    "rollout_se": 0.002
+   },
+   "gap2": 0.3840476870536804,
+   "gap3": 0.37509745359420776,
+   "legal": 17,
+   "engine_best": {
+    "play": "18/15 15/11",
+    "eq2": 0.891636073589325,
+    "hits": 19
+   },
+   "answers": {
+    "board": {
+     "Celeris-1 Decision": "6/3 6/2",
+     "Jev 1.14.0": "6/3 6/2",
+     "Liquid d1-ultra": "6/3 6/2",
+     "Claude Sonnet 5.5 (high)": "6/3 6/2",
+     "GPT-6.1 Sol (high)": "18/15 15/11",
+     "Kimi K3.1 Pro (off)": "6/3 6/2",
+     "GLM-5.3 (on)": "18/15 15/11",
+     "Claude Opus 5.5 (on)": "6/3 6/2"
+    },
+    "numbers": {
+     "Celeris-1 Decision": "6/3 6/2",
+     "Jev 1.14.0": "6/3 6/2",
+     "Liquid d1-ultra": "6/3 6/2",
+     "Claude Sonnet 5.5 (high)": "18/15 15/11",
+     "GPT-6.1 Sol (high)": "6/3 6/2",
+     "Kimi K3.1 Pro (off)": "6/3 6/2",
+     "GLM-5.3 (on)": "6/3 6/2",
+     "Claude Opus 5.5 (on)": "6/3 6/2"
+    }
+   },
+   "version": "numbers"
+  }
+ },
+ "slot4": {
+  "rule": "League 3 non-program decisions; largest loss; needless risk preferred if within 0.25 of the overall largest",
+  "overall": [
+   [
+    108032,
+    "Gemini 4 Argon (low)",
+    1.4936,
+    "missed"
+   ],
+   [
+    157908,
+    "Grok 4.7 (high)",
+    1.2742,
+    "missed"
+   ],
+   [
+    144040,
+    "Grok 4.7 (high)",
+    1.1431,
+    "right_risk"
+   ],
+   [
+    153929,
+    "Kimi K3.1 Pro (off)",
+    1.0309,
+    "needless"
+   ],
+   [
+    155214,
+    "Kimi K3.1 Pro (off)",
+    1.0004,
+    "needless"
+   ]
+  ],
+  "needless": [
+   [
+    153929,
+    "Kimi K3.1 Pro (off)",
+    1.0309
+   ],
+   [
+    155214,
+    "Kimi K3.1 Pro (off)",
+    1.0004
+   ],
+   [
+    152909,
+    "Kimi K3.1 Pro (off)",
+    0.7359
+   ]
+  ],
+  "difference": 0.4627,
+  "needless_chosen": false,
+  "pick": {
+   "id": 108032,
+   "dataset": "league-3",
+   "setup": "Gemini 4 Argon (low)",
+   "league": 3,
+   "game": 2158,
+   "turn_no": 22,
+   "side": "black",
+   "dice": [
+    2,
+    3
+   ],
+   "board": {
+    "points": [
+     -1,
+     3,
+     3,
+     2,
+     2,
+     3,
+     0,
+     0,
+     0,
+     0,
+     0,
+     -2,
+     0,
+     0,
+     -2,
+     0,
+     -2,
+     -1,
+     -5,
+     -2,
+     2,
+     0,
+     0,
+     0
+    ],
+    "bar": [
+     0,
+     0
+    ],
+    "off": [
+     0,
+     0
+    ]
+   },
+   "phase": "contact",
+   "tag": "priming",
+   "pips": [
+    93,
+    133
+   ],
+   "program": false,
+   "plays": [
+    {
+     "letter": "A",
+     "notation": "3/1* 4/1",
+     "description": "3/1* 4/1: hits 1; makes the 1 point; leaves 1 blot, the opponent hits with 11 of 36 rolls; you hold 6 points (5 in your home board), longest prime 3; pips: you 88, opponent 134",
+     "equity": 0.4465,
+     "loss": 0.8429,
+     "probability": null,
+     "hitting_rolls": 11
+    },
+    {
+     "letter": "B",
+     "notation": "4/2 6/3",
+     "description": "4/2 6/3: hits 0; makes no new point; leaves 1 blot, the opponent hits with 11 of 36 rolls; you hold 5 points (4 in your home board), longest prime 2; pips: you 88, opponent 133",
+     "equity": -0.3541,
+     "loss": 1.6435,
+     "probability": null,
+     "hitting_rolls": 11
+    },
+    {
+     "letter": "C",
+     "notation": "6/4 5/2",
+     "description": "6/4 5/2: hits 0; makes no new point; leaves 1 blot, the opponent hits with 11 of 36 rolls; you hold 5 points (4 in your home board), longest prime 3; pips: you 88, opponent 133",
+     "equity": -0.2568,
+     "loss": 1.5462,
+     "probability": null,
+     "hitting_rolls": 11
+    },
+    {
+     "letter": "D",
+     "notation": "4/2 5/2",
+     "description": "4/2 5/2: hits 0; makes no new point; leaves 2 blots, the opponent hits with 20 of 36 rolls; you hold 4 points (3 in your home board), longest prime 2; pips: you 88, opponent 133",
+     "equity": -0.5427,
+     "loss": 1.8321,
+     "probability": null,
+     "hitting_rolls": 20
+    },
+    {
+     "letter": "E",
+     "notation": "5/3 21/18*",
+     "description": "5/3 21/18*: hits 1; makes no new point; leaves 3 blots, the opponent hits with 20 of 36 rolls; you hold 4 points (4 in your home board), longest prime 3; pips: you 88, opponent 151",
+     "equity": 0.2346,
+     "loss": 1.0548,
+     "probability": null,
+     "hitting_rolls": 20
+    },
+    {
+     "letter": "F",
+     "notation": "4/2 21/18*",
+     "description": "4/2 21/18*: hits 1; makes no new point; leaves 3 blots, the opponent hits with 18 of 36 rolls; you hold 4 points (4 in your home board), longest prime 2; pips: you 88, opponent 151",
+     "equity": 0.209,
+     "loss": 1.0804,
+     "probability": null,
+     "hitting_rolls": 18
+    },
+    {
+     "letter": "G",
+     "notation": "3/1* 21/18*",
+     "description": "3/1* 21/18*: hits 2; makes no new point; leaves 3 blots, the opponent hits with 11 of 36 rolls; you hold 5 points (5 in your home board), longest prime 5; pips: you 88, opponent 152",
+     "equity": 1.2894,
+     "loss": 0.0,
+     "probability": null,
+     "hitting_rolls": 11
+    },
+    {
+     "letter": "H",
+     "notation": "5/3 6/3",
+     "description": "5/3 6/3: hits 0; makes no new point; leaves 1 blot, the opponent hits with 11 of 36 rolls; you hold 5 points (4 in your home board), longest prime 3; pips: you 88, opponent 133",
+     "equity": -0.3152,
+     "loss": 1.6046,
+     "probability": null,
+     "hitting_rolls": 11
+    },
+    {
+     "letter": "I",
+     "notation": "5/3 5/2",
+     "description": "5/3 5/2: hits 0; makes no new point; leaves 0 blots, the opponent hits with 0 of 36 rolls; you hold 5 points (4 in your home board), longest prime 3; pips: you 88, opponent 133",
+     "equity": -0.2042,
+     "loss": 1.4936,
+     "probability": null,
+     "hitting_rolls": 0
+    },
+    {
+     "letter": "J",
+     "notation": "6/4 4/1*",
+     "description": "6/4 4/1*: hits 1; makes no new point; leaves 1 blot, the opponent hits with 11 of 36 rolls; you hold 6 points (5 in your home board), longest prime 5; pips: you 88, opponent 134",
+     "equity": 0.6707,
+     "loss": 0.6187,
+     "probability": null,
+     "hitting_rolls": 11
+    },
+    {
+     "letter": "K",
+     "notation": "4/2 4/1*",
+     "description": "4/2 4/1*: hits 1; makes no new point; leaves 1 blot, the opponent hits with 11 of 36 rolls; you hold 5 points (4 in your home board), longest prime 2; pips: you 88, opponent 134",
+     "equity": 0.0688,
+     "loss": 1.2206,
+     "probability": null,
+     "hitting_rolls": 11
+    },
+    {
+     "letter": "L",
+     "notation": "5/3 4/1*",
+     "description": "5/3 4/1*: hits 1; makes no new point; leaves 3 blots, the opponent hits with 27 of 36 rolls; you hold 4 points (3 in your home board), longest prime 2; pips: you 88, opponent 134",
+     "equity": -0.4332,
+     "loss": 1.7226,
+     "probability": null,
+     "hitting_rolls": 27
+    },
+    {
+     "letter": "M",
+     "notation": "21/18* 18/16",
+     "description": "21/18* 18/16: hits 1; makes no new point; leaves 2 blots, the opponent hits with 7 of 36 rolls; you hold 5 points (5 in your home board), longest prime 5; pips: you 88, opponent 151",
+     "equity": 1.0535,
+     "loss": 0.2359,
+     "probability": null,
+     "hitting_rolls": 7
+    },
+    {
+     "letter": "N",
+     "notation": "3/1* 5/2",
+     "description": "3/1* 5/2: hits 1; makes no new point; leaves 2 blots, the opponent hits with 20 of 36 rolls; you hold 5 points (4 in your home board), longest prime 3; pips: you 88, opponent 134",
+     "equity": -0.0172,
+     "loss": 1.3065,
+     "probability": null,
+     "hitting_rolls": 20
+    },
+    {
+     "letter": "O",
+     "notation": "6/4 6/3",
+     "description": "6/4 6/3: hits 0; makes no new point; leaves 1 blot, the opponent hits with 11 of 36 rolls; you hold 5 points (4 in your home board), longest prime 4; pips: you 88, opponent 133",
+     "equity": -0.2575,
+     "loss": 1.5469,
+     "probability": null,
+     "hitting_rolls": 11
+    },
+    {
+     "letter": "P",
+     "notation": "6/4 21/18*",
+     "description": "6/4 21/18*: hits 1; makes no new point; leaves 2 blots, the opponent hits with 9 of 36 rolls; you hold 5 points (5 in your home board), longest prime 5; pips: you 88, opponent 151",
+     "equity": 1.0167,
+     "loss": 0.2727,
+     "probability": null,
+     "hitting_rolls": 9
+    }
+   ],
+   "chosen": 8,
+   "best": 6,
+   "decided_by": "model",
+   "invalid": false,
+   "group_size": null,
+   "probability_source": "choice_only",
+   "request_seconds": 3.358,
+   "retry_seconds": 0.0,
+   "cost_usd": 0.007848,
+   "close": null,
+   "risk": {
+    "class": "risk",
+    "call": "missed",
+    "call_robust": "missed",
+    "band": "big",
+    "stake": 1.4936,
+    "best_safe": 8
+   },
+   "slug": "gemini-4-argon-off",
+   "page": 11
+  },
+  "runner_up": {
+   "id": 153929,
+   "dataset": "league-3",
+   "setup": "Kimi K3.1 Pro (off)",
+   "league": 3,
+   "game": 3062,
+   "turn_no": 41,
+   "side": "white",
+   "dice": [
+    2,
+    4
+   ],
+   "board": {
+    "points": [
+     3,
+     2,
+     -2,
+     2,
+     3,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     -2,
+     -2,
+     -3,
+     -2,
+     0,
+     0,
+     0,
+     -2
+    ],
+    "bar": [
+     0,
+     2
+    ],
+    "off": [
+     5,
+     0
+    ]
+   },
+   "phase": "contact",
+   "tag": "blitz",
+   "pips": [
+    30,
+    154
+   ],
+   "program": false,
+   "plays": [
+    {
+     "letter": "A",
+     "notation": "4/2 4/off",
+     "description": "4/2 4/off: hits 0; makes no new point; leaves 0 blots, the opponent hits with 0 of 36 rolls; you hold 3 points (3 in your home board), longest prime 2; pips: you 24, opponent 154; borne off 6",
+     "equity": 1.7297,
+     "loss": 0.0,
+     "probability": null,
+     "hitting_rolls": 0
+    },
+    {
+     "letter": "B",
+     "notation": "2/off 4/off",
+     "description": "2/off 4/off: hits 0; makes no new point; leaves 2 blots, the opponent hits with 20 of 36 rolls; you hold 2 points (2 in your home board), longest prime 1; pips: you 24, opponent 154; borne off 7",
+     "equity": 0.6988,
+     "loss": 1.0309,
+     "probability": null,
+     "hitting_rolls": 20
+    },
+    {
+     "letter": "C",
+     "notation": "4/2 5/1",
+     "description": "4/2 5/1: hits 0; makes no new point; leaves 1 blot, the opponent hits with 11 of 36 rolls; you hold 3 points (3 in your home board), longest prime 2; pips: you 24, opponent 154",
+     "equity": 1.2355,
+     "loss": 0.4943,
+     "probability": null,
+     "hitting_rolls": 11
+    },
+    {
+     "letter": "D",
+     "notation": "2/off 5/1",
+     "description": "2/off 5/1: hits 0; makes no new point; leaves 1 blot, the opponent hits with 11 of 36 rolls; you hold 3 points (3 in your home board), longest prime 2; pips: you 24, opponent 154; borne off 6",
+     "equity": 1.1636,
+     "loss": 0.5661,
+     "probability": null,
+     "hitting_rolls": 11
+    }
+   ],
+   "chosen": 1,
+   "best": 0,
+   "decided_by": "model",
+   "invalid": false,
+   "group_size": null,
+   "probability_source": "choice_only",
+   "request_seconds": 2.191,
+   "retry_seconds": 0.0,
+   "cost_usd": 0.0019336,
+   "close": null,
+   "risk": {
+    "class": "safety",
+    "call": "needless",
+    "call_robust": "needless",
+    "band": "big",
+    "stake": 0.0,
+    "best_safe": 0
+   },
+   "slug": "kimi-k3-1-pro-off",
+   "page": 10
+  },
+  "second_overall": {
+   "id": 157908,
+   "dataset": "league-3",
+   "setup": "Grok 4.7 (high)",
+   "league": 3,
+   "game": 3122,
+   "turn_no": 17,
+   "side": "black",
+   "dice": [
+    5,
+    2
+   ],
+   "board": {
+    "points": [
+     3,
+     1,
+     2,
+     2,
+     2,
+     2,
+     1,
+     0,
+     0,
+     0,
+     0,
+     -1,
+     0,
+     0,
+     0,
+     0,
+     -1,
+     -4,
+     -5,
+     -2,
+     0,
+     0,
+     -2,
+     2
+    ],
+    "bar": [
+     0,
+     0
+    ],
+    "off": [
+     0,
+     0
+    ]
+   },
+   "phase": "contact",
+   "tag": "priming",
+   "pips": [
+    96,
+    93
+   ],
+   "program": false,
+   "plays": [
+    {
+     "letter": "A",
+     "notation": "7/2 5/3",
+     "description": "7/2 5/3: hits 0; makes the 2 point; leaves 1 blot, the opponent hits with 0 of 36 rolls; you hold 6 points (5 in your home board), longest prime 4; pips: you 89, opponent 93",
+     "equity": -0.7251,
+     "loss": 1.2555,
+     "probability": null,
+     "hitting_rolls": 0
+    },
+    {
+     "letter": "B",
+     "notation": "6/1 3/1",
+     "description": "6/1 3/1: hits 0; makes no new point; leaves 4 blots, the opponent hits with 0 of 36 rolls; you hold 4 points (3 in your home board), longest prime 2; pips: you 89, opponent 93",
+     "equity": -0.8208,
+     "loss": 1.3511,
+     "probability": null,
+     "hitting_rolls": 0
+    },
+    {
+     "letter": "C",
+     "notation": "6/1 4/2",
+     "description": "6/1 4/2: hits 0; makes the 2 point; leaves 3 blots, the opponent hits with 0 of 36 rolls; you hold 5 points (4 in your home board), longest prime 3; pips: you 89, opponent 93",
+     "equity": -0.7706,
+     "loss": 1.301,
+     "probability": null,
+     "hitting_rolls": 0
+    },
+    {
+     "letter": "D",
+     "notation": "7/2 3/1",
+     "description": "7/2 3/1: hits 0; makes the 2 point; leaves 1 blot, the opponent hits with 0 of 36 rolls; you hold 6 points (5 in your home board), longest prime 3; pips: you 89, opponent 93",
+     "equity": -0.7438,
+     "loss": 1.2742,
+     "probability": null,
+     "hitting_rolls": 0
+    },
+    {
+     "letter": "E",
+     "notation": "6/1 6/4",
+     "description": "6/1 6/4: hits 0; makes no new point; leaves 2 blots, the opponent hits with 0 of 36 rolls; you hold 5 points (4 in your home board), longest prime 3; pips: you 89, opponent 93",
+     "equity": -0.747,
+     "loss": 1.2774,
+     "probability": null,
+     "hitting_rolls": 0
+    },
+    {
+     "letter": "F",
+     "notation": "7/2 6/4",
+     "description": "7/2 6/4: hits 0; makes the 2 point; leaves 1 blot, the opponent hits with 0 of 36 rolls; you hold 6 points (5 in your home board), longest prime 5; pips: you 89, opponent 93",
+     "equity": -0.7038,
+     "loss": 1.2341,
+     "probability": null,
+     "hitting_rolls": 0
+    },
+    {
+     "letter": "G",
+     "notation": "6/1 24/22",
+     "description": "6/1 24/22: hits 0; makes no new point; leaves 5 blots, the opponent hits with 36 of 36 rolls; you hold 4 points (4 in your home board), longest prime 3; pips: you 89, opponent 93",
+     "equity": -0.7658,
+     "loss": 1.2961,
+     "probability": null,
+     "hitting_rolls": 36
+    },
+    {
+     "letter": "H",
+     "notation": "6/1 7/5",
+     "description": "6/1 7/5: hits 0; makes no new point; leaves 2 blots, the opponent hits with 0 of 36 rolls; you hold 5 points (4 in your home board), longest prime 3; pips: you 89, opponent 93",
+     "equity": -0.7482,
+     "loss": 1.2785,
+     "probability": null,
+     "hitting_rolls": 0
+    },
+    {
+     "letter": "I",
+     "notation": "6/1 5/3",
+     "description": "6/1 5/3: hits 0; makes no new point; leaves 4 blots, the opponent hits with 0 of 36 rolls; you hold 4 points (3 in your home board), longest prime 2; pips: you 89, opponent 93",
+     "equity": -0.7938,
+     "loss": 1.3241,
+     "probability": null,
+     "hitting_rolls": 0
+    },
+    {
+     "letter": "J",
+     "notation": "24/22 22/17*",
+     "description": "24/22 22/17*: hits 1; makes no new point; leaves 4 blots, the opponent hits with 11 of 36 rolls; you hold 5 points (5 in your home board), longest prime 4; pips: you 89, opponent 110",
+     "equity": 0.5303,
+     "loss": 0.0,
+     "probability": null,
+     "hitting_rolls": 11
+    },
+    {
+     "letter": "K",
+     "notation": "7/2 24/22",
+     "description": "7/2 24/22: hits 0; makes the 2 point; leaves 2 blots, the opponent hits with 36 of 36 rolls; you hold 6 points (6 in your home board), longest prime 6; pips: you 89, opponent 93",
+     "equity": -0.5416,
+     "loss": 1.072,
+     "probability": null,
+     "hitting_rolls": 36
+    },
+    {
+     "letter": "L",
+     "notation": "7/2 4/2",
+     "description": "7/2 4/2: hits 0; makes the 2 point; leaves 1 blot, the opponent hits with 0 of 36 rolls; you hold 6 points (5 in your home board), longest prime 3; pips: you 89, opponent 93",
+     "equity": -0.7428,
+     "loss": 1.2732,
+     "probability": null,
+     "hitting_rolls": 0
+    }
+   ],
+   "chosen": 3,
+   "best": 9,
+   "decided_by": "model",
+   "invalid": false,
+   "group_size": null,
+   "probability_source": "choice_only",
+   "request_seconds": 649.084,
+   "retry_seconds": 0.0,
+   "cost_usd": 0.29545,
+   "close": null,
+   "risk": {
+    "class": "risk",
+    "call": "missed",
+    "call_robust": "missed",
+    "band": "big",
+    "stake": 1.2341,
+    "best_safe": 5
+   },
+   "slug": "grok-4-7-on",
+   "page": 25
+  }
+ },
+ "slot5": {
+  "rule": "Risk wins; Liquid d1-ultra took the risky play; >= 70% of the five quiz chat models safe; max gap",
+  "quiz_70": [
+   [
+    0.1697,
+    89,
+    "board",
+    5,
+    4
+   ],
+   [
+    0.167,
+    91,
+    "board",
+    5,
+    4
+   ],
+   [
+    0.1364,
+    50,
+    "board",
+    5,
+    5
+   ],
+   [
+    0.1343,
+    41,
+    "board",
+    5,
+    4
+   ],
+   [
+    0.1244,
+    47,
+    "numbers",
+    5,
+    4
+   ],
+   [
+    0.1244,
+    47,
+    "board",
+    5,
+    4
+   ]
+  ],
+  "quiz_majority": [
+   [
+    0.37,
+    74,
+    "board",
+    5,
+    3
+   ],
+   [
+    0.1697,
+    89,
+    "board",
+    5,
+    4
+   ],
+   [
+    0.167,
+    91,
+    "board",
+    5,
+    4
+   ],
+   [
+    0.1534,
+    72,
+    "numbers",
+    5,
+    3
+   ],
+   [
+    0.1534,
+    72,
+    "board",
+    5,
+    3
+   ],
+   [
+    0.1364,
+    50,
+    "board",
+    5,
+    5
+   ]
+  ],
+  "league_any": [
+   [
+    0.3073,
+    217043,
+    1,
+    0
+   ],
+   [
+    0.2606,
+    231439,
+    2,
+    0
+   ],
+   [
+    0.2042,
+    40821,
+    1,
+    0
+   ],
+   [
+    0.1719,
+    131663,
+    1,
+    0
+   ],
+   [
+    0.1653,
+    38267,
+    1,
+    0
+   ]
+  ],
+  "league_frontier_mostly_safe_n2plus": [],
+  "pick": {
+   "sid": 89,
+   "group": "Risk wins",
+   "source_league": 1,
+   "source_decision": 50819,
+   "source_setup": "Safest",
+   "source_play": "4/1 6/2",
+   "side": "black",
+   "dice": [
+    3,
+    4
+   ],
+   "board": {
+    "points": [
+     2,
+     3,
+     0,
+     3,
+     0,
+     3,
+     0,
+     2,
+     0,
+     0,
+     0,
+     -4,
+     0,
+     0,
+     -2,
+     0,
+     0,
+     0,
+     -3,
+     0,
+     0,
+     -1,
+     -5,
+     2
+    ],
+    "bar": [
+     0,
+     0
+    ],
+    "off": [
+     0,
+     0
+    ]
+   },
+   "pips": [
+    102,
+    103
+   ],
+   "shown_order": [
+    "8/5 24/20",
+    "6/3 8/4"
+   ],
+   "safe": {
+    "play": "6/3 8/4",
+    "eq2": 0.013321280479431152,
+    "hits": 0,
+    "eq3": 0.03470408916473389,
+    "rollout": 0.031,
+    "rollout_se": 0.003
+   },
+   "risk": {
+    "play": "8/5 24/20",
+    "eq2": 0.18302488327026367,
+    "hits": 32,
+    "eq3": 0.19962263107299805,
+    "rollout": 0.185,
+    "rollout_se": 0.003
+   },
+   "gap2": 0.16970360279083252,
+   "gap3": 0.16491854190826416,
+   "legal": 13,
+   "engine_best": {
+    "play": "8/5 24/20",
+    "eq2": 0.18302488327026367,
+    "hits": 32
+   },
+   "answers": {
+    "board": {
+     "Celeris-1 Decision": "8/5 24/20",
+     "Jev 1.14.0": "6/3 8/4",
+     "Liquid d1-ultra": "8/5 24/20",
+     "Claude Sonnet 5.5 (high)": "6/3 8/4",
+     "GPT-6.1 Sol (high)": "8/5 24/20",
+     "Kimi K3.1 Pro (off)": "6/3 8/4",
+     "GLM-5.3 (on)": "6/3 8/4",
+     "Claude Opus 5.5 (on)": "6/3 8/4"
+    },
+    "numbers": {
+     "Celeris-1 Decision": "6/3 8/4",
+     "Jev 1.14.0": "6/3 8/4",
+     "Liquid d1-ultra": "6/3 8/4",
+     "Claude Sonnet 5.5 (high)": "6/3 8/4",
+     "GPT-6.1 Sol (high)": "8/5 24/20",
+     "Kimi K3.1 Pro (off)": "6/3 8/4",
+     "GLM-5.3 (on)": "6/3 8/4",
+     "Claude Opus 5.5 (on)": "6/3 8/4"
+    }
+   },
+   "version": "board"
+  },
+  "runner_up": {
+   "sid": 91,
+   "group": "Risk wins",
+   "source_league": 1,
+   "source_decision": 152085,
+   "source_setup": "Jev 1.13.0",
+   "source_play": "6/2 8/2",
+   "side": "white",
+   "dice": [
+    4,
+    6
+   ],
+   "board": {
+    "points": [
+     -2,
+     3,
+     0,
+     -2,
+     -2,
+     3,
+     2,
+     3,
+     0,
+     0,
+     0,
+     -2,
+     2,
+     0,
+     0,
+     0,
+     -1,
+     2,
+     0,
+     0,
+     0,
+     -2,
+     0,
+     -4
+    ],
+    "bar": [
+     0,
+     0
+    ],
+    "off": [
+     0,
+     0
+    ]
+   },
+   "pips": [
+    124,
+    174
+   ],
+   "shown_order": [
+    "6/2 8/2",
+    "18/14 14/8"
+   ],
+   "safe": {
+    "play": "6/2 8/2",
+    "eq2": 0.7207380533218384,
+    "hits": 0,
+    "eq3": 0.663783073425293,
+    "rollout": 0.781,
+    "rollout_se": 0.005
+   },
+   "risk": {
+    "play": "18/14 14/8",
+    "eq2": 0.8876953125,
+    "hits": 24,
+    "eq3": 0.8388209939002991,
+    "rollout": 0.943,
+    "rollout_se": 0.004
+   },
+   "gap2": 0.16695725917816162,
+   "gap3": 0.1750379204750061,
+   "legal": 9,
+   "engine_best": {
+    "play": "18/14 14/8",
+    "eq2": 0.8876953125,
+    "hits": 24
+   },
+   "answers": {
+    "board": {
+     "Celeris-1 Decision": "6/2 8/2",
+     "Jev 1.14.0": "6/2 8/2",
+     "Liquid d1-ultra": "18/14 14/8",
+     "Claude Sonnet 5.5 (high)": "6/2 8/2",
+     "GPT-6.1 Sol (high)": "18/14 14/8",
+     "Kimi K3.1 Pro (off)": "6/2 8/2",
+     "GLM-5.3 (on)": "6/2 8/2",
+     "Claude Opus 5.5 (on)": "6/2 8/2"
+    },
+    "numbers": {
+     "Celeris-1 Decision": "6/2 8/2",
+     "Jev 1.14.0": "6/2 8/2",
+     "Liquid d1-ultra": "6/2 8/2",
+     "Claude Sonnet 5.5 (high)": "6/2 8/2",
+     "GPT-6.1 Sol (high)": "6/2 8/2",
+     "Kimi K3.1 Pro (off)": "6/2 8/2",
+     "GLM-5.3 (on)": "6/2 8/2",
+     "Claude Opus 5.5 (on)": "6/2 8/2"
+    }
+   },
+   "version": "board"
+  },
+  "majority_alternative": {
+   "sid": 74,
+   "group": "Risk wins",
+   "source_league": 2,
+   "source_decision": 129710,
+   "source_setup": "Claude Sonnet 5.5 (high)",
+   "source_play": "13/10 13/9",
+   "side": "white",
+   "dice": [
+    3,
+    4
+   ],
+   "board": {
+    "points": [
+     -2,
+     2,
+     0,
+     3,
+     3,
+     3,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     2,
+     0,
+     -1,
+     0,
+     0,
+     -3,
+     -3,
+     0,
+     0,
+     -3,
+     -3,
+     2
+    ],
+    "bar": [
+     0,
+     0
+    ],
+    "off": [
+     0,
+     0
+    ]
+   },
+   "pips": [
+    123,
+    112
+   ],
+   "shown_order": [
+    "24/21 21/17",
+    "5/2 6/2"
+   ],
+   "safe": {
+    "play": "5/2 6/2",
+    "eq2": 0.1508955955505371,
+    "hits": 0,
+    "eq3": 0.18573951721191406,
+    "rollout": 0.195,
+    "rollout_se": 0.004
+   },
+   "risk": {
+    "play": "24/21 21/17",
+    "eq2": 0.5208709239959717,
+    "hits": 33,
+    "eq3": 0.5679093599319458,
+    "rollout": 0.608,
+    "rollout_se": 0.004
+   },
+   "gap2": 0.36997532844543457,
+   "gap3": 0.38216984272003174,
+   "legal": 14,
+   "engine_best": {
+    "play": "24/21 21/17",
+    "eq2": 0.5208709239959717,
+    "hits": 33
+   },
+   "answers": {
+    "board": {
+     "Celeris-1 Decision": "5/2 6/2",
+     "Jev 1.14.0": "5/2 6/2",
+     "Liquid d1-ultra": "24/21 21/17",
+     "Claude Sonnet 5.5 (high)": "24/21 21/17",
+     "GPT-6.1 Sol (high)": "24/21 21/17",
+     "Kimi K3.1 Pro (off)": "5/2 6/2",
+     "GLM-5.3 (on)": "5/2 6/2",
+     "Claude Opus 5.5 (on)": "5/2 6/2"
+    },
+    "numbers": {
+     "Celeris-1 Decision": "5/2 6/2",
+     "Jev 1.14.0": "5/2 6/2",
+     "Liquid d1-ultra": "5/2 6/2",
+     "Claude Sonnet 5.5 (high)": "5/2 6/2",
+     "GPT-6.1 Sol (high)": "5/2 6/2",
+     "Kimi K3.1 Pro (off)": "5/2 6/2",
+     "GLM-5.3 (on)": "5/2 6/2",
+     "Claude Opus 5.5 (on)": "5/2 6/2"
+    }
+   },
+   "version": "board"
+  }
+ },
+ "slot6": {
+  "rule": "first different play of control vs lessons in the same series/game (identical history); lessons right_risk, control missed; prefer series 1 game >= 4 (after the game-3 lesson), then gain",
+  "n_meeting": 14,
+  "all": [
+   [
+    1,
+    5,
+    11,
+    0.6265
+   ],
+   [
+    9,
+    7,
+    15,
+    0.3699
+   ],
+   [
+    7,
+    3,
+    2,
+    0.2555
+   ],
+   [
+    7,
+    9,
+    3,
+    0.2222
+   ],
+   [
+    9,
+    5,
+    2,
+    0.1919
+   ],
+   [
+    2,
+    7,
+    3,
+    0.1318
+   ],
+   [
+    8,
+    9,
+    6,
+    0.1227
+   ],
+   [
+    3,
+    3,
+    21,
+    0.1155
+   ],
+   [
+    5,
+    5,
+    8,
+    0.112
+   ],
+   [
+    7,
+    6,
+    1,
+    0.1098
+   ],
+   [
+    7,
+    2,
+    19,
+    0.1095
+   ],
+   [
+    7,
+    4,
+    1,
+    0.0823
+   ],
+   [
+    9,
+    3,
+    22,
+    0.0629
+   ],
+   [
+    5,
+    3,
+    3,
+    0.0296
+   ]
+  ],
+  "pick": {
+   "series": 1,
+   "game": 5,
+   "turn_no": 11,
+   "side": "white",
+   "dice": [
+    4,
+    6
+   ],
+   "control_turn": 335,
+   "lessons_turn": 2642,
+   "board": {
+    "points": [
+     0,
+     2,
+     0,
+     -2,
+     3,
+     3,
+     3,
+     0,
+     0,
+     0,
+     0,
+     -2,
+     2,
+     0,
+     0,
+     0,
+     -3,
+     -1,
+     -5,
+     0,
+     -2,
+     0,
+     0,
+     2
+    ],
+    "bar": [
+     0,
+     0
+    ],
+    "off": [
+     0,
+     0
+    ]
+   },
+   "pips": [
+    132,
+    137
+   ],
+   "control": {
+    "play": "5/1 7/1",
+    "eq2": -0.2607937455177307,
+    "hits": 0
+   },
+   "lessons": {
+    "play": "24/18* 18/14",
+    "eq2": 0.36569827795028687,
+    "hits": 19
+   },
+   "engine_best": {
+    "play": "24/18* 18/14",
+    "eq2": 0.36569827795028687,
+    "hits": 19
+   },
+   "legal": 17,
+   "gain": 0.6264920234680176,
+   "prompt_control": [
+    "Score: you 5, opponent 0 (you lead by 5).",
+    "Match: round 3 of 5, game 1 of 2 in this round."
+   ],
+   "prompt_lessons": [
+    "Score: you 5, opponent 0 (you lead by 5).",
+    "Match: round 3 of 5, game 1 of 2 in this round."
+   ]
+  },
+  "runner_up": {
+   "series": 9,
+   "game": 7,
+   "turn_no": 15,
+   "side": "white",
+   "dice": [
+    1,
+    5
+   ],
+   "control_turn": 14712,
+   "lessons_turn": 24210,
+   "board": {
+    "points": [
+     0,
+     2,
+     6,
+     -1,
+     1,
+     2,
+     0,
+     0,
+     0,
+     0,
+     0,
+     -2,
+     2,
+     0,
+     0,
+     -1,
+     -2,
+     0,
+     -5,
+     0,
+     -3,
+     0,
+     0,
+     2
+    ],
+    "bar": [
+     0,
+     1
+    ],
+    "off": [
+     0,
+     0
+    ]
+   },
+   "pips": [
+    113,
+    139
+   ],
+   "control": {
+    "play": "6/5 6/1",
+    "eq2": -0.4226193428039551,
+    "hits": 11
+   },
+   "lessons": {
+    "play": "5/4* 13/8",
+    "eq2": -0.052732884883880615,
+    "hits": 12
+   },
+   "engine_best": {
+    "play": "5/4* 13/8",
+    "eq2": -0.052732884883880615,
+    "hits": 12
+   },
+   "legal": 12,
+   "gain": 0.36988645792007446,
+   "prompt_control": [
+    "Score: you 6, opponent 4 (you lead by 2).",
+    "Match: round 4 of 5, game 1 of 2 in this round."
+   ],
+   "prompt_lessons": [
+    "Score: you 5, opponent 4 (you lead by 1).",
+    "Match: round 4 of 5, game 1 of 2 in this round."
+   ]
+  }
+ }
+}

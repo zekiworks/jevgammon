@@ -24,11 +24,8 @@ LIMIT_HARD = ("Setups met different positions; risk judgement is not adjusted fo
               "comparisons wait for the shared positions.")
 # Under the risk leaderboard chart (Ümit #2564; wording Zeki #2578).
 RANK_NOTE = "Ranks show observed scores; small gaps need not be meaningful."
-# The hero's three buttons (Ümit #2564, #2570 item 1), existing pages only and named for what they open: there is no
-# write-up yet, so the first opens the Method page; Every decision has no filter for the engine's best play, so the
-# second opens its existing right-risk filter (the setup in view is named there, and any other can be picked).
-HERO_LINKS = [("Read the method", "method/"), ("Right risk calls, decision by decision", "decisions/?r=risk&c=rr"),
-              ("Every decision", "decisions/")]
+# The hero's three buttons (Ümit #2938 item 2): Every decision, Highlights, Read the method.
+HERO_LINKS = [("Every decision", "decisions/"), ("Highlights", "highlights/"), ("Read the method", "method/")]
 GNUBG_WEAK = "x86-64 build: its noise is shifted, so it overplays gammons"
 CALL_LABEL = {"needless": "needless risks", "missed": "missed risks", "wrong_risk": "wrong risks",
               "right_risk": "right risks", "right_safety": "right safety", "none": "No trade-off"}
@@ -1114,7 +1111,8 @@ def slot(ds, name, html) -> str:
 
 def fragments(S, out) -> None:
     """fragments/<league>-<phase>.html: the phase-dependent parts of a league view, loaded by the Phase filter;
-    fragments/all-<phase>.html: the same for the All leagues view."""
+    fragments/all-<phase>.html: the same for the All leagues view. Loaded into the Leagues page (since Ümit #2938), so
+    their links are written relative to leagues/."""
     folder = out / "fragments"
     if folder.exists():
         for old in folder.glob("*.html"):
@@ -1123,12 +1121,12 @@ def fragments(S, out) -> None:
     for lg in S["leagues"]:
         for ph in A.PHASES:
             parts = "".join(slot(lg["dataset"], k, v) for k, v in phase_slots(S, lg, ph).items())
-            (folder / f"{lg['dataset']}-{ph}.html").write_text(
-                f'<div data-league-view="{lg["dataset"]}" data-dataset="{lg["dataset"]}">{prov_note(lg)}{parts}</div>\n')
+            (folder / f"{lg['dataset']}-{ph}.html").write_text(P.rebase(
+                f'<div data-league-view="{lg["dataset"]}" data-dataset="{lg["dataset"]}">{prov_note(lg)}{parts}</div>\n', "../"))
     for ph in A.PHASES:
-        (folder / f"{ALL}-{ph}.html").write_text(
+        (folder / f"{ALL}-{ph}.html").write_text(P.rebase(
             f'<div data-league-view="{ALL}" data-dataset="{ALL}">{all_head(S)}'
-            f'{slot(ALL, "risk", all_risk_table(S, ph) + all_robust_table(S, ph))}</div>\n')
+            f'{slot(ALL, "risk", all_risk_table(S, ph) + all_robust_table(S, ph))}</div>\n', "../"))
 
 
 def prov_note(lg) -> str:
@@ -1223,10 +1221,6 @@ def tab_body(S, key: str) -> str:
 
 # --- Hero, findings, filters -------------------------------------------------------------------------------
 
-def version_line(S) -> str:
-    return P.version_line(S)
-
-
 def champions(S) -> str:
     """The match winners strip (Can, 31 Oct 2026): the winner of each starting group's own table, the first games
     (content/starting_groups.json, its place, points and recorded tiebreak), each linking to its tab under the hero; a
@@ -1235,7 +1229,7 @@ def champions(S) -> str:
     items = []
     for g in SG.load()["groups"]:
         top = g["rows"][0]
-        val = f'<a href="#{P.HOME_PREFIX}group-{g["name"].lower()}">{esc(top["name"])}</a>'
+        val = f'<a href="#group-{g["name"].lower()}">{esc(top["name"])}</a>'
         tie = next((t for t in g["ties"] if t["points"] == top["pts"] and t["setups"][0] == top["name"]), None)
         how = ""
         if tie and tie["kind"] == "head-to-head":
@@ -1248,7 +1242,7 @@ def champions(S) -> str:
         if SG.is_program(S, top["name"]):
             model = next(r for r in g["rows"] if not SG.is_program(S, r["name"]))
             val += (f' <span class="champ-note">(program, reference)</span> <span class="leader-detail">{esc(note)}</span>'
-                    f' · top model: <a href="#{P.HOME_PREFIX}group-{g["name"].lower()}">{esc(model["name"])}</a> '
+                    f' · top model: <a href="#group-{g["name"].lower()}">{esc(model["name"])}</a> '
                     f'<span class="leader-detail">{model["pts"]} pts</span>')
         else:
             val += f' <span class="leader-detail">{esc(note)}</span>'
@@ -1256,7 +1250,7 @@ def champions(S) -> str:
                      f'<span class="readout-value champ">{val}</span></li>')
     # The Hype Cup champion: the cross-league champion (an event, not a ranking: the Cup card says so).
     c = S["cup"]
-    val = f'<a href="#{P.HOME_PREFIX}hype-cup">{esc(c["champion"])}</a>' if c["champion"] else nm("To play")
+    val = f'<a href="#hype-cup">{esc(c["champion"])}</a>' if c["champion"] else nm("To play")
     items.append(f'<li class="readout"><span class="readout-label">Hype Cup:</span> <span class="readout-value champ">{val}</span></li>')
     return (f'<div class="readout-row champions"><span class="readout-label">Starting-group winners · match results</span>'
             f'<ul class="readouts">{"".join(items)}</ul></div>')
@@ -1306,14 +1300,16 @@ def hero_board(S) -> str:
 
 
 def findings_block(S) -> str:
+    """The findings Ümit approved (content/findings.json, each machine-checked by findings.py), under the finding
+    sections; nothing while none is approved (the sections above carry the page's findings since #2938)."""
     import findings as F
     approved = F.published()
     lead = F.lead_in()
     if not approved or not lead:
-        return '<div class="summary" id="findings"><p class="summary-lead findings-wait">Findings will be published after review.</p></div>'
-    items = "".join(f'<li><a href="?tab={esc(f["tab"])}#board" data-goto-tab="{esc(f["tab"])}">{esc(f["label"])}</a>: '
+        return ""
+    items = "".join(f'<li><a href="leagues/?tab={esc(f["tab"])}#board">{esc(f["label"])}</a>: '
                     f'{esc(f["text"])}</li>' for f in approved)
-    return (f'<div class="summary" id="findings"><p class="summary-lead">{esc(lead["text"])}</p>'
+    return (f'<div class="summary" id="findings-approved"><p class="summary-lead">{esc(lead["text"])}</p>'
             f'<ul class="summary-list">{items}</ul></div>')
 
 
@@ -1339,17 +1335,15 @@ def filters(S) -> str:
     # The model setups of each league; the programs are reference rows, never counted.
     totals = {lg["dataset"]: sum(1 for n in lg["setups"] if not ref_label(S, lg["dataset"], n)) for lg in S["leagues"]}
     totals = {ALL: sum(totals.values()), **totals}
-    parts = ([("leaderboard", "Leaderboard")] + MEASURES + [("board-panel", "Every number")])
-    links = "".join(f'<a href="#{k}">{esc(l)}</a>' for k, l in parts)
-    # One compact row on the Risk calls part (Ümit, bus #2570, item 1), out of the sticky header: the league and the
-    # model type, the parts of the page, and behind "More filters" the quick view, phase, reasoning, runs on and weights,
-    # whose key names the active ones while it is closed (bg.js); the setup count and Reset at the end.
-    return f"""<nav class="panel filters filter-row" id="filters" aria-labelledby="filters-title">
-      <h2 id="filters-title" class="visually-hidden">Filters and parts of this page</h2>
+    # One compact row (Ümit, bus #2570, item 1), on the Leagues page above the measure sections and Every number since
+    # #2938 (its part links, a chip row, removed): the league and the model type, and behind "More filters" the quick
+    # view, phase, reasoning, runs on and weights, whose key names the active ones while it is closed (bg.js); the setup
+    # count and Reset at the end. data-fragments: where the Phase filter loads its fragments from.
+    return f"""<nav class="panel filters filter-row" id="filters" aria-labelledby="filters-title" data-fragments="../fragments/">
+      <h2 id="filters-title" class="visually-hidden">Filters</h2>
       <div class="filters-body" id="filters-body">
         <div class="group league-pick needs-js" role="group" aria-labelledby="f-league"><span class="group-label" id="f-league">League</span><span class="keys">{leagues}</span></div>
         <div class="needs-js">{group("kind", "Models", [("all", "All"), ("decision", "Decision"), ("chat", "Chat"), ("program", "Program")])}</div>
-        <div class="group part-links"><span class="group-label">Measure</span><span class="face-nav">{links}</span></div>
         <div class="group more-filters needs-js"><button type="button" class="key fold-toggle" data-more-filters aria-expanded="false" aria-controls="filters-more"><span class="chevron" aria-hidden="true"></span>More filters<span class="fold-summary" data-more-summary> · phase, reasoning, runs on, weights</span></button></div>
         <div class="group filters-count needs-js"><span class="setup-count" data-setups data-totals='{esc(json.dumps(totals))}' aria-live="polite">{count(totals[default_league(S)])} of {count(totals[default_league(S)])} setups</span>
         <button type="button" class="key reset" data-control="reset" aria-disabled="true" data-tip="Nothing to reset: the filters show the defaults.">Reset</button>
@@ -1831,9 +1825,10 @@ WHAT_THIS_MEASURES = ("Risk calls per setup: was each risk the right one, and wa
                       "gives away, judged by the engine, not by wins. " + LIMIT_HIT + " " + LIMIT_HARD)
 
 
-def how_numbers(S) -> str:
-    """'How the scoring works' (Ümit #2564; the heading #2570 item 5): sentences of the Method page only, quoted as published there, each with the
-    Method section it comes from (mailbox/learning-page-review3/README.md lists them). No new claim."""
+def how_numbers(S, rel: str) -> str:
+    """The scoring as the Method page states it (Ümit #2564; on About under "How the scores work" since #2938):
+    sentences of the Method page only, quoted as published there, each with the Method section it comes from
+    (mailbox/learning-page-review3/README.md lists them). No new claim."""
     t = S["thresholds"]
     items = [
         ("Who scores", "error-rate", "Error rate",
@@ -1853,74 +1848,96 @@ def how_numbers(S) -> str:
         ("Different positions", "limits", "Limits",
          "Setups played different positions; league comparisons are not paired, and risk judgement is not adjusted "
          "for how hard the positions were.")]
-    lis = "".join(f'<li><strong>{esc(k)}.</strong> {esc(v)} <a class="small" href="method/#{a}">Method: {esc(s)}</a></li>'
+    lis = "".join(f'<li><strong>{esc(k)}.</strong> {esc(v)} <a class="small" href="{rel}method/#{a}">Method: {esc(s)}</a></li>'
                   for k, a, s, v in items)
-    return (f'<section class="card how-numbers" id="how-numbers"><h2>How the scoring works</h2><ul>{lis}</ul>'
-            f'<p class="table-note">Quoted from the <a href="method/">Method</a> page.</p></section>')
+    return (f'<div class="how-method" id="how-method"><h3>As the Method page states it</h3><ul>{lis}</ul>'
+            f'<p class="table-note">Quoted from the <a href="{rel}method/">Method</a> page.</p></div>')
+
+
+def how_scores(S) -> str:
+    """"How the scores work" (Ümit #2938 item 2 (4)): the five short bullets of About's text (content/about.md, its
+    Leaderboard box section), with a link to the whole section on About."""
+    import method
+    md = next(md for i, _, md in P.about_sections() if i == "short")
+    return (f'<section class="card how-numbers" id="how-numbers"><h2>How the scores work</h2>{method.spec_markdown(md)}'
+            f'<p class="table-note"><a href="about/#scores">More in About</a></p></section>')
+
+
+def counts_line(S) -> str:
+    """The hero's counts line (Ümit #2938 item 2 (1)): decisions scored, leagues, setups, models and the update date."""
+    c = S["counts"]
+    items = [(count(c["decisions_scored"]), "decisions scored"), (count(c["leagues"]), "leagues"),
+             (count(c["model_setups"]), "setups"), (count(c["models"]), "models")]
+    return ('<p class="counts-line">' + " · ".join(f'<span class="readout-value">{v}</span> {l}' for v, l in items)
+            + f' · updated {esc(P.as_of(S).split(",")[0])}</p>')
 
 
 def hero_card(S) -> str:
-    face = "".join(f'<a href="#{k}">{esc(l)}</a>' for k, l in MEASURES)
-    face += ('<a href="#leagues-tabs">Leagues and matches</a><a href="#board-panel">Every number</a>'
-             '<a href="#findings">Findings</a><a href="method/">Method</a>')
-    links = "".join(f'<a href="{href}">{esc(label)}</a>' for label, href in HERO_LINKS)
+    links = "".join(f'<a class="key" href="{href}">{esc(label)}</a>' for label, href in HERO_LINKS)
     return f"""
     <section class="card hero hero-card">
       <div class="hero-split">
         <div class="hero-text">
-          <p class="eyebrow">Experiment</p>
           <h1>{esc(P.TITLE)}</h1>
-          <p class="subtitle">{esc(P.SUBTITLE)}</p>
-          <nav class="hero-links" aria-label="Main parts">{links}</nav>
           <p class="intro">{esc(INTRO)}</p>
-          <div class="readout-row">
-            <ul class="readouts">{P.readouts(S)}</ul>
-            <p class="version">{esc(version_line(S))}</p>
-          </div>
+          {counts_line(S)}
+          <nav class="hero-links" aria-label="Main parts">{links}</nav>
         </div>
         {hero_board(S)}
       </div>
-      {result_cards(S)}
-      <p class="framing"><strong>What this measures.</strong> {esc(WHAT_THIS_MEASURES)}</p>
-      {champions(S)}
-      {leaders(S)}
-      {facts(S)}
-      <nav class="face-nav" aria-label="On this page">{face}</nav>
-      {P.more_pages("")}
     </section>"""
 
 
-def home(S) -> str:
-    import story
+# The home page's content that moved to the Leagues page (Ümit #2938 item 2): what each block is, for the old anchors.
+def leagues_moved(S) -> tuple[str, str]:
+    """(top, bottom): the blocks of the old home page that now sit on the Leagues page, written relative to the site's
+    root (pages.rebase moves them under leagues/). top: the three result boxes, the match winners and the leaders, the
+    Scorer / Results / Published facts, What this measures. bottom: the filters (the measure charts and Every number
+    follow them), the measure sections, Every number, Risk pays vs safety pays, Close choices stage B."""
     tabs = "".join(f'<button type="button" role="tab" id="tab-{k}" class="mode" aria-controls="board" '
                    f'aria-selected="{str(i == 0).lower()}" data-tab="{k}"><span class="lamp" aria-hidden="true"></span>{l}</button>'
                    for i, (k, l) in enumerate(TABS))
     panels = "".join(f'<div class="tabpanel" id="panel-{k}" data-panel="{k}"{" hidden" if i else ""}>{tab_body(S, k)}</div>'
                      for i, (k, _) in enumerate(TABS))
-    return f"""
+    top = f"""
     {FAMILY_ICONS}
-    {hero_card(S)}
-    {story.headline(S)}
+    <section class="card overview" id="overview">
+      {result_cards(S)}
+      <p class="framing"><strong>What this measures.</strong> {esc(WHAT_THIS_MEASURES)}</p>
+      {champions(S)}
+      {leaders(S)}
+      {facts(S)}
+    </section>"""
+    bottom = f"""
     {filters(S)}
-    {story.findings(S)}
-    {how_numbers(S)}
-    {findings_block(S)}
     {measure_charts(S)}
-    <div class="home-leagues" id="leagues-tabs">{P.home_league_sections(S)}</div>
     <section class="panel board-panel" id="board-panel" aria-labelledby="board-title">
-      <div class="chart-head"><h2 id="board-title">Every number, setup by setup</h2><p class="chart-sub">The leaderboard: every measure of every setup, one tab per measure; each value with its 95% interval, its count and denominator or its price label under it.</p></div>
+      <div class="chart-head"><h2 id="board-title">Every number, setup by setup</h2><p class="chart-sub">Every measure of every setup, one tab per measure; each value with its 95% interval, its count and denominator or its price label under it.</p></div>
       <div class="modebar">
         <div class="keys view-switch needs-js" role="group" aria-label="Show the results as"><button type="button" class="key" data-view="table" aria-pressed="true"><span class="lamp" aria-hidden="true"></span>Table</button><button type="button" class="key" data-view="charts" aria-pressed="false"><span class="lamp" aria-hidden="true"></span>Charts</button></div>
         <div class="keys col-switch needs-js" role="group" aria-label="Table columns"><button type="button" class="key" data-cols-all aria-pressed="false"><span class="lamp" aria-hidden="true"></span>All columns</button></div>
-        <div class="modes" role="tablist" aria-label="Leaderboard">{tabs}</div>
+        <div class="modes" role="tablist" aria-label="Every number">{tabs}</div>
       </div>
       <div id="board" role="tabpanel">{panels}</div>
       {charts(S)}
     </section>
     {pays_section(S)}
-    {close_b_section(S)}
-    {nack_section.section(S["nack"], *nack_views(S), S["nack_late"])}
-    <p class="downloads" id="downloads">Download: <a href="data/results.json" download="results.json">results.json</a> · <a href="decisions/index.json" download="decisions.json">decisions.json</a></p>"""
+    {close_b_section(S)}"""
+    return top, bottom
+
+
+def home(S) -> str:
+    """The front page (Ümit #2938 item 2): the hero, the leaderboard, the finding sections a-f, How the scores work.
+    Everything else of the old front page is on the Leagues page (leagues_moved) or the Nackgammon page; the old
+    anchors are sent there (pages.moved_anchors, bg.js)."""
+    import story
+    return f"""
+    {FAMILY_ICONS}
+    {hero_card(S)}
+    {story.headline(S)}
+    {story.findings(S)}
+    {findings_block(S)}
+    {how_scores(S)}"""
 
 
 # --- Risk call card (B6.5): one image per league winner, made to post on X ---------------------------------------

@@ -554,8 +554,9 @@ def check_learning(out: Path, test_set: Path | None = None) -> list[str]:
 def run(S: dict, out: Path) -> list[str]:
     failures = []
     nums = allowed_numbers(out, S)
-    # The home page's per-league, per-phase views load as fragments into the home page: checked as part of it.
-    pages = [(p, p) for p in sorted(out.rglob("index.html"))] + [(p, out / "index.html")
+    # The per-league, per-phase views load as fragments into the Leagues page (the home page's until Ümit #2938):
+    # checked as part of it.
+    pages = [(p, p) for p in sorted(out.rglob("index.html"))] + [(p, out / "leagues/index.html")
                                                                  for p in sorted((out / "fragments").glob("*.html"))]
     for page, base in pages:
         rel = page.relative_to(out)

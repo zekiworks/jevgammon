@@ -8,6 +8,7 @@ numbers is mailbox/front-story/evidence (made by evidence.py there), not code he
 supporting must be reworded by hand."""
 
 import json
+import math
 import re
 
 import home as H
@@ -17,6 +18,7 @@ from common import ALL_NOTE, CONTENT, LATE_ENTRY, NA, count, esc, fmt, nm, pct
 RELEASES = json.loads((CONTENT / "release_months.json").read_text())["models"]
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 PROGRAMS = ("GNUbg weak", "Random", "Safest")
+NO_MAKER = "Maker not recorded"  # content/maker_colors.json's entry for setups whose maker is not on record
 
 
 def caveat(text: str, anchor: str = "limits") -> str:
@@ -37,22 +39,31 @@ ON = "on"
 # Models that are one row (content/model_identity.json: an approved list, nothing inferred from names): a dated
 # checkpoint under its original, which names and dates the row.
 SAME_MODEL = json.loads((CONTENT / "model_identity.json").read_text())["same_model"]
-# Under the table (Ümit #2745 item 3, with Zeki #2578's accepted rank sentence in place of the whisker-overlap one).
+# Beside the table until Ümit #2938 item 3; on About since (Zeki #2578's accepted rank sentence in place of the
+# whisker-overlap one).
 NOTE = ("Bars run to each score; the whisker is its 95% interval. Ranks show observed scores; small gaps need not be "
         "meaningful. Leagues played different positions.")
-# The row rule, one line under the table (Ümit #2921 items 1 and 5); the longer explanation is on About (about_text).
+# The full row rule (Ümit #2921 items 1 and 5); the table's own line is ROW_LINE.
 RULE = ("Row rule: each model's highest reasoning setting (off < minimal < low < medium < high < xhigh < max), late "
         "entries included; a model with one setup uses it; several setups at that setting: the first in league order, "
         "then by setup name, never by score.")
 
 
-def about_text(rel: str) -> str:
+def about_text(S, rel: str) -> str:
     """How the leaderboard is built, for the About page: the text that stood above and under the table before
-    Ümit #2921 item 5, unchanged but for the late entries now in the ranking."""
-    return ('<p><strong>A fixed table:</strong> the filters below the leaderboard do not change it. Tap a model (or '
+    Ümit #2921 item 5, and the notes that stood beside it before #2938 item 3 (bars and ranks, the row rule, Released),
+    unchanged but for where the filters and Every number now are (Leagues)."""
+    n_models = len(leaderboard_rows(S)[0])
+    missing = headline_rows(S)[1]
+    released = (f'<p>Released (in a row\'s details): the month of the maker\'s own dated statement that this exact model '
+                f'was released or became available to the public (an announcement before public availability does not '
+                f'count), linked; left out where no such statement is on record ({count(len(missing))} of '
+                f'{count(n_models)} models).</p>' if missing else "")
+    return ('<p><strong>A fixed table:</strong> the filters on the Leagues page do not change it. Tap a model (or '
             'point at it) for its details and its decisions.</p>'
             '<p># is the rank among all models, in every view of the table\'s All · Chat models · Decision models '
             'filter; the programs are reference rows in every view.</p>'
+            f'<p>{esc(NOTE)}</p><p>{esc(RULE)}</p>'
             '<p>Each model\'s row is its highest reasoning setting played, by the effort the requests sent (off &lt; '
             'minimal &lt; low &lt; medium &lt; high &lt; xhigh &lt; max; on above off for a model without levels; a '
             'decision model\'s single setup), never its best score; late-entry setups count as the model\'s setups '
@@ -60,8 +71,8 @@ def about_text(rel: str) -> str:
             'setting: the first in league order, then by setup name (no score). Every value of a row and of its details '
             'is that setup\'s own; its other settings are under the row\'s expander and under All setups. Version names '
             'are separate models; ' + "; ".join(f"{esc(k)} is under {esc(v)}" for k, v in SAME_MODEL.items()) + ' (a '
-            f'dated checkpoint under its original). Every column of every setup: <a href="{rel}#board-panel">Every '
-            'number</a>.</p>')
+            f'dated checkpoint under its original). Every column of every setup: <a href="{rel}leagues/#board-panel">Every '
+            'number</a>.</p>' + released)
 
 
 def level(setting: str | None, levelled: bool) -> int:
@@ -220,21 +231,24 @@ def details_box(S, x, kind: str, bid: str, extra: list) -> str:
     er = (f'Error rate {fmt(q["error_rate"])} (95%: {fmt(q["error_lo"])}\u2013{fmt(q["error_hi"])})'
           if q and q.get("error_rate") is not None and not q.get("too_few") else None)
     href, page = decisions_href(S, x), page_href(S, x)
+    # The lines in the order of Ümit's example (#2938 item 3): name · maker / risk judgement / both halves / the raw
+    # counts / error rate · record · late entry; then the setup's other stored facts; then the links.
     lines = [
         join([f'<strong>{esc(x["name"])}</strong>', esc(H.maker(x["name"])[0]) if kind != "program" else None]),
-        join([f'Setting {esc(x["setting"])}' if x["setting"] else None, None if e else f'League {x["lg"]["id"]}']),
-        (f'Played the original League {e["field_league"]} field after the league finished (late entry)' if e else None),
-        (join([f'Provisional: {count(e["played"])} of {count(e["total"])} matches'] + [
-            f'not played: {esc(g["opponent"])} ({esc(g["reason"])})' for g in e.get("not_played") or []])
-         if e and e["status"] == P.PROVISIONAL else None),
-        (esc(P.SUBQ_SELF) if e and x["name"] == P.SUBQ_11 else None),
         (f'Risk judgement {fmt(r["judgement"])} (95%: {fmt(r["judgement_lo"])}\u2013{fmt(r["judgement_hi"])})'
          if r["judgement"] is not None else None),
         join([f'Risks found {pct(found["share"])}' if found["den"] else None,
               f'safe right {pct(safe["share"])}' if safe["den"] else None]),
         join([f'Took {H.n_(found["n"])} of {H.n_(found["den"])} risks that paid' if found["den"] else None,
               f'played safe in {H.n_(safe["n"])} of {H.n_(safe["den"])} positions where safe paid' if safe["den"] else None]),
-        join([er, f'record {count(rec["won"])}\u2013{count(rec["drawn"])}\u2013{count(rec["lost"])}' if rec else None]),
+        join([er, f'record {count(rec["won"])}\u2013{count(rec["drawn"])}\u2013{count(rec["lost"])}' if rec else None,
+              esc(late_tag(x)) if e else None]),
+        join([f'Setting {esc(x["setting"])}' if x["setting"] else None, None if e else f'League {x["lg"]["id"]}']),
+        (f'Played the original League {e["field_league"]} field after the league finished (late entry)' if e else None),
+        (join([f'Provisional: {count(e["played"])} of {count(e["total"])} matches'] + [
+            f'not played: {esc(g["opponent"])} ({esc(g["reason"])})' for g in e.get("not_played") or []])
+         if e and e["status"] == P.PROVISIONAL else None),
+        (esc(P.SUBQ_SELF) if e and x["name"] == P.SUBQ_11 else None),
         join([cost_text(S, x), f'{count(q["decisions"])} decisions' if q else None]),
         *extra,
         join([f'<a href="{href}">{"Its late-entry page" if e else "Open its decisions"} \u2192</a>' if href else None,
@@ -293,7 +307,7 @@ def headline_rows(S) -> tuple[list, list, list]:
             bid = f"{rid}-box"
             body.append(f'<tr{cls}{tr_attrs(S, x, kind, typ)} data-box="{bid}">{rank}<td class="model">{dot}{icon}'
                         f'{name_link(S, x, label, bid)}<span class="small hl-type">{under}{tag}</span>{more}'
-                        f'{details_box(S, x, kind, bid, extra)}</td>{judgement_cell(x["r"], colour)}</tr>')
+                        f'{details_box(S, x, kind, bid, extra)}</td>{judgement_cell(x["r"], colour)}{wide_cells(x)}</tr>')
             for sid, y in zip(sub_ids, others):
                 ycol = H.maker(y["name"])[1] if kind == "model" else None
                 ybid = f"{sid}-box"
@@ -301,13 +315,31 @@ def headline_rows(S) -> tuple[list, list, list]:
                 body.append(f'<tr class="hl-sub{"" if kind == "model" else " reference"}" '
                             f'id="{sid}" hidden{tr_attrs(S, y, kind, typ)} data-box="{ybid}"><td class="num"></td><td class="model">'
                             f'{name_link(S, y, y["name"], ybid)}<span class="small">other {what} of {esc(label)}{ytag}</span>'
-                            f'{details_box(S, y, kind, ybid, [])}</td>{judgement_cell(y["r"], ycol)}</tr>')
+                            f'{details_box(S, y, kind, ybid, [])}</td>{judgement_cell(y["r"], ycol)}{wide_cells(y)}</tr>')
             if kind != "program" or x["name"] == "GNUbg weak":
                 chart.append((kind, label, x, colour))
     return body, missing, chart
 
 
-HEADLINE_HEAD = [(h, " data-nosort") for h in ("#", "Model", "Risk judgement (95% interval)")]
+# Wide screens add four columns (Ümit #2938 item 3): risks found, safe right, error rate, $ per 1,000 decisions; bg.css
+# hides the hl-wide cells below 900 px, where the details box holds the same values.
+WIDE_HEAD = ["Risks found", "Safe right", "Error rate (PR)",
+             '<span class="cost-1k">$ per 1,000</span><span class="cost-1m">$ per 1M</span>']
+HEADLINE_HEAD = ([(h, " data-nosort") for h in ("#", "Model", "Risk judgement (95% interval)")]
+                 + [(h, " data-nosort data-wide") for h in WIDE_HEAD])
+
+
+def wide_cells(x) -> str:
+    """The four wide-screen cells of a row, each the setup's stored value as its details box prints it; a dash where
+    the data has none."""
+    r, q = x["r"], x["q"]
+    dash = '<span class="muted">\u2013</span>'
+    share = lambda s: pct(s["share"]) if s["den"] else dash  # noqa: E731
+    er = fmt(q["error_rate"]) if q and q.get("error_rate") is not None and not q.get("too_few") else dash
+    usd = q.get("usd_per_1000") if q else None
+    cost = (f'<span class="cost-1k">${fmt(usd, 3)}</span><span class="cost-1m" data-usd="{usd!r}">${fmt(usd, 3)}</span>'
+            if usd is not None else dash)
+    return "".join(f'<td class="num hl-wide">{v}</td>' for v in (share(r["found"]), share(r["right_safety"]), er, cost))
 
 
 def too_safe(S, chart: list) -> str:
@@ -339,19 +371,21 @@ def too_safe(S, chart: list) -> str:
             f'and of the risks it found, as in the table</p></div>{chart_html}<p class="chart-legend">{legend}</p></figure>')
 
 
+# The two lines around the table (Ümit #2938 item 3): the score's meaning above it, the row rule (with the All leagues
+# note the merged table carries) under it. The longer notes (bars and whisker, ranks, Released, the full rule) are on
+# About (about_text).
+MEANING = "Risk judgement: 100 = every call right, 50 = always safe; higher is better."
+ROW_LINE = "One row per model at its highest reasoning setting, never its best score; late entries included."
+
+
 def headline(S) -> str:
     """One row per model at its highest reasoning setting (a fixed rule, not the best score), its other settings
     behind a per-row expander, the programs as grey unranked rows; the All setups key shows the full All leagues risk
-    table (every setup, programs as reference rows) in its place. The Too safe chart under it."""
-    rows, missing, chart = headline_rows(S)
-    n_models = len(leaderboard_rows(S)[0])
+    table (every setup, programs as reference rows) in its place."""
+    rows = headline_rows(S)[0]
     table = P.table(HEADLINE_HEAD, rows, "One row per model at its highest reasoning setting; all leagues, all phases",
                     cls="board headline",
                     attrs=' data-dataset="all" id="headline-table"')
-    note = (f'<p class="table-note">Released (in a row\'s details): the month of the maker\'s own dated statement that '
-            f'this exact model was released or became available to the public (an announcement before public '
-            f'availability does not count), linked; left out where no such statement is on record '
-            f'({count(len(missing))} of {count(n_models)} models).</p>' if missing else "")
     keys = ('<span class="keys needs-js" role="group" aria-label="Rows"><button type="button" class="key" '
             'data-headline-view="model" aria-pressed="true">One row per model</button><button type="button" '
             'class="key" data-headline-view="all" aria-pressed="false">All setups</button></span>')
@@ -361,14 +395,12 @@ def headline(S) -> str:
                        f'{l}</button>' for k, l in (("all", "All"), ("chat", "Chat models"), ("decision", "Decision models")))
              + '</div>')
     return (f'<section class="card headline" id="leaderboard" data-dataset="all" aria-labelledby="leaderboard-title">'
-            f'<div class="chart-head"><h2 id="leaderboard-title">Risk calls leaderboard</h2>{keys}<p class="chart-sub">'
-            f'Risk judgement: 100 = every call right, 50 = always safe · higher is better</p></div>'
-            '<p class="table-note headline-scope">One row per model: its highest reasoning setting, late entries '
-            'included, never its best score (<a href="about/#leaderboard">more in About</a>).</p>'
-            f'<div data-headline-panel="model">{types}{table}{caveat(NOTE, "statistics")}'
-            f'<p class="table-note headline-rule">{esc(RULE)}</p>{note}{too_safe(S, chart)}</div>'
+            f'<div class="chart-head"><h2 id="leaderboard-title">Risk calls leaderboard</h2>{keys}'
+            f'<p class="chart-sub">{esc(MEANING)}</p></div>'
+            f'<div data-headline-panel="model">{types}{table}</div>'
             f'<div data-headline-panel="all" hidden>{H.all_risk_table(S)}{caveat(H.RANK_NOTE, "statistics")}</div>'
-            f'<p class="table-note">{esc(ALL_NOTE)}</p></section>')
+            f'<p class="table-note headline-rule">{esc(ROW_LINE)} {esc(ALL_NOTE)} '
+            '<a href="about/#leaderboard">How rows are chosen</a></p></section>')
 
 
 # --- Finding sections ----------------------------------------------------------------------------------------------
@@ -420,10 +452,13 @@ def _bars(rows: list, lo: float, hi: float, ticks: list, head: str, zero: bool =
             f'<span class="hbar-head">{head}</span></div><ol class="hbars headed">{"".join(out)}</ol>')
 
 
-def finding(fid: str, heading: str, sentences: str, chart: str, legend: str, warn: str, anchor: str) -> str:
+def finding(fid: str, heading: str, sentences: str, chart: str, legend: str, warn: str, link: tuple[str, str]) -> str:
+    """A finding section (Ümit #2938 item 2): the heading states the finding, one chart, two or three sentences and one
+    link (href relative to the site's root, label)."""
     return (f'<section class="card finding" id="{fid}" aria-labelledby="{fid}-title"><h2 id="{fid}-title">{esc(heading)}</h2>'
             f'<p class="finding-text">{sentences}</p><figure class="chart-card chart-wide finding-chart">{chart}'
-            f'<p class="chart-legend">{legend}</p></figure>{caveat(warn, anchor)}</section>')
+            + (f'<p class="chart-legend">{legend}</p>' if legend else "") + '</figure>'
+            f'<p class="table-note section-caveat">{esc(warn)} <a href="{link[0]}">{esc(link[1])}</a></p></section>')
 
 
 def cautious(S) -> str:
@@ -450,8 +485,9 @@ def cautious(S) -> str:
     legend = ('<span>Bias = missed risks (a clear Risk win played safe) minus needless risks (a clear Safety win played '
               'unsafe), in percentage points; right of 0 = too cautious</span> <span><i class="swatch swatch-program">'
               '</i>program (reference row)</span>')
-    return finding("finding-cautious", "Models are too cautious", text, chart, legend,
-                   "Not paired: setups met different positions, so the rows compare only loosely.", "clear-risk")
+    return finding("clear-risk-bias", "Models are too cautious: the clear-risk scan", text, chart, legend,
+                   "Not paired: setups met different positions, so the rows compare only loosely.",
+                   ("method/#clear-risk", "More caveats: Method"))
 
 
 def flinch(S) -> str:
@@ -479,8 +515,285 @@ def flinch(S) -> str:
     legend = ('<span><i class="swatch" style="background:var(--text-2)"></i>with numbers (the league prompt, each play\'s '
               'computed consequences)</span> <span><i class="swatch swatch-q1-board"></i>board only (notation, no computed '
               'number)</span> <span>Bias: missed minus needless, Q1 of Clear risk Part 2</span>')
-    return finding("finding-flinch", heading, text, chart, legend, "Two plays shown, not league play.", "clear-risk")
+    return finding("finding-flinch", heading, text, chart, legend, "Preliminary: two plays shown, not league play.",
+                   ("clear-risk/", "Clear risk (preliminary)"))
+
+
+# --- The front page's finding sections a-f (Ümit #2938 item 2). Every heading is decided from the same stored values
+# the section shows (the rule beside each); where the rule fails the section keeps a neutral heading. The check of each
+# rule against the data, with its numbers, is mailbox/ct-brief/evidence/a.md ... f.md. --------------------------------
+
+def _svg(label: str, w: int, h: int, body: str) -> str:
+    """A finding's SVG in the site's chart style. Its points carry no dataset (they come from several leagues, like the
+    leaderboard's rows, and the section says so)."""
+    return f'<svg class="chart-svg finding-svg" viewBox="0 0 {w} {h}" role="img" aria-label="{esc(label)}">{body}</svg>'
+
+
+def _rows_chart(S) -> list:
+    """The leaderboard's model rows and GNUbg weak: (kind, row name, chosen setup, maker colour)."""
+    return headline_rows(S)[2]
+
+
+def two_skill(S) -> str:
+    """a. Risks found (x) against safe right (y), one dot per leaderboard row in its maker's colour, GNUbg weak the grey
+    reference. Heading rule: most ranked models found a smaller share of the risks that paid than they played safe
+    right where safety paid."""
+    rows = _rows_chart(S)
+    models = [(label, x, c) for kind, label, x, c in rows if kind == "model"
+              and x["r"]["found"]["den"] and x["r"]["right_safety"]["den"]]
+    gnu = next((x for kind, label, x, c in rows if kind == "program"), None)
+    below = [m for m in models if m[1]["r"]["found"]["share"] < m[1]["r"]["right_safety"]["share"]]
+    heading = "Models are too cautious." if 2 * len(below) > len(models) else "Risks found and safe right"
+    f = sorted(m[1]["r"]["found"]["share"] for m in models)
+    s = sorted(m[1]["r"]["right_safety"]["share"] for m in models)
+    who = f"Every one of the {count(len(models))}" if len(below) == len(models) else \
+        f"{count(len(below))} of the {count(len(models))}"
+    text = (f'{who} ranked models took a smaller share of the risks that paid than the share of safe positions they '
+            f'played right: risks found runs from {pct(f[0])} to {pct(f[-1])}, safe right from {pct(s[0])} to {pct(s[-1])}.')
+    if gnu:
+        g = gnu["r"]
+        text += (f' GNUbg weak, a weak setting of the engine (grey square), is close to even: {pct(g["right_safety"]["share"])} '
+                 f'safe right, {pct(g["found"]["share"])} risks found.')
+    text += ' Above the diagonal, a model plays safe more often than the positions reward.'
+    W, Hh, L, B, T, R = 520, 420, 52, 44, 12, 14
+    x = lambda v: L + (W - L - R) * v  # noqa: E731
+    y = lambda v: Hh - B - (Hh - B - T) * v  # noqa: E731
+    parts = []
+    for t in range(0, 101, 25):
+        v = t / 100
+        parts.append(f'<line class="grid" x1="{x(v):.1f}" x2="{x(v):.1f}" y1="{T}" y2="{Hh - B}"/>'
+                     f'<line class="grid" x1="{L}" x2="{W - R}" y1="{y(v):.1f}" y2="{y(v):.1f}"/>'
+                     f'<text class="muted" x="{x(v):.1f}" y="{Hh - B + 14}" text-anchor="middle">{t}%</text>'
+                     f'<text class="muted" x="{L - 6}" y="{y(v) + 4:.1f}" text-anchor="end">{t}%</text>')
+    parts.append(f'<line class="rm-diag" x1="{x(0):.1f}" y1="{y(0):.1f}" x2="{x(1):.1f}" y2="{y(1):.1f}"/>'
+                 f'<text x="{(L + W - R) / 2}" y="{Hh - 8}" text-anchor="middle">Risks found: took the risk when it paid</text>'
+                 f'<text x="14" y="{(T + Hh - B) / 2}" transform="rotate(-90 14 {(T + Hh - B) / 2})" text-anchor="middle">'
+                 'Safe right: played safe when safe paid</text>')
+    for label, xr, c in models:
+        fx, sy = xr["r"]["found"]["share"], xr["r"]["right_safety"]["share"]
+        parts.append(f'<circle class="sk-dot" cx="{x(fx):.1f}" cy="{y(sy):.1f}" r="5" style="fill:{c}">'
+                     f'<title>{esc(label)}: risks found {pct(fx)}, safe right {pct(sy)}</title></circle>')
+    if gnu:
+        g = gnu["r"]
+        cx, cy = x(g["found"]["share"]), y(g["right_safety"]["share"])
+        parts.append(f'<rect class="sk-ref" x="{cx - 5:.1f}" y="{cy - 5:.1f}" width="10" height="10">'
+                     f'<title>GNUbg weak: risks found {pct(g["found"]["share"])}, safe right '
+                     f'{pct(g["right_safety"]["share"])}</title></rect>'
+                     f'<text class="sk-label" x="{cx + 9:.1f}" y="{cy + 4:.1f}">GNUbg weak</text>')
+    chart = _svg("Risks found against safe right, one dot per model", W, Hh, "".join(parts))
+    chart += ('<details class="more" id="too-safe-values"><summary>Every model\'s two values</summary>'
+              f'{too_safe(S, rows)}</details>')
+    legend = (H.maker_legend(xr["name"] for _, xr, _ in models)
+              + ' <span><i class="swatch swatch-ts-grey"></i>GNUbg weak (program, reference)</span>'
+              ' <span>Dashed diagonal: as often right on both</span>')
+    return finding("finding-cautious", heading, text, chart, legend,
+                   "Not paired: models met different positions in different leagues.",
+                   ("method/#risk-metrics", "How risks found and safe right are counted"))
+
+
+def release_chart(S) -> str:
+    """b. Risk judgement against release month, one line per maker, documented months only (content/release_months.json).
+    Heading rule: "Newer models judge risk better" only if every maker with models in two or more months scores higher
+    with each later month, and at least two makers do; else the neutral heading."""
+    rows = [(label, x, c) for kind, label, x, c in _rows_chart(S) if kind == "model" and x["r"]["judgement"] is not None]
+    dated = [(RELEASES[label]["month"], label, x["r"]["judgement"], H.maker(x["name"])[0], c)
+             for label, x, c in rows if (RELEASES.get(label) or {}).get("month")]
+    by = {}
+    for m, label, j, mk, c in sorted(dated):
+        by.setdefault(mk, []).append((m, label, j, c))
+    # A line joins a maker's models only where they span two or more months ("Maker not recorded" is no maker).
+    spread = {mk: pts for mk, pts in by.items() if len({p[0] for p in pts}) > 1 and mk != NO_MAKER}
+
+    def rising(pts):
+        months = sorted({p[0] for p in pts})
+        return all(min(p[2] for p in pts if p[0] == b) > max(p[2] for p in pts if p[0] == a)
+                   for a, b in zip(months, months[1:]))
+    ok = len(spread) >= 2 and all(rising(p) for p in spread.values())
+    heading = "Newer models judge risk better" if ok else "Risk judgement by release date"
+    lines = "; ".join(f'{esc(mk)} {", ".join(fmt(p[2]) for p in pts)}' for mk, pts in spread.items())
+    text = (f'A release month is documented for {count(len(dated))} of the {count(len(rows))} ranked models; only those '
+            'are shown, each at the month of its maker\'s own dated statement.')
+    if spread:
+        text += (f' Makers with models in different months, earliest first: {lines}.'
+                 + ("" if ok else " Not every maker\'s newer model scores higher, so the dates show no clear trend."))
+    months = sorted({d[0] for d in dated})
+    if not months:
+        return ""
+    W, Hh, L, B, T, R = 560, 340, 44, 40, 12, 120
+    js = [d[2] for d in dated]
+    lo, hi = math.floor(min(js) / 5) * 5, math.ceil(max(js) / 5) * 5
+    idx = lambda m: (int(m[:4]) * 12 + int(m[5:7]))  # noqa: E731
+    m0, m1 = idx(months[0]), idx(months[-1])
+    x = lambda m: L + (W - L - R) * ((idx(m) - m0) / ((m1 - m0) or 1))  # noqa: E731
+    y = lambda v: Hh - B - (Hh - B - T) * (v - lo) / ((hi - lo) or 1)  # noqa: E731
+    parts = []
+    for v in range(lo, hi + 1, 5):
+        parts.append(f'<line class="grid" x1="{L}" x2="{W - R}" y1="{y(v):.1f}" y2="{y(v):.1f}"/>'
+                     f'<text class="muted" x="{L - 6}" y="{y(v) + 4:.1f}" text-anchor="end">{v}</text>')
+    for k in range(m0, m1 + 1):
+        m = f"{(k - 1) // 12}-{(k - 1) % 12 + 1:02d}"
+        parts.append(f'<text class="muted" x="{x(m):.1f}" y="{Hh - B + 14}" text-anchor="middle">{MONTHS[int(m[5:]) - 1]}</text>')
+    parts.append(f'<text class="muted" x="{L}" y="{Hh - B + 30}">{months[0][:4]}</text>'
+                 f'<text x="14" y="{(T + Hh - B) / 2}" transform="rotate(-90 14 {(T + Hh - B) / 2})" text-anchor="middle">'
+                 'Risk judgement</text>')
+    for mk, pts in by.items():
+        c = pts[0][3]
+        if mk in spread:
+            parts.append(f'<polyline class="rd-line" style="stroke:{c}" points="'
+                         + " ".join(f"{x(p[0]):.1f},{y(p[2]):.1f}" for p in pts) + '"/>')
+        for m, label, j, _ in pts:
+            parts.append(f'<circle class="sk-dot" cx="{x(m):.1f}" cy="{y(j):.1f}" r="4.5" style="fill:{c}">'
+                         f'<title>{esc(label)} ({esc(mk)}), released {MONTHS[int(m[5:]) - 1]} {m[:4]}: risk judgement '
+                         f'{fmt(j)}</title></circle>')
+        last = pts[-1]
+        parts.append(f'<text class="sk-label" x="{W - R + 8}" y="{y(last[2]) + 4:.1f}" style="fill:{c}">{esc(mk)}</text>'
+                     if mk in spread else "")
+    chart = _svg("Risk judgement against release month, one line per maker", W, Hh, "".join(parts))
+    legend = H.maker_legend(x["name"] for label, x, _ in rows if (RELEASES.get(label) or {}).get("month"))
+    return finding("finding-release", heading, text, chart, legend,
+                   "Models without a documented release month are left out.",
+                   ("about/#leaderboard", "How release months are dated"))
+
+
+def reasoning_groups(S) -> list:
+    """Every model with two or more reasoning settings in the same league (late entries in the league whose field they
+    played): (model, league id, [setups from lowest to highest setting])."""
+    groups = {}
+    for lg, n, r, ref in H.all_rows(S):
+        if not ref:
+            x = _entry(S, lg, n, r)
+            groups.setdefault((x["model"], lg["id"]), []).append(x)
+    for e in S["late_entries"]:
+        x = _late_entry(S, e)
+        groups.setdefault((x["model"], e["field_league"]), []).append(x)
+    out = []
+    for (model, lid), g in groups.items():
+        levelled = any(level(x["setting"], False) > 0 for x in g if x["setting"] != ON)
+        by_level = {}
+        for x in g:
+            by_level.setdefault(level(x["setting"], levelled), []).append(x)
+        if len(by_level) > 1:
+            out.append((model, lid, [_first(by_level[k]) for k in sorted(by_level)]))
+    return sorted(out, key=lambda t: (t[1], t[0]))
+
+
+def _er(x):
+    q = x["q"]
+    return q["error_rate"] if q and q.get("error_rate") is not None and not q.get("too_few") else None
+
+
+def reasoning(S) -> str:
+    """d. The same model at different reasoning settings, in one league. Heading rule: "More thinking: better moves, not
+    better risk calls" only if most such models have a lower error rate at their highest setting and most do not have a
+    higher risk judgement there; else "What thinking adds"."""
+    groups = [(m, lid, xs) for m, lid, xs in reasoning_groups(S)
+              if _er(xs[0]) is not None and _er(xs[-1]) is not None and xs[0]["r"]["judgement"] is not None
+              and xs[-1]["r"]["judgement"] is not None]
+    if not groups:
+        return ""
+    n = len(groups)
+    er_lower = sum(_er(xs[-1]) < _er(xs[0]) for _, _, xs in groups)
+    rj_higher = sum(xs[-1]["r"]["judgement"] > xs[0]["r"]["judgement"] for _, _, xs in groups)
+    ok = 2 * er_lower > n and 2 * rj_higher <= n
+    heading = "More thinking: better moves, not better risk calls" if ok else "What thinking adds"
+    ex = max(groups, key=lambda t: (len(t[2]), -t[1]))
+    text = (f'{count(n)} models played two or more reasoning settings in the same league. At the highest setting, '
+            f'{count(er_lower)} of the {count(n)} had a lower error rate than at the lowest, and {count(rj_higher)} of '
+            f'the {count(n)} a higher risk judgement. {esc(ex[0])}, {esc(ex[2][0]["setting"] or "")} to '
+            f'{esc(ex[2][-1]["setting"] or "")}: risk judgement {", ".join(fmt(x["r"]["judgement"]) for x in ex[2])}; '
+            f'error rate {", ".join(fmt(_er(x)) for x in ex[2])}.')
+    rj = [x["r"]["judgement"] for _, _, xs in groups for x in xs]
+    er = [_er(x) for _, _, xs in groups for x in xs]
+    W, RH, L, T, B, GAP = 640, 26, 200, 30, 26, 24
+    PW = (W - L - GAP - 10) / 2
+    Hh = T + RH * n + B
+    rlo, rhi = math.floor(min(rj) / 10) * 10, math.ceil(max(rj) / 10) * 10
+    ehi = math.ceil(max(er) / 10) * 10
+    xr = lambda v: L + PW * (v - rlo) / ((rhi - rlo) or 1)  # noqa: E731
+    xe = lambda v: L + PW + GAP + PW * v / (ehi or 1)  # noqa: E731
+    parts = [f'<text class="sk-head" x="{L}" y="{T - 14}">Risk judgement (higher is better)</text>'
+             f'<text class="sk-head" x="{L + PW + GAP}" y="{T - 14}">Error rate, PR (lower is better)</text>']
+    for v in range(rlo, rhi + 1, 10):
+        parts.append(f'<line class="grid" x1="{xr(v):.1f}" x2="{xr(v):.1f}" y1="{T - 6}" y2="{Hh - B}"/>'
+                     f'<text class="muted" x="{xr(v):.1f}" y="{Hh - B + 14}" text-anchor="middle">{v}</text>')
+    step = 10 if ehi <= 60 else 20
+    for v in range(0, ehi + 1, step):
+        parts.append(f'<line class="grid" x1="{xe(v):.1f}" x2="{xe(v):.1f}" y1="{T - 6}" y2="{Hh - B}"/>'
+                     f'<text class="muted" x="{xe(v):.1f}" y="{Hh - B + 14}" text-anchor="middle">{v}</text>')
+    for i, (m, lid, xs) in enumerate(groups):
+        cy = T + RH * i + RH / 2
+        c = H.maker(xs[-1]["name"])[1]
+        parts.append(f'<text class="sk-row" x="{L - 8}" y="{cy + 4:.1f}" text-anchor="end">{esc(m)} · L{lid}</text>')
+        for xf, val in ((xr, lambda x: x["r"]["judgement"]), (xe, _er)):
+            pts = [(xf(val(x)), x) for x in xs]
+            parts.append(f'<line class="th-line" x1="{pts[0][0]:.1f}" x2="{pts[-1][0]:.1f}" y1="{cy:.1f}" y2="{cy:.1f}" '
+                         f'style="stroke:{c}"/>')
+            for k, (px, x) in enumerate(pts):
+                top = k == len(pts) - 1
+                parts.append(f'<circle class="th-dot{" th-top" if top else ""}" cx="{px:.1f}" cy="{cy:.1f}" r="4.5" '
+                             f'style="stroke:{c};fill:{c if top else "var(--panel)"}"><title>{esc(x["name"])}: '
+                             f'{fmt(val(x))}</title></circle>')
+    chart = _svg("The same model at its reasoning settings: risk judgement and error rate", W, Hh, "".join(parts))
+    legend = ('<span>One row per model and league; hollow dots: its lower settings, filled dot: its highest setting.</span> '
+              + H.maker_legend(xs[-1]["name"] for _, _, xs in groups))
+    return finding("finding-reasoning", heading, text, chart, legend,
+                   "Not paired: each setting played its own games; these are observed differences.",
+                   ("leagues/?tab=reasoning#board", "Every setting, league by league"))
+
+
+def nack_finding(S) -> str:
+    """e. Nackgammon: standard against Nackgammon error rate per setup and group, Random as the reference (the paired
+    test's own chart). Heading rule: "no clear drop" only if every group comparison's interval (every rule, with and
+    without the additions) includes 0."""
+    import nack_section as NS
+    N, Lt = S["nack"], S["nack_late"]
+    comps = [c for key in ("primary", "primary_original_members") for rule in (N.get(key) or {}).values()
+             for c in rule if c.get("kind") == "group"]
+    clear = bool(comps) and all(c["ci_99"][0] <= 0 <= c["ci_99"][1] for c in comps)
+    heading = "A new starting position: no clear drop in any group" if clear else "A new starting position"
+    rd1 = N["setups"]["Random"]["first"]["drop"]
+    worse = [(s, r) for s, r in ((Lt or {}).get("setups") or {}).items() if r.get("label") == "worse"]
+    text = ("Each model was asked Nackgammon positions and standard positions matched to them. "
+            + ("Every comparison between the groups (decision models, workhorses, frontier) has an interval that "
+               "includes 0. " if clear else "Not every comparison between the groups has an interval that includes 0. ")
+            + f"Random play's own drop is {fmt(rd1, 1, True)} PR on the main 200 pairs: the Nackgammon positions were "
+            f"{'slightly easier' if rd1 < 0 else 'harder'} for random play.")
+    if worse:
+        text += " Outside the groups, " + "; ".join(
+            f'the late entry {esc(s)} dropped ({fmt(r["final"]["drop"], 2, True)} PR, 97.5% interval '
+            f'{fmt(r["final"]["drop_975"][0], 2, True)} to {fmt(r["final"]["drop_975"][1], 2, True)})' for s, r in worse) + "."
+    text += f" <strong>{esc(NS.UNCLEAR_NOTE)}</strong>"
+    legend = ('<span><i class="swatch nack-dot nack-dm"></i>decision models</span> '
+              '<span><i class="swatch nack-dot nack-wh"></i>workhorses</span> '
+              '<span><i class="swatch nack-dot nack-fr"></i>frontier</span> '
+              '<span><i class="swatch nack-dot nack-ng"></i>no group (exploratory)</span> '
+              '<span><i class="swatch nack-yard"></i>GNUbg weak, Random</span> '
+              '<span>Above the dashed diagonal: higher error on Nackgammon.</span>')
+    return finding("finding-nackgammon", heading, text, NS.chart(N), legend,
+                   "Paired positions, not league play; a drop mixes the new start with how hard the positions are.",
+                   ("nackgammon/", "The Nackgammon test"))
+
+
+def learning_finding(S) -> str:
+    """f. Learning from experience: the page's status line, its verdict's first sentence (published wording only) and
+    its risks-found chart. A question, not a claim."""
+    import learning_page as LP
+    L = S["learning"]
+    R = L.get("results")
+    if L.get("preregistration_only"):
+        return ""
+    st = L["status"]
+    text = f'Status: {esc(st["line"])}.'
+    if R and R["complete"] and LP.is_complete(L):
+        text += f' {esc(LP.verdict_head(R))}'
+    chart = (LP.risks_figure(R, "finding-learning-chart") if R and R.get("series_total_done") else "") or \
+        '<p class="note">No finished series yet.</p>'
+    return finding("finding-learning", "Does the model learn from its games?", text, chart, "",
+                   "One model, a small pilot; the plan, every number and the lessons are on its page.",
+                   (LP.PATH, "Learning from experience"))
 
 
 def findings(S) -> str:
-    return cautious(S) + flinch(S)
+    """The finding sections a-f, in Ümit's order (#2938 item 2); the wrapper keeps the old #findings anchor."""
+    return ('<div class="findings" id="findings">' + two_skill(S) + release_chart(S) + flinch(S) + reasoning(S)
+            + nack_finding(S) + learning_finding(S) + '</div>')

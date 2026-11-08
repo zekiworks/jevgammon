@@ -35,7 +35,7 @@
 ## 3. How the scores work
 
 - **Risk call.** A position is a risk call when its legal plays leave different numbers of hitting rolls. The engine compares its best play with the best safe play: if the best play is at least 0.001 better, **risk pays**; otherwise **safety pays**.
-- **Risks found.** The share of risk-pays positions where the model took the risk.
+- **Risks found.** The share of risk-pays positions where the model chose a worthwhile risky play: one at least 0.001 better than the best safe play. A risky play that is not that good counts as a wrong risk, not a risk found.
 - **Safe right.** The share of safety-pays positions where the model played safe.
 - **Risk judgement.** The average of risks found and safe right, from 0 to 100. A model that always plays safe scores 50. A model that gets every call right scores 100.
 - **Error rate.** How much a model's moves give away, as judged by the engine: the PR scale that human players use. Lower is better. A move that matches the engine's best play costs nothing.
@@ -52,7 +52,7 @@
 ## Leaderboard box
 
 1. Models play full games of backgammon. GNU Backgammon scores every move.
-2. Risk judgement: did the model take the risk when it paid, and play safe when safe was right? 50 = always plays safe, 100 = every call right.
+2. Risk judgement: did the model find a worthwhile risk when risk paid, and play safe when safe was right? 50 = always plays safe, 100 = every call right.
 3. Error rate: how much a move gives away, judged by the engine (lower is better).
 4. Everything is public: every position, every legal play, the engine's value for each.
 5. Leagues played different positions, so close scores across leagues are not a clear ranking.

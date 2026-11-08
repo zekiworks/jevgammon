@@ -284,7 +284,10 @@ def headline_rows(S) -> tuple[list, list, list]:
             dot = f'<i class="swatch hl-dot" style="background:{colour}" title="{esc(mk)}"></i>' if colour else \
                 '<i class="swatch hl-dot swatch-program"></i>'
             typ = "program" if kind == "program" else model_type(S, x)
-            under = esc(H.ref_label(S, x["ds"], x["name"]) or "") if kind == "program" else esc(TYPE_LABEL.get(typ, ""))
+            # Under the name (Ümit #2938 item 3): maker · chat model / decision model · setting, each part only where
+            # it is on record (no maker on record, a decision model's absent setting: left out); then a late tag.
+            under = (esc(H.ref_label(S, x["ds"], x["name"]) or "") if kind == "program" else
+                     " \u00b7 ".join(esc(p) for p in (mk if mk != NO_MAKER else None, TYPE_LABEL.get(typ), x["setting"]) if p))
             tag = f'<span class="hl-tag">{esc(late_tag(x))}</span>' if x["late"] else ""
             extra = []
             if kind == "model":
@@ -400,7 +403,9 @@ def headline(S) -> str:
             f'<div data-headline-panel="model">{types}{table}</div>'
             f'<div data-headline-panel="all" hidden>{H.all_risk_table(S)}{caveat(H.RANK_NOTE, "statistics")}</div>'
             f'<p class="table-note headline-rule">{esc(ROW_LINE)} {esc(ALL_NOTE)} '
-            '<a href="about/#leaderboard">How rows are chosen</a></p></section>')
+            '<a href="about/#leaderboard">How rows are chosen</a><span class="hl-wide-note"> $ per 1,000 decisions: at '
+            'each setup\'s price basis, which its details name (a list price, or API-equivalent for a subscription); '
+            'not a bill paid.</span></p></section>')
 
 
 # --- Finding sections ----------------------------------------------------------------------------------------------
@@ -548,13 +553,15 @@ def two_skill(S) -> str:
     s = sorted(m[1]["r"]["right_safety"]["share"] for m in models)
     who = f"Every one of the {count(len(models))}" if len(below) == len(models) else \
         f"{count(len(below))} of the {count(len(models))}"
-    text = (f'{who} ranked models took a smaller share of the risks that paid than the share of safe positions they '
-            f'played right: risks found runs from {pct(f[0])} to {pct(f[-1])}, safe right from {pct(s[0])} to {pct(s[-1])}.')
+    text = (f'{who} ranked models found a worthwhile risk (a risky play at least 0.001 better than the best safe play) '
+            f'in a smaller share of the risk-pays positions than the share of safety-pays positions they played safe: '
+            f'risks found runs from {pct(f[0])} to {pct(f[-1])}, safe right from {pct(s[0])} to {pct(s[-1])}.')
     if gnu:
         g = gnu["r"]
         text += (f' GNUbg weak, a weak setting of the engine (grey square), is close to even: {pct(g["right_safety"]["share"])} '
                  f'safe right, {pct(g["found"]["share"])} risks found.')
-    text += ' Above the diagonal, a model plays safe more often than the positions reward.'
+    text += (' Above the diagonal, a model succeeds more often when safety pays than when risk pays; the chart compares '
+             'these two success rates, not how often a model plays risky at all.')
     W, Hh, L, B, T, R = 520, 420, 52, 44, 12, 14
     x = lambda v: L + (W - L - R) * v  # noqa: E731
     y = lambda v: Hh - B - (Hh - B - T) * v  # noqa: E731
@@ -566,7 +573,7 @@ def two_skill(S) -> str:
                      f'<text class="muted" x="{x(v):.1f}" y="{Hh - B + 14}" text-anchor="middle">{t}%</text>'
                      f'<text class="muted" x="{L - 6}" y="{y(v) + 4:.1f}" text-anchor="end">{t}%</text>')
     parts.append(f'<line class="rm-diag" x1="{x(0):.1f}" y1="{y(0):.1f}" x2="{x(1):.1f}" y2="{y(1):.1f}"/>'
-                 f'<text x="{(L + W - R) / 2}" y="{Hh - 8}" text-anchor="middle">Risks found: took the risk when it paid</text>'
+                 f'<text x="{(L + W - R) / 2}" y="{Hh - 8}" text-anchor="middle">Risks found: a worthwhile risk when risk paid</text>'
                  f'<text x="14" y="{(T + Hh - B) / 2}" transform="rotate(-90 14 {(T + Hh - B) / 2})" text-anchor="middle">'
                  'Safe right: played safe when safe paid</text>')
     for label, xr, c in models:
@@ -615,7 +622,7 @@ def release_chart(S) -> str:
             'are shown, each at the month of its maker\'s own dated statement.')
     if spread:
         text += (f' Makers with models in different months, earliest first: {lines}.'
-                 + ("" if ok else " Not every maker\'s newer model scores higher, so the dates show no clear trend."))
+                 + ("" if ok else " That is not a consistent increase across the makers shown."))
     months = sorted({d[0] for d in dated})
     if not months:
         return ""

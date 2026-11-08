@@ -451,10 +451,11 @@ table.headline tr.reference td { color: var(--text-2); }
 .hbar-fill.ts-grey, i.swatch-ts-grey { background-color: var(--data-grey); }
 i.swatch-ts-safety, i.swatch-ts-found { background-color: var(--text-2); }
 /* Wide screens: four more columns (Ümit #2938 item 3: risks found, safe right, error rate, $ per 1,000). */
-table.headline th[data-wide], table.headline td.hl-wide { display: none; }
+table.headline th[data-wide], table.headline td.hl-wide, .hl-wide-note { display: none; }
 @media (min-width: 900px) {
   table.headline th[data-wide], table.headline td.hl-wide { display: table-cell; white-space: nowrap; }
   td.hl-judgement { width: 40%; }
+  .hl-wide-note { display: inline; }
 }
 /* At phone width: the three columns fit the width (no sticky column, no sideways scrolling), the bar column narrower. */
 @media (max-width: 640px) {

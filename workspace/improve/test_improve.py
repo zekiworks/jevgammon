@@ -234,7 +234,8 @@ class Money(Isolated):
                                                    [("deepseek/deepseek-v4.1-flash-1017", "Fireworks")]))
         self.assertIn("route check", I.route_check("deepseek-v4.1-flash-on",
                                                    [("deepseek/deepseek-v4.1-flash", "Alibaba")]))
-        self.assertIsNone(I.route_check("claude-opus-5.5-on", [("x", "y")]))  # not billed: no check
+        self.assertIsNone(I.route_check("claude-opus-5.5-on", [("claude-opus-5-5", None)]))
+        self.assertIn("route check", I.route_check("claude-opus-5.5-on", [("claude-sonnet-5-5", None)]))
         self.assertIn("fails closed", I.route_check("deepseek-v4.1-flash-on", []))  # no evidence
         self.assertIn("route check", I.route_check("deepseek-v4.1-flash-on", [(None, None)]))
 
@@ -243,7 +244,12 @@ class Money(Isolated):
         self.assertEqual(p["expect_route"]["models"][0], "deepseek/deepseek-v4.1-flash")
         self.assertEqual(p["expect_route"]["provider"], "Fireworks")
         self.assertTrue(p["expect_route"]["reject_log"].endswith("route-rejections.jsonl"))
-        self.assertNotIn("expect_route", I.player_config("claude-opus-5.5-on", "n", 1))
+        p = I.player_config("claude-opus-5.5-on", "n", 1)
+        self.assertEqual((p["expect_route"]["models"], p["quota_pause"]), (["claude-opus-5-5"], True))
+        self.assertNotIn("provider", p["expect_route"])
+        p = I.player_config("gemini-3.8-flash-high", "n", 1)
+        self.assertEqual(p["expect_route"]["model_pointer"], "/response/modelVersion")
+        self.assertNotIn("quota_pause", p)
 
     def test_a_rejected_route_stops_before_any_step(self):
         I.write_atomic(I.mdir(KEY) / "route-rejections.jsonl", '{"reason": "wrong model"}\n')

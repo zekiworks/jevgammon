@@ -1,0 +1,4044 @@
+diff --git a/tools/site/assets/bg.css b/tools/site/assets/bg.css
+index 87cfd0d..e6b731e 100644
+--- a/tools/site/assets/bg.css
++++ b/tools/site/assets/bg.css
+@@ -231,6 +231,10 @@ a.cc-open { font-weight: 600; }
+ #chart-nack { margin: 1rem 0 .5rem; }
+ #nackgammon-paired thead th[data-nosort] { cursor: default; }
+ #nackgammon-paired ul.lettered { list-style: none; padding-left: 1rem; }
++#nackgammon-paired .section-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: .25rem 1rem; }
++#nackgammon-paired .section-head .eyebrow { flex-basis: 100%; margin: 0; }
++#nackgammon-paired .section-head .keys { margin-left: auto; }
++#nackgammon-paired tr.nack-yardstick, #nackgammon-paired tr.nack-yardstick a { color: var(--text-2); }
+ .section-label { margin: .15rem 0 .6rem; font-size: .8rem; color: var(--text-2); }
+ 
+ /* Hype Cup and Nackgammon knockout brackets (Leagues page) and the Matches page. Rounds side by side on a wide screen,
+@@ -405,3 +409,41 @@ i.swatch-refline { width: 0; height: .8rem; border-left: 2px dashed var(--text-2
+   .nav-group > ul { overflow: visible; margin: 0; padding: 0; }
+   .hbar-where { display: block; }
+ }
++
++/* --- The home page as a story (Ümit, bus #2570; story.py): the headline table and the finding sections. --------------- */
++.headline .chart-head .keys { margin-left: auto; }
++table.headline td.model { min-width: 15rem; }
++table.headline td.model .swatch { margin-right: .3rem; }
++td.hl-judgement { min-width: 13rem; }
++.hl-bar { position: relative; display: block; height: .8rem; margin: .2rem 0 .25rem; background: var(--sunk);
++  border-radius: 2px; box-shadow: inset 0 0 0 1px var(--edge); }
++.hl-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 2px; box-shadow: inset 0 0 0 1px var(--mark-edge); }
++.hl-fill.other { background: var(--data-grey); }
++.hl-int { position: absolute; top: 50%; height: 2px; margin-top: -1px; background: var(--text); box-shadow: 0 0 0 1px var(--panel); }
++.hl-safe { position: absolute; left: 50%; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; background: var(--text-2); }
++.hl-val { font-family: var(--mono); font-size: .84rem; }
++td.hl-release { white-space: nowrap; }
++.js [data-headline-panel][hidden] { display: none; }
++.finding h2 { font-size: 1.25rem; }
++.finding-text { max-width: 80ch; margin: 0 0 .75rem; }
++.finding-chart { margin: 0; }
++.section-caveat { margin-top: .6rem; }
++.hbar-fill.q1-board, i.swatch-q1-board { background-color: var(--data-grey); background-image: repeating-linear-gradient(135deg, rgba(255, 255, 255, .55) 0 3px, rgba(0, 0, 0, .12) 3px 6px); }
++/* The Risk calls part's compact filter row (home.filters; Ümit, bus #2570 item 1): league, models, the parts of the page,
++   More filters, the setup count and Reset on one line where they fit, in the view bar's compact key size. */
++.filter-row { padding: 6px 10px; }
++.filter-row .filters-body { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; margin: 0; padding: 0; border: 0; }
++.filter-row .group { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
++.filter-row .group-label { color: var(--view-label); font-size: 10px; font-weight: 700; }
++.filter-row .key { min-height: 26px; padding: 2px 8px; gap: 5px; font-size: 12.5px; }
++.filter-row .face-nav { gap: 4px; }
++.filter-row .face-nav a { min-height: 26px; padding: 2px 8px; border-width: 1.5px; border-radius: 6px; font-size: 12.5px; }
++.filter-row .filters-more { flex: 1 1 100%; gap: 4px 18px; padding-top: 4px; border-top: 1px dashed var(--edge); }
++.filter-row .filters-count { margin-left: auto; }
++.filter-row .reset-why { display: none; }
++@media (max-width: 640px) {
++  .filter-row .group-label { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); }
++  .filter-row .key { min-height: 24px; padding: 1px 7px; font-size: 12px; }
++  .filter-row .part-links .face-nav { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
++  .filter-row .filters-count { margin-left: 0; }
++}
+diff --git a/tools/site/assets/bg.js b/tools/site/assets/bg.js
+index 80d2471..61b3fd6 100644
+--- a/tools/site/assets/bg.js
++++ b/tools/site/assets/bg.js
+@@ -46,6 +46,10 @@ function rowShown(el) {
+   return el.dataset.kind === 'reference' || Object.keys(f).every(g => f[g] === 'all' || el.dataset[g] === f[g]);
+ }
+ 
++/* Parts of the home page the filter row does not govern (bus #2718): the leaderboard is fixed (all leagues, all phases,
++   every setup) and the Nackgammon section has its own Decision / Chat / All and per-model keys. */
++const OWN_SCOPE = '#leaderboard, #nackgammon-paired';
++
+ function activeFilters() {
+   const on = Object.keys(HOME.filters).filter(g => HOME.filters[g] !== 'all').map(g => `${FILTER_LABEL[g]}: ${HOME.filters[g]}`);
+   if (HOME.phase !== 'all') on.push(`Phase: ${HOME.phase}`);
+@@ -115,28 +119,19 @@ function viewOn(v, lg) {
+     && !v.parentElement.querySelector(':scope > [data-league-view="all"]'));
+ }
+ 
+-/* A key in the view bar is a link (it works without the script: ?league=, ?type=): marked with aria-current, not
+-   aria-pressed. */
+-function markKey(key, on) {
+-  if (key.tagName === 'A') {
+-    if (on) key.setAttribute('aria-current', 'true'); else key.removeAttribute('aria-current');
+-  } else {
+-    key.setAttribute('aria-pressed', String(on));
+-  }
+-}
+-
+ function applyHome() {
+   const lg = HOME.league;
+   document.querySelectorAll('[data-league-view]').forEach(v => v.toggleAttribute('data-off', !viewOn(v, lg)));
+   document.querySelectorAll('[data-stack-title]').forEach(h => { h.hidden = lg !== 'all'; });
+-  document.querySelectorAll('[data-league-pick]').forEach(b => markKey(b, b.dataset.leaguePick === lg));
+-  document.querySelectorAll('a[data-filter-kind]').forEach(a => markKey(a, a.dataset.filterKind === HOME.filters.kind));
+-  document.querySelectorAll('tr[data-kind], li.hbar[data-kind]').forEach(tr => { tr.hidden = !rowShown(tr); });
++  document.querySelectorAll('[data-league-pick]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.leaguePick === lg)));
++  // The leaderboard (a fixed global table) and the Nackgammon section (its own keys) are outside the filters' scope.
++  const filtered = el => !el.closest(OWN_SCOPE);
++  document.querySelectorAll('tr[data-kind], li.hbar[data-kind]').forEach(tr => { if (filtered(tr)) tr.hidden = !rowShown(tr); });
+   // A chart's group heading shows while one of its rows does.
+   document.querySelectorAll('li.hbar-group').forEach(h => {
+     h.hidden = !h.parentElement.querySelector(`li.hbar[data-group="${h.dataset.group}"]:not([hidden])`);
+   });
+-  document.querySelectorAll('svg.chart-svg').forEach(layoutChart);
++  document.querySelectorAll('svg.chart-svg').forEach(svg => { if (filtered(svg)) layoutChart(svg); });
+   document.querySelectorAll('.phase-all').forEach(p => { p.hidden = HOME.phase === 'all'; });
+   const box = document.getElementById('filters');
+   if (!box) return;
+@@ -192,17 +187,10 @@ async function loadPhase(phase) {
+   HOME.league = picks.some(b => b.dataset.leaguePick === wanted) ? wanted : HOME.defaultLeague;
+   // ?type=decision (or chat, program): the Model type filter.
+   if (document.querySelector(`[data-filter-kind="${CSS.escape(params.get('type') || '')}"]`)) HOME.filters.kind = params.get('type');
+-  // The view bar's League and Models keys are links (?league=, ?type=); with the script they filter in place.
+-  picks.forEach(b => b.addEventListener('click', event => {
+-    if (b.tagName === 'A') event.preventDefault();
++  picks.forEach(b => b.addEventListener('click', () => {
+     HOME.league = b.dataset.leaguePick;
+     applyHome();
+   }));
+-  document.querySelectorAll('a[data-filter-kind]').forEach(a => a.addEventListener('click', event => {
+-    event.preventDefault();
+-    HOME.filters.kind = a.dataset.filterKind;
+-    applyHome();
+-  }));
+   document.querySelectorAll('[data-quick-view]').forEach(b => b.addEventListener('click', () => {
+     HOME.league = 'all';
+     HOME.filters.kind = b.dataset.quickView;
+@@ -534,3 +522,38 @@ async function savePng(panel, svg, title, lines, filename) {
+   window.addEventListener('hashchange', () => fromHash(true));
+   fromHash(location.hash.length > 1);
+ })();
++
++/* Home page: the headline table's two views (story.py): the best setting per model, or every setup (the All leagues risk
++   table). */
++(function headlineViews() {
++  const keys = [...document.querySelectorAll('[data-headline-view]')];
++  if (!keys.length) return;
++  const show = view => {
++    keys.forEach(k => k.setAttribute('aria-pressed', String(k.dataset.headlineView === view)));
++    document.querySelectorAll('[data-headline-panel]').forEach(p => { p.hidden = p.dataset.headlinePanel !== view; });
++  };
++  keys.forEach(k => k.addEventListener('click', () => show(k.dataset.headlineView)));
++})();
++
++/* Home page: the Nackgammon summary table's keys (nack_section.py; Ümit #2647, #2651): Decision / Chat / All by model
++   type, and One setting per model / All settings. Programs (the yardsticks) are always shown; the notes and every
++   table below the summary keep every setup. */
++(function nackViews() {
++  const sec = document.getElementById('nackgammon-paired');
++  const table = sec && sec.querySelector('#nack-summary');
++  if (!table) return;
++  const kinds = JSON.parse(sec.dataset.nackKinds);
++  const chosen = new Set(JSON.parse(sec.dataset.nackChosen));
++  const state = { kind: 'all', view: 'model' };
++  const apply = () => {
++    sec.querySelectorAll('[data-nack-kind-pick]').forEach(k => k.setAttribute('aria-pressed', String(k.dataset.nackKindPick === state.kind)));
++    sec.querySelectorAll('[data-nack-view]').forEach(k => k.setAttribute('aria-pressed', String(k.dataset.nackView === state.view)));
++    table.querySelectorAll('tbody tr[data-row]').forEach(tr => {
++      const k = kinds[tr.dataset.row];
++      tr.hidden = k !== 'program' && ((state.kind !== 'all' && k !== state.kind) || (state.view === 'model' && !chosen.has(tr.dataset.row)));
++    });
++  };
++  sec.querySelectorAll('[data-nack-kind-pick]').forEach(k => k.addEventListener('click', () => { state.kind = k.dataset.nackKindPick; apply(); }));
++  sec.querySelectorAll('[data-nack-view]').forEach(k => k.addEventListener('click', () => { state.view = k.dataset.nackView; apply(); }));
++  apply();
++})();
+diff --git a/tools/site/build.py b/tools/site/build.py
+index ae0834d..ae96a64 100755
+--- a/tools/site/build.py
++++ b/tools/site/build.py
+@@ -154,6 +154,7 @@ def compute(args) -> dict:
+         close_spec=dict(fixed_on=CC.CC["fixed_on"], definition=CC.DEFINITION, label=CC.LABEL), _close=close_records,
+         close_b=json.loads((CONTENT / "close_choices_b_results.json").read_text()),
+         nack=json.loads((CONTENT / "nack_paired_results.json").read_text()),
++        nack_late=json.loads((CONTENT / "nack_paired_late.json").read_text()),
+         # Clear-risk scan and follow-up (preliminary / partial): saved aggregates (tools/site/clear_risk_publish.py).
+         clear_risk=json.loads((CONTENT / "clear_risk_results.json").read_text()),
+         # Learning from experience (preliminary, running): the plan and the pilot's aggregates, lessons and lesson
+@@ -299,6 +300,8 @@ def write_data(S: dict, out: Path) -> None:
+     write_json(out, "data/v3/close-choices-b.json", dict(version="v3", **S["close_b"]))
+     # Nackgammon paired test (Method spec 2026-10-24 §10): aggregates only (tools/site/nack_paired_publish.py).
+     write_json(out, "data/v3/nack-paired.json", dict(version="v3", **S["nack"]))
++    # Its late entries (§10.14(i), exploratory): a separate file, never merged into the 28 Oct setups.
++    write_json(out, "data/v3/nack-paired-late.json", dict(version="v3", **S["nack_late"]))
+     # Clear-risk scan and follow-up (preliminary / partial): aggregates only (tools/site/clear_risk_publish.py).
+     write_json(out, "data/v3/clear-risk.json", dict(version="v3", **S["clear_risk"]))
+     # Learning from experience (preliminary, running): aggregates only (tools/site/learning_page.py).
+diff --git a/tools/site/content/nack_paired_late.json b/tools/site/content/nack_paired_late.json
+new file mode 100644
+index 0000000..abb00c6
+--- /dev/null
++++ b/tools/site/content/nack_paired_late.json
+@@ -0,0 +1,2745 @@
++{
++ "title": "Nackgammon paired test: late entries",
++ "method": "Method spec 2026-10-24 §10.14(i)",
++ "late_entries_note": "Late entry, exploratory (Method §10.14(i), 2026-11-07): added after this test's results had been computed and read; no group, no primary comparison, M unchanged; same rules and scoring as every setup.",
++ "late_entries": [
++  "SubQ Snap 1.1",
++  "Drex Max 1.1",
++  "Drex 2.0",
++  "Base Labs Elephant-1",
++  "Base Labs Mammoth-1",
++  "Drex Max v1",
++  "Drex 2.0 (local)"
++ ],
++ "intervals_first_final": 0.975,
++ "setups": {
++  "SubQ Snap 1.1": {
++   "group": "late entry (exploratory, §10.14(i))",
++   "aliases": [],
++   "added": false,
++   "first": {
++    "pairs": 200,
++    "standard_pr": 31.91,
++    "nackgammon_pr": 29.66,
++    "drop": -2.25,
++    "drop_975": [
++     -18.09,
++     11.88
++    ],
++    "drop_95": [
++     -15.84,
++     10.11
++    ]
++   },
++   "final": {
++    "pairs": 500,
++    "standard_pr": 31.25,
++    "nackgammon_pr": 32.87,
++    "drop": 1.62,
++    "drop_975": [
++     -7.07,
++     10.07
++    ],
++    "drop_95": [
++     -5.97,
++     9.05
++    ]
++   },
++   "extend_at_first_look": true,
++   "extended": true,
++   "extension_incomplete": null,
++   "label": "unclear",
++   "invalid": {
++    "first": {
++     "nackgammon": 0,
++     "standard": 0
++    },
++    "final": {
++     "nackgammon": 0,
++     "standard": 0
++    }
++   },
++   "cut_off": {
++    "main": {
++     "nackgammon": 0,
++     "standard": 0
++    },
++    "all": {
++     "nackgammon": 0,
++     "standard": 0
++    }
++   },
++   "past_32768_no_limit_sent": {
++    "main": {
++     "nackgammon": 0,
++     "standard": 0
++    },
++    "all": {
++     "nackgammon": 0,
++     "standard": 0
++    }
++   },
++   "sensitivity": {
++    "worst": {
++     "pairs": 200,
++     "standard_pr": 31.91,
++     "nackgammon_pr": 29.66,
++     "drop": -2.25,
++     "drop_975": [
++      -18.09,
++      11.88
++     ]
++    },
++    "drop": {
++     "pairs": 200,
++     "standard_pr": 31.91,
++     "nackgammon_pr": 29.66,
++     "drop": -2.25,
++     "drop_975": [
++      -18.09,
++      11.88
++     ]
++    },
++    "cutoff": {
++     "pairs": 200,
++     "standard_pr": 31.91,
++     "nackgammon_pr": 29.66,
++     "drop": -2.25,
++     "drop_975": [
++      -18.09,
++      11.88
++     ]
++    }
++   },
++   "sensitivity_final_cutoff": {
++    "pairs": 500,
++    "standard_pr": 31.25,
++    "nackgammon_pr": 32.87,
++    "drop": 1.62,
++    "drop_975": [
++     -7.07,
++     10.07
++    ]
++   },
++   "phases": {
++    "opening": {
++     "pairs": 60,
++     "standard_pr": 30.16,
++     "nackgammon_pr": 37.55,
++     "drop": 7.39,
++     "drop_95": [
++      -6.51,
++      21.06
++     ]
++    },
++    "contact": {
++     "pairs": 60,
++     "standard_pr": 42.13,
++     "nackgammon_pr": 38.64,
++     "drop": -3.49,
++     "drop_95": [
++      -23.46,
++      18.42
++     ]
++    },
++    "holding": {
++     "pairs": 30,
++     "standard_pr": 60.08,
++     "nackgammon_pr": 42.23,
++     "drop": -17.85,
++     "drop_95": [
++      -94.94,
++      42.28
++     ]
++    },
++    "race": {
++     "pairs": 25,
++     "standard_pr": 5.27,
++     "nackgammon_pr": 2.75,
++     "drop": -2.51,
++     "drop_95": [
++      -8.14,
++      2.98
++     ]
++    },
++    "bear-off": {
++     "pairs": 25,
++     "standard_pr": 4.44,
++     "nackgammon_pr": 1.02,
++     "drop": -3.41,
++     "drop_95": [
++      -7.89,
++      -0.15
++     ]
++    }
++   },
++   "opening_vs_rest": {
++    "diff": 13.77,
++    "ci_95": [
++     -7.21,
++     37.11
++    ]
++   },
++   "tags": {
++    "(none: bear-off)": {
++     "nackgammon": {
++      "n": 25,
++      "pr": 1.02
++     },
++     "standard": {
++      "n": 25,
++      "pr": 4.44
++     }
++    },
++    "(none: opening)": {
++     "nackgammon": {
++      "n": 60,
++      "pr": 37.55
++     },
++     "standard": {
++      "n": 60,
++      "pr": 30.16
++     }
++    },
++    "(none: race)": {
++     "nackgammon": {
++      "n": 25,
++      "pr": 2.75
++     },
++     "standard": {
++      "n": 25,
++      "pr": 5.27
++     }
++    },
++    "back game": {
++     "nackgammon": {
++      "n": 10,
++      "pr": 51.48
++     },
++     "standard": {
++      "n": 2,
++      "pr": 17.04
++     }
++    },
++    "blitz": {
++     "nackgammon": {
++      "n": 17,
++      "pr": 34.81
++     },
++     "standard": {
++      "n": 23,
++      "pr": 42.33
++     }
++    },
++    "holding": {
++     "nackgammon": {
++      "n": 30,
++      "pr": 42.23
++     },
++     "standard": {
++      "n": 30,
++      "pr": 60.08
++     }
++    },
++    "low-anchor": {
++     "nackgammon": {
++      "n": 7,
++      "pr": 48.65
++     },
++     "standard": {
++      "n": 8,
++      "pr": 48.45
++     }
++    },
++    "other": {
++     "nackgammon": {
++      "n": 11,
++      "pr": 16.02
++     },
++     "standard": {
++      "n": 10,
++      "pr": 32.21
++     }
++    },
++    "priming": {
++     "nackgammon": {
++      "n": 15,
++      "pr": 46.33
++     },
++     "standard": {
++      "n": 17,
++      "pr": 47.68
++     }
++    }
++   },
++   "cost": {
++    "main": {
++     "decisions": 400,
++     "billed_usd_per_1000": 0.112,
++     "api_eq_usd_per_1000": 0.0
++    },
++    "all": {
++     "decisions": 1000,
++     "billed_usd_per_1000": 0.112,
++     "api_eq_usd_per_1000": 0.0
++    }
++   },
++   "risk": {
++    "main": {
++     "standard": {
++      "risk_pays": 66,
++      "safety_pays": 66,
++      "risks_taken": 31.0,
++      "needless": 17.0,
++      "d_prime": 0.56,
++      "caution": 0.36
++     },
++     "nackgammon": {
++      "risk_pays": 66,
++      "safety_pays": 66,
++      "risks_taken": 25.0,
++      "needless": 18.0,
++      "d_prime": 0.29,
++      "caution": 0.45
++     },
++     "change": {
++      "d_prime": -0.27,
++      "d_prime_95": [
++       -0.95,
++       0.34
++      ],
++      "caution": 0.09,
++      "caution_95": [
++       -0.23,
++       0.42
++      ]
++     },
++     "thin": false
++    },
++    "all": {
++     "standard": {
++      "risk_pays": 165,
++      "safety_pays": 165,
++      "risks_taken": 73.0,
++      "needless": 40.0,
++      "d_prime": 0.55,
++      "caution": 0.42
++     },
++     "nackgammon": {
++      "risk_pays": 165,
++      "safety_pays": 165,
++      "risks_taken": 67.0,
++      "needless": 45.0,
++      "d_prime": 0.36,
++      "caution": 0.42
++     },
++     "change": {
++      "d_prime": -0.19,
++      "d_prime_95": [
++       -0.57,
++       0.19
++      ],
++      "caution": 0.0,
++      "caution_95": [
++       -0.2,
++       0.2
++      ]
++     },
++     "thin": false
++    }
++   }
++  },
++  "Drex Max 1.1": {
++   "group": "late entry (exploratory, §10.14(i))",
++   "aliases": [],
++   "added": false,
++   "first": {
++    "pairs": 200,
++    "standard_pr": 28.04,
++    "nackgammon_pr": 24.41,
++    "drop": -3.63,
++    "drop_975": [
++     -12.96,
++     6.07
++    ],
++    "drop_95": [
++     -11.83,
++     4.74
++    ]
++   },
++   "final": {
++    "pairs": 500,
++    "standard_pr": 28.4,
++    "nackgammon_pr": 29.09,
++    "drop": 0.69,
++    "drop_975": [
++     -6.03,
++     7.48
++    ],
++    "drop_95": [
++     -5.23,
++     6.59
++    ]
++   },
++   "extend_at_first_look": true,
++   "extended": true,
++   "extension_incomplete": null,
++   "label": "unclear",
++   "invalid": {
++    "first": {
++     "nackgammon": 0,
++     "standard": 0
++    },
++    "final": {
++     "nackgammon": 0,
++     "standard": 0
++    }
++   },
++   "cut_off": {
++    "main": {
++     "nackgammon": 0,
++     "standard": 0
++    },
++    "all": {
++     "nackgammon": 0,
++     "standard": 0
++    }
++   },
++   "past_32768_no_limit_sent": {
++    "main": {
++     "nackgammon": 0,
++     "standard": 0
++    },
++    "all": {
++     "nackgammon": 0,
++     "standard": 0
++    }
++   },
++   "sensitivity": {
++    "worst": {
++     "pairs": 200,
++     "standard_pr": 28.04,
++     "nackgammon_pr": 24.41,
++     "drop": -3.63,
++     "drop_975": [
++      -12.96,
++      6.07
++     ]
++    },
++    "drop": {
++     "pairs": 200,
++     "standard_pr": 28.04,
++     "nackgammon_pr": 24.41,
++     "drop": -3.63,
++     "drop_975": [
++      -12.96,
++      6.07
++     ]
++    },
++    "cutoff": {
++     "pairs": 200,
++     "standard_pr": 28.04,
++     "nackgammon_pr": 24.41,
++     "drop": -3.63,
++     "drop_975": [
++      -12.96,
++      6.07
++     ]
++    }
++   },
++   "sensitivity_final_cutoff": {
++    "pairs": 500,
++    "standard_pr": 28.4,
++    "nackgammon_pr": 29.09,
++    "drop": 0.69,
++    "drop_975": [
++     -6.03,
++     7.48
++    ]
++   },
++   "phases": {
++    "opening": {
++     "pairs": 60,
++     "standard_pr": 30.58,
++     "nackgammon_pr": 25.44,
++     "drop": -5.14,
++     "drop_95": [
++      -18.22,
++      7.54
++     ]
++    },
++    "contact": {
++     "pairs": 60,
++     "standard_pr": 44.31,
++     "nackgammon_pr": 34.19,
++     "drop": -10.12,
++     "drop_95": [
++      -28.68,
++      6.9
++     ]
++    },
++    "holding": {
++     "pairs": 30,
++     "standard_pr": 28.17,
++     "nackgammon_pr": 29.54,
++     "drop": 1.37,
++     "drop_95": [
++      -26.95,
++      34.4
++     ]
++    },
++    "race": {
++     "pairs": 25,
++     "standard_pr": 6.18,
++     "nackgammon_pr": 9.13,
++     "drop": 2.95,
++     "drop_95": [
++      -5.88,
++      13.83
++     ]
++    },
++    "bear-off": {
++     "pairs": 25,
++     "standard_pr": 4.61,
++     "nackgammon_pr": 7.6,
++     "drop": 2.99,
++     "drop_95": [
++      -2.06,
++      11.63
++     ]
++    }
++   },
++   "opening_vs_rest": {
++    "diff": -2.16,
++    "ci_95": [
++     -18.58,
++     14.24
++    ]
++   },
++   "tags": {
++    "(none: bear-off)": {
++     "nackgammon": {
++      "n": 25,
++      "pr": 7.6
++     },
++     "standard": {
++      "n": 25,
++      "pr": 4.61
++     }
++    },
++    "(none: opening)": {
++     "nackgammon": {
++      "n": 60,
++      "pr": 25.44
++     },
++     "standard": {
++      "n": 60,
++      "pr": 30.58
++     }
++    },
++    "(none: race)": {
++     "nackgammon": {
++      "n": 25,
++      "pr": 9.13
++     },
++     "standard": {
++      "n": 25,
++      "pr": 6.18
++     }
++    },
++    "back game": {
++     "nackgammon": {
++      "n": 10,
++      "pr": 44.17
++     },
++     "standard": {
++      "n": 2,
++      "pr": 17.04
++     }
++    },
++    "blitz": {
++     "nackgammon": {
++      "n": 17,
++      "pr": 13.46
++     },
++     "standard": {
++      "n": 23,
++      "pr": 60.47
++     }
++    },
++    "holding": {
++     "nackgammon": {
++      "n": 30,
++      "pr": 29.54
++     },
++     "standard": {
++      "n": 30,
++      "pr": 28.17
++     }
++    },
++    "low-anchor": {
++     "nackgammon": {
++      "n": 7,
++      "pr": 52.75
++     },
++     "standard": {
++      "n": 8,
++      "pr": 42.66
++     }
++    },
++    "other": {
++     "nackgammon": {
++      "n": 11,
++      "pr": 29.96
++     },
++     "standard": {
++      "n": 10,
++      "pr": 22.78
++     }
++    },
++    "priming": {
++     "nackgammon": {
++      "n": 15,
++      "pr": 45.47
++     },
++     "standard": {
++      "n": 17,
++      "pr": 39.09
++     }
++    }
++   },
++   "cost": {
++    "main": {
++     "decisions": 400,
++     "billed_usd_per_1000": 0.168,
++     "api_eq_usd_per_1000": 0.0
++    },
++    "all": {
++     "decisions": 1000,
++     "billed_usd_per_1000": 0.168,
++     "api_eq_usd_per_1000": 0.0
++    }
++   },
++   "risk": {
++    "main": {
++     "standard": {
++      "risk_pays": 66,
++      "safety_pays": 66,
++      "risks_taken": 28.0,
++      "needless": 15.0,
++      "d_prime": 0.55,
++      "caution": 0.46
++     },
++     "nackgammon": {
++      "risk_pays": 66,
++      "safety_pays": 66,
++      "risks_taken": 22.0,
++      "needless": 10.0,
++      "d_prime": 0.58,
++      "caution": 0.72
++     },
++     "change": {
++      "d_prime": 0.03,
++      "d_prime_95": [
++       -0.63,
++       0.68
++      ],
++      "caution": 0.26,
++      "caution_95": [
++       -0.07,
++       0.6
++      ]
++     },
++     "thin": false
++    },
++    "all": {
++     "standard": {
++      "risk_pays": 165,
++      "safety_pays": 165,
++      "risks_taken": 67.0,
++      "needless": 36.0,
++      "d_prime": 0.54,
++      "caution": 0.5
++     },
++     "nackgammon": {
++      "risk_pays": 165,
++      "safety_pays": 165,
++      "risks_taken": 55.0,
++      "needless": 31.0,
++      "d_prime": 0.45,
++      "caution": 0.65
++     },
++     "change": {
++      "d_prime": -0.09,
++      "d_prime_95": [
++       -0.5,
++       0.32
++      ],
++      "caution": 0.15,
++      "caution_95": [
++       -0.05,
++       0.36
++      ]
++     },
++     "thin": false
++    }
++   }
++  },
++  "Drex 2.0": {
++   "group": "late entry (exploratory, §10.14(i))",
++   "aliases": [],
++   "added": false,
++   "first": {
++    "pairs": 200,
++    "standard_pr": 29.91,
++    "nackgammon_pr": 24.14,
++    "drop": -5.77,
++    "drop_975": [
++     -20.96,
++     6.76
++    ],
++    "drop_95": [
++     -18.71,
++     5.3
++    ]
++   },
++   "final": {
++    "pairs": 500,
++    "standard_pr": 29.39,
++    "nackgammon_pr": 31.35,
++    "drop": 1.95,
++    "drop_975": [
++     -6.39,
++     9.95
++    ],
++    "drop_95": [
++     -5.38,
++     9.03
++    ]
++   },
++   "extend_at_first_look": true,
++   "extended": true,
++   "extension_incomplete": null,
++   "label": "unclear",
++   "invalid": {
++    "first": {
++     "nackgammon": 0,
++     "standard": 0
++    },
++    "final": {
++     "nackgammon": 0,
++     "standard": 0
++    }
++   },
++   "cut_off": {
++    "main": {
++     "nackgammon": 0,
++     "standard": 0
++    },
++    "all": {
++     "nackgammon": 0,
++     "standard": 0
++    }
++   },
++   "past_32768_no_limit_sent": {
++    "main": {
++     "nackgammon": 0,
++     "standard": 0
++    },
++    "all": {
++     "nackgammon": 0,
++     "standard": 0
++    }
++   },
++   "sensitivity": {
++    "worst": {
++     "pairs": 200,
++     "standard_pr": 29.91,
++     "nackgammon_pr": 24.14,
++     "drop": -5.77,
++     "drop_975": [
++      -20.96,
++      6.76
++     ]
++    },
++    "drop": {
++     "pairs": 200,
++     "standard_pr": 29.91,
++     "nackgammon_pr": 24.14,
++     "drop": -5.77,
++     "drop_975": [
++      -20.96,
++      6.76
++     ]
++    },
++    "cutoff": {
++     "pairs": 200,
++     "standard_pr": 29.91,
++     "nackgammon_pr": 24.14,
++     "drop": -5.77,
++     "drop_975": [
++      -20.96,
++      6.76
++     ]
++    }
++   },
++   "sensitivity_final_cutoff": {
++    "pairs": 500,
++    "standard_pr": 29.39,
++    "nackgammon_pr": 31.35,
++    "drop": 1.95,
++    "drop_975": [
++     -6.39,
++     9.95
++    ]
++   },
++   "phases": {
++    "opening": {
++     "pairs": 60,
++     "standard_pr": 26.78,
++     "nackgammon_pr": 24.02,
++     "drop": -2.76,
++     "drop_95": [
++      -14.87,
++      9.52
++     ]
++    },
++    "contact": {
++     "pairs": 60,
++     "standard_pr": 39.07,
++     "nackgammon_pr": 27.2,
++     "drop": -11.87,
++     "drop_95": [
++      -29.73,
++      5.81
++     ]
++    },
++    "holding": {
++     "pairs": 30,
++     "standard_pr": 56.62,
++     "nackgammon_pr": 46.45,
++     "drop": -10.16,
++     "drop_95": [
++      -86.45,
++      45.01
++     ]
++    },
++    "race": {
++     "pairs": 25,
++     "standard_pr": 5.97,
++     "nackgammon_pr": 10.55,
++     "drop": 4.58,
++     "drop_95": [
++      -3.37,
++      15.14
++     ]
++    },
++    "bear-off": {
++     "pairs": 25,
++     "standard_pr": 7.35,
++     "nackgammon_pr": 3.92,
++     "drop": -3.43,
++     "drop_95": [
++      -10.28,
++      3.62
++     ]
++    }
++   },
++   "opening_vs_rest": {
++    "diff": 4.3,
++    "ci_95": [
++     -14.89,
++     26.13
++    ]
++   },
++   "tags": {
++    "(none: bear-off)": {
++     "nackgammon": {
++      "n": 25,
++      "pr": 3.92
++     },
++     "standard": {
++      "n": 25,
++      "pr": 7.35
++     }
++    },
++    "(none: opening)": {
++     "nackgammon": {
++      "n": 60,
++      "pr": 24.02
++     },
++     "standard": {
++      "n": 60,
++      "pr": 26.78
++     }
++    },
++    "(none: race)": {
++     "nackgammon": {
++      "n": 25,
++      "pr": 10.55
++     },
++     "standard": {
++      "n": 25,
++      "pr": 5.97
++     }
++    },
++    "back game": {
++     "nackgammon": {
++      "n": 10,
++      "pr": 20.53
++     },
++     "standard": {
++      "n": 2,
++      "pr": 22.94
++     }
++    },
++    "blitz": {
++     "nackgammon": {
++      "n": 17,
++      "pr": 13.81
++     },
++     "standard": {
++      "n": 23,
++      "pr": 26.41
++     }
++    },
++    "holding": {
++     "nackgammon": {
++      "n": 30,
++      "pr": 46.45
++     },
++     "standard": {
++      "n": 30,
++      "pr": 56.62
++     }
++    },
++    "low-anchor": {
++     "nackgammon": {
++      "n": 7,
++      "pr": 37.32
++     },
++     "standard": {
++      "n": 8,
++      "pr": 49.64
++     }
++    },
++    "other": {
++     "nackgammon": {
++      "n": 11,
++      "pr": 21.82
++     },
++     "standard": {
++      "n": 10,
++      "pr": 26.44
++     }
++    },
++    "priming": {
++     "nackgammon": {
++      "n": 15,
++      "pr": 46.05
++     },
++     "standard": {
++      "n": 17,
++      "pr": 60.54
++     }
++    }
++   },
++   "cost": {
++    "main": {
++     "decisions": 400,
++     "billed_usd_per_1000": 0.163,
++     "api_eq_usd_per_1000": 0.0
++    },
++    "all": {
++     "decisions": 1000,
++     "billed_usd_per_1000": 0.163,
++     "api_eq_usd_per_1000": 0.0
++    }
++   },
++   "risk": {
++    "main": {
++     "standard": {
++      "risk_pays": 66,
++      "safety_pays": 66,
++      "risks_taken": 27.0,
++      "needless": 14.0,
++      "d_prime": 0.56,
++      "caution": 0.51
++     },
++     "nackgammon": {
++      "risk_pays": 66,
++      "safety_pays": 66,
++      "risks_taken": 35.0,
++      "needless": 11.0,
++      "d_prime": 1.02,
++      "caution": 0.44
++     },
++     "change": {
++      "d_prime": 0.46,
++      "d_prime_95": [
++       -0.2,
++       1.13
++      ],
++      "caution": -0.07,
++      "caution_95": [
++       -0.37,
++       0.26
++      ]
++     },
++     "thin": false
++    },
++    "all": {
++     "standard": {
++      "risk_pays": 165,
++      "safety_pays": 165,
++      "risks_taken": 75.0,
++      "needless": 39.0,
++      "d_prime": 0.6,
++      "caution": 0.41
++     },
++     "nackgammon": {
++      "risk_pays": 165,
++      "safety_pays": 165,
++      "risks_taken": 79.0,
++      "needless": 43.0,
++      "d_prime": 0.58,
++      "caution": 0.34
++     },
++     "change": {
++      "d_prime": -0.02,
++      "d_prime_95": [
++       -0.4,
++       0.37
++      ],
++      "caution": -0.07,
++      "caution_95": [
++       -0.26,
++       0.13
++      ]
++     },
++     "thin": false
++    }
++   }
++  },
++  "Base Labs Elephant-1": {
++   "group": "late entry (exploratory, §10.14(i))",
++   "aliases": [],
++   "added": false,
++   "first": {
++    "pairs": 200,
++    "standard_pr": 26.1,
++    "nackgammon_pr": 31.1,
++    "drop": 5.0,
++    "drop_975": [
++     -10.13,
++     17.27
++    ],
++    "drop_95": [
++     -7.86,
++     15.89
++    ]
++   },
++   "final": {
++    "pairs": 500,
++    "standard_pr": 25.23,
++    "nackgammon_pr": 33.89,
++    "drop": 8.66,
++    "drop_975": [
++     0.42,
++     16.02
++    ],
++    "drop_95": [
++     1.68,
++     15.2
++    ]
++   },
++   "extend_at_first_look": true,
++   "extended": true,
++   "extension_incomplete": null,
++   "label": "worse",
++   "invalid": {
++    "first": {
++     "nackgammon": 0,
++     "standard": 0
++    },
++    "final": {
++     "nackgammon": 0,
++     "standard": 0
++    }
++   },
++   "cut_off": {
++    "main": {
++     "nackgammon": 0,
++     "standard": 0
++    },
++    "all": {
++     "nackgammon": 0,
++     "standard": 0
++    }
++   },
++   "past_32768_no_limit_sent": {
++    "main": {
++     "nackgammon": 0,
++     "standard": 0
++    },
++    "all": {
++     "nackgammon": 0,
++     "standard": 0
++    }
++   },
++   "sensitivity": {
++    "worst": {
++     "pairs": 200,
++     "standard_pr": 26.1,
++     "nackgammon_pr": 31.1,
++     "drop": 5.0,
++     "drop_975": [
++      -10.13,
++      17.27
++     ]
++    },
++    "drop": {
++     "pairs": 200,
++     "standard_pr": 26.1,
++     "nackgammon_pr": 31.1,
++     "drop": 5.0,
++     "drop_975": [
++      -10.13,
++      17.27
++     ]
++    },
++    "cutoff": {
++     "pairs": 200,
++     "standard_pr": 26.1,
++     "nackgammon_pr": 31.1,
++     "drop": 5.0,
++     "drop_975": [
++      -10.13,
++      17.27
++     ]
++    }
++   },
++   "sensitivity_final_cutoff": {
++    "pairs": 500,
++    "standard_pr": 25.23,
++    "nackgammon_pr": 33.89,
++    "drop": 8.66,
++    "drop_975": [
++     0.42,
++     16.02
++    ]
++   },
++   "phases": {
++    "opening": {
++     "pairs": 60,
++     "standard_pr": 18.64,
++     "nackgammon_pr": 31.15,
++     "drop": 12.52,
++     "drop_95": [
++      1.95,
++      23.89
++     ]
++    },
++    "contact": {
++     "pairs": 60,
++     "standard_pr": 31.15,
++     "nackgammon_pr": 31.52,
++     "drop": 0.37,
++     "drop_95": [
++      -14.69,
++      16.04
++     ]
++    },
++    "holding": {
++     "pairs": 30,
++     "standard_pr": 63.1,
++     "nackgammon_pr": 57.6,
++     "drop": -5.5,
++     "drop_95": [
++      -82.27,
++      50.55
++     ]
++    },
++    "race": {
++     "pairs": 25,
++     "standard_pr": 7.98,
++     "nackgammon_pr": 19.49,
++     "drop": 11.52,
++     "drop_95": [
++      -2.67,
++      30.51
++     ]
++    },
++    "bear-off": {
++     "pairs": 25,
++     "standard_pr": 5.62,
++     "nackgammon_pr": 9.74,
++     "drop": 4.11,
++     "drop_95": [
++      -4.04,
++      15.03
++     ]
++    }
++   },
++   "opening_vs_rest": {
++    "diff": 10.74,
++    "ci_95": [
++     -7.78,
++     31.87
++    ]
++   },
++   "tags": {
++    "(none: bear-off)": {
++     "nackgammon": {
++      "n": 25,
++      "pr": 9.74
++     },
++     "standard": {
++      "n": 25,
++      "pr": 5.62
++     }
++    },
++    "(none: opening)": {
++     "nackgammon": {
++      "n": 60,
++      "pr": 31.15
++     },
++     "standard": {
++      "n": 60,
++      "pr": 18.64
++     }
++    },
++    "(none: race)": {
++     "nackgammon": {
++      "n": 25,
++      "pr": 19.49
++     },
++     "standard": {
++      "n": 25,
++      "pr": 7.98
++     }
++    },
++    "back game": {
++     "nackgammon": {
++      "n": 10,
++      "pr": 27.83
++     },
++     "standard": {
++      "n": 2,
++      "pr": 18.44
++     }
++    },
++    "blitz": {
++     "nackgammon": {
++      "n": 17,
++      "pr": 10.14
++     },
++     "standard": {
++      "n": 23,
++      "pr": 31.07
++     }
++    },
++    "holding": {
++     "nackgammon": {
++      "n": 30,
++      "pr": 57.6
++     },
++     "standard": {
++      "n": 30,
++      "pr": 63.1
++     }
++    },
++    "low-anchor": {
++     "nackgammon": {
++      "n": 7,
++      "pr": 39.68
++     },
++     "standard": {
++      "n": 8,
++      "pr": 48.45
++     }
++    },
++    "other": {
++     "nackgammon": {
++      "n": 11,
++      "pr": 27.6
++     },
++     "standard": {
++      "n": 10,
++      "pr": 23.05
++     }
++    },
++    "priming": {
++     "nackgammon": {
++      "n": 15,
++      "pr": 57.27
++     },
++     "standard": {
++      "n": 17,
++      "pr": 29.37
++     }
++    }
++   },
++   "cost": {
++    "main": {
++     "decisions": 400,
++     "billed_usd_per_1000": 0.099,
++     "api_eq_usd_per_1000": 0.0
++    },
++    "all": {
++     "decisions": 1000,
++     "billed_usd_per_1000": 0.099,
++     "api_eq_usd_per_1000": 0.0
++    }
++   },
++   "risk": {
++    "main": {
++     "standard": {
++      "risk_pays": 66,
++      "safety_pays": 66,
++      "risks_taken": 28.0,
++      "needless": 8.0,
++      "d_prime": 0.95,
++      "caution": 0.66
++     },
++     "nackgammon": {
++      "risk_pays": 66,
++      "safety_pays": 66,
++      "risks_taken": 28.0,
++      "needless": 12.0,
++      "d_prime": 0.7,
++      "caution": 0.54
++     },
++     "change": {
++      "d_prime": -0.25,
++      "d_prime_95": [
++       -0.94,
++       0.36
++      ],
++      "caution": -0.12,
++      "caution_95": [
++       -0.45,
++       0.21
++      ]
++     },
++     "thin": false
++    },
++    "all": {
++     "standard": {
++      "risk_pays": 165,
++      "safety_pays": 165,
++      "risks_taken": 70.0,
++      "needless": 28.0,
++      "d_prime": 0.76,
++      "caution": 0.57
++     },
++     "nackgammon": {
++      "risk_pays": 165,
++      "safety_pays": 165,
++      "risks_taken": 61.0,
++      "needless": 38.0,
++      "d_prime": 0.4,
++      "caution": 0.53
++     },
++     "change": {
++      "d_prime": -0.36,
++      "d_prime_95": [
++       -0.75,
++       0.02
++      ],
++      "caution": -0.04,
++      "caution_95": [
++       -0.23,
++       0.16
++      ]
++     },
++     "thin": false
++    }
++   }
++  },
++  "Base Labs Mammoth-1": {
++   "group": "late entry (exploratory, §10.14(i))",
++   "aliases": [],
++   "added": false,
++   "first": {
++    "pairs": 200,
++    "standard_pr": 26.01,
++    "nackgammon_pr": 22.35,
++    "drop": -3.66,
++    "drop_975": [
++     -18.14,
++     7.38
++    ],
++    "drop_95": [
++     -15.91,
++     6.28
++    ]
++   },
++   "final": {
++    "pairs": 500,
++    "standard_pr": 22.97,
++    "nackgammon_pr": 24.81,
++    "drop": 1.84,
++    "drop_975": [
++     -5.72,
++     8.72
++    ],
++    "drop_95": [
++     -4.61,
++     7.9
++    ]
++   },
++   "extend_at_first_look": true,
++   "extended": true,
++   "extension_incomplete": null,
++   "label": "unclear",
++   "invalid": {
++    "first": {
++     "nackgammon": 0,
++     "standard": 0
++    },
++    "final": {
++     "nackgammon": 0,
++     "standard": 0
++    }
++   },
++   "cut_off": {
++    "main": {
++     "nackgammon": 0,
++     "standard": 0
++    },
++    "all": {
++     "nackgammon": 0,
++     "standard": 0
++    }
++   },
++   "past_32768_no_limit_sent": {
++    "main": {
++     "nackgammon": 0,
++     "standard": 0
++    },
++    "all": {
++     "nackgammon": 0,
++     "standard": 0
++    }
++   },
++   "sensitivity": {
++    "worst": {
++     "pairs": 200,
++     "standard_pr": 26.01,
++     "nackgammon_pr": 22.35,
++     "drop": -3.66,
++     "drop_975": [
++      -18.14,
++      7.38
++     ]
++    },
++    "drop": {
++     "pairs": 200,
++     "standard_pr": 26.01,
++     "nackgammon_pr": 22.35,
++     "drop": -3.66,
++     "drop_975": [
++      -18.14,
++      7.38
++     ]
++    },
++    "cutoff": {
++     "pairs": 200,
++     "standard_pr": 26.01,
++     "nackgammon_pr": 22.35,
++     "drop": -3.66,
++     "drop_975": [
++      -18.14,
++      7.38
++     ]
++    }
++   },
++   "sensitivity_final_cutoff": {
++    "pairs": 500,
++    "standard_pr": 22.97,
++    "nackgammon_pr": 24.81,
++    "drop": 1.84,
++    "drop_975": [
++     -5.72,
++     8.72
++    ]
++   },
++   "phases": {
++    "opening": {
++     "pairs": 60,
++     "standard_pr": 25.11,
++     "nackgammon_pr": 29.71,
++     "drop": 4.6,
++     "drop_95": [
++      -6.72,
++      15.88
++     ]
++    },
++    "contact": {
++     "pairs": 60,
++     "standard_pr": 35.46,
++     "nackgammon_pr": 33.68,
++     "drop": -1.78,
++     "drop_95": [
++      -19.9,
++      17.55
++     ]
++    },
++    "holding": {
++     "pairs": 30,
++     "standard_pr": 47.62,
++     "nackgammon_pr": 17.23,
++     "drop": -30.39,
++     "drop_95": [
++      -98.17,
++      10.8
++     ]
++    },
++    "race": {
++     "pairs": 25,
++     "standard_pr": 4.3,
++     "nackgammon_pr": 5.32,
++     "drop": 1.02,
++     "drop_95": [
++      -5.31,
++      7.32
++     ]
++    },
++    "bear-off": {
++     "pairs": 25,
++     "standard_pr": 1.24,
++     "nackgammon_pr": 0.65,
++     "drop": -0.59,
++     "drop_95": [
++      -2.18,
++      1.09
++     ]
++    }
++   },
++   "opening_vs_rest": {
++    "diff": 11.8,
++    "ci_95": [
++     -6.27,
++     32.15
++    ]
++   },
++   "tags": {
++    "(none: bear-off)": {
++     "nackgammon": {
++      "n": 25,
++      "pr": 0.65
++     },
++     "standard": {
++      "n": 25,
++      "pr": 1.24
++     }
++    },
++    "(none: opening)": {
++     "nackgammon": {
++      "n": 60,
++      "pr": 29.71
++     },
++     "standard": {
++      "n": 60,
++      "pr": 25.11
++     }
++    },
++    "(none: race)": {
++     "nackgammon": {
++      "n": 25,
++      "pr": 5.32
++     },
++     "standard": {
++      "n": 25,
++      "pr": 4.3
++     }
++    },
++    "back game": {
++     "nackgammon": {
++      "n": 10,
++      "pr": 42.68
++     },
++     "standard": {
++      "n": 2,
++      "pr": 56.29
++     }
++    },
++    "blitz": {
++     "nackgammon": {
++      "n": 17,
++      "pr": 25.21
++     },
++     "standard": {
++      "n": 23,
++      "pr": 34.7
++     }
++    },
++    "holding": {
++     "nackgammon": {
++      "n": 30,
++      "pr": 17.23
++     },
++     "standard": {
++      "n": 30,
++      "pr": 47.62
++     }
++    },
++    "low-anchor": {
++     "nackgammon": {
++      "n": 7,
++      "pr": 37.32
++     },
++     "standard": {
++      "n": 8,
++      "pr": 38.86
++     }
++    },
++    "other": {
++     "nackgammon": {
++      "n": 11,
++      "pr": 16.57
++     },
++     "standard": {
++      "n": 10,
++      "pr": 23.76
++     }
++    },
++    "priming": {
++     "nackgammon": {
++      "n": 15,
++      "pr": 48.14
++     },
++     "standard": {
++      "n": 17,
++      "pr": 39.32
++     }
++    }
++   },
++   "cost": {
++    "main": {
++     "decisions": 400,
++     "billed_usd_per_1000": 0.282,
++     "api_eq_usd_per_1000": 0.0
++    },
++    "all": {
++     "decisions": 1000,
++     "billed_usd_per_1000": 0.282,
++     "api_eq_usd_per_1000": 0.0
++    }
++   },
++   "risk": {
++    "main": {
++     "standard": {
++      "risk_pays": 66,
++      "safety_pays": 66,
++      "risks_taken": 30.0,
++      "needless": 13.0,
++      "d_prime": 0.72,
++      "caution": 0.47
++     },
++     "nackgammon": {
++      "risk_pays": 66,
++      "safety_pays": 66,
++      "risks_taken": 30.0,
++      "needless": 9.0,
++      "d_prime": 0.96,
++      "caution": 0.59
++     },
++     "change": {
++      "d_prime": 0.24,
++      "d_prime_95": [
++       -0.43,
++       0.89
++      ],
++      "caution": 0.12,
++      "caution_95": [
++       -0.22,
++       0.46
++      ]
++     },
++     "thin": false
++    },
++    "all": {
++     "standard": {
++      "risk_pays": 165,
++      "safety_pays": 165,
++      "risks_taken": 72.0,
++      "needless": 26.0,
++      "d_prime": 0.84,
++      "caution": 0.58
++     },
++     "nackgammon": {
++      "risk_pays": 165,
++      "safety_pays": 165,
++      "risks_taken": 67.0,
++      "needless": 27.0,
++      "d_prime": 0.74,
++      "caution": 0.6
++     },
++     "change": {
++      "d_prime": -0.1,
++      "d_prime_95": [
++       -0.51,
++       0.33
++      ],
++      "caution": 0.02,
++      "caution_95": [
++       -0.18,
++       0.23
++      ]
++     },
++     "thin": false
++    }
++   }
++  },
++  "Drex Max v1": {
++   "group": "late entry (exploratory, §10.14(i))",
++   "aliases": [],
++   "added": false,
++   "first": {
++    "pairs": 200,
++    "standard_pr": 25.33,
++    "nackgammon_pr": 26.68,
++    "drop": 1.35,
++    "drop_975": [
++     -14.05,
++     14.41
++    ],
++    "drop_95": [
++     -11.91,
++     12.89
++    ]
++   },
++   "final": {
++    "pairs": 500,
++    "standard_pr": 26.21,
++    "nackgammon_pr": 27.92,
++    "drop": 1.71,
++    "drop_975": [
++     -6.67,
++     9.37
++    ],
++    "drop_95": [
++     -5.52,
++     8.5
++    ]
++   },
++   "extend_at_first_look": true,
++   "extended": true,
++   "extension_incomplete": null,
++   "label": "unclear",
++   "invalid": {
++    "first": {
++     "nackgammon": 0,
++     "standard": 0
++    },
++    "final": {
++     "nackgammon": 0,
++     "standard": 0
++    }
++   },
++   "cut_off": {
++    "main": {
++     "nackgammon": 0,
++     "standard": 0
++    },
++    "all": {
++     "nackgammon": 0,
++     "standard": 0
++    }
++   },
++   "past_32768_no_limit_sent": {
++    "main": {
++     "nackgammon": 0,
++     "standard": 0
++    },
++    "all": {
++     "nackgammon": 0,
++     "standard": 0
++    }
++   },
++   "sensitivity": {
++    "worst": {
++     "pairs": 200,
++     "standard_pr": 25.33,
++     "nackgammon_pr": 26.68,
++     "drop": 1.35,
++     "drop_975": [
++      -14.05,
++      14.41
++     ]
++    },
++    "drop": {
++     "pairs": 200,
++     "standard_pr": 25.33,
++     "nackgammon_pr": 26.68,
++     "drop": 1.35,
++     "drop_975": [
++      -14.05,
++      14.41
++     ]
++    },
++    "cutoff": {
++     "pairs": 200,
++     "standard_pr": 25.33,
++     "nackgammon_pr": 26.68,
++     "drop": 1.35,
++     "drop_975": [
++      -14.05,
++      14.41
++     ]
++    }
++   },
++   "sensitivity_final_cutoff": {
++    "pairs": 500,
++    "standard_pr": 26.21,
++    "nackgammon_pr": 27.92,
++    "drop": 1.71,
++    "drop_975": [
++     -6.67,
++     9.37
++    ]
++   },
++   "phases": {
++    "opening": {
++     "pairs": 60,
++     "standard_pr": 23.26,
++     "nackgammon_pr": 32.22,
++     "drop": 8.95,
++     "drop_95": [
++      -6.53,
++      24.65
++     ]
++    },
++    "contact": {
++     "pairs": 60,
++     "standard_pr": 29.19,
++     "nackgammon_pr": 27.73,
++     "drop": -1.46,
++     "drop_95": [
++      -16.98,
++      14.15
++     ]
++    },
++    "holding": {
++     "pairs": 30,
++     "standard_pr": 53.75,
++     "nackgammon_pr": 41.11,
++     "drop": -12.64,
++     "drop_95": [
++      -88.97,
++      46.6
++     ]
++    },
++    "race": {
++     "pairs": 25,
++     "standard_pr": 6.7,
++     "nackgammon_pr": 10.5,
++     "drop": 3.8,
++     "drop_95": [
++      -5.09,
++      14.87
++     ]
++    },
++    "bear-off": {
++     "pairs": 25,
++     "standard_pr": 5.54,
++     "nackgammon_pr": 9.71,
++     "drop": 4.18,
++     "drop_95": [
++      -4.07,
++      15.16
++     ]
++    }
++   },
++   "opening_vs_rest": {
++    "diff": 10.86,
++    "ci_95": [
++     -10.91,
++     34.66
++    ]
++   },
++   "tags": {
++    "(none: bear-off)": {
++     "nackgammon": {
++      "n": 25,
++      "pr": 9.71
++     },
++     "standard": {
++      "n": 25,
++      "pr": 5.54
++     }
++    },
++    "(none: opening)": {
++     "nackgammon": {
++      "n": 60,
++      "pr": 32.22
++     },
++     "standard": {
++      "n": 60,
++      "pr": 23.26
++     }
++    },
++    "(none: race)": {
++     "nackgammon": {
++      "n": 25,
++      "pr": 10.5
++     },
++     "standard": {
++      "n": 25,
++      "pr": 6.7
++     }
++    },
++    "back game": {
++     "nackgammon": {
++      "n": 10,
++      "pr": 35.43
++     },
++     "standard": {
++      "n": 2,
++      "pr": 22.94
++     }
++    },
++    "blitz": {
++     "nackgammon": {
++      "n": 17,
++      "pr": 14.7
++     },
++     "standard": {
++      "n": 23,
++      "pr": 24.07
++     }
++    },
++    "holding": {
++     "nackgammon": {
++      "n": 30,
++      "pr": 41.11
++     },
++     "standard": {
++      "n": 30,
++      "pr": 53.75
++     }
++    },
++    "low-anchor": {
++     "nackgammon": {
++      "n": 7,
++      "pr": 32.32
++     },
++     "standard": {
++      "n": 8,
++      "pr": 39.17
++     }
++    },
++    "other": {
++     "nackgammon": {
++      "n": 11,
++      "pr": 20.23
++     },
++     "standard": {
++      "n": 10,
++      "pr": 21.61
++     }
++    },
++    "priming": {
++     "nackgammon": {
++      "n": 15,
++      "pr": 40.71
++     },
++     "standard": {
++      "n": 17,
++      "pr": 36.62
++     }
++    }
++   },
++   "cost": {
++    "main": {
++     "decisions": 400,
++     "billed_usd_per_1000": 0.168,
++     "api_eq_usd_per_1000": 0.0
++    },
++    "all": {
++     "decisions": 1000,
++     "billed_usd_per_1000": 0.168,
++     "api_eq_usd_per_1000": 0.0
++    }
++   },
++   "risk": {
++    "main": {
++     "standard": {
++      "risk_pays": 66,
++      "safety_pays": 66,
++      "risks_taken": 27.0,
++      "needless": 9.0,
++      "d_prime": 0.85,
++      "caution": 0.65
++     },
++     "nackgammon": {
++      "risk_pays": 66,
++      "safety_pays": 66,
++      "risks_taken": 28.0,
++      "needless": 12.0,
++      "d_prime": 0.7,
++      "caution": 0.54
++     },
++     "change": {
++      "d_prime": -0.15,
++      "d_prime_95": [
++       -0.82,
++       0.51
++      ],
++      "caution": -0.11,
++      "caution_95": [
++       -0.44,
++       0.21
++      ]
++     },
++     "thin": false
++    },
++    "all": {
++     "standard": {
++      "risk_pays": 165,
++      "safety_pays": 165,
++      "risks_taken": 65.0,
++      "needless": 24.0,
++      "d_prime": 0.78,
++      "caution": 0.66
++     },
++     "nackgammon": {
++      "risk_pays": 165,
++      "safety_pays": 165,
++      "risks_taken": 63.0,
++      "needless": 29.0,
++      "d_prime": 0.63,
++      "caution": 0.61
++     },
++     "change": {
++      "d_prime": -0.15,
++      "d_prime_95": [
++       -0.57,
++       0.25
++      ],
++      "caution": -0.05,
++      "caution_95": [
++       -0.24,
++       0.17
++      ]
++     },
++     "thin": false
++    }
++   }
++  },
++  "Drex 2.0 (local)": {
++   "group": "late entry (exploratory, §10.14(i))",
++   "aliases": [],
++   "added": false,
++   "first": {
++    "pairs": 200,
++    "standard_pr": 29.78,
++    "nackgammon_pr": 24.71,
++    "drop": -5.06,
++    "drop_975": [
++     -20.32,
++     7.69
++    ],
++    "drop_95": [
++     -18.19,
++     6.16
++    ]
++   },
++   "final": {
++    "pairs": 500,
++    "standard_pr": 29.19,
++    "nackgammon_pr": 30.79,
++    "drop": 1.6,
++    "drop_975": [
++     -6.9,
++     9.75
++    ],
++    "drop_95": [
++     -5.78,
++     8.69
++    ]
++   },
++   "extend_at_first_look": true,
++   "extended": true,
++   "extension_incomplete": null,
++   "label": "unclear",
++   "invalid": {
++    "first": {
++     "nackgammon": 0,
++     "standard": 0
++    },
++    "final": {
++     "nackgammon": 0,
++     "standard": 0
++    }
++   },
++   "cut_off": {
++    "main": {
++     "nackgammon": 0,
++     "standard": 0
++    },
++    "all": {
++     "nackgammon": 0,
++     "standard": 0
++    }
++   },
++   "past_32768_no_limit_sent": {
++    "main": {
++     "nackgammon": 0,
++     "standard": 0
++    },
++    "all": {
++     "nackgammon": 0,
++     "standard": 0
++    }
++   },
++   "sensitivity": {
++    "worst": {
++     "pairs": 200,
++     "standard_pr": 29.78,
++     "nackgammon_pr": 24.71,
++     "drop": -5.06,
++     "drop_975": [
++      -20.32,
++      7.69
++     ]
++    },
++    "drop": {
++     "pairs": 200,
++     "standard_pr": 29.78,
++     "nackgammon_pr": 24.71,
++     "drop": -5.06,
++     "drop_975": [
++      -20.32,
++      7.69
++     ]
++    },
++    "cutoff": {
++     "pairs": 200,
++     "standard_pr": 29.78,
++     "nackgammon_pr": 24.71,
++     "drop": -5.06,
++     "drop_975": [
++      -20.32,
++      7.69
++     ]
++    }
++   },
++   "sensitivity_final_cutoff": {
++    "pairs": 500,
++    "standard_pr": 29.19,
++    "nackgammon_pr": 30.79,
++    "drop": 1.6,
++    "drop_975": [
++     -6.9,
++     9.75
++    ]
++   },
++   "phases": {
++    "opening": {
++     "pairs": 60,
++     "standard_pr": 26.76,
++     "nackgammon_pr": 23.82,
++     "drop": -2.93,
++     "drop_95": [
++      -15.38,
++      9.73
++     ]
++    },
++    "contact": {
++     "pairs": 60,
++     "standard_pr": 39.45,
++     "nackgammon_pr": 29.63,
++     "drop": -9.82,
++     "drop_95": [
++      -28.33,
++      8.68
++     ]
++    },
++    "holding": {
++     "pairs": 30,
++     "standard_pr": 57.14,
++     "nackgammon_pr": 46.47,
++     "drop": -10.67,
++     "drop_95": [
++      -86.63,
++      44.25
++     ]
++    },
++    "race": {
++     "pairs": 25,
++     "standard_pr": 5.12,
++     "nackgammon_pr": 9.71,
++     "drop": 4.59,
++     "drop_95": [
++      -3.65,
++      15.24
++     ]
++    },
++    "bear-off": {
++     "pairs": 25,
++     "standard_pr": 5.61,
++     "nackgammon_pr": 3.92,
++     "drop": -1.69,
++     "drop_95": [
++      -7.15,
++      4.48
++     ]
++    }
++   },
++   "opening_vs_rest": {
++    "diff": 3.04,
++    "ci_95": [
++     -16.54,
++     25.12
++    ]
++   },
++   "tags": {
++    "(none: bear-off)": {
++     "nackgammon": {
++      "n": 25,
++      "pr": 3.92
++     },
++     "standard": {
++      "n": 25,
++      "pr": 5.61
++     }
++    },
++    "(none: opening)": {
++     "nackgammon": {
++      "n": 60,
++      "pr": 23.82
++     },
++     "standard": {
++      "n": 60,
++      "pr": 26.76
++     }
++    },
++    "(none: race)": {
++     "nackgammon": {
++      "n": 25,
++      "pr": 9.71
++     },
++     "standard": {
++      "n": 25,
++      "pr": 5.12
++     }
++    },
++    "back game": {
++     "nackgammon": {
++      "n": 10,
++      "pr": 29.27
++     },
++     "standard": {
++      "n": 2,
++      "pr": 22.94
++     }
++    },
++    "blitz": {
++     "nackgammon": {
++      "n": 17,
++      "pr": 13.81
++     },
++     "standard": {
++      "n": 23,
++      "pr": 26.41
++     }
++    },
++    "holding": {
++     "nackgammon": {
++      "n": 30,
++      "pr": 46.47
++     },
++     "standard": {
++      "n": 30,
++      "pr": 57.14
++     }
++    },
++    "low-anchor": {
++     "nackgammon": {
++      "n": 7,
++      "pr": 51.04
++     },
++     "standard": {
++      "n": 8,
++      "pr": 49.64
++     }
++    },
++    "other": {
++     "nackgammon": {
++      "n": 11,
++      "pr": 21.82
++     },
++     "standard": {
++      "n": 10,
++      "pr": 26.44
++     }
++    },
++    "priming": {
++     "nackgammon": {
++      "n": 15,
++      "pr": 43.56
++     },
++     "standard": {
++      "n": 17,
++      "pr": 61.9
++     }
++    }
++   },
++   "cost": {
++    "main": {
++     "decisions": 400,
++     "billed_usd_per_1000": 0.163,
++     "api_eq_usd_per_1000": 0.0
++    },
++    "all": {
++     "decisions": 1000,
++     "billed_usd_per_1000": 0.163,
++     "api_eq_usd_per_1000": 0.0
++    }
++   },
++   "risk": {
++    "main": {
++     "standard": {
++      "risk_pays": 66,
++      "safety_pays": 66,
++      "risks_taken": 26.0,
++      "needless": 12.0,
++      "d_prime": 0.63,
++      "caution": 0.58
++     },
++     "nackgammon": {
++      "risk_pays": 66,
++      "safety_pays": 66,
++      "risks_taken": 37.0,
++      "needless": 12.0,
++      "d_prime": 1.04,
++      "caution": 0.37
++     },
++     "change": {
++      "d_prime": 0.41,
++      "d_prime_95": [
++       -0.25,
++       1.05
++      ],
++      "caution": -0.21,
++      "caution_95": [
++       -0.52,
++       0.12
++      ]
++     },
++     "thin": false
++    },
++    "all": {
++     "standard": {
++      "risk_pays": 165,
++      "safety_pays": 165,
++      "risks_taken": 71.0,
++      "needless": 37.0,
++      "d_prime": 0.58,
++      "caution": 0.46
++     },
++     "nackgammon": {
++      "risk_pays": 165,
++      "safety_pays": 165,
++      "risks_taken": 79.0,
++      "needless": 42.0,
++      "d_prime": 0.6,
++      "caution": 0.35
++     },
++     "change": {
++      "d_prime": 0.02,
++      "d_prime_95": [
++       -0.37,
++       0.4
++      ],
++      "caution": -0.11,
++      "caution_95": [
++       -0.29,
++       0.08
++      ]
++     },
++     "thin": false
++    }
++   }
++  },
++  "Random": {
++   "group": "yardstick",
++   "aliases": [],
++   "added": false,
++   "first": {
++    "pairs": 200,
++    "standard_pr": 87.45,
++    "nackgammon_pr": 82.89,
++    "drop": -4.56,
++    "drop_975": [
++     -18.04,
++     7.86
++    ],
++    "drop_95": [
++     -15.96,
++     6.15
++    ]
++   },
++   "final": {
++    "pairs": 500,
++    "standard_pr": 85.16,
++    "nackgammon_pr": 81.43,
++    "drop": -3.73,
++    "drop_975": [
++     -11.43,
++     3.74
++    ],
++    "drop_95": [
++     -10.41,
++     2.81
++    ]
++   },
++   "extend_at_first_look": false,
++   "extended": false,
++   "extension_incomplete": null,
++   "label": "unclear",
++   "invalid": {
++    "first": {
++     "nackgammon": 0,
++     "standard": 0
++    },
++    "final": {
++     "nackgammon": 0,
++     "standard": 0
++    }
++   },
++   "cut_off": null,
++   "past_32768_no_limit_sent": null,
++   "sensitivity": {
++    "worst": {
++     "pairs": 200,
++     "standard_pr": 87.45,
++     "nackgammon_pr": 82.89,
++     "drop": -4.56,
++     "drop_975": [
++      -18.04,
++      7.86
++     ]
++    },
++    "drop": {
++     "pairs": 200,
++     "standard_pr": 87.45,
++     "nackgammon_pr": 82.89,
++     "drop": -4.56,
++     "drop_975": [
++      -18.04,
++      7.86
++     ]
++    },
++    "cutoff": {
++     "pairs": 200,
++     "standard_pr": 87.45,
++     "nackgammon_pr": 82.89,
++     "drop": -4.56,
++     "drop_975": [
++      -18.04,
++      7.86
++     ]
++    }
++   },
++   "sensitivity_final_cutoff": null,
++   "phases": {
++    "opening": {
++     "pairs": 60,
++     "standard_pr": 95.63,
++     "nackgammon_pr": 84.31,
++     "drop": -11.32,
++     "drop_95": [
++      -23.34,
++      0.42
++     ]
++    },
++    "contact": {
++     "pairs": 60,
++     "standard_pr": 125.31,
++     "nackgammon_pr": 115.99,
++     "drop": -9.32,
++     "drop_95": [
++      -27.33,
++      8.75
++     ]
++    },
++    "holding": {
++     "pairs": 30,
++     "standard_pr": 113.57,
++     "nackgammon_pr": 121.18,
++     "drop": 7.61,
++     "drop_95": [
++      -57.23,
++      63.11
++     ]
++    },
++    "race": {
++     "pairs": 25,
++     "standard_pr": 19.17,
++     "nackgammon_pr": 22.57,
++     "drop": 3.4,
++     "drop_95": [
++      -7.66,
++      16.86
++     ]
++    },
++    "bear-off": {
++     "pairs": 25,
++     "standard_pr": 13.92,
++     "nackgammon_pr": 14.46,
++     "drop": 0.54,
++     "drop_95": [
++      -5.63,
++      6.89
++     ]
++    }
++   },
++   "opening_vs_rest": {
++    "diff": -9.66,
++    "ci_95": [
++     -28.68,
++     9.8
++    ]
++   },
++   "tags": {
++    "(none: bear-off)": {
++     "nackgammon": {
++      "n": 25,
++      "pr": 14.46
++     },
++     "standard": {
++      "n": 25,
++      "pr": 13.92
++     }
++    },
++    "(none: opening)": {
++     "nackgammon": {
++      "n": 60,
++      "pr": 84.31
++     },
++     "standard": {
++      "n": 60,
++      "pr": 95.63
++     }
++    },
++    "(none: race)": {
++     "nackgammon": {
++      "n": 25,
++      "pr": 22.57
++     },
++     "standard": {
++      "n": 25,
++      "pr": 19.17
++     }
++    },
++    "back game": {
++     "nackgammon": {
++      "n": 10,
++      "pr": 104.58
++     },
++     "standard": {
++      "n": 2,
++      "pr": 57.49
++     }
++    },
++    "blitz": {
++     "nackgammon": {
++      "n": 17,
++      "pr": 143.55
++     },
++     "standard": {
++      "n": 23,
++      "pr": 125.59
++     }
++    },
++    "holding": {
++     "nackgammon": {
++      "n": 30,
++      "pr": 121.18
++     },
++     "standard": {
++      "n": 30,
++      "pr": 113.57
++     }
++    },
++    "low-anchor": {
++     "nackgammon": {
++      "n": 7,
++      "pr": 113.21
++     },
++     "standard": {
++      "n": 8,
++      "pr": 92.05
++     }
++    },
++    "other": {
++     "nackgammon": {
++      "n": 11,
++      "pr": 81.52
++     },
++     "standard": {
++      "n": 10,
++      "pr": 135.92
++     }
++    },
++    "priming": {
++     "nackgammon": {
++      "n": 15,
++      "pr": 118.93
++     },
++     "standard": {
++      "n": 17,
++      "pr": 142.31
++     }
++    }
++   },
++   "cost": null,
++   "risk": {
++    "main": {
++     "standard": {
++      "risk_pays": 66,
++      "safety_pays": 66,
++      "risks_taken": 54.16,
++      "needless": 48.81,
++      "d_prime": 0.27,
++      "caution": -0.77
++     },
++     "nackgammon": {
++      "risk_pays": 66,
++      "safety_pays": 66,
++      "risks_taken": 55.93,
++      "needless": 48.96,
++      "d_prime": 0.37,
++      "caution": -0.82
++     },
++     "change": {
++      "d_prime": 0.1,
++      "d_prime_95": [
++       -0.11,
++       0.3
++      ],
++      "caution": -0.05,
++      "caution_95": [
++       -0.15,
++       0.04
++      ]
++     },
++     "thin": false
++    },
++    "all": null
++   }
++  }
++ },
++ "engine_check": {
++  "pairs": 40,
++  "counts": {
++   "rolled_out_plays": 445,
++   "adjusted_plays_used": 438
++  },
++  "per_setup": {
++   "SubQ Snap 1.1": {
++    "2ply": {
++     "standard_pr": 17.11,
++     "nackgammon_pr": 35.79,
++     "drop": 18.67
++    },
++    "rollout": {
++     "standard_pr": 18.47,
++     "nackgammon_pr": 34.63,
++     "drop": 16.16
++    }
++   },
++   "Drex Max 1.1": {
++    "2ply": {
++     "standard_pr": 16.7,
++     "nackgammon_pr": 25.35,
++     "drop": 8.66
++    },
++    "rollout": {
++     "standard_pr": 17.79,
++     "nackgammon_pr": 23.76,
++     "drop": 5.97
++    }
++   },
++   "Drex 2.0": {
++    "2ply": {
++     "standard_pr": 16.0,
++     "nackgammon_pr": 24.64,
++     "drop": 8.64
++    },
++    "rollout": {
++     "standard_pr": 17.43,
++     "nackgammon_pr": 22.48,
++     "drop": 5.04
++    }
++   },
++   "Base Labs Elephant-1": {
++    "2ply": {
++     "standard_pr": 11.68,
++     "nackgammon_pr": 33.6,
++     "drop": 21.93
++    },
++    "rollout": {
++     "standard_pr": 12.17,
++     "nackgammon_pr": 31.54,
++     "drop": 19.37
++    }
++   },
++   "Base Labs Mammoth-1": {
++    "2ply": {
++     "standard_pr": 14.28,
++     "nackgammon_pr": 23.78,
++     "drop": 9.5
++    },
++    "rollout": {
++     "standard_pr": 15.3,
++     "nackgammon_pr": 20.97,
++     "drop": 5.67
++    }
++   },
++   "Drex Max v1": {
++    "2ply": {
++     "standard_pr": 14.03,
++     "nackgammon_pr": 25.65,
++     "drop": 11.61
++    },
++    "rollout": {
++     "standard_pr": 14.67,
++     "nackgammon_pr": 23.72,
++     "drop": 9.05
++    }
++   },
++   "Drex 2.0 (local)": {
++    "2ply": {
++     "standard_pr": 15.27,
++     "nackgammon_pr": 25.61,
++     "drop": 10.34
++    },
++    "rollout": {
++     "standard_pr": 16.25,
++     "nackgammon_pr": 24.89,
++     "drop": 8.65
++    }
++   },
++   "Random": {
++    "2ply": {
++     "standard_pr": 83.84,
++     "nackgammon_pr": 93.55,
++     "drop": 9.72
++    },
++    "rollout": {
++     "standard_pr": 86.1,
++     "nackgammon_pr": 92.13,
++     "drop": 6.03
++    }
++   }
++  },
++  "primary": [],
++  "primary_original_members": [],
++  "settings": "GNUbg 1.08.003 rollout: 1,296 trials per play, cubeless, variance reduction on, quasi-random dice, no truncation, no late evaluation, chequer play 1-ply, seed 1, 8 threads, nice 19; candidates: top 5 at 2-ply plus every play any setup chose"
++ }
++}
+diff --git a/tools/site/content/nack_setup_types.json b/tools/site/content/nack_setup_types.json
+new file mode 100644
+index 0000000..18dc284
+--- /dev/null
++++ b/tools/site/content/nack_setup_types.json
+@@ -0,0 +1,10 @@
++{
++  "note": "Model type of a Nackgammon paired-test setup that has no setups.json entry (it played in no league). Read by home.nack_views; every other setup's type is its setups.json model_type.",
++  "setups": {
++    "GPT-6.1 Terra": {
++      "model_type": "chat model",
++      "model": "GPT-6.1 Terra",
++      "source": "content/method-spec-2026-10-24.md, \u00a710 roster: \"GPT-6.1 Terra (openai/gpt-6.1-terra, effort low)\"; tools/v3/effort_sweep_score.py: route \"OpenRouter (OpenAI endpoint)\". A general OpenAI chat model with a reasoning-effort setting, like GPT-6.1 Sol; not a backgammon decision model."
++    }
++  }
++}
+diff --git a/tools/site/content/release_months.json b/tools/site/content/release_months.json
+new file mode 100644
+index 0000000..82a8570
+--- /dev/null
++++ b/tools/site/content/release_months.json
+@@ -0,0 +1,229 @@
++{
++ "about": "Release months for the headline-table models. A month only where the maker's own page gives an explicit dated release or public-availability statement for that exact model (quote copied verbatim); a mention in another model's post or an undated 'today' does not count; null otherwise. Read 2026-11-07, re-audited the same day (Zeki #2714; mailbox/front-story/evidence/release-audit.json).",
++ "models": {
++  "Celeris-1 Decision": {
++   "month": "2026-10",
++   "url": "https://celeris.ai/celeris-1-decision",
++   "quote": "Tom Hamer · October 8, 2026",
++   "read": "2026-11-07",
++   "note": "Byline date of Celeris's own launch post."
++  },
++  "Claude Fable 5.1": {
++   "month": "2026-09",
++   "url": "https://www.anthropic.com/claude-fable-and-mythos-5-1",
++   "quote": "September 2026",
++   "read": "2026-11-07",
++   "note": "Page header gives month only, above 'We’re introducing Claude Fable 5.1 and Claude Mythos 5.1.'"
++  },
++  "Claude Opus 5.5": {
++   "month": "2026-09",
++   "url": "https://www.anthropic.com/claude-opus-5-5",
++   "quote": "September 22, 2026",
++   "read": "2026-11-07",
++   "note": "Date line directly under the '# Claude Opus 5.5' heading of the launch post."
++  },
++  "Claude Sonnet 5.5": {
++   "month": "2026-09",
++   "url": "https://www.anthropic.com/claude-sonnet-5-5",
++   "quote": "September 28, 2026",
++   "read": "2026-11-07",
++   "note": "Date line directly under the '# Claude Sonnet 5.5' heading of the launch post."
++  },
++  "Clef": {
++   "month": "2026-10",
++   "url": "https://developers.cloudflare.com/changelog/post/2026-10-01-clef-workers-ai/",
++   "quote": "October 1, 2026",
++   "read": "2026-11-07",
++   "note": "Date of Cloudflare changelog post 'Introducing Clef: Cloudflare's first open-source decision models, now on Workers AI'."
++  },
++  "Cygnet (Gemma 4 12B)": {
++   "month": null,
++   "url": null,
++   "quote": null,
++   "read": "2026-11-07",
++   "note": "Cygnet's own repo (https://github.com/blockbrain-ai/cygnet-recipe) was read; it states no release date (only 'retrieved 2026-09-30' for benchmark data). Gemma 4 12B dates not used per instructions."
++  },
++  "Decider Flash v1.2": {
++   "month": "2026-10",
++   "url": "https://docs.perplexity.ai/changelog",
++   "quote": "`pplx-decider-flash-v1.2` is a new 4B decision model at \\$0.01 per million input tokens.",
++   "read": "2026-11-07",
++   "note": "Entry sits under the '**October 2026**' heading of Perplexity's API changelog (exact day not given there)."
++  },
++  "Decider v1.1 27B": {
++   "month": "2026-10",
++   "url": "https://docs.perplexity.ai/changelog",
++   "quote": "`pplx-decider-v1.1-27b` replaces `pplx-decider-v1-27b` as the Decisions API model.",
++   "read": "2026-11-07",
++   "note": "Entry sits under the '**October 2026**' heading of Perplexity's API changelog; HF model card states no date."
++  },
++  "Decider v1.2 27B": {
++   "month": "2026-10",
++   "url": "https://docs.perplexity.ai/changelog",
++   "quote": "`pplx-decider-v1.2` replaces `pplx-decider-v1.1-27b` as the 27B decision model, at \\$0.02 per million input tokens.",
++   "read": "2026-11-07",
++   "note": "Entry sits under the '**October 2026**' heading; perplexity.ai/changelog index also dates the announcing post 10/19/26."
++  },
++  "DeepSeek V4.1 Flash": {
++   "month": "2026-09",
++   "url": "https://api-docs.deepseek.com/updates/",
++   "quote": "Today, we officially release the DeepSeek-V4.1-Flash model.",
++   "read": "2026-11-07",
++   "note": "Sentence is under the '## Date: 2026-09-10' / 'DeepSeek-V4.1-Flash Release' heading of the official change log."
++  },
++  "DeepSeek V4.1 Flash 1017": {
++   "month": "2026-10",
++   "url": "https://api-docs.deepseek.com/updates/",
++   "quote": "DeepSeek V4.1 Flash has been upgraded to DeepSeek-V4.1-Flash-1017.",
++   "read": "2026-11-07",
++   "note": "Under the change log's 'Date: 2026-10-17' entry (re-audited 2026-11-07); the dedicated news page news261017 ('DeepSeek-V4.1-Flash-1017 is here!') was also read."
++  },
++  "Fastino GLiDE": {
++   "month": "2026-09",
++   "url": "https://fastino.ai/blog/introducing-glide-the-first-thinking-decision-model",
++   "quote": "Today we release the Generalized Lightweight Decision Engine (GLiDE), a model trained specifically for difficult, structured decisions.",
++   "read": "2026-11-07",
++   "note": "Post dated September 30, 2026."
++  },
++  "Fastino GLiDE v1.2": {
++   "month": "2026-10",
++   "url": "https://fastino.ai/blog/training-glide-sota-decision-model",
++   "quote": "At the time of its October 22 launch, GLiDE v1.2 ranked #1 on the [Hugging Face Decision Index v0.4.1](https://huggingface.co/spaces/multimodalart/jev-decision-index) with a score of 71.5.",
++   "read": "2026-11-07",
++   "note": "Post dated October 22, 2026."
++  },
++  "GLM-5.3": {
++   "month": "2026-08",
++   "url": "https://docs.z.ai/release-notes/new-released",
++   "quote": "**2026-08-18**",
++   "read": "2026-11-07",
++   "note": "Z.ai 'New Released' entry dated 2026-08-18 for GLM-5.3 (blog z.ai/blog/glm-5.3 says 'Today we are releasing GLM-5.3' but shows no readable date)."
++  },
++  "GPT-6 Astra": {
++   "month": "2026-09",
++   "url": "https://openai.com/research/index/release/",
++   "quote": "Sep 3, 2026\n\n[GPT-6 Astra: A new generation of intelligence",
++   "read": "2026-11-07",
++   "note": "OpenAI's release index lists Astra's own launch post (/index/gpt-6-astra/) at Sep 3, 2026; the post itself shows no date. Re-audited 2026-11-07 (Zeki #2714): a related-posts card on another post is not used."
++  },
++  "GPT-6 Luna": {
++   "month": "2026-09",
++   "url": "https://openai.com/index/gpt-6-astra/",
++   "quote": "***Update on September 22, 2026:*** *We are expanding our GPT‑6 family with GPT‑6 Sol and GPT‑6 Luna.*",
++   "read": "2026-11-07",
++   "note": "Luna launch post (introducing-gpt-6-sol-and-luna) says 'available ... starting today' and is listed as Sep 22, 2026."
++  },
++  "GPT-6.1 Sol": {
++   "month": "2026-09",
++   "url": "https://openai.com/index/gpt-6-astra/",
++   "quote": "***Update on September 29, 2026:*** *Learn about OpenAI's latest model:* [*GPT‑6 .1 Sol*⁠](/index/introducing-gpt-6-1-sol/)*.*",
++   "read": "2026-11-07",
++   "note": "Sol post says 'GPT-6.1 Sol is available starting today' but has no date; date taken from this update note."
++  },
++  "Gemini 3.8 Flash": {
++   "month": "2026-09",
++   "url": "https://blog.google/innovation-and-ai/models-and-research/gemini-models/3-8-flash-and-3-8-flash-cyber/",
++   "quote": "Sep 02, 2026",
++   "read": "2026-11-07",
++   "note": "Date under '# Introducing Gemini 3.8 Flash and 3.8 Flash Cyber'."
++  },
++  "Gemini 4 Argon": {
++   "month": "2026-10",
++   "url": "https://blog.google/innovation-and-ai/technology/developers-tools/build-with-gemini-4-argon/",
++   "quote": "Starting today, developers can build with [Gemini 4 Argon]",
++   "read": "2026-11-07",
++   "note": "Post dated Oct 13, 2026. Doubt: announced Sep 30, 2026 (gemini-4-argon post) but then only 'rolling out to trusted cyber defenders through the Fairwind Program'; Oct 13 used as public availability."
++  },
++  "Gemma 4 31B": {
++   "month": "2026-04",
++   "url": "https://blog.google/innovation-and-ai/technology/developers-tools/gemma-4/",
++   "quote": "Apr 02, 2026",
++   "read": "2026-11-07",
++   "note": "Gemma 4 launch post (lists the 31B Dense model)."
++  },
++  "Grok 4.7": {
++   "month": "2026-09",
++   "url": "https://x.ai/news/grok-4-7",
++   "quote": "[Back to news](/news)Sep 21, 2026",
++   "read": "2026-11-07",
++   "note": "Date header of 'Introducing Grok 4.7'."
++  },
++  "Jev 1.13.0": {
++   "month": null,
++   "url": null,
++   "quote": null,
++   "read": "2026-11-07",
++   "note": "No official page found stating when jev-1.13.0 was released; typesafe.ai/blog/introducing-system-one-models-and-jev (Sep 15, 2026) and docs.typesafe.ai/models, /changelog were read and do not date 1.13.0."
++  },
++  "Jev 1.14.0": {
++   "month": "2026-10",
++   "url": "https://docs.typesafe.ai/models",
++   "quote": "Jev 1.14 is the newest Jev release, available from October 14, 2026.",
++   "read": "2026-11-07",
++   "note": "Also typesafe.ai/blog/jev-1-14 dated Oct 14, 2026."
++  },
++  "Kimi K3.1 Pro": {
++   "month": "2026-10",
++   "url": "https://forum.moonshot.ai/t/kimi-k3-1-pro-has-launched-start-exploring-now/629",
++   "quote": "### Post 1 - @Zoe - 2026-10-23 - Likes: 0",
++   "read": "2026-11-07",
++   "note": "Moonshot's official forum announcement 'Kimi K3.1 Pro has launched!'; date is the post timestamp."
++  },
++  "LFM2.5-24B-A2B": {
++   "month": "2026-10",
++   "url": "https://www.liquid.ai/blog/lfm2-5-24b-a2b",
++   "quote": "Today, we release **LFM2.5-24B-A2B**, a 24B-parameter reasoning model with just 2B active parameters, built for fast, private agents on-device.",
++   "read": "2026-11-07",
++   "note": "Post dated OCT 13, 2026."
++  },
++  "Liquid d1-ultra": {
++   "month": "2026-10",
++   "url": "https://www.liquid.ai/blog/d1-ultra",
++   "quote": "Today, we release d1-ultra, our new multimodal **decision model with state-of-the-art performance**.",
++   "read": "2026-11-07",
++   "note": "Post dated OCT 15, 2026."
++  },
++  "Mercury Decide": {
++   "month": null,
++   "url": null,
++   "quote": null,
++   "read": "2026-11-07",
++   "note": "Re-audited 2026-11-07 (Zeki #2714): only a portfolio mention in the Mercury 3 post (inceptionlabs.ai/blog/introducing-mercury-3); the maker's blog index, models page and home page give no dated release of Mercury Decide itself, so no month."
++  },
++  "Open-Jev 27B v1.1": {
++   "month": null,
++   "url": null,
++   "quote": null,
++   "read": "2026-11-07",
++   "note": "HF card ZefanCai/Open-Jev-27B-v1.1 read; it states no release date (commit dates not counted)."
++  },
++  "Qwen3.8 Flash": {
++   "month": null,
++   "url": null,
++   "quote": null,
++   "read": "2026-11-07",
++   "note": "Not used: the page does not name this exact model (Alibaba Cloud Model Studio new-models page; assumes our 'Qwen3.8 Flash' is the API model qwen3.8-flash (open-weight Qwen3.8-Flash-Next also dated 2026-08-26 on its GitHub).); a month shown must be stated for the exact model name (Ümit #2570: never guess). Was 2026-08 from https://www.alibabacloud.com/help/en/model-studio/newly-released-models."
++  },
++  "Qwen3.8-27B": {
++   "month": "2026-08",
++   "url": "https://github.com/QwenLM/Qwen3.8",
++   "quote": "- 2026-08-14: Qwen3.8-27B is now available on [Hugging Face Hub](https://huggingface.co/collections/Qwen/qwen38) and [ModelScope](https://www.modelscope.cn/collections/Qwen/Qwen38).",
++   "read": "2026-11-07",
++   "note": "Official QwenLM GitHub news list."
++  },
++  "SubQ Snap Preview": {
++   "month": null,
++   "url": null,
++   "quote": null,
++   "read": "2026-11-07",
++   "note": "Not used: the page does not name this exact model (Post dated October 12, 2026. Doubt: page names the model 'SubQ Snap' and its status 'Public Preview', not literally 'SubQ Snap Preview'.); a month shown must be stated for the exact model name (Ümit #2570: never guess). Was 2026-10 from https://subq.ai/introducing-subq-snap."
++  },
++  "Winnow-12B": {
++   "month": null,
++   "url": null,
++   "quote": null,
++   "read": "2026-11-07",
++   "note": "HF card EldanRing/Winnow-12B read; it states no release date."
++  }
++ }
++}
+diff --git a/tools/site/home.py b/tools/site/home.py
+index 5ecfed1..a17f1a6 100644
+--- a/tools/site/home.py
++++ b/tools/site/home.py
+@@ -24,9 +24,11 @@ LIMIT_HARD = ("Setups met different positions; risk judgement is not adjusted fo
+               "comparisons wait for the shared positions.")
+ # Under the risk leaderboard chart (Ümit #2564; wording Zeki #2578).
+ RANK_NOTE = "Ranks show observed scores; small gaps need not be meaningful."
+-# The hero's prominent links (Ümit #2564): existing pages and anchors only.
+-HERO_LINKS = [("Risk calls leaderboard", "#risk-judgement"), (P.TAB_LEARNING, P.TAB_LEARNING_PATH),
+-              ("Every decision", "decisions/"), ("Leagues and matches", "#leagues-tabs")]
++# The hero's three buttons (Ümit #2564, #2570 item 1), existing pages only and named for what they open: there is no
++# write-up yet, so the first opens the Method page; Every decision has no filter for the engine's best play, so the
++# second opens its existing right-risk filter (the setup in view is named there, and any other can be picked).
++HERO_LINKS = [("Read the method", "method/"), ("Right risk calls, decision by decision", "decisions/?r=risk&c=rr"),
++              ("Every decision", "decisions/")]
+ GNUBG_WEAK = "x86-64 build: its noise is shifted, so it overplays gammons"
+ CALL_LABEL = {"needless": "needless risks", "missed": "missed risks", "wrong_risk": "wrong risks",
+               "right_risk": "right risks", "right_safety": "right safety", "none": "No trade-off"}
+@@ -70,6 +72,33 @@ def type_meta(S, ds, name) -> dict:
+                 P.meta(S, ds, name))
+ 
+ 
++NACK_TYPES = json.loads((CONTENT / "nack_setup_types.json").read_text())["setups"]
++
++
++def nack_views(S) -> tuple[dict, list]:
++    """The Nackgammon section's views: each setup's model type (decision / chat / program; its setups.json entry, a
++    league entry first as for a ladder move, else content/nack_setup_types.json for a setup that played in no league),
++    and the one setting per model of the per-model view: the model's setting with the highest stored All-leagues risk
++    judgement (the leaderboard's rule, from league play, never from this test). A model with one setting keeps it."""
++    N = S["nack"]
++    judged = {n: r["judgement"] for lg, n, r, ref in all_rows(S) if not ref and r["judgement"] is not None}
++    kinds, models = {}, {}
++    for n in N["setups"]:
++        m = (next((m for (d, x), m in S["setups_meta"].items() if x == n and d.startswith("league-")), None)
++             or next((m for (d, x), m in S["setups_meta"].items() if x == n), None) or NACK_TYPES.get(n))
++        if m is None:
++            raise ValueError(f"Nackgammon setup {n!r}: no model type (setups.json or content/nack_setup_types.json)")
++        kinds[n] = kind(m)
++        if kinds[n] != "program":
++            models.setdefault(m.get("model") or n, []).append(n)
++    chosen = []
++    for model, names in models.items():
++        if len(names) > 1 and any(judged.get(x) is None for x in names):
++            raise ValueError(f"Nackgammon model {model!r}: a setting without a league risk judgement among {names}")
++        chosen.append(max(names, key=lambda x: (judged.get(x) or 0, x)))
++    return kinds, chosen
++
++
+ def cell_model(S, ds, name, ref=None) -> str:
+     if ref:
+         return (f'<td class="model"><span class="model-name">{esc(name)}</span>'
+@@ -1280,33 +1309,37 @@ def filters(S) -> str:
+     settings = [("all", "All")] + [(v, cap(v)) for v in sorted({m["setting"] for m in ms if m.get("setting")})] + [("none", "None")]
+     runs = [("all", "All")] + [(v, cap(v)) for v in sorted({m["runs_on"] for m in ms if m.get("runs_on")})]
+     weights = [("all", "All")] + [(v, cap(v)) for v in sorted({m["weights"] for m in ms if m.get("weights")})]
+-    pick = lambda ds, label: (f'<button type="button" class="key" data-league-pick="{ds}" aria-pressed="'
+-                              f'{str(ds == default_league(S)).lower()}"><span class="lamp" aria-hidden="true"></span>{label}</button>')
+-    leagues = pick(ALL, "All leagues") + "".join(pick(lg["dataset"], f'League {lg["id"]}') for lg in S["leagues"])
+-    leagues += ('<button type="button" class="key" data-league-pick="shared" aria-pressed="false"><span class="lamp" '
+-                f'aria-hidden="true"></span>Shared positions</button>')
++    pick = lambda ds, label, full: (f'<button type="button" class="key" data-league-pick="{ds}" aria-pressed="'
++                                    f'{str(ds == default_league(S)).lower()}" aria-label="{full}"><span class="lamp" '
++                                    f'aria-hidden="true"></span>{label}</button>')
++    leagues = pick(ALL, "All", "All leagues") + "".join(pick(lg["dataset"], lg["id"], f'League {lg["id"]}') for lg in S["leagues"])
++    leagues += pick("shared", "Shared", "Shared positions").replace('aria-pressed="true"', 'aria-pressed="false"')
+     phases = "".join(f'<option value="{p}">{esc(P.PHASE_LABEL[p])}</option>' for p in A.PHASES)
+     # The model setups of each league; the programs are reference rows, never counted.
+     totals = {lg["dataset"]: sum(1 for n in lg["setups"] if not ref_label(S, lg["dataset"], n)) for lg in S["leagues"]}
+     totals = {ALL: sum(totals.values()), **totals}
+-    # The league and the model type stay in view; phase, reasoning, runs on and weights fold behind "More filters", whose
+-    # key names the active ones while it is closed (bg.js).
+-    return f"""<section class="panel filters is-open needs-js" id="filters" aria-labelledby="filters-title">
+-      <h2 id="filters-title" class="filters-title">Filters</h2>
++    parts = ([("leaderboard", "Leaderboard")] + MEASURES + [("board-panel", "Every number")])
++    links = "".join(f'<a href="#{k}">{esc(l)}</a>' for k, l in parts)
++    # One compact row on the Risk calls part (Ümit, bus #2570, item 1), out of the sticky header: the league and the
++    # model type, the parts of the page, and behind "More filters" the quick view, phase, reasoning, runs on and weights,
++    # whose key names the active ones while it is closed (bg.js); the setup count and Reset at the end.
++    return f"""<nav class="panel filters filter-row" id="filters" aria-labelledby="filters-title">
++      <h2 id="filters-title" class="visually-hidden">Filters and parts of this page</h2>
+       <div class="filters-body" id="filters-body">
+-        <div class="group league-pick" role="group" aria-labelledby="f-league"><span class="group-label" id="f-league">League</span><span class="keys">{leagues}</span></div>
+-        {group("kind", "Model type", [("all", "All types"), ("decision", "Decision"), ("chat", "Chat"), ("program", "Program")])}
+-        <div class="group quick-view" role="group" aria-labelledby="f-quick"><span class="group-label" id="f-quick">Quick view</span><span class="keys"><button type="button" class="key" data-quick-view="decision" aria-pressed="false"><span class="lamp" aria-hidden="true"></span>Decision models · all leagues</button></span></div>
+-        <div class="group more-filters"><button type="button" class="key fold-toggle" data-more-filters aria-expanded="false" aria-controls="filters-more"><span class="chevron" aria-hidden="true"></span>More filters<span class="fold-summary" data-more-summary> · phase, reasoning, runs on, weights</span></button></div>
+-        <div class="filters-more" id="filters-more" hidden>
++        <div class="group league-pick needs-js" role="group" aria-labelledby="f-league"><span class="group-label" id="f-league">League</span><span class="keys">{leagues}</span></div>
++        <div class="needs-js">{group("kind", "Models", [("all", "All"), ("decision", "Decision"), ("chat", "Chat"), ("program", "Program")])}</div>
++        <div class="group part-links"><span class="group-label">Measure</span><span class="face-nav">{links}</span></div>
++        <div class="group more-filters needs-js"><button type="button" class="key fold-toggle" data-more-filters aria-expanded="false" aria-controls="filters-more"><span class="chevron" aria-hidden="true"></span>More filters<span class="fold-summary" data-more-summary> · phase, reasoning, runs on, weights</span></button></div>
++        <div class="group filters-count needs-js"><span class="setup-count" data-setups data-totals='{esc(json.dumps(totals))}' aria-live="polite">{count(totals[default_league(S)])} of {count(totals[default_league(S)])} setups</span>
++        <button type="button" class="key reset" data-control="reset" aria-disabled="true" data-tip="Nothing to reset: the filters show the defaults.">Reset</button>
++        <span class="small reset-why" data-reset-why hidden>Nothing to reset: the filters show the defaults.</span></div>
++        <div class="filters-more needs-js" id="filters-more" hidden>
++          <div class="group quick-view" role="group" aria-labelledby="f-quick"><span class="group-label" id="f-quick">Quick view</span><span class="keys"><button type="button" class="key" data-quick-view="decision" aria-pressed="false"><span class="lamp" aria-hidden="true"></span>Decision models · all leagues</button></span></div>
+           <label class="group"><span class="group-label">Phase</span> <select data-control="phase"><option value="all">All phases</option>{phases}</select></label>
+           {group("setting", "Reasoning", settings)}{group("runs", "Runs on", runs)}{group("weights", "Weights", weights)}
+         </div>
+-        <div class="group"><span class="setup-count" data-setups data-totals='{esc(json.dumps(totals))}' aria-live="polite">{count(totals[default_league(S)])} of {count(totals[default_league(S)])} setups</span>
+-        <button type="button" class="key reset" data-control="reset" aria-disabled="true" data-tip="Nothing to reset: the filters show the defaults.">Reset</button>
+-        <span class="small reset-why" data-reset-why>Nothing to reset: the filters show the defaults.</span></div>
+       </div>
+-    </section>"""
++    </nav>"""
+ 
+ 
+ # --- Chart panels ----------------------------------------------------------------------------------------------
+@@ -1521,27 +1554,6 @@ def family(name: str) -> dict | None:
+     return next((f for f in FAMILIES if re.match(f["match"], name)), None)
+ 
+ 
+-def view_rows(S) -> str:
+-    """The home page's rows of the view bar, after its Home key: the League and Models filters (the filters panel's League
+-    and Model type, kept in step by bg.js; ?league= and ?type= as before) and the parts of the page."""
+-    def row(cls, rid, label, keys):
+-        return (f'<div class="view-row {cls}" role="group" aria-labelledby="{rid}"><span class="view-label" id="{rid}">'
+-                f'{label}</span><ul>{"".join(f"<li>{k}</li>" for k in keys)}</ul></div>')
+-    # Each label in one span, so the key's flex box keeps the space before the words a phone shows (as the sibling's).
+-    leagues = [f'<a class="view-key" href="./" data-league-pick="{ALL}" aria-current="true"><span>All<span class="view-more">'
+-               f' leagues</span></span></a>'] + [f'<a class="view-key" href="?league={lg["dataset"]}" data-league-pick="'
+-                                                f'{lg["dataset"]}"><span><span class="view-more">League </span>{lg["id"]}</span></a>'
+-                                                for lg in S["leagues"]]
+-    kinds = [f'<a class="view-key" href="{"./" if k == ALL else f"?type={k}"}" data-filter-kind="{k}"'
+-             f'{" aria-current=true" if k == ALL else ""}>{l}</a>'
+-             for k, l in ((ALL, "All"), ("decision", "Decision"), ("chat", "Chat"))]
+-    parts = [f'<a class="view-key" href="#{k}" data-view-measure="{k}">{esc(l)}</a>' for k, l in MEASURES]
+-    parts.append('<a class="view-key" href="#board-panel" data-view-measure="board-panel">Every number</a>')
+-    return (row("view-leagues view-filter", "view-league", "League", leagues)
+-            + row("view-groups view-filter", "view-models", "Models", kinds)
+-            + row("view-measures", "view-measure", "Measure", parts))
+-
+-
+ def chart_rows(S, lg, measure: str) -> list:
+     """(name, reference label, value, low, high, setup's quality or None) for one league and measure: Risk judgement
+     every setup and reference row of the Risk table; the other measures the setups of the Quality and Cost tables."""
+@@ -1716,15 +1728,15 @@ def measure_chart_card(S, measure: str, title: str) -> str:
+                                 '</i>50 = always safe'),
+              "error-rate": ('<i class="swatch swatch-interval"></i>95% interval</span> <span><i class="swatch swatch-refline">'
+                             '</i>a program\'s error rate (reference row, named above the axis)')}.get(measure)
+-    notes = {"risk-judgement": [RANK_NOTE, LIMIT_HIT, LIMIT_HARD],
+-             "error-rate": [LIMIT_PAIRED],
+-             "cost": ["\u00a7 list-price estimate; runs on our GPUs: each setup's price label is in its row's tooltip and "
+-                      "in the Cost tab.", LIMIT_PAIRED],
+-             "time": [LIMIT_PAIRED]}[measure]
++    # One caveat per section (Ümit, bus #2570 item 4); the others are on the Method page (Limits, Cost), linked.
++    caveat = {"risk-judgement": (RANK_NOTE, "statistics"), "error-rate": (LIMIT_PAIRED, "limits"),
++              "cost": ("\u00a7 list-price estimate; runs on our GPUs: each setup's price label is in its row's tooltip "
++                       "and in the Cost tab.", "cost"),
++              "time": (LIMIT_PAIRED, "limits")}[measure]
+     return (f'<section class="measure" id="{measure}" aria-label="{esc(title)}"><figure class="panel chart-card chart-wide" '
+             f'id="chart-{measure}"><div class="chart-head"><h2>{esc(title)}</h2><p class="chart-sub">{sub}</p>{keys}</div>'
+             f'{views}<p class="chart-legend">{legend}{f"<span>{extra}</span>" if extra else ""}</p>'
+-            + "".join(f'<p class="table-note">{esc(x)}</p>' for x in notes)
++            + f'<p class="table-note section-caveat">{esc(caveat[0])} <a href="method/#{caveat[1]}">More caveats: Method</a></p>'
+             + f'<p class="table-note phase-all" hidden>{esc(PHASE_ALL_CHARTS)}</p></figure></section>')
+ 
+ 
+@@ -1780,7 +1792,7 @@ WHAT_THIS_MEASURES = ("Risk calls per setup: was each risk the right one, and wa
+ 
+ 
+ def how_numbers(S) -> str:
+-    """'How the numbers work' (Ümit #2564): sentences of the Method page only, quoted as published there, each with the
++    """'How the scoring works' (Ümit #2564; the heading #2570 item 5): sentences of the Method page only, quoted as published there, each with the
+     Method section it comes from (mailbox/learning-page-review3/README.md lists them). No new claim."""
+     t = S["thresholds"]
+     items = [
+@@ -1803,7 +1815,7 @@ def how_numbers(S) -> str:
+          "for how hard the positions were.")]
+     lis = "".join(f'<li><strong>{esc(k)}.</strong> {esc(v)} <a class="small" href="method/#{a}">Method: {esc(s)}</a></li>'
+                   for k, a, s, v in items)
+-    return (f'<section class="card how-numbers" id="how-numbers"><h2>How the numbers work</h2><ul>{lis}</ul>'
++    return (f'<section class="card how-numbers" id="how-numbers"><h2>How the scoring works</h2><ul>{lis}</ul>'
+             f'<p class="table-note">Quoted from the <a href="method/">Method</a> page.</p></section>')
+ 
+ 
+@@ -1838,6 +1850,7 @@ def hero_card(S) -> str:
+ 
+ 
+ def home(S) -> str:
++    import story
+     tabs = "".join(f'<button type="button" role="tab" id="tab-{k}" class="mode" aria-controls="board" '
+                    f'aria-selected="{str(i == 0).lower()}" data-tab="{k}"><span class="lamp" aria-hidden="true"></span>{l}</button>'
+                    for i, (k, l) in enumerate(TABS))
+@@ -1846,10 +1859,12 @@ def home(S) -> str:
+     return f"""
+     {FAMILY_ICONS}
+     {hero_card(S)}
+-    {findings_block(S)}
++    {story.headline(S)}
+     {filters(S)}
+-    {measure_charts(S)}
++    {story.findings(S)}
+     {how_numbers(S)}
++    {findings_block(S)}
++    {measure_charts(S)}
+     <div class="home-leagues" id="leagues-tabs">{P.home_league_sections(S)}</div>
+     <section class="panel board-panel" id="board-panel" aria-labelledby="board-title">
+       <div class="chart-head"><h2 id="board-title">Every number, setup by setup</h2><p class="chart-sub">The leaderboard: every measure of every setup, one tab per measure; each value with its 95% interval, its count and denominator or its price label under it.</p></div>
+@@ -1863,7 +1878,7 @@ def home(S) -> str:
+     </section>
+     {pays_section(S)}
+     {close_b_section(S)}
+-    {nack_section.section(S["nack"])}
++    {nack_section.section(S["nack"], *nack_views(S), S["nack_late"])}
+     <p class="downloads" id="downloads">Download: <a href="data/results.json" download="results.json">results.json</a> · <a href="decisions/index.json" download="decisions.json">decisions.json</a></p>"""
+ 
+ 
+diff --git a/tools/site/nack_paired_publish.py b/tools/site/nack_paired_publish.py
+index 319e875..4ef4031 100755
+--- a/tools/site/nack_paired_publish.py
++++ b/tools/site/nack_paired_publish.py
+@@ -2,13 +2,16 @@
+ """Nackgammon paired test: the site's data file from the scorer's output (Method spec 2026-10-24 §10).
+ 
+     python3 tools/site/nack_paired_publish.py [RESULTS_JSON] [OUT_JSON]
++    python3 tools/site/nack_paired_publish.py --late [RESULTS_JSON] [OUT_JSON]
+ 
+ RESULTS_JSON defaults to positions/nack-paired/results-2026-10-28/results.json (tools/v3/nack_paired_score.py report,
+ with the §10.14(g) Cup-roster additions and the §10.14(h) exploratory setup); OUT_JSON to
+-tools/site/content/nack_paired_results.json. Only aggregates are kept: no per-position answers, no answer text, no
+-logs, no paths. Cost is per 1,000 decisions (recorded cost and API-equivalent kept apart). Setups carry their shown
+-names (content/labels.json), the databases' names as "aliases". build() is also what nack_paired_verify.py uses to
+-rederive the data file from results.json and from a fresh recomputation.
++tools/site/content/nack_paired_results.json. With --late: the late entries (§10.14(i)),
++positions/nack-paired/results-late-2026-11-07/results.json to tools/site/content/nack_paired_late.json. Only aggregates
++are kept: no per-position answers, no answer text, no logs, no paths. Cost is per 1,000 decisions (recorded cost and
++API-equivalent kept apart). Setups carry their shown names (content/labels.json), the databases' names as "aliases".
++build() is also what nack_paired_verify.py uses to rederive the data file from results.json and from a fresh
++recomputation.
+ """
+ 
+ import json
+@@ -20,6 +23,8 @@ ROOT = SITE.parent.parent
+ CONTENT = SITE / "content"
+ RESULTS = ROOT / "positions/nack-paired/results-2026-10-28/results.json"
+ OUT = CONTENT / "nack_paired_results.json"
++RESULTS_LATE = ROOT / "positions/nack-paired/results-late-2026-11-07/results.json"
++OUT_LATE = CONTENT / "nack_paired_late.json"
+ sys.path.insert(0, str(SITE))
+ 
+ from common import RENAMED, aliases, relabel  # noqa: E402
+@@ -115,6 +120,25 @@ def limit_note(setups: dict) -> str:
+     return text.strip()
+ 
+ 
++def _setup(r: dict, s: str, added: bool) -> dict:
++    """One setup's published aggregates."""
++    ph = r["phases"]
++    return dict(
++        group=r["group"], aliases=aliases(s), added=added,
++        first={k: r["first_look"][k] for k in LOOK},
++        final={k: r["final_look"][k] for k in LOOK},
++        extend_at_first_look=r["first_look"]["extend"], extended=r["extended"],
++        extension_incomplete=r.get("extension_incomplete"), label=r["label"],
++        invalid=dict(first=r["first_look"]["invalid"], final=r["final_look"]["invalid"]),
++        cut_off=r.get("cut_off"), past_32768_no_limit_sent=r.get("past_32768_no_limit_sent"),
++        sensitivity=r["sensitivity_first"], sensitivity_final_cutoff=r.get("sensitivity_final_cutoff"),
++        phases={p: v for p, v in ph.items() if p != "opening minus other phases"},
++        opening_vs_rest=ph["opening minus other phases"],
++        tags=r["tags"],
++        cost=dict(main=_cost(r.get("cost_main")), all=_cost(r.get("cost_all"))) if s != "Random" else None,
++        risk=dict(main=_risk(r.get("risk_main")), all=_risk(r.get("risk_all"))))
++
++
+ def build(R: dict) -> dict:
+     """The published aggregates of a results.json (pure function of it)."""
+     R = shown(R)
+@@ -122,24 +146,7 @@ def build(R: dict) -> dict:
+     added = [s for g in GROUP_ORDER if g in R["groups"] for s in R["groups"][g] if s not in orig]
+     names = sorted(R["setups"], key=lambda s: (GROUP_ORDER.index(R["setups"][s]["group"]),
+                                                R["setups"][s]["first_look"]["standard_pr"], s))
+-    setups = {}
+-    for s in names:
+-        r = R["setups"][s]
+-        ph = r["phases"]
+-        setups[s] = dict(
+-            group=r["group"], aliases=aliases(s), added=s in added,
+-            first={k: r["first_look"][k] for k in LOOK},
+-            final={k: r["final_look"][k] for k in LOOK},
+-            extend_at_first_look=r["first_look"]["extend"], extended=r["extended"],
+-            extension_incomplete=r.get("extension_incomplete"), label=r["label"],
+-            invalid=dict(first=r["first_look"]["invalid"], final=r["final_look"]["invalid"]),
+-            cut_off=r.get("cut_off"), past_32768_no_limit_sent=r.get("past_32768_no_limit_sent"),
+-            sensitivity=r["sensitivity_first"], sensitivity_final_cutoff=r.get("sensitivity_final_cutoff"),
+-            phases={p: v for p, v in ph.items() if p != "opening minus other phases"},
+-            opening_vs_rest=ph["opening minus other phases"],
+-            tags=r["tags"],
+-            cost=dict(main=_cost(r.get("cost_main")), all=_cost(r.get("cost_all"))) if s != "Random" else None,
+-            risk=dict(main=_risk(r.get("risk_main")), all=_risk(r.get("risk_all"))))
++    setups = {s: _setup(R["setups"][s], s, s in added) for s in names}
+     incomplete = any(v["extension_incomplete"] for v in setups.values()) or any(
+         c.get("missing") for key in ("primary", "primary_original_members") for c in R[key]["random"])
+     by_group = {g: [s for s in added if R["setups"][s]["group"] == g] for g in GROUP_ORDER}
+@@ -170,13 +177,24 @@ def build(R: dict) -> dict:
+     return out
+ 
+ 
++def build_late(R: dict) -> dict:
++    """The published aggregates of the late entries' results.json (§10.14(i); positions/nack-paired/
++    results-late-2026-11-07): the late entries in the scorer's order, then Random; exploratory, no group comparison."""
++    names = [s for s in R["late_entries"]] + ["Random"]
++    return dict(title="Nackgammon paired test: late entries", method="Method spec 2026-10-24 \u00a710.14(i)",
++                late_entries_note=R["late_entries_note"], late_entries=list(R["late_entries"]),
++                intervals_first_final=0.975, setups={s: _setup(R["setups"][s], s, False) for s in names},
++                engine_check=R.get("engine_check"))
++
++
+ def main():
+-    src = Path(sys.argv[1]) if len(sys.argv) > 1 else RESULTS
+-    dst = Path(sys.argv[2]) if len(sys.argv) > 2 else OUT
+-    out = build(json.loads(src.read_text()))
++    late = "--late" in sys.argv
++    args = [a for a in sys.argv[1:] if a != "--late"]
++    src = Path(args[0]) if args else (RESULTS_LATE if late else RESULTS)
++    dst = Path(args[1]) if len(args) > 1 else (OUT_LATE if late else OUT)
++    out = (build_late if late else build)(json.loads(src.read_text()))
+     dst.write_text(json.dumps(out, indent=1, ensure_ascii=False) + "\n")
+-    print(f"{dst}: {len(out['setups'])} setups; {'in progress' if out['in_progress'] else 'complete'}; "
+-          f"engine check {'present' if out['engine_check'] else 'not yet'}")
++    print(f"{dst}: {len(out['setups'])} setups; engine check {'present' if out['engine_check'] else 'not yet'}")
+ 
+ 
+ if __name__ == "__main__":
+diff --git a/tools/site/nack_paired_verify.py b/tools/site/nack_paired_verify.py
+index 61bc642..effca6a 100755
+--- a/tools/site/nack_paired_verify.py
++++ b/tools/site/nack_paired_verify.py
+@@ -9,6 +9,9 @@ OUT_DIR is a built site (build.py --out); RESULTS_JSON the scorer's output
+ - the site's data file (OUT_DIR/data/v3/nack-paired.json) equals content/nack_paired_results.json, which equals
+   nack_paired_publish.build() of RESULTS_JSON and of a fresh recomputation (tools/v3/nack_paired_score.py report run
+   into a temporary directory from the scored data); the fresh results.json equals RESULTS_JSON;
++- the late entries' data file (OUT_DIR/data/v3/nack-paired-late.json, §10.14(i)) equals content/nack_paired_late.json,
++  which equals nack_paired_publish.build_late() of positions/nack-paired/results-late-2026-11-07/results.json; the
++  home page's late-entries table is checked cell by cell against it (labels as their shown words, worse = "dropped");
+ - the data file holds no position ids or answers, and renamed setups only under their shown names (old names only
+   as "aliases");
+ - on the home page: every table cell with data-k (each printed number equals its data-file value at the printed
+@@ -48,7 +51,7 @@ import nack_section as NS  # noqa: E402
+ from checks import Tree, text_of, walk  # noqa: E402
+ from common import BANNED, CONTENT, NACK_SCOPE_NOTE, RENAMED, esc  # noqa: E402
+ from method import nack_spec_text  # noqa: E402
+-from nack_paired_publish import GROUP_ORDER, build  # noqa: E402
++from nack_paired_publish import GROUP_ORDER, RESULTS_LATE, build, build_late  # noqa: E402
+ 
+ NUM = re.compile(r"[\u2212+-]?\d[\d,]*(?:\.\d+)?")
+ # Anywhere in the build (the existing data/setups.json names smoke/part-a.json as a source: public, not this run's).
+@@ -132,6 +135,9 @@ def check_home(out: Path, N: dict, bad: list):
+     if order != want_order:
+         bad.append("data file: setups not in group, standard-PR order")
+     tables = [n for n in walk(sec) if n.tag == "table"]
++    # The late entries' table (§10.14(i)) is checked against its own data file, data/v3/nack-paired-late.json.
++    late_f = out / "data/v3/nack-paired-late.json"
++    late = json.loads(late_f.read_text()) if late_f.is_file() else None
+     seen = 0
+     for t in tables:
+         tid, src = t.attrs.get("id"), t.attrs.get("data-src")
+@@ -140,13 +146,19 @@ def check_home(out: Path, N: dict, bad: list):
+             continue
+         if any(n.tag == "th" and n.attrs.get("scope") == "col" and "data-nosort" not in n.attrs for n in walk(t)):
+             bad.append(f"home table {tid}: a header can be sorted")
+-        coll = NS.resolve(N, N, src)
++        is_late = t.attrs.get("data-file") == "nack-paired-late"
++        if is_late and late is None:
++            bad.append(f"home table {tid}: data/v3/nack-paired-late.json missing")
++            continue
++        D = late if is_late else N
++        coll = NS.resolve(D, D, src)
+         rows = [n for n in walk(t) if n.tag == "tr" and "data-row" in n.attrs]
+         keys = [r.attrs["data-row"] for r in rows]
+         if src == "setups":
+-            want = [s for s in order if tid not in ("nack-cost", "nack-risk-main", "nack-risk-all")
+-                    or (tid == "nack-cost" and N["setups"][s]["cost"])
+-                    or (tid.startswith("nack-risk") and N["setups"][s]["risk"][tid[10:]])]
++            want = list(D["setups"]) if is_late else [
++                s for s in order if tid not in ("nack-cost", "nack-risk-main", "nack-risk-all")
++                or (tid == "nack-cost" and N["setups"][s]["cost"])
++                or (tid.startswith("nack-risk") and N["setups"][s]["risk"][tid[10:]])]
+             if keys != want:
+                 bad.append(f"home table {tid}: rows {keys} != {want}")
+         elif isinstance(coll, list) and keys != [str(i) for i in range(len(coll))]:
+@@ -154,13 +166,15 @@ def check_home(out: Path, N: dict, bad: list):
+         elif isinstance(coll, dict) and src != "" and src != "secondary" and keys != list(coll):
+             bad.append(f"home table {tid}: rows {keys} != {list(coll)}")
+         for r in rows:
+-            rec = NS.resolve(N, N, "/".join(p for p in (src, r.attrs["data-row"]) if p))
++            rec = NS.resolve(D, D, "/".join(p for p in (src, r.attrs["data-row"]) if p))
+             for c in walk(r):
+                 if c.tag != "td" or "data-k" not in c.attrs:
+                     continue
+                 seen += 1
+-                vals = [x for p in c.attrs["data-k"].split("|") for x in leaves(NS.resolve(N, rec, p))
++                vals = [x for p in c.attrs["data-k"].split("|") for x in leaves(NS.resolve(D, rec, p))
+                         if x is not None]
++                if c.attrs["data-k"] == "label":  # the shown word for the data's label (Ümit #2651: worse -> dropped)
++                    vals = [NS.LABELS[v] for v in vals]
+                 err = check_cell(norm(text_of(c)), vals)
+                 if err:
+                     bad.append(f"home table {tid} row {r.attrs['data-row']} [{c.attrs['data-k']}]: {err}")
+@@ -314,6 +328,13 @@ def main():
+     R = json.loads(Path(args.results).read_text())
+     if build(R) != N:
+         bad.append(f"content/nack_paired_results.json differs from nack_paired_publish.build({args.results})")
++    # Late entries (§10.14(i)): site file = content file = build_late(the frozen late results), no recomputation here.
++    LATE = json.loads((CONTENT / "nack_paired_late.json").read_text())
++    site_late = json.loads((out / "data/v3/nack-paired-late.json").read_text())
++    if site_late.pop("version", None) != "v3" or site_late != LATE:
++        bad.append("data/v3/nack-paired-late.json differs from content/nack_paired_late.json")
++    if build_late(json.loads(RESULTS_LATE.read_text())) != LATE:
++        bad.append(f"content/nack_paired_late.json differs from nack_paired_publish.build_late({RESULTS_LATE})")
+     if args.saved_only:
+         print("saved-only: no recomputation; checked against the frozen results file only")
+     elif R.get("engine_check") and not args.rollouts:
+diff --git a/tools/site/nack_section.py b/tools/site/nack_section.py
+index 12d6ac9..6e18992 100644
+--- a/tools/site/nack_section.py
++++ b/tools/site/nack_section.py
+@@ -5,6 +5,7 @@ row data-row (its key under the table's data-src); nack_paired_verify.py reads t
+ against the data file. Rows are in the data file's fixed order (group, then standard PR); no header can be sorted.
+ """
+ 
++import json
+ import math
+ 
+ import pages as P
+@@ -12,11 +13,19 @@ from common import NACK_SCOPE_NOTE, count, esc, fmt
+ 
+ SECTION_ID = "nackgammon-paired"
+ TITLE = "Nackgammon paired test"
++QUESTION = "Does a model still play well when the starting position changes?"
++UNCLEAR_NOTE = "Unclear means the test can\u2019t tell, not that the scores are equal."
+ READING = ("A larger drop is consistent with relying on familiar positions but is not proof: Nackgammon positions also "
+            "differ in structure. \u201cKept\u201d is a valid result.")
+ PROMPT_NOTE = ("The paired test's standard-side prompt differs from the league prompt (no opening table; the starting "
+                "setup on its own line), so the standard error rates here are not compared with league error rates.")
+-LABELS = {"kept": "kept", "worse": "worse", "better": "better", "unclear": "unclear"}
++# Shown words for the data file's outcome labels (Ümit #2651: kept / unclear / dropped). The data keeps "worse";
++# nack_paired_verify.py checks a label cell against LABELS[its data value].
++LABELS = {"kept": "kept", "worse": "dropped", "better": "better", "unclear": "unclear"}
++LABEL_LEGEND = ("Labels, from the final 97.5% interval (Method \u00a710, outcome label (c)): kept = the interval lies "
++                "within \u00b15 PR; dropped = the data file's label \u201cworse\u201d: the interval lies above 0 (lower "
++                "end > 0) and the setup is not kept; better = the interval lies below 0 and the setup is not kept; "
++                "unclear = anything else.")
+ RULES = [("random", "Primary rule: an invalid or missing answer scores the position's Random error"),
+          ("worst", "Sensitivity (i): an invalid or missing answer scores the worst legal play's loss"),
+          ("drop", "Sensitivity (ii): the pair is left out for that setup"),
+@@ -62,13 +71,20 @@ def td(data, rec, paths, digits=2, signed=False, sep=" ", text=False) -> str:
+     return f'<td{cls} data-k="{esc("|".join(paths))}">{esc(shown)}</td>'
+ 
+ 
++def label_td(data, rec) -> str:
++    """The outcome label cell: the shown word for the data file's label (LABELS)."""
++    v = resolve(data, rec, "label")
++    return f'<td data-k="label" data-label="{esc(v)}">{esc(LABELS[v])}</td>'
++
++
+ def table(src, head, rows, caption, tid) -> str:
+     head = [(h, " data-nosort") for h in head]
+     return P.SWIPE + P.table(head, rows, esc(caption), cls="board list", attrs=f' id="{tid}" data-src="{esc(src)}"')
+ 
+ 
+-def row(key, label, cells) -> str:
+-    return f'<tr data-row="{esc(key)}"><th scope="row">{label}</th>{"".join(cells)}</tr>'
++def row(key, label, cells, cls="") -> str:
++    c = f' class="{cls}"' if cls else ""
++    return f'<tr data-row="{esc(key)}"{c}><th scope="row">{label}</th>{"".join(cells)}</tr>'
+ 
+ 
+ def _setup_label(name, rec) -> str:
+@@ -105,7 +121,7 @@ def main_table(N) -> str:
+             td(N, r, ["extended", "extension_incomplete"], sep="; ", text=True),
+             td(N, r, ["final/pairs"]), td(N, r, ["final/standard_pr"]), td(N, r, ["final/nackgammon_pr"]),
+             td(N, r, ["final/drop"], signed=True), td(N, r, ["final/drop_975"], signed=True),
+-            td(N, r, [rnd], signed=True), td(N, r, ["label"], text=True),
++            td(N, r, [rnd], signed=True), label_td(N, r),
+             td(N, r, ["invalid/first/standard", "invalid/first/nackgammon"], sep=" / "),
+             td(N, r, ["invalid/final/standard", "invalid/final/nackgammon"], sep=" / ")]))
+     head = ["Setup (group)", "Standard PR, main 200 pairs", "Nackgammon PR, main 200 pairs", "Drop, main 200 pairs",
+@@ -118,6 +134,53 @@ def main_table(N) -> str:
+                                        "positive = worse on Nackgammon)", "nack-table")
+ 
+ 
++def summary_table(N) -> str:
++    """The question's answer per setup, primary rule, final look: standard PR, Nackgammon PR, drop and the label;
++    GNUbg weak and Random as grey yardstick rows. Fixed data-file order, like every table of the section."""
++    rows = [row(s, _setup_label(s, r), [
++        td(N, r, ["final/pairs"]), td(N, r, ["final/standard_pr"]), td(N, r, ["final/nackgammon_pr"]),
++        td(N, r, ["final/drop"], signed=True), td(N, r, ["final/drop_975"], signed=True), label_td(N, r)],
++        "nack-yardstick" if r["group"] == "yardstick" else "") for s, r in N["setups"].items()]
++    head = ["Setup (group)", "Pairs", "Standard PR", "Nackgammon PR", "Drop (Nackgammon \u2212 standard)",
++            "97.5% interval", "Label"]
++    return (table("setups", head, rows, "The primary rule (an invalid answer scores the position's Random error), final "
++                                        "look: positive drop = worse on Nackgammon. Grey rows: the GNUbg weak and Random "
++                                        "yardsticks.", "nack-summary")
++            + f'<p class="table-note nack-label-legend">{esc(LABEL_LEGEND)}</p>')
++
++
++LATE_ID = "nackgammon-late"
++LATE_NOTE = "Added after the results were known; exploratory; not in any group comparison (\u00a710.14(i))."
++# From the run's report (mailbox "Nackgammon paired test - results.md", Update 2026-11-07), not from the data file.
++LATE_ROW_NOTES = {"SubQ Snap 1.1": "its answers equal SubQ Snap Preview's answers of 27 October on all 1,000 positions "
++                                   "(the same letters and probability vectors)"}
++LATE_NOT_RUN = "REAX 1.3: not run (pending approval)."
++
++
++def late_block(L) -> str:
++    """The late entries (§10.14(i)): their own table from data/v3/nack-paired-late.json, separate from the 28 Oct
++    setups and their additions note; Random as the grey yardstick row."""
++    rows = []
++    for s, r in L["setups"].items():
++        note = LATE_ROW_NOTES.get(s)
++        label = (f'{esc(s)}<span class="small">{"yardstick" if s == "Random" else "late entry, exploratory"}'
++                 f'{" \u00b7 " + esc(note) if note else ""}</span>')
++        rows.append(row(s, label, [
++            td(L, r, ["final/pairs"]), td(L, r, ["final/standard_pr"]), td(L, r, ["final/nackgammon_pr"]),
++            td(L, r, ["final/drop"], signed=True), td(L, r, ["final/drop_975"], signed=True), label_td(L, r)],
++            "nack-yardstick" if s == "Random" else ""))
++    head = ["Setup", "Pairs", "Standard PR", "Nackgammon PR", "Change (Nackgammon \u2212 standard)", "97.5% interval",
++            "Label"]
++    t = (P.SWIPE + P.table([(h, " data-nosort") for h in head], rows,
++                           esc("Late entries, the primary rule, final look; Random on the same pairs as the grey row."),
++                           cls="board list", attrs=' id="nack-late" data-src="setups" data-file="nack-paired-late"'))
++    return (f'<h3 id="{LATE_ID}">Late entries / exploratory</h3>'
++            f'<p class="note nack-late-note"><strong>{esc(LATE_NOTE)}</strong> {esc(L["late_entries_note"])}</p>'
++            + t + f'<p class="table-note">{esc(LABEL_LEGEND)}</p><p class="table-note">{esc(LATE_NOT_RUN)}</p>'
++            '<p class="table-note">Data: <a href="data/v3/nack-paired-late.json" download="nack-paired-late.json">'
++            'nack-paired-late.json</a></p>')
++
++
+ def _limit_cells(N, r) -> list:
+     """Output-limit counts (§10.14(h)), main 200 pairs and all recorded positions; Random is never asked."""
+     if not r["cut_off"]:
+@@ -346,7 +409,10 @@ def chart(N) -> str:
+             + "".join(parts) + "</svg>")
+ 
+ 
+-def section(N) -> str:
++def section(N, kinds: dict, chosen: list, L: dict) -> str:
++    """kinds: setup name -> decision / chat / program (its model type), for the Decision / Chat / All keys; chosen: the
++    one setting per model of the per-model view (home.nack_views). Both govern the summary table only; every table
++    below it keeps every setup."""
+     rnd = N["setups"]["Random"]
+     rd1, rdf = rnd["first"]["drop"], rnd["final"]["drop"]
+     rnd_text = (f"Random's own drop: {fmt(rd1, 2, True)} PR on the main 200 pairs, {fmt(rdf, 2, True)} on all 500 "
+@@ -368,7 +434,29 @@ def section(N) -> str:
+         kept += kept_table(N, "kept_advantage_all_500", "Secondary: kept advantage, all 500 pairs (extended setups)")
+     risk = risk_table(N, "main") + (risk_table(N, "all") if any(r["risk"]["all"] for r in N["setups"].values()) else "")
+     scope = scope_notes(N)
+-    return (f'<section class="card" id="{SECTION_ID}"><div class="section-head"><h2>{esc(TITLE)}</h2></div>'
++    n_added = len(N["additions"])
++    head_note = (f"Random play's own drop is {fmt(rd1, 1, True)} PR on the main 200 pairs: the Nackgammon positions were "
++                 f"{'slightly easier' if rd1 < 0 else 'harder'} for random play, so a drop mixes how a model copes with "
++                 "the new start with how hard the positions are; the test cannot separate the two.")
++    keys = ('<span class="keys needs-js" role="group" aria-label="Model type">' + "".join(
++        f'<button type="button" class="key" data-nack-kind-pick="{k}" aria-pressed="{str(k == "all").lower()}">{lab}'
++        '</button>' for k, lab in (("decision", "Decision"), ("chat", "Chat"), ("all", "All"))) + '</span>'
++        '<span class="keys needs-js" role="group" aria-label="Rows">' + "".join(
++        f'<button type="button" class="key" data-nack-view="{k}" aria-pressed="{str(k == "model").lower()}">{lab}'
++        '</button>' for k, lab in (("model", "One setting per model"), ("all", "All settings"))) + '</span>')
++    multi = len([n for n, k in kinds.items() if k != "program"]) - len(chosen)
++    view_note = (f"One setting per model: a model asked at several settings shows the one with its highest stored "
++                 f"risk judgement in league play (the leaderboard's rule; chosen from league results, never from this "
++                 f"test); All settings shows every setup asked ({count(multi)} more rows). Decision / Chat is the model "
++                 f"type; the group under each name is the paired test's original league group, so a chat model can "
++                 f"sit in the decision models group. Every table further down shows every setup.")
++    return (f'<section class="card" id="{SECTION_ID}" data-nack-kinds="{esc(json.dumps(kinds))}" '
++            f'data-nack-chosen="{esc(json.dumps(chosen))}">'
++            f'<div class="section-head"><p class="eyebrow">{esc(TITLE)}</p><h2>{esc(QUESTION)}</h2>{keys}</div>'
++            f'<p class="note nack-always"><strong>{esc(UNCLEAR_NOTE)}</strong> {count(n_added)} setups were added after '
++            'the results were read; the primary results are shown with and without them.</p>'
++            f'<p class="table-note">{esc(head_note)}</p>'
++            + summary_table(N) + f'<p class="table-note nack-view-note">{esc(view_note)}</p>' + late_block(L) +
+             f'<p class="section-label">{esc(N["method"])}</p>{status}{scope}'
+             f'<p class="note nack-additions-note"><strong>Additions.</strong> {esc(N["additions_note"])}</p>'
+             "<p>Nackgammon has the rules of backgammon; only the starting position differs. Each setup was asked 200 "
+@@ -378,8 +466,8 @@ def section(N) -> str:
+             "first-look 97.5% interval was wide and contained 0 was asked the 300 reserve pairs too (500 pairs). Every "
+             "recorded position is scored: an invalid, timed-out or missing answer scores the position's Random error, "
+             "with the sensitivity checks below. Label from the final 97.5% "
+-            "interval: kept (within \u00b15 PR), worse, better or unclear. \u201cUnclear\u201d means the interval is "
+-            "too wide to decide; it is not evidence of equivalence.</p>"
++            "interval: kept (within \u00b15 PR), dropped (the data's \u201cworse\u201d), better or unclear. "
++            "\u201cUnclear\u201d means the interval is too wide to decide; it is not evidence of equivalence.</p>"
+             f'<p class="note">{esc(READING)}</p><p class="table-note">{esc(PROMPT_NOTE)}</p>'
+             f'<p class="table-note">{esc(rnd_text)}</p>'
+             f'<p class="table-note nack-no-group-note">{esc(no_group_note(N))}</p>'
+diff --git a/tools/site/pages.py b/tools/site/pages.py
+index ce148a1..6877f07 100644
+--- a/tools/site/pages.py
++++ b/tools/site/pages.py
+@@ -1488,7 +1488,7 @@ def write_all(S, out: Path, base: str) -> None:
+         import shutil
+         if (out / stale).exists():
+             shutil.rmtree(out / stale)
+-    put("", TITLE, home.home(S), scripts=("bg.js",), styles=("decisions.css",), body_class="home", view_rows=home.view_rows(S))
++    put("", TITLE, home.home(S), scripts=("bg.js",), styles=("decisions.css",), body_class="home")
+     home.fragments(S, out)
+     put("leagues/", "Leagues", leagues_page(S, method.archive_v1()), scripts=("bg.js",))
+     put("matches/", "Matches", matches_page(S), scripts=("bg.js",),
+diff --git a/tools/site/story.py b/tools/site/story.py
+new file mode 100644
+index 0000000..9a6eea6
+--- /dev/null
++++ b/tools/site/story.py
+@@ -0,0 +1,251 @@
++"""The home page as a story (Ümit, bus #2570): one headline table, one row per model at its best-scoring setting, and
++sections whose headings state what the published numbers show, each with one chart, two sentences and one caveat. Every number is a
++stored value as the site's tables print it: risk judgement, risks found, right safety, error rate and cost from the
++league results; the bias of the clear-risk scan and of its Part 2 question Q1 from the published clear-risk data
++(data/v3/clear-risk.json). A third heading asked for, on reasoning, is not shown: the Reasoning tab's comparison is not
++paired and shows no effect of the setting (its own note). The check of each heading against these
++numbers is mailbox/front-story/evidence (made by evidence.py there), not code here: a heading that the data stops
++supporting must be reworded by hand."""
++
++import json
++import re
++
++import home as H
++import pages as P
++from common import ALL_NOTE, CONTENT, NA, count, esc, fmt, nm, pct
++
++RELEASES = json.loads((CONTENT / "release_months.json").read_text())["models"]
++MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
++PROGRAMS = ("GNUbg weak", "Random", "Safest")
++
++
++def caveat(text: str, anchor: str = "limits") -> str:
++    """The one caveat of a section (Ümit, bus #2570 item 4); the others are on the Method page."""
++    return (f'<p class="table-note section-caveat">{esc(text)} <a href="method/#{anchor}">More caveats: Method</a></p>')
++
++
++# --- The headline table ------------------------------------------------------------------------------------------
++
++def model_of(S, lg, n) -> str:
++    return H.type_meta(S, lg["dataset"], n).get("model") or n
++
++
++def best_settings(S) -> list:
++    """(league, setup name, risk metrics) of each model's setup with the highest stored risk judgement, best first.
++    Programs are not models; a setup without a risk judgement is left out (Too few decisions)."""
++    best = {}
++    for lg, n, r, ref in H.all_rows(S):
++        if ref or r["judgement"] is None:
++            continue
++        m = model_of(S, lg, n)
++        if m not in best or r["judgement"] > best[m][2]["judgement"]:
++            best[m] = (lg, n, r)
++    return sorted(best.values(), key=lambda x: (-x[2]["judgement"], x[1]))
++
++
++def release(model: str) -> tuple[str, str | None]:
++    """The model's release month as its maker's page states it (content/release_months.json), else a dash."""
++    e = RELEASES.get(model) or {}
++    if not e.get("month"):
++        return "\u2014", None
++    y, m = e["month"].split("-")
++    return f"{MONTHS[int(m) - 1]} {y}", e["url"]
++
++
++def share(s: dict) -> str:
++    if not s["den"]:
++        return f'<td class="num">{nm(NA)}<span class="small">0 / 0</span></td>'
++    return f'<td class="num">{pct(s["share"])}<span class="small">{H.n_(s["n"])} / {H.n_(s["den"])}</span></td>'
++
++
++def judgement_cell(r: dict, colour: str | None) -> str:
++    """The risk judgement as a bar on 0 to 100 with its 95% interval and the line at 50 (always safe)."""
++    j, lo, hi = r["judgement"], r["judgement_lo"], r["judgement_hi"]
++    fill = f' style="width:{j:.2f}%;background-color:{colour}"' if colour else f' style="width:{j:.2f}%"'
++    return (f'<td class="hl-judgement" data-v="{j}"><span class="hl-bar" aria-hidden="true"><span class="hl-fill'
++            f'{"" if colour else " other"}"{fill}></span><span class="hl-int" style="left:{lo:.2f}%;width:{hi - lo:.2f}%">'
++            f'</span><span class="hl-safe"></span></span><span class="hl-val">{fmt(j)}<span class="small">{fmt(lo)} to '
++            f'{fmt(hi)}</span></span></td>')
++
++
++def headline_rows(S) -> tuple[list, list]:
++    rows, missing = [], []
++    settings = {}
++    for lg, n, r, ref in H.all_rows(S):
++        if not ref:
++            settings[model_of(S, lg, n)] = settings.get(model_of(S, lg, n), 0) + 1
++    for rank, (lg, n, r) in enumerate(best_settings(S), 1):
++        ds, model = lg["dataset"], model_of(S, lg, n)
++        fam = H.family(n)
++        icon = f'<svg class="fam-icon" aria-hidden="true" focusable="false"><use href="#{fam["icon"]}"/></svg>' if fam else ""
++        swatch = f'<i class="swatch" style="background:{fam["colour"]}" title="{esc(fam["name"])}"></i>' if fam else ""
++        month, url = release(model)
++        if not url:
++            missing.append(model)
++        q = lg["setups"][n]["quality"]
++        er = (f'<td class="num">{fmt(q["error_rate"])}<span class="small">{fmt(q["error_lo"])} to {fmt(q["error_hi"])}'
++              f'</span></td>' if q.get("error_rate") is not None and not q.get("too_few") else f'<td class="num">{nm(NA)}</td>')
++        label = (P.meta(S, ds, n).get("price") or {}).get("label")
++        cost = (f'<td class="num"><span class="cost-1k">${fmt(q["usd_per_1000"], 3)}</span><span class="cost-1m" '
++                f'data-usd="{q["usd_per_1000"]!r}">${fmt(q["usd_per_1000"], 3)}</span>'
++                f'<span class="small">{esc(label or "label missing")}</span></td>'
++                if q.get("usd_per_1000") is not None else P.cost_cell(S, ds, n, q))
++        when = (f'<td class="hl-release"><a href="{esc(url)}">{month}</a></td>' if url else
++                f'<td class="hl-release"><span class="muted" title="No release date from the maker on record">{month}</span></td>')
++        others = settings[model] - 1
++        rows.append(f'<tr{H.attrs(S, ds, n)}><td class="num">{rank}</td><td class="model">{swatch}{icon}'
++                    f'<a class="model-name" href="{P.model_href("", ds, n, S)}">{esc(n)}</a><span class="small">League '
++                    f'{lg["id"]} · {"its setting with the highest risk judgement; " + count(others) + " other setting" + ("s" if others > 1 else "") + " under All setups" if others else "its only setting"}'
++                    f'</span></td>{when}'
++                    f'{judgement_cell(r, fam["colour"] if fam else None)}{share(r["found"])}{share(r["right_safety"])}{er}{cost}</tr>')
++    return rows, missing
++
++
++HEADLINE_HEAD = ["Rank", "Model: its setting with the highest risk judgement", ("Released", " data-nosort"), "Risk judgement (95% interval)", "Risks found",
++                 "Right safety", "Error rate (PR)",
++                 '<span class="cost-1k">$ per 1,000 decisions</span><span class="cost-1m">$ per 1M decisions</span>']
++
++
++def headline(S) -> str:
++    """One row per model at its setting with the highest stored risk judgement; the All setups key shows the full
++    All leagues risk table (every setup, programs as reference rows) in its place."""
++    rows, missing = headline_rows(S)
++    table = P.table(HEADLINE_HEAD, rows, "One row per model: one named setup, the model's setting with the highest stored "
++                    "risk judgement (a selection for display; every cell of a row is that setup's own; all setups under All "
++                    "setups). All leagues, all phases.", cls="board headline",
++                    attrs=' data-dataset="all" id="headline-table"')
++    note = (f'<p class="table-note">Released: the month of the maker\'s own dated statement that this exact model was '
++            f'released or became available to the public (an announcement before public availability does not count), '
++            f'linked; \u2014 where no such statement is on record ({count(len(missing))} of {count(len(rows))} models).</p>'
++            if missing else "")
++    keys = ('<span class="keys needs-js" role="group" aria-label="Rows"><button type="button" class="key" '
++            'data-headline-view="best" aria-pressed="true">Best setting per model</button><button type="button" '
++            'class="key" data-headline-view="all" aria-pressed="false">All setups</button></span>')
++    return (f'<section class="card headline" id="leaderboard" data-dataset="all" aria-labelledby="leaderboard-title">'
++            f'<div class="chart-head"><h2 id="leaderboard-title">Risk calls leaderboard</h2>{keys}<p class="chart-sub">'
++            f'Risk judgement: 100 = every call right, 50 = always safe; the line on each bar is its 95% interval, the mark '
++            f'at 50 the always-safe line · higher is better</p></div>'
++            f'<p class="table-note">{esc(ALL_NOTE)}</p>'
++            '<p class="table-note headline-scope"><strong>A fixed table:</strong> all leagues, all phases, every model; '
++            'the filter row below does not change it. A model with several settings shows the one with the highest '
++            'stored risk judgement (on an exact tie, the first in league order).</p>'
++            f'<div data-headline-panel="best">{P.SWIPE}{table}{note}</div>'
++            f'<div data-headline-panel="all" hidden>{H.all_risk_table(S)}</div>'
++            f'{caveat(H.RANK_NOTE, "statistics")}</section>')
++
++
++# --- Finding sections ----------------------------------------------------------------------------------------------
++
++def _num(s: str) -> float:
++    return float(s.replace("\u2212", "-").replace("pp", "").replace("+", "").strip())
++
++
++def scan_bias(S) -> list:
++    """(league id, setup, bias text, bias) of the clear-risk scan's per-setup tables (kept decisions only); the
++    league's reference rows (Safest program, Random legal play expected) left out."""
++    sec = next(s for s in S["clear_risk"]["sections"] if s["id"] == "clear-risk-setups")
++    out = []
++    for t in sec["tables"]:
++        m = re.match(r"League (\d)", t["caption"])
++        i = t["head"].index("bias = missed \u2212 needless")
++        for row in t["rows"]:
++            if "(reference)" in row[0] or "(expected)" in row[0]:
++                continue
++            out.append((int(m.group(1)), row[0], row[i], _num(row[i])))
++    return out
++
++
++def q1_bias(S) -> list:
++    """(model, bias with numbers text, value, bias board only text, value) of Clear risk Part 2, question Q1."""
++    sec = next(s for s in S["clear_risk"]["sections"] if s["id"] == "clear-risk-part2")
++    t = next(t for t in sec["tables"] if t["caption"].startswith("Q1"))
++    i = t["head"].index("bias")
++    by = {}
++    for row in t["rows"]:
++        by.setdefault(row[0], {})[row[1]] = row[i]
++    return [(m, v["with numbers"], _num(v["with numbers"]), v["board only"], _num(v["board only"])) for m, v in by.items()]
++
++
++def _bars(rows: list, lo: float, hi: float, ticks: list, head: str, zero: bool = True) -> str:
++    """Bars from zero on a lo..hi axis (the sibling site's HTML bars): rows are (label html, [(value, class, colour)],
++    value text, attrs)."""
++    pos = lambda v: 100 * (v - lo) / (hi - lo)
++    z = pos(0)
++    out = []
++    for label, bars, text, attrs in rows:
++        fills = "".join(f'<span class="hbar-fill {cls}" style="margin-left:{min(pos(v), z):.2f}%;width:{abs(pos(v) - z):.2f}%'
++                        f'{";background-color:" + colour if colour else ""}"></span>' for v, cls, colour in bars)
++        mark = f'<span class="hbar-marker" style="left:{z:.2f}%"></span>' if zero else ""
++        out.append(f'<li class="hbar"{attrs}><span class="hbar-label">{label}</span><span class="hbar-track">{fills}{mark}'
++                   f'</span><span class="hbar-value">{text}</span></li>')
++    axis = "".join(f'<span class="hbar-tick" style="left:{pos(t):.2f}%">{esc(lab)}</span>' for t, lab in ticks)
++    return (f'<div class="hbar hbar-axis headed" aria-hidden="true"><span></span><span class="hbar-track">{axis}</span>'
++            f'<span class="hbar-head">{head}</span></div><ol class="hbars headed">{"".join(out)}</ol>')
++
++
++def finding(fid: str, heading: str, sentences: str, chart: str, legend: str, warn: str, anchor: str) -> str:
++    return (f'<section class="card finding" id="{fid}" aria-labelledby="{fid}-title"><h2 id="{fid}-title">{esc(heading)}</h2>'
++            f'<p class="finding-text">{sentences}</p><figure class="chart-card chart-wide finding-chart">{chart}'
++            f'<p class="chart-legend">{legend}</p></figure>{caveat(warn, anchor)}</section>')
++
++
++def cautious(S) -> str:
++    rows = scan_bias(S)
++    models = sorted((x for x in rows if x[1] not in PROGRAMS), key=lambda x: -x[3])
++    progs = sorted((x for x in rows if x[1] in PROGRAMS), key=lambda x: -x[3])
++    lo_m, hi_m = models[-1], models[0]
++    gnu = [x for x in progs if x[1] == "GNUbg weak"]
++    rnd = next(x for x in progs if x[1] == "Random")
++    scanned = next(s for s in S["clear_risk"]["sections"] if s["id"] == "clear-risk-scan")
++    kept = re.search(r"Kept: ([\d,]+) of", " ".join(scanned["notes"])).group(1)
++    text = (f'In the clear-risk scan ({kept} league decisions where the engine\'s call is clear and stable), every one of '
++            f'the {count(len(models))} model setups missed more risks than it took needlessly: its bias (missed minus '
++            f'needless) runs from {esc(lo_m[2])} ({esc(lo_m[1])}, League {lo_m[0]}) to {esc(hi_m[2])} ({esc(hi_m[1])}, '
++            f'League {hi_m[0]}). The programs are not like that: GNUbg weak\'s bias is negative in all three leagues '
++            f'({", ".join(esc(x[2]) for x in sorted(gnu, key=lambda x: x[0]))}), and so is Random\'s ({esc(rnd[2])}); '
++            f'Safest, which never takes a risk, is {esc(next(x[2] for x in progs if x[1] == "Safest"))} by construction.')
++    bars = []
++    for lg, n, t, v in models + progs:
++        fam = None if n in PROGRAMS else H.family(n)
++        cls = "program" if n in PROGRAMS else ("" if fam else "other")
++        bars.append((f'{esc(n)}<span class="hbar-where"> · League {lg}</span>', [(v, cls, fam["colour"] if fam else None)],
++                     esc(t), f' data-program="{"yes" if n in PROGRAMS else "no"}"'))
++    chart = _bars(bars, -50, 100, [(-50, "\u221250"), (0, "0"), (50, "+50"), (100, "+100 pp")], "Bias (pp)")
++    legend = ('<span>Bias = missed risks (a clear Risk win played safe) minus needless risks (a clear Safety win played '
++              'unsafe), in percentage points; right of 0 = too cautious</span> <span><i class="swatch swatch-program">'
++              '</i>program (reference row)</span>')
++    return finding("finding-cautious", "Models are too cautious", text, chart, legend,
++                   "Not paired: setups met different positions, so the rows compare only loosely.", "clear-risk")
++
++
++def flinch(S) -> str:
++    rows = q1_bias(S)
++    safer = [r for r in rows if r[2] > r[4]]
++    neg = [r for r in rows if r[4] < 0]
++    all_ = len(safer) == len(rows)
++    # Observed, not tested (Zeki, bus #2578: no new statistics): the heading says what the two versions showed.
++    heading = ("With the numbers on screen, every model asked played safer" if all_ else
++               f"With the numbers on screen, {count(len(safer))} of {count(len(rows))} models asked played safer")
++    big = max(rows, key=lambda r: r[2] - r[4])
++    small = min(rows, key=lambda r: r[2] - r[4])
++    text = (f'Asked which of two plays is better on the same rollout-confirmed positions, '
++            f'{"all " + count(len(rows)) if all_ else count(len(safer)) + " of " + count(len(rows))} models chose the safe '
++            f'play more often when the prompt showed each play\'s computed numbers than from the board alone: the bias '
++            f'(missed minus needless) moves from {esc(big[3])} to {esc(big[1])} for {esc(big[0])} and from {esc(small[3])} '
++            f'to {esc(small[1])} for {esc(small[0])}. From the board alone, {count(len(neg))} of them '
++            f'({", ".join(esc(r[0]) for r in neg)}) took more needless risks than they missed.')
++    bars = []
++    for m, tn, vn, tb, vb in sorted(rows, key=lambda r: -r[2]):
++        fam = H.family(m)
++        bars.append((esc(m), [(vn, "q1-numbers", fam["colour"] if fam else None), (vb, "q1-board", None)],
++                     f'{esc(tn)} | {esc(tb)}', ""))
++    chart = _bars(bars, -50, 100, [(-50, "\u221250"), (0, "0"), (50, "+50"), (100, "+100 pp")],
++                  '<span class="head-long">With numbers | board only (pp)</span><span class="head-short">Numbers | board</span>')
++    legend = ('<span><i class="swatch" style="background:var(--text-2)"></i>with numbers (the league prompt, each play\'s '
++              'computed consequences)</span> <span><i class="swatch swatch-q1-board"></i>board only (notation, no computed '
++              'number)</span> <span>Bias: missed minus needless, Q1 of Clear risk Part 2</span>')
++    return finding("finding-flinch", heading, text, chart, legend, "Two plays shown, not league play.", "clear-risk")
++
++
++def findings(S) -> str:
++    return cautious(S) + flinch(S)

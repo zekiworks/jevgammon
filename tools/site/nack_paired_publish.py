@@ -2,13 +2,16 @@
 """Nackgammon paired test: the site's data file from the scorer's output (Method spec 2026-10-24 §10).
 
     python3 tools/site/nack_paired_publish.py [RESULTS_JSON] [OUT_JSON]
+    python3 tools/site/nack_paired_publish.py --late [RESULTS_JSON] [OUT_JSON]
 
 RESULTS_JSON defaults to positions/nack-paired/results-2026-10-28/results.json (tools/v3/nack_paired_score.py report,
 with the §10.14(g) Cup-roster additions and the §10.14(h) exploratory setup); OUT_JSON to
-tools/site/content/nack_paired_results.json. Only aggregates are kept: no per-position answers, no answer text, no
-logs, no paths. Cost is per 1,000 decisions (recorded cost and API-equivalent kept apart). Setups carry their shown
-names (content/labels.json), the databases' names as "aliases". build() is also what nack_paired_verify.py uses to
-rederive the data file from results.json and from a fresh recomputation.
+tools/site/content/nack_paired_results.json. With --late: the late entries (§10.14(i)),
+positions/nack-paired/results-late-2026-11-07/results.json to tools/site/content/nack_paired_late.json. Only aggregates
+are kept: no per-position answers, no answer text, no logs, no paths. Cost is per 1,000 decisions (recorded cost and
+API-equivalent kept apart). Setups carry their shown names (content/labels.json), the databases' names as "aliases".
+build() is also what nack_paired_verify.py uses to rederive the data file from results.json and from a fresh
+recomputation.
 """
 
 import json
@@ -20,6 +23,8 @@ ROOT = SITE.parent.parent
 CONTENT = SITE / "content"
 RESULTS = ROOT / "positions/nack-paired/results-2026-10-28/results.json"
 OUT = CONTENT / "nack_paired_results.json"
+RESULTS_LATE = ROOT / "positions/nack-paired/results-late-2026-11-07/results.json"
+OUT_LATE = CONTENT / "nack_paired_late.json"
 sys.path.insert(0, str(SITE))
 
 from common import RENAMED, aliases, relabel  # noqa: E402
@@ -115,6 +120,25 @@ def limit_note(setups: dict) -> str:
     return text.strip()
 
 
+def _setup(r: dict, s: str, added: bool) -> dict:
+    """One setup's published aggregates."""
+    ph = r["phases"]
+    return dict(
+        group=r["group"], aliases=aliases(s), added=added,
+        first={k: r["first_look"][k] for k in LOOK},
+        final={k: r["final_look"][k] for k in LOOK},
+        extend_at_first_look=r["first_look"]["extend"], extended=r["extended"],
+        extension_incomplete=r.get("extension_incomplete"), label=r["label"],
+        invalid=dict(first=r["first_look"]["invalid"], final=r["final_look"]["invalid"]),
+        cut_off=r.get("cut_off"), past_32768_no_limit_sent=r.get("past_32768_no_limit_sent"),
+        sensitivity=r["sensitivity_first"], sensitivity_final_cutoff=r.get("sensitivity_final_cutoff"),
+        phases={p: v for p, v in ph.items() if p != "opening minus other phases"},
+        opening_vs_rest=ph["opening minus other phases"],
+        tags=r["tags"],
+        cost=dict(main=_cost(r.get("cost_main")), all=_cost(r.get("cost_all"))) if s != "Random" else None,
+        risk=dict(main=_risk(r.get("risk_main")), all=_risk(r.get("risk_all"))))
+
+
 def build(R: dict) -> dict:
     """The published aggregates of a results.json (pure function of it)."""
     R = shown(R)
@@ -122,24 +146,7 @@ def build(R: dict) -> dict:
     added = [s for g in GROUP_ORDER if g in R["groups"] for s in R["groups"][g] if s not in orig]
     names = sorted(R["setups"], key=lambda s: (GROUP_ORDER.index(R["setups"][s]["group"]),
                                                R["setups"][s]["first_look"]["standard_pr"], s))
-    setups = {}
-    for s in names:
-        r = R["setups"][s]
-        ph = r["phases"]
-        setups[s] = dict(
-            group=r["group"], aliases=aliases(s), added=s in added,
-            first={k: r["first_look"][k] for k in LOOK},
-            final={k: r["final_look"][k] for k in LOOK},
-            extend_at_first_look=r["first_look"]["extend"], extended=r["extended"],
-            extension_incomplete=r.get("extension_incomplete"), label=r["label"],
-            invalid=dict(first=r["first_look"]["invalid"], final=r["final_look"]["invalid"]),
-            cut_off=r.get("cut_off"), past_32768_no_limit_sent=r.get("past_32768_no_limit_sent"),
-            sensitivity=r["sensitivity_first"], sensitivity_final_cutoff=r.get("sensitivity_final_cutoff"),
-            phases={p: v for p, v in ph.items() if p != "opening minus other phases"},
-            opening_vs_rest=ph["opening minus other phases"],
-            tags=r["tags"],
-            cost=dict(main=_cost(r.get("cost_main")), all=_cost(r.get("cost_all"))) if s != "Random" else None,
-            risk=dict(main=_risk(r.get("risk_main")), all=_risk(r.get("risk_all"))))
+    setups = {s: _setup(R["setups"][s], s, s in added) for s in names}
     incomplete = any(v["extension_incomplete"] for v in setups.values()) or any(
         c.get("missing") for key in ("primary", "primary_original_members") for c in R[key]["random"])
     by_group = {g: [s for s in added if R["setups"][s]["group"] == g] for g in GROUP_ORDER}
@@ -170,13 +177,24 @@ def build(R: dict) -> dict:
     return out
 
 
+def build_late(R: dict) -> dict:
+    """The published aggregates of the late entries' results.json (§10.14(i); positions/nack-paired/
+    results-late-2026-11-07): the late entries in the scorer's order, then Random; exploratory, no group comparison."""
+    names = [s for s in R["late_entries"]] + ["Random"]
+    return dict(title="Nackgammon paired test: late entries", method="Method spec 2026-10-24 \u00a710.14(i)",
+                late_entries_note=R["late_entries_note"], late_entries=list(R["late_entries"]),
+                intervals_first_final=0.975, setups={s: _setup(R["setups"][s], s, False) for s in names},
+                engine_check=R.get("engine_check"))
+
+
 def main():
-    src = Path(sys.argv[1]) if len(sys.argv) > 1 else RESULTS
-    dst = Path(sys.argv[2]) if len(sys.argv) > 2 else OUT
-    out = build(json.loads(src.read_text()))
+    late = "--late" in sys.argv
+    args = [a for a in sys.argv[1:] if a != "--late"]
+    src = Path(args[0]) if args else (RESULTS_LATE if late else RESULTS)
+    dst = Path(args[1]) if len(args) > 1 else (OUT_LATE if late else OUT)
+    out = (build_late if late else build)(json.loads(src.read_text()))
     dst.write_text(json.dumps(out, indent=1, ensure_ascii=False) + "\n")
-    print(f"{dst}: {len(out['setups'])} setups; {'in progress' if out['in_progress'] else 'complete'}; "
-          f"engine check {'present' if out['engine_check'] else 'not yet'}")
+    print(f"{dst}: {len(out['setups'])} setups; engine check {'present' if out['engine_check'] else 'not yet'}")
 
 
 if __name__ == "__main__":

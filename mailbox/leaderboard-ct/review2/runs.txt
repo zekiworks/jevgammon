@@ -1,0 +1,106 @@
+# leaderboard-ct review 2, 2026-11-07 20:59:07 UTC; branch a99a1ce, retained fixtures
+
+## render the branch from the retained S, checks.run
+$ bash -c cd /tmp/lct/src-r2 && /home/cbasaran/.pyenv/shims/python3 /home/cbasaran/code/jevgammon/mailbox/leaderboard-ct/scripts/render_retained.py /tmp/lct/src-r2 /tmp/lct/state /tmp/lct/out-r2 7b40b30e /tmp/lct/S.pkl --checks
+rendered /tmp/lct/out-r2 with /tmp/lct/src-r2/tools/site
+checks.run: 0 failure(s)
+exit status: 0 (expected 0)
+
+## late-entry preview render (LATE_ROWS on; screenshots only)
+$ bash -c cd /tmp/lct/src-r2 && LATE=1 /home/cbasaran/.pyenv/shims/python3 /home/cbasaran/code/jevgammon/mailbox/leaderboard-ct/scripts/render_retained.py /tmp/lct/src-r2 /tmp/lct/state /tmp/lct/out-late2 7b40b30e /tmp/lct/S.pkl
+rendered /tmp/lct/out-late2 with /tmp/lct/src-r2/tools/site
+exit status: 0 (expected 0)
+
+## the retained S gives the 5ca56de render's data files, byte for byte (manifest aside; the render time stamp normalised)
+$ /home/cbasaran/.pyenv/shims/python3 -c 
+import re, sys
+from pathlib import Path
+a, b = Path('/tmp/lct/out-branch/data'), Path('/tmp/lct/out-r2/data')
+stamp = lambda s: re.sub(rb'updated \d+ \w+ \d{4}, \d\d:\d\d UTC', b'updated STAMP', s)
+fa = {p.relative_to(a) for p in a.rglob('*') if p.is_file() and p.name != 'manifest.json'}
+fb = {p.relative_to(b) for p in b.rglob('*') if p.is_file() and p.name != 'manifest.json'}
+diff = sorted(str(p) for p in fa & fb if stamp((a / p).read_bytes()) != stamp((b / p).read_bytes()))
+print(f'{len(fa)} / {len(fb)} files; only in one: {sorted(map(str, fa ^ fb))}; differing: {diff}')
+sys.exit(0 if fa == fb and not diff else 1)
+105 / 105 files; only in one: []; differing: []
+exit status: 0 (expected 0)
+
+## selection rule regression tests
+$ bash -c cd /tmp/lct/src-r2/tools/site && /home/cbasaran/.pyenv/shims/python3 /home/cbasaran/code/jevgammon/mailbox/leaderboard-ct/scripts/test_rules.py . /tmp/lct/S.pkl
+PASS (a) same setting twice: first by league order then name, not the higher score: chosen Gemma 4 31B (off) (62.6) over the (on) setup (64.5)
+PASS (b) the checkpoint's score does not move the DeepSeek row: DeepSeek V4.1 Flash (low)
+PASS (c) an unlisted dated suffix is its own model: 32 rows; Grok rows: ['Grok 4.7', 'Grok 4.7 1101']
+PASS (d) approved list exactly one pair; the DeepSeek row holds its 4 setups: ['DeepSeek V4.1 Flash (low)', 'DeepSeek V4.1 Flash 1017 (low)', 'DeepSeek V4.1 Flash (off)', 'DeepSeek V4.1 Flash 1017 (off)']
+PASS (e) an unknown setting fails the build: reasoning setting 'turbo' is not one of ['high', 'low', 'max', 'medium', 'minimal', 'none', 'off', 'xhigh'] or 'on'
+test_rules: 0 failure(s)
+exit status: 0 (expected 0)
+
+## LATE_ROWS on adds a separate late group and leaves the ranked rows as they are (Astra stays medium)
+$ /home/cbasaran/.pyenv/shims/python3 -c 
+import sys
+from bs4 import BeautifulSoup
+def rows(d):
+    t = BeautifulSoup(open(d + '/index.html').read(), 'html.parser').select_one('#headline-table')
+    trs = t.tbody.find_all('tr', recursive=False)
+    ranked = [(r['data-dataset'], r['data-setup']) for r in trs if r.get('data-setup') and not set(r.get('class') or []) & {'hl-sub', 'reference', 'late'}]
+    late = [(r['data-dataset'], r['data-setup']) for r in trs if 'late' in (r.get('class') or []) and 'hl-sub' not in (r.get('class') or [])]
+    return ranked, late
+a, la = rows('/tmp/lct/out-r2'); b, lb = rows('/tmp/lct/out-late2')
+print('ranked rows off/on:', len(a), len(b), 'identical:', a == b)
+print('GPT-6 Astra ranked row:', [x for x in b if x[1].startswith('gpt-6-astra')])
+print('late group off/on:', len(la), len(lb), lb)
+sys.exit(0 if a == b and not la and lb else 1)
+ranked rows off/on: 31 31 identical: True
+GPT-6 Astra ranked row: [('league-3', 'gpt-6-astra-on')]
+late group off/on: 0 8 [('late-entry', 'gpt-6-astra-high'), ('late-entry', 'subq-snap-1-1'), ('late-entry', 'base-labs-elephant-1'), ('late-entry', 'base-labs-mammoth-1'), ('late-entry', 'drex-max-1-1'), ('late-entry', 'drex-2-0'), ('late-entry', 'drex-max-v1'), ('late-entry', 'reax-1-3')]
+exit status: 0 (expected 0)
+
+## evidence: re-derived choice and per-parent families against the branch render
+$ /home/cbasaran/.pyenv/shims/python3 /home/cbasaran/code/jevgammon/mailbox/leaderboard-ct/scripts/evidence.py /home/cbasaran/code/jevgammon-lct /tmp/lct/out-r2 /home/cbasaran/code/jevgammon/mailbox/leaderboard-ct/review2/evidence /tmp/lct/out-branch
+PASS the approved identity list is exactly DeepSeek V4.1 Flash 1017 → DeepSeek V4.1 Flash: {"DeepSeek V4.1 Flash 1017": "DeepSeek V4.1 Flash"}
+PASS ranked rows = re-derived choice, in rank order: 31 rows shown, 31 expected
+PASS each parent row's expander controls exactly its expected alternatives (per row, expected from the data): 34 parent rows
+PASS programs: one grey unranked row each (GNUbg weak, Safest, Random), their first played setup in league order: [('league-1', 'gnubg-weak'), ('league-1', 'safest'), ('league-1', 'random')]
+PASS no late-entry row (LATE_ROWS off)
+PASS note under the table: Bars run to each score; the whisker is its 95% interval. Ranks show observed scores; small gaps need not be meaningful. Leagues played different positions.  More caveats: Method
+PASS no whisker-overlap sentence anywhere on the page
+PASS the rule under the table states the score-free representative: Each model's row is its highest reasoning setting played, by the effort the requests sent (off < minimal < low < medium < high < xhigh < max; on above off for a model without levels; a decision model's single setup), never its best score. Several setups at that setting: the first in league order, then by setup name (no score). Every cell of a row is that setup's own; its other settings are under the row's expander and under All setups. Version names are separate models; DeepSeek V4.1 Flash 1017 is under DeepSeek V4.1 Flash (a dated checkpoint under its original).
+PASS ranked rows unchanged against 5ca56de (the score-free rule picks the same setups now)
+PASS every league and late-entry setup has a maker
+evidence: OK
+exit status: 0 (expected 0)
+
+## negative control: the same evidence against the 5ca56de render must fail (no score-free rule text there)
+$ /home/cbasaran/.pyenv/shims/python3 /home/cbasaran/code/jevgammon/mailbox/leaderboard-ct/scripts/evidence.py /home/cbasaran/code/jevgammon-lct /tmp/lct/out-branch /tmp/lct/evidence-5ca56de
+PASS the approved identity list is exactly DeepSeek V4.1 Flash 1017 → DeepSeek V4.1 Flash: {"DeepSeek V4.1 Flash 1017": "DeepSeek V4.1 Flash"}
+PASS ranked rows = re-derived choice, in rank order: 31 rows shown, 31 expected
+PASS each parent row's expander controls exactly its expected alternatives (per row, expected from the data): 34 parent rows
+PASS programs: one grey unranked row each (GNUbg weak, Safest, Random), their first played setup in league order: [('league-1', 'gnubg-weak'), ('league-1', 'safest'), ('league-1', 'random')]
+PASS no late-entry row (LATE_ROWS off)
+PASS note under the table: Bars run to each score; the whisker is its 95% interval. Ranks show observed scores; small gaps need not be meaningful. Leagues played different positions.  More caveats: Method
+PASS no whisker-overlap sentence anywhere on the page
+Traceback (most recent call last):
+  File "/home/cbasaran/code/jevgammon/mailbox/leaderboard-ct/scripts/evidence.py", line 125, in <module>
+    rule = norm_text = " ".join(html.select_one("#leaderboard .headline-rule").get_text(" ").split())
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'get_text'
+exit status: 1 (expected 1)
+
+## review: numbers, links, browser tests (file:// and the phase control), screenshots
+$ /home/cbasaran/.pyenv/shims/python3 /home/cbasaran/code/jevgammon/mailbox/leaderboard-ct/scripts/review.py /home/cbasaran/code/jevgammon-lct /tmp/lct/live /tmp/lct/out-main /tmp/lct/out-r2 /tmp/lct/out-late2 /home/cbasaran/code/jevgammon/mailbox/leaderboard-ct/review2 /home/cbasaran/code/jevgammon/mailbox/leaderboard-ct/review2/evidence/expected-families.json
+numbers: [('Home page: every live table cell (every ', 17377, 0, 0), ('Home page: every origin/main render tabl', 17377, 0, 0), ('Headline table, every row (ranked, other', 432, 0, 0), ('Too safe chart (new): right safety and r', 32, 0, 0), ('Finding sections: every value beside a b', 58, 0, 0), ('Measure charts (Risk judgement, Error ra', 398, 0, 0), ('Every other page: the main content, byte', 111, 0, 0), ('Data files under data/, byte for byte (m', 105, 0, 0)]
+links: {'ok': 2551, 'build.py-only asset, absent from the origin/main render too': 3, 'same as live (unresolved statically in both)': 823, 'external': 21, 'same': 206}
+browser: {'ok': 54}
+screenshots: 44
+review: 0 number difference(s), 0 link check(s) and 0 browser check(s) not accepted
+exit status: 0 (expected 0)
+
+## first screen at #leaderboard, 5ca56de against the branch
+$ /home/cbasaran/.pyenv/shims/python3 /home/cbasaran/code/jevgammon/mailbox/leaderboard-ct/scripts/first_screen.py 5ca56de=/tmp/lct/out-branch branch=/tmp/lct/out-r2
+{"render": "5ca56de", "width": 390, "height": 844, "table_top": 553, "rows_fully_in_view": 2, "score_number_fully_visible": 0, "judgement_cell_partly_visible": 0}
+{"render": "5ca56de", "width": 1280, "height": 900, "table_top": 309, "rows_fully_in_view": 5, "score_number_fully_visible": 6, "judgement_cell_partly_visible": 6}
+{"render": "branch", "width": 390, "height": 844, "table_top": 308, "rows_fully_in_view": 3, "score_number_fully_visible": 4, "judgement_cell_partly_visible": 3}
+{"render": "branch", "width": 1280, "height": 900, "table_top": 203, "rows_fully_in_view": 7, "score_number_fully_visible": 7, "judgement_cell_partly_visible": 7}
+exit status: 0 (expected 0)
+
+# overall exit status: 0

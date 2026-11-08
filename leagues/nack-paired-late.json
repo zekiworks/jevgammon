@@ -1,0 +1,114 @@
+{
+ "note": "Nackgammon paired test, late entries (Method §10.14(i), commit 6a64eb8, 2026-11-07; Ümit's go #2646): exploratory, no group. Same frozen pairs, prompts, option-order seed and rules as leagues/nack-paired.json; each setup's stored v3.db settings and option cap, except the Nace pre-send ledger: a new one for this run, smoke/nack-paired-late-nace-budget.db, cap $0.39 (Zeki #2656: $0.54 billed for the whole run = $0.39 Nace + at most $0.15 SubQ, the latter by --max-cost 0.15). Answers in smoke/nack-paired-late.db, never in smoke/nack-paired.db. Local late entries are added before their run on the GPU named by UUID.",
+ "prompt_version": "bg-v3-std-notable",
+ "seed": 0,
+ "order_seed": 1190975713392774006,
+ "rounds": 3,
+ "clock": 0,
+ "delay": 30,
+ "max_turns": 300,
+ "players": [
+  {
+   "name": "SubQ Snap 1.1",
+   "spec": "subq/subq-snap-1.1",
+   "provider": "subq",
+   "price": {
+    "input_per_mtok": 0.04,
+    "output_per_mtok": 0.0
+   },
+   "note": "SubQ Decisions API (POST https://api.subq.ai/v1/systemone), model subq-snap-1.1, SubQ's default decision model (public preview), which replaced SubQ Snap Preview; list price $0.04 per million input tokens, output free (docs.subq.ai/using-the-api/models, 2026-11-01); probabilities arrive as 32-bit floats and are stored as returned. Late entry to the original League 1 table; not eligible for the Hype Cup"
+  },
+  {
+   "name": "Drex Max 1.1",
+   "spec": "nace/drex-max-v1.1",
+   "provider": "nace",
+   "price": {
+    "input_per_mtok": 0.06,
+    "output_per_mtok": 0.0
+   },
+   "note": "Nace.AI's Drex Max 1.1 (drex-max-v1.1; no open weights) through Nace's hosted System One endpoint (https://console.nace.ai/v1/systemone); price = Nace's list price, $0.06 per million input tokens, output not billed (nace.ai/drex, read 2026-11-05); Nace bills the launch price, $0.03 per million (console.nace.ai/docs/drex/reference/pricing, read 2026-11-05). At most 25 options per request. Pre-send cap on its Nace requests: a ledger shared with the other hosted Drex setup reserves each attempt's worst case (one input token per request byte plus 4,096, at the billed price) before sending and refuses past $1.25 spent + reserved; error answers other than Nace's documented unbilled statuses keep the worst case. Late entry to the original League 1 table; not eligible for the Hype Cup",
+   "parallel": 2,
+   "budget": {
+    "ledger": "/home/cbasaran/code/jevgammon/smoke/nack-paired-late-nace-budget.db",
+    "cap_usd": 0.39,
+    "input_per_mtok": 0.03,
+    "cached_input_per_mtok": 0.03,
+    "output_per_mtok": 0.0
+   }
+  },
+  {
+   "name": "Drex 2.0",
+   "spec": "nace/drex-v2.0",
+   "provider": "nace",
+   "price": {
+    "input_per_mtok": 0.06,
+    "output_per_mtok": 0.0
+   },
+   "note": "Nace.AI's Drex 2.0 (drex-v2.0, pinned id) through Nace's hosted System One endpoint (https://console.nace.ai/v1/systemone); probabilities come rounded to 4 decimals and are stored as returned; list price $0.06 per million input tokens, output not billed (console.nace.ai/docs/drex/reference/pricing, read 2026-11-05). At most 25 options per request. Pre-send cap on its Nace requests: a ledger shared with the other hosted Drex setup reserves each attempt's worst case (one input token per request byte plus 4,096, at the billed price) before sending and refuses past $1.25 spent + reserved; error answers other than Nace's documented unbilled statuses keep the worst case. Late entry to the original League 1 table; not eligible for the Hype Cup",
+   "parallel": 2,
+   "budget": {
+    "ledger": "/home/cbasaran/code/jevgammon/smoke/nack-paired-late-nace-budget.db",
+    "cap_usd": 0.39,
+    "input_per_mtok": 0.06,
+    "cached_input_per_mtok": 0.06,
+    "output_per_mtok": 0.0
+   }
+  },
+  {
+   "name": "Base Labs Elephant-1",
+   "spec": "baselabs/baselabs/elephant-1",
+   "provider": "local (baselabs_server.py)",
+   "quantization": "bf16",
+   "base_url": "http://127.0.0.1:18102",
+   "price": {
+    "input_per_mtok": 0.035,
+    "output_per_mtok": 0.0
+   },
+   "note": "Base Labs' elephant-1 (Hugging Face baselabs/elephant-1 @ b3f8a93462fb1051a9de031e94a7ff380e254072, bf16; post-trained from Qwen3.5-9B) on our GPU through its model card's loader (qev's DecisionEngine from OneJev 81ce62f with the checkpoint's serve.patch, image baselabs-serve:81ce62f) behind decision-models runner/servers/baselabs_server.py, text only, one request at a time; probabilities come rounded to 6 decimals by that loader and are stored as returned; price = Baseten's Model API list price for the same model ($0.035 per million input tokens, output free, 2026-11-01). Late entry to the original League 1 table; not eligible for the Hype Cup",
+   "device": "RTX PRO 6000 (bariton GPU 3), docker image baselabs-serve:81ce62f (workspace/late3/baselabs.sh elephant, ELEPHANT_GPU=3)",
+   "parallel": 1
+  },
+  {
+   "name": "Base Labs Mammoth-1",
+   "spec": "baselabs/baselabs/mammoth-1",
+   "provider": "local (baselabs_server.py)",
+   "quantization": "bf16",
+   "base_url": "http://127.0.0.1:18103",
+   "price": {
+    "input_per_mtok": 0.1,
+    "output_per_mtok": 0.0
+   },
+   "note": "Base Labs' mammoth-1 (Hugging Face baselabs/mammoth-1 @ 61cec44c281c693992e3d6ebeb44dd3402dfa186, bf16; post-trained from Qwen3.5-27B) on our GPU through its model card's loader (qev's DecisionEngine from OneJev 81ce62f with the checkpoint's serve.patch, image baselabs-serve:81ce62f) behind decision-models runner/servers/baselabs_server.py, text only, one request at a time; probabilities come rounded to 6 decimals by that loader and are stored as returned; price = Baseten's Model API list price for the same model ($0.10 per million input tokens, output free, 2026-11-01). Late entry to the original League 1 table; not eligible for the Hype Cup",
+   "device": "RTX PRO 6000 (bariton GPU 0), docker image baselabs-serve:81ce62f (workspace/late3/baselabs.sh mammoth, MAMMOTH_GPU=0)",
+   "parallel": 1
+  },
+  {
+   "name": "Drex Max v1",
+   "spec": "drex-max/drex-max-v1",
+   "provider": "local (drex_max_server.py)",
+   "quantization": "bf16",
+   "base_url": "http://127.0.0.1:18104",
+   "price": {
+    "input_per_mtok": 0.06,
+    "output_per_mtok": 0.0
+   },
+   "note": "Nace.AI's Drex Max v1 open weights (Hugging Face nace-ai/drex-max-v1 @ cac65e1982a0237e996419ba559004522d9a33ac, bf16; Qwen3.8-27B backbone with a 255-way readout) on our GPU, scored by Nace's own loader (drex_max from github.com/nace-ai/drex-decision-models @ e206b278e3988ad1b58e6f1556b559a65947a4e6, .venv-drex-max: torch 2.15.0, transformers 5.17.0) behind decision-models runner/servers/drex_max_server.py, as the Turkish runs served it, one request at a time, the loader's default 16,384-token limit; at most 25 options per request; price = Nace's list price for the hosted model ($0.06 per million input tokens, nace.ai/drex, read 2026-11-05; as on the Decision Models page), not billed. Late entry to the original League 1 table; not eligible for the Hype Cup",
+   "device": "RTX PRO 6000 (bariton), one GPU (workspace/drex/drexmax.sh, DREX_MAX_GPU)",
+   "parallel": 1
+  },
+  {
+   "name": "Drex 2.0 (local)",
+   "spec": "drex-local/drex-v2.0",
+   "provider": "local (drex-v2.0 serve.py)",
+   "quantization": "bf16",
+   "base_url": "http://127.0.0.1:18105",
+   "price": {
+    "input_per_mtok": 0.06,
+    "output_per_mtok": 0.0
+   },
+   "note": "Optional. Nace.AI's Drex 2.0 open weights (Hugging Face nace-ai/drex-v2.0 @ e646674476744e3826caf62b834054151e2aba51, bf16, 16 shards, 70.2 GB; Qwen3_5MoeForConditionalGeneration, 35B total, about 3B active) on our GPU through the serve.py and kev loader its checkpoint ships (requirements: torch>=2.6,<2.9, transformers>=5.17,<6), one request at a time, the default 16,384-token limit (KEV_CONTEXT); at most 25 options per request; probabilities rounded to 4 decimals by that server; price = Nace's list price for the hosted model ($0.06 per million input tokens, console.nace.ai/docs/drex/reference/pricing, read 2026-11-05), not billed. Late entry to the original League 1 table; not eligible for the Hype Cup",
+   "device": "RTX PRO 6000 (bariton), one GPU (workspace/drex/drexv2.sh, DREX_V2_GPU)",
+   "parallel": 1
+  }
+ ]
+}

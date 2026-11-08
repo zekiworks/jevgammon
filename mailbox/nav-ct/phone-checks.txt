@@ -1,0 +1,14 @@
+# sweep.py (mailbox/mobile-fix/scripts/sweep.py; new pages measured against zero), 2026-11-08 02:56:00 UTC: BEFORE = leaderboard-ct render (a99a1ce), AFTER = nav-ct render (d345323), 390 px
+about/index.html new in AFTER
+experiments/index.html new in AFTER
+highlights/index.html new in AFTER
+index.html overflow px, bad hbar parts: before [46, 0] after [0, 0]
+113 pages; pages with page overflow: before 1, after 0; pages with hbar parts sticking out: before 0, after 0; pages worse after: 0
+exit status: 0
+
+# first_screen.py at #leaderboard
+{"render": "leaderboard-ct", "width": 390, "height": 844, "header": 83, "table_top": 408, "rows_with_all_four_parts": 0, "page_wider_than_window": 46}
+{"render": "leaderboard-ct", "width": 1280, "height": 900, "header": 63, "table_top": 203, "rows_with_all_four_parts": 7, "page_wider_than_window": 0}
+{"render": "nav-ct", "width": 390, "height": 844, "header": 98, "table_top": 375, "rows_with_all_four_parts": 4, "page_wider_than_window": 0}
+{"render": "nav-ct", "width": 1280, "height": 900, "header": 92, "table_top": 287, "rows_with_all_four_parts": 6, "page_wider_than_window": 0}
+(first_screen.py exits 1 here because the leaderboard-ct render is in the same run: 0 rows and 46 px too wide at 390 px. nav-ct alone passes.)

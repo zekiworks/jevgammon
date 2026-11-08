@@ -1,0 +1,64 @@
+2026-11-08 08:05:21 UTC  learning-default-preregistration-page-1280-light.png  <- file://$SCRATCH/out-branch/learning/index.html
+2026-11-08 08:05:22 UTC  learning-default-preregistration-page-1280-dark.png  <- file://$SCRATCH/out-branch/learning/index.html
+2026-11-08 08:05:22 UTC  learning-default-preregistration-page-390-light.png  <- file://$SCRATCH/out-branch/learning/index.html
+2026-11-08 08:05:22 UTC  learning-default-preregistration-page-390-dark.png  <- file://$SCRATCH/out-branch/learning/index.html
+2026-11-08 08:05:22 UTC  learning-real-complete-status-line-1280-light.png  <- file://$SCRATCH/real-complete-site/learning/index.html header.page-head
+2026-11-08 08:05:22 UTC  learning-real-complete-status-line-1280-dark.png  <- file://$SCRATCH/real-complete-site/learning/index.html header.page-head
+2026-11-08 08:05:22 UTC  learning-real-complete-status-line-390-light.png  <- file://$SCRATCH/real-complete-site/learning/index.html header.page-head
+2026-11-08 08:05:23 UTC  learning-real-complete-status-line-390-dark.png  <- file://$SCRATCH/real-complete-site/learning/index.html header.page-head
+2026-11-08 08:05:23 UTC  learning-real-complete-charts-and-tables-1280-light.png  <- file://$SCRATCH/real-complete-site/learning/index.html #learning-results
+2026-11-08 08:05:23 UTC  learning-real-complete-charts-and-tables-1280-dark.png  <- file://$SCRATCH/real-complete-site/learning/index.html #learning-results
+2026-11-08 08:05:23 UTC  learning-real-complete-charts-and-tables-390-light.png  <- file://$SCRATCH/real-complete-site/learning/index.html #learning-results
+2026-11-08 08:05:23 UTC  learning-real-complete-charts-and-tables-390-dark.png  <- file://$SCRATCH/real-complete-site/learning/index.html #learning-results
+2026-11-08 08:05:24 UTC  learning-real-complete-verdict-and-lift-1280-light.png  <- file://$SCRATCH/real-complete-site/learning/index.html #learning-verdict-section
+2026-11-08 08:05:24 UTC  learning-real-complete-verdict-and-lift-1280-dark.png  <- file://$SCRATCH/real-complete-site/learning/index.html #learning-verdict-section
+2026-11-08 08:05:24 UTC  learning-real-complete-verdict-and-lift-390-light.png  <- file://$SCRATCH/real-complete-site/learning/index.html #learning-verdict-section
+2026-11-08 08:05:24 UTC  learning-real-complete-verdict-and-lift-390-dark.png  <- file://$SCRATCH/real-complete-site/learning/index.html #learning-verdict-section
+2026-11-08 08:05:24 UTC  learning-real-complete-lessons-1280-light.png  <- file://$SCRATCH/real-complete-site/learning/index.html #learning-lessons
+2026-11-08 08:05:25 UTC  learning-real-complete-lessons-1280-dark.png  <- file://$SCRATCH/real-complete-site/learning/index.html #learning-lessons
+2026-11-08 08:05:25 UTC  learning-real-complete-lessons-390-light.png  <- file://$SCRATCH/real-complete-site/learning/index.html #learning-lessons
+2026-11-08 08:05:25 UTC  learning-real-complete-lessons-390-dark.png  <- file://$SCRATCH/real-complete-site/learning/index.html #learning-lessons
+2026-11-08 08:05:25 UTC  learning-real-complete-page-1280-light.png  <- file://$SCRATCH/real-complete-site/learning/index.html
+2026-11-08 08:05:26 UTC  learning-real-complete-page-1280-dark.png  <- file://$SCRATCH/real-complete-site/learning/index.html
+2026-11-08 08:05:26 UTC  learning-real-complete-page-390-light.png  <- file://$SCRATCH/real-complete-site/learning/index.html
+2026-11-08 08:05:26 UTC  learning-real-complete-page-390-dark.png  <- file://$SCRATCH/real-complete-site/learning/index.html
+2026-11-08 08:05:26 UTC  learning-SYNTHETIC-running-status-line-1280-light.png  <- file://$SCRATCH/SYNTHETIC-running-site/learning/index.html header.page-head
+2026-11-08 08:05:26 UTC  learning-SYNTHETIC-running-status-line-1280-dark.png  <- file://$SCRATCH/SYNTHETIC-running-site/learning/index.html header.page-head
+2026-11-08 08:05:27 UTC  learning-SYNTHETIC-running-status-line-390-light.png  <- file://$SCRATCH/SYNTHETIC-running-site/learning/index.html header.page-head
+2026-11-08 08:05:27 UTC  learning-SYNTHETIC-running-status-line-390-dark.png  <- file://$SCRATCH/SYNTHETIC-running-site/learning/index.html header.page-head
+2026-11-08 08:05:27 UTC  learning-SYNTHETIC-running-charts-and-tables-1280-light.png  <- file://$SCRATCH/SYNTHETIC-running-site/learning/index.html #learning-results
+2026-11-08 08:05:27 UTC  learning-SYNTHETIC-running-charts-and-tables-1280-dark.png  <- file://$SCRATCH/SYNTHETIC-running-site/learning/index.html #learning-results
+2026-11-08 08:05:27 UTC  learning-SYNTHETIC-running-charts-and-tables-390-light.png  <- file://$SCRATCH/SYNTHETIC-running-site/learning/index.html #learning-results
+2026-11-08 08:05:27 UTC  learning-SYNTHETIC-running-charts-and-tables-390-dark.png  <- file://$SCRATCH/SYNTHETIC-running-site/learning/index.html #learning-results
+2026-11-08 08:05:28 UTC  learning-SYNTHETIC-running-verdict-pending-1280-light.png  <- file://$SCRATCH/SYNTHETIC-running-site/learning/index.html #learning-verdict-section
+2026-11-08 08:05:28 UTC  learning-SYNTHETIC-running-verdict-pending-1280-dark.png  <- file://$SCRATCH/SYNTHETIC-running-site/learning/index.html #learning-verdict-section
+2026-11-08 08:05:28 UTC  learning-SYNTHETIC-running-verdict-pending-390-light.png  <- file://$SCRATCH/SYNTHETIC-running-site/learning/index.html #learning-verdict-section
+2026-11-08 08:05:28 UTC  learning-SYNTHETIC-running-verdict-pending-390-dark.png  <- file://$SCRATCH/SYNTHETIC-running-site/learning/index.html #learning-verdict-section
+2026-11-08 08:05:28 UTC  learning-SYNTHETIC-running-lessons-1280-light.png  <- file://$SCRATCH/SYNTHETIC-running-site/learning/index.html #learning-lessons
+2026-11-08 08:05:28 UTC  learning-SYNTHETIC-running-lessons-1280-dark.png  <- file://$SCRATCH/SYNTHETIC-running-site/learning/index.html #learning-lessons
+2026-11-08 08:05:29 UTC  learning-SYNTHETIC-running-lessons-390-light.png  <- file://$SCRATCH/SYNTHETIC-running-site/learning/index.html #learning-lessons
+2026-11-08 08:05:29 UTC  learning-SYNTHETIC-running-lessons-390-dark.png  <- file://$SCRATCH/SYNTHETIC-running-site/learning/index.html #learning-lessons
+2026-11-08 08:05:29 UTC  learning-SYNTHETIC-smoke-running-status-line-1280-light.png  <- file://$SCRATCH/SYNTHETIC-smoke-running-site/learning/index.html header.page-head
+2026-11-08 08:05:29 UTC  learning-SYNTHETIC-smoke-running-status-line-1280-dark.png  <- file://$SCRATCH/SYNTHETIC-smoke-running-site/learning/index.html header.page-head
+2026-11-08 08:05:29 UTC  learning-SYNTHETIC-smoke-running-status-line-390-light.png  <- file://$SCRATCH/SYNTHETIC-smoke-running-site/learning/index.html header.page-head
+2026-11-08 08:05:30 UTC  learning-SYNTHETIC-smoke-running-status-line-390-dark.png  <- file://$SCRATCH/SYNTHETIC-smoke-running-site/learning/index.html header.page-head
+2026-11-08 08:05:30 UTC  learning-SYNTHETIC-smoke-running-charts-and-tables-1280-light.png  <- file://$SCRATCH/SYNTHETIC-smoke-running-site/learning/index.html #learning-results
+2026-11-08 08:05:30 UTC  learning-SYNTHETIC-smoke-running-charts-and-tables-1280-dark.png  <- file://$SCRATCH/SYNTHETIC-smoke-running-site/learning/index.html #learning-results
+2026-11-08 08:05:30 UTC  learning-SYNTHETIC-smoke-running-charts-and-tables-390-light.png  <- file://$SCRATCH/SYNTHETIC-smoke-running-site/learning/index.html #learning-results
+2026-11-08 08:05:30 UTC  learning-SYNTHETIC-smoke-running-charts-and-tables-390-dark.png  <- file://$SCRATCH/SYNTHETIC-smoke-running-site/learning/index.html #learning-results
+2026-11-08 08:05:30 UTC  learning-SYNTHETIC-smoke-running-verdict-pending-1280-light.png  <- file://$SCRATCH/SYNTHETIC-smoke-running-site/learning/index.html #learning-verdict-section
+2026-11-08 08:05:31 UTC  learning-SYNTHETIC-smoke-running-verdict-pending-1280-dark.png  <- file://$SCRATCH/SYNTHETIC-smoke-running-site/learning/index.html #learning-verdict-section
+2026-11-08 08:05:31 UTC  learning-SYNTHETIC-smoke-running-verdict-pending-390-light.png  <- file://$SCRATCH/SYNTHETIC-smoke-running-site/learning/index.html #learning-verdict-section
+2026-11-08 08:05:31 UTC  learning-SYNTHETIC-smoke-running-verdict-pending-390-dark.png  <- file://$SCRATCH/SYNTHETIC-smoke-running-site/learning/index.html #learning-verdict-section
+2026-11-08 08:05:31 UTC  learning-SYNTHETIC-not-started-status-line-1280-light.png  <- file://$SCRATCH/SYNTHETIC-not-started-site/learning/index.html header.page-head
+2026-11-08 08:05:31 UTC  learning-SYNTHETIC-not-started-status-line-1280-dark.png  <- file://$SCRATCH/SYNTHETIC-not-started-site/learning/index.html header.page-head
+2026-11-08 08:05:31 UTC  learning-SYNTHETIC-not-started-status-line-390-light.png  <- file://$SCRATCH/SYNTHETIC-not-started-site/learning/index.html header.page-head
+2026-11-08 08:05:31 UTC  learning-SYNTHETIC-not-started-status-line-390-dark.png  <- file://$SCRATCH/SYNTHETIC-not-started-site/learning/index.html header.page-head
+2026-11-08 08:05:32 UTC  learning-SYNTHETIC-not-started-results-empty-1280-light.png  <- file://$SCRATCH/SYNTHETIC-not-started-site/learning/index.html #learning-results
+2026-11-08 08:05:32 UTC  learning-SYNTHETIC-not-started-results-empty-1280-dark.png  <- file://$SCRATCH/SYNTHETIC-not-started-site/learning/index.html #learning-results
+2026-11-08 08:05:32 UTC  learning-SYNTHETIC-not-started-results-empty-390-light.png  <- file://$SCRATCH/SYNTHETIC-not-started-site/learning/index.html #learning-results
+2026-11-08 08:05:32 UTC  learning-SYNTHETIC-not-started-results-empty-390-dark.png  <- file://$SCRATCH/SYNTHETIC-not-started-site/learning/index.html #learning-results
+2026-11-08 08:05:32 UTC  learning-none-status-line-1280-light.png  <- file://$SCRATCH/none-site/learning/index.html header.page-head
+2026-11-08 08:05:32 UTC  learning-none-status-line-1280-dark.png  <- file://$SCRATCH/none-site/learning/index.html header.page-head
+2026-11-08 08:05:32 UTC  learning-none-status-line-390-light.png  <- file://$SCRATCH/none-site/learning/index.html header.page-head
+2026-11-08 08:05:32 UTC  learning-none-status-line-390-dark.png  <- file://$SCRATCH/none-site/learning/index.html header.page-head

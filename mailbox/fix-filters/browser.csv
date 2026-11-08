@@ -1,0 +1,121 @@
+render,width,theme,check,observed,result
+before (origin/main),1280,light,#filters-body display,none,FAIL
+before (origin/main),1280,light,League key 'League 2' visible,False,FAIL
+before (origin/main),1280,light,Models key 'Chat' visible,False,FAIL
+before (origin/main),1280,light,Measure link 'Error rate' visible,False,FAIL
+before (origin/main),1280,light,More filters visible,False,FAIL
+before (origin/main),1280,light,Reset visible,False,FAIL
+before (origin/main),1280,light,League 2 clicked → pressed,not clickable: Locator.click: Timeout 2000ms exceeded.; aria-pressed=false,FAIL
+before (origin/main),1280,light,Models 'Chat' clicked → pressed,not clickable: Locator.click: Timeout 2000ms exceeded.; aria-pressed=false,FAIL
+before (origin/main),1280,light,More filters clicked → fold open,not clickable: Locator.click: Timeout 2000ms exceeded.; aria-expanded=false; fold visible=False,FAIL
+before (origin/main),1280,light,"Phase select visible (in the More filters fold, once open)",False,FAIL
+before (origin/main),1280,light,"Phase select usable (real select, file://)",not usable: Page.select_option: Timeout 2000ms exceeded.,FAIL
+before (origin/main),1280,light,Reset clicked → defaults,"not clickable: Locator.click: Timeout 2000ms exceeded.; {'league': 'all', 'kind': 'all', 'phase': 'all'}",FAIL
+before (origin/main),1280,light,Phase select → Race changes the page (routed http),not usable: Page.click: Timeout 2000ms exceeded.,FAIL
+before (origin/main),1280,light,collapsible .filters panel: closed / .is-open,none / flex,ok
+before (origin/main),1280,light,script errors (fragment fetch refused by file:// listed),none,ok
+before (origin/main),1280,dark,#filters-body display,none,FAIL
+before (origin/main),1280,dark,League key 'League 2' visible,False,FAIL
+before (origin/main),1280,dark,Models key 'Chat' visible,False,FAIL
+before (origin/main),1280,dark,Measure link 'Error rate' visible,False,FAIL
+before (origin/main),1280,dark,More filters visible,False,FAIL
+before (origin/main),1280,dark,Reset visible,False,FAIL
+before (origin/main),1280,dark,League 2 clicked → pressed,not clickable: Locator.click: Timeout 2000ms exceeded.; aria-pressed=false,FAIL
+before (origin/main),1280,dark,Models 'Chat' clicked → pressed,not clickable: Locator.click: Timeout 2000ms exceeded.; aria-pressed=false,FAIL
+before (origin/main),1280,dark,More filters clicked → fold open,not clickable: Locator.click: Timeout 2000ms exceeded.; aria-expanded=false; fold visible=False,FAIL
+before (origin/main),1280,dark,"Phase select visible (in the More filters fold, once open)",False,FAIL
+before (origin/main),1280,dark,"Phase select usable (real select, file://)",not usable: Page.select_option: Timeout 2000ms exceeded.,FAIL
+before (origin/main),1280,dark,Reset clicked → defaults,"not clickable: Locator.click: Timeout 2000ms exceeded.; {'league': 'all', 'kind': 'all', 'phase': 'all'}",FAIL
+before (origin/main),1280,dark,Phase select → Race changes the page (routed http),not usable: Page.click: Timeout 2000ms exceeded.,FAIL
+before (origin/main),1280,dark,collapsible .filters panel: closed / .is-open,none / flex,ok
+before (origin/main),1280,dark,script errors (fragment fetch refused by file:// listed),none,ok
+before (origin/main),390,light,#filters-body display,none,FAIL
+before (origin/main),390,light,League key 'League 2' visible,False,FAIL
+before (origin/main),390,light,Models key 'Chat' visible,False,FAIL
+before (origin/main),390,light,Measure link 'Error rate' visible,False,FAIL
+before (origin/main),390,light,More filters visible,False,FAIL
+before (origin/main),390,light,Reset visible,False,FAIL
+before (origin/main),390,light,League 2 clicked → pressed,not clickable: Locator.click: Timeout 2000ms exceeded.; aria-pressed=false,FAIL
+before (origin/main),390,light,Models 'Chat' clicked → pressed,not clickable: Locator.click: Timeout 2000ms exceeded.; aria-pressed=false,FAIL
+before (origin/main),390,light,More filters clicked → fold open,not clickable: Locator.click: Timeout 2000ms exceeded.; aria-expanded=false; fold visible=False,FAIL
+before (origin/main),390,light,"Phase select visible (in the More filters fold, once open)",False,FAIL
+before (origin/main),390,light,"Phase select usable (real select, file://)",not usable: Page.select_option: Timeout 2000ms exceeded.,FAIL
+before (origin/main),390,light,Reset clicked → defaults,"not clickable: Locator.click: Timeout 2000ms exceeded.; {'league': 'all', 'kind': 'all', 'phase': 'all'}",FAIL
+before (origin/main),390,light,Phase select → Race changes the page (routed http),not usable: Page.click: Timeout 2000ms exceeded.,FAIL
+before (origin/main),390,light,collapsible .filters panel: closed / .is-open,none / flex,ok
+before (origin/main),390,light,script errors (fragment fetch refused by file:// listed),none,ok
+before (origin/main),390,dark,#filters-body display,none,FAIL
+before (origin/main),390,dark,League key 'League 2' visible,False,FAIL
+before (origin/main),390,dark,Models key 'Chat' visible,False,FAIL
+before (origin/main),390,dark,Measure link 'Error rate' visible,False,FAIL
+before (origin/main),390,dark,More filters visible,False,FAIL
+before (origin/main),390,dark,Reset visible,False,FAIL
+before (origin/main),390,dark,League 2 clicked → pressed,not clickable: Locator.click: Timeout 2000ms exceeded.; aria-pressed=false,FAIL
+before (origin/main),390,dark,Models 'Chat' clicked → pressed,not clickable: Locator.click: Timeout 2000ms exceeded.; aria-pressed=false,FAIL
+before (origin/main),390,dark,More filters clicked → fold open,not clickable: Locator.click: Timeout 2000ms exceeded.; aria-expanded=false; fold visible=False,FAIL
+before (origin/main),390,dark,"Phase select visible (in the More filters fold, once open)",False,FAIL
+before (origin/main),390,dark,"Phase select usable (real select, file://)",not usable: Page.select_option: Timeout 2000ms exceeded.,FAIL
+before (origin/main),390,dark,Reset clicked → defaults,"not clickable: Locator.click: Timeout 2000ms exceeded.; {'league': 'all', 'kind': 'all', 'phase': 'all'}",FAIL
+before (origin/main),390,dark,Phase select → Race changes the page (routed http),not usable: Page.click: Timeout 2000ms exceeded.,FAIL
+before (origin/main),390,dark,collapsible .filters panel: closed / .is-open,none / flex,ok
+before (origin/main),390,dark,script errors (fragment fetch refused by file:// listed),none,ok
+after (fix-filters),1280,light,#filters-body display,flex,ok
+after (fix-filters),1280,light,League key 'League 2' visible,True,ok
+after (fix-filters),1280,light,Models key 'Chat' visible,True,ok
+after (fix-filters),1280,light,Measure link 'Error rate' visible,True,ok
+after (fix-filters),1280,light,More filters visible,True,ok
+after (fix-filters),1280,light,Reset visible,True,ok
+after (fix-filters),1280,light,League 2 clicked → pressed,True; aria-pressed=true,ok
+after (fix-filters),1280,light,Models 'Chat' clicked → pressed,True; aria-pressed=true,ok
+after (fix-filters),1280,light,More filters clicked → fold open,True; aria-expanded=true; fold visible=True,ok
+after (fix-filters),1280,light,"Phase select visible (in the More filters fold, once open)",True,ok
+after (fix-filters),1280,light,"Phase select usable (real select, file://)",value after: race; dialogs: ['Could not load this phase (Failed to fetch).'],ok
+after (fix-filters),1280,light,Reset clicked → defaults,"True; {'league': 'all', 'kind': 'all', 'phase': 'all'}",ok
+after (fix-filters),1280,light,Phase select → Race changes the page (routed http),value race; 10 of 10 phase slots replaced; dialogs none; errors none,ok
+after (fix-filters),1280,light,collapsible .filters panel: closed / .is-open,none / flex,ok
+after (fix-filters),1280,light,script errors (fragment fetch refused by file:// listed),none,ok
+after (fix-filters),1280,dark,#filters-body display,flex,ok
+after (fix-filters),1280,dark,League key 'League 2' visible,True,ok
+after (fix-filters),1280,dark,Models key 'Chat' visible,True,ok
+after (fix-filters),1280,dark,Measure link 'Error rate' visible,True,ok
+after (fix-filters),1280,dark,More filters visible,True,ok
+after (fix-filters),1280,dark,Reset visible,True,ok
+after (fix-filters),1280,dark,League 2 clicked → pressed,True; aria-pressed=true,ok
+after (fix-filters),1280,dark,Models 'Chat' clicked → pressed,True; aria-pressed=true,ok
+after (fix-filters),1280,dark,More filters clicked → fold open,True; aria-expanded=true; fold visible=True,ok
+after (fix-filters),1280,dark,"Phase select visible (in the More filters fold, once open)",True,ok
+after (fix-filters),1280,dark,"Phase select usable (real select, file://)",value after: race; dialogs: ['Could not load this phase (Failed to fetch).'],ok
+after (fix-filters),1280,dark,Reset clicked → defaults,"True; {'league': 'all', 'kind': 'all', 'phase': 'all'}",ok
+after (fix-filters),1280,dark,Phase select → Race changes the page (routed http),value race; 10 of 10 phase slots replaced; dialogs none; errors none,ok
+after (fix-filters),1280,dark,collapsible .filters panel: closed / .is-open,none / flex,ok
+after (fix-filters),1280,dark,script errors (fragment fetch refused by file:// listed),none,ok
+after (fix-filters),390,light,#filters-body display,flex,ok
+after (fix-filters),390,light,League key 'League 2' visible,True,ok
+after (fix-filters),390,light,Models key 'Chat' visible,True,ok
+after (fix-filters),390,light,Measure link 'Error rate' visible,True,ok
+after (fix-filters),390,light,More filters visible,True,ok
+after (fix-filters),390,light,Reset visible,True,ok
+after (fix-filters),390,light,League 2 clicked → pressed,True; aria-pressed=true,ok
+after (fix-filters),390,light,Models 'Chat' clicked → pressed,True; aria-pressed=true,ok
+after (fix-filters),390,light,More filters clicked → fold open,True; aria-expanded=true; fold visible=True,ok
+after (fix-filters),390,light,"Phase select visible (in the More filters fold, once open)",True,ok
+after (fix-filters),390,light,"Phase select usable (real select, file://)",value after: race; dialogs: ['Could not load this phase (Failed to fetch).'],ok
+after (fix-filters),390,light,Reset clicked → defaults,"True; {'league': 'all', 'kind': 'all', 'phase': 'all'}",ok
+after (fix-filters),390,light,Phase select → Race changes the page (routed http),value race; 10 of 10 phase slots replaced; dialogs none; errors none,ok
+after (fix-filters),390,light,collapsible .filters panel: closed / .is-open,none / flex,ok
+after (fix-filters),390,light,script errors (fragment fetch refused by file:// listed),none,ok
+after (fix-filters),390,dark,#filters-body display,flex,ok
+after (fix-filters),390,dark,League key 'League 2' visible,True,ok
+after (fix-filters),390,dark,Models key 'Chat' visible,True,ok
+after (fix-filters),390,dark,Measure link 'Error rate' visible,True,ok
+after (fix-filters),390,dark,More filters visible,True,ok
+after (fix-filters),390,dark,Reset visible,True,ok
+after (fix-filters),390,dark,League 2 clicked → pressed,True; aria-pressed=true,ok
+after (fix-filters),390,dark,Models 'Chat' clicked → pressed,True; aria-pressed=true,ok
+after (fix-filters),390,dark,More filters clicked → fold open,True; aria-expanded=true; fold visible=True,ok
+after (fix-filters),390,dark,"Phase select visible (in the More filters fold, once open)",True,ok
+after (fix-filters),390,dark,"Phase select usable (real select, file://)",value after: race; dialogs: ['Could not load this phase (Failed to fetch).'],ok
+after (fix-filters),390,dark,Reset clicked → defaults,"True; {'league': 'all', 'kind': 'all', 'phase': 'all'}",ok
+after (fix-filters),390,dark,Phase select → Race changes the page (routed http),value race; 10 of 10 phase slots replaced; dialogs none; errors none,ok
+after (fix-filters),390,dark,collapsible .filters panel: closed / .is-open,none / flex,ok
+after (fix-filters),390,dark,script errors (fragment fetch refused by file:// listed),none,ok

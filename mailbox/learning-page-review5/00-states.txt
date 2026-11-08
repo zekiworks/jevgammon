@@ -1,0 +1,5 @@
+real: copied as snapshot.py does; complete=True; updated_at 2026-11-08T07:28:06+00:00
+none: the lesson prompt files only
+SYNTHETIC-not-started: SYNTHETIC (subset of the real series); T0 removed; finished series {'control': 0, 'records': 0, 'lessons': 0, 'budget': 0}; complete=False; updated_at 2026-11-08T07:28:06+00:00
+SYNTHETIC-smoke-running: SYNTHETIC (subset of the real series); T0 kept; finished series {'control': 3, 'records': 2, 'lessons': 3, 'budget': 2}; complete=False; updated_at 2026-11-07T21:53:02+00:00
+SYNTHETIC-running: SYNTHETIC (subset of the real series); T0 kept; finished series {'control': 7, 'records': 6, 'lessons': 6, 'budget': 5}; complete=False; updated_at 2026-11-08T04:11:24+00:00

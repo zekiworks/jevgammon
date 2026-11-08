@@ -1,0 +1,10 @@
+{
+  "note": "Model type of a Nackgammon paired-test setup that has no setups.json entry (it played in no league). Read by home.nack_views; every other setup's type is its setups.json model_type.",
+  "setups": {
+    "GPT-6.1 Terra": {
+      "model_type": "chat model",
+      "model": "GPT-6.1 Terra",
+      "source": "content/method-spec-2026-10-24.md, \u00a710 roster: \"GPT-6.1 Terra (openai/gpt-6.1-terra, effort low)\"; tools/v3/effort_sweep_score.py: route \"OpenRouter (OpenAI endpoint)\". A general OpenAI chat model with a reasoning-effort setting, like GPT-6.1 Sol; not a backgammon decision model."
+    }
+  }
+}

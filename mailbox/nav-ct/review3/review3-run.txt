@@ -1,0 +1,38 @@
+2549 / 2549 files; only in one: []
+identical 2546; differing: ['about/index.html', 'bg.css', 'index.html']
+home outside #leaderboard and the result cards unchanged: True
+numbers: 544 values, 0 differences
+cards before: ['Highest observed risk judgement, every model setup 75.8 /100, higher is better GPT-6 Astra (low) · League 3 · 95% interval 73.1 to 78.5', 'Highest observed risk judgement, decision models 64.0 /100, higher is better Liquid d1-ultra · League 2 · 95% interval 61.7 to 66.3', 'Lowest observed error rate, every model setup 9.9 PR, lower is better GPT-6.1 Sol (high) · League 3 · 95% interval 8.6 to 11.3']
+cards now: ['75.8 /100, higher is better GPT-6 Astra (low) · League 3 · 95% interval 73.1 to 78.5', '64.0 /100, higher is better Liquid d1-ultra · League 2 · 95% interval 61.7 to 66.3', '8.8 PR, lower is better GPT-6 Astra (high) · late entry, League 3 field · 95% interval 7.4 to 10.3']
+| # | Row | Setup shown | Setting | Risk judgement (95%) | Tag | Other settings | Rank at 90cd56e |
+|---:|---|---|---|---|---|---|---:|
+| 1 | GPT-6 Astra | GPT-6 Astra (high) | high | 74.4 (71.8–77.0) | late entry | GPT-6 Astra (low), GPT-6 Astra (medium) | 1 |
+| 2 | Gemini 4 Argon | Gemini 4 Argon (high) | high | 74.1 (72.0–76.1) |  | Gemini 4 Argon (low) | 2 |
+| 3 | Claude Fable 5.1 | Claude Fable 5.1 (high) | high | 72.3 (69.8–74.7) |  | Claude Fable 5.1 (low) | 3 |
+| 4 | GPT-6.1 Sol | GPT-6.1 Sol (high) | high | 72.2 (69.5–74.9) |  | GPT-6.1 Sol (low) | 4 |
+| 5 | Claude Opus 5.5 | Claude Opus 5.5 (high) | high | 70.0 (67.3–72.6) |  | Claude Opus 5.5 (low) | 5 |
+| 6 | DeepSeek V4.1 Flash | DeepSeek V4.1 Flash (low) | low | 69.0 (67.3–70.9) |  | DeepSeek V4.1 Flash 1017 (low), DeepSeek V4.1 Flash (off), DeepSeek V4.1 Flash 1017 (off) | 6 |
+| 7 | Grok 4.7 | Grok 4.7 (high) | high | 68.5 (66.1–71.1) |  | Grok 4.7 (low) | 7 |
+| 8 | Claude Sonnet 5.5 | Claude Sonnet 5.5 (high) | high | 68.2 (66.3–70.0) |  | Claude Sonnet 5.5 (low) | 8 |
+| 9 | Gemini 3.8 Flash | Gemini 3.8 Flash (high) | high | 66.9 (65.2–68.5) |  | Gemini 3.8 Flash (low) | 9 |
+| 10 | Kimi K3.1 Pro | Kimi K3.1 Pro (off) | off | 65.9 (63.2–68.9) |  |  | 10 |
+| 11 | Gemma 4 31B | Gemma 4 31B (on) | on | 64.5 (62.9–66.2) |  | Gemma 4 31B (off) | 11 |
+| 12 | Liquid d1-ultra | Liquid d1-ultra | (single setup) | 64.0 (61.7–66.3) |  |  | 12 |
+| 13 | Base Labs Mammoth-1 | Base Labs Mammoth-1 | (single setup) | 63.2 (61.2–65.2) | late entry |  | not ranked |
+| 14 | Drex Max v1 | Drex Max v1 | (single setup) | 62.9 (61.1–64.7) | late entry · provisional |  | not ranked |
+| 15 | Qwen3.8-27B | Qwen3.8-27B (low) | low | 62.0 (60.1–63.9) |  | Qwen3.8-27B (off) | 13 |
+| Old text (90cd56e home) | On About (#leaderboard) | Found |
+|---|---|---|
+| A fixed table: the filters below do not change it. | A fixed table: the filters below the leaderboard do not change it. | yes |
+| Tap a model (or point at it) for its details and its decisions; how each row is chosen is under the table. | Tap a model (or point at it) for its details and its decisions. | yes |
+| # is the rank among all models, in every view; the programs are reference rows in every view. | # is the rank among all models, in every view of the table's All · Chat models · Decision models filter; the programs are reference rows in every view. | yes |
+| Each model's row is its highest reasoning setting played, by the effort the requests sent (off < minimal < low < medium < high < xhigh < max; on above off for a model without levels; a decision model's single setup), never its best score. | (same) | yes |
+| Several setups at that setting: the first in league order, then by setup name (no score). | (same) | yes |
+| Every value of a row and of its details is that setup's own; its other settings are under the row's expander and under All setups. | (same) | yes |
+| Version names are separate models; DeepSeek V4.1 Flash 1017 is under DeepSeek V4.1 Flash (a dated checkpoint under its original). | (same) | yes |
+| Every column of every setup: Every number . | (same) | yes |
+
+Above the table now: Risk judgement: 100 = every call right, 50 = always safe · higher is better / One row per model: its highest reasoning setting, late entries included, never its best score ( more in About ).
+Under the table (rule line): Row rule: each model's highest reasoning setting (off < minimal < low < medium < high < xhigh < max), late entries included; a model with one setup uses it; several setups at that setting: the first in league order, then by setup name, never by score.
+browser: 44/44 ok
+failures: none

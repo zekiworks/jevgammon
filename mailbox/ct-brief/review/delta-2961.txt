@@ -1,0 +1,10 @@
+files only in one: []
+files differing: ['index.html']
+home page outside #finding-nackgammon identical: True
+old heading: A new starting position: no clear drop in any group
+old text: Each model was asked Nackgammon positions and standard positions matched to them. Every comparison between the groups (decision models, workhorses, frontier) has an interval that includes 0. Random play's own drop is −4.6 PR on the main 200 pairs: the Nackgammon positions were slightly easier for random play. Outside the groups, the late entry Base Labs Elephant-1 dropped (+8.66 PR, 97.5% interval +0.42 to +16.02). Unclear means the test can’t tell, not that the scores are equal.
+new heading: A new starting position
+new text: Each model was asked Nackgammon positions and standard positions matched to them. Compared group against group (one group's drop minus another's: decision models, workhorses, frontier), every 99% interval includes 0, so the test does not show the groups' drops to differ. Random play's own drop is −4.6 PR on the main 200 pairs: the Nackgammon positions were slightly easier for random play. Outside the groups, the late entry Base Labs Elephant-1 dropped (+8.66 PR, 97.5% interval +0.42 to +16.02). Unclear means the test can’t tell, not that the scores are equal.
+interval level now named: {'99': 1}
+numbers in the new section not in the old one: {}
+delta check: ok

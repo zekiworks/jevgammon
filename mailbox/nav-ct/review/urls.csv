@@ -1,0 +1,329 @@
+width,check,address,observed,result
+static,page of live: the page and every one of its 45 content ids,archive/2026-10-23/,all kept,ok
+static,page of live: the page and every one of its 7 content ids,clear-risk/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 3 content ids,compare/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 5 content ids,data/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 5 content ids,decisions/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 3 content ids,disagreements/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 225 content ids,./,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 91 content ids,leagues/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 13 content ids,learning/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 804 content ids,matches/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 94 content ids,method/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 4 content ids,models/late-entry/base-labs-elephant-1/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 4 content ids,models/late-entry/base-labs-mammoth-1/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 4 content ids,models/late-entry/drex-2-0/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 4 content ids,models/late-entry/drex-2-0-local/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 4 content ids,models/late-entry/drex-max-1-1/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 4 content ids,models/late-entry/drex-max-v1/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 4 content ids,models/late-entry/gpt-6-astra-high/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 4 content ids,models/late-entry/reax-1-3/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 4 content ids,models/late-entry/subq-snap-1-1/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-1/celeris-1-decision/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-1/cygnet-gemma-4-12b/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-1/decider-flash-v1-2/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-1/decider-v1-1-27b/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-1/decider-v1-2-27b/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-1/deepseek-v4-1-flash-off/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-1/fastino-glide-v1-2-local/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-1/gnubg-weak/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-1/gpt-6-luna/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-1/jev-1-13-0/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-1/lfm2-5-24b-a2b-off/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-1/lfm2-5-24b-a2b-on/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-1/mercury-decide/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-1/open-jev-27b-v1-1/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-1/qwen3-8-27b-off/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-1/random/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-1/safest/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-1/subq-snap-preview/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-1/winnow-12b/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-2/claude-fable-5-1-off/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-2/claude-sonnet-5-5-high/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-2/claude-sonnet-5-5-low/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-2/clef/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-2/deepseek-v4-1-flash-1017-off/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-2/deepseek-v4-1-flash-1017-on/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-2/deepseek-v4-1-flash-on/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-2/fastino-glide/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-2/gemini-3-8-flash-high/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-2/gemini-3-8-flash-low/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-2/gemma-4-31b-off/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-2/gemma-4-31b-on/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-2/glm-5-3-on/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-2/gnubg-weak/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-2/grok-4-7-off/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-2/jev-1-14-0/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-2/liquid-d1-ultra/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-2/qwen3-8-27b-on/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-2/qwen3-8-flash-off/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-3/claude-fable-5-1-on/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-3/claude-opus-5-5-off/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-3/claude-opus-5-5-on/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-3/gemini-4-argon-off/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-3/gemini-4-argon-on/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-3/gnubg-weak/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-3/gpt-6-1-sol-high/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-3/gpt-6-1-sol-low/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-3/gpt-6-astra-off/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-3/gpt-6-astra-on/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-3/grok-4-7-on/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 6 content ids,models/league-3/kimi-k3-1-pro-off/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 3 content ids,models/smoke-part-a/d3-turbo/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 3 content ids,models/smoke-part-a/nemotron-3-5-bolt-off/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 3 content ids,models/smoke-part-a/nemotron-3-5-bolt-on/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 3 content ids,models/smoke-part-a/smoke-beam-1-0-high/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 3 content ids,models/smoke-part-a/smoke-beam-1-0-low/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 3 content ids,models/smoke-part-a/smoke-claude-fable-5-1-high/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 3 content ids,models/smoke-part-a/smoke-claude-fable-5-1-low/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 3 content ids,models/smoke-part-a/smoke-claude-haiku-5-5-high/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 3 content ids,models/smoke-part-a/smoke-claude-haiku-5-5-low/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 3 content ids,models/smoke-part-a/smoke-gemini-3-8-flash-low-antigravity/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 3 content ids,models/smoke-part-a/smoke-grok-4-7-high/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 3 content ids,models/smoke-part-a/smoke-grok-4-7-low/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 3 content ids,models/smoke-part-a/smoke-hy4-preview-off/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 3 content ids,models/smoke-part-a/smoke-kimi-k3-low/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 3 content ids,models/smoke-part-a/smoke-mercury-3-low/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 3 content ids,models/smoke-part-a/smoke-mercury-3-off/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 3 content ids,models/smoke-part-a/smoke-mimo-v2-6-flash-low/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 3 content ids,models/smoke-part-a/smoke-mimo-v2-6-flash-off/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 3 content ids,models/smoke-part-a/smoke-mimo-v2-6-flash-off-unconstrained/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 3 content ids,models/smoke-part-a/smoke-mimo-v2-6-pro-high/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 3 content ids,models/smoke-part-a/smoke-mimo-v2-6-pro-off/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 3 content ids,models/smoke-part-a/smoke-minimax-m3-1-flash-low/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 5 content ids,models/v1-set/v1-claude-opus-5-5/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 5 content ids,models/v1-set/v1-clef/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 5 content ids,models/v1-set/v1-cygnet/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 5 content ids,models/v1-set/v1-decider-v1-1-27b/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 5 content ids,models/v1-set/v1-deepseek-v4-1-flash/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 5 content ids,models/v1-set/v1-deepseek-v4-1-flash-thinking/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 5 content ids,models/v1-set/v1-gemini-3-8-flash/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 5 content ids,models/v1-set/v1-gemini-4-argon/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 5 content ids,models/v1-set/v1-gemini-4-argon-shuffled/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 5 content ids,models/v1-set/v1-gemma-4-31b/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 5 content ids,models/v1-set/v1-glm-4-7-flash/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 5 content ids,models/v1-set/v1-glm-5-3-flash-nvfp4/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 5 content ids,models/v1-set/v1-gpt-6-astra/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 5 content ids,models/v1-set/v1-gpt-6-luna/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 5 content ids,models/v1-set/v1-jev-1-13-0/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 5 content ids,models/v1-set/v1-open-jev-27b/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 5 content ids,models/v1-set/v1-qwen3-8-flash-next/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 2 content ids,new-models/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of live: the page and every one of its 25 content ids,phases/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 45 content ids,archive/2026-10-23/,all kept,ok
+static,page of leaderboard-ct render: the page and every one of its 7 content ids,clear-risk/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 3 content ids,compare/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 5 content ids,data/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 5 content ids,decisions/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 3 content ids,disagreements/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 246 content ids,./,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 91 content ids,leagues/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 13 content ids,learning/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 804 content ids,matches/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 94 content ids,method/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 4 content ids,models/late-entry/base-labs-elephant-1/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 4 content ids,models/late-entry/base-labs-mammoth-1/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 4 content ids,models/late-entry/drex-2-0/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 4 content ids,models/late-entry/drex-2-0-local/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 4 content ids,models/late-entry/drex-max-1-1/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 4 content ids,models/late-entry/drex-max-v1/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 4 content ids,models/late-entry/gpt-6-astra-high/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 4 content ids,models/late-entry/reax-1-3/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 4 content ids,models/late-entry/subq-snap-1-1/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-1/celeris-1-decision/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-1/cygnet-gemma-4-12b/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-1/decider-flash-v1-2/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-1/decider-v1-1-27b/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-1/decider-v1-2-27b/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-1/deepseek-v4-1-flash-off/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-1/fastino-glide-v1-2-local/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-1/gnubg-weak/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-1/gpt-6-luna/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-1/jev-1-13-0/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-1/lfm2-5-24b-a2b-off/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-1/lfm2-5-24b-a2b-on/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-1/mercury-decide/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-1/open-jev-27b-v1-1/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-1/qwen3-8-27b-off/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-1/random/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-1/safest/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-1/subq-snap-preview/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-1/winnow-12b/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-2/claude-fable-5-1-off/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-2/claude-sonnet-5-5-high/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-2/claude-sonnet-5-5-low/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-2/clef/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-2/deepseek-v4-1-flash-1017-off/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-2/deepseek-v4-1-flash-1017-on/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-2/deepseek-v4-1-flash-on/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-2/fastino-glide/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-2/gemini-3-8-flash-high/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-2/gemini-3-8-flash-low/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-2/gemma-4-31b-off/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-2/gemma-4-31b-on/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-2/glm-5-3-on/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-2/gnubg-weak/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-2/grok-4-7-off/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-2/jev-1-14-0/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-2/liquid-d1-ultra/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-2/qwen3-8-27b-on/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-2/qwen3-8-flash-off/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-3/claude-fable-5-1-on/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-3/claude-opus-5-5-off/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-3/claude-opus-5-5-on/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-3/gemini-4-argon-off/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-3/gemini-4-argon-on/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-3/gnubg-weak/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-3/gpt-6-1-sol-high/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-3/gpt-6-1-sol-low/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-3/gpt-6-astra-off/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-3/gpt-6-astra-on/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-3/grok-4-7-on/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 6 content ids,models/league-3/kimi-k3-1-pro-off/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 3 content ids,models/smoke-part-a/d3-turbo/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 3 content ids,models/smoke-part-a/nemotron-3-5-bolt-off/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 3 content ids,models/smoke-part-a/nemotron-3-5-bolt-on/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 3 content ids,models/smoke-part-a/smoke-beam-1-0-high/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 3 content ids,models/smoke-part-a/smoke-beam-1-0-low/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 3 content ids,models/smoke-part-a/smoke-claude-fable-5-1-high/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 3 content ids,models/smoke-part-a/smoke-claude-fable-5-1-low/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 3 content ids,models/smoke-part-a/smoke-claude-haiku-5-5-high/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 3 content ids,models/smoke-part-a/smoke-claude-haiku-5-5-low/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 3 content ids,models/smoke-part-a/smoke-gemini-3-8-flash-low-antigravity/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 3 content ids,models/smoke-part-a/smoke-grok-4-7-high/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 3 content ids,models/smoke-part-a/smoke-grok-4-7-low/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 3 content ids,models/smoke-part-a/smoke-hy4-preview-off/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 3 content ids,models/smoke-part-a/smoke-kimi-k3-low/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 3 content ids,models/smoke-part-a/smoke-mercury-3-low/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 3 content ids,models/smoke-part-a/smoke-mercury-3-off/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 3 content ids,models/smoke-part-a/smoke-mimo-v2-6-flash-low/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 3 content ids,models/smoke-part-a/smoke-mimo-v2-6-flash-off/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 3 content ids,models/smoke-part-a/smoke-mimo-v2-6-flash-off-unconstrained/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 3 content ids,models/smoke-part-a/smoke-mimo-v2-6-pro-high/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 3 content ids,models/smoke-part-a/smoke-mimo-v2-6-pro-off/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 3 content ids,models/smoke-part-a/smoke-minimax-m3-1-flash-low/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 5 content ids,models/v1-set/v1-claude-opus-5-5/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 5 content ids,models/v1-set/v1-clef/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 5 content ids,models/v1-set/v1-cygnet/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 5 content ids,models/v1-set/v1-decider-v1-1-27b/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 5 content ids,models/v1-set/v1-deepseek-v4-1-flash/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 5 content ids,models/v1-set/v1-deepseek-v4-1-flash-thinking/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 5 content ids,models/v1-set/v1-gemini-3-8-flash/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 5 content ids,models/v1-set/v1-gemini-4-argon/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 5 content ids,models/v1-set/v1-gemini-4-argon-shuffled/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 5 content ids,models/v1-set/v1-gemma-4-31b/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 5 content ids,models/v1-set/v1-glm-4-7-flash/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 5 content ids,models/v1-set/v1-glm-5-3-flash-nvfp4/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 5 content ids,models/v1-set/v1-gpt-6-astra/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 5 content ids,models/v1-set/v1-gpt-6-luna/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 5 content ids,models/v1-set/v1-jev-1-13-0/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 5 content ids,models/v1-set/v1-open-jev-27b/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 5 content ids,models/v1-set/v1-qwen3-8-flash-next/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 2 content ids,new-models/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+static,page of leaderboard-ct render: the page and every one of its 25 content ids,phases/,all kept; the old header's own id ['view-part'] went with the old header (a link to it opens the page at its top),ok
+1280,old address in the browser,#board-panel,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+1280,old address in the browser,#cost,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+1280,old address in the browser,#error-rate,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+1280,old address in the browser,#findings,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+1280,old address in the browser,#leaderboard,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+1280,old address in the browser,#leagues-tabs,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+1280,old address in the browser,#risk-judgement,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+1280,old address in the browser,#time,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+1280,old address in the browser,./,200; no anchor; tab Leaderboard (expected Leaderboard),ok
+1280,old address in the browser,clear-risk/,200; no anchor; tab Experiments (expected Experiments),ok
+1280,old address in the browser,compare/,200; no anchor; tab Leaderboard (expected Leaderboard),ok
+1280,old address in the browser,data/,200; no anchor; tab About (expected About),ok
+1280,old address in the browser,decisions/,200; no anchor; tab Decisions (expected Decisions),ok
+1280,old address in the browser,decisions/?r=risk&c=rr,200; no anchor; tab Decisions (expected Decisions),ok
+1280,old address in the browser,disagreements/,200; no anchor; tab Leaderboard (expected Leaderboard),ok
+1280,old address in the browser,leagues/,200; no anchor; tab Leaderboard (expected Leaderboard),ok
+1280,old address in the browser,learning/,200; no anchor; tab Experiments (expected Experiments),ok
+1280,old address in the browser,matches/,200; no anchor; tab Leaderboard (expected Leaderboard),ok
+1280,old address in the browser,method/,200; no anchor; tab About (expected About),ok
+1280,old address in the browser,phases/,200; no anchor; tab Leaderboard (expected Leaderboard),ok
+1280,old address in the browser,#leaderboard,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+1280,old address in the browser,#too-safe,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+1280,old address in the browser,#finding-cautious,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+1280,old address in the browser,#finding-flinch,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+1280,old address in the browser,#how-numbers,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+1280,old address in the browser,#findings,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+1280,old address in the browser,#board-panel,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+1280,old address in the browser,#leagues-tabs,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+1280,old address in the browser,#filters,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+1280,old address in the browser,#close-choices-stage-b,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+1280,old address in the browser,#nackgammon-paired,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+1280,old address in the browser,#downloads,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+1280,old address in the browser,#risk-judgement,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+1280,old address in the browser,#error-rate,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+1280,old address in the browser,#cost,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+1280,old address in the browser,#time,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+1280,old address in the browser,method/#limits,"200; below the header, in view; tab About (expected About)",ok
+1280,old address in the browser,method/#prompt,"200; below the header, in view; tab About (expected About)",ok
+1280,old address in the browser,method/#nackgammon-paired,"200; below the header, in view; tab About (expected About)",ok
+1280,old address in the browser,leagues/#late-entries,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+1280,old address in the browser,leagues/#nack-knockout,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+1280,old address in the browser,leagues/#hype-cup,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+1280,old address in the browser,matches/#stage-knockout,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+1280,old address in the browser,matches/#stage-cup,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+1280,old address in the browser,data/#recompute,"200; below the header, in view; tab About (expected About)",ok
+1280,old address in the browser,data/#status,"200; below the header, in view; tab About (expected About)",ok
+1280,old address in the browser,learning/#learning-prompt,"200; below the header, in view; tab Experiments (expected Experiments)",ok
+1280,old address in the browser,clear-risk/,200; no anchor; tab Experiments (expected Experiments),ok
+1280,old address in the browser,?league=league-2#leaderboard,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+1280,old address in the browser,?type=chat#board,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+1280,old address in the browser,decisions/?d=league-3&s=gpt-6-astra-off,200; no anchor; tab Decisions (expected Decisions),ok
+1280,script errors on these addresses,,none,ok
+390,old address in the browser,#board-panel,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+390,old address in the browser,#cost,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+390,old address in the browser,#error-rate,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+390,old address in the browser,#findings,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+390,old address in the browser,#leaderboard,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+390,old address in the browser,#leagues-tabs,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+390,old address in the browser,#risk-judgement,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+390,old address in the browser,#time,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+390,old address in the browser,./,200; no anchor; tab Leaderboard (expected Leaderboard),ok
+390,old address in the browser,clear-risk/,200; no anchor; tab Experiments (expected Experiments),ok
+390,old address in the browser,compare/,200; no anchor; tab Leaderboard (expected Leaderboard),ok
+390,old address in the browser,data/,200; no anchor; tab About (expected About),ok
+390,old address in the browser,decisions/,200; no anchor; tab Decisions (expected Decisions),ok
+390,old address in the browser,decisions/?r=risk&c=rr,200; no anchor; tab Decisions (expected Decisions),ok
+390,old address in the browser,disagreements/,200; no anchor; tab Leaderboard (expected Leaderboard),ok
+390,old address in the browser,leagues/,200; no anchor; tab Leaderboard (expected Leaderboard),ok
+390,old address in the browser,learning/,200; no anchor; tab Experiments (expected Experiments),ok
+390,old address in the browser,matches/,200; no anchor; tab Leaderboard (expected Leaderboard),ok
+390,old address in the browser,method/,200; no anchor; tab About (expected About),ok
+390,old address in the browser,phases/,200; no anchor; tab Leaderboard (expected Leaderboard),ok
+390,old address in the browser,#leaderboard,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+390,old address in the browser,#too-safe,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+390,old address in the browser,#finding-cautious,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+390,old address in the browser,#finding-flinch,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+390,old address in the browser,#how-numbers,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+390,old address in the browser,#findings,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+390,old address in the browser,#board-panel,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+390,old address in the browser,#leagues-tabs,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+390,old address in the browser,#filters,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+390,old address in the browser,#close-choices-stage-b,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+390,old address in the browser,#nackgammon-paired,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+390,old address in the browser,#downloads,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+390,old address in the browser,#risk-judgement,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+390,old address in the browser,#error-rate,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+390,old address in the browser,#cost,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+390,old address in the browser,#time,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+390,old address in the browser,method/#limits,"200; below the header, in view; tab About (expected About)",ok
+390,old address in the browser,method/#prompt,"200; below the header, in view; tab About (expected About)",ok
+390,old address in the browser,method/#nackgammon-paired,"200; below the header, in view; tab About (expected About)",ok
+390,old address in the browser,leagues/#late-entries,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+390,old address in the browser,leagues/#nack-knockout,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+390,old address in the browser,leagues/#hype-cup,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+390,old address in the browser,matches/#stage-knockout,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+390,old address in the browser,matches/#stage-cup,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+390,old address in the browser,data/#recompute,"200; below the header, in view; tab About (expected About)",ok
+390,old address in the browser,data/#status,"200; below the header, in view; tab About (expected About)",ok
+390,old address in the browser,learning/#learning-prompt,"200; below the header, in view; tab Experiments (expected Experiments)",ok
+390,old address in the browser,clear-risk/,200; no anchor; tab Experiments (expected Experiments),ok
+390,old address in the browser,?league=league-2#leaderboard,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+390,old address in the browser,?type=chat#board,"200; below the header, in view; tab Leaderboard (expected Leaderboard)",ok
+390,old address in the browser,decisions/?d=league-3&s=gpt-6-astra-off,200; no anchor; tab Decisions (expected Decisions),ok
+390,script errors on these addresses,,none,ok

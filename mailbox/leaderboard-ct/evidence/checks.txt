@@ -1,0 +1,8 @@
+PASS ranked rows = re-derived choice, in rank order: 31 rows shown, 31 expected
+PASS every other league setup of a model is under its row's expander, once: 14 other-setting rows
+PASS programs: one grey unranked row each (GNUbg weak, Safest, Random), League 1 (the played setup; best_per_model's rule over the played setups): [('league-1', 'gnubg-weak'), ('league-1', 'safest'), ('league-1', 'random')]
+PASS no late-entry row (LATE_ROWS off)
+PASS note under the table: Bars run to each score; the whisker is its 95% interval. Ranks show observed scores; small gaps need not be meaningful. Leagues played different positions.  More caveats: Method
+PASS no whisker-overlap sentence anywhere on the page
+PASS every league and late-entry setup has a maker
+evidence: OK

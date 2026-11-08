@@ -1,0 +1,2745 @@
+{
+ "title": "Nackgammon paired test: late entries",
+ "method": "Method spec 2026-10-24 §10.14(i)",
+ "late_entries_note": "Late entry, exploratory (Method §10.14(i), 2026-11-07): added after this test's results had been computed and read; no group, no primary comparison, M unchanged; same rules and scoring as every setup.",
+ "late_entries": [
+  "SubQ Snap 1.1",
+  "Drex Max 1.1",
+  "Drex 2.0",
+  "Base Labs Elephant-1",
+  "Base Labs Mammoth-1",
+  "Drex Max v1",
+  "Drex 2.0 (local)"
+ ],
+ "intervals_first_final": 0.975,
+ "setups": {
+  "SubQ Snap 1.1": {
+   "group": "late entry (exploratory, §10.14(i))",
+   "aliases": [],
+   "added": false,
+   "first": {
+    "pairs": 200,
+    "standard_pr": 31.91,
+    "nackgammon_pr": 29.66,
+    "drop": -2.25,
+    "drop_975": [
+     -18.09,
+     11.88
+    ],
+    "drop_95": [
+     -15.84,
+     10.11
+    ]
+   },
+   "final": {
+    "pairs": 500,
+    "standard_pr": 31.25,
+    "nackgammon_pr": 32.87,
+    "drop": 1.62,
+    "drop_975": [
+     -7.07,
+     10.07
+    ],
+    "drop_95": [
+     -5.97,
+     9.05
+    ]
+   },
+   "extend_at_first_look": true,
+   "extended": true,
+   "extension_incomplete": null,
+   "label": "unclear",
+   "invalid": {
+    "first": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "final": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "cut_off": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "past_32768_no_limit_sent": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "sensitivity": {
+    "worst": {
+     "pairs": 200,
+     "standard_pr": 31.91,
+     "nackgammon_pr": 29.66,
+     "drop": -2.25,
+     "drop_975": [
+      -18.09,
+      11.88
+     ]
+    },
+    "drop": {
+     "pairs": 200,
+     "standard_pr": 31.91,
+     "nackgammon_pr": 29.66,
+     "drop": -2.25,
+     "drop_975": [
+      -18.09,
+      11.88
+     ]
+    },
+    "cutoff": {
+     "pairs": 200,
+     "standard_pr": 31.91,
+     "nackgammon_pr": 29.66,
+     "drop": -2.25,
+     "drop_975": [
+      -18.09,
+      11.88
+     ]
+    }
+   },
+   "sensitivity_final_cutoff": {
+    "pairs": 500,
+    "standard_pr": 31.25,
+    "nackgammon_pr": 32.87,
+    "drop": 1.62,
+    "drop_975": [
+     -7.07,
+     10.07
+    ]
+   },
+   "phases": {
+    "opening": {
+     "pairs": 60,
+     "standard_pr": 30.16,
+     "nackgammon_pr": 37.55,
+     "drop": 7.39,
+     "drop_95": [
+      -6.51,
+      21.06
+     ]
+    },
+    "contact": {
+     "pairs": 60,
+     "standard_pr": 42.13,
+     "nackgammon_pr": 38.64,
+     "drop": -3.49,
+     "drop_95": [
+      -23.46,
+      18.42
+     ]
+    },
+    "holding": {
+     "pairs": 30,
+     "standard_pr": 60.08,
+     "nackgammon_pr": 42.23,
+     "drop": -17.85,
+     "drop_95": [
+      -94.94,
+      42.28
+     ]
+    },
+    "race": {
+     "pairs": 25,
+     "standard_pr": 5.27,
+     "nackgammon_pr": 2.75,
+     "drop": -2.51,
+     "drop_95": [
+      -8.14,
+      2.98
+     ]
+    },
+    "bear-off": {
+     "pairs": 25,
+     "standard_pr": 4.44,
+     "nackgammon_pr": 1.02,
+     "drop": -3.41,
+     "drop_95": [
+      -7.89,
+      -0.15
+     ]
+    }
+   },
+   "opening_vs_rest": {
+    "diff": 13.77,
+    "ci_95": [
+     -7.21,
+     37.11
+    ]
+   },
+   "tags": {
+    "(none: bear-off)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 1.02
+     },
+     "standard": {
+      "n": 25,
+      "pr": 4.44
+     }
+    },
+    "(none: opening)": {
+     "nackgammon": {
+      "n": 60,
+      "pr": 37.55
+     },
+     "standard": {
+      "n": 60,
+      "pr": 30.16
+     }
+    },
+    "(none: race)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 2.75
+     },
+     "standard": {
+      "n": 25,
+      "pr": 5.27
+     }
+    },
+    "back game": {
+     "nackgammon": {
+      "n": 10,
+      "pr": 51.48
+     },
+     "standard": {
+      "n": 2,
+      "pr": 17.04
+     }
+    },
+    "blitz": {
+     "nackgammon": {
+      "n": 17,
+      "pr": 34.81
+     },
+     "standard": {
+      "n": 23,
+      "pr": 42.33
+     }
+    },
+    "holding": {
+     "nackgammon": {
+      "n": 30,
+      "pr": 42.23
+     },
+     "standard": {
+      "n": 30,
+      "pr": 60.08
+     }
+    },
+    "low-anchor": {
+     "nackgammon": {
+      "n": 7,
+      "pr": 48.65
+     },
+     "standard": {
+      "n": 8,
+      "pr": 48.45
+     }
+    },
+    "other": {
+     "nackgammon": {
+      "n": 11,
+      "pr": 16.02
+     },
+     "standard": {
+      "n": 10,
+      "pr": 32.21
+     }
+    },
+    "priming": {
+     "nackgammon": {
+      "n": 15,
+      "pr": 46.33
+     },
+     "standard": {
+      "n": 17,
+      "pr": 47.68
+     }
+    }
+   },
+   "cost": {
+    "main": {
+     "decisions": 400,
+     "billed_usd_per_1000": 0.112,
+     "api_eq_usd_per_1000": 0.0
+    },
+    "all": {
+     "decisions": 1000,
+     "billed_usd_per_1000": 0.112,
+     "api_eq_usd_per_1000": 0.0
+    }
+   },
+   "risk": {
+    "main": {
+     "standard": {
+      "risk_pays": 66,
+      "safety_pays": 66,
+      "risks_taken": 31.0,
+      "needless": 17.0,
+      "d_prime": 0.56,
+      "caution": 0.36
+     },
+     "nackgammon": {
+      "risk_pays": 66,
+      "safety_pays": 66,
+      "risks_taken": 25.0,
+      "needless": 18.0,
+      "d_prime": 0.29,
+      "caution": 0.45
+     },
+     "change": {
+      "d_prime": -0.27,
+      "d_prime_95": [
+       -0.95,
+       0.34
+      ],
+      "caution": 0.09,
+      "caution_95": [
+       -0.23,
+       0.42
+      ]
+     },
+     "thin": false
+    },
+    "all": {
+     "standard": {
+      "risk_pays": 165,
+      "safety_pays": 165,
+      "risks_taken": 73.0,
+      "needless": 40.0,
+      "d_prime": 0.55,
+      "caution": 0.42
+     },
+     "nackgammon": {
+      "risk_pays": 165,
+      "safety_pays": 165,
+      "risks_taken": 67.0,
+      "needless": 45.0,
+      "d_prime": 0.36,
+      "caution": 0.42
+     },
+     "change": {
+      "d_prime": -0.19,
+      "d_prime_95": [
+       -0.57,
+       0.19
+      ],
+      "caution": 0.0,
+      "caution_95": [
+       -0.2,
+       0.2
+      ]
+     },
+     "thin": false
+    }
+   }
+  },
+  "Drex Max 1.1": {
+   "group": "late entry (exploratory, §10.14(i))",
+   "aliases": [],
+   "added": false,
+   "first": {
+    "pairs": 200,
+    "standard_pr": 28.04,
+    "nackgammon_pr": 24.41,
+    "drop": -3.63,
+    "drop_975": [
+     -12.96,
+     6.07
+    ],
+    "drop_95": [
+     -11.83,
+     4.74
+    ]
+   },
+   "final": {
+    "pairs": 500,
+    "standard_pr": 28.4,
+    "nackgammon_pr": 29.09,
+    "drop": 0.69,
+    "drop_975": [
+     -6.03,
+     7.48
+    ],
+    "drop_95": [
+     -5.23,
+     6.59
+    ]
+   },
+   "extend_at_first_look": true,
+   "extended": true,
+   "extension_incomplete": null,
+   "label": "unclear",
+   "invalid": {
+    "first": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "final": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "cut_off": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "past_32768_no_limit_sent": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "sensitivity": {
+    "worst": {
+     "pairs": 200,
+     "standard_pr": 28.04,
+     "nackgammon_pr": 24.41,
+     "drop": -3.63,
+     "drop_975": [
+      -12.96,
+      6.07
+     ]
+    },
+    "drop": {
+     "pairs": 200,
+     "standard_pr": 28.04,
+     "nackgammon_pr": 24.41,
+     "drop": -3.63,
+     "drop_975": [
+      -12.96,
+      6.07
+     ]
+    },
+    "cutoff": {
+     "pairs": 200,
+     "standard_pr": 28.04,
+     "nackgammon_pr": 24.41,
+     "drop": -3.63,
+     "drop_975": [
+      -12.96,
+      6.07
+     ]
+    }
+   },
+   "sensitivity_final_cutoff": {
+    "pairs": 500,
+    "standard_pr": 28.4,
+    "nackgammon_pr": 29.09,
+    "drop": 0.69,
+    "drop_975": [
+     -6.03,
+     7.48
+    ]
+   },
+   "phases": {
+    "opening": {
+     "pairs": 60,
+     "standard_pr": 30.58,
+     "nackgammon_pr": 25.44,
+     "drop": -5.14,
+     "drop_95": [
+      -18.22,
+      7.54
+     ]
+    },
+    "contact": {
+     "pairs": 60,
+     "standard_pr": 44.31,
+     "nackgammon_pr": 34.19,
+     "drop": -10.12,
+     "drop_95": [
+      -28.68,
+      6.9
+     ]
+    },
+    "holding": {
+     "pairs": 30,
+     "standard_pr": 28.17,
+     "nackgammon_pr": 29.54,
+     "drop": 1.37,
+     "drop_95": [
+      -26.95,
+      34.4
+     ]
+    },
+    "race": {
+     "pairs": 25,
+     "standard_pr": 6.18,
+     "nackgammon_pr": 9.13,
+     "drop": 2.95,
+     "drop_95": [
+      -5.88,
+      13.83
+     ]
+    },
+    "bear-off": {
+     "pairs": 25,
+     "standard_pr": 4.61,
+     "nackgammon_pr": 7.6,
+     "drop": 2.99,
+     "drop_95": [
+      -2.06,
+      11.63
+     ]
+    }
+   },
+   "opening_vs_rest": {
+    "diff": -2.16,
+    "ci_95": [
+     -18.58,
+     14.24
+    ]
+   },
+   "tags": {
+    "(none: bear-off)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 7.6
+     },
+     "standard": {
+      "n": 25,
+      "pr": 4.61
+     }
+    },
+    "(none: opening)": {
+     "nackgammon": {
+      "n": 60,
+      "pr": 25.44
+     },
+     "standard": {
+      "n": 60,
+      "pr": 30.58
+     }
+    },
+    "(none: race)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 9.13
+     },
+     "standard": {
+      "n": 25,
+      "pr": 6.18
+     }
+    },
+    "back game": {
+     "nackgammon": {
+      "n": 10,
+      "pr": 44.17
+     },
+     "standard": {
+      "n": 2,
+      "pr": 17.04
+     }
+    },
+    "blitz": {
+     "nackgammon": {
+      "n": 17,
+      "pr": 13.46
+     },
+     "standard": {
+      "n": 23,
+      "pr": 60.47
+     }
+    },
+    "holding": {
+     "nackgammon": {
+      "n": 30,
+      "pr": 29.54
+     },
+     "standard": {
+      "n": 30,
+      "pr": 28.17
+     }
+    },
+    "low-anchor": {
+     "nackgammon": {
+      "n": 7,
+      "pr": 52.75
+     },
+     "standard": {
+      "n": 8,
+      "pr": 42.66
+     }
+    },
+    "other": {
+     "nackgammon": {
+      "n": 11,
+      "pr": 29.96
+     },
+     "standard": {
+      "n": 10,
+      "pr": 22.78
+     }
+    },
+    "priming": {
+     "nackgammon": {
+      "n": 15,
+      "pr": 45.47
+     },
+     "standard": {
+      "n": 17,
+      "pr": 39.09
+     }
+    }
+   },
+   "cost": {
+    "main": {
+     "decisions": 400,
+     "billed_usd_per_1000": 0.168,
+     "api_eq_usd_per_1000": 0.0
+    },
+    "all": {
+     "decisions": 1000,
+     "billed_usd_per_1000": 0.168,
+     "api_eq_usd_per_1000": 0.0
+    }
+   },
+   "risk": {
+    "main": {
+     "standard": {
+      "risk_pays": 66,
+      "safety_pays": 66,
+      "risks_taken": 28.0,
+      "needless": 15.0,
+      "d_prime": 0.55,
+      "caution": 0.46
+     },
+     "nackgammon": {
+      "risk_pays": 66,
+      "safety_pays": 66,
+      "risks_taken": 22.0,
+      "needless": 10.0,
+      "d_prime": 0.58,
+      "caution": 0.72
+     },
+     "change": {
+      "d_prime": 0.03,
+      "d_prime_95": [
+       -0.63,
+       0.68
+      ],
+      "caution": 0.26,
+      "caution_95": [
+       -0.07,
+       0.6
+      ]
+     },
+     "thin": false
+    },
+    "all": {
+     "standard": {
+      "risk_pays": 165,
+      "safety_pays": 165,
+      "risks_taken": 67.0,
+      "needless": 36.0,
+      "d_prime": 0.54,
+      "caution": 0.5
+     },
+     "nackgammon": {
+      "risk_pays": 165,
+      "safety_pays": 165,
+      "risks_taken": 55.0,
+      "needless": 31.0,
+      "d_prime": 0.45,
+      "caution": 0.65
+     },
+     "change": {
+      "d_prime": -0.09,
+      "d_prime_95": [
+       -0.5,
+       0.32
+      ],
+      "caution": 0.15,
+      "caution_95": [
+       -0.05,
+       0.36
+      ]
+     },
+     "thin": false
+    }
+   }
+  },
+  "Drex 2.0": {
+   "group": "late entry (exploratory, §10.14(i))",
+   "aliases": [],
+   "added": false,
+   "first": {
+    "pairs": 200,
+    "standard_pr": 29.91,
+    "nackgammon_pr": 24.14,
+    "drop": -5.77,
+    "drop_975": [
+     -20.96,
+     6.76
+    ],
+    "drop_95": [
+     -18.71,
+     5.3
+    ]
+   },
+   "final": {
+    "pairs": 500,
+    "standard_pr": 29.39,
+    "nackgammon_pr": 31.35,
+    "drop": 1.95,
+    "drop_975": [
+     -6.39,
+     9.95
+    ],
+    "drop_95": [
+     -5.38,
+     9.03
+    ]
+   },
+   "extend_at_first_look": true,
+   "extended": true,
+   "extension_incomplete": null,
+   "label": "unclear",
+   "invalid": {
+    "first": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "final": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "cut_off": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "past_32768_no_limit_sent": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "sensitivity": {
+    "worst": {
+     "pairs": 200,
+     "standard_pr": 29.91,
+     "nackgammon_pr": 24.14,
+     "drop": -5.77,
+     "drop_975": [
+      -20.96,
+      6.76
+     ]
+    },
+    "drop": {
+     "pairs": 200,
+     "standard_pr": 29.91,
+     "nackgammon_pr": 24.14,
+     "drop": -5.77,
+     "drop_975": [
+      -20.96,
+      6.76
+     ]
+    },
+    "cutoff": {
+     "pairs": 200,
+     "standard_pr": 29.91,
+     "nackgammon_pr": 24.14,
+     "drop": -5.77,
+     "drop_975": [
+      -20.96,
+      6.76
+     ]
+    }
+   },
+   "sensitivity_final_cutoff": {
+    "pairs": 500,
+    "standard_pr": 29.39,
+    "nackgammon_pr": 31.35,
+    "drop": 1.95,
+    "drop_975": [
+     -6.39,
+     9.95
+    ]
+   },
+   "phases": {
+    "opening": {
+     "pairs": 60,
+     "standard_pr": 26.78,
+     "nackgammon_pr": 24.02,
+     "drop": -2.76,
+     "drop_95": [
+      -14.87,
+      9.52
+     ]
+    },
+    "contact": {
+     "pairs": 60,
+     "standard_pr": 39.07,
+     "nackgammon_pr": 27.2,
+     "drop": -11.87,
+     "drop_95": [
+      -29.73,
+      5.81
+     ]
+    },
+    "holding": {
+     "pairs": 30,
+     "standard_pr": 56.62,
+     "nackgammon_pr": 46.45,
+     "drop": -10.16,
+     "drop_95": [
+      -86.45,
+      45.01
+     ]
+    },
+    "race": {
+     "pairs": 25,
+     "standard_pr": 5.97,
+     "nackgammon_pr": 10.55,
+     "drop": 4.58,
+     "drop_95": [
+      -3.37,
+      15.14
+     ]
+    },
+    "bear-off": {
+     "pairs": 25,
+     "standard_pr": 7.35,
+     "nackgammon_pr": 3.92,
+     "drop": -3.43,
+     "drop_95": [
+      -10.28,
+      3.62
+     ]
+    }
+   },
+   "opening_vs_rest": {
+    "diff": 4.3,
+    "ci_95": [
+     -14.89,
+     26.13
+    ]
+   },
+   "tags": {
+    "(none: bear-off)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 3.92
+     },
+     "standard": {
+      "n": 25,
+      "pr": 7.35
+     }
+    },
+    "(none: opening)": {
+     "nackgammon": {
+      "n": 60,
+      "pr": 24.02
+     },
+     "standard": {
+      "n": 60,
+      "pr": 26.78
+     }
+    },
+    "(none: race)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 10.55
+     },
+     "standard": {
+      "n": 25,
+      "pr": 5.97
+     }
+    },
+    "back game": {
+     "nackgammon": {
+      "n": 10,
+      "pr": 20.53
+     },
+     "standard": {
+      "n": 2,
+      "pr": 22.94
+     }
+    },
+    "blitz": {
+     "nackgammon": {
+      "n": 17,
+      "pr": 13.81
+     },
+     "standard": {
+      "n": 23,
+      "pr": 26.41
+     }
+    },
+    "holding": {
+     "nackgammon": {
+      "n": 30,
+      "pr": 46.45
+     },
+     "standard": {
+      "n": 30,
+      "pr": 56.62
+     }
+    },
+    "low-anchor": {
+     "nackgammon": {
+      "n": 7,
+      "pr": 37.32
+     },
+     "standard": {
+      "n": 8,
+      "pr": 49.64
+     }
+    },
+    "other": {
+     "nackgammon": {
+      "n": 11,
+      "pr": 21.82
+     },
+     "standard": {
+      "n": 10,
+      "pr": 26.44
+     }
+    },
+    "priming": {
+     "nackgammon": {
+      "n": 15,
+      "pr": 46.05
+     },
+     "standard": {
+      "n": 17,
+      "pr": 60.54
+     }
+    }
+   },
+   "cost": {
+    "main": {
+     "decisions": 400,
+     "billed_usd_per_1000": 0.163,
+     "api_eq_usd_per_1000": 0.0
+    },
+    "all": {
+     "decisions": 1000,
+     "billed_usd_per_1000": 0.163,
+     "api_eq_usd_per_1000": 0.0
+    }
+   },
+   "risk": {
+    "main": {
+     "standard": {
+      "risk_pays": 66,
+      "safety_pays": 66,
+      "risks_taken": 27.0,
+      "needless": 14.0,
+      "d_prime": 0.56,
+      "caution": 0.51
+     },
+     "nackgammon": {
+      "risk_pays": 66,
+      "safety_pays": 66,
+      "risks_taken": 35.0,
+      "needless": 11.0,
+      "d_prime": 1.02,
+      "caution": 0.44
+     },
+     "change": {
+      "d_prime": 0.46,
+      "d_prime_95": [
+       -0.2,
+       1.13
+      ],
+      "caution": -0.07,
+      "caution_95": [
+       -0.37,
+       0.26
+      ]
+     },
+     "thin": false
+    },
+    "all": {
+     "standard": {
+      "risk_pays": 165,
+      "safety_pays": 165,
+      "risks_taken": 75.0,
+      "needless": 39.0,
+      "d_prime": 0.6,
+      "caution": 0.41
+     },
+     "nackgammon": {
+      "risk_pays": 165,
+      "safety_pays": 165,
+      "risks_taken": 79.0,
+      "needless": 43.0,
+      "d_prime": 0.58,
+      "caution": 0.34
+     },
+     "change": {
+      "d_prime": -0.02,
+      "d_prime_95": [
+       -0.4,
+       0.37
+      ],
+      "caution": -0.07,
+      "caution_95": [
+       -0.26,
+       0.13
+      ]
+     },
+     "thin": false
+    }
+   }
+  },
+  "Base Labs Elephant-1": {
+   "group": "late entry (exploratory, §10.14(i))",
+   "aliases": [],
+   "added": false,
+   "first": {
+    "pairs": 200,
+    "standard_pr": 26.1,
+    "nackgammon_pr": 31.1,
+    "drop": 5.0,
+    "drop_975": [
+     -10.13,
+     17.27
+    ],
+    "drop_95": [
+     -7.86,
+     15.89
+    ]
+   },
+   "final": {
+    "pairs": 500,
+    "standard_pr": 25.23,
+    "nackgammon_pr": 33.89,
+    "drop": 8.66,
+    "drop_975": [
+     0.42,
+     16.02
+    ],
+    "drop_95": [
+     1.68,
+     15.2
+    ]
+   },
+   "extend_at_first_look": true,
+   "extended": true,
+   "extension_incomplete": null,
+   "label": "worse",
+   "invalid": {
+    "first": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "final": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "cut_off": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "past_32768_no_limit_sent": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "sensitivity": {
+    "worst": {
+     "pairs": 200,
+     "standard_pr": 26.1,
+     "nackgammon_pr": 31.1,
+     "drop": 5.0,
+     "drop_975": [
+      -10.13,
+      17.27
+     ]
+    },
+    "drop": {
+     "pairs": 200,
+     "standard_pr": 26.1,
+     "nackgammon_pr": 31.1,
+     "drop": 5.0,
+     "drop_975": [
+      -10.13,
+      17.27
+     ]
+    },
+    "cutoff": {
+     "pairs": 200,
+     "standard_pr": 26.1,
+     "nackgammon_pr": 31.1,
+     "drop": 5.0,
+     "drop_975": [
+      -10.13,
+      17.27
+     ]
+    }
+   },
+   "sensitivity_final_cutoff": {
+    "pairs": 500,
+    "standard_pr": 25.23,
+    "nackgammon_pr": 33.89,
+    "drop": 8.66,
+    "drop_975": [
+     0.42,
+     16.02
+    ]
+   },
+   "phases": {
+    "opening": {
+     "pairs": 60,
+     "standard_pr": 18.64,
+     "nackgammon_pr": 31.15,
+     "drop": 12.52,
+     "drop_95": [
+      1.95,
+      23.89
+     ]
+    },
+    "contact": {
+     "pairs": 60,
+     "standard_pr": 31.15,
+     "nackgammon_pr": 31.52,
+     "drop": 0.37,
+     "drop_95": [
+      -14.69,
+      16.04
+     ]
+    },
+    "holding": {
+     "pairs": 30,
+     "standard_pr": 63.1,
+     "nackgammon_pr": 57.6,
+     "drop": -5.5,
+     "drop_95": [
+      -82.27,
+      50.55
+     ]
+    },
+    "race": {
+     "pairs": 25,
+     "standard_pr": 7.98,
+     "nackgammon_pr": 19.49,
+     "drop": 11.52,
+     "drop_95": [
+      -2.67,
+      30.51
+     ]
+    },
+    "bear-off": {
+     "pairs": 25,
+     "standard_pr": 5.62,
+     "nackgammon_pr": 9.74,
+     "drop": 4.11,
+     "drop_95": [
+      -4.04,
+      15.03
+     ]
+    }
+   },
+   "opening_vs_rest": {
+    "diff": 10.74,
+    "ci_95": [
+     -7.78,
+     31.87
+    ]
+   },
+   "tags": {
+    "(none: bear-off)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 9.74
+     },
+     "standard": {
+      "n": 25,
+      "pr": 5.62
+     }
+    },
+    "(none: opening)": {
+     "nackgammon": {
+      "n": 60,
+      "pr": 31.15
+     },
+     "standard": {
+      "n": 60,
+      "pr": 18.64
+     }
+    },
+    "(none: race)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 19.49
+     },
+     "standard": {
+      "n": 25,
+      "pr": 7.98
+     }
+    },
+    "back game": {
+     "nackgammon": {
+      "n": 10,
+      "pr": 27.83
+     },
+     "standard": {
+      "n": 2,
+      "pr": 18.44
+     }
+    },
+    "blitz": {
+     "nackgammon": {
+      "n": 17,
+      "pr": 10.14
+     },
+     "standard": {
+      "n": 23,
+      "pr": 31.07
+     }
+    },
+    "holding": {
+     "nackgammon": {
+      "n": 30,
+      "pr": 57.6
+     },
+     "standard": {
+      "n": 30,
+      "pr": 63.1
+     }
+    },
+    "low-anchor": {
+     "nackgammon": {
+      "n": 7,
+      "pr": 39.68
+     },
+     "standard": {
+      "n": 8,
+      "pr": 48.45
+     }
+    },
+    "other": {
+     "nackgammon": {
+      "n": 11,
+      "pr": 27.6
+     },
+     "standard": {
+      "n": 10,
+      "pr": 23.05
+     }
+    },
+    "priming": {
+     "nackgammon": {
+      "n": 15,
+      "pr": 57.27
+     },
+     "standard": {
+      "n": 17,
+      "pr": 29.37
+     }
+    }
+   },
+   "cost": {
+    "main": {
+     "decisions": 400,
+     "billed_usd_per_1000": 0.099,
+     "api_eq_usd_per_1000": 0.0
+    },
+    "all": {
+     "decisions": 1000,
+     "billed_usd_per_1000": 0.099,
+     "api_eq_usd_per_1000": 0.0
+    }
+   },
+   "risk": {
+    "main": {
+     "standard": {
+      "risk_pays": 66,
+      "safety_pays": 66,
+      "risks_taken": 28.0,
+      "needless": 8.0,
+      "d_prime": 0.95,
+      "caution": 0.66
+     },
+     "nackgammon": {
+      "risk_pays": 66,
+      "safety_pays": 66,
+      "risks_taken": 28.0,
+      "needless": 12.0,
+      "d_prime": 0.7,
+      "caution": 0.54
+     },
+     "change": {
+      "d_prime": -0.25,
+      "d_prime_95": [
+       -0.94,
+       0.36
+      ],
+      "caution": -0.12,
+      "caution_95": [
+       -0.45,
+       0.21
+      ]
+     },
+     "thin": false
+    },
+    "all": {
+     "standard": {
+      "risk_pays": 165,
+      "safety_pays": 165,
+      "risks_taken": 70.0,
+      "needless": 28.0,
+      "d_prime": 0.76,
+      "caution": 0.57
+     },
+     "nackgammon": {
+      "risk_pays": 165,
+      "safety_pays": 165,
+      "risks_taken": 61.0,
+      "needless": 38.0,
+      "d_prime": 0.4,
+      "caution": 0.53
+     },
+     "change": {
+      "d_prime": -0.36,
+      "d_prime_95": [
+       -0.75,
+       0.02
+      ],
+      "caution": -0.04,
+      "caution_95": [
+       -0.23,
+       0.16
+      ]
+     },
+     "thin": false
+    }
+   }
+  },
+  "Base Labs Mammoth-1": {
+   "group": "late entry (exploratory, §10.14(i))",
+   "aliases": [],
+   "added": false,
+   "first": {
+    "pairs": 200,
+    "standard_pr": 26.01,
+    "nackgammon_pr": 22.35,
+    "drop": -3.66,
+    "drop_975": [
+     -18.14,
+     7.38
+    ],
+    "drop_95": [
+     -15.91,
+     6.28
+    ]
+   },
+   "final": {
+    "pairs": 500,
+    "standard_pr": 22.97,
+    "nackgammon_pr": 24.81,
+    "drop": 1.84,
+    "drop_975": [
+     -5.72,
+     8.72
+    ],
+    "drop_95": [
+     -4.61,
+     7.9
+    ]
+   },
+   "extend_at_first_look": true,
+   "extended": true,
+   "extension_incomplete": null,
+   "label": "unclear",
+   "invalid": {
+    "first": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "final": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "cut_off": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "past_32768_no_limit_sent": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "sensitivity": {
+    "worst": {
+     "pairs": 200,
+     "standard_pr": 26.01,
+     "nackgammon_pr": 22.35,
+     "drop": -3.66,
+     "drop_975": [
+      -18.14,
+      7.38
+     ]
+    },
+    "drop": {
+     "pairs": 200,
+     "standard_pr": 26.01,
+     "nackgammon_pr": 22.35,
+     "drop": -3.66,
+     "drop_975": [
+      -18.14,
+      7.38
+     ]
+    },
+    "cutoff": {
+     "pairs": 200,
+     "standard_pr": 26.01,
+     "nackgammon_pr": 22.35,
+     "drop": -3.66,
+     "drop_975": [
+      -18.14,
+      7.38
+     ]
+    }
+   },
+   "sensitivity_final_cutoff": {
+    "pairs": 500,
+    "standard_pr": 22.97,
+    "nackgammon_pr": 24.81,
+    "drop": 1.84,
+    "drop_975": [
+     -5.72,
+     8.72
+    ]
+   },
+   "phases": {
+    "opening": {
+     "pairs": 60,
+     "standard_pr": 25.11,
+     "nackgammon_pr": 29.71,
+     "drop": 4.6,
+     "drop_95": [
+      -6.72,
+      15.88
+     ]
+    },
+    "contact": {
+     "pairs": 60,
+     "standard_pr": 35.46,
+     "nackgammon_pr": 33.68,
+     "drop": -1.78,
+     "drop_95": [
+      -19.9,
+      17.55
+     ]
+    },
+    "holding": {
+     "pairs": 30,
+     "standard_pr": 47.62,
+     "nackgammon_pr": 17.23,
+     "drop": -30.39,
+     "drop_95": [
+      -98.17,
+      10.8
+     ]
+    },
+    "race": {
+     "pairs": 25,
+     "standard_pr": 4.3,
+     "nackgammon_pr": 5.32,
+     "drop": 1.02,
+     "drop_95": [
+      -5.31,
+      7.32
+     ]
+    },
+    "bear-off": {
+     "pairs": 25,
+     "standard_pr": 1.24,
+     "nackgammon_pr": 0.65,
+     "drop": -0.59,
+     "drop_95": [
+      -2.18,
+      1.09
+     ]
+    }
+   },
+   "opening_vs_rest": {
+    "diff": 11.8,
+    "ci_95": [
+     -6.27,
+     32.15
+    ]
+   },
+   "tags": {
+    "(none: bear-off)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 0.65
+     },
+     "standard": {
+      "n": 25,
+      "pr": 1.24
+     }
+    },
+    "(none: opening)": {
+     "nackgammon": {
+      "n": 60,
+      "pr": 29.71
+     },
+     "standard": {
+      "n": 60,
+      "pr": 25.11
+     }
+    },
+    "(none: race)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 5.32
+     },
+     "standard": {
+      "n": 25,
+      "pr": 4.3
+     }
+    },
+    "back game": {
+     "nackgammon": {
+      "n": 10,
+      "pr": 42.68
+     },
+     "standard": {
+      "n": 2,
+      "pr": 56.29
+     }
+    },
+    "blitz": {
+     "nackgammon": {
+      "n": 17,
+      "pr": 25.21
+     },
+     "standard": {
+      "n": 23,
+      "pr": 34.7
+     }
+    },
+    "holding": {
+     "nackgammon": {
+      "n": 30,
+      "pr": 17.23
+     },
+     "standard": {
+      "n": 30,
+      "pr": 47.62
+     }
+    },
+    "low-anchor": {
+     "nackgammon": {
+      "n": 7,
+      "pr": 37.32
+     },
+     "standard": {
+      "n": 8,
+      "pr": 38.86
+     }
+    },
+    "other": {
+     "nackgammon": {
+      "n": 11,
+      "pr": 16.57
+     },
+     "standard": {
+      "n": 10,
+      "pr": 23.76
+     }
+    },
+    "priming": {
+     "nackgammon": {
+      "n": 15,
+      "pr": 48.14
+     },
+     "standard": {
+      "n": 17,
+      "pr": 39.32
+     }
+    }
+   },
+   "cost": {
+    "main": {
+     "decisions": 400,
+     "billed_usd_per_1000": 0.282,
+     "api_eq_usd_per_1000": 0.0
+    },
+    "all": {
+     "decisions": 1000,
+     "billed_usd_per_1000": 0.282,
+     "api_eq_usd_per_1000": 0.0
+    }
+   },
+   "risk": {
+    "main": {
+     "standard": {
+      "risk_pays": 66,
+      "safety_pays": 66,
+      "risks_taken": 30.0,
+      "needless": 13.0,
+      "d_prime": 0.72,
+      "caution": 0.47
+     },
+     "nackgammon": {
+      "risk_pays": 66,
+      "safety_pays": 66,
+      "risks_taken": 30.0,
+      "needless": 9.0,
+      "d_prime": 0.96,
+      "caution": 0.59
+     },
+     "change": {
+      "d_prime": 0.24,
+      "d_prime_95": [
+       -0.43,
+       0.89
+      ],
+      "caution": 0.12,
+      "caution_95": [
+       -0.22,
+       0.46
+      ]
+     },
+     "thin": false
+    },
+    "all": {
+     "standard": {
+      "risk_pays": 165,
+      "safety_pays": 165,
+      "risks_taken": 72.0,
+      "needless": 26.0,
+      "d_prime": 0.84,
+      "caution": 0.58
+     },
+     "nackgammon": {
+      "risk_pays": 165,
+      "safety_pays": 165,
+      "risks_taken": 67.0,
+      "needless": 27.0,
+      "d_prime": 0.74,
+      "caution": 0.6
+     },
+     "change": {
+      "d_prime": -0.1,
+      "d_prime_95": [
+       -0.51,
+       0.33
+      ],
+      "caution": 0.02,
+      "caution_95": [
+       -0.18,
+       0.23
+      ]
+     },
+     "thin": false
+    }
+   }
+  },
+  "Drex Max v1": {
+   "group": "late entry (exploratory, §10.14(i))",
+   "aliases": [],
+   "added": false,
+   "first": {
+    "pairs": 200,
+    "standard_pr": 25.33,
+    "nackgammon_pr": 26.68,
+    "drop": 1.35,
+    "drop_975": [
+     -14.05,
+     14.41
+    ],
+    "drop_95": [
+     -11.91,
+     12.89
+    ]
+   },
+   "final": {
+    "pairs": 500,
+    "standard_pr": 26.21,
+    "nackgammon_pr": 27.92,
+    "drop": 1.71,
+    "drop_975": [
+     -6.67,
+     9.37
+    ],
+    "drop_95": [
+     -5.52,
+     8.5
+    ]
+   },
+   "extend_at_first_look": true,
+   "extended": true,
+   "extension_incomplete": null,
+   "label": "unclear",
+   "invalid": {
+    "first": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "final": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "cut_off": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "past_32768_no_limit_sent": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "sensitivity": {
+    "worst": {
+     "pairs": 200,
+     "standard_pr": 25.33,
+     "nackgammon_pr": 26.68,
+     "drop": 1.35,
+     "drop_975": [
+      -14.05,
+      14.41
+     ]
+    },
+    "drop": {
+     "pairs": 200,
+     "standard_pr": 25.33,
+     "nackgammon_pr": 26.68,
+     "drop": 1.35,
+     "drop_975": [
+      -14.05,
+      14.41
+     ]
+    },
+    "cutoff": {
+     "pairs": 200,
+     "standard_pr": 25.33,
+     "nackgammon_pr": 26.68,
+     "drop": 1.35,
+     "drop_975": [
+      -14.05,
+      14.41
+     ]
+    }
+   },
+   "sensitivity_final_cutoff": {
+    "pairs": 500,
+    "standard_pr": 26.21,
+    "nackgammon_pr": 27.92,
+    "drop": 1.71,
+    "drop_975": [
+     -6.67,
+     9.37
+    ]
+   },
+   "phases": {
+    "opening": {
+     "pairs": 60,
+     "standard_pr": 23.26,
+     "nackgammon_pr": 32.22,
+     "drop": 8.95,
+     "drop_95": [
+      -6.53,
+      24.65
+     ]
+    },
+    "contact": {
+     "pairs": 60,
+     "standard_pr": 29.19,
+     "nackgammon_pr": 27.73,
+     "drop": -1.46,
+     "drop_95": [
+      -16.98,
+      14.15
+     ]
+    },
+    "holding": {
+     "pairs": 30,
+     "standard_pr": 53.75,
+     "nackgammon_pr": 41.11,
+     "drop": -12.64,
+     "drop_95": [
+      -88.97,
+      46.6
+     ]
+    },
+    "race": {
+     "pairs": 25,
+     "standard_pr": 6.7,
+     "nackgammon_pr": 10.5,
+     "drop": 3.8,
+     "drop_95": [
+      -5.09,
+      14.87
+     ]
+    },
+    "bear-off": {
+     "pairs": 25,
+     "standard_pr": 5.54,
+     "nackgammon_pr": 9.71,
+     "drop": 4.18,
+     "drop_95": [
+      -4.07,
+      15.16
+     ]
+    }
+   },
+   "opening_vs_rest": {
+    "diff": 10.86,
+    "ci_95": [
+     -10.91,
+     34.66
+    ]
+   },
+   "tags": {
+    "(none: bear-off)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 9.71
+     },
+     "standard": {
+      "n": 25,
+      "pr": 5.54
+     }
+    },
+    "(none: opening)": {
+     "nackgammon": {
+      "n": 60,
+      "pr": 32.22
+     },
+     "standard": {
+      "n": 60,
+      "pr": 23.26
+     }
+    },
+    "(none: race)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 10.5
+     },
+     "standard": {
+      "n": 25,
+      "pr": 6.7
+     }
+    },
+    "back game": {
+     "nackgammon": {
+      "n": 10,
+      "pr": 35.43
+     },
+     "standard": {
+      "n": 2,
+      "pr": 22.94
+     }
+    },
+    "blitz": {
+     "nackgammon": {
+      "n": 17,
+      "pr": 14.7
+     },
+     "standard": {
+      "n": 23,
+      "pr": 24.07
+     }
+    },
+    "holding": {
+     "nackgammon": {
+      "n": 30,
+      "pr": 41.11
+     },
+     "standard": {
+      "n": 30,
+      "pr": 53.75
+     }
+    },
+    "low-anchor": {
+     "nackgammon": {
+      "n": 7,
+      "pr": 32.32
+     },
+     "standard": {
+      "n": 8,
+      "pr": 39.17
+     }
+    },
+    "other": {
+     "nackgammon": {
+      "n": 11,
+      "pr": 20.23
+     },
+     "standard": {
+      "n": 10,
+      "pr": 21.61
+     }
+    },
+    "priming": {
+     "nackgammon": {
+      "n": 15,
+      "pr": 40.71
+     },
+     "standard": {
+      "n": 17,
+      "pr": 36.62
+     }
+    }
+   },
+   "cost": {
+    "main": {
+     "decisions": 400,
+     "billed_usd_per_1000": 0.168,
+     "api_eq_usd_per_1000": 0.0
+    },
+    "all": {
+     "decisions": 1000,
+     "billed_usd_per_1000": 0.168,
+     "api_eq_usd_per_1000": 0.0
+    }
+   },
+   "risk": {
+    "main": {
+     "standard": {
+      "risk_pays": 66,
+      "safety_pays": 66,
+      "risks_taken": 27.0,
+      "needless": 9.0,
+      "d_prime": 0.85,
+      "caution": 0.65
+     },
+     "nackgammon": {
+      "risk_pays": 66,
+      "safety_pays": 66,
+      "risks_taken": 28.0,
+      "needless": 12.0,
+      "d_prime": 0.7,
+      "caution": 0.54
+     },
+     "change": {
+      "d_prime": -0.15,
+      "d_prime_95": [
+       -0.82,
+       0.51
+      ],
+      "caution": -0.11,
+      "caution_95": [
+       -0.44,
+       0.21
+      ]
+     },
+     "thin": false
+    },
+    "all": {
+     "standard": {
+      "risk_pays": 165,
+      "safety_pays": 165,
+      "risks_taken": 65.0,
+      "needless": 24.0,
+      "d_prime": 0.78,
+      "caution": 0.66
+     },
+     "nackgammon": {
+      "risk_pays": 165,
+      "safety_pays": 165,
+      "risks_taken": 63.0,
+      "needless": 29.0,
+      "d_prime": 0.63,
+      "caution": 0.61
+     },
+     "change": {
+      "d_prime": -0.15,
+      "d_prime_95": [
+       -0.57,
+       0.25
+      ],
+      "caution": -0.05,
+      "caution_95": [
+       -0.24,
+       0.17
+      ]
+     },
+     "thin": false
+    }
+   }
+  },
+  "Drex 2.0 (local)": {
+   "group": "late entry (exploratory, §10.14(i))",
+   "aliases": [],
+   "added": false,
+   "first": {
+    "pairs": 200,
+    "standard_pr": 29.78,
+    "nackgammon_pr": 24.71,
+    "drop": -5.06,
+    "drop_975": [
+     -20.32,
+     7.69
+    ],
+    "drop_95": [
+     -18.19,
+     6.16
+    ]
+   },
+   "final": {
+    "pairs": 500,
+    "standard_pr": 29.19,
+    "nackgammon_pr": 30.79,
+    "drop": 1.6,
+    "drop_975": [
+     -6.9,
+     9.75
+    ],
+    "drop_95": [
+     -5.78,
+     8.69
+    ]
+   },
+   "extend_at_first_look": true,
+   "extended": true,
+   "extension_incomplete": null,
+   "label": "unclear",
+   "invalid": {
+    "first": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "final": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "cut_off": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "past_32768_no_limit_sent": {
+    "main": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "all": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "sensitivity": {
+    "worst": {
+     "pairs": 200,
+     "standard_pr": 29.78,
+     "nackgammon_pr": 24.71,
+     "drop": -5.06,
+     "drop_975": [
+      -20.32,
+      7.69
+     ]
+    },
+    "drop": {
+     "pairs": 200,
+     "standard_pr": 29.78,
+     "nackgammon_pr": 24.71,
+     "drop": -5.06,
+     "drop_975": [
+      -20.32,
+      7.69
+     ]
+    },
+    "cutoff": {
+     "pairs": 200,
+     "standard_pr": 29.78,
+     "nackgammon_pr": 24.71,
+     "drop": -5.06,
+     "drop_975": [
+      -20.32,
+      7.69
+     ]
+    }
+   },
+   "sensitivity_final_cutoff": {
+    "pairs": 500,
+    "standard_pr": 29.19,
+    "nackgammon_pr": 30.79,
+    "drop": 1.6,
+    "drop_975": [
+     -6.9,
+     9.75
+    ]
+   },
+   "phases": {
+    "opening": {
+     "pairs": 60,
+     "standard_pr": 26.76,
+     "nackgammon_pr": 23.82,
+     "drop": -2.93,
+     "drop_95": [
+      -15.38,
+      9.73
+     ]
+    },
+    "contact": {
+     "pairs": 60,
+     "standard_pr": 39.45,
+     "nackgammon_pr": 29.63,
+     "drop": -9.82,
+     "drop_95": [
+      -28.33,
+      8.68
+     ]
+    },
+    "holding": {
+     "pairs": 30,
+     "standard_pr": 57.14,
+     "nackgammon_pr": 46.47,
+     "drop": -10.67,
+     "drop_95": [
+      -86.63,
+      44.25
+     ]
+    },
+    "race": {
+     "pairs": 25,
+     "standard_pr": 5.12,
+     "nackgammon_pr": 9.71,
+     "drop": 4.59,
+     "drop_95": [
+      -3.65,
+      15.24
+     ]
+    },
+    "bear-off": {
+     "pairs": 25,
+     "standard_pr": 5.61,
+     "nackgammon_pr": 3.92,
+     "drop": -1.69,
+     "drop_95": [
+      -7.15,
+      4.48
+     ]
+    }
+   },
+   "opening_vs_rest": {
+    "diff": 3.04,
+    "ci_95": [
+     -16.54,
+     25.12
+    ]
+   },
+   "tags": {
+    "(none: bear-off)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 3.92
+     },
+     "standard": {
+      "n": 25,
+      "pr": 5.61
+     }
+    },
+    "(none: opening)": {
+     "nackgammon": {
+      "n": 60,
+      "pr": 23.82
+     },
+     "standard": {
+      "n": 60,
+      "pr": 26.76
+     }
+    },
+    "(none: race)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 9.71
+     },
+     "standard": {
+      "n": 25,
+      "pr": 5.12
+     }
+    },
+    "back game": {
+     "nackgammon": {
+      "n": 10,
+      "pr": 29.27
+     },
+     "standard": {
+      "n": 2,
+      "pr": 22.94
+     }
+    },
+    "blitz": {
+     "nackgammon": {
+      "n": 17,
+      "pr": 13.81
+     },
+     "standard": {
+      "n": 23,
+      "pr": 26.41
+     }
+    },
+    "holding": {
+     "nackgammon": {
+      "n": 30,
+      "pr": 46.47
+     },
+     "standard": {
+      "n": 30,
+      "pr": 57.14
+     }
+    },
+    "low-anchor": {
+     "nackgammon": {
+      "n": 7,
+      "pr": 51.04
+     },
+     "standard": {
+      "n": 8,
+      "pr": 49.64
+     }
+    },
+    "other": {
+     "nackgammon": {
+      "n": 11,
+      "pr": 21.82
+     },
+     "standard": {
+      "n": 10,
+      "pr": 26.44
+     }
+    },
+    "priming": {
+     "nackgammon": {
+      "n": 15,
+      "pr": 43.56
+     },
+     "standard": {
+      "n": 17,
+      "pr": 61.9
+     }
+    }
+   },
+   "cost": {
+    "main": {
+     "decisions": 400,
+     "billed_usd_per_1000": 0.163,
+     "api_eq_usd_per_1000": 0.0
+    },
+    "all": {
+     "decisions": 1000,
+     "billed_usd_per_1000": 0.163,
+     "api_eq_usd_per_1000": 0.0
+    }
+   },
+   "risk": {
+    "main": {
+     "standard": {
+      "risk_pays": 66,
+      "safety_pays": 66,
+      "risks_taken": 26.0,
+      "needless": 12.0,
+      "d_prime": 0.63,
+      "caution": 0.58
+     },
+     "nackgammon": {
+      "risk_pays": 66,
+      "safety_pays": 66,
+      "risks_taken": 37.0,
+      "needless": 12.0,
+      "d_prime": 1.04,
+      "caution": 0.37
+     },
+     "change": {
+      "d_prime": 0.41,
+      "d_prime_95": [
+       -0.25,
+       1.05
+      ],
+      "caution": -0.21,
+      "caution_95": [
+       -0.52,
+       0.12
+      ]
+     },
+     "thin": false
+    },
+    "all": {
+     "standard": {
+      "risk_pays": 165,
+      "safety_pays": 165,
+      "risks_taken": 71.0,
+      "needless": 37.0,
+      "d_prime": 0.58,
+      "caution": 0.46
+     },
+     "nackgammon": {
+      "risk_pays": 165,
+      "safety_pays": 165,
+      "risks_taken": 79.0,
+      "needless": 42.0,
+      "d_prime": 0.6,
+      "caution": 0.35
+     },
+     "change": {
+      "d_prime": 0.02,
+      "d_prime_95": [
+       -0.37,
+       0.4
+      ],
+      "caution": -0.11,
+      "caution_95": [
+       -0.29,
+       0.08
+      ]
+     },
+     "thin": false
+    }
+   }
+  },
+  "Random": {
+   "group": "yardstick",
+   "aliases": [],
+   "added": false,
+   "first": {
+    "pairs": 200,
+    "standard_pr": 87.45,
+    "nackgammon_pr": 82.89,
+    "drop": -4.56,
+    "drop_975": [
+     -18.04,
+     7.86
+    ],
+    "drop_95": [
+     -15.96,
+     6.15
+    ]
+   },
+   "final": {
+    "pairs": 500,
+    "standard_pr": 85.16,
+    "nackgammon_pr": 81.43,
+    "drop": -3.73,
+    "drop_975": [
+     -11.43,
+     3.74
+    ],
+    "drop_95": [
+     -10.41,
+     2.81
+    ]
+   },
+   "extend_at_first_look": false,
+   "extended": false,
+   "extension_incomplete": null,
+   "label": "unclear",
+   "invalid": {
+    "first": {
+     "nackgammon": 0,
+     "standard": 0
+    },
+    "final": {
+     "nackgammon": 0,
+     "standard": 0
+    }
+   },
+   "cut_off": null,
+   "past_32768_no_limit_sent": null,
+   "sensitivity": {
+    "worst": {
+     "pairs": 200,
+     "standard_pr": 87.45,
+     "nackgammon_pr": 82.89,
+     "drop": -4.56,
+     "drop_975": [
+      -18.04,
+      7.86
+     ]
+    },
+    "drop": {
+     "pairs": 200,
+     "standard_pr": 87.45,
+     "nackgammon_pr": 82.89,
+     "drop": -4.56,
+     "drop_975": [
+      -18.04,
+      7.86
+     ]
+    },
+    "cutoff": {
+     "pairs": 200,
+     "standard_pr": 87.45,
+     "nackgammon_pr": 82.89,
+     "drop": -4.56,
+     "drop_975": [
+      -18.04,
+      7.86
+     ]
+    }
+   },
+   "sensitivity_final_cutoff": null,
+   "phases": {
+    "opening": {
+     "pairs": 60,
+     "standard_pr": 95.63,
+     "nackgammon_pr": 84.31,
+     "drop": -11.32,
+     "drop_95": [
+      -23.34,
+      0.42
+     ]
+    },
+    "contact": {
+     "pairs": 60,
+     "standard_pr": 125.31,
+     "nackgammon_pr": 115.99,
+     "drop": -9.32,
+     "drop_95": [
+      -27.33,
+      8.75
+     ]
+    },
+    "holding": {
+     "pairs": 30,
+     "standard_pr": 113.57,
+     "nackgammon_pr": 121.18,
+     "drop": 7.61,
+     "drop_95": [
+      -57.23,
+      63.11
+     ]
+    },
+    "race": {
+     "pairs": 25,
+     "standard_pr": 19.17,
+     "nackgammon_pr": 22.57,
+     "drop": 3.4,
+     "drop_95": [
+      -7.66,
+      16.86
+     ]
+    },
+    "bear-off": {
+     "pairs": 25,
+     "standard_pr": 13.92,
+     "nackgammon_pr": 14.46,
+     "drop": 0.54,
+     "drop_95": [
+      -5.63,
+      6.89
+     ]
+    }
+   },
+   "opening_vs_rest": {
+    "diff": -9.66,
+    "ci_95": [
+     -28.68,
+     9.8
+    ]
+   },
+   "tags": {
+    "(none: bear-off)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 14.46
+     },
+     "standard": {
+      "n": 25,
+      "pr": 13.92
+     }
+    },
+    "(none: opening)": {
+     "nackgammon": {
+      "n": 60,
+      "pr": 84.31
+     },
+     "standard": {
+      "n": 60,
+      "pr": 95.63
+     }
+    },
+    "(none: race)": {
+     "nackgammon": {
+      "n": 25,
+      "pr": 22.57
+     },
+     "standard": {
+      "n": 25,
+      "pr": 19.17
+     }
+    },
+    "back game": {
+     "nackgammon": {
+      "n": 10,
+      "pr": 104.58
+     },
+     "standard": {
+      "n": 2,
+      "pr": 57.49
+     }
+    },
+    "blitz": {
+     "nackgammon": {
+      "n": 17,
+      "pr": 143.55
+     },
+     "standard": {
+      "n": 23,
+      "pr": 125.59
+     }
+    },
+    "holding": {
+     "nackgammon": {
+      "n": 30,
+      "pr": 121.18
+     },
+     "standard": {
+      "n": 30,
+      "pr": 113.57
+     }
+    },
+    "low-anchor": {
+     "nackgammon": {
+      "n": 7,
+      "pr": 113.21
+     },
+     "standard": {
+      "n": 8,
+      "pr": 92.05
+     }
+    },
+    "other": {
+     "nackgammon": {
+      "n": 11,
+      "pr": 81.52
+     },
+     "standard": {
+      "n": 10,
+      "pr": 135.92
+     }
+    },
+    "priming": {
+     "nackgammon": {
+      "n": 15,
+      "pr": 118.93
+     },
+     "standard": {
+      "n": 17,
+      "pr": 142.31
+     }
+    }
+   },
+   "cost": null,
+   "risk": {
+    "main": {
+     "standard": {
+      "risk_pays": 66,
+      "safety_pays": 66,
+      "risks_taken": 54.16,
+      "needless": 48.81,
+      "d_prime": 0.27,
+      "caution": -0.77
+     },
+     "nackgammon": {
+      "risk_pays": 66,
+      "safety_pays": 66,
+      "risks_taken": 55.93,
+      "needless": 48.96,
+      "d_prime": 0.37,
+      "caution": -0.82
+     },
+     "change": {
+      "d_prime": 0.1,
+      "d_prime_95": [
+       -0.11,
+       0.3
+      ],
+      "caution": -0.05,
+      "caution_95": [
+       -0.15,
+       0.04
+      ]
+     },
+     "thin": false
+    },
+    "all": null
+   }
+  }
+ },
+ "engine_check": {
+  "pairs": 40,
+  "counts": {
+   "rolled_out_plays": 445,
+   "adjusted_plays_used": 438
+  },
+  "per_setup": {
+   "SubQ Snap 1.1": {
+    "2ply": {
+     "standard_pr": 17.11,
+     "nackgammon_pr": 35.79,
+     "drop": 18.67
+    },
+    "rollout": {
+     "standard_pr": 18.47,
+     "nackgammon_pr": 34.63,
+     "drop": 16.16
+    }
+   },
+   "Drex Max 1.1": {
+    "2ply": {
+     "standard_pr": 16.7,
+     "nackgammon_pr": 25.35,
+     "drop": 8.66
+    },
+    "rollout": {
+     "standard_pr": 17.79,
+     "nackgammon_pr": 23.76,
+     "drop": 5.97
+    }
+   },
+   "Drex 2.0": {
+    "2ply": {
+     "standard_pr": 16.0,
+     "nackgammon_pr": 24.64,
+     "drop": 8.64
+    },
+    "rollout": {
+     "standard_pr": 17.43,
+     "nackgammon_pr": 22.48,
+     "drop": 5.04
+    }
+   },
+   "Base Labs Elephant-1": {
+    "2ply": {
+     "standard_pr": 11.68,
+     "nackgammon_pr": 33.6,
+     "drop": 21.93
+    },
+    "rollout": {
+     "standard_pr": 12.17,
+     "nackgammon_pr": 31.54,
+     "drop": 19.37
+    }
+   },
+   "Base Labs Mammoth-1": {
+    "2ply": {
+     "standard_pr": 14.28,
+     "nackgammon_pr": 23.78,
+     "drop": 9.5
+    },
+    "rollout": {
+     "standard_pr": 15.3,
+     "nackgammon_pr": 20.97,
+     "drop": 5.67
+    }
+   },
+   "Drex Max v1": {
+    "2ply": {
+     "standard_pr": 14.03,
+     "nackgammon_pr": 25.65,
+     "drop": 11.61
+    },
+    "rollout": {
+     "standard_pr": 14.67,
+     "nackgammon_pr": 23.72,
+     "drop": 9.05
+    }
+   },
+   "Drex 2.0 (local)": {
+    "2ply": {
+     "standard_pr": 15.27,
+     "nackgammon_pr": 25.61,
+     "drop": 10.34
+    },
+    "rollout": {
+     "standard_pr": 16.25,
+     "nackgammon_pr": 24.89,
+     "drop": 8.65
+    }
+   },
+   "Random": {
+    "2ply": {
+     "standard_pr": 83.84,
+     "nackgammon_pr": 93.55,
+     "drop": 9.72
+    },
+    "rollout": {
+     "standard_pr": 86.1,
+     "nackgammon_pr": 92.13,
+     "drop": 6.03
+    }
+   }
+  },
+  "primary": [],
+  "primary_original_members": [],
+  "settings": "GNUbg 1.08.003 rollout: 1,296 trials per play, cubeless, variance reduction on, quasi-random dice, no truncation, no late evaluation, chequer play 1-ply, seed 1, 8 threads, nice 19; candidates: top 5 at 2-ply plus every play any setup chose"
+ }
+}

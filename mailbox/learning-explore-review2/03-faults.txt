@@ -1,0 +1,380 @@
+# (c1) injected faults (injected_faults.py) at 7e78dc6. Started 2026-11-08 11:44:14 UTC
+baseline running ($SCRATCH/page-SYNTHETIC-running): 0 failure(s)
+baseline complete ($SCRATCH/page-explore): 0 failure(s)
+baseline malformed ($SCRATCH/page-malformed-explore): 0 failure(s)
+
+== status line lying: N one higher than the data [running]: DETECTED (1 failure(s))
+    learning/: status line says 'Running: 6 of 10 series per arm', the data imply 'Running: 5 of 10 series per arm'
+
+== status line lying: 'Done' while running [running]: DETECTED (1 failure(s))
+    learning/: status line says 'Done', the data imply 'Running: 5 of 10 series per arm'
+
+== status line lying: 'Smoke running' after the smoke [running]: DETECTED (1 failure(s))
+    learning/: status line says 'Smoke running: 2 of 3 series per arm', the data imply 'Running: 5 of 10 series per arm'
+
+== status line time not the data's last update [running]: DETECTED (1 failure(s))
+    learning/: status line time '2026-11-09T00:00:00+00:00' is not the data's last update
+
+== status line removed [running]: DETECTED (1 failure(s))
+    learning/: status line missing
+
+== data file's status line not the one its data imply [running]: DETECTED (1 failure(s))
+    learning/: the data file's status line is not the one its data imply
+
+== chart number not in the data (risks dot value) [running]: DETECTED (1 failure(s))
+    learning/: chart learning-risks point ('lessons', 'T10'): '41.7', data '32.5'
+
+== chart number not in the data (games dot value) [running]: DETECTED (1 failure(s))
+    learning/: chart learning-games point ('records', '3'): '12.3', data '24.7'
+
+== chart point dropped (no dot for budget, game 10) [running]: DETECTED (1 failure(s))
+    learning/: chart learning-games point ('budget', '10'): None, data '26.9'
+
+== table number not in the data (risks table cell) [running]: DETECTED (2 failure(s))
+    learning/index.html: number '77.7' not found in any data file (in '77.7')
+    learning/: table under learning-risks, ('records', 'T10'): '77.7' is not the data's 28.2
+
+== table number not in the data (games table cell) [running]: DETECTED (1 failure(s))
+    learning/: table under learning-games, ('control', '4'): '12.9' is not the data's 40.1
+
+== table number absent from every data file (games table cell 987.6) [running]: DETECTED (2 failure(s))
+    learning/index.html: number '987.6' not found in any data file (in '987.6')
+    learning/: table under learning-games, ('lessons', '9'): '987.6' is not the data's 33.3
+
+== control line not dashed [running]: DETECTED (1 failure(s))
+    learning/: chart learning-risks: control is not a flat dashed line at its T0 value
+
+== control line not flat (end raised) [running]: DETECTED (1 failure(s))
+    learning/: chart learning-risks: control is not a flat dashed line at its T0 value
+
+== another arm's line dashed (records) [running]: DETECTED (1 failure(s))
+    learning/: chart learning-risks: 'records' line is dashed (only control's is)
+
+== arm colour not the fixed one (records drawn in lessons' colour) [running]: DETECTED (1 failure(s))
+    learning/: arm 'records' not in its fixed colour
+
+== risks chart removed while series are finished [running]: DETECTED (1 failure(s))
+    learning/: chart learning-risks missing
+
+== verdict block shown before complete [running]: DETECTED (1 failure(s))
+    learning/: block #learning-verdict shown before the results are complete
+
+== learning-lift block shown before complete [running]: DETECTED (1 failure(s))
+    learning/: block #learning-lift shown before the results are complete
+
+== learning_lift key in the data file before complete [running]: DETECTED (1 failure(s))
+    data/v3/learning-pilot.json: learning_lift published before the results are complete
+
+== signal key in the data file before complete [running]: DETECTED (1 failure(s))
+    data/v3/learning-pilot.json: signal published before the results are complete
+
+== 'N of 10 series done' wrong while running [running]: DETECTED (1 failure(s))
+    learning/: the verdict section does not say '5 of 10 series done'
+
+== data file claims complete, validator did not (results.complete true, validation.complete false) [running]: DETECTED (1 failure(s))
+    data/v3/learning-pilot.json: results.complete and validation.complete disagree
+
+== verdict contradicts the data's signal (lessons 'reached') [complete]: DETECTED (1 failure(s))
+    learning/: verdict for 'lessons' contradicts the data's signal
+
+== budget's fixed reading removed although its context was always empty [complete]: DETECTED (1 failure(s))
+    learning/: the budget reading (plan section 11) does not follow the budget points
+
+== verdict block removed when complete [complete]: DETECTED (1 failure(s))
+    learning/: complete, but no verdict
+
+== lesson without its game (data: game result removed) [complete]: DETECTED (2 failure(s))
+    learning/: lesson of series 1 game 1 without its game
+    learning/: lesson of series 1 game 1 not shown with its game and result
+
+== lesson of an unfinished/unknown series (data: series 99) [complete]: DETECTED (3 failure(s))
+    learning/: lesson of series 99 game 1 without its game
+    learning/: lesson of series 1 game 1 is not in the data file
+    learning/: lesson of series 99 game 1 missing from the page
+
+== lesson shown without its series and game (page attributes removed) [complete]: DETECTED (2 failure(s))
+    learning/: a lesson without its series and game
+    learning/: lesson of series 1 game 1 missing from the page
+
+== lesson shown without its game line [complete]: DETECTED (1 failure(s))
+    learning/: lesson of series 1 game 2 not shown with its game and result
+
+== lesson dropped from the page [complete]: DETECTED (1 failure(s))
+    learning/: lesson of series 2 game 5 missing from the page
+
+== lesson text edited in the page [complete]: DETECTED (1 failure(s))
+    learning/: lesson of series 3 game 7: text is not the data's, as written and escaped
+
+== unescaped lesson text (literal HTML in the page) [complete]: DETECTED (2 failure(s))
+    learning/index.html: link x does not resolve
+    learning/: lesson of series 1 game 1: text is not the data's, as written and escaped
+
+== evaluation-set id in a published lesson (data file and page) [complete]: DETECTED (3 failure(s))
+    learning/: lesson of series 1 game 1: text is not the data's, as written and escaped
+    learning/: evaluation-set position [REDACTED]…
+    data/v3/learning-pilot.json: evaluation-set position [REDACTED]…
+
+== evaluation-set board key in the page [running]: DETECTED (1 failure(s))
+    learning/: evaluation-set position [REDACTED]…
+
+== evaluation-set board string in the page [running]: DETECTED (1 failure(s))
+    learning/: evaluation-set position [REDACTED]…
+
+== evaluation-set board string in the data file [running]: DETECTED (1 failure(s))
+    data/v3/learning-pilot.json: evaluation-set position [REDACTED]…
+
+== made-up number in the page [running]: DETECTED (1 failure(s))
+    learning/index.html: number '4.567' not found in any data file (in 'Lift 4.567 points.')
+
+== the line at the top of Results changed (4 kinds -> 3 kinds) [complete]: DETECTED (1 failure(s))
+    learning/: the line at the top of Results is missing or not the fixed one
+
+== a chart title without the model's name [complete]: DETECTED (1 failure(s))
+    learning/: chart title 'Risks found, % (higher is better)' does not name Gemma 4 31B
+
+== a legend entry under the internal arm name (records) [complete]: DETECTED (1 failure(s))
+    learning/: legend entry 'records' is not its arm's name
+
+== a chart table row under the internal arm name (budget) [complete]: DETECTED (1 failure(s))
+    learning/: chart table row of 'budget' is not named by its arm's name
+
+== a verdict line under the internal arm name (lessons) [complete]: DETECTED (1 failure(s))
+    learning/: verdict line of 'lessons' is not named by its arm's name
+
+== exploratory: an arm-minus-budget number not the data's [complete]: DETECTED (1 failure(s))
+    learning/: exploratory cell '+6.5 [4.0, 7.0]' is not the data's '+5.5 [3.7, 7.3]'
+
+== exploratory: a run's number not the data's [complete]: DETECTED (1 failure(s))
+    learning/: exploratory cell '51.2' is not the data's '55.6'
+
+== exploratory: a spread cell not the data's [complete]: DETECTED (1 failure(s))
+    learning/: exploratory cell '28.3 (24.0-30.0; SD 1.41)' is not the data's '28.2 (24.0-30.0; SD 1.41)'
+
+== exploratory: an agreement count not the data's (retest vs retest 0-2) [complete]: DETECTED (1 failure(s))
+    learning/: exploratory cell '0-2' is not the data's '0-3'
+
+== exploratory: 'T0 differs from the later runs' where the counts do not show it [complete]: DETECTED (2 failure(s))
+    learning/: exploratory cell '0-3' is not the data's '0-20'
+    learning/: 'T0 differs from the later empty-context runs' is not what the agreement counts show
+
+== exploratory: the retests' own range not the data's (r1-r5 error rate) [complete]: DETECTED (1 failure(s))
+    learning/: exploratory cell '54.4-55.6 (SD 0.11)' is not the data's '54.4-54.7 (SD 0.11)'
+
+== exploratory: the retests' own range row dropped [complete]: DETECTED (1 failure(s))
+    learning/: the exploratory tables show 296 of the data's 297 values
+
+== exploratory: a cell dropped [complete]: DETECTED (1 failure(s))
+    learning/: the exploratory tables show 296 of the data's 297 values
+
+== exploratory: the block moved before the verdict [complete]: DETECTED (1 failure(s))
+    learning/: the exploratory block is not after the verdict, apart from it
+
+== exploratory: its label removed [complete]: DETECTED (1 failure(s))
+    learning/: the exploratory block is not labelled as exploratory, after the results
+
+== exploratory: a block although the data file has no exploratory data [complete]: DETECTED (4 failure(s))
+    learning/index.html: number '55.1' not found in any data file (in '55.1')
+    learning/index.html: number '1.41' not found in any data file (in '28.2 (24.0-30.0; SD 1.41)')
+    learning/index.html: number '7,202' not found in any data file (in 'Checked in the stored records of T0, the 5 retests and the 20 budget evaluations')
+    learning/: an exploratory block without exploratory data
+
+== exploratory: data but the block removed [complete]: DETECTED (2 failure(s))
+    learning/index.html: anchor #learning-explore missing
+    learning/: exploratory data but no exploratory block
+
+== exploratory, refused file: a number table shown anyway [malformed]: DETECTED (1 failure(s))
+    learning/: a refused exploratory file shows numbers or no refusal note
+
+== exploratory, refused file: the data file carries its numbers [malformed]: DETECTED (1 failure(s))
+    learning/: a refused exploratory file publishes more than its problem codes
+
+57 / 57 injected faults detected
+exit code: 0
+
+# (c2) review 4/5's saved regression cases (regression_cases.py) on the REAL state and the SYNTHETIC running subset. 2026-11-08 11:45:49 UTC
+
+== [Zeki] complete as the string "true": expected file refused, got file refused; refused-file page render: clean: OK
+    learning-pilot.json.complete: not a JSON bool
+
+== [Zeki] protocol lesson prompt hash not the plan's: expected file refused, got file refused; refused-file page render: clean: OK
+    protocol.lesson_prompt_sha256 is not the hash the plan states
+    protocol.lesson_prompt_sha256 is not the hash of the lesson prompt files
+    lesson_prompt_sha256 differs from protocol.lesson_prompt_sha256
+
+== [Zeki] running lessons, evaluation set missing: expected build failed, got build failed: OK
+    a results file is present, but the evaluation set <test set> is missing or unreadable (No such file or directory): the leakage check cannot run
+
+== [Zeki] running lessons, lesson prompt files missing: expected file refused, got file refused; refused-file page render: clean: OK
+    the lesson prompt files are not present: the results cannot be bound to the prompt
+
+== [Zeki] running lessons, inventory claims a series whose aggregate is missing (lessons s03): expected file refused, got file refused; refused-file page render: clean: OK
+    games does not follow from the aggregates
+    inventory does not follow from the aggregates
+    series does not follow from the aggregates
+    series_done does not follow from the aggregates
+    series_finished does not follow from the aggregates
+    table does not follow from the aggregates
+
+== running lessons, aggregate missing and the summary recomputed without it (lessons s03 not published): expected not complete, got not complete: OK
+
+== running lessons, a lesson file edited after its aggregate (lessons s02 game 4): expected file refused, got file refused; refused-file page render: clean: OK
+    lessons s02 game 4: lesson file missing or not the aggregate's
+
+== running lessons, a lesson file missing (lessons s01 game 7): expected file refused, got file refused; refused-file page render: clean: OK
+    lessons s01 game 7: lesson file missing or not the aggregate's
+
+== [Zeki] literal HTML in budget games_shown (budget s01), summary recomputed: expected file refused, got file refused; refused-file page render: clean: OK
+    budget s01 aggregate.budget_points[0].games_shown[0]: not a JSON int
+
+== budget games_shown a game after the point (budget s02): expected file refused, got file refused; refused-file page render: clean: OK
+    budget s02: budget point after game 1 disagrees with the context records
+    budget s02: empty budget points are not the points with no game shown
+    budget s02: budget_points[0] games shown/dropped inconsistent
+
+== [Zeki] aggregate names another arm (control s02 says records), summary recomputed: expected file refused, got file refused; refused-file page render: clean: OK
+    control s02: aggregate names another arm or series
+
+== [Zeki] aggregate names another series (records s04 says 999): expected file refused, got file refused; refused-file page render: clean: OK
+    records s04 aggregate.series: out of range
+
+== [Zeki] aggregate with an unknown key run_id (lessons s01): expected file refused, got file refused; refused-file page render: clean: OK
+    lessons s01 aggregate: unknown key [name withheld]
+
+== aggregate with another series' dice seed (budget s05), summary recomputed: expected file refused, got file refused; refused-file page render: clean: OK
+    budget s05: dice seed is not the series' seed
+
+== an aggregate in a directory that is not a series (records s11): expected file refused, got file refused; refused-file page render: clean: OK
+    records [name withheld]: not a series 1-10 of the protocol
+
+== an aggregate under an arm the protocol does not have (runs/extra/s01): expected file refused, got file refused; refused-file page render: clean: OK
+    runs/[name withheld]: not an arm of the protocol
+
+== [Zeki] table records T0 and T10 risks found changed with a signal agreeing with the table: expected file refused, got file refused; refused-file page render: clean: OK
+    signal does not follow from the aggregates
+    table does not follow from the aggregates
+
+== [Zeki] an extra literal field inside learning_lift.records: expected file refused, got file refused; refused-file page render: clean: OK
+    learning_lift does not follow from the aggregates
+
+== an extra literal field inside a table row: expected file refused, got file refused; refused-file page render: clean: OK
+    table does not follow from the aggregates
+
+== a T0 row of one arm differing from the shared T0: expected file refused, got file refused; refused-file page render: clean: OK
+    table does not follow from the aggregates
+
+== T0 aggregate changed after the summary (risks found): expected file refused, got file refused; refused-file page render: clean: OK
+    signal does not follow from the aggregates
+    table does not follow from the aggregates
+
+== T0 aggregate changed and the summary recomputed: published T0 and signal follow the aggregate: expected accepted as complete, got accepted as complete: OK
+
+== an unknown top-level key: expected file refused, got file refused; refused-file page render: clean: OK
+    learning-pilot.json: unknown key [name withheld]
+
+== a fifth arm in the protocol: expected file refused, got file refused; refused-file page render: clean: OK
+    protocol.arms differs from the site's copy of the protocol
+
+== planned series 2 instead of 10: expected file refused, got file refused; refused-file page render: clean: OK
+    planned_series_per_arm differs from the protocol
+
+== another evaluation set hash in the protocol: expected build failed, got build failed: OK
+    the results were made with evaluation set 000000000000…, but <test set> hashes to 6c92e7416745…: the leakage check would test the wrong set
+
+== an aggregate made with another evaluation set (records s03), summary recomputed: expected file refused, got file refused; refused-file page render: clean: OK
+    records s03: made with another evaluation set
+
+== an aggregate made with another lesson prompt (budget s07): expected file refused, got file refused; refused-file page render: clean: OK
+    budget s07: made with another lesson prompt
+
+== the results file not JSON: expected file refused, got file refused; refused-file page render: clean: OK
+    learning-pilot.json is not JSON
+
+== t0_done as 1, not true: expected file refused, got file refused; refused-file page render: clean: OK
+    learning-pilot.json.t0_done: not a JSON bool
+
+== a dry run claiming complete: expected file refused, got file refused; refused-file page render: clean: OK
+    T0 aggregate: dry flag differs from the protocol's
+
+== a dry run, summary recomputed (T0 dry too): expected not complete, got not complete: OK
+
+== series 10 of budget not finished in the summary only: expected file refused, got file refused; refused-file page render: clean: OK
+    series_finished does not follow from the aggregates
+
+== a tampered learning lift: expected file refused, got file refused; refused-file page render: clean: OK
+    learning_lift does not follow from the aggregates
+
+== a tampered lift interval: expected file refused, got file refused; refused-file page render: clean: OK
+    learning_lift does not follow from the aggregates
+
+== a signal flag not following the rule: expected file refused, got file refused; refused-file page render: clean: OK
+    signal does not follow from the aggregates
+
+== T10 answered 199 of 200 (records s04), summary not updated: expected file refused, got file refused; refused-file page render: clean: OK
+    records s04 T10: valid + invalid + failed is not answered
+
+== T10 answered 199 of 200 (records s04), summary recomputed: not complete, s04 not published: expected not complete, got not complete: OK
+
+== T10 answered 199 but valid 200 (records s04), summary recomputed: counts do not add up: expected file refused, got file refused; refused-file page render: clean: OK
+    records s04 T10: valid + invalid + failed is not answered
+
+== games 8-10 error rate not following from the games (lessons s02): expected file refused, got file refused; refused-file page render: clean: OK
+    lessons s02: games_error_rate_8_10 does not follow from its games
+
+== a game's error rate not following from its losses (control s06): expected file refused, got file refused; refused-file page render: clean: OK
+    control s06 game 1: error rate does not follow from its losses
+
+== a lesson file changed after the aggregate (lessons s05 game 3): expected file refused, got file refused; refused-file page render: clean: OK
+    lessons s05 game 3: lesson file missing or not the aggregate's
+
+== the T0 aggregate missing: expected file refused, got file refused; refused-file page render: clean: OK
+    complete does not follow from the aggregates
+    learning_lift does not follow from the aggregates
+    paired_series does not follow from the aggregates
+    signal does not follow from the aggregates
+    t0_done does not follow from the aggregates
+    table does not follow from the aggregates
+
+== a budget point with tokens as a string (budget s01): expected file refused, got file refused; refused-file page render: clean: OK
+    budget s01 aggregate.budget_points[0].tokens: not a JSON int
+
+== an evaluation metric as an object (records s02 T5 risks_found): expected file refused, got file refused; refused-file page render: clean: OK
+    records s02 aggregate.evaluations.T5.risks_found: not a JSON number
+
+== an evaluation rate out of range (lessons s08 T10 right_safety 140): expected file refused, got file refused; refused-file page render: clean: OK
+    lessons s08 aggregate.evaluations.T10.right_safety: out of range
+
+== a game result not in the allowed values (records s01 game 2): expected file refused, got file refused; refused-file page render: clean: OK
+    records s01 aggregate.games[1].result: not an allowed value
+
+== missing evaluation set, SYNTHETIC complete results: expected build failed, got build failed: OK
+    a results file is present, but the evaluation set <test set> is missing or unreadable (No such file or directory): the leakage check cannot run
+
+== unreadable evaluation set (a directory), SYNTHETIC running results: expected build failed, got build failed: OK
+    a results file is present, but the evaluation set <test set> is missing or unreadable (Is a directory): the leakage check cannot run
+
+== missing evaluation set, aggregates but no results file: expected build failed, got build failed: OK
+    aggregates or lesson files are present, but the evaluation set <test set> is missing or unreadable (No such file or directory): the leakage check cannot run
+
+== missing evaluation set, a lesson file but no results file and no aggregates: expected build failed, got build failed: OK
+    aggregates or lesson files are present, but the evaluation set <test set> is missing or unreadable (No such file or directory): the leakage check cannot run
+
+== missing evaluation set, no results (empty source): expected builds, got builds: OK
+
+# page-level cases
+
+== [Zeki] leakage check, SYNTHETIC running page, evaluation set missing: OK (1 failure(s))
+
+== leakage check, SYNTHETIC complete page, evaluation set missing: OK (1 failure(s))
+
+== leakage check, no-results page, evaluation set missing: OK (0 failure(s))
+
+== [Zeki] budget cell and lesson text with literal HTML are escaped in the body: OK
+
+== [Zeki] body of a rejected file's validation shape (accepted/problems only): OK
+
+== body of the typed rejected shape: OK
+
+58 / 58 regression cases handled as expected
+exit code: 0
+
+# Finished 2026-11-08 11:46:07 UTC

@@ -1,0 +1,10 @@
+main render:   /tmp/inv5/out-main (2549 files)
+branch render: /tmp/inv5/out-branch (2549 files)
+
+explained: 1
+identical: 2548
+
+explained changes, by reason (files):
+      1  bg.css: the Learning charts' block (arm colours from learning_page.ARM_COLOUR as --lp, control's dashed swatch, the charts stacked with their tables, the status line and the lessons' series boxes)
+
+unexplained: 0

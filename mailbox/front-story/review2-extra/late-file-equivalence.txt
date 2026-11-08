@@ -1,0 +1,1 @@
+content re-serialised as build.write_json does == site file bytes: True

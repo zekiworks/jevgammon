@@ -9,6 +9,9 @@ OUT_DIR is a built site (build.py --out); RESULTS_JSON the scorer's output
 - the site's data file (OUT_DIR/data/v3/nack-paired.json) equals content/nack_paired_results.json, which equals
   nack_paired_publish.build() of RESULTS_JSON and of a fresh recomputation (tools/v3/nack_paired_score.py report run
   into a temporary directory from the scored data); the fresh results.json equals RESULTS_JSON;
+- the late entries' data file (OUT_DIR/data/v3/nack-paired-late.json, §10.14(i)) equals content/nack_paired_late.json,
+  which equals nack_paired_publish.build_late() of positions/nack-paired/results-late-2026-11-07/results.json; the
+  home page's late-entries table is checked cell by cell against it (labels as their shown words, worse = "dropped");
 - the data file holds no position ids or answers, and renamed setups only under their shown names (old names only
   as "aliases");
 - on the home page: every table cell with data-k (each printed number equals its data-file value at the printed
@@ -48,7 +51,7 @@ import nack_section as NS  # noqa: E402
 from checks import Tree, text_of, walk  # noqa: E402
 from common import BANNED, CONTENT, NACK_SCOPE_NOTE, RENAMED, esc  # noqa: E402
 from method import nack_spec_text  # noqa: E402
-from nack_paired_publish import GROUP_ORDER, build  # noqa: E402
+from nack_paired_publish import GROUP_ORDER, RESULTS_LATE, build, build_late  # noqa: E402
 
 NUM = re.compile(r"[\u2212+-]?\d[\d,]*(?:\.\d+)?")
 # Anywhere in the build (the existing data/setups.json names smoke/part-a.json as a source: public, not this run's).
@@ -132,6 +135,9 @@ def check_home(out: Path, N: dict, bad: list):
     if order != want_order:
         bad.append("data file: setups not in group, standard-PR order")
     tables = [n for n in walk(sec) if n.tag == "table"]
+    # The late entries' table (§10.14(i)) is checked against its own data file, data/v3/nack-paired-late.json.
+    late_f = out / "data/v3/nack-paired-late.json"
+    late = json.loads(late_f.read_text()) if late_f.is_file() else None
     seen = 0
     for t in tables:
         tid, src = t.attrs.get("id"), t.attrs.get("data-src")
@@ -140,13 +146,19 @@ def check_home(out: Path, N: dict, bad: list):
             continue
         if any(n.tag == "th" and n.attrs.get("scope") == "col" and "data-nosort" not in n.attrs for n in walk(t)):
             bad.append(f"home table {tid}: a header can be sorted")
-        coll = NS.resolve(N, N, src)
+        is_late = t.attrs.get("data-file") == "nack-paired-late"
+        if is_late and late is None:
+            bad.append(f"home table {tid}: data/v3/nack-paired-late.json missing")
+            continue
+        D = late if is_late else N
+        coll = NS.resolve(D, D, src)
         rows = [n for n in walk(t) if n.tag == "tr" and "data-row" in n.attrs]
         keys = [r.attrs["data-row"] for r in rows]
         if src == "setups":
-            want = [s for s in order if tid not in ("nack-cost", "nack-risk-main", "nack-risk-all")
-                    or (tid == "nack-cost" and N["setups"][s]["cost"])
-                    or (tid.startswith("nack-risk") and N["setups"][s]["risk"][tid[10:]])]
+            want = D["late_entries"] + ["Random"] if is_late else [
+                s for s in order if tid not in ("nack-cost", "nack-risk-main", "nack-risk-all")
+                or (tid == "nack-cost" and N["setups"][s]["cost"])
+                or (tid.startswith("nack-risk") and N["setups"][s]["risk"][tid[10:]])]
             if keys != want:
                 bad.append(f"home table {tid}: rows {keys} != {want}")
         elif isinstance(coll, list) and keys != [str(i) for i in range(len(coll))]:
@@ -154,13 +166,15 @@ def check_home(out: Path, N: dict, bad: list):
         elif isinstance(coll, dict) and src != "" and src != "secondary" and keys != list(coll):
             bad.append(f"home table {tid}: rows {keys} != {list(coll)}")
         for r in rows:
-            rec = NS.resolve(N, N, "/".join(p for p in (src, r.attrs["data-row"]) if p))
+            rec = NS.resolve(D, D, "/".join(p for p in (src, r.attrs["data-row"]) if p))
             for c in walk(r):
                 if c.tag != "td" or "data-k" not in c.attrs:
                     continue
                 seen += 1
-                vals = [x for p in c.attrs["data-k"].split("|") for x in leaves(NS.resolve(N, rec, p))
+                vals = [x for p in c.attrs["data-k"].split("|") for x in leaves(NS.resolve(D, rec, p))
                         if x is not None]
+                if c.attrs["data-k"] == "label":  # the shown word for the data's label (Ümit #2651: worse -> dropped)
+                    vals = [NS.LABELS[v] for v in vals]
                 err = check_cell(norm(text_of(c)), vals)
                 if err:
                     bad.append(f"home table {tid} row {r.attrs['data-row']} [{c.attrs['data-k']}]: {err}")
@@ -314,6 +328,13 @@ def main():
     R = json.loads(Path(args.results).read_text())
     if build(R) != N:
         bad.append(f"content/nack_paired_results.json differs from nack_paired_publish.build({args.results})")
+    # Late entries (§10.14(i)): site file = content file = build_late(the frozen late results), no recomputation here.
+    LATE = json.loads((CONTENT / "nack_paired_late.json").read_text())
+    site_late = json.loads((out / "data/v3/nack-paired-late.json").read_text())
+    if site_late.pop("version", None) != "v3" or site_late != LATE:
+        bad.append("data/v3/nack-paired-late.json differs from content/nack_paired_late.json")
+    if build_late(json.loads(RESULTS_LATE.read_text())) != LATE:
+        bad.append(f"content/nack_paired_late.json differs from nack_paired_publish.build_late({RESULTS_LATE})")
     if args.saved_only:
         print("saved-only: no recomputation; checked against the frozen results file only")
     elif R.get("engine_check") and not args.rollouts:

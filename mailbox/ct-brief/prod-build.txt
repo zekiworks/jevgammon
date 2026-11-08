@@ -1,0 +1,19 @@
+# production-path build (Zeki #2963 release check): ct-brief 0ed9029, build.py main with the image step, scratch state copy /tmp/ctb/scratch-state (not the live state), out /tmp/ctb/out-prod; no deploy, no timer, no redirects. Started 2026-11-08 10:48:36 UTC
+{"results": "2b432cfb", "data_as_of": "2026-11-08T10:35Z", "decision_files": 2298, "scored": {"league-1": 36995, "league-2": 39538, "league-3": 16355}}
+build.py exit status: 0
+Finished 2026-11-08 10:50:57 UTC
+
+# Release check after the build (CTBrief)
+- build.py ran checks.run itself (it exits 2 on any failure and writes STATE/site-check-failures.json): exit status 0,
+  so checks.run: 0 failures; no failure report in the scratch state.
+- Risk call card on Leagues (#chart-risk): present — "Risk call card of each league winner (PNG, 1200×675): League 1:
+  GNUbg weak · League 2: Gemini 3.8 Flash (low) · League 3: GPT-6.1 Sol (low)", links ../share/risk-card-league-{1,2,3}-
+  c8895621 / dc85265c / 1bcb6521 .png, all three files exist in out-prod/share. Live has the same line on its home page
+  (#chart-risk), files 6eb07b35 / d9dc862b / 207c6ac8: the name hashes differ because the PNGs embed the results
+  label (below).
+- Data: 2,403 data and decision files of out-prod against live, equal after gunzip, data/manifest.json excluded: 0
+  differ, no new file. The results label is 2b432cfb (live a8708ed6) because the scratch copy's snapshot time is
+  2026-11-08T10:35Z (manifest data_as_of), not a data change.
+- Nothing shared touched: inputs copied to /tmp/ctb/scratch-state (snap.db, prompts.db, plays, shared, knockout.db,
+  learning; DBs opened read-only by the site code), output /tmp/ctb/out-prod; repository files only read via a symlink
+  mirror; no update.sh, no deploy, no timer, no --preview-redirects.

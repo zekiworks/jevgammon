@@ -1,0 +1,9 @@
+## 90cd56e (90cd56e): render_retained.py from /tmp/lct/S.pkl --checks
+rendered /tmp/nav/out-r3-90cd56e with /tmp/nav/src-r3-90cd56e/tools/site
+checks.run: 0 failure(s)
+exit status: 0
+## HEAD (88e0257): render_retained.py from /tmp/lct/S.pkl --checks
+rendered /tmp/nav/out-r3-head with /tmp/nav/src-r3-head/tools/site
+checks.run: 0 failure(s)
+exit status: 0
+# overall exit status: 0

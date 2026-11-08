@@ -21,10 +21,13 @@ const FILTER_LABEL = { kind: 'Model type', setting: 'Reasoning', runs: 'Runs on'
 const FOLDED = ['setting', 'runs', 'weights'];
 const TOP_N = 8;
 
-/* The anchors of the page that was live here before the switch (B2) open where that content lives now. */
+/* Old anchors of the home page open where that content lives now: the blocks that moved to the Leagues and Nackgammon
+   pages in Ümit #2938 (the map the build writes into #moved-anchors: every id of those blocks, and the old home league
+   block's lg- ids), then the anchors of the page that was live here before the switch (B2). The query string goes
+   along (?tab=, ?league=, ?type= work on the Leagues page too). */
 (function oldAnchors() {
   if (!document.body.classList.contains('home')) return;
-  const MOVED = {
+  const BEFORE_SWITCH = {
     v3: 'leagues/', 'v3-title': 'leagues/', 'v3-l1': 'leagues/#league-1', 'v3-league1': 'leagues/#league-1',
     'v3-l2': 'leagues/#league-2', 'v3-league2': 'leagues/#league-2', 'v3-l3': 'leagues/#league-3',
     'v3-league3': 'leagues/#league-3', 'v3-anchor': 'method/#v3-anchor', 'v3-dice': 'method/#exp-dice',
@@ -33,9 +36,13 @@ const TOP_N = 8;
     results: 'leagues/#v1-results', allstar: 'leagues/#v1-allstar', 'speed-cost': 'leagues/#v1-speed-cost',
     limits: 'leagues/#v1-limits',
   };
+  const map = document.getElementById('moved-anchors');
+  const MOVED = Object.assign({}, BEFORE_SWITCH, map ? JSON.parse(map.textContent) : {});
   const go = () => {
     const id = decodeURIComponent(location.hash.slice(1)).replace(/-title$/, '');
-    if (id && !document.getElementById(id) && MOVED[id]) location.replace(MOVED[id]);
+    if (!id || document.getElementById(id) || !MOVED[id]) return;
+    const [path, hash] = MOVED[id].split('#');
+    location.replace(path + location.search + (hash ? '#' + hash : ''));
   };
   go();
   window.addEventListener('hashchange', go);
@@ -45,6 +52,10 @@ function rowShown(el) {
   const f = HOME.filters;
   return el.dataset.kind === 'reference' || Object.keys(f).every(g => f[g] === 'all' || el.dataset[g] === f[g]);
 }
+
+/* Parts of the home page the filter row does not govern (bus #2718): the leaderboard is fixed (all leagues, all phases,
+   every setup) and the Nackgammon section has its own Decision / Chat / All and per-model keys. */
+const OWN_SCOPE = '#leaderboard, #nackgammon-paired';
 
 function activeFilters() {
   const on = Object.keys(HOME.filters).filter(g => HOME.filters[g] !== 'all').map(g => `${FILTER_LABEL[g]}: ${HOME.filters[g]}`);
@@ -115,28 +126,19 @@ function viewOn(v, lg) {
     && !v.parentElement.querySelector(':scope > [data-league-view="all"]'));
 }
 
-/* A key in the view bar is a link (it works without the script: ?league=, ?type=): marked with aria-current, not
-   aria-pressed. */
-function markKey(key, on) {
-  if (key.tagName === 'A') {
-    if (on) key.setAttribute('aria-current', 'true'); else key.removeAttribute('aria-current');
-  } else {
-    key.setAttribute('aria-pressed', String(on));
-  }
-}
-
 function applyHome() {
   const lg = HOME.league;
   document.querySelectorAll('[data-league-view]').forEach(v => v.toggleAttribute('data-off', !viewOn(v, lg)));
   document.querySelectorAll('[data-stack-title]').forEach(h => { h.hidden = lg !== 'all'; });
-  document.querySelectorAll('[data-league-pick]').forEach(b => markKey(b, b.dataset.leaguePick === lg));
-  document.querySelectorAll('a[data-filter-kind]').forEach(a => markKey(a, a.dataset.filterKind === HOME.filters.kind));
-  document.querySelectorAll('tr[data-kind], li.hbar[data-kind]').forEach(tr => { tr.hidden = !rowShown(tr); });
+  document.querySelectorAll('[data-league-pick]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.leaguePick === lg)));
+  // The leaderboard (a fixed global table) and the Nackgammon section (its own keys) are outside the filters' scope.
+  const filtered = el => !el.closest(OWN_SCOPE);
+  document.querySelectorAll('tr[data-kind], li.hbar[data-kind]').forEach(tr => { if (filtered(tr)) tr.hidden = !rowShown(tr); });
   // A chart's group heading shows while one of its rows does.
   document.querySelectorAll('li.hbar-group').forEach(h => {
     h.hidden = !h.parentElement.querySelector(`li.hbar[data-group="${h.dataset.group}"]:not([hidden])`);
   });
-  document.querySelectorAll('svg.chart-svg').forEach(layoutChart);
+  document.querySelectorAll('svg.chart-svg').forEach(svg => { if (filtered(svg)) layoutChart(svg); });
   document.querySelectorAll('.phase-all').forEach(p => { p.hidden = HOME.phase === 'all'; });
   const box = document.getElementById('filters');
   if (!box) return;
@@ -170,7 +172,8 @@ async function loadPhase(phase) {
   } else {
     const leagues = [...new Set([...slots].map(s => s.dataset.dataset))];
     await Promise.all(leagues.map(async ds => {
-      const res = await fetch(`fragments/${ds}-${phase}.html`);
+      const base = document.getElementById('filters')?.dataset.fragments || 'fragments/';
+      const res = await fetch(`${base}${ds}-${phase}.html`);
       if (!res.ok) throw new Error(`fragments/${ds}-${phase}.html: ${res.status}`);
       const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
       doc.querySelectorAll('.phase-slot').forEach(src => {
@@ -192,15 +195,8 @@ async function loadPhase(phase) {
   HOME.league = picks.some(b => b.dataset.leaguePick === wanted) ? wanted : HOME.defaultLeague;
   // ?type=decision (or chat, program): the Model type filter.
   if (document.querySelector(`[data-filter-kind="${CSS.escape(params.get('type') || '')}"]`)) HOME.filters.kind = params.get('type');
-  // The view bar's League and Models keys are links (?league=, ?type=); with the script they filter in place.
-  picks.forEach(b => b.addEventListener('click', event => {
-    if (b.tagName === 'A') event.preventDefault();
+  picks.forEach(b => b.addEventListener('click', () => {
     HOME.league = b.dataset.leaguePick;
-    applyHome();
-  }));
-  document.querySelectorAll('a[data-filter-kind]').forEach(a => a.addEventListener('click', event => {
-    event.preventDefault();
-    HOME.filters.kind = a.dataset.filterKind;
     applyHome();
   }));
   document.querySelectorAll('[data-quick-view]').forEach(b => b.addEventListener('click', () => {
@@ -512,7 +508,11 @@ async function savePng(panel, svg, title, lines, filename) {
   const fromHash = scroll => {
     const id = decodeURIComponent(location.hash.slice(1));
     const el = id && document.getElementById(id);
-    if (!el || !route(el, scroll)) route(document.getElementById(tabs[0].getAttribute('aria-controls')), false);
+    if (el && route(el, scroll)) return;
+    route(document.getElementById(tabs[0].getAttribute('aria-controls')), false);
+    // An anchor outside the tabs (the blocks moved here from the home page, #board-panel, #risk-judgement …): the tabs
+    // above it just changed height, so scroll to it again.
+    if (el && scroll) el.scrollIntoView();
   };
   tabs.forEach(t => t.addEventListener('click', event => {
     event.preventDefault();
@@ -533,4 +533,157 @@ async function savePng(panel, svg, title, lines, filename) {
   }));
   window.addEventListener('hashchange', () => fromHash(true));
   fromHash(location.hash.length > 1);
+})();
+
+/* Home page: the headline table's two views (story.py): one row per model, or every setup (the All leagues risk table);
+   and each row's "other settings" expander, which shows or hides the rows it names (aria-controls). */
+(function headlineViews() {
+  const keys = [...document.querySelectorAll('[data-headline-view]')];
+  if (!keys.length) return;
+  const show = view => {
+    keys.forEach(k => k.setAttribute('aria-pressed', String(k.dataset.headlineView === view)));
+    document.querySelectorAll('[data-headline-panel]').forEach(p => { p.hidden = p.dataset.headlinePanel !== view; });
+  };
+  keys.forEach(k => k.addEventListener('click', () => show(k.dataset.headlineView)));
+  document.querySelectorAll('#headline-table .hl-more').forEach(b => b.addEventListener('click', () => {
+    const open = b.getAttribute('aria-expanded') !== 'true';
+    b.setAttribute('aria-expanded', String(open));
+    b.getAttribute('aria-controls').split(' ').forEach(id => { const r = document.getElementById(id); if (r) r.hidden = !open; });
+  }));
+})();
+
+/* Home page: the leaderboard's own filter (Ümit #2907): All, Chat models or Decision models, local to the table (the
+   page's filters never change it). A row of the other type and its other-settings rows go out of view (class hl-off),
+   whatever their expander says; the programs stay in every view; the ranks are the ranks among all models. */
+(function headlineFilter() {
+  const table = document.getElementById('headline-table');
+  const keys = [...document.querySelectorAll('[data-hl-filter]')];
+  if (!table || !keys.length) return;
+  keys.forEach(k => k.addEventListener('click', () => {
+    const type = k.dataset.hlFilter;
+    keys.forEach(x => x.setAttribute('aria-pressed', String(x === k)));
+    table.querySelectorAll('tbody tr[data-hl-type]').forEach(tr => {
+      const t = tr.dataset.hlType;
+      tr.classList.toggle('hl-off', type !== 'all' && t !== 'program' && t !== type);
+    });
+    table.dispatchEvent(new CustomEvent('hl-filter'));
+  }));
+})();
+
+/* Home page: a leaderboard row's details box (Ümit #2904, as Clocktower Bench's). A tap on a phone opens it and a
+   second tap on the row, a tap outside it or Escape closes it; with a mouse it shows while the pointer is on the row;
+   with the keyboard while the focus is in the row (the model's name, then the box's links). The box is placed under
+   the row (above it near the bottom of the window), within the window's width. Without JavaScript every box is shown
+   in its row. */
+(function headlineDetails() {
+  const table = document.getElementById('headline-table');
+  if (!table) return;
+  let open = null, pinned = false, pointer = 'mouse', quiet = false;
+  const boxOf = tr => document.getElementById(tr.dataset.box);
+  const place = () => {
+    if (!open) return;
+    const box = boxOf(open), row = open.getBoundingClientRect(), cell = open.querySelector('td.model').getBoundingClientRect();
+    const vw = document.documentElement.clientWidth;  // the visible width, even where something overflows the page
+    const width = Math.min(380, vw - 16);
+    box.style.width = `${width}px`;
+    box.style.left = `${Math.max(8, Math.min(cell.left, vw - width - 8))}px`;
+    // Height: below the row if it fits, else above it. If it fits neither way, capped to the larger side of the row,
+    // scrolling inside (its links stay reachable by scrolling it or with Tab), so the row itself stays uncovered for a
+    // second tap; only where neither side has 120 px does it take the window under the header.
+    box.style.maxHeight = '';
+    const height = box.offsetHeight;
+    const header = document.querySelector('.site-header')?.getBoundingClientRect().bottom || 0;
+    const below = row.bottom;  // no gap: the pointer moves from the row into its box without leaving the row
+    const bottom = innerHeight - 8;
+    const roomBelow = bottom - below, roomAbove = row.top - header - 4;
+    if (height <= roomBelow) box.style.top = `${below}px`;
+    else if (height <= roomAbove) box.style.top = `${row.top - height}px`;
+    else if (Math.max(roomBelow, roomAbove) >= 120) {
+      box.style.maxHeight = `${Math.max(roomBelow, roomAbove)}px`;
+      box.style.top = `${roomBelow >= roomAbove ? below : row.top - roomAbove}px`;
+    } else {
+      const room = Math.max(bottom - header - 4, 80);
+      box.style.maxHeight = `${room}px`;
+      box.style.top = `${header + 4}px`;
+    }
+  };
+  const hide = () => {
+    if (!open) return;
+    boxOf(open).classList.remove('open');
+    open.classList.remove('hl-open');
+    open = null;
+    pinned = false;
+  };
+  const show = (tr, pin) => {
+    if (open !== tr) hide();
+    const box = boxOf(tr);
+    if (!box) return;
+    open = tr;
+    pinned = pin;
+    tr.classList.add('hl-open');
+    box.classList.add('open');
+    place();
+  };
+  const rows = [...table.querySelectorAll('tbody tr[data-box]')];
+  // Keyboard focus in the open row (its name or its box) keeps the box: the pointer leaving the row or entering another
+  // row does not take it away until the focus leaves the row, Escape, a second tap or a click outside. Focus that a
+  // press of the pointer gives (pointing) neither opens a box nor holds one: the press itself decides.
+  let pointing = false, keyed = false;
+  const held = () => !!open && keyed && open.contains(document.activeElement);
+  document.addEventListener('pointerdown', event => {
+    pointing = true;
+    if (table.contains(event.target)) pointer = event.pointerType || 'mouse';
+  }, true);
+  const released = () => setTimeout(() => { pointing = false; });
+  document.addEventListener('pointerup', released, true);
+  document.addEventListener('pointercancel', released, true);
+  rows.forEach(tr => {
+    tr.addEventListener('pointerenter', event => { if (event.pointerType === 'mouse' && !pinned && !held()) show(tr, false); });
+    tr.addEventListener('pointerleave', event => { if (event.pointerType === 'mouse' && !pinned && open === tr && !held()) hide(); });
+    tr.addEventListener('focusin', () => {
+      keyed = !pointing;
+      if (keyed && open !== tr && !quiet) show(tr, false);
+    });
+    tr.addEventListener('focusout', event => { if (open === tr && !pinned && !tr.contains(event.relatedTarget)) hide(); });
+    tr.addEventListener('click', event => {
+      // A mouse click or a key (detail 0) follows the link; a link or key in the box or the expander does its own job.
+      if (pointer === 'mouse' || event.detail === 0 || boxOf(tr).contains(event.target) || event.target.closest('.hl-more')) return;
+      event.preventDefault();  // a tap opens the box; its own link opens the decisions
+      if (open === tr && pinned) hide(); else show(tr, true);
+    });
+  });
+  document.addEventListener('click', event => { if (open && !open.contains(event.target)) hide(); });
+  document.addEventListener('keydown', event => {
+    if (event.key !== 'Escape' || !open) return;
+    const name = open.querySelector('.model-name');
+    const inside = open.contains(document.activeElement);
+    hide();
+    if (inside && name) { quiet = true; name.focus(); quiet = false; }
+  });
+  addEventListener('scroll', place, { passive: true });
+  addEventListener('resize', place);
+  table.addEventListener('hl-filter', () => { if (open && open.classList.contains('hl-off')) hide(); });
+})();
+
+/* Home page: the Nackgammon summary table's keys (nack_section.py; Ümit #2647, #2651): Decision / Chat / All by model
+   type, and One setting per model / All settings. Programs (the yardsticks) are always shown; the notes and every
+   table below the summary keep every setup. */
+(function nackViews() {
+  const sec = document.getElementById('nackgammon-paired');
+  const table = sec && sec.querySelector('#nack-summary');
+  if (!table) return;
+  const kinds = JSON.parse(sec.dataset.nackKinds);
+  const chosen = new Set(JSON.parse(sec.dataset.nackChosen));
+  const state = { kind: 'all', view: 'model' };
+  const apply = () => {
+    sec.querySelectorAll('[data-nack-kind-pick]').forEach(k => k.setAttribute('aria-pressed', String(k.dataset.nackKindPick === state.kind)));
+    sec.querySelectorAll('[data-nack-view]').forEach(k => k.setAttribute('aria-pressed', String(k.dataset.nackView === state.view)));
+    table.querySelectorAll('tbody tr[data-row]').forEach(tr => {
+      const k = kinds[tr.dataset.row];
+      tr.hidden = k !== 'program' && ((state.kind !== 'all' && k !== state.kind) || (state.view === 'model' && !chosen.has(tr.dataset.row)));
+    });
+  };
+  sec.querySelectorAll('[data-nack-kind-pick]').forEach(k => k.addEventListener('click', () => { state.kind = k.dataset.nackKindPick; apply(); }));
+  sec.querySelectorAll('[data-nack-view]').forEach(k => k.addEventListener('click', () => { state.view = k.dataset.nackView; apply(); }));
+  apply();
 })();

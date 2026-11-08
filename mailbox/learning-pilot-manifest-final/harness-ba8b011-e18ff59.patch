@@ -1,0 +1,43 @@
+diff --git a/workspace/learning-pilot/pilot.py b/workspace/learning-pilot/pilot.py
+index b1b6794..176774c 100644
+--- a/workspace/learning-pilot/pilot.py
++++ b/workspace/learning-pilot/pilot.py
+@@ -538,9 +538,19 @@ def run_series(arm, s):
+     prior = match_of(arm, s)
+     if prior is not None:
+         # A series cut off part-way is played again from game 1 with the same dice (logged); its old match stays.
+-        log(arm, s, "series_restarted", old_match=prior[0], old_status=prior[1])
+-        for f in list(d.glob("lessons-g*")) + list(d.glob("contexts/*")) + [d / "note.txt", d / "failed"]:
+-            f.unlink(missing_ok=True)
++        # The failed attempt's files move to attempt-N/, so the new attempt's log and lessons start clean.
++        n = 1 + sum(1 for _ in d.glob("attempt-*"))
++        old = d / f"attempt-{n}"
++        old.mkdir(parents=True)
++        for f in (list(d.glob("lessons-g*")) + list(d.glob("eval-*")) + [d / "contexts", d / "note.txt", d / "failed",
++                                                                          d / "failed.previous",
++                                                                          d / "log.jsonl", d / "match.log",
++                                                                          d / "player.json"]):
++            if f.exists():
++                f.rename(old / f.name)
++        why = next((old / x for x in ("failed", "failed.previous") if (old / x).exists()), None)
++        log(arm, s, "series_restarted", old_match=prior[0], old_status=prior[1], attempt_archive=old.name,
++            reason=why.read_text()[-300:] if why else None)
+     d.mkdir(parents=True, exist_ok=True)
+     started = time.time()
+     log(arm, s, "series_start", seed=series_seed(s), lesson_prompt_sha256=lesson_prompt_sha256())
+@@ -821,8 +831,15 @@ def main():
+     else:
+         if not (RUNS / "t0/aggregate.json").exists():
+             sys.exit("run the shared T0 evaluation first: pilot.py t0")
++        tokens("check")  # the after-game hook runs with this interpreter and needs the tokenizer; fail before any game
+         init_runner_db()
+         lo, hi = (int(x) for x in a.series.split("-"))
++        for arm in a.arms.split(","):
++            for s in range(lo, hi + 1):
++                # A failed series is restarted by its own worker; clear its marker first so the budget arm, which
++                # waits on the lessons arm's series, does not see the old failure.
++                if not (run_dir(arm, s) / "aggregate.json").exists() and (run_dir(arm, s) / "failed").exists():
++                    (run_dir(arm, s) / "failed").rename(run_dir(arm, s) / "failed.previous")
+         errors = []
+ 
+         def worker(arm):

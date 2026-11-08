@@ -1,0 +1,33 @@
+2026-11-07 17:18:21 UTC  home-1280-light.png  <- file:///tmp/inv/out-branch/index.html
+2026-11-07 17:18:22 UTC  home-1280-dark.png  <- file:///tmp/inv/out-branch/index.html
+2026-11-07 17:18:23 UTC  home-390-light.png  <- file:///tmp/inv/out-branch/index.html
+2026-11-07 17:18:24 UTC  home-390-dark.png  <- file:///tmp/inv/out-branch/index.html
+2026-11-07 17:18:25 UTC  home-how-numbers-1280-light.png  <- file:///tmp/inv/out-branch/index.html #how-numbers
+2026-11-07 17:18:25 UTC  home-how-numbers-1280-dark.png  <- file:///tmp/inv/out-branch/index.html #how-numbers
+2026-11-07 17:18:26 UTC  home-how-numbers-390-light.png  <- file:///tmp/inv/out-branch/index.html #how-numbers
+2026-11-07 17:18:26 UTC  home-how-numbers-390-dark.png  <- file:///tmp/inv/out-branch/index.html #how-numbers
+2026-11-07 17:18:27 UTC  learning-tab-noresults-1280-light.png  <- file:///tmp/inv/out-branch/learning/index.html
+2026-11-07 17:18:27 UTC  learning-tab-noresults-1280-dark.png  <- file:///tmp/inv/out-branch/learning/index.html
+2026-11-07 17:18:27 UTC  learning-tab-noresults-390-light.png  <- file:///tmp/inv/out-branch/learning/index.html
+2026-11-07 17:18:28 UTC  learning-tab-noresults-390-dark.png  <- file:///tmp/inv/out-branch/learning/index.html
+2026-11-07 17:18:28 UTC  learning-protocol-1-question-1280-light.png  <- file:///tmp/inv/out-branch/learning/index.html #plan-1-question
+2026-11-07 17:18:28 UTC  learning-protocol-1-question-1280-dark.png  <- file:///tmp/inv/out-branch/learning/index.html #plan-1-question
+2026-11-07 17:18:28 UTC  learning-protocol-1-question-390-light.png  <- file:///tmp/inv/out-branch/learning/index.html #plan-1-question
+2026-11-07 17:18:28 UTC  learning-protocol-1-question-390-dark.png  <- file:///tmp/inv/out-branch/learning/index.html #plan-1-question
+2026-11-07 17:18:29 UTC  learning-protocol-4-arms-1280-light.png  <- file:///tmp/inv/out-branch/learning/index.html #plan-4-arms
+2026-11-07 17:18:29 UTC  learning-protocol-4-arms-1280-dark.png  <- file:///tmp/inv/out-branch/learning/index.html #plan-4-arms
+2026-11-07 17:18:29 UTC  learning-protocol-4-arms-390-light.png  <- file:///tmp/inv/out-branch/learning/index.html #plan-4-arms
+2026-11-07 17:18:30 UTC  learning-protocol-4-arms-390-dark.png  <- file:///tmp/inv/out-branch/learning/index.html #plan-4-arms
+2026-11-07 17:18:32 UTC  learning-tab-SYNTHETIC-complete-1280-light.png  <- file:///tmp/inv/synthetic-complete-site/learning/index.html
+2026-11-07 17:18:34 UTC  learning-tab-SYNTHETIC-complete-1280-dark.png  <- file:///tmp/inv/synthetic-complete-site/learning/index.html
+2026-11-07 17:18:36 UTC  learning-tab-SYNTHETIC-complete-390-light.png  <- file:///tmp/inv/synthetic-complete-site/learning/index.html
+2026-11-07 17:18:38 UTC  learning-tab-SYNTHETIC-complete-390-dark.png  <- file:///tmp/inv/synthetic-complete-site/learning/index.html
+2026-11-07 17:18:39 UTC  method-learning-row-1280-light.png  <- file:///tmp/inv/out-branch/method/index.html #learning
+2026-11-07 17:18:39 UTC  method-learning-row-1280-dark.png  <- file:///tmp/inv/out-branch/method/index.html #learning
+2026-11-07 17:18:39 UTC  method-learning-row-390-light.png  <- file:///tmp/inv/out-branch/method/index.html #learning
+2026-11-07 17:18:39 UTC  method-learning-row-390-dark.png  <- file:///tmp/inv/out-branch/method/index.html #learning
+# rerun after 9d8c29b (top label fix): learning-tab-SYNTHETIC-complete only
+2026-11-07 17:24:08 UTC  learning-tab-SYNTHETIC-complete-1280-light.png  <- file:///tmp/inv/synthetic-complete-site/learning/index.html
+2026-11-07 17:24:10 UTC  learning-tab-SYNTHETIC-complete-1280-dark.png  <- file:///tmp/inv/synthetic-complete-site/learning/index.html
+2026-11-07 17:24:12 UTC  learning-tab-SYNTHETIC-complete-390-light.png  <- file:///tmp/inv/synthetic-complete-site/learning/index.html
+2026-11-07 17:24:15 UTC  learning-tab-SYNTHETIC-complete-390-dark.png  <- file:///tmp/inv/synthetic-complete-site/learning/index.html

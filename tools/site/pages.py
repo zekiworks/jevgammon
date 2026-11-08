@@ -7,19 +7,27 @@ from pathlib import Path
 
 import analysis as A
 from common import (EARLIER, EARLIER_NOTE, LATE_ENTRY, LATE_ENTRY_LABEL, LATE_ENTRY_NOTE, NA, NAME_NOTES, NOT_MEASURED,
-                    PENDING, PROVISIONAL, PROVISIONAL_NOTE, PUBLISHED, REASONING_NOTES, SUITE_BAR, TOO_FEW, aliases, count, esc, fmt,
+                    PENDING, PROVISIONAL, PROVISIONAL_NOTE, PUBLISHED, REASONING_NOTES, ROOT, SUITE_BAR, TOO_FEW, aliases, count, esc, fmt,
                     nm, pct, setup_slug, slug, status_badge)
 
-# The nav in groups (Ümit, 30 Oct 2026): Home (the leaderboard), Analyses, Leagues and matches, Method and data.
-# Model pages open from the table rows; New models is linked from Data. "" is the home page, first and without a group
-# label: the one navigation of every page (Zeki, bus #1860: the pages row and the old text menu merged), as keys in the
-# sibling site's pages-row style, the current page filled.
-NAV = [("", [("", "Home")]),
-       ("Analyses", [("decisions/", "Every decision"), ("disagreements/", "Where models disagree"), ("phases/", "Phases"),
-                     ("compare/", "Compare"), ("clear-risk/", "Clear risk")]),
-       ("Leagues and matches", [("leagues/", "Leagues"), ("matches/", "Matches")]),
-       ("Method and data", [("method/", "Method"), ("data/", "Data")])]
-TITLE = "Can a model tell when a risk is worth taking?"
+# The site's top bar (Ümit #2901, as Clocktower Bench's): the Hilde leaf and the site's name, then one row of tabs. Each
+# tab is a page; every other page sits under one tab (SECTION), which is marked while it is in view. The pages that are
+# not tabs (Matches, Phases, Compare, Where models disagree, Leagues, Models, Data, Method) are linked from the
+# Leaderboard and the About page (MORE_PAGES).
+TABS = [("", "Leaderboard"), ("decisions/", "Decisions"), ("highlights/", "Highlights"), ("experiments/", "Experiments"),
+        ("about/", "About")]
+SECTION = {"clear-risk/": "experiments/", "learning/": "experiments/", "nackgammon/": "experiments/", "method/": "about/",
+           "data/": "about/"}
+MORE_PAGES = [("matches/", "Matches"), ("phases/", "Phases"), ("compare/", "Compare"),
+              ("disagreements/", "Where models disagree"), ("leagues/", "Leagues"), ("models/", "Every model setup"),
+              ("method/", "Method"), ("data/", "Data")]
+SITE_NAME = "Backgammon bench"
+# The Hilde leaf: Hilde Reader's bare copper leaf (hilde repository, assets/reader-leaf.svg), copied byte for byte.
+LEAF = "hilde-leaf.svg"
+TITLE = "Backgammon: do models take the right risks, and do they learn from their games?"
+# The learning pilot's tab name inside its page (Ümit #2553/#2557) and its address.
+TAB_LEARNING = "Learning across games"
+TAB_LEARNING_PATH = "learning/"
 # Reviewed brief of 24 Oct 2026, item 2: the subtitle, used with the title in the hero, the meta description, the social
 # preview and the PNG headers (png.js, bg.js read both from the body's data attributes).
 SUBTITLE = "And when does playing safe cost more?"
@@ -106,6 +114,16 @@ def meta(S, dataset, name) -> dict:
                 aliases=aliases(name) if dataset.startswith("league-") else [])
 
 
+def origin_meta(S, dataset, name) -> dict:
+    """The setup's setups.json entry for its model facts (model type, confidence source, price); a setup that came into
+    this league by a ladder move is listed under the league it came from."""
+    m = S["setups_meta"].get((dataset, name))
+    if m:
+        return m
+    return next((m for (d, n), m in S["setups_meta"].items() if n == name and d.startswith("league-")),
+                meta(S, dataset, name))
+
+
 def model_href(rel, dataset, name, S) -> str:
     return f"{rel}models/{dataset}/{meta(S, dataset, name)['slug']}/"
 
@@ -137,8 +155,7 @@ def by_error(setups: dict) -> list[str]:
 
 
 def cost_cell(S, dataset, name, q) -> str:
-    m = meta(S, dataset, name)
-    label = (m.get("price") or {}).get("label")
+    label = (origin_meta(S, dataset, name).get("price") or {}).get("label")
     if q.get("usd_per_1000") is None:
         why = NOT_MEASURED if q.get("cost_coverage", 0) == 0 else f"Priced for {pct(q['cost_coverage'], 0)} of decisions"
         return f'<td class="num">{nm(why)}</td>'
@@ -219,26 +236,28 @@ COST_HEAD = ["Model and setting", "$ per 1,000 decisions", "Median / P90 s per d
 
 # --- Layout -------------------------------------------------------------------------------------------------
 
-# The sticky header at the top of every page (Ümit via Zeki #2270; the suite's shared component, #2290), as on the
-# Decision models site: the suite strip (common.SUITE_BAR, the shared snippet with Backgammon marked; its look is
-# suite-bar.css, copied verbatim), then the compact view bar: Home on every page and, on the home page, its League,
-# Models and Measure rows. The pages row (NAV) sits in the top bar under it, which scrolls away.
-def site_header(rel: str, path: str, rows: str = "") -> str:
-    home = (f'<a class="view-key view-home" href="{rel or "./"}"{" aria-current=page" if path == "" else ""}>'
-            f'<svg class="home-mark" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 1.6 1 7.6h2v6.8h3.8v-4.2'
-            f'h2.4v4.2H13V7.6h2z"/></svg>Home</a>')
-    label = "View: league, models and measure" if rows else "View"
-    return (f'<div class="site-header">\n  {SUITE_BAR}\n  <nav class="view-bar" aria-label="{label}"><div class="view-rows">'
-            f'{home}{rows}</div></nav>\n  </div>')
+# The one sticky header of every page (Ümit #2901; the suite's shared component, Zeki #2270, #2290): the suite strip
+# (common.SUITE_BAR, the shared snippet with Backgammon marked; its look is suite-bar.css, copied verbatim), then the
+# site's bar: the Hilde leaf and the site's name (the Leaderboard's link) with the colour theme and More options, and
+# under them the tabs (TABS), one row that scrolls sideways on a phone, the tab of the page in view underlined.
+def tab_of(path: str) -> str:
+    """The tab a page sits under: its own, its SECTION's, else the Leaderboard's."""
+    for prefix, tab in SECTION.items():
+        if path.startswith(prefix):
+            return tab
+    return next((href for href, _ in TABS if href and path.startswith(href)), "")
 
 
-def nav_items(rel: str, path: str) -> str:
-    """The pages row's groups and keys (NAV), the page in view marked."""
-    here = lambda href: href == path if not href else path.startswith(href)
-    return "".join(f'<li class="nav-group">{f"<span class=nav-group-label>{esc(group)}</span>" if group else ""}<ul>'
-                   + "".join(f'<li><a href="{rel}{href or ("" if rel else "./")}"{" aria-current=page" if here(href) else ""}>'
-                             f'{esc(label)}</a></li>' for href, label in links) + '</ul></li>'
-                   for group, links in NAV)
+# The tab row keeps the id of the old Part row (view-part), so an old link to #view-part still lands on the site's parts.
+def site_header(rel: str, path: str, controls: str) -> str:
+    here = tab_of(path)
+    tabs = "".join(f'<li><a href="{rel}{href or ("" if rel else "./")}"'
+                   f'{(" aria-current=page" if href == path else " aria-current=true") if href == here else ""}>'
+                   f'{esc(label)}</a></li>' for href, label in TABS)
+    return (f'<div class="site-header">\n  {SUITE_BAR}\n  <header class="site-bar"><div class="site-bar-in">'
+            f'<div class="site-title-row"><a class="site-title" href="{rel or "./"}"><img class="site-leaf" '
+            f'src="{rel}{LEAF}" width="18" height="21" alt="">{esc(SITE_NAME)}</a>{controls}</div>'
+            f'<nav class="site-tabs" id="view-part" aria-label="Sections"><ul>{tabs}</ul></nav></div></header>\n  </div>')
 
 
 # The first script of every page, before the stylesheets apply (Zeki, bus #2310): the theme is always named on <html>
@@ -254,7 +273,7 @@ HEAD_SCRIPT = ('<script>(function () { var d = document.documentElement; d.class
 
 
 def layout(S, base, path: str, title: str, body: str, description: str | None = None, main_class: str = "",
-           scripts=(), styles=(), body_class: str = "", view_rows: str = "") -> str:
+           scripts=(), styles=(), body_class: str = "") -> str:
     depth = path.count("/")
     rel = "../" * depth
     desc = description or S["description"]
@@ -264,13 +283,18 @@ def layout(S, base, path: str, title: str, body: str, description: str | None = 
     og = (f'<meta property="og:image" content="{image}"><meta property="og:image:width" content="1200">'
           f'<meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image">'
           f'<meta name="twitter:image" content="{image}">') if image else ""
-    nav = nav_items(rel, path)
     css = "".join(f'<link rel="stylesheet" href="{rel}{s}">' for s in ("suite-bar.css", "site.css", "bg.css") + tuple(styles))
     js = "".join(f'<script src="{rel}{s}" defer></script>' for s in ("site.js", "tables.js", "png.js") + tuple(scripts))
-    # The Dark / Light switch sits in the top bar itself, as on the Decision models site (Ümit, 31 Oct 2026); More options
-    # keeps the page export.
+    # The Dark / Light switch sits in the site's bar beside its name, as on the Decision models site (Ümit, 31 Oct 2026);
+    # More options keeps the page export ("More" on a phone, its name unchanged).
+    theme = ('<div class="theme-switch" role="group" aria-label="Colour theme" hidden><button type="button" class="key" '
+             'data-theme-choice="dark" aria-pressed="true" aria-label="Dark background"><span class="lamp" aria-hidden="true">'
+             '</span>Dark<span class="long"> background</span></button><button type="button" class="key" '
+             'data-theme-choice="light" aria-pressed="false" aria-label="Light background"><span class="lamp" '
+             'aria-hidden="true"></span>Light<span class="long"> background</span></button></div>')
     more = ('<div class="more-menu needs-js"><button type="button" class="key more-toggle" data-more-toggle aria-expanded="false" '
-            'aria-controls="more-options">More options<span class="chevron" aria-hidden="true"></span></button>'
+            'aria-controls="more-options" aria-label="More options">More<span class="more-long"> options</span><span '
+            'class="chevron" aria-hidden="true"></span></button>'
             '<div class="more-pop" id="more-options" hidden><p class="more-label">Share</p><button type="button" class="key '
             'page-png" data-page-png hidden>Export page as PNG</button></div></div>' if EXPORT_PAGE_PNG else "")
     return f"""<!doctype html>
@@ -292,18 +316,13 @@ def layout(S, base, path: str, title: str, body: str, description: str | None = 
 </head>
 <body class="v3 {body_class}" data-site-title="{esc(TITLE)}" data-site-subtitle="{esc(SUBTITLE)}">
   <a class="skip" href="#main">Skip to content</a>
-  {site_header(rel, path, view_rows)}
-  <header class="topbar">
-    <a class="brand" href="{rel or './'}">Hilde · Backgammon benchmark · v3</a>
-    <div class="theme-switch" role="group" aria-label="Colour theme" hidden><button type="button" class="key" data-theme-choice="dark" aria-pressed="true" aria-label="Dark background"><span class="lamp" aria-hidden="true"></span>Dark<span class="long"> background</span></button><button type="button" class="key" data-theme-choice="light" aria-pressed="false" aria-label="Light background"><span class="lamp" aria-hidden="true"></span>Light<span class="long"> background</span></button></div>
-    {more}
-    <nav class="nav" aria-label="Pages"><span class="view-label nav-label" aria-hidden="true">Pages</span><ul>{nav}</ul></nav>
-  </header>
+  {site_header(rel, path, f'<div class="site-controls">{theme}{more}</div>')}
   <main id="main"{f' class="{main_class}"' if main_class else ''}>
 {body}
   </main>
   <footer class="footer">
-    <p>Download: <a href="{rel}data/results.json" download="results.json">results.json</a> · <a href="{rel}decisions/index.json" download="decisions.json">decisions.json</a> · <a href="{rel}data/">every data file</a></p>
+    <nav class="footer-links" aria-label="Site"><a href="{rel}about/">About</a> · <a href="{rel}method/">Method</a> · <a href="{rel}data/">Data</a> · <a href="{GITHUB}">GitHub</a></nav>
+    <p{' id="downloads"' if not path else ""}>Download: <a href="{rel}data/results.json" download="results.json">results.json</a> · <a href="{rel}decisions/index.json" download="decisions.json">decisions.json</a> · <a href="{rel}data/">every data file</a></p>
     <p>{esc(version_line(S))}</p>
   </footer>
 </body>
@@ -318,14 +337,6 @@ def page_head(S, eyebrow: str, title: str, intro: str = "") -> str:
 
 
 # --- Home ---------------------------------------------------------------------------------------------------
-
-def readouts(S) -> str:
-    c = S["counts"]
-    items = [(count(c["decisions_scored"]), "decisions scored"), (count(c["leagues"]), "leagues"),
-             (count(c["model_setups"]), "setups"), (count(c["models"]), "models")]
-    return "".join(f'<li class="readout"><span class="readout-value">{v}</span> <span class="readout-label">{l}</span></li>'
-                   for v, l in items)
-
 
 def league_reasoning_table(S, lg) -> str:
     """Reasoning inside one league: every model with both settings in this league's games. Not paired, so no verdict
@@ -516,7 +527,7 @@ def league_notes(S, lg) -> str:
 
 def league_sections(S) -> str:
     """The Leagues page's tab bar and its sections (Starting groups, After league moves, Cups, Late entries), written for
-    the Leagues page (links relative to leagues/); the home page shows the same block through home_league_sections."""
+    the Leagues page (links relative to leagues/)."""
     rel = "../"
     blocks = []
     for lg in S["leagues"]:
@@ -551,29 +562,55 @@ def league_sections(S) -> str:
                         **({"late-entries": late} if late else {})})
 
 
+# The home page's league block had every id prefixed "lg-" (#lg-starting-groups, #lg-hype-cup …) until Ümit #2938; its
+# old anchors land on the same section of the Leagues page (moved_anchors).
 HOME_PREFIX = "lg-"
 
 
-def home_league_sections(S) -> str:
-    """The Leagues page's tab block on the home page (Can, 31 Oct 2026), under the hero: the same HTML with every id and
-    in-block reference prefixed (#lg-starting-groups, #lg-group-decision, #lg-league-3 …), so it never meets the
-    leaderboard's own ids and hashes, and its links made relative to the site's root."""
-    html = league_sections(S)
-    ref = r'(\s(?:id|aria-controls|aria-labelledby|data-tab|data-tab-part)=")([^"]+)"'
-    html = re.sub(ref, lambda m: f'{m.group(1)}{HOME_PREFIX}{m.group(2)}"', html)
-    html = re.sub(r'(\shref=")#([^"]+)"', lambda m: f'{m.group(1)}#{HOME_PREFIX}{m.group(2)}"', html)
-    return html.replace('="../"', '="./"').replace('="../', '="')
+def rebase(html: str, rel: str, local_ids: set | None = None) -> str:
+    """HTML written relative to the site's root, moved to a page `rel` deep (rel "../"): every relative href and src
+    gets rel in front; a same-page anchor (#id) does too unless the id is in local_ids (None: anchors stay)."""
+    def fix(m):
+        attr, v = m.group(1), m.group(2)
+        if v.startswith(("http:", "https:", "mailto:", "data:", "/", "?", "../", "javascript:")):
+            return m.group(0)
+        if v.startswith("#") and (local_ids is None or v[1:] in local_ids):
+            return m.group(0)
+        return f'{attr}"{rel}{v}"'
+    return re.sub(r'(\s(?:href|src)=)"([^"]*)"', fix, html)
 
 
-def leagues_page(S, archive_v1: str) -> str:
+def ids_of(html: str) -> set:
+    return set(re.findall(r'\sid="([^"]+)"', html))
+
+
+def moved_anchors(moved: dict, league_ids: set) -> dict:
+    """{old home id: new address}: every id of each block that left the home page (moved: {page path: ids of the block
+    now on that page}), and the old home league block's lg- ids, each to the same id on the Leagues page."""
+    out = {i: f"{path}#{i}" for path, ids in moved.items() for i in sorted(ids)}
+    out.update({HOME_PREFIX + i: f"leagues/#{i}" for i in sorted(league_ids)})
+    out["leagues-tabs"] = "leagues/#leagues-tabs"  # the old home block's wrapper: the Leagues page's tab bar
+    return out
+
+
+def leagues_page(S, archive_v1: str) -> tuple[str, set, set]:
+    """(page, ids of the blocks moved here from the home page, ids of the league sections). The moved blocks (Ümit
+    #2938 item 2; home.leagues_moved) frame the league sections: the overview first, then the sections, then the
+    filters, the measure sections and Every number."""
+    import home
+    top, bottom = home.leagues_moved(S)
+    sections = league_sections(S)
     intro = about("<p>One table per league. League tables compare only the players inside one league; they are never "
                   "merged into one overall score. A running league's numbers are Provisional and change as matches finish. "
                   "Click a row to open the setup, or a match to open its decisions.</p>", "About these tables")
-    return (page_head(S, "Leagues", "Leagues") + league_sections(S) + intro
-            + f'<section class="card" id="earlier"><details class="more"><summary>Earlier version: v1 leagues and teams '
-              f'{status_badge(EARLIER)}</summary><p class="note">{esc(play_order_note(S))}</p>{archive_v1}</details>'
-              f'<p class="table-note" id="pre-switch">The page as it was before this site went live, with its final league '
-              f'data: <a href="../archive/2026-10-23/">archive, 23 October 2026</a>.</p></section>')
+    earlier = (f'<section class="card" id="earlier"><details class="more"><summary>Earlier version: v1 leagues and teams '
+               f'{status_badge(EARLIER)}</summary><p class="note">{esc(play_order_note(S))}</p>{archive_v1}</details>'
+               f'<p class="table-note" id="pre-switch">The page as it was before this site went live, with its final league '
+               f'data: <a href="../archive/2026-10-23/">archive, 23 October 2026</a>.</p></section>')
+    head = page_head(S, "Leagues", "Leagues", "The leagues, their matches and every number, setup by setup.")
+    local = ids_of(head + top + sections + bottom + intro + earlier)
+    page = head + rebase(top, "../", local) + sections + rebase(bottom, "../", local) + intro + earlier
+    return page, ids_of(top) | ids_of(bottom), ids_of(sections)
 
 
 # --- Leagues page tabs (Can, 31 Oct 2026): the home page's tab keys as links, one section at a time (bg.js), with a
@@ -606,7 +643,7 @@ def league_tabs(panels: dict[str, str]) -> str:
     first = {}
     for key, _, pid in tabs:
         first.setdefault(pid, key)
-    nav = (f'<nav class="league-tabs" aria-label="Leagues sections" data-league-tabs>'
+    nav = (f'<nav class="league-tabs" id="leagues-tabs" aria-label="Leagues sections" data-league-tabs>'
            f'{link_tabs(tabs, "league", "Leagues sections")}'
            f'<a class="mode" href="../matches/"><span class="lamp" aria-hidden="true"></span>Every match</a></nav>')
     return nav + "".join(tab_panel(f"league-panel-{key}", f"league-tab-{first[f'league-panel-{key}']}", html, "league-panel")
@@ -781,6 +818,9 @@ LATE_ABOUT = ("A late entry joins an original league table after it was played a
               "once, in matches of its own. Its games count in no standings table, no league table, no Hype Cup input "
               "and no other setup's numbers. The numbers here come from its own late-entry games only, computed as for "
               "a setup in a league.")
+# On About and Leagues only (Zeki #2930, explaining Ümit #2921).
+LATE_RANKED = ("Late entries are ranked on the risk leaderboard; they do not change league match-points standings, "
+               "Cups, or other setups' results.")
 LATE_METHOD = ("Error rate and risk judgement: 95% intervals, whole games resampled. Ability d\u2032 and caution c at "
                "the 0.001 margin: rates corrected by adding 0.5 to the counts and 1 to the totals; 95% intervals, blocks "
                "of two seat-swapped games resampled. Cut off: answers that stopped at an output limit the request sent "
@@ -807,6 +847,9 @@ def late_cost(e) -> str:
     """$ per 1,000 decisions at the price its setups.json entry records (label, source, date read), and, where it was
     billed at another price, the billed figure (build.late_entry_summaries) beside it."""
     q, p = e["quality"], e.get("price") or {}
+    if p and p.get("input_per_mtok") is None:
+        src = (f'; {esc(p["source"])}' if p.get("source") else "") + (f', read {esc(p["date"])}' if p.get("date") else "")
+        return f'{nm("No price")}<span class="small">{esc(p["label"])}{src}</span>'
     if q.get("usd_per_1000") is None or not p:
         return cost_cell({"setups_meta": {}}, LATE_ENTRY, e["name"], q)[16:-5]
     tokens = f'${p["input_per_mtok"]} per million input tokens' + (
@@ -858,6 +901,26 @@ def late_href(rel, e) -> str:
     return f"{rel}models/{LATE_ENTRY}/{e['slug']}/"
 
 
+SUBQ_PREVIEW, SUBQ_11 = "SubQ Snap Preview", "SubQ Snap 1.1"
+SUBQ_SELF = ("This pair may be SubQ Snap 1.1 against itself: under the 'subq-snap-preview' name the API returned answers "
+             "identical to SubQ Snap 1.1 (1,000 identical paired positions: letters and probabilities).")
+SUBQ_OTHER = ("The opponent was requested as SubQ Snap Preview; under that name the API returned answers identical to "
+              "SubQ Snap 1.1 on 1,000 paired positions, so the opponent's model identity is not verified.")
+
+
+def subq_note(entrant, opponent=None, tag="span") -> str:
+    """Presentation only, no result changes. SubQ Snap 1.1's row and page, and its pair against SubQ Snap Preview: the
+    pair may be 1.1 against itself; every other late-entry pair against SubQ Snap Preview: the opponent's model
+    identity is not verified."""
+    if (opponent is None or opponent == SUBQ_PREVIEW) and entrant == SUBQ_11:
+        text = SUBQ_SELF
+    elif opponent == SUBQ_PREVIEW:
+        text = SUBQ_OTHER
+    else:
+        return ""
+    return f'<{tag} class="small">{esc(text)}</{tag}>'
+
+
 def late_results(e, rel) -> str:
     """A late entry's matches, one row per opponent in the order they started: score (its own first), result, match.
     A pair not played for a recorded reason (its stopped match, if any, included) shows the reason, no score."""
@@ -868,7 +931,8 @@ def late_results(e, rel) -> str:
         if not done and m["opponent"] in gone:
             continue
         res = LATE_RESULT[(m["score_for"] > m["score_against"]) - (m["score_for"] < m["score_against"])] if done else None
-        rows.append(f'<tr data-dataset="{LATE_ENTRY}"><td class="model"><span class="model-name">{esc(m["opponent"])}</span></td>'
+        rows.append(f'<tr data-dataset="{LATE_ENTRY}"><td class="model"><span class="model-name">{esc(m["opponent"])}</span>'
+                    f'{subq_note(e["name"], m["opponent"])}</td>'
                     f'<td class="num">{m["score_for"]}\u2013{m["score_against"]}</td>'
                     f'<td>{res or esc(MATCH_STATE.get(m["status"], m["status"]))}</td>'
                     f'<td class="num">' + (f'<a href="{rel}matches/#{match_anchor("v3", m["id"])}">{m["id"]}</a>' if done
@@ -895,14 +959,15 @@ def late_entries_section(S, rel) -> str:
     for e in S["late_entries"]:
         c = late_cells(e)
         rows.append(f'<tr data-dataset="{LATE_ENTRY}"><td class="model"><a class="model-name" href="{late_href(rel, e)}">'
-                    f'{esc(e["name"])}</a><span class="small">{late_status(e)}</span></td><td class="date">{c["entry"]}</td>'
+                    f'{esc(e["name"])}</a><span class="small">{late_status(e)}</span>{subq_note(e["name"])}</td>'
+                    f'<td class="date">{c["entry"]}</td>'
                     f'<td>{c["field"]}</td>'
                     + "".join(f'<td class="num">{c[k]}</td>' for k in ("played", "record", "error", "judgement", "ability",
                                                                        "caution", "best", "time", "cost", "invalid", "cut"))
                     + f'<td>{c["route"]}</td></tr>')
         results.append(f'<h3 id="late-{e["slug"]}">{esc(e["name"])}: results per opponent</h3>' + late_results(e, rel))
     return (f'<section class="card" id="late-entries" data-dataset="{LATE_ENTRY}"><div class="section-head">'
-            f'<h2>Late entries (not in standings)</h2></div><p class="note">{esc(LATE_ABOUT)}</p>'
+            f'<h2>Late entries (not in standings)</h2></div><p class="note">{esc(LATE_ABOUT)} {esc(LATE_RANKED)}</p>'
             + SWIPE + table(LATE_HEAD, rows, "Late entries: each one's own late-entry games; never ranked",
                             attrs=f' data-dataset="{LATE_ENTRY}"')
             + "".join(results)
@@ -928,7 +993,8 @@ def late_entry_page(S, e) -> str:
     m = S["setups_meta"].get((LATE_ENTRY, e["name"]))
     setup = (f'<section class="card" id="setup"><h2>How we called it</h2>{facts(m, q)}</section>' if m else "")
     return (f'<section class="card"><p class="eyebrow">{esc(LATE_ENTRY_LABEL)} · League {e["field_league"]} field</p>'
-            f'<h1>{esc(e["name"])}</h1><p class="subtitle">{late_status(e)}</p><p class="version">{esc(version_line(S))}</p></section>'
+            f'<h1>{esc(e["name"])}</h1><p class="subtitle">{late_status(e)}</p>{subq_note(e["name"], tag="p")}'
+            f'<p class="version">{esc(version_line(S))}</p></section>'
             f'<section class="card" id="late-entry" data-dataset="{LATE_ENTRY}"><h2>{esc(LATE_ENTRY_LABEL)}</h2>'
             f'<p class="note">{esc(LATE_ABOUT)}</p><dl class="facts">'
             + "".join(f"<dt>{k}</dt><dd>{v}</dd>" for k, v in items)
@@ -1368,19 +1434,31 @@ def status_list(S) -> str:
                          "Every analysis in the plan, with its status and data file", cls="board list")
 
 
+# The Data page's downloads and how-to-recompute text, also on the About page (both pages are one level down, so the
+# links are the same).
+DOWNLOADS = ('<p class="hero-links"><a class="key" href="../data/results.json" download="results.json">results.json</a> '
+             '<a class="key" href="../decisions/index.json" download="decisions.json">decisions.json</a> '
+             '<a class="key" href="../new-models/">New models: first look</a> <a class="key" href="../models/">Every model setup</a></p>'
+             '<p>results.json: every league\'s results per setup, one league per key, every risk metric at both margins. '
+             'decisions.json: the index of every decision file, one gzip JSON file per setup and page of 50 decisions, '
+             'with the board, the plays as shown, the engine\'s equities, the model\'s choice and its position class, '
+             'stake and risk call.</p>')
+
+
+def recompute(thresholds_href: str) -> str:
+    return ('<ol>'
+            '<li>Snapshot the league database: <code>python3 tools/site/snapshot.py v3.db STATE</code> (one read transaction; the prompts each model was sent go to <code>STATE/prompts.db</code>; the Nackgammon knockout\'s matches, from <code>knockout-nack.db</code> next to it, to <code>STATE/knockout.db</code>).</li>'
+            '<li>Score every legal play of every decision with GNUbg 1.08 at 2-ply: <code>tools/site/score.sh STATE/snap.db STATE/plays</code>.</li>'
+            '<li>Build and check the site: <code>python3 tools/site/build.py --state STATE --out OUT</code>. The build fails, and nothing is deployed, if a number does not trace to a data file, counts do not add up, leagues or versions mix, a published finding no longer holds, or a file contains a private address or credential.</li>'
+            f'</ol><p>The scripts are in the jevgammon repository under <code>tools/site/</code>; the fixed thresholds are in <a href="{thresholds_href}">thresholds.json</a>.</p>')
+
+
 def data_page(S, out: Path) -> str:
     man = json.loads((out / "data/manifest.json").read_text())
     rows = "".join(f'<tr><td><a href="../{esc(f["path"])}">{esc(f["path"])}</a></td><td class="num">{count(f["bytes"])}</td>'
                    f'<td><code>{f["sha256"][:12]}</code></td></tr>' for f in man["files"])
     return (page_head(S, "Data", "Data, versions and how to recompute")
-            + f'<section class="card" id="downloads"><h2>Downloads</h2>'
-              f'<p class="hero-links"><a class="key" href="../data/results.json" download="results.json">results.json</a> '
-              f'<a class="key" href="../decisions/index.json" download="decisions.json">decisions.json</a> '
-              f'<a class="key" href="../new-models/">New models: first look</a> <a class="key" href="../models/">Every model setup</a></p>'
-              f'<p>results.json: every league\'s results per setup, one league per key, every risk metric at both margins. '
-              f'decisions.json: the index of every decision file, one gzip JSON file per setup and page of 50 decisions, '
-              f'with the board, the plays as shown, the engine\'s equities, the model\'s choice and its position class, '
-              f'stake and risk call.</p>'
+            + f'<section class="card" id="downloads"><h2>Downloads</h2>{DOWNLOADS}'
               + SWIPE + table(["File", "Bytes", "sha256"], [rows], "Data files of this build", cls="board list")
               + f'<p class="table-note">Data files are split per version, league and model, '
               f'so each loads on a phone. Every number on the site is in one of them. The decision files behind '
@@ -1390,15 +1468,191 @@ def data_page(S, out: Path) -> str:
               '<dt>v3</dt><dd>Prompt bg-v2, plays in a seeded random order, invalid answers not retried. Leagues 1 to 3 and the shared positions.</dd>'
               f'<dt>v1</dt><dd>{status_badge(EARLIER)} Earlier prompt; plays listed in the runner\'s order. The v1 set of 1,000 positions answered by the v1 setups. Never in a v3 table or chart.</dd>'
               '<dt>Smoke tests</dt><dd>50 positions outside the shared sets, v3 prompt; only on New models: first look.</dd></dl></section>'
-            + '<section class="card" id="recompute"><h2>How to recompute</h2><ol>'
-              '<li>Snapshot the league database: <code>python3 tools/site/snapshot.py v3.db STATE</code> (one read transaction; the prompts each model was sent go to <code>STATE/prompts.db</code>; the Nackgammon knockout\'s matches, from <code>knockout-nack.db</code> next to it, to <code>STATE/knockout.db</code>).</li>'
-              '<li>Score every legal play of every decision with GNUbg 1.08 at 2-ply: <code>tools/site/score.sh STATE/snap.db STATE/plays</code>.</li>'
-              '<li>Build and check the site: <code>python3 tools/site/build.py --state STATE --out OUT</code>. The build fails, and nothing is deployed, if a number does not trace to a data file, counts do not add up, leagues or versions mix, a published finding no longer holds, or a file contains a private address or credential.</li>'
-              '</ol><p>The scripts are in the jevgammon repository under <code>tools/site/</code>; the fixed thresholds are in <a href="thresholds.json">thresholds.json</a>.</p></section>')
+            + f'<section class="card" id="recompute"><h2>How to recompute</h2>{recompute("thresholds.json")}</section>')
+
+
+def more_pages(rel: str, label: str = "More pages") -> str:
+    """The pages that are not tabs (MORE_PAGES), as the in-page link keys: linked from the Leaderboard and About."""
+    return (f'<nav class="face-nav more-pages" aria-label="{esc(label)}"><span class="view-label">{esc(label)}</span>'
+            + "".join(f'<a href="{rel}{href}">{esc(text)}</a>' for href, text in MORE_PAGES) + '</nav>')
+
+
+# --- Highlights, Experiments, About (Ümit #2901) --------------------------------------------------------------------
+
+# Highlights (Ümit #2938 item 4): decision slots, each one decision (board, the model's play, the engine's play) and its
+# short story; content/highlights.json names them. A filled slot's decision is read from the Every decision export and
+# its stated facts (content/highlights.json "facts") must be the exported decision's, or the build fails; its story
+# comes from Ümit / Claude, until then it is marked Story coming. Other slots name only candidates Can or Ümit listed.
+HIGHLIGHTS = json.loads((CONTENT_DIR / "highlights.json").read_text())["slots"]
+STORY_COMING = "Story coming"
+
+
+def exported_decision(out: Path, dataset: str, slug: str, did: int) -> tuple[dict, int]:
+    """(the decision as exported, its page number) from decisions/<dataset>/<slug>/<page>.json.gz."""
+    import gzip
+    files = [p for p in (out / "decisions" / dataset / slug).glob("*.json.gz") if re.fullmatch(r"\d+\.json\.gz", p.name)]
+    for p in sorted(files, key=lambda p: int(p.name.split(".")[0])):
+        for d in json.loads(gzip.decompress(p.read_bytes()))["decisions"]:
+            if d["id"] == did:
+                return d, int(p.name.split(".")[0])
+    raise ValueError(f"content/highlights.json: decision {did} is not in the {dataset}/{slug} export")
+
+
+def highlight_slot(S, out: Path, i: int, h: dict) -> str:
+    head = f'<section class="card highlight-slot" id="highlight-{i}"'
+    coming = f'<p class="note">{status_badge(STORY_COMING)} The story will be added here.</p>'
+    if "decision" not in h:
+        return (f'{head} data-slot="empty"><h2>Highlight {i}</h2><p class="highlight-candidate">'
+                f'{esc(h["candidate"]) if h.get("candidate") else nm("No decision chosen yet")}</p>'
+                f'{coming.replace("story", "decision and its story")}</section>')
+    from board import board_svg
+    d, page = exported_decision(out, h["dataset"], h["setup"], h["decision"])
+    me, best = d["plays"][d["chosen"]], d["plays"][d["best"]]
+    f = h["facts"]
+    shown = dict(model_play=me["notation"], model_hitting_rolls=me["hitting_rolls"], best_play=best["notation"],
+                 best_hitting_rolls=best["hitting_rolls"], equity_difference=round(best["equity"] - me["equity"], 4))
+    if shown != f:
+        raise ValueError(f"content/highlights.json slot {i}: stated facts {f} are not the exported decision's {shown}")
+    svg = board_svg(d["board"], d["dice"], d["pips"], play=best["notation"], alt=me["notation"], cls="bd hl-board",
+                    label_extra=f"Solid arrows: the engine's best play, {best['notation']}. Dashed: the model's play, "
+                                f"{me['notation']}.")
+    href = f'../decisions/?d={h["dataset"]}&amp;s={h["setup"]}&amp;p={page}#d{h["decision"]}'
+    shot = lambda n: f"the opponent hits with {count(n)} of 36 rolls"  # noqa: E731  (Every decision's wording)
+    facts = (f'<dl class="facts"><dt>Dice</dt><dd>{d["dice"][0]}-{d["dice"][1]}</dd>'
+             f'<dt>The model played</dt><dd><code>{esc(me["notation"])}</code>: {shot(me["hitting_rolls"])}</dd>'
+             f'<dt>The engine\'s best play</dt><dd><code>{esc(best["notation"])}</code>: {shot(best["hitting_rolls"])}, '
+             f'worth {fmt(f["equity_difference"], 3)} more in equity (GNU Backgammon 2-ply)</dd></dl>')
+    return (f'{head} data-slot="filled"><h2>{esc(h["title"])}</h2><div class="highlight-body">'
+            f'<figure class="hero-board">{svg}</figure><div>{facts}{coming}'
+            f'<p><a href="{href}">Open this decision</a></p></div></div></section>')
+
+
+def highlights_page(S, out: Path) -> str:
+    slots = "".join(highlight_slot(S, out, i, h) for i, h in enumerate(HIGHLIGHTS, 1))
+    return (page_head(S, "Highlights", "Highlights", "Single decisions, each with the board, the model's play and the "
+                      'engine\'s play, and a short story. The stories are not written yet; every decision is on '
+                      '<a href="../decisions/">Decisions</a>.')
+            + f'<div class="highlight-slots">{slots}</div>')
+
+
+def experiments_page(S) -> str:
+    import learning_page
+    L = S["learning"]
+    lstatus = "Pre-registration" if L.get("preregistration_only") else L["status"]["line"]
+    cards = [
+        ("clear-risk", "Clear risk", "Preliminary",
+         "Clear-risk scan: decisions where a risk or safety is clearly better, per setup, checks, a rollout check and a "
+         "partial model quiz.", [("../clear-risk/", "Open Clear risk")]),
+        ("nackgammon", "Nackgammon", "Finished",
+         "Does a model still play well when the starting position changes? Nackgammon has the rules of backgammon; only "
+         "the starting position differs.",
+         [("../nackgammon/", "Open Nackgammon"), ("../leagues/#nack-knockout", "The knockout"),
+          ("../matches/#stage-knockout", "Its matches")]),
+        ("learning", "Learning from experience", lstatus,
+         "Does a model play better after seeing its own earlier games? " + esc(L["plan"]["commitment"]),
+         [(f"../{learning_page.PATH}", "Open Learning from experience")])]
+    out = "".join(
+        f'<section class="card experiment-card" id="{cid}"><h2>{esc(title)}</h2>'
+        f'{status_badge(status) if status else ""}<p>{text}</p><p class="hero-links">'
+        + "".join(f'<a href="{href}">{esc(label)}</a>' for href, label in links) + '</p></section>'
+        for cid, title, status, text, links in cards)
+    return page_head(S, "Experiments", "Experiments", "Tests beside the leagues, each opened from its card.") + \
+        f'<div class="experiment-cards">{out}</div>'
+
+
+def nackgammon_page(S) -> str:
+    """The Nackgammon paired test on its own page (Ümit #2938 item 5): the home page's section as it was (its per-setup
+    tables, chart and method text, from nack-paired.json), moved here."""
+    import home
+    import nack_section
+    sec = nack_section.section(S["nack"], *home.nack_views(S), S["nack_late"])
+    return (page_head(S, "Experiments", "Nackgammon", "Finished. Does a model still play well when the starting "
+                      "position changes? The knockout: <a href=\"../leagues/#nack-knockout\">Leagues</a>.")
+            + rebase(sec, "../", ids_of(sec)))
+
+
+def rules_text() -> str:
+    """The rules of backgammon as every player is given them: the Rules part of the current prompt (bg-v2), verbatim."""
+    md = (ROOT / "prompts/bg-v2.md").read_text()
+    md = md[md.index("## Rules\n") + len("## Rules\n"):md.index("## Strategy principles")]
+    import method
+    return method.spec_markdown(md)
+
+
+def method_sections(method_html: str) -> list[tuple[str, str]]:
+    """(id, heading) of the Method page's sections, in order."""
+    return re.findall(r'<section class="card" id="([\w-]+)"[^>]*>\s*<h2 id="[\w-]+-title">(.*?)</h2>', method_html)
+
+
+# About's text (Ümit, bus #2939): content/about.md, four sections in order, then the "Leaderboard box" section that the
+# home page shows as "How the scores work". Each section's id: the old About anchors keep landing (#leaderboard is the
+# leaderboard rules, with the longer leaderboard notes under them).
+ABOUT_IDS = {"Backgammon in one page": "backgammon", "How the benchmark works": "how-it-works",
+             "How the scores work": "scores", "Leaderboard rules": "leaderboard", "Leaderboard box": "short"}
+GITHUB = "https://github.com/zekiworks/jevgammon"
+
+
+def about_sections() -> list[tuple[str, str, str]]:
+    """(id, heading, markdown) of content/about.md's sections, in order; the "1. " numbering of a heading is dropped."""
+    md = re.sub(r"<!--.*?-->", "", (CONTENT_DIR / "about.md").read_text(), flags=re.S)
+    out = []
+    for block in re.split(r"^## ", md, flags=re.M)[1:]:
+        head, _, body = block.partition("\n")
+        head = re.sub(r"^\d+\.\s*", "", head.strip())
+        out.append((ABOUT_IDS[head], head, body.strip()))
+    return out
+
+
+def about_links(rel: str) -> str:
+    """About's links (Ümit #2938 item 6): Method, Data, Leagues, Matches, GitHub."""
+    items = [(f"{rel}method/", "Method"), (f"{rel}data/", "Data"), (f"{rel}leagues/", "Leagues"),
+             (f"{rel}matches/", "Matches"), (GITHUB, "GitHub")]
+    return ('<nav class="face-nav about-links" aria-label="About links">'
+            + "".join(f'<a href="{h}">{esc(t)}</a>' for h, t in items) + '</nav>')
+
+
+def about_page(S, method_html: str) -> str:
+    import home
+    import method
+    import story
+    ours = [(i, h, method.spec_markdown(md)) for i, h, md in about_sections() if i != "short"]
+    more = [("rules", "Rules of backgammon, as the prompt states them"), ("method", "Method"), ("data", "Data"),
+            ("how-to-run", "How to run it"), ("late-entries", "Late entries"), ("open-questions", "Open questions"),
+            ("pages", "More pages")]
+    method_links = "".join(f'<li><a href="../method/#{i}">{h}</a></li>' for i, h in method_sections(method_html))
+    parts = {
+        "rules": f'<p class="note">The rules as every player reads them in the prompt (bg-v2, the current version: '
+                 f'<a href="../method/#prompt">Method: The prompt</a>), quoted unchanged.</p>{rules_text()}',
+        "method": f'<p>Every definition, threshold and caveat is on the <a href="../method/">Method</a> page:</p>'
+                  f'<ul class="columns">{method_links}</ul>',
+        "data": f'{DOWNLOADS}<p>Every data file, with its size and hash: <a href="../data/">Data</a>.</p>',
+        "how-to-run": recompute("../data/thresholds.json"),
+        "late-entries": f'<p>{esc(LATE_ABOUT)} {esc(LATE_RANKED)}</p><p>{esc(LATE_METHOD)}</p><p>Every late entry, its numbers and its '
+                        f'matches: <a href="../leagues/#late-entries">Leagues: Late entries</a>.</p>',
+        "open-questions": f'<p>What is not settled yet: every analysis in the plan with its status, and the limits on '
+                          f'the <a href="../method/#limits">Method page</a>.</p>{status_list(S)}',
+        "pages": more_pages("../")}
+    extra = {"scores": home.how_numbers(S, "../"),
+             "leaderboard": '<h3 id="leaderboard-notes">How the leaderboard is built</h3>' + story.about_text(S, "../")}
+    nav = "".join(f'<a href="#{i}">{esc(t)}</a>' for i, t, _ in ours) + "".join(f'<a href="#{i}">{esc(t)}</a>' for i, t in more)
+    return (page_head(S, "About", "About the benchmark", "Backgammon in one page, how the benchmark works, how the "
+                      "scores work and the leaderboard rules; then the method, the data and how to run it.")
+            + about_links("../")
+            + f'<nav class="face-nav" aria-label="On this page">{nav}</nav>'
+            + "".join(f'<section class="card about-text" id="{i}"><h2>{esc(t)}</h2>{body}{extra.get(i, "")}</section>'
+                      for i, t, body in ours)
+            + "".join(f'<section class="card" id="{i}"><h2>{esc(t)}</h2>{parts[i]}</section>' for i, t in more))
+
+
+# The Decisions tab's other pages (Ümit #2938 item 1): linked under its first card.
+DECISION_PAGES = [("disagreements/", "Where models disagree"), ("phases/", "Phases"), ("compare/", "Compare")]
 
 
 def decisions_page(S, body: str) -> str:
-    return body + f'<p class="version version-line">{esc(version_line(S))}</p>'
+    links = ('<nav class="face-nav decisions-links" aria-label="More on decisions">'
+             + "".join(f'<a href="../{h}">{esc(t)}</a>' for h, t in DECISION_PAGES) + '</nav>')
+    head_end = body.index("</section>") + len("</section>")
+    return body[:head_end] + links + body[head_end:] + f'<p class="version version-line">{esc(version_line(S))}</p>'
 
 
 def share_card(S) -> str:
@@ -1450,9 +1704,21 @@ def write_all(S, out: Path, base: str) -> None:
         import shutil
         if (out / stale).exists():
             shutil.rmtree(out / stale)
-    put("", TITLE, home.home(S), scripts=("bg.js",), styles=("decisions.css",), body_class="home", view_rows=home.view_rows(S))
+    import story
+    leagues, moved_ids, league_ids = leagues_page(S, method.archive_v1())
+    nack = nackgammon_page(S)
+    # The old home anchors (#risk-judgement, #lg-hype-cup, #board-panel, #nackgammon-paired …): bg.js sends each to
+    # the same id on its new page; ids that stayed on the home page are not in the map.
+    home_html = home.home(S)
+    moved = moved_anchors({"leagues/": moved_ids, "nackgammon/": ids_of(nack)}, league_ids)
+    moved = {k: v for k, v in moved.items() if k not in ids_of(home_html)}
+    home_html += f'<script type="application/json" id="moved-anchors">{json.dumps(moved, sort_keys=True)}</script>'
+    put("", TITLE, home_html, scripts=("bg.js",), styles=("decisions.css",), body_class="home")
     home.fragments(S, out)
-    put("leagues/", "Leagues", leagues_page(S, method.archive_v1()), scripts=("bg.js",))
+    put("leagues/", "Leagues", leagues, scripts=("bg.js",), styles=("decisions.css",))
+    put("nackgammon/", "Nackgammon", nack, scripts=("bg.js",),
+        description="The Nackgammon paired test of the backgammon benchmark (finished): does a model still play well "
+                    "when the starting position changes? Per-setup tables, the chart and the method.")
     put("matches/", "Matches", matches_page(S), scripts=("bg.js",),
         description="Every match of the backgammon benchmark: the leagues, the ladder rounds, gap matches, late "
                     "entries, the Hype Cup and the Nackgammon knockout, with scores, winners and links to the decisions.")
@@ -1473,11 +1739,25 @@ def write_all(S, out: Path, base: str) -> None:
             model_page(S, "smoke-part-a", r["setup"], None, r))
     ctx = dict(thresholds=S["thresholds"], play_order=S["v1"]["play_order"], shared_sets=S["shared"]["build_log"],
                data_as_of=as_of(S), extra=home.method_extras(S))
-    put("method/", "Method", method.body(ctx), main_class="method-page")
+    method_html = method.body(ctx)
+    put("method/", "Method", method_html, main_class="method-page")
     import clear_risk_section
-    put("clear-risk/", "Clear risk (preliminary)", clear_risk_section.body(S),
+    # The clear-risk scan's bias chart, a finding section of the home page until Ümit #2938, sits under the scan.
+    bias = story.cautious(S)
+    put("clear-risk/", "Clear risk (preliminary)", clear_risk_section.body(S) + rebase(bias, "../", ids_of(bias)),
         description="Clear-risk scan of the backgammon benchmark (preliminary / partial): decisions where a risk or "
                     "safety is clearly better, per setup, checks, a rollout check and a partial model quiz.")
+    import learning_page
+    put(learning_page.PATH, learning_page.title(S["learning"]), learning_page.body(S["learning"]),
+        description=learning_page.DESCRIPTION)
     put("data/", "Data", data_page(S, out))
     put("decisions/", "Every decision", decisions_page(S, decisions_export.body()),
         scripts=("decisions.js",), styles=("decisions.css",))
+    put("highlights/", "Highlights", highlights_page(S, out), styles=("decisions.css",),
+        description="Highlights of the backgammon benchmark: single decisions, each with the board, the model's play, "
+                    "the engine's play and a short story (the stories are not written yet).")
+    put("experiments/", "Experiments", experiments_page(S),
+        description="Experiments of the backgammon benchmark: Clear risk, Nackgammon and Learning from experience.")
+    put("about/", "About", about_page(S, method_html),
+        description="About the backgammon benchmark: backgammon in one page, how the benchmark works, how the scores "
+                    "work, the leaderboard rules, the method, the data, how to run it, late entries and open questions.")

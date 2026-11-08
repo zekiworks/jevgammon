@@ -1,0 +1,82 @@
+# (b) learning_page.py --check at 34ef85e (links against the branch's whole-site render). Started 2026-11-08 08:03:53 UTC
+
+## default-preregistration: python3 tools/site/learning_page.py --out /tmp/inv5/page-default-preregistration --src /tmp/inv5/states/real/learning --check /tmp/inv5/out-branch --test-set <test_set.json> 
+$SCRATCH/page-default-preregistration/learning/index.html
+checks: 0 failure(s)
+preregistration_only: True | validation: None
+status (data file): None
+status line (page): None
+results: None | lift/signal in data: [] | lessons: 0 | budget series: 0
+charts: [] | chart dots: 0 | control dashed lines: 0
+blocks: []
+verdict pending text: None
+top label: Pre-registration | heading: Learning from experience (pre-registered)
+
+## none: python3 tools/site/learning_page.py --out /tmp/inv5/page-none --src /tmp/inv5/states/none/learning --check /tmp/inv5/out-branch --test-set <test_set.json> --with-results
+$SCRATCH/page-none/learning/index.html
+checks: 0 failure(s)
+preregistration_only: False | validation: None
+status (data file): {'phase': 'not-started', 'line': 'Not started', 'series_per_arm': 0, 'planned': 10, 'smoke_series': 3, 'last_update': None}
+status line (page): Not started · Last update: none yet
+results: None | lift/signal in data: [] | lessons: 0 | budget series: 0
+charts: [] | chart dots: 0 | control dashed lines: 0
+blocks: ['learning-verdict-section', 'learning-verdict-pending']
+verdict pending text: No verdict and no learning lift yet. They are shown only when every planned series of every arm is done (plan section 9): 0 of 10 series done in every arm. The numbers so far are under Results.
+top label: Not started | heading: Learning from experience (preliminary, running)
+
+## SYNTHETIC-not-started: python3 tools/site/learning_page.py --out /tmp/inv5/page-SYNTHETIC-not-started --src /tmp/inv5/states/SYNTHETIC-not-started/learning --check /tmp/inv5/out-branch --test-set <test_set.json> --with-results
+$SCRATCH/page-SYNTHETIC-not-started/learning/index.html
+checks: 0 failure(s)
+preregistration_only: False | validation: {'accepted': True, 'complete': False}
+status (data file): {'phase': 'not-started', 'line': 'Not started', 'series_per_arm': 0, 'planned': 10, 'smoke_series': 3, 'last_update': None}
+status line (page): Not started · Last update: none yet
+results: {'complete': False, 'series_total_done': 0, 'last_update': None} | lift/signal in data: [] | lessons: 0 | budget series: 0
+charts: [] | chart dots: 0 | control dashed lines: 0
+blocks: ['learning-verdict-section', 'learning-verdict-pending']
+verdict pending text: No verdict and no learning lift yet. They are shown only when every planned series of every arm is done (plan section 9): 0 of 10 series done in every arm. The numbers so far are under Results.
+top label: Not started | heading: Learning from experience (preliminary, running)
+
+## SYNTHETIC-smoke-running: python3 tools/site/learning_page.py --out /tmp/inv5/page-SYNTHETIC-smoke-running --src /tmp/inv5/states/SYNTHETIC-smoke-running/learning --check /tmp/inv5/out-branch --test-set <test_set.json> --with-results
+$SCRATCH/page-SYNTHETIC-smoke-running/learning/index.html
+checks: 0 failure(s)
+preregistration_only: False | validation: {'accepted': True, 'complete': False}
+status (data file): {'phase': 'smoke', 'line': 'Smoke running: 2 of 3 series per arm', 'series_per_arm': 2, 'planned': 10, 'smoke_series': 3, 'last_update': '2026-11-07T21:53:02+00:00'}
+status line (page): Smoke running: 2 of 3 series per arm · Last update: 2026-11-07 21:53 UTC
+results: {'complete': False, 'series_total_done': 10, 'last_update': '2026-11-07T21:53:02+00:00'} | lift/signal in data: [] | lessons: 30 | budget series: 2
+charts: ['learning-risks', 'learning-games'] | chart dots: 50 | control dashed lines: 1
+blocks: ['learning-verdict-section', 'learning-verdict-pending']
+verdict pending text: No verdict and no learning lift yet. They are shown only when every planned series of every arm is done (plan section 9): 2 of 10 series done in every arm. The numbers so far are under Results.
+top label: Preliminary · running | heading: Learning from experience (preliminary, running)
+
+## SYNTHETIC-running: python3 tools/site/learning_page.py --out /tmp/inv5/page-SYNTHETIC-running --src /tmp/inv5/states/SYNTHETIC-running/learning --check /tmp/inv5/out-branch --test-set <test_set.json> --with-results
+$SCRATCH/page-SYNTHETIC-running/learning/index.html
+checks: 0 failure(s)
+preregistration_only: False | validation: {'accepted': True, 'complete': False}
+status (data file): {'phase': 'running', 'line': 'Running: 5 of 10 series per arm', 'series_per_arm': 5, 'planned': 10, 'smoke_series': 3, 'last_update': '2026-11-08T03:11:56+00:00'}
+status line (page): Running: 5 of 10 series per arm · Last update: 2026-11-08 03:11 UTC
+results: {'complete': False, 'series_total_done': 24, 'last_update': '2026-11-08T03:11:56+00:00'} | lift/signal in data: [] | lessons: 60 | budget series: 5
+charts: ['learning-risks', 'learning-games'] | chart dots: 50 | control dashed lines: 1
+blocks: ['learning-verdict-section', 'learning-verdict-pending']
+verdict pending text: No verdict and no learning lift yet. They are shown only when every planned series of every arm is done (plan section 9): 5 of 10 series done in every arm. The numbers so far are under Results.
+top label: Preliminary · running | heading: Learning from experience (preliminary, running)
+
+## real-complete: python3 tools/site/learning_page.py --out /tmp/inv5/page-real-complete --src /tmp/inv5/states/real/learning --check /tmp/inv5/out-branch --test-set <test_set.json> --with-results
+$SCRATCH/page-real-complete/learning/index.html
+checks: 0 failure(s)
+preregistration_only: False | validation: {'accepted': True, 'complete': True}
+status (data file): {'phase': 'done', 'line': 'Done', 'series_per_arm': 10, 'planned': 10, 'smoke_series': 3, 'last_update': '2026-11-08T07:28:04+00:00'}
+status line (page): Done · Last update: 2026-11-08 07:28 UTC
+results: {'complete': True, 'series_total_done': 40, 'last_update': '2026-11-08T07:28:04+00:00'} | lift/signal in data: ['learning_lift', 'paired_series', 'signal'] | lessons: 100 | budget series: 10
+charts: ['learning-risks', 'learning-games'] | chart dots: 50 | control dashed lines: 1
+blocks: ['learning-verdict-section', 'learning-verdict', 'learning-signal', 'learning-lift', 'learning-leaders']
+verdict pending text: None
+top label: Complete | heading: Learning from experience (complete)
+
+## the default build reads no results: files opened under the source or the test set while building
+['<src>/lessons_system.txt', '<src>/lessons_user.txt']
+
+## the default page equals origin/main's default page (learning/ and its data file)
+identical: learning/index.html
+identical: data/v3/learning-pilot.json
+
+# Finished 2026-11-08 08:04:00 UTC

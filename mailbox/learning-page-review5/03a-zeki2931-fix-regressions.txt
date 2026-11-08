@@ -1,0 +1,110 @@
+# (c0) Zeki #2931: one regression test per fix (zeki2931_regressions.py), on the tree before the fixes
+# (003f7e7 = ad2fb4d rebased) and on 34ef85e. Started 2026-11-08 08:04:00 UTC
+
+## before the fixes: 003f7e7:tools/site (expected: every case FAILs except the control case of fix 4)
+
+== fix 1: malformed T0: an empty object: expected refused, got crash: KeyError: FAIL
+    KeyError: 'dry'
+
+== fix 1: malformed T0: a list: expected refused, got crash: TypeError: FAIL
+    TypeError: list indices must be integers or slices, not str
+
+== fix 1: the real T0 aggregate (no 'dry' key) with the real results: expected accepted complete, got crash: KeyError: FAIL
+    KeyError: 'dry'
+
+== fix 2: canary in an unknown top-level key of learning-pilot.json: expected refused, got refused; canary in the page: FAIL
+    learning-pilot.json: unknown key 'CANARY_7f3a'
+
+== fix 2: canary in an unknown key of an aggregate (records s02): expected refused, got refused; canary in the page: FAIL
+    records s02 aggregate: unknown key 'CANARY_7f3a'
+
+== fix 2: canary as a map key outside its pattern (lessons s03 context_tokens_after_game): expected refused, got refused; canary in the page: FAIL
+    lessons s03 aggregate.context_tokens_after_game: key not allowed
+    lessons s03 aggregate.context_tokens_after_game.CANARY_7f3a: not a JSON int
+
+== fix 2: canary as an arm directory (runs/<canary>/s01): expected refused, got refused; canary in the page: FAIL
+    runs/CANARY_7f3a: not an arm of the protocol
+
+== fix 2: canary as a series directory (runs/records/s<canary>): expected refused, got refused; canary in the page: FAIL
+    records sCANARY_7f3a: not a series 1-10 of the protocol
+
+== fix 3: finished budget series with its last point missing (s04), summary recomputed: expected refused, got accepted complete: FAIL
+
+== fix 3: finished budget series with a point duplicated (s05: point 5 twice, no point 6), summary recomputed: expected refused, got accepted complete: FAIL
+
+== fix 3: empty-point list contradicting a point that shows a game (s06 game 3), summary recomputed: expected refused, got accepted complete: FAIL
+
+== fix 4: records s01 T5: valid 200 + invalid 200 for 200 answered, summary recomputed: expected refused, got accepted complete: FAIL
+
+== fix 4: T0: valid 200 + invalid 200 for 200 answered, summary recomputed: expected refused, got accepted complete: FAIL
+
+== fix 4: control: lessons s07 T10 with 1 failed of 200 (consistent), summary recomputed: still accepted: expected accepted complete, got accepted complete: PASS
+
+1 / 14 pass ($SCRATCH/src-before/tools/site)
+exit code: 1
+
+## after the fixes: 34ef85e:tools/site (expected: every case PASSes)
+learning_validate (private): T0 aggregate: name missing
+learning_validate (private): T0 aggregate: wall_seconds missing
+learning_validate (private): T0 aggregate: finished_at missing
+learning_validate (private): T0 aggregate: metrics missing
+learning_validate (private): T0 aggregate: test_set_sha256 missing
+
+== fix 1: malformed T0: an empty object: expected refused, got refused: PASS
+    T0 aggregate: name missing
+    T0 aggregate: wall_seconds missing
+    T0 aggregate: finished_at missing
+    T0 aggregate: metrics missing
+learning_validate (private): T0 aggregate: not a JSON object
+
+== fix 1: malformed T0: a list: expected refused, got refused: PASS
+    T0 aggregate: not a JSON object
+
+== fix 1: the real T0 aggregate (no 'dry' key) with the real results: expected accepted complete, got accepted complete: PASS
+learning_validate (private): learning-pilot.json: unknown key 'CANARY_7f3a'
+
+== fix 2: canary in an unknown top-level key of learning-pilot.json: expected refused, got refused: PASS
+    learning-pilot.json: unknown key [name withheld]
+learning_validate (private): records s02 aggregate: unknown key 'CANARY_7f3a'
+
+== fix 2: canary in an unknown key of an aggregate (records s02): expected refused, got refused: PASS
+    records s02 aggregate: unknown key [name withheld]
+learning_validate (private): lessons s03 aggregate.context_tokens_after_game: key 'CANARY_7f3a' not allowed
+
+== fix 2: canary as a map key outside its pattern (lessons s03 context_tokens_after_game): expected refused, got refused: PASS
+    lessons s03 aggregate.context_tokens_after_game: key [name withheld] not allowed
+learning_validate (private): runs/'CANARY_7f3a': not an arm of the protocol
+
+== fix 2: canary as an arm directory (runs/<canary>/s01): expected refused, got refused: PASS
+    runs/[name withheld]: not an arm of the protocol
+learning_validate (private): records 'sCANARY_7f3a': not a series 1-10 of the protocol
+
+== fix 2: canary as a series directory (runs/records/s<canary>): expected refused, got refused: PASS
+    records [name withheld]: not a series 1-10 of the protocol
+learning_validate (private): budget s04: budget points are not one per game played, in order
+
+== fix 3: finished budget series with its last point missing (s04), summary recomputed: expected refused, got refused: PASS
+    budget s04: budget points are not one per game played, in order
+learning_validate (private): budget s05: budget points are not one per game played, in order
+
+== fix 3: finished budget series with a point duplicated (s05: point 5 twice, no point 6), summary recomputed: expected refused, got refused: PASS
+    budget s05: budget points are not one per game played, in order
+learning_validate (private): budget s06: empty budget points are not the points with no game shown
+
+== fix 3: empty-point list contradicting a point that shows a game (s06 game 3), summary recomputed: expected refused, got refused: PASS
+    budget s06: empty budget points are not the points with no game shown
+learning_validate (private): records s01 T5: valid + invalid + failed is not answered
+
+== fix 4: records s01 T5: valid 200 + invalid 200 for 200 answered, summary recomputed: expected refused, got refused: PASS
+    records s01 T5: valid + invalid + failed is not answered
+learning_validate (private): T0 aggregate metrics: valid + invalid + failed is not answered
+
+== fix 4: T0: valid 200 + invalid 200 for 200 answered, summary recomputed: expected refused, got refused: PASS
+    T0 aggregate metrics: valid + invalid + failed is not answered
+
+== fix 4: control: lessons s07 T10 with 1 failed of 200 (consistent), summary recomputed: still accepted: expected accepted complete, got accepted complete: PASS
+
+14 / 14 pass (/home/cbasaran/code/jevgammon-learning-page/tools/site)
+exit code: 0
+
+# Finished 2026-11-08 08:04:04 UTC

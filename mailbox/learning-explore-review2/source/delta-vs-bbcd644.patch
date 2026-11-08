@@ -1,0 +1,201 @@
+diff --git a/tools/site/checks.py b/tools/site/checks.py
+index 95e252e..273dea8 100644
+--- a/tools/site/checks.py
++++ b/tools/site/checks.py
+@@ -579,6 +579,10 @@ def _learning_explore(nodes, ids, L, complete: bool) -> list[str]:
+             s = s[a["data-m"]]
+             sd = fmt(s["sd"], 2) if s["sd"] is not None else NA
+             return f'{fmt(s["mean"], 1)} ({fmt(s["min"], 1)}-{fmt(s["max"], 1)}; SD {sd})'
++        if "data-rspread" in a:  # the retests' own range under their rows (r1-r5 only)
++            s = X["spread"]["retests"][a["data-rspread"]]
++            sd = fmt(s["sd"], 2) if s["sd"] is not None else NA
++            return f'{fmt(s["min"], 1)}-{fmt(s["max"], 1)} (SD {sd})'
+         if "data-agree" in a:
+             s = X["agreement"]["summary"][a["data-agree"]]
+             return {"n": lambda: fmt(s["n"], 0), "mean": lambda: fmt(s["mean"], 1),
+@@ -597,7 +601,8 @@ def _learning_explore(nodes, ids, L, complete: bool) -> list[str]:
+             if text_of(n).strip() != w:
+                 bad.append(f"{PATH}: exploratory cell {text_of(n).strip()!r} is not the data's {w!r}")
+     expected = (sum(len(m) for cp in X["arm_minus_budget"].values() for m in cp.values())
+-                + len(X["runs"]) * 9 + len(X["spread"]) * 6 + len(X["agreement"]["summary"]) * 4)
++                + len(X["runs"]) * 9 + len(X["spread"]) * 6 + len(X["agreement"]["summary"]) * 4
++                + (3 if "retests" in X["spread"] else 0))
+     if len(seen) != expected:
+         bad.append(f"{PATH}: the exploratory tables show {len(seen)} of the data's {expected} values")
+     # "T0 differs from the later empty-context runs" only where the counts say so: every T0-vs-retest count above
+diff --git a/tools/site/learning_page.py b/tools/site/learning_page.py
+index d55a36d..49c2b6b 100755
+--- a/tools/site/learning_page.py
++++ b/tools/site/learning_page.py
+@@ -115,7 +115,9 @@ EXPLORE = "explore/explore.json"
+ # #2964): fixed text on the page; the numbers are also in the data file, so they trace.
+ SAMPLING = dict(temperature=1.0, max_tokens=1, top_logprobs=20, max_options_per_request=26, grouped_positions=32,
+                 positions=200, in_flight_t0_and_retests=4, in_flight_budget=1,
+-                server_default_temperature=1.0, server_default_top_k=64, server_default_top_p=0.95)
++                server_default_temperature=1.0, server_default_top_k=64, server_default_top_p=0.95,
++                # Zeki #2991: what was checked in the stored records of T0, the 5 retests and the 20 budget evaluations
++                answers_checked=5200, requests_checked=7202)
+ CHECKPOINTS = ("T0", "T5", "T10")
+ CHECKPOINT_LABEL = {"T0": "Before game 1", "T5": "After game 5", "T10": "After game 10"}
+ # Shown per arm x test round; the keys copied to the data file are exactly these.
+@@ -598,7 +600,10 @@ def verdict(L) -> str:
+ 
+ EXPLORE_METRIC_LABEL = {"risks_found": "Risks found", "right_safety": "Right safety", "error_rate": "Error rate (PR)",
+                         "risk_judgement": "Risk judgement", "risk_appetite": "Risk appetite"}
+-EXPLORE_GROUP_LABEL = {"all": "All runs", "t0+retests": "T0 and retests", "budget": f"{ARM_LABEL['budget']}"}
++EXPLORE_GROUP_LABEL = {"all": "All runs", "t0+retests": "T0 and retests", "retests": "Retests r1-r5",
++                       "budget": f"{ARM_LABEL['budget']}"}
++# The retests' own range under their rows (Zeki #2991): these measures, min-max and SD.
++RETEST_RANGE = ("risks_found", "right_safety", "error_rate")
+ 
+ 
+ def amb_cell(s: dict) -> str:
+@@ -614,6 +619,11 @@ def run_label(r: dict) -> str:
+     return f"Series {r['series']}, {CHECKPOINT_LABEL[r['checkpoint']].lower()}"
+ 
+ 
++def retest_range(s: dict) -> str:
++    sd = fmt(s["sd"], 2) if s["sd"] is not None else NA
++    return f'{fmt(s["min"], 1)}-{fmt(s["max"], 1)} (SD {sd})'
++
++
+ def spread_cell(s: dict) -> str:
+     sd = fmt(s["sd"], 2) if s["sd"] is not None else NA
+     return f'{fmt(s["mean"], 1)} ({fmt(s["min"], 1)}-{fmt(s["max"], 1)}; SD {sd})'
+@@ -651,12 +661,21 @@ def explore_agreement(X: dict, B: str) -> str:
+     facts.append(f"Positions where the {fmt(len(ret), 0)} retests do not all choose the same play: {fmt(k, 0)} of "
+                  f"{fmt(X['sampling']['positions'], 0)}.")
+     return ('<h3>Do the empty-context runs choose the same plays?</h3>' + table
+-            + f'<p id="learning-explore-agreement">{esc(" ".join(facts))}</p>')
++            + f'<p id="learning-explore-agreement">{esc(" ".join(facts))}</p>'
++            '<p class="table-note">The pairwise counts, like the retests\' rates and the count of positions where the '
++            'retests are not unanimous, come from the runs\' private answers: the site checks that the counts are '
++            'within range, symmetric and complete and recomputes this summary from them, but cannot recompute the '
++            'counts themselves.</p>')
++
++
++# The two comparisons of the exploratory block (Zeki #2993): no memory has only the shared T0, no T5/T10 of its own.
++COMPARISON = {"records": "full records − budget", "lessons": "own lessons − budget"}
+ 
+ 
+ def explore(L) -> str:
+-    """The exploratory block, after the verdict and apart from it: each arm minus budget (the noise baseline), the
+-    empty-context runs and their spread, the evaluation requests' settings and the next version's note. Shown only as
++    """The exploratory block, after the verdict and apart from it: own lessons − budget and full records − budget (the
++    budget arm as the noise baseline), the empty-context runs and their spread, the agreement between them, the
++    evaluation requests' settings and the next version's note. Shown only as
+     learning_validate.validate_explore accepted it; refused, only its fixed problem codes."""
+     X = L["explore"]
+     head = (f'<p class="lp-explore-label"><strong>{esc(V.EXPLORE_LABEL.capitalize())}.</strong> Not part of the '
+@@ -667,14 +686,15 @@ def explore(L) -> str:
+                 f'the site\'s checks, so none of it is shown:</p><ul>{items}</ul></div>')
+     B, S = esc(ARM_LABEL["budget"]), X["sampling"]
+     rows = []
+-    for a in V.EXPLORE_ARMS:
++    for a in ("lessons", "records"):  # own lessons − budget first, as named
+         for cp in V.EXPLORE_CPS:
+-            rows.append(f'<tr><th scope="row">{arm_name(a)}</th><td>{esc(CHECKPOINT_LABEL[cp])}</td>'
++            rows.append(f'<tr><th scope="row">{esc(COMPARISON[a])}</th><td>{esc(CHECKPOINT_LABEL[cp])}</td>'
+                         + "".join(f'<td class="num" data-arm="{a}" data-cp="{cp}" data-m="{m}">'
+                                   f'{amb_cell(X["arm_minus_budget"][a][cp][m])}</td>' for m in V.EXPLORE_METRICS)
+                         + "</tr>")
+-    amb = P.SWIPE + P.table(["Arm", "Test"] + [EXPLORE_METRIC_LABEL[m] for m in V.EXPLORE_METRICS],
+-                            rows, f"Each arm minus {B} in the same series, mean over {count(X['series'])} series "
++    amb = P.SWIPE + P.table(["Comparison", "Test"] + [EXPLORE_METRIC_LABEL[m] for m in V.EXPLORE_METRICS],
++                            rows, f"{esc(COMPARISON['lessons'])} and {esc(COMPARISON['records'])}, in the same "
++                                  f"series: mean over {count(X['series'])} series "
+                                   "[95% interval]; risks found and right safety in percentage points",
+                             cls="board list lp-explore-amb")
+     runs, ncols = [], 1 + len(V.RUN_COUNTS) + len(V.RUN_METRICS)
+@@ -687,6 +707,14 @@ def explore(L) -> str:
+                     + "".join(f'<td class="num" data-run="{i}" data-k="{k}">{count(r[k])}</td>' for k in V.RUN_COUNTS)
+                     + "".join(f'<td class="num" data-run="{i}" data-k="{m}">{num(r[m], 1)}</td>'
+                               for m in V.RUN_METRICS) + "</tr>")
++        nxt = X["runs"][i + 1]["kind"] if i + 1 < len(X["runs"]) else None
++        if r["kind"] == "retest" and nxt != "retest" and "retests" in X["spread"]:
++            # The retests' own range (r1-r5 only, Zeki #2991): T0's difference stays outside it.
++            sp = X["spread"]["retests"]
++            runs.append('<tr class="lp-group"><th scope="row">Retests r1-r5: min-max (SD)</th>'
++                        + "<td></td>" * len(V.RUN_COUNTS)
++                        + "".join(f'<td class="num" data-rspread="{m}">{retest_range(sp[m])}</td>'
++                                  if m in RETEST_RANGE else "<td></td>" for m in V.RUN_METRICS) + "</tr>")
+     # Not sortable (data-nosort): its group rows (T0 and retests; the budget arm's evaluations) keep their order.
+     runs_table = P.SWIPE + P.table([(h, " data-nosort") for h in ["Run", "Answered", "Valid", "Invalid", "Failed"]
+                                     + [EXPLORE_METRIC_LABEL[m] for m in V.RUN_METRICS]], runs,
+@@ -707,13 +735,14 @@ def explore(L) -> str:
+                '</p>' if short else "")
+     agree = explore_agreement(X, B)
+     return (head
+-            + f'<h3>Each arm minus {B}, paired by series</h3>'
++            + f'<h3>{esc(COMPARISON["lessons"])} and {esc(COMPARISON["records"])}, paired by series</h3>'
+             f'<p>The {B} arm\'s context was empty at every point, so its evaluations after games 5 and 10 are '
+-            'empty-context retests of the T0 prompts: here it is the noise baseline. Each value is the arm\'s '
+-            f'evaluation minus {B}\'s, paired by series (same series id and dice seed; the games differ once plays '
+-            f'differ), averaged over the {count(X["series"])} series, with a 95% interval (10,000 resamples of whole '
+-            'series, the pilot\'s bootstrap). The calibration of the intervals was not determined in this pilot. This '
+-            'is not part of the pre-registered verdict.</p>' + amb
++            'empty-context retests of the T0 prompts: here it is the noise baseline. Each value is the own lessons or '
++            f'full records arm\'s evaluation minus {B}\'s, paired by series (same series id and dice seed; the games '
++            f'differ once plays differ), averaged over the {count(X["series"])} series, with a 95% interval (10,000 '
++            'resamples of whole series, the pilot\'s bootstrap). The no memory arm is not compared here: it has only '
++            'the shared T0, no evaluations after games 5 and 10 of its own. The calibration of the intervals was not '
++            'determined in this pilot. This is not part of the pre-registered verdict.</p>' + amb
+             + '<h3>Empty-context runs: the same prompts, again</h3>'
+             '<p>The shared T0 run, the retests of the T0 prompts and the evaluations of the '
+             f'{B} arm, whose context was always empty, with their spread. The retests measure the variability between '
+@@ -731,12 +760,18 @@ def explore(L) -> str:
+             f'temperature {fmt(S["server_default_temperature"], 1)}, top_k {count(S["server_default_top_k"])}, top_p '
+             f'{fmt(S["server_default_top_p"], 2)}; that file is identical on the server and in our copy of the model. '
+             'No seed was sent; the server\'s seed behaviour was not checked.</p>'
+-            '<p>The answer is the argmax over the option-letter logprobs, so temperature, top_k and top_p cannot '
+-            'change which option is chosen. Positions with more than '
+-            f'{count(S["max_options_per_request"])} options ({count(S["grouped_positions"])} of the '
+-            f'{count(S["positions"])}) are asked in groups, then among the group winners. The retests ran with '
+-            f'{count(S["in_flight_t0_and_retests"])} requests in flight, like T0; the {B} evaluations with '
+-            f'{count(S["in_flight_budget"])}.</p>'
++            '<p>The play is the argmax of the returned option-letter probabilities (several tokens per letter are '
++            'summed). The cause of differences between empty-context runs was not verified.</p>'
++            '<p>Checked in the stored records of T0, the 5 retests and the 20 budget evaluations: all '
++            f'{count(S["answers_checked"])} answers have probability_source "logprobs"; all '
++            f'{count(S["requests_checked"])} requests are the prefill readout (max_tokens {count(S["max_tokens"])}, '
++            'continue_final_message), and none carries response_format, so the constrained-letter fallback never '
++            'fired; no request errors. Whether vLLM returned raw or processed logprobs (before or after '
++            'temperature/top_k/top_p) cannot be shown from the stored records; it was not determined.</p>'
++            f'<p>Positions with more than {count(S["max_options_per_request"])} options '
++            f'({count(S["grouped_positions"])} of the {count(S["positions"])}) are asked in groups, then among the '
++            f'group winners. The retests ran with {count(S["in_flight_t0_and_retests"])} requests in flight, like T0; '
++            f'the {B} evaluations with {count(S["in_flight_budget"])}.</p>'
+             '<h3>Next version (not run)</h3>'
+             '<p>Budget-match the records at the decision level: the most recent decisions, with their verdicts, that '
+             f'fit within the {arm_name("lessons")} arm\'s token count.</p>')
+diff --git a/tools/site/learning_validate.py b/tools/site/learning_validate.py
+index 96a611f..4a99970 100644
+--- a/tools/site/learning_validate.py
++++ b/tools/site/learning_validate.py
+@@ -550,7 +550,7 @@ EXPLORE_METRICS = ("risks_found", "right_safety", "error_rate", "risk_judgement"
+ RUN_METRICS = EXPLORE_METRICS + ("risk_appetite",)
+ RUN_COUNTS = ("answered", "valid", "invalid", "failed")
+ RETESTS = 5
+-SPREAD_GROUPS = ("all", "t0+retests", "budget")
++SPREAD_GROUPS = ("all", "t0+retests", "retests", "budget")  # "retests": r1-r5 only (Zeki #2991)
+ RUN_NAME = re.compile(r"T0 \(shared, 4 in flight\)|retest r([1-5]) \(4 in flight\)|"
+                       r"budget s(0[1-9]|10) (T5|T10) \(1 in flight\)")
+ # Public problem texts of a refused exploratory file: fixed codes only; the details are private (stderr).
+@@ -713,12 +713,16 @@ def validate_explore(path: Path, pilot: dict, test_sha: str) -> dict:
+         elif r["kind"] != want_rows[r["run"]][0]:
+             fail("rows", f"row {r['run']!r}: kind")
+     counts = E["retest_answer_counts"]
++    # Every planned retest is named (Zeki #2993): a missing key would otherwise drop silently out of "pending".
+     for k in map(str, range(1, RETESTS + 1)):
+         full = counts.get(k) == POSITIONS
+-        if full != (k in retests):
++        if k not in counts:
++            fail("retests", f"retest r{k}: no answer count")
++        elif full != (k in retests):
+             fail("retests", f"retest r{k}: a row {'missing' if full else 'without 200 answers'}")
+     # The spread, from the rows.
+     groups = {"all": runs, "t0+retests": [r for r in runs if r["kind"] in ("t0", "retest")],
++              "retests": [r for r in runs if r["kind"] == "retest"],
+               "budget": [r for r in runs if r["kind"] == "budget"]}
+     for g, rows in groups.items():
+         for m in RUN_METRICS:

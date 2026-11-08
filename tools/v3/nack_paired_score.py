@@ -28,8 +28,10 @@ import numpy as np
 
 SEED = "nack-paired-2026-10-27"
 DIR = "positions/nack-paired"
-DB = "smoke/nack-paired.db"
-ROSTER = "leagues/nack-paired.json"
+# §10.14(i) late entries (2026-11-07): their own answers database and roster (NACK_DB / NACK_ROSTER), never merged
+# into the 28 published setups' files.
+DB = os.environ.get("NACK_DB", "smoke/nack-paired.db")
+ROSTER = os.environ.get("NACK_ROSTER", "leagues/nack-paired.json")
 OUT = os.path.join(DIR, "results")
 B = 10000
 MARGIN = 0.001
@@ -55,6 +57,12 @@ OUTPUT_LIMIT = 32768
 # §10.14(g) (2026-10-28, Can): a setup added for another reason than the Cup roster is in no group (exploratory).
 EXPLORATORY = {"Gemini 4 Argon (off)": "Gemini 4 Argon (low), added by Can's decision of 2026-10-28 instead of Argon (on), "
                                        "not because of the Cup roster (§10.14(h))"}
+# §10.14(i) (2026-11-07, Ümit #2646): the league late entries, exploratory, no group; a group of their own, separate
+# from the §10.14(g)/(h) additions of 2026-10-28.
+LATE = {"SubQ Snap 1.1", "Base Labs Elephant-1", "Base Labs Mammoth-1", "Drex Max 1.1", "Drex 2.0", "Drex Max v1",
+        "Drex 2.0 (local)", "REAX 1.3"}
+LATE_NOTE = ("Late entry, exploratory (Method §10.14(i), 2026-11-07): added after this test's results had been computed "
+             "and read; no group, no primary comparison, M unchanged; same rules and scoring as every setup.")
 # §10.14(d): the 22 grouped model setups before the §10.14(g) additions (comparison (i), original members only).
 ORIGINAL_MEMBERS = {
     "Celeris-1 Decision", "SubQ Snap Preview", "Cygnet (Gemma 4 12B)", "Decider v1.2 27B", "Fastino GLiDE v1.2 (local)",
@@ -76,7 +84,7 @@ def original_league_groups(names, db="v3.db"):
         origin.update(league_web.league_origins(con, lid))
     groups = {g: [] for g in GROUP_OF_LEAGUE.values()}
     for n in names:
-        if n in origin and origin[n] in GROUP_OF_LEAGUE and n not in EXPLORATORY:
+        if n in origin and origin[n] in GROUP_OF_LEAGUE and n not in EXPLORATORY and n not in LATE:
             groups[GROUP_OF_LEAGUE[origin[n]]].append(n)
     return groups
 
@@ -563,6 +571,8 @@ def svg_chart(rows, path):
         out.append(f'<text x="{sx(0) - 6}" y="{sy(v) + 3}" text-anchor="end">{v}</text>')
     colors = {"decision models": "#1f77b4", "workhorses": "#2ca02c", "frontier": "#d62728",
               "no group (exploratory)": "#9467bd", "yardstick": "#000"}
+    if any(g == group_of(next(iter(LATE))) for *_, g in rows):  # §10.14(i): in the late entries' own chart only
+        colors["late entry (exploratory, §10.14(i))"] = "#ff7f0e"
     for name, x, y, group in rows:
         c = colors[group]
         shape = (f'<rect x="{sx(x) - 4}" y="{sy(y) - 4}" width="8" height="8" fill="{c}"/>' if group == "yardstick"
@@ -581,6 +591,8 @@ def group_of(s):
     for g, names in GROUPS.items():
         if s in names:
             return g
+    if s in LATE:
+        return "late entry (exploratory, §10.14(i))"
     return "yardstick" if s in YARDSTICKS else "no group (exploratory)"
 
 
@@ -632,6 +644,14 @@ def report(args):
             r["cost_all"] = cost(d, s, list(d.rows))
         res[s] = r
     mat = drops_matrix(d, setups + ["Random"], d.main, "first")
+    if all(s in LATE for s in setups):
+        # §10.14(i): the late entries alone; per setup only, no group comparison.
+        out = {"late_entries_note": LATE_NOTE, "first_look": fl, "setups": res,
+               "late_entries": [s for s in setups if s in LATE]}
+        if args.rollouts:
+            out["engine_check"] = engine_check(d, setups, args.rollouts)
+        write_report(out, out_dir, mat, setups, fl)
+        return
     frontier = GROUPS.get("frontier", [])
     out = {"groups_rule": NOTE_E,
            "frontier_note": (f"The frontier group currently has {len(frontier)} setup"
@@ -658,6 +678,10 @@ def report(args):
         out["kept_advantage_all_500"] = kept_advantage(d, mat5, ext)
     if args.rollouts:
         out["engine_check"] = engine_check(d, setups, args.rollouts)
+    write_report(out, out_dir, mat, setups, fl)
+
+
+def write_report(out, out_dir, mat, setups, fl):
     rows = [(s, mat[s][0], mat[s][1], group_of(s)) for s in setups + ["Random"]]
     svg_chart(rows, os.path.join(out_dir, "standard-vs-nackgammon.svg"))
     with open(os.path.join(out_dir, "results.json"), "w") as f:

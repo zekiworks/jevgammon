@@ -1,0 +1,7 @@
+rendered /tmp/nav/out-r4 with /tmp/nav/src-r4/tools/site
+checks.run: 0 failure(s)
+render diff vs 88e0257: 2549/2549 files, only in one [], differing ['about/index.html', 'index.html', 'leagues/index.html']
+about/index.html sentence present: True | numbers before/after equal: True
+  changes: [('insert', '. Late entries are ranked on the risk leaderboard; they do not change league match-points standings, Cups, or other setups&#x27; results')]
+index.html sentence present: True | numbers before/after equal: True
+render diff vs 88e0257 (render of a1739a8 from the retained S): 2549/2549 files; differing about/index.html, leagues/index.html, index.html (the home page carries the Leagues section's Late entries tab: the same note). Each: one line changed, the late-entry note plus Zeki's sentence; the sentence has no digits, numbers before/after equal: 0 number differences.

@@ -1,0 +1,14 @@
+## evidence: re-derived choice and per-parent families against the branch render
+$ /home/cbasaran/.pyenv/shims/python3 /home/cbasaran/code/jevgammon/mailbox/leaderboard-ct/scripts/evidence.py /home/cbasaran/code/jevgammon-lct /tmp/lct/out-r2 /home/cbasaran/code/jevgammon/mailbox/leaderboard-ct/review2/evidence /tmp/lct/out-branch
+PASS the approved identity list is exactly DeepSeek V4.1 Flash 1017 → DeepSeek V4.1 Flash: {"DeepSeek V4.1 Flash 1017": "DeepSeek V4.1 Flash"}
+PASS ranked rows = re-derived choice, in rank order: 31 rows shown, 31 expected
+PASS each parent row's expander controls exactly its expected alternatives (per row, expected from the data): 34 parent rows
+PASS programs: one grey unranked row each (GNUbg weak, Safest, Random), their first played setup in league order: [('league-1', 'gnubg-weak'), ('league-1', 'safest'), ('league-1', 'random')]
+PASS no late-entry row (LATE_ROWS off)
+PASS note under the table: Bars run to each score; the whisker is its 95% interval. Ranks show observed scores; small gaps need not be meaningful. Leagues played different positions.  More caveats: Method
+PASS no whisker-overlap sentence anywhere on the page
+PASS the rule under the table states the score-free representative: Each model's row is its highest reasoning setting played, by the effort the requests sent (off < minimal < low < medium < high < xhigh < max; on above off for a model without levels; a decision model's single setup), never its best score. Several setups at that setting: the first in league order, then by setup name (no score). Every cell of a row is that setup's own; its other settings are under the row's expander and under All setups. Version names are separate models; DeepSeek V4.1 Flash 1017 is under DeepSeek V4.1 Flash (a dated checkpoint under its original).
+PASS ranked rows unchanged against 5ca56de (the score-free rule picks the same setups now)
+PASS every league and late-entry setup has a maker
+evidence: OK
+exit status: 0 (expected 0)

@@ -1,0 +1,9 @@
+# (e) packet scan for evaluation-set strings (ids, board keys, boards). 2026-11-08 11:46:08 UTC
+600 strings, 24 files, hits: 0
+exit code: 0
+319e07e80b89aba608781876935d6a36b6583829ac677e2477e216d82282dad6  public/explore.json
+06f8c9806e676cb3004603dbb7336d5e80711e9969812eccc41559f59154c613  public/learning-index.html
+54cbee8731a149ea3a226329013cbc3c70ce2982740125657cd86feaa8a92e4c  public/learning-pilot.json
+c03b5c51e0336e1c4fd234ae03313c24a59ab6bd75d6da8150cc7664a652f74e  source/delta-vs-bbcd644.patch
+3eaac12b7218fa1530e126b7ef6ecf276b3f0083a62c5bf8ac34056b8ed8fc6e  source/delta-vs-bbcd644.stat
+48564ceff484233d289a10d8707e8013dd794b8c4588f8ef3f6bf9dcd485a9d8  source/delta-vs-origin-main.patch

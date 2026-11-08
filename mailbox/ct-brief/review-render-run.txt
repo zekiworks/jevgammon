@@ -1,0 +1,9 @@
+## origin/main (e70840e): render_retained.py from /tmp/lct/S.pkl --checks
+rendered /tmp/ctb/out-base with /tmp/ctb/src-base/tools/site
+checks.run: 0 failure(s)
+exit status: 0
+## HEAD (ace14d5): render_retained.py from /tmp/lct/S.pkl --checks
+rendered /tmp/ctb/out-head with /tmp/ctb/src-head/tools/site
+checks.run: 0 failure(s)
+exit status: 0
+# overall exit status: 0

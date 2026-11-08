@@ -1,0 +1,33 @@
+PASS (a) no model_type fails: setup 'Fastino GLiDE v1.2 (local)' without model_type -> "Nackgammon setup 'Fastino GLiDE v1.2 (local)': model type None is not one of ['chat model', 'chat model, answer-letter probabilities', 'chat model, one letter', 'decision model', 'program'] (setups.json or content/nack_setup_types.json)"
+PASS (b) unknown model_type fails: model_type 'chatbot, free text' -> "Nackgammon setup 'Fastino GLiDE v1.2 (local)': model type 'chatbot, free text' is not one of ['chat model', 'chat model, answer-letter probabilities', 'chat model, one letter', 'decision model', 'program'] (setups.json or content/nack_setup_types.json)"; kind() would have said 'chat'
+   Celeris-1 Decision               nack: Celeris-1 Decision                 leaderboard: Celeris-1 Decision (league-1)              equal
+   Claude Fable 5.1                 nack: Claude Fable 5.1 (high)            leaderboard: Claude Fable 5.1 (high) (league-3)         equal
+   Claude Sonnet 5.5                nack: Claude Sonnet 5.5 (low)            leaderboard: Claude Sonnet 5.5 (high) (league-2), not asked same rule over the asked settings: Claude Sonnet 5.5 (low)
+   Cygnet (Gemma 4 12B)             nack: Cygnet (Gemma 4 12B)               leaderboard: Cygnet (Gemma 4 12B) (league-1)            equal
+   Decider Flash v1.2               nack: Decider Flash v1.2                 leaderboard: Decider Flash v1.2 (league-1)              equal
+   Decider v1.1 27B                 nack: Decider v1.1 27B                   leaderboard: Decider v1.1 27B (league-1)                equal
+   Decider v1.2 27B                 nack: Decider v1.2 27B                   leaderboard: Decider v1.2 27B (league-1)                equal
+   DeepSeek V4.1 Flash              nack: DeepSeek V4.1 Flash (off)          leaderboard: DeepSeek V4.1 Flash (low) (league-2), not asked same rule over the asked settings: DeepSeek V4.1 Flash (off)
+   Fastino GLiDE                    nack: Fastino GLiDE                      leaderboard: Fastino GLiDE (league-2)                   equal
+   Fastino GLiDE v1.2               nack: Fastino GLiDE v1.2 (local)         leaderboard: Fastino GLiDE v1.2 (local) (league-1)      equal
+   GPT-6 Astra                      nack: GPT-6 Astra (medium)               leaderboard: GPT-6 Astra (low) (league-3), not asked    same rule over the asked settings: GPT-6 Astra (medium)
+   GPT-6 Luna                       nack: GPT-6 Luna                         leaderboard: GPT-6 Luna (league-1)                      equal
+   GPT-6.1 Sol                      nack: GPT-6.1 Sol (low)                  leaderboard: GPT-6.1 Sol (low) (league-3)               equal
+   GPT-6.1 Terra                    nack: GPT-6.1 Terra                      leaderboard: -                                          no leaderboard row (played in no league)
+   Gemini 3.8 Flash                 nack: Gemini 3.8 Flash (low)             leaderboard: Gemini 3.8 Flash (high) (league-2), not asked same rule over the asked settings: Gemini 3.8 Flash (low)
+   Gemini 4 Argon                   nack: Gemini 4 Argon (low)               leaderboard: Gemini 4 Argon (high) (league-3), not asked same rule over the asked settings: Gemini 4 Argon (low)
+   Gemma 4 31B                      nack: Gemma 4 31B (on)                   leaderboard: Gemma 4 31B (on) (league-2)                equal
+   Grok 4.7                         nack: Grok 4.7 (high)                    leaderboard: Grok 4.7 (high) (league-3)                 equal
+   Jev 1.13.0                       nack: Jev 1.13.0                         leaderboard: Jev 1.13.0 (league-1)                      equal
+   LFM2.5-24B-A2B                   nack: LFM2.5-24B-A2B (on)                leaderboard: LFM2.5-24B-A2B (on) (league-1)             equal
+   Liquid d1-ultra                  nack: Liquid d1-ultra                    leaderboard: Liquid d1-ultra (league-2)                 equal
+   Mercury Decide                   nack: Mercury Decide                     leaderboard: Mercury Decide (league-1)                  equal
+   Open-Jev 27B v1.1                nack: Open-Jev 27B v1.1                  leaderboard: Open-Jev 27B v1.1 (league-1)               equal
+   Qwen3.8-27B                      nack: Qwen3.8-27B (off)                  leaderboard: Qwen3.8-27B (low) (league-2), not asked    same rule over the asked settings: Qwen3.8-27B (off)
+   SubQ Snap Preview                nack: SubQ Snap Preview                  leaderboard: SubQ Snap Preview (league-1)               equal
+   Winnow-12B                       nack: Winnow-12B                         leaderboard: Winnow-12B (league-1)                      equal
+PASS (c) per-model view = leaderboard selection, every model: 26 models
+   rendered page's per-model view (old rule) vs fixed rule: only old [], only new []
+PASS (d) synthetic: C (League 1, 75) beats its own League 2 row (50) and the A/B tie at 70: nack ['C'], leaderboard [('league-1', 'C')]; the old name-keyed rule picked 'B'
+PASS (d) synthetic tie A (League 1) = B (League 2) = 70: the first in league order, A: nack ['A'], leaderboard [('league-1', 'A')]; the old rule picked 'B'
+0 failure(s)

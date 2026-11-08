@@ -1,0 +1,4 @@
+# (a) branch ad2fb4d whole-site render, default build (PREREGISTRATION_ONLY on), checks.run. Started 2026-11-07 17:48:53 UTC
+rendered /tmp/inv/out-branch with /tmp/inv/src-branch/tools/site
+checks.run: 0 failure(s)
+# Finished 2026-11-07 17:50:50 UTC

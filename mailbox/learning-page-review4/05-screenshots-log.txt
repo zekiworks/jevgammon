@@ -1,0 +1,24 @@
+2026-11-07 17:51:55 UTC  learning-tab-default-preregistration-1280-light.png  <- file:///tmp/inv/out-branch/learning/index.html
+2026-11-07 17:51:56 UTC  learning-tab-default-preregistration-1280-dark.png  <- file:///tmp/inv/out-branch/learning/index.html
+2026-11-07 17:51:56 UTC  learning-tab-default-preregistration-390-light.png  <- file:///tmp/inv/out-branch/learning/index.html
+2026-11-07 17:51:56 UTC  learning-tab-default-preregistration-390-dark.png  <- file:///tmp/inv/out-branch/learning/index.html
+2026-11-07 17:51:59 UTC  learning-tab-SYNTHETIC-complete-1280-light.png  <- file:///tmp/inv/synthetic-complete-site/learning/index.html
+2026-11-07 17:52:01 UTC  learning-tab-SYNTHETIC-complete-1280-dark.png  <- file:///tmp/inv/synthetic-complete-site/learning/index.html
+2026-11-07 17:52:03 UTC  learning-tab-SYNTHETIC-complete-390-light.png  <- file:///tmp/inv/synthetic-complete-site/learning/index.html
+2026-11-07 17:52:05 UTC  learning-tab-SYNTHETIC-complete-390-dark.png  <- file:///tmp/inv/synthetic-complete-site/learning/index.html
+2026-11-07 17:52:05 UTC  learning-tab-SYNTHETIC-complete-charts-1280-light.png  <- file:///tmp/inv/synthetic-complete-site/learning/index.html #learning-chart
+2026-11-07 17:52:06 UTC  learning-tab-SYNTHETIC-complete-charts-1280-dark.png  <- file:///tmp/inv/synthetic-complete-site/learning/index.html #learning-chart
+2026-11-07 17:52:06 UTC  learning-tab-SYNTHETIC-complete-charts-390-light.png  <- file:///tmp/inv/synthetic-complete-site/learning/index.html #learning-chart
+2026-11-07 17:52:06 UTC  learning-tab-SYNTHETIC-complete-charts-390-dark.png  <- file:///tmp/inv/synthetic-complete-site/learning/index.html #learning-chart
+2026-11-07 17:52:08 UTC  learning-tab-SYNTHETIC-complete-budget-1280-light.png  <- file:///tmp/inv/synthetic-complete-site/learning/index.html #learning-budget
+2026-11-07 17:52:11 UTC  learning-tab-SYNTHETIC-complete-budget-1280-dark.png  <- file:///tmp/inv/synthetic-complete-site/learning/index.html #learning-budget
+2026-11-07 17:52:13 UTC  learning-tab-SYNTHETIC-complete-budget-390-light.png  <- file:///tmp/inv/synthetic-complete-site/learning/index.html #learning-budget
+2026-11-07 17:52:15 UTC  learning-tab-SYNTHETIC-complete-budget-390-dark.png  <- file:///tmp/inv/synthetic-complete-site/learning/index.html #learning-budget
+2026-11-07 17:52:16 UTC  learning-tab-SYNTHETIC-running-1280-light.png  <- file:///tmp/inv/synthetic-running-site/learning/index.html
+2026-11-07 17:52:18 UTC  learning-tab-SYNTHETIC-running-1280-dark.png  <- file:///tmp/inv/synthetic-running-site/learning/index.html
+2026-11-07 17:52:18 UTC  learning-tab-SYNTHETIC-running-390-light.png  <- file:///tmp/inv/synthetic-running-site/learning/index.html
+2026-11-07 17:52:18 UTC  learning-tab-SYNTHETIC-running-390-dark.png  <- file:///tmp/inv/synthetic-running-site/learning/index.html
+2026-11-07 17:52:19 UTC  learning-tab-SYNTHETIC-rejected-1280-light.png  <- file:///tmp/inv/synthetic-rejected-site/learning/index.html
+2026-11-07 17:52:19 UTC  learning-tab-SYNTHETIC-rejected-1280-dark.png  <- file:///tmp/inv/synthetic-rejected-site/learning/index.html
+2026-11-07 17:52:20 UTC  learning-tab-SYNTHETIC-rejected-390-light.png  <- file:///tmp/inv/synthetic-rejected-site/learning/index.html
+2026-11-07 17:52:20 UTC  learning-tab-SYNTHETIC-rejected-390-dark.png  <- file:///tmp/inv/synthetic-rejected-site/learning/index.html

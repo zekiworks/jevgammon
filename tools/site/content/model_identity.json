@@ -1,0 +1,6 @@
+{
+ "about": "Setups of differently named models that the leaderboard shows as one model (one row, its other setups under the row's expander), each pair approved by name; nothing is inferred from a name (Zeki, bus #2790). A dated checkpoint sits under its original, which names the row and gives its release month (Ümit, bus #2745 item 1). A model not listed here is its own row.",
+ "same_model": {
+  "DeepSeek V4.1 Flash 1017": "DeepSeek V4.1 Flash"
+ }
+}

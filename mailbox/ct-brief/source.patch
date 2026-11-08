@@ -1,5 +1,5 @@
 diff --git a/tools/site/assets/bg.css b/tools/site/assets/bg.css
-index 0421e80..ce88889 100644
+index 0421e80..bbc43c1 100644
 --- a/tools/site/assets/bg.css
 +++ b/tools/site/assets/bg.css
 @@ -331,6 +331,7 @@ td.badges .small { display: block; white-space: normal; }
@@ -31,21 +31,22 @@ index 0421e80..ce88889 100644
  .hl-val { font-family: var(--mono); font-size: .84rem; }
  .js [data-headline-panel][hidden] { display: none; }
  /* The leaderboard rows (Ümit, bus #2745; #2904, #2907; #2921): the rank, the model (maker dot, its type under the name
-@@ -450,7 +450,12 @@ table.headline tr.reference td { color: var(--text-2); }
+@@ -450,7 +450,13 @@ table.headline tr.reference td { color: var(--text-2); }
  .hbar-fill.ts-found, i.swatch-ts-found { background-image: repeating-linear-gradient(135deg, rgba(255, 255, 255, .55) 0 3px, rgba(0, 0, 0, .12) 3px 6px); }
  .hbar-fill.ts-grey, i.swatch-ts-grey { background-color: var(--data-grey); }
  i.swatch-ts-safety, i.swatch-ts-found { background-color: var(--text-2); }
 -.too-safe { margin-top: 1rem; }
 +/* Wide screens: four more columns (Ümit #2938 item 3: risks found, safe right, error rate, $ per 1,000). */
-+table.headline th[data-wide], table.headline td.hl-wide { display: none; }
++table.headline th[data-wide], table.headline td.hl-wide, .hl-wide-note { display: none; }
 +@media (min-width: 900px) {
 +  table.headline th[data-wide], table.headline td.hl-wide { display: table-cell; white-space: nowrap; }
 +  td.hl-judgement { width: 40%; }
++  .hl-wide-note { display: inline; }
 +}
  /* At phone width: the three columns fit the width (no sticky column, no sideways scrolling), the bar column narrower. */
  @media (max-width: 640px) {
    table.headline th:first-child, table.headline td:first-child { position: static; width: auto; min-width: 0; max-width: none;
-@@ -465,7 +470,28 @@ i.swatch-ts-safety, i.swatch-ts-found { background-color: var(--text-2); }
+@@ -465,7 +471,28 @@ i.swatch-ts-safety, i.swatch-ts-found { background-color: var(--text-2); }
  .finding-chart { margin: 0; }
  .section-caveat { margin-top: .6rem; }
  .hbar-fill.q1-board, i.swatch-q1-board { background-color: var(--data-grey); background-image: repeating-linear-gradient(135deg, rgba(255, 255, 255, .55) 0 3px, rgba(0, 0, 0, .12) 3px 6px); }
@@ -75,7 +76,7 @@ index 0421e80..ce88889 100644
     More filters, the setup count and Reset on one line where they fit, in a compact key size. The row is
     always open: its body's selector outranks site.css's `.filters:not(.is-open) .filters-body { display: none }`
     (the collapsible filter panel, which this row is not), which had hidden the whole row. */
-@@ -482,6 +508,5 @@ nav.filters.filter-row .filters-body { display: flex; flex-wrap: wrap; align-ite
+@@ -482,6 +509,5 @@ nav.filters.filter-row .filters-body { display: flex; flex-wrap: wrap; align-ite
  @media (max-width: 640px) {
    .filter-row .group-label { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); }
    .filter-row .key { min-height: 24px; padding: 1px 7px; font-size: 12px; }
@@ -158,7 +159,7 @@ index 3e96fcb..fb69c53 100644
          rel = page.relative_to(out)
 diff --git a/tools/site/content/about.md b/tools/site/content/about.md
 new file mode 100644
-index 0000000..b9d3daa
+index 0000000..d782833
 --- /dev/null
 +++ b/tools/site/content/about.md
 @@ -0,0 +1,58 @@
@@ -199,7 +200,7 @@ index 0000000..b9d3daa
 +## 3. How the scores work
 +
 +- **Risk call.** A position is a risk call when its legal plays leave different numbers of hitting rolls. The engine compares its best play with the best safe play: if the best play is at least 0.001 better, **risk pays**; otherwise **safety pays**.
-+- **Risks found.** The share of risk-pays positions where the model took the risk.
++- **Risks found.** The share of risk-pays positions where the model chose a worthwhile risky play: one at least 0.001 better than the best safe play. A risky play that is not that good counts as a wrong risk, not a risk found.
 +- **Safe right.** The share of safety-pays positions where the model played safe.
 +- **Risk judgement.** The average of risks found and safe right, from 0 to 100. A model that always plays safe scores 50. A model that gets every call right scores 100.
 +- **Error rate.** How much a model's moves give away, as judged by the engine: the PR scale that human players use. Lower is better. A move that matches the engine's best play costs nothing.
@@ -216,7 +217,7 @@ index 0000000..b9d3daa
 +## Leaderboard box
 +
 +1. Models play full games of backgammon. GNU Backgammon scores every move.
-+2. Risk judgement: did the model take the risk when it paid, and play safe when safe was right? 50 = always plays safe, 100 = every call right.
++2. Risk judgement: did the model find a worthwhile risk when risk paid, and play safe when safe was right? 50 = always plays safe, 100 = every call right.
 +3. Error rate: how much a move gives away, judged by the engine (lower is better).
 +4. Everything is public: every position, every legal play, the engine's value for each.
 +5. Leagues played different positions, so close scores across leagues are not a clear ranking.
@@ -973,7 +974,7 @@ index f76278a..80c525d 100644
 +        description="About the backgammon benchmark: backgammon in one page, how the benchmark works, how the scores "
 +                    "work, the leaderboard rules, the method, the data, how to run it, late entries and open questions.")
 diff --git a/tools/site/story.py b/tools/site/story.py
-index c997965..ad164f0 100644
+index c997965..e23ba06 100644
 --- a/tools/site/story.py
 +++ b/tools/site/story.py
 @@ -8,6 +8,7 @@ numbers is mailbox/front-story/evidence (made by evidence.py there), not code he
@@ -1072,7 +1073,19 @@ index c997965..ad164f0 100644
          join([cost_text(S, x), f'{count(q["decisions"])} decisions' if q else None]),
          *extra,
          join([f'<a href="{href}">{"Its late-entry page" if e else "Open its decisions"} \u2192</a>' if href else None,
-@@ -293,7 +307,7 @@ def headline_rows(S) -> tuple[list, list, list]:
+@@ -270,7 +284,10 @@ def headline_rows(S) -> tuple[list, list, list]:
+             dot = f'<i class="swatch hl-dot" style="background:{colour}" title="{esc(mk)}"></i>' if colour else \
+                 '<i class="swatch hl-dot swatch-program"></i>'
+             typ = "program" if kind == "program" else model_type(S, x)
+-            under = esc(H.ref_label(S, x["ds"], x["name"]) or "") if kind == "program" else esc(TYPE_LABEL.get(typ, ""))
++            # Under the name (Ümit #2938 item 3): maker · chat model / decision model · setting, each part only where
++            # it is on record (no maker on record, a decision model's absent setting: left out); then a late tag.
++            under = (esc(H.ref_label(S, x["ds"], x["name"]) or "") if kind == "program" else
++                     " \u00b7 ".join(esc(p) for p in (mk if mk != NO_MAKER else None, TYPE_LABEL.get(typ), x["setting"]) if p))
+             tag = f'<span class="hl-tag">{esc(late_tag(x))}</span>' if x["late"] else ""
+             extra = []
+             if kind == "model":
+@@ -293,7 +310,7 @@ def headline_rows(S) -> tuple[list, list, list]:
              bid = f"{rid}-box"
              body.append(f'<tr{cls}{tr_attrs(S, x, kind, typ)} data-box="{bid}">{rank}<td class="model">{dot}{icon}'
                          f'{name_link(S, x, label, bid)}<span class="small hl-type">{under}{tag}</span>{more}'
@@ -1081,7 +1094,7 @@ index c997965..ad164f0 100644
              for sid, y in zip(sub_ids, others):
                  ycol = H.maker(y["name"])[1] if kind == "model" else None
                  ybid = f"{sid}-box"
-@@ -301,13 +315,31 @@ def headline_rows(S) -> tuple[list, list, list]:
+@@ -301,13 +318,31 @@ def headline_rows(S) -> tuple[list, list, list]:
                  body.append(f'<tr class="hl-sub{"" if kind == "model" else " reference"}" '
                              f'id="{sid}" hidden{tr_attrs(S, y, kind, typ)} data-box="{ybid}"><td class="num"></td><td class="model">'
                              f'{name_link(S, y, y["name"], ybid)}<span class="small">other {what} of {esc(label)}{ytag}</span>'
@@ -1115,7 +1128,7 @@ index c997965..ad164f0 100644
  
  
  def too_safe(S, chart: list) -> str:
-@@ -339,19 +371,21 @@ def too_safe(S, chart: list) -> str:
+@@ -339,19 +374,21 @@ def too_safe(S, chart: list) -> str:
              f'and of the risks it found, as in the table</p></div>{chart_html}<p class="chart-legend">{legend}</p></figure>')
  
  
@@ -1144,7 +1157,7 @@ index c997965..ad164f0 100644
      keys = ('<span class="keys needs-js" role="group" aria-label="Rows"><button type="button" class="key" '
              'data-headline-view="model" aria-pressed="true">One row per model</button><button type="button" '
              'class="key" data-headline-view="all" aria-pressed="false">All setups</button></span>')
-@@ -361,14 +395,12 @@ def headline(S) -> str:
+@@ -361,14 +398,14 @@ def headline(S) -> str:
                         f'{l}</button>' for k, l in (("all", "All"), ("chat", "Chat models"), ("decision", "Decision models")))
               + '</div>')
      return (f'<section class="card headline" id="leaderboard" data-dataset="all" aria-labelledby="leaderboard-title">'
@@ -1160,11 +1173,13 @@ index c997965..ad164f0 100644
              f'<div data-headline-panel="all" hidden>{H.all_risk_table(S)}{caveat(H.RANK_NOTE, "statistics")}</div>'
 -            f'<p class="table-note">{esc(ALL_NOTE)}</p></section>')
 +            f'<p class="table-note headline-rule">{esc(ROW_LINE)} {esc(ALL_NOTE)} '
-+            '<a href="about/#leaderboard">How rows are chosen</a></p></section>')
++            '<a href="about/#leaderboard">How rows are chosen</a><span class="hl-wide-note"> $ per 1,000 decisions: at '
++            'each setup\'s price basis, which its details name (a list price, or API-equivalent for a subscription); '
++            'not a bill paid.</span></p></section>')
  
  
  # --- Finding sections ----------------------------------------------------------------------------------------------
-@@ -420,10 +452,13 @@ def _bars(rows: list, lo: float, hi: float, ticks: list, head: str, zero: bool =
+@@ -420,10 +457,13 @@ def _bars(rows: list, lo: float, hi: float, ticks: list, head: str, zero: bool =
              f'<span class="hbar-head">{head}</span></div><ol class="hbars headed">{"".join(out)}</ol>')
  
  
@@ -1180,7 +1195,7 @@ index c997965..ad164f0 100644
  
  
  def cautious(S) -> str:
-@@ -450,8 +485,9 @@ def cautious(S) -> str:
+@@ -450,8 +490,9 @@ def cautious(S) -> str:
      legend = ('<span>Bias = missed risks (a clear Risk win played safe) minus needless risks (a clear Safety win played '
                'unsafe), in percentage points; right of 0 = too cautious</span> <span><i class="swatch swatch-program">'
                '</i>program (reference row)</span>')
@@ -1192,7 +1207,7 @@ index c997965..ad164f0 100644
  
  
  def flinch(S) -> str:
-@@ -479,8 +515,288 @@ def flinch(S) -> str:
+@@ -479,8 +520,290 @@ def flinch(S) -> str:
      legend = ('<span><i class="swatch" style="background:var(--text-2)"></i>with numbers (the league prompt, each play\'s '
                'computed consequences)</span> <span><i class="swatch swatch-q1-board"></i>board only (notation, no computed '
                'number)</span> <span>Bias: missed minus needless, Q1 of Clear risk Part 2</span>')
@@ -1230,13 +1245,15 @@ index c997965..ad164f0 100644
 +    s = sorted(m[1]["r"]["right_safety"]["share"] for m in models)
 +    who = f"Every one of the {count(len(models))}" if len(below) == len(models) else \
 +        f"{count(len(below))} of the {count(len(models))}"
-+    text = (f'{who} ranked models took a smaller share of the risks that paid than the share of safe positions they '
-+            f'played right: risks found runs from {pct(f[0])} to {pct(f[-1])}, safe right from {pct(s[0])} to {pct(s[-1])}.')
++    text = (f'{who} ranked models found a worthwhile risk (a risky play at least 0.001 better than the best safe play) '
++            f'in a smaller share of the risk-pays positions than the share of safety-pays positions they played safe: '
++            f'risks found runs from {pct(f[0])} to {pct(f[-1])}, safe right from {pct(s[0])} to {pct(s[-1])}.')
 +    if gnu:
 +        g = gnu["r"]
 +        text += (f' GNUbg weak, a weak setting of the engine (grey square), is close to even: {pct(g["right_safety"]["share"])} '
 +                 f'safe right, {pct(g["found"]["share"])} risks found.')
-+    text += ' Above the diagonal, a model plays safe more often than the positions reward.'
++    text += (' Above the diagonal, a model succeeds more often when safety pays than when risk pays; the chart compares '
++             'these two success rates, not how often a model plays risky at all.')
 +    W, Hh, L, B, T, R = 520, 420, 52, 44, 12, 14
 +    x = lambda v: L + (W - L - R) * v  # noqa: E731
 +    y = lambda v: Hh - B - (Hh - B - T) * v  # noqa: E731
@@ -1248,7 +1265,7 @@ index c997965..ad164f0 100644
 +                     f'<text class="muted" x="{x(v):.1f}" y="{Hh - B + 14}" text-anchor="middle">{t}%</text>'
 +                     f'<text class="muted" x="{L - 6}" y="{y(v) + 4:.1f}" text-anchor="end">{t}%</text>')
 +    parts.append(f'<line class="rm-diag" x1="{x(0):.1f}" y1="{y(0):.1f}" x2="{x(1):.1f}" y2="{y(1):.1f}"/>'
-+                 f'<text x="{(L + W - R) / 2}" y="{Hh - 8}" text-anchor="middle">Risks found: took the risk when it paid</text>'
++                 f'<text x="{(L + W - R) / 2}" y="{Hh - 8}" text-anchor="middle">Risks found: a worthwhile risk when risk paid</text>'
 +                 f'<text x="14" y="{(T + Hh - B) / 2}" transform="rotate(-90 14 {(T + Hh - B) / 2})" text-anchor="middle">'
 +                 'Safe right: played safe when safe paid</text>')
 +    for label, xr, c in models:
@@ -1297,7 +1314,7 @@ index c997965..ad164f0 100644
 +            'are shown, each at the month of its maker\'s own dated statement.')
 +    if spread:
 +        text += (f' Makers with models in different months, earliest first: {lines}.'
-+                 + ("" if ok else " Not every maker\'s newer model scores higher, so the dates show no clear trend."))
++                 + ("" if ok else " That is not a consistent increase across the makers shown."))
 +    months = sorted({d[0] for d in dated})
 +    if not months:
 +        return ""

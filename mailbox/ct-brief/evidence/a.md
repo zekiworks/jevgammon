@@ -51,3 +51,7 @@ Verdict: **KEEP** — heading: **Models are too cautious.**
 | 37 | Decider Flash v1.2 (Decider Flash v1.2) | league-1 | 66.9 | 31.3 | 35.6 | data/results.json leagues.league-1.setups["Decider Flash v1.2"].risk.main |
 | 38 | Open-Jev 27B v1.1 (Open-Jev 27B v1.1) | league-1 | 59.8 | 37.3 | 22.5 | data/results.json leagues.league-1.setups["Open-Jev 27B v1.1"].risk.main |
 | – | GNUbg weak (reference) | league-1 | 67.6 | 66.6 | 1.1 | data/results.json leagues.league-1.setups["GNUbg weak"].risk.main |
+
+**Wording (Zeki #2963):** risks found = right risks ÷ Risk pays decisions (a risky play at least 0.001 better than the
+best safe play), so the section and the axis now say "found a worthwhile risk"; the chart compares the two success rates,
+not how often a model plays risky at all. Numbers unchanged.

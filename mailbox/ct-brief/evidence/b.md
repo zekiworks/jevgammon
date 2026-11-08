@@ -31,3 +31,5 @@ maker with models in two or more documented months scores higher with each later
 Fastino (60.4 → 58.8) fails it, so the heading is neutral; the pooled correlation is not computed on the site (no new
 statistic). One line per maker only where its models span two or more months (Google, Fastino); "Maker not recorded"
 is not a maker and gets no line.
+Wording (Zeki #2963): "no clear trend" replaced by "That is not a consistent increase across the makers shown." (the rule
+does not test every possible trend).

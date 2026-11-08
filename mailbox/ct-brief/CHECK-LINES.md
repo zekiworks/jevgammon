@@ -42,3 +42,14 @@ Note on §3 Uncertainty (src:40, also carried a [check]): **confirmed**, no chan
 |---|---|---|---|---|
 | 3 | src:40 "…Neighbours whose intervals overlap are not reliably ordered." | "…Ranks show observed scores; small gaps need not be meaningful." | Zeki, bus #2578: interval overlap is not a difference test. | flagged deviation |
 | 4 | src:54 "The rank is a sort order, not a verdict: when two neighbours' intervals overlap, they are not reliably ordered." | "Rows are sorted by risk judgement. The rank is a sort order, not a verdict. Ranks show observed scores; small gaps need not be meaningful." | Same, bus #2578. | flagged deviation |
+
+## D. Extra correction (Zeki #2963), for Ümit
+
+| § | Old | New | Evidence | Status |
+|---|---|---|---|---|
+| 3 | src:36 "**Risks found.** The share of risk-pays positions where the model took the risk." | "**Risks found.** The share of risk-pays positions where the model chose a worthwhile risky play: one at least 0.001 better than the best safe play. A risky play that is not that good counts as a wrong risk, not a risk found." | Risks found = right risks ÷ Risk pays decisions (method.py:359); right risk = took a risk and the chosen play is at least the margin better than the best safe play, wrong risk otherwise (method.py:349-352); analysis.py:451-454, 618-625. "Took the risk" would also count wrong risks. | fixed |
+| LB | src:44 bullet 2 "did the model take the risk when it paid, …" | "did the model find a worthwhile risk when risk paid, …" | Same definition. | fixed |
+| — | Details box "Took N of M risks that paid" (Ümit's example wording in #2938) | unchanged | N is right risks, M the Risk pays decisions; "risks that paid" can be read as the worthwhile ones. Ümit may want "Found N of M worthwhile risks". | flag (not changed) |
+
+The front page's finding (a) and its chart axis use the same definition ("found a worthwhile risk … at least 0.001 better
+than the best safe play"; the chart compares the two success rates, not how often a model plays risky).

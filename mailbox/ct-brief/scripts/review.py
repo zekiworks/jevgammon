@@ -225,8 +225,10 @@ for p in sorted(live.rglob("index.html")):
         pg_rows.append((rel, rel in changed_ok, nums(a) == nums(b) or rel in changed_ok))
         if rel not in changed_ok:
             fail.append(f"page {rel}: main content differs from live and the page is not one this change touches")
-summary.append(("Other pages: main content text identical to live", n_same + len(pg_rows), n_same + len(pg_rows),
-                len([r for r in pg_rows if not r[1]])))
+summary.append((f"Pages compared, main content text against live: {n_same + len(pg_rows)} compared, {n_same} equal, "
+                 f"{len([r for r in pg_rows if r[1]])} expected changes (the pages this change touches); differences "
+                 "count unexpected changes only", n_same + len(pg_rows), n_same + len(pg_rows),
+                 len([r for r in pg_rows if not r[1]])))
 n_files = n_fd = 0
 for p in sorted(live.rglob("*")):
     rel = p.relative_to(live)
@@ -243,8 +245,9 @@ for p in sorted(live.rglob("*")):
         rows.append(["data file", str(rel), "", "", "differs", ""])
 extra = sorted(str(q.relative_to(new)) for q in new.rglob("*") if q.is_file() and q.relative_to(new).parts[0] in ("data", "decisions")
                and not (live / q.relative_to(new)).exists())
-summary.append((f"Data files and decision pages, byte for byte (gz decompressed; manifest.json's time stamps aside); new "
-                f"files: {extra or 'none'}", n_files, n_files, n_fd + len(extra)))
+summary.append((f"Data files and decision pages: equal after gunzip of .gz files, data/manifest.json excluded from the "
+                 f"comparison (not literal raw-byte identity); new files: {extra or 'none'}", n_files, n_files,
+                 n_fd + len(extra)))
 
 with open(out / "numbers.csv", "w", newline="") as f:
     csv.writer(f).writerows([["what", "where", "label", "cell", "live", "new"]] + rows)
@@ -254,12 +257,22 @@ md = ["# Numbers: the ct-brief render against live", "",
       "rendered from the retained computed state (no compute), data-as-of label set to live's.", "",
       "| Check | Items | Values | Differences |", "|---|---:|---:|---:|"]
 md += [f"| {a} | {b:,} | {c:,} | {d} |" for a, b, c, d in summary]
-md += ["", f"**Total differences: {total}.** Every difference is in `numbers.csv`.", "",
-       "Pages whose main content changed (expected: the pages this change touches):", ""]
+# Differences already explained (Zeki #2963: shown as such, not as a pass): the old #leagues-tabs wrapper held the
+# league sections (they compare equal under their own ids), and the Risk call card line, written only by build.py's
+# image step (absent from every retained render, origin/main's included; see prod-build.txt for the production path).
+EXPLAINED = {"leagues-tabs": "old wrapper held the league sections; now the Leagues tab bar",
+             "board-panel": "Risk call card line (build.py image step only)", "charts": "Risk call card line",
+             "chart-risk": "Risk call card line"}
+explained = [r for r in rows if r[0] == "home block numbers" and r[1] in EXPLAINED]
+md += ["", f"**Total differences: {total}**, of which {len(explained)} explained and {total - len(explained)} "
+       "unexplained. Every difference is in `numbers.csv`. The script still exits 1 on any difference.", ""]
+md += [f"- explained: `#{r[1]}` — {EXPLAINED[r[1]]}" for r in explained]
+md += ["", "Pages whose main content changed (expected: the pages this change touches):", ""]
 md += [f"- `{r[0] or 'home'}`" for r in pg_rows]
 (out / "numbers.md").write_text("\n".join(md) + "\n")
 if total:
-    fail.append(f"numbers: {total} differences")
+    fail.append(f"numbers: {total} differences ({len(explained)} explained: "
+                + ", ".join("#" + r[1] for r in explained) + f"; {total - len(explained)} unexplained)")
 
 # --- 2. Links: every tab and page link answers 200 --------------------------------------------------------------------
 link_rows = []

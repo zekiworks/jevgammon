@@ -247,6 +247,7 @@ def tab_of(path: str) -> str:
     return next((href for href, _ in TABS if href and path.startswith(href)), "")
 
 
+# The tab row keeps the id of the old Part row (view-part), so an old link to #view-part still lands on the site's parts.
 def site_header(rel: str, path: str, controls: str) -> str:
     here = tab_of(path)
     tabs = "".join(f'<li><a href="{rel}{href or ("" if rel else "./")}"'
@@ -255,7 +256,7 @@ def site_header(rel: str, path: str, controls: str) -> str:
     return (f'<div class="site-header">\n  {SUITE_BAR}\n  <header class="site-bar"><div class="site-bar-in">'
             f'<div class="site-title-row"><a class="site-title" href="{rel or "./"}"><img class="site-leaf" '
             f'src="{rel}{LEAF}" width="18" height="21" alt="">{esc(SITE_NAME)}</a>{controls}</div>'
-            f'<nav class="site-tabs" aria-label="Sections"><ul>{tabs}</ul></nav></div></header>\n  </div>')
+            f'<nav class="site-tabs" id="view-part" aria-label="Sections"><ul>{tabs}</ul></nav></div></header>\n  </div>')
 
 
 # The first script of every page, before the stylesheets apply (Zeki, bus #2310): the theme is always named on <html>

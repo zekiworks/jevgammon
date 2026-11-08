@@ -575,10 +575,20 @@ async function savePng(panel, svg, title, lines, filename) {
     const width = Math.min(380, vw - 16);
     box.style.width = `${width}px`;
     box.style.left = `${Math.max(8, Math.min(cell.left, vw - width - 8))}px`;
+    // Height: below the row if it fits, else above it; if it fits neither way, as tall as the window allows below the
+    // header, scrolling inside (its links stay reachable by scrolling it or with Tab).
+    box.style.maxHeight = '';
     const height = box.offsetHeight;
     const header = document.querySelector('.site-header')?.getBoundingClientRect().bottom || 0;
     const below = row.bottom;  // no gap: the pointer moves from the row into its box without leaving the row
-    box.style.top = `${below + height > innerHeight - 8 && row.top - height > header ? row.top - height : below}px`;
+    const bottom = innerHeight - 8;
+    if (below + height <= bottom) box.style.top = `${below}px`;
+    else if (row.top - height >= header + 4) box.style.top = `${row.top - height}px`;
+    else {
+      const room = Math.max(bottom - header - 4, 80);
+      box.style.maxHeight = `${room}px`;
+      box.style.top = `${Math.max(header + 4, Math.min(below, bottom - Math.min(height, room)))}px`;
+    }
   };
   const hide = () => {
     if (!open) return;
@@ -598,10 +608,13 @@ async function savePng(panel, svg, title, lines, filename) {
     place();
   };
   const rows = [...table.querySelectorAll('tbody tr[data-box]')];
+  // Keyboard focus in the open row (its name or its box) keeps the box: the pointer leaving the row or entering another
+  // row does not take it away until the focus leaves the row, Escape, a second tap or a click outside.
+  const held = () => !!open && open.contains(document.activeElement);
   table.addEventListener('pointerdown', event => { pointer = event.pointerType || 'mouse'; }, true);
   rows.forEach(tr => {
-    tr.addEventListener('pointerenter', event => { if (event.pointerType === 'mouse' && !pinned) show(tr, false); });
-    tr.addEventListener('pointerleave', event => { if (event.pointerType === 'mouse' && !pinned && open === tr) hide(); });
+    tr.addEventListener('pointerenter', event => { if (event.pointerType === 'mouse' && !pinned && !held()) show(tr, false); });
+    tr.addEventListener('pointerleave', event => { if (event.pointerType === 'mouse' && !pinned && open === tr && !held()) hide(); });
     tr.addEventListener('focusin', () => { if (open !== tr && !quiet) show(tr, false); });
     tr.addEventListener('focusout', event => { if (open === tr && !pinned && !tr.contains(event.relatedTarget)) hide(); });
     tr.addEventListener('click', event => {

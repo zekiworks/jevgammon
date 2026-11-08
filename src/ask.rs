@@ -297,7 +297,9 @@ CREATE TABLE IF NOT EXISTS answer_exchanges (
     request     TEXT NOT NULL,
     response    TEXT,
     error       TEXT,
-    latency_ms  INTEGER NOT NULL
+    latency_ms  INTEGER NOT NULL,
+    -- "Did they improve?": the reply's checked identity (served model fields and the result).
+    identity    TEXT
 );
 "#;
 
@@ -382,6 +384,14 @@ pub async fn ask(args: AskArgs, setup: &Setup) -> Result<()> {
     )? > 0;
     if !has_in_flight {
         conn.execute("ALTER TABLE answers ADD COLUMN in_flight INTEGER", [])?;
+    }
+    let has_identity: bool = conn.query_row(
+        "SELECT COUNT(*) FROM pragma_table_info('answer_exchanges') WHERE name = 'identity'",
+        [],
+        |row| row.get::<_, i64>(0),
+    )? > 0;
+    if !has_identity {
+        conn.execute("ALTER TABLE answer_exchanges ADD COLUMN identity TEXT", [])?;
     }
     let conn = Arc::new(Mutex::new(conn));
     println!(
@@ -650,15 +660,16 @@ fn store(
     for (attempt, exchange) in exchanges.iter().enumerate() {
         tx.execute(
             "INSERT INTO answer_exchanges (answer_id, attempt, request, response, error,
-                                           latency_ms)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                                           latency_ms, identity)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
             params![
                 id,
                 (attempt + 1) as i64,
                 exchange.request,
                 exchange.response,
                 exchange.error,
-                exchange.latency_ms as i64
+                exchange.latency_ms as i64,
+                exchange.identity
             ],
         )?;
     }

@@ -483,6 +483,7 @@ impl DecisionClient {
             response: Some(text),
             error,
             latency_ms,
+            identity: None,
         });
         Ok(choice)
     }

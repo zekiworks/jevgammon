@@ -468,6 +468,10 @@ table.headline th[data-wide], table.headline td.hl-wide, .hl-wide-note { display
   td.hl-judgement { width: 40%; }
   .hl-wide-note { display: inline; }
 }
+/* Wide desktop windows: the model column wide enough for the name and its chip on one line (Ümit #3193). */
+@media (min-width: 1200px) {
+  table.headline td.model { min-width: 22.5rem; }
+}
 /* At phone width: the three columns fit the width (no sticky column, no sideways scrolling), the bar column narrower. */
 @media (max-width: 640px) {
   table.headline th:first-child, table.headline td:first-child { position: static; width: auto; min-width: 0; max-width: none;

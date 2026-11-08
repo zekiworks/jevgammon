@@ -1882,6 +1882,7 @@ def hero_card(S) -> str:
       {leaders(S)}
       {facts(S)}
       <nav class="face-nav" aria-label="On this page">{face}</nav>
+      {P.more_pages("")}
     </section>"""
 
 

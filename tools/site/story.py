@@ -126,12 +126,6 @@ def leaderboard_rows(S) -> tuple[list, list, list]:
     return out, prog_rows, late
 
 
-def share(s: dict) -> str:
-    if not s["den"]:
-        return f'<td class="num">{nm(NA)}<span class="small">0 / 0</span></td>'
-    return f'<td class="num">{pct(s["share"])}<span class="small">{H.n_(s["n"])} / {H.n_(s["den"])}</span></td>'
-
-
 def judgement_cell(r: dict, colour: str | None) -> str:
     """The risk judgement as a bar on 0 to 100 to the score, its 95% interval as the whisker, the line at 50 (always
     safe), and the number."""
@@ -161,42 +155,74 @@ def page_href(S, x) -> str | None:
     return P.model_href("", x["ds"], x["name"], S) if x["q"] is not None else None
 
 
-def setting_label(x) -> str:
-    return esc(x["setting"]) if x["setting"] else '<span class="muted">\u2014</span>'
+# The row's details box (Ümit #2904, as Clocktower Bench's): opened by a tap on a phone, by hover or the keyboard focus on
+# a desktop (bg.js), each line filled only from the setup's stored values, a line or part left out where the data has
+# none (never "n/a"). The row itself shows the rank, the model (maker dot, its type under the name) and the risk
+# judgement; every other value of the setup is in its box.
+TYPE_LABEL = {"chat": "chat model", "decision": "decision model"}
 
 
-def cells(S, x, colour) -> str:
-    """Setting, league and the numbers of one setup, as the league tables print them."""
-    r, q, e = x["r"], x["q"], x["late"]
-    league = (f'Late entry<span class="small">League {e["field_league"]} field</span>' if e else f'League {x["lg"]["id"]}')
-    if q is None:
-        er = cost = dec = f'<td class="num">{nm(NA)}</td>'
-    else:
-        er = (f'<td class="num">{fmt(q["error_rate"])}<span class="small">{fmt(q["error_lo"])} to {fmt(q["error_hi"])}'
-              f'</span></td>' if q.get("error_rate") is not None and not q.get("too_few") else f'<td class="num">{nm(NA)}</td>')
-        if e:
-            cost = f'<td class="num">{P.late_cost(e)}</td>'
-        elif q.get("usd_per_1000") is not None:
-            label = (P.origin_meta(S, x["ds"], x["name"]).get("price") or {}).get("label")
-            cost = (f'<td class="num"><span class="cost-1k">${fmt(q["usd_per_1000"], 3)}</span><span class="cost-1m" '
-                    f'data-usd="{q["usd_per_1000"]!r}">${fmt(q["usd_per_1000"], 3)}</span>'
-                    f'<span class="small">{esc(label or "label missing")}</span></td>')
-        else:
-            cost = P.cost_cell(S, x["ds"], x["name"], q)
-        dec = f'<td class="num"><a href="{decisions_href(S, x)}">{count(q["decisions"])}</a></td>'
-    return (f'<td class="hl-setting">{setting_label(x)}</td><td class="num" data-v="{x["lg"]["id"] if x["lg"] else 9}">'
-            f'{league}</td>{judgement_cell(r, colour)}{share(r["found"])}{share(r["right_safety"])}{er}{cost}{dec}')
+def model_type(S, x) -> str:
+    """"chat", "decision", "program" or "unknown" (home.kind of the setup's setups.json entry)."""
+    return H.kind((S["setups_meta"].get((LATE_ENTRY, x["name"])) or {}) if x["late"] else P.origin_meta(S, x["ds"], x["name"]))
 
 
-def name_link(S, x, text) -> str:
-    href = decisions_href(S, x)
-    return (f'<a class="model-name" href="{href}">{esc(text)}</a>' if href else f'<span class="model-name">{esc(text)}</span>')
-
-
-def tr_attrs(S, x, kind) -> str:
+def record(x) -> dict | None:
+    """The setup's won, drawn and lost matches: its league standing, or its late-entry record."""
     if x["late"]:
-        return f' data-dataset="{LATE_ENTRY}" data-setup="{esc(x["late"]["slug"])}" data-kind="late"'
-    return H.attrs(S, x["ds"], H.slug_name(x["name"]), kind == "program")
+        return x["late"].get("record")
+    return next((s for s in x["lg"]["standings"] if s["name"] == x["name"]), None)
+
+
+def cost_text(S, x) -> str | None:
+    q = x["q"]
+    if q is None or q.get("usd_per_1000") is None:
+        return None
+    label = ((x["late"].get("price") or {}) if x["late"] else (P.origin_meta(S, x["ds"], x["name"]).get("price") or {})).get("label")
+    return (f'<span class="cost-1k">${fmt(q["usd_per_1000"], 3)} per 1,000 decisions</span><span class="cost-1m" '
+            f'data-usd="{q["usd_per_1000"]!r}">${fmt(q["usd_per_1000"], 3)}</span><span class="cost-1m"> per 1M decisions</span>'
+            + (f' ({esc(label)})' if label else ""))
+
+
+def details_box(S, x, kind: str, bid: str, extra: list) -> str:
+    """The lines of one setup's details box; extra: lines about the row's model (release month, checkpoint)."""
+    r, q, e = x["r"], x["q"], x["late"]
+    found, safe = r["found"], r["right_safety"]
+    join = lambda parts: " \u00b7 ".join(p for p in parts if p)
+    rec = record(x)
+    er = (f'Error rate {fmt(q["error_rate"])} (95%: {fmt(q["error_lo"])}\u2013{fmt(q["error_hi"])})'
+          if q and q.get("error_rate") is not None and not q.get("too_few") else None)
+    href, page = decisions_href(S, x), page_href(S, x)
+    lines = [
+        join([f'<strong>{esc(x["name"])}</strong>', esc(H.maker(x["name"])[0]) if kind != "program" else None]),
+        join([f'Setting {esc(x["setting"])}' if x["setting"] else None,
+              f'Late entry, League {e["field_league"]} field' if e else f'League {x["lg"]["id"]}']),
+        (f'Risk judgement {fmt(r["judgement"])} (95%: {fmt(r["judgement_lo"])}\u2013{fmt(r["judgement_hi"])})'
+         if r["judgement"] is not None else None),
+        join([f'Risks found {pct(found["share"])}' if found["den"] else None,
+              f'safe right {pct(safe["share"])}' if safe["den"] else None]),
+        join([f'Took {H.n_(found["n"])} of {H.n_(found["den"])} risks that paid' if found["den"] else None,
+              f'played safe in {H.n_(safe["n"])} of {H.n_(safe["den"])} positions where safe paid' if safe["den"] else None]),
+        join([er, f'record {count(rec["won"])}\u2013{count(rec["drawn"])}\u2013{count(rec["lost"])}' if rec else None,
+              "late entry" if e else None]),
+        join([cost_text(S, x), f'{count(q["decisions"])} decisions' if q else None]),
+        *extra,
+        join([f'<a href="{href}">{"Its late-entry page" if e else "Open its decisions"} \u2192</a>' if href else None,
+              f'<a href="{page}">Model page</a>' if page else None])]
+    return (f'<div class="hl-box" id="{bid}" role="group" aria-label="{esc(x["name"])}: details">'
+            + "".join(f"<p>{line}</p>" for line in lines if line) + "</div>")
+
+
+def name_link(S, x, text, bid) -> str:
+    href = decisions_href(S, x)
+    return (f'<a class="model-name" href="{href}" aria-describedby="{bid}">{esc(text)}</a>' if href else
+            f'<span class="model-name" tabindex="0" aria-describedby="{bid}">{esc(text)}</span>')
+
+
+def tr_attrs(S, x, kind, typ) -> str:
+    if x["late"]:
+        return f' data-dataset="{LATE_ENTRY}" data-setup="{esc(x["late"]["slug"])}" data-kind="late" data-hl-type="{typ}"'
+    return H.attrs(S, x["ds"], H.slug_name(x["name"]), kind == "program") + f' data-hl-type="{typ}"'
 
 
 def headline_rows(S) -> tuple[list, list, list]:
@@ -216,21 +242,18 @@ def headline_rows(S) -> tuple[list, list, list]:
             icon = f'<svg class="fam-icon" aria-hidden="true" focusable="false"><use href="#{fam["icon"]}"/></svg>' if fam else ""
             dot = f'<i class="swatch hl-dot" style="background:{colour}" title="{esc(mk)}"></i>' if colour else \
                 '<i class="swatch hl-dot swatch-program"></i>'
-            bits = []
+            typ = "program" if kind == "program" else model_type(S, x)
+            under = esc(H.ref_label(S, x["ds"], x["name"]) or "") if kind == "program" else esc(TYPE_LABEL.get(typ, ""))
+            extra = []
             if kind == "model":
                 month, url = release(name)
-                if not url:
+                if url:
+                    extra.append(f'Released <a href="{esc(url)}">{month}</a>')
+                else:
                     missing.append(name)
-                bits.append(f'Released <a href="{esc(url)}">{month}</a>' if url else
-                            f'Released <span class="muted" title="No release date from the maker on record">{month}</span>')
                 ckpt = sorted({y["model"] for y in group if y["model"] != name})
                 if ckpt:
-                    bits.append("with its dated checkpoint " + ", ".join(esc(c) for c in ckpt))
-            elif kind == "program":
-                bits.append(esc(H.ref_label(S, x["ds"], x["name"]) or ""))
-            page = page_href(S, x)
-            if page:
-                bits.append(f'<a href="{page}">model page</a>')
+                    extra.append("With its dated checkpoint " + ", ".join(esc(c) for c in ckpt) + " (under the expander)")
             rid = f'hl-{"p-" if kind == "program" else "l-" if kind == "late" else ""}{i}'
             sub_ids = [f"{rid}-{k}" for k in range(1, len(others) + 1)]
             what = "league" if kind == "program" else "setting"
@@ -239,25 +262,23 @@ def headline_rows(S) -> tuple[list, list, list]:
             rank = f'<td class="num">{i}</td>' if kind == "model" else '<td class="num"><span class="muted" title="never ranked">\u2013</span></td>'
             cls = {"model": "", "program": ' class="reference"', "late": ' class="late"'}[kind]
             label = x["name"] if kind == "program" else name
-            body.append(f'<tr{cls}{tr_attrs(S, x, kind)}>{rank}<td class="model">{dot}{icon}{name_link(S, x, label)}'
-                        f'<span class="small">{" · ".join(b for b in bits if b)}</span>{more}</td>'
-                        f'{cells(S, x, colour)}</tr>')
+            bid = f"{rid}-box"
+            body.append(f'<tr{cls}{tr_attrs(S, x, kind, typ)} data-box="{bid}">{rank}<td class="model">{dot}{icon}'
+                        f'{name_link(S, x, label, bid)}<span class="small hl-type">{under}</span>{more}'
+                        f'{details_box(S, x, kind, bid, extra)}</td>{judgement_cell(x["r"], colour)}</tr>')
             for sid, y in zip(sub_ids, others):
                 ycol = H.maker(y["name"])[1] if kind == "model" else None
-                ypage = page_href(S, y)
-                page_link = f' · <a href="{ypage}">model page</a>' if ypage else ""
+                ybid = f"{sid}-box"
                 body.append(f'<tr class="hl-sub{"" if kind == "model" else " reference" if kind == "program" else " late"}" '
-                            f'id="{sid}" hidden{tr_attrs(S, y, kind)}><td class="num"></td><td class="model">'
-                            f'{name_link(S, y, y["name"])}<span class="small">other {what} of {esc(label)}'
-                            f'{page_link}</span></td>{cells(S, y, ycol)}</tr>')
+                            f'id="{sid}" hidden{tr_attrs(S, y, kind, typ)} data-box="{ybid}"><td class="num"></td><td class="model">'
+                            f'{name_link(S, y, y["name"], ybid)}<span class="small">other {what} of {esc(label)}</span>'
+                            f'{details_box(S, y, kind, ybid, [])}</td>{judgement_cell(y["r"], ycol)}</tr>')
             if kind != "program" or x["name"] == "GNUbg weak":
                 chart.append((kind, label, x, colour))
     return body, missing, chart
 
 
-HEADLINE_HEAD = [(h, " data-nosort") for h in (
-    "#", "Model", "Setting", "League", "Risk judgement (95% interval)", "Risks found", "Right safety", "Error rate (PR)",
-    '<span class="cost-1k">$ per 1,000 decisions</span><span class="cost-1m">$ per 1M decisions</span>', "Decisions")]
+HEADLINE_HEAD = [(h, " data-nosort") for h in ("#", "Model", "Risk judgement (95% interval)")]
 
 
 def too_safe(S, chart: list) -> str:
@@ -298,26 +319,32 @@ def headline(S) -> str:
     table = P.table(HEADLINE_HEAD, rows, "One row per model at its highest reasoning setting; all leagues, all phases",
                     cls="board headline",
                     attrs=' data-dataset="all" id="headline-table"')
-    note = (f'<p class="table-note">Released: the month of the maker\'s own dated statement that this exact model was '
-            f'released or became available to the public (an announcement before public availability does not count), '
-            f'linked; \u2014 where no such statement is on record ({count(len(missing))} of {count(n_models)} models).</p>'
-            if missing else "")
+    note = (f'<p class="table-note">Released (in a row\'s details): the month of the maker\'s own dated statement that '
+            f'this exact model was released or became available to the public (an announcement before public '
+            f'availability does not count), linked; left out where no such statement is on record '
+            f'({count(len(missing))} of {count(n_models)} models).</p>' if missing else "")
     keys = ('<span class="keys needs-js" role="group" aria-label="Rows"><button type="button" class="key" '
             'data-headline-view="model" aria-pressed="true">One row per model</button><button type="button" '
             'class="key" data-headline-view="all" aria-pressed="false">All setups</button></span>')
+    # The table's own filter (Ümit #2907): local to this table, never the page's filters; programs stay in every view.
+    types = ('<div class="keys hl-filter needs-js" role="group" aria-label="Model type">'
+             + "".join(f'<button type="button" class="key" data-hl-filter="{k}" aria-pressed="{str(k == "all").lower()}">'
+                       f'{l}</button>' for k, l in (("all", "All"), ("chat", "Chat models"), ("decision", "Decision models")))
+             + '</div><p class="table-note hl-legend"># is the rank among all models, in every view; the programs are '
+               'reference rows in every view.</p>')
     rule = ('<p class="table-note headline-rule">Each model\'s row is its highest reasoning setting played, by the effort '
             'the requests sent (off &lt; minimal &lt; low &lt; medium &lt; high &lt; xhigh &lt; max; on above off for a '
             'model without levels; a decision model\'s single setup), never its best score. Several setups at that '
-            'setting: the first in league order, then by setup name (no score). Every cell of a row is that setup\'s '
-            'own; its other settings are under the row\'s expander and under All setups. Version names are separate '
-            'models; ' + "; ".join(f"{esc(k)} is under {esc(v)}" for k, v in SAME_MODEL.items()) + ' (a dated checkpoint '
-            'under its original).</p>')
+            'setting: the first in league order, then by setup name (no score). Every value of a row and of its details '
+            'is that setup\'s own; its other settings are under the row\'s expander and under All setups. Version names '
+            'are separate models; ' + "; ".join(f"{esc(k)} is under {esc(v)}" for k, v in SAME_MODEL.items()) + ' (a '
+            'dated checkpoint under its original). Every column of every setup: <a href="#board-panel">Every number</a>.</p>')
     return (f'<section class="card headline" id="leaderboard" data-dataset="all" aria-labelledby="leaderboard-title">'
             f'<div class="chart-head"><h2 id="leaderboard-title">Risk calls leaderboard</h2>{keys}<p class="chart-sub">'
             f'Risk judgement: 100 = every call right, 50 = always safe · higher is better</p></div>'
             '<p class="table-note headline-scope"><strong>A fixed table:</strong> the filters below do not change it. '
-            'Tap a model for its decisions; how each row is chosen is under the table.</p>'
-            f'<div data-headline-panel="model">{P.SWIPE}{table}{caveat(NOTE, "statistics")}{rule}{note}{too_safe(S, chart)}</div>'
+            'Tap a model (or point at it) for its details and its decisions; how each row is chosen is under the table.</p>'
+            f'<div data-headline-panel="model">{types}{table}{caveat(NOTE, "statistics")}{rule}{note}{too_safe(S, chart)}</div>'
             f'<div data-headline-panel="all" hidden>{H.all_risk_table(S)}{caveat(H.RANK_NOTE, "statistics")}</div>'
             f'<p class="table-note">{esc(ALL_NOTE)}</p></section>')
 

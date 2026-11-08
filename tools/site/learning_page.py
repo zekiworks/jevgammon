@@ -236,6 +236,12 @@ def title(L) -> str:
     return TITLE_COMPLETE if is_complete(L) else TITLE
 
 
+def status_label(L) -> str:
+    """The page's top label, from the validated status: "Complete" only when learning_validate accepts complete. The
+    Experiments page's card shows the same label."""
+    return "Pre-registration" if L.get("preregistration_only") else "Complete" if is_complete(L) else "Preliminary · running"
+
+
 def require_test_set(test_set: Path, why: str) -> str:
     try:
         return V.sha256(test_set)
@@ -616,8 +622,7 @@ def body(L) -> str:
     withheld = (f'<p class="note">{count(L["redacted"])} private address(es) in the plan are withheld here.</p>'
                 if L["redacted"] else "")
     status = f'<div class="note">{spec_markdown(plan["status"])}</div>' if plan["status"] else ""
-    # The top label follows the validated status: "Complete" only when learning_validate accepts complete.
-    label = ("Pre-registration" if prereg else "Complete" if is_complete(L) else "Preliminary · running")
+    label = status_label(L)
     intro = ("The pre-registered plan and lesson prompt. No results or lessons are published on this page yet: they "
              "are not read by the build." if prereg else
              "The pre-registered plan, the lesson prompt and the results as they come in.")

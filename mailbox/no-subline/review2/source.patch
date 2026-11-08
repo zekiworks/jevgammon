@@ -1,0 +1,226 @@
+diff --git a/tools/site/assets/bg.css b/tools/site/assets/bg.css
+index bae961b..2028bdd 100644
+--- a/tools/site/assets/bg.css
++++ b/tools/site/assets/bg.css
+@@ -421,11 +421,12 @@ td.hl-judgement { width: 55%; min-width: 13rem; }
+   box-shadow: 0 0 0 1px rgba(0, 0, 0, .45); }
+ .hl-val { font-family: var(--mono); font-size: .84rem; }
+ .js [data-headline-panel][hidden] { display: none; }
+-/* The leaderboard rows (Ümit, bus #2745; #2904, #2907; #2921): the rank, the model (maker dot, its type under the name
+-   with a late entry's tag, the expander of its other settings, shown without script) and the risk judgement; the
+-   programs grey and unranked under a group heading. */
++/* The leaderboard rows (Ümit, bus #2745; #2904, #2907; #2921; #3039): the rank, the model (maker dot, a late entry's
++   tag small after the name, the expander of its other settings, shown without script; nothing under the name, its
++   maker, type and setting are in its details box) and the risk judgement; the programs grey and unranked under a group
++   heading. */
+ table.headline td.model .hl-dot { width: .7rem; height: .7rem; border-radius: 50%; }
+-table.headline .hl-type { display: block; }
++table.headline td.model > .hl-tag { color: var(--text-2); font-size: .78rem; white-space: nowrap; }
+ .hl-filter { display: flex; flex-wrap: wrap; gap: .3rem; margin: .1rem 0 .2rem; }
+ .hl-filter .key { min-height: 1.9rem; padding: .15rem .65rem; font-size: .82rem; }
+ .hl-tag::before { content: " \00b7\0020"; font-weight: 400; }
+@@ -433,7 +434,8 @@ table.headline .hl-type { display: block; }
+ tr.hl-off { display: none !important; }
+ table.headline tbody tr.hl-open > td { background: var(--row-hover); }
+ /* A row's details box (bg.js): every value of the setup, a line per kind; in its row without script, else over the page
+-   under its row (fixed to the window, within its width), opened by a tap, hover or the focus. */
++   beside its row where the window has room, else under it (fixed to the window, within its width), opened by a tap,
++   hover or the focus. */
+ .hl-box { margin: .35rem 0 0; color: var(--text); font-size: .82rem; line-height: 1.4; white-space: normal; }
+ .hl-box p { margin: .12rem 0; }
+ .hl-box p:first-child { margin-top: 0; }
+diff --git a/tools/site/assets/bg.js b/tools/site/assets/bg.js
+index 5ca97e3..b5b115d 100644
+--- a/tools/site/assets/bg.js
++++ b/tools/site/assets/bg.js
+@@ -571,10 +571,14 @@ async function savePng(panel, svg, title, lines, filename) {
+ })();
+ 
+ /* Home page: a leaderboard row's details box (Ümit #2904, as Clocktower Bench's). A tap on a phone opens it and a
+-   second tap on the row, a tap outside it or Escape closes it; with a mouse it shows while the pointer is on the row;
+-   with the keyboard while the focus is in the row (the model's name, then the box's links). The box is placed under
+-   the row (above it near the bottom of the window), within the window's width. Without JavaScript every box is shown
+-   in its row. */
++   second tap on the row, a tap outside it or Escape closes it; with a mouse it shows while the pointer is on the row or
++   its box (150 ms of grace after leaving both, so the pointer can cross a corner into the box; another row takes over at
++   once); with the keyboard while the focus is in the row (the model's name, then the box's links). Where the window has
++   room the box stands beside its row, right of the score column (else right of the name column), from the row's top
++   (from its bottom upwards near the window's foot): it never covers another row's name, so the row under the pointer
++   on a name is the row whose box shows (HoverCheck, Zeki #3146). On a phone it goes under the row (above it near the
++   bottom of the window). Within the window's width; capped where it does not fit. Without JavaScript every box is
++   shown in its row. */
+ (function headlineDetails() {
+   const table = document.getElementById('headline-table');
+   if (!table) return;
+@@ -583,18 +587,31 @@ async function savePng(panel, svg, title, lines, filename) {
+   const place = () => {
+     if (!open) return;
+     const box = boxOf(open), row = open.getBoundingClientRect(), cell = open.querySelector('td.model').getBoundingClientRect();
++    const score = open.cells[2].getBoundingClientRect();
+     const vw = document.documentElement.clientWidth;  // the visible width, even where something overflows the page
+     const width = Math.min(380, vw - 16);
+     box.style.width = `${width}px`;
++    box.style.maxHeight = '';
++    let height = box.offsetHeight;
++    const header = document.querySelector('.site-header')?.getBoundingClientRect().bottom || 0;
++    const bottom = innerHeight - 8;
++    const side = vw - 8 - score.right >= width ? score.right : vw - 8 - cell.right >= width ? cell.right : null;
++    if (side !== null) {
++      // Beside the row: from its top, else ending at its bottom; where neither fits, within the window as near the
++      // row as it goes, capped to the window under the header (scrolling inside).
++      box.style.left = `${side}px`;
++      const top = header + 4;
++      if (height > bottom - top) { height = Math.max(bottom - top, 80); box.style.maxHeight = `${height}px`; }
++      box.style.top = `${row.top >= top && row.top + height <= bottom ? row.top
++        : row.bottom - height >= top && row.bottom <= bottom ? row.bottom - height
++        : Math.min(Math.max(row.top, top), bottom - height)}px`;
++      return;
++    }
+     box.style.left = `${Math.max(8, Math.min(cell.left, vw - width - 8))}px`;
+     // Height: below the row if it fits, else above it. If it fits neither way, capped to the larger side of the row,
+     // scrolling inside (its links stay reachable by scrolling it or with Tab), so the row itself stays uncovered for a
+     // second tap; only where neither side has 120 px does it take the window under the header.
+-    box.style.maxHeight = '';
+-    const height = box.offsetHeight;
+-    const header = document.querySelector('.site-header')?.getBoundingClientRect().bottom || 0;
+     const below = row.bottom;  // no gap: the pointer moves from the row into its box without leaving the row
+-    const bottom = innerHeight - 8;
+     const roomBelow = bottom - below, roomAbove = row.top - header - 4;
+     if (height <= roomBelow) box.style.top = `${below}px`;
+     else if (height <= roomAbove) box.style.top = `${row.top - height}px`;
+@@ -637,9 +654,21 @@ async function savePng(panel, svg, title, lines, filename) {
+   const released = () => setTimeout(() => { pointing = false; });
+   document.addEventListener('pointerup', released, true);
+   document.addEventListener('pointercancel', released, true);
++  // The pointer leaving the row and its box (the box is inside the row) closes it after a 150 ms grace; entering the row
++  // or its box again keeps it, entering another row shows that row's box at once.
++  let leaving = 0;
++  const stay = () => { clearTimeout(leaving); leaving = 0; };
+   rows.forEach(tr => {
+-    tr.addEventListener('pointerenter', event => { if (event.pointerType === 'mouse' && !pinned && !held()) show(tr, false); });
+-    tr.addEventListener('pointerleave', event => { if (event.pointerType === 'mouse' && !pinned && open === tr && !held()) hide(); });
++    tr.addEventListener('pointerenter', event => {
++      if (event.pointerType !== 'mouse') return;
++      stay();
++      if (!pinned && !held()) show(tr, false);
++    });
++    tr.addEventListener('pointerleave', event => {
++      if (event.pointerType !== 'mouse' || pinned || open !== tr || held()) return;
++      stay();
++      leaving = setTimeout(() => { leaving = 0; if (open === tr && !pinned && !held()) hide(); }, 150);
++    });
+     tr.addEventListener('focusin', () => {
+       keyed = !pointing;
+       if (keyed && open !== tr && !quiet) show(tr, false);
+@@ -648,7 +677,7 @@ async function savePng(panel, svg, title, lines, filename) {
+     tr.addEventListener('click', event => {
+       // A mouse click or a key (detail 0) follows the link; a link or key in the box or the expander does its own job.
+       if (pointer === 'mouse' || event.detail === 0 || boxOf(tr).contains(event.target) || event.target.closest('.hl-more')) return;
+-      event.preventDefault();  // a tap opens the box; its own link opens the decisions
++      event.preventDefault();  // a tap opens the box (tables.js leaves a prevented click alone); its link opens the decisions
+       if (open === tr && pinned) hide(); else show(tr, true);
+     });
+   });
+diff --git a/tools/site/assets/tables.js b/tools/site/assets/tables.js
+index 47e851d..12e18d5 100644
+--- a/tools/site/assets/tables.js
++++ b/tools/site/assets/tables.js
+@@ -80,7 +80,8 @@
+     const th = event.target.closest('thead th');
+     if (th) { if (!th.hasAttribute('data-nosort')) sortBy(th); return; }
+     const row = event.target.closest('tbody tr');
+-    if (!row || event.target.closest('a, button, select, input, label, summary')) return;
++    // A click the row's own handler took (the leaderboard's tap that opens a details box, bg.js) does not navigate.
++    if (!row || event.defaultPrevented || event.target.closest('a, button, select, input, label, summary')) return;
+     if (String(window.getSelection())) return;
+     const link = row.dataset.href || row.querySelector('a[href]')?.getAttribute('href');
+     if (!link) return;
+diff --git a/tools/site/story.py b/tools/site/story.py
+index e23ba06..4c5d13f 100644
+--- a/tools/site/story.py
++++ b/tools/site/story.py
+@@ -195,8 +195,9 @@ def page_href(S, x) -> str | None:
+ 
+ # The row's details box (Ümit #2904, as Clocktower Bench's): opened by a tap on a phone, by hover or the keyboard focus on
+ # a desktop (bg.js), each line filled only from the setup's stored values, a line or part left out where the data has
+-# none (never "n/a"). The row itself shows the rank, the model (maker dot, its type under the name) and the risk
+-# judgement; every other value of the setup is in its box.
++# none (never "n/a"). The row itself shows the rank, the model (maker dot, a late entry's tag after the name) and the
++# risk judgement; every other value of the setup is in its box, its maker, type and setting on the first line (Ümit
++# #3039: nothing under the name).
+ TYPE_LABEL = {"chat": "chat model", "decision": "decision model"}
+ 
+ 
+@@ -222,8 +223,9 @@ def cost_text(S, x) -> str | None:
+             + (f' ({esc(label)})' if label else ""))
+ 
+ 
+-def details_box(S, x, kind: str, bid: str, extra: list) -> str:
+-    """The lines of one setup's details box; extra: lines about the row's model (release month, checkpoint)."""
++def details_box(S, x, kind: str, bid: str, extra: list, ref: str | None = None) -> str:
++    """The lines of one setup's details box; extra: lines about the row's model (release month, checkpoint); ref: a
++    program's reference label (home.ref_label of its row), on the first line in place of maker, type and setting."""
+     r, q, e = x["r"], x["q"], x["late"]
+     found, safe = r["found"], r["right_safety"]
+     join = lambda parts: " \u00b7 ".join(p for p in parts if p)
+@@ -231,10 +233,13 @@ def details_box(S, x, kind: str, bid: str, extra: list) -> str:
+     er = (f'Error rate {fmt(q["error_rate"])} (95%: {fmt(q["error_lo"])}\u2013{fmt(q["error_hi"])})'
+           if q and q.get("error_rate") is not None and not q.get("too_few") else None)
+     href, page = decisions_href(S, x), page_href(S, x)
+-    # The lines in the order of Ümit's example (#2938 item 3): name · maker / risk judgement / both halves / the raw
+-    # counts / error rate · record · late entry; then the setup's other stored facts; then the links.
++    # The lines in the order of Ümit's example (#2938 item 3): name · maker · type · setting (#3039: no longer under
++    # the name; each part only where it is on record) / risk judgement / both halves / the raw counts / error rate ·
++    # record · late entry; then the setup's other stored facts; then the links.
++    mk = H.maker(x["name"])[0] if kind != "program" else None
+     lines = [
+-        join([f'<strong>{esc(x["name"])}</strong>', esc(H.maker(x["name"])[0]) if kind != "program" else None]),
++        join([f'<strong>{esc(x["name"])}</strong>'] + ([esc(ref) if ref else None] if kind == "program" else
++             [esc(p) for p in (mk if mk != NO_MAKER else None, TYPE_LABEL.get(model_type(S, x)), x["setting"]) if p])),
+         (f'Risk judgement {fmt(r["judgement"])} (95%: {fmt(r["judgement_lo"])}\u2013{fmt(r["judgement_hi"])})'
+          if r["judgement"] is not None else None),
+         join([f'Risks found {pct(found["share"])}' if found["den"] else None,
+@@ -243,7 +248,7 @@ def details_box(S, x, kind: str, bid: str, extra: list) -> str:
+               f'played safe in {H.n_(safe["n"])} of {H.n_(safe["den"])} positions where safe paid' if safe["den"] else None]),
+         join([er, f'record {count(rec["won"])}\u2013{count(rec["drawn"])}\u2013{count(rec["lost"])}' if rec else None,
+               esc(late_tag(x)) if e else None]),
+-        join([f'Setting {esc(x["setting"])}' if x["setting"] else None, None if e else f'League {x["lg"]["id"]}']),
++        (None if e else f'League {x["lg"]["id"]}'),
+         (f'Played the original League {e["field_league"]} field after the league finished (late entry)' if e else None),
+         (join([f'Provisional: {count(e["played"])} of {count(e["total"])} matches'] + [
+             f'not played: {esc(g["opponent"])} ({esc(g["reason"])})' for g in e.get("not_played") or []])
+@@ -284,11 +289,10 @@ def headline_rows(S) -> tuple[list, list, list]:
+             dot = f'<i class="swatch hl-dot" style="background:{colour}" title="{esc(mk)}"></i>' if colour else \
+                 '<i class="swatch hl-dot swatch-program"></i>'
+             typ = "program" if kind == "program" else model_type(S, x)
+-            # Under the name (Ümit #2938 item 3): maker · chat model / decision model · setting, each part only where
+-            # it is on record (no maker on record, a decision model's absent setting: left out); then a late tag.
+-            under = (esc(H.ref_label(S, x["ds"], x["name"]) or "") if kind == "program" else
+-                     " \u00b7 ".join(esc(p) for p in (mk if mk != NO_MAKER else None, TYPE_LABEL.get(typ), x["setting"]) if p))
++            # Nothing under the name (Ümit #3039): maker, type and setting are on the box's first line; a late entry's
++            # tag stays after the name, small (a caveat on its rank).
+             tag = f'<span class="hl-tag">{esc(late_tag(x))}</span>' if x["late"] else ""
++            ref = H.ref_label(S, x["ds"], x["name"]) if kind == "program" else None
+             extra = []
+             if kind == "model":
+                 month, url = release(name)
+@@ -309,8 +313,8 @@ def headline_rows(S) -> tuple[list, list, list]:
+             label = x["name"] if kind == "program" else name
+             bid = f"{rid}-box"
+             body.append(f'<tr{cls}{tr_attrs(S, x, kind, typ)} data-box="{bid}">{rank}<td class="model">{dot}{icon}'
+-                        f'{name_link(S, x, label, bid)}<span class="small hl-type">{under}{tag}</span>{more}'
+-                        f'{details_box(S, x, kind, bid, extra)}</td>{judgement_cell(x["r"], colour)}{wide_cells(x)}</tr>')
++                        f'{name_link(S, x, label, bid)}{tag}{more}'
++                        f'{details_box(S, x, kind, bid, extra, ref)}</td>{judgement_cell(x["r"], colour)}{wide_cells(x)}</tr>')
+             for sid, y in zip(sub_ids, others):
+                 ycol = H.maker(y["name"])[1] if kind == "model" else None
+                 ybid = f"{sid}-box"
+@@ -318,7 +322,7 @@ def headline_rows(S) -> tuple[list, list, list]:
+                 body.append(f'<tr class="hl-sub{"" if kind == "model" else " reference"}" '
+                             f'id="{sid}" hidden{tr_attrs(S, y, kind, typ)} data-box="{ybid}"><td class="num"></td><td class="model">'
+                             f'{name_link(S, y, y["name"], ybid)}<span class="small">other {what} of {esc(label)}{ytag}</span>'
+-                            f'{details_box(S, y, kind, ybid, [])}</td>{judgement_cell(y["r"], ycol)}{wide_cells(y)}</tr>')
++                            f'{details_box(S, y, kind, ybid, [], ref)}</td>{judgement_cell(y["r"], ycol)}{wide_cells(y)}</tr>')
+             if kind != "program" or x["name"] == "GNUbg weak":
+                 chart.append((kind, label, x, colour))
+     return body, missing, chart

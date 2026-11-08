@@ -1,0 +1,2 @@
+sweep candidate: 32/32 ok
+sweep candidate exit status: 0

@@ -195,8 +195,9 @@ def page_href(S, x) -> str | None:
 
 # The row's details box (Ümit #2904, as Clocktower Bench's): opened by a tap on a phone, by hover or the keyboard focus on
 # a desktop (bg.js), each line filled only from the setup's stored values, a line or part left out where the data has
-# none (never "n/a"). The row itself shows the rank, the model (maker dot, its type under the name) and the risk
-# judgement; every other value of the setup is in its box.
+# none (never "n/a"). The row itself shows the rank, the model (maker dot, a late entry's tag after the name) and the
+# risk judgement; every other value of the setup is in its box, its maker, type and setting on the first line (Ümit
+# #3039: nothing under the name).
 TYPE_LABEL = {"chat": "chat model", "decision": "decision model"}
 
 
@@ -222,8 +223,9 @@ def cost_text(S, x) -> str | None:
             + (f' ({esc(label)})' if label else ""))
 
 
-def details_box(S, x, kind: str, bid: str, extra: list) -> str:
-    """The lines of one setup's details box; extra: lines about the row's model (release month, checkpoint)."""
+def details_box(S, x, kind: str, bid: str, extra: list, ref: str | None = None) -> str:
+    """The lines of one setup's details box; extra: lines about the row's model (release month, checkpoint); ref: a
+    program's reference label (home.ref_label of its row), on the first line in place of maker, type and setting."""
     r, q, e = x["r"], x["q"], x["late"]
     found, safe = r["found"], r["right_safety"]
     join = lambda parts: " \u00b7 ".join(p for p in parts if p)
@@ -231,10 +233,13 @@ def details_box(S, x, kind: str, bid: str, extra: list) -> str:
     er = (f'Error rate {fmt(q["error_rate"])} (95%: {fmt(q["error_lo"])}\u2013{fmt(q["error_hi"])})'
           if q and q.get("error_rate") is not None and not q.get("too_few") else None)
     href, page = decisions_href(S, x), page_href(S, x)
-    # The lines in the order of Ümit's example (#2938 item 3): name · maker / risk judgement / both halves / the raw
-    # counts / error rate · record · late entry; then the setup's other stored facts; then the links.
+    # The lines in the order of Ümit's example (#2938 item 3): name · maker · type · setting (#3039: no longer under
+    # the name; each part only where it is on record) / risk judgement / both halves / the raw counts / error rate ·
+    # record · late entry; then the setup's other stored facts; then the links.
+    mk = H.maker(x["name"])[0] if kind != "program" else None
     lines = [
-        join([f'<strong>{esc(x["name"])}</strong>', esc(H.maker(x["name"])[0]) if kind != "program" else None]),
+        join([f'<strong>{esc(x["name"])}</strong>'] + ([esc(ref) if ref else None] if kind == "program" else
+             [esc(p) for p in (mk if mk != NO_MAKER else None, TYPE_LABEL.get(model_type(S, x)), x["setting"]) if p])),
         (f'Risk judgement {fmt(r["judgement"])} (95%: {fmt(r["judgement_lo"])}\u2013{fmt(r["judgement_hi"])})'
          if r["judgement"] is not None else None),
         join([f'Risks found {pct(found["share"])}' if found["den"] else None,
@@ -243,7 +248,7 @@ def details_box(S, x, kind: str, bid: str, extra: list) -> str:
               f'played safe in {H.n_(safe["n"])} of {H.n_(safe["den"])} positions where safe paid' if safe["den"] else None]),
         join([er, f'record {count(rec["won"])}\u2013{count(rec["drawn"])}\u2013{count(rec["lost"])}' if rec else None,
               esc(late_tag(x)) if e else None]),
-        join([f'Setting {esc(x["setting"])}' if x["setting"] else None, None if e else f'League {x["lg"]["id"]}']),
+        (None if e else f'League {x["lg"]["id"]}'),
         (f'Played the original League {e["field_league"]} field after the league finished (late entry)' if e else None),
         (join([f'Provisional: {count(e["played"])} of {count(e["total"])} matches'] + [
             f'not played: {esc(g["opponent"])} ({esc(g["reason"])})' for g in e.get("not_played") or []])
@@ -284,11 +289,10 @@ def headline_rows(S) -> tuple[list, list, list]:
             dot = f'<i class="swatch hl-dot" style="background:{colour}" title="{esc(mk)}"></i>' if colour else \
                 '<i class="swatch hl-dot swatch-program"></i>'
             typ = "program" if kind == "program" else model_type(S, x)
-            # Under the name (Ümit #2938 item 3): maker · chat model / decision model · setting, each part only where
-            # it is on record (no maker on record, a decision model's absent setting: left out); then a late tag.
-            under = (esc(H.ref_label(S, x["ds"], x["name"]) or "") if kind == "program" else
-                     " \u00b7 ".join(esc(p) for p in (mk if mk != NO_MAKER else None, TYPE_LABEL.get(typ), x["setting"]) if p))
+            # Nothing under the name (Ümit #3039): maker, type and setting are on the box's first line; a late entry's
+            # tag stays after the name, small (a caveat on its rank).
             tag = f'<span class="hl-tag">{esc(late_tag(x))}</span>' if x["late"] else ""
+            ref = H.ref_label(S, x["ds"], x["name"]) if kind == "program" else None
             extra = []
             if kind == "model":
                 month, url = release(name)
@@ -309,8 +313,8 @@ def headline_rows(S) -> tuple[list, list, list]:
             label = x["name"] if kind == "program" else name
             bid = f"{rid}-box"
             body.append(f'<tr{cls}{tr_attrs(S, x, kind, typ)} data-box="{bid}">{rank}<td class="model">{dot}{icon}'
-                        f'{name_link(S, x, label, bid)}<span class="small hl-type">{under}{tag}</span>{more}'
-                        f'{details_box(S, x, kind, bid, extra)}</td>{judgement_cell(x["r"], colour)}{wide_cells(x)}</tr>')
+                        f'{name_link(S, x, label, bid)}{tag}{more}'
+                        f'{details_box(S, x, kind, bid, extra, ref)}</td>{judgement_cell(x["r"], colour)}{wide_cells(x)}</tr>')
             for sid, y in zip(sub_ids, others):
                 ycol = H.maker(y["name"])[1] if kind == "model" else None
                 ybid = f"{sid}-box"
@@ -318,7 +322,7 @@ def headline_rows(S) -> tuple[list, list, list]:
                 body.append(f'<tr class="hl-sub{"" if kind == "model" else " reference"}" '
                             f'id="{sid}" hidden{tr_attrs(S, y, kind, typ)} data-box="{ybid}"><td class="num"></td><td class="model">'
                             f'{name_link(S, y, y["name"], ybid)}<span class="small">other {what} of {esc(label)}{ytag}</span>'
-                            f'{details_box(S, y, kind, ybid, [])}</td>{judgement_cell(y["r"], ycol)}{wide_cells(y)}</tr>')
+                            f'{details_box(S, y, kind, ybid, [], ref)}</td>{judgement_cell(y["r"], ycol)}{wide_cells(y)}</tr>')
             if kind != "program" or x["name"] == "GNUbg weak":
                 chart.append((kind, label, x, colour))
     return body, missing, chart

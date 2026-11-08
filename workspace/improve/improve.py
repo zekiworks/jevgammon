@@ -308,6 +308,19 @@ def rule_b(total: float, expected: float):
     return None
 
 
+def share_cap():
+    """The experiment's share of the shared balance (Main), a pause limit below $110; None = no share limit."""
+    f = RUNS / "share_cap.json"
+    return json.loads(f.read_text())["usd"] if f.exists() else None
+
+
+def share_exceeded(total: float, expected: float, share):
+    if share is not None and round(total + expected, 6) > share:
+        return (f"share limit: billed total ${total:.2f} + expected step cost ${expected:.2f} would pass this "
+                f"experiment's share ${share:.2f}")
+    return None
+
+
 def balance_shortfall(balance: float, expected: float):
     if round(balance - BALANCE_RESERVE_USD, 6) < round(expected, 6):
         return (f"balance ${balance:.2f} - ${BALANCE_RESERVE_USD:.0f} reserve does not cover the step's expected "
@@ -315,11 +328,13 @@ def balance_shortfall(balance: float, expected: float):
     return None
 
 
-def ledger_cap(key, balance: float, model_billed: float, total: float):
-    """The step ledger's hard cap and the limit that binds it."""
+def ledger_cap(key, balance: float, model_billed: float, total: float, share=None):
+    """The step ledger's hard cap and the limit that binds it (rule a or b: stop; balance or share: pause)."""
     limits = {"rule (a) limit": ESTIMATE_FACTOR * MODELS[key]["estimate"] - model_billed,
               "rule (b) limit": TOTAL_CAP_USD - total,
               "balance": balance - BALANCE_RESERVE_USD}
+    if share is not None:
+        limits["share"] = share - total
     binding = min(limits, key=limits.get)
     return limits[binding], binding, limits
 
@@ -342,13 +357,17 @@ def money_gate(key, step, balance_reader=openrouter_balance):
     why = rule_b(total, expected)
     if why:
         raise Stop(why)
+    share = share_cap()
+    why = share_exceeded(total, expected, share)
+    if why:
+        raise Pause(why)
     bal = balance_reader()
     why = balance_shortfall(bal["balance"], expected)
     if why:
         raise Pause(why)
-    cap, binding, limits = ledger_cap(key, bal["balance"], billed(key), total)
+    cap, binding, limits = ledger_cap(key, bal["balance"], billed(key), total, share)
     return dict(step=step, expected=expected, billed_total=total, model_billed=billed(key), credits=bal, cap=cap,
-                binding=binding, limits=limits)
+                binding=binding, limits=limits, share=share)
 
 
 # --- Lessons ---------------------------------------------------------------------------------------------------
@@ -937,7 +956,7 @@ def run(key, until=None, balance_reader=openrouter_balance):
                 (run_empty if step.startswith("E") else run_series)(key, step, gate)
             except BudgetRefused as e:
                 binding = (gate or {}).get("binding", "")
-                if binding == "balance":
+                if binding in ("balance", "share"):
                     raise Pause(f"{step}: the step ledger's balance limit refused a request: {e}") from None
                 raise Stop(f"{step}: {binding} reached before a request: {e}") from None
             if billed_model:
@@ -1070,6 +1089,9 @@ def main():
     h = sub.add_parser("after-game")
     h.add_argument("--model", required=True)
     h.add_argument("--series", type=int, required=True)
+    sc = sub.add_parser("share-cap", help="set this experiment's share of the balance (a pause limit; Main)")
+    sc.add_argument("--usd", type=float, required=True)
+    sc.add_argument("--note", required=True)
     st = sub.add_parser("status")
     st.add_argument("--model")
     sub.add_parser("summary")
@@ -1080,6 +1102,10 @@ def main():
         status(a.model)
     elif a.cmd == "summary":
         summary()
+    elif a.cmd == "share-cap":
+        write_atomic(RUNS / "share_cap.json", json.dumps(dict(usd=a.usd, note=a.note, at=now()), indent=1))
+        with open(RUNS / "share_cap.log", "a") as f:
+            f.write(json.dumps(dict(usd=a.usd, note=a.note, at=now())) + "\n")
     else:
         if a.base_url:
             write_atomic(mdir(a.model) / "base_url.txt", a.base_url)

@@ -192,6 +192,16 @@ class Money(Isolated):
         finally:
             (I.check_inputs, I.ensure_runner_db, I.run_empty, I.run_series, I.summary, I.response_ids) = saved
 
+    def test_share_limit_pauses(self):
+        rich = lambda: dict(balance=500.0, total_credits=600.0, total_usage=100.0, at="t")  # noqa: E731
+        I.write_atomic(I.RUNS / "share_cap.json", json.dumps(dict(usd=55.0, note="t", at="t")))
+        make_ledger(I.mdir("glm-5.3-on") / "ledgers" / "S1-a1.db", settled=54.80)
+        with self.assertRaises(I.Pause):
+            I.money_gate(KEY, "S1", rich)  # 54.80 + 0.35 > 55
+        gate = I.money_gate(KEY, "E1", rich)  # 54.80 + 0.18 <= 55
+        self.assertEqual(gate["binding"], "share")
+        self.assertAlmostEqual(gate["cap"], 0.20)
+
     def test_route_check(self):
         self.assertIsNone(I.route_check("deepseek-v4.1-flash-on", [("deepseek/deepseek-v4.1-flash", "Fireworks")]))
         self.assertIn("route check", I.route_check("deepseek-v4.1-flash-on",

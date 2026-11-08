@@ -105,8 +105,22 @@ class Schedule(Isolated):
         self.done(KEY, *I.STEPS)
         self.assertEqual(I.progress(KEY, *I.model_state(KEY)), dict(status="done", reason=None, series_done=5,
                                                                     updated_at=I.events(KEY)[-1]["at"]))
+        self.assertEqual(I.progress_reason("S1: usage limit (429) on the subscription: QUOTA: 429"), "usage limit")
         with self.assertRaises(ValueError):  # a pause the page has no text for is not hidden
-            I.progress_reason("usage limit (429) on the subscription")
+            I.progress_reason("something else")
+
+    def test_export_keeps_writing_when_a_pause_has_no_page_text(self):
+        first = I.summary()
+        self.assertEqual(len(first["models"]), 15)
+        I.write_atomic(I.mdir(KEY) / "paused.json", json.dumps(dict(at="t", reason="an unforeseen pause")))
+        out = I.summary()
+        kept = [m for m in out["models"] if m["key"] == KEY]
+        self.assertEqual(kept, [m for m in first["models"] if m["key"] == KEY])  # the last exported entry, not invented
+        self.assertEqual(len(out["models"]), 15)
+        self.assertIn("unforeseen", (I.RUNS / "export-errors.log").read_text())
+        written = json.loads((I.OUT / "improve.json").read_text())
+        self.assertEqual(written["updated_at"], out["updated_at"])
+        self.assertFalse(list(I.OUT.glob("*.tmp")))  # atomic: no temp file left
 
     def test_restarted_series_is_archived_with_new_names(self):
         d = I.step_dir(KEY, "S2")

@@ -1121,7 +1121,8 @@ def model_state(key):
 
 
 # The page's fixed status reasons (improve_validate, Ümit #3219).
-PROGRESS_REASONS = ("shared-balance priority", "waiting for the ChatGPT reset 13 Nov", "waiting for its turn")
+PROGRESS_REASONS = ("shared-balance priority", "waiting for the ChatGPT reset 13 Nov", "waiting for its turn",
+                    "usage limit")
 
 
 def progress_reason(reason):
@@ -1130,6 +1131,8 @@ def progress_reason(reason):
         return "waiting for the ChatGPT reset 13 Nov"
     if reason == TURN:
         return "waiting for its turn"
+    if "usage limit (429)" in reason:  # the harness's Claude/subscription QUOTA pause
+        return "usage limit"
     if "shared-balance" in reason or "balance" in reason or "share limit" in reason:
         return "shared-balance priority"
     raise ValueError(f"no page reason for a pause: {reason!r}")  # e.g. a Claude usage limit: needs a page text
@@ -1220,13 +1223,31 @@ def summary(only_if_changed=False):
     """The page's file: every plan model, with its progress. `only_if_changed`: leave the file alone when nothing but
     `updated_at` would change (the exporter's path trigger fires on its own write)."""
     keys = list(MODELS) if not DRY else [k for k in MODELS if mdir(k).exists()]
+    previous = {}
+    if (OUT / "improve.json").exists():
+        try:
+            previous = {m["key"]: m for m in json.loads((OUT / "improve.json").read_text()).get("models", [])}
+        except (ValueError, KeyError, TypeError, AttributeError):
+            previous = {}
+    models = []
+    for k in keys:
+        try:
+            models.append(model_summary(k))
+        except ValueError as e:
+            # A pause the page has no text for: never invent one. Keep the model's last exported entry (or leave it
+            # out), log the error, and write everything else.
+            print(f"improve export: {k}: {e}; keeping its previous entry", file=sys.stderr)
+            with open(RUNS / "export-errors.log", "a") as f:
+                f.write(json.dumps(dict(at=now(), model=k, error=str(e))) + "\n")
+            if k in previous:
+                models.append(previous[k])
     out = dict(updated_at=now(),
                protocol=dict(plan_sha256=bound_plan(keys), lesson_prompt_sha256=lesson_prompt_sha256(),
                              test_set_sha256=sha256_file(TEST_SET), series_per_model=SERIES,
                              games_per_series=GAMES, empty_runs=EMPTY_RUNS, test_positions=POSITIONS, steps=STEPS,
                              floor_points=FLOOR_POINTS, safety_drop_points=SAFETY_DROP, dry_run=DRY),
                money=dict(total_cap_usd=TOTAL_CAP_USD, billed_total_usd=round(billed_total(), 4)),
-               models=[model_summary(k) for k in keys])
+               models=models)
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / "prompt").mkdir(exist_ok=True)
     shutil.copyfile(LESSONS_SYSTEM, OUT / "prompt/lessons_system.txt")

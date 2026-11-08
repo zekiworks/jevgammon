@@ -157,8 +157,10 @@ E = (full − 5 × S) / 3, the draft's estimate split over its steps.
 ## 10. Schedule
 
 - **Publish first:** this file, then the page in pre-registration mode; the first model call only after the page is live.
-- Then, one model at a time: **Qwen3.8 Flash → GLM-5.3 → Kimi K3.1 Pro → DeepSeek V4.1 Flash** (OpenRouter, within the money rules); **Gemini 3.8 Flash → Claude Sonnet 5.5 → Claude Opus 5.5 → Gemini 4 Argon → Grok 4.7 → Claude Fable 5.1** (subscriptions); **local models** (Gemma 4 31B (on), Qwen3.8-27B, LFM2.5) when a bariton GPU is free (the compactor holds them until about 08:00 UTC 9 Nov), claimed on the bus; **GPT-6.1 Sol and GPT-6 Astra (high)** after the ChatGPT reset 2026-11-13 11:38 UTC.
-- Local and API models may run at the same time (different servers); one model's own steps never overlap.
+- Then, one model at a time per lane: **Qwen3.8 Flash → GLM-5.3 → Kimi K3.1 Pro → DeepSeek V4.1 Flash** (OpenRouter, within the money rules); **Gemini 3.8 Flash → Claude Sonnet 5.5 → Claude Opus 5.5 → Gemini 4 Argon → Grok 4.7 → Claude Fable 5.1** (subscriptions); **GPT-6.1 Sol and GPT-6 Astra (high)** after the ChatGPT reset 2026-11-13 11:38 UTC.
+- **Local lane (Can #3121): bariton GPU 3 by UUID `GPU-e4f2a538-a3dc-e777-a1b6-e083f08514aa`** ("fell but is in order, you can use it"), one model at a time, in parallel with the API lane ($0 billed): **Gemma 4 31B (on) → Qwen3.8-27B (low) → LFM2.5-24B-A2B (on)**, each with its league server script and arguments (`tools/v3/servers/gemma4-31b.sh`, `qwen38-27b.sh`, `lfm25-24b.sh`; GPU set to that UUID). GPUs 0–2 stay the compactor's until about 08:00 UTC 9 Nov. Before each start the claim is posted on the bus; in the first hour of each server the kernel log is watched for Xid/PCIe errors, and any such error stops the run and is reported.
+- **Fit on one RTX PRO 6000 (96 GB) at the league context:** each ran its league matches on one such GPU with the same script. Weights: Gemma 4 31B fp8 ≈ 31 GB (memory share 0.6, max-model-len 32,768, fp8 KV cache); Qwen3.8-27B fp16 ≈ 54 GB (share 0.90, max-model-len 65,536); LFM2.5-24B bf16 ≈ 45 GiB (share 0.90, max-model-len 65,536). Checked at each start: vLLM's reported KV-cache capacity must hold at least 4 sequences at the full max-model-len (the tests' 4 in flight); otherwise the run does not start and the shortfall is reported.
+- Lanes may run at the same time (different servers); one model's own steps never overlap.
 
 ## 11. Outputs
 

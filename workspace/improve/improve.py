@@ -1240,12 +1240,19 @@ PROGRESS_REASONS = ("shared-balance priority", "waiting for the ChatGPT reset 13
                     "usage limit")
 
 
+# The page has no "waiting for a GPU" text yet (requested from ImproveStatus): until it does, a local model held for
+# its GPU shows the nearest fixed text. Switch to "waiting for a GPU" when the page's list has it.
+GPU_WAIT_TEXT = "waiting for its turn"
+
+
 def progress_reason(reason):
     """The page's fixed reason for a paused model's free-text reason."""
     if reason == CHATGPT_RESET:
         return "waiting for the ChatGPT reset 13 Nov"
     if reason == TURN:
         return "waiting for its turn"
+    if "waiting for a GPU" in reason:
+        return GPU_WAIT_TEXT
     if "usage limit (429)" in reason:  # the harness's Claude/subscription QUOTA pause
         return "usage limit"
     if "shared-balance" in reason or "balance" in reason or "share limit" in reason:

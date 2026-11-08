@@ -550,7 +550,7 @@ EXPLORE_METRICS = ("risks_found", "right_safety", "error_rate", "risk_judgement"
 RUN_METRICS = EXPLORE_METRICS + ("risk_appetite",)
 RUN_COUNTS = ("answered", "valid", "invalid", "failed")
 RETESTS = 5
-SPREAD_GROUPS = ("all", "t0+retests", "budget")
+SPREAD_GROUPS = ("all", "t0+retests", "retests", "budget")  # "retests": r1-r5 only (Zeki #2991)
 RUN_NAME = re.compile(r"T0 \(shared, 4 in flight\)|retest r([1-5]) \(4 in flight\)|"
                       r"budget s(0[1-9]|10) (T5|T10) \(1 in flight\)")
 # Public problem texts of a refused exploratory file: fixed codes only; the details are private (stderr).
@@ -719,6 +719,7 @@ def validate_explore(path: Path, pilot: dict, test_sha: str) -> dict:
             fail("retests", f"retest r{k}: a row {'missing' if full else 'without 200 answers'}")
     # The spread, from the rows.
     groups = {"all": runs, "t0+retests": [r for r in runs if r["kind"] in ("t0", "retest")],
+              "retests": [r for r in runs if r["kind"] == "retest"],
               "budget": [r for r in runs if r["kind"] == "budget"]}
     for g, rows in groups.items():
         for m in RUN_METRICS:

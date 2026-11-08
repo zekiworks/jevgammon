@@ -115,7 +115,9 @@ EXPLORE = "explore/explore.json"
 # #2964): fixed text on the page; the numbers are also in the data file, so they trace.
 SAMPLING = dict(temperature=1.0, max_tokens=1, top_logprobs=20, max_options_per_request=26, grouped_positions=32,
                 positions=200, in_flight_t0_and_retests=4, in_flight_budget=1,
-                server_default_temperature=1.0, server_default_top_k=64, server_default_top_p=0.95)
+                server_default_temperature=1.0, server_default_top_k=64, server_default_top_p=0.95,
+                # Zeki #2991: what was checked in the stored records of T0, the 5 retests and the 20 budget evaluations
+                answers_checked=5200, requests_checked=7202)
 CHECKPOINTS = ("T0", "T5", "T10")
 CHECKPOINT_LABEL = {"T0": "Before game 1", "T5": "After game 5", "T10": "After game 10"}
 # Shown per arm x test round; the keys copied to the data file are exactly these.
@@ -598,7 +600,10 @@ def verdict(L) -> str:
 
 EXPLORE_METRIC_LABEL = {"risks_found": "Risks found", "right_safety": "Right safety", "error_rate": "Error rate (PR)",
                         "risk_judgement": "Risk judgement", "risk_appetite": "Risk appetite"}
-EXPLORE_GROUP_LABEL = {"all": "All runs", "t0+retests": "T0 and retests", "budget": f"{ARM_LABEL['budget']}"}
+EXPLORE_GROUP_LABEL = {"all": "All runs", "t0+retests": "T0 and retests", "retests": "Retests r1-r5",
+                       "budget": f"{ARM_LABEL['budget']}"}
+# The retests' own range under their rows (Zeki #2991): these measures, min-max and SD.
+RETEST_RANGE = ("risks_found", "right_safety", "error_rate")
 
 
 def amb_cell(s: dict) -> str:
@@ -612,6 +617,11 @@ def run_label(r: dict) -> str:
     if r["kind"] == "retest":
         return f"Retest r{r['retest']}"
     return f"Series {r['series']}, {CHECKPOINT_LABEL[r['checkpoint']].lower()}"
+
+
+def retest_range(s: dict) -> str:
+    sd = fmt(s["sd"], 2) if s["sd"] is not None else NA
+    return f'{fmt(s["min"], 1)}-{fmt(s["max"], 1)} (SD {sd})'
 
 
 def spread_cell(s: dict) -> str:
@@ -687,6 +697,14 @@ def explore(L) -> str:
                     + "".join(f'<td class="num" data-run="{i}" data-k="{k}">{count(r[k])}</td>' for k in V.RUN_COUNTS)
                     + "".join(f'<td class="num" data-run="{i}" data-k="{m}">{num(r[m], 1)}</td>'
                               for m in V.RUN_METRICS) + "</tr>")
+        nxt = X["runs"][i + 1]["kind"] if i + 1 < len(X["runs"]) else None
+        if r["kind"] == "retest" and nxt != "retest" and "retests" in X["spread"]:
+            # The retests' own range (r1-r5 only, Zeki #2991): T0's difference stays outside it.
+            sp = X["spread"]["retests"]
+            runs.append('<tr class="lp-group"><th scope="row">Retests r1-r5: min-max (SD)</th>'
+                        + "<td></td>" * len(V.RUN_COUNTS)
+                        + "".join(f'<td class="num" data-rspread="{m}">{retest_range(sp[m])}</td>'
+                                  if m in RETEST_RANGE else "<td></td>" for m in V.RUN_METRICS) + "</tr>")
     # Not sortable (data-nosort): its group rows (T0 and retests; the budget arm's evaluations) keep their order.
     runs_table = P.SWIPE + P.table([(h, " data-nosort") for h in ["Run", "Answered", "Valid", "Invalid", "Failed"]
                                     + [EXPLORE_METRIC_LABEL[m] for m in V.RUN_METRICS]], runs,
@@ -731,12 +749,18 @@ def explore(L) -> str:
             f'temperature {fmt(S["server_default_temperature"], 1)}, top_k {count(S["server_default_top_k"])}, top_p '
             f'{fmt(S["server_default_top_p"], 2)}; that file is identical on the server and in our copy of the model. '
             'No seed was sent; the server\'s seed behaviour was not checked.</p>'
-            '<p>The answer is the argmax over the option-letter logprobs, so temperature, top_k and top_p cannot '
-            'change which option is chosen. Positions with more than '
-            f'{count(S["max_options_per_request"])} options ({count(S["grouped_positions"])} of the '
-            f'{count(S["positions"])}) are asked in groups, then among the group winners. The retests ran with '
-            f'{count(S["in_flight_t0_and_retests"])} requests in flight, like T0; the {B} evaluations with '
-            f'{count(S["in_flight_budget"])}.</p>'
+            '<p>The play is the argmax of the returned option-letter probabilities (several tokens per letter are '
+            'summed). The cause of differences between empty-context runs was not verified.</p>'
+            '<p>Checked in the stored records of T0, the 5 retests and the 20 budget evaluations: all '
+            f'{count(S["answers_checked"])} answers have probability_source "logprobs"; all '
+            f'{count(S["requests_checked"])} requests are the prefill readout (max_tokens {count(S["max_tokens"])}, '
+            'continue_final_message), and none carries response_format, so the constrained-letter fallback never '
+            'fired; no request errors. Whether vLLM returned raw or processed logprobs (before or after '
+            'temperature/top_k/top_p) cannot be shown from the stored records; it was not determined.</p>'
+            f'<p>Positions with more than {count(S["max_options_per_request"])} options '
+            f'({count(S["grouped_positions"])} of the {count(S["positions"])}) are asked in groups, then among the '
+            f'group winners. The retests ran with {count(S["in_flight_t0_and_retests"])} requests in flight, like T0; '
+            f'the {B} evaluations with {count(S["in_flight_budget"])}.</p>'
             '<h3>Next version (not run)</h3>'
             '<p>Budget-match the records at the decision level: the most recent decisions, with their verdicts, that '
             f'fit within the {arm_name("lessons")} arm\'s token count.</p>')

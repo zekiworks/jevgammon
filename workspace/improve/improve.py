@@ -1140,7 +1140,21 @@ def progress(key, state, reason):
     ev = events(key)
     return dict(status=status, reason=progress_reason(reason) if status == "paused" else None,
                 series_done=sum(step_done(key, f"S{s}") for s in range(1, SERIES + 1)),
-                updated_at=ev[-1]["at"] if ev else now())
+                updated_at=ev[-1]["at"] if ev else not_started_since(key))
+
+
+PHASE2_START = "2026-11-08T16:10:46+00:00"  # the first lane's start (plan §10: the first model call came after it)
+
+
+def not_started_since(key):
+    """A stable time for a model with no event yet (so the exporter's file only changes when a model does): its
+    hold's time, else Phase 2's start."""
+    hold = mdir(key) / "hold.json"
+    if hold.exists():
+        at = json.loads(hold.read_text()).get("at")
+        if at:
+            return datetime.fromisoformat(at.replace("Z", "+00:00")).isoformat(timespec="seconds")
+    return PHASE2_START
 
 
 def api_equivalent(key):

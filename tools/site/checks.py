@@ -549,7 +549,9 @@ def _learning_explore(nodes, ids, L, complete: bool) -> list[str]:
     if verdict is None or nodes.index(el) < nodes.index(verdict) or any(a is verdict for a in ancestors(el)):
         bad.append(f"{PATH}: the exploratory block is not after the verdict, apart from it")
     text = " ".join(text_of(el).split()).lower()
-    if "exploratory, after the results" not in text or "not part of the pre-registered verdict" not in text:
+    label = next((n for n in walk(el) if "lp-explore-label" in n.attrs.get("class", "").split()), None)
+    label = " ".join(text_of(label).split()).lower() if label else ""
+    if "exploratory, after the results" not in label or "not part of the pre-registered verdict" not in label:
         bad.append(f"{PATH}: the exploratory block is not labelled as exploratory, after the results")
     cells = [n for n in walk(el) if n.tag == "td"]
     if not X.get("accepted"):

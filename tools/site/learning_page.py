@@ -110,10 +110,12 @@ TEST_SET = ROOT / "workspace/learning-pilot/test_set.json"
 # The exploratory file (Ümit #2950/#2952), as snapshot.py copies it from workspace/learning-retest/out/explore.json:
 # missing, no exploratory block; present, shown only after learning_validate.validate_explore accepts it.
 EXPLORE = "explore/explore.json"
-# The evaluation requests' settings (LearningPilot checked them against the request code and a stored request): fixed
-# text on the page; the numbers are also in the data file, so they trace.
+# The evaluation requests' settings (LearningPilot checked the sent ones against the request code and a stored request;
+# the server's effective defaults by a read-only check of spark3: vLLM's log, the model's generation_config.json; Zeki
+# #2964): fixed text on the page; the numbers are also in the data file, so they trace.
 SAMPLING = dict(temperature=1.0, max_tokens=1, top_logprobs=20, max_options_per_request=26, grouped_positions=32,
-                positions=200, in_flight_t0_and_retests=4, in_flight_budget=1)
+                positions=200, in_flight_t0_and_retests=4, in_flight_budget=1,
+                server_default_temperature=1.0, server_default_top_k=64, server_default_top_p=0.95)
 CHECKPOINTS = ("T0", "T5", "T10")
 CHECKPOINT_LABEL = {"T0": "Before game 1", "T5": "After game 5", "T10": "After game 10"}
 # Shown per arm x test round; the keys copied to the data file are exactly these.
@@ -666,23 +668,31 @@ def explore(L) -> str:
             + f'<h3>Each arm minus {B}, paired by series</h3>'
             f'<p>The {B} arm\'s context was empty at every point, so its evaluations after games 5 and 10 are '
             'empty-context retests of the T0 prompts: here it is the noise baseline. Each value is the arm\'s '
-            f'evaluation minus {B}\'s in the same series (same dice), averaged over the {count(X["series"])} series, '
-            'with a 95% interval (10,000 resamples of whole series, the pilot\'s bootstrap). The calibration of the '
-            'intervals was not determined in this pilot. This is not part of the pre-registered verdict.</p>' + amb
+            f'evaluation minus {B}\'s, paired by series (same series id and dice seed; the games differ once plays '
+            f'differ), averaged over the {count(X["series"])} series, with a 95% interval (10,000 resamples of whole '
+            'series, the pilot\'s bootstrap). The calibration of the intervals was not determined in this pilot. This '
+            'is not part of the pre-registered verdict.</p>' + amb
             + '<h3>Empty-context runs: the same prompts, again</h3>'
             '<p>The shared T0 run, the retests of the T0 prompts and the evaluations of the '
-            f'{B} arm, whose context was always empty, with their spread.</p>' + runs_table + pending + spread_table
+            f'{B} arm, whose context was always empty, with their spread. The retests measure the variability between '
+            'empty-context runs; they do not establish its cause. The cause of the differences between empty-context '
+            'runs was not verified; any sampling or numerical explanation is a hypothesis only.</p>'
+            + runs_table + pending + spread_table
             + '<h3>How the evaluation requests were made</h3>'
-            f'<p>Temperature {fmt(S["temperature"], 1)}; max_tokens {count(S["max_tokens"])}; logprobs on, with the '
-            f'top {count(S["top_logprobs"])}; the assistant turn prefilled with "Answer:" and continued '
-            '(continue_final_message); thinking off (enable_thinking false); no top_p, top_k or seed sent, so the '
-            'server\'s defaults apply.</p>'
-            '<p>The play is the option letter with the highest probability among the top logprobs (the argmax), not '
-            'the sampled token, so temperature does not choose the answer. Positions with more than '
+            '<p><strong>Sent</strong> with every evaluation request:</p><ul>'
+            f'<li>temperature {fmt(S["temperature"], 1)};</li><li>max_tokens {count(S["max_tokens"])};</li>'
+            f'<li>logprobs, with top_logprobs {count(S["top_logprobs"])};</li>'
+            '<li>the assistant turn prefilled with "Answer:", with continue_final_message;</li>'
+            '<li>enable_thinking false;</li><li>no top_p, top_k or seed sent.</li></ul>'
+            '<p><strong>The server\'s effective defaults</strong> (a read-only check of the serving machine): vLLM\'s '
+            'log says its default sampling parameters are overridden by the model\'s generation_config.json, '
+            f'temperature {fmt(S["server_default_temperature"], 1)}, top_k {count(S["server_default_top_k"])}, top_p '
+            f'{fmt(S["server_default_top_p"], 2)}; that file is identical on the server and in our copy of the model. '
+            'No seed was sent; the server\'s seed behaviour was not checked.</p>'
+            '<p>The answer is the argmax over the option-letter logprobs, so temperature, top_k and top_p cannot '
+            'change which option is chosen. Positions with more than '
             f'{count(S["max_options_per_request"])} options ({count(S["grouped_positions"])} of the '
-            f'{count(S["positions"])}) are asked in groups, then among the group winners. Why an identical '
-            'empty-context request can be answered differently on a retest was not determined: server-side variation '
-            'in the returned probabilities is a hypothesis only. The retests ran with '
+            f'{count(S["positions"])}) are asked in groups, then among the group winners. The retests ran with '
             f'{count(S["in_flight_t0_and_retests"])} requests in flight, like T0; the {B} evaluations with '
             f'{count(S["in_flight_budget"])}.</p>'
             '<h3>Next version (not run)</h3>'

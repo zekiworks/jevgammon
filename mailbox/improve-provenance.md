@@ -61,3 +61,4 @@ Nothing Qwen3.8 Flash sends changed between the builds, and the identity check o
 ## Receipts of later Qwen3.8 Flash steps (appended as they happen)
 
 Each receipt names the `jevgammon` process that started the step and the binary it ran: `/proc/<pid>/exe` and its sha256 when the process could be caught; otherwise the binary at the path at its start time.
+- **S1 T10 (hook's first asking):** `jevgammon ask` pid 3934684, started 16:45:18 UTC. `/proc/3934684/exe` → `target/release/jevgammon` (not deleted), sha256 `19357c4e46af78eb07bc8125d7bf7f99e9b463464951caea41d5f4f18dd7fa11` = **B2**, observed 16:4x UTC. Its parent, the S1 match (pid 3875115, B1), was still running the after-game hook at that time.

@@ -18,7 +18,8 @@ States (every number and lesson SYNTHETIC; never results):
   mixed          Qwen Yes, GLM No, Kimi paused (balance), DeepSeek running mid-series 3, Gemini stopped, Gemma 4 31B
                  (on) running locally ("running on our GPU, 0 of 5 series"): the sort order and every status;
   paused         Kimi K3.1 Pro (off) paused (shared-balance priority), GPT-6.1 Sol (high) not started (waiting for the
-                 ChatGPT reset 13 Nov);
+                 ChatGPT reset 13 Nov), Claude Opus 5.5 (on) paused (usage limit), Qwen3.8-27B (on) paused (waiting
+                 for a GPU); accepted by the status view and the full validation;
   status table   the default build (pre-registration only) in states none, running-1, paused and complete-yes (done):
                  the "Models and status" table at the top, 15 rows as the data's progress fields, no outcome number
                  and no free-text reason from the file on the page or in its data file;
@@ -144,7 +145,9 @@ def states() -> dict:
     paused = [model(kimi, "paused", ["E1", "S1"], [test(40, 85, 25.0)], [test(41, 86, 24.1)], billed_usd=6.2,
                     reason="SYNTHETIC: zz_free_text_reason_91c"), sol,
               model(by["Claude Opus 5.5 (on)"], "paused", ["E1"], [test(42, 90, 20.0)], [],
-                    reason="SYNTHETIC: 429", why="usage limit")]
+                    reason="SYNTHETIC: 429", why="usage limit"),
+              model(by["Qwen3.8-27B (on)"], "paused", ["E1"], [test(31, 93, 30.0)], [],
+                    reason="SYNTHETIC: device lost", why="waiting for a GPU")]
     return {"none": None, "running-1": document([running], plan_sha),
             "complete-yes": document([qwen_yes(q)], plan_sha), "complete-no": document([glm_no(g)], plan_sha),
             "mixed": document(mixed, plan_sha), "paused": document(paused, plan_sha)}
@@ -199,6 +202,8 @@ def progress_faults() -> list:
         ("progress: running with all 5 series", mutation(lambda d: p0(d).update(status="running")), None),
         ("progress: usage limit while not paused",
          mutation(lambda d: p0(d).update(status="stopped", reason="usage limit")), None),
+        ("progress: waiting for a GPU while not paused",
+         mutation(lambda d: p0(d).update(status="stopped", reason="waiting for a GPU")), None),
         ("progress: unknown key (canary)", mutation(lambda d: p0(d).update({CANARY_KEY: 1})), CANARY_KEY),
     ]
 
@@ -317,7 +322,8 @@ def main():
     want = {"none": {}, "running-1": {"Qwen3.8 Flash (off)": ("running", "1 / 5")},
             "paused": {"Kimi K3.1 Pro (off)": ("paused (shared-balance priority)", "1 / 5"),
                        "GPT-6.1 Sol (high)": ("not started (waiting for the ChatGPT reset 13 Nov)", "0 / 5"),
-                       "Claude Opus 5.5 (on)": ("paused (usage limit)", "0 / 5")},
+                       "Claude Opus 5.5 (on)": ("paused (usage limit)", "0 / 5"),
+                       "Qwen3.8-27B (on)": ("paused (waiting for a GPU)", "0 / 5")},
             "complete-yes": {"Qwen3.8 Flash (off)": ("done", "5 / 5")}}
     for name, rows_ in want.items():
         src = write_state(base / "states" / name, S[name])
@@ -342,6 +348,11 @@ def main():
         case(f"status table ({name}): 15 rows as the data, at the top, no outcome or free text, check_improve clean",
              len(trs) == 15 and got == rows_ and top and not leaked and not bad and Lp["progress_refused"] is None
              and Lp["results"] is None, "; ".join(bad) or f"got {got}, leaked {leaked}")
+    # The paused-only reasons are accepted when paused by the full validation too (the status view: above).
+    v = V.validate(S["paused"], hashlib.sha256(IP.PLAN.read_bytes()).hexdigest(), IP.PROMPT_SHA256,
+                   IP.TEST_SET_SHA256, IP.PROMPT_SHA256, models_by_setup(), leak_strings())
+    case("full validation: paused state accepted (usage limit, waiting for a GPU)", v["accepted"],
+         "; ".join(v["private_problems"][:2]))
     # Status faults in the default build: refused, every status unknown, the note, no canary.
     for name, mutate, canary in progress_faults():
         src = write_state(base / "states" / "status-fault", mutate(S["complete-yes"]))

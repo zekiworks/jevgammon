@@ -480,6 +480,8 @@ table.headline th[data-wide], table.headline td.hl-wide, .hl-wide-note { display
   table.headline th, table.headline td { padding-left: .35rem; padding-right: .35rem; }
   table.headline tr.hl-sub td.model { padding-left: .6rem; }
   table.headline td.hl-judgement { min-width: 8rem; }
+  /* The chip may wrap between its parts, so it never widens the model column past the score column (Zeki #3240). */
+  table.headline td.model > .hl-tag { white-space: normal; border-radius: .6rem; }
 }
 .finding h2 { font-size: 1.25rem; }
 .finding-text { max-width: 80ch; margin: 0 0 .75rem; }

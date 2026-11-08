@@ -1,8 +1,7 @@
 """render_site.py without build.compute(): the pages and data files rendered from a RETAINED computed state S (a pickle
 written once by compute_retained.py, i.e. build.compute() on the copy of the live state, results 7b40b30e), so no
 statistics run again (Zeki #2790, Main: no model/statistics reruns). Otherwise as render_site.py: no build.py main, no
-preview image, no deploy, nothing written outside OUT. LATE=1 in the environment sets story.LATE_ROWS (the late-entry
-preview only).
+preview image, no deploy, nothing written outside OUT.
 
     python3 render_retained.py SRC STATE OUT RESULTS_HASH S_PICKLE [--checks]
 
@@ -27,9 +26,6 @@ S = pickle.load(open(spk, "rb"))
 # STATE/learning); read again from STATE, whose snapshot (19:35 UTC) is newer than the retained S (19:18 UTC).
 import learning_page  # noqa: E402
 S["learning"] = learning_page.from_state(Path(state))
-import os  # noqa: E402
-import story  # noqa: E402
-story.LATE_ROWS = os.environ.get("LATE") == "1"
 S["base"] = B.BASE
 B.write_data(S, out)
 datasets = [dict(id=lg["dataset"], label=f"League {lg['id']}", version="v3", league_id=lg["id"],

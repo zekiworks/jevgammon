@@ -1,0 +1,545 @@
+where,setup,label,data (S),page,result
+leaderboard,late-entry/gpt-6-astra-high,field,League 3 field,League 3 field,ok
+leaderboard,late-entry/gpt-6-astra-high,safe,95.5%,95.5%,ok
+leaderboard,late-entry/gpt-6-astra-high,cost,$59.356,$59.356,ok
+leaderboard,late-entry/gpt-6-astra-high,decisions,"1,489","1,489",ok
+leaderboard,late-entry/gpt-6-astra-high,safe_n,614 of 643,614 of 643,ok
+leaderboard,late-entry/gpt-6-astra-high,took,248 of 465,248 of 465,ok
+leaderboard,late-entry/gpt-6-astra-high,bar,74.4 71.8 to 77.0,74.4 71.8 to 77.0,ok
+leaderboard,late-entry/gpt-6-astra-high,found,53.3%,53.3%,ok
+leaderboard,late-entry/gpt-6-astra-high,judgement,74.4 (95%: 71.8–77.0),74.4 (95%: 71.8–77.0),ok
+leaderboard,late-entry/gpt-6-astra-high,record,10–1–1,10–1–1,ok
+leaderboard,late-entry/gpt-6-astra-high,error,8.8 (95%: 7.4–10.3),8.8 (95%: 7.4–10.3),ok
+leaderboard,league-3/gpt-6-astra-off,safe,94.4%,94.4%,ok
+leaderboard,league-3/gpt-6-astra-off,cost,$49.737,$49.737,ok
+leaderboard,league-3/gpt-6-astra-off,decisions,"1,251","1,251",ok
+leaderboard,league-3/gpt-6-astra-off,safe_n,486 of 515,486 of 515,ok
+leaderboard,league-3/gpt-6-astra-off,took,226 of 395,226 of 395,ok
+leaderboard,league-3/gpt-6-astra-off,bar,75.8 73.1 to 78.5,75.8 73.1 to 78.5,ok
+leaderboard,league-3/gpt-6-astra-off,found,57.2%,57.2%,ok
+leaderboard,league-3/gpt-6-astra-off,judgement,75.8 (95%: 73.1–78.5),75.8 (95%: 73.1–78.5),ok
+leaderboard,league-3/gpt-6-astra-off,record,4–1–6,4–1–6,ok
+leaderboard,league-3/gpt-6-astra-off,error,11.8 (95%: 9.5–14.2),11.8 (95%: 9.5–14.2),ok
+leaderboard,league-3/gpt-6-astra-on,safe,94.4%,94.4%,ok
+leaderboard,league-3/gpt-6-astra-on,cost,$50.268,$50.268,ok
+leaderboard,league-3/gpt-6-astra-on,decisions,"1,362","1,362",ok
+leaderboard,league-3/gpt-6-astra-on,safe_n,542 of 574,542 of 574,ok
+leaderboard,league-3/gpt-6-astra-on,took,245 of 446,245 of 446,ok
+leaderboard,league-3/gpt-6-astra-on,bar,74.7 71.9 to 77.3,74.7 71.9 to 77.3,ok
+leaderboard,league-3/gpt-6-astra-on,found,54.9%,54.9%,ok
+leaderboard,league-3/gpt-6-astra-on,judgement,74.7 (95%: 71.9–77.3),74.7 (95%: 71.9–77.3),ok
+leaderboard,league-3/gpt-6-astra-on,record,8–0–3,8–0–3,ok
+leaderboard,league-3/gpt-6-astra-on,error,11.1 (95%: 9.5–12.9),11.1 (95%: 9.5–12.9),ok
+leaderboard,league-3/gemini-4-argon-on,safe,97.4%,97.4%,ok
+leaderboard,league-3/gemini-4-argon-on,cost,$64.401,$64.401,ok
+leaderboard,league-3/gemini-4-argon-on,decisions,"1,368","1,368",ok
+leaderboard,league-3/gemini-4-argon-on,safe_n,484 of 497,484 of 497,ok
+leaderboard,league-3/gemini-4-argon-on,took,224 of 441,224 of 441,ok
+leaderboard,league-3/gemini-4-argon-on,bar,74.1 72.0 to 76.1,74.1 72.0 to 76.1,ok
+leaderboard,league-3/gemini-4-argon-on,found,50.8%,50.8%,ok
+leaderboard,league-3/gemini-4-argon-on,judgement,74.1 (95%: 72.0–76.1),74.1 (95%: 72.0–76.1),ok
+leaderboard,league-3/gemini-4-argon-on,record,4–1–6,4–1–6,ok
+leaderboard,league-3/gemini-4-argon-on,error,12.6 (95%: 10.5–14.8),12.6 (95%: 10.5–14.8),ok
+leaderboard,league-3/gemini-4-argon-off,safe,90.7%,90.7%,ok
+leaderboard,league-3/gemini-4-argon-off,cost,$10.204,$10.204,ok
+leaderboard,league-3/gemini-4-argon-off,decisions,"1,484","1,484",ok
+leaderboard,league-3/gemini-4-argon-off,safe_n,543 of 599,543 of 599,ok
+leaderboard,league-3/gemini-4-argon-off,took,209 of 437,209 of 437,ok
+leaderboard,league-3/gemini-4-argon-off,bar,69.2 66.2 to 72.3,69.2 66.2 to 72.3,ok
+leaderboard,league-3/gemini-4-argon-off,found,47.8%,47.8%,ok
+leaderboard,league-3/gemini-4-argon-off,judgement,69.2 (95%: 66.2–72.3),69.2 (95%: 66.2–72.3),ok
+leaderboard,league-3/gemini-4-argon-off,record,3–1–7,3–1–7,ok
+leaderboard,league-3/gemini-4-argon-off,error,16.5 (95%: 13.7–19.5),16.5 (95%: 13.7–19.5),ok
+leaderboard,league-3/claude-fable-5-1-on,safe,94.0%,94.0%,ok
+leaderboard,league-3/claude-fable-5-1-on,cost,$136.268,$136.268,ok
+leaderboard,league-3/claude-fable-5-1-on,decisions,"1,286","1,286",ok
+leaderboard,league-3/claude-fable-5-1-on,safe_n,529 of 563,529 of 563,ok
+leaderboard,league-3/claude-fable-5-1-on,took,215 of 424,215 of 424,ok
+leaderboard,league-3/claude-fable-5-1-on,bar,72.3 69.8 to 74.7,72.3 69.8 to 74.7,ok
+leaderboard,league-3/claude-fable-5-1-on,found,50.7%,50.7%,ok
+leaderboard,league-3/claude-fable-5-1-on,judgement,72.3 (95%: 69.8–74.7),72.3 (95%: 69.8–74.7),ok
+leaderboard,league-3/claude-fable-5-1-on,record,6–0–5,6–0–5,ok
+leaderboard,league-3/claude-fable-5-1-on,error,14.0 (95%: 11.5–16.3),14.0 (95%: 11.5–16.3),ok
+leaderboard,league-2/claude-fable-5-1-off,safe,94.6%,94.6%,ok
+leaderboard,league-2/claude-fable-5-1-off,cost,$62.613,$62.613,ok
+leaderboard,league-2/claude-fable-5-1-off,decisions,"2,008","2,008",ok
+leaderboard,league-2/claude-fable-5-1-off,safe_n,781 of 826,781 of 826,ok
+leaderboard,league-2/claude-fable-5-1-off,took,270 of 658,270 of 658,ok
+leaderboard,league-2/claude-fable-5-1-off,bar,67.8 65.6 to 69.9,67.8 65.6 to 69.9,ok
+leaderboard,league-2/claude-fable-5-1-off,found,41.0%,41.0%,ok
+leaderboard,league-2/claude-fable-5-1-off,judgement,67.8 (95%: 65.6–69.9),67.8 (95%: 65.6–69.9),ok
+leaderboard,league-2/claude-fable-5-1-off,record,10–0–8,10–0–8,ok
+leaderboard,league-2/claude-fable-5-1-off,error,17.9 (95%: 15.9–20.1),17.9 (95%: 15.9–20.1),ok
+leaderboard,league-3/gpt-6-1-sol-high,safe,93.7%,93.7%,ok
+leaderboard,league-3/gpt-6-1-sol-high,cost,$15.573,$15.573,ok
+leaderboard,league-3/gpt-6-1-sol-high,decisions,"1,389","1,389",ok
+leaderboard,league-3/gpt-6-1-sol-high,safe_n,568 of 606,568 of 606,ok
+leaderboard,league-3/gpt-6-1-sol-high,took,212 of 419,212 of 419,ok
+leaderboard,league-3/gpt-6-1-sol-high,bar,72.2 69.5 to 74.9,72.2 69.5 to 74.9,ok
+leaderboard,league-3/gpt-6-1-sol-high,found,50.6%,50.6%,ok
+leaderboard,league-3/gpt-6-1-sol-high,judgement,72.2 (95%: 69.5–74.9),72.2 (95%: 69.5–74.9),ok
+leaderboard,league-3/gpt-6-1-sol-high,record,7–0–4,7–0–4,ok
+leaderboard,league-3/gpt-6-1-sol-high,error,9.9 (95%: 8.6–11.3),9.9 (95%: 8.6–11.3),ok
+leaderboard,league-3/gpt-6-1-sol-low,safe,93.8%,93.8%,ok
+leaderboard,league-3/gpt-6-1-sol-low,cost,$10.228,$10.228,ok
+leaderboard,league-3/gpt-6-1-sol-low,decisions,"1,344","1,344",ok
+leaderboard,league-3/gpt-6-1-sol-low,safe_n,602 of 642,602 of 642,ok
+leaderboard,league-3/gpt-6-1-sol-low,took,198 of 383,198 of 383,ok
+leaderboard,league-3/gpt-6-1-sol-low,bar,72.7 69.9 to 75.5,72.7 69.9 to 75.5,ok
+leaderboard,league-3/gpt-6-1-sol-low,found,51.7%,51.7%,ok
+leaderboard,league-3/gpt-6-1-sol-low,judgement,72.7 (95%: 69.9–75.5),72.7 (95%: 69.9–75.5),ok
+leaderboard,league-3/gpt-6-1-sol-low,record,9–0–2,9–0–2,ok
+leaderboard,league-3/gpt-6-1-sol-low,error,12.1 (95%: 10.5–13.7),12.1 (95%: 10.5–13.7),ok
+leaderboard,league-3/claude-opus-5-5-on,safe,96.6%,96.6%,ok
+leaderboard,league-3/claude-opus-5-5-on,cost,$36.400,$36.400,ok
+leaderboard,league-3/claude-opus-5-5-on,decisions,"1,477","1,477",ok
+leaderboard,league-3/claude-opus-5-5-on,safe_n,590 of 611,590 of 611,ok
+leaderboard,league-3/claude-opus-5-5-on,took,199 of 459,199 of 459,ok
+leaderboard,league-3/claude-opus-5-5-on,bar,70.0 67.3 to 72.6,70.0 67.3 to 72.6,ok
+leaderboard,league-3/claude-opus-5-5-on,found,43.4%,43.4%,ok
+leaderboard,league-3/claude-opus-5-5-on,judgement,70.0 (95%: 67.3–72.6),70.0 (95%: 67.3–72.6),ok
+leaderboard,league-3/claude-opus-5-5-on,record,6–0–5,6–0–5,ok
+leaderboard,league-3/claude-opus-5-5-on,error,14.4 (95%: 12.1–17.0),14.4 (95%: 12.1–17.0),ok
+leaderboard,league-3/claude-opus-5-5-off,safe,93.8%,93.8%,ok
+leaderboard,league-3/claude-opus-5-5-off,cost,$29.062,$29.062,ok
+leaderboard,league-3/claude-opus-5-5-off,decisions,"1,411","1,411",ok
+leaderboard,league-3/claude-opus-5-5-off,safe_n,541 of 577,541 of 577,ok
+leaderboard,league-3/claude-opus-5-5-off,took,187 of 466,187 of 466,ok
+leaderboard,league-3/claude-opus-5-5-off,bar,66.9 64.7 to 69.2,66.9 64.7 to 69.2,ok
+leaderboard,league-3/claude-opus-5-5-off,found,40.1%,40.1%,ok
+leaderboard,league-3/claude-opus-5-5-off,judgement,66.9 (95%: 64.7–69.2),66.9 (95%: 64.7–69.2),ok
+leaderboard,league-3/claude-opus-5-5-off,record,4–0–7,4–0–7,ok
+leaderboard,league-3/claude-opus-5-5-off,error,15.4 (95%: 13.1–18.0),15.4 (95%: 13.1–18.0),ok
+leaderboard,league-2/deepseek-v4-1-flash-on,safe,93.0%,93.0%,ok
+leaderboard,league-2/deepseek-v4-1-flash-on,cost,$12.801,$12.801,ok
+leaderboard,league-2/deepseek-v4-1-flash-on,decisions,"2,226","2,226",ok
+leaderboard,league-2/deepseek-v4-1-flash-on,safe_n,891 of 958,891 of 958,ok
+leaderboard,league-2/deepseek-v4-1-flash-on,took,338 of 751,338 of 751,ok
+leaderboard,league-2/deepseek-v4-1-flash-on,bar,69.0 67.3 to 70.9,69.0 67.3 to 70.9,ok
+leaderboard,league-2/deepseek-v4-1-flash-on,found,45.0%,45.0%,ok
+leaderboard,league-2/deepseek-v4-1-flash-on,judgement,69.0 (95%: 67.3–70.9),69.0 (95%: 67.3–70.9),ok
+leaderboard,league-2/deepseek-v4-1-flash-on,record,12–0–6,12–0–6,ok
+leaderboard,league-2/deepseek-v4-1-flash-on,error,19.0 (95%: 16.6–21.3),19.0 (95%: 16.6–21.3),ok
+leaderboard,league-2/deepseek-v4-1-flash-1017-on,safe,94.5%,94.5%,ok
+leaderboard,league-2/deepseek-v4-1-flash-1017-on,cost,$4.869,$4.869,ok
+leaderboard,league-2/deepseek-v4-1-flash-1017-on,decisions,"2,234","2,234",ok
+leaderboard,league-2/deepseek-v4-1-flash-1017-on,safe_n,872 of 923,872 of 923,ok
+leaderboard,league-2/deepseek-v4-1-flash-1017-on,took,321 of 755,321 of 755,ok
+leaderboard,league-2/deepseek-v4-1-flash-1017-on,bar,68.5 66.4 to 70.6,68.5 66.4 to 70.6,ok
+leaderboard,league-2/deepseek-v4-1-flash-1017-on,found,42.5%,42.5%,ok
+leaderboard,league-2/deepseek-v4-1-flash-1017-on,judgement,68.5 (95%: 66.4–70.6),68.5 (95%: 66.4–70.6),ok
+leaderboard,league-2/deepseek-v4-1-flash-1017-on,record,12–1–5,12–1–5,ok
+leaderboard,league-2/deepseek-v4-1-flash-1017-on,error,17.1 (95%: 15.1–19.2),17.1 (95%: 15.1–19.2),ok
+leaderboard,league-1/deepseek-v4-1-flash-off,safe,89.5%,89.5%,ok
+leaderboard,league-1/deepseek-v4-1-flash-off,cost,$0.434,$0.434,ok
+leaderboard,league-1/deepseek-v4-1-flash-off,decisions,"1,736","1,736",ok
+leaderboard,league-1/deepseek-v4-1-flash-off,safe_n,603 of 674,603 of 674,ok
+leaderboard,league-1/deepseek-v4-1-flash-off,took,192 of 659,192 of 659,ok
+leaderboard,league-1/deepseek-v4-1-flash-off,bar,59.3 57.1 to 61.5,59.3 57.1 to 61.5,ok
+leaderboard,league-1/deepseek-v4-1-flash-off,found,29.1%,29.1%,ok
+leaderboard,league-1/deepseek-v4-1-flash-off,judgement,59.3 (95%: 57.1–61.5),59.3 (95%: 57.1–61.5),ok
+leaderboard,league-1/deepseek-v4-1-flash-off,record,12–0–6,12–0–6,ok
+leaderboard,league-1/deepseek-v4-1-flash-off,error,35.6 (95%: 31.7–39.7),35.6 (95%: 31.7–39.7),ok
+leaderboard,league-2/deepseek-v4-1-flash-1017-off,safe,91.7%,91.7%,ok
+leaderboard,league-2/deepseek-v4-1-flash-1017-off,cost,$0.244,$0.244,ok
+leaderboard,league-2/deepseek-v4-1-flash-1017-off,decisions,"2,034","2,034",ok
+leaderboard,league-2/deepseek-v4-1-flash-1017-off,safe_n,683 of 745,683 of 745,ok
+leaderboard,league-2/deepseek-v4-1-flash-1017-off,took,181 of 713,181 of 713,ok
+leaderboard,league-2/deepseek-v4-1-flash-1017-off,bar,58.5 56.6 to 60.5,58.5 56.6 to 60.5,ok
+leaderboard,league-2/deepseek-v4-1-flash-1017-off,found,25.4%,25.4%,ok
+leaderboard,league-2/deepseek-v4-1-flash-1017-off,judgement,58.5 (95%: 56.6–60.5),58.5 (95%: 56.6–60.5),ok
+leaderboard,league-2/deepseek-v4-1-flash-1017-off,record,5–1–12,5–1–12,ok
+leaderboard,league-2/deepseek-v4-1-flash-1017-off,error,35.2 (95%: 31.8–38.8),35.2 (95%: 31.8–38.8),ok
+leaderboard,league-3/grok-4-7-on,safe,93.0%,93.0%,ok
+leaderboard,league-3/grok-4-7-on,cost,$117.379,$117.379,ok
+leaderboard,league-3/grok-4-7-on,decisions,"1,337","1,337",ok
+leaderboard,league-3/grok-4-7-on,safe_n,454 of 488,454 of 488,ok
+leaderboard,league-3/grok-4-7-on,took,190 of 432,190 of 432,ok
+leaderboard,league-3/grok-4-7-on,bar,68.5 66.1 to 71.1,68.5 66.1 to 71.1,ok
+leaderboard,league-3/grok-4-7-on,found,44.0%,44.0%,ok
+leaderboard,league-3/grok-4-7-on,judgement,68.5 (95%: 66.1–71.1),68.5 (95%: 66.1–71.1),ok
+leaderboard,league-3/grok-4-7-on,record,6–1–4,6–1–4,ok
+leaderboard,league-3/grok-4-7-on,error,18.8 (95%: 15.9–21.8),18.8 (95%: 15.9–21.8),ok
+leaderboard,league-2/grok-4-7-off,safe,93.0%,93.0%,ok
+leaderboard,league-2/grok-4-7-off,cost,$32.813,$32.813,ok
+leaderboard,league-2/grok-4-7-off,decisions,"2,152","2,152",ok
+leaderboard,league-2/grok-4-7-off,safe_n,852 of 916,852 of 916,ok
+leaderboard,league-2/grok-4-7-off,took,295 of 697,295 of 697,ok
+leaderboard,league-2/grok-4-7-off,bar,67.7 66.0 to 69.5,67.7 66.0 to 69.5,ok
+leaderboard,league-2/grok-4-7-off,found,42.3%,42.3%,ok
+leaderboard,league-2/grok-4-7-off,judgement,67.7 (95%: 66.0–69.5),67.7 (95%: 66.0–69.5),ok
+leaderboard,league-2/grok-4-7-off,record,11–0–7,11–0–7,ok
+leaderboard,league-2/grok-4-7-off,error,19.1 (95%: 16.9–21.4),19.1 (95%: 16.9–21.4),ok
+leaderboard,league-2/claude-sonnet-5-5-high,safe,94.6%,94.6%,ok
+leaderboard,league-2/claude-sonnet-5-5-high,cost,$19.847,$19.847,ok
+leaderboard,league-2/claude-sonnet-5-5-high,decisions,"2,164","2,164",ok
+leaderboard,league-2/claude-sonnet-5-5-high,safe_n,841 of 889,841 of 889,ok
+leaderboard,league-2/claude-sonnet-5-5-high,took,308 of 737,308 of 737,ok
+leaderboard,league-2/claude-sonnet-5-5-high,bar,68.2 66.3 to 70.0,68.2 66.3 to 70.0,ok
+leaderboard,league-2/claude-sonnet-5-5-high,found,41.8%,41.8%,ok
+leaderboard,league-2/claude-sonnet-5-5-high,judgement,68.2 (95%: 66.3–70.0),68.2 (95%: 66.3–70.0),ok
+leaderboard,league-2/claude-sonnet-5-5-high,record,12–0–6,12–0–6,ok
+leaderboard,league-2/claude-sonnet-5-5-high,error,16.7 (95%: 14.9–18.7),16.7 (95%: 14.9–18.7),ok
+leaderboard,league-2/claude-sonnet-5-5-low,safe,96.2%,96.2%,ok
+leaderboard,league-2/claude-sonnet-5-5-low,cost,$13.541,$13.541,ok
+leaderboard,league-2/claude-sonnet-5-5-low,decisions,"2,150","2,150",ok
+leaderboard,league-2/claude-sonnet-5-5-low,safe_n,883 of 918,883 of 918,ok
+leaderboard,league-2/claude-sonnet-5-5-low,took,204 of 661,204 of 661,ok
+leaderboard,league-2/claude-sonnet-5-5-low,bar,63.5 61.6 to 65.4,63.5 61.6 to 65.4,ok
+leaderboard,league-2/claude-sonnet-5-5-low,found,30.9%,30.9%,ok
+leaderboard,league-2/claude-sonnet-5-5-low,judgement,63.5 (95%: 61.6–65.4),63.5 (95%: 61.6–65.4),ok
+leaderboard,league-2/claude-sonnet-5-5-low,record,13–1–4,13–1–4,ok
+leaderboard,league-2/claude-sonnet-5-5-low,error,20.1 (95%: 17.8–22.4),20.1 (95%: 17.8–22.4),ok
+leaderboard,league-2/gemini-3-8-flash-high,safe,97.6%,97.6%,ok
+leaderboard,league-2/gemini-3-8-flash-high,cost,$22.352,$22.352,ok
+leaderboard,league-2/gemini-3-8-flash-high,decisions,"2,168","2,168",ok
+leaderboard,league-2/gemini-3-8-flash-high,safe_n,858 of 879,858 of 879,ok
+leaderboard,league-2/gemini-3-8-flash-high,took,264 of 731,264 of 731,ok
+leaderboard,league-2/gemini-3-8-flash-high,bar,66.9 65.2 to 68.5,66.9 65.2 to 68.5,ok
+leaderboard,league-2/gemini-3-8-flash-high,found,36.1%,36.1%,ok
+leaderboard,league-2/gemini-3-8-flash-high,judgement,66.9 (95%: 65.2–68.5),66.9 (95%: 65.2–68.5),ok
+leaderboard,league-2/gemini-3-8-flash-high,record,12–0–6,12–0–6,ok
+leaderboard,league-2/gemini-3-8-flash-high,error,14.9 (95%: 12.9–17.0),14.9 (95%: 12.9–17.0),ok
+leaderboard,league-2/gemini-3-8-flash-low,safe,96.5%,96.5%,ok
+leaderboard,league-2/gemini-3-8-flash-low,cost,$4.123,$4.123,ok
+leaderboard,league-2/gemini-3-8-flash-low,decisions,"2,053","2,053",ok
+leaderboard,league-2/gemini-3-8-flash-low,safe_n,877 of 909,877 of 909,ok
+leaderboard,league-2/gemini-3-8-flash-low,took,214 of 633,214 of 633,ok
+leaderboard,league-2/gemini-3-8-flash-low,bar,65.1 63.5 to 66.8,65.1 63.5 to 66.8,ok
+leaderboard,league-2/gemini-3-8-flash-low,found,33.8%,33.8%,ok
+leaderboard,league-2/gemini-3-8-flash-low,judgement,65.1 (95%: 63.5–66.8),65.1 (95%: 63.5–66.8),ok
+leaderboard,league-2/gemini-3-8-flash-low,record,14–2–2,14–2–2,ok
+leaderboard,league-2/gemini-3-8-flash-low,error,16.3 (95%: 14.5–18.2),16.3 (95%: 14.5–18.2),ok
+leaderboard,league-3/kimi-k3-1-pro-off,safe,89.5%,89.5%,ok
+leaderboard,league-3/kimi-k3-1-pro-off,cost,$3.982,$3.982,ok
+leaderboard,league-3/kimi-k3-1-pro-off,decisions,"1,167","1,167",ok
+leaderboard,league-3/kimi-k3-1-pro-off,safe_n,416 of 465,416 of 465,ok
+leaderboard,league-3/kimi-k3-1-pro-off,took,153 of 361,153 of 361,ok
+leaderboard,league-3/kimi-k3-1-pro-off,bar,65.9 63.2 to 68.9,65.9 63.2 to 68.9,ok
+leaderboard,league-3/kimi-k3-1-pro-off,found,42.4%,42.4%,ok
+leaderboard,league-3/kimi-k3-1-pro-off,judgement,65.9 (95%: 63.2–68.9),65.9 (95%: 63.2–68.9),ok
+leaderboard,league-3/kimi-k3-1-pro-off,record,4–0–7,4–0–7,ok
+leaderboard,league-3/kimi-k3-1-pro-off,error,28.0 (95%: 24.5–31.8),28.0 (95%: 24.5–31.8),ok
+leaderboard,league-2/gemma-4-31b-on,error,19.6 (95%: 17.5–21.7),19.6 (95%: 17.5–21.7),ok
+leaderboard,league-2/gemma-4-31b-on,safe,97.1%,97.1%,ok
+leaderboard,league-2/gemma-4-31b-on,decisions,"2,122","2,122",ok
+leaderboard,league-2/gemma-4-31b-on,judgement,64.5 (95%: 62.9–66.2),64.5 (95%: 62.9–66.2),ok
+leaderboard,league-2/gemma-4-31b-on,safe_n,878 of 904,878 of 904,ok
+leaderboard,league-2/gemma-4-31b-on,took,223 of 700,223 of 700,ok
+leaderboard,league-2/gemma-4-31b-on,record,13–0–5,13–0–5,ok
+leaderboard,league-2/gemma-4-31b-on,bar,64.5 62.9 to 66.2,64.5 62.9 to 66.2,ok
+leaderboard,league-2/gemma-4-31b-on,found,31.9%,31.9%,ok
+leaderboard,league-2/gemma-4-31b-off,error,22.5 (95%: 19.9–25.3),22.5 (95%: 19.9–25.3),ok
+leaderboard,league-2/gemma-4-31b-off,safe,92.1%,92.1%,ok
+leaderboard,league-2/gemma-4-31b-off,decisions,"1,847","1,847",ok
+leaderboard,league-2/gemma-4-31b-off,judgement,62.6 (95%: 60.4–65.0),62.6 (95%: 60.4–65.0),ok
+leaderboard,league-2/gemma-4-31b-off,safe_n,732 of 795,732 of 795,ok
+leaderboard,league-2/gemma-4-31b-off,took,194 of 584,194 of 584,ok
+leaderboard,league-2/gemma-4-31b-off,record,10–0–8,10–0–8,ok
+leaderboard,league-2/gemma-4-31b-off,bar,62.6 60.4 to 65.0,62.6 60.4 to 65.0,ok
+leaderboard,league-2/gemma-4-31b-off,found,33.2%,33.2%,ok
+leaderboard,league-2/liquid-d1-ultra,safe,86.0%,86.0%,ok
+leaderboard,league-2/liquid-d1-ultra,cost,$0.145,$0.145,ok
+leaderboard,league-2/liquid-d1-ultra,decisions,"2,071","2,071",ok
+leaderboard,league-2/liquid-d1-ultra,safe_n,702 of 816,702 of 816,ok
+leaderboard,league-2/liquid-d1-ultra,took,289 of 688,289 of 688,ok
+leaderboard,league-2/liquid-d1-ultra,bar,64.0 61.7 to 66.3,64.0 61.7 to 66.3,ok
+leaderboard,league-2/liquid-d1-ultra,found,42.0%,42.0%,ok
+leaderboard,league-2/liquid-d1-ultra,judgement,64.0 (95%: 61.7–66.3),64.0 (95%: 61.7–66.3),ok
+leaderboard,league-2/liquid-d1-ultra,record,6–1–11,6–1–11,ok
+leaderboard,league-2/liquid-d1-ultra,error,30.3 (95%: 27.3–33.4),30.3 (95%: 27.3–33.4),ok
+leaderboard,late-entry/base-labs-mammoth-1,field,League 1 field,League 1 field,ok
+leaderboard,late-entry/base-labs-mammoth-1,safe,86.4%,86.4%,ok
+leaderboard,late-entry/base-labs-mammoth-1,cost,$0.387,$0.387,ok
+leaderboard,late-entry/base-labs-mammoth-1,decisions,"2,021","2,021",ok
+leaderboard,late-entry/base-labs-mammoth-1,safe_n,760 of 880,760 of 880,ok
+leaderboard,late-entry/base-labs-mammoth-1,took,288 of 720,288 of 720,ok
+leaderboard,late-entry/base-labs-mammoth-1,bar,63.2 61.2 to 65.2,63.2 61.2 to 65.2,ok
+leaderboard,late-entry/base-labs-mammoth-1,found,40.0%,40.0%,ok
+leaderboard,late-entry/base-labs-mammoth-1,judgement,63.2 (95%: 61.2–65.2),63.2 (95%: 61.2–65.2),ok
+leaderboard,late-entry/base-labs-mammoth-1,record,16–1–2,16–1–2,ok
+leaderboard,late-entry/base-labs-mammoth-1,error,28.5 (95%: 26.2–31.1),28.5 (95%: 26.2–31.1),ok
+leaderboard,late-entry/drex-max-v1,field,League 1 field,League 1 field,ok
+leaderboard,late-entry/drex-max-v1,safe,86.5%,86.5%,ok
+leaderboard,late-entry/drex-max-v1,cost,$0.271,$0.271,ok
+leaderboard,late-entry/drex-max-v1,decisions,"2,148","2,148",ok
+leaderboard,late-entry/drex-max-v1,safe_n,775 of 896,775 of 896,ok
+leaderboard,late-entry/drex-max-v1,took,299 of 761,299 of 761,ok
+leaderboard,late-entry/drex-max-v1,bar,62.9 61.1 to 64.7,62.9 61.1 to 64.7,ok
+leaderboard,late-entry/drex-max-v1,found,39.3%,39.3%,ok
+leaderboard,late-entry/drex-max-v1,played,18 of 19,18 of 19,ok
+leaderboard,late-entry/drex-max-v1,judgement,62.9 (95%: 61.1–64.7),62.9 (95%: 61.1–64.7),ok
+leaderboard,late-entry/drex-max-v1,record,11–0–7,11–0–7,ok
+leaderboard,late-entry/drex-max-v1,error,30.4 (95%: 27.4–33.4),30.4 (95%: 27.4–33.4),ok
+leaderboard,league-2/qwen3-8-27b-on,error,29.0 (95%: 26.5–31.8),29.0 (95%: 26.5–31.8),ok
+leaderboard,league-2/qwen3-8-27b-on,safe,90.2%,90.2%,ok
+leaderboard,league-2/qwen3-8-27b-on,decisions,"2,108","2,108",ok
+leaderboard,league-2/qwen3-8-27b-on,judgement,62.0 (95%: 60.1–63.9),62.0 (95%: 60.1–63.9),ok
+leaderboard,league-2/qwen3-8-27b-on,safe_n,735 of 815,735 of 815,ok
+leaderboard,league-2/qwen3-8-27b-on,took,242 of 715,242 of 715,ok
+leaderboard,league-2/qwen3-8-27b-on,record,9–0–9,9–0–9,ok
+leaderboard,league-2/qwen3-8-27b-on,bar,62.0 60.1 to 63.9,62.0 60.1 to 63.9,ok
+leaderboard,league-2/qwen3-8-27b-on,found,33.8%,33.8%,ok
+leaderboard,league-1/qwen3-8-27b-off,error,45.0 (95%: 40.7–49.9),45.0 (95%: 40.7–49.9),ok
+leaderboard,league-1/qwen3-8-27b-off,safe,91.7%,91.7%,ok
+leaderboard,league-1/qwen3-8-27b-off,decisions,"2,005","2,005",ok
+leaderboard,league-1/qwen3-8-27b-off,judgement,57.6 (95%: 56.1–59.0),57.6 (95%: 56.1–59.0),ok
+leaderboard,league-1/qwen3-8-27b-off,safe_n,671 of 732,671 of 732,ok
+leaderboard,league-1/qwen3-8-27b-off,took,178 of 756,178 of 756,ok
+leaderboard,league-1/qwen3-8-27b-off,record,9–1–8,9–1–8,ok
+leaderboard,league-1/qwen3-8-27b-off,bar,57.6 56.1 to 59.0,57.6 56.1 to 59.0,ok
+leaderboard,league-1/qwen3-8-27b-off,found,23.5%,23.5%,ok
+leaderboard,league-2/glm-5-3-on,safe,92.7%,92.7%,ok
+leaderboard,league-2/glm-5-3-on,cost,$2.917,$2.917,ok
+leaderboard,league-2/glm-5-3-on,decisions,"1,989","1,989",ok
+leaderboard,league-2/glm-5-3-on,safe_n,726 of 783,726 of 783,ok
+leaderboard,league-2/glm-5-3-on,took,205 of 668,205 of 668,ok
+leaderboard,league-2/glm-5-3-on,bar,61.7 59.7 to 63.8,61.7 59.7 to 63.8,ok
+leaderboard,league-2/glm-5-3-on,found,30.7%,30.7%,ok
+leaderboard,league-2/glm-5-3-on,judgement,61.7 (95%: 59.7–63.8),61.7 (95%: 59.7–63.8),ok
+leaderboard,league-2/glm-5-3-on,record,7–0–11,7–0–11,ok
+leaderboard,league-2/glm-5-3-on,error,30.9 (95%: 27.8–34.0),30.9 (95%: 27.8–34.0),ok
+leaderboard,late-entry/reax-1-3,field,League 1 field,League 1 field,ok
+leaderboard,late-entry/reax-1-3,safe,89.4%,89.4%,ok
+leaderboard,late-entry/reax-1-3,decisions,"1,998","1,998",ok
+leaderboard,late-entry/reax-1-3,safe_n,760 of 850,760 of 850,ok
+leaderboard,late-entry/reax-1-3,took,211 of 666,211 of 666,ok
+leaderboard,late-entry/reax-1-3,bar,60.5 58.7 to 62.4,60.5 58.7 to 62.4,ok
+leaderboard,late-entry/reax-1-3,found,31.7%,31.7%,ok
+leaderboard,late-entry/reax-1-3,played,18 of 19,18 of 19,ok
+leaderboard,late-entry/reax-1-3,judgement,60.5 (95%: 58.7–62.4),60.5 (95%: 58.7–62.4),ok
+leaderboard,late-entry/reax-1-3,record,11–1–6,11–1–6,ok
+leaderboard,late-entry/reax-1-3,error,27.8 (95%: 24.9–30.6),27.8 (95%: 24.9–30.6),ok
+leaderboard,league-2/fastino-glide,error,33.2 (95%: 30.2–36.4),33.2 (95%: 30.2–36.4),ok
+leaderboard,league-2/fastino-glide,safe,84.0%,84.0%,ok
+leaderboard,league-2/fastino-glide,decisions,"2,159","2,159",ok
+leaderboard,league-2/fastino-glide,judgement,60.4 (95%: 58.3–62.6),60.4 (95%: 58.3–62.6),ok
+leaderboard,league-2/fastino-glide,safe_n,756 of 900,756 of 900,ok
+leaderboard,league-2/fastino-glide,took,249 of 675,249 of 675,ok
+leaderboard,league-2/fastino-glide,record,5–0–13,5–0–13,ok
+leaderboard,league-2/fastino-glide,bar,60.4 58.3 to 62.6,60.4 58.3 to 62.6,ok
+leaderboard,league-2/fastino-glide,found,36.9%,36.9%,ok
+leaderboard,league-1/jev-1-13-0,safe,92.1%,92.1%,ok
+leaderboard,league-1/jev-1-13-0,cost,$0.166,$0.166,ok
+leaderboard,league-1/jev-1-13-0,decisions,"1,911","1,911",ok
+leaderboard,league-1/jev-1-13-0,safe_n,710 of 771,710 of 771,ok
+leaderboard,league-1/jev-1-13-0,took,190 of 705,190 of 705,ok
+leaderboard,league-1/jev-1-13-0,bar,59.5 57.4 to 61.6,59.5 57.4 to 61.6,ok
+leaderboard,league-1/jev-1-13-0,found,27.0%,27.0%,ok
+leaderboard,league-1/jev-1-13-0,judgement,59.5 (95%: 57.4–61.6),59.5 (95%: 57.4–61.6),ok
+leaderboard,league-1/jev-1-13-0,record,12–0–6,12–0–6,ok
+leaderboard,league-1/jev-1-13-0,error,34.4 (95%: 31.0–38.0),34.4 (95%: 31.0–38.0),ok
+leaderboard,league-2/qwen3-8-flash-off,safe,84.6%,84.6%,ok
+leaderboard,league-2/qwen3-8-flash-off,cost,$0.284,$0.284,ok
+leaderboard,league-2/qwen3-8-flash-off,decisions,"2,027","2,027",ok
+leaderboard,league-2/qwen3-8-flash-off,safe_n,613 of 725,613 of 725,ok
+leaderboard,league-2/qwen3-8-flash-off,took,243 of 706,243 of 706,ok
+leaderboard,league-2/qwen3-8-flash-off,bar,59.5 57.2 to 61.7,59.5 57.2 to 61.7,ok
+leaderboard,league-2/qwen3-8-flash-off,found,34.4%,34.4%,ok
+leaderboard,league-2/qwen3-8-flash-off,judgement,59.5 (95%: 57.2–61.7),59.5 (95%: 57.2–61.7),ok
+leaderboard,league-2/qwen3-8-flash-off,record,2–0–16,2–0–16,ok
+leaderboard,league-2/qwen3-8-flash-off,error,33.6 (95%: 30.8–36.7),33.6 (95%: 30.8–36.7),ok
+leaderboard,league-2/jev-1-14-0,safe,89.4%,89.4%,ok
+leaderboard,league-2/jev-1-14-0,cost,$0.173,$0.173,ok
+leaderboard,league-2/jev-1-14-0,decisions,"1,912","1,912",ok
+leaderboard,league-2/jev-1-14-0,safe_n,657 of 735,657 of 735,ok
+leaderboard,league-2/jev-1-14-0,took,184 of 632,184 of 632,ok
+leaderboard,league-2/jev-1-14-0,bar,59.3 57.1 to 61.4,59.3 57.1 to 61.4,ok
+leaderboard,league-2/jev-1-14-0,found,29.1%,29.1%,ok
+leaderboard,league-2/jev-1-14-0,judgement,59.3 (95%: 57.1–61.4),59.3 (95%: 57.1–61.4),ok
+leaderboard,league-2/jev-1-14-0,record,5–0–13,5–0–13,ok
+leaderboard,league-2/jev-1-14-0,error,31.7 (95%: 28.3–35.7),31.7 (95%: 28.3–35.7),ok
+leaderboard,late-entry/drex-max-1-1,field,League 1 field,League 1 field,ok
+leaderboard,late-entry/drex-max-1-1,safe,82.5%,82.5%,ok
+leaderboard,late-entry/drex-max-1-1,cost,$0.265,$0.265,ok
+leaderboard,late-entry/drex-max-1-1,decisions,"2,154","2,154",ok
+leaderboard,late-entry/drex-max-1-1,safe_n,775 of 939,775 of 939,ok
+leaderboard,late-entry/drex-max-1-1,took,250 of 702,250 of 702,ok
+leaderboard,late-entry/drex-max-1-1,bar,59.1 57.0 to 61.3,59.1 57.0 to 61.3,ok
+leaderboard,late-entry/drex-max-1-1,found,35.6%,35.6%,ok
+leaderboard,late-entry/drex-max-1-1,played,18 of 19,18 of 19,ok
+leaderboard,late-entry/drex-max-1-1,judgement,59.1 (95%: 57.0–61.3),59.1 (95%: 57.0–61.3),ok
+leaderboard,late-entry/drex-max-1-1,record,12–2–4,12–2–4,ok
+leaderboard,late-entry/drex-max-1-1,error,30.9 (95%: 28.2–33.7),30.9 (95%: 28.2–33.7),ok
+leaderboard,league-1/fastino-glide-v1-2-local,error,35.0 (95%: 31.6–39.0),35.0 (95%: 31.6–39.0),ok
+leaderboard,league-1/fastino-glide-v1-2-local,safe,84.6%,84.6%,ok
+leaderboard,league-1/fastino-glide-v1-2-local,decisions,"2,003","2,003",ok
+leaderboard,league-1/fastino-glide-v1-2-local,judgement,58.8 (95%: 56.7–60.8),58.8 (95%: 56.7–60.8),ok
+leaderboard,league-1/fastino-glide-v1-2-local,safe_n,698 of 825,698 of 825,ok
+leaderboard,league-1/fastino-glide-v1-2-local,took,219 of 664,219 of 664,ok
+leaderboard,league-1/fastino-glide-v1-2-local,record,12–0–6,12–0–6,ok
+leaderboard,league-1/fastino-glide-v1-2-local,bar,58.8 56.7 to 60.8,58.8 56.7 to 60.8,ok
+leaderboard,league-1/fastino-glide-v1-2-local,found,33.0%,33.0%,ok
+leaderboard,late-entry/drex-2-0,field,League 1 field,League 1 field,ok
+leaderboard,late-entry/drex-2-0,safe,84.8%,84.8%,ok
+leaderboard,late-entry/drex-2-0,cost,$0.258,$0.258,ok
+leaderboard,late-entry/drex-2-0,decisions,"1,937","1,937",ok
+leaderboard,late-entry/drex-2-0,safe_n,623 of 735,623 of 735,ok
+leaderboard,late-entry/drex-2-0,took,220 of 699,220 of 699,ok
+leaderboard,late-entry/drex-2-0,bar,58.1 55.7 to 60.4,58.1 55.7 to 60.4,ok
+leaderboard,late-entry/drex-2-0,found,31.5%,31.5%,ok
+leaderboard,late-entry/drex-2-0,played,18 of 19,18 of 19,ok
+leaderboard,late-entry/drex-2-0,judgement,58.1 (95%: 55.7–60.4),58.1 (95%: 55.7–60.4),ok
+leaderboard,late-entry/drex-2-0,record,10–0–8,10–0–8,ok
+leaderboard,late-entry/drex-2-0,error,38.4 (95%: 35.6–41.4),38.4 (95%: 35.6–41.4),ok
+leaderboard,late-entry/drex-2-0-local,field,League 1 field,League 1 field,ok
+leaderboard,late-entry/drex-2-0-local,safe,79.7%,79.7%,ok
+leaderboard,late-entry/drex-2-0-local,cost,$0.250,$0.250,ok
+leaderboard,late-entry/drex-2-0-local,decisions,"1,993","1,993",ok
+leaderboard,late-entry/drex-2-0-local,safe_n,581 of 729,581 of 729,ok
+leaderboard,late-entry/drex-2-0-local,took,189 of 720,189 of 720,ok
+leaderboard,late-entry/drex-2-0-local,bar,53.0 50.5 to 55.2,53.0 50.5 to 55.2,ok
+leaderboard,late-entry/drex-2-0-local,found,26.2%,26.2%,ok
+leaderboard,late-entry/drex-2-0-local,played,18 of 19,18 of 19,ok
+leaderboard,late-entry/drex-2-0-local,judgement,53.0 (95%: 50.5–55.2),53.0 (95%: 50.5–55.2),ok
+leaderboard,late-entry/drex-2-0-local,record,7–0–11,7–0–11,ok
+leaderboard,late-entry/drex-2-0-local,error,42.9 (95%: 39.1–47.1),42.9 (95%: 39.1–47.1),ok
+leaderboard,league-1/decider-v1-2-27b,safe,82.5%,82.5%,ok
+leaderboard,league-1/decider-v1-2-27b,cost,$0.087,$0.087,ok
+leaderboard,league-1/decider-v1-2-27b,decisions,"2,028","2,028",ok
+leaderboard,league-1/decider-v1-2-27b,safe_n,682 of 827,682 of 827,ok
+leaderboard,league-1/decider-v1-2-27b,took,244 of 731,244 of 731,ok
+leaderboard,league-1/decider-v1-2-27b,bar,57.9 56.0 to 59.9,57.9 56.0 to 59.9,ok
+leaderboard,league-1/decider-v1-2-27b,found,33.4%,33.4%,ok
+leaderboard,league-1/decider-v1-2-27b,judgement,57.9 (95%: 56.0–59.9),57.9 (95%: 56.0–59.9),ok
+leaderboard,league-1/decider-v1-2-27b,record,12–0–6,12–0–6,ok
+leaderboard,league-1/decider-v1-2-27b,error,36.9 (95%: 33.9–40.1),36.9 (95%: 33.9–40.1),ok
+leaderboard,league-1/celeris-1-decision,safe,91.7%,91.7%,ok
+leaderboard,league-1/celeris-1-decision,cost,$0.150,$0.150,ok
+leaderboard,league-1/celeris-1-decision,decisions,"1,922","1,922",ok
+leaderboard,league-1/celeris-1-decision,safe_n,749 of 817,749 of 817,ok
+leaderboard,league-1/celeris-1-decision,took,163 of 683,163 of 683,ok
+leaderboard,league-1/celeris-1-decision,bar,57.8 55.9 to 59.7,57.8 55.9 to 59.7,ok
+leaderboard,league-1/celeris-1-decision,found,23.9%,23.9%,ok
+leaderboard,league-1/celeris-1-decision,judgement,57.8 (95%: 55.9–59.7),57.8 (95%: 55.9–59.7),ok
+leaderboard,league-1/celeris-1-decision,record,12–2–4,12–2–4,ok
+leaderboard,league-1/celeris-1-decision,error,35.6 (95%: 32.0–39.4),35.6 (95%: 32.0–39.4),ok
+leaderboard,late-entry/base-labs-elephant-1,field,League 1 field,League 1 field,ok
+leaderboard,late-entry/base-labs-elephant-1,safe,87.0%,87.0%,ok
+leaderboard,late-entry/base-labs-elephant-1,cost,$0.133,$0.133,ok
+leaderboard,late-entry/base-labs-elephant-1,decisions,"2,044","2,044",ok
+leaderboard,late-entry/base-labs-elephant-1,safe_n,682 of 784,682 of 784,ok
+leaderboard,late-entry/base-labs-elephant-1,took,231 of 812,231 of 812,ok
+leaderboard,late-entry/base-labs-elephant-1,bar,57.7 55.8 to 59.6,57.7 55.8 to 59.6,ok
+leaderboard,late-entry/base-labs-elephant-1,found,28.4%,28.4%,ok
+leaderboard,late-entry/base-labs-elephant-1,judgement,57.7 (95%: 55.8–59.6),57.7 (95%: 55.8–59.6),ok
+leaderboard,late-entry/base-labs-elephant-1,record,11–0–8,11–0–8,ok
+leaderboard,late-entry/base-labs-elephant-1,error,44.6 (95%: 40.3–48.9),44.6 (95%: 40.3–48.9),ok
+leaderboard,league-2/clef,error,36.5 (95%: 33.5–39.6),36.5 (95%: 33.5–39.6),ok
+leaderboard,league-2/clef,safe,75.6%,75.6%,ok
+leaderboard,league-2/clef,decisions,"1,978","1,978",ok
+leaderboard,league-2/clef,judgement,57.5 (95%: 55.4–59.8),57.5 (95%: 55.4–59.8),ok
+leaderboard,league-2/clef,safe_n,603 of 798,603 of 798,ok
+leaderboard,league-2/clef,took,263 of 666,263 of 666,ok
+leaderboard,league-2/clef,record,2–0–16,2–0–16,ok
+leaderboard,league-2/clef,bar,57.5 55.4 to 59.8,57.5 55.4 to 59.8,ok
+leaderboard,league-2/clef,found,39.5%,39.5%,ok
+leaderboard,league-1/cygnet-gemma-4-12b,error,38.6 (95%: 35.4–41.9),38.6 (95%: 35.4–41.9),ok
+leaderboard,league-1/cygnet-gemma-4-12b,safe,86.8%,86.8%,ok
+leaderboard,league-1/cygnet-gemma-4-12b,decisions,"2,016","2,016",ok
+leaderboard,league-1/cygnet-gemma-4-12b,judgement,57.1 (95%: 55.3–58.8),57.1 (95%: 55.3–58.8),ok
+leaderboard,league-1/cygnet-gemma-4-12b,safe_n,685 of 789,685 of 789,ok
+leaderboard,league-1/cygnet-gemma-4-12b,took,205 of 750,205 of 750,ok
+leaderboard,league-1/cygnet-gemma-4-12b,record,12–1–5,12–1–5,ok
+leaderboard,league-1/cygnet-gemma-4-12b,bar,57.1 55.3 to 58.8,57.1 55.3 to 58.8,ok
+leaderboard,league-1/cygnet-gemma-4-12b,found,27.3%,27.3%,ok
+leaderboard,league-1/decider-v1-1-27b,safe,80.7%,80.7%,ok
+leaderboard,league-1/decider-v1-1-27b,cost,$0.090,$0.090,ok
+leaderboard,league-1/decider-v1-1-27b,decisions,"2,052","2,052",ok
+leaderboard,league-1/decider-v1-1-27b,safe_n,682 of 845,682 of 845,ok
+leaderboard,league-1/decider-v1-1-27b,took,233 of 703,233 of 703,ok
+leaderboard,league-1/decider-v1-1-27b,bar,56.9 54.9 to 58.8,56.9 54.9 to 58.8,ok
+leaderboard,league-1/decider-v1-1-27b,found,33.1%,33.1%,ok
+leaderboard,league-1/decider-v1-1-27b,judgement,56.9 (95%: 54.9–58.8),56.9 (95%: 54.9–58.8),ok
+leaderboard,league-1/decider-v1-1-27b,record,10–0–8,10–0–8,ok
+leaderboard,league-1/decider-v1-1-27b,error,38.8 (95%: 35.3–42.5),38.8 (95%: 35.3–42.5),ok
+leaderboard,late-entry/subq-snap-1-1,field,League 1 field,League 1 field,ok
+leaderboard,late-entry/subq-snap-1-1,safe,74.8%,74.8%,ok
+leaderboard,late-entry/subq-snap-1-1,cost,$0.150,$0.150,ok
+leaderboard,late-entry/subq-snap-1-1,decisions,"2,326","2,326",ok
+leaderboard,late-entry/subq-snap-1-1,safe_n,"750 of 1,003","750 of 1,003",ok
+leaderboard,late-entry/subq-snap-1-1,took,308 of 798,308 of 798,ok
+leaderboard,late-entry/subq-snap-1-1,bar,56.7 54.8 to 58.6,56.7 54.8 to 58.6,ok
+leaderboard,late-entry/subq-snap-1-1,found,38.6%,38.6%,ok
+leaderboard,late-entry/subq-snap-1-1,judgement,56.7 (95%: 54.8–58.6),56.7 (95%: 54.8–58.6),ok
+leaderboard,late-entry/subq-snap-1-1,record,12–0–7,12–0–7,ok
+leaderboard,late-entry/subq-snap-1-1,error,40.2 (95%: 36.7–43.8),40.2 (95%: 36.7–43.8),ok
+leaderboard,league-1/subq-snap-preview,safe,75.1%,75.1%,ok
+leaderboard,league-1/subq-snap-preview,cost,$0.193,$0.193,ok
+leaderboard,league-1/subq-snap-preview,decisions,"2,200","2,200",ok
+leaderboard,league-1/subq-snap-preview,safe_n,673 of 896,673 of 896,ok
+leaderboard,league-1/subq-snap-preview,took,297 of 783,297 of 783,ok
+leaderboard,league-1/subq-snap-preview,bar,56.5 53.8 to 59.1,56.5 53.8 to 59.1,ok
+leaderboard,league-1/subq-snap-preview,found,37.9%,37.9%,ok
+leaderboard,league-1/subq-snap-preview,judgement,56.5 (95%: 53.8–59.1),56.5 (95%: 53.8–59.1),ok
+leaderboard,league-1/subq-snap-preview,record,12–1–5,12–1–5,ok
+leaderboard,league-1/subq-snap-preview,error,43.9 (95%: 39.3–48.8),43.9 (95%: 39.3–48.8),ok
+leaderboard,league-1/gpt-6-luna,safe,89.7%,89.7%,ok
+leaderboard,league-1/gpt-6-luna,cost,$0.335,$0.335,ok
+leaderboard,league-1/gpt-6-luna,decisions,"1,962","1,962",ok
+leaderboard,league-1/gpt-6-luna,safe_n,636 of 709,636 of 709,ok
+leaderboard,league-1/gpt-6-luna,took,160 of 740,160 of 740,ok
+leaderboard,league-1/gpt-6-luna,bar,55.7 53.8 to 57.6,55.7 53.8 to 57.6,ok
+leaderboard,league-1/gpt-6-luna,found,21.6%,21.6%,ok
+leaderboard,league-1/gpt-6-luna,judgement,55.7 (95%: 53.8–57.6),55.7 (95%: 53.8–57.6),ok
+leaderboard,league-1/gpt-6-luna,record,11–1–6,11–1–6,ok
+leaderboard,league-1/gpt-6-luna,error,43.3 (95%: 39.7–46.9),43.3 (95%: 39.7–46.9),ok
+leaderboard,league-1/winnow-12b,error,49.7 (95%: 45.9–53.6),49.7 (95%: 45.9–53.6),ok
+leaderboard,league-1/winnow-12b,safe,76.6%,76.6%,ok
+leaderboard,league-1/winnow-12b,decisions,"2,015","2,015",ok
+leaderboard,league-1/winnow-12b,judgement,55.2 (95%: 52.9–57.2),55.2 (95%: 52.9–57.2),ok
+leaderboard,league-1/winnow-12b,safe_n,573 of 748,573 of 748,ok
+leaderboard,league-1/winnow-12b,took,263 of 780,263 of 780,ok
+leaderboard,league-1/winnow-12b,record,7–0–11,7–0–11,ok
+leaderboard,league-1/winnow-12b,bar,55.2 52.9 to 57.2,55.2 52.9 to 57.2,ok
+leaderboard,league-1/winnow-12b,found,33.7%,33.7%,ok
+leaderboard,league-1/mercury-decide,safe,88.1%,88.1%,ok
+leaderboard,league-1/mercury-decide,cost,$0.071,$0.071,ok
+leaderboard,league-1/mercury-decide,decisions,"1,853","1,853",ok
+leaderboard,league-1/mercury-decide,safe_n,583 of 662,583 of 662,ok
+leaderboard,league-1/mercury-decide,took,129 of 690,129 of 690,ok
+leaderboard,league-1/mercury-decide,bar,53.4 51.5 to 55.2,53.4 51.5 to 55.2,ok
+leaderboard,league-1/mercury-decide,found,18.7%,18.7%,ok
+leaderboard,league-1/mercury-decide,judgement,53.4 (95%: 51.5–55.2),53.4 (95%: 51.5–55.2),ok
+leaderboard,league-1/mercury-decide,record,8–1–9,8–1–9,ok
+leaderboard,league-1/mercury-decide,error,47.9 (95%: 43.3–52.9),47.9 (95%: 43.3–52.9),ok
+leaderboard,league-1/lfm2-5-24b-a2b-on,error,47.7 (95%: 44.1–51.2),47.7 (95%: 44.1–51.2),ok
+leaderboard,league-1/lfm2-5-24b-a2b-on,safe,73.4%,73.4%,ok
+leaderboard,league-1/lfm2-5-24b-a2b-on,decisions,"2,193","2,193",ok
+leaderboard,league-1/lfm2-5-24b-a2b-on,judgement,52.4 (95%: 50.3–54.5),52.4 (95%: 50.3–54.5),ok
+leaderboard,league-1/lfm2-5-24b-a2b-on,safe_n,647 of 882,647 of 882,ok
+leaderboard,league-1/lfm2-5-24b-a2b-on,took,248 of 788,248 of 788,ok
+leaderboard,league-1/lfm2-5-24b-a2b-on,record,10–0–8,10–0–8,ok
+leaderboard,league-1/lfm2-5-24b-a2b-on,bar,52.4 50.3 to 54.5,52.4 50.3 to 54.5,ok
+leaderboard,league-1/lfm2-5-24b-a2b-on,found,31.5%,31.5%,ok
+leaderboard,league-1/lfm2-5-24b-a2b-off,error,61.5 (95%: 56.3–66.8),61.5 (95%: 56.3–66.8),ok
+leaderboard,league-1/lfm2-5-24b-a2b-off,safe,62.7%,62.7%,ok
+leaderboard,league-1/lfm2-5-24b-a2b-off,decisions,"1,952","1,952",ok
+leaderboard,league-1/lfm2-5-24b-a2b-off,judgement,45.7 (95%: 43.2–48.1),45.7 (95%: 43.2–48.1),ok
+leaderboard,league-1/lfm2-5-24b-a2b-off,safe_n,470 of 750,470 of 750,ok
+leaderboard,league-1/lfm2-5-24b-a2b-off,took,206 of 715,206 of 715,ok
+leaderboard,league-1/lfm2-5-24b-a2b-off,record,3–0–15,3–0–15,ok
+leaderboard,league-1/lfm2-5-24b-a2b-off,bar,45.7 43.2 to 48.1,45.7 43.2 to 48.1,ok
+leaderboard,league-1/lfm2-5-24b-a2b-off,found,28.8%,28.8%,ok
+leaderboard,league-1/decider-flash-v1-2,safe,66.9%,66.9%,ok
+leaderboard,league-1/decider-flash-v1-2,cost,$0.045,$0.045,ok
+leaderboard,league-1/decider-flash-v1-2,decisions,"2,006","2,006",ok
+leaderboard,league-1/decider-flash-v1-2,safe_n,519 of 776,519 of 776,ok
+leaderboard,league-1/decider-flash-v1-2,took,223 of 712,223 of 712,ok
+leaderboard,league-1/decider-flash-v1-2,bar,49.1 46.5 to 51.6,49.1 46.5 to 51.6,ok
+leaderboard,league-1/decider-flash-v1-2,found,31.3%,31.3%,ok
+leaderboard,league-1/decider-flash-v1-2,judgement,49.1 (95%: 46.5–51.6),49.1 (95%: 46.5–51.6),ok
+leaderboard,league-1/decider-flash-v1-2,record,2–0–16,2–0–16,ok
+leaderboard,league-1/decider-flash-v1-2,error,59.6 (95%: 54.9–64.5),59.6 (95%: 54.9–64.5),ok
+leaderboard,league-1/open-jev-27b-v1-1,error,65.6 (95%: 59.7–71.9),65.6 (95%: 59.7–71.9),ok
+leaderboard,league-1/open-jev-27b-v1-1,safe,59.8%,59.8%,ok
+leaderboard,league-1/open-jev-27b-v1-1,decisions,"2,002","2,002",ok
+leaderboard,league-1/open-jev-27b-v1-1,judgement,48.5 (95%: 46.1–50.9),48.5 (95%: 46.1–50.9),ok
+leaderboard,league-1/open-jev-27b-v1-1,safe_n,455 of 761,455 of 761,ok
+leaderboard,league-1/open-jev-27b-v1-1,took,264 of 708,264 of 708,ok
+leaderboard,league-1/open-jev-27b-v1-1,record,2–1–15,2–1–15,ok
+leaderboard,league-1/open-jev-27b-v1-1,bar,48.5 46.1 to 50.9,48.5 46.1 to 50.9,ok
+leaderboard,league-1/open-jev-27b-v1-1,found,37.3%,37.3%,ok
+result card,1,card,"75.8 /100, higher is better GPT-6 Astra (low) · League 3 · 95% interval 73.1 to 78.5","75.8 /100, higher is better GPT-6 Astra (low) · League 3 · 95% interval 73.1 to 78.5",ok
+result card,2,card,"64.0 /100, higher is better Liquid d1-ultra · League 2 · 95% interval 61.7 to 66.3","64.0 /100, higher is better Liquid d1-ultra · League 2 · 95% interval 61.7 to 66.3",ok
+result card,3,card,"8.8 PR, lower is better GPT-6 Astra (high) · late entry, League 3 field · 95% interval 7.4 to 10.3","8.8 PR, lower is better GPT-6 Astra (high) · late entry, League 3 field · 95% interval 7.4 to 10.3",ok

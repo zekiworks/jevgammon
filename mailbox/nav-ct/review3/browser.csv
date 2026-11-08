@@ -1,0 +1,45 @@
+width,theme,check,observed,result
+1280,light,theme applied,light,ok
+1280,light,"result cards: 3 visible, Astra (high) 8.8 late entry lowest error rate","Highest observed risk judgement, every model setup 75.8 /100, higher is better GPT-6 Astra (low) · League 3 · 95% interval 73.1 to 78.5 | Highest observed risk judgement, decision models 64.0 /100, higher is better Liquid d1-ultra · League 2 · 95% interval 61.7 to 66.3 | Lowest observed error rate, every model setup 8.8 PR, lower is better GPT-6 Astra (high) · late entry, League 3 field · 95% interval 7.4 to 10.3",ok
+1280,light,"ranked rows 1..38 in order, 3 programs","38 ranked, 3 programs; top 5 GPT-6 Astra, Gemini 4 Argon, Claude Fable 5.1, GPT-6.1 Sol, Claude Opus 5.5",ok
+1280,light,tags on the 8 late-entry rows,GPT-6 Astra: late entry; Base Labs Mammoth-1: late entry; Drex Max v1: late entry · provisional; REAX 1.3: late entry · provisional; Drex Max 1.1: late entry · provisional; Drex 2.0: late entry · provisional; Base Labs Elephant-1: late entry; SubQ Snap 1.1: late entry,ok
+1280,light,"details box of every late entry (9): late line, provisional line, SubQ note",9 ok; ,ok
+1280,light,"filter chat: rows, ranks kept, programs shown","16 rows, late entries shown: GPT-6 Astra; programs 3",ok
+1280,light,"filter decision: rows, ranks kept, programs shown","22 rows, late entries shown: Base Labs Mammoth-1, Drex Max v1, REAX 1.3, Drex Max 1.1, Drex 2.0, Base Labs Elephant-1, SubQ Snap 1.1; programs 3",ok
+1280,light,"filter all: rows, ranks kept, programs shown","38 rows, late entries shown: GPT-6 Astra, Base Labs Mammoth-1, Drex Max v1, REAX 1.3, Drex Max 1.1, Drex 2.0, Base Labs Elephant-1, SubQ Snap 1.1; programs 3",ok
+1280,light,About: How the leaderboard is built,How the leaderboard is built  A fixed table: the filters below the leaderboard do not chan…,ok
+1280,light,home page no wider than the window,scrollWidth 1280,ok
+1280,light,script errors,none,ok
+1280,dark,theme applied,dark,ok
+1280,dark,"result cards: 3 visible, Astra (high) 8.8 late entry lowest error rate","Highest observed risk judgement, every model setup 75.8 /100, higher is better GPT-6 Astra (low) · League 3 · 95% interval 73.1 to 78.5 | Highest observed risk judgement, decision models 64.0 /100, higher is better Liquid d1-ultra · League 2 · 95% interval 61.7 to 66.3 | Lowest observed error rate, every model setup 8.8 PR, lower is better GPT-6 Astra (high) · late entry, League 3 field · 95% interval 7.4 to 10.3",ok
+1280,dark,"ranked rows 1..38 in order, 3 programs","38 ranked, 3 programs; top 5 GPT-6 Astra, Gemini 4 Argon, Claude Fable 5.1, GPT-6.1 Sol, Claude Opus 5.5",ok
+1280,dark,tags on the 8 late-entry rows,GPT-6 Astra: late entry; Base Labs Mammoth-1: late entry; Drex Max v1: late entry · provisional; REAX 1.3: late entry · provisional; Drex Max 1.1: late entry · provisional; Drex 2.0: late entry · provisional; Base Labs Elephant-1: late entry; SubQ Snap 1.1: late entry,ok
+1280,dark,"details box of every late entry (9): late line, provisional line, SubQ note",9 ok; ,ok
+1280,dark,"filter chat: rows, ranks kept, programs shown","16 rows, late entries shown: GPT-6 Astra; programs 3",ok
+1280,dark,"filter decision: rows, ranks kept, programs shown","22 rows, late entries shown: Base Labs Mammoth-1, Drex Max v1, REAX 1.3, Drex Max 1.1, Drex 2.0, Base Labs Elephant-1, SubQ Snap 1.1; programs 3",ok
+1280,dark,"filter all: rows, ranks kept, programs shown","38 rows, late entries shown: GPT-6 Astra, Base Labs Mammoth-1, Drex Max v1, REAX 1.3, Drex Max 1.1, Drex 2.0, Base Labs Elephant-1, SubQ Snap 1.1; programs 3",ok
+1280,dark,About: How the leaderboard is built,How the leaderboard is built  A fixed table: the filters below the leaderboard do not chan…,ok
+1280,dark,home page no wider than the window,scrollWidth 1280,ok
+1280,dark,script errors,none,ok
+390,light,theme applied,light,ok
+390,light,"result cards: 3 visible, Astra (high) 8.8 late entry lowest error rate","Highest observed risk judgement, every model setup 75.8 /100, higher is better GPT-6 Astra (low) · League 3 · 95% interval 73.1 to 78.5 | Highest observed risk judgement, decision models 64.0 /100, higher is better Liquid d1-ultra · League 2 · 95% interval 61.7 to 66.3 | Lowest observed error rate, every model setup 8.8 PR, lower is better GPT-6 Astra (high) · late entry, League 3 field · 95% interval 7.4 to 10.3",ok
+390,light,"ranked rows 1..38 in order, 3 programs","38 ranked, 3 programs; top 5 GPT-6 Astra, Gemini 4 Argon, Claude Fable 5.1, GPT-6.1 Sol, Claude Opus 5.5",ok
+390,light,tags on the 8 late-entry rows,GPT-6 Astra: late entry; Base Labs Mammoth-1: late entry; Drex Max v1: late entry · provisional; REAX 1.3: late entry · provisional; Drex Max 1.1: late entry · provisional; Drex 2.0: late entry · provisional; Base Labs Elephant-1: late entry; SubQ Snap 1.1: late entry,ok
+390,light,"details box of every late entry (9): late line, provisional line, SubQ note",9 ok; ,ok
+390,light,"filter chat: rows, ranks kept, programs shown","16 rows, late entries shown: GPT-6 Astra; programs 3",ok
+390,light,"filter decision: rows, ranks kept, programs shown","22 rows, late entries shown: Base Labs Mammoth-1, Drex Max v1, REAX 1.3, Drex Max 1.1, Drex 2.0, Base Labs Elephant-1, SubQ Snap 1.1; programs 3",ok
+390,light,"filter all: rows, ranks kept, programs shown","38 rows, late entries shown: GPT-6 Astra, Base Labs Mammoth-1, Drex Max v1, REAX 1.3, Drex Max 1.1, Drex 2.0, Base Labs Elephant-1, SubQ Snap 1.1; programs 3",ok
+390,light,About: How the leaderboard is built,How the leaderboard is built  A fixed table: the filters below the leaderboard do not chan…,ok
+390,light,home page no wider than the window,scrollWidth 390,ok
+390,light,script errors,none,ok
+390,dark,theme applied,dark,ok
+390,dark,"result cards: 3 visible, Astra (high) 8.8 late entry lowest error rate","Highest observed risk judgement, every model setup 75.8 /100, higher is better GPT-6 Astra (low) · League 3 · 95% interval 73.1 to 78.5 | Highest observed risk judgement, decision models 64.0 /100, higher is better Liquid d1-ultra · League 2 · 95% interval 61.7 to 66.3 | Lowest observed error rate, every model setup 8.8 PR, lower is better GPT-6 Astra (high) · late entry, League 3 field · 95% interval 7.4 to 10.3",ok
+390,dark,"ranked rows 1..38 in order, 3 programs","38 ranked, 3 programs; top 5 GPT-6 Astra, Gemini 4 Argon, Claude Fable 5.1, GPT-6.1 Sol, Claude Opus 5.5",ok
+390,dark,tags on the 8 late-entry rows,GPT-6 Astra: late entry; Base Labs Mammoth-1: late entry; Drex Max v1: late entry · provisional; REAX 1.3: late entry · provisional; Drex Max 1.1: late entry · provisional; Drex 2.0: late entry · provisional; Base Labs Elephant-1: late entry; SubQ Snap 1.1: late entry,ok
+390,dark,"details box of every late entry (9): late line, provisional line, SubQ note",9 ok; ,ok
+390,dark,"filter chat: rows, ranks kept, programs shown","16 rows, late entries shown: GPT-6 Astra; programs 3",ok
+390,dark,"filter decision: rows, ranks kept, programs shown","22 rows, late entries shown: Base Labs Mammoth-1, Drex Max v1, REAX 1.3, Drex Max 1.1, Drex 2.0, Base Labs Elephant-1, SubQ Snap 1.1; programs 3",ok
+390,dark,"filter all: rows, ranks kept, programs shown","38 rows, late entries shown: GPT-6 Astra, Base Labs Mammoth-1, Drex Max v1, REAX 1.3, Drex Max 1.1, Drex 2.0, Base Labs Elephant-1, SubQ Snap 1.1; programs 3",ok
+390,dark,About: How the leaderboard is built,How the leaderboard is built  A fixed table: the filters below the leaderboard do not chan…,ok
+390,dark,home page no wider than the window,scrollWidth 390,ok
+390,dark,script errors,none,ok

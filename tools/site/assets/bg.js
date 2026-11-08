@@ -573,8 +573,9 @@ async function savePng(panel, svg, title, lines, filename) {
 /* Home page: a leaderboard row's details box (Ümit #2904, as Clocktower Bench's). A tap on a phone opens it and a
    second tap on the row, a tap outside it or Escape closes it; with a mouse it shows while the pointer is on the row;
    with the keyboard while the focus is in the row (the model's name, then the box's links). The box is placed under
-   the row (above it near the bottom of the window), within the window's width. Without JavaScript every box is shown
-   in its row. */
+   the row (above it near the bottom of the window), within the window's width. A box that hover opened lets the
+   pointer through (class hl-hover): it covers the rows under its own, and the row under the pointer, not the box,
+   decides which box shows. Without JavaScript every box is shown in its row. */
 (function headlineDetails() {
   const table = document.getElementById('headline-table');
   if (!table) return;
@@ -593,7 +594,7 @@ async function savePng(panel, svg, title, lines, filename) {
     box.style.maxHeight = '';
     const height = box.offsetHeight;
     const header = document.querySelector('.site-header')?.getBoundingClientRect().bottom || 0;
-    const below = row.bottom;  // no gap: the pointer moves from the row into its box without leaving the row
+    const below = row.bottom;
     const bottom = innerHeight - 8;
     const roomBelow = bottom - below, roomAbove = row.top - header - 4;
     if (height <= roomBelow) box.style.top = `${below}px`;
@@ -609,12 +610,12 @@ async function savePng(panel, svg, title, lines, filename) {
   };
   const hide = () => {
     if (!open) return;
-    boxOf(open).classList.remove('open');
+    boxOf(open).classList.remove('open', 'hl-hover');
     open.classList.remove('hl-open');
     open = null;
     pinned = false;
   };
-  const show = (tr, pin) => {
+  const show = (tr, pin, hover = false) => {
     if (open !== tr) hide();
     const box = boxOf(tr);
     if (!box) return;
@@ -622,6 +623,7 @@ async function savePng(panel, svg, title, lines, filename) {
     pinned = pin;
     tr.classList.add('hl-open');
     box.classList.add('open');
+    box.classList.toggle('hl-hover', hover && !pin);
     place();
   };
   const rows = [...table.querySelectorAll('tbody tr[data-box]')];
@@ -638,17 +640,18 @@ async function savePng(panel, svg, title, lines, filename) {
   document.addEventListener('pointerup', released, true);
   document.addEventListener('pointercancel', released, true);
   rows.forEach(tr => {
-    tr.addEventListener('pointerenter', event => { if (event.pointerType === 'mouse' && !pinned && !held()) show(tr, false); });
+    tr.addEventListener('pointerenter', event => { if (event.pointerType === 'mouse' && !pinned && !held()) show(tr, false, true); });
     tr.addEventListener('pointerleave', event => { if (event.pointerType === 'mouse' && !pinned && open === tr && !held()) hide(); });
     tr.addEventListener('focusin', () => {
       keyed = !pointing;
-      if (keyed && open !== tr && !quiet) show(tr, false);
+      if (keyed && open === tr) boxOf(tr).classList.remove('hl-hover');  // the keyboard reaches the box's links
+      else if (keyed && !quiet) show(tr, false);
     });
     tr.addEventListener('focusout', event => { if (open === tr && !pinned && !tr.contains(event.relatedTarget)) hide(); });
     tr.addEventListener('click', event => {
       // A mouse click or a key (detail 0) follows the link; a link or key in the box or the expander does its own job.
       if (pointer === 'mouse' || event.detail === 0 || boxOf(tr).contains(event.target) || event.target.closest('.hl-more')) return;
-      event.preventDefault();  // a tap opens the box; its own link opens the decisions
+      event.preventDefault();  // a tap opens the box (tables.js leaves a prevented click alone); its link opens the decisions
       if (open === tr && pinned) hide(); else show(tr, true);
     });
   });

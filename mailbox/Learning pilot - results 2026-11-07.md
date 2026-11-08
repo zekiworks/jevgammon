@@ -82,20 +82,20 @@ Secondary comparison (records vs lessons vs budget, descriptive): on the evaluat
 
 Added on 8 Nov 2026 at Ümit's request (bus #2950, #2952), with Zeki's wording rules (#2929, #2964). Everything above this section, including the verdict, is unchanged. Nothing in this section was pre-registered.
 
-### 1. Each arm minus budget (empty: no game fit), paired by series
+### 1. Own lessons − budget and full records − budget (budget: empty, no game fit), paired by series
 
 The budget arm's context was empty at every point, so its T5 and T10 evaluations are empty-context retests of the T0 prompts. That makes budget the noise baseline for the evaluation set.
 
-- **Pairing:** each arm's value minus budget's value at the same checkpoint, within the same series id (same dice seed; the games differ once plays differ).
+- **Pairing:** two comparisons, own lessons − budget and full records − budget: the arm's value minus budget's value at the same checkpoint, within the same series id (same dice seed; the games differ once plays differ).
 - **Summary:** mean over the 10 series.
 - **Intervals:** 95% percentile bootstrap over whole series, the pilot's own (10,000 resamples). The calibration of these intervals was not determined.
 
-| Arm − budget (empty: no game fit) | Checkpoint | Risks found (pp) [95% CI] | Right safety (pp) [95% CI] | Error rate (PR) [95% CI] | Risk judgement [95% CI] |
+| Comparison | Checkpoint | Risks found (pp) [95% CI] | Right safety (pp) [95% CI] | Error rate (PR) [95% CI] | Risk judgement [95% CI] |
 |---|---|---:|---:|---:|---:|
-| full records | T5 | +0.1 [-1.6, 1.7] | -0.6 [-1.1, -0.1] | -1.03 [-2.33, 0.36] | -0.25 [-1.25, 0.70] |
-| full records | T10 | +0.5 [-0.5, 1.5] | +0.5 [-0.1, 1.1] | -1.61 [-2.42, -0.73] | +0.50 [-0.20, 1.25] |
-| own lessons | T5 | +5.9 [4.5, 7.2] | -0.5 [-0.9, -0.1] | -7.89 [-8.70, -7.08] | +2.70 [2.15, 3.20] |
-| own lessons | T10 | +5.5 [3.7, 7.3] | +0.3 [-0.2, 0.8] | -8.29 [-9.03, -7.44] | +2.90 [1.85, 3.90] |
+| full records − budget | T5 | +0.1 [-1.6, 1.7] | -0.6 [-1.1, -0.1] | -1.03 [-2.33, 0.36] | -0.25 [-1.25, 0.70] |
+| full records − budget | T10 | +0.5 [-0.5, 1.5] | +0.5 [-0.1, 1.1] | -1.61 [-2.42, -0.73] | +0.50 [-0.20, 1.25] |
+| own lessons − budget | T5 | +5.9 [4.5, 7.2] | -0.5 [-0.9, -0.1] | -7.89 [-8.70, -7.08] | +2.70 [2.15, 3.20] |
+| own lessons − budget | T10 | +5.5 [3.7, 7.3] | +0.3 [-0.2, 0.8] | -8.29 [-9.03, -7.44] | +2.90 [1.85, 3.90] |
 
 ### 2. Five more empty-context runs of the evaluation set
 
@@ -131,7 +131,7 @@ The 20 budget evaluations ran with 1 request in flight, during the pilot.
 | retests vs budget | 100 | 5.0 | 1–14 |
 | budget vs budget | 190 | 6.0 | 0–14 |
 
-**Every retest gave the same risks found and right safety, 28.0% and 97.0%.** The retests also chose the same plays almost everywhere: only 3 of the 200 positions were not unanimous across the five. T0 differs from every later empty-context run, on 8–11 positions against the retests and 7–12 against the budget evaluations. T0 differs from the later empty-context runs; the cause was not verified.
+**Every retest gave the same risks found and right safety, 28.0% and 97.0%.** The retests also chose the same plays almost everywhere: only 3 of the 200 positions were not unanimous across the five. These agreement counts come from the private per-position answers; only their totals are published. T0 differs from every later empty-context run, on 8–11 positions against the retests and 7–12 against the budget evaluations. T0 differs from the later empty-context runs; the cause was not verified.
 
 Read descriptively, about +3 pp of every arm's risks-found change from T0 (section "Signal rule") also appears with no memory at all. The signal rule and its verdict are as pre-registered and stay unchanged.
 

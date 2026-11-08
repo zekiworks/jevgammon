@@ -668,29 +668,29 @@ class Asked:
         self.returncode, self.stdout, self.stderr, self.key_limit = returncode, stdout, stderr, key_limit
 
 
-def last_answer_id(key):
+def answer_snapshot(key, name):
+    """Every stored answer row of `name` before an asking: position -> (row id, created_at, error). The runner
+    replaces a re-asked position's row (DELETE + INSERT; ids can be reused), so a row is this asking's own when its
+    (id, created_at, error) differs from the snapshot or its position was not stored before."""
     if not db_path(key).exists():
-        return 0
+        return {}
     db = sqlite3.connect(f"file:{db_path(key)}?mode=ro", uri=True, timeout=60)
     try:
-        return db.execute("SELECT COALESCE(MAX(id), 0) FROM answers").fetchone()[0]
+        return {r[0]: tuple(r[1:]) for r in db.execute(
+            "SELECT position_id, id, created_at, error FROM answers WHERE setup = ?", (name,))}
     except sqlite3.OperationalError:
-        return 0
+        return {}
     finally:
         db.close()
 
 
-def key_limit_answer(key, name, after_id=0):
-    """The provider text of an answer stored after `after_id` (this asking's own rows) that failed on the account
-    limit, or None. Earlier failures, kept for re-asking, do not count."""
-    db = sqlite3.connect(f"file:{db_path(key)}?mode=ro", uri=True, timeout=60)
-    try:
-        rows = db.execute("SELECT error FROM answers WHERE setup = ? AND id > ? AND error IS NOT NULL "
-                          "ORDER BY id DESC LIMIT 50", (name, after_id)).fetchall()
-    except sqlite3.OperationalError:
-        rows = []
-    db.close()
-    return next((t for (e,) in rows if (t := key_limit_text(e))), None)
+def key_limit_answer(key, name, snapshot):
+    """The provider text of an answer written by this asking (see `answer_snapshot`) that failed on the account
+    limit, or None. Failures stored before this asking, kept for re-asking, do not count."""
+    for pid, row in answer_snapshot(key, name).items():
+        if row != snapshot.get(pid) and (text := key_limit_text(row[2])):
+            return text
+    return None
 
 
 def open_reservations(ledger_path, pid):
@@ -704,31 +704,38 @@ def open_reservations(ledger_path, pid):
 
 
 def ask_watched(key, name, config_path, ledger, poll=0.05, settle_timeout=5.0):
-    """`jevgammon ask`, watched: at the first stored answer that failed on the provider's account limit, the process
-    is stopped (nothing more is dispatched once no reservation of it is open, so in-flight requests settle first;
-    after `settle_timeout` it is stopped anyway and an open reservation keeps its worst case, the ledger's rule)."""
+    """`jevgammon ask`, watched: at the first answer written by this asking that failed on the provider's account
+    limit (or such a failure printed on stdout or stderr), the process is stopped once none of its ledger reservations
+    is open, so requests in flight settle first; after `settle_timeout` it is stopped anyway and an open reservation
+    keeps its worst case (the ledger's rule). Stopping the process is not a cancellation of requests already sent;
+    the runner may send a few more before it is stopped."""
     import tempfile
-    start_id = last_answer_id(key)
-    with tempfile.TemporaryFile("w+") as out, tempfile.TemporaryFile("w+") as err:
-        proc = subprocess.Popen([str(BIN), "ask", "--config", str(config_path), "--positions", str(TEST_POSITIONS),
-                                 "--out", str(db_path(key)), "--setup", name], cwd=CODE, stdout=out, stderr=err,
-                                text=True)
-        found = None
-        while proc.poll() is None:
-            time.sleep(poll)
-            if found is None and db_path(key).exists():
-                found = key_limit_answer(key, name, start_id)
-                if found is not None:
-                    deadline = time.time() + settle_timeout
-                    while ledger and open_reservations(ledger["path"], proc.pid) and time.time() < deadline:
-                        time.sleep(0.01)
-                    proc.send_signal(signal.SIGKILL)
-        proc.wait()
-        out.seek(0)
-        err.seek(0)
-        stdout, stderr = out.read(), err.read()
+    snapshot = answer_snapshot(key, name)
+    with tempfile.TemporaryDirectory() as tmp:
+        out_path, err_path = Path(tmp) / "stdout", Path(tmp) / "stderr"
+        # The child writes through its own descriptors; the watcher reads through separate ones (no shared offset).
+        with open(out_path, "w") as out, open(err_path, "w") as err, open(out_path) as reader:
+            proc = subprocess.Popen([str(BIN), "ask", "--config", str(config_path), "--positions",
+                                     str(TEST_POSITIONS), "--out", str(db_path(key)), "--setup", name], cwd=CODE,
+                                    stdout=out, stderr=err, text=True)
+            found, printed = None, ""
+            while proc.poll() is None:
+                time.sleep(poll)
+                if found is None:
+                    printed += reader.read()
+                    found = (key_limit_answer(key, name, snapshot) if db_path(key).exists() else None) \
+                        or key_limit_text(printed)
+                    if found is not None:
+                        deadline = time.time() + settle_timeout
+                        while ledger and open_reservations(ledger["path"], proc.pid) and time.time() < deadline:
+                            time.sleep(0.01)
+                        proc.send_signal(signal.SIGKILL)
+            proc.wait()
+        stdout, stderr = out_path.read_text(), err_path.read_text()
     if found is None:
-        found = key_limit_text(stderr) or (key_limit_answer(key, name, start_id) if db_path(key).exists() else None)
+        # The runner prints each failed request on stdout (ask.rs store), other errors on stderr.
+        found = (key_limit_answer(key, name, snapshot) if db_path(key).exists() else None) \
+            or key_limit_text(stdout) or key_limit_text(stderr)
     return Asked(proc.returncode, stdout, stderr, found)
 
 

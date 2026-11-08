@@ -360,7 +360,8 @@ class KeyLimit(Isolated):
         with self.assertRaises(I.Pause):
             self.ask("keylimit", rounds=30)
         sent = self.dispatched()
-        # 3 answered, then the first refusal; dispatch stops right after (no retry loop, no sweep of 200).
+        # 3 answered, then the first refusal; dispatch stops soon after (no retry loop, no sweep of 200). The bound
+        # holds for this serial test double's timing only; it is not a proved bound for the real runner.
         self.assertLessEqual(len(sent), 3 + 1 + 4, sent)
         hold = json.loads((I.mdir(KEY) / "hold.json").read_text())
         self.assertIn("shared-balance priority", hold["reason"])
@@ -386,6 +387,51 @@ class KeyLimit(Isolated):
         self.assertFalse(answered & set(again))
         self.assertTrue(failed <= set(again))
         self.assertEqual((m["answered"], m["failed"]), (200, 0))
+
+    def seed(self, failed_error):
+        """199 answered positions, then the last one failed with the highest row id (as after an earlier run)."""
+        ids = [json.loads(line)["id"] for line in open(I.TEST_POSITIONS)]
+        db = sqlite3.connect(I.db_path(KEY))
+        db.execute("CREATE TABLE IF NOT EXISTS answers (id INTEGER PRIMARY KEY, setup TEXT, position_id TEXT, "
+                   "repeat INTEGER, chosen_index INTEGER, invalid INTEGER, error TEXT, in_flight INTEGER, "
+                   "cost_usd REAL, created_at TEXT)")
+        name = I.test_name(KEY, "E1")
+        for k, pid in enumerate(ids):
+            failed = k == len(ids) - 1
+            db.execute("INSERT INTO answers (setup, position_id, repeat, chosen_index, invalid, error, in_flight, "
+                       "created_at) VALUES (?, ?, 1, ?, 0, ?, 1, '1.0')",
+                       (name, pid, None if failed else 0, failed_error if failed else None))
+        db.commit()
+        top = db.execute("SELECT id, position_id FROM answers ORDER BY id DESC LIMIT 1").fetchone()
+        db.close()
+        return top
+
+    STALE = ('credential rejected: 403 Forbidden: {"error":{"message":"Key limit exceeded (total limit)"}}')
+
+    def test_a_fresh_key_limit_on_the_highest_id_retry_pauses(self):
+        """Zeki #3285: the re-asked position reuses the highest row id; its fresh failure is still this asking's."""
+        top = self.seed(self.STALE)
+        with self.assertRaises(I.Pause):
+            self.ask("retry-keylimit", rounds=30)
+        db = sqlite3.connect(I.db_path(KEY))
+        again = db.execute("SELECT id FROM answers WHERE position_id = ?", (top[1],)).fetchone()
+        db.close()
+        self.assertEqual(again[0], top[0])  # the same id, reused
+        self.assertEqual(self.dispatched(), [top[1]])
+        self.assertTrue((I.mdir(KEY) / "hold.json").exists())
+
+    def test_a_successful_resume_ignores_stale_failures(self):
+        top = self.seed(self.STALE)
+        m = self.ask("resume")
+        self.assertEqual((m["answered"], m["failed"]), (200, 0))
+        self.assertEqual(self.dispatched(), [top[1]])
+        self.assertFalse((I.mdir(KEY) / "hold.json").exists())
+
+    def test_a_key_limit_printed_on_stdout_only_is_detected(self):
+        with self.assertRaises(I.Pause):
+            self.ask("stdout-keylimit", rounds=30)
+        self.assertLessEqual(len(self.dispatched()), 1 + 4)  # the serial double's timing, not a runner bound
+        self.assertTrue((I.mdir(KEY) / "hold.json").exists())
 
     def test_an_ordinary_403_is_a_failed_request_as_before(self):
         m = self.ask("plain403")

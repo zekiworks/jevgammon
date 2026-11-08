@@ -491,11 +491,9 @@ def verdict(L) -> str:
     arms = list(R["table"])
     rule, sig = R["signal_rule"], R["signal"]
     lift = by_arm(R["learning_lift"], arms)
-    met = [a for a in arms if (sig.get(a) or {}).get("signal")]
     # Wording as the results file (mailbox, Zeki #2929): "threshold", never "effect"; the lift differences only as
     # observed; nothing stronger than the data.
-    head = ("No arm reached the pre-registered signal threshold (plan section 8)." if not met else
-            f"Arms that reached the pre-registered signal threshold (plan section 8): {', '.join(met)}.")
+    head = verdict_head(R)
     items = "".join(
         f'<li data-arm="{esc(a)}"><strong>{esc(a)}</strong>: '
         f'{"threshold reached" if s["signal"] else "threshold not reached"}. '
@@ -731,6 +729,38 @@ def chart_table(name: str, caption: str, xs: list, R, cells: dict) -> str:
                              cls=f"board list lp-numbers lp-{name}")
 
 
+def verdict_head(R) -> str:
+    """The verdict's first sentence (the page's, and the home page's learning section quotes it)."""
+    met = [a for a in R["table"] if (R["signal"].get(a) or {}).get("signal")]
+    return ("No arm reached the pre-registered signal threshold (plan section 8)." if not met else
+            f"Arms that reached the pre-registered signal threshold (plan section 8): {', '.join(met)}.")
+
+
+def risks_figure(R, fid: str = "learning-chart-risks") -> str:
+    """Chart (a) of the Results section with its numbers table; "" while no arm has a risks-found value."""
+    arms = list(R["table"])
+    xs = [(cp, CHECKPOINT_LABEL[cp]) for cp in CHECKPOINTS]
+    risks = risks_points(R)
+    if not any(risks.values()):
+        return ""
+    lines = []
+    for a in arms:
+        pts = risks[a]
+        if a == "control" and pts:  # control: T0 only, drawn flat at its T0 value across every checkpoint
+            lines.append((a, [(0, pts[0][1]), (len(xs) - 1, pts[0][1])], pts, True))
+        else:
+            lines.append((a, pts, pts, False))
+    cells = {a: {cp: (num(dict(risks[a]).get(i), 1) if a != "control" or cp == "T0" else nm("T0 only"))
+                 for i, (cp, _) in enumerate(xs)} for a in arms}
+    return (f'<figure class="lp-chart" id="{fid}">'
+            + line_chart("learning-risks", "Risks found, % (higher is better)", "%", xs, lines)
+            + legend(arms, ("control",)) + chart_table("risks", "Risks found (%) on the 200 evaluation "
+                                                       "positions: means over each arm's finished series; "
+                                                       "before game 1 is one shared run", xs, R, cells)
+            + '<p class="table-note">Control is tested before game 1 only (the shared run): its line is drawn '
+              'flat and dashed at that value.</p></figure>')
+
+
 def results_charts(L) -> str:
     """The two charts of the Results section (Ümit #2925 item 2), each with its numbers table, from the data file's
     validated projection only and empty until the first finished series: (a) risks found on the 200 evaluation
@@ -742,26 +772,7 @@ def results_charts(L) -> str:
                 'finished series: risks found on the evaluation set before game 1, after game 5 and after game 10, '
                 'and the error rate of each game, one line per arm.</p>')
     arms = list(R["table"])
-    out = []
-    xs = [(cp, CHECKPOINT_LABEL[cp]) for cp in CHECKPOINTS]
-    risks = risks_points(R)
-    if any(risks.values()):
-        lines = []
-        for a in arms:
-            pts = risks[a]
-            if a == "control" and pts:  # control: T0 only, drawn flat at its T0 value across every checkpoint
-                lines.append((a, [(0, pts[0][1]), (len(xs) - 1, pts[0][1])], pts, True))
-            else:
-                lines.append((a, pts, pts, False))
-        cells = {a: {cp: (num(dict(risks[a]).get(i), 1) if a != "control" or cp == "T0" else nm("T0 only"))
-                     for i, (cp, _) in enumerate(xs)} for a in arms}
-        out.append('<figure class="lp-chart" id="learning-chart-risks">'
-                   + line_chart("learning-risks", "Risks found, % (higher is better)", "%", xs, lines)
-                   + legend(arms, ("control",)) + chart_table("risks", "Risks found (%) on the 200 evaluation "
-                                                              "positions: means over each arm's finished series; "
-                                                              "before game 1 is one shared run", xs, R, cells)
-                   + '<p class="table-note">Control is tested before game 1 only (the shared run): its line is drawn '
-                     'flat and dashed at that value.</p></figure>')
+    out = [f] if (f := risks_figure(R)) else []
     games = games_points(R)
     gx = [(str(g), str(g)) for g in range(1, V.G + 1)]
     if any(games.values()):

@@ -1,0 +1,15 @@
+{
+ "_about": "Highlights page slots (Ümit #2938 item 4; pages.highlights_page). A filled slot names one exported decision (dataset, setup slug, decision id); its 'facts' are the brief's claims as the export states them and must equal the exported decision (the model's play and its hitting rolls, the engine's best play and its hitting rolls, best equity minus the played equity, 4 decimals), or the build fails. 'story': null until the text comes from Ümit / Claude (shown as Story coming). Other slots: a candidate Can or Ümit listed, not chosen yet.",
+ "slots": [
+  {"title": "GPT-6 Astra (low) · League 3 · decision 108669", "dataset": "league-3", "setup": "gpt-6-astra-off",
+   "decision": 108669,
+   "facts": {"model_play": "7/3 7/4", "model_hitting_rolls": 0, "best_play": "6/2 24/21", "best_hitting_rolls": 36,
+             "equity_difference": 0.2238},
+   "story": null},
+  {"candidate": "Candidate (listed by Ümit, not chosen yet): GPT-6.1 Sol (high), Clear risk: the same boards with and without the numbers"},
+  {"candidate": "Candidate (listed by Ümit, not chosen yet): one great risk taken"},
+  {"candidate": "Candidate (listed by Ümit, not chosen yet): one blunder"},
+  {"candidate": "Candidate (listed by Ümit, not chosen yet): one decision-model surprise"},
+  {"candidate": "Candidate (listed by Ümit, later): one lesson from the learning run"}
+ ]
+}

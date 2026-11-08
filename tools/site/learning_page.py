@@ -510,7 +510,8 @@ def verdict(L) -> str:
     else:
         lift_head = "The observed game-lift differences against control differ in sign between the arms."
     with_zero = [a for a, c in vs_ci.items() if c and c[0] <= 0 <= c[1]]
-    lift_notes = ([f'For {", ".join(with_zero)} the intervals of the difference include zero.'] if with_zero else [])
+    names = ", ".join(with_zero[:-1]) + " and " + with_zero[-1] if len(with_zero) > 1 else "".join(with_zero)
+    lift_notes = [f"For {names}, the intervals of the difference include zero."] if with_zero else []
     empty, total = R["budget_empty_points"]["budget"], R["budget_points_total"]["budget"]
     always_empty = bool(total and empty == total)
     if always_empty:

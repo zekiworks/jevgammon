@@ -87,16 +87,25 @@ def headline_rows(S) -> tuple[list, list]:
         when = (f'<td class="hl-release"><a href="{esc(url)}">{month}</a></td>' if url else
                 f'<td class="hl-release"><span class="muted" title="No release date from the maker on record">{month}</span></td>')
         others = settings[model] - 1
+        # The setting line in full, and on a phone (site.css's settings-short) the league and a "+N" link to All setups.
+        more = (f' · <a class="hl-more" href="#leaderboard" data-headline-show="all" title="{count(others)} other setting'
+                f'{"s" if others > 1 else ""} of this model under All setups">+{others}</a>' if others else "")
         rows.append(f'<tr{H.attrs(S, ds, n)}><td class="num">{rank}</td><td class="model">{swatch}{icon}'
-                    f'<a class="model-name" href="{P.model_href("", ds, n, S)}">{esc(n)}</a><span class="small">League '
+                    f'<a class="model-name" href="{P.model_href("", ds, n, S)}">{esc(n)}</a><span class="small settings-long">League '
                     f'{lg["id"]} · {"its setting with the highest risk judgement; " + count(others) + " other setting" + ("s" if others > 1 else "") + " under All setups" if others else "its only setting"}'
-                    f'</span></td>{when}'
+                    f'</span><span class="small settings-short">League {lg["id"]}{more}</span></td>{when}'
                     f'{judgement_cell(r, fam["colour"] if fam else None)}{share(r["found"])}{share(r["right_safety"])}{er}{cost}</tr>')
     return rows, missing
 
 
-HEADLINE_HEAD = ["Rank", "Model: its setting with the highest risk judgement", ("Released", " data-nosort"), "Risk judgement (95% interval)", "Risks found",
-                 "Right safety", "Error rate (PR)",
+def head(long: str, short: str) -> str:
+    """A header in full, and on a phone (bg.css) its short form."""
+    return f'<span class="head-long">{long}</span><span class="head-short">{short}</span>'
+
+
+HEADLINE_HEAD = [head("Rank", "#"), head("Model: its setting with the highest risk judgement", "Model"),
+                 ("Released", " data-nosort"), head("Risk judgement (95% interval)", "Risk judgement"), "Risks found",
+                 "Right safety", head("Error rate (PR)", "PR"),
                  '<span class="cost-1k">$ per 1,000 decisions</span><span class="cost-1m">$ per 1M decisions</span>']
 
 

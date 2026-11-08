@@ -125,12 +125,11 @@ pub fn retryable(status: StatusCode) -> bool {
 
 /// Sends the request built by `make`, retrying network and server errors; the failed
 /// attempts and the waits are added to `retry`. Returns the body of a successful response.
-/// `stop`: a latch read immediately before every HTTP attempt (the first, and each retry after
-/// its backoff); once set, no further attempt is made.
+/// `guard`: see `Guard`.
 pub async fn send(
     make: impl Fn() -> RequestBuilder,
     retry: &RetryTime,
-    stop: Option<&AtomicBool>,
+    guard: Guard<'_>,
 ) -> Result<String, CallError> {
     let (body, _) = send_until(
         make,
@@ -139,7 +138,7 @@ pub async fn send(
         FIRST_BACKOFF,
         RATE_LIMIT_BACKOFF,
         RetryPolicy::current(),
-        stop,
+        guard,
     )
     .await?;
     Ok(body)
@@ -154,7 +153,7 @@ pub async fn send_metered(
     retry: &RetryTime,
     ledger: &Arc<Ledger>,
     worst_case: f64,
-    stop: Option<&AtomicBool>,
+    guard: Guard<'_>,
 ) -> Result<(String, Hold), CallError> {
     let (body, hold) = send_until(
         make,
@@ -163,7 +162,7 @@ pub async fn send_metered(
         FIRST_BACKOFF,
         RATE_LIMIT_BACKOFF,
         RetryPolicy::current(),
-        stop,
+        guard,
     )
     .await?;
     Ok((body, hold.expect("a metered attempt holds a reservation")))
@@ -178,7 +177,16 @@ async fn send_with_backoff(
     rate_limit_backoff: Duration,
     policy: RetryPolicy,
 ) -> Result<(String, Option<Hold>), CallError> {
-    send_until(make, retry, budget, first_backoff, rate_limit_backoff, policy, None).await
+    send_until(make, retry, budget, first_backoff, rate_limit_backoff, policy, Guard::default()).await
+}
+
+/// "Did they improve?" stops for one call: `stop` is a latch read immediately before every HTTP
+/// attempt (the first, and each retry after its backoff); once set, no further attempt is made.
+/// `quota_fatal`: a 429 ends the call at once (no retry), its reply kept in the error.
+#[derive(Clone, Copy, Default)]
+pub struct Guard<'a> {
+    pub stop: Option<&'a AtomicBool>,
+    pub quota_fatal: bool,
 }
 
 async fn send_until(
@@ -188,14 +196,14 @@ async fn send_until(
     first_backoff: Duration,
     rate_limit_backoff: Duration,
     policy: RetryPolicy,
-    stop: Option<&AtomicBool>,
+    guard: Guard<'_>,
 ) -> Result<(String, Option<Hold>), CallError> {
     let mut backoff = first_backoff;
     let mut attempt = 0;
     loop {
         // Immediately before every HTTP attempt (after pacing and after each backoff), before
         // any reservation: a set latch ends the call with nothing sent.
-        if stop.is_some_and(|latch| latch.load(Ordering::SeqCst)) {
+        if guard.stop.is_some_and(|latch| latch.load(Ordering::SeqCst)) {
             return Err(CallError::Fatal(anyhow::anyhow!(
                 "ROUTE CHECK: the player is stopped; no further HTTP attempt (attempt {})",
                 attempt + 1
@@ -242,6 +250,12 @@ async fn send_until(
                         }
                         .into(),
                     ));
+                }
+                if status == StatusCode::TOO_MANY_REQUESTS && guard.quota_fatal {
+                    return Err(CallError::Fatal(anyhow::anyhow!(
+                        "QUOTA: {status}: {}",
+                        snippet(&body)
+                    )));
                 }
                 if status == StatusCode::TOO_MANY_REQUESTS {
                     // Shared provider pools recover in tens of seconds, not two.
@@ -512,7 +526,7 @@ mod tests {
             Duration::from_millis(5),
             Duration::from_millis(5),
             LEAGUE,
-            Some(&latch),
+            Guard { stop: Some(&latch), quota_fatal: false },
         )
         .await
         .unwrap_err();
@@ -530,7 +544,7 @@ mod tests {
             Duration::from_millis(300),
             Duration::from_millis(300),
             LEAGUE,
-            Some(&latch),
+            Guard { stop: Some(&latch), quota_fatal: false },
         );
         let set = async {
             while count.load(Ordering::SeqCst) < 1 {
@@ -541,6 +555,32 @@ mod tests {
         let (result, ()) = tokio::join!(call, set);
         assert!(result.is_err());
         assert_eq!(count.load(Ordering::SeqCst), 1);
+    }
+
+    /// Claude caution: with `quota_fatal`, a 429 ends the call after one attempt (no retry).
+    #[tokio::test]
+    async fn a_quota_429_is_final_when_asked() {
+        let http = reqwest::Client::new();
+        let (url, count) = serve(vec![429, 200]);
+        let retry = RetryTime::default();
+        let error = send_until(
+            || http.get(&url),
+            &retry,
+            None,
+            Duration::from_millis(5),
+            Duration::from_millis(5),
+            LEAGUE,
+            Guard { stop: None, quota_fatal: true },
+        )
+        .await
+        .unwrap_err();
+        assert!(format!("{error:?}").contains("QUOTA: 429"));
+        assert_eq!(count.load(Ordering::SeqCst), 1);
+        // Without it, the league's retries apply.
+        let (url, count) = serve(vec![429, 200]);
+        assert!(send_until(|| http.get(&url), &retry, None, Duration::from_millis(5), Duration::from_millis(5),
+                           LEAGUE, Guard::default()).await.is_ok());
+        assert_eq!(count.load(Ordering::SeqCst), 2);
     }
 }
 

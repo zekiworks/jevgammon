@@ -343,7 +343,7 @@ impl DecisionClient {
                 }
             },
             retry,
-            None,
+            http::Guard::default(),
         )
         .await
         .map_err(|e| {

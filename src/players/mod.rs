@@ -208,6 +208,10 @@ pub struct PlayerConfig {
     /// does not is rejected before it is used and no further request is sent.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub expect_route: Option<llm::ExpectRoute>,
+    /// "Did they improve?" (Claude subscription): a 429 usage-limit reply ends the request at
+    /// once (no retry), so the run can pause without spending the shared quota.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub quota_pause: bool,
 }
 
 impl PlayerConfig {
@@ -364,6 +368,7 @@ pub fn render_stage_b(config: &PlayerConfig, req: &DecisionRequest<'_>, shown: &
         pacer: None,
         budget: None,
         expect_route: None,
+        quota_pause: false,
     };
     let play_user = prompt::letter_user(req, shown);
     let prediction_user = prompt::prediction_user(req, shown);
@@ -468,6 +473,7 @@ impl Player {
                 None => None,
             },
             expect_route: config.expect_route.clone(),
+            quota_pause: config.quota_pause,
         };
         let player = |backend| Player {
             spec: spec.to_owned(),

@@ -98,35 +98,49 @@ pub struct Options {
     /// "Did they improve?": the model and provider every response must name (OpenRouter's
     /// `model` and `provider` fields); `None` = no check.
     pub expect_route: Option<ExpectRoute>,
+    /// "Did they improve?" (Claude): a 429 ends the request at once, no retry.
+    pub quota_pause: bool,
 }
 
-/// "Did they improve?" route identity: the response's `model` must be one of `models` and its
-/// `provider` must be `provider`; a failing reply is appended to `reject_log` (JSON lines).
+/// "Did they improve?" route identity: the response's model field (JSON pointer `model_pointer`,
+/// default `/model`) must be one of `models`; when `provider` is set, the field at
+/// `provider_pointer` (default `/provider`) must equal it. A failing reply is appended to
+/// `reject_log` (JSON lines).
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct ExpectRoute {
     pub models: Vec<String>,
-    pub provider: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub provider: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub model_pointer: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub provider_pointer: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reject_log: Option<std::path::PathBuf>,
 }
 
-/// Whether a raw response names the expected model and provider. Missing or unreadable
+/// Whether a raw response names the expected model (and provider). Missing or unreadable
 /// identity fails closed.
 pub fn route_identity(raw: &str, expect: &ExpectRoute) -> std::result::Result<(), String> {
     let value: Value =
         serde_json::from_str(raw).map_err(|_| "the response is not JSON: no identity".to_owned())?;
-    let model = value.get("model").and_then(Value::as_str);
-    let provider = value.get("provider").and_then(Value::as_str);
-    match (model, provider) {
-        (Some(m), Some(p)) if expect.models.iter().any(|x| x == m) && p == expect.provider => Ok(()),
-        (Some(m), Some(p)) => Err(format!(
-            "the response names model {m:?} on {p:?}, expected one of {:?} on {:?}",
-            expect.models, expect.provider
-        )),
-        _ => Err(format!(
-            "the response lacks its identity (model {model:?}, provider {provider:?})"
-        )),
+    let model_at = expect.model_pointer.as_deref().unwrap_or("/model");
+    let model = value.pointer(model_at).and_then(Value::as_str);
+    let Some(model) = model else {
+        return Err(format!("the response lacks its identity (no model at {model_at})"));
+    };
+    if !expect.models.iter().any(|x| x == model) {
+        return Err(format!("the response names model {model:?}, expected one of {:?}", expect.models));
     }
+    if let Some(want) = &expect.provider {
+        let provider_at = expect.provider_pointer.as_deref().unwrap_or("/provider");
+        match value.pointer(provider_at).and_then(Value::as_str) {
+            Some(p) if p == want => {}
+            Some(p) => return Err(format!("the response names provider {p:?} for {model:?}, expected {want:?}")),
+            None => return Err(format!("the response lacks its identity (no provider at {provider_at})")),
+        }
+    }
+    Ok(())
 }
 
 enum Kind {
@@ -791,6 +805,14 @@ impl LlmClient {
         Ok((completion.text, completion.reasoning))
     }
 
+    /// The stops of every HTTP attempt: the route-check latch and, when set, the quota pause.
+    fn guard(&self) -> http::Guard<'_> {
+        http::Guard {
+            stop: Some(&self.route_rejected),
+            quota_fatal: self.options.quota_pause,
+        }
+    }
+
     /// Sends `body` (with the configured extra fields) and records the exchange and tokens.
     async fn call(
         &self,
@@ -906,7 +928,7 @@ impl LlmClient {
                         }
                         builder
                     };
-                    match http::send(request, retry, Some(&self.route_rejected)).await {
+                    match http::send(request, retry, self.guard()).await {
                         Err(CallError::Auth(_)) if !refreshed => {
                             token = creds.refresh_after_rejection(&token.access).await?;
                             refreshed = true;
@@ -930,7 +952,7 @@ impl LlmClient {
                             .header("anthropic-beta", "claude-code-20250219,oauth-2025-04-20")
                             .json(body)
                     };
-                    match http::send(request, retry, Some(&self.route_rejected)).await {
+                    match http::send(request, retry, self.guard()).await {
                         Err(CallError::Auth(_)) if !refreshed => {
                             token = creds.refresh_after_rejection(&token.access).await?;
                             refreshed = true;
@@ -953,7 +975,7 @@ impl LlmClient {
                             .bearer_auth(&token.access)
                             .json(body)
                     };
-                    match http::send(request, retry, Some(&self.route_rejected)).await {
+                    match http::send(request, retry, self.guard()).await {
                         Err(CallError::Auth(_)) if !refreshed => {
                             token = creds.refresh_after_rejection(&token.access).await?;
                             refreshed = true;
@@ -976,7 +998,7 @@ impl LlmClient {
                             .json(body)
                     },
                     retry,
-                    Some(&self.route_rejected),
+                    self.guard(),
                 )
                 .await?;
                 let completion = parse_gemini(&raw)?;
@@ -1001,7 +1023,7 @@ impl LlmClient {
                             .header("User-Agent", ANTIGRAVITY_USER_AGENT)
                             .json(&envelope)
                     };
-                    match http::send(request, retry, Some(&self.route_rejected)).await {
+                    match http::send(request, retry, self.guard()).await {
                         Err(CallError::Auth(_)) if !refreshed => {
                             token = creds.refresh_after_rejection(&token.access).await?;
                             refreshed = true;
@@ -1028,7 +1050,7 @@ impl LlmClient {
                     }
                 };
                 let Some(ledger) = &self.options.budget else {
-                    let raw = http::send(make, retry, Some(&self.route_rejected)).await?;
+                    let raw = http::send(make, retry, self.guard()).await?;
                     let completion = parse_chat_completion(&raw)?;
                     return Ok((raw, completion));
                 };
@@ -1037,7 +1059,7 @@ impl LlmClient {
                     .and_then(Value::as_u64)
                     .unwrap_or(32768);
                 let worst = ledger.worst_case(body.to_string().len(), max_output);
-                let (raw, hold) = http::send_metered(make, retry, ledger, worst, Some(&self.route_rejected)).await?;
+                let (raw, hold) = http::send_metered(make, retry, ledger, worst, self.guard()).await?;
                 match parse_chat_completion(&raw) {
                     Ok(completion) => {
                         hold.settle(
@@ -1728,6 +1750,7 @@ mod tests {
                 pacer: None,
                 budget: None,
                 expect_route: None,
+            quota_pause: false,
             },
         );
         let body = client.constrained_body("the position", 3);
@@ -1801,6 +1824,7 @@ mod tests {
             pacer: None,
             budget: None,
             expect_route: None,
+            quota_pause: false,
         };
         let routes = [
             (Route::OpenAiSubscription, Some("high"), "/text/format"),
@@ -1931,6 +1955,7 @@ mod tests {
             pacer: None,
             budget: None,
             expect_route: None,
+            quota_pause: false,
         };
         let sent = as_sent(
             constrained_request(
@@ -1975,6 +2000,7 @@ mod tests {
             pacer: None,
             budget: None,
             expect_route: None,
+            quota_pause: false,
         };
         let cases: [(Route, Option<&str>, Option<u32>, &[&str]); 7] = [
             (Route::OpenAiSubscription, Some("high"), None, &["/text"]),
@@ -2057,9 +2083,12 @@ mod tests {
                 budget: None,
                 expect_route: Some(ExpectRoute {
                     models: vec!["deepseek/deepseek-v4.1-flash".into()],
-                    provider: "Fireworks".into(),
+                    provider: Some("Fireworks".into()),
+                    model_pointer: None,
+                    provider_pointer: None,
                     reject_log: Some(reject_log),
                 }),
+                quota_pause: false,
             },
         )
     }
@@ -2072,7 +2101,9 @@ mod tests {
     fn route_identity_fails_closed() {
         let expect = ExpectRoute {
             models: vec!["deepseek/deepseek-v4.1-flash".into(), "deepseek/deepseek-v4.1-flash-20260910".into()],
-            provider: "Fireworks".into(),
+            provider: Some("Fireworks".into()),
+            model_pointer: None,
+            provider_pointer: None,
             reject_log: None,
         };
         assert!(route_identity(RIGHT, &expect).is_ok());
@@ -2172,6 +2203,26 @@ mod tests {
         // A's 503 and B's rejected reply: nothing after the latch reached the server.
         std::thread::sleep(std::time::Duration::from_millis(200));
         assert_eq!(count.load(Ordering::SeqCst), 2);
+    }
+
+    /// Subscription and local routes: the identity sits elsewhere (Antigravity's
+    /// `response.modelVersion`) or there is no provider field.
+    #[test]
+    fn route_identity_reads_the_routes_own_fields() {
+        let antigravity = ExpectRoute {
+            models: vec!["gemini-3.8-flash".into()],
+            provider: None,
+            model_pointer: Some("/response/modelVersion".into()),
+            provider_pointer: None,
+            reject_log: None,
+        };
+        assert!(route_identity(r#"{"response":{"modelVersion":"gemini-3.8-flash"},"traceId":"x"}"#, &antigravity).is_ok());
+        assert!(route_identity(r#"{"response":{"modelVersion":"gemini-4-argon"}}"#, &antigravity).is_err());
+        assert!(route_identity(r#"{"response":{}}"#, &antigravity).unwrap_err().contains("lacks"));
+        let claude = ExpectRoute { models: vec!["claude-sonnet-5-5".into()], provider: None, model_pointer: None,
+                                   provider_pointer: None, reject_log: None };
+        assert!(route_identity(r#"{"model":"claude-sonnet-5-5","content":[]}"#, &claude).is_ok());
+        assert!(route_identity(r#"{"model":"claude-opus-5-5","content":[]}"#, &claude).is_err());
     }
 }
 

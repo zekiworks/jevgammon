@@ -40,7 +40,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 CODE = HERE.parents[1]
-BIN = CODE / "target/release/jevgammon"
+BIN = Path(os.environ.get("IMPROVE_BIN", CODE / "target/release/jevgammon"))  # a lane may pin a copy
 STATE_ROOT = Path(os.environ.get("IMPROVE_ROOT", "/home/cbasaran/code/jevgammon"))
 DRY = os.environ.get("IMPROVE_DRY") == "1"
 SUFFIX = "-dry" if DRY else ""
@@ -113,9 +113,9 @@ MODELS = {
     "gemini-4-argon-on": dict(setup="Gemini 4 Argon (on)", lane="subscription"),
     "grok-4.7-on": dict(setup="Grok 4.7 (on)", lane="subscription"),
     "claude-fable-5.1-on": dict(setup="Claude Fable 5.1 (on)", lane="subscription"),
-    "gemma-4-31b-on": dict(setup="Gemma 4 31B (on)", lane="local"),
-    "qwen3.8-27b-on": dict(setup="Qwen3.8-27B (on)", lane="local"),
-    "lfm2.5-24b-a2b-on": dict(setup="LFM2.5-24B-A2B (on)", lane="local"),
+    "gemma-4-31b-on": dict(setup="Gemma 4 31B (on)", lane="local", expect=dict(models=["gemma-4-31B-it"])),
+    "qwen3.8-27b-on": dict(setup="Qwen3.8-27B (on)", lane="local", expect=dict(models=["qwen3.8-27b"])),
+    "lfm2.5-24b-a2b-on": dict(setup="LFM2.5-24B-A2B (on)", lane="local", expect=dict(models=["lfm2.5-24b-a2b"])),
     "gpt-6.1-sol-high": dict(setup="GPT-6.1 Sol (high)", lane="subscription"),
     "gpt-6-astra-high": dict(setup="GPT-6 Astra (high)", lane="subscription"),
 }
@@ -231,8 +231,10 @@ def player_config(key, name, parallel, note_file=None, ledger=None, base_url=Non
     if m.get("expect") and not DRY:
         # Every response is checked by the runner before it is used (llm::route_identity); a failure stops the
         # player's requests and is logged with its raw response here.
-        p["expect_route"] = dict(models=m["expect"]["models"], provider=m["expect"]["provider"],
+        p["expect_route"] = dict({k: v for k, v in m["expect"].items() if v is not None},
                                  reject_log=str(mdir(key) / "route-rejections.jsonl"))
+    if m.get("quota_pause") and not DRY:
+        p["quota_pause"] = True  # Claude: a 429 usage-limit reply ends the request at once; the run pauses
     return p
 
 
@@ -605,6 +607,9 @@ def run_test(key, step, name, note, workdir, ledger=None, rounds=30):
         route = answer_error(key, name, "ROUTE CHECK")
         if route:
             raise Stop(f"{step}: {route[:600]}")
+        quota = answer_error(key, name, "QUOTA:")
+        if quota:
+            raise Pause(f"{step}: usage limit (429) on the subscription: {quota[:600]}")
         budget = answer_error(key, name, "BUDGET CAP")
         if budget:
             raise BudgetRefused(budget)
@@ -767,6 +772,8 @@ def run_series(key, step, gate):
             log(key, "series_failed", step=step, attempt=attempt, stderr=r.stderr[-1000:])
             if "ROUTE CHECK" in r.stderr:
                 raise Stop(f"{step}: {r.stderr[-600:]}")
+            if "QUOTA:" in r.stderr:
+                raise Pause(f"{step}: usage limit (429) on the subscription: {r.stderr[-600:]}")
             if "BUDGET CAP" in r.stderr:
                 raise BudgetRefused(r.stderr[-500:])
             raise RuntimeError(f"{key} {step}: match failed: {r.stderr[-800:]}")
@@ -847,6 +854,8 @@ def write_lessons(key, step, g, record):
             log(key, "lesson_call_failed", step=step, game=g, attempt=k + 1, stderr=r.stderr[-500:])
             if "ROUTE CHECK" in r.stderr:
                 raise SystemExit(f"ROUTE CHECK: lesson call rejected: {r.stderr[-600:]}")
+            if "QUOTA:" in r.stderr:
+                raise SystemExit(f"QUOTA: lesson call hit the usage limit: {r.stderr[-600:]}")
             if "BUDGET CAP" in r.stderr:
                 raise SystemExit(f"BUDGET CAP: lesson call refused: {r.stderr[-300:]}")
             time.sleep(min(600, 30 * (k + 1)))
@@ -915,14 +924,23 @@ def response_ids(key, step):
         db.close()
     for f in d.rglob("lessons-g*.call.json"):
         out += [x.get("response") for x in json.loads(f.read_text()).get("exchanges", [])]
+    exp = MODELS[key].get("expect") or {}
     ids = []
     for raw in out:
         try:
             v = json.loads(raw)
         except (TypeError, ValueError):
+            ids.append((None, None))  # unreadable identity fails the check
             continue
-        ids.append((v.get("model"), v.get("provider")))
+        ids.append((pointer(v, exp.get("model_pointer") or "/model"),
+                    pointer(v, exp.get("provider_pointer") or "/provider") if exp.get("provider") else None))
     return ids
+
+
+def pointer(value, path):
+    for part in path.strip("/").split("/"):
+        value = value.get(part) if isinstance(value, dict) else None
+    return value
 
 
 def route_check(key, ids):
@@ -932,9 +950,9 @@ def route_check(key, ids):
         return None
     if not ids:
         return "route check: no response identity found for the step (fails closed)"
-    bad = sorted({(m, p) for m, p in ids if m not in exp["models"] or p != exp["provider"]}, key=str)
+    bad = sorted({(m, p) for m, p in ids if m not in exp["models"] or p != exp.get("provider")}, key=str)
     if bad:
-        return f"route check: responses named {bad[:5]}, expected model in {exp['models']} on {exp['provider']}"
+        return f"route check: responses named {bad[:5]}, expected model in {exp['models']} on {exp.get('provider')}"
     return None
 
 
@@ -994,6 +1012,14 @@ def run(key, until=None, balance_reader=openrouter_balance):
         lock.close()
         return STOP
     (mdir(key) / "paused.json").unlink(missing_ok=True)
+    hold = mdir(key) / "hold.json"  # an operator hold (e.g. shared-balance priority): pause before the next step
+    if hold.exists():
+        why = json.loads(hold.read_text())["reason"]
+        write_atomic(mdir(key) / "paused.json", json.dumps(dict(at=now(), reason=why), indent=1))
+        log(key, "paused", reason=why)
+        print(f"PAUSED {key}: {why}", file=sys.stderr)
+        lock.close()
+        return PAUSE
     ensure_runner_db(key)
     bind_plan(key)
     if m["lane"] == "local" and not DRY:
@@ -1013,7 +1039,7 @@ def run(key, until=None, balance_reader=openrouter_balance):
                 if binding in ("balance", "share"):
                     raise Pause(f"{step}: the step ledger's balance limit refused a request: {e}") from None
                 raise Stop(f"{step}: {binding} reached before a request: {e}") from None
-            if billed_model:
+            if m.get("expect") and not DRY:
                 why = route_check(key, response_ids(key, step))
                 if why:
                     raise Stop(f"{step}: {why}")

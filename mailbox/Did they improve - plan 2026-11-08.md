@@ -35,7 +35,7 @@ Examples (from #3057, with the 5-point floor): empty runs 28, 28, 28 (range 0) �
 | 1 | Qwen3.8 Flash (off) | Alibaba (Qwen) | off | OpenRouter → Alibaba, fallbacks off | waiting: first in order |
 | 2 | GLM-5.3 (on) | Z.ai | low | OpenRouter → Fireworks, fallbacks off | waiting |
 | 3 | Kimi K3.1 Pro (off) | Moonshot | off (`reasoning_effort: none`) | OpenRouter → moonshotai/mxfp4, fallbacks off | waiting: needs the money cap raised (§9) |
-| 4 | DeepSeek V4.1 Flash — **tested checkpoint: 1017** (the leaderboard row is the original V4.1 Flash; separate checkpoints) | DeepSeek | low | **API setup: OpenRouter id `deepseek/deepseek-v4.1-flash-1017`** (canonical slug `deepseek/deepseek-v4.1-flash-20261017`, Hugging Face `deepseek-ai/DeepSeek-V4.1-Flash-1017`; Fireworks `accounts/fireworks/models/deepseek-v4p1-flash-1017`), **pinned to provider tag `fireworks`, fallbacks off, `require_parameters: true`**, $0.30/$1.20 per 1M (read 2026-11-08). Settings: the league settings of the setup "DeepSeek V4.1 Flash 1017 (on)" (reasoning effort low, letter read from the answer's logprobs, top_logprobs 5, `response_format` not sent), only the provider pin changed (DeepSeek → Fireworks). Every response's `model` and `provider` fields are recorded; the run stops if they do not name the 1017 checkpoint on Fireworks (no substitution). Not the league's local route (bariton 4-GPU, impossible: GPU 3 faulty); spark2 is not used. **Two setups under one model name (Fireworks API here; our GPUs in the reading run: bariton, 4× RTX PRO 6000, SGLang, `deepseek-ai/DeepSeek-V4.1-Flash-1017` @ `1bae0e1088993b9b82de08f59de5be5a34e42170`, published mixed precision), not verified to be identical.** Decided by Ümit (#3084, #3089) and Main; GPU run confirmed by turkce (#3094). | waiting: needs the money cap raised (§9) |
+| 4 | DeepSeek V4.1 Flash (on) — **tested checkpoint: original V4.1 Flash (Fireworks)** | DeepSeek | low | **API setup: OpenRouter id `deepseek/deepseek-v4.1-flash`** (canonical slug `deepseek/deepseek-v4.1-flash-20260910`, Hugging Face `deepseek-ai/DeepSeek-V4.1-Flash`; Fireworks `deepseek-v4p1-flash`), **pinned to provider tag `fireworks`, fallbacks off, `require_parameters: true`**, $0.30/$1.20 per 1M (read 2026-11-08). Same model and settings as the leaderboard row's setup "DeepSeek V4.1 Flash (on)" (reasoning effort low, letter read from the answer's logprobs, top_logprobs 5); its league decisions ran mostly on this route (2,178). Every response's `model` and `provider` fields are recorded; the run stops if they do not name the original V4.1 Flash on Fireworks (not 1017; no substitution). Not the league's local route (bariton 4-GPU, impossible: GPU 3 faulty); spark2 is not used. Decided by Ümit (#3099, overriding #3089). | waiting: needs the money cap raised (§9) |
 | 5 | Gemini 3.8 Flash (high) | Google | high | Antigravity subscription | waiting |
 | 6 | Claude Sonnet 5.5 (high) | Anthropic | high | Claude Code subscription | waiting |
 | 7 | Claude Opus 5.5 (on) | Anthropic | high | Claude Code subscription | waiting |
@@ -144,7 +144,7 @@ Billed money: OpenRouter only (Qwen3.8 Flash, GLM-5.3, Kimi K3.1 Pro, DeepSeek V
 | Qwen3.8 Flash (off) | $2.30 | $3.45 | $0.35 | $0.18 |
 | GLM-5.3 (on) | $22.00 | $33.00 | $3.35 | $1.75 |
 | Kimi K3.1 Pro (off) | $35.00 | $52.50 | $5.34 | $2.77 |
-| DeepSeek V4.1 Flash 1017, via Fireworks | $44.00 | $66.00 | $6.96 | $3.07 |
+| DeepSeek V4.1 Flash (on), original, via Fireworks | $44.00 | $66.00 | $6.96 | $3.07 |
 
 E = (full − 5 × S) / 3, the draft's estimate split over its steps.
 

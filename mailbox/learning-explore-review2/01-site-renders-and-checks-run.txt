@@ -1,0 +1,7 @@
+# (a) whole-site renders, production mode. origin/main 59a5c16 and branch 7e78dc6. Started 2026-11-08 11:39:09 UTC
+main: PREREGISTRATION_ONLY = False
+rendered $SCRATCH/out-main with $SCRATCH/src-main/tools/site
+branch: PREREGISTRATION_ONLY = False
+rendered $SCRATCH/out-branch with $SCRATCH/src-branch/tools/site
+checks.run: 0 failure(s)
+# Finished 2026-11-08 11:41:08 UTC

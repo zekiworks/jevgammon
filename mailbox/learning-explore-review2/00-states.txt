@@ -1,0 +1,8 @@
+# (00) states. 2026-11-08 11:39:09 UTC
+no-explore: learning key 959a469f0d60
+explore: learning key 7366afabbdc2
+explore: explore.json sha256 319e07e80b89aba608781876935d6a36b6583829ac677e2477e216d82282dad6; retest_answer_counts {'1': 200, '2': 200, '3': 200, '4': 200, '5': 200}
+malformed-explore: SYNTHETIC: the explore state's explore.json with an unknown top-level key
+real: copied as snapshot.py does; complete=True; updated_at 2026-11-08T07:28:06+00:00
+SYNTHETIC-running: SYNTHETIC (subset of the real series); T0 kept; finished series {'control': 7, 'records': 6, 'lessons': 6, 'budget': 5}; complete=False; updated_at 2026-11-08T04:11:24+00:00
+site state: /tmp/inv/state with learning = explore

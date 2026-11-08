@@ -1,0 +1,2863 @@
+{
+ "version": "v3",
+ "preregistration_only": false,
+ "plan": {
+  "file": "Learning pilot - plan 2026-11-07.md",
+  "title": "Learning pilot - plan 2026-11-07",
+  "status": null,
+  "commitment": "Results will be published whichever way they go, including no lift.",
+  "sha256": "1e9bc932e0f6e72605868582510e4c8026885f19153a562cf1ed493a046ce8f6",
+  "sections": [
+   {
+    "title": "1. Question",
+    "markdown": "Does Gemma 4 31B (off) play better backgammon after seeing its own earlier games? Does the form of that experience matter: full game records with GNU Backgammon's evaluation of every decision, lessons the model writes for itself, or records cut to the size of those lessons?\n\nThis is measured in two places: in games against GNU Backgammon's Beginner level, and on a fixed 200-position evaluation set."
+   },
+   {
+    "title": "2. Model and settings",
+    "markdown": "- **Model:** Gemma 4 31B with reasoning off, set up exactly as in League 2: same weights, precision, prompt and request settings. Only the server address differs.\n- **Server:** our own vLLM server on a DGX Spark (GB10). It was checked against League 2's server before any call. The check was read-only: the model list, the container's arguments and the checkpoint files.\n  - The image is the same: vLLM 0.30.0.\n  - The checkpoint is the same: `gemma-4-31B-it`, bf16. Both weight-file sizes match, and so do the checksums of the config, the weight index, the chat template, the generation config and the tokenizer config.\n  - The precision is the same: bf16 weights quantized to fp8 at load, and an fp8 KV cache.\n  - Context length 32,768, generation config from the checkpoint, Gemma 4 reasoning parser, up to 20 log-probabilities.\n  - It differs from League 2 in four ways: at most 8 sequences at once (League 2: 16 or 24), a different memory share, a tool-call parser that is enabled, and the GB10 hardware (League 2 also ran some periods on a GB10).\n- **Request (as in League 2):**\n  - prompt version `bg-v2` and League 2's option-order seed;\n  - reasoning off (`enable_thinking = false`) and temperature 1.0;\n  - the answer is read by prefilling `Answer:`, generating 1 token and taking the top 20 log-probabilities; the play is the most probable option letter;\n  - positions with more than 26 legal plays are asked in groups, as in the league;\n  - no clock, and a turn limit of 300.\n- **Where the context goes:** after the league's system prompt and a blank line, between the lines `=== NOTES FROM YOUR EARLIER GAMES IN THIS SERIES ===` and `=== END OF NOTES ===`. The user prompt is unchanged. With no context, the request is exactly the league's.\n- **Context limit:** the context may use 26,879 tokens, counted with Gemma's tokenizer. That is 32,768, minus the largest evaluation prompt measured (4,389 tokens), minus a 1,500-token margin. When a context would exceed it, the oldest games are dropped first, and every drop is logged.\n- **Load:** each arm has at most one model request in flight, so the server never has more than 4. Games are played one after another, the evaluation asks one position at a time, and the lesson call runs between games. The one exception is the shared evaluation before game 1: it runs alone, with 4 requests in flight.\n- **Cost:** $0 API spend; local compute cost not estimated. Time is recorded for every evaluation, game decision and lesson call."
+   },
+   {
+    "title": "3. Opponent",
+    "markdown": "The opponent is GNU Backgammon 1.08 at its Beginner level (0-ply, deterministic noise 0.060, cubeless), x86-64 build. It is the runner's `gnubg-weak`, the fixed anchor of every league; the site's Method section \"The anchor\" describes it. This is A17's \"GNUbg Beginner anchor\"."
+   },
+   {
+    "title": "4. Arms",
+    "markdown": "There are exactly four arms. Every series starts with an empty context, and nothing carries over from one series to the next.\n\n| Arm | Context during the games and evaluations of a series |\n| --- | --- |\n| **control** | None (no history). |\n| **records** | Full records of all earlier games of this series, with GNU Backgammon's evaluation of each decision. |\n| **lessons** | Every lesson the model has written so far in this series, and nothing else. |\n| **budget** | Budget-matched records: the most recent full game records of this series (whole games) that fit within the lessons arm's context size at the same point of the same series. |\n\n### Records (records and budget arms)\n\n- **Board:** given in the player's own point numbering, as in the game prompt. Example: `your checkers 6:5 8:3 13:5 24:2 (bar 0, off 0); opponent's checkers 1:2 12:5 17:3 19:5 (bar 0, off 0)`.\n- **Game header:** one per game, giving the result, e.g. `Game k (you won 1 point(s), single):`.\n- **Decision line:** one per decision. Each line gives:\n  - turn and dice;\n  - the board;\n  - the play made and GNU Backgammon's best play;\n  - the equity lost, to 3 decimals;\n  - GNU Backgammon's default mark: best play; small error (below 0.04); doubtful (from 0.04); bad (from 0.08); very bad (from 0.16);\n  - the risk call, using the site's definition with margin 0.001: missed risk, needless risk, wrong risk, right risk call, right safety call, or no risk trade-off.\n- **Evaluations** are GNU Backgammon 1.08 at 2-ply, scored as on the site, with the same scorer settings, rules, play descriptions and hitting rolls.\n- **Leakage:** decisions whose board is an evaluation position are left out (section 8).\n\n### Lessons arm\n\nAfter each game there is exactly ONE lesson call.\n\n- **Input:** the record of that game, with GNU Backgammon's evaluation of each decision, in the format above. The call sees nothing else: no earlier lessons and no earlier games.\n- **Settings:** reasoning off, temperature 1.0, at most 400 output tokens.\n- **Output:** at most 5 lessons and at most 150 words in total.\n- **Over-long output:** if the model writes more, the harness keeps the first 5 lines that start with `- ` and then the first 150 words. Each cut is logged and counted.\n- **Context:** the lessons arm's context is every lesson kept so far in the series, oldest first, each block labelled \"After game k:\".\n\n### Budget arm\n\n- After game g of series s, the budget arm's context is no longer, in Gemma tokens, than the lessons arm's context after game g of series s.\n- That makes the budget arm's series s start only after the lessons arm's series s has finished.\n- The unit is the whole game record (amended before any model call; see section 11). Whole earlier games are taken newest first, as long as the whole context, including the delimiters and headers, still fits. They are shown in game order.\n- If not even the newest game fits, the context is empty at that point, and this is logged.\n\n### Lesson prompt\n\nThe lesson prompt is written once and fixed before any model call.\n\n- Files on branch `learning-pilot`: `workspace/learning-pilot/lessons_system.txt` and `lessons_user.txt`. The user file's `{game}` and `{record}` are filled in.\n- **sha256 of the system file's bytes followed by the user file's bytes:** `d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e`.\n\nSystem:\n\n```\nYou are a backgammon player reviewing one of your own games against the GNU Backgammon engine's evaluation, to play better in your next games. You write short, general lessons for yourself.\n```\n\nUser:\n\n```\nYou just played game {game} of a series of games against the same opponent. Below is the record of that game: every decision you made, with the GNU Backgammon engine's evaluation of it (2-ply: its best play, the equity you lost, and its verdict). Boards are given in your point numbering.\n\n{record}\n\nWrite at most 5 lessons for your next games in this series, at most 150 words in total. Each lesson is one line starting with \"- \", general advice rather than a comment on one specific position. Reply with the lessons only.\n```"
+   },
+   {
+    "title": "5. Structure",
+    "markdown": "- **Series:** 10 games against the anchor, played as a 5-round match with no early end at 5 points and no tie-break round. Games 2k−1 and 2k are a mirrored pair: same dice, seats swapped. After every game, the game is scored and the arm's context is updated. The next game reads the new context before every decision.\n- **Dice:** series s uses one dice seed in every arm, derived from a fixed master string; every seed is kept in `seeds.json`. The arms share dice schedules; their games differ once their plays differ.\n- **Evaluations (the 200-position set):**\n  - **T0:** ONE shared run before game 1, with an empty context. It is every arm's starting point and the control arm's evaluation. It is run once in total, not once per series.\n  - **T5 and T10:** after game 5 and after game 10 of every series, for records, lessons and budget, each with the arm's current context.\n  - **Counts:** 200 + 3 arms × 10 series × 2 × 200 = **12,200** evaluation answers. The smoke run (3 series) needs 3,800.\n- **Smoke:**\n  - 3 series per arm first. If the smoke is clean, the run continues to **10 series in total per arm**.\n  - \"Clean\" means technical and protocol cleanliness only. It is never a positive learning result.\n  - The smoke series count toward the 10 only if the prompt, the scoring, the arms and the evaluation set are unchanged after the smoke. If any of these changes, the smoke series are run again and the reason is logged.\n- **Restarts:** a series cut off part-way is played again from game 1 with the same dice. The restart is logged, and the old match stays in the database."
+   },
+   {
+    "title": "6. Evaluation set",
+    "markdown": "- **Source:** the Clear-risk scan's kept decisions from League 2 (`mailbox/Clear-risk scan - method 2026-10-29.md` and its amendments). In each one, the best unsafe play (12 or more hitting rolls) and the best safe play (0 hitting rolls) differ by at least 0.04 equity at both 2-ply and 3-ply, in the same direction, and the 2-ply and 3-ply gaps differ by at most 0.02. League 2 has 3,337 kept Risk wins and 7,704 kept Safety wins.\n- **Exclusions, in order:**\n  1. one legal play (none: the scan already skips one and two legal plays);\n  2. a repeated position, meaning the same board from the mover's side and the same dice (787 removed);\n  3. a position whose class under the site's rule (margin 0.001) disagrees with its scan group. This keeps \"risks found\" and \"right safety\" on the site's definitions for every position. 1,188 Safety wins were removed because an in-between play beats the best safe play.\n- **Draw:** from the remaining pools (3,004 Risk wins, 6,062 Safety wins), 100 Risk wins and 100 Safety wins, with a fixed seed kept in the private files.\n- **Positions with more than 26 legal plays:** 32 in total (18 Risk wins, 14 Safety wins). They are asked in groups, as in the league.\n- **Median absolute 3-ply gap:** 0.129 for Risk wins, 0.234 for Safety wins.\n- **Context:** each position is shown as it was in the league, with the same board, dice, score, round, game, turn and option order.\n- **Offline check, with no model call:** 160 single-request positions have a stored league exchange. For all 160, the prompt the harness renders matches the prompt the league sent: 125 identical in full, and 35 with identical state text (those were sent to decision services). The other 8 single-request positions have no stored exchange.\n- **Privacy:** the positions, the answers and the per-position results are never published (section 9)."
+   },
+   {
+    "title": "7. Metrics",
+    "markdown": "The definitions are the site's (`tools/site/analysis.py`). Every share is taken over valid answers.\n\n**For each arm and evaluation (T0 shared; T5 and T10 for records, lessons and budget):**\n\n- **Error rate (PR):** 500 × the mean 2-ply equity loss.\n- **Risk judgement:** 50 × (right risks ÷ Risk pays + right safety ÷ Safety pays).\n- **Risks found:** right risks ÷ Risk pays positions.\n- **Right safety:** right safety calls ÷ Safety pays positions.\n- **Risk appetite:** the share of the Risk pays and Safety pays positions where the chosen play leaves more hitting rolls than the best safe play, right or wrong.\n- **Invalid answers:** answers that name no option. They are left out of every quality number, as on the site. Failed requests are counted separately.\n- **Tokens per decision.**\n- **Records dropped:** earlier games of the series whose full record was left out of the context. This applies to records (over the context limit) and to budget (over the lessons arm's token count).\n- **Cost** ($0 API spend; local compute cost not estimated) and **time**.\n\n**For each arm, from its games:**\n\n- the error rate of every game;\n- decision latency;\n- tokens per decision;\n- wins.\n\n**A17 learning lift:** for each arm and series, the error rate in games 1–3 minus the error rate in games 8–10. Decisions are pooled within each group of games. A positive value means the arm played better later. It is compared with the control arm's change, paired by series: (arm's lift − control's lift), averaged over the series.\n\n**Secondary:** records against lessons against budget.\n\nAll of these are descriptive and outside the Holm correction. Each interval is a 95% percentile bootstrap: 10,000 resamples of whole series, fixed seed, with the same series drawn for every arm, so each resample keeps the dice schedules paired across arms."
+   },
+   {
+    "title": "8. Signal rule",
+    "markdown": "A17 fixed this rule before the first model call. It replaces every earlier version.\n\nFor each non-control arm (records, lessons, budget), averaged over its series:\n\n> **risks found after game 10 (T10) − risks found before game 1 (T0) ≥ +10 points, AND right safety (T10) − right safety (T0) ≥ −5 points.**\n\n- Points are percentage points.\n- T0 is the shared run.\n- The rule is reported for every arm, with the learning lift against control next to it as the second measure."
+   },
+   {
+    "title": "9. Leakage, isolation and publication",
+    "markdown": "**Leakage and isolation:**\n\n- Evaluation positions never appear in any context, record or lesson input. A game decision on a board equal to an evaluation position's board (mover's side, any dice) is left out, and the number left out is counted.\n- Evaluation answers and their scores never feed any context, lesson call or later prompt.\n- The arms never see each other's games. Each arm's context comes only from its own game records in the current series. The budget arm reads only the lessons arm's token count, never its content.\n- Pilot data are kept apart from the leagues and the site's inputs. They are not in `v3.db`, not under `tools/site/content`, and not in any public export.\n\n**Display:**\n\n- The page shows the protocol, the lesson prompt with its hash, this signal rule and the commitment sentence before the first model call.\n- Numbers (a table per arm and evaluation, and progress as series done out of planned) update after each series.\n- No verdict (\"learns\" / \"doesn't learn\") and **no learning lift** are published until all planned series of every arm are done, even if games 8–10 already exist for some series.\n- Every lesson the model wrote is published next to the game it came from.\n- **Learning tab order (amended before any model call, 7 Nov):** one model, Gemma 4 31B, is tested across 4 arms, so the tab orders arms, not models, and only after all planned series are done. Before that it shows no ranking or leader: only \"running, n of N series\" and per-arm interim numbers.\n  - Order: the non-control arms that meet the signal rule (section 8) come first, then those that do not.\n  - Within each group, arms are ordered by the learning lift minus control's lift, higher first.\n  - The control arm is the reference and is not ranked.\n\n**What is committed:**\n\n- To the repo: this plan and the results page, aggregates only.\n- Kept private and uncommitted, in `workspace/learning-pilot/` and `smoke/`: raw files (`learning.jsonl`, `seeds.json`, the evaluation set, answers, and contexts with real positions)."
+   },
+   {
+    "title": "10. Outputs and harness",
+    "markdown": "**Outputs:**\n\n- `learning.jsonl`: every pilot game and evaluation, by arm and series, with the context each decision saw and the lessons written.\n- `seeds.json`: the dice seed of every series, the option-order seed, and the option order of every position.\n- `learning-pilot.json`: aggregates.\n- The results table: `mailbox/Learning pilot - results 2026-11-07.md`.\n\n**Harness:** on branch `learning-pilot`, not main.\n\nRunner changes:\n\n- `prompt_note` and `prompt_note_file` in a player config: text appended to the system prompt;\n- for a single match: `--model1-config`, `--fixed-rounds`, and `--after-game` (a command run between games, which scores the game and updates the context).\n\nScripts in `workspace/learning-pilot/`:\n\n- `build_test_set.py`: the evaluation set;\n- `check_render.py`: the offline prompt check;\n- `score_games.py`: GNU Backgammon 2-ply scoring;\n- `pilot.py`: the shared T0, the series, contexts, lesson calls, evaluations, aggregates, `learning.jsonl` and `seeds.json`;\n- `report.py`: the table.\n\n**Dry run:** an offline run with the Safest program in Gemma's seat played series of all four arms end to end, with no model call. Evaluations were stubbed. Lessons were stubbed at the allowed maximum (5 lessons, 150 words), so that the budget arm's matching runs."
+   },
+   {
+    "title": "11. Amendment before any model call (7 Nov, Zeki #2531)",
+    "markdown": "Made after Zeki's review of the page candidate and before any model call of the pilot. No series, evaluation or lesson call had run.\n\n- **Budget arm unit.** The budget-matched arm now uses A17's unit: the most recent FULL game records (whole games, newest first) that fit within the lessons arm's token count at the same point of the same series.\n  - The first version used decision lines.\n  - If not even the newest whole game fits, the context is empty at that point, and this is logged.\n  - \"Records dropped\" now counts whole games, for both records and budget.\n- **Cost wording.** \"$0 API spend; local compute cost not estimated\" replaces \"$0, because the model runs locally\".\n- **Plan hashes.**\n  - Before this amendment (commit 5af8842): `3839eae1c1411ef82e20fe9ef18fdf4818192a7e44c034a07fea1e6bbfaa0861`.\n  - The hash of this amended file is recorded in the commit message and in the review packet. A file cannot contain its own hash.\n- **Consequence measured in the dry run, with no model call.** These sizes come from Safest's games, not Gemma's; Gemma's will differ.\n  - One full game record is 1,891–3,946 tokens (median 2,706; 20 cases).\n  - The lessons arm's context at the cap of 5 lessons and 150 words per game grows from 226 tokens after game 1 to 1,951 after game 10.\n  - In that dry run, **no whole game ever fit the budget**: the budget arm's context was empty after every game of both dry series. Under the whole-game rule it is expected to be empty at most or all points of the real run too.\n- **Decision (Zeki #2577, before any model call): keep A17's whole-game unit.** The alternatives (decision lines, or the newest game cut to fit) were not chosen.\n  - In the real run, every point of every budget series is logged and shown: the games included, the games dropped, and the tokens used against the lessons arm's token count.\n  - **Interpretation, fixed now:** if the budget arm's context stays empty in the real run, the reading is \"with this budget, record memory could not be provided\", NOT \"record memory didn't help\". The budget arm's results are then reported with that wording on the page.\n- **Lesson prompt:** unchanged (sha256 `d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e`)."
+   }
+  ],
+  "tab_order": {
+   "section": "9. Leakage, isolation and publication",
+   "markdown": "- **Learning tab order (amended before any model call, 7 Nov):** one model, Gemma 4 31B, is tested across 4 arms, so the tab orders arms, not models, and only after all planned series are done. Before that it shows no ranking or leader: only \"running, n of N series\" and per-arm interim numbers.\n  - Order: the non-control arms that meet the signal rule (section 8) come first, then those that do not.\n  - Within each group, arms are ordered by the learning lift minus control's lift, higher first.\n  - The control arm is the reference and is not ranked."
+  },
+  "budget_reading": {
+   "section": "11. Amendment before any model call (7 Nov, Zeki #2531)",
+   "markdown": "- **Interpretation, fixed now:** if the budget arm's context stays empty in the real run, the reading is \"with this budget, record memory could not be provided\", NOT \"record memory didn't help\". The budget arm's results are then reported with that wording on the page."
+  }
+ },
+ "redacted": 0,
+ "lesson_prompt": {
+  "system": "You are a backgammon player reviewing one of your own games against the GNU Backgammon engine's evaluation, to play better in your next games. You write short, general lessons for yourself.\n",
+  "user": "You just played game {game} of a series of games against the same opponent. Below is the record of that game: every decision you made, with the GNU Backgammon engine's evaluation of it (2-ply: its best play, the equity you lost, and its verdict). Boards are given in your point numbering.\n\n{record}\n\nWrite at most 5 lessons for your next games in this series, at most 150 words in total. Each lesson is one line starting with \"- \", general advice rather than a comment on one specific position. Reply with the lessons only.\n",
+  "sha256": "d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e",
+  "stated_in_plan": true
+ },
+ "results": {
+  "updated_at": "2026-11-08T07:28:06+00:00",
+  "last_update": "2026-11-08T07:28:04+00:00",
+  "planned_series_per_arm": 10,
+  "series_done": {
+   "control": 10,
+   "records": 10,
+   "lessons": 10,
+   "budget": 10
+  },
+  "complete": true,
+  "t0_done": true,
+  "table": {
+   "control": {
+    "T0": {
+     "error_rate": 55.55215932428837,
+     "risk_judgement": 60.5,
+     "risks_found": 25.0,
+     "right_safety": 96.0,
+     "risk_appetite": 18.0,
+     "invalid": 0,
+     "failed": 0,
+     "input_tokens_per_decision": 4853.44,
+     "latency_median_s": 3.719,
+     "request_seconds": 1026.1,
+     "cost_usd": 0.0,
+     "shared": true
+    }
+   },
+   "records": {
+    "T0": {
+     "error_rate": 55.55215932428837,
+     "risk_judgement": 60.5,
+     "risks_found": 25.0,
+     "right_safety": 96.0,
+     "risk_appetite": 18.0,
+     "invalid": 0,
+     "failed": 0,
+     "input_tokens_per_decision": 4853.44,
+     "latency_median_s": 3.719,
+     "request_seconds": 1026.1,
+     "cost_usd": 0.0,
+     "shared": true
+    },
+    "T5": {
+     "error_rate": 52.98170593380928,
+     "risk_judgement": 62.5,
+     "risks_found": 28.8,
+     "right_safety": 96.2,
+     "risk_appetite": 20.1,
+     "invalid": 0,
+     "failed": 0,
+     "records_dropped": 0,
+     "input_tokens_per_decision": 27374.139000000003,
+     "latency_median_s": 3.754,
+     "request_seconds": 11012.8,
+     "cost_usd": 0.0,
+     "series": 10
+    },
+    "T10": {
+     "error_rate": 53.08154107630253,
+     "risk_judgement": 62.8,
+     "risks_found": 28.3,
+     "right_safety": 97.3,
+     "risk_appetite": 19.35,
+     "invalid": 0,
+     "failed": 0,
+     "records_dropped": 23,
+     "input_tokens_per_decision": 39322.936,
+     "latency_median_s": 4.8662,
+     "request_seconds": 14759.9,
+     "cost_usd": 0.0,
+     "series": 10
+    }
+   },
+   "lessons": {
+    "T0": {
+     "error_rate": 55.55215932428837,
+     "risk_judgement": 60.5,
+     "risks_found": 25.0,
+     "right_safety": 96.0,
+     "risk_appetite": 18.0,
+     "invalid": 0,
+     "failed": 0,
+     "input_tokens_per_decision": 4853.44,
+     "latency_median_s": 3.719,
+     "request_seconds": 1026.1,
+     "cost_usd": 0.0,
+     "shared": true
+    },
+    "T5": {
+     "error_rate": 46.1230778247118,
+     "risk_judgement": 65.45,
+     "risks_found": 34.6,
+     "right_safety": 96.3,
+     "risk_appetite": 21.7,
+     "invalid": 0,
+     "failed": 0,
+     "records_dropped": 0,
+     "input_tokens_per_decision": 5744.1735,
+     "latency_median_s": 3.656,
+     "request_seconds": 10536.6,
+     "cost_usd": 0.0,
+     "series": 10
+    },
+    "T10": {
+     "error_rate": 46.39786507189274,
+     "risk_judgement": 65.2,
+     "risks_found": 33.3,
+     "right_safety": 97.1,
+     "risk_appetite": 20.45,
+     "invalid": 0,
+     "failed": 0,
+     "records_dropped": 0,
+     "input_tokens_per_decision": 6599.557000000001,
+     "latency_median_s": 2.9767,
+     "request_seconds": 9013.4,
+     "cost_usd": 0.0,
+     "series": 10
+    }
+   },
+   "budget": {
+    "T0": {
+     "error_rate": 55.55215932428837,
+     "risk_judgement": 60.5,
+     "risks_found": 25.0,
+     "right_safety": 96.0,
+     "risk_appetite": 18.0,
+     "invalid": 0,
+     "failed": 0,
+     "input_tokens_per_decision": 4853.44,
+     "latency_median_s": 3.719,
+     "request_seconds": 1026.1,
+     "cost_usd": 0.0,
+     "shared": true
+    },
+    "T5": {
+     "error_rate": 54.01461234688759,
+     "risk_judgement": 62.75,
+     "risks_found": 28.7,
+     "right_safety": 96.8,
+     "risk_appetite": 18.95,
+     "invalid": 0,
+     "failed": 0,
+     "records_dropped": 50,
+     "input_tokens_per_decision": 4853.447,
+     "latency_median_s": 3.1178999999999997,
+     "request_seconds": 9237.8,
+     "cost_usd": 0.0,
+     "series": 10
+    },
+    "T10": {
+     "error_rate": 54.68985567986965,
+     "risk_judgement": 62.3,
+     "risks_found": 27.8,
+     "right_safety": 96.8,
+     "risk_appetite": 18.55,
+     "invalid": 0,
+     "failed": 0,
+     "records_dropped": 100,
+     "input_tokens_per_decision": 4853.4465,
+     "latency_median_s": 2.5315000000000003,
+     "request_seconds": 7536.7,
+     "cost_usd": 0.0,
+     "series": 10
+    }
+   }
+  },
+  "series_total_done": 40,
+  "series_total_planned": 40,
+  "series_finished": {
+   "control": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "records": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "lessons": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "budget": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ]
+  },
+  "games": {
+   "control": {
+    "series": 10,
+    "games": 100,
+    "wins": 52,
+    "decisions": 2392,
+    "invalid": 0,
+    "error_rate": 28.7837248706698,
+    "records_dropped": 0,
+    "input_tokens_per_decision": 4354.6588266301915,
+    "latency_median_s": 3.621,
+    "cost_usd": 0.0
+   },
+   "records": {
+    "series": 10,
+    "games": 100,
+    "wins": 52,
+    "decisions": 2283,
+    "invalid": 0,
+    "error_rate": 29.664097310574597,
+    "records_dropped": 23,
+    "input_tokens_per_decision": 22847.51976993517,
+    "latency_median_s": 3.219,
+    "cost_usd": 0.0
+   },
+   "lessons": {
+    "series": 10,
+    "games": 100,
+    "wins": 47,
+    "decisions": 2425,
+    "invalid": 0,
+    "error_rate": 27.409571175722732,
+    "records_dropped": 0,
+    "input_tokens_per_decision": 5114.702555481814,
+    "latency_median_s": 3.737,
+    "cost_usd": 0.0
+   },
+   "budget": {
+    "series": 10,
+    "games": 100,
+    "wins": 52,
+    "decisions": 2383,
+    "invalid": 0,
+    "error_rate": 29.670423055415487,
+    "records_dropped": 100,
+    "input_tokens_per_decision": 4343.635853774634,
+    "latency_median_s": 3.225,
+    "cost_usd": 0.0
+   }
+  },
+  "game_error_rate": {
+   "control": {
+    "1": 22.988992074821457,
+    "2": 35.22149010278806,
+    "3": 27.002671435485855,
+    "4": 35.914265051805934,
+    "5": 28.2402843951911,
+    "6": 30.109605194698588,
+    "7": 30.201086686541593,
+    "8": 24.78635366190324,
+    "9": 34.09776582559546,
+    "10": 22.970885794541847
+   },
+   "records": {
+    "1": 23.867123209112194,
+    "2": 44.123706790125965,
+    "3": 27.903121730277764,
+    "4": 28.921333226799824,
+    "5": 30.530330872352124,
+    "6": 27.02471904105439,
+    "7": 24.142201383190827,
+    "8": 30.22682194606881,
+    "9": 40.287876271041405,
+    "10": 26.41023710662635
+   },
+   "lessons": {
+    "1": 23.128293532210492,
+    "2": 31.52208151052188,
+    "3": 24.543024069976962,
+    "4": 35.973621328137995,
+    "5": 25.327913741725055,
+    "6": 24.861189494241305,
+    "7": 24.330375442025552,
+    "8": 26.866270840568045,
+    "9": 34.87838377210195,
+    "10": 26.01473363957616
+   },
+   "budget": {
+    "1": 23.90988910910369,
+    "2": 35.59783518598439,
+    "3": 28.621134105917566,
+    "4": 32.07293630194497,
+    "5": 25.641602350861444,
+    "6": 29.224707480440436,
+    "7": 32.02654396328613,
+    "8": 32.075731312219396,
+    "9": 33.8649394230707,
+    "10": 25.85495352742411
+   }
+  },
+  "budget_empty_points": {
+   "budget": 100
+  },
+  "budget_points_total": {
+   "budget": 100
+  },
+  "signal_rule": {
+   "risks_found_at_least": 10,
+   "right_safety_at_least": -5
+  },
+  "provenance": {
+   "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+   "lesson_prompt_sha256": "d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e",
+   "t0_aggregate_sha256": "b0711cfde4787ee03e2fa97e5d4f9f64269044af7d46a3369f509c644cd117cc",
+   "series_aggregate_sha256": {
+    "control": {
+     "1": "bdf7a5d5d7a6d7a746dcf84cc801a53c7cc269ab4f69430e969bb450bbc80c63",
+     "2": "a6e2dd016140b468ffed445c0fc2ba306c4425142d8d8c2d443dd409052d915a",
+     "3": "d13141b59c4d4c200390ed4ffeebeb2752543a2d73eb9ed656da2337ef8e36a4",
+     "4": "74d8433a408b1e5b9f46aa17f4943330d98d813dae2326003dfcf38649af798b",
+     "5": "6bd100f80527bc8aeeb96dc8406e389061f515aa4d3c1e045021676b5386e556",
+     "6": "0a4007204d9cde7ddfbab6f9aa6eaabf0b8a882587ffa544954ceb6351b98b39",
+     "7": "b7f436d2a0e54b4495819f4a9ff8ba2ca2849fa7e5634f8ef07cd1650ca2d138",
+     "8": "f9b763fe2b2e281ccedd3a9e133951a9094379f24d45b9e51e3d798a472ba9be",
+     "9": "fbdb80567646bf611eccbee369585aa15120298e950ddd8f07e257eec0bdf708",
+     "10": "f6737b80545fe795fe7e41b69029c7b832180ff8346f00f43172abfe52fef70e"
+    },
+    "records": {
+     "1": "51bb95f74ae99612fc72b6554f72c72ede32d29d4def35e438a60e27e0f32b42",
+     "2": "3e33dc0b349f4c047f15d4f38a86d4056bc43c285c311546dca7d71df62c0237",
+     "3": "7f28740c401109bb11c9a554ca62821486bae23bab43d25d76d784ec24cb1a71",
+     "4": "083ab016ffdbf9d0ad62f7aaa54c10027382a3215ae1401c31f2080d2fdb91ef",
+     "5": "4e389f6f2c51088c5f8f7766d8415ab5910ed7eb983dd1fa14b869d05645dda1",
+     "6": "46b29ffaa3778b71680fc53a79934f22139864503a100135e8b89385a58a1a54",
+     "7": "40a40fc92b5f2200d1bd8b62cd37348429551d623c251f93a80f6c64603b3c05",
+     "8": "b9b34de45b87a6f35f51de91df362ba36fadb96ee533351b9a221264bd608a7f",
+     "9": "42c821dabd1304069ed66aca4036c1bb06fdfc24b5b02696ceb8ff1420d070cf",
+     "10": "09cd3c7bdc8ef06f23b362489b3adc7f999086db799a530d7cabffb3f5843000"
+    },
+    "lessons": {
+     "1": "93e9a5ef1c78185d75c40251ff5eb35b52d79de2177165db5e4c74f56ae8312d",
+     "2": "295a51fc2916d4ddf992ab12f8900b8ed35fc7414214706e638975a0e782c0e3",
+     "3": "90572acd916a256bee3ee5ed19a9f3496f2d4acd5d48446bfd73dd778fea2792",
+     "4": "7655b4b3c55ca3cc0f332cbef603e109269ce060570f4ba5ced75e84058a0b06",
+     "5": "ec0c44b1b3087a9948f235c0c32c025f18dffba868b66d74fc482d5b8b7ec3b8",
+     "6": "f8f17adef95af90386a38f77bc7d557e21e48a6d2feb1ecb39b4ac51d0c78d6b",
+     "7": "ea0c820761f0c7355cc3b1084b72162edbeb83db3ead2417e0f1c3f24436a3cb",
+     "8": "78c7eef6797c82f2609039d6f99cbc0d72ca6aab4a9ab4409591d7ad94f49301",
+     "9": "373c1b5b813946118bf460b1eed8a5e1e0c531a77d92754977e1cbc27c6e7147",
+     "10": "9be8c089d3c47aa384fdc920df2a6937ff53af5ce9dc18b86f75eb9ae2406a1d"
+    },
+    "budget": {
+     "1": "e4a4fb9286b063e22b94c96d40c038dfe7cf56053b97c678198ae79b4bb353ae",
+     "2": "330d6eb60526870d19e8cd4832fd017aef27f4d83884b7b955d7b88b7ceb466b",
+     "3": "55df0af3f06387153b9d969eab74b291aaa97cc8b7d53f3119c29e6adb36ad1e",
+     "4": "f5eca3f2d6009b8bd37003161761b0931b19b3c64fde5a1c249b8247fff0b9f8",
+     "5": "db486081a2056587ae939f3bdb27bb9407a9e5191cfd3faca6020b9f12741df3",
+     "6": "1de47793f4a3eb75377c9a28d2df5fa8fd39962390006304dde2f3182e8817ee",
+     "7": "8887e47f1bd2b0c7de440e48cffd41bc9c6353b3d28e856609d82c49726ae1f7",
+     "8": "6f93d3737535865debbc03bbc71b1b0ed1f59949350b7ebe8aaa4ad8159a81ce",
+     "9": "3e2bbd0f817d460f8c915c9fa854b548f6d7684da0880a0beecd85ace7f49d96",
+     "10": "997d41b2fcbf45e1e18b7aa0167c87fbf74d893ce5d3e93058b7bdfe312e9ab2"
+    }
+   }
+  },
+  "learning_lift": {
+   "control": {
+    "lift": 0.4838070174717197,
+    "lift_ci": [
+     -6.548804332834466,
+     6.098478804709749
+    ]
+   },
+   "records": {
+    "lift": -1.494853243557292,
+    "lift_ci": [
+     -7.473209043096719,
+     5.3329044188864305
+    ],
+    "vs_control": -1.9786602610290118,
+    "vs_control_ci": [
+     -8.7098456146119,
+     5.215623164862667
+    ]
+   },
+   "lessons": {
+    "lift": -3.3674970109298408,
+    "lift_ci": [
+     -7.882479299352949,
+     1.5189328610903712
+    ],
+    "vs_control": -3.85130402840156,
+    "vs_control_ci": [
+     -11.093897268509698,
+     3.9335874552993695
+    ]
+   },
+   "budget": {
+    "lift": -2.5668650016093872,
+    "lift_ci": [
+     -9.091953103476396,
+     3.112843439224727
+    ],
+    "vs_control": -3.0506720190811074,
+    "vs_control_ci": [
+     -4.921555516645209,
+     -1.183006235614139
+    ]
+   }
+  },
+  "signal": {
+   "records": {
+    "risks_found_change": 3.3,
+    "risks_found_ci": [
+     2.6,
+     4.1
+    ],
+    "right_safety_change": 1.3,
+    "right_safety_ci": [
+     0.8,
+     1.8
+    ],
+    "signal": false
+   },
+   "lessons": {
+    "risks_found_change": 8.3,
+    "risks_found_ci": [
+     7.1,
+     9.4
+    ],
+    "right_safety_change": 1.1,
+    "right_safety_ci": [
+     0.6,
+     1.6
+    ],
+    "signal": false
+   },
+   "budget": {
+    "risks_found_change": 2.8,
+    "risks_found_ci": [
+     1.7,
+     3.7
+    ],
+    "right_safety_change": 0.8,
+    "right_safety_ci": [
+     0.4,
+     1.0
+    ],
+    "signal": false
+   }
+  },
+  "paired_series": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10
+  ]
+ },
+ "lessons": [
+  {
+   "series": 1,
+   "text": "- Be more aggressive when hitting; don't miss opportunities to put the opponent on the bar to gain tempo.\n- Prioritize clearing mid-point checkers and bringing them home rather than burying checkers deep in the home board.\n- Avoid making unnecessary hits in the endgame if they don't improve your position or hinder the opponent's entry.\n- When bearing off, focus on maximizing the number of checkers removed rather than creating unnecessary points.\n- Balance safety and risk; don't default to the safest move when a slightly more aggressive play significantly increases equity.",
+   "game": 1,
+   "won": true,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 1,
+   "text": "- Prioritize hitting the opponent's blots in the early game, even if it means leaving a vulnerability.\n- Avoid \"burying\" checkers deep in the home board too early; maintain flexibility and utilize mid-point checkers.\n- When the opponent has a checker on the bar, prioritize cleaning up your own blots over making redundant internal points.\n- Be more aggressive with \"risk\" plays when the engine suggests a hitting sequence over a passive safety move.\n- Maintain a balance between closing out the opponent and bringing your remaining checkers home efficiently.",
+   "game": 2,
+   "won": true,
+   "result": "gammon",
+   "points": 2
+  },
+  {
+   "series": 1,
+   "text": "- Stop playing too safely; prioritize hitting the opponent's blots to disrupt their timing and gain tempo.\n- Look for opportunities to advance your back checkers early rather than focusing solely on building a home board.\n- Avoid \"burying\" checkers deep in your home board when you still have active threats or runners to manage.\n- When the opponent has a checker on the bar or is vulnerable, be more aggressive in attacking their anchors.\n- Prioritize clearing your outermost points and bringing checkers home over making redundant points deep in the board.",
+   "game": 3,
+   "won": true,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 1,
+   "text": "- Prioritize escaping back checkers over making internal points in the early game.\n- Don't be afraid to take calculated risks to hit the opponent and disrupt their structure.\n- Avoid \"burying\" checkers on the 2-point or 3-point when you still have checkers to bring home.\n- Maintain flexibility with your mid-point and outer board checkers rather than rushing to lock down the home board.\n- Be aggressive in challenging the opponent's anchor; missed hitting opportunities often lead to significant equity loss.",
+   "game": 4,
+   "won": true,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 1,
+   "text": "- Prioritize escaping your back checkers over making redundant internal points in the early game.\n- Don't be afraid to take risks by hitting blots in the outfield when it creates tempo or disrupts the opponent's structure.\n- Avoid burying checkers deep in your home board while you still have assets to move from the midpoint.\n- Be alert for \"hit and run\" opportunities that can shift the momentum of the game.\n- When bearing off against a defender on the bar, maintain a flexible structure to avoid leaving shots.",
+   "game": 5,
+   "won": true,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 1,
+   "text": "- Prioritize cleaning up blots and strengthening the home board over making redundant points.\n- When playing doubles, look for the most flexible distribution of checkers rather than just stacking points.\n- Be cautious not to leave unnecessary blots when the opponent has a strong anchor or checkers poised to hit.\n- In the bear-off, prioritize clearing the highest points first to maximize flexibility for future rolls.\n- Avoid \"over-playing\" safety when a slightly more aggressive move significantly increases winning equity.",
+   "game": 6,
+   "won": true,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 1,
+   "text": "- Avoid hitting haphazardly when your home board is weak; prioritize advancing back checkers to establish a secure escape route.\n- When entering from the bar, evaluate whether hitting in the outfield is more valuable than securing a landing spot or establishing an anchor.\n- In the late game, focus on clearing your furthest checkers first to avoid getting trapped or leaving unnecessary blots.\n- Don't prioritize making points in the home board when you still have checkers trapped in the opponent's home board.\n- Maintain a balance between aggressive hitting and safety; avoid \"over-hitting\" if it leaves your own structure vulnerable.",
+   "game": 7,
+   "won": false,
+   "result": "gammon",
+   "points": 2
+  },
+  {
+   "series": 1,
+   "text": "- Don't neglect your back checkers; escaping them early is often more valuable than reinforcing an internal board.\n- Avoid \"burying\" checkers on the 1-point too early if you still have assets to mobilize or threats to neutralize.\n- Be cautious with aggressive hits (wrong risks) when you are already ahead in the race or have a secure position.\n- Prioritize flexibility over safety; avoid making redundant moves that don't improve your overall board structure.\n- When forced to move checkers into your home board, ensure they are distributed to maximize bearing-off efficiency later.",
+   "game": 8,
+   "won": false,
+   "result": "gammon",
+   "points": 2
+  },
+  {
+   "series": 1,
+   "text": "- Prioritize escaping your back checkers early; don't focus on making inner-board points while your runners are trapped.\n- Avoid \"burying\" checkers deep in the home board too early; keep them flexible on higher points to maintain control and timing.\n- When the opponent is anchored in your home board, prioritize clearing your remaining outer-board points rather than making redundant internal points.\n- Be careful with aggressive hits in the endgame if they leave you vulnerable or don't significantly improve your winning chances.\n- In the closing stages, maximize the efficiency of your checkers to ensure you don't leave gaps or awkward distributions during the bear-off.",
+   "game": 9,
+   "won": false,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 1,
+   "text": "- Prioritize escaping your back checkers over making passive inner-board points in the early game.\n- Avoid \"burying\" checkers on the 2-point early; keep your flexibility to challenge the opponent's movement.\n- When you have the opportunity to advance your runners, take the risk to move them toward safety rather than playing overly conservatively.\n- Don't be afraid to leave temporary blots to improve your overall board structure and racing position.\n- Recognize that safety in the home board is often less valuable than mobility and timing in the outfield.",
+   "game": 10,
+   "won": false,
+   "result": "gammon",
+   "points": 2
+  },
+  {
+   "series": 2,
+   "text": "- Prioritize hitting the opponent to gain tempo and disrupt their structure, especially when you have the opportunity to put them on the bar.\n- Avoid over-stacking a single point (e.g., the 4-point) when you could be developing other assets or controlling the outer board.\n- Maintain flexibility with mid-point checkers rather than rushing them home prematurely.\n- Be more aggressive in the mid-game; missing multiple \"hit\" opportunities often leads to a significant loss in equity.\n- During the bear-off, prioritize clearing the highest points first and avoid leaving gaps that could hinder your efficiency.",
+   "game": 1,
+   "won": false,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 2,
+   "text": "- Prioritize splitting your back checkers early to gain mobility and flexibility.\n- Look for aggressive hitting opportunities to disrupt the opponent's structure, even when it feels risky.\n- Avoid making unnecessary hits in your home board if they don't improve your position or secure a win.\n- When leading or in the endgame, focus on safely bringing checkers home rather than creating redundant points.\n- Do not ignore the value of clearing high points and advancing outfield checkers to avoid getting trapped.",
+   "game": 2,
+   "won": false,
+   "result": "gammon",
+   "points": 2
+  },
+  {
+   "series": 2,
+   "text": "- Prioritize escaping the back checkers; don't leave them trapped while trying to attack or shore up the home board.\n- Avoid taking unnecessary risks (like hitting deep in the home board) when you already have a significant positional advantage.\n- When playing a holding game or escaping, look for opportunities to hit and disrupt the opponent's timing rather than playing too safely.\n- Use doubles to maximize flexibility and mobility across the whole board, not just for making a single point.\n- In the bearing-off phase, prioritize clearing the highest points first to avoid getting checkers stuck or leaving blots.",
+   "game": 3,
+   "won": true,
+   "result": "gammon",
+   "points": 2
+  },
+  {
+   "series": 2,
+   "text": "- Prioritize escaping your back checkers over making deep internal points early in the game.\n- Do not over-stack checkers on your lowest points; maintain flexibility and mobility.\n- Avoid hitting deep in your own home board if it doesn't meaningfully improve your position or trap the opponent.\n- Look for opportunities to hit the opponent's blots in the outfield or their home board to disrupt their timing.\n- Be more aggressive with risk-taking when the engine suggests \"missed risk,\" especially when trying to establish a presence in the opponent's half.",
+   "game": 4,
+   "won": false,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 2,
+   "text": "- Prioritize splitting the back checkers early to establish a presence in the opponent's home board.\n- When attacking, consider multiple hits (double hits) to maximize disruption and control of the board.\n- Avoid bringing checkers home too early if it leaves blots that are easily hit while you still have checkers to move.\n- Do not hit impulsively in the late game if it creates unnecessary vulnerabilities without a clear strategic advantage.\n- In the bearing-off phase, prioritize removing checkers from the highest points to minimize the risk of leaving blots.",
+   "game": 5,
+   "won": true,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 2,
+   "text": "- Don't be afraid to hit early; missing opportunities to put opponents on the bar can cost significant equity.\n- Avoid burying checkers deep in your home board too early if you still have assets to mobilize in the outfield.\n- Prioritize clearing your furthest points and improving overall flexibility over making redundant interior points.\n- When playing for the win, maintain a balance between safety and aggression rather than choosing overly passive plays.\n- In the endgame, focus on the most efficient way to bring checkers home rather than making unnecessary moves with stranded checkers.",
+   "game": 6,
+   "won": true,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 2,
+   "text": "- Prioritize hitting opponent checkers in your home board to maintain control and hinder their entry.\n- Don't shy away from aggressive hits (tempos) when the engine suggests a \"missed risk\" to seize momentum.\n- Be mindful of \"needless risk\"; avoid leaving blots or making precarious moves when a safer alternative preserves equity.\n- When closing out the game, focus on clearing the highest points first to maximize efficiency.\n- Always evaluate the board for \"double-hit\" opportunities or attacking blots that can disrupt the opponent's structure.",
+   "game": 7,
+   "won": true,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 2,
+   "text": "- Prioritize escaping the back checkers over making internal points when the opponent has a strong board.\n- Avoid \"needless risk\" by not attacking unless it significantly improves board control or forces a critical response.\n- When playing a containing game, focus on clearing the back checkers to prevent being trapped or gammoned.\n- Be cautious about burying checkers deep in the home board too early, as flexibility is key for the endgame.\n- In the endgame, prioritize moving your most stranded checkers forward over rearranging safe checkers.",
+   "game": 8,
+   "won": false,
+   "result": "gammon",
+   "points": 2
+  },
+  {
+   "series": 2,
+   "text": "- Prioritize attacking the opponent's blots over making passive internal moves to keep the opponent under pressure.\n- Do not neglect the back checkers; splitting or advancing from the 24-point is often higher equity than stacking the home board.\n- Look for opportunities to hit multiple checkers or gain tempo in the outfield rather than focusing solely on the home board.\n- When the opponent is anchored or trapped, avoid \"burying\" checkers deep in the home board too early.\n- Maintain flexibility with your checkers to respond to hitting opportunities across the board.",
+   "game": 9,
+   "won": false,
+   "result": "gammon",
+   "points": 2
+  },
+  {
+   "series": 2,
+   "text": "- Prioritize attacking the opponent's blots early to disrupt their development and gain tempo.\n- Focus on making strong home board points (like the 4-point) rather than just shifting checkers.\n- When rolling doubles, prioritize escaping trapped back checkers over making internal points.\n- Avoid \"burying\" checkers deep in your home board while you still have checkers to bring home.\n- Always look for hitting opportunities in the closing stages to prevent the opponent from bearing off safely.",
+   "game": 10,
+   "won": false,
+   "result": "gammon",
+   "points": 2
+  },
+  {
+   "series": 3,
+   "text": "- Be more aggressive when entering from the bar; prioritize hitting the opponent's blots over playing safely.\n- Avoid making internal points too early if it leaves your mid-point stripped or your outfield weak.\n- Look for opportunities to hit blots in your home board to keep the opponent trapped and maximize gammon potential.\n- Don't forget to advance your back checkers; prioritize escaping them before closing out the home board.\n- Continue to look for \"tempo hits\" late in the game to disrupt the opponent's timing and prevent them from organizing.",
+   "game": 1,
+   "won": true,
+   "result": "gammon",
+   "points": 2
+  },
+  {
+   "series": 3,
+   "text": "- Prioritize developing mid-point checkers (13) to create flexibility over making deep home-board points too early.\n- When hitting from the bar, prioritize challenging the opponent's anchor or establishing your own advanced anchor rather than hitting deep in your home board.\n- Use large doubles to strengthen your prime or secure key strategic points rather than just clearing outer-board blots.\n- Avoid unnecessary risk in the late game when you are behind; prioritize safety and structural integrity over aggressive hits.\n- Focus on clearing your furthest remaining checkers first during the bearing-in phase to avoid getting trapped.",
+   "game": 2,
+   "won": false,
+   "result": "gammon",
+   "points": 2
+  },
+  {
+   "series": 3,
+   "text": "- Prioritize clearing the highest points first during the bear-off to maximize efficiency.\n- In the mid-game, avoid making unnecessary blots when you already have a positional advantage.\n- Be more aggressive in utilizing your builders to secure key points rather than playing overly safe.\n- When bringing checkers home, focus on creating a smooth distribution to avoid getting stuck with awkward gaps.\n- Trust the value of flexibility; avoid committing checkers to deep points unless it's essential for a prime.",
+   "game": 3,
+   "won": false,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 3,
+   "text": "- Prioritize advancing back checkers over making aggressive hits in the early game to avoid getting trapped.\n- Avoid hitting deep in your own home board when you lack a strong inner board to contain the opponent.\n- When you have a clear lead, focus on safe consolidation and clearing outer points rather than taking unnecessary risks.\n- Don't neglect the opportunity to hit the opponent when you can safely contain them or gain a significant tempo advantage.\n- Ensure efficient distribution of checkers during the bear-off phase to avoid leaving gaps or wasting pips.",
+   "game": 4,
+   "won": true,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 3,
+   "text": "- Prioritize escaping your back checkers; don't ignore the race to focus on attacking when your runners are trapped.\n- Be more aggressive in hitting opponent blots in the outfield or on your home board to disrupt their timing.\n- Avoid over-stacking your home board too early; maintain flexibility to move checkers off or reposition them.\n- Value board control over making passive points; look for plays that challenge the opponent's structure.\n- Don't let a \"safe\" play lure you into a significant equity loss when a bold, riskier move is required to win.",
+   "game": 5,
+   "won": false,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 3,
+   "text": "- Stop playing too safely; don't overlook aggressive hitting opportunities in the mid-game to disrupt the opponent's structure.\n- Prioritize escaping back checkers over reinforcing internal points when the opportunity arises.\n- When bearing off against a checker on the bar, focus on clearing the highest points first rather than taking needless risks.\n- Be more assertive with the 24-point runners; don't let them get trapped while playing passively in the home board.\n- Trust the timing of the attack—hit when the engine suggests \"missed risk\" to maintain board control.",
+   "game": 6,
+   "won": true,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 3,
+   "text": "- Prioritize escaping your back checkers; don't neglect the race to strengthen your home board prematurely.\n- Avoid \"burying\" checkers on the 1 and 2 points too early during the bearing-off process.\n- When bearing off under pressure, prioritize clearing the highest points first to minimize the risk of leaving blots.\n- Always look for opportunities to advance your remaining anchors or runners even when your home board feels secure.\n- Balance aggressive hitting with strategic positioning to maintain control of the board.",
+   "game": 7,
+   "won": true,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 3,
+   "text": "- Prioritize safety and stability over hitting when entering from the bar if the hit creates unnecessary vulnerability.\n- When the opponent is bearing off, move your furthest checkers home immediately rather than rearranging checkers already in the home stretch.\n- Avoid making \"dead\" points or over-stacking the inner board when you still have checkers stranded in the opponent's territory.\n- Focus on clearing the outermost points first to minimize the risk of leaving blots during the endgame.\n- Be cautious of \"needless risk\" calls; if a safe play maintains equity, avoid attacking unless it provides a clear strategic advantage.",
+   "game": 8,
+   "won": false,
+   "result": "backgammon",
+   "points": 3
+  },
+  {
+   "series": 3,
+   "text": "- Stop playing overly safe; look for aggressive hitting opportunities to gain tempo and board control.\n- Prioritize hitting opponent blots in your own home board and the outer board over making passive internal points.\n- When you have a checker on the bar or deep in the opponent's home, look for ways to challenge their anchors rather than just stacking checkers.\n- Avoid \"burying\" checkers on the 1 and 2 points too early when you still have active work to do in the outer board.\n- Be more decisive in attacking the opponent's remaining checkers to secure a gammon or prevent them from establishing a strong anchor.",
+   "game": 9,
+   "won": true,
+   "result": "gammon",
+   "points": 2
+  },
+  {
+   "series": 3,
+   "text": "- Prioritize hitting loose checkers in the outfield to maximize disruption and control the tempo.\n- Avoid overly cautious plays when the engine suggests \"missed risk\"; don't be afraid to leave blots to improve overall board structure.\n- When clearing the home board, prioritize smoothing the distribution of checkers over simply taking a checker off to avoid leaving shots.\n- Maintain flexibility with mid-point checkers; don't rush to bring them home if they can be used to cover blots or control the outfield.\n- Be mindful of \"needless risk\" during the bear-off; ensure the remaining checkers are safe before prioritizing speed.",
+   "game": 10,
+   "won": true,
+   "result": "backgammon",
+   "points": 3
+  },
+  {
+   "series": 4,
+   "text": "- Prioritize hitting the opponent's back checkers early to seize tempo and disrupt their board.\n- Avoid making \"needless risks\" by hitting deep in your own home board if a safer, constructive play exists.\n- Always look for opportunities to hit opposing checkers in the outfield to prevent them from safely bringing their pieces home.\n- Be cautious about over-stacking your home board; keep checkers flexible to maximize the efficiency of your bearing-off process.\n- Do not prioritize hitting for the sake of hitting if it leaves your own position vulnerable or misses a critical strategic move.",
+   "game": 1,
+   "won": false,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 4,
+   "text": "- Prioritize making strong inner-board points over aggressive hitting when it improves overall structure.\n- Avoid taking needless risks by hitting when you already have a significant positional advantage.\n- Be more aggressive in attacking the opponent's remaining checkers to prevent them from establishing a defensive anchor.\n- Do not rush to clear the board; ensure your checkers are efficiently distributed to avoid leaving blots during the bear-off.\n- When the opponent is on the bar, look for opportunities to close out your home board rather than just making safe moves.",
+   "game": 2,
+   "won": true,
+   "result": "gammon",
+   "points": 2
+  },
+  {
+   "series": 4,
+   "text": "- Prioritize advancing trapped back checkers over making redundant points in the home board.\n- Avoid \"needless risk\" by choosing safe structural improvements over aggressive hits when equity is already high.\n- In the endgame, prioritize clearing your remaining back checkers to avoid being trapped or gammoned.\n- Don't neglect the race; move checkers from the midpoint or home board only when it serves a strategic purpose.\n- Recognize when a \"safe\" play is actually a \"missed risk\" that allows the opponent to solidify their lead.",
+   "game": 3,
+   "won": false,
+   "result": "gammon",
+   "points": 2
+  },
+  {
+   "series": 4,
+   "text": "- Prioritize making key interior points over making aggressive hits that leave checkers vulnerable.\n- When attacking, maximize the pressure by hitting multiple checkers or creating a stronger board rather than just one hit.\n- Avoid \"needless risk\" by not over-extending checkers in the outfield when a safer, consolidating move maintains the advantage.\n- Be more alert to opportunities to hit opponent checkers in the outfield to prevent them from establishing a safe escape.\n- In the endgame, prioritize efficiency and safety over rushing checkers off the board to avoid getting trapped.",
+   "game": 4,
+   "won": false,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 4,
+   "text": "- Prioritize clearing the outermost anchors and moving back checkers home over making redundant hits in the home board.\n- Avoid \"needless risk\" by choosing safe positioning when the opponent is already trapped or compromised.\n- In the closing stages, prioritize purity in the home board to maximize bearing-off efficiency.\n- When the opponent has multiple checkers on the bar, focus on closing out the board rather than just hitting.\n- Be cautious about over-committing checkers to a single point; maintain flexibility to avoid getting stuck in the endgame.",
+   "game": 5,
+   "won": false,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 4,
+   "text": "- Prioritize hitting the opponent's blots to gain tempo and disrupt their structure, even when it feels risky.\n- Do not ignore your back checkers; advance them early to avoid getting trapped and to create flexibility.\n- Avoid making passive moves in the middle game; look for active plays that contest the board.\n- Be careful not to over-hit or take \"needless risks\" once you have a clear advantage or a secure lead.\n- In the endgame, focus on the most efficient path to bring checkers home rather than making arbitrary moves.",
+   "game": 6,
+   "won": false,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 4,
+   "text": "- Prioritize advancing back checkers to the outfield or home board over making redundant points deep in your home board.\n- Be more aggressive in the early and mid-game; don't miss hitting opportunities that disrupt the opponent's structure.\n- Avoid \"burying\" checkers on the 1-point or 2-point too early, as this reduces your flexibility to hit or defend.\n- When your opponent is anchored or hindered, focus on clearing your remaining outfield checkers efficiently to prepare for the bear-off.\n- Balance safety and risk: avoid making \"needless risks\" by hitting deep in the home board when you already have a significant positional advantage.",
+   "game": 7,
+   "won": false,
+   "result": "gammon",
+   "points": 2
+  },
+  {
+   "series": 4,
+   "text": "- Prioritize hitting the opponent's blots over making passive moves to keep them on the bar and disrupt their timing.\n- Avoid \"needless risks\" by not hitting deep in your own home board when the opponent has no way to escape or create a meaningful counter-attack.\n- When moving checkers from the mid-point or outer boards, prioritize clearing high points to avoid getting stuck or leaving shots.\n- Don't sacrifice home board structure or safety just to hit a blot if it leaves you vulnerable to a return hit.\n- Ensure you are maximizing the efficiency of your doubles by moving the maximum distance possible toward your home board or off the board.",
+   "game": 8,
+   "won": true,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 4,
+   "text": "- Stop neglecting your back checkers; prioritize escaping the 24-point before committing too many resources to the home board.\n- Always look for hitting opportunities in the opponent's home board, even if they seem risky, to disrupt their timing.\n- Avoid \"stacking\" checkers on the low points (1, 2, 3) too early when the game is still open.\n- Be more aggressive with risk calls; \"missed risk\" errors frequently cost significant equity.\n- In the endgame, optimize your movement to clear the outer boards efficiently rather than making redundant home board shifts.",
+   "game": 9,
+   "won": false,
+   "result": "gammon",
+   "points": 2
+  },
+  {
+   "series": 4,
+   "text": "- Avoid taking needless risks with checkers in the outfield when a safer, consolidating move is available.\n- When attacking, prioritize hitting multiple checkers or creating maximum pressure over simple hits.\n- In the middle game, focus on improving overall board structure rather than making isolated moves.\n- When playing for a win in a race or bear-off, prioritize clearing the highest points first.\n- Be cautious about \"over-playing\" safety; sometimes the engine prefers a calculated risk to maintain initiative.",
+   "game": 10,
+   "won": false,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 5,
+   "text": "- Prioritize hitting loose checkers in the early game to disrupt the opponent's development.\n- In the mid-game, prioritize making key points over hitting unless it creates a significant strategic advantage.\n- Avoid \"needless risk\" by focusing on cleaning up blots and securing home board strength.\n- When advancing checkers from the outfield, move the most vulnerable pieces first to minimize the risk of being hit.\n- Ensure you are maximizing the utility of doubles by balancing board construction with the removal of opponent anchors.",
+   "game": 1,
+   "won": true,
+   "result": "gammon",
+   "points": 2
+  },
+  {
+   "series": 5,
+   "text": "- Prioritize escaping the back checkers early rather than making minor inner board adjustments.\n- Be aggressive in hitting multiple checkers to seize momentum and disrupt the opponent's timing.\n- Avoid \"burying\" checkers deep in the home board when you still have distant checkers to bring home.\n- In the endgame, prioritize clearing the outermost points first to minimize the risk of getting trapped.\n- Look for dynamic plays that challenge the opponent rather than playing too safely when the engine suggests a \"missed risk.\"",
+   "game": 2,
+   "won": false,
+   "result": "gammon",
+   "points": 2
+  },
+  {
+   "series": 5,
+   "text": "- Prioritize hitting the opponent when entering from the bar to disrupt their timing and gain tempo.\n- Avoid overly conservative moves in the mid-game; be willing to take calculated risks to maintain board control.\n- When rolling doubles, prioritize clearing heavy stacks and improving flexibility over making safe, isolated moves.\n- Avoid creating \"needless risk\" during the bear-off; prioritize safe clearances over hitting if the hit doesn't significantly improve your win probability.\n- In the late game, focus on clearing the highest points first to minimize the chance of leaving checkers stranded.",
+   "game": 3,
+   "won": false,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 5,
+   "text": "- Be more aggressive in the early game; don't hesitate to split your back checkers or challenge the opponent's builders to gain board control.\n- Prioritize hitting blots in your home board to keep the opponent on the bar and maximize your timing advantage.\n- Avoid \"burying\" checkers deep in your home board too early; maintain flexibility and use your checkers to create offensive threats.\n- When attacking, prioritize creating a stronger blockade or hitting multiple checkers over simply consolidating safe positions.\n- In the endgame, prioritize bearing off checkers as soon as safely possible rather than obsessively cleaning up the board.",
+   "game": 4,
+   "won": false,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 5,
+   "text": "- When playing for a strong home board, prioritize clearing outer-board blots to secure the structure before over-stacking a single point.\n- Avoid \"burying\" checkers deep in the home board too early; maintain flexibility to avoid gaps during the bear-off.\n- In the early game, consider splitting the back checkers to improve mobility and anchoring potential.\n- Prioritize cleaning up the board and removing remaining vulnerabilities over minor positional gains.\n- When bearing off, focus on maximizing the number of checkers removed per roll rather than just moving them down.",
+   "game": 5,
+   "won": true,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 5,
+   "text": "- Avoid over-committing to multiple hits if it leaves your own structure fragile or fails to secure key points.\n- Prioritize clearing the mid-point and bringing checkers home over making redundant interior hits.\n- Do not ignore the importance of mobility; avoid burying checkers deep in the home board too early.\n- In the endgame, focus on maximizing the distance covered by your trailing checkers to avoid getting trapped.\n- Balance aggression with safety; don't take \"needless risks\" when a consolidating move maintains a strong advantage.",
+   "game": 6,
+   "won": false,
+   "result": "gammon",
+   "points": 2
+  },
+  {
+   "series": 5,
+   "text": "- Prioritize attacking multiple blots (double hits) over securing a single point when the opponent has a weak home board.\n- Avoid \"burying\" checkers deep in your home board too early; maintain flexibility to escape the back checkers or hit in the outfield.\n- When you have a lead or a strong position, prioritize clearing your outermost points and bringing checkers home rather than creating unnecessary risks.\n- In the mid-game, look for opportunities to hit and advance your back checkers simultaneously rather than making passive safety plays.\n- Do not ignore the urgency of escaping your last remaining checkers; once the opponent is bearing off, speed is the only priority.",
+   "game": 7,
+   "won": false,
+   "result": "gammon",
+   "points": 2
+  },
+  {
+   "series": 5,
+   "text": "- Prioritize hitting opponents while they are vulnerable on your side of the board rather than making passive moves.\n- Avoid \"needless risk\" by not hitting for the sake of hitting when a safer, structural improvement is available.\n- Be more aggressive with \"missed risks\"; look for opportunities to hit and disrupt the opponent's timing.\n- Do not rush the bear-off; ensure your home board is secure before taking checkers off if it leaves you vulnerable.\n- Coordinate the movement of your back checkers to avoid getting trapped or forced into suboptimal escapes.",
+   "game": 8,
+   "won": true,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 5,
+   "text": "- Avoid premature hitting in the opponent's home board if it leaves you vulnerable or ignores your back checkers.\n- Prioritize escaping the back checkers early to avoid getting trapped or forced into desperate plays.\n- Don't hit \"needlessly\" in your own home board when a safer structural improvement is available.\n- When playing doubles, look for the most efficient way to clear points rather than simply moving checkers forward.\n- Balance the urge to attack with the necessity of maintaining a solid internal board and safe connectivity.",
+   "game": 9,
+   "won": false,
+   "result": "backgammon",
+   "points": 3
+  },
+  {
+   "series": 5,
+   "text": "- Prioritize advancing and splitting the back checkers (24-point) early to avoid getting trapped and maintain flexibility.\n- Be more aggressive in hitting the opponent; missing hitting opportunities (like on Turn 13 and 23) significantly drops equity.\n- Avoid burying checkers on the 1-point too early; maintain an active board to maximize hitting and blocking potential.\n- In the bearing-off phase, prioritize removing as many checkers as possible from the board rather than rearranging them.\n- Do not play overly safely when the engine suggests \"missed risk\"; taking calculated risks is often necessary to win.",
+   "game": 10,
+   "won": false,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 6,
+   "text": "- Prioritize slotting or improving your home board over making redundant points in the mid-game.\n- When hitting an opponent's checker, look for ways to maintain flexibility and pressure rather than rushing to cover everything.\n- Avoid prematurely closing your board when you still have checkers to bring home; keep mid-point assets available for safety.\n- In the bear-off, prioritize clearing your highest points first to reduce the risk of leaving blots.\n- Do not play too conservatively during the bear-off; take calculated risks to maximize the number of checkers removed each turn.",
+   "game": 1,
+   "won": true,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 6,
+   "text": "- Prioritize hitting the opponent's blots, especially when they are exposed in the outfield or on your side of the board.\n- Avoid passive moves when an aggressive hit can disrupt the opponent's structure or seize control.\n- When moving checkers from the mid-point or home board, ensure you aren't leaving unnecessary blots or missing opportunities to clear awkward points.\n- Be cautious about making \"needless risks\" by hitting when the positional advantage is already secure.\n- Focus on efficiently bringing your back checkers home rather than over-stacking checkers on low points in the home board.",
+   "game": 2,
+   "won": true,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 6,
+   "text": "- Prioritize hitting the opponent to disrupt their structure and gain tempo over passive safety.\n- Be cautious of \"needless risk\"; avoid leaving blots when there is a safe alternative that maintains equity.\n- When bringing checkers home, prioritize clearing the highest points first to maximize flexibility for bearing off.\n- Avoid burying checkers deep in the home board (on the 1 or 2 point) too early in the game.\n- During the bear-off, prioritize taking as many checkers off as possible in a single turn to maximize speed.",
+   "game": 3,
+   "won": true,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 6,
+   "text": "- Stop playing too safely; prioritize hitting opponent checkers to disrupt their timing and gain board control.\n- Look for opportunities to attack the opponent's blots in the mid-game rather than just consolidating your own position.\n- Avoid \"burying\" checkers on low points too early; keep flexibility to move them forward or hit.\n- Don't ignore your back checkers; prioritize escaping them or using them to challenge the opponent's home board.\n- In the bear-off, prioritize clearing the highest points first to maximize the efficiency of future rolls.",
+   "game": 4,
+   "won": false,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 6,
+   "text": "- Prioritize making inner board points and hitting opponents over passive safety plays when you have the opportunity.\n- Do not ignore attacking chances in the outfield; hitting a blot to gain tempo or disrupt the opponent is often superior to simply consolidating.\n- When entering from the bar, evaluate if you can hit a checker immediately rather than just moving to a safe spot.\n- Avoid \"over-playing\" for safety in the mid-game; missing aggressive hits can lead to significant equity loss.\n- In the bearing-off phase, prioritize removing checkers from the board as quickly as possible to minimize the chance of leaving a shot.",
+   "game": 5,
+   "won": true,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 6,
+   "text": "- Prioritize hitting loose checkers in the outfield to disrupt the opponent's timing and gain tempo.\n- Avoid burying checkers deep in your home board too early; keep them flexible for blocking or hitting.\n- When leading or in control, prioritize clearing high anchors and bringing checkers home over making redundant deep points.\n- Be cautious about hitting for the sake of hitting if it creates unnecessary blots and weakens your board structure.\n- Focus on efficient clearance of the mid-point and outer boards to avoid getting trapped or leaving shots during the bear-in.",
+   "game": 6,
+   "won": true,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 6,
+   "text": "- Prioritize secure entry over aggressive movement when returning from the bar.\n- Avoid hitting unnecessarily when you are in the process of bearing off and the opponent is trapped.\n- When bearing off, focus on clearing the highest points and maintaining a smooth distribution rather than creating new blots.\n- Evaluate whether a hit actually improves your winning percentage or merely increases the risk of leaving a blot.\n- Ensure that mid-game transitions maintain board connectivity instead of leaving isolated checkers.",
+   "game": 7,
+   "won": true,
+   "result": "gammon",
+   "points": 2
+  },
+  {
+   "series": 6,
+   "text": "- Prioritize escaping your back checkers over attacking deep in your own home board.\n- Do not blindly hit for the sake of hitting; evaluate if the attack creates a structural advantage or just leaves you vulnerable.\n- When playing for a prime or containment, maintain flexibility in your mid-point and outer board rather than over-stacking your home board.\n- Be cautious of \"over-hitting\" when you have a lead or a strong position; avoid taking unnecessary risks that allow the opponent back into the game.\n- In the endgame, focus on the most efficient way to clear checkers and minimize the chance of leaving a blot.",
+   "game": 8,
+   "won": false,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 6,
+   "text": "- Avoid making needless risks in the early game when a safe alternative preserves equity.\n- Prioritize escaping the back checkers over attacking when you have the opportunity to advance your trailing pieces.\n- In the mid-game, don't be too passive; look for aggressive hits that disrupt the opponent's timing.\n- Avoid \"burying\" checkers deep in your home board too early; keep them flexible to block or hit.\n- During the bear-off, prioritize removing checkers from the board over shifting positions within the home board.",
+   "game": 9,
+   "won": false,
+   "result": "gammon",
+   "points": 2
+  },
+  {
+   "series": 6,
+   "text": "- Prioritize advancing back checkers early to establish mobility and avoid being trapped.\n- Don't be afraid to hit and create risks when the engine identifies a \"missed risk\" opportunity.\n- In the mid-game, prioritize hitting opponent blots in the outfield over making passive internal points.\n- When clearing checkers, maintain a flexible structure to avoid leaving unnecessary blots.\n- Focus on maximizing equity by challenging the opponent's position rather than playing purely for safety.",
+   "game": 10,
+   "won": false,
+   "result": "gammon",
+   "points": 2
+  },
+  {
+   "series": 7,
+   "text": "- Prioritize escaping your back checkers (the 18-point) over making internal home board points when the opponent is not threatening a hit.\n- Avoid \"burying\" checkers deep in the home board prematurely; maintain flexibility to clear points or hit opponents.\n- When ahead in the race or controlling the board, focus on bringing your remaining outfield checkers home safely rather than over-stacking the home board.\n- Be more aggressive in hitting the opponent when they are trying to enter or establish a position, even if it feels \"safe\" to play conservatively.\n- In the bear-off, prioritize clearing the highest points first to minimize the chance of leaving blots or wasting pips.",
+   "game": 1,
+   "won": true,
+   "result": "gammon",
+   "points": 2
+  },
+  {
+   "series": 7,
+   "text": "- Be more aggressive with early hits to disrupt the opponent's structure.\n- When playing for a closed board, prioritize filling the gaps in your prime over making deep points.\n- When entering from the bar, prioritize strengthening your home board and clearing blots.\n- Avoid over-stacking checkers on a single point; maintain a flexible distribution for smoother bearing-in.\n- In the endgame, prioritize bearing checkers off as quickly as possible once the opponent is contained.",
+   "game": 2,
+   "won": true,
+   "result": "gammon",
+   "points": 2
+  },
+  {
+   "series": 7,
+   "text": "- Avoid over-committing to the 4-point too early if it leaves blots or misses opportunities to develop the rest of the board.\n- Prioritize hitting opponent checkers when they are vulnerable, even if it seems risky, to maintain tempo and control.\n- Do not reflexively play safely; look for aggressive opportunities to put the opponent on the bar and disrupt their timing.\n- When bearing in or clearing points, ensure you are minimizing the risk of leaving shots rather than just moving checkers forward.\n- During the bear-off, prioritize clearing the highest points first to maximize the efficiency of subsequent rolls.",
+   "game": 3,
+   "won": false,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 7,
+   "text": "- Avoid attacking deep in your home board (e.g., 5/1*) if it doesn't significantly improve your structure or secure a key point.\n- Prioritize flexibility and connectivity over premature hits when you have a lead or a stable position.\n- When playing doubles, carefully evaluate if shifting checkers to strengthen the board is better than simply moving them forward.\n- In the endgame, prioritize bearing off checkers immediately rather than rearranging them within the home board.\n- Don't let a \"hitting instinct\" override the engine's preference for safety and positioning during the mid-game.",
+   "game": 4,
+   "won": false,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 7,
+   "text": "- Prioritize hitting the opponent's blots to disrupt their structure and gain tempo.\n- Do not be overly cautious when entering from the bar; look for aggressive hitting opportunities.\n- Avoid wasting moves on redundant internal point-making when active threats exist on the board.\n- When hitting a checker, balance the attack with the ability to bring your back checkers home.\n- Stay alert for \"missed risks\" by evaluating whether a bold hit is more valuable than a safe move.",
+   "game": 5,
+   "won": false,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 7,
+   "text": "- Prioritize hitting the opponent's blots in the early game to disrupt their development and gain tempo.\n- When playing doubles, look for opportunities to create a strong home board or hit checkers rather than just advancing back checkers.\n- Be aggressive in the home board; don't be afraid to hit your opponent inside your own board to keep them pinned.\n- In the endgame, prioritize bearing off the highest checkers first to minimize the risk of leaving blots.\n- Be mindful of \"needless risk\"; if you can bear off safely, don't hit unless it significantly improves your winning chances.",
+   "game": 6,
+   "won": true,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 7,
+   "text": "- Prioritize making interior points (like the 5-point) over simply shifting checkers when the opponent has blots.\n- Look for aggressive hitting opportunities to keep the opponent off-balance and hinder their home board development.\n- When entering from the bar, prioritize escaping the opponent's home board over making small internal moves.\n- Avoid passive play when the engine suggests \"risk\"; don't be too afraid to leave blots if it gains significant tempo or board control.\n- In the endgame, focus on clearing the highest remaining points first to avoid getting stuck with awkward gaps.",
+   "game": 7,
+   "won": false,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 7,
+   "text": "- Prioritize flexibility in the early game; don't rush to commit back checkers to the 20-point if safer mid-point plays are available.\n- Avoid \"needless risks\" by consolidating your position rather than making shallow attacks when the equity gain is negligible.\n- When hitting in the home board, prioritize closing out the opponent or making strong points over hitting deep for no structural gain.\n- Maintain mobility for your furthest checkers; do not leave them stranded while focusing solely on home board points.\n- In the endgame, focus on clearing your remaining outer-board checkers quickly to avoid getting trapped or losing timing.",
+   "game": 8,
+   "won": false,
+   "result": "gammon",
+   "points": 2
+  },
+  {
+   "series": 7,
+   "text": "- Prioritize hitting the opponent's checkers whenever possible to disrupt their timing and create offensive pressure.\n- Avoid playing too safely when the engine identifies \"missed risks\"; aggression is often necessary to maintain control.\n- Don't neglect your back checkers; look for opportunities to advance them or split them to avoid getting trapped.\n- When making a point in your home board, evaluate if there is a more efficient way to use your checkers to maximize board strength.\n- Be cautious about burying checkers deep in the home board too early, as it limits your flexibility and hitting potential.",
+   "game": 9,
+   "won": true,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 7,
+   "text": "- Prioritize building your own home board (e.g., making the 5-point) over attacking isolated checkers in the early game.\n- When hitting from the bar, maximize the disruption to the opponent by hitting multiple checkers or creating more threats.\n- Avoid leaving unnecessary blots or gaps in your home board while trying to bring checkers home.\n- In the late game, prioritize clearing your highest points to avoid getting stuck or leaving shots.\n- When bearing off under pressure, focus on clearing the most awkward checkers first to minimize the risk of leaving a shot.",
+   "game": 10,
+   "won": true,
+   "result": "gammon",
+   "points": 2
+  },
+  {
+   "series": 8,
+   "text": "- Prioritize hitting the opponent's blots over making internal points when you can disrupt their structure.\n- Avoid making \"safe\" points in your home board if it leaves your remaining checkers stranded and vulnerable.\n- In the mid-game, maintain flexibility with your checkers rather than over-committing to a rigid structure.\n- When advancing checkers from the opponent's home board, prioritize clearing the furthest points to avoid getting trapped.\n- Don't rush to consolidate too early; look for opportunities to maximize equity through aggressive positioning.",
+   "game": 1,
+   "won": false,
+   "result": "gammon",
+   "points": 2
+  },
+  {
+   "series": 8,
+   "text": "- Stop playing too defensively; prioritize hitting the opponent's checkers to disrupt their timing and gain tempo.\n- Do not ignore the back checkers; move them early to avoid getting trapped or losing the race.\n- Avoid \"burying\" checkers deep in your own home board when you have active hitting opportunities elsewhere.\n- Prioritize attacking the opponent's blots over making redundant internal points.\n- In the endgame, focus on maximizing the speed of your remaining checkers to escape the opponent's board.",
+   "game": 2,
+   "won": false,
+   "result": "backgammon",
+   "points": 3
+  },
+  {
+   "series": 8,
+   "text": "- Prioritize making internal home-board points over attacking loose checkers in the outfield.\n- Avoid \"hitting for the sake of hitting\" when it leaves your own checkers vulnerable or misses a stronger structural play.\n- In the mid-game, look for opportunities to hit multiple checkers (double hits) to maximize disruption of the opponent's timing.\n- Be cautious about over-committing to a hit in the opponent's home board if it disrupts your own board's connectivity.\n- During the bearing-off phase, prioritize clearing the highest points and maintaining a smooth distribution to avoid leaving shots.",
+   "game": 3,
+   "won": true,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 8,
+   "text": "- Prioritize hitting the opponent's blots in your home board over making redundant points.\n- Avoid \"over-stacking\" checkers in the home board when you need to mobilize your remaining back checkers.\n- When transitioning from offense to defense, focus on safely bringing your last checkers home rather than polishing your board.\n- Be aggressive in escaping your runners; don't let them get trapped while you make small, unnecessary improvements elsewhere.\n- In the endgame, maximize the distance your checkers travel toward the home board to avoid getting gammoned.",
+   "game": 4,
+   "won": false,
+   "result": "gammon",
+   "points": 2
+  },
+  {
+   "series": 8,
+   "text": "- Prioritize advancing back checkers over reinforcing the home board early in the game.\n- Avoid making aggressive hits if they leave your blots vulnerable and don't improve your overall structure.\n- When clearing the board, prioritize taking checkers off immediately rather than shuffling them within the home board.\n- In the endgame, focus on creating a smooth distribution to avoid getting \"stuck\" with checkers on high points.\n- Be mindful of \"missed risk\" opportunities; sometimes the engine favors a bold move to secure a winning advantage over a safe, passive one.",
+   "game": 5,
+   "won": false,
+   "result": "gammon",
+   "points": 2
+  },
+  {
+   "series": 8,
+   "text": "- Prioritize escaping back checkers over reinforcing an already strong home board.\n- Don't play overly conservatively when you have an opportunity to challenge the opponent's movement.\n- Look for attacking opportunities (hitting) even when you feel you have a safe lead.\n- Avoid stacking too many checkers on a single point if those checkers could be used to maintain flexibility or pressure.\n- When entering from the bar, evaluate if entering deep is riskier than staying back to maintain a better board structure.",
+   "game": 6,
+   "won": true,
+   "result": "gammon",
+   "points": 2
+  },
+  {
+   "series": 8,
+   "text": "- Don't over-invest in deep home-board points when you need to mobilize your back checkers.\n- Prioritize escaping the opponent's home board over making redundant points in your own.\n- When hitting, look for opportunities to double-hit or maximize the disruption of the opponent's structure.\n- Be cautious about \"burying\" checkers on the 1-point or 2-point too early in the game.\n- In the endgame, focus on the most efficient path to clear checkers and minimize leaving blots.",
+   "game": 7,
+   "won": false,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 8,
+   "text": "- Be more aggressive in the early game; don't shy away from hitting opponent blots to disrupt their structure.\n- Prioritize advancing your back checkers (the 24-point) early to avoid getting trapped or squeezed.\n- Avoid \"burying\" checkers deep in your home board too early if you still have checkers to bring around.\n- When the opponent is on the bar, maximize the pressure by closing points or maintaining a strong prime rather than playing passively.\n- Always look for the most efficient way to clear checkers during the bear-off to minimize the risk of leaving a shot.",
+   "game": 8,
+   "won": true,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 8,
+   "text": "- Prioritize hitting and entering the opponent's home board over passive moves when you have the opportunity to disrupt their timing.\n- Don't neglect your back checkers; avoid leaving them stranded when you can advance or challenge the opponent's anchor.\n- Look for double-hit opportunities in the opponent's home board to maximize equity and secure a gammon.\n- When clearing your board, prioritize flexibility and safety to prevent leaving blots that could allow a late-game return.\n- Avoid playing too conservatively in the mid-game; be willing to take calculated risks to improve your position.",
+   "game": 9,
+   "won": true,
+   "result": "gammon",
+   "points": 2
+  },
+  {
+   "series": 8,
+   "text": "- Prioritize escaping back checkers early; don't bury checkers deep in your home board while your anchors are still under pressure.\n- Avoid the urge to make internal points when moving your rear checkers to safety is the higher equity play.\n- Be more aggressive in taking calculated risks to improve board position rather than defaulting to purely safe plays.\n- Maintain a flexible structure in the mid-game to avoid becoming \"too safe\" and missing opportunities to attack.\n- When bearing in or clearing points, ensure you are maximizing the efficiency of your checkers' movement toward the home board.",
+   "game": 10,
+   "won": true,
+   "result": "gammon",
+   "points": 2
+  },
+  {
+   "series": 9,
+   "text": "- Prioritize making strong internal points over hitting blots in the home board when board control is already established.\n- Be cautious of \"over-hitting\"; avoid unnecessary hits that leave your own checkers vulnerable or disrupt your home board structure.\n- When transitioning to the home board, focus on creating a cohesive prime or wall rather than leaving isolated checkers.\n- In the late game, prioritize clearing the highest points first to maximize flexibility for bearing off.\n- Avoid making intuitive moves based on \"cleaning up\" the board; check if a more aggressive or defensive placement improves long-term equity.",
+   "game": 1,
+   "won": true,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 9,
+   "text": "- Don't ignore the back checkers; prioritize advancing your anchors or escaping from the opponent's home board to avoid getting trapped.\n- Be more aggressive in hitting; missing opportunities to hit the opponent's blots in the outfield or home board costs significant equity.\n- Prioritize flexibility and connectivity over stacking checkers on a single point.\n- When your opponent is trapped or on the bar, focus on improving your overall position rather than making redundant moves in the home board.\n- Avoid \"needless risk\" by ensuring your remaining outfield checkers are brought home safely before the opponent can establish a counter-threat.",
+   "game": 2,
+   "won": false,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 9,
+   "text": "- Prioritize securing interior points and creating a strong home board over aggressive hitting when the risk is high.\n- Avoid rushing to bear off checkers when the opponent has a significant presence or anchoring potential; safety first.\n- Be mindful of \"needless risk\"; don't hit just for the sake of hitting if it leaves your own position vulnerable.\n- When returning from the bar, evaluate whether to prioritize escaping the back checkers or establishing a defensive presence.\n- Don't ignore the importance of timing in the outfield; moving checkers efficiently toward home is often better than opportunistic hits.",
+   "game": 3,
+   "won": true,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 9,
+   "text": "- Prioritize making inner board points early to establish a strong home board for attacking.\n- Be more aggressive in hitting opponent blots in the outfield and home board to disrupt their timing.\n- Avoid playing overly safe when you have the opportunity to create multiple threats or gain a significant tempo advantage.\n- When entering from the bar, prioritize flexible positioning or hitting over simply moving into a passive spot.\n- Always evaluate whether a \"safe\" move is actually a \"missed risk\" that allows the opponent to escape or consolidate.",
+   "game": 4,
+   "won": true,
+   "result": "gammon",
+   "points": 2
+  },
+  {
+   "series": 9,
+   "text": "- Avoid over-committing to an aggressive inner-board attack when your outfield assets (like the 18-point) are vulnerable or need to be brought home.\n- Prioritize clearing outer-board anchors and advancing remaining checkers over making redundant inner-board points.\n- Look for opportunities to hit loose checkers in the outfield to disrupt the opponent's timing and maintain control.\n- Do not rush to \"crunch\" your home board by moving checkers to the 1-point too early; keep flexibility to move checkers off efficiently.\n- When transitioning to the bear-off, prioritize clearing the highest points first to avoid getting stuck with awkward numbers.",
+   "game": 5,
+   "won": true,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 9,
+   "text": "- Prioritize hitting opponent checkers in the outfield to disrupt their connectivity and gain tempo.\n- Avoid playing too safely when aggressive hitting can put the opponent on the bar and seize control.\n- Look for double-hit opportunities (hitting two checkers in one turn) to maximize pressure and equity.\n- Don't prematurely settle for safe home-board structures if the opponent's back checkers are vulnerable to attack.\n- Be more decisive in taking calculated risks early in the game to prevent the opponent from establishing a strong prime.",
+   "game": 6,
+   "won": false,
+   "result": "backgammon",
+   "points": 3
+  },
+  {
+   "series": 9,
+   "text": "- Prioritize hitting loose checkers in the early and mid-game to disrupt the opponent's timing and gain tempo.\n- Don't be afraid to hit and split your home board or leave blots if it puts the opponent on the bar.\n- Avoid overly passive play when the engine suggests aggressive hits to maximize equity.\n- When attacking from the bar or deep in the opponent's home, look for opportunities to hit rather than just escaping.\n- Avoid making \"safe\" moves that concede board control or allow the opponent to consolidate their position.",
+   "game": 7,
+   "won": true,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 9,
+   "text": "- Prioritize advancing the back checkers early to avoid getting trapped and improve mobility.\n- Be cautious with \"needless risk\" hits; hitting for the sake of hitting can compromise your structure if it doesn't gain a strategic advantage.\n- When attacking, look for opportunities to hit and make a point simultaneously to maximize pressure on the opponent.\n- Do not ignore the potential to hit in the opponent's home board or outer board when you have a safe way to do so.\n- In the endgame, focus on clearing points efficiently and maintaining a flexible board rather than making redundant points.",
+   "game": 8,
+   "won": true,
+   "result": "gammon",
+   "points": 2
+  },
+  {
+   "series": 9,
+   "text": "- Prioritize hitting opponent checkers in the outfield or your own home board over making safe interior moves.\n- Don't miss opportunities to hit multiple checkers when the dice allow for aggressive double-hits.\n- Be more alert to hitting opportunities when your opponent has checkers exposed in your home board.\n- When leading or bearing in, prefer cleaning up your home board (e.g., 3/1) over redundant stacking on higher points.\n- In the early game, look for active plays in the opponent's home board to disrupt their anchor or timing.",
+   "game": 9,
+   "won": true,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 9,
+   "text": "- Prioritize escaping back checkers over making internal points early in the game.\n- Don't be afraid to hit aggressively to disrupt the opponent's timing and board control.\n- Maintain flexibility with your checkers rather than burying them deeply in your home board too early.\n- When bearing in or off, prioritize clearing the highest points first to avoid getting stuck.\n- Avoid unnecessary \"safety\" moves when a more aggressive play offers significantly higher equity.",
+   "game": 10,
+   "won": true,
+   "result": "gammon",
+   "points": 2
+  },
+  {
+   "series": 10,
+   "text": "- Prioritize hitting loose checkers in the early game to disrupt the opponent's development.\n- Avoid burying checkers deep in the home board too early; maintain flexibility and connectivity.\n- When under pressure, look for opportunities to advance back checkers rather than playing overly safe.\n- Be cautious about over-stacking a single point when better distributing checkers for home-board efficiency.\n- In the endgame, prioritize clearing the highest points first to ensure a smoother bearing-off process.",
+   "game": 1,
+   "won": false,
+   "result": "gammon",
+   "points": 2
+  },
+  {
+   "series": 10,
+   "text": "- Prioritize flexibility and board control over making redundant points in the home board early on.\n- Avoid \"needless risk\"; do not hit just for the sake of hitting if it compromises your structure or safety.\n- Look for aggressive options to challenge the opponent's blots (missed risks) rather than playing too safely.\n- When clearing checkers from the mid-point or outfield, ensure you are moving toward a safe home board distribution.\n- In the endgame, focus on clearing the highest points first to avoid leaving awkward gaps or blots.",
+   "game": 2,
+   "won": false,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 10,
+   "text": "- Prioritize aggressive hitting and escaping back checkers over making deep inner-board points early in the game.\n- Avoid \"burying\" checkers on the 1 or 2 point when the opponent still has checkers to bring home.\n- In the mid-game, prioritize advancing trailing checkers to the outfield rather than reinforcing a secure home board.\n- When racing to finish, maximize the distance covered by your furthest checkers to avoid getting trapped or delayed.\n- Don't trade equity by making safe, passive moves when a high-impact hit is available to disrupt the opponent's timing.",
+   "game": 3,
+   "won": false,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 10,
+   "text": "- Prioritize hitting blots in the opponent's home board early to disrupt their timing and development.\n- Avoid \"needless risk\" by not hitting for the sake of hitting when a safe, constructive move preserves equity.\n- In the mid-game, balance aggression with structural integrity; don't leave blots unnecessarily.\n- When racing or clearing back checkers, move the furthest checkers first to minimize the risk of getting trapped.\n- Focus on clearing the most distant points efficiently rather than making redundant internal points.",
+   "game": 4,
+   "won": false,
+   "result": "backgammon",
+   "points": 3
+  },
+  {
+   "series": 10,
+   "text": "- Avoid attacking blindly when your own board is weak or you are under pressure; priority should be safe entry and consolidation.\n- Don't bury checkers deep in your home board too early; maintain flexibility in your distribution to avoid getting \"crunched.\"\n- When bearing in or clearing points, prioritize clearing the highest points first to reduce the risk of leaving blots.\n- In the endgame, be mindful of the \"waste\" of pips; move checkers to the most efficient positions for bearing off.\n- Avoid making unnecessary blots in your home board when the opponent has checkers waiting to enter or hit.",
+   "game": 5,
+   "won": false,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 10,
+   "text": "- Don't be afraid to hit deep in the opponent's home board to create chaos and prevent them from establishing a strong anchor.\n- Prioritize aggressive hitting over passive safety when the engine flags a \"missed risk,\" especially when trying to disrupt the opponent's timing.\n- When attacking, look for opportunities to hit multiple checkers or create immediate threats rather than just consolidating positions.\n- In the endgame, be precise with checker distribution to minimize the risk of leaving blots while bearing off.\n- Avoid playing too safely when you have the opportunity to put the opponent on the bar and gain a significant tempo advantage.",
+   "game": 6,
+   "won": true,
+   "result": "gammon",
+   "points": 2
+  },
+  {
+   "series": 10,
+   "text": "- Prioritize advancing back checkers (splitting) over hitting blots in the outfield when your home board is not yet strong.\n- Avoid hitting deep in your own home board if it leaves you vulnerable or fails to create a meaningful structural advantage.\n- In the late game, prioritize hitting and controlling the opponent's remaining checkers to prevent them from escaping or establishing a late anchor.\n- Do not bury checkers on the 1 or 2 point too early; keep them flexible on higher points to maximize their utility.\n- Always evaluate if a hit is \"needless risk\" by checking if it improves your position or merely creates a new target for the opponent.",
+   "game": 7,
+   "won": false,
+   "result": "gammon",
+   "points": 2
+  },
+  {
+   "series": 10,
+   "text": "- Prioritize attacking multiple blots (double hits) over making safe points to maintain pressure and maximize equity.\n- Avoid making \"safe\" internal moves when the engine suggests aggressive hitting to keep the opponent on the bar.\n- Be cautious about over-committing to an attack in your own home board if it leaves you vulnerable to a counter-hit.\n- When entering from the bar, evaluate the flexibility of your landing point rather than just moving the most obvious checker.\n- In the endgame, prioritize clearing the highest points first to avoid leaving blots that could lead to a lost gammon.",
+   "game": 8,
+   "won": false,
+   "result": "single",
+   "points": 1
+  },
+  {
+   "series": 10,
+   "text": "- Prioritize advancing your furthest back checkers to avoid getting trapped or forced into awkward late-game positions.\n- Be more aggressive in seeking \"double hits\" or multiple attackers when the engine suggests missed risks.\n- Avoid making redundant moves in your home board when you have vulnerable checkers stranded in the opponent's territory.\n- In the late game, clear your furthest checkers first to maximize flexibility and safety.\n- Don't prioritize hitting for the sake of hitting if it compromises your overall structural transition to the home board.",
+   "game": 9,
+   "won": false,
+   "result": "backgammon",
+   "points": 3
+  },
+  {
+   "series": 10,
+   "text": "- Don't bury checkers in the home board too early if you still have assets to bring around from the midpoint.\n- Prioritize clearing the midpoint (13-point) over reinforcing already secure inner-board points.\n- Avoid \"crunching\" your home board position; keep flexibility to move checkers forward rather than backward.\n- When the opponent is trapped or anchored, maintain outward pressure instead of playing overly passively.\n- Balance safety with efficiency; don't sacrifice too much equity by playing excessively cautious moves when you hold a strong lead.",
+   "game": 10,
+   "won": true,
+   "result": "single",
+   "points": 1
+  }
+ ],
+ "budget": [
+  {
+   "series": 1,
+   "points": [
+    {
+     "after_game": 1,
+     "games_shown": [],
+     "games_dropped": 1,
+     "tokens": 0,
+     "budget_tokens": 158
+    },
+    {
+     "after_game": 2,
+     "games_shown": [],
+     "games_dropped": 2,
+     "tokens": 0,
+     "budget_tokens": 277
+    },
+    {
+     "after_game": 3,
+     "games_shown": [],
+     "games_dropped": 3,
+     "tokens": 0,
+     "budget_tokens": 394
+    },
+    {
+     "after_game": 4,
+     "games_shown": [],
+     "games_dropped": 4,
+     "tokens": 0,
+     "budget_tokens": 509
+    },
+    {
+     "after_game": 5,
+     "games_shown": [],
+     "games_dropped": 5,
+     "tokens": 0,
+     "budget_tokens": 623
+    },
+    {
+     "after_game": 6,
+     "games_shown": [],
+     "games_dropped": 6,
+     "tokens": 0,
+     "budget_tokens": 729
+    },
+    {
+     "after_game": 7,
+     "games_shown": [],
+     "games_dropped": 7,
+     "tokens": 0,
+     "budget_tokens": 860
+    },
+    {
+     "after_game": 8,
+     "games_shown": [],
+     "games_dropped": 8,
+     "tokens": 0,
+     "budget_tokens": 988
+    },
+    {
+     "after_game": 9,
+     "games_shown": [],
+     "games_dropped": 9,
+     "tokens": 0,
+     "budget_tokens": 1130
+    },
+    {
+     "after_game": 10,
+     "games_shown": [],
+     "games_dropped": 10,
+     "tokens": 0,
+     "budget_tokens": 1252
+    }
+   ]
+  },
+  {
+   "series": 2,
+   "points": [
+    {
+     "after_game": 1,
+     "games_shown": [],
+     "games_dropped": 1,
+     "tokens": 0,
+     "budget_tokens": 169
+    },
+    {
+     "after_game": 2,
+     "games_shown": [],
+     "games_dropped": 2,
+     "tokens": 0,
+     "budget_tokens": 275
+    },
+    {
+     "after_game": 3,
+     "games_shown": [],
+     "games_dropped": 3,
+     "tokens": 0,
+     "budget_tokens": 405
+    },
+    {
+     "after_game": 4,
+     "games_shown": [],
+     "games_dropped": 4,
+     "tokens": 0,
+     "budget_tokens": 527
+    },
+    {
+     "after_game": 5,
+     "games_shown": [],
+     "games_dropped": 5,
+     "tokens": 0,
+     "budget_tokens": 645
+    },
+    {
+     "after_game": 6,
+     "games_shown": [],
+     "games_dropped": 6,
+     "tokens": 0,
+     "budget_tokens": 763
+    },
+    {
+     "after_game": 7,
+     "games_shown": [],
+     "games_dropped": 7,
+     "tokens": 0,
+     "budget_tokens": 884
+    },
+    {
+     "after_game": 8,
+     "games_shown": [],
+     "games_dropped": 8,
+     "tokens": 0,
+     "budget_tokens": 997
+    },
+    {
+     "after_game": 9,
+     "games_shown": [],
+     "games_dropped": 9,
+     "tokens": 0,
+     "budget_tokens": 1118
+    },
+    {
+     "after_game": 10,
+     "games_shown": [],
+     "games_dropped": 10,
+     "tokens": 0,
+     "budget_tokens": 1225
+    }
+   ]
+  },
+  {
+   "series": 3,
+   "points": [
+    {
+     "after_game": 1,
+     "games_shown": [],
+     "games_dropped": 1,
+     "tokens": 0,
+     "budget_tokens": 156
+    },
+    {
+     "after_game": 2,
+     "games_shown": [],
+     "games_dropped": 2,
+     "tokens": 0,
+     "budget_tokens": 285
+    },
+    {
+     "after_game": 3,
+     "games_shown": [],
+     "games_dropped": 3,
+     "tokens": 0,
+     "budget_tokens": 392
+    },
+    {
+     "after_game": 4,
+     "games_shown": [],
+     "games_dropped": 4,
+     "tokens": 0,
+     "budget_tokens": 510
+    },
+    {
+     "after_game": 5,
+     "games_shown": [],
+     "games_dropped": 5,
+     "tokens": 0,
+     "budget_tokens": 637
+    },
+    {
+     "after_game": 6,
+     "games_shown": [],
+     "games_dropped": 6,
+     "tokens": 0,
+     "budget_tokens": 764
+    },
+    {
+     "after_game": 7,
+     "games_shown": [],
+     "games_dropped": 7,
+     "tokens": 0,
+     "budget_tokens": 875
+    },
+    {
+     "after_game": 8,
+     "games_shown": [],
+     "games_dropped": 8,
+     "tokens": 0,
+     "budget_tokens": 1005
+    },
+    {
+     "after_game": 9,
+     "games_shown": [],
+     "games_dropped": 9,
+     "tokens": 0,
+     "budget_tokens": 1142
+    },
+    {
+     "after_game": 10,
+     "games_shown": [],
+     "games_dropped": 10,
+     "tokens": 0,
+     "budget_tokens": 1278
+    }
+   ]
+  },
+  {
+   "series": 4,
+   "points": [
+    {
+     "after_game": 1,
+     "games_shown": [],
+     "games_dropped": 1,
+     "tokens": 0,
+     "budget_tokens": 161
+    },
+    {
+     "after_game": 2,
+     "games_shown": [],
+     "games_dropped": 2,
+     "tokens": 0,
+     "budget_tokens": 277
+    },
+    {
+     "after_game": 3,
+     "games_shown": [],
+     "games_dropped": 3,
+     "tokens": 0,
+     "budget_tokens": 394
+    },
+    {
+     "after_game": 4,
+     "games_shown": [],
+     "games_dropped": 4,
+     "tokens": 0,
+     "budget_tokens": 512
+    },
+    {
+     "after_game": 5,
+     "games_shown": [],
+     "games_dropped": 5,
+     "tokens": 0,
+     "budget_tokens": 629
+    },
+    {
+     "after_game": 6,
+     "games_shown": [],
+     "games_dropped": 6,
+     "tokens": 0,
+     "budget_tokens": 749
+    },
+    {
+     "after_game": 7,
+     "games_shown": [],
+     "games_dropped": 7,
+     "tokens": 0,
+     "budget_tokens": 893
+    },
+    {
+     "after_game": 8,
+     "games_shown": [],
+     "games_dropped": 8,
+     "tokens": 0,
+     "budget_tokens": 1035
+    },
+    {
+     "after_game": 9,
+     "games_shown": [],
+     "games_dropped": 9,
+     "tokens": 0,
+     "budget_tokens": 1166
+    },
+    {
+     "after_game": 10,
+     "games_shown": [],
+     "games_dropped": 10,
+     "tokens": 0,
+     "budget_tokens": 1274
+    }
+   ]
+  },
+  {
+   "series": 5,
+   "points": [
+    {
+     "after_game": 1,
+     "games_shown": [],
+     "games_dropped": 1,
+     "tokens": 0,
+     "budget_tokens": 146
+    },
+    {
+     "after_game": 2,
+     "games_shown": [],
+     "games_dropped": 2,
+     "tokens": 0,
+     "budget_tokens": 256
+    },
+    {
+     "after_game": 3,
+     "games_shown": [],
+     "games_dropped": 3,
+     "tokens": 0,
+     "budget_tokens": 380
+    },
+    {
+     "after_game": 4,
+     "games_shown": [],
+     "games_dropped": 4,
+     "tokens": 0,
+     "budget_tokens": 511
+    },
+    {
+     "after_game": 5,
+     "games_shown": [],
+     "games_dropped": 5,
+     "tokens": 0,
+     "budget_tokens": 632
+    },
+    {
+     "after_game": 6,
+     "games_shown": [],
+     "games_dropped": 6,
+     "tokens": 0,
+     "budget_tokens": 748
+    },
+    {
+     "after_game": 7,
+     "games_shown": [],
+     "games_dropped": 7,
+     "tokens": 0,
+     "budget_tokens": 888
+    },
+    {
+     "after_game": 8,
+     "games_shown": [],
+     "games_dropped": 8,
+     "tokens": 0,
+     "budget_tokens": 1010
+    },
+    {
+     "after_game": 9,
+     "games_shown": [],
+     "games_dropped": 9,
+     "tokens": 0,
+     "budget_tokens": 1123
+    },
+    {
+     "after_game": 10,
+     "games_shown": [],
+     "games_dropped": 10,
+     "tokens": 0,
+     "budget_tokens": 1258
+    }
+   ]
+  },
+  {
+   "series": 6,
+   "points": [
+    {
+     "after_game": 1,
+     "games_shown": [],
+     "games_dropped": 1,
+     "tokens": 0,
+     "budget_tokens": 160
+    },
+    {
+     "after_game": 2,
+     "games_shown": [],
+     "games_dropped": 2,
+     "tokens": 0,
+     "budget_tokens": 289
+    },
+    {
+     "after_game": 3,
+     "games_shown": [],
+     "games_dropped": 3,
+     "tokens": 0,
+     "budget_tokens": 406
+    },
+    {
+     "after_game": 4,
+     "games_shown": [],
+     "games_dropped": 4,
+     "tokens": 0,
+     "budget_tokens": 527
+    },
+    {
+     "after_game": 5,
+     "games_shown": [],
+     "games_dropped": 5,
+     "tokens": 0,
+     "budget_tokens": 661
+    },
+    {
+     "after_game": 6,
+     "games_shown": [],
+     "games_dropped": 6,
+     "tokens": 0,
+     "budget_tokens": 780
+    },
+    {
+     "after_game": 7,
+     "games_shown": [],
+     "games_dropped": 7,
+     "tokens": 0,
+     "budget_tokens": 882
+    },
+    {
+     "after_game": 8,
+     "games_shown": [],
+     "games_dropped": 8,
+     "tokens": 0,
+     "budget_tokens": 1018
+    },
+    {
+     "after_game": 9,
+     "games_shown": [],
+     "games_dropped": 9,
+     "tokens": 0,
+     "budget_tokens": 1135
+    },
+    {
+     "after_game": 10,
+     "games_shown": [],
+     "games_dropped": 10,
+     "tokens": 0,
+     "budget_tokens": 1239
+    }
+   ]
+  },
+  {
+   "series": 7,
+   "points": [
+    {
+     "after_game": 1,
+     "games_shown": [],
+     "games_dropped": 1,
+     "tokens": 0,
+     "budget_tokens": 184
+    },
+    {
+     "after_game": 2,
+     "games_shown": [],
+     "games_dropped": 2,
+     "tokens": 0,
+     "budget_tokens": 287
+    },
+    {
+     "after_game": 3,
+     "games_shown": [],
+     "games_dropped": 3,
+     "tokens": 0,
+     "budget_tokens": 419
+    },
+    {
+     "after_game": 4,
+     "games_shown": [],
+     "games_dropped": 4,
+     "tokens": 0,
+     "budget_tokens": 549
+    },
+    {
+     "after_game": 5,
+     "games_shown": [],
+     "games_dropped": 5,
+     "tokens": 0,
+     "budget_tokens": 655
+    },
+    {
+     "after_game": 6,
+     "games_shown": [],
+     "games_dropped": 6,
+     "tokens": 0,
+     "budget_tokens": 785
+    },
+    {
+     "after_game": 7,
+     "games_shown": [],
+     "games_dropped": 7,
+     "tokens": 0,
+     "budget_tokens": 911
+    },
+    {
+     "after_game": 8,
+     "games_shown": [],
+     "games_dropped": 8,
+     "tokens": 0,
+     "budget_tokens": 1047
+    },
+    {
+     "after_game": 9,
+     "games_shown": [],
+     "games_dropped": 9,
+     "tokens": 0,
+     "budget_tokens": 1173
+    },
+    {
+     "after_game": 10,
+     "games_shown": [],
+     "games_dropped": 10,
+     "tokens": 0,
+     "budget_tokens": 1297
+    }
+   ]
+  },
+  {
+   "series": 8,
+   "points": [
+    {
+     "after_game": 1,
+     "games_shown": [],
+     "games_dropped": 1,
+     "tokens": 0,
+     "budget_tokens": 152
+    },
+    {
+     "after_game": 2,
+     "games_shown": [],
+     "games_dropped": 2,
+     "tokens": 0,
+     "budget_tokens": 262
+    },
+    {
+     "after_game": 3,
+     "games_shown": [],
+     "games_dropped": 3,
+     "tokens": 0,
+     "budget_tokens": 393
+    },
+    {
+     "after_game": 4,
+     "games_shown": [],
+     "games_dropped": 4,
+     "tokens": 0,
+     "budget_tokens": 513
+    },
+    {
+     "after_game": 5,
+     "games_shown": [],
+     "games_dropped": 5,
+     "tokens": 0,
+     "budget_tokens": 634
+    },
+    {
+     "after_game": 6,
+     "games_shown": [],
+     "games_dropped": 6,
+     "tokens": 0,
+     "budget_tokens": 743
+    },
+    {
+     "after_game": 7,
+     "games_shown": [],
+     "games_dropped": 7,
+     "tokens": 0,
+     "budget_tokens": 861
+    },
+    {
+     "after_game": 8,
+     "games_shown": [],
+     "games_dropped": 8,
+     "tokens": 0,
+     "budget_tokens": 991
+    },
+    {
+     "after_game": 9,
+     "games_shown": [],
+     "games_dropped": 9,
+     "tokens": 0,
+     "budget_tokens": 1120
+    },
+    {
+     "after_game": 10,
+     "games_shown": [],
+     "games_dropped": 10,
+     "tokens": 0,
+     "budget_tokens": 1246
+    }
+   ]
+  },
+  {
+   "series": 9,
+   "points": [
+    {
+     "after_game": 1,
+     "games_shown": [],
+     "games_dropped": 1,
+     "tokens": 0,
+     "budget_tokens": 161
+    },
+    {
+     "after_game": 2,
+     "games_shown": [],
+     "games_dropped": 2,
+     "tokens": 0,
+     "budget_tokens": 293
+    },
+    {
+     "after_game": 3,
+     "games_shown": [],
+     "games_dropped": 3,
+     "tokens": 0,
+     "budget_tokens": 419
+    },
+    {
+     "after_game": 4,
+     "games_shown": [],
+     "games_dropped": 4,
+     "tokens": 0,
+     "budget_tokens": 533
+    },
+    {
+     "after_game": 5,
+     "games_shown": [],
+     "games_dropped": 5,
+     "tokens": 0,
+     "budget_tokens": 675
+    },
+    {
+     "after_game": 6,
+     "games_shown": [],
+     "games_dropped": 6,
+     "tokens": 0,
+     "budget_tokens": 789
+    },
+    {
+     "after_game": 7,
+     "games_shown": [],
+     "games_dropped": 7,
+     "tokens": 0,
+     "budget_tokens": 909
+    },
+    {
+     "after_game": 8,
+     "games_shown": [],
+     "games_dropped": 8,
+     "tokens": 0,
+     "budget_tokens": 1037
+    },
+    {
+     "after_game": 9,
+     "games_shown": [],
+     "games_dropped": 9,
+     "tokens": 0,
+     "budget_tokens": 1160
+    },
+    {
+     "after_game": 10,
+     "games_shown": [],
+     "games_dropped": 10,
+     "tokens": 0,
+     "budget_tokens": 1260
+    }
+   ]
+  },
+  {
+   "series": 10,
+   "points": [
+    {
+     "after_game": 1,
+     "games_shown": [],
+     "games_dropped": 1,
+     "tokens": 0,
+     "budget_tokens": 140
+    },
+    {
+     "after_game": 2,
+     "games_shown": [],
+     "games_dropped": 2,
+     "tokens": 0,
+     "budget_tokens": 259
+    },
+    {
+     "after_game": 3,
+     "games_shown": [],
+     "games_dropped": 3,
+     "tokens": 0,
+     "budget_tokens": 387
+    },
+    {
+     "after_game": 4,
+     "games_shown": [],
+     "games_dropped": 4,
+     "tokens": 0,
+     "budget_tokens": 499
+    },
+    {
+     "after_game": 5,
+     "games_shown": [],
+     "games_dropped": 5,
+     "tokens": 0,
+     "budget_tokens": 630
+    },
+    {
+     "after_game": 6,
+     "games_shown": [],
+     "games_dropped": 6,
+     "tokens": 0,
+     "budget_tokens": 764
+    },
+    {
+     "after_game": 7,
+     "games_shown": [],
+     "games_dropped": 7,
+     "tokens": 0,
+     "budget_tokens": 905
+    },
+    {
+     "after_game": 8,
+     "games_shown": [],
+     "games_dropped": 8,
+     "tokens": 0,
+     "budget_tokens": 1033
+    },
+    {
+     "after_game": 9,
+     "games_shown": [],
+     "games_dropped": 9,
+     "tokens": 0,
+     "budget_tokens": 1147
+    },
+    {
+     "after_game": 10,
+     "games_shown": [],
+     "games_dropped": 10,
+     "tokens": 0,
+     "budget_tokens": 1268
+    }
+   ]
+  }
+ ],
+ "validation": {
+  "accepted": true,
+  "producer_complete": true,
+  "complete": true,
+  "problems": []
+ },
+ "explore": {
+  "accepted": true,
+  "problems": [],
+  "label": "exploratory, after the results",
+  "generated_at": "2026-11-08T11:29:15+00:00",
+  "arm_minus_budget": {
+   "records": {
+    "T5": {
+     "risks_found": {
+      "mean": 0.1,
+      "ci": [
+       -1.6,
+       1.7
+      ]
+     },
+     "right_safety": {
+      "mean": -0.6,
+      "ci": [
+       -1.1,
+       -0.1
+      ]
+     },
+     "error_rate": {
+      "mean": -1.032906413078308,
+      "ci": [
+       -2.3321638852357864,
+       0.36230894923210144
+      ]
+     },
+     "risk_judgement": {
+      "mean": -0.25,
+      "ci": [
+       -1.25,
+       0.7
+      ]
+     }
+    },
+    "T10": {
+     "risks_found": {
+      "mean": 0.5,
+      "ci": [
+       -0.5,
+       1.5
+      ]
+     },
+     "right_safety": {
+      "mean": 0.5,
+      "ci": [
+       -0.1,
+       1.1
+      ]
+     },
+     "error_rate": {
+      "mean": -1.6083146035671234,
+      "ci": [
+       -2.420711427927017,
+       -0.7251364588737488
+      ]
+     },
+     "risk_judgement": {
+      "mean": 0.5,
+      "ci": [
+       -0.2,
+       1.25
+      ]
+     }
+    }
+   },
+   "lessons": {
+    "T5": {
+     "risks_found": {
+      "mean": 5.9,
+      "ci": [
+       4.5,
+       7.2
+      ]
+     },
+     "right_safety": {
+      "mean": -0.5,
+      "ci": [
+       -0.9,
+       -0.1
+      ]
+     },
+     "error_rate": {
+      "mean": -7.891534522175789,
+      "ci": [
+       -8.703995913267136,
+       -7.079707860946655
+      ]
+     },
+     "risk_judgement": {
+      "mean": 2.6999999999999957,
+      "ci": [
+       2.1499999999999972,
+       3.1999999999999984
+      ]
+     }
+    },
+    "T10": {
+     "risks_found": {
+      "mean": 5.5,
+      "ci": [
+       3.7,
+       7.3
+      ]
+     },
+     "right_safety": {
+      "mean": 0.3,
+      "ci": [
+       -0.2,
+       0.8
+      ]
+     },
+     "error_rate": {
+      "mean": -8.291990607976913,
+      "ci": [
+       -9.028665348887444,
+       -7.444161653518677
+      ]
+     },
+     "risk_judgement": {
+      "mean": 2.8999999999999972,
+      "ci": [
+       1.8499999999999985,
+       3.8999999999999986
+      ]
+     }
+    }
+   }
+  },
+  "series": 10,
+  "runs": [
+   {
+    "kind": "t0",
+    "retest": null,
+    "series": null,
+    "checkpoint": null,
+    "answered": 200,
+    "valid": 200,
+    "invalid": 0,
+    "failed": 0,
+    "risks_found": 25.0,
+    "right_safety": 96.0,
+    "error_rate": 55.55215932428837,
+    "risk_judgement": 60.5,
+    "risk_appetite": 18.0
+   },
+   {
+    "kind": "retest",
+    "retest": 1,
+    "series": null,
+    "checkpoint": null,
+    "answered": 200,
+    "valid": 200,
+    "invalid": 0,
+    "failed": 0,
+    "risks_found": 28.0,
+    "right_safety": 97.0,
+    "error_rate": 54.66305263340473,
+    "risk_judgement": 62.5,
+    "risk_appetite": 18.5
+   },
+   {
+    "kind": "retest",
+    "retest": 2,
+    "series": null,
+    "checkpoint": null,
+    "answered": 200,
+    "valid": 200,
+    "invalid": 0,
+    "failed": 0,
+    "risks_found": 28.0,
+    "right_safety": 97.0,
+    "error_rate": 54.67233054339886,
+    "risk_judgement": 62.5,
+    "risk_appetite": 19.0
+   },
+   {
+    "kind": "retest",
+    "retest": 3,
+    "series": null,
+    "checkpoint": null,
+    "answered": 200,
+    "valid": 200,
+    "invalid": 0,
+    "failed": 0,
+    "risks_found": 28.0,
+    "right_safety": 97.0,
+    "error_rate": 54.66305263340473,
+    "risk_judgement": 62.5,
+    "risk_appetite": 18.5
+   },
+   {
+    "kind": "retest",
+    "retest": 4,
+    "series": null,
+    "checkpoint": null,
+    "answered": 200,
+    "valid": 200,
+    "invalid": 0,
+    "failed": 0,
+    "risks_found": 28.0,
+    "right_safety": 97.0,
+    "error_rate": 54.43257264792919,
+    "risk_judgement": 62.5,
+    "risk_appetite": 19.0
+   },
+   {
+    "kind": "retest",
+    "retest": 5,
+    "series": null,
+    "checkpoint": null,
+    "answered": 200,
+    "valid": 200,
+    "invalid": 0,
+    "failed": 0,
+    "risks_found": 28.0,
+    "right_safety": 97.0,
+    "error_rate": 54.67233054339886,
+    "risk_judgement": 62.5,
+    "risk_appetite": 19.0
+   },
+   {
+    "kind": "budget",
+    "retest": null,
+    "series": 1,
+    "checkpoint": "T5",
+    "answered": 200,
+    "valid": 200,
+    "invalid": 0,
+    "failed": 0,
+    "risks_found": 28.0,
+    "right_safety": 97.0,
+    "error_rate": 54.45885233581066,
+    "risk_judgement": 62.5,
+    "risk_appetite": 18.5
+   },
+   {
+    "kind": "budget",
+    "retest": null,
+    "series": 1,
+    "checkpoint": "T10",
+    "answered": 200,
+    "valid": 200,
+    "invalid": 0,
+    "failed": 0,
+    "risks_found": 24.0,
+    "right_safety": 95.0,
+    "error_rate": 56.872075870633125,
+    "risk_judgement": 59.5,
+    "risk_appetite": 18.0
+   },
+   {
+    "kind": "budget",
+    "retest": null,
+    "series": 2,
+    "checkpoint": "T5",
+    "answered": 200,
+    "valid": 200,
+    "invalid": 0,
+    "failed": 0,
+    "risks_found": 30.0,
+    "right_safety": 96.0,
+    "error_rate": 53.702126517891884,
+    "risk_judgement": 63.0,
+    "risk_appetite": 20.0
+   },
+   {
+    "kind": "budget",
+    "retest": null,
+    "series": 2,
+    "checkpoint": "T10",
+    "answered": 200,
+    "valid": 200,
+    "invalid": 0,
+    "failed": 0,
+    "risks_found": 28.0,
+    "right_safety": 97.0,
+    "error_rate": 54.47900302708149,
+    "risk_judgement": 62.5,
+    "risk_appetite": 18.5
+   },
+   {
+    "kind": "budget",
+    "retest": null,
+    "series": 3,
+    "checkpoint": "T5",
+    "answered": 200,
+    "valid": 200,
+    "invalid": 0,
+    "failed": 0,
+    "risks_found": 28.0,
+    "right_safety": 97.0,
+    "error_rate": 54.47900302708149,
+    "risk_judgement": 62.5,
+    "risk_appetite": 18.5
+   },
+   {
+    "kind": "budget",
+    "retest": null,
+    "series": 3,
+    "checkpoint": "T10",
+    "answered": 200,
+    "valid": 200,
+    "invalid": 0,
+    "failed": 0,
+    "risks_found": 28.0,
+    "right_safety": 97.0,
+    "error_rate": 54.47900302708149,
+    "risk_judgement": 62.5,
+    "risk_appetite": 18.5
+   },
+   {
+    "kind": "budget",
+    "retest": null,
+    "series": 4,
+    "checkpoint": "T5",
+    "answered": 200,
+    "valid": 200,
+    "invalid": 0,
+    "failed": 0,
+    "risks_found": 30.0,
+    "right_safety": 97.0,
+    "error_rate": 54.40627120435238,
+    "risk_judgement": 63.5,
+    "risk_appetite": 19.5
+   },
+   {
+    "kind": "budget",
+    "retest": null,
+    "series": 4,
+    "checkpoint": "T10",
+    "answered": 200,
+    "valid": 200,
+    "invalid": 0,
+    "failed": 0,
+    "risks_found": 26.0,
+    "right_safety": 97.0,
+    "error_rate": 55.0763987749815,
+    "risk_judgement": 61.5,
+    "risk_appetite": 17.5
+   },
+   {
+    "kind": "budget",
+    "retest": null,
+    "series": 5,
+    "checkpoint": "T5",
+    "answered": 200,
+    "valid": 200,
+    "invalid": 0,
+    "failed": 0,
+    "risks_found": 28.0,
+    "right_safety": 97.0,
+    "error_rate": 54.47900302708149,
+    "risk_judgement": 62.5,
+    "risk_appetite": 18.5
+   },
+   {
+    "kind": "budget",
+    "retest": null,
+    "series": 5,
+    "checkpoint": "T10",
+    "answered": 200,
+    "valid": 200,
+    "invalid": 0,
+    "failed": 0,
+    "risks_found": 30.0,
+    "right_safety": 97.0,
+    "error_rate": 54.132450595498085,
+    "risk_judgement": 63.5,
+    "risk_appetite": 19.5
+   },
+   {
+    "kind": "budget",
+    "retest": null,
+    "series": 6,
+    "checkpoint": "T5",
+    "answered": 200,
+    "valid": 200,
+    "invalid": 0,
+    "failed": 0,
+    "risks_found": 30.0,
+    "right_safety": 97.0,
+    "error_rate": 52.64764405786991,
+    "risk_judgement": 63.5,
+    "risk_appetite": 19.5
+   },
+   {
+    "kind": "budget",
+    "retest": null,
+    "series": 6,
+    "checkpoint": "T10",
+    "answered": 200,
+    "valid": 200,
+    "invalid": 0,
+    "failed": 0,
+    "risks_found": 29.0,
+    "right_safety": 97.0,
+    "error_rate": 54.122404381632805,
+    "risk_judgement": 63.0,
+    "risk_appetite": 19.0
+   },
+   {
+    "kind": "budget",
+    "retest": null,
+    "series": 7,
+    "checkpoint": "T5",
+    "answered": 200,
+    "valid": 200,
+    "invalid": 0,
+    "failed": 0,
+    "risks_found": 29.0,
+    "right_safety": 96.0,
+    "error_rate": 52.5362142175436,
+    "risk_judgement": 62.5,
+    "risk_appetite": 19.5
+   },
+   {
+    "kind": "budget",
+    "retest": null,
+    "series": 7,
+    "checkpoint": "T10",
+    "answered": 200,
+    "valid": 200,
+    "invalid": 0,
+    "failed": 0,
+    "risks_found": 29.0,
+    "right_safety": 97.0,
+    "error_rate": 54.300212040543556,
+    "risk_judgement": 63.0,
+    "risk_appetite": 19.0
+   },
+   {
+    "kind": "budget",
+    "retest": null,
+    "series": 8,
+    "checkpoint": "T5",
+    "answered": 200,
+    "valid": 200,
+    "invalid": 0,
+    "failed": 0,
+    "risks_found": 28.0,
+    "right_safety": 97.0,
+    "error_rate": 54.47900302708149,
+    "risk_judgement": 62.5,
+    "risk_appetite": 18.5
+   },
+   {
+    "kind": "budget",
+    "retest": null,
+    "series": 8,
+    "checkpoint": "T10",
+    "answered": 200,
+    "valid": 200,
+    "invalid": 0,
+    "failed": 0,
+    "risks_found": 28.0,
+    "right_safety": 97.0,
+    "error_rate": 54.47900302708149,
+    "risk_judgement": 62.5,
+    "risk_appetite": 18.5
+   },
+   {
+    "kind": "budget",
+    "retest": null,
+    "series": 9,
+    "checkpoint": "T5",
+    "answered": 200,
+    "valid": 200,
+    "invalid": 0,
+    "failed": 0,
+    "risks_found": 28.0,
+    "right_safety": 97.0,
+    "error_rate": 54.47900302708149,
+    "risk_judgement": 62.5,
+    "risk_appetite": 18.5
+   },
+   {
+    "kind": "budget",
+    "retest": null,
+    "series": 9,
+    "checkpoint": "T10",
+    "answered": 200,
+    "valid": 200,
+    "invalid": 0,
+    "failed": 0,
+    "risks_found": 28.0,
+    "right_safety": 97.0,
+    "error_rate": 54.47900302708149,
+    "risk_judgement": 62.5,
+    "risk_appetite": 18.5
+   },
+   {
+    "kind": "budget",
+    "retest": null,
+    "series": 10,
+    "checkpoint": "T5",
+    "answered": 200,
+    "valid": 200,
+    "invalid": 0,
+    "failed": 0,
+    "risks_found": 28.0,
+    "right_safety": 97.0,
+    "error_rate": 54.47900302708149,
+    "risk_judgement": 62.5,
+    "risk_appetite": 18.5
+   },
+   {
+    "kind": "budget",
+    "retest": null,
+    "series": 10,
+    "checkpoint": "T10",
+    "answered": 200,
+    "valid": 200,
+    "invalid": 0,
+    "failed": 0,
+    "risks_found": 28.0,
+    "right_safety": 97.0,
+    "error_rate": 54.47900302708149,
+    "risk_judgement": 62.5,
+    "risk_appetite": 18.5
+   }
+  ],
+  "retest_answer_counts": {
+   "1": 200,
+   "2": 200,
+   "3": 200,
+   "4": 200,
+   "5": 200
+  },
+  "spread": {
+   "all": {
+    "risks_found": {
+     "n": 26,
+     "mean": 28.076923076923077,
+     "min": 24.0,
+     "max": 30.0,
+     "sd": 1.3834182859302366
+    },
+    "right_safety": {
+     "n": 26,
+     "mean": 96.8076923076923,
+     "min": 95.0,
+     "max": 97.0,
+     "sd": 0.4914656259988704
+    },
+    "error_rate": {
+     "n": 26,
+     "mean": 54.450006868976814,
+     "min": 52.5362142175436,
+     "max": 56.872075870633125,
+     "sd": 0.7842168936752293
+    },
+    "risk_judgement": {
+     "n": 26,
+     "mean": 62.44230769230769,
+     "min": 59.5,
+     "max": 63.5,
+     "sd": 0.8405584224421653
+    },
+    "risk_appetite": {
+     "n": 26,
+     "mean": 18.73076923076923,
+     "min": 17.5,
+     "max": 20.0,
+     "sd": 0.5519197266046799
+    }
+   },
+   "t0+retests": {
+    "risks_found": {
+     "n": 6,
+     "mean": 27.5,
+     "min": 25.0,
+     "max": 28.0,
+     "sd": 1.224744871391589
+    },
+    "right_safety": {
+     "n": 6,
+     "mean": 96.83333333333333,
+     "min": 96.0,
+     "max": 97.0,
+     "sd": 0.408248290463863
+    },
+    "error_rate": {
+     "n": 6,
+     "mean": 54.77591638763746,
+     "min": 54.43257264792919,
+     "max": 55.55215932428837,
+     "sd": 0.39175873406716655
+    },
+    "risk_judgement": {
+     "n": 6,
+     "mean": 62.166666666666664,
+     "min": 60.5,
+     "max": 62.5,
+     "sd": 0.816496580927726
+    },
+    "risk_appetite": {
+     "n": 6,
+     "mean": 18.666666666666668,
+     "min": 18.0,
+     "max": 19.0,
+     "sd": 0.408248290463863
+    }
+   },
+   "retests": {
+    "risks_found": {
+     "n": 5,
+     "mean": 28.0,
+     "min": 28.0,
+     "max": 28.0,
+     "sd": 0.0
+    },
+    "right_safety": {
+     "n": 5,
+     "mean": 97.0,
+     "min": 97.0,
+     "max": 97.0,
+     "sd": 0.0
+    },
+    "error_rate": {
+     "n": 5,
+     "mean": 54.620667800307274,
+     "min": 54.43257264792919,
+     "max": 54.67233054339886,
+     "sd": 0.10525066810836235
+    },
+    "risk_judgement": {
+     "n": 5,
+     "mean": 62.5,
+     "min": 62.5,
+     "max": 62.5,
+     "sd": 0.0
+    },
+    "risk_appetite": {
+     "n": 5,
+     "mean": 18.8,
+     "min": 18.5,
+     "max": 19.0,
+     "sd": 0.27386127875258304
+    }
+   },
+   "budget": {
+    "risks_found": {
+     "n": 20,
+     "mean": 28.25,
+     "min": 24.0,
+     "max": 30.0,
+     "sd": 1.409553867457061
+    },
+    "right_safety": {
+     "n": 20,
+     "mean": 96.8,
+     "min": 95.0,
+     "max": 97.0,
+     "sd": 0.5231483637805969
+    },
+    "error_rate": {
+     "n": 20,
+     "mean": 54.35223401337862,
+     "min": 52.5362142175436,
+     "max": 56.872075870633125,
+     "sd": 0.8515940522768534
+    },
+    "risk_judgement": {
+     "n": 20,
+     "mean": 62.525,
+     "min": 59.5,
+     "max": 63.5,
+     "sd": 0.8503095411610255
+    },
+    "risk_appetite": {
+     "n": 20,
+     "mean": 18.75,
+     "min": 17.5,
+     "max": 20.0,
+     "sd": 0.5960395606792697
+    }
+   }
+  },
+  "agreement": {
+   "unit": "positions (of 200) where two runs chose different plays",
+   "summary": {
+    "T0 vs retests": {
+     "n": 5,
+     "mean": 9.0,
+     "min": 8,
+     "max": 11,
+     "sd": 1.224744871391589
+    },
+    "retest vs retest": {
+     "n": 10,
+     "mean": 1.4,
+     "min": 0,
+     "max": 3,
+     "sd": 1.0749676997731399
+    },
+    "T0 vs budget": {
+     "n": 20,
+     "mean": 9.2,
+     "min": 7,
+     "max": 12,
+     "sd": 1.0563093645728086
+    },
+    "retests vs budget": {
+     "n": 100,
+     "mean": 5.03,
+     "min": 1,
+     "max": 14,
+     "sd": 4.400309906441508
+    },
+    "budget vs budget": {
+     "n": 190,
+     "mean": 6.042105263157895,
+     "min": 0,
+     "max": 14,
+     "sd": 4.722827127210684
+    }
+   },
+   "positions_not_unanimous_across_retests": 3
+  },
+  "sampling": {
+   "temperature": 1.0,
+   "max_tokens": 1,
+   "top_logprobs": 20,
+   "max_options_per_request": 26,
+   "grouped_positions": 32,
+   "positions": 200,
+   "in_flight_t0_and_retests": 4,
+   "in_flight_budget": 1,
+   "server_default_temperature": 1.0,
+   "server_default_top_k": 64,
+   "server_default_top_p": 0.95,
+   "answers_checked": 5200,
+   "requests_checked": 7202
+  }
+ },
+ "status": {
+  "phase": "done",
+  "line": "Done",
+  "series_per_arm": 10,
+  "planned": 10,
+  "smoke_series": 3,
+  "last_update": "2026-11-08T07:28:04+00:00"
+ },
+ "source_sha256": "2190dc75f786799c885d0f34ab64f0f90f9fccabdc02d59808fce8568deaa116"
+}

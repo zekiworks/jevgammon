@@ -1,0 +1,8 @@
+2026-11-08 11:46:09 UTC  learning-explore-exploratory-block-1280-light.png  <- file://$SCRATCH/out-branch/learning/index.html #learning-explore
+2026-11-08 11:46:09 UTC  learning-explore-exploratory-block-1280-dark.png  <- file://$SCRATCH/out-branch/learning/index.html #learning-explore
+2026-11-08 11:46:10 UTC  learning-explore-exploratory-block-390-light.png  <- file://$SCRATCH/out-branch/learning/index.html #learning-explore
+2026-11-08 11:46:10 UTC  learning-explore-exploratory-block-390-dark.png  <- file://$SCRATCH/out-branch/learning/index.html #learning-explore
+2026-11-08 11:46:10 UTC  learning-SYNTHETIC-malformed-explore-exploratory-block-1280-light.png  <- file://$SCRATCH/malformed-explore-site/learning/index.html #learning-explore
+2026-11-08 11:46:10 UTC  learning-SYNTHETIC-malformed-explore-exploratory-block-1280-dark.png  <- file://$SCRATCH/malformed-explore-site/learning/index.html #learning-explore
+2026-11-08 11:46:10 UTC  learning-SYNTHETIC-malformed-explore-exploratory-block-390-light.png  <- file://$SCRATCH/malformed-explore-site/learning/index.html #learning-explore
+2026-11-08 11:46:10 UTC  learning-SYNTHETIC-malformed-explore-exploratory-block-390-dark.png  <- file://$SCRATCH/malformed-explore-site/learning/index.html #learning-explore

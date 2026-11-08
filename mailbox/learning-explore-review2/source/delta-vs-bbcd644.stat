@@ -1,0 +1,4 @@
+ tools/site/checks.py            |  7 +++-
+ tools/site/learning_page.py     | 77 ++++++++++++++++++++++++++++++-----------
+ tools/site/learning_validate.py |  8 +++--
+ 3 files changed, 68 insertions(+), 24 deletions(-)

@@ -1,0 +1,1027 @@
+diff --git a/tools/site/assets/bg.css b/tools/site/assets/bg.css
+index bbc43c1..bae961b 100644
+--- a/tools/site/assets/bg.css
++++ b/tools/site/assets/bg.css
+@@ -49,6 +49,10 @@ details.more > summary { cursor: pointer; font-weight: 600; }
+ .lp-chart .chart-svg { display: block; width: 100%; max-width: 560px; }
+ .lp-status { margin: .3rem 0 .6rem; font-size: 1.05rem; }
+ details.lp-series { margin: .4rem 0; } details.lp-series > summary { cursor: pointer; font-weight: 600; }
++.lp-run-line { margin: 0 0 1rem; font-weight: 600; }
++/* The exploratory block (learning_page.explore): apart from the verdict, a dashed frame on the sunk background. */
++section.card.lp-explore { border: 2px dashed var(--edge); background: var(--sunk); }
++.lp-explore-label { margin-top: 0; }
+ 
+ /* --- Dashboard layout: a centred header, tables first; data colours are unchanged. Colours, keys, lamps and panels are
+    site.css's, the sibling site's look in both themes (Ümit, 31 Oct 2026); this page's own colour names map onto
+diff --git a/tools/site/checks.py b/tools/site/checks.py
+index fb69c53..273dea8 100644
+--- a/tools/site/checks.py
++++ b/tools/site/checks.py
+@@ -21,7 +21,8 @@
+ 7. The learning page (learning_page.py, plan §9): no verdict, learning lift, signal or Learning-tab ranking/leader block
+    in the page or its data file unless the results are complete; no evaluation-set position (id, board key, board) in
+    either (where the private test set is present); outside pre-registration-only mode, the status line, both charts and
+-   their tables, the verdict and every lesson against the page's own data file (Ümit #2925).
++   their tables, the verdict, the arms' display names, every lesson and the exploratory block (Ümit #2925, #2950)
++   against the page's own data file.
+ """
+ 
+ import gzip
+@@ -390,7 +391,7 @@ def _learning_results(root, L) -> list[str]:
+     chart at its T0 value, no other line dashed) and the tables under them; the verdict only as the data allows; every
+     lesson next to its game, its text exactly the data file's (escaped)."""
+     from common import NA, fmt
+-    from learning_page import ARM_COLOUR, CHECKPOINTS, CONTROL_DASH, PATH
++    from learning_page import ARM_COLOUR, ARM_LABEL, CHECKPOINTS, CONTROL_DASH, MODEL, PATH, RUN_LINE
+     bad, R, ids = [], L.get("results"), {}
+     nodes = list(walk(root))
+     for n in nodes:
+@@ -484,6 +485,28 @@ def _learning_results(root, L) -> list[str]:
+             empty, total = R["budget_empty_points"]["budget"], R["budget_points_total"]["budget"]
+             if (BUDGET_VERDICT in text_of(el)) != bool(total and empty == total):
+                 bad.append(f"{PATH}: the budget reading (plan section 11) does not follow the budget points")
++    # Display names (Ümit #2950): every legend entry, chart-table row and verdict line names its arm by ARM_LABEL; the
++    # one line at the top of Results; the model in every chart title.
++    for n in nodes:
++        cls = n.attrs.get("class", "").split()
++        if "lp-swatch" in cls and text_of(n.parent).strip() != ARM_LABEL.get(n.attrs.get("data-arm")):
++            bad.append(f"{PATH}: legend entry {text_of(n.parent).strip()!r} is not its arm's name")
++        if n.tag == "tr" and any("lp-numbers" in a.attrs.get("class", "").split() for a in ancestors(n)):
++            arm = next((c.attrs.get("data-arm") for c in n.children if c.attrs.get("data-arm")), None)
++            th = next((c for c in n.children if c.tag == "th"), None)
++            if arm and (th is None or text_of(th).strip() != ARM_LABEL.get(arm)):
++                bad.append(f"{PATH}: chart table row of {arm!r} is not named by its arm's name")
++        if n.tag == "li" and n.attrs.get("data-arm") and any(a.attrs.get("id") == "learning-verdict"
++                                                            for a in ancestors(n)):
++            strong = next((c for c in n.children if c.tag == "strong"), None)
++            if strong is None or text_of(strong).strip() != ARM_LABEL.get(n.attrs["data-arm"]):
++                bad.append(f"{PATH}: verdict line of {n.attrs['data-arm']!r} is not named by its arm's name")
++        if n.tag == "text" and "lp-title" in cls and MODEL not in text_of(n):
++            bad.append(f"{PATH}: chart title {text_of(n).strip()!r} does not name {MODEL}")
++    run_line = ids.get("learning-run-line")
++    if R is not None and R["series_total_done"] and (run_line is None or text_of(run_line).strip() != RUN_LINE):
++        bad.append(f"{PATH}: the line at the top of Results is missing or not the fixed one")
++    bad += _learning_explore(nodes, ids, L, complete)
+     # Lessons: each next to its game, exactly the data's text, finished lessons series only.
+     fin = set((R or {}).get("series_finished", {}).get("lessons", []))
+     data_lessons = {(x["series"], x["game"]): x for x in L.get("lessons") or []}
+@@ -510,13 +533,95 @@ def _learning_results(root, L) -> list[str]:
+     return bad
+ 
+ 
++def _learning_explore(nodes, ids, L, complete: bool) -> list[str]:
++    """The exploratory block (Ümit #2950/#2952) against the data file: absent when the data has none; when present,
++    right after the verdict and outside it, labelled "exploratory, after the results" and "not part of the
++    pre-registered verdict"; accepted only with complete results, every cell exactly the data's (each arm minus budget,
++    the runs, the spread); refused, no number of it at all (only the fixed problem codes)."""
++    from common import NA, fmt
++    from learning_page import PATH
++    X, el, bad = L.get("explore"), ids.get("learning-explore"), []
++    if X is None:
++        return [f"{PATH}: an exploratory block without exploratory data"] if el is not None else []
++    if el is None:
++        return [f"{PATH}: exploratory data but no exploratory block"]
++    verdict = ids.get("learning-verdict-section")
++    if verdict is None or nodes.index(el) < nodes.index(verdict) or any(a is verdict for a in ancestors(el)):
++        bad.append(f"{PATH}: the exploratory block is not after the verdict, apart from it")
++    text = " ".join(text_of(el).split()).lower()
++    label = next((n for n in walk(el) if "lp-explore-label" in n.attrs.get("class", "").split()), None)
++    label = " ".join(text_of(label).split()).lower() if label else ""
++    if "exploratory, after the results" not in label or "not part of the pre-registered verdict" not in label:
++        bad.append(f"{PATH}: the exploratory block is not labelled as exploratory, after the results")
++    cells = [n for n in walk(el) if n.tag == "td"]
++    if not X.get("accepted"):
++        if set(X) - {"accepted", "problems"}:
++            bad.append(f"{PATH}: a refused exploratory file publishes more than its problem codes")
++        if cells or "exploratory file not accepted" not in text:
++            bad.append(f"{PATH}: a refused exploratory file shows numbers or no refusal note")
++        return bad
++    if not complete:
++        bad.append(f"{PATH}: exploratory block shown before the results are complete")
++
++    def want(n):
++        a = n.attrs
++        if "data-cp" in a:
++            s = X["arm_minus_budget"][a["data-arm"]][a["data-cp"]][a["data-m"]]
++            return f'{fmt(s["mean"], 1, signed=True)} [{fmt(s["ci"][0], 1)}, {fmt(s["ci"][1], 1)}]'
++        if "data-run" in a:
++            v = X["runs"][int(a["data-run"])][a["data-k"]]
++            return f"{v:,}" if a["data-k"] in ("answered", "valid", "invalid", "failed") else (
++                NA if v is None else fmt(v, 1))
++        if "data-group" in a:
++            s = X["spread"][a["data-group"]]
++            if a.get("data-k") == "n":
++                return f'{s["risks_found"]["n"]:,}'
++            s = s[a["data-m"]]
++            sd = fmt(s["sd"], 2) if s["sd"] is not None else NA
++            return f'{fmt(s["mean"], 1)} ({fmt(s["min"], 1)}-{fmt(s["max"], 1)}; SD {sd})'
++        if "data-rspread" in a:  # the retests' own range under their rows (r1-r5 only)
++            s = X["spread"]["retests"][a["data-rspread"]]
++            sd = fmt(s["sd"], 2) if s["sd"] is not None else NA
++            return f'{fmt(s["min"], 1)}-{fmt(s["max"], 1)} (SD {sd})'
++        if "data-agree" in a:
++            s = X["agreement"]["summary"][a["data-agree"]]
++            return {"n": lambda: fmt(s["n"], 0), "mean": lambda: fmt(s["mean"], 1),
++                    "range": lambda: f'{fmt(s["min"], 0)}-{fmt(s["max"], 0)}',
++                    "sd": lambda: fmt(s["sd"], 2) if s["sd"] is not None else NA}[a["data-k"]]()
++        return None
++    seen = set()
++    for n in cells:
++        try:
++            w = want(n)
++        except (KeyError, IndexError, ValueError, TypeError):
++            bad.append(f"{PATH}: an exploratory cell names no value of the data file")
++            continue
++        if w is not None:
++            seen.add(tuple(sorted(n.attrs.items())))
++            if text_of(n).strip() != w:
++                bad.append(f"{PATH}: exploratory cell {text_of(n).strip()!r} is not the data's {w!r}")
++    expected = (sum(len(m) for cp in X["arm_minus_budget"].values() for m in cp.values())
++                + len(X["runs"]) * 9 + len(X["spread"]) * 6 + len(X["agreement"]["summary"]) * 4
++                + (3 if "retests" in X["spread"] else 0))
++    if len(seen) != expected:
++        bad.append(f"{PATH}: the exploratory tables show {len(seen)} of the data's {expected} values")
++    # "T0 differs from the later empty-context runs" only where the counts say so: every T0-vs-retest count above
++    # every retest-vs-retest count.
++    G = X["agreement"]["summary"]
++    if "t0 differs from the later empty-context runs" in text and not (
++            G["T0 vs retests"]["n"] and G["T0 vs retests"]["min"] > G["retest vs retest"]["max"]):
++        bad.append(f"{PATH}: 'T0 differs from the later empty-context runs' is not what the agreement counts show")
++    return bad
++
++
++
+ def check_learning(out: Path, test_set: Path | None = None) -> list[str]:
+     """The learning page (learning_page.py; plan §9): (a) no verdict, learning lift, signal or Learning-tab leaders
+     block, in the page or its data file, unless the site accepted the results as complete; (b) no evaluation-set
+     position (id, board key or board) in the page or its data file. (b) needs the private test set
+     (learning_page.TEST_SET) whenever results, a validation or lessons are present: missing or unreadable is a failure,
+     not a skip; only the no-results state passes without it. (c) Outside pre-registration-only mode, the results view
+-    against its data file (_learning_results: status line, charts and tables, verdict, lessons)."""
++    against its data file (_learning_results: status line, charts and tables, verdict, names, lessons, exploratory)."""
+     from learning_page import COMPLETE_ONLY_IDS, COMPLETE_ONLY_KEYS, DATA, PATH, TEST_SET
+     test_set = test_set or TEST_SET
+     page, data = out / PATH / "index.html", out / DATA
+diff --git a/tools/site/learning_page.py b/tools/site/learning_page.py
+index f75b77f..49c2b6b 100755
+--- a/tools/site/learning_page.py
++++ b/tools/site/learning_page.py
+@@ -21,6 +21,12 @@ the live site). Every source is read at render time:
+   - lessons_system.txt and lessons_user.txt, the lesson prompt, and its sha256: one hash over the system file's bytes
+     immediately followed by the user file's bytes; when the plan states a 64-hex hash, the render fails unless the
+     files hash to it.
++  - explore/explore.json (workspace/learning-retest/out/explore.json): the exploratory block, after the verdict and
++    apart from it, only once learning_validate.validate_explore accepts it against the validated pilot; missing, no
++    block (Ümit #2950/#2952).
++
++Arms are named on the page by ARM_LABEL (no memory, full records, own lessons, budget (empty: no game fit)); the data
++file keeps the plan's keys.
+ 
+ Only what the page shows goes into the data file (aggregates; whitelisted keys): never positions, answers or contexts.
+ --check SITE runs checks.py's page checks on the output: numbers trace (against the output's own data file and the
+@@ -76,6 +82,22 @@ SMOKE_SERIES = 3
+ ARM_COLOUR = {"control": "var(--text-2)", "records": "var(--reading)", "lessons": "var(--good)",
+               "budget": "var(--wrong)"}
+ CONTROL_DASH = "6 4"
++# The arms' names on the page (Ümit #2950): the one map behind every legend, table, verdict line and sentence that
++# names an arm. The data file and every internal key keep the plan's names (control, records, lessons, budget).
++ARM_LABEL = {"control": "no memory", "records": "full records", "lessons": "own lessons",
++             "budget": "budget (empty: no game fit)"}
++# The one line at the top of Results (Ümit #2950/#2952; facts checked against the run by LearningPilot: Gemma 4 31B
++# with reasoning off on the site's own vLLM, GNUbg 1.08 Beginner = the site's "GNUbg weak", 4 arms, 10 x 10 games).
++RUN_LINE = ("One model: Gemma 4 31B (reasoning off, our GPUs) · opponent: GNUbg weak · 4 kinds of memory (one of them "
++            "is no memory) · 10 series of 10 games each.")
++MODEL = "Gemma 4 31B"
++
++
++def arm_name(arm: str) -> str:
++    """An arm's name on the page, escaped (ARM_LABEL; a key outside the map is shown as written)."""
++    return esc(ARM_LABEL.get(arm, arm))
++
++
+ # The plan's verdict wording for an always-empty budget context (section 11, Interpretation, fixed now).
+ BUDGET_VERDICT = "with this budget, record memory could not be provided"
+ # The plan's bullet that fixes the Learning tab's order (section 9, amended before any model call, 09bcbc4).
+@@ -85,6 +107,17 @@ BUDGET_READING = "Interpretation, fixed now"
+ # The pilot's evaluation set: private, never published; read at build time only for its hash (learning_validate) and
+ # for checks.check_learning (no evaluation position on the page).
+ TEST_SET = ROOT / "workspace/learning-pilot/test_set.json"
++# The exploratory file (Ümit #2950/#2952), as snapshot.py copies it from workspace/learning-retest/out/explore.json:
++# missing, no exploratory block; present, shown only after learning_validate.validate_explore accepts it.
++EXPLORE = "explore/explore.json"
++# The evaluation requests' settings (LearningPilot checked the sent ones against the request code and a stored request;
++# the server's effective defaults by a read-only check of spark3: vLLM's log, the model's generation_config.json; Zeki
++# #2964): fixed text on the page; the numbers are also in the data file, so they trace.
++SAMPLING = dict(temperature=1.0, max_tokens=1, top_logprobs=20, max_options_per_request=26, grouped_positions=32,
++                positions=200, in_flight_t0_and_retests=4, in_flight_budget=1,
++                server_default_temperature=1.0, server_default_top_k=64, server_default_top_p=0.95,
++                # Zeki #2991: what was checked in the stored records of T0, the 5 retests and the 20 budget evaluations
++                answers_checked=5200, requests_checked=7202)
+ CHECKPOINTS = ("T0", "T5", "T10")
+ CHECKPOINT_LABEL = {"T0": "Before game 1", "T5": "After game 5", "T10": "After game 10"}
+ # Shown per arm x test round; the keys copied to the data file are exactly these.
+@@ -104,8 +137,8 @@ GAME_METRICS = [("series", "Series", 0), ("games", "Games", 0), ("wins", "Wins",
+ COST_NOTE = "$0 API spend; local compute cost not estimated."
+ GAME_KEYS = ("game", "won", "result", "points")
+ # Column names of the learning-lift and signal tables (pilot.py summary); any other key is shown as written.
+-RESULT_LABELS = {"lift": "Learning lift", "lift_ci": "95% interval", "vs_control": "Minus control's lift",
+-                 "vs_control_ci": "95% interval (minus control)", "per_arm": "Learning lift",
++RESULT_LABELS = {"lift": "Learning lift", "lift_ci": "95% interval", "vs_control": "Minus no memory's lift",
++                 "vs_control_ci": "95% interval (minus no memory)", "per_arm": "Learning lift",
+                  "risks_found_change": "Risks found, change (pp)", "risks_found_ci": "95% interval (risks found)",
+                  "right_safety_change": "Right safety, change (pp)", "right_safety_ci": "95% interval (right safety)",
+                  "signal": "Signal rule met"}
+@@ -330,7 +363,21 @@ def read_results(src: Path, plan: dict, prompt: dict | None, test_set: Path) ->
+             lessons.append(dict(series=s, text=text, **{k: game.get(k) for k in GAME_KEYS} | {"game": g}))
+     budget = [dict(series=s, points=[pick(p, ("after_game", "games_shown", "games_dropped", "tokens",
+                                               "budget_tokens")) for p in points]) for s, points in v["budget"]]
+-    return dict(results=shown_results(v["public"]), lessons=lessons, budget=budget, validation=validation)
++    out = dict(results=shown_results(v["public"]), lessons=lessons, budget=budget, validation=validation)
++    if (src / EXPLORE).exists():
++        out["explore"] = read_explore(src / EXPLORE, v, test_sha)
++    return out
++
++
++def read_explore(path: Path, v: dict, test_sha: str) -> dict:
++    """The exploratory block's data: learning_validate.validate_explore's public projection and the fixed sampling
++    settings, or, refused, its fixed problem codes only (the details go to stderr)."""
++    e = V.validate_explore(path, v, test_sha)
++    for p in e["private_problems"]:
++        print(f"learning_validate explore (private): {p}", file=sys.stderr)
++    if not e["accepted"]:
++        return dict(accepted=False, problems=e["problems"])
++    return dict(accepted=True, problems=[], **e["public"], sampling=dict(SAMPLING))
+ 
+ 
+ def data(plan_path: Path, src: Path, test_set: Path = TEST_SET,
+@@ -395,7 +442,7 @@ def progress(L) -> str:
+         return validation_note(L) or ('<p class="note"><strong>No results yet.</strong></p><p>Progress: 0 / planned '
+                                       'series per arm (the planned count appears with the first results file).</p>')
+     planned = R["planned_series_per_arm"]
+-    rows = [f'<tr><th scope="row">{esc(a)}</th><td class="num">{count(len(s))} / {count(planned)}</td></tr>'
++    rows = [f'<tr><th scope="row">{arm_name(a)}</th><td class="num">{count(len(s))} / {count(planned)}</td></tr>'
+             for a, s in R["series_finished"].items()]
+     t0 = (f'<p class="note">Shared T0 test (before any context): {"done" if R["t0_done"] else "not yet done"}.</p>'
+           if "t0_done" in R else "")
+@@ -413,7 +460,7 @@ def results_table(R) -> str:
+             if cp not in by_cp or (shared and cp == "T0" and i):
+                 continue
+             row = by_cp[cp]
+-            label = "All arms (shared)" if shared and cp == "T0" else arm
++            label = "All arms (shared)" if shared and cp == "T0" else ARM_LABEL.get(arm, arm)
+             cells = ("".join(f'<td class="num">{num(row.get(k), d, u)}</td>' for k, _, d, u in METRICS)
+                      if row else f'<td colspan="{len(METRICS)}">{nm("Not yet run")}</td>')
+             rows.append(f'<tr><th scope="row">{esc(label)}</th><td>{cp}</td>{cells}</tr>')
+@@ -423,7 +470,7 @@ def results_table(R) -> str:
+ 
+ 
+ def games_table(R) -> str:
+-    rows = [f'<tr><th scope="row">{esc(arm)}</th>'
++    rows = [f'<tr><th scope="row">{arm_name(arm)}</th>'
+             + "".join(f'<td class="num">{num(g.get(k), d)}</td>' for k, _, d in GAME_METRICS) + "</tr>"
+             for arm, g in R["games"].items() if g]
+     return P.SWIPE + P.table(["Arm"] + [h for _, h, _ in GAME_METRICS], rows,
+@@ -454,7 +501,7 @@ def by_arm(d: dict, arms) -> dict:
+ def arm_table(d: dict, arms, caption: str) -> str:
+     d = by_arm(d, arms)
+     cols = list(dict.fromkeys(k for v in d.values() for k in v))
+-    rows = [f'<tr><th scope="row">{esc(a)}</th>' + "".join(f'<td class="num">{flat(v.get(c))}</td>' for c in cols)
++    rows = [f'<tr><th scope="row">{arm_name(a)}</th>' + "".join(f'<td class="num">{flat(v.get(c))}</td>' for c in cols)
+             + "</tr>" for a, v in d.items()]
+     head = ["Arm"] + [esc(RESULT_LABELS.get(c, c.replace("_", " "))) for c in cols]
+     return P.SWIPE + P.table(head, rows, esc(caption), cls="board list")
+@@ -495,42 +542,44 @@ def verdict(L) -> str:
+     # observed; nothing stronger than the data.
+     head = verdict_head(R)
+     items = "".join(
+-        f'<li data-arm="{esc(a)}"><strong>{esc(a)}</strong>: '
++        f'<li data-arm="{esc(a)}"><strong>{arm_name(a)}</strong>: '
+         f'{"threshold reached" if s["signal"] else "threshold not reached"}. '
+         f'Risks found {fmt(s["risks_found_change"], 1, signed=True)} points ({ci(s["risks_found_ci"])}); right safety '
+         f'{fmt(s["right_safety_change"], 1, signed=True)} points ({ci(s["right_safety_ci"])}).</li>'
+         for a in arms if (s := sig.get(a)))
+     vs = {a: (lift.get(a) or {}).get("vs_control") for a in arms if a != "control"}
+     vs_ci = {a: (lift.get(a) or {}).get("vs_control_ci") for a in vs}
++    C, B, LS = ARM_LABEL["control"], ARM_LABEL["budget"], ARM_LABEL["lessons"]
+     if vs and all(v is not None and v < 0 for v in vs.values()):
+-        lift_head = "All observed game-lift differences are below control."
++        lift_head = f"All observed game-lift differences are below the {C} arm."
+     elif vs and all(v is not None and v > 0 for v in vs.values()):
+-        lift_head = "All observed game-lift differences are above control."
++        lift_head = f"All observed game-lift differences are above the {C} arm."
+     else:
+-        lift_head = "The observed game-lift differences against control differ in sign between the arms."
+-    with_zero = [a for a, c in vs_ci.items() if c and c[0] <= 0 <= c[1]]
++        lift_head = f"The observed game-lift differences against the {C} arm differ in sign between the arms."
++    with_zero = [ARM_LABEL.get(a, a) for a, c in vs_ci.items() if c and c[0] <= 0 <= c[1]]
+     names = ", ".join(with_zero[:-1]) + " and " + with_zero[-1] if len(with_zero) > 1 else "".join(with_zero)
+     lift_notes = [f"For {names}, the intervals of the difference include zero."] if with_zero else []
+     empty, total = R["budget_empty_points"]["budget"], R["budget_points_total"]["budget"]
+     always_empty = bool(total and empty == total)
+     if always_empty:
+-        budget_text = (f'<strong>budget</strong>: its context was empty at all {count(empty)} of {count(total)} points '
+-                       '(no whole game record fit within the lessons arm\'s token count). The plan\'s fixed reading '
+-                       f'(section 11): <strong>{esc(BUDGET_VERDICT)}</strong>, not "record memory didn\'t help".')
++        budget_text = (f'<strong>{esc(B)}</strong>: its context was empty at all {count(empty)} of {count(total)} '
++                       f'points (no whole game record fit within the {esc(LS)} arm\'s token count). The plan\'s fixed '
++                       f'reading (section 11): <strong>{esc(BUDGET_VERDICT)}</strong>, not "record memory didn\'t '
++                       'help".')
+         c = vs_ci.get("budget")
+         if c and not c[0] <= 0 <= c[1]:
+             lift_notes.append(
+-                "The budget arm's interval does not include zero, although budget and control had the same memory "
++                f"The {B} arm's interval does not include zero, although {B} and {C} had the same memory "
+                 "policy (an empty context) and the same dice seeds; that does not make their realized game prompts "
+                 "the same, as the games diverge once a play differs. The source of this unexpected difference and "
+                 "the calibration of the intervals were not determined in this pilot.")
+     else:
+-        budget_text = (f'<strong>budget</strong>: its context was empty at {count(empty)} of {count(total)} points, '
++        budget_text = (f'<strong>{esc(B)}</strong>: its context was empty at {count(empty)} of {count(total)} points, '
+                        'so the plan\'s fixed reading for an always-empty context (section 11) does not apply.')
+     return ('<div id="learning-verdict">'
+             f'<p><strong>{esc(head)}</strong></p>'
+-            f'<p class="small">Signal rule (plan section 8, pre-registered), per non-control arm averaged over its '
+-            f'series: risks found after game 10 minus before game 1 at least '
++            f'<p class="small">Signal rule (plan section 8, pre-registered), per arm other than {esc(C)}, averaged '
++            f'over its series: risks found after game 10 minus before game 1 at least '
+             f'{fmt(rule["risks_found_at_least"], 0, signed=True)} points, and right safety after game 10 minus before '
+             f'game 1 at least {fmt(rule["right_safety_at_least"], 0, signed=True)} points.</p>'
+             f'<ul class="notes lp-verdict">{items}</ul>'
+@@ -542,11 +591,193 @@ def verdict(L) -> str:
+             '<div id="learning-signal"><h3>Signal rule per arm</h3>'
+             + arm_table(R["signal"], arms, "Signal rule per arm (definition: the plan's Signal rule)") + "</div>"
+             '<div id="learning-lift"><h3>Learning lift</h3><p class="small">Error rate in games 1-3 minus games 8-10 '
+-            '(decisions pooled; positive: the arm played better later), and the same minus control\'s, paired by '
++            f'(decisions pooled; positive: the arm played better later), and the same minus {esc(C)}\'s, paired by '
+             'series (plan section 7). 95% intervals: 10,000 resamples of whole series.</p>'
+             + arm_table(R["learning_lift"], arms, "Learning lift per arm (definition: the plan's Metrics)") + "</div>")
+ 
+ 
++# --- Exploratory, after the results (Ümit #2950/#2952) ----------------------------------------------------------
++
++EXPLORE_METRIC_LABEL = {"risks_found": "Risks found", "right_safety": "Right safety", "error_rate": "Error rate (PR)",
++                        "risk_judgement": "Risk judgement", "risk_appetite": "Risk appetite"}
++EXPLORE_GROUP_LABEL = {"all": "All runs", "t0+retests": "T0 and retests", "retests": "Retests r1-r5",
++                       "budget": f"{ARM_LABEL['budget']}"}
++# The retests' own range under their rows (Zeki #2991): these measures, min-max and SD.
++RETEST_RANGE = ("risks_found", "right_safety", "error_rate")
++
++
++def amb_cell(s: dict) -> str:
++    """An arm-minus-budget cell: mean [95% interval] (checks.check_learning reads it back)."""
++    return f'{fmt(s["mean"], 1, signed=True)} [{fmt(s["ci"][0], 1)}, {fmt(s["ci"][1], 1)}]'
++
++
++def run_label(r: dict) -> str:
++    if r["kind"] == "t0":
++        return "Before game 1 (T0, shared)"
++    if r["kind"] == "retest":
++        return f"Retest r{r['retest']}"
++    return f"Series {r['series']}, {CHECKPOINT_LABEL[r['checkpoint']].lower()}"
++
++
++def retest_range(s: dict) -> str:
++    sd = fmt(s["sd"], 2) if s["sd"] is not None else NA
++    return f'{fmt(s["min"], 1)}-{fmt(s["max"], 1)} (SD {sd})'
++
++
++def spread_cell(s: dict) -> str:
++    sd = fmt(s["sd"], 2) if s["sd"] is not None else NA
++    return f'{fmt(s["mean"], 1)} ({fmt(s["min"], 1)}-{fmt(s["max"], 1)}; SD {sd})'
++
++
++def explore_agreement(X: dict, B: str) -> str:
++    """How often two empty-context runs chose different plays (counts of positions, of 200; which positions stays
++    private), per group of run pairs, and the facts that follow from the data file's numbers only."""
++    A, runs = X["agreement"], X["runs"]
++    G = A["summary"]
++    label = {"T0 vs retests": "T0 vs each retest", "retest vs retest": "Retest vs retest",
++             "T0 vs budget": f"T0 vs each {B} evaluation", "retests vs budget": f"Each retest vs each {B} evaluation",
++             "budget vs budget": f"{B} evaluation vs {B} evaluation"}
++    rows = [f'<tr><th scope="row">{label[g]}</th>'
++            f'<td class="num" data-agree="{g}" data-k="n">{fmt(s["n"], 0)}</td>'
++            f'<td class="num" data-agree="{g}" data-k="mean">{fmt(s["mean"], 1)}</td>'
++            f'<td class="num" data-agree="{g}" data-k="range">{fmt(s["min"], 0)}-{fmt(s["max"], 0)}</td>'
++            f'<td class="num" data-agree="{g}" data-k="sd">{fmt(s["sd"], 2) if s["sd"] is not None else NA}</td></tr>'
++            for g, s in G.items()]
++    table = P.SWIPE + P.table(["Pairs of runs", "Pairs", "Mean", "Min-max", "SD"], rows,
++                              "Positions (of 200) where two empty-context runs chose different plays",
++                              cls="board list lp-explore-agree")
++    rr, tr = G["retest vs retest"], G["T0 vs retests"]
++    t0 = next(r for r in runs if r["kind"] == "t0")
++    ret = [r for r in runs if r["kind"] == "retest"]
++    facts = [f'The retests differ from each other on {fmt(rr["min"], 0)}-{fmt(rr["max"], 0)} positions; T0 differs '
++             f'from each retest on {fmt(tr["min"], 0)}-{fmt(tr["max"], 0)}.'] if ret else []
++    if ret and len({(r["risks_found"], r["right_safety"]) for r in ret}) == 1:
++        facts.append(f'Every retest has risks found {fmt(ret[0]["risks_found"], 1)} and right safety '
++                     f'{fmt(ret[0]["right_safety"], 1)}, against T0\'s {fmt(t0["risks_found"], 1)} and '
++                     f'{fmt(t0["right_safety"], 1)}.')
++    if ret and tr["min"] > rr["max"]:
++        facts.append("T0 differs from the later empty-context runs; the cause was not verified.")
++    k = A["positions_not_unanimous_across_retests"]
++    facts.append(f"Positions where the {fmt(len(ret), 0)} retests do not all choose the same play: {fmt(k, 0)} of "
++                 f"{fmt(X['sampling']['positions'], 0)}.")
++    return ('<h3>Do the empty-context runs choose the same plays?</h3>' + table
++            + f'<p id="learning-explore-agreement">{esc(" ".join(facts))}</p>'
++            '<p class="table-note">The pairwise counts, like the retests\' rates and the count of positions where the '
++            'retests are not unanimous, come from the runs\' private answers: the site checks that the counts are '
++            'within range, symmetric and complete and recomputes this summary from them, but cannot recompute the '
++            'counts themselves.</p>')
++
++
++# The two comparisons of the exploratory block (Zeki #2993): no memory has only the shared T0, no T5/T10 of its own.
++COMPARISON = {"records": "full records − budget", "lessons": "own lessons − budget"}
++
++
++def explore(L) -> str:
++    """The exploratory block, after the verdict and apart from it: own lessons − budget and full records − budget (the
++    budget arm as the noise baseline), the empty-context runs and their spread, the agreement between them, the
++    evaluation requests' settings and the next version's note. Shown only as
++    learning_validate.validate_explore accepted it; refused, only its fixed problem codes."""
++    X = L["explore"]
++    head = (f'<p class="lp-explore-label"><strong>{esc(V.EXPLORE_LABEL.capitalize())}.</strong> Not part of the '
++            'pre-registered verdict above.</p>')
++    if not X["accepted"]:
++        items = "".join(f"<li>{esc(p)}</li>" for p in X["problems"])
++        return (head + '<div class="note validation-note"><p><strong>Exploratory file not accepted.</strong> It failed '
++                f'the site\'s checks, so none of it is shown:</p><ul>{items}</ul></div>')
++    B, S = esc(ARM_LABEL["budget"]), X["sampling"]
++    rows = []
++    for a in ("lessons", "records"):  # own lessons − budget first, as named
++        for cp in V.EXPLORE_CPS:
++            rows.append(f'<tr><th scope="row">{esc(COMPARISON[a])}</th><td>{esc(CHECKPOINT_LABEL[cp])}</td>'
++                        + "".join(f'<td class="num" data-arm="{a}" data-cp="{cp}" data-m="{m}">'
++                                  f'{amb_cell(X["arm_minus_budget"][a][cp][m])}</td>' for m in V.EXPLORE_METRICS)
++                        + "</tr>")
++    amb = P.SWIPE + P.table(["Comparison", "Test"] + [EXPLORE_METRIC_LABEL[m] for m in V.EXPLORE_METRICS],
++                            rows, f"{esc(COMPARISON['lessons'])} and {esc(COMPARISON['records'])}, in the same "
++                                  f"series: mean over {count(X['series'])} series "
++                                  "[95% interval]; risks found and right safety in percentage points",
++                            cls="board list lp-explore-amb")
++    runs, ncols = [], 1 + len(V.RUN_COUNTS) + len(V.RUN_METRICS)
++    for i, r in enumerate(X["runs"]):
++        if i == 0 or (r["kind"] == "budget") != (X["runs"][i - 1]["kind"] == "budget"):
++            group = (f"{B}: its evaluations, {count(S['in_flight_budget'])} request in flight" if r["kind"] == "budget"
++                     else f"T0 and retests: {count(S['in_flight_t0_and_retests'])} requests in flight")
++            runs.append(f'<tr class="lp-group"><th scope="rowgroup" colspan="{ncols}">{group}</th></tr>')
++        runs.append(f'<tr><th scope="row">{esc(run_label(r))}</th>'
++                    + "".join(f'<td class="num" data-run="{i}" data-k="{k}">{count(r[k])}</td>' for k in V.RUN_COUNTS)
++                    + "".join(f'<td class="num" data-run="{i}" data-k="{m}">{num(r[m], 1)}</td>'
++                              for m in V.RUN_METRICS) + "</tr>")
++        nxt = X["runs"][i + 1]["kind"] if i + 1 < len(X["runs"]) else None
++        if r["kind"] == "retest" and nxt != "retest" and "retests" in X["spread"]:
++            # The retests' own range (r1-r5 only, Zeki #2991): T0's difference stays outside it.
++            sp = X["spread"]["retests"]
++            runs.append('<tr class="lp-group"><th scope="row">Retests r1-r5: min-max (SD)</th>'
++                        + "<td></td>" * len(V.RUN_COUNTS)
++                        + "".join(f'<td class="num" data-rspread="{m}">{retest_range(sp[m])}</td>'
++                                  if m in RETEST_RANGE else "<td></td>" for m in V.RUN_METRICS) + "</tr>")
++    # Not sortable (data-nosort): its group rows (T0 and retests; the budget arm's evaluations) keep their order.
++    runs_table = P.SWIPE + P.table([(h, " data-nosort") for h in ["Run", "Answered", "Valid", "Invalid", "Failed"]
++                                    + [EXPLORE_METRIC_LABEL[m] for m in V.RUN_METRICS]], runs,
++                                   "The same 200 evaluation prompts with an empty context",
++                                   cls="board list lp-explore-runs")
++    groups = V.SPREAD_GROUPS
++    spread_rows = ['<tr><th scope="row">Runs</th>' + "".join(
++        f'<td class="num" data-group="{g}" data-k="n">{count(X["spread"][g]["risks_found"]["n"])}</td>' for g in groups)
++        + "</tr>"] + [f'<tr><th scope="row">{EXPLORE_METRIC_LABEL[m]}</th>' + "".join(
++            f'<td class="num" data-group="{g}" data-m="{m}">{spread_cell(X["spread"][g][m])}</td>' for g in groups)
++        + "</tr>" for m in V.RUN_METRICS]
++    spread_table = P.SWIPE + P.table(["Measure"] + [esc(EXPLORE_GROUP_LABEL[g]) for g in groups], spread_rows,
++                                     "Spread over the empty-context runs: mean (min-max; SD)",
++                                     cls="board list lp-explore-spread")
++    short = [f"r{k} ({count(n)} of {count(S['positions'])})" for k, n in X["retest_answer_counts"].items()
++             if n != S["positions"]]
++    pending = (f'<p class="table-note">Retests not yet answered in full are not in the table: {esc(", ".join(short))}.'
++               '</p>' if short else "")
++    agree = explore_agreement(X, B)
++    return (head
++            + f'<h3>{esc(COMPARISON["lessons"])} and {esc(COMPARISON["records"])}, paired by series</h3>'
++            f'<p>The {B} arm\'s context was empty at every point, so its evaluations after games 5 and 10 are '
++            'empty-context retests of the T0 prompts: here it is the noise baseline. Each value is the own lessons or '
++            f'full records arm\'s evaluation minus {B}\'s, paired by series (same series id and dice seed; the games '
++            f'differ once plays differ), averaged over the {count(X["series"])} series, with a 95% interval (10,000 '
++            'resamples of whole series, the pilot\'s bootstrap). The no memory arm is not compared here: it has only '
++            'the shared T0, no evaluations after games 5 and 10 of its own. The calibration of the intervals was not '
++            'determined in this pilot. This is not part of the pre-registered verdict.</p>' + amb
++            + '<h3>Empty-context runs: the same prompts, again</h3>'
++            '<p>The shared T0 run, the retests of the T0 prompts and the evaluations of the '
++            f'{B} arm, whose context was always empty, with their spread. The retests measure the variability between '
++            'empty-context runs; they do not establish its cause. The cause of the differences between empty-context '
++            'runs was not verified; any sampling or numerical explanation is a hypothesis only.</p>'
++            + runs_table + pending + spread_table + agree
++            + '<h3>How the evaluation requests were made</h3>'
++            '<p><strong>Sent</strong> with every evaluation request:</p><ul>'
++            f'<li>temperature {fmt(S["temperature"], 1)};</li><li>max_tokens {count(S["max_tokens"])};</li>'
++            f'<li>logprobs, with top_logprobs {count(S["top_logprobs"])};</li>'
++            '<li>the assistant turn prefilled with "Answer:", with continue_final_message;</li>'
++            '<li>enable_thinking false;</li><li>no top_p, top_k or seed sent.</li></ul>'
++            '<p><strong>The server\'s effective defaults</strong> (a read-only check of the serving machine): vLLM\'s '
++            'log says its default sampling parameters are overridden by the model\'s generation_config.json, '
++            f'temperature {fmt(S["server_default_temperature"], 1)}, top_k {count(S["server_default_top_k"])}, top_p '
++            f'{fmt(S["server_default_top_p"], 2)}; that file is identical on the server and in our copy of the model. '
++            'No seed was sent; the server\'s seed behaviour was not checked.</p>'
++            '<p>The play is the argmax of the returned option-letter probabilities (several tokens per letter are '
++            'summed). The cause of differences between empty-context runs was not verified.</p>'
++            '<p>Checked in the stored records of T0, the 5 retests and the 20 budget evaluations: all '
++            f'{count(S["answers_checked"])} answers have probability_source "logprobs"; all '
++            f'{count(S["requests_checked"])} requests are the prefill readout (max_tokens {count(S["max_tokens"])}, '
++            'continue_final_message), and none carries response_format, so the constrained-letter fallback never '
++            'fired; no request errors. Whether vLLM returned raw or processed logprobs (before or after '
++            'temperature/top_k/top_p) cannot be shown from the stored records; it was not determined.</p>'
++            f'<p>Positions with more than {count(S["max_options_per_request"])} options '
++            f'({count(S["grouped_positions"])} of the {count(S["positions"])}) are asked in groups, then among the '
++            f'group winners. The retests ran with {count(S["in_flight_t0_and_retests"])} requests in flight, like T0; '
++            f'the {B} evaluations with {count(S["in_flight_budget"])}.</p>'
++            '<h3>Next version (not run)</h3>'
++            '<p>Budget-match the records at the decision level: the most recent decisions, with their verdicts, that '
++            f'fit within the {arm_name("lessons")} arm\'s token count.</p>')
++
++
++
+ def game_result(x) -> str:
+     if x["won"] is None:
+         return nm(NA)
+@@ -559,7 +790,8 @@ def lessons(L) -> str:
+     lesson files of finished series only (learning_validate binds each file to its aggregate's hash). One box per
+     series, the first open; the text is escaped and shown as written."""
+     if not L["lessons"]:
+-        return '<p class="note">No lessons yet: they appear with each finished series of the lessons arm.</p>'
++        return (f'<p class="note">No lessons yet: they appear with each finished series of the {arm_name("lessons")} '
++                'arm.</p>')
+     by_series = {}
+     for x in L["lessons"]:
+         by_series.setdefault(x["series"], []).append(x)
+@@ -573,8 +805,8 @@ def lessons(L) -> str:
+         out.append(f'<details class="lp-series"{" open" if i == 0 else ""}><summary>Series {esc(str(s))}: '
+                    f'lessons after games {esc(str(xs[0]["game"]))}-{esc(str(xs[-1]["game"]))}</summary>'
+                    f'<ul class="notes">{items}</ul></details>')
+-    return ('<p class="small">The lessons arm only. Each series starts with no lessons; after each game the model '
+-            'wrote its lessons, which the next game read.</p>' + "".join(out))
++    return (f'<p class="small">The {arm_name("lessons")} arm only. Each series starts with no lessons; after each '
++            'game the model wrote its lessons, which the next game read.</p>' + "".join(out))
+ 
+ 
+ def prompt(L) -> str:
+@@ -618,11 +850,11 @@ def tab_card(L) -> str:
+     if R and R["complete"]:
+         lift = by_arm(R.get("learning_lift") or {}, list(R["table"]))
+         sig = R.get("signal") or {}
+-        items = "".join(f'<li><strong>{esc(a)}</strong>: signal rule {flat((sig.get(a) or {}).get("signal"))}; '
+-                        f'learning lift minus control\'s {flat((lift.get(a) or {}).get("vs_control"))}</li>'
+-                        for a in leader_order(R))
++        items = "".join(f'<li><strong>{arm_name(a)}</strong>: signal rule {flat((sig.get(a) or {}).get("signal"))}; '
++                        f'learning lift minus {arm_name("control")}\'s {flat((lift.get(a) or {}).get("vs_control"))}'
++                        '</li>' for a in leader_order(R))
+         block = (f'<div id="learning-leaders"><h3>Arms in order</h3><ol class="leaders-list">{items}</ol>'
+-                 '<p class="table-note">control: the reference, not ranked.</p></div>')
++                 f'<p class="table-note">{arm_name("control")}: the reference, not ranked.</p></div>')
+     else:
+         state = (("Results file not accepted: see Status and progress." if L["validation"] else
+                   "Not started: no series has finished.") if R is None else
+@@ -631,7 +863,7 @@ def tab_card(L) -> str:
+         for arm, by_cp in (R["table"].items() if R else []):
+             cp, row = latest(by_cp)
+             g = (R.get("games") or {}).get(arm) or {}
+-            rows.append(f'<tr><th scope="row">{esc(arm)}</th>'
++            rows.append(f'<tr><th scope="row">{arm_name(arm)}</th>'
+                         f'<td class="num">{count(len(R["series_finished"][arm]))} / '
+                         f'{count(R["planned_series_per_arm"])}</td>'
+                         f'<td>{esc(CHECKPOINT_LABEL[cp]) if cp else nm(NA)}</td>'
+@@ -691,7 +923,7 @@ def line_chart(key: str, label: str, unit: str, xs: list, lines: list, xtitle: s
+         for i, val in dots:
+             parts.append(f'<circle class="lp-dot" data-arm="{esc(arm)}" data-x="{esc(xs[i][0])}" '
+                          f'data-value="{val:.1f}" {arm_style(arm)} cx="{x(i):.1f}" cy="{y(val):.1f}" r="4">'
+-                         f'<title>{esc(arm)}, {esc(xs[i][1])}: {fmt(val, 1)}{unit}</title></circle>')
++                         f'<title>{arm_name(arm)}, {esc(xs[i][1])}: {fmt(val, 1)}{unit}</title></circle>')
+     return (f'<svg class="chart-svg" data-chart="{esc(key)}" viewBox="0 0 {W} {H}" role="img" '
+             f'aria-label="{esc(label)}, one line per arm">' + "".join(parts) + "</svg>")
+ 
+@@ -699,7 +931,7 @@ def line_chart(key: str, label: str, unit: str, xs: list, lines: list, xtitle: s
+ def legend(arms, dashed: tuple = ()) -> str:
+     return '<p class="chart-legend">' + "".join(
+         f'<span><i class="swatch lp-swatch{" lp-dashed" if a in dashed else ""}" data-arm="{esc(a)}" '
+-        f'{arm_style(a)}></i>{esc(a)}</span>' for a in arms) + "</p>"
++        f'{arm_style(a)}></i>{arm_name(a)}</span>' for a in arms) + "</p>"
+ 
+ 
+ def risks_points(R) -> dict:
+@@ -722,7 +954,7 @@ def games_points(R) -> dict:
+ def chart_table(name: str, caption: str, xs: list, R, cells: dict) -> str:
+     """The numbers under a chart: arm x checkpoint or arm x game, each cell tagged with its arm and x for
+     checks.check_learning. cells: {arm: {x key: html}}."""
+-    rows = [f'<tr><th scope="row">{esc(a)}</th><td class="num">{count(len(R["series_finished"][a]))}</td>'
++    rows = [f'<tr><th scope="row">{arm_name(a)}</th><td class="num">{count(len(R["series_finished"][a]))}</td>'
+             + "".join(f'<td class="num" data-arm="{esc(a)}" data-x="{esc(k)}">{cells[a][k]}</td>' for k, _ in xs)
+             + "</tr>" for a in R["table"]]
+     return P.SWIPE + P.table(["Arm", "Series"] + [esc(lab) for _, lab in xs], rows, esc(caption),
+@@ -733,7 +965,8 @@ def verdict_head(R) -> str:
+     """The verdict's first sentence (the page's, and the home page's learning section quotes it)."""
+     met = [a for a in R["table"] if (R["signal"].get(a) or {}).get("signal")]
+     return ("No arm reached the pre-registered signal threshold (plan section 8)." if not met else
+-            f"Arms that reached the pre-registered signal threshold (plan section 8): {', '.join(met)}.")
++            "Arms that reached the pre-registered signal threshold (plan section 8): "
++            f"{', '.join(ARM_LABEL.get(a, a) for a in met)}.")
+ 
+ 
+ def risks_figure(R, fid: str = "learning-chart-risks") -> str:
+@@ -753,12 +986,12 @@ def risks_figure(R, fid: str = "learning-chart-risks") -> str:
+     cells = {a: {cp: (num(dict(risks[a]).get(i), 1) if a != "control" or cp == "T0" else nm("T0 only"))
+                  for i, (cp, _) in enumerate(xs)} for a in arms}
+     return (f'<figure class="lp-chart" id="{fid}">'
+-            + line_chart("learning-risks", "Risks found, % (higher is better)", "%", xs, lines)
++            + line_chart("learning-risks", f"{MODEL}: risks found, % (higher is better)", "%", xs, lines)
+             + legend(arms, ("control",)) + chart_table("risks", "Risks found (%) on the 200 evaluation "
+                                                        "positions: means over each arm's finished series; "
+                                                        "before game 1 is one shared run", xs, R, cells)
+-            + '<p class="table-note">Control is tested before game 1 only (the shared run): its line is drawn '
+-              'flat and dashed at that value.</p></figure>')
++            + f'<p class="table-note">{arm_name("control")} is tested before game 1 only (the shared run): its line '
++              'is drawn flat and dashed at that value.</p></figure>')
+ 
+ 
+ def results_charts(L) -> str:
+@@ -768,24 +1001,26 @@ def results_charts(L) -> str:
+     T0 value; (b) the error rate of each game 1-10, averaged over each arm's finished series. No lift or verdict."""
+     R = L["results"]
+     if not R or not R["series_total_done"]:
+-        return ('<p class="note"><strong>No finished series yet.</strong> Two charts appear here with the first '
+-                'finished series: risks found on the evaluation set before game 1, after game 5 and after game 10, '
+-                'and the error rate of each game, one line per arm.</p>')
++        return (f'<p class="lp-run-line">{esc(RUN_LINE)}</p><p class="note"><strong>No finished series yet.</strong> '
++                'Two charts appear here with the first finished series: risks found on the evaluation set before '
++                'game 1, after game 5 and after game 10, and the error rate of each game, one line per arm.</p>')
+     arms = list(R["table"])
+-    out = [f] if (f := risks_figure(R)) else []
++    out = [f'<p class="lp-run-line" id="learning-run-line">{esc(RUN_LINE)}</p>'] + (
++        [f] if (f := risks_figure(R)) else [])
+     games = games_points(R)
+     gx = [(str(g), str(g)) for g in range(1, V.G + 1)]
+     if any(games.values()):
+         lines = [(a, games[a], games[a], False) for a in arms]
+         cells = {a: {k: num(dict(games[a]).get(int(k) - 1), 1) for k, _ in gx} for a in arms}
+         out.append('<figure class="lp-chart" id="learning-chart-games">'
+-                   + line_chart("learning-games", "Error rate per game (PR, lower is better)", "", gx, lines, "Game")
++                   + line_chart("learning-games", f"{MODEL}: error rate per game (PR, lower is better)", "", gx, lines,
++                                "Game")
+                    + legend(arms) + chart_table("games", "Error rate (PR) of game 1 to 10, averaged over each arm's "
+                                                 "finished series", [(k, f"Game {k}") for k, _ in gx], R, cells)
+                    + "</figure>")
+     note = ("" if R["complete"] else '<p class="table-note">Numbers so far: the verdict and the learning lift are '
+                                      'shown only when every planned series of every arm is done.</p>')
+-    return '<div class="lp-charts">' + "".join(out) + "</div>" + note
++    return out[0] + '<div class="lp-charts">' + "".join(out[1:]) + "</div>" + note
+ 
+ 
+ def section_id(title: str) -> str:
+@@ -800,7 +1035,7 @@ def budget(L) -> str:
+                f'Plan section {esc(L["plan"]["budget_reading"]["section"])}, as pre-registered.</p></div>')
+     R = L["results"]
+     empty = (R or {}).get("budget_empty_points", {}).get("budget")
+-    out = ([f'<p class="note">Points where the budget arm\'s context was empty: {count(empty)}.</p>']
++    out = ([f'<p class="note">Points where the {arm_name("budget")} arm\'s context was empty: {count(empty)}.</p>']
+            if empty is not None else [])
+     for b in L["budget"]:
+         rows = [f'<tr><th scope="row">{count(p["after_game"])}</th>'
+@@ -808,11 +1043,11 @@ def budget(L) -> str:
+                 f'<td class="num">{count(p["games_dropped"])}</td>'
+                 f'<td class="num">{count(p["tokens"])} / {num(p["budget_tokens"], 0)}</td></tr>' for p in b["points"]]
+         out.append(P.SWIPE + P.table(["After game", "Games included", "Games dropped",
+-                                      "Tokens used / lessons arm's tokens"], rows,
+-                                     f'Budget arm, series {esc(str(b["series"]))}', cls="board list"))
++                                      f"Tokens used / {arm_name('lessons')} arm's tokens"], rows,
++                                     f'{arm_name("budget")}, series {esc(str(b["series"]))}', cls="board list"))
+     if not L["budget"]:
+-        out.append('<p class="note">No finished budget series yet: its points appear here, after every game, as each '
+-                   'series finishes.</p>')
++        out.append(f'<p class="note">No finished {arm_name("budget")} series yet: its points appear here, after every '
++                   'game, as each series finishes.</p>')
+     return "".join(out) + reading
+ 
+ 
+@@ -821,11 +1056,14 @@ def body(L) -> str:
+     prereg = L.get("preregistration_only")
+     parts = [] if prereg else [
+         ("learning-results", "Results", results_charts(L)),
+-        ("learning-verdict-section", "Verdict and learning lift", verdict(L)),
++        ("learning-verdict-section", "Verdict and learning lift", verdict(L))]
++    # Exploratory, after the results: right after the verdict, in a visually separate card (bg.css .lp-explore).
++    parts += [("learning-explore", "Exploratory, after the results", explore(L))] if L.get("explore") else []
++    parts += [] if prereg else [
+         ("learning-tab", f"{P.TAB_LEARNING}: arms, not models", tab_card(L)),
+         ("learning-status", "Status and progress", progress(L)),
+         ("learning-numbers", "All numbers", results(L)),
+-        ("learning-budget", "Budget arm: what its context held", budget(L)),
++        ("learning-budget", f"{ARM_LABEL['budget']}: what its context held", budget(L)),
+         ("learning-lessons", "Lessons the model wrote", lessons(L))]
+     parts += [("learning-prompt", "Lesson prompt", prompt(L))]
+     parts += [(section_id(s["title"]), s["title"], spec_markdown(s["markdown"])) for s in plan["sections"]]
+@@ -844,7 +1082,8 @@ def body(L) -> str:
+             f'<a href="../{DATA}">learning-pilot.json</a>.</p>{plan_status}'
+             f'<p class="small">Plan: {esc(plan["file"])}, sha256 <code>{plan["sha256"]}</code></p>{withheld}</header>')
+     return "\n".join([head, f'<nav class="toc card" aria-label="On this page"><ul>{toc}</ul></nav>']
+-                     + [f'<section class="card" id="{i}"><h2>{esc(t)}</h2>{h}</section>' for i, t, h in parts])
++                     + [f'<section class="card{" lp-explore" if i == "learning-explore" else ""}" id="{i}">'
++                        f'<h2>{esc(t)}</h2>{h}</section>' for i, t, h in parts])
+ 
+ 
+ def site_state(L) -> dict:
+diff --git a/tools/site/learning_validate.py b/tools/site/learning_validate.py
+index 17eaf57..4a99970 100644
+--- a/tools/site/learning_validate.py
++++ b/tools/site/learning_validate.py
+@@ -499,7 +499,9 @@ def validate(R, src: Path, prompt: dict | None, plan_hashes: list, test_sha: str
+     # The summary agreed field by field, so the file's "complete" is the recomputed one: nothing left to note.
+     return dict(accepted=True, producer_complete=R["complete"], complete=want["complete"], problems=[],
+                 public=public(R["updated_at"], t0, t0_sha, aggs, shas, fin, want, test_sha, prompt_sha),
+-                lessons=lessons, budget=budget, private_problems=[])
++                lessons=lessons, budget=budget, private_problems=[],
++                # The validated aggregates themselves, for validate_explore only (never published as they are).
++                t0=t0, aggs={arm: {s: aggs[arm][s] for s in fin[arm]} for arm in ARMS})
+ 
+ 
+ def game_curve(done: dict) -> dict:
+@@ -534,3 +536,219 @@ def public(updated_at, t0, t0_sha, aggs, shas, fin, want, test_sha, prompt_sha)
+     if want["complete"]:
+         out.update({k: want[k] for k in ("signal", "learning_lift", "paired_series")})
+     return out
++
++
++# --- The exploratory file (Ümit #2950/#2952): workspace/learning-retest/out/explore.json --------------------------
++# Exploratory, after the results; not part of the pre-registered verdict. explore.py derives it from the pilot's
++# aggregates (each arm minus budget, paired by series; the budget and T0 evaluations) and from 5 empty-context retests
++# whose answers are private (only their counts and rates are in the file). Everything that follows from the validated
++# aggregates is recomputed here and must agree; the retests are checked for schema, counts and their spread.
++
++EXPLORE_LABEL = "exploratory, after the results"
++EXPLORE_ARMS, EXPLORE_CPS = ("records", "lessons"), ("T5", "T10")
++EXPLORE_METRICS = ("risks_found", "right_safety", "error_rate", "risk_judgement")
++RUN_METRICS = EXPLORE_METRICS + ("risk_appetite",)
++RUN_COUNTS = ("answered", "valid", "invalid", "failed")
++RETESTS = 5
++SPREAD_GROUPS = ("all", "t0+retests", "retests", "budget")  # "retests": r1-r5 only (Zeki #2991)
++RUN_NAME = re.compile(r"T0 \(shared, 4 in flight\)|retest r([1-5]) \(4 in flight\)|"
++                      r"budget s(0[1-9]|10) (T5|T10) \(1 in flight\)")
++# Public problem texts of a refused exploratory file: fixed codes only; the details are private (stderr).
++EXPLORE_CODES = {
++    "unreadable": "explore.unreadable: the file is not readable JSON",
++    "schema": "explore.schema: the file does not match its schema",
++    "test-set": "explore.test-set: made with another evaluation set",
++    "pilot": "explore.pilot: the pilot's results are not accepted as complete",
++    "budget-not-empty": "explore.budget-not-empty: the budget arm's context was not empty at every point",
++    "counts": "explore.counts: a run's answers do not add up to 200",
++    "arm-minus-budget": "explore.arm-minus-budget: does not follow from the validated aggregates",
++    "rows": "explore.rows: the T0 or budget rows are not the validated aggregates",
++    "retests": "explore.retests: the retest rows do not match their answer counts",
++    "spread": "explore.spread: does not follow from the rows",
++    "agreement": "explore.agreement: the agreement counts are not symmetric, not the runs', or not their summary",
++}
++# agreement (LearningPilot, after the final retests): positions (of 200) where two runs chose different plays, counts
++# only. Run names: "T0", "r1".."r5", "budget sNN T5|T10" (the rows' runs, short).
++AGREE_NAME = r"T0|r[1-5]|budget s(0[1-9]|10) T(5|10)"
++AGREE_UNIT = "positions (of 200) where two runs chose different plays"
++AGREE_GROUPS = ("T0 vs retests", "retest vs retest", "T0 vs budget", "retests vs budget", "budget vs budget")
++_PAIRS = (1 + RETESTS + 2 * N) ** 2
++_SNUM = NUM(None, None)
++EXPLORE_SPEC = DICT(dict(
++    generated_at=ISO, label=("const", EXPLORE_LABEL), note=("str", r"[^<>&]{1,600}"), test_set_sha256=HEX64,
++    arm_minus_budget=DICT({arm: DICT({cp: DICT({m: DICT(dict(mean=_SNUM, ci=LIST(_SNUM, 2), per_series=LIST(_SNUM, N)))
++                                                for m in EXPLORE_METRICS}) for cp in EXPLORE_CPS})
++                           for arm in EXPLORE_ARMS}),
++    empty_context_runs=LIST(DICT(dict(run=("str", RUN_NAME.pattern), kind=("enum", ("t0", "retest", "budget")),
++                                      **{k: INT(0, POSITIONS) for k in RUN_COUNTS},
++                                      **{m: OPT(NUM()) if m == "error_rate" else PCT for m in RUN_METRICS})),
++                            1 + RETESTS + 2 * N),
++    retest_answer_counts=("map", r"[1-5]", INT(0, POSITIONS)),
++    spread=DICT({g: DICT({m: DICT(dict(n=INT(0, 1 + RETESTS + 2 * N), mean=_SNUM, min=_SNUM, max=_SNUM,
++                                       sd=OPT(NUM()))) for m in RUN_METRICS}) for g in SPREAD_GROUPS}),
++    agreement=DICT(dict(unit=("const", AGREE_UNIT),
++                        pairwise=("map", AGREE_NAME, ("map", AGREE_NAME, INT(0, POSITIONS))),
++                        summary=DICT({g: DICT(dict(n=INT(0, _PAIRS), mean=_SNUM, min=_SNUM, max=_SNUM, sd=OPT(NUM())))
++                                      for g in AGREE_GROUPS}),
++                        positions_not_unanimous_across_retests=INT(0, POSITIONS)))))
++
++
++def short_name(run: str) -> str:
++    """A row's run as the agreement counts name it."""
++    mt = RUN_NAME.fullmatch(run)
++    if run.startswith("T0"):
++        return "T0"
++    return f"r{mt.group(1)}" if mt.group(1) else f"budget s{mt.group(2)} {mt.group(3)}"
++
++
++def agreement_problems(A: dict, runs: list) -> list:
++    """The agreement counts: one count per pair of the rows' runs (no other name), symmetric; the summary recomputed
++    from the counts as explore.py groups them; the positions where the retests are not unanimous between the largest
++    retest-vs-retest count and the sum of r1's counts against the other retests (as it must be)."""
++    names, P, bad = [short_name(r["run"]) for r in runs], A["pairwise"], []
++    if set(P) != set(names) or any(set(P[a]) != set(names) - {a} for a in P):
++        return ["agreement.pairwise: not exactly one count for each pair of the rows' runs"]
++    bad += [f"agreement.pairwise: {a} vs {b} not symmetric" for a in P for b in P[a] if P[a][b] != P[b][a]]
++    retests = sorted(n for n in names if n.startswith("r"))
++    budgets = [n for n in names if n.startswith("budget")]
++
++    def pair(xs, ys):
++        return [P[a][b] for a in xs for b in ys if a != b]
++
++    def tri(xs):
++        return [P[a][b] for i, a in enumerate(xs) for b in xs[i + 1:]]
++    groups = {"T0 vs retests": pair(["T0"], retests), "retest vs retest": tri(retests),
++              "T0 vs budget": pair(["T0"], budgets), "retests vs budget": pair(retests, budgets),
++              "budget vs budget": tri(budgets)}
++    for g, xs in groups.items():
++        want = dict(n=len(xs), mean=fmean(xs), min=min(xs), max=max(xs), sd=stdev(xs) if len(xs) > 1 else None) \
++            if xs else None
++        if want is None or not same(A["summary"][g], want):
++            bad.append(f"agreement.summary.{g}: does not follow from the pairwise counts")
++    k = A["positions_not_unanimous_across_retests"]
++    if retests and not max(tri(retests) or [0]) <= k <= sum(P[retests[0]][b] for b in retests[1:]):
++        bad.append("agreement.positions_not_unanimous_across_retests: outside what the pairwise counts allow")
++    return bad
++
++
++def fmean(xs):
++    return sum(xs) / len(xs)
++
++
++def stdev(xs):
++    m = fmean(xs)
++    return (sum((x - m) ** 2 for x in xs) / (len(xs) - 1)) ** 0.5
++
++
++def explore_refused(codes: list, details: list) -> dict:
++    return dict(accepted=False, problems=[EXPLORE_CODES[c] for c in dict.fromkeys(codes)],
++                private_problems=private_problems(details), public=None)
++
++
++def validate_explore(path: Path, pilot: dict, test_sha: str) -> dict:
++    """The exploratory file against its schema and the validated pilot (pilot: validate()'s accepted result). Refused:
++    public problems are fixed codes (EXPLORE_CODES), details only in private_problems. Accepted: `public`, the
++    projection the page shows."""
++    try:
++        E = json.loads(path.read_text())
++    except (OSError, ValueError):
++        return explore_refused(["unreadable"], [])
++    bad = check(E, EXPLORE_SPEC, "explore")
++    if not bad:
++        bad += [f"explore.arm_minus_budget.{a}.{cp}.{m}: not {N} series or not 2 bounds"
++                for a in EXPLORE_ARMS for cp in EXPLORE_CPS for m in EXPLORE_METRICS
++                if len(E["arm_minus_budget"][a][cp][m]["per_series"]) != N
++                or len(E["arm_minus_budget"][a][cp][m]["ci"]) != 2]
++    if bad:
++        return explore_refused(["schema"], bad)
++    if E["test_set_sha256"] != test_sha:
++        return explore_refused(["test-set"], ["explore.test_set_sha256 is not the evaluation set's"])
++    if not (pilot.get("accepted") and pilot.get("complete")):
++        return explore_refused(["pilot"], [])
++    pub = pilot["public"]
++    if not (pub["budget_points_total"]["budget"] and
++            pub["budget_empty_points"]["budget"] == pub["budget_points_total"]["budget"]):
++        return explore_refused(["budget-not-empty"], [])
++    t0, aggs = pilot["t0"]["metrics"], pilot["aggs"]
++    codes, details = [], []
++
++    def fail(code, detail):
++        codes.append(code)
++        details.append(detail)
++    runs = E["empty_context_runs"]
++    for i, r in enumerate(runs):
++        if not (r["valid"] + r["invalid"] + r["failed"] == r["answered"] == POSITIONS):
++            fail("counts", f"empty_context_runs[{i}]: valid + invalid + failed = answered = {POSITIONS} fails")
++    # Each arm minus budget, recomputed from the validated aggregates (paired by series, pilot.py boot_ci).
++    for a in EXPLORE_ARMS:
++        for cp in EXPLORE_CPS:
++            for m in EXPLORE_METRICS:
++                got = E["arm_minus_budget"][a][cp][m]
++                d = [sub(aggs[a][s]["evaluations"][cp][m], aggs["budget"][s]["evaluations"][cp][m])
++                     for s in range(1, N + 1)]
++                want = dict(mean=mean(d), ci=boot_ci(d, BOOT_SEED), per_series=d)
++                for k in ("per_series", "mean", "ci"):
++                    if not same(got[k], want[k]):
++                        fail("arm-minus-budget", f"arm_minus_budget.{a}.{cp}.{m}.{k} does not follow")
++    # The T0 and budget rows are the validated aggregates; every run name agrees with its kind, once.
++    names = [r["run"] for r in runs]
++    if len(set(names)) != len(names):
++        fail("rows", "a run appears twice")
++    want_rows = {"T0 (shared, 4 in flight)": ("t0", t0)}
++    want_rows |= {f"budget s{s:02d} {cp} (1 in flight)": ("budget", aggs["budget"][s]["evaluations"][cp])
++                  for s in range(1, N + 1) for cp in EXPLORE_CPS}
++    by_name = {r["run"]: r for r in runs}
++    for name, (kind, m) in want_rows.items():
++        r = by_name.get(name)
++        if r is None or r["kind"] != kind or any(not same(r[k], m[k]) for k in RUN_COUNTS + RUN_METRICS):
++            fail("rows", f"row {name!r} missing or not the aggregate's")
++    retests = {}
++    for r in runs:
++        mt = RUN_NAME.fullmatch(r["run"])
++        if r["run"] not in want_rows:
++            if r["kind"] != "retest" or not mt.group(1):
++                fail("rows", f"row {r['run']!r}: not a T0, budget or retest row of its kind")
++            else:
++                retests[mt.group(1)] = r
++        elif r["kind"] != want_rows[r["run"]][0]:
++            fail("rows", f"row {r['run']!r}: kind")
++    counts = E["retest_answer_counts"]
++    # Every planned retest is named (Zeki #2993): a missing key would otherwise drop silently out of "pending".
++    for k in map(str, range(1, RETESTS + 1)):
++        full = counts.get(k) == POSITIONS
++        if k not in counts:
++            fail("retests", f"retest r{k}: no answer count")
++        elif full != (k in retests):
++            fail("retests", f"retest r{k}: a row {'missing' if full else 'without 200 answers'}")
++    # The spread, from the rows.
++    groups = {"all": runs, "t0+retests": [r for r in runs if r["kind"] in ("t0", "retest")],
++              "retests": [r for r in runs if r["kind"] == "retest"],
++              "budget": [r for r in runs if r["kind"] == "budget"]}
++    for g, rows in groups.items():
++        for m in RUN_METRICS:
++            xs = [r[m] for r in rows if r[m] is not None]
++            want = (dict(n=len(xs), mean=fmean(xs), min=min(xs), max=max(xs), sd=stdev(xs) if len(xs) > 1 else None)
++                    if xs else None)
++            if want is None or not same(E["spread"][g][m], want):
++                fail("spread", f"spread.{g}.{m} does not follow from the rows")
++    for d in agreement_problems(E["agreement"], runs) if not codes else []:
++        fail("agreement", d)
++    if codes:
++        return explore_refused(codes, details)
++    order = {"t0": 0, "retest": 1, "budget": 2}
++
++    def place(r):
++        mt = RUN_NAME.fullmatch(r["run"])
++        return dict(kind=r["kind"], retest=int(mt.group(1)) if mt.group(1) else None,
++                    series=int(mt.group(2)) if mt.group(2) else None, checkpoint=mt.group(3))
++    rows = sorted(runs, key=lambda r: (order[r["kind"]], place(r)["retest"] or 0, place(r)["series"] or 0,
++                                       {"T5": 0, "T10": 1}.get(place(r)["checkpoint"], -1)))
++    public_rows = [place(r) | {k: r[k] for k in RUN_COUNTS + RUN_METRICS} for r in rows]
++    return dict(accepted=True, problems=[], private_problems=[], public=dict(
++        label=EXPLORE_LABEL, generated_at=E["generated_at"],
++        arm_minus_budget={a: {cp: {m: {k: E["arm_minus_budget"][a][cp][m][k] for k in ("mean", "ci")}
++                                   for m in EXPLORE_METRICS} for cp in EXPLORE_CPS} for a in EXPLORE_ARMS},
++        series=N, runs=public_rows, retest_answer_counts={k: counts[k] for k in sorted(counts)},
++        spread=E["spread"],
++        agreement=dict(unit=AGREE_UNIT, summary=E["agreement"]["summary"], positions_not_unanimous_across_retests=E[
++            "agreement"]["positions_not_unanimous_across_retests"])))
+diff --git a/tools/site/snapshot.py b/tools/site/snapshot.py
+index 0f5e87b..6865bd7 100755
+--- a/tools/site/snapshot.py
++++ b/tools/site/snapshot.py
+@@ -27,8 +27,10 @@
+ 6. The learning pilot (workspace/learning-pilot/ next to V3_DB, read only): its summary out/learning-pilot.json, every
+    finished series' runs/<arm>/sNN/aggregate.json, the lessons arm's runs/lessons/sNN/lessons-gKK.txt and the lesson
+    prompt (lessons_system.txt, lessons_user.txt) are copied to STATE_DIR/learning, replacing the last copy (a missing
+-   source leaves it empty: the page shows "No results yet"). Its key, a hash of the copied files and of the plan
+-   (mailbox/Learning pilot - plan 2026-11-07.md), goes into update.sh's change key, so a finished series rebuilds.
++   source leaves it empty: the page shows "No results yet"); the exploratory file workspace/learning-retest/out/
++   explore.json, when present, goes to STATE_DIR/learning/explore/explore.json. Its key, a hash of the copied files and
++   of the plan (mailbox/Learning pilot - plan 2026-11-07.md), goes into update.sh's change key, so a finished series
++   or a new exploratory file rebuilds.
+ 7. Prints one line of JSON: decisions extracted, skipped by reason, contexts, a fingerprint that changes whenever
+    the league data or the knockout's matches change, and the learning pilot's key ("learning").
+ 
+@@ -92,6 +94,9 @@ LEARNING_FILES = [("out/learning-pilot.json", lambda rel: "learning-pilot.json")
+                   ("runs/lessons/s*/lessons-g*.txt", lambda rel: rel),
+                   ("lessons_system.txt", lambda rel: rel), ("lessons_user.txt", lambda rel: rel)]
+ LEARNING_PLAN = os.path.join("mailbox", "Learning pilot - plan 2026-11-07.md")
++# The exploratory file (Ümit #2950/#2952; workspace/learning-retest/explore.py), relative to the same root, and where it
++# goes under STATE_DIR/learning: copied read-only with the pilot's files, in the same key (a missing file: no block).
++LEARNING_EXPLORE = (os.path.join("workspace", "learning-retest", "out", "explore.json"), "explore/explore.json")
+ 
+ 
+ def shown_leagues(db, prefix=""):
+@@ -325,22 +330,25 @@ def snapshot_knockout(source, state):
+ 
+ 
+ def snapshot_learning(root, state):
+-    """Copies the learning pilot's published inputs (LEARNING_FILES) from ROOT/workspace/learning-pilot to
+-    STATE/learning, replacing the last copy whole; returns a hash of the copied files and the plan (first 12 hex)."""
++    """Copies the learning pilot's published inputs (LEARNING_FILES) from ROOT/workspace/learning-pilot, and the
++    exploratory file (LEARNING_EXPLORE) when present, to STATE/learning, replacing the last copy whole; returns a hash
++    of the copied files and the plan (first 12 hex)."""
+     source, target = os.path.join(root, LEARNING_SOURCE), os.path.join(state, "learning")
+     tmp = target + ".tmp"
+     shutil.rmtree(tmp, ignore_errors=True)
+     os.makedirs(tmp)
+     h = hashlib.sha256()
+-    for pattern, dest in LEARNING_FILES:
+-        for path in sorted(glob.glob(os.path.join(source, pattern))):
+-            rel = dest(os.path.relpath(path, source))
+-            os.makedirs(os.path.dirname(os.path.join(tmp, rel)), exist_ok=True)
+-            with open(path, "rb") as f:
+-                data = f.read()
+-            with open(os.path.join(tmp, rel), "wb") as f:
+-                f.write(data)
+-            h.update(rel.encode() + b"\0" + data)
++    files = [(path, dest(os.path.relpath(path, source))) for pattern, dest in LEARNING_FILES
++             for path in sorted(glob.glob(os.path.join(source, pattern)))]
++    explore = os.path.join(root, LEARNING_EXPLORE[0])
++    files += [(explore, LEARNING_EXPLORE[1])] if os.path.exists(explore) else []
++    for path, rel in files:
++        os.makedirs(os.path.dirname(os.path.join(tmp, rel)), exist_ok=True)
++        with open(path, "rb") as f:
++            data = f.read()
++        with open(os.path.join(tmp, rel), "wb") as f:
++            f.write(data)
++        h.update(rel.encode() + b"\0" + data)
+     plan = os.path.join(root, LEARNING_PLAN)
+     if os.path.exists(plan):
+         with open(plan, "rb") as f:

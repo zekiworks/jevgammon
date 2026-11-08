@@ -25,7 +25,9 @@ for model in "$@"; do
   index=$(nvidia-smi -i "$UUID" --query-gpu=index,uuid --format=csv,noheader) || { echo "no GPU $UUID"; exit 1; }
   echo "== $model: host GPU $index"
   case $index in 0,*|1,*|2,*) echo "refused: GPU 0-2 are not this lane's"; exit 1 ;; esac
-  env "$var=$UUID" "$SERVERS/$script" start || { echo "$model: server did not start"; exit 1; }
+  # Docker's CDI names GPUs by index here, not by UUID: the index the host gives this UUID now, and the
+  # container must then report this UUID (checked below).
+  env "$var=${index%%,*}" "$SERVERS/$script" start || { echo "$model: server did not start"; exit 1; }
   seen=$(docker exec "$name" nvidia-smi --query-gpu=uuid --format=csv,noheader | tr -d ' ')
   if [[ "$seen" != "$UUID" ]]; then
     echo "$model: the container sees '$seen', not $UUID: stopped"; "$SERVERS/$script" stop; exit 1

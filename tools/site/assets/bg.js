@@ -575,19 +575,24 @@ async function savePng(panel, svg, title, lines, filename) {
     const width = Math.min(380, vw - 16);
     box.style.width = `${width}px`;
     box.style.left = `${Math.max(8, Math.min(cell.left, vw - width - 8))}px`;
-    // Height: below the row if it fits, else above it; if it fits neither way, as tall as the window allows below the
-    // header, scrolling inside (its links stay reachable by scrolling it or with Tab).
+    // Height: below the row if it fits, else above it. If it fits neither way, capped to the larger side of the row,
+    // scrolling inside (its links stay reachable by scrolling it or with Tab), so the row itself stays uncovered for a
+    // second tap; only where neither side has 120 px does it take the window under the header.
     box.style.maxHeight = '';
     const height = box.offsetHeight;
     const header = document.querySelector('.site-header')?.getBoundingClientRect().bottom || 0;
     const below = row.bottom;  // no gap: the pointer moves from the row into its box without leaving the row
     const bottom = innerHeight - 8;
-    if (below + height <= bottom) box.style.top = `${below}px`;
-    else if (row.top - height >= header + 4) box.style.top = `${row.top - height}px`;
-    else {
+    const roomBelow = bottom - below, roomAbove = row.top - header - 4;
+    if (height <= roomBelow) box.style.top = `${below}px`;
+    else if (height <= roomAbove) box.style.top = `${row.top - height}px`;
+    else if (Math.max(roomBelow, roomAbove) >= 120) {
+      box.style.maxHeight = `${Math.max(roomBelow, roomAbove)}px`;
+      box.style.top = `${roomBelow >= roomAbove ? below : row.top - roomAbove}px`;
+    } else {
       const room = Math.max(bottom - header - 4, 80);
       box.style.maxHeight = `${room}px`;
-      box.style.top = `${Math.max(header + 4, Math.min(below, bottom - Math.min(height, room)))}px`;
+      box.style.top = `${header + 4}px`;
     }
   };
   const hide = () => {
@@ -609,13 +614,24 @@ async function savePng(panel, svg, title, lines, filename) {
   };
   const rows = [...table.querySelectorAll('tbody tr[data-box]')];
   // Keyboard focus in the open row (its name or its box) keeps the box: the pointer leaving the row or entering another
-  // row does not take it away until the focus leaves the row, Escape, a second tap or a click outside.
-  const held = () => !!open && open.contains(document.activeElement);
-  table.addEventListener('pointerdown', event => { pointer = event.pointerType || 'mouse'; }, true);
+  // row does not take it away until the focus leaves the row, Escape, a second tap or a click outside. Focus that a
+  // press of the pointer gives (pointing) neither opens a box nor holds one: the press itself decides.
+  let pointing = false, keyed = false;
+  const held = () => !!open && keyed && open.contains(document.activeElement);
+  document.addEventListener('pointerdown', event => {
+    pointing = true;
+    if (table.contains(event.target)) pointer = event.pointerType || 'mouse';
+  }, true);
+  const released = () => setTimeout(() => { pointing = false; });
+  document.addEventListener('pointerup', released, true);
+  document.addEventListener('pointercancel', released, true);
   rows.forEach(tr => {
     tr.addEventListener('pointerenter', event => { if (event.pointerType === 'mouse' && !pinned && !held()) show(tr, false); });
     tr.addEventListener('pointerleave', event => { if (event.pointerType === 'mouse' && !pinned && open === tr && !held()) hide(); });
-    tr.addEventListener('focusin', () => { if (open !== tr && !quiet) show(tr, false); });
+    tr.addEventListener('focusin', () => {
+      keyed = !pointing;
+      if (keyed && open !== tr && !quiet) show(tr, false);
+    });
     tr.addEventListener('focusout', event => { if (open === tr && !pinned && !tr.contains(event.relatedTarget)) hide(); });
     tr.addEventListener('click', event => {
       // A mouse click or a key (detail 0) follows the link; a link or key in the box or the expander does its own job.

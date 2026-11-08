@@ -598,8 +598,7 @@ def verdict(L) -> str:
 
 EXPLORE_METRIC_LABEL = {"risks_found": "Risks found", "right_safety": "Right safety", "error_rate": "Error rate (PR)",
                         "risk_judgement": "Risk judgement", "risk_appetite": "Risk appetite"}
-EXPLORE_GROUP_LABEL = {"all": "All empty-context runs", "t0+retests": "T0 and the retests (4 in flight)",
-                       "budget": f"{ARM_LABEL['budget']} after games 5 and 10 (1 in flight)"}
+EXPLORE_GROUP_LABEL = {"all": "All runs", "t0+retests": "T0 and retests", "budget": f"{ARM_LABEL['budget']}"}
 
 
 def amb_cell(s: dict) -> str:
@@ -612,7 +611,7 @@ def run_label(r: dict) -> str:
         return "Before game 1 (T0, shared)"
     if r["kind"] == "retest":
         return f"Retest r{r['retest']}"
-    return f"{ARM_LABEL['budget']}, series {r['series']}, {CHECKPOINT_LABEL[r['checkpoint']].lower()}"
+    return f"Series {r['series']}, {CHECKPOINT_LABEL[r['checkpoint']].lower()}"
 
 
 def spread_cell(s: dict) -> str:
@@ -639,25 +638,32 @@ def explore(L) -> str:
                         + "".join(f'<td class="num" data-arm="{a}" data-cp="{cp}" data-m="{m}">'
                                   f'{amb_cell(X["arm_minus_budget"][a][cp][m])}</td>' for m in V.EXPLORE_METRICS)
                         + "</tr>")
-    amb = P.SWIPE + P.table(["Arm", "Test"] + [f"{EXPLORE_METRIC_LABEL[m]} minus {B}" for m in V.EXPLORE_METRICS],
-                            rows, f"Each arm minus {B} in the same series: mean over {count(X['series'])} series "
-                                  "[95% interval]", cls="board list lp-explore-amb")
-    runs = []
+    amb = P.SWIPE + P.table(["Arm", "Test"] + [EXPLORE_METRIC_LABEL[m] for m in V.EXPLORE_METRICS],
+                            rows, f"Each arm minus {B} in the same series, mean over {count(X['series'])} series "
+                                  "[95% interval]; risks found and right safety in percentage points",
+                            cls="board list lp-explore-amb")
+    runs, ncols = [], 1 + len(V.RUN_COUNTS) + len(V.RUN_METRICS)
     for i, r in enumerate(X["runs"]):
-        flight = S["in_flight_budget"] if r["kind"] == "budget" else S["in_flight_t0_and_retests"]
-        runs.append(f'<tr><th scope="row">{esc(run_label(r))}</th><td class="num">{count(flight)}</td>'
+        if i == 0 or (r["kind"] == "budget") != (X["runs"][i - 1]["kind"] == "budget"):
+            group = (f"{B}: its evaluations, {count(S['in_flight_budget'])} request in flight" if r["kind"] == "budget"
+                     else f"T0 and retests: {count(S['in_flight_t0_and_retests'])} requests in flight")
+            runs.append(f'<tr class="lp-group"><th scope="rowgroup" colspan="{ncols}">{group}</th></tr>')
+        runs.append(f'<tr><th scope="row">{esc(run_label(r))}</th>'
                     + "".join(f'<td class="num" data-run="{i}" data-k="{k}">{count(r[k])}</td>' for k in V.RUN_COUNTS)
                     + "".join(f'<td class="num" data-run="{i}" data-k="{m}">{num(r[m], 1)}</td>'
                               for m in V.RUN_METRICS) + "</tr>")
-    runs_table = P.SWIPE + P.table(["Run", "Requests in flight", "Answered", "Valid", "Invalid", "Failed"]
-                                   + [EXPLORE_METRIC_LABEL[m] for m in V.RUN_METRICS], runs,
+    # Not sortable (data-nosort): its group rows (T0 and retests; the budget arm's evaluations) keep their order.
+    runs_table = P.SWIPE + P.table([(h, " data-nosort") for h in ["Run", "Answered", "Valid", "Invalid", "Failed"]
+                                    + [EXPLORE_METRIC_LABEL[m] for m in V.RUN_METRICS]], runs,
                                    "The same 200 evaluation prompts with an empty context",
                                    cls="board list lp-explore-runs")
-    spread_rows = [f'<tr><th scope="row">{esc(EXPLORE_GROUP_LABEL[g])}</th>'
-                   f'<td class="num" data-group="{g}" data-k="n">{count(X["spread"][g]["risks_found"]["n"])}</td>'
-                   + "".join(f'<td class="num" data-group="{g}" data-m="{m}">{spread_cell(X["spread"][g][m])}</td>'
-                             for m in V.RUN_METRICS) + "</tr>" for g in V.SPREAD_GROUPS]
-    spread_table = P.SWIPE + P.table(["Group", "Runs"] + [EXPLORE_METRIC_LABEL[m] for m in V.RUN_METRICS], spread_rows,
+    groups = V.SPREAD_GROUPS
+    spread_rows = ['<tr><th scope="row">Runs</th>' + "".join(
+        f'<td class="num" data-group="{g}" data-k="n">{count(X["spread"][g]["risks_found"]["n"])}</td>' for g in groups)
+        + "</tr>"] + [f'<tr><th scope="row">{EXPLORE_METRIC_LABEL[m]}</th>' + "".join(
+            f'<td class="num" data-group="{g}" data-m="{m}">{spread_cell(X["spread"][g][m])}</td>' for g in groups)
+        + "</tr>" for m in V.RUN_METRICS]
+    spread_table = P.SWIPE + P.table(["Measure"] + [esc(EXPLORE_GROUP_LABEL[g]) for g in groups], spread_rows,
                                      "Spread over the empty-context runs: mean (min-max; SD)",
                                      cls="board list lp-explore-spread")
     short = [f"r{k} ({count(n)} of {count(S['positions'])})" for k, n in X["retest_answer_counts"].items()

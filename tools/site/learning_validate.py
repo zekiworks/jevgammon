@@ -686,7 +686,7 @@ def validate_explore(path: Path, pilot: dict, test_sha: str) -> dict:
         return dict(kind=r["kind"], retest=int(mt.group(1)) if mt.group(1) else None,
                     series=int(mt.group(2)) if mt.group(2) else None, checkpoint=mt.group(3))
     rows = sorted(runs, key=lambda r: (order[r["kind"]], place(r)["retest"] or 0, place(r)["series"] or 0,
-                                       place(r)["checkpoint"] or ""))
+                                       {"T5": 0, "T10": 1}.get(place(r)["checkpoint"], -1)))
     public_rows = [place(r) | {k: r[k] for k in RUN_COUNTS + RUN_METRICS} for r in rows]
     return dict(accepted=True, problems=[], private_problems=[], public=dict(
         label=EXPLORE_LABEL, generated_at=E["generated_at"],

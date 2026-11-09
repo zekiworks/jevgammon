@@ -63,3 +63,7 @@ Nothing Qwen3.8 Flash sends changed between the builds, and the identity check o
 Each receipt names the `jevgammon` process that started the step and the binary it ran: `/proc/<pid>/exe` and its sha256 when the process could be caught; otherwise the binary at the path at its start time.
 - **S1 T10 (hook's first asking):** `jevgammon ask` pid 3934684, started 16:45:18 UTC. `/proc/3934684/exe` → `target/release/jevgammon` (not deleted), sha256 `19357c4e46af78eb07bc8125d7bf7f99e9b463464951caea41d5f4f18dd7fa11` = **B2**, observed 16:4x UTC. Its parent, the S1 match (pid 3875115, B1), was still running the after-game hook at that time.
 - **S2 games:** match pid 4051283, started 17:00:45 UTC. `/proc/4051283/exe` → `target/release/jevgammon` (not deleted), sha256 `19357c4e…` = **B2**, observed 17:01 UTC. S1 finished at 17:00:45; its T10 re-ask round (if any) started after 16:26:50 = B2 by the path rule.
+
+## Execution conditions: GPU power limit (local lane)
+
+- About 2026-11-09 07:37 UTC Can lowered the power limit of all four bariton GPUs from the default 600 W to 400 W (bus #3385; `nvidia-smi` power.limit 400 W, power.default_limit 600 W). It affects speed and latency (time is a recorded metric), not answers by design. Gemma 4 31B (on)'s S1 attempt 3 (started 01:54 UTC on GPU-1115ade0) straddles the change; nothing was restarted for it. A `power_limit` event is in each local model's run log.

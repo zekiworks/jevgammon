@@ -502,6 +502,19 @@
    "read": "2026-11-09",
    "note": ""
   },
+  "MiniMax-M3.1-Flash": {
+   "total_b": 428,
+   "active_b": 23,
+   "effective_b": null,
+   "moe": true,
+   "source": "https://huggingface.co/MiniMaxAI/MiniMax-M3.1-Flash",
+   "quote": "MiniMaxAI/MiniMax-M3.1-Flash model card: approximately 428B total parameters, 23B activated per token.",
+   "checked": [
+    "https://huggingface.co/MiniMaxAI/MiniMax-M3.1-Flash"
+   ],
+   "read": "2026-11-09",
+   "note": "The card's figures, as logic's model_sizes.json 'MiniMax-M3.1-Flash' (428B total, 23B active); no checkpoint count there."
+  },
   "Open-Jev 27B v1.1": {
    "total_b": 27.8,
    "active_b": null,
@@ -600,6 +613,19 @@
    ],
    "read": "2026-11-09",
    "note": "Checkpoint total (#3508 rule); same as logic's model_sizes.json 'Winnow-12B' (logic #3534 receipt)."
+  },
+  "vLLM-SR d3-ultra": {
+   "total_b": 26.09,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/vllm-sr/d3-ultra",
+   "quote": "vllm-sr/d3-ultra: backbone 26,085,330,160 (its 11 safetensors shards) + decision head (readout.safetensors) 1,305,600 = 26,086,635,760 logical parameters.",
+   "checked": [
+    "https://huggingface.co/vllm-sr/d3-ultra"
+   ],
+   "read": "2026-11-09",
+   "note": "Released-checkpoint count (#3508 rule), as logic's model_sizes.json 'vLLM-SR d3-ultra' (26.09B; counted from the checkpoint, tb-next export_results.py)."
   }
  }
 }

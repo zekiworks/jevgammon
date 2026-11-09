@@ -133,9 +133,39 @@ MODELS = {
                              expect=dict(models=["gpt-6-astra"], allow_dated=True)),
 }
 
+# Part 3 (decision models): the arms registered by decision.py (key "decision/<setup>-<arm>"), resolved by the shared
+# helpers below through `entry`; never part of MODELS (the chat lanes and their page rows).
+ENTRIES = {}
+
+
+def entry(key):
+    return MODELS[key] if key in MODELS else ENTRIES[key]
+
 
 class Stop(Exception):
     """A pre-registered stop rule fired (rule a or b, a route check): the model stops."""
+
+
+class Incomplete(Stop):
+    """Part 3: the conservative context guard or the service's own refusal stopped a decision model's arm mid-run
+    (`incomplete: conservative context guard` / `incomplete: context limit reached`); its records stay."""
+
+
+def context_stop(text):
+    """An Incomplete for a runner error carrying the decision client's context markers, else None."""
+    if "CONTEXT GATE" in text:
+        return Incomplete(f"incomplete: conservative context guard: {text[-600:]}")
+    if "CONTEXT REFUSAL" in text:
+        return Incomplete(f"incomplete: context limit reached (the service refused): {text[-600:]}")
+    return None
+
+
+def context_answer(key, name):
+    """An Incomplete for the first stored test answer of `name` stopped by the context guard or a refusal, else None."""
+    for marker in ("CONTEXT GATE", "CONTEXT REFUSAL"):
+        if (text := answer_error(key, name, marker)) and (stop := context_stop(text)):
+            return stop
+    return None
 
 
 class Pause(Exception):
@@ -194,12 +224,12 @@ def attempt_of(key, step):
 
 
 def game_name(key, s, attempt):
-    return f"{MODELS[key]['setup']} | improve | s{s:02d} | a{attempt}"
+    return f"{entry(key).get('label', entry(key)['setup'])} | improve | s{s:02d} | a{attempt}"
 
 
 def test_name(key, step, attempt=None):
     if step.startswith("E"):
-        return f"{MODELS[key]['setup']} | improve | {step}"
+        return f"{entry(key).get('label', entry(key)['setup'])} | improve | {step}"
     return f"{game_name(key, series_of(step), attempt)} | T10"
 
 
@@ -291,12 +321,17 @@ def reported(key) -> float:
 
 
 def billed_total(keys=None) -> float:
-    return sum(billed(k) for k in (keys or MODELS) if MODELS[k].get("billed"))
+    """Booked dollars of the billed chat models and of every decision-model arm (Part 3: player, writer and probe
+    ledgers, all counted against the same $110)."""
+    chat = sum(billed(k) for k in (keys or MODELS) if MODELS[k].get("billed"))
+    if keys is not None:
+        return chat
+    return chat + sum(b + r for b, _, r in map(ledger_spent, sorted((RUNS / "decision").glob("*/ledgers/*.db"))))
 
 
 def step_estimate(key, step) -> float:
     """Expected cost of a step: the plan's S or E until the cost check, then the model's measured S1 or E1."""
-    m = MODELS[key]
+    m = entry(key)
     if cost_check(key) is not None:
         return billed(key, "S1") if step.startswith("S") else billed(key, "E1")
     return m["S"] if step.startswith("S") else m["E"]
@@ -314,11 +349,11 @@ def projected_full(s1: float, e1: float) -> float:
 
 def rule_a(key, s1: float, e1: float):
     """None, or the reason rule (a) fires: projected full cost > 1.5 x the model's estimate."""
-    limit = ESTIMATE_FACTOR * MODELS[key]["estimate"]
+    limit = ESTIMATE_FACTOR * entry(key)["estimate"]
     p = projected_full(s1, e1)
     if round(p, 6) > round(limit, 6):  # cents compared exactly, not 1.5 x 2.30 = 3.4499...
         return (f"rule (a): projected full cost ${p:.2f} (5 x S1 ${s1:.2f} + 3 x E1 ${e1:.2f}) > 1.5 x estimate "
-                f"${MODELS[key]['estimate']:.2f} = ${limit:.2f}")
+                f"${entry(key)['estimate']:.2f} = ${limit:.2f}")
     return None
 
 
@@ -351,7 +386,7 @@ def balance_shortfall(balance: float, expected: float):
 
 def ledger_cap(key, balance: float, model_billed: float, total: float, share=None):
     """The step ledger's hard cap and the limit that binds it (rule a or b: stop; balance or share: pause)."""
-    limits = {"rule (a) limit": ESTIMATE_FACTOR * MODELS[key]["estimate"] - model_billed,
+    limits = {"rule (a) limit": ESTIMATE_FACTOR * entry(key)["estimate"] - model_billed,
               "rule (b) limit": TOTAL_CAP_USD - total,
               "balance": balance - BALANCE_RESERVE_USD}
     if share is not None:
@@ -416,12 +451,12 @@ def limit_lessons(text):
     return "\n".join(out), cut
 
 
-def lessons_context(blocks):
+def lessons_context(blocks, intro=LESSONS_INTRO):
     """The play call's note: every lesson so far in the series, oldest first, between the pilot's delimiters."""
     blocks = [(g, t) for g, t in blocks if t]
     if not blocks:
         return ""
-    return "\n".join([OPEN, LESSONS_INTRO, ""] + [f"After game {g}:\n{t}\n" for g, t in blocks] + [CLOSE])
+    return "\n".join([OPEN, intro, ""] + [f"After game {g}:\n{t}\n" for g, t in blocks] + [CLOSE])
 
 
 # --- Game records (the pilot's) ----------------------------------------------------------------------------------
@@ -546,7 +581,7 @@ def eligible(decs, exclude):
 
 def ensure_runner_db(key):
     """Create the runner's schema once (`jevgammon rank --dry-run` opens the file, then stops: no such league)."""
-    SMOKE.mkdir(parents=True, exist_ok=True)
+    db_path(key).parent.mkdir(parents=True, exist_ok=True)
     subprocess.run([str(BIN), "rank", "--db", str(db_path(key)), "--dry-run", "--scores", str(HERE)], cwd=CODE,
                    capture_output=True, text=True)
     db = sqlite3.connect(f"file:{db_path(key)}?mode=ro", uri=True, timeout=60)
@@ -558,8 +593,8 @@ def ensure_runner_db(key):
 
 def vllm_load(key):
     """Running and waiting requests of a local vLLM server (/metrics), or None."""
-    url = base_url_of(key) or (league_settings(MODELS[key]["setup"]).get("base_url") if not DRY else None)
-    if MODELS[key]["lane"] != "local" or not url or DRY:
+    url = base_url_of(key) or (league_settings(entry(key)["setup"]).get("base_url") if not DRY else None)
+    if entry(key)["lane"] != "local" or not url or DRY:
         return None
     try:
         with urllib.request.urlopen(url.rsplit("/v1", 1)[0] + "/metrics", timeout=10) as r:
@@ -578,7 +613,7 @@ def fit_check(key, fetch=None):
     """Local servers (plan §10): the KV cache must hold at least 4 sequences at the full max-model-len (the tests'
     4 in flight). Reads /v1/models (max_model_len) and /metrics (vllm:cache_config_info num_gpu_blocks, block_size).
     Returns the record; raises SystemExit (the run does not start) on a shortfall or an unreadable server."""
-    url = base_url_of(key) or league_settings(MODELS[key]["setup"]).get("base_url")
+    url = base_url_of(key) or league_settings(entry(key)["setup"]).get("base_url")
     fetch = fetch or (lambda u: urllib.request.urlopen(u, timeout=20).read().decode())
     try:
         models = json.loads(fetch(f"{url}/models"))["data"]
@@ -597,18 +632,22 @@ def fit_check(key, fetch=None):
     return rec
 
 
-def run_test(key, step, name, note, workdir, ledger=None, rounds=30):
+def run_test(key, step, name, note, workdir, ledger=None, rounds=30, config=None):
     """The 200-position test with `note` (empty = the league request) and 4 decisions in flight; failed requests
-    are asked again (same prompt and context) until 200 of 200 or the rounds run out (resumable)."""
+    are asked again (same prompt and context) until 200 of 200 or the rounds run out (resumable). `config(name,
+    parallel, ledger)`: the player's config (default: the chat model's, `player_config`)."""
     workdir.mkdir(parents=True, exist_ok=True)
+    config = config or (lambda n, par, led: player_config(key, n, par, ledger=led, base_url=base_url_of(key)))
     cfg = dict(TEST_CONTEXT, prompt_version=PROMPT_VERSION, order_seed=ORDER_SEED,
-               players=[dict(player_config(key, name, TEST_PARALLEL, ledger=ledger, base_url=base_url_of(key)),
+               players=[dict(config(name, TEST_PARALLEL, ledger),
                              **({"prompt_note": note} if note else {}))])
     path = workdir / f"test-{step}.json"
     path.write_text(json.dumps(cfg, indent=1))
     route = answer_error(key, name, "ROUTE CHECK") if db_path(key).exists() else None
     if route:  # never re-ask a test whose replies failed the route check
         raise Stop(f"{step}: {route[:600]}")
+    if db_path(key).exists() and (stop := context_answer(key, name)):  # nor one stopped by a context gate/refusal
+        raise stop
     held(key, step)  # a key/credit-limit hold: nothing is dispatched until the operator lifts it
     load_before = vllm_load(key)
     started = time.time()
@@ -622,6 +661,8 @@ def run_test(key, step, name, note, workdir, ledger=None, rounds=30):
         route = answer_error(key, name, "ROUTE CHECK")
         if route:
             raise Stop(f"{step}: {route[:600]}")
+        if stop := context_answer(key, name):
+            raise stop
         quota = answer_error(key, name, "QUOTA:")
         if quota:
             raise Pause(f"{step}: usage limit (429) on the subscription: {quota[:600]}")
@@ -1050,7 +1091,7 @@ def response_ids(key, step):
         db.close()
     for f in d.rglob("lessons-g*.call.json"):
         out += [x.get("response") for x in json.loads(f.read_text()).get("exchanges", [])]
-    exp = MODELS[key].get("expect") or {}
+    exp = entry(key).get("expect") or {}
     ids = []
     for raw in out:
         try:
@@ -1071,7 +1112,7 @@ def pointer(value, path):
 
 def route_check(key, ids):
     """None, or why the responses do not name the pre-registered model and provider."""
-    exp = MODELS[key].get("expect")
+    exp = entry(key).get("expect")
     if not exp:
         return None
     if not ids:

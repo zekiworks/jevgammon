@@ -369,11 +369,6 @@ impl Service {
     fn takes_blocks(&self) -> bool {
         !matches!(self.provider, "clef" | "open-jev")
     }
-
-    /// Hosted (keyed) services: their gate must be ours (`ContextGate::Client`).
-    fn hosted(&self) -> bool {
-        self.key_required
-    }
 }
 
 /// "Did they improve?" (decision models): the per-request context gate, checked before every
@@ -474,11 +469,12 @@ impl DecisionClient {
                 service.key_vars.join(" or ")
             );
         }
-        check_extras(service, &extras)?;
         let base = match base_url {
             Some(url) => url.to_owned(),
             None => std::env::var(service.url_var).unwrap_or_else(|_| service.base_url.into()),
         };
+        let url = format!("{}{}", base.trim_end_matches('/'), service.path);
+        check_extras(service, &url, &extras)?;
         Ok(DecisionClient {
             http,
             service,
@@ -486,7 +482,7 @@ impl DecisionClient {
             model: service
                 .default_model
                 .map(|default| model.unwrap_or_else(|| default.to_owned())),
-            url: format!("{}{}", base.trim_end_matches('/'), service.path),
+            url,
             budget,
             extras,
             stopped: AtomicBool::new(false),
@@ -547,8 +543,10 @@ impl DecisionClient {
     async fn send(&self, body: &Value, retry: &RetryTime) -> Result<String> {
         if self.stopped.load(Ordering::SeqCst) {
             bail!(
-                "STOPPED: an earlier request of {} failed a context gate or the route check; no \
-                 further request is sent",
+                // Worded without the CONTEXT GATE / CONTEXT REFUSAL / ROUTE CHECK markers (the
+                // harness finds the first request's own marker; SQLite LIKE ignores case).
+                "STOPPED: an earlier request of {} failed a pre-send or reply check; no further \
+                 request is sent",
                 self.service.label
             );
         }
@@ -828,8 +826,9 @@ fn context_refusal(error: &anyhow::Error) -> bool {
 }
 
 /// Start-up checks of a decision player's "Did they improve?" settings: a block needs a route
-/// that can carry one and a context gate; a hosted route's gate must be ours (`Client`).
-pub fn check_extras(service: &Service, extras: &Extras) -> Result<()> {
+/// that can carry one and a context gate; a hosted route (an `https` URL; our local servers
+/// are plain `http`) needs our pre-send guard (`Client`), never only its own.
+pub fn check_extras(service: &Service, url: &str, extras: &Extras) -> Result<()> {
     let has_block = extras.prompt_note.is_some() || extras.prompt_note_file.is_some();
     if has_block && !service.takes_blocks() {
         bail!(
@@ -843,7 +842,7 @@ pub fn check_extras(service: &Service, extras: &Extras) -> Result<()> {
             service.label
         );
     }
-    if service.hosted() && extras.context_gate == Some(ContextGate::Server) {
+    if url.starts_with("https://") && extras.context_gate == Some(ContextGate::Server) {
         bail!(
             "{}: a hosted route needs our pre-send guard (context_gate kind client)",
             service.label
@@ -1426,25 +1425,21 @@ mod tests {
             expect_route: None,
         };
         let jev = service("jev").unwrap();
-        assert!(check_extras(jev, &with_block(None)).is_err());
-        assert!(check_extras(jev, &with_block(Some(ContextGate::Server))).is_err());
-        assert!(check_extras(jev, &with_block(Some(gate(Some(32_000))))).is_ok());
+        let hosted = "https://api.typesafe.ai/v1/systemone";
+        let local = "http://127.0.0.1:18104/v1/systemone";
+        assert!(check_extras(jev, hosted, &with_block(None)).is_err());
+        assert!(check_extras(jev, hosted, &with_block(Some(ContextGate::Server))).is_err());
+        assert!(check_extras(jev, hosted, &with_block(Some(gate(Some(32_000))))).is_ok());
         for provider in ["clef", "open-jev"] {
-            assert!(
-                check_extras(
-                    service(provider).unwrap(),
-                    &with_block(Some(ContextGate::Server))
-                )
-                .is_err()
-            );
+            let s = service(provider).unwrap();
+            assert!(check_extras(s, local, &with_block(Some(ContextGate::Server))).is_err());
         }
-        assert!(
-            check_extras(
-                service("drex-max").unwrap(),
-                &with_block(Some(ContextGate::Server))
-            )
-            .is_ok()
-        );
-        assert!(check_extras(jev, &Extras::default()).is_ok());
+        // A local server reached through a keyed service (Fastino GLiDE v1.2 behind `fastino`)
+        // keeps its own pre-inference gate.
+        let fastino = service("fastino").unwrap();
+        assert!(check_extras(fastino, local, &with_block(Some(ContextGate::Server))).is_ok());
+        let drex = service("drex-max").unwrap();
+        assert!(check_extras(drex, local, &with_block(Some(ContextGate::Server))).is_ok());
+        assert!(check_extras(jev, hosted, &Extras::default()).is_ok());
     }
 }

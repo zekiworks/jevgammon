@@ -1,0 +1,898 @@
+"""Did they improve? Part 3: decision models (pre-registration: the live plan, mailbox/Did they improve - plan
+2026-11-08.md, and its addendum, mailbox/Did they improve - decision models - addendum 2026-11-09.md).
+
+Per decision model of the cohort (decision_cohort.json: the top 8 of the live leaderboard), two arms, each judged on
+its own under the live plan's rule, each with its own games, run directory and (D1, proposed default) its own 3 empty
+runs, on the chat models' schedule (E1, S1, cost check, S2, E2, S3, S4, E3, S5):
+
+- notes ("helper-written notes"): after each game a fixed writer (Qwen3.8 Flash (off) via OpenRouter, the live plan's
+  lesson call unchanged, pinned for the whole cohort) reads the model's graded game record (test positions removed
+  first) with the pilot's lesson prompt; the pilot's cut rule keeps at most 5 lessons and 150 words; the block (intro
+  "Notes a helper wrote from your earlier games in this series, oldest first:") goes at the start of `state`.
+- worst ("worst mistakes"): after each game a script puts the 5 costliest decisions of this series so far (GNUbg 2-ply,
+  test positions removed before selection) at the start of `state` as solved examples.
+
+Blocks reset every series and are never shortened; every request passes the runner's context gate, and a gate
+failure or the service's own refusal stops the arm as incomplete.
+
+    python3 workspace/improve/decision.py status
+    python3 workspace/improve/decision.py preflight-guard            # no call: the conservative guard on league requests
+    python3 workspace/improve/decision.py run --arm decision/jev-1.14.0-notes [--until S1]
+    IMPROVE_DRY=1 python3 workspace/improve/decision.py run --arm decision/fastino-glide-worst --until S1  # no call
+    python3 workspace/improve/decision.py probe-p1 --setup jev-1.14.0 --send   # billed (< $0.001); never run by tests
+
+Private outputs as in improve.py, under the arm key: smoke/improve/decision/<arm>.db, workspace/improve/runs/
+decision/<arm>/ (notes: the writer's raw reply, kept notes, delivered blocks by hash; worst: the selected turn ids and
+board keys per game), workspace/improve/runs/decision/preflight/ (guard, P1, render checks), and
+workspace/improve/out/improve-decision.json (aggregates only).
+
+Money: the live plan's rules (the $110 total with every decision-model ledger counted, the $5 OpenRouter reserve,
+rule a at 1.5 x the arm's estimate) plus the hosted allowance per provider (D6, open: $0 refuses every billed hosted
+call) and the provider subcaps (Nace $1.25, counted with the league's own Nace ledger). Every request, writer call and
+probe reserves its worst case in the step's ledger before it is sent.
+"""
+
+import argparse
+import fcntl
+import hashlib
+import json
+import math
+import os
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+import improve as I  # noqa: E402
+
+COHORT_FILE = HERE / "decision_cohort.json"
+ADDENDUM = I.STATE_ROOT / "mailbox/Did they improve - decision models - addendum 2026-11-09.md"
+ADDENDUM_SHA256 = "PENDING"  # set to the committed addendum's sha256 before the first call
+ARMS = {"notes": "helper-written notes", "worst": "worst mistakes"}
+NOTES_INTRO = "Notes a helper wrote from your earlier games in this series, oldest first:"
+WORST_OPEN = "=== WORST MISTAKES FROM YOUR EARLIER GAMES IN THIS SERIES ==="
+WORST_INTRO = "Your costliest decisions so far in this series, by GNU Backgammon's 2-ply equity loss, largest first:"
+WORST_CLOSE = "=== END OF WORST MISTAKES ==="
+WORST_N = 5
+POSITION_HEAD = "Position (your numbering; you move 24 -> 1):"
+GNUBG = "GNU Backgammon 1.08, 2-ply (score_games.py)"
+WRITER_KEY = "qwen3.8-flash-off"  # the live plan's Qwen3.8 Flash (off) lesson call, unchanged
+WRITER_SUFFIX = " | writer"
+WRITER_CALL_RESERVE = 0.018  # worst case per writer call: input bytes + 32,768 output tokens at $0.47/M
+# Requests per arm (draft §7): 5 series of (about 210 game requests + a 200-position T10) and 3 empty runs of 200.
+SERIES_SHARE, EMPTY_SHARE = 410 / 2650, 200 / 2650
+# The synthetic maximum blocks of the guard preflight (addendum): Arm N 10 games x 5 lessons x 30 words of 12 bytes
+# (the pilot's cut rule bounds lessons and words, not bytes; the longest chat notes measured 9,535 bytes / 1,460
+# words, 6.5 bytes a word); Arm W 5 examples with the largest rendered League position blocks and longest plays.
+MAX_WORD = "x" * 12
+PREFLIGHT = lambda: I.RUNS / "decision" / "preflight"  # noqa: E731
+DECISION_OUT = lambda: I.OUT / "improve-decision.json"  # noqa: E731
+
+
+# --- Cohort ----------------------------------------------------------------------------------------------------
+
+def cohort():
+    return json.loads(COHORT_FILE.read_text())
+
+
+def decided(name):
+    return cohort()["decisions"][name]["value"]
+
+
+def setups():
+    return {s["slug"]: s for s in cohort()["setups"]}
+
+
+def arm_key(slug, arm):
+    return f"decision/{slug}-{arm}"
+
+
+def split(key):
+    slug, arm = key.split("/", 1)[1].rsplit("-", 1)
+    return slug, arm
+
+
+def register():
+    """Every testable arm of the cohort into improve.ENTRIES, for the shared helpers (names, estimates, route check)."""
+    for s in cohort()["setups"]:
+        if "estimate" not in s:
+            continue
+        for arm, label in ARMS.items():
+            est = s["estimate"][arm]
+            I.ENTRIES[arm_key(s["slug"], arm)] = dict(
+                setup=s["setup"], label=f"{s['setup']} · {label}", lane=f"decision-{s['lane']}", slug=s["slug"],
+                arm=arm, hosted=s["lane"] == "hosted", provider=s.get("provider"), gate=s["gate"],
+                price=s.get("price"), estimate=est, S=est * SERIES_SHARE, E=est * EMPTY_SHARE,
+                expect=dict(models=s["expect"]))
+
+
+register()
+
+
+def arm_keys():
+    return sorted(I.ENTRIES)
+
+
+def guard_record():
+    f = PREFLIGHT() / "guard.json"
+    return json.loads(f.read_text()) if f.exists() else None
+
+
+def evidence_record(kind, slug):
+    f = PREFLIGHT() / f"{kind}-{slug}.json"
+    return json.loads(f.read_text()) if f.exists() else None
+
+
+def arm_state(slug, arm, dry=None):
+    """(state, reason) of an arm before it runs: eligible, 'not tested' (shown with its reason) or 'pending' (a
+    human decision or a preflight is missing). Dry runs skip only the billing and evidence preconditions."""
+    dry = I.DRY if dry is None else dry
+    s = setups()[slug]
+    if s.get("not_tested"):
+        return "not tested", s["not_tested"]
+    if s.get("not_started"):
+        return "not started", s["not_started"]
+    if (s.get("arm_not_tested") or {}).get(arm):
+        return "not tested", s["arm_not_tested"][arm]
+    need = s.get("needs")
+    if need == "D5_edge_settings" and arm in s.get("needs_arms", ARMS):
+        v = decided(need)
+        if v == "pending":
+            return "pending", "D5 (edge settings): Ümit's decision"
+        if v == "not_tested":
+            return "not tested", "edge settings (D5)"
+    if (s.get("arm_pending") or {}).get(arm):
+        return "pending", s["arm_pending"][arm]
+    if s["gate"]["kind"] == "client":
+        if s["gate"].get("limit_tokens") is None:
+            return "not tested", "native context limit unverified"  # no documented limit: the guard fails closed
+        g = guard_record()
+        row = (g or {}).get("setups", {}).get(slug)
+        if row is None:
+            return "pending", "conservative context guard preflight not run"
+        if row["refused"]["none"] or row["refused"][arm]:
+            return "not tested", "conservative context guard"
+    if dry:
+        return "eligible", None
+    if s["lane"] == "hosted":
+        if not (decided("D6_hosted_allowance_usd").get(s["provider"]) or 0) > 0:
+            return "pending", "D6 open: hosted spending outside OpenRouter not authorised"
+        subcap = cohort().get("provider_subcaps_usd", {}).get(s["provider"])
+        if subcap is not None and subcap - provider_booked(s["provider"]) < s["estimate"][arm]:
+            left = subcap - provider_booked(s["provider"])
+            return "pending", (f"{s['provider']} subcap: ${left:.2f} left of ${subcap:.2f} (its ledgers), below this "
+                               f"arm's ${s['estimate'][arm]:.2f} estimate; needs a subcap decision")
+        p1 = evidence_record("p1", slug)
+        if not (p1 and p1.get("passed")):
+            return "pending", "accounting probe P1 not passed"
+    else:
+        lr = evidence_record("render", slug)
+        if not (lr and lr.get("passed")):
+            return "pending", "local render check (Lr) not passed"
+    return "eligible", None
+
+
+# --- Plan binding ----------------------------------------------------------------------------------------------
+
+def check_addendum():
+    current = I.sha256_file(ADDENDUM)
+    if current != ADDENDUM_SHA256:
+        raise SystemExit(f"{ADDENDUM} ({current}) is not the published addendum {ADDENDUM_SHA256}")
+
+
+def bind_addendum(key):
+    """Before an arm's first call, store the addendum's hash next to the live plan's (improve.bind_plan); every later
+    start must find the same file."""
+    f = I.mdir(key) / "addendum.json"
+    current = I.sha256_file(ADDENDUM)
+    if not f.exists():
+        if current != ADDENDUM_SHA256:
+            raise SystemExit(f"{ADDENDUM} ({current}) is not the published addendum {ADDENDUM_SHA256}")
+        I.write_atomic(f, json.dumps(dict(addendum_sha256=current, cohort_sha256=I.sha256_file(COHORT_FILE),
+                                          bound_at=I.now()), indent=1))
+        I.log(key, "addendum_bound", addendum_sha256=current)
+        return current
+    stored = json.loads(f.read_text())["addendum_sha256"]
+    if current != stored:
+        raise SystemExit(f"{key}: the addendum now hashes {current}, but this arm is bound to {stored}: refused")
+    return stored
+
+
+# --- Player and writer configs ---------------------------------------------------------------------------------
+
+def player_config(key, name, parallel, note_file=None, ledger=None):
+    """The leaderboard setup's settings (v3.db), unchanged except name, parallel (never above the league's),
+    prompt_note_file, budget (this experiment's step ledger, never the league's), expect_route and context_gate."""
+    m = I.entry(key)
+    if I.DRY:
+        p = dict(name=name, spec="safest", note="dry run: the safest program in the decision model's seat")
+    else:
+        p = I.league_settings(m["setup"])
+    league_parallel = p.get("parallel")
+    p.update(name=name, parallel=min(parallel, league_parallel) if league_parallel else parallel)
+    p.pop("max_matches", None)
+    p.pop("budget", None)
+    if note_file is not None:
+        p["prompt_note_file"] = str(note_file)
+    if base := I.base_url_of(key):
+        p["base_url"] = base
+    if I.DRY:
+        return p
+    if ledger is not None:
+        cin, ccached, cout = m["price"] or (0.0, 0.0, 0.0)
+        p["budget"] = dict(ledger=str(ledger["path"]), cap_usd=round(ledger["cap"], 6), input_per_mtok=cin,
+                           cached_input_per_mtok=ccached, output_per_mtok=cout)
+    p["expect_route"] = dict(models=m["expect"]["models"], reject_log=str(I.mdir(key) / "route-rejections.jsonl"))
+    p["context_gate"] = m["gate"]
+    return p
+
+
+def writer_config(key, name, ledger):
+    """The writer: the live plan's Qwen3.8 Flash (off) lesson-call config (improve.player_config, unchanged) in this
+    arm's step ledger, with its own route check and rejection log."""
+    cfg = I.player_config(WRITER_KEY, name + WRITER_SUFFIX, 1, ledger=ledger)
+    cfg["expect_route"]["reject_log"] = str(I.mdir(key) / "writer-rejections.jsonl")
+    return cfg
+
+
+def writer_expect():
+    return I.MODELS[WRITER_KEY]["expect"]
+
+
+# --- Money -----------------------------------------------------------------------------------------------------
+
+def booked_rows(path, writer=None):
+    """Booked dollars of a ledger (settled + lost + open), all rows or only the writer's / the player's."""
+    import sqlite3
+    if not Path(path).exists():
+        return 0.0
+    db = sqlite3.connect(f"file:{path}?mode=ro", uri=True, timeout=60)
+    where = "" if writer is None else ("WHERE setup LIKE ?" if writer else "WHERE setup NOT LIKE ?")
+    args = () if writer is None else (f"%{WRITER_SUFFIX}",)
+    try:
+        (v,) = db.execute("SELECT COALESCE(SUM(CASE status WHEN 'settled' THEN cost_usd ELSE reserved_usd END), 0) "
+                          f"FROM attempts {where}", args).fetchone()
+    except sqlite3.OperationalError:
+        v = 0.0
+    db.close()
+    return v
+
+
+def provider_booked(provider):
+    """A provider's booked dollars: this experiment's player and probe rows (writer rows are OpenRouter's) plus the
+    provider's own existing ledgers that share its subcap (Nace: the league's $1.25 ledger)."""
+    total = 0.0
+    for path in sorted((I.RUNS / "decision").glob("*/ledgers/*.db")):
+        slug = path.parent.parent.name.rsplit("-", 1)[0]
+        s = setups().get(slug)
+        if s and s.get("provider") == provider:
+            total += booked_rows(path, writer=False)
+    for rel in cohort().get("provider_ledgers", {}).get(provider, []):
+        total += booked_rows(I.STATE_ROOT / rel)
+    return total
+
+
+def needs_ledger(key, step):
+    m = I.entry(key)
+    return m["hosted"] or (m["arm"] == "notes" and step.startswith("S"))
+
+
+def money_gate(key, step, balance_reader=I.openrouter_balance):
+    """Before a billed step: rule (b) over every ledger, the share limit, the hosted allowance (D6) and subcap, and for
+    a step with writer calls the OpenRouter balance less the $5 reserve. Returns the step ledger's cap and record."""
+    m = I.entry(key)
+    expected = I.step_estimate(key, step)
+    total = I.billed_total()
+    if why := I.rule_b(total, expected):
+        raise I.Stop(why)
+    share = I.share_cap()
+    if why := I.share_exceeded(total, expected, share):
+        raise I.Pause(why)
+    limits = {"rule (a) limit": I.ESTIMATE_FACTOR * m["estimate"] - I.billed(key),
+              "rule (b) limit": I.TOTAL_CAP_USD - total}
+    if share is not None:
+        limits["share"] = share - total
+    credits = None
+    if m["hosted"]:
+        allowance = decided("D6_hosted_allowance_usd").get(m["provider"]) or 0
+        if not allowance > 0:
+            raise I.Pause(f"D6 open: hosted spending on {m['provider']} is not authorised (allowance $0); no billed call")
+        cap = min(allowance, cohort().get("provider_subcaps_usd", {}).get(m["provider"], math.inf))
+        limits["provider cap"] = cap - provider_booked(m["provider"])
+    if m["arm"] == "notes" and step.startswith("S"):
+        credits = balance_reader()
+        if why := I.balance_shortfall(credits["balance"], I.GAMES * WRITER_CALL_RESERVE):
+            raise I.Pause(why)
+        limits["balance"] = credits["balance"] - I.BALANCE_RESERVE_USD
+    binding = min(limits, key=limits.get)
+    return dict(step=step, expected=expected, billed_total=total, model_billed=I.billed(key), credits=credits,
+                cap=limits[binding], binding=binding, limits=limits, share=share)
+
+
+# --- Arm W: the worst-mistakes selector ------------------------------------------------------------------------
+
+def select_worst(decs, exclude, n=WORST_N):
+    """Addendum §5: eligible = model-decided, valid, GNUbg-scored decisions whose board is not a frozen test
+    position (removed before selection) and whose loss does not print as 0.000; largest loss first at full
+    precision, ties by earlier game, lower turn number, lower turn id. Returns (selected, excluded test positions)."""
+    scored = [d for d in decs if d["scored"] and not d["invalid"]]
+    excluded = [d for d in scored if d["board_key"] in exclude]
+    pool = [d for d in scored if d["board_key"] not in exclude and f"{d['loss']:.3f}" != "0.000"]
+    pool.sort(key=lambda d: (-d["loss"], d["game"], d["turn_no"], d["turn_id"]))
+    return pool[:n], excluded
+
+
+def render_states(rows):
+    """The league state text (`jevgammon render`, prompt bg-v2, League 2's order seed) for rows of
+    {position, dice}: the runner's own rendering, no model call."""
+    payload = "".join(json.dumps(dict(position=r["position"], dice=list(r["dice"]), prompt=I.PROMPT_VERSION)) + "\n"
+                      for r in rows)
+    out = subprocess.run([str(I.BIN), "render", "--order-seed", str(I.ORDER_SEED)], input=payload, cwd=I.CODE,
+                         capture_output=True, text=True)
+    if out.returncode != 0:
+        raise RuntimeError(f"render failed: {out.stderr[-1000:]}")
+    return [json.loads(x) for x in out.stdout.splitlines() if x.strip()]
+
+
+def position_block(state):
+    """The league prompt's position block, verbatim: 'Position (your numbering; you move 24 -> 1):' through the
+    'Dice: a-b' line (the last one: a block at the start of the state may hold earlier examples)."""
+    i = state.rfind(POSITION_HEAD)
+    j = state.index("\nDice: ", i)
+    k = state.index("\n", j + 1)
+    return state[i:k]
+
+
+def worst_block(chosen, blocks):
+    """The addendum's serialization: board, chosen play, best play and loss only."""
+    if not chosen:
+        return ""
+    lines = [WORST_OPEN, WORST_INTRO, ""]
+    for k, (d, pos) in enumerate(zip(chosen, blocks), 1):
+        lines += [f"Example {k} (game {d['game']}, turn {d['turn_no']}):", pos,
+                  f"You played: {d['plays'][d['chosen']]}. GNUbg's best play: {d['plays'][d['best']]}. "
+                  f"Equity lost: {d['loss']:.3f}.", ""]
+    return "\n".join(lines + [WORST_CLOSE])
+
+
+# --- Steps -----------------------------------------------------------------------------------------------------
+
+def test_config(key):
+    return lambda name, parallel, ledger: player_config(key, name, parallel, ledger=ledger)
+
+
+def run_empty(key, step, gate):
+    d = I.step_dir(key, step)
+    ledger = I.new_ledger(key, step, gate)
+    if ledger:
+        I.write_atomic(d / "ledger.json", json.dumps(dict(ledger, path=str(ledger["path"]), gate=gate), indent=1))
+    m = I.run_test(key, step, I.test_name(key, step), "", d, ledger=ledger, config=test_config(key))
+    if not I.test_complete(m):
+        raise RuntimeError(f"{step}: {m['answered']} answered, {m['failed']} failed; run again to re-ask")
+    I.write_atomic(d / "aggregate.json", json.dumps(dict(step=step, finished_at=I.now(), test=m), indent=1))
+
+
+def shared_empty(key, step):
+    """D1 shared: the worst arm's empty runs are the notes arm's (same setup, same schedule); it waits for them."""
+    slug, _ = split(key)
+    src = I.step_dir(arm_key(slug, "notes"), step) / "aggregate.json"
+    if not src.exists():
+        raise I.Pause(f"{step}: waiting for the shared empty run of {arm_key(slug, 'notes')} (D1 shared)")
+    agg = json.loads(src.read_text())
+    I.write_atomic(I.step_dir(key, step) / "aggregate.json",
+                   json.dumps(dict(agg, shared_from=arm_key(slug, "notes")), indent=1))
+
+
+def run_series(key, step, gate):
+    s = I.series_of(step)
+    d = I.step_dir(key, step)
+    d.mkdir(parents=True, exist_ok=True)
+    attempt = I.attempt_of(key, step)
+    name = I.game_name(key, s, attempt)
+    prior = I.match_of(key, name)
+    if prior is not None and not (d / "match.done").exists():
+        I.archive_attempt(key, step, (d / "failed").read_text() if (d / "failed").exists() else f"match {prior}")
+        d.mkdir(parents=True, exist_ok=True)
+        attempt = I.attempt_of(key, step)
+        name = I.game_name(key, s, attempt)
+    ledger = I.new_ledger(key, step, gate)
+    if ledger:
+        I.write_atomic(d / "ledger.json", json.dumps(dict(ledger, path=str(ledger["path"]), gate=gate), indent=1))
+    player = player_config(key, name, 1, note_file=d / "note.txt", ledger=ledger)
+    I.held(key, step)
+    if not (d / "match.done").exists():
+        I.log(key, "series_start", step=step, attempt=attempt, seed=I.series_seed(s), arm=I.entry(key)["arm"],
+              lesson_prompt_sha256=I.lesson_prompt_sha256())
+        (d / "note.txt").write_text("")  # the series starts with no block (reset)
+        I.write_atomic(d / "player.json", json.dumps(player, indent=1))
+        hook = f"{sys.executable} {Path(__file__).resolve()} after-game --arm {key} --series {s}"
+        r = subprocess.run([str(I.BIN), "--model1-config", str(d / "player.json"), "--model2", "gnubg-weak",
+                            "--seed", str(I.series_seed(s)), "--order-seed", str(I.ORDER_SEED), "--rounds",
+                            str(I.GAMES // 2), "--fixed-rounds", "--clock", "0", "--max-turns",
+                            str(I.TEST_CONTEXT["max_turns"]), "--prompt-version", I.PROMPT_VERSION, "--quiet",
+                            "--db", str(I.db_path(key)), "--after-game", hook], cwd=I.CODE, capture_output=True,
+                           text=True, env=dict(os.environ))
+        (d / "match.log").write_text(r.stdout + r.stderr)
+        if r.returncode != 0:
+            (d / "failed").write_text(r.stderr[-2000:])
+            I.log(key, "series_failed", step=step, attempt=attempt, stderr=r.stderr[-1000:])
+            if stop := I.context_stop(r.stderr):
+                raise stop  # the games so far stay stored; nothing is replayed, shortened or scored from a subset
+            if "ROUTE CHECK" in r.stderr:
+                raise I.Stop(f"{step}: {r.stderr[-600:]}")
+            if (text := I.key_limit_text(r.stderr)) or "KEY LIMIT:" in r.stderr:
+                I.key_limit_pause(key, step, text or r.stderr[-600:])
+            if "BUDGET CAP" in r.stderr:
+                raise I.BudgetRefused(r.stderr[-500:])
+            raise RuntimeError(f"{key} {step}: match failed: {r.stderr[-800:]}")
+        I.write_atomic(d / "match.done", str(I.match_of(key, name)[0]))
+    context = (d / "contexts" / "after-g10.txt").read_text() if (d / "contexts" / "after-g10.txt").exists() else ""
+    m = I.run_test(key, step, I.test_name(key, step, attempt), context, d, ledger=ledger, config=test_config(key))
+    m["wall_seconds"] = round(m["wall_seconds"] + sum(e.get("wall_seconds", 0) for e in I.events(key) if e["event"] ==
+                                                      "t10_asked" and e["step"] == step and e.get("attempt") == attempt), 1)
+    if not I.test_complete(m):
+        raise RuntimeError(f"{step} T10: {m['answered']} answered, {m['failed']} failed; run again to re-ask")
+    write_aggregate(key, step, attempt, m)
+
+
+def after_game(key, s):
+    """The runner's after-game hook: score the game; notes: one writer call; worst: the selector; the next game's
+    block; T10 after game 10 with the series' last block."""
+    step = f"S{s}"
+    d = I.step_dir(key, step)
+    attempt = I.attempt_of(key, step)
+    match_id = int(os.environ["MATCH_ID"])
+    g = 2 * (int(os.environ["GAME_ROUND"]) - 1) + int(os.environ["GAME_LEG"])
+    if I.DRY and os.environ.get("IMPROVE_DRY_FAIL_AFTER_GAME") == str(g):
+        raise SystemExit(f"dry-run fault injection after game {g}")
+    I.score_match(key, match_id)
+    exclude = I.test_board_keys()
+    decs = I.game_decisions(key, match_id, g)
+    excluded = sum(1 for x in decs if x["scored"] and x["game"] == g and x["board_key"] in exclude)
+    I.log(key, "test_positions_excluded", step=step, game=g, n=excluded)
+    if I.entry(key)["arm"] == "notes":
+        results = I.game_results(key, match_id)
+        ok = [x for x in I.eligible(decs, exclude) if x["game"] == g]
+        record = "\n".join([I.game_header(g, results)] + [I.record_line(x) for x in ok])
+        write_notes(key, step, g, record)
+        blocks = [(k, (d / f"notes-g{k:02d}.txt").read_text().strip()) for k in range(1, g + 1)]
+        block = I.lessons_context(blocks, intro=NOTES_INTRO)
+    else:
+        chosen, _ = select_worst(decs, exclude)
+        states = render_states(chosen) if chosen else []
+        block = worst_block(chosen, [position_block(x["state"]) for x in states])
+        I.write_atomic(d / f"worst-g{g:02d}.json", json.dumps(dict(
+            after_game=g, gnubg=GNUBG, scores=str(I.plays_path(key)), scores_sha256=I.sha256_file(I.plays_path(key)),
+            test_positions_excluded_so_far=sum(1 for x in decs if x["scored"] and x["board_key"] in exclude),
+            selected=[dict(turn_id=x["turn_id"], game=x["game"], turn_no=x["turn_no"], board_key=x["board_key"],
+                           loss=x["loss"]) for x in chosen]), indent=1))
+        I.log(key, "worst_selected", step=step, after_game=g, n=len(chosen))
+    I.write_atomic(d / "note.txt", block)
+    (d / "contexts").mkdir(exist_ok=True)
+    (d / "contexts" / f"after-g{g:02d}.txt").write_text(block)
+    I.log(key, "context", step=step, after_game=g, chars=len(block),
+          sha256=hashlib.sha256(block.encode()).hexdigest())
+    if g == I.GAMES:
+        ledger = json.loads((d / "ledger.json").read_text()) if (d / "ledger.json").exists() else None
+        try:
+            m = I.run_test(key, step, I.test_name(key, step, attempt), block, d, ledger=ledger, rounds=1,
+                           config=test_config(key))
+            I.log(key, "t10_asked", step=step, attempt=attempt, answered=m["answered"], failed=m["failed"],
+                  wall_seconds=m["wall_seconds"])
+        except Exception as e:  # noqa: BLE001  (re-asked, or stopped, by run_series)
+            I.log(key, "t10_deferred", step=step, error=str(e)[-500:])
+
+
+def write_notes(key, step, g, record):
+    """One writer call after game g (the pilot's prompt, byte-identical), retried until it returns; a refused budget
+    reservation or a failed route check stops at once. Stores the raw reply, the kept notes and the cut counts."""
+    d = I.step_dir(key, step)
+    user = I.LESSONS_USER.read_text().format(game=g, record=record)
+    system = I.LESSONS_SYSTEM.read_text().strip()
+    (d / "writer-system.txt").write_text(system)
+    (d / f"writer-g{g:02d}.user.txt").write_text(user)
+    call = d / f"writer-g{g:02d}.call.json"
+    if I.DRY:
+        raw = "\n".join(f"- (dry run) game {g} note {k}: " + " ".join(["placeholder"] * 24) for k in range(1, 7))
+        out = dict(text=raw, dry=True, input_tokens=0, output_tokens=0, cost_usd=None, reported_cost_usd=None,
+                   in_flight=1, wall_ms=0, exchanges=[])
+        I.write_atomic(call, json.dumps(out, indent=1))
+    else:
+        ledger = json.loads((d / "ledger.json").read_text()) if (d / "ledger.json").exists() else None
+        cfg = writer_config(key, I.game_name(key, I.series_of(step), I.attempt_of(key, step)), ledger)
+        (d / "writer-player.json").write_text(json.dumps(cfg, indent=1))
+        for k in range(20):
+            r = subprocess.run([str(I.BIN), "lesson", "--player", str(d / "writer-player.json"), "--system",
+                                str(d / "writer-system.txt"), "--user", str(d / f"writer-g{g:02d}.user.txt"),
+                                "--out", str(call)], cwd=I.CODE, capture_output=True, text=True)
+            if r.returncode == 0:
+                break
+            I.log(key, "writer_call_failed", step=step, game=g, attempt=k + 1, stderr=r.stderr[-500:])
+            if "ROUTE CHECK" in r.stderr:
+                raise SystemExit(f"ROUTE CHECK: writer call rejected: {r.stderr[-600:]}")
+            if text := I.key_limit_text(r.stderr):
+                I.write_atomic(I.mdir(key) / "hold.json", json.dumps(dict(
+                    reason="paused: shared-balance priority (provider account limit: HTTP 403 key limit / 402 credits)",
+                    at=I.now(), step=step), indent=1))
+                raise SystemExit(f"KEY LIMIT: writer call after game {g}: {text[:300]}")
+            if "BUDGET CAP" in r.stderr:
+                raise SystemExit(f"BUDGET CAP: writer call refused: {r.stderr[-300:]}")
+            time.sleep(min(600, 30 * (k + 1)))
+        else:
+            raise SystemExit(f"writer call after game {g} failed 20 times")
+        out = json.loads(call.read_text())
+    raw = out.get("text") or ""
+    (d / f"writer-g{g:02d}.raw.txt").write_text(raw)
+    text, cut = I.limit_lessons(raw.strip())
+    I.write_atomic(d / f"notes-g{g:02d}.txt", text + "\n")
+    I.log(key, "writer_call", step=step, game=g, input_tokens=out.get("input_tokens"),
+          output_tokens=out.get("output_tokens"), cost_usd=out.get("cost_usd"),
+          reported_cost_usd=out.get("reported_cost_usd"), wall_ms=out.get("wall_ms"), empty=not text, **cut)
+    return text, cut
+
+
+def write_aggregate(key, step, attempt, t10):
+    d = I.step_dir(key, step)
+    match_id = int((d / "match.done").read_text())
+    decs = I.game_decisions(key, match_id)
+    results = I.game_results(key, match_id)
+    ev = [e for e in I.events(key) if e.get("step") == step]
+    calls = [e for e in ev if e["event"] == "writer_call"][-I.GAMES:]
+    agg = dict(step=step, series=I.series_of(step), attempt=attempt, arm=I.entry(key)["arm"],
+               seed=I.series_seed(I.series_of(step)), finished_at=I.now(), games=len(results),
+               wins=sum(r["won"] for r in results.values()), game_decisions=len(decs),
+               game_invalid=sum(x["invalid"] for x in decs),
+               game_in_flight_max=max((x["in_flight"] or 0 for x in decs), default=0),
+               writer_calls=len(calls), notes_cut=sum(bool(e.get("cut")) for e in calls),
+               notes_empty=sum(bool(e.get("empty")) for e in calls),
+               worst_blocks=sum(1 for e in ev if e["event"] == "worst_selected"), restarts=attempt - 1,
+               context_sha256={e["after_game"]: e["sha256"] for e in ev if e["event"] == "context"},
+               test_positions_excluded=sum(e["n"] for e in ev if e["event"] == "test_positions_excluded"),
+               t10=t10, lesson_prompt_sha256=I.lesson_prompt_sha256(), test_set_sha256=I.sha256_file(I.TEST_SET))
+    I.write_atomic(d / "aggregate.json", json.dumps(agg, indent=1))
+
+
+def writer_route_check(key, step):
+    """None, or why a writer reply of the step does not name the pinned writer model and provider."""
+    exp = writer_expect()
+    ids = []
+    for f in I.step_dir(key, step).rglob("writer-g*.call.json"):
+        for x in json.loads(f.read_text()).get("exchanges", []):
+            try:
+                v = json.loads(x.get("response"))
+                ids.append((I.pointer(v, "/model"), I.pointer(v, "/provider")))
+            except (TypeError, ValueError):
+                ids.append((None, None))
+    bad = sorted({(m, p) for m, p in ids if m not in exp["models"] or p != exp["provider"]}, key=str)
+    if bad:
+        return f"writer route check: replies named {bad[:5]}, expected {exp['models']} on {exp['provider']}"
+    return None
+
+
+# --- Run -------------------------------------------------------------------------------------------------------
+
+def run(key, until=None, balance_reader=I.openrouter_balance):
+    """Runs the arm's next steps in order; returns 0 (done or reached `until`), STOP or PAUSE (also for an arm that
+    is not eligible: nothing is called)."""
+    slug, arm = split(key)
+    m = I.entry(key)
+    state, why = arm_state(slug, arm)
+    if state != "eligible":
+        print(f"{key}: {state}: {why}; nothing called", file=sys.stderr)
+        return I.PAUSE if state == "pending" else I.STOP
+    hold = I.mdir(key) / "hold.json"
+    if hold.exists():
+        why = json.loads(hold.read_text())["reason"]
+        I.write_atomic(I.mdir(key) / "paused.json", json.dumps(dict(at=I.now(), reason=why), indent=1))
+        I.log(key, "paused", reason=why)
+        return I.PAUSE
+    I.check_inputs()
+    check_addendum()
+    I.mdir(key).mkdir(parents=True, exist_ok=True)
+    lock = open(I.mdir(key) / "lock", "w")
+    try:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        raise SystemExit(f"{key}: another run holds the lock") from None
+    hosted_lock = None
+    if m["hosted"]:
+        # One hosted arm at a time: the provider subcaps and the $110 are checked per step, never by two at once.
+        (I.RUNS / "decision").mkdir(parents=True, exist_ok=True)
+        hosted_lock = open(I.RUNS / "decision" / "hosted.lock", "w")
+        try:
+            fcntl.flock(hosted_lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            lock.close()
+            raise SystemExit(f"{key}: another hosted decision arm is running") from None
+    if (I.mdir(key) / "stopped.json").exists():
+        print(f"{key}: stopped: {json.loads((I.mdir(key) / 'stopped.json').read_text())['reason']}")
+        lock.close()
+        return I.STOP
+    (I.mdir(key) / "paused.json").unlink(missing_ok=True)
+    I.ensure_runner_db(key)
+    I.bind_plan(key)
+    bind_addendum(key)
+    shared = decided("D1_empty_runs") == "shared"
+    try:
+        while (step := I.next_step(key)) is not None:
+            for f in ("route-rejections.jsonl", "writer-rejections.jsonl"):
+                rejected = I.mdir(key) / f
+                if rejected.exists() and rejected.stat().st_size:
+                    raise I.Stop(f"route check: {rejected.read_text().splitlines()[0][:600]}")
+            if shared and arm == "worst" and step.startswith("E"):
+                shared_empty(key, step)
+                I.log(key, "step_done", step=step, shared_from=arm_key(slug, "notes"))
+                continue
+            gate = money_gate(key, step, balance_reader) if needs_ledger(key, step) and not I.DRY else None
+            I.log(key, "step_start", step=step, gate=gate, binary=I.binary_identity(),
+                  cohort_sha256=I.sha256_file(COHORT_FILE))
+            try:
+                (run_empty if step.startswith("E") else run_series)(key, step, gate)
+            except I.BudgetRefused as e:
+                binding = (gate or {}).get("binding", "")
+                if binding in ("balance", "share"):
+                    raise I.Pause(f"{step}: the step ledger's balance limit refused a request: {e}") from None
+                raise I.Stop(f"{step}: {binding} reached before a request: {e}") from None
+            if not I.DRY:
+                why = I.route_check(key, I.response_ids(key, step)) or writer_route_check(key, step)
+                if why:
+                    raise I.Stop(f"{step}: {why}")
+            I.log(key, "step_done", step=step, billed=I.billed(key, step))
+            if needs_ledger(key, "S1") and not I.DRY and I.step_done(key, "E1") and I.step_done(key, "S1") \
+                    and I.cost_check(key) is None:
+                s1, e1 = I.billed(key, "S1"), I.billed(key, "E1")
+                why = I.rule_a(key, s1, e1)
+                I.write_atomic(I.mdir(key) / "cost_check.json", json.dumps(
+                    dict(at=I.now(), S1=s1, E1=e1, projected=I.projected_full(s1, e1), estimate=m["estimate"],
+                         limit=I.ESTIMATE_FACTOR * m["estimate"], fired=why), indent=1))
+                if why:
+                    raise I.Stop(why)
+            summary()
+            if step == until:
+                return 0
+        return 0
+    except (I.Stop, I.Pause) as e:
+        kind = "paused" if isinstance(e, I.Pause) else "stopped"
+        I.write_atomic(I.mdir(key) / f"{kind}.json", json.dumps(dict(at=I.now(), reason=str(e)), indent=1))
+        I.log(key, kind, reason=str(e))
+        print(f"{kind.upper()} {key}: {e}", file=sys.stderr)
+        return I.PAUSE if kind == "paused" else I.STOP
+    finally:
+        summary()
+        lock.close()
+        if hosted_lock:
+            hosted_lock.close()
+
+
+# --- Preflight: the conservative context guard on retained league requests (no call) ---------------------------
+
+def synthetic_notes_block():
+    """The largest notes block the cut rule allows: 10 games x 5 lessons x 30 words (12 bytes a word)."""
+    lesson = "- " + " ".join([MAX_WORD] * 30)
+    return I.lessons_context([(g, "\n".join([lesson] * I.MAX_LESSONS)) for g in range(1, I.GAMES + 1)],
+                             intro=NOTES_INTRO)
+
+
+def checker_text_length(position):
+    """An upper estimate of the checker lists' length of a stored position (either numbering), for picking the
+    League positions whose rendered position block can be the largest."""
+    pts = position["points"]
+
+    def side(sign, numbering):
+        return sum(len(f"{numbering(i)}:{abs(n)} ") for i, n in enumerate(pts) if n * sign > 0)
+    return sum(max(side(s, f) for f in (lambda i: i + 1, lambda i: 24 - i)) for s in (1, -1))
+
+
+def league_rows(candidates=2000):
+    """The `candidates` distinct model-decided League positions of v3.db (board and dice) with the longest checker
+    lists: the rendered position block is those lists plus fixed lines and a few digits, so the largest blocks are
+    among them (rendering all 185,900 takes over 15 minutes)."""
+    import sqlite3
+    db = sqlite3.connect(f"file:{I.V3_DB}?mode=ro", uri=True, timeout=60)
+    rows = [dict(position=json.loads(p), dice=(a, b))
+            for p, a, b in db.execute("SELECT DISTINCT position, die1, die2 FROM turns WHERE decided_by = 'model'")]
+    db.close()
+    rows.sort(key=lambda r: checker_text_length(r["position"]), reverse=True)
+    return rows[:candidates]
+
+
+def longest_play():
+    """The longest play notation any League decision chose (v3.db turns.move)."""
+    import sqlite3
+    db = sqlite3.connect(f"file:{I.V3_DB}?mode=ro", uri=True, timeout=60)
+    (move,) = db.execute("SELECT move FROM turns ORDER BY length(move) DESC LIMIT 1").fetchone()
+    db.close()
+    return move
+
+
+def synthetic_worst_block(rows=None):
+    """The largest worst-mistakes block: the 5 largest rendered League position blocks, the longest League play
+    notation as both plays, two-digit game and three-digit turn numbers, a four-digit loss."""
+    states = render_states(rows if rows is not None else league_rows())
+    blocks = sorted((position_block(x["state"]) for x in states), key=lambda b: len(b.encode()), reverse=True)[:WORST_N]
+    longest = longest_play()
+    chosen = [dict(game=10, turn_no=299, plays=[longest], chosen=0, best=0, loss=9.999) for _ in blocks]
+    return worst_block(chosen, blocks)
+
+
+def added_bytes(block):
+    """Bytes a block adds to a request body: the JSON-escaped block and its blank-line separator."""
+    return len(json.dumps(block + "\n\n", ensure_ascii=False).encode()) - 2
+
+
+def guard_preflight(write=True, notes=None, worst=None):
+    """Per hosted setup with a client gate: of its retained league requests (v3.db, valid matches), how many the
+    conservative guard (request bytes + wrapper + output > documented limit) refuses with no block, with the largest
+    notes block and with the largest worst-mistakes block. A setup with any refusal is 'not tested: conservative
+    context guard' for that arm (none: both arms). Recorded in preflight/guard.json; no call."""
+    import sqlite3
+    notes = notes if notes is not None else synthetic_notes_block()
+    worst = worst if worst is not None else synthetic_worst_block()
+    extra = dict(none=0, notes=added_bytes(notes), worst=added_bytes(worst))
+    db = sqlite3.connect(f"file:{I.V3_DB}?mode=ro", uri=True, timeout=60)
+    out = dict(at=I.now(), method="v3.db exchanges of the setup's valid matches with a response; bound = request bytes"
+               " + block bytes + wrapper (4,096 when undocumented) + output tokens", added_bytes=extra,
+               notes_block_sha256=hashlib.sha256(notes.encode()).hexdigest(),
+               worst_block_sha256=hashlib.sha256(worst.encode()).hexdigest(), setups={})
+    for s in cohort()["setups"]:
+        g = s.get("gate")
+        if not g or g["kind"] != "client":
+            continue
+        (pid,) = db.execute("SELECT id FROM players WHERE name = ?", (s["setup"],)).fetchone()
+        sizes = [r[0] for r in db.execute(
+            "SELECT length(CAST(x.request AS BLOB)) FROM exchanges x JOIN turns t ON t.id = x.turn_id "
+            "JOIN games gm ON gm.id = t.game_id JOIN matches m ON m.id = gm.match_id WHERE m.valid = 1 AND "
+            "x.response IS NOT NULL AND ((m.player1 = ? AND t.player = 1) OR (m.player2 = ? AND t.player = 2))",
+            (pid, pid))]
+        wrapper = g.get("wrapper_tokens") or 4096
+        limit = g.get("limit_tokens")
+        refused = {k: (len(sizes) if limit is None else sum(1 for b in sizes if b + e + wrapper +
+                                                            g.get("output_tokens", 0) > limit))
+                   for k, e in extra.items()}
+        out["setups"][s["slug"]] = dict(setup=s["setup"], requests=len(sizes), max_bytes=max(sizes, default=0),
+                                        limit_tokens=limit, wrapper_tokens=wrapper, refused=refused,
+                                        refused_share={k: (v / len(sizes) if sizes else None) for k, v in refused.items()})
+    db.close()
+    if write:
+        I.write_atomic(PREFLIGHT() / "guard.json", json.dumps(out, indent=1))
+    return out
+
+
+# --- Preflight: hosted accounting probe P1 (billed; implemented, run only by an operator) ------------------------
+
+def probe_p1(slug, send=False):
+    """Addendum §6.1(b): one stored 2-option League request of the setup, sent without and with the largest notes
+    block through the runner (`jevgammon ask`, context gate and route check on, a $0.01 ledger counted in the
+    provider's spend). Passes when the reported input tokens rise. Billed: refuses unless `send` and D6 allows it."""
+    import sqlite3
+    s = setups()[slug]
+    if s.get("evidence") not in ("Hc", "unverified") or s["lane"] != "hosted":
+        raise SystemExit(f"{slug}: P1 applies to hosted rows run by the cohort only")
+    if not (decided("D6_hosted_allowance_usd").get(s["provider"]) or 0) > 0:
+        raise SystemExit(f"{slug}: D6 open: no allowance for {s['provider']}; P1 not sent")
+    if not send:
+        raise SystemExit(f"{slug}: P1 sends two billed requests; pass --send")
+    I.check_inputs()
+    check_addendum()
+    key = f"decision/{slug}-probe"
+    db = sqlite3.connect(f"file:{I.V3_DB}?mode=ro", uri=True, timeout=60)
+    (pid,) = db.execute("SELECT id FROM players WHERE name = ?", (s["setup"],)).fetchone()
+    row = db.execute("SELECT t.position, t.die1, t.die2 FROM turns t JOIN games gm ON gm.id = t.game_id JOIN matches m "
+                     "ON m.id = gm.match_id WHERE m.valid = 1 AND t.legal_count = 2 AND t.decided_by = 'model' AND "
+                     "((m.player1 = ? AND t.player = 1) OR (m.player2 = ? AND t.player = 2)) ORDER BY t.id LIMIT 1",
+                     (pid, pid)).fetchone()
+    db.close()
+    d = I.mdir(key)
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "position.jsonl").write_text(json.dumps(dict(id="p1", position=json.loads(row[0]), dice=[row[1], row[2]],
+                                                      prompt=I.PROMPT_VERSION)) + "\n")
+    cap = min(0.01, (decided("D6_hosted_allowance_usd")[s["provider"]]) - provider_booked(s["provider"]))
+    ledger = dict(path=d / "ledgers" / "P1-a1.db", cap=cap)
+    (d / "ledgers").mkdir(exist_ok=True)
+    m = dict(I.ENTRIES[arm_key(slug, "notes")])
+    I.ENTRIES[key] = dict(m, arm="probe")
+    tokens = {}
+    for variant, note in (("plain", ""), ("block", synthetic_notes_block())):
+        name = f"{s['setup']} | improve | P1 | {variant}"
+        cfg = dict(I.TEST_CONTEXT, prompt_version=I.PROMPT_VERSION, order_seed=I.ORDER_SEED,
+                   players=[dict(player_config(key, name, 1, ledger=ledger), **({"prompt_note": note} if note else {}))])
+        (d / f"p1-{variant}.json").write_text(json.dumps(cfg, indent=1))
+        r = subprocess.run([str(I.BIN), "ask", "--config", str(d / f"p1-{variant}.json"), "--positions",
+                            str(d / "position.jsonl"), "--out", str(I.db_path(key)), "--setup", name], cwd=I.CODE,
+                           capture_output=True, text=True)
+        (d / f"p1-{variant}.log").write_text(r.stdout + r.stderr)
+        conn = sqlite3.connect(f"file:{I.db_path(key)}?mode=ro", uri=True, timeout=60)
+        resp = conn.execute("SELECT x.response FROM answer_exchanges x JOIN answers a ON a.id = x.answer_id "
+                            "WHERE a.setup = ? ORDER BY x.id DESC LIMIT 1", (name,)).fetchone()
+        conn.close()
+        tokens[variant] = I.pointer(json.loads(resp[0]), "/usage/input_tokens") if resp and resp[0] else None
+    passed = tokens["plain"] is not None and tokens["block"] is not None and tokens["block"] > tokens["plain"]
+    rec = dict(at=I.now(), setup=s["setup"], input_tokens=tokens, passed=passed,
+               note="accounting evidence only: billing can precede a cut (addendum §6.1)")
+    I.write_atomic(PREFLIGHT() / f"p1-{slug}.json", json.dumps(rec, indent=1))
+    return rec
+
+
+# --- Summary (aggregates only; the page's decision rows) -------------------------------------------------------
+
+def arm_summary(slug, arm):
+    s = setups()[slug]
+    key = arm_key(slug, arm)
+    pre_state, pre_reason = arm_state(slug, arm)
+    row = dict(setup=s["setup"], arm=arm, label=f"{s['setup']} · {ARMS[arm]}", chosen_by=s.get("chosen_by"),
+               lane=s["lane"], evidence=s.get("evidence"), delivery_flag=s.get("delivery_flag"),
+               page_note=s.get("page_note"), state=pre_state, reason=pre_reason)
+    if key in I.ENTRIES and I.mdir(key).exists() and any(e["event"] == "step_start" for e in I.events(key)):
+        state, reason = I.model_state(key)
+        if state == "stopped" and reason.startswith("incomplete"):
+            state = "incomplete"
+        row.update(state=state, reason=reason)
+        row["empty"] = [{k: json.loads((I.step_dir(key, e) / "aggregate.json").read_text())["test"][k]
+                         for k in I.TEST_KEYS} for e in ("E1", "E2", "E3") if I.step_done(key, e)]
+        row["series"] = []
+        for n in range(1, I.SERIES + 1):
+            f = I.step_dir(key, f"S{n}") / "aggregate.json"
+            if f.exists():
+                a = json.loads(f.read_text())
+                row["series"].append(dict(series=n, games=a["games"], wins=a["wins"], writer_calls=a["writer_calls"],
+                                          notes_cut=a["notes_cut"], worst_blocks=a["worst_blocks"],
+                                          test_positions_excluded=a["test_positions_excluded"],
+                                          t10={k: a["t10"][k] for k in I.TEST_KEYS}))
+        row["cost"] = dict(booked_usd=round(I.billed(key), 4), estimate_usd=I.entry(key)["estimate"])
+    return row
+
+
+def summary():
+    rows = [arm_summary(s["slug"], arm) for s in cohort()["setups"] for arm in ARMS]
+    out = dict(updated_at=I.now(), addendum_sha256=ADDENDUM_SHA256, cohort_sha256=I.sha256_file(COHORT_FILE),
+               writer=dict(setup=I.MODELS[WRITER_KEY]["setup"], label="helper-written notes → decision player"),
+               decisions={k: v for k, v in cohort()["decisions"].items()}, dry_run=I.DRY, rows=rows)
+    I.write_atomic(DECISION_OUT(), json.dumps(out, indent=1))
+    return out
+
+
+def status():
+    for s in cohort()["setups"]:
+        for arm in ARMS:
+            r = arm_summary(s["slug"], arm)
+            print(f"{r['label']}: {r['state']}{' (' + r['reason'] + ')' if r['reason'] else ''}")
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    sub = ap.add_subparsers(dest="cmd", required=True)
+    r = sub.add_parser("run")
+    r.add_argument("--arm", required=True, choices=arm_keys())
+    r.add_argument("--until", choices=I.STEPS)
+    h = sub.add_parser("after-game")
+    h.add_argument("--arm", required=True)
+    h.add_argument("--series", type=int, required=True)
+    p = sub.add_parser("probe-p1", help="billed: the hosted accounting probe of one setup")
+    p.add_argument("--setup", required=True)
+    p.add_argument("--send", action="store_true")
+    sub.add_parser("preflight-guard", help="the conservative guard on retained league requests (no call)")
+    sub.add_parser("status")
+    sub.add_parser("summary")
+    a = ap.parse_args()
+    if a.cmd == "after-game":
+        after_game(a.arm, a.series)
+    elif a.cmd == "probe-p1":
+        print(json.dumps(probe_p1(a.setup, a.send), indent=1))
+    elif a.cmd == "preflight-guard":
+        out = guard_preflight()
+        print(f"added bytes: {out['added_bytes']}")
+        for slug, x in out["setups"].items():
+            print(f"{x['setup']}: {x['requests']} requests, max {x['max_bytes']} B, limit {x['limit_tokens']}; "
+                  f"refused none {x['refused']['none']}, notes {x['refused']['notes']}, worst {x['refused']['worst']}")
+    elif a.cmd == "status":
+        status()
+    elif a.cmd == "summary":
+        summary()
+    else:
+        sys.exit(run(a.arm, a.until))
+
+
+if __name__ == "__main__":
+    main()

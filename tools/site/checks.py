@@ -29,6 +29,7 @@
 """
 
 import gzip
+import hashlib
 import html
 import json
 import re
@@ -831,4 +832,13 @@ def run(S: dict, out: Path) -> list[str]:
     failures += findings.failures(out)
     failures += check_learning(out)
     failures += check_improve(out)
+    failures += check_palette()
     return failures
+
+
+def check_palette() -> list[str]:
+    """content/maker_palette.json is the three sites' shared palette unchanged: its sha256 is the one
+    maker_colors.json records (Ümit #3635; logic #3668)."""
+    want = json.loads((CONTENT / "maker_colors.json").read_text())["palette_sha256"]
+    got = hashlib.sha256((CONTENT / "maker_palette.json").read_bytes()).hexdigest()
+    return [] if got == want else [f"content/maker_palette.json: sha256 {got}, not the shared palette's {want}"]

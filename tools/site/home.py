@@ -1559,8 +1559,9 @@ def close_b_section(S) -> str:
 
 FAMILIES = json.loads((CONTENT / "families.json").read_text())["families"]
 FAMILY_ICONS = (CONTENT / "family_icons.svg").read_text().strip()
-_MAKERS = json.loads((CONTENT / "maker_colors.json").read_text())
-MAKERS, SETUP_MAKER = _MAKERS["makers"], _MAKERS["setups"]
+# Each setup's maker and colour: the shared palette (maker_palette.json, its hash in maker_colors.json, checked by
+# checks.py), the maker whose families hold the setup's family; the palette's order is the legends' order.
+MAKERS = json.loads((CONTENT / "maker_palette.json").read_text())["makers"]
 GROUPS = [("decision", "Decision models"), ("chat", "Chat models"), ("unknown", "Model type not recorded"),
           ("program", "Programs: reference rows, never ranked")]
 MEASURES = [("risk-judgement", "Risk judgement"), ("error-rate", "Error rate"), ("cost", "Cost"), ("time", "Time")]
@@ -1573,16 +1574,19 @@ def family(name: str) -> dict | None:
 
 
 def maker(name: str) -> tuple[str, str]:
-    """(maker, colour) of a model setup (content/maker_colors.json, Ümit #2745 item 7): the one colour of its setups on
-    every chart and in the leaderboard. A setup missing there fails the build; programs have none (callers skip them)."""
-    if name not in SETUP_MAKER:
-        raise ValueError(f"content/maker_colors.json: no maker for setup {name!r}")
-    m = SETUP_MAKER[name]
-    return m, MAKERS[m]["colour"]
+    """(maker, colour) of a model setup (maker_palette.json via its family, maker_colors.json's about; Ümit #2745 item 7,
+    #3635): the one colour of its setups on every chart and in the leaderboard. A setup without a family, or whose
+    family is not exactly one palette maker's, fails the build; programs have none (callers skip them)."""
+    f = family(name)
+    found = [m for m, v in MAKERS.items() if f and f["name"] in v["families"]]
+    if len(found) != 1:
+        raise ValueError(f"content/maker_palette.json: {len(found)} makers for setup {name!r} (family "
+                         f"{f and f['name']!r})")
+    return found[0], MAKERS[found[0]]["colour"]
 
 
 def maker_legend(names) -> str:
-    """A swatch per maker of the given setups, in maker_colors.json's order."""
+    """A swatch per maker of the given setups, in maker_palette.json's order."""
     present = {maker(n)[0] for n in names}
     return "".join(f'<span><i class="swatch" style="background:{v["colour"]}"></i>{esc(m)}</span>'
                    for m, v in MAKERS.items() if m in present)

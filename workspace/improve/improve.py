@@ -1137,6 +1137,10 @@ def check_inputs():
 def run(key, until=None, balance_reader=openrouter_balance):
     """Runs the model's next steps in order; returns 0 (done or reached `until`), STOP or PAUSE."""
     m = MODELS[key]
+    claim = mdir(key) / "lane.json"  # each model belongs to one lane (run_local_start.sh); others never run it
+    if claim.exists() and json.loads(claim.read_text())["lane"] != os.environ.get("IMPROVE_LANE"):
+        raise SystemExit(f"{key}: owned by lane {json.loads(claim.read_text())['lane']}, not "
+                         f"{os.environ.get('IMPROVE_LANE') or 'this process'}: refused")
     hold = mdir(key) / "hold.json"  # an operator hold (e.g. shared-balance priority): pause before the next step
     if hold.exists():
         why = json.loads(hold.read_text())["reason"]

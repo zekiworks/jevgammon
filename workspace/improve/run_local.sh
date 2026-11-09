@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
-# "Did they improve?" Phase 2, local lane (plan §10): one model at a time on ONE GPU, given by UUID (Can #3121; since
-# 2026-11-09 GPU-1115ade0, Main, after GPU-e4f2a538's hardware failure),
-# each with its league server script and arguments (only the GPU differs). Before each start: the UUID's index on
-# the host and the GPU the container sees are checked; the container's model path and image are recorded. The
-# experiment's run then starts with the server's address; afterwards the server is stopped. A stop (exit 2) moves
-# on to the next model; a pause (3) or an error stops the lane (the server is stopped).
-#   systemd-run --user --unit improve-local workspace/improve/run_local.sh GPU-UUID gemma-4-31b-on qwen3.8-27b-on ...
+# "Did they improve?" Phase 2, local lane (plan §10): one model at a time on ONE GPU, given by UUID, each with its
+# league server script and arguments (only the GPU differs). Several lanes may run on different GPUs (Can #3383);
+# each model belongs to exactly one lane: runs/<model>/lane.json names the lane's unit (IMPROVE_LANE), and a lane
+# skips a model claimed by another lane before touching any server. Before each start: the UUID's index on the host
+# and the GPU the container sees are checked; the container's model path and image are recorded. A stop (exit 2)
+# moves on to the next model; a pause (3) or an error stops the lane (the server is stopped).
+#   IMPROVE_LANE=improve-local3 workspace/improve/run_local.sh GPU-UUID qwen3.8-27b-on lfm2.5-24b-a2b-on
 set -uo pipefail
 cd "$(dirname "$0")/../.."
 UUID=$1; shift
+LANE=${IMPROVE_LANE:?IMPROVE_LANE (the lane's unit name)}
 PY=/home/cbasaran/.pyenv/versions/3.12.13/bin/python3
 SERVERS=/home/cbasaran/code/jevgammon/tools/v3/servers
 RUNS=/home/cbasaran/code/jevgammon/workspace/improve/runs
@@ -20,12 +21,14 @@ server() {  # model key -> "script name port gpu-variable"
     *) return 1 ;;
   esac
 }
-echo "local lane start $(date -u +%FT%TZ) on $UUID: $*"
+echo "local lane $LANE start $(date -u +%FT%TZ) on $UUID: $*"
 for model in "$@"; do
+  claim=$RUNS/$model/lane.json
+  owner=$([[ -f $claim ]] && "$PY" -c "import json,sys; print(json.load(open(sys.argv[1]))['lane'])" "$claim" || echo "")
+  if [[ -n "$owner" && "$owner" != "$LANE" ]]; then echo "== $model: owned by $owner, skipped"; continue; fi
   read -r script name port var < <(server "$model") || { echo "unknown local model $model"; exit 1; }
   index=$(nvidia-smi -i "$UUID" --query-gpu=index,uuid --format=csv,noheader) || { echo "no GPU $UUID"; exit 1; }
   echo "== $model: host GPU $index"
-  case $UUID in GPU-e4f2a538*) echo "refused: GPU-e4f2a538 is off limits (hardware failure 2026-11-08)"; exit 1 ;; esac
   # Docker's CDI names GPUs by index here, not by UUID: the index the host gives this UUID now, and the
   # container must then report this UUID (checked below).
   env "$var=${index%%,*}" "$SERVERS/$script" start || { echo "$model: server did not start"; exit 1; }
@@ -48,4 +51,4 @@ for model in "$@"; do
     *) echo "local lane stopped: $model failed"; exit "$code" ;;
   esac
 done
-echo "local lane done $(date -u +%FT%TZ)"
+echo "local lane $LANE done $(date -u +%FT%TZ)"

@@ -123,6 +123,18 @@ class Schedule(Isolated):
         self.assertEqual(written["updated_at"], out["updated_at"])
         self.assertFalse(list(I.OUT.glob("*.tmp")))  # atomic: no temp file left
 
+    def test_a_model_claimed_by_another_lane_is_refused(self):
+        I.write_atomic(I.mdir("qwen3.8-27b-on") / "lane.json", json.dumps(dict(lane="improve-local3")))
+        os.environ.pop("IMPROVE_LANE", None)
+        with self.assertRaises(SystemExit):
+            I.run("qwen3.8-27b-on")
+        os.environ["IMPROVE_LANE"] = "improve-local"
+        try:
+            with self.assertRaises(SystemExit):
+                I.run("qwen3.8-27b-on")
+        finally:
+            os.environ.pop("IMPROVE_LANE", None)
+
     def test_restarted_series_is_archived_with_new_names(self):
         d = I.step_dir(KEY, "S2")
         d.mkdir(parents=True)

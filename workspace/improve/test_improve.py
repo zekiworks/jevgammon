@@ -6,6 +6,7 @@
 import hashlib
 import json
 import os
+import time
 import sqlite3
 import sys
 import tempfile
@@ -96,7 +97,12 @@ class Schedule(Isolated):
         I.write_atomic(I.mdir("glm-5.3-on") / "hold.json", json.dumps(dict(reason="paused: shared-balance priority, Ümit #3215")))
         self.done(KEY, "E1", "S1")
         I.log(KEY, "step_start", step="S2")
-        rows = {k: I.progress(k, *I.model_state(k)) for k in I.MODELS}
+        saved_active = I.run_active
+        I.run_active = lambda key: key == KEY
+        try:
+            rows = {k: I.progress(k, *I.model_state(k)) for k in I.MODELS}
+        finally:
+            I.run_active = saved_active
         self.assertEqual(len(rows), 15)
         self.assertEqual((rows[KEY]["status"], rows[KEY]["reason"], rows[KEY]["series_done"]), ("running", None, 1))
         self.assertEqual((rows["glm-5.3-on"]["status"], rows["glm-5.3-on"]["reason"]), ("paused", "shared-balance priority"))
@@ -134,6 +140,34 @@ class Schedule(Isolated):
                 I.run("qwen3.8-27b-on")
         finally:
             os.environ.pop("IMPROVE_LANE", None)
+
+    def test_a_started_model_without_a_run_process_is_waiting_for_its_turn(self):
+        """Main (Ümit #3465): a model whose lane was reordered mid-E1 is waiting, not running; kept answers stay."""
+        I.log(KEY, "step_start", step="E1")
+        saved = I.run_active
+        try:
+            I.run_active = lambda key: False
+            self.assertEqual(I.model_state(KEY), ("paused", I.TURN))
+            self.assertEqual(I.progress(KEY, *I.model_state(KEY))["reason"], "waiting for its turn")
+            I.run_active = lambda key: True
+            self.assertEqual(I.model_state(KEY), ("running", None))
+        finally:
+            I.run_active = saved
+
+    def test_run_active_finds_a_run_process(self):
+        import subprocess
+        p = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(30)", "x/improve.py", "run", "--model",
+                              "zz-test-model"])
+        try:
+            for _ in range(50):
+                if I.run_active("zz-test-model"):
+                    break
+                time.sleep(0.02)
+            self.assertTrue(I.run_active("zz-test-model"))
+            self.assertFalse(I.run_active("zz-other"))
+        finally:
+            p.kill()
+            p.wait()
 
     def test_restarted_series_is_archived_with_new_names(self):
         d = I.step_dir(KEY, "S2")

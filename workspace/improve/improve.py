@@ -1230,13 +1230,34 @@ def model_state(key):
         return "paused", json.loads((mdir(key) / "paused.json").read_text())["reason"]
     if all(step_done(key, s) for s in STEPS):
         return "complete", None
-    if not started(key):
+    if not started(key) or not run_active(key):
+        # Not started, or started and now waiting (e.g. its lane was reordered, Ümit #3465): its stored answers and
+        # finished steps are kept; it resumes when its lane reaches it again.
         if (mdir(key) / "hold.json").exists():
             return "paused", json.loads((mdir(key) / "hold.json").read_text())["reason"]
         if key in ("gpt-6.1-sol-high", "gpt-6-astra-high") and now() < "2026-11-13T11:38":
             return "paused", CHATGPT_RESET
         return "paused", TURN
     return "running", None
+
+
+def run_active(key):
+    """Whether an `improve.py run --model <key>` process is running now (read-only scan of /proc; the run lock is
+    not touched, so a starting run is never disturbed)."""
+    want = ["run", "--model", key]
+    for d in Path("/proc").iterdir():
+        if not d.name.isdigit():
+            continue
+        try:
+            argv = (d / "cmdline").read_bytes().split(b"\0")
+        except OSError:
+            continue
+        args = [a.decode(errors="replace") for a in argv if a]
+        if any(a.endswith("improve.py") for a in args):
+            i = next(k for k, a in enumerate(args) if a.endswith("improve.py"))
+            if args[i + 1:i + 4] == want:
+                return True
+    return False
 
 
 # The page's fixed status reasons (improve_validate, Ümit #3219).

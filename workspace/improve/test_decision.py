@@ -541,9 +541,6 @@ class States(Isolated):
         self.assertIsNone(I.context_stop("STOPPED: an earlier request failed a pre-send or reply check"))
 
 
-if __name__ == "__main__":
-    unittest.main()
-
 
 class Fence(unittest.TestCase):
     """Zeki #3788: the billed chat side runs only through improve-openrouter, one worker at a time, pinned code."""
@@ -605,3 +602,7 @@ class Fence(unittest.TestCase):
                 D.admit("decision/decider-v1.2-27b-notes", "S1", Path(self.tmp.name) / "w.db", 0.005, balance=50)
         finally:
             D.FENCE = saved
+
+
+if __name__ == "__main__":
+    unittest.main()

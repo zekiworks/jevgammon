@@ -1,0 +1,183 @@
+diff --git a/tools/site/checks.py b/tools/site/checks.py
+index 0aaef14..599899f 100644
+--- a/tools/site/checks.py
++++ b/tools/site/checks.py
+@@ -48,10 +48,11 @@ DATE = re.compile(r"\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2})?(?:\.\d+)?Z?)?
+ 
+ 
+ class Node:
+-    __slots__ = ("tag", "attrs", "children", "parent", "text")
++    __slots__ = ("tag", "attrs", "children", "parent", "text", "at")
+ 
+     def __init__(self, tag, attrs, parent):
+         self.tag, self.attrs, self.parent, self.children, self.text = tag, dict(attrs), parent, [], []
++        self.at = []  # per text chunk: how many children preceded it (for ordered_text)
+ 
+ 
+ VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"}
+@@ -89,6 +90,7 @@ class Tree(HTMLParser):
+     def handle_data(self, data):
+         if not self.skip:
+             self.cur.text.append(data)
++            self.cur.at.append(len(self.cur.children))
+ 
+ 
+ def walk(n):
+@@ -101,6 +103,19 @@ def text_of(n) -> str:
+     return "".join(t for x in walk(n) if x.tag not in ("script", "style") for t in x.text)
+ 
+ 
++def ordered_text(n) -> str:
++    """The text of n in document order (text_of puts a node's own text before its children's: "<span>N/A</span> →
++    <span>N/A</span>" reads "→ N/AN/A")."""
++    if n.tag in ("script", "style"):
++        return ""
++    out, chunks = [], list(zip(n.at, n.text))
++    for i, c in enumerate(n.children + [None]):
++        out += [t for at, t in chunks if at == i]
++        if c is not None:
++            out.append(ordered_text(c))
++    return "".join(out)
++
++
+ def ancestors(n):
+     n = n.parent
+     while n is not None:
+@@ -762,7 +777,7 @@ def check_improve(out: Path, test_set: Path | None = None) -> list[str]:
+             bad.append(f"{PATH}: {m['setup']}: verdict {verdict.attrs['data-verdict']!r} not what the data gives")
+         if verdict is None and e["gate"] and not L["results"].get("dry_run"):
+             bad.append(f"{PATH}: {m['setup']}: complete past the gate, but no verdict")
+-        cells = {c.attrs["data-cell"]: " ".join(text_of(c).split()) for c in walk(n) if c.attrs.get("data-cell")}
++        cells = {c.attrs["data-cell"]: " ".join(ordered_text(c).split()) for c in walk(n) if c.attrs.get("data-cell")}
+ 
+         def f(v, signed=False):
+             return fmt(v, 1, signed=signed) if v is not None else NA
+diff --git a/tools/site/improve_page.py b/tools/site/improve_page.py
+index c932035..ba10f35 100755
+--- a/tools/site/improve_page.py
++++ b/tools/site/improve_page.py
+@@ -55,10 +55,11 @@ PATH = "improve/"
+ DATA = "data/v3/improve.json"
+ TITLE = "Did they improve?"
+ TITLE_PREREG = "Did they improve? (pre-registered)"
+-# Pre-registration only (default ON): the build never reads improve.json, and the page shows the plan's rule, model
+-# list, lesson prompt, settings and money rules only. Results are published only after this is switched off in a
+-# reviewed commit (as the learning page's PREREGISTRATION_ONLY).
+-PREREGISTRATION_ONLY = True
++# Pre-registration only: when True the build never reads improve.json, and the page shows the plan's rule, model
++# list, lesson prompt, settings and money rules only (as the learning page's PREREGISTRATION_ONLY).
++# Switched off (results mode) at Ümit/Zeki's request (#3369), per the plan's publishing rule: numbers update as each
++# model finishes; no verdict text for a model until all its 5 series are done (improve_validate's verdict gate).
++PREREGISTRATION_ONLY = False
+ COMMITMENT = "Results will be published whichever way they go."
+ PLAN = ROOT / "mailbox/Did they improve - plan 2026-11-08.md"
+ SOURCE = "improve"
+diff --git a/tools/site/improve_validate.py b/tools/site/improve_validate.py
+index 21146fc..bfa8dc6 100644
+--- a/tools/site/improve_validate.py
++++ b/tools/site/improve_validate.py
+@@ -44,6 +44,10 @@ STATES = ("running", "paused", "complete", "incomplete", "stopped")
+ # States whose current step may be in progress (paused: a balance shortfall at a step boundary, plan section 9).
+ LIVE = ("running", "paused")
+ TOL = 1e-6
++# The producer rounds each model's billed amount and the billed total to 4 decimals separately (the live file of
++# 9 Nov: 0.9407 + 13.5513 = 14.4920 against a total of 14.4921), so the sum may differ by up to half a unit of the
++# 4th decimal per rounded amount.
++MONEY_ROUND = 0.00005
+ 
+ PCT = OPT(NUM(0, 100))
+ TEST = DICT(dict(answered=INT(0, POSITIONS), expected=INT(POSITIONS, POSITIONS), valid=INT(0, POSITIONS),
+@@ -318,8 +322,9 @@ def scores(m: dict, dry: bool, local: bool = False) -> dict:
+         status = "complete (dry run): no verdict"
+     elif m["state"] == "running":  # a local model runs on our GPU (the page names no host)
+         status = f"running{' on our GPU' if local else ''}, {finished} of {SERIES} series"
+-    else:
+-        status = f"{m['state']}: {m['reason']}"
++    else:  # the producer may already prefix the reason with the state ("paused: shared-balance priority, ...")
++        prefix = f"{m['state']}: "
++        status = m["reason"] if m["reason"].startswith(prefix) else prefix + m["reason"]
+     return dict(before=before, after=after, change=change, range=rng, threshold=threshold, verdict=passed,
+                 improved=improved, status=status, series_finished=finished, empty_done=len(m["empty"]),
+                 answers_before=summed(m["empty"]), answers_after=summed(t10))
+@@ -347,7 +352,7 @@ def validate(R, plan_sha: str, prompt_sha: str, test_sha: str, harness_prompt_sh
+     if M["total_cap_usd"] != TOTAL_CAP:
+         bad.append("money.total_cap_usd: not $110")
+     total = sum(m["cost"]["billed_usd"] for m in R["models"])
+-    if abs(total - M["billed_total_usd"]) > TOL:
++    if abs(total - M["billed_total_usd"]) > MONEY_ROUND * (len(R["models"]) + 1) + TOL:
+         bad.append("money.billed_total_usd: not the sum of the models' billed amounts")
+     if M["billed_total_usd"] > TOTAL_CAP + TOL:
+         bad.append("money.billed_total_usd: above the $110 cap")
+diff --git a/tools/site/selftest_improve.py b/tools/site/selftest_improve.py
+index 5da0a60..f82a6dc 100755
+--- a/tools/site/selftest_improve.py
++++ b/tools/site/selftest_improve.py
+@@ -306,18 +306,20 @@ def main():
+                  and "withheld" not in page and "bariton" not in page)
+         if name == "complete-no":
+             case("complete-no: No", 'data-verdict="no"' in page and 'data-verdict="yes"' not in page)
+-    # The default build (pre-registration only) reads only improve.json's progress fields, never its results.
++    # The pre-registration-only build reads only improve.json's progress fields, never its results.
+     src = base / "states" / "complete-yes" / "improve"
+-    Lp = IP.data(IP.PLAN, src, TS())
+-    case("default build: pre-registration only, results not read", Lp["preregistration_only"]
++    Lp = IP.data(IP.PLAN, src, TS(), preregistration_only=True)
++    case("pre-registration-only build: results not read", Lp["preregistration_only"]
+          and Lp["results"] is None and Lp["validation"] is None)
++    case("default build: results mode (Ümit/Zeki #3369)", not IP.PREREGISTRATION_ONLY
++         and IP.data(IP.PLAN, src, TS())["results"] is not None)
+     out = base / "pages" / "default-preregistration"
+     shutil.rmtree(out, ignore_errors=True)
+     IP.render(out, Lp)
+     bad = checks.check_improve(out, TS())
+     case("default build: check_improve clean", not bad, "; ".join(bad))
+ 
+-    # The status table in the default build (pre-registration only): states none, running, paused, done; status
++    # The status table in the pre-registration-only build: states none, running, paused, done; status
+     # fields only, no outcome number and no free text from the file on the page or in its data file.
+     want = {"none": {}, "running-1": {"Qwen3.8 Flash (off)": ("running", "1 / 5")},
+             "paused": {"Kimi K3.1 Pro (off)": ("paused (shared-balance priority)", "1 / 5"),
+@@ -329,7 +331,7 @@ def main():
+         src = write_state(base / "states" / name, S[name])
+         out = base / "pages" / f"status-{name}"
+         shutil.rmtree(out, ignore_errors=True)
+-        Lp = IP.data(IP.PLAN, src, TS())
++        Lp = IP.data(IP.PLAN, src, TS(), preregistration_only=True)
+         IP.render(out, Lp)
+         page = (out / IP.PATH / "index.html").read_text()
+         data = (out / IP.DATA).read_text()
+@@ -353,12 +355,32 @@ def main():
+                    IP.TEST_SET_SHA256, IP.PROMPT_SHA256, models_by_setup(), leak_strings())
+     case("full validation: paused state accepted (usage limit, waiting for a GPU)", v["accepted"],
+          "; ".join(v["private_problems"][:2]))
+-    # Status faults in the default build: refused, every status unknown, the note, no canary.
++    # The producer rounds each billed amount and the total to 4 decimals separately (live file, 9 Nov: 0.9407 +
++    # 13.5513 against a total of 14.4921): accepted; a real mismatch (faults: total 1.0) is still refused.
++    d = json.loads(json.dumps(S["complete-yes"]))
++    d["money"]["billed_total_usd"] = round(d["money"]["billed_total_usd"] + 0.0001, 4)
++    v = V.validate(d, hashlib.sha256(IP.PLAN.read_bytes()).hexdigest(), IP.PROMPT_SHA256,
++                   IP.TEST_SET_SHA256, IP.PROMPT_SHA256, models_by_setup(), leak_strings())
++    case("full validation: billed total off by the producer's 4-decimal rounding accepted", v["accepted"],
++         "; ".join(v["private_problems"][:2]))
++    # The producer's reasons may carry the state already (live file, 9 Nov: "paused: shared-balance priority, ...").
++    km = json.loads(json.dumps(next(m for m in S["paused"]["models"] if m["state"] == "paused")))
++    km["reason"] = "paused: shared-balance priority, Ümit #3215"
++    st = V.scores(km, False)["status"]
++    case("status: a reason already prefixed with its state is not prefixed twice",
++         st == "paused: shared-balance priority, Ümit #3215", st)
++    # The results view with models not started (N/A → N/A cells): check_improve reads the cells in document order.
++    out = base / "pages" / "results-paused"
++    shutil.rmtree(out, ignore_errors=True)
++    render(write_state(base / "states" / "paused", S["paused"]), out)
++    bad = checks.check_improve(out, TS())
++    case("results view (paused, models not started): check_improve clean", not bad, "; ".join(bad[:2]))
++    # Status faults in the pre-registration-only build: refused, every status unknown, the note, no canary.
+     for name, mutate, canary in progress_faults():
+         src = write_state(base / "states" / "status-fault", mutate(S["complete-yes"]))
+         out = base / "pages" / "status-fault"
+         shutil.rmtree(out, ignore_errors=True)
+-        Lp = IP.data(IP.PLAN, src, TS())
++        Lp = IP.data(IP.PLAN, src, TS(), preregistration_only=True)
+         IP.render(out, Lp)
+         page = (out / IP.PATH / "index.html").read_text()
+         data = (out / IP.DATA).read_text()

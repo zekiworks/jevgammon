@@ -1,0 +1,31 @@
+/tmp/ir/tools/site/offline.py:213: RuntimeWarning: invalid value encountered in multiply
+  return np.where(ok, d * (c - cs), np.nan)
+Traceback (most recent call last):
+  File "/tmp/ir/tools/site/selftest_mixing.py", line 116, in <module>
+    main()
+  File "/tmp/ir/tools/site/selftest_mixing.py", line 91, in main
+    pages.write_all(S, out, build.BASE)
+  File "/tmp/ir/tools/site/pages.py", line 1713, in write_all
+    leagues, moved_ids, league_ids = leagues_page(S, method.archive_v1())
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/ir/tools/site/pages.py", line 601, in leagues_page
+    top, bottom = home.leagues_moved(S)
+                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/ir/tools/site/home.py", line 1913, in leagues_moved
+    {measure_charts(S)}
+     ^^^^^^^^^^^^^^^^^
+  File "/tmp/ir/tools/site/home.py", line 1775, in measure_charts
+    + "".join(measure_chart_card(S, k, l) for k, l in MEASURES) + "</section>")
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/ir/tools/site/home.py", line 1775, in <genexpr>
+    + "".join(measure_chart_card(S, k, l) for k, l in MEASURES) + "</section>")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/ir/tools/site/home.py", line 1734, in measure_chart_card
+    views = all_view(S, hbars(S, measure, every, pos, ticks, True, lines(every, True)))
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/ir/tools/site/home.py", line 1689, in hbars
+    colour = f' style="width:{pos(v):.2f}%;background-color:{maker(n)[1]}"' if not ref else f' style="width:{pos(v):.2f}%"'
+                                                             ^^^^^^^^
+  File "/tmp/ir/tools/site/home.py", line 1579, in maker
+    raise ValueError(f"content/maker_colors.json: no maker for setup {name!r}")
+ValueError: content/maker_colors.json: no maker for setup 'GPT-6 Astra (off)'

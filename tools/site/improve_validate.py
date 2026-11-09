@@ -44,6 +44,10 @@ STATES = ("running", "paused", "complete", "incomplete", "stopped")
 # States whose current step may be in progress (paused: a balance shortfall at a step boundary, plan section 9).
 LIVE = ("running", "paused")
 TOL = 1e-6
+# The producer rounds each model's billed amount and the billed total to 4 decimals separately (the live file of
+# 9 Nov: 0.9407 + 13.5513 = 14.4920 against a total of 14.4921), so the sum may differ by up to half a unit of the
+# 4th decimal per rounded amount.
+MONEY_ROUND = 0.00005
 
 PCT = OPT(NUM(0, 100))
 TEST = DICT(dict(answered=INT(0, POSITIONS), expected=INT(POSITIONS, POSITIONS), valid=INT(0, POSITIONS),
@@ -318,8 +322,9 @@ def scores(m: dict, dry: bool, local: bool = False) -> dict:
         status = "complete (dry run): no verdict"
     elif m["state"] == "running":  # a local model runs on our GPU (the page names no host)
         status = f"running{' on our GPU' if local else ''}, {finished} of {SERIES} series"
-    else:
-        status = f"{m['state']}: {m['reason']}"
+    else:  # the producer may already prefix the reason with the state ("paused: shared-balance priority, ...")
+        prefix = f"{m['state']}: "
+        status = m["reason"] if m["reason"].startswith(prefix) else prefix + m["reason"]
     return dict(before=before, after=after, change=change, range=rng, threshold=threshold, verdict=passed,
                 improved=improved, status=status, series_finished=finished, empty_done=len(m["empty"]),
                 answers_before=summed(m["empty"]), answers_after=summed(t10))
@@ -347,7 +352,7 @@ def validate(R, plan_sha: str, prompt_sha: str, test_sha: str, harness_prompt_sh
     if M["total_cap_usd"] != TOTAL_CAP:
         bad.append("money.total_cap_usd: not $110")
     total = sum(m["cost"]["billed_usd"] for m in R["models"])
-    if abs(total - M["billed_total_usd"]) > TOL:
+    if abs(total - M["billed_total_usd"]) > MONEY_ROUND * (len(R["models"]) + 1) + TOL:
         bad.append("money.billed_total_usd: not the sum of the models' billed amounts")
     if M["billed_total_usd"] > TOTAL_CAP + TOL:
         bad.append("money.billed_total_usd: above the $110 cap")

@@ -306,18 +306,20 @@ def main():
                  and "withheld" not in page and "bariton" not in page)
         if name == "complete-no":
             case("complete-no: No", 'data-verdict="no"' in page and 'data-verdict="yes"' not in page)
-    # The default build (pre-registration only) reads only improve.json's progress fields, never its results.
+    # The pre-registration-only build reads only improve.json's progress fields, never its results.
     src = base / "states" / "complete-yes" / "improve"
-    Lp = IP.data(IP.PLAN, src, TS())
-    case("default build: pre-registration only, results not read", Lp["preregistration_only"]
+    Lp = IP.data(IP.PLAN, src, TS(), preregistration_only=True)
+    case("pre-registration-only build: results not read", Lp["preregistration_only"]
          and Lp["results"] is None and Lp["validation"] is None)
+    case("default build: results mode (Ümit/Zeki #3369)", not IP.PREREGISTRATION_ONLY
+         and IP.data(IP.PLAN, src, TS())["results"] is not None)
     out = base / "pages" / "default-preregistration"
     shutil.rmtree(out, ignore_errors=True)
     IP.render(out, Lp)
     bad = checks.check_improve(out, TS())
     case("default build: check_improve clean", not bad, "; ".join(bad))
 
-    # The status table in the default build (pre-registration only): states none, running, paused, done; status
+    # The status table in the pre-registration-only build: states none, running, paused, done; status
     # fields only, no outcome number and no free text from the file on the page or in its data file.
     want = {"none": {}, "running-1": {"Qwen3.8 Flash (off)": ("running", "1 / 5")},
             "paused": {"Kimi K3.1 Pro (off)": ("paused (shared-balance priority)", "1 / 5"),
@@ -329,7 +331,7 @@ def main():
         src = write_state(base / "states" / name, S[name])
         out = base / "pages" / f"status-{name}"
         shutil.rmtree(out, ignore_errors=True)
-        Lp = IP.data(IP.PLAN, src, TS())
+        Lp = IP.data(IP.PLAN, src, TS(), preregistration_only=True)
         IP.render(out, Lp)
         page = (out / IP.PATH / "index.html").read_text()
         data = (out / IP.DATA).read_text()
@@ -353,12 +355,32 @@ def main():
                    IP.TEST_SET_SHA256, IP.PROMPT_SHA256, models_by_setup(), leak_strings())
     case("full validation: paused state accepted (usage limit, waiting for a GPU)", v["accepted"],
          "; ".join(v["private_problems"][:2]))
-    # Status faults in the default build: refused, every status unknown, the note, no canary.
+    # The producer rounds each billed amount and the total to 4 decimals separately (live file, 9 Nov: 0.9407 +
+    # 13.5513 against a total of 14.4921): accepted; a real mismatch (faults: total 1.0) is still refused.
+    d = json.loads(json.dumps(S["complete-yes"]))
+    d["money"]["billed_total_usd"] = round(d["money"]["billed_total_usd"] + 0.0001, 4)
+    v = V.validate(d, hashlib.sha256(IP.PLAN.read_bytes()).hexdigest(), IP.PROMPT_SHA256,
+                   IP.TEST_SET_SHA256, IP.PROMPT_SHA256, models_by_setup(), leak_strings())
+    case("full validation: billed total off by the producer's 4-decimal rounding accepted", v["accepted"],
+         "; ".join(v["private_problems"][:2]))
+    # The producer's reasons may carry the state already (live file, 9 Nov: "paused: shared-balance priority, ...").
+    km = json.loads(json.dumps(next(m for m in S["paused"]["models"] if m["state"] == "paused")))
+    km["reason"] = "paused: shared-balance priority, Ümit #3215"
+    st = V.scores(km, False)["status"]
+    case("status: a reason already prefixed with its state is not prefixed twice",
+         st == "paused: shared-balance priority, Ümit #3215", st)
+    # The results view with models not started (N/A → N/A cells): check_improve reads the cells in document order.
+    out = base / "pages" / "results-paused"
+    shutil.rmtree(out, ignore_errors=True)
+    render(write_state(base / "states" / "paused", S["paused"]), out)
+    bad = checks.check_improve(out, TS())
+    case("results view (paused, models not started): check_improve clean", not bad, "; ".join(bad[:2]))
+    # Status faults in the pre-registration-only build: refused, every status unknown, the note, no canary.
     for name, mutate, canary in progress_faults():
         src = write_state(base / "states" / "status-fault", mutate(S["complete-yes"]))
         out = base / "pages" / "status-fault"
         shutil.rmtree(out, ignore_errors=True)
-        Lp = IP.data(IP.PLAN, src, TS())
+        Lp = IP.data(IP.PLAN, src, TS(), preregistration_only=True)
         IP.render(out, Lp)
         page = (out / IP.PATH / "index.html").read_text()
         data = (out / IP.DATA).read_text()

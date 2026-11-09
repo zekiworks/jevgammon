@@ -55,10 +55,11 @@ PATH = "improve/"
 DATA = "data/v3/improve.json"
 TITLE = "Did they improve?"
 TITLE_PREREG = "Did they improve? (pre-registered)"
-# Pre-registration only (default ON): the build never reads improve.json, and the page shows the plan's rule, model
-# list, lesson prompt, settings and money rules only. Results are published only after this is switched off in a
-# reviewed commit (as the learning page's PREREGISTRATION_ONLY).
-PREREGISTRATION_ONLY = True
+# Pre-registration only: when True the build never reads improve.json, and the page shows the plan's rule, model
+# list, lesson prompt, settings and money rules only (as the learning page's PREREGISTRATION_ONLY).
+# Switched off (results mode) at Ümit/Zeki's request (#3369), per the plan's publishing rule: numbers update as each
+# model finishes; no verdict text for a model until all its 5 series are done (improve_validate's verdict gate).
+PREREGISTRATION_ONLY = False
 COMMITMENT = "Results will be published whichever way they go."
 PLAN = ROOT / "mailbox/Did they improve - plan 2026-11-08.md"
 SOURCE = "improve"

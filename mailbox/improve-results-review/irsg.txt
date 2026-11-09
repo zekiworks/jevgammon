@@ -1,0 +1,12 @@
+PASS  group 1 named exactly 'Decision': heading 'Decision', caption 'Decision'
+PASS  group 2 named exactly 'Workhorse': heading 'Workhorse', caption 'Workhorse'
+PASS  group 3 named exactly 'Frontier': heading 'Frontier', caption 'Frontier'
+PASS  subtitle element exact: 'Groups reflect model profiles, not tournament rankings.'
+PASS  cohort note separate and retained: 'These are fixed starting cohorts, not current ladder ranks or mutually exclusive universal model types.'
+PASS  GNUbg weak in all three group tables: group 1: 19 rows, group 2: 19 rows, group 3: 12 rows
+PASS  Safest row in the Decision table only, a reference row: rows in groups: [1]
+PASS  Random row in the Decision table only, a reference row: rows in groups: [1]
+PASS  GNUbg weak's later-league starting group: all three groups: {'Decision, Workhorse, Frontier program, original Leagues 1, 2, 3'}
+PASS  Safest's later-league starting group: the original League 1 only: {'Decision program, original League 1'}
+PASS  Random's later-league starting group: the original League 1 only: {'Decision program, original League 1'}
+11 of 11 checks passed

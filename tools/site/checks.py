@@ -48,10 +48,11 @@ DATE = re.compile(r"\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2})?(?:\.\d+)?Z?)?
 
 
 class Node:
-    __slots__ = ("tag", "attrs", "children", "parent", "text")
+    __slots__ = ("tag", "attrs", "children", "parent", "text", "at")
 
     def __init__(self, tag, attrs, parent):
         self.tag, self.attrs, self.parent, self.children, self.text = tag, dict(attrs), parent, [], []
+        self.at = []  # per text chunk: how many children preceded it (for ordered_text)
 
 
 VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"}
@@ -89,6 +90,7 @@ class Tree(HTMLParser):
     def handle_data(self, data):
         if not self.skip:
             self.cur.text.append(data)
+            self.cur.at.append(len(self.cur.children))
 
 
 def walk(n):
@@ -99,6 +101,19 @@ def walk(n):
 
 def text_of(n) -> str:
     return "".join(t for x in walk(n) if x.tag not in ("script", "style") for t in x.text)
+
+
+def ordered_text(n) -> str:
+    """The text of n in document order (text_of puts a node's own text before its children's: "<span>N/A</span> →
+    <span>N/A</span>" reads "→ N/AN/A")."""
+    if n.tag in ("script", "style"):
+        return ""
+    out, chunks = [], list(zip(n.at, n.text))
+    for i, c in enumerate(n.children + [None]):
+        out += [t for at, t in chunks if at == i]
+        if c is not None:
+            out.append(ordered_text(c))
+    return "".join(out)
 
 
 def ancestors(n):
@@ -762,7 +777,7 @@ def check_improve(out: Path, test_set: Path | None = None) -> list[str]:
             bad.append(f"{PATH}: {m['setup']}: verdict {verdict.attrs['data-verdict']!r} not what the data gives")
         if verdict is None and e["gate"] and not L["results"].get("dry_run"):
             bad.append(f"{PATH}: {m['setup']}: complete past the gate, but no verdict")
-        cells = {c.attrs["data-cell"]: " ".join(text_of(c).split()) for c in walk(n) if c.attrs.get("data-cell")}
+        cells = {c.attrs["data-cell"]: " ".join(ordered_text(c).split()) for c in walk(n) if c.attrs.get("data-cell")}
 
         def f(v, signed=False):
             return fmt(v, 1, signed=signed) if v is not None else NA

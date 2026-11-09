@@ -98,3 +98,9 @@ for model in "$@"; do
   echo "UNEXPECTED: reached past the start"
 done
 ```
+
+## Condition (Zeki #3397): the gate file stays until the old loop has exited
+- The gate allows every caller when `workspace/improve/runs/server_gate.txt` is absent. While the old GPU-0 lane shell (pid 806805) is alive, the file must exist and list `improve-local.service`, with no override or bypass.
+- `improve-lane0-guard` was restarted at 07:55:10 UTC with `lane0_guard.sh` from improve c4ce9b3. It checks this at start and once a minute while pid 806805 exists. If the file is missing or lacks the entry, it adds `improve-local.service` back, logs it, and writes a `server_gate_restored` event in Gemma's run log. The rest of the guard is unchanged: it fires when Gemma's run exits or the shell starts a Qwen3.8-27B/LFM2.5 child.
+- Test of the check (temporary file, not the live one): file absent → restored; file present without the entry → entry added; correct file → no change; shell gone → no action.
+- The entry may be removed only after pid 806805 has exited, and the removal will be logged here and in Gemma's run log. Until then it stays.

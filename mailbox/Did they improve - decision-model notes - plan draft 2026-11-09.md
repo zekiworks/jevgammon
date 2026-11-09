@@ -1,4 +1,4 @@
-# Did they improve? Decision models (Part 3): plan draft (2026-11-09, revision 2)
+# Did they improve? Decision models (Part 3): plan draft (2026-11-09, revision 3)
 
 **Draft, not the pre-registration.** Nothing was called, bought, started or stopped to write it; the running lanes, the live plan (`mailbox/Did they improve - plan 2026-11-08.md`, sha256 85a970d0…8542) and the live page are untouched. The pre-registration will be a separate addendum, committed and shown on the page (rule, writer, arms) before the first call.
 
@@ -12,8 +12,9 @@ Sources: Ümit #3632 (the part) and #3660 (the second arm), Zeki #3638 (writer, 
 - No Celeris successor and no hosted/local substitution (§3).
 - Money keeps the $110 total, the $5 reserve and the existing provider subcaps, with both empty-run schedules shown separately (§7).
 - One model per GPU (§3).
-- Effect of the stricter delivery standard: Mercury, Liquid, SubQ Snap Preview and GPT-6 Luna become "not tested: delivery unverified", because their docs do not say that oversize input is refused or that billed input is what the model reads.
-- D3, D4, D9 and D10 are decided here; D1, D2, D5–D8 remain for Ümit.
+- Effect of the stricter delivery standard (revision 3 adds Celeris): Mercury, Liquid, Celeris, SubQ Snap Preview and GPT-6 Luna become "not tested: delivery unverified". That is **our evidence gap**: the docs we read do not state that oversize input is refused rather than cut. It does not mean these models cannot accept notes.
+- Revision 3 (Zeki #3685): "billed input covers what the model reads" no longer counts as no-truncation evidence; the client size check is worded as a conservative guard; local 400/422 is the server's pre-inference gate; D7 is decided.
+- D3, D4, D7, D9 and D10 are decided here; D1, D2, D5, D6 and D8 remain for Ümit.
 
 ## 1. What this part asks
 
@@ -58,7 +59,7 @@ These figures and the historical largest requests (§3) decide only whether a mo
 - the allowed response aliases (as observed in the league).
 
 There is no successor, alias or substitute beyond that list:
-- **Celeris:** send `celeris-1-decision`, as the leaderboard row did. Its docs now name `celeris-1.1-decision`. If the service refuses the frozen id or answers with an id outside the frozen aliases, the model stops: "not tested: model id not served as on the leaderboard" (D7).
+- **Celeris:** send `celeris-1-decision`, as the leaderboard row did. Its docs now name `celeris-1.1-decision`. If the service refuses the frozen id or answers with an id outside the frozen aliases, the model stops: "not tested: model id not served as on the leaderboard" (decided, D7).
 - **SubQ Snap Preview:** the same rule.
 - **No hosted/local swap:** a hosted setup is never replaced by local weights, and the reverse.
 
@@ -72,17 +73,17 @@ A returned name alone does not prove the model behind it is unchanged; it is rec
 
 | # | Setup (v3.db) | Maker | Route (frozen) | Delivery evidence (§6.1) | Sizing N / W (historical max + bound vs limit) | Est. decisions / requests per arm (incl. its 3 empty runs) | Est. $ both arms: separate · shared (Arm N alone); billed unless noted | GPU (alone) | Status / blocker |
 |---|---|---|---|---|---|---|---|---|---|
-| 1 | Mercury Decide | Inception | OpenRouter `openrouter.ai/api/v1/systemone`, `inception/mercury-decide` | **unresolved**: docs say state is read as given (openrouter.ai/docs/guides/community/typesafe-sdk.md; docs.inceptionlabs.ai/capabilities/decisions.md, read 2026-11-09). Neither documents oversize handling, and the same OpenRouter page documents a **silent** cut for another provider ("reads roughly the first 2,000 tokens of text in `state` and drops the rest without an error") | 27,535 + 2,000 / + 1,350 ≤ 65,536 (openrouter.ai/inception/mercury-decide) | 2,600 / 2,600 | $0.46 · $0.42 ($0.23) on OpenRouter | — | **not tested: delivery unverified** (unless the maker documents refusal on oversize) |
+| 1 | Mercury Decide | Inception | OpenRouter `openrouter.ai/api/v1/systemone`, `inception/mercury-decide` | **unresolved**: docs say state is read as given (openrouter.ai/docs/guides/community/typesafe-sdk.md; docs.inceptionlabs.ai/capabilities/decisions.md, read 2026-11-09). Neither documents oversize handling, and the same OpenRouter page documents a **silent** cut for another provider ("reads roughly the first 2,000 tokens of text in `state` and drops the rest without an error") | 27,535 + 2,000 / + 1,350 ≤ 65,536 (openrouter.ai/inception/mercury-decide) | 2,600 / 2,600 | $0.46 · $0.42 ($0.23) on OpenRouter | — | **not tested: delivery unverified** (our evidence gap: no documented refusal of oversize input; not a finding that it cannot take notes) |
 | 2 | Drex Max 1.1 | Nace.AI | Nace `console.nace.ai/v1/systemone`, `drex-max-v1.1`, 25 options | **Hc**: "Drex passes it to the model as is"; too long → `422`, "A longer request is refused" (console.nace.ai/docs/drex/api-reference/systemone; …/reference/models) | 5,204 + 2,000 / + 1,350 ≤ 262,144 whole request | 2,600 / 3,350 | booked at list $0.06: $1.74 · $1.58 ($0.86); Nace bills $0.87 · $0.79 at its $0.03 launch price | — | Nace subcap (§7) |
-| 3 | Liquid d1-ultra | Liquid AI | `api.liquid.ai/decisions/v1/systemone`, `d1-ultra` | **unresolved**: state "can be plain text" (docs.liquid.ai/lfm/models/d1.md); Liquid publishes no limit and no oversize behaviour | 20,603 + 2,000 / + 1,350 ≤ 32,768 (OpenRouter listing only) | 2,600 / 2,600 | $0.94 · $0.86 ($0.47) | — | **not tested: delivery unverified** |
-| 4 | Celeris-1 Decision | Celeris | `inference.celeris.ai/celeris-1-decision/v1/systemone`, `celeris-1-decision` | **Hc**: "`input_tokens` covers everything the model reads for the request"; unknown field → `422`; context 131,072 (docs.celeris.ai/decisions, /models) | 28,163 + 2,000 / + 1,350 ≤ 131,072 | 2,600 / 2,600 | $0.96 · $0.87 ($0.48) at our recorded $0.04 (docs now $0.004) | — | D7 (id) |
+| 3 | Liquid d1-ultra | Liquid AI | `api.liquid.ai/decisions/v1/systemone`, `d1-ultra` | **unresolved**: state "can be plain text" (docs.liquid.ai/lfm/models/d1.md); Liquid publishes no limit and no oversize behaviour | 20,603 + 2,000 / + 1,350 ≤ 32,768 (OpenRouter listing only) | 2,600 / 2,600 | $0.94 · $0.86 ($0.47) | — | **not tested: delivery unverified** (our evidence gap, as row 1) |
+| 4 | Celeris-1 Decision | Celeris | `inference.celeris.ai/celeris-1-decision/v1/systemone`, `celeris-1-decision` | **unresolved**: state "can be a string"; "`input_tokens` covers everything the model reads for the request" (billing, not a no-truncation statement: billed text could still be dropped later); context 131,072, "a fixed part is reserved for the answers", with no statement that oversize input is refused (docs.celeris.ai/decisions, /models, read 2026-11-09) | 28,163 + 2,000 / + 1,350 ≤ 131,072 | 2,600 / 2,600 | $0.96 · $0.87 ($0.48) at our recorded $0.04 (docs now $0.004) | — | **not tested: delivery unverified** (our evidence gap, as row 1); identity rule D7 |
 | 5 | Fastino GLiDE | Fastino | `api.fastino.ai/v1/systemone`, `fastino/GLiDE` (answers `glide_v2`) | **Hc**: each question prompt "must fit within 65,536 tokens"; `400` "Prompt exceeds the context window"; extra field → `422` (docs.fastino.ai/inference/systemone.md) | 27,515 + 2,000 / + 1,350 ≤ 65,536 | 2,650 / 2,650 | $0.99 · $0.90 ($0.49) at $0.04 (docs; league recorded none) | — | — |
 | 6 | SubQ Snap 1.1 | SubQ | `api.subq.ai/v1/systemone`, `subq-snap-1.1` | **Hc**: "`state`: the text, object, or array to evaluate"; "A request over the limit, or close to it, fails with `400`" (docs.subq.ai/endpoints/decisions-api) | 21,968 + 2,000 / + 1,350 ≤ 393,216 | 2,700 / 2,700 | $0.99 · $0.90 ($0.49) | — | — |
 | 7 | Jev 1.13.0 | TypeSafe | `api.typesafe.ai/v1/systemone`, `jev-1.13.0` | **Hc**: "State is the content you ask a System One model to evaluate"; over the limit → `400 max_tokens_exceeded` (docs.typesafe.ai/concepts/state.md, api/errors.md) | 26,116 + 2,000 / + 1,350 ≤ 32k per question (docs.typesafe.ai/models.md; 32,000 or 32,768 not stated: the gate uses 32,000) | 2,600 / 2,600 | $1.05 · $0.96 ($0.52) | — | — |
 | 8 | Jev 1.14.0 | TypeSafe | same, `jev-1.14.0` | **Hc**, as row 7 | 27,898 + 2,000 = 29,898 / 29,248 ≤ 32,000 (tightest hosted) | 2,650 / 2,650 | $1.08 · $0.98 ($0.53) | — | — |
-| 9 | SubQ Snap Preview | SubQ | `api.subq.ai/v1/systemone`, `subq-snap-preview` | **unresolved**: no longer on docs.subq.ai/using-the-api/models (answered on 2026-11-07) | not published | 2,650 / 2,650 | $1.25 · $1.14 ($0.62) | — | **not tested: delivery unverified**; D7 |
+| 9 | SubQ Snap Preview | SubQ | `api.subq.ai/v1/systemone`, `subq-snap-preview` | **unresolved**: no longer on docs.subq.ai/using-the-api/models (answered on 2026-11-07) | not published | 2,650 / 2,650 | $1.25 · $1.14 ($0.62) | — | **not tested: delivery unverified** (our evidence gap, as row 1); identity rule D7 |
 | 10 | Drex 2.0 | Nace.AI | Nace, `drex-v2.0`, 25 options | **Hc**, as row 2 | 5,017 + 2,000 / + 1,350 ≤ 131,072 state / 262,144 state + question | 2,600 / 3,350 | $1.71 · $1.55 ($0.84) | — | Nace subcap; D8 |
-| 11 | GPT-6 Luna | OpenAI | `api.openai.com/v1/decisions`, `gpt-6-luna` | **unresolved**: `input` is "Shared evidence for the questions: a text string…"; the API schema limits `input` to 10,485,760 characters, but the pages read (developers.openai.com/api/docs/guides/decisions; …/reference/resources/decisions/methods/create, 2026-11-09) neither say that over-long token input is refused rather than cut nor tie billed input to what the model reads | 24,150 + 2,000 / + 1,350 ≤ 922,000 max input (model page) | 2,600 / 2,600 | $2.17 · $1.97 ($1.07) | — | **not tested: delivery unverified** (unless OpenAI's docs settle (a)) |
+| 11 | GPT-6 Luna | OpenAI | `api.openai.com/v1/decisions`, `gpt-6-luna` | **unresolved**: `input` is "Shared evidence for the questions: a text string…"; the API schema limits `input` to 10,485,760 characters, but the pages read (developers.openai.com/api/docs/guides/decisions; …/reference/resources/decisions/methods/create, 2026-11-09) do not say that over-long token input is refused rather than cut | 24,150 + 2,000 / + 1,350 ≤ 922,000 max input (model page) | 2,600 / 2,600 | $2.17 · $1.97 ($1.07) | — | **not tested: delivery unverified** (our evidence gap, as row 1) |
 | 12 | Decider Flash v1.2 | Perplexity | local `pplx_decider_server.py`, `decider-v1.2.sh flash`, 25 options | **pending R** (code: `protocol.py:176-189` "State:\n" + state; only `<|…|>` escaped, `:149-152`) | 5,162 + 2,000 / + 1,350 ≤ 262,144 (`model.py:35`, then 400) | 2,600 / 3,400 | $0 (list eq. $0.30 · $0.27) | ~13 GiB | GPU |
 | 13 | Decider v1.2 27B | Perplexity | local `decider-v1.2.sh 27b` | **pending R**, as row 12 | 5,166 + 2,000 / + 1,350 ≤ 262,144 | 2,600 / 3,300 | $0 (list eq. $0.57 · $0.52) | ~53 GiB | GPU |
 | 14 | Decider v1.1 27B | Perplexity | local `decider.sh` (`autojev`) | **pending R** (`autojev/model.py:98-103` "State:\n" + describe(state)) | 5,168 + 2,000 = 7,168 / 6,518 ≤ 8,192 per question (`model.py:264,284-285`, then 422) | 2,600 / 3,350 | $0 (list eq. $0.58 · $0.53) | ~49–52 GiB | GPU |
@@ -98,8 +99,8 @@ A returned name alone does not prove the model behind it is unchanged; it is rec
 | (D2) | Cygnet (Gemma 4 12B) | (Cygnet) | local shim `cygnet.sh` (vLLM gemma-4-12B-it), 26 options | **pending R** (shim copies `state`: `decision_server.py:221`, `cygnet_shim.py:162-170`; trailing whitespace stripped) | 9,953 + 2,000 / + 1,350 ≤ 16,384 (`cygnet.sh:20`, then 422) | 3,100 / 3,100 | $0 | ~32–42 GiB | excluded by #3111; **D2** |
 
 **Cohort outcome before preflight:**
-- **Hosted, eligible to prepare (Hc), 6:** rows 2, 4, 5, 6, 7, 8, plus row 10 if D8 keeps it.
-- **Hosted, "not tested: delivery unverified", 4:** rows 1, 3, 9, 11.
+- **Hosted, eligible to prepare (Hc), 5:** rows 2, 5, 6, 7, 8, plus row 10 if D8 keeps it.
+- **Hosted, "not tested: delivery unverified" (our evidence gap), 5:** rows 1, 3, 4, 9, 11.
 - **Local, eligible to prepare (pending R), 9:** rows 12–20 (row 18 per D8; rows 15, 16, 20 per D5).
 - **"Not tested: context too short":** rows 21 and 23 in both arms; row 22 in Arm N.
 - **Row 22 Arm W** depends on its exact count.
@@ -207,10 +208,10 @@ Exact byte equality is not required where escaping is declared, and token counts
 A route whose final input cannot be rendered this way is **"delivery unverified"**.
 
 **Hosted routes, API contract + accounting (Hc).** This is weaker than Lr and labelled so on the page: "delivery: API contract + accounting, not verified end to end". It needs both of these:
-- (a) **Contract:** the maker's docs say the `state`/`input` text is what the model reads **and** either that oversize requests are **refused**, not cut, or that billed input covers everything the model reads (so an accounting delta is a reading delta by contract). Met for rows 2 and 10 (Nace: passed "as is", oversize refused), 4 (Celeris: billed input "covers everything the model reads"), 5 (Fastino: `400` over the limit), 6 (SubQ: `400` over the limit), 7 and 8 (TypeSafe: `400 max_tokens_exceeded`). Not met for rows 1, 3, 9, 11.
+- (a) **Contract (no silent truncation):** the maker's docs say the `state`/`input` text is what the model reads **and** say explicitly that oversize input is **refused**, not cut (or give equivalent complete-input evidence). A statement that billed input covers what the model reads does **not** count on its own: billing can include text dropped later. Met for rows 2 and 10 (Nace: passed "as is"; "A longer request is refused", `422`), 5 (Fastino: `400` "Prompt exceeds the context window"), 6 (SubQ: "A request over the limit … fails with `400`"), and 7 and 8 (TypeSafe: `400 max_tokens_exceeded`). Not met for rows 1, 3, 4, 9, 11.
 - (b) **Accounting, probe P1:** one stored 2-option request sent without and with the block (under $0.001 per route). The reported input tokens must rise. P1 is accounting evidence only: billing can come before a cut, so it does not show the original board and options survived.
 
-A route without (a) is **"not tested: delivery unverified"**, and P1 is not sent to it.
+A route without (a) is **"not tested: delivery unverified"**: a gap in our evidence, not a finding that the route drops notes. P1 is not sent to it.
 
 **No canary.** A behavioural canary shows neither complete delivery nor anything the rule needs, so it is not part of the plan.
 
@@ -219,9 +220,9 @@ A route without (a) is **"not tested: delivery unverified"**, and P1 is not sent
 ### 6.2 Context: sizing, then a gate on every request (decided)
 
 - **Sizing (preflight):** the historical largest request plus the arm's sizing bound (§3) decides only whether a model is prepared. For local routes, the Lr render of the largest stored request with a worst-case block (Arm N: 10 × 5 lessons × 30 words; Arm W: the 5 largest stored position blocks and the longest plays) must fit in the model's own tokenizer.
-- **Run-time gate (fail closed):** every request actually rendered at the pinned settings is checked against every limit that applies before it is sent: route, question, candidate, read layout, plus the output allowance.
-  - **Local routes:** the server's own refusal path (400/422 on overflow) is the gate. Clef has none, which is one reason it is not tested.
-  - **Hosted routes:** our client also refuses to send a request whose upper-bound size (request bytes counted as tokens) exceeds the documented limit. The service's documented refusal is the second gate.
+- **Run-time gate (fail closed):** every request actually rendered at the pinned settings is checked, before inference, against every limit that applies: route, question, candidate, read layout, plus the output allowance.
+  - **Local routes:** the server's own pre-inference gate: it refuses an over-limit request with 400/422 before the model runs. Clef has none, which is one reason it is not tested.
+  - **Hosted routes:** before sending, our client applies a **conservative guard**. It refuses a request whose upper bound (request bytes counted as tokens, plus the route's documented wrapper allowance) exceeds the documented limit. This bound is not the model's exact count, and a guard refusal does not show the model could not take the request. A route whose wrapper is undocumented gets the 4,096-token template margin the late-entry runner already uses; with no documented limit it fails closed. The service's documented refusal is the second gate.
 - **On any gate failure or refusal:** that model/arm **stops and is marked "incomplete: context limit reached"**. Nothing is shortened: no notes cut beyond the pilot rule, no examples dropped, no options dropped, no different group size. No position or game is scored from only the requests that succeeded.
 
 ### 6.3 Identity
@@ -238,21 +239,21 @@ The response `model` (and OpenRouter `provider`) must be in the frozen alias lis
 - **Cost check after E1 + S1 per arm** (live plan rule a): projected > 1.5 × the per-model estimate in §3 → that model stops and is reported.
 - **Cross-provider accounting (D6):** OpenRouter is checked against its live balance. TypeSafe, Celeris, Fastino, SubQ, OpenAI and Nace bill their own accounts. Whether they count against the $110, and with what allocation, is D6. No paid hosted work starts before it.
 
-**Estimates, rows that can be run (Hc rows 2, 4–8, 10), booked** (= max(reported, list price), the rule's amount; for Drex Max 1.1 that is the $0.06 list price, about twice what Nace bills at its $0.03 launch price):
+**Estimates, rows that can be run (Hc rows 2, 5–8, 10), booked** (= max(reported, list price), the rule's amount; for Drex Max 1.1 that is the $0.06 list price, about twice what Nace bills at its $0.03 launch price):
 
 | Schedule | Hosted players | Writer (OpenRouter) | P1 probes | Total |
 |---|---:|---:|---:|---:|
-| **Separate empty runs (default, D1)** | $8.51 | $0.49 (≈ 17 Arm N models × 50 × $0.00058) | < $0.02 | **≈ $9.0** |
-| Shared empty runs | $7.73 | $0.49 | < $0.02 | ≈ $8.2 |
+| **Separate empty runs (default, D1)** | $7.55 | $0.46 (≈ 16 Arm N models × 50 × $0.00058) | < $0.02 | **≈ $8.0** |
+| Shared empty runs | $6.86 | $0.46 | < $0.02 | ≈ $7.3 |
 
-- Per provider, separate empty runs: Nace $3.45 (Drex Max 1.1 $1.74 + Drex 2.0 $1.71); TypeSafe $2.13; Fastino $0.99; SubQ $0.99; Celeris $0.96 (about $0.10 at the docs' $0.004).
-- The not-tested hosted rows (1, 3, 9, 11) add nothing; Mercury was the only OpenRouter player. If OpenAI's docs settle row 11's contract, Luna adds $2.17 separate / $1.97 shared.
+- Per provider, separate empty runs: Nace $3.45 (Drex Max 1.1 $1.74 + Drex 2.0 $1.71); TypeSafe $2.13; Fastino $0.99; SubQ $0.99.
+- The not-tested hosted rows (1, 3, 4, 9, 11) add nothing; Mercury was the only OpenRouter player. If later documentation settles a row's contract, it adds its figure from §3 (e.g. Luna $2.17 separate / $1.97 shared, Celeris $0.96 / $0.87).
 - Reservation peak in flight is small: about $0.018 per writer call, and under $0.01 per decision request at worst case.
 - This experiment's OpenRouter billed total so far: $20.72 of $110 (`workspace/improve/out/improve.json`). The total-cap question #3631 is open; nothing here assumes a higher cap.
 
 **Order (API first, cheapest first, booked).** The order is the same under both schedules except that Fastino and SubQ swap places; the default is separate.
-- **Separate:** Celeris ($0.96) → SubQ Snap 1.1 ($0.99) → Fastino GLiDE ($0.99) → Jev 1.13.0 ($1.05) → Jev 1.14.0 ($1.08) → Drex 2.0 ($1.71) → Drex Max 1.1 ($1.74).
-- **Shared:** Celeris ($0.87) → Fastino ($0.90) → SubQ 1.1 ($0.90) → Jev 1.13.0 ($0.96) → Jev 1.14.0 ($0.98) → Drex 2.0 ($1.55) → Drex Max 1.1 ($1.58).
+- **Separate:** SubQ Snap 1.1 ($0.99) → Fastino GLiDE ($0.99) → Jev 1.13.0 ($1.05) → Jev 1.14.0 ($1.08) → Drex 2.0 ($1.71) → Drex Max 1.1 ($1.74).
+- **Shared:** Fastino ($0.90) → SubQ 1.1 ($0.90) → Jev 1.13.0 ($0.96) → Jev 1.14.0 ($0.98) → Drex 2.0 ($1.55) → Drex Max 1.1 ($1.58).
 
 Nace (Drex) rows wait for D6 in either order.
 
@@ -295,7 +296,7 @@ Per arm: 50 games ≈ 1,000–1,075 decisions, 5 T10 = 1,000 and 3 empty runs = 
 7. **Page and validator (#3664/#3665)** (`improve_page.py`, `improve_validate.py`, `checks.check_improve`, `selftest_improve.py`):
    - extend the **existing** improve table, not a new section, with a **Chat / Decision filter**;
    - **two rows per decision model** ("<model> · helper-written notes" and "<model> · worst mistakes");
-   - **not-tested rows stay visible with their reason** ("context too short", "delivery unverified", "model id not served as on the leaderboard", "excluded (#3111)" for Cygnet unless D2 changes it);
+   - **not-tested rows stay visible with their reason** ("context too short"; "delivery unverified: our evidence does not show complete delivery", worded as our gap, not the model's inability; "model id not served as on the leaderboard"; "excluded (#3111)" for Cygnet unless D2 changes it);
    - per row: the delivery evidence class, and "incomplete" states;
    - the rule, the writer (Qwen3.8 Flash (off), pinned) and the label "helper-written notes → decision player" stated above the table before the first call;
    - the plan text "not tested: cannot write lessons" (in `REQUIRED` and `others()`) is replaced by the decision rows, and the validator's required phrases change with it.
@@ -307,11 +308,12 @@ Per arm: 50 games ≈ 1,000–1,075 decisions, 5 T10 = 1,000 and 3 empty runs = 
 - **D3 placement:** start of `state` / `input` (§2).
 - **D4 wording:** the pilot prompt stays byte-identical; the intro line is "Notes a helper wrote from your earlier games in this series, oldest first:" (§2, §4).
 - **D9 Arm W content:** board, chosen play, best play, loss; no descriptions (§5).
-- **D10 delivery evidence:** Lr / Hc / "delivery unverified", no canary (§6.1).
+- **D10 delivery evidence:** Lr / Hc (explicit no-silent-truncation evidence required) / "delivery unverified", no canary (§6.1).
+- **D7 identity:** no successor, alias or substitute beyond the frozen list (Ümit's leaderboard-settings rule). A frozen id not served as on the leaderboard → "not tested: model id not served as on the leaderboard" (§3).
 
 ## 10. Open decisions for Ümit
 
-- **D1 Empty runs:** one set per arm (the default) or shared by both arms. Sharing saves 600 decisions per model (~$0.8 booked over the runnable hosted rows) but makes both verdicts use the same baseline, and needs one schedule interleaving both arms' series.
+- **D1 Empty runs:** one set per arm (the default) or shared by both arms. Sharing saves 600 decisions per model (~$0.7 booked over the runnable hosted rows) but makes both verdicts use the same baseline, and needs one schedule interleaving both arms' series.
 - **D2 Cygnet:** keep it excluded (#3111) or add it (its earlier reason was our runner; sizing fits).
 - **D5 Edge settings:** with settings unchanged, are these eligible or "not tested"?
   - Base Labs past the trained 16,384 tokens (Elephant: N; Mammoth: both arms);
@@ -321,5 +323,4 @@ Per arm: 50 games ≈ 1,000–1,075 decisions, 5 T10 = 1,000 and 3 empty runs = 
   - do the non-OpenRouter providers count against the $110 total, and with what per-provider allocation?
   - Nace's $1.25 subcap is below the ~$3.45 booked (~$2.58 billed by Nace) that both hosted Drex setups need with separate empty runs (~$3.13 / $2.34 shared).
   - No paid hosted work starts before this.
-- **D7 Identity:** Celeris's docs now name `celeris-1.1-decision`, while the row used `celeris-1-decision`; SubQ Snap Preview has left SubQ's docs. If the frozen id is not served as on the leaderboard, is "not tested: model id not served as on the leaderboard" right?
 - **D8 Drex 2.0 settings:** test the hosted setup only (the row's), or both it and Drex 2.0 (local)?

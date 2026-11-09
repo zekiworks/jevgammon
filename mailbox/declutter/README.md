@@ -1,7 +1,7 @@
 # declutter review: smaller headings, a shorter front page (Ümit, relayed by Zeki #3521)
 
 Ümit: 'webden gereksiz büyük fontları değiştirin, sonra gereksiz yazıları çıkartın' (shrink the needlessly big fonts,
-then take out the needless text). Branch `declutter`, site commit **239e158**, one commit on origin/main 7b35e40.
+then take out the needless text). Branch `declutter`: site commit **239e158** (on 7b35e40), merged with origin/main **98effa3** (522d0d9; main's new suite-bar.css tabs came in, no conflict).
 **Candidate only. Not merged or deployed.** Presentation only: bg.css, home.py, story.py, pages.py.
 
 ## What changed
@@ -49,8 +49,8 @@ full title): **'Do models take the right risks, and do they learn from their gam
   `~/.local/state/bg-site/lock`; data as of 11:50Z, results 7acf91cb), plus frozen copies of the untracked build inputs
   (replay.db, smoke/part-a.json, workspace/learning-pilot). The live state was only read. Each build used its own copy.
 - Full `build.py --state … --no-image` (compute, render and checks.run, which exits 2 on any failure), `/usr/bin/python3`:
-  - origin/main 7b35e40: `build-main.log`, **exit status 0**.
-  - candidate 239e158 (the committed tree, checked equal to the build's source): `build-candidate.log`, **exit status 0**,
+  - origin/main 98effa3: `build-main.log`, **exit status 0**.
+  - candidate 522d0d9 (git archive of the branch: 239e158 + origin/main 98effa3): `build-candidate.log`, **exit status 0**,
     so **checks.run 0 failures** (links, anchors, unique ids, number traceability, findings).
 - `scripts/compare.py` (render vs render), `scripts/narrow.py` (diffs), `scripts/browser.py` (Playwright, Chromium,
   renders served by `python3 -m http.server` over /tmp). Not run: update.sh, deploy, scorers, model calls.
@@ -68,12 +68,12 @@ full title): **'Do models take the right risks, and do they learn from their gam
 ### First screen (front page, light; dark the same)
 | px | title before | after | leaderboard top / row 1 bottom before | after | screen |
 |---|---|---|---|---|---|
-| 1280 | 25.6 px, 2 lines | 20.5 px, 1 line | 609 / 879 | 219 / 489 | 900 |
-| 390 | 25.6 px, 4 lines | 16.8 px, 3 lines | 921 / 1308 | 269 / 655 | 844 |
-| 375 | 25.6 px, 4 lines | 16.8 px, 3 lines | 930 / 1333 | 270 / 672 | 844 |
+| 1280 | 25.6 px, 2 lines | 20.5 px, 1 line | 633 / 903 | 243 / 513 | 900 |
+| 390 | 25.6 px, 4 lines | 16.8 px, 3 lines | 941 / 1328 | 289 / 675 | 844 |
+| 375 | 25.6 px, 4 lines | 16.8 px, 3 lines | 950 / 1353 | 290 / 692 | 844 |
 
-At 1280 the tabs, title, counts line and the leaderboard's first six rows are on the first screen; at 375 the tabs,
-title, leaderboard keys and its first three rows (row 1 ends at 672 px of 844) (before: the leaderboard began below the first screen).
+At 1280 the tabs, title, counts line and the leaderboard's first five rows (the sixth cut) are on the first screen; at 375 the tabs,
+title, leaderboard keys and its first two rows (the third cut; row 1 ends at 692 px of 844) (before: the leaderboard began below the first screen).
 
 ## Diffs
 - `source.patch`: the branch against origin/main (`tools/site`).

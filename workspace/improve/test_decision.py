@@ -369,7 +369,8 @@ class Money(Isolated):
         self.cohort()
         chat = ledger(I.RUNS / "deepseek-v4.1-flash-on" / "ledgers" / "S1-a1.db", ("DeepSeek | S1", "settled", 1, 2.0))
         rec = I.RUNS / "deepseek-v4.1-flash-on" / "S1" / "ledger.json"
-        I.write_atomic(rec, json.dumps(dict(path=str(chat), cap=107.5, binding="rule (a) limit")))
+        I.write_atomic(rec, json.dumps(dict(path=str(chat), cap=107.5, binding="rule (a) limit",
+                                            gate=dict(share=107.0))))
         self.assertEqual([round(x["headroom"], 6) for x in D.chat_liabilities()], [105.5])
         # $110 - $2 booked - $105.50 open chat headroom = $2.50 for the decision lane: SubQ's step fits ...
         gate = D.admit(HOSTED_W.replace("jev-1.14.0", "subq-snap-1.1"), "E1", I.RUNS / "s.db", 0.05, want=0.75)
@@ -388,6 +389,61 @@ class Money(Isolated):
         rec.write_text("{not json")
         with self.assertRaises(D.AccountingError):
             D.chat_liabilities()
+
+    def chat_step(self, model, step, cap, share, rows=()):
+        led = ledger(I.RUNS / model / "ledgers" / f"{step}-a1.db", *rows)
+        rec = I.RUNS / model / step / "ledger.json"
+        gate = {} if share == "none" else dict(share=share)
+        I.write_atomic(rec, json.dumps(dict(path=str(led), cap=cap, gate=gate)))
+        return led, rec
+
+    def test_an_open_chat_step_capped_under_an_old_share_blocks_admission_until_it_ends(self):
+        # Zeki #3784 / Main: the $107 + $3.00 partition holds only once no open chat step was capped under a larger
+        # share. DeepSeek S1 started 13:03Z under the $110 share.
+        self.cohort()
+        sub = HOSTED_W.replace("jev-1.14.0", "subq-snap-1.1")
+        _, rec = self.chat_step("deepseek-v4.1-flash-on", "S1", 61.97, 110.0, [("DeepSeek | S1", "settled", 1, 3.0)])
+        with self.assertRaises(D.Refused) as e:
+            D.admit(sub, "E1", I.RUNS / "s.db", 0.05, want=0.75)
+        self.assertTrue(e.exception.pause)
+        self.assertIn("deepseek-v4.1-flash-on S1 (share 110.0", str(e.exception))
+        I.write_atomic(rec.parent / "aggregate.json", "{}")  # the step ended
+        self.chat_step("kimi-k3.1-pro-off", "S1", 6.59, 21.9586)  # capped under a share below $107: no block
+        self.chat_step("glm-5.3-on", "S2", 3.0, 107.0)  # a new step under the $107 share: no block
+        gate = D.admit(sub, "E1", I.RUNS / "s.db", 0.05, want=0.75)
+        self.assertEqual(gate["partition"], 107.0)
+        self.chat_step("qwen3.8-flash-off", "S3", 1.0, "none")  # no recorded share: blocks
+        with self.assertRaises(D.Refused):
+            D.admit(sub, "E2", I.RUNS / "s2.db", 0.05, want=0.75)
+
+    def test_an_unbilled_chat_reservation_does_not_reuse_the_openrouter_reserve(self):
+        # Zeki #3784 executed defect 1: balance $5.03, chat cap $0.03 with an unsent open attempt of $0.03.
+        self.cohort()
+        self.chat_step("deepseek-v4.1-flash-on", "S2", 0.03, 107.0, [("DeepSeek | S2", "open", 0.03, None)])
+        with self.assertRaises(D.Refused) as e:
+            D.admit("decision/decider-v1.2-27b-notes", "S1", I.RUNS / "w.db", 0.005, balance=5.03)
+        self.assertIn("balance", str(e.exception))
+
+    def test_a_lost_chat_reservation_stays_a_balance_liability(self):
+        self.cohort()
+        self.chat_step("deepseek-v4.1-flash-on", "S2", 0.0, 107.0, [("DeepSeek | S2", "lost", 0.03, None)])
+        with self.assertRaises(D.Refused):
+            D.admit("decision/decider-v1.2-27b-notes", "S1", I.RUNS / "w2.db", 0.005, balance=5.03)
+
+    def test_each_chat_ledger_is_read_once_per_admission(self):
+        # Zeki #3784 executed defect 2: booked and headroom come from one sample of each ledger, so an open step
+        # contributes max(booked, cap) whatever settles between reads.
+        self.cohort()
+        led, _ = self.chat_step("deepseek-v4.1-flash-on", "S2", 106.9, 107.0)
+        reads, real = [], D.ledger_read
+        try:
+            D.ledger_read = lambda p, writer=None: (reads.append(str(p)), real(p, writer))[1]
+            with self.assertRaises(D.Refused):  # $110 - $106.90 = $3.10 < the expected $3.20
+                D.admit(HOSTED_W.replace("jev-1.14.0", "subq-snap-1.1"), "E1", I.RUNS / "s.db", 3.2)
+            self.assertEqual(reads.count(str(led)), 1)
+            self.assertAlmostEqual(D.chat_accounting()["total"], 106.9)
+        finally:
+            D.ledger_read = real
 
     def test_p1_counts_only_under_the_current_effective_settings(self):
         self.cohort()

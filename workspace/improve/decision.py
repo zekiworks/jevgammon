@@ -309,14 +309,16 @@ class Refused(Exception):
         self.pause = pause
 
 
-def booked_rows(path, writer=None):
-    """Booked dollars of a ledger (settled at cost, lost and open at their reservation), all rows or only the
-    writer's / the player's. A file the runner never created holds nothing; an existing file that cannot be read,
-    lacks its table or holds an invalid status or amount raises AccountingError."""
+def ledger_read(path, writer=None):
+    """One read of a ledger: (booked, unbilled). Booked = settled at cost, lost and open at their reservation;
+    unbilled = the open and lost reservations (sent or not, possibly not yet charged: they stay liabilities against
+    the live balance until reconciled). All rows or only the writer's / the player's. A file the runner never
+    created holds nothing; an existing file that cannot be read, lacks its table or holds an invalid status or amount
+    raises AccountingError."""
     import sqlite3
     path = Path(path)
     if not path.exists():
-        return 0.0
+        return 0.0, 0.0
     try:
         db = sqlite3.connect(f"file:{path}?mode=ro", uri=True, timeout=60)
         try:
@@ -325,15 +327,21 @@ def booked_rows(path, writer=None):
             db.close()
     except sqlite3.Error as e:
         raise AccountingError(f"ledger {path} unreadable: {e}") from None
-    total = 0.0
+    booked = unbilled = 0.0
     for status, reserved, cost, setup in rows:
         if writer is not None and str(setup or "").endswith(WRITER_SUFFIX) != writer:
             continue
         value = {"settled": cost, "lost": reserved, "open": reserved}.get(status, "bad")
         if not isinstance(value, (int, float)) or value != value or value < 0:
             raise AccountingError(f"ledger {path}: invalid row ({status!r}, {reserved!r}, {cost!r})")
-        total += value
-    return total
+        booked += value
+        if status != "settled":
+            unbilled += value
+    return booked, unbilled
+
+
+def booked_rows(path, writer=None):
+    return ledger_read(path, writer)[0]
 
 
 def arm_ledgers(key):
@@ -350,24 +358,45 @@ def chat_booked():
     return sum(booked_rows(p) for p in sorted(I.RUNS.glob("*/ledgers/*.db")))
 
 
-def chat_liabilities():
+def chat_liabilities(reads=None):
     """The chat lanes' open steps: a chat step fixes its ledger cap at its start (improve.py run -> money_gate ->
-    new_ledger, written to <model>/<step>/ledger.json) and may spend up to it until it ends, whatever share file is
-    read later. Every chat step directory with a ledger record and no aggregate counts its headroom (cap - booked)
-    as a liability, also when no process runs it (a resume opens a new ledger, so this only over-counts). Strict."""
+    new_ledger, written to <model>/<step>/ledger.json with the gate, including the share it read) and may spend up to
+    it until it ends. Every chat step directory with a ledger record and no aggregate is open, also when no process
+    runs it (a resume opens a new ledger, so this only over-counts). `reads`: ledger path -> (booked, unbilled)
+    from one read (missing ones are read here, once). Strict."""
+    reads = {} if reads is None else reads
     out = []
     for f in sorted(I.RUNS.glob("*/*/ledger.json")):
         if f.parent.parent.name == "decision" or (f.parent / "aggregate.json").exists():
             continue
         try:
             rec = json.loads(f.read_text())
-            cap, path = float(rec["cap"]), rec["path"]
+            cap, path = float(rec["cap"]), str(rec["path"])
         except (ValueError, KeyError, TypeError) as e:
             raise AccountingError(f"chat step record {f} unreadable: {e}") from None
-        booked = booked_rows(path)
+        if path not in reads:
+            reads[path] = ledger_read(path)
+        booked = reads[path][0]
+        share = (rec.get("gate") or {}).get("share")
         out.append(dict(model=f.parent.parent.name, step=f.parent.name, ledger=path, cap=cap, booked=booked,
-                        headroom=max(cap - booked, 0.0)))
+                        headroom=max(cap - booked, 0.0), share=share))
     return out
+
+
+def chat_accounting():
+    """The chat side from one read per ledger: booked (every chat ledger), unused capacity of open steps (an open
+    step contributes max(booked, cap)), unbilled reservations, and the open steps whose cap was fixed under a share
+    above the chat partition ($110 - the decision lane cap) or under no recorded share: while one exists, the
+    $107 + $3.00 partition does not hold and the decision lane waits."""
+    reads = {str(p): ledger_read(p) for p in sorted(I.RUNS.glob("*/ledgers/*.db"))}
+    steps = chat_liabilities(reads)
+    partition = I.TOTAL_CAP_USD - cohort()["decision_lane_cap_usd"]
+    blocks = [dict(model=s["model"], step=s["step"], share=s["share"], cap=s["cap"]) for s in steps
+              if not isinstance(s["share"], (int, float)) or s["share"] > partition + 1e-9]
+    booked = sum(b for b, _ in reads.values())
+    unused = sum(s["headroom"] for s in steps)
+    return dict(booked=booked, unused=unused, total=booked + unused, unbilled=sum(u for _, u in reads.values()),
+                steps=steps, partition=partition, blocks=blocks)
 
 
 def provider_of(key):
@@ -417,22 +446,34 @@ def admit(key, step, ledger_path, expected, balance=None, want=None):
         db.execute("BEGIN IMMEDIATE")
         rows = db.execute("SELECT id, key, provider, ledger, amount, status FROM allocations").fetchall()
         steps = dict(db.execute("SELECT id, step FROM allocations").fetchall())
-        held = {r[0]: committed(r) for r in rows}
-        # Every other decision ledger (none should exist outside an allocation) counts too, read strictly and
-        # attributed to its provider (an unattributable one refuses).
+        # One read per decision ledger, reused for every limit.
+        dread = {}
+        for path in [str(Path(r[3])) for r in rows] + [str(p) for p in sorted((I.RUNS / "decision").glob("*/ledgers/*.db"))]:
+            if path not in dread:
+                dread[path] = ledger_read(path)
+        held = {r[0]: committed(r, booked=dread[str(Path(r[3]))][0]) for r in rows}
+        # Every other decision ledger (none should exist outside an allocation) counts too, attributed to its
+        # provider (an unattributable one refuses).
         allocated = {str(Path(r[3])) for r in rows}
-        loose = [(provider_of(f"decision/{p.parent.parent.name}"), booked_rows(p))
-                 for p in sorted((I.RUNS / "decision").glob("*/ledgers/*.db")) if str(p) not in allocated]
+        loose = [(provider_of(f"decision/{Path(p).parent.parent.name}"), b) for p, (b, _) in dread.items()
+                 if p not in allocated]
         lane_used = sum(held.values()) + sum(v for _, v in loose)
         lane_cap = c["decision_lane_cap_usd"]
         share = I.share_cap()
         if share is not None and share + lane_cap > I.TOTAL_CAP_USD + 1e-9:
             raise Refused(f"the chat share ${share:.2f} plus the decision lane cap ${lane_cap:.2f} exceed "
                           f"${I.TOTAL_CAP_USD:.0f}: not hard allocations")
-        chat = chat_booked()
-        chat_open = sum(x["headroom"] for x in chat_liabilities())
+        acct = chat_accounting()
+        if acct["blocks"]:
+            # The partition ($110 - lane cap for the chat lanes, which they read at every step start) holds only once
+            # no open chat step was capped under a larger (or unrecorded) share: wait for those steps to end.
+            raise Refused("partition not yet in force: waiting for chat steps capped under a share above "
+                          f"${acct['partition']:.2f}: " + ", ".join(f"{b['model']} {b['step']} (share {b['share']}, cap "
+                                                                      f"${b['cap']:.2f})" for b in acct["blocks"]),
+                          pause=True)
+        chat, chat_open = acct["booked"], acct["unused"]
         limits = {"decision lane cap": lane_cap - lane_used,
-                  "rule (b) limit": I.TOTAL_CAP_USD - chat - chat_open - lane_used,
+                  "rule (b) limit": I.TOTAL_CAP_USD - acct["total"] - lane_used,
                   "rule (a) limit": I.ESTIMATE_FACTOR * m["estimate"] - arm_booked(key)}
         provider = m.get("provider") if m["hosted"] else None
         if provider:
@@ -444,11 +485,15 @@ def admit(key, step, ledger_path, expected, balance=None, want=None):
                 ours = sum(held[r[0]] for r in rows if r[2] == provider) + sum(v for p, v in loose if p == provider)
                 limits["provider subcap"] = subcap - outside - ours
         if balance is not None:
-            # OpenRouter money already promised: open writer allocations (notes arms' series steps) and the chat
-            # lanes' open step headroom (every billed chat model runs on OpenRouter), under the same lock.
+            # OpenRouter money promised but possibly not yet charged, under the same lock: open writer allocations
+            # (notes arms' series steps), unbilled (open or lost) reservations of every other decision ledger and of
+            # every chat ledger, and the unused capacity of open chat steps (all billed chat models use OpenRouter).
             writers = sum(held[r[0]] for r in rows if r[5] == "open" and r[1].endswith("-notes")
                           and str(steps[r[0]]).startswith("S"))
-            limits["balance"] = balance - I.BALANCE_RESERVE_USD - writers - chat_open
+            open_ids = {str(Path(r[3])) for r in rows if r[5] == "open"}
+            decision_unbilled = sum(u for p, (_, u) in dread.items() if p not in open_ids)
+            limits["balance"] = (balance - I.BALANCE_RESERVE_USD - writers - decision_unbilled - acct["unbilled"]
+                                 - chat_open)
         if want is not None:
             limits["requested"] = want
         binding = min(limits, key=limits.get)
@@ -463,7 +508,7 @@ def admit(key, step, ledger_path, expected, balance=None, want=None):
         db.execute("COMMIT")
         return dict(allocation=cur.lastrowid, step=step, expected=expected, cap=amount, binding=binding,
                     limits=limits, ledger=str(ledger_path), share=share, chat_booked=chat, chat_open_headroom=chat_open,
-                    lane_used=lane_used)
+                    chat_unbilled=acct["unbilled"], partition=acct["partition"], lane_used=lane_used)
     except BaseException:
         if db.in_transaction:
             db.execute("ROLLBACK")

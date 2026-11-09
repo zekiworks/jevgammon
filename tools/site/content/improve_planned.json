@@ -1,0 +1,211 @@
+{
+ "about": "Planned rows of the Did they improve? page (Ümit/Zeki #3710): models and setups not yet run, status only, no numbers. Not the pre-registration and not results. Second chat group: Ümit #3629. Decision setups (23) and Cygnet: the decision-model plan draft of 2026-11-09, revision 3 (section 3), with its not-tested reasons; arms 'notes' (helper-written notes) and 'worst mistakes'. params_model: the model's name in model_params.json (Small models filter), null when not listed.",
+ "rows": [
+  {
+   "setup": "MiniMax-M3.1-Flash",
+   "group": "chat",
+   "tag": "added 9 Nov, no league record",
+   "params_model": null,
+   "status": "not started (waiting for budget)"
+  },
+  {
+   "setup": "Inkling Small",
+   "group": "chat",
+   "tag": "added 9 Nov, no league record",
+   "params_model": null,
+   "status": "not started (waiting for budget)"
+  },
+  {
+   "setup": "Mercury Decide",
+   "group": "decision",
+   "tag": null,
+   "params_model": "Mercury Decide",
+   "notes": "not tested: delivery unverified (our evidence gap)",
+   "worst_mistakes": "not tested: delivery unverified (our evidence gap)"
+  },
+  {
+   "setup": "Drex Max 1.1",
+   "group": "decision",
+   "tag": null,
+   "params_model": "Drex Max 1.1",
+   "notes": "not started (plan awaiting decisions)",
+   "worst_mistakes": "not started (plan awaiting decisions)"
+  },
+  {
+   "setup": "Liquid d1-ultra",
+   "group": "decision",
+   "tag": null,
+   "params_model": "Liquid d1-ultra",
+   "notes": "not tested: delivery unverified (our evidence gap)",
+   "worst_mistakes": "not tested: delivery unverified (our evidence gap)"
+  },
+  {
+   "setup": "Celeris-1 Decision",
+   "group": "decision",
+   "tag": null,
+   "params_model": "Celeris-1 Decision",
+   "notes": "not tested: delivery unverified (our evidence gap)",
+   "worst_mistakes": "not tested: delivery unverified (our evidence gap)"
+  },
+  {
+   "setup": "Fastino GLiDE",
+   "group": "decision",
+   "tag": null,
+   "params_model": "Fastino GLiDE",
+   "notes": "not started (plan awaiting decisions)",
+   "worst_mistakes": "not started (plan awaiting decisions)"
+  },
+  {
+   "setup": "SubQ Snap 1.1",
+   "group": "decision",
+   "tag": null,
+   "params_model": "SubQ Snap 1.1",
+   "notes": "not started (plan awaiting decisions)",
+   "worst_mistakes": "not started (plan awaiting decisions)"
+  },
+  {
+   "setup": "Jev 1.13.0",
+   "group": "decision",
+   "tag": null,
+   "params_model": "Jev 1.13.0",
+   "notes": "not started (plan awaiting decisions)",
+   "worst_mistakes": "not started (plan awaiting decisions)"
+  },
+  {
+   "setup": "Jev 1.14.0",
+   "group": "decision",
+   "tag": null,
+   "params_model": "Jev 1.14.0",
+   "notes": "not started (plan awaiting decisions)",
+   "worst_mistakes": "not started (plan awaiting decisions)"
+  },
+  {
+   "setup": "SubQ Snap Preview",
+   "group": "decision",
+   "tag": null,
+   "params_model": "SubQ Snap Preview",
+   "notes": "not tested: delivery unverified (our evidence gap)",
+   "worst_mistakes": "not tested: delivery unverified (our evidence gap)"
+  },
+  {
+   "setup": "Drex 2.0",
+   "group": "decision",
+   "tag": null,
+   "params_model": "Drex 2.0",
+   "notes": "not started (plan awaiting decisions)",
+   "worst_mistakes": "not started (plan awaiting decisions)"
+  },
+  {
+   "setup": "GPT-6 Luna",
+   "group": "decision",
+   "tag": null,
+   "params_model": "GPT-6 Luna",
+   "notes": "not tested: delivery unverified (our evidence gap)",
+   "worst_mistakes": "not tested: delivery unverified (our evidence gap)"
+  },
+  {
+   "setup": "Decider Flash v1.2",
+   "group": "decision",
+   "tag": null,
+   "params_model": "Decider Flash v1.2",
+   "notes": "not started (plan awaiting decisions)",
+   "worst_mistakes": "not started (plan awaiting decisions)"
+  },
+  {
+   "setup": "Decider v1.2 27B",
+   "group": "decision",
+   "tag": null,
+   "params_model": "Decider v1.2 27B",
+   "notes": "not started (plan awaiting decisions)",
+   "worst_mistakes": "not started (plan awaiting decisions)"
+  },
+  {
+   "setup": "Decider v1.1 27B",
+   "group": "decision",
+   "tag": null,
+   "params_model": "Decider v1.1 27B",
+   "notes": "not started (plan awaiting decisions)",
+   "worst_mistakes": "not started (plan awaiting decisions)"
+  },
+  {
+   "setup": "Base Labs Elephant-1",
+   "group": "decision",
+   "tag": null,
+   "params_model": "Base Labs Elephant-1",
+   "notes": "not started (plan awaiting decisions)",
+   "worst_mistakes": "not started (plan awaiting decisions)"
+  },
+  {
+   "setup": "Base Labs Mammoth-1",
+   "group": "decision",
+   "tag": null,
+   "params_model": "Base Labs Mammoth-1",
+   "notes": "not started (plan awaiting decisions)",
+   "worst_mistakes": "not started (plan awaiting decisions)"
+  },
+  {
+   "setup": "Drex Max v1",
+   "group": "decision",
+   "tag": null,
+   "params_model": "Drex Max v1",
+   "notes": "not started (plan awaiting decisions)",
+   "worst_mistakes": "not started (plan awaiting decisions)"
+  },
+  {
+   "setup": "Drex 2.0 (local)",
+   "group": "decision",
+   "tag": null,
+   "params_model": "Drex 2.0",
+   "notes": "not started (plan awaiting decisions)",
+   "worst_mistakes": "not started (plan awaiting decisions)"
+  },
+  {
+   "setup": "Fastino GLiDE v1.2 (local)",
+   "group": "decision",
+   "tag": null,
+   "params_model": "Fastino GLiDE v1.2",
+   "notes": "not started (plan awaiting decisions)",
+   "worst_mistakes": "not started (plan awaiting decisions)"
+  },
+  {
+   "setup": "REAX 1.3",
+   "group": "decision",
+   "tag": null,
+   "params_model": "REAX 1.3",
+   "notes": "not started (plan awaiting decisions)",
+   "worst_mistakes": "not started (plan awaiting decisions)"
+  },
+  {
+   "setup": "Open-Jev 27B v1.1",
+   "group": "decision",
+   "tag": null,
+   "params_model": "Open-Jev 27B v1.1",
+   "notes": "not tested: context too short",
+   "worst_mistakes": "not tested: context too short"
+  },
+  {
+   "setup": "Winnow-12B",
+   "group": "decision",
+   "tag": null,
+   "params_model": "Winnow-12B",
+   "notes": "not tested: context too short",
+   "worst_mistakes": "not started (plan awaiting decisions)"
+  },
+  {
+   "setup": "Clef",
+   "group": "decision",
+   "tag": null,
+   "params_model": "Clef",
+   "notes": "not tested: context too short",
+   "worst_mistakes": "not tested: context too short"
+  },
+  {
+   "setup": "Cygnet (Gemma 4 12B)",
+   "group": "decision",
+   "tag": null,
+   "params_model": "Cygnet (Gemma 4 12B)",
+   "notes": "not tested: excluded (#3111)",
+   "worst_mistakes": "not tested: excluded (#3111)"
+  }
+ ]
+}

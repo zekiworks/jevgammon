@@ -1081,7 +1081,9 @@ def body(L) -> str:
             f'<p class="intro">{intro} Data: '
             f'<a href="../{DATA}">learning-pilot.json</a>.</p>{plan_status}'
             f'<p class="small">Plan: {esc(plan["file"])}, sha256 <code>{plan["sha256"]}</code></p>{withheld}</header>')
-    return "\n".join([head, f'<nav class="toc card" aria-label="On this page"><ul>{toc}</ul></nav>']
+    banner = ('<p class="note" id="learning-improve-banner">The pilot (one model). The full experiment with every model: '
+              '<a href="../improve/">Did they improve? →</a></p>')
+    return "\n".join([banner, head, f'<nav class="toc card" aria-label="On this page"><ul>{toc}</ul></nav>']
                      + [f'<section class="card{" lp-explore" if i == "learning-explore" else ""}" id="{i}">'
                         f'<h2>{esc(t)}</h2>{h}</section>' for i, t, h in parts])
 

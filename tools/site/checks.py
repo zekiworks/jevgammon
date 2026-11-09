@@ -734,15 +734,30 @@ def check_improve(out: Path, test_set: Path | None = None) -> list[str]:
     setups = [n.attrs["data-setup"] for n in rows]
     if sorted(setups) != sorted(m["setup"] for m in plan["models"]):
         bad.append(f"{PATH}: the model table is not one row per plan model")
-    # The "Models and status" table (Ümit #3219): one row per plan model in the plan's order, each cell the data's
-    # progress (a model the data does not list: not started), every cell unknown when the data was refused.
+    # The results table at the top (Ümit #3219, #3710): one row per plan model, finished first (by the change in risks
+    # found, largest first), then started, then not started; each status cell the data's progress (a model the data
+    # does not list: not started), every cell unknown when the data was refused; its numbers and Yes/No the ones
+    # recomputed here. Planned rows (content/improve_planned.json): no number in any cell.
     prog = {m["setup"]: m for m in (L.get("progress") or {}).get("models", [])}
+    results = None if L.get("preregistration_only") else L.get("results")
+    by = {m["setup"]: m for m in (results or {}).get("models", [])}
     prows = [n for n in nodes if n.tag == "tr" and n.attrs.get("data-progress-setup")]
-    if [n.attrs["data-progress-setup"] for n in prows] != [m["setup"] for m in plan["models"]]:
-        bad.append(f"{PATH}: the status table is not one row per plan model in the plan's order")
+    psetups = [n.attrs["data-progress-setup"] for n in prows]
+    if sorted(psetups) != sorted(m["setup"] for m in plan["models"]):
+        bad.append(f"{PATH}: the results table is not one row per plan model")
+
+    def rank(s):
+        m, p = by.get(s), prog.get(s)
+        if m is not None and _improve_expect(m)["gate"] and not results.get("dry_run"):
+            return (0, -m["change"]["risks_found"])
+        return (1, 0) if p is not None and p["status"] != "not started" and not L.get("progress_refused") else (2, 0)
+    ranks = [rank(s) for s in psetups]
+    if ranks != sorted(ranks):
+        bad.append(f"{PATH}: the results table is not finished (by change), then running, then not started")
     for n in prows:
+        s = n.attrs["data-progress-setup"]
         cells = {c.attrs["data-progress"]: " ".join(text_of(c).split()) for c in walk(n) if c.attrs.get("data-progress")}
-        p = prog.get(n.attrs["data-progress-setup"])
+        p = prog.get(s)
         if L.get("progress_refused"):
             want_s, want_d = NA, NA
         elif p is None:
@@ -751,9 +766,27 @@ def check_improve(out: Path, test_set: Path | None = None) -> list[str]:
             want_s = p["status"] + (f' ({p["reason"]})' if p["reason"] else "")
             want_d = f'{p["series_done"]} / 5'
         if cells.get("status") != want_s or cells.get("series") != want_d:
-            bad.append(f"{PATH}: {n.attrs['data-progress-setup']}: status row not what the data gives")
-    results = None if L.get("preregistration_only") else L.get("results")
-    by = {m["setup"]: m for m in (results or {}).get("models", [])}
+            bad.append(f"{PATH}: {s}: status row not what the data gives")
+        rcells = {c.attrs["data-rcell"]: " ".join(ordered_text(c).split()) for c in walk(n) if c.attrs.get("data-rcell")}
+        rv = next((c.attrs["data-rverdict"] for c in walk(n) if c.attrs.get("data-rverdict")), None)
+        m = by.get(s)
+        if m is None:
+            if rcells or rv:
+                bad.append(f"{PATH}: {s}: results-table numbers without validated results")
+            continue
+        e = _improve_expect(m)
+        g = lambda v, signed=False: fmt(v, 1, signed=signed) if v is not None else NA  # noqa: E731
+        want = {"rf": f"{g(e['before']['risks_found'])} → {g(e['after']['risks_found'])}",
+                "rf-change": g(e["change"]["risks_found"], True),
+                "rs": f"{g(e['before']['right_safety'])} → {g(e['after']['right_safety'])}"}
+        if rcells != want:
+            bad.append(f"{PATH}: {s}: results-table cells {rcells!r}, the data gives {want!r}")
+        if rv != (("yes" if e["improved"] else "no") if e["gate"] and not results.get("dry_run") else None):
+            bad.append(f"{PATH}: {s}: results-table Yes/No {rv!r} not what the data gives")
+    for n in (n for n in nodes if n.tag == "tr" and n.attrs.get("data-planned")):
+        if any(re.search(r"\d", text_of(c)) for c in [c for c in walk(n) if c.tag == "td"][2:]):
+            bad.append(f"{PATH}: planned row {n.attrs['data-planned']}: shows a number")
+
     changes = [by[s]["change"]["risks_found"] if s in by else None for s in setups]
     seen_none = False
     for i, c in enumerate(changes):

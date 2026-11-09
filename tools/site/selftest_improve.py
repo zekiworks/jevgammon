@@ -21,7 +21,7 @@ States (every number and lesson SYNTHETIC; never results):
                  ChatGPT reset 13 Nov), Claude Opus 5.5 (on) paused (usage limit), Qwen3.8-27B (on) paused (waiting
                  for a GPU); accepted by the status view and the full validation;
   status table   the default build (pre-registration only) in states none, running-1, paused and complete-yes (done):
-                 the "Models and status" table at the top, 15 rows as the data's progress fields, no outcome number
+                 the results table at the top (first under the title), 15 rows as the data's progress fields, no outcome number
                  and no free-text reason from the file on the page or in its data file;
   status faults  the progress fields with one fault each (status outside the enum, series_done 6, missing, a reason
                  outside the fixed list, ...): refused by the full validation (in faults) and by the default build's
@@ -336,7 +336,7 @@ def main():
         page = (out / IP.PATH / "index.html").read_text()
         data = (out / IP.DATA).read_text()
         bad = checks.check_improve(out, TS())
-        trs = re.findall(r'<tr data-progress-setup="([^"]+)">.*?data-progress="status">([^<]*)<.*?'
+        trs = re.findall(r'<tr data-progress-setup="([^"]+)"[^>]*>.*?data-progress="status">([^<]*)<.*?'
                          r'data-progress="series">([^<]*)<', page)
         got = {s: (st, n) for s, st, n in trs if (st, n) != ("not started", "0 / 5")}
         free = [m["reason"] for m in (S[name] or {}).get("models", []) if m["reason"]]
@@ -346,7 +346,7 @@ def main():
                  and all(set(m) == {"setup", "status", "reason", "series_done", "updated_at"}
                          for m in (Ld["progress"] or {}).get("models", [])))
         leaked = [x for x in free + outcome if x in page or x in data] + ([] if shape else ["data file shape"])
-        top = 0 < page.find('id="improve-status"') < page.find('id="improve-rule"')
+        top = 0 < page.find('id="improve-results"') < page.find('id="improve-commitment"') < page.find('id="improve-rule"')
         case(f"status table ({name}): 15 rows as the data, at the top, no outcome or free text, check_improve clean",
              len(trs) == 15 and got == rows_ and top and not leaked and not bad and Lp["progress_refused"] is None
              and Lp["results"] is None, "; ".join(bad) or f"got {got}, leaked {leaked}")

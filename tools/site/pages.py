@@ -1051,6 +1051,44 @@ def phases_page(S) -> str:
 
 # --- Models -------------------------------------------------------------------------------------------------
 
+# Parameter counts (Ümit #3465): only as the maker documents them (content/model_params.json: total, active for a
+# mixture of experts, effective where the maker gives one, in billions as shown, the source URL and read date); never
+# an estimate.
+PARAMS = json.loads((CONTENT_DIR / "model_params.json").read_text())["models"]
+# The leaderboard's Small models key (story.headline): disclosed total parameters in billions (a mixture of experts by
+# its total) at most this; 15B on all three sites (Ümit #3475).
+SMALL_MAX_B = 15
+
+
+def billions(b: float) -> str:
+    """A count in billions as shown: 31 -> '31B', 30.7 -> '30.7B', 2800 -> '2.8T'."""
+    return f"{b / 1000:g}T" if b >= 1000 else f"{b:g}B"
+
+
+def params_html(model: str) -> str:
+    """The box's parameter count: '31B', '24B total / 2.45B active', '753.33B total; active not disclosed by maker' (a
+    mixture of experts whose maker gives no active count), '4B effective (8B total)', a disclosed count linked to its
+    source (as the box's Released month is); else 'not disclosed by maker'. A model the file does not list: KeyError."""
+    p = PARAMS[model]
+    total = p["total_b"]
+    if total is None:
+        return "not disclosed by maker"
+    if p["effective_b"] is not None:
+        text = f'{billions(p["effective_b"])} effective ({billions(total)} total)'
+    elif p["active_b"] is not None:
+        text = f'{billions(total)} total / {billions(p["active_b"])} active'
+    elif p["moe"]:
+        text = f'{billions(total)} total; active not disclosed by maker'
+    else:
+        text = billions(total)
+    return f'<a href="{esc(p["source"])}">{esc(text)}</a>'
+
+
+def is_small(model: str) -> bool:
+    """Disclosed total parameters (a mixture of experts by its total) at most SMALL_MAX_B billion."""
+    return PARAMS[model]["total_b"] is not None and PARAMS[model]["total_b"] <= SMALL_MAX_B
+
+
 B7 = [("model_id", "Model ID"), ("provider", "Provider or endpoint"), ("date_run", "Date run"), ("price", "Price"),
       ("model_type", "Model type"), ("weights", "Weights"), ("runs_on", "Runs on"), ("reasoning", "Reasoning setting"),
       ("confidence_source", "Confidence source"), ("rules_text", "Rules text"), ("option_groups", "Option groups"),

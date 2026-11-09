@@ -1,0 +1,517 @@
+--- main/index.html#leaderboard
++++ candidate/index.html#leaderboard
+@@ -2,7 +2,8 @@
+ <div class="chart-head"><h2 id="leaderboard-title">Risk calls leaderboard</h2><span class="keys needs-js" role="group" aria-label="Rows"><button type="button" class="key" data-headline-view="model" aria-pressed="true">One row per model</button><button type="button" class="key" data-headline-view="all" aria-pressed="false">All setups</button></span><p class="chart-sub">Risk judgement: 100 = every call right, 50 = always safe; higher is better.
+ </p></div>
+ <div data-headline-panel="model">
+-<div class="keys hl-filter needs-js" role="group" aria-label="Model type"><button type="button" class="key" data-hl-filter="all" aria-pressed="true">All</button><button type="button" class="key" data-hl-filter="chat" aria-pressed="false">Chat models</button><button type="button" class="key" data-hl-filter="decision" aria-pressed="false">Decision models</button></div>
++<div class="keys hl-filter needs-js" role="group" aria-label="Model type"><button type="button" class="key" data-hl-filter="all" aria-pressed="true">All</button><button type="button" class="key" data-hl-filter="chat" aria-pressed="false">Chat models</button><button type="button" class="key" data-hl-filter="decision" aria-pressed="false">Decision models</button><button type="button" class="key" data-hl-filter="small" aria-pressed="false">Small models</button></div><p class="table-note hl-small-note" hidden>Small models: 15B parameters or fewer (total), as disclosed by the maker; models with undisclosed size are not included.
++</p>
+ <div class="table-wrap"><table class="board headline" data-dataset="all" id="headline-table"><caption>One row per model at its highest reasoning setting; all leagues, all phases</caption><thead>
+ <tr><th scope="col" data-nosort>#</th><th scope="col" class=num data-nosort>Model</th><th scope="col" class=num data-nosort>Risk judgement (95% interval)</th><th scope="col" class=num data-nosort data-wide>Risks found</th><th scope="col" class=num data-nosort data-wide>Safe right</th><th scope="col" class=num data-nosort data-wide>Error rate (PR)</th><th scope="col" class=num data-nosort data-wide><span class="cost-1k">$ per 1,000</span><span class="cost-1m">$ per 1M</span></th>
+ </tr></thead><tbody>
+@@ -22,6 +23,8 @@
+ </p>
+ <p><span class="cost-1k">$59.356 per 1,000 decisions</span><span class="cost-1m" data-usd="59.35595030221626">$59.356</span><span class="cost-1m"> per 1M decisions</span> (API-equivalent (subscription)) · 1,489 decisions
+ </p>
++<p>Parameters: not disclosed by maker
++</p>
+ <p>Released <a href="https://openai.com/research/index/release/">Sep 2026</a>
+ </p>
+ <p><a href="models/late-entry/gpt-6-astra-high/">Its late-entry page →</a>
+@@ -43,6 +46,8 @@
+ </p>
+ <p><span class="cost-1k">$49.737 per 1,000 decisions</span><span class="cost-1m" data-usd="49.736570743405274">$49.737</span><span class="cost-1m"> per 1M decisions</span> (API-equivalent (subscription)) · 1,251 decisions
+ </p>
++<p>Parameters: not disclosed by maker
++</p>
+ <p><a href="decisions/?d=league-3&amp;s=gpt-6-astra-off">Open its decisions →</a> · <a href="models/league-3/gpt-6-astra-off/">Model page</a>
+ </p></div></td><td class="hl-judgement" data-v="75.79206095612633"><span class="hl-bar" aria-hidden="true"><span class="hl-fill" style="width:75.79%;background-color:#199e70"></span><span class="hl-int" style="left:73.14%;width:5.32%"></span><span class="hl-safe"></span></span><span class="hl-val">75.8<span class="small">73.1 to 78.5</span></span></td><td class="num hl-wide">57.2%</td><td class="num hl-wide">94.4%</td><td class="num hl-wide">11.8</td><td class="num hl-wide"><span class="cost-1k">$49.737</span><span class="cost-1m" data-usd="49.736570743405274">$49.737</span></td>
+ </tr>
+@@ -62,6 +67,8 @@
+ </p>
+ <p><span class="cost-1k">$50.268 per 1,000 decisions</span><span class="cost-1m" data-usd="50.26791483113069">$50.268</span><span class="cost-1m"> per 1M decisions</span> (API-equivalent (subscription)) · 1,362 decisions
+ </p>
++<p>Parameters: not disclosed by maker
++</p>
+ <p><a href="decisions/?d=league-3&amp;s=gpt-6-astra-on">Open its decisions →</a> · <a href="models/league-3/gpt-6-astra-on/">Model page</a>
+ </p></div></td><td class="hl-judgement" data-v="74.67891126701144"><span class="hl-bar" aria-hidden="true"><span class="hl-fill" style="width:74.68%;background-color:#199e70"></span><span class="hl-int" style="left:71.93%;width:5.39%"></span><span class="hl-safe"></span></span><span class="hl-val">74.7<span class="small">71.9 to 77.3</span></span></td><td class="num hl-wide">54.9%</td><td class="num hl-wide">94.4%</td><td class="num hl-wide">11.1</td><td class="num hl-wide"><span class="cost-1k">$50.268</span><span class="cost-1m" data-usd="50.26791483113069">$50.268</span></td>
+ </tr>
+@@ -81,6 +88,8 @@
+ </p>
+ <p><span class="cost-1k">$64.401 per 1,000 decisions</span><span class="cost-1m" data-usd="64.4014298245614">$64.401</span><span class="cost-1m"> per 1M decisions</span> (API-equivalent (subscription)) · 1,368 decisions
+ </p>
++<p>Parameters: not disclosed by maker
++</p>
+ <p>Released <a href="https://blog.google/innovation-and-ai/technology/developers-tools/build-with-gemini-4-argon/">Oct 2026</a>
+ </p>
+ <p><a href="decisions/?d=league-3&amp;s=gemini-4-argon-on">Open its decisions →</a> · <a href="models/league-3/gemini-4-argon-on/">Model page</a>
+@@ -102,6 +111,8 @@
+ </p>
+ <p><span class="cost-1k">$10.204 per 1,000 decisions</span><span class="cost-1m" data-usd="10.204045822102426">$10.204</span><span class="cost-1m"> per 1M decisions</span> (API-equivalent (subscription)) · 1,484 decisions
+ </p>
++<p>Parameters: not disclosed by maker
++</p>
+ <p><a href="decisions/?d=league-3&amp;s=gemini-4-argon-off">Open its decisions →</a> · <a href="models/league-3/gemini-4-argon-off/">Model page</a>
+ </p></div></td><td class="hl-judgement" data-v="69.23858604921246"><span class="hl-bar" aria-hidden="true"><span class="hl-fill" style="width:69.24%;background-color:#2a78d6"></span><span class="hl-int" style="left:66.24%;width:6.08%"></span><span class="hl-safe"></span></span><span class="hl-val">69.2<span class="small">66.2 to 72.3</span></span></td><td class="num hl-wide">47.8%</td><td class="num hl-wide">90.7%</td><td class="num hl-wide">16.5</td><td class="num hl-wide"><span class="cost-1k">$10.204</span><span class="cost-1m" data-usd="10.204045822102426">$10.204</span></td>
+ </tr>
+@@ -121,6 +132,8 @@
+ </p>
+ <p><span class="cost-1k">$136.268 per 1,000 decisions</span><span class="cost-1m" data-usd="136.26779160186624">$136.268</span><span class="cost-1m"> per 1M decisions</span> (API-equivalent (subscription)) · 1,286 decisions
+ </p>
++<p>Parameters: not disclosed by maker
++</p>
+ <p>Released <a href="https://www.anthropic.com/claude-fable-and-mythos-5-1">Sep 2026</a>
+ </p>
+ <p><a href="decisions/?d=league-3&amp;s=claude-fable-5-1-on">Open its decisions →</a> · <a href="models/league-3/claude-fable-5-1-on/">Model page</a>
+@@ -142,6 +155,8 @@
+ </p>
+ <p><span class="cost-1k">$62.613 per 1,000 decisions</span><span class="cost-1m" data-usd="62.61268924302789">$62.613</span><span class="cost-1m"> per 1M decisions</span> (API-equivalent (subscription)) · 2,008 decisions
+ </p>
++<p>Parameters: not disclosed by maker
++</p>
+ <p><a href="decisions/?d=league-2&amp;s=claude-fable-5-1-off">Open its decisions →</a> · <a href="models/league-2/claude-fable-5-1-off/">Model page</a>
+ </p></div></td><td class="hl-judgement" data-v="67.79274638091803"><span class="hl-bar" aria-hidden="true"><span class="hl-fill" style="width:67.79%;background-color:#d9653b"></span><span class="hl-int" style="left:65.56%;width:4.32%"></span><span class="hl-safe"></span></span><span class="hl-val">67.8<span class="small">65.6 to 69.9</span></span></td><td class="num hl-wide">41.0%</td><td class="num hl-wide">94.6%</td><td class="num hl-wide">17.9</td><td class="num hl-wide"><span class="cost-1k">$62.613</span><span class="cost-1m" data-usd="62.61268924302789">$62.613</span></td>
+ </tr>
+@@ -161,6 +176,8 @@
+ </p>
+ <p><span class="cost-1k">$15.573 per 1,000 decisions</span><span class="cost-1m" data-usd="15.572840892728582">$15.573</span><span class="cost-1m"> per 1M decisions</span> (API-equivalent (subscription)) · 1,389 decisions
+ </p>
++<p>Parameters: not disclosed by maker
++</p>
+ <p>Released <a href="https://openai.com/index/gpt-6-astra/">Sep 2026</a>
+ </p>
+ <p><a href="decisions/?d=league-3&amp;s=gpt-6-1-sol-high">Open its decisions →</a> · <a href="models/league-3/gpt-6-1-sol-high/">Model page</a>
+@@ -182,6 +199,8 @@
+ </p>
+ <p><span class="cost-1k">$10.228 per 1,000 decisions</span><span class="cost-1m" data-usd="10.227511904761904">$10.228</span><span class="cost-1m"> per 1M decisions</span> (API-equivalent (subscription)) · 1,344 decisions
+ </p>
++<p>Parameters: not disclosed by maker
++</p>
+ <p><a href="decisions/?d=league-3&amp;s=gpt-6-1-sol-low">Open its decisions →</a> · <a href="models/league-3/gpt-6-1-sol-low/">Model page</a>
+ </p></div></td><td class="hl-judgement" data-v="72.73329917116062"><span class="hl-bar" aria-hidden="true"><span class="hl-fill" style="width:72.73%;background-color:#199e70"></span><span class="hl-int" style="left:69.88%;width:5.62%"></span><span class="hl-safe"></span></span><span class="hl-val">72.7<span class="small">69.9 to 75.5</span></span></td><td class="num hl-wide">51.7%</td><td class="num hl-wide">93.8%</td><td class="num hl-wide">12.1</td><td class="num hl-wide"><span class="cost-1k">$10.228</span><span class="cost-1m" data-usd="10.227511904761904">$10.228</span></td>
+ </tr>
+@@ -201,6 +220,8 @@
+ </p>
+ <p><span class="cost-1k">$36.400 per 1,000 decisions</span><span class="cost-1m" data-usd="36.40049559918754">$36.400</span><span class="cost-1m"> per 1M decisions</span> (API-equivalent (subscription)) · 1,477 decisions
+ </p>
++<p>Parameters: not disclosed by maker
++</p>
+ <p>Released <a href="https://www.anthropic.com/claude-opus-5-5">Sep 2026</a>
+ </p>
+ <p><a href="decisions/?d=league-3&amp;s=claude-opus-5-5-on">Open its decisions →</a> · <a href="models/league-3/claude-opus-5-5-on/">Model page</a>
+@@ -222,6 +243,8 @@
+ </p>
+ <p><span class="cost-1k">$29.062 per 1,000 decisions</span><span class="cost-1m" data-usd="29.062012756909994">$29.062</span><span class="cost-1m"> per 1M decisions</span> (API-equivalent (subscription)) · 1,411 decisions
+ </p>
++<p>Parameters: not disclosed by maker
++</p>
+ <p><a href="decisions/?d=league-3&amp;s=claude-opus-5-5-off">Open its decisions →</a> · <a href="models/league-3/claude-opus-5-5-off/">Model page</a>
+ </p></div></td><td class="hl-judgement" data-v="66.94479362694416"><span class="hl-bar" aria-hidden="true"><span class="hl-fill" style="width:66.94%;background-color:#d9653b"></span><span class="hl-int" style="left:64.68%;width:4.52%"></span><span class="hl-safe"></span></span><span class="hl-val">66.9<span class="small">64.7 to 69.2</span></span></td><td class="num hl-wide">40.1%</td><td class="num hl-wide">93.8%</td><td class="num hl-wide">15.4</td><td class="num hl-wide"><span class="cost-1k">$29.062</span><span class="cost-1m" data-usd="29.062012756909994">$29.062</span></td>
+ </tr>
+@@ -241,6 +264,8 @@
+ </p>
+ <p><span class="cost-1k">$12.801 per 1,000 decisions</span><span class="cost-1m" data-usd="12.800830330997304">$12.801</span><span class="cost-1m"> per 1M decisions</span> (API price) · 2,226 decisions
+ </p>
++<p>Parameters: <a href="https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash">552B total / 16B active</a>
++</p>
+ <p>Released <a href="https://api-docs.deepseek.com/updates/">Sep 2026</a>
+ </p>
+ <p>With its dated checkpoint DeepSeek V4.1 Flash 1017 (under the expander)
+@@ -264,6 +289,8 @@
+ </p>
+ <p><span class="cost-1k">$4.869 per 1,000 decisions</span><span class="cost-1m" data-usd="4.8688645487914055">$4.869</span><span class="cost-1m"> per 1M decisions</span> (API price) · 2,234 decisions
+ </p>
++<p>Parameters: not disclosed by maker
++</p>
+ <p><a href="decisions/?d=league-2&amp;s=deepseek-v4-1-flash-1017-on">Open its decisions →</a> · <a href="models/league-2/deepseek-v4-1-flash-1017-on/">Model page</a>
+ </p></div></td><td class="hl-judgement" data-v="68.4955479181764"><span class="hl-bar" aria-hidden="true"><span class="hl-fill" style="width:68.50%;background-color:#a61e4d"></span><span class="hl-int" style="left:66.41%;width:4.20%"></span><span class="hl-safe"></span></span><span class="hl-val">68.5<span class="small">66.4 to 70.6</span></span></td><td class="num hl-wide">42.5%</td><td class="num hl-wide">94.5%</td><td class="num hl-wide">17.1</td><td class="num hl-wide"><span class="cost-1k">$4.869</span><span class="cost-1m" data-usd="4.8688645487914055">$4.869</span></td>
+ </tr>
+@@ -283,6 +310,8 @@
+ </p>
+ <p><span class="cost-1k">$0.434 per 1,000 decisions</span><span class="cost-1m" data-usd="0.434236018202765">$0.434</span><span class="cost-1m"> per 1M decisions</span> (API price) · 1,736 decisions
+ </p>
++<p>Parameters: <a href="https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash">552B total / 16B active</a>
++</p>
+ <p><a href="decisions/?d=league-1&amp;s=deepseek-v4-1-flash-off">Open its decisions →</a> · <a href="models/league-1/deepseek-v4-1-flash-off/">Model page</a>
+ </p></div></td><td class="hl-judgement" data-v="59.30046424084689"><span class="hl-bar" aria-hidden="true"><span class="hl-fill" style="width:59.30%;background-color:#a61e4d"></span><span class="hl-int" style="left:57.11%;width:4.42%"></span><span class="hl-safe"></span></span><span class="hl-val">59.3<span class="small">57.1 to 61.5</span></span></td><td class="num hl-wide">29.1%</td><td class="num hl-wide">89.5%</td><td class="num hl-wide">35.6</td><td class="num hl-wide"><span class="cost-1k">$0.434</span><span class="cost-1m" data-usd="0.434236018202765">$0.434</span></td>
+ </tr>
+@@ -302,6 +331,8 @@
+ </p>
+ <p><span class="cost-1k">$0.244 per 1,000 decisions</span><span class="cost-1m" data-usd="0.24391185250737463">$0.244</span><span class="cost-1m"> per 1M decisions</span> (API price) · 2,034 decisions
+ </p>
++<p>Parameters: not disclosed by maker
++</p>
+ <p><a href="decisions/?d=league-2&amp;s=deepseek-v4-1-flash-1017-off">Open its decisions →</a> · <a href="models/league-2/deepseek-v4-1-flash-1017-off/">Model page</a>
+ </p></div></td><td class="hl-judgement" data-v="58.53177329932133"><span class="hl-bar" aria-hidden="true"><span class="hl-fill" style="width:58.53%;background-color:#a61e4d"></span><span class="hl-int" style="left:56.58%;width:3.91%"></span><span class="hl-safe"></span></span><span class="hl-val">58.5<span class="small">56.6 to 60.5</span></span></td><td class="num hl-wide">25.4%</td><td class="num hl-wide">91.7%</td><td class="num hl-wide">35.2</td><td class="num hl-wide"><span class="cost-1k">$0.244</span><span class="cost-1m" data-usd="0.24391185250737463">$0.244</span></td>
+ </tr>
+@@ -321,6 +352,8 @@
+ </p>
+ <p><span class="cost-1k">$117.379 per 1,000 decisions</span><span class="cost-1m" data-usd="117.37871204188481">$117.379</span><span class="cost-1m"> per 1M decisions</span> (API-equivalent (subscription)) · 1,337 decisions
+ </p>
++<p>Parameters: not disclosed by maker
++</p>
+ <p>Released <a href="https://x.ai/news/grok-4-7">Sep 2026</a>
+ </p>
+ <p><a href="decisions/?d=league-3&amp;s=grok-4-7-on">Open its decisions →</a> · <a href="models/league-3/grok-4-7-on/">Model page</a>
+@@ -342,6 +375,8 @@
+ </p>
+ <p><span class="cost-1k">$32.813 per 1,000 decisions</span><span class="cost-1m" data-usd="32.812594795539034">$32.813</span><span class="cost-1m"> per 1M decisions</span> (API-equivalent (subscription)) · 2,152 decisions
+ </p>
++<p>Parameters: not disclosed by maker
++</p>
+ <p><a href="decisions/?d=league-2&amp;s=grok-4-7-off">Open its decisions →</a> · <a href="models/league-2/grok-4-7-off/">Model page</a>
+ </p></div></td><td class="hl-judgement" data-v="67.66867360428034"><span class="hl-bar" aria-hidden="true"><span class="hl-fill" style="width:67.67%;background-color:#6250d6"></span><span class="hl-int" style="left:65.95%;width:3.54%"></span><span class="hl-safe"></span></span><span class="hl-val">67.7<span class="small">66.0 to 69.5</span></span></td><td class="num hl-wide">42.3%</td><td class="num hl-wide">93.0%</td><td class="num hl-wide">19.1</td><td class="num hl-wide"><span class="cost-1k">$32.813</span><span class="cost-1m" data-usd="32.812594795539034">$32.813</span></td>
+ </tr>
+@@ -361,6 +396,8 @@
+ </p>
+ <p><span class="cost-1k">$19.847 per 1,000 decisions</span><span class="cost-1m" data-usd="19.846780961182994">$19.847</span><span class="cost-1m"> per 1M decisions</span> (API-equivalent (subscription)) · 2,164 decisions
+ </p>
++<p>Parameters: not disclosed by maker
++</p>
+ <p>Released <a href="https://www.anthropic.com/claude-sonnet-5-5">Sep 2026</a>
+ </p>
+ <p><a href="decisions/?d=league-2&amp;s=claude-sonnet-5-5-high">Open its decisions →</a> · <a href="models/league-2/claude-sonnet-5-5-high/">Model page</a>
+@@ -382,6 +419,8 @@
+ </p>
+ <p><span class="cost-1k">$13.541 per 1,000 decisions</span><span class="cost-1m" data-usd="13.54072930232558">$13.541</span><span class="cost-1m"> per 1M decisions</span> (API-equivalent (subscription)) · 2,150 decisions
+ </p>
++<p>Parameters: not disclosed by maker
++</p>
+ <p><a href="decisions/?d=league-2&amp;s=claude-sonnet-5-5-low">Open its decisions →</a> · <a href="models/league-2/claude-sonnet-5-5-low/">Model page</a>
+ </p></div></td><td class="hl-judgement" data-v="63.52484681887547"><span class="hl-bar" aria-hidden="true"><span class="hl-fill" style="width:63.52%;background-color:#d9653b"></span><span class="hl-int" style="left:61.59%;width:3.85%"></span><span class="hl-safe"></span></span><span class="hl-val">63.5<span class="small">61.6 to 65.4</span></span></td><td class="num hl-wide">30.9%</td><td class="num hl-wide">96.2%</td><td class="num hl-wide">20.1</td><td class="num hl-wide"><span class="cost-1k">$13.541</span><span class="cost-1m" data-usd="13.54072930232558">$13.541</span></td>
+ </tr>
+@@ -401,6 +440,8 @@
+ </p>
+ <p><span class="cost-1k">$22.352 per 1,000 decisions</span><span class="cost-1m" data-usd="22.35240844095941">$22.352</span><span class="cost-1m"> per 1M decisions</span> (API-equivalent (subscription)) · 2,168 decisions
+ </p>
++<p>Parameters: not disclosed by maker
++</p>
+ <p>Released <a href="https://blog.google/innovation-and-ai/models-and-research/gemini-models/3-8-flash-and-3-8-flash-cyber/">Sep 2026</a>
+ </p>
+ <p><a href="decisions/?d=league-2&amp;s=gemini-3-8-flash-high">Open its decisions →</a> · <a href="models/league-2/gemini-3-8-flash-high/">Model page</a>
+@@ -422,6 +463,8 @@
+ </p>
+ <p><span class="cost-1k">$4.123 per 1,000 decisions</span><span class="cost-1m" data-usd="4.12258597174866">$4.123</span><span class="cost-1m"> per 1M decisions</span> (API-equivalent (subscription)) · 2,053 decisions
+ </p>
++<p>Parameters: not disclosed by maker
++</p>
+ <p><a href="decisions/?d=league-2&amp;s=gemini-3-8-flash-low">Open its decisions →</a> · <a href="models/league-2/gemini-3-8-flash-low/">Model page</a>
+ </p></div></td><td class="hl-judgement" data-v="65.14345747370946"><span class="hl-bar" aria-hidden="true"><span class="hl-fill" style="width:65.14%;background-color:#2a78d6"></span><span class="hl-int" style="left:63.53%;width:3.28%"></span><span class="hl-safe"></span></span><span class="hl-val">65.1<span class="small">63.5 to 66.8</span></span></td><td class="num hl-wide">33.8%</td><td class="num hl-wide">96.5%</td><td class="num hl-wide">16.3</td><td class="num hl-wide"><span class="cost-1k">$4.123</span><span class="cost-1m" data-usd="4.12258597174866">$4.123</span></td>
+ </tr>
+@@ -441,6 +484,8 @@
+ </p>
+ <p><span class="cost-1k">$3.982 per 1,000 decisions</span><span class="cost-1m" data-usd="3.9815345329905747">$3.982</span><span class="cost-1m"> per 1M decisions</span> (API price) · 1,167 decisions
+ </p>
++<p>Parameters: <a href="https://huggingface.co/moonshotai/Kimi-K3.1-Pro/blob/main/README.md">2.8T total / 104B active</a>
++</p>
+ <p>Released <a href="https://forum.moonshot.ai/t/kimi-k3-1-pro-has-launched-start-exploring-now/629">Oct 2026</a>
+ </p>
+ <p><a href="decisions/?d=league-3&amp;s=kimi-k3-1-pro-off">Open its decisions →</a> · <a href="models/league-3/kimi-k3-1-pro-off/">Model page</a>
+@@ -462,6 +507,8 @@
+ </p>
+ <p>2,122 decisions
+ </p>
++<p>Parameters: <a href="https://huggingface.co/google/gemma-4-31B-it">30.7B</a>
++</p>
+ <p>Released <a href="https://blog.google/innovation-and-ai/technology/developers-tools/gemma-4/">Apr 2026</a>
+ </p>
+ <p><a href="decisions/?d=league-2&amp;s=gemma-4-31b-on">Open its decisions →</a> · <a href="models/league-2/gemma-4-31b-on/">Model page</a>
+@@ -483,6 +530,8 @@
+ </p>
+ <p>1,847 decisions
+ </p>
++<p>Parameters: <a href="https://huggingface.co/google/gemma-4-31B-it">30.7B</a>
++</p>
+ <p><a href="decisions/?d=league-2&amp;s=gemma-4-31b-off">Open its decisions →</a> · <a href="models/league-2/gemma-4-31b-off/">Model page</a>
+ </p></div></td><td class="hl-judgement" data-v="62.647324890152504"><span class="hl-bar" aria-hidden="true"><span class="hl-fill" style="width:62.65%;background-color:#2a78d6"></span><span class="hl-int" style="left:60.38%;width:4.65%"></span><span class="hl-safe"></span></span><span class="hl-val">62.6<span class="small">60.4 to 65.0</span></span></td><td class="num hl-wide">33.2%</td><td class="num hl-wide">92.1%</td><td class="num hl-wide">22.5</td><td class="num hl-wide"><span class="muted">–</span></td>
+ </tr>
+@@ -502,6 +551,8 @@
+ </p>
+ <p><span class="cost-1k">$0.145 per 1,000 decisions</span><span class="cost-1m" data-usd="0.1453827464992757">$0.145</span><span class="cost-1m"> per 1M decisions</span> (API price) · 2,071 decisions
+ </p>
++<p>Parameters: not disclosed by maker
++</p>
+ <p>Released <a href="https://www.liquid.ai/blog/d1-ultra">Oct 2026</a>
+ </p>
+ <p><a href="decisions/?d=league-2&amp;s=liquid-d1-ultra">Open its decisions →</a> · <a href="models/league-2/liquid-d1-ultra/">Model page</a>
+@@ -523,6 +574,8 @@
+ </p>
+ <p><span class="cost-1k">$0.387 per 1,000 decisions</span><span class="cost-1m" data-usd="0.3867093518060366">$0.387</span><span class="cost-1m"> per 1M decisions</span> (Baseten list price for the hosted model, not billed) · 2,021 decisions
+ </p>
++<p>Parameters: <a href="https://huggingface.co/baselabs/mammoth-1/blob/61cec44c281c693992e3d6ebeb44dd3402dfa186/README.md">27B</a>
++</p>
+ <p><a href="models/late-entry/base-labs-mammoth-1/">Its late-entry page →</a>
+ </p></div></td><td class="hl-judgement" data-v="63.18181818181819"><span class="hl-bar" aria-hidden="true"><span class="hl-fill" style="width:63.18%;background-color:#8f9399"></span><span class="hl-int" style="left:61.16%;width:4.04%"></span><span class="hl-safe"></span></span><span class="hl-val">63.2<span class="small">61.2 to 65.2</span></span></td><td class="num hl-wide">40.0%</td><td class="num hl-wide">86.4%</td><td class="num hl-wide">28.5</td><td class="num hl-wide"><span class="cost-1k">$0.387</span><span class="cost-1m" data-usd="0.3867093518060366">$0.387</span></td>
+ </tr>
+@@ -544,6 +597,8 @@
+ </p>
+ <p><span class="cost-1k">$0.271 per 1,000 decisions</span><span class="cost-1m" data-usd="0.2705951117318436">$0.271</span><span class="cost-1m"> per 1M decisions</span> (list price for the hosted model, not billed) · 2,148 decisions
+ </p>
++<p>Parameters: <a href="https://huggingface.co/nace-ai/drex-max-v1/blob/cac65e1982a0237e996419ba559004522d9a33ac/README.md">27B</a>
++</p>
+ <p><a href="models/late-entry/drex-max-v1/">Its late-entry page →</a>
+ </p></div></td><td class="hl-judgement" data-v="62.8929715365121"><span class="hl-bar" aria-hidden="true"><span class="hl-fill" style="width:62.89%;background-color:#8f9399"></span><span class="hl-int" style="left:61.07%;width:3.60%"></span><span class="hl-safe"></span></span><span class="hl-val">62.9<span class="small">61.1 to 64.7</span></span></td><td class="num hl-wide">39.3%</td><td class="num hl-wide">86.5%</td><td class="num hl-wide">30.4</td><td class="num hl-wide"><span class="cost-1k">$0.271</span><span class="cost-1m" data-usd="0.2705951117318436">$0.271</span></td>
+ </tr>
+@@ -563,6 +618,8 @@
+ </p>
+ <p>2,108 decisions
+ </p>
++<p>Parameters: <a href="https://huggingface.co/Qwen/Qwen3.8-27B">27B</a>
++</p>
+ <p>Released <a href="https://github.com/QwenLM/Qwen3.8">Aug 2026</a>
+ </p>
+ <p><a href="decisions/?d=league-2&amp;s=qwen3-8-27b-on">Open its decisions →</a> · <a href="models/league-2/qwen3-8-27b-on/">Model page</a>
+@@ -584,6 +641,8 @@
+ </p>
+ <p>2,005 decisions
+ </p>
++<p>Parameters: <a href="https://huggingface.co/Qwen/Qwen3.8-27B">27B</a>
++</p>
+ <p><a href="decisions/?d=league-1&amp;s=qwen3-8-27b-off">Open its decisions →</a> · <a href="models/league-1/qwen3-8-27b-off/">Model page</a>
+ </p></div></td><td class="hl-judgement" data-v="57.60582010582011"><span class="hl-bar" aria-hidden="true"><span class="hl-fill" style="width:57.61%;background-color:#8f9399"></span><span class="hl-int" style="left:56.08%;width:2.96%"></span><span class="hl-safe"></span></span><span class="hl-val">57.6<span class="small">56.1 to 59.0</span></span></td><td class="num hl-wide">23.5%</td><td class="num hl-wide">91.7%</td><td class="num hl-wide">45.0</td><td class="num hl-wide"><span class="muted">–</span></td>
+ </tr>
+@@ -603,6 +662,8 @@
+ </p>
+ <p><span class="cost-1k">$2.917 per 1,000 decisions</span><span class="cost-1m" data-usd="2.9173718552036196">$2.917</span><span class="cost-1m"> per 1M decisions</span> (API price) · 1,989 decisions
+ </p>
++<p>Parameters: <a href="https://huggingface.co/api/models/zai-org/GLM-5.3">753.33B total; active not disclosed by maker</a>
++</p>
+ <p>Released <a href="https://docs.z.ai/release-notes/new-released">Aug 2026</a>
+ </p>
+ <p><a href="decisions/?d=league-2&amp;s=glm-5-3-on">Open its decisions →</a> · <a href="models/league-2/glm-5-3-on/">Model page</a>
+@@ -626,6 +687,8 @@
+ </p>
+ <p>1,998 decisions
+ </p>
++<p>Parameters: not disclosed by maker
++</p>
+ <p><a href="models/late-entry/reax-1-3/">Its late-entry page →</a>
+ </p></div></td><td class="hl-judgement" data-v="60.54672319378203"><span class="hl-bar" aria-hidden="true"><span class="hl-fill" style="width:60.55%;background-color:#8f9399"></span><span class="hl-int" style="left:58.69%;width:3.72%"></span><span class="hl-safe"></span></span><span class="hl-val">60.5<span class="small">58.7 to 62.4</span></span></td><td class="num hl-wide">31.7%</td><td class="num hl-wide">89.4%</td><td class="num hl-wide">27.8</td><td class="num hl-wide"><span class="muted">–</span></td>
+ </tr>
+@@ -645,6 +708,8 @@
+ </p>
+ <p>2,159 decisions
+ </p>
++<p>Parameters: not disclosed by maker
++</p>
+ <p>Released <a href="https://fastino.ai/blog/introducing-glide-the-first-thinking-decision-model">Sep 2026</a>
+ </p>
+ <p><a href="decisions/?d=league-2&amp;s=fastino-glide">Open its decisions →</a> · <a href="models/league-2/fastino-glide/">Model page</a>
+@@ -666,6 +731,8 @@
+ </p>
+ <p><span class="cost-1k">$0.166 per 1,000 decisions</span><span class="cost-1m" data-usd="0.16567824175824178">$0.166</span><span class="cost-1m"> per 1M decisions</span> (API price) · 1,911 decisions
+ </p>
++<p>Parameters: not disclosed by maker
++</p>
+ <p><a href="decisions/?d=league-1&amp;s=jev-1-13-0">Open its decisions →</a> · <a href="models/league-1/jev-1-13-0/">Model page</a>
+ </p></div></td><td class="hl-judgement" data-v="59.51927587824599"><span class="hl-bar" aria-hidden="true"><span class="hl-fill" style="width:59.52%;background-color:#8f9399"></span><span class="hl-int" style="left:57.38%;width:4.27%"></span><span class="hl-safe"></span></span><span class="hl-val">59.5<span class="small">57.4 to 61.6</span></span></td><td class="num hl-wide">27.0%</td><td class="num hl-wide">92.1%</td><td class="num hl-wide">34.4</td><td class="num hl-wide"><span class="cost-1k">$0.166</span><span class="cost-1m" data-usd="0.16567824175824178">$0.166</span></td>
+ </tr>
+@@ -685,6 +752,8 @@
+ </p>
+ <p><span class="cost-1k">$0.284 per 1,000 decisions</span><span class="cost-1m" data-usd="0.28444589738529846">$0.284</span><span class="cost-1m"> per 1M decisions</span> (API price) · 2,027 decisions
+ </p>
++<p>Parameters: not disclosed by maker
++</p>
+ <p><a href="decisions/?d=league-2&amp;s=qwen3-8-flash-off">Open its decisions →</a> · <a href="models/league-2/qwen3-8-flash-off/">Model page</a>
+ </p></div></td><td class="hl-judgement" data-v="59.48549379701085"><span class="hl-bar" aria-hidden="true"><span class="hl-fill" style="width:59.49%;background-color:#8f9399"></span><span class="hl-int" style="left:57.19%;width:4.48%"></span><span class="hl-safe"></span></span><span class="hl-val">59.5<span class="small">57.2 to 61.7</span></span></td><td class="num hl-wide">34.4%</td><td class="num hl-wide">84.6%</td><td class="num hl-wide">33.6</td><td class="num hl-wide"><span class="cost-1k">$0.284</span><span class="cost-1m" data-usd="0.28444589738529846">$0.284</span></td>
+ </tr>
+@@ -704,6 +773,8 @@
+ </p>
+ <p><span class="cost-1k">$0.173 per 1,000 decisions</span><span class="cost-1m" data-usd="0.17287224163179918">$0.173</span><span class="cost-1m"> per 1M decisions</span> (API price) · 1,912 decisions
+ </p>
++<p>Parameters: not disclosed by maker
++</p>
+ <p>Released <a href="https://docs.typesafe.ai/models">Oct 2026</a>
+ </p>
+ <p><a href="decisions/?d=league-2&amp;s=jev-1-14-0">Open its decisions →</a> · <a href="models/league-2/jev-1-14-0/">Model page</a>
+@@ -727,6 +798,8 @@
+ </p>
+ <p><span class="cost-1k">$0.265 per 1,000 decisions</span><span class="cost-1m" data-usd="0.26484793871866297">$0.265</span><span class="cost-1m"> per 1M decisions</span> (list price; output not billed) · 2,154 decisions
+ </p>
++<p>Parameters: not disclosed by maker
++</p>
+ <p><a href="models/late-entry/drex-max-1-1/">Its late-entry page →</a>
+ </p></div></td><td class="hl-judgement" data-v="59.07357345057025"><span class="hl-bar" aria-hidden="true"><span class="hl-fill" style="width:59.07%;background-color:#8f9399"></span><span class="hl-int" style="left:57.00%;width:4.29%"></span><span class="hl-safe"></span></span><span class="hl-val">59.1<span class="small">57.0 to 61.3</span></span></td><td class="num hl-wide">35.6%</td><td class="num hl-wide">82.5%</td><td class="num hl-wide">30.9</td><td class="num hl-wide"><span class="cost-1k">$0.265</span><span class="cost-1m" data-usd="0.26484793871866297">$0.265</span></td>
+ </tr>
+@@ -746,6 +819,8 @@
+ </p>
+ <p>2,003 decisions
+ </p>
++<p>Parameters: <a href="https://huggingface.co/api/models/fastino/GLiDE/revision/a7e45896">26.09B</a>
++</p>
+ <p>Released <a href="https://fastino.ai/blog/training-glide-sota-decision-model">Oct 2026</a>
+ </p>
+ <p><a href="decisions/?d=league-1&amp;s=fastino-glide-v1-2-local">Open its decisions →</a> · <a href="models/league-1/fastino-glide-v1-2-local/">Model page</a>
+@@ -769,6 +844,8 @@
+ </p>
+ <p><span class="cost-1k">$0.258 per 1,000 decisions</span><span class="cost-1m" data-usd="0.25826224057821373">$0.258</span><span class="cost-1m"> per 1M decisions</span> (list price (billed); output not billed) · 1,937 decisions
+ </p>
++<p>Parameters: <a href="https://huggingface.co/nace-ai/drex-v2.0/blob/e646674476744e3826caf62b834054151e2aba51/README.md">35B total / 3B active</a>
++</p>
+ <p><a href="models/late-entry/drex-2-0/">Its late-entry page →</a>
+ </p></div></td><td class="hl-judgement" data-v="58.11771919068056"><span class="hl-bar" aria-hidden="true"><span class="hl-fill" style="width:58.12%;background-color:#8f9399"></span><span class="hl-int" style="left:55.75%;width:4.63%"></span><span class="hl-safe"></span></span><span class="hl-val">58.1<span class="small">55.7 to 60.4</span></span></td><td class="num hl-wide">31.5%</td><td class="num hl-wide">84.8%</td><td class="num hl-wide">38.4</td><td class="num hl-wide"><span class="cost-1k">$0.258</span><span class="cost-1m" data-usd="0.25826224057821373">$0.258</span></td>
+ </tr>
+@@ -790,6 +867,8 @@
+ </p>
+ <p><span class="cost-1k">$0.250 per 1,000 decisions</span><span class="cost-1m" data-usd="0.25012262920220774">$0.250</span><span class="cost-1m"> per 1M decisions</span> (list price for the hosted model, not billed) · 1,993 decisions
+ </p>
++<p>Parameters: <a href="https://huggingface.co/nace-ai/drex-v2.0/blob/e646674476744e3826caf62b834054151e2aba51/README.md">35B total / 3B active</a>
++</p>
+ <p><a href="models/late-entry/drex-2-0-local/">Its late-entry page →</a>
+ </p></div></td><td class="hl-judgement" data-v="52.97410836762688"><span class="hl-bar" aria-hidden="true"><span class="hl-fill" style="width:52.97%;background-color:#8f9399"></span><span class="hl-int" style="left:50.53%;width:4.68%"></span><span class="hl-safe"></span></span><span class="hl-val">53.0<span class="small">50.5 to 55.2</span></span></td><td class="num hl-wide">26.2%</td><td class="num hl-wide">79.7%</td><td class="num hl-wide">42.9</td><td class="num hl-wide"><span class="cost-1k">$0.250</span><span class="cost-1m" data-usd="0.25012262920220774">$0.250</span></td>
+ </tr>
+@@ -809,6 +888,8 @@
+ </p>
+ <p><span class="cost-1k">$0.087 per 1,000 decisions</span><span class="cost-1m" data-usd="0.08661295857988166">$0.087</span><span class="cost-1m"> per 1M decisions</span> (list-price estimate; runs on our GPUs) · 2,028 decisions
+ </p>
++<p>Parameters: <a href="https://docs.perplexity.ai/changelog">27B</a>
++</p>
+ <p>Released <a href="https://docs.perplexity.ai/changelog">Oct 2026</a>
+ </p>
+ <p><a href="decisions/?d=league-1&amp;s=decider-v1-2-27b">Open its decisions →</a> · <a href="models/league-1/decider-v1-2-27b/">Model page</a>
+@@ -830,12 +911,14 @@
+ </p>
+ <p><span class="cost-1k">$0.150 per 1,000 decisions</span><span class="cost-1m" data-usd="0.14988965660770032">$0.150</span><span class="cost-1m"> per 1M decisions</span> (API price) · 1,922 decisions
+ </p>
++<p>Parameters: not disclosed by maker
++</p>
+ <p>Released <a href="https://celeris.ai/celeris-1-decision">Oct 2026</a>
+ </p>
+ <p><a href="decisions/?d=league-1&amp;s=celeris-1-decision">Open its decisions →</a> · <a href="models/league-1/celeris-1-decision/">Model page</a>
+ </p></div></td><td class="hl-judgement" data-v="57.771083365740104"><span class="hl-bar" aria-hidden="true"><span class="hl-fill" style="width:57.77%;background-color:#8f9399"></span><span class="hl-int" style="left:55.90%;width:3.76%"></span><span class="hl-safe"></span></span><span class="hl-val">57.8<span class="small">55.9 to 59.7</span></span></td><td class="num hl-wide">23.9%</td><td class="num hl-wide">91.7%</td><td class="num hl-wide">35.6</td><td class="num hl-wide"><span class="cost-1k">$0.150</span><span class="cost-1m" data-usd="0.14988965660770032">$0.150</span></td>
+ </tr>
+-<tr data-dataset="late-entry" data-setup="base-labs-elephant-1" data-kind="late" data-hl-type="decision" data-box="hl-27-box"><td class="num">27</td><td class="model"><i class="swatch hl-dot" style="background:#8f9399" title="Base Labs"></i><svg class="fam-icon" aria-hidden="true" focusable="false"><use href="#fi-elephant"/></svg><a class="model-name" href="models/late-entry/base-labs-elephant-1/" aria-describedby="hl-27-box">Base Labs Elephant-1</a><span class="hl-tag">decision · late entry</span>
++<tr data-dataset="late-entry" data-setup="base-labs-elephant-1" data-kind="late" data-hl-type="decision" data-hl-small="yes" data-box="hl-27-box"><td class="num">27</td><td class="model"><i class="swatch hl-dot" style="background:#8f9399" title="Base Labs"></i><svg class="fam-icon" aria-hidden="true" focusable="false"><use href="#fi-elephant"/></svg><a class="model-name" href="models/late-entry/base-labs-elephant-1/" aria-describedby="hl-27-box">Base Labs Elephant-1</a><span class="hl-tag">decision · late entry</span>
+ <div class="hl-box" id="hl-27-box" role="group" aria-label="Base Labs Elephant-1: details">
+ <p><strong>Base Labs Elephant-1</strong> · Base Labs · decision model
+ </p>
+@@ -851,6 +934,8 @@
+ </p>
+ <p><span class="cost-1k">$0.133 per 1,000 decisions</span><span class="cost-1m" data-usd="0.13284534246575344">$0.133</span><span class="cost-1m"> per 1M decisions</span> (Baseten list price for the hosted model, not billed) · 2,044 decisions
+ </p>
++<p>Parameters: <a href="https://huggingface.co/baselabs/elephant-1/blob/b3f8a93462fb1051a9de031e94a7ff380e254072/README.md">9B</a>
++</p>
+ <p><a href="models/late-entry/base-labs-elephant-1/">Its late-entry page →</a>
+ </p></div></td><td class="hl-judgement" data-v="57.719035890218166"><span class="hl-bar" aria-hidden="true"><span class="hl-fill" style="width:57.72%;background-color:#8f9399"></span><span class="hl-int" style="left:55.77%;width:3.80%"></span><span class="hl-safe"></span></span><span class="hl-val">57.7<span class="small">55.8 to 59.6</span></span></td><td class="num hl-wide">28.4%</td><td class="num hl-wide">87.0%</td><td class="num hl-wide">44.6</td><td class="num hl-wide"><span class="cost-1k">$0.133</span><span class="cost-1m" data-usd="0.13284534246575344">$0.133</span></td>
+ </tr>
+@@ -870,12 +955,14 @@
+ </p>
+ <p>1,978 decisions
+ </p>
++<p>Parameters: <a href="https://huggingface.co/cloudflare/clef">27B</a>
++</p>
+ <p>Released <a href="https://developers.cloudflare.com/changelog/post/2026-10-01-clef-workers-ai/">Oct 2026</a>
+ </p>
+ <p><a href="decisions/?d=league-2&amp;s=clef">Open its decisions →</a> · <a href="models/league-2/clef/">Model page</a>
+ </p></div></td><td class="hl-judgement" data-v="57.526699631962785"><span class="hl-bar" aria-hidden="true"><span class="hl-fill" style="width:57.53%;background-color:#8f9399"></span><span class="hl-int" style="left:55.41%;width:4.37%"></span><span class="hl-safe"></span></span><span class="hl-val">57.5<span class="small">55.4 to 59.8</span></span></td><td class="num hl-wide">39.5%</td><td class="num hl-wide">75.6%</td><td class="num hl-wide">36.5</td><td class="num hl-wide"><span class="muted">–</span></td>
+ </tr>
+-<tr data-dataset="league-1" data-setup="cygnet-gemma-4-12b" data-kind="chat" data-weights="open" data-runs="our GPUs" data-setting="none" data-hl-type="chat" data-box="hl-29-box"><td class="num">29</td><td class="model"><i class="swatch hl-dot" style="background:#2a78d6" title="Google"></i><svg class="fam-icon" aria-hidden="true" focusable="false"><use href="#fi-cygnet"/></svg><a class="model-name" href="decisions/?d=league-1&amp;s=cygnet-gemma-4-12b" aria-describedby="hl-29-box">Cygnet (Gemma 4 12B)</a><span class="hl-tag">chat</span>
++<tr data-dataset="league-1" data-setup="cygnet-gemma-4-12b" data-kind="chat" data-weights="open" data-runs="our GPUs" data-setting="none" data-hl-type="chat" data-hl-small="yes" data-box="hl-29-box"><td class="num">29</td><td class="model"><i class="swatch hl-dot" style="background:#2a78d6" title="Google"></i><svg class="fam-icon" aria-hidden="true" focusable="false"><use href="#fi-cygnet"/></svg><a class="model-name" href="decisions/?d=league-1&amp;s=cygnet-gemma-4-12b" aria-describedby="hl-29-box">Cygnet (Gemma 4 12B)</a><span class="hl-tag">chat</span>
+ <div class="hl-box" id="hl-29-box" role="group" aria-label="Cygnet (Gemma 4 12B): details">
+ <p><strong>Cygnet (Gemma 4 12B)</strong> · Google · chat model
+ </p>
+@@ -891,6 +978,8 @@
+ </p>
+ <p>2,016 decisions
+ </p>
++<p>Parameters: <a href="https://huggingface.co/google/gemma-4-12B-it">11.95B</a>
++</p>
+ <p><a href="decisions/?d=league-1&amp;s=cygnet-gemma-4-12b">Open its decisions →</a> · <a href="models/league-1/cygnet-gemma-4-12b/">Model page</a>
+ </p></div></td><td class="hl-judgement" data-v="57.07604562737642"><span class="hl-bar" aria-hidden="true"><span class="hl-fill" style="width:57.08%;background-color:#2a78d6"></span><span class="hl-int" style="left:55.32%;width:3.47%"></span><span class="hl-safe"></span></span><span class="hl-val">57.1<span class="small">55.3 to 58.8</span></span></td><td class="num hl-wide">27.3%</td><td class="num hl-wide">86.8%</td><td class="num hl-wide">38.6</td><td class="num hl-wide"><span class="muted">–</span></td>
+ </tr>
+@@ -910,6 +999,8 @@
+ </p>
+ <p><span class="cost-1k">$0.090 per 1,000 decisions</span><span class="cost-1m" data-usd="0.08976654970760234">$0.090</span><span class="cost-1m"> per 1M decisions</span> (list-price estimate; runs on our GPUs) · 2,052 decisions
+ </p>
++<p>Parameters: <a href="https://huggingface.co/api/models/perplexity-ai/pplx-decider-v1.1-27b">26.09B</a>
++</p>
+ <p>Released <a href="https://docs.perplexity.ai/changelog">Oct 2026</a>
+ </p>
+ <p><a href="decisions/?d=league-1&amp;s=decider-v1-1-27b">Open its decisions →</a> · <a href="models/league-1/decider-v1-1-27b/">Model page</a>
+@@ -933,6 +1024,8 @@
+ </p>
+ <p><span class="cost-1k">$0.150 per 1,000 decisions</span><span class="cost-1m" data-usd="0.14970443680137577">$0.150</span><span class="cost-1m"> per 1M decisions</span> (API price (billed); output free) · 2,326 decisions
+ </p>
++<p>Parameters: not disclosed by maker
++</p>
+ <p><a href="models/late-entry/subq-snap-1-1/">Its late-entry page →</a>
+ </p></div></td><td class="hl-judgement" data-v="56.686082104563496"><span class="hl-bar" aria-hidden="true"><span class="hl-fill" style="width:56.69%;background-color:#8f9399"></span><span class="hl-int" style="left:54.85%;width:3.70%"></span><span class="hl-safe"></span></span><span class="hl-val">56.7<span class="small">54.8 to 58.6</span></span></td><td class="num hl-wide">38.6%</td><td class="num hl-wide">74.8%</td><td class="num hl-wide">40.2</td><td class="num hl-wide"><span class="cost-1k">$0.150</span><span class="cost-1m" data-usd="0.14970443680137577">$0.150</span></td>
+ </tr>
+@@ -952,6 +1045,8 @@
+ </p>
+ <p><span class="cost-1k">$0.193 per 1,000 decisions</span><span class="cost-1m" data-usd="0.1933142272727273">$0.193</span><span class="cost-1m"> per 1M decisions</span> (API price) · 2,200 decisions
+ </p>
++<p>Parameters: not disclosed by maker
++</p>
+ <p><a href="decisions/?d=league-1&amp;s=subq-snap-preview">Open its decisions →</a> · <a href="models/league-1/subq-snap-preview/">Model page</a>
+ </p></div></td><td class="hl-judgement" data-v="56.52132081280787"><span class="hl-bar" aria-hidden="true"><span class="hl-fill" style="width:56.52%;background-color:#8f9399"></span><span class="hl-int" style="left:53.79%;width:5.36%"></span><span class="hl-safe"></span></span><span class="hl-val">56.5<span class="small">53.8 to 59.1</span></span></td><td class="num hl-wide">37.9%</td><td class="num hl-wide">75.1%</td><td class="num hl-wide">43.9</td><td class="num hl-wide"><span class="cost-1k">$0.193</span><span class="cost-1m" data-usd="0.1933142272727273">$0.193</span></td>
+ </tr>
+@@ -971,6 +1066,8 @@
+ </p>
+ <p><span class="cost-1k">$0.335 per 1,000 decisions</span><span class="cost-1m" data-usd="0.3351354740061162">$0.335</span><span class="cost-1m"> per 1M decisions</span> (API price) · 1,962 decisions
+ </p>
++<p>Parameters: not disclosed by maker
++</p>
+ <p>Released <a href="https://openai.com/index/gpt-6-astra/">Sep 2026</a>
+ </p>
+ <p><a href="decisions/?d=league-1&amp;s=gpt-6-luna">Open its decisions →</a> · <a href="models/league-1/gpt-6-luna/">Model page</a>
+@@ -992,6 +1089,8 @@
+ </p>
+ <p>2,015 decisions
+ </p>
++<p>Parameters: not disclosed by maker
++</p>
+ <p><a href="decisions/?d=league-1&amp;s=winnow-12b">Open its decisions →</a> · <a href="models/league-1/winnow-12b/">Model page</a>
+ </p></div></td><td class="hl-judgement" data-v="55.161113396407515"><span class="hl-bar" aria-hidden="true"><span class="hl-fill" style="width:55.16%;background-color:#8f9399"></span><span class="hl-int" style="left:52.94%;width:4.21%"></span><span class="hl-safe"></span></span><span class="hl-val">55.2<span class="small">52.9 to 57.2</span></span></td><td class="num hl-wide">33.7%</td><td class="num hl-wide">76.6%</td><td class="num hl-wide">49.7</td><td class="num hl-wide"><span class="muted">–</span></td>
+ </tr>
+@@ -1011,6 +1110,8 @@
+ </p>
+ <p><span class="cost-1k">$0.071 per 1,000 decisions</span><span class="cost-1m" data-usd="0.07133575822989746">$0.071</span><span class="cost-1m"> per 1M decisions</span> (API price) · 1,853 decisions
+ </p>
++<p>Parameters: not disclosed by maker
++</p>
+ <p><a href="decisions/?d=league-1&amp;s=mercury-decide">Open its decisions →</a> · <a href="models/league-1/mercury-decide/">Model page</a>
+ </p></div></td><td class="hl-judgement" data-v="53.38105871535531"><span class="hl-bar" aria-hidden="true"><span class="hl-fill" style="width:53.38%;background-color:#8f9399"></span><span class="hl-int" style="left:51.48%;width:3.70%"></span><span class="hl-safe"></span></span><span class="hl-val">53.4<span class="small">51.5 to 55.2</span></span></td><td class="num hl-wide">18.7%</td><td class="num hl-wide">88.1%</td><td class="num hl-wide">47.9</td><td class="num hl-wide"><span class="cost-1k">$0.071</span><span class="cost-1m" data-usd="0.07133575822989746">$0.071</span></td>
+ </tr>
+@@ -1030,6 +1131,8 @@
+ </p>
+ <p>2,193 decisions
+ </p>
++<p>Parameters: <a href="https://huggingface.co/LiquidAI/LFM2.5-24B-A2B">24B total / 2.45B active</a>
++</p>
+ <p>Released <a href="https://www.liquid.ai/blog/lfm2-5-24b-a2b">Oct 2026</a>
+ </p>
+ <p><a href="decisions/?d=league-1&amp;s=lfm2-5-24b-a2b-on">Open its decisions →</a> · <a href="models/league-1/lfm2-5-24b-a2b-on/">Model page</a>
+@@ -1051,10 +1154,12 @@
+ </p>
+ <p>1,952 decisions
+ </p>
++<p>Parameters: <a href="https://huggingface.co/LiquidAI/LFM2.5-24B-A2B">24B total / 2.45B active</a>
++</p>
+ <p><a href="decisions/?d=league-1&amp;s=lfm2-5-24b-a2b-off">Open its decisions →</a> · <a href="models/league-1/lfm2-5-24b-a2b-off/">Model page</a>
+ </p></div></td><td class="hl-judgement" data-v="45.738927738927735"><span class="hl-bar" aria-hidden="true"><span class="hl-fill" style="width:45.74%;background-color:#c98500"></span><span class="hl-int" style="left:43.23%;width:4.90%"></span><span class="hl-safe"></span></span><span class="hl-val">45.7<span class="small">43.2 to 48.1</span></span></td><td class="num hl-wide">28.8%</td><td class="num hl-wide">62.7%</td><td class="num hl-wide">61.5</td><td class="num hl-wide"><span class="muted">–</span></td>
+ </tr>
+-<tr data-dataset="league-1" data-setup="decider-flash-v1-2" data-kind="decision" data-weights="open" data-runs="our GPUs" data-setting="none" data-hl-type="decision" data-box="hl-37-box"><td class="num">37</td><td class="model"><i class="swatch hl-dot" style="background:#8f9399" title="Perplexity"></i><svg class="fam-icon" aria-hidden="true" focusable="false"><use href="#fi-perplexity"/></svg><a class="model-name" href="decisions/?d=league-1&amp;s=decider-flash-v1-2" aria-describedby="hl-37-box">Decider Flash v1.2</a><span class="hl-tag">decision</span>
++<tr data-dataset="league-1" data-setup="decider-flash-v1-2" data-kind="decision" data-weights="open" data-runs="our GPUs" data-setting="none" data-hl-type="decision" data-hl-small="yes" data-box="hl-37-box"><td class="num">37</td><td class="model"><i class="swatch hl-dot" style="background:#8f9399" title="Perplexity"></i><svg class="fam-icon" aria-hidden="true" focusable="false"><use href="#fi-perplexity"/></svg><a class="model-name" href="decisions/?d=league-1&amp;s=decider-flash-v1-2" aria-describedby="hl-37-box">Decider Flash v1.2</a><span class="hl-tag">decision</span>
+ <div class="hl-box" id="hl-37-box" role="group" aria-label="Decider Flash v1.2: details">
+ <p><strong>Decider Flash v1.2</strong> · Perplexity · decision model
+ </p>
+@@ -1070,6 +1175,8 @@
+ </p>
+ <p><span class="cost-1k">$0.045 per 1,000 decisions</span><span class="cost-1m" data-usd="0.044917826520438686">$0.045</span><span class="cost-1m"> per 1M decisions</span> (list-price estimate; runs on our GPUs) · 2,006 decisions
+ </p>
++<p>Parameters: <a href="https://docs.perplexity.ai/changelog">4B</a>
++</p>
+ <p>Released <a href="https://docs.perplexity.ai/changelog">Oct 2026</a>
+ </p>
+ <p><a href="decisions/?d=league-1&amp;s=decider-flash-v1-2">Open its decisions →</a> · <a href="models/league-1/decider-flash-v1-2/">Model page</a>
+@@ -1091,6 +1198,8 @@
+ </p>
+ <p>2,002 decisions
+ </p>
++<p>Parameters: not disclosed by maker
++</p>
+ <p><a href="decisions/?d=league-1&amp;s=open-jev-27b-v1-1">Open its decisions →</a> · <a href="models/league-1/open-jev-27b-v1-1/">Model page</a>
+ </p></div></td><td class="hl-judgement" data-v="48.53894296086773"><span class="hl-bar" aria-hidden="true"><span class="hl-fill" style="width:48.54%;background-color:#8f9399"></span><span class="hl-int" style="left:46.07%;width:4.88%"></span><span class="hl-safe"></span></span><span class="hl-val">48.5<span class="small">46.1 to 50.9</span></span></td><td class="num hl-wide">37.3%</td><td class="num hl-wide">59.8%</td><td class="num hl-wide">65.6</td><td class="num hl-wide"><span class="muted">–</span></td>
+ </tr>

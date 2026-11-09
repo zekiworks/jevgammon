@@ -1,0 +1,574 @@
+{
+ "about": "Parameter counts of the leaderboard's models (Ümit #3465), only as each model's maker documents them: the maker's model card, its Hugging Face repository (card text, config.json, or the safetensors total Hugging Face shows for the maker's own repo, used only where the maker states no figure in text) or its official announcement/docs; the maker's stated figure is used where it and the repository total differ (both in note). total_b, active_b (a mixture of experts; moe true) and effective_b in billions of parameters as shown (an exact repository total rounded to two decimals, the exact count in quote); total_b null = the maker discloses no count (the URLs checked in checked). Never an estimate, a figure from the model's name, its base model or a third party. Read 2026-11-09.",
+ "models": {
+  "Base Labs Elephant-1": {
+   "total_b": 9,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/baselabs/elephant-1/blob/b3f8a93462fb1051a9de031e94a7ff380e254072/README.md",
+   "quote": "elephant-1 is a 9B parameter **decision model** post-trained from Qwen3.5-9B",
+   "checked": [
+    "https://huggingface.co/api/models/baselabs/elephant-1"
+   ],
+   "read": "2026-11-09",
+   "note": "Dense. HF safetensors total at the pinned sha b3f8a934: 9,409,813,744 (BF16); card's rounded 9B used."
+  },
+  "Base Labs Mammoth-1": {
+   "total_b": 27,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/baselabs/mammoth-1/blob/61cec44c281c693992e3d6ebeb44dd3402dfa186/README.md",
+   "quote": "mammoth-1 is a 27B parameter **decision model** post-trained from Qwen3.5-27B",
+   "checked": [
+    "https://huggingface.co/api/models/baselabs/mammoth-1"
+   ],
+   "read": "2026-11-09",
+   "note": "Dense. HF safetensors total for the maker's repo at the pinned sha 61cec44c: 27,356,728,560 (BF16); card's rounded 27B used."
+  },
+  "Celeris-1 Decision": {
+   "total_b": null,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://celeris.ai/celeris-1-decision",
+   "quote": "Launch post gives benchmarks, latency, price; no parameter count",
+   "checked": [
+    "https://celeris.ai/celeris-1-decision"
+   ],
+   "read": "2026-11-09",
+   "note": "Closed API."
+  },
+  "Claude Fable 5.1": {
+   "total_b": null,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://www.anthropic.com/claude-fable-and-mythos-5-1",
+   "quote": "Searched the launch post, the API model docs page and the system/model card for 'parameter', 'billion', 'trillion' and figures like 'NB'/'NT'. No explicit parameter count was found (all cards fetched as full text unless noted).",
+   "checked": [
+    "https://www.anthropic.com/claude-fable-and-mythos-5-1",
+    "https://docs.claude.com/en/docs/about-claude/models/overview",
+    "https://www.anthropic.com/system-cards",
+    "https://assets.claude.com/0339e6a7c5c7b87f5c07798616dc32c215d14235.pdf"
+   ],
+   "read": "2026-11-09",
+   "note": "System card PDF (Fable 5.1 / Mythos 5.1) searched in full text."
+  },
+  "Claude Opus 5.5": {
+   "total_b": null,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://www.anthropic.com/claude-opus-5-5",
+   "quote": "Searched the launch post, the API model docs page and the system/model card for 'parameter', 'billion', 'trillion' and figures like 'NB'/'NT'. No explicit parameter count was found (all cards fetched as full text unless noted).",
+   "checked": [
+    "https://www.anthropic.com/claude-opus-5-5",
+    "https://docs.claude.com/en/docs/about-claude/models/overview",
+    "https://www.anthropic.com/system-cards",
+    "https://assets.claude.com/fc1b44717c85dc068bc6ba5024219938094694bd.pdf"
+   ],
+   "read": "2026-11-09",
+   "note": "System card PDF searched in full text."
+  },
+  "Claude Sonnet 5.5": {
+   "total_b": null,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://www.anthropic.com/claude-sonnet-5-5",
+   "quote": "Searched the launch post, the API model docs page and the system/model card for 'parameter', 'billion', 'trillion' and figures like 'NB'/'NT'. No explicit parameter count was found (all cards fetched as full text unless noted).",
+   "checked": [
+    "https://www.anthropic.com/claude-sonnet-5-5",
+    "https://docs.claude.com/en/docs/about-claude/models/overview",
+    "https://www.anthropic.com/system-cards",
+    "https://assets.claude.com/870c8f525702625d2c62fc6dd04c857e3250bec1.pdf"
+   ],
+   "read": "2026-11-09",
+   "note": "System card PDF searched in full text."
+  },
+  "Clef": {
+   "total_b": 27,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/cloudflare/clef",
+   "quote": "Clef is a 27B multimodal model that turns a state and a schema of typed questions into decisions",
+   "checked": [
+    "https://huggingface.co/api/models/cloudflare/clef",
+    "https://developers.cloudflare.com/changelog/post/2026-10-01-clef-workers-ai/",
+    "https://developers.cloudflare.com/workers-ai/models/clef/"
+   ],
+   "read": "2026-11-09",
+   "note": "Model card and Cloudflare changelog ('@cf/cloudflare/clef 27B') say 27B; HF safetensors total for cloudflare/clef is 27356728560 (sha cfddda043dd190ef3b01cff449d5ee8cff1e8ec6). Card figure chosen per rule. Maker: Cloudflare."
+  },
+  "Cygnet (Gemma 4 12B)": {
+   "total_b": 11.95,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/google/gemma-4-12B-it",
+   "quote": "| **Total Parameters** | ... | 11.95B | 30.7B |  (column '12B Unified')",
+   "checked": [
+    "https://raw.githubusercontent.com/blockbrain-ai/cygnet-recipe/main/README.md",
+    "https://huggingface.co/api/models/google/gemma-4-12B-it"
+   ],
+   "read": "2026-11-09",
+   "note": "Cygnet is blockbrain-ai's recipe (github.com/blockbrain-ai/cygnet-recipe): Google's gemma-4-12B-it, 'no fine-tuning', served by vLLM at --revision 707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7; so the weights' maker card is Google's. Figure read from the current main card, not the pinned revision. Not an E-series model, no effective figure. HF safetensors total 11,959,730,224 agrees."
+  },
+  "Decider Flash v1.2": {
+   "total_b": 4,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://docs.perplexity.ai/changelog",
+   "quote": "`pplx-decider-flash-v1.2` is a new 4B decision model at \\$0.01 per million input tokens.",
+   "checked": [
+    "https://huggingface.co/perplexity-ai/pplx-decider-flash-v1.2",
+    "https://huggingface.co/api/models/perplexity-ai/pplx-decider-flash-v1.2"
+   ],
+   "read": "2026-11-09",
+   "note": "Maker's own stated figure (changelog) used over Hugging Face's exact safetensors total for perplexity-ai/pplx-decider-flash-v1.2 @ 9ff7cf98: 4,539,265,536. Model card states no count. Dense."
+  },
+  "Decider v1.1 27B": {
+   "total_b": 26.09,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/api/models/perplexity-ai/pplx-decider-v1.1-27b",
+   "quote": "safetensors: {\"parameters\": {\"BF16\": 26085330160}, \"total\": 26085330160} (sha 14c9d90137962d300f3de95633f7b6535e80c5ce)",
+   "checked": [
+    "https://huggingface.co/perplexity-ai/pplx-decider-v1.1-27b",
+    "https://docs.perplexity.ai/changelog"
+   ],
+   "read": "2026-11-09",
+   "note": "Model card states no explicit count (only the name '27b' and backbone Qwen3.8-27B); the figure is the safetensors total HF shows for Perplexity's own repo. Dense."
+  },
+  "Decider v1.2 27B": {
+   "total_b": 27,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://docs.perplexity.ai/changelog",
+   "quote": "`pplx-decider-v1.2` replaces `pplx-decider-v1.1-27b` as the 27B decision model, at \\$0.02 per million input tokens.",
+   "checked": [
+    "https://huggingface.co/perplexity-ai/pplx-decider-v1.2",
+    "https://huggingface.co/api/models/perplexity-ai/pplx-decider-v1.2"
+   ],
+   "read": "2026-11-09",
+   "note": "Maker's own stated figure (changelog) used over Hugging Face's exact safetensors total for perplexity-ai/pplx-decider-v1.2 @ cce0f3f8: 26,085,330,160. Model card text states no count. Dense."
+  },
+  "DeepSeek V4.1 Flash": {
+   "total_b": 552,
+   "active_b": 16,
+   "effective_b": null,
+   "moe": true,
+   "source": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash",
+   "quote": "a multimodal Mixture-of-Experts (MoE) model with 552B backbone parameters ... activate only **8B parameters per token during prefill** and **16B during decode**",
+   "checked": [
+    "https://huggingface.co/api/models/deepseek-ai/DeepSeek-V4.1-Flash",
+    "https://www.alibabacloud.com/help/en/model-studio/newly-released-models"
+   ],
+   "read": "2026-11-09",
+   "note": "Card table: '# Backbone Params 552B', '# Activated Params 8B / 16B' (prefill/decode); active recorded as the 16B decode figure. Card also lists 'Engram conditional memory (196B parameters, sparsely accessed)' separately from the 552B backbone; total kept at the card's stated 552B. HF safetensors total 763,205,315,794 is not used: it counts packed FP4 experts stored as I8 (557.2B I8 elements), not parameters."
+  },
+  "DeepSeek V4.1 Flash 1017": {
+   "total_b": null,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash-1017",
+   "quote": "Card states only: 'DeepSeek-V4.1-Flash-1017 is a minor update to DeepSeek-V4.1-Flash'; no parameter count on the 1017 card.",
+   "checked": [
+    "https://huggingface.co/api/models/deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "https://api-docs.deepseek.com/updates/"
+   ],
+   "read": "2026-11-09",
+   "note": "Not filled from the V4.1-Flash card (lineage). HF safetensors total 763,205,315,794 is identical to V4.1-Flash's and inflated by packed FP4 (I8) storage, so not a parameter count. If Main accepts 'minor update' as same architecture, V4.1-Flash's 552B / 8B-16B applies."
+  },
+  "Drex 2.0": {
+   "total_b": 35,
+   "active_b": 3,
+   "effective_b": null,
+   "moe": true,
+   "source": "https://huggingface.co/nace-ai/drex-v2.0/blob/e646674476744e3826caf62b834054151e2aba51/README.md",
+   "quote": "mixture-of-experts ... 40 layers, 256 experts and 8 active per token: 35B parameters in total, about 3B active per token",
+   "checked": [
+    "https://huggingface.co/api/models/nace-ai/drex-v2.0",
+    "https://console.nace.ai/docs/drex/reference/models"
+   ],
+   "read": "2026-11-09",
+   "note": "Active is 'about 3B' on the card; Nace docs: 'drex-v2.0 is a mixture of experts with 3B active parameters'. HF safetensors total at pinned sha e6466744: 35,107,181,936 (includes the vision tower, which the card says is dropped on load). Applies to both hosted and local rows."
+  },
+  "Drex Max 1.1": {
+   "total_b": null,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": null,
+   "quote": "Maker's model reference, Drex Max guide and developer page list API id drex-max-v1.1, limits and pricing, but no parameter count; no open weights.",
+   "checked": [
+    "https://console.nace.ai/docs/drex/reference/models",
+    "https://console.nace.ai/docs/drex/guides/drex-max",
+    "https://www.nace.ai/blog/introducing-drex-max",
+    "https://www.nace.ai/developers"
+   ],
+   "read": "2026-11-09",
+   "note": "Not inferred from Drex Max v1 (27B)."
+  },
+  "Drex Max v1": {
+   "total_b": 27,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/nace-ai/drex-max-v1/blob/cac65e1982a0237e996419ba559004522d9a33ac/README.md",
+   "quote": "Drex Max is a dense 27B-parameter model with a 255-way readout head",
+   "checked": [
+    "https://huggingface.co/api/models/nace-ai/drex-max-v1/revision/cac65e19"
+   ],
+   "read": "2026-11-09",
+   "note": "Card says 27B; HF safetensors total at pinned sha cac65e19 is 26,085,330,160 (BF16, ~26.1B). Disagreement recorded; card figure used per rule. Repo main has moved on (sha 81cb1111), same safetensors total."
+  },
+  "Fastino GLiDE": {
+   "total_b": null,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": null,
+   "quote": "Hosted API (responses name glide_v2); the launch post and v1.2 post give no parameter count for the hosted model; the v1.2 post only says post-trained from 'an open weight 27B-class hybrid language model'.",
+   "checked": [
+    "https://fastino.ai/blog/introducing-glide-the-first-thinking-decision-model",
+    "https://fastino.ai/blog/training-glide-sota-decision-model",
+    "https://huggingface.co/api/models/fastino/GLiDE"
+   ],
+   "read": "2026-11-09",
+   "note": "Hosted glide_v2 is not documented as the same checkpoint as the HF fastino/GLiDE weights, so the HF safetensors total is not applied."
+  },
+  "Fastino GLiDE v1.2": {
+   "total_b": 26.09,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/api/models/fastino/GLiDE/revision/a7e45896",
+   "quote": "safetensors: {\"parameters\": {\"BF16\": 26085330160}, \"total\": 26085330160} (repo now redirects to fastino/GLiDE-27B; sha a7e45896be7c96ba3354891da790c5ec99c30b6c)",
+   "checked": [
+    "https://huggingface.co/fastino/GLiDE/blob/a7e45896/README.md",
+    "https://fastino.ai/blog/training-glide-sota-decision-model"
+   ],
+   "read": "2026-11-09",
+   "note": "Model card text states no count; Fastino blog says only '27B-class'. HF-shown safetensors total for the maker's own repo at the pin used."
+  },
+  "GLM-5.3": {
+   "total_b": 753.33,
+   "active_b": null,
+   "effective_b": null,
+   "moe": true,
+   "source": "https://huggingface.co/api/models/zai-org/GLM-5.3",
+   "quote": "safetensors.total: 753329940480 (BF16 2,103,729,152 + F8_E4M3 751,226,191,872 + F32 19,456), maker's own repo zai-org/GLM-5.3 @ ba32f8c19c8738e2c57c71798c601d477a7bf844",
+   "checked": [
+    "https://huggingface.co/zai-org/GLM-5.3",
+    "https://z.ai/blog/glm-5.3",
+    "https://docs.z.ai/guides/llm/glm-5.3",
+    "https://huggingface.co/zai-org/GLM-5.3/raw/main/config.json"
+   ],
+   "read": "2026-11-09",
+   "note": "Neither the model card, blog nor docs state a parameter count (blog: 'uses the same base model as GLM-5.2'). Total is the HF safetensors figure; active not stated anywhere checked (MoE active unknown). Repo may include MTP layers in the count. Mixture of experts per the maker's Hugging Face config.json (architectures: GlmMoeDsaForCausalLM; first_k_dense_replace 3), so shown as total with active not disclosed."
+  },
+  "GPT-6 Astra": {
+   "total_b": null,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://openai.com/index/gpt-6-astra/",
+   "quote": "Searched the launch post, the API model docs page and the system/model card for 'parameter', 'billion', 'trillion' and figures like 'NB'/'NT'. No explicit parameter count was found (all cards fetched as full text unless noted).",
+   "checked": [
+    "https://openai.com/index/gpt-6-astra/",
+    "https://developers.openai.com/api/docs/models/gpt-6-astra",
+    "https://platform.openai.com/docs/models/gpt-6-astra",
+    "https://deploymentsafety.openai.com/gpt-6-astra",
+    "https://openai.com/index/gpt-6-astra-system-card/"
+   ],
+   "read": "2026-11-09",
+   "note": "Closed API model; system card not checked separately. openai.com system-card URL returned HTTP 403 (Cloudflare); the same card on deploymentsafety.openai.com was read instead."
+  },
+  "GPT-6 Luna": {
+   "total_b": null,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://openai.com/index/introducing-gpt-6-sol-and-luna/",
+   "quote": "Searched the launch post, the API model docs page and the system/model card for 'parameter', 'billion', 'trillion' and figures like 'NB'/'NT'. No explicit parameter count was found (all cards fetched as full text unless noted).",
+   "checked": [
+    "https://openai.com/index/introducing-gpt-6-sol-and-luna/",
+    "https://openai.com/index/gpt-6-astra/",
+    "https://developers.openai.com/api/docs/models/gpt-6-luna",
+    "https://platform.openai.com/docs/models/gpt-6-luna",
+    "https://openai.com/index/gpt-6-sol-and-luna-system-card/",
+    "https://deploymentsafety.openai.com/gpt-6-sol-and-luna",
+    "https://deploymentsafety.openai.com/gpt-6-luna"
+   ],
+   "read": "2026-11-09",
+   "note": "Only 'billions' appears, referring to requests, not parameters. No Luna system card was found: the two openai.com and deploymentsafety guesses returned 403 or failed to fetch. The model docs and the launch post state no count."
+  },
+  "GPT-6.1 Sol": {
+   "total_b": null,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://openai.com/index/introducing-gpt-6-1-sol/",
+   "quote": "Searched the launch post, the API model docs page and the system/model card for 'parameter', 'billion', 'trillion' and figures like 'NB'/'NT'. No explicit parameter count was found (all cards fetched as full text unless noted).",
+   "checked": [
+    "https://openai.com/index/introducing-gpt-6-1-sol/",
+    "https://openai.com/index/gpt-6-astra/",
+    "https://developers.openai.com/api/docs/models/gpt-6.1-sol",
+    "https://platform.openai.com/docs/models/gpt-6.1-sol",
+    "https://deploymentsafety.openai.com/gpt-6-1-sol",
+    "https://openai.com/index/gpt-6-1-sol-system-card/"
+   ],
+   "read": "2026-11-09",
+   "note": "openai.com system-card URL returned HTTP 403; card read on deploymentsafety.openai.com."
+  },
+  "Gemini 3.8 Flash": {
+   "total_b": null,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://blog.google/innovation-and-ai/models-and-research/gemini-models/3-8-flash-and-3-8-flash-cyber/",
+   "quote": "Searched the launch post, the API model docs page and the system/model card for 'parameter', 'billion', 'trillion' and figures like 'NB'/'NT'. No explicit parameter count was found (all cards fetched as full text unless noted).",
+   "checked": [
+    "https://blog.google/innovation-and-ai/models-and-research/gemini-models/3-8-flash-and-3-8-flash-cyber/",
+    "https://ai.google.dev/gemini-api/docs/models",
+    "https://deepmind.google/models/model-cards/",
+    "https://deepmind.google/models/model-cards/gemini-3-8-flash/"
+   ],
+   "read": "2026-11-09",
+   "note": ""
+  },
+  "Gemini 4 Argon": {
+   "total_b": null,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://blog.google/innovation-and-ai/technology/developers-tools/build-with-gemini-4-argon/",
+   "quote": "Searched the launch post, the API model docs page and the system/model card for 'parameter', 'billion', 'trillion' and figures like 'NB'/'NT'. No explicit parameter count was found (all cards fetched as full text unless noted).",
+   "checked": [
+    "https://blog.google/innovation-and-ai/technology/developers-tools/build-with-gemini-4-argon/",
+    "https://ai.google.dev/gemini-api/docs/models",
+    "https://deepmind.google/models/model-cards/",
+    "https://deepmind.google/models/model-cards/gemini-4-argon/"
+   ],
+   "read": "2026-11-09",
+   "note": ""
+  },
+  "Gemma 4 31B": {
+   "total_b": 30.7,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/google/gemma-4-31B-it",
+   "quote": "| **Total Parameters** | ... | 11.95B | 30.7B |  (column '31B Dense')",
+   "checked": [
+    "https://huggingface.co/api/models/google/gemma-4-31B-it"
+   ],
+   "read": "2026-11-09",
+   "note": "Dense. Card says 30.7B; HF safetensors total for the repo is 31,273,088,876 (includes ~550M vision encoder). Chose the card figure per rule."
+  },
+  "Grok 4.7": {
+   "total_b": null,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://x.ai/news/grok-4-7",
+   "quote": "Searched the launch post, the API model docs page and the system/model card for 'parameter', 'billion', 'trillion' and figures like 'NB'/'NT'. No explicit parameter count was found (all cards fetched as full text unless noted).",
+   "checked": [
+    "https://x.ai/news/grok-4-7",
+    "https://docs.x.ai/docs/models",
+    "https://docs.x.ai/docs/models/grok-4.7",
+    "https://x.ai/news"
+   ],
+   "read": "2026-11-09",
+   "note": "x.ai/news mentions Grok-1's 314B, not Grok 4.7."
+  },
+  "Jev 1.13.0": {
+   "total_b": null,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://docs.typesafe.ai/models",
+   "quote": "Models page lists model ID jev-1.13.0, price, context; no parameter count",
+   "checked": [
+    "https://docs.typesafe.ai/models",
+    "https://typesafe.ai/blog/jev-1-14"
+   ],
+   "read": "2026-11-09",
+   "note": "Closed API; TypeSafe states no size."
+  },
+  "Jev 1.14.0": {
+   "total_b": null,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://docs.typesafe.ai/models",
+   "quote": "Models page lists model ID jev-1.14.0, price, context, release; no parameter count; launch blog has no count either",
+   "checked": [
+    "https://docs.typesafe.ai/models",
+    "https://typesafe.ai/blog/jev-1-14"
+   ],
+   "read": "2026-11-09",
+   "note": "Closed API; TypeSafe states no size."
+  },
+  "Kimi K3.1 Pro": {
+   "total_b": 2800,
+   "active_b": 104,
+   "effective_b": null,
+   "moe": true,
+   "source": "https://huggingface.co/moonshotai/Kimi-K3.1-Pro/blob/main/README.md",
+   "quote": "Total Parameters | 2.8T ; Activated Parameters | 104B",
+   "checked": [
+    "https://huggingface.co/api/models/moonshotai/Kimi-K3.1-Pro"
+   ],
+   "read": "2026-11-09",
+   "note": "Open weights, MoE (repo sha d9e99b0792a5e93b78ea9bea62a68167e36ddd9e). HF safetensors total shows 2,780,110,363,392 but 2.72T of that is U8-packed MXFP4 storage, so it is not a true param count; card figure 2.8T used. Card also states vision encoder ~401M separately."
+  },
+  "LFM2.5-24B-A2B": {
+   "total_b": 24,
+   "active_b": 2.45,
+   "effective_b": null,
+   "moe": true,
+   "source": "https://huggingface.co/LiquidAI/LFM2.5-24B-A2B",
+   "quote": "- **Total parameters**: 24.0B  - **Active parameters**: 2.45B",
+   "checked": [
+    "https://www.liquid.ai/blog/lfm2-5-24b-a2b",
+    "https://huggingface.co/api/models/LiquidAI/LFM2.5-24B-A2B"
+   ],
+   "read": "2026-11-09",
+   "note": "Card intro and blog say '24B-parameter ... with only 2B active'; spec list says 24.0B / 2.45B — used the precise spec figures. HF safetensors total 23,971,587,712 (BF16 23,971,585,280 + F32 2,432)."
+  },
+  "Liquid d1-ultra": {
+   "total_b": null,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://www.liquid.ai/blog/d1-ultra",
+   "quote": "Launch post ('Today, we release d1-ultra, our new multimodal decision model') states no parameter count.",
+   "checked": [
+    "https://www.liquid.ai/models",
+    "https://huggingface.co/LiquidAI/d1-ultra (401, not public)"
+   ],
+   "read": "2026-11-09",
+   "note": "API-only decision model."
+  },
+  "Mercury Decide": {
+   "total_b": null,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": null,
+   "quote": "Inception's decisions docs, models page and Mercury 3 post describe the API (model id mercury-decide) but give no parameter count.",
+   "checked": [
+    "https://docs.inceptionlabs.ai/capabilities/decisions",
+    "https://www.inceptionlabs.ai/models",
+    "https://www.inceptionlabs.ai/blog/introducing-mercury-3"
+   ],
+   "read": "2026-11-09",
+   "note": ""
+  },
+  "Open-Jev 27B v1.1": {
+   "total_b": null,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/ZefanCai/Open-Jev-27B-v1.1",
+   "quote": "A trained LoRA adapter and scalar decision head for the text backbone of Qwen/Qwen3.8-27B ... It contains 15,471,617 trained parameters; upstream base-model weights are obtained separately.",
+   "checked": [
+    "https://huggingface.co/api/models/ZefanCai/Open-Jev-27B-v1.1"
+   ],
+   "read": "2026-11-09",
+   "note": "Maker: Zefan Cai (HF ZefanCai, github Zefan-Cai/Open-Jev; sha 28cf73067d5b337860bbef3c85b8b82ba8730956). Card states only the adapter+head count (15,471,617 trainable); it gives no total for the combined model and HF shows no safetensors total. Total would require base-model lineage (Qwen3.8-27B), which is not allowed, so null."
+  },
+  "Qwen3.8 Flash": {
+   "total_b": null,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://www.alibabacloud.com/help/en/model-studio/newly-released-models",
+   "quote": "qwen3.8-flash entries (2026-08-26 etc.) describe 'a multimodal model from the Qwen family ... million-token context window' with no parameter count.",
+   "checked": [
+    "https://www.alibabacloud.com/help/en/model-studio/models"
+   ],
+   "read": "2026-11-09",
+   "note": "Closed API model. Not the open-weight Qwen3.8-Flash-Next; its numbers not used."
+  },
+  "Qwen3.8-27B": {
+   "total_b": 27,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/Qwen/Qwen3.8-27B",
+   "quote": "- Number of Parameters: 27B",
+   "checked": [
+    "https://huggingface.co/api/models/Qwen/Qwen3.8-27B"
+   ],
+   "read": "2026-11-09",
+   "note": "Card says 27B; HF safetensors total 27,781,427,952 (BF16, likely includes vision tower). Chose card figure."
+  },
+  "REAX 1.3": {
+   "total_b": null,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": null,
+   "quote": "Card at fa4bf7ee describes a two-part blend (Part G: Gemma-line 31B-derived fine-tunes; Part Q: Qwen3.5-27B-lineage fine-tunes), weights 'about 115 GB', but states no parameter count; HF shows no safetensors total for the repo.",
+   "checked": [
+    "https://huggingface.co/decisionmodels/REAX-1.3/blob/fa4bf7ee3bb56a8bc421dad090631be1c5845c2d/README.md",
+    "https://huggingface.co/api/models/decisionmodels/REAX-1.3",
+    "https://huggingface.co/decisionmodels/REAX-1.3/blob/fa4bf7ee3bb56a8bc421dad090631be1c5845c2d/engine/reax13.json"
+   ],
+   "read": "2026-11-09",
+   "note": "Component sizes in names (31B/27B) are lineage, not a stated total for REAX; not summed."
+  },
+  "SubQ Snap 1.1": {
+   "total_b": null,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://subq.ai/subq-snap-1-1",
+   "quote": "Announcement covers training, calibration, benchmarks; no parameter count",
+   "checked": [
+    "https://subq.ai/subq-snap-1-1",
+    "https://docs.subq.ai/using-the-api/models/",
+    "https://docs.subq.ai/endpoints/decisions-api/"
+   ],
+   "read": "2026-11-09",
+   "note": "Closed API."
+  },
+  "SubQ Snap Preview": {
+   "total_b": null,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://subq.ai/introducing-subq-snap",
+   "quote": "Launch post gives benchmarks, price ($0.05/M input), Public Preview status; no parameter count",
+   "checked": [
+    "https://subq.ai/introducing-subq-snap",
+    "https://docs.subq.ai/using-the-api/models/"
+   ],
+   "read": "2026-11-09",
+   "note": "Closed API."
+  },
+  "Winnow-12B": {
+   "total_b": null,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/EldanRing/Winnow-12B",
+   "quote": "Card (EldanRing, repo @ 0b5b7f98e718cf0faffd0acea3093b86ebf00b56) states no parameter count; only that it is a merged rank-32 LoRA fine-tune of Gemma 4 12B IT and GGUF sizes (Q8_0 12.67 GB, BF16 23.83 GB).",
+   "checked": [
+    "https://huggingface.co/api/models/EldanRing/Winnow-12B?expand[]=gguf"
+   ],
+   "read": "2026-11-09",
+   "note": "GGUF repo, no safetensors total. HF's gguf total (422,857,220, architecture gemma4-assistant) is for the MTP assistant file, not Winnow. Base Gemma 4 12B's 11.95B not used (lineage)."
+  }
+ }
+}

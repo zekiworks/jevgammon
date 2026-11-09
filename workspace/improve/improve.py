@@ -1323,6 +1323,27 @@ def api_equivalent(key):
     return round(total, 4)
 
 
+def public_reason(reason):
+    """The page's short, single-line form of a pause/stop reason (the full text stays in the private run log): the
+    step prefix plus a fixed summary for known causes, else the first line; control characters and <>& removed,
+    at most 200 characters (the site's TEXT pattern: [^<>&\\x00-\\x1f]{1,400})."""
+    if reason is None:
+        return None
+    m = re.match(r"\s*([ES][1-5]):", reason)
+    step = f"{m.group(1)}: " if m else ""
+    known = [("QUOTA: 429", "usage limit (429 rate_limit_error)"), ("usage limit (429)", "usage limit (429 rate_limit_error)"),
+             ("529", "provider overloaded (529)"), ("overloaded_error", "provider overloaded (529)"),
+             ("provider account limit", "provider account limit (shared-balance priority)"),
+             ("Key limit exceeded", "provider account limit (shared-balance priority)"),
+             ("ROUTE CHECK", "route check failed"), ("route check", "route check failed")]
+    text = next((short for marker, short in known if marker in reason), None)
+    if text is None:
+        text = reason.strip().splitlines()[0] if reason.strip() else "unspecified"
+        step = ""
+    out = re.sub(r"[<>&\x00-\x1f\x7f]", "", step + text).strip()
+    return (out[:200] or "unspecified")
+
+
 def model_summary(key):
     m = MODELS[key]
     state, reason = model_state(key)
@@ -1345,7 +1366,8 @@ def model_summary(key):
                            t10={k: a["t10"][k] for k in TEST_KEYS}))
     settings = {} if DRY else league_settings(m["setup"])
     route = settings.get("provider") or m["lane"]
-    return dict(key=key, setup=m["setup"], route=route, billed=bool(m.get("billed")), state=state, reason=reason,
+    return dict(key=key, setup=m["setup"], route=route, billed=bool(m.get("billed")), state=state,
+                reason=public_reason(reason),
                 progress=progress(key, state, reason),
                 steps_done=[s for s in STEPS if step_done(key, s)], empty=empty, series=series,
                 cost=dict(billed_usd=round(billed(key), 4) if m.get("billed") else 0.0,

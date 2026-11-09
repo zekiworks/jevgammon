@@ -169,6 +169,36 @@ class Schedule(Isolated):
             p.kill()
             p.wait()
 
+    def test_every_exported_reason_passes_the_site_text_pattern(self):
+        """Main: models[].reason must match the site's TEXT pattern (improve_validate: [^<>&\\x00-\\x1f]{1,400})."""
+        import re as _re
+        TEXT = _re.compile(r"[^<>&\x00-\x1f]{1,400}")
+        raw = [
+            'S2: usage limit (429) on the subscription: jevgammon: player 1: claude-fable-5-1 request failed: QUOTA: 429 '
+            'Too Many Requests: {"type":"error","error":{"type":"rate_limit_error","message":"This request would '
+            'exceed your account\'s rate limit. Please try again later."},"request_id":"req_011CgsgwYUvRLWnfUvDKdyBx"}\n',
+            "S2: jevgammon: player 1: claude-fable-5-1 request failed: gave up after 4 attempts: 529 <unknown status "
+            'code>: {"type":"error","error":{"type":"overloaded_error"}}',
+            "S4: paused: shared-balance priority (provider account limit: HTTP 403 key limit / 402 credits): 403 Forbidden",
+            "S1: route check: responses named [('x', 'y')] <bad> & more",
+            "rule (a): projected full cost $3.95 (5 x S1 $0.70 + 3 x E1 $0.15) > 1.5 x estimate $2.30 = $3.45",
+            "paused: shared-balance priority, Ümit #3215",
+            "line one\nline two\twith a tab " + "x" * 600,
+            "\x07\n",
+        ]
+        for r in raw:
+            out = I.public_reason(r)
+            self.assertTrue(TEXT.fullmatch(out), repr(out))
+            self.assertLessEqual(len(out), 200)
+        self.assertEqual(I.public_reason(raw[0]), "S2: usage limit (429 rate_limit_error)")
+        self.assertEqual(I.public_reason(raw[1]), "S2: provider overloaded (529)")
+        self.assertIsNone(I.public_reason(None))
+        # The live export: every model's reason passes.
+        out = I.summary()
+        for m in out["models"]:
+            if m["reason"] is not None:
+                self.assertTrue(TEXT.fullmatch(m["reason"]), (m["key"], m["reason"]))
+
     def test_restarted_series_is_archived_with_new_names(self):
         d = I.step_dir(KEY, "S2")
         d.mkdir(parents=True)

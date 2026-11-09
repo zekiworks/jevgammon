@@ -1665,7 +1665,7 @@ def about_page(S, method_html: str) -> str:
     ours = [(i, h, method.spec_markdown(md)) for i, h, md in about_sections() if i != "short"]
     more = [("rules", "Rules of backgammon, as the prompt states them"), ("method", "Method"), ("data", "Data"),
             ("how-to-run", "How to run it"), ("late-entries", "Late entries"), ("open-questions", "Open questions"),
-            ("pages", "More pages")]
+            ("pages", "More pages"), ("front-page", "From the front page")]
     method_links = "".join(f'<li><a href="../method/#{i}">{h}</a></li>' for i, h in method_sections(method_html))
     parts = {
         "rules": f'<p class="note">The rules as every player reads them in the prompt (bg-v2, the current version: '
@@ -1678,7 +1678,8 @@ def about_page(S, method_html: str) -> str:
                         f'matches: <a href="../leagues/#late-entries">Leagues: Late entries</a>.</p>',
         "open-questions": f'<p>What is not settled yet: every analysis in the plan with its status, and the limits on '
                           f'the <a href="../method/#limits">Method page</a>.</p>{status_list(S)}',
-        "pages": more_pages("../")}
+        "pages": more_pages("../"),
+        "front-page": home.front_page_text(S, "../")}
     extra = {"scores": home.how_numbers(S, "../"),
              "leaderboard": '<h3 id="leaderboard-notes">How the leaderboard is built</h3>' + story.about_text(S, "../")}
     nav = "".join(f'<a href="#{i}">{esc(t)}</a>' for i, t, _ in ours) + "".join(f'<a href="#{i}">{esc(t)}</a>' for i, t in more)
@@ -1808,6 +1809,6 @@ def write_all(S, out: Path, base: str) -> None:
                     "the engine's play and a short story (the stories are not written yet).")
     put("experiments/", "Experiments", experiments_page(S),
         description="Experiments of the backgammon benchmark: Clear risk, Nackgammon and Learning from experience.")
-    put("about/", "About", about_page(S, method_html),
+    put("about/", "About", about_page(S, method_html), styles=("decisions.css",),
         description="About the backgammon benchmark: backgammon in one page, how the benchmark works, how the scores "
                     "work, the leaderboard rules, the method, the data, how to run it, late entries and open questions.")

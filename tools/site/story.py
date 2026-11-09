@@ -1,5 +1,6 @@
 """The home page as a story (Ümit, bus #2570): one headline table, one row per model at its highest reasoning setting, and
-sections whose headings state what the published numbers show, each with one chart, two sentences and one caveat. Every number is a
+sections whose headings state what the published numbers show, each with one chart and one caveat (the sentences are on
+About, but for the Nackgammon comparison and the learning status, Ümit via Zeki #3521). Every number is a
 stored value as the site's tables print it: risk judgement, risks found, right safety, error rate and cost from the
 league results; the bias of the clear-risk scan and of its Part 2 question Q1 from the published clear-risk data
 (data/v3/clear-risk.json). A third heading asked for, on reasoning, is not shown: the Reasoning tab's comparison is not
@@ -10,6 +11,7 @@ supporting must be reworded by hand."""
 import json
 import math
 import re
+from collections import namedtuple
 
 import home as H
 import pages as P
@@ -489,13 +491,21 @@ def _bars(rows: list, lo: float, hi: float, ticks: list, head: str, zero: bool =
             f'<span class="hbar-head">{head}</span></div><ol class="hbars headed">{"".join(out)}</ol>')
 
 
-def finding(fid: str, heading: str, sentences: str, chart: str, legend: str, warn: str, link: tuple[str, str]) -> str:
-    """A finding section (Ümit #2938 item 2): the heading states the finding, one chart, two or three sentences and one
-    link (href relative to the site's root, label)."""
-    return (f'<section class="card finding" id="{fid}" aria-labelledby="{fid}-title"><h2 id="{fid}-title">{esc(heading)}</h2>'
-            f'<p class="finding-text">{sentences}</p><figure class="chart-card chart-wide finding-chart">{chart}'
-            + (f'<p class="chart-legend">{legend}</p>' if legend else "") + '</figure>'
-            f'<p class="table-note section-caveat">{esc(warn)} <a href="{link[0]}">{esc(link[1])}</a></p></section>')
+# A finding section's parts. kept: the sentences the front page shows above the chart (Ümit via Zeki #3521: no long
+# paragraph above a chart there; "" none); None: the whole text, as on the Clear risk page. The whole text is on About
+# (findings_text) for every section that keeps less.
+Finding = namedtuple("Finding", "fid heading text chart legend warn link kept")
+
+
+def finding(f: Finding, full: bool = True) -> str:
+    """A finding section (Ümit #2938 item 2): the heading states the finding, one chart, its sentences (full) or only
+    the kept ones, and one caveat with one link (href relative to the site's root, label)."""
+    text = f.text if full or f.kept is None else f.kept
+    return (f'<section class="card finding" id="{f.fid}" aria-labelledby="{f.fid}-title"><h2 id="{f.fid}-title">{esc(f.heading)}</h2>'
+            + (f'<p class="finding-text">{text}</p>' if text else "")
+            + f'<figure class="chart-card chart-wide finding-chart">{f.chart}'
+            + (f'<p class="chart-legend">{f.legend}</p>' if f.legend else "") + '</figure>'
+            f'<p class="table-note section-caveat">{esc(f.warn)} <a href="{f.link[0]}">{esc(f.link[1])}</a></p></section>')
 
 
 def cautious(S) -> str:
@@ -522,12 +532,12 @@ def cautious(S) -> str:
     legend = ('<span>Bias = missed risks (a clear Risk win played safe) minus needless risks (a clear Safety win played '
               'unsafe), in percentage points; right of 0 = too cautious</span> <span><i class="swatch swatch-program">'
               '</i>program (reference row)</span>')
-    return finding("clear-risk-bias", "Models are too cautious: the clear-risk scan", text, chart, legend,
-                   "Not paired: setups met different positions, so the rows compare only loosely.",
-                   ("method/#clear-risk", "More caveats: Method"))
+    return finding(Finding("clear-risk-bias", "Models are too cautious: the clear-risk scan", text, chart, legend,
+                           "Not paired: setups met different positions, so the rows compare only loosely.",
+                           ("method/#clear-risk", "More caveats: Method"), None))
 
 
-def flinch(S) -> str:
+def flinch(S) -> Finding:
     rows = q1_bias(S)
     safer = [r for r in rows if r[2] > r[4]]
     neg = [r for r in rows if r[4] < 0]
@@ -552,8 +562,8 @@ def flinch(S) -> str:
     legend = ('<span><i class="swatch" style="background:var(--text-2)"></i>with numbers (the league prompt, each play\'s '
               'computed consequences)</span> <span><i class="swatch swatch-q1-board"></i>board only (notation, no computed '
               'number)</span> <span>Bias: missed minus needless, Q1 of Clear risk Part 2</span>')
-    return finding("finding-flinch", heading, text, chart, legend, "Preliminary: two plays shown, not league play.",
-                   ("clear-risk/", "Clear risk (preliminary)"))
+    return Finding("finding-flinch", heading, text, chart, legend, "Preliminary: two plays shown, not league play.",
+                   ("clear-risk/", "Clear risk (preliminary)"), "")
 
 
 # --- The front page's finding sections a-f (Ümit #2938 item 2). Every heading is decided from the same stored values
@@ -571,7 +581,7 @@ def _rows_chart(S) -> list:
     return headline_rows(S)[2]
 
 
-def two_skill(S) -> str:
+def two_skill(S) -> Finding:
     """a. Risks found (x) against safe right (y), one dot per leaderboard row in its maker's colour, GNUbg weak the grey
     reference. Heading rule: most ranked models found a smaller share of the risks that paid than they played safe
     right where safety paid."""
@@ -625,12 +635,12 @@ def two_skill(S) -> str:
     legend = (H.maker_legend(xr["name"] for _, xr, _ in models)
               + ' <span><i class="swatch swatch-ts-grey"></i>GNUbg weak (program, reference)</span>'
               ' <span>Dashed diagonal: as often right on both</span>')
-    return finding("finding-cautious", heading, text, chart, legend,
+    return Finding("finding-cautious", heading, text, chart, legend,
                    "Not paired: models met different positions in different leagues.",
-                   ("method/#risk-metrics", "How risks found and safe right are counted"))
+                   ("method/#risk-metrics", "How risks found and safe right are counted"), "")
 
 
-def release_chart(S) -> str:
+def release_chart(S) -> Finding | None:
     """b. Risk judgement against release month, one line per maker, documented months only (content/release_months.json).
     Heading rule: "Newer models judge risk better" only if every maker with models in two or more months scores higher
     with each later month, and at least two makers do; else the neutral heading."""
@@ -657,7 +667,7 @@ def release_chart(S) -> str:
                  + ("" if ok else " That is not a consistent increase across the makers shown."))
     months = sorted({d[0] for d in dated})
     if not months:
-        return ""
+        return None
     W, Hh, L, B, T, R = 560, 340, 44, 40, 12, 120
     js = [d[2] for d in dated]
     lo, hi = math.floor(min(js) / 5) * 5, math.ceil(max(js) / 5) * 5
@@ -689,9 +699,9 @@ def release_chart(S) -> str:
                      if mk in spread else "")
     chart = _svg("Risk judgement against release month, one line per maker", W, Hh, "".join(parts))
     legend = H.maker_legend(x["name"] for label, x, _ in rows if (RELEASES.get(label) or {}).get("month"))
-    return finding("finding-release", heading, text, chart, legend,
+    return Finding("finding-release", heading, text, chart, legend,
                    "Models without a documented release month are left out.",
-                   ("about/#leaderboard", "How release months are dated"))
+                   ("about/#leaderboard", "How release months are dated"), "")
 
 
 def reasoning_groups(S) -> list:
@@ -721,7 +731,7 @@ def _er(x):
     return q["error_rate"] if q and q.get("error_rate") is not None and not q.get("too_few") else None
 
 
-def reasoning(S) -> str:
+def reasoning(S) -> Finding | None:
     """d. The same model at different reasoning settings, in one league. Heading rule: "More thinking: better moves, not
     better risk calls" only if most such models have a lower error rate at their highest setting and most do not have a
     higher risk judgement there; else "What thinking adds"."""
@@ -729,7 +739,7 @@ def reasoning(S) -> str:
               if _er(xs[0]) is not None and _er(xs[-1]) is not None and xs[0]["r"]["judgement"] is not None
               and xs[-1]["r"]["judgement"] is not None]
     if not groups:
-        return ""
+        return None
     n = len(groups)
     er_lower = sum(_er(xs[-1]) < _er(xs[0]) for _, _, xs in groups)
     rj_higher = sum(xs[-1]["r"]["judgement"] > xs[0]["r"]["judgement"] for _, _, xs in groups)
@@ -775,12 +785,12 @@ def reasoning(S) -> str:
     chart = _svg("The same model at its reasoning settings: risk judgement and error rate", W, Hh, "".join(parts))
     legend = ('<span>One row per model and league; hollow dots: its lower settings, filled dot: its highest setting.</span> '
               + H.maker_legend(xs[-1]["name"] for _, _, xs in groups))
-    return finding("finding-reasoning", heading, text, chart, legend,
+    return Finding("finding-reasoning", heading, text, chart, legend,
                    "Not paired: each setting played its own games; these are observed differences.",
-                   ("leagues/?tab=reasoning#board", "Every setting, league by league"))
+                   ("leagues/?tab=reasoning#board", "Every setting, league by league"), "")
 
 
-def nack_finding(S) -> str:
+def nack_finding(S) -> Finding:
     """e. Nackgammon: standard against Nackgammon error rate per setup and group, Random as the reference (the paired
     test's own chart). Heading: always the neutral "A new starting position" (Zeki #2961). The data hold no interval for
     a group's own drop, only the 99% intervals of BETWEEN-group drop differences (primary, primary_original_members);
@@ -793,49 +803,61 @@ def nack_finding(S) -> str:
     heading = "A new starting position"
     rd1 = N["setups"]["Random"]["first"]["drop"]
     worse = [(s, r) for s, r in ((Lt or {}).get("setups") or {}).items() if r.get("label") == "worse"]
-    text = ("Each model was asked Nackgammon positions and standard positions matched to them. "
-            + ("Compared group against group (one group's drop minus another's: decision models, workhorses, "
-               "frontier), every 99% interval includes 0, so the test does not show the groups' drops to differ. "
+    between = ("Compared group against group (one group's drop minus another's: decision models, workhorses, "
+               "frontier), every 99% interval includes 0, so the test does not show the groups' drops to differ."
                if clear else "Compared group against group (one group's drop minus another's), not every 99% "
-               "interval includes 0. ")
-            + f"Random play's own drop is {fmt(rd1, 1, True)} PR on the main 200 pairs: the Nackgammon positions were "
-            f"{'slightly easier' if rd1 < 0 else 'harder'} for random play.")
-    if worse:
-        text += " Outside the groups, " + "; ".join(
-            f'the late entry {esc(s)} dropped ({fmt(r["final"]["drop"], 2, True)} PR, 97.5% interval '
-            f'{fmt(r["final"]["drop_975"][0], 2, True)} to {fmt(r["final"]["drop_975"][1], 2, True)})' for s, r in worse) + "."
-    text += f" <strong>{esc(NS.UNCLEAR_NOTE)}</strong>"
+               "interval includes 0.")
+    late = (" Outside the groups, " + "; ".join(
+        f'the late entry {esc(s)} dropped ({fmt(r["final"]["drop"], 2, True)} PR, 97.5% interval '
+        f'{fmt(r["final"]["drop_975"][0], 2, True)} to {fmt(r["final"]["drop_975"][1], 2, True)})' for s, r in worse) + "."
+        if worse else "")
+    unclear = f" <strong>{esc(NS.UNCLEAR_NOTE)}</strong>"
+    text = ("Each model was asked Nackgammon positions and standard positions matched to them. " + between
+            + f" Random play's own drop is {fmt(rd1, 1, True)} PR on the main 200 pairs: the Nackgammon positions were "
+            f"{'slightly easier' if rd1 < 0 else 'harder'} for random play." + late + unclear)
     legend = ('<span><i class="swatch nack-dot nack-dm"></i>decision models</span> '
               '<span><i class="swatch nack-dot nack-wh"></i>workhorses</span> '
               '<span><i class="swatch nack-dot nack-fr"></i>frontier</span> '
               '<span><i class="swatch nack-dot nack-ng"></i>no group (exploratory)</span> '
               '<span><i class="swatch nack-yard"></i>GNUbg weak, Random</span> '
               '<span>Above the dashed diagonal: higher error on Nackgammon.</span>')
-    return finding("finding-nackgammon", heading, text, NS.chart(N), legend,
+    return Finding("finding-nackgammon", heading, text, NS.chart(N), legend,
                    "Paired positions, not league play; a drop mixes the new start with how hard the positions are.",
-                   ("nackgammon/", "The Nackgammon test"))
+                   ("nackgammon/", "The Nackgammon test"), between + late + unclear)
 
 
-def learning_finding(S) -> str:
+def learning_finding(S) -> Finding | None:
     """f. Learning from experience: the page's status line, its verdict's first sentence (published wording only) and
     its risks-found chart. A question, not a claim."""
     import learning_page as LP
     L = S["learning"]
     R = L.get("results")
     if L.get("preregistration_only"):
-        return ""
+        return None
     st = L["status"]
     text = f'Status: {esc(st["line"])}.'
     if R and R["complete"] and LP.is_complete(L):
         text += f' {esc(LP.verdict_head(R))}'
     chart = (LP.risks_figure(R, "finding-learning-chart") if R and R.get("series_total_done") else "") or \
         '<p class="note">No finished series yet.</p>'
-    return finding("finding-learning", "Does the model learn from its games?", text, chart, "",
+    return Finding("finding-learning", "Does the model learn from its games?", text, chart, "",
                    "One model, a small pilot; the plan, every number and the lessons are on its page.",
-                   (LP.PATH, "Learning from experience"))
+                   (LP.PATH, "Learning from experience"), text)
+
+
+def sections(S) -> list[Finding]:
+    """The finding sections a-f, in Ümit's order (#2938 item 2); a section the data cannot fill is left out."""
+    return [f for f in (two_skill(S), release_chart(S), flinch(S), reasoning(S), nack_finding(S), learning_finding(S)) if f]
 
 
 def findings(S) -> str:
-    """The finding sections a-f, in Ümit's order (#2938 item 2); the wrapper keeps the old #findings anchor."""
-    return ('<div class="findings" id="findings">' + two_skill(S) + release_chart(S) + flinch(S) + reasoning(S)
-            + nack_finding(S) + learning_finding(S) + '</div>')
+    """The front page's finding sections, each with only its kept sentences above the chart; the wrapper keeps the old
+    #findings anchor."""
+    return '<div class="findings" id="findings">' + "".join(finding(f, full=False) for f in sections(S)) + '</div>'
+
+
+def findings_text(S, rel: str) -> str:
+    """For About: the whole text of each front-page finding section that shows less there (Ümit via Zeki #3521), under
+    its heading, with a link back to its chart."""
+    return "".join(f'<h3 id="text-{f.fid}">{esc(f.heading)}</h3><p>{f.text}</p><p class="table-note">'
+                   f'<a href="{rel}#{f.fid}">The chart: front page</a></p>' for f in sections(S) if f.kept != f.text)

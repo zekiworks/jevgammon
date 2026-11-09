@@ -15,6 +15,7 @@ from common import ALL_NOTE, CLOSE_B_SCOPE_NOTE, CONTENT, LATE_ENTRY, NA, NOT_ME
 
 TABS = [("risk", "Risk"), ("quality", "Quality"), ("confidence", "Confidence"), ("reasoning", "Reasoning"),
         ("cost", "Cost"), ("stability", "Stability")]
+# The front page's description until Ümit via Zeki #3521; on About (front_page_text) since.
 INTRO = ("Models play backgammon, and an engine scores every move they make. We measure whether each risk a model "
          "takes is the right one, and what that costs. Every decision is public.")
 LIMIT_PAIRED = "Setups played different positions; league comparisons are not paired."
@@ -24,8 +25,6 @@ LIMIT_HARD = ("Setups met different positions; risk judgement is not adjusted fo
               "comparisons wait for the shared positions.")
 # Under the risk leaderboard chart (Ümit #2564; wording Zeki #2578).
 RANK_NOTE = "Ranks show observed scores; small gaps need not be meaningful."
-# The hero's three buttons (Ümit #2938 item 2): Every decision, Highlights, Read the method.
-HERO_LINKS = [("Every decision", "decisions/"), ("Highlights", "highlights/"), ("Read the method", "method/")]
 GNUBG_WEAK = "x86-64 build: its noise is shifted, so it overplays gammons"
 CALL_LABEL = {"needless": "needless risks", "missed": "missed risks", "wrong_risk": "wrong risks",
               "right_risk": "right risks", "right_safety": "right safety", "none": "No trade-off"}
@@ -1283,7 +1282,8 @@ CALL_WORDS = {"right_risk": "a right risk", "wrong_risk": "a wrong risk", "misse
               "needless": "a needless risk", "right_safety": "right safety"}
 
 
-def hero_board(S) -> str:
+def hero_board(S, rel: str) -> str:
+    """The example decision that stood beside the front page's title until Ümit via Zeki #3521; on About since."""
     sc = S.get("showcase")
     if not sc:
         return ""
@@ -1295,7 +1295,7 @@ def hero_board(S) -> str:
     text = (f'{esc(sc["label"])}, dice {sc["dice"][0]}-{sc["dice"][1]}, stake {P.eq(sc["stake"])}: the engine\'s best play '
             f'{code(b)} leaves {count(b["hitting_rolls"])} hitting rolls, the best safe play {code(s)} (dashed) '
             f'leaves {count(s["hitting_rolls"])}. {esc(sc["who"])} played {code(c)}: {esc(CALL_WORDS[sc["call"]])}.')
-    href = f'decisions/?d={sc["dataset"]}&amp;s={sc["slug"]}&amp;p={sc["page"]}#d{sc["id"]}'
+    href = f'{rel}decisions/?d={sc["dataset"]}&amp;s={sc["slug"]}&amp;p={sc["page"]}#d{sc["id"]}'
     return f'<figure class="hero-board">{svg}<figcaption>{text} <a href="{href}">Open this decision</a></figcaption></figure>'
 
 
@@ -1873,19 +1873,22 @@ def counts_line(S) -> str:
 
 
 def hero_card(S) -> str:
-    links = "".join(f'<a class="key" href="{href}">{esc(label)}</a>' for label, href in HERO_LINKS)
+    """The front page's first card (Ümit via Zeki #3521): the question and the counts line; the description and the
+    example decision are on About (front_page_text), the three buttons were the top bar's tabs."""
     return f"""
     <section class="card hero hero-card">
-      <div class="hero-split">
-        <div class="hero-text">
-          <h1>{esc(P.TITLE)}</h1>
-          <p class="intro">{esc(INTRO)}</p>
-          {counts_line(S)}
-          <nav class="hero-links" aria-label="Main parts">{links}</nav>
-        </div>
-        {hero_board(S)}
-      </div>
+      <h1>{esc(P.TITLE)}</h1>
+      {counts_line(S)}
     </section>"""
+
+
+def front_page_text(S, rel: str) -> str:
+    """About's 'From the front page' (Ümit via Zeki #3521): the description and the example decision of the old hero,
+    then the whole text of each finding section that shows less on the front page."""
+    import story
+    return (f'<p>The longer text of the front page, kept here in full.</p><h3 id="front-intro">What this is</h3>'
+            f'<p class="intro">{esc(INTRO)}</p><h3 id="front-example">An example risk call</h3>{hero_board(S, rel)}'
+            + story.findings_text(S, rel))
 
 
 # The home page's content that moved to the Leagues page (Ümit #2938 item 2): what each block is, for the old anchors.

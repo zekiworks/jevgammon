@@ -33,9 +33,10 @@ class Isolated(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         root = Path(self.tmp.name)
-        self.saved = {k: getattr(I, k) for k in ("RUNS", "OUT", "SMOKE")}
+        self.saved = {k: getattr(I, k) for k in ("RUNS", "OUT", "SMOKE", "check_inputs")}
         self.saved_d = {k: getattr(D, k) for k in ("ADDENDUM", "ADDENDUM_SHA256", "COHORT_FILE")}
         I.RUNS, I.OUT, I.SMOKE = root / "runs", root / "out", root / "smoke"
+        I.check_inputs = lambda: None  # the pinned-binary rule is for real runs; these tests start no process
         self.root = root
 
     def tearDown(self):
@@ -148,29 +149,87 @@ class Writer(Isolated):
             self.assertEqual(kept, lessons)
 
 
+def ledger(path, *rows):
+    """A runner-schema ledger with (setup, status, reserved, cost) rows."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    db = sqlite3.connect(path)
+    db.execute("CREATE TABLE attempts (id INTEGER PRIMARY KEY, setup TEXT, status TEXT, reserved_usd REAL, "
+               "cost_usd REAL, reported_cost_usd REAL)")
+    db.executemany("INSERT INTO attempts (setup, status, reserved_usd, cost_usd) VALUES (?, ?, ?, ?)", rows)
+    db.commit()
+    db.close()
+    return path
+
+
+class FakeAsk:
+    """Stands in for `jevgammon ask` (no process, no network): records each call; `ok` writes one fresh answer with
+    the given input tokens into the attempt's --out database; a failing call returns `code` and writes nothing."""
+
+    def __init__(self, tokens=(100, 200), code=0, model="subq-snap-1.1"):
+        self.tokens, self.code, self.model, self.calls = list(tokens), code, model, []
+
+    def __call__(self, argv, **kw):
+        self.calls.append(argv)
+        a = dict(zip(argv[2::2], argv[3::2]))
+        if self.code == 0:
+            db = sqlite3.connect(a["--out"])
+            db.execute("CREATE TABLE IF NOT EXISTS answers (id INTEGER PRIMARY KEY, setup TEXT, error TEXT)")
+            db.execute("CREATE TABLE IF NOT EXISTS answer_exchanges (id INTEGER PRIMARY KEY, answer_id INTEGER, "
+                       "response TEXT)")
+            cur = db.execute("INSERT INTO answers (setup, error) VALUES (?, NULL)", (a["--setup"],))
+            db.execute("INSERT INTO answer_exchanges (answer_id, response) VALUES (?, ?)", (cur.lastrowid, json.dumps(
+                {"model": self.model, "usage": {"input_tokens": self.tokens.pop(0)}})))
+            db.commit()
+            db.close()
+        return type("R", (), dict(returncode=self.code, stdout="", stderr="" if self.code == 0 else "refused"))()
+
+
 class Binding(Isolated):
     def test_an_arm_is_bound_to_the_published_addendum(self):
         D.ADDENDUM = self.root / "addendum.md"
         D.ADDENDUM.write_text("addendum v1\n")
         D.ADDENDUM_SHA256 = hashlib.sha256(b"addendum v1\n").hexdigest()
         D.check_addendum()
-        self.assertEqual(D.bind_addendum(HOSTED), D.ADDENDUM_SHA256)
+        self.assertEqual(D.bind_run(HOSTED)["addendum_sha256"], D.ADDENDUM_SHA256)
         D.ADDENDUM.write_text("addendum v2\n")
         with self.assertRaises(SystemExit):
             D.check_addendum()
         with self.assertRaises(SystemExit):
-            D.bind_addendum(HOSTED)  # resume refused: bound to v1
+            D.bind_run(HOSTED)  # resume refused: bound to v1
         D.ADDENDUM_SHA256 = hashlib.sha256(b"addendum v2\n").hexdigest()
         with self.assertRaises(SystemExit):
-            D.bind_addendum(HOSTED)  # even when the constant moves: the arm keeps its first binding
+            D.bind_run(HOSTED)  # even when the constant moves: the arm keeps its first binding
 
     def test_an_unpublished_addendum_binds_nothing(self):
         D.ADDENDUM = self.root / "addendum.md"
         D.ADDENDUM.write_text("draft\n")
         D.ADDENDUM_SHA256 = "0" * 64
         with self.assertRaises(SystemExit):
-            D.bind_addendum(HOSTED)
-        self.assertFalse((I.mdir(HOSTED) / "addendum.json").exists())
+            D.bind_run(HOSTED)
+        self.assertFalse((I.mdir(HOSTED) / "run.json").exists())
+
+    def test_a_changed_cohort_refuses_the_resume_and_money_needs_an_amendment(self):
+        self.cohort()
+        bound = D.bind_run(HOSTED)
+        c = json.loads(D.COHORT_FILE.read_text())
+        jev = next(s for s in c["setups"] if s["slug"] == "jev-1.14.0")
+        jev["estimate"]["notes"] = 0.99  # a run-defining setting
+        D.COHORT_FILE.write_text(json.dumps(c))
+        with self.assertRaises(SystemExit) as e:
+            D.bind_run(HOSTED)
+        self.assertIn("run-defining", str(e.exception))
+        jev["estimate"]["notes"] = 0.56
+        c["decision_lane_cap_usd"] = 4.0  # a money term without an amendment record
+        D.COHORT_FILE.write_text(json.dumps(c))
+        with self.assertRaises(SystemExit) as e:
+            D.bind_run(HOSTED)
+        self.assertIn("amendment", str(e.exception))
+        c["amendments"] = [dict(path="decision_lane_cap_usd", **{"from": 3.0, "to": 4.0}, source="Ümit #test")]
+        D.COHORT_FILE.write_text(json.dumps(c))
+        self.assertEqual(D.bind_run(HOSTED)["identity_sha256"], bound["identity_sha256"])
+        # The export shows the bound settings, not today's file.
+        row = D.arm_summary("jev-1.14.0", "notes")
+        self.assertEqual(row["bound_money"]["decision_lane_cap_usd"], 3.0)
 
 
 class Money(Isolated):
@@ -178,9 +237,9 @@ class Money(Isolated):
         self.cohort(D6_hosted_allowance_usd=ZERO)
         for key in (HOSTED, HOSTED_W):
             for step in ("E1", "S1"):
-                with self.assertRaises(I.Pause) as e:
+                with self.assertRaises(D.Refused) as e:
                     D.money_gate(key, step, balance_reader=lambda: dict(balance=100.0))
-                self.assertIn("D6 open", str(e.exception))
+                self.assertTrue(e.exception.pause and "D6" in str(e.exception))
 
     def test_a_zero_allowance_keeps_the_arm_pending_and_calls_nothing(self):
         self.cohort(D6_hosted_allowance_usd=ZERO)
@@ -191,30 +250,87 @@ class Money(Isolated):
         self.assertEqual(D.run(HOSTED), I.PAUSE)
         self.assertFalse(I.mdir(HOSTED).exists())  # nothing started, nothing bound
 
-    def test_an_allowance_caps_the_step_ledger_at_the_provider_remainder(self):
-        self.cohort(D6_hosted_allowance_usd={"jev": 0.30, "liquid": 0, "nace": 0})
-        # Spent on jev by the other arm (player rows) and by its writer (OpenRouter rows, not jev's).
-        path = I.RUNS / "decision" / "jev-1.14.0-worst" / "ledgers" / "E1-a1.db"
-        path.parent.mkdir(parents=True)
-        db = sqlite3.connect(path)
-        db.execute("CREATE TABLE attempts (id INTEGER PRIMARY KEY, setup TEXT, status TEXT, reserved_usd REAL, "
-                   "cost_usd REAL, reported_cost_usd REAL)")
-        db.execute("INSERT INTO attempts (setup, status, reserved_usd, cost_usd) VALUES ('Jev | E1', 'settled', 1, 0.10)")
-        db.execute("INSERT INTO attempts (setup, status, reserved_usd, cost_usd) VALUES (?, 'settled', 1, 0.05)",
-                   ("Jev | s01" + D.WRITER_SUFFIX,))
-        db.commit()
+    def test_an_exhausted_nace_subcap_refuses_even_a_mocked_probe(self):
+        league = ledger(self.root / "nace-league.db", ("Drex Max 1.1", "settled", 1.0, 2.50))
+        c = json.loads(self.saved_d["COHORT_FILE"].read_text())
+        c["provider_ledgers"] = {"nace": [str(league)]}
+        D.COHORT_FILE = self.root / "cohort.json"
+        D.COHORT_FILE.write_text(json.dumps(c))
+        fake = FakeAsk(model="drex-max-v1.1")
+        with self.assertRaises(D.Refused) as e:
+            D.probe_p1("drex-max-1.1", send=True, run=fake)
+        self.assertIn("provider subcap", str(e.exception))
+        self.assertEqual(fake.calls, [])
+        with self.assertRaises(D.Refused):
+            D.money_gate("decision/drex-max-1.1-worst", "E1")
+
+    def test_p1_needs_fresh_successful_answers_and_never_reuses_an_earlier_attempt(self):
+        self.cohort()
+        good = D.probe_p1("subq-snap-1.1", send=True, run=FakeAsk(tokens=(100, 900)))
+        self.assertTrue(good["passed"])
+        failed = D.probe_p1("subq-snap-1.1", send=True, run=FakeAsk(code=1))
+        self.assertFalse(failed["passed"])  # the earlier attempt's answers are in another database: not read
+        self.assertEqual(failed["failures"]["plain"], "runner exit 1")
+        self.assertFalse(D.evidence_record("p1", "subq-snap-1.1")["passed"])
+        wrong = D.probe_p1("subq-snap-1.1", send=True, run=FakeAsk(model="subq-snap-preview"))
+        self.assertFalse(wrong["passed"])
+        flat = D.probe_p1("subq-snap-1.1", send=True, run=FakeAsk(tokens=(100, 100)))
+        self.assertFalse(flat["passed"])
+        # Each probe held, then released, an allocation in the one admission ledger.
+        db = sqlite3.connect(I.RUNS / "decision" / "admission.db")
+        self.assertEqual(db.execute("SELECT COUNT(*), SUM(status = 'closed') FROM allocations").fetchone(), (4, 4))
         db.close()
-        self.assertAlmostEqual(D.provider_booked("jev"), 0.10)
-        gate = D.money_gate(HOSTED, "E1", balance_reader=lambda: dict(balance=100.0))
-        self.assertEqual(gate["binding"], "provider cap")
-        self.assertAlmostEqual(gate["cap"], 0.20)
-        # Every decision ledger counts against the $110 (rule b), writer rows included.
+
+    def test_unreadable_accounting_refuses(self):
+        self.cohort()
+        bad = I.RUNS / "decision" / "subq-snap-1.1-worst" / "ledgers" / "E1-a1.db"
+        bad.parent.mkdir(parents=True)
+        bad.write_bytes(b"not a database" * 100)
+        with self.assertRaises(D.AccountingError):
+            D.booked_rows(bad)
+        with self.assertRaises(D.AccountingError):
+            D.money_gate(HOSTED_W, "E1")
+        bad.unlink()
+        ledger(bad, ("x", "settled", 1.0, None))  # a settled row without a cost
+        with self.assertRaises(D.AccountingError):
+            D.money_gate(HOSTED_W, "E1")
+        self.assertEqual(D.booked_rows(self.root / "absent.db"), 0.0)  # a ledger never created holds nothing
+
+    def test_concurrent_admissions_cannot_jointly_pass_the_lane_cap(self):
+        import threading
+        self.cohort()
+        keys = [arm_key for arm_key in D.arm_keys() if D.I.entry(arm_key)["hosted"]] * 3
+        granted, refused = [], []
+
+        def one(k):
+            try:
+                granted.append(D.admit(k, "E1", D.next_ledger(k, f"E1-{threading.get_ident()}"), 0.05)["cap"])
+            except D.Refused:
+                refused.append(k)
+        threads = [threading.Thread(target=one, args=(k,)) for k in keys]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+        self.assertLessEqual(sum(granted), 3.00 + 1e-9)
+        self.assertTrue(refused)
+        self.assertEqual(len(granted) + len(refused), len(keys))
+
+    def test_every_decision_ledger_counts_in_the_110_and_a_chat_share_must_leave_room(self):
+        self.cohort()
+        ledger(I.RUNS / "decision" / "subq-snap-1.1-worst" / "ledgers" / "E1-a1.db",
+               ("SubQ | E1", "settled", 1.0, 0.10), ("SubQ | s01" + D.WRITER_SUFFIX, "open", 0.05, None))
         self.assertAlmostEqual(I.billed_total(), 0.15)
+        self.assertAlmostEqual(D.provider_spent("subq"), 0.15)
+        I.write_atomic(I.RUNS / "share_cap.json", json.dumps(dict(usd=107.5)))
+        with self.assertRaises(D.Refused):
+            D.money_gate(HOSTED_W.replace("jev-1.14.0", "subq-snap-1.1"), "E1")
 
     def test_writer_steps_check_the_openrouter_balance(self):
         self.cohort()
-        with self.assertRaises(I.Pause):
-            D.money_gate("decision/decider-v1.2-27b-notes", "S1", balance_reader=lambda: dict(balance=5.05))
+        with self.assertRaises(D.Refused) as e:
+            D.money_gate("decision/decider-v1.2-27b-notes", "S1", balance_reader=lambda: dict(balance=5.001))
+        self.assertTrue(e.exception.pause)
         gate = D.money_gate("decision/decider-v1.2-27b-notes", "S1", balance_reader=lambda: dict(balance=50.0))
         self.assertEqual(gate["binding"], "rule (a) limit")  # 1.5 x $0.03
         self.assertFalse(D.needs_ledger(LOCAL, "S1"))  # a local worst arm bills nothing

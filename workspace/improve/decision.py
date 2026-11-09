@@ -160,8 +160,8 @@ def arm_state(slug, arm, dry=None):
         if not (decided("D6_hosted_allowance_usd").get(s["provider"]) or 0) > 0:
             return "pending", "D6 open: hosted spending outside OpenRouter not authorised"
         subcap = cohort().get("provider_subcaps_usd", {}).get(s["provider"])
-        if subcap is not None and subcap - provider_booked(s["provider"]) < s["estimate"][arm]:
-            left = subcap - provider_booked(s["provider"])
+        if subcap is not None and subcap - provider_spent(s["provider"]) < s["estimate"][arm]:
+            left = subcap - provider_spent(s["provider"])
             return "pending", (f"{s['provider']} subcap: ${left:.2f} left of ${subcap:.2f} (its ledgers), below this "
                                f"arm's ${s['estimate'][arm]:.2f} estimate; needs a subcap decision")
         p1 = evidence_record("p1", slug)
@@ -182,22 +182,71 @@ def check_addendum():
         raise SystemExit(f"{ADDENDUM} ({current}) is not the published addendum {ADDENDUM_SHA256}")
 
 
-def bind_addendum(key):
-    """Before an arm's first call, store the addendum's hash next to the live plan's (improve.bind_plan); every later
-    start must find the same file."""
-    f = I.mdir(key) / "addendum.json"
+# The settings that define an arm's run: bound before its first call and never changed after (a change refuses the
+# resume). Money terms may change only through an explicit amendment record in the cohort file (`amendments`:
+# {path, from, to, source, at}), applied in order.
+RUN_DEFINING = ("setup", "lane", "provider", "evidence", "gate", "expect", "price", "estimate", "needs", "needs_arms")
+
+
+def digest(value):
+    return hashlib.sha256(json.dumps(value, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
+
+
+def run_identity(slug):
+    s = setups()[slug]
+    return dict(setup={k: s.get(k) for k in RUN_DEFINING}, D1_empty_runs=decided("D1_empty_runs"),
+                writer=WRITER_KEY, writer_expect=writer_expect(), lesson_prompt_sha256=I.LESSON_PROMPT_SHA256,
+                addendum_sha256=ADDENDUM_SHA256)
+
+
+def money_terms(slug):
+    c, p = cohort(), setups()[slug].get("provider")
+    return {"decision_lane_cap_usd": c["decision_lane_cap_usd"],
+            f"provider_subcaps_usd.{p}": c.get("provider_subcaps_usd", {}).get(p),
+            f"D6_hosted_allowance_usd.{p}": decided("D6_hosted_allowance_usd").get(p)}
+
+
+def amended(path, old, new):
+    """Whether the cohort file's amendment records lead `path` from `old` to `new`, in order."""
+    value = old
+    for a in cohort().get("amendments", []):
+        if a.get("path") == path and a.get("from") == value and a.get("source"):
+            value = a.get("to")
+    return value == new
+
+
+def bind_run(key):
+    """Before an arm's first call, store the addendum hash, the run-defining settings and the money terms; on every
+    start and resume the addendum and settings must be unchanged, and a changed money term needs its amendments."""
+    slug, _ = split(key)
+    f = I.mdir(key) / "run.json"
     current = I.sha256_file(ADDENDUM)
+    identity, money = run_identity(slug), money_terms(slug)
     if not f.exists():
         if current != ADDENDUM_SHA256:
             raise SystemExit(f"{ADDENDUM} ({current}) is not the published addendum {ADDENDUM_SHA256}")
-        I.write_atomic(f, json.dumps(dict(addendum_sha256=current, cohort_sha256=I.sha256_file(COHORT_FILE),
-                                          bound_at=I.now()), indent=1))
-        I.log(key, "addendum_bound", addendum_sha256=current)
-        return current
-    stored = json.loads(f.read_text())["addendum_sha256"]
-    if current != stored:
-        raise SystemExit(f"{key}: the addendum now hashes {current}, but this arm is bound to {stored}: refused")
+        stored = dict(addendum_sha256=current, identity=identity, identity_sha256=digest(identity), money=money,
+                      bound_at=I.now())
+        I.write_atomic(f, json.dumps(stored, indent=1))
+        I.log(key, "run_bound", addendum_sha256=current, identity_sha256=stored["identity_sha256"], money=money)
+        return stored
+    stored = json.loads(f.read_text())
+    if current != stored["addendum_sha256"]:
+        raise SystemExit(f"{key}: the addendum now hashes {current}, but this arm is bound to "
+                         f"{stored['addendum_sha256']}: refused")
+    if digest(identity) != stored["identity_sha256"]:
+        changed = sorted(k for k in identity if identity[k] != stored["identity"].get(k))
+        raise SystemExit(f"{key}: run-defining settings changed since the arm was bound ({changed}): refused")
+    for path, value in money.items():
+        if value != stored["money"].get(path) and not amended(path, stored["money"].get(path), value):
+            raise SystemExit(f"{key}: {path} changed from {stored['money'].get(path)} to {value} without an "
+                             "amendment record: refused")
     return stored
+
+
+def bound_run(key):
+    f = I.mdir(key) / "run.json"
+    return json.loads(f.read_text()) if f.exists() else None
 
 
 # --- Player and writer configs ---------------------------------------------------------------------------------
@@ -243,35 +292,62 @@ def writer_expect():
 
 # --- Money -----------------------------------------------------------------------------------------------------
 
+class AccountingError(Exception):
+    """A ledger exists but cannot be read or holds invalid amounts: nothing is admitted (fails closed)."""
+
+
+class Refused(Exception):
+    """The admission refused a step or probe; `pause` when only a later balance or decision can lift it."""
+
+    def __init__(self, reason, pause=False):
+        super().__init__(reason)
+        self.pause = pause
+
+
 def booked_rows(path, writer=None):
-    """Booked dollars of a ledger (settled + lost + open), all rows or only the writer's / the player's."""
+    """Booked dollars of a ledger (settled at cost, lost and open at their reservation), all rows or only the
+    writer's / the player's. A file the runner never created holds nothing; an existing file that cannot be read,
+    lacks its table or holds an invalid status or amount raises AccountingError."""
     import sqlite3
-    if not Path(path).exists():
+    path = Path(path)
+    if not path.exists():
         return 0.0
-    db = sqlite3.connect(f"file:{path}?mode=ro", uri=True, timeout=60)
-    where = "" if writer is None else ("WHERE setup LIKE ?" if writer else "WHERE setup NOT LIKE ?")
-    args = () if writer is None else (f"%{WRITER_SUFFIX}",)
     try:
-        (v,) = db.execute("SELECT COALESCE(SUM(CASE status WHEN 'settled' THEN cost_usd ELSE reserved_usd END), 0) "
-                          f"FROM attempts {where}", args).fetchone()
-    except sqlite3.OperationalError:
-        v = 0.0
-    db.close()
-    return v
-
-
-def provider_booked(provider):
-    """A provider's booked dollars: this experiment's player and probe rows (writer rows are OpenRouter's) plus the
-    provider's own existing ledgers that share its subcap (Nace: the league's $1.25 ledger)."""
+        db = sqlite3.connect(f"file:{path}?mode=ro", uri=True, timeout=60)
+        try:
+            rows = db.execute("SELECT status, reserved_usd, cost_usd, setup FROM attempts").fetchall()
+        finally:
+            db.close()
+    except sqlite3.Error as e:
+        raise AccountingError(f"ledger {path} unreadable: {e}") from None
     total = 0.0
-    for path in sorted((I.RUNS / "decision").glob("*/ledgers/*.db")):
-        slug = path.parent.parent.name.rsplit("-", 1)[0]
-        s = setups().get(slug)
-        if s and s.get("provider") == provider:
-            total += booked_rows(path, writer=False)
-    for rel in cohort().get("provider_ledgers", {}).get(provider, []):
-        total += booked_rows(I.STATE_ROOT / rel)
+    for status, reserved, cost, setup in rows:
+        if writer is not None and str(setup or "").endswith(WRITER_SUFFIX) != writer:
+            continue
+        value = {"settled": cost, "lost": reserved, "open": reserved}.get(status, "bad")
+        if not isinstance(value, (int, float)) or value != value or value < 0:
+            raise AccountingError(f"ledger {path}: invalid row ({status!r}, {reserved!r}, {cost!r})")
+        total += value
     return total
+
+
+def arm_ledgers(key):
+    d = I.mdir(key) / "ledgers"
+    return sorted(d.glob("*.db")) if d.exists() else []
+
+
+def arm_booked(key):
+    return sum(booked_rows(p) for p in arm_ledgers(key))
+
+
+def chat_booked():
+    """Every chat-model ledger of the experiment (runs/<model>/ledgers), read strictly."""
+    return sum(booked_rows(p) for p in sorted(I.RUNS.glob("*/ledgers/*.db")))
+
+
+def provider_of(key):
+    slug = key.split("/", 1)[1].rsplit("-", 1)[0]
+    return (setups().get(slug) or {}).get("provider")
 
 
 def needs_ledger(key, step):
@@ -279,36 +355,126 @@ def needs_ledger(key, step):
     return m["hosted"] or (m["arm"] == "notes" and step.startswith("S"))
 
 
+def admission_db():
+    import sqlite3
+    path = I.RUNS / "decision" / "admission.db"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    db = sqlite3.connect(path, timeout=120, isolation_level=None)
+    db.execute("CREATE TABLE IF NOT EXISTS allocations (id INTEGER PRIMARY KEY, key TEXT NOT NULL, step TEXT NOT NULL, "
+               "provider TEXT, ledger TEXT NOT NULL, amount REAL NOT NULL, status TEXT NOT NULL, opened_at TEXT NOT "
+               "NULL, closed_at TEXT, booked REAL, binding TEXT, limits TEXT)")
+    return db
+
+
+def committed(row, booked=None):
+    """What an allocation holds: an open one its whole amount (or more, if its ledger booked more), a closed one what
+    its ledger booked."""
+    _, _, _, ledger, amount, status = row
+    spent = booked_rows(ledger) if booked is None else booked
+    return max(amount, spent) if status == "open" else spent
+
+
+def admit(key, step, ledger_path, expected, balance=None, want=None):
+    """The one atomic admission (one SQLite write lock over every decision process) for a player step, a writer step
+    or a probe: it reads every decision allocation (open ones at their full amount), every chat ledger and the
+    provider's own ledgers, and grants an allocation (the step ledger's hard cap) only if all of these leave room
+    for the step's expected cost: the decision lane's hard cap, the provider subcap, the hosted allowance (D6), the
+    $110 total, the chat share (share + lane cap must fit in $110), rule (a) and, with writer calls, the OpenRouter
+    balance less the $5 reserve. Concurrent admissions therefore cannot jointly pass a cap. Unreadable accounting
+    refuses. Returns the gate record (allocation id, cap, ledger)."""
+    m, c = I.entry(key), cohort()
+    db = admission_db()
+    try:
+        db.execute("BEGIN IMMEDIATE")
+        rows = db.execute("SELECT id, key, provider, ledger, amount, status FROM allocations").fetchall()
+        held = {r[0]: committed(r) for r in rows}
+        # Every other decision ledger (none should exist outside an allocation) counts too, read strictly.
+        allocated = {str(Path(r[3])) for r in rows}
+        loose = sum(booked_rows(p) for p in sorted((I.RUNS / "decision").glob("*/ledgers/*.db"))
+                    if str(p) not in allocated)
+        lane_used = sum(held.values()) + loose
+        lane_cap = c["decision_lane_cap_usd"]
+        share = I.share_cap()
+        if share is not None and share + lane_cap > I.TOTAL_CAP_USD + 1e-9:
+            raise Refused(f"the chat share ${share:.2f} plus the decision lane cap ${lane_cap:.2f} exceed "
+                          f"${I.TOTAL_CAP_USD:.0f}: not hard allocations")
+        chat = chat_booked()
+        limits = {"decision lane cap": lane_cap - lane_used,
+                  "rule (b) limit": I.TOTAL_CAP_USD - chat - lane_used,
+                  "rule (a) limit": I.ESTIMATE_FACTOR * m["estimate"] - arm_booked(key)}
+        provider = m.get("provider") if m["hosted"] else None
+        if provider:
+            if not (decided("D6_hosted_allowance_usd").get(provider) or 0) > 0:
+                raise Refused(f"D6: no hosted allowance for {provider}; no billed call", pause=True)
+            subcap = c.get("provider_subcaps_usd", {}).get(provider)
+            if subcap is not None:
+                outside = sum(booked_rows(I.STATE_ROOT / rel) for rel in c.get("provider_ledgers", {}).get(provider, []))
+                ours = sum(held[r[0]] for r in rows if r[2] == provider)
+                limits["provider subcap"] = subcap - outside - ours
+        if balance is not None:
+            limits["balance"] = balance - I.BALANCE_RESERVE_USD
+        if want is not None:
+            limits["requested"] = want
+        binding = min(limits, key=limits.get)
+        amount = limits[binding]
+        if round(amount, 6) < round(expected, 6):
+            raise Refused(f"{step}: {binding} leaves ${amount:.4f}, below the expected ${expected:.4f} "
+                          f"(limits {json.dumps({k: round(v, 4) for k, v in limits.items()})})",
+                          pause=binding in ("balance",))
+        cur = db.execute("INSERT INTO allocations (key, step, provider, ledger, amount, status, opened_at, binding, "
+                         "limits) VALUES (?, ?, ?, ?, ?, 'open', ?, ?, ?)",
+                         (key, step, provider, str(ledger_path), amount, I.now(), binding, json.dumps(limits)))
+        db.execute("COMMIT")
+        return dict(allocation=cur.lastrowid, step=step, expected=expected, cap=amount, binding=binding,
+                    limits=limits, ledger=str(ledger_path), share=share, chat_booked=chat, lane_used=lane_used)
+    except BaseException:
+        if db.in_transaction:
+            db.execute("ROLLBACK")
+        raise
+    finally:
+        db.close()
+
+
+def release(gate):
+    """Close an allocation at what its ledger booked; on unreadable accounting it stays open (held in full)."""
+    db = admission_db()
+    try:
+        db.execute("BEGIN IMMEDIATE")
+        booked = booked_rows(gate["ledger"])
+        db.execute("UPDATE allocations SET status = 'closed', closed_at = ?, booked = ? WHERE id = ?",
+                   (I.now(), booked, gate["allocation"]))
+        db.execute("COMMIT")
+    except AccountingError as e:
+        db.execute("ROLLBACK")
+        print(f"allocation {gate['allocation']} kept open: {e}", file=sys.stderr)
+    finally:
+        db.close()
+
+
+def next_ledger(key, step):
+    d = I.mdir(key) / "ledgers"
+    d.mkdir(parents=True, exist_ok=True)
+    return d / f"{step}-a{1 + len(list(d.glob(f'{step}-a*.db')))}.db"
+
+
 def money_gate(key, step, balance_reader=I.openrouter_balance):
-    """Before a billed step: rule (b) over every ledger, the share limit, the hosted allowance (D6) and subcap, and for
-    a step with writer calls the OpenRouter balance less the $5 reserve. Returns the step ledger's cap and record."""
-    m = I.entry(key)
+    """Before a billed step: the atomic admission with the step's expected cost; with writer calls, the OpenRouter
+    balance first (its $5 reserve). The step ledger's cap is the allocation."""
     expected = I.step_estimate(key, step)
-    total = I.billed_total()
-    if why := I.rule_b(total, expected):
-        raise I.Stop(why)
-    share = I.share_cap()
-    if why := I.share_exceeded(total, expected, share):
-        raise I.Pause(why)
-    limits = {"rule (a) limit": I.ESTIMATE_FACTOR * m["estimate"] - I.billed(key),
-              "rule (b) limit": I.TOTAL_CAP_USD - total}
-    if share is not None:
-        limits["share"] = share - total
-    credits = None
-    if m["hosted"]:
-        allowance = decided("D6_hosted_allowance_usd").get(m["provider"]) or 0
-        if not allowance > 0:
-            raise I.Pause(f"D6 open: hosted spending on {m['provider']} is not authorised (allowance $0); no billed call")
-        cap = min(allowance, cohort().get("provider_subcaps_usd", {}).get(m["provider"], math.inf))
-        limits["provider cap"] = cap - provider_booked(m["provider"])
-    if m["arm"] == "notes" and step.startswith("S"):
-        credits = balance_reader()
-        if why := I.balance_shortfall(credits["balance"], I.GAMES * WRITER_CALL_RESERVE):
-            raise I.Pause(why)
-        limits["balance"] = credits["balance"] - I.BALANCE_RESERVE_USD
-    binding = min(limits, key=limits.get)
-    return dict(step=step, expected=expected, billed_total=total, model_billed=I.billed(key), credits=credits,
-                cap=limits[binding], binding=binding, limits=limits, share=share)
+    balance = None
+    if I.entry(key)["arm"] == "notes" and step.startswith("S"):
+        balance = balance_reader()["balance"]
+    return admit(key, step, next_ledger(key, step), expected, balance=balance,
+                 want=I.ESTIMATE_FACTOR * I.entry(key)["estimate"])
+
+
+def provider_spent(provider):
+    """A provider's booked dollars: its own outside ledgers (Nace: the league's) and every decision ledger of it."""
+    outside = sum(booked_rows(I.STATE_ROOT / rel) for rel in cohort().get("provider_ledgers", {}).get(provider, []))
+    root = I.RUNS / "decision"
+    dirs = [p for p in root.glob("*") if p.is_dir() and provider_of(f"decision/{p.name}") == provider] \
+        if root.exists() else []
+    return outside + sum(booked_rows(f) for p in dirs for f in sorted((p / "ledgers").glob("*.db")))
 
 
 # --- Arm W: the worst-mistakes selector ------------------------------------------------------------------------
@@ -365,7 +531,7 @@ def test_config(key):
 
 def run_empty(key, step, gate):
     d = I.step_dir(key, step)
-    ledger = I.new_ledger(key, step, gate)
+    ledger = dict(path=Path(gate["ledger"]), cap=gate["cap"], binding=gate["binding"]) if gate else None
     if ledger:
         I.write_atomic(d / "ledger.json", json.dumps(dict(ledger, path=str(ledger["path"]), gate=gate), indent=1))
     m = I.run_test(key, step, I.test_name(key, step), "", d, ledger=ledger, config=test_config(key))
@@ -397,7 +563,7 @@ def run_series(key, step, gate):
         d.mkdir(parents=True, exist_ok=True)
         attempt = I.attempt_of(key, step)
         name = I.game_name(key, s, attempt)
-    ledger = I.new_ledger(key, step, gate)
+    ledger = dict(path=Path(gate["ledger"]), cap=gate["cap"], binding=gate["binding"]) if gate else None
     if ledger:
         I.write_atomic(d / "ledger.json", json.dumps(dict(ledger, path=str(ledger["path"]), gate=gate), indent=1))
     player = player_config(key, name, 1, note_file=d / "note.txt", ledger=ledger)
@@ -613,7 +779,7 @@ def run(key, until=None, balance_reader=I.openrouter_balance):
     (I.mdir(key) / "paused.json").unlink(missing_ok=True)
     I.ensure_runner_db(key)
     I.bind_plan(key)
-    bind_addendum(key)
+    bind_run(key)
     shared = decided("D1_empty_runs") == "shared"
     try:
         while (step := I.next_step(key)) is not None:
@@ -625,7 +791,12 @@ def run(key, until=None, balance_reader=I.openrouter_balance):
                 shared_empty(key, step)
                 I.log(key, "step_done", step=step, shared_from=arm_key(slug, "notes"))
                 continue
-            gate = money_gate(key, step, balance_reader) if needs_ledger(key, step) and not I.DRY else None
+            try:
+                gate = money_gate(key, step, balance_reader) if needs_ledger(key, step) and not I.DRY else None
+            except Refused as e:
+                raise (I.Pause if e.pause else I.Stop)(f"{step}: admission refused: {e}") from None
+            except AccountingError as e:
+                raise I.Pause(f"{step}: accounting unreadable, nothing admitted: {e}") from None
             I.log(key, "step_start", step=step, gate=gate, binary=I.binary_identity(),
                   cohort_sha256=I.sha256_file(COHORT_FILE))
             try:
@@ -635,6 +806,9 @@ def run(key, until=None, balance_reader=I.openrouter_balance):
                 if binding in ("balance", "share"):
                     raise I.Pause(f"{step}: the step ledger's balance limit refused a request: {e}") from None
                 raise I.Stop(f"{step}: {binding} reached before a request: {e}") from None
+            finally:
+                if gate:
+                    release(gate)
             if not I.DRY:
                 why = I.route_check(key, I.response_ids(key, step)) or writer_route_check(key, step)
                 if why:
@@ -762,55 +936,92 @@ def guard_preflight(write=True, notes=None, worst=None):
 
 # --- Preflight: hosted accounting probe P1 (billed; implemented, run only by an operator) ------------------------
 
-def probe_p1(slug, send=False):
-    """Addendum §6.1(b): one stored 2-option League request of the setup, sent without and with the largest notes
-    block through the runner (`jevgammon ask`, context gate and route check on, a $0.01 ledger counted in the
-    provider's spend). Passes when the reported input tokens rise. Billed: refuses unless `send` and D6 allows it."""
+def p1_answer(db_path, name, expect):
+    """The input tokens of the one fresh answer of `name` in this attempt's own database: a valid, unfailed answer
+    whose reply names a frozen model id and reports usage; else None and why."""
     import sqlite3
+    if not Path(db_path).exists():
+        return None, "no answer database"
+    conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True, timeout=60)
+    try:
+        rows = conn.execute("SELECT a.error, x.response FROM answers a JOIN answer_exchanges x ON x.answer_id = a.id "
+                            "WHERE a.setup = ?", (name,)).fetchall()
+    finally:
+        conn.close()
+    if len(rows) != 1:
+        return None, f"{len(rows)} exchanges for {name}"
+    error, response = rows[0]
+    if error:
+        return None, f"failed: {error[:300]}"
+    try:
+        value = json.loads(response)
+    except (TypeError, ValueError):
+        return None, "reply is not JSON"
+    if value.get("model") not in expect:
+        return None, f"reply names {value.get('model')!r}, not one of {expect}"
+    tokens = I.pointer(value, "/usage/input_tokens")
+    if not isinstance(tokens, int):
+        return None, "no usage.input_tokens"
+    return tokens, None
+
+
+def probe_p1(slug, send=False, run=subprocess.run):
+    """Addendum §6.1(b): one stored 2-option League request of the setup, sent without and with the largest notes
+    block through the runner (`jevgammon ask`, context gate and route check on). The probe passes the same atomic
+    admission as every step (its allocation is the ledger's cap), runs under a fresh attempt id with its own answer
+    database, and passes only when both runs exit 0 with one fresh valid answer each, naming a frozen model id, and
+    the reported input tokens rise. Billed: refuses unless `send`."""
+    import sqlite3
+    import uuid
     s = setups()[slug]
     if s.get("evidence") not in ("Hc", "unverified") or s["lane"] != "hosted":
         raise SystemExit(f"{slug}: P1 applies to hosted rows run by the cohort only")
-    if not (decided("D6_hosted_allowance_usd").get(s["provider"]) or 0) > 0:
-        raise SystemExit(f"{slug}: D6 open: no allowance for {s['provider']}; P1 not sent")
     if not send:
         raise SystemExit(f"{slug}: P1 sends two billed requests; pass --send")
     I.check_inputs()
     check_addendum()
     key = f"decision/{slug}-probe"
-    db = sqlite3.connect(f"file:{I.V3_DB}?mode=ro", uri=True, timeout=60)
-    (pid,) = db.execute("SELECT id FROM players WHERE name = ?", (s["setup"],)).fetchone()
-    row = db.execute("SELECT t.position, t.die1, t.die2 FROM turns t JOIN games gm ON gm.id = t.game_id JOIN matches m "
-                     "ON m.id = gm.match_id WHERE m.valid = 1 AND t.legal_count = 2 AND t.decided_by = 'model' AND "
-                     "((m.player1 = ? AND t.player = 1) OR (m.player2 = ? AND t.player = 2)) ORDER BY t.id LIMIT 1",
-                     (pid, pid)).fetchone()
-    db.close()
-    d = I.mdir(key)
-    d.mkdir(parents=True, exist_ok=True)
-    (d / "position.jsonl").write_text(json.dumps(dict(id="p1", position=json.loads(row[0]), dice=[row[1], row[2]],
-                                                      prompt=I.PROMPT_VERSION)) + "\n")
-    cap = min(0.01, (decided("D6_hosted_allowance_usd")[s["provider"]]) - provider_booked(s["provider"]))
-    ledger = dict(path=d / "ledgers" / "P1-a1.db", cap=cap)
-    (d / "ledgers").mkdir(exist_ok=True)
-    m = dict(I.ENTRIES[arm_key(slug, "notes")])
-    I.ENTRIES[key] = dict(m, arm="probe")
-    tokens = {}
-    for variant, note in (("plain", ""), ("block", synthetic_notes_block())):
-        name = f"{s['setup']} | improve | P1 | {variant}"
-        cfg = dict(I.TEST_CONTEXT, prompt_version=I.PROMPT_VERSION, order_seed=I.ORDER_SEED,
-                   players=[dict(player_config(key, name, 1, ledger=ledger), **({"prompt_note": note} if note else {}))])
-        (d / f"p1-{variant}.json").write_text(json.dumps(cfg, indent=1))
-        r = subprocess.run([str(I.BIN), "ask", "--config", str(d / f"p1-{variant}.json"), "--positions",
-                            str(d / "position.jsonl"), "--out", str(I.db_path(key)), "--setup", name], cwd=I.CODE,
-                           capture_output=True, text=True)
-        (d / f"p1-{variant}.log").write_text(r.stdout + r.stderr)
-        conn = sqlite3.connect(f"file:{I.db_path(key)}?mode=ro", uri=True, timeout=60)
-        resp = conn.execute("SELECT x.response FROM answer_exchanges x JOIN answers a ON a.id = x.answer_id "
-                            "WHERE a.setup = ? ORDER BY x.id DESC LIMIT 1", (name,)).fetchone()
-        conn.close()
-        tokens[variant] = I.pointer(json.loads(resp[0]), "/usage/input_tokens") if resp and resp[0] else None
-    passed = tokens["plain"] is not None and tokens["block"] is not None and tokens["block"] > tokens["plain"]
-    rec = dict(at=I.now(), setup=s["setup"], input_tokens=tokens, passed=passed,
+    I.ENTRIES[key] = dict(I.ENTRIES[arm_key(slug, "notes")], arm="probe", estimate=0.01)
+    attempt = uuid.uuid4().hex[:12]
+    d = I.mdir(key) / f"P1-{attempt}"
+    d.mkdir(parents=True)
+    gate = admit(key, "P1", next_ledger(key, f"P1-{attempt}"), 0.002, want=0.01)  # Refused / AccountingError: no call
+    try:
+        db = sqlite3.connect(f"file:{I.V3_DB}?mode=ro", uri=True, timeout=60)
+        (pid,) = db.execute("SELECT id FROM players WHERE name = ?", (s["setup"],)).fetchone()
+        row = db.execute("SELECT t.position, t.die1, t.die2 FROM turns t JOIN games gm ON gm.id = t.game_id JOIN "
+                         "matches m ON m.id = gm.match_id WHERE m.valid = 1 AND t.legal_count = 2 AND t.decided_by = "
+                         "'model' AND ((m.player1 = ? AND t.player = 1) OR (m.player2 = ? AND t.player = 2)) "
+                         "ORDER BY t.id LIMIT 1", (pid, pid)).fetchone()
+        db.close()
+        (d / "position.jsonl").write_text(json.dumps(dict(id="p1", position=json.loads(row[0]),
+                                                          dice=[row[1], row[2]], prompt=I.PROMPT_VERSION)) + "\n")
+        ledger = dict(path=Path(gate["ledger"]), cap=gate["cap"])
+        out_db = d / "answers.db"
+        tokens, why = {}, {}
+        for variant, note in (("plain", ""), ("block", synthetic_notes_block())):
+            name = f"{s['setup']} | improve | P1 {attempt} | {variant}"
+            cfg = dict(I.TEST_CONTEXT, prompt_version=I.PROMPT_VERSION, order_seed=I.ORDER_SEED,
+                       players=[dict(player_config(key, name, 1, ledger=ledger),
+                                     **({"prompt_note": note} if note else {}))])
+            (d / f"{variant}.json").write_text(json.dumps(cfg, indent=1))
+            r = run([str(I.BIN), "ask", "--config", str(d / f"{variant}.json"), "--positions",
+                     str(d / "position.jsonl"), "--out", str(out_db), "--setup", name], cwd=I.CODE,
+                    capture_output=True, text=True)
+            (d / f"{variant}.log").write_text((r.stdout or "") + (r.stderr or ""))
+            if r.returncode != 0:
+                tokens[variant], why[variant] = None, f"runner exit {r.returncode}"
+                break
+            tokens[variant], why[variant] = p1_answer(out_db, name, s["expect"])
+            if tokens[variant] is None:
+                break
+    finally:
+        release(gate)
+    passed = all(tokens.get(v) is not None for v in ("plain", "block")) and tokens["block"] > tokens["plain"]
+    rec = dict(at=I.now(), setup=s["setup"], attempt=attempt, input_tokens=tokens, failures=why, passed=passed,
+               allocation=gate["allocation"], identity_sha256=digest(run_identity(slug)),
                note="accounting evidence only: billing can precede a cut (addendum §6.1)")
+    I.write_atomic(d / "p1.json", json.dumps(rec, indent=1))
     I.write_atomic(PREFLIGHT() / f"p1-{slug}.json", json.dumps(rec, indent=1))
     return rec
 
@@ -841,6 +1052,9 @@ def arm_summary(slug, arm):
                                           test_positions_excluded=a["test_positions_excluded"],
                                           t10={k: a["t10"][k] for k in I.TEST_KEYS}))
         row["cost"] = dict(booked_usd=round(I.billed(key), 4), estimate_usd=I.entry(key)["estimate"])
+    if bound := bound_run(key):  # a started arm is shown with the settings it is bound to, never today's file
+        row.update(bound_identity_sha256=bound["identity_sha256"], bound_setup=bound["identity"]["setup"],
+                   bound_money=bound["money"], bound_addendum_sha256=bound["addendum_sha256"])
     return row
 
 

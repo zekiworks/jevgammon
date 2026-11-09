@@ -5,6 +5,9 @@
   "D5_edge_settings": {"value": "pending", "status": "proposal pending Ümit: Base Labs past the trained 16,384 tokens (Elephant-1: notes arm; Mammoth-1: both arms) and REAX's read-twice -> read-once switch eligible with a page note (pending | eligible | not_tested)"},
   "D6_hosted_allowance_usd": {"value": {"jev": 110, "liquid": 110, "nace": 110, "subq": 110}, "status": "approved by Ümit (native message 1569386890212147201, relayed Zeki #3753): hosted spending outside OpenRouter counts within the existing $110 total cap (the $5 OpenRouter reserve and the 1.5x per-model rule unchanged); 110 = no allowance beyond the $110 total. $0 would refuse every billed call of that provider."}
  },
+ "decision_lane_cap_usd": 3.00,
+ "decision_lane_cap_status": "hard allocation of the decision lane within the $110 (Zeki #3772): every decision provider, the writer and the probes, open reservations and open allocations included; the chat lanes' share is $107 (runs/share_cap.json), so $107 + $3.00 = $110",
+ "amendments": [],
  "provider_subcaps_usd": {"nace": 2.50},
  "provider_ledgers": {"nace": ["workspace/drex/state/nace-budget.db"]},
  "setups": [

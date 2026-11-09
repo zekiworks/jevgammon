@@ -604,5 +604,66 @@ class Fence(unittest.TestCase):
             D.FENCE = saved
 
 
+class ExitCodes(unittest.TestCase):
+    """probe-p1: 0 passed, 2 failed/stopped, 3 refused for now (reason on stderr, no traceback). No calls."""
+
+    def code(self, outcome):
+        def probe(slug, send):
+            if isinstance(outcome, Exception):
+                raise outcome
+            return dict(passed=outcome, failures={} if outcome else {"plain": "runner exit 1"})
+        import contextlib
+        import io
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err), contextlib.redirect_stdout(io.StringIO()):
+            rc = D.probe_p1_cli("subq-snap-1.1", True, probe=probe)
+        return rc, err.getvalue()
+
+    def test_codes(self):
+        self.assertEqual(self.code(True)[0], 0)
+        self.assertEqual(self.code(False)[0], 2)
+        rc, err = self.code(D.Refused("partition not yet in force: waiting for chat steps capped", pause=True))
+        self.assertEqual(rc, 3)
+        self.assertIn("waiting for chat steps", err)
+        self.assertEqual(self.code(D.Refused("chat fence: 2 billed chat workers at once", pause=True))[0], 3)
+        self.assertEqual(self.code(D.Refused("P1: balance leaves $0.0010", pause=True))[0], 3)
+        self.assertEqual(self.code(D.AccountingError("ledger unreadable"))[0], 3)
+        self.assertEqual(self.code(D.Refused("lane cap reached"))[0], 2)
+        self.assertEqual(self.code(I.Stop("incomplete"))[0], 2)
+
+
+class Script(unittest.TestCase):
+    """run_decision.sh with a stub decision.py: order, waits and skips; no real call."""
+
+    def test_sequence(self):
+        import subprocess
+        with tempfile.TemporaryDirectory() as t:
+            t = Path(t)
+            seq = {"probe-p1 a": [3, 3, 0], "run a-notes": [3, 0], "run a-worst": [2],
+                   "probe-p1 b": [0], "run b-notes": [1], "probe-p1 c": [2]}
+            (t / "seq.json").write_text(json.dumps(seq))
+            (t / "stub.py").write_text(
+                "import json, sys\nfrom pathlib import Path\n"
+                f"d = Path({str(t)!r})\n"
+                "k = sys.argv[1] + ' ' + sys.argv[3].removeprefix('decision/')\n"
+                "s = json.loads((d / 'seq.json').read_text())\n"
+                "rc = s[k].pop(0)\n(d / 'seq.json').write_text(json.dumps(s))\n"
+                "with open(d / 'calls', 'a') as f: f.write(f'{k} {rc}\\n')\n"
+                "sys.exit(rc)\n")
+            env = dict(os.environ, DECISION_PY=str(t / "stub.py"), DECISION_SLEEP="0", DECISION_SETUPS="a b c")
+            script = Path(__file__).resolve().parent / "run_decision.sh"
+            r = subprocess.run(["bash", str(script)], env=env, capture_output=True, text=True)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            self.assertEqual((t / "calls").read_text().split("\n")[:-1], [
+                "probe-p1 a 3", "probe-p1 a 3", "probe-p1 a 0", "run a-notes 3", "run a-notes 0", "run a-worst 2",
+                "probe-p1 b 0", "run b-notes 1", "probe-p1 c 2"])
+            log = r.stdout
+            self.assertEqual(log.count("retry in 0s"), 3)
+            self.assertIn("b-notes: exit 1, skipping setup", log)
+            self.assertIn("c: P1 failed (exit 2), skipping setup", log)
+            self.assertRegex(log.splitlines()[0], r"^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ ")
+
+
+
 if __name__ == "__main__":
     unittest.main()

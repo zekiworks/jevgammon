@@ -1204,6 +1204,21 @@ def status():
             print(f"{r['label']}: {r['state']}{' (' + r['reason'] + ')' if r['reason'] else ''}")
 
 
+def probe_p1_cli(slug, send, probe=None):
+    """Exit code of `probe-p1`: 0 passed, 2 failed or stopped (stop that setup), 3 refused for now (pause: the
+    old-share wait, the chat fence, a balance or subcap pause, unreadable accounting); the reason goes to stderr."""
+    try:
+        rec = (probe or probe_p1)(slug, send)
+    except (Refused, AccountingError, I.Pause, I.Stop) as e:
+        pause = isinstance(e, (AccountingError, I.Pause)) or (isinstance(e, Refused) and e.pause)
+        print(f"{'PAUSED' if pause else 'STOPPED'} P1 {slug}: {e}", file=sys.stderr)
+        return I.PAUSE if pause else I.STOP
+    print(json.dumps(rec, indent=1))
+    if not rec["passed"]:
+        print(f"FAILED P1 {slug}: {rec['failures']}", file=sys.stderr)
+    return 0 if rec["passed"] else I.STOP
+
+
 def main():
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -1223,7 +1238,7 @@ def main():
     if a.cmd == "after-game":
         after_game(a.arm, a.series)
     elif a.cmd == "probe-p1":
-        print(json.dumps(probe_p1(a.setup, a.send), indent=1))
+        sys.exit(probe_p1_cli(a.setup, a.send))
     elif a.cmd == "preflight-guard":
         out = guard_preflight()
         print(f"added bytes: {out['added_bytes']}")

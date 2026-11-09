@@ -1,0 +1,501 @@
+diff --git a/tools/site/assets/bg.css b/tools/site/assets/bg.css
+index 615d84d..e5270ca 100644
+--- a/tools/site/assets/bg.css
++++ b/tools/site/assets/bg.css
+@@ -1,5 +1,16 @@
+ /* Backgammon benchmark additions to the shared design system (site.css). */
+ 
++/* Heading sizes on every backgammon page (Ümit via Zeki #3521: no needlessly big type): the title one or two lines
++   at 1280 px and 375 px, h2 and h3 a step below it, body text as site.css sets it. These replace site.css's heading
++   sizes (.card h2, main > .card h1, .hero h1, .chart-head h2, .worked-example h2, .method-page .card h3) and the
++   browser's default for headings in a panel (Leagues' table titles); its result-card label (.result-card h2, .9rem)
++   stays as it was. */
++:root { --h1: clamp(1.05rem, 1.6vw, 1.35rem); --h2: clamp(1rem, 1.3vw, 1.12rem); --h3: .95rem; }
++main > .card h1, .hero h1 { font-size: var(--h1); }
++.card h2, .panel h2, .chart-head h2, .worked-example h2 { font-size: var(--h2); }
++.result-card h2 { font-size: .9rem; }
++.panel h3, .method-page .card h3 { font-size: var(--h3); }
++
+ main > section + section, main > .card + .card, main > section + .card, main > .card + section { margin-top: 1rem; }
+ .status { display: inline-block; margin: 0 .4rem .15rem 0; padding: .05rem .45rem; border: 1px solid var(--control-edge); border-radius: 999px;
+   font-family: var(--sans); font-size: .72rem; font-weight: 600; letter-spacing: .02em; color: var(--text-2); background: var(--sunk);
+@@ -11,7 +22,7 @@ main > section + section, main > .card + .card, main > section + .card, main > .
+ .status-finished { color: var(--accepted); border-color: var(--accepted); }
+ .section-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: .25rem .75rem; }
+ .section-head h2, .section-head h3 { margin: 0; }
+-.card h3 { font-size: 1rem; margin: 1.1rem 0 .5rem; }
++.card h3 { font-size: var(--h3); margin: 1.1rem 0 .5rem; }
+ .block { margin: 1rem 0 0; padding-top: .75rem; border-top: 1px dashed var(--edge); }
+ .block:first-of-type { border-top: 0; padding-top: 0; }
+ .pending { margin: .5rem 0; padding: .6rem .8rem; background: var(--sunk); border: 1px solid var(--edge); border-radius: 6px; color: var(--text-2); }
+@@ -74,7 +85,7 @@ section.card.lp-explore { border: 2px dashed var(--edge); background: var(--sunk
+ /* A page's first card (pages.page_head; the home page's hero_card), as the sibling site's: the eyebrow, the title at its
+    size, the intro, the results version. */
+ .hero { max-width: none; margin: 0 0 1rem; }
+-main > .card.hero h1 { font-size: 1.6rem; margin: 0 0 .5rem; letter-spacing: 0; }
++main > .card.hero h1 { font-size: var(--h1); margin: 0 0 .5rem; letter-spacing: 0; }
+ .hero .intro { margin: 0 0 .6rem; font-size: 1rem; }
+ .hero .subtitle { margin: 0 0 .5rem; color: var(--text-2); font-size: 1.05rem; }
+ .hero .readout-row { margin: .5rem 0 0; }
+@@ -119,22 +130,19 @@ main > details.about { max-width: 1100px; margin: 1rem auto 0; padding: 0 .25rem
+ @media (max-width: 720px) {
+   .swipe-hint { display: block; }
+   .readouts { flex-wrap: wrap; row-gap: .25rem; }
+-  .hero h1 { font-size: 1.45rem; }
+   .table-wrap { max-height: 78vh; }
+   td.model { min-width: 9.5rem; }
+ }
+ /* The four questions of the findings on one line under the waiting note. */
+ .hero .summary-lead { margin: 0 0 .15rem; }
+ 
+-/* --- The home page's first card: the text and the board side by side on a wide screen. ------------------------- */
+-.hero-split { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 1rem 1.75rem; align-items: start; }
++/* --- Buttons in a row (Data's downloads, the experiment cards) and a decision's board (About's example, Highlights). - */
+ .hero-links { display: flex; flex-wrap: wrap; gap: .4rem; margin: .4rem 0 .6rem; }
+ .hero-links .key { text-decoration: none; padding: .3rem .8rem; border: 1px solid var(--control-edge); color: var(--text); font-size: .85rem; }
+ .hero-links .key:hover { border-color: var(--accent); color: var(--accent); }
+ .hero-board { margin: 0; }
+ .hero-board svg.hero-bd { width: 100%; max-width: 520px; height: auto; display: block; margin: 0 auto; }
+ .hero-board figcaption { color: var(--text-2); font-size: .82rem; margin-top: .4rem; }
+-@media (max-width: 860px) { .hero-split { grid-template-columns: minmax(0, 1fr); } }
+ #findings { margin: 0 0 1rem; }
+ #findings .summary-list { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: .5rem; }
+ #findings .summary-list li { padding: .55rem .7rem; border: 1px solid var(--edge); border-radius: 8px; background: var(--panel); }
+@@ -373,7 +381,7 @@ button.key[aria-pressed="true"]::before { content: "\2713"; margin-right: .3rem;
+ .theme-switch button.key[aria-pressed="true"]::before { content: none; }
+ /* The measures, one chart card each in one column; the leaderboard's own chart panels keep their two columns. */
+ .charts.measures { grid-template-columns: minmax(0, 1fr); margin: 0 0 1rem; }
+-.board-panel .chart-head h2 { font-size: 1.15rem; }
++.board-panel .chart-head h2 { font-size: var(--h2); }
+ /* The bars: in the maker's colour (content/maker_colors.json); a program grey and striped (a reference row, never
+    ranked); the 95% interval a line across the bar; the league beside the name under All leagues. */
+ .hbar-fill.program { background-color: var(--data-grey); background-image: repeating-linear-gradient(135deg, rgba(255, 255, 255, .55) 0 3px, rgba(0, 0, 0, .12) 3px 6px); }
+@@ -484,7 +492,7 @@ table.headline th[data-wide], table.headline td.hl-wide, .hl-wide-note { display
+   table.headline td.hl-judgement { width: auto; min-width: 8rem; }
+   table.headline td.model > .hl-tag { white-space: normal; border-radius: .6rem; }
+ }
+-.finding h2 { font-size: 1.25rem; }
++.finding h2 { font-size: var(--h2); }
+ .finding-text { max-width: 80ch; margin: 0 0 .75rem; }
+ .finding-chart { margin: 0; }
+ .section-caveat { margin-top: .6rem; }
+@@ -500,7 +508,7 @@ table.headline th[data-wide], table.headline td.hl-wide, .hl-wide-note { display
+ .chart-svg .th-dot { stroke-width: 2; }
+ .finding #too-safe-values { margin-top: .6rem; }
+ .finding .lp-chart { margin: 0; }
+-/* The front page's hero (Ümit #2938 item 2 (1)): the question, the description, the counts line and three buttons. */
++/* The front page's first card (Ümit via Zeki #3521): the question and the counts line. */
+ .hero-card h1 { margin-top: 0; }
+ .counts-line { margin: .3rem 0 .5rem; color: var(--text-2); font-size: .9rem; }
+ .counts-line .readout-value { color: var(--text); font-weight: 700; }
+diff --git a/tools/site/assets/suite-bar.css b/tools/site/assets/suite-bar.css
+index fd42f55..a4d788e 100644
+--- a/tools/site/assets/suite-bar.css
++++ b/tools/site/assets/suite-bar.css
+@@ -4,10 +4,8 @@
+ 
+    Theme: it follows data-theme on <html> ("light" or "dark"), as the sites' own stylesheets do; without the attribute
+    it follows the reader's system setting (prefers-color-scheme). The current site's link carries aria-current="page"
+-   and is filled like a selected key; the others are plain links. On a desktop about 50 px tall: 8 px above the links and
+-   10 px below them, the links 32 px high with 8 px by 16 px inside and 20 px between them, 14 px text. On screens
+-   narrower than 600 px about 46 px: links 28 px high with 6 px by 12 px inside, 8 px apart, 13 px text. One line; on a
+-   narrow screen the links scroll sideways inside the strip, never the page. */
++   and is filled like a selected key; the others are plain links. About 27 px tall, one line; on a narrow screen the
++   links scroll sideways inside the strip, never the page. */
+ .suite-bar {
+   --suite-bg: #ecebe6;
+   --suite-edge: #c9c6bf;
+@@ -43,22 +41,23 @@
+ .suite-bar {
+   box-sizing: border-box;
+   display: block;
+-  min-height: 50px;
++  height: 27px;
+   margin: 0;
+-  padding: 8px 16px 10px;
++  padding: 0 8px;
+   overflow-x: auto;
+   overflow-y: hidden;
+   scrollbar-width: none;
+   background: var(--suite-bg);
+   border-bottom: 1px solid var(--suite-edge);
+-  font: 600 14px/1 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
++  font: 600 12px/1 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+   letter-spacing: 0;
+ }
+ .suite-bar::-webkit-scrollbar { display: none; }
+ .suite-bar ul {
+   display: flex;
+   align-items: center;
+-  gap: 20px;
++  gap: 4px;
++  height: 100%;
+   max-width: 1248px;
+   margin: 0 auto;
+   padding: 0;
+@@ -69,8 +68,8 @@
+   box-sizing: border-box;
+   display: inline-flex;
+   align-items: center;
+-  min-height: 32px;
+-  padding: 8px 16px;
++  height: 21px;
++  padding: 0 8px;
+   color: var(--suite-text);
+   border: 1px solid transparent;
+   border-radius: 5px;
+@@ -87,9 +86,4 @@
+   border-color: var(--suite-current-edge);
+   text-decoration: none;
+ }
+-@media (max-width: 599px) {
+-  .suite-bar { min-height: 46px; padding: 8px 14px 10px; font-size: 13px; }
+-  .suite-bar ul { gap: 8px; }
+-  .suite-bar a { min-height: 28px; padding: 6px 12px; }
+-}
+ @media print { .suite-bar { display: none; } }
+diff --git a/tools/site/home.py b/tools/site/home.py
+index 366e91c..52c845e 100644
+--- a/tools/site/home.py
++++ b/tools/site/home.py
+@@ -15,6 +15,7 @@ from common import ALL_NOTE, CLOSE_B_SCOPE_NOTE, CONTENT, LATE_ENTRY, NA, NOT_ME
+ 
+ TABS = [("risk", "Risk"), ("quality", "Quality"), ("confidence", "Confidence"), ("reasoning", "Reasoning"),
+         ("cost", "Cost"), ("stability", "Stability")]
++# The front page's description until Ümit via Zeki #3521; on About (front_page_text) since.
+ INTRO = ("Models play backgammon, and an engine scores every move they make. We measure whether each risk a model "
+          "takes is the right one, and what that costs. Every decision is public.")
+ LIMIT_PAIRED = "Setups played different positions; league comparisons are not paired."
+@@ -24,8 +25,6 @@ LIMIT_HARD = ("Setups met different positions; risk judgement is not adjusted fo
+               "comparisons wait for the shared positions.")
+ # Under the risk leaderboard chart (Ümit #2564; wording Zeki #2578).
+ RANK_NOTE = "Ranks show observed scores; small gaps need not be meaningful."
+-# The hero's three buttons (Ümit #2938 item 2): Every decision, Highlights, Read the method.
+-HERO_LINKS = [("Every decision", "decisions/"), ("Highlights", "highlights/"), ("Read the method", "method/")]
+ GNUBG_WEAK = "x86-64 build: its noise is shifted, so it overplays gammons"
+ CALL_LABEL = {"needless": "needless risks", "missed": "missed risks", "wrong_risk": "wrong risks",
+               "right_risk": "right risks", "right_safety": "right safety", "none": "No trade-off"}
+@@ -1283,7 +1282,8 @@ CALL_WORDS = {"right_risk": "a right risk", "wrong_risk": "a wrong risk", "misse
+               "needless": "a needless risk", "right_safety": "right safety"}
+ 
+ 
+-def hero_board(S) -> str:
++def hero_board(S, rel: str) -> str:
++    """The example decision that stood beside the front page's title until Ümit via Zeki #3521; on About since."""
+     sc = S.get("showcase")
+     if not sc:
+         return ""
+@@ -1295,7 +1295,7 @@ def hero_board(S) -> str:
+     text = (f'{esc(sc["label"])}, dice {sc["dice"][0]}-{sc["dice"][1]}, stake {P.eq(sc["stake"])}: the engine\'s best play '
+             f'{code(b)} leaves {count(b["hitting_rolls"])} hitting rolls, the best safe play {code(s)} (dashed) '
+             f'leaves {count(s["hitting_rolls"])}. {esc(sc["who"])} played {code(c)}: {esc(CALL_WORDS[sc["call"]])}.')
+-    href = f'decisions/?d={sc["dataset"]}&amp;s={sc["slug"]}&amp;p={sc["page"]}#d{sc["id"]}'
++    href = f'{rel}decisions/?d={sc["dataset"]}&amp;s={sc["slug"]}&amp;p={sc["page"]}#d{sc["id"]}'
+     return f'<figure class="hero-board">{svg}<figcaption>{text} <a href="{href}">Open this decision</a></figcaption></figure>'
+ 
+ 
+@@ -1873,21 +1873,24 @@ def counts_line(S) -> str:
+ 
+ 
+ def hero_card(S) -> str:
+-    links = "".join(f'<a class="key" href="{href}">{esc(label)}</a>' for label, href in HERO_LINKS)
++    """The front page's first card (Ümit via Zeki #3521): the question and the counts line; the description and the
++    example decision are on About (front_page_text), the three buttons were the top bar's tabs."""
+     return f"""
+     <section class="card hero hero-card">
+-      <div class="hero-split">
+-        <div class="hero-text">
+-          <h1>{esc(P.TITLE)}</h1>
+-          <p class="intro">{esc(INTRO)}</p>
+-          {counts_line(S)}
+-          <nav class="hero-links" aria-label="Main parts">{links}</nav>
+-        </div>
+-        {hero_board(S)}
+-      </div>
++      <h1>{esc(P.TITLE)}</h1>
++      {counts_line(S)}
+     </section>"""
+ 
+ 
++def front_page_text(S, rel: str) -> str:
++    """About's 'From the front page' (Ümit via Zeki #3521): the description and the example decision of the old hero,
++    then the whole text of each finding section that shows less on the front page."""
++    import story
++    return (f'<p>The longer text of the front page, kept here in full.</p><h3 id="front-intro">What this is</h3>'
++            f'<p class="intro">{esc(INTRO)}</p><h3 id="front-example">An example risk call</h3>{hero_board(S, rel)}'
++            + story.findings_text(S, rel))
++
++
+ # The home page's content that moved to the Leagues page (Ümit #2938 item 2): what each block is, for the old anchors.
+ def leagues_moved(S) -> tuple[str, str]:
+     """(top, bottom): the blocks of the old home page that now sit on the Leagues page, written relative to the site's
+diff --git a/tools/site/pages.py b/tools/site/pages.py
+index b0e8ad7..e9ace27 100644
+--- a/tools/site/pages.py
++++ b/tools/site/pages.py
+@@ -1665,7 +1665,7 @@ def about_page(S, method_html: str) -> str:
+     ours = [(i, h, method.spec_markdown(md)) for i, h, md in about_sections() if i != "short"]
+     more = [("rules", "Rules of backgammon, as the prompt states them"), ("method", "Method"), ("data", "Data"),
+             ("how-to-run", "How to run it"), ("late-entries", "Late entries"), ("open-questions", "Open questions"),
+-            ("pages", "More pages")]
++            ("pages", "More pages"), ("front-page", "From the front page")]
+     method_links = "".join(f'<li><a href="../method/#{i}">{h}</a></li>' for i, h in method_sections(method_html))
+     parts = {
+         "rules": f'<p class="note">The rules as every player reads them in the prompt (bg-v2, the current version: '
+@@ -1678,7 +1678,8 @@ def about_page(S, method_html: str) -> str:
+                         f'matches: <a href="../leagues/#late-entries">Leagues: Late entries</a>.</p>',
+         "open-questions": f'<p>What is not settled yet: every analysis in the plan with its status, and the limits on '
+                           f'the <a href="../method/#limits">Method page</a>.</p>{status_list(S)}',
+-        "pages": more_pages("../")}
++        "pages": more_pages("../"),
++        "front-page": home.front_page_text(S, "../")}
+     extra = {"scores": home.how_numbers(S, "../"),
+              "leaderboard": '<h3 id="leaderboard-notes">How the leaderboard is built</h3>' + story.about_text(S, "../")}
+     nav = "".join(f'<a href="#{i}">{esc(t)}</a>' for i, t, _ in ours) + "".join(f'<a href="#{i}">{esc(t)}</a>' for i, t in more)
+@@ -1808,6 +1809,6 @@ def write_all(S, out: Path, base: str) -> None:
+                     "the engine's play and a short story (the stories are not written yet).")
+     put("experiments/", "Experiments", experiments_page(S),
+         description="Experiments of the backgammon benchmark: Clear risk, Nackgammon and Learning from experience.")
+-    put("about/", "About", about_page(S, method_html),
++    put("about/", "About", about_page(S, method_html), styles=("decisions.css",),
+         description="About the backgammon benchmark: backgammon in one page, how the benchmark works, how the scores "
+                     "work, the leaderboard rules, the method, the data, how to run it, late entries and open questions.")
+diff --git a/tools/site/story.py b/tools/site/story.py
+index edbdbf5..c390258 100644
+--- a/tools/site/story.py
++++ b/tools/site/story.py
+@@ -1,5 +1,6 @@
+ """The home page as a story (Ümit, bus #2570): one headline table, one row per model at its highest reasoning setting, and
+-sections whose headings state what the published numbers show, each with one chart, two sentences and one caveat. Every number is a
++sections whose headings state what the published numbers show, each with one chart and one caveat (the sentences are on
++About, but for the Nackgammon comparison and the learning status, Ümit via Zeki #3521). Every number is a
+ stored value as the site's tables print it: risk judgement, risks found, right safety, error rate and cost from the
+ league results; the bias of the clear-risk scan and of its Part 2 question Q1 from the published clear-risk data
+ (data/v3/clear-risk.json). A third heading asked for, on reasoning, is not shown: the Reasoning tab's comparison is not
+@@ -10,6 +11,7 @@ supporting must be reworded by hand."""
+ import json
+ import math
+ import re
++from collections import namedtuple
+ 
+ import home as H
+ import pages as P
+@@ -489,13 +491,21 @@ def _bars(rows: list, lo: float, hi: float, ticks: list, head: str, zero: bool =
+             f'<span class="hbar-head">{head}</span></div><ol class="hbars headed">{"".join(out)}</ol>')
+ 
+ 
+-def finding(fid: str, heading: str, sentences: str, chart: str, legend: str, warn: str, link: tuple[str, str]) -> str:
+-    """A finding section (Ümit #2938 item 2): the heading states the finding, one chart, two or three sentences and one
+-    link (href relative to the site's root, label)."""
+-    return (f'<section class="card finding" id="{fid}" aria-labelledby="{fid}-title"><h2 id="{fid}-title">{esc(heading)}</h2>'
+-            f'<p class="finding-text">{sentences}</p><figure class="chart-card chart-wide finding-chart">{chart}'
+-            + (f'<p class="chart-legend">{legend}</p>' if legend else "") + '</figure>'
+-            f'<p class="table-note section-caveat">{esc(warn)} <a href="{link[0]}">{esc(link[1])}</a></p></section>')
++# A finding section's parts. kept: the sentences the front page shows above the chart (Ümit via Zeki #3521: no long
++# paragraph above a chart there; "" none); None: the whole text, as on the Clear risk page. The whole text is on About
++# (findings_text) for every section that keeps less.
++Finding = namedtuple("Finding", "fid heading text chart legend warn link kept")
++
++
++def finding(f: Finding, full: bool = True) -> str:
++    """A finding section (Ümit #2938 item 2): the heading states the finding, one chart, its sentences (full) or only
++    the kept ones, and one caveat with one link (href relative to the site's root, label)."""
++    text = f.text if full or f.kept is None else f.kept
++    return (f'<section class="card finding" id="{f.fid}" aria-labelledby="{f.fid}-title"><h2 id="{f.fid}-title">{esc(f.heading)}</h2>'
++            + (f'<p class="finding-text">{text}</p>' if text else "")
++            + f'<figure class="chart-card chart-wide finding-chart">{f.chart}'
++            + (f'<p class="chart-legend">{f.legend}</p>' if f.legend else "") + '</figure>'
++            f'<p class="table-note section-caveat">{esc(f.warn)} <a href="{f.link[0]}">{esc(f.link[1])}</a></p></section>')
+ 
+ 
+ def cautious(S) -> str:
+@@ -522,12 +532,12 @@ def cautious(S) -> str:
+     legend = ('<span>Bias = missed risks (a clear Risk win played safe) minus needless risks (a clear Safety win played '
+               'unsafe), in percentage points; right of 0 = too cautious</span> <span><i class="swatch swatch-program">'
+               '</i>program (reference row)</span>')
+-    return finding("clear-risk-bias", "Models are too cautious: the clear-risk scan", text, chart, legend,
+-                   "Not paired: setups met different positions, so the rows compare only loosely.",
+-                   ("method/#clear-risk", "More caveats: Method"))
++    return finding(Finding("clear-risk-bias", "Models are too cautious: the clear-risk scan", text, chart, legend,
++                           "Not paired: setups met different positions, so the rows compare only loosely.",
++                           ("method/#clear-risk", "More caveats: Method"), None))
+ 
+ 
+-def flinch(S) -> str:
++def flinch(S) -> Finding:
+     rows = q1_bias(S)
+     safer = [r for r in rows if r[2] > r[4]]
+     neg = [r for r in rows if r[4] < 0]
+@@ -552,8 +562,8 @@ def flinch(S) -> str:
+     legend = ('<span><i class="swatch" style="background:var(--text-2)"></i>with numbers (the league prompt, each play\'s '
+               'computed consequences)</span> <span><i class="swatch swatch-q1-board"></i>board only (notation, no computed '
+               'number)</span> <span>Bias: missed minus needless, Q1 of Clear risk Part 2</span>')
+-    return finding("finding-flinch", heading, text, chart, legend, "Preliminary: two plays shown, not league play.",
+-                   ("clear-risk/", "Clear risk (preliminary)"))
++    return Finding("finding-flinch", heading, text, chart, legend, "Preliminary: two plays shown, not league play.",
++                   ("clear-risk/", "Clear risk (preliminary)"), "")
+ 
+ 
+ # --- The front page's finding sections a-f (Ümit #2938 item 2). Every heading is decided from the same stored values
+@@ -571,7 +581,7 @@ def _rows_chart(S) -> list:
+     return headline_rows(S)[2]
+ 
+ 
+-def two_skill(S) -> str:
++def two_skill(S) -> Finding:
+     """a. Risks found (x) against safe right (y), one dot per leaderboard row in its maker's colour, GNUbg weak the grey
+     reference. Heading rule: most ranked models found a smaller share of the risks that paid than they played safe
+     right where safety paid."""
+@@ -625,12 +635,12 @@ def two_skill(S) -> str:
+     legend = (H.maker_legend(xr["name"] for _, xr, _ in models)
+               + ' <span><i class="swatch swatch-ts-grey"></i>GNUbg weak (program, reference)</span>'
+               ' <span>Dashed diagonal: as often right on both</span>')
+-    return finding("finding-cautious", heading, text, chart, legend,
++    return Finding("finding-cautious", heading, text, chart, legend,
+                    "Not paired: models met different positions in different leagues.",
+-                   ("method/#risk-metrics", "How risks found and safe right are counted"))
++                   ("method/#risk-metrics", "How risks found and safe right are counted"), "")
+ 
+ 
+-def release_chart(S) -> str:
++def release_chart(S) -> Finding | None:
+     """b. Risk judgement against release month, one line per maker, documented months only (content/release_months.json).
+     Heading rule: "Newer models judge risk better" only if every maker with models in two or more months scores higher
+     with each later month, and at least two makers do; else the neutral heading."""
+@@ -657,7 +667,7 @@ def release_chart(S) -> str:
+                  + ("" if ok else " That is not a consistent increase across the makers shown."))
+     months = sorted({d[0] for d in dated})
+     if not months:
+-        return ""
++        return None
+     W, Hh, L, B, T, R = 560, 340, 44, 40, 12, 120
+     js = [d[2] for d in dated]
+     lo, hi = math.floor(min(js) / 5) * 5, math.ceil(max(js) / 5) * 5
+@@ -689,9 +699,9 @@ def release_chart(S) -> str:
+                      if mk in spread else "")
+     chart = _svg("Risk judgement against release month, one line per maker", W, Hh, "".join(parts))
+     legend = H.maker_legend(x["name"] for label, x, _ in rows if (RELEASES.get(label) or {}).get("month"))
+-    return finding("finding-release", heading, text, chart, legend,
++    return Finding("finding-release", heading, text, chart, legend,
+                    "Models without a documented release month are left out.",
+-                   ("about/#leaderboard", "How release months are dated"))
++                   ("about/#leaderboard", "How release months are dated"), "")
+ 
+ 
+ def reasoning_groups(S) -> list:
+@@ -721,7 +731,7 @@ def _er(x):
+     return q["error_rate"] if q and q.get("error_rate") is not None and not q.get("too_few") else None
+ 
+ 
+-def reasoning(S) -> str:
++def reasoning(S) -> Finding | None:
+     """d. The same model at different reasoning settings, in one league. Heading rule: "More thinking: better moves, not
+     better risk calls" only if most such models have a lower error rate at their highest setting and most do not have a
+     higher risk judgement there; else "What thinking adds"."""
+@@ -729,7 +739,7 @@ def reasoning(S) -> str:
+               if _er(xs[0]) is not None and _er(xs[-1]) is not None and xs[0]["r"]["judgement"] is not None
+               and xs[-1]["r"]["judgement"] is not None]
+     if not groups:
+-        return ""
++        return None
+     n = len(groups)
+     er_lower = sum(_er(xs[-1]) < _er(xs[0]) for _, _, xs in groups)
+     rj_higher = sum(xs[-1]["r"]["judgement"] > xs[0]["r"]["judgement"] for _, _, xs in groups)
+@@ -775,12 +785,12 @@ def reasoning(S) -> str:
+     chart = _svg("The same model at its reasoning settings: risk judgement and error rate", W, Hh, "".join(parts))
+     legend = ('<span>One row per model and league; hollow dots: its lower settings, filled dot: its highest setting.</span> '
+               + H.maker_legend(xs[-1]["name"] for _, _, xs in groups))
+-    return finding("finding-reasoning", heading, text, chart, legend,
++    return Finding("finding-reasoning", heading, text, chart, legend,
+                    "Not paired: each setting played its own games; these are observed differences.",
+-                   ("leagues/?tab=reasoning#board", "Every setting, league by league"))
++                   ("leagues/?tab=reasoning#board", "Every setting, league by league"), "")
+ 
+ 
+-def nack_finding(S) -> str:
++def nack_finding(S) -> Finding:
+     """e. Nackgammon: standard against Nackgammon error rate per setup and group, Random as the reference (the paired
+     test's own chart). Heading: always the neutral "A new starting position" (Zeki #2961). The data hold no interval for
+     a group's own drop, only the 99% intervals of BETWEEN-group drop differences (primary, primary_original_members);
+@@ -793,49 +803,61 @@ def nack_finding(S) -> str:
+     heading = "A new starting position"
+     rd1 = N["setups"]["Random"]["first"]["drop"]
+     worse = [(s, r) for s, r in ((Lt or {}).get("setups") or {}).items() if r.get("label") == "worse"]
+-    text = ("Each model was asked Nackgammon positions and standard positions matched to them. "
+-            + ("Compared group against group (one group's drop minus another's: decision models, workhorses, "
+-               "frontier), every 99% interval includes 0, so the test does not show the groups' drops to differ. "
++    between = ("Compared group against group (one group's drop minus another's: decision models, workhorses, "
++               "frontier), every 99% interval includes 0, so the test does not show the groups' drops to differ."
+                if clear else "Compared group against group (one group's drop minus another's), not every 99% "
+-               "interval includes 0. ")
+-            + f"Random play's own drop is {fmt(rd1, 1, True)} PR on the main 200 pairs: the Nackgammon positions were "
+-            f"{'slightly easier' if rd1 < 0 else 'harder'} for random play.")
+-    if worse:
+-        text += " Outside the groups, " + "; ".join(
+-            f'the late entry {esc(s)} dropped ({fmt(r["final"]["drop"], 2, True)} PR, 97.5% interval '
+-            f'{fmt(r["final"]["drop_975"][0], 2, True)} to {fmt(r["final"]["drop_975"][1], 2, True)})' for s, r in worse) + "."
+-    text += f" <strong>{esc(NS.UNCLEAR_NOTE)}</strong>"
++               "interval includes 0.")
++    late = (" Outside the groups, " + "; ".join(
++        f'the late entry {esc(s)} dropped ({fmt(r["final"]["drop"], 2, True)} PR, 97.5% interval '
++        f'{fmt(r["final"]["drop_975"][0], 2, True)} to {fmt(r["final"]["drop_975"][1], 2, True)})' for s, r in worse) + "."
++        if worse else "")
++    unclear = f" <strong>{esc(NS.UNCLEAR_NOTE)}</strong>"
++    text = ("Each model was asked Nackgammon positions and standard positions matched to them. " + between
++            + f" Random play's own drop is {fmt(rd1, 1, True)} PR on the main 200 pairs: the Nackgammon positions were "
++            f"{'slightly easier' if rd1 < 0 else 'harder'} for random play." + late + unclear)
+     legend = ('<span><i class="swatch nack-dot nack-dm"></i>decision models</span> '
+               '<span><i class="swatch nack-dot nack-wh"></i>workhorses</span> '
+               '<span><i class="swatch nack-dot nack-fr"></i>frontier</span> '
+               '<span><i class="swatch nack-dot nack-ng"></i>no group (exploratory)</span> '
+               '<span><i class="swatch nack-yard"></i>GNUbg weak, Random</span> '
+               '<span>Above the dashed diagonal: higher error on Nackgammon.</span>')
+-    return finding("finding-nackgammon", heading, text, NS.chart(N), legend,
++    return Finding("finding-nackgammon", heading, text, NS.chart(N), legend,
+                    "Paired positions, not league play; a drop mixes the new start with how hard the positions are.",
+-                   ("nackgammon/", "The Nackgammon test"))
++                   ("nackgammon/", "The Nackgammon test"), between + late + unclear)
+ 
+ 
+-def learning_finding(S) -> str:
++def learning_finding(S) -> Finding | None:
+     """f. Learning from experience: the page's status line, its verdict's first sentence (published wording only) and
+     its risks-found chart. A question, not a claim."""
+     import learning_page as LP
+     L = S["learning"]
+     R = L.get("results")
+     if L.get("preregistration_only"):
+-        return ""
++        return None
+     st = L["status"]
+     text = f'Status: {esc(st["line"])}.'
+     if R and R["complete"] and LP.is_complete(L):
+         text += f' {esc(LP.verdict_head(R))}'
+     chart = (LP.risks_figure(R, "finding-learning-chart") if R and R.get("series_total_done") else "") or \
+         '<p class="note">No finished series yet.</p>'
+-    return finding("finding-learning", "Does the model learn from its games?", text, chart, "",
++    return Finding("finding-learning", "Does the model learn from its games?", text, chart, "",
+                    "One model, a small pilot; the plan, every number and the lessons are on its page.",
+-                   (LP.PATH, "Learning from experience"))
++                   (LP.PATH, "Learning from experience"), text)
++
++
++def sections(S) -> list[Finding]:
++    """The finding sections a-f, in Ümit's order (#2938 item 2); a section the data cannot fill is left out."""
++    return [f for f in (two_skill(S), release_chart(S), flinch(S), reasoning(S), nack_finding(S), learning_finding(S)) if f]
+ 
+ 
+ def findings(S) -> str:
+-    """The finding sections a-f, in Ümit's order (#2938 item 2); the wrapper keeps the old #findings anchor."""
+-    return ('<div class="findings" id="findings">' + two_skill(S) + release_chart(S) + flinch(S) + reasoning(S)
+-            + nack_finding(S) + learning_finding(S) + '</div>')
++    """The front page's finding sections, each with only its kept sentences above the chart; the wrapper keeps the old
++    #findings anchor."""
++    return '<div class="findings" id="findings">' + "".join(finding(f, full=False) for f in sections(S)) + '</div>'
++
++
++def findings_text(S, rel: str) -> str:
++    """For About: the whole text of each front-page finding section that shows less there (Ümit via Zeki #3521), under
++    its heading, with a link back to its chart."""
++    return "".join(f'<h3 id="text-{f.fid}">{esc(f.heading)}</h3><p>{f.text}</p><p class="table-note">'
++                   f'<a href="{rel}#{f.fid}">The chart: front page</a></p>' for f in sections(S) if f.kept != f.text)

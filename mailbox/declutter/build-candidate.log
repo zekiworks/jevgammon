@@ -1,0 +1,5 @@
+# /usr/bin/python3 tools/site/build.py --state /tmp/decl-state-cand --out /tmp/decl-out-cand --no-image; tools/site = branch declutter 239e158 (on origin/main 7b35e40); state frozen 2026-11-09T12:04:33Z (copy of ~/.local/state/bg-site under its update lock)
+/tmp/decl-src-cand/tools/site/offline.py:213: RuntimeWarning: invalid value encountered in multiply
+  return np.where(ok, d * (c - cs), np.nan)
+{"results": "7acf91cb", "data_as_of": "2026-11-09T11:50Z", "decision_files": 2298, "scored": {"league-1": 36995, "league-2": 39538, "league-3": 16355}}
+exit status: 0

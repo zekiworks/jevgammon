@@ -1,0 +1,55 @@
+--- origin/main/bg.css
++++ declutter/bg.css
+@@ -1,2 +1,13 @@
+ /* Backgammon benchmark additions to the shared design system (site.css). */
++
++/* Heading sizes on every backgammon page (Ümit via Zeki #3521: no needlessly big type): the title one or two lines
++   at 1280 px and 375 px, h2 and h3 a step below it, body text as site.css sets it. These replace site.css's heading
++   sizes (.card h2, main > .card h1, .hero h1, .chart-head h2, .worked-example h2, .method-page .card h3) and the
++   browser's default for headings in a panel (Leagues' table titles); its result-card label (.result-card h2, .9rem)
++   stays as it was. */
++:root { --h1: clamp(1.05rem, 1.6vw, 1.35rem); --h2: clamp(1rem, 1.3vw, 1.12rem); --h3: .95rem; }
++main > .card h1, .hero h1 { font-size: var(--h1); }
++.card h2, .panel h2, .chart-head h2, .worked-example h2 { font-size: var(--h2); }
++.result-card h2 { font-size: .9rem; }
++.panel h3, .method-page .card h3 { font-size: var(--h3); }
+ 
+@@ -13,3 +24,3 @@
+ .section-head h2, .section-head h3 { margin: 0; }
+-.card h3 { font-size: 1rem; margin: 1.1rem 0 .5rem; }
++.card h3 { font-size: var(--h3); margin: 1.1rem 0 .5rem; }
+ .block { margin: 1rem 0 0; padding-top: .75rem; border-top: 1px dashed var(--edge); }
+@@ -76,3 +87,3 @@
+ .hero { max-width: none; margin: 0 0 1rem; }
+-main > .card.hero h1 { font-size: 1.6rem; margin: 0 0 .5rem; letter-spacing: 0; }
++main > .card.hero h1 { font-size: var(--h1); margin: 0 0 .5rem; letter-spacing: 0; }
+ .hero .intro { margin: 0 0 .6rem; font-size: 1rem; }
+@@ -121,3 +132,2 @@
+   .readouts { flex-wrap: wrap; row-gap: .25rem; }
+-  .hero h1 { font-size: 1.45rem; }
+   .table-wrap { max-height: 78vh; }
+@@ -128,4 +138,3 @@
+ 
+-/* --- The home page's first card: the text and the board side by side on a wide screen. ------------------------- */
+-.hero-split { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 1rem 1.75rem; align-items: start; }
++/* --- Buttons in a row (Data's downloads, the experiment cards) and a decision's board (About's example, Highlights). - */
+ .hero-links { display: flex; flex-wrap: wrap; gap: .4rem; margin: .4rem 0 .6rem; }
+@@ -136,3 +145,2 @@
+ .hero-board figcaption { color: var(--text-2); font-size: .82rem; margin-top: .4rem; }
+-@media (max-width: 860px) { .hero-split { grid-template-columns: minmax(0, 1fr); } }
+ #findings { margin: 0 0 1rem; }
+@@ -375,3 +383,3 @@
+ .charts.measures { grid-template-columns: minmax(0, 1fr); margin: 0 0 1rem; }
+-.board-panel .chart-head h2 { font-size: 1.15rem; }
++.board-panel .chart-head h2 { font-size: var(--h2); }
+ /* The bars: in the maker's colour (content/maker_colors.json); a program grey and striped (a reference row, never
+@@ -486,3 +494,3 @@
+ }
+-.finding h2 { font-size: 1.25rem; }
++.finding h2 { font-size: var(--h2); }
+ .finding-text { max-width: 80ch; margin: 0 0 .75rem; }
+@@ -502,3 +510,3 @@
+ .finding .lp-chart { margin: 0; }
+-/* The front page's hero (Ümit #2938 item 2 (1)): the question, the description, the counts line and three buttons. */
++/* The front page's first card (Ümit via Zeki #3521): the question and the counts line. */
+ .hero-card h1 { margin-top: 0; }

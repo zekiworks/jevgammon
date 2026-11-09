@@ -404,6 +404,20 @@
    "read": "2026-11-09",
    "note": "x.ai/news mentions Grok-1's 314B, not Grok 4.7."
   },
+  "Inkling Small": {
+   "total_b": 265.96,
+   "active_b": 12,
+   "effective_b": null,
+   "moe": true,
+   "source": "https://thinkingmachines.ai/model-card/inkling-small/",
+   "quote": "Thinking Machines' Inkling-Small model card: a mixture-of-experts model, 12B active parameters per token, 276B total.",
+   "checked": [
+    "https://thinkingmachines.ai/model-card/inkling-small/"
+   ],
+   "read": "2026-11-09",
+   "note": "Released-checkpoint count (#3508 rule): 265.96B total counted from the released checkpoint's tensors (turkce, bus #3592), as logic's model_sizes.json 'Inkling Small'; 12B active from the card; card: 276B total. In Small models by name only (improve_page.SMALL_BY_NAME, Ümit #3806); its total is over the threshold.",
+   "terms": "265.96B total, 12B active"
+  },
   "Jev 1.13.0": {
    "total_b": null,
    "active_b": null,

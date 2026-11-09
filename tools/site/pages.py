@@ -1799,8 +1799,8 @@ def write_all(S, out: Path, base: str) -> None:
     put(learning_page.PATH, learning_page.title(S["learning"]), learning_page.body(S["learning"]),
         description=learning_page.DESCRIPTION)
     import improve_page
-    put(improve_page.PATH, improve_page.title(S["improve"]), improve_page.body(S["improve"]),
-        description=improve_page.DESCRIPTION)
+    put(improve_page.PATH, improve_page.title(S["improve"]), improve_page.body(S["improve"], S),
+        description=improve_page.DESCRIPTION, scripts=("bg.js",))
     put("data/", "Data", data_page(S, out))
     put("decisions/", "Every decision", decisions_page(S, decisions_export.body()),
         scripts=("decisions.js",), styles=("decisions.css",))

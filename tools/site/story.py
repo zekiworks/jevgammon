@@ -251,7 +251,6 @@ def details_box(S, x, kind: str, bid: str, extra: list, ref: str | None = None) 
     rec = record(x)
     er = (f'Error rate {fmt(q["error_rate"])} (95%: {fmt(q["error_lo"])}\u2013{fmt(q["error_hi"])})'
           if q and q.get("error_rate") is not None and not q.get("too_few") else None)
-    href, page = decisions_href(S, x), page_href(S, x)
     # The lines in the order of Ümit's example (#2938 item 3): name · maker · type · setting (#3039: no longer under
     # the name; each part only where it is on record) / risk judgement / both halves / the raw counts / error rate ·
     # record · late entry; then the setup's other stored facts; then the links.
@@ -276,9 +275,22 @@ def details_box(S, x, kind: str, bid: str, extra: list, ref: str | None = None) 
         join([cost_text(S, x), f'{count(q["decisions"])} decisions' if q else None]),
         (f'Parameters: {P.params_html(x["model"])}' if kind != "program" else None),
         *extra,
-        join([f'<a href="{href}">{"Its late-entry page" if e else "Open its decisions"} \u2192</a>' if href else None,
-              f'<a href="{page}">Model page</a>' if page else None])]
-    return (f'<div class="hl-box" id="{bid}" role="group" aria-label="{esc(x["name"])}: details">'
+        links_line(S, x)]
+    return box_html(bid, x["name"], lines)
+
+
+def links_line(S, x, rel: str = "") -> str:
+    """The box's last line: the setup's decisions (a late entry: its own page) and its model page, where it has them;
+    rel: the page's way to the site root."""
+    href, page = decisions_href(S, x), page_href(S, x)
+    return " \u00b7 ".join(p for p in (
+        f'<a href="{rel}{href}">{"Its late-entry page" if x["late"] else "Open its decisions"} \u2192</a>' if href else None,
+        f'<a href="{rel}{page}">Model page</a>' if page else None) if p)
+
+
+def box_html(bid: str, name: str, lines: list) -> str:
+    """A row's details box (bg.js headlineDetails): one paragraph per line, a line without data left out."""
+    return (f'<div class="hl-box" id="{bid}" role="group" aria-label="{esc(name)}: details">'
             + "".join(f"<p>{line}</p>" for line in lines if line) + "</div>")
 
 

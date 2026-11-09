@@ -1,5 +1,5 @@
 {
- "about": "Parameter counts of the leaderboard's models (Ümit #3465), by the three sites' rule (logic #3508, Main #3506; Zeki #3529; logic #3550, turkce #3552 wording; Zeki #3574: released checkpoint or composition at the stated revision, logical count, scope written out; actual-run identity only where evidenced): the logical parameter count of the maker's own released checkpoint at the pinned revision (sum of tensor shapes; never packed storage elements, scales, buffers, or an adapter/assistant file alone), with its component scope; the maker's text in quote; a separate decision head shown as 'backbone X + decision head Y' ('terms'); a model with no released weights 'not disclosed by maker' unless the maker states a figure; a card that gives parts but no whole-model total in its own terms (total_b null, never a Small model). Cygnet: the maker card's 11.95B at the recipe's pinned revision (Zeki #3510). total_b, active_b (moe true) and effective_b in billions as shown; total_b null and no terms = not disclosed (the URLs checked in checked). Read 2026-11-09.",
+ "about": "Parameter counts of the leaderboard's models (Ümit #3465), by the three sites' rule (logic #3508, Main #3506; Zeki #3529; logic #3550, turkce #3552 wording; Zeki #3574: released checkpoint or composition at the stated revision, logical count, scope written out; actual-run identity only where evidenced): the logical parameter count of the maker's own released checkpoint at the pinned revision (sum of tensor shapes; never packed storage elements, scales, buffers (tensors the model class registers as nn.Buffer, e.g. Gemma 4's layer_scalar, std_bias, std_scale), or an adapter/assistant file alone), with its component scope; the maker's text in quote; a separate decision head shown as 'backbone X + decision head Y' ('terms'); a model with no released weights 'not disclosed by maker' unless the maker states a figure; a card that gives parts but no whole-model total in its own terms (total_b null, never a Small model). Cygnet: the count of Google's checkpoint at the recipe's pinned revision, the card's 11.95B beside it (turkce #3592). total_b, active_b (moe true) and effective_b in billions as shown; total_b null and no terms = not disclosed (the URLs checked in checked). Read 2026-11-09.",
  "models": {
   "Base Labs Elephant-1": {
    "total_b": 9.41,
@@ -107,12 +107,12 @@
    "terms": "backbone 27.36B incl. its vision encoder + joint head 128.1M; card: 27B"
   },
   "Cygnet (Gemma 4 12B)": {
-   "total_b": 11.95,
+   "total_b": 11.96,
    "active_b": null,
    "effective_b": null,
    "moe": false,
-   "source": "https://huggingface.co/google/gemma-4-12B-it/blob/707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7/README.md",
-   "quote": "Card at the pinned revision 707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7, '12B Unified' column: '| **Total Parameters** | ... | 11.95B |'. Recipe: https://github.com/blockbrain-ai/cygnet-recipe (Google's gemma-4-12B-it, 'no fine-tuning', vLLM --revision 707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7).",
+   "source": "https://huggingface.co/google/gemma-4-12B-it/tree/707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7",
+   "quote": "google/gemma-4-12B-it @ 707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7 (the revision the Cygnet recipe github.com/blockbrain-ai/cygnet-recipe serves, unchanged, 'no fine-tuning'), model.safetensors (LFS sha256 5a84cb313260ac447237b890387116dfa8682e49a6b44bc585ae8353abbff18d, one file, language model and vision embedder): 11,959,730,176 parameters = all tensor elements 11,959,730,224 (header) minus 48 x layer_scalar 1 (huggingface/transformers @ b25568817a6cb458f6d8b180a32698c2ab11fd26, models/gemma4/modeling_gemma4.py: layer_scalar, std_bias, std_scale are nn.Buffer). Maker's text: the card at that revision, '12B Unified' column, '| **Total Parameters** | ... | 11.95B |'.",
    "checked": [
     "https://raw.githubusercontent.com/blockbrain-ai/cygnet-recipe/main/README.md",
     "https://huggingface.co/api/models/google/gemma-4-12B-it",
@@ -120,7 +120,8 @@
     "https://huggingface.co/google/gemma-4-12B-it/raw/707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7/README.md"
    ],
    "read": "2026-11-09",
-   "note": "Kept at the maker card's 11.95B at the recipe's pinned revision 707f0a3b (Zeki #3510); recipe https://github.com/blockbrain-ai/cygnet-recipe. Not an E-series model, no effective figure."
+   "note": "Released-checkpoint count at the recipe's pinned revision, scope written out (logic #3550, turkce #3552/#3592, Zeki #3574), the card's 11.95B beside it, as for the other entries; was the card's 11.95B alone (Zeki #3510).",
+   "terms": "11.96B incl. its vision encoder; card: 11.95B"
   },
   "Decider Flash v1.2": {
    "total_b": 4.54,
@@ -379,7 +380,7 @@
    "effective_b": null,
    "moe": false,
    "source": "https://huggingface.co/google/gemma-4-31B-it/tree/842da3794eaa0b77d5f08bae87a17459d91ff475",
-   "quote": "google/gemma-4-31B-it @ 842da3794eaa0b77d5f08bae87a17459d91ff475, model.safetensors.index.json shards: 31,273,088,876 logical parameters, BF16 (Hugging Face's safetensors total; language model and vision encoder). Maker's text: the card's table gives 30.7B plus a vision encoder.",
+   "quote": "google/gemma-4-31B-it @ 842da3794eaa0b77d5f08bae87a17459d91ff475, model.safetensors.index.json shards (language model and vision encoder): 31,273,086,512 parameters = all tensor elements 31,273,088,876 (Hugging Face's safetensors total) minus buffers model.vision_tower.std_bias 1,152 + std_scale 1,152 + 60 x layer_scalar 1 = 2,364 (huggingface/transformers @ b25568817a6cb458f6d8b180a32698c2ab11fd26, models/gemma4/modeling_gemma4.py: layer_scalar, std_bias, std_scale are nn.Buffer). Maker's text: the card's table gives 30.7B plus a vision encoder.",
    "checked": [
     "https://huggingface.co/api/models/google/gemma-4-31B-it"
    ],
@@ -450,7 +451,7 @@
    "effective_b": null,
    "moe": true,
    "source": "https://huggingface.co/LiquidAI/LFM2.5-24B-A2B/tree/3dc4cd09c9a2a99e1e819693e79d3aba5e9bb4f2",
-   "quote": "LiquidAI/LFM2.5-24B-A2B @ 3dc4cd09c9a2a99e1e819693e79d3aba5e9bb4f2, model.safetensors.index.json shards: BF16 23,971,585,280 logical parameters (Hugging Face's safetensors total; plus F32 2,432 buffer elements, not counted). Maker's text (card): 24B total, 2.45B active.",
+   "quote": "LiquidAI/LFM2.5-24B-A2B @ 3dc4cd09c9a2a99e1e819693e79d3aba5e9bb4f2, model.safetensors.index.json shards: BF16 23,971,585,280 logical parameters (Hugging Face's safetensors total); the 38 x expert_bias F32 tensors (2,432 elements) are buffers (transformers @ b2556881, models/lfm2_moe/modeling_lfm2_moe.py: expert_bias = nn.Buffer), not counted. Maker's text (card): 24B total, 2.45B active.",
    "checked": [
     "https://www.liquid.ai/blog/lfm2-5-24b-a2b",
     "https://huggingface.co/api/models/LiquidAI/LFM2.5-24B-A2B"
@@ -534,7 +535,7 @@
    "effective_b": null,
    "moe": false,
    "source": "https://huggingface.co/decisionmodels/REAX-1.3/tree/fa4bf7ee3bb56a8bc421dad090631be1c5845c2d",
-   "quote": "decisionmodels/REAX-1.3 @ fa4bf7ee3bb56a8bc421dad090631be1c5845c2d, the two parts of the blend: part-g, 13 shards model-000NN-of-00013.safetensors, 31,273,088,876 logical parameters (BF16; summed from each shard's header, scripts/st_header_count.py, reax-headers.txt); part-q, 11 shards, 26,085,330,160 (its model.safetensors.index.json 'total_parameters') + part-q/readout.safetensors 1,305,600 (F32, header) = 57,359,724,636. Weights stored in BF16 (served in FP8 on our GPU); no scale tensors counted. Maker's text: the card describes the two parts but states no count.",
+   "quote": "decisionmodels/REAX-1.3 @ fa4bf7ee3bb56a8bc421dad090631be1c5845c2d, the two parts of the blend: part-g, 13 shards model-000NN-of-00013.safetensors, 31,273,086,512 parameters (all tensor elements 31,273,088,876, summed from each shard's header, reax-headers.txt, minus the Gemma 4 buffers std_bias 1,152 + std_scale 1,152 + 60 x layer_scalar = 2,364; huggingface/transformers @ b25568817a6cb458f6d8b180a32698c2ab11fd26, models/gemma4/modeling_gemma4.py: layer_scalar, std_bias, std_scale are nn.Buffer); part-q, 11 shards, 26,085,330,160 (its model.safetensors.index.json 'total_parameters') + part-q/readout.safetensors 1,305,600 (F32, header) = 57,359,722,272 (all tensor elements 57,359,724,636). Weights stored in BF16 (served in FP8 on our GPU); no scale tensors counted. Maker's text: the card describes the two parts but states no count.",
    "checked": [
     "https://huggingface.co/decisionmodels/REAX-1.3/blob/fa4bf7ee3bb56a8bc421dad090631be1c5845c2d/README.md",
     "https://huggingface.co/api/models/decisionmodels/REAX-1.3",
@@ -579,7 +580,7 @@
    "effective_b": null,
    "moe": false,
    "source": "https://huggingface.co/EldanRing/Winnow-12B/blob/0b5b7f98e718cf0faffd0acea3093b86ebf00b56/gguf/Winnow-12B-Q8_0.gguf",
-   "quote": "EldanRing/Winnow-12B @ 0b5b7f98e718cf0faffd0acea3093b86ebf00b56, gguf/Winnow-12B-Q8_0.gguf (LFS sha256 b710efc4c0d048ee61eed92c5fef5ce323a4d17e7c51f9f0533cc72ae50818ea, the file the winnow-inference repo pins at d4631fb, logic #3534): 667 tensors, text model only (mmproj-Winnow-12B.gguf and the assistant GGUF not counted); from the GGUF header's tensor shapes: 11,907,350,320 logical parameters (token_embd 1,006,632,960 + blocks 10,900,713,520 + output_norm 3,840), excluding the 256-element rope_freqs buffer (all tensor elements: 11,907,350,576); shapes, not Q8_0 storage blocks or scales. Counted here (scripts/gguf_count.py) from the maker's file at that revision (header read) and from the local copy (same sha256). Maker's text: no count.",
+   "quote": "EldanRing/Winnow-12B @ 0b5b7f98e718cf0faffd0acea3093b86ebf00b56, gguf/Winnow-12B-Q8_0.gguf (LFS sha256 b710efc4c0d048ee61eed92c5fef5ce323a4d17e7c51f9f0533cc72ae50818ea, the file the winnow-inference repo pins at d4631fb, logic #3534): 667 tensors, text model only (mmproj-Winnow-12B.gguf and the assistant GGUF not counted); from the GGUF header's tensor shapes: 11,907,350,272 parameters (token_embd 1,006,632,960 + blocks 10,900,713,472 + output_norm 3,840), excluding the buffers rope_freqs 256 and 48 x blk.N.layer_output_scale 1 (Gemma 4's layer_scalar, an nn.Buffer in transformers' modeling_gemma4.py @ b2556881) (all tensor elements: 11,907,350,576); shapes, not Q8_0 storage blocks or scales. Counted here (scripts/gguf_count.py) from the maker's file at that revision (header read) and from the local copy (same sha256). Maker's text: no count.",
    "checked": [
     "https://huggingface.co/api/models/EldanRing/Winnow-12B?expand[]=gguf"
    ],

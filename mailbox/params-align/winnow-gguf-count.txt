@@ -1,0 +1,18 @@
+# maker's file EldanRing/Winnow-12B @ 0b5b7f98e718cf0faffd0acea3093b86ebf00b56 gguf/Winnow-12B-Q8_0.gguf, first 33,554,432 bytes (HTTP 206 33554432), header only:
+file: /tmp/winnow-head.gguf
+GGUF version 3; tensors 667; metadata keys 44
+general.architecture: gemma4 | general.name: Winnow-12B
+tensor types (ggml type id: count): {0: 338, 8: 329}
+tensor elements by name prefix: {'rope_freqs': 256, 'token_embd': 1006632960, 'blk': 10900713520, 'output_norm': 3840}
+all tensor elements: 11,907,350,576; non-parameter buffers {'rope_freqs': 256}
+logical parameter total (buffers excluded): 11,907,350,320
+
+# local copy (whole file hashed):
+file: /home/cbasaran/code/winnow/models/gguf/Winnow-12B-Q8_0.gguf
+GGUF version 3; tensors 667; metadata keys 44
+general.architecture: gemma4 | general.name: Winnow-12B
+tensor types (ggml type id: count): {0: 338, 8: 329}
+tensor elements by name prefix: {'rope_freqs': 256, 'token_embd': 1006632960, 'blk': 10900713520, 'output_norm': 3840}
+all tensor elements: 11,907,350,576; non-parameter buffers {'rope_freqs': 256}
+logical parameter total (buffers excluded): 11,907,350,320
+sha256: b710efc4c0d048ee61eed92c5fef5ce323a4d17e7c51f9f0533cc72ae50818ea

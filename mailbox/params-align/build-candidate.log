@@ -1,0 +1,5 @@
+# /usr/bin/python3 tools/site/build.py --state /tmp/pa2-state --out /tmp/pa2-out-cand --no-image; tools/site at params-align 6fb9b4313661302a48de188e07c957ca5987e72d (parent 98effa3af62f76aeaf92fb9e21de84f0ccd782e8 = origin/main)
+/home/cbasaran/code/jevgammon-params/tools/site/offline.py:213: RuntimeWarning: invalid value encountered in multiply
+  return np.where(ok, d * (c - cs), np.nan)
+{"results": "41349961", "data_as_of": "2026-11-09T12:35Z", "decision_files": 2298, "scored": {"league-1": 36995, "league-2": 39538, "league-3": 16355}}
+exit status: 0

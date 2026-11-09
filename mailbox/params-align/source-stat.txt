@@ -1,0 +1,5 @@
+# git diff origin/main..params-align -- tools/site; base origin/main 98effa3af62f76aeaf92fb9e21de84f0ccd782e8, branch 6fb9b4313661302a48de188e07c957ca5987e72d
+ tools/site/content/model_params.json | 131 +++++++++++++++++++----------------
+ tools/site/pages.py                  |   2 +-
+ tools/site/story.py                  |   2 +-
+ 3 files changed, 74 insertions(+), 61 deletions(-)

@@ -520,10 +520,8 @@ def small(name: str | None) -> str:
 
 
 # Each row's maker dot and details box (Ümit via Zeki #3803): the home leaderboard's (home.maker on the shared palette,
-# story.box_html, bg.js headlineDetails). A row's model without a palette maker fails the build, except the planned
-# rows named in NO_MAKER (families.json has no family for them, so home.maker finds no palette maker): a grey dot, no
-# maker in the box. Box lines without data are left out (never "n/a").
-NO_MAKER = ("MiniMax-M3.1-Flash", "Inkling Small", "vLLM-SR d3-ultra")
+# story.box_html, bg.js headlineDetails). A row's model without a palette maker fails the build. Box lines without data
+# are left out (never "n/a").
 
 
 def board_links(S) -> dict:
@@ -540,10 +538,8 @@ def board_links(S) -> dict:
     return out
 
 
-def maker_dot(setup: str) -> tuple[str | None, str]:
+def maker_dot(setup: str) -> tuple[str, str]:
     """(maker, the row's dot) as on the leaderboard."""
-    if setup in NO_MAKER:
-        return None, '<i class="swatch hl-dot hl-dot-none" aria-hidden="true"></i>'
     mk, colour = H.maker(setup)
     return mk, f'<i class="swatch hl-dot" style="background:{colour}" title="{esc(mk)}"></i>'
 

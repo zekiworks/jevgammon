@@ -5,7 +5,7 @@
    "setup": "MiniMax-M3.1-Flash",
    "group": "chat",
    "tag": "added 9 Nov, no league record",
-   "params_model": null,
+   "params_model": "MiniMax-M3.1-Flash",
    "status": "not started (waiting for budget)"
   },
   {
@@ -51,7 +51,7 @@
    "setup": "vLLM-SR d3-ultra",
    "group": "decision",
    "tag": "added 9 Nov, no league record",
-   "params_model": null,
+   "params_model": "vLLM-SR d3-ultra",
    "notes": "not started: no backgammon route yet",
    "worst_mistakes": "not started: no backgammon route yet"
   },

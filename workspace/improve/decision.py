@@ -71,7 +71,7 @@ PREFLIGHT = lambda: I.RUNS / "decision" / "preflight"  # noqa: E731
 DECISION_OUT = lambda: I.OUT / "improve-decision.json"  # noqa: E731
 # The bounded envelope (Zeki #3788): the billed chat models run only through one serial systemd unit, from pinned code.
 CHAT_CODE = Path("/home/cbasaran/code/jevgammon-improve/workspace/improve")
-CHAT_IMPROVE_SHA256 = "341e7a69f6450bda7bd2c90a3c93852084b7e2c2c7555ba0bdb1dbfb1198db4b"  # improve.py @ 56a93b4
+CHAT_IMPROVE_SHA256 = "90fe6b0ead90ff4d3d32ec80e5932a8c113456b05ee76e6bb9c5e39a56df9875"  # improve.py @ 1a27793 (Zeki #3798: export-only delta from 56a93b4/0e6314d, patch sha256 e0b3ee66…)
 CHAT_QUEUE_SHA256 = "e53fa11b4d31dd289e3a62ce74d66dfe227aeb3e58240e19b4d8565c85f13a74"  # run_queue.sh (for-loop, serial)
 BILLED_CHAT = ("qwen3.8-flash-off", "glm-5.3-on", "kimi-k3.1-pro-off", "deepseek-v4.1-flash-on")  # MODELS billed=True
 CHAT_UNIT = "improve-openrouter.service"

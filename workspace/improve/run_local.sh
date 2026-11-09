@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# "Did they improve?" Phase 2, local lane (plan §10): one model at a time on ONE GPU, given by UUID (Can #3121),
+# "Did they improve?" Phase 2, local lane (plan §10): one model at a time on ONE GPU, given by UUID (Can #3121; since
+# 2026-11-09 GPU-1115ade0, Main, after GPU-e4f2a538's hardware failure),
 # each with its league server script and arguments (only the GPU differs). Before each start: the UUID's index on
 # the host and the GPU the container sees are checked; the container's model path and image are recorded. The
 # experiment's run then starts with the server's address; afterwards the server is stopped. A stop (exit 2) moves
@@ -24,7 +25,7 @@ for model in "$@"; do
   read -r script name port var < <(server "$model") || { echo "unknown local model $model"; exit 1; }
   index=$(nvidia-smi -i "$UUID" --query-gpu=index,uuid --format=csv,noheader) || { echo "no GPU $UUID"; exit 1; }
   echo "== $model: host GPU $index"
-  case $index in 0,*|1,*|2,*) echo "refused: GPU 0-2 are not this lane's"; exit 1 ;; esac
+  case $UUID in GPU-e4f2a538*) echo "refused: GPU-e4f2a538 is off limits (hardware failure 2026-11-08)"; exit 1 ;; esac
   # Docker's CDI names GPUs by index here, not by UUID: the index the host gives this UUID now, and the
   # container must then report this UUID (checked below).
   env "$var=${index%%,*}" "$SERVERS/$script" start || { echo "$model: server did not start"; exit 1; }

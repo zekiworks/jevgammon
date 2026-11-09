@@ -1,31 +1,33 @@
 {
- "about": "Parameter counts of the leaderboard's models (Ümit #3465), only as each model's maker documents them: the maker's model card, its Hugging Face repository (card text, config.json, or the safetensors total Hugging Face shows for the maker's own repo, used only where the maker states no figure in text) or its official announcement/docs; the maker's stated figure is used where it and the repository total differ (both in note). total_b, active_b (a mixture of experts; moe true) and effective_b in billions of parameters as shown (an exact repository total rounded to two decimals, the exact count in quote); terms: the maker card's own terms where it gives parts but no whole-model total (total_b null, never a Small model; Zeki #3510); total_b null and no terms = the maker discloses no count (the URLs checked in checked). Never an estimate, a figure from the model's name, its base model or a third party. Read 2026-11-09.",
+ "about": "Parameter counts of the leaderboard's models (Ümit #3465), by the three sites' rule (logic #3508, Main #3506; Zeki #3529; logic #3550, turkce #3552 wording; Zeki #3574: released checkpoint or composition at the stated revision, logical count, scope written out; actual-run identity only where evidenced): the logical parameter count of the maker's own released checkpoint at the pinned revision (sum of tensor shapes; never packed storage elements, scales, buffers, or an adapter/assistant file alone), with its component scope; the maker's text in quote; a separate decision head shown as 'backbone X + decision head Y' ('terms'); a model with no released weights 'not disclosed by maker' unless the maker states a figure; a card that gives parts but no whole-model total in its own terms (total_b null, never a Small model). Cygnet: the maker card's 11.95B at the recipe's pinned revision (Zeki #3510). total_b, active_b (moe true) and effective_b in billions as shown; total_b null and no terms = not disclosed (the URLs checked in checked). Read 2026-11-09.",
  "models": {
   "Base Labs Elephant-1": {
-   "total_b": 9,
+   "total_b": 9.41,
    "active_b": null,
    "effective_b": null,
    "moe": false,
-   "source": "https://huggingface.co/baselabs/elephant-1/blob/b3f8a93462fb1051a9de031e94a7ff380e254072/README.md",
-   "quote": "elephant-1 is a 9B parameter **decision model** post-trained from Qwen3.5-9B",
+   "source": "https://huggingface.co/baselabs/elephant-1/tree/b3f8a93462fb1051a9de031e94a7ff380e254072",
+   "quote": "baselabs/elephant-1 @ b3f8a93462fb1051a9de031e94a7ff380e254072, model.safetensors (one file, no separate head file): 9,409,813,744 logical parameters (Hugging Face's safetensors total; language model 8,953,803,264 + vision encoder 456,010,480 per logic). Maker's text: 'a 9B parameter decision model'.",
    "checked": [
     "https://huggingface.co/api/models/baselabs/elephant-1"
    ],
    "read": "2026-11-09",
-   "note": "Dense. HF safetensors total at the pinned sha b3f8a934: 9,409,813,744 (BF16); card's rounded 9B used."
+   "note": "Checkpoint total at the pinned revision (#3508 rule); same as logic's model_sizes.json 'Elephant-1'.",
+   "terms": "9.41B incl. its vision encoder; card: 9B"
   },
   "Base Labs Mammoth-1": {
-   "total_b": 27,
+   "total_b": 27.36,
    "active_b": null,
    "effective_b": null,
    "moe": false,
-   "source": "https://huggingface.co/baselabs/mammoth-1/blob/61cec44c281c693992e3d6ebeb44dd3402dfa186/README.md",
-   "quote": "mammoth-1 is a 27B parameter **decision model** post-trained from Qwen3.5-27B",
+   "source": "https://huggingface.co/baselabs/mammoth-1/tree/61cec44c281c693992e3d6ebeb44dd3402dfa186",
+   "quote": "baselabs/mammoth-1 @ 61cec44c281c693992e3d6ebeb44dd3402dfa186, model.safetensors.index.json shards (no separate head file): 27,356,728,560 logical parameters (Hugging Face's safetensors total; language model 26,895,998,464 + vision encoder 460,730,096 per logic). Maker's text: 'a 27B parameter decision model'.",
    "checked": [
     "https://huggingface.co/api/models/baselabs/mammoth-1"
    ],
    "read": "2026-11-09",
-   "note": "Dense. HF safetensors total for the maker's repo at the pinned sha 61cec44c: 27,356,728,560 (BF16); card's rounded 27B used."
+   "note": "Checkpoint total at the pinned revision (#3508 rule); same as logic's model_sizes.json 'Mammoth-1'.",
+   "terms": "27.36B incl. its vision encoder; card: 27B"
   },
   "Celeris-1 Decision": {
    "total_b": null,
@@ -89,19 +91,20 @@
    "note": "System card PDF searched in full text."
   },
   "Clef": {
-   "total_b": 27,
+   "total_b": 27.48,
    "active_b": null,
    "effective_b": null,
    "moe": false,
-   "source": "https://huggingface.co/cloudflare/clef",
-   "quote": "Clef is a 27B multimodal model that turns a state and a schema of typed questions into decisions",
+   "source": "https://huggingface.co/Cloudflare/clef/tree/cfddda043dd190ef3b01cff449d5ee8cff1e8ec6",
+   "quote": "Cloudflare/clef @ cfddda043dd190ef3b01cff449d5ee8cff1e8ec6: backbone 27,356,728,560 logical parameters (model.safetensors.index.json shards, language model and vision encoder; Hugging Face's safetensors total) + joint head 128,056,324 (joint_head.safetensors, 122 tensors, its header's tensor shapes) = 27,484,784,884. Maker's text: the card: 'Clef is a 27B multimodal model…'; Cloudflare changelog '27B'.",
    "checked": [
     "https://huggingface.co/api/models/cloudflare/clef",
     "https://developers.cloudflare.com/changelog/post/2026-10-01-clef-workers-ai/",
     "https://developers.cloudflare.com/workers-ai/models/clef/"
    ],
    "read": "2026-11-09",
-   "note": "Model card and Cloudflare changelog ('@cf/cloudflare/clef 27B') say 27B; HF safetensors total for cloudflare/clef is 27356728560 (sha cfddda043dd190ef3b01cff449d5ee8cff1e8ec6). Card figure chosen per rule. Maker: Cloudflare."
+   "note": "Checkpoint total of the maker's released repo at the pinned revision (logic #3508 rule, Main #3506; Zeki #3529: component scope shown). Same figure as logic's model_sizes.json where it has the model. Revision: the repo's current one (the run's revision is not recorded).",
+   "terms": "backbone 27.36B incl. its vision encoder + joint head 128.1M; card: 27B"
   },
   "Cygnet (Gemma 4 12B)": {
    "total_b": 11.95,
@@ -120,46 +123,49 @@
    "note": "Kept at the maker card's 11.95B at the recipe's pinned revision 707f0a3b (Zeki #3510); recipe https://github.com/blockbrain-ai/cygnet-recipe. Not an E-series model, no effective figure."
   },
   "Decider Flash v1.2": {
-   "total_b": 4,
+   "total_b": 4.54,
    "active_b": null,
    "effective_b": null,
    "moe": false,
-   "source": "https://docs.perplexity.ai/changelog",
-   "quote": "`pplx-decider-flash-v1.2` is a new 4B decision model at \\$0.01 per million input tokens.",
+   "source": "https://huggingface.co/perplexity-ai/pplx-decider-flash-v1.2/tree/9ff7cf9838e59df461c276b7699d56b244d2af58",
+   "quote": "perplexity-ai/pplx-decider-flash-v1.2 @ 9ff7cf9838e59df461c276b7699d56b244d2af58: backbone 4,539,265,536 logical parameters (model.safetensors.index.json shards, language model and vision encoder; Hugging Face's safetensors total) + decision head 652,800 (readout.safetensors, its header's tensor shapes) = 4,539,918,336. Maker's text: changelog: '`pplx-decider-flash-v1.2` is a new 4B decision model at \\$0.01 per million input tokens.'",
    "checked": [
     "https://huggingface.co/perplexity-ai/pplx-decider-flash-v1.2",
     "https://huggingface.co/api/models/perplexity-ai/pplx-decider-flash-v1.2"
    ],
    "read": "2026-11-09",
-   "note": "Maker's own stated figure (changelog) used over Hugging Face's exact safetensors total for perplexity-ai/pplx-decider-flash-v1.2 @ 9ff7cf98: 4,539,265,536. Model card states no count. Dense."
+   "note": "Checkpoint total of the maker's released repo at the pinned revision (logic #3508 rule, Main #3506; Zeki #3529: component scope shown). Same figure as logic's model_sizes.json where it has the model.",
+   "terms": "backbone 4.54B incl. its vision encoder + decision head 0.7M; changelog: 4B"
   },
   "Decider v1.1 27B": {
    "total_b": 26.09,
    "active_b": null,
    "effective_b": null,
    "moe": false,
-   "source": "https://huggingface.co/api/models/perplexity-ai/pplx-decider-v1.1-27b",
-   "quote": "safetensors: {\"parameters\": {\"BF16\": 26085330160}, \"total\": 26085330160} (sha 14c9d90137962d300f3de95633f7b6535e80c5ce)",
+   "source": "https://huggingface.co/perplexity-ai/pplx-decider-v1.1-27b/tree/14c9d90137962d300f3de95633f7b6535e80c5ce",
+   "quote": "perplexity-ai/pplx-decider-v1.1-27b @ 14c9d90137962d300f3de95633f7b6535e80c5ce: backbone 26,085,330,160 logical parameters (model.safetensors.index.json shards, language model and vision encoder, 333 vision tensors in the index; Hugging Face's safetensors total) + decision head 1,305,600 (readout.safetensors, its header's tensor shapes) = 26,086,635,760. Maker's text: the card states no count.",
    "checked": [
     "https://huggingface.co/perplexity-ai/pplx-decider-v1.1-27b",
     "https://docs.perplexity.ai/changelog"
    ],
    "read": "2026-11-09",
-   "note": "Model card states no explicit count (only the name '27b' and backbone Qwen3.8-27B); the figure is the safetensors total HF shows for Perplexity's own repo. Dense."
+   "note": "Checkpoint total of the maker's released repo at the pinned revision (logic #3508 rule, Main #3506; Zeki #3529: component scope shown). Same figure as logic's model_sizes.json where it has the model.",
+   "terms": "backbone 26.09B incl. its vision encoder + decision head 1.3M"
   },
   "Decider v1.2 27B": {
-   "total_b": 27,
+   "total_b": 26.09,
    "active_b": null,
    "effective_b": null,
    "moe": false,
-   "source": "https://docs.perplexity.ai/changelog",
-   "quote": "`pplx-decider-v1.2` replaces `pplx-decider-v1.1-27b` as the 27B decision model, at \\$0.02 per million input tokens.",
+   "source": "https://huggingface.co/perplexity-ai/pplx-decider-v1.2/tree/cce0f3f80033e9d89d80831d5281fd72124aacce",
+   "quote": "perplexity-ai/pplx-decider-v1.2 @ cce0f3f80033e9d89d80831d5281fd72124aacce (same counts at 225c913ddc8761a8264f04f64548e1f97e443eb3): backbone 26,085,330,160 logical parameters (model.safetensors.index.json shards, language model and vision encoder; Hugging Face's safetensors total) + decision head 1,305,600 (readout.safetensors, its header's tensor shapes) = 26,086,635,760. Maker's text: changelog: '`pplx-decider-v1.2` replaces `pplx-decider-v1.1-27b` as the 27B decision model'.",
    "checked": [
     "https://huggingface.co/perplexity-ai/pplx-decider-v1.2",
     "https://huggingface.co/api/models/perplexity-ai/pplx-decider-v1.2"
    ],
    "read": "2026-11-09",
-   "note": "Maker's own stated figure (changelog) used over Hugging Face's exact safetensors total for perplexity-ai/pplx-decider-v1.2 @ cce0f3f8: 26,085,330,160. Model card text states no count. Dense."
+   "note": "Checkpoint total of the maker's released repo at the pinned revision (logic #3508 rule, Main #3506; Zeki #3529: component scope shown). Same figure as logic's model_sizes.json where it has the model.",
+   "terms": "backbone 26.09B incl. its vision encoder + decision head 1.3M; changelog: 27B"
   },
   "DeepSeek V4.1 Flash": {
    "total_b": null,
@@ -191,18 +197,19 @@
    "note": "Not filled from the V4.1-Flash card (lineage). HF safetensors total 763,205,315,794 is identical to V4.1-Flash's and inflated by packed FP4 (I8) storage, so not a parameter count. If Main accepts 'minor update' as same architecture, V4.1-Flash's 552B / 8B-16B applies."
   },
   "Drex 2.0": {
-   "total_b": 35,
+   "total_b": 35.11,
    "active_b": 3,
    "effective_b": null,
    "moe": true,
-   "source": "https://huggingface.co/nace-ai/drex-v2.0/blob/e646674476744e3826caf62b834054151e2aba51/README.md",
-   "quote": "mixture-of-experts ... 40 layers, 256 experts and 8 active per token: 35B parameters in total, about 3B active per token",
+   "source": "https://huggingface.co/nace-ai/drex-v2.0/tree/e646674476744e3826caf62b834054151e2aba51",
+   "quote": "nace-ai/drex-v2.0 @ e646674476744e3826caf62b834054151e2aba51, model.safetensors.index.json (16 shards; 'total_parameters': 35,107,181,936, = Hugging Face's safetensors total, BF16); the vision tower is 333 tensors in model-00016-of-00016.safetensors, 446,571,248 logical parameters from that shard's header (drex2-vision.txt). Maker's text: 'mixture-of-experts ... 40 layers, 256 experts and 8 active per token: 35B parameters in total, about 3B active per token'; the card says the vision tower is dropped on load (text use).",
    "checked": [
     "https://huggingface.co/api/models/nace-ai/drex-v2.0",
     "https://console.nace.ai/docs/drex/reference/models"
    ],
    "read": "2026-11-09",
-   "note": "Active is 'about 3B' on the card; Nace docs: 'drex-v2.0 is a mixture of experts with 3B active parameters'. HF safetensors total at pinned sha e6466744: 35,107,181,936 (includes the vision tower, which the card says is dropped on load). Applies to both hosted and local rows."
+   "note": "Released-checkpoint count at the stated revision, scope written out (logic #3550, turkce #3552, Zeki #3574): the checkpoint total incl. the vision tower, which the card says is dropped on load (text use); not a verified count of the model as loaded in our hosted or local runs. 3B active from the card. Applies to the hosted and local rows.",
+   "terms": "35.11B incl. a vision tower the card says is dropped on load; card: 35B; 3B active"
   },
   "Drex Max 1.1": {
    "total_b": null,
@@ -221,17 +228,18 @@
    "note": "Not inferred from Drex Max v1 (27B)."
   },
   "Drex Max v1": {
-   "total_b": 27,
+   "total_b": 26.09,
    "active_b": null,
    "effective_b": null,
    "moe": false,
-   "source": "https://huggingface.co/nace-ai/drex-max-v1/blob/cac65e1982a0237e996419ba559004522d9a33ac/README.md",
-   "quote": "Drex Max is a dense 27B-parameter model with a 255-way readout head",
+   "source": "https://huggingface.co/nace-ai/drex-max-v1/tree/cac65e1982a0237e996419ba559004522d9a33ac",
+   "quote": "nace-ai/drex-max-v1 @ cac65e1982a0237e996419ba559004522d9a33ac: backbone 26,085,330,160 logical parameters (model.safetensors.index.json shards, language model and vision encoder; Hugging Face's safetensors total) + decision head 1,305,600 (readout.safetensors, its header's tensor shapes) = 26,086,635,760. Maker's text: the card: 'a dense 27B-parameter model'.",
    "checked": [
     "https://huggingface.co/api/models/nace-ai/drex-max-v1/revision/cac65e19"
    ],
    "read": "2026-11-09",
-   "note": "Card says 27B; HF safetensors total at pinned sha cac65e19 is 26,085,330,160 (BF16, ~26.1B). Disagreement recorded; card figure used per rule. Repo main has moved on (sha 81cb1111), same safetensors total."
+   "note": "Checkpoint total of the maker's released repo at the pinned revision (logic #3508 rule, Main #3506; Zeki #3529: component scope shown). Same figure as logic's model_sizes.json where it has the model.",
+   "terms": "backbone 26.09B incl. its vision encoder + decision head 1.3M; card: 27B"
   },
   "Fastino GLiDE": {
    "total_b": null,
@@ -253,14 +261,15 @@
    "active_b": null,
    "effective_b": null,
    "moe": false,
-   "source": "https://huggingface.co/api/models/fastino/GLiDE/revision/a7e45896",
-   "quote": "safetensors: {\"parameters\": {\"BF16\": 26085330160}, \"total\": 26085330160} (repo now redirects to fastino/GLiDE-27B; sha a7e45896be7c96ba3354891da790c5ec99c30b6c)",
+   "source": "https://huggingface.co/fastino/GLiDE-27B/tree/a7e45896be7c96ba3354891da790c5ec99c30b6c",
+   "quote": "fastino/GLiDE (now fastino/GLiDE-27B) @ a7e45896be7c96ba3354891da790c5ec99c30b6c: backbone 26,085,330,160 logical parameters (model.safetensors.index.json shards, language model in 5 shards and vision encoder model-visual.safetensors 460,730,096, both in the index; Hugging Face's safetensors total) + decision head 1,305,600 (readout.safetensors, its header's tensor shapes) = 26,086,635,760. Maker's text: the card states no count; Fastino's blog: '27B-class'.",
    "checked": [
     "https://huggingface.co/fastino/GLiDE/blob/a7e45896/README.md",
     "https://fastino.ai/blog/training-glide-sota-decision-model"
    ],
    "read": "2026-11-09",
-   "note": "Model card text states no count; Fastino blog says only '27B-class'. HF-shown safetensors total for the maker's own repo at the pin used."
+   "note": "Checkpoint total of the maker's released repo at the pinned revision (logic #3508 rule, Main #3506; Zeki #3529: component scope shown). Same figure as logic's model_sizes.json where it has the model.",
+   "terms": "backbone 26.09B incl. its vision encoder + decision head 1.3M"
   },
   "GLM-5.3": {
    "total_b": 753.33,
@@ -365,17 +374,18 @@
    "note": ""
   },
   "Gemma 4 31B": {
-   "total_b": 30.7,
+   "total_b": 31.27,
    "active_b": null,
    "effective_b": null,
    "moe": false,
-   "source": "https://huggingface.co/google/gemma-4-31B-it",
-   "quote": "| **Total Parameters** | ... | 11.95B | 30.7B |  (column '31B Dense')",
+   "source": "https://huggingface.co/google/gemma-4-31B-it/tree/842da3794eaa0b77d5f08bae87a17459d91ff475",
+   "quote": "google/gemma-4-31B-it @ 842da3794eaa0b77d5f08bae87a17459d91ff475, model.safetensors.index.json shards: 31,273,088,876 logical parameters, BF16 (Hugging Face's safetensors total; language model and vision encoder). Maker's text: the card's table gives 30.7B plus a vision encoder.",
    "checked": [
     "https://huggingface.co/api/models/google/gemma-4-31B-it"
    ],
    "read": "2026-11-09",
-   "note": "Dense. Card says 30.7B; HF safetensors total for the repo is 31,273,088,876 (includes ~550M vision encoder). Chose the card figure per rule."
+   "note": "Checkpoint total (#3508 rule); same as logic's model_sizes.json. Revision: the repo's current one (the run's revision is not recorded).",
+   "terms": "31.27B incl. its vision encoder"
   },
   "Grok 4.7": {
    "total_b": null,
@@ -435,18 +445,18 @@
    "note": "Open weights, MoE (repo sha d9e99b0792a5e93b78ea9bea62a68167e36ddd9e). HF safetensors total shows 2,780,110,363,392 but 2.72T of that is U8-packed MXFP4 storage, so it is not a true param count; card figure 2.8T used. Card also states vision encoder ~401M separately."
   },
   "LFM2.5-24B-A2B": {
-   "total_b": 24,
+   "total_b": 23.97,
    "active_b": 2.45,
    "effective_b": null,
    "moe": true,
-   "source": "https://huggingface.co/LiquidAI/LFM2.5-24B-A2B",
-   "quote": "- **Total parameters**: 24.0B  - **Active parameters**: 2.45B",
+   "source": "https://huggingface.co/LiquidAI/LFM2.5-24B-A2B/tree/3dc4cd09c9a2a99e1e819693e79d3aba5e9bb4f2",
+   "quote": "LiquidAI/LFM2.5-24B-A2B @ 3dc4cd09c9a2a99e1e819693e79d3aba5e9bb4f2, model.safetensors.index.json shards: BF16 23,971,585,280 logical parameters (Hugging Face's safetensors total; plus F32 2,432 buffer elements, not counted). Maker's text (card): 24B total, 2.45B active.",
    "checked": [
     "https://www.liquid.ai/blog/lfm2-5-24b-a2b",
     "https://huggingface.co/api/models/LiquidAI/LFM2.5-24B-A2B"
    ],
    "read": "2026-11-09",
-   "note": "Card intro and blog say '24B-parameter ... with only 2B active'; spec list says 24.0B / 2.45B — used the precise spec figures. HF safetensors total 23,971,587,712 (BF16 23,971,585,280 + F32 2,432)."
+   "note": "Checkpoint total (#3508 rule; backgammon only); active 2.45B from the card (a checkpoint has no active count). Revision: the repo's current one."
   },
   "Liquid d1-ultra": {
    "total_b": null,
@@ -478,17 +488,18 @@
    "note": ""
   },
   "Open-Jev 27B v1.1": {
-   "total_b": null,
+   "total_b": 27.8,
    "active_b": null,
    "effective_b": null,
    "moe": false,
-   "source": "https://huggingface.co/ZefanCai/Open-Jev-27B-v1.1",
-   "quote": "A trained LoRA adapter and scalar decision head for the text backbone of Qwen/Qwen3.8-27B ... It contains 15,471,617 trained parameters; upstream base-model weights are obtained separately.",
+   "source": "https://huggingface.co/ZefanCai/Open-Jev-27B-v1.1/tree/28cf73067d5b337860bbef3c85b8b82ba8730956",
+   "quote": "ZefanCai/Open-Jev-27B-v1.1 @ 28cf73067d5b337860bbef3c85b8b82ba8730956: release-manifest.json (sha256 19a4f2ad3eb48e3b6335519549baac279fa95af82dca21bb892aa033ebf0a1f5, the same bytes as the local checkout's copy) gives artifact_type 'qwen_lora_adapter_plus_scalar_decision_head', base_model 'Qwen/Qwen3.8-27B', base_revision '1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0', base_weights_included false; package/checkpoint/adapter/adapter_model.safetensors (sha256 1c857224bd3609c6a71eacf7f71dd021115fcc0f791936b1fc332e915b548a81, 61,907,944 bytes) and package/checkpoint/head.pt (sha256 76e382f122abfa4e0c467d860a8d142d2fb6d2a98dc0ef9e19870bfc6eb296b4, 22,221 bytes). Card: 'A trained LoRA adapter and scalar decision head for the text backbone of Qwen/Qwen3.8-27B ... It contains 15,471,617 trained parameters; upstream base-model weights are obtained separately.' Base: Qwen/Qwen3.8-27B @ 1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0, 27,781,427,952 logical parameters (Hugging Face's safetensors total for the whole released checkpoint, incl. its vision encoder). Release composition: 27,781,427,952 + 15,471,617 = 27,796,899,569.",
    "checked": [
     "https://huggingface.co/api/models/ZefanCai/Open-Jev-27B-v1.1"
    ],
    "read": "2026-11-09",
-   "note": "Maker: Zefan Cai (HF ZefanCai, github Zefan-Cai/Open-Jev; sha 28cf73067d5b337860bbef3c85b8b82ba8730956). Card states only the adapter+head count (15,471,617 trainable); it gives no total for the combined model and HF shows no safetensors total. Total would require base-model lineage (Qwen3.8-27B), which is not allowed, so null."
+   "note": "Released composition at the stated revisions, scope written out (logic #3550, turkce #3552, Zeki #3574): the repo holds only the adapter and head; the total is the base the release manifest pins plus the adapter and head. The base revision comes from the release manifest (the local Open-Jev checkout's scripts/download_models.py downloads the same revision), not from our league run's record, which does not name it. Same as logic's 27.80B.",
+   "terms": "27.80B: Qwen3.8-27B base 27.78B + adapter and head 15.47M (the repo holds only the adapter and head)"
   },
   "Qwen3.8 Flash": {
    "total_b": null,
@@ -504,32 +515,34 @@
    "note": "Closed API model. Not the open-weight Qwen3.8-Flash-Next; its numbers not used."
   },
   "Qwen3.8-27B": {
-   "total_b": 27,
+   "total_b": 27.78,
    "active_b": null,
    "effective_b": null,
    "moe": false,
-   "source": "https://huggingface.co/Qwen/Qwen3.8-27B",
-   "quote": "- Number of Parameters: 27B",
+   "source": "https://huggingface.co/Qwen/Qwen3.8-27B/tree/37561816e66b5b9153b1b64c10968c18c1e6f4a0",
+   "quote": "Qwen/Qwen3.8-27B @ 37561816e66b5b9153b1b64c10968c18c1e6f4a0, model.safetensors.index.json shards: 27,781,427,952 logical parameters, BF16 (Hugging Face's safetensors total; language model and vision encoder). Maker's text: 'Number of Parameters: 27B'.",
    "checked": [
     "https://huggingface.co/api/models/Qwen/Qwen3.8-27B"
    ],
    "read": "2026-11-09",
-   "note": "Card says 27B; HF safetensors total 27,781,427,952 (BF16, likely includes vision tower). Chose card figure."
+   "note": "Checkpoint total (#3508 rule); same as logic's model_sizes.json. Revision: the repo's current one (the run's revision is not recorded).",
+   "terms": "27.78B incl. its vision encoder; card: 27B"
   },
   "REAX 1.3": {
-   "total_b": null,
+   "total_b": 57.36,
    "active_b": null,
    "effective_b": null,
    "moe": false,
-   "source": null,
-   "quote": "Card at fa4bf7ee describes a two-part blend (Part G: Gemma-line 31B-derived fine-tunes; Part Q: Qwen3.5-27B-lineage fine-tunes), weights 'about 115 GB', but states no parameter count; HF shows no safetensors total for the repo.",
+   "source": "https://huggingface.co/decisionmodels/REAX-1.3/tree/fa4bf7ee3bb56a8bc421dad090631be1c5845c2d",
+   "quote": "decisionmodels/REAX-1.3 @ fa4bf7ee3bb56a8bc421dad090631be1c5845c2d, the two parts of the blend: part-g, 13 shards model-000NN-of-00013.safetensors, 31,273,088,876 logical parameters (BF16; summed from each shard's header, scripts/st_header_count.py, reax-headers.txt); part-q, 11 shards, 26,085,330,160 (its model.safetensors.index.json 'total_parameters') + part-q/readout.safetensors 1,305,600 (F32, header) = 57,359,724,636. Weights stored in BF16 (served in FP8 on our GPU); no scale tensors counted. Maker's text: the card describes the two parts but states no count.",
    "checked": [
     "https://huggingface.co/decisionmodels/REAX-1.3/blob/fa4bf7ee3bb56a8bc421dad090631be1c5845c2d/README.md",
     "https://huggingface.co/api/models/decisionmodels/REAX-1.3",
     "https://huggingface.co/decisionmodels/REAX-1.3/blob/fa4bf7ee3bb56a8bc421dad090631be1c5845c2d/engine/reax13.json"
    ],
    "read": "2026-11-09",
-   "note": "Component sizes in names (31B/27B) are lineage, not a stated total for REAX; not summed."
+   "note": "Checkpoint total of the maker's released repo at the pinned revision (#3508 rule), component scope shown; same as logic's model_sizes.json 'REAX 1.3' 57.36B, verified here from the shard headers.",
+   "terms": "part G 31.27B + part Q 26.09B (each incl. its vision encoder) + decision head 1.3M"
   },
   "SubQ Snap 1.1": {
    "total_b": null,
@@ -561,17 +574,17 @@
    "note": "Closed API."
   },
   "Winnow-12B": {
-   "total_b": null,
+   "total_b": 11.91,
    "active_b": null,
    "effective_b": null,
    "moe": false,
-   "source": "https://huggingface.co/EldanRing/Winnow-12B",
-   "quote": "Card (EldanRing, repo @ 0b5b7f98e718cf0faffd0acea3093b86ebf00b56) states no parameter count; only that it is a merged rank-32 LoRA fine-tune of Gemma 4 12B IT and GGUF sizes (Q8_0 12.67 GB, BF16 23.83 GB).",
+   "source": "https://huggingface.co/EldanRing/Winnow-12B/blob/0b5b7f98e718cf0faffd0acea3093b86ebf00b56/gguf/Winnow-12B-Q8_0.gguf",
+   "quote": "EldanRing/Winnow-12B @ 0b5b7f98e718cf0faffd0acea3093b86ebf00b56, gguf/Winnow-12B-Q8_0.gguf (LFS sha256 b710efc4c0d048ee61eed92c5fef5ce323a4d17e7c51f9f0533cc72ae50818ea, the file the winnow-inference repo pins at d4631fb, logic #3534): 667 tensors, text model only (mmproj-Winnow-12B.gguf and the assistant GGUF not counted); from the GGUF header's tensor shapes: 11,907,350,320 logical parameters (token_embd 1,006,632,960 + blocks 10,900,713,520 + output_norm 3,840), excluding the 256-element rope_freqs buffer (all tensor elements: 11,907,350,576); shapes, not Q8_0 storage blocks or scales. Counted here (scripts/gguf_count.py) from the maker's file at that revision (header read) and from the local copy (same sha256). Maker's text: no count.",
    "checked": [
     "https://huggingface.co/api/models/EldanRing/Winnow-12B?expand[]=gguf"
    ],
    "read": "2026-11-09",
-   "note": "GGUF repo, no safetensors total. HF's gguf total (422,857,220, architecture gemma4-assistant) is for the MTP assistant file, not Winnow. Base Gemma 4 12B's 11.95B not used (lineage)."
+   "note": "Checkpoint total (#3508 rule); same as logic's model_sizes.json 'Winnow-12B' (logic #3534 receipt)."
   }
  }
 }

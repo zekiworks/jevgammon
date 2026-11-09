@@ -1,0 +1,755 @@
+diff --git a/tools/site/assets/bg.js b/tools/site/assets/bg.js
+index b5b115d..43b9843 100644
+--- a/tools/site/assets/bg.js
++++ b/tools/site/assets/bg.js
+@@ -552,20 +552,25 @@ async function savePng(panel, svg, title, lines, filename) {
+   }));
+ })();
+ 
+-/* Home page: the leaderboard's own filter (Ümit #2907): All, Chat models or Decision models, local to the table (the
+-   page's filters never change it). A row of the other type and its other-settings rows go out of view (class hl-off),
+-   whatever their expander says; the programs stay in every view; the ranks are the ranks among all models. */
++/* Home page: the leaderboard's own filter (Ümit #2907): All, Chat models, Decision models or Small models (Ümit #3465:
++   rows marked data-hl-small, the model's disclosed total parameters at most story's threshold), local to the table
++   (the page's filters never change it). A row out of the view and its other-settings rows go out of view (class
++   hl-off), whatever their expander says; the programs stay in every view; the ranks are the ranks among all models;
++   the Small models key shows its definition under the keys. */
+ (function headlineFilter() {
+   const table = document.getElementById('headline-table');
+   const keys = [...document.querySelectorAll('[data-hl-filter]')];
++  const note = document.querySelector('.hl-small-note');
+   if (!table || !keys.length) return;
+   keys.forEach(k => k.addEventListener('click', () => {
+     const type = k.dataset.hlFilter;
+     keys.forEach(x => x.setAttribute('aria-pressed', String(x === k)));
+     table.querySelectorAll('tbody tr[data-hl-type]').forEach(tr => {
+       const t = tr.dataset.hlType;
+-      tr.classList.toggle('hl-off', type !== 'all' && t !== 'program' && t !== type);
++      const out = type === 'small' ? tr.dataset.hlSmall !== 'yes' : t !== type;
++      tr.classList.toggle('hl-off', type !== 'all' && t !== 'program' && out);
+     });
++    if (note) note.hidden = type !== 'small';
+     table.dispatchEvent(new CustomEvent('hl-filter'));
+   }));
+ })();
+diff --git a/tools/site/content/model_params.json b/tools/site/content/model_params.json
+new file mode 100644
+index 0000000..4a6a589
+--- /dev/null
++++ b/tools/site/content/model_params.json
+@@ -0,0 +1,574 @@
++{
++ "about": "Parameter counts of the leaderboard's models (Ümit #3465), only as each model's maker documents them: the maker's model card, its Hugging Face repository (card text, config.json, or the safetensors total Hugging Face shows for the maker's own repo, used only where the maker states no figure in text) or its official announcement/docs; the maker's stated figure is used where it and the repository total differ (both in note). total_b, active_b (a mixture of experts; moe true) and effective_b in billions of parameters as shown (an exact repository total rounded to two decimals, the exact count in quote); total_b null = the maker discloses no count (the URLs checked in checked). Never an estimate, a figure from the model's name, its base model or a third party. Read 2026-11-09.",
++ "models": {
++  "Base Labs Elephant-1": {
++   "total_b": 9,
++   "active_b": null,
++   "effective_b": null,
++   "moe": false,
++   "source": "https://huggingface.co/baselabs/elephant-1/blob/b3f8a93462fb1051a9de031e94a7ff380e254072/README.md",
++   "quote": "elephant-1 is a 9B parameter **decision model** post-trained from Qwen3.5-9B",
++   "checked": [
++    "https://huggingface.co/api/models/baselabs/elephant-1"
++   ],
++   "read": "2026-11-09",
++   "note": "Dense. HF safetensors total at the pinned sha b3f8a934: 9,409,813,744 (BF16); card's rounded 9B used."
++  },
++  "Base Labs Mammoth-1": {
++   "total_b": 27,
++   "active_b": null,
++   "effective_b": null,
++   "moe": false,
++   "source": "https://huggingface.co/baselabs/mammoth-1/blob/61cec44c281c693992e3d6ebeb44dd3402dfa186/README.md",
++   "quote": "mammoth-1 is a 27B parameter **decision model** post-trained from Qwen3.5-27B",
++   "checked": [
++    "https://huggingface.co/api/models/baselabs/mammoth-1"
++   ],
++   "read": "2026-11-09",
++   "note": "Dense. HF safetensors total for the maker's repo at the pinned sha 61cec44c: 27,356,728,560 (BF16); card's rounded 27B used."
++  },
++  "Celeris-1 Decision": {
++   "total_b": null,
++   "active_b": null,
++   "effective_b": null,
++   "moe": false,
++   "source": "https://celeris.ai/celeris-1-decision",
++   "quote": "Launch post gives benchmarks, latency, price; no parameter count",
++   "checked": [
++    "https://celeris.ai/celeris-1-decision"
++   ],
++   "read": "2026-11-09",
++   "note": "Closed API."
++  },
++  "Claude Fable 5.1": {
++   "total_b": null,
++   "active_b": null,
++   "effective_b": null,
++   "moe": false,
++   "source": "https://www.anthropic.com/claude-fable-and-mythos-5-1",
++   "quote": "Searched the launch post, the API model docs page and the system/model card for 'parameter', 'billion', 'trillion' and figures like 'NB'/'NT'. No explicit parameter count was found (all cards fetched as full text unless noted).",
++   "checked": [
++    "https://www.anthropic.com/claude-fable-and-mythos-5-1",
++    "https://docs.claude.com/en/docs/about-claude/models/overview",
++    "https://www.anthropic.com/system-cards",
++    "https://assets.claude.com/0339e6a7c5c7b87f5c07798616dc32c215d14235.pdf"
++   ],
++   "read": "2026-11-09",
++   "note": "System card PDF (Fable 5.1 / Mythos 5.1) searched in full text."
++  },
++  "Claude Opus 5.5": {
++   "total_b": null,
++   "active_b": null,
++   "effective_b": null,
++   "moe": false,
++   "source": "https://www.anthropic.com/claude-opus-5-5",
++   "quote": "Searched the launch post, the API model docs page and the system/model card for 'parameter', 'billion', 'trillion' and figures like 'NB'/'NT'. No explicit parameter count was found (all cards fetched as full text unless noted).",
++   "checked": [
++    "https://www.anthropic.com/claude-opus-5-5",
++    "https://docs.claude.com/en/docs/about-claude/models/overview",
++    "https://www.anthropic.com/system-cards",
++    "https://assets.claude.com/fc1b44717c85dc068bc6ba5024219938094694bd.pdf"
++   ],
++   "read": "2026-11-09",
++   "note": "System card PDF searched in full text."
++  },
++  "Claude Sonnet 5.5": {
++   "total_b": null,
++   "active_b": null,
++   "effective_b": null,
++   "moe": false,
++   "source": "https://www.anthropic.com/claude-sonnet-5-5",
++   "quote": "Searched the launch post, the API model docs page and the system/model card for 'parameter', 'billion', 'trillion' and figures like 'NB'/'NT'. No explicit parameter count was found (all cards fetched as full text unless noted).",
++   "checked": [
++    "https://www.anthropic.com/claude-sonnet-5-5",
++    "https://docs.claude.com/en/docs/about-claude/models/overview",
++    "https://www.anthropic.com/system-cards",
++    "https://assets.claude.com/870c8f525702625d2c62fc6dd04c857e3250bec1.pdf"
++   ],
++   "read": "2026-11-09",
++   "note": "System card PDF searched in full text."
++  },
++  "Clef": {
++   "total_b": 27,
++   "active_b": null,
++   "effective_b": null,
++   "moe": false,
++   "source": "https://huggingface.co/cloudflare/clef",
++   "quote": "Clef is a 27B multimodal model that turns a state and a schema of typed questions into decisions",
++   "checked": [
++    "https://huggingface.co/api/models/cloudflare/clef",
++    "https://developers.cloudflare.com/changelog/post/2026-10-01-clef-workers-ai/",
++    "https://developers.cloudflare.com/workers-ai/models/clef/"
++   ],
++   "read": "2026-11-09",
++   "note": "Model card and Cloudflare changelog ('@cf/cloudflare/clef 27B') say 27B; HF safetensors total for cloudflare/clef is 27356728560 (sha cfddda043dd190ef3b01cff449d5ee8cff1e8ec6). Card figure chosen per rule. Maker: Cloudflare."
++  },
++  "Cygnet (Gemma 4 12B)": {
++   "total_b": 11.95,
++   "active_b": null,
++   "effective_b": null,
++   "moe": false,
++   "source": "https://huggingface.co/google/gemma-4-12B-it",
++   "quote": "| **Total Parameters** | ... | 11.95B | 30.7B |  (column '12B Unified')",
++   "checked": [
++    "https://raw.githubusercontent.com/blockbrain-ai/cygnet-recipe/main/README.md",
++    "https://huggingface.co/api/models/google/gemma-4-12B-it"
++   ],
++   "read": "2026-11-09",
++   "note": "Cygnet is blockbrain-ai's recipe (github.com/blockbrain-ai/cygnet-recipe): Google's gemma-4-12B-it, 'no fine-tuning', served by vLLM at --revision 707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7; so the weights' maker card is Google's. Figure read from the current main card, not the pinned revision. Not an E-series model, no effective figure. HF safetensors total 11,959,730,224 agrees."
++  },
++  "Decider Flash v1.2": {
++   "total_b": 4,
++   "active_b": null,
++   "effective_b": null,
++   "moe": false,
++   "source": "https://docs.perplexity.ai/changelog",
++   "quote": "`pplx-decider-flash-v1.2` is a new 4B decision model at \\$0.01 per million input tokens.",
++   "checked": [
++    "https://huggingface.co/perplexity-ai/pplx-decider-flash-v1.2",
++    "https://huggingface.co/api/models/perplexity-ai/pplx-decider-flash-v1.2"
++   ],
++   "read": "2026-11-09",
++   "note": "Maker's own stated figure (changelog) used over Hugging Face's exact safetensors total for perplexity-ai/pplx-decider-flash-v1.2 @ 9ff7cf98: 4,539,265,536. Model card states no count. Dense."
++  },
++  "Decider v1.1 27B": {
++   "total_b": 26.09,
++   "active_b": null,
++   "effective_b": null,
++   "moe": false,
++   "source": "https://huggingface.co/api/models/perplexity-ai/pplx-decider-v1.1-27b",
++   "quote": "safetensors: {\"parameters\": {\"BF16\": 26085330160}, \"total\": 26085330160} (sha 14c9d90137962d300f3de95633f7b6535e80c5ce)",
++   "checked": [
++    "https://huggingface.co/perplexity-ai/pplx-decider-v1.1-27b",
++    "https://docs.perplexity.ai/changelog"
++   ],
++   "read": "2026-11-09",
++   "note": "Model card states no explicit count (only the name '27b' and backbone Qwen3.8-27B); the figure is the safetensors total HF shows for Perplexity's own repo. Dense."
++  },
++  "Decider v1.2 27B": {
++   "total_b": 27,
++   "active_b": null,
++   "effective_b": null,
++   "moe": false,
++   "source": "https://docs.perplexity.ai/changelog",
++   "quote": "`pplx-decider-v1.2` replaces `pplx-decider-v1.1-27b` as the 27B decision model, at \\$0.02 per million input tokens.",
++   "checked": [
++    "https://huggingface.co/perplexity-ai/pplx-decider-v1.2",
++    "https://huggingface.co/api/models/perplexity-ai/pplx-decider-v1.2"
++   ],
++   "read": "2026-11-09",
++   "note": "Maker's own stated figure (changelog) used over Hugging Face's exact safetensors total for perplexity-ai/pplx-decider-v1.2 @ cce0f3f8: 26,085,330,160. Model card text states no count. Dense."
++  },
++  "DeepSeek V4.1 Flash": {
++   "total_b": 552,
++   "active_b": 16,
++   "effective_b": null,
++   "moe": true,
++   "source": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash",
++   "quote": "a multimodal Mixture-of-Experts (MoE) model with 552B backbone parameters ... activate only **8B parameters per token during prefill** and **16B during decode**",
++   "checked": [
++    "https://huggingface.co/api/models/deepseek-ai/DeepSeek-V4.1-Flash",
++    "https://www.alibabacloud.com/help/en/model-studio/newly-released-models"
++   ],
++   "read": "2026-11-09",
++   "note": "Card table: '# Backbone Params 552B', '# Activated Params 8B / 16B' (prefill/decode); active recorded as the 16B decode figure. Card also lists 'Engram conditional memory (196B parameters, sparsely accessed)' separately from the 552B backbone; total kept at the card's stated 552B. HF safetensors total 763,205,315,794 is not used: it counts packed FP4 experts stored as I8 (557.2B I8 elements), not parameters."
++  },
++  "DeepSeek V4.1 Flash 1017": {
++   "total_b": null,
++   "active_b": null,
++   "effective_b": null,
++   "moe": false,
++   "source": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash-1017",
++   "quote": "Card states only: 'DeepSeek-V4.1-Flash-1017 is a minor update to DeepSeek-V4.1-Flash'; no parameter count on the 1017 card.",
++   "checked": [
++    "https://huggingface.co/api/models/deepseek-ai/DeepSeek-V4.1-Flash-1017",
++    "https://api-docs.deepseek.com/updates/"
++   ],
++   "read": "2026-11-09",
++   "note": "Not filled from the V4.1-Flash card (lineage). HF safetensors total 763,205,315,794 is identical to V4.1-Flash's and inflated by packed FP4 (I8) storage, so not a parameter count. If Main accepts 'minor update' as same architecture, V4.1-Flash's 552B / 8B-16B applies."
++  },
++  "Drex 2.0": {
++   "total_b": 35,
++   "active_b": 3,
++   "effective_b": null,
++   "moe": true,
++   "source": "https://huggingface.co/nace-ai/drex-v2.0/blob/e646674476744e3826caf62b834054151e2aba51/README.md",
++   "quote": "mixture-of-experts ... 40 layers, 256 experts and 8 active per token: 35B parameters in total, about 3B active per token",
++   "checked": [
++    "https://huggingface.co/api/models/nace-ai/drex-v2.0",
++    "https://console.nace.ai/docs/drex/reference/models"
++   ],
++   "read": "2026-11-09",
++   "note": "Active is 'about 3B' on the card; Nace docs: 'drex-v2.0 is a mixture of experts with 3B active parameters'. HF safetensors total at pinned sha e6466744: 35,107,181,936 (includes the vision tower, which the card says is dropped on load). Applies to both hosted and local rows."
++  },
++  "Drex Max 1.1": {
++   "total_b": null,
++   "active_b": null,
++   "effective_b": null,
++   "moe": false,
++   "source": null,
++   "quote": "Maker's model reference, Drex Max guide and developer page list API id drex-max-v1.1, limits and pricing, but no parameter count; no open weights.",
++   "checked": [
++    "https://console.nace.ai/docs/drex/reference/models",
++    "https://console.nace.ai/docs/drex/guides/drex-max",
++    "https://www.nace.ai/blog/introducing-drex-max",
++    "https://www.nace.ai/developers"
++   ],
++   "read": "2026-11-09",
++   "note": "Not inferred from Drex Max v1 (27B)."
++  },
++  "Drex Max v1": {
++   "total_b": 27,
++   "active_b": null,
++   "effective_b": null,
++   "moe": false,
++   "source": "https://huggingface.co/nace-ai/drex-max-v1/blob/cac65e1982a0237e996419ba559004522d9a33ac/README.md",
++   "quote": "Drex Max is a dense 27B-parameter model with a 255-way readout head",
++   "checked": [
++    "https://huggingface.co/api/models/nace-ai/drex-max-v1/revision/cac65e19"
++   ],
++   "read": "2026-11-09",
++   "note": "Card says 27B; HF safetensors total at pinned sha cac65e19 is 26,085,330,160 (BF16, ~26.1B). Disagreement recorded; card figure used per rule. Repo main has moved on (sha 81cb1111), same safetensors total."
++  },
++  "Fastino GLiDE": {
++   "total_b": null,
++   "active_b": null,
++   "effective_b": null,
++   "moe": false,
++   "source": null,
++   "quote": "Hosted API (responses name glide_v2); the launch post and v1.2 post give no parameter count for the hosted model; the v1.2 post only says post-trained from 'an open weight 27B-class hybrid language model'.",
++   "checked": [
++    "https://fastino.ai/blog/introducing-glide-the-first-thinking-decision-model",
++    "https://fastino.ai/blog/training-glide-sota-decision-model",
++    "https://huggingface.co/api/models/fastino/GLiDE"
++   ],
++   "read": "2026-11-09",
++   "note": "Hosted glide_v2 is not documented as the same checkpoint as the HF fastino/GLiDE weights, so the HF safetensors total is not applied."
++  },
++  "Fastino GLiDE v1.2": {
++   "total_b": 26.09,
++   "active_b": null,
++   "effective_b": null,
++   "moe": false,
++   "source": "https://huggingface.co/api/models/fastino/GLiDE/revision/a7e45896",
++   "quote": "safetensors: {\"parameters\": {\"BF16\": 26085330160}, \"total\": 26085330160} (repo now redirects to fastino/GLiDE-27B; sha a7e45896be7c96ba3354891da790c5ec99c30b6c)",
++   "checked": [
++    "https://huggingface.co/fastino/GLiDE/blob/a7e45896/README.md",
++    "https://fastino.ai/blog/training-glide-sota-decision-model"
++   ],
++   "read": "2026-11-09",
++   "note": "Model card text states no count; Fastino blog says only '27B-class'. HF-shown safetensors total for the maker's own repo at the pin used."
++  },
++  "GLM-5.3": {
++   "total_b": 753.33,
++   "active_b": null,
++   "effective_b": null,
++   "moe": true,
++   "source": "https://huggingface.co/api/models/zai-org/GLM-5.3",
++   "quote": "safetensors.total: 753329940480 (BF16 2,103,729,152 + F8_E4M3 751,226,191,872 + F32 19,456), maker's own repo zai-org/GLM-5.3 @ ba32f8c19c8738e2c57c71798c601d477a7bf844",
++   "checked": [
++    "https://huggingface.co/zai-org/GLM-5.3",
++    "https://z.ai/blog/glm-5.3",
++    "https://docs.z.ai/guides/llm/glm-5.3",
++    "https://huggingface.co/zai-org/GLM-5.3/raw/main/config.json"
++   ],
++   "read": "2026-11-09",
++   "note": "Neither the model card, blog nor docs state a parameter count (blog: 'uses the same base model as GLM-5.2'). Total is the HF safetensors figure; active not stated anywhere checked (MoE active unknown). Repo may include MTP layers in the count. Mixture of experts per the maker's Hugging Face config.json (architectures: GlmMoeDsaForCausalLM; first_k_dense_replace 3), so shown as total with active not disclosed."
++  },
++  "GPT-6 Astra": {
++   "total_b": null,
++   "active_b": null,
++   "effective_b": null,
++   "moe": false,
++   "source": "https://openai.com/index/gpt-6-astra/",
++   "quote": "Searched the launch post, the API model docs page and the system/model card for 'parameter', 'billion', 'trillion' and figures like 'NB'/'NT'. No explicit parameter count was found (all cards fetched as full text unless noted).",
++   "checked": [
++    "https://openai.com/index/gpt-6-astra/",
++    "https://developers.openai.com/api/docs/models/gpt-6-astra",
++    "https://platform.openai.com/docs/models/gpt-6-astra",
++    "https://deploymentsafety.openai.com/gpt-6-astra",
++    "https://openai.com/index/gpt-6-astra-system-card/"
++   ],
++   "read": "2026-11-09",
++   "note": "Closed API model; system card not checked separately. openai.com system-card URL returned HTTP 403 (Cloudflare); the same card on deploymentsafety.openai.com was read instead."
++  },
++  "GPT-6 Luna": {
++   "total_b": null,
++   "active_b": null,
++   "effective_b": null,
++   "moe": false,
++   "source": "https://openai.com/index/introducing-gpt-6-sol-and-luna/",
++   "quote": "Searched the launch post, the API model docs page and the system/model card for 'parameter', 'billion', 'trillion' and figures like 'NB'/'NT'. No explicit parameter count was found (all cards fetched as full text unless noted).",
++   "checked": [
++    "https://openai.com/index/introducing-gpt-6-sol-and-luna/",
++    "https://openai.com/index/gpt-6-astra/",
++    "https://developers.openai.com/api/docs/models/gpt-6-luna",
++    "https://platform.openai.com/docs/models/gpt-6-luna",
++    "https://openai.com/index/gpt-6-sol-and-luna-system-card/",
++    "https://deploymentsafety.openai.com/gpt-6-sol-and-luna",
++    "https://deploymentsafety.openai.com/gpt-6-luna"
++   ],
++   "read": "2026-11-09",
++   "note": "Only 'billions' appears, referring to requests, not parameters. No Luna system card was found: the two openai.com and deploymentsafety guesses returned 403 or failed to fetch. The model docs and the launch post state no count."
++  },
++  "GPT-6.1 Sol": {
++   "total_b": null,
++   "active_b": null,
++   "effective_b": null,
++   "moe": false,
++   "source": "https://openai.com/index/introducing-gpt-6-1-sol/",
++   "quote": "Searched the launch post, the API model docs page and the system/model card for 'parameter', 'billion', 'trillion' and figures like 'NB'/'NT'. No explicit parameter count was found (all cards fetched as full text unless noted).",
++   "checked": [
++    "https://openai.com/index/introducing-gpt-6-1-sol/",
++    "https://openai.com/index/gpt-6-astra/",
++    "https://developers.openai.com/api/docs/models/gpt-6.1-sol",
++    "https://platform.openai.com/docs/models/gpt-6.1-sol",
++    "https://deploymentsafety.openai.com/gpt-6-1-sol",
++    "https://openai.com/index/gpt-6-1-sol-system-card/"
++   ],
++   "read": "2026-11-09",
++   "note": "openai.com system-card URL returned HTTP 403; card read on deploymentsafety.openai.com."
++  },
++  "Gemini 3.8 Flash": {
++   "total_b": null,
++   "active_b": null,
++   "effective_b": null,
++   "moe": false,
++   "source": "https://blog.google/innovation-and-ai/models-and-research/gemini-models/3-8-flash-and-3-8-flash-cyber/",
++   "quote": "Searched the launch post, the API model docs page and the system/model card for 'parameter', 'billion', 'trillion' and figures like 'NB'/'NT'. No explicit parameter count was found (all cards fetched as full text unless noted).",
++   "checked": [
++    "https://blog.google/innovation-and-ai/models-and-research/gemini-models/3-8-flash-and-3-8-flash-cyber/",
++    "https://ai.google.dev/gemini-api/docs/models",
++    "https://deepmind.google/models/model-cards/",
++    "https://deepmind.google/models/model-cards/gemini-3-8-flash/"
++   ],
++   "read": "2026-11-09",
++   "note": ""
++  },
++  "Gemini 4 Argon": {
++   "total_b": null,
++   "active_b": null,
++   "effective_b": null,
++   "moe": false,
++   "source": "https://blog.google/innovation-and-ai/technology/developers-tools/build-with-gemini-4-argon/",
++   "quote": "Searched the launch post, the API model docs page and the system/model card for 'parameter', 'billion', 'trillion' and figures like 'NB'/'NT'. No explicit parameter count was found (all cards fetched as full text unless noted).",
++   "checked": [
++    "https://blog.google/innovation-and-ai/technology/developers-tools/build-with-gemini-4-argon/",
++    "https://ai.google.dev/gemini-api/docs/models",
++    "https://deepmind.google/models/model-cards/",
++    "https://deepmind.google/models/model-cards/gemini-4-argon/"
++   ],
++   "read": "2026-11-09",
++   "note": ""
++  },
++  "Gemma 4 31B": {
++   "total_b": 30.7,
++   "active_b": null,
++   "effective_b": null,
++   "moe": false,
++   "source": "https://huggingface.co/google/gemma-4-31B-it",
++   "quote": "| **Total Parameters** | ... | 11.95B | 30.7B |  (column '31B Dense')",
++   "checked": [
++    "https://huggingface.co/api/models/google/gemma-4-31B-it"
++   ],
++   "read": "2026-11-09",
++   "note": "Dense. Card says 30.7B; HF safetensors total for the repo is 31,273,088,876 (includes ~550M vision encoder). Chose the card figure per rule."
++  },
++  "Grok 4.7": {
++   "total_b": null,
++   "active_b": null,
++   "effective_b": null,
++   "moe": false,
++   "source": "https://x.ai/news/grok-4-7",
++   "quote": "Searched the launch post, the API model docs page and the system/model card for 'parameter', 'billion', 'trillion' and figures like 'NB'/'NT'. No explicit parameter count was found (all cards fetched as full text unless noted).",
++   "checked": [
++    "https://x.ai/news/grok-4-7",
++    "https://docs.x.ai/docs/models",
++    "https://docs.x.ai/docs/models/grok-4.7",
++    "https://x.ai/news"
++   ],
++   "read": "2026-11-09",
++   "note": "x.ai/news mentions Grok-1's 314B, not Grok 4.7."
++  },
++  "Jev 1.13.0": {
++   "total_b": null,
++   "active_b": null,
++   "effective_b": null,
++   "moe": false,
++   "source": "https://docs.typesafe.ai/models",
++   "quote": "Models page lists model ID jev-1.13.0, price, context; no parameter count",
++   "checked": [
++    "https://docs.typesafe.ai/models",
++    "https://typesafe.ai/blog/jev-1-14"
++   ],
++   "read": "2026-11-09",
++   "note": "Closed API; TypeSafe states no size."
++  },
++  "Jev 1.14.0": {
++   "total_b": null,
++   "active_b": null,
++   "effective_b": null,
++   "moe": false,
++   "source": "https://docs.typesafe.ai/models",
++   "quote": "Models page lists model ID jev-1.14.0, price, context, release; no parameter count; launch blog has no count either",
++   "checked": [
++    "https://docs.typesafe.ai/models",
++    "https://typesafe.ai/blog/jev-1-14"
++   ],
++   "read": "2026-11-09",
++   "note": "Closed API; TypeSafe states no size."
++  },
++  "Kimi K3.1 Pro": {
++   "total_b": 2800,
++   "active_b": 104,
++   "effective_b": null,
++   "moe": true,
++   "source": "https://huggingface.co/moonshotai/Kimi-K3.1-Pro/blob/main/README.md",
++   "quote": "Total Parameters | 2.8T ; Activated Parameters | 104B",
++   "checked": [
++    "https://huggingface.co/api/models/moonshotai/Kimi-K3.1-Pro"
++   ],
++   "read": "2026-11-09",
++   "note": "Open weights, MoE (repo sha d9e99b0792a5e93b78ea9bea62a68167e36ddd9e). HF safetensors total shows 2,780,110,363,392 but 2.72T of that is U8-packed MXFP4 storage, so it is not a true param count; card figure 2.8T used. Card also states vision encoder ~401M separately."
++  },
++  "LFM2.5-24B-A2B": {
++   "total_b": 24,
++   "active_b": 2.45,
++   "effective_b": null,
++   "moe": true,
++   "source": "https://huggingface.co/LiquidAI/LFM2.5-24B-A2B",
++   "quote": "- **Total parameters**: 24.0B  - **Active parameters**: 2.45B",
++   "checked": [
++    "https://www.liquid.ai/blog/lfm2-5-24b-a2b",
++    "https://huggingface.co/api/models/LiquidAI/LFM2.5-24B-A2B"
++   ],
++   "read": "2026-11-09",
++   "note": "Card intro and blog say '24B-parameter ... with only 2B active'; spec list says 24.0B / 2.45B — used the precise spec figures. HF safetensors total 23,971,587,712 (BF16 23,971,585,280 + F32 2,432)."
++  },
++  "Liquid d1-ultra": {
++   "total_b": null,
++   "active_b": null,
++   "effective_b": null,
++   "moe": false,
++   "source": "https://www.liquid.ai/blog/d1-ultra",
++   "quote": "Launch post ('Today, we release d1-ultra, our new multimodal decision model') states no parameter count.",
++   "checked": [
++    "https://www.liquid.ai/models",
++    "https://huggingface.co/LiquidAI/d1-ultra (401, not public)"
++   ],
++   "read": "2026-11-09",
++   "note": "API-only decision model."
++  },
++  "Mercury Decide": {
++   "total_b": null,
++   "active_b": null,
++   "effective_b": null,
++   "moe": false,
++   "source": null,
++   "quote": "Inception's decisions docs, models page and Mercury 3 post describe the API (model id mercury-decide) but give no parameter count.",
++   "checked": [
++    "https://docs.inceptionlabs.ai/capabilities/decisions",
++    "https://www.inceptionlabs.ai/models",
++    "https://www.inceptionlabs.ai/blog/introducing-mercury-3"
++   ],
++   "read": "2026-11-09",
++   "note": ""
++  },
++  "Open-Jev 27B v1.1": {
++   "total_b": null,
++   "active_b": null,
++   "effective_b": null,
++   "moe": false,
++   "source": "https://huggingface.co/ZefanCai/Open-Jev-27B-v1.1",
++   "quote": "A trained LoRA adapter and scalar decision head for the text backbone of Qwen/Qwen3.8-27B ... It contains 15,471,617 trained parameters; upstream base-model weights are obtained separately.",
++   "checked": [
++    "https://huggingface.co/api/models/ZefanCai/Open-Jev-27B-v1.1"
++   ],
++   "read": "2026-11-09",
++   "note": "Maker: Zefan Cai (HF ZefanCai, github Zefan-Cai/Open-Jev; sha 28cf73067d5b337860bbef3c85b8b82ba8730956). Card states only the adapter+head count (15,471,617 trainable); it gives no total for the combined model and HF shows no safetensors total. Total would require base-model lineage (Qwen3.8-27B), which is not allowed, so null."
++  },
++  "Qwen3.8 Flash": {
++   "total_b": null,
++   "active_b": null,
++   "effective_b": null,
++   "moe": false,
++   "source": "https://www.alibabacloud.com/help/en/model-studio/newly-released-models",
++   "quote": "qwen3.8-flash entries (2026-08-26 etc.) describe 'a multimodal model from the Qwen family ... million-token context window' with no parameter count.",
++   "checked": [
++    "https://www.alibabacloud.com/help/en/model-studio/models"
++   ],
++   "read": "2026-11-09",
++   "note": "Closed API model. Not the open-weight Qwen3.8-Flash-Next; its numbers not used."
++  },
++  "Qwen3.8-27B": {
++   "total_b": 27,
++   "active_b": null,
++   "effective_b": null,
++   "moe": false,
++   "source": "https://huggingface.co/Qwen/Qwen3.8-27B",
++   "quote": "- Number of Parameters: 27B",
++   "checked": [
++    "https://huggingface.co/api/models/Qwen/Qwen3.8-27B"
++   ],
++   "read": "2026-11-09",
++   "note": "Card says 27B; HF safetensors total 27,781,427,952 (BF16, likely includes vision tower). Chose card figure."
++  },
++  "REAX 1.3": {
++   "total_b": null,
++   "active_b": null,
++   "effective_b": null,
++   "moe": false,
++   "source": null,
++   "quote": "Card at fa4bf7ee describes a two-part blend (Part G: Gemma-line 31B-derived fine-tunes; Part Q: Qwen3.5-27B-lineage fine-tunes), weights 'about 115 GB', but states no parameter count; HF shows no safetensors total for the repo.",
++   "checked": [
++    "https://huggingface.co/decisionmodels/REAX-1.3/blob/fa4bf7ee3bb56a8bc421dad090631be1c5845c2d/README.md",
++    "https://huggingface.co/api/models/decisionmodels/REAX-1.3",
++    "https://huggingface.co/decisionmodels/REAX-1.3/blob/fa4bf7ee3bb56a8bc421dad090631be1c5845c2d/engine/reax13.json"
++   ],
++   "read": "2026-11-09",
++   "note": "Component sizes in names (31B/27B) are lineage, not a stated total for REAX; not summed."
++  },
++  "SubQ Snap 1.1": {
++   "total_b": null,
++   "active_b": null,
++   "effective_b": null,
++   "moe": false,
++   "source": "https://subq.ai/subq-snap-1-1",
++   "quote": "Announcement covers training, calibration, benchmarks; no parameter count",
++   "checked": [
++    "https://subq.ai/subq-snap-1-1",
++    "https://docs.subq.ai/using-the-api/models/",
++    "https://docs.subq.ai/endpoints/decisions-api/"
++   ],
++   "read": "2026-11-09",
++   "note": "Closed API."
++  },
++  "SubQ Snap Preview": {
++   "total_b": null,
++   "active_b": null,
++   "effective_b": null,
++   "moe": false,
++   "source": "https://subq.ai/introducing-subq-snap",
++   "quote": "Launch post gives benchmarks, price ($0.05/M input), Public Preview status; no parameter count",
++   "checked": [
++    "https://subq.ai/introducing-subq-snap",
++    "https://docs.subq.ai/using-the-api/models/"
++   ],
++   "read": "2026-11-09",
++   "note": "Closed API."
++  },
++  "Winnow-12B": {
++   "total_b": null,
++   "active_b": null,
++   "effective_b": null,
++   "moe": false,
++   "source": "https://huggingface.co/EldanRing/Winnow-12B",
++   "quote": "Card (EldanRing, repo @ 0b5b7f98e718cf0faffd0acea3093b86ebf00b56) states no parameter count; only that it is a merged rank-32 LoRA fine-tune of Gemma 4 12B IT and GGUF sizes (Q8_0 12.67 GB, BF16 23.83 GB).",
++   "checked": [
++    "https://huggingface.co/api/models/EldanRing/Winnow-12B?expand[]=gguf"
++   ],
++   "read": "2026-11-09",
++   "note": "GGUF repo, no safetensors total. HF's gguf total (422,857,220, architecture gemma4-assistant) is for the MTP assistant file, not Winnow. Base Gemma 4 12B's 11.95B not used (lineage)."
++  }
++ }
++}
+diff --git a/tools/site/pages.py b/tools/site/pages.py
+index 8445dd1..912b7a0 100644
+--- a/tools/site/pages.py
++++ b/tools/site/pages.py
+@@ -1051,6 +1051,44 @@ def phases_page(S) -> str:
+ 
+ # --- Models -------------------------------------------------------------------------------------------------
+ 
++# Parameter counts (Ümit #3465): only as the maker documents them (content/model_params.json: total, active for a
++# mixture of experts, effective where the maker gives one, in billions as shown, the source URL and read date); never
++# an estimate.
++PARAMS = json.loads((CONTENT_DIR / "model_params.json").read_text())["models"]
++# The leaderboard's Small models key (story.headline): disclosed total parameters in billions (a mixture of experts by
++# its total) at most this; 15B on all three sites (Ümit #3475).
++SMALL_MAX_B = 15
++
++
++def billions(b: float) -> str:
++    """A count in billions as shown: 31 -> '31B', 30.7 -> '30.7B', 2800 -> '2.8T'."""
++    return f"{b / 1000:g}T" if b >= 1000 else f"{b:g}B"
++
++
++def params_html(model: str) -> str:
++    """The box's parameter count: '31B', '24B total / 2.45B active', '753.33B total; active not disclosed by maker' (a
++    mixture of experts whose maker gives no active count), '4B effective (8B total)', a disclosed count linked to its
++    source (as the box's Released month is); else 'not disclosed by maker'. A model the file does not list: KeyError."""
++    p = PARAMS[model]
++    total = p["total_b"]
++    if total is None:
++        return "not disclosed by maker"
++    if p["effective_b"] is not None:
++        text = f'{billions(p["effective_b"])} effective ({billions(total)} total)'
++    elif p["active_b"] is not None:
++        text = f'{billions(total)} total / {billions(p["active_b"])} active'
++    elif p["moe"]:
++        text = f'{billions(total)} total; active not disclosed by maker'
++    else:
++        text = billions(total)
++    return f'<a href="{esc(p["source"])}">{esc(text)}</a>'
++
++
++def is_small(model: str) -> bool:
++    """Disclosed total parameters (a mixture of experts by its total) at most SMALL_MAX_B billion."""
++    return PARAMS[model]["total_b"] is not None and PARAMS[model]["total_b"] <= SMALL_MAX_B
++
++
+ B7 = [("model_id", "Model ID"), ("provider", "Provider or endpoint"), ("date_run", "Date run"), ("price", "Price"),
+       ("model_type", "Model type"), ("weights", "Weights"), ("runs_on", "Runs on"), ("reasoning", "Reasoning setting"),
+       ("confidence_source", "Confidence source"), ("rules_text", "Rules text"), ("option_groups", "Option groups"),
+diff --git a/tools/site/story.py b/tools/site/story.py
+index 2c347a0..edbdbf5 100644
+--- a/tools/site/story.py
++++ b/tools/site/story.py
+@@ -61,8 +61,11 @@ def about_text(S, rel: str) -> str:
+                 f'{count(n_models)} models).</p>' if missing else "")
+     return ('<p><strong>A fixed table:</strong> the filters on the Leagues page do not change it. Tap a model (or '
+             'point at it) for its details and its decisions.</p>'
+-            '<p># is the rank among all models, in every view of the table\'s All · Chat models · Decision models '
+-            'filter; the programs are reference rows in every view.</p>'
++            '<p># is the rank among all models, in every view of the table\'s All · Chat models · Decision models · '
++            'Small models filter; the programs are reference rows in every view.</p>'
++            f'<p>{esc(SMALL_NOTE)} Parameters (in a row\'s details): the count its maker documents (model card, '
++            'Hugging Face repository or announcement), linked; a mixture of experts as total / active; "not disclosed '
++            'by maker" where the maker gives none.</p>'
+             f'<p>{esc(NOTE)}</p><p>{esc(RULE)}</p>'
+             '<p>Each model\'s row is its highest reasoning setting played, by the effort the requests sent (off &lt; '
+             'minimal &lt; low &lt; medium &lt; high &lt; xhigh &lt; max; on above off for a model without levels; a '
+@@ -272,6 +275,7 @@ def details_box(S, x, kind: str, bid: str, extra: list, ref: str | None = None)
+          if e and e["status"] == P.PROVISIONAL else None),
+         (esc(P.SUBQ_SELF) if e and x["name"] == P.SUBQ_11 else None),
+         join([cost_text(S, x), f'{count(q["decisions"])} decisions' if q else None]),
++        (f'Parameters: {P.params_html(x["model"])}' if kind != "program" else None),
+         *extra,
+         join([f'<a href="{href}">{"Its late-entry page" if e else "Open its decisions"} \u2192</a>' if href else None,
+               f'<a href="{page}">Model page</a>' if page else None])]
+@@ -285,10 +289,12 @@ def name_link(S, x, text, bid) -> str:
+             f'<span class="model-name" tabindex="0" aria-describedby="{bid}">{esc(text)}</span>')
+ 
+ 
+-def tr_attrs(S, x, kind, typ) -> str:
++def tr_attrs(S, x, kind, typ, small: bool = False) -> str:
++    """small: the row's model is in the Small models view (its other-settings rows go with it)."""
++    hl = f' data-hl-type="{typ}"' + (' data-hl-small="yes"' if small else "")
+     if x["late"]:
+-        return f' data-dataset="{LATE_ENTRY}" data-setup="{esc(x["late"]["slug"])}" data-kind="late" data-hl-type="{typ}"'
+-    return H.attrs(S, x["ds"], H.slug_name(x["name"]), kind == "program") + f' data-hl-type="{typ}"'
++        return f' data-dataset="{LATE_ENTRY}" data-setup="{esc(x["late"]["slug"])}" data-kind="late"{hl}'
++    return H.attrs(S, x["ds"], H.slug_name(x["name"]), kind == "program") + hl
+ 
+ 
+ def headline_rows(S) -> tuple[list, list, list]:
+@@ -306,6 +312,7 @@ def headline_rows(S) -> tuple[list, list, list]:
+             dot = f'<i class="swatch hl-dot" style="background:{colour}" title="{esc(mk)}"></i>' if colour else \
+                 '<i class="swatch hl-dot swatch-program"></i>'
+             typ = "program" if kind == "program" else model_type(S, x)
++            small = kind == "model" and P.is_small(x["model"])
+             # Nothing under the name (Ümit #3039); after it one small grey chip (Ümit #3193): setting · type, a late
+             # entry's tag in it (a caveat on its rank); the maker only in the dot and the box.
+             tag = f'<span class="hl-tag">{esc(chip_text(S, x, kind))}</span>'
+@@ -329,7 +336,7 @@ def headline_rows(S) -> tuple[list, list, list]:
+             cls = ' class="reference"' if kind == "program" else ""
+             label = x["name"] if kind == "program" else name
+             bid = f"{rid}-box"
+-            body.append(f'<tr{cls}{tr_attrs(S, x, kind, typ)} data-box="{bid}">{rank}<td class="model">{dot}{icon}'
++            body.append(f'<tr{cls}{tr_attrs(S, x, kind, typ, small)} data-box="{bid}">{rank}<td class="model">{dot}{icon}'
+                         f'{name_link(S, x, row_name(label, x["setting"]), bid)}{tag}{more}'
+                         f'{details_box(S, x, kind, bid, extra, ref)}</td>{judgement_cell(x["r"], colour)}{wide_cells(x)}</tr>')
+             for sid, y in zip(sub_ids, others):
+@@ -337,7 +344,7 @@ def headline_rows(S) -> tuple[list, list, list]:
+                 ybid = f"{sid}-box"
+                 ytag = f'<span class="hl-tag">{esc(chip_text(S, y, kind, league=True))}</span>'
+                 body.append(f'<tr class="hl-sub{"" if kind == "model" else " reference"}" '
+-                            f'id="{sid}" hidden{tr_attrs(S, y, kind, typ)} data-box="{ybid}"><td class="num"></td><td class="model">'
++                            f'id="{sid}" hidden{tr_attrs(S, y, kind, typ, small)} data-box="{ybid}"><td class="num"></td><td class="model">'
+                             f'{name_link(S, y, row_name(y["name"], y["setting"]), ybid)}{ytag}'
+                             f'{details_box(S, y, kind, ybid, [], ref)}</td>{judgement_cell(y["r"], ycol)}{wide_cells(y)}</tr>')
+             if kind != "program" or x["name"] == "GNUbg weak":
+@@ -400,6 +407,8 @@ def too_safe(S, chart: list) -> str:
+ # About (about_text).
+ MEANING = "Risk judgement: 100 = every call right, 50 = always safe; higher is better."
+ ROW_LINE = "One row per model at its highest reasoning setting, never its best score; late entries included."
++SMALL_NOTE = (f"Small models: {P.billions(P.SMALL_MAX_B)} parameters or fewer (total), as disclosed by the maker; models "
++              "with undisclosed size are not included.")
+ 
+ 
+ def headline(S) -> str:
+@@ -414,10 +423,12 @@ def headline(S) -> str:
+             'data-headline-view="model" aria-pressed="true">One row per model</button><button type="button" '
+             'class="key" data-headline-view="all" aria-pressed="false">All setups</button></span>')
+     # The table's own filter (Ümit #2907): local to this table, never the page's filters; programs stay in every view.
++    # Small models (Ümit #3465, #3475): the rows whose model's disclosed total parameters are at most P.SMALL_MAX_B.
+     types = ('<div class="keys hl-filter needs-js" role="group" aria-label="Model type">'
+              + "".join(f'<button type="button" class="key" data-hl-filter="{k}" aria-pressed="{str(k == "all").lower()}">'
+-                       f'{l}</button>' for k, l in (("all", "All"), ("chat", "Chat models"), ("decision", "Decision models")))
+-             + '</div>')
++                       f'{l}</button>' for k, l in (("all", "All"), ("chat", "Chat models"), ("decision", "Decision models"),
++                                                    ("small", "Small models")))
++             + f'</div><p class="table-note hl-small-note" hidden>{esc(SMALL_NOTE)}</p>')
+     return (f'<section class="card headline" id="leaderboard" data-dataset="all" aria-labelledby="leaderboard-title">'
+             f'<div class="chart-head"><h2 id="leaderboard-title">Risk calls leaderboard</h2>{keys}'
+             f'<p class="chart-sub">{esc(MEANING)}</p></div>'

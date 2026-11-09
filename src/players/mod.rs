@@ -213,6 +213,10 @@ pub struct PlayerConfig {
     /// once (no retry), so the run can pause without spending the shared quota.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub quota_pause: bool,
+    /// "Did they improve?" (decision models): the per-request context gate (see
+    /// `decision::ContextGate`); required with a `prompt_note`/`prompt_note_file`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub context_gate: Option<decision::ContextGate>,
 }
 
 impl PlayerConfig {
@@ -527,13 +531,25 @@ impl Player {
             backend,
         };
         if let Some(service) = decision::service(provider) {
+            // The notes/examples block goes at the start of `state` (`input`), never into a
+            // system prompt; the client re-reads `prompt_note_file` before every request.
+            let extras = decision::Extras {
+                prompt_note: config.prompt_note.clone(),
+                prompt_note_file: config.prompt_note_file.clone(),
+                context_gate: config.context_gate.clone(),
+                expect_route: config.expect_route.clone(),
+            };
             return Ok(player(Backend::Decision(decision::DecisionClient::new(
                 http,
                 service,
                 model,
                 config.base_url.as_deref(),
                 budget,
+                extras,
             )?)));
+        }
+        if config.context_gate.is_some() {
+            bail!("{}: context_gate applies to decision services only", config.name);
         }
         let backend = match provider.to_ascii_lowercase().as_str() {
             "random" if model.is_none() => {

@@ -2,10 +2,13 @@
 //! OpenAI's Decisions API. The legal plays become the options of one `choice` question, in
 //! the seeded option order, and the service returns its probability for each.
 
+use std::path::PathBuf;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
-use anyhow::{Result, bail};
+use anyhow::{Context as _, Result, bail};
+use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value, json};
 
 use super::prompt::{instructions, option_text, state};
@@ -359,6 +362,76 @@ impl Service {
             _ => |_| false,
         }
     }
+
+    /// Routes that can never carry a notes/examples block: Clef cuts the state's tail silently
+    /// (`state_ids[: max_length - fixed_length]`), Open-Jev limits each candidate prompt to
+    /// 4,096 tokens. A player with a block on them fails at start.
+    fn takes_blocks(&self) -> bool {
+        !matches!(self.provider, "clef" | "open-jev")
+    }
+
+    /// Hosted (keyed) services: their gate must be ours (`ContextGate::Client`).
+    fn hosted(&self) -> bool {
+        self.key_required
+    }
+}
+
+/// "Did they improve?" (decision models): the per-request context gate, checked before every
+/// request is sent. On failure (or the service's own refusal) the player stops: nothing is
+/// shortened and resent.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+pub enum ContextGate {
+    /// Hosted routes: our conservative context guard (a heuristic policy, not proof that the
+    /// whole input is read). Upper bound = request body bytes counted as tokens + the
+    /// documented wrapper allowance (`wrapper_tokens`; undocumented: 4,096) + `output_tokens`;
+    /// refused when above `limit_tokens`. No documented limit: every request is refused (fails
+    /// closed).
+    Client {
+        limit_tokens: Option<u64>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        wrapper_tokens: Option<u64>,
+        #[serde(default)]
+        output_tokens: u64,
+    },
+    /// Local routes: the server's own pre-inference gate refuses an over-limit request (400 or
+    /// 422) before the model runs; that refusal stops the player.
+    Server,
+}
+
+impl ContextGate {
+    /// `Ok` when a request of `body_bytes` may be sent, else why not.
+    pub fn admits(&self, body_bytes: usize) -> std::result::Result<(), String> {
+        let ContextGate::Client {
+            limit_tokens,
+            wrapper_tokens,
+            output_tokens,
+        } = self
+        else {
+            return Ok(());
+        };
+        let Some(limit) = limit_tokens else {
+            return Err("the route has no documented limit (fails closed)".into());
+        };
+        let wrapper = wrapper_tokens.unwrap_or(TEMPLATE_MARGIN as u64);
+        let bound = body_bytes as u64 + wrapper + output_tokens;
+        if bound > *limit {
+            return Err(format!(
+                "conservative context guard: upper bound {bound} tokens ({body_bytes} request \
+                 bytes + {wrapper} wrapper + {output_tokens} output) > documented limit {limit}"
+            ));
+        }
+        Ok(())
+    }
+}
+
+/// The "Did they improve?" settings of a decision player (all `None` in the leagues).
+#[derive(Clone, Debug, Default)]
+pub struct Extras {
+    pub prompt_note: Option<String>,
+    pub prompt_note_file: Option<PathBuf>,
+    pub context_gate: Option<ContextGate>,
+    pub expect_route: Option<super::llm::ExpectRoute>,
 }
 
 pub struct DecisionClient {
@@ -370,19 +443,25 @@ pub struct DecisionClient {
     url: String,
     /// Hard spending cap: every attempt reserves its worst case before it is sent.
     budget: Option<Arc<Ledger>>,
+    extras: Extras,
+    /// Set by a failed context gate, a context refusal or a failed route check: no further
+    /// request is sent.
+    stopped: AtomicBool,
 }
 
 impl DecisionClient {
     /// `model` overrides the service's default; it is ignored by services without a
     /// `model` field. `base_url` (a player config's) overrides the service's URL and its
     /// environment variable. `budget` meters every request attempt. Fails when a required
-    /// API key is missing.
+    /// API key is missing, or when a block (`prompt_note`/`prompt_note_file`) is set on a
+    /// route that cannot carry one or without a context gate fit for the route.
     pub fn new(
         http: reqwest::Client,
         service: &'static Service,
         model: Option<String>,
         base_url: Option<&str>,
         budget: Option<Arc<Ledger>>,
+        extras: Extras,
     ) -> Result<Self> {
         let key = service
             .key_vars
@@ -395,6 +474,7 @@ impl DecisionClient {
                 service.key_vars.join(" or ")
             );
         }
+        check_extras(service, &extras)?;
         let base = match base_url {
             Some(url) => url.to_owned(),
             None => std::env::var(service.url_var).unwrap_or_else(|_| service.base_url.into()),
@@ -408,6 +488,8 @@ impl DecisionClient {
                 .map(|default| model.unwrap_or_else(|| default.to_owned())),
             url: format!("{}{}", base.trim_end_matches('/'), service.path),
             budget,
+            extras,
+            stopped: AtomicBool::new(false),
         })
     }
 
@@ -463,6 +545,23 @@ impl DecisionClient {
     /// without readable usage, an error status the service does not document as unbilled
     /// (`Service::unbilled`), and an attempt without a response keep the worst case.
     async fn send(&self, body: &Value, retry: &RetryTime) -> Result<String> {
+        if self.stopped.load(Ordering::SeqCst) {
+            bail!(
+                "STOPPED: an earlier request of {} failed a context gate or the route check; no \
+                 further request is sent",
+                self.service.label
+            );
+        }
+        let bytes = body.to_string().len();
+        if let Some(gate) = &self.extras.context_gate
+            && let Err(reason) = gate.admits(bytes)
+        {
+            self.stopped.store(true, Ordering::SeqCst);
+            bail!(
+                "CONTEXT GATE: {} request refused before sending: {reason}",
+                self.service.label
+            );
+        }
         let make = || {
             let request = self.http.post(&self.url).json(body);
             match &self.key {
@@ -470,18 +569,31 @@ impl DecisionClient {
                 None => request,
             }
         };
+        let guard = http::Guard {
+            stop: Some(&self.stopped),
+            quota_fatal: false,
+        };
         let failed = |e: http::CallError| {
-            e.into_anyhow()
-                .context(format!("{} request failed", self.service.label))
+            let error = e
+                .into_anyhow()
+                .context(format!("{} request failed", self.service.label));
+            // Under a context gate, the service's own refusal (400/413/422) is the second gate:
+            // the player stops; nothing is shortened and resent.
+            if self.extras.context_gate.is_some() && context_refusal(&error) {
+                self.stopped.store(true, Ordering::SeqCst);
+                return error.context("CONTEXT REFUSAL: the service refused the request");
+            }
+            error
         };
         let Some(ledger) = &self.budget else {
-            return http::send(make, retry, http::Guard::default()).await.map_err(failed);
+            let text = http::send(make, retry, guard).await.map_err(failed)?;
+            return self.check_identity(body, text);
         };
-        let bytes = body.to_string().len();
         let worst = ledger.worst_case(bytes + TEMPLATE_MARGIN, bytes as u64);
-        let (text, hold) = http::send_metered(make, retry, ledger, worst, self.service.unbilled(), http::Guard::default())
-            .await
-            .map_err(failed)?;
+        let (text, hold) =
+            http::send_metered(make, retry, ledger, worst, self.service.unbilled(), guard)
+                .await
+                .map_err(failed)?;
         let value: Option<Value> = serde_json::from_str(&text).ok();
         let tokens = |key: &str| {
             value
@@ -503,7 +615,61 @@ impl DecisionClient {
             }
             None => hold.kept("200 without readable usage: booked at the worst case"),
         }
+        self.check_identity(body, text)
+    }
+
+    /// "Did they improve?": the reply must name a frozen model id (`expect_route`) before it is
+    /// used; a reply that does not (or carries no identity) stops the player and is logged.
+    fn check_identity(&self, body: &Value, text: String) -> Result<String> {
+        let Some(expect) = &self.extras.expect_route else {
+            return Ok(text);
+        };
+        if let Err(reason) = super::llm::route_identity(&text, expect) {
+            self.stopped.store(true, Ordering::SeqCst);
+            let fields = super::llm::identity_fields(&text, expect);
+            if let Some(log) = &expect.reject_log {
+                let line = json!({"at": chrono::Utc::now().to_rfc3339(), "identity": fields,
+                    "reason": reason, "request": body, "response": text});
+                use std::io::Write as _;
+                let written = std::fs::OpenOptions::new()
+                    .create(true)
+                    .append(true)
+                    .open(log)
+                    .and_then(|mut f| writeln!(f, "{line}"));
+                if let Err(error) = written {
+                    eprintln!("route check: rejection log {}: {error}", log.display());
+                }
+            }
+            let shown: String = text.chars().take(1500).collect();
+            bail!("ROUTE CHECK: {reason}; identity {fields}; response: {shown}");
+        }
         Ok(text)
+    }
+
+    /// The notes/examples block for this request: the file's text when it is not empty
+    /// (re-read every request: it changes between games), else `prompt_note`.
+    fn block(&self) -> Result<Option<String>> {
+        if let Some(path) = &self.extras.prompt_note_file {
+            let text = std::fs::read_to_string(path)
+                .with_context(|| format!("prompt_note_file {}", path.display()))?;
+            if !text.trim().is_empty() {
+                return Ok(Some(text));
+            }
+        }
+        Ok(self
+            .extras
+            .prompt_note
+            .clone()
+            .filter(|t| !t.trim().is_empty()))
+    }
+
+    /// The league state with the block, if any, at its start (System One `state`, OpenAI
+    /// `input`), separated by a blank line; the block is never shortened.
+    fn state_with_block(&self, state: &str) -> Result<String> {
+        Ok(match self.block()? {
+            Some(block) => format!("{}\n\n{state}", block.trim_end()),
+            None => state.to_owned(),
+        })
     }
 
     /// `plays`: `(notation, description)`; the notation identifies the option in the answer
@@ -587,7 +753,8 @@ impl DecisionClient {
             .iter()
             .map(|&i| (req.notations[i].clone(), option_text(req, i)))
             .collect();
-        let body = self.body(&state(req), instructions(req), &plays);
+        let state = self.state_with_block(&state(req))?;
+        let body = self.body(&state, instructions(req), &plays);
         let started = Instant::now();
         let retry_before = req.retry.get();
         let text = self.send(&body, req.retry).await?;
@@ -651,6 +818,40 @@ fn refused(error: &anyhow::Error) -> bool {
     })
 }
 
+/// Whether the service refused the request as too long or malformed (400, 413, 422): under a
+/// context gate, the route's documented refusal of an over-limit request.
+fn context_refusal(error: &anyhow::Error) -> bool {
+    error.chain().any(|e| {
+        e.downcast_ref::<http::StatusError>()
+            .is_some_and(|s| matches!(s.status.as_u16(), 400 | 413 | 422))
+    })
+}
+
+/// Start-up checks of a decision player's "Did they improve?" settings: a block needs a route
+/// that can carry one and a context gate; a hosted route's gate must be ours (`Client`).
+pub fn check_extras(service: &Service, extras: &Extras) -> Result<()> {
+    let has_block = extras.prompt_note.is_some() || extras.prompt_note_file.is_some();
+    if has_block && !service.takes_blocks() {
+        bail!(
+            "{}: this route cannot carry a notes/examples block (not tested)",
+            service.label
+        );
+    }
+    if has_block && extras.context_gate.is_none() {
+        bail!(
+            "{}: a decision player with a block needs a context_gate",
+            service.label
+        );
+    }
+    if service.hosted() && extras.context_gate == Some(ContextGate::Server) {
+        bail!(
+            "{}: a hosted route needs our pre-send guard (context_gate kind client)",
+            service.label
+        );
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -666,6 +867,7 @@ mod tests {
             Some("baselabs/mammoth-1".into()),
             Some("http://127.0.0.1:18103/"),
             None,
+            Extras::default(),
         )
         .unwrap();
         assert_eq!(client.url, "http://127.0.0.1:18103/v1/systemone");
@@ -697,6 +899,8 @@ mod tests {
             model: Some(model.to_owned()),
             url: format!("{}{}", base.trim_end_matches('/'), service.path),
             budget: None,
+            extras: Extras::default(),
+            stopped: AtomicBool::new(false),
         }
     }
 
@@ -902,5 +1106,345 @@ mod tests {
         }
         let local = service("drex-max").unwrap().unbilled();
         assert!(!local(reqwest::StatusCode::TOO_MANY_REQUESTS));
+    }
+
+    /// A server answering every request with `status` and `body`, keeping each request body
+    /// whole (read to its content-length); returns its URL and the bodies.
+    fn serve_capture(status: u16, body: String) -> (String, Arc<parking_lot::Mutex<Vec<String>>>) {
+        use std::io::{BufRead, BufReader, Read, Write};
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let url = format!("http://{}", listener.local_addr().unwrap());
+        let bodies = Arc::new(parking_lot::Mutex::new(Vec::new()));
+        let seen = bodies.clone();
+        std::thread::spawn(move || {
+            for stream in listener.incoming() {
+                let mut stream = stream.unwrap();
+                let mut reader = BufReader::new(stream.try_clone().unwrap());
+                let mut length = 0usize;
+                loop {
+                    let mut line = String::new();
+                    reader.read_line(&mut line).unwrap();
+                    if line == "\r\n" || line.is_empty() {
+                        break;
+                    }
+                    if let Some((name, value)) = line.split_once(':')
+                        && name.eq_ignore_ascii_case("content-length")
+                    {
+                        length = value.trim().parse().unwrap();
+                    }
+                }
+                let mut request = vec![0u8; length];
+                reader.read_exact(&mut request).unwrap();
+                seen.lock().push(String::from_utf8(request).unwrap());
+                let _ = write!(
+                    stream,
+                    "HTTP/1.1 {status} X\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{body}",
+                    body.len()
+                );
+            }
+        });
+        (url, bodies)
+    }
+
+    struct Position {
+        board: crate::board::Board,
+        plays: Vec<crate::board::Play>,
+        notations: Vec<String>,
+        order: Vec<usize>,
+        retry: RetryTime,
+    }
+
+    impl Position {
+        fn new() -> Self {
+            let mut board = crate::board::Board::start();
+            board.pts[12] = 3;
+            board.pts[7] = 5;
+            let plays = board.legal_plays(2, 1);
+            let notations = plays.iter().map(|p| p.notation()).collect();
+            let order = (0..plays.len()).collect();
+            Position {
+                board,
+                plays,
+                notations,
+                order,
+                retry: RetryTime::default(),
+            }
+        }
+
+        fn request(&self) -> DecisionRequest<'_> {
+            DecisionRequest {
+                board: &self.board,
+                dice: (2, 1),
+                plays: &self.plays,
+                notations: &self.notations,
+                my_score: 0,
+                opp_score: 0,
+                round: 1,
+                rounds: 3,
+                leg: 1,
+                clock: None,
+                my_clock: None,
+                opp_clock: None,
+                turn_no: 1,
+                max_turns: None,
+                player: 1,
+                history: &[],
+                order: &self.order,
+                seed: 7,
+                version: crate::players::prompt::PromptVersion::BgV2,
+                retry: &self.retry,
+            }
+        }
+    }
+
+    fn gate(limit: Option<u64>) -> ContextGate {
+        ContextGate::Client {
+            limit_tokens: limit,
+            wrapper_tokens: None,
+            output_tokens: 0,
+        }
+    }
+
+    /// A ~60 kB notes block with a marker at each end: nothing in it may be cut.
+    fn long_block() -> String {
+        let mut block = String::from(
+            "=== NOTES FROM YOUR EARLIER GAMES IN THIS SERIES ===\nFIRST-LINE-MARKER\n",
+        );
+        for k in 0..1500 {
+            block.push_str(&format!(
+                "- lesson {k}: keep the blot count low when the opponent has a strong board.\n"
+            ));
+        }
+        block.push_str("LAST-LINE-MARKER\n=== END OF NOTES ===\n");
+        block
+    }
+
+    /// The block (re-read from its file before every request) reaches the start of `state`
+    /// (System One) or `input` (OpenAI) whole; the league state, instructions and every
+    /// option follow byte-identical; the stored exchange is the exact body sent.
+    #[tokio::test]
+    async fn the_block_reaches_the_start_of_state_untruncated_in_both_formats() {
+        let position = Position::new();
+        let req = position.request();
+        let shown: Vec<usize> = (0..position.plays.len().min(5)).collect();
+        let dir = std::env::temp_dir().join(format!("decision-block-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let file = dir.join("note.txt");
+        let block = long_block();
+        for (provider, model, field, response) in [
+            (
+                "drex-max",
+                "drex-max-v1",
+                "/state",
+                json!({"model": "drex-max-v1", "answers": {QUESTION: {"type": "choice", "choice": position.notations[shown[1]]}}}),
+            ),
+            (
+                "openai-decisions",
+                "gpt-6-luna",
+                "/input",
+                json!({"model": "gpt-6-luna", "answers": [{"name": QUESTION, "type": "choice", "choice": position.notations[shown[1]]}]}),
+            ),
+        ] {
+            let (url, bodies) = serve_capture(200, response.to_string());
+            let mut client = client(provider, model, Some(&url), Some("k"));
+            client.extras = Extras {
+                prompt_note: None,
+                prompt_note_file: Some(file.clone()),
+                context_gate: Some(gate(Some(1_000_000))),
+                expect_route: None,
+            };
+            // An empty file: the league request, unchanged.
+            std::fs::write(&file, "").unwrap();
+            let mut decision = Decision::default();
+            assert_eq!(
+                client.choose(&req, &shown, &mut decision).await.unwrap(),
+                Some(shown[1])
+            );
+            // The block written between requests is read for the next one.
+            std::fs::write(&file, &block).unwrap();
+            assert_eq!(
+                client.choose(&req, &shown, &mut decision).await.unwrap(),
+                Some(shown[1])
+            );
+            let sent = bodies.lock().clone();
+            assert_eq!(sent.len(), 2, "{provider}");
+            let plain: Value = serde_json::from_str(&sent[0]).unwrap();
+            let noted: Value = serde_json::from_str(&sent[1]).unwrap();
+            let league = state(&req);
+            assert_eq!(
+                plain.pointer(field).unwrap(),
+                &Value::from(league.clone()),
+                "{provider}"
+            );
+            let expected = format!("{}\n\n{league}", block.trim_end());
+            assert_eq!(
+                noted.pointer(field).unwrap(),
+                &Value::from(expected),
+                "{provider}"
+            );
+            let text = noted.pointer(field).unwrap().as_str().unwrap();
+            assert!(
+                text.starts_with("=== NOTES FROM YOUR EARLIER GAMES")
+                    && text.contains("LAST-LINE-MARKER")
+            );
+            // Everything but the state is the league request's.
+            let strip = |mut v: Value| {
+                v.as_object_mut().unwrap().remove(&field[1..]);
+                v
+            };
+            assert_eq!(strip(plain), strip(noted.clone()), "{provider}");
+            // The stored request is the exact body sent.
+            assert_eq!(decision.exchanges[1].request, sent[1], "{provider}");
+        }
+    }
+
+    /// The pre-send gate: no documented limit refuses (fails closed), an upper bound over the
+    /// limit refuses, and either stops the player; nothing reaches the server.
+    #[tokio::test]
+    async fn the_context_gate_fails_closed_and_stops_the_player() {
+        let position = Position::new();
+        let req = position.request();
+        let shown: Vec<usize> = (0..position.plays.len().min(5)).collect();
+        let ok = json!({"model": "jev-1.14.0", "answers": {QUESTION: {"type": "choice", "choice": position.notations[shown[0]]}}});
+        for limit in [None, Some(4_096 + 100)] {
+            let (url, bodies) = serve_capture(200, ok.to_string());
+            let mut client = client("jev", "jev-1.14.0", Some(&url), Some("k"));
+            client.extras = Extras {
+                prompt_note: Some("=== NOTES ===\nnote\n=== END ===".into()),
+                prompt_note_file: None,
+                context_gate: Some(gate(limit)),
+                expect_route: None,
+            };
+            let error = client
+                .choose(&req, &shown, &mut Decision::default())
+                .await
+                .unwrap_err();
+            assert!(format!("{error:#}").contains("CONTEXT GATE"), "{error:#}");
+            // Stopped: even a request that would fit is not sent.
+            client.extras.context_gate = Some(gate(Some(10_000_000)));
+            let error = client
+                .choose(&req, &shown, &mut Decision::default())
+                .await
+                .unwrap_err();
+            assert!(format!("{error:#}").contains("STOPPED"), "{error:#}");
+            assert!(bodies.lock().is_empty());
+        }
+        // The bound: request bytes as tokens + wrapper (default 4,096) + output.
+        assert!(gate(Some(5_096)).admits(1_000).is_ok());
+        assert!(gate(Some(5_095)).admits(1_000).is_err());
+        let documented = ContextGate::Client {
+            limit_tokens: Some(32_000),
+            wrapper_tokens: Some(100),
+            output_tokens: 10,
+        };
+        assert!(documented.admits(31_890).is_ok() && documented.admits(31_891).is_err());
+        // No empirical token-per-byte ratio is accepted (Zeki #3725).
+        assert!(
+            serde_json::from_str::<ContextGate>(
+                r#"{"kind":"client","limit_tokens":32000,"tokens_per_byte":0.5}"#
+            )
+            .is_err()
+        );
+        assert!(ContextGate::Server.admits(usize::MAX).is_ok());
+        // Config form.
+        let parsed: ContextGate =
+            serde_json::from_str(r#"{"kind":"client","limit_tokens":32000}"#).unwrap();
+        assert_eq!(parsed, gate(Some(32_000)));
+        assert!(serde_json::from_str::<ContextGate>(r#"{"kind":"client","limit":32000}"#).is_err());
+    }
+
+    /// The service's own refusal (422 too long) under a gate stops the player, marked as a
+    /// context refusal; nothing is resent.
+    #[tokio::test]
+    async fn a_context_refusal_stops_the_player() {
+        let position = Position::new();
+        let req = position.request();
+        let shown: Vec<usize> = (0..position.plays.len().min(5)).collect();
+        let (url, bodies) = serve_capture(422, r#"{"error":"request too long"}"#.into());
+        let mut client = client("drex-max", "drex-max-v1", Some(&url), None);
+        client.extras.context_gate = Some(ContextGate::Server);
+        let error = client
+            .choose(&req, &shown, &mut Decision::default())
+            .await
+            .unwrap_err();
+        assert!(
+            format!("{error:#}").contains("CONTEXT REFUSAL"),
+            "{error:#}"
+        );
+        let error = client
+            .choose(&req, &shown, &mut Decision::default())
+            .await
+            .unwrap_err();
+        assert!(format!("{error:#}").contains("STOPPED"), "{error:#}");
+        assert_eq!(bodies.lock().len(), 1);
+    }
+
+    /// A reply naming a model outside the frozen ids stops the player and is logged.
+    #[tokio::test]
+    async fn a_reply_with_another_model_id_stops_the_player() {
+        let position = Position::new();
+        let req = position.request();
+        let shown: Vec<usize> = (0..position.plays.len().min(5)).collect();
+        let reply = json!({"model": "celeris-1.1-decision", "answers": {QUESTION: {"type": "choice", "choice": position.notations[shown[0]]}}});
+        let (url, bodies) = serve_capture(200, reply.to_string());
+        let log =
+            std::env::temp_dir().join(format!("decision-reject-{}.jsonl", uuid::Uuid::new_v4()));
+        let mut client = client("celeris", "celeris-1-decision", Some(&url), Some("k"));
+        client.extras.expect_route = Some(super::super::llm::ExpectRoute {
+            models: vec!["celeris-1-decision".into()],
+            provider: None,
+            model_pointer: None,
+            provider_pointer: None,
+            reject_log: Some(log.clone()),
+            allow_dated: false,
+        });
+        let error = client
+            .choose(&req, &shown, &mut Decision::default())
+            .await
+            .unwrap_err();
+        assert!(format!("{error:#}").contains("ROUTE CHECK"), "{error:#}");
+        assert!(
+            std::fs::read_to_string(&log)
+                .unwrap()
+                .contains("celeris-1.1-decision")
+        );
+        assert!(
+            client
+                .choose(&req, &shown, &mut Decision::default())
+                .await
+                .is_err()
+        );
+        assert_eq!(bodies.lock().len(), 1);
+    }
+
+    #[test]
+    fn a_block_needs_a_route_that_takes_it_and_a_fitting_gate() {
+        let with_block = |gate| Extras {
+            prompt_note: Some("notes".into()),
+            prompt_note_file: None,
+            context_gate: gate,
+            expect_route: None,
+        };
+        let jev = service("jev").unwrap();
+        assert!(check_extras(jev, &with_block(None)).is_err());
+        assert!(check_extras(jev, &with_block(Some(ContextGate::Server))).is_err());
+        assert!(check_extras(jev, &with_block(Some(gate(Some(32_000))))).is_ok());
+        for provider in ["clef", "open-jev"] {
+            assert!(
+                check_extras(
+                    service(provider).unwrap(),
+                    &with_block(Some(ContextGate::Server))
+                )
+                .is_err()
+            );
+        }
+        assert!(
+            check_extras(
+                service("drex-max").unwrap(),
+                &with_block(Some(ContextGate::Server))
+            )
+            .is_ok()
+        );
+        assert!(check_extras(jev, &Extras::default()).is_ok());
     }
 }

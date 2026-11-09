@@ -1,0 +1,5 @@
+owner: jevgammon (agent) for Can
+what: the backgammon benchmark (jevgammon): runner (src/), site (tools/site), experiments (workspace/), mailbox/
+reason: main project; the live site https://zekiworks.github.io/analysis/backgammon/ is built from here by bg-site-preview.timer
+delete when: never without Can
+written: 2026-11-09T16:46:04Z (Can #3774)

@@ -1,0 +1,31 @@
+# Buffers vs parameters (Main relay of turkce #3592; Zeki #3574 'parameters only, buffers out').
+# Small and buffer-like tensors per checkpoint, from shard headers (scripts/small_tensors.py, fail-closed 206 range reads); norm weights left out of this listing.
+google/gemma-4-31B-it @ 842da3794eaa0b77d5f08bae87a17459d91ff475 : 2 shards, all tensor elements 31,273,088,876
+  model.vision_tower.std_bias: 1 tensors, 1,152 elements, shape/dtype ([1152], 'BF16')
+  model.vision_tower.std_scale: 1 tensors, 1,152 elements, shape/dtype ([1152], 'BF16')
+  model.language_model.layers.N.layer_scalar: 60 tensors, 60 elements, shape/dtype ([1], 'BF16')
+google/gemma-4-12B-it @ 707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7 : 1 shards, all tensor elements 11,959,730,224
+  model.vision_embedder.patch_ln2.weight: 1 tensors, 3,840 elements, shape/dtype ([3840], 'BF16')
+  model.language_model.layers.N.layer_scalar: 48 tensors, 48 elements, shape/dtype ([1], 'BF16')
+decisionmodels/REAX-1.3 @ fa4bf7ee3bb56a8bc421dad090631be1c5845c2d part-g/: 13 shards, all tensor elements 31,273,088,876
+  model.vision_tower.std_bias: 1 tensors, 1,152 elements, shape/dtype ([1152], 'BF16')
+  model.vision_tower.std_scale: 1 tensors, 1,152 elements, shape/dtype ([1152], 'BF16')
+  model.language_model.layers.N.layer_scalar: 60 tensors, 60 elements, shape/dtype ([1], 'BF16')
+Qwen/Qwen3.8-27B @ 37561816e66b5b9153b1b64c10968c18c1e6f4a0 : 18 shards, all tensor elements 27,781,427,952
+  model.visual.blocks.N.norm1.weight: 27 tensors, 31,104 elements, shape/dtype ([1152], 'BF16')
+  model.visual.blocks.N.norm2.weight: 27 tensors, 31,104 elements, shape/dtype ([1152], 'BF16')
+  model.language_model.layers.N.linear_attn.A_log: 48 tensors, 2,304 elements, shape/dtype ([48], 'BF16')
+  model.language_model.layers.N.linear_attn.dt_bias: 48 tensors, 2,304 elements, shape/dtype ([48], 'BF16')
+LiquidAI/LFM2.5-24B-A2B @ 3dc4cd09c9a2a99e1e819693e79d3aba5e9bb4f2 : 10 shards, all tensor elements 23,971,587,712
+  model.layers.N.feed_forward.expert_bias: 38 tensors, 2,432 elements, shape/dtype ([64], 'F32')
+
+# Which are buffers: huggingface/transformers @ b25568817a6cb458f6d8b180a32698c2ab11fd26 (main, 2026-11-09T11:10:10Z):
+## src/transformers/models/gemma4/modeling_gemma4.py
+1351:        self.layer_scalar = nn.Buffer(torch.ones(1))
+2066:            self.std_bias = nn.Buffer(torch.empty(self.config.hidden_size))
+2067:            self.std_scale = nn.Buffer(torch.empty(self.config.hidden_size))
+## src/transformers/models/lfm2_moe/modeling_lfm2_moe.py
+205:            self.expert_bias = nn.Buffer(torch.zeros(config.num_experts, dtype=torch.float32))
+## src/transformers/models/qwen3_5/modeling_qwen3_5.py (parameters, kept)
+518:        self.dt_bias = nn.Parameter(torch.ones(self.num_v_heads))
+522:        self.A_log = nn.Parameter(torch.log(A))

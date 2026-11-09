@@ -1,0 +1,5 @@
+# /usr/bin/python3 tools/site/build.py --state /tmp/pb-state --out /tmp/pb-out-cand --no-image; tools/site at params-buffers 254a300d32213d4213b7c93cb38d85304b84bef1 (on origin/main f255bec)
+/home/cbasaran/code/jevgammon-buffers/tools/site/offline.py:213: RuntimeWarning: invalid value encountered in multiply
+  return np.where(ok, d * (c - cs), np.nan)
+{"results": "6b6c89a6", "data_as_of": "2026-11-09T13:05Z", "decision_files": 2298, "scored": {"league-1": 36995, "league-2": 39538, "league-3": 16355}}
+exit status: 0

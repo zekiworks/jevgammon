@@ -1,0 +1,11 @@
+--- main f255bec index.html#leaderboard
++++ params-buffers 254a300 index.html#leaderboard
+@@ -978,7 +978,7 @@
+ </p>
+ <p>2,016 decisions
+ </p>
+-<p>Parameters: <a href="https://huggingface.co/google/gemma-4-12B-it/blob/707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7/README.md">11.95B</a>
++<p>Parameters: <a href="https://huggingface.co/google/gemma-4-12B-it/tree/707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7">11.96B incl. its vision encoder; card: 11.95B</a>
+ </p>
+ <p><a href="decisions/?d=league-1&amp;s=cygnet-gemma-4-12b">Open its decisions →</a> · <a href="models/league-1/cygnet-gemma-4-12b/">Model page</a>
+ </p></div></td><td class="hl-judgement" data-v="57.07604562737642"><span class="hl-bar" aria-hidden="true"><span class="hl-fill" style="width:57.08%;background-color:#2a78d6"></span><span class="hl-int" style="left:55.32%;width:3.47%"></span><span class="hl-safe"></span></span><span class="hl-val">57.1<span class="small">55.3 to 58.8</span></span></td><td class="num hl-wide">27.3%</td><td class="num hl-wide">86.8%</td><td class="num hl-wide">38.6</td><td class="num hl-wide"><span class="muted">–</span></td>

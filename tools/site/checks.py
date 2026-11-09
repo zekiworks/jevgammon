@@ -723,7 +723,7 @@ def check_improve(out: Path, test_set: Path | None = None) -> list[str]:
     text = " ".join(text_of(tree.root).split())
     plan = L["plan"]
     want = [COMMITMENT, *REQUIRED, plan["seed_line"] or "(seed line missing in the plan)", plan["prompt_sha256"],
-            plan["test_set_sha256"], "Cygnet"]
+            plan["test_set_sha256"], "Cygnet", L["addendum"]["sha256"], "Decision models (added 9 Nov)"]
     want += [m["setup"] for m in plan["models"]] + [m["label"] for m in plan["models"] if m["label"]]
     bad += [f"{PATH}: missing the pre-registered text {w!r}" for w in want if w not in text]
     # The page names no host or device and shows no withheld mark (improve_page.HOST_REWRITES).

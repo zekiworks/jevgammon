@@ -423,7 +423,7 @@ def headline(S) -> str:
             'data-headline-view="model" aria-pressed="true">One row per model</button><button type="button" '
             'class="key" data-headline-view="all" aria-pressed="false">All setups</button></span>')
     # The table's own filter (Ümit #2907): local to this table, never the page's filters; programs stay in every view.
-    # Small models (Ümit #3465, #3475): the rows whose model's disclosed total parameters are at most P.SMALL_MAX_B.
+    # Small models (Ümit #3465; 15B provisional): rows whose model's disclosed total parameters are at most P.SMALL_MAX_B.
     types = ('<div class="keys hl-filter needs-js" role="group" aria-label="Model type">'
              + "".join(f'<button type="button" class="key" data-hl-filter="{k}" aria-pressed="{str(k == "all").lower()}">'
                        f'{l}</button>' for k, l in (("all", "All"), ("chat", "Chat models"), ("decision", "Decision models"),

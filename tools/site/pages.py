@@ -1056,7 +1056,7 @@ def phases_page(S) -> str:
 # an estimate.
 PARAMS = json.loads((CONTENT_DIR / "model_params.json").read_text())["models"]
 # The leaderboard's Small models key (story.headline): disclosed total parameters in billions (a mixture of experts by
-# its total) at most this; 15B on all three sites (Ümit #3475).
+# its total) at most this; 15B is the three sites' shared provisional threshold (#3471, #3473), not a human decision.
 SMALL_MAX_B = 15
 
 

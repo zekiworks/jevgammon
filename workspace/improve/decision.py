@@ -167,6 +167,8 @@ def arm_state(slug, arm, dry=None):
         p1 = evidence_record("p1", slug)
         if not (p1 and p1.get("passed")):
             return "pending", "accounting probe P1 not passed"
+        if p1.get("identity_sha256") != digest(run_identity(slug)):
+            return "pending", "accounting probe P1 was run under other settings (or records none): run it again"
     else:
         lr = evidence_record("render", slug)
         if not (lr and lr.get("passed")):
@@ -193,10 +195,13 @@ def digest(value):
 
 
 def run_identity(slug):
+    """The run-defining settings of a setup as they take effect: its cohort row, the league settings actually loaded
+    from v3.db for it, any base URL override of its arms, D1, the writer and the bound texts."""
     s = setups()[slug]
-    return dict(setup={k: s.get(k) for k in RUN_DEFINING}, D1_empty_runs=decided("D1_empty_runs"),
-                writer=WRITER_KEY, writer_expect=writer_expect(), lesson_prompt_sha256=I.LESSON_PROMPT_SHA256,
-                addendum_sha256=ADDENDUM_SHA256)
+    return dict(setup={k: s.get(k) for k in RUN_DEFINING}, league=I.league_settings(s["setup"]),
+                base_urls={arm: I.base_url_of(arm_key(slug, arm)) for arm in ARMS},
+                D1_empty_runs=decided("D1_empty_runs"), writer=WRITER_KEY, writer_expect=writer_expect(),
+                lesson_prompt_sha256=I.LESSON_PROMPT_SHA256, addendum_sha256=ADDENDUM_SHA256)
 
 
 def money_terms(slug):
@@ -345,9 +350,33 @@ def chat_booked():
     return sum(booked_rows(p) for p in sorted(I.RUNS.glob("*/ledgers/*.db")))
 
 
+def chat_liabilities():
+    """The chat lanes' open steps: a chat step fixes its ledger cap at its start (improve.py run -> money_gate ->
+    new_ledger, written to <model>/<step>/ledger.json) and may spend up to it until it ends, whatever share file is
+    read later. Every chat step directory with a ledger record and no aggregate counts its headroom (cap - booked)
+    as a liability, also when no process runs it (a resume opens a new ledger, so this only over-counts). Strict."""
+    out = []
+    for f in sorted(I.RUNS.glob("*/*/ledger.json")):
+        if f.parent.parent.name == "decision" or (f.parent / "aggregate.json").exists():
+            continue
+        try:
+            rec = json.loads(f.read_text())
+            cap, path = float(rec["cap"]), rec["path"]
+        except (ValueError, KeyError, TypeError) as e:
+            raise AccountingError(f"chat step record {f} unreadable: {e}") from None
+        booked = booked_rows(path)
+        out.append(dict(model=f.parent.parent.name, step=f.parent.name, ledger=path, cap=cap, booked=booked,
+                        headroom=max(cap - booked, 0.0)))
+    return out
+
+
 def provider_of(key):
+    """The provider of a decision run directory (None for a local setup); an unknown setup raises AccountingError:
+    its spend could not be attributed to a subcap."""
     slug = key.split("/", 1)[1].rsplit("-", 1)[0]
-    return (setups().get(slug) or {}).get("provider")
+    if slug not in setups():
+        raise AccountingError(f"decision directory {key} belongs to no cohort setup: its spend is unattributed")
+    return setups()[slug].get("provider")
 
 
 def needs_ledger(key, step):
@@ -387,20 +416,23 @@ def admit(key, step, ledger_path, expected, balance=None, want=None):
     try:
         db.execute("BEGIN IMMEDIATE")
         rows = db.execute("SELECT id, key, provider, ledger, amount, status FROM allocations").fetchall()
+        steps = dict(db.execute("SELECT id, step FROM allocations").fetchall())
         held = {r[0]: committed(r) for r in rows}
-        # Every other decision ledger (none should exist outside an allocation) counts too, read strictly.
+        # Every other decision ledger (none should exist outside an allocation) counts too, read strictly and
+        # attributed to its provider (an unattributable one refuses).
         allocated = {str(Path(r[3])) for r in rows}
-        loose = sum(booked_rows(p) for p in sorted((I.RUNS / "decision").glob("*/ledgers/*.db"))
-                    if str(p) not in allocated)
-        lane_used = sum(held.values()) + loose
+        loose = [(provider_of(f"decision/{p.parent.parent.name}"), booked_rows(p))
+                 for p in sorted((I.RUNS / "decision").glob("*/ledgers/*.db")) if str(p) not in allocated]
+        lane_used = sum(held.values()) + sum(v for _, v in loose)
         lane_cap = c["decision_lane_cap_usd"]
         share = I.share_cap()
         if share is not None and share + lane_cap > I.TOTAL_CAP_USD + 1e-9:
             raise Refused(f"the chat share ${share:.2f} plus the decision lane cap ${lane_cap:.2f} exceed "
                           f"${I.TOTAL_CAP_USD:.0f}: not hard allocations")
         chat = chat_booked()
+        chat_open = sum(x["headroom"] for x in chat_liabilities())
         limits = {"decision lane cap": lane_cap - lane_used,
-                  "rule (b) limit": I.TOTAL_CAP_USD - chat - lane_used,
+                  "rule (b) limit": I.TOTAL_CAP_USD - chat - chat_open - lane_used,
                   "rule (a) limit": I.ESTIMATE_FACTOR * m["estimate"] - arm_booked(key)}
         provider = m.get("provider") if m["hosted"] else None
         if provider:
@@ -409,10 +441,14 @@ def admit(key, step, ledger_path, expected, balance=None, want=None):
             subcap = c.get("provider_subcaps_usd", {}).get(provider)
             if subcap is not None:
                 outside = sum(booked_rows(I.STATE_ROOT / rel) for rel in c.get("provider_ledgers", {}).get(provider, []))
-                ours = sum(held[r[0]] for r in rows if r[2] == provider)
+                ours = sum(held[r[0]] for r in rows if r[2] == provider) + sum(v for p, v in loose if p == provider)
                 limits["provider subcap"] = subcap - outside - ours
         if balance is not None:
-            limits["balance"] = balance - I.BALANCE_RESERVE_USD
+            # OpenRouter money already promised: open writer allocations (notes arms' series steps) and the chat
+            # lanes' open step headroom (every billed chat model runs on OpenRouter), under the same lock.
+            writers = sum(held[r[0]] for r in rows if r[5] == "open" and r[1].endswith("-notes")
+                          and str(steps[r[0]]).startswith("S"))
+            limits["balance"] = balance - I.BALANCE_RESERVE_USD - writers - chat_open
         if want is not None:
             limits["requested"] = want
         binding = min(limits, key=limits.get)
@@ -426,7 +462,8 @@ def admit(key, step, ledger_path, expected, balance=None, want=None):
                          (key, step, provider, str(ledger_path), amount, I.now(), binding, json.dumps(limits)))
         db.execute("COMMIT")
         return dict(allocation=cur.lastrowid, step=step, expected=expected, cap=amount, binding=binding,
-                    limits=limits, ledger=str(ledger_path), share=share, chat_booked=chat, lane_used=lane_used)
+                    limits=limits, ledger=str(ledger_path), share=share, chat_booked=chat, chat_open_headroom=chat_open,
+                    lane_used=lane_used)
     except BaseException:
         if db.in_transaction:
             db.execute("ROLLBACK")
@@ -472,8 +509,8 @@ def provider_spent(provider):
     """A provider's booked dollars: its own outside ledgers (Nace: the league's) and every decision ledger of it."""
     outside = sum(booked_rows(I.STATE_ROOT / rel) for rel in cohort().get("provider_ledgers", {}).get(provider, []))
     root = I.RUNS / "decision"
-    dirs = [p for p in root.glob("*") if p.is_dir() and provider_of(f"decision/{p.name}") == provider] \
-        if root.exists() else []
+    dirs = [p for p in root.glob("*") if p.is_dir() and (p / "ledgers").exists()
+            and provider_of(f"decision/{p.name}") == provider] if root.exists() else []
     return outside + sum(booked_rows(f) for p in dirs for f in sorted((p / "ledgers").glob("*.db")))
 
 

@@ -335,6 +335,84 @@ class Money(Isolated):
         self.assertEqual(gate["binding"], "rule (a) limit")  # 1.5 x $0.03
         self.assertFalse(D.needs_ledger(LOCAL, "S1"))  # a local worst arm bills nothing
 
+    def test_an_orphan_provider_ledger_counts_in_its_subcap_and_an_unattributed_one_refuses(self):
+        # Zeki #3782 inert case: orphan Drex notes spend $2.49, then a worst-arm admission of $0.02.
+        empty = ledger(self.root / "nace-league.db")
+        c = json.loads(self.saved_d["COHORT_FILE"].read_text())
+        c["provider_ledgers"] = {"nace": [str(empty)]}
+        D.COHORT_FILE = self.root / "cohort.json"
+        D.COHORT_FILE.write_text(json.dumps(c))
+        orphan = ledger(I.RUNS / "decision" / "drex-max-1.1-notes" / "ledgers" / "orphan.db",
+                        ("Drex | E1", "settled", 2.49, 2.49))
+        with self.assertRaises(D.Refused) as e:
+            D.admit("decision/drex-max-1.1-worst", "E1", D.next_ledger("decision/drex-max-1.1-worst", "E1"), 0.02,
+                    want=0.02)
+        self.assertIn("provider subcap", str(e.exception))
+        orphan.unlink()
+        ledger(I.RUNS / "decision" / "ghost-notes" / "ledgers" / "x.db", ("?", "settled", 0.01, 0.01))
+        with self.assertRaises(D.AccountingError):
+            D.admit("decision/drex-max-1.1-worst", "E1", D.next_ledger("decision/drex-max-1.1-worst", "E1"), 0.02)
+
+    def test_the_openrouter_reserve_is_not_reused_across_writer_allocations(self):
+        # Zeki #3782 inert case: two local notes arms against one $5.03 balance.
+        self.cohort()
+        a = D.admit("decision/decider-v1.2-27b-notes", "S1", I.RUNS / "a.db", 0.005, balance=5.03)
+        self.assertAlmostEqual(a["cap"], 0.03)
+        with self.assertRaises(D.Refused) as e:
+            D.admit("decision/glide-v1.2-local-notes", "S1", I.RUNS / "b.db", 0.005, balance=5.03)
+        self.assertTrue(e.exception.pause)
+        D.release(a)  # released at what it booked (nothing): the reserve is free again
+        self.assertAlmostEqual(D.admit("decision/glide-v1.2-local-notes", "S1", I.RUNS / "b.db", 0.005,
+                                       balance=5.03)["cap"], 0.03)
+
+    def test_open_chat_step_caps_are_liabilities_of_the_total_and_the_balance(self):
+        self.cohort()
+        chat = ledger(I.RUNS / "deepseek-v4.1-flash-on" / "ledgers" / "S1-a1.db", ("DeepSeek | S1", "settled", 1, 2.0))
+        rec = I.RUNS / "deepseek-v4.1-flash-on" / "S1" / "ledger.json"
+        I.write_atomic(rec, json.dumps(dict(path=str(chat), cap=107.5, binding="rule (a) limit")))
+        self.assertEqual([round(x["headroom"], 6) for x in D.chat_liabilities()], [105.5])
+        # $110 - $2 booked - $105.50 open chat headroom = $2.50 for the decision lane: SubQ's step fits ...
+        gate = D.admit(HOSTED_W.replace("jev-1.14.0", "subq-snap-1.1"), "E1", I.RUNS / "s.db", 0.05, want=0.75)
+        self.assertAlmostEqual(gate["chat_open_headroom"], 105.5)
+        self.assertAlmostEqual(gate["limits"]["rule (b) limit"], 2.5)
+        # ... a step that needs more than what is left is refused, and a writer step must also fit in the balance
+        # less $5, the open writer allocations and the chat headroom.
+        with self.assertRaises(D.Refused):
+            D.admit("decision/drex-max-1.1-worst", "E1", I.RUNS / "d.db", 1.80)
+        with self.assertRaises(D.Refused):
+            D.admit("decision/decider-v1.2-27b-notes", "S1", I.RUNS / "w.db", 0.005, balance=110.0)
+        # A finished chat step (aggregate written) holds nothing more; an unreadable step record refuses.
+        I.write_atomic(rec.parent / "aggregate.json", "{}")
+        self.assertEqual(D.chat_liabilities(), [])
+        rec.parent.joinpath("aggregate.json").unlink()
+        rec.write_text("{not json")
+        with self.assertRaises(D.AccountingError):
+            D.chat_liabilities()
+
+    def test_p1_counts_only_under_the_current_effective_settings(self):
+        self.cohort()
+        self.guard("subq-snap-1.1")
+        rec = D.probe_p1("subq-snap-1.1", send=True, run=FakeAsk(tokens=(100, 900)))
+        self.assertTrue(rec["passed"])
+        self.assertEqual(D.arm_state("subq-snap-1.1", "notes", dry=False), ("eligible", None))
+        I.write_atomic(D.PREFLIGHT() / "p1-subq-snap-1.1.json", json.dumps(dict(rec, identity_sha256="wrong")))
+        self.assertEqual(D.arm_state("subq-snap-1.1", "notes", dry=False)[0], "pending")
+        I.write_atomic(D.PREFLIGHT() / "p1-subq-snap-1.1.json", json.dumps({k: v for k, v in rec.items()
+                                                                             if k != "identity_sha256"}))
+        self.assertEqual(D.arm_state("subq-snap-1.1", "notes", dry=False)[0], "pending")  # legacy record
+        I.write_atomic(D.PREFLIGHT() / "p1-subq-snap-1.1.json", json.dumps(rec))
+        saved = I.league_settings
+        try:  # the league settings actually loaded changed: P1 no longer counts, and a bound arm refuses to resume
+            D.bind_run(HOSTED_W.replace("jev-1.14.0", "subq-snap-1.1"))
+            I.league_settings = lambda setup: dict(saved(setup), parallel=9)
+            self.assertEqual(D.arm_state("subq-snap-1.1", "notes", dry=False)[0], "pending")
+            with self.assertRaises(SystemExit):
+                D.bind_run(HOSTED_W.replace("jev-1.14.0", "subq-snap-1.1"))
+        finally:
+            I.league_settings = saved
+        I.write_atomic(I.RUNS / "decision" / "subq-snap-1.1-notes" / "base_url.txt", "http://elsewhere/v1")
+        self.assertEqual(D.arm_state("subq-snap-1.1", "notes", dry=False)[0], "pending")  # a base URL override too
+
 
 class Configs(Isolated):
     def test_the_player_carries_gate_route_check_and_this_experiments_ledger(self):

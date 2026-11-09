@@ -1,0 +1,5 @@
+# /usr/bin/python3 tools/site/build.py --state /tmp/ds-state --out /tmp/ds-out-cand --no-image; tools/site at deepseek-fix 9d3bd27 (ds-state = copy of the frozen /tmp/pa-state)
+/home/cbasaran/code/jevgammon-dsfix/tools/site/offline.py:213: RuntimeWarning: invalid value encountered in multiply
+  return np.where(ok, d * (c - cs), np.nan)
+{"results": "7acf91cb", "data_as_of": "2026-11-09T11:50Z", "decision_files": 2298, "scored": {"league-1": 36995, "league-2": 39538, "league-3": 16355}}
+exit status: 0

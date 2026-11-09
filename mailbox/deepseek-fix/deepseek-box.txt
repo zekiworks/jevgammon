@@ -1,0 +1,2 @@
+1280 'Parameters: 552B backbone + 196B conditional memory; active 8B (prefill) / 16B (decode)' overflow 0
+375 'Parameters: 552B backbone + 196B conditional memory; active 8B (prefill) / 16B (decode)' overflow 0

@@ -1,0 +1,29 @@
+--- main/index.html#leaderboard
++++ candidate/index.html#leaderboard
+@@ -264,7 +264,7 @@
+ </p>
+ <p><span class="cost-1k">$12.801 per 1,000 decisions</span><span class="cost-1m" data-usd="12.800830330997304">$12.801</span><span class="cost-1m"> per 1M decisions</span> (API price) · 2,226 decisions
+ </p>
+-<p>Parameters: <a href="https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash">552B total / 16B active</a>
++<p>Parameters: <a href="https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash">552B backbone + 196B conditional memory; active 8B (prefill) / 16B (decode)</a>
+ </p>
+ <p>Released <a href="https://api-docs.deepseek.com/updates/">Sep 2026</a>
+ </p>
+@@ -310,7 +310,7 @@
+ </p>
+ <p><span class="cost-1k">$0.434 per 1,000 decisions</span><span class="cost-1m" data-usd="0.434236018202765">$0.434</span><span class="cost-1m"> per 1M decisions</span> (API price) · 1,736 decisions
+ </p>
+-<p>Parameters: <a href="https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash">552B total / 16B active</a>
++<p>Parameters: <a href="https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash">552B backbone + 196B conditional memory; active 8B (prefill) / 16B (decode)</a>
+ </p>
+ <p><a href="decisions/?d=league-1&amp;s=deepseek-v4-1-flash-off">Open its decisions →</a> · <a href="models/league-1/deepseek-v4-1-flash-off/">Model page</a>
+ </p></div></td><td class="hl-judgement" data-v="59.30046424084689"><span class="hl-bar" aria-hidden="true"><span class="hl-fill" style="width:59.30%;background-color:#a61e4d"></span><span class="hl-int" style="left:57.11%;width:4.42%"></span><span class="hl-safe"></span></span><span class="hl-val">59.3<span class="small">57.1 to 61.5</span></span></td><td class="num hl-wide">29.1%</td><td class="num hl-wide">89.5%</td><td class="num hl-wide">35.6</td><td class="num hl-wide"><span class="cost-1k">$0.434</span><span class="cost-1m" data-usd="0.434236018202765">$0.434</span></td>
+@@ -978,7 +978,7 @@
+ </p>
+ <p>2,016 decisions
+ </p>
+-<p>Parameters: <a href="https://huggingface.co/google/gemma-4-12B-it">11.95B</a>
++<p>Parameters: <a href="https://huggingface.co/google/gemma-4-12B-it/blob/707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7/README.md">11.95B</a>
+ </p>
+ <p><a href="decisions/?d=league-1&amp;s=cygnet-gemma-4-12b">Open its decisions →</a> · <a href="models/league-1/cygnet-gemma-4-12b/">Model page</a>
+ </p></div></td><td class="hl-judgement" data-v="57.07604562737642"><span class="hl-bar" aria-hidden="true"><span class="hl-fill" style="width:57.08%;background-color:#2a78d6"></span><span class="hl-int" style="left:55.32%;width:3.47%"></span><span class="hl-safe"></span></span><span class="hl-val">57.1<span class="small">55.3 to 58.8</span></span></td><td class="num hl-wide">27.3%</td><td class="num hl-wide">86.8%</td><td class="num hl-wide">38.6</td><td class="num hl-wide"><span class="muted">–</span></td>

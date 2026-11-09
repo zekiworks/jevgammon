@@ -61,8 +61,11 @@ def about_text(S, rel: str) -> str:
                 f'{count(n_models)} models).</p>' if missing else "")
     return ('<p><strong>A fixed table:</strong> the filters on the Leagues page do not change it. Tap a model (or '
             'point at it) for its details and its decisions.</p>'
-            '<p># is the rank among all models, in every view of the table\'s All · Chat models · Decision models '
-            'filter; the programs are reference rows in every view.</p>'
+            '<p># is the rank among all models, in every view of the table\'s All · Chat models · Decision models · '
+            'Small models filter; the programs are reference rows in every view.</p>'
+            f'<p>{esc(SMALL_NOTE)} Parameters (in a row\'s details): the count its maker documents (model card, '
+            'Hugging Face repository or announcement), linked; a mixture of experts as total / active; "not disclosed '
+            'by maker" where the maker gives none.</p>'
             f'<p>{esc(NOTE)}</p><p>{esc(RULE)}</p>'
             '<p>Each model\'s row is its highest reasoning setting played, by the effort the requests sent (off &lt; '
             'minimal &lt; low &lt; medium &lt; high &lt; xhigh &lt; max; on above off for a model without levels; a '
@@ -272,6 +275,7 @@ def details_box(S, x, kind: str, bid: str, extra: list, ref: str | None = None) 
          if e and e["status"] == P.PROVISIONAL else None),
         (esc(P.SUBQ_SELF) if e and x["name"] == P.SUBQ_11 else None),
         join([cost_text(S, x), f'{count(q["decisions"])} decisions' if q else None]),
+        (f'Parameters: {P.params_html(x["model"])}' if kind != "program" else None),
         *extra,
         join([f'<a href="{href}">{"Its late-entry page" if e else "Open its decisions"} \u2192</a>' if href else None,
               f'<a href="{page}">Model page</a>' if page else None])]
@@ -285,10 +289,12 @@ def name_link(S, x, text, bid) -> str:
             f'<span class="model-name" tabindex="0" aria-describedby="{bid}">{esc(text)}</span>')
 
 
-def tr_attrs(S, x, kind, typ) -> str:
+def tr_attrs(S, x, kind, typ, small: bool = False) -> str:
+    """small: the row's model is in the Small models view (its other-settings rows go with it)."""
+    hl = f' data-hl-type="{typ}"' + (' data-hl-small="yes"' if small else "")
     if x["late"]:
-        return f' data-dataset="{LATE_ENTRY}" data-setup="{esc(x["late"]["slug"])}" data-kind="late" data-hl-type="{typ}"'
-    return H.attrs(S, x["ds"], H.slug_name(x["name"]), kind == "program") + f' data-hl-type="{typ}"'
+        return f' data-dataset="{LATE_ENTRY}" data-setup="{esc(x["late"]["slug"])}" data-kind="late"{hl}'
+    return H.attrs(S, x["ds"], H.slug_name(x["name"]), kind == "program") + hl
 
 
 def headline_rows(S) -> tuple[list, list, list]:
@@ -306,6 +312,7 @@ def headline_rows(S) -> tuple[list, list, list]:
             dot = f'<i class="swatch hl-dot" style="background:{colour}" title="{esc(mk)}"></i>' if colour else \
                 '<i class="swatch hl-dot swatch-program"></i>'
             typ = "program" if kind == "program" else model_type(S, x)
+            small = kind == "model" and P.is_small(x["model"])
             # Nothing under the name (Ümit #3039); after it one small grey chip (Ümit #3193): setting · type, a late
             # entry's tag in it (a caveat on its rank); the maker only in the dot and the box.
             tag = f'<span class="hl-tag">{esc(chip_text(S, x, kind))}</span>'
@@ -329,7 +336,7 @@ def headline_rows(S) -> tuple[list, list, list]:
             cls = ' class="reference"' if kind == "program" else ""
             label = x["name"] if kind == "program" else name
             bid = f"{rid}-box"
-            body.append(f'<tr{cls}{tr_attrs(S, x, kind, typ)} data-box="{bid}">{rank}<td class="model">{dot}{icon}'
+            body.append(f'<tr{cls}{tr_attrs(S, x, kind, typ, small)} data-box="{bid}">{rank}<td class="model">{dot}{icon}'
                         f'{name_link(S, x, row_name(label, x["setting"]), bid)}{tag}{more}'
                         f'{details_box(S, x, kind, bid, extra, ref)}</td>{judgement_cell(x["r"], colour)}{wide_cells(x)}</tr>')
             for sid, y in zip(sub_ids, others):
@@ -337,7 +344,7 @@ def headline_rows(S) -> tuple[list, list, list]:
                 ybid = f"{sid}-box"
                 ytag = f'<span class="hl-tag">{esc(chip_text(S, y, kind, league=True))}</span>'
                 body.append(f'<tr class="hl-sub{"" if kind == "model" else " reference"}" '
-                            f'id="{sid}" hidden{tr_attrs(S, y, kind, typ)} data-box="{ybid}"><td class="num"></td><td class="model">'
+                            f'id="{sid}" hidden{tr_attrs(S, y, kind, typ, small)} data-box="{ybid}"><td class="num"></td><td class="model">'
                             f'{name_link(S, y, row_name(y["name"], y["setting"]), ybid)}{ytag}'
                             f'{details_box(S, y, kind, ybid, [], ref)}</td>{judgement_cell(y["r"], ycol)}{wide_cells(y)}</tr>')
             if kind != "program" or x["name"] == "GNUbg weak":
@@ -400,6 +407,8 @@ def too_safe(S, chart: list) -> str:
 # About (about_text).
 MEANING = "Risk judgement: 100 = every call right, 50 = always safe; higher is better."
 ROW_LINE = "One row per model at its highest reasoning setting, never its best score; late entries included."
+SMALL_NOTE = (f"Small models: {P.billions(P.SMALL_MAX_B)} parameters or fewer (total), as disclosed by the maker; models "
+              "with undisclosed size are not included.")
 
 
 def headline(S) -> str:
@@ -414,10 +423,12 @@ def headline(S) -> str:
             'data-headline-view="model" aria-pressed="true">One row per model</button><button type="button" '
             'class="key" data-headline-view="all" aria-pressed="false">All setups</button></span>')
     # The table's own filter (Ümit #2907): local to this table, never the page's filters; programs stay in every view.
+    # Small models (Ümit #3465, #3475): the rows whose model's disclosed total parameters are at most P.SMALL_MAX_B.
     types = ('<div class="keys hl-filter needs-js" role="group" aria-label="Model type">'
              + "".join(f'<button type="button" class="key" data-hl-filter="{k}" aria-pressed="{str(k == "all").lower()}">'
-                       f'{l}</button>' for k, l in (("all", "All"), ("chat", "Chat models"), ("decision", "Decision models")))
-             + '</div>')
+                       f'{l}</button>' for k, l in (("all", "All"), ("chat", "Chat models"), ("decision", "Decision models"),
+                                                    ("small", "Small models")))
+             + f'</div><p class="table-note hl-small-note" hidden>{esc(SMALL_NOTE)}</p>')
     return (f'<section class="card headline" id="leaderboard" data-dataset="all" aria-labelledby="leaderboard-title">'
             f'<div class="chart-head"><h2 id="leaderboard-title">Risk calls leaderboard</h2>{keys}'
             f'<p class="chart-sub">{esc(MEANING)}</p></div>'

@@ -1593,7 +1593,8 @@ def experiments_page(S) -> str:
           ("../matches/#stage-knockout", "Its matches")]),
         ("learning", "Learning from experience", lstatus,
          "Does a model play better after seeing its own earlier games? " + esc(L["plan"]["commitment"]),
-         [(f"../{learning_page.PATH}", "Open Learning from experience")]),
+         [(f"../{improve_page.PATH}", "Open Did they improve? (every model)"),
+          (f"../{learning_page.PATH}", "The pilot (one model)")]),
         ("improve", improve_page.TITLE, improve_page.eyebrow(I) if I["preregistration_only"] or not I.get("status")
          else I["status"]["line"],
          "Does each chat model on the leaderboard take risks better after writing its own lessons over 10 games? "

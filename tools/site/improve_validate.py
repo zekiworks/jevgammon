@@ -373,3 +373,37 @@ def validate(R, plan_sha: str, prompt_sha: str, test_sha: str, harness_prompt_sh
         models.append(out)
     return dict(accepted=True, problems=[], private_problems=[],
                 public=dict(updated_at=R["updated_at"], dry_run=P["dry_run"], money=M, models=models))
+
+
+# The page's planned rows (content/improve_planned.json, Ümit/Zeki #3710): models and setups not yet run, status only,
+# never a number; separate from improve.json and the frozen plan. Closed schema, every status and tag from these lists.
+PLANNED_STATUSES = ("not started (waiting for budget)", "not started (plan awaiting decisions)",
+                    "not tested: context too short", "not tested: delivery unverified (our evidence gap)",
+                    "not tested: excluded (#3111)")
+PLANNED_TAGS = ("added 9 Nov, no league record",)
+PLANNED_GROUPS = ("chat", "decision")
+PLANNED_ROW = DICT(dict(setup=MODEL[1]["setup"], group=("enum", PLANNED_GROUPS), tag=OPT(("enum", PLANNED_TAGS)),
+                        params_model=OPT(MODEL[1]["setup"])),
+                   dict(status=("enum", PLANNED_STATUSES), notes=("enum", PLANNED_STATUSES),
+                        worst_mistakes=("enum", PLANNED_STATUSES)))
+PLANNED = DICT(dict(about=("str", r"[^<>\x00-\x1f]{1,2000}"), rows=LIST(PLANNED_ROW, 40)))
+
+
+def planned_problems(doc, plan_setups: set, params: dict) -> list:
+    """content/improve_planned.json against PLANNED: a chat row has a status only, a decision row both arms' statuses
+    only; setups unique and none of the plan's (results) chat models; params_model a model_params.json name."""
+    bad = check(doc, PLANNED, "improve_planned.json")
+    if bad:
+        return bad
+    seen = set()
+    for i, r in enumerate(doc["rows"]):
+        w = f"improve_planned.json rows[{i}]"
+        arms = {k for k in ("status", "notes", "worst_mistakes") if k in r}
+        if arms != ({"status"} if r["group"] == "chat" else {"notes", "worst_mistakes"}):
+            bad.append(f"{w}: statuses not the group's (chat: status; decision: notes and worst_mistakes)")
+        if r["setup"] in seen or r["setup"] in plan_setups:
+            bad.append(f"{w}: setup appears twice or is a plan model")
+        seen.add(r["setup"])
+        if r["params_model"] is not None and r["params_model"] not in params:
+            bad.append(f"{w}: params_model not in model_params.json")
+    return bad

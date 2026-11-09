@@ -19,9 +19,9 @@ site). It follows the learning page (learning_page.py) in every convention. Sour
     pre-registration-only mode (PREREGISTRATION_ONLY) read whole and shown only after improve_validate accepts it;
     refused, the page is the pre-registration view with a "data refused" note naming the failed fields (names taken
     from the file withheld; the full text on stderr only). In pre-registration-only mode only its progress fields are
-    read (improve_validate.status_view), for the "Models and status" table at the top (Ümit #3219): per plan chat
-    model its route (OpenRouter, subscription, our GPU), status (with a fixed reason), series done of 5 and last
-    update; never an outcome number.
+    read (improve_validate.status_view), for the results table at the top (Ümit #3219, #3710): per plan chat model its
+    status (with a fixed reason) and series done of 5; never an outcome number. The results table also lists the
+    planned rows of content/improve_planned.json (status only, no numbers).
 
 The producer writes no before, after or verdict: improve_validate computes them (plan sections 2, 6 and 7). A model
 gets Yes or No only past the verdict gate; until then its row shows live numbers and "running, n of 5 series", or
@@ -63,6 +63,8 @@ PREREGISTRATION_ONLY = False
 COMMITMENT = "Results will be published whichever way they go."
 PLAN = ROOT / "mailbox/Did they improve - plan 2026-11-08.md"
 SOURCE = "improve"
+# The results table's planned rows (models and setups not yet run; status only, no numbers), outside the plan.
+PLANNED = SITE / "content/improve_planned.json"
 DESCRIPTION = ("Did they improve? Each chat model on the leaderboard writes its own lessons over 10 games against GNUbg "
                "weak, then takes the risk test again. The pre-registered rule, model list and lesson prompt.")
 # The hashes the plan states (sections 5): the lesson prompt and the test set. The render fails unless the plan states
@@ -314,6 +316,16 @@ def status(L) -> dict:
                 last_update=R["updated_at"] if R else None)
 
 
+def read_planned(plan_setups: set, path: Path = PLANNED) -> list:
+    """The results table's planned rows (content/improve_planned.json, Ümit/Zeki #3710): status only, no number; a
+    file outside improve_validate.PLANNED fails the build."""
+    doc = json.loads(path.read_text())
+    bad = V.planned_problems(doc, plan_setups, P.PARAMS)
+    if bad:
+        raise SystemExit("content/improve_planned.json: " + "; ".join(bad))
+    return doc["rows"]
+
+
 def data(plan_path: Path, src: Path, test_set: Path = TEST_SET, preregistration_only: bool | None = None) -> dict:
     """The page's data from the plan and src (the STATE/improve layout). In pre-registration-only mode no test set is
     read and of the results file only its progress fields (read_progress)."""
@@ -323,7 +335,8 @@ def data(plan_path: Path, src: Path, test_set: Path = TEST_SET, preregistration_
     shown = dict(results=None, validation=None) if prereg else read_results(src, plan, test_set)
     progress = read_progress(src, plan) if prereg else progress_from_results(shown)
     L = dict(version="v3", preregistration_only=prereg, plan={k: v for k, v in plan.items() if k != "redacted"},
-             redacted=plan["redacted"], lesson_prompt=prompt, **shown, **progress)
+             redacted=plan["redacted"], lesson_prompt=prompt, **shown, **progress,
+             planned=read_planned({m["setup"] for m in plan["models"]}))
     if not prereg:
         L["status"] = status(L)
     L["source_sha256"] = hashlib.sha256(json.dumps(L, sort_keys=True).encode()).hexdigest()
@@ -453,47 +466,89 @@ def models_section(L) -> str:
     return seed + before + body + f'<ul class="notes improve-notes">{notes}</ul>' + others(L)
 
 
-def route_class(pm) -> str:
-    """The status table's route: OpenRouter (billed), a subscription, or a local server ("our GPU"), from the plan."""
-    if pm["billed"]:
-        return "OpenRouter"
-    if "subscription" in pm["route"]:
-        return "subscription"
-    if pm["route"].startswith("local"):
-        return "our GPU"
-    raise SystemExit(f"{pm['setup']}: the plan's route {pm['route']!r} is none of OpenRouter, subscription, local")
-
-
 def progress_status(p) -> str:
     return p["status"] + (f' ({p["reason"]})' if p["reason"] else "")
 
 
-def progress_section(L) -> str:
-    """The "Models and status" table (Ümit #3219): one row per plan chat model, in the plan's order; status, series
-    done and last update from the validated progress fields only, no outcome number. A model the file does not list
-    has not started; with the file refused, every status is unknown."""
-    refused, prog = L["progress_refused"], L["progress"]
-    by = {m["setup"]: m for m in (prog or {}).get("models", [])}
+ARMS = (("notes", "notes"), ("worst_mistakes", "worst mistakes"))
+SMALL_NOTE = (f"Small models: {P.billions(P.SMALL_MAX_B)} parameters or fewer (total), as disclosed by the maker "
+              "(the leaderboard's provisional threshold); a model whose maker discloses no total is not counted as small.")
+
+
+def small(name: str | None) -> str:
+    return "yes" if name in P.PARAMS and P.is_small(name) else "no"
+
+
+def result_rows(L) -> list:
+    """The plan's chat models for the results table, as (pm, progress, validated data): finished first by the change
+    in risks found (largest first), then running (any other started status), then not started; plan order within a
+    group."""
+    prog = {m["setup"]: m for m in (L["progress"] or {}).get("models", [])}
+    by = {m["setup"]: m for m in (L["results"] or {}).get("models", [])} if results_shown(L) else {}
     out = []
-    for pm in L["plan"]["models"]:
-        p = by.get(pm["setup"])
-        if refused:
-            status_, done, when = nm(NA), nm(NA), nm(NA)
-        elif p is None:
-            status_, done, when = "not started", f"0 / {V.SERIES}", nm(NA)
-        else:
-            status_, done = esc(progress_status(p)), f'{p["series_done"]} / {V.SERIES}'
-            when = f'<time datetime="{esc(p["updated_at"])}">{LP.utc(p["updated_at"])}</time>'
-        out.append(f'<tr data-progress-setup="{esc(pm["setup"])}"><th scope="row">{esc(pm["setup"])}</th>'
-                   f'<td>{route_class(pm)}</td><td data-progress="status">{status_}</td>'
-                   f'<td class="num" data-progress="series">{done}</td><td data-progress="updated">{when}</td></tr>')
+    for i, pm in enumerate(L["plan"]["models"]):
+        p, m = prog.get(pm["setup"]), by.get(pm["setup"])
+        done = m is not None and m["verdict"] and m["change"]["risks_found"] is not None
+        started = not L["progress_refused"] and p is not None and p["status"] != "not started"
+        key = (0, -m["change"]["risks_found"], i) if done else ((1, 0, i) if started else (2, 0, i))
+        out.append((key, pm, p, m))
+    return [x[1:] for x in sorted(out, key=lambda x: x[0])]
+
+
+def result_row(pm, p, m, refused) -> str:
+    if refused:
+        status_, done = nm(NA), nm(NA)
+    elif p is None:
+        status_, done = "not started", f"0 / {V.SERIES}"
+    else:
+        status_, done = esc(progress_status(p)), f'{p["series_done"]} / {V.SERIES}'
+    if m is None:
+        nums = "<td></td><td></td><td></td>"
+    else:
+        ch = m["change"]
+        nums = (f'<td class="num" data-rcell="rf">{before_after(m, "risks_found")}</td>'
+                f'<td class="num" data-rcell="rf-change">{fmt(ch["risks_found"], 1, signed=True) or nm(NA)}</td>'
+                f'<td class="num" data-rcell="rs">{before_after(m, "right_safety")}</td>')
+    verdict = (f'<strong data-rverdict="{"yes" if m["improved"] else "no"}">{esc(m["status"])}</strong>'
+               if m is not None and m["verdict"] else "")
+    name = re.sub(r" \([^()]*\)$", "", pm["setup"])
+    return (f'<tr data-progress-setup="{esc(pm["setup"])}" data-group="chat" data-small="{small(name)}">'
+            f'<th scope="row">{esc(pm["setup"])}</th><td>Chat</td><td data-progress="status">{status_}</td>'
+            f'<td class="num" data-progress="series">{done}</td>{nums}<td>{verdict}</td></tr>')
+
+
+def planned_row(r, arm=None) -> str:
+    status_ = r[arm[0]] if arm else r["status"]
+    group = f"Decision · {arm[1]}" if arm else "Chat"
+    tag = f'<br><span class="small">{esc(r["tag"])}</span>' if r["tag"] else ""
+    return (f'<tr data-planned="{esc(r["setup"])}" data-group="{r["group"]}" data-small="{small(r["params_model"])}">'
+            f'<th scope="row">{esc(r["setup"])}<br><span class="small">planned, not a result</span>{tag}</th>'
+            f'<td>{group}</td><td>{esc(status_)}</td><td class="num">{nm(NA)}</td><td></td><td></td><td></td>'
+            '<td></td></tr>')
+
+
+def results_section(L) -> str:
+    """The page's first table (Ümit/Zeki #3710): one row per model, the plan's chat models (status and series from
+    the validated progress fields; numbers from the validated results; Yes or No only past the verdict gate), then the
+    planned rows (content/improve_planned.json: status only, never a number). Filters: All, Chat, Decision, Small."""
+    refused = L["progress_refused"]
+    rows_ = [result_row(pm, p, m, refused) for pm, p, m in result_rows(L)]
+    rows_ += [planned_row(r, arm) for r in L["planned"] for arm in ((None,) if r["group"] == "chat" else ARMS)]
     note = ('<p class="note" id="improve-progress-refused"><strong>Status unavailable.</strong> The latest results '
             'file\'s status fields failed the site\'s checks:</p><ul class="notes">'
             + "".join(f"<li>{esc(p)}</li>" for p in refused) + "</ul>" if refused else "")
-    cap = (f'{count(len(L["plan"]["models"]))} chat models, in the plan\'s order; status only, no results. The '
-           'decision models and Cygnet are not tested (below).')
-    return note + P.SWIPE + P.table(["Model", "Route", "Status", f"Series done (of {V.SERIES})", "Last update (UTC)"],
-                                    out, esc(cap), cls="board list improve-progress")
+    keys = ('<div class="keys needs-js" role="group" aria-label="Model type">'
+            + "".join(f'<button type="button" class="key" data-improve-filter="{k}" aria-pressed="{str(k == "all").lower()}">'
+                      f'{t}</button>' for k, t in (("all", "All"), ("chat", "Chat models"),
+                                                   ("decision", "Decision models"), ("small", "Small models")))
+            + f'</div><p class="table-note improve-small-note" hidden>{esc(SMALL_NOTE)}</p>')
+    cap = (f'{count(len(L["plan"]["models"]))} chat models under the pre-registered rule: finished first (by the change '
+           'in risks found), then running, then not started. Rows marked "planned, not a result" are not run yet and '
+           'show no numbers; a decision setup has one row per arm (notes, worst mistakes).')
+    head = ["Model", "Group", "Status", f"Series (of {V.SERIES})", "Risks found before → after", "Change",
+            "Right safety before → after", "Improved?"]
+    return note + keys + P.SWIPE + P.table(head, rows_, esc(cap), cls="board list improve-progress",
+                                           attrs=' id="improve-results-table"')
 
 
 def validation_note(L) -> str:
@@ -596,8 +651,7 @@ def title(L) -> str:
 def body(L) -> str:
     plan = L["plan"]
     rule = section(plan["sections"], RULE_SECTION)
-    parts = [("improve-status", "Models and status", progress_section(L)),
-             ("improve-rule", rule["title"], spec_markdown(rule["markdown"])),
+    parts = [("improve-rule", rule["title"], spec_markdown(rule["markdown"])),
              ("improve-models", "Models", models_section(L))]
     if results_shown(L):
         parts.append(("improve-lessons", "Lessons and every test, per model", lessons(L)))
@@ -611,11 +665,12 @@ def body(L) -> str:
              "page yet." if not results_shown(L) else
              "The pre-registered rule, the results as each model's runs come in, and every lesson.")
     head = (f'<header class="card hero page-head"><p class="eyebrow">{eyebrow(L)}</p><h1>{esc(title(L))}</h1>'
-            + (status_line(L) if results_shown(L) else "")
-            + f'<p class="intro" id="improve-commitment"><strong>{esc(plan["commitment"])}</strong></p>'
-            f'<p class="intro">{intro} Data: <a href="../{DATA}">improve.json</a>.</p>{validation_note(L)}{money(L)}'
-            f'<p class="small">Plan: {esc(plan["file"])}, sha256 <code>{plan["sha256"]}</code></p>{withheld}</header>')
-    return "\n".join([head, f'<nav class="toc card" aria-label="On this page"><ul>{toc}</ul></nav>']
+            f'</header><section class="card" id="improve-results"><h2>Results</h2>{results_section(L)}</section>')
+    about = ('<section class="card" id="improve-about">' + (status_line(L) if results_shown(L) else "")
+             + f'<p class="intro" id="improve-commitment"><strong>{esc(plan["commitment"])}</strong></p>'
+             f'<p class="intro">{intro} Data: <a href="../{DATA}">improve.json</a>.</p>{validation_note(L)}{money(L)}'
+             f'<p class="small">Plan: {esc(plan["file"])}, sha256 <code>{plan["sha256"]}</code></p>{withheld}</section>')
+    return "\n".join([head, about, f'<nav class="toc card" aria-label="On this page"><ul>{toc}</ul></nav>']
                      + [f'<section class="card" id="{i}"><h2>{esc(t)}</h2>{h}</section>' for i, t, h in parts])
 
 

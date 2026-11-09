@@ -34,9 +34,10 @@ class Isolated(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         root = Path(self.tmp.name)
         self.saved = {k: getattr(I, k) for k in ("RUNS", "OUT", "SMOKE", "check_inputs")}
-        self.saved_d = {k: getattr(D, k) for k in ("ADDENDUM", "ADDENDUM_SHA256", "COHORT_FILE")}
+        self.saved_d = {k: getattr(D, k) for k in ("ADDENDUM", "ADDENDUM_SHA256", "COHORT_FILE", "FENCE")}
         I.RUNS, I.OUT, I.SMOKE = root / "runs", root / "out", root / "smoke"
         I.check_inputs = lambda: None  # the pinned-binary rule is for real runs; these tests start no process
+        D.FENCE = lambda: []  # the live /proc and chat code are checked by the Fence tests below, not here
         self.root = root
 
     def tearDown(self):
@@ -542,3 +543,65 @@ class States(Isolated):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class Fence(unittest.TestCase):
+    """Zeki #3788: the billed chat side runs only through improve-openrouter, one worker at a time, pinned code."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.proc = Path(self.tmp.name)
+        self.sha = lambda p: D.CHAT_IMPROVE_SHA256 if Path(p).name == "improve.py" else D.CHAT_QUEUE_SHA256
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def worker(self, pid, model, unit=D.CHAT_UNIT, args=None):
+        d = self.proc / str(pid)
+        d.mkdir()
+        argv = args or ["python3", "workspace/improve/improve.py", "run", "--model", model]
+        (d / "cmdline").write_bytes(b"\0".join(a.encode() for a in argv) + b"\0")
+        (d / "cgroup").write_text(f"0::/user.slice/user-1000.slice/user@1000.service/app.slice/{unit}\n")
+        return d
+
+    def test_one_billed_worker_in_the_unit_is_allowed(self):
+        self.worker(10, "deepseek-v4.1-flash-on")
+        self.worker(11, "gemma-4-31b-on", unit="improve-local.service")  # an unbilled lane: not a billed worker
+        self.worker(12, "x", args=["bash", "-c", "sleep 1"])
+        self.assertEqual([w["pid"] for w in D.billed_chat_fence(self.proc, self.sha)], [10])
+
+    def test_two_billed_workers_refuse(self):
+        self.worker(10, "deepseek-v4.1-flash-on")
+        self.worker(11, "kimi-k3.1-pro-off")
+        with self.assertRaises(D.Refused) as e:
+            D.billed_chat_fence(self.proc, self.sha)
+        self.assertTrue(e.exception.pause)
+
+    def test_a_billed_worker_outside_the_unit_refuses(self):
+        self.worker(10, "glm-5.3-on", unit="session-3.scope")
+        with self.assertRaises(D.Refused):
+            D.billed_chat_fence(self.proc, self.sha)
+
+    def test_unreadable_or_ambiguous_state_refuses(self):
+        d = self.worker(10, "deepseek-v4.1-flash-on")
+        (d / "cgroup").unlink()
+        (d / "cgroup").mkdir()  # reading it fails (IsADirectoryError)
+        with self.assertRaises(D.AccountingError):
+            D.billed_chat_fence(self.proc, self.sha)
+        self.worker(11, "", args=["python3", "improve.py", "run", "--model"])
+        with self.assertRaises(D.AccountingError):
+            D.billed_chat_fence(self.proc / "missing", self.sha)
+
+    def test_changed_chat_code_or_queue_refuses(self):
+        for name in ("improve.py", "run_queue.sh"):
+            with self.assertRaises(D.Refused):
+                D.billed_chat_fence(self.proc, lambda p, n=name: "changed" if Path(p).name == n else self.sha(p))
+
+    def test_the_admission_runs_the_fence(self):
+        saved = D.FENCE
+        try:
+            D.FENCE = lambda: (_ for _ in ()).throw(D.Refused("fence", pause=True))
+            with self.assertRaises(D.Refused):
+                D.admit("decision/decider-v1.2-27b-notes", "S1", Path(self.tmp.name) / "w.db", 0.005, balance=50)
+        finally:
+            D.FENCE = saved

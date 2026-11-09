@@ -69,6 +69,52 @@ SERIES_SHARE, EMPTY_SHARE = 410 / 2650, 200 / 2650
 MAX_WORD = "x" * 12
 PREFLIGHT = lambda: I.RUNS / "decision" / "preflight"  # noqa: E731
 DECISION_OUT = lambda: I.OUT / "improve-decision.json"  # noqa: E731
+# The bounded envelope (Zeki #3788): the billed chat models run only through one serial systemd unit, from pinned code.
+CHAT_CODE = Path("/home/cbasaran/code/jevgammon-improve/workspace/improve")
+CHAT_IMPROVE_SHA256 = "341e7a69f6450bda7bd2c90a3c93852084b7e2c2c7555ba0bdb1dbfb1198db4b"  # improve.py @ 56a93b4
+CHAT_QUEUE_SHA256 = "e53fa11b4d31dd289e3a62ce74d66dfe227aeb3e58240e19b4d8565c85f13a74"  # run_queue.sh (for-loop, serial)
+BILLED_CHAT = ("qwen3.8-flash-off", "glm-5.3-on", "kimi-k3.1-pro-off", "deepseek-v4.1-flash-on")  # MODELS billed=True
+CHAT_UNIT = "improve-openrouter.service"
+
+
+def billed_chat_fence(proc="/proc", sha=None):
+    """Fail-closed check of the chat side, inside the admission lock: the pinned chat code and its serial queue are
+    unchanged, and at most one `improve.py run --model <billed chat model>` process exists, inside the
+    improve-openrouter unit's cgroup. Anything unreadable or ambiguous refuses. Returns the workers seen."""
+    sha = sha or I.sha256_file
+    for path, want in ((CHAT_CODE / "improve.py", CHAT_IMPROVE_SHA256), (CHAT_CODE / "run_queue.sh", CHAT_QUEUE_SHA256)):
+        if sha(path) != want:
+            raise Refused(f"chat fence: {path} no longer has the reviewed sha256 {want[:12]}…", pause=True)
+    workers = []
+    try:
+        entries = [d for d in Path(proc).iterdir() if d.name.isdigit()]
+    except OSError as e:
+        raise AccountingError(f"chat fence: {proc} unreadable: {e}") from None
+    for d in entries:
+        try:
+            args = [a.decode(errors="replace") for a in (d / "cmdline").read_bytes().split(b"\0") if a]
+            if not any(a.endswith("improve.py") for a in args) or "run" not in args:
+                continue
+            cgroup = (d / "cgroup").read_text()
+        except FileNotFoundError:
+            continue  # exited between the listing and the read
+        except OSError as e:
+            raise AccountingError(f"chat fence: /proc/{d.name} unreadable: {e}") from None
+        models = [args[i + 1] for i, a in enumerate(args[:-1]) if a == "--model"] + \
+            [a.split("=", 1)[1] for a in args if a.startswith("--model=")]
+        if len(models) != 1:
+            raise AccountingError(f"chat fence: ambiguous improve.py run process {d.name}: {args}")
+        if models[0] in BILLED_CHAT:
+            workers.append(dict(pid=int(d.name), model=models[0], cgroup=cgroup.strip()))
+    if len(workers) > 1:
+        raise Refused(f"chat fence: {len(workers)} billed chat workers at once: {workers}", pause=True)
+    for w in workers:
+        if not any(line.endswith("/" + CHAT_UNIT) for line in w["cgroup"].splitlines()):
+            raise Refused(f"chat fence: billed chat worker {w['pid']} ({w['model']}) outside {CHAT_UNIT}", pause=True)
+    return workers
+
+
+FENCE = billed_chat_fence
 
 
 # --- Cohort ----------------------------------------------------------------------------------------------------
@@ -463,6 +509,7 @@ def admit(key, step, ledger_path, expected, balance=None, want=None):
         if share is not None and share + lane_cap > I.TOTAL_CAP_USD + 1e-9:
             raise Refused(f"the chat share ${share:.2f} plus the decision lane cap ${lane_cap:.2f} exceed "
                           f"${I.TOTAL_CAP_USD:.0f}: not hard allocations")
+        fence = FENCE()
         acct = chat_accounting()
         if acct["blocks"]:
             # The partition ($110 - lane cap for the chat lanes, which they read at every step start) holds only once
@@ -508,7 +555,8 @@ def admit(key, step, ledger_path, expected, balance=None, want=None):
         db.execute("COMMIT")
         return dict(allocation=cur.lastrowid, step=step, expected=expected, cap=amount, binding=binding,
                     limits=limits, ledger=str(ledger_path), share=share, chat_booked=chat, chat_open_headroom=chat_open,
-                    chat_unbilled=acct["unbilled"], partition=acct["partition"], lane_used=lane_used)
+                    chat_unbilled=acct["unbilled"], partition=acct["partition"], lane_used=lane_used,
+                    chat_workers=fence)
     except BaseException:
         if db.in_transaction:
             db.execute("ROLLBACK")

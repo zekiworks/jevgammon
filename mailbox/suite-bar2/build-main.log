@@ -1,0 +1,4 @@
+/tmp/sb2-main/tools/site/offline.py:213: RuntimeWarning: invalid value encountered in multiply
+  return np.where(ok, d * (c - cs), np.nan)
+{"results": "3000c912", "data_as_of": "2026-11-09T12:05Z", "decision_files": 2298, "scored": {"league-1": 36995, "league-2": 39538, "league-3": 16355}}
+main exit 0

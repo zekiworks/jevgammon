@@ -1,0 +1,5 @@
+2551c2551
+< 0ebf1077df26ebc0c55ac3809bbbf0e714afb944925e1dd3a840300f859a8590  ./suite-bar.css
+---
+> 7c686c6d5be33c47b1069436067c20da491bfe9863e43e56fb348eb70ed11bca  ./suite-bar.css
+diff exit 1

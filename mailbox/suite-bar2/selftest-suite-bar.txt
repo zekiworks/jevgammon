@@ -1,0 +1,14 @@
+ok   1 the exact shared strip in an HTML page: passes; expected to pass
+ok   2a the strip's first link outside the strip: fails (banned 'decision-models' 1 unresolved links); expected to fail
+ok   2b the address in the page text: fails (banned 'decision-models'); expected to fail
+ok   2c the link alone, no strip: fails (banned 'decision-models' 1 unresolved links); expected to fail
+ok   3a strip with other link text: fails (banned 'decision-models' 3 unresolved links); expected to fail
+ok   3b strip with another address: fails (banned 'decision-models' 3 unresolved links); expected to fail
+ok   3c strip marking another site: fails (banned 'decision-models' 3 unresolved links); expected to fail
+ok   4 the exact strip twice: fails (banned 'decision-models' 3 unresolved links); expected to fail
+ok   5a the exact strip in a data JSON file: fails (banned 'decision-models'); expected to fail
+ok   5b the exact strip in a text file: fails (banned 'decision-models'); expected to fail
+ok   5c the exact strip in an .html.gz file (scanned decompressed): fails (banned 'decision-models'); expected to fail
+ok   5d the exact strip in a .json.gz file (scanned decompressed): fails (banned 'decision-models'); expected to fail
+all cases as expected
+exit 0

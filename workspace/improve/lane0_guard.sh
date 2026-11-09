@@ -12,8 +12,21 @@ note() { echo "$(date -u +%FT%TZ) $*"; }
 cmd() { tr '\0' ' ' < "/proc/$1/cmdline" 2>/dev/null; }  # cmdline arguments are NUL-separated
 cmd "$RUN" | grep -q "improve.py run --model gemma-4-31b-on" || { note "pid $RUN is not Gemma's run"; exit 1; }
 cmd "$SHELL_PID" | grep -q "run_local.sh" || { note "pid $SHELL_PID is not the lane shell"; exit 1; }
-note "guarding: Gemma run $RUN, lane shell $SHELL_PID; stop action: improve-local + v3-gemma4-31b only"
+GATE=/home/cbasaran/code/jevgammon/workspace/improve/runs/server_gate.txt
+# Zeki #3397: while the lane shell is alive, the server gate file must exist and list improve-local.service (the gate
+# allows every caller when the file is absent). Checked at start and once a minute; restored and logged if not.
+check_gate() {
+  [[ -d /proc/$SHELL_PID ]] || return 0
+  if ! grep -qxF improve-local.service "$GATE" 2>/dev/null; then
+    echo improve-local.service >> "$GATE"
+    note "server gate restored: $GATE did not list improve-local.service"
+    printf '{"at": "%s", "event": "server_gate_restored", "file": "%s"}\n' "$(date -u +%FT%T+00:00)" "$GATE" >> "$LOG"
+  fi
+}
+check_gate
+note "guarding: Gemma run $RUN, lane shell $SHELL_PID; stop action: improve-local + v3-gemma4-31b only; gate file checked each minute"
 printf '{"at": "%s", "event": "lane0_guard_start", "gemma_run_pid": %s, "lane_shell_pid": %s, "stop_action": "systemctl --user stop improve-local; docker stop v3-gemma4-31b"}\n' "$(date -u +%FT%T+00:00)" "$RUN" "$SHELL_PID" >> "$LOG"
+tick=0
 while true; do
   why=""
   if [[ ! -d /proc/$RUN ]]; then why="Gemma's run exited"; fi
@@ -33,5 +46,6 @@ while true; do
     exit 0
   fi
   systemctl --user is-active -q improve-local || { note "improve-local is no longer active: guard ends"; exit 0; }
+  (( ++tick % 60 == 0 )) && check_gate
   sleep 1
 done

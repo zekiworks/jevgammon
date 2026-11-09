@@ -418,8 +418,8 @@ def too_safe(S, chart: list) -> str:
 # About (about_text).
 MEANING = "Risk judgement: 100 = every call right, 50 = always safe; higher is better."
 ROW_LINE = "One row per model at its highest reasoning setting, never its best score; late entries included."
-SMALL_NOTE = (f"Small models: {P.billions(P.SMALL_MAX_B)} parameters or fewer (total), as disclosed by the maker; models "
-              "with undisclosed size are not included.")
+SMALL_NOTE = (f"Small models: {P.billions(P.SMALL_MAX_B)} parameters or fewer, total or active (for "
+              "mixture-of-experts models), as disclosed by the maker; models with undisclosed size are not included.")
 
 
 def headline(S) -> str:

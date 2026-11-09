@@ -1089,8 +1089,10 @@ def params_html(model: str) -> str:
 
 
 def is_small(model: str) -> bool:
-    """Disclosed total parameters (a mixture of experts by its total) at most SMALL_MAX_B billion."""
-    return PARAMS[model]["total_b"] is not None and PARAMS[model]["total_b"] <= SMALL_MAX_B
+    """Disclosed total parameters, or a mixture of experts' disclosed active parameters, at most SMALL_MAX_B billion
+    (Ümit via Zeki #3815/#3816, the same rule on all three sites); an undisclosed count is never assumed."""
+    p = PARAMS[model]
+    return any(v is not None and v <= SMALL_MAX_B for v in (p["total_b"], p["active_b"]))
 
 
 B7 = [("model_id", "Model ID"), ("provider", "Provider or endpoint"), ("date_run", "Date run"), ("price", "Price"),

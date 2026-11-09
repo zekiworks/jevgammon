@@ -510,17 +510,13 @@ def progress_status(p) -> str:
 
 ARMS = (("notes", "notes"), ("worst_mistakes", "worst mistakes"))
 ARM_LABEL = {"notes": "helper-written notes", "worst_mistakes": "worst mistakes"}
-# Small models: the leaderboard's rule (total at most P.SMALL_MAX_B), plus the models named here (Ümit #3806); a later
-# rule change is this one line.
-SMALL_BY_NAME = ("Inkling Small",)
-SMALL_NOTE = (f"Small models: {P.billions(P.SMALL_MAX_B)} parameters or fewer (total), as disclosed by the maker "
-              "(the leaderboard's provisional threshold); a model whose maker discloses no total is not counted as small."
-              + "".join(f" Also included by name: {n} ({P.billions(P.PARAMS[n]['active_b'])} active of "
-                        f"{P.billions(P.PARAMS[n]['total_b'])} total)." for n in SMALL_BY_NAME))
+# Small models: the leaderboard's rule (P.is_small: total, or a mixture of experts' active, at most P.SMALL_MAX_B).
+SMALL_NOTE = (f"Small models: {P.billions(P.SMALL_MAX_B)} parameters or fewer, total or active (for "
+              "mixture-of-experts models), as disclosed by the maker; models with undisclosed size are not included.")
 
 
 def small(name: str | None) -> str:
-    return "yes" if name in SMALL_BY_NAME or (name in P.PARAMS and P.is_small(name)) else "no"
+    return "yes" if name in P.PARAMS and P.is_small(name) else "no"
 
 
 # Each row's maker dot and details box (Ümit via Zeki #3803): the home leaderboard's (home.maker on the shared palette,

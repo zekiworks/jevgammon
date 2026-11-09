@@ -273,6 +273,8 @@ class States(Isolated):
         rows = [r for r in D.summary()["rows"] if r["setup"] == "Liquid d1-ultra"]
         self.assertEqual(len(rows), 2)
         self.assertTrue(all("delivery unverified (our evidence gap)" in r["delivery_flag"] for r in rows))
+        self.assertTrue(all((r["state"], r["reason"]) == ("not tested", "native context limit unverified")
+                            for r in rows))
 
     def test_a_spent_subcap_keeps_drex_max_pending(self):
         self.cohort(subcaps={"nace": 1.25}, D6_hosted_allowance_usd=dict(ZERO, nace=110))

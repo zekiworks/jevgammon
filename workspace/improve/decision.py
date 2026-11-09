@@ -49,7 +49,7 @@ import improve as I  # noqa: E402
 
 COHORT_FILE = HERE / "decision_cohort.json"
 ADDENDUM = I.STATE_ROOT / "mailbox/Did they improve - decision models - addendum 2026-11-09.md"
-ADDENDUM_SHA256 = "PENDING"  # set to the committed addendum's sha256 before the first call
+ADDENDUM_SHA256 = "b370f4dc9660a618aece4586b8c8f5259688372fab580305b4454aaa2d71a967"  # main 02d6145
 ARMS = {"notes": "helper-written notes", "worst": "worst mistakes"}
 NOTES_INTRO = "Notes a helper wrote from your earlier games in this series, oldest first:"
 WORST_OPEN = "=== WORST MISTAKES FROM YOUR EARLIER GAMES IN THIS SERIES ==="

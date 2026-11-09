@@ -18,7 +18,6 @@ from common import ALL_NOTE, CONTENT, LATE_ENTRY, NA, count, esc, fmt, nm, pct
 RELEASES = json.loads((CONTENT / "release_months.json").read_text())["models"]
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 PROGRAMS = ("GNUbg weak", "Random", "Safest")
-NO_MAKER = "Maker not recorded"  # content/maker_colors.json's entry for setups whose maker is not on record
 
 
 def caveat(text: str, anchor: str = "limits") -> str:
@@ -259,7 +258,7 @@ def details_box(S, x, kind: str, bid: str, extra: list, ref: str | None = None) 
     mk = H.maker(x["name"])[0] if kind != "program" else None
     lines = [
         join([f'<strong>{esc(x["name"])}</strong>'] + ([esc(ref) if ref else None] if kind == "program" else
-             [esc(p) for p in (mk if mk != NO_MAKER else None, TYPE_LABEL.get(model_type(S, x)), x["setting"]) if p])),
+             [esc(p) for p in (mk, TYPE_LABEL.get(model_type(S, x)), x["setting"]) if p])),
         (f'Risk judgement {fmt(r["judgement"])} (95%: {fmt(r["judgement_lo"])}\u2013{fmt(r["judgement_hi"])})'
          if r["judgement"] is not None else None),
         join([f'Risks found {pct(found["share"])}' if found["den"] else None,
@@ -640,8 +639,8 @@ def release_chart(S) -> str:
     by = {}
     for m, label, j, mk, c in sorted(dated):
         by.setdefault(mk, []).append((m, label, j, c))
-    # A line joins a maker's models only where they span two or more months ("Maker not recorded" is no maker).
-    spread = {mk: pts for mk, pts in by.items() if len({p[0] for p in pts}) > 1 and mk != NO_MAKER}
+    # A line joins a maker's models only where they span two or more months.
+    spread = {mk: pts for mk, pts in by.items() if len({p[0] for p in pts}) > 1}
 
     def rising(pts):
         months = sorted({p[0] for p in pts})

@@ -46,6 +46,7 @@ sys.path.insert(0, str(SITE))
 
 from common import NA, ROOT, count, esc, fmt, nm  # noqa: E402
 
+import home as H  # noqa: E402
 import improve_validate as V  # noqa: E402
 import learning_page as LP  # noqa: E402
 import pages as P  # noqa: E402
@@ -508,12 +509,74 @@ def progress_status(p) -> str:
 
 
 ARMS = (("notes", "notes"), ("worst_mistakes", "worst mistakes"))
+ARM_LABEL = {"notes": "helper-written notes", "worst_mistakes": "worst mistakes"}
+# Small models: the leaderboard's rule (total at most P.SMALL_MAX_B), plus the models named here (Ümit #3806); a later
+# rule change is this one line.
+SMALL_BY_NAME = ("Inkling Small",)
 SMALL_NOTE = (f"Small models: {P.billions(P.SMALL_MAX_B)} parameters or fewer (total), as disclosed by the maker "
-              "(the leaderboard's provisional threshold); a model whose maker discloses no total is not counted as small.")
+              "(the leaderboard's provisional threshold); a model whose maker discloses no total is not counted as small."
+              + "".join(f" Also included by name: {n} ({P.billions(P.PARAMS[n]['active_b'])} active of "
+                        f"{P.billions(P.PARAMS[n]['total_b'])} total)." for n in SMALL_BY_NAME))
 
 
 def small(name: str | None) -> str:
-    return "yes" if name in P.PARAMS and P.is_small(name) else "no"
+    return "yes" if name in SMALL_BY_NAME or (name in P.PARAMS and P.is_small(name)) else "no"
+
+
+# Each row's maker dot and details box (Ümit via Zeki #3803): the home leaderboard's (home.maker on the shared palette,
+# story.box_html, bg.js headlineDetails). A row's model without a palette maker fails the build, except the planned
+# rows named in NO_MAKER (families.json has no family for them, so home.maker finds no palette maker): a grey dot, no
+# maker in the box. Box lines without data are left out (never "n/a").
+NO_MAKER = ("MiniMax-M3.1-Flash", "Inkling Small", "vLLM-SR d3-ultra")
+
+
+def board_links(S) -> dict:
+    """{setup name or model name: the box's link line} of the leaderboard's rows (a model: its top row), relative to
+    improve/."""
+    import story as ST
+    out = {}
+    for x, others, _, _ in ST.leaderboard_rows(S)[0]:
+        for y in (x, *others):
+            line = ST.links_line(S, y, "../")
+            if line:
+                out.setdefault(y["name"], line)
+                out.setdefault(y["model"], line)
+    return out
+
+
+def maker_dot(setup: str) -> tuple[str | None, str]:
+    """(maker, the row's dot) as on the leaderboard."""
+    if setup in NO_MAKER:
+        return None, '<i class="swatch hl-dot hl-dot-none" aria-hidden="true"></i>'
+    mk, colour = H.maker(setup)
+    return mk, f'<i class="swatch hl-dot" style="background:{colour}" title="{esc(mk)}"></i>'
+
+
+def name_cell(setup: str, dot: str, bid: str, box: list, extra: str = "") -> str:
+    from story import box_html
+    return (f'<th scope="row" class="model">{dot}<span class="model-name" tabindex="0" aria-describedby="{bid}">'
+            f'{esc(setup)}</span>{extra}{box_html(bid, setup, box)}</th>')
+
+
+def first_line(model: str, mk: str | None, typ: str, setting: str | None) -> str:
+    return " \u00b7 ".join([f"<strong>{esc(model)}</strong>"] + [esc(p) for p in (mk, typ, setting) if p])
+
+
+def answers_line(m) -> str | None:
+    parts = [f'{w}: {count(a["valid"])} valid of {count(a["expected"])} ({count(a["tests"])} test'
+             f'{"s" if a["tests"] != 1 else ""}), {count(a["invalid"])} invalid'
+             for w, a in (("before", m["answers_before"]), ("after", m["answers_after"])) if a]
+    return "Answers " + "; ".join(parts) if parts else None
+
+
+def change_line(m) -> str | None:
+    """A finished model's three measures before → after and its Yes/No."""
+    if not m["verdict"]:
+        return None
+    parts = [f'{t} {before_after(m, k)}' for t, k in (("Risks found", "risks_found"), ("right safety", "right_safety"),
+                                                     ("error rate", "error_rate"))
+             if m["before"][k] is not None and m["after"][k] is not None]
+    return " \u00b7 ".join(parts + [f'Improved? <strong>{esc(m["status"])}</strong>'])
 
 
 def result_rows(L) -> list:
@@ -532,7 +595,7 @@ def result_rows(L) -> list:
     return [x[1:] for x in sorted(out, key=lambda x: x[0])]
 
 
-def result_row(pm, p, m, refused) -> str:
+def result_row(pm, p, m, refused, i: int, links: dict) -> str:
     if refused:
         status_, done = nm(NA), nm(NA)
     elif p is None:
@@ -549,28 +612,47 @@ def result_row(pm, p, m, refused) -> str:
     verdict = (f'<strong data-rverdict="{"yes" if m["improved"] else "no"}">{esc(m["status"])}</strong>'
                if m is not None and m["verdict"] else "")
     name = re.sub(r" \([^()]*\)$", "", pm["setup"])
-    return (f'<tr data-progress-setup="{esc(pm["setup"])}" data-group="chat" data-small="{small(name)}">'
-            f'<th scope="row">{esc(pm["setup"])}</th><td>Chat</td><td data-progress="status">{status_}</td>'
+    setting = pm["setup"][len(name) + 2:-1] or None
+    mk, dot = maker_dot(pm["setup"])
+    bid = f"ir-{i}-box"
+    box = [first_line(name, mk, "chat model", setting), f"Parameters: {P.params_html(name)}",
+           "Route: " + ("our GPU" if pm["route"].startswith("local") else _inline(pm["route"])),
+           None if refused else f"Status: {status_}", None if refused else f"Series done {done}",
+           m and answers_line(m), m and change_line(m), links.get(pm["setup"]) or links.get(name)]
+    return (f'<tr data-progress-setup="{esc(pm["setup"])}" data-group="chat" data-small="{small(name)}" data-box="{bid}">'
+            f'{name_cell(pm["setup"], dot, bid, box)}<td>Chat</td><td data-progress="status">{status_}</td>'
             f'<td class="num" data-progress="series">{done}</td>{nums}<td>{verdict}</td></tr>')
 
 
-def planned_row(r, arm=None) -> str:
+def planned_row(r, arm, i: int, links: dict) -> str:
     status_ = r[arm[0]] if arm else r["status"]
     group = f"Decision · {arm[1]}" if arm else "Chat"
     tag = f'<br><span class="small">{esc(r["tag"])}</span>' if r["tag"] else ""
-    return (f'<tr data-planned="{esc(r["setup"])}" data-group="{r["group"]}" data-small="{small(r["params_model"])}">'
-            f'<th scope="row">{esc(r["setup"])}<br><span class="small">planned, not a result</span>{tag}</th>'
+    listed = r["params_model"] is not None
+    mk, dot = maker_dot(r["setup"])
+    bid = f"ir-{i}-box"
+    box = [first_line(r["setup"], mk, "decision model" if arm else "chat model", None),
+           f'Parameters: {P.params_html(r["params_model"])}' if listed else None,
+           f"Arm: {ARM_LABEL[arm[0]]}" if arm else None, f"Status: {esc(status_)}",
+           " \u00b7 ".join(["Planned, not a result"] + ([esc(r["tag"])] if r["tag"] else [])),
+           links.get(r["setup"]) or (links.get(r["params_model"]) if listed else None)]
+    return (f'<tr data-planned="{esc(r["setup"])}" data-group="{r["group"]}" data-small="{small(r["params_model"])}" '
+            f'data-box="{bid}">{name_cell(r["setup"], dot, bid, box, "<br><span class=\"small\">planned, not a result</span>" + tag)}'
             f'<td>{group}</td><td>{esc(status_)}</td><td class="num">{nm(NA)}</td><td></td><td></td><td></td>'
             '<td></td></tr>')
 
 
-def results_section(L) -> str:
+def results_section(L, S=None) -> str:
     """The page's first table (Ümit/Zeki #3710): one row per model, the plan's chat models (status and series from
     the validated progress fields; numbers from the validated results; Yes or No only past the verdict gate), then the
-    planned rows (content/improve_planned.json: status only, never a number). Filters: All, Chat, Decision, Small."""
+    planned rows (content/improve_planned.json: status only, never a number). Filters: All, Chat, Decision, Small. Each
+    row: its maker dot and details box; S (the site's state, absent in the page's own renders): the boxes' links to
+    the leaderboard's decisions and model pages."""
     refused = L["progress_refused"]
-    rows_ = [result_row(pm, p, m, refused) for pm, p, m in result_rows(L)]
-    rows_ += [planned_row(r, arm) for r in L["planned"] for arm in ((None,) if r["group"] == "chat" else ARMS)]
+    links = board_links(S) if S else {}
+    rows_ = [result_row(pm, p, m, refused, i, links) for i, (pm, p, m) in enumerate(result_rows(L), 1)]
+    rows_ += [planned_row(r, arm, i, links) for i, (r, arm) in enumerate(
+        ((r, arm) for r in L["planned"] for arm in ((None,) if r["group"] == "chat" else ARMS)), len(rows_) + 1)]
     note = ('<p class="note" id="improve-progress-refused"><strong>Status unavailable.</strong> The latest results '
             'file\'s status fields failed the site\'s checks:</p><ul class="notes">'
             + "".join(f"<li>{esc(p)}</li>" for p in refused) + "</ul>" if refused else "")
@@ -697,7 +779,7 @@ def addendum_section(A) -> str:
             f'sha256 <code>{A["sha256"]}</code></p>{secs}')
 
 
-def body(L) -> str:
+def body(L, S=None) -> str:
     plan = L["plan"]
     rule = section(plan["sections"], RULE_SECTION)
     parts = [("improve-decision", "Decision models (added 9 Nov)", addendum_section(L["addendum"])),
@@ -715,7 +797,7 @@ def body(L) -> str:
              "page yet." if not results_shown(L) else
              "The pre-registered rule, the results as each model's runs come in, and every lesson.")
     head = (f'<header class="card hero page-head"><p class="eyebrow">{eyebrow(L)}</p><h1>{esc(title(L))}</h1>'
-            f'</header><section class="card" id="improve-results"><h2>Results</h2>{results_section(L)}</section>')
+            f'</header><section class="card" id="improve-results"><h2>Results</h2>{results_section(L, S)}</section>')
     about = ('<section class="card" id="improve-about">' + (status_line(L) if results_shown(L) else "")
              + f'<p class="intro" id="improve-commitment"><strong>{esc(plan["commitment"])}</strong></p>'
              f'<p class="intro">{intro} Data: <a href="../{DATA}">improve.json</a>.</p>{validation_note(L)}{money(L)}'
@@ -735,7 +817,7 @@ def render(out: Path, L: dict) -> Path:
     S = site_state(L)
     page = out / PATH / "index.html"
     page.parent.mkdir(parents=True, exist_ok=True)
-    page.write_text(P.layout(S, LP.site_base(), PATH, title(L), body(L), description=DESCRIPTION))
+    page.write_text(P.layout(S, LP.site_base(), PATH, title(L), body(L), description=DESCRIPTION, scripts=("bg.js",)))
     (out / DATA).parent.mkdir(parents=True, exist_ok=True)
     (out / DATA).write_text(json.dumps(L, indent=1, ensure_ascii=False))
     return page

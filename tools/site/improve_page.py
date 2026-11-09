@@ -67,6 +67,15 @@ SOURCE = "improve"
 PLANNED = SITE / "content/improve_planned.json"
 DESCRIPTION = ("Did they improve? Each chat model on the leaderboard writes its own lessons over 10 games against GNUbg "
                "weak, then takes the risk test again. The pre-registered rule, model list and lesson prompt.")
+# Part 3, the decision models (Ümit/Zeki, #3790): the addendum to the pre-registration, committed at ADDENDUM_COMMIT and
+# bound by sha256 (the harness refuses any other file). The render fails unless the file hashes to ADDENDUM_SHA256. Its
+# sections ADDENDUM_SECTIONS are shown as written in their own section, below the results table and above the plan.
+ADDENDUM = ROOT / "mailbox/Did they improve - decision models - addendum 2026-11-09.md"
+ADDENDUM_SHA256 = "b370f4dc9660a618aece4586b8c8f5259688372fab580305b4454aaa2d71a967"
+ADDENDUM_COMMIT = "02d6145b5be01c67075511137cfee8c7ee22ad2c"
+ADDENDUM_URL = ("https://github.com/zekiworks/jevgammon/blob/" + ADDENDUM_COMMIT
+                + "/mailbox/Did%20they%20improve%20-%20decision%20models%20-%20addendum%202026-11-09.md?plain=1")
+ADDENDUM_SECTIONS = ("1.", "2.", "3.", "4.", "7.", "9.")
 # The hashes the plan states (sections 5): the lesson prompt and the test set. The render fails unless the plan states
 # them and the files present hash to them.
 PROMPT_SHA256 = "d755001513b60546cbcc4159db0965dbeda09a65d65377d874b22e247f74550e"
@@ -218,6 +227,34 @@ def read_plan(path: Path) -> dict:
                 prompt_sha256=PROMPT_SHA256, test_set_sha256=TEST_SET_SHA256)
 
 
+def read_addendum(path: Path = ADDENDUM) -> dict:
+    """The decision-model addendum: its sections ADDENDUM_SECTIONS as written (hosts rewritten as for the plan); the
+    render fails unless the file hashes to ADDENDUM_SHA256, states the commitment line and needs no redaction."""
+    raw = path.read_bytes()
+    sha = hashlib.sha256(raw).hexdigest()
+    if sha != ADDENDUM_SHA256:
+        raise SystemExit(f"{path}: sha256 {sha}, not the bound {ADDENDUM_SHA256}")
+    text = raw.decode()
+    if COMMITMENT not in text:
+        raise SystemExit(f"{path}: the commitment line is missing: {COMMITMENT!r}")
+    sections, cur = [], None
+    for line in text.splitlines():
+        line, n = LP.redact(unhost(line))
+        if n:
+            raise SystemExit(f"{path}: a private string in {line!r}")
+        if line.startswith("## "):
+            cur = dict(title=line[3:].strip(), lines=[])
+            sections.append(cur)
+        elif cur is not None:
+            cur["lines"].append(line)
+    shown = [dict(title=s["title"], markdown="\n".join(s["lines"]).strip()) for s in sections
+             if s["title"].startswith(ADDENDUM_SECTIONS)]
+    if len(shown) != len(ADDENDUM_SECTIONS):
+        raise SystemExit(f"{path}: not every section of {ADDENDUM_SECTIONS} found")
+    return dict(file=path.name, sha256=sha, commit=ADDENDUM_COMMIT, url=ADDENDUM_URL, commitment=COMMITMENT,
+                sections=shown)
+
+
 def prompt_sha(d: Path) -> str | None:
     files = [d / "lessons_system.txt", d / "lessons_user.txt"]
     if not all(f.exists() for f in files):
@@ -336,7 +373,7 @@ def data(plan_path: Path, src: Path, test_set: Path = TEST_SET, preregistration_
     progress = read_progress(src, plan) if prereg else progress_from_results(shown)
     L = dict(version="v3", preregistration_only=prereg, plan={k: v for k, v in plan.items() if k != "redacted"},
              redacted=plan["redacted"], lesson_prompt=prompt, **shown, **progress,
-             planned=read_planned({m["setup"] for m in plan["models"]}))
+             planned=read_planned({m["setup"] for m in plan["models"]}), addendum=read_addendum())
     if not prereg:
         L["status"] = status(L)
     L["source_sha256"] = hashlib.sha256(json.dumps(L, sort_keys=True).encode()).hexdigest()
@@ -648,10 +685,23 @@ def title(L) -> str:
     return TITLE if results_shown(L) else TITLE_PREREG
 
 
+def addendum_section(A) -> str:
+    """Part 3, the decision models: the addendum's sections as written, its commitment line, and its sha256 with a
+    link to the committed file, so the page's copy can be checked against the file the harness is bound to."""
+    secs = "".join(f'<h3>{esc(s["title"])}</h3>{spec_markdown(s["markdown"])}' for s in A["sections"])
+    return (f'<p class="intro" id="improve-decision-commitment"><strong>{esc(A["commitment"])}</strong></p>'
+            '<p>The decision models are pre-registered in an addendum to the plan, committed before their first '
+            'call. Its rule, cohort, writer, money and open decisions follow as written; the planned rows above '
+            'show each setup\'s status per arm.</p>'
+            f'<p class="small" id="improve-decision-sha">Addendum: <a href="{esc(A["url"])}">{esc(A["file"])}</a>, '
+            f'sha256 <code>{A["sha256"]}</code></p>{secs}')
+
+
 def body(L) -> str:
     plan = L["plan"]
     rule = section(plan["sections"], RULE_SECTION)
-    parts = [("improve-rule", rule["title"], spec_markdown(rule["markdown"])),
+    parts = [("improve-decision", "Decision models (added 9 Nov)", addendum_section(L["addendum"])),
+             ("improve-rule", rule["title"], spec_markdown(rule["markdown"])),
              ("improve-models", "Models", models_section(L))]
     if results_shown(L):
         parts.append(("improve-lessons", "Lessons and every test, per model", lessons(L)))

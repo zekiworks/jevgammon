@@ -12,6 +12,18 @@
 # defaults from generation_config.json (top_k 20, top_p 0.95; the league sets temperature 1).
 # Thinking is switched per request with chat_template_kwargs.enable_thinking; --reasoning-parser
 # qwen3 files the reasoning under reasoning.
+# "Did they improve?" lane gate (2026-11-09, Zeki #3392): a systemd unit listed in the gate file (one unit per
+# line, e.g. improve-local.service, the GPU-0 lane whose loop predates per-model lane claims) may not run this script;
+# it is refused here, before anything else (no docker call, no side effect). Other callers (lane improve-local3, the
+# leagues, a shell) are unaffected. IMPROVE_GATE_FILE overrides the file (tests).
+IMPROVE_GATE=${IMPROVE_GATE_FILE:-/home/cbasaran/code/jevgammon/workspace/improve/runs/server_gate.txt}
+if [[ -f "$IMPROVE_GATE" ]]; then
+  improve_unit=$(grep -o '[^/]*\.service$' /proc/$$/cgroup | tail -1)
+  if [[ -n "$improve_unit" ]] && grep -qxF "$improve_unit" "$IMPROVE_GATE"; then
+    echo "$(basename "$0") ${1:-}: refused for $improve_unit (lane gate $IMPROVE_GATE)" >&2
+    exit 3
+  fi
+fi
 source "$(dirname "$(readlink -f "$0")")/_lib.sh"
 DIR=$(dirname "$(readlink -f "$0")")
 

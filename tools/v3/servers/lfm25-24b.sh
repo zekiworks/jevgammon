@@ -14,6 +14,18 @@
 # files the text up to </think> under reasoning. 20 stored League 2 (off) requests with that
 # prefill: same top letter as Liquid's API 14/20 in bf16 (Liquid's FP8 checkpoint f54bf395
 # here: 12/20; Liquid against itself 19/20; bf16 against FP8 here 15/20, most of them near-ties).
+# "Did they improve?" lane gate (2026-11-09, Zeki #3392): a systemd unit listed in the gate file (one unit per
+# line, e.g. improve-local.service, the GPU-0 lane whose loop predates per-model lane claims) may not run this script;
+# it is refused here, before anything else (no docker call, no side effect). Other callers (lane improve-local3, the
+# leagues, a shell) are unaffected. IMPROVE_GATE_FILE overrides the file (tests).
+IMPROVE_GATE=${IMPROVE_GATE_FILE:-/home/cbasaran/code/jevgammon/workspace/improve/runs/server_gate.txt}
+if [[ -f "$IMPROVE_GATE" ]]; then
+  improve_unit=$(grep -o '[^/]*\.service$' /proc/$$/cgroup | tail -1)
+  if [[ -n "$improve_unit" ]] && grep -qxF "$improve_unit" "$IMPROVE_GATE"; then
+    echo "$(basename "$0") ${1:-}: refused for $improve_unit (lane gate $IMPROVE_GATE)" >&2
+    exit 3
+  fi
+fi
 source "$(dirname "$(readlink -f "$0")")/_lib.sh"
 DIR=$(dirname "$(readlink -f "$0")")
 

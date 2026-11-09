@@ -9,7 +9,7 @@
 set -uo pipefail
 cd "$(dirname "$0")/../.."
 UUID=$1; shift
-LANE=${IMPROVE_LANE:?IMPROVE_LANE (the lane's unit name)}
+LANE=${IMPROVE_LANE:?IMPROVE_LANE: the lane unit name}
 PY=/home/cbasaran/.pyenv/versions/3.12.13/bin/python3
 SERVERS=/home/cbasaran/code/jevgammon/tools/v3/servers
 RUNS=/home/cbasaran/code/jevgammon/workspace/improve/runs

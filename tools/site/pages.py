@@ -1060,9 +1060,12 @@ PARAMS = json.loads((CONTENT_DIR / "model_params.json").read_text())["models"]
 # and open models without a maker's total), the maker's standard price per 1M input tokens, its URL and read date
 # (content/model_prices.json); never an estimate.
 PRICES = json.loads((CONTENT_DIR / "model_prices.json").read_text())["models"]
-# Model classes (Ümit #4245; one scale for the three sites): (key, label). Programs are in no class.
+# Model classes (Ümit #4245, #4259; one scale for the three sites): (key, label). Undisclosed: neither the maker's size
+# nor a per-token list price (a chat model always has one, so never; a decision model with a per-request price or
+# none). Programs are in no class.
 CLASSES = (("tiny", "Tiny"), ("small", "Small"), ("medium", "Medium"), ("large", "Large"),
-           ("efficient", "Efficient"), ("workhorse", "Workhorse"), ("flagship", "Flagship"))
+           ("efficient", "Efficient"), ("workhorse", "Workhorse"), ("flagship", "Flagship"),
+           ("undisclosed", "Undisclosed"))
 CLASS_LABEL = dict(CLASSES)
 # The rule shown under the Class row and on About, word for word (Ümit #4245).
 CLASS_RULE = ("Size by total parameters, as disclosed by the maker (for MoE models the label also shows active "
@@ -1109,8 +1112,8 @@ def model_class(model: str) -> str | None:
     15B, medium over 15B to 40B, large over 40B; not our checkpoint count total_b); REAX 1.3, two models run together
     whose card states no total (card_parts_b), by its total in all (total_b, 57.36B, the figure logic's live site uses,
     #4253); any other model by its standard list price (PRICES: efficient <= $0.50, workhorse over $0.50 to $3,
-    flagship over $3); None where the maker's page gives no price. A model the parameter file does not list:
-    KeyError."""
+    flagship over $3); undisclosed where it has neither a maker's size nor a per-token list price (#4259). A model
+    the parameter file does not list: KeyError."""
     p = PARAMS[model]
     if p["card_total_b"] is not None:
         return _by_total(p["card_total_b"])
@@ -1118,7 +1121,7 @@ def model_class(model: str) -> str | None:
         return _by_total(p["total_b"])
     price = PRICES[model]["input_per_mtok"]
     if price is None:
-        return None
+        return "undisclosed"  # Ümit #4259: neither size nor a per-token list price
     return "efficient" if price <= 0.5 else "workhorse" if price <= 3 else "flagship"
 
 
@@ -1133,8 +1136,8 @@ def class_label(model: str) -> str:
     """The short plain-text label after a row's name (Ümit #4245, #4254; logic #4253): the maker's total, a dense
     model the number only ('31B'), a mixture of experts with its active count ('309B MoE · 15B active'; '753B MoE'
     without one); REAX 1.3 its total and '2×' ('57B 2×'); a model of undisclosed size 'Closed · Workhorse' or 'Open,
-    size undisclosed · Workhorse', '(provisional)' on an introductory-only price (#4238), 'price unknown' without one.
-    The details box gives the exact counts."""
+    size undisclosed · Workhorse', '(provisional)' on an introductory-only price (#4238), 'Closed · Undisclosed'
+    without one (#4259). The details box gives the exact counts."""
     p = PARAMS[model]
     if p["card_total_b"] is not None:
         if not p["moe"]:
@@ -1146,7 +1149,7 @@ def class_label(model: str) -> str:
     cls = model_class(model)
     head = "Closed" if PRICES[model]["weights"] == "closed" else "Open, size undisclosed"
     provisional = " (provisional)" if PRICES[model]["provisional"] else ""
-    return f'{head} \u00b7 {CLASS_LABEL[cls] + provisional if cls else "price unknown"}'
+    return f'{head} \u00b7 {CLASS_LABEL[cls]}{provisional}'
 
 
 def class_note(model: str) -> str | None:

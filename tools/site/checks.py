@@ -904,6 +904,8 @@ def check_model_classes(out: Path) -> list[str]:
     home = (out / "index.html").read_text()
     rows = re.findall(r'<tr[^>]*data-hl-type="(?!program)[^"]*"[^>]*>', home)
     bad += [f"index.html: leaderboard row without a class: {r[:120]}" for r in rows if "data-hl-class=" not in r]
+    bad += [f"index.html: chat model row in Undisclosed (Ümit #4259): {r[:120]}" for r in rows
+            if 'data-hl-type="chat"' in r and 'data-hl-class="undisclosed"' in r]
     import html as html_mod
     bad += [] if html_mod.escape(P.CLASS_RULE) in home else ["index.html: the class rule sentence (Ümit #4245) missing"]
     return bad + ([] if rows else ["index.html: no leaderboard model rows"])

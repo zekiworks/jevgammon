@@ -69,12 +69,25 @@ pinned || { echo "KnowLine server on $SSH_HOST: not the pinned snapshot's serve_
 bal=$(balance) || { echo "OpenRouter credits unreadable" >&2; exit 1; }
 lt "$bal" "$FLOOR" && { echo "OpenRouter balance \$$bal: under \$$FLOOR" >&2; exit 1; }
 
+# Once, fail closed: every step must succeed, else nothing after it runs and state/first is not written (so the block
+# runs again next time). The backup goes to v3.db's own disk (34 GB; /tmp is a smaller tmpfs) and the .zst is
+# verified with zstd -t before anything writes v3.db.
 if [[ ! -e $ST/first ]]; then
-  sqlite3 v3.db ".backup /tmp/v3-before-knowline.db"
-  zstd -q -T0 --rm /tmp/v3-before-knowline.db -o "v3.db.bak-$(date -u +%Y%m%dT%H%M%S)-before-knowline.zst"
-  sqlite3 -readonly v3.db "SELECT COALESCE(MAX(id), 0) + 1 FROM matches" > $ST/first
-  python3 $T/knowline.py trigger >> $ST/guard.log 2>&1 || { echo "trigger failed" >&2; exit 1; }
-  python3 $T/knowline.py configs >> $ST/guard.log 2>&1 || { echo "configs failed" >&2; exit 1; }
+  raw=$PWD/v3-before-knowline.db
+  bak=$PWD/v3.db.bak-$(date -u +%Y%m%dT%H%M%S)-before-knowline.zst
+  fail() { echo "$1" >&2; rm -f "$raw" "$ST/first.new"; exit 1; }
+  rm -f "$raw"
+  [[ ! -e $bak ]] || fail "$bak already exists"
+  sqlite3 v3.db ".backup '$raw'" || fail "v3.db backup to $raw failed"
+  zstd -q -T0 "$raw" -o "$bak" || { rm -f "$bak"; fail "zstd of $raw failed"; }
+  zstd -q -t "$bak" || { rm -f "$bak"; fail "zstd -t: $bak does not verify"; }
+  rm -f "$raw"
+  sqlite3 -readonly v3.db "SELECT COALESCE(MAX(id), 0) + 1 FROM matches" > "$ST/first.new" && [[ -s $ST/first.new ]] ||
+    fail "first match id unreadable"
+  python3 $T/knowline.py trigger >> $ST/guard.log 2>&1 || fail "trigger failed"
+  python3 $T/knowline.py configs >> $ST/guard.log 2>&1 || fail "configs failed"
+  mv "$ST/first.new" "$ST/first" || fail "state/first not written"
+  echo "$(date -u +%FT%TZ) backup $bak verified (zstd -t); first match #$(cat $ST/first)" >> $ST/guard.log
 fi
 [[ -e $STATUS ]] || printf '# Late entries KnowLine - status\n\nGo: Ümit #4325. First match id: #%s.\n\n## Log\n' "$(cat $ST/first)" > "$STATUS"
 log "guard up: runner $(git -C "$T" rev-parse --short HEAD) clean; KnowLine $URL pinned ($SSH_HOST); OpenRouter \$$bal; floor \$$FLOOR; paid-opponent cap \$$CAP from #$(cat $ST/first); 10 opponents (GPT-6 Luna deferred: no OpenAI credit; 8 local setups queued for a GPU)"

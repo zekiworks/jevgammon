@@ -1685,33 +1685,42 @@ def highlights_page(S, out: Path) -> str:
 
 
 def experiments_page(S) -> str:
+    """One compact card per experiment (Ümit #4388, #4390). Status words: 'Completed', 'In progress' or 'Paused', from
+    the data. 'Learning' is the every-model study (/improve/), its status and counts from the same validated data as
+    that page (the build fails without it); the finished one-model pilot (/learning/) is its own small card."""
     import improve_page
     import learning_page
-    L, I = S["learning"], S["improve"]
-    lstatus = "Pre-registration" if L.get("preregistration_only") else L["status"]["line"]
+    I = S.get("improve")
+    if not I or not I.get("plan"):
+        raise SystemExit("experiments page: improve data missing")
+    st = improve_page.status(I)
+    istatus = ("Completed" if st["phase"] == "done" else "Not started" if st["phase"] == "not-started"
+               else "Paused" if st["paused"] and not st["running"] else "In progress")
+    counts = " · ".join([f'{st["verdicts"]}/{st["models"]} verdicts', f'{st["running"]} running']
+                        + ([f'{st["paused"]} paused'] if st["paused"] else [])
+                        + ([f'{st["stopped"]} stopped'] if st["stopped"] else []))
+    L = S["learning"]
+    lphase = "pre" if L.get("preregistration_only") else L["status"]["phase"]
+    lstatus = "Completed" if lphase == "done" else "Not started" if lphase in ("pre", "not-started") else "In progress"
     cards = [
-        ("clear-risk", "Clear risk", "Preliminary",
-         "Clear-risk scan: decisions where a risk or safety is clearly better, per setup, checks, a rollout check and a "
-         "partial model quiz.", [("../clear-risk/", "Clear risk")]),
-        ("nackgammon", "Nackgammon", "Finished",
-         "Does a model still play well when the starting position changes? Nackgammon has the rules of backgammon; only "
-         "the starting position differs.",
+        ("improve", "Learning", istatus, counts,
+         "Do models take better risks after notes from their own games? Every model, five series each.",
+         [(f"../{improve_page.PATH}", "Results")]),
+        ("learning", "Pilot", lstatus, None, "One model, finished.", [(f"../{learning_page.PATH}", "The pilot")]),
+        ("clear-risk", "Clear risk", "In progress", None,
+         "Decisions where a risk or safety is clearly better, per setup.", [("../clear-risk/", "Clear risk")]),
+        ("nackgammon", "Nackgammon", "Completed", None,
+         "Does a model still play well from a different starting position?",
          [("../nackgammon/", "Nackgammon"), ("../leagues/#nack-knockout", "The knockout"),
-          ("../matches/#stage-knockout", "Its matches")]),
-        ("learning", "Learning from experience", lstatus,
-         "Does a model play better after seeing its own earlier games? " + esc(L["plan"]["commitment"]),
-         [(f"../{improve_page.PATH}", "Did they improve? (every model)"),
-          (f"../{learning_page.PATH}", "The pilot (one model)")]),
-        ("improve", improve_page.TITLE, improve_page.eyebrow(I) if I["preregistration_only"] or not I.get("status")
-         else I["status"]["line"],
-         "Does each chat model on the leaderboard take risks better after writing its own lessons over 10 games? "
-         + esc(I["plan"]["commitment"]), [(f"../{improve_page.PATH}", "Did they improve?")])]
+          ("../matches/#stage-knockout", "Its matches")])]
     out = "".join(
-        f'<section class="card experiment-card" id="{cid}"><h2>{esc(title)}</h2>'
-        f'{status_badge(status) if status else ""}<p>{text}</p><p class="hero-links">'
-        + "".join(f'<a href="{href}">{esc(label)}</a>' for href, label in links) + '</p></section>'
-        for cid, title, status, text, links in cards)
-    return page_head(S, "Experiments", "Experiments", "Tests beside the leagues, each opened from its card.") + \
+        f'<section class="card experiment-card{" experiment-small" if cid == "learning" else ""}" id="{cid}">'
+        f'<h2>{esc(title)}</h2><p class="experiment-status">{status_badge(status)}'
+        + (f'<span class="experiment-counts">{esc(sub)}</span>' if sub else "") + f'</p><p>{text}</p>'
+        '<p class="hero-links">' + "".join(f'<a href="{href}">{esc(label)}</a>' for href, label in links)
+        + '</p></section>'
+        for cid, title, status, sub, text, links in cards)
+    return page_head(S, "Experiments", "Experiments", "Tests beside the leagues.") + \
         f'<div class="experiment-cards">{out}</div>'
 
 

@@ -1,8 +1,76 @@
 # Class row preview: backgammon (Ümit JOB 2 FINAL, #4217)
 
-Branch `class-preview`, HEAD **a65ee5c** (rebased onto origin/main 1858d9b, force-pushed: 914879b Class scheme on
-a re-applied Size row, a063048 row label and card of Ümit #4229 / turkce #4231, a65ee5c trillions per turkce #4237
-and standard list prices per Ümit #4238). **Preview only. Not merged, not deployed, nothing live changed.**
+Branch `class-preview`, HEAD **077f959** (rebased onto origin/main 123e404, force-pushed; latest commits 86b6dfa
+maker-figure classes and plain labels (Ümit #4245/#4254, logic #4253), 077f959 Undisclosed class (Ümit #4259)).
+**Preview only. Not merged, not deployed, nothing live changed.**
+
+## Update 3 (Ümit #4245, #4254, #4259; logic #4253): ready to merge
+- **Classes by the maker's stated total** (model card, announcement or the maker's model name), never our
+  checkpoint count: new `card_total_b` / `card_active_b` / `card_source` / `card_quote` in model_params.json (our
+  count stays in `total_b` and in the details box). Tiny < 6B · Small 6–15B · Medium > 15–40B · Large > 40B.
+- **Undisclosed size → standard list price per 1M input** (Efficient ≤ $0.50 · Workhorse ≤ $3 · Flagship > $3;
+  introductory-only → "(provisional)": Drex Max 1.1 only; Mercury Decide on its standard $0.04).
+- **Undisclosed class (#4259):** neither the maker's size nor a per-token list price; checks.run fails on a chat
+  model there. **Backgammon: no model is Undisclosed.** Price basis checked per model: every undisclosed-size
+  model has a per-token input price on its maker's page (Anthropic, OpenAI incl. the Decisions API, Google, xAI,
+  Alibaba, Z.ai per 1M tokens; Celeris, Liquid, TypeSafe per 1M / per Btok; SubQ, Fastino, Inception, Nace per 1M
+  input tokens; none per request). So the Undisclosed key is hidden in every view, like every empty class key.
+- **Labels (plain text, logic #4253):** `31B`, `9B`, `35B MoE · 3B active`, `2.8T MoE · 104B active`,
+  `552B MoE · 16B active` (DeepSeek V4.1 Flash, #4254: card "552B backbone parameters", "8B parameters per token
+  during prefill and 16B during decode"; 16B shown, the split in the details; same for its 1017 checkpoint),
+  `57B 2×` (REAX 1.3: its card states no total, so it goes by its 57.36B in all, logic's figure),
+  `Closed · Workhorse`, `Open, size undisclosed · Workhorse` (GLM-5.3: its maker states no count; Z.ai lists $1.4
+  per 1M input), `Closed · Efficient (provisional)`.
+- **Rule sentence** under the Class row and on About, word for word (checks.run verifies it in index.html).
+- **Class row** replaces Small chat / Small decision on the leaderboard and /improve/; `?models=small-chat|small-decision`
+  opens on that type with Tiny + Small.
+- **Changes vs Update 2:** GLM-5.3 Large → Workhorse (its 753.33B is our count, not the maker's); Gemma 4 31B
+  label 31B (card 30.7B); Elephant-1 9B (was 9.4B), Decider Flash v1.2 4B (was 4.5B), Decider v1.1/v1.2, Drex Max v1,
+  GLiDE v1.2 27B (were 26B), Open-Jev and Qwen3.8-27B 27B (were 28B), Inkling Small 276B (was 266B). No other class
+  moves. Leaderboard per view: All 38 = Tiny 1, Small 3, Medium 11, Large 3, Efficient 11, Workhorse 6, Flagship 3;
+  Chat 16 = Small 1, Medium 3, Large 2, Efficient 1, Workhorse 6, Flagship 3 (Tiny hidden); Decision 22 = Tiny 1,
+  Small 2, Medium 8, Large 1, Efficient 10 (Workhorse, Flagship hidden). Undisclosed 0 everywhere.
+- **Builds:** fresh frozen copy `/tmp/class-state` (16:17:20Z; data as of 16:12Z, results 67a48fb0): origin/main
+  123e404 **exit 0**, branch **exit 0**; `data/` and `decisions/` byte-identical; index.html and improve/index.html
+  identical once class markup is removed (number tokens equal). Browser 375/1280 (`class-preview-backgammon/`):
+  class views, tap on the label and the name opens the card at 375, hover at 1280; no sideways overflow.
+
+### Maker's figure vs our checkpoint count
+Compared with logic's card_vs_count table (/home/cbasaran/.agent-bus/received/jevgammon/…card_vs_count.md).
+**Disagreements:** (1) where logic's 'Card says' is blank I found a maker figure: Decider Flash v1.2 4B and Decider
+v1.2 27B (Perplexity changelog), Drex Max v1 27B (card), Open-Jev 27B (the maker's model name), vLLM-SR d3-ultra
+26.09B (its card). (2) logic's table says it changed only Inkling Small to the card figure; if logic's labels still
+show checkpoint counts for the others, they differ from ours in the label only (classes identical): Elephant-1 9.4B
+vs 9B, Decider Flash 4.5B vs 4B, Decider v1.2 / Drex Max v1 / GLiDE v1.2 26B vs 27B, Qwen3.8-27B and Open-Jev 28B vs
+27B, Gemma 4 31B 31B either way. (3) logic lists the DeepSeek 552B/196B card terms against V4.1-Flash 1017; we now
+show 552B MoE · 16B active per #4254. Winnow-12B: logic's 11.95B is Gemma 4 12B's (its base's) card figure; we use the
+same (Winnow's own card states none).
+
+| Model | Maker figure (class/label) | Source | Our checkpoint count | Difference | logic card column |
+|---|---|---|---|---|---|
+| Base Labs Elephant-1 | 9B | https://huggingface.co/baselabs/elephant-1 | 9.41B | +0.41B | 9B |
+| Base Labs Mammoth-1 | 27B | https://huggingface.co/baselabs/mammoth-1 | 27.36B | +0.36B | 27B |
+| Clef | 27B | https://huggingface.co/Cloudflare/clef | 27.48B | +0.48B | 27B |
+| Cygnet (Gemma 4 12B) | 11.95B | https://huggingface.co/google/gemma-4-12B-it | 11.96B | +0.01B | 11.95B |
+| Decider Flash v1.2 | 4B | https://huggingface.co/perplexity-ai/pplx-decider-flash-v1.2 | 4.54B | +0.54B | — |
+| Decider v1.1 27B | 27B | https://huggingface.co/perplexity-ai/pplx-decider-v1.1-27b | 26.09B | -0.91B | (not on logic) |
+| Decider v1.2 27B | 27B | https://huggingface.co/perplexity-ai/pplx-decider-v1.2 | 26.09B | -0.91B | — |
+| DeepSeek V4.1 Flash | 552B / 16B active | https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash | — | — | (not on logic) |
+| DeepSeek V4.1 Flash 1017 | 552B / 16B active | https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash | — | — | 552B backbone + 196B memory |
+| Drex 2.0 | 35B / 3B active | https://huggingface.co/nace-ai/drex-v2.0 | 35.11B | +0.11B | 35B |
+| Drex Max v1 | 27B | https://huggingface.co/nace-ai/drex-max-v1 | 26.09B | -0.91B | — |
+| Fastino GLiDE v1.2 | 27B | https://huggingface.co/fastino/GLiDE-27B | 26.09B | -0.91B | 27B (GLiDE 27B row) |
+| GLM-5.3 | — | https://huggingface.co/zai-org/GLM-5.3 | 753.33B | — | (not on logic) |
+| Gemma 4 31B | 30.7B | https://huggingface.co/google/gemma-4-31B-it | 31.27B | +0.57B | 30.7B |
+| Inkling Small | 276B / 12B active | https://thinkingmachines.ai/model-card/inkling-small/ | 265.96B | -10.04B | 276B / 12B |
+| Kimi K3.1 Pro | 2.8T / 104B active | https://huggingface.co/moonshotai/Kimi-K3.1-Pro/blob/main/README.md | 2800B | +0.00B | (not on logic) |
+| LFM2.5-24B-A2B | 24B / 2.45B active | https://huggingface.co/LiquidAI/LFM2.5-24B-A2B | 23.97B | -0.03B | (not on logic) |
+| MiniMax-M3.1-Flash | 428B / 23B active | https://huggingface.co/MiniMaxAI/MiniMax-M3.1-Flash | 428B | +0.00B | 428B / 23B |
+| Open-Jev 27B v1.1 | 27B | https://huggingface.co/ZefanCai/Open-Jev-27B-v1.1 | 27.8B | +0.80B | — |
+| Qwen3.8-27B | 27B | https://huggingface.co/Qwen/Qwen3.8-27B | 27.78B | +0.78B | 27B |
+| REAX 1.3 | none stated (parts 31B + 27B); class by 57.36B in all | https://huggingface.co/decisionmodels/REAX-1.3 | 57.36B | — | — |
+| Winnow-12B | 11.95B | https://huggingface.co/google/gemma-4-12B-it | 11.91B | -0.04B | 11.95B |
+| vLLM-SR d3-ultra | 26.09B | https://huggingface.co/vllm-sr/d3-ultra | 26.09B | +0.00B | — |
 
 ## Update 2 (turkce #4237, Ümit #4238)
 - **Label numbers:** trillions to one decimal from 1,000B (Kimi K3.1 Pro `2.8T`<sup>MoE</sup>; card "2.8T total"),

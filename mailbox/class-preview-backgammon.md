@@ -1,10 +1,32 @@
 # Class row preview: backgammon (Ümit JOB 2 FINAL, #4217)
 
-Branch `class-preview`, HEAD **405dd12** (rebased onto origin/main 65a4ec6 and force-pushed: aea4cc8 re-applies
-a01bf9f's Size-row code, 53a710a turns it into the Class scheme, 405dd12 the row label and card of Ümit #4229 /
-turkce #4231). **Preview only. Not merged, not deployed, nothing live changed.**
+Branch `class-preview`, HEAD **a65ee5c** (rebased onto origin/main 1858d9b, force-pushed: 914879b Class scheme on
+a re-applied Size row, a063048 row label and card of Ümit #4229 / turkce #4231, a65ee5c trillions per turkce #4237
+and standard list prices per Ümit #4238). **Preview only. Not merged, not deployed, nothing live changed.**
 
-## Update 2026-11-10 (Ümit #4229, aligned with turkce #4231)
+## Update 2 (turkce #4237, Ümit #4238)
+- **Label numbers:** trillions to one decimal from 1,000B (Kimi K3.1 Pro `2.8T`<sup>MoE</sup>; card "2.8T total"),
+  whole from 10B, one decimal under 10B.
+- **Standard list price only.** Every model_prices.json entry rechecked on 2026-11-10 for introductory / launch /
+  promotional / preview wording; each entry now has `provisional` (true/false) and `provisional_reason` (checks.run
+  enforces both). Results:
+  - **Mercury Decide: corrected to its standard $0.04** (docs.inceptionlabs.ai/get-started/models: "$0.02 per
+    million tokens (50% off the regular $0.04 price)"). Still Efficient, not provisional.
+  - **Drex Max 1.1: provisional.** $0.03 is its launch price (nace.ai/developers: "Drex Max v1.1 cost is at its 50%
+    launch price"); no regular v1.1 price is printed. Label `Closed · Efficient (provisional)`; the card says why.
+  - **Gemini 4 Argon:** Google writes "$2.00 through November 30, 2026. $4.00 starting December 1, 2026." and does
+    not call $2.00 introductory or promotional (no such word on the page): standard today, Workhorse; Flagship from
+    1 Dec. Gemini 3.8 Flash the same ("$0.75 through December 31, 2026. $1.50 starting January 1, 2027."): Workhorse.
+  - **SubQ Snap Preview:** the model is in "Public Preview"; its launch post states $0.05 without calling it
+    introductory or a preview discount: its own standard price, not provisional.
+  - Celeris-1 Decision (launch post $0.04, no introductory wording), DeepSeek V4.1 Flash 1017 (peak = standard;
+    off-peak is a discount), and the rest (Anthropic, OpenAI, xAI, Alibaba "standard prices", Liquid, TypeSafe,
+    SubQ 1.1, Fastino, Meta): no introductory or promotional wording on the page; not provisional.
+  - **Provisional list: Drex Max 1.1 only.**
+- Rebuilt on the same frozen copy: branch exit 0; `data/` and `decisions/` byte-identical to origin/main's build
+  (main's site code unchanged since 65a4ec6: only this mailbox file moved). Screenshots refreshed.
+
+## Update 1 (Ümit #4229, aligned with turkce #4231)
 - Builds again on a fresh frozen copy (`/tmp/class-state`, copied 16:04:18Z; the live state had not updated since
   15:52, so data as of 15:50Z, results a7130a46): origin/main 65a4ec6 **exit 0**, branch 405dd12 **exit 0**; `data/`
   and `decisions/` byte-identical; index.html and improve/index.html identical once the class markup is removed
@@ -97,8 +119,8 @@ Closed / open-undisclosed models, by list price (base rate per 1M input tokens):
 | SubQ Snap Preview | closed | 0.05 | Efficient | https://subq.ai/introducing-subq-snap (launch post; pricing page lists only 1.1) |
 | Celeris-1 Decision | closed | 0.04 | Efficient | https://celeris.ai/celeris-1-decision (launch post; pricing page lists only Celeris-1.1 Decision at $0.004) |
 | Fastino GLiDE (API) | closed (hosted glide_v2) | 0.04 | Efficient | https://docs.fastino.ai/pricing |
-| Mercury Decide (Inception) | closed | 0.02 shown with a "50% OFF" badge; undiscounted rate not printed | Efficient either way | https://www.inceptionlabs.ai/ |
-| Drex Max 1.1 (Nace) | closed | 0.03 | Efficient | https://console.nace.ai/docs/drex/reference/models |
+| Mercury Decide (Inception) | closed | 0.04 standard ("$0.02 ... 50% off the regular $0.04 price") | Efficient | https://docs.inceptionlabs.ai/get-started/models |
+| Drex Max 1.1 (Nace) | closed | 0.03, its 50% launch price; no regular price printed | Efficient (provisional) | https://console.nace.ai/docs/drex/reference/models, https://www.nace.ai/developers |
 | Muse Ember (held, not shown) | closed | 0.10 | Efficient | https://dev.meta.ai/models/muse-ember |
 
 ## Classes in each view (models with a class, programs excluded)
@@ -143,7 +165,7 @@ late_entries.json, held_setups.json) and no row is a sample setup. No label adde
    the price route gives no answer (DeepSeek's page now prices only V4.1-Flash-1017, $0.30). Alternatives: Efficient
    by the 1017 price, or no class.
 2. **Gemini 4 Argon** turns Flagship on 1 Dec 2026 ($2 → $4 announced). Built at today's price (Workhorse).
-3. **Mercury Decide**: maker shows only a discounted price; Efficient either way.
+3. **Drex Max 1.1** is Efficient (provisional) on its launch price; a regular price, once published, replaces it.
 4. **DeepSeek V4.1 Flash 1017** is "Open, size undisclosed · Efficient" while its original is Large; it only shows
    under the original's expander, so its own class shows nowhere.
 

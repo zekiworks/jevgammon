@@ -1,22 +1,200 @@
 {
- "overflow_home": 0,
- "home_cols_375": [
-  "#",
-  "Model",
-  "Risk judgement",
-  "$ per 1,000$ per 1M"
- ],
- "header_hidden_down": true,
- "header_back_up": true,
- "details_open": true,
- "details_closed_by_tap_outside": true,
- "details_closed_by_esc": true,
- "box_before_hint": null,
- "box_after_hint": null,
- "cost_tip_open": true,
- "cost_tip_row_box_stayed_closed": true,
- "cost_tip_text": "Estimate: $47.092 per 1,000 decisions (GPU time, at most). Counted as the wall clock from the first to the last answer, pauses over 10 min left out, \u00d7 the hourl",
- "cost_tip_closed_by_tap_outside": true,
- "cost_tip_closed_by_esc": true,
- "overflow_nack": 0
+ "1f722b7 (375, light): interactions": {
+  "overflow_home": 0,
+  "home_cols_375": [
+   "#",
+   "Model",
+   "Risk judgement",
+   "$ per 1,000$ per 1M"
+  ],
+  "header_hidden_down": true,
+  "header_back_up": true,
+  "details_open": true,
+  "details_closed_by_tap_outside": true,
+  "details_closed_by_esc": true,
+  "box_before_hint": null,
+  "box_after_hint": null,
+  "cost_tip_open": true,
+  "cost_tip_row_box_stayed_closed": true,
+  "cost_tip_text": "Estimate: $47.092 per 1,000 decisions (GPU time, at most). Counted as the wall clock from the first to the last answer, pauses over 10 min left out, × the hourl",
+  "cost_tip_closed_by_tap_outside": true,
+  "cost_tip_closed_by_esc": true,
+  "overflow_nack": 0
+ },
+ "a1ff983 full pass (375 + 1280, light + dark)": {
+  "home-375-light": {
+   "page_sideways_scroll_px": 0,
+   "strip_one_line": true,
+   "tabs_one_line": true,
+   "tables_wider_than_frame": [],
+   "names_past_edge": 0,
+   "header_hides_on_scroll_down": true,
+   "header_returns_on_scroll_up": true,
+   "filters_button": [
+    "Filters",
+    "Filters (1)"
+   ]
+  },
+  "improve-375-light": {
+   "page_sideways_scroll_px": 0,
+   "strip_one_line": true,
+   "tabs_one_line": true,
+   "tables_wider_than_frame": [],
+   "names_past_edge": 0,
+   "header_hides_on_scroll_down": true,
+   "header_returns_on_scroll_up": true,
+   "filters_button": [
+    "Filters",
+    "Filters (1)"
+   ]
+  },
+  "nackgammon-375-light": {
+   "page_sideways_scroll_px": 0,
+   "strip_one_line": true,
+   "tabs_one_line": true,
+   "tables_wider_than_frame": [],
+   "names_past_edge": 0,
+   "header_hides_on_scroll_down": true,
+   "header_returns_on_scroll_up": true,
+   "nack_summary_columns_375": [
+    "Setup (group)",
+    "Drop (Nackgammon − standard)"
+   ],
+   "filters_button": [
+    "Filters",
+    "Filters (1)"
+   ]
+  },
+  "decisions-375-light": {
+   "page_sideways_scroll_px": 0,
+   "strip_one_line": true,
+   "tabs_one_line": true,
+   "tables_wider_than_frame": [],
+   "names_past_edge": 0,
+   "header_hides_on_scroll_down": true,
+   "header_returns_on_scroll_up": true,
+   "filters_button": [
+    "Filters",
+    "Filters (1)"
+   ]
+  },
+  "experiments-375-light": {
+   "page_sideways_scroll_px": 0,
+   "strip_one_line": true,
+   "tabs_one_line": true,
+   "tables_wider_than_frame": [],
+   "names_past_edge": 0,
+   "header_hide": "page too short to test (1396 px)"
+  },
+  "home-375-dark": {
+   "page_sideways_scroll_px": 0,
+   "strip_one_line": true,
+   "tabs_one_line": true,
+   "tables_wider_than_frame": [],
+   "names_past_edge": 0,
+   "header_hides_on_scroll_down": true,
+   "header_returns_on_scroll_up": true,
+   "filters_button": [
+    "Filters",
+    "Filters (1)"
+   ]
+  },
+  "improve-375-dark": {
+   "page_sideways_scroll_px": 0,
+   "strip_one_line": true,
+   "tabs_one_line": true,
+   "tables_wider_than_frame": [],
+   "names_past_edge": 0,
+   "header_hides_on_scroll_down": true,
+   "header_returns_on_scroll_up": true,
+   "filters_button": [
+    "Filters",
+    "Filters (1)"
+   ]
+  },
+  "nackgammon-375-dark": {
+   "page_sideways_scroll_px": 0,
+   "strip_one_line": true,
+   "tabs_one_line": true,
+   "tables_wider_than_frame": [],
+   "names_past_edge": 0,
+   "header_hides_on_scroll_down": true,
+   "header_returns_on_scroll_up": true,
+   "filters_button": [
+    "Filters",
+    "Filters (1)"
+   ]
+  },
+  "decisions-375-dark": {
+   "page_sideways_scroll_px": 0,
+   "strip_one_line": true,
+   "tabs_one_line": true,
+   "tables_wider_than_frame": [],
+   "names_past_edge": 0,
+   "header_hides_on_scroll_down": true,
+   "header_returns_on_scroll_up": true,
+   "filters_button": [
+    "Filters",
+    "Filters (1)"
+   ]
+  },
+  "experiments-375-dark": {
+   "page_sideways_scroll_px": 0,
+   "strip_one_line": true,
+   "tabs_one_line": true,
+   "tables_wider_than_frame": [],
+   "names_past_edge": 0,
+   "header_hide": "page too short to test (1396 px)"
+  },
+  "home-1280-light": {
+   "page_sideways_scroll_px": 0,
+   "strip_one_line": true,
+   "tabs_one_line": true
+  },
+  "improve-1280-light": {
+   "page_sideways_scroll_px": 0,
+   "strip_one_line": true,
+   "tabs_one_line": true
+  },
+  "nackgammon-1280-light": {
+   "page_sideways_scroll_px": 0,
+   "strip_one_line": true,
+   "tabs_one_line": true
+  },
+  "decisions-1280-light": {
+   "page_sideways_scroll_px": 0,
+   "strip_one_line": true,
+   "tabs_one_line": true
+  },
+  "experiments-1280-light": {
+   "page_sideways_scroll_px": 0,
+   "strip_one_line": true,
+   "tabs_one_line": true
+  },
+  "home-1280-dark": {
+   "page_sideways_scroll_px": 0,
+   "strip_one_line": true,
+   "tabs_one_line": true
+  },
+  "improve-1280-dark": {
+   "page_sideways_scroll_px": 0,
+   "strip_one_line": true,
+   "tabs_one_line": true
+  },
+  "nackgammon-1280-dark": {
+   "page_sideways_scroll_px": 0,
+   "strip_one_line": true,
+   "tabs_one_line": true
+  },
+  "decisions-1280-dark": {
+   "page_sideways_scroll_px": 0,
+   "strip_one_line": true,
+   "tabs_one_line": true
+  },
+  "experiments-1280-dark": {
+   "page_sideways_scroll_px": 0,
+   "strip_one_line": true,
+   "tabs_one_line": true
+  }
+ }
 }

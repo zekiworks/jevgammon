@@ -1135,9 +1135,9 @@ def _short(b: float) -> str:
 def class_label(model: str) -> str:
     """The short plain-text label after a row's name (Ümit #4245, #4254; logic #4253): the maker's total, a dense
     model the number only ('31B'), a mixture of experts with its active count ('309B MoE · 15B active'; '753B MoE'
-    without one); REAX 1.3 its total and '2×' ('57B 2×'); a model of undisclosed size 'Closed · Workhorse' or 'Open,
-    size undisclosed · Workhorse', '(provisional)' on an introductory-only price (#4238), 'Closed · Undisclosed'
-    without one (#4259). The details box gives the exact counts."""
+    without one); REAX 1.3 its total and '2×' ('57B 2×'); a model of undisclosed size nothing: its price class goes
+    in the details box (class_note), as on the other two sites (logic #4261, turkce #4231). The details box gives the
+    exact counts."""
     p = PARAMS[model]
     if p["card_total_b"] is not None:
         if not p["moe"]:
@@ -1146,10 +1146,7 @@ def class_label(model: str) -> str:
         return f'{_short(p["card_total_b"])} MoE{active}'
     if p.get("card_parts_b"):
         return f'{_short(p["total_b"])} {len(p["card_parts_b"])}\u00d7'
-    cls = model_class(model)
-    head = "Closed" if PRICES[model]["weights"] == "closed" else "Open, size undisclosed"
-    provisional = " (provisional)" if PRICES[model]["provisional"] else ""
-    return f'{head} \u00b7 {CLASS_LABEL[cls]}{provisional}'
+    return ""
 
 
 def class_note(model: str) -> str | None:
@@ -1171,10 +1168,13 @@ def class_note(model: str) -> str | None:
     if p.get("card_parts_b"):
         return (f'Two models run together, option probabilities averaged 50/50: {billions(p["total_b"])} in all, all '
                 'used on every question.')
-    if model in PRICES and PRICES[model]["provisional"]:
-        return f'Price class provisional: {PRICES[model]["provisional_reason"]}'
-    if model in PRICES and PRICES[model]["weights"] == "open":
-        return f'The maker states no parameter count, so its class is by list price{ours}.'
+    if model in PRICES:
+        head = "Closed" if PRICES[model]["weights"] == "closed" else "Open, size not stated by the maker"
+        kind = "introductory price, the only one published" if PRICES[model]["provisional"] else "standard list price"
+        price = f'${PRICES[model]["input_per_mtok"]:g} per 1M input tokens, {kind}'
+        prov = (f'; class provisional: {PRICES[model]["provisional_reason"].rstrip(".")}'
+                if PRICES[model]["provisional"] else "")
+        return f'{head} · {CLASS_LABEL[model_class(model)]} ({price}){prov}{ours}.'
     return None
 
 

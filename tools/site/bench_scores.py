@@ -22,12 +22,22 @@ METRIC = "error rate (PR, lower is better)"
 CALIBRATION_NOTE = "calibration definition pending Ümit"
 # The schema's keys (turkce #4062): checks.py refuses any other.
 TOP_KEYS = {"bench", "title", "url", "updated", "score", "models"}
-ROW_KEYS = {"repo", "commit", "name", "maker", "kind", "params_total", "params_active", "quantization", "score_0_100",
-            "raw", "calibration_error", "improvement_points", "runs", "notes"}
+ROW_KEYS = {"repo", "commit", "name", "model_key", "maker", "kind", "params_total", "params_active", "quantization",
+            "score_0_100", "raw", "calibration_error", "improvement_points", "runs", "notes"}
 RAW_KEYS = {"metric", "value", "questions", "options"}
 # A locally served open-weights setup's recorded checkpoint in setups.json model_id: "<owner>/<repo> @ <commit>".
 CHECKPOINT = re.compile(r"^([\w.-]+/[\w.-]+) @ ([0-9a-f]{7,40})\b")
 QUANT = re.compile(r"\b(FP8|NVFP4|BF16)\b", re.I)
+# The cross-site join key (turkce #4246): the repo id in lower case where the row has one; else the model's name in
+# lower case, without its setting, route or a parenthesised note, spaces to '-', dots kept: 'gpt-6-astra',
+# 'claude-fable-5.1', 'cygnet'. Settings never split a key.
+KEY_OK = re.compile(r"^[a-z0-9][a-z0-9./+-]*$")
+
+
+def model_key(model: str, repo: str | None) -> str:
+    if repo:
+        return repo.lower()
+    return re.sub(r"\s+", "-", re.sub(r"\s*\([^)]*\)", "", model).strip().lower())
 
 
 def score(error_rate: float | None, random: float) -> float | None:
@@ -97,7 +107,8 @@ def build(S) -> dict:
             notes.append("improvement_points: change in risks found, percentage points of risk-pays decisions "
                          "(with lessons minus no memory)")
         rows.append(dict(
-            repo=repo, commit=commit, name=x["name"], maker=H.maker(x["name"])[0], kind=ST.model_type(S, x),
+            repo=repo, commit=commit, name=x["name"], model_key=model_key(x["model"], repo), maker=H.maker(x["name"])[0],
+            kind=ST.model_type(S, x),
             params_total=p["total_b"], params_active=p["active_b"] if p["moe"] else p["total_b"], quantization=quant,
             score_0_100=score(q.get("error_rate"), rnd[lg]),
             raw=dict(metric=METRIC, value=q.get("error_rate"), questions=q.get("scored"), options=None),
@@ -136,7 +147,8 @@ def problems(S, doc) -> list[str]:
             out.append(f"{PATH}: row {name!r}: keys are not the schema's")
             continue
         raw = r["raw"]
-        types = [isinstance(name, str), isinstance(r["maker"], str), r["kind"] in ("chat", "decision"),
+        types = [isinstance(name, str), isinstance(r["model_key"], str) and bool(KEY_OK.match(r["model_key"])),
+                 isinstance(r["maker"], str), r["kind"] in ("chat", "decision"),
                  opt(r["repo"], lambda v: isinstance(v, str)), opt(r["commit"], lambda v: isinstance(v, str)),
                  (r["repo"] is None) == (r["commit"] is None), opt(r["params_total"], num),
                  opt(r["params_active"], num), opt(r["quantization"], lambda v: isinstance(v, str)),

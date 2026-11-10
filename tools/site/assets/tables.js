@@ -80,8 +80,9 @@
     const th = event.target.closest('thead th');
     if (th) { if (!th.hasAttribute('data-nosort')) sortBy(th); return; }
     const row = event.target.closest('tbody tr');
-    // A click the row's own handler took (the leaderboard's tap that opens a details box, bg.js) does not navigate.
-    if (!row || event.defaultPrevented || event.target.closest('a, button, select, input, label, summary')) return;
+    // A click the row's own handler took (the leaderboard's tap that opens a details box, bg.js) does not navigate;
+    // nor does a tap on a tooltip (.hint: the own-machine cost explanation opens on focus instead).
+    if (!row || event.defaultPrevented || event.target.closest('a, button, select, input, label, summary, .hint')) return;
     if (String(window.getSelection())) return;
     const link = row.dataset.href || row.querySelector('a[href]')?.getAttribute('href');
     if (!link) return;
@@ -226,7 +227,8 @@ window.rowDetails = function rowDetails(table) {
   });
   table.addEventListener('focusin', event => {
     const tr = rowOf(event.target);
-    if (!tr) return;
+    // A cost tooltip (.hint) takes the focus to show itself (a tap focuses it after the pointer is up): not the box.
+    if (!tr || event.target.closest('.hint')) return;
     keyed = !pointing;
     if (keyed && open !== tr && !quiet) show(tr, false);
   });
@@ -238,7 +240,8 @@ window.rowDetails = function rowDetails(table) {
     const tr = rowOf(event.target);
     const box = tr && boxOf(tr);
     // A mouse click or a key (detail 0) follows the link; a link or key in the box or the expander does its own job.
-    if (!box || pointer === 'mouse' || event.detail === 0 || box.contains(event.target) || event.target.closest('.hl-more')) return;
+    // A cost tooltip (.hint) opens on its own tap (focus), not the row's box.
+    if (!box || pointer === 'mouse' || event.detail === 0 || box.contains(event.target) || event.target.closest('.hl-more, .hint')) return;
     event.preventDefault();  // a tap opens the box (the row click below leaves a prevented click alone)
     if (open === tr && pinned) hide(); else show(tr, true);
   });
@@ -353,3 +356,10 @@ document.querySelectorAll('#headline-table, #improve-results-table').forEach(t =
   document.addEventListener('toggle', soon, true);
   new MutationObserver(soon).observe(document.body, { childList: true, subtree: true });
 })();
+
+/* A tooltip key (.hint, e.g. an own-machine cost's explanation) shows while it has the focus: Escape closes it, as a tap
+   outside it does (the focus leaves it). */
+document.addEventListener('keydown', event => {
+  const hint = event.key === 'Escape' && document.activeElement && document.activeElement.closest('.hint');
+  if (hint) hint.blur();
+});

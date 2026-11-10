@@ -499,7 +499,11 @@ table.headline td.hl-wide { white-space: nowrap; }
   table.headline td.model > .hl-tag { white-space: normal; border-radius: .6rem; }
   table.headline thead th { min-width: 0; font-size: .74rem; white-space: normal; overflow-wrap: normal; }
   table.headline :is(td.num, td.hl-judgement, td.hl-wide), table.headline thead th:not(:nth-child(2)) { width: 1%; }
-  table.headline .th-long { display: none; }
+  /* One leading slot, the rank (Zeki #4522): the Tier is in the row's details box, so the model gets the width. */
+  table.headline :is(th, td):nth-child(8) { display: none; }
+  /* An own-machine cost names its machine: it wraps in its cell rather than taking the model's width. */
+  table.headline td.hl-wide, table.headline td.hl-wide .hint { white-space: normal; overflow-wrap: normal; }
+  table.headline td.hl-wide { min-width: 4.5rem; }
   table.headline td.model { width: 99%; }
   /* The score as its number (the bar needs a width a phone does not have), the class label under the name. */
   table.headline td.hl-judgement { min-width: 0; }

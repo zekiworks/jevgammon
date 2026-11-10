@@ -1212,7 +1212,8 @@ def tab_body(S, key: str) -> str:
         "reasoning": "The same model at a lower and a higher reasoning setting, each named by the effort its requests sent.",
         "cost": "Dollars per 1,000 decisions and seconds per decision.",
         "stability": "Does a setup repeat its play on the same position?"}[key]
-    marks = ('<p class="table-note">\u00a7 list-price estimate; runs on our GPUs · \u2020 plays split into groups · '
+    marks = ('<p class="table-note">A machine\'s name as cost: runs on our own machine; its estimate (GPU time, at most) on '
+             'hover or tap · \u2020 plays split into groups · '
              f'{esc(NOT_MEASURED)}: no value recorded. <a href="method/#{key}">Method</a></p>')
     cols = {"risk": "good risks, the error rate by risk-call category, stakes, extra hitting rolls, confidence on the call, "
                     "ability and caution",
@@ -1784,7 +1785,8 @@ def measure_chart_card(S, measure: str, title: str) -> str:
                             '</i>a program\'s error rate (reference row, named above the axis)')}.get(measure)
     # One caveat per section (Ümit, bus #2570 item 4); the others are on the Method page (Limits, Cost), linked.
     caveat = {"risk-judgement": (RANK_NOTE, "statistics"), "error-rate": (LIMIT_PAIRED, "limits"),
-              "cost": ("\u00a7 list-price estimate; runs on our GPUs: each setup's price label is in its row's tooltip "
+              "cost": ("Setups on our own machines: an estimate, GPU time, at most (wall-clock time \u00d7 hourly rate, "
+                       "an upper bound); each setup's price label and how its cost was counted are in its row's tooltip "
                        "and in the Cost tab.", "cost"),
               "time": (LIMIT_PAIRED, "limits")}[measure]
     return (f'<section class="measure" id="{measure}" aria-label="{esc(title)}"><figure class="panel chart-card chart-wide" '

@@ -12,6 +12,7 @@ import math
 import re
 
 import home as H
+import own_cost
 import pages as P
 from common import ALL_NOTE, CONTENT, LATE_ENTRY, NA, count, esc, fmt, nm, pct, relabel
 from common import label as shown_name
@@ -248,9 +249,12 @@ def record(x) -> dict | None:
 
 def cost_text(S, x) -> str | None:
     q = x["q"]
+    if P.own_machine(q):  # on our machines (Ümit #4450): the machine; the estimate on the box's Cost line
+        return f'On {esc(P.own_machine(q))}'
     if q is None or q.get("usd_per_1000") is None:
         return None
-    label = ((x["late"].get("price") or {}) if x["late"] else (P.origin_meta(S, x["ds"], x["name"]).get("price") or {})).get("label")
+    label = ((x["late"].get("price") or {}) if x["late"] else
+             (P.origin_meta(S, x["ds"], x["name"]).get("price") or {})).get("label")
     return (f'<span class="cost-1k">${fmt(q["usd_per_1000"], 3)} per 1,000 decisions</span><span class="cost-1m" '
             f'data-usd="{q["usd_per_1000"]!r}">${fmt(q["usd_per_1000"], 3)}</span><span class="cost-1m"> per 1M decisions</span>'
             + (f' ({esc(label)})' if label else ""))
@@ -287,6 +291,7 @@ def details_box(S, x, kind: str, bid: str, extra: list, ref: str | None = None) 
          if e and e["status"] == P.PROVISIONAL else None),
         (esc(P.SUBQ_SELF) if e and x["name"] == P.SUBQ_11 else None),
         join([cost_text(S, x), f'{count(q["decisions"])} decisions' if q else None]),
+        (f'Cost: {esc(own_cost.tooltip(q["own_cost"], every_gap=False))}' if q and q.get("own_cost") else None),
         (f'Parameters: {P.params_html(x["model"])}' if kind != "program" else None),
         (esc(P.class_note(x["model"])) if kind != "program" and P.class_note(x["model"]) else None),
         # The model it is built on (Ümit #4445: in the details, not in the name; content/model_names.json base_model).
@@ -349,8 +354,7 @@ def headline_rows(S) -> tuple[list, list, list]:
             ref = H.ref_label(S, x["ds"], x["name"]) if kind == "program" else None
             extra = []
             if kind == "model":
-                if TIER.get(x["name"]):
-                    extra.append(f'Tier (same positions) {TIER[x["name"]]}')
+                extra.append(f'Tier (same positions) {esc(tier_text(x["name"]))}')
                 month, url = release(name)
                 if url:
                     extra.append(f'Released <a href="{esc(url)}">{month}</a>')
@@ -371,7 +375,7 @@ def headline_rows(S) -> tuple[list, list, list]:
             body.append(f'<tr{cls}{tr_attrs(S, x, kind, typ, mclass)} data-box="{bid}">{rank}<td class="model">{dot}{icon}'
                         f'{name_link(S, x, row_name(x, kind), bid)}{labelled}{tag}{more}'
                         f'{details_box(S, x, kind, bid, extra, ref)}</td>{judgement_cell(x["r"], colour)}{wide_cells(x)}'
-                        f'{tier_cell(x if kind == "model" else None)}</tr>')
+                        f'{tier_cell(x)}</tr>')
             for sid, y in zip(sub_ids, others):
                 ycol = H.maker(y["name"])[1] if kind == "model" else None
                 ybid = f"{sid}-box"
@@ -380,7 +384,7 @@ def headline_rows(S) -> tuple[list, list, list]:
                             f'id="{sid}" hidden{tr_attrs(S, y, kind, typ, mclass)} data-box="{ybid}"><td class="num"></td><td class="model">'
                             f'{name_link(S, y, row_name(y, kind), ybid)}{ytag}'
                             f'{details_box(S, y, kind, ybid, [], ref)}</td>{judgement_cell(y["r"], ycol)}{wide_cells(y)}'
-                            f'{tier_cell(None)}</tr>')
+                            f'{tier_cell(y)}</tr>')
             if kind != "program" or x["name"] == "GNUbg weak":
                 chart.append((kind, label, x, colour))
     return body, missing, chart
@@ -390,18 +394,26 @@ def headline_rows(S) -> tuple[list, list, list]:
 # hides the hl-wide cells below 900 px, where the details box holds the same values.
 WIDE_HEAD = ["Risks found", "Safe right", "Error rate (PR)",
              '<span class="cost-1k">$ per 1,000</span><span class="cost-1m">$ per 1M</span>']
-# Ümit #4313: each ranked row's tier from Same positions (story.SAME), after the wide columns; empty where the model is
-# not in that computation (never a guess). Below 900 px the details box carries it, like the other wide columns.
-TIER_HEAD = 'Tier<span class="th-long"> (same positions)</span>'
+# Ümit #4313: each ranked row's tier from Same positions (story.SAME), after the wide columns (never a guess); a row
+# not in that computation says so (Ümit #4399 JOB 7): 'not run yet', or how many of the 200 answers are stored. The
+# same rule for other-setting rows and program rows: none of them is in the run. Below 900 px the details box carries
+# it, like the other wide columns.
+TIER_HEAD = "Tier (same positions)"
 TIER_NOTE = "Rank comes from league play; tier comes from the same 200 positions for every model."
 HEADLINE_HEAD = ([(h, " data-nosort") for h in ("#", "Model", "Risk judgement")]
                  + [(h, " data-nosort data-wide") for h in WIDE_HEAD] + [(TIER_HEAD, " data-nosort data-wide data-tier")])
 
 
+def tier_text(name: str) -> str:
+    """The row's Same positions tier; a model with some of the 200 answers stored, how many; else 'not run yet'."""
+    if name in TIER:
+        return str(TIER[name])
+    return f'{PARTIAL[name]} of 200 so far' if name in PARTIAL else "not run yet"
+
+
 def tier_cell(x) -> str:
-    """The row's Same positions tier, or an empty cell (a setting not in the computation, a model not yet asked, a
-    program)."""
-    return f'<td class="num hl-wide">{TIER.get(x["name"], "") if x else ""}</td>'
+    """The row's Same positions tier cell (tier_text)."""
+    return f'<td class="num hl-wide">{esc(tier_text(x["name"])) if x["name"] in TIER else nm(tier_text(x["name"]))}</td>'
 
 
 def wide_cells(x) -> str:
@@ -412,9 +424,13 @@ def wide_cells(x) -> str:
     share = lambda s: pct(s["share"]) if s["den"] else dash  # noqa: E731
     er = fmt(q["error_rate"]) if q and q.get("error_rate") is not None and not q.get("too_few") else dash
     usd = q.get("usd_per_1000") if q else None
-    cost = (f'<span class="cost-1k">${fmt(usd, 3)}</span><span class="cost-1m" data-usd="{usd!r}">${fmt(usd, 3)}</span>'
-            if usd is not None else dash)
-    return "".join(f'<td class="num hl-wide">{v}</td>' for v in (share(r["found"]), share(r["right_safety"]), er, cost))
+    if P.own_machine(q):  # on our machines (Ümit #4450): the machine's name; the estimate in its tooltip
+        cost = P.own_cost_hint(q, esc(P.own_machine(q)))
+    else:
+        cost = (P.own_cost_hint(q, f'<span class="cost-1k">${fmt(usd, 3)}</span><span class="cost-1m" '
+                                   f'data-usd="{usd!r}">${fmt(usd, 3)}</span>') if usd is not None else dash)
+    return "".join(f'<td class="num hl-wide"{t}>{v}</td>' for v, t in
+                   ((share(r["found"]), ""), (share(r["right_safety"]), ""), (er, ""), (cost, P.own_cost_sort(q))))
 
 
 def too_safe(S, chart: list) -> str:
@@ -462,6 +478,8 @@ SAME = json.loads((CONTENT / "same_positions_preview.json").read_text())
 SAME_KEY = "Same positions" if SAME["prompt_equals_league"] else "Same positions (learning-experiment prompt)"
 # Shown leaderboard name -> its tier (models with all 200 answers only).
 TIER = {shown_name(m["name"]): m["tier"] for m in SAME["models"] if m["tier"] is not None}
+# Shown leaderboard name -> answers stored so far (models in the run without all 200).
+PARTIAL = {shown_name(m["name"]): m["n"] for m in SAME["models"] if m["tier"] is None}
 
 
 def same_positions() -> str:

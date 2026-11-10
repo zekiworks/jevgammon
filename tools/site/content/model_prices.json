@@ -96,11 +96,11 @@
   },
   "Gemini 4 Argon": {
    "weights": "closed",
-   "input_per_mtok": 2,
+   "input_per_mtok": 4,
    "source": "https://ai.google.dev/gemini-api/docs/pricing",
    "read": "2026-11-10",
    "quote": "Gemini 4 Argon, Standard, Paid tier input price: '$2.00 through November 30, 2026. $4.00 starting December 1, 2026.'",
-   "note": "Google's page gives '$2.00 through November 30, 2026. $4.00 starting December 1, 2026.' and does not call $2.00 introductory or promotional (no such word on the page), so $2.00 is today's standard price: Workhorse; the announced $4.00 from 1 Dec 2026 is Flagship.",
+   "note": "Google's page gives '$2.00 through November 30, 2026. $4.00 starting December 1, 2026.' Ümit's ruling (#4399 JOB 7): the $2.00 is introductory and $4.00 is the standard price, so the class uses $4.00: Flagship.",
    "provisional": false,
    "provisional_reason": null
   },

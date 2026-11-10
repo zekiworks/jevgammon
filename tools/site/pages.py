@@ -6,6 +6,7 @@ import re
 from pathlib import Path
 
 import analysis as A
+import own_cost
 from common import (EARLIER, EARLIER_NOTE, LATE_ENTRY, LATE_ENTRY_LABEL, LATE_ENTRY_NOTE, NA, NAME_NOTES, NOT_MEASURED,
                     PENDING, PROVISIONAL, PROVISIONAL_NOTE, PUBLISHED, REASONING_NOTES, ROOT, SUITE_BAR, TOO_FEW, aliases, count, esc, fmt,
                     nm, pct, relabel, setup_slug, shown_names_html, slug, status_badge)
@@ -164,12 +165,37 @@ def by_error(setups: dict) -> list[str]:
     return sorted(setups, key=key)
 
 
+def own_cost_hint(q, text: str) -> str:
+    """text with the cost explanation as a tooltip (site.css .hint: hover, keyboard focus and tap; Ümit #4450): the
+    estimate in dollars per 1,000 decisions and how it was counted (own_cost.tooltip, the gaps as a count); text
+    alone for a recorded cost."""
+    if not q or not q.get("own_cost"):
+        return text
+    return (f'<span class="hint" tabindex="0" data-tip="{esc(own_cost.tooltip(q["own_cost"], every_gap=False))}">'
+            f'{text}</span>')
+
+
+def own_cost_sort(q) -> str:
+    """data-v for a cell that shows a machine's name: its estimate, so the column still sorts by cost (tables.js); no
+    estimate, no data-v (the name sorts after every number)."""
+    return f' data-v="{q["usd_per_1000"]:.3f}"' if own_machine(q) and q.get("usd_per_1000") is not None else ""
+
+
+def own_machine(q) -> str | None:
+    """What the cost cell of a setup on our machines shows instead of a dollar figure (Ümit #4450): the machine's
+    name ('RTX PRO 6000 Blackwell', 'DGX Spark'); None for any other setup."""
+    return own_cost.basis(q["own_cost"]) if q and q.get("own_cost") else None
+
+
 def cost_cell(S, dataset, name, q) -> str:
     label = (origin_meta(S, dataset, name).get("price") or {}).get("label")
+    if own_machine(q):
+        return f'<td class="num"{own_cost_sort(q)}>{own_cost_hint(q, esc(own_machine(q)))}</td>'
     if q.get("usd_per_1000") is None:
         why = NOT_MEASURED if q.get("cost_coverage", 0) == 0 else f"Priced for {pct(q['cost_coverage'], 0)} of decisions"
         return f'<td class="num">{nm(why)}</td>'
-    return f'<td class="num">{fmt(q["usd_per_1000"], 3)}<span class="small">{esc(label or "label missing")}</span></td>'
+    return (f'<td class="num">{own_cost_hint(q, fmt(q["usd_per_1000"], 3))}'
+            f'<span class="small">{esc(label or "label missing")}</span></td>')
 
 
 # --- Shared blocks ----------------------------------------------------------------------------------------
@@ -860,6 +886,8 @@ def late_cost(e) -> str:
     """$ per 1,000 decisions at the price its setups.json entry records (label, source, date read), and, where it was
     billed at another price, the billed figure (build.late_entry_summaries) beside it."""
     q, p = e["quality"], e.get("price") or {}
+    if own_machine(q):  # on our machines (Ümit #4450): the machine's name; the estimate in the tooltip
+        return own_cost_hint(q, esc(own_machine(q)))
     if p and p.get("input_per_mtok") is None:
         src = (f'; {esc(p["source"])}' if p.get("source") else "") + (f', read {esc(p["date"])}' if p.get("date") else "")
         return f'{nm("No price")}<span class="small">{esc(p["label"])}{src}</span>'
@@ -975,8 +1003,9 @@ def late_entries_section(S, rel) -> str:
                     f'{esc(e["name"])}</a><span class="small">{late_status(e)}</span>{subq_note(e["name"])}</td>'
                     f'<td class="date">{c["entry"]}</td>'
                     f'<td>{c["field"]}</td>'
-                    + "".join(f'<td class="num">{c[k]}</td>' for k in ("played", "record", "error", "judgement", "ability",
-                                                                       "caution", "best", "time", "cost", "invalid", "cut"))
+                    + "".join(f'<td class="num"{own_cost_sort(e["quality"]) if k == "cost" else ""}>{c[k]}</td>'
+                              for k in ("played", "record", "error", "judgement", "ability",
+                                        "caution", "best", "time", "cost", "invalid", "cut"))
                     + f'<td>{c["route"]}</td></tr>')
         results.append(f'<h3 id="late-{e["slug"]}">{esc(e["name"])}: results per opponent</h3>' + late_results(e, rel))
     return (f'<section class="card" id="late-entries" data-dataset="{LATE_ENTRY}"><div class="section-head">'
@@ -1125,12 +1154,13 @@ def model_class(model: str) -> str | None:
     15B, medium over 15B to 40B, large over 40B; not our checkpoint count total_b); REAX 1.3, two models run together
     whose card states no total (card_parts_b), by its total in all (total_b, 57.36B, the figure logic's live site uses,
     #4253); any other model by its standard list price (PRICES: efficient <= $0.50, workhorse over $0.50 to $3,
-    flagship over $3); undisclosed where it has neither a maker's size nor a per-token list price (#4259). A model
-    the parameter file does not list: KeyError."""
+    flagship over $3); undisclosed where it has neither a maker's size nor a per-token list price (#4259); an open model
+    whose card states no total but whose released files are counted (class_from_files, GLM-5.3: turkce #4406, Zeki
+    #4409/#4412) by that count (total_b). A model the parameter file does not list: KeyError."""
     p = PARAMS[model]
     if p["card_total_b"] is not None:
         return _by_total(p["card_total_b"])
-    if p.get("card_parts_b"):
+    if p.get("card_parts_b") or p.get("class_from_files"):
         return _by_total(p["total_b"])
     price = PRICES[model]["input_per_mtok"]
     if price is None:
@@ -1177,6 +1207,8 @@ def class_label(model: str) -> str:
         body = f'{_short(p["card_total_b"])}{" MoE" if p["moe"] else ""}{active}'
     elif p.get("card_parts_b"):
         body = _short(p["total_b"])
+    elif p.get("class_from_files"):  # an open model whose card states no total: sized by its released files (#4406)
+        body = f'{_short(p["total_b"])} MoE' if p["moe"] else _short(p["total_b"])
     else:
         body = CLASS_LABEL[model_class(model)] + (" (provisional)" if PRICES[model]["provisional"] else "")
     head = {"open": "Open", "closed": "Closed"}.get(weights(model))
@@ -1199,6 +1231,8 @@ def class_note(model: str) -> str | None:
                       else "active count not disclosed by the maker")
             return f'Mixture of experts: {billions(p["card_total_b"])} total, {active} (the maker\'s figures){ours}.'
         return f'Size class by the maker\'s figure, {billions(p["card_total_b"])}{ours}.'
+    if p.get("class_from_files"):
+        return p["class_from_files"]
     if p.get("card_parts_b"):
         return (f'Two models run together, option probabilities averaged 50/50: {billions(p["total_b"])} in all, all '
                 'used on every question.')

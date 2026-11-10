@@ -29,6 +29,7 @@ from statistics import NormalDist
 
 import numpy as np
 
+import own_cost
 import stats
 from common import EARLIER, HELD, PROVISIONAL, PUBLISHED, ROOT, SPEC, THRESHOLDS as T, slug
 from decisions_export import PAGE_SIZE as DECISION_PAGE
@@ -88,7 +89,7 @@ def decision_from_plays(p: dict) -> dict:
 
 DECISION_COLUMNS = """t.id, g.id AS game_id, g.match_id, g.round_no, t.decided_by, t.legal_count, t.probability_source,
     t.probabilities, t.chosen_position, t.option_order, t.request_ms, t.latency_ms, t.retry_ms, t.cost_usd, t.group_size,
-    t.created_at, t.input_tokens, t.output_tokens, t.reasoning_tokens"""
+    t.created_at, t.input_tokens, t.output_tokens, t.reasoning_tokens, t.provider"""
 
 
 def decision(r, plays: dict) -> dict:
@@ -110,7 +111,7 @@ def decision(r, plays: dict) -> dict:
              block=f'{r["match_id"]}/{r["round_no"]}', pvec=pvec, rank=rank,
              scored=p is not None, n=r["legal_count"], source=r["probability_source"], p=prob,
              req_s=(r["request_ms"] if r["request_ms"] is not None else r["latency_ms"]) / 1000,
-             retry_s=(r["retry_ms"] or 0) / 1000, cost=r["cost_usd"], group=r["group_size"],
+             retry_s=(r["retry_ms"] or 0) / 1000, cost=r["cost_usd"], group=r["group_size"], provider=r["provider"],
              at=r["created_at"], tin=r["input_tokens"], tout=r["output_tokens"], treason=r["reasoning_tokens"])
     if p is not None:
         d.update(loss=p["loss"], phase=p["phase"], tag=p["tag"], **decision_from_plays(p))
@@ -774,6 +775,8 @@ def dataset_summary(dataset: str, decisions: list[dict], setups: list[str]) -> d
             phases=breakdown(decs, "phase", PHASES), tags=breakdown(decs, "tag", TAGS),
             options=breakdown(decs, "options", OPTION_LABELS), gaps=breakdown(decs, "gapb", GAP_LABELS),
             quality_phases={ph: quality([d for d in decs if d.get("phase") == ph], f"{key}/{ph}") for ph in PHASES})
+        if dataset != "v1-set":  # the earlier version's replay has no per-answer machine record
+            own_cost.apply(name, decs, out[name]["quality"], out[name]["quality_phases"])
     return out
 
 

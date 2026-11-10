@@ -474,11 +474,12 @@ i.swatch-ts-safety, i.swatch-ts-found { background-color: var(--text-2); }
 /* Wide screens: four more columns (Ümit #2938 item 3: risks found, safe right, error rate, $ per 1,000) and the Tier;
    narrower, the cost and the Tier stay (Ümit #4425 JOB 8: rank, Tier, model, score, cost) and the three shares are in
    the details box. */
-table.headline th[data-wide]:not(:nth-child(7), :nth-child(8)), table.headline td.hl-wide:not(:nth-child(7), :nth-child(8)) { display: none; }
+@media (max-width: 899px) {
+  table.headline th[data-wide]:not(:nth-child(7), :nth-child(8)), table.headline td.hl-wide:not(:nth-child(7), :nth-child(8)) { display: none; }
+}
 table.headline th[data-wide] { white-space: normal; }
 table.headline td.hl-wide { white-space: nowrap; }
 @media (min-width: 900px) {
-  table.headline th[data-wide], table.headline td.hl-wide { display: table-cell; }
   td.hl-judgement { width: 34%; }
 }
 /* Wide desktop windows: the model column wide enough for the name and its chip on one line (Ümit #3193). */

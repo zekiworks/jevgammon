@@ -9,7 +9,7 @@ import json
 import math
 
 import pages as P
-from common import NACK_SCOPE_NOTE, count, esc, fmt
+from common import CONTENT, NACK_SCOPE_NOTE, count, esc, fmt, label
 
 SECTION_ID = "nackgammon-paired"
 TITLE = "Nackgammon paired test"
@@ -38,6 +38,32 @@ ENGINE_ADDED = ("The additions' chosen plays that had no rollout yet were rolled
 # Chart classes per group (not the group names: one of them is a banned string in published files).
 GROUP_CLASS = {"decision models": "nack-dm", "workhorses": "nack-wh", "frontier": "nack-fr",
                "no group (exploratory)": "nack-ng"}
+# The groups as shown (Ümit #4282 item 3): the test's groups are the setups from one original league (§10.14), not
+# model classes, so they are named by that league; 'workhorses' and 'frontier' are gone from the page (Workhorse is
+# a price class site-wide). The data file keeps its group ids. Each setup shows its own class (P.model_class).
+GROUP_SHOWN = {"decision models": "League 1 group", "workhorses": "League 2 group", "frontier": "League 3 group",
+               "no group (exploratory)": "no group (exploratory)", "yardstick": "yardstick"}
+_GROUP_WORDS = [("the frontier group", "the League 3 group"), ("The frontier group", "The League 3 group"),
+                ("decision models", "League 1 group"), ("workhorses", "League 2 group"), ("frontier", "League 3 group")]
+
+
+def shown_text(s: str) -> str:
+    """A scorer note or comparison name with the groups under their shown names (GROUP_SHOWN)."""
+    for old, new in _GROUP_WORDS:
+        s = s.replace(old, new)
+    return s
+
+
+# Each setup's model under its shown name: setups.json, else content/nack_setup_types.json (no league).
+MODEL_OF = {**{label(s["name"]): label(s["model"]) for s in json.loads((CONTENT / "setups.json").read_text())["setups"]},
+            **{s: label(v["model"]) for s, v in json.loads((CONTENT / "nack_setup_types.json").read_text())["setups"].items()}}
+
+
+def setup_class(name: str) -> str:
+    """The setup's model class label (P.model_class, the leaderboard's Class row), '' for a program or a model the
+    parameter file does not list."""
+    m = MODEL_OF.get(name)
+    return P.CLASS_LABEL[P.model_class(m)] if m in P.PARAMS else ""
 
 
 def resolve(data: dict, rec, path: str):
@@ -89,7 +115,9 @@ def row(key, label, cells, cls="") -> str:
 
 def _setup_label(name, rec) -> str:
     added = f" \u00b7 {ADDED}" if rec.get("added") else ""
-    return f'{esc(name)}<span class="small">{esc(rec["group"])}{esc(added)}</span>'
+    cls = setup_class(name)
+    sub = (f"{cls} \u00b7 " if cls else "") + GROUP_SHOWN[rec["group"]]
+    return f'{esc(name)}<span class="small">{esc(sub)}{esc(added)}</span>'
 
 
 def no_group_note(N) -> str:
@@ -280,7 +308,7 @@ def risk_table(N, which) -> str:
 def group_notes(N, orig=False) -> str:
     """\u00a710.14: the groups rule (what had been opened before it) and the frontier note, verbatim from the scorer;
     after a table of the original members only, the frontier note of that roster."""
-    fr = N["frontier_note_original_members"] if orig else N["frontier_note"]
+    fr = shown_text(N["frontier_note_original_members"] if orig else N["frontier_note"])
     return (f'<p class="table-note nack-groups-rule">{esc(N["groups_rule"])}</p>'
             f'<p class="table-note nack-frontier-note">{esc(fr)}</p>')
 
@@ -288,7 +316,7 @@ def group_notes(N, orig=False) -> str:
 def scope_notes(N) -> str:
     """Wherever group results or the frontier group appear: the scope note and the frontier note."""
     return (f'<p class="note"><strong>Scope.</strong> {esc(NACK_SCOPE_NOTE)}</p>'
-            f'<p class="table-note nack-frontier-note">{esc(N["frontier_note"])}</p>')
+            f'<p class="table-note nack-frontier-note">{esc(shown_text(N["frontier_note"]))}</p>')
 
 
 def primary_table(N, rule, caption, key="primary") -> str:
@@ -296,7 +324,7 @@ def primary_table(N, rule, caption, key="primary") -> str:
     original members only (key "primary_original_members")."""
     rows = []
     for i, c in enumerate(N[key][rule]):
-        label = esc(c["comparison"])
+        label = esc(shown_text(c["comparison"]))
         if c.get("missing"):
             rows.append(f'<tr data-row="{i}"><th scope="row">{label}</th><td colspan="9">Not yet available: one side '
                         f'has no setup in the run yet.</td></tr>')
@@ -351,7 +379,7 @@ def engine_tables(N) -> str:
                       ("primary_original_members", "original members only")):
         if key not in E:
             continue
-        rows = [row(i, esc(c["comparison"]), [td(N, c, ["2ply"], signed=True), td(N, c, ["2ply_ci_99"], signed=True),
+        rows = [row(i, esc(shown_text(c["comparison"])), [td(N, c, ["2ply"], signed=True), td(N, c, ["2ply_ci_99"], signed=True),
                                               td(N, c, ["rollout"], signed=True),
                                               td(N, c, ["rollout_ci_99"], signed=True),
                                               td(N, c, ["direction_changed"], text=True)])
@@ -366,7 +394,7 @@ def engine_tables(N) -> str:
                                                           td(N, E, ["counts/rolled_out_plays"]),
                                                           td(N, E, ["counts/adjusted_plays_used"])])],
                    "Engine check: counts", "nack-engine-counts")
-    changed = [c["comparison"] for key in ("primary", "primary_original_members") for c in E.get(key, [])
+    changed = [shown_text(c["comparison"]) for key in ("primary", "primary_original_members") for c in E.get(key, [])
                if c["direction_changed"]]
     return (per + prims + counts + f'<p class="table-note">Settings: {esc(E["settings"])}. {esc(ENGINE_ADDED)}</p>'
             + f'<p class="table-note">{"Direction changed: " + esc("; ".join(changed)) if changed else "No primary comparison changes direction between 2-ply and rollout values, either way."} '
@@ -394,7 +422,8 @@ def chart(N) -> str:
                  f'text-anchor="middle">Nackgammon PR, main 200 pairs</text>')
     for p in pts:
         cx, cy = x(p["standard_pr"]), y(p["nackgammon_pr"])
-        tip = (f'{p["setup"]} ({p["group"]}): standard PR {fmt(p["standard_pr"], 2)}, Nackgammon PR '
+        cls = setup_class(p["setup"])
+        tip = (f'{p["setup"]} ({(cls + " · ") if cls else ""}{GROUP_SHOWN[p["group"]]}): standard PR {fmt(p["standard_pr"], 2)}, Nackgammon PR '
                f'{fmt(p["nackgammon_pr"], 2)}')
         mark = (f'<rect class="nack-yard" x="{cx - 5:.1f}" y="{cy - 5:.1f}" width="10" height="10"/>'
                 f'<text x="{cx + 8:.1f}" y="{cy + 4:.1f}">{esc(p["setup"])}</text>' if p["group"] == "yardstick"
@@ -403,7 +432,7 @@ def chart(N) -> str:
                      f'data-y="{p["nackgammon_pr"]}"><title>{esc(tip)}</title>{mark}</g>')
     note = (f"{TITLE}: standard PR (x) against Nackgammon PR (y), main 200 pairs; dashed diagonal = no change; above it "
             f"= worse on Nackgammon. Colour = group by original league (no group = exploratory). Squares: GNUbg weak and "
-            f"Random. {NACK_SCOPE_NOTE} {N['frontier_note']}")
+            f"Random. {NACK_SCOPE_NOTE} {shown_text(N['frontier_note'])}")
     return (f'<svg class="chart-svg" data-chart="nack" data-note="{esc(note)}" viewBox="0 0 {W} {H}" width="{W}" '
             f'height="{H}" role="img" aria-label="{esc(TITLE)}: standard against Nackgammon error rate">'
             + "".join(parts) + "</svg>")
@@ -449,8 +478,9 @@ def section(N, kinds: dict, chosen: list, L: dict) -> str:
                  f"risk judgement in league play, on an exact tie the first in league order (chosen from league "
                  f"results, never from this "
                  f"test); All settings shows every setup asked ({count(multi)} more rows). Decision / Chat is the model "
-                 f"type; the group under each name is the paired test's original league group, so a chat model can "
-                 f"sit in the decision models group. Every table further down shows every setup.")
+                 f"type; under each name are its model class (the leaderboard's Class row) and the paired test's group, "
+                 f"the setups from one original league, so a chat model can sit in the League 1 group. Every table "
+                 f"further down shows every setup.")
     return (f'<section class="card" id="{SECTION_ID}" data-nack-kinds="{esc(json.dumps(kinds))}" '
             f'data-nack-chosen="{esc(json.dumps(chosen))}">'
             f'<div class="section-head"><p class="eyebrow">{esc(TITLE)}</p><h2>{esc(QUESTION)}</h2>{keys}</div>'
@@ -459,7 +489,7 @@ def section(N, kinds: dict, chosen: list, L: dict) -> str:
             f'<p class="table-note">{esc(head_note)}</p>'
             + summary_table(N) + f'<p class="table-note nack-view-note">{esc(view_note)}</p>' + late_block(L) +
             f'<p class="section-label">{esc(N["method"])}</p>{status}{scope}'
-            f'<p class="note nack-additions-note"><strong>Additions.</strong> {esc(N["additions_note"])}</p>'
+            f'<p class="note nack-additions-note"><strong>Additions.</strong> {esc(shown_text(N["additions_note"]))}</p>'
             "<p>Nackgammon has the rules of backgammon; only the starting position differs. Each setup was asked 200 "
             "Nackgammon positions and 200 standard positions matched to them by phase, position class, number of legal "
             "plays and the gap between the two best plays. Error rate (PR) = 500 \u00d7 mean GNUbg 2-ply equity loss. "
@@ -479,9 +509,9 @@ def section(N, kinds: dict, chosen: list, L: dict) -> str:
             + '<figure class="chart-card" data-static-chart id="chart-nack"><div class="chart-head">'
               '<h3>Standard against Nackgammon error rate</h3>'
               '<button type="button" class="key" data-download-static>Download PNG</button></div>' + chart(N)
-            + '<p class="chart-legend"><span><i class="swatch nack-dot nack-dm"></i>decision models</span> '
-              '<span><i class="swatch nack-dot nack-wh"></i>workhorses</span> '
-              '<span><i class="swatch nack-dot nack-fr"></i>frontier</span> '
+            + '<p class="chart-legend"><span><i class="swatch nack-dot nack-dm"></i>League 1 group</span> '
+              '<span><i class="swatch nack-dot nack-wh"></i>League 2 group</span> '
+              '<span><i class="swatch nack-dot nack-fr"></i>League 3 group</span> '
               '<span><i class="swatch nack-dot nack-ng"></i>no group (exploratory)</span> '
               '<span><i class="swatch nack-yard"></i>GNUbg weak, Random</span> '
               '<span>Above the dashed diagonal: higher error on Nackgammon.</span></p></figure>'

@@ -44,7 +44,8 @@ from pathlib import Path
 SITE = Path(__file__).resolve().parent
 sys.path.insert(0, str(SITE))
 
-from common import NA, ROOT, count, esc, fmt, nm  # noqa: E402
+from common import NA, ROOT, count, esc, fmt, nm, relabel  # noqa: E402
+from common import label as shown_name  # noqa: E402
 
 import home as H  # noqa: E402
 import improve_validate as V  # noqa: E402
@@ -357,8 +358,9 @@ def status(L) -> dict:
 def read_planned(plan_setups: set, path: Path = PLANNED) -> list:
     """The results table's planned rows (content/improve_planned.json, Ümit/Zeki #3710): status only, no number; a
     file outside improve_validate.PLANNED fails the build."""
-    doc = json.loads(path.read_text())
-    bad = V.planned_problems(doc, plan_setups, P.PARAMS)
+    # Shown names (common.relabel): P.PARAMS is keyed by them.
+    doc = relabel(json.loads(path.read_text()))
+    bad = V.planned_problems(doc, {shown_name(s) for s in plan_setups}, P.PARAMS)
     if bad:
         raise SystemExit("content/improve_planned.json: " + "; ".join(bad))
     return doc["rows"]

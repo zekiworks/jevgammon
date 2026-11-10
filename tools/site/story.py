@@ -13,9 +13,10 @@ import re
 
 import home as H
 import pages as P
-from common import ALL_NOTE, CONTENT, LATE_ENTRY, NA, count, esc, fmt, nm, pct
+from common import ALL_NOTE, CONTENT, LATE_ENTRY, NA, count, esc, fmt, nm, pct, relabel
+from common import label as shown_name
 
-RELEASES = json.loads((CONTENT / "release_months.json").read_text())["models"]
+RELEASES = relabel(json.loads((CONTENT / "release_months.json").read_text())["models"])
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 PROGRAMS = ("GNUbg weak", "Random", "Safest")
 
@@ -37,7 +38,7 @@ LEVELS = {"off": 0, "none": 0, "minimal": 1, "low": 2, "medium": 3, "high": 4, "
 ON = "on"
 # Models that are one row (content/model_identity.json: an approved list, nothing inferred from names): a dated
 # checkpoint under its original, which names and dates the row.
-SAME_MODEL = json.loads((CONTENT / "model_identity.json").read_text())["same_model"]
+SAME_MODEL = relabel(json.loads((CONTENT / "model_identity.json").read_text())["same_model"])
 # Beside the table until Ümit #2938 item 3; on About since (Zeki #2578's accepted rank sentence in place of the
 # whisker-overlap one).
 NOTE = ("Bars run to each score; the whisker is its 95% interval. Ranks show observed scores; small gaps need not be "
@@ -433,6 +434,45 @@ def too_safe(S, chart: list) -> str:
 # About (about_text).
 MEANING = "Risk judgement: 100 = every call right, 50 = always safe; higher is better."
 ROW_LINE = "One row per model at its highest reasoning setting, never its best score; late entries included."
+# Under the table, next to the not-paired note (Ümit #4282 item 2): why # has no tiers, plainly.
+NO_TIERS = ("# is the rank only, with no tiers: a tier needs a paired test (McNemar, Holm) over positions every model "
+            "answered, and each league played its own positions, so models in different leagues never answered the "
+            "same ones. Same positions (preview) has tiers: there every model answered the same 200 positions.")
+# Same positions (preview, Zeki #4287): the stored E1 answers of 'Did they improve?' (content/same_positions_preview.json,
+# tools/site/same_positions_publish.py), tiers by exact McNemar with Holm.
+SAME = json.loads((CONTENT / "same_positions_preview.json").read_text())
+SAME_KEY = "Same positions" if SAME["prompt_equals_league"] else "Same positions (learning-experiment prompt)"
+
+
+def same_positions() -> str:
+    """The Same positions view: a tier table of the ranked models with all 200 stored E1 answers, then the ranked models
+    not yet asked and what asking them would cost."""
+    done = sorted((m for m in SAME["models"] if m["tier"] is not None), key=lambda m: (m["tier"], -m["correct"]))
+    part = [m for m in SAME["models"] if m["tier"] is None]
+    rows = [f'<tr><td>{m["tier"]}</td><th scope="row">{esc(shown_name(m["name"]))}</th>'
+            f'<td class="num">{m["correct"]}</td><td class="num">{m["invalid"]}</td>'
+            f'<td class="num">{m["rank"]}</td></tr>' for m in done]
+    table = P.table(["Tier", "Model", "Engine's best play, of 200", "Invalid (counted wrong)", "League #"], rows,
+                    f"Same positions: {len(done)} models, 200 positions each, by tier", cls="board list",
+                    attrs=' id="same-positions-table"')
+    prompt = ("The prompt and setting are the league row's (checked request by request against the league prompts)."
+              if SAME["prompt_equals_league"] else "The prompt is the learning experiment's, not the league's.")
+    T = SAME["missing_totals"]
+    late = "; ".join(f'{esc(shown_name(m["name"]))} ({m["n"]} of 200 stored, not in the tiers)' for m in part)
+    gone = ", ".join(f'{esc(shown_name(m["name"]))} ({esc(m["unavailable"])})' for m in SAME["missing_ranked"]
+                     if m["unavailable"])
+    return (f'<p class="table-note">Preview. The stored answers of the "Did they improve?" test without lessons (E1): '
+            f'200 positions every model below answered; no new run. {prompt} Engine\'s best play: the play loses under '
+            f'0.001 against GNU Backgammon\'s best; an invalid answer counts as wrong. Tiers: an exact McNemar test on '
+            f'every pair, Holm-adjusted at 0.05; tier 1 is the model with the most best plays and every model not '
+            f'significantly different from it, then the same for the models left. League # is the league rank.</p>'
+            + table +
+            f'<p class="table-note">Not asked yet: {T["models"]} ranked models ('
+            + ", ".join(esc(shown_name(m["name"])) for m in SAME["missing_ranked"]) + ")"
+            + (f"; {late}" if late else "") +
+            f'. Asking them, one position per request: about ${T["usd_hosted"]} at list price on hosted APIs '
+            f'(${T["usd_hosted_available"]} for those available now), {T["hours_sequential"]} hours one after another, '
+            f'of which {T["gpu_hours"]} hours on our GPUs. Not available now: {gone}.</p>')
 
 
 def headline(S) -> str:
@@ -445,7 +485,8 @@ def headline(S) -> str:
                     attrs=' data-dataset="all" id="headline-table"')
     keys = ('<span class="keys needs-js" role="group" aria-label="Rows"><button type="button" class="key" '
             'data-headline-view="model" aria-pressed="true">One row per model</button><button type="button" '
-            'class="key" data-headline-view="all" aria-pressed="false">All setups</button></span>')
+            'class="key" data-headline-view="all" aria-pressed="false">All setups</button><button type="button" '
+            f'class="key" data-headline-view="same" aria-pressed="false">{esc(SAME_KEY)}</button></span>')
     # The table's own filter (Ümit #2907): local to this table, never the page's filters; programs stay in every view.
     # Type and Class (Ümit #4217) combine: a row shows when it is of the pressed type and class (P.model_class).
     types = ('<div class="keys hl-filter needs-js" role="group" aria-label="Model type">'
@@ -457,7 +498,8 @@ def headline(S) -> str:
             f'<p class="chart-sub">{esc(MEANING)}</p></div>'
             f'<div data-headline-panel="model">{types}{table}</div>'
             f'<div data-headline-panel="all" hidden>{H.all_risk_table(S)}{caveat(H.RANK_NOTE, "statistics")}</div>'
-            f'<p class="table-note headline-rule">{esc(ROW_LINE)} {esc(ALL_NOTE)} '
+            f'<div data-headline-panel="same" hidden>{same_positions()}</div>'
+            f'<p class="table-note headline-rule">{esc(ROW_LINE)} {esc(ALL_NOTE)} {esc(NO_TIERS)} '
             '<a href="about/#leaderboard">How rows are chosen</a><span class="hl-wide-note"> $ per 1,000 decisions: at '
             'each setup\'s price basis, which its details name (a list price, or API-equivalent for a subscription); '
             'not a bill paid.</span></p></section>')
@@ -839,8 +881,8 @@ def nack_finding(S) -> str:
     rd1 = N["setups"]["Random"]["first"]["drop"]
     worse = [(s, r) for s, r in ((Lt or {}).get("setups") or {}).items() if r.get("label") == "worse"]
     text = ("Each model was asked Nackgammon positions and standard positions matched to them. "
-            + ("Compared group against group (one group's drop minus another's: decision models, workhorses, "
-               "frontier), every 99% interval includes 0, so the test does not show the groups' drops to differ. "
+            + ("Compared group against group (one group's drop minus another's; a group is the setups from one "
+               "original league: League 1, 2, 3), every 99% interval includes 0, so the test does not show the groups' drops to differ. "
                if clear else "Compared group against group (one group's drop minus another's), not every 99% "
                "interval includes 0. ")
             + f"Random play's own drop is {fmt(rd1, 1, True)} PR on the main 200 pairs: the Nackgammon positions were "
@@ -850,9 +892,9 @@ def nack_finding(S) -> str:
             f'the late entry {esc(s)} dropped ({fmt(r["final"]["drop"], 2, True)} PR, 97.5% interval '
             f'{fmt(r["final"]["drop_975"][0], 2, True)} to {fmt(r["final"]["drop_975"][1], 2, True)})' for s, r in worse) + "."
     text += f" <strong>{esc(NS.UNCLEAR_NOTE)}</strong>"
-    legend = ('<span><i class="swatch nack-dot nack-dm"></i>decision models</span> '
-              '<span><i class="swatch nack-dot nack-wh"></i>workhorses</span> '
-              '<span><i class="swatch nack-dot nack-fr"></i>frontier</span> '
+    legend = ('<span><i class="swatch nack-dot nack-dm"></i>League 1 group</span> '
+              '<span><i class="swatch nack-dot nack-wh"></i>League 2 group</span> '
+              '<span><i class="swatch nack-dot nack-fr"></i>League 3 group</span> '
               '<span><i class="swatch nack-dot nack-ng"></i>no group (exploratory)</span> '
               '<span><i class="swatch nack-yard"></i>GNUbg weak, Random</span> '
               '<span>Above the dashed diagonal: higher error on Nackgammon.</span>')

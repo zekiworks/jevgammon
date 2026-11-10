@@ -39,7 +39,8 @@ from html.parser import HTMLParser
 from pathlib import Path
 
 import findings
-from common import ALL_NOTE, BANNED, CONTENT, INTERNAL, LATE_ENTRY, PROVISIONAL, PROVISIONAL_NOTE, ROOT, SUITE_BAR
+from common import (ALL_NOTE, BANNED, CONTENT, INTERNAL, LATE_ENTRY, PROVISIONAL, PROVISIONAL_NOTE, ROOT, SUITE_BAR,
+                    old_model_spans)
 
 NUM = re.compile(r"(?<![\w.\u2212+-])([\u2212+-]?)(\d{1,3}(?:,\d{3})+|\d+)(\.\d+)?")
 DATE = re.compile(r"\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2})?(?:\.\d+)?Z?)?|\b\d{1,2}:\d{2}\b|"
@@ -837,6 +838,15 @@ def check_improve(out: Path, test_set: Path | None = None) -> list[str]:
     return bad
 
 
+# Old model names (content/labels.json "models", Ümit #4282 item 4): a page whose text shows one fails (an old name
+# that is part of its own new name, 'Mercury Decide' in 'Inception Mercury Decide', is not one). The frozen archive/
+# and results/<id>/ pages keep the names they were published under.
+def old_model_names(rel, text: str) -> list[str]:
+    text = html.unescape(re.sub(r"<[^>]+>", " ", text))
+    found = sorted({o for _, _, o in old_model_spans(text)})
+    return [f"{rel}: old model name {o!r} (content/labels.json models)" for o in found]
+
+
 def run(S: dict, out: Path) -> list[str]:
     failures = []
     nums = allowed_numbers(out, S)
@@ -855,6 +865,8 @@ def run(S: dict, out: Path) -> list[str]:
             failures += check_numbers(rel, tree.root, nums)
             failures += check_mixing(rel, tree.root, S)
         failures += [f.replace(str(base), str(rel)) for f in check_links(base, tree.root, out, anchors=page == base)]
+        if rel.parts[0] not in ("archive", "results"):
+            failures += old_model_names(rel, page.read_text())
     failures += check_counts(S)
     for p in out.rglob("*"):
         if not p.is_file() or p.suffix == ".png":

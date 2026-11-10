@@ -40,7 +40,7 @@ import learning_page  # noqa: E402
 import offline as O  # noqa: E402
 import pages  # noqa: E402
 from common import (CONTENT, EARLIER, INTERNAL, LATE_ENTRY, PENDING, PROVISIONAL, PUBLISHED, ROOT, SITE,  # noqa: E402
-                    THRESHOLDS, aliases, relabel, setup_slug)
+                    THRESHOLDS, aliases, label, relabel, setup_slug)
 
 BASE = "https://zekiworks.github.io/analysis/backgammon/"
 # The files of tools/site/assets/ copied to the site's root (hilde-leaf.svg: the top bar's mark, Ümit #2901).
@@ -54,9 +54,12 @@ def load_setups() -> dict:
     data = json.loads((CONTENT / "setups.json").read_text())
     out = {}
     for s in data["setups"]:
-        if s["dataset"].startswith("league-") and aliases(s["name"]):
-            s = dict(s, aliases=aliases(s["name"]))
-            out[(s["dataset"], INTERNAL[s["name"]])] = s
+        # The databases' name: the effort rename's old name (labels.json "renamed"), found through the shown name
+        # (which the model's display name, labels.json "models", may also change).
+        old = INTERNAL.get(label(s["name"]), s["name"])
+        if s["dataset"].startswith("league-") and old != s["name"]:
+            s = dict(s, aliases=[old])
+            out[(s["dataset"], old)] = s
         else:
             out[(s["dataset"], s["name"])] = s
     return out

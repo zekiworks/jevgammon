@@ -300,6 +300,7 @@ def export_v1(root, ds, rdb, v1_positions, contexts):
     out = {}
     for model in sorted(answers, key=str.lower):
         rows = answers[model]
+        shown = label(model)  # the name the site shows; its slug stays the recorded name's (setup_slug)
         # Choice-only runs record their pick as {play: 1.0}: no probability (brief B11).
         choice_only = all(p is None or len(json.loads(p)) == 1 and next(iter(json.loads(p).values())) == 1.0
                           for _, _, p, _, _ in rows)
@@ -330,7 +331,7 @@ def export_v1(root, ds, rdb, v1_positions, contexts):
                 pos = from_json(json.loads(position), side)
                 lab = labels[pid]
                 decisions.append({
-                    "id": lab["id"], "dataset": ds["id"], "setup": model, "league": None, "game": None,
+                    "id": lab["id"], "dataset": ds["id"], "setup": shown, "league": None, "game": None,
                     "turn_no": lab["turn"], "side": side, "dice": [d1, d2], "board": board(pos), "phase": lab["phase"],
                     "tag": lab["tag"], "pips": list(pips(pos)), "program": False,
                     "prompt": {"format": fmt, "context": h, "separator": sep, "requests": [request]},
@@ -341,10 +342,10 @@ def export_v1(root, ds, rdb, v1_positions, contexts):
                     "retry_seconds": None, "cost_usd": None})
                 mark_risk(decisions[-1], entries, range(len(names)), page)
                 risk_rows.append((page, lab["id"], decisions[-1]["risk"], None))
-            write_page(root, ds["id"], model, page, len(chunks), decisions)
-        out[model] = {"slug": setup_slug(ds["id"], model), "decisions": len(rows), "invalid": invalid,
+            write_page(root, ds["id"], shown, page, len(chunks), decisions)
+        out[shown] = {"slug": setup_slug(ds["id"], shown), "decisions": len(rows), "invalid": invalid,
                       "pages": len(chunks), "program": False,
-                      "risk": write_risk_index(root, ds["id"], model, risk_rows)}
+                      "risk": write_risk_index(root, ds["id"], shown, risk_rows)}
     return out
 
 

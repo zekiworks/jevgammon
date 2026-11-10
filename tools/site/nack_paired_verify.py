@@ -118,9 +118,10 @@ def check_home(out: Path, N: dict, bad: list):
             bad.append(f"home page: {want!r} missing")
     if text.count(NACK_SCOPE_NOTE) < 4:
         bad.append("home page: the scope note is not next to every group result")
+    # The groups as shown (nack_section.GROUP_SHOWN, Ümit #4282 item 3): the scorer's notes with the group names shown.
     for k in ("scope_note", "groups_rule", "frontier_note"):
-        if N[k] not in text:
-            bad.append(f"home page: {k} {N[k]!r} missing")
+        if NS.shown_text(N[k]) not in text:
+            bad.append(f"home page: {k} {NS.shown_text(N[k])!r} missing")
     if N["scope_note"] != NACK_SCOPE_NOTE:
         bad.append(f"scope note: published {NACK_SCOPE_NOTE!r}, scorer {N['scope_note']!r}")
     if FORBIDDEN.search(text):
@@ -236,8 +237,8 @@ def check_home(out: Path, N: dict, bad: list):
             bad.append(f"chart {name}: not drawn as {group!r}")
     legend = " ".join(norm(text_of(n)) for n in walk(sec) if "chart-legend" in (n.attrs.get("class") or ""))
     for group in {v["group"] for v in N["setups"].values()} - {"yardstick"}:
-        if group not in legend:
-            bad.append(f"chart legend: {group!r} missing")
+        if NS.GROUP_SHOWN[group] not in legend:
+            bad.append(f"chart legend: {NS.GROUP_SHOWN[group]!r} missing")
     for s, v in N["setups"].items():
         if v["group"] == "no group (exploratory)":
             ths = [norm(text_of(n)) for n in walk(sec) if n.tag == "th" and n.parent is not None
@@ -253,7 +254,7 @@ def check_home(out: Path, N: dict, bad: list):
     tids = [f"nack-primary-{r}" for r in rules] + (["nack-engine-primary"] if N["engine_check"] else [])
     orig_tids = [f"nack-primary-orig-{r}" for r in rules] + (
         ["nack-engine-primary-orig"] if N["engine_check"] and "primary_original_members" in N["engine_check"] else [])
-    for ids, fr in ((tids, N["frontier_note"]), (orig_tids, N["frontier_note_original_members"])):
+    for ids, fr in ((tids, NS.shown_text(N["frontier_note"])), (orig_tids, NS.shown_text(N["frontier_note_original_members"]))):
         notes = (f'<p class="table-note nack-groups-rule">{esc(N["groups_rule"])}</p>'
                  f'<p class="table-note nack-frontier-note">{esc(fr)}</p>')
         for tid in ids:
@@ -262,7 +263,7 @@ def check_home(out: Path, N: dict, bad: list):
             if at < 0 or not page.startswith(notes, end):
                 bad.append(f"home table {tid}: the \u00a710.14(e) groups note and the frontier note do not follow it "
                            "verbatim")
-    if text.count(N["frontier_note"]) < text.count(NACK_SCOPE_NOTE) + len(tids):
+    if text.count(NS.shown_text(N["frontier_note"])) < text.count(NACK_SCOPE_NOTE) + len(tids):
         bad.append("home page: the frontier note is not next to every scope note and every primary table")
 
 

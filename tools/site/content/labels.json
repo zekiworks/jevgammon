@@ -20,9 +20,24 @@
  "notes": {
   "Gemini 4 Argon (low)": "The API reported 0 thinking tokens, but the responses carry thought signatures.",
   "Claude Fable 5.1 (low)": "Reasoned on 365 of 3,967 decisions.",
-  "DeepSeek V4.1 Flash (off)": "232 early requests sent no reasoning field. All responses had 0 reasoning tokens."
+  "DeepSeek-V4.1-Flash (off)": "232 early requests sent no reasoning field. All responses had 0 reasoning tokens."
  },
  "reasoning_notes": {
   "LFM2.5-24B-A2B": "it has no effort setting. (off): an empty thinking block is prefilled, so it answers without thinking. (on): it is let to think before it answers (its template has no switch or effort setting; the \"low\" its requests carry is ignored)."
+ },
+ "_models_about": "Model display names (Ümit #4282 item 4): one name per model across the three sites, the name the Logic & Math and Reading bench-scores feeds give the same model (fetched 2026-11-10), with a route suffix where our setup's route differs from theirs. The databases, setups.json, slugs and data ids keep the old model name; every setup named '<old model>' or '<old model> (<setting>)' is shown as '<new model>' / '<new model> (<setting>)'. checks.py fails the build when a page shows an old name.",
+ "models": {
+  "Base Labs Mammoth-1": {"name": "Mammoth-1", "feeds": "Logic & Math, Reading 'Mammoth-1' (baselabs/mammoth-1)"},
+  "Base Labs Elephant-1": {"name": "Elephant-1", "feeds": "Logic & Math, Reading 'Elephant-1' (baselabs/elephant-1)"},
+  "Cygnet (Gemma 4 12B)": {"name": "Cygnet", "feeds": "Logic & Math, Reading 'Cygnet' (decision)"},
+  "Decider v1.2 27B": {"name": "Perplexity Decider 27B v1.2 (local GPU)", "feeds": "Reading 'Perplexity Decider 27B v1.2 (local GPU)' (perplexity-ai/pplx-decider-v1.2, self-hosted); Logic & Math has only the API row"},
+  "Decider v1.1 27B": {"name": "Perplexity Decider 27B v1.1 (local GPU)", "feeds": "Reading 'Perplexity Decider 27B v1.1' is the Perplexity Decisions API; ours ran on our GPUs, so the route suffix"},
+  "Decider Flash v1.2": {"name": "Perplexity Decider Flash v1.2", "feeds": "Logic & Math, Reading 'Perplexity Decider Flash v1.2' (self-hosted)"},
+  "Mercury Decide": {"name": "Inception Mercury Decide", "feeds": "Logic & Math, Reading 'Inception Mercury Decide'"},
+  "GPT-6 Luna": {"name": "GPT-6 Luna (Decisions API)", "feeds": "Reading 'GPT-6 Luna (Decisions API)' (not its 'GPT-6 Luna (chat API)')"},
+  "Fastino GLiDE v1.2 (local)": {"name": "Fastino GLiDE v1.2", "feeds": "Logic & Math, Reading 'Fastino GLiDE v1.2' (fastino/GLiDE, self-hosted like ours: no route suffix)"},
+  "DeepSeek V4.1 Flash": {"name": "DeepSeek-V4.1-Flash", "feeds": "Logic & Math spelling ('DeepSeek-V4.1-Flash 1017'); Reading 'DeepSeek-V4.1-Flash, first release'"},
+  "DeepSeek V4.1 Flash 1017": {"name": "DeepSeek-V4.1-Flash 1017", "feeds": "Logic & Math 'DeepSeek-V4.1-Flash 1017'"},
+  "MiniMax M3.1 Flash": {"name": "MiniMax-M3.1-Flash", "feeds": "Logic & Math, Reading 'MiniMax-M3.1-Flash'"}
  }
 }

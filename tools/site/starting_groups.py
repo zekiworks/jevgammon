@@ -7,7 +7,7 @@ import functools
 import json
 
 import pages as P
-from common import CONTENT, count, esc
+from common import CONTENT, count, esc, label
 
 SUBTITLE = "Groups reflect model profiles, not tournament rankings."
 COHORT_NOTE = ("These are fixed starting cohorts, not current ladder ranks or mutually exclusive universal model "
@@ -19,8 +19,7 @@ PROGRAM_NOTE = "program, a reference row: an official place in the match standin
 def load() -> dict:
     """The saved standings and moves, with every recorded name mapped to the name the site shows."""
     data = json.loads((CONTENT / "starting_groups.json").read_text())
-    renamed = {old: v["name"] for old, v in json.loads((CONTENT / "labels.json").read_text())["renamed"].items()}
-    shown = lambda n: renamed.get(n, n)
+    shown = label
     for g in data["groups"]:
         for r in g["rows"]:
             r["name"] = shown(r["name"])

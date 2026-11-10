@@ -534,13 +534,13 @@ def _versions(po: dict) -> str:
   (off) to (low). No score changed. 29 Oct 2026: the Hype Cup and the Nackgammon knockout on
   <a href="../leagues/#hype-cup">Leagues</a>, and every match on <a href="../matches/">Matches</a>. Match results
   only: no score changed. 6 Nov 2026: seven late entries to the original League 1 table on
-  <a href="../leagues/#late-entries">Leagues</a> (Late entries): SubQ Snap 1.1, Base Labs Elephant-1 and Base Labs
-  Mammoth-1 (played 2 Nov), Drex Max 1.1, Drex 2.0, Drex Max v1 and Drex 2.0 (local) (played 6 Nov; their pairs with
-  GPT-6 Luna not played, its API out of credit), each with a page of its own; the late-entry table gains the engine's
+  <a href="../leagues/#late-entries">Leagues</a> (Late entries): SubQ Snap 1.1, Elephant-1 and Mammoth-1 (played 2
+  Nov), Drex Max 1.1, Drex 2.0, Drex Max v1 and Drex 2.0 (local) (played 6 Nov; their pairs with
+  GPT-6 Luna (Decisions API) not played, its API out of credit), each with a page of its own; the late-entry table gains the engine's
   best play, median seconds and $ per 1,000 decisions, with each price's label, source and date read. Late entries
   count in no standings table and no other setup's numbers: no score changed. 7 Nov 2026: REAX 1.3, a late entry to
   the original League 1 table on <a href="../leagues/#late-entries">Leagues</a> (Late entries), played on our GPU on
-  7 Nov (its pair with GPT-6 Luna not played, its API out of credit), with a page of its own; no list price is
+  7 Nov (its pair with GPT-6 Luna (Decisions API) not played, its API out of credit), with a page of its own; no list price is
   published for it, so it has no cost figure. No score changed.</p>""")
 
 

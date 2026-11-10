@@ -15,6 +15,13 @@
 #   - when the paid opponents' cost from the first match reaches $CAP ($5; KnowLine itself costs nothing);
 #   - when the KnowLine server fails 3 health checks in a row (fail closed: no match runs against a missing server);
 #   - when the 10 pairs are played (done), every open pair is blocked, or after 12 h.
+# One match at a time (Zeki #4561, #4564): player.json has max_matches 1 (and parallel 1), so the server gets one
+# request at a time. Once, before the league unit (re)starts, fail closed: v3.db's players row takes player.json
+# (knowline.py settings: only max_matches and the note may differ), the first run's parallel matches #933-#936 are
+# voided with the runner's own `jevgammon void` (valid 0, every row kept; the league replays each pair from the start
+# with the same seed), and the excluded window (match ids, turn ids, times) goes into the status file. After the
+# replay's first 20 KnowLine decisions, their measured in-flight peak (turn intervals) and SGLang's own batch log for
+# that window are logged once.
 set -uo pipefail
 cd /home/cbasaran/code/jevgammon
 T=$(dirname "$(readlink -f "$0")")
@@ -93,6 +100,29 @@ fi
 [[ -e $STATUS ]] || printf '# Late entries KnowLine - status\n\nGo: Ümit #4325. First match id: #%s.\n\n## Log\n' "$(cat $ST/first)" > "$STATUS"
 log "guard up: runner $(git -C "$T" rev-parse --short HEAD) clean; KnowLine $URL pinned ($SSH_HOST); OpenRouter \$$bal; floor \$$FLOOR; paid-opponent cap \$$CAP from #$(cat $ST/first); 10 opponents (GPT-6 Luna deferred: no OpenAI credit; 8 local setups queued for a GPU)"
 
+if [[ ! -e $ST/one-at-a-time ]]; then
+  halt() { log "STOPPED before the league: $1"; exit 1; }
+  systemctl --user is-active -q $UNIT && halt "league unit $UNIT is running; stop it before the one-at-a-time step"
+  out=$(python3 $T/knowline.py settings 2>&1) || halt "players.settings not updated: $out"
+  log "one match at a time: $out"
+  reason=$(python3 -c 'import sys; sys.path.insert(0, sys.argv[1]); import knowline; print(knowline.PARALLEL_REASON)' "$T") ||
+    halt "no void reason"
+  ids=$(python3 $T/knowline.py parallel-valid) || halt "parallel-window matches unreadable"
+  for mid in $ids; do
+    out=$("$BIN" void --db v3.db --match "$mid" --reason "$reason" 2>&1) || halt "void of #$mid failed: $out"
+    log "voided #$mid: $(head -1 <<<"$out")"
+  done
+  left=$(python3 $T/knowline.py parallel-valid) || halt "parallel-window matches unreadable"
+  [[ -z $left ]] || halt "still valid after void: $left"
+  record=$(python3 $T/knowline.py parallel-record) || halt "parallel-window record failed"
+  printf '%s\n' "$record" >> "$STATUS"
+  sqlite3 -readonly v3.db "SELECT COALESCE(MAX(id), 0) + 1 FROM matches" > $ST/replay-first.new && [[ -s $ST/replay-first.new ]] ||
+    halt "replay's first match id unreadable"
+  mv $ST/replay-first.new $ST/replay-first && date -u '+%F %T' > $ST/replay-since && touch $ST/one-at-a-time ||
+    halt "state not written"
+  log "one match at a time from match #$(cat $ST/replay-first) on; #933-#936 excluded (record above)"
+fi
+
 stop_league() { systemctl --user stop $UNIT 2>/dev/null; }
 restarts=0
 down=0
@@ -120,6 +150,15 @@ while true; do
   if healthy; then down=0; else down=$((down + 1)); fi
   if (( down >= 3 )); then
     stop_league; log "STOPPED: KnowLine server $URL failed 3 health checks in a row; paid opponents \$$s"; exit 1
+  fi
+  if [[ ! -e $ST/inflight-logged ]]; then
+    first20=$(python3 $T/knowline.py inflight "$(cat $ST/replay-first)" 20 2>&1)
+    if [[ $first20 == "20 decisions"* ]]; then
+      until_utc=$(sqlite3 -readonly v3.db "SELECT strftime('%Y-%m-%d %H:%M:%S', MAX(created_at), '+1 second') FROM turns")
+      server=$(python3 $T/knowline.py server-inflight "$(cat $ST/replay-since)" "$until_utc" 2>&1)
+      log "in flight, replay's first decisions: $first20; server: $server"
+      touch $ST/inflight-logged
+    fi
   fi
   if ! systemctl --user is-active -q $UNIT; then
     read -r opened blocked < <(python3 $T/knowline.py scope | head -1)

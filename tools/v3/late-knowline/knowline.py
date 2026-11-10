@@ -13,6 +13,16 @@ v3.db; the league web helpers are this tree's.
   knowline.py billed FIRST         paid opponents' dollars in late-entry matches from match FIRST on (read-only)
   knowline.py scope                open and blocked pairs: "OPEN BLOCKED", then one line per blocked pair (read-only)
   knowline.py estimate             decisions and server hours expected, from earlier late entries (read-only)
+  knowline.py settings             records player.json in v3.db's players row when only max_matches and the note
+                                   changed (one match at a time, Zeki #4561); refuses any other change (writes v3.db)
+  knowline.py parallel-valid       the parallel-window matches (PARALLEL) still valid, one id per line (read-only)
+  knowline.py parallel-record      markdown for the status file: the excluded window's matches, turn ids and times
+  knowline.py inflight FIRST N     the first N KnowLine decisions in valid late-entry matches from match FIRST on:
+                                   most requests in flight (request start = created_at - request_ms) and most
+                                   KnowLine matches running at once (read-only)
+  knowline.py server-inflight SINCE UNTIL   SGLang's own batch log on the server host (ssh, read-only; UTC times
+                                   'YYYY-MM-DD HH:MM:SS'): most requests in the server (new + running + queued) per
+                                   logged batch; other clients of the same server are counted too
 """
 import argparse
 import json
@@ -228,6 +238,125 @@ def estimate(_args) -> None:
           + f"; all {len(paid)}: ${sum(paid.values()):.3f}; now: ${sum(v for k, v in paid.items() if k in NOW):.3f}")
 
 
+# The first run (2026-11-10 20:22-20:30 UTC, league #21, harness 9df24a8) played these 4 matches at once, so the
+# server got up to 5 requests at a time (SGLang's batch log; turn intervals show 1 decision at a time, the rest were
+# warm-ups). Rule (Zeki #4564): void (the league's own `jevgammon void`: valid 0, rows kept) and replayed from the
+# start, one match at a time.
+PARALLEL = [933, 934, 935, 936]
+PARALLEL_REASON = ("KnowLine 31B Gen1.5's first run played 4 matches at once (#933-#936), up to 5 requests at once "
+                   "on a server handed over for one at a time; excluded and replayed from the start, one match at a "
+                   "time (Zeki #4561, #4564)")
+SSH_HOST = "spark2"
+SNAPSHOT = "/home/cbasaran/decision-models/KnowLine-31B-Gen1.5@8e56aa1b236a6dd1064dcfd22ba1e5e360e4c140"
+
+
+def settings(_args) -> None:
+    conn = sqlite3.connect(DB, timeout=60)
+    conn.execute("BEGIN IMMEDIATE")
+    row = conn.execute("SELECT id, settings FROM players WHERE name = ?", (NAME,)).fetchone()
+    if not row:
+        conn.rollback()
+        sys.exit(f"{NAME} is not in v3.db")
+    stored = json.loads(row[1])
+    if stored == PLAYER:
+        conn.rollback()
+        print(f"players #{row[0]}: settings already as player.json")
+        return
+    changed = {k for k in stored.keys() | PLAYER.keys() if stored.get(k) != PLAYER.get(k)}
+    if not changed <= {"max_matches", "note"}:
+        conn.rollback()
+        sys.exit(f"players #{row[0]}: settings differ in {sorted(changed)}, not only max_matches/note")
+    conn.execute("UPDATE players SET settings = ? WHERE id = ?", (json.dumps(PLAYER, ensure_ascii=False), row[0]))
+    conn.commit()
+    print(f"players #{row[0]}: settings updated ({', '.join(sorted(changed))}): max_matches {PLAYER.get('max_matches')}")
+
+
+def parallel_valid(_args) -> None:
+    conn = ro()
+    for mid in PARALLEL:
+        if conn.execute("SELECT valid FROM matches WHERE id = ?", (mid,)).fetchone()[0] == 1:
+            print(mid)
+
+
+def knowline_turns(conn, where: str, params: tuple):
+    return conn.execute(
+        f"""SELECT t.id, m.id AS match_id, t.created_at, t.request_ms, t.decided_by FROM turns t
+            JOIN games g ON g.id = t.game_id JOIN matches m ON m.id = g.match_id
+            JOIN players p ON p.id = CASE t.player WHEN 1 THEN m.player1 ELSE m.player2 END
+            WHERE p.name = ? AND {where} ORDER BY t.created_at, t.id""", (NAME,) + params).fetchall()
+
+
+def ts(s: str) -> float:
+    from datetime import datetime
+    return datetime.fromisoformat(s.replace("Z", "+00:00")).timestamp()
+
+
+def peak(intervals) -> int:
+    events = sorted([(s, 1) for s, _ in intervals] + [(e, -1) for _, e in intervals])
+    cur = most = 0
+    for _, d in events:
+        cur += d
+        most = max(most, cur)
+    return most
+
+
+def parallel_record(_args) -> None:
+    conn = ro()
+    marks = ",".join("?" * len(PARALLEL))
+    turns = knowline_turns(conn, f"m.id IN ({marks})", tuple(PARALLEL))
+    model = [t for t in turns if t["decided_by"] in ("model", "fallback")]
+    print(f"- Excluded (Zeki #4564): matches {', '.join(f'#{m}' for m in PARALLEL)}, played at once in the first run; "
+          f"void with `jevgammon void` (valid 0, every row kept), pairs replayed from the start one match at a time.")
+    for mid in PARALLEL:
+        r = conn.execute("""SELECT m.status, m.valid, m.voided_at, m.started_at, a.name, b.name FROM matches m
+                            JOIN players a ON a.id = m.player1 JOIN players b ON b.id = m.player2 WHERE m.id = ?""",
+                         (mid,)).fetchone()
+        n = sum(t["match_id"] == mid for t in model)
+        print(f"  - #{mid} {r[4]} v {r[5]}: {r[0]}, valid {r[1]}{f', voided {r[2]}' if r[2] else ''}; started "
+              f"{r[3]}; {n} KnowLine decisions")
+    print(f"  - KnowLine turns: {len(turns)} ({len(model)} decisions with a request), turn ids {turns[0]['id']}-"
+          f"{turns[-1]['id']}, stored {turns[0]['created_at']} to {turns[-1]['created_at']}")
+    print(f"  - decision turn ids: {' '.join(str(t['id']) for t in model)}")
+    iv = [(ts(t["created_at"]) - t["request_ms"] / 1000, ts(t["created_at"])) for t in model if t["request_ms"]]
+    print(f"  - in flight: decisions at most {peak(iv)} at once (turn intervals, created_at - request_ms); warm-ups "
+          "(not stored) at each start and resume of the 4 matches: SGLang's batch log shows up to 5 requests at once")
+
+
+def inflight(args) -> None:
+    conn = ro()
+    turns = knowline_turns(conn, "m.id >= ? AND m.valid = 1 AND m.stage = 'late-entry' AND t.decided_by IN "
+                                 "('model', 'fallback') AND t.request_ms IS NOT NULL", (args.first,))[:args.n]
+    if not turns:
+        print("0 decisions")
+        return
+    iv = [(ts(t["created_at"]) - t["request_ms"] / 1000, ts(t["created_at"])) for t in turns]
+    spans = {}
+    for t, (s, e) in zip(turns, iv):
+        lo, hi = spans.get(t["match_id"], (s, e))
+        spans[t["match_id"]] = (min(lo, s), max(hi, e))
+    print(f"{len(turns)} decisions (turn ids {turns[0]['id']}-{turns[-1]['id']}, {turns[0]['created_at']} to "
+          f"{turns[-1]['created_at']}): at most {peak(iv)} in flight; at most {peak(spans.values())} KnowLine "
+          f"matches deciding at once (matches {', '.join(f'#{m}' for m in spans)})")
+
+
+def server_inflight(args) -> None:
+    import subprocess
+    cmd = (f"pid=$(pgrep -f 'sglang.launch_server --model-path {SNAPSHOT}' | head -1); "
+           "unit=$(sed -n 's#.*/\\([^/]*\\.service\\)$#\\1#p' /proc/$pid/cgroup); "
+           f"journalctl --user -u \"$unit\" --since '{args.since} UTC' --until '{args.until} UTC' -o cat --no-pager")
+    out = subprocess.run(["timeout", "60", "ssh", "-o", "BatchMode=yes", SSH_HOST, cmd], capture_output=True,
+                         text=True, check=True).stdout
+    most, batches = 0, 0
+    for line in out.splitlines():
+        if " batch, " not in line:
+            continue
+        d = dict((k, int(v)) for k, v in re.findall(r"#([a-z-]+): (\d+)", line))
+        batches += 1
+        most = max(most, d.get("new-seq", 0) + d.get("running-req", 0) + d.get("queue-req", 0))
+    print(f"SGLang batch log {args.since} to {args.until} UTC: {batches} batches, at most {most} requests in the "
+          "server (new + running + queued; other clients included)")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -237,9 +366,19 @@ def main() -> None:
     p.add_argument("opponents", nargs="+")
     b = sub.add_parser("billed")
     b.add_argument("first", type=int)
+    for cmd in ("settings", "parallel-valid", "parallel-record"):
+        sub.add_parser(cmd)
+    i = sub.add_parser("inflight")
+    i.add_argument("first", type=int)
+    i.add_argument("n", type=int)
+    s = sub.add_parser("server-inflight")
+    s.add_argument("since")
+    s.add_argument("until")
     args = ap.parse_args()
     {"configs": configs, "trigger": trigger, "pending": pending, "open": open_pairs, "billed": billed,
-     "scope": scope, "estimate": estimate, "league-id": lambda a: print(league_id() or "")}[args.cmd](args)
+     "scope": scope, "estimate": estimate, "league-id": lambda a: print(league_id() or ""), "settings": settings,
+     "parallel-valid": parallel_valid, "parallel-record": parallel_record, "inflight": inflight,
+     "server-inflight": server_inflight}[args.cmd](args)
 
 
 if __name__ == "__main__":

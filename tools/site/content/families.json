@@ -1,5 +1,5 @@
 {
- "about": "Each league setup's model family, whose icon stands beside the setup's name on the home page: the families and icons of the sibling Decision models site (its page_config.json model_families and family icons of 6 Nov 2026); Open-Jev (Zefan Cai's, not TypeSafe's) is its own family and REAX has one since 9 Nov (Ümit #3635), MiniMax, Inkling and vLLM-SR since 9 Nov (Main, a monogram each; their icons are ours, in the sibling's badge style). A setup belongs to the first family whose match (a regular expression on the setup's shown name) fits; the programs (GNUbg weak, Safest, Random) belong to none. Colours are per maker, not per family: maker_colors.json; a badge icon's square (family_icons.svg) is its maker's colour (maker_palette.json), its mark white or near-black, whichever contrasts more.",
+ "about": "Each league setup's model family, whose icon stands beside the setup's name on the home page: the families and icons of the sibling Decision models site (its page_config.json model_families and family icons of 6 Nov 2026); Open-Jev (Zefan Cai's, not TypeSafe's) is its own family and REAX has one since 9 Nov (Ümit #3635), MiniMax, Inkling and vLLM-SR since 9 Nov (Main, a monogram each; their icons are ours, in the sibling's badge style). A setup belongs to the first family whose match (a regular expression on the setup's shown name) fits; the programs (GNUbg weak, Safest, Random) belong to none. Colours are per maker, not per family: maker_colors.json; a badge icon's square (family_icons.svg) is its maker's colour (maker_palette.json), its mark white or near-black, whichever contrasts more. Muse (Meta's Muse Ember) since 10 Nov (Main; a monogram, ours, in the sibling's badge style; Meta added to the shared palette, logic #4185); its one setup, Muse Ember (max), is held until its late entry is complete (held_setups.json).",
  "families": [
   {
    "name": "Gemini",
@@ -135,6 +135,11 @@
    "name": "vLLM-SR",
    "icon": "fi-vllm-sr",
    "match": "^(?:vLLM-SR)"
+  },
+  {
+   "name": "Muse",
+   "icon": "fi-muse",
+   "match": "^(?:Muse)"
   }
  ]
 }

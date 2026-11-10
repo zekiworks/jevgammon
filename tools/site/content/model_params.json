@@ -515,6 +515,21 @@
    "read": "2026-11-09",
    "note": "The card's figures, as logic's model_sizes.json 'MiniMax-M3.1-Flash' (428B total, 23B active); no checkpoint count there."
   },
+  "Muse Ember": {
+   "total_b": null,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://dev.meta.ai/models/muse-ember",
+   "quote": "Not disclosed by the maker: Meta's model page and launch post ('our smallest and most efficient model'; 1M-token context, up to 512K output tokens, $0.10/M input, $0.50/M output) and OpenRouter's listing (meta/muse-ember, endpoint meta/muse-ember-20261109, provider Meta, quantization 'unknown') state no parameter count; no open weights.",
+   "checked": [
+    "https://dev.meta.ai/models/muse-ember",
+    "https://research.meta.ai/blog/muse-ember",
+    "https://openrouter.ai/api/v1/models/meta/muse-ember/endpoints"
+   ],
+   "read": "2026-11-10",
+   "note": "Closed API (Meta Model API, OpenRouter). Not shown yet: its late entry is held (held_setups.json)."
+  },
   "Open-Jev 27B v1.1": {
    "total_b": 27.8,
    "active_b": null,

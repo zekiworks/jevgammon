@@ -24,6 +24,10 @@ ALL_NOTE = "Leagues played different positions; close scores across leagues need
 LATE_ENTRY = "late-entry"
 LATE_ENTRY_LABEL = "Late entry, not in standings"
 LATE_ENTRY_NOTE = "Provisional: late entry still playing"
+# Setups not shown yet (content/held_setups.json, name: reason): a late entry still playing is held until its entry is
+# complete, so no moving partial numbers are published; analysis.late_entries and cup.classify leave them out, so no
+# page, data file, leaderboard row, bench score or model list carries them.
+HELD = json.loads((CONTENT / "held_setups.json").read_text())["held"]
 # Close choices, stage B: scope note (Ümit, 2026-10-25; Method spec 2026-10-24 §9.13 addendum of 16:05 UTC), verbatim on
 # the home page and the Method page.
 CLOSE_B_SCOPE_NOTE = ("Gemma 4 31B (on) was started but not completed: two reboots and a GPU fault interrupted it, and it "

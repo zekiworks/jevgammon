@@ -10,7 +10,8 @@
 # SGLang without --allow-auto-truncate. Once: v3.db backup, first match id, the late_entry_stage trigger, the league
 # config. Then starts the league unit late-knowline-league and guards it every 60 s; it stops the league unit (matches
 # resume later from their last turn):
-#   - when OpenRouter's balance (shared with other lanes; Mercury Decide bills there) is under $FLOOR ($40);
+#   - when OpenRouter's balance (shared with other lanes; Mercury Decide bills there) is under $FLOOR ($40), or cannot
+#     be read 3 times in a row (fail closed: the floor is never left unchecked);
 #   - when the paid opponents' cost from the first match reaches $CAP ($5; KnowLine itself costs nothing);
 #   - when the KnowLine server fails 3 health checks in a row (fail closed: no match runs against a missing server);
 #   - when the 10 pairs are played (done), every open pair is blocked, or after 12 h.
@@ -95,13 +96,22 @@ log "guard up: runner $(git -C "$T" rev-parse --short HEAD) clean; KnowLine $URL
 stop_league() { systemctl --user stop $UNIT 2>/dev/null; }
 restarts=0
 down=0
+unread=0
 t0=$SECONDS
 while true; do
   if [[ $(python3 $T/knowline.py pending "${OPPS[@]}") == 0 ]]; then
     stop_league; log "done: all 10 pairs played; paid opponents \$$(spent); OpenRouter \$$(balance)"; exit 0
   fi
-  if bal=$(balance) && lt "$bal" "$FLOOR"; then
-    stop_league; log "STOPPED: OpenRouter balance \$$bal under \$$FLOOR; paid opponents \$$(spent)"; exit 1
+  if bal=$(balance); then
+    unread=0
+    if lt "$bal" "$FLOOR"; then
+      stop_league; log "STOPPED: OpenRouter balance \$$bal under \$$FLOOR; paid opponents \$$(spent)"; exit 1
+    fi
+  else
+    unread=$((unread + 1))
+    if (( unread >= 3 )); then
+      stop_league; log "STOPPED: OpenRouter balance unreadable 3 times in a row; paid opponents \$$(spent)"; exit 1
+    fi
   fi
   s=$(spent)
   if ! lt "$s" "$CAP"; then

@@ -4,7 +4,7 @@
 # its own server (player.json base_url). For each opponent whose pair is unplayed: waits until OPP_GPU has room for it
 # (+2 GB; a GPU held by someone else is waited for, never freed), starts its server with `agent-bus run RES -- ...`,
 # league-adds it to KnowLine's league, waits until the pair is played, stops the server. It keeps start.sh's guard
-# (OpenRouter balance >= $40, paid opponents < $5, KnowLine server healthy) itself, so the unit late-knowline
+# (OpenRouter balance >= $40 and readable, paid opponents < $5, KnowLine server healthy) itself, so the unit late-knowline
 # (start.sh) must have exited first.
 #   systemd-run --user --unit=late-knowline-locals --working-directory=/home/cbasaran/code/jevgammon \
 #     -E OPP_GPU=<n> -E RES=<reservation> /home/cbasaran/code/jevgammon-knowline/tools/v3/late-knowline/locals.sh
@@ -35,9 +35,16 @@ spent() { python3 $T/knowline.py billed "$(cat $ST/first)"; }
 healthy() { curl -fsS -m 10 -o /dev/null "$URL/health"; }
 # Guard; returns 1 (and logs) when the run must stop.
 down=0
+unread=0
 guard() {
   local bal s
-  if bal=$(balance) && lt "$bal" "$FLOOR"; then log "locals STOPPED: OpenRouter balance \$$bal under \$$FLOOR"; return 1; fi
+  if bal=$(balance); then
+    unread=0
+    if lt "$bal" "$FLOOR"; then log "locals STOPPED: OpenRouter balance \$$bal under \$$FLOOR"; return 1; fi
+  else
+    unread=$((unread + 1))
+    (( unread < 3 )) || { log "locals STOPPED: OpenRouter balance unreadable 3 times in a row"; return 1; }
+  fi
   s=$(spent)
   lt "$s" "$CAP" || { log "locals STOPPED: paid opponents \$$s reached the \$$CAP cap"; return 1; }
   if healthy; then down=0; else down=$((down + 1)); fi

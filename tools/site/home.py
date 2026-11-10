@@ -24,8 +24,8 @@ LIMIT_HARD = ("Setups met different positions; risk judgement is not adjusted fo
               "comparisons wait for the shared positions.")
 # Under the risk leaderboard chart (Ümit #2564; wording Zeki #2578).
 RANK_NOTE = "Ranks show observed scores; small gaps need not be meaningful."
-# The hero's three buttons (Ümit #2938 item 2): Every decision, Highlights, Read the method.
-HERO_LINKS = [("Every decision", "decisions/"), ("Highlights", "highlights/"), ("Read the method", "method/")]
+# The hero's buttons (Ümit #2938 item 2): Every decision, Read the method; Highlights hidden for now (Ümit via Zeki #4392).
+HERO_LINKS = [("Every decision", "decisions/"), ("Read the method", "method/")]
 GNUBG_WEAK = "x86-64 build: its noise is shifted, so it overplays gammons"
 CALL_LABEL = {"needless": "needless risks", "missed": "missed risks", "wrong_risk": "wrong risks",
               "right_risk": "right risks", "right_safety": "right safety", "none": "No trade-off"}

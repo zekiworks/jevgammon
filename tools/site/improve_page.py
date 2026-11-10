@@ -562,13 +562,13 @@ def answers_line(m) -> str | None:
 
 
 def change_line(m) -> str | None:
-    """A finished model's three measures before → after and its Yes/No."""
-    if not m["verdict"]:
-        return None
+    """A model's measures before → after (each with both values; the phone's table shows them only here) and, past
+    the verdict gate, its Yes/No."""
     parts = [f'{t} {before_after(m, k)}' for t, k in (("Risks found", "risks_found"), ("right safety", "right_safety"),
                                                      ("error rate", "error_rate"))
              if m["before"][k] is not None and m["after"][k] is not None]
-    return " \u00b7 ".join(parts + [f'Improved? <strong>{esc(m["status"])}</strong>'])
+    parts += [f'Improved? <strong>{esc(m["status"])}</strong>'] if m["verdict"] else []
+    return " \u00b7 ".join(parts) or None
 
 
 def result_rows(L) -> list:
@@ -660,8 +660,9 @@ def results_section(L, S=None) -> str:
            'show no numbers; a decision setup has one row per arm (notes, worst mistakes).')
     head = ["Model", "Group", "Status", f"Series (of {V.SERIES})", "Risks found before → after", "Change",
             "Right safety before → after", "Improved?"]
-    return note + keys + P.SWIPE + P.table(head, rows_, esc(cap), cls="board list improve-progress",
-                                           attrs=' id="improve-results-table"')
+    return (note + keys + f'<p class="table-note" id="improve-results-note">{esc(cap)}</p>' + P.SWIPE
+            + P.table(head, rows_, "Results, one row per model", cls="board list improve-progress",
+                      attrs=' id="improve-results-table"'))
 
 
 def validation_note(L) -> str:

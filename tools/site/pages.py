@@ -9,7 +9,7 @@ import analysis as A
 from common import (EARLIER, EARLIER_NOTE, LATE_ENTRY, LATE_ENTRY_LABEL, LATE_ENTRY_NOTE, NA, NAME_NOTES, NOT_MEASURED,
                     PENDING, PROVISIONAL, PROVISIONAL_NOTE, PUBLISHED, REASONING_NOTES, ROOT, SUITE_BAR, TOO_FEW, aliases, count, esc, fmt,
                     nm, pct, relabel, setup_slug, shown_names_html, slug, status_badge)
-from common import effort_aliases
+from common import SHARED_NAMES, effort_aliases, model_key, name_and_tag, name_text, tag_html, tag_text
 
 # The site's top bar (Ümit #2901, as Clocktower Bench's): the Hilde leaf and the site's name, then one row of tabs. Each
 # tab is a page; every other page sits under one tab (SECTION), which is marked while it is in view. The pages that are
@@ -145,11 +145,12 @@ def row_attrs(S, dataset, name) -> str:
 
 
 def model_cell(S, rel, dataset, name) -> str:
+    """The setup's cell: its official name and tag (setting · route · snapshot), how it was called under it."""
     m = meta(S, dataset, name)
-    bits = [x for x in (m.get("setting") and f"{m['setting']}", m.get("model_type"), m.get("runs_on"),
-                        m.get("play_order") and "shuffled play order") if x]
-    return (f'<td class="model"><a class="model-name" href="{model_href(rel, dataset, name, S)}">{esc(name)}</a>'
-            f'<span class="small">{esc(" · ".join(bits))}</span></td>')
+    shown, parts = name_and_tag(name, dataset)
+    bits = [x for x in (m.get("model_type"), m.get("runs_on"), m.get("play_order") and "shuffled play order") if x]
+    return (f'<td class="model"><a class="model-name" href="{model_href(rel, dataset, name, S)}">{esc(shown)}</a>'
+            f'{tag_html(tag_text(parts))}<span class="small">{esc(" · ".join(bits))}</span></td>')
 
 
 def tr(S, dataset, name, cells: str, rel: str) -> str:
@@ -282,7 +283,8 @@ HEAD_SCRIPT = ('<script>(function () { var d = document.documentElement; d.class
 
 
 def layout(S, base, path: str, title: str, body: str, description: str | None = None, main_class: str = "",
-           scripts=(), styles=(), body_class: str = "") -> str:
+           scripts=(), styles=(), body_class: str = "", dataset: str | None = None) -> str:
+    """dataset: the dataset of the page's setups where it is not the leagues' (their routes in the names' tags)."""
     depth = path.count("/")
     rel = "../" * depth
     desc = description or S["description"]
@@ -306,9 +308,10 @@ def layout(S, base, path: str, title: str, body: str, description: str | None = 
             'class="chevron" aria-hidden="true"></span></button>'
             '<div class="more-pop" id="more-options" hidden><p class="more-label">Share</p><button type="button" class="key '
             'page-png" data-page-png hidden>Export page as PNG</button></div></div>' if EXPORT_PAGE_PNG else "")
-    # Old model names in any text become the model's display name (common.shown_names_html, Ümit #4282 item 4).
+    # Old model names in any text become the model's display name, every shown name the maker's official name and its
+    # tag (common.shown_names_html, Ümit #4282 item 4, #4445); data-names: the page's setups' dataset, for checks.py.
     return shown_names_html(f"""<!doctype html>
-<html lang="en">
+<html lang="en"{f' data-names="{dataset}"' if dataset else ""}>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -337,7 +340,7 @@ def layout(S, base, path: str, title: str, body: str, description: str | None = 
   </footer>
 </body>
 </html>
-""")
+""", dataset)
 
 
 def page_head(S, eyebrow: str, title: str, intro: str = "") -> str:
@@ -1142,23 +1145,42 @@ def _short(b: float) -> str:
     return f"{b / 1000:.1f}T" if b >= 1000 else f"{round(b)}B" if b >= 10 else f"{b:.1f}B"
 
 
+# Each model's weights as setups.json records them (shown model name -> the set of its setups' "weights" values).
+_SETUP_WEIGHTS: dict[str, set] = {}
+for _s in relabel(json.loads((CONTENT_DIR / "setups.json").read_text())["setups"]):
+    _SETUP_WEIGHTS.setdefault(_s["model"], set()).add(_s.get("weights"))
+
+
+def weights(model: str) -> str | None:
+    """'open' or 'closed' (Ümit #4445: the class label starts with it): the shared names file's "open" (by model key),
+    else the price file's "weights", else the one value every setups.json entry of the model records; None where none
+    of them says (never guessed: Zeki #4448)."""
+    e = SHARED_NAMES.get(model_key(model))
+    if e and isinstance(e.get("open"), bool):
+        return "open" if e["open"] else "closed"
+    if model in PRICES and PRICES[model].get("weights") in ("open", "closed"):
+        return PRICES[model]["weights"]
+    rec = _SETUP_WEIGHTS.get(model, set())
+    return next(iter(rec)) if len(rec) == 1 and rec <= {"open", "closed"} else None
+
+
 def class_label(model: str) -> str:
-    """The short plain-text label after a row's name (Ümit #4245, #4254, #4269; turkce #4263/#4266/#4268): the maker's
-    total, a dense model the number only ('31B'), a mixture of experts with its active count ('309B MoE · 15B active';
-    '753B MoE' without one); REAX 1.3 its total only ('57B'; its two parts are explained in the details box); a model
-    of undisclosed size its price class: 'Closed · Workhorse', 'Open · Workhorse' (open weights, no stated size),
-    '(provisional)' on an introductory-only price. The details box gives the exact counts and the price."""
+    """The short plain-text label after a row's name (Ümit #4245, #4254, #4269, #4445; turkce #4263/#4266/#4268): Open
+    or Closed (weights; left out where no source says), then the maker's total, a dense model the number only
+    ('Open · 31B'), a mixture of experts with its active count ('Open · 309B MoE · 15B active'; '753B MoE' without one);
+    REAX 1.3 its total only ('Open · 57B'; its two parts are explained in the details box); a model of undisclosed size
+    its price class: 'Closed · Workhorse', 'Open · Workhorse' (open weights, no stated size), '(provisional)' on an
+    introductory-only price. The details box gives the exact counts and the price."""
     p = PARAMS[model]
     if p["card_total_b"] is not None:
-        if not p["moe"]:
-            return _short(p["card_total_b"])
-        active = f' \u00b7 {_short(p["card_active_b"])} active' if p["card_active_b"] is not None else ""
-        return f'{_short(p["card_total_b"])} MoE{active}'
-    if p.get("card_parts_b"):
-        return _short(p["total_b"])
-    head = "Closed" if PRICES[model]["weights"] == "closed" else "Open"
-    provisional = " (provisional)" if PRICES[model]["provisional"] else ""
-    return f'{head} \u00b7 {CLASS_LABEL[model_class(model)]}{provisional}'
+        active = f' \u00b7 {_short(p["card_active_b"])} active' if p["moe"] and p["card_active_b"] is not None else ""
+        body = f'{_short(p["card_total_b"])}{" MoE" if p["moe"] else ""}{active}'
+    elif p.get("card_parts_b"):
+        body = _short(p["total_b"])
+    else:
+        body = CLASS_LABEL[model_class(model)] + (" (provisional)" if PRICES[model]["provisional"] else "")
+    head = {"open": "Open", "closed": "Closed"}.get(weights(model))
+    return f"{head} \u00b7 {body}" if head else body
 
 
 def class_note(model: str) -> str | None:
@@ -1842,7 +1864,13 @@ def decisions_page(S, body: str) -> str:
     links = ('<nav class="face-nav decisions-links" aria-label="More on decisions">'
              + "".join(f'<a href="../{h}">{esc(t)}</a>' for h, t in DECISION_PAGES) + '</nav>')
     head_end = body.index("</section>") + len("</section>")
-    return body[:head_end] + links + body[head_end:] + f'<p class="version version-line">{esc(version_line(S))}</p>'
+    # Each setup as the site shows it (official name and tag, Ümit #4445), by dataset and the name decisions/index.json
+    # keys it by (that file is part of the results hash and keeps the name): decisions.js shows these.
+    shown = {ds: {n: name_text(n, ds) for n in setups} for ds, setups in S["decisions_export"].items()}
+    labels = (f'<script type="application/json" id="setup-labels">'
+              f'{json.dumps(shown, ensure_ascii=False, sort_keys=True).replace("</", "<\\/")}</script>')
+    return (body[:head_end] + links + body[head_end:] + labels
+            + f'<p class="version version-line">{esc(version_line(S))}</p>')
 
 
 def share_card(S) -> str:
@@ -1906,7 +1934,7 @@ def write_all(S, out: Path, base: str) -> None:
     put("", TITLE, home_html, scripts=("bg.js",), styles=("decisions.css",), body_class="home")
     home.fragments(S, out)
     put("leagues/", "Leagues", leagues, scripts=("bg.js",), styles=("decisions.css",))
-    put("nackgammon/", "Nackgammon", nack, scripts=("bg.js",),
+    put("nackgammon/", "Nackgammon", nack, scripts=("bg.js",), dataset="nackgammon",
         description="The Nackgammon paired test of the backgammon benchmark (finished): does a model still play well "
                     "when the starting position changes? Per-setup tables, the chart and the method.")
     put("matches/", "Matches", matches_page(S), scripts=("bg.js",),
@@ -1914,20 +1942,21 @@ def write_all(S, out: Path, base: str) -> None:
                     "entries, the Hype Cup and the Nackgammon knockout, with scores, winners and links to the decisions.")
     put("phases/", "Phases", phases_page(S), scripts=("bg.js",))
     put("vision/", "Vision", vision_page(S))
-    put("compare/", "Compare", compare_page(S), scripts=("bg.js",))
-    put("disagreements/", "Where models disagree", disagreements_page(S), scripts=("bg.js",))
+    put("compare/", "Compare", compare_page(S), scripts=("bg.js",), dataset="v1-set")
+    put("disagreements/", "Where models disagree", disagreements_page(S), scripts=("bg.js",), dataset="v1-set")
     put("new-models/", "New models: first look", new_models_page(S), scripts=("bg.js",))
     put("models/", "Models", models_index(S))
     for lg in S["leagues"]:
         for n, e in lg["setups"].items():
             put(f"models/{lg['dataset']}/{meta(S, lg['dataset'], n)['slug']}/", n, model_page(S, lg["dataset"], n, e, None))
     for n, e in S["v1"]["setups"].items():
-        put(f"models/v1-set/{meta(S, 'v1-set', n)['slug']}/", f"{n} (v1)", model_page(S, "v1-set", n, e, None))
+        put(f"models/v1-set/{meta(S, 'v1-set', n)['slug']}/", f"{n} (v1)", model_page(S, "v1-set", n, e, None),
+            dataset="v1-set")
     for e in S["late_entries"]:
         put(late_href("", e), f"{e['name']} (late entry)", late_entry_page(S, e))
     for r in S["smoke"]:
         put(f"models/smoke-part-a/{meta(S, 'smoke-part-a', r['setup'])['slug']}/", r["setup"],
-            model_page(S, "smoke-part-a", r["setup"], None, r))
+            model_page(S, "smoke-part-a", r["setup"], None, r), dataset="smoke-part-a")
     ctx = dict(thresholds=S["thresholds"], play_order=S["v1"]["play_order"], shared_sets=S["shared"]["build_log"],
                data_as_of=as_of(S), extra=home.method_extras(S))
     method_html = method.body(ctx)
@@ -1939,11 +1968,13 @@ def write_all(S, out: Path, base: str) -> None:
         description="Clear-risk scan of the backgammon benchmark (preliminary / partial): decisions where a risk or "
                     "safety is clearly better, per setup, checks, a rollout check and a partial model quiz.")
     import learning_page
+    # The Learning and "Did they improve?" runs are their own (the improve page has its own Route column): the tags there
+    # carry the setting and snapshot, never a league setup's route.
     put(learning_page.PATH, learning_page.title(S["learning"]), learning_page.body(S["learning"]),
-        description=learning_page.DESCRIPTION)
+        description=learning_page.DESCRIPTION, dataset="learning")
     import improve_page
     put(improve_page.PATH, improve_page.title(S["improve"]), improve_page.body(S["improve"], S),
-        description=improve_page.DESCRIPTION, scripts=("bg.js",))
+        description=improve_page.DESCRIPTION, scripts=("bg.js",), dataset="improve")
     put("data/", "Data", data_page(S, out))
     put("decisions/", "Every decision", decisions_page(S, decisions_export.body()),
         scripts=("decisions.js",), styles=("decisions.css",))

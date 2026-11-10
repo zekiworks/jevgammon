@@ -39,8 +39,9 @@ from html.parser import HTMLParser
 from pathlib import Path
 
 import findings
-from common import (ALL_NOTE, BANNED, CONTENT, INTERNAL, LATE_ENTRY, PROVISIONAL, PROVISIONAL_NOTE, ROOT, SUITE_BAR,
-                    old_model_spans)
+from common import (ALL_NOTE, BANNED, CONTENT, INTERNAL, LATE_ENTRY, MODEL_NAMES_FILE, NAMES_SHA256, PROVISIONAL,
+                    PROVISIONAL_NOTE, ROOT, SUITE_BAR, name_and_tag, old_model_spans, shown_names_html, split_spans,
+                    tag_text)
 
 NUM = re.compile(r"(?<![\w.\u2212+-])([\u2212+-]?)(\d{1,3}(?:,\d{3})+|\d+)(\.\d+)?")
 DATE = re.compile(r"\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2})?(?:\.\d+)?Z?)?|\b\d{1,2}:\d{2}\b|"
@@ -725,7 +726,11 @@ def check_improve(out: Path, test_set: Path | None = None) -> list[str]:
     plan = L["plan"]
     want = [COMMITMENT, *REQUIRED, plan["seed_line"] or "(seed line missing in the plan)", plan["prompt_sha256"],
             plan["test_set_sha256"], "Cygnet", L["addendum"]["sha256"], "Decision models (added 9 Nov)"]
-    want += [m["setup"] for m in plan["models"]] + [m["label"] for m in plan["models"] if m["label"]]
+    # A plan model as the page shows it (Ümit #4445): its official name and its tag (setting · snapshot; the page has
+    # its own route column).
+    want += [p for m in plan["models"] for p in (name_and_tag(m["setup"], "improve")[0],
+                                                  tag_text(name_and_tag(m["setup"], "improve")[1])) if p]
+    want += [m["label"] for m in plan["models"] if m["label"]]
     bad += [f"{PATH}: missing the pre-registered text {w!r}" for w in want if w not in text]
     # The page names no host or device and shows no withheld mark (improve_page.HOST_REWRITES).
     raw = page.read_text() + data.read_text()
@@ -839,12 +844,29 @@ def check_improve(out: Path, test_set: Path | None = None) -> list[str]:
 
 
 # Old model names (content/labels.json "models", Ümit #4282 item 4): a page whose text shows one fails (an old name
-# that is part of its own new name, 'Mercury Decide' in 'Inception Mercury Decide', is not one). The frozen archive/
-# and results/<id>/ pages keep the names they were published under.
+# that is part of its own new name, 'Decider Flash v1.2' in 'Perplexity Decider Flash v1.2', is not one). Names (Ümit
+# #4445): a page that shows a name the site splits (common.SPLIT: a setting, route or snapshot in the name, or a name the
+# maker writes otherwise) as it is fails: the page pass common.shown_names_html leaves a page it built unchanged. The
+# frozen archive/ and results/<id>/ pages keep the names they were published under.
 def old_model_names(rel, text: str) -> list[str]:
-    text = html.unescape(re.sub(r"<[^>]+>", " ", text))
-    found = sorted({o for _, _, o in old_model_spans(text)})
-    return [f"{rel}: old model name {o!r} (content/labels.json models)" for o in found]
+    plain = html.unescape(re.sub(r"<[^>]+>", " ", text))
+    found = sorted({o for _, _, o in old_model_spans(plain)})
+    bad = [f"{rel}: old model name {o!r} (content/labels.json models)" for o in found]
+    ds = re.search(r'<html[^>]* data-names="([^"]*)"', text)
+    again = shown_names_html(text, ds and ds.group(1))
+    if again != text:
+        a, b = re.split(r"(<[^>]*>)", text), re.split(r"(<[^>]*>)", again)
+        diff = ([x.strip()[:80] for x, y in zip(a, b) if x != y][:8] if len(a) == len(b) else
+                sorted({n for p in a if not p.startswith("<") for _, _, n in split_spans(p)}))
+        bad.append(f"{rel}: names shown without their split into official name and tag: {diff}")
+    return bad
+
+
+def check_names() -> list[str]:
+    """content/model_names.json is the three sites' shared names file unchanged (logic #4487, #4517): its sha256 is the
+    one labels.json pins."""
+    got = hashlib.sha256(MODEL_NAMES_FILE.read_bytes()).hexdigest()
+    return [] if got == NAMES_SHA256 else [f"content/model_names.json: sha256 {got}, not the shared file's {NAMES_SHA256}"]
 
 
 def run(S: dict, out: Path) -> list[str]:
@@ -878,6 +900,7 @@ def run(S: dict, out: Path) -> list[str]:
     failures += check_learning(out)
     failures += check_improve(out)
     failures += check_palette()
+    failures += check_names()
     failures += check_model_classes(out)
     failures += check_bench_scores(S, out)
     failures += check_highlight_cards(out)

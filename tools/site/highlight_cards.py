@@ -17,13 +17,13 @@ from pathlib import Path
 
 import improve_page as IP
 import story as ST
-from common import count, esc, fmt, pct
+from common import count, esc, fmt, name_and_tag, name_text, pct, tag_text
 
 LEAGUE_DATA = "data/v3/{}.json"
 LATE_DATA = "data/v3/late-entries.json"
 LEADERBOARD = "index.html"
 SPAN = re.compile(r'<span class="hc-num" data-src="([^"]*)" data-path="([^"]*)" data-fmt="([^"]*)">([^<]*)</span>')
-NAME = re.compile(r'<span class="hc-name">[^<]*</span>')
+NAME = re.compile(r'<span class="hc-name(?: name-tag)?">[^<]*</span>')
 
 
 def num(text: str, src: str, path: list, kind: str) -> str:
@@ -31,8 +31,11 @@ def num(text: str, src: str, path: list, kind: str) -> str:
             f'{esc(text)}</span>')
 
 
-def name(text: str) -> str:
-    return f'<span class="hc-name">{esc(text)}</span>'
+def name(text: str, dataset: str | None = None) -> str:
+    """A setup's name as the site shows it (Ümit #4445): its official name, then its tag in a name span of its own."""
+    shown, parts = name_and_tag(text, dataset)
+    tag = tag_text(parts)
+    return f'<span class="hc-name">{esc(shown)}</span>' + (f'<span class="hc-name name-tag">{esc(tag)}</span>' if tag else "")
 
 
 def row_path(x, *keys) -> tuple[str, list]:
@@ -54,7 +57,7 @@ def row_num(x, kind: str, part: str, *keys) -> str:
 def tagged(x) -> str:
     """The row's name and, where the row has it, its late-entry tag (with provisional), for inside brackets."""
     tag = ST.late_tag(x)
-    return name(x["name"]) + (f", {esc(tag)}" if tag else "")
+    return name(x["name"], x["ds"]) + (f", {esc(tag)}" if tag else "")
 
 
 def improve_card(S) -> dict:
@@ -62,7 +65,7 @@ def improve_card(S) -> dict:
     done = [(pm, m) for pm, _, m in IP.result_rows(L) if m is not None and m["verdict"]]
     src = IP.DATA
     line = " \u00b7 ".join(
-        f'{name(pm["setup"])} '
+        f'{name(pm["setup"], "improve")} '
         + num(fmt(m["before"]["risks_found"]), src, ["results", "models", {"setup": pm["setup"]}, "before", "risks_found"], "1")
         + " \u2192 "
         + num(fmt(m["after"]["risks_found"]), src, ["results", "models", {"setup": pm["setup"]}, "after", "risks_found"], "1")
@@ -116,7 +119,7 @@ def leaderboard_card(S) -> dict | None:
 
     def part(i, x, typ):
         tag = ST.late_tag(x)
-        return (f'{name(x["name"])} ({typ} model{", " + esc(tag) if tag else ""}): rank '
+        return (f'{name(x["name"], x["ds"])} ({typ} model{", " + esc(tag) if tag else ""}): rank '
                 f'{num(str(i), LEADERBOARD, [x["name"]], "rank")}, risk judgement {row_num(x, "1", "r", "judgement")}')
     return dict(id="leaderboard", title="Decision models and chat models at the top of the leaderboard", status=None,
                 text=(f"The leaderboard ranks one row per model by risk judgement (higher is better). The "
@@ -177,7 +180,8 @@ def _resolve(out: Path, src: str, path: list):
 def _shown(out: Path, src: str, path: list, kind: str, texts: dict):
     """What the built site holds for one span, written as the card writes it."""
     if kind == "rank":
-        m = re.search(r'id="hl-(\d+)-box" role="group" aria-label="' + re.escape(esc(path[0])) + ': details"',
+        # The row's details box is labelled with the setup's name as plain text (common.name_text).
+        m = re.search(r'id="hl-(\d+)-box" role="group" aria-label="' + re.escape(esc(name_text(path[0]))) + ': details"',
                       (out / src).read_text())
         return m and m.group(1)
     if kind == "quote":

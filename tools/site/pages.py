@@ -13,8 +13,8 @@ from common import (EARLIER, EARLIER_NOTE, LATE_ENTRY, LATE_ENTRY_LABEL, LATE_EN
 # The site's top bar (Ümit #2901, as Clocktower Bench's): the Hilde leaf and the site's name, then one row of tabs. Each
 # tab is a page; every other page sits under one tab (SECTION), which is marked while it is in view. The pages that are
 # not tabs (Matches, Phases, Compare, Where models disagree, Leagues, Models, Data, Method) are linked from the
-# Leaderboard and the About page (MORE_PAGES).
-TABS = [("", "Leaderboard"), ("decisions/", "Decisions"), ("highlights/", "Highlights"), ("experiments/", "Experiments"),
+# Leaderboard (the Text tab) and the About page (MORE_PAGES). Vision is a short page: no vision runs yet.
+TABS = [("", "Text"), ("vision/", "Vision"), ("decisions/", "Decisions"), ("highlights/", "Highlights"), ("experiments/", "Experiments"),
         ("about/", "About")]
 SECTION = {"clear-risk/": "experiments/", "learning/": "experiments/", "improve/": "experiments/",
            "nackgammon/": "experiments/", "method/": "about/", "data/": "about/"}
@@ -1403,6 +1403,13 @@ def compare_page(S) -> str:
               f'</section>')
 
 
+def vision_page(S) -> str:
+    return (page_head(S, "Vision", "Vision")
+            + '<section class="card" id="vision"><p>No vision runs yet: every model here reads the board as text '
+              '(points, dice and legal plays), never a picture of the board.</p>'
+              '<p><a href="../">See the text results \u2192</a></p></section>')
+
+
 def disagreements_page(S) -> str:
     d = S["v1"]["disagreements"]
     dist = "".join(f'<tr><td class="num">{k}</td><td class="num">{count(v)}</td></tr>' for k, v in d["distribution"].items())
@@ -1775,6 +1782,7 @@ def write_all(S, out: Path, base: str) -> None:
         description="Every match of the backgammon benchmark: the leagues, the ladder rounds, gap matches, late "
                     "entries, the Hype Cup and the Nackgammon knockout, with scores, winners and links to the decisions.")
     put("phases/", "Phases", phases_page(S), scripts=("bg.js",))
+    put("vision/", "Vision", vision_page(S))
     put("compare/", "Compare", compare_page(S), scripts=("bg.js",))
     put("disagreements/", "Where models disagree", disagreements_page(S), scripts=("bg.js",))
     put("new-models/", "New models: first look", new_models_page(S), scripts=("bg.js",))

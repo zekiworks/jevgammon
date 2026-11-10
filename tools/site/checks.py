@@ -867,7 +867,14 @@ def run(S: dict, out: Path) -> list[str]:
     failures += check_improve(out)
     failures += check_palette()
     failures += check_bench_scores(S, out)
+    failures += check_highlight_cards(out)
     return failures
+
+
+def check_highlight_cards(out: Path) -> list[str]:
+    """The Highlights page's finding cards (highlight_cards.py): four, every number equal to the built site's."""
+    import highlight_cards
+    return highlight_cards.problems(out)
 
 
 def check_bench_scores(S: dict, out: Path) -> list[str]:

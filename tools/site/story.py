@@ -583,18 +583,28 @@ def _rows_chart(S) -> list:
     return headline_rows(S)[2]
 
 
-def two_skill(S) -> str:
-    """a. Risks found (x) against safe right (y), one dot per leaderboard row in its maker's colour, GNUbg weak the grey
-    reference. Heading rule: most ranked models found a smaller share of the risks that paid than they played safe
-    right where safety paid."""
+def two_skill_numbers(S) -> dict:
+    """Finding a's numbers (two_skill; the Highlights card reads them too): the ranked models with both shares, those
+    below the diagonal, GNUbg weak's row, the heading by its rule, and the rows at the ends of both ranges."""
     rows = _rows_chart(S)
     models = [(label, x, c) for kind, label, x, c in rows if kind == "model"
               and x["r"]["found"]["den"] and x["r"]["right_safety"]["den"]]
     gnu = next((x for kind, label, x, c in rows if kind == "program"), None)
     below = [m for m in models if m[1]["r"]["found"]["share"] < m[1]["r"]["right_safety"]["share"]]
     heading = "Models are too cautious." if 2 * len(below) > len(models) else "Risks found and safe right"
-    f = sorted(m[1]["r"]["found"]["share"] for m in models)
-    s = sorted(m[1]["r"]["right_safety"]["share"] for m in models)
+    ends = {k: (min(models, key=lambda m: m[1]["r"][k]["share"])[1], max(models, key=lambda m: m[1]["r"][k]["share"])[1])
+            for k in ("found", "right_safety")}
+    return dict(rows=rows, models=models, gnu=gnu, below=below, heading=heading, ends=ends)
+
+
+def two_skill(S) -> str:
+    """a. Risks found (x) against safe right (y), one dot per leaderboard row in its maker's colour, GNUbg weak the grey
+    reference. Heading rule: most ranked models found a smaller share of the risks that paid than they played safe
+    right where safety paid."""
+    N = two_skill_numbers(S)
+    rows, models, gnu, below, heading = N["rows"], N["models"], N["gnu"], N["below"], N["heading"]
+    f = [x["r"]["found"]["share"] for x in N["ends"]["found"]]
+    s = [x["r"]["right_safety"]["share"] for x in N["ends"]["right_safety"]]
     who = f"Every one of the {count(len(models))}" if len(below) == len(models) else \
         f"{count(len(below))} of the {count(len(models))}"
     text = (f'{who} ranked models found a worthwhile risk (a risky play at least 0.001 better than the best safe play) '
@@ -733,24 +743,36 @@ def _er(x):
     return q["error_rate"] if q and q.get("error_rate") is not None and not q.get("too_few") else None
 
 
-def reasoning(S) -> str:
-    """d. The same model at different reasoning settings, in one league. Heading rule: "More thinking: better moves, not
-    better risk calls" only if most such models have a lower error rate at their highest setting and most do not have a
-    higher risk judgement there; else "What thinking adds"."""
+def reasoning_numbers(S) -> dict | None:
+    """Finding d's numbers (reasoning; the Highlights card reads them too): the models with two or more settings in one
+    league, how many have a lower error rate / a higher risk judgement at the highest setting, the heading by its rule,
+    the example model, and the finding's two count sentences as written. None when no model qualifies."""
     groups = [(m, lid, xs) for m, lid, xs in reasoning_groups(S)
               if _er(xs[0]) is not None and _er(xs[-1]) is not None and xs[0]["r"]["judgement"] is not None
               and xs[-1]["r"]["judgement"] is not None]
     if not groups:
-        return ""
+        return None
     n = len(groups)
     er_lower = sum(_er(xs[-1]) < _er(xs[0]) for _, _, xs in groups)
     rj_higher = sum(xs[-1]["r"]["judgement"] > xs[0]["r"]["judgement"] for _, _, xs in groups)
     ok = 2 * er_lower > n and 2 * rj_higher <= n
-    heading = "More thinking: better moves, not better risk calls" if ok else "What thinking adds"
-    ex = max(groups, key=lambda t: (len(t[2]), -t[1]))
-    text = (f'{count(n)} models played two or more reasoning settings in the same league. At the highest setting, '
-            f'{count(er_lower)} of the {count(n)} had a lower error rate than at the lowest, and {count(rj_higher)} of '
-            f'the {count(n)} a higher risk judgement. {esc(ex[0])}, {esc(ex[2][0]["setting"] or "")} to '
+    return dict(groups=groups, n=n, er_lower=er_lower, rj_higher=rj_higher,
+                heading="More thinking: better moves, not better risk calls" if ok else "What thinking adds",
+                ex=max(groups, key=lambda t: (len(t[2]), -t[1])),
+                lead=f'{count(n)} models played two or more reasoning settings in the same league.',
+                counts=(f'At the highest setting, {count(er_lower)} of the {count(n)} had a lower error rate than at the '
+                        f'lowest, and {count(rj_higher)} of the {count(n)} a higher risk judgement.'))
+
+
+def reasoning(S) -> str:
+    """d. The same model at different reasoning settings, in one league. Heading rule: "More thinking: better moves, not
+    better risk calls" only if most such models have a lower error rate at their highest setting and most do not have a
+    higher risk judgement there; else "What thinking adds"."""
+    N = reasoning_numbers(S)
+    if N is None:
+        return ""
+    groups, n, heading, ex = N["groups"], N["n"], N["heading"], N["ex"]
+    text = (f'{N["lead"]} {N["counts"]} {esc(ex[0])}, {esc(ex[2][0]["setting"] or "")} to '
             f'{esc(ex[2][-1]["setting"] or "")}: risk judgement {", ".join(fmt(x["r"]["judgement"]) for x in ex[2])}; '
             f'error rate {", ".join(fmt(_er(x)) for x in ex[2])}.')
     rj = [x["r"]["judgement"] for _, _, xs in groups for x in xs]

@@ -1133,11 +1133,11 @@ def _short(b: float) -> str:
 
 
 def class_label(model: str) -> str:
-    """The short plain-text label after a row's name (Ümit #4245, #4254; logic #4253): the maker's total, a dense
-    model the number only ('31B'), a mixture of experts with its active count ('309B MoE · 15B active'; '753B MoE'
-    without one); REAX 1.3 its total and '2×' ('57B 2×'); a model of undisclosed size nothing: its price class goes
-    in the details box (class_note), as on the other two sites (logic #4261, turkce #4231). The details box gives the
-    exact counts."""
+    """The short plain-text label after a row's name (Ümit #4245, #4254, #4269; turkce #4263/#4266/#4268): the maker's
+    total, a dense model the number only ('31B'), a mixture of experts with its active count ('309B MoE · 15B active';
+    '753B MoE' without one); REAX 1.3 its total only ('57B'; its two parts are explained in the details box); a model
+    of undisclosed size its price class: 'Closed · Workhorse', 'Open · Workhorse' (open weights, no stated size),
+    '(provisional)' on an introductory-only price. The details box gives the exact counts and the price."""
     p = PARAMS[model]
     if p["card_total_b"] is not None:
         if not p["moe"]:
@@ -1145,8 +1145,10 @@ def class_label(model: str) -> str:
         active = f' \u00b7 {_short(p["card_active_b"])} active' if p["card_active_b"] is not None else ""
         return f'{_short(p["card_total_b"])} MoE{active}'
     if p.get("card_parts_b"):
-        return f'{_short(p["total_b"])} {len(p["card_parts_b"])}\u00d7'
-    return ""
+        return _short(p["total_b"])
+    head = "Closed" if PRICES[model]["weights"] == "closed" else "Open"
+    provisional = " (provisional)" if PRICES[model]["provisional"] else ""
+    return f'{head} \u00b7 {CLASS_LABEL[model_class(model)]}{provisional}'
 
 
 def class_note(model: str) -> str | None:

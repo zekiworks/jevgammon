@@ -14,10 +14,11 @@ from common import (EARLIER, EARLIER_NOTE, LATE_ENTRY, LATE_ENTRY_LABEL, LATE_EN
 # tab is a page; every other page sits under one tab (SECTION), which is marked while it is in view. The pages that are
 # not tabs (Matches, Phases, Compare, Where models disagree, Leagues, Models, Data, Method) are linked from the
 # Leaderboard (the Text tab) and the About page (MORE_PAGES). Vision is a short page: no vision runs yet.
-TABS = [("", "Text"), ("vision/", "Vision"), ("decisions/", "Decisions"), ("highlights/", "Highlights"), ("experiments/", "Experiments"),
-        ("about/", "About")]
-SECTION = {"clear-risk/": "experiments/", "learning/": "experiments/", "improve/": "experiments/",
-           "nackgammon/": "experiments/", "method/": "about/", "data/": "about/"}
+TABS = [("", "Text"), ("vision/", "Vision"), ("improve/", "Learning"), ("decisions/", "Decisions"),
+        ("highlights/", "Highlights"), ("experiments/", "Experiments"), ("about/", "About")]
+# Learning (Ümit #4178): "Did they improve?" (improve/), with the learning pilot (learning/) under it.
+SECTION = {"clear-risk/": "experiments/", "learning/": "improve/", "nackgammon/": "experiments/", "method/": "about/",
+           "data/": "about/"}
 MORE_PAGES = [("matches/", "Matches"), ("phases/", "Phases"), ("compare/", "Compare"),
               ("disagreements/", "Where models disagree"), ("leagues/", "Leagues"), ("models/", "Every model setup"),
               ("method/", "Method"), ("data/", "Data")]
@@ -1534,9 +1535,10 @@ def more_pages(rel: str, label: str = "More pages") -> str:
 # --- Highlights, Experiments, About (Ümit #2901) --------------------------------------------------------------------
 
 # Highlights (Ümit #2938 item 4): decision slots, each one decision (board, the model's play, the engine's play) and its
-# short story; content/highlights.json names them. A filled slot's decision is read from the Every decision export and
-# its stated facts (content/highlights.json "facts") must be the exported decision's, or the build fails; its story
-# comes from Ümit / Claude, until then it is marked Story coming. Other slots name only candidates Can or Ümit listed.
+# short story; content/highlights.json names them. A slot's decision is read from the Every decision export and its
+# stated facts (content/highlights.json "facts") must be the exported decision's, or the build fails; its story comes
+# from Ümit / Claude, until then it is marked Story coming. Under the slots, four finding cards (highlight_cards.py,
+# Ümit #4178), each number checked against the built site.
 HIGHLIGHTS = json.loads((CONTENT_DIR / "highlights.json").read_text())["slots"]
 STORY_COMING = "Story coming"
 
@@ -1555,10 +1557,6 @@ def exported_decision(out: Path, dataset: str, slug: str, did: int) -> tuple[dic
 def highlight_slot(S, out: Path, i: int, h: dict) -> str:
     head = f'<section class="card highlight-slot" id="highlight-{i}"'
     coming = f'<p class="note">{status_badge(STORY_COMING)} The story will be added here.</p>'
-    if "decision" not in h:
-        return (f'{head} data-slot="empty"><h2>Highlight {i}</h2><p class="highlight-candidate">'
-                f'{esc(h["candidate"]) if h.get("candidate") else nm("No decision chosen yet")}</p>'
-                f'{coming.replace("story", "decision and its story")}</section>')
     from board import board_svg
     d, page = exported_decision(out, h["dataset"], h["setup"], h["decision"])
     me, best = d["plays"][d["chosen"]], d["plays"][d["best"]]
@@ -1582,10 +1580,12 @@ def highlight_slot(S, out: Path, i: int, h: dict) -> str:
 
 
 def highlights_page(S, out: Path) -> str:
+    import highlight_cards as HC
     slots = "".join(highlight_slot(S, out, i, h) for i, h in enumerate(HIGHLIGHTS, 1))
-    return (page_head(S, "Highlights", "Highlights", "Single decisions, each with the board, the model's play and the "
-                      'engine\'s play, and a short story. The stories are not written yet; every decision is on '
-                      '<a href="../decisions/">Decisions</a>.')
+    slots += "".join(HC.card_html(c, status_badge) for c in HC.cards(S))
+    return (page_head(S, "Highlights", "Highlights", "A single decision with the board, the model's play and the "
+                      "engine's play, then findings the site already shows, each with its numbers and the page it "
+                      'comes from. Every decision is on <a href="../decisions/">Decisions</a>.')
             + f'<div class="highlight-slots">{slots}</div>')
 
 
@@ -1818,8 +1818,8 @@ def write_all(S, out: Path, base: str) -> None:
     put("decisions/", "Every decision", decisions_page(S, decisions_export.body()),
         scripts=("decisions.js",), styles=("decisions.css",))
     put("highlights/", "Highlights", highlights_page(S, out), styles=("decisions.css",),
-        description="Highlights of the backgammon benchmark: single decisions, each with the board, the model's play, "
-                    "the engine's play and a short story (the stories are not written yet).")
+        description="Highlights of the backgammon benchmark: a single decision with the board, the model's play and "
+                    "the engine's play, then findings the site already shows, each with its numbers.")
     put("experiments/", "Experiments", experiments_page(S),
         description="Experiments of the backgammon benchmark: Clear risk, Nackgammon and Learning from experience.")
     put("about/", "About", about_page(S, method_html),

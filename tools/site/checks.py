@@ -866,7 +866,7 @@ def run(S: dict, out: Path) -> list[str]:
     failures += check_learning(out)
     failures += check_improve(out)
     failures += check_palette()
-    failures += check_size_classes(out)
+    failures += check_model_classes(out)
     failures += check_bench_scores(S, out)
     failures += check_highlight_cards(out)
     return failures
@@ -884,17 +884,20 @@ def check_bench_scores(S: dict, out: Path) -> list[str]:
     return bench_scores.problems(S, json.loads((out / bench_scores.PATH).read_text()))
 
 
-def check_size_classes(out: Path) -> list[str]:
-    """The Size row (Ümit #4156): Tiny and Small together are exactly the old Small models (a disclosed total, or a
-    mixture of experts' disclosed active count, at most 15B; Ümit via Zeki #3815/#3816), so the old Small chat / Small
-    decision views (?models=small-chat, small-decision) keep their rows; every leaderboard model row has a size class."""
+def check_model_classes(out: Path) -> list[str]:
+    """The Class row (Ümit #4217): every model whose total model_params.json leaves undisclosed has a list price entry
+    (model_prices.json: weights, price or null, the maker's page and read date), and no other model has one; every
+    leaderboard model row has a class."""
     import pages as P
-    bad = [f"model_params.json: {m}: size class {P.size_class(m)} disagrees with the old Small rule"
-           for m, p in P.PARAMS.items()
-           if (P.size_class(m) in ("tiny", "small")) != any(v is not None and v <= 15 for v in (p["total_b"], p["active_b"]))]
+    bad = [f"model_prices.json: {m}: no entry, and model_params.json gives no total" for m, p in P.PARAMS.items()
+           if p["total_b"] is None and m not in P.PRICES]
+    bad += [f"model_prices.json: {m}: not a model_params.json model without a total" for m in P.PRICES
+            if m not in P.PARAMS or P.PARAMS[m]["total_b"] is not None]
+    bad += [f"model_prices.json: {m}: {k} missing" for m, e in P.PRICES.items() for k in ("weights", "source", "read")
+            if not e.get(k)]
     home = (out / "index.html").read_text()
     rows = re.findall(r'<tr[^>]*data-hl-type="(?!program)[^"]*"[^>]*>', home)
-    bad += [f"index.html: leaderboard row without a size class: {r[:120]}" for r in rows if "data-hl-size=" not in r]
+    bad += [f"index.html: leaderboard row without a class: {r[:120]}" for r in rows if "data-hl-class=" not in r]
     return bad + ([] if rows else ["index.html: no leaderboard model rows"])
 
 

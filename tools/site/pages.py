@@ -1056,15 +1056,24 @@ def phases_page(S) -> str:
 # mixture of experts, effective where the maker gives one, in billions as shown, the source URL and read date); never
 # an estimate.
 PARAMS = json.loads((CONTENT_DIR / "model_params.json").read_text())["models"]
-# Size classes (Ümit #4156, Zeki #4202; the three sites' shared rule, size_class): (key, label, the one-sentence rule
-# shown under the Size keys while the class is selected). Programs are in no class.
-_BY = "by the smaller of total and active parameters, as disclosed by the maker."
-SIZE_CLASSES = (("tiny", "Tiny", f"Tiny models: under 6B parameters, {_BY}"),
-                ("small", "Small", f"Small models: 6B to 15B parameters, {_BY}"),
-                ("medium", "Medium", f"Medium models: over 15B to 40B parameters, {_BY}"),
-                ("large", "Large", f"Large models: over 40B parameters, {_BY}"),
-                ("undisclosed", "Undisclosed", "Undisclosed: models whose maker discloses no parameter count; never "
-                                               "estimated."))
+# List prices (Ümit #4217): for every model whose total parameter count PARAMS leaves undisclosed (closed models, and
+# open models without a disclosed total), the maker's price page's base rate per 1M input tokens, its URL and read
+# date (content/model_prices.json); never an estimate.
+PRICES = json.loads((CONTENT_DIR / "model_prices.json").read_text())["models"]
+# Model classes (Ümit's JOB 2 FINAL, #4217; one scale for the three sites): (key, label, the one-sentence rule shown
+# under the Class keys while the class is selected). Open models with a disclosed total by that total; the others by
+# list price. Programs are in no class.
+_OPEN = "open-weight models by total parameters, as disclosed by the maker"
+_PRICE = ("closed models (and open models of undisclosed size) by list price per 1M input tokens, base rate, from the "
+          "maker's price page")
+CLASSES = (("tiny", "Tiny", f"Tiny: under 6B; {_OPEN}."),
+           ("small", "Small", f"Small: 6B to 15B; {_OPEN}."),
+           ("medium", "Medium", f"Medium: over 15B to 40B; {_OPEN}."),
+           ("large", "Large", f"Large: over 40B; {_OPEN}."),
+           ("efficient", "Efficient", f"Efficient: $0.50 or less; {_PRICE}."),
+           ("workhorse", "Workhorse", f"Workhorse: over $0.50 to $3; {_PRICE}."),
+           ("flagship", "Flagship", f"Flagship: over $3; {_PRICE}."))
+CLASS_LABEL = {k: l for k, l, _ in CLASSES}
 
 
 def billions(b: float) -> str:
@@ -1096,46 +1105,58 @@ def params_html(model: str) -> str:
     return f'<a href="{esc(p["source"])}">{esc(text)}</a>'
 
 
-def size_b(model: str) -> float | None:
-    """The count a model is classed by: the smaller of its disclosed total and active parameters, in billions; None
-    where neither is disclosed. A model with several disclosed active counts (DeepSeek V4.1 Flash: 8B prefill / 16B
-    decode) has active_b null and its counts in 'terms' only, and no total: undisclosed (#3876). An effective count
-    (Gemma's E-series) is never used: such a model goes by its total."""
+def _by_total(b: float) -> str:
+    return "tiny" if b < 6 else "small" if b <= 15 else "medium" if b <= 40 else "large"
+
+
+def model_class(model: str) -> str | None:
+    """The model's class key (CLASSES; Ümit #4217): an open model with a disclosed total by it (tiny < 6B, small 6B to
+    15B, medium over 15B to 40B, large over 40B; an effective count, Gemma's E-series, is never used); a model without
+    one by its list price (PRICES: efficient <= $0.50, workhorse over $0.50 to $3, flagship over $3); None where the
+    maker's page gives no price. DeepSeek V4.1 Flash states no whole-model total but a 552B backbone ('terms'), over
+    40B whatever the total: large. A model the parameter file does not list: KeyError."""
     p = PARAMS[model]
-    return min((v for v in (p["total_b"], p["active_b"]) if v is not None), default=None)
+    if p["total_b"] is not None:
+        return _by_total(p["total_b"])
+    price = PRICES[model]["input_per_mtok"]
+    if price is None:
+        return "large" if model == "DeepSeek V4.1 Flash" else None
+    return "efficient" if price <= 0.5 else "workhorse" if price <= 3 else "flagship"
 
 
-def size_class(model: str) -> str:
-    """The model's size class key (SIZE_CLASSES, SIZE_RULE): tiny (< 6B), small (6B to 15B), medium (over 15B to 40B),
-    large (over 40B) or undisclosed. A model the file does not list: KeyError."""
-    b = size_b(model)
-    return "undisclosed" if b is None else "tiny" if b < 6 else "small" if b <= 15 else "medium" if b <= 40 else "large"
+def _short(b: float) -> str:
+    """A count in billions for the label after a name: one decimal under 10B, whole above, '2.8T' from 1000B."""
+    return billions(round(b, 1) if b < 10 else round(b) if b < 1000 else round(b, -2))
 
 
-def size_label(model: str) -> str:
-    """The short size after a row's name (#4192/#4194): one decimal, dense or MoE: '26.1B dense', '35.1B MoE · 3B
-    active', '8B dense · 4B effective'; 'undisclosed' without a disclosed total. The details box keeps the exact count
-    (params_html)."""
+def class_label(model: str) -> str:
+    """The short label after a row's name (Ümit #4217): an open model's total ('27B', '309B MoE · 15B active', '753B
+    MoE' where the active count is undisclosed); DeepSeek V4.1 Flash its card's terms ('552B backbone MoE · 8B/16B
+    active'); a priced model 'Closed · Workhorse' or 'Open, size undisclosed · Efficient'; no price: '... · price
+    unknown'. The details box keeps the exact count (params_html)."""
     p = PARAMS[model]
-    if p["total_b"] is None:
-        return "undisclosed"
-    def one(b: float) -> str:
-        return billions(round(b, 1) if b < 1000 else round(b, -2))
-    text = f'{one(p["total_b"])} {"MoE" if p["moe"] else "dense"}'
-    if p["effective_b"] is not None:
-        return f'{text} \u00b7 {one(p["effective_b"])} effective'
-    return f'{text} \u00b7 {one(p["active_b"])} active' if p["active_b"] is not None else text
+    if p["total_b"] is not None:
+        if not p["moe"]:
+            return _short(p["total_b"])
+        active = f' \u00b7 {_short(p["active_b"])} active' if p["active_b"] is not None else ""
+        return f'{_short(p["total_b"])} MoE{active}'
+    if model == "DeepSeek V4.1 Flash":
+        return "552B backbone MoE \u00b7 8B/16B active"
+    cls = model_class(model)
+    head = "Closed" if PRICES[model]["weights"] == "closed" else "Open, size undisclosed"
+    return f'{head} \u00b7 {CLASS_LABEL[cls] if cls else "price unknown"}'
 
 
-def size_keys(cls: str) -> str:
-    """The Size row under a table's type keys (Ümit #4156): All · Tiny · Small · Medium · Large · Undisclosed
-    (data-size-key), and each class's rule line, shown while it is selected (data-size-note); cls: the row's classes."""
-    return (f'<div class="keys size-keys needs-js {cls}" role="group" aria-label="Size"><span class="size-keys-label">'
-            'Size:</span>' + "".join(f'<button type="button" class="key" data-size-key="{k}" aria-pressed='
-                                     f'"{str(k == "all").lower()}">{l}</button>'
-                                     for k, l, _ in (("all", "All", None),) + SIZE_CLASSES)
-            + "</div>" + "".join(f'<p class="table-note size-note" data-size-note="{k}" hidden>{esc(n)}</p>'
-                                 for k, _, n in SIZE_CLASSES))
+def class_keys(cls: str) -> str:
+    """The Class row under a table's type keys (Ümit #4217): All · Tiny · Small · Medium · Large · Efficient · Workhorse
+    · Flagship (data-class-key; the page's script hides a key with no model in the type in view), and each class's rule
+    line, shown while it is selected (data-class-note); cls: the row's classes."""
+    return (f'<div class="keys class-keys needs-js {cls}" role="group" aria-label="Class"><span class="class-keys-label">'
+            'Class:</span>' + "".join(f'<button type="button" class="key" data-class-key="{k}" aria-pressed='
+                                      f'"{str(k == "all").lower()}">{l}</button>'
+                                      for k, l, _ in (("all", "All", None),) + CLASSES)
+            + "</div>" + "".join(f'<p class="table-note class-note" data-class-note="{k}" hidden>{esc(n)}</p>'
+                                 for k, _, n in CLASSES))
 
 
 B7 = [("model_id", "Model ID"), ("provider", "Provider or endpoint"), ("date_run", "Date run"), ("price", "Price"),

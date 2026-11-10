@@ -61,16 +61,20 @@ def about_text(S, rel: str) -> str:
     return ('<p><strong>A fixed table:</strong> the filters on the Leagues page do not change it. Tap a model (or '
             'point at it) for its details and its decisions.</p>'
             '<p># is the rank among all models, in every view of the table\'s filters (type: All · Chat models · '
-            'Decision models; size: All · Tiny · Small · Medium · Large · Undisclosed, combined with the type); the '
-            'programs are reference rows in every view. This benchmark has no all-pairs test, so it has no tiers: # is '
-            'the rank only.</p>'
-            '<p>Size classes, by the smaller of a model\'s total and active parameters, as disclosed by the maker: Tiny '
-            'under 6B, Small 6B to 15B, Medium over 15B to 40B, Large over 40B; Undisclosed where the maker gives no '
-            'count (never estimated). A model with an effective count (Gemma\'s E-series) goes by its total. The size '
-            'after a model\'s name is its total to one decimal, dense or MoE (a mixture of experts with its active '
-            'count). Parameters (in a row\'s details): the exact count its maker documents (model card, Hugging Face '
-            'repository or announcement), linked, with dense or MoE; a mixture of experts as total · active; "not '
-            'disclosed by maker" where the maker gives none.</p>'
+            'Decision models; class: All · Tiny · Small · Medium · Large · Efficient · Workhorse · Flagship, combined '
+            'with the type; a class with no model in the type in view has no key); the programs are reference rows in '
+            'every view and in no class. This benchmark has no tiers: a tier needs a paired exact test (McNemar, Holm) '
+            'over one question set every model answered, and the leagues played different positions, so no pair of '
+            'models in different leagues shares one. # is the rank only.</p>'
+            '<p>Classes, one scale for the whole site: an open-weight model by its total parameters as disclosed by '
+            'the maker: Tiny under 6B, Small 6B to 15B, Medium over 15B to 40B, Large over 40B (a model with an '
+            'effective count, Gemma\'s E-series, by its total with embeddings). A closed model, or an open model whose '
+            'maker gives no total, by its list price per 1M input tokens (base rate, from the maker\'s price page): '
+            'Efficient $0.50 or less, Workhorse over $0.50 to $3, Flagship over $3. Never estimated: a model with '
+            'neither has no class. The label after a model\'s name is its total (a mixture of experts with its active '
+            'count) or Closed and its price class. Parameters (in a row\'s details): the exact count its maker '
+            'documents (model card, Hugging Face repository or announcement), linked, with dense or MoE; a mixture of '
+            'experts as total · active; "not disclosed by maker" where the maker gives none.</p>'
             f'<p>{esc(NOTE)}</p><p>{esc(RULE)}</p>'
             '<p>Each model\'s row is its highest reasoning setting played, by the effort the requests sent (off &lt; '
             'minimal &lt; low &lt; medium &lt; high &lt; xhigh &lt; max; on above off for a model without levels; a '
@@ -306,9 +310,9 @@ def name_link(S, x, text, bid) -> str:
             f'<span class="model-name" tabindex="0" aria-describedby="{bid}">{esc(text)}</span>')
 
 
-def tr_attrs(S, x, kind, typ, size: str | None = None) -> str:
-    """size: the row's model's size class (P.size_class; a program none) (its other-settings rows go with it)."""
-    hl = f' data-hl-type="{typ}"' + (f' data-hl-size="{size}"' if size else "")
+def tr_attrs(S, x, kind, typ, cls: str | None = None) -> str:
+    """cls: the row's model's class (P.model_class; a program none) (its other-settings rows go with it)."""
+    hl = f' data-hl-type="{typ}"' + (f' data-hl-class="{cls}"' if cls else "")
     if x["late"]:
         return f' data-dataset="{LATE_ENTRY}" data-setup="{esc(x["late"]["slug"])}" data-kind="late"{hl}'
     return H.attrs(S, x["ds"], H.slug_name(x["name"]), kind == "program") + hl
@@ -329,9 +333,9 @@ def headline_rows(S) -> tuple[list, list, list]:
             dot = f'<i class="swatch hl-dot" style="background:{colour}" title="{esc(mk)}"></i>' if colour else \
                 '<i class="swatch hl-dot swatch-program"></i>'
             typ = "program" if kind == "program" else model_type(S, x)
-            size = P.size_class(x["model"]) if kind == "model" else None
-            # The model's size after its name (Ümit #4156, #4192/#4194): small grey text; wraps under it on a phone.
-            sized = f'<span class="hl-size">{esc(P.size_label(x["model"]))}</span>' if size else ""
+            mclass = P.model_class(x["model"]) if kind == "model" else None
+            # The model's class label after its name (Ümit #4217): small grey text; wraps under it on a phone.
+            labelled = f'<span class="hl-size">{esc(P.class_label(x["model"]))}</span>' if kind == "model" else ""
             # Nothing under the name (Ümit #3039); after it one small grey chip (Ümit #3193): setting · type, a late
             # entry's tag in it (a caveat on its rank); the maker only in the dot and the box.
             tag = f'<span class="hl-tag">{esc(chip_text(S, x, kind))}</span>'
@@ -355,15 +359,15 @@ def headline_rows(S) -> tuple[list, list, list]:
             cls = ' class="reference"' if kind == "program" else ""
             label = x["name"] if kind == "program" else name
             bid = f"{rid}-box"
-            body.append(f'<tr{cls}{tr_attrs(S, x, kind, typ, size)} data-box="{bid}">{rank}<td class="model">{dot}{icon}'
-                        f'{name_link(S, x, row_name(label, x["setting"]), bid)}{sized}{tag}{more}'
+            body.append(f'<tr{cls}{tr_attrs(S, x, kind, typ, mclass)} data-box="{bid}">{rank}<td class="model">{dot}{icon}'
+                        f'{name_link(S, x, row_name(label, x["setting"]), bid)}{labelled}{tag}{more}'
                         f'{details_box(S, x, kind, bid, extra, ref)}</td>{judgement_cell(x["r"], colour)}{wide_cells(x)}</tr>')
             for sid, y in zip(sub_ids, others):
                 ycol = H.maker(y["name"])[1] if kind == "model" else None
                 ybid = f"{sid}-box"
                 ytag = f'<span class="hl-tag">{esc(chip_text(S, y, kind, league=True))}</span>'
                 body.append(f'<tr class="hl-sub{"" if kind == "model" else " reference"}" '
-                            f'id="{sid}" hidden{tr_attrs(S, y, kind, typ, size)} data-box="{ybid}"><td class="num"></td><td class="model">'
+                            f'id="{sid}" hidden{tr_attrs(S, y, kind, typ, mclass)} data-box="{ybid}"><td class="num"></td><td class="model">'
                             f'{name_link(S, y, row_name(y["name"], y["setting"]), ybid)}{ytag}'
                             f'{details_box(S, y, kind, ybid, [], ref)}</td>{judgement_cell(y["r"], ycol)}{wide_cells(y)}</tr>')
             if kind != "program" or x["name"] == "GNUbg weak":
@@ -440,11 +444,11 @@ def headline(S) -> str:
             'data-headline-view="model" aria-pressed="true">One row per model</button><button type="button" '
             'class="key" data-headline-view="all" aria-pressed="false">All setups</button></span>')
     # The table's own filter (Ümit #2907): local to this table, never the page's filters; programs stay in every view.
-    # Type and Size (Ümit #4156) combine: a row shows when it is of the pressed type and size class (P.size_class).
+    # Type and Class (Ümit #4217) combine: a row shows when it is of the pressed type and class (P.model_class).
     types = ('<div class="keys hl-filter needs-js" role="group" aria-label="Model type">'
              + "".join(f'<button type="button" class="key" data-hl-filter="{k}" aria-pressed="{str(k == "all").lower()}">'
                        f'{l}</button>' for k, l in (("all", "All"), ("chat", "Chat models"), ("decision", "Decision models")))
-             + "</div>" + P.size_keys("hl-filter"))
+             + "</div>" + P.class_keys("hl-filter"))
     return (f'<section class="card headline" id="leaderboard" data-dataset="all" aria-labelledby="leaderboard-title">'
             f'<div class="chart-head"><h2 id="leaderboard-title">Risk calls leaderboard</h2>{keys}'
             f'<p class="chart-sub">{esc(MEANING)}</p></div>'

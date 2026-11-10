@@ -512,12 +512,13 @@ ARMS = (("notes", "notes"), ("worst_mistakes", "worst mistakes"))
 ARM_LABEL = {"notes": "helper-written notes", "worst_mistakes": "worst mistakes"}
 
 
-# Size classes (Ümit #4156): the leaderboard's (P.size_class); a model the parameter file does not list: undisclosed.
-def size(name: str | None) -> tuple[str, str]:
-    """(the row's size class, its size label after the name)."""
+# Classes (Ümit #4217): the leaderboard's (P.model_class, P.class_label); a model the parameter file does not list, or
+# one without a class: none (in the All view only).
+def model_class(name: str | None) -> tuple[str, str]:
+    """(the row's class key, '' for none; its class label after the name, '' for a model the file does not list)."""
     if name in P.PARAMS:
-        return P.size_class(name), f'<span class="hl-size">{esc(P.size_label(name))}</span>'
-    return "undisclosed", '<span class="hl-size">undisclosed</span>'
+        return P.model_class(name) or "", f'<span class="hl-size">{esc(P.class_label(name))}</span>'
+    return "", ""
 
 
 # Each row's maker dot and details box (Ümit via Zeki #3803): the home leaderboard's (home.maker on the shared palette,
@@ -612,9 +613,9 @@ def result_row(pm, p, m, refused, i: int, links: dict) -> str:
            "Route: " + ("our GPU" if pm["route"].startswith("local") else _inline(pm["route"])),
            None if refused else f"Status: {status_}", None if refused else f"Series done {done}",
            m and answers_line(m), m and change_line(m), links.get(pm["setup"]) or links.get(name)]
-    cls, sized = size(name)
-    return (f'<tr data-progress-setup="{esc(pm["setup"])}" data-group="chat" data-size="{cls}" data-box="{bid}">'
-            f'{name_cell(pm["setup"], dot, bid, box, sized=sized)}<td>Chat</td><td data-progress="status">{status_}</td>'
+    cls, labelled = model_class(name)
+    return (f'<tr data-progress-setup="{esc(pm["setup"])}" data-group="chat" data-class="{cls}" data-box="{bid}">'
+            f'{name_cell(pm["setup"], dot, bid, box, sized=labelled)}<td>Chat</td><td data-progress="status">{status_}</td>'
             f'<td class="num" data-progress="series">{done}</td>{nums}<td>{verdict}</td></tr>')
 
 
@@ -630,9 +631,9 @@ def planned_row(r, arm, i: int, links: dict) -> str:
            f"Arm: {ARM_LABEL[arm[0]]}" if arm else None, f"Status: {esc(status_)}",
            " \u00b7 ".join(["Planned, not a result"] + ([esc(r["tag"])] if r["tag"] else [])),
            links.get(r["setup"]) or (links.get(r["params_model"]) if listed else None)]
-    cls, sized = size(r["params_model"])
-    return (f'<tr data-planned="{esc(r["setup"])}" data-group="{r["group"]}" data-size="{cls}" '
-            f'data-box="{bid}">{name_cell(r["setup"], dot, bid, box, "<br><span class=\"small\">planned, not a result</span>" + tag, sized)}'
+    cls, labelled = model_class(r["params_model"])
+    return (f'<tr data-planned="{esc(r["setup"])}" data-group="{r["group"]}" data-class="{cls}" '
+            f'data-box="{bid}">{name_cell(r["setup"], dot, bid, box, "<br><span class=\"small\">planned, not a result</span>" + tag, labelled)}'
             f'<td>{group}</td><td>{esc(status_)}</td><td class="num">{nm(NA)}</td><td></td><td></td><td></td>'
             '<td></td></tr>')
 
@@ -641,7 +642,7 @@ def results_section(L, S=None) -> str:
     """The page's first table (Ümit/Zeki #3710): one row per model, the plan's chat models (status and series from
     the validated progress fields; numbers from the validated results; Yes or No only past the verdict gate), then the
     planned rows (content/improve_planned.json: status only, never a number). Filters: type (All, Chat, Decision) and
-    size (P.size_keys), combined. Each
+    class (P.class_keys), combined. Each
     row: its maker dot and details box; S (the site's state, absent in the page's own renders): the boxes' links to
     the leaderboard's decisions and model pages."""
     refused = L["progress_refused"]
@@ -655,7 +656,7 @@ def results_section(L, S=None) -> str:
     keys = ('<div class="keys needs-js" role="group" aria-label="Model type">'
             + "".join(f'<button type="button" class="key" data-improve-filter="{k}" aria-pressed="{str(k == "all").lower()}">'
                       f'{t}</button>' for k, t in (("all", "All"), ("chat", "Chat models"), ("decision", "Decision models")))
-            + "</div>" + P.size_keys("improve-size"))
+            + "</div>" + P.class_keys("improve-class"))
     cap = (f'{count(len(L["plan"]["models"]))} chat models under the pre-registered rule: finished first (by the change '
            'in risks found), then running, then not started. Rows marked "planned, not a result" are not run yet and '
            'show no numbers; a decision setup has one row per arm (notes, worst mistakes).')

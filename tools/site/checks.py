@@ -895,6 +895,9 @@ def check_model_classes(out: Path) -> list[str]:
             if m not in P.PARAMS or P.PARAMS[m]["total_b"] is not None]
     bad += [f"model_prices.json: {m}: {k} missing" for m, e in P.PRICES.items() for k in ("weights", "source", "read")
             if not e.get(k)]
+    bad += [f"model_prices.json: {m}: provisional must be true or false, with a reason exactly when true"
+            for m, e in P.PRICES.items()
+            if not isinstance(e.get("provisional"), bool) or bool(e.get("provisional_reason")) != e["provisional"]]
     home = (out / "index.html").read_text()
     rows = re.findall(r'<tr[^>]*data-hl-type="(?!program)[^"]*"[^>]*>', home)
     bad += [f"index.html: leaderboard row without a class: {r[:120]}" for r in rows if "data-hl-class=" not in r]

@@ -1125,9 +1125,9 @@ def model_class(model: str) -> str | None:
 
 
 def _short(b: float) -> str:
-    """A count in billions for the label after a name (turkce #4231, the three sites' format): whole from 10B ('26B',
-    '266B', '2800B'), one decimal under 10B ('7.9B', '0.4B')."""
-    return f"{round(b)}B" if b >= 10 else f"{round(b, 1):.1f}B"
+    """A count in billions for the label after a name (turkce #4231, #4237, the three sites' format): trillions to one
+    decimal from 1,000B ('2.8T'), whole from 10B ('26B', '266B'), one decimal under 10B ('7.9B', '0.4B')."""
+    return f"{b / 1000:.1f}T" if b >= 1000 else f"{round(b)}B" if b >= 10 else f"{round(b, 1):.1f}B"
 
 
 # The label's marks (Ümit #4229, turkce #4231): a superscript after the number, explained in the details box
@@ -1149,7 +1149,8 @@ def class_label(model: str) -> str:
     if PRICES[model]["weights"] != "closed":
         return ""
     cls = model_class(model)
-    return f'Closed \u00b7 {CLASS_LABEL[cls] if cls else "price unknown"}'
+    provisional = " (provisional)" if PRICES[model]["provisional"] else ""
+    return f'Closed \u00b7 {CLASS_LABEL[cls] + provisional if cls else "price unknown"}'
 
 
 def class_note(model: str) -> str | None:
@@ -1168,6 +1169,9 @@ def class_note(model: str) -> str | None:
     if model in TWO_MODELS:
         return (f'Two models run together, option probabilities averaged 50/50: {billions(p["total_b"])} in all, all '
                 'used on every question.')
+    if model in PRICES and PRICES[model]["provisional"]:
+        # Ümit #4238: only an introductory/launch price is published; the class rests on it until a standard one is.
+        return f'Price class provisional: {PRICES[model]["provisional_reason"]}'
     return None
 
 

@@ -63,7 +63,7 @@ def about_text(S, rel: str) -> str:
             '<p># is the rank among all models, in every view of the table\'s All · Chat models · Decision models · '
             'Small chat models · Small decision models filter; the programs are reference rows in every view.</p>'
             f'<p>{esc(SMALL_NOTES["chat"])} {esc(SMALL_NOTES["decision"])} Parameters (in a row\'s details): the count its maker documents (model card, '
-            'Hugging Face repository or announcement), linked; a mixture of experts as total / active; "not disclosed '
+            'Hugging Face repository or announcement), linked, with dense or MoE; a mixture of experts as total · active; "not disclosed '
             'by maker" where the maker gives none.</p>'
             f'<p>{esc(NOTE)}</p><p>{esc(RULE)}</p>'
             '<p>Each model\'s row is its highest reasoning setting played, by the effort the requests sent (off &lt; '

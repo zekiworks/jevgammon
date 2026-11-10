@@ -1066,7 +1066,7 @@ def billions(b: float) -> str:
 
 
 def params_html(model: str) -> str:
-    """The box's parameter count: '31B', '24B total / 2.45B active', '753.33B total; active not disclosed by maker' (a
+    """The box's parameter count: '31B dense', '24B MoE · 2.45B active', '753.33B MoE; active not disclosed by maker' (a
     mixture of experts whose maker gives no active count), '4B effective (8B total)', or the maker card's own terms
     where it gives parts but no whole-model total ('terms'; total_b null, so never a Small model); a disclosed count
     linked to its source (as the box's Released month is); else 'not disclosed by maker'. A model the file does not
@@ -1074,17 +1074,18 @@ def params_html(model: str) -> str:
     p = PARAMS[model]
     total = p["total_b"]
     if p.get("terms"):
-        return f'<a href="{esc(p["source"])}">{esc(p["terms"])}</a>'
+        kind = "MoE" if p["moe"] else "dense"
+        return f'<a href="{esc(p["source"])}">{esc(p["terms"])}</a> · {kind}'
     if total is None:
         return "not disclosed by maker"
     if p["effective_b"] is not None:
         text = f'{billions(p["effective_b"])} effective ({billions(total)} total)'
     elif p["active_b"] is not None:
-        text = f'{billions(total)} total / {billions(p["active_b"])} active'
+        text = f'{billions(total)} MoE · {billions(p["active_b"])} active'
     elif p["moe"]:
-        text = f'{billions(total)} total; active not disclosed by maker'
+        text = f'{billions(total)} MoE; active not disclosed by maker'
     else:
-        text = billions(total)
+        text = f'{billions(total)} dense'  # dense or MoE stated for every disclosed size (Ümit via Zeki #4183)
     return f'<a href="{esc(p["source"])}">{esc(text)}</a>'
 
 

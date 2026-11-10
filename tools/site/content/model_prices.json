@@ -1,0 +1,203 @@
+{
+ "about": "List price per 1M input tokens (USD, base rate: the STANDARD list price (Ümit #4238), standard tier, short-context, uncached, no batch, introductory/launch/promotional or off-peak discount) from the maker's own price page, for every leaderboard or Did-they-improve model whose maker states no total parameter count (model_params.json card_total_b null; Ümit #4245) (closed models, and open models without a disclosed total). Ümit's JOB 2 FINAL (#4217): these models are classed by this price (Efficient <= $0.50, Workhorse > $0.50 to $3, Flagship > $3); open models with a disclosed total are classed by it (model_params.json). weights: open or closed. input_per_mtok null: no price on the maker's page for this model (never estimated); such a model has no class. read: the date the page was read. provisional: true where the maker publishes only an introductory/launch price for the model (that price is used; provisional_reason says why); the label then reads 'Closed · <class> (provisional)'.",
+ "models": {
+  "Celeris-1 Decision": {
+   "weights": "closed",
+   "input_per_mtok": 0.04,
+   "source": "https://celeris.ai/celeris-1-decision",
+   "read": "2026-11-10",
+   "quote": "'$0.04 per million input tokens with output free' (launch post, 8 Oct 2026).",
+   "note": "celeris.ai/pricing now lists only its successor Celeris-1.1 Decision ($0.004); the launch post is the maker's price for this model. The launch post does not call $0.04 introductory or a launch discount.",
+   "provisional": false,
+   "provisional_reason": null
+  },
+  "Claude Fable 5.1": {
+   "weights": "closed",
+   "input_per_mtok": 10,
+   "source": "https://platform.claude.com/docs/en/about-claude/pricing",
+   "read": "2026-11-10",
+   "quote": "Claude Fable 5.1 | Base input tokens $10 / MTok",
+   "provisional": false,
+   "provisional_reason": null
+  },
+  "Claude Opus 5.5": {
+   "weights": "closed",
+   "input_per_mtok": 4,
+   "source": "https://platform.claude.com/docs/en/about-claude/pricing",
+   "read": "2026-11-10",
+   "quote": "Claude Opus 5.5 | Base input tokens $4 / MTok",
+   "provisional": false,
+   "provisional_reason": null
+  },
+  "Claude Sonnet 5.5": {
+   "weights": "closed",
+   "input_per_mtok": 2,
+   "source": "https://platform.claude.com/docs/en/about-claude/pricing",
+   "read": "2026-11-10",
+   "quote": "Claude Sonnet 5.5 | Base input tokens $2 / MTok",
+   "provisional": false,
+   "provisional_reason": null
+  },
+  "Drex Max 1.1": {
+   "weights": "closed",
+   "input_per_mtok": 0.03,
+   "source": "https://console.nace.ai/docs/drex/reference/models",
+   "read": "2026-11-10",
+   "quote": "Drex Max v1.1 | drex-max-v1.1 | 2026-10-28 | $0.03 (per million input tokens; output not billed); https://www.nace.ai/developers: 'Drex Max v1.1 cost is at its 50% launch price.'",
+   "provisional": true,
+   "provisional_reason": "Only its launch price is published: the models reference lists $0.03, and nace.ai/developers says 'Drex Max v1.1 cost is at its 50% launch price'; no regular price for v1.1 is printed (Drex Max v1's launch post gave $0.06 for the earlier model, not used)."
+  },
+  "Fastino GLiDE": {
+   "weights": "closed",
+   "input_per_mtok": 0.04,
+   "source": "https://docs.fastino.ai/pricing",
+   "read": "2026-11-10",
+   "quote": "Inference: GLiDE | $0.04 per 1M input tokens | $0 output",
+   "note": "The hosted model (glide_v2), not documented as the open fastino/GLiDE weights (model_params.json).",
+   "provisional": false,
+   "provisional_reason": null
+  },
+  "GPT-6 Astra": {
+   "weights": "closed",
+   "input_per_mtok": 10,
+   "source": "https://developers.openai.com/api/docs/pricing",
+   "read": "2026-11-10",
+   "quote": "Standard: gpt-6-astra | Short context input $10.00",
+   "provisional": false,
+   "provisional_reason": null
+  },
+  "GPT-6 Luna": {
+   "weights": "closed",
+   "input_per_mtok": 0.1,
+   "source": "https://developers.openai.com/api/docs/guides/decisions",
+   "read": "2026-11-10",
+   "quote": "Decisions API: 'With gpt-6-luna, uncached input costs $0.10 per 1M tokens ... Output tokens are not charged.' (also gpt-6-luna short-context input $0.10 on /api/docs/pricing)",
+   "provisional": false,
+   "provisional_reason": null
+  },
+  "GPT-6.1 Sol": {
+   "weights": "closed",
+   "input_per_mtok": 2,
+   "source": "https://developers.openai.com/api/docs/pricing",
+   "read": "2026-11-10",
+   "quote": "Standard: gpt-6.1-sol | Short context input $2.00",
+   "provisional": false,
+   "provisional_reason": null
+  },
+  "Gemini 3.8 Flash": {
+   "weights": "closed",
+   "input_per_mtok": 0.75,
+   "source": "https://ai.google.dev/gemini-api/docs/pricing",
+   "read": "2026-11-10",
+   "quote": "Gemini 3.8 Flash, Standard, Paid tier input price: '$0.75 through December 31, 2026. $1.50 starting January 1, 2027.'",
+   "note": "Google's page gives '$0.75 through December 31, 2026. $1.50 starting January 1, 2027.' without calling $0.75 introductory or promotional: today's standard price. Workhorse at either price.",
+   "provisional": false,
+   "provisional_reason": null
+  },
+  "Gemini 4 Argon": {
+   "weights": "closed",
+   "input_per_mtok": 2,
+   "source": "https://ai.google.dev/gemini-api/docs/pricing",
+   "read": "2026-11-10",
+   "quote": "Gemini 4 Argon, Standard, Paid tier input price: '$2.00 through November 30, 2026. $4.00 starting December 1, 2026.'",
+   "note": "Google's page gives '$2.00 through November 30, 2026. $4.00 starting December 1, 2026.' and does not call $2.00 introductory or promotional (no such word on the page), so $2.00 is today's standard price: Workhorse; the announced $4.00 from 1 Dec 2026 is Flagship.",
+   "provisional": false,
+   "provisional_reason": null
+  },
+  "Grok 4.7": {
+   "weights": "closed",
+   "input_per_mtok": 2,
+   "source": "https://docs.x.ai/docs/models",
+   "read": "2026-11-10",
+   "quote": "grok-4.7 (< 200k prompt tokens) | Input $2.00 / 1M tokens",
+   "provisional": false,
+   "provisional_reason": null
+  },
+  "Jev 1.13.0": {
+   "weights": "closed",
+   "input_per_mtok": 0.042,
+   "source": "https://docs.typesafe.ai/models",
+   "read": "2026-11-10",
+   "quote": "Jev 1.13 (jev-1.13.0) | Price $42 per Btok / $0.042 per Mtok; output tokens are free",
+   "provisional": false,
+   "provisional_reason": null
+  },
+  "Jev 1.14.0": {
+   "weights": "closed",
+   "input_per_mtok": 0.042,
+   "source": "https://docs.typesafe.ai/models",
+   "read": "2026-11-10",
+   "quote": "Jev 1.14 (jev-1.14.0) | Price $42 per Btok / $0.042 per Mtok; output tokens are free",
+   "provisional": false,
+   "provisional_reason": null
+  },
+  "Liquid d1-ultra": {
+   "weights": "closed",
+   "input_per_mtok": 0.042,
+   "source": "https://www.liquid.ai/pricing",
+   "read": "2026-11-10",
+   "quote": "d1-ultra | Input $0.042 / MTok | Output $0.00 / MTok",
+   "provisional": false,
+   "provisional_reason": null
+  },
+  "Mercury Decide": {
+   "weights": "closed",
+   "input_per_mtok": 0.04,
+   "source": "https://docs.inceptionlabs.ai/get-started/models",
+   "read": "2026-11-10",
+   "quote": "Mercury Decide: 'Only input tokens are billed, at $0.02 per million tokens (50% off the regular $0.04 price).' (www.inceptionlabs.ai/models shows $0.04 struck through, $0.02, '50% OFF')",
+   "note": "Standard (regular) price $0.04; the $0.02 shown on the home page is the 50%-off launch promotion.",
+   "provisional": false,
+   "provisional_reason": null
+  },
+  "Muse Ember": {
+   "weights": "closed",
+   "input_per_mtok": 0.1,
+   "source": "https://dev.meta.ai/models/muse-ember",
+   "read": "2026-11-10",
+   "quote": "muse-ember-1.0 price table: input $0.10, output $0.50 per 1M tokens (prompts up to 200k)",
+   "note": "Held late entry: not shown on the leaderboard yet.",
+   "provisional": false,
+   "provisional_reason": null
+  },
+  "Qwen3.8 Flash": {
+   "weights": "closed",
+   "input_per_mtok": 0.15,
+   "source": "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
+   "read": "2026-11-10",
+   "quote": "Qwen-Flash, Singapore: qwen3.8-flash | International | 0<Token≤1M | Input $0.15 | Output $0.47 (the page lists standard prices)",
+   "note": "The closed API model, not the open Qwen3.8-Flash-Next.",
+   "provisional": false,
+   "provisional_reason": null
+  },
+  "SubQ Snap 1.1": {
+   "weights": "closed",
+   "input_per_mtok": 0.04,
+   "source": "https://subq.ai/pricing",
+   "read": "2026-11-10",
+   "quote": "Pricing: 'In $0.04 per 1M tokens Input, Out Free Output'",
+   "provisional": false,
+   "provisional_reason": null
+  },
+  "SubQ Snap Preview": {
+   "weights": "closed",
+   "input_per_mtok": 0.05,
+   "source": "https://subq.ai/introducing-subq-snap",
+   "read": "2026-11-10",
+   "quote": "'SubQ Snap is priced at $0.05 per million input tokens, with no charge for output tokens.' (launch post, 12 Oct 2026)",
+   "note": "The model is in 'Public Preview'; the launch post states its price without calling it introductory or a preview discount, so it is the model's own standard price. subq.ai/pricing now prices only its successor SubQ Snap 1.1.",
+   "provisional": false,
+   "provisional_reason": null
+  },
+  "GLM-5.3": {
+   "weights": "open",
+   "input_per_mtok": 1.4,
+   "source": "https://docs.z.ai/guides/overview/pricing",
+   "read": "2026-11-10",
+   "quote": "GLM-5.3 | Input $1.4 | Cached Input $0.26 | Output $4.4 (per 1M tokens)",
+   "note": "Open weights, but the maker states no parameter count (card, blog, docs), so classed by price (Ümit #4245).",
+   "provisional": false,
+   "provisional_reason": null
+  }
+ }
+}

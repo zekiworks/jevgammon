@@ -1056,9 +1056,22 @@ def phases_page(S) -> str:
 # mixture of experts, effective where the maker gives one, in billions as shown, the source URL and read date); never
 # an estimate.
 PARAMS = json.loads((CONTENT_DIR / "model_params.json").read_text())["models"]
-# The leaderboard's Small models key (story.headline): disclosed total parameters in billions (a mixture of experts by
-# its total) at most this; 15B is the three sites' shared provisional threshold (#3471, #3473), not a human decision.
-SMALL_MAX_B = 15
+# List prices (Ümit #4217, #4238, #4245): for every model whose maker states no total parameter count (closed models,
+# and open models without a maker's total), the maker's standard price per 1M input tokens, its URL and read date
+# (content/model_prices.json); never an estimate.
+PRICES = json.loads((CONTENT_DIR / "model_prices.json").read_text())["models"]
+# Model classes (Ümit #4245, #4259; one scale for the three sites): (key, label). Undisclosed: neither the maker's size
+# nor a per-token list price (a chat model always has one, so never; a decision model with a per-request price or
+# none). Programs are in no class.
+CLASSES = (("tiny", "Tiny"), ("small", "Small"), ("medium", "Medium"), ("large", "Large"),
+           ("efficient", "Efficient"), ("workhorse", "Workhorse"), ("flagship", "Flagship"),
+           ("undisclosed", "Undisclosed"))
+CLASS_LABEL = dict(CLASSES)
+# The rule shown under the Class row and on About, word for word (Ümit #4245).
+CLASS_RULE = ("Size by total parameters, as disclosed by the maker (for MoE models the label also shows active "
+              "parameters): Tiny under 6B · Small 6B–15B · Medium over 15B up to 40B · Large over 40B. Models of "
+              "undisclosed size, by standard list price per 1M input tokens: Efficient up to $0.50 · Workhorse up to "
+              "$3 · Flagship over $3.")
 
 
 def billions(b: float) -> str:
@@ -1090,13 +1103,90 @@ def params_html(model: str) -> str:
     return f'<a href="{esc(p["source"])}">{esc(text)}</a>'
 
 
-def is_small(model: str) -> bool:
-    """Disclosed total parameters, or a mixture of experts' disclosed active parameters, at most SMALL_MAX_B billion
-    (Ümit via Zeki #3815/#3816, the same rule on all three sites); an undisclosed count is never assumed. A model with
-    several disclosed active counts (DeepSeek V4.1 Flash: 8B prefill / 16B decode) has active_b null and its counts in
-    'terms' only, so it is small only by a total, which it lacks: never small (#3876 asks every active count <= 15B)."""
+def _by_total(b: float) -> str:
+    return "tiny" if b < 6 else "small" if b <= 15 else "medium" if b <= 40 else "large"
+
+
+def model_class(model: str) -> str | None:
+    """The model's class key (CLASSES; Ümit #4245): by the total the MAKER states (card_total_b: tiny < 6B, small 6B to
+    15B, medium over 15B to 40B, large over 40B; not our checkpoint count total_b); REAX 1.3, two models run together
+    whose card states no total (card_parts_b), by its total in all (total_b, 57.36B, the figure logic's live site uses,
+    #4253); any other model by its standard list price (PRICES: efficient <= $0.50, workhorse over $0.50 to $3,
+    flagship over $3); undisclosed where it has neither a maker's size nor a per-token list price (#4259). A model
+    the parameter file does not list: KeyError."""
     p = PARAMS[model]
-    return any(v is not None and v <= SMALL_MAX_B for v in (p["total_b"], p["active_b"]))
+    if p["card_total_b"] is not None:
+        return _by_total(p["card_total_b"])
+    if p.get("card_parts_b"):
+        return _by_total(p["total_b"])
+    price = PRICES[model]["input_per_mtok"]
+    if price is None:
+        return "undisclosed"  # Ümit #4259: neither size nor a per-token list price
+    return "efficient" if price <= 0.5 else "workhorse" if price <= 3 else "flagship"
+
+
+def _short(b: float) -> str:
+    """A count in billions for the label after a name (turkce #4231, #4237, the three sites' format): trillions to one
+    decimal from 1,000B ('2.8T'), whole from 10B ('26B', '276B'), at most one decimal under 10B ('7.9B', '2.5B'; a
+    whole maker's figure as is: '9B')."""
+    return f"{b / 1000:.1f}T" if b >= 1000 else f"{round(b)}B" if b >= 10 else f"{round(b, 1):g}B"
+
+
+def class_label(model: str) -> str:
+    """The short plain-text label after a row's name (Ümit #4245, #4254; logic #4253): the maker's total, a dense
+    model the number only ('31B'), a mixture of experts with its active count ('309B MoE · 15B active'; '753B MoE'
+    without one); REAX 1.3 its total and '2×' ('57B 2×'); a model of undisclosed size 'Closed · Workhorse' or 'Open,
+    size undisclosed · Workhorse', '(provisional)' on an introductory-only price (#4238), 'Closed · Undisclosed'
+    without one (#4259). The details box gives the exact counts."""
+    p = PARAMS[model]
+    if p["card_total_b"] is not None:
+        if not p["moe"]:
+            return _short(p["card_total_b"])
+        active = f' \u00b7 {_short(p["card_active_b"])} active' if p["card_active_b"] is not None else ""
+        return f'{_short(p["card_total_b"])} MoE{active}'
+    if p.get("card_parts_b"):
+        return f'{_short(p["total_b"])} {len(p["card_parts_b"])}\u00d7'
+    cls = model_class(model)
+    head = "Closed" if PRICES[model]["weights"] == "closed" else "Open, size undisclosed"
+    provisional = " (provisional)" if PRICES[model]["provisional"] else ""
+    return f'{head} \u00b7 {CLASS_LABEL[cls]}{provisional}'
+
+
+def class_note(model: str) -> str | None:
+    """The details box's line on the model's size or price class (Ümit #4229, #4245), plain text: the maker's figure
+    the class uses and our checkpoint count ('Mixture of experts: 35B total, about 3B active per step (the maker's
+    figures); our checkpoint count 35.11B.'); REAX 1.3 its two parts (model card and reax-engine @ ff8f595
+    reax13/probabilities.py: every request to both parts, per-option probabilities 0.5*G + 0.5*Q); an open model whose
+    maker states no count, that; an introductory-only price, why its class is provisional (#4238); else None."""
+    p = PARAMS[model]
+    ours = (f'; our checkpoint count {billions(p["total_b"])}'
+            if p["total_b"] is not None and p["total_b"] != p["card_total_b"] else "")
+    if p["card_total_b"] is not None:
+        if p["moe"]:
+            split = f', {p["card_active_terms"]}' if p.get("card_active_terms") else ""
+            active = (f'about {billions(p["card_active_b"])} active per step{split}' if p["card_active_b"] is not None
+                      else "active count not disclosed by the maker")
+            return f'Mixture of experts: {billions(p["card_total_b"])} total, {active} (the maker\'s figures){ours}.'
+        return f'Size class by the maker\'s figure, {billions(p["card_total_b"])}{ours}.'
+    if p.get("card_parts_b"):
+        return (f'Two models run together, option probabilities averaged 50/50: {billions(p["total_b"])} in all, all '
+                'used on every question.')
+    if model in PRICES and PRICES[model]["provisional"]:
+        return f'Price class provisional: {PRICES[model]["provisional_reason"]}'
+    if model in PRICES and PRICES[model]["weights"] == "open":
+        return f'The maker states no parameter count, so its class is by list price{ours}.'
+    return None
+
+
+def class_keys(cls: str) -> str:
+    """The Class row under a table's type keys (Ümit #4217, #4245): All · Tiny · Small · Medium · Large · Efficient ·
+    Workhorse · Flagship (data-class-key; the page's script hides a key with no model in the type in view), and the
+    rule (CLASS_RULE) under it; cls: the row's classes."""
+    return (f'<div class="keys class-keys needs-js {cls}" role="group" aria-label="Class"><span class="class-keys-label">'
+            'Class:</span>' + "".join(f'<button type="button" class="key" data-class-key="{k}" aria-pressed='
+                                      f'"{str(k == "all").lower()}">{l}</button>'
+                                      for k, l in (("all", "All"),) + CLASSES)
+            + f'</div><p class="table-note class-note">{esc(CLASS_RULE)}</p>')
 
 
 B7 = [("model_id", "Model ID"), ("provider", "Provider or endpoint"), ("date_run", "Date run"), ("price", "Price"),

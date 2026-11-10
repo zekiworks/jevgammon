@@ -866,6 +866,7 @@ def run(S: dict, out: Path) -> list[str]:
     failures += check_learning(out)
     failures += check_improve(out)
     failures += check_palette()
+    failures += check_model_classes(out)
     failures += check_bench_scores(S, out)
     failures += check_highlight_cards(out)
     return failures
@@ -881,6 +882,33 @@ def check_bench_scores(S: dict, out: Path) -> list[str]:
     """bench-scores.json (the combined score page's feed): the shared schema, scores, one row per leaderboard row."""
     import bench_scores
     return bench_scores.problems(S, json.loads((out / bench_scores.PATH).read_text()))
+
+
+def check_model_classes(out: Path) -> list[str]:
+    """The Class row (Ümit #4217, #4245): every model whose maker states no total (model_params.json card_total_b
+    null, no card_parts_b) has a list price entry (model_prices.json: weights, price or null, the maker's page and read
+    date), and no other model has one; every maker's figure has its source and quote; every leaderboard model row has
+    a class; the rule sentence stands under the Class row word for word."""
+    import pages as P
+    unsized = {m for m, p in P.PARAMS.items() if p["card_total_b"] is None and not p.get("card_parts_b")}
+    bad = [f"model_prices.json: {m}: no entry, and the maker states no total" for m in sorted(unsized - set(P.PRICES))]
+    bad += [f"model_prices.json: {m}: not a model_params.json model whose maker states no total" for m in P.PRICES
+            if m not in unsized]
+    bad += [f"model_params.json: {m}: maker's figure without card_source/card_quote" for m, p in P.PARAMS.items()
+            if (p["card_total_b"] is not None or p.get("card_parts_b")) and not (p["card_source"] and p["card_quote"])]
+    bad += [f"model_prices.json: {m}: {k} missing" for m, e in P.PRICES.items() for k in ("weights", "source", "read")
+            if not e.get(k)]
+    bad += [f"model_prices.json: {m}: provisional must be true or false, with a reason exactly when true"
+            for m, e in P.PRICES.items()
+            if not isinstance(e.get("provisional"), bool) or bool(e.get("provisional_reason")) != e["provisional"]]
+    home = (out / "index.html").read_text()
+    rows = re.findall(r'<tr[^>]*data-hl-type="(?!program)[^"]*"[^>]*>', home)
+    bad += [f"index.html: leaderboard row without a class: {r[:120]}" for r in rows if "data-hl-class=" not in r]
+    bad += [f"index.html: chat model row in Undisclosed (Ümit #4259): {r[:120]}" for r in rows
+            if 'data-hl-type="chat"' in r and 'data-hl-class="undisclosed"' in r]
+    import html as html_mod
+    bad += [] if html_mod.escape(P.CLASS_RULE) in home else ["index.html: the class rule sentence (Ümit #4245) missing"]
+    return bad + ([] if rows else ["index.html: no leaderboard model rows"])
 
 
 def check_palette() -> list[str]:

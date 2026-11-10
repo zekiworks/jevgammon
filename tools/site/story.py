@@ -61,8 +61,8 @@ def about_text(S, rel: str) -> str:
     return ('<p><strong>A fixed table:</strong> the filters on the Leagues page do not change it. Tap a model (or '
             'point at it) for its details and its decisions.</p>'
             '<p># is the rank among all models, in every view of the table\'s All · Chat models · Decision models · '
-            'Small models filter; the programs are reference rows in every view.</p>'
-            f'<p>{esc(SMALL_NOTE)} Parameters (in a row\'s details): the count its maker documents (model card, '
+            'Small chat models · Small decision models filter; the programs are reference rows in every view.</p>'
+            f'<p>{esc(SMALL_NOTES["chat"])} {esc(SMALL_NOTES["decision"])} Parameters (in a row\'s details): the count its maker documents (model card, '
             'Hugging Face repository or announcement), linked; a mixture of experts as total / active; "not disclosed '
             'by maker" where the maker gives none.</p>'
             f'<p>{esc(NOTE)}</p><p>{esc(RULE)}</p>'
@@ -301,7 +301,7 @@ def name_link(S, x, text, bid) -> str:
 
 
 def tr_attrs(S, x, kind, typ, small: bool = False) -> str:
-    """small: the row's model is in the Small models view (its other-settings rows go with it)."""
+    """small: the row's model is small (the Small chat / decision models views, with its type) (its other-settings rows go with it)."""
     hl = f' data-hl-type="{typ}"' + (' data-hl-small="yes"' if small else "")
     if x["late"]:
         return f' data-dataset="{LATE_ENTRY}" data-setup="{esc(x["late"]["slug"])}" data-kind="late"{hl}'
@@ -418,8 +418,8 @@ def too_safe(S, chart: list) -> str:
 # About (about_text).
 MEANING = "Risk judgement: 100 = every call right, 50 = always safe; higher is better."
 ROW_LINE = "One row per model at its highest reasoning setting, never its best score; late entries included."
-SMALL_NOTE = (f"Small models: {P.billions(P.SMALL_MAX_B)} parameters or fewer, total or active (for "
-              "mixture-of-experts models), as disclosed by the maker; models with undisclosed size are not included.")
+SMALL_NOTES = {k: (f"Small {k} models: {k} models with {P.billions(P.SMALL_MAX_B)} parameters or fewer, total or "
+                  "active (for mixture-of-experts models), as disclosed by the maker; models with undisclosed size are not included.") for k in ("chat", "decision")}
 
 
 def headline(S) -> str:
@@ -434,12 +434,13 @@ def headline(S) -> str:
             'data-headline-view="model" aria-pressed="true">One row per model</button><button type="button" '
             'class="key" data-headline-view="all" aria-pressed="false">All setups</button></span>')
     # The table's own filter (Ümit #2907): local to this table, never the page's filters; programs stay in every view.
-    # Small models (Ümit #3465; 15B provisional): rows whose model's disclosed total parameters are at most P.SMALL_MAX_B.
+    # Small chat / decision models (Ümit #3465, #3876): rows of that type whose model is small (P.is_small, at most P.SMALL_MAX_B).
     types = ('<div class="keys hl-filter needs-js" role="group" aria-label="Model type">'
              + "".join(f'<button type="button" class="key" data-hl-filter="{k}" aria-pressed="{str(k == "all").lower()}">'
                        f'{l}</button>' for k, l in (("all", "All"), ("chat", "Chat models"), ("decision", "Decision models"),
-                                                    ("small", "Small models")))
-             + f'</div><p class="table-note hl-small-note" hidden>{esc(SMALL_NOTE)}</p>')
+                                                    ("small-chat", "Small chat models"), ("small-decision", "Small decision models")))
+             + "</div>" + "".join(f'<p class="table-note hl-small-note" data-small-note="small-{k}" hidden>{esc(v)}</p>'
+                                  for k, v in SMALL_NOTES.items()))
     return (f'<section class="card headline" id="leaderboard" data-dataset="all" aria-labelledby="leaderboard-title">'
             f'<div class="chart-head"><h2 id="leaderboard-title">Risk calls leaderboard</h2>{keys}'
             f'<p class="chart-sub">{esc(MEANING)}</p></div>'

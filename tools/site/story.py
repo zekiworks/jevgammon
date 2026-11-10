@@ -333,8 +333,7 @@ def headline_rows(S) -> tuple[list, list, list]:
             mk, colour = H.maker(x["name"]) if kind == "model" else (None, None)
             fam = H.family(x["name"]) if kind != "program" else None
             icon = f'<svg class="fam-icon" aria-hidden="true" focusable="false"><use href="#{fam["icon"]}"/></svg>' if fam else ""
-            dot = f'<i class="swatch hl-dot" style="background:{colour}" title="{esc(mk)}"></i>' if colour else \
-                '<i class="swatch hl-dot swatch-program"></i>'
+            dot = H.dot(x["name"]) if colour else '<i class="swatch hl-dot swatch-program"></i>'
             typ = "program" if kind == "program" else model_type(S, x)
             mclass = P.model_class(x["model"]) if kind == "model" else None
             # The model's class label after its name (Ümit #4217): small grey text; wraps under it on a phone.
@@ -722,7 +721,8 @@ def two_skill(S) -> str:
     for i, (lab, xr, c) in enumerate(models):
         fx, sy = xr["r"]["found"]["share"], xr["r"]["right_safety"]["share"]
         parts.append(f'<circle class="sk-dot" cx="{x(fx):.1f}" cy="{y(sy):.1f}" r="5" style="fill:{c}" tabindex="0">'
-                     f'<title>{esc(lab)}: risks found {pct(fx)}, safe right {pct(sy)}</title></circle>')
+                     f'<title>{esc(lab)} ({esc(H.maker(xr["name"])[0])}): risks found {pct(fx)}, safe right {pct(sy)}'
+                     '</title></circle>')
         if i < 5:
             label(x(fx), y(sy), lab)
     if gnu:

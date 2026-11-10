@@ -545,8 +545,7 @@ def board_links(S) -> dict:
 
 def maker_dot(setup: str) -> tuple[str, str]:
     """(maker, the row's dot) as on the leaderboard."""
-    mk, colour = H.maker(setup)
-    return mk, f'<i class="swatch hl-dot" style="background:{colour}" title="{esc(mk)}"></i>'
+    return H.maker(setup)[0], H.dot(setup)
 
 
 def name_cell(setup: str, dot: str, bid: str, box: list, extra: str = "", sized: str = "") -> str:

@@ -600,3 +600,5 @@ nav.filters.filter-row .filters-body { display: flex; flex-wrap: wrap; align-ite
   .show-row .frow-label { min-width: 0; }
   .tabbar .key { padding: .25rem .55rem; font-size: .8rem; }
 }
+/* A grey maker's name beside its dot (home.dot; logic #4436): the dot alone would not tell grey makers apart. */
+.mk-name { margin: 0 .35rem 0 .2rem; color: var(--text-2); font-size: .74rem; white-space: nowrap; }

@@ -1586,11 +1586,27 @@ def maker(name: str) -> tuple[str, str]:
     return found[0], MAKERS[found[0]]["colour"]
 
 
+def is_grey(mk: str) -> bool:
+    """A maker without a colour of its own (maker_palette.json 'grey', logic #4436): its name goes beside its dots."""
+    return bool(MAKERS[mk].get("grey"))
+
+
+def dot(name: str) -> str:
+    """A setup's maker dot in a table row; a grey maker's name written after it (logic #4436)."""
+    mk, colour = maker(name)
+    return (f'<i class="swatch hl-dot" style="background:{colour}" title="{esc(mk)}"></i>'
+            + (f'<span class="mk-name">{esc(mk)}</span>' if is_grey(mk) else ""))
+
+
 def maker_legend(names) -> str:
-    """A swatch per maker of the given setups, in maker_palette.json's order."""
+    """A swatch per coloured maker of the given setups, in maker_palette.json's order, then one grey swatch naming the
+    grey makers among them (logic #4436)."""
     present = {maker(n)[0] for n in names}
-    return "".join(f'<span><i class="swatch" style="background:{v["colour"]}"></i>{esc(m)}</span>'
-                   for m, v in MAKERS.items() if m in present)
+    grey = [m for m in MAKERS if m in present and is_grey(m)]
+    return ("".join(f'<span><i class="swatch" style="background:{v["colour"]}"></i>{esc(m)}</span>'
+                    for m, v in MAKERS.items() if m in present and not is_grey(m))
+            + (f'<span><i class="swatch" style="background:{MAKERS[grey[0]]["colour"]}"></i>grey: '
+               f'{esc(", ".join(grey))}</span>' if grey else ""))
 
 
 def chart_rows(S, lg, measure: str) -> list:

@@ -121,10 +121,8 @@ def maker_mark(name: str, group: str) -> str:
     import home as H
     if is_program(group):
         return '<i class="swatch hl-dot swatch-program"></i>'
-    mk, colour = H.maker(name)
     fam = H.family(name)
-    return (f'<svg class="fam-icon" aria-hidden="true" focusable="false"><use href="#{fam["icon"]}"/></svg>'
-            f'<i class="swatch hl-dot" style="background:{colour}" title="{esc(mk)}"></i>')
+    return f'<svg class="fam-icon" aria-hidden="true" focusable="false"><use href="#{fam["icon"]}"/></svg>{H.dot(name)}'
 
 
 def class_key(name: str, group: str) -> str:
@@ -453,8 +451,9 @@ def chart(N) -> str:
     for p in pts:
         cx, cy = x(p["standard_pr"]), y(p["nackgammon_pr"])
         cls = setup_class(p["setup"])
-        tip = (f'{p["setup"]} ({(cls + " · ") if cls else ""}{GROUP_SHOWN[p["group"]]}): standard PR {fmt(p["standard_pr"], 2)}, Nackgammon PR '
-               f'{fmt(p["nackgammon_pr"], 2)}')
+        mk = "" if p["group"] == "yardstick" else f'{maker(p["setup"])[0]} · '
+        tip = (f'{p["setup"]} ({mk}{(cls + " · ") if cls else ""}{GROUP_SHOWN[p["group"]]}): standard PR '
+               f'{fmt(p["standard_pr"], 2)}, Nackgammon PR {fmt(p["nackgammon_pr"], 2)}')
         mark = (f'<rect class="nack-yard" x="{cx - 5:.1f}" y="{cy - 5:.1f}" width="10" height="10"/>'
                 f'<text x="{cx + 8:.1f}" y="{cy + 4:.1f}">{esc(p["setup"])}</text>' if p["group"] == "yardstick"
                 else f'<circle class="nack-dot" cx="{cx:.1f}" cy="{cy:.1f}" r="4.5" style="fill:{maker(p["setup"])[1]}"/>')

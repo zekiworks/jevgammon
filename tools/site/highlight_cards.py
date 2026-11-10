@@ -75,7 +75,7 @@ def improve_card(S) -> dict:
                       "a statistical test. The other models are still running; their numbers are not results yet."),
                 line=f"Risks found before \u2192 after, finished models: {line}" if done else
                 "No model has finished yet: every model is still running.",
-                link=(IP.PATH, "Open Did they improve?"))
+                link=(IP.PATH, "Did they improve?"))
 
 
 def cautious_card(S) -> dict:
@@ -124,7 +124,7 @@ def leaderboard_card(S) -> dict | None:
                       "leagues, and a late entry played its league's field after the league finished, so the rows "
                       "compare only loosely."),
                 line=f"{part(ci, c, 'chat')} \u00b7 {part(di, d, 'decision')}",
-                link=("#headline-table", "Open the leaderboard"))
+                link=("#headline-table", "The leaderboard"))
 
 
 def reasoning_card(S) -> dict | None:

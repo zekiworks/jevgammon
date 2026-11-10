@@ -297,7 +297,7 @@ def links_line(S, x, rel: str = "") -> str:
     rel: the page's way to the site root."""
     href, page = decisions_href(S, x), page_href(S, x)
     return " \u00b7 ".join(p for p in (
-        f'<a href="{rel}{href}">{"Its late-entry page" if x["late"] else "Open its decisions"} \u2192</a>' if href else None,
+        f'<a href="{rel}{href}">{"Its late-entry page" if x["late"] else "Its decisions"} \u2192</a>' if href else None,
         f'<a href="{rel}{page}">Model page</a>' if page else None) if p)
 
 

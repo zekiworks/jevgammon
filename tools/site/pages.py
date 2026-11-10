@@ -1671,7 +1671,7 @@ def highlight_slot(S, out: Path, i: int, h: dict) -> str:
              f'worth {fmt(f["equity_difference"], 3)} more in equity (GNU Backgammon 2-ply)</dd></dl>')
     return (f'{head} data-slot="filled"><h2>{esc(h["title"])}</h2><div class="highlight-body">'
             f'<figure class="hero-board">{svg}</figure><div>{facts}{coming}'
-            f'<p><a href="{href}">Open this decision</a></p></div></div></section>')
+            f'<p><a href="{href}">This decision</a></p></div></div></section>')
 
 
 def highlights_page(S, out: Path) -> str:
@@ -1692,20 +1692,20 @@ def experiments_page(S) -> str:
     cards = [
         ("clear-risk", "Clear risk", "Preliminary",
          "Clear-risk scan: decisions where a risk or safety is clearly better, per setup, checks, a rollout check and a "
-         "partial model quiz.", [("../clear-risk/", "Open Clear risk")]),
+         "partial model quiz.", [("../clear-risk/", "Clear risk")]),
         ("nackgammon", "Nackgammon", "Finished",
          "Does a model still play well when the starting position changes? Nackgammon has the rules of backgammon; only "
          "the starting position differs.",
-         [("../nackgammon/", "Open Nackgammon"), ("../leagues/#nack-knockout", "The knockout"),
+         [("../nackgammon/", "Nackgammon"), ("../leagues/#nack-knockout", "The knockout"),
           ("../matches/#stage-knockout", "Its matches")]),
         ("learning", "Learning from experience", lstatus,
          "Does a model play better after seeing its own earlier games? " + esc(L["plan"]["commitment"]),
-         [(f"../{improve_page.PATH}", "Open Did they improve? (every model)"),
+         [(f"../{improve_page.PATH}", "Did they improve? (every model)"),
           (f"../{learning_page.PATH}", "The pilot (one model)")]),
         ("improve", improve_page.TITLE, improve_page.eyebrow(I) if I["preregistration_only"] or not I.get("status")
          else I["status"]["line"],
          "Does each chat model on the leaderboard take risks better after writing its own lessons over 10 games? "
-         + esc(I["plan"]["commitment"]), [(f"../{improve_page.PATH}", "Open Did they improve?")])]
+         + esc(I["plan"]["commitment"]), [(f"../{improve_page.PATH}", "Did they improve?")])]
     out = "".join(
         f'<section class="card experiment-card" id="{cid}"><h2>{esc(title)}</h2>'
         f'{status_badge(status) if status else ""}<p>{text}</p><p class="hero-links">'

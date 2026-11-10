@@ -1130,9 +1130,9 @@ def model_class(model: str) -> str | None:
 
 def _short(b: float) -> str:
     """A count in billions for the label after a name (turkce #4231, #4237, the three sites' format): trillions to one
-    decimal from 1,000B ('2.8T'), whole from 10B ('26B', '276B'), at most one decimal under 10B ('7.9B', '2.5B'; a
-    whole maker's figure as is: '9B')."""
-    return f"{b / 1000:.1f}T" if b >= 1000 else f"{round(b)}B" if b >= 10 else f"{round(b, 1):g}B"
+    decimal from 1,000B ('2.8T'), whole from 10B ('26B', '276B'), one decimal under 10B ('7.9B', '9.0B', '4.0B'; logic
+    #4361, as on Reading)."""
+    return f"{b / 1000:.1f}T" if b >= 1000 else f"{round(b)}B" if b >= 10 else f"{b:.1f}B"
 
 
 def class_label(model: str) -> str:

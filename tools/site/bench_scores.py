@@ -32,6 +32,28 @@ QUANT = re.compile(r"\b(FP8|NVFP4|BF16)\b", re.I)
 # note ('(open)' etc.), lower case, spaces to '-', dots kept: 'gpt-6-astra', 'claude-fable-5.1', 'reax-1.3', 'cygnet'.
 # All benches joins on repo where both rows have one, else on this key. Settings never split a key.
 KEY_OK = re.compile(r"^[a-z0-9][a-z0-9.+-]*$")
+# The other benches' names for our leaderboard rows (Ümit #4270): All benches joins rows on the name, so a model's row
+# here carries the name the Logic & Math and Reading feeds give the same model and route; the key follows from it.
+# Our setup on a different route than their row: their name with the route suffix in their style, and the route in
+# `notes`. Leaderboard name -> (feed name, route note or None, (repo, commit) of the served checkpoint where our
+# records name it and setups.json does not, else None). problems() fails on an entry no leaderboard row uses.
+FEED_NAMES = {
+    # Reading 'Perplexity Decider 27B v1.2 (local GPU)' (perplexity-ai/pplx-decider-v1.2, self-hosted); Logic & Math
+    # has only the API row 'Perplexity Decider 27B v1.2 API'.
+    # Served from snapshot 225c913 (tools/v3/servers/decider-v1.2.sh), Reading's commit.
+    "Decider v1.2 27B": ("Perplexity Decider 27B v1.2 (local GPU)", None,
+                         ("perplexity-ai/pplx-decider-v1.2", "225c913ddc8761a8264f04f64548e1f97e443eb3")),
+    # Logic & Math, Reading 'Perplexity Decider Flash v1.2' (perplexity-ai/pplx-decider-flash-v1.2, self-hosted).
+    "Decider Flash v1.2": ("Perplexity Decider Flash v1.2", None, None),
+    # Reading 'Perplexity Decider 27B v1.1' is the Perplexity Decisions API; ours ran on our GPUs.
+    "Decider v1.1 27B": ("Perplexity Decider 27B v1.1 (local GPU)",
+                         "route: our GPUs (released checkpoint); the other benches' row is the Perplexity Decisions API",
+                         None),
+    # Logic & Math, Reading 'Inception Mercury Decide' (OpenRouter System One API; ours: OpenRouter, Inception).
+    "Mercury Decide": ("Inception Mercury Decide", None, None),
+    # Reading 'GPT-6 Luna (Decisions API)' (OpenAI Decisions API); not 'GPT-6 Luna (chat API)'.
+    "GPT-6 Luna": ("GPT-6 Luna (Decisions API)", None, None),
+}
 
 
 def model_key(model: str) -> str:
@@ -100,12 +122,18 @@ def build(S) -> dict:
             notes.append(f"late entry: its own decisions in late-entry matches against League {lg}'s field "
                          f"(different positions from the league's); scored against League {lg}'s Random")
         notes.append("run on our GPUs" if m.get("runs_on") == "our GPUs" else "hosted (API or subscription)")
+        name, route, ckpt = FEED_NAMES.get(x["name"], (x["name"], None, None))
+        if route:
+            notes.append(route)
+        if ckpt and repo is None:
+            repo, commit = ckpt
         if imp is not None:
             imp = round(imp, 2)
             notes.append("improvement_points: change in risks found, percentage points of risk-pays decisions "
                          "(with lessons minus no memory)")
         rows.append(dict(
-            repo=repo, commit=commit, name=x["name"], model_key=model_key(x["model"]), maker=H.maker(x["name"])[0],
+            repo=repo, commit=commit, name=name, model_key=model_key(name if x["name"] in FEED_NAMES else x["model"]),
+            maker=H.maker(x["name"])[0],
             kind=ST.model_type(S, x),
             params_total=p["total_b"], params_active=p["active_b"] if p["moe"] else p["total_b"], quantization=quant,
             score_0_100=score(q.get("error_rate"), rnd[lg]),
@@ -136,7 +164,11 @@ def problems(S, doc) -> list[str]:
         return [f"{PATH}: bench/title/url/updated/score/models of the wrong type"]
     model_rows, prog_rows = ST.leaderboard_rows(S)
     rnd = randoms(prog_rows)
-    expect = {x["name"]: ((x["q"] or {}).get("error_rate"), league_of(x)) for x, *_ in model_rows}
+    expect = {FEED_NAMES.get(x["name"], (x["name"],))[0]: ((x["q"] or {}).get("error_rate"), league_of(x))
+              for x, *_ in model_rows}
+    unused = sorted(set(FEED_NAMES) - {x["name"] for x, *_ in model_rows})
+    if unused:
+        out.append(f"{PATH}: FEED_NAMES entries for no leaderboard model row: {unused}")
     num = lambda v: isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
     opt = lambda v, t: v is None or t(v)
     for r in doc["models"]:

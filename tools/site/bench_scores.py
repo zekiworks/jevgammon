@@ -35,8 +35,9 @@ KEY_OK = re.compile(r"^[a-z0-9][a-z0-9.+-]*$")
 # The other benches' names for our leaderboard rows (Ümit #4270): All benches joins rows on the name, so a model's row
 # here carries the name the Logic & Math and Reading feeds give the same model and route; the key follows from it.
 # Our setup on a different route than their row: their name with the route suffix in their style, and the route in
-# `notes`. Leaderboard name -> (feed name, route note or None, (repo, commit) of the served checkpoint where our
-# records name it and setups.json does not, else None). problems() fails on an entry no leaderboard row uses.
+# `notes`; a setting their name leaves out goes there too. Leaderboard name -> (feed name, note or None, (repo, commit)
+# of the served checkpoint where our records name it and setups.json does not, else None). problems() fails on an
+# entry no leaderboard row uses.
 FEED_NAMES = {
     # Reading 'Perplexity Decider 27B v1.2 (local GPU)' (perplexity-ai/pplx-decider-v1.2, self-hosted); Logic & Math
     # has only the API row 'Perplexity Decider 27B v1.2 API'.
@@ -53,6 +54,33 @@ FEED_NAMES = {
     "Mercury Decide": ("Inception Mercury Decide", None, None),
     # Reading 'GPT-6 Luna (Decisions API)' (OpenAI Decisions API); not 'GPT-6 Luna (chat API)'.
     "GPT-6 Luna": ("GPT-6 Luna (Decisions API)", None, None),
+    # Reading 'GPT-6 Astra', 'GPT-6.1 Sol' (Codex CLI, ChatGPT subscription; ours: ChatGPT subscription).
+    "GPT-6 Astra (high)": ("GPT-6 Astra", "setting: high", None),
+    "GPT-6.1 Sol (high)": ("GPT-6.1 Sol", "setting: high", None),
+    # Reading 'Gemini 4 Argon', 'Gemini 3.8 Flash' (Gemini API; ours: Google Antigravity subscription).
+    "Gemini 4 Argon (high)": ("Gemini 4 Argon", "setting: high; route: Google Antigravity subscription", None),
+    "Gemini 3.8 Flash (high)": ("Gemini 3.8 Flash", "setting: high; route: Google Antigravity subscription", None),
+    # Reading 'Claude Fable 5.1', 'Claude Opus 5.5', 'Claude Sonnet 5.5' (Claude Code CLI, Claude subscription).
+    "Claude Fable 5.1 (high)": ("Claude Fable 5.1", "setting: high", None),
+    "Claude Opus 5.5 (high)": ("Claude Opus 5.5", "setting: high", None),
+    "Claude Sonnet 5.5 (high)": ("Claude Sonnet 5.5", "setting: high", None),
+    # Reading 'Grok 4.7' (xAI Responses API, SuperGrok subscription; ours: SuperGrok subscription).
+    "Grok 4.7 (high)": ("Grok 4.7", "setting: high", None),
+    # Reading 'Kimi K3.1 Pro' (OpenRouter, Moonshot AI's endpoint, mxfp4; ours the same endpoint).
+    "Kimi K3.1 Pro (off)": ("Kimi K3.1 Pro", "setting: off", None),
+    # Reading 'GLM-5.3' (OpenRouter, Fireworks endpoint; ours: Fireworks via OpenRouter).
+    "GLM-5.3 (low)": ("GLM-5.3", "setting: low", None),
+    # Logic & Math, Reading 'Gemma 4 31B' (google/gemma-4-31B-it, self-hosted, FP8).
+    "Gemma 4 31B (on)": ("Gemma 4 31B", "setting: on", None),
+    # Logic & Math, Reading 'Qwen3.8-27B' (Qwen/Qwen3.8-27B, self-hosted).
+    "Qwen3.8-27B (low)": ("Qwen3.8-27B", "setting: low", None),
+    # Logic & Math, Reading 'Mammoth-1', 'Elephant-1' (baselabs/*, self-hosted through the model card's loader).
+    "Base Labs Mammoth-1": ("Mammoth-1", None, None),
+    "Base Labs Elephant-1": ("Elephant-1", None, None),
+    # Logic & Math, Reading 'Fastino GLiDE v1.2' (fastino/GLiDE, self-hosted, Fastino's server).
+    "Fastino GLiDE v1.2 (local)": ("Fastino GLiDE v1.2", None, None),
+    # Logic & Math, Reading 'Cygnet' (Cygnet decision server on vLLM, self-hosted).
+    "Cygnet (Gemma 4 12B)": ("Cygnet", None, None),
 }
 
 

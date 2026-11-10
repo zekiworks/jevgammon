@@ -239,6 +239,26 @@ pub const SERVICES: &[Service] = &[
         openai_format: false,
         max_choices: 200,
     },
+    // PelaAI's KnowLine-31B-Gen1.5 (dense Gemma 4 31B fine-tune) behind the knowline_server.py its
+    // Hugging Face repo ships, started by the repo's serve_knowline.sh (SGLang bf16 + the
+    // /v1/systemone front end, served model name `m`, which the front end echoes and otherwise
+    // ignores). One label token per option: at most 255 options per question (longer play lists
+    // are split as for every 255-option service) and 64 questions per request. The front end
+    // never truncates: SGLang (no --allow-auto-truncate) refuses a prompt longer than its context
+    // or KV pool and the front end answers 422, which fails the decision. League 1's longest
+    // single request, 251 options, is 27,849 Gemma 4 tokens; spark2's pool holds 53,181.
+    Service {
+        provider: "knowline",
+        label: "KnowLine (local)",
+        base_url: "http://127.0.0.1:19360",
+        url_var: "KNOWLINE_BASE_URL",
+        path: "/v1/systemone",
+        key_vars: &[],
+        key_required: false,
+        default_model: Some("m"),
+        openai_format: false,
+        max_choices: 255,
+    },
 ];
 
 pub fn service(provider: &str) -> Option<&'static Service> {

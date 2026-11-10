@@ -848,6 +848,108 @@ mod tests {
         assert_eq!(asked(&player).len(), 2);
     }
 
+    /// A one-shot System One server on 127.0.0.1: answers the first request with a fixed
+    /// distribution (0.7 for the third option, the rest shared) and hands back its body.
+    fn systemone_stub() -> (String, std::thread::JoinHandle<serde_json::Value>) {
+        use std::io::{BufRead, BufReader, Read, Write};
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let url = format!("http://{}", listener.local_addr().unwrap());
+        let handle = std::thread::spawn(move || {
+            let (stream, _) = listener.accept().unwrap();
+            let mut reader = BufReader::new(stream.try_clone().unwrap());
+            let mut length = 0;
+            loop {
+                let mut line = String::new();
+                reader.read_line(&mut line).unwrap();
+                if line == "\r\n" {
+                    break;
+                }
+                if let Some((name, value)) = line.split_once(':')
+                    && name.eq_ignore_ascii_case("content-length")
+                {
+                    length = value.trim().parse().unwrap();
+                }
+            }
+            let mut body = vec![0; length];
+            reader.read_exact(&mut body).unwrap();
+            let body: serde_json::Value = serde_json::from_slice(&body).unwrap();
+            let keys: Vec<String> = body["questions"]["play"]["criteria"]
+                .as_object()
+                .unwrap()
+                .keys()
+                .cloned()
+                .collect();
+            let rest = 0.3 / (keys.len() - 1) as f64;
+            let probabilities: serde_json::Map<String, serde_json::Value> = keys
+                .iter()
+                .enumerate()
+                .map(|(i, k)| (k.clone(), (if i == 2 { 0.7 } else { rest }).into()))
+                .collect();
+            let answer = serde_json::json!({
+                "id": "jev-stub", "model": body["model"],
+                "answers": {"play": {"type": "choice", "choice": keys[2], "probabilities": probabilities, "confidence": 0.5}},
+                "usage": {"input_tokens": 1234, "output_tokens": 1}
+            })
+            .to_string();
+            let mut stream = stream;
+            write!(
+                stream,
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{answer}",
+                answer.len()
+            )
+            .unwrap();
+            body
+        });
+        (url, handle)
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn knowline_sends_every_option_in_one_request_and_keeps_its_probabilities() {
+        let mut board = Board::start();
+        board.pts[12] = 3;
+        board.pts[7] = 5;
+        let plays = board.legal_plays(2, 1);
+        let n = plays.len();
+        assert!(n > 8, "{n}");
+        let notations: Vec<String> = plays.iter().map(|p| p.notation()).collect();
+        let order: Vec<usize> = (0..n).rev().collect();
+        let retry = RetryTime::default();
+        let req = request(&board, &plays, &notations, &order, 1, &retry);
+        let (url, stub) = systemone_stub();
+        let service = decision::service("knowline").expect("knowline service");
+        let client =
+            decision::DecisionClient::new(reqwest::Client::new(), service, None, Some(&url))
+                .unwrap();
+        assert_eq!(client.max_choices(), 255);
+        let player = Player {
+            spec: "knowline".into(),
+            provider: "knowline".into(),
+            quantization: Some("bf16".into()),
+            reasoning: None,
+            price: None,
+            requests: None,
+            backend: Backend::Decision(client),
+        };
+        let decision = player.decide(&req).await.unwrap();
+        let body = stub.join().unwrap();
+        assert_eq!(body["model"], "m");
+        assert_eq!(body["state"], prompt::state(&req));
+        let shown: Vec<&String> = body["questions"]["play"]["criteria"]
+            .as_object()
+            .unwrap()
+            .keys()
+            .collect();
+        let want: Vec<&String> = order.iter().map(|&i| &notations[i]).collect();
+        assert_eq!(shown, want, "every option in the seeded order");
+        assert!(!decision.invalid && decision.group_size.is_none());
+        assert_eq!(decision.exchanges.len(), 1);
+        assert_eq!(decision.index, order[2]);
+        assert_eq!(decision.probability_source, Some("decision"));
+        assert_eq!(decision.probabilities.len(), n);
+        assert!(decision.probabilities.contains(&(order[2], 0.7)));
+        assert_eq!(decision.input_tokens, 1234);
+    }
+
     #[test]
     fn cost_uses_the_price_table() {
         let player = Player {

@@ -432,7 +432,7 @@ def chart_legend(N) -> str:
 
 
 def chart(N) -> str:
-    import home as H
+    from home import maker
     pts = N["chart"]
     W, H, L, B, T, R = 640, 520, 56, 46, 14, 16
     top = max([max(p["standard_pr"], p["nackgammon_pr"]) for p in pts] or [10])
@@ -457,7 +457,7 @@ def chart(N) -> str:
                f'{fmt(p["nackgammon_pr"], 2)}')
         mark = (f'<rect class="nack-yard" x="{cx - 5:.1f}" y="{cy - 5:.1f}" width="10" height="10"/>'
                 f'<text x="{cx + 8:.1f}" y="{cy + 4:.1f}">{esc(p["setup"])}</text>' if p["group"] == "yardstick"
-                else f'<circle class="nack-dot" cx="{cx:.1f}" cy="{cy:.1f}" r="4.5" style="fill:{H.maker(p["setup"])[1]}"/>')
+                else f'<circle class="nack-dot" cx="{cx:.1f}" cy="{cy:.1f}" r="4.5" style="fill:{maker(p["setup"])[1]}"/>')
         parts.append(f'<g class="pt" data-setup="{esc(p["setup"])}" data-x="{p["standard_pr"]}" '
                      f'data-y="{p["nackgammon_pr"]}"><title>{esc(tip)}</title>{mark}</g>')
     note = (f"{TITLE}: standard PR (x) against Nackgammon PR (y), main 200 pairs; dashed diagonal = no change; above it "

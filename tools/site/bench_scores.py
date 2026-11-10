@@ -15,54 +15,82 @@ import re
 import home as H
 import pages as P
 import story as ST
-from common import LATE_ENTRY
+from common import LATE_ENTRY, model_key, name_and_tag, tag_text
 
 PATH = "bench-scores.json"
 METRIC = "error rate (PR, lower is better)"
 CALIBRATION_NOTE = "calibration definition pending Ümit"
 # The schema's keys (turkce #4062): checks.py refuses any other.
 TOP_KEYS = {"bench", "title", "url", "updated", "score", "models"}
-ROW_KEYS = {"repo", "commit", "name", "model_key", "maker", "kind", "params_total", "params_active", "quantization",
+ROW_KEYS = {"repo", "commit", "name", "tag", "model_key", "maker", "kind", "params_total", "params_active", "quantization",
             "score_0_100", "raw", "calibration_error", "improvement_points", "runs", "notes"}
 RAW_KEYS = {"metric", "value", "questions", "options"}
 # A locally served open-weights setup's recorded checkpoint in setups.json model_id: "<owner>/<repo> @ <commit>".
 CHECKPOINT = re.compile(r"^([\w.-]+/[\w.-]+) @ ([0-9a-f]{7,40})\b")
 QUANT = re.compile(r"\b(FP8|NVFP4|BF16)\b", re.I)
-# The cross-site join key (bus #4243, turkce #4251): the model's name without its setting, route or a parenthesised
-# note ('(open)' etc.), lower case, spaces to '-', dots kept: 'gpt-6-astra', 'claude-fable-5.1', 'reax-1.3', 'cygnet'.
+# The cross-site join key (bus #4243, turkce #4251; common.model_key): the model's name without its setting, route or a
+# parenthesised note, lower case, spaces to '-', dots kept: 'gpt-6-astra', 'claude-fable-5.1', 'reax-1.3', 'cygnet'.
 # All benches joins on repo where both rows have one, else on this key. Settings never split a key.
 KEY_OK = re.compile(r"^[a-z0-9][a-z0-9.+-]*$")
-# Row names are the site's shown names (content/labels.json "models", Ümit #4282 item 4), which are the names the Logic &
-# Math and Reading feeds give the same model, with a route suffix where our route differs from theirs. Here a row
-# whose shown name carries a setting their name leaves out gets their name, the setting in `notes` (Ümit #4270), and a
-# row on another route than theirs the route in `notes`: shown name -> (feed name, note). CHECKPOINTS: the (repo,
-# commit) of the served checkpoint where our records name it and setups.json does not. problems() fails on an entry
-# no leaderboard row uses.
+# Names (Ümit #4445, turkce #4449, Zeki #4448): `name` is the maker's official name (common.name_and_tag, the shared
+# names file), `tag` how we ran the row's setup ('setting · route · snapshot', '' without one), as the site shows them.
+# A name no longer tells routes or snapshots apart, so each row's model_key is frozen here, by the row's setup (the
+# keys of 10 Nov 2026, before the names changed): two rows of one official name ('GLiDE', API and v1.2) keep their keys.
+# A row not listed (a model added later) gets common.model_key of its shown model name, which keeps a route or
+# snapshot ('fastino-glide-v1.2', 'deepseek-v4.1-flash-1017'). The note: where the row's setting or route differs from
+# the other benches' row of the model (Ümit #4270), unchanged. CHECKPOINTS: the (repo, commit) of the served checkpoint
+# where our records name it and setups.json does not. problems() fails on two rows with one key and on an entry no
+# leaderboard row uses.
 FEED_ROWS = {
+    # Reading 'GPT-6 Astra', 'GPT-6.1 Sol' (Codex CLI, ChatGPT subscription; ours: ChatGPT subscription).
+    "GPT-6 Astra (high)": ("gpt-6-astra", "setting: high"),
+    "GPT-6.1 Sol (high)": ("gpt-6.1-sol", "setting: high"),
+    # Reading 'Gemini 4 Argon', 'Gemini 3.8 Flash' (Gemini API; ours: Google Antigravity subscription).
+    "Gemini 4 Argon (high)": ("gemini-4-argon", "setting: high; route: Google Antigravity subscription"),
+    "Gemini 3.8 Flash (high)": ("gemini-3.8-flash", "setting: high; route: Google Antigravity subscription"),
+    # Reading 'Claude Fable 5.1', 'Claude Opus 5.5', 'Claude Sonnet 5.5' (Claude Code CLI, Claude subscription).
+    "Claude Fable 5.1 (high)": ("claude-fable-5.1", "setting: high"),
+    "Claude Opus 5.5 (high)": ("claude-opus-5.5", "setting: high"),
+    "Claude Sonnet 5.5 (high)": ("claude-sonnet-5.5", "setting: high"),
+    # Reading 'Grok 4.7' (xAI Responses API, SuperGrok subscription; ours: SuperGrok subscription).
+    "Grok 4.7 (high)": ("grok-4.7", "setting: high"),
+    "DeepSeek-V4.1-Flash (low)": ("deepseek-v4.1-flash", None),
+    # Logic & Math, Reading 'Gemma 4 31B' (google/gemma-4-31B-it, self-hosted, FP8).
+    "Gemma 4 31B (on)": ("gemma-4-31b", "setting: on"),
+    "REAX 1.3": ("reax-1.3", None),
+    "Mammoth-1": ("mammoth-1", None),
+    # Reading 'Kimi K3.1 Pro' (OpenRouter, Moonshot AI's endpoint, mxfp4; ours the same endpoint).
+    "Kimi K3.1 Pro (off)": ("kimi-k3.1-pro", "setting: off"),
+    # Logic & Math, Reading 'Qwen3.8-27B' (Qwen/Qwen3.8-27B, self-hosted).
+    "Qwen3.8-27B (low)": ("qwen3.8-27b", "setting: low"),
+    "Drex Max v1": ("drex-max-v1", None),
+    "Drex Max 1.1": ("drex-max-1.1", None),
+    "Liquid d1-ultra": ("liquid-d1-ultra", None),
+    # Reading 'GLM-5.3' (OpenRouter, Fireworks endpoint; ours: Fireworks via OpenRouter).
+    "GLM-5.3 (low)": ("glm-5.3", "setting: low"),
+    "Jev 1.14.0": ("jev-1.14.0", None),
+    "Fastino GLiDE": ("fastino-glide", None),
+    "Jev 1.13.0": ("jev-1.13.0", None),
+    "Qwen3.8 Flash (off)": ("qwen3.8-flash", None),
+    "Fastino GLiDE v1.2": ("fastino-glide-v1.2", None),
+    "Celeris-1 Decision": ("celeris-1-decision", None),
+    "Perplexity Decider 27B v1.2 (local GPU)": ("perplexity-decider-27b-v1.2", None),
+    "Clef": ("clef", None),
+    "Drex 2.0": ("drex-2.0", None),
+    "Cygnet": ("cygnet", None),
     # Reading 'Perplexity Decider 27B v1.1' is the Perplexity Decisions API; ours ran on our GPUs.
     "Perplexity Decider 27B v1.1 (local GPU)": (
-        "Perplexity Decider 27B v1.1 (local GPU)",
+        "perplexity-decider-27b-v1.1",
         "route: our GPUs (released checkpoint); the other benches' row is the Perplexity Decisions API"),
-    # Reading 'GPT-6 Astra', 'GPT-6.1 Sol' (Codex CLI, ChatGPT subscription; ours: ChatGPT subscription).
-    "GPT-6 Astra (high)": ("GPT-6 Astra", "setting: high"),
-    "GPT-6.1 Sol (high)": ("GPT-6.1 Sol", "setting: high"),
-    # Reading 'Gemini 4 Argon', 'Gemini 3.8 Flash' (Gemini API; ours: Google Antigravity subscription).
-    "Gemini 4 Argon (high)": ("Gemini 4 Argon", "setting: high; route: Google Antigravity subscription"),
-    "Gemini 3.8 Flash (high)": ("Gemini 3.8 Flash", "setting: high; route: Google Antigravity subscription"),
-    # Reading 'Claude Fable 5.1', 'Claude Opus 5.5', 'Claude Sonnet 5.5' (Claude Code CLI, Claude subscription).
-    "Claude Fable 5.1 (high)": ("Claude Fable 5.1", "setting: high"),
-    "Claude Opus 5.5 (high)": ("Claude Opus 5.5", "setting: high"),
-    "Claude Sonnet 5.5 (high)": ("Claude Sonnet 5.5", "setting: high"),
-    # Reading 'Grok 4.7' (xAI Responses API, SuperGrok subscription; ours: SuperGrok subscription).
-    "Grok 4.7 (high)": ("Grok 4.7", "setting: high"),
-    # Reading 'Kimi K3.1 Pro' (OpenRouter, Moonshot AI's endpoint, mxfp4; ours the same endpoint).
-    "Kimi K3.1 Pro (off)": ("Kimi K3.1 Pro", "setting: off"),
-    # Reading 'GLM-5.3' (OpenRouter, Fireworks endpoint; ours: Fireworks via OpenRouter).
-    "GLM-5.3 (low)": ("GLM-5.3", "setting: low"),
-    # Logic & Math, Reading 'Gemma 4 31B' (google/gemma-4-31B-it, self-hosted, FP8).
-    "Gemma 4 31B (on)": ("Gemma 4 31B", "setting: on"),
-    # Logic & Math, Reading 'Qwen3.8-27B' (Qwen/Qwen3.8-27B, self-hosted).
-    "Qwen3.8-27B (low)": ("Qwen3.8-27B", "setting: low"),
+    "SubQ Snap 1.1": ("subq-snap-1.1", None),
+    "GPT-6 Luna (Decisions API)": ("gpt-6-luna", None),
+    "SubQ Snap Preview": ("subq-snap-preview", None),
+    "Elephant-1": ("elephant-1", None),
+    "LFM2.5-24B-A2B (on)": ("lfm2.5-24b-a2b", None),
+    "Inception Mercury Decide": ("inception-mercury-decide", None),
+    "Winnow-12B": ("winnow-12b", None),
+    "Perplexity Decider Flash v1.2": ("perplexity-decider-flash-v1.2", None),
+    "Open-Jev 27B v1.1": ("open-jev-27b-v1.1", None),
 }
 CHECKPOINTS = {
     # Served from snapshot 225c913 (tools/v3/servers/decider-v1.2.sh), Reading's commit.
@@ -71,8 +99,9 @@ CHECKPOINTS = {
 }
 
 
-def model_key(model: str) -> str:
-    return re.sub(r"\s+", "-", re.sub(r"\s*\([^)]*\)", "", model).strip().lower())
+def row_key(x) -> str:
+    """The row's model_key: frozen in FEED_ROWS, else common.model_key of its shown model name."""
+    return FEED_ROWS[x["name"]][0] if x["name"] in FEED_ROWS else model_key(x["model"])
 
 
 def score(error_rate: float | None, random: float) -> float | None:
@@ -137,7 +166,8 @@ def build(S) -> dict:
             notes.append(f"late entry: its own decisions in late-entry matches against League {lg}'s field "
                          f"(different positions from the league's); scored against League {lg}'s Random")
         notes.append("run on our GPUs" if m.get("runs_on") == "our GPUs" else "hosted (API or subscription)")
-        name, note = FEED_ROWS.get(x["name"], (x["name"], None))
+        note = FEED_ROWS.get(x["name"], (None, None))[1]
+        name, parts = name_and_tag(x["name"], x["ds"])
         ckpt = CHECKPOINTS.get(x["name"])
         if note:
             notes.append(note)
@@ -148,7 +178,7 @@ def build(S) -> dict:
             notes.append("improvement_points: change in risks found, percentage points of risk-pays decisions "
                          "(with lessons minus no memory)")
         rows.append(dict(
-            repo=repo, commit=commit, name=name, model_key=model_key(x["model"]),
+            repo=repo, commit=commit, name=name, tag=tag_text(parts), model_key=row_key(x),
             maker=H.maker(x["name"])[0],
             kind=ST.model_type(S, x),
             params_total=p["total_b"], params_active=p["active_b"] if p["moe"] else p["total_b"], quantization=quant,
@@ -180,8 +210,10 @@ def problems(S, doc) -> list[str]:
         return [f"{PATH}: bench/title/url/updated/score/models of the wrong type"]
     model_rows, prog_rows = ST.leaderboard_rows(S)
     rnd = randoms(prog_rows)
-    expect = {FEED_ROWS.get(x["name"], (x["name"],))[0]: ((x["q"] or {}).get("error_rate"), league_of(x))
+    expect = {row_key(x): ((x["q"] or {}).get("error_rate"), league_of(x), name_and_tag(x["name"], x["ds"]))
               for x, *_ in model_rows}
+    if len(expect) != len(model_rows):
+        out.append(f"{PATH}: two leaderboard model rows with one model_key")
     unused = sorted((set(FEED_ROWS) | set(CHECKPOINTS)) - {x["name"] for x, *_ in model_rows})
     if unused:
         out.append(f"{PATH}: FEED_ROWS/CHECKPOINTS entries for no leaderboard model row: {unused}")
@@ -193,7 +225,8 @@ def problems(S, doc) -> list[str]:
             out.append(f"{PATH}: row {name!r}: keys are not the schema's")
             continue
         raw = r["raw"]
-        types = [isinstance(name, str), isinstance(r["model_key"], str) and bool(KEY_OK.match(r["model_key"])),
+        types = [isinstance(name, str), isinstance(r["tag"], str),
+                 isinstance(r["model_key"], str) and bool(KEY_OK.match(r["model_key"])),
                  isinstance(r["maker"], str), r["kind"] in ("chat", "decision"),
                  opt(r["repo"], lambda v: isinstance(v, str)), opt(r["commit"], lambda v: isinstance(v, str)),
                  (r["repo"] is None) == (r["commit"] is None), opt(r["params_total"], num),
@@ -208,18 +241,22 @@ def problems(S, doc) -> list[str]:
             continue
         if r["score_0_100"] is not None and r["score_0_100"] > 100:
             out.append(f"{PATH}: row {name!r}: score {r['score_0_100']} above 100")
-        if name not in expect:
+        key = r["model_key"]
+        if key not in expect:
             continue
-        er, lg = expect[name]
+        er, lg, (want_name, parts) = expect[key]
+        if (name, r["tag"]) != (want_name, tag_text(parts)):
+            out.append(f"{PATH}: row {key!r}: name and tag {name!r} / {r['tag']!r}, the site shows {want_name!r} / "
+                       f"{tag_text(parts)!r}")
         want = score(er, rnd[lg])
         if raw["value"] != er or not r["notes"].startswith(f"League {lg};") or (want is None) != (
                 r["score_0_100"] is None) or (want is not None and want != r["score_0_100"]):
-            out.append(f"{PATH}: row {name!r}: score {r['score_0_100']} / error rate {raw['value']}, the leaderboard's "
+            out.append(f"{PATH}: row {key!r}: score {r['score_0_100']} / error rate {raw['value']}, the leaderboard's "
                        f"error rate {er} against League {lg}'s Random gives {want}")
         if r["improvement_points"] is not None and r["improvement_points"] != round(r["improvement_points"], 2):
-            out.append(f"{PATH}: row {name!r}: improvement_points not rounded to 2 decimals")
-    names = sorted(r.get("name") for r in doc["models"] if isinstance(r, dict))
+            out.append(f"{PATH}: row {key!r}: improvement_points not rounded to 2 decimals")
+    keys = sorted(r.get("model_key") for r in doc["models"] if isinstance(r, dict))
     want = sorted(expect)
-    if names != want:
-        out.append(f"{PATH}: rows {names} are not the leaderboard's model rows {want}")
+    if keys != want:
+        out.append(f"{PATH}: rows {keys} are not the leaderboard's model rows {want}")
     return out

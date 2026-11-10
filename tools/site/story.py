@@ -15,6 +15,7 @@ import home as H
 import pages as P
 from common import ALL_NOTE, CONTENT, LATE_ENTRY, NA, count, esc, fmt, nm, pct, relabel
 from common import label as shown_name
+from common import base_model, name_and_tag
 
 RELEASES = relabel(json.loads((CONTENT / "release_months.json").read_text())["models"])
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
@@ -179,20 +180,21 @@ def late_tag(x) -> str | None:
 
 
 def chip_text(S, x, kind: str, league: bool = False) -> str:
-    """The one small grey chip after a row's name (Ümit #3193): '<setting> · <chat|decision>' (the setting left out
-    where the setup has none), then its late-entry tag; a program 'program' (an other-league row of a program: its
-    league first)."""
+    """The one small grey chip after a row's name (Ümit #3193, #4445): 'setting · route · snapshot · <chat|decision>'
+    (common.name_and_tag; each part left out where the setup has none), then its late-entry tag; a program 'program'
+    (an other-league row of a program: its league first)."""
     if kind == "program":
         parts = [f'League {x["lg"]["id"]}' if league and x["lg"] else None, "program"]
     else:
         typ = model_type(S, x)
-        parts = [x["setting"], typ if typ in TYPE_LABEL else None]
+        parts = [*name_and_tag(x["name"], x["ds"])[1], typ if typ in TYPE_LABEL else None]
     return " \u00b7 ".join(p for p in parts + [late_tag(x)] if p)
 
 
-def row_name(text: str, setting: str | None) -> str:
-    """The name a row shows: without a trailing '(<setting>)', which its chip carries (data and links keep the name)."""
-    return text.removesuffix(f" ({setting})") if setting else text
+def row_name(x, kind: str) -> str:
+    """The name a row shows: a model's official name (its setting, route and snapshot are in its chip; data and links
+    keep the setup's name), a program's as it is."""
+    return x["name"] if kind == "program" else name_and_tag(x["name"], x["ds"])[0]
 
 
 def judgement_cell(r: dict, colour: str | None) -> str:
@@ -268,8 +270,8 @@ def details_box(S, x, kind: str, bid: str, extra: list, ref: str | None = None) 
     # record · late entry; then the setup's other stored facts; then the links.
     mk = H.maker(x["name"])[0] if kind != "program" else None
     lines = [
-        join([f'<strong>{esc(x["name"])}</strong>'] + ([esc(ref) if ref else None] if kind == "program" else
-             [esc(p) for p in (mk, TYPE_LABEL.get(model_type(S, x)), x["setting"]) if p])),
+        join([f'<strong>{esc(row_name(x, kind))}</strong>'] + ([esc(ref) if ref else None] if kind == "program" else
+             [esc(p) for p in (mk, TYPE_LABEL.get(model_type(S, x)), *name_and_tag(x["name"], x["ds"])[1]) if p])),
         (f'Risk judgement {fmt(r["judgement"])} (95%: {fmt(r["judgement_lo"])}\u2013{fmt(r["judgement_hi"])})'
          if r["judgement"] is not None else None),
         join([f'Risks found {pct(found["share"])}' if found["den"] else None,
@@ -287,6 +289,8 @@ def details_box(S, x, kind: str, bid: str, extra: list, ref: str | None = None) 
         join([cost_text(S, x), f'{count(q["decisions"])} decisions' if q else None]),
         (f'Parameters: {P.params_html(x["model"])}' if kind != "program" else None),
         (esc(P.class_note(x["model"])) if kind != "program" and P.class_note(x["model"]) else None),
+        # The model it is built on (Ümit #4445: in the details, not in the name; content/model_names.json base_model).
+        (f'Base model: {esc(base_model(x["model"]))}' if kind != "program" and base_model(x["model"]) else None),
         *extra,
         links_line(S, x)]
     return box_html(bid, x["name"], lines)
@@ -366,7 +370,7 @@ def headline_rows(S) -> tuple[list, list, list]:
             label = x["name"] if kind == "program" else name
             bid = f"{rid}-box"
             body.append(f'<tr{cls}{tr_attrs(S, x, kind, typ, mclass)} data-box="{bid}">{rank}<td class="model">{dot}{icon}'
-                        f'{name_link(S, x, row_name(label, x["setting"]), bid)}{labelled}{tag}{more}'
+                        f'{name_link(S, x, row_name(x, kind), bid)}{labelled}{tag}{more}'
                         f'{details_box(S, x, kind, bid, extra, ref)}</td>{judgement_cell(x["r"], colour)}{wide_cells(x)}'
                         f'{tier_cell(x if kind == "model" else None)}</tr>')
             for sid, y in zip(sub_ids, others):
@@ -375,7 +379,7 @@ def headline_rows(S) -> tuple[list, list, list]:
                 ytag = f'<span class="hl-tag">{esc(chip_text(S, y, kind, league=True))}</span>'
                 body.append(f'<tr class="hl-sub{"" if kind == "model" else " reference"}" '
                             f'id="{sid}" hidden{tr_attrs(S, y, kind, typ, mclass)} data-box="{ybid}"><td class="num"></td><td class="model">'
-                            f'{name_link(S, y, row_name(y["name"], y["setting"]), ybid)}{ytag}'
+                            f'{name_link(S, y, row_name(y, kind), ybid)}{ytag}'
                             f'{details_box(S, y, kind, ybid, [], ref)}</td>{judgement_cell(y["r"], ycol)}{wide_cells(y)}'
                             f'{tier_cell(None)}</tr>')
             if kind != "program" or x["name"] == "GNUbg weak":

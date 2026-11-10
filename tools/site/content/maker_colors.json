@@ -1,4 +1,4 @@
 {
  "about": "Each setup's maker and the maker's colour, the one colour every chart, the leaderboard and the family icons give its setups (Ümit, bus #2745 item 7; #3635): both come from maker_palette.json, the palette the three Hilde sites share, a byte-identical copy of the Logic & Math site's maker_colours.json (logic #3668). A setup's maker is the palette maker whose families hold the setup's family (families.json), so Jev is TypeSafe's, Open-Jev Zefan Cai's, Clef Cloudflare's, Cygnet Blockbrain Labs' (its recipe over Google's unchanged Gemma 4 12B IT weights), Winnow-12B EldanRing's. A setup without a family, or a family no palette maker (or more than one) holds, fails the build; so does a palette whose sha256 is not the one below (checks.py). The programs (GNUbg weak, Safest, Random) have no maker and keep the program grey.",
- "palette_sha256": "5f16a53f3a032faf64c54428cd510566bc6cb9528cae975e17f72f3c407ec92c"
+ "palette_sha256": "de4ed118e2f67105916c37ea3e7084af168105d87bb22075ffeb0430203652d5"
 }

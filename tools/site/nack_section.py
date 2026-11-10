@@ -497,17 +497,18 @@ def section(N, kinds: dict, chosen: list, L: dict) -> str:
     head_note = (f"Random play's own drop is {fmt(rd1, 1, True)} PR on the main 200 pairs: the Nackgammon positions were "
                  f"{'slightly easier' if rd1 < 0 else 'harder'} for random play, so a drop mixes how a model copes with "
                  "the new start with how hard the positions are; the test cannot separate the two.")
-    keys = ('<span class="keys needs-js" role="group" aria-label="Model type">' + "".join(
-        f'<button type="button" class="key" data-nack-kind-pick="{k}" aria-pressed="{str(k == "all").lower()}">{lab}'
-        '</button>' for k, lab in (("decision", "Decision"), ("chat", "Chat"), ("all", "All"))) + '</span>'
-        '<span class="keys needs-js" role="group" aria-label="Rows">' + "".join(
+    keys = P.show_row("".join(
         f'<button type="button" class="key" data-nack-view="{k}" aria-pressed="{str(k == "model").lower()}">{lab}'
-        '</button>' for k, lab in (("model", "One setting per model"), ("all", "All settings"))) + '</span>')
+        '</button>' for k, lab in (("model", "One row per model"), ("all", "All setups"))))
+    filters = P.filter_box(P.filter_row("Models", "".join(
+        f'<button type="button" class="key" data-nack-kind-pick="{k}" aria-pressed="{str(k == "all").lower()}">{lab}'
+        '</button>' for k, lab in (("all", "All"), ("decision", "Decision models"), ("chat", "Chat models"))))
+        + P.class_keys("nack-class"))
     multi = len([n for n, k in kinds.items() if k != "program"]) - len(chosen)
-    view_note = (f"One setting per model: a model asked at several settings shows the one with its highest stored "
+    view_note = (f"One row per model: a model asked at several settings shows the one with its highest stored "
                  f"risk judgement in league play, on an exact tie the first in league order (chosen from league "
                  f"results, never from this "
-                 f"test); All settings shows every setup asked ({count(multi)} more rows). Decision / Chat is the model "
+                 f"test); All setups shows every setup asked ({count(multi)} more rows). Decision / Chat is the model "
                  f"type; after each name is its model class (the Class row filters every table and the chart) and under it the paired test's group, "
                  f"the setups from one original league, so a chat model can sit in the League 1 group. Every table "
                  f"further down shows every setup.")
@@ -516,8 +517,8 @@ def section(N, kinds: dict, chosen: list, L: dict) -> str:
     return (f'<section class="card" id="{SECTION_ID}" data-nack-kinds="{esc(json.dumps(kinds))}" '
             f'data-nack-chosen="{esc(json.dumps(chosen))}" data-nack-classes="{esc(json.dumps(classes))}">'
             f'{H.FAMILY_ICONS}'
-            f'<div class="section-head"><p class="eyebrow">{esc(TITLE)}</p><h2>{esc(QUESTION)}</h2>{keys}</div>'
-            + P.class_keys("nack-class")
+            f'<div class="section-head"><p class="eyebrow">{esc(TITLE)}</p><h2>{esc(QUESTION)}</h2></div>{keys}'
+            + filters
             + f'<p class="note nack-always"><strong>{esc(UNCLEAR_NOTE)}</strong> {count(n_added)} setups were added after '
             'the results were read; the primary results are shown with and without them.</p>'
             f'<p class="table-note">{esc(head_note)}</p>'

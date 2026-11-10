@@ -8,6 +8,14 @@
   const status = document.getElementById('dec-status');
   const pagerBottom = document.getElementById('dec-pager-bottom');
   if (!controls || !list) return;
+  let filtersOpen = false;
+  controls.addEventListener('click', event => {
+    const key = event.target.closest('[data-dec-filters]');
+    if (!key) return;
+    filtersOpen = !filtersOpen;
+    key.parentElement.classList.toggle('is-open', filtersOpen);
+    key.setAttribute('aria-expanded', String(filtersOpen));
+  });
 
   const MINUS = '\u2212';
   const pages = new Map();
@@ -363,14 +371,18 @@ ${flag}<div class="dec-top"><figure class="dec-board">${boardSVG(d)}</figure>${f
       ['other', `Not close choices (${count(cc.other)})`]] : [['all', 'N/A: no full probability distribution']])
       .map(([k, l]) => `<option value="${k}"${k === v.k ? ' selected' : ''}>${esc(l)}</option>`).join('');
     const statusClass = v.dataset.status.split(/[ (:]/)[0].toLowerCase();
-    controls.innerHTML = `<div class="filters-bar">
+    // The filters (Ümit #4425 JOB 8): on a phone behind one Filters key that counts those not at All (bg.css
+    // .filter-box); the dataset and the setup are the choice of rows, not filters. The key's state outlives a render.
+    const active = [v.r, v.c, v.b, v.k].filter(x => x && x !== 'all').length;
+    controls.innerHTML = `<div class="filter-box${filtersOpen ? ' is-open' : ''}"><button type="button" class="key filter-toggle" data-dec-filters aria-expanded="${filtersOpen}" aria-label="Filters, ${active ? `${active} active` : 'none active'}">Filters<span class="filter-n">${active ? ` (${active})` : ''}</span></button>
+<div class="filter-rows filters-bar">
 <label class="group"><span class="group-label">Dataset</span><select id="dec-dataset">${datasetOptions}</select></label>
 <label class="group"><span class="group-label">Setup</span><select id="dec-setup">${setupOptions}</select></label>
 <label class="group"><span class="group-label">Position class</span><select id="dec-kind">${kindOptions}</select></label>
 <label class="group"><span class="group-label">Risk call</span><select id="dec-call"${v.r === 'none' ? ' disabled' : ''}>${callOptions}</select></label>
 <label class="group"><span class="group-label">Stake, or equity lost by a needless risk</span><select id="dec-band"${v.r === 'none' ? ' disabled' : ''}>${bandOptions}</select></label>
 <label class="group"><span class="group-label">Close choice</span><select id="dec-close"${hasClose ? '' : ' disabled'}>${closeOptions}</select></label>
-<span class="status status-${esc(statusClass)}">${esc(v.dataset.badge)}</span></div>
+<span class="status status-${esc(statusClass)}">${esc(v.dataset.badge)}</span></div></div>
 ${v.dataset.note ? `<p class="note dec-note">${esc(v.dataset.note)}</p>` : ''}
 <p class="note dec-note">Position class, stake and risk call as defined in <a href="../method/#risk">Method</a>; hit risk only: gammon risk and priming are not in it.</p>
 ${v.k !== 'all' ? `<p class="note dec-note">Close choice: the second most likely play has at least half the probability of the first (<a href="../method/#close-choices">Method</a>). Each decision shows p1, p2 and both plays. ${esc(CLOSE_LABEL)}</p>` : ''}

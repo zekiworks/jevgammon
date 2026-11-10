@@ -197,15 +197,15 @@ def row_name(text: str, setting: str | None) -> str:
 
 def judgement_cell(r: dict, colour: str | None) -> str:
     """The risk judgement as a bar on 0 to 100 to the score, its 95% interval as the whisker, the line at 50 (always
-    safe), and the number."""
+    safe), and the number; the interval's bounds in the cell's tooltip and the row's details box (Ümit #4425 JOB 8)."""
     j, lo, hi = r["judgement"], r["judgement_lo"], r["judgement_hi"]
     if j is None:
         return f'<td class="num">{nm(r["judgement_na"] or NA)}</td>'
     fill = f' style="width:{j:.2f}%;background-color:{colour}"' if colour else f' style="width:{j:.2f}%"'
-    return (f'<td class="hl-judgement" data-v="{j}"><span class="hl-bar" aria-hidden="true"><span class="hl-fill'
-            f'{"" if colour else " other"}"{fill}></span><span class="hl-int" style="left:{lo:.2f}%;width:{hi - lo:.2f}%">'
-            f'</span><span class="hl-safe"></span></span><span class="hl-val">{fmt(j)}<span class="small">{fmt(lo)} to '
-            f'{fmt(hi)}</span></span></td>')
+    return (f'<td class="hl-judgement" data-v="{j}" title="95% interval {fmt(lo)} to {fmt(hi)}"><span class="hl-bar" '
+            f'aria-hidden="true"><span class="hl-fill{"" if colour else " other"}"{fill}></span><span class="hl-int" '
+            f'style="left:{lo:.2f}%;width:{hi - lo:.2f}%"></span><span class="hl-safe"></span></span>'
+            f'<span class="hl-val">{fmt(j)}</span></td>')
 
 
 def decisions_href(S, x) -> str | None:
@@ -389,9 +389,9 @@ WIDE_HEAD = ["Risks found", "Safe right", "Error rate (PR)",
              '<span class="cost-1k">$ per 1,000</span><span class="cost-1m">$ per 1M</span>']
 # Ümit #4313: each ranked row's tier from Same positions (story.SAME), after the wide columns; empty where the model is
 # not in that computation (never a guess). Below 900 px the details box carries it, like the other wide columns.
-TIER_HEAD = "Tier (same positions)"
+TIER_HEAD = 'Tier<span class="th-long"> (same positions)</span>'
 TIER_NOTE = "Rank comes from league play; tier comes from the same 200 positions for every model."
-HEADLINE_HEAD = ([(h, " data-nosort") for h in ("#", "Model", "Risk judgement (95% interval)")]
+HEADLINE_HEAD = ([(h, " data-nosort") for h in ("#", "Model", "Risk judgement")]
                  + [(h, " data-nosort data-wide") for h in WIDE_HEAD] + [(TIER_HEAD, " data-nosort data-wide data-tier")])
 
 
@@ -500,19 +500,19 @@ def headline(S) -> str:
     table = P.table(HEADLINE_HEAD, rows, "One row per model at its highest reasoning setting; all leagues, all phases",
                     cls="board headline",
                     attrs=' data-dataset="all" id="headline-table"')
-    keys = ('<span class="keys needs-js" role="group" aria-label="Rows"><button type="button" class="key" '
-            'data-headline-view="model" aria-pressed="true">One row per model</button><button type="button" '
-            'class="key" data-headline-view="all" aria-pressed="false">All setups</button><button type="button" '
-            f'class="key" data-headline-view="same" aria-pressed="false">{esc(SAME_KEY)}</button></span>')
+    keys = P.show_row('<button type="button" class="key" data-headline-view="model" aria-pressed="true">One row per model'
+                      '</button><button type="button" class="key" data-headline-view="all" aria-pressed="false">All setups'
+                      '</button><button type="button" class="key" data-headline-view="same" aria-pressed="false">'
+                      f'{esc(SAME_KEY)}</button>')
     # The table's own filter (Ümit #2907): local to this table, never the page's filters; programs stay in every view.
     # Type and Class (Ümit #4217) combine: a row shows when it is of the pressed type and class (P.model_class).
-    types = ('<div class="keys hl-filter needs-js" role="group" aria-label="Model type">'
-             + "".join(f'<button type="button" class="key" data-hl-filter="{k}" aria-pressed="{str(k == "all").lower()}">'
-                       f'{l}</button>' for k, l in (("all", "All"), ("chat", "Chat models"), ("decision", "Decision models")))
-             + "</div>" + P.class_keys("hl-filter"))
+    types = P.filter_box(P.filter_row("Models", "".join(
+        f'<button type="button" class="key" data-hl-filter="{k}" aria-pressed="{str(k == "all").lower()}">{l}</button>'
+        for k, l in (("all", "All"), ("chat", "Chat models"), ("decision", "Decision models"))), "hl-filter")
+        + P.class_keys("hl-filter"))
     return (f'<section class="card headline" id="leaderboard" data-dataset="all" aria-labelledby="leaderboard-title">'
-            f'<div class="chart-head"><h2 id="leaderboard-title">Risk calls leaderboard</h2>{keys}'
-            f'<p class="chart-sub">{esc(MEANING)}</p></div>'
+            f'<div class="chart-head"><h2 id="leaderboard-title">Risk calls leaderboard</h2>'
+            f'<p class="chart-sub">{esc(MEANING)}</p></div>{keys}'
             f'<div data-headline-panel="model">{types}{table}<p class="table-note hl-tier-note">{esc(TIER_NOTE)}</p></div>'
             f'<div data-headline-panel="all" hidden>{H.all_risk_table(S)}{caveat(H.RANK_NOTE, "statistics")}</div>'
             f'<div data-headline-panel="same" hidden>{same_positions()}</div>'
@@ -686,31 +686,53 @@ def two_skill(S) -> str:
                  f'safe right, {pct(g["found"]["share"])} risks found.')
     text += (' Above the diagonal, a model succeeds more often when safety pays than when risk pays; the chart compares '
              'these two success rates, not how often a model plays risky at all.')
+    # The axes zoomed to the data (Ümit #4425 JOB 8): one range for both, so the diagonal (as often right on both)
+    # stays at 45 degrees; bounds rounded out to whole 5% steps around every point, GNUbg weak included.
+    vals = [xr["r"][k]["share"] for _, xr, _ in models for k in ("found", "right_safety")]
+    if gnu:
+        vals += [gnu["r"]["found"]["share"], gnu["r"]["right_safety"]["share"]]
+    lo, hi = max(0, math.floor(min(vals) * 20 - .5) / 20), min(1, math.ceil(max(vals) * 20 + .5) / 20)
+    step = next(s for s in (.05, .1, .2, .25) if (hi - lo) / s <= 6)
     W, Hh, L, B, T, R = 520, 420, 52, 44, 12, 14
-    x = lambda v: L + (W - L - R) * v  # noqa: E731
-    y = lambda v: Hh - B - (Hh - B - T) * v  # noqa: E731
+    x = lambda v: L + (W - L - R) * (v - lo) / (hi - lo)  # noqa: E731
+    y = lambda v: Hh - B - (Hh - B - T) * (v - lo) / (hi - lo)  # noqa: E731
     parts = []
-    for t in range(0, 101, 25):
-        v = t / 100
-        parts.append(f'<line class="grid" x1="{x(v):.1f}" x2="{x(v):.1f}" y1="{T}" y2="{Hh - B}"/>'
-                     f'<line class="grid" x1="{L}" x2="{W - R}" y1="{y(v):.1f}" y2="{y(v):.1f}"/>'
-                     f'<text class="muted" x="{x(v):.1f}" y="{Hh - B + 14}" text-anchor="middle">{t}%</text>'
-                     f'<text class="muted" x="{L - 6}" y="{y(v) + 4:.1f}" text-anchor="end">{t}%</text>')
-    parts.append(f'<line class="rm-diag" x1="{x(0):.1f}" y1="{y(0):.1f}" x2="{x(1):.1f}" y2="{y(1):.1f}"/>'
+    t = math.ceil(lo / step - 1e-9) * step
+    while t <= hi + 1e-9:
+        parts.append(f'<line class="grid" x1="{x(t):.1f}" x2="{x(t):.1f}" y1="{T}" y2="{Hh - B}"/>'
+                     f'<line class="grid" x1="{L}" x2="{W - R}" y1="{y(t):.1f}" y2="{y(t):.1f}"/>'
+                     f'<text class="muted" x="{x(t):.1f}" y="{Hh - B + 14}" text-anchor="middle">{round(t * 100)}%</text>'
+                     f'<text class="muted" x="{L - 6}" y="{y(t) + 4:.1f}" text-anchor="end">{round(t * 100)}%</text>')
+        t += step
+    parts.append(f'<line class="rm-diag" x1="{x(lo):.1f}" y1="{y(lo):.1f}" x2="{x(hi):.1f}" y2="{y(hi):.1f}"/>'
                  f'<text x="{(L + W - R) / 2}" y="{Hh - 8}" text-anchor="middle">Risks found: a worthwhile risk when risk paid</text>'
                  f'<text x="14" y="{(T + Hh - B) / 2}" transform="rotate(-90 14 {(T + Hh - B) / 2})" text-anchor="middle">'
                  'Safe right: played safe when safe paid</text>')
-    for label, xr, c in models:
+    # Names written for the five best-ranked models and GNUbg weak; every other dot names itself on hover or a tap
+    # (bg.js chartTips). A label that would sit on an earlier one moves down a line.
+    taken, labels = [], []
+
+    def label(cx, cy, text):
+        ly = cy + 4
+        while any(abs(ly - py) < 12 and abs(cx - px) < 110 for px, py in taken):
+            ly += 12
+        taken.append((cx, ly))
+        anchor, lx = ("end", cx - 8) if cx > W - R - 110 else ("start", cx + 8)
+        labels.append(f'<text class="sk-label" x="{lx:.1f}" y="{ly:.1f}" text-anchor="{anchor}">{esc(text)}</text>')
+    for i, (lab, xr, c) in enumerate(models):
         fx, sy = xr["r"]["found"]["share"], xr["r"]["right_safety"]["share"]
-        parts.append(f'<circle class="sk-dot" cx="{x(fx):.1f}" cy="{y(sy):.1f}" r="5" style="fill:{c}">'
-                     f'<title>{esc(label)}: risks found {pct(fx)}, safe right {pct(sy)}</title></circle>')
+        parts.append(f'<circle class="sk-dot" cx="{x(fx):.1f}" cy="{y(sy):.1f}" r="5" style="fill:{c}" tabindex="0">'
+                     f'<title>{esc(lab)}: risks found {pct(fx)}, safe right {pct(sy)}</title></circle>')
+        if i < 5:
+            label(x(fx), y(sy), lab)
     if gnu:
         g = gnu["r"]
         cx, cy = x(g["found"]["share"]), y(g["right_safety"]["share"])
-        parts.append(f'<rect class="sk-ref" x="{cx - 5:.1f}" y="{cy - 5:.1f}" width="10" height="10">'
+        parts.append(f'<rect class="sk-ref" x="{cx - 5:.1f}" y="{cy - 5:.1f}" width="10" height="10" tabindex="0">'
                      f'<title>GNUbg weak: risks found {pct(g["found"]["share"])}, safe right '
-                     f'{pct(g["right_safety"]["share"])}</title></rect>'
-                     f'<text class="sk-label" x="{cx + 9:.1f}" y="{cy + 4:.1f}">GNUbg weak</text>')
+                     f'{pct(g["right_safety"]["share"])}</title></rect>')
+        label(cx, cy, "GNUbg weak")
+    parts += labels
     chart = _svg("Risks found against safe right, one dot per model", W, Hh, "".join(parts))
     chart += ('<details class="more" id="too-safe-values"><summary>Every model\'s two values</summary>'
               f'{too_safe(S, rows)}</details>')

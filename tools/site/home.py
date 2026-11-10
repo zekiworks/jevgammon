@@ -178,10 +178,11 @@ def share_td(s: dict) -> str:
 
 
 def judgement_td(r: dict) -> str:
+    """The score only; its 95% interval in the cell's tooltip and the row's details on a phone (Ümit #4425 JOB 8)."""
     if r["judgement"] is None:
         return f'<td class="num">{nm(r["judgement_na"])}</td>'
-    return (f'<td class="num"><strong>{fmt(r["judgement"])}</strong><span class="small">{fmt(r["judgement_lo"])} to '
-            f'{fmt(r["judgement_hi"])}</span></td>')
+    return (f'<td class="num" title="95% interval {fmt(r["judgement_lo"])} to {fmt(r["judgement_hi"])}">'
+            f'<strong>{fmt(r["judgement"])}</strong></td>')
 
 
 def split_td(r: dict) -> str:
@@ -434,7 +435,7 @@ def quality_table(S, lg, phase="all") -> str:
         cls = ' class="reference"' if ref else ""
         rows.append(f'<tr{cls}{attrs(S, ds, n, ref)}>{cell_model(S, ds, n)}{cells}</tr>')
     where = "all phases" if phase == "all" else P.PHASE_LABEL[phase]
-    head = ["Model and setting", "Error rate (PR), 95% interval", "Band on the human scale (approx.)",
+    head = ["Model and setting", "Error rate (PR)", "Band on the human scale (approx.)",
             "Engine's best play", "Blunder rate", "Median / P90 s per decision", "$ per 1,000 decisions",
             "Decisions scored", "Invalid answers"]
     return P.SWIPE + P.table(head, rows, f"Decision quality, {esc(where)}: equity given away against GNUbg 2-ply",

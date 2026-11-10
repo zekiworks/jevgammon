@@ -56,8 +56,8 @@
   if (pagePng) pagePng.addEventListener('click', () => { set(false); toggle.focus(); });
 })();
 
-/* If the tab row is ever wider than the window (it wraps on a phone), the current tab starts in the middle of the row,
-   and a tab that takes the keyboard focus is brought fully into view. */
+/* The tab row is one line that scrolls sideways where it does not fit (a phone): the current tab starts in the middle of
+   the row, and a tab that takes the keyboard focus is brought fully into view. */
 (function keepNavLinksInView() {
   const bar = document.querySelector('.site-tabs ul');
   if (!bar) return;
@@ -125,13 +125,57 @@
 })();
 
 /* Every page: the sticky header (the suite strip and the site's bar with its tabs, Ümit #2901). Its height is kept in
-   --view-bar-h, so links to a part of a page land below it. */
+   --view-bar-h, so links to a part of a page land below it. On a phone (below 768 px; Ümit #4425 JOB 8) the whole
+   header slides away while the page scrolls down and comes back as soon as it scrolls up (or the focus enters it); the
+   wrapper (.site-header, ours) moves, never the shared strip inside it. Hook for the suite: once the shared strip
+   does this itself, it marks <html data-suite-autohide> and this script leaves the header to it. */
 (function setupViewBar() {
   const bar = document.querySelector('.site-header');
   if (!bar) return;
-  const measure = () => document.documentElement.style.setProperty('--view-bar-h', `${bar.offsetHeight}px`);
+  const root = document.documentElement;
+  const measure = () => root.style.setProperty('--view-bar-h', `${bar.offsetHeight}px`);
   measure();
   if ('ResizeObserver' in window) new ResizeObserver(measure).observe(bar);
+  const phone = matchMedia('(max-width: 767px)');
+  let last = scrollY;
+  const tuck = on => bar.classList.toggle('is-tucked', on);
+  addEventListener('scroll', () => {
+    const y = scrollY;
+    if (root.hasAttribute('data-suite-autohide') || !phone.matches || bar.contains(document.activeElement)) { tuck(false); last = y; return; }
+    if (Math.abs(y - last) < 6) return;
+    tuck(y > last && y > bar.offsetHeight);
+    last = y;
+  }, { passive: true });
+  bar.addEventListener('focusin', () => tuck(false));
+  phone.addEventListener('change', () => tuck(false));
+})();
+
+/* Every table's filters (pages.filter_box; Ümit #4425 JOB 8): labelled rows (Models, Class …); on a phone behind one
+   Filters key that opens them and shows how many rows are not at All. */
+(function filterBoxes() {
+  const boxes = [...document.querySelectorAll('[data-filter-box]')];
+  if (!boxes.length) return;
+  const count = () => boxes.forEach(box => {
+    const n = [...box.querySelectorAll('.frow')].filter(row => {
+      const on = [...row.querySelectorAll('[aria-pressed="true"]')];
+      return on.length && !on.some(k => Object.values(k.dataset).includes('all'));
+    }).length;
+    const out = box.querySelector('[data-filter-n]');
+    out.textContent = n ? ` (${n})` : '';
+    box.querySelector('.filter-toggle').setAttribute('aria-label', n ? `Filters, ${n} active` : 'Filters, none active');
+  });
+  boxes.forEach(box => {
+    const toggle = box.querySelector('.filter-toggle');
+    toggle.addEventListener('click', () => {
+      const open = !box.classList.contains('is-open');
+      box.classList.toggle('is-open', open);
+      toggle.setAttribute('aria-expanded', String(open));
+    });
+  });
+  // After the page's own handlers (they run on the same click, later scripts' listeners on the keys themselves).
+  document.addEventListener('click', () => setTimeout(count));
+  addEventListener('load', count);
+  setTimeout(count);
 })();
 
 /* Did they improve?: the results table's filter (Ümit/Zeki #3710), the leaderboard's (bg.js headlineFilter): a type

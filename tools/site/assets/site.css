@@ -799,18 +799,18 @@ ul.price-list { padding-left: 1.25rem; }
   .chart-wide .hbar { grid-template-columns: minmax(0, 1fr) 11.5rem; }
   .chart-wide .hbar-value, .chart-wide .hbar-head { font-size: .72rem; }
   .chart-wide .hbar-axis .hbar-tick:nth-child(even) { display: none; }
-  body { padding: 0 .6rem 1.5rem; }
+  body { padding: 0 16px 1.5rem; }
   /* The first screen reaches the results: one compact sticky header (the suite strip, the site's name with the theme
-     keys and More, the tabs wrapping to a second centred line with room between them, never cut or scrolled: Ümit
-     #3948), the title is smaller, the counters take one line and the versions move under the table. */
+     keys and More, the tabs on one line that scrolls sideways: Ümit #4425 JOB 8), the title is smaller, the counters
+     take one line and the versions move under the table. 16 px side margin on a phone (turkce #4431). */
   html { --view-bar-h: 132px; }
-  .site-header { margin: 0 -.6rem .55rem; }
-  .site-bar { padding: 0 .6rem; }
+  .site-header { margin: 0 -16px .55rem; }
+  .site-bar { padding: 0 16px; }
   .site-title-row { gap: .5rem; padding-top: 4px; }
   .site-title { gap: .3rem; font-size: .95rem; }
   .site-leaf { width: 15px; height: 18px; }
   .more-long, .more-toggle .chevron { display: none; }
-  .site-tabs ul { flex-wrap: wrap; justify-content: center; gap: 2px 12px; margin: 0; padding: 0; overflow: visible; }
+  .site-tabs ul { gap: 2px; }
   .site-tabs a { padding: 5px 8px 3px; font-size: .88rem; }
   .theme-switch .key, .more-menu .key { padding: 1px 6px; gap: 4px; font-size: 11.5px; }
   .panel, .card { padding: .75rem; border-radius: 8px; }

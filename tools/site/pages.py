@@ -79,8 +79,15 @@ def er_cell(q) -> str:
         return f'<td class="num">{nm("Not scored yet")}</td>'
     if q.get("too_few"):
         return f'<td class="num">{nm(TOO_FEW)}</td>'
-    return (f'<td class="num">{fmt(q["error_rate"])}<span class="small">{fmt(q["error_lo"])} to '
-            f'{fmt(q["error_hi"])}</span></td>')
+    return (f'<td class="num" title="95% interval {fmt(q["error_lo"])} to {fmt(q["error_hi"])}">'
+            f'{fmt(q["error_rate"])}</td>')
+
+
+def cell_inner(cell: str) -> str:
+    """The contents of a <td class="num"> cell, for a place that is not a table cell; the cell's tooltip (a score's 95%
+    interval) goes along on a span."""
+    m = re.fullmatch(r'<td class="num"(?: title="([^"]*)")?>(.*)</td>', cell, re.S)
+    return f'<span title="{m.group(1)}">{m.group(2)}</span>' if m.group(1) else m.group(2)
 
 
 def val(q, key, f, too_few_key="too_few") -> str:
@@ -205,7 +212,7 @@ def quality_rows(S, rel, dataset, setups) -> list[str]:
     return rows
 
 
-QUALITY_HEAD = ["Model and setting", "Error rate (PR), 95% interval", "Band on the human scale",
+QUALITY_HEAD = ["Model and setting", "Error rate (PR)", "Band on the human scale",
                 "Engine's best play", "Blunder rate", "Median / P90 s per decision", "$ per 1,000 decisions",
                 "Decisions scored", "Invalid answers"]
 
@@ -347,8 +354,8 @@ def league_reasoning_table(S, lg) -> str:
     def judgement(r):
         if r["judgement"] is None:
             return f'<td class="num">{nm(r["judgement_na"])}</td>'
-        return (f'<td class="num">{fmt(r["judgement"])}<span class="small">{fmt(r["judgement_lo"])} to '
-                f'{fmt(r["judgement_hi"])}</span></td>')
+        return (f'<td class="num" title="95% interval {fmt(r["judgement_lo"])} to {fmt(r["judgement_hi"])}">'
+                f'{fmt(r["judgement"])}</td>')
     rows, notes = [], []
     for r in lg["reasoning"]:
         lo, hi = lg["setups"][r["low"]], lg["setups"][r["high"]]
@@ -402,7 +409,7 @@ def tail_table(S, rel, dataset, setups) -> str:
         cells = (er_cell(q) + val(q, "p95_loss", eq) + val(q, "worst_mean", eq) + val(q, "blunder_share", pct) + cbw
                  + f'<td class="num">{count(q["scored"])}</td><td class="num">{count(q["invalid"])}</td>')
         rows.append(tr(S, dataset, n, cells, rel))
-    head = ["Model and setting", "Error rate (PR), 95% interval", "P95 equity loss", "Mean loss, worst 5%",
+    head = ["Model and setting", "Error rate (PR)", "P95 equity loss", "Mean loss, worst 5%",
             "Blunder rate", "Confident and badly wrong", "Decisions scored", "Invalid answers"]
     return SWIPE + table(head, rows, "League decisions; intervals resample whole games", attrs=f' data-dataset="{dataset}"')
 
@@ -867,7 +874,7 @@ def late_cells(e) -> dict:
     """The late-entry numbers as cell contents, shared by the Leagues table and the setup's page."""
     import home
     q, r, x, route = e["quality"], e["risk"]["main"], e["exchanges"], e["route"]
-    td = lambda cell: cell[16:-5]  # the contents of a <td class="num"> cell
+    td = cell_inner
     effort = "; ".join(f"{esc(k)} in {count(v)} of {count(x['with_exchanges'])} decisions" for k, v in x["efforts"].items())
     gone = e.get("not_played") or []
     return dict(
@@ -892,7 +899,7 @@ def late_cells(e) -> dict:
 
 
 LATE_HEAD = ["Setup", "Entry date", "League field played", "Matches played", "Record (W\u2013D\u2013L)",
-             "Error rate (PR), 95% interval", "Risk judgement, margin 0.001", "Ability d\u2032",
+             "Error rate (PR)", "Risk judgement, margin 0.001", "Ability d\u2032",
              "Caution c (+ cautious, \u2212 bold)", "Engine's best play", "Median s per decision",
              "$ per 1,000 decisions", "Invalid answers", "Cut off at the output limit", "Route and effort sent"]
 
@@ -986,7 +993,7 @@ def late_entry_page(S, e) -> str:
     items = [("Late entry", f'{esc(LATE_ENTRY_LABEL)}: its games count in no standings table, no league table, no Hype '
                             f'Cup input and no other setup\'s numbers'),
              ("Entry date", c["entry"]), ("League field played", c["field"]), ("Matches played", c["played"]),
-             ("Record", c["record"]), ("Error rate (PR), 95% interval", c["error"]),
+             ("Record", c["record"]), ("Error rate (PR)", c["error"]),
              ("Decisions", f'{count(q["decisions"])} ({count(q["scored"])} scored)'),
              ("Risk judgement, margin 0.001", c["judgement"]), ("Ability d\u2032", c["ability"]),
              ("Caution c (+ cautious, \u2212 bold)", c["caution"]), ("Engine's best play", c["best"]),
@@ -1183,15 +1190,34 @@ def class_note(model: str) -> str | None:
     return None
 
 
+def filter_row(label: str, keys: str, cls: str = "") -> str:
+    """One labelled filter row (Ümit #4425 JOB 8): its name (Models, Class, …) before its keys."""
+    return (f'<div class="frow needs-js{" " + cls if cls else ""}" role="group" aria-label="{esc(label)}">'
+            f'<span class="frow-label">{esc(label)}</span><span class="keys">{keys}</span></div>')
+
+
+def filter_box(rows: str) -> str:
+    """A table's filter rows; on a phone behind one Filters key that counts the rows not at All (site.js filterBoxes)."""
+    return ('<div class="filter-box needs-js" data-filter-box><button type="button" class="key filter-toggle" '
+            'aria-expanded="false">Filters<span class="filter-n" data-filter-n></span></button>'
+            f'<div class="filter-rows">{rows}</div></div>')
+
+
+def show_row(keys: str) -> str:
+    """A table's Show choice (its views: One row per model, All setups …) as a tab bar, labelled Show, right under the
+    table's heading on every page that has one (Ümit #4425 JOB 8)."""
+    return (f'<div class="show-row needs-js" role="group" aria-label="Show"><span class="frow-label">Show</span>'
+            f'<span class="tabbar">{keys}</span></div>')
+
+
 def class_keys(cls: str) -> str:
     """The Class row under a table's type keys (Ümit #4217, #4245): All · Tiny · Small · Medium · Large · Efficient ·
     Workhorse · Flagship (data-class-key; the page's script hides a key with no model in the type in view), and the
     rule (CLASS_RULE) under it; cls: the row's classes."""
-    return (f'<div class="keys class-keys needs-js {cls}" role="group" aria-label="Class"><span class="class-keys-label">'
-            'Class:</span>' + "".join(f'<button type="button" class="key" data-class-key="{k}" aria-pressed='
-                                      f'"{str(k == "all").lower()}">{l}</button>'
-                                      for k, l in (("all", "All"),) + CLASSES)
-            + f'</div><p class="table-note class-note">{esc(CLASS_RULE)}</p>')
+    return (filter_row("Class", "".join(f'<button type="button" class="key" data-class-key="{k}" aria-pressed='
+                                        f'"{str(k == "all").lower()}">{l}</button>' for k, l in (("all", "All"),) + CLASSES),
+                       f"class-keys {cls}")
+            + f'<p class="table-note class-note">{esc(CLASS_RULE)}</p>')
 
 
 B7 = [("model_id", "Model ID"), ("provider", "Provider or endpoint"), ("date_run", "Date run"), ("price", "Price"),
@@ -1396,7 +1422,7 @@ def model_page(S, dataset: str, name: str, entry: dict | None, smoke_row: dict |
              f'<section class="card" id="setup"><h2>How we called it</h2>{facts(m, q)}'
              f'{"<p class=note>Missing B7 fields: " + esc(", ".join(m["missing"])) + "</p>" if m.get("missing") else ""}</section>']
     if entry:
-        cells = (f"<dt>Error rate (PR)</dt><dd>{er_cell(q)[16:-5]}</dd>"
+        cells = (f"<dt>Error rate (PR)</dt><dd>{cell_inner(er_cell(q))}</dd>"
                  f"<dt>Decisions</dt><dd>{count(q['decisions'])} ({count(q['scored'])} scored, {count(q['invalid'])} invalid)</dd>")
         if q.get("error_rate") is not None and not q.get("too_few"):
             cells += (f"<dt>Engine's best play</dt><dd>{pct(q['best_share'])}</dd><dt>Blunder rate</dt><dd>{pct(q['blunder_share'])}</dd>"

@@ -658,10 +658,10 @@ def results_section(L, S=None) -> str:
     note = ('<p class="note" id="improve-progress-refused"><strong>Status unavailable.</strong> The latest results '
             'file\'s status fields failed the site\'s checks:</p><ul class="notes">'
             + "".join(f"<li>{esc(p)}</li>" for p in refused) + "</ul>" if refused else "")
-    keys = ('<div class="keys needs-js" role="group" aria-label="Model type">'
-            + "".join(f'<button type="button" class="key" data-improve-filter="{k}" aria-pressed="{str(k == "all").lower()}">'
-                      f'{t}</button>' for k, t in (("all", "All"), ("chat", "Chat models"), ("decision", "Decision models")))
-            + "</div>" + P.class_keys("improve-class"))
+    keys = P.filter_box(P.filter_row("Models", "".join(
+        f'<button type="button" class="key" data-improve-filter="{k}" aria-pressed="{str(k == "all").lower()}">{t}</button>'
+        for k, t in (("all", "All"), ("chat", "Chat models"), ("decision", "Decision models"))))
+        + P.class_keys("improve-class"))
     cap = (f'{count(len(L["plan"]["models"]))} chat models under the pre-registered rule: finished first (by the change '
            'in risks found), then running, then not started. Rows marked "planned, not a result" are not run yet and '
            'show no numbers; a decision setup has one row per arm (notes, worst mistakes).')

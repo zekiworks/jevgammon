@@ -349,35 +349,21 @@ td.badges .small { display: block; white-space: normal; }
 .experiment-small { font-size: .95em; }
 .status-completed { color: var(--accepted); border-color: var(--accepted); }
 .status-paused { color: var(--reading-text); border-color: var(--reading-text); }
-/* Three kinds of choice, three looks, in both themes and without hovering (Zeki, bus #1860):
-   - the page in view: its tab in the site's bar underlined in the link colour (site.css);
-   - a part of a page (in-page tabs: the leaderboard's and the leagues' tabs, the part links): keys
-     tinted with the link colour, the one in view filled with it (the sibling's --tab-* colours);
-   - a filter (the Filters panel, the cost unit and the other keys that switch a view): rounded keys, the
-     chosen one with a thick edge in the link colour on its tint and a check mark; a filter at its default (All) looks
-     unpressed, as on the sibling site, its lamp still lit. */
+/* One look for every choice (Ümit #4425 JOB 8; turkce #4431, shared with the sibling sites): unselected keys and tabs
+   tinted with the link colour; the selected one, whatever it is (an in-page tab, a Show tab, a filter key at All or
+   not, the cost unit, the theme), filled with the site's accent and white text, no check mark. The page in view keeps
+   its underlined tab in the site's bar (site.css). */
+:root { --sel-bg: #1d4ed8; --sel-text: #ffffff; }
+@media screen { :root:not([data-theme="light"]) { --sel-bg: #2563eb; } }
 button.mode, a.mode { color: var(--tab-text); background: var(--tab-bg); border: 2px solid var(--tab-edge);
   border-radius: 7px; font-weight: 700; box-shadow: var(--key-shadow); }
 button.mode:hover, a.mode:hover { border-color: var(--view-key-hover); }
-button.mode[aria-selected="true"], a.mode[aria-selected="true"] {
-  color: var(--tab-current-text); background: var(--tab-current-bg); border-color: var(--tab-current-bg); box-shadow: none; }
-button.mode[aria-selected="true"]::after, a.mode[aria-selected="true"]::after { background: var(--tab-current-bg); }
-#filters button.key, .cost-unit button.key, .view-switch button.key, .col-switch button.key, .hl-filter button.key { border-radius: 999px; }
-button.key[aria-pressed="true"] { color: var(--tab-text); background: var(--tab-bg);
-  border: 2px solid var(--tab-edge); box-shadow: var(--key-inset); font-weight: 700; }
-button.key[aria-pressed="true"]::before { content: "\2713"; margin-right: .3rem; }
-#filters button.key[aria-pressed="true"]:is([data-league-pick="all"], [data-filter-kind="all"], [data-filter-setting="all"],
-  [data-filter-runs="all"], [data-filter-weights="all"]), .hl-filter button.key[aria-pressed="true"]:is([data-hl-filter="all"], [data-class-key="all"]) {
-  color: var(--view-text); background: var(--view-key); border: 1.5px solid var(--view-key-edge); box-shadow: var(--key-shadow);
-  font-weight: 700; }
-#filters button.key[aria-pressed="true"]:is([data-league-pick="all"], [data-filter-kind="all"], [data-filter-setting="all"],
-  [data-filter-runs="all"], [data-filter-weights="all"]) { border-width: 1px; font-weight: 400; }
-#filters button.key[aria-pressed="true"]:is([data-league-pick="all"], [data-filter-kind="all"], [data-filter-setting="all"],
-  [data-filter-runs="all"], [data-filter-weights="all"])::before,
-.hl-filter button.key[aria-pressed="true"]:is([data-hl-filter="all"], [data-class-key="all"])::before { content: none; }
-/* The theme keys keep the sibling's look: a lit lamp says which theme is on. */
+#filters button.key, .cost-unit button.key, .view-switch button.key, .col-switch button.key, .frow button.key { border-radius: 999px; }
+button.key[aria-pressed="true"], button.mode[aria-selected="true"], a.mode[aria-selected="true"], .face-nav a[aria-current] {
+  color: var(--sel-text); background: var(--sel-bg); border-color: var(--sel-bg); box-shadow: none; font-weight: 700; }
+button.mode[aria-selected="true"]::after, a.mode[aria-selected="true"]::after { background: var(--sel-bg); }
+[aria-pressed="true"] > .lamp { background: var(--sel-text); box-shadow: none; }
 .theme-switch button.key[aria-pressed="true"] { border-radius: 6px; }
-.theme-switch button.key[aria-pressed="true"]::before { content: none; }
 /* The measures, one chart card each in one column; the leaderboard's own chart panels keep their two columns. */
 .charts.measures { grid-template-columns: minmax(0, 1fr); margin: 0 0 1rem; }
 .board-panel .chart-head h2 { font-size: 1.15rem; }
@@ -457,7 +443,7 @@ table.headline tbody tr.hl-open > td, #improve-results-table tbody tr.hl-open > 
 #improve-results-table .hl-box { font-weight: 400; text-align: left; }
 /* On a phone the table fits the screen (Ümit): Model, Change and Improved? only; the group, status, series
    and the before → after values are in each row's details box. */
-@media (max-width: 640px) {
+@media (max-width: 767px) {
   #improve-results-table :is(th, td):is(:nth-child(2), :nth-child(3), :nth-child(4), :nth-child(5), :nth-child(7)),
   #improve-results .swipe-hint { display: none !important; }
   #improve-results-table .model-name { white-space: normal; overflow-wrap: anywhere; }
@@ -485,30 +471,39 @@ table.headline tr.reference td { color: var(--text-2); }
 .hbar-fill.ts-found, i.swatch-ts-found { background-image: repeating-linear-gradient(135deg, rgba(255, 255, 255, .55) 0 3px, rgba(0, 0, 0, .12) 3px 6px); }
 .hbar-fill.ts-grey, i.swatch-ts-grey { background-color: var(--data-grey); }
 i.swatch-ts-safety, i.swatch-ts-found { background-color: var(--text-2); }
-/* Wide screens: four more columns (Ümit #2938 item 3: risks found, safe right, error rate, $ per 1,000). */
-table.headline th[data-wide], table.headline td.hl-wide, .hl-wide-note { display: none; }
+/* Wide screens: four more columns (Ümit #2938 item 3: risks found, safe right, error rate, $ per 1,000) and the Tier;
+   narrower, the cost and the Tier stay (Ümit #4425 JOB 8: rank, Tier, model, score, cost) and the three shares are in
+   the details box. */
+table.headline th[data-wide]:not(:nth-child(7), :nth-child(8)), table.headline td.hl-wide:not(:nth-child(7), :nth-child(8)) { display: none; }
+table.headline th[data-wide] { white-space: normal; }
+table.headline td.hl-wide { white-space: nowrap; }
 @media (min-width: 900px) {
-  table.headline th[data-wide], table.headline td.hl-wide { display: table-cell; white-space: nowrap; }
+  table.headline th[data-wide], table.headline td.hl-wide { display: table-cell; }
   td.hl-judgement { width: 34%; }
-  /* Tier (same positions), Ümit #4313: the wide heads wrap (their cells do not) so the fifth column fits at 1280. */
-  table.headline th[data-wide] { white-space: normal; }
-  .hl-wide-note { display: inline; }
 }
 /* Wide desktop windows: the model column wide enough for the name and its chip on one line (Ümit #3193). */
 @media (min-width: 1200px) {
   table.headline td.model { min-width: 22.5rem; }
 }
-/* At phone width: the three columns fit the width (no sticky column, no sideways scrolling), the bar column narrower. */
-@media (max-width: 640px) {
+/* At phone width: the five columns fit the width (no sticky column, no sideways scrolling), the bar column narrower. */
+@media (max-width: 767px) {
   table.headline th:first-child, table.headline td:first-child { position: static; width: auto; min-width: 0; max-width: none;
     box-shadow: none; }
-  table.headline td.model { min-width: 0; }
-  table.headline th, table.headline td { padding-left: .35rem; padding-right: .35rem; }
+  table.headline td.model { min-width: 0; overflow-wrap: anywhere; }
+  table.headline th, table.headline td { padding-left: .3rem; padding-right: .3rem; }
   table.headline tr.hl-sub td.model { padding-left: .6rem; }
-  /* The bar column takes only what the model column leaves (min 8rem), and the chip may wrap between its parts, so
-     names stay readable and the chip never pushes the score and its interval past the table's frame (Zeki #3240). */
-  table.headline td.hl-judgement { width: auto; min-width: 8rem; }
+  /* The bar column takes only what the model column leaves, and the chip may wrap between its parts, so names stay
+     readable and the chip never pushes the score past the table's frame (Zeki #3240). */
+  table.headline td.hl-judgement { width: auto; min-width: 4.5rem; }
   table.headline td.model > .hl-tag { white-space: normal; border-radius: .6rem; }
+  table.headline thead th { min-width: 0; font-size: .74rem; white-space: normal; overflow-wrap: normal; }
+  table.headline :is(td.num, td.hl-judgement, td.hl-wide), table.headline thead th:not(:nth-child(2)) { width: 1%; }
+  table.headline .th-long { display: none; }
+  table.headline td.model { width: 99%; }
+  /* The score as its number (the bar needs a width a phone does not have), the class label under the name. */
+  table.headline td.hl-judgement { min-width: 0; }
+  table.headline .hl-bar { display: none; }
+  table.headline .hl-size { display: block; margin-left: 0; white-space: normal; }
 }
 .finding h2 { font-size: 1.25rem; }
 .finding-text { max-width: 80ch; margin: 0 0 .75rem; }
@@ -551,7 +546,57 @@ nav.filters.filter-row .filters-body { display: flex; flex-wrap: wrap; align-ite
 .filter-row .filters-count { margin-left: auto; }
 .filter-row .reset-why { display: none; }
 @media (max-width: 640px) {
-  .filter-row .group-label { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); }
   .filter-row .key { min-height: 24px; padding: 1px 7px; font-size: 12px; }
   .filter-row .filters-count { margin-left: 0; }
+}
+
+/* --- One look on every page (Ümit #4425 JOB 8). ------------------------------------------------------------------ */
+/* Filter rows: each with its name (Models, Class …) before its keys; a table's rows sit in one box which, on a phone,
+   opens from one Filters key that counts the rows not at All (site.js filterBoxes). */
+.filter-box { margin: .2rem 0 .5rem; }
+.filter-toggle { display: none; }
+.filter-rows { display: grid; gap: .35rem; }
+.filter-rows.filters-bar { display: flex; }
+.frow { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .5rem; }
+.frow-label { flex: none; min-width: 3.6rem; color: var(--text-2); font-size: .72rem; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; }
+.frow .keys { display: inline-flex; flex-wrap: wrap; gap: .3rem; }
+.frow .key { min-height: 1.9rem; padding: .15rem .65rem; font-size: .82rem; }
+.frow .key[hidden] { display: none; }
+.filter-rows .class-note { margin: 0; }
+/* The Show choice (a table's views: One row per model, All setups …): a tab bar right under the table's heading, the
+   same place on every page that has one. */
+.show-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: .3rem .5rem; margin: .5rem 0 .6rem; }
+.tabbar { display: flex; flex-wrap: wrap; gap: 0; border-bottom: 2px solid var(--sel-bg); }
+.tabbar .key { min-height: 2rem; margin: 0 -1px -2px 0; padding: .25rem .8rem; border: 1px solid var(--control-edge);
+  border-bottom: 0; border-radius: 6px 6px 0 0; color: var(--tab-text); background: var(--tab-bg); box-shadow: none;
+  font-size: .85rem; font-weight: 700; }
+.tabbar .key[aria-pressed="true"] { border-color: var(--sel-bg); }
+/* A chart's dots name themselves on hover (their title) and on a tap (bg.js chartTips writes it under the chart). */
+.chart-tip { min-height: 1.3em; margin: .25rem 0 0; color: var(--text); font-size: .85rem; }
+.chart-svg [tabindex] { cursor: pointer; outline: none; }
+.chart-svg [tabindex]:focus-visible { stroke: var(--focus); stroke-width: 2; }
+/* The header on a phone slides away on the way down and back on the way up (site.js setupViewBar). */
+.site-header { transition: transform .2s ease; }
+.site-header.is-tucked { transform: translateY(-100%); box-shadow: none; }
+/* Phones (below 768 px): the page scrolls, never a box inside it; 16 px side margins; the filters behind one key. */
+@media (max-width: 767px) {
+  body { padding-left: 16px; padding-right: 16px; }
+  .site-header { margin-left: -16px; margin-right: -16px; }
+  .site-bar { padding-left: 16px; padding-right: 16px; }
+  .table-wrap, .heatmap-wrap { max-height: none; }
+  .table-wrap thead th, .heatmap-table thead th { position: static; }
+  .table-wrap th:first-child, .table-wrap td:first-child { position: static; }
+  table.ph-fit th, table.ph-fit td { white-space: normal; overflow-wrap: anywhere; min-width: 0 !important; max-width: none; width: auto;
+    position: static; box-shadow: none; }
+  table.ph-fit .ph-off { display: none !important; }
+  table.ph-fit tr[data-ph-box] > :first-child::after { content: " \25B8"; color: var(--text-2); }
+  .swipe-hint { display: none !important; }
+  .filter-toggle { display: inline-flex; }
+  .filter-box:not(.is-open) .filter-rows { display: none; }
+  .filter-box.is-open .filter-rows { margin-top: .45rem; }
+  .filter-toggle[aria-expanded="true"] { border-color: var(--sel-bg); }
+  .frow-label { min-width: 100%; }
+  .show-row .frow-label { min-width: 0; }
+  .tabbar .key { padding: .25rem .55rem; font-size: .8rem; }
 }

@@ -31,6 +31,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import analysis as A  # noqa: E402
+import bench_scores  # noqa: E402
 import checks  # noqa: E402
 import close_choices as CC  # noqa: E402
 import cup  # noqa: E402
@@ -504,6 +505,8 @@ def main():
     S["decision_files"] = sum(1 for p in (out / "decisions").rglob("*") if p.is_file())
     S["showcase"] = showcase(S, decisions_export.SHOWCASE)
     write_json(out, "data/showcase.json", S["showcase"] or {})
+    # The combined score page's feed (turkce #4062), at the site's root: from the leaderboard's own rows and numbers.
+    write_json(out, bench_scores.PATH, bench_scores.build(S))
     S["hash"] = results_hash(out)
     manifest(S, out)
     S["image"] = None if args.no_image else preview_image(S, out)

@@ -866,7 +866,14 @@ def run(S: dict, out: Path) -> list[str]:
     failures += check_learning(out)
     failures += check_improve(out)
     failures += check_palette()
+    failures += check_bench_scores(S, out)
     return failures
+
+
+def check_bench_scores(S: dict, out: Path) -> list[str]:
+    """bench-scores.json (the combined score page's feed): the shared schema, scores, one row per leaderboard row."""
+    import bench_scores
+    return bench_scores.problems(S, json.loads((out / bench_scores.PATH).read_text()))
 
 
 def check_palette() -> list[str]:

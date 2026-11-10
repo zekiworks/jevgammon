@@ -909,12 +909,7 @@ def nack_finding(S) -> str:
             f'the late entry {esc(s)} dropped ({fmt(r["final"]["drop"], 2, True)} PR, 97.5% interval '
             f'{fmt(r["final"]["drop_975"][0], 2, True)} to {fmt(r["final"]["drop_975"][1], 2, True)})' for s, r in worse) + "."
     text += f" <strong>{esc(NS.UNCLEAR_NOTE)}</strong>"
-    legend = ('<span><i class="swatch nack-dot nack-dm"></i>League 1 group</span> '
-              '<span><i class="swatch nack-dot nack-wh"></i>League 2 group</span> '
-              '<span><i class="swatch nack-dot nack-fr"></i>League 3 group</span> '
-              '<span><i class="swatch nack-dot nack-ng"></i>no group (exploratory)</span> '
-              '<span><i class="swatch nack-yard"></i>GNUbg weak, Random</span> '
-              '<span>Above the dashed diagonal: higher error on Nackgammon.</span>')
+    legend = NS.chart_legend(N)
     return finding("finding-nackgammon", heading, text, NS.chart(N), legend,
                    "Paired positions, not league play; a drop mixes the new start with how hard the positions are.",
                    ("nackgammon/", "The Nackgammon test"))

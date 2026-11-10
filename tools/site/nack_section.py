@@ -35,9 +35,6 @@ DASH = "\u2013"
 ADDED = "added under \u00a710.14(g), after the results were read"
 ENGINE_ADDED = ("The additions' chosen plays that had no rollout yet were rolled out later with the same settings, alone "
                 "rather than alongside the other candidates of their positions; the earlier rollouts are unchanged.")
-# Chart classes per group (not the group names: one of them is a banned string in published files).
-GROUP_CLASS = {"decision models": "nack-dm", "workhorses": "nack-wh", "frontier": "nack-fr",
-               "no group (exploratory)": "nack-ng"}
 # The groups as shown (Ümit #4282 item 3): the test's groups are the setups from one original league (§10.14), not
 # model classes, so they are named by that league; 'workhorses' and 'frontier' are gone from the page (Workhorse is
 # a price class site-wide). The data file keeps its group ids. Each setup shows its own class (P.model_class).
@@ -113,11 +110,35 @@ def row(key, label, cells, cls="") -> str:
     return f'<tr data-row="{esc(key)}"{c}><th scope="row">{label}</th>{"".join(cells)}</tr>'
 
 
+def is_program(group: str) -> bool:
+    """The yardsticks (GNUbg weak, Random) are the programs: the program grey, no maker, every class view."""
+    return group == "yardstick"
+
+
+def maker_mark(name: str, group: str) -> str:
+    """The row's maker dot and family icon as on the home leaderboard (story.headline_table): the shared palette's colour
+    (home.maker, which fails the build for a model setup with no palette maker); a program the striped program grey."""
+    import home as H
+    if is_program(group):
+        return '<i class="swatch hl-dot swatch-program"></i>'
+    mk, colour = H.maker(name)
+    fam = H.family(name)
+    return (f'<svg class="fam-icon" aria-hidden="true" focusable="false"><use href="#{fam["icon"]}"/></svg>'
+            f'<i class="swatch hl-dot" style="background:{colour}" title="{esc(mk)}"></i>')
+
+
+def class_key(name: str, group: str) -> str:
+    """The setup's Class-row key (P.model_class), '' for a program or a model the parameter file does not list."""
+    m = MODEL_OF.get(name)
+    return P.model_class(m) if not is_program(group) and m in P.PARAMS else ""
+
+
 def _setup_label(name, rec) -> str:
     added = f" \u00b7 {ADDED}" if rec.get("added") else ""
     cls = setup_class(name)
-    sub = (f"{cls} \u00b7 " if cls else "") + GROUP_SHOWN[rec["group"]]
-    return f'{esc(name)}<span class="small">{esc(sub)}{esc(added)}</span>'
+    size = f'<span class="hl-size">{esc(cls)}</span>' if cls else ""
+    return (f'{maker_mark(name, rec["group"])}{esc(name)}{size}'
+            f'<span class="small">{esc(GROUP_SHOWN[rec["group"]])}{esc(added)}</span>')
 
 
 def no_group_note(N) -> str:
@@ -402,7 +423,16 @@ def engine_tables(N) -> str:
               "accurate; the check bounds that, it does not remove it.</p>")
 
 
+def chart_legend(N) -> str:
+    """The chart's key: the makers' swatches (home.maker_legend, the palette's order), the programs' grey."""
+    import home as H
+    return (H.maker_legend(p["setup"] for p in N["chart"] if not is_program(p["group"]))
+            + ' <span><i class="swatch swatch-program"></i>GNUbg weak, Random (programs)</span> '
+            '<span>Above the dashed diagonal: higher error on Nackgammon.</span>')
+
+
 def chart(N) -> str:
+    from home import maker
     pts = N["chart"]
     W, H, L, B, T, R = 640, 520, 56, 46, 14, 16
     top = max([max(p["standard_pr"], p["nackgammon_pr"]) for p in pts] or [10])
@@ -427,12 +457,12 @@ def chart(N) -> str:
                f'{fmt(p["nackgammon_pr"], 2)}')
         mark = (f'<rect class="nack-yard" x="{cx - 5:.1f}" y="{cy - 5:.1f}" width="10" height="10"/>'
                 f'<text x="{cx + 8:.1f}" y="{cy + 4:.1f}">{esc(p["setup"])}</text>' if p["group"] == "yardstick"
-                else f'<circle class="nack-dot {GROUP_CLASS[p["group"]]}" cx="{cx:.1f}" cy="{cy:.1f}" r="4.5"/>')
+                else f'<circle class="nack-dot" cx="{cx:.1f}" cy="{cy:.1f}" r="4.5" style="fill:{maker(p["setup"])[1]}"/>')
         parts.append(f'<g class="pt" data-setup="{esc(p["setup"])}" data-x="{p["standard_pr"]}" '
                      f'data-y="{p["nackgammon_pr"]}"><title>{esc(tip)}</title>{mark}</g>')
     note = (f"{TITLE}: standard PR (x) against Nackgammon PR (y), main 200 pairs; dashed diagonal = no change; above it "
-            f"= worse on Nackgammon. Colour = group by original league (no group = exploratory). Squares: GNUbg weak and "
-            f"Random. {NACK_SCOPE_NOTE} {shown_text(N['frontier_note'])}")
+            f"= worse on Nackgammon. Colour = maker (the shared maker palette). Squares, "
+            f"program grey: GNUbg weak and Random. {NACK_SCOPE_NOTE} {shown_text(N['frontier_note'])}")
     return (f'<svg class="chart-svg" data-chart="nack" data-note="{esc(note)}" viewBox="0 0 {W} {H}" width="{W}" '
             f'height="{H}" role="img" aria-label="{esc(TITLE)}: standard against Nackgammon error rate">'
             + "".join(parts) + "</svg>")
@@ -478,13 +508,17 @@ def section(N, kinds: dict, chosen: list, L: dict) -> str:
                  f"risk judgement in league play, on an exact tie the first in league order (chosen from league "
                  f"results, never from this "
                  f"test); All settings shows every setup asked ({count(multi)} more rows). Decision / Chat is the model "
-                 f"type; under each name are its model class (the leaderboard's Class row) and the paired test's group, "
+                 f"type; after each name is its model class (the Class row filters every table and the chart) and under it the paired test's group, "
                  f"the setups from one original league, so a chat model can sit in the League 1 group. Every table "
                  f"further down shows every setup.")
+    import home as H
+    classes = {n: class_key(n, r["group"]) for n, r in N["setups"].items()}
     return (f'<section class="card" id="{SECTION_ID}" data-nack-kinds="{esc(json.dumps(kinds))}" '
-            f'data-nack-chosen="{esc(json.dumps(chosen))}">'
+            f'data-nack-chosen="{esc(json.dumps(chosen))}" data-nack-classes="{esc(json.dumps(classes))}">'
+            f'{H.FAMILY_ICONS}'
             f'<div class="section-head"><p class="eyebrow">{esc(TITLE)}</p><h2>{esc(QUESTION)}</h2>{keys}</div>'
-            f'<p class="note nack-always"><strong>{esc(UNCLEAR_NOTE)}</strong> {count(n_added)} setups were added after '
+            + P.class_keys("nack-class")
+            + f'<p class="note nack-always"><strong>{esc(UNCLEAR_NOTE)}</strong> {count(n_added)} setups were added after '
             'the results were read; the primary results are shown with and without them.</p>'
             f'<p class="table-note">{esc(head_note)}</p>'
             + summary_table(N) + f'<p class="table-note nack-view-note">{esc(view_note)}</p>' + late_block(L) +
@@ -509,12 +543,7 @@ def section(N, kinds: dict, chosen: list, L: dict) -> str:
             + '<figure class="chart-card" data-static-chart id="chart-nack"><div class="chart-head">'
               '<h3>Standard against Nackgammon error rate</h3>'
               '<button type="button" class="key" data-download-static>Download PNG</button></div>' + chart(N)
-            + '<p class="chart-legend"><span><i class="swatch nack-dot nack-dm"></i>League 1 group</span> '
-              '<span><i class="swatch nack-dot nack-wh"></i>League 2 group</span> '
-              '<span><i class="swatch nack-dot nack-fr"></i>League 3 group</span> '
-              '<span><i class="swatch nack-dot nack-ng"></i>no group (exploratory)</span> '
-              '<span><i class="swatch nack-yard"></i>GNUbg weak, Random</span> '
-              '<span>Above the dashed diagonal: higher error on Nackgammon.</span></p></figure>'
+            + f'<p class="chart-legend">{chart_legend(N)}</p></figure>'
             + f'<h3>Primary comparisons</h3>{scope}'
               '<p>Each difference is A\'s drop \u2212 B\'s drop (a group\'s drop = the mean of its setups\' drops), main 200 '
               'pairs, paired bootstrap. Five comparisons, so each interval is at 99% (Bonferroni, 1 \u2212 0.05/5). Both '

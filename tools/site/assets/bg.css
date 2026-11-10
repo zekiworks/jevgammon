@@ -232,12 +232,9 @@ a.cc-open { font-weight: 600; }
 #close-b-table tbody tr:nth-child(even) > th { background: var(--zebra); }
 #close-b-table thead th[data-nosort] { cursor: default; }
 /* Nackgammon paired test (nack_section.py): standard PR (x) against Nackgammon PR (y). */
-.chart-svg .nack-dm, .swatch.nack-dm { fill: var(--reading); background: var(--reading); }
-.chart-svg .nack-wh, .swatch.nack-wh { fill: var(--good); background: var(--good); }
-.chart-svg .nack-fr, .swatch.nack-fr { fill: var(--bad); background: var(--bad); }
-.chart-svg .nack-ng, .swatch.nack-ng { fill: var(--panel); stroke: var(--text-2); stroke-width: 1.5; background: var(--panel); border: 1.5px solid var(--text-2); box-sizing: border-box; }
-.chart-svg .nack-yard, .swatch.nack-yard { fill: var(--text); background: var(--text); }
-.swatch.nack-dot { border-radius: 50%; }
+.chart-svg .nack-yard { fill: var(--data-grey); stroke: var(--text-2); stroke-width: 1; }
+#nackgammon-paired th .hl-dot { width: .7rem; height: .7rem; border-radius: 50%; margin-right: .3rem; vertical-align: -1px; }
+#nackgammon-paired .nack-class { margin: .4rem 0 0; }
 #chart-nack { margin: 1rem 0 .5rem; }
 #nackgammon-paired thead th[data-nosort] { cursor: default; }
 #nackgammon-paired ul.lettered { list-style: none; padding-left: 1rem; }

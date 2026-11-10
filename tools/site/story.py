@@ -346,6 +346,8 @@ def headline_rows(S) -> tuple[list, list, list]:
             ref = H.ref_label(S, x["ds"], x["name"]) if kind == "program" else None
             extra = []
             if kind == "model":
+                if TIER.get(x["name"]):
+                    extra.append(f'Tier (same positions) {TIER[x["name"]]}')
                 month, url = release(name)
                 if url:
                     extra.append(f'Released <a href="{esc(url)}">{month}</a>')
@@ -365,7 +367,8 @@ def headline_rows(S) -> tuple[list, list, list]:
             bid = f"{rid}-box"
             body.append(f'<tr{cls}{tr_attrs(S, x, kind, typ, mclass)} data-box="{bid}">{rank}<td class="model">{dot}{icon}'
                         f'{name_link(S, x, row_name(label, x["setting"]), bid)}{labelled}{tag}{more}'
-                        f'{details_box(S, x, kind, bid, extra, ref)}</td>{judgement_cell(x["r"], colour)}{wide_cells(x)}</tr>')
+                        f'{details_box(S, x, kind, bid, extra, ref)}</td>{judgement_cell(x["r"], colour)}{wide_cells(x)}'
+                        f'{tier_cell(x if kind == "model" else None)}</tr>')
             for sid, y in zip(sub_ids, others):
                 ycol = H.maker(y["name"])[1] if kind == "model" else None
                 ybid = f"{sid}-box"
@@ -373,7 +376,8 @@ def headline_rows(S) -> tuple[list, list, list]:
                 body.append(f'<tr class="hl-sub{"" if kind == "model" else " reference"}" '
                             f'id="{sid}" hidden{tr_attrs(S, y, kind, typ, mclass)} data-box="{ybid}"><td class="num"></td><td class="model">'
                             f'{name_link(S, y, row_name(y["name"], y["setting"]), ybid)}{ytag}'
-                            f'{details_box(S, y, kind, ybid, [], ref)}</td>{judgement_cell(y["r"], ycol)}{wide_cells(y)}</tr>')
+                            f'{details_box(S, y, kind, ybid, [], ref)}</td>{judgement_cell(y["r"], ycol)}{wide_cells(y)}'
+                            f'{tier_cell(None)}</tr>')
             if kind != "program" or x["name"] == "GNUbg weak":
                 chart.append((kind, label, x, colour))
     return body, missing, chart
@@ -383,8 +387,18 @@ def headline_rows(S) -> tuple[list, list, list]:
 # hides the hl-wide cells below 900 px, where the details box holds the same values.
 WIDE_HEAD = ["Risks found", "Safe right", "Error rate (PR)",
              '<span class="cost-1k">$ per 1,000</span><span class="cost-1m">$ per 1M</span>']
+# Ümit #4313: each ranked row's tier from Same positions (story.SAME), after the wide columns; empty where the model is
+# not in that computation (never a guess). Below 900 px the details box carries it, like the other wide columns.
+TIER_HEAD = "Tier (same positions)"
+TIER_NOTE = "Rank comes from league play; tier comes from the same 200 positions for every model."
 HEADLINE_HEAD = ([(h, " data-nosort") for h in ("#", "Model", "Risk judgement (95% interval)")]
-                 + [(h, " data-nosort data-wide") for h in WIDE_HEAD])
+                 + [(h, " data-nosort data-wide") for h in WIDE_HEAD] + [(TIER_HEAD, " data-nosort data-wide data-tier")])
+
+
+def tier_cell(x) -> str:
+    """The row's Same positions tier, or an empty cell (a setting not in the computation, a model not yet asked, a
+    program)."""
+    return f'<td class="num hl-wide">{TIER.get(x["name"], "") if x else ""}</td>'
 
 
 def wide_cells(x) -> str:
@@ -435,13 +449,16 @@ def too_safe(S, chart: list) -> str:
 MEANING = "Risk judgement: 100 = every call right, 50 = always safe; higher is better."
 ROW_LINE = "One row per model at its highest reasoning setting, never its best score; late entries included."
 # Under the table, next to the not-paired note (Ümit #4282 item 2): why # has no tiers, plainly.
-NO_TIERS = ("# is the rank only, with no tiers: a tier needs a paired test (McNemar, Holm) over positions every model "
-            "answered, and each league played its own positions, so models in different leagues never answered the "
-            "same ones. Same positions (preview) has tiers: there every model answered the same 200 positions.")
+NO_TIERS = ("# is the league rank, which has no tiers: a tier needs a paired test (McNemar, Holm) over positions every "
+            "model answered, and each league played its own positions, so models in different leagues never answered "
+            "the same ones. The Tier column and Same positions (preview) come from 200 positions every model there "
+            "answered.")
 # Same positions (preview, Zeki #4287): the stored E1 answers of 'Did they improve?' (content/same_positions_preview.json,
 # tools/site/same_positions_publish.py), tiers by exact McNemar with Holm.
 SAME = json.loads((CONTENT / "same_positions_preview.json").read_text())
 SAME_KEY = "Same positions" if SAME["prompt_equals_league"] else "Same positions (learning-experiment prompt)"
+# Shown leaderboard name -> its tier (models with all 200 answers only).
+TIER = {shown_name(m["name"]): m["tier"] for m in SAME["models"] if m["tier"] is not None}
 
 
 def same_positions() -> str:
@@ -496,7 +513,7 @@ def headline(S) -> str:
     return (f'<section class="card headline" id="leaderboard" data-dataset="all" aria-labelledby="leaderboard-title">'
             f'<div class="chart-head"><h2 id="leaderboard-title">Risk calls leaderboard</h2>{keys}'
             f'<p class="chart-sub">{esc(MEANING)}</p></div>'
-            f'<div data-headline-panel="model">{types}{table}</div>'
+            f'<div data-headline-panel="model">{types}{table}<p class="table-note hl-tier-note">{esc(TIER_NOTE)}</p></div>'
             f'<div data-headline-panel="all" hidden>{H.all_risk_table(S)}{caveat(H.RANK_NOTE, "statistics")}</div>'
             f'<div data-headline-panel="same" hidden>{same_positions()}</div>'
             f'<p class="table-note headline-rule">{esc(ROW_LINE)} {esc(ALL_NOTE)} {esc(NO_TIERS)} '

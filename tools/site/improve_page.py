@@ -510,13 +510,14 @@ def progress_status(p) -> str:
 
 ARMS = (("notes", "notes"), ("worst_mistakes", "worst mistakes"))
 ARM_LABEL = {"notes": "helper-written notes", "worst_mistakes": "worst mistakes"}
-# Small chat / decision models: the leaderboard's rule (P.is_small: total, or a mixture of experts' active, at most P.SMALL_MAX_B).
-SMALL_NOTES = {k: (f"Small {k} models: {k} models with {P.billions(P.SMALL_MAX_B)} parameters or fewer, total or "
-                  "active (for mixture-of-experts models), as disclosed by the maker; models with undisclosed size are not included.") for k in ("chat", "decision")}
 
 
-def small(name: str | None) -> str:
-    return "yes" if name in P.PARAMS and P.is_small(name) else "no"
+# Size classes (Ümit #4156): the leaderboard's (P.size_class); a model the parameter file does not list: undisclosed.
+def size(name: str | None) -> tuple[str, str]:
+    """(the row's size class, its size label after the name)."""
+    if name in P.PARAMS:
+        return P.size_class(name), f'<span class="hl-size">{esc(P.size_label(name))}</span>'
+    return "undisclosed", '<span class="hl-size">undisclosed</span>'
 
 
 # Each row's maker dot and details box (Ümit via Zeki #3803): the home leaderboard's (home.maker on the shared palette,
@@ -544,10 +545,10 @@ def maker_dot(setup: str) -> tuple[str, str]:
     return mk, f'<i class="swatch hl-dot" style="background:{colour}" title="{esc(mk)}"></i>'
 
 
-def name_cell(setup: str, dot: str, bid: str, box: list, extra: str = "") -> str:
+def name_cell(setup: str, dot: str, bid: str, box: list, extra: str = "", sized: str = "") -> str:
     from story import box_html
     return (f'<th scope="row" class="model">{dot}<span class="model-name" tabindex="0" aria-describedby="{bid}">'
-            f'{esc(setup)}</span>{extra}{box_html(bid, setup, box)}</th>')
+            f'{esc(setup)}</span>{sized}{extra}{box_html(bid, setup, box)}</th>')
 
 
 def first_line(model: str, mk: str | None, typ: str, setting: str | None) -> str:
@@ -611,8 +612,9 @@ def result_row(pm, p, m, refused, i: int, links: dict) -> str:
            "Route: " + ("our GPU" if pm["route"].startswith("local") else _inline(pm["route"])),
            None if refused else f"Status: {status_}", None if refused else f"Series done {done}",
            m and answers_line(m), m and change_line(m), links.get(pm["setup"]) or links.get(name)]
-    return (f'<tr data-progress-setup="{esc(pm["setup"])}" data-group="chat" data-small="{small(name)}" data-box="{bid}">'
-            f'{name_cell(pm["setup"], dot, bid, box)}<td>Chat</td><td data-progress="status">{status_}</td>'
+    cls, sized = size(name)
+    return (f'<tr data-progress-setup="{esc(pm["setup"])}" data-group="chat" data-size="{cls}" data-box="{bid}">'
+            f'{name_cell(pm["setup"], dot, bid, box, sized=sized)}<td>Chat</td><td data-progress="status">{status_}</td>'
             f'<td class="num" data-progress="series">{done}</td>{nums}<td>{verdict}</td></tr>')
 
 
@@ -628,8 +630,9 @@ def planned_row(r, arm, i: int, links: dict) -> str:
            f"Arm: {ARM_LABEL[arm[0]]}" if arm else None, f"Status: {esc(status_)}",
            " \u00b7 ".join(["Planned, not a result"] + ([esc(r["tag"])] if r["tag"] else [])),
            links.get(r["setup"]) or (links.get(r["params_model"]) if listed else None)]
-    return (f'<tr data-planned="{esc(r["setup"])}" data-group="{r["group"]}" data-small="{small(r["params_model"])}" '
-            f'data-box="{bid}">{name_cell(r["setup"], dot, bid, box, "<br><span class=\"small\">planned, not a result</span>" + tag)}'
+    cls, sized = size(r["params_model"])
+    return (f'<tr data-planned="{esc(r["setup"])}" data-group="{r["group"]}" data-size="{cls}" '
+            f'data-box="{bid}">{name_cell(r["setup"], dot, bid, box, "<br><span class=\"small\">planned, not a result</span>" + tag, sized)}'
             f'<td>{group}</td><td>{esc(status_)}</td><td class="num">{nm(NA)}</td><td></td><td></td><td></td>'
             '<td></td></tr>')
 
@@ -637,7 +640,8 @@ def planned_row(r, arm, i: int, links: dict) -> str:
 def results_section(L, S=None) -> str:
     """The page's first table (Ümit/Zeki #3710): one row per model, the plan's chat models (status and series from
     the validated progress fields; numbers from the validated results; Yes or No only past the verdict gate), then the
-    planned rows (content/improve_planned.json: status only, never a number). Filters: All, Chat, Decision, Small chat, Small decision. Each
+    planned rows (content/improve_planned.json: status only, never a number). Filters: type (All, Chat, Decision) and
+    size (P.size_keys), combined. Each
     row: its maker dot and details box; S (the site's state, absent in the page's own renders): the boxes' links to
     the leaderboard's decisions and model pages."""
     refused = L["progress_refused"]
@@ -650,11 +654,8 @@ def results_section(L, S=None) -> str:
             + "".join(f"<li>{esc(p)}</li>" for p in refused) + "</ul>" if refused else "")
     keys = ('<div class="keys needs-js" role="group" aria-label="Model type">'
             + "".join(f'<button type="button" class="key" data-improve-filter="{k}" aria-pressed="{str(k == "all").lower()}">'
-                      f'{t}</button>' for k, t in (("all", "All"), ("chat", "Chat models"),
-                                                   ("decision", "Decision models"), ("small-chat", "Small chat models"),
-                                                   ("small-decision", "Small decision models")))
-            + "</div>" + "".join(f'<p class="table-note improve-small-note" data-small-note="small-{k}" hidden>{esc(v)}</p>'
-                                 for k, v in SMALL_NOTES.items()))
+                      f'{t}</button>' for k, t in (("all", "All"), ("chat", "Chat models"), ("decision", "Decision models")))
+            + "</div>" + P.size_keys("improve-size"))
     cap = (f'{count(len(L["plan"]["models"]))} chat models under the pre-registered rule: finished first (by the change '
            'in risks found), then running, then not started. Rows marked "planned, not a result" are not run yet and '
            'show no numbers; a decision setup has one row per arm (notes, worst mistakes).')

@@ -9,7 +9,7 @@ import json
 import math
 
 import pages as P
-from common import CONTENT, NACK_SCOPE_NOTE, count, esc, fmt, label
+from common import CONTENT, NACK_SCOPE_NOTE, count, esc, fmt, label, name_html, name_text
 
 SECTION_ID = "nackgammon-paired"
 TITLE = "Nackgammon paired test"
@@ -57,10 +57,10 @@ MODEL_OF = {**{label(s["name"]): label(s["model"]) for s in json.loads((CONTENT 
 
 
 def setup_class(name: str) -> str:
-    """The setup's model class label (P.model_class, the leaderboard's Class row), '' for a program or a model the
-    parameter file does not list."""
+    """The setup's class label as on the leaderboard (P.class_label: 'Open · 27B', 'Closed · Efficient'), '' for a
+    program or a model the parameter file does not list (Zeki #4534)."""
     m = MODEL_OF.get(name)
-    return P.CLASS_LABEL[P.model_class(m)] if m in P.PARAMS else ""
+    return P.class_label(m) if m in P.PARAMS else ""
 
 
 def resolve(data: dict, rec, path: str):
@@ -132,10 +132,11 @@ def class_key(name: str, group: str) -> str:
 
 
 def _setup_label(name, rec) -> str:
+    """The row's maker mark, the official name and its tag, the class label, then the group (Zeki #4534)."""
     added = f" \u00b7 {ADDED}" if rec.get("added") else ""
     cls = setup_class(name)
     size = f'<span class="hl-size">{esc(cls)}</span>' if cls else ""
-    return (f'{maker_mark(name, rec["group"])}{esc(name)}{size}'
+    return (f'{maker_mark(name, rec["group"])}<span class="model-name">{name_html(name)}</span>{size}'
             f'<span class="small">{esc(GROUP_SHOWN[rec["group"]])}{esc(added)}</span>')
 
 
@@ -452,7 +453,7 @@ def chart(N) -> str:
         cx, cy = x(p["standard_pr"]), y(p["nackgammon_pr"])
         cls = setup_class(p["setup"])
         mk = "" if p["group"] == "yardstick" else f'{maker(p["setup"])[0]} · '
-        tip = (f'{p["setup"]} ({mk}{(cls + " · ") if cls else ""}{GROUP_SHOWN[p["group"]]}): standard PR '
+        tip = (f'{name_text(p["setup"])} ({mk}{(cls + " · ") if cls else ""}{GROUP_SHOWN[p["group"]]}): standard PR '
                f'{fmt(p["standard_pr"], 2)}, Nackgammon PR {fmt(p["nackgammon_pr"], 2)}')
         mark = (f'<rect class="nack-yard" x="{cx - 5:.1f}" y="{cy - 5:.1f}" width="10" height="10"/>'
                 f'<text x="{cx + 8:.1f}" y="{cy + 4:.1f}">{esc(p["setup"])}</text>' if p["group"] == "yardstick"

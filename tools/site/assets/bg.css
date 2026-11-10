@@ -606,7 +606,13 @@ nav.filters.filter-row .filters-body { display: flex; flex-wrap: wrap; align-ite
   .tabbar .key { padding: .25rem .55rem; font-size: .8rem; }
 }
 /* A grey maker's name beside its dot (home.dot; logic #4436): the dot alone would not tell grey makers apart. */
-.mk-name { margin: 0 .35rem 0 .2rem; color: var(--text-2); font-size: .74rem; white-space: nowrap; }
+.mk-name { margin: 0 .5rem 0 .2rem; color: var(--text-2); font-size: .74rem; font-weight: 400; white-space: nowrap; }
+.mk-name::after { content: " \00b7"; }
+/* Nackgammon's setup cells (Zeki #4534): the class label on its own line under the name on a phone, as on the
+   leaderboard. */
+@media (max-width: 767px) {
+  #nackgammon-paired th .hl-size { display: block; margin-left: 0; white-space: normal; }
+}
 /* A setup's tag after its official name outside the leaderboard (Ümit #4445): setting · route · snapshot, small, grey,
    as the leaderboard's chip. */
 .name-tag { display: inline-block; margin-left: .35rem; padding: 0 .4rem; color: var(--text-2); font-size: .74rem;

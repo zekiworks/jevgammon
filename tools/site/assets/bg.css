@@ -555,7 +555,7 @@ nav.filters.filter-row .filters-body { display: flex; flex-wrap: wrap; align-ite
 /* Filter rows: each with its name (Models, Class …) before its keys; a table's rows sit in one box which, on a phone,
    opens from one Filters key that counts the rows not at All (site.js filterBoxes). */
 .filter-box { margin: .2rem 0 .5rem; }
-.filter-toggle { display: none; }
+.filter-box .filter-toggle { display: none; }
 .filter-rows { display: grid; gap: .35rem; }
 .filter-rows.filters-bar { display: flex; }
 .frow { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .5rem; }
@@ -593,7 +593,7 @@ nav.filters.filter-row .filters-body { display: flex; flex-wrap: wrap; align-ite
   table.ph-fit .ph-off { display: none !important; }
   table.ph-fit tr[data-ph-box] > :first-child::after { content: " \25B8"; color: var(--text-2); }
   .swipe-hint { display: none !important; }
-  .filter-toggle { display: inline-flex; }
+  .filter-box .filter-toggle { display: inline-flex; }
   .filter-box:not(.is-open) .filter-rows { display: none; }
   .filter-box.is-open .filter-rows { margin-top: .45rem; }
   .filter-toggle[aria-expanded="true"] { border-color: var(--sel-bg); }

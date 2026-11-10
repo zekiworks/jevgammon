@@ -15,13 +15,11 @@ from common import effort_aliases
 # tab is a page; every other page sits under one tab (SECTION), which is marked while it is in view. The pages that are
 # not tabs (Matches, Phases, Compare, Where models disagree, Leagues, Models, Data, Method) are linked from the
 # Leaderboard (the Text tab) and the About page (MORE_PAGES). Vision is a short page: no vision runs yet.
-# Highlights hidden for now (Ümit via Zeki #4392): no tab and no link to it; the page is still built at highlights/ so an
-# old direct link keeps working.
 TABS = [("", "Text"), ("vision/", "Vision"), ("improve/", "Learning"), ("decisions/", "Decisions"),
-        ("experiments/", "Experiments"), ("about/", "About")]
+        ("highlights/", "Highlights"), ("experiments/", "Experiments"), ("about/", "About")]
 # Learning (Ümit #4178): "Did they improve?" (improve/), with the learning pilot (learning/) under it.
 SECTION = {"clear-risk/": "experiments/", "learning/": "improve/", "nackgammon/": "experiments/", "method/": "about/",
-           "data/": "about/", "highlights/": "experiments/"}
+           "data/": "about/"}
 MORE_PAGES = [("matches/", "Matches"), ("phases/", "Phases"), ("compare/", "Compare"),
               ("disagreements/", "Where models disagree"), ("leagues/", "Leagues"), ("models/", "Every model setup"),
               ("method/", "Method"), ("data/", "Data")]

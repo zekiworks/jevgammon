@@ -1,0 +1,35 @@
+{
+  "name": "Muse Ember (max)",
+  "spec": "openai-compatible/meta/muse-ember",
+  "provider": "openrouter:meta",
+  "base_url": "https://openrouter.ai/api/v1",
+  "api_key_env": "OPENROUTER_API_KEY",
+  "letter_readout": "answer",
+  "reasoning": "max",
+  "request": {
+    "provider": {
+      "only": [
+        "meta"
+      ],
+      "allow_fallbacks": false
+    },
+    "usage": {
+      "include": true
+    },
+    "logprobs": null,
+    "top_logprobs": null
+  },
+  "price": {
+    "input_per_mtok": 0.1,
+    "output_per_mtok": 0.5
+  },
+  "note": "meta/muse-ember via OpenRouter, provider only=[meta] (reply provider Meta), fallbacks off, reasoning_effort max (top of OpenRouter's listed efforts on 2026-11-10). Cloned from 'Kimi K3.1 Pro (off)' league settings (v3.db players.settings): only name, spec, provider pin, reasoning, price, note changed. request.logprobs/top_logprobs = null (removed from the body: the maker endpoints reject or ignore logprobs; the answer letter is read from the reply, 'choice only').",
+  "parallel": 4,
+  "budget": {
+    "ledger": "/home/cbasaran/code/jevgammon/workspace/late-ember/state/ember-budget.db",
+    "cap_usd": 19.5,
+    "input_per_mtok": 0.1,
+    "cached_input_per_mtok": 0.1,
+    "output_per_mtok": 0.5
+  }
+}

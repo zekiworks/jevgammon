@@ -1079,7 +1079,7 @@ def params_html(model: str) -> str:
     if total is None:
         return "not disclosed by maker"
     if p["effective_b"] is not None:
-        text = f'{billions(p["effective_b"])} effective ({billions(total)} total)'
+        text = f'{billions(total)} {"MoE" if p["moe"] else "dense"} · {billions(p["effective_b"])} effective'
     elif p["active_b"] is not None:
         text = f'{billions(total)} MoE · {billions(p["active_b"])} active'
     elif p["moe"]:

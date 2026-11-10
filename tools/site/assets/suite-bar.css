@@ -8,13 +8,14 @@
    (project lead, 10 November, bus #4222): a white rectangle with a dark edge in the light theme, a light outline on a
    faint fill in the dark one. The current site's link carries aria-current="page" and is filled, with a thicker ring.
 
-   The links sit in the middle of the strip (project lead, 9 November), every label whole. Where one line no longer
-   fits (below about 700 px wide), the links wrap onto a second centred line (up to about 385 px: All benches and
-   Reading & Grammar, then Logic & Math and Backgammon; wider, the first three, then Backgammon), so the strip never
-   scrolls sideways and never cuts a label. On a desktop one line about 57 px tall: 10 px above and below the links,
-   the links 36 px high with 10 px by 18 px inside and 24 px between them, 14 px text. Below 600 px wide the full
-   labels in 13 px text (Zeki, bus #3924), links 31 px high with 8 px inside and 8 px between them, 6 px between the
-   two lines: about 48 px tall on one line, 85 px on two. */
+   The links sit in the middle of the strip (project lead, 9 November), every label whole, always on one line at every
+   width (Ümit, 10 November, bus #4425; logic #4463): where the line no longer fits (below about 700 px wide) the strip
+   scrolls sideways, starting at All benches, with no scroll bar drawn, and the links never wrap onto a second line.
+   The first and last items' auto margins centre the line while it fits and let it start at the left edge once it
+   overflows, so no label is ever cut on the left. On a desktop one line about 57 px tall: 10 px above and below the
+   links, the links 36 px high with 10 px by 18 px inside and 24 px between them, 14 px text. Below 600 px wide the full
+   labels in 13 px text (Zeki, bus #3924), links 28 px high with 6 px by 8 px inside and 8 px between them, 6 px above
+   and below: one line about 41 px tall. */
 .suite-bar {
   --suite-bg: #ecebe6;
   --suite-edge: #c9c6bf;
@@ -72,15 +73,21 @@
 }
 .suite-bar ul {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 6px 24px;
-  margin: 0;
-  padding: 0;
+  margin: -3px;
+  padding: 3px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
   list-style: none;
 }
+.suite-bar ul::-webkit-scrollbar { display: none; }
 .suite-bar li { flex: none; margin: 0; padding: 0; }
+.suite-bar li:first-child { margin-left: auto; }
+.suite-bar li:last-child { margin-right: auto; }
 .suite-bar a {
   box-sizing: border-box;
   display: inline-flex;
@@ -103,8 +110,9 @@
   box-shadow: 0 0 0 1px var(--suite-current-edge);
 }
 @media (max-width: 599px) {
-  .suite-bar { min-height: 48px; padding: 8px 8px; font-size: 13px; }
-  .suite-bar ul { gap: 6px 8px; }
-  .suite-bar a { min-height: 31px; padding: 8px 8px; }
+  .suite-bar { min-height: 41px; padding: 6px 16px; font-size: 13px; }
+  .suite-bar ul { flex-wrap: nowrap; justify-content: flex-start; gap: 6px 8px; overflow-x: auto; scrollbar-width: none; }
+  .suite-bar ul::-webkit-scrollbar { display: none; }
+  .suite-bar a { min-height: 28px; padding: 6px 8px; }
 }
 @media print { .suite-bar { display: none; } }

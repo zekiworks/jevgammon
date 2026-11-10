@@ -147,6 +147,16 @@ if git -C "$CLONE" diff --cached --quiet; then
   log "no change in the built site ($AS_OF)"
 else
   git -C "$CLONE" commit -q -m "backgammon: data as of $AS_OF"
+  # The three Hilde sites share one Pages deploy, and a push cancels the deploy still running (bus #4213/#4215): wait
+  # (up to 15 min, one check a minute: the anonymous API allows 60 an hour) while a Pages run is queued or running.
+  for _ in $(seq 1 15); do
+    busy=$(curl -s --max-time 15 "https://api.github.com/repos/zekiworks/analysis/actions/runs?per_page=3" |
+      python3 -c 'import json, sys
+try: print(sum(r["status"] in ("queued", "in_progress", "waiting", "requested") for r in json.load(sys.stdin)["workflow_runs"]))
+except Exception: print(0)')
+    [ "$busy" = 0 ] && break
+    sleep 60
+  done
   for attempt in 1 2 3; do
     if git -C "$CLONE" push -q origin main; then
       log "pushed, data as of $AS_OF"

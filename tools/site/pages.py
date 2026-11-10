@@ -1125,26 +1125,50 @@ def model_class(model: str) -> str | None:
 
 
 def _short(b: float) -> str:
-    """A count in billions for the label after a name: one decimal under 10B, whole above, '2.8T' from 1000B."""
-    return billions(round(b, 1) if b < 10 else round(b) if b < 1000 else round(b, -2))
+    """A count in billions for the label after a name (turkce #4231, the three sites' format): whole from 10B ('26B',
+    '266B', '2800B'), one decimal under 10B ('7.9B', '0.4B')."""
+    return f"{round(b)}B" if b >= 10 else f"{round(b, 1):.1f}B"
+
+
+# The label's marks (Ümit #4229, turkce #4231): a superscript after the number, explained in the details box
+# (class_note): 'MoE' for every mixture of experts, '2×' for two models run together (REAX 1.3).
+TWO_MODELS = {"REAX 1.3"}
 
 
 def class_label(model: str) -> str:
-    """The short label after a row's name (Ümit #4217): an open model's total ('27B', '309B MoE · 15B active', '753B
-    MoE' where the active count is undisclosed); DeepSeek V4.1 Flash its card's terms ('552B backbone MoE · 8B/16B
-    active'); a priced model 'Closed · Workhorse' or 'Open, size undisclosed · Efficient'; no price: '... · price
-    unknown'. The details box keeps the exact count (params_html)."""
+    """The short label after a row's name (Ümit #4217, #4229; turkce #4231), as HTML: an open model's total (_short),
+    with a superscript 'MoE' for a mixture of experts ('35B<sup>MoE</sup>') or '2×' for two models run together
+    ('57B<sup>2×</sup>'), a dense model none ('27B'); an open model without a disclosed whole-model total: empty; a
+    closed model 'Closed · Workhorse' (no price: 'Closed · price unknown'). The details box explains a mark
+    (class_note) and keeps the exact count (params_html)."""
     p = PARAMS[model]
     if p["total_b"] is not None:
-        if not p["moe"]:
-            return _short(p["total_b"])
-        active = f' \u00b7 {_short(p["active_b"])} active' if p["active_b"] is not None else ""
-        return f'{_short(p["total_b"])} MoE{active}'
-    if model == "DeepSeek V4.1 Flash":
-        return "552B backbone MoE \u00b7 8B/16B active"
+        mark = ("MoE", "Mixture of experts") if p["moe"] else ("2\u00d7", "Two models run together") \
+            if model in TWO_MODELS else None
+        return _short(p["total_b"]) + (f'<sup class="hl-mark" title="{mark[1]}">{mark[0]}</sup>' if mark else "")
+    if PRICES[model]["weights"] != "closed":
+        return ""
     cls = model_class(model)
-    head = "Closed" if PRICES[model]["weights"] == "closed" else "Open, size undisclosed"
-    return f'{head} \u00b7 {CLASS_LABEL[cls] if cls else "price unknown"}'
+    return f'Closed \u00b7 {CLASS_LABEL[cls] if cls else "price unknown"}'
+
+
+def class_note(model: str) -> str | None:
+    """The details box's line explaining a label's mark (Ümit #4229, turkce #4231), plain text: a mixture of experts
+    'Mixture of experts: 35.11B total, about 3B active per step. Size class uses 35.11B.' (the count model_class
+    uses: the total, #4217); REAX 1.3 its two parts (model card and reax-engine @ ff8f595 reax13/probabilities.py:
+    every request to both parts, per-option probabilities 0.5*G + 0.5*Q); None for a model without a mark."""
+    p = PARAMS[model]
+    if model == "DeepSeek V4.1 Flash":
+        return ("Mixture of experts: 552B backbone plus 196B conditional memory (no whole-model total stated by the "
+                "maker), about 8B active per step in prefill and 16B in decode. Size class uses the 552B backbone.")
+    if p["total_b"] is not None and p["moe"]:
+        active = (f'about {billions(p["active_b"])} active per step' if p["active_b"] is not None
+                  else "active count not disclosed by the maker")
+        return f'Mixture of experts: {billions(p["total_b"])} total, {active}. Size class uses {billions(p["total_b"])}.'
+    if model in TWO_MODELS:
+        return (f'Two models run together, option probabilities averaged 50/50: {billions(p["total_b"])} in all, all '
+                'used on every question.')
+    return None
 
 
 def class_keys(cls: str) -> str:

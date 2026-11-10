@@ -517,7 +517,8 @@ ARM_LABEL = {"notes": "helper-written notes", "worst_mistakes": "worst mistakes"
 def model_class(name: str | None) -> tuple[str, str]:
     """(the row's class key, '' for none; its class label after the name, '' for a model the file does not list)."""
     if name in P.PARAMS:
-        return P.model_class(name) or "", f'<span class="hl-size">{esc(P.class_label(name))}</span>'
+        label = P.class_label(name)
+        return P.model_class(name) or "", f'<span class="hl-size">{label}</span>' if label else ""
     return "", ""
 
 
@@ -610,6 +611,7 @@ def result_row(pm, p, m, refused, i: int, links: dict) -> str:
     mk, dot = maker_dot(pm["setup"])
     bid = f"ir-{i}-box"
     box = [first_line(name, mk, "chat model", setting), f"Parameters: {P.params_html(name)}",
+           esc(P.class_note(name)) if P.class_note(name) else None,
            "Route: " + ("our GPU" if pm["route"].startswith("local") else _inline(pm["route"])),
            None if refused else f"Status: {status_}", None if refused else f"Series done {done}",
            m and answers_line(m), m and change_line(m), links.get(pm["setup"]) or links.get(name)]
@@ -628,6 +630,7 @@ def planned_row(r, arm, i: int, links: dict) -> str:
     bid = f"ir-{i}-box"
     box = [first_line(r["setup"], mk, "decision model" if arm else "chat model", None),
            f'Parameters: {P.params_html(r["params_model"])}' if listed else None,
+           esc(P.class_note(r["params_model"])) if listed and P.class_note(r["params_model"]) else None,
            f"Arm: {ARM_LABEL[arm[0]]}" if arm else None, f"Status: {esc(status_)}",
            " \u00b7 ".join(["Planned, not a result"] + ([esc(r["tag"])] if r["tag"] else [])),
            links.get(r["setup"]) or (links.get(r["params_model"]) if listed else None)]

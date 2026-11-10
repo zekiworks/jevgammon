@@ -71,8 +71,10 @@ def about_text(S, rel: str) -> str:
             'effective count, Gemma\'s E-series, by its total with embeddings). A closed model, or an open model whose '
             'maker gives no total, by its list price per 1M input tokens (base rate, from the maker\'s price page): '
             'Efficient $0.50 or less, Workhorse over $0.50 to $3, Flagship over $3. Never estimated: a model with '
-            'neither has no class. The label after a model\'s name is its total (a mixture of experts with its active '
-            'count) or Closed and its price class. Parameters (in a row\'s details): the exact count its maker '
+            'neither has no class. The label after a model\'s name is its total, whole from 10B and to one decimal '
+            'under it (a superscript MoE: a mixture of experts; 2×: two models run together; a row\'s details explain '
+            'the mark), empty for an open model whose maker gives no whole-model total, or Closed and its price class. '
+            'Parameters (in a row\'s details): the exact count its maker '
             'documents (model card, Hugging Face repository or announcement), linked, with dense or MoE; a mixture of '
             'experts as total · active; "not disclosed by maker" where the maker gives none.</p>'
             f'<p>{esc(NOTE)}</p><p>{esc(RULE)}</p>'
@@ -284,6 +286,7 @@ def details_box(S, x, kind: str, bid: str, extra: list, ref: str | None = None) 
         (esc(P.SUBQ_SELF) if e and x["name"] == P.SUBQ_11 else None),
         join([cost_text(S, x), f'{count(q["decisions"])} decisions' if q else None]),
         (f'Parameters: {P.params_html(x["model"])}' if kind != "program" else None),
+        (esc(P.class_note(x["model"])) if kind != "program" and P.class_note(x["model"]) else None),
         *extra,
         links_line(S, x)]
     return box_html(bid, x["name"], lines)
@@ -335,7 +338,8 @@ def headline_rows(S) -> tuple[list, list, list]:
             typ = "program" if kind == "program" else model_type(S, x)
             mclass = P.model_class(x["model"]) if kind == "model" else None
             # The model's class label after its name (Ümit #4217): small grey text; wraps under it on a phone.
-            labelled = f'<span class="hl-size">{esc(P.class_label(x["model"]))}</span>' if kind == "model" else ""
+            label_html = P.class_label(x["model"]) if kind == "model" else ""
+            labelled = f'<span class="hl-size">{label_html}</span>' if label_html else ""
             # Nothing under the name (Ümit #3039); after it one small grey chip (Ümit #3193): setting · type, a late
             # entry's tag in it (a caveat on its rank); the maker only in the dot and the box.
             tag = f'<span class="hl-tag">{esc(chip_text(S, x, kind))}</span>'

@@ -444,6 +444,7 @@ tr.hl-sub td.model > .hl-tag { background: var(--panel); }
 .class-keys-label { color: var(--text-2); font-size: .82rem; }
 .class-keys .key[hidden] { display: none; }
 .hl-size { display: inline-block; margin-left: .35rem; color: var(--text-2); font-size: .74rem; white-space: nowrap; }
+.hl-mark { margin-left: .05rem; }
 tr.hl-off { display: none !important; }
 table.headline tbody tr.hl-open > td, #improve-results-table tbody tr.hl-open > * { background: var(--row-hover); }
 /* The "Did they improve?" table's boxes sit in its sticky first column: the open row's cell above the other rows' (and

@@ -344,6 +344,14 @@ td.badges .small { display: block; white-space: normal; }
 .hc-line { color: var(--text-2); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .hc-num { color: var(--text); font-weight: 600; }
 .experiment-card .status { margin-bottom: .3rem; }
+.experiment-card h2 { margin: 0 0 .3rem; }
+.experiment-card p { margin: .3rem 0; overflow-wrap: anywhere; }
+.experiment-status { display: flex; flex-wrap: wrap; align-items: center; gap: .2rem .4rem; }
+.experiment-counts { color: var(--text-2); font-size: .9em; font-variant-numeric: tabular-nums; }
+.experiment-card .hero-links { display: flex; flex-wrap: wrap; gap: .3rem 1rem; }
+.experiment-small { font-size: .95em; }
+.status-completed { color: var(--accepted); border-color: var(--accepted); }
+.status-paused { color: var(--reading-text); border-color: var(--reading-text); }
 /* Three kinds of choice, three looks, in both themes and without hovering (Zeki, bus #1860):
    - the page in view: its tab in the site's bar underlined in the link colour (site.css);
    - a part of a page (in-page tabs: the leaderboard's and the leagues' tabs, the part links): keys

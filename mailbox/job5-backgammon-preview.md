@@ -211,3 +211,25 @@ method.py, build.py (load_setups through the shown name), content/same_positions
 same_positions_publish.py (the read-only computation; it reads the live state and smoke/improve and writes /tmp/job5).
 **Not run:** nack_paired_verify. On origin/main it already reports 118 mismatches, mostly the suite-bar
 'decision-models' string, so it is not a gate.
+
+## Update 1 (Ümit #4313): Tier column on the league leaderboard
+Branch head after this update: 754718f (pushed, not merged). League play stays the default view, and the Same
+positions view is unchanged.
+- **New column "Tier (same positions)"** after the four wide columns. It shows each ranked row's tier from the Same
+  positions computation: 8 rows in tier 1 and 4 in tier 2. The cell is **empty** for models not in that computation
+  (the 26 not asked, and Claude Sonnet 5.5 with 111/200), for other-settings rows and for programs. It is never a guess
+  and never a dash.
+- **One line under the table, exactly:** "Rank comes from league play; tier comes from the same 200 positions for
+  every model."
+- The no-tiers sentence in the note below now begins "# is the league rank, which has no tiers: …" and ends "The Tier
+  column and Same positions (preview) come from 200 positions every model there answered."
+- **Phone:** like the other wide columns, the column is hidden below 900 px. The row's details box then shows "Tier
+  (same positions) N" (12 boxes).
+- **Fit at 1280:** the wide column heads now wrap; their cells do not. At 1280 the table fits its box (1,056 px wide
+  in a 1,056 px box). Without the wrap it was 67 px too wide and the Tier column was cut off.
+- **Unchanged by this update:**
+  - At 375 the table is 340 px in a 328 px box, the same as on origin/main.
+  - At 900 the table still scrolls inside its box: 51 px too wide (on main it is 90 px too wide).
+- **Checks:** branch build exit 0. All 2,400 data and decision files hold the same numbers; data/manifest.json still
+  differs only in file byte sizes. On the home page, the new number tokens are the 12 tier cells plus the 12 detail
+  lines. Screenshots in `job5-backgammon-preview/` are refreshed at 1280 and 375, with no sideways page scroll.

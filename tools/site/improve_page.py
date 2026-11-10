@@ -510,9 +510,9 @@ def progress_status(p) -> str:
 
 ARMS = (("notes", "notes"), ("worst_mistakes", "worst mistakes"))
 ARM_LABEL = {"notes": "helper-written notes", "worst_mistakes": "worst mistakes"}
-# Small models: the leaderboard's rule (P.is_small: total, or a mixture of experts' active, at most P.SMALL_MAX_B).
-SMALL_NOTE = (f"Small models: {P.billions(P.SMALL_MAX_B)} parameters or fewer, total or active (for "
-              "mixture-of-experts models), as disclosed by the maker; models with undisclosed size are not included.")
+# Small chat / decision models: the leaderboard's rule (P.is_small: total, or a mixture of experts' active, at most P.SMALL_MAX_B).
+SMALL_NOTES = {k: (f"Small {k} models: {k} models with {P.billions(P.SMALL_MAX_B)} parameters or fewer, total or "
+                  "active (for mixture-of-experts models), as disclosed by the maker; models with undisclosed size are not included.") for k in ("chat", "decision")}
 
 
 def small(name: str | None) -> str:
@@ -637,7 +637,7 @@ def planned_row(r, arm, i: int, links: dict) -> str:
 def results_section(L, S=None) -> str:
     """The page's first table (Ümit/Zeki #3710): one row per model, the plan's chat models (status and series from
     the validated progress fields; numbers from the validated results; Yes or No only past the verdict gate), then the
-    planned rows (content/improve_planned.json: status only, never a number). Filters: All, Chat, Decision, Small. Each
+    planned rows (content/improve_planned.json: status only, never a number). Filters: All, Chat, Decision, Small chat, Small decision. Each
     row: its maker dot and details box; S (the site's state, absent in the page's own renders): the boxes' links to
     the leaderboard's decisions and model pages."""
     refused = L["progress_refused"]
@@ -651,8 +651,10 @@ def results_section(L, S=None) -> str:
     keys = ('<div class="keys needs-js" role="group" aria-label="Model type">'
             + "".join(f'<button type="button" class="key" data-improve-filter="{k}" aria-pressed="{str(k == "all").lower()}">'
                       f'{t}</button>' for k, t in (("all", "All"), ("chat", "Chat models"),
-                                                   ("decision", "Decision models"), ("small", "Small models")))
-            + f'</div><p class="table-note improve-small-note" hidden>{esc(SMALL_NOTE)}</p>')
+                                                   ("decision", "Decision models"), ("small-chat", "Small chat models"),
+                                                   ("small-decision", "Small decision models")))
+            + "</div>" + "".join(f'<p class="table-note improve-small-note" data-small-note="small-{k}" hidden>{esc(v)}</p>'
+                                 for k, v in SMALL_NOTES.items()))
     cap = (f'{count(len(L["plan"]["models"]))} chat models under the pre-registered rule: finished first (by the change '
            'in risks found), then running, then not started. Rows marked "planned, not a result" are not run yet and '
            'show no numbers; a decision setup has one row per arm (notes, worst mistakes).')

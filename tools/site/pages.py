@@ -1056,9 +1056,15 @@ def phases_page(S) -> str:
 # mixture of experts, effective where the maker gives one, in billions as shown, the source URL and read date); never
 # an estimate.
 PARAMS = json.loads((CONTENT_DIR / "model_params.json").read_text())["models"]
-# The leaderboard's Small models key (story.headline): disclosed total parameters in billions (a mixture of experts by
-# its total) at most this; 15B is the three sites' shared provisional threshold (#3471, #3473), not a human decision.
-SMALL_MAX_B = 15
+# Size classes (Ümit #4156, Zeki #4202; the three sites' shared rule, size_class): (key, label, the one-sentence rule
+# shown under the Size keys while the class is selected). Programs are in no class.
+_BY = "by the smaller of total and active parameters, as disclosed by the maker."
+SIZE_CLASSES = (("tiny", "Tiny", f"Tiny models: under 6B parameters, {_BY}"),
+                ("small", "Small", f"Small models: 6B to 15B parameters, {_BY}"),
+                ("medium", "Medium", f"Medium models: over 15B to 40B parameters, {_BY}"),
+                ("large", "Large", f"Large models: over 40B parameters, {_BY}"),
+                ("undisclosed", "Undisclosed", "Undisclosed: models whose maker discloses no parameter count; never "
+                                               "estimated."))
 
 
 def billions(b: float) -> str:
@@ -1090,13 +1096,46 @@ def params_html(model: str) -> str:
     return f'<a href="{esc(p["source"])}">{esc(text)}</a>'
 
 
-def is_small(model: str) -> bool:
-    """Disclosed total parameters, or a mixture of experts' disclosed active parameters, at most SMALL_MAX_B billion
-    (Ümit via Zeki #3815/#3816, the same rule on all three sites); an undisclosed count is never assumed. A model with
-    several disclosed active counts (DeepSeek V4.1 Flash: 8B prefill / 16B decode) has active_b null and its counts in
-    'terms' only, so it is small only by a total, which it lacks: never small (#3876 asks every active count <= 15B)."""
+def size_b(model: str) -> float | None:
+    """The count a model is classed by: the smaller of its disclosed total and active parameters, in billions; None
+    where neither is disclosed. A model with several disclosed active counts (DeepSeek V4.1 Flash: 8B prefill / 16B
+    decode) has active_b null and its counts in 'terms' only, and no total: undisclosed (#3876). An effective count
+    (Gemma's E-series) is never used: such a model goes by its total."""
     p = PARAMS[model]
-    return any(v is not None and v <= SMALL_MAX_B for v in (p["total_b"], p["active_b"]))
+    return min((v for v in (p["total_b"], p["active_b"]) if v is not None), default=None)
+
+
+def size_class(model: str) -> str:
+    """The model's size class key (SIZE_CLASSES, SIZE_RULE): tiny (< 6B), small (6B to 15B), medium (over 15B to 40B),
+    large (over 40B) or undisclosed. A model the file does not list: KeyError."""
+    b = size_b(model)
+    return "undisclosed" if b is None else "tiny" if b < 6 else "small" if b <= 15 else "medium" if b <= 40 else "large"
+
+
+def size_label(model: str) -> str:
+    """The short size after a row's name (#4192/#4194): one decimal, dense or MoE: '26.1B dense', '35.1B MoE · 3B
+    active', '8B dense · 4B effective'; 'undisclosed' without a disclosed total. The details box keeps the exact count
+    (params_html)."""
+    p = PARAMS[model]
+    if p["total_b"] is None:
+        return "undisclosed"
+    def one(b: float) -> str:
+        return billions(round(b, 1) if b < 1000 else round(b, -2))
+    text = f'{one(p["total_b"])} {"MoE" if p["moe"] else "dense"}'
+    if p["effective_b"] is not None:
+        return f'{text} \u00b7 {one(p["effective_b"])} effective'
+    return f'{text} \u00b7 {one(p["active_b"])} active' if p["active_b"] is not None else text
+
+
+def size_keys(cls: str) -> str:
+    """The Size row under a table's type keys (Ümit #4156): All · Tiny · Small · Medium · Large · Undisclosed
+    (data-size-key), and each class's rule line, shown while it is selected (data-size-note); cls: the row's classes."""
+    return (f'<div class="keys size-keys needs-js {cls}" role="group" aria-label="Size"><span class="size-keys-label">'
+            'Size:</span>' + "".join(f'<button type="button" class="key" data-size-key="{k}" aria-pressed='
+                                     f'"{str(k == "all").lower()}">{l}</button>'
+                                     for k, l, _ in (("all", "All", None),) + SIZE_CLASSES)
+            + "</div>" + "".join(f'<p class="table-note size-note" data-size-note="{k}" hidden>{esc(n)}</p>'
+                                 for k, _, n in SIZE_CLASSES))
 
 
 B7 = [("model_id", "Model ID"), ("provider", "Provider or endpoint"), ("date_run", "Date run"), ("price", "Price"),

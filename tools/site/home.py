@@ -12,6 +12,7 @@ import analysis as A
 import nack_section
 import pages as P
 from common import ALL_NOTE, CLOSE_B_SCOPE_NOTE, CONTENT, LATE_ENTRY, NA, NOT_MEASURED, PENDING, PROVISIONAL, PROVISIONAL_NOTE, TOO_FEW, count, esc, fmt, nm, pct, relabel, shown_names_html, status_badge
+from common import name_and_tag, tag_html, tag_text
 
 TABS = [("risk", "Risk"), ("quality", "Quality"), ("confidence", "Confidence"), ("reasoning", "Reasoning"),
         ("cost", "Cost"), ("stability", "Stability")]
@@ -123,8 +124,9 @@ def cell_model(S, ds, name, ref=None) -> str:
                 f'<span class="small">reference row, never ranked · {esc(ref)}</span></td>')
     m = P.meta(S, ds, name)
     extra = f" · {GNUBG_WEAK}" if name == "GNUbg weak" else ""
-    return (f'<td class="model"><a class="model-name" href="{P.model_href("", ds, name, S)}">{esc(name)}</a>'
-            f'<span class="small">{esc(settings_line(m) + extra)}</span></td>')
+    shown, parts = name_and_tag(name, ds)
+    return (f'<td class="model"><a class="model-name" href="{P.model_href("", ds, name, S)}">{esc(shown)}</a>'
+            f'{tag_html(tag_text(parts))}<span class="small">{esc(settings_line(m) + extra)}</span></td>')
 
 
 def is_reference(S, ds, name) -> bool:
@@ -340,8 +342,9 @@ def all_tr(S, lg, n, ref, cells: str) -> str:
     """A row of the All leagues table: the name with the model type under it, the League, then the league table's cells."""
     ds = lg["dataset"]
     t = kind(P.origin_meta(S, ds, n))
-    name = (f'<a class="model-name" href="{P.model_href("", ds, n, S)}">{esc(n)}</a>' if n in lg["setups"]
-            else f'<span class="model-name">{esc(n)}</span>')
+    shown, parts = name_and_tag(n, ds)
+    name = (f'<a class="model-name" href="{P.model_href("", ds, n, S)}">{esc(shown)}</a>' if n in lg["setups"]
+            else f'<span class="model-name">{esc(shown)}</span>') + tag_html(tag_text(parts))
     small = f"program · reference row, never ranked · {ref}" if ref else t if t != "unknown" else "model type not recorded"
     cls = ' class="reference"' if ref else ""
     return (f'<tr{cls}{attrs(S, ds, slug_name(n), bool(ref))}><td class="model">{name}'

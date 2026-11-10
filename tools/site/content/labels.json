@@ -39,5 +39,42 @@
   "DeepSeek V4.1 Flash": {"name": "DeepSeek-V4.1-Flash", "feeds": "Logic & Math spelling ('DeepSeek-V4.1-Flash 1017'); Reading 'DeepSeek-V4.1-Flash, first release'"},
   "DeepSeek V4.1 Flash 1017": {"name": "DeepSeek-V4.1-Flash 1017", "feeds": "Logic & Math 'DeepSeek-V4.1-Flash 1017'"},
   "MiniMax M3.1 Flash": {"name": "MiniMax-M3.1-Flash", "feeds": "Logic & Math, Reading 'MiniMax-M3.1-Flash'"}
- }
+ },
+ "_names_about": "Names on every page (Ümit #4445; logic #4447/#4487/#4517, turkce #4449, Zeki #4448/#4484): the maker's official model name only; open or closed starts the class label; the base model is in the row's details; how we ran a setup is the small grey tag beside the name, 'setting · route · snapshot' (a version that tells two models of one product name apart before the route: 'v1.2 · …'; the leaderboard adds the type, 'chat'/'decision'). The model-level facts (official name, open, base model, snapshot) come from the three sites' shared names file, content/model_names.json (logic's work/model_names.json, 95 models, copied byte for byte, its sha256 pinned here and checked by checks.check_names), looked up by model key (common.model_key: the shown model name without '(…)', lower case, spaces to '-'; name_keys: our key -> the shared file's where it spells it otherwise; the bench-scores.json model_key stays ours). A model it does not list keeps its shown name without '(…)'. The routes below are this site's: the machine a setup on our hardware ran on (NVIDIA RTX PRO 6000 Blackwell until the DGX Spark came on 16 Oct; per setup from the players.device timeline of v3.db as branch gpu-cost's content/own_cost.json records it, most-used first, '+' for both), 'API' only where another setup of the same official name ran another way, GPT-6 Luna's 'Decisions API' (Reading's GPT-6 Luna also has a chat API row). By shown setup name; routes_v1 for the v1 set (its own-hardware machine is not on record); a smoke-test, Nackgammon, Learning or 'Did they improve?' setup has none on record. route_words: a setup-name suffix that names the route, left out of the tag where the setup has a route.",
+ "model_names_sha256": "d9d975db91dfa69455f17428a3f890fd35ade82b8ded7c912dd694ba27b20c56",
+ "name_keys": {
+  "deepseek-v4.1-flash": "deepseek-v4.1-flash-first-release"
+ },
+ "routes": {
+  "Perplexity Decider 27B v1.1 (local GPU)": "NVIDIA RTX PRO 6000 Blackwell + NVIDIA DGX Spark",
+  "Clef": "NVIDIA RTX PRO 6000 Blackwell + NVIDIA DGX Spark",
+  "Cygnet": "NVIDIA RTX PRO 6000 Blackwell + NVIDIA DGX Spark",
+  "Open-Jev 27B v1.1": "NVIDIA RTX PRO 6000 Blackwell",
+  "Perplexity Decider Flash v1.2": "NVIDIA RTX PRO 6000 Blackwell",
+  "Winnow-12B": "NVIDIA RTX PRO 6000 Blackwell",
+  "Perplexity Decider 27B v1.2 (local GPU)": "NVIDIA RTX PRO 6000 Blackwell",
+  "Fastino GLiDE v1.2": "NVIDIA RTX PRO 6000 Blackwell",
+  "Fastino GLiDE": "API",
+  "GPT-6 Luna (Decisions API)": "Decisions API",
+  "DeepSeek-V4.1-Flash (off)": "API + NVIDIA RTX PRO 6000 Blackwell",
+  "DeepSeek-V4.1-Flash (low)": "API + NVIDIA RTX PRO 6000 Blackwell",
+  "DeepSeek-V4.1-Flash 1017 (off)": "API",
+  "DeepSeek-V4.1-Flash 1017 (low)": "API",
+  "LFM2.5-24B-A2B (off)": "NVIDIA RTX PRO 6000 Blackwell",
+  "LFM2.5-24B-A2B (on)": "NVIDIA RTX PRO 6000 Blackwell + NVIDIA DGX Spark",
+  "Gemma 4 31B (on)": "NVIDIA RTX PRO 6000 Blackwell + NVIDIA DGX Spark",
+  "Gemma 4 31B (off)": "NVIDIA RTX PRO 6000 Blackwell + NVIDIA DGX Spark",
+  "Qwen3.8-27B (off)": "NVIDIA RTX PRO 6000 Blackwell + NVIDIA DGX Spark",
+  "Qwen3.8-27B (low)": "NVIDIA RTX PRO 6000 Blackwell + NVIDIA DGX Spark",
+  "Elephant-1": "NVIDIA RTX PRO 6000 Blackwell",
+  "Mammoth-1": "NVIDIA RTX PRO 6000 Blackwell",
+  "Drex Max v1": "NVIDIA RTX PRO 6000 Blackwell",
+  "Drex 2.0 (local)": "NVIDIA RTX PRO 6000 Blackwell",
+  "REAX 1.3": "NVIDIA RTX PRO 6000 Blackwell",
+  "Drex 2.0": "API"
+ },
+ "routes_v1": {
+  "GPT-6 Luna (Decisions API)": "Decisions API"
+ },
+ "route_words": ["local"]
 }

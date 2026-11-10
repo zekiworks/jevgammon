@@ -20,7 +20,7 @@ import sqlite3
 from collections import defaultdict
 from pathlib import Path
 
-from common import CONTENT
+from common import CONTENT, HELD, INTERNAL
 
 CUP = json.loads((CONTENT / "hype_cup.json").read_text())
 ERROR_SCALE = 500
@@ -51,7 +51,9 @@ def _hidden_kind(note: str) -> tuple[str, int | None]:
 
 
 def classify(conn) -> tuple[list[dict], list[dict]]:
-    """(every valid finished v3 match with where it was played, every voided finished match with its reason)."""
+    """(every valid finished v3 match with where it was played, every voided finished match with its reason); a held
+    late entrant's matches (content/held_setups.json) are left out."""
+    held = {INTERNAL.get(n, n) for n in HELD}
     leagues = {r["id"]: dict(r) for r in conn.execute("SELECT id, hidden, only_pairs_of, note FROM leagues")}
     member = defaultdict(list)
     for r in conn.execute("""SELECT lp.league_id, lp.joined_at, lp.left_at, lp.note, p.name FROM league_players lp
@@ -76,6 +78,8 @@ def classify(conn) -> tuple[list[dict], list[dict]]:
         row = dict(id=m["id"], source="v3", finished=m["finished_at"], model1=m["a"], model2=m["b"],
                    score1=m["score1"], score2=m["score2"],
                    winner={1: m["a"], 2: m["b"]}.get(m["winner"]), games=games.get(m["id"], 0))
+        if m["stage"] == "late-entry" and held & {m["a"], m["b"]}:
+            continue
         if not m["valid"]:
             voided.append(dict(row, reason=m["void_reason"]))
             continue

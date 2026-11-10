@@ -30,7 +30,7 @@ from statistics import NormalDist
 import numpy as np
 
 import stats
-from common import EARLIER, PROVISIONAL, PUBLISHED, ROOT, SPEC, THRESHOLDS as T, slug
+from common import EARLIER, HELD, PROVISIONAL, PUBLISHED, ROOT, SPEC, THRESHOLDS as T, slug
 from decisions_export import PAGE_SIZE as DECISION_PAGE
 
 sys.path.insert(0, str(ROOT / "tools"))
@@ -210,7 +210,8 @@ def late_entries(conn, plays: dict) -> list[dict]:
     table, and none counts in any standings table or any other setup's numbers. Per entrant: the setup its late-entry
     league plays only the pairs of (leagues.only_pairs_of), else the side outside every original table; its field: the
     original table holding all its opponents (ties broken by the league's seed, the dice of that table); entry: the
-    start of its first late-entry match; its decisions: its own, in its late-entry matches only."""
+    start of its first late-entry match; its decisions: its own, in its late-entry matches only. A held entrant
+    (content/held_setups.json) is left out."""
     rows = conn.execute(
         """SELECT DISTINCT lm.match_id, lm.model1, lm.model2, lm.player1, lm.player2, m.status, m.score1, m.score2,
                   m.started_at, m.finished_at, l.only_pairs_of, l.seed
@@ -230,7 +231,8 @@ def late_entries(conn, plays: dict) -> list[dict]:
             if len(outside) != 1:
                 raise RuntimeError(f"late-entry match {r['match_id']}: no single entrant ({r['model1']} v {r['model2']})")
             name = outside[0]
-        by[name].append(r)
+        if name not in HELD:
+            by[name].append(r)
     out = []
     for name, ms in by.items():
         seat = {r["match_id"]: 1 if r["model1"] == name else 2 for r in ms}

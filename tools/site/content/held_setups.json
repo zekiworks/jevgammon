@@ -1,0 +1,6 @@
+{
+ "_about": "Setups not shown on the site yet (common.HELD), name: reason. Earlier late entries (Drex, REAX 1.3) were shown automatically from their first late-entry match; a held one is left out of every page, data file, leaderboard row, bench score and model list (analysis.late_entries, cup.classify) until its line is removed here, once its entry is complete.",
+ "held": {
+  "Muse Ember (max)": "late entry running (late-entry league #20, from 2026-11-10 14:45 UTC); shown when complete"
+ }
+}

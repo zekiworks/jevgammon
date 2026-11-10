@@ -157,7 +157,7 @@
     "date": null,
     "label": "own hardware"
    },
-   "model_type": "chat model, answer-letter probabilities",
+   "model_type": "decision model",
    "weights": "open",
    "runs_on": "our GPUs",
    "reasoning": "none (letter read directly)",
@@ -1848,7 +1848,7 @@
     "date": null,
     "label": "own hardware"
    },
-   "model_type": "chat model, answer-letter probabilities",
+   "model_type": "decision model",
    "weights": "open",
    "runs_on": "our GPUs",
    "reasoning": "none (letter read directly)",

@@ -11,7 +11,7 @@ import textwrap
 import analysis as A
 import nack_section
 import pages as P
-from common import ALL_NOTE, CLOSE_B_SCOPE_NOTE, CONTENT, LATE_ENTRY, NA, NOT_MEASURED, PENDING, PROVISIONAL, PROVISIONAL_NOTE, TOO_FEW, count, esc, fmt, nm, pct, status_badge
+from common import ALL_NOTE, CLOSE_B_SCOPE_NOTE, CONTENT, LATE_ENTRY, NA, NOT_MEASURED, PENDING, PROVISIONAL, PROVISIONAL_NOTE, TOO_FEW, count, esc, fmt, nm, pct, relabel, shown_names_html, status_badge
 
 TABS = [("risk", "Risk"), ("quality", "Quality"), ("confidence", "Confidence"), ("reasoning", "Reasoning"),
         ("cost", "Cost"), ("stability", "Stability")]
@@ -59,7 +59,7 @@ def attrs(S, ds, name, ref=False) -> str:
             f' data-setting="{esc(m.get("setting") or "none")}"')
 
 
-NACK_TYPES = json.loads((CONTENT / "nack_setup_types.json").read_text())["setups"]
+NACK_TYPES = relabel(json.loads((CONTENT / "nack_setup_types.json").read_text())["setups"])
 # The model types a Nackgammon setup may have, and the key they file under (Zeki #2737: anything else fails the
 # build). The first four are setups.json's; "chat model" is content/nack_setup_types.json's, for a chat model that
 # played in no league (its answer form is not on record).
@@ -1121,12 +1121,12 @@ def fragments(S, out) -> None:
     for lg in S["leagues"]:
         for ph in A.PHASES:
             parts = "".join(slot(lg["dataset"], k, v) for k, v in phase_slots(S, lg, ph).items())
-            (folder / f"{lg['dataset']}-{ph}.html").write_text(P.rebase(
-                f'<div data-league-view="{lg["dataset"]}" data-dataset="{lg["dataset"]}">{prov_note(lg)}{parts}</div>\n', "../"))
+            (folder / f"{lg['dataset']}-{ph}.html").write_text(shown_names_html(P.rebase(
+                f'<div data-league-view="{lg["dataset"]}" data-dataset="{lg["dataset"]}">{prov_note(lg)}{parts}</div>\n', "../")))
     for ph in A.PHASES:
-        (folder / f"{ALL}-{ph}.html").write_text(P.rebase(
+        (folder / f"{ALL}-{ph}.html").write_text(shown_names_html(P.rebase(
             f'<div data-league-view="{ALL}" data-dataset="{ALL}">{all_head(S)}'
-            f'{slot(ALL, "risk", all_risk_table(S, ph) + all_robust_table(S, ph))}</div>\n', "../"))
+            f'{slot(ALL, "risk", all_risk_table(S, ph) + all_robust_table(S, ph))}</div>\n', "../")))
 
 
 def prov_note(lg) -> str:

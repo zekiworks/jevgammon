@@ -32,55 +32,42 @@ QUANT = re.compile(r"\b(FP8|NVFP4|BF16)\b", re.I)
 # note ('(open)' etc.), lower case, spaces to '-', dots kept: 'gpt-6-astra', 'claude-fable-5.1', 'reax-1.3', 'cygnet'.
 # All benches joins on repo where both rows have one, else on this key. Settings never split a key.
 KEY_OK = re.compile(r"^[a-z0-9][a-z0-9.+-]*$")
-# The other benches' names for our leaderboard rows (Ümit #4270): All benches joins rows on the name, so a model's row
-# here carries the name the Logic & Math and Reading feeds give the same model and route; the key follows from it.
-# Our setup on a different route than their row: their name with the route suffix in their style, and the route in
-# `notes`; a setting their name leaves out goes there too. Leaderboard name -> (feed name, note or None, (repo, commit)
-# of the served checkpoint where our records name it and setups.json does not, else None). problems() fails on an
-# entry no leaderboard row uses.
-FEED_NAMES = {
-    # Reading 'Perplexity Decider 27B v1.2 (local GPU)' (perplexity-ai/pplx-decider-v1.2, self-hosted); Logic & Math
-    # has only the API row 'Perplexity Decider 27B v1.2 API'.
-    # Served from snapshot 225c913 (tools/v3/servers/decider-v1.2.sh), Reading's commit.
-    "Decider v1.2 27B": ("Perplexity Decider 27B v1.2 (local GPU)", None,
-                         ("perplexity-ai/pplx-decider-v1.2", "225c913ddc8761a8264f04f64548e1f97e443eb3")),
-    # Logic & Math, Reading 'Perplexity Decider Flash v1.2' (perplexity-ai/pplx-decider-flash-v1.2, self-hosted).
-    "Decider Flash v1.2": ("Perplexity Decider Flash v1.2", None, None),
+# Row names are the site's shown names (content/labels.json "models", Ümit #4282 item 4), which are the names the Logic &
+# Math and Reading feeds give the same model, with a route suffix where our route differs from theirs. Here a row
+# whose shown name carries a setting their name leaves out gets their name, the setting in `notes` (Ümit #4270), and a
+# row on another route than theirs the route in `notes`: shown name -> (feed name, note). CHECKPOINTS: the (repo,
+# commit) of the served checkpoint where our records name it and setups.json does not. problems() fails on an entry
+# no leaderboard row uses.
+FEED_ROWS = {
     # Reading 'Perplexity Decider 27B v1.1' is the Perplexity Decisions API; ours ran on our GPUs.
-    "Decider v1.1 27B": ("Perplexity Decider 27B v1.1 (local GPU)",
-                         "route: our GPUs (released checkpoint); the other benches' row is the Perplexity Decisions API",
-                         None),
-    # Logic & Math, Reading 'Inception Mercury Decide' (OpenRouter System One API; ours: OpenRouter, Inception).
-    "Mercury Decide": ("Inception Mercury Decide", None, None),
-    # Reading 'GPT-6 Luna (Decisions API)' (OpenAI Decisions API); not 'GPT-6 Luna (chat API)'.
-    "GPT-6 Luna": ("GPT-6 Luna (Decisions API)", None, None),
+    "Perplexity Decider 27B v1.1 (local GPU)": (
+        "Perplexity Decider 27B v1.1 (local GPU)",
+        "route: our GPUs (released checkpoint); the other benches' row is the Perplexity Decisions API"),
     # Reading 'GPT-6 Astra', 'GPT-6.1 Sol' (Codex CLI, ChatGPT subscription; ours: ChatGPT subscription).
-    "GPT-6 Astra (high)": ("GPT-6 Astra", "setting: high", None),
-    "GPT-6.1 Sol (high)": ("GPT-6.1 Sol", "setting: high", None),
+    "GPT-6 Astra (high)": ("GPT-6 Astra", "setting: high"),
+    "GPT-6.1 Sol (high)": ("GPT-6.1 Sol", "setting: high"),
     # Reading 'Gemini 4 Argon', 'Gemini 3.8 Flash' (Gemini API; ours: Google Antigravity subscription).
-    "Gemini 4 Argon (high)": ("Gemini 4 Argon", "setting: high; route: Google Antigravity subscription", None),
-    "Gemini 3.8 Flash (high)": ("Gemini 3.8 Flash", "setting: high; route: Google Antigravity subscription", None),
+    "Gemini 4 Argon (high)": ("Gemini 4 Argon", "setting: high; route: Google Antigravity subscription"),
+    "Gemini 3.8 Flash (high)": ("Gemini 3.8 Flash", "setting: high; route: Google Antigravity subscription"),
     # Reading 'Claude Fable 5.1', 'Claude Opus 5.5', 'Claude Sonnet 5.5' (Claude Code CLI, Claude subscription).
-    "Claude Fable 5.1 (high)": ("Claude Fable 5.1", "setting: high", None),
-    "Claude Opus 5.5 (high)": ("Claude Opus 5.5", "setting: high", None),
-    "Claude Sonnet 5.5 (high)": ("Claude Sonnet 5.5", "setting: high", None),
+    "Claude Fable 5.1 (high)": ("Claude Fable 5.1", "setting: high"),
+    "Claude Opus 5.5 (high)": ("Claude Opus 5.5", "setting: high"),
+    "Claude Sonnet 5.5 (high)": ("Claude Sonnet 5.5", "setting: high"),
     # Reading 'Grok 4.7' (xAI Responses API, SuperGrok subscription; ours: SuperGrok subscription).
-    "Grok 4.7 (high)": ("Grok 4.7", "setting: high", None),
+    "Grok 4.7 (high)": ("Grok 4.7", "setting: high"),
     # Reading 'Kimi K3.1 Pro' (OpenRouter, Moonshot AI's endpoint, mxfp4; ours the same endpoint).
-    "Kimi K3.1 Pro (off)": ("Kimi K3.1 Pro", "setting: off", None),
+    "Kimi K3.1 Pro (off)": ("Kimi K3.1 Pro", "setting: off"),
     # Reading 'GLM-5.3' (OpenRouter, Fireworks endpoint; ours: Fireworks via OpenRouter).
-    "GLM-5.3 (low)": ("GLM-5.3", "setting: low", None),
+    "GLM-5.3 (low)": ("GLM-5.3", "setting: low"),
     # Logic & Math, Reading 'Gemma 4 31B' (google/gemma-4-31B-it, self-hosted, FP8).
-    "Gemma 4 31B (on)": ("Gemma 4 31B", "setting: on", None),
+    "Gemma 4 31B (on)": ("Gemma 4 31B", "setting: on"),
     # Logic & Math, Reading 'Qwen3.8-27B' (Qwen/Qwen3.8-27B, self-hosted).
-    "Qwen3.8-27B (low)": ("Qwen3.8-27B", "setting: low", None),
-    # Logic & Math, Reading 'Mammoth-1', 'Elephant-1' (baselabs/*, self-hosted through the model card's loader).
-    "Base Labs Mammoth-1": ("Mammoth-1", None, None),
-    "Base Labs Elephant-1": ("Elephant-1", None, None),
-    # Logic & Math, Reading 'Fastino GLiDE v1.2' (fastino/GLiDE, self-hosted, Fastino's server).
-    "Fastino GLiDE v1.2 (local)": ("Fastino GLiDE v1.2", None, None),
-    # Logic & Math, Reading 'Cygnet' (Cygnet decision server on vLLM, self-hosted).
-    "Cygnet (Gemma 4 12B)": ("Cygnet", None, None),
+    "Qwen3.8-27B (low)": ("Qwen3.8-27B", "setting: low"),
+}
+CHECKPOINTS = {
+    # Served from snapshot 225c913 (tools/v3/servers/decider-v1.2.sh), Reading's commit.
+    "Perplexity Decider 27B v1.2 (local GPU)": ("perplexity-ai/pplx-decider-v1.2",
+                                                "225c913ddc8761a8264f04f64548e1f97e443eb3"),
 }
 
 
@@ -150,9 +137,10 @@ def build(S) -> dict:
             notes.append(f"late entry: its own decisions in late-entry matches against League {lg}'s field "
                          f"(different positions from the league's); scored against League {lg}'s Random")
         notes.append("run on our GPUs" if m.get("runs_on") == "our GPUs" else "hosted (API or subscription)")
-        name, route, ckpt = FEED_NAMES.get(x["name"], (x["name"], None, None))
-        if route:
-            notes.append(route)
+        name, note = FEED_ROWS.get(x["name"], (x["name"], None))
+        ckpt = CHECKPOINTS.get(x["name"])
+        if note:
+            notes.append(note)
         if ckpt and repo is None:
             repo, commit = ckpt
         if imp is not None:
@@ -160,7 +148,7 @@ def build(S) -> dict:
             notes.append("improvement_points: change in risks found, percentage points of risk-pays decisions "
                          "(with lessons minus no memory)")
         rows.append(dict(
-            repo=repo, commit=commit, name=name, model_key=model_key(name if x["name"] in FEED_NAMES else x["model"]),
+            repo=repo, commit=commit, name=name, model_key=model_key(x["model"]),
             maker=H.maker(x["name"])[0],
             kind=ST.model_type(S, x),
             params_total=p["total_b"], params_active=p["active_b"] if p["moe"] else p["total_b"], quantization=quant,
@@ -192,11 +180,11 @@ def problems(S, doc) -> list[str]:
         return [f"{PATH}: bench/title/url/updated/score/models of the wrong type"]
     model_rows, prog_rows = ST.leaderboard_rows(S)
     rnd = randoms(prog_rows)
-    expect = {FEED_NAMES.get(x["name"], (x["name"],))[0]: ((x["q"] or {}).get("error_rate"), league_of(x))
+    expect = {FEED_ROWS.get(x["name"], (x["name"],))[0]: ((x["q"] or {}).get("error_rate"), league_of(x))
               for x, *_ in model_rows}
-    unused = sorted(set(FEED_NAMES) - {x["name"] for x, *_ in model_rows})
+    unused = sorted((set(FEED_ROWS) | set(CHECKPOINTS)) - {x["name"] for x, *_ in model_rows})
     if unused:
-        out.append(f"{PATH}: FEED_NAMES entries for no leaderboard model row: {unused}")
+        out.append(f"{PATH}: FEED_ROWS/CHECKPOINTS entries for no leaderboard model row: {unused}")
     num = lambda v: isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
     opt = lambda v, t: v is None or t(v)
     for r in doc["models"]:

@@ -79,7 +79,7 @@
   {
    "name": "Perplexity",
    "icon": "fi-perplexity",
-   "match": "^(?:Decider)"
+   "match": "^(?:Perplexity Decider|Decider)"
   },
   {
    "name": "Jev",
@@ -114,7 +114,7 @@
   {
    "name": "Inception",
    "icon": "fi-inception",
-   "match": "^(?:Mercury)"
+   "match": "^(?:Inception Mercury|Mercury)"
   },
   {
    "name": "REAX",

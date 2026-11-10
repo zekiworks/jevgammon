@@ -1,0 +1,968 @@
+{
+ "about": "Same positions (preview, Zeki #4287): the STORED E1 answers (the 200-position empty-context test of 'Did they improve?') of every ranked leaderboard model that answered all 200; no new model call. Computed read-only by tools/site/same_positions_publish.py on 2026-11-10 from smoke/improve/*.db, the improve test set and the site state. Names: the leaderboard's (the site relabels them).",
+ "prompt_equals_league": true,
+ "correctness_rule": "correct = valid answer whose play lost < 0.001 equity against GNUbg's best (test_set.json losses, GNUbg 2-ply; tools/site thresholds.json best_play_loss_below, the site's 'Engine's best play'); invalid and failed answers count as wrong. The improve pipeline itself scores error rate / risks found / right safety (workspace/learning-pilot/pilot.py eval_metrics), no correct/incorrect rule.",
+ "tier_rule": "Holm-adjusted (all pairs, alpha 0.05) two-sided exact McNemar. Tier 1: the most-correct model and every model not significantly different from it; then the most-correct model left leads tier 2 with every remaining model not significantly different from it; and so on.",
+ "arm_notes": [
+  "SubQ Snap 1.1: arm \"worst mistakes\" vs \"helper-written notes\": 0 of 200 E1 answers differ"
+ ],
+ "models": [
+  {
+   "name": "Claude Fable 5.1 (high)",
+   "rank": 3,
+   "n": 200,
+   "correct": 106,
+   "invalid": 0,
+   "failed": 0,
+   "tier": 1
+  },
+  {
+   "name": "Gemini 4 Argon (high)",
+   "rank": 2,
+   "n": 200,
+   "correct": 101,
+   "invalid": 45,
+   "failed": 0,
+   "tier": 1
+  },
+  {
+   "name": "DeepSeek V4.1 Flash (low)",
+   "rank": 6,
+   "n": 200,
+   "correct": 100,
+   "invalid": 1,
+   "failed": 0,
+   "tier": 1
+  },
+  {
+   "name": "Gemini 3.8 Flash (high)",
+   "rank": 9,
+   "n": 200,
+   "correct": 97,
+   "invalid": 0,
+   "failed": 0,
+   "tier": 1
+  },
+  {
+   "name": "Grok 4.7 (high)",
+   "rank": 7,
+   "n": 200,
+   "correct": 97,
+   "invalid": 0,
+   "failed": 0,
+   "tier": 1
+  },
+  {
+   "name": "Gemma 4 31B (on)",
+   "rank": 11,
+   "n": 200,
+   "correct": 92,
+   "invalid": 0,
+   "failed": 0,
+   "tier": 1
+  },
+  {
+   "name": "Kimi K3.1 Pro (off)",
+   "rank": 10,
+   "n": 200,
+   "correct": 85,
+   "invalid": 0,
+   "failed": 0,
+   "tier": 1
+  },
+  {
+   "name": "GLM-5.3 (low)",
+   "rank": 16,
+   "n": 200,
+   "correct": 83,
+   "invalid": 0,
+   "failed": 0,
+   "tier": 1
+  },
+  {
+   "name": "Qwen3.8-27B (low)",
+   "rank": 15,
+   "n": 200,
+   "correct": 78,
+   "invalid": 0,
+   "failed": 0,
+   "tier": 2
+  },
+  {
+   "name": "Drex Max 1.1",
+   "rank": 22,
+   "n": 200,
+   "correct": 67,
+   "invalid": 0,
+   "failed": 0,
+   "tier": 2
+  },
+  {
+   "name": "Qwen3.8 Flash (off)",
+   "rank": 20,
+   "n": 200,
+   "correct": 66,
+   "invalid": 0,
+   "failed": 0,
+   "tier": 2
+  },
+  {
+   "name": "SubQ Snap 1.1",
+   "rank": 31,
+   "n": 200,
+   "correct": 60,
+   "invalid": 0,
+   "failed": 0,
+   "tier": 2
+  },
+  {
+   "name": "Claude Sonnet 5.5 (high)",
+   "rank": 8,
+   "n": 111,
+   "correct": 34,
+   "invalid": 0,
+   "failed": 0,
+   "tier": null
+  }
+ ],
+ "pairs": [
+  {
+   "a": "Claude Fable 5.1 (high)",
+   "b": "Gemini 4 Argon (high)",
+   "b01": 19,
+   "b10": 14,
+   "p": 0.48685024166479707,
+   "p_holm": 1.0,
+   "sig": false
+  },
+  {
+   "a": "Claude Fable 5.1 (high)",
+   "b": "DeepSeek V4.1 Flash (low)",
+   "b01": 22,
+   "b10": 16,
+   "p": 0.417692190836533,
+   "p_holm": 1.0,
+   "sig": false
+  },
+  {
+   "a": "Claude Fable 5.1 (high)",
+   "b": "Gemini 3.8 Flash (high)",
+   "b01": 20,
+   "b10": 11,
+   "p": 0.14961278438568115,
+   "p_holm": 1.0,
+   "sig": false
+  },
+  {
+   "a": "Claude Fable 5.1 (high)",
+   "b": "Grok 4.7 (high)",
+   "b01": 24,
+   "b10": 15,
+   "p": 0.19959086691960692,
+   "p_holm": 1.0,
+   "sig": false
+  },
+  {
+   "a": "Claude Fable 5.1 (high)",
+   "b": "Gemma 4 31B (on)",
+   "b01": 24,
+   "b10": 10,
+   "p": 0.024306510109454393,
+   "p_holm": 0.7291953032836318,
+   "sig": false
+  },
+  {
+   "a": "Claude Fable 5.1 (high)",
+   "b": "Kimi K3.1 Pro (off)",
+   "b01": 34,
+   "b10": 13,
+   "p": 0.0030876764615186403,
+   "p_holm": 0.12659473492226425,
+   "sig": false
+  },
+  {
+   "a": "Claude Fable 5.1 (high)",
+   "b": "GLM-5.3 (low)",
+   "b01": 36,
+   "b10": 13,
+   "p": 0.001402688503695515,
+   "p_holm": 0.060315605658907145,
+   "sig": false
+  },
+  {
+   "a": "Claude Fable 5.1 (high)",
+   "b": "Qwen3.8-27B (low)",
+   "b01": 40,
+   "b10": 12,
+   "p": 0.0001275387838557407,
+   "p_holm": 0.0063769391927870345,
+   "sig": true
+  },
+  {
+   "a": "Claude Fable 5.1 (high)",
+   "b": "Drex Max 1.1",
+   "b01": 50,
+   "b10": 11,
+   "p": 4.588831219506234e-07,
+   "p_holm": 2.8909636682889275e-05,
+   "sig": true
+  },
+  {
+   "a": "Claude Fable 5.1 (high)",
+   "b": "Qwen3.8 Flash (off)",
+   "b01": 51,
+   "b10": 11,
+   "p": 2.775636864143019e-07,
+   "p_holm": 1.8041639616929624e-05,
+   "sig": true
+  },
+  {
+   "a": "Claude Fable 5.1 (high)",
+   "b": "SubQ Snap 1.1",
+   "b01": 57,
+   "b10": 11,
+   "p": 1.2750032374450517e-08,
+   "p_holm": 8.415021367137341e-07,
+   "sig": true
+  },
+  {
+   "a": "Gemini 4 Argon (high)",
+   "b": "DeepSeek V4.1 Flash (low)",
+   "b01": 23,
+   "b10": 22,
+   "p": 1.0,
+   "p_holm": 1.0,
+   "sig": false
+  },
+  {
+   "a": "Gemini 4 Argon (high)",
+   "b": "Gemini 3.8 Flash (high)",
+   "b01": 22,
+   "b10": 18,
+   "p": 0.6358280026288412,
+   "p_holm": 1.0,
+   "sig": false
+  },
+  {
+   "a": "Gemini 4 Argon (high)",
+   "b": "Grok 4.7 (high)",
+   "b01": 23,
+   "b10": 19,
+   "p": 0.6439689563703723,
+   "p_holm": 1.0,
+   "sig": false
+  },
+  {
+   "a": "Gemini 4 Argon (high)",
+   "b": "Gemma 4 31B (on)",
+   "b01": 25,
+   "b10": 16,
+   "p": 0.21102359760880063,
+   "p_holm": 1.0,
+   "sig": false
+  },
+  {
+   "a": "Gemini 4 Argon (high)",
+   "b": "Kimi K3.1 Pro (off)",
+   "b01": 33,
+   "b10": 17,
+   "p": 0.032839137564268484,
+   "p_holm": 0.9194958517995175,
+   "sig": false
+  },
+  {
+   "a": "Gemini 4 Argon (high)",
+   "b": "GLM-5.3 (low)",
+   "b01": 33,
+   "b10": 15,
+   "p": 0.013283281562245008,
+   "p_holm": 0.4383482915540853,
+   "sig": false
+  },
+  {
+   "a": "Gemini 4 Argon (high)",
+   "b": "Qwen3.8-27B (low)",
+   "b01": 38,
+   "b10": 15,
+   "p": 0.0021901868838920535,
+   "p_holm": 0.09198784912346625,
+   "sig": false
+  },
+  {
+   "a": "Gemini 4 Argon (high)",
+   "b": "Drex Max 1.1",
+   "b01": 52,
+   "b10": 18,
+   "p": 5.849547318695842e-05,
+   "p_holm": 0.003041764605721838,
+   "sig": true
+  },
+  {
+   "a": "Gemini 4 Argon (high)",
+   "b": "Qwen3.8 Flash (off)",
+   "b01": 47,
+   "b10": 12,
+   "p": 5.1256292496887346e-06,
+   "p_holm": 0.00028703523798256914,
+   "sig": true
+  },
+  {
+   "a": "Gemini 4 Argon (high)",
+   "b": "SubQ Snap 1.1",
+   "b01": 56,
+   "b10": 15,
+   "p": 1.0414019304757919e-06,
+   "p_holm": 6.35255177590233e-05,
+   "sig": true
+  },
+  {
+   "a": "DeepSeek V4.1 Flash (low)",
+   "b": "Gemini 3.8 Flash (high)",
+   "b01": 15,
+   "b10": 12,
+   "p": 0.7011080384254456,
+   "p_holm": 1.0,
+   "sig": false
+  },
+  {
+   "a": "DeepSeek V4.1 Flash (low)",
+   "b": "Grok 4.7 (high)",
+   "b01": 19,
+   "b10": 16,
+   "p": 0.7358788008568808,
+   "p_holm": 1.0,
+   "sig": false
+  },
+  {
+   "a": "DeepSeek V4.1 Flash (low)",
+   "b": "Gemma 4 31B (on)",
+   "b01": 20,
+   "b10": 12,
+   "p": 0.21532714972272515,
+   "p_holm": 1.0,
+   "sig": false
+  },
+  {
+   "a": "DeepSeek V4.1 Flash (low)",
+   "b": "Kimi K3.1 Pro (off)",
+   "b01": 26,
+   "b10": 11,
+   "p": 0.020073851919732988,
+   "p_holm": 0.6419714242219925,
+   "sig": false
+  },
+  {
+   "a": "DeepSeek V4.1 Flash (low)",
+   "b": "GLM-5.3 (low)",
+   "b01": 25,
+   "b10": 8,
+   "p": 0.004551384132355452,
+   "p_holm": 0.1775039811618626,
+   "sig": false
+  },
+  {
+   "a": "DeepSeek V4.1 Flash (low)",
+   "b": "Qwen3.8-27B (low)",
+   "b01": 32,
+   "b10": 10,
+   "p": 0.0009406740282429382,
+   "p_holm": 0.04138965724268928,
+   "sig": true
+  },
+  {
+   "a": "DeepSeek V4.1 Flash (low)",
+   "b": "Drex Max 1.1",
+   "b01": 42,
+   "b10": 9,
+   "p": 3.3888279489246997e-06,
+   "p_holm": 0.00019655202103763258,
+   "sig": true
+  },
+  {
+   "a": "DeepSeek V4.1 Flash (low)",
+   "b": "Qwen3.8 Flash (off)",
+   "b01": 43,
+   "b10": 9,
+   "p": 2.0377698612961126e-06,
+   "p_holm": 0.00012226619167776676,
+   "sig": true
+  },
+  {
+   "a": "DeepSeek V4.1 Flash (low)",
+   "b": "SubQ Snap 1.1",
+   "b01": 53,
+   "b10": 13,
+   "p": 7.237175237417024e-07,
+   "p_holm": 4.487048647198555e-05,
+   "sig": true
+  },
+  {
+   "a": "Gemini 3.8 Flash (high)",
+   "b": "Grok 4.7 (high)",
+   "b01": 20,
+   "b10": 20,
+   "p": 1.0,
+   "p_holm": 1.0,
+   "sig": false
+  },
+  {
+   "a": "Gemini 3.8 Flash (high)",
+   "b": "Gemma 4 31B (on)",
+   "b01": 15,
+   "b10": 10,
+   "p": 0.42435622215270996,
+   "p_holm": 1.0,
+   "sig": false
+  },
+  {
+   "a": "Gemini 3.8 Flash (high)",
+   "b": "Kimi K3.1 Pro (off)",
+   "b01": 24,
+   "b10": 12,
+   "p": 0.06524533522315323,
+   "p_holm": 1.0,
+   "sig": false
+  },
+  {
+   "a": "Gemini 3.8 Flash (high)",
+   "b": "GLM-5.3 (low)",
+   "b01": 24,
+   "b10": 10,
+   "p": 0.024306510109454393,
+   "p_holm": 0.7291953032836318,
+   "sig": false
+  },
+  {
+   "a": "Gemini 3.8 Flash (high)",
+   "b": "Qwen3.8-27B (low)",
+   "b01": 34,
+   "b10": 15,
+   "p": 0.009399241523873059,
+   "p_holm": 0.3383726948594301,
+   "sig": false
+  },
+  {
+   "a": "Gemini 3.8 Flash (high)",
+   "b": "Drex Max 1.1",
+   "b01": 38,
+   "b10": 8,
+   "p": 9.24769992138863e-06,
+   "p_holm": 0.0004901280958335974,
+   "sig": true
+  },
+  {
+   "a": "Gemini 3.8 Flash (high)",
+   "b": "Qwen3.8 Flash (off)",
+   "b01": 38,
+   "b10": 7,
+   "p": 3.1213096463034162e-06,
+   "p_holm": 0.00018415726913190156,
+   "sig": true
+  },
+  {
+   "a": "Gemini 3.8 Flash (high)",
+   "b": "SubQ Snap 1.1",
+   "b01": 46,
+   "b10": 9,
+   "p": 4.336383137015787e-07,
+   "p_holm": 2.7752852076901036e-05,
+   "sig": true
+  },
+  {
+   "a": "Grok 4.7 (high)",
+   "b": "Gemma 4 31B (on)",
+   "b01": 19,
+   "b10": 14,
+   "p": 0.48685024166479707,
+   "p_holm": 1.0,
+   "sig": false
+  },
+  {
+   "a": "Grok 4.7 (high)",
+   "b": "Kimi K3.1 Pro (off)",
+   "b01": 25,
+   "b10": 13,
+   "p": 0.07295138851623051,
+   "p_holm": 1.0,
+   "sig": false
+  },
+  {
+   "a": "Grok 4.7 (high)",
+   "b": "GLM-5.3 (low)",
+   "b01": 26,
+   "b10": 12,
+   "p": 0.03355243967962451,
+   "p_holm": 0.9194958517995175,
+   "sig": false
+  },
+  {
+   "a": "Grok 4.7 (high)",
+   "b": "Qwen3.8-27B (low)",
+   "b01": 33,
+   "b10": 14,
+   "p": 0.007942726509483578,
+   "p_holm": 0.29388088085089237,
+   "sig": false
+  },
+  {
+   "a": "Grok 4.7 (high)",
+   "b": "Drex Max 1.1",
+   "b01": 43,
+   "b10": 13,
+   "p": 7.333218396948782e-05,
+   "p_holm": 0.0037399413824438787,
+   "sig": true
+  },
+  {
+   "a": "Grok 4.7 (high)",
+   "b": "Qwen3.8 Flash (off)",
+   "b01": 39,
+   "b10": 8,
+   "p": 5.539621596994948e-06,
+   "p_holm": 0.00030467918783472214,
+   "sig": true
+  },
+  {
+   "a": "Grok 4.7 (high)",
+   "b": "SubQ Snap 1.1",
+   "b01": 51,
+   "b10": 14,
+   "p": 4.47522484948754e-06,
+   "p_holm": 0.0002550878164207898,
+   "sig": true
+  },
+  {
+   "a": "Gemma 4 31B (on)",
+   "b": "Kimi K3.1 Pro (off)",
+   "b01": 16,
+   "b10": 9,
+   "p": 0.2295229434967041,
+   "p_holm": 1.0,
+   "sig": false
+  },
+  {
+   "a": "Gemma 4 31B (on)",
+   "b": "GLM-5.3 (low)",
+   "b01": 17,
+   "b10": 8,
+   "p": 0.10775214433670044,
+   "p_holm": 1.0,
+   "sig": false
+  },
+  {
+   "a": "Gemma 4 31B (on)",
+   "b": "Qwen3.8-27B (low)",
+   "b01": 23,
+   "b10": 9,
+   "p": 0.020061607006937265,
+   "p_holm": 0.6419714242219925,
+   "sig": false
+  },
+  {
+   "a": "Gemma 4 31B (on)",
+   "b": "Drex Max 1.1",
+   "b01": 35,
+   "b10": 10,
+   "p": 0.00024708778460080794,
+   "p_holm": 0.011860213660838781,
+   "sig": true
+  },
+  {
+   "a": "Gemma 4 31B (on)",
+   "b": "Qwen3.8 Flash (off)",
+   "b01": 36,
+   "b10": 10,
+   "p": 0.00015641720852954677,
+   "p_holm": 0.007664443217947792,
+   "sig": true
+  },
+  {
+   "a": "Gemma 4 31B (on)",
+   "b": "SubQ Snap 1.1",
+   "b01": 42,
+   "b10": 10,
+   "p": 9.063271916964766e-06,
+   "p_holm": 0.0004894166835160974,
+   "sig": true
+  },
+  {
+   "a": "Kimi K3.1 Pro (off)",
+   "b": "GLM-5.3 (low)",
+   "b01": 11,
+   "b10": 9,
+   "p": 0.8238029479980469,
+   "p_holm": 1.0,
+   "sig": false
+  },
+  {
+   "a": "Kimi K3.1 Pro (off)",
+   "b": "Qwen3.8-27B (low)",
+   "b01": 17,
+   "b10": 10,
+   "p": 0.24778856337070465,
+   "p_holm": 1.0,
+   "sig": false
+  },
+  {
+   "a": "Kimi K3.1 Pro (off)",
+   "b": "Drex Max 1.1",
+   "b01": 27,
+   "b10": 9,
+   "p": 0.00393317302223295,
+   "p_holm": 0.157326920889318,
+   "sig": false
+  },
+  {
+   "a": "Kimi K3.1 Pro (off)",
+   "b": "Qwen3.8 Flash (off)",
+   "b01": 24,
+   "b10": 5,
+   "p": 0.0005461126565933228,
+   "p_holm": 0.025121182203292847,
+   "sig": true
+  },
+  {
+   "a": "Kimi K3.1 Pro (off)",
+   "b": "SubQ Snap 1.1",
+   "b01": 35,
+   "b10": 10,
+   "p": 0.00024708778460080794,
+   "p_holm": 0.011860213660838781,
+   "sig": true
+  },
+  {
+   "a": "GLM-5.3 (low)",
+   "b": "Qwen3.8-27B (low)",
+   "b01": 17,
+   "b10": 12,
+   "p": 0.45825831964612007,
+   "p_holm": 1.0,
+   "sig": false
+  },
+  {
+   "a": "GLM-5.3 (low)",
+   "b": "Drex Max 1.1",
+   "b01": 26,
+   "b10": 10,
+   "p": 0.011330984183587134,
+   "p_holm": 0.3965844464255497,
+   "sig": false
+  },
+  {
+   "a": "GLM-5.3 (low)",
+   "b": "Qwen3.8 Flash (off)",
+   "b01": 27,
+   "b10": 10,
+   "p": 0.007632078602910042,
+   "p_holm": 0.2900189869105816,
+   "sig": false
+  },
+  {
+   "a": "GLM-5.3 (low)",
+   "b": "SubQ Snap 1.1",
+   "b01": 34,
+   "b10": 11,
+   "p": 0.0008240823595997426,
+   "p_holm": 0.03708370618198842,
+   "sig": true
+  },
+  {
+   "a": "Qwen3.8-27B (low)",
+   "b": "Drex Max 1.1",
+   "b01": 24,
+   "b10": 13,
+   "p": 0.09887174959294498,
+   "p_holm": 1.0,
+   "sig": false
+  },
+  {
+   "a": "Qwen3.8-27B (low)",
+   "b": "Qwen3.8 Flash (off)",
+   "b01": 25,
+   "b10": 13,
+   "p": 0.07295138851623051,
+   "p_holm": 1.0,
+   "sig": false
+  },
+  {
+   "a": "Qwen3.8-27B (low)",
+   "b": "SubQ Snap 1.1",
+   "b01": 32,
+   "b10": 14,
+   "p": 0.011351591436778108,
+   "p_holm": 0.3965844464255497,
+   "sig": false
+  },
+  {
+   "a": "Drex Max 1.1",
+   "b": "Qwen3.8 Flash (off)",
+   "b01": 22,
+   "b10": 21,
+   "p": 1.0,
+   "p_holm": 1.0,
+   "sig": false
+  },
+  {
+   "a": "Drex Max 1.1",
+   "b": "SubQ Snap 1.1",
+   "b01": 15,
+   "b10": 8,
+   "p": 0.21003961563110352,
+   "p_holm": 1.0,
+   "sig": false
+  },
+  {
+   "a": "Qwen3.8 Flash (off)",
+   "b": "SubQ Snap 1.1",
+   "b01": 28,
+   "b10": 22,
+   "p": 0.47988766169832786,
+   "p_holm": 1.0,
+   "sig": false
+  }
+ ],
+ "missing_ranked": [
+  {
+   "name": "GPT-6 Astra (high)",
+   "rank": 1,
+   "route": "subscription",
+   "usd_200": 0.0,
+   "hours_200": 0.5461666666666666,
+   "gpu_hours": 0.0,
+   "unavailable": "ChatGPT subscription quota until 13 Nov"
+  },
+  {
+   "name": "GPT-6.1 Sol (high)",
+   "rank": 4,
+   "route": "subscription",
+   "usd_200": 0.0,
+   "hours_200": 0.5770555555555555,
+   "gpu_hours": 0.0,
+   "unavailable": "ChatGPT subscription quota until 13 Nov"
+  },
+  {
+   "name": "Claude Opus 5.5 (high)",
+   "rank": 5,
+   "route": "subscription",
+   "usd_200": 0.0,
+   "hours_200": 0.35141666666666665,
+   "gpu_hours": 0.0,
+   "unavailable": "Claude subscription limit"
+  },
+  {
+   "name": "Claude Sonnet 5.5 (high)",
+   "rank": 8,
+   "route": "subscription",
+   "usd_200": 0.0,
+   "hours_200": 0.3605,
+   "gpu_hours": 0.0,
+   "unavailable": "Claude subscription limit"
+  },
+  {
+   "name": "Liquid d1-ultra",
+   "rank": 12,
+   "route": "hosted API",
+   "usd_200": 0.02861102494872273,
+   "hours_200": 0.0135,
+   "gpu_hours": 0.0,
+   "unavailable": null
+  },
+  {
+   "name": "Base Labs Mammoth-1",
+   "rank": 13,
+   "route": "local GPU",
+   "usd_200": 0.0,
+   "hours_200": 0.040222222222222215,
+   "gpu_hours": 0.040222222222222215,
+   "unavailable": null
+  },
+  {
+   "name": "Drex Max v1",
+   "rank": 14,
+   "route": "local GPU",
+   "usd_200": 0.0,
+   "hours_200": 0.038000000000000006,
+   "gpu_hours": 0.038000000000000006,
+   "unavailable": null
+  },
+  {
+   "name": "REAX 1.3",
+   "rank": 17,
+   "route": "local GPU",
+   "usd_200": 0.0,
+   "hours_200": 0.0968611111111111,
+   "gpu_hours": 0.0968611111111111,
+   "unavailable": null
+  },
+  {
+   "name": "Fastino GLiDE",
+   "rank": 18,
+   "route": "hosted API",
+   "usd_200": 0.030543338224504772,
+   "hours_200": 0.024777777777777777,
+   "gpu_hours": 0.0,
+   "unavailable": null
+  },
+  {
+   "name": "Jev 1.13.0",
+   "rank": 19,
+   "route": "hosted API",
+   "usd_200": 0.032924633373786406,
+   "hours_200": 0.011555555555555557,
+   "gpu_hours": 0.0,
+   "unavailable": null
+  },
+  {
+   "name": "Jev 1.14.0",
+   "rank": 21,
+   "route": "hosted API",
+   "usd_200": 0.03377305981607357,
+   "hours_200": 0.010944444444444444,
+   "gpu_hours": 0.0,
+   "unavailable": null
+  },
+  {
+   "name": "Fastino GLiDE v1.2 (local)",
+   "rank": 23,
+   "route": "local GPU",
+   "usd_200": 0.0,
+   "hours_200": 0.09155555555555554,
+   "gpu_hours": 0.09155555555555554,
+   "unavailable": null
+  },
+  {
+   "name": "Drex 2.0",
+   "rank": 24,
+   "route": "hosted API",
+   "usd_200": 0.05165244811564275,
+   "hours_200": 0.023333333333333334,
+   "gpu_hours": 0.0,
+   "unavailable": null
+  },
+  {
+   "name": "Decider v1.2 27B",
+   "rank": 25,
+   "route": "local GPU",
+   "usd_200": 0.0,
+   "hours_200": 0.05672222222222222,
+   "gpu_hours": 0.05672222222222222,
+   "unavailable": null
+  },
+  {
+   "name": "Celeris-1 Decision",
+   "rank": 26,
+   "route": "hosted API",
+   "usd_200": 0.02973186061903835,
+   "hours_200": 0.009666666666666665,
+   "gpu_hours": 0.0,
+   "unavailable": null
+  },
+  {
+   "name": "Base Labs Elephant-1",
+   "rank": 27,
+   "route": "local GPU",
+   "usd_200": 0.0,
+   "hours_200": 0.014416666666666666,
+   "gpu_hours": 0.014416666666666666,
+   "unavailable": null
+  },
+  {
+   "name": "Clef",
+   "rank": 28,
+   "route": "local GPU",
+   "usd_200": 0.0,
+   "hours_200": 0.07394444444444444,
+   "gpu_hours": 0.07394444444444444,
+   "unavailable": null
+  },
+  {
+   "name": "Cygnet (Gemma 4 12B)",
+   "rank": 29,
+   "route": "local GPU",
+   "usd_200": 0.0,
+   "hours_200": 0.02622222222222222,
+   "gpu_hours": 0.02622222222222222,
+   "unavailable": null
+  },
+  {
+   "name": "Decider v1.1 27B",
+   "rank": 30,
+   "route": "local GPU",
+   "usd_200": 0.0,
+   "hours_200": 0.050972222222222224,
+   "gpu_hours": 0.050972222222222224,
+   "unavailable": null
+  },
+  {
+   "name": "SubQ Snap Preview",
+   "rank": 32,
+   "route": "hosted API",
+   "usd_200": 0.038351768617021276,
+   "hours_200": 0.013166666666666667,
+   "gpu_hours": 0.0,
+   "unavailable": null
+  },
+  {
+   "name": "GPT-6 Luna",
+   "rank": 33,
+   "route": "hosted API",
+   "usd_200": 0.06671291526689063,
+   "hours_200": 0.013000000000000001,
+   "gpu_hours": 0.0,
+   "unavailable": "no OpenAI API credit"
+  },
+  {
+   "name": "Winnow-12B",
+   "rank": 34,
+   "route": "local GPU",
+   "usd_200": 0.0,
+   "hours_200": 0.09472222222222222,
+   "gpu_hours": 0.09472222222222222,
+   "unavailable": null
+  },
+  {
+   "name": "Mercury Decide",
+   "rank": 35,
+   "route": "hosted API",
+   "usd_200": 0.014329537090098697,
+   "hours_200": 0.027333333333333334,
+   "gpu_hours": 0.0,
+   "unavailable": null
+  },
+  {
+   "name": "LFM2.5-24B-A2B (on)",
+   "rank": 36,
+   "route": "local GPU",
+   "usd_200": 0.0,
+   "hours_200": 16.825888888888887,
+   "gpu_hours": 16.825888888888887,
+   "unavailable": null
+  },
+  {
+   "name": "Decider Flash v1.2",
+   "rank": 37,
+   "route": "local GPU",
+   "usd_200": 0.0,
+   "hours_200": 0.030416666666666668,
+   "gpu_hours": 0.030416666666666668,
+   "unavailable": null
+  },
+  {
+   "name": "Open-Jev 27B v1.1",
+   "rank": 38,
+   "route": "local GPU",
+   "usd_200": 0.0,
+   "hours_200": 0.09655555555555556,
+   "gpu_hours": 0.09655555555555556,
+   "unavailable": null
+  }
+ ],
+ "missing_totals": {
+  "models": 26,
+  "usd_hosted": 0.33,
+  "usd_hosted_available": 0.26,
+  "hours_sequential": 19.5,
+  "gpu_hours": 17.5,
+  "unavailable": 5
+ }
+}

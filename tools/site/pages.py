@@ -8,7 +8,8 @@ from pathlib import Path
 import analysis as A
 from common import (EARLIER, EARLIER_NOTE, LATE_ENTRY, LATE_ENTRY_LABEL, LATE_ENTRY_NOTE, NA, NAME_NOTES, NOT_MEASURED,
                     PENDING, PROVISIONAL, PROVISIONAL_NOTE, PUBLISHED, REASONING_NOTES, ROOT, SUITE_BAR, TOO_FEW, aliases, count, esc, fmt,
-                    nm, pct, setup_slug, slug, status_badge)
+                    nm, pct, relabel, setup_slug, shown_names_html, slug, status_badge)
+from common import effort_aliases
 
 # The site's top bar (Ümit #2901, as Clocktower Bench's): the Hilde leaf and the site's name, then one row of tabs. Each
 # tab is a page; every other page sits under one tab (SECTION), which is marked while it is in view. The pages that are
@@ -298,7 +299,8 @@ def layout(S, base, path: str, title: str, body: str, description: str | None = 
             'class="chevron" aria-hidden="true"></span></button>'
             '<div class="more-pop" id="more-options" hidden><p class="more-label">Share</p><button type="button" class="key '
             'page-png" data-page-png hidden>Export page as PNG</button></div></div>' if EXPORT_PAGE_PNG else "")
-    return f"""<!doctype html>
+    # Old model names in any text become the model's display name (common.shown_names_html, Ümit #4282 item 4).
+    return shown_names_html(f"""<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -328,7 +330,7 @@ def layout(S, base, path: str, title: str, body: str, description: str | None = 
   </footer>
 </body>
 </html>
-"""
+""")
 
 
 def page_head(S, eyebrow: str, title: str, intro: str = "") -> str:
@@ -1055,11 +1057,12 @@ def phases_page(S) -> str:
 # Parameter counts (Ümit #3465): only as the maker documents them (content/model_params.json: total, active for a
 # mixture of experts, effective where the maker gives one, in billions as shown, the source URL and read date); never
 # an estimate.
-PARAMS = json.loads((CONTENT_DIR / "model_params.json").read_text())["models"]
+# Keyed by the shown model name (common.relabel, labels.json "models"), as the rendered state names models.
+PARAMS = relabel(json.loads((CONTENT_DIR / "model_params.json").read_text())["models"])
 # List prices (Ümit #4217, #4238, #4245): for every model whose maker states no total parameter count (closed models,
 # and open models without a maker's total), the maker's standard price per 1M input tokens, its URL and read date
 # (content/model_prices.json); never an estimate.
-PRICES = json.loads((CONTENT_DIR / "model_prices.json").read_text())["models"]
+PRICES = relabel(json.loads((CONTENT_DIR / "model_prices.json").read_text())["models"])
 # Model classes (Ümit #4245, #4259; one scale for the three sites): (key, label). Undisclosed: neither the maker's size
 # nor a per-token list price (a chat model always has one, so never; a decision model with a per-request price or
 # none). Programs are in no class.
@@ -1217,8 +1220,8 @@ def facts(m: dict, q: dict | None) -> str:
         out.append(f"<dt>{label}</dt><dd>{esc(v) if v else nm('Missing')}</dd>")
     if m.get("play_order"):
         out.append(f"<dt>Play order</dt><dd>{esc(m['play_order'])}</dd>")
-    if m.get("aliases"):
-        out.append(f"<dt>Earlier name</dt><dd>{esc(', '.join(m['aliases']))} (renamed on 28 Oct 2026 to the reasoning "
+    if m.get("aliases") and effort_aliases(m["name"]):
+        out.append(f"<dt>Earlier name</dt><dd>{esc(', '.join(effort_aliases(m['name'])))} (renamed on 28 Oct 2026 to the reasoning "
                    f"effort its requests sent)</dd>")
     if m.get("dataset", "").startswith("league-") and NAME_NOTES.get(m.get("name")):
         out.append(f"<dt>Reasoning, from the logs</dt><dd>{esc(NAME_NOTES[m['name']])}</dd>")

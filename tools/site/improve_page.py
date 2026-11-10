@@ -512,13 +512,13 @@ ARMS = (("notes", "notes"), ("worst_mistakes", "worst mistakes"))
 ARM_LABEL = {"notes": "helper-written notes", "worst_mistakes": "worst mistakes"}
 
 
-# Classes (Ümit #4217): the leaderboard's (P.model_class, P.class_label); a model the parameter file does not list, or
+# Classes (Ümit #4245): the leaderboard's (P.model_class, P.class_label); a model the parameter file does not list, or
 # one without a class: none (in the All view only).
 def model_class(name: str | None) -> tuple[str, str]:
     """(the row's class key, '' for none; its class label after the name, '' for a model the file does not list)."""
     if name in P.PARAMS:
         label = P.class_label(name)
-        return P.model_class(name) or "", f'<span class="hl-size">{label}</span>' if label else ""
+        return P.model_class(name) or "", f'<span class="hl-size">{esc(label)}</span>' if label else ""
     return "", ""
 
 

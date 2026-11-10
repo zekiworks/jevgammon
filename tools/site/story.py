@@ -66,20 +66,14 @@ def about_text(S, rel: str) -> str:
             'every view and in no class. This benchmark has no tiers: a tier needs a paired exact test (McNemar, Holm) '
             'over one question set every model answered, and the leagues played different positions, so no pair of '
             'models in different leagues shares one. # is the rank only.</p>'
-            '<p>Classes, one scale for the whole site: an open-weight model by its total parameters as disclosed by '
-            'the maker: Tiny under 6B, Small 6B to 15B, Medium over 15B to 40B, Large over 40B (a model with an '
-            'effective count, Gemma\'s E-series, by its total with embeddings). A closed model, or an open model whose '
-            'maker gives no total, by its list price per 1M input tokens (base rate, from the maker\'s price page): '
-            'Efficient $0.50 or less, Workhorse over $0.50 to $3, Flagship over $3; the standard price, never an '
-            'introductory one, and "(provisional)" where the maker publishes only an introductory or launch price '
-            '(the row\'s details say why). Never estimated: a model with '
-            'neither has no class. The label after a model\'s name is its total, in trillions to one decimal from '
-            '1,000B, whole from 10B and to one decimal under 10B '
-            '(a superscript MoE: a mixture of experts; 2×: two models run together; a row\'s details explain '
-            'the mark), empty for an open model whose maker gives no whole-model total, or Closed and its price class. '
-            'Parameters (in a row\'s details): the exact count its maker '
-            'documents (model card, Hugging Face repository or announcement), linked, with dense or MoE; a mixture of '
-            'experts as total · active; "not disclosed by maker" where the maker gives none.</p>'
+            f'<p>{esc(P.CLASS_RULE)} The maker\'s own figure (model card, announcement or model name), never our '
+            'count; the standard price, never an introductory one, and "(provisional)" where the maker publishes only '
+            'an introductory or launch price. Never estimated: a model with neither has no class. The label after a '
+            'model\'s name: its total (trillions to one decimal from 1,000B, whole from 10B, one decimal under 10B), '
+            'a mixture of experts as "total MoE · active", or Closed and its price class; a row\'s details give the '
+            'maker\'s figure the class uses and our checkpoint count. Parameters (in a row\'s details): the logical '
+            'parameter count of the maker\'s released checkpoint, linked, with dense or MoE; a mixture of experts as '
+            'total · active; "not disclosed by maker" where the maker gives none.</p>'
             f'<p>{esc(NOTE)}</p><p>{esc(RULE)}</p>'
             '<p>Each model\'s row is its highest reasoning setting played, by the effort the requests sent (off &lt; '
             'minimal &lt; low &lt; medium &lt; high &lt; xhigh &lt; max; on above off for a model without levels; a '
@@ -341,7 +335,7 @@ def headline_rows(S) -> tuple[list, list, list]:
             typ = "program" if kind == "program" else model_type(S, x)
             mclass = P.model_class(x["model"]) if kind == "model" else None
             # The model's class label after its name (Ümit #4217): small grey text; wraps under it on a phone.
-            label_html = P.class_label(x["model"]) if kind == "model" else ""
+            label_html = esc(P.class_label(x["model"])) if kind == "model" else ""
             labelled = f'<span class="hl-size">{label_html}</span>' if label_html else ""
             # Nothing under the name (Ümit #3039); after it one small grey chip (Ümit #3193): setting · type, a late
             # entry's tag in it (a caveat on its rank); the maker only in the dot and the box.

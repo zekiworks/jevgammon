@@ -1,5 +1,5 @@
 {
- "about": "Parameter counts of the leaderboard's models (Ümit #3465), by the three sites' rule (logic #3508, Main #3506; Zeki #3529; logic #3550, turkce #3552 wording; Zeki #3574: released checkpoint or composition at the stated revision, logical count, scope written out; actual-run identity only where evidenced): the logical parameter count of the maker's own released checkpoint at the pinned revision (sum of tensor shapes; never packed storage elements, scales, buffers (tensors the model class registers as nn.Buffer, e.g. Gemma 4's layer_scalar, std_bias, std_scale), or an adapter/assistant file alone), with its component scope; the maker's text in quote; a separate decision head shown as 'backbone X + decision head Y' ('terms'); a model with no released weights 'not disclosed by maker' unless the maker states a figure; a card that gives parts but no whole-model total in its own terms (total_b null, never a Small model). Cygnet: the count of Google's checkpoint at the recipe's pinned revision, the card's 11.95B beside it (turkce #3592). total_b, active_b (moe true) and effective_b in billions as shown; total_b null and no terms = not disclosed (the URLs checked in checked). Read 2026-11-09.",
+ "about": "Parameter counts of the leaderboard's models (Ümit #3465), by the three sites' rule (logic #3508, Main #3506; Zeki #3529; logic #3550, turkce #3552 wording; Zeki #3574: released checkpoint or composition at the stated revision, logical count, scope written out; actual-run identity only where evidenced): the logical parameter count of the maker's own released checkpoint at the pinned revision (sum of tensor shapes; never packed storage elements, scales, buffers (tensors the model class registers as nn.Buffer, e.g. Gemma 4's layer_scalar, std_bias, std_scale), or an adapter/assistant file alone), with its component scope; the maker's text in quote; a separate decision head shown as 'backbone X + decision head Y' ('terms'); a model with no released weights 'not disclosed by maker' unless the maker states a figure; a card that gives parts but no whole-model total in its own terms (total_b null, never a Small model). Cygnet: the count of Google's checkpoint at the recipe's pinned revision, the card's 11.95B beside it (turkce #3592). total_b, active_b (moe true) and effective_b in billions as shown; total_b null and no terms = not disclosed (the URLs checked in checked). Read 2026-11-09. Classes and the row label (Ümit #4245) use the MAKER's own figure (card_total_b, card_active_b: model card, announcement or the maker's model name; card_source, card_quote); total_b stays our checkpoint count, shown in the details box. REAX 1.3: card_parts_b, the maker's figures for its two parts (no total stated).",
  "models": {
   "Base Labs Elephant-1": {
    "total_b": 9.41,
@@ -13,7 +13,11 @@
    ],
    "read": "2026-11-09",
    "note": "Checkpoint total at the pinned revision (#3508 rule); same as logic's model_sizes.json 'Elephant-1'.",
-   "terms": "9.41B incl. its vision encoder; card: 9B"
+   "terms": "9.41B incl. its vision encoder; card: 9B",
+   "card_total_b": 9,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/baselabs/elephant-1",
+   "card_quote": "Maker's text: 'a 9B parameter decision model'."
   },
   "Base Labs Mammoth-1": {
    "total_b": 27.36,
@@ -27,7 +31,11 @@
    ],
    "read": "2026-11-09",
    "note": "Checkpoint total at the pinned revision (#3508 rule); same as logic's model_sizes.json 'Mammoth-1'.",
-   "terms": "27.36B incl. its vision encoder; card: 27B"
+   "terms": "27.36B incl. its vision encoder; card: 27B",
+   "card_total_b": 27,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/baselabs/mammoth-1",
+   "card_quote": "Maker's text: 'a 27B parameter decision model'."
   },
   "Celeris-1 Decision": {
    "total_b": null,
@@ -40,7 +48,11 @@
     "https://celeris.ai/celeris-1-decision"
    ],
    "read": "2026-11-09",
-   "note": "Closed API."
+   "note": "Closed API.",
+   "card_total_b": null,
+   "card_active_b": null,
+   "card_source": null,
+   "card_quote": null
   },
   "Claude Fable 5.1": {
    "total_b": null,
@@ -56,7 +68,11 @@
     "https://assets.claude.com/0339e6a7c5c7b87f5c07798616dc32c215d14235.pdf"
    ],
    "read": "2026-11-09",
-   "note": "System card PDF (Fable 5.1 / Mythos 5.1) searched in full text."
+   "note": "System card PDF (Fable 5.1 / Mythos 5.1) searched in full text.",
+   "card_total_b": null,
+   "card_active_b": null,
+   "card_source": null,
+   "card_quote": null
   },
   "Claude Opus 5.5": {
    "total_b": null,
@@ -72,7 +88,11 @@
     "https://assets.claude.com/fc1b44717c85dc068bc6ba5024219938094694bd.pdf"
    ],
    "read": "2026-11-09",
-   "note": "System card PDF searched in full text."
+   "note": "System card PDF searched in full text.",
+   "card_total_b": null,
+   "card_active_b": null,
+   "card_source": null,
+   "card_quote": null
   },
   "Claude Sonnet 5.5": {
    "total_b": null,
@@ -88,7 +108,11 @@
     "https://assets.claude.com/870c8f525702625d2c62fc6dd04c857e3250bec1.pdf"
    ],
    "read": "2026-11-09",
-   "note": "System card PDF searched in full text."
+   "note": "System card PDF searched in full text.",
+   "card_total_b": null,
+   "card_active_b": null,
+   "card_source": null,
+   "card_quote": null
   },
   "Clef": {
    "total_b": 27.48,
@@ -104,7 +128,11 @@
    ],
    "read": "2026-11-09",
    "note": "Checkpoint total of the maker's released repo at the pinned revision (logic #3508 rule, Main #3506; Zeki #3529: component scope shown). Same figure as logic's model_sizes.json where it has the model. Revision: the repo's current one (the run's revision is not recorded).",
-   "terms": "backbone 27.36B incl. its vision encoder + joint head 128.1M; card: 27B"
+   "terms": "backbone 27.36B incl. its vision encoder + joint head 128.1M; card: 27B",
+   "card_total_b": 27,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/Cloudflare/clef",
+   "card_quote": "Card: 'Clef is a 27B multimodal model…'; Cloudflare changelog '27B'."
   },
   "Cygnet (Gemma 4 12B)": {
    "total_b": 11.96,
@@ -121,7 +149,11 @@
    ],
    "read": "2026-11-09",
    "note": "Released-checkpoint count at the recipe's pinned revision, scope written out (logic #3550, turkce #3552/#3592, Zeki #3574), the card's 11.95B beside it, as for the other entries; was the card's 11.95B alone (Zeki #3510).",
-   "terms": "11.96B incl. its vision encoder; card: 11.95B"
+   "terms": "11.96B incl. its vision encoder; card: 11.95B",
+   "card_total_b": 11.95,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/google/gemma-4-12B-it",
+   "card_quote": "Google's Gemma 4 card, '12B Unified' column: 'Total Parameters | 11.95B' (Cygnet serves it unchanged)."
   },
   "Decider Flash v1.2": {
    "total_b": 4.54,
@@ -136,7 +168,11 @@
    ],
    "read": "2026-11-09",
    "note": "Checkpoint total of the maker's released repo at the pinned revision (logic #3508 rule, Main #3506; Zeki #3529: component scope shown). Same figure as logic's model_sizes.json where it has the model.",
-   "terms": "backbone 4.54B incl. its vision encoder + decision head 0.7M; changelog: 4B"
+   "terms": "backbone 4.54B incl. its vision encoder + decision head 0.7M; changelog: 4B",
+   "card_total_b": 4,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/perplexity-ai/pplx-decider-flash-v1.2",
+   "card_quote": "Perplexity changelog: 'pplx-decider-flash-v1.2 is a new 4B decision model'."
   },
   "Decider v1.1 27B": {
    "total_b": 26.09,
@@ -151,7 +187,11 @@
    ],
    "read": "2026-11-09",
    "note": "Checkpoint total of the maker's released repo at the pinned revision (logic #3508 rule, Main #3506; Zeki #3529: component scope shown). Same figure as logic's model_sizes.json where it has the model.",
-   "terms": "backbone 26.09B incl. its vision encoder + decision head 1.3M"
+   "terms": "backbone 26.09B incl. its vision encoder + decision head 1.3M",
+   "card_total_b": 27,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/perplexity-ai/pplx-decider-v1.1-27b",
+   "card_quote": "The maker's model name pplx-decider-v1.1-27b; Perplexity changelog: 'pplx-decider-v1.2 replaces pplx-decider-v1.1-27b as the 27B decision model'."
   },
   "Decider v1.2 27B": {
    "total_b": 26.09,
@@ -166,7 +206,11 @@
    ],
    "read": "2026-11-09",
    "note": "Checkpoint total of the maker's released repo at the pinned revision (logic #3508 rule, Main #3506; Zeki #3529: component scope shown). Same figure as logic's model_sizes.json where it has the model.",
-   "terms": "backbone 26.09B incl. its vision encoder + decision head 1.3M; changelog: 27B"
+   "terms": "backbone 26.09B incl. its vision encoder + decision head 1.3M; changelog: 27B",
+   "card_total_b": 27,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/perplexity-ai/pplx-decider-v1.2",
+   "card_quote": "Perplexity changelog: 'pplx-decider-v1.2 replaces pplx-decider-v1.1-27b as the 27B decision model'."
   },
   "DeepSeek V4.1 Flash": {
    "total_b": null,
@@ -181,13 +225,18 @@
     "https://www.alibabacloud.com/help/en/model-studio/newly-released-models"
    ],
    "read": "2026-11-09",
-   "note": "The card's own terms (Zeki #3510): no whole-model total is stated, none is computed, so not a Small model. The checkpoint's safetensors total (763,205,315,794) counts packed FP4 experts as I8 elements, not parameters."
+   "note": "The card's own terms (Zeki #3510): no whole-model total is stated, none is computed, so not a Small model. The checkpoint's safetensors total (763,205,315,794) counts packed FP4 experts as I8 elements, not parameters.",
+   "card_total_b": 552,
+   "card_active_b": 16,
+   "card_source": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash",
+   "card_quote": "README at revision 314113f8a7dadb388215396ba5fbee2c610a04d6: 'a multimodal Mixture-of-Experts (MoE) model with 552B backbone parameters'; 'activate only 8B parameters per token during prefill and 16B during decode'; 'Engram conditional memory (196B parameters, sparsely accessed via token-based lookup)'; table '# Backbone Params 552B', '# Activated Params 8B / 16B'. Ümit #4254: total 552B, active 16B (the decode figure), the prefill/decode split kept in the details.",
+   "card_active_terms": "8B per token in prefill and 16B in decode"
   },
   "DeepSeek V4.1 Flash 1017": {
    "total_b": null,
    "active_b": null,
    "effective_b": null,
-   "moe": false,
+   "moe": true,
    "source": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash-1017",
    "quote": "Card states only: 'DeepSeek-V4.1-Flash-1017 is a minor update to DeepSeek-V4.1-Flash'; no parameter count on the 1017 card.",
    "checked": [
@@ -195,7 +244,12 @@
     "https://api-docs.deepseek.com/updates/"
    ],
    "read": "2026-11-09",
-   "note": "Not filled from the V4.1-Flash card (lineage). HF safetensors total 763,205,315,794 is identical to V4.1-Flash's and inflated by packed FP4 (I8) storage, so not a parameter count. If Main accepts 'minor update' as same architecture, V4.1-Flash's 552B / 8B-16B applies."
+   "note": "Not filled from the V4.1-Flash card (lineage). HF safetensors total 763,205,315,794 is identical to V4.1-Flash's and inflated by packed FP4 (I8) storage, so not a parameter count. If Main accepts 'minor update' as same architecture, V4.1-Flash's 552B / 8B-16B applies.",
+   "card_total_b": 552,
+   "card_active_b": 16,
+   "card_source": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash",
+   "card_quote": "README at revision 314113f8a7dadb388215396ba5fbee2c610a04d6: 'a multimodal Mixture-of-Experts (MoE) model with 552B backbone parameters'; 'activate only 8B parameters per token during prefill and 16B during decode'; 'Engram conditional memory (196B parameters, sparsely accessed via token-based lookup)'; table '# Backbone Params 552B', '# Activated Params 8B / 16B'. Ümit #4254: total 552B, active 16B (the decode figure), the prefill/decode split kept in the details. Applied to the 1017 checkpoint too (Ümit #4254); its own card says only 'a minor update to DeepSeek-V4.1-Flash'.",
+   "card_active_terms": "8B per token in prefill and 16B in decode"
   },
   "Drex 2.0": {
    "total_b": 35.11,
@@ -210,7 +264,11 @@
    ],
    "read": "2026-11-09",
    "note": "Released-checkpoint count at the stated revision, scope written out (logic #3550, turkce #3552, Zeki #3574): the checkpoint total incl. the vision tower, which the card says is dropped on load (text use); not a verified count of the model as loaded in our hosted or local runs. 3B active from the card. Applies to the hosted and local rows.",
-   "terms": "35.11B incl. a vision tower the card says is dropped on load; card: 35B; 3B active"
+   "terms": "35.11B incl. a vision tower the card says is dropped on load; card: 35B; 3B active",
+   "card_total_b": 35,
+   "card_active_b": 3,
+   "card_source": "https://huggingface.co/nace-ai/drex-v2.0",
+   "card_quote": "Card: '35B parameters in total, about 3B active per token'."
   },
   "Drex Max 1.1": {
    "total_b": null,
@@ -226,7 +284,11 @@
     "https://www.nace.ai/developers"
    ],
    "read": "2026-11-09",
-   "note": "Not inferred from Drex Max v1 (27B)."
+   "note": "Not inferred from Drex Max v1 (27B).",
+   "card_total_b": null,
+   "card_active_b": null,
+   "card_source": null,
+   "card_quote": null
   },
   "Drex Max v1": {
    "total_b": 26.09,
@@ -240,7 +302,11 @@
    ],
    "read": "2026-11-09",
    "note": "Checkpoint total of the maker's released repo at the pinned revision (logic #3508 rule, Main #3506; Zeki #3529: component scope shown). Same figure as logic's model_sizes.json where it has the model.",
-   "terms": "backbone 26.09B incl. its vision encoder + decision head 1.3M; card: 27B"
+   "terms": "backbone 26.09B incl. its vision encoder + decision head 1.3M; card: 27B",
+   "card_total_b": 27,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/nace-ai/drex-max-v1",
+   "card_quote": "Card: 'a dense 27B-parameter model'."
   },
   "Fastino GLiDE": {
    "total_b": null,
@@ -255,7 +321,11 @@
     "https://huggingface.co/api/models/fastino/GLiDE"
    ],
    "read": "2026-11-09",
-   "note": "Hosted glide_v2 is not documented as the same checkpoint as the HF fastino/GLiDE weights, so the HF safetensors total is not applied."
+   "note": "Hosted glide_v2 is not documented as the same checkpoint as the HF fastino/GLiDE weights, so the HF safetensors total is not applied.",
+   "card_total_b": null,
+   "card_active_b": null,
+   "card_source": null,
+   "card_quote": null
   },
   "Fastino GLiDE v1.2": {
    "total_b": 26.09,
@@ -270,7 +340,11 @@
    ],
    "read": "2026-11-09",
    "note": "Checkpoint total of the maker's released repo at the pinned revision (logic #3508 rule, Main #3506; Zeki #3529: component scope shown). Same figure as logic's model_sizes.json where it has the model.",
-   "terms": "backbone 26.09B incl. its vision encoder + decision head 1.3M"
+   "terms": "backbone 26.09B incl. its vision encoder + decision head 1.3M",
+   "card_total_b": 27,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/fastino/GLiDE-27B",
+   "card_quote": "Card: 'GLiDE 27B is a 27B GLiDE decision model.'"
   },
   "GLM-5.3": {
    "total_b": 753.33,
@@ -286,7 +360,11 @@
     "https://huggingface.co/zai-org/GLM-5.3/raw/main/config.json"
    ],
    "read": "2026-11-09",
-   "note": "Neither the model card, blog nor docs state a parameter count (blog: 'uses the same base model as GLM-5.2'). Total is the HF safetensors figure; active not stated anywhere checked (MoE active unknown). Repo may include MTP layers in the count. Mixture of experts per the maker's Hugging Face config.json (architectures: GlmMoeDsaForCausalLM; first_k_dense_replace 3), so shown as total with active not disclosed."
+   "note": "Neither the model card, blog nor docs state a parameter count (blog: 'uses the same base model as GLM-5.2'). Total is the HF safetensors figure; active not stated anywhere checked (MoE active unknown). Repo may include MTP layers in the count. Mixture of experts per the maker's Hugging Face config.json (architectures: GlmMoeDsaForCausalLM; first_k_dense_replace 3), so shown as total with active not disclosed.",
+   "card_total_b": null,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/zai-org/GLM-5.3",
+   "card_quote": "Neither the card, blog nor docs state a parameter count (our checkpoint count 753.33B is not the maker's figure)."
   },
   "GPT-6 Astra": {
    "total_b": null,
@@ -303,7 +381,11 @@
     "https://openai.com/index/gpt-6-astra-system-card/"
    ],
    "read": "2026-11-09",
-   "note": "Closed API model; system card not checked separately. openai.com system-card URL returned HTTP 403 (Cloudflare); the same card on deploymentsafety.openai.com was read instead."
+   "note": "Closed API model; system card not checked separately. openai.com system-card URL returned HTTP 403 (Cloudflare); the same card on deploymentsafety.openai.com was read instead.",
+   "card_total_b": null,
+   "card_active_b": null,
+   "card_source": null,
+   "card_quote": null
   },
   "GPT-6 Luna": {
    "total_b": null,
@@ -322,7 +404,11 @@
     "https://deploymentsafety.openai.com/gpt-6-luna"
    ],
    "read": "2026-11-09",
-   "note": "Only 'billions' appears, referring to requests, not parameters. No Luna system card was found: the two openai.com and deploymentsafety guesses returned 403 or failed to fetch. The model docs and the launch post state no count."
+   "note": "Only 'billions' appears, referring to requests, not parameters. No Luna system card was found: the two openai.com and deploymentsafety guesses returned 403 or failed to fetch. The model docs and the launch post state no count.",
+   "card_total_b": null,
+   "card_active_b": null,
+   "card_source": null,
+   "card_quote": null
   },
   "GPT-6.1 Sol": {
    "total_b": null,
@@ -340,7 +426,11 @@
     "https://openai.com/index/gpt-6-1-sol-system-card/"
    ],
    "read": "2026-11-09",
-   "note": "openai.com system-card URL returned HTTP 403; card read on deploymentsafety.openai.com."
+   "note": "openai.com system-card URL returned HTTP 403; card read on deploymentsafety.openai.com.",
+   "card_total_b": null,
+   "card_active_b": null,
+   "card_source": null,
+   "card_quote": null
   },
   "Gemini 3.8 Flash": {
    "total_b": null,
@@ -356,7 +446,11 @@
     "https://deepmind.google/models/model-cards/gemini-3-8-flash/"
    ],
    "read": "2026-11-09",
-   "note": ""
+   "note": "",
+   "card_total_b": null,
+   "card_active_b": null,
+   "card_source": null,
+   "card_quote": null
   },
   "Gemini 4 Argon": {
    "total_b": null,
@@ -372,7 +466,11 @@
     "https://deepmind.google/models/model-cards/gemini-4-argon/"
    ],
    "read": "2026-11-09",
-   "note": ""
+   "note": "",
+   "card_total_b": null,
+   "card_active_b": null,
+   "card_source": null,
+   "card_quote": null
   },
   "Gemma 4 31B": {
    "total_b": 31.27,
@@ -386,7 +484,11 @@
    ],
    "read": "2026-11-09",
    "note": "Checkpoint total (#3508 rule); same as logic's model_sizes.json. Revision: the repo's current one (the run's revision is not recorded).",
-   "terms": "31.27B incl. its vision encoder"
+   "terms": "31.27B incl. its vision encoder",
+   "card_total_b": 30.7,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/google/gemma-4-31B-it",
+   "card_quote": "Card table, '31B Dense' column: 'Total Parameters | 30.7B' (vision encoder ~550M listed separately)."
   },
   "Grok 4.7": {
    "total_b": null,
@@ -402,7 +504,11 @@
     "https://x.ai/news"
    ],
    "read": "2026-11-09",
-   "note": "x.ai/news mentions Grok-1's 314B, not Grok 4.7."
+   "note": "x.ai/news mentions Grok-1's 314B, not Grok 4.7.",
+   "card_total_b": null,
+   "card_active_b": null,
+   "card_source": null,
+   "card_quote": null
   },
   "Inkling Small": {
    "total_b": 265.96,
@@ -416,7 +522,11 @@
    ],
    "read": "2026-11-09",
    "note": "Released-checkpoint count (#3508 rule): 265.96B total counted from the released checkpoint's tensors (turkce, bus #3592), as logic's model_sizes.json 'Inkling Small'; 12B active from the card; card: 276B total. In Small models by name only (improve_page.SMALL_BY_NAME, Ümit #3806); its total is over the threshold.",
-   "terms": "265.96B total, 12B active"
+   "terms": "265.96B total, 12B active",
+   "card_total_b": 276,
+   "card_active_b": 12,
+   "card_source": "https://thinkingmachines.ai/model-card/inkling-small/",
+   "card_quote": "Card: a mixture-of-experts model, 12B active parameters per token, 276B total."
   },
   "Jev 1.13.0": {
    "total_b": null,
@@ -430,7 +540,11 @@
     "https://typesafe.ai/blog/jev-1-14"
    ],
    "read": "2026-11-09",
-   "note": "Closed API; TypeSafe states no size."
+   "note": "Closed API; TypeSafe states no size.",
+   "card_total_b": null,
+   "card_active_b": null,
+   "card_source": null,
+   "card_quote": null
   },
   "Jev 1.14.0": {
    "total_b": null,
@@ -444,7 +558,11 @@
     "https://typesafe.ai/blog/jev-1-14"
    ],
    "read": "2026-11-09",
-   "note": "Closed API; TypeSafe states no size."
+   "note": "Closed API; TypeSafe states no size.",
+   "card_total_b": null,
+   "card_active_b": null,
+   "card_source": null,
+   "card_quote": null
   },
   "Kimi K3.1 Pro": {
    "total_b": 2800,
@@ -457,7 +575,11 @@
     "https://huggingface.co/api/models/moonshotai/Kimi-K3.1-Pro"
    ],
    "read": "2026-11-09",
-   "note": "Open weights, MoE (repo sha d9e99b0792a5e93b78ea9bea62a68167e36ddd9e). HF safetensors total shows 2,780,110,363,392 but 2.72T of that is U8-packed MXFP4 storage, so it is not a true param count; card figure 2.8T used. Card also states vision encoder ~401M separately."
+   "note": "Open weights, MoE (repo sha d9e99b0792a5e93b78ea9bea62a68167e36ddd9e). HF safetensors total shows 2,780,110,363,392 but 2.72T of that is U8-packed MXFP4 storage, so it is not a true param count; card figure 2.8T used. Card also states vision encoder ~401M separately.",
+   "card_total_b": 2800,
+   "card_active_b": 104,
+   "card_source": "https://huggingface.co/moonshotai/Kimi-K3.1-Pro/blob/main/README.md",
+   "card_quote": "Card: 'Total Parameters | 2.8T ; Activated Parameters | 104B'."
   },
   "LFM2.5-24B-A2B": {
    "total_b": 23.97,
@@ -471,7 +593,11 @@
     "https://huggingface.co/api/models/LiquidAI/LFM2.5-24B-A2B"
    ],
    "read": "2026-11-09",
-   "note": "Checkpoint total (#3508 rule; backgammon only); active 2.45B from the card (a checkpoint has no active count). Revision: the repo's current one."
+   "note": "Checkpoint total (#3508 rule; backgammon only); active 2.45B from the card (a checkpoint has no active count). Revision: the repo's current one.",
+   "card_total_b": 24.0,
+   "card_active_b": 2.45,
+   "card_source": "https://huggingface.co/LiquidAI/LFM2.5-24B-A2B",
+   "card_quote": "Card: 'Total parameters: 24.0B', 'Active parameters: 2.45B'."
   },
   "Liquid d1-ultra": {
    "total_b": null,
@@ -485,7 +611,11 @@
     "https://huggingface.co/LiquidAI/d1-ultra (401, not public)"
    ],
    "read": "2026-11-09",
-   "note": "API-only decision model."
+   "note": "API-only decision model.",
+   "card_total_b": null,
+   "card_active_b": null,
+   "card_source": null,
+   "card_quote": null
   },
   "Mercury Decide": {
    "total_b": null,
@@ -500,7 +630,11 @@
     "https://www.inceptionlabs.ai/blog/introducing-mercury-3"
    ],
    "read": "2026-11-09",
-   "note": ""
+   "note": "",
+   "card_total_b": null,
+   "card_active_b": null,
+   "card_source": null,
+   "card_quote": null
   },
   "MiniMax-M3.1-Flash": {
    "total_b": 428,
@@ -513,7 +647,11 @@
     "https://huggingface.co/MiniMaxAI/MiniMax-M3.1-Flash"
    ],
    "read": "2026-11-09",
-   "note": "The card's figures, as logic's model_sizes.json 'MiniMax-M3.1-Flash' (428B total, 23B active); no checkpoint count there."
+   "note": "The card's figures, as logic's model_sizes.json 'MiniMax-M3.1-Flash' (428B total, 23B active); no checkpoint count there.",
+   "card_total_b": 428,
+   "card_active_b": 23,
+   "card_source": "https://huggingface.co/MiniMaxAI/MiniMax-M3.1-Flash",
+   "card_quote": "Card: approximately 428B total parameters, 23B activated per token."
   },
   "Muse Ember": {
    "total_b": null,
@@ -528,7 +666,11 @@
     "https://openrouter.ai/api/v1/models/meta/muse-ember/endpoints"
    ],
    "read": "2026-11-10",
-   "note": "Closed API (Meta Model API, OpenRouter). Not shown yet: its late entry is held (held_setups.json)."
+   "note": "Closed API (Meta Model API, OpenRouter). Not shown yet: its late entry is held (held_setups.json).",
+   "card_total_b": null,
+   "card_active_b": null,
+   "card_source": null,
+   "card_quote": null
   },
   "Open-Jev 27B v1.1": {
    "total_b": 27.8,
@@ -542,7 +684,11 @@
    ],
    "read": "2026-11-09",
    "note": "Released composition at the stated revisions, scope written out (logic #3550, turkce #3552, Zeki #3574): the repo holds only the adapter and head; the total is the base the release manifest pins plus the adapter and head. The base revision comes from the release manifest (the local Open-Jev checkout's scripts/download_models.py downloads the same revision), not from our league run's record, which does not name it. Same as logic's 27.80B.",
-   "terms": "27.80B: Qwen3.8-27B base 27.78B + adapter and head 15.47M (the repo holds only the adapter and head)"
+   "terms": "27.80B: Qwen3.8-27B base 27.78B + adapter and head 15.47M (the repo holds only the adapter and head)",
+   "card_total_b": 27,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/ZefanCai/Open-Jev-27B-v1.1",
+   "card_quote": "The maker's model name Open-Jev-27B; its base Qwen/Qwen3.8-27B ('Number of Parameters: 27B'); the repo adds 15,471,617 trained parameters."
   },
   "Qwen3.8 Flash": {
    "total_b": null,
@@ -555,7 +701,11 @@
     "https://www.alibabacloud.com/help/en/model-studio/models"
    ],
    "read": "2026-11-09",
-   "note": "Closed API model. Not the open-weight Qwen3.8-Flash-Next; its numbers not used."
+   "note": "Closed API model. Not the open-weight Qwen3.8-Flash-Next; its numbers not used.",
+   "card_total_b": null,
+   "card_active_b": null,
+   "card_source": null,
+   "card_quote": null
   },
   "Qwen3.8-27B": {
    "total_b": 27.78,
@@ -569,7 +719,11 @@
    ],
    "read": "2026-11-09",
    "note": "Checkpoint total (#3508 rule); same as logic's model_sizes.json. Revision: the repo's current one (the run's revision is not recorded).",
-   "terms": "27.78B incl. its vision encoder; card: 27B"
+   "terms": "27.78B incl. its vision encoder; card: 27B",
+   "card_total_b": 27,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/Qwen/Qwen3.8-27B",
+   "card_quote": "Card: 'Number of Parameters: 27B'."
   },
   "REAX 1.3": {
    "total_b": 57.36,
@@ -585,7 +739,15 @@
    ],
    "read": "2026-11-09",
    "note": "Checkpoint total of the maker's released repo at the pinned revision (#3508 rule), component scope shown; same as logic's model_sizes.json 'REAX 1.3' 57.36B, verified here from the shard headers.",
-   "terms": "part G 31.27B + part Q 26.09B (each incl. its vision encoder) + decision head 1.3M"
+   "terms": "part G 31.27B + part Q 26.09B (each incl. its vision encoder) + decision head 1.3M",
+   "card_total_b": null,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/decisionmodels/REAX-1.3",
+   "card_quote": "The card states no total; it names its two parts: Part G 'blended with PelaAI/KnowLine-31B-Gen1 (Gemma-4-31B)' and Part Q 'blended with vllm-sr/d3-ultra (27B, Qwen lineage)'.",
+   "card_parts_b": [
+    31,
+    27
+   ]
   },
   "SubQ Snap 1.1": {
    "total_b": null,
@@ -600,7 +762,11 @@
     "https://docs.subq.ai/endpoints/decisions-api/"
    ],
    "read": "2026-11-09",
-   "note": "Closed API."
+   "note": "Closed API.",
+   "card_total_b": null,
+   "card_active_b": null,
+   "card_source": null,
+   "card_quote": null
   },
   "SubQ Snap Preview": {
    "total_b": null,
@@ -614,7 +780,11 @@
     "https://docs.subq.ai/using-the-api/models/"
    ],
    "read": "2026-11-09",
-   "note": "Closed API."
+   "note": "Closed API.",
+   "card_total_b": null,
+   "card_active_b": null,
+   "card_source": null,
+   "card_quote": null
   },
   "Winnow-12B": {
    "total_b": 11.91,
@@ -627,7 +797,11 @@
     "https://huggingface.co/api/models/EldanRing/Winnow-12B?expand[]=gguf"
    ],
    "read": "2026-11-09",
-   "note": "Checkpoint total (#3508 rule); same as logic's model_sizes.json 'Winnow-12B' (logic #3534 receipt)."
+   "note": "Checkpoint total (#3508 rule); same as logic's model_sizes.json 'Winnow-12B' (logic #3534 receipt).",
+   "card_total_b": 11.95,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/google/gemma-4-12B-it",
+   "card_quote": "Winnow-12B's own card states no count ('an EldanRing fine-tune of Gemma 4 12B IT'); its base's card, '12B Unified' column: 'Total Parameters | 11.95B' (the figure logic's card_vs_count table gives for Winnow-12B)."
   },
   "vLLM-SR d3-ultra": {
    "total_b": 26.09,
@@ -640,7 +814,11 @@
     "https://huggingface.co/vllm-sr/d3-ultra"
    ],
    "read": "2026-11-09",
-   "note": "Released-checkpoint count (#3508 rule), as logic's model_sizes.json 'vLLM-SR d3-ultra' (26.09B; counted from the checkpoint, tb-next export_results.py)."
+   "note": "Released-checkpoint count (#3508 rule), as logic's model_sizes.json 'vLLM-SR d3-ultra' (26.09B; counted from the checkpoint, tb-next export_results.py).",
+   "card_total_b": 26.09,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/vllm-sr/d3-ultra",
+   "card_quote": "Card: 'Parameters | 26.09B, including the 0.46B vision encoder'."
   }
  }
 }

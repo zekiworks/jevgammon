@@ -1,5 +1,5 @@
 {
- "about": "List price per 1M input tokens (USD, base rate: the STANDARD list price (Ümit #4238), standard tier, short-context, uncached, no batch, introductory/launch/promotional or off-peak discount) from the maker's own price page, for every leaderboard or Did-they-improve model whose total parameter count model_params.json leaves undisclosed (closed models, and open models without a disclosed total). Ümit's JOB 2 FINAL (#4217): these models are classed by this price (Efficient <= $0.50, Workhorse > $0.50 to $3, Flagship > $3); open models with a disclosed total are classed by it (model_params.json). weights: open or closed. input_per_mtok null: no price on the maker's page for this model (never estimated); such a model has no class. read: the date the page was read. provisional: true where the maker publishes only an introductory/launch price for the model (that price is used; provisional_reason says why); the label then reads 'Closed · <class> (provisional)'.",
+ "about": "List price per 1M input tokens (USD, base rate: the STANDARD list price (Ümit #4238), standard tier, short-context, uncached, no batch, introductory/launch/promotional or off-peak discount) from the maker's own price page, for every leaderboard or Did-they-improve model whose maker states no total parameter count (model_params.json card_total_b null; Ümit #4245) (closed models, and open models without a disclosed total). Ümit's JOB 2 FINAL (#4217): these models are classed by this price (Efficient <= $0.50, Workhorse > $0.50 to $3, Flagship > $3); open models with a disclosed total are classed by it (model_params.json). weights: open or closed. input_per_mtok null: no price on the maker's page for this model (never estimated); such a model has no class. read: the date the page was read. provisional: true where the maker publishes only an introductory/launch price for the model (that price is used; provisional_reason says why); the label then reads 'Closed · <class> (provisional)'.",
  "models": {
   "Celeris-1 Decision": {
    "weights": "closed",
@@ -35,26 +35,6 @@
    "source": "https://platform.claude.com/docs/en/about-claude/pricing",
    "read": "2026-11-10",
    "quote": "Claude Sonnet 5.5 | Base input tokens $2 / MTok",
-   "provisional": false,
-   "provisional_reason": null
-  },
-  "DeepSeek V4.1 Flash": {
-   "weights": "open",
-   "input_per_mtok": null,
-   "source": "https://api-docs.deepseek.com/quick_start/pricing",
-   "read": "2026-11-10",
-   "quote": "The API's deepseek-flash now serves DeepSeek-V4.1-Flash-1017; 'the legacy names ... have been retired, their requests are served by the DeepSeek-V4.1-Flash-1017 model'.",
-   "note": "No price for this model itself on the maker's page. Classed by its total: the card's 552B backbone (plus 196B conditional memory) is over 40B whatever the whole-model total (pages.model_class).",
-   "provisional": false,
-   "provisional_reason": null
-  },
-  "DeepSeek V4.1 Flash 1017": {
-   "weights": "open",
-   "input_per_mtok": 0.3,
-   "source": "https://api-docs.deepseek.com/quick_start/pricing",
-   "read": "2026-11-10",
-   "quote": "deepseek-flash, MODEL VERSION DeepSeek-V4.1-Flash-1017: 1M INPUT TOKENS (CACHE MISS) PEAK $0.3, OFF-PEAK $0.15 ('Off-peak rates are half of the peak rates').",
-   "note": "Base rate: peak, cache miss (off-peak is a discount: 'Off-peak rates are half of the peak rates'). Shown under DeepSeek V4.1 Flash's row (a dated checkpoint under its original), so its own class shows nowhere.",
    "provisional": false,
    "provisional_reason": null
   },
@@ -206,6 +186,16 @@
    "read": "2026-11-10",
    "quote": "'SubQ Snap is priced at $0.05 per million input tokens, with no charge for output tokens.' (launch post, 12 Oct 2026)",
    "note": "The model is in 'Public Preview'; the launch post states its price without calling it introductory or a preview discount, so it is the model's own standard price. subq.ai/pricing now prices only its successor SubQ Snap 1.1.",
+   "provisional": false,
+   "provisional_reason": null
+  },
+  "GLM-5.3": {
+   "weights": "open",
+   "input_per_mtok": 1.4,
+   "source": "https://docs.z.ai/guides/overview/pricing",
+   "read": "2026-11-10",
+   "quote": "GLM-5.3 | Input $1.4 | Cached Input $0.26 | Output $4.4 (per 1M tokens)",
+   "note": "Open weights, but the maker states no parameter count (card, blog, docs), so classed by price (Ümit #4245).",
    "provisional": false,
    "provisional_reason": null
   }

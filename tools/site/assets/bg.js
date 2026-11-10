@@ -559,13 +559,12 @@ async function savePng(panel, svg, title, lines, filename) {
    selected one goes back to All). A second click on a pressed key returns its row to All (Ümit #3923).
    ?models=chat|decision and ?class=<class> open on them; the old ?models=small-chat / small-decision (and small: Small
    chat) open on that type with Tiny and Small. A row out of the view and its other-settings rows go out of view (class
-   hl-off), whatever their expander says; the programs stay in every view; the ranks are the ranks among all models; a
-   selected class shows its rule under the keys. */
+   hl-off), whatever their expander says; the programs stay in every view; the ranks are the ranks among all models;
+   the class rule (Ümit #4245) stands under the keys. */
 (function headlineFilter() {
   const table = document.getElementById('headline-table');
   const keys = [...document.querySelectorAll('[data-hl-filter]')];
   const classKeys = [...document.querySelectorAll('#leaderboard [data-class-key]')];
-  const notes = [...document.querySelectorAll('#leaderboard [data-class-note]')];
   if (!table || !keys.length) return;
   const rows = [...table.querySelectorAll('tbody tr[data-hl-type]')];
   let type = 'all', classes = new Set();
@@ -581,7 +580,6 @@ async function savePng(panel, svg, title, lines, filename) {
       const out = (type !== 'all' && t !== type) || (classes.size > 0 && !classes.has(tr.dataset.hlClass));
       tr.classList.toggle('hl-off', t !== 'program' && out);
     });
-    notes.forEach(n => { n.hidden = !classes.has(n.dataset.classNote); });
     table.dispatchEvent(new CustomEvent('hl-filter'));
   };
   keys.forEach(k => k.addEventListener('click', () => {

@@ -137,14 +137,13 @@
 /* Did they improve?: the results table's filter (Ümit/Zeki #3710), the leaderboard's (bg.js headlineFilter): a type
    row (All, Chat models, Decision models; rows' data-group) and a Class row (Ümit #4217; rows' data-class, empty for
    none), combined; a class with no model of the type in view loses its key (a selected one goes back to All); a second
-   click on a pressed key returns its row to All (Ümit #3923); a selected class shows its rule under the keys;
+   click on a pressed key returns its row to All (Ümit #3923); the class rule (Ümit #4245) stands under the keys;
    ?models=chat|decision and ?class=<class> open on them, the old ?models=small-chat / small-decision (small: Small
    chat) on that type with Tiny and Small. */
 (function improveFilter() {
   const table = document.getElementById('improve-results-table');
   const keys = [...document.querySelectorAll('[data-improve-filter]')];
   const classKeys = [...document.querySelectorAll('.improve-class [data-class-key]')];
-  const notes = [...document.querySelectorAll('[data-class-note]')];
   if (!table || !keys.length) return;
   const rows = [...table.querySelectorAll('tbody tr[data-group]')];
   let type = 'all', classes = new Set();
@@ -157,7 +156,6 @@
     rows.forEach(tr => {
       tr.hidden = (type !== 'all' && tr.dataset.group !== type) || (classes.size > 0 && !classes.has(tr.dataset.class));
     });
-    notes.forEach(n => { n.hidden = !classes.has(n.dataset.classNote); });
   };
   keys.forEach(k => k.addEventListener('click', () => {
     const t = k.dataset.improveFilter;

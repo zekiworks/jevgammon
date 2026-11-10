@@ -124,12 +124,12 @@
       "min_contrast": 2.06
     },
     "Fastino": {
-      "colour": "#8f2400",
+      "colour": "#f07804",
       "families": [
         "Fastino"
       ],
       "maker_source": "https://huggingface.co/fastino (GLiDE, GLiNER)",
-      "min_contrast": 2.01
+      "min_contrast": 2.02
     },
     "Perplexity": {
       "colour": "#645b2b",
@@ -344,7 +344,7 @@
   "programs": {
     "colour": "#64748b"
   },
-  "min_delta_e": 12.02,
+  "min_delta_e": 12.03,
   "min_delta_e_pair": [
     "Anthropic",
     "Metask Lab"

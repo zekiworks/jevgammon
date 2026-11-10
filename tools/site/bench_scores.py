@@ -32,14 +32,37 @@ QUANT = re.compile(r"\b(FP8|NVFP4|BF16)\b", re.I)
 # note ('(open)' etc.), lower case, spaces to '-', dots kept: 'gpt-6-astra', 'claude-fable-5.1', 'reax-1.3', 'cygnet'.
 # All benches joins on repo where both rows have one, else on this key. Settings never split a key.
 KEY_OK = re.compile(r"^[a-z0-9][a-z0-9.+-]*$")
-# Row names are the site's shown names (content/labels.json "models", Ümit #4282 item 4): the names the Logic & Math
-# and Reading feeds give the same model, with a route suffix where our route differs from theirs. Per shown name:
-# the route note where their row is on another route, and the (repo, commit) of the served checkpoint where our
-# records name it and setups.json does not. problems() fails on an entry no leaderboard row uses.
-ROUTE_NOTES = {
+# Row names are the site's shown names (content/labels.json "models", Ümit #4282 item 4), which are the names the Logic &
+# Math and Reading feeds give the same model, with a route suffix where our route differs from theirs. Here a row
+# whose shown name carries a setting their name leaves out gets their name, the setting in `notes` (Ümit #4270), and a
+# row on another route than theirs the route in `notes`: shown name -> (feed name, note). CHECKPOINTS: the (repo,
+# commit) of the served checkpoint where our records name it and setups.json does not. problems() fails on an entry
+# no leaderboard row uses.
+FEED_ROWS = {
     # Reading 'Perplexity Decider 27B v1.1' is the Perplexity Decisions API; ours ran on our GPUs.
-    "Perplexity Decider 27B v1.1 (local GPU)":
-        "route: our GPUs (released checkpoint); the other benches' row is the Perplexity Decisions API",
+    "Perplexity Decider 27B v1.1 (local GPU)": (
+        "Perplexity Decider 27B v1.1 (local GPU)",
+        "route: our GPUs (released checkpoint); the other benches' row is the Perplexity Decisions API"),
+    # Reading 'GPT-6 Astra', 'GPT-6.1 Sol' (Codex CLI, ChatGPT subscription; ours: ChatGPT subscription).
+    "GPT-6 Astra (high)": ("GPT-6 Astra", "setting: high"),
+    "GPT-6.1 Sol (high)": ("GPT-6.1 Sol", "setting: high"),
+    # Reading 'Gemini 4 Argon', 'Gemini 3.8 Flash' (Gemini API; ours: Google Antigravity subscription).
+    "Gemini 4 Argon (high)": ("Gemini 4 Argon", "setting: high; route: Google Antigravity subscription"),
+    "Gemini 3.8 Flash (high)": ("Gemini 3.8 Flash", "setting: high; route: Google Antigravity subscription"),
+    # Reading 'Claude Fable 5.1', 'Claude Opus 5.5', 'Claude Sonnet 5.5' (Claude Code CLI, Claude subscription).
+    "Claude Fable 5.1 (high)": ("Claude Fable 5.1", "setting: high"),
+    "Claude Opus 5.5 (high)": ("Claude Opus 5.5", "setting: high"),
+    "Claude Sonnet 5.5 (high)": ("Claude Sonnet 5.5", "setting: high"),
+    # Reading 'Grok 4.7' (xAI Responses API, SuperGrok subscription; ours: SuperGrok subscription).
+    "Grok 4.7 (high)": ("Grok 4.7", "setting: high"),
+    # Reading 'Kimi K3.1 Pro' (OpenRouter, Moonshot AI's endpoint, mxfp4; ours the same endpoint).
+    "Kimi K3.1 Pro (off)": ("Kimi K3.1 Pro", "setting: off"),
+    # Reading 'GLM-5.3' (OpenRouter, Fireworks endpoint; ours: Fireworks via OpenRouter).
+    "GLM-5.3 (low)": ("GLM-5.3", "setting: low"),
+    # Logic & Math, Reading 'Gemma 4 31B' (google/gemma-4-31B-it, self-hosted, FP8).
+    "Gemma 4 31B (on)": ("Gemma 4 31B", "setting: on"),
+    # Logic & Math, Reading 'Qwen3.8-27B' (Qwen/Qwen3.8-27B, self-hosted).
+    "Qwen3.8-27B (low)": ("Qwen3.8-27B", "setting: low"),
 }
 CHECKPOINTS = {
     # Served from snapshot 225c913 (tools/v3/servers/decider-v1.2.sh), Reading's commit.
@@ -114,9 +137,10 @@ def build(S) -> dict:
             notes.append(f"late entry: its own decisions in late-entry matches against League {lg}'s field "
                          f"(different positions from the league's); scored against League {lg}'s Random")
         notes.append("run on our GPUs" if m.get("runs_on") == "our GPUs" else "hosted (API or subscription)")
-        route, ckpt = ROUTE_NOTES.get(x["name"]), CHECKPOINTS.get(x["name"])
-        if route:
-            notes.append(route)
+        name, note = FEED_ROWS.get(x["name"], (x["name"], None))
+        ckpt = CHECKPOINTS.get(x["name"])
+        if note:
+            notes.append(note)
         if ckpt and repo is None:
             repo, commit = ckpt
         if imp is not None:
@@ -124,7 +148,7 @@ def build(S) -> dict:
             notes.append("improvement_points: change in risks found, percentage points of risk-pays decisions "
                          "(with lessons minus no memory)")
         rows.append(dict(
-            repo=repo, commit=commit, name=x["name"], model_key=model_key(x["model"]),
+            repo=repo, commit=commit, name=name, model_key=model_key(x["model"]),
             maker=H.maker(x["name"])[0],
             kind=ST.model_type(S, x),
             params_total=p["total_b"], params_active=p["active_b"] if p["moe"] else p["total_b"], quantization=quant,
@@ -156,10 +180,11 @@ def problems(S, doc) -> list[str]:
         return [f"{PATH}: bench/title/url/updated/score/models of the wrong type"]
     model_rows, prog_rows = ST.leaderboard_rows(S)
     rnd = randoms(prog_rows)
-    expect = {x["name"]: ((x["q"] or {}).get("error_rate"), league_of(x)) for x, *_ in model_rows}
-    unused = sorted((set(ROUTE_NOTES) | set(CHECKPOINTS)) - {x["name"] for x, *_ in model_rows})
+    expect = {FEED_ROWS.get(x["name"], (x["name"],))[0]: ((x["q"] or {}).get("error_rate"), league_of(x))
+              for x, *_ in model_rows}
+    unused = sorted((set(FEED_ROWS) | set(CHECKPOINTS)) - {x["name"] for x, *_ in model_rows})
     if unused:
-        out.append(f"{PATH}: ROUTE_NOTES/CHECKPOINTS entries for no leaderboard model row: {unused}")
+        out.append(f"{PATH}: FEED_ROWS/CHECKPOINTS entries for no leaderboard model row: {unused}")
     num = lambda v: isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
     opt = lambda v, t: v is None or t(v)
     for r in doc["models"]:

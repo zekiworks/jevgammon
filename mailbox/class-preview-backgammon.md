@@ -1,7 +1,31 @@
 # Class row preview: backgammon (Ümit JOB 2 FINAL, #4217)
 
-Branch `class-preview`, HEAD **a48c05d** (pushed; on origin/main 6e765da: 789fd10 re-applies a01bf9f's Size-row code,
-a48c05d turns it into the Class scheme). **Preview only. Not merged, not deployed, nothing live changed.**
+Branch `class-preview`, HEAD **405dd12** (rebased onto origin/main 65a4ec6 and force-pushed: aea4cc8 re-applies
+a01bf9f's Size-row code, 53a710a turns it into the Class scheme, 405dd12 the row label and card of Ümit #4229 /
+turkce #4231). **Preview only. Not merged, not deployed, nothing live changed.**
+
+## Update 2026-11-10 (Ümit #4229, aligned with turkce #4231)
+- Builds again on a fresh frozen copy (`/tmp/class-state`, copied 16:04:18Z; the live state had not updated since
+  15:52, so data as of 15:50Z, results a7130a46): origin/main 65a4ec6 **exit 0**, branch 405dd12 **exit 0**; `data/`
+  and `decisions/` byte-identical; index.html and improve/index.html identical once the class markup is removed
+  (number tokens 6,734 and 3,734 equal).
+- **Label after the name:** total whole from 10B (`26B`, `57B`, `266B`, `2800B`), one decimal under 10B (`9.4B`,
+  `4.5B`); superscript **MoE** after every mixture of experts (`35B`<sup>MoE</sup>, `24B`<sup>MoE</sup>,
+  `753B`<sup>MoE</sup>); superscript **2×** after REAX 1.3 (`57B`<sup>2×</sup>); dense: no mark; open model without
+  a whole-model total: empty (DeepSeek V4.1 Flash; its 1017 checkpoint too); closed: `Closed · <class>`.
+- **Card line** (after Parameters), e.g. Drex 2.0: "Mixture of experts: 35.11B total, about 3B active per step. Size
+  class uses 35.11B." (the total, per #4217). Same for LFM2.5-24B-A2B (23.97B / 2.45B), Inkling Small, MiniMax,
+  Kimi (2.8T / 104B); GLM-5.3: "active count not disclosed by the maker"; DeepSeek V4.1 Flash: its 552B backbone +
+  196B memory, 8B/16B active, "Size class uses the 552B backbone." REAX 1.3: "Two models run together, option
+  probabilities averaged 50/50: 57.36B in all, all used on every question."
+- **50/50 verified** three ways: the model card (decisionmodels/REAX-1.3 @ fa4bf7e README: "Every request goes to both
+  parts; their per-option probabilities are averaged 50/50"); the engine code it pins (reax-engine @ ff8f595,
+  `reax13/probabilities.py` `mix()`: `.5 * (px[k] + py[k])`, then renormalised for roundoff; `reax13_engine.py`:
+  "'mix': '0.5*G probability + 0.5*Q probability'"); and our run (setups.json: our GPU through reax-engine @ ff8f595,
+  reax13 mode; our local checkout's probabilities.py and reax13_engine.py are byte-identical to the card's `engine/`).
+- **Taps:** the existing row tap opens the card; checked at 375 px with touch emulation: tap on Drex 2.0's MoE mark,
+  REAX 1.3's 2× mark and Kimi K3.1 Pro's name each open the card (`tap-375-*.png`); mouse hover on the mark at 1280
+  opens it (`hover-1280-Drex-20-mark.png`).
 
 ## What ran
 - Frozen live state `/tmp/class-state` (copied 2026-11-10T15:52:54Z right after a finished update cycle; data as of

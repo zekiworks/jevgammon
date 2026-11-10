@@ -7,7 +7,7 @@
 # Once: v3.db backup, first match id, the late_entry_stage trigger, the league config. Then starts the league unit
 # late-ember-league and guards it every 60 s; it stops the league unit (matches resume later from their last turn):
 #   - when OpenRouter's balance (shared with other lanes) is under $FLOOR ($40 kept, $1 margin for requests in flight
-#     and the credits endpoint's lag);
+#     and the credits endpoint's lag), or when it cannot be read 3 times in a row (fail closed);
 #   - when Ember's ledger (spent + open reservations; hard pre-send cap 19.5 in player.json) plus the paid opponents'
 #     cost from the first match reaches $CAP (the run's $20 with margin: a reservation books 32,768 output tokens,
 #     Meta's reasoning can pass that, smoke max 83,103);
@@ -66,13 +66,22 @@ log "guard up: runner $(git -C "$T" rev-parse --short HEAD) clean; OpenRouter \$
 
 stop_league() { systemctl --user stop $UNIT 2>/dev/null; }
 restarts=0
+unread=0
 t0=$SECONDS
 while true; do
   if [[ $(python3 $T/ember.py pending "${OPPS[@]}") == 0 ]]; then
     stop_league; log "done: all 10 pairs played; run spent \$$(spent) (Ember ledger \$$(python3 $T/ember.py ledger)); OpenRouter \$$(balance)"; exit 0
   fi
-  if bal=$(balance) && lt "$bal" "$FLOOR"; then
-    stop_league; log "STOPPED: OpenRouter balance \$$bal under \$$FLOOR; run spent \$$(spent)"; exit 1
+  if bal=$(balance); then
+    unread=0
+    if lt "$bal" "$FLOOR"; then
+      stop_league; log "STOPPED: OpenRouter balance \$$bal under \$$FLOOR; run spent \$$(spent)"; exit 1
+    fi
+  else
+    unread=$((unread + 1))
+    if (( unread >= 3 )); then
+      stop_league; log "STOPPED: OpenRouter balance unreadable 3 times in a row; run spent \$$(spent)"; exit 1
+    fi
   fi
   s=$(spent)
   if ! lt "$s" "$CAP"; then

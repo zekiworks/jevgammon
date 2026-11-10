@@ -4,7 +4,7 @@
 # For each opponent whose pair is unplayed: waits until OPP_GPU has room for it (+2 GB; a GPU held by someone else is
 # waited for, never freed), starts its server with `agent-bus run RES -- ...`, league-adds it to Ember's league, waits
 # until the pair is played, stops the server. It keeps start.sh's money guard (OpenRouter balance >= $41, run cap
-# $19.75) itself, so the unit late-ember (start.sh) must have exited first.
+# $19.75; a balance unreadable 3 times in a row also stops it) itself, so the unit late-ember (start.sh) must have exited first.
 #   systemd-run --user --unit=late-ember-locals --working-directory=/home/cbasaran/code/jevgammon \
 #     -E OPP_GPU=0 -E RES=r_57d739c4cd53 /home/cbasaran/code/jevgammon-ember/tools/v3/late-ember/locals.sh
 set -uo pipefail
@@ -32,9 +32,16 @@ lt() { python3 -c 'import sys; sys.exit(not float(sys.argv[1]) < float(sys.argv[
 spent() { python3 -c 'import sys; print(f"{float(sys.argv[1]) + float(sys.argv[2]):.4f}")' \
   "$(python3 $T/ember.py ledger)" "$(python3 $T/ember.py billed "$(cat $ST/first)")"; }
 # Money guard; returns 1 (and logs) when the run must stop.
+unread=0
 guard() {
   local bal s
-  if bal=$(balance) && lt "$bal" "$FLOOR"; then log "locals STOPPED: OpenRouter balance \$$bal under \$$FLOOR"; return 1; fi
+  if bal=$(balance); then
+    unread=0
+    if lt "$bal" "$FLOOR"; then log "locals STOPPED: OpenRouter balance \$$bal under \$$FLOOR"; return 1; fi
+  else
+    unread=$((unread + 1))
+    (( unread < 3 )) || { log "locals STOPPED: OpenRouter balance unreadable 3 times in a row"; return 1; }
+  fi
   s=$(spent)
   lt "$s" "$CAP" || { log "locals STOPPED: run spent \$$s reached the \$$CAP cap"; return 1; }
 }

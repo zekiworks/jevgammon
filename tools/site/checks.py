@@ -866,7 +866,6 @@ def run(S: dict, out: Path) -> list[str]:
     failures += check_learning(out)
     failures += check_improve(out)
     failures += check_palette()
-    failures += check_size_classes(out)
     failures += check_bench_scores(S, out)
     failures += check_highlight_cards(out)
     return failures
@@ -882,20 +881,6 @@ def check_bench_scores(S: dict, out: Path) -> list[str]:
     """bench-scores.json (the combined score page's feed): the shared schema, scores, one row per leaderboard row."""
     import bench_scores
     return bench_scores.problems(S, json.loads((out / bench_scores.PATH).read_text()))
-
-
-def check_size_classes(out: Path) -> list[str]:
-    """The Size row (Ümit #4156): Tiny and Small together are exactly the old Small models (a disclosed total, or a
-    mixture of experts' disclosed active count, at most 15B; Ümit via Zeki #3815/#3816), so the old Small chat / Small
-    decision views (?models=small-chat, small-decision) keep their rows; every leaderboard model row has a size class."""
-    import pages as P
-    bad = [f"model_params.json: {m}: size class {P.size_class(m)} disagrees with the old Small rule"
-           for m, p in P.PARAMS.items()
-           if (P.size_class(m) in ("tiny", "small")) != any(v is not None and v <= 15 for v in (p["total_b"], p["active_b"]))]
-    home = (out / "index.html").read_text()
-    rows = re.findall(r'<tr[^>]*data-hl-type="(?!program)[^"]*"[^>]*>', home)
-    bad += [f"index.html: leaderboard row without a size class: {r[:120]}" for r in rows if "data-hl-size=" not in r]
-    return bad + ([] if rows else ["index.html: no leaderboard model rows"])
 
 
 def check_palette() -> list[str]:

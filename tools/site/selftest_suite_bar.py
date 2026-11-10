@@ -41,7 +41,7 @@ CASES = [
     ("2b the address in the page text", "index.html", page(SUITE_BAR + OUTSIDE_TEXT).encode(), False),
     ("2c the link alone, no strip", "index.html", page(OUTSIDE_LINK).encode(), False),
     ("3a strip with other link text", "index.html",
-     page(SUITE_BAR.replace("English &amp; Turkish Reading", "English Reading")).encode(), False),
+     page(SUITE_BAR.replace("Reading &amp; Grammar", "Reading")).encode(), False),
     ("3b strip with another address", "index.html",
      page(SUITE_BAR.replace('href="/analysis/decision-models/"', 'href="/analysis/decision-models/method/"')).encode(), False),
     ("3c strip marking another site", "index.html",

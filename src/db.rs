@@ -395,7 +395,10 @@ CREATE TABLE IF NOT EXISTS leagues (
     -- Only this participant's pairs are played (`Scope::only_pairs_of`); NULL: every pair.
     only_pairs_of   TEXT,
     -- The position every game starts from (as `matches.start_position`); NULL = standard.
-    start_position  TEXT
+    start_position  TEXT,
+    -- JSON {opponent: {"seed", "seat_first"}}: pairs of `only_pairs_of` whose first match
+    -- takes this dice seed and seating (`Scope::pinned_pairs`); NULL: none.
+    pinned_pairs    TEXT
 );
 
 -- One row per setup: the name is the identity a league table shows.
@@ -449,7 +452,7 @@ JOIN players p2 ON p2.id = m.player2
 ";
 
 /// Columns added after the first release, for databases created before them.
-const ADDED_COLUMNS: [(&str, &str, &str); 43] = [
+const ADDED_COLUMNS: [(&str, &str, &str); 44] = [
     ("matches", "clock_seconds", "INTEGER"),
     ("turns", "clock_ms", "INTEGER"),
     ("matches", "delay_seconds", "INTEGER"),
@@ -493,6 +496,7 @@ const ADDED_COLUMNS: [(&str, &str, &str); 43] = [
     ("leagues", "only_pairs_of", "TEXT"),
     ("matches", "start_position", "TEXT"),
     ("leagues", "start_position", "TEXT"),
+    ("leagues", "pinned_pairs", "TEXT"),
 ];
 
 pub struct Db {
@@ -516,6 +520,131 @@ pub struct Scope {
     /// Left out of the site, the dashboard and the ladder tools: its matches still count
     /// wherever both players meet, as every match does.
     pub hidden: bool,
+    /// Pairs of `only_pairs_of` (by opponent name) whose first match takes a given dice
+    /// seed and seating instead of `Rules::pair_seed` and `Rules::sides`: a repeat replays
+    /// an earlier match's dice and option orders under another name. Empty: none.
+    pub pinned_pairs: PinnedPairs,
+}
+
+/// A pinned pair: the dice seed of its match and whether `only_pairs_of` is `player1`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct PinnedPair {
+    pub seed: u64,
+    pub seat_first: bool,
+}
+
+/// Pinned pairs by opponent name (`leagues.pinned_pairs`).
+pub type PinnedPairs = std::collections::BTreeMap<String, PinnedPair>;
+
+impl Scope {
+    /// `only_pairs_of` and its pinned pairs, when it has any.
+    pub fn pins(&self) -> Option<(&str, &PinnedPairs)> {
+        match &self.only_pairs_of {
+            Some(owner) if !self.pinned_pairs.is_empty() => Some((owner, &self.pinned_pairs)),
+            _ => None,
+        }
+    }
+}
+
+fn pins_value(pins: &PinnedPairs) -> Result<rusqlite::types::Value> {
+    Ok(if pins.is_empty() {
+        rusqlite::types::Value::Null
+    } else {
+        serde_json::to_string(pins)?.into()
+    })
+}
+
+/// `stored` pins with `pins` added for `owner`'s pairs: the same pin again is fine; another
+/// seed or seating for a pinned opponent, a pin against itself, or a pin for a pair whose
+/// valid match exists with another seed or seating is refused.
+fn merged_pins(
+    conn: &Connection,
+    owner: &str,
+    stored: &PinnedPairs,
+    pins: &PinnedPairs,
+) -> Result<PinnedPairs> {
+    let side = |first: bool| if first { "first" } else { "second" };
+    let mut merged = stored.clone();
+    for (opponent, pin) in pins {
+        if opponent == owner {
+            bail!("pinned_pairs: `{owner}` cannot be pinned against itself");
+        }
+        if let Some(old) = stored.get(opponent)
+            && old != pin
+        {
+            bail!(
+                "pinned_pairs: {owner} v {opponent} is already pinned to seed {} ({}), not {} ({})",
+                old.seed,
+                side(old.seat_first),
+                pin.seed,
+                side(pin.seat_first)
+            );
+        }
+        let played: Option<(i64, String, i64)> = conn
+            .query_row(
+                &format!(
+                    "SELECT m.id, a.name, m.seed FROM matches m JOIN players a ON a.id = m.player1
+                     JOIN players b ON b.id = m.player2
+                     WHERE {PAIR_RESULT}
+                       AND ((a.name = ?1 AND b.name = ?2) OR (a.name = ?2 AND b.name = ?1))
+                     ORDER BY m.id DESC LIMIT 1"
+                ),
+                params![owner, opponent],
+                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+            )
+            .optional()?;
+        if let Some((id, first, seed)) = played
+            && (seed as u64 != pin.seed || (first == owner) != pin.seat_first)
+        {
+            bail!(
+                "pinned_pairs: {owner} v {opponent} already has match #{id} with another seed or \
+                 seating; a played pair keeps its match"
+            );
+        }
+        merged.insert(opponent.clone(), *pin);
+    }
+    Ok(merged)
+}
+
+fn league_on(conn: &Connection, league_id: i64) -> Result<LeagueRow> {
+    let (mut row, pins): (LeagueRow, Option<String>) = conn
+        .query_row(
+            "SELECT seed, rounds, clock_seconds, delay_seconds, max_turns, prompt_version,
+                    order_seed, mirror_concurrent, hidden, only_pairs_of, start_position,
+                    pinned_pairs
+             FROM leagues WHERE id = ?1",
+            params![league_id],
+            |row| {
+                Ok((
+                    LeagueRow {
+                        seed: row.get::<_, i64>(0)? as u64,
+                        rules: Rules {
+                            rounds: row.get(1)?,
+                            clock_seconds: row.get::<_, Option<i64>>(2)?.map(|s| s as u64),
+                            delay_seconds: row.get::<_, Option<i64>>(3)?.map(|s| s as u64),
+                            max_turns: row.get(4)?,
+                            prompt_version: row.get(5)?,
+                            order_seed: row.get::<_, Option<i64>>(6)?.map(|s| s as u64),
+                            mirror_concurrent: row.get::<_, Option<bool>>(7)?.unwrap_or(false),
+                            start_position: row.get(10)?,
+                        },
+                        scope: Scope {
+                            hidden: row.get::<_, Option<bool>>(8)?.unwrap_or(false),
+                            only_pairs_of: row.get(9)?,
+                            pinned_pairs: PinnedPairs::new(),
+                        },
+                    },
+                    row.get(11)?,
+                ))
+            },
+        )
+        .with_context(|| format!("league #{league_id}"))?;
+    if let Some(text) = pins {
+        row.scope.pinned_pairs = serde_json::from_str(&text)
+            .with_context(|| format!("league #{league_id}: pinned_pairs"))?;
+    }
+    Ok(row)
 }
 
 /// A current participant of a league.
@@ -1026,7 +1155,7 @@ impl Db {
     }
 
     /// A new league with `players` as its founding participants (in entry order); one
-    /// transaction. `scope.only_pairs_of` must be one of them.
+    /// transaction. `scope.only_pairs_of` must be one of them, and pinned pairs need it.
     pub fn create_league(
         &mut self,
         seed: u64,
@@ -1041,6 +1170,11 @@ impl Db {
             bail!("only_pairs_of: `{name}` is not a player of the league");
         }
         let tx = self.conn.transaction()?;
+        let pins = match &scope.only_pairs_of {
+            Some(owner) => merged_pins(&tx, owner, &PinnedPairs::new(), &scope.pinned_pairs)?,
+            None if scope.pinned_pairs.is_empty() => PinnedPairs::new(),
+            None => bail!("pinned_pairs need only_pairs_of"),
+        };
         let started_at = now();
         let mut values: Vec<rusqlite::types::Value> = vec![
             started_at.clone().into(),
@@ -1049,13 +1183,15 @@ impl Db {
             SEED_RULE.to_owned().into(),
             i64::from(scope.hidden).into(),
             scope.only_pairs_of.clone().into(),
+            pins_value(&pins)?,
         ];
         values.extend(rules.values());
         tx.execute(
-            "INSERT INTO leagues (started_at, seed, note, seed_rule, hidden, only_pairs_of, status,
-                                  rounds, clock_seconds, delay_seconds, max_turns,
-                                  prompt_version, order_seed, mirror_concurrent, start_position)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'running', ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
+            "INSERT INTO leagues (started_at, seed, note, seed_rule, hidden, only_pairs_of,
+                                  pinned_pairs, status, rounds, clock_seconds, delay_seconds,
+                                  max_turns, prompt_version, order_seed, mirror_concurrent,
+                                  start_position)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 'running', ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)",
             rusqlite::params_from_iter(values),
         )?;
         let id = tx.last_insert_rowid();
@@ -1070,34 +1206,41 @@ impl Db {
         Ok(id)
     }
 
+    /// Pins pairs of league `league_id`'s `only_pairs_of` (`Scope::pinned_pairs`): the same
+    /// pins again change nothing; a conflicting pin, or one for a pair already played with
+    /// another seed or seating, is refused and nothing is written. Returns whether a pin was
+    /// added (the league's note then says so).
+    pub fn set_pinned_pairs(&mut self, league_id: i64, pins: &PinnedPairs) -> Result<bool> {
+        let tx = self.conn.transaction()?;
+        let scope = league_on(&tx, league_id)?.scope;
+        let owner = scope
+            .only_pairs_of
+            .as_deref()
+            .with_context(|| format!("league #{league_id} has no only_pairs_of to pin pairs of"))?;
+        let merged = merged_pins(&tx, owner, &scope.pinned_pairs, pins)?;
+        if merged == scope.pinned_pairs {
+            return Ok(false);
+        }
+        let added: Vec<&str> = merged
+            .keys()
+            .filter(|k| !scope.pinned_pairs.contains_key(*k))
+            .map(String::as_str)
+            .collect();
+        tx.execute(
+            "UPDATE leagues SET pinned_pairs = ?2 WHERE id = ?1",
+            params![league_id, pins_value(&merged)?],
+        )?;
+        league_changed(
+            &tx,
+            league_id,
+            &format!("Pairs pinned: {owner} v {}.", added.join(", ")),
+        )?;
+        tx.commit()?;
+        Ok(true)
+    }
+
     pub fn league(&self, league_id: i64) -> Result<LeagueRow> {
-        self.conn
-            .query_row(
-                "SELECT seed, rounds, clock_seconds, delay_seconds, max_turns, prompt_version,
-                        order_seed, mirror_concurrent, hidden, only_pairs_of, start_position
-                 FROM leagues WHERE id = ?1",
-                params![league_id],
-                |row| {
-                    Ok(LeagueRow {
-                        seed: row.get::<_, i64>(0)? as u64,
-                        rules: Rules {
-                            rounds: row.get(1)?,
-                            clock_seconds: row.get::<_, Option<i64>>(2)?.map(|s| s as u64),
-                            delay_seconds: row.get::<_, Option<i64>>(3)?.map(|s| s as u64),
-                            max_turns: row.get(4)?,
-                            prompt_version: row.get(5)?,
-                            order_seed: row.get::<_, Option<i64>>(6)?.map(|s| s as u64),
-                            mirror_concurrent: row.get::<_, Option<bool>>(7)?.unwrap_or(false),
-                            start_position: row.get(10)?,
-                        },
-                        scope: Scope {
-                            hidden: row.get::<_, Option<bool>>(8)?.unwrap_or(false),
-                            only_pairs_of: row.get(9)?,
-                        },
-                    })
-                },
-            )
-            .with_context(|| format!("league #{league_id}"))
+        league_on(&self.conn, league_id)
     }
 
     /// The rules match `match_id` was played under.

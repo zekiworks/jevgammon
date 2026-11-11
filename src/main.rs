@@ -143,6 +143,11 @@ struct LeagueAddArgs {
     config: Option<PathBuf>,
     #[arg(long)]
     name: Option<String>,
+    /// Pin the joiner's pair with the league's `only_pairs_of` (`Scope::pinned_pairs`), as
+    /// JSON `{"seed": u64, "seat_first": bool}` (seat_first: `only_pairs_of` is player1);
+    /// the same pin again is fine, a conflicting one is refused before anything is added.
+    #[arg(long)]
+    pin: Option<String>,
     /// JSON array the addition is appended to; default freeze/league<ID>-additions.json.
     #[arg(long)]
     freeze_log: Option<PathBuf>,
@@ -294,7 +299,7 @@ struct LeagueArgs {
     /// League config file (JSON): players with spec, provider, quantization, reasoning,
     /// request fields, price, parallel and max_matches, plus optional seed, order_seed,
     /// prompt_version, rounds, clock, delay, max_turns, mirror_concurrent, start_position,
-    /// note, only_pairs_of and hidden, which override the command line.
+    /// note, only_pairs_of, pinned_pairs and hidden, which override the command line.
     #[arg(long, conflicts_with_all = ["models", "resume"])]
     config: Option<PathBuf>,
     /// Continue a stopped league from this database; its models, rounds, clock, seeds and
@@ -523,6 +528,7 @@ async fn run_league(args: LeagueArgs) -> Result<()> {
                 scope: db::Scope {
                     only_pairs_of: config.only_pairs_of.or(args.only_pairs_of),
                     hidden: config.hidden.unwrap_or(args.hidden),
+                    pinned_pairs: config.pinned_pairs.unwrap_or_default(),
                 },
             }
         }
@@ -551,6 +557,7 @@ async fn run_league(args: LeagueArgs) -> Result<()> {
                 scope: db::Scope {
                     only_pairs_of: args.only_pairs_of,
                     hidden: args.hidden,
+                    pinned_pairs: db::PinnedPairs::new(),
                 },
             }
         }
@@ -656,6 +663,16 @@ async fn league_add(args: LeagueAddArgs) -> Result<()> {
     let harness = Harness::detect();
     let now = chrono::Utc::now();
     let mut db = db::Db::open(&args.db)?;
+    if let Some(pin) = &args.pin {
+        let pin: db::PinnedPair = serde_json::from_str(pin).context("--pin")?;
+        let pins = db::PinnedPairs::from([(config.name.clone(), pin)]);
+        if db.set_pinned_pairs(args.league, &pins)? {
+            println!(
+                "{} pinned: seed {}, seat_first {}",
+                config.name, pin.seed, pin.seat_first
+            );
+        }
+    }
     let addition = league::add_player(
         &mut db,
         args.league,

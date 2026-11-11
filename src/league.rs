@@ -25,7 +25,7 @@ use tokio::sync::mpsc;
 use tokio::task::JoinSet;
 
 use crate::board::StartPosition;
-use crate::db::{Db, MatchRow, NewMatch, Participant, Rules, Scope};
+use crate::db::{Db, MatchRow, NewMatch, Participant, PinnedPairs, Rules, Scope};
 use crate::dice::{Dice, derive_seed};
 use crate::players::prompt::PromptVersion;
 use crate::players::{Player, PlayerConfig, Setup};
@@ -87,6 +87,9 @@ pub struct LeagueConfig {
     pub only_pairs_of: Option<String>,
     /// Leave the league out of the site, the dashboard and the ladder tools (default false).
     pub hidden: Option<bool>,
+    /// Pairs of `only_pairs_of` that take a given dice seed and seating (`Scope::pinned_pairs`),
+    /// by opponent name: `{"seed": u64, "seat_first": bool}`.
+    pub pinned_pairs: Option<PinnedPairs>,
 }
 
 impl LeagueConfig {
@@ -154,7 +157,7 @@ impl Entrant {
 }
 
 /// A match of the league: one pair of current participants.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 struct Fixture {
     /// Position in the derived fixture; earlier fixtures start first.
     order: usize,
@@ -565,14 +568,16 @@ fn pair_order(participants: &[Participant], seed: u64) -> Vec<(u32, usize, usize
 }
 
 /// The league stage: every pair of current participants in `pair_order`, each with its
-/// valid match from `matches` (stored side and seed) or, without one, the side and seed of
-/// its last voided match (so a voided pair replays the same dice), else from the pair's
-/// names and the rules (`Rules::sides`, `Rules::pair_seed`).
+/// valid match from `matches` (stored side and seed); without one, the seed and seating of
+/// its pin (`pins`: `only_pairs_of` and `Scope::pinned_pairs`), else the side and seed of its
+/// last voided match (so a voided pair replays the same dice), else from the pair's names and
+/// the rules (`Rules::sides`, `Rules::pair_seed`).
 fn derive_fixture(
     seed: u64,
     rules: &Rules,
     participants: &[Participant],
     matches: &[MatchRow],
+    pins: Option<(&str, &PinnedPairs)>,
 ) -> Vec<Fixture> {
     /// The pair's valid match and its last voided one.
     type Known<'a> = (Option<&'a MatchRow>, Option<&'a MatchRow>);
@@ -585,6 +590,26 @@ fn derive_fixture(
             entry.1 = Some(row);
         }
     }
+    // A pinned pair of `a` and `b`: (player1's id, seed).
+    let pinned = |a: &Participant, b: &Participant| -> Option<(i64, u64)> {
+        let (owner, pairs) = pins?;
+        let (me, other) = if a.config.name == owner {
+            (a, b)
+        } else if b.config.name == owner {
+            (b, a)
+        } else {
+            return None;
+        };
+        let pin = pairs.get(&other.config.name)?;
+        Some((
+            if pin.seat_first {
+                me.player_id
+            } else {
+                other.player_id
+            },
+            pin.seed,
+        ))
+    };
     pair_order(participants, seed)
         .into_iter()
         .enumerate()
@@ -592,8 +617,12 @@ fn derive_fixture(
             let (a, b) = (&participants[i], &participants[j]);
             let key = (a.player_id.min(b.player_id), a.player_id.max(b.player_id));
             let (valid, void) = by_pair.get(&key).copied().unwrap_or_default();
-            let (first, seed) = match valid.or(void) {
-                Some(row) => (row.player1, row.seed),
+            let (first, seed) = match valid
+                .map(|row| (row.player1, row.seed))
+                .or_else(|| pinned(a, b))
+                .or_else(|| void.map(|row| (row.player1, row.seed)))
+            {
+                Some(found) => found,
                 None => {
                     let (model1, _) = rules.sides(&a.config.name, &b.config.name);
                     let first = if model1 == a.config.name { a } else { b };
@@ -1041,8 +1070,16 @@ impl State {
         }
         let ids: Vec<i64> = participants.iter().map(|p| p.player_id).collect();
         let matches = db.matches_between(&ids)?;
+        // Pins are read again with the participants: `set_pinned_pairs` may add some.
+        let scope = db.league(league.id)?.scope;
         let fixtures = in_scope(
-            derive_fixture(league.seed, &league.rules, &participants, &matches),
+            derive_fixture(
+                league.seed,
+                &league.rules,
+                &participants,
+                &matches,
+                scope.pins(),
+            ),
             league.only_pairs_of.as_deref(),
         );
         self.played.clear();
@@ -1105,7 +1142,13 @@ fn open_pairs(db: &Db, id: i64, name: &str) -> Result<Vec<String>> {
     let ids: Vec<i64> = participants.iter().map(|p| p.player_id).collect();
     let matches = db.matches_between(&ids)?;
     Ok(in_scope(
-        derive_fixture(row.seed, &row.rules, &participants, &matches),
+        derive_fixture(
+            row.seed,
+            &row.rules,
+            &participants,
+            &matches,
+            row.scope.pins(),
+        ),
         row.scope.only_pairs_of.as_deref(),
     )
     .into_iter()
@@ -1365,7 +1408,13 @@ fn league_rows(db: &Db, id: i64, rates: &HashMap<String, f64>) -> Result<Vec<Row
     let ids: Vec<i64> = participants.iter().map(|p| p.player_id).collect();
     let matches = db.matches_between(&ids)?;
     let fixtures = in_scope(
-        derive_fixture(row.seed, &row.rules, &participants, &matches),
+        derive_fixture(
+            row.seed,
+            &row.rules,
+            &participants,
+            &matches,
+            row.scope.pins(),
+        ),
         row.scope.only_pairs_of.as_deref(),
     );
     let mut played = Vec::new();

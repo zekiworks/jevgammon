@@ -1,3 +1,4 @@
+mod admit;
 mod ask;
 mod auth;
 mod board;
@@ -83,6 +84,31 @@ enum Command {
     /// error rate from the site's GNUbg scores) and stores the ranking; prints the stored
     /// and the new ranking.
     Rank(RankArgs),
+    /// Offline client admission, before anything is written: builds the client of every
+    /// player of a league config and of every opponent its pinned_pairs names (settings from
+    /// the database's players.settings, opened read-only) exactly as a league builds its
+    /// participants; sends no request. Fails when any client cannot be built.
+    Admit(AdmitArgs),
+}
+
+#[derive(Args)]
+struct AdmitArgs {
+    /// Database the pinned opponents' players.settings are read from (read-only).
+    #[arg(long)]
+    db: PathBuf,
+    /// League config file (as for `league --config`).
+    #[arg(long)]
+    config: PathBuf,
+    /// qfork/Glyph credential root read for subscription logins and API keys.
+    #[arg(long, env = "JEVGAMMON_QFORK_ROOT")]
+    qfork_root: Option<PathBuf>,
+    /// Base URL of the OpenAI-compatible server behind `local/<model>`.
+    #[arg(
+        long,
+        env = "JEVGAMMON_LOCAL_URL",
+        default_value = "http://localhost:8080/v1"
+    )]
+    local_url: String,
 }
 
 #[derive(Args)]
@@ -429,6 +455,13 @@ async fn main() -> ExitCode {
         Some(Command::Void(args)) => void(args),
         Some(Command::Migrate(args)) => migrate::run(&args),
         Some(Command::Rank(args)) => rank(args),
+        Some(Command::Admit(args)) => {
+            let setup = Setup::new(
+                args.qfork_root.unwrap_or_else(auth::default_qfork_root),
+                args.local_url,
+            );
+            admit::run(&args.db, &args.config, &setup).await
+        }
         Some(Command::RenderStageB(args)) => {
             ask::render_stage_b(&args.config, &args.positions, &args.setups)
         }

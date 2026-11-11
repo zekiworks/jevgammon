@@ -36,6 +36,24 @@
    "first_match": null,
    "started": null,
    "finished": null
+  },
+  "drex-max-1.1-r1": {
+   "status": "queued",
+   "league": null,
+   "played": 0,
+   "playable": 17,
+   "first_match": null,
+   "started": null,
+   "finished": null
+  },
+  "glide-v1.2-r1": {
+   "status": "queued",
+   "league": null,
+   "played": 0,
+   "playable": 16,
+   "first_match": null,
+   "started": null,
+   "finished": null
   }
  }
 }

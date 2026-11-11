@@ -54,7 +54,7 @@
   {
    "name": "Fastino",
    "icon": "fi-fastino",
-   "match": "^(?:Fastino)"
+   "match": "^(?:Fastino|GLiDE)"
   },
   {
    "name": "Mammoth",
@@ -150,6 +150,16 @@
    "name": "StartLux",
    "icon": "fi-startlux",
    "match": "^(?:StartLux)"
+  },
+  {
+   "name": "OneJev",
+   "icon": "fi-onejev",
+   "match": "^(?:OneJev)"
+  },
+  {
+   "name": "GLiClass",
+   "icon": "fi-gliclass",
+   "match": "^(?:GLiClass)"
   }
  ]
 }

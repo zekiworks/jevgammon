@@ -10,6 +10,7 @@ supporting must be reworded by hand."""
 import json
 import math
 import re
+from datetime import datetime
 
 import home as H
 import own_cost
@@ -336,6 +337,8 @@ def headline_rows(S) -> tuple[list, list, list]:
     ranked, progs = leaderboard_rows(S)
     body, missing, chart = [], [], []
     for kind, rows in (("model", ranked), ("program", progs)):
+        if kind == "program":
+            body.extend(running_rows(S))
         if kind == "program" and rows:
             body.append(f'<tr class="hl-group"><th scope="rowgroup" colspan="{len(HEADLINE_HEAD)}">Programs: reference rows, '
                         f'never ranked</th></tr>')
@@ -390,6 +393,40 @@ def headline_rows(S) -> tuple[list, list, list]:
             if kind != "program" or x["name"] == "GNUbg weak":
                 chart.append((kind, label, x, colour))
     return body, missing, chart
+
+
+def running_rows(S) -> list:
+    """A held late entry still playing (held_setups.json "running", analysis.running_entries; Ümit via Zeki #5001): one
+    unranked row after the ranked models, rank '–', every score cell empty (no score until its entry is complete), its
+    finished matches of its field as its status; the league, start, route, runner and the pairs still to play in its
+    details box. data-kind="running": bg.js never numbers it; no data-dataset, as it is in no data file."""
+    out = []
+    for i, e in enumerate(S["_running"], 1):
+        name = e["name"]
+        mk, colour = H.maker(name)
+        fam = H.family(name)
+        icon = f'<svg class="fam-icon" aria-hidden="true" focusable="false"><use href="#{fam["icon"]}"/></svg>' if fam else ""
+        dot = f'<i class="swatch hl-dot" style="background:{colour}" title="{esc(mk)}"></i>'
+        label_html = esc(P.class_label(name))
+        mclass = P.model_class(name)
+        status = f'Running \u00b7 {count(e["finished"])} of {count(e["total"])} matches'
+        bid = f"hl-r-{i}-box"
+        started = datetime.fromisoformat(e["started"].replace("Z", "+00:00"))
+        lines = [
+            " \u00b7 ".join(p for p in (f'<strong>{esc(name)}</strong>', esc(mk), TYPE_LABEL.get(e["type"])) if p),
+            f'{esc(status)}: late entry still playing; no score or rank until its entry is complete',
+            f'Late-entry league #{e["league"]}, started {started.day} {started:%B %Y}, {started:%H:%M} UTC',
+            f'Route: {esc(e["route"])}, model {esc(e["model_id"])}',
+            f'Runner commit {", ".join(esc(c) for c in e["runners"])}' if e["runners"] else None,
+            "Pending: " + "; ".join(esc(p) for p in e["pending"]),
+            f'Parameters: {P.params_html(name)}']
+        cells = '<td class="num"></td>' + '<td class="num hl-wide"></td>' * (len(WIDE_HEAD) + 1)
+        out.append(f'<tr data-kind="running" data-hl-type="{e["type"]}"' + (f' data-hl-class="{mclass}"' if mclass else "")
+                   + f' data-box="{bid}"><td class="num"><span class="muted" title="not ranked until complete">\u2013</span>'
+                   f'</td><td class="model">{dot}{icon}<span class="model-name" tabindex="0" aria-describedby="{bid}">'
+                   f'{esc(name)}</span><span class="hl-size">{label_html}</span><span class="hl-tag">{esc(status)}</span>'
+                   f'{box_html(bid, name, lines)}</td>{cells}</tr>')
+    return out
 
 
 # Wide screens add four columns (Ümit #2938 item 3): risks found, safe right, error rate, $ per 1,000 decisions; bg.css

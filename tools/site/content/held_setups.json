@@ -1,5 +1,5 @@
 {
- "_about": "Setups not shown on the site yet (common.HELD), name: reason. Earlier late entries (Drex, REAX 1.3) were shown automatically from their first late-entry match; a held one is left out of every page, data file, leaderboard row, bench score and model list (analysis.late_entries, cup.classify) until its line is removed here, once its entry is complete.",
+ "_about": "Setups not shown on the site yet (common.HELD), name: reason. Earlier late entries (Drex, REAX 1.3) were shown automatically from their first late-entry match; a held one is left out of every page, data file, leaderboard row, bench score and model list (analysis.late_entries, cup.classify) until its line is removed here, once its entry is complete. \"running\" (common.RUNNING; Ümit via Zeki #5001), name: a held late entry shown while it plays as one unranked row of the home leaderboard, rank '–', no score, its status 'Running · n of N matches' (n: its finished valid late-entry matches in its late-entry league, read from the snapshot of v3.db at build time; N: the original table field_league it plays, without it) and, in its details, the league, its start, route, runner commits and the pairs still pending; still held everywhere else. A running name must also be under held; remove both lines once its entry is complete.",
  "held": {
   "KnowLine 4B Gen5.5": "late entry running (branch late-knowline4b, Ümit #4325; spark2 serve_knowline.sh, FP8 at load); shown when complete",
   "StartLux-Decision v1.1 2B": "late entry running (branch late-startlux2b, Main 11 Nov; spark2 startlux-decide serve, BF16); shown when complete",
@@ -18,5 +18,10 @@
   "Liquid d1-ultra [repeat 1]": "reproducibility repeat (tools/v3/repeats, Zeki #4671): never shown as a setup; its result only in Experiments, Repeat checks",
   "Drex Max 1.1 [repeat 1]": "reproducibility repeat (tools/v3/repeats, Zeki #4838): never shown as a setup; its result only in Experiments, Repeat checks",
   "Fastino GLiDE v1.2 (local) [repeat 1]": "reproducibility repeat (tools/v3/repeats, Zeki #4838): never shown as a setup; its result only in Experiments, Repeat checks"
+ },
+ "running": {
+  "Gemini Decision 1": {"league": 26, "field_league": 1, "type": "decision", "route": "OpenRouter \u2192 Google AI Studio", "model_id": "google/gemini-decision-1",
+   "pending": ["GPT-6 Luna deferred: no OpenAI credit", "Mercury Decide: no OpenRouter endpoint", "8 local opponents queued on our RTX PRO 6000 (GPU 0)"],
+   "source": "mailbox/Late entry Gemini Decision 1 - status.md; Zeki #5001"}
  }
 }

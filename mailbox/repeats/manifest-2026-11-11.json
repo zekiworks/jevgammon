@@ -4949,7 +4949,7 @@
         "joined_at": "2026-11-11T15:25:16.745Z",
         "left_at": null,
         "note": null,
-        "name": "REAX 1.3 [repeat 1]"
+        "player_name": "REAX 1.3 [repeat 1]"
        },
        {
         "id": 370,
@@ -4958,7 +4958,7 @@
         "joined_at": "2026-11-11T15:25:16.745Z",
         "left_at": null,
         "note": null,
-        "name": "GNUbg weak"
+        "player_name": "GNUbg weak"
        },
        {
         "id": 371,
@@ -4967,7 +4967,7 @@
         "joined_at": "2026-11-11T15:25:16.745Z",
         "left_at": null,
         "note": null,
-        "name": "Random"
+        "player_name": "Random"
        },
        {
         "id": 372,
@@ -4976,7 +4976,7 @@
         "joined_at": "2026-11-11T15:25:16.745Z",
         "left_at": null,
         "note": null,
-        "name": "Safest"
+        "player_name": "Safest"
        }
       ]
      },

@@ -11,7 +11,8 @@
 # repeats.py); the keys are a scratch HOME's ~/.keys and Celeris key file with placeholder values (no request is sent).
 #   Recorded attempt: league-id skips league #24 (the league unit then starts a new league); a changed #24 refuses: a
 #   heartbeat, and (#4928 L1) rounds, seed, hidden, a participant's joined_at, note, max_turns, the pins' stored text, a
-#   participant's note or left_at, a column added, a participant added.
+#   participant's note or left_at, a column added, a participant added; and (#4954) a league_players column `name`
+#   added and filled with the joined names, alone and with the joined players.name then renamed.
 #   Admitted settings (#4928 S1): Clef's players row replaced by an UPDATE kept in the write-ahead log (clef ->
 #   openai/review-placeholder): admission admits the checkpointed clef, check refuses on the difference alone, run.sh
 #   writes nothing (database file and log byte-identical); after an admission, `repeats.py bound` and run_league.sh (a
@@ -118,7 +119,7 @@ import repeats
 a = repeats.REAX_ATTEMPT_1
 cfg = json.loads((leagues / "reax-1.3-r1.json").read_text())
 entrant = cfg["players"][0]
-ids = {p["name"]: p["player_id"] for p in a["record"]["participants"]}
+ids = {p["player_name"]: p["player_id"] for p in a["record"]["participants"]}
 for name, s in sorted([*rows.items(), (entrant["name"], entrant)], key=lambda kv: kv[0] not in ids):
     conn.execute("INSERT INTO players (id, name, spec, settings, created_at) VALUES (?, ?, ?, ?, ?)",
                  (ids.get(name), name, s.get("spec") or "program", json.dumps(s),
@@ -136,7 +137,7 @@ if columns != list(league):
     sys.exit(f"the runner's leagues columns {columns} are not the recorded {list(league)}")
 conn.execute(f"INSERT INTO leagues ({', '.join(league)}) VALUES ({', '.join('?' * len(league))})", list(league.values()))
 for p in a["record"]["participants"]:
-    cols = [k for k in p if k != "name"]
+    cols = [k for k in p if k != "player_name"]
     conn.execute(f"INSERT INTO league_players ({', '.join(cols)}) VALUES ({', '.join('?' * len(cols))})",
                  [p[k] for k in cols])
 conn.commit()
@@ -321,6 +322,33 @@ for mutation in "rounds|UPDATE leagues SET rounds = 999 WHERE id = 24" \
   grep -qE "attempt league #24 changed: (.* )?$col " "$D/check.out" && pass "the refusal names #24's changed $col" ||
     failc "check did not name #24's changed $col: $(cut -c1-600 "$D/check.out")"
 done
+
+# Zeki #4954 (L1 residual): a league_players column named `name` must not collapse into the joined players.name. The
+# participants are read by an explicit projection (the recorded columns, the joined name as player_name), and any
+# other league_players column set refuses. (1) league_players.name added and filled with the joined names; (2) the same,
+# then the joined players.name renamed (the change the collision used to hide). Each refuses before any preparation
+# write, on league #24 alone (besides the missing trigger).
+attempt_only() {  # expected-text...: check's one line is league #24's change (and the missing trigger), naming each
+  local t ok=1
+  grep -qE "^reax-1\.3-r1: attempt league #24 changed: .*; trigger missing: late_entry_stage does not name it$" "$D/check.out" &&
+    [[ $(wc -l < "$D/check.out") == 1 ]] || ok=0
+  for t in "$@"; do grep -qF -- "$t" "$D/check.out" || ok=0; done
+  if (( ok )); then pass "the refusal is league #24's change alone, naming: $*"
+  else failc "check did not refuse on league #24's change alone ($*): $(cut -c1-800 "$D/check.out")"; fi
+}
+setup lp-name-added
+sqlite3 "$D/home/v3.db" "ALTER TABLE league_players ADD COLUMN name TEXT;
+  UPDATE league_players SET name = (SELECT p.name FROM players p WHERE p.id = league_players.player_id)"
+echo "     league_players: $(sqlite3 "$D/home/v3.db" "SELECT group_concat(name, ', ') FROM pragma_table_info('league_players')")"
+refuse reax-1.3-r1
+attempt_only "league_players columns ['id', 'league_id', 'player_id', 'joined_at', 'left_at', 'note', 'name'] (recorded ['id', 'league_id', 'player_id', 'joined_at', 'left_at', 'note'])"
+setup lp-name-added-joined-renamed
+sqlite3 "$D/home/v3.db" "ALTER TABLE league_players ADD COLUMN name TEXT;
+  UPDATE league_players SET name = (SELECT p.name FROM players p WHERE p.id = league_players.player_id);
+  UPDATE players SET name = 'REAX 1.3 [repeat 1] (renamed)' WHERE id = 65"
+refuse reax-1.3-r1
+attempt_only "league_players columns ['id', 'league_id', 'player_id', 'joined_at', 'left_at', 'note', 'name']" \
+  "league_players #369 player_name 'REAX 1.3 [repeat 1] (renamed)' (recorded 'REAX 1.3 [repeat 1]')"
 
 # Zeki #4928 S1: admission reads v3.db immutably (its main file), the league reads the current rows. A writer that never
 # checkpoints commits Clef's replacement (clef -> openai/review-placeholder, the reviewer's fixture) and keeps it in the

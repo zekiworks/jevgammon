@@ -156,9 +156,9 @@ RUNNER_DIFFERENCE = ("Runner: " + RUNNER["commit"] + ", the originals' runner li
 # The league of a recorded attempt is kept as it is and never resumed: league_id() skips it, so the repeat's next start
 # creates a new league with the same config (repeat name, pins); check fails while such a league differs from its
 # record (a process resumed, completed or edited it). The record is the attempt's whole historical state (Zeki #4928
-# L1): its leagues row, every column, and every league_players row of the league, every column (with the player's
-# name), as v3.db held them when the attempt stopped (read-only, 2026-11-11). The manifest lists these attempts before
-# the current one.
+# L1, #4954): its leagues row, every column, and every league_players row of the league, every column, with the joined
+# players.name as player_name (the participant columns are these rows' keys besides player_name), as v3.db held them
+# when the attempt stopped (read-only, 2026-11-11). The manifest lists these attempts before the current one.
 REAX_ATTEMPT_1 = dict(
     league=24, runner=dict(commit=RUNNER_4CA4F08["commit"], commit_full=RUNNER_4CA4F08["commit_full"],
                            binary_sha256=RUNNER_4CA4F08["binary_sha256"]),
@@ -194,7 +194,7 @@ REAX_ATTEMPT_1 = dict(
                 '"SubQ Snap Preview":{"seed":1831931896691103214,"seat_first":false},'
                 '"Winnow-12B":{"seed":4483105724799583608,"seat_first":true}}')),
         participants=[dict(id=lp, league_id=24, player_id=pid, joined_at="2026-11-11T15:25:16.745Z", left_at=None,
-                           note=None, name=name)
+                           note=None, player_name=name)
                       for lp, pid, name in [(369, 65, "REAX 1.3 [repeat 1]"), (370, 39, "GNUbg weak"),
                                             (371, 42, "Random"), (372, 43, "Safest")]]),
     matches=0,
@@ -921,10 +921,12 @@ def league_id(conn, rid: str):
 
 
 def attempt_problems(conn, rid: str, want: dict) -> list[str]:
-    """Each recorded attempt's league is exactly as recorded (Zeki #4886, #4928 L1): its leagues row, every column (a
-    column added, missing or of another value or type differs), and the league's league_players rows, every column and
-    each player's name, in id order (a process resuming, completing or editing it, or any other change, differs); its
-    repeat name and pins as the config's."""
+    """Each recorded attempt's league is exactly as recorded (Zeki #4886, #4928 L1, #4954): its leagues row, every column
+    (a column added, missing or of another value or type differs); the league_players table's columns exactly the
+    recorded ones, in order (any other column set, e.g. an added `name`, differs); the league's league_players rows,
+    read by an explicit projection of the recorded columns plus the joined players.name as player_name (no two labels
+    alike, so no column can shadow another), every field compared, in id order (a process resuming, completing or
+    editing it, or any other change, differs); its repeat name and pins as the config's."""
     def shown(v):
         return repr(v) if len(repr(v)) <= 80 else repr(v)[:77] + "..."
 
@@ -941,9 +943,16 @@ def attempt_problems(conn, rid: str, want: dict) -> list[str]:
             continue
         league, rec = dict(row), a["record"]
         changed = differences("", league, rec["league"])
-        players = [dict(r) for r in conn.execute(
-            """SELECT lp.*, p.name FROM league_players lp LEFT JOIN players p ON p.id = lp.player_id
-               WHERE lp.league_id = ? ORDER BY lp.id""", (a["league"],))]
+        columns = [k for k in rec["participants"][0] if k != "player_name"]
+        table = [r[1] for r in conn.execute("SELECT * FROM pragma_table_info('league_players')")]
+        if table != columns:
+            changed.append(f"league_players columns {table} (recorded {columns})")
+        players = []
+        if set(columns) <= set(table):  # the recorded fields are still compared when a column is added
+            players = [dict(r) for r in conn.execute(
+                f"""SELECT {", ".join('lp."' + c.replace('"', '""') + '"' for c in columns)}, p.name AS player_name
+                    FROM league_players lp LEFT JOIN players p ON p.id = lp.player_id
+                    WHERE lp.league_id = ? ORDER BY lp.id""", (a["league"],))]
         for i in range(max(len(players), len(rec["participants"]))):
             got = players[i] if i < len(players) else None
             was = rec["participants"][i] if i < len(rec["participants"]) else None

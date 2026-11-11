@@ -515,12 +515,11 @@ def headline(S) -> str:
                        f'{l}</button>' for k, l in (("all", "All"), ("chat", "Chat models"), ("decision", "Decision models")))
              + "</div>" + P.class_keys("hl-filter"))
     return (f'<section class="card headline" id="leaderboard" data-dataset="all" aria-labelledby="leaderboard-title">'
-            f'<div class="chart-head"><h2 id="leaderboard-title">Risk calls leaderboard</h2>{keys}'
-            f'<p class="chart-sub">{esc(MEANING)}</p></div>'
+            f'<div class="chart-head"><h2 id="leaderboard-title">Risk calls leaderboard</h2>{keys}</div>'
             f'<div data-headline-panel="model">{types}{table}<p class="table-note hl-tier-note">{esc(TIER_NOTE)}</p></div>'
             f'<div data-headline-panel="all" hidden>{H.all_risk_table(S)}{caveat(H.RANK_NOTE, "statistics")}</div>'
             f'<div data-headline-panel="same" hidden>{same_positions()}</div>'
-            f'<p class="table-note headline-rule">{esc(ROW_LINE)} {esc(ALL_NOTE)} {esc(NO_TIERS)} '
+            f'<p class="table-note headline-rule">{esc(MEANING)} {esc(ROW_LINE)} {esc(ALL_NOTE)} {esc(NO_TIERS)} '
             '<a href="about/#leaderboard">How rows are chosen</a><span class="hl-wide-note"> $ per 1,000 decisions: at '
             'each setup\'s price basis, which its details name (a list price, or API-equivalent for a subscription); '
             'not a bill paid.</span></p></section>')

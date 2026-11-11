@@ -119,7 +119,8 @@ def group_table(S, G: dict, g: dict, moves: dict, rel: str) -> str:
 
 
 def section(S, rel: str = "../") -> str:
-    """The Starting groups card: the shared subtitle and notes, then one sub-tab per group (Decision first)."""
+    """The Starting groups card: one sub-tab per group (Decision first), then the shared subtitle and notes (Ümit via
+    Zeki #4666: nothing but the heading above the tables)."""
     G = load()
     moves = moves_of(G)
     tabs = [(f'group-{g["name"].lower()}', g["name"], f'group-{g["name"].lower()}') for g in G["groups"]]
@@ -129,6 +130,7 @@ def section(S, rel: str = "../") -> str:
                                     f'{group_table(S, G, g, moves, rel)}', "sub-panel")
                         for (key, _, pid), g in zip(tabs, G["groups"])))
     return (f'<section class="card" id="starting-groups"><div class="section-head"><h2>Starting groups</h2></div>'
+            + blocks +
             f'<p class="subtitle-line"><strong>{esc(SUBTITLE)}</strong></p>'
             f'<p class="note cohort-note">{esc(COHORT_NOTE)}</p>'
             f'<p class="note">Each setup stays in the group it started in, the original league it played in before any '
@@ -143,18 +145,20 @@ def section(S, rel: str = "../") -> str:
             f'<span class="badge badge-move badge-relegated">\u2193 now in League N</span> '
             f'<span class="badge badge-move badge-back">\u2195 back in League N</span> league moves, from the ladder\'s '
             f'records. Match points are match results only; they are not the Risk, Quality or Confidence measures.</p>'
-            + blocks + '</section>')
+            '</section>')
 
 
-def after_moves_intro(S) -> str:
+def after_moves_intro(S) -> tuple[str, str]:
+    """(head, note): the After league moves heading card, above the league tabs, and its note, under them."""
     G = load()
     rounds = sorted({m["round"] for m in G["moves"]})
-    return (f'<section class="card" id="after-league-moves"><div class="section-head"><h2>After league moves</h2></div>'
+    return ('<section class="card" id="after-league-moves"><div class="section-head"><h2>After league moves</h2></div>'
+            '</section>',
             f'<p class="note">The leagues as they stand now, after {count(len(G["moves"]))} moves in ladder rounds '
             f'{rounds[0]}\u2013{rounds[-1]} (the ladder ended on 26 Oct; its final swap stands). These leagues mix starting '
             f'groups, so they keep their numbers: League 1, League 2, League 3. Each row says its starting group and, for '
             f'a setup that moved, its recorded moves. The <a href="../">leaderboard</a>\'s League keys and links such as '
-            f'?league=league-3 refer to these leagues.</p></section>')
+            f'?league=league-3 refer to these leagues.</p>')
 
 
 def standing_cells(S, name: str) -> str:
@@ -172,9 +176,11 @@ def standing_cells(S, name: str) -> str:
     return f'<td>{names} <span class="small">{league}</span></td><td class="badges">{move_badge(moves_of(G).get(name, []))}</td>'
 
 
-def cups_intro() -> str:
-    """The Cups section's head, above the existing Hype Cup and Nackgammon knockout card."""
-    return ('<section class="card" id="cups"><div class="section-head"><h2>Cups</h2></div><p class="note">Knockout events, '
+def cups_intro() -> tuple[str, str]:
+    """(head, note): the Cups heading card, above the existing Hype Cup and Nackgammon knockout card, and its note,
+    under it."""
+    return ('<section class="card" id="cups"><div class="section-head"><h2>Cups</h2></div></section>',
+            '<p class="note">Knockout events, '
             'apart from the league tables: their places and results are not league points. The Hype Cup took its 8 teams '
             'from the starting groups\' tables (its roster rule is under its bracket); the Nackgammon knockout used the same '
-            '8 teams and the same draw. A Cup place is not a promotion.</p></section>')
+            '8 teams and the same draw. A Cup place is not a promotion.</p>')

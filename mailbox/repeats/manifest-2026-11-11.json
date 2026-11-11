@@ -1,11 +1,12 @@
 {
  "_about": "Reproducibility repeats (prepared, not started): per repeat, the original's per-opponent match id, seed and seats, game dice, option-order seed, prompt, rules and settings, its coverage, today's blockers, the paid gates, cost basis, GPU plan and start commands. Written by tools/v3/repeats/repeats.py manifest from v3.db (read-only).",
- "written": "2026-11-11T12:01:02Z",
+ "written": "2026-11-11T12:23:18Z",
  "requested_by": "Ümit via Zeki, bus #4663, #4666, #4667 (protocol), #4671 (d1-ultra)",
  "seed_mechanism": {
-  "finding": "The league runner has no per-match or per-pair seed field in its league config. A new pair's seed and seats come from the two player names and the rules hash (Rules::pair_seed, Rules::sides; seed_rule pair-v1), so a renamed repeat would get other dice; the original late entries' seeds are exactly pair_seed of their names (checked for #780, #807, #818, #845, #867, #905, #920), Liquid d1-ultra's League 1 seeds are not (older rule). One existing path replays a given seed: league::derive_fixture takes a pair's seed and first player from its valid match or, without one, from its last voided match ('a voided pair replays with the same dice'), and every game's dice follow from the match seed (dice::round_seed) and every option order from the option-order seed and the position (players::order::option_order), never from names. The standalone `jevgammon match --seed --order-seed` takes a seed but not a player's settings, stage or league, so it is not the same protocol.",
-  "no_code_route": "repeats.py pin ID --apply (needs approval; writes v3.db, changes no existing row): the repeat's players row (the settings below) and, per pair, one placeholder match with valid 0, status 'aborted', stage 'late-entry', no games, void_reason naming the original match, its seed and its seats; the original runner builds then replay those seeds unchanged. Nothing on the site reads aborted voided rows (cup.compute and the matches pages take finished matches).",
-  "smallest_runner_change": "League config field `pinned_pairs` [{opponent, seed, first}] for the only_pairs_of setup, stored in a new leagues column (so --resume and league-add keep it) and read by derive_fixture before Rules::pair_seed; with a test: about 40 lines in league.rs, db.rs and migrate.rs. Not made (Zeki #4667: ask first); it would also mean a new runner build instead of each original's."
+  "finding": "The original runner builds have no per-pair seed field: a new pair's seed and seating come from the two player names and the rules hash (Rules::pair_seed, Rules::sides), so a renamed repeat would get other dice. The late entries' seeds are exactly that (checked for #780, #807, #818, #845, #867, #905, #920); Liquid d1-ultra's League 1 seeds are not (older rule).",
+  "used": "Runner change on branch pinned-pairs, commit 4ca4f08 (Zeki #4710): league config field pinned_pairs {opponent: {seed: u64, seat_first: bool}} for the only_pairs_of setup, stored in the new column leagues.pinned_pairs and read wherever fixtures are derived (resume, league-add and a running league keep them); league-add --pin. Every game's dice follow from the match seed and every option order from the option-order seed and the position, never from names: a test replays #808, #856, #905 and #190 under a renamed repeat and gets every game's dice and every turn's option order of the original. Each repeat's league config carries a pin for every opponent of its original.",
+  "migration": "leagues.pinned_pairs is added (ALTER TABLE ADD COLUMN, NULL) by the new build's ensure_schema the first time it opens a database; not applied to production v3.db yet (nothing has run it there); no existing row is edited, and NULL means no pins, so older builds and every existing league are unaffected.",
+  "not_used": "The voided-placeholder route (pin --apply) is dropped (Zeki #4710)."
  },
  "blockers_today": [
   {
@@ -39,16 +40,17 @@
    "original_league": 14,
    "original_stage": "late-entry",
    "status": "queued",
+   "hold": null,
    "prepared": "2026-11-11",
    "started": null,
    "finished": null,
    "league_config": "tools/v3/repeats/leagues/mammoth-1-r1.json",
    "status_file": "mailbox/repeats/mammoth-1-r1 - status.md",
    "runner": {
-    "binary": "/home/cbasaran/code/jevgammon/target/late3/release/jevgammon",
-    "tree": "/home/cbasaran/code/jevgammon-late3",
-    "commit": "104103a9dfd5ecaf141f699b363148ebbb490855",
-    "same_build_as_original": true
+    "binary": "/home/cbasaran/code/jevgammon/target/pinned/release/jevgammon",
+    "tree": "/home/cbasaran/code/jevgammon-pinned-pairs",
+    "commit": "4ca4f08",
+    "original": "104103a9dfd5ecaf141f699b363148ebbb490855"
    },
    "rules": {
     "rounds": 3,
@@ -188,10 +190,10 @@
    },
    "differences": [
     "Name: '<original> [repeat 1]', a new players row; settings otherwise as the original's (the changed fields are listed under Settings); one match at a time, where the original played several at once.",
+    "Runner: the pinned-pairs build 4ca4f08 (the pins are its only change for these leagues), where the original ran 104103a (clean); the same prompt version, option-order seed and rules.",
     "Not replayable today, though played in the original: GPT-6 Luna, Mercury Decide (blockers today); their seed pins are kept so they replay with the original seeds once unblocked."
    ],
    "start": [
-    "python3 /home/cbasaran/code/jevgammon/tools/v3/repeats/repeats.py pin mammoth-1-r1 --apply   # once, after approval",
     "systemd-run --user --unit=repeat-mammoth-1-r1 --working-directory=/home/cbasaran/code/jevgammon -E GPU=0 -E OPP_GPU=0 -E RES=<reservation> /home/cbasaran/code/jevgammon/tools/v3/repeats/run.sh mammoth-1-r1"
    ],
    "pairs": [
@@ -2368,16 +2370,17 @@
    "original_league": 17,
    "original_stage": "late-entry",
    "status": "queued",
+   "hold": null,
    "prepared": "2026-11-11",
    "started": null,
    "finished": null,
    "league_config": "tools/v3/repeats/leagues/drex-max-v1-r1.json",
    "status_file": "mailbox/repeats/drex-max-v1-r1 - status.md",
    "runner": {
-    "binary": "/home/cbasaran/code/jevgammon/target/drex/release/jevgammon",
-    "tree": "/home/cbasaran/code/jevgammon-drex",
-    "commit": "e58fc6c255304c085bdb5eb8dec34b83c473573a",
-    "same_build_as_original": true
+    "binary": "/home/cbasaran/code/jevgammon/target/pinned/release/jevgammon",
+    "tree": "/home/cbasaran/code/jevgammon-pinned-pairs",
+    "commit": "4ca4f08",
+    "original": "e58fc6c255304c085bdb5eb8dec34b83c473573a"
    },
    "rules": {
     "rounds": 3,
@@ -2525,10 +2528,10 @@
    },
    "differences": [
     "Name: '<original> [repeat 1]', a new players row; settings otherwise as the original's (the changed fields are listed under Settings); one match at a time, where the original played several at once.",
+    "Runner: the pinned-pairs build 4ca4f08 (the pins are its only change for these leagues), where the original ran e58fc6c (clean); the same prompt version, option-order seed and rules.",
     "Not replayable today, though played in the original: Mercury Decide (blockers today); their seed pins are kept so they replay with the original seeds once unblocked."
    ],
    "start": [
-    "python3 /home/cbasaran/code/jevgammon/tools/v3/repeats/repeats.py pin drex-max-v1-r1 --apply   # once, after approval",
     "systemd-run --user --unit=repeat-drex-max-v1-r1 --working-directory=/home/cbasaran/code/jevgammon -E GPU=0 -E OPP_GPU=0 -E RES=<reservation> /home/cbasaran/code/jevgammon/tools/v3/repeats/run.sh drex-max-v1-r1"
    ],
    "pairs": [
@@ -4787,17 +4790,18 @@
    "original_player_id": 60,
    "original_league": 19,
    "original_stage": "late-entry",
-   "status": "queued",
+   "status": "held",
+   "hold": "Held (Zeki #4710): the plan to use logic's container (outbound network open) is dropped; the repeat needs the original's offline setup (reax13-late on the internal network reax13-offline, no outbound route; workspace/reax/reax.sh) and Can's no-new-privileges exception renewed for it, or a new approval. Its server settings below are logic's and are not used until then.",
    "prepared": "2026-11-11",
    "started": null,
    "finished": null,
    "league_config": "tools/v3/repeats/leagues/reax-1.3-r1.json",
    "status_file": "mailbox/repeats/reax-1.3-r1 - status.md",
    "runner": {
-    "binary": "/home/cbasaran/code/jevgammon/target/reax/release/jevgammon",
-    "tree": "/home/cbasaran/code/jevgammon-reax",
-    "commit": "acfd89cdcc710846d7173e475ce8546af7febac1",
-    "same_build_as_original": true
+    "binary": "/home/cbasaran/code/jevgammon/target/pinned/release/jevgammon",
+    "tree": "/home/cbasaran/code/jevgammon-pinned-pairs",
+    "commit": "4ca4f08",
+    "original": "acfd89cdcc710846d7173e475ce8546af7febac1"
    },
    "rules": {
     "rounds": 3,
@@ -4941,14 +4945,12 @@
    },
    "differences": [
     "Name: '<original> [repeat 1]', a new players row; settings otherwise as the original's (the changed fields are listed under Settings); one match at a time, where the original played several at once.",
+    "Runner: the pinned-pairs build 4ca4f08 (the pins are its only change for these leagues), where the original ran acfd89c (clean); the same prompt version, option-order seed and rules.",
     "Server: logic's container logic-dm-reax13 on Docker's default bridge, its API published on the host's loopback (outbound network open; offline Hugging Face variables set as before), where the original ran reax13-late on the internal network reax13-offline (no outbound route), reached on the container's address; logic's env lacks HF_HUB_DISABLE_IMPLICIT_TOKEN=1 (offline either way). Same image, engine, kit, weights, config and serve.py arguments.",
     "no-new-privileges: the original ran without it under Can's one-run exception (#2199); logic's server drops it only with REAX_NO_NNP_EXCEPTION=1 and its own approval, otherwise it does not start.",
     "Not replayable today, though played in the original: Mercury Decide (blockers today); their seed pins are kept so they replay with the original seeds once unblocked."
    ],
-   "start": [
-    "python3 /home/cbasaran/code/jevgammon/tools/v3/repeats/repeats.py pin reax-1.3-r1 --apply   # once, after approval",
-    "systemd-run --user --unit=repeat-reax-1.3-r1 --working-directory=/home/cbasaran/code/jevgammon -E GPU=0 -E OPP_GPU=0 -E RES=<reservation> /home/cbasaran/code/jevgammon/tools/v3/repeats/run.sh reax-1.3-r1"
-   ],
+   "start": [],
    "pairs": [
     {
      "opponent": "Random",
@@ -7080,16 +7082,17 @@
    "original_league": 1,
    "original_stage": "league",
    "status": "queued",
+   "hold": null,
    "prepared": "2026-11-11",
    "started": null,
    "finished": null,
    "league_config": "tools/v3/repeats/leagues/d1-ultra-r1.json",
    "status_file": "mailbox/repeats/d1-ultra-r1 - status.md",
    "runner": {
-    "binary": "/home/cbasaran/code/jevgammon/target/reax/release/jevgammon",
-    "tree": "/home/cbasaran/code/jevgammon-reax",
-    "commit": "acfd89cdcc710846d7173e475ce8546af7febac1",
-    "same_build_as_original": false
+    "binary": "/home/cbasaran/code/jevgammon/target/pinned/release/jevgammon",
+    "tree": "/home/cbasaran/code/jevgammon-pinned-pairs",
+    "commit": "4ca4f08",
+    "original": "six builds: 17f3b8e, 2421d9e, 6425197, 356e32a (uncommitted changes), bef3ec8, ec555d6"
    },
    "rules": {
     "rounds": 3,
@@ -7262,13 +7265,12 @@
    },
    "differences": [
     "Name: '<original> [repeat 1]', a new players row; settings otherwise as the original's (the changed fields are listed under Settings); one match at a time, where the original played several at once.",
-    "Runner: its 18 League 1 matches were played by six runner builds (17f3b8e, 2421d9e, 6425197, 356e32a with uncommitted changes; bef3ec8, ec555d6 clean); the repeat uses the clean acfd89c build, the one that played Liquid d1-ultra as an opponent in REAX's late entry (#920). Same prompt version bg-v2, option-order seed and rules; mirror games off as in its originals.",
+    "Runner: its 18 League 1 matches were played by six runner builds (17f3b8e, 2421d9e, 6425197, 356e32a with uncommitted changes; bef3ec8, ec555d6 clean); the repeat uses the pinned-pairs build 4ca4f08. Same prompt version bg-v2, option-order seed and rules; mirror games off as in its originals.",
     "Opponent hardware: Clef (#180), Cygnet (#184) and Decider v1.1 27B (#182) answered from DGX Spark (GB10) servers then; they now run on our RTX PRO 6000 cards with the same checkpoints and arguments (their players.device records the move and its 20-request replays: same play 20/20, 20/20 and 19/20).",
     "Hosted model: d1-ultra is served by Liquid; whether the hosted model behind liquid/d1-ultra changed since 2026-10-19 cannot be checked from here.",
     "Not replayable today, though played in the original: GPT-6 Luna, Mercury Decide (blockers today); their seed pins are kept so they replay with the original seeds once unblocked."
    ],
    "start": [
-    "python3 /home/cbasaran/code/jevgammon/tools/v3/repeats/repeats.py pin d1-ultra-r1 --apply   # once, after approval",
     "systemd-run --user --unit=repeat-d1-ultra-r1 --working-directory=/home/cbasaran/code/jevgammon -E OPP_GPU=0 -E RES=<reservation> /home/cbasaran/code/jevgammon/tools/v3/repeats/run.sh d1-ultra-r1"
    ],
    "pairs": [

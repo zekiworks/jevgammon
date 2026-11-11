@@ -1,5 +1,5 @@
 {
-  "note": "Reproducibility repeat 1 of REAX 1.3 (Ümit via Zeki, bus #4663, #4666, #4667 (protocol), #4671 (d1-ultra); run repeat-2026-11-11-reax-1.3-r1): REAX 1.3 [repeat 1] plays REAX 1.3's original League 1 field again, one match at a time, each pair with its original match's seed and seats (voided placeholder matches, tools/v3/repeats/repeats.py pin), the same option-order seed, prompt, rules and settings. Hidden league; matches stage 'late-entry' and the name held (tools/site/content/held_setups.json): in no standings, table, Cup input or other setup's numbers. mailbox/repeats/manifest-2026-11-11.json",
+  "note": "Reproducibility repeat 1 of REAX 1.3 (Ümit via Zeki, bus #4663, #4666, #4667 (protocol), #4671 (d1-ultra), #4710; run repeat-2026-11-11-reax-1.3-r1): REAX 1.3 [repeat 1] plays REAX 1.3's original League 1 field again, one match at a time, each pair pinned to its original match's seed and seating (pinned_pairs), the same option-order seed, prompt, rules and settings. Hidden league; matches stage 'late-entry' and the name held (tools/site/content/held_setups.json): in no standings, table, Cup input or other setup's numbers. mailbox/repeats/manifest-2026-11-11.json",
   "prompt_version": "bg-v2",
   "seed": 2567889193785291627,
   "order_seed": 1190975713392774006,
@@ -10,6 +10,80 @@
   "mirror_concurrent": true,
   "only_pairs_of": "REAX 1.3 [repeat 1]",
   "hidden": true,
+  "pinned_pairs": {
+    "Random": {
+      "seed": 14048797037936432625,
+      "seat_first": false
+    },
+    "GNUbg weak": {
+      "seed": 7687453975057924759,
+      "seat_first": false
+    },
+    "Safest": {
+      "seed": 4250404258724067804,
+      "seat_first": false
+    },
+    "Cygnet (Gemma 4 12B)": {
+      "seed": 11364547734129190159,
+      "seat_first": false
+    },
+    "Winnow-12B": {
+      "seed": 4483105724799583608,
+      "seat_first": true
+    },
+    "Decider Flash v1.2": {
+      "seed": 10926795277747235328,
+      "seat_first": false
+    },
+    "Decider v1.2 27B": {
+      "seed": 1021836415416679067,
+      "seat_first": true
+    },
+    "Fastino GLiDE v1.2 (local)": {
+      "seed": 9547641185966060099,
+      "seat_first": true
+    },
+    "Clef": {
+      "seed": 14863584321610017996,
+      "seat_first": true
+    },
+    "Open-Jev 27B v1.1": {
+      "seed": 11746268790371622157,
+      "seat_first": false
+    },
+    "Decider v1.1 27B": {
+      "seed": 6810423341903318602,
+      "seat_first": true
+    },
+    "Celeris-1 Decision": {
+      "seed": 7161064289564184736,
+      "seat_first": true
+    },
+    "Fastino GLiDE": {
+      "seed": 8676420728319782702,
+      "seat_first": false
+    },
+    "Jev 1.13.0": {
+      "seed": 1191860321266350990,
+      "seat_first": true
+    },
+    "Jev 1.14.0": {
+      "seed": 12685378779393301775,
+      "seat_first": true
+    },
+    "Liquid d1-ultra": {
+      "seed": 18385022176221832218,
+      "seat_first": false
+    },
+    "Mercury Decide": {
+      "seed": 847988905885570598,
+      "seat_first": true
+    },
+    "SubQ Snap Preview": {
+      "seed": 1831931896691103214,
+      "seat_first": false
+    }
+  },
   "players": [
     {
       "name": "REAX 1.3 [repeat 1]",

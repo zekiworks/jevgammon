@@ -1,5 +1,5 @@
 {
-  "note": "Reproducibility repeat 1 of Drex Max v1 (Ümit via Zeki, bus #4663, #4666, #4667 (protocol), #4671 (d1-ultra); run repeat-2026-11-11-drex-max-v1-r1): Drex Max v1 [repeat 1] plays Drex Max v1's original League 1 field again, one match at a time, each pair with its original match's seed and seats (voided placeholder matches, tools/v3/repeats/repeats.py pin), the same option-order seed, prompt, rules and settings. Hidden league; matches stage 'late-entry' and the name held (tools/site/content/held_setups.json): in no standings, table, Cup input or other setup's numbers. mailbox/repeats/manifest-2026-11-11.json",
+  "note": "Reproducibility repeat 1 of Drex Max v1 (Ümit via Zeki, bus #4663, #4666, #4667 (protocol), #4671 (d1-ultra), #4710; run repeat-2026-11-11-drex-max-v1-r1): Drex Max v1 [repeat 1] plays Drex Max v1's original League 1 field again, one match at a time, each pair pinned to its original match's seed and seating (pinned_pairs), the same option-order seed, prompt, rules and settings. Hidden league; matches stage 'late-entry' and the name held (tools/site/content/held_setups.json): in no standings, table, Cup input or other setup's numbers. mailbox/repeats/manifest-2026-11-11.json",
   "prompt_version": "bg-v2",
   "seed": 2567889193785291627,
   "order_seed": 1190975713392774006,
@@ -10,6 +10,84 @@
   "mirror_concurrent": true,
   "only_pairs_of": "Drex Max v1 [repeat 1]",
   "hidden": true,
+  "pinned_pairs": {
+    "Mercury Decide": {
+      "seed": 3011338297224002216,
+      "seat_first": true
+    },
+    "GPT-6 Luna": {
+      "seed": 17181008972599963089,
+      "seat_first": false
+    },
+    "Jev 1.13.0": {
+      "seed": 11005606642846497852,
+      "seat_first": true
+    },
+    "SubQ Snap Preview": {
+      "seed": 5008997222355474043,
+      "seat_first": true
+    },
+    "Fastino GLiDE": {
+      "seed": 18304563493947544641,
+      "seat_first": true
+    },
+    "Random": {
+      "seed": 15407983512609043838,
+      "seat_first": false
+    },
+    "Celeris-1 Decision": {
+      "seed": 9840904233161987322,
+      "seat_first": false
+    },
+    "Jev 1.14.0": {
+      "seed": 11933676677615952892,
+      "seat_first": true
+    },
+    "GNUbg weak": {
+      "seed": 7323308491602056259,
+      "seat_first": false
+    },
+    "Safest": {
+      "seed": 2561309086991491001,
+      "seat_first": true
+    },
+    "Liquid d1-ultra": {
+      "seed": 11057523051444674742,
+      "seat_first": true
+    },
+    "Decider v1.2 27B": {
+      "seed": 205605674475530312,
+      "seat_first": true
+    },
+    "Decider Flash v1.2": {
+      "seed": 12112519809197669136,
+      "seat_first": true
+    },
+    "Winnow-12B": {
+      "seed": 5933853776950260856,
+      "seat_first": true
+    },
+    "Cygnet (Gemma 4 12B)": {
+      "seed": 11416358787246607588,
+      "seat_first": true
+    },
+    "Clef": {
+      "seed": 4725177579945299308,
+      "seat_first": false
+    },
+    "Fastino GLiDE v1.2 (local)": {
+      "seed": 14677231067326529841,
+      "seat_first": false
+    },
+    "Open-Jev 27B v1.1": {
+      "seed": 951292442080725756,
+      "seat_first": false
+    },
+    "Decider v1.1 27B": {
+      "seed": 12106414227289274443,
+      "seat_first": true
+    }
+  },
   "players": [
     {
       "name": "Drex Max v1 [repeat 1]",

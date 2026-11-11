@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Reproducibility repeats of four League 1 setups (Ümit via Zeki, bus #4663, #4666, #4667, #4671): each repeat plays
-the original's own League 1 field again, one match at a time, with the original's per-match seeds (dice) and seats, the
+the original's own League 1 field again, one match at a time, each pair pinned (league config pinned_pairs, runner
+branch pinned-pairs, Zeki #4710) to its original match's seed (dice) and seating, with the
 same option-order seed, prompt, rules and setup settings, under a separate held name ('<original> [repeat 1]') whose
 matches carry stage 'late-entry' (late_entry_stage trigger) and are held off every page, table and league computation
 (tools/site/content/held_setups.json). Published rows are never changed. Run from anywhere; v3.db is the main
@@ -9,10 +10,7 @@ checkout's (JEVGAMMON_DB overrides).
   repeats.py manifest                 writes mailbox/repeats/manifest-2026-11-11.json from v3.db (read-only)
   repeats.py configs                  writes tools/v3/repeats/leagues/ID.json from the manifest
   repeats.py plan ID                  opponents to play, in order: NAME|KIND|MiB|START|STOP|BLOCKED (read-only)
-  repeats.py check ID                 fail-closed preflight (read-only): pins, trigger, held name, runner tree
-  repeats.py pin ID --apply           WRITES v3.db (needs Zeki's approval): the repeat's players row and, per pair, one
-                                      voided placeholder match carrying the original's seed and seats (no game; the
-                                      runner replays a voided pair with its seed: league::derive_fixture)
+  repeats.py check ID                 fail-closed preflight (read-only): config pins, trigger, held name, runner build
   repeats.py env ID                   shell assignments for run.sh (NAME KIND BIN ENTRANT_MIB START STOP HEALTH ...)
   repeats.py trigger ID               WRITES v3.db: adds the repeat name to the late_entry_stage trigger
   repeats.py league-id ID             the repeat's league id, or nothing (read-only)
@@ -73,6 +71,12 @@ BLOCKED_TODAY = {
 WRITTEN_FOR = "Ümit via Zeki, bus #4663, #4666, #4667 (protocol), #4671 (d1-ultra)"
 LOGIC_REAX = dict(container="logic-dm-reax13", url="http://127.0.0.1:19100",
                   image="sha256:9622cace6607ea35516dfae16c1d2c0cc191a7da735be0a7966e06a0dd839938")
+# The runner every repeat uses: the pinned-pairs build (league config pinned_pairs; Zeki #4710).
+RUNNER = dict(binary=str(MAIN / "target/pinned/release/jevgammon"), tree="/home/cbasaran/code/jevgammon-pinned-pairs",
+              commit="4ca4f08")
+RUNNER_DIFFERENCE = ("Runner: the pinned-pairs build " + RUNNER["commit"] + " (the pins are its only change for "
+                     "these leagues), where the original ran %s; the same prompt version, option-order seed and "
+                     "rules.")
 
 
 def repeat_note(rid: str, extra: str = "") -> str:
@@ -85,8 +89,7 @@ def repeat_note(rid: str, extra: str = "") -> str:
 REPEATS = {
     "mammoth-1-r1": dict(
         original="Base Labs Mammoth-1", original_league=14, original_stage="late-entry",
-        runner=dict(binary=str(MAIN / "target/late3/release/jevgammon"), tree="/home/cbasaran/code/jevgammon-late3",
-                    commit="104103a9dfd5ecaf141f699b363148ebbb490855"),
+        runner=RUNNER, original_runner="104103a9dfd5ecaf141f699b363148ebbb490855",
         server=dict(kind="ours", mib=59000, start="MAMMOTH_GPU=$g /home/cbasaran/code/jevgammon/workspace/late3/baselabs.sh mammoth start",
                     stop="/home/cbasaran/code/jevgammon/workspace/late3/baselabs.sh mammoth stop",
                     health="http://127.0.0.1:18103/", health_any_status=True,
@@ -97,11 +100,10 @@ REPEATS = {
                                 "2026-11-11)"),
                     measured="57-59 GB on GPU 0 at its smoke test (mailbox/Late entries 3 - status 2026-11-02.md)"),
         settings_change=dict(),
-        rules=dict(mirror_concurrent=True)),
+        rules=dict(mirror_concurrent=True), differences=[RUNNER_DIFFERENCE % "104103a (clean)"]),
     "drex-max-v1-r1": dict(
         original="Drex Max v1", original_league=17, original_stage="late-entry",
-        runner=dict(binary=str(MAIN / "target/drex/release/jevgammon"), tree="/home/cbasaran/code/jevgammon-drex",
-                    commit="e58fc6c255304c085bdb5eb8dec34b83c473573a"),
+        runner=RUNNER, original_runner="e58fc6c255304c085bdb5eb8dec34b83c473573a",
         server=dict(kind="ours", mib=53000, start="DREX_MAX_GPU=$g /home/cbasaran/code/jevgammon/workspace/drex/drexmax.sh start",
                     stop="/home/cbasaran/code/jevgammon/workspace/drex/drexmax.sh stop",
                     health="http://127.0.0.1:18104/health", health_any_status=False,
@@ -111,11 +113,15 @@ REPEATS = {
                                 "@ cac65e1, bf16; unchanged since the original (checked 2026-11-11)"),
                     measured="about 50-53 GB on GPU 0 (state of workspace/drex/state/servers.log, 2026-11-06)"),
         settings_change=dict(),
-        rules=dict(mirror_concurrent=True)),
+        rules=dict(mirror_concurrent=True), differences=[RUNNER_DIFFERENCE % "e58fc6c (clean)"]),
     "reax-1.3-r1": dict(
         original="REAX 1.3", original_league=19, original_stage="late-entry",
-        runner=dict(binary=str(MAIN / "target/reax/release/jevgammon"), tree="/home/cbasaran/code/jevgammon-reax",
-                    commit="acfd89cdcc710846d7173e475ce8546af7febac1"),
+        runner=RUNNER, original_runner="acfd89cdcc710846d7173e475ce8546af7febac1",
+        status="held",
+        hold=("Held (Zeki #4710): the plan to use logic's container (outbound network open) is dropped; the repeat "
+              "needs the original's offline setup (reax13-late on the internal network reax13-offline, no outbound "
+              "route; workspace/reax/reax.sh) and Can's no-new-privileges exception renewed for it, or a new "
+              "approval. Its server settings below are logic's and are not used until then."),
         server=dict(kind="logic", mib=75000, start=None, stop=None,
                     health=LOGIC_REAX["url"] + "/healthz", health_any_status=False,
                     smoke=f"python3 /home/cbasaran/code/jevgammon/workspace/reax/reax.py smoke {LOGIC_REAX['url']} reax13",
@@ -132,6 +138,7 @@ REPEATS = {
                     "loopback port 19100)")),
         rules=dict(mirror_concurrent=True),
         differences=[
+            RUNNER_DIFFERENCE % "acfd89c (clean)",
             ("Server: logic's container logic-dm-reax13 on Docker's default bridge, its API published on the host's "
              "loopback (outbound network open; offline Hugging Face variables set as before), where the original ran "
              "reax13-late on the internal network reax13-offline (no outbound route), reached on the container's "
@@ -144,8 +151,7 @@ REPEATS = {
         original="Liquid d1-ultra", original_league=1, original_stage="league",
         # Its League 1 matches (2026-10-19 to 2026-10-22, before ladder round 1 moved it to League 2).
         original_matches=[180, 181, 182, 184, 190, 191, 192, 223, 264, 265, 268, 275, 280, 283, 365, 376, 399, 490],
-        runner=dict(binary=str(MAIN / "target/reax/release/jevgammon"), tree="/home/cbasaran/code/jevgammon-reax",
-                    commit="acfd89cdcc710846d7173e475ce8546af7febac1"),
+        runner=RUNNER, original_runner="six builds: 17f3b8e, 2421d9e, 6425197, 356e32a (uncommitted changes), bef3ec8, ec555d6",
         server=dict(kind="api", mib=0, start=None, stop=None, health=None, smoke=None,
                     provenance="Liquid AI decisions API, paid tier (spec liquid/d1-ultra, LIQUIDAI_API_KEY in ~/.keys)",
                     measured="none (hosted)"),
@@ -153,9 +159,9 @@ REPEATS = {
         rules=dict(mirror_concurrent=False),
         differences=[
             ("Runner: its 18 League 1 matches were played by six runner builds (17f3b8e, 2421d9e, 6425197, 356e32a "
-             "with uncommitted changes; bef3ec8, ec555d6 clean); the repeat uses the clean acfd89c build, the one that "
-             "played Liquid d1-ultra as an opponent in REAX's late entry (#920). Same prompt version bg-v2, option-order "
-             "seed and rules; mirror games off as in its originals."),
+             "with uncommitted changes; bef3ec8, ec555d6 clean); the repeat uses the pinned-pairs build "
+             f"{RUNNER['commit']}. Same prompt version bg-v2, option-order seed and rules; mirror games off as in its "
+             "originals."),
             ("Opponent hardware: Clef (#180), Cygnet (#184) and Decider v1.1 27B (#182) answered from DGX Spark (GB10) "
              "servers then; they now run on our RTX PRO 6000 cards with the same checkpoints and arguments (their "
              "players.device records the move and its 20-request replays: same play 20/20, 20/20 and 19/20)."),
@@ -249,28 +255,22 @@ def manifest(args) -> None:
                 "repeats.py manifest from v3.db (read-only)."),
         written=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"), requested_by=WRITTEN_FOR,
         seed_mechanism=dict(
-            finding=("The league runner has no per-match or per-pair seed field in its league config. A new pair's "
-                     "seed and seats come from the two player names and the rules hash (Rules::pair_seed, "
-                     "Rules::sides; seed_rule pair-v1), so a renamed repeat would get other dice; the original late "
-                     "entries' seeds are exactly pair_seed of their names (checked for #780, #807, #818, #845, #867, "
-                     "#905, #920), Liquid d1-ultra's League 1 seeds are not (older rule). One existing path replays a "
-                     "given seed: league::derive_fixture takes a pair's seed and first player from its valid match or, "
-                     "without one, from its last voided match ('a voided pair replays with the same dice'), and every "
-                     "game's dice follow from the match seed (dice::round_seed) and every option order from the "
-                     "option-order seed and the position (players::order::option_order), never from names. The "
-                     "standalone `jevgammon match --seed --order-seed` takes a seed but not a player's settings, "
-                     "stage or league, so it is not the same protocol."),
-            no_code_route=("repeats.py pin ID --apply (needs approval; writes v3.db, changes no existing row): the "
-                           "repeat's players row (the settings below) and, per pair, one placeholder match with "
-                           "valid 0, status 'aborted', stage 'late-entry', no games, void_reason naming the original "
-                           "match, its seed and its seats; the original runner builds then replay those seeds "
-                           "unchanged. Nothing on the site reads aborted voided rows (cup.compute and the matches "
-                           "pages take finished matches)."),
-            smallest_runner_change=("League config field `pinned_pairs` [{opponent, seed, first}] for the "
-                                    "only_pairs_of setup, stored in a new leagues column (so --resume and league-add "
-                                    "keep it) and read by derive_fixture before Rules::pair_seed; with a test: about "
-                                    "40 lines in league.rs, db.rs and migrate.rs. Not made (Zeki #4667: ask first); "
-                                    "it would also mean a new runner build instead of each original's.")),
+            finding=("The original runner builds have no per-pair seed field: a new pair's seed and seating come from "
+                     "the two player names and the rules hash (Rules::pair_seed, Rules::sides), so a renamed repeat "
+                     "would get other dice. The late entries' seeds are exactly that (checked for #780, #807, #818, "
+                     "#845, #867, #905, #920); Liquid d1-ultra's League 1 seeds are not (older rule)."),
+            used=(f"Runner change on branch pinned-pairs, commit {RUNNER['commit']} (Zeki #4710): league config field "
+                  "pinned_pairs {opponent: {seed: u64, seat_first: bool}} for the only_pairs_of setup, stored in the "
+                  "new column leagues.pinned_pairs and read wherever fixtures are derived (resume, league-add and a "
+                  "running league keep them); league-add --pin. Every game's dice follow from the match seed and every "
+                  "option order from the option-order seed and the position, never from names: a test replays #808, "
+                  "#856, #905 and #190 under a renamed repeat and gets every game's dice and every turn's option order "
+                  "of the original. Each repeat's league config carries a pin for every opponent of its original."),
+            migration=("leagues.pinned_pairs is added (ALTER TABLE ADD COLUMN, NULL) by the new build's ensure_schema "
+                       "the first time it opens a database; not applied to production v3.db yet (nothing has run it "
+                       "there); no existing row is edited, and NULL means no pins, so older builds and every existing "
+                       "league are unaffected."),
+            not_used="The voided-placeholder route (pin --apply) is dropped (Zeki #4710)."),
         blockers_today=[dict(opponent=k, reason=v) for k, v in BLOCKED_TODAY.items()],
         gates=dict(paid_cap_usd_per_repeat=5.0, openrouter_floor_usd=40.0, openrouter_unreadable_stop=3,
                    note=("Each repeat's guard (tools/v3/repeats/run.sh): stops the league when its billed spend "
@@ -307,11 +307,10 @@ def manifest(args) -> None:
         out["repeats"].append(dict(
             id=rid, run_id=f"repeat-2026-11-11-{rid}", name=name, display=DISPLAY[rid], original=r["original"],
             original_player_id=row["id"], original_league=r["original_league"], original_stage=r["original_stage"],
-            status="queued", prepared="2026-11-11", started=None, finished=None,
+            status=r.get("status", "queued"), hold=r.get("hold"), prepared="2026-11-11", started=None, finished=None,
             league_config=f"tools/v3/repeats/leagues/{rid}.json",
             status_file=f"mailbox/repeats/{rid} - status.md",
-            runner=dict(r["runner"], same_build_as_original=all(p["harness"]["commit"] == r["runner"]["commit"]
-                                                                 for p in pairs)),
+            runner=dict(r["runner"], original=r["original_runner"]),
             rules=dict(rules, mirror_concurrent=r["rules"]["mirror_concurrent"]),
             settings_original=settings, settings_repeat=rep, settings_changed=diff,
             server={k: v for k, v in srv.items() if k not in ("start", "stop", "health_any_status")}
@@ -365,8 +364,9 @@ def start_commands(rid: str) -> list[str]:
     run = f"/home/cbasaran/code/jevgammon/tools/v3/repeats/run.sh {rid}"
     unit = f"systemd-run --user --unit=repeat-{rid} --working-directory=/home/cbasaran/code/jevgammon"
     gpu = {"ours": "-E GPU=0 -E OPP_GPU=0", "logic": "-E GPU=0 -E OPP_GPU=0", "api": "-E OPP_GPU=0"}[REPEATS[rid]["server"]["kind"]]
-    return [f"python3 /home/cbasaran/code/jevgammon/tools/v3/repeats/repeats.py pin {rid} --apply   # once, after approval",
-            f"{unit} {gpu} -E RES=<reservation> {run}"]
+    if REPEATS[rid].get("status") == "held":
+        return []
+    return [f"{unit} {gpu} -E RES=<reservation> {run}"]
 
 
 def load() -> dict:
@@ -382,16 +382,16 @@ def configs(args) -> None:
         progs = [json.loads(conn.execute("SELECT settings FROM players WHERE name = ?", (n,)).fetchone()[0])
                  for n in PROGRAMS]
         cfg = dict(
-            note=(f"Reproducibility repeat 1 of {m['original']} ({WRITTEN_FOR}; run {m['run_id']}): {m['name']} plays "
-                  f"{m['original']}'s original League 1 field again, one match at a time, each pair with its original "
-                  "match's seed and seats (voided placeholder matches, tools/v3/repeats/repeats.py pin), the same "
-                  "option-order seed, prompt, rules and settings. Hidden league; matches stage 'late-entry' and the "
-                  "name held (tools/site/content/held_setups.json): in no standings, table, Cup input or other "
-                  "setup's numbers. mailbox/repeats/manifest-2026-11-11.json"),
+            note=(f"Reproducibility repeat 1 of {m['original']} ({WRITTEN_FOR}, #4710; run {m['run_id']}): {m['name']} "
+                  f"plays {m['original']}'s original League 1 field again, one match at a time, each pair pinned to its "
+                  "original match's seed and seating (pinned_pairs), the same option-order seed, prompt, rules and "
+                  "settings. Hidden league; matches stage 'late-entry' and the name held "
+                  "(tools/site/content/held_setups.json): in no standings, table, Cup input or other setup's numbers. "
+                  "mailbox/repeats/manifest-2026-11-11.json"),
             prompt_version=r["prompt_version"], seed=conn.execute("SELECT seed FROM leagues WHERE id = 1").fetchone()[0],
             order_seed=r["order_seed"], rounds=r["rounds"], clock=0, delay=30, max_turns=r["max_turns"],
             mirror_concurrent=r["mirror_concurrent"], only_pairs_of=m["name"], hidden=True,
-            players=[m["settings_repeat"]] + progs)
+            pinned_pairs=wanted_pins(m), players=[m["settings_repeat"]] + progs)
         if r["clock_seconds"] is not None or r["start_position"] is not None:
             sys.exit(f"{rid}: originals ran with a clock or another start; not covered")
         path = out / f"{rid}.json"
@@ -421,14 +421,9 @@ def plan(args) -> None:
         print("|".join([p["opponent"], p["kind"], str(mib), start, stop, "blocked" if p["blocked_today"] else ""]))
 
 
-def pins(conn, m) -> dict:
-    """Repeat's voided placeholder per opponent: {opponent: (seed, repeat_is_player1)}."""
-    rows = conn.execute(
-        """SELECT m.seed, a.name AS a, b.name AS b FROM matches m JOIN players a ON a.id = m.player1
-           JOIN players b ON b.id = m.player2
-           WHERE m.valid = 0 AND m.status = 'aborted' AND m.stage = 'late-entry' AND m.label LIKE 'seed pin:%'
-             AND ? IN (a.name, b.name)""", (m["name"],)).fetchall()
-    return {(r["b"] if r["a"] == m["name"] else r["a"]): (r["seed"], r["a"] == m["name"]) for r in rows}
+def wanted_pins(m) -> dict:
+    """The pin of every opponent of the original: its match's seed (u64) and whether the original sat first."""
+    return {p["opponent"]: dict(seed=int(p["seed_u64"]), seat_first=p["original_is_player1"]) for p in m["pairs"]}
 
 
 def trigger_names(conn) -> list[str]:
@@ -439,81 +434,39 @@ def trigger_names(conn) -> list[str]:
 
 
 def check(args) -> None:
-    """Fail closed: every pair pinned to its original seed and seats, the name in the trigger and held in the committed
-    site code of the main checkout, the players row equal to the manifest's settings, the original runner tree clean at
-    its commit and the binary present."""
+    """Fail closed: the league config pins every opponent to its original seed and seating (and the league, once it
+    exists, holds the same pins), the name is in the trigger and held in the main checkout's committed site code, the
+    runner tree is clean at the pinned-pairs commit and its binary present; a held repeat never passes."""
     m = load()[args.id]
     conn = ro()
-    bad = []
-    got = pins(conn, m)
-    for p in m["pairs"]:
-        want = (p["seed"], p["original_is_player1"])
-        if got.get(p["opponent"]) != want:
-            bad.append(f"pin {p['opponent']}: {got.get(p['opponent'])} != original #{p['original_match']} {want}")
+    bad = [f"held: {m['hold']}"] if m["status"] == "held" else []
+    want = wanted_pins(m)
+    if json.loads((HERE / "leagues" / f"{args.id}.json").read_text()).get("pinned_pairs") != want:
+        bad.append("league config pins differ from the manifest's original seeds and seats")
+    lid = league_id(conn, m["name"])
+    if lid is not None:
+        stored = conn.execute("SELECT pinned_pairs FROM leagues WHERE id = ?", (lid,)).fetchone()[0]
+        if json.loads(stored or "{}") != want:
+            bad.append(f"league #{lid} holds other pins")
     if m["name"] not in trigger_names(conn):
         bad.append("not in the late_entry_stage trigger")
     held = json.loads(subprocess.run(["git", "-C", str(MAIN), "show", "HEAD:tools/site/content/held_setups.json"],
                                      capture_output=True, text=True).stdout or "{}").get("held", {})
     if m["name"] not in held:
         bad.append("not held in the main checkout's committed tools/site/content/held_setups.json")
-    row = conn.execute("SELECT settings FROM players WHERE name = ?", (m["name"],)).fetchone()
-    if not row or json.loads(row[0]) != m["settings_repeat"]:
-        bad.append("players row missing or not the manifest's settings_repeat")
     rn = m["runner"]
     head = subprocess.run(["git", "-C", rn["tree"], "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
-    dirty = subprocess.run(["git", "-C", rn["tree"], "status", "--porcelain", "--untracked-files=no"],
+    dirty = subprocess.run(["git", "-C", rn["tree"], "status", "--porcelain", "--untracked-files=no", "--", "src"],
                            capture_output=True, text=True).stdout.strip()
-    if head != rn["commit"] or dirty:
-        bad.append(f"runner tree {rn['tree']} at {head[:7]}{' dirty' if dirty else ''}, not {rn['commit'][:7]}")
+    built = subprocess.run(["git", "-C", rn["tree"], "merge-base", "--is-ancestor", rn["commit"], "HEAD"]).returncode
+    if built or dirty:
+        bad.append(f"runner tree {rn['tree']} at {head[:7]}{' dirty' if dirty else ''} lacks {rn['commit']}")
     if not os.access(rn["binary"], os.X_OK):
         bad.append(f"no runner {rn['binary']}")
     if bad:
         sys.exit(f"{args.id}: " + "; ".join(bad))
-    print(f"{args.id}: {len(m['pairs'])} pairs pinned, trigger and held name in place, runner {rn['commit'][:7]} clean")
-
-
-def pin(args) -> None:
-    m = load()[args.id]
-    if not args.apply:
-        sys.exit("pin writes v3.db (players row + voided placeholder matches): rerun with --apply once approved")
-    conn = sqlite3.connect(DB, timeout=120)
-    conn.row_factory = sqlite3.Row
-    conn.execute("BEGIN IMMEDIATE")
-    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
-    s = m["settings_repeat"]
-    row = conn.execute("SELECT id, settings FROM players WHERE name = ?", (m["name"],)).fetchone()
-    if row and json.loads(row["settings"]) != s:
-        sys.exit(f"{m['name']} exists with other settings")
-    me = row["id"] if row else conn.execute(
-        """INSERT INTO players (name, spec, provider, quantization, device, price, settings, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-        (s["name"], s["spec"], s.get("provider"), s.get("quantization"), s.get("device"),
-         json.dumps(s["price"], separators=(",", ":")) if s.get("price") else None,
-         json.dumps(s, separators=(",", ":"), ensure_ascii=False), now)).lastrowid
-    done = pins(conn, m)
-    added = 0
-    for p in m["pairs"]:
-        if p["opponent"] in done:
-            continue
-        opp = conn.execute("SELECT id, spec FROM players WHERE name = ?", (p["opponent"],)).fetchone()
-        first = p["original_is_player1"]
-        p1, p2 = (me, opp["id"]) if first else (opp["id"], me)
-        s1, s2 = (s["spec"], opp["spec"]) if first else (opp["spec"], s["spec"])
-        r = p["rules"]
-        conn.execute(
-            """INSERT INTO matches (started_at, model1, model2, seed, rounds_planned, status, error, clock_seconds,
-                                   delay_seconds, max_turns, prompt_version, order_seed, player1, player2, stage, label,
-                                   mirror_concurrent, valid, void_reason, voided_at, start_position)
-               VALUES (?, ?, ?, ?, ?, 'aborted', NULL, ?, ?, ?, ?, ?, ?, ?, 'late-entry', ?, ?, 0, ?, ?, ?)""",
-            (now, s1, s2, p["seed"], r["rounds"], r["clock_seconds"], r["delay_seconds"], r["max_turns"],
-             r["prompt_version"], r["order_seed"], p1, p2,
-             f"seed pin: {m['name']} v {p['opponent']} (original #{p['original_match']})",
-             int(m["rules"]["mirror_concurrent"]),
-             (f"seed pin for {m['run_id']}: no game; carries original match #{p['original_match']}'s seed and seats "
-              "so the league replays its dice (league::derive_fixture, voided pair)"), now, r["start_position"]))
-        added += 1
-    conn.commit()
-    print(f"{m['name']}: players #{me}; {added} seed pins added ({len(done)} already there)")
+    print(f"{args.id}: {len(want)} pairs pinned in its config, trigger and held name in place, runner "
+          f"{rn['commit']} (tree {head[:7]})")
 
 
 def trigger(args) -> None:
@@ -588,7 +541,7 @@ def results(args) -> None:
         played = repeat_matches(conn, m)
         playable = [p for p in m["pairs"] if p["status"] == "finished" and not p["blocked_today"]]
         done = (MAIN / "workspace/repeats" / rid / "done").exists()
-        state = "queued" if lid is None else "played" if done else "running"
+        state = ("held" if m["status"] == "held" else "queued" if lid is None else "played" if done else "running")
         out[rid] = dict(status=state, league=lid, played=len(played), playable=len(playable),
                         first_match=played[0]["id"] if played else None,
                         started=played[0]["started_at"] if played else None,
@@ -611,10 +564,6 @@ def main() -> None:
         p = sub.add_parser(cmd)
         p.add_argument("id", choices=list(REPEATS))
         p.set_defaults(fn=fn)
-    p = sub.add_parser("pin")
-    p.add_argument("id", choices=list(REPEATS))
-    p.add_argument("--apply", action="store_true")
-    p.set_defaults(fn=pin)
     p = sub.add_parser("league-id")
     p.add_argument("id", choices=list(REPEATS))
     p.set_defaults(fn=lambda a: print(league_id(ro(), load()[a.id]["name"]) or ""))

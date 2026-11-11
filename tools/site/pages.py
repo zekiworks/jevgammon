@@ -1811,7 +1811,7 @@ def experiments_page(S) -> str:
 # status file; each original's numbers are computed on the pairs its repeat plays (build: _repeat_originals). The
 # section's numbers are published in data/v3/repeat-checks.json (repeat_data).
 REPEAT_MANIFEST = ROOT / "mailbox/repeats/manifest-2026-11-11.json"
-REPEAT_STATUS = {"queued": "Queued", "running": "Running", "played": "Played"}
+REPEAT_STATUS = {"queued": "Queued", "running": "Running", "played": "Played", "held": "Held"}
 # Changed setting fields in words (a page never names the server-address field).
 REPEAT_FIELDS = {"name": "name", "note": "note", "max_matches": "one match at a time",
                  "base_url": "server address (logic's REAX server)", "device": "device note"}
@@ -1855,7 +1855,7 @@ def repeat_data(S) -> list[dict]:
                        finished=(res.get("finished") or "")[:10] or None),
             cost=dict(estimate_usd=round(cost["estimate_usd"], 2), entrant_usd=round(cost["entrant_usd"], 2),
                       cap_usd=cost["cap_usd"]),
-            differences=m["differences"]))
+            differences=([m["hold"]] if m.get("hold") else []) + m["differences"]))
     return out
 
 

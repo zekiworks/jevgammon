@@ -3,11 +3,11 @@
 # as the late entries' start.sh + locals.sh (tools/v3/late-knowline) in one loop:
 #   systemd-run --user --unit=repeat-ID --working-directory=/home/cbasaran/code/jevgammon \
 #     [-E GPU=<entrant card>] -E OPP_GPU=<card for opponent servers> -E RES=<agent-bus reservation> \
-#     [-E PINS_APPROVED='<bus #>'] /home/cbasaran/code/jevgammon/tools/v3/repeats/run.sh ID
-# Fail closed before anything plays (repeats.py check): every pair pinned to its original match's seed and seats, the
-# name in the late_entry_stage trigger and held in the main checkout's committed site code, the players row equal to
-# the manifest's settings, the original runner tree clean at its commit. The first run, with PINS_APPROVED set, writes
-# them once: verified zstd backup of v3.db, `repeats.py pin ID --apply`, `repeats.py trigger ID`.
+#     /home/cbasaran/code/jevgammon/tools/v3/repeats/run.sh ID
+# Fail closed before anything plays (repeats.py check): the league config pins every opponent to its original match's
+# seed and seating (pinned_pairs; the league holds the same pins once it exists), the name in the late_entry_stage
+# trigger and held in the main checkout's committed site code, the pinned-pairs runner build. The first run writes
+# once: verified zstd backup of v3.db, `repeats.py trigger ID`. A held repeat (REAX 1.3) never passes the check.
 # The entrant: Mammoth-1 and Drex Max v1 are started here on GPU under RES and smoke-tested as in their originals (and
 # stopped at the end); REAX 1.3 must already answer on logic's server (unit logic-dm-reax13, image checked, smoke-tested;
 # never started or stopped here); Liquid d1-ultra is hosted. Then each opponent of the plan in turn (programs, paid API,
@@ -58,11 +58,9 @@ healthy() {
 room() { nvidia-smi -i "$1" --query-gpu=memory.total,memory.used --format=csv,noheader,nounits | awk -F', ' '{print $1-$2}'; }
 gpus() { nvidia-smi --query-gpu=index,memory.used --format=csv,noheader | tr '\n' ' '; }
 
-# Once, fail closed (Zeki's approval of the seed pins named in PINS_APPROVED): backup, pins, trigger.
+# Once, fail closed: backup, then the trigger; everything else must already pass the check.
 if ! "${R[@]}" check "$RID" > "$ST/check.log" 2>&1; then
-  if [[ -e $ST/prepared ]] || [[ -z ${PINS_APPROVED:-} ]]; then
-    echo "check failed ($(cat "$ST/check.log")); seed pins need PINS_APPROVED=<bus #> on the first run" >&2; exit 1
-  fi
+  [[ -e $ST/prepared ]] && { echo "check failed: $(cat "$ST/check.log")" >&2; exit 1; }
   raw=$PWD/v3-before-$RID.db
   bak=$PWD/v3.db.bak-$(date -u +%Y%m%dT%H%M%S)-before-$RID.zst
   fail() { echo "$1" >&2; rm -f "$raw"; exit 1; }
@@ -71,12 +69,10 @@ if ! "${R[@]}" check "$RID" > "$ST/check.log" 2>&1; then
   zstd -q -T0 "$raw" -o "$bak" || { rm -f "$bak"; fail "zstd failed"; }
   zstd -q -t "$bak" || { rm -f "$bak"; fail "zstd -t: $bak does not verify"; }
   rm -f "$raw"
-  out=$("${R[@]}" pin "$RID" --apply 2>&1) || fail "pin failed: $out"
-  log "seed pins (approved: $PINS_APPROVED; backup $bak verified): $out"
   out=$("${R[@]}" trigger "$RID" 2>&1) || fail "trigger failed: $out"
-  log "$out"
+  log "backup $bak verified; $out"
   touch "$ST/prepared"
-  "${R[@]}" check "$RID" > "$ST/check.log" 2>&1 || fail "check still fails: $(cat "$ST/check.log")"
+  "${R[@]}" check "$RID" > "$ST/check.log" 2>&1 || fail "check fails: $(cat "$ST/check.log")"
 fi
 log "check: $(cat "$ST/check.log")"
 
@@ -168,7 +164,9 @@ while IFS='|' read -r -u 3 name kind mib start stop blocked; do
     if ! sqlite3 -readonly v3.db "SELECT 1 FROM league_players lp JOIN players p ON p.id = lp.player_id
          WHERE lp.league_id = $ID AND lp.left_at IS NULL AND p.name = '${name//\'/\'\'}'" | grep -q 1; then
       entry=$(sqlite3 -readonly v3.db "SELECT settings FROM players WHERE name = '${name//\'/\'\'}'")
-      "$BIN" league-add --db v3.db --league "$ID" --entry "$entry" >> "repeat-$RID.log" 2>&1 ||
+      pin=$(python3 -c 'import json,sys; print(json.dumps(json.load(open(sys.argv[1]))["pinned_pairs"][sys.argv[2]]))' \
+        "$T/leagues/$RID.json" "$name")
+      "$BIN" league-add --db v3.db --league "$ID" --entry "$entry" --pin "$pin" >> "repeat-$RID.log" 2>&1 ||
         { log "league-add of $name failed"; missing+=("$name (league-add failed)"); continue; }
       log "$name added to league #$ID"
     fi

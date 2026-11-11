@@ -1,5 +1,5 @@
 {
-  "note": "Reproducibility repeat 1 of Liquid d1-ultra (Ümit via Zeki, bus #4663, #4666, #4667 (protocol), #4671 (d1-ultra); run repeat-2026-11-11-d1-ultra-r1): Liquid d1-ultra [repeat 1] plays Liquid d1-ultra's original League 1 field again, one match at a time, each pair with its original match's seed and seats (voided placeholder matches, tools/v3/repeats/repeats.py pin), the same option-order seed, prompt, rules and settings. Hidden league; matches stage 'late-entry' and the name held (tools/site/content/held_setups.json): in no standings, table, Cup input or other setup's numbers. mailbox/repeats/manifest-2026-11-11.json",
+  "note": "Reproducibility repeat 1 of Liquid d1-ultra (Ümit via Zeki, bus #4663, #4666, #4667 (protocol), #4671 (d1-ultra), #4710; run repeat-2026-11-11-d1-ultra-r1): Liquid d1-ultra [repeat 1] plays Liquid d1-ultra's original League 1 field again, one match at a time, each pair pinned to its original match's seed and seating (pinned_pairs), the same option-order seed, prompt, rules and settings. Hidden league; matches stage 'late-entry' and the name held (tools/site/content/held_setups.json): in no standings, table, Cup input or other setup's numbers. mailbox/repeats/manifest-2026-11-11.json",
   "prompt_version": "bg-v2",
   "seed": 2567889193785291627,
   "order_seed": 1190975713392774006,
@@ -10,6 +10,80 @@
   "mirror_concurrent": false,
   "only_pairs_of": "Liquid d1-ultra [repeat 1]",
   "hidden": true,
+  "pinned_pairs": {
+    "Clef": {
+      "seed": 7015214181411837251,
+      "seat_first": false
+    },
+    "SubQ Snap Preview": {
+      "seed": 4110204326658156475,
+      "seat_first": false
+    },
+    "Decider v1.1 27B": {
+      "seed": 3296664533817822337,
+      "seat_first": false
+    },
+    "Cygnet (Gemma 4 12B)": {
+      "seed": 4496681061505309226,
+      "seat_first": true
+    },
+    "Random": {
+      "seed": 5434299141657422090,
+      "seat_first": true
+    },
+    "Safest": {
+      "seed": 9295882388952428579,
+      "seat_first": true
+    },
+    "GNUbg weak": {
+      "seed": 13946112723528571607,
+      "seat_first": true
+    },
+    "Open-Jev 27B v1.1": {
+      "seed": 17143540289880687240,
+      "seat_first": false
+    },
+    "Celeris-1 Decision": {
+      "seed": 10551187889230566014,
+      "seat_first": true
+    },
+    "Jev 1.14.0": {
+      "seed": 4750228731398360226,
+      "seat_first": true
+    },
+    "Decider Flash v1.2": {
+      "seed": 15019187788786894646,
+      "seat_first": false
+    },
+    "GPT-6 Luna": {
+      "seed": 10271094545751485971,
+      "seat_first": false
+    },
+    "Jev 1.13.0": {
+      "seed": 6410236347400271523,
+      "seat_first": true
+    },
+    "Winnow-12B": {
+      "seed": 14234552382919516670,
+      "seat_first": false
+    },
+    "Mercury Decide": {
+      "seed": 15668731511355998315,
+      "seat_first": true
+    },
+    "Fastino GLiDE": {
+      "seed": 14105995457156109860,
+      "seat_first": true
+    },
+    "Decider v1.2 27B": {
+      "seed": 2510174432292934373,
+      "seat_first": true
+    },
+    "Fastino GLiDE v1.2 (local)": {
+      "seed": 10442249882576386863,
+      "seat_first": false
+    }
+  },
   "players": [
     {
       "name": "Liquid d1-ultra [repeat 1]",

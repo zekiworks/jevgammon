@@ -1,5 +1,5 @@
 {
-  "note": "Reproducibility repeat 1 of Base Labs Mammoth-1 (Ümit via Zeki, bus #4663, #4666, #4667 (protocol), #4671 (d1-ultra); run repeat-2026-11-11-mammoth-1-r1): Base Labs Mammoth-1 [repeat 1] plays Base Labs Mammoth-1's original League 1 field again, one match at a time, each pair with its original match's seed and seats (voided placeholder matches, tools/v3/repeats/repeats.py pin), the same option-order seed, prompt, rules and settings. Hidden league; matches stage 'late-entry' and the name held (tools/site/content/held_setups.json): in no standings, table, Cup input or other setup's numbers. mailbox/repeats/manifest-2026-11-11.json",
+  "note": "Reproducibility repeat 1 of Base Labs Mammoth-1 (Ümit via Zeki, bus #4663, #4666, #4667 (protocol), #4671 (d1-ultra), #4710; run repeat-2026-11-11-mammoth-1-r1): Base Labs Mammoth-1 [repeat 1] plays Base Labs Mammoth-1's original League 1 field again, one match at a time, each pair pinned to its original match's seed and seating (pinned_pairs), the same option-order seed, prompt, rules and settings. Hidden league; matches stage 'late-entry' and the name held (tools/site/content/held_setups.json): in no standings, table, Cup input or other setup's numbers. mailbox/repeats/manifest-2026-11-11.json",
   "prompt_version": "bg-v2",
   "seed": 2567889193785291627,
   "order_seed": 1190975713392774006,
@@ -10,6 +10,84 @@
   "mirror_concurrent": true,
   "only_pairs_of": "Base Labs Mammoth-1 [repeat 1]",
   "hidden": true,
+  "pinned_pairs": {
+    "SubQ Snap Preview": {
+      "seed": 12641660370495050513,
+      "seat_first": false
+    },
+    "Celeris-1 Decision": {
+      "seed": 16292921392597545991,
+      "seat_first": false
+    },
+    "Fastino GLiDE": {
+      "seed": 17652243691648528421,
+      "seat_first": false
+    },
+    "Jev 1.14.0": {
+      "seed": 384638883687945505,
+      "seat_first": false
+    },
+    "Jev 1.13.0": {
+      "seed": 15524932619166113772,
+      "seat_first": false
+    },
+    "GPT-6 Luna": {
+      "seed": 3634975665765799311,
+      "seat_first": true
+    },
+    "Safest": {
+      "seed": 8912082069680013991,
+      "seat_first": true
+    },
+    "Mercury Decide": {
+      "seed": 18413736479388242593,
+      "seat_first": false
+    },
+    "Winnow-12B": {
+      "seed": 3950770289274967254,
+      "seat_first": false
+    },
+    "Liquid d1-ultra": {
+      "seed": 16823791619665320402,
+      "seat_first": true
+    },
+    "GNUbg weak": {
+      "seed": 12050078245764941092,
+      "seat_first": false
+    },
+    "Random": {
+      "seed": 4362141510172531886,
+      "seat_first": false
+    },
+    "Decider Flash v1.2": {
+      "seed": 7201838220502392468,
+      "seat_first": true
+    },
+    "Fastino GLiDE v1.2 (local)": {
+      "seed": 15723762234602605296,
+      "seat_first": true
+    },
+    "Decider v1.2 27B": {
+      "seed": 17371933361509720230,
+      "seat_first": true
+    },
+    "Decider v1.1 27B": {
+      "seed": 6980247384385673010,
+      "seat_first": true
+    },
+    "Cygnet (Gemma 4 12B)": {
+      "seed": 231389076767029198,
+      "seat_first": false
+    },
+    "Clef": {
+      "seed": 12305971492677992990,
+      "seat_first": true
+    },
+    "Open-Jev 27B v1.1": {
+      "seed": 11482154090234804114,
+      "seat_first": false
+    }
+  },
   "players": [
     {
       "name": "Base Labs Mammoth-1 [repeat 1]",

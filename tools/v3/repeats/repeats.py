@@ -11,13 +11,13 @@ checkout's (JEVGAMMON_DB overrides).
   repeats.py manifest                 writes mailbox/repeats/manifest-2026-11-11.json from v3.db (read-only)
   repeats.py configs                  writes tools/v3/repeats/leagues/ID.json from the manifest
   repeats.py plan ID                  opponents to play, in order: NAME|KIND|MiB|START|STOP|BLOCKED (read-only)
-  repeats.py check ID                 fail-closed preflight (read-only): held, config pins and settings, held name on the
-                                      site, runner binary and build inputs (sha256), trigger; exit 3 = only the trigger
-                                      lacks the name, 1 = anything else
+  repeats.py check ID                 fail-closed preflight (read-only): held, config pins and settings, a recorded
+                                      attempt's league unchanged, held name on the site, runner binary and build inputs
+                                      (sha256), trigger; exit 3 = only the trigger lacks the name, 1 = anything else
   repeats.py env ID                   shell assignments for run.sh (NAME KIND BIN ENTRANT_MIB START STOP HEALTH ...)
   repeats.py trigger ID               WRITES v3.db: adds the repeat name to the late_entry_stage trigger (refused unless
                                       that is check's only failure)
-  repeats.py league-id ID             the repeat's league id, or nothing (read-only)
+  repeats.py league-id ID             the repeat's current league id (never a recorded attempt's), or nothing (read-only)
   repeats.py pending ID [OPPONENT...] pairs without a finished valid repeat match (read-only)
   repeats.py billed ID                dollars billed in the repeat's matches (read-only)
   repeats.py results                  writes tools/site/content/repeat_results.json (status per repeat, read-only)
@@ -80,11 +80,11 @@ BLOCKED_TODAY = {
 WRITTEN_FOR = "Ümit via Zeki, bus #4663, #4666, #4667 (protocol), #4671 (d1-ultra)"
 LOGIC_REAX = dict(container="logic-dm-reax13", url="http://127.0.0.1:19100",
                   image="sha256:9622cace6607ea35516dfae16c1d2c0cc191a7da735be0a7966e06a0dd839938")
-# The runner every repeat uses: the pinned-pairs build 4ca4f08 (league config pinned_pairs; Zeki #4710), bound by sha256
-# (Zeki #4737): the binary as built from a clean detached checkout of exactly that commit (its own tree, which the binary
-# also asks for its harness commit at runtime), every compile input outside src (include_str!; no build.rs) and the
-# test data inside src, Cargo.toml and Cargo.lock. check refuses any other binary, commit, changed src or input.
-RUNNER = dict(
+# The pinned-pairs build 4ca4f08 (league config pinned_pairs; Zeki #4710), bound by sha256 (Zeki #4737): built on
+# origin/main's runner line, which has no reax, baselabs, drex-max or nace client. REAX 1.3's first attempt ran it
+# (league #24, 0 matches: "unknown provider `reax`"); kept as that attempt's runner identity (REPEATS attempts), never
+# run again (Zeki #4886).
+RUNNER_4CA4F08 = dict(
     binary=str(MAIN / "target/pinned/release/jevgammon"),
     binary_sha256="53816d53b3a020eb9f858ccb44b7e7782d74609f0f8c7312c55f0cd5347a7098",
     tree="/home/cbasaran/code/jevgammon-runner-4ca4f08", commit="4ca4f08",
@@ -120,9 +120,42 @@ RUNNER = dict(
 # condition run.sh prepares (backup, trigger) before checking again; every other failure exits 1.
 TRIGGER_MISSING = 3
 NOT_IN_TRIGGER = "trigger missing: late_entry_stage does not name it"
-RUNNER_DIFFERENCE = ("Runner: the pinned-pairs build " + RUNNER["commit"] + " (the pins are its only change for "
-                     "these leagues), where the original ran %s; the same prompt version, option-order seed and "
-                     "rules.")
+# The runner every repeat uses (Zeki #4860, #4886): branch pinned-late-reax e77e3a0 = origin/late-reax acfd89c (the
+# originals' runner line, with the decision clients reax, baselabs, drex-max, nace, liquid and fastino) + 4ca4f08
+# cherry-picked without conflict (313e96f) + the offline admit command (e77e3a0), bound by sha256 as above: the binary as
+# built from a clean detached checkout of exactly that commit (its own tree, which the binary also asks for its harness
+# commit at runtime), every compile input outside src (include_str!; no build.rs) and the test data inside src,
+# Cargo.toml and Cargo.lock (all 18 at the same sha256 as 4ca4f08's). check refuses any other binary, commit, changed
+# src or input. Review package: mailbox/pinned-late-review/.
+RUNNER = dict(
+    binary=str(MAIN / "target/pinned-late/release/jevgammon"),
+    binary_sha256="a7838e735bd0659ce25e7752984e438147c0451ae6a6d5f5c9cc7117dfe8798c",
+    tree="/home/cbasaran/code/jevgammon-runner-pinned-late", commit="e77e3a0",
+    commit_full="e77e3a0531d95e44256bdfda4264343aa182b9a5", src_tree="f70bd7efe6180f29e042babf3cef0e1cf9c40089",
+    build=dict(
+        command=("cd /home/cbasaran/code/jevgammon-runner-pinned-late && CARGO_TARGET_DIR=/home/cbasaran/code/"
+                 "jevgammon/target/pinned-late cargo build --release --locked"),
+        toolchain="rustc 1.97.1 (8bab26f4f 2026-07-14), cargo 1.97.1 (c980f4866 2026-06-30)",
+        built="2026-11-11T16:30Z",
+        tree=("git worktree add --detach /home/cbasaran/code/jevgammon-runner-pinned-late origin/late-reax (acfd89c); "
+              "cherry-pick -x 4ca4f08 (313e96f); admit commit e77e3a0 (clean; only the untracked METADATA.worktree "
+              "added)")),
+    inputs=dict(RUNNER_4CA4F08["inputs"]))
+RUNNER_DIFFERENCE = ("Runner: " + RUNNER["commit"] + ", the originals' runner line (origin/late-reax acfd89c) with the "
+                     "pinned-pairs change 4ca4f08 (the pins are its only change for these leagues), where the original "
+                     "ran %s; the same prompt version, option-order seed and rules.")
+# The league of a recorded attempt is kept as it is and never resumed: league_id() skips it, so the repeat's next start
+# creates a new league with the same config (repeat name, pins); check fails while such a league differs from its
+# record (a process resumed, completed or edited it). The manifest lists these attempts before the current one.
+REAX_ATTEMPT_1 = dict(
+    league=24, runner=dict(commit=RUNNER_4CA4F08["commit"], commit_full=RUNNER_4CA4F08["commit_full"],
+                           binary_sha256=RUNNER_4CA4F08["binary_sha256"]),
+    record=dict(started_at="2026-11-11T15:25:16.745Z", finished_at=None, status="running", heartbeat_at=None,
+                participants=["GNUbg weak", "REAX 1.3 [repeat 1]", "Random", "Safest"]),
+    matches=0,
+    outcome=("stopped: the entrant's client could not be built, 'unknown provider `reax`' (4ca4f08 is on origin/main's "
+             "runner line); the league waited with 0 matches until stopped. Kept as the stopped attempt: not deleted, "
+             "not completed, not resumed (Zeki #4886)."))
 
 
 def repeat_note(rid: str, extra: str = "") -> str:
@@ -163,6 +196,7 @@ REPEATS = {
     "reax-1.3-r1": dict(
         original="REAX 1.3", original_league=19, original_stage="late-entry",
         runner=RUNNER, original_runner="acfd89cdcc710846d7173e475ce8546af7febac1",
+        attempts=[REAX_ATTEMPT_1],
         status="queued",
         hold=None,
         server=dict(kind="logic", mib=75000, start=None, stop=None,
@@ -373,7 +407,9 @@ def manifest(args) -> None:
                      "the two player names and the rules hash (Rules::pair_seed, Rules::sides), so a renamed repeat "
                      "would get other dice. The late entries' seeds are exactly that (checked for #780, #807, #818, "
                      "#845, #867, #905, #920); Liquid d1-ultra's League 1 seeds are not (older rule)."),
-            used=(f"Runner change on branch pinned-pairs, commit {RUNNER['commit']} (Zeki #4710): league config field "
+            used=(f"Runner change on branch pinned-pairs, commit 4ca4f08 (Zeki #4710), run as {RUNNER['commit']} "
+                  "(branch pinned-late-reax: the originals' runner line origin/late-reax with 4ca4f08 cherry-picked; "
+                  "Zeki #4860, #4886): league config field "
                   "pinned_pairs {opponent: {seed: u64, seat_first: bool}} for the only_pairs_of setup, stored in the "
                   "new column leagues.pinned_pairs and read wherever fixtures are derived (resume, league-add and a "
                   "running league keep them); league-add --pin. Every game's dice follow from the match seed and every "
@@ -426,6 +462,7 @@ def manifest(args) -> None:
             league_config=f"tools/v3/repeats/leagues/{rid}.json",
             status_file=f"mailbox/repeats/{rid} - status.md",
             runner=dict(r["runner"], original=r["original_runner"]),
+            attempts=attempts(conn, rid),
             rules=dict(rules, mirror_concurrent=r["rules"]["mirror_concurrent"]),
             settings_original=settings, settings_repeat=rep, settings_changed=diff,
             server={k: v for k, v in srv.items() if k not in ("start", "stop", "health_any_status")}
@@ -632,7 +669,8 @@ def problems(rid: str) -> list[str]:
     want = wanted_pins(m)
     if cfg.get("pinned_pairs") != want:
         bad.append("league config pins differ from the manifest's original seeds and seats")
-    lid = league_id(conn, m["name"])
+    bad += attempt_problems(conn, rid, want)
+    lid = league_id(conn, rid)
     if lid is not None:
         stored = conn.execute("SELECT pinned_pairs FROM leagues WHERE id = ?", (lid,)).fetchone()[0]
         if json.loads(stored or "{}") != want:
@@ -695,9 +733,41 @@ END""")
     print("late_entry_stage now names:", listed)
 
 
-def league_id(conn, name: str):
-    row = conn.execute("SELECT id FROM leagues WHERE only_pairs_of = ? ORDER BY id DESC LIMIT 1", (name,)).fetchone()
+def league_id(conn, rid: str):
+    """The repeat's current league: the newest one playing only its pairs, a recorded attempt's league never."""
+    skip = [a["league"] for a in REPEATS[rid].get("attempts", [])]
+    row = conn.execute(f"""SELECT id FROM leagues WHERE only_pairs_of = ? AND id NOT IN ({",".join("?" * len(skip))})
+                           ORDER BY id DESC LIMIT 1""", (repeat_name(rid), *skip)).fetchone()
     return row[0] if row else None
+
+
+def attempt_problems(conn, rid: str, want: dict) -> list[str]:
+    """Each recorded attempt's league is still as recorded: same start, end, status, heartbeat, pins and participants
+    (a process resuming, completing or editing it would change one of them)."""
+    bad = []
+    for a in REPEATS[rid].get("attempts", []):
+        row = conn.execute("""SELECT only_pairs_of, started_at, finished_at, status, heartbeat_at, pinned_pairs
+                              FROM leagues WHERE id = ?""", (a["league"],)).fetchone()
+        if row is None:
+            bad.append(f"attempt league #{a['league']} is missing")
+            continue
+        names = sorted(r[0] for r in conn.execute(
+            """SELECT p.name FROM league_players lp JOIN players p ON p.id = lp.player_id
+               WHERE lp.league_id = ? AND lp.left_at IS NULL""", (a["league"],)))
+        got = dict(started_at=row["started_at"], finished_at=row["finished_at"], status=row["status"],
+                   heartbeat_at=row["heartbeat_at"], participants=names)
+        if row["only_pairs_of"] != repeat_name(rid) or got != a["record"]:
+            bad.append(f"attempt league #{a['league']} changed: {got}, recorded {a['record']}")
+        if json.loads(row["pinned_pairs"] or "{}") != want:
+            bad.append(f"attempt league #{a['league']} holds other pins")
+    return bad
+
+
+def attempts(conn, rid: str) -> list[dict]:
+    """The repeat's recorded attempts, then the current one (its league once created, else None)."""
+    current = dict(league=league_id(conn, rid), runner=dict(commit=RUNNER["commit"], commit_full=RUNNER["commit_full"],
+                                                             binary_sha256=RUNNER["binary_sha256"]))
+    return REPEATS[rid].get("attempts", []) + [current]
 
 
 def repeat_matches(conn, m, finished=True):
@@ -744,7 +814,7 @@ def results(args) -> None:
     conn = ro()
     out = {}
     for rid, m in load().items():
-        lid = league_id(conn, m["name"])
+        lid = league_id(conn, rid)
         played = repeat_matches(conn, m)
         playable = [p for p in m["pairs"] if p["status"] == "finished" and not p["blocked_today"]]
         done = (MAIN / "workspace/repeats" / rid / "done").exists()
@@ -773,7 +843,7 @@ def main() -> None:
         p.set_defaults(fn=fn)
     p = sub.add_parser("league-id")
     p.add_argument("id", choices=list(REPEATS))
-    p.set_defaults(fn=lambda a: print(league_id(ro(), load()[a.id]["name"]) or ""))
+    p.set_defaults(fn=lambda a: print(league_id(ro(), a.id) or ""))
     p = sub.add_parser("pending")
     p.add_argument("id", choices=list(REPEATS))
     p.add_argument("opponents", nargs="*")

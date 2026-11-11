@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # A repeat's league (tools/v3/repeats), as tools/v3/late-knowline/run_league.sh: starts it from its config, or resumes it
-# once v3.db has it (league --resume ID, which also plays pairs added by league-add). Started by run.sh as the user unit
-# repeat-ID-league with the checked runner build and run.sh's database; log repeat-ID.log in its working directory.
+# once v3.db has it (league --resume ID, which also plays pairs added by league-add). repeats.py league-id never names a
+# recorded attempt's league (REAX 1.3's #24), so after an attempt the config starts a new league. Started by run.sh as
+# the user unit repeat-ID-league with the checked runner build and run.sh's database; log repeat-ID.log in its working
+# directory.
 set -euo pipefail
 RID=$1 BIN=$2
 export JEVGAMMON_DB=$3

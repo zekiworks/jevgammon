@@ -3,7 +3,9 @@
 # checkout's state or the runner tree. Each case gets its own copy of these scripts and the manifest (repo layout), a
 # clone of the runner tree at the recorded commit, a copy of the recorded binary, and a scratch database (the runner's
 # own schema, created by the copied binary, plus the originals' and programs' players rows from the manifest and a
-# late_entry_stage trigger naming the originals only, so every repeat starts with "trigger missing").
+# late_entry_stage trigger naming the originals only, so every repeat starts with "trigger missing"; and REAX 1.3's
+# recorded attempt, league #24, as v3.db holds it).
+#   Recorded attempt: league-id skips league #24 (the league unit then starts a new league); a changed #24 refuses.
 #   Refusals (a held repeat: REAX 1.3 marked held in the case's manifest copy, as before its release; bad pins, other
 #   settings, another binary, a changed or missing build input, a changed src, a descendant commit, Drex Max 1.1's and
 #   GLiDE v1.2's pins and budget, a repeat name not yet held in main's site): run.sh ID --prepare-only exits non-zero,
@@ -49,8 +51,27 @@ WHEN EXISTS (SELECT 1 FROM players p WHERE p.id IN (NEW.player1, NEW.player2)
 BEGIN
   UPDATE matches SET stage = 'late-entry' WHERE id = NEW.id;
 END""")
+# REAX 1.3's first attempt as v3.db holds it (repeats.py REAX_ATTEMPT_1): league #24 playing only the repeat name's
+# pairs, with its pins, the repeat name and the programs as participants, no match.
+sys.path.insert(0, str(leagues.parent))
+import repeats
+a = repeats.REAX_ATTEMPT_1
+cfg = json.loads((leagues / "reax-1.3-r1.json").read_text())
+entrant = cfg["players"][0]
+conn.execute("INSERT INTO players (name, spec, settings, created_at) VALUES (?, ?, ?, ?)",
+             (entrant["name"], entrant["spec"], json.dumps(entrant), a["record"]["started_at"]))
+conn.execute("""INSERT INTO leagues (id, started_at, finished_at, seed, rounds, status, heartbeat_at, only_pairs_of,
+                                     hidden, pinned_pairs, prompt_version, order_seed)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)""",
+             (a["league"], a["record"]["started_at"], a["record"]["finished_at"], cfg["seed"], cfg["rounds"],
+              a["record"]["status"], a["record"]["heartbeat_at"], entrant["name"], json.dumps(cfg["pinned_pairs"]),
+              cfg["prompt_version"], cfg["order_seed"]))
+for name in a["record"]["participants"]:
+    conn.execute("""INSERT INTO league_players (league_id, player_id, joined_at)
+                    SELECT ?, id, ? FROM players WHERE name = ?""", (a["league"], a["record"]["started_at"], name))
 conn.commit()
-print(f"scratch database: runner schema, {len(rows)} players rows, late_entry_stage naming {listed}")
+print(f"scratch database: runner schema, {len(rows)} players rows, late_entry_stage naming {listed}, "
+      f"attempt league #{a['league']} as recorded")
 EOF
 
 fails=0
@@ -161,6 +182,20 @@ out=$(JEVGAMMON_DB=$D/v3.db python3 "$HERE/repeats.py" check mammoth-1-r1 2>&1);
 echo "     check (recorded runner $RTREE, $RBIN): exit $rc: $out"
 if (( rc == 3 )) && [[ $(sha256sum < "$D/v3.db") == "$before" ]]; then pass "the recorded runner binds; only the trigger is missing"
 else failc "check exit $rc or the database changed"; fi
+
+# REAX 1.3's recorded attempt (league #24 on 4ca4f08, Zeki #4886): league-id never names it, so the league unit starts
+# a new league; a changed attempt league (here: a heartbeat, as a resume would write) refuses like any other failure.
+C=attempt-skipped D=$S/attempt-skipped
+mkdir -p "$D" && cp "$S/tpl/v3.db" "$D/v3.db"
+lid=$(JEVGAMMON_DB=$D/v3.db python3 "$HERE/repeats.py" league-id reax-1.3-r1)
+n=$(sqlite3 "$D/v3.db" "SELECT count(*) FROM leagues WHERE id = 24 AND only_pairs_of = 'REAX 1.3 [repeat 1]'")
+[[ -z $lid && $n == 1 ]] && pass "league #24 exists for the repeat name; league-id names no league (a new one is created)" ||
+  failc "league-id printed '$lid' (league #24 rows: $n)"
+setup attempt-resumed
+sqlite3 "$D/home/v3.db" "UPDATE leagues SET heartbeat_at = '2026-11-11T17:00:00.000Z' WHERE id = 24"
+refuse reax-1.3-r1
+grep -q "attempt league #24 changed" "$D/check.out" && pass "the refusal names the changed attempt league" ||
+  failc "check did not name the changed attempt league: $(cat "$D/check.out")"
 
 # A repeat whose held name is not yet in the main checkout's committed held_setups.json (the site branch adding it not
 # merged) must refuse on that alone; once it is held, it takes the trigger-missing case below.

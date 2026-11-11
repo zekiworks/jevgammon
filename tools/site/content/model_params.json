@@ -583,6 +583,25 @@
    "card_source": "https://huggingface.co/PelaAI/KnowLine-31B-Gen1.5",
    "card_quote": "Card table: 'Base model | google/gemma-4-31B-it (Apache-2.0): dense, about 31B parameters'; 'Weights | byte-identical to KnowLine-31B-Gen1, a LoRA fine-tune of gemma-4-31B-it (rank 32, alpha 64, language model only, one epoch, merged into bf16 weights)'."
   },
+  "KnowLine 4B Gen5.5": {
+   "total_b": 4.66,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/PelaAI/KnowLine-4B-Gen5.5/tree/779944d2cc8ffa19cef386aee83c83bcb967ade2",
+   "quote": "PelaAI/KnowLine-4B-Gen5.5 @ 779944d2cc8ffa19cef386aee83c83bcb967ade2, 3 safetensors files (738 tensors, 690 BF16 + 48 F32): 4,659,865,088 parameters (the files' safetensors headers) = language model 4,205,751,296 + vision encoder 333,514,240 (model-00001/00002-of-00002.safetensors) + MTP layer 120,599,552 (model-extra-from-base.safetensors, copied from Qwen/Qwen3.5-4B); index total_size 9,319,737,856 bytes. Without the MTP layer 4,539,265,536, the same figure as the Qwen3.5-4B backbone of Decider Flash v1.2. Qwen3_5ForConditionalGeneration, dense.",
+   "checked": [
+    "https://huggingface.co/api/models/PelaAI/KnowLine-4B-Gen5.5/revision/779944d2cc8ffa19cef386aee83c83bcb967ade2",
+    "https://huggingface.co/PelaAI/KnowLine-4B-Gen5.5/raw/779944d2cc8ffa19cef386aee83c83bcb967ade2/README.md"
+   ],
+   "read": "2026-11-11",
+   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors headers on spark2; weights byte-identical to KnowLine-4B-Gen5 (card). Stored in BF16; the card's serve_knowline.sh, which plays our late entry, quantizes to FP8 at load (SGLang --quantization fp8): the count is of the released checkpoint, not of the served FP8 weights.",
+   "terms": "4.66B incl. its vision encoder and MTP layer; card: 4B",
+   "card_total_b": 4,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/PelaAI/KnowLine-4B-Gen5.5",
+   "card_quote": "Card table: 'Base model | Qwen/Qwen3.5-4B (Apache-2.0)'; results table: 'KnowLine-4B-Gen5.5 | 4B'; 'Serving | serve_knowline.sh: SGLang with FP8 at load, as for Gen5'."
+  },
   "Kimi K3.1 Pro": {
    "total_b": 2800,
    "active_b": 104,

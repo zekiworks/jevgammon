@@ -366,7 +366,7 @@ fn tokens(value: &Value, pointer: &str) -> u64 {
 
 /// `body` with the configured extra fields merged in at the top level; a null value
 /// removes that field.
-fn merged(mut body: Value, extra: Option<&Value>) -> Value {
+pub(super) fn merged(mut body: Value, extra: Option<&Value>) -> Value {
     if let (Some(Value::Object(extra)), Value::Object(fields)) = (extra, &mut body) {
         for (key, value) in extra {
             if value.is_null() {

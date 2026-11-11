@@ -1,0 +1,6 @@
+owner: jevgammon (agent; Can's backgammon project ~/code/jevgammon)
+created: 2026-11-11
+what: scripts of Google's Gemini Decision 1 late entry into the original League 1 table (hosted: OpenRouter's System One route, model google/gemini-decision-1, provider pinned to Google AI Studio, fallbacks off): player.json (v3.db settings), gemini.py, start.sh (programs + paid API opponents), locals.sh (local opponents, bariton GPU 2), run_league.sh BIN; branch 'late-gemini-decision' (worktree ~/code/jevgammon-gemini-decision), from tools/v3/late-tiny8, with the runner's decision clients taking a player config's `request` fields (src/players/decision.rs)
+reason: Ümit wants it asap (Can #4966; Main, 11 Nov); status in mailbox/Late entry Gemini Decision 1 - status.md
+delete when: never on its own: it documents how the late-entry matches in v3.db were played (as tools/v3/late-tiny8)
+written: 2026-11-11 (Can #4966)

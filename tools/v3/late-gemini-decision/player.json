@@ -1,0 +1,20 @@
+{
+  "name": "Gemini Decision 1",
+  "spec": "openrouter-decisions/google/gemini-decision-1",
+  "provider": "openrouter (google ai studio)",
+  "price": {
+    "input_per_mtok": 0.1,
+    "output_per_mtok": 0.0
+  },
+  "request": {
+    "provider": {
+      "only": [
+        "google-ai-studio"
+      ],
+      "allow_fallbacks": false
+    }
+  },
+  "note": "Google's Gemini Decision 1 (gemini-decision-1, launched 11 Nov 2026) through OpenRouter's System One route (/api/v1/systemone, model google/gemini-decision-1; replies name google/gemini-decision-1-20261111), pinned to its one provider, Google AI Studio, with fallbacks off (provider.only [google-ai-studio], allow_fallbacks false). List price $0.10 per million input tokens, no output tokens (openrouter.ai/google/gemini-decision-1 and aistudio.google.com/docs/pricing, 11 Nov 2026); latency includes OpenRouter's own time. One choice question per request with up to 255 options (the API's limit; longer lists split by the league's rule); context 262,144 tokens, refused with 400 above it, never cut: League 1's largest stored request (229 options, 57,539 bytes) was 26,133 input tokens at the smoke test. The API sorts option keys alphabetically (UTF-8 bytes) before evaluation, so the model reads the options in that order, not the seeded one (aistudio.google.com/docs/decisions-api#choice). OpenRouter answers some 429s (Google's per-tier token limit): retried as on every route.",
+  "parallel": 1,
+  "max_matches": 1
+}

@@ -12,6 +12,8 @@ positions/build-log.json and the play-order re-run from replay.db (both through 
 import json
 import re
 
+import own_cost
+
 from common import (CLOSE_B_SCOPE_NOTE, CONTENT, NACK_SCOPE_NOTE, EARLIER, EARLIER_NOTE, NA, NOT_MEASURED, PENDING, PROVISIONAL, PUBLISHED,
                     SPEC, TOO_FEW, esc,
                     fmt, status_badge)
@@ -830,16 +832,24 @@ def _nack() -> str:
 
 
 def _cost() -> str:
-    return _section("cost", "Cost", """
+    return _section("cost", "Cost", f"""
 <p>Cost per 1,000 decisions carries one of three labels. They are never mixed in one figure or ranking.</p>
 <dl class="facts">
-  <dt>API price estimate</dt><dd>The provider's list price, on a stated date, × the tokens its API reported. The bill
-    itself was not checked.</dd>
+  <dt>API price estimate</dt><dd>The provider's list price, on a stated date, × the tokens its API reported (where the
+    API records no cost per answer, × our recorded token counts). The bill itself was not checked.</dd>
   <dt>API-equivalent (subscription)</dt><dd>A setup played through a subscription, which is not billed per token,
     priced at the API list price × the tokens reported. Not money paid.</dd>
-  <dt>Own hardware</dt><dd>A setup run on our own GPUs. It has no per-request price; no dollar figure is shown.</dd>
-  <dt>List-price estimate; runs on our GPUs</dt><dd>A model that runs on our GPUs but has a maker's list price,
-    priced at that list price × the tokens reported. Not money paid.</dd>
+  <dt>GPU time, at most</dt><dd>A setup run on our own machines (NVIDIA RTX PRO 6000 Blackwell (96 GB) at
+    ${own_cost.MACHINES["rtx_pro_6000"]["usd_per_gpu_hour"]} per GPU-hour; NVIDIA DGX Spark (GB10) at its purchase
+    price over 3 years plus electricity at the chip's measured draw): the wall clock from its first to its last
+    answer, leaving out every gap over {own_cost.C["gap_minutes"]} minutes between consecutive answers, × the
+    machine's hourly rate × the GPUs its server used, ÷ its decisions. Its own simultaneous matches count once. Other
+    setups' servers on the same machine at the same time are not separated, so each setup is charged the whole
+    device: an upper bound. A setup that also answered through a hosted API adds those answers' recorded cost. The
+    cost cell shows the estimate first, then a small line naming it and the machine it used most ('estimate · DGX
+    Spark', 'estimate · RTX PRO 6000 Blackwell'; '+ API' where some answers came from a hosted API); how it was counted
+    is in its tooltip (hover, keyboard focus or tap) and its details box. Cost sorting and the cost charts use the
+    estimate.</dd>
 </dl>
 <p>Every view shows how many of its decisions have a cost (cost coverage).</p>""")
 

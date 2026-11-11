@@ -1,0 +1,75 @@
+{
+ "_about": "Cost of the setups that ran on our own machines (Ümit #4399 JOB 7; rates logic #4416, shared by the three sites; machine names logic #4420). Per setup and dataset: its answers from our machines in time order; every step between two consecutive answers of 10 minutes or less (gap_minutes) counts as wall-clock time on the machine the later answer came from (spans below, from the players.device timeline of v3.db; outside every span: 1 RTX PRO 6000), times the machine's hourly rate and the number of GPUs the setup's server used; steps over 10 minutes are left out and listed. Several matches of one setup at the same time count once (the union of its own answer times). Other setups' servers on the same machine at the same time are not separated (the logs record no per-setup GPU share), so each setup is charged the whole device: an upper bound, 'GPU time, at most'. Answers from a hosted API (mixed-route setups) keep their recorded cost (turns.cost_usd). token_priced: hosted setups whose turns carry no cost, priced at the maker's list price times our recorded token counts. A machine input left null: that machine's hours are shown, no dollar figure.",
+ "label": "GPU time, at most",
+ "gap_minutes": 10,
+ "machines": {
+  "rtx_pro_6000": {
+   "name": "NVIDIA RTX PRO 6000 Blackwell (96 GB)",
+   "short": "RTX PRO 6000 Blackwell",
+   "host": "bariton",
+   "usd_per_gpu_hour": 2.49,
+   "source": "Ümit #4399: $2.49 per GPU-hour"
+  },
+  "dgx_spark": {
+   "name": "NVIDIA DGX Spark (GB10)",
+   "short": "DGX Spark",
+   "host": "spark-194d / spark-002e",
+   "purchase_chf": 4000,
+   "years": 3,
+   "hours_per_year": 8760,
+   "kwh_chf": 0.2838,
+   "kwh_source": "ewz.natur Hochtarif 26.25 Rp/kWh + 8.1% VAT, https://www.ewz.ch/dam/ewz/meinewz/Dokumentencenter/2026/Uebersicht_Tarife_ewz-2026.pdf",
+   "watts": 79.1,
+   "watts_source": "spark2 nvidia-smi power.draw mean while serving KnowLine 31B, 18:39-18:42 UTC (logic #4416; GB10 chip only)",
+   "chf_usd": 1.2185,
+   "chf_usd_date": "2026-11-10",
+   "chf_usd_source": "ECB reference rate 2026-11-10",
+   "formula_as_shared": "DGX Spark: CHF 4,000 ÷ (3 years × 8,760 h) + CHF 0.2838/kWh × 0.0791 kW = CHF 0.175/h ≈ $0.213/h (CHF 1 = USD 1.2185, ECB 2026-11-10; logic #4416)"
+  }
+ },
+ "setups": {
+  "Decider v1.1 27B": [{"from": "2026-10-16T11:04Z", "to": "2026-10-22T22:41Z", "machine": "dgx_spark"}],
+  "Clef": [{"from": "2026-10-16T11:04Z", "to": "2026-10-23T21:20Z", "machine": "dgx_spark"}],
+  "Cygnet (Gemma 4 12B)": [{"from": "2026-10-16T11:04Z", "to": "2026-10-23T21:12Z", "machine": "dgx_spark"}],
+  "Open-Jev 27B v1.1": [],
+  "Decider Flash v1.2": [],
+  "Decider v1.2 27B": [],
+  "Winnow-12B": [],
+  "Fastino GLiDE v1.2 (local)": [],
+  "Gemma 4 31B (on)": [
+   {"from": "2026-10-16T11:11Z", "to": "2026-10-19T18:36Z", "machine": "rtx_pro_6000", "gpus": 3},
+   {"from": "2026-10-19T18:36Z", "to": "2026-10-19T22:26Z", "machine": "dgx_spark"},
+   {"from": "2026-10-20T21:10Z", "to": "2026-10-21T01:25Z", "machine": "dgx_spark"},
+   {"from": "2026-10-21T05:00Z", "to": "2026-10-22T15:37Z", "machine": "dgx_spark"},
+   {"from": "2026-10-22T15:37Z", "to": "2026-10-23T21:31Z", "machine": "rtx_pro_6000", "gpus": 2}],
+  "Gemma 4 31B (off)": [
+   {"from": "2026-10-16T11:11Z", "to": "2026-10-19T18:36Z", "machine": "rtx_pro_6000", "gpus": 3},
+   {"from": "2026-10-19T18:36Z", "to": "2026-10-19T22:26Z", "machine": "dgx_spark"},
+   {"from": "2026-10-20T21:10Z", "to": "2026-10-21T01:25Z", "machine": "dgx_spark"},
+   {"from": "2026-10-21T05:00Z", "to": "2026-10-22T15:37Z", "machine": "dgx_spark"},
+   {"from": "2026-10-22T15:37Z", "to": "2026-10-23T21:31Z", "machine": "rtx_pro_6000", "gpus": 2}],
+  "LFM2.5-24B-A2B (on)": [
+   {"from": "2026-10-20T21:10Z", "to": "2026-10-21T01:25Z", "machine": "dgx_spark"},
+   {"from": "2026-10-21T05:00Z", "to": "2026-10-22T15:37Z", "machine": "dgx_spark"}],
+  "LFM2.5-24B-A2B (off)": [
+   {"from": "2026-10-20T21:10Z", "to": "2026-10-21T01:25Z", "machine": "dgx_spark"},
+   {"from": "2026-10-21T05:00Z", "to": "2026-10-22T15:37Z", "machine": "dgx_spark"}],
+  "Qwen3.8-27B (on)": [
+   {"from": "2026-10-20T21:10Z", "to": "2026-10-21T01:25Z", "machine": "dgx_spark"},
+   {"from": "2026-10-21T05:00Z", "to": "2026-10-22T15:37Z", "machine": "dgx_spark"}],
+  "Qwen3.8-27B (off)": [
+   {"from": "2026-10-20T21:10Z", "to": "2026-10-21T01:25Z", "machine": "dgx_spark"},
+   {"from": "2026-10-21T05:00Z", "to": "2026-10-22T15:37Z", "machine": "dgx_spark"}],
+  "DeepSeek V4.1 Flash (on)": [{"from": "2026-10-20T21:56Z", "to": "2026-10-22T15:37Z", "machine": "rtx_pro_6000", "gpus": 4}],
+  "DeepSeek V4.1 Flash (off)": [{"from": "2026-10-20T21:56Z", "to": "2026-10-22T15:37Z", "machine": "rtx_pro_6000", "gpus": 4}],
+  "Base Labs Elephant-1": [],
+  "Base Labs Mammoth-1": [],
+  "Drex Max v1": [],
+  "Drex 2.0 (local)": [],
+  "REAX 1.3": []
+ },
+ "token_priced": {
+  "Fastino GLiDE": {"input_per_mtok": 0.04, "output_per_mtok": 0, "source": "https://docs.fastino.ai/pricing", "read": "2026-11-10",
+                    "quote": "Inference: GLiDE | $0.04 per 1M input tokens | $0 output"}
+ }
+}

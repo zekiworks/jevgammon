@@ -15,6 +15,15 @@ use crate::http::{self, RetryTime};
 const QUESTION: &str = "play";
 /// Longest wait for a service to answer its warm-up request.
 const WARM_UP_LIMIT: Duration = Duration::from_secs(900);
+/// Models whose probability maps must pass `map_fault` (Zeki #4977, #4985): Gemini Decision 1's late entry only, so
+/// no other setup's stored rows change. A map that fails keeps its raw response and the returned choice is played,
+/// but the decision stores no probabilities (probability_source NULL, as for an invalid answer).
+const MAP_CHECKED_MODELS: &[&str] = &["google/gemini-decision-1"];
+/// Named in every map-check error, so answers before the switch (no check) stay distinguishable.
+const MAP_CHECK: &str = "map-check v2";
+/// Largest |sum - 1| a checked map may have. No frozen sum tolerance existed (the runner never checked a sum); 1e-6
+/// was chosen 11 Nov for Gemini Decision 1 only (Main), covering a provider's float32 rounding.
+const SUM_TOLERANCE: f64 = 1e-6;
 
 /// A decision service and how to call it.
 pub struct Service {
@@ -486,13 +495,25 @@ impl DecisionClient {
                 .collect();
             decision.probability_source =
                 (!decision.probabilities.is_empty()).then_some("decision");
-            // The returned choice is played either way; a map that is not exactly the shown ids (one probability
-            // each, none unknown) is recorded on the exchange.
-            if let Some(gap) = coverage_gap(
-                &probabilities,
-                shown.iter().map(|&i| req.notations[i].as_str()),
-            ) {
-                error = Some(gap);
+            if self.map_checked() {
+                let fault = map_fault(
+                    &answer.map(raw_map).unwrap_or_default(),
+                    shown.iter().map(|&i| req.notations[i].as_str()),
+                );
+                if let Some(fault) = fault {
+                    error = Some(fault);
+                }
+                // One failed map in any group of a split decision leaves the whole decision without probabilities.
+                let failed = error.is_some()
+                    || decision.exchanges.iter().any(|e| {
+                        e.error
+                            .as_deref()
+                            .is_some_and(|e| e.starts_with("probability map rejected"))
+                    });
+                if failed {
+                    decision.probabilities.clear();
+                    decision.probability_source = None;
+                }
             }
         }
         decision.exchanges.push(Exchange {
@@ -503,30 +524,83 @@ impl DecisionClient {
         });
         Ok(choice)
     }
+
+    fn map_checked(&self) -> bool {
+        self.service.provider == "openrouter-decisions"
+            && self
+                .model
+                .as_deref()
+                .is_some_and(|m| MAP_CHECKED_MODELS.contains(&m))
+    }
 }
 
-/// How a returned probability map differs from exactly one probability per shown id: the shown ids it lacks, the
-/// ids it names that were not shown, and the shown ids it names more than once; `None` when it matches.
-fn coverage_gap<'a>(
-    probabilities: &[(String, f64)],
+/// Every probability entry of an answer as sent, in either format: `None` for a value that is not a number. Nothing
+/// is dropped or normalised.
+fn raw_map(answer: &Value) -> Vec<(String, Option<f64>)> {
+    match answer.get("probabilities") {
+        Some(Value::Array(list)) => list
+            .iter()
+            .map(|p| {
+                let id = p
+                    .get("value")
+                    .and_then(Value::as_str)
+                    .unwrap_or("")
+                    .to_owned();
+                (id, p.get("probability").and_then(Value::as_f64))
+            })
+            .collect(),
+        Some(Value::Object(map)) => map.iter().map(|(id, p)| (id.clone(), p.as_f64())).collect(),
+        _ => Vec::new(),
+    }
+}
+
+/// Why a probability map is not usable, or `None` when it is: exactly one entry per shown id (none missing, unknown
+/// or repeated), every value a finite number in [0, 1], and the values summing to 1 within `SUM_TOLERANCE`.
+fn map_fault<'a>(
+    map: &[(String, Option<f64>)],
     shown: impl Iterator<Item = &'a str>,
 ) -> Option<String> {
     let shown: Vec<&str> = shown.collect();
-    let count = |id: &str| probabilities.iter().filter(|(p, _)| p == id).count();
+    let count = |id: &str| map.iter().filter(|(p, _)| p == id).count();
+    let ids = |pick: &dyn Fn(&(String, Option<f64>)) -> bool| -> Vec<&str> {
+        map.iter()
+            .filter(|e| pick(e))
+            .map(|(p, _)| p.as_str())
+            .collect()
+    };
+    let mut causes = Vec::new();
     let missing: Vec<&str> = shown.iter().copied().filter(|&id| count(id) == 0).collect();
     let repeated: Vec<&str> = shown.iter().copied().filter(|&id| count(id) > 1).collect();
-    let unknown: Vec<&str> = probabilities
-        .iter()
-        .map(|(p, _)| p.as_str())
-        .filter(|p| !shown.contains(p))
-        .collect();
-    if missing.is_empty() && repeated.is_empty() && unknown.is_empty() {
+    let unknown = ids(&|(p, _)| !shown.contains(&p.as_str()));
+    let non_numeric = ids(&|(_, v)| v.is_none());
+    let non_finite = ids(&|(_, v)| v.is_some_and(|v| !v.is_finite()));
+    let below = ids(&|(_, v)| v.is_some_and(|v| v.is_finite() && v < 0.0));
+    let above = ids(&|(_, v)| v.is_some_and(|v| v.is_finite() && v > 1.0));
+    for (cause, list) in [
+        ("missing", &missing),
+        ("unknown", &unknown),
+        ("repeated", &repeated),
+        ("not a number", &non_numeric),
+        ("not finite", &non_finite),
+        ("below 0", &below),
+        ("above 1", &above),
+    ] {
+        if !list.is_empty() {
+            causes.push(format!("{cause} {list:?}"));
+        }
+    }
+    let sum: f64 = map.iter().filter_map(|(_, v)| *v).sum();
+    if map.iter().all(|(_, v)| v.is_some_and(f64::is_finite)) && (sum - 1.0).abs() > SUM_TOLERANCE {
+        causes.push(format!("sum {sum} outside 1 +/- {SUM_TOLERANCE:e}"));
+    }
+    if causes.is_empty() {
         return None;
     }
     Some(format!(
-        "probabilities do not cover exactly the {} shown options: missing {missing:?}, unknown {unknown:?}, \
-         repeated {repeated:?} (the returned choice was played)",
-        shown.len()
+        "probability map rejected ({MAP_CHECK}) over {} shown options: {}; the returned choice was played, no \
+         probabilities stored (raw map in the response)",
+        shown.len(),
+        causes.join("; ")
     ))
 }
 
@@ -547,9 +621,11 @@ mod tests {
     use crate::players::prompt::PromptVersion;
 
     /// Answers one System One request as OpenRouter does (the third option at 0.7, with
-    /// `id`, `provider` and `usage.cost`) and returns the request body. With `gap`, the
-    /// probability map lacks the last shown option and names an id that was not shown.
-    fn openrouter_stub(gap: bool) -> (String, std::thread::JoinHandle<Value>) {
+    /// `id`, `provider` and `usage.cost`) and returns the request body; `tamper` edits the
+    /// probability map before it is sent.
+    fn openrouter_stub(
+        tamper: fn(&[String], &mut Map<String, Value>),
+    ) -> (String, std::thread::JoinHandle<Value>) {
         let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
         let url = format!("http://{}", listener.local_addr().unwrap());
         let handle = std::thread::spawn(move || {
@@ -583,10 +659,7 @@ mod tests {
                 .enumerate()
                 .map(|(i, k)| (k.clone(), (if i == 2 { 0.7 } else { rest }).into()))
                 .collect();
-            if gap {
-                probabilities.remove(keys.last().unwrap());
-                probabilities.insert("24/1".into(), 0.0.into());
-            }
+            tamper(&keys, &mut probabilities);
             let answer = json!({
                 "model": "google/gemini-decision-1-20261111", "provider": "Google AI Studio",
                 "id": "gen-dec-stub",
@@ -638,7 +711,7 @@ mod tests {
             version: PromptVersion::BgV2,
             retry: &retry,
         };
-        let (url, stub) = openrouter_stub(false);
+        let (url, stub) = openrouter_stub(|_, _| {});
         let service = service("openrouter-decisions").unwrap();
         let pin = json!({"provider": {"only": ["google-ai-studio"], "allow_fallbacks": false}});
         let client = DecisionClient {
@@ -685,41 +758,148 @@ mod tests {
         );
         assert!(body.get("provider").is_none());
 
-        // A probability map that is not exactly the shown ids: the returned choice is still
-        // played, the probabilities it has are kept, and the exchange records the gap.
-        let (url, stub) = openrouter_stub(true);
-        let client = DecisionClient {
+        // Gemini's maps must be exactly the shown ids, finite values in [0, 1], summing to 1
+        // within 1e-6. A failed map: the returned choice is still played, the raw response
+        // is kept, the exchange names the cause and the decision stores no probabilities.
+        type Tamper = fn(&[String], &mut Map<String, Value>);
+        let cases: [(&str, Tamper, &str); 7] = [
+            ("valid control", |_, _| {}, ""),
+            (
+                "missing",
+                |k, p| {
+                    p.remove(k.last().unwrap());
+                },
+                "missing [",
+            ),
+            (
+                "extra",
+                |_, p| {
+                    p.insert("24/1".into(), 0.0.into());
+                },
+                "unknown [\"24/1\"]",
+            ),
+            (
+                "not a number",
+                |k, p| {
+                    p.insert(k[0].clone(), "0.1".into());
+                },
+                "not a number [",
+            ),
+            (
+                "below 0",
+                |k, p| {
+                    p.insert(k[0].clone(), (-0.01).into());
+                },
+                "below 0 [",
+            ),
+            (
+                "above 1",
+                |k, p| {
+                    p.insert(k[0].clone(), 1.5.into());
+                },
+                "above 1 [",
+            ),
+            (
+                "sum",
+                |_, p| {
+                    p.values_mut()
+                        .for_each(|v| *v = (v.as_f64().unwrap() * 0.99).into());
+                },
+                "outside 1 +/- 1e-6",
+            ),
+        ];
+        for (name, tamper, cause) in cases {
+            let (url, stub) = openrouter_stub(tamper);
+            let client = DecisionClient {
+                http: reqwest::Client::new(),
+                service,
+                key: Some("test".into()),
+                model: Some("google/gemini-decision-1".into()),
+                url: format!("{url}{}", service.path),
+                request: None,
+            };
+            let mut decision = Decision::new(0);
+            let choice = client.choose(&req, &order, &mut decision).await.unwrap();
+            stub.join().unwrap();
+            assert_eq!(
+                choice,
+                Some(order[2]),
+                "{name}: the returned choice is played"
+            );
+            assert!(
+                decision.exchanges[0].response.is_some(),
+                "{name}: raw response kept"
+            );
+            assert_eq!(
+                (decision.input_tokens, decision.output_tokens),
+                (2345, 0),
+                "{name}"
+            );
+            match decision.exchanges[0].error.as_deref() {
+                None => {
+                    assert!(cause.is_empty(), "{name}: not rejected");
+                    assert_eq!(decision.probability_source, Some("decision"));
+                    assert_eq!(decision.probabilities.len(), n);
+                }
+                Some(error) => {
+                    assert!(
+                        !cause.is_empty() && error.contains(cause),
+                        "{name}: {error}"
+                    );
+                    assert!(error.contains("map-check v2"), "{error}");
+                    assert_eq!(decision.probability_source, None, "{name}");
+                    assert!(decision.probabilities.is_empty(), "{name}");
+                }
+            }
+        }
+
+        // Other models through the same route are not checked: a bad map is kept as before.
+        let (url, stub) = openrouter_stub(|k, p| {
+            p.remove(k.last().unwrap());
+        });
+        let mercury = DecisionClient {
             url: format!("{url}{}", service.path),
+            model: Some("inception/mercury-decide".into()),
             ..plain
         };
         let mut decision = Decision::new(0);
-        let choice = client.choose(&req, &order, &mut decision).await.unwrap();
+        mercury.choose(&req, &order, &mut decision).await.unwrap();
         stub.join().unwrap();
-        assert_eq!(choice, Some(order[2]));
+        assert!(decision.exchanges[0].error.is_none());
         assert_eq!(decision.probabilities.len(), n - 1);
-        let error = decision.exchanges[0].error.as_deref().unwrap();
-        let last = &notations[*order.last().unwrap()];
-        assert!(error.contains(&format!("missing [{last:?}]")), "{error}");
-        assert!(error.contains("unknown [\"24/1\"]"), "{error}");
+        assert_eq!(decision.probability_source, Some("decision"));
     }
 
     #[test]
-    fn coverage_gap_needs_one_probability_per_shown_id() {
-        let p = |ids: &[&str]| {
-            ids.iter()
-                .map(|id| (id.to_string(), 0.5))
-                .collect::<Vec<_>>()
+    fn map_fault_needs_one_finite_probability_per_shown_id_summing_to_one() {
+        let m = |e: &[(&str, f64)]| -> Vec<(String, Option<f64>)> {
+            e.iter().map(|&(id, v)| (id.to_owned(), Some(v))).collect()
         };
         let shown = || ["a", "b"].into_iter();
-        assert_eq!(coverage_gap(&p(&["b", "a"]), shown()), None);
-        let repeated = coverage_gap(&p(&["a", "a", "b"]), shown()).unwrap();
-        assert!(repeated.contains("repeated [\"a\"]"), "{repeated}");
-        let missing = coverage_gap(&p(&["a"]), shown()).unwrap();
-        assert!(missing.contains("missing [\"b\"]"), "{missing}");
-        assert!(
-            coverage_gap(&p(&[]), shown())
-                .unwrap()
-                .contains("missing [\"a\", \"b\"]")
+        assert_eq!(
+            map_fault(&m(&[("b", 0.25), ("a", 0.75)]), shown()),
+            None,
+            "valid control"
         );
+        assert_eq!(
+            map_fault(&m(&[("a", 0.5 + 4e-7), ("b", 0.5)]), shown()),
+            None,
+            "within 1e-6"
+        );
+        let fault = |e: Vec<(String, Option<f64>)>| map_fault(&e, shown()).unwrap();
+        assert!(fault(m(&[("a", 1.0)])).contains("missing [\"b\"]"));
+        assert!(fault(m(&[("a", 0.5), ("b", 0.5), ("c", 0.0)])).contains("unknown [\"c\"]"));
+        assert!(fault(m(&[("a", 0.25), ("a", 0.25), ("b", 0.5)])).contains("repeated [\"a\"]"));
+        assert!(fault(m(&[("a", f64::NAN), ("b", 0.5)])).contains("not finite [\"a\"]"));
+        assert!(fault(m(&[("a", f64::INFINITY), ("b", 0.0)])).contains("not finite [\"a\"]"));
+        assert!(
+            fault(vec![("a".into(), None), ("b".into(), Some(1.0))])
+                .contains("not a number [\"a\"]")
+        );
+        assert!(fault(m(&[("a", -0.5), ("b", 1.5)])).contains("below 0 [\"a\"]; above 1 [\"b\"]"));
+        assert!(fault(m(&[("a", 0.5), ("b", 0.5 + 2e-6)])).contains("outside 1 +/- 1e-6"));
+        // The list format's repeated ids reach the check as sent.
+        let list = json!({"probabilities": [{"value": "a", "probability": 0.5}, {"value": "a", "probability": 0.5}]});
+        assert!(fault(raw_map(&list)).contains("missing [\"b\"]; repeated"));
     }
 }

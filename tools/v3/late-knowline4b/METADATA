@@ -1,0 +1,6 @@
+owner: jevgammon (agent; Can's backgammon project ~/code/jevgammon)
+created: 2026-11-11
+what: scripts of the KnowLine 4B Gen5.5 late entry into the original League 1 table (player.json, knowline.py, start.sh, run_league.sh, locals.sh; offline stub: tools/v3/late-knowline/stub_server.py), branch 'late-knowline4b' (worktree ~/code/jevgammon-knowline4b); copied from tools/v3/late-knowline (KnowLine 31B Gen1.5, unchanged) with the 4B server's pins
+reason: Ümit #4325; the model runs on PelaAI's serve_knowline.sh on spark2 :19400; status in mailbox/Late entries KnowLine 4B - status.md
+delete when: never on its own: it documents how the late-entry matches in v3.db were played (as tools/v3/late-knowline)
+written: 2026-11-11 (Can #3774)

@@ -1,0 +1,11 @@
+{
+  "name": "KnowLine 4B Gen5.5",
+  "spec": "knowline/m",
+  "provider": "local (knowline_server.py)",
+  "quantization": "fp8",
+  "base_url": "http://192.168.1.131:19400",
+  "note": "PelaAI's KnowLine-4B-Gen5.5 (Hugging Face PelaAI/KnowLine-4B-Gen5.5 @ 779944d2cc8ffa19cef386aee83c83bcb967ade2, Apache-2.0; dense, a fine-tune of Qwen/Qwen3.5-4B: a weight average of two LoRA SFT models merged into bf16 weights, byte-identical to KnowLine-4B-Gen5; readout temperature 1.50 folded into the final norm weight) on our GPU through the repo's own serve_knowline.sh: SGLang 0.5.21 (transformers 5.12.1, torch 2.13.0+cu130) with FP8 at load (--quantization fp8, as the card and serve_knowline.sh serve it), --mem-fraction-static 0.72, --mamba-radix-cache-strategy extra_buffer, --enable-fp32-lm-head, then the repo's knowline_server.py System One front end (served model name m, temperature 1, 16 scoring threads, read twice for text-only requests up to 3,000 tokens, longer requests read once; no question header, no temperatures file; sha256 of knowline_server.py 1b4c7341, knowline_layout.py aa0fb356, knowline_engine.py a95d0d92, serve_knowline.sh 7a15933a, as the repo's SHA256SUMS). Label-token readout: one prefill per question, a softmax over the option labels; probabilities stored as returned. At most 255 options per question: longer play lists are split into equal groups of at most 255, as for every 255-option service. Nothing is truncated: SGLang runs without --allow-auto-truncate, so a prompt over its limit (min(context 262,144, KV pool 1,302,218) - 6 tokens) is refused (front end 422) and the decision fails. No hosted API and no list price: cost not recorded. Late entry to the original League 1 table (Ümit #4325); not eligible for the Hype Cup. One league match at a time (max_matches 1) and one decision in flight (parallel 1), so the server gets at most one request at a time (Zeki #4561).",
+  "device": "NVIDIA GB10 (DGX Spark spark2, spark-d9ee), the whole GPU: serve_knowline.sh <snapshot> 0 19400 (front end 0.0.0.0:19400, SGLang 127.0.0.1:20400, KV pool 1,302,218 tokens)",
+  "parallel": 1,
+  "max_matches": 1
+}

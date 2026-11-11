@@ -10,15 +10,19 @@ checkout's (JEVGAMMON_DB overrides).
   repeats.py manifest                 writes mailbox/repeats/manifest-2026-11-11.json from v3.db (read-only)
   repeats.py configs                  writes tools/v3/repeats/leagues/ID.json from the manifest
   repeats.py plan ID                  opponents to play, in order: NAME|KIND|MiB|START|STOP|BLOCKED (read-only)
-  repeats.py check ID                 fail-closed preflight (read-only): config pins, trigger, held name, runner build
+  repeats.py check ID                 fail-closed preflight (read-only): held, config pins and settings, held name on the
+                                      site, runner binary and build inputs (sha256), trigger; exit 3 = only the trigger
+                                      lacks the name, 1 = anything else
   repeats.py env ID                   shell assignments for run.sh (NAME KIND BIN ENTRANT_MIB START STOP HEALTH ...)
-  repeats.py trigger ID               WRITES v3.db: adds the repeat name to the late_entry_stage trigger
+  repeats.py trigger ID               WRITES v3.db: adds the repeat name to the late_entry_stage trigger (refused unless
+                                      that is check's only failure)
   repeats.py league-id ID             the repeat's league id, or nothing (read-only)
   repeats.py pending ID [OPPONENT...] pairs without a finished valid repeat match (read-only)
   repeats.py billed ID                dollars billed in the repeat's matches (read-only)
   repeats.py results                  writes tools/site/content/repeat_results.json (status per repeat, read-only)
 """
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -71,9 +75,46 @@ BLOCKED_TODAY = {
 WRITTEN_FOR = "Ümit via Zeki, bus #4663, #4666, #4667 (protocol), #4671 (d1-ultra)"
 LOGIC_REAX = dict(container="logic-dm-reax13", url="http://127.0.0.1:19100",
                   image="sha256:9622cace6607ea35516dfae16c1d2c0cc191a7da735be0a7966e06a0dd839938")
-# The runner every repeat uses: the pinned-pairs build (league config pinned_pairs; Zeki #4710).
-RUNNER = dict(binary=str(MAIN / "target/pinned/release/jevgammon"), tree="/home/cbasaran/code/jevgammon-pinned-pairs",
-              commit="4ca4f08")
+# The runner every repeat uses: the pinned-pairs build 4ca4f08 (league config pinned_pairs; Zeki #4710), bound by sha256
+# (Zeki #4737): the binary as built from a clean detached checkout of exactly that commit (its own tree, which the binary
+# also asks for its harness commit at runtime), every compile input outside src (include_str!; no build.rs) and the
+# test data inside src, Cargo.toml and Cargo.lock. check refuses any other binary, commit, changed src or input.
+RUNNER = dict(
+    binary=str(MAIN / "target/pinned/release/jevgammon"),
+    binary_sha256="53816d53b3a020eb9f858ccb44b7e7782d74609f0f8c7312c55f0cd5347a7098",
+    tree="/home/cbasaran/code/jevgammon-runner-4ca4f08", commit="4ca4f08",
+    commit_full="4ca4f08c8aed7bea2c87e43ccda2521e4c08cdbe", src_tree="b41757b8899fb70573ce9c5d11ad0972e10cf179",
+    build=dict(
+        command=("cd /home/cbasaran/code/jevgammon-runner-4ca4f08 && CARGO_TARGET_DIR=/home/cbasaran/code/jevgammon/"
+                 "target/pinned cargo build --release --locked"),
+        toolchain="rustc 1.97.1 (8bab26f4f 2026-07-14), cargo 1.97.1 (c980f4866 2026-06-30)",
+        built="2026-11-11T12:44Z",
+        tree=("git worktree add --detach /home/cbasaran/code/jevgammon-runner-4ca4f08 "
+              "4ca4f08c8aed7bea2c87e43ccda2521e4c08cdbe (clean; only the untracked METADATA.worktree added)")),
+    inputs={
+        "Cargo.toml": "bf64a9f15bd33cd3f5d517dc984140ff38fb9ec93c5d3a50eb0971f658c0ed4b",
+        "Cargo.lock": "d7048551c8907fd02c85f7ac8d8d2ffdc088ae4848bf313fc3c0f6e070d88494",
+        "tools/gnubg_player.py": "085601d706df41ddec7f1732428a2366c157aa58bb8e514b1cf1dd1b0f3f3aab",
+        "tools/v3/engine.py": "511ab4b2490732632f7e810f2e3da616fb5da4cd91d75eb2cf1ac4604e50e046",
+        "tools/v3/rules.py": "18dd032837ff061f64d2af32a5e7e813ad187b64f28a5a6e139f7695202f8480",
+        "tools/v3/order_vectors.json": "9efbb3ada083c02c51bdf74e539d48ee61b2f49e8d2f0fe58e29db8c6d8cb499",
+        "prompts/bg-v2.md": "3c59036a1f416f6187ccec06ec939e4d888a2029441daf30f6ee06a69015c465",
+        "prompts/nack-v2.md": "fa7397be6e9a7d337389a401d61464464bcbbe5725b8a2c70e01e6cb670395a8",
+        "prompts/bg-v3-std-notable.md": "1a145a09713fdd694696cb16d826406711567394697f0938300c285e4cba703f",
+        "prompts/bg-v3-nack.md": "13c744f06613f4051888af99bf9d1692011cb95d6f301c1898f94e13d67fef33",
+        "prompts/instructions.txt": "445735bf10ff30e4cc7f1a90dbeaa0c8858f0cf0b7bfe3f9dd3a0da1f1f0ec2d",
+        "prompts/instructions-notation.txt": "8565178e44a566f703fe1443f028ab2877d3d931b9ddef43547b92f9d1a7acdb",
+        "prompts/question.txt": "ef76def6baccec519ff9515c66b41d4c233b8e2927acf18115ad1e2e494211dc",
+        "prompts/letter-system.txt": "21059b268bae257dab3aa7f608d1545d9d6a610f6f2782fc4baa84e728a6c82e",
+        "prompts/prediction.txt": "cf3b989784a3b815fe1440589e2f212acc4e106ec4fe1e784d256ab58b128725",
+        "prompts/prediction-system.txt": "4d08045b72eeedc28602af09f82475a60bac768819d40a00a50601a661da332f",
+        "src/league/testdata/repeat_originals.json": "1e8611f27444c8e2429cd0998475dba52e5e21bdbd67e22ee51cfd282101a994",
+        "src/players/testdata/league8_request.json": "a285c55eb6e76c959801ec314305d0ee193131a2658da49926c9c73eccbee818",
+    })
+# check's exit status when the only failure is the repeat name missing from the late_entry_stage trigger: the one
+# condition run.sh prepares (backup, trigger) before checking again; every other failure exits 1.
+TRIGGER_MISSING = 3
+NOT_IN_TRIGGER = "trigger missing: late_entry_stage does not name it"
 RUNNER_DIFFERENCE = ("Runner: the pinned-pairs build " + RUNNER["commit"] + " (the pins are its only change for "
                      "these leagues), where the original ran %s; the same prompt version, option-order seed and "
                      "rules.")
@@ -405,7 +446,7 @@ def shell_env(args) -> None:
     for k, v in dict(NAME=m["name"], RUN_ID=m["run_id"], KIND=s["kind"], BIN=r["binary"], ENTRANT_MIB=s["mib"],
                      START=s["start"] or "", STOP=s["stop"] or "", HEALTH=s["health"] or "",
                      HEALTH_ANY=int(bool(s.get("health_any_status"))), SMOKE=s["smoke"] or "",
-                     STATUS=str(MAIN / m["status_file"]), CAP=m["cost_basis"]["cap_usd"]).items():
+                     STATUS=m["status_file"], CAP=m["cost_basis"]["cap_usd"]).items():
         print(f"{k}={shlex.quote(str(v))}")
 
 
@@ -426,54 +467,142 @@ def wanted_pins(m) -> dict:
     return {p["opponent"]: dict(seed=int(p["seed_u64"]), seat_first=p["original_is_player1"]) for p in m["pairs"]}
 
 
-def trigger_names(conn) -> list[str]:
+def trigger_names(conn) -> list[str] | None:
+    """The names the late_entry_stage trigger stages as late entries; None when v3.db has no such trigger."""
     sql = conn.execute("SELECT sql FROM sqlite_master WHERE type = 'trigger' AND name = 'late_entry_stage'").fetchone()
     if not sql:
-        sys.exit("v3.db has no late_entry_stage trigger")
+        return None
     return [n.replace("''", "'") for n in re.findall(r"'((?:[^']|'')*)'", TRIGGER.search(sql[0]).group(1))]
 
 
-def check(args) -> None:
-    """Fail closed: the league config pins every opponent to its original seed and seating (and the league, once it
-    exists, holds the same pins), the name is in the trigger and held in the main checkout's committed site code, the
-    runner tree is clean at the pinned-pairs commit and its binary present; a held repeat never passes."""
-    m = load()[args.id]
+def sha256(path) -> str | None:
+    try:
+        with open(path, "rb") as f:
+            return hashlib.file_digest(f, "sha256").hexdigest()
+    except FileNotFoundError:
+        return None
+
+
+def runner_problems(rn) -> list[str]:
+    """The runner is the reviewed build: its tree at exactly the recorded commit with src and every build input as
+    committed (untracked files included), each input and the binary at their recorded sha256."""
+    bad = []
+    tree = Path(rn["tree"])
+    git = lambda *a: subprocess.run(["git", "-C", str(tree), *a], capture_output=True, text=True)
+    head = git("rev-parse", "HEAD").stdout.strip()
+    if head != rn["commit_full"]:
+        bad.append(f"runner tree {tree} is at {head[:7] or 'no commit'}, not {rn['commit']}")
+    status = git("status", "--porcelain", "--untracked-files=all", "--", "src", *rn["inputs"])
+    if status.returncode:
+        bad.append(f"runner tree {tree}: git status failed ({status.stderr.strip()})")
+    elif status.stdout.strip():
+        bad.append(f"runner tree {tree} differs from {rn['commit']} in "
+                   + ", ".join(line[3:] for line in status.stdout.splitlines()))
+    for rel, want in rn["inputs"].items():
+        got = sha256(tree / rel)
+        if got != want:
+            bad.append(f"build input {rel} " + ("missing" if got is None else f"has sha256 {got[:16]}…")
+                       + f", recorded {want[:16]}…")
+    got = sha256(rn["binary"])
+    if got != rn["binary_sha256"]:
+        bad.append(f"runner {rn['binary']} " + ("missing" if got is None else f"has sha256 {got[:16]}…")
+                   + f", not the {rn['commit']} build {rn['binary_sha256'][:16]}…")
+    elif not os.access(rn["binary"], os.X_OK):
+        bad.append(f"runner {rn['binary']} is not executable")
+    return bad
+
+
+def settings_problems(conn, rid: str, m, cfg) -> list[str]:
+    """The league config plays the manifest's repeat settings under the original's rules, the original's stored
+    settings are the manifest's, and the repeat changes only its name, max_matches, note and its listed changes."""
+    bad = []
+    players = cfg.get("players") or [None]
+    if players[0] != m["settings_repeat"]:
+        bad.append("league config entrant settings differ from the manifest's settings_repeat")
+    row = conn.execute("SELECT settings FROM players WHERE name = ?", (m["original"],)).fetchone()
+    if row is None or json.loads(row[0]) != m["settings_original"]:
+        bad.append(f"{m['original']}'s stored settings differ from the manifest's settings_original")
+    orig, rep = m["settings_original"], m["settings_repeat"]
+    allowed = {"name", "max_matches", "note"} | set(REPEATS[rid]["settings_change"])
+    extra = sorted(k for k in set(orig) | set(rep) if orig.get(k) != rep.get(k) and k not in allowed)
+    if extra:
+        bad.append(f"repeat settings change {', '.join(extra)} beyond the listed changes")
+    r = m["rules"]
+    for k, v in dict(prompt_version=r["prompt_version"], order_seed=r["order_seed"], rounds=r["rounds"],
+                     max_turns=r["max_turns"], mirror_concurrent=r["mirror_concurrent"], only_pairs_of=m["name"],
+                     hidden=True).items():
+        if cfg.get(k) != v:
+            bad.append(f"league config {k} is {cfg.get(k)!r}, not {v!r}")
+    if [p.get("name") for p in players[1:] if p] != PROGRAMS:
+        bad.append(f"league config programs are not {', '.join(PROGRAMS)}")
+    for p in players[1:]:
+        row = conn.execute("SELECT settings FROM players WHERE name = ?", ((p or {}).get("name"),)).fetchone()
+        if row is None or json.loads(row[0]) != p:
+            bad.append(f"league config settings of {(p or {}).get('name')} differ from v3.db's")
+    return bad
+
+
+def problems(rid: str) -> list[str]:
+    """Everything check verifies, read-only; NOT_IN_TRIGGER stands for the trigger lacking the name."""
+    m = load()[rid]
     conn = ro()
-    bad = [f"held: {m['hold']}"] if m["status"] == "held" else []
+    bad = []
+    if m["status"] == "held" or REPEATS[rid].get("status") == "held":
+        bad.append(f"held: {m['hold'] or REPEATS[rid].get('hold')}")
+    path = HERE / "leagues" / f"{rid}.json"
+    cfg = json.loads(path.read_text()) if path.exists() else {}
+    if not cfg:
+        bad.append(f"no league config {path}")
     want = wanted_pins(m)
-    if json.loads((HERE / "leagues" / f"{args.id}.json").read_text()).get("pinned_pairs") != want:
+    if cfg.get("pinned_pairs") != want:
         bad.append("league config pins differ from the manifest's original seeds and seats")
     lid = league_id(conn, m["name"])
     if lid is not None:
         stored = conn.execute("SELECT pinned_pairs FROM leagues WHERE id = ?", (lid,)).fetchone()[0]
         if json.loads(stored or "{}") != want:
             bad.append(f"league #{lid} holds other pins")
-    if m["name"] not in trigger_names(conn):
-        bad.append("not in the late_entry_stage trigger")
+    bad += settings_problems(conn, rid, m, cfg)
     held = json.loads(subprocess.run(["git", "-C", str(MAIN), "show", "HEAD:tools/site/content/held_setups.json"],
                                      capture_output=True, text=True).stdout or "{}").get("held", {})
     if m["name"] not in held:
         bad.append("not held in the main checkout's committed tools/site/content/held_setups.json")
-    rn = m["runner"]
-    head = subprocess.run(["git", "-C", rn["tree"], "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
-    dirty = subprocess.run(["git", "-C", rn["tree"], "status", "--porcelain", "--untracked-files=no", "--", "src"],
-                           capture_output=True, text=True).stdout.strip()
-    built = subprocess.run(["git", "-C", rn["tree"], "merge-base", "--is-ancestor", rn["commit"], "HEAD"]).returncode
-    if built or dirty:
-        bad.append(f"runner tree {rn['tree']} at {head[:7]}{' dirty' if dirty else ''} lacks {rn['commit']}")
-    if not os.access(rn["binary"], os.X_OK):
-        bad.append(f"no runner {rn['binary']}")
+    bad += runner_problems(m["runner"])
+    names = trigger_names(conn)
+    if names is None:
+        bad.append("v3.db has no late_entry_stage trigger")
+    elif m["name"] not in names:
+        bad.append(NOT_IN_TRIGGER)
+    return bad
+
+
+def check(args) -> None:
+    """Fail closed (read-only): a held repeat, other pins or settings, the name not held on the site, another runner
+    binary, commit, src or build input exit 1; the trigger lacking the name, when nothing else fails, exits
+    TRIGGER_MISSING (3), the one condition run.sh prepares."""
+    bad = problems(args.id)
+    if bad == [NOT_IN_TRIGGER]:
+        print(f"{args.id}: {NOT_IN_TRIGGER} (everything else passes)", file=sys.stderr)
+        sys.exit(TRIGGER_MISSING)
     if bad:
-        sys.exit(f"{args.id}: " + "; ".join(bad))
-    print(f"{args.id}: {len(want)} pairs pinned in its config, trigger and held name in place, runner "
-          f"{rn['commit']} (tree {head[:7]})")
+        print(f"{args.id}: " + "; ".join(bad), file=sys.stderr)
+        sys.exit(1)
+    m = load()[args.id]
+    rn = m["runner"]
+    print(f"{args.id}: {len(wanted_pins(m))} pairs pinned in its config, settings as the manifest's, trigger and held "
+          f"name in place, runner {rn['commit']} (binary sha256 {rn['binary_sha256'][:16]}…, "
+          f"{len(rn['inputs'])} build inputs as recorded, tree {rn['tree']})")
 
 
 def trigger(args) -> None:
+    bad = problems(args.id)
+    if bad and bad != [NOT_IN_TRIGGER]:
+        sys.exit(f"{args.id}: trigger refused, the check fails beyond the trigger: " + "; ".join(bad))
     name = load()[args.id]["name"]
-    conn = sqlite3.connect(DB, timeout=120)
+    conn = sqlite3.connect(f"file:{DB}?mode=rw", uri=True, timeout=120)
     conn.execute("BEGIN IMMEDIATE")
     names = trigger_names(conn)
+    if names is None:
+        sys.exit("v3.db has no late_entry_stage trigger")
     if name in names:
         conn.rollback()
         print("trigger already names", name)

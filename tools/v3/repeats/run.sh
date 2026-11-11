@@ -4,10 +4,16 @@
 #   systemd-run --user --unit=repeat-ID --working-directory=/home/cbasaran/code/jevgammon \
 #     [-E GPU=<entrant card>] -E OPP_GPU=<card for opponent servers> -E RES=<agent-bus reservation> \
 #     /home/cbasaran/code/jevgammon/tools/v3/repeats/run.sh ID
-# Fail closed before anything plays (repeats.py check): the league config pins every opponent to its original match's
-# seed and seating (pinned_pairs; the league holds the same pins once it exists), the name in the late_entry_stage
-# trigger and held in the main checkout's committed site code, the pinned-pairs runner build. The first run writes
-# once: verified zstd backup of v3.db, `repeats.py trigger ID`. A held repeat (REAX 1.3) never passes the check.
+# run.sh ID --prepare-only: the checks and, when needed, the preparation below; nothing starts or plays.
+# Every check comes first and writes nothing (repeats.py check): not held (REAX 1.3 never passes), the league config pins
+# every opponent to its original match's seed and seating (the league holds the same pins once it exists), the settings
+# as the manifest's, the name held in the main checkout's committed site code, the runner binary and every build input
+# at the sha256 recorded for the 4ca4f08 build (exact commit, clean tree), the name in the late_entry_stage trigger.
+# Only "trigger missing" with everything else passing (check exit 3) leads to the one write: a zstd backup of v3.db
+# (VACUUM INTO, zstd -t), `repeats.py trigger ID` (itself refused on any other failure), then the complete check again.
+# Any other failure exits before anything is written: no backup, no trigger, no state or status file.
+# REPEATS_HOME (default the main checkout: v3.db, workspace/repeats, the status file) and JEVGAMMON_DB (default
+# REPEATS_HOME/v3.db) are for the scratch regression tests (tools/v3/repeats/test_launcher.sh).
 # The entrant: Mammoth-1 and Drex Max v1 are started here on GPU under RES and smoke-tested as in their originals (and
 # stopped at the end); REAX 1.3 must already answer on logic's server (unit logic-dm-reax13, image checked, smoke-tested;
 # never started or stopped here); Liquid d1-ultra is hosted. Then each opponent of the plan in turn (programs, paid API,
@@ -18,18 +24,49 @@
 # Guard every minute, stopping the league (matches resume later from their last turn): billed spend of the repeat >= $5,
 # OpenRouter balance under $40 or unreadable 3 times in a row, the entrant failing 3 health checks in a row.
 set -uo pipefail
-cd /home/cbasaran/code/jevgammon
-RID=${1:?usage: run.sh ID}
+cd "${REPEATS_HOME:-/home/cbasaran/code/jevgammon}" || exit 1
+RID=${1:?usage: run.sh ID [--prepare-only]}
+MODE=${2:-}
+[[ -z $MODE || $MODE == --prepare-only ]] || { echo "usage: run.sh ID [--prepare-only]" >&2; exit 1; }
+export JEVGAMMON_DB=${JEVGAMMON_DB:-$PWD/v3.db}
+DB=$JEVGAMMON_DB
 T=$(dirname "$(readlink -f "$0")")
 R=(python3 "$T/repeats.py")
 env_out=$("${R[@]}" env "$RID") || exit 1
 eval "$env_out"
+STATUS=$PWD/$STATUS
 FLOOR=40
 UNIT=repeat-$RID-league
 W=workspace/repeats
 ST=$W/$RID
-: "${OPP_GPU:?set OPP_GPU}" "${RES:?set RES (agent-bus reservation)}"
-[[ $KIND != ours || -n ${GPU:-} ]] || { echo "set GPU (the entrant's card)" >&2; exit 1; }
+if [[ -z $MODE ]]; then
+  : "${OPP_GPU:?set OPP_GPU}" "${RES:?set RES (agent-bus reservation)}"
+  [[ $KIND != ours || -n ${GPU:-} ]] || { echo "set GPU (the entrant's card)" >&2; exit 1; }
+fi
+
+# Every check before any write; only the missing trigger is prepared, then everything is checked again.
+checked=$("${R[@]}" check "$RID" 2>&1)
+rc=$?
+prepared=
+if (( rc == 3 )); then
+  raw=${DB%.db}-before-$RID.db
+  bak=$DB.bak-$(date -u +%Y%m%dT%H%M%S)-before-$RID.zst
+  fail() { echo "$1" >&2; rm -f "$raw"; exit 1; }
+  rm -f "$raw"
+  sqlite3 "$DB" "VACUUM INTO '$raw'" || fail "VACUUM INTO $raw failed"
+  zstd -q -T0 "$raw" -o "$bak" || { rm -f "$bak"; fail "zstd failed"; }
+  zstd -q -t "$bak" || { rm -f "$bak"; fail "zstd -t: $bak does not verify"; }
+  rm -f "$raw"
+  out=$("${R[@]}" trigger "$RID" 2>&1) || fail "trigger failed: $out"
+  prepared="backup $bak verified; $out"
+  checked=$("${R[@]}" check "$RID" 2>&1)
+  rc=$?
+  (( rc == 0 )) || fail "the check after the preparation fails (exit $rc): $checked"
+elif (( rc != 0 )); then
+  echo "check refused (exit $rc); nothing written: $checked" >&2
+  exit 1
+fi
+
 mkdir -p "$ST" "$(dirname "$STATUS")"
 rm -f "$ST/done"
 [[ -e $W/METADATA ]] || printf '%s\n' "owner: jevgammon (agent; Can's backgammon project ~/code/jevgammon)" \
@@ -38,12 +75,15 @@ rm -f "$ST/done"
   "reason: Ümit via Zeki #4663/#4666/#4667/#4671; scripts tools/v3/repeats, manifest mailbox/repeats/manifest-2026-11-11.json" \
   "delete when: after the repeats are reported (their matches stay in v3.db)" \
   "written: $(date -u +%FT%TZ) (Can #3774)" > $W/METADATA
-set -a; . ~/.keys; set +a
-[[ -n ${CELERIS_API_KEY:-} ]] || { CELERIS_API_KEY="$(cat ~/.config/celeris/key)"; export CELERIS_API_KEY; }
-export PATH=$HOME/.local/bin:$PATH
 [[ -e $STATUS ]] || printf '# Repeat %s - status\n\n%s, run %s. Manifest: mailbox/repeats/manifest-2026-11-11.json.\n\n## Log\n' \
   "$RID" "$NAME" "$RUN_ID" > "$STATUS"
 log() { local line; line="$(date -u +%FT%TZ) $*"; echo "$line" >> "$ST/run.log"; echo "- $line" >> "$STATUS"; }
+[[ -z $prepared ]] || { log "$prepared"; touch "$ST/prepared"; }
+log "check: $checked"
+[[ -z $MODE ]] || exit 0
+set -a; . ~/.keys; set +a
+[[ -n ${CELERIS_API_KEY:-} ]] || { CELERIS_API_KEY="$(cat ~/.config/celeris/key)"; export CELERIS_API_KEY; }
+export PATH=$HOME/.local/bin:$PATH
 balance() {
   curl -fsS -m 20 https://openrouter.ai/api/v1/credits -H "Authorization: Bearer $OPENROUTER_API_KEY" |
     python3 -c 'import json,sys; d=json.load(sys.stdin)["data"]; print(round(d["total_credits"]-d["total_usage"],4))'
@@ -57,24 +97,6 @@ healthy() {
 }
 room() { nvidia-smi -i "$1" --query-gpu=memory.total,memory.used --format=csv,noheader,nounits | awk -F', ' '{print $1-$2}'; }
 gpus() { nvidia-smi --query-gpu=index,memory.used --format=csv,noheader | tr '\n' ' '; }
-
-# Once, fail closed: backup, then the trigger; everything else must already pass the check.
-if ! "${R[@]}" check "$RID" > "$ST/check.log" 2>&1; then
-  [[ -e $ST/prepared ]] && { echo "check failed: $(cat "$ST/check.log")" >&2; exit 1; }
-  raw=$PWD/v3-before-$RID.db
-  bak=$PWD/v3.db.bak-$(date -u +%Y%m%dT%H%M%S)-before-$RID.zst
-  fail() { echo "$1" >&2; rm -f "$raw"; exit 1; }
-  rm -f "$raw"
-  sqlite3 v3.db ".backup '$raw'" || fail "v3.db backup failed"
-  zstd -q -T0 "$raw" -o "$bak" || { rm -f "$bak"; fail "zstd failed"; }
-  zstd -q -t "$bak" || { rm -f "$bak"; fail "zstd -t: $bak does not verify"; }
-  rm -f "$raw"
-  out=$("${R[@]}" trigger "$RID" 2>&1) || fail "trigger failed: $out"
-  log "backup $bak verified; $out"
-  touch "$ST/prepared"
-  "${R[@]}" check "$RID" > "$ST/check.log" 2>&1 || fail "check fails: $(cat "$ST/check.log")"
-fi
-log "check: $(cat "$ST/check.log")"
 
 ID=
 quiesce() {
@@ -93,7 +115,7 @@ quiesce() {
 ensure_league() {
   systemctl --user is-active -q "$UNIT" && return 0
   systemctl --user reset-failed "$UNIT" >/dev/null 2>&1 || true
-  systemd-run --user --quiet --unit="$UNIT" --working-directory="$PWD" "$T/run_league.sh" "$RID" "$BIN"
+  systemd-run --user --quiet --unit="$UNIT" --working-directory="$PWD" "$T/run_league.sh" "$RID" "$BIN" "$DB"
 }
 down=0
 unread=0
@@ -161,12 +183,12 @@ while IFS='|' read -r -u 3 name kind mib start stop blocked; do
       [[ -n $ID ]] || { finish "STOPPED: the league did not appear in v3.db"; exit 1; }
     fi
     quiesce || { finish "STOPPED before adding $name: league #$ID not confirmed stopped"; exit 1; }
-    if ! sqlite3 -readonly v3.db "SELECT 1 FROM league_players lp JOIN players p ON p.id = lp.player_id
+    if ! sqlite3 -readonly "$DB" "SELECT 1 FROM league_players lp JOIN players p ON p.id = lp.player_id
          WHERE lp.league_id = $ID AND lp.left_at IS NULL AND p.name = '${name//\'/\'\'}'" | grep -q 1; then
-      entry=$(sqlite3 -readonly v3.db "SELECT settings FROM players WHERE name = '${name//\'/\'\'}'")
+      entry=$(sqlite3 -readonly "$DB" "SELECT settings FROM players WHERE name = '${name//\'/\'\'}'")
       pin=$(python3 -c 'import json,sys; print(json.dumps(json.load(open(sys.argv[1]))["pinned_pairs"][sys.argv[2]]))' \
         "$T/leagues/$RID.json" "$name")
-      "$BIN" league-add --db v3.db --league "$ID" --entry "$entry" --pin "$pin" >> "repeat-$RID.log" 2>&1 ||
+      "$BIN" league-add --db "$DB" --league "$ID" --entry "$entry" --pin "$pin" >> "repeat-$RID.log" 2>&1 ||
         { log "league-add of $name failed"; missing+=("$name (league-add failed)"); continue; }
       log "$name added to league #$ID"
     fi

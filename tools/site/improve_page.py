@@ -627,12 +627,13 @@ def verdict_text(m) -> str:
     """The Improved? cell (Ümit via Zeki #4841): Yes/No with its change and threshold in points side by side; a No the
     safety condition alone decides says so; before the verdict gate 'pending' with the interim numbers. HTML."""
     rf, thr, rs = m["change"]["risks_found"], m["threshold"], m["change"]["right_safety"]
-    nums = (f' · {fmt(rf, 1, signed=True)} pp · threshold {num(thr)} pp' if None not in (rf, thr) else "")
+    nb = "\u00a0"  # a number keeps its unit when the cell wraps
+    nums = (f' · {fmt(rf, 1, signed=True)}{nb}pp · threshold {num(thr)}{nb}pp' if None not in (rf, thr) else "")
     if not m["verdict"]:
         return "pending" + (f'<span class="small">{nums} (interim)</span>' if nums else "")
     word = f'<strong data-rverdict="{"yes" if m["improved"] else "no"}">{esc(m["status"])}</strong>'
     if not m["improved"] and round(rf, 9) > round(thr, 9):
-        return f'{word} · safety {fmt(rs, 1, signed=True)} pp'
+        return f'{word} · safety{nb}{fmt(rs, 1, signed=True)}{nb}pp'
     return word + nums
 
 

@@ -48,6 +48,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import checks  # noqa: E402
 import improve_page as IP  # noqa: E402
 import improve_validate as V  # noqa: E402
+from common import label  # noqa: E402
 
 WS = {"dir": IP.ROOT / "workspace"}  # set from --workspace
 CANARY_KEY, CANARY_SETUP = "zz_canary_key_7f3a", "Canary Model 9 (x)"
@@ -321,12 +322,14 @@ def main():
 
     # The status table in the pre-registration-only build: states none, running, paused, done; status
     # fields only, no outcome number and no free text from the file on the page or in its data file.
+    # The page shows the shown names (common.label, as build.py's relabelled state); the state files keep the plan's.
     want = {"none": {}, "running-1": {"Qwen3.8 Flash (off)": ("running", "1 / 5")},
             "paused": {"Kimi K3.1 Pro (off)": ("paused (shared-balance priority)", "1 / 5"),
                        "GPT-6.1 Sol (high)": ("not started (waiting for the ChatGPT reset 13 Nov)", "0 / 5"),
                        "Claude Opus 5.5 (on)": ("paused (usage limit)", "0 / 5"),
                        "Qwen3.8-27B (on)": ("paused (waiting for a GPU)", "0 / 5")},
             "complete-yes": {"Qwen3.8 Flash (off)": ("done", "5 / 5")}}
+    want = {k: {label(s): v for s, v in rows_.items()} for k, rows_ in want.items()}
     for name, rows_ in want.items():
         src = write_state(base / "states" / name, S[name])
         out = base / "pages" / f"status-{name}"
@@ -435,14 +438,14 @@ def main():
         ("complete-yes", "a withheld mark on the page",
          lambda t: t.replace("</main>", "<p>[withheld: private address]</p></main>")),
         ("complete-yes", "a host named on the page", lambda t: t.replace("</main>", "<p>bariton</p></main>")),
-        ("complete-yes", "a model row removed", lambda t: re.sub(r'<tr data-setup="Grok 4.7 \(on\)".*?</tr>', "", t,
-                                                                 flags=re.S)),
+        ("complete-yes", "a model row removed", lambda t: re.sub(
+            rf'<tr data-setup="{re.escape(label("Grok 4.7 (on)"))}".*?</tr>', "", t, flags=re.S)),
         ("status-paused", "status row: a wrong status", lambda t: t.replace(
             'data-progress="status">paused (shared-balance priority)<', 'data-progress="status">running<')),
         ("status-paused", "status row: a wrong series count", lambda t: t.replace(
             'data-progress="series">1 / 5<', 'data-progress="series">2 / 5<')),
         ("status-paused", "status row removed", lambda t: re.sub(
-            r'<tr data-progress-setup="Grok 4.7 \(on\)".*?</tr>', "", t, flags=re.S)),
+            rf'<tr data-progress-setup="{re.escape(label("Grok 4.7 (on)"))}".*?</tr>', "", t, flags=re.S)),
     ]
     for state, name, f in page_faults:
         src_page = base / "pages" / state

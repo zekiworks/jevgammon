@@ -591,7 +591,8 @@ def results(args) -> None:
         state = "queued" if lid is None else "played" if done else "running"
         out[rid] = dict(status=state, league=lid, played=len(played), playable=len(playable),
                         first_match=played[0]["id"] if played else None,
-                        started=played[0]["started_at"] if played else None,
+                        started=(conn.execute("SELECT started_at FROM leagues WHERE id = ?", (lid,)).fetchone()[0]
+                                 if lid is not None else None),
                         finished=played[-1]["finished_at"] if played and state == "played" else None)
     RESULTS.write_text(json.dumps(dict(
         _about=("Repeat checks' status (Experiments page), written by tools/v3/repeats/repeats.py results from v3.db "

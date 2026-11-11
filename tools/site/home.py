@@ -16,9 +16,6 @@ from common import name_and_tag, tag_html, tag_text
 
 TABS = [("risk", "Risk"), ("quality", "Quality"), ("confidence", "Confidence"), ("reasoning", "Reasoning"),
         ("cost", "Cost"), ("stability", "Stability")]
-# One short line before the leaderboard, the rest under its '*' (Ümit via Zeki #4649, as Logic & Math #4650).
-INTRO = "We measure whether each risk a model takes is the right one, and what that costs."
-INTRO_MORE = "Models play backgammon, and an engine scores every move they make. Every decision is public."
 LIMIT_PAIRED = "Setups played different positions; league comparisons are not paired."
 ALL = "all"
 LIMIT_HIT = "Hit risk only: being hit. Gammon risk and priming are not in it."
@@ -1219,69 +1216,11 @@ def tab_body(S, key: str) -> str:
             "quality": "time, cost, decisions scored and invalid answers"}.get(key)
     cols_note = (f'<p class="table-note cols-note needs-js">Summary columns first; <strong>All columns</strong> adds '
                  f'{esc(cols)}.</p>' if cols else "")
-    return (f'<p class="version-line">{esc(caption)}</p>{cols_note}' + "".join(out) + marks
+    return ("".join(out) + f'<p class="table-note">{esc(caption)}</p>{cols_note}' + marks
             + f'<p class="table-note">{esc(LIMIT_PAIRED)}</p>')
 
 
 # --- Hero, findings, filters -------------------------------------------------------------------------------
-
-def champions(S) -> str:
-    """The match winners strip (Can, 31 Oct 2026): the winner of each starting group's own table, the first games
-    (content/starting_groups.json, its place, points and recorded tiebreak), each linking to its tab under the hero; a
-    program on top is named as the reference it is, with the group's top model beside it; then the Hype Cup."""
-    import starting_groups as SG
-    items = []
-    for g in SG.load()["groups"]:
-        top = g["rows"][0]
-        val = f'<a href="#group-{g["name"].lower()}">{esc(top["name"])}</a>'
-        tie = next((t for t in g["ties"] if t["points"] == top["pts"] and t["setups"][0] == top["name"]), None)
-        how = ""
-        if tie and tie["kind"] == "head-to-head":
-            m = tie["matches"][0]
-            us, them = (m["score"][0], m["score"][1]) if m["a"] == top["name"] else (m["score"][1], m["score"][0])
-            how = f', 1st on head-to-head ({us}\u2013{them}, match #{m["id"]})'
-        elif tie:
-            how = ", 1st on the mini-table of the tied setups' matches"
-        note = f'{top["pts"]} pts{how}'
-        if SG.is_program(S, top["name"]):
-            model = next(r for r in g["rows"] if not SG.is_program(S, r["name"]))
-            val += (f' <span class="champ-note">(program, reference)</span> <span class="leader-detail">{esc(note)}</span>'
-                    f' · top model: <a href="#group-{g["name"].lower()}">{esc(model["name"])}</a> '
-                    f'<span class="leader-detail">{model["pts"]} pts</span>')
-        else:
-            val += f' <span class="leader-detail">{esc(note)}</span>'
-        items.append(f'<li class="readout"><span class="readout-label">{esc(g["name"])}:</span> '
-                     f'<span class="readout-value champ">{val}</span></li>')
-    # The Hype Cup champion: the cross-league champion (an event, not a ranking: the Cup card says so).
-    c = S["cup"]
-    val = f'<a href="#hype-cup">{esc(c["champion"])}</a>' if c["champion"] else nm("To play")
-    items.append(f'<li class="readout"><span class="readout-label">Hype Cup:</span> <span class="readout-value champ">{val}</span></li>')
-    return (f'<div class="readout-row champions"><span class="readout-label">Starting-group winners · match results</span>'
-            f'<ul class="readouts">{"".join(items)}</ul></div>')
-
-
-def leaders(S) -> str:
-    """The highest stored risk judgement among the model setups (the leaderboard's order; programs are reference rows,
-    never ranked), overall, per model type and per league: kept apart from the match winners above it."""
-    models = [(lg, n, r) for lg, n, r, ref in all_rows(S) if not ref and r["judgement"] is not None]
-    groups = [("All model setups", "", lambda lg, n: True)]
-    groups += [(f"{t.capitalize()} models", f"?type={t}#board", lambda lg, n, t=t: kind(P.origin_meta(S, lg["dataset"], n)) == t)
-               for t in ("decision", "chat")]
-    groups += [(f'League {lg["id"]}', f'?league={lg["dataset"]}#board', lambda x, n, d=lg["dataset"]: x["dataset"] == d)
-               for lg in S["leagues"]]
-    items = []
-    for label, href, keep in groups:
-        top = next(((lg, n, r) for lg, n, r in models if keep(lg, n)), None)
-        if not top:
-            continue
-        lg, n, r = top
-        items.append(f'<li class="readout"><span class="readout-label">{esc(label)}:</span> <span class="readout-value">'
-                     f'<a href="{P.model_href("", lg["dataset"], n, S)}">{esc(n)}</a></span> <span class="leader-detail">'
-                     f'League {lg["id"]} · {fmt(r["judgement"])}</span>'
-                     + (f' <a class="leader-view" href="{href or "#board"}">view</a>' if href else "") + '</li>')
-    return (f'<div class="readout-row leaders"><span class="readout-label">Risk judgement leaders · model setups; programs '
-            f'are reference rows, never ranked</span><ul class="readouts">{"".join(items)}</ul></div>')
-
 
 CALL_WORDS = {"right_risk": "a right risk", "wrong_risk": "a wrong risk", "missed": "a missed risk",
               "needless": "a needless risk", "right_safety": "right safety"}
@@ -1301,6 +1240,12 @@ def hero_board(S) -> str:
             f'leaves {count(s["hitting_rolls"])}. {esc(sc["who"])} played {code(c)}: {esc(CALL_WORDS[sc["call"]])}.')
     href = f'decisions/?d={sc["dataset"]}&amp;s={sc["slug"]}&amp;p={sc["page"]}#d{sc["id"]}'
     return f'<figure class="hero-board">{svg}<figcaption>{text} <a href="{href}">This decision</a></figcaption></figure>'
+
+
+def hero_figure(S) -> str:
+    """The showcase decision, under the leaderboard (Ümit via Zeki #4666: nothing but the heading above the table)."""
+    fig = hero_board(S)
+    return f'<section class="card hero-showcase">{fig}</section>' if fig else ""
 
 
 def findings_block(S) -> str:
@@ -1783,38 +1728,6 @@ def measure_charts(S) -> str:
             + "".join(measure_chart_card(S, k, l) for k, l in MEASURES) + "</section>")
 
 
-def result_cards(S) -> str:
-    """Three cards, stored values only and model setups only (programs are reference rows, never leaders), late entries
-    counted (Ümit #2921 item 4): the highest risk judgement of every model setup and of the decision models, and the
-    lowest error rate."""
-    late = [(P.late_href("", e), e["name"], f'late entry, League {e["field_league"]} field',
-             S["setups_meta"].get((LATE_ENTRY, e["name"])) or {}, e["risk"]["main"], e["quality"]) for e in S["late_entries"]]
-    league = [(P.model_href("", lg["dataset"], n, S), n, f'League {lg["id"]}', P.origin_meta(S, lg["dataset"], n), r,
-               lg["setups"][n]["quality"] if n in lg["setups"] else None) for lg, n, r, ref in all_rows(S) if not ref]
-    models = [x for x in league + late if x[4]["judgement"] is not None]
-    best = max(models, key=lambda x: x[4]["judgement"], default=None)
-    dec = max((x for x in models if kind(x[3]) == "decision"), key=lambda x: x[4]["judgement"], default=None)
-    ers = [x for x in league + late if x[5] and x[5].get("error_rate") is not None and not x[5].get("too_few")]
-    low = min(ers, key=lambda x: x[5]["error_rate"], default=None)
-    cards = []
-    for title, top, i, value, lo, hi, unit in (
-            ("Highest observed risk judgement, every model setup", best, 4, "judgement", "judgement_lo", "judgement_hi",
-             "/100, higher is better"),
-            ("Highest observed risk judgement, decision models", dec, 4, "judgement", "judgement_lo", "judgement_hi",
-             "/100, higher is better"),
-            ("Lowest observed error rate, every model setup", low, 5, "error_rate", "error_lo", "error_hi",
-             "PR, lower is better")):
-        if not top:
-            continue
-        href, n, where, x = top[0], top[1], top[2], top[i]
-        cards.append(f'<div class="result-card"><h2>{esc(title)}</h2><p class="result-main">{fmt(x[value])} '
-                     f'<span class="result-unit">{esc(unit)}</span></p>'
-                     f'<p class="result-cost"><a href="{href}">{esc(n)}</a> · {esc(where)} · 95% interval '
-                     f'{fmt(x[lo])} to {fmt(x[hi])}</p></div>')
-    return (f'<h2 class="board-group">Model setups, all leagues</h2><div class="result-cards">{"".join(cards)}</div>'
-            f'<p class="table-note cards-note">{esc(ALL_NOTE)}</p>')
-
-
 def facts(S) -> str:
     lg_text = "; ".join(f'League {lg["id"]}: {esc(P.LEAGUE_KIND[lg["id"]])}' for lg in S["leagues"])
     rows = [("Scorer", "GNU Backgammon 1.08, 2-ply, on every legal play of every decision"),
@@ -1871,56 +1784,34 @@ def how_scores(S) -> str:
             f'<p class="table-note"><a href="about/#scores">More in About</a></p></section>')
 
 
-def counts_line(S) -> str:
-    """The hero's counts line (Ümit #2938 item 2 (1)): decisions scored, leagues, setups, models and the update date."""
-    c = S["counts"]
-    items = [(count(c["decisions_scored"]), "decisions scored"), (count(c["leagues"]), "leagues"),
-             (count(c["model_setups"]), "setups"), (count(c["models"]), "models")]
-    return ('<p class="counts-line">' + " · ".join(f'<span class="readout-value">{v}</span> {l}' for v, l in items)
-            + f' · updated {esc(P.as_of(S).split(",")[0])}</p>')
-
-
 def hero_card(S) -> str:
     links = "".join(f'<a class="key" href="{href}">{esc(label)}</a>' for label, href in HERO_LINKS)
     return f"""
     <section class="card hero hero-card">
-      <div class="hero-split">
-        <div class="hero-text">
-          <h1>{esc(P.TITLE)}</h1>
-          {P.star_note(esc(INTRO), f"<p>{esc(INTRO_MORE)}</p>", "intro")}
-          {counts_line(S)}
-          <nav class="hero-links" aria-label="Main parts">{links}</nav>
-        </div>
-        {hero_board(S)}
-      </div>
+      <h1>{esc(P.TITLE)}</h1>
+      <nav class="hero-links" aria-label="Main parts">{links}</nav>
     </section>"""
 
 
 # The home page's content that moved to the Leagues page (Ümit #2938 item 2): what each block is, for the old anchors.
 def leagues_moved(S) -> tuple[str, str]:
     """(top, bottom): the blocks of the old home page that now sit on the Leagues page, written relative to the site's
-    root (pages.rebase moves them under leagues/). top: the three result boxes, the match winners and the leaders, the
-    Scorer / Results / Published facts, What this measures. bottom: the filters (the measure charts and Every number
-    follow them), the measure sections, Every number, Risk pays vs safety pays, Close choices stage B."""
+    root (pages.rebase moves them under leagues/). top: the family icons only (Ümit via Zeki #4666: no result boxes,
+    winners or leaders above the tables). bottom: the filters (the measure charts and Every number follow them), the
+    measure sections, Every number, Risk pays vs safety pays, Close choices stage B, then the Scorer / Results /
+    Published facts and What this measures."""
     tabs = "".join(f'<button type="button" role="tab" id="tab-{k}" class="mode" aria-controls="board" '
                    f'aria-selected="{str(i == 0).lower()}" data-tab="{k}"><span class="lamp" aria-hidden="true"></span>{l}</button>'
                    for i, (k, l) in enumerate(TABS))
     panels = "".join(f'<div class="tabpanel" id="panel-{k}" data-panel="{k}"{" hidden" if i else ""}>{tab_body(S, k)}</div>'
                      for i, (k, _) in enumerate(TABS))
     top = f"""
-    {FAMILY_ICONS}
-    <section class="card overview" id="overview">
-      {result_cards(S)}
-      {champions(S)}
-      {leaders(S)}
-      {facts(S)}
-      <p class="framing"><strong>What this measures.</strong> {esc(WHAT_THIS_MEASURES)}</p>
-    </section>"""
+    {FAMILY_ICONS}"""
     bottom = f"""
     {filters(S)}
     {measure_charts(S)}
     <section class="panel board-panel" id="board-panel" aria-labelledby="board-title">
-      <div class="chart-head"><h2 id="board-title">Every number, setup by setup</h2><p class="chart-sub">Every measure of every setup, one tab per measure; each value with its 95% interval, its count and denominator or its price label under it.</p></div>
+      <div class="chart-head"><h2 id="board-title">Every number, setup by setup</h2></div>
       <div class="modebar">
         <div class="keys view-switch needs-js" role="group" aria-label="Show the results as"><button type="button" class="key" data-view="table" aria-pressed="true"><span class="lamp" aria-hidden="true"></span>Table</button><button type="button" class="key" data-view="charts" aria-pressed="false"><span class="lamp" aria-hidden="true"></span>Charts</button></div>
         <div class="keys col-switch needs-js" role="group" aria-label="Table columns"><button type="button" class="key" data-cols-all aria-pressed="false"><span class="lamp" aria-hidden="true"></span>All columns</button></div>
@@ -1928,9 +1819,14 @@ def leagues_moved(S) -> tuple[str, str]:
       </div>
       <div id="board" role="tabpanel">{panels}</div>
       {charts(S)}
+      <p class="table-note">Every measure of every setup, one tab per measure; each value with its 95% interval, its count and denominator or its price label under it.</p>
     </section>
     {pays_section(S)}
-    {close_b_section(S)}"""
+    {close_b_section(S)}
+    <section class="card overview" id="overview">
+      {facts(S)}
+      <p class="framing"><strong>What this measures.</strong> {esc(WHAT_THIS_MEASURES)}</p>
+    </section>"""
     return top, bottom
 
 
@@ -1943,6 +1839,7 @@ def home(S) -> str:
     {FAMILY_ICONS}
     {hero_card(S)}
     {story.headline(S)}
+    {hero_figure(S)}
     {story.findings(S)}
     {findings_block(S)}
     {how_scores(S)}"""

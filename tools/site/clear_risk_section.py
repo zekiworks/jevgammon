@@ -8,17 +8,12 @@ import pages as P
 
 
 def body(S) -> str:
+    """Each section: its heading, then its tables, then its status and how it was done (Ümit via Zeki #4666: nothing
+    but the heading above a table). The page's label, data and method links and the Status section close the page."""
     C = S["clear_risk"]
     toc = "".join(f'<li><a href="#{s["id"]}">{esc(s["title"])}</a></li>' for s in C["sections"])
-    out = [P.page_head(S, C["status"], "Clear risk: when one play is clearly better",
-                       esc(C["label"]) + ' Data: <a href="../data/v3/clear-risk.json">clear-risk.json</a> · '
-                       '<a href="../method/#clear-risk">Method</a>'),
+    out = [P.page_head(S, C["status"], "Clear risk: when one play is clearly better"),
            f'<nav class="toc card" aria-label="On this page"><ul>{toc}</ul></nav>']
-    pend = "".join(f"<li>{esc(p['what'])}: pending. {esc(p['blocker'])}.</li>" for p in C["pending"])
-    omit = "".join(f"<li>{esc(o['what'])}: not published ({esc(o['why'])}).</li>" for o in C["omitted"])
-    asof = f'<p class="note">{esc(C["scan_as_of"])}</p>' if C.get("scan_as_of") else ""
-    out.append(f'<section class="card" id="clear-risk-status"><h2>Status</h2><p class="note">{esc(C["status"])}</p>'
-               f"{asof}<ul>{pend}{omit}</ul></section>")
     for s in C["sections"]:
         notes = "".join(f"<li>{esc(n)}</li>" for n in s["notes"])
         tabs = "".join(P.SWIPE + P.table([esc(h) for h in t["head"]],
@@ -26,7 +21,13 @@ def body(S) -> str:
                                                            for i, c in enumerate(r)) + "</tr>" for r in t["rows"]],
                                          esc(t["caption"]))
                        for t in s["tables"])
-        out.append(f'<section class="card" id="{s["id"]}"><h2>{esc(s["title"])}</h2>'
+        out.append(f'<section class="card" id="{s["id"]}"><h2>{esc(s["title"])}</h2>{tabs}'
                    f'<p class="note">{esc(C["status"])}</p>'
-                   + P.star_note("How this part was done and checked", f'<ul class="notes">{notes}</ul>') + f'{tabs}</section>')
+                   + P.star_note("How this part was done and checked", f'<ul class="notes">{notes}</ul>') + '</section>')
+    pend = "".join(f"<li>{esc(p['what'])}: pending. {esc(p['blocker'])}.</li>" for p in C["pending"])
+    omit = "".join(f"<li>{esc(o['what'])}: not published ({esc(o['why'])}).</li>" for o in C["omitted"])
+    asof = f'<p class="note">{esc(C["scan_as_of"])}</p>' if C.get("scan_as_of") else ""
+    out.append(f'<section class="card" id="clear-risk-status"><h2>Status</h2><p class="note">{esc(C["status"])}</p>'
+               f'<p class="note">{esc(C["label"])} Data: <a href="../data/v3/clear-risk.json">clear-risk.json</a> · '
+               f'<a href="../method/#clear-risk">Method</a></p>{asof}<ul>{pend}{omit}</ul></section>')
     return "\n".join(out)

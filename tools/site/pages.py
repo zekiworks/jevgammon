@@ -626,7 +626,7 @@ def leagues_page(S, archive_v1: str) -> tuple[str, set, set]:
                f'{status_badge(EARLIER)}</summary><p class="note">{esc(play_order_note(S))}</p>{archive_v1}</details>'
                f'<p class="table-note" id="pre-switch">The page as it was before this site went live, with its final league '
                f'data: <a href="../archive/2026-10-23/">archive, 23 October 2026</a>.</p></section>')
-    head = page_head(S, "Leagues", "Leagues", "The leagues, their matches and every number, setup by setup.")
+    head = page_head(S, "Leagues", "Leagues")
     local = ids_of(head + top + sections + bottom + intro + earlier)
     page = head + rebase(top, "../", local) + sections + rebase(bottom, "../", local) + intro + earlier
     return page, ids_of(top) | ids_of(bottom), ids_of(sections)
@@ -824,10 +824,11 @@ def matches_page(S) -> str:
                                   "Voided matches, with the reason recorded when they were voided", cls="board list")
                   + '</details></section>')
     intro = (f'Every finished match: {count(M["total"])}, by stage. Results only: the standings and error rates are on '
-             '<a href="../leagues/">Leagues</a>.')
-    return (page_head(S, "Matches", "Every match", intro,
-                      "A match is listed once, where it was played; the setups carry their current names.")
-            + f'<nav class="card stage-nav" aria-label="Stages"><ul class="subnav">{nav}</ul></nav>' + "".join(blocks))
+             '<a href="../leagues/">Leagues</a>. A match is listed once, where it was played; the setups carry their '
+             'current names.')
+    return (page_head(S, "Matches", "Every match")
+            + f'<nav class="card stage-nav" aria-label="Stages"><ul class="subnav">{nav}</ul></nav>' + "".join(blocks)
+            + f'<p class="table-note page-note">{intro}</p>')
 
 
 # --- Late entries (Can's go of 28 Oct 2026, live after GPT-6 Astra (high)'s 12th late-entry match): a tab of the
@@ -1598,11 +1599,12 @@ def new_models_page(S) -> str:
     head = ["Setup", "Probabilities", "Reasoning setting", "Median / P90 request s", "$ per 1,000 decisions",
             "Invalid share", "Error rate (PR), 95% interval", "Paired difference from the reference setups"]
     return (page_head(S, "New models: first look", "New models: first look")
-            + '<section class="card" id="smoke"><p><strong>50 positions each, outside the shared sets. Error rates are rough '
-              '(about \u00b110 to \u00b125): enough to spot a clearly weak model, not to rank models.</strong> This page feeds no '
-              'ranking, chart or finding. Sorted by name.</p>' + SWIPE
+            + '<section class="card" id="smoke">' + SWIPE
             + table(head, rows, "Smoke tests: the same 50 positions for every setup, with the v3 prompt and shuffled plays")
-            + '<p class="note">Every value is shown with its count and interval: the minimum-sample rule of the other pages '
+            + '<p class="note"><strong>50 positions each, outside the shared sets. Error rates are rough '
+              '(about \u00b110 to \u00b125): enough to spot a clearly weak model, not to rank models.</strong> This page feeds no '
+              'ranking, chart or finding. Sorted by name. '
+              'Every value is shown with its count and interval: the minimum-sample rule of the other pages '
               'does not apply here. Rows marked "also in League N" are models that also play a league; their league '
               'results are on the Leagues page and are never compared with these 50 positions.</p></section>')
 
@@ -1766,9 +1768,8 @@ def nackgammon_page(S) -> str:
     import home
     import nack_section
     sec = nack_section.section(S["nack"], *home.nack_views(S), S["nack_late"])
-    return (page_head(S, "Experiments", "Nackgammon", "Finished. The knockout: "
-                      "<a href=\"../leagues/#nack-knockout\">Leagues</a>.")
-            + rebase(sec, "../", ids_of(sec)))
+    return (page_head(S, "Experiments", "Nackgammon") + rebase(sec, "../", ids_of(sec))
+            + '<p class="table-note page-note">Finished. The knockout: <a href="../leagues/#nack-knockout">Leagues</a>.</p>')
 
 
 def rules_text() -> str:

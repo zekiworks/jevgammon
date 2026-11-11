@@ -519,11 +519,14 @@ def section(N, kinds: dict, chosen: list, L: dict) -> str:
             f'{H.FAMILY_ICONS}'
             f'<div class="section-head"><p class="eyebrow">{esc(TITLE)}</p><h2>{esc(QUESTION)}</h2>{keys}</div>'
             + P.class_keys("nack-class")
+            + summary_table(N)
             + P.star_note(f'<strong>{esc(UNCLEAR_NOTE)}</strong> {count(n_added)} setups were added after the results '
                           'were read; the primary results are shown with and without them.',
                           f'<p>{esc(head_note)}</p>', "note nack-always")
-            + summary_table(N) + f'<p class="table-note nack-view-note">{esc(view_note)}</p>' + late_block(L) +
-            f'<p class="section-label">{esc(N["method"])}</p>{status}{scope}'
+            + f'<p class="table-note nack-view-note">{esc(view_note)}</p>' + late_block(L)
+            + main_table(N)
+            + f'<p class="table-note nack-missing-note">{esc(N["missing_note"])}</p>'
+            + f'<p class="section-label">{esc(N["method"])}</p>{status}{scope}'
             f'<p class="note nack-additions-note"><strong>Additions.</strong> {esc(shown_text(N["additions_note"]))}</p>'
             "<p>Nackgammon has the rules of backgammon; only the starting position differs. Each setup was asked 200 "
             "Nackgammon positions and 200 standard positions matched to them by phase, position class, number of legal "
@@ -539,29 +542,26 @@ def section(N, kinds: dict, chosen: list, L: dict) -> str:
             f'<p class="table-note nack-no-group-note">{esc(no_group_note(N))}</p>'
             '<p class="table-note">Not a ranking: rows are in fixed order (group, then standard PR) and no table can be '
             'sorted.</p>'
-            + main_table(N)
-            + f'<p class="table-note nack-missing-note">{esc(N["missing_note"])}</p>'
             + '<figure class="chart-card" data-static-chart id="chart-nack"><div class="chart-head">'
               '<h3>Standard against Nackgammon error rate</h3>'
               '<button type="button" class="key" data-download-static>Download PNG</button></div>' + chart(N)
             + f'<p class="chart-legend">{chart_legend(N)}</p></figure>'
-            + f'<h3>Primary comparisons</h3>{scope}'
-              '<p>Each difference is A\'s drop \u2212 B\'s drop (a group\'s drop = the mean of its setups\' drops), main 200 '
+            + '<h3>Primary comparisons</h3>' + rule_tables + scope
+            + '<p class="table-note">Each difference is A\'s drop \u2212 B\'s drop (a group\'s drop = the mean of its setups\' drops), main 200 '
               'pairs, paired bootstrap. Five comparisons, so each interval is at 99% (Bonferroni, 1 \u2212 0.05/5). Both '
               'sides\' standard and Nackgammon PR are shown next to every difference. Shown both ways: with the '
-              '\u00a710.14(g) additions (the primary result) and with the original members only.</p>' + rule_tables
-            + f'<h4>Original members only</h4>{scope}' + orig_tables
-            + '<h3>Invalid answers, output limit and sensitivity</h3>' + scope + sensitivity_table(N)
-            + '<details><summary>By phase (descriptive)</summary>' + scope + phase_table(N) + '</details>'
-            + '<details><summary>By game-plan tag (descriptive)</summary>' + scope + tag_table(N) + '</details>'
-            + '<details><summary>Cost per decision</summary>' + scope + cost_table(N) + '</details>'
-            + f'<h3>Secondary analyses</h3>{scope}'
-              '<p class="table-note">Secondary, as fixed in \u00a710.11. K = (Random\'s Nackgammon PR \u2212 setup\'s '
+              '\u00a710.14(g) additions (the primary result) and with the original members only.</p>'
+            + '<h4>Original members only</h4>' + orig_tables + scope
+            + '<h3>Invalid answers, output limit and sensitivity</h3>' + sensitivity_table(N) + scope
+            + '<details><summary>By phase (descriptive)</summary>' + phase_table(N) + scope + '</details>'
+            + '<details><summary>By game-plan tag (descriptive)</summary>' + tag_table(N) + scope + '</details>'
+            + '<details><summary>Cost per decision</summary>' + cost_table(N) + scope + '</details>'
+            + '<h3>Secondary analyses</h3>' + kept + spearman_tables(N) + risk + scope
+            + '<p class="table-note">Secondary, as fixed in \u00a710.11. K = (Random\'s Nackgammon PR \u2212 setup\'s '
               'Nackgammon PR) \u00f7 (Random\'s standard PR \u2212 setup\'s standard PR): 1 = keeps its whole advantage '
               'over random play, 0 = falls to random. Unstable: standard advantage under 20 PR or its interval reaches '
               '0. Risk: a class with fewer than 50 positions is thin and not read into.</p>'
-            + kept + spearman_tables(N) + risk
-            + '<h3>Engine check</h3>' + scope + engine_tables(N)
+            + '<h3>Engine check</h3>' + engine_tables(N) + scope
             + f'<p class="table-note">Data: <a href="data/v3/nack-paired.json" download="nack-paired.json">'
               f'nack-paired.json</a> \u00b7 <a href="method/#nackgammon-paired">Method</a> ({esc(N["method"])})</p>'
               '</section>')

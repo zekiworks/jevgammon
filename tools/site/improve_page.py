@@ -667,9 +667,10 @@ def results_section(L, S=None) -> str:
            'show no numbers; a decision setup has one row per arm (notes, worst mistakes).')
     head = ["Model", "Group", "Status", f"Series (of {V.SERIES})", "Risks found before → after", "Change",
             "Right safety before → after", "Improved?"]
-    return (note + keys + f'<p class="table-note" id="improve-results-note">{esc(cap)}</p>' + P.SWIPE
+    return (keys + P.SWIPE
             + P.table(head, rows_, "Results, one row per model", cls="board list improve-progress",
-                      attrs=' id="improve-results-table"'))
+                      attrs=' id="improve-results-table"')
+            + f'<p class="table-note" id="improve-results-note">{esc(cap)}</p>' + note)
 
 
 def validation_note(L) -> str:

@@ -12305,7 +12305,7 @@
     "Name: '<original> [repeat 1]', a new players row; settings otherwise as the original's (the changed fields are listed under Settings); one match at a time, where the original played several at once.",
     "Runner: its 18 League 1 matches were played by d2f1f9e with uncommitted changes (#482-#486) and ec555d6 (clean, #487-#499); the repeat uses the pinned-pairs build 4ca4f08. Same prompt version bg-v2, option-order seed and rules; mirror games off as in its originals.",
     "Opponent hardware: Clef (#484) and Cygnet (#486) answered from DGX Spark (GB10) servers then, Decider v1.1 27B (#483) from spark3 until 22:41 UTC; they now run on our RTX PRO 6000 cards with the same checkpoints and arguments (their players.device records the move and its 20-request replays: same play 20/20, 20/20 and 19/20).",
-    "Server: the original ran on bariton GPU 0 beside the opponents' servers on GPUs 1 and 3 and the Sparks; the repeat runs it on GPU (run.sh), the opponents one at a time on OPP_GPU.",
+    "Server: the same script, snapshot and Python environment; the original ran on one RTX PRO 6000 card beside the opponents' servers on two others and the DGX Sparks, the repeat runs it on one card with the opponents one at a time on the same or a second card.",
     "Not replayable today, though played in the original: GPT-6 Luna, Mercury Decide (blockers today); their seed pins are kept so they replay with the original seeds once unblocked."
    ],
    "start": [

@@ -274,8 +274,9 @@ REPEATS = {
              "v1.1 27B (#483) from spark3 until 22:41 UTC; they now run on our RTX PRO 6000 cards with the same "
              "checkpoints and arguments (their players.device records the move and its 20-request replays: same play "
              "20/20, 20/20 and 19/20)."),
-            ("Server: the original ran on bariton GPU 0 beside the opponents' servers on GPUs 1 and 3 and the Sparks; "
-             "the repeat runs it on GPU (run.sh), the opponents one at a time on OPP_GPU."),
+            ("Server: the same script, snapshot and Python environment; the original ran on one RTX PRO 6000 card "
+             "beside the opponents' servers on two others and the DGX Sparks, the repeat runs it on one card with the "
+             "opponents one at a time on the same or a second card."),
         ]),
 }
 DISPLAY = {"mammoth-1-r1": "Mammoth-1", "drex-max-v1-r1": "Drex Max v1", "reax-1.3-r1": "REAX 1.3",

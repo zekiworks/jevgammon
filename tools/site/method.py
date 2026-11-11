@@ -551,7 +551,12 @@ def _versions(po: dict) -> str:
   Muse Ember (max), a late entry to the original League 1 table on <a href="../leagues/#late-entries">Leagues</a> (Late
   entries), played through OpenRouter (pinned to Meta, reasoning effort max) on 10–11 Nov (its pairs with GPT-6 Luna
   (Decisions API), its API out of credit, and Mercury Decide, no longer served on OpenRouter, not played), with a page
-  of its own; its cost is its billed tokens at Meta's list price. No score changed.</p>""")
+  of its own; its cost is its billed tokens at Meta's list price. No score changed. 11 Nov 2026: Gemini Decision 1, a
+  late entry to the original League 1 table on <a href="../leagues/#late-entries">Leagues</a> (Late entries), played
+  through OpenRouter (pinned to Google AI Studio) on 11 Nov (its pairs with GPT-6 Luna (Decisions API), its API out of
+  credit, and Mercury Decide, no longer served on OpenRouter, not played; runner dab6da5 without a probability-map check,
+  then 38024d6 with map-check v2, whose sum rule (within 1e-6) applies to this entry only), with a page of its own; its
+  cost is its billed cost per decision. No score changed.</p>""")
 
 
 def _confidence(t: dict, extra: dict) -> str:

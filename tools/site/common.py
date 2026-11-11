@@ -27,7 +27,13 @@ LATE_ENTRY_NOTE = "Provisional: late entry still playing"
 # Setups not shown yet (content/held_setups.json, name: reason): a late entry still playing is held until its entry is
 # complete, so no moving partial numbers are published; analysis.late_entries and cup.classify leave them out, so no
 # page, data file, leaderboard row, bench score or model list carries them.
-HELD = json.loads((CONTENT / "held_setups.json").read_text())["held"]
+_HELD_FILE = json.loads((CONTENT / "held_setups.json").read_text())
+HELD = _HELD_FILE["held"]
+# Held late entries shown while they play (held_setups.json "running", name: its late-entry league and what the row's
+# details say): one unranked row on the home leaderboard, no score anywhere (analysis.running_entries,
+# story.running_rows); every other page, data file and bench score still leaves them out, as HELD says.
+RUNNING = _HELD_FILE.get("running", {})
+assert set(RUNNING) <= set(HELD), "held_setups.json: a running entry must also be held"
 # Close choices, stage B: scope note (Ümit, 2026-10-25; Method spec 2026-10-24 §9.13 addendum of 16:05 UTC), verbatim on
 # the home page and the Method page.
 CLOSE_B_SCOPE_NOTE = ("Gemma 4 31B (on) was started but not completed: two reboots and a GPU fault interrupted it, and it "

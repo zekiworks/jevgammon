@@ -31,7 +31,7 @@ import numpy as np
 
 import own_cost
 import stats
-from common import EARLIER, HELD, PROVISIONAL, PUBLISHED, ROOT, SPEC, THRESHOLDS as T, slug
+from common import EARLIER, HELD, PROVISIONAL, PUBLISHED, ROOT, RUNNING, SPEC, THRESHOLDS as T, slug
 from decisions_export import PAGE_SIZE as DECISION_PAGE
 
 sys.path.insert(0, str(ROOT / "tools"))
@@ -191,10 +191,11 @@ def load_leagues(snap: Path, plays_dir: Path) -> dict:
     turns_total = conn.execute("SELECT COUNT(*) FROM turns").fetchone()[0]
     last = conn.execute("SELECT MAX(created_at) FROM turns").fetchone()[0]
     late = late_entries(conn, plays)
+    running = running_entries(conn)
     repeats = repeat_originals(conn, plays)
     conn.close()
     return dict(leagues=leagues, plays=len(plays), turns_total=turns_total, last_move=last, late_entries=late,
-                repeat_originals=repeats)
+                repeat_originals=repeats, running=running)
 
 
 REPEAT_MANIFEST = ROOT / "mailbox/repeats/manifest-2026-11-11.json"
@@ -315,6 +316,31 @@ def late_entries(conn, plays: dict) -> list[dict]:
                                                         and (x["output_tokens"] or 0) > OUTPUT_LIMIT),
                            efforts=dict(sorted(efforts.items()))),
             decisions=decisions))
+    return out
+
+
+def running_entries(conn) -> list[dict]:
+    """The held late entries shown while they play (common.RUNNING): per entrant, its late-entry league's start, its
+    finished valid late-entry matches against the original table it plays (field_league), the size of that table and
+    the runner commits its matches recorded. Counts only: no decision, score or rank of the entrant is read."""
+    if not RUNNING:
+        return []
+    fields = original_fields(conn)
+    out = []
+    for name, cfg in RUNNING.items():
+        lg = conn.execute("SELECT started_at, only_pairs_of FROM leagues WHERE id = ?", (cfg["league"],)).fetchone()
+        if lg is None or lg["only_pairs_of"] != name:
+            raise RuntimeError(f"held_setups.json running: league {cfg['league']} is not {name}'s late-entry league")
+        ms = conn.execute(
+            """SELECT DISTINCT m.id, m.status, m.harness_commit FROM league_match_view_all lm
+               JOIN matches m ON m.id = lm.match_id
+               WHERE lm.league_id = ? AND lm.stage = 'late-entry' AND ? IN (lm.model1, lm.model2)""",
+            (cfg["league"], name)).fetchall()
+        out.append(dict(name=name, league=cfg["league"], started=lg["started_at"],
+                        finished=sum(m["status"] == "finished" for m in ms),
+                        total=len(fields[cfg["field_league"]] - {name}),
+                        runners=sorted({m["harness_commit"][:7] for m in ms if m["harness_commit"]}), **{
+                            k: cfg[k] for k in ("type", "route", "model_id", "pending")}))
     return out
 
 

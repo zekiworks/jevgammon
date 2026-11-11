@@ -180,7 +180,9 @@ def compute(args) -> dict:
         improve=improve_page.from_state(state),
         status=json.loads((CONTENT / "analysis_status.json").read_text()),
         human_scale=json.loads((CONTENT / "human_scale.json").read_text()),
-        _v1_raw=v1, _state=state, _repeat_originals=repeat_originals)
+        _v1_raw=v1, _state=state, _repeat_originals=repeat_originals,
+        # Held late entries shown while they play (held_setups.json "running"): the home leaderboard's unranked rows only.
+        _running=L["running"])
 
 
 def late_entry_summaries(entries: list[dict]) -> list[dict]:

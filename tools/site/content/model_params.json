@@ -74,6 +74,25 @@
    "card_source": null,
    "card_quote": null
   },
+  "Claude Fable 5.2": {
+   "total_b": null,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://www.anthropic.com/claude-fable-and-mythos-5-2",
+   "quote": "Searched the launch post, the API model docs page and the system/model card for 'parameter', 'billion', 'trillion' and figures like 'NB'/'NT'. No explicit parameter count was found (all cards fetched as full text unless noted).",
+   "checked": [
+    "https://www.anthropic.com/claude-fable-and-mythos-5-2",
+    "https://platform.claude.com/docs/en/models/fable-5-2/whats-new-fable-5-2",
+    "https://www.anthropic.com/document/claude-fable-5-2-mythos-5-2-system-card"
+   ],
+   "read": "2026-11-11",
+   "note": "System card PDF (Fable 5.2 / Mythos 5.2) searched in full text. Held late entry (held_setups.json) until its entry is complete.",
+   "card_total_b": null,
+   "card_active_b": null,
+   "card_source": null,
+   "card_quote": null
+  },
   "Claude Opus 5.5": {
    "total_b": null,
    "active_b": null,
@@ -467,6 +486,27 @@
    ],
    "read": "2026-11-09",
    "note": "",
+   "card_total_b": null,
+   "card_active_b": null,
+   "card_source": null,
+   "card_quote": null
+  },
+  "Gemini 4 Carbon": {
+   "total_b": null,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://blog.google/innovation-and-ai/technology/developers-tools/gemini-4-carbon-developers/",
+   "quote": "Searched the launch post, the API model docs page and the system/model card for 'parameter', 'billion', 'trillion' and figures like 'NB'/'NT'. No explicit parameter count was found (all cards fetched as full text unless noted).",
+   "checked": [
+    "https://blog.google/innovation-and-ai/technology/developers-tools/gemini-4-carbon-developers/",
+    "https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-4-carbon-now-available/",
+    "https://ai.google.dev/gemini-api/docs/models/gemini-4-carbon",
+    "https://deepmind.google/models/model-cards/gemini-4-carbon/",
+    "https://storage.googleapis.com/deepmind-media/Model-Cards/Gemini-4-Carbon-Model-Card.pdf"
+   ],
+   "read": "2026-11-11",
+   "note": "Held late entry (held_setups.json) until its entry is complete.",
    "card_total_b": null,
    "card_active_b": null,
    "card_source": null,

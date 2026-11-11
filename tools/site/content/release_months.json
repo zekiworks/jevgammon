@@ -15,6 +15,13 @@
    "read": "2026-11-07",
    "note": "Page header gives month only, above 'We’re introducing Claude Fable 5.1 and Claude Mythos 5.1.'"
   },
+  "Claude Fable 5.2": {
+   "month": "2026-11",
+   "url": "https://www.anthropic.com/claude-fable-and-mythos-5-2",
+   "quote": "November 9, 2026",
+   "read": "2026-11-11",
+   "note": "Date line above '# Claude Fable 5.2 and Mythos 5.2'."
+  },
   "Claude Opus 5.5": {
    "month": "2026-09",
    "url": "https://www.anthropic.com/claude-opus-5-5",
@@ -133,6 +140,13 @@
    "quote": "Starting today, developers can build with [Gemini 4 Argon]",
    "read": "2026-11-07",
    "note": "Post dated Oct 13, 2026. Doubt: announced Sep 30, 2026 (gemini-4-argon post) but then only 'rolling out to trusted cyber defenders through the Fairwind Program'; Oct 13 used as public availability."
+  },
+  "Gemini 4 Carbon": {
+   "month": "2026-11",
+   "url": "https://blog.google/innovation-and-ai/technology/developers-tools/gemini-4-carbon-developers/",
+   "quote": "Starting today, developers can build with Gemini 4 Carbon",
+   "read": "2026-11-11",
+   "note": "Post dated Nov 10, 2026. Earlier (late Oct 2026) only to cyber defenders via the Fairwind Program ('Two weeks ago, we released Carbon to a set of cybersecurity defenders', gemini-4-carbon-now-available); Nov 10 used as public availability, as for Gemini 4 Argon."
   },
   "Gemma 4 31B": {
    "month": "2026-04",

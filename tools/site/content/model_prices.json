@@ -116,11 +116,11 @@
   },
   "Gemini 4 Carbon": {
    "weights": "closed",
-   "input_per_mtok": 2,
+   "input_per_mtok": 4,
    "source": "https://ai.google.dev/gemini-api/docs/pricing",
    "read": "2026-11-11",
    "quote": "Gemini 4 Carbon, Standard, Paid tier input price: '$2.00 through November 30, 2026. $4.00 starting December 1, 2026.'",
-   "note": "As Gemini 4 Argon: the price page gives '$2.00 through November 30, 2026. $4.00 starting December 1, 2026.' without calling $2.00 introductory or promotional, so $2.00 is today's standard price: Workhorse; the announced $4.00 from 1 Dec 2026 is Flagship. Doubt: Google's launch post (blog.google, 'Gemini 4 Carbon is now available', 10 Nov 2026) calls it 'the same introductory price as Gemini 4 Argon ($2 per million input tokens and $10 per million output tokens)', footnote: 'After the introductory period expires on November 30, 2026, the price of $4 per 1M input tokens and $20 per 1M output tokens will apply.' Held late entry until its entry is complete.",
+   "note": "Google's page gives '$2.00 through November 30, 2026. $4.00 starting December 1, 2026.' As Gemini 4 Argon (Ümit's ruling, #4399 JOB 7): the $2.00 is introductory and $4.00 is the standard price, so the class uses $4.00: Flagship. Google's launch post (blog.google, 'Gemini 4 Carbon is now available', 10 Nov 2026) says the same: 'the same introductory price as Gemini 4 Argon'; 'After the introductory period expires on November 30, 2026, the price of $4 per 1M input tokens and $20 per 1M output tokens will apply.' Held late entry until its entry is complete.",
    "provisional": false,
    "provisional_reason": null
   },

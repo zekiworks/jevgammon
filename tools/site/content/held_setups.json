@@ -11,6 +11,7 @@
   "GLiDE 0.4B": "late entry prepared (branch late-tiny8, Main 11 Nov); not started; shown when complete",
   "GLiDE 0.8B": "late entry prepared (branch late-tiny8, Main 11 Nov); not started; shown when complete",
   "GLiDE 2B": "late entry prepared (branch late-tiny8, Main 11 Nov); not started; shown when complete",
+  "Gemini Decision 1": "late entry prepared (branch late-gemini-decision, Can #4966; OpenRouter pinned to Google AI Studio); not started; shown when complete",
   "Base Labs Mammoth-1 [repeat 1]": "reproducibility repeat (tools/v3/repeats, Zeki #4667): never shown as a setup; its result only in Experiments, Repeat checks",
   "Drex Max v1 [repeat 1]": "reproducibility repeat (tools/v3/repeats, Zeki #4667): never shown as a setup; its result only in Experiments, Repeat checks",
   "REAX 1.3 [repeat 1]": "reproducibility repeat (tools/v3/repeats, Zeki #4667): never shown as a setup; its result only in Experiments, Repeat checks",

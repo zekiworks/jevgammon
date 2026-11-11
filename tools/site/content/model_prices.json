@@ -104,6 +104,16 @@
    "provisional": false,
    "provisional_reason": null
   },
+  "Gemini Decision 1": {
+   "weights": "closed",
+   "input_per_mtok": 0.1,
+   "source": "https://aistudio.google.com/docs/pricing#gemini-decision",
+   "read": "2026-11-11",
+   "quote": "Gemini Decision (gemini-decision-1), Standard, Paid tier: 'Input price (text, image, video, audio, PDF)' $0.10 per 1M tokens; 'Output price: Not applicable (0 output tokens)'.",
+   "note": "Standard price $0.10, no introductory price (the launch post gives the same: '$0.10 per 1M input tokens and $0 for output tokens'); Efficient. OpenRouter lists the same price for its one provider, Google AI Studio.",
+   "provisional": false,
+   "provisional_reason": null
+  },
   "Grok 4.7": {
    "weights": "closed",
    "input_per_mtok": 2,

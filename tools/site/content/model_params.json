@@ -625,6 +625,158 @@
    "card_source": "https://huggingface.co/startlux-models/StartLux-Decision-v1.1-2B-Instant",
    "card_quote": "'StartLux-Decision-v1.1-2B-Instant is a 2B decision model.'; 'The released weights are the uniform average of four such runs that differ only in their random seeds.'"
   },
+  "KnowLine-0.8B-Gen1": {
+   "total_b": 0.87,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/PelaAI/KnowLine-0.8B-Gen1/tree/6b27831f7b783c03278bd946d4d8f4f7a98a3798",
+   "quote": "PelaAI/KnowLine-0.8B-Gen1 @ 6b27831f7b783c03278bd946d4d8f4f7a98a3798: 873,438,784 parameters (the snapshot's safetensors header) = language model 752,393,024 + MTP layer 20,452,864 + vision encoder 100,592,896. Qwen3.5-0.8B base with a merged one-epoch LoRA SFT, dense; the same count as logic's model_sizes.json.",
+   "checked": [
+    "https://huggingface.co/api/models/PelaAI/KnowLine-0.8B-Gen1/revision/6b27831f7b783c03278bd946d4d8f4f7a98a3798",
+    "https://huggingface.co/PelaAI/KnowLine-0.8B-Gen1/raw/6b27831f7b783c03278bd946d4d8f4f7a98a3798/README.md"
+   ],
+   "read": "2026-11-11",
+   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors header on spark2: 0.87B (873,438,784) incl. its vision encoder (the base model's, not trained on images) and MTP layer; the card states 0.8B, the figure shown (Ümit #4260). Served in BF16 by the repo's serve_knowline.sh (SGLang 0.5.21) and knowline_server.py, which plays our late entry. Plays with up to 255 options per request (the league's usual rule); no request is over its limits.",
+   "terms": "0.87B incl. its vision encoder and MTP layer; card: 0.8B",
+   "card_total_b": 0.8,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/PelaAI/KnowLine-0.8B-Gen1",
+   "card_quote": "'KnowLine-0.8B-Gen1 is a 0.8B decision model based on Qwen3.5-0.8B.'; results table: 'KnowLine-0.8B-Gen1 | 0.8B'."
+  },
+  "StartLux-Decision-v1.1-0.8B-Instant": {
+   "total_b": 0.87,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/startlux-models/StartLux-Decision-v1.1-0.8B-Instant/tree/6496ae641cc71b149ce9dad69bd97f2a44e7bf11",
+   "quote": "startlux-models/StartLux-Decision-v1.1-0.8B-Instant @ 6496ae641cc71b149ce9dad69bd97f2a44e7bf11: 873,438,784 parameters (the snapshot's safetensors header) = language model incl. MTP layer 772,845,888 + vision encoder 100,592,896. Qwen3_5ForConditionalGeneration (Qwen3.5-0.8B backbone), dense; the same count as logic's model_sizes.json.",
+   "checked": [
+    "https://huggingface.co/api/models/startlux-models/StartLux-Decision-v1.1-0.8B-Instant/revision/6496ae641cc71b149ce9dad69bd97f2a44e7bf11",
+    "https://huggingface.co/startlux-models/StartLux-Decision-v1.1-0.8B-Instant/raw/6496ae641cc71b149ce9dad69bd97f2a44e7bf11/README.md"
+   ],
+   "read": "2026-11-11",
+   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors header on spark2: 0.87B (873,438,784) incl. its vision encoder and MTP layer; the card states 0.8B, the figure shown (Ümit #4260). Stored and served in BF16 by the package's startlux-decide serve --launch-vllm (vLLM 0.31.0 with its plugin), which plays our late entry. Plays with up to 255 options per request (the league's usual rule); no request is over its limits.",
+   "terms": "0.87B incl. its vision encoder and MTP layer; card: 0.8B",
+   "card_total_b": 0.8,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/startlux-models/StartLux-Decision-v1.1-0.8B-Instant",
+   "card_quote": "'StartLux-Decision-v1.1-0.8B-Instant is a 0.8B decision model.'"
+  },
+  "OneJev1.6-0.8B": {
+   "total_b": 0.85,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/OmniJev/OneJev1.6-0.8B/tree/bcd88a382f314b26cb7b1b7f369c1ed3502ee7a0",
+   "quote": "OmniJev/OneJev1.6-0.8B @ bcd88a382f314b26cb7b1b7f369c1ed3502ee7a0: 852,985,920 parameters (the snapshot's safetensors header) = language model 752,393,024 + vision encoder 100,592,896. Qwen3.5-0.8B base, dense; the same count as logic's model_sizes.json.",
+   "checked": [
+    "https://huggingface.co/api/models/OmniJev/OneJev1.6-0.8B/revision/bcd88a382f314b26cb7b1b7f369c1ed3502ee7a0",
+    "https://huggingface.co/OmniJev/OneJev1.6-0.8B/raw/bcd88a382f314b26cb7b1b7f369c1ed3502ee7a0/README.md"
+   ],
+   "read": "2026-11-11",
+   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors header on spark2: 0.85B (852,985,920) incl. its vision encoder; the card's chart gives 0.9B parameters, the figure shown (Ümit #4260); its text calls it 'the 0.8B model'. HF main moved from c89933c2 to bcd88a38 on 10 Nov (README only). Served by the repo's flide serve, which plays our late entry. Plays with up to 255 options per request (the league's usual rule); no request is over its limits.",
+   "terms": "0.85B incl. its vision encoder; card: 0.9B",
+   "card_total_b": 0.9,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/OmniJev/OneJev1.6-0.8B",
+   "card_quote": "'OneJev1.6-0.8B is the 0.8B model of OneJev 1.6'; chart: 'OneJev1.6-0.8B 48.8 at 0.9B parameters'."
+  },
+  "GLiClass v4 Edge": {
+   "total_b": 0.44,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/knowledgator/gliclass-v4-edge/tree/885af1af8a07edf4ed34df83ca0d995ed8201283",
+   "quote": "knowledgator/gliclass-v4-edge @ 885af1af8a07edf4ed34df83ca0d995ed8201283: 439,790,596 parameters (the snapshot's safetensors header) = DeBERTa-v3-large encoder 433,913,856 + projectors 4,198,400 + scorer 557,569 + calibrator 1,120,770. An encoder, dense, text only.",
+   "checked": [
+    "https://huggingface.co/api/models/knowledgator/gliclass-v4-edge/revision/885af1af8a07edf4ed34df83ca0d995ed8201283",
+    "https://huggingface.co/knowledgator/gliclass-v4-edge/raw/885af1af8a07edf4ed34df83ca0d995ed8201283/README.md"
+   ],
+   "read": "2026-11-11",
+   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors header on spark2: 0.44B (439,790,596) incl. its projectors, scorer and calibrator; the card states 0.4B (435M in its table), the figure shown (Ümit #4260). Served in BF16 by gliclass 0.1.22 behind runner/servers/gliclass_server.py, which plays our late entry. Plays with max_choices 218 (Main, 11 Nov): the worst case is 16,367 tokens, within its 16,384-token input; longer lists are split into equal groups of at most 218, then a final among the winners.",
+   "terms": "0.44B incl. its projectors, scorer and calibrator; card: 0.4B",
+   "card_total_b": 0.4,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/knowledgator/gliclass-v4-edge",
+   "card_quote": "'`knowledgator/gliclass-v4-edge` is the 0.4B-parameter edge release'; table: '| **Edge 0.4B** | 435M |'."
+  },
+  "KnowLine-2B-Gen1": {
+   "total_b": 2.27,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/PelaAI/KnowLine-2B-Gen1/tree/53245d470a4ce316e32fd0d18c24e142c697f40b",
+   "quote": "PelaAI/KnowLine-2B-Gen1 @ 53245d470a4ce316e32fd0d18c24e142c697f40b: 2,274,069,824 parameters (the snapshot's safetensors header) = language model 1,881,825,088 + MTP layer 60,828,160 + vision encoder 331,416,576. Qwen3.5-2B base with a merged one-epoch LoRA SFT, dense; the same count as logic's model_sizes.json.",
+   "checked": [
+    "https://huggingface.co/api/models/PelaAI/KnowLine-2B-Gen1/revision/53245d470a4ce316e32fd0d18c24e142c697f40b",
+    "https://huggingface.co/PelaAI/KnowLine-2B-Gen1/raw/53245d470a4ce316e32fd0d18c24e142c697f40b/README.md"
+   ],
+   "read": "2026-11-11",
+   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors header on spark2: 2.27B (2,274,069,824) incl. its vision encoder (the base model's, not trained on images) and MTP layer; the card states 2B, the figure shown (Ümit #4260). Served in BF16 by the repo's serve_knowline.sh (SGLang 0.5.21) and knowline_server.py, which plays our late entry. Plays with up to 255 options per request (the league's usual rule); no request is over its limits.",
+   "terms": "2.27B incl. its vision encoder and MTP layer; card: 2B",
+   "card_total_b": 2,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/PelaAI/KnowLine-2B-Gen1",
+   "card_quote": "'KnowLine-2B-Gen1 is a 2B decision model based on Qwen3.5-2B.'; results table: 'KnowLine-2B-Gen1 | 2B'."
+  },
+  "GLiDE 0.4B": {
+   "total_b": 0.4,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/fastino/GLiDE-0.4B/tree/6bda7ab91aeb36dcad6d27828a8871e548c7fc71",
+   "quote": "fastino/GLiDE-0.4B @ 6bda7ab91aeb36dcad6d27828a8871e548c7fc71: 395,042,816 parameters (the snapshot's safetensors headers) = encoder 394,781,696 (ModernBERT architecture) + decision readout 261,120 (readout.safetensors). Dense, text only; the same count as logic's model_sizes.json.",
+   "checked": [
+    "https://huggingface.co/api/models/fastino/GLiDE-0.4B/revision/6bda7ab91aeb36dcad6d27828a8871e548c7fc71",
+    "https://huggingface.co/fastino/GLiDE-0.4B/raw/6bda7ab91aeb36dcad6d27828a8871e548c7fc71/README.md"
+   ],
+   "read": "2026-11-11",
+   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors headers on spark2 incl. readout.safetensors: 0.40B (395,042,816); the card states 0.4B, the figure shown (Ümit #4260). Served by the glide package from the repo, which plays our late entry. Plays with max_choices 74 (Main, 11 Nov): its encoder shortens prompts over 7,999 tokens, so lists of 75 or more options are split into equal groups of at most 74, then a final among the winners, as for Winnow and Clef; the server (GLIDE_MAX_LEN=8006) refuses anything it would shorten; nothing shortened or refused.",
+   "terms": "0.40B incl. its decision readout; card: 0.4B",
+   "card_total_b": 0.4,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/fastino/GLiDE-0.4B",
+   "card_quote": "'GLiDE 0.4B is a GLiDE decision model with 0.40B parameters.'; table: 'Parameters | 0.40 B (0.39 B encoder, of which 52 M token embeddings; 0.26 M decision readout)'."
+  },
+  "GLiDE 0.8B": {
+   "total_b": 0.75,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/fastino/GLiDE-0.8B/tree/9eacdeec79fa48ec52a8d6f54b331376b4bbfaf0",
+   "quote": "fastino/GLiDE-0.8B @ 9eacdeec79fa48ec52a8d6f54b331376b4bbfaf0: 752,654,144 parameters (the snapshot's safetensors headers) = language model 752,393,024 + decision readout 261,120 (readout.safetensors). Dense, text only; the same count as logic's model_sizes.json.",
+   "checked": [
+    "https://huggingface.co/api/models/fastino/GLiDE-0.8B/revision/9eacdeec79fa48ec52a8d6f54b331376b4bbfaf0",
+    "https://huggingface.co/fastino/GLiDE-0.8B/raw/9eacdeec79fa48ec52a8d6f54b331376b4bbfaf0/README.md"
+   ],
+   "read": "2026-11-11",
+   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors headers on spark2 incl. readout.safetensors: 0.75B (752,654,144); the card states 0.75B, the figure shown (Ümit #4260). Served by the glide package from the repo, which plays our late entry. Plays with up to 255 options per request (the league's usual rule); no request is over its limits.",
+   "terms": "0.75B incl. its decision readout; card: 0.75B",
+   "card_total_b": 0.75,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/fastino/GLiDE-0.8B",
+   "card_quote": "'GLiDE 0.8B is a GLiDE decision model with 0.75B parameters.'; table: 'Parameters | 0.75 B (0.75 B language model, of which 254 M token embeddings; 0.26 M decision readout)'."
+  },
+  "GLiDE 2B": {
+   "total_b": 1.88,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/fastino/GLiDE-2B/tree/00f122c120cdeed82284106cb77d9bab5a50ad16",
+   "quote": "fastino/GLiDE-2B @ 00f122c120cdeed82284106cb77d9bab5a50ad16: 1,882,347,328 parameters (the snapshot's safetensors headers) = language model 1,881,825,088 + decision readout 522,240 (readout.safetensors). Dense, text only; the same count as logic's model_sizes.json.",
+   "checked": [
+    "https://huggingface.co/api/models/fastino/GLiDE-2B/revision/00f122c120cdeed82284106cb77d9bab5a50ad16",
+    "https://huggingface.co/fastino/GLiDE-2B/raw/00f122c120cdeed82284106cb77d9bab5a50ad16/README.md"
+   ],
+   "read": "2026-11-11",
+   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors headers on spark2 incl. readout.safetensors: 1.88B (1,882,347,328); the card states 1.88B, the figure shown (Ümit #4260). Served by the glide package from the repo, which plays our late entry. Plays with up to 255 options per request (the league's usual rule); no request is over its limits.",
+   "terms": "1.88B incl. its decision readout; card: 1.88B",
+   "card_total_b": 1.88,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/fastino/GLiDE-2B",
+   "card_quote": "'GLiDE 2B is a GLiDE decision model with 1.88B parameters.'; table: 'Parameters | 1.88 B (1.88 B language model, of which 509 M token embeddings; 0.52 M decision readout)'."
+  },
   "Kimi K3.1 Pro": {
    "total_b": 2800,
    "active_b": 104,

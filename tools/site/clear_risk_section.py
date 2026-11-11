@@ -27,5 +27,6 @@ def body(S) -> str:
                                          esc(t["caption"]))
                        for t in s["tables"])
         out.append(f'<section class="card" id="{s["id"]}"><h2>{esc(s["title"])}</h2>'
-                   f'<p class="note">{esc(C["status"])}</p><ul class="notes">{notes}</ul>{tabs}</section>')
+                   f'<p class="note">{esc(C["status"])}</p>'
+                   + P.star_note("How this part was done and checked", f'<ul class="notes">{notes}</ul>') + f'{tabs}</section>')
     return "\n".join(out)

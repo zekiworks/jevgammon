@@ -8,9 +8,12 @@
 # Every check comes first and writes nothing (repeats.py check): not held (REAX 1.3 never passes), the league config pins
 # every opponent to its original match's seed and seating (the league holds the same pins once it exists), the settings
 # as the manifest's, the name held in the main checkout's committed site code, the runner binary and every build input
-# at the sha256 recorded for the runner build (repeats.py RUNNER: e77e3a0, exact commit, clean tree), a recorded
-# attempt's league as recorded (REAX 1.3's #24 on 4ca4f08: kept, never resumed; league-id skips it, so the league unit
-# creates a new league for the repeat), the name in the late_entry_stage trigger.
+# at the sha256 recorded for the runner build (repeats.py RUNNER: d24d90a, exact commit, clean tree), then client
+# admission by that binary (`jevgammon admit` of the league config with the keys loaded as below: every config player's
+# and pinned opponent's client built, only decision services and the local engines, v3.db and budget ledgers opened
+# read-only and immutable, no request; any refused client fails the check), a recorded attempt's league as recorded
+# (REAX 1.3's #24 on 4ca4f08: kept, never resumed; league-id skips it, so the league unit creates a new league for the
+# repeat), the name in the late_entry_stage trigger.
 # Only "trigger missing" with everything else passing (check exit 3) leads to the one write: a zstd backup of v3.db
 # (VACUUM INTO, zstd -t), `repeats.py trigger ID` (itself refused on any other failure), then the complete check again.
 # Any other failure exits before anything is written: no backup, no trigger, no state or status file.

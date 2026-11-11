@@ -120,26 +120,27 @@ RUNNER_4CA4F08 = dict(
 # condition run.sh prepares (backup, trigger) before checking again; every other failure exits 1.
 TRIGGER_MISSING = 3
 NOT_IN_TRIGGER = "trigger missing: late_entry_stage does not name it"
-# The runner every repeat uses (Zeki #4860, #4886): branch pinned-late-reax e77e3a0 = origin/late-reax acfd89c (the
+# The runner every repeat uses (Zeki #4860, #4886, #4896): branch pinned-late-reax d24d90a = origin/late-reax acfd89c (the
 # originals' runner line, with the decision clients reax, baselabs, drex-max, nace, liquid and fastino) + 4ca4f08
-# cherry-picked without conflict (313e96f) + the offline admit command (e77e3a0), bound by sha256 as above: the binary as
-# built from a clean detached checkout of exactly that commit (its own tree, which the binary also asks for its harness
-# commit at runtime), every compile input outside src (include_str!; no build.rs) and the test data inside src,
-# Cargo.toml and Cargo.lock (all 18 at the same sha256 as 4ca4f08's). check refuses any other binary, commit, changed
-# src or input. Review package: mailbox/pinned-late-review/.
+# cherry-picked without conflict (313e96f) + the offline admit command (e77e3a0) made read-only (d24d90a: database and
+# budget ledgers opened read-only and immutable, client types outside the repeats' rosters refused before construction),
+# bound by sha256 as above: the binary as built from a clean detached checkout of exactly that commit (its own tree,
+# which the binary also asks for its harness commit at runtime), every compile input outside src (include_str!; no
+# build.rs) and the test data inside src, Cargo.toml and Cargo.lock (all 18 at the same sha256 as 4ca4f08's). check
+# refuses any other binary, commit, changed src or input. Review packages: mailbox/pinned-late-review/ (e77e3a0) and
+# its round2/ (d24d90a).
 RUNNER = dict(
     binary=str(MAIN / "target/pinned-late/release/jevgammon"),
-    binary_sha256="a7838e735bd0659ce25e7752984e438147c0451ae6a6d5f5c9cc7117dfe8798c",
-    tree="/home/cbasaran/code/jevgammon-runner-pinned-late", commit="e77e3a0",
-    commit_full="e77e3a0531d95e44256bdfda4264343aa182b9a5", src_tree="f70bd7efe6180f29e042babf3cef0e1cf9c40089",
+    binary_sha256="a7482f887bc5be97e46478f405d9692be7b02ae0dc375800cd28a3e0c80d51ac",
+    tree="/home/cbasaran/code/jevgammon-runner-admit-ro", commit="d24d90a",
+    commit_full="d24d90aacfca4f832329315d5c87ce856db65281", src_tree="524da2703a140cd2f9e22860bd2af915f5221dd2",
     build=dict(
-        command=("cd /home/cbasaran/code/jevgammon-runner-pinned-late && CARGO_TARGET_DIR=/home/cbasaran/code/"
+        command=("cd /home/cbasaran/code/jevgammon-runner-admit-ro && CARGO_TARGET_DIR=/home/cbasaran/code/"
                  "jevgammon/target/pinned-late cargo build --release --locked"),
         toolchain="rustc 1.97.1 (8bab26f4f 2026-07-14), cargo 1.97.1 (c980f4866 2026-06-30)",
-        built="2026-11-11T16:30Z",
-        tree=("git worktree add --detach /home/cbasaran/code/jevgammon-runner-pinned-late origin/late-reax (acfd89c); "
-              "cherry-pick -x 4ca4f08 (313e96f); admit commit e77e3a0 (clean; only the untracked METADATA.worktree "
-              "added)")),
+        built="2026-11-11T17:07Z",
+        tree=("git worktree add /home/cbasaran/code/jevgammon-runner-admit-ro pinned-late-reax (e77e3a0); commit "
+              "d24d90a; checkout --detach (clean; only the untracked METADATA.worktree added)")),
     inputs=dict(RUNNER_4CA4F08["inputs"]))
 RUNNER_DIFFERENCE = ("Runner: " + RUNNER["commit"] + ", the originals' runner line (origin/late-reax acfd89c) with the "
                      "pinned-pairs change 4ca4f08 (the pins are its only change for these leagues), where the original "
@@ -655,6 +656,32 @@ def settings_problems(conn, rid: str, m, cfg) -> list[str]:
     return bad
 
 
+# The keys run.sh loads before the league (~/.keys; Celeris' key file when ~/.keys has none), so admission builds each
+# client with the credentials the league will have.
+KEYS = ('set -a; . ~/.keys; set +a; [[ -n ${CELERIS_API_KEY:-} ]] || '
+        '{ CELERIS_API_KEY="$(cat ~/.config/celeris/key)"; export CELERIS_API_KEY; }; ')
+ADMIT_TIMEOUT_S = 600
+
+
+def admission_problems(rn, config: Path) -> list[str]:
+    """Client admission by the bound runner (Zeki #4860, #4896): `jevgammon admit --db DB --config <league config>`
+    builds the client of every config player and of every opponent its pinned_pairs names (from players.settings), as
+    the league builds them, but only decision services and the local engines (any other client type is refused before
+    it is constructed); the database and every budget ledger are opened read-only and immutable and no request is
+    sent, so admission writes nothing. A refused client, an error or no answer in ADMIT_TIMEOUT_S is a problem."""
+    try:
+        r = subprocess.run(["bash", "-c", KEYS + 'exec "$0" admit --db "$1" --config "$2"', rn["binary"], str(DB),
+                            str(config)], capture_output=True, text=True, timeout=ADMIT_TIMEOUT_S)
+    except subprocess.TimeoutExpired:
+        return [f"client admission: jevgammon admit gave no answer in {ADMIT_TIMEOUT_S} s"]
+    if r.returncode == 0:
+        return []
+    why = [line.strip() for line in r.stdout.splitlines() if line.startswith("REFUSED")]
+    why += [line.strip() for line in r.stderr.splitlines() if line.strip()]
+    return [f"client admission refused (jevgammon admit exit {r.returncode}): " + " | ".join(why)]
+
+
+
 def problems(rid: str) -> list[str]:
     """Everything check verifies, read-only; NOT_IN_TRIGGER stands for the trigger lacking the name."""
     m = load()[rid]
@@ -680,7 +707,10 @@ def problems(rid: str) -> list[str]:
                                      capture_output=True, text=True).stdout or "{}").get("held", {})
     if m["name"] not in held:
         bad.append("not held in the main checkout's committed tools/site/content/held_setups.json")
-    bad += runner_problems(m["runner"])
+    rb = runner_problems(m["runner"])
+    bad += rb
+    if not rb and cfg:  # only the bound binary is executed
+        bad += admission_problems(m["runner"], path)
     names = trigger_names(conn)
     if names is None:
         bad.append("v3.db has no late_entry_stage trigger")
@@ -691,8 +721,8 @@ def problems(rid: str) -> list[str]:
 
 def check(args) -> None:
     """Fail closed (read-only): a held repeat, other pins or settings, the name not held on the site, another runner
-    binary, commit, src or build input exit 1; the trigger lacking the name, when nothing else fails, exits
-    TRIGGER_MISSING (3), the one condition run.sh prepares."""
+    binary, commit, src or build input, a client the bound runner's `admit` refuses exit 1; the trigger lacking the
+    name, when nothing else fails, exits TRIGGER_MISSING (3), the one condition run.sh prepares."""
     bad = problems(args.id)
     if bad == [NOT_IN_TRIGGER]:
         print(f"{args.id}: {NOT_IN_TRIGGER} (everything else passes)", file=sys.stderr)
@@ -704,7 +734,7 @@ def check(args) -> None:
     rn = m["runner"]
     print(f"{args.id}: {len(wanted_pins(m))} pairs pinned in its config, settings as the manifest's, trigger and held "
           f"name in place, runner {rn['commit']} (binary sha256 {rn['binary_sha256'][:16]}…, "
-          f"{len(rn['inputs'])} build inputs as recorded, tree {rn['tree']})")
+          f"{len(rn['inputs'])} build inputs as recorded, tree {rn['tree']}), every client admitted (jevgammon admit)")
 
 
 def trigger(args) -> None:

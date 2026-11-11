@@ -1,18 +1,24 @@
 #!/usr/bin/env bash
-# Regression tests of run.sh's preflight (Zeki #4737), on scratch copies only: never the production v3.db, the main
-# checkout's state or the runner tree. Each case gets its own copy of these scripts and the manifest (repo layout), a
-# clone of the runner tree at the recorded commit, a copy of the recorded binary, and a scratch database (the runner's
-# own schema, created by the copied binary, plus the originals' and programs' players rows from the manifest and a
-# late_entry_stage trigger naming the originals only, so every repeat starts with "trigger missing"; and REAX 1.3's
-# recorded attempt, league #24, as v3.db holds it).
+# Regression tests of run.sh's preflight (Zeki #4737, #4896), on scratch copies only: never the production v3.db, a
+# production budget ledger, the main checkout's state or the runner tree. Each case gets its own copy of these scripts
+# and the manifest (repo layout), a clone of the runner tree at the recorded commit, a copy of the recorded binary, and a
+# scratch database (the runner's own schema, created by the copied binary, plus the originals' and programs' players
+# rows from the manifest, the pinned opponents' rows (name and spec as each original played them; specs from the
+# 2026-11-11 admission run, mailbox/pinned-late-review/admission.log) and a late_entry_stage trigger naming the originals
+# only, so every repeat starts with "trigger missing"; and REAX 1.3's recorded attempt, league #24, as v3.db holds it).
+# Drex Max 1.1's Nace ledger is a scratch ledger (the path replaced in the copies of the manifest, the league configs and
+# repeats.py); the keys are a scratch HOME's ~/.keys and Celeris key file with placeholder values (no request is sent).
 #   Recorded attempt: league-id skips league #24 (the league unit then starts a new league); a changed #24 refuses.
 #   Refusals (a held repeat: REAX 1.3 marked held in the case's manifest copy, as before its release; bad pins, other
 #   settings, another binary, a changed or missing build input, a changed src, a descendant commit, Drex Max 1.1's and
-#   GLiDE v1.2's pins and budget, a repeat name not yet held in main's site): run.sh ID --prepare-only exits non-zero,
-#   the scratch database's sha256 is unchanged, no backup,
-#   no state or status file; repeats.py check exits 1 (not 3) and repeats.py trigger refuses without a write.
+#   GLiDE v1.2's pins and budget, a repeat name not yet held in main's site; client admission: a pinned opponent's
+#   players row with a subscription-login provider, a required key missing, Drex Max 1.1's ledger missing): run.sh ID
+#   --prepare-only exits non-zero, the scratch database's sha256 is unchanged, no backup, no state or status file;
+#   repeats.py check exits 1 (not 3) and repeats.py trigger refuses without a write. An admission refusal is the
+#   check's only failure besides the missing trigger, and names the refused client; a missing ledger is not created.
 #   Trigger missing only (each repeat not held): check exits 3, run.sh prepares (backup verified by zstd -t, trigger),
-#   checks again and exits 0; check then exits 0, and a second run.sh writes nothing more.
+#   checks again and exits 0 with every client admitted; check then exits 0, and a second run.sh writes nothing more.
+#   The scratch Nace ledger is byte-identical after every case, with no -wal or -shm beside it.
 # Usage: tools/v3/repeats/test_launcher.sh   (TMPDIR defaults to ~/.cache/tmp; exit 0 when every case passes)
 set -uo pipefail
 HERE=$(dirname "$(readlink -f "$0")")
@@ -26,12 +32,52 @@ print(r["tree"], r["binary"], r["commit_full"])' "$MAN")
 echo "runner as recorded: tree $RTREE, binary $RBIN, commit $RCOMMIT"
 echo "scratch: $S"
 
-# Templates: the runner tree as a clone at the commit, the binary, the scratch database.
+# Templates: the runner tree as a clone at the commit, the binary, the scripts and manifest with a scratch Nace ledger,
+# the keys, the scratch database.
 git clone -q --shared --no-checkout "$RTREE" "$S/tpl/runner" && git -C "$S/tpl/runner" checkout -q --detach "$RCOMMIT" ||
   { echo "cannot clone $RTREE at $RCOMMIT"; exit 1; }
 mkdir -p "$S/tpl/bin" && cp "$RBIN" "$S/tpl/bin/jevgammon"
+mkdir -p "$S/tpl/repo/tools/v3" "$S/tpl/repo/mailbox/repeats" "$S/ledger"
+cp -r "$HERE" "$S/tpl/repo/tools/v3/repeats"
+cp "$MAN" "$S/tpl/repo/mailbox/repeats/"
+TMAN=$S/tpl/repo/mailbox/repeats/$(basename "$MAN")
+LEDGER=$S/ledger/nace-budget.db
+NACE=$(python3 -c 'import sys; sys.path.insert(0, sys.argv[1]); import repeats; print(repeats.NACE_LEDGER)' "$HERE")
+python3 - "$NACE" "$LEDGER" "$TMAN" "$S/tpl/repo/tools/v3/repeats" <<'EOF' || { echo "ledger fixture failed"; exit 1; }
+import sqlite3, sys
+from pathlib import Path
+nace, ledger, man, rep = sys.argv[1:5]
+for p in [Path(man), Path(rep) / "repeats.py", *sorted((Path(rep) / "leagues").glob("*.json"))]:
+    p.write_text(p.read_text().replace(nace, ledger))
+# The ledger as the runner's Ledger::open leaves it (budget.rs SCHEMA, WAL, the cap row), closed.
+conn = sqlite3.connect(ledger)
+conn.execute("PRAGMA journal_mode = WAL")
+conn.executescript("""
+CREATE TABLE IF NOT EXISTS budget (id INTEGER PRIMARY KEY CHECK (id = 1), cap_usd REAL NOT NULL);
+CREATE TABLE IF NOT EXISTS attempts (
+    id INTEGER PRIMARY KEY, setup TEXT NOT NULL, pid INTEGER NOT NULL, started_at TEXT NOT NULL, finished_at TEXT,
+    status TEXT NOT NULL, reserved_usd REAL NOT NULL, cost_usd REAL, list_cost_usd REAL, reported_cost_usd REAL,
+    input_tokens INTEGER, cached_tokens INTEGER, output_tokens INTEGER, reasoning_tokens INTEGER, note TEXT);
+INSERT INTO budget (id, cap_usd) VALUES (1, 1.25);
+""")
+conn.commit()
+conn.close()
+EOF
+LEDGER_SHA=$(sha256sum < "$LEDGER")
+ledger_intact() { [[ $(sha256sum < "$LEDGER") == "$LEDGER_SHA" && ! -e $LEDGER-wal && ! -e $LEDGER-shm ]]; }
+ledger_intact || { echo "the scratch ledger did not close cleanly"; exit 1; }
+# Every key the field's decision services require, placeholder values; Celeris' from its key file, as on the host.
+keys_home() {  # dir [variable to leave out]
+  mkdir -p "$1/.config/celeris"
+  local v
+  for v in TYPESAFE_API_KEY FASTINO_API_KEY OPENAI_API_KEY LIQUID_API_KEY SUBQ_API_KEY OPENROUTER_API_KEY NACE_API_KEY; do
+    [[ $v == "${2:-}" ]] || echo "$v=placeholder-not-a-key"
+  done > "$1/.keys"
+  [[ ${2:-} == CELERIS_API_KEY ]] || echo placeholder-not-a-key > "$1/.config/celeris/key"
+}
+keys_home "$S/keys"
 "$S/tpl/bin/jevgammon" void --db "$S/tpl/v3.db" --match 1 --reason schema >/dev/null 2>&1  # opens: creates the schema
-python3 - "$S/tpl/v3.db" "$MAN" "$HERE/leagues" <<'EOF' || { echo "fixture failed"; exit 1; }
+python3 - "$S/tpl/v3.db" "$TMAN" "$S/tpl/repo/tools/v3/repeats/leagues" <<'EOF' || { echo "fixture failed"; exit 1; }
 import json, sqlite3, sys
 from pathlib import Path
 db, man, leagues = sys.argv[1], json.load(open(sys.argv[2])), Path(sys.argv[3])
@@ -41,6 +87,21 @@ if not conn.execute("SELECT 1 FROM sqlite_master WHERE name = 'players'").fetcho
 rows = {r["original"]: r["settings_original"] for r in man["repeats"]}
 for cfg in leagues.glob("*.json"):
     rows |= {p["name"]: p for p in json.loads(cfg.read_text())["players"][1:]}
+# The pinned opponents (each original's field), as `jevgammon admit` built them on 2026-11-11 (admission.log): the
+# name and spec of each players row; the originals among them keep their manifest settings.
+OPPONENTS = {
+    "Celeris-1 Decision": "celeris/celeris-1-decision", "Clef": "clef", "Cygnet (Gemma 4 12B)": "cygnet",
+    "Decider Flash v1.2": "pplx-local/pplx-decider-flash-v1.2", "Decider v1.1 27B": "pplx-local",
+    "Decider v1.2 27B": "pplx-local/pplx-decider-v1.2", "Fastino GLiDE": "fastino",
+    "Fastino GLiDE v1.2 (local)": "fastino/glide-v1.2", "GPT-6 Luna": "openai-decisions/gpt-6-luna",
+    "Jev 1.13.0": "jev/jev-1.13.0", "Jev 1.14.0": "jev/jev-1.14.0", "Liquid d1-ultra": "liquid/d1-ultra",
+    "Mercury Decide": "openrouter-decisions/inception/mercury-decide", "Open-Jev 27B v1.1": "open-jev",
+    "SubQ Snap Preview": "subq/subq-snap-preview", "Winnow-12B": "winnow/winnow-12b"}
+for name, spec in OPPONENTS.items():
+    rows.setdefault(name, dict(name=name, spec=spec))
+pins = {o for r in man["repeats"] for o in json.loads((leagues / f"{r['id']}.json").read_text())["pinned_pairs"]}
+if pins - set(rows):
+    sys.exit(f"pinned opponents without a players row: {sorted(pins - set(rows))}")
 for name, s in rows.items():
     conn.execute("INSERT INTO players (name, spec, settings, created_at) VALUES (?, ?, ?, '2026-11-11T00:00:00Z')",
                  (name, s.get("spec") or "program", json.dumps(s)))
@@ -78,14 +139,15 @@ fails=0
 pass() { echo "ok   $C: $*"; }
 failc() { echo "FAIL $C: $*"; fails=$((fails + 1)); }
 # A case's own copies: D/repo (scripts, leagues, manifest pointing at D/runner and D/bin), D/home (state), D/home/v3.db.
+# The keys: the scratch HOME $S/keys, or the case's own (CASE_HOME).
 setup() {
-  C=$1 D=$S/$1
+  C=$1 D=$S/$1 CASE_HOME=
   mkdir -p "$D/repo/tools/v3" "$D/repo/mailbox/repeats" "$D/home"
-  cp -r "$HERE" "$D/repo/tools/v3/repeats"
+  cp -r "$S/tpl/repo/tools/v3/repeats" "$D/repo/tools/v3/repeats"
   cp -a "$S/tpl/runner" "$D/runner"
   cp -a "$S/tpl/bin" "$D/bin"
   cp "$S/tpl/v3.db" "$D/home/v3.db"
-  python3 - "$MAN" "$D/repo/mailbox/repeats/$(basename "$MAN")" "$D" <<'EOF'
+  python3 - "$TMAN" "$D/repo/mailbox/repeats/$(basename "$MAN")" "$D" <<'EOF'
 import json, sys
 m = json.load(open(sys.argv[1]))
 for r in m["repeats"]:
@@ -93,8 +155,18 @@ for r in m["repeats"]:
 open(sys.argv[2], "w").write(json.dumps(m, indent=1, ensure_ascii=False) + "\n")
 EOF
 }
-in_case() { JEVGAMMON_DB=$D/home/v3.db REPEATS_HOME=$D/home "$@"; }
+in_case() { HOME=${CASE_HOME:-$S/keys} JEVGAMMON_DB=$D/home/v3.db REPEATS_HOME=$D/home "$@"; }
 check_rc() { in_case python3 "$D/repo/tools/v3/repeats/repeats.py" check "$1" > "$D/check.out" 2>&1; echo $?; }
+# An admission refusal is the check's only failure besides the missing trigger (problems() lists every other check
+# before admission and only the trigger after it), and its text names the refusal.
+admission_only() {  # rid expected-text
+  if [[ $(wc -l < "$D/check.out") == 1 ]] &&
+     grep -qE "^$1: client admission refused \(jevgammon admit exit 1\): .*$2.*; trigger missing: late_entry_stage does not name it$" "$D/check.out"; then
+    pass "check's only failure (with the missing trigger) is the admission refusal: $(grep -oE "REFUSED[^|]*$2[^|]*" "$D/check.out" | head -1 | cut -c1-200)"
+  else
+    failc "check did not fail on the admission refusal alone: $(cut -c1-600 "$D/check.out")"
+  fi
+}
 
 refuse() {  # case id: run after the case's mutation
   local rid=$1 before after rc crc trc
@@ -173,12 +245,33 @@ open(sys.argv[1], "w").write(json.dumps(c, indent=2, ensure_ascii=False) + "\n")
 EOF
 refuse drex-max-1.1-r1
 
+# Client admission (Zeki #4896): the bound runner's `jevgammon admit` refuses a client, so check exits 1 before any
+# write. A pinned opponent's players row naming a subscription login (refused before its client is constructed):
+setup admission-oauth-opponent
+sqlite3 "$D/home/v3.db" "UPDATE players SET spec = 'openai/gpt-5.6', settings = json_set(settings, '$.spec', 'openai/gpt-5.6')
+                         WHERE name = 'Jev 1.13.0'"
+refuse mammoth-1-r1
+admission_only mammoth-1-r1 "Jev 1.13.0 \(openai/gpt-5.6; players #[0-9]+\): provider .openai. of .openai/gpt-5.6. is outside the admission roster"
+# A client that cannot be built: Celeris' required key missing (no CELERIS_API_KEY, no key file).
+setup admission-key-missing
+CASE_HOME=$D/keys; keys_home "$CASE_HOME" CELERIS_API_KEY
+refuse reax-1.3-r1
+admission_only reax-1.3-r1 "Celeris-1 Decision \(celeris/celeris-1-decision; players #[0-9]+\): .*needs an API key"
+# Drex Max 1.1's budget ledger missing: refused, and not created (the writable Ledger::open would create it).
+setup admission-ledger-missing
+mv "$LEDGER" "$LEDGER.away"
+refuse drex-max-1.1-r1
+admission_only drex-max-1.1-r1 "Drex Max 1.1 \[repeat 1\] \(nace/drex-max-v1.1; league config\): budget ledger .* does not exist"
+[[ ! -e $LEDGER && ! -e $LEDGER-wal && ! -e $LEDGER-shm ]] && pass "the missing ledger was not created" ||
+  failc "admission created $LEDGER"
+rm -f "$LEDGER" "$LEDGER-wal" "$LEDGER-shm"; mv "$LEDGER.away" "$LEDGER"
+
 # The real runner as recorded (tree, binary, inputs; the unmodified manifest) against a scratch database: only the
 # trigger is missing (exit 3); nothing is written.
 C=recorded-runner D=$S/recorded-runner
 mkdir -p "$D" && cp "$S/tpl/v3.db" "$D/v3.db"
 before=$(sha256sum < "$D/v3.db")
-out=$(JEVGAMMON_DB=$D/v3.db python3 "$HERE/repeats.py" check mammoth-1-r1 2>&1); rc=$?
+out=$(HOME=$S/keys JEVGAMMON_DB=$D/v3.db python3 "$HERE/repeats.py" check mammoth-1-r1 2>&1); rc=$?
 echo "     check (recorded runner $RTREE, $RBIN): exit $rc: $out"
 if (( rc == 3 )) && [[ $(sha256sum < "$D/v3.db") == "$before" ]]; then pass "the recorded runner binds; only the trigger is missing"
 else failc "check exit $rc or the database changed"; fi
@@ -235,12 +328,17 @@ for rid in "${prepare[@]}"; do
   [[ -n $bak ]] && zstd -q -t "$bak" || bad+=("no verified backup")
   [[ -e $D/home/workspace/repeats/$rid/prepared ]] || bad+=("no prepared marker")
   (( crc1 == 0 )) || bad+=("check after exit $crc1")
+  [[ $out1 == *"every client admitted (jevgammon admit)"* ]] || bad+=("check after: no admission")
   (( rc2 == 0 )) && [[ $again == "$after" ]] || bad+=("second run.sh: exit $rc2 or wrote")
   (( $(compgen -G "$D/home/v3.db.bak-*" | wc -l) == 1 )) || bad+=("more than one backup")
   if (( ${#bad[@]} )); then failc "${bad[*]}"; else
-    pass "check exit 3, prepared ($(basename "$bak") verified, trigger added), check exit 0; second run wrote nothing"
+    pass "check exit 3, prepared ($(basename "$bak") verified, trigger added), check exit 0 with every client admitted; second run wrote nothing"
   fi
 done
+
+C=scratch-ledger
+ledger_intact && pass "the scratch Nace ledger is byte-identical (sha256 ${LEDGER_SHA%% *}), no -wal or -shm beside it" ||
+  failc "the scratch Nace ledger changed: $(sha256sum < "$LEDGER"); $(ls -la "$S/ledger")"
 
 if (( fails )); then echo "FAILED: $fails case(s)"; else echo "ALL PASSED"; fi
 exit $(( fails > 0 ))

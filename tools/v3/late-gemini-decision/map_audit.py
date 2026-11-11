@@ -2,11 +2,15 @@
 """Offline audit of every stored Gemini Decision 1 answer under the runner's map-check v2 (src/players/decision.rs
 map_fault; Zeki #4985): a probability map is usable only when it has exactly one entry per shown id (none missing,
 unknown or repeated), every value a finite number in [0, 1], and the values sum to 1 within 1e-6 (no frozen sum
-tolerance existed; 1e-6 chosen 11 Nov for Gemini Decision 1 only). Read-only on v3.db; metadata only (counts, ids of
-failing exchanges, max |sum - 1|), never a probability is changed.
+tolerance existed; 1e-6 chosen 11 Nov for Gemini Decision 1 only). Reads the raw response text stored in
+exchanges.response (the HTTP body as received) with every JSON object kept as its key/value pairs, so a repeated key
+shows (a plain dict keeps only the last), and as strict JSON: a bare NaN/Infinity token makes the response unreadable,
+as the runner's serde_json does (an invalid answer there). Read-only on v3.db; metadata only (counts, ids of failing
+exchanges, max |sum - 1|), never a probability is changed.
 
     map_audit.py [V3_DB]          audit (default: the main checkout's v3.db)
-    map_audit.py --controls       run the predicate on hand-made bad maps (each must be rejected) and a valid one
+    map_audit.py --controls       run the predicate on hand-made bad maps (each must be rejected) and a valid one,
+                                  and the raw-text reader on a repeated key and a NaN token
 """
 import json
 import math
@@ -42,11 +46,27 @@ def faults(entries, shown) -> set[str]:
     return out
 
 
+class Pairs(dict):
+    """A JSON object as parsed (last value per key, for lookups) with every key/value pair as sent in `pairs`."""
+
+    def __init__(self, pairs):
+        super().__init__(pairs)
+        self.pairs = pairs
+
+
+def strict(token):
+    raise ValueError(f"non-standard JSON token {token}")
+
+
+def parse(text: str):
+    return json.loads(text, object_pairs_hook=Pairs, parse_constant=strict)
+
+
 def entries_of(probabilities):
     if isinstance(probabilities, list):
         return [(p.get("value"), p.get("probability")) for p in probabilities]
-    if isinstance(probabilities, dict):
-        return list(probabilities.items())
+    if isinstance(probabilities, Pairs):
+        return list(probabilities.pairs)
     return []
 
 
@@ -58,15 +78,20 @@ def audit(db: str) -> None:
            JOIN players p ON p.id = CASE t.player WHEN 1 THEN m.player1 ELSE m.player2 END
            WHERE p.name = ? ORDER BY e.id""", (NAME,)).fetchall()
     counts = dict.fromkeys(KINDS, 0)
-    audited = no_answer = failed = 0
+    audited = no_answer = unreadable = failed = 0
     worst = 0.0
     bad = []
     matches = sorted({r[2] for r in rows})
     for eid, tid, mid, request, response, error, source in rows:
         try:
-            answer = json.loads(response or "")["answers"]["play"]
             shown = list(json.loads(request)["questions"]["play"]["criteria"])
-        except (ValueError, KeyError, TypeError):
+            parsed = parse(response or "")
+        except ValueError:
+            unreadable += 1
+            continue
+        try:
+            answer = parsed["answers"]["play"]
+        except (KeyError, TypeError):
             no_answer += 1
             continue
         if answer.get("type") != "choice" or "probabilities" not in answer:
@@ -83,8 +108,9 @@ def audit(db: str) -> None:
         if f:
             failed += 1
             bad.append(f"exchange {eid} (turn {tid}, match #{mid}): {', '.join(sorted(f))}")
-    print(f"{NAME}: {len(rows)} exchanges in matches {', '.join(f'#{m}' for m in matches)}; {audited} answers with a "
-          f"probability map audited, {no_answer} without one (error or no choice answer)")
+    print(f"{NAME}: {len(rows)} exchanges in matches {', '.join(f'#{m}' for m in matches)}, raw response text stored "
+          f"for {sum(1 for r in rows if r[4])}; {audited} answers with a probability map audited, {unreadable} "
+          f"unreadable as strict JSON, {no_answer} without a choice answer")
     print("| failing maps | " + " | ".join(KINDS) + " | max abs(sum - 1) |")
     print("|---" * (len(KINDS) + 2) + "|")
     print(f"| {failed} | " + " | ".join(str(counts[k]) for k in KINDS) + f" | {worst:.3g} |")
@@ -111,6 +137,17 @@ def controls() -> None:
         got = faults(entries, shown)
         ok &= got == want
         print(f"{'ok ' if got == want else 'BAD'} {name}: {sorted(got) or 'accepted'}")
+    # The raw-text reader: a repeated key in the object (a plain dict would keep one) and a bare NaN token.
+    raw = '{"answers":{"play":{"type":"choice","choice":"a","probabilities":{"a":0.5,"a":0.0,"b":0.5}}}}'
+    got = faults(entries_of(parse(raw)["answers"]["play"]["probabilities"]), shown)
+    ok &= got == {"repeated"}
+    print(f"{'ok ' if got == {'repeated'} else 'BAD'} raw text, repeated key: {sorted(got) or 'accepted'}")
+    try:
+        parse('{"answers":{"play":{"probabilities":{"a":NaN,"b":0.5}}}}')
+        ok = False
+        print("BAD raw text, NaN token: read")
+    except ValueError as e:
+        print(f"ok  raw text, NaN token: unreadable ({e})")
     sys.exit(0 if ok else 1)
 
 

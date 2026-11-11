@@ -497,7 +497,7 @@ impl DecisionClient {
                 (!decision.probabilities.is_empty()).then_some("decision");
             if self.map_checked() {
                 let fault = map_fault(
-                    &answer.map(raw_map).unwrap_or_default(),
+                    &raw_entries(&text),
                     shown.iter().map(|&i| req.notations[i].as_str()),
                 );
                 if let Some(fault) = fault {
@@ -534,24 +534,57 @@ impl DecisionClient {
     }
 }
 
-/// Every probability entry of an answer as sent, in either format: `None` for a value that is not a number. Nothing
-/// is dropped or normalised.
-fn raw_map(answer: &Value) -> Vec<(String, Option<f64>)> {
-    match answer.get("probabilities") {
-        Some(Value::Array(list)) => list
-            .iter()
-            .map(|p| {
-                let id = p
-                    .get("value")
-                    .and_then(Value::as_str)
-                    .unwrap_or("")
-                    .to_owned();
-                (id, p.get("probability").and_then(Value::as_f64))
-            })
-            .collect(),
-        Some(Value::Object(map)) => map.iter().map(|(id, p)| (id.clone(), p.as_f64())).collect(),
-        _ => Vec::new(),
+/// Every probability entry of the play answer as the raw response text has it, in either format, read with a visitor
+/// so a repeated key stays two entries (`serde_json::Value` keeps only the last): `None` for a value that is not a
+/// number. Nothing is dropped or normalised; a response this cannot read gives no entries (every id then missing).
+fn raw_entries(text: &str) -> Vec<(String, Option<f64>)> {
+    use serde::Deserialize;
+    use serde::de::{Deserializer, MapAccess, SeqAccess, Visitor};
+
+    struct Entries(Vec<(String, Option<f64>)>);
+    impl<'de> Deserialize<'de> for Entries {
+        fn deserialize<D: Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+            struct V;
+            impl<'de> Visitor<'de> for V {
+                type Value = Entries;
+                fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+                    f.write_str("a probability object or list")
+                }
+                fn visit_map<A: MapAccess<'de>>(self, mut map: A) -> Result<Entries, A::Error> {
+                    let mut out = Vec::new();
+                    while let Some((id, p)) = map.next_entry::<String, Value>()? {
+                        out.push((id, p.as_f64()));
+                    }
+                    Ok(Entries(out))
+                }
+                fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<Entries, A::Error> {
+                    let mut out = Vec::new();
+                    while let Some(p) = seq.next_element::<Value>()? {
+                        let id = p.get("value").and_then(Value::as_str).unwrap_or("");
+                        out.push((id.to_owned(), p.get("probability").and_then(Value::as_f64)));
+                    }
+                    Ok(Entries(out))
+                }
+            }
+            d.deserialize_any(V)
+        }
     }
+    #[derive(Deserialize)]
+    struct Answer {
+        probabilities: Entries,
+    }
+    // QUESTION is "play": the answer's field name.
+    #[derive(Deserialize)]
+    struct Answers {
+        play: Answer,
+    }
+    #[derive(Deserialize)]
+    struct Response {
+        answers: Answers,
+    }
+    serde_json::from_str::<Response>(text)
+        .map(|r| r.answers.play.probabilities.0)
+        .unwrap_or_default()
 }
 
 /// Why a probability map is not usable, or `None` when it is: exactly one entry per shown id (none missing, unknown
@@ -626,6 +659,29 @@ mod tests {
     fn openrouter_stub(
         tamper: fn(&[String], &mut Map<String, Value>),
     ) -> (String, std::thread::JoinHandle<Value>) {
+        literal_stub(move |keys| {
+            let rest = 0.3 / (keys.len() - 1) as f64;
+            let mut probabilities: Map<String, Value> = keys
+                .iter()
+                .enumerate()
+                .map(|(i, k)| (k.clone(), (if i == 2 { 0.7 } else { rest }).into()))
+                .collect();
+            tamper(keys, &mut probabilities);
+            json!({
+                "model": "google/gemini-decision-1-20261111", "provider": "Google AI Studio",
+                "id": "gen-dec-stub",
+                "answers": {QUESTION: {"type": "choice", "choice": keys[2], "probabilities": probabilities, "confidence": 0.6}},
+                "usage": {"input_tokens": 2345, "output_tokens": 0, "cost": 0.0002345}
+            })
+            .to_string()
+        })
+    }
+
+    /// Answers one request with the literal response text `respond` makes from the shown ids
+    /// (the request's criteria keys, in order) and returns the request body.
+    fn literal_stub(
+        respond: impl FnOnce(&[String]) -> String + Send + 'static,
+    ) -> (String, std::thread::JoinHandle<Value>) {
         let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
         let url = format!("http://{}", listener.local_addr().unwrap());
         let handle = std::thread::spawn(move || {
@@ -653,20 +709,7 @@ mod tests {
                 .keys()
                 .cloned()
                 .collect();
-            let rest = 0.3 / (keys.len() - 1) as f64;
-            let mut probabilities: Map<String, Value> = keys
-                .iter()
-                .enumerate()
-                .map(|(i, k)| (k.clone(), (if i == 2 { 0.7 } else { rest }).into()))
-                .collect();
-            tamper(&keys, &mut probabilities);
-            let answer = json!({
-                "model": "google/gemini-decision-1-20261111", "provider": "Google AI Studio",
-                "id": "gen-dec-stub",
-                "answers": {QUESTION: {"type": "choice", "choice": keys[2], "probabilities": probabilities, "confidence": 0.6}},
-                "usage": {"input_tokens": 2345, "output_tokens": 0, "cost": 0.0002345}
-            })
-            .to_string();
+            let answer = respond(&keys);
             write!(
                 stream,
                 "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{answer}",
@@ -676,6 +719,20 @@ mod tests {
             body
         });
         (url, handle)
+    }
+
+    /// A raw System One answer: `entries` written as given (so a key may repeat, or a value be
+    /// a bare `NaN`), the third shown id chosen.
+    fn raw_answer(keys: &[String], entries: &[(usize, &str)]) -> String {
+        let map: Vec<String> = entries
+            .iter()
+            .map(|&(i, v)| format!("{}:{v}", serde_json::to_string(&keys[i]).unwrap()))
+            .collect();
+        format!(
+            r#"{{"model":"google/gemini-decision-1-20261111","provider":"Google AI Studio","answers":{{"play":{{"type":"choice","choice":{},"probabilities":{{{}}},"confidence":0.6}}}},"usage":{{"input_tokens":2345,"output_tokens":0}}}}"#,
+            serde_json::to_string(&keys[2]).unwrap(),
+            map.join(",")
+        )
     }
 
     #[tokio::test(flavor = "multi_thread")]
@@ -868,6 +925,86 @@ mod tests {
         assert!(decision.exchanges[0].error.is_none());
         assert_eq!(decision.probabilities.len(), n - 1);
         assert_eq!(decision.probability_source, Some("decision"));
+
+        // Raw response bytes through the real decode path. A repeated key (one of the two
+        // entries at 0, so the sum stays 1): serde_json's map keeps only the last, the
+        // map check still sees both entries and rejects the map.
+        let gemini = |url: &str| DecisionClient {
+            http: reqwest::Client::new(),
+            service,
+            key: Some("test".into()),
+            model: Some("google/gemini-decision-1".into()),
+            url: format!("{url}{}", service.path),
+            request: None,
+        };
+        fn valid(n: usize) -> Vec<(usize, String)> {
+            let rest = 0.3 / (n - 1) as f64;
+            (0..n)
+                .map(|i| (i, (if i == 2 { 0.7 } else { rest }).to_string()))
+                .collect()
+        }
+        let (url, stub) = literal_stub(|keys| {
+            let mut e = valid(keys.len());
+            e.push((0, "0.0".into()));
+            e.push((0, e[0].1.clone()));
+            e.remove(0);
+            let e: Vec<(usize, &str)> = e.iter().map(|(i, v)| (*i, v.as_str())).collect();
+            raw_answer(keys, &e)
+        });
+        let mut decision = Decision::new(0);
+        let choice = gemini(&url)
+            .choose(&req, &order, &mut decision)
+            .await
+            .unwrap();
+        stub.join().unwrap();
+        let raw = decision.exchanges[0].response.as_deref().unwrap();
+        let parsed: Value = serde_json::from_str(raw).unwrap();
+        assert_eq!(
+            parsed["answers"]["play"]["probabilities"]
+                .as_object()
+                .unwrap()
+                .len(),
+            n,
+            "serde_json's map hides the repeat"
+        );
+        assert_eq!(choice, Some(order[2]), "the returned choice is played");
+        let error = decision.exchanges[0].error.as_deref().unwrap();
+        let first = &notations[order[0]];
+        assert!(error.contains(&format!("repeated [{first:?}]")), "{error}");
+        assert!(!error.contains("sum"), "{error}");
+        assert_eq!(decision.probability_source, None);
+        assert!(decision.probabilities.is_empty());
+
+        // Bare NaN or Infinity tokens are not JSON: the whole response fails to parse, so the
+        // answer is invalid (seeded random play by the caller), as for any unreadable reply.
+        for token in ["NaN", "Infinity", "-Infinity"] {
+            let (url, stub) = literal_stub(move |keys| {
+                let mut e = valid(keys.len());
+                e[0].1 = token.into();
+                let e: Vec<(usize, &str)> = e.iter().map(|(i, v)| (*i, v.as_str())).collect();
+                raw_answer(keys, &e)
+            });
+            let mut decision = Decision::new(0);
+            let choice = gemini(&url)
+                .choose(&req, &order, &mut decision)
+                .await
+                .unwrap();
+            stub.join().unwrap();
+            assert_eq!(choice, None, "{token}: invalid answer");
+            assert_eq!(
+                decision.exchanges[0].error.as_deref(),
+                Some("response is not JSON"),
+                "{token}"
+            );
+            assert!(
+                decision.exchanges[0]
+                    .response
+                    .as_deref()
+                    .unwrap()
+                    .contains(token)
+            );
+            assert!(decision.probabilities.is_empty() && decision.probability_source.is_none());
+        }
     }
 
     #[test]
@@ -899,7 +1036,10 @@ mod tests {
         assert!(fault(m(&[("a", -0.5), ("b", 1.5)])).contains("below 0 [\"a\"]; above 1 [\"b\"]"));
         assert!(fault(m(&[("a", 0.5), ("b", 0.5 + 2e-6)])).contains("outside 1 +/- 1e-6"));
         // The list format's repeated ids reach the check as sent.
-        let list = json!({"probabilities": [{"value": "a", "probability": 0.5}, {"value": "a", "probability": 0.5}]});
-        assert!(fault(raw_map(&list)).contains("missing [\"b\"]; repeated"));
+        let list = r#"{"answers":{"play":{"probabilities":[{"value":"a","probability":0.5},{"value":"a","probability":0.5}]}}}"#;
+        assert!(fault(raw_entries(list)).contains("missing [\"b\"]; repeated"));
+        // So do the object format's, which serde_json's map would collapse.
+        let object = r#"{"answers":{"play":{"probabilities":{"a":0.5,"a":0.0,"b":0.5}}}}"#;
+        assert!(fault(raw_entries(object)).contains("repeated [\"a\"]"));
     }
 }

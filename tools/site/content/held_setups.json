@@ -21,7 +21,8 @@
  },
  "running": {
   "Gemini Decision 1": {"league": 26, "field_league": 1, "type": "decision", "route": "OpenRouter \u2192 Google AI Studio", "model_id": "google/gemini-decision-1",
-   "pending": ["GPT-6 Luna deferred: no OpenAI credit", "Mercury Decide: no OpenRouter endpoint", "8 local opponents queued on our RTX PRO 6000 (GPU 0)"],
+  "pending": ["GPT-6 Luna deferred: no OpenAI credit", "Mercury Decide: no OpenRouter endpoint", "8 local opponents playing on our RTX PRO 6000 (GPU 0) since 21:46 UTC 11 Nov"],
+  "runner_notes": {"dab6da5": "no probability-map check", "38024d6": "map-check v2 from 21:46:31 UTC 11 Nov: a returned probability map must cover exactly the options shown, finite values in [0, 1], sum within 1e-6"},
    "source": "mailbox/Late entry Gemini Decision 1 - status.md; Zeki #5001"}
  }
 }

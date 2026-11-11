@@ -385,8 +385,11 @@ def running_entries(conn) -> list[dict]:
         out.append(dict(name=name, league=cfg["league"], started=lg["started_at"],
                         finished=sum(m["status"] == "finished" for m in ms),
                         total=len(fields[cfg["field_league"]] - {name}),
-                        runners=sorted({m["harness_commit"][:7] for m in ms if m["harness_commit"]}), **{
+                        runners=[dict(commit=c, first=min(m["id"] for m in ms if m["harness_commit"][:7] == c),
+                                      note=cfg.get("runner_notes", {}).get(c))
+                                 for c in {m["harness_commit"][:7] for m in ms if m["harness_commit"]}], **{
                             k: cfg[k] for k in ("type", "route", "model_id", "pending")}))
+        out[-1]["runners"].sort(key=lambda r: r["first"])
     return out
 
 

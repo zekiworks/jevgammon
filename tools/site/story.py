@@ -417,7 +417,9 @@ def running_rows(S) -> list:
             f'{esc(status)}: late entry still playing; no score or rank until its entry is complete',
             f'Late-entry league #{e["league"]}, started {started.day} {started:%B %Y}, {started:%H:%M} UTC',
             f'Route: {esc(e["route"])}, model {esc(e["model_id"])}',
-            f'Runner commit {", ".join(esc(c) for c in e["runners"])}' if e["runners"] else None,
+            ("Runner: " + "; then ".join(
+                esc(r["commit"]) + (f' ({esc(r["note"])})' if r["note"] else "") for r in e["runners"]))
+            if e["runners"] else None,
             "Pending: " + "; ".join(esc(p) for p in e["pending"]),
             f'Parameters: {P.params_html(name)}']
         cells = '<td class="num"></td>' + '<td class="num hl-wide"></td>' * (len(WIDE_HEAD) + 1)

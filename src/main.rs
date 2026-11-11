@@ -86,29 +86,21 @@ enum Command {
     Rank(RankArgs),
     /// Offline client admission, before anything is written: builds the client of every
     /// player of a league config and of every opponent its pinned_pairs names (settings from
-    /// the database's players.settings, opened read-only) exactly as a league builds its
-    /// participants; sends no request. Fails when any client cannot be built.
+    /// the database's players.settings, read immutably) as a league builds its participants,
+    /// but only decision services and the local engines (any other client type is refused
+    /// before construction) and with budget ledgers read immutably; sends no request and
+    /// writes no database, ledger or credential. Fails when any client is refused.
     Admit(AdmitArgs),
 }
 
 #[derive(Args)]
 struct AdmitArgs {
-    /// Database the pinned opponents' players.settings are read from (read-only).
+    /// Database the pinned opponents' players.settings are read from (read-only, immutable).
     #[arg(long)]
     db: PathBuf,
     /// League config file (as for `league --config`).
     #[arg(long)]
     config: PathBuf,
-    /// qfork/Glyph credential root read for subscription logins and API keys.
-    #[arg(long, env = "JEVGAMMON_QFORK_ROOT")]
-    qfork_root: Option<PathBuf>,
-    /// Base URL of the OpenAI-compatible server behind `local/<model>`.
-    #[arg(
-        long,
-        env = "JEVGAMMON_LOCAL_URL",
-        default_value = "http://localhost:8080/v1"
-    )]
-    local_url: String,
 }
 
 #[derive(Args)]
@@ -456,10 +448,8 @@ async fn main() -> ExitCode {
         Some(Command::Migrate(args)) => migrate::run(&args),
         Some(Command::Rank(args)) => rank(args),
         Some(Command::Admit(args)) => {
-            let setup = Setup::new(
-                args.qfork_root.unwrap_or_else(auth::default_qfork_root),
-                args.local_url,
-            );
+            // No admitted client type reads a credential root or the local server's URL.
+            let setup = Setup::new(PathBuf::new(), String::new());
             admit::run(&args.db, &args.config, &setup).await
         }
         Some(Command::RenderStageB(args)) => {

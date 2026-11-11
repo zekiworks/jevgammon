@@ -122,6 +122,76 @@ impl Ledger {
         }))
     }
 
+    /// The ledger as `open` finds it, for admission: the file is opened read-only and
+    /// immutable (`mode=ro&immutable=1`: no write, no lock, no `-wal`/`-shm` opened or
+    /// created, no checkpoint on close), so neither this process nor a concurrent writer
+    /// can make admission change it. What `open` would add (the file, WAL mode, a table,
+    /// the cap row) is refused instead of added, as is a different cap. Only the main file
+    /// is read: a ledger whose tables or cap are still only in its write-ahead log (never
+    /// checkpointed since creation), or that a checkpoint changes mid-read, is refused, never
+    /// admitted. The returned ledger can reserve nothing.
+    pub fn open_read_only(config: &BudgetConfig, setup: &str) -> Result<Arc<Self>> {
+        let path = PathBuf::from(&config.ledger);
+        if !path.is_file() {
+            bail!(
+                "budget ledger {} does not exist (opening it would create it)",
+                path.display()
+            );
+        }
+        // Bytes 18 and 19 of the header (file format versions) are 2 in WAL mode.
+        let mut header = [0u8; 20];
+        std::io::Read::read_exact(
+            &mut std::fs::File::open(&path)
+                .with_context(|| format!("reading budget ledger {}", path.display()))?,
+            &mut header,
+        )
+        .with_context(|| format!("reading the header of budget ledger {}", path.display()))?;
+        if header[18..20] != [2, 2] {
+            bail!(
+                "budget ledger {} is not in WAL mode (opening it would switch it to WAL)",
+                path.display()
+            );
+        }
+        let conn = crate::db::open_immutable(&path)
+            .with_context(|| format!("budget ledger {}", path.display()))?;
+        for table in ["budget", "attempts"] {
+            let found: Option<i64> = conn
+                .query_row(
+                    "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?1",
+                    [table],
+                    |r| r.get(0),
+                )
+                .optional()?;
+            if found.is_none() {
+                bail!(
+                    "budget ledger {} has no table {table} (opening it would add it)",
+                    path.display()
+                );
+            }
+        }
+        let stored: Option<f64> = conn
+            .query_row("SELECT cap_usd FROM budget WHERE id = 1", [], |r| r.get(0))
+            .optional()?;
+        match stored {
+            None => bail!(
+                "budget ledger {} has no cap (opening it would store ${})",
+                path.display(),
+                config.cap_usd
+            ),
+            Some(cap) if cap != config.cap_usd => bail!(
+                "budget ledger {} has cap ${cap}, the config says ${}",
+                path.display(),
+                config.cap_usd
+            ),
+            Some(_) => {}
+        }
+        Ok(Arc::new(Ledger {
+            config: config.clone(),
+            setup: setup.to_owned(),
+            conn: Mutex::new(conn),
+        }))
+    }
+
     /// Worst case of one attempt: every byte of the request body an uncached input token
     /// (a token is never shorter than one byte) and the whole output allowance used.
     pub fn worst_case(&self, body_bytes: usize, max_output_tokens: u64) -> f64 {
@@ -318,5 +388,61 @@ mod tests {
         assert!(other.reserve(0.48).is_ok());
         // Another cap for the same ledger is refused.
         assert!(Ledger::open(&config(&path, 2.0), "c").is_err());
+    }
+
+    /// What `open` would add is refused, a different cap too, the file is left byte-identical
+    /// and nothing is created next to it; the read-only ledger reserves nothing.
+    #[test]
+    fn read_only_open_refuses_what_open_would_change_and_writes_nothing() {
+        let dir = std::env::temp_dir().join(format!("budget-ro-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let listing = || {
+            let mut names: Vec<String> = std::fs::read_dir(&dir)
+                .unwrap()
+                .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
+                .collect();
+            names.sort();
+            names
+        };
+        let refused = |path: &Path, cap: f64, why: &str| {
+            let before = std::fs::read(path).ok();
+            let names = listing();
+            let error = Ledger::open_read_only(&config(path, cap), "a")
+                .err()
+                .unwrap();
+            assert!(format!("{error:#}").contains(why), "{error:#}");
+            assert_eq!(std::fs::read(path).ok(), before);
+            assert_eq!(listing(), names);
+        };
+        refused(&dir.join("missing.db"), 1.0, "does not exist");
+        let rollback = dir.join("rollback.db");
+        Connection::open(&rollback)
+            .unwrap()
+            .execute_batch(SCHEMA)
+            .unwrap();
+        refused(&rollback, 1.0, "is not in WAL mode");
+        let empty = dir.join("empty.db");
+        Connection::open(&empty)
+            .unwrap()
+            .pragma_update(None, "journal_mode", "WAL")
+            .unwrap();
+        refused(&empty, 1.0, "has no table budget");
+        let uncapped = dir.join("uncapped.db");
+        let conn = Connection::open(&uncapped).unwrap();
+        conn.pragma_update(None, "journal_mode", "WAL").unwrap();
+        conn.execute_batch(SCHEMA).unwrap();
+        drop(conn);
+        refused(&uncapped, 1.0, "has no cap");
+        let path = dir.join("ledger ?#%.db");
+        drop(Ledger::open(&config(&path, 1.0), "a").unwrap());
+        refused(&path, 2.0, "has cap $1, the config says $2");
+        let names = listing();
+        let before = std::fs::read(&path).unwrap();
+        let ledger = Ledger::open_read_only(&config(&path, 1.0), "a").unwrap();
+        assert_eq!(ledger.totals().unwrap(), (0.0, 0.0));
+        assert!(ledger.reserve(0.1).is_err());
+        drop(ledger);
+        assert_eq!(std::fs::read(&path).unwrap(), before);
+        assert_eq!(listing(), names);
     }
 }

@@ -398,6 +398,14 @@ pub fn random_play(req: &DecisionRequest<'_>) -> usize {
     Dice::new(derive_seed(req.seed, "invalid answer")).below(req.plays.len())
 }
 
+/// How `Player::build` reaches a budget ledger: a league opens it for writing; admission
+/// reads it read-only and immutable.
+#[derive(Clone, Copy)]
+enum Ledgers {
+    Open,
+    ReadOnly,
+}
+
 impl Player {
     /// A local engine player (baselines, GNUbg).
     pub fn engine(spec: &str, engine: Box<dyn Engine>) -> Self {
@@ -420,11 +428,35 @@ impl Player {
     /// Parses `provider/model` (or a bare decision provider such as `jev`), resolves its
     /// credentials, and limits its decisions in flight to `config.parallel`.
     pub async fn from_config(config: &PlayerConfig, setup: &Setup) -> Result<Self> {
-        let mut player = Self::build(config, setup).await?;
+        let mut player = Self::build(config, setup, Ledgers::Open).await?;
         player.requests = config
             .parallel
             .map(|n| tokio::sync::Semaphore::new(n.max(1)));
         Ok(player)
+    }
+
+    /// The client `from_config` builds, for admission (`jevgammon admit`). Only the client
+    /// types of the repeats' rosters are built: decision services (a key from the
+    /// environment, nothing else read) and the local engines random, safest and
+    /// gnubg-weak. Every other type is refused before anything is constructed: the
+    /// subscription logins (openai, anthropic, antigravity, xai), whose constructors can
+    /// refresh a token over the network and write credentials, and the other chat clients.
+    /// A budget ledger is read by `Ledger::open_read_only`, never opened for writing.
+    pub async fn for_admission(config: &PlayerConfig, setup: &Setup) -> Result<Self> {
+        let provider = match config.spec.split_once('/') {
+            Some((provider, model)) if !model.is_empty() => provider,
+            _ => config.spec.as_str(),
+        };
+        let engine = ["random", "safest", "gnubg-weak"]
+            .iter()
+            .any(|e| e.eq_ignore_ascii_case(provider));
+        if !engine && decision::service(provider).is_none() {
+            bail!(
+                "provider `{provider}` of `{}` is outside the admission roster (decision services and random, safest, gnubg-weak); refused before its client is constructed",
+                config.spec
+            );
+        }
+        Self::build(config, setup, Ledgers::ReadOnly).await
     }
 
     /// Whether the player decides locally (random, safest, gnubg-weak), not by request.
@@ -432,7 +464,7 @@ impl Player {
         matches!(self.backend, Backend::Engine(_))
     }
 
-    async fn build(config: &PlayerConfig, setup: &Setup) -> Result<Self> {
+    async fn build(config: &PlayerConfig, setup: &Setup, ledgers: Ledgers) -> Result<Self> {
         let spec = config.spec.as_str();
         let (provider, model) = match spec.split_once('/') {
             Some((provider, model)) if !model.is_empty() => (provider, Some(model.to_owned())),
@@ -450,7 +482,12 @@ impl Player {
                 if provider.eq_ignore_ascii_case("openai-compatible")
                     || decision::service(provider).is_some() =>
             {
-                Some(crate::budget::Ledger::open(budget, &config.name)?)
+                Some(match ledgers {
+                    Ledgers::Open => crate::budget::Ledger::open(budget, &config.name)?,
+                    Ledgers::ReadOnly => {
+                        crate::budget::Ledger::open_read_only(budget, &config.name)?
+                    }
+                })
             }
             Some(_) => bail!(
                 "{}: a budget needs an openai-compatible spec or a decision service",

@@ -23,10 +23,11 @@ v3.db; the league web helpers are this tree's.
   knowline.py server-inflight SINCE UNTIL   SGLang's own batch log on the server host (ssh, read-only; UTC times
                                    'YYYY-MM-DD HH:MM:SS'): most requests in the server (new + running + queued) per
                                    logged batch; other clients of the same server are counted too
-  knowline.py local-only NAME      exit 0 only when KnowLine v NAME and every other open pair of the league run on our
-                                   own hardware with no hosted or paid route (locals.sh skips the OpenRouter balance
-                                   check then, Zeki #4621); prints the evidence per setup; exit 1 with the reason
-                                   otherwise, also for a missing or unknown route (read-only)
+  knowline.py local-only NAME      exit 0 only when, in one read snapshot, KnowLine's latest league is #21, KnowLine
+                                   and NAME are active members of it, and KnowLine, NAME and every other open pair of
+                                   it are on their exact known routes on our own hardware (LOCAL_ROUTES; locals.sh
+                                   skips the OpenRouter balance check then, Zeki #4621, #4626); prints the evidence;
+                                   exit 1 with the reasons otherwise, also for a missing or unknown route (read-only)
 """
 import argparse
 import json
@@ -361,20 +362,26 @@ def server_inflight(args) -> None:
           "server (new + running + queued; other clients included)")
 
 
-# Our own hardware (Zeki #4621). KnowLine: PelaAI's serve_knowline.sh on spark2, exactly this URL. Opponents: decision
-# servers on bariton's loopback (the league runner runs on bariton), reached through one of these runner services
-# (src/players/decision.rs: provider -> default URL and its environment override; none needs a key). A setup with no
-# base_url uses the service default, unless its override variable is set. fastino's default is Fastino's hosted API,
-# so a fastino setup counts only with a loopback base_url of its own. Anything else is not local.
+# Our own hardware (Zeki #4621; review #4626). Only these exact deployed routes count. KnowLine: PelaAI's
+# serve_knowline.sh on spark2, as player.json. Opponents: the 8 local League 1 setups, each bound to its recorded spec
+# and the exact loopback destination its own server script listens on (tools/v3/servers/*.sh, the start table of
+# locals.sh: clef.sh 18091, cygnet.sh 18093, decider.sh 18097, decider-v1.2.sh flash 18098 / 27b 18099, glide-v12.sh
+# 18101, open-jev.sh 8791, winnow.sh 8091), on bariton, where the league runner and those servers run. The runner
+# sends to settings.base_url when set, else to its service default unless the service's URL variable overrides it
+# (src/players/decision.rs); Open-Jev's recorded base_url is null, so its route is the open-jev default and only while
+# OPEN_JEV_BASE_URL is unset. Any other name, spec or destination is not ours.
 KNOWLINE_URL = "http://192.168.1.131:19360"
 RUNNER_HOST = "bariton"
-LOCAL_SERVICES = {
-    "clef": ("http://127.0.0.1:18091", "CLEF_BASE_URL"),
-    "cygnet": ("http://127.0.0.1:18093", "CYGNET_BASE_URL"),
-    "pplx-local": ("http://127.0.0.1:18097", "PPLX_LOCAL_BASE_URL"),
-    "winnow": ("http://127.0.0.1:8091", "WINNOW_BASE_URL"),
-    "open-jev": ("http://127.0.0.1:8791", "OPEN_JEV_BASE_URL"),
-    "fastino": (None, "FASTINO_BASE_URL"),
+LEAGUE = 21  # KnowLine's current late-entry league
+LOCAL_ROUTES = {
+    "Clef": ("clef", "http://127.0.0.1:18091", None),
+    "Cygnet (Gemma 4 12B)": ("cygnet", "http://127.0.0.1:18093", None),
+    "Decider v1.1 27B": ("pplx-local", "http://127.0.0.1:18097", None),
+    "Decider Flash v1.2": ("pplx-local/pplx-decider-flash-v1.2", "http://127.0.0.1:18098", None),
+    "Decider v1.2 27B": ("pplx-local/pplx-decider-v1.2", "http://127.0.0.1:18099", None),
+    "Fastino GLiDE v1.2 (local)": ("fastino/glide-v1.2", "http://127.0.0.1:18101", None),
+    "Open-Jev 27B v1.1": ("open-jev", None, ("http://127.0.0.1:8791", "OPEN_JEV_BASE_URL")),
+    "Winnow-12B": ("winnow/winnow-12b", "http://127.0.0.1:8091", None),
 }
 HOSTED_FIELDS = ("api_key_env", "budget", "request", "reasoning", "rpm", "rate_group")
 
@@ -383,46 +390,56 @@ def route(conn, name: str) -> tuple[bool, str]:
     """(local, evidence) of a setup's recorded route: v3.db players.settings, which the league plays it with."""
     import os
     import socket
-    from urllib.parse import urlsplit
     row = conn.execute("SELECT settings FROM players WHERE name = ?", (name,)).fetchone()
     if not row:
         return False, f"{name}: no players row (route unknown)"
     s = json.loads(row[0])
-    spec = s.get("spec") or ""
-    provider = spec.split("/", 1)[0].lower()
+    spec = s.get("spec")
     head = f"{name}: spec {spec!r}, provider {s.get('provider')!r}, base_url {s.get('base_url')!r}"
     hosted = [k for k in HOSTED_FIELDS if s.get(k) is not None]
     if hosted:
         return False, f"{head}: hosted-route fields {hosted}"
     if name == NAME:
-        ok = (s == PLAYER and provider == "knowline" and s.get("base_url") == KNOWLINE_URL
-              and str(s.get("provider", "")).startswith("local"))
+        ok = s == PLAYER and spec == "knowline/m" and s.get("base_url") == KNOWLINE_URL
         return ok, f"{head}: {'' if ok else 'NOT '}our spark2 KnowLine server (as player.json)"
-    if provider not in LOCAL_SERVICES or not str(s.get("provider", "")).startswith("local"):
-        return False, f"{head}: not a local decision service"
-    default, var = LOCAL_SERVICES[provider]
-    url = s.get("base_url")
+    if name not in LOCAL_ROUTES:
+        return False, f"{head}: not one of the 8 known local routes"
+    want_spec, want_url, default = LOCAL_ROUTES[name]
+    if spec != want_spec or not str(s.get("provider", "")).startswith("local"):
+        return False, f"{head}: not its known route (spec {want_spec!r}, provider local)"
+    if s.get("base_url") != want_url:
+        return False, f"{head}: not its known destination {want_url or 'service default'}"
+    url = want_url
     if url is None:
+        url, var = default
         if os.environ.get(var):
-            return False, f"{head}: no base_url and {var} is set (route not from the config)"
-        if default is None:
-            return False, f"{head}: no base_url and the service default is hosted"
-        url = default
-    parts = urlsplit(url)
-    if parts.scheme != "http" or parts.hostname not in ("127.0.0.1", "localhost"):
-        return False, f"{head}: {url} is not this host's loopback"
+            return False, f"{head}: no base_url and {var} is set, so the runner would not use {url}"
     if socket.gethostname() != RUNNER_HOST:
-        return False, f"{head}: loopback here is {socket.gethostname()}, not {RUNNER_HOST}"
-    return True, f"{head}: {url} on {RUNNER_HOST} (our GPU), no key or hosted field"
+        return False, f"{head}: checked on {socket.gethostname()}, not {RUNNER_HOST}, where {url} is ours"
+    return True, f"{head}: its known destination {url} on {RUNNER_HOST} (our GPU), no key or hosted field"
 
 
 def local_only(args) -> None:
     conn = ro()
-    others = [o for o in members(conn) if o != args.name and not played(conn, o)]
+    conn.execute("BEGIN")  # one read snapshot for the league, its members and the routes
+    reasons = []
+    latest = conn.execute("SELECT MAX(id) FROM leagues WHERE only_pairs_of = ?", (NAME,)).fetchone()[0]
+    if latest != LEAGUE:
+        reasons.append(f"KnowLine's latest league is #{latest}, not #{LEAGUE}")
+    active = {r[0] for r in conn.execute(
+        """SELECT p.name FROM league_players lp JOIN players p ON p.id = lp.player_id
+           WHERE lp.league_id = ? AND lp.left_at IS NULL""", (LEAGUE,))}
+    for n in (NAME, args.name):
+        if n not in active:
+            reasons.append(f"{n} is not an active member of league #{LEAGUE}")
+    others = sorted(o for o in active - {NAME, args.name} if not played(conn, o))
     checks = [route(conn, n) for n in [NAME, args.name] + others]
+    conn.rollback()
+    for why in reasons:
+        print("NOT LOCAL: " + why)
     for ok, why in checks:
         print(("local: " if ok else "NOT LOCAL: ") + why)
-    if not all(ok for ok, _ in checks):
+    if reasons or not all(ok for ok, _ in checks):
         sys.exit(1)
 
 

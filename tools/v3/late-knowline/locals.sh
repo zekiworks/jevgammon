@@ -1,14 +1,17 @@
 #!/usr/bin/env bash
 # KnowLine 31B Gen1.5 v the 8 local League 1 opponents, one opponent server at a time on OPP_GPU under the bus
 # reservation RES (only once Main hands over a free card), as tools/v3/late-ember/locals.sh. KnowLine itself stays on
-# its own server (player.json base_url). For each opponent whose pair is unplayed: waits until OPP_GPU has room for it
-# (+2 GB; a GPU held by someone else is waited for, never freed), starts its server with `agent-bus run RES -- ...`,
-# league-adds it to KnowLine's league, waits until the pair is played, stops the server. It keeps start.sh's guard
-# (OpenRouter balance >= $40 and readable, paid opponents < $5, KnowLine server healthy) itself, so the unit late-knowline
-# (start.sh) must have exited first. The one exception (Zeki #4621): the balance check is skipped while KnowLine v the
-# current opponent and every other open pair of the league are on our own hardware, as `knowline.py local-only`
-# proves from the recorded settings (KnowLine on spark2, the opponent on bariton's loopback, no key, budget or hosted
-# route); a paid, mixed, missing or unknown route keeps the check (the open Mercury Decide pair keeps it too).
+# its own server (player.json base_url). For each opponent whose pair is unplayed: stops the league unit (nothing plays
+# while the pair is added and its server starts), league-adds it to KnowLine's league, checks the guard, waits until
+# OPP_GPU has room for it (+2 GB; a GPU held by someone else is waited for, never freed), starts its server with
+# `agent-bus run RES -- ...`, (re)starts the league unit, waits until the pair is played, stops the server. A server
+# that does not start leaves its pair in the league, unplayed and reported missing (the league's warm-up fails against
+# it, unbilled). It keeps start.sh's guard (OpenRouter balance >= $40 and readable, paid opponents < $5, KnowLine
+# server healthy) itself, so the unit late-knowline (start.sh) must have exited first. The one exception (Zeki #4621,
+# review #4626): the balance check is skipped while `knowline.py local-only` proves from the recorded settings that
+# KnowLine's league #21 exists, KnowLine and the current opponent are active members, and KnowLine, the opponent and
+# every other open pair are on their exact known routes (KnowLine on spark2 as player.json; each of the 8 opponents on
+# its own server script's loopback port on bariton); anything else keeps the check (the open Mercury Decide pair too).
 #   systemd-run --user --unit=late-knowline-locals --working-directory=/home/cbasaran/code/jevgammon \
 #     -E OPP_GPU=<n> -E RES=<reservation> /home/cbasaran/code/jevgammon-knowline/tools/v3/late-knowline/locals.sh
 set -uo pipefail
@@ -90,6 +93,14 @@ for o in "${OPPS[@]}"; do
   IFS='|' read -r name need start stop <<<"$o"
   current=$name
   [[ $(python3 $T/knowline.py pending "$name") == 0 ]] && continue
+  systemctl --user stop $UNIT 2>/dev/null
+  if ! sqlite3 -readonly v3.db "SELECT 1 FROM league_players lp JOIN players p ON p.id = lp.player_id
+       WHERE lp.league_id = $ID AND lp.left_at IS NULL AND p.name = '$name'" | grep -q 1; then
+    entry=$(sqlite3 -readonly v3.db "SELECT settings FROM players WHERE name = '$name'")
+    "$BIN" league-add --db v3.db --league "$ID" --entry "$entry" >> late-knowline.log 2>&1 ||
+      { log "locals: league-add of $name failed"; missing+=("$name"); continue; }
+    log "locals: $name added to league #$ID"
+  fi
   guard || { finish "stopped by the guard"; exit 1; }
   until (( $(room "$OPP_GPU") >= need + 2000 )); do sleep 60; done
   if ! agent-bus run "$RES" -- bash -c "g=$OPP_GPU; $start" >> $ST/servers.log 2>&1; then
@@ -98,13 +109,6 @@ for o in "${OPPS[@]}"; do
     missing+=("$name"); continue
   fi
   log "locals: started $name on GPU $OPP_GPU ($(gpus))"
-  if ! sqlite3 -readonly v3.db "SELECT 1 FROM league_players lp JOIN players p ON p.id = lp.player_id
-       WHERE lp.league_id = $ID AND lp.left_at IS NULL AND p.name = '$name'" | grep -q 1; then
-    entry=$(sqlite3 -readonly v3.db "SELECT settings FROM players WHERE name = '$name'")
-    "$BIN" league-add --db v3.db --league "$ID" --entry "$entry" >> late-knowline.log 2>&1 ||
-      { log "locals: league-add of $name failed"; bash -c "$stop" >> $ST/servers.log 2>&1; missing+=("$name"); continue; }
-    log "locals: $name added to league #$ID"
-  fi
   # Played, or given up after 4 h with the pair still open (an aborted match is retried by the league runner).
   t0=$SECONDS
   until [[ $(python3 $T/knowline.py pending "$name") == 0 ]] || (( SECONDS - t0 > 14400 )); do

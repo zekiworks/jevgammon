@@ -408,7 +408,8 @@ def manifest(args) -> None:
         dropped = [p["opponent"] for p in played if p["blocked_today"]]
         unpinned = [o for o in missing if o not in {p["opponent"] for p in pairs}]
         srv = r["server"]
-        big = [o for o in LOCAL if srv["mib"] + LOCAL[o][0] + MARGIN_MIB > GPU_MIB]
+        opps = [o for o in LOCAL if o != r["original"]]
+        big = [o for o in opps if srv["mib"] + LOCAL[o][0] + MARGIN_MIB > GPU_MIB]
         rules = {k: v for k, v in pairs[0]["rules"].items()}
         for p in pairs:
             if p["rules"] != rules:
@@ -456,7 +457,7 @@ def manifest(args) -> None:
                     "d1-ultra none; each local opponent 1-5 min (state logs of the originals)"))),
             gpu_plan=dict(
                 entrant_mib=srv["mib"], entrant_measured=srv["measured"],
-                fits_beside_entrant=[o for o in LOCAL if o not in big],
+                fits_beside_entrant=[o for o in opps if o not in big],
                 needs_second_gpu=big,
                 note=("One card: the entrant's server (none for d1-ultra) stays up for the whole repeat; the opponent "
                       "servers run one at a time beside it, smallest first. A pair needs both servers at once, so the "

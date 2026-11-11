@@ -12296,7 +12296,6 @@
     "needs_second_gpu": [
      "Decider v1.1 27B",
      "Decider v1.2 27B",
-     "Fastino GLiDE v1.2 (local)",
      "Open-Jev 27B v1.1",
      "Clef"
     ],

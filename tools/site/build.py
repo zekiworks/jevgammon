@@ -148,12 +148,13 @@ def compute(args) -> dict:
     # Every match, the Hype Cup and the Nackgammon knockout (Can, 29 Oct 2026): match results only, no league number.
     every = cup.compute(state, leagues)
     late = late_entry_summaries(L["late_entries"])
-    # Repeat checks (Experiments): each original's numbers on the pairs its repeat plays, and the repeat's on its finished
-    # matches of those pairs, the same computation as a setup's; on that page only.
+    # Repeat checks (Experiments): each repeat's state from the snapshot, and once complete Run 1 (the original) and Run 2
+    # (the repeat) on exactly the pairs the repeat finished, the same computation as a setup's; on that page only.
     repeat_originals = {rid: dict(
-        A.dataset_summary(f"repeat-original/{rid}", r["decisions"], [r["name"]])[r["name"]], matches=r["matches"],
+        A.dataset_summary(f"repeat-original/{rid}", r["decisions"], [r["name"]])[r["name"]],
         repeat=(A.dataset_summary(f"repeat/{rid}", r["repeat_decisions"], [r["repeat_name"]])[r["repeat_name"]]
-                if r["repeat_decisions"] else None), repeat_matches=r["repeat_matches"])
+                if r["repeat_decisions"] else None),
+        **{k: v for k, v in r.items() if k not in ("name", "decisions", "repeat_decisions")})
         for rid, r in L["repeat_originals"].items()}
     return dict(
         as_of=snapshot_time(snap), last_move=L["last_move"], leagues=leagues, setups_meta=setups,
@@ -304,11 +305,15 @@ def write_data(S: dict, out: Path) -> None:
                                                                  "quality_phases")}, **brief(e)) for e in S["late_entries"]]))
     for e in S["late_entries"]:
         write_json(out, f"data/v3/late-entries/{e['slug']}.json", dict(dataset=LATE_ENTRY, version="v3", **e))
-    # Repeat checks (Experiments): what the section shows, original and repeat on the same pairs; in no other number.
+    # Repeat checks (Experiments): what the section shows, each repeat's state from the snapshot and, once complete, Run 1
+    # and Run 2 on exactly the same pairs; in no other number.
     write_json(out, "data/v3/repeat-checks.json", dict(
-        version="v3", note=("Reproducibility repeats: each original's own decisions on the pairs its repeat plays and the "
-                            "repeat's on the same pairs (same seeds and dice); the repeats are held setups, in no "
-                            "standings, table or other setup's numbers."),
+        version="v3", note=("Reproducibility repeats: each repeat's state from the snapshot of v3.db (queued: no match "
+                            "yet; running; stopped; complete: every pair playable today finished), the matches finished "
+                            "of the pairs playable today, and each original's own decisions and billed cost on the "
+                            "pairs its repeat plays (once complete: exactly the pairs it finished) beside the repeat's "
+                            "on the same pairs (same seeds and dice); the repeats are held setups, in no standings, "
+                            "table or other setup's numbers."),
         repeats=pages.repeat_data(S)))
     v1 = S["v1"]
     write_json(out, "data/v1/v1-set.json", dict(

@@ -201,37 +201,78 @@ def load_leagues(snap: Path, plays_dir: Path) -> dict:
 REPEAT_MANIFEST = ROOT / "mailbox/repeats/manifest-2026-11-11.json"
 
 
-def repeat_originals(conn, plays: dict) -> dict:
-    """Reproducibility repeats (tools/v3/repeats, REPEAT_MANIFEST): per repeat, the repeat's own decisions in its
-    finished valid matches against its original's field (stage 'late-entry', a held name: in no other number), and its
-    original's own decisions in the original matches of the same pairs (until the repeat is played, per
-    content/repeat_results.json: the pairs it plays, played then and not blocked today), so original and repeat are read
-    on the same pairs, seeds and dice. Read only for the Experiments page's Repeat checks."""
-    status = json.loads((ROOT / "tools/site/content/repeat_results.json").read_text())["results"]
+# A repeat's cost basis (tools/v3/repeats/repeats.py billed_usd, its guard's rule, and the manifest's cost_basis): a paid
+# opponent at its recorded cost_usd, Fastino GLiDE (none recorded) at its input tokens x $0.04/M, the entrant at its own
+# cost_usd when billed, Drex Max 1.1 at Nace's $0.03/M launch price (its cost_usd records the $0.06 list price); local
+# setups and programs bill nothing.
+REPEAT_FASTINO_RATE = 0.04
+REPEAT_ENTRANT_RATE = {"Drex Max 1.1": 0.03}
 
+
+def repeat_originals(conn, plays: dict) -> dict:
+    """Reproducibility repeats (tools/v3/repeats, REPEAT_MANIFEST), each one's state from the snapshot of v3.db (never the
+    manifest's prepared status): queued (no match of the repeat yet), complete (every pair playable today finished),
+    running (its league open or a match in progress) or stopped (its league closed short of that). Playable today: the
+    pairs its original finished, less those blocked today. The repeat's own decisions in its finished valid matches of
+    those pairs (stage 'late-entry', a held name: in no other number), its original's own decisions in the original
+    matches of the same pairs (the pairs the repeat finished once complete, else every playable pair), and the billed
+    cost of both, so Run 1 and Run 2 are read on the same pairs, seeds and dice. Read only for the Experiments page's
+    Repeat checks."""
     def decisions_of(name: str, match_id: int, seat: int) -> list[dict]:
         return [decision(t, plays) for t in conn.execute(
             f"""SELECT {DECISION_COLUMNS}, ? AS name FROM turns t JOIN games g ON g.id = t.game_id
                 WHERE g.match_id = ? AND t.player = ? AND t.decided_by IN ('model', 'fallback')
                 ORDER BY g.id, t.turn_no""", (name, match_id, seat))]
 
+    def billed(m: dict, match_id: int, seat: int, opponent: str, paid: set, entrant_billed: bool) -> float:
+        total = 0.0
+        for player, cost, tokens in conn.execute(
+                """SELECT t.player, SUM(COALESCE(t.cost_usd, 0)), SUM(t.input_tokens) FROM turns t
+                   JOIN games g ON g.id = t.game_id WHERE g.match_id = ? GROUP BY t.player""", (match_id,)):
+            if player == seat:
+                total += ((tokens or 0) * REPEAT_ENTRANT_RATE[m["original"]] / 1e6
+                          if m["original"] in REPEAT_ENTRANT_RATE else cost if entrant_billed else 0.0)
+            elif opponent == "Fastino GLiDE":
+                total += (tokens or 0) * REPEAT_FASTINO_RATE / 1e6
+            elif opponent in paid:
+                total += cost
+        return total
+
     out = {}
     for m in json.loads(REPEAT_MANIFEST.read_text())["repeats"]:
         playable = {p["opponent"]: p for p in m["pairs"] if p["status"] == "finished" and not p["blocked_today"]}
-        played = [r for r in conn.execute(
-            """SELECT m.id, a.name AS a, b.name AS b FROM matches m JOIN players a ON a.id = m.player1
-               JOIN players b ON b.id = m.player2
-               WHERE m.valid = 1 AND m.stage = 'late-entry' AND m.status = 'finished' AND ? IN (a.name, b.name)
-               ORDER BY m.id""", (m["name"],))
-                  if (r["b"] if r["a"] == m["name"] else r["a"]) in playable]
-        done = status[m["id"]]["status"] == "played"
-        pairs = ([playable[r["b"] if r["a"] == m["name"] else r["a"]] for r in played] if done and played
-                 else list(playable.values()))
+        basis = m["cost_basis"]["pairs"]
+        paid = {o for o, c in basis.items() if c["opponent"] is not None}
+        entrant_billed = any(c["original"] is not None for c in basis.values())
+        rows = [dict(r, opponent=r["b"] if r["a"] == m["name"] else r["a"], seat=1 if r["a"] == m["name"] else 2)
+                for r in conn.execute(
+                    """SELECT m.id, m.status, m.started_at, m.finished_at, a.name AS a, b.name AS b FROM matches m
+                       JOIN players a ON a.id = m.player1 JOIN players b ON b.id = m.player2
+                       WHERE m.valid = 1 AND m.stage = 'late-entry' AND ? IN (a.name, b.name) ORDER BY m.id""",
+                    (m["name"],))]
+        played = [r for r in rows if r["status"] == "finished" and r["opponent"] in playable]
+        league = conn.execute("SELECT id, status, started_at FROM leagues WHERE only_pairs_of = ? ORDER BY id DESC",
+                              (m["name"],)).fetchone()
+        state = ("queued" if not rows else "complete" if {r["opponent"] for r in played} >= set(playable)
+                 else "running" if (league and league["status"] == "running") or any(r["status"] == "running" for r in rows)
+                 else "stopped")
+        pairs = [playable[r["opponent"]] for r in played] if state == "complete" else list(playable.values())
         original = [d for p in pairs
                     for d in decisions_of(m["original"], p["original_match"], 1 if p["original_is_player1"] else 2)]
-        repeat = [d for r in played for d in decisions_of(m["name"], r["id"], 1 if r["a"] == m["name"] else 2)]
-        out[m["id"]] = dict(name=m["original"], matches=sorted(p["original_match"] for p in pairs), decisions=original,
-                            repeat_name=m["name"], repeat_matches=[r["id"] for r in played], repeat_decisions=repeat)
+        repeat = [d for r in played for d in decisions_of(m["name"], r["id"], r["seat"])] if state == "complete" else []
+        out[m["id"]] = dict(
+            name=m["original"], matches=sorted(p["original_match"] for p in pairs), decisions=original,
+            billed_usd=sum(billed(m, p["original_match"], 1 if p["original_is_player1"] else 2, p["opponent"], paid,
+                                  entrant_billed) for p in pairs),
+            repeat_name=m["name"], state=state, league=league["id"] if league else None, played=len(played),
+            playable=len(playable), running=sum(r["status"] == "running" for r in rows),
+            started=rows[0]["started_at"] if rows else None,
+            finished=max(r["finished_at"] for r in played) if state == "complete" else None,
+            repeat_matches=[r["id"] for r in played], repeat_decisions=repeat,
+            repeat_billed_usd=(sum(billed(m, r["id"], r["seat"], r["opponent"], paid, entrant_billed) for r in played)
+                               if state == "complete" else None),
+            # Scoring pending: a valid decision of the matched cohort without its GNUbg scores yet (score_plays.py).
+            scoring_pending=any(not d["invalid"] and not d["scored"] for d in repeat + original))
     return out
 
 

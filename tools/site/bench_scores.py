@@ -163,8 +163,15 @@ def build(S) -> dict:
         lg = league_of(x)
         notes = [f"League {lg}", CALIBRATION_NOTE]
         if x["late"]:
+            e = x["late"]
             notes.append(f"late entry: its own decisions in late-entry matches against League {lg}'s field "
                          f"(different positions from the league's); scored against League {lg}'s Random")
+            # Coverage carried to All benches so a partial entry never reads as complete (Zeki #4657).
+            if e.get("status") == P.PROVISIONAL:
+                notes.append(f"provisional: played {e['played']} of {e['total']} matches" + "".join(
+                    f"; not played: {g['opponent']} ({g['reason']})" for g in e.get("not_played") or []))
+            if m.get("notes"):
+                notes.append(m["notes"])
         notes.append("run on our GPUs" if m.get("runs_on") == "our GPUs" else "hosted (API or subscription)")
         note = FEED_ROWS.get(x["name"], (None, None))[1]
         name, parts = name_and_tag(x["name"], x["ds"])

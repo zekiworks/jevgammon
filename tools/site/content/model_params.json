@@ -606,6 +606,25 @@
    "card_source": "https://huggingface.co/PelaAI/KnowLine-4B-Gen5.5",
    "card_quote": "Card table: 'Base model | Qwen/Qwen3.5-4B (Apache-2.0)'; results table: 'KnowLine-4B-Gen5.5 | 4B'; 'Serving | serve_knowline.sh: SGLang with FP8 at load, as for Gen5'."
   },
+  "StartLux-Decision v1.1 2B": {
+   "total_b": 2.27,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/startlux-models/StartLux-Decision-v1.1-2B-Instant/tree/f1e6cd147dda82c9ffa3e8e725d5c1f175566fb1",
+   "quote": "startlux-models/StartLux-Decision-v1.1-2B-Instant @ f1e6cd147dda82c9ffa3e8e725d5c1f175566fb1, 1 safetensors file (632 tensors, 596 BF16 + 36 F32): 2,274,069,824 parameters (the file's safetensors header) = language model 1,881,825,088 + vision encoder 331,416,576 + MTP layer 60,828,160; index total_size 4,548,144,832 bytes. Qwen3_5ForConditionalGeneration (Qwen3.5-2B backbone), dense; the same count as logic's model_sizes.json.",
+   "checked": [
+    "https://huggingface.co/api/models/startlux-models/StartLux-Decision-v1.1-2B-Instant/revision/f1e6cd147dda82c9ffa3e8e725d5c1f175566fb1",
+    "https://huggingface.co/startlux-models/StartLux-Decision-v1.1-2B-Instant/raw/f1e6cd147dda82c9ffa3e8e725d5c1f175566fb1/README.md"
+   ],
+   "read": "2026-11-11",
+   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors header on spark2: 2.27B (2,274,069,824) incl. its vision encoder and MTP layer; the card states 2B, the figure shown (Ümit #4260). The released weights are the uniform average of four seed runs (card), one checkpoint file. Stored and served in BF16 by the package's startlux-decide serve --launch-vllm (vLLM 0.31.0 with its plugin), which plays our late entry.",
+   "terms": "2.27B incl. its vision encoder and MTP layer; card: 2B",
+   "card_total_b": 2,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/startlux-models/StartLux-Decision-v1.1-2B-Instant",
+   "card_quote": "'StartLux-Decision-v1.1-2B-Instant is a 2B decision model.'; 'The released weights are the uniform average of four such runs that differ only in their random seeds.'"
+  },
   "Kimi K3.1 Pro": {
    "total_b": 2800,
    "active_b": 104,

@@ -547,7 +547,11 @@ def _versions(po: dict) -> str:
   original League 1 table on <a href="../leagues/#late-entries">Leagues</a> (Late entries), played on our GPU (NVIDIA
   DGX Spark) on 10–11 Nov (its pairs with GPT-6 Luna (Decisions API), its API out of credit, and Mercury Decide, no
   longer served on OpenRouter, not played; its first 4 matches, played at once, voided and replayed one at a time),
-  with a page of its own; no list price is published for it, so it has no cost figure. No score changed.</p>""")
+  with a page of its own; no list price is published for it, so it has no cost figure. No score changed. 11 Nov 2026:
+  Muse Ember (max), a late entry to the original League 1 table on <a href="../leagues/#late-entries">Leagues</a> (Late
+  entries), played through OpenRouter (pinned to Meta, reasoning effort max) on 10–11 Nov (its pairs with GPT-6 Luna
+  (Decisions API), its API out of credit, and Mercury Decide, no longer served on OpenRouter, not played), with a page
+  of its own; its cost is its billed tokens at Meta's list price. No score changed.</p>""")
 
 
 def _confidence(t: dict, extra: dict) -> str:

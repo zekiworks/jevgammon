@@ -727,7 +727,7 @@
     "https://openrouter.ai/api/v1/models/meta/muse-ember/endpoints"
    ],
    "read": "2026-11-10",
-   "note": "Closed API (Meta Model API, OpenRouter). Not shown yet: its late entry is held (held_setups.json).",
+   "note": "Closed API (Meta Model API, OpenRouter).",
    "card_total_b": null,
    "card_active_b": null,
    "card_source": null,

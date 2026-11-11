@@ -1020,7 +1020,7 @@ def results_charts(L) -> str:
                    + "</figure>")
     note = ("" if R["complete"] else '<p class="table-note">Numbers so far: the verdict and the learning lift are '
                                      'shown only when every planned series of every arm is done.</p>')
-    return out[0] + '<div class="lp-charts">' + "".join(out[1:]) + "</div>" + note
+    return '<div class="lp-charts">' + "".join(out[1:]) + "</div>" + out[0] + note
 
 
 def section_id(title: str) -> str:

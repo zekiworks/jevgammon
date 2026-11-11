@@ -574,11 +574,14 @@ def league_sections(S) -> str:
                       f'voided ones: <a href="../matches/">Matches</a>.</p></details></section>')
     import starting_groups as SG
     leagues = [(f'league-{lg["id"]}', f'League {lg["id"]}', f'sub-panel-league-{lg["id"]}') for lg in S["leagues"]]
-    after = (SG.after_moves_intro(S) + link_tabs(leagues, "sub", "Leagues after the moves", "modes sub-tabs")
-             + "".join(tab_panel(pid, f"sub-tab-{key}", b, "sub-panel") for (key, _, pid), b in zip(leagues, blocks)))
+    after_head, after_note = SG.after_moves_intro(S)
+    after = (after_head + link_tabs(leagues, "sub", "Leagues after the moves", "modes sub-tabs")
+             + "".join(tab_panel(pid, f"sub-tab-{key}", b, "sub-panel") for (key, _, pid), b in zip(leagues, blocks))
+             + after_note)
     late = late_entries_section(S, rel)
-    return league_tabs({"starting-groups": SG.section(S), "after-league-moves": after, "cups": SG.cups_intro() + cup_card(S),
-                        **({"late-entries": late} if late else {})})
+    cups_head, cups_note = SG.cups_intro()
+    return league_tabs({"starting-groups": SG.section(S), "after-league-moves": after,
+                        "cups": cups_head + cup_card(S) + cups_note, **({"late-entries": late} if late else {})})
 
 
 # The home page's league block had every id prefixed "lg-" (#lg-starting-groups, #lg-hype-cup …) until Ümit #2938; its
@@ -730,23 +733,21 @@ def bracket(ties: list[dict], source: str, prefix: str, rel: str, caption: str) 
 
 
 def cup_card(S, rel: str = "../") -> str:
+    """The Hype Cup and the Nackgammon knockout: each heading, then its bracket (the winner marked in it), then its
+    notes (Ümit via Zeki #4666: no champion line or text above a bracket)."""
     c, k = S["cup"], S["knockout"]
-    champ = (f'<p class="cup-champion">Champion: <strong>{esc(c["champion"])}</strong></p>' if c["champion"]
-             else f'<p class="cup-champion">Champion: {nm("after the final")}</p>')
-    k_champ = (f'<p class="cup-champion">Champion: <strong>{esc(k["champion"])}</strong></p>' if k["champion"]
-               else f'<p class="cup-champion">{count(k["played"])} of {count(k["matches_total"])} matches played; '
-                    f'the rest to play. Champion: {nm("after the final")}</p>')
+    k_left = ('' if k["state"] == "finished" else
+              f'<p class="table-note">{count(k["played"])} of {count(k["matches_total"])} matches played; the rest to play.</p>')
     return (f'<section class="card cup-card" id="hype-cup"><div data-tab-part="hype-cup"><div class="section-head"><h2>Hype Cup</h2>'
             f'{status_badge("Finished" if c["state"] == "finished" else "In progress")}</div>'
-            f'<p class="cup-honesty"><strong>{esc(c["honesty"])}</strong></p>{champ}'
             + bracket(c["ties"], "v3", "cup", rel, "Hype Cup bracket")
             + f'<p class="table-note"><strong>Played</strong> ({count(c["new_matches"])}): a new Cup match. '
               f'<strong>Stored</strong> ({count(c["stored_matches"])}): {esc(c["stored_rule"])} {esc(c["level_rule"])}</p>'
               f'<p class="table-note"><strong>Roster.</strong> {esc(c["roster_rule"])}</p></div>'
               f'<div data-tab-part="nack-knockout"><div class="section-head cup-sub"><h3 id="nack-knockout">{esc(k["name"])}</h3>'
               f'{status_badge("Finished" if k["state"] == "finished" else "In progress")}</div>'
-              f'<p class="note"><strong>{esc(k["label"])}.</strong> {esc(k["about"])}</p>{k_champ}'
             + bracket(k["ties"], "knockout", "nack", rel, "Nackgammon knockout bracket")
+            + f'<p class="note"><strong>{esc(k["label"])}.</strong> {esc(k["about"])}</p>{k_left}'
             + f'</div><p class="table-note">Every match of both, with the leagues\' matches: <a href="{rel}matches/">Matches</a>. '
               f'{esc(c["honesty"])}</p></section>')
 
@@ -987,9 +988,10 @@ def late_entries_section(S, rel) -> str:
                     + f'<td>{c["route"]}</td></tr>')
         results.append(f'<h3 id="late-{e["slug"]}">{esc(e["name"])}: results per opponent</h3>' + late_results(e, rel))
     return (f'<section class="card" id="late-entries" data-dataset="{LATE_ENTRY}"><div class="section-head">'
-            f'<h2>Late entries (not in standings)</h2></div><p class="note">{esc(LATE_ABOUT)} {esc(LATE_RANKED)}</p>'
+            f'<h2>Late entries (not in standings)</h2></div>'
             + SWIPE + table(LATE_HEAD, rows, "Late entries: each one's own late-entry games; never ranked",
                             attrs=f' data-dataset="{LATE_ENTRY}"')
+            + f'<p class="note">{esc(LATE_ABOUT)} {esc(LATE_RANKED)}</p>'
             + "".join(results)
             + f'<p class="table-note">{esc(LATE_METHOD)} Every match of every stage: <a href="{rel}matches/">Matches</a>.</p>'
               f'</section>')
@@ -1016,9 +1018,9 @@ def late_entry_page(S, e) -> str:
             f'<h1>{esc(e["name"])}</h1><p class="subtitle">{late_status(e)}</p>{subq_note(e["name"], tag="p")}'
             f'<p class="version">{esc(version_line(S))}</p></section>'
             f'<section class="card" id="late-entry" data-dataset="{LATE_ENTRY}"><h2>{esc(LATE_ENTRY_LABEL)}</h2>'
-            f'<p class="note">{esc(LATE_ABOUT)}</p><dl class="facts">'
+            f'<dl class="facts">'
             + "".join(f"<dt>{k}</dt><dd>{v}</dd>" for k, v in items)
-            + f'</dl><p class="table-note">{esc(LATE_METHOD)}</p>'
+            + f'</dl><p class="note">{esc(LATE_ABOUT)}</p><p class="table-note">{esc(LATE_METHOD)}</p>'
             f'<p><a href="{rel}leagues/#late-entries">Late entries on the Leagues page</a> · '
             f'<a href="{rel}data/v3/late-entries/{e["slug"]}.json">JSON</a></p></section>' + setup
             + f'<section class="card" id="late-entry-matches"><h2>Matches</h2>' + late_results(e, rel) + "</section>")

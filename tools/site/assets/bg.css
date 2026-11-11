@@ -242,8 +242,6 @@ a.cc-open { font-weight: 600; }
 /* Hype Cup and Nackgammon knockout brackets (Leagues page) and the Matches page. Rounds side by side on a wide screen,
    one under the other on a phone; the winner's row in bold with a marked edge; the tie's state as a small label. */
 .status-in-progress { color: var(--grammar-text); border-color: var(--grammar-text); }
-.cup-honesty { margin: .25rem 0 .5rem; }
-.cup-champion { margin: .25rem 0 .75rem; }
 .cup-sub { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--edge); }
 .bracket { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; margin: .5rem 0 .75rem; }
 .bracket-round h4 { margin: 0 0 .4rem; color: var(--text-2); font-size: .72rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }

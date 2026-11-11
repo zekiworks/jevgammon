@@ -16,8 +16,9 @@ from common import name_and_tag, tag_html, tag_text
 
 TABS = [("risk", "Risk"), ("quality", "Quality"), ("confidence", "Confidence"), ("reasoning", "Reasoning"),
         ("cost", "Cost"), ("stability", "Stability")]
-INTRO = ("Models play backgammon, and an engine scores every move they make. We measure whether each risk a model "
-         "takes is the right one, and what that costs. Every decision is public.")
+# One short line before the leaderboard, the rest under its '*' (Ümit via Zeki #4649, as Logic & Math #4650).
+INTRO = "We measure whether each risk a model takes is the right one, and what that costs."
+INTRO_MORE = "Models play backgammon, and an engine scores every move they make. Every decision is public."
 LIMIT_PAIRED = "Setups played different positions; league comparisons are not paired."
 ALL = "all"
 LIMIT_HIT = "Hit risk only: being hit. Gammon risk and priming are not in it."
@@ -1886,7 +1887,7 @@ def hero_card(S) -> str:
       <div class="hero-split">
         <div class="hero-text">
           <h1>{esc(P.TITLE)}</h1>
-          <p class="intro">{esc(INTRO)}</p>
+          {P.star_note(esc(INTRO), f"<p>{esc(INTRO_MORE)}</p>", "intro")}
           {counts_line(S)}
           <nav class="hero-links" aria-label="Main parts">{links}</nav>
         </div>
@@ -1910,10 +1911,10 @@ def leagues_moved(S) -> tuple[str, str]:
     {FAMILY_ICONS}
     <section class="card overview" id="overview">
       {result_cards(S)}
-      <p class="framing"><strong>What this measures.</strong> {esc(WHAT_THIS_MEASURES)}</p>
       {champions(S)}
       {leaders(S)}
       {facts(S)}
+      <p class="framing"><strong>What this measures.</strong> {esc(WHAT_THIS_MEASURES)}</p>
     </section>"""
     bottom = f"""
     {filters(S)}

@@ -519,9 +519,9 @@ def section(N, kinds: dict, chosen: list, L: dict) -> str:
             f'{H.FAMILY_ICONS}'
             f'<div class="section-head"><p class="eyebrow">{esc(TITLE)}</p><h2>{esc(QUESTION)}</h2>{keys}</div>'
             + P.class_keys("nack-class")
-            + f'<p class="note nack-always"><strong>{esc(UNCLEAR_NOTE)}</strong> {count(n_added)} setups were added after '
-            'the results were read; the primary results are shown with and without them.</p>'
-            f'<p class="table-note">{esc(head_note)}</p>'
+            + P.star_note(f'<strong>{esc(UNCLEAR_NOTE)}</strong> {count(n_added)} setups were added after the results '
+                          'were read; the primary results are shown with and without them.',
+                          f'<p>{esc(head_note)}</p>', "note nack-always")
             + summary_table(N) + f'<p class="table-note nack-view-note">{esc(view_note)}</p>' + late_block(L) +
             f'<p class="section-label">{esc(N["method"])}</p>{status}{scope}'
             f'<p class="note nack-additions-note"><strong>Additions.</strong> {esc(shown_text(N["additions_note"]))}</p>'

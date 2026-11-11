@@ -176,11 +176,22 @@ def league_status_text(lg) -> str:
     return s
 
 
-def play_order_note(S) -> str:
+def play_order_shuffled(S) -> str:
+    """The shuffled-order check behind EARLIER_NOTE (play_order_note without its first sentence)."""
     p = S["v1"]["play_order"]
-    return (f"{EARLIER_NOTE} When {p['setup']} answered the same {count(p['positions'])} positions with the plays "
+    return (f"When {p['setup']} answered the same {count(p['positions'])} positions with the plays "
             f"shuffled, its error rate changed by {fmt(p['diff'], 1, True)} (95% interval {fmt(p['lo'], 1, True)} to "
             f"{fmt(p['hi'], 1, True)}), so the effect is not proven.")
+
+
+def play_order_note(S) -> str:
+    return f"{EARLIER_NOTE} {play_order_shuffled(S)}"
+
+
+def star_note(line: str, more: str, cls: str = "note") -> str:
+    """One short line in front and its longer explanation under a '*' (Ümit via Zeki #4649, as Logic & Math's #4611,
+    #4650): line and more are HTML; more is one or more block elements."""
+    return (f'<details class="{cls} star-note"><summary>{line} <span class="star">*</span></summary>{more}</details>')
 
 
 def about(inner: str, label: str = "About this table") -> str:
@@ -336,10 +347,12 @@ def layout(S, base, path: str, title: str, body: str, description: str | None = 
 """, dataset)
 
 
-def page_head(S, eyebrow: str, title: str, intro: str = "") -> str:
-    """A page's first card, as the sibling site's: the eyebrow, the title, the intro and the results version."""
+def page_head(S, eyebrow: str, title: str, intro: str = "", more: str = "") -> str:
+    """A page's first card, as the sibling site's: the eyebrow, the title, the intro and the results version. more (HTML,
+    optional): the intro's longer explanation, under a '*' after the intro."""
+    lead = (star_note(intro, f"<p>{more}</p>", "intro") if more else f"<p class=intro>{intro}</p>") if intro else ""
     return (f'<header class="card hero page-head"><p class="eyebrow">{esc(eyebrow)}</p><h1>{esc(title)}</h1>'
-            f'{f"<p class=intro>{intro}</p>" if intro else ""}<p class="version">{esc(version_line(S))}</p></header>')
+            f'{lead}<p class="version">{esc(version_line(S))}</p></header>')
 
 
 # --- Home ---------------------------------------------------------------------------------------------------
@@ -810,10 +823,10 @@ def matches_page(S) -> str:
                   + SWIPE + table(["Match", "#", "Finished", "Score", "Why voided"], void_rows,
                                   "Voided matches, with the reason recorded when they were voided", cls="board list")
                   + '</details></section>')
-    intro = (f'Every finished match: {count(M["total"])}, by stage. A match is listed once, where it was '
-             'played; the setups carry their current names. Results only: the standings and error rates are on '
+    intro = (f'Every finished match: {count(M["total"])}, by stage. Results only: the standings and error rates are on '
              '<a href="../leagues/">Leagues</a>.')
-    return (page_head(S, "Matches", "Every match", intro)
+    return (page_head(S, "Matches", "Every match", intro,
+                      "A match is listed once, where it was played; the setups carry their current names.")
             + f'<nav class="card stage-nav" aria-label="Stages"><ul class="subnav">{nav}</ul></nav>' + "".join(blocks))
 
 
@@ -1213,7 +1226,8 @@ def class_keys(cls: str) -> str:
             'Class:</span>' + "".join(f'<button type="button" class="key" data-class-key="{k}" aria-pressed='
                                       f'"{str(k == "all").lower()}">{l}</button>'
                                       for k, l in (("all", "All"),) + CLASSES)
-            + f'</div><p class="table-note class-note">{esc(CLASS_RULE)}</p>')
+            + '</div>' + star_note("Class: by the maker's total parameters, or by list price when the size is "
+                                   "undisclosed", f'<p>{esc(CLASS_RULE)}</p>', "table-note class-note"))
 
 
 B7 = [("model_id", "Model ID"), ("provider", "Provider or endpoint"), ("date_run", "Date run"), ("price", "Price"),
@@ -1514,7 +1528,7 @@ def compare_page(S) -> str:
               f'<p>Waits for the shared-position answers. League games give each setup different positions, so league '
               f'setups cannot be paired; see each league\'s own tables on the <a href="../leagues/">Leagues page</a>.</p></section>'
             + f'<section class="card" id="v1" data-version="v1"><div class="section-head"><h2>Earlier version: the v1 set</h2>{status_badge(EARLIER)}</div>'
-              f'<p class="note">{esc(play_order_note(S))}</p>'
+              + star_note(esc(EARLIER_NOTE), f'<p>{esc(play_order_shuffled(S))}</p>') +
               f'<div class="compare-pick needs-js"><label>First <select data-compare="a">{opts}</select></label>'
               f'<label>Second <select data-compare="b">{opts}</select></label></div>'
               f'<div data-compare-out aria-live="polite"></div>'
@@ -1752,8 +1766,8 @@ def nackgammon_page(S) -> str:
     import home
     import nack_section
     sec = nack_section.section(S["nack"], *home.nack_views(S), S["nack_late"])
-    return (page_head(S, "Experiments", "Nackgammon", "Finished. Does a model still play well when the starting "
-                      "position changes? The knockout: <a href=\"../leagues/#nack-knockout\">Leagues</a>.")
+    return (page_head(S, "Experiments", "Nackgammon", "Finished. The knockout: "
+                      "<a href=\"../leagues/#nack-knockout\">Leagues</a>.")
             + rebase(sec, "../", ids_of(sec)))
 
 

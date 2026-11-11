@@ -1856,7 +1856,18 @@ def repeat_data(S) -> list[dict]:
             cost=dict(estimate_usd=round(cost["estimate_usd"], 2), entrant_usd=round(cost["entrant_usd"], 2),
                       cap_usd=cost["cap_usd"]),
             differences=m["differences"]))
-    return out
+    return run2_order(out)
+
+
+def run2_order(rows: list[dict]) -> list[dict]:
+    """The Run 2 view (Zeki #4838): the repeats with a risk judgement from a completed run first, by that judgement
+    (higher first; ties by model name), ranked 1..n consecutively over those only; every other repeat (queued, running,
+    played without a judgement) below, unranked (rank None), in the manifest's fixed order. Each model has one repeat:
+    nothing is picked from several repeats or averaged."""
+    done = [d for d in rows if d["status"] == "played" and d["repeat"] and d["repeat"]["judgement"] is not None]
+    done.sort(key=lambda d: (-d["repeat"]["judgement"], d["model"]))
+    rest = [d for d in rows if d not in done]
+    return [dict(d, rank=i) for i, d in enumerate(done, 1)] + [dict(d, rank=None) for d in rest]
 
 
 def repeat_measures(x: dict) -> str:
@@ -1877,16 +1888,24 @@ def utc_time(iso: str | None) -> str:
 
 # The one area of the backgammon repeats: every repeat replays its original's League 1 field (Ümit via Zeki #4831).
 REPEAT_AREA = "League play vs League 1's field"
-REPEAT_HEAD = ["Model", 'First run<span class="rc-more">: risk judgement / error rate (PR) / decisions on the same '
-               'pairs</span>', "Repeat", "Pairs", "Status"]
+# The Run 2 view (Zeki #4838): rank, model, the repeat (Run 2), its first run beside it, pairs, status; the build's order
+# only (no header sorts: ranks hold for completed repeats only, the rest stay in their fixed order below).
+REPEAT_HEAD = [(h, " data-nosort") for h in (
+    "Rank", "Model", 'Run 2<span class="rc-more">: risk judgement / error rate (PR) / decisions</span>',
+    'First run<span class="rc-more">, same pairs</span>', "Pairs", "Status")]
+RUN2_NOTE = ("Run 2: the completed repeats ranked by their own risk judgement, Rank 1 to n; queued and running repeats "
+             "below them, unranked, in a fixed order. Each repeat is one run of its model, shown beside that model's "
+             "first run on the same pairs, seeds and dice; nothing is picked from several runs or averaged, and the "
+             "main leaderboard is unchanged.")
 
 
 def repeat_checks(S) -> str:
-    """Repeat checks at the top of Experiments (Ümit via Zeki #4831): one compact table per area, a row per repeat: the
-    model (maker dot, family icon, official name and tag, as on the home leaderboard), the first run's risk judgement /
-    error rate / decisions on the pairs its repeat plays, the repeat's (or its state in words), pairs played and status;
-    the run id, settings, dates, cost basis and differences in the row's details. Below 640 px: model, first run's
-    risk judgement, repeat and status; the rest in the details."""
+    """Repeat checks at the top of Experiments (Ümit via Zeki #4831; Run 2 view, Zeki #4838): one compact table per area,
+    a row per repeat in run2_order: its Run 2 rank (completed repeats only), the model (maker dot, family icon, official
+    name and tag, as on the home leaderboard), the repeat's risk judgement / error rate / decisions (or its state in
+    words), the first run's on the pairs the repeat plays, pairs played and status; the run id, settings, dates, cost
+    basis and differences in the row's details. Below 640 px: rank, model, both risk judgements and status; the rest in
+    the details."""
     import home as H
     from common import CONTENT
     # The setup's shown name (maker, family, official name) and the start and finish times, beside the published record.
@@ -1903,8 +1922,8 @@ def repeat_checks(S) -> str:
         gone = "".join(f"; not played: {esc(g['opponent'])} ({esc(g['reason'])})" for g in d["not_played"])
         cost = d["cost"]
         items = [
+            ("Run 2", repeat),
             ("First run", f'{repeat_measures(d["original"])} (risk judgement / error rate (PR) / decisions)'),
-            ("Repeat", repeat),
             ("Pairs played", pairs),
             ("Run id", esc(d["run_id"])),
             ("Setup", f'{esc(d["setup"])}; held: in no standings, table or other setup\'s numbers'),
@@ -1925,14 +1944,17 @@ def repeat_checks(S) -> str:
              "<ul>" + "".join(f"<li>{esc(x)}</li>" for x in d["differences"]) + "</ul>")]
         details = (f'<details class="more rc-details" id="repeat-{d["id"]}"><summary>Details</summary>'
                    '<dl class="facts">' + "".join(f"<dt>{k}</dt><dd>{v}</dd>" for k, v in items) + "</dl></details>")
-        rows.append(f'<tr class="rc-row"><td class="model">{dot}{icon}<span class="model-name">{name_html(setup[d["id"]])}'
-                    f'</span></td><td class="num">{repeat_measures(d["original"])}</td><td class="num">{repeat}</td>'
+        rank = (count(d["rank"]) if d["rank"] else
+                '<span class="nm"><span class="rc-more">unranked</span><span class="rc-short" title="unranked">–</span></span>')
+        rows.append(f'<tr class="rc-row"><td class="num rc-rank">{rank}</td><td class="model">{dot}{icon}'
+                    f'<span class="model-name">{name_html(setup[d["id"]])}</span></td><td class="num">{repeat}</td>'
+                    f'<td class="num">{repeat_measures(d["original"])}</td>'
                     f'<td class="num rc-pairs">{pairs}</td><td class="rc-status">{status_badge(state)}</td></tr>'
                     f'<tr class="rc-detail-row"><td colspan="{len(REPEAT_HEAD)}">{details}</td></tr>')
     return (f'<section class="card" id="repeat-checks">{H.FAMILY_ICONS}<div class="section-head"><h2>Repeat checks</h2>'
-            f'</div><h3>{esc(REPEAT_AREA)}</h3>'
-            + table(REPEAT_HEAD, rows, f"Repeat checks, {esc(REPEAT_AREA)}: each first run and its repeat on the same pairs",
-                    cls="board repeat-table")
+            f'</div><h3>{esc(REPEAT_AREA)}</h3><p class="table-note rc-view">{esc(RUN2_NOTE)}</p>'
+            + table(REPEAT_HEAD, rows, f"Repeat checks, {esc(REPEAT_AREA)}, Run 2: each repeat ranked when complete, "
+                    "beside its first run on the same pairs", cls="board repeat-table")
             + "</section>")
 
 

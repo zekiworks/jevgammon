@@ -619,6 +619,24 @@ def result_rows(L) -> list:
     return [x[1:] for x in sorted(out, key=lambda x: x[0])]
 
 
+THRESHOLD_NOTE = ("Threshold: the larger of the model's own spread over its three empty runs (max − min) and 5 points; "
+                  "right safety may fall by at most 5 points.")
+
+
+def verdict_text(m) -> str:
+    """The Improved? cell (Ümit via Zeki #4841): Yes/No with its change and threshold in points side by side; a No the
+    safety condition alone decides says so; before the verdict gate 'pending' with the interim numbers. HTML."""
+    rf, thr, rs = m["change"]["risks_found"], m["threshold"], m["change"]["right_safety"]
+    nb = "\u00a0"  # a number keeps its unit when the cell wraps
+    nums = (f' · {fmt(rf, 1, signed=True)}{nb}pp · threshold {num(thr)}{nb}pp' if None not in (rf, thr) else "")
+    if not m["verdict"]:
+        return "pending" + (f'<span class="small">{nums} (interim)</span>' if nums else "")
+    word = f'<strong data-rverdict="{"yes" if m["improved"] else "no"}">{esc(m["status"])}</strong>'
+    if not m["improved"] and round(rf, 9) > round(thr, 9):
+        return f'{word} · safety{nb}{fmt(rs, 1, signed=True)}{nb}pp'
+    return word + nums
+
+
 def result_row(pm, p, m, refused, i: int, links: dict) -> str:
     if refused:
         status_, done = nm(NA), nm(NA)
@@ -636,8 +654,7 @@ def result_row(pm, p, m, refused, i: int, links: dict) -> str:
         bar = (f'<td class="num"><span data-rcell="threshold">{num(m["threshold"])}</span><br>'
                f'<span class="small">spread <span data-rcell="range">{num(m["range"])}</span></span></td>')
         rs = f'<td class="num" data-rcell="rs">{before_after(m, "right_safety")}</td>'
-    verdict = (f'<strong data-rverdict="{"yes" if m["improved"] else "no"}">{esc(m["status"])}</strong>'
-               if m is not None and m["verdict"] else "")
+    verdict = (f'<span data-rcell="verdict">{verdict_text(m)}</span>' if m is not None else "")
     name = re.sub(r" \([^()]*\)$", "", pm["setup"])
     setting = pm["setup"][len(name) + 2:-1] or None
     mk, dot = maker_dot(pm["setup"])
@@ -701,7 +718,9 @@ def results_section(L, S=None) -> str:
     return (keys + P.SWIPE
             + P.table(head, rows_, "Results, one row per model", cls="board list improve-progress",
                       attrs=' id="improve-results-table"')
-            + f'<p class="table-note" id="improve-results-note">{esc(cap)}</p>' + note)
+            + f'<p class="table-note" id="improve-results-note">{esc(cap)}</p>'
+            + P.star_note("Improved? = verdict · change · threshold, in points (pp) of risks found.",
+                          f'<p>{esc(THRESHOLD_NOTE)}</p>') + note)
 
 
 def validation_note(L) -> str:

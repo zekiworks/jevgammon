@@ -622,7 +622,7 @@ impl DecisionClient {
             .and_then(|a| a.get("choice"))
             .and_then(Value::as_str)
             .and_then(|choice| shown.iter().copied().find(|&i| req.notations[i] == choice));
-        let error = match (&value, refused, choice) {
+        let mut error = match (&value, refused, choice) {
             (None, _, _) => Some("response is not JSON".to_owned()),
             (_, true, _) => Some("refusal".to_owned()),
             (_, _, None) => Some(format!("no {QUESTION} choice among the candidates")),
@@ -641,6 +641,14 @@ impl DecisionClient {
                 .collect();
             decision.probability_source =
                 (!decision.probabilities.is_empty()).then_some("decision");
+            // The returned choice is played either way; a map that is not exactly the shown ids (one probability
+            // each, none unknown) is recorded on the exchange.
+            if let Some(gap) = coverage_gap(
+                &probabilities,
+                shown.iter().map(|&i| req.notations[i].as_str()),
+            ) {
+                error = Some(gap);
+            }
         }
         decision.exchanges.push(Exchange {
             request: body.to_string(),
@@ -650,6 +658,31 @@ impl DecisionClient {
         });
         Ok(choice)
     }
+}
+
+/// How a returned probability map differs from exactly one probability per shown id: the shown ids it lacks, the
+/// ids it names that were not shown, and the shown ids it names more than once; `None` when it matches.
+fn coverage_gap<'a>(
+    probabilities: &[(String, f64)],
+    shown: impl Iterator<Item = &'a str>,
+) -> Option<String> {
+    let shown: Vec<&str> = shown.collect();
+    let count = |id: &str| probabilities.iter().filter(|(p, _)| p == id).count();
+    let missing: Vec<&str> = shown.iter().copied().filter(|&id| count(id) == 0).collect();
+    let repeated: Vec<&str> = shown.iter().copied().filter(|&id| count(id) > 1).collect();
+    let unknown: Vec<&str> = probabilities
+        .iter()
+        .map(|(p, _)| p.as_str())
+        .filter(|p| !shown.contains(p))
+        .collect();
+    if missing.is_empty() && repeated.is_empty() && unknown.is_empty() {
+        return None;
+    }
+    Some(format!(
+        "probabilities do not cover exactly the {} shown options: missing {missing:?}, unknown {unknown:?}, \
+         repeated {repeated:?} (the returned choice was played)",
+        shown.len()
+    ))
 }
 
 /// Whether the service refused the request (a 4xx other than 425 Too Early).
@@ -919,8 +952,9 @@ mod tests {
     }
 
     /// Answers one System One request as OpenRouter does (the third option at 0.7, with
-    /// `id`, `provider` and `usage.cost`) and returns the request body.
-    fn openrouter_stub() -> (String, std::thread::JoinHandle<Value>) {
+    /// `id`, `provider` and `usage.cost`) and returns the request body. With `gap`, the
+    /// probability map lacks the last shown option and names an id that was not shown.
+    fn openrouter_stub(gap: bool) -> (String, std::thread::JoinHandle<Value>) {
         let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
         let url = format!("http://{}", listener.local_addr().unwrap());
         let handle = std::thread::spawn(move || {
@@ -949,11 +983,15 @@ mod tests {
                 .cloned()
                 .collect();
             let rest = 0.3 / (keys.len() - 1) as f64;
-            let probabilities: Map<String, Value> = keys
+            let mut probabilities: Map<String, Value> = keys
                 .iter()
                 .enumerate()
                 .map(|(i, k)| (k.clone(), (if i == 2 { 0.7 } else { rest }).into()))
                 .collect();
+            if gap {
+                probabilities.remove(keys.last().unwrap());
+                probabilities.insert("24/1".into(), 0.0.into());
+            }
             let answer = json!({
                 "model": "google/gemini-decision-1-20261111", "provider": "Google AI Studio",
                 "id": "gen-dec-stub",
@@ -1005,7 +1043,7 @@ mod tests {
             version: PromptVersion::BgV2,
             retry: &retry,
         };
-        let (url, stub) = openrouter_stub();
+        let (url, stub) = openrouter_stub(false);
         let service = service("openrouter-decisions").unwrap();
         let pin = json!({"provider": {"only": ["google-ai-studio"], "allow_fallbacks": false}});
         let client = DecisionClient {
@@ -1035,11 +1073,59 @@ mod tests {
         assert!(decision.probabilities.contains(&(order[2], 0.7)));
         assert_eq!((decision.input_tokens, decision.output_tokens), (2345, 0));
         assert!(decision.exchanges[0].error.is_none());
-        assert!(decision.exchanges[0].request.contains("\"allow_fallbacks\":false"));
+        assert!(
+            decision.exchanges[0]
+                .request
+                .contains("\"allow_fallbacks\":false")
+        );
 
         // Without a config `request` the body carries no provider field, as before.
-        let plain = DecisionClient { request: None, ..client };
-        let body = plain.body("s", "i", &[("a".into(), "a".into()), ("b".into(), "b".into())]);
+        let plain = DecisionClient {
+            request: None,
+            ..client
+        };
+        let body = plain.body(
+            "s",
+            "i",
+            &[("a".into(), "a".into()), ("b".into(), "b".into())],
+        );
         assert!(body.get("provider").is_none());
+
+        // A probability map that is not exactly the shown ids: the returned choice is still
+        // played, the probabilities it has are kept, and the exchange records the gap.
+        let (url, stub) = openrouter_stub(true);
+        let client = DecisionClient {
+            url: format!("{url}{}", service.path),
+            ..plain
+        };
+        let mut decision = Decision::new(0);
+        let choice = client.choose(&req, &order, &mut decision).await.unwrap();
+        stub.join().unwrap();
+        assert_eq!(choice, Some(order[2]));
+        assert_eq!(decision.probabilities.len(), n - 1);
+        let error = decision.exchanges[0].error.as_deref().unwrap();
+        let last = &notations[*order.last().unwrap()];
+        assert!(error.contains(&format!("missing [{last:?}]")), "{error}");
+        assert!(error.contains("unknown [\"24/1\"]"), "{error}");
+    }
+
+    #[test]
+    fn coverage_gap_needs_one_probability_per_shown_id() {
+        let p = |ids: &[&str]| {
+            ids.iter()
+                .map(|id| (id.to_string(), 0.5))
+                .collect::<Vec<_>>()
+        };
+        let shown = || ["a", "b"].into_iter();
+        assert_eq!(coverage_gap(&p(&["b", "a"]), shown()), None);
+        let repeated = coverage_gap(&p(&["a", "a", "b"]), shown()).unwrap();
+        assert!(repeated.contains("repeated [\"a\"]"), "{repeated}");
+        let missing = coverage_gap(&p(&["a"]), shown()).unwrap();
+        assert!(missing.contains("missing [\"b\"]"), "{missing}");
+        assert!(
+            coverage_gap(&p(&[]), shown())
+                .unwrap()
+                .contains("missing [\"a\", \"b\"]")
+        );
     }
 }

@@ -17,7 +17,7 @@ from pathlib import Path
 
 import improve_page as IP
 import story as ST
-from common import count, esc, fmt, name_and_tag, name_text, pct, tag_text
+from common import count, esc, fmt, name_and_tag, pct, tag_text
 
 LEAGUE_DATA = "data/v3/{}.json"
 LATE_DATA = "data/v3/late-entries.json"
@@ -180,8 +180,9 @@ def _resolve(out: Path, src: str, path: list):
 def _shown(out: Path, src: str, path: list, kind: str, texts: dict):
     """What the built site holds for one span, written as the card writes it."""
     if kind == "rank":
-        # The row's details box is labelled with the setup's name as plain text (common.name_text).
-        m = re.search(r'id="hl-(\d+)-box" role="group" aria-label="' + re.escape(esc(name_text(path[0]))) + ': details"',
+        # The row's details box is labelled with the setup's shown name as stored (story.details_box: x["name"], no
+        # tag), so a name with a snapshot tag (Gemini Decision 1) is found too.
+        m = re.search(r'id="hl-(\d+)-box" role="group" aria-label="' + re.escape(esc(path[0])) + ': details"',
                       (out / src).read_text())
         return m and m.group(1)
     if kind == "quote":

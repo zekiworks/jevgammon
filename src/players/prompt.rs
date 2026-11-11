@@ -800,7 +800,9 @@ mod tests {
         // the line naming the starting setup.
         let std_state = state(&fixture.request(PromptVersion::BgV3StdNoTable, dice));
         let nack3_state = state(&fixture.request(PromptVersion::BgV3Nack, dice));
-        assert!(!std_state.contains("## Opening rolls") && !nack3_state.contains("## Opening rolls"));
+        assert!(
+            !std_state.contains("## Opening rolls") && !nack3_state.contains("## Opening rolls")
+        );
         let differ: Vec<(&str, &str)> = std_state
             .lines()
             .zip(nack3_state.lines())
@@ -808,8 +810,14 @@ mod tests {
             .collect();
         assert_eq!(std_state.lines().count(), nack3_state.lines().count());
         assert_eq!(differ.len(), 1);
-        assert!(differ[0].0.contains("in the standard starting position: two on the 24-point, five"));
-        assert!(differ[0].1.contains("in the Nackgammon starting position: two on the 24-point, two on the 23-point"));
+        assert!(
+            differ[0]
+                .0
+                .contains("in the standard starting position: two on the 24-point, five")
+        );
+        assert!(differ[0].1.contains(
+            "in the Nackgammon starting position: two on the 24-point, two on the 23-point"
+        ));
 
         // Letters follow the request's order.
         let user = letter_user(&bg, bg.order);

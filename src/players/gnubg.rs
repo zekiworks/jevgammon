@@ -15,7 +15,10 @@ use crate::board::{Board, Play};
 
 /// The script and the tools/v3 modules it imports, written to one folder at start-up.
 const FILES: [(&str, &str); 3] = [
-    ("gnubg_player.py", include_str!("../../tools/gnubg_player.py")),
+    (
+        "gnubg_player.py",
+        include_str!("../../tools/gnubg_player.py"),
+    ),
     ("engine.py", include_str!("../../tools/v3/engine.py")),
     ("rules.py", include_str!("../../tools/v3/rules.py")),
 ];

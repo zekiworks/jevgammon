@@ -178,7 +178,7 @@ fn fixture_is_a_round_robin_with_one_match_per_model_per_matchday_and_joiners_af
             .enumerate()
             .map(|(i, name)| participant(i as i64 + 1, name, "2026-10-01"))
             .collect();
-        let fixture = derive_fixture(11, &rules(false), &people, &[]);
+        let fixture = derive_fixture(11, &rules(false), &people, &[], None);
         let mut pairs: Vec<(i64, i64)> = fixture.iter().map(Fixture::key).collect();
         pairs.sort();
         pairs.dedup();
@@ -201,7 +201,7 @@ fn fixture_is_a_round_robin_with_one_match_per_model_per_matchday_and_joiners_af
         // everyone who joined before it.
         people.push(participant(100, "late1", "2026-10-02"));
         people.push(participant(101, "late2", "2026-10-03"));
-        let with_late = derive_fixture(11, &rules(false), &people, &[]);
+        let with_late = derive_fixture(11, &rules(false), &people, &[], None);
         assert_eq!(&with_late[..fixture.len()].len(), &fixture.len());
         for (old, new) in fixture.iter().zip(&with_late) {
             assert_eq!((&old.label, old.seed), (&new.label, new.seed));
@@ -227,7 +227,7 @@ fn fixture_is_a_round_robin_with_one_match_per_model_per_matchday_and_joiners_af
         .map(|(i, name)| participant(i as i64 + 1, name, "x"))
         .collect();
     let labels = |seed| {
-        derive_fixture(seed, &rules(false), &people, &[])
+        derive_fixture(seed, &rules(false), &people, &[], None)
             .into_iter()
             .map(|f| f.label)
             .collect::<Vec<_>>()
@@ -340,7 +340,7 @@ fn same_pair_same_rules_same_seed_across_leagues() {
     let pair = |id: i64| {
         let row = db.league(id).unwrap();
         let participants = db.participants(id).unwrap();
-        derive_fixture(row.seed, &row.rules, &participants, &[])
+        derive_fixture(row.seed, &row.rules, &participants, &[], row.scope.pins())
             .into_iter()
             .find(|f| {
                 let mut names = [f.model1.as_str(), f.model2.as_str()];
@@ -609,6 +609,7 @@ async fn an_early_start_plays_only_its_setups_pairs() {
     let scope = Scope {
         only_pairs_of: Some("X".into()),
         hidden: true,
+        ..Scope::default()
     };
     // The setup must be one of the players.
     assert!(
@@ -1031,5 +1032,518 @@ async fn a_mismatched_nackgammon_league_is_not_created() {
     assert_eq!(count, 0);
     for suffix in ["", "-wal", "-shm"] {
         let _ = std::fs::remove_file(format!("{}{suffix}", path.display()));
+    }
+}
+
+/// A pinned pair (`Scope::pinned_pairs`): (opponent, seed, seat_first).
+fn pins(list: &[(&str, u64, bool)]) -> PinnedPairs {
+    list.iter()
+        .map(|&(name, seed, seat_first)| {
+            (name.to_owned(), crate::db::PinnedPair { seed, seat_first })
+        })
+        .collect()
+}
+
+fn pinned_scope(owner: &str, list: &[(&str, u64, bool)]) -> Scope {
+    Scope {
+        only_pairs_of: Some(owner.into()),
+        hidden: true,
+        pinned_pairs: pins(list),
+    }
+}
+
+/// Without pins, nothing changes: an empty pin set, or pins of a setup outside the league
+/// or for other opponents, give the very fixture (seeds, seats, order) of no pins at all;
+/// and the name-derived seed is still the one stored for an original late-entry match
+/// (#808, Base Labs Mammoth-1 v Safest under League 1's rules).
+#[test]
+fn without_pins_every_fixture_and_seed_is_unchanged() {
+    let people: Vec<Participant> = names(6)
+        .iter()
+        .enumerate()
+        .map(|(i, name)| participant(i as i64 + 1, name, "2026-10-01"))
+        .collect();
+    let plain = derive_fixture(11, &rules(true), &people, &[], None);
+    let empty = PinnedPairs::new();
+    let elsewhere = pins(&[("m1", 42, true)]);
+    let unrelated = pins(&[("nobody", 42, true)]);
+    for with in [
+        derive_fixture(11, &rules(true), &people, &[], Some(("m0", &empty))),
+        derive_fixture(
+            11,
+            &rules(true),
+            &people,
+            &[],
+            Some(("outsider", &elsewhere)),
+        ),
+        derive_fixture(11, &rules(true), &people, &[], Some(("m0", &unrelated))),
+    ] {
+        assert_eq!(with, plain);
+    }
+    // A pin touches its own pair only.
+    let one = derive_fixture(11, &rules(true), &people, &[], Some(("m0", &elsewhere)));
+    for (a, b) in one.iter().zip(&plain) {
+        let pinned = [a.model1.as_str(), a.model2.as_str()].contains(&"m0")
+            && [a.model1.as_str(), a.model2.as_str()].contains(&"m1");
+        if !pinned {
+            assert_eq!(a, b);
+        }
+    }
+    let original = original_matches()
+        .into_iter()
+        .find(|m| m.id == 808)
+        .unwrap();
+    let l1 = original.rules();
+    assert_eq!(l1.pair_seed("Base Labs Mammoth-1", "Safest"), original.seed);
+    assert_eq!(
+        l1.sides("Base Labs Mammoth-1", "Safest").0,
+        original.player1
+    );
+}
+
+/// A pinned pair takes the exact u64 seed (above i64::MAX too) and seating, stored and read
+/// back unchanged; a league without pins stores NULL.
+#[test]
+fn a_pinned_pair_takes_its_exact_seed_and_seating() {
+    let people: Vec<Participant> = ["R", "A", "B"]
+        .iter()
+        .enumerate()
+        .map(|(i, name)| participant(i as i64 + 1, name, "2026-10-01"))
+        .collect();
+    let big = u64::MAX - 12_345;
+    let set = pins(&[("A", big, true), ("B", 7, false)]);
+    let fixture = derive_fixture(3, &rules(true), &people, &[], Some(("R", &set)));
+    let pair = |x: &str| {
+        fixture
+            .iter()
+            .find(|f| {
+                [f.model1.as_str(), f.model2.as_str()].contains(&x)
+                    && [f.model1.as_str(), f.model2.as_str()].contains(&"R")
+            })
+            .unwrap()
+            .clone()
+    };
+    let (ra, rb) = (pair("A"), pair("B"));
+    assert_eq!(
+        (ra.model1.as_str(), ra.model2.as_str(), ra.seed),
+        ("R", "A", big)
+    );
+    assert_eq!(
+        (rb.model1.as_str(), rb.model2.as_str(), rb.seed),
+        ("B", "R", 7)
+    );
+    let ab = fixture.iter().find(|f| f.key() == (2, 3)).unwrap();
+    assert_eq!(ab.seed, rules(true).pair_seed("A", "B"));
+
+    let path = temp_db("pins-store");
+    let mut db = Db::open(&path).unwrap();
+    let players: Vec<PlayerConfig> = ["R", "A"]
+        .iter()
+        .map(|n| PlayerConfig::new(n, "random"))
+        .collect();
+    let id = db
+        .create_league(
+            3,
+            &rules(true),
+            &players,
+            None,
+            &pinned_scope("R", &[("A", big, true), ("B", 7, false)]),
+        )
+        .unwrap();
+    assert_eq!(db.league(id).unwrap().scope.pinned_pairs, set);
+    let plain = db
+        .create_league(3, &rules(true), &players, None, &Scope::default())
+        .unwrap();
+    let stored: Option<String> = rusqlite::Connection::open(&path)
+        .unwrap()
+        .query_row(
+            "SELECT pinned_pairs FROM leagues WHERE id = ?1",
+            [plain],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert_eq!(stored, None);
+    drop(db);
+    let _ = std::fs::remove_file(&path);
+}
+
+/// Pins hold across a resume and a league-add: the pinned pair already in the league plays
+/// with its pin, a resumed league keeps it, and an opponent added later (with its pin given
+/// again, unchanged) plays with its own pin. Earlier rows are never edited.
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn pins_hold_across_resume_and_league_add() {
+    let path = temp_db("pins-resume");
+    let mut db = Db::open(&path).unwrap();
+    let players: Vec<PlayerConfig> = ["R", "A"]
+        .iter()
+        .map(|n| PlayerConfig::new(n, "random"))
+        .collect();
+    let (sa, sb) = (u64::MAX - 1, 1_234_567_890_123);
+    let id = db
+        .create_league(
+            5,
+            &rules(true),
+            &players,
+            None,
+            &pinned_scope("R", &[("A", sa, false), ("B", sb, true)]),
+        )
+        .unwrap();
+    play_out(&path, id).await;
+    let first = stored_matches(&path);
+    assert_eq!(first.len(), 1);
+    assert_eq!(
+        (first[0].1.as_str(), first[0].2.as_str(), first[0].3 as u64),
+        ("A", "R", sa)
+    );
+    let rows_before = all_match_rows(&path);
+    // The same pin again changes nothing; then B joins and the resumed league plays it.
+    assert!(!db.set_pinned_pairs(id, &pins(&[("B", sb, true)])).unwrap());
+    add_player(&mut db, id, &PlayerConfig::new("B", "random"), "2026-11-11").unwrap();
+    play_out(&path, id).await;
+    let after = stored_matches(&path);
+    assert_eq!(after.len(), 2);
+    assert_eq!(
+        (after[1].1.as_str(), after[1].2.as_str(), after[1].3 as u64),
+        ("R", "B", sb)
+    );
+    assert_eq!(
+        &all_match_rows(&path)[..rows_before.len()],
+        &rows_before[..]
+    );
+    drop(db);
+    let _ = std::fs::remove_file(&path);
+}
+
+/// Every column of every match row, as text, in id order.
+fn all_match_rows(path: &std::path::Path) -> Vec<String> {
+    let conn = rusqlite::Connection::open(path).unwrap();
+    let mut statement = conn.prepare("SELECT * FROM matches ORDER BY id").unwrap();
+    let n = statement.column_count();
+    statement
+        .query_map([], |r| {
+            Ok((0..n)
+                .map(|i| format!("{:?}", r.get_ref(i).unwrap()))
+                .collect::<Vec<_>>()
+                .join("|"))
+        })
+        .unwrap()
+        .collect::<rusqlite::Result<_>>()
+        .unwrap()
+}
+
+/// Pins are validated idempotently: the same pins again are fine (nothing written); another
+/// seed or seat for a pinned opponent, a pin against itself, a pin contradicting a played
+/// pair's match, pins without only_pairs_of are refused, and a refusal writes nothing.
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn pins_are_validated_idempotently() {
+    let path = temp_db("pins-valid");
+    let mut db = Db::open(&path).unwrap();
+    let players: Vec<PlayerConfig> = ["R", "A"]
+        .iter()
+        .map(|n| PlayerConfig::new(n, "random"))
+        .collect();
+    assert!(
+        db.create_league(
+            5,
+            &rules(true),
+            &players,
+            None,
+            &Scope {
+                pinned_pairs: pins(&[("A", 1, true)]),
+                ..Scope::default()
+            }
+        )
+        .is_err()
+    );
+    assert!(
+        db.create_league(
+            5,
+            &rules(true),
+            &players,
+            None,
+            &pinned_scope("R", &[("R", 1, true)])
+        )
+        .is_err()
+    );
+    let id = db
+        .create_league(
+            5,
+            &rules(true),
+            &players,
+            None,
+            &pinned_scope("R", &[("A", 11, true)]),
+        )
+        .unwrap();
+    assert!(!db.set_pinned_pairs(id, &pins(&[("A", 11, true)])).unwrap());
+    assert!(db.set_pinned_pairs(id, &pins(&[("A", 12, true)])).is_err());
+    assert!(db.set_pinned_pairs(id, &pins(&[("A", 11, false)])).is_err());
+    assert!(
+        db.set_pinned_pairs(id, &pins(&[("C", 3, true), ("A", 12, true)]))
+            .is_err()
+    );
+    assert_eq!(
+        db.league(id).unwrap().scope.pinned_pairs,
+        pins(&[("A", 11, true)])
+    );
+    assert!(db.set_pinned_pairs(id, &pins(&[("C", 3, true)])).unwrap());
+    assert!(
+        !db.set_pinned_pairs(id, &pins(&[("C", 3, true), ("A", 11, true)]))
+            .unwrap()
+    );
+    play_out(&path, id).await;
+    let rows = all_match_rows(&path);
+    // R v A is played with seed 11: a new league may pin it the same way, never otherwise.
+    let again = db
+        .create_league(
+            6,
+            &rules(true),
+            &players,
+            None,
+            &pinned_scope("R", &[("A", 11, true)]),
+        )
+        .unwrap();
+    assert!(
+        db.create_league(
+            6,
+            &rules(true),
+            &players,
+            None,
+            &pinned_scope("R", &[("A", 99, true)])
+        )
+        .is_err()
+    );
+    assert!(
+        db.set_pinned_pairs(again, &pins(&[("A", 11, false)]))
+            .is_err()
+    );
+    let plain = db
+        .create_league(7, &rules(true), &players, None, &Scope::default())
+        .unwrap();
+    assert!(
+        db.set_pinned_pairs(plain, &pins(&[("A", 11, true)]))
+            .is_err()
+    );
+    assert_eq!(all_match_rows(&path), rows);
+    drop(db);
+    let _ = std::fs::remove_file(&path);
+}
+
+/// An original match as read from v3.db (src/league/testdata/repeat_originals.json).
+#[derive(Deserialize)]
+struct Original {
+    id: i64,
+    player1: String,
+    player2: String,
+    seed: u64,
+    rounds: u32,
+    max_turns: u32,
+    prompt_version: String,
+    order_seed: u64,
+    mirror_concurrent: bool,
+    games: Vec<OriginalGame>,
+    /// round, leg, turn_no, side, player, die1, die2, position, legal_count, chosen_index,
+    /// option_order, decided_by
+    turns: Vec<OriginalTurn>,
+}
+
+#[derive(Deserialize, Debug, PartialEq)]
+struct OriginalGame {
+    round: u32,
+    leg: u8,
+    white_player: u8,
+    dice_seed: u64,
+    opening: [u8; 2],
+}
+
+type OriginalTurn = (
+    u32,
+    u8,
+    u32,
+    String,
+    u8,
+    u8,
+    u8,
+    String,
+    u32,
+    Option<usize>,
+    Option<String>,
+    String,
+);
+
+impl Original {
+    fn rules(&self) -> Rules {
+        Rules::new(
+            self.rounds,
+            None,
+            Some(self.max_turns),
+            &self.prompt_version,
+            self.order_seed,
+            self.mirror_concurrent,
+            StartPosition::Standard,
+        )
+    }
+}
+
+fn original_matches() -> Vec<Original> {
+    #[derive(Deserialize)]
+    struct File {
+        matches: Vec<Original>,
+    }
+    serde_json::from_str::<File>(include_str!("testdata/repeat_originals.json"))
+        .unwrap()
+        .matches
+}
+
+/// Plays the original's choices: the play index each turn of the original match chose.
+struct Replay {
+    choices: HashMap<(u32, u8, u32), usize>,
+}
+
+impl crate::players::Engine for Replay {
+    fn decide(
+        &self,
+        req: &crate::players::DecisionRequest<'_>,
+    ) -> Result<crate::players::Decision> {
+        let index = self
+            .choices
+            .get(&(req.round, req.leg, req.turn_no))
+            .copied()
+            .with_context(|| {
+                format!(
+                    "no original choice for round {} game {} turn {}",
+                    req.round, req.leg, req.turn_no
+                )
+            })?;
+        Ok(crate::players::Decision::new(index))
+    }
+}
+
+/// A repeat under another name, its pair pinned to the original match's seed and seating,
+/// with both players making the original's choices, replays every game's dice and every
+/// decision's option order exactly: #808 (Base Labs Mammoth-1 v Safest) and one match of
+/// each repeat (Drex Max v1 #856, REAX 1.3 #905, Liquid d1-ultra #190, mirror games off).
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn a_pinned_repeat_replays_the_originals_dice_and_option_orders() {
+    let setup = Setup::new(std::env::temp_dir(), "http://127.0.0.1:9/v1".into());
+    let entrants = [
+        "Base Labs Mammoth-1",
+        "Drex Max v1",
+        "REAX 1.3",
+        "Liquid d1-ultra",
+    ];
+    for original in original_matches() {
+        let entrant = entrants
+            .iter()
+            .find(|e| [&original.player1, &original.player2].contains(&&e.to_string()))
+            .unwrap();
+        let opponent = if original.player1 == *entrant {
+            &original.player2
+        } else {
+            &original.player1
+        };
+        let repeat = format!("{entrant} [repeat 1]");
+        let path = temp_db(&format!("pins-replay-{}", original.id));
+        let mut db = Db::open(&path).unwrap();
+        let configs = vec![
+            PlayerConfig::new(&repeat, "random"),
+            PlayerConfig::new(opponent, "random"),
+        ];
+        let scope = pinned_scope(
+            &repeat,
+            &[(opponent, original.seed, original.player1 == *entrant)],
+        );
+        let id = db
+            .create_league(1, &original.rules(), &configs, None, &scope)
+            .unwrap();
+        let choices: HashMap<(u32, u8, u32), usize> = original
+            .turns
+            .iter()
+            .filter_map(|t| t.9.map(|index| ((t.0, t.1, t.2), index)))
+            .collect();
+        let players = configs
+            .iter()
+            .map(|config| {
+                let player = Player::engine(
+                    "replay",
+                    Box::new(Replay {
+                        choices: choices.clone(),
+                    }),
+                );
+                (config.name.clone(), Entrant::new(config, player))
+            })
+            .collect();
+        let league = Arc::into_inner(local_league(&path, id)).unwrap();
+        let league = Arc::new(League {
+            players: RwLock::new(players),
+            protocol: Arc::new(Protocol {
+                version: PromptVersion::BgV2,
+                order_seed: original.order_seed,
+                harness: Harness::default(),
+            }),
+            ..league
+        });
+        let mut state = State::default();
+        state.sync(&db, &league, &setup).await.unwrap();
+        tokio::time::timeout(
+            Duration::from_secs(120),
+            play_league(league.clone(), &db, &setup, state),
+        )
+        .await
+        .expect("the league finishes")
+        .unwrap();
+        let conn = rusqlite::Connection::open(&path).unwrap();
+        let (p1, seed): (String, i64) = conn
+            .query_row("SELECT p.name, m.seed FROM matches m JOIN players p ON p.id = m.player1 WHERE m.valid = 1", [], |r| Ok((r.get(0)?, r.get(1)?)))
+            .unwrap();
+        let first = if original.player1 == *entrant {
+            &repeat
+        } else {
+            opponent
+        };
+        assert_eq!(
+            (&p1, seed as u64),
+            (first, original.seed),
+            "#{}",
+            original.id
+        );
+        let games: Vec<OriginalGame> = conn
+            .prepare("SELECT round_no, leg, white_player, dice_seed, opening_white, opening_black FROM games ORDER BY round_no, leg")
+            .unwrap()
+            .query_map([], |r| {
+                Ok(OriginalGame {
+                    round: r.get(0)?,
+                    leg: r.get(1)?,
+                    white_player: r.get(2)?,
+                    dice_seed: r.get::<_, i64>(3)? as u64,
+                    opening: [r.get(4)?, r.get(5)?],
+                })
+            })
+            .unwrap()
+            .collect::<rusqlite::Result<_>>()
+            .unwrap();
+        assert_eq!(games, original.games, "#{}: games", original.id);
+        let turns: Vec<OriginalTurn> = conn
+            .prepare(
+                "SELECT g.round_no, g.leg, t.turn_no, t.side, t.player, t.die1, t.die2, t.position, t.legal_count,
+                        t.chosen_index, t.option_order, t.decided_by
+                 FROM turns t JOIN games g ON g.id = t.game_id ORDER BY g.round_no, g.leg, t.turn_no",
+            )
+            .unwrap()
+            .query_map([], |r| {
+                Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?, r.get(5)?, r.get(6)?, r.get(7)?, r.get(8)?,
+                    r.get::<_, Option<i64>>(9)?.map(|i| i as usize), r.get(10)?, r.get(11)?))
+            })
+            .unwrap()
+            .collect::<rusqlite::Result<_>>()
+            .unwrap();
+        assert_eq!(turns.len(), original.turns.len(), "#{}: turns", original.id);
+        for (got, want) in turns.iter().zip(&original.turns) {
+            assert_eq!(got, want, "#{}", original.id);
+        }
+        drop(conn);
+        drop(db);
+        for suffix in ["", "-wal", "-shm"] {
+            let _ = std::fs::remove_file(format!("{}{suffix}", path.display()));
+        }
     }
 }

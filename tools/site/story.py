@@ -62,12 +62,12 @@ def about_text(S, rel: str) -> str:
                 f'{count(n_models)} models).</p>' if missing else "")
     return ('<p><strong>A fixed table:</strong> the filters on the Leagues page do not change it. Tap a model (or '
             'point at it) for its details and its decisions.</p>'
-            '<p># is the rank among all models, in every view of the table\'s filters (type: All · Chat models · '
+            '<p>Rank is the rank among all models, in every view of the table\'s filters (type: All · Chat models · '
             'Decision models; class: All · Tiny · Small · Medium · Large · Efficient · Workhorse · Flagship, combined '
             'with the type; a class with no model in the type in view has no key); the programs are reference rows in '
-            'every view and in no class. This benchmark has no tiers: a tier needs a paired exact test (McNemar, Holm) '
-            'over one question set every model answered, and the leagues played different positions, so no pair of '
-            'models in different leagues shares one. # is the rank only.</p>'
+            'every view and in no class. Rank is the league rank and has no tiers: a tier needs a paired exact test '
+            '(McNemar, Holm) over one question set every model answered, and the leagues played different positions, so '
+            'no pair of models in different leagues shares one. The Tier column comes from the same 200 positions.</p>'
             f'<p>{esc(P.CLASS_RULE)} The maker\'s own figure (model card, announcement or model name), never our '
             'count; the standard price, never an introductory one, and "(provisional)" where the maker publishes only '
             'an introductory or launch price. Never estimated: Undisclosed is a model with neither (never a chat '
@@ -395,7 +395,7 @@ WIDE_HEAD = ["Risks found", "Safe right", "Error rate (PR)",
 # not in that computation (never a guess). Below 900 px the details box carries it, like the other wide columns.
 TIER_HEAD = "Tier (same positions)"
 TIER_NOTE = "Rank comes from league play; tier comes from the same 200 positions for every model."
-HEADLINE_HEAD = ([(h, " data-nosort") for h in ("#", "Model", "Risk judgement (95% interval)")]
+HEADLINE_HEAD = ([(h, " data-nosort") for h in ("Rank", "Model", "Risk judgement (95% interval)")]
                  + [(h, " data-nosort data-wide") for h in WIDE_HEAD] + [(TIER_HEAD, " data-nosort data-wide data-tier")])
 
 
@@ -453,7 +453,7 @@ def too_safe(S, chart: list) -> str:
 MEANING = "Risk judgement: 100 = every call right, 50 = always safe; higher is better."
 ROW_LINE = "One row per model at its highest reasoning setting, never its best score; late entries included."
 # Under the table, next to the not-paired note (Ümit #4282 item 2): why # has no tiers, plainly.
-NO_TIERS = ("# is the league rank, which has no tiers: a tier needs a paired test (McNemar, Holm) over positions every "
+NO_TIERS = ("Rank is the league rank, which has no tiers: a tier needs a paired test (McNemar, Holm) over positions every "
             "model answered, and each league played its own positions, so models in different leagues never answered "
             "the same ones. The Tier column and Same positions (preview) come from 200 positions every model there "
             "answered.")
@@ -473,7 +473,7 @@ def same_positions() -> str:
     rows = [f'<tr><td>{m["tier"]}</td><th scope="row">{esc(shown_name(m["name"]))}</th>'
             f'<td class="num">{m["correct"]}</td><td class="num">{m["invalid"]}</td>'
             f'<td class="num">{m["rank"]}</td></tr>' for m in done]
-    table = P.table(["Tier", "Model", "Engine's best play, of 200", "Invalid (counted wrong)", "League #"], rows,
+    table = P.table(["Tier", "Model", "Engine's best play, of 200", "Invalid (counted wrong)", "League rank"], rows,
                     f"Same positions: {len(done)} models, 200 positions each, by tier", cls="board list",
                     attrs=' id="same-positions-table"')
     prompt = ("The prompt and setting are the league row's (checked request by request against the league prompts)."
@@ -486,7 +486,7 @@ def same_positions() -> str:
             f'200 positions every model below answered; no new run. {prompt} Engine\'s best play: the play loses under '
             f'0.001 against GNU Backgammon\'s best; an invalid answer counts as wrong. Tiers: an exact McNemar test on '
             f'every pair, Holm-adjusted at 0.05; tier 1 is the model with the most best plays and every model not '
-            f'significantly different from it, then the same for the models left. League # is the league rank.</p>'
+            f'significantly different from it, then the same for the models left. Rank is the league rank.</p>'
             + table +
             f'<p class="table-note">Not asked yet: {T["models"]} ranked models ('
             + ", ".join(esc(shown_name(m["name"])) for m in SAME["missing_ranked"]) + ")"

@@ -1,0 +1,11 @@
+{
+  "name": "GLiClass v4 Edge",
+  "spec": "gliclass",
+  "provider": "local (gliclass_server.py)",
+  "quantization": "bf16",
+  "base_url": "http://192.168.1.131:19480",
+  "note": "knowledgator's GLiClass v4 Edge (Hugging Face knowledgator/gliclass-v4-edge @ 885af1af8a07edf4ed34df83ca0d995ed8201283, Apache-2.0; a 0.44B GLiClass uni-encoder on DeBERTa-v3-large with a calibrator, text only) on our GPU behind turkce's runner/servers/gliclass_server.py (sha256 aa39e5f435c74f64b6ec905c2965d0ae5b76fa68b7bbf48f7c8a46bde52229e1), the card's own System One mapping (its jev_api.py: one gliclass 0.1.22 pass per choice question, the state as text, the instructions as prompt, each option's description as a label; probabilities the softmax over the calibrated label logits), BF16, model field knowledgator/gliclass-v4-edge. max_choices 218: options, instructions and state share one 16,384-token input (refused with 422 above it, never cut); League 1's worst case, the longest state (2,197 tokens) plus 218 options at the longest label (65 tokens), is 16,367, so play lists over 218 options are split into equal groups of at most 218 and a final among the group winners (the league's split rule, as Winnow and Clef): 24 of League 1's 36,995 decisions had more than 218 options (8 of them over 255). Nothing shortened or refused.",
+  "device": "NVIDIA GB10 (DGX Spark spark2, spark-d9ee), the whole GPU, handed over by logic one server at a time: HF_HUB_OFFLINE=1 ~/envs/gliclass/bin/python ~/decision-src/gliclass_server.py --model <snapshot> --device cuda:0 --host 0.0.0.0 --port 19480",
+  "parallel": 1,
+  "max_matches": 1
+}

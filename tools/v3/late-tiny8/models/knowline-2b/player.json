@@ -1,0 +1,11 @@
+{
+  "name": "KnowLine-2B-Gen1",
+  "spec": "knowline/m",
+  "provider": "local (knowline_server.py)",
+  "quantization": "bf16",
+  "base_url": "http://192.168.1.131:19490",
+  "note": "PelaAI's KnowLine-2B-Gen1 (Hugging Face PelaAI/KnowLine-2B-Gen1 @ 53245d470a4ce316e32fd0d18c24e142c697f40b, Apache-2.0; Qwen3.5-2B with a one-epoch LoRA SFT merged into BF16, readout temperature 1.32 folded into the weights, score questions divided by temperatures.json) on our GPU through the repo's own serve_knowline.sh as the card serves it: SGLang 0.5.21 (torch 2.13.0+cu130, transformers 5.12.1) in BF16, --mem-fraction-static 0.85, --enable-fp32-lm-head, --mamba-radix-cache-strategy extra_buffer, then the repo's knowline_server.py (served model name m, temperature 1, --temperatures temperatures.json, read twice up to 3,000 tokens). 255 options per request (the league's rule; longer lists split); never truncates: SGLang (no --allow-auto-truncate) refuses over its 262,144-token context. League 1's longest stored request (251 options) is 27,333 tokens of its tokenizer; none over.",
+  "device": "NVIDIA GB10 (DGX Spark spark2, spark-d9ee), the whole GPU, handed over by logic one server at a time: cd <snapshot> && HOST=0.0.0.0 bash serve_knowline.sh <snapshot> 0 19490 (front end 0.0.0.0:19490, SGLang 127.0.0.1:20490)",
+  "parallel": 1,
+  "max_matches": 1
+}

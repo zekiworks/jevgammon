@@ -282,6 +282,80 @@ pub const SERVICES: &[Service] = &[
         openai_format: false,
         max_choices: 255,
     },
+    // Fastino's released small GLiDE checkpoints (fastino/GLiDE-0.8B @ 9eacdee, GLiDE-2B @
+    // 00f122c) behind the server each repository ships (`python -m glide.server`,
+    // GLIDE_MAX_BATCH=1), as GLiDE v1.2 runs locally but without Fastino's key: the server takes
+    // no key and passes only `state` and `questions` to the model, so no model field is sent.
+    // One readout code per option: 255 options per question. It never truncates: a question
+    // prompt over GLIDE_MAX_LEN (40,000 tokens) is refused (422); League 1's longest stored
+    // request, 251 options, is 28,323 tokens of their tokenizer with the card's prompt.
+    Service {
+        provider: "glide",
+        label: "GLiDE (local)",
+        base_url: "http://127.0.0.1:19330",
+        url_var: "GLIDE_BASE_URL",
+        path: "/v1/systemone",
+        key_vars: &[],
+        key_required: false,
+        default_model: None,
+        openai_format: false,
+        max_choices: 255,
+    },
+    // fastino/GLiDE-0.4B @ 6bda7ab, the same server and request, but an encoder (ModernBERT) whose
+    // model shortens any prompt over 7,999 tokens (the first 1,024 kept, then the tail) instead of
+    // refusing it. Every League 1 stored request of at most 74 options fits (at most 7,833 encoder
+    // tokens with the card's prompt); 77 or more never does. So longer play lists are split into
+    // groups of at most 74, as for every limited service, and nothing is ever cut; the server runs
+    // with GLIDE_MAX_LEN=8006, which refuses (422) any prompt the model would shorten.
+    Service {
+        provider: "glide-0.4b",
+        label: "GLiDE 0.4B (local)",
+        base_url: "http://127.0.0.1:19350",
+        url_var: "GLIDE_04B_BASE_URL",
+        path: "/v1/systemone",
+        key_vars: &[],
+        key_required: false,
+        default_model: None,
+        openai_format: false,
+        max_choices: 74,
+    },
+    // OmniJev's OneJev1.6-0.8B (OmniJev/OneJev1.6-0.8B @ bcd88a3) behind Flide 0.1.11, the server
+    // its card names (`flide serve --name OmniJev/OneJev1.6-0.8B`, format onejev-slot-v2): the
+    // model field must be that name (or an alias); 255 options per question; it never truncates:
+    // state plus a question over 32,768 tokens, or a request over 65,536, is refused (422).
+    Service {
+        provider: "onejev",
+        label: "OneJev (Flide)",
+        base_url: "http://127.0.0.1:19420",
+        url_var: "ONEJEV_BASE_URL",
+        path: "/v1/systemone",
+        key_vars: &[],
+        key_required: false,
+        default_model: Some("OmniJev/OneJev1.6-0.8B"),
+        openai_format: false,
+        max_choices: 255,
+    },
+    // knowledgator's GLiClass v4 Edge (knowledgator/gliclass-v4-edge @ 885af1a), a zero-shot
+    // classifier, behind turkce's runner/servers/gliclass_server.py (the card's own System One
+    // mapping: one gliclass 0.1.22 pass per choice question, the state as text, the instructions
+    // as prompt, every option's description as a label). No option cap of its own: options,
+    // instructions and state share one 16,384-token input, refused (422) above it, never cut.
+    // League 1's worst case with its tokenizer: the longest state and instructions (2,197
+    // tokens with [CLS], [SEP] and <<SEP>>) plus 218 options at the longest label (65 tokens
+    // with <<LABEL>>) is 16,367; so longer play lists are split into groups of at most 218.
+    // The model field must name the checkpoint (or be absent).
+    Service {
+        provider: "gliclass",
+        label: "GLiClass (local)",
+        base_url: "http://127.0.0.1:19480",
+        url_var: "GLICLASS_BASE_URL",
+        path: "/v1/systemone",
+        key_vars: &[],
+        key_required: false,
+        default_model: Some("knowledgator/gliclass-v4-edge"),
+        openai_format: false,
+        max_choices: 218,
+    },
 ];
 
 pub fn service(provider: &str) -> Option<&'static Service> {

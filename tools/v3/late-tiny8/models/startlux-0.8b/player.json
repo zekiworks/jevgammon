@@ -1,0 +1,11 @@
+{
+  "name": "StartLux-Decision-v1.1-0.8B-Instant",
+  "spec": "startlux",
+  "provider": "local (startlux-decide serve)",
+  "quantization": "bf16",
+  "base_url": "http://192.168.1.131:19460",
+  "note": "StartLux Labs' StartLux-Decision-v1.1-0.8B-Instant (Hugging Face startlux-models/StartLux-Decision-v1.1-0.8B-Instant @ 6496ae641cc71b149ce9dad69bd97f2a44e7bf11, CC BY-NC 4.0, run for this non-commercial benchmark as the 2B; Qwen3.5-0.8B with bidirectional prompt attention, per-type temperatures from decision_config.json, choice 1.4364) on our GPU through its package's own server, as the card serves it: startlux-decide 1.1.0 (github.com/StartLuxLabs/StartLux-Decision @ a99977d, clean) serve --launch-vllm with the package's vLLM plugin, vLLM 0.31.0 (torch 2.13.0+cu130), BF16 as released, context 131,072. Instant: one read-out per pass, no thinking; 26 letters per pass incl. the hidden 'None of the above' (serve's default none_check), longer lists knocked out by the server in groups of <=25 (3 kept, final pass); 255 options per request (the league's rule). Never truncates: vLLM refuses over 131,072 tokens (422). League 1's longest stored request (251 options) is 27,333 tokens of its tokenizer as one prompt, its longest pass 5,135; none over.",
+  "device": "NVIDIA GB10 (DGX Spark spark2, spark-d9ee), the whole GPU, handed over by logic one server at a time: startlux-decide serve --model <snapshot> --launch-vllm --gpus 0 --host 0.0.0.0 --port 19460",
+  "parallel": 1,
+  "max_matches": 1
+}

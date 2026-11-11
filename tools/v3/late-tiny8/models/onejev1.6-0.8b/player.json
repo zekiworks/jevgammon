@@ -1,0 +1,11 @@
+{
+  "name": "OneJev1.6-0.8B",
+  "spec": "onejev",
+  "provider": "local (flide serve)",
+  "quantization": "bf16",
+  "base_url": "http://192.168.1.131:19420",
+  "note": "OmniJev's OneJev1.6-0.8B (Hugging Face OmniJev/OneJev1.6-0.8B @ bcd88a382f314b26cb7b1b7f369c1ed3502ee7a0, Apache-2.0; average of three Qwen3.5-0.8B fine-tunes; no calibration.json shipped, so temperature 1; main moved from c89933c2 on 10 Nov with README.md only) on our GPU through the server its card names, Flide 0.1.11 (flide serve --name OmniJev/OneJev1.6-0.8B, format onejev-slot-v2, BF16), model field OmniJev/OneJev1.6-0.8B; probabilities rounded to 6 places by the server. 255 options per request (the league's rule; longer lists split). Never truncates: state plus a question over 32,768 tokens, or a request over 65,536, is refused (422). League 1's longest stored request (251 options) is 27,333 tokens of its tokenizer; none over.",
+  "device": "NVIDIA GB10 (DGX Spark spark2, spark-d9ee), the whole GPU, handed over by logic one server at a time: ~/envs/onejev16/bin/flide serve --model <snapshot> --name OmniJev/OneJev1.6-0.8B --host 0.0.0.0 --port 19420",
+  "parallel": 1,
+  "max_matches": 1
+}

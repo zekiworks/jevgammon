@@ -263,7 +263,8 @@ struct AskArgs {
 struct MatchArgs {
     /// First player: openai/<model>, anthropic/<model>, gemini/<model>, antigravity/<model>,
     /// xai/<model>, ollama/<model>, local/<model>, random, safest, gnubg-weak, or a decision service: jev, fastino,
-    /// openai-decisions, perplexity, liquid, clef, open-jev, cygnet, gemma, pplx-local, d3, knowline, startlux
+    /// openai-decisions, perplexity, liquid, clef, open-jev, cygnet, gemma, pplx-local, d3, knowline, startlux,
+    /// glide, glide-0.4b, onejev, gliclass
     /// (optionally /<model>). Reasoning, prices and other providers need a league --config.
     #[arg(long, required = true)]
     model1: Option<String>,

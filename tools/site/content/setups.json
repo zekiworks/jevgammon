@@ -3202,6 +3202,38 @@
   },
   {
    "dataset": "late-entry",
+   "name": "KnowLine 31B Gen1.5",
+   "slug": "knowline-31b-gen1-5",
+   "model": "KnowLine 31B Gen1.5",
+   "setting": null,
+   "model_id": "PelaAI/KnowLine-31B-Gen1.5 @ 8e56aa1b236a6dd1064dcfd22ba1e5e360e4c140 (Hugging Face, Apache-2.0; a LoRA fine-tune of google/gemma-4-31B-it merged into bf16 weights)",
+   "provider": "our GPU (NVIDIA DGX Spark, GB10), bf16, through the repo's own serve_knowline.sh (SGLang 0.5.21, then its knowline_server.py front end), one request at a time",
+   "date_run": "10–11 Nov 2026",
+   "price": {
+    "input_per_mtok": null,
+    "output_per_mtok": null,
+    "date": "2026-11-10",
+    "label": "no price (our GPU)",
+    "source": "no list price published for KnowLine-31B-Gen1.5"
+   },
+   "model_type": "decision model",
+   "weights": "open",
+   "runs_on": "our GPUs",
+   "reasoning": "none (decision model)",
+   "confidence_source": "decision-model probability",
+   "rules_text": "long",
+   "option_groups": "up to 255 options per request (the front end's limit); more legal plays are split into equal groups, a winner per group, then among the winners",
+   "sampling": "not sent (decision request)",
+   "notes": "Late entry to the original League 1 table (not in standings, not eligible for the Hype Cup); its matches were played on 10–11 Nov 2026. It played 17 of its 19 opponents: its pair with Mercury Decide was not played (Mercury Decide is no longer served on OpenRouter) and its pair with GPT-6 Luna was not played (GPT-6 Luna's API was out of credit). Each option's probability is a softmax over the option labels, stored as returned. Its first run played 4 matches at once (#933–936) on a server meant for one request at a time; those matches were voided (rows kept, left out of every number) and the pairs replayed from the start, one match at a time.",
+   "sources": [
+    "players.settings (v3.db, read-only)",
+    "turns.provider/quantization/probability_source/group_size (v3.db, read-only)",
+    "mailbox/Late entries KnowLine - status.md"
+   ],
+   "missing": []
+  },
+  {
+   "dataset": "late-entry",
    "name": "GPT-6 Astra (high)",
    "slug": "gpt-6-astra-high",
    "model": "GPT-6 Astra",

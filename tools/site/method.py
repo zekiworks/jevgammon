@@ -541,7 +541,11 @@ def _versions(po: dict) -> str:
   count in no standings table and no other setup's numbers: no score changed. 7 Nov 2026: REAX 1.3, a late entry to
   the original League 1 table on <a href="../leagues/#late-entries">Leagues</a> (Late entries), played on our GPU on
   7 Nov (its pair with GPT-6 Luna (Decisions API) not played, its API out of credit), with a page of its own; no list price is
-  published for it, so it has no cost figure. No score changed.</p>""")
+  published for it, so it has no cost figure. No score changed. 11 Nov 2026: KnowLine-31B-Gen1.5, a late entry to the
+  original League 1 table on <a href="../leagues/#late-entries">Leagues</a> (Late entries), played on our GPU (NVIDIA
+  DGX Spark) on 10–11 Nov (its pairs with GPT-6 Luna (Decisions API), its API out of credit, and Mercury Decide, no
+  longer served on OpenRouter, not played; its first 4 matches, played at once, voided and replayed one at a time),
+  with a page of its own; no list price is published for it, so it has no cost figure. No score changed.</p>""")
 
 
 def _confidence(t: dict, extra: dict) -> str:

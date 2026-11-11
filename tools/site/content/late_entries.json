@@ -10,6 +10,10 @@
   {"entrant": "Drex 2.0 (local)", "opponent": "GPT-6 Luna", "reason": "opponent's API out of credit",
    "source": "mailbox/Late entries Drex - status 2026-11-06.md (match #886 blocked: OpenAI 429, no credit; deferred)"},
   {"entrant": "REAX 1.3", "opponent": "GPT-6 Luna", "reason": "opponent's API out of credit",
-   "source": "mailbox/Late entries REAX - status 2026-11-07.md (paid run 17:13-17:44 UTC: GPT-6 Luna deferred, no OpenAI credit)"}
+   "source": "mailbox/Late entries REAX - status 2026-11-07.md (paid run 17:13-17:44 UTC: GPT-6 Luna deferred, no OpenAI credit)"},
+  {"entrant": "KnowLine 31B Gen1.5", "opponent": "GPT-6 Luna", "reason": "opponent's API out of credit",
+   "source": "mailbox/Late entries KnowLine - status.md (GPT-6 Luna deferred: no OpenAI credit)"},
+  {"entrant": "KnowLine 31B Gen1.5", "opponent": "Mercury Decide", "reason": "opponent no longer served on OpenRouter",
+   "source": "mailbox/Late entries KnowLine - status.md (match #946 blocked: no OpenRouter endpoint for Mercury Decide; pair left open)"}
  ]
 }

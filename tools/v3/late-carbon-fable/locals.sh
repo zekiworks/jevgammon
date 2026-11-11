@@ -9,18 +9,22 @@
 # its league-add, quiesce() confirms nothing plays the entrant's league; any failure aborts the run there, logged.
 #   systemd-run --user --unit=late-carbon-locals --working-directory=/home/cbasaran/code/jevgammon \
 #     -E PATH=$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin -E OPP_GPU=<n> -E RES=<reservation> \
-#     /home/cbasaran/code/jevgammon-carbon-fable/tools/v3/late-carbon-fable/locals.sh carbon
+#     /home/cbasaran/code/jevgammon-carbon-fable/tools/v3/late-carbon-fable/locals.sh carbon <APPROVAL>
+# carbon is paid: as start.sh, only with an explicit approval id ('#NNNN'; Zeki #4735).
 set -uo pipefail
 cd /home/cbasaran/code/jevgammon
 export PATH=$HOME/.local/bin:$PATH  # agent-bus
 ENTRANT=${1:-}
+APPROVAL=${2:-}
 T=$(dirname "$(readlink -f "$0")")
 case $ENTRANT in
   carbon) NAME="Gemini 4 Carbon (high)"; CFG=gemini-4-carbon-high; LANES=(); OWN_CAP=${OWN_CAP:-250} ;;
   fable) NAME="Claude Fable 5.2 (max)"; CFG=claude-fable-5\.2-max; LANES=(improve-subs-claude improve-claude-wait)
          OWN_CAP= ;;
-  *) echo "usage: locals.sh carbon|fable" >&2; exit 2 ;;
+  *) echo "usage: locals.sh carbon <APPROVAL> | locals.sh fable" >&2; exit 2 ;;
 esac
+[[ $ENTRANT != carbon || $APPROVAL =~ ^#[0-9]+$ ]] ||
+  { echo "carbon is a paid entry: pass the approval id of its spend ('#NNNN'); a top-up alone is not approval" >&2; exit 2; }
 W=workspace/late-carbon-fable/$ENTRANT
 ST=$W/state
 S=tools/v3/servers
@@ -101,7 +105,7 @@ systemctl --user is-active -q "late-$ENTRANT" && { echo "stop the unit late-$ENT
 ID=$(L league-id)
 [[ -n $ID ]] || { log "locals: $NAME's league is not in v3.db"; exit 1; }
 finish() { systemctl --user stop "$UNIT" 2>/dev/null; log "locals: $1; paid opponents \$$(spent); GPU $OPP_GPU free of us ($(gpus))"; }
-log "locals up: opponents one at a time on GPU $OPP_GPU (reservation $RES); $NAME"
+log "locals up: opponents one at a time on GPU $OPP_GPU (reservation $RES); $NAME${APPROVAL:+ (spend approved $APPROVAL)}"
 missing=()
 for o in "${OPPS[@]}"; do
   IFS='|' read -r name need start stop <<<"$o"

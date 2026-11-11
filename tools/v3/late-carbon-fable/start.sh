@@ -6,8 +6,10 @@
 # <name> - status.md (main checkout); state workspace/late-carbon-fable/<ENTRANT>/state.
 #   systemd-run --user --unit=late-carbon --working-directory=/home/cbasaran/code/jevgammon \
 #     -E PATH=$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin \
-#     /home/cbasaran/code/jevgammon-carbon-fable/tools/v3/late-carbon-fable/start.sh carbon
+#     /home/cbasaran/code/jevgammon-carbon-fable/tools/v3/late-carbon-fable/start.sh carbon <APPROVAL>
 #   (fable: --unit=late-fable ... start.sh fable; only once the Claude lane improve-subs-claude has ended)
+# carbon is paid (OpenRouter): it starts only with an explicit approval id (APPROVAL, e.g. the bus message that approved
+# the spend, '#NNNN'); a balance top-up alone is not approval, and nothing starts it when credit arrives (Zeki #4735).
 # Before anything: the runner tree is clean; no run of this entrant is going (its units inactive, no runner process);
 # fable: the subscription's other user here is not running (the "Did they improve?" Claude lane improve-subs-claude and
 # its probe improve-claude-wait): it keeps priority.
@@ -27,13 +29,16 @@
 set -uo pipefail
 cd /home/cbasaran/code/jevgammon
 ENTRANT=${1:-}
+APPROVAL=${2:-}
 T=$(dirname "$(readlink -f "$0")")
 case $ENTRANT in
   carbon) NAME="Gemini 4 Carbon (high)"; CFG=gemini-4-carbon-high; LANES=(); OWN_CAP=${OWN_CAP:-250} ;;
   fable) NAME="Claude Fable 5.2 (max)"; CFG=claude-fable-5\.2-max; LANES=(improve-subs-claude improve-claude-wait)
          OWN_CAP= ;;
-  *) echo "usage: start.sh carbon|fable" >&2; exit 2 ;;
+  *) echo "usage: start.sh carbon <APPROVAL> | start.sh fable" >&2; exit 2 ;;
 esac
+[[ $ENTRANT != carbon || $APPROVAL =~ ^#[0-9]+$ ]] ||
+  { echo "carbon is a paid entry: pass the approval id of its spend ('#NNNN'); a top-up alone is not approval" >&2; exit 2; }
 W=workspace/late-carbon-fable/$ENTRANT
 ST=$W/state
 BIN=/home/cbasaran/code/jevgammon/target/carbon-fable/release/jevgammon
@@ -105,9 +110,9 @@ if [[ ! -e $ST/first ]]; then
   mv "$ST/first.new" "$ST/first" || fail "state/first not written"
   echo "$(date -u +%FT%TZ) backup $bak verified (zstd -t); first match #$(cat "$ST/first")" >> "$ST/guard.log"
 fi
-[[ -e $STATUS ]] || printf '# Late entries %s - status\n\nGo: Ümit via Zeki #4676. First match id: #%s.\n\n## Log\n' \
-  "$NAME" "$(cat "$ST/first")" > "$STATUS"
-log "guard up: runner $(git -C "$T" rev-parse --short HEAD) clean; $NAME; OpenRouter \$$bal; floor \$$FLOOR; paid-opponent cap \$$CAP from #$(cat "$ST/first"); 10 opponents, one match at a time (GPT-6 Luna deferred: no OpenAI credit; 8 local setups by locals.sh)"
+[[ -e $STATUS ]] || printf '# Late entries %s - status\n\nGo: Ümit via Zeki #4676%s. First match id: #%s.\n\n## Log\n' \
+  "$NAME" "${APPROVAL:+; spend approved $APPROVAL}" "$(cat "$ST/first")" > "$STATUS"
+log "guard up: runner $(git -C "$T" rev-parse --short HEAD) clean; $NAME${APPROVAL:+ (spend approved $APPROVAL)}; OpenRouter \$$bal; floor \$$FLOOR; paid-opponent cap \$$CAP from #$(cat "$ST/first"); 10 opponents, one match at a time (GPT-6 Luna deferred: no OpenAI credit; 8 local setups by locals.sh)"
 
 stop_league() { systemctl --user stop "$UNIT" 2>/dev/null; }
 restarts=0

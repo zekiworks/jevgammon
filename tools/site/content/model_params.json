@@ -637,7 +637,7 @@
     "https://huggingface.co/PelaAI/KnowLine-0.8B-Gen1/raw/6b27831f7b783c03278bd946d4d8f4f7a98a3798/README.md"
    ],
    "read": "2026-11-11",
-   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors header on spark2: 0.87B (873,438,784) incl. its vision encoder (the base model's, not trained on images) and MTP layer; the card states 0.8B, the figure shown (Ümit #4260). Served in BF16 by the repo's serve_knowline.sh (SGLang 0.5.21) and knowline_server.py, which plays our late entry.",
+   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors header on spark2: 0.87B (873,438,784) incl. its vision encoder (the base model's, not trained on images) and MTP layer; the card states 0.8B, the figure shown (Ümit #4260). Served in BF16 by the repo's serve_knowline.sh (SGLang 0.5.21) and knowline_server.py, which plays our late entry. Plays with up to 255 options per request (the league's usual rule); no request is over its limits.",
    "terms": "0.87B incl. its vision encoder and MTP layer; card: 0.8B",
    "card_total_b": 0.8,
    "card_active_b": null,
@@ -656,7 +656,7 @@
     "https://huggingface.co/startlux-models/StartLux-Decision-v1.1-0.8B-Instant/raw/6496ae641cc71b149ce9dad69bd97f2a44e7bf11/README.md"
    ],
    "read": "2026-11-11",
-   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors header on spark2: 0.87B (873,438,784) incl. its vision encoder and MTP layer; the card states 0.8B, the figure shown (Ümit #4260). Stored and served in BF16 by the package's startlux-decide serve --launch-vllm (vLLM 0.31.0 with its plugin), which plays our late entry.",
+   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors header on spark2: 0.87B (873,438,784) incl. its vision encoder and MTP layer; the card states 0.8B, the figure shown (Ümit #4260). Stored and served in BF16 by the package's startlux-decide serve --launch-vllm (vLLM 0.31.0 with its plugin), which plays our late entry. Plays with up to 255 options per request (the league's usual rule); no request is over its limits.",
    "terms": "0.87B incl. its vision encoder and MTP layer; card: 0.8B",
    "card_total_b": 0.8,
    "card_active_b": null,
@@ -675,7 +675,7 @@
     "https://huggingface.co/OmniJev/OneJev1.6-0.8B/raw/bcd88a382f314b26cb7b1b7f369c1ed3502ee7a0/README.md"
    ],
    "read": "2026-11-11",
-   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors header on spark2: 0.85B (852,985,920) incl. its vision encoder; the card's chart gives 0.9B parameters, the figure shown (Ümit #4260); its text calls it 'the 0.8B model'. HF main moved from c89933c2 to bcd88a38 on 10 Nov (README only). Served by the repo's flide serve, which plays our late entry.",
+   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors header on spark2: 0.85B (852,985,920) incl. its vision encoder; the card's chart gives 0.9B parameters, the figure shown (Ümit #4260); its text calls it 'the 0.8B model'. HF main moved from c89933c2 to bcd88a38 on 10 Nov (README only). Served by the repo's flide serve, which plays our late entry. Plays with up to 255 options per request (the league's usual rule); no request is over its limits.",
    "terms": "0.85B incl. its vision encoder; card: 0.9B",
    "card_total_b": 0.9,
    "card_active_b": null,
@@ -694,7 +694,7 @@
     "https://huggingface.co/knowledgator/gliclass-v4-edge/raw/885af1af8a07edf4ed34df83ca0d995ed8201283/README.md"
    ],
    "read": "2026-11-11",
-   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors header on spark2: 0.44B (439,790,596) incl. its projectors, scorer and calibrator; the card states 0.4B (435M in its table), the figure shown (Ümit #4260). Served in BF16 by gliclass 0.1.22 behind runner/servers/gliclass_server.py, which plays our late entry.",
+   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors header on spark2: 0.44B (439,790,596) incl. its projectors, scorer and calibrator; the card states 0.4B (435M in its table), the figure shown (Ümit #4260). Served in BF16 by gliclass 0.1.22 behind runner/servers/gliclass_server.py, which plays our late entry. Plays with max_choices 218 (Main, 11 Nov): the worst case is 16,367 tokens, within its 16,384-token input; longer lists are split into equal groups of at most 218, then a final among the winners.",
    "terms": "0.44B incl. its projectors, scorer and calibrator; card: 0.4B",
    "card_total_b": 0.4,
    "card_active_b": null,
@@ -713,7 +713,7 @@
     "https://huggingface.co/PelaAI/KnowLine-2B-Gen1/raw/53245d470a4ce316e32fd0d18c24e142c697f40b/README.md"
    ],
    "read": "2026-11-11",
-   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors header on spark2: 2.27B (2,274,069,824) incl. its vision encoder (the base model's, not trained on images) and MTP layer; the card states 2B, the figure shown (Ümit #4260). Served in BF16 by the repo's serve_knowline.sh (SGLang 0.5.21) and knowline_server.py, which plays our late entry.",
+   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors header on spark2: 2.27B (2,274,069,824) incl. its vision encoder (the base model's, not trained on images) and MTP layer; the card states 2B, the figure shown (Ümit #4260). Served in BF16 by the repo's serve_knowline.sh (SGLang 0.5.21) and knowline_server.py, which plays our late entry. Plays with up to 255 options per request (the league's usual rule); no request is over its limits.",
    "terms": "2.27B incl. its vision encoder and MTP layer; card: 2B",
    "card_total_b": 2,
    "card_active_b": null,
@@ -732,7 +732,7 @@
     "https://huggingface.co/fastino/GLiDE-0.4B/raw/6bda7ab91aeb36dcad6d27828a8871e548c7fc71/README.md"
    ],
    "read": "2026-11-11",
-   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors headers on spark2 incl. readout.safetensors: 0.40B (395,042,816); the card states 0.4B, the figure shown (Ümit #4260). Served by the glide package from the repo, which plays our late entry.",
+   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors headers on spark2 incl. readout.safetensors: 0.40B (395,042,816); the card states 0.4B, the figure shown (Ümit #4260). Served by the glide package from the repo, which plays our late entry. Plays with max_choices 74 (Main, 11 Nov): its encoder shortens prompts over 7,999 tokens, so lists of 75 or more options are split into equal groups of at most 74, then a final among the winners, as for Winnow and Clef; the server (GLIDE_MAX_LEN=8006) refuses anything it would shorten; nothing shortened or refused.",
    "terms": "0.40B incl. its decision readout; card: 0.4B",
    "card_total_b": 0.4,
    "card_active_b": null,
@@ -751,7 +751,7 @@
     "https://huggingface.co/fastino/GLiDE-0.8B/raw/9eacdeec79fa48ec52a8d6f54b331376b4bbfaf0/README.md"
    ],
    "read": "2026-11-11",
-   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors headers on spark2 incl. readout.safetensors: 0.75B (752,654,144); the card states 0.75B, the figure shown (Ümit #4260). Served by the glide package from the repo, which plays our late entry.",
+   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors headers on spark2 incl. readout.safetensors: 0.75B (752,654,144); the card states 0.75B, the figure shown (Ümit #4260). Served by the glide package from the repo, which plays our late entry. Plays with up to 255 options per request (the league's usual rule); no request is over its limits.",
    "terms": "0.75B incl. its decision readout; card: 0.75B",
    "card_total_b": 0.75,
    "card_active_b": null,
@@ -770,7 +770,7 @@
     "https://huggingface.co/fastino/GLiDE-2B/raw/00f122c120cdeed82284106cb77d9bab5a50ad16/README.md"
    ],
    "read": "2026-11-11",
-   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors headers on spark2 incl. readout.safetensors: 1.88B (1,882,347,328); the card states 1.88B, the figure shown (Ümit #4260). Served by the glide package from the repo, which plays our late entry.",
+   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors headers on spark2 incl. readout.safetensors: 1.88B (1,882,347,328); the card states 1.88B, the figure shown (Ümit #4260). Served by the glide package from the repo, which plays our late entry. Plays with up to 255 options per request (the league's usual rule); no request is over its limits.",
    "terms": "1.88B incl. its decision readout; card: 1.88B",
    "card_total_b": 1.88,
    "card_active_b": null,

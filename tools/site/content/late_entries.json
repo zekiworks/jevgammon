@@ -18,6 +18,10 @@
   {"entrant": "Muse Ember (max)", "opponent": "GPT-6 Luna", "reason": "opponent's API out of credit",
    "source": "mailbox/Late entries Muse Ember - status 2026-11-10.md (GPT-6 Luna deferred: no OpenAI credit)"},
   {"entrant": "Muse Ember (max)", "opponent": "Mercury Decide", "reason": "opponent no longer served on OpenRouter",
-   "source": "mailbox/Late entries Muse Ember - status 2026-11-10.md (match #932 aborted: OpenRouter 404, no endpoint for Mercury Decide, unbilled; pair left open)"}
+   "source": "mailbox/Late entries Muse Ember - status 2026-11-10.md (match #932 aborted: OpenRouter 404, no endpoint for Mercury Decide, unbilled; pair left open)"},
+  {"entrant": "Gemini Decision 1", "opponent": "GPT-6 Luna", "reason": "opponent's API out of credit",
+   "source": "mailbox/Late entry Gemini Decision 1 - status.md (GPT-6 Luna deferred: no OpenAI credit)"},
+  {"entrant": "Gemini Decision 1", "opponent": "Mercury Decide", "reason": "opponent no longer served on OpenRouter",
+   "source": "mailbox/Late entry Gemini Decision 1 - status.md (Mercury Decide blocked: no OpenRouter endpoint; match #1016 aborted; pair left open)"}
  ]
 }

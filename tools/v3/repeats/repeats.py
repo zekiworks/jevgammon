@@ -12,8 +12,14 @@ checkout's (JEVGAMMON_DB overrides).
   repeats.py configs                  writes tools/v3/repeats/leagues/ID.json from the manifest
   repeats.py plan ID                  opponents to play, in order: NAME|KIND|MiB|START|STOP|BLOCKED (read-only)
   repeats.py check ID                 fail-closed preflight (read-only): held, config pins and settings, a recorded
-                                      attempt's league unchanged, held name on the site, runner binary and build inputs
-                                      (sha256), trigger; exit 3 = only the trigger lacks the name, 1 = anything else
+                                      attempt's league exactly as recorded, held name on the site, runner binary and
+                                      build inputs (sha256), every client admitted by that runner and the settings it
+                                      admitted those v3.db holds now, trigger; exit 3 = only the trigger lacks the name,
+                                      1 = anything else; on success the last line is the admitted-settings record
+  repeats.py bound ID FILE            the league config and v3.db's settings are those of check's admitted-settings
+                                      record FILE, else exit 1 (read-only; run_league.sh before the league starts)
+  repeats.py entry ID NAME FILE       a pinned opponent's settings text as admitted in FILE, for league-add --entry
+                                      (read-only; exit 1 when anything differs from FILE)
   repeats.py env ID                   shell assignments for run.sh (NAME KIND BIN ENTRANT_MIB START STOP HEALTH ...)
   repeats.py trigger ID               WRITES v3.db: adds the repeat name to the late_entry_stage trigger (refused unless
                                       that is check's only failure)
@@ -120,39 +126,77 @@ RUNNER_4CA4F08 = dict(
 # condition run.sh prepares (backup, trigger) before checking again; every other failure exits 1.
 TRIGGER_MISSING = 3
 NOT_IN_TRIGGER = "trigger missing: late_entry_stage does not name it"
-# The runner every repeat uses (Zeki #4860, #4886, #4896): branch pinned-late-reax d24d90a = origin/late-reax acfd89c (the
-# originals' runner line, with the decision clients reax, baselabs, drex-max, nace, liquid and fastino) + 4ca4f08
-# cherry-picked without conflict (313e96f) + the offline admit command (e77e3a0) made read-only (d24d90a: database and
-# budget ledgers opened read-only and immutable, client types outside the repeats' rosters refused before construction),
+# The runner every repeat uses (Zeki #4860, #4886, #4896, #4928): branch pinned-late-reax 0e66836 = origin/late-reax
+# acfd89c (the originals' runner line, with the decision clients reax, baselabs, drex-max, nace, liquid and fastino) +
+# 4ca4f08 cherry-picked without conflict (313e96f) + the offline admit command (e77e3a0) made read-only (d24d90a:
+# database and budget ledgers opened read-only and immutable, client types outside the repeats' rosters refused before
+# construction) + its admitted-settings record (0e66836: the config file's sha256, each pinned opponent's players row and
+# settings sha256, compared by check and before the league starts with what v3.db holds now),
 # bound by sha256 as above: the binary as built from a clean detached checkout of exactly that commit (its own tree,
 # which the binary also asks for its harness commit at runtime), every compile input outside src (include_str!; no
 # build.rs) and the test data inside src, Cargo.toml and Cargo.lock (all 18 at the same sha256 as 4ca4f08's). check
-# refuses any other binary, commit, changed src or input. Review packages: mailbox/pinned-late-review/ (e77e3a0) and
-# its round2/ (d24d90a).
+# refuses any other binary, commit, changed src or input. Review packages: mailbox/pinned-late-review/ (e77e3a0), its
+# round2/ (d24d90a) and round3/ (0e66836).
 RUNNER = dict(
     binary=str(MAIN / "target/pinned-late/release/jevgammon"),
-    binary_sha256="a7482f887bc5be97e46478f405d9692be7b02ae0dc375800cd28a3e0c80d51ac",
-    tree="/home/cbasaran/code/jevgammon-runner-admit-ro", commit="d24d90a",
-    commit_full="d24d90aacfca4f832329315d5c87ce856db65281", src_tree="524da2703a140cd2f9e22860bd2af915f5221dd2",
+    binary_sha256="60b3643b9ce7f58fce9217fa53c7a42990b19e56af85468ae3d6d6b8ad7818cc",
+    tree="/home/cbasaran/code/jevgammon-runner-admit-bind", commit="0e66836",
+    commit_full="0e668368dfd8db2da70663cda6b2ed183dd8532e", src_tree="280a60ec121341d2488336707e1ee457103f5500",
     build=dict(
-        command=("cd /home/cbasaran/code/jevgammon-runner-admit-ro && CARGO_TARGET_DIR=/home/cbasaran/code/"
+        command=("cd /home/cbasaran/code/jevgammon-runner-admit-bind && CARGO_TARGET_DIR=/home/cbasaran/code/"
                  "jevgammon/target/pinned-late cargo build --release --locked"),
         toolchain="rustc 1.97.1 (8bab26f4f 2026-07-14), cargo 1.97.1 (c980f4866 2026-06-30)",
-        built="2026-11-11T17:07Z",
-        tree=("git worktree add /home/cbasaran/code/jevgammon-runner-admit-ro pinned-late-reax (e77e3a0); commit "
-              "d24d90a; checkout --detach (clean; only the untracked METADATA.worktree added)")),
+        built="2026-11-11T18:05Z",
+        tree=("git worktree add /home/cbasaran/code/jevgammon-runner-admit-bind pinned-late-reax (d24d90a); commit "
+              "0e66836; checkout --detach (clean; only the untracked METADATA.worktree added)")),
     inputs=dict(RUNNER_4CA4F08["inputs"]))
 RUNNER_DIFFERENCE = ("Runner: " + RUNNER["commit"] + ", the originals' runner line (origin/late-reax acfd89c) with the "
                      "pinned-pairs change 4ca4f08 (the pins are its only change for these leagues), where the original "
                      "ran %s; the same prompt version, option-order seed and rules.")
 # The league of a recorded attempt is kept as it is and never resumed: league_id() skips it, so the repeat's next start
 # creates a new league with the same config (repeat name, pins); check fails while such a league differs from its
-# record (a process resumed, completed or edited it). The manifest lists these attempts before the current one.
+# record (a process resumed, completed or edited it). The record is the attempt's whole historical state (Zeki #4928
+# L1): its leagues row, every column, and every league_players row of the league, every column (with the player's
+# name), as v3.db held them when the attempt stopped (read-only, 2026-11-11). The manifest lists these attempts before
+# the current one.
 REAX_ATTEMPT_1 = dict(
     league=24, runner=dict(commit=RUNNER_4CA4F08["commit"], commit_full=RUNNER_4CA4F08["commit_full"],
                            binary_sha256=RUNNER_4CA4F08["binary_sha256"]),
-    record=dict(started_at="2026-11-11T15:25:16.745Z", finished_at=None, status="running", heartbeat_at=None,
-                participants=["GNUbg weak", "REAX 1.3 [repeat 1]", "Random", "Safest"]),
+    record=dict(
+        league=dict(
+            id=24, started_at="2026-11-11T15:25:16.745Z", finished_at=None, seed=2567889193785291627, rounds=3,
+            clock_seconds=None, delay_seconds=None, max_turns=300, status="running", ranking=None,
+            note=("Reproducibility repeat 1 of REAX 1.3 (Ümit via Zeki, bus #4663, #4666, #4667 (protocol), #4671 "
+                  "(d1-ultra), #4710; run repeat-2026-11-11-reax-1.3-r1): REAX 1.3 [repeat 1] plays REAX 1.3's "
+                  "original League 1 field again, one match at a time, each pair pinned to its original match's seed "
+                  "and seating (pinned_pairs), the same option-order seed, prompt, rules and settings. Hidden league; "
+                  "matches stage 'late-entry' and the name held (tools/site/content/held_setups.json): in no "
+                  "standings, table, Cup input or other setup's numbers. mailbox/repeats/manifest-2026-11-11.json"),
+            prompt_version="bg-v2", order_seed=1190975713392774006, heartbeat_at=None, mirror_concurrent=1,
+            seed_rule="pair-v1", hidden=1, only_pairs_of="REAX 1.3 [repeat 1]", start_position=None,
+            pinned_pairs=(
+                '{"Celeris-1 Decision":{"seed":7161064289564184736,"seat_first":true},'
+                '"Clef":{"seed":14863584321610017996,"seat_first":true},'
+                '"Cygnet (Gemma 4 12B)":{"seed":11364547734129190159,"seat_first":false},'
+                '"Decider Flash v1.2":{"seed":10926795277747235328,"seat_first":false},'
+                '"Decider v1.1 27B":{"seed":6810423341903318602,"seat_first":true},'
+                '"Decider v1.2 27B":{"seed":1021836415416679067,"seat_first":true},'
+                '"Fastino GLiDE":{"seed":8676420728319782702,"seat_first":false},'
+                '"Fastino GLiDE v1.2 (local)":{"seed":9547641185966060099,"seat_first":true},'
+                '"GNUbg weak":{"seed":7687453975057924759,"seat_first":false},'
+                '"Jev 1.13.0":{"seed":1191860321266350990,"seat_first":true},'
+                '"Jev 1.14.0":{"seed":12685378779393301775,"seat_first":true},'
+                '"Liquid d1-ultra":{"seed":18385022176221832218,"seat_first":false},'
+                '"Mercury Decide":{"seed":847988905885570598,"seat_first":true},'
+                '"Open-Jev 27B v1.1":{"seed":11746268790371622157,"seat_first":false},'
+                '"Random":{"seed":14048797037936432625,"seat_first":false},'
+                '"Safest":{"seed":4250404258724067804,"seat_first":false},'
+                '"SubQ Snap Preview":{"seed":1831931896691103214,"seat_first":false},'
+                '"Winnow-12B":{"seed":4483105724799583608,"seat_first":true}}')),
+        participants=[dict(id=lp, league_id=24, player_id=pid, joined_at="2026-11-11T15:25:16.745Z", left_at=None,
+                           note=None, name=name)
+                      for lp, pid, name in [(369, 65, "REAX 1.3 [repeat 1]"), (370, 39, "GNUbg weak"),
+                                            (371, 42, "Random"), (372, 43, "Safest")]]),
     matches=0,
     outcome=("stopped: the entrant's client could not be built, 'unknown provider `reax`' (4ca4f08 is on origin/main's "
              "runner line); the league waited with 0 matches until stopped. Kept as the stopped attempt: not deleted, "
@@ -661,29 +705,87 @@ def settings_problems(conn, rid: str, m, cfg) -> list[str]:
 KEYS = ('set -a; . ~/.keys; set +a; [[ -n ${CELERIS_API_KEY:-} ]] || '
         '{ CELERIS_API_KEY="$(cat ~/.config/celeris/key)"; export CELERIS_API_KEY; }; ')
 ADMIT_TIMEOUT_S = 600
+# The last line of a successful `jevgammon admit` (runner 0e66836): the settings it admitted, as JSON.
+ADMITTED = "admitted-settings "
 
 
-def admission_problems(rn, config: Path) -> list[str]:
+def admission_problems(rn, config: Path) -> tuple[list[str], dict | None]:
     """Client admission by the bound runner (Zeki #4860, #4896): `jevgammon admit --db DB --config <league config>`
     builds the client of every config player and of every opponent its pinned_pairs names (from players.settings), as
     the league builds them, but only decision services and the local engines (any other client type is refused before
     it is constructed); the database and every budget ledger are opened read-only and immutable and no request is
-    sent, so admission writes nothing. A refused client, an error or no answer in ADMIT_TIMEOUT_S is a problem."""
+    sent, so admission writes nothing. A refused client, an error, no answer in ADMIT_TIMEOUT_S or no admitted-settings
+    record is a problem; else the record (Zeki #4928): the config file's sha256, every client with its source and, for
+    a pinned opponent, its players row and the sha256 of the settings text admitted."""
     try:
         r = subprocess.run(["bash", "-c", KEYS + 'exec "$0" admit --db "$1" --config "$2"', rn["binary"], str(DB),
                             str(config)], capture_output=True, text=True, timeout=ADMIT_TIMEOUT_S)
     except subprocess.TimeoutExpired:
-        return [f"client admission: jevgammon admit gave no answer in {ADMIT_TIMEOUT_S} s"]
+        return [f"client admission: jevgammon admit gave no answer in {ADMIT_TIMEOUT_S} s"], None
     if r.returncode == 0:
-        return []
+        records = [line[len(ADMITTED):] for line in r.stdout.splitlines() if line.startswith(ADMITTED)]
+        try:
+            (admitted,) = [json.loads(x) for x in records]
+            if not (isinstance(admitted, dict) and isinstance(admitted.get("config_sha256"), str)
+                    and isinstance(admitted.get("clients"), list) and all(isinstance(c, dict) for c in admitted["clients"])):
+                raise ValueError("not a record of the config's sha256 and its clients")
+        except ValueError as e:
+            return [f"client admission: jevgammon admit gave no single admitted-settings record ({e})"], None
+        return [], admitted
     why = [line.strip() for line in r.stdout.splitlines() if line.startswith("REFUSED")]
     why += [line.strip() for line in r.stderr.splitlines() if line.strip()]
-    return [f"client admission refused (jevgammon admit exit {r.returncode}): " + " | ".join(why)]
+    return [f"client admission refused (jevgammon admit exit {r.returncode}): " + " | ".join(why)], None
 
 
+def binding_problems(conn, config: Path, admitted: dict) -> list[str]:
+    """The settings admitted are the settings the league runs (Zeki #4928 S1). Admission reads v3.db immutably (its main
+    file only: a change still in the write-ahead log, a new row or an UPDATE of an existing one, is not seen) and
+    records what it admitted; conn is an ordinary read-only connection (write-ahead-log-aware: what league-add and the
+    league read). The config file is the one admitted (sha256); the admitted clients are exactly the config's players
+    and the other opponents its pinned_pairs names; each config player's v3.db row, once there, holds the config's
+    settings (a league resumes its players from v3.db); each pinned opponent's row is the one admitted, its settings
+    text of the admitted sha256 (the text league-add --entry passes and the league loads). Any difference is a
+    problem."""
+    try:
+        data = config.read_bytes()
+    except OSError as e:
+        return [f"league config {config} unreadable: {e}"]
+    got = hashlib.sha256(data).hexdigest()
+    if got != admitted.get("config_sha256"):
+        return [f"league config {config} is not the one admitted (sha256 {got[:16]}…, admitted "
+                f"{str(admitted.get('config_sha256'))[:16]}…)"]
+    cfg = json.loads(data)
+    players = {p["name"]: p for p in cfg.get("players") or []}
+    pinned = sorted(n for n in cfg.get("pinned_pairs") or {} if n not in players)
+    clients = admitted.get("clients") or []
+    bad = []
+    if ([c.get("name") for c in clients if c.get("source") == "league config"] != list(players)
+            or sorted(c.get("name") for c in clients if c.get("source") != "league config") != pinned):
+        bad.append("the admitted clients are not the league config's players and pinned opponents")
+    for c in clients:
+        row = conn.execute("SELECT id, settings FROM players WHERE name = ?", (c.get("name"),)).fetchone()
+        if c.get("source") == "league config":
+            try:
+                same = row is None or json.loads(row[1]) == players.get(c.get("name"))
+            except (TypeError, ValueError):
+                same = False
+            if not same:
+                bad.append(f"{c.get('name')}: v3.db's settings (players #{row[0]}) are not the league config's, "
+                           "which were admitted")
+        elif row is None:
+            bad.append(f"{c.get('name')}: no players row in v3.db now (admitted players #{c.get('player_id')})")
+        else:
+            now = hashlib.sha256(row[1].encode()).hexdigest() if isinstance(row[1], str) else "not text"
+            if row[0] != c.get("player_id") or now != c.get("settings_sha256"):
+                bad.append(f"{c.get('name')}: v3.db's settings now (players #{row[0]}, sha256 {now[:16]}…) are not "
+                           f"the ones admitted (players #{c.get('player_id')}, sha256 "
+                           f"{str(c.get('settings_sha256'))[:16]}…)")
+    return bad
 
-def problems(rid: str) -> list[str]:
-    """Everything check verifies, read-only; NOT_IN_TRIGGER stands for the trigger lacking the name."""
+
+def problems(rid: str, admitted: dict | None = None) -> list[str]:
+    """Everything check verifies, read-only; NOT_IN_TRIGGER stands for the trigger lacking the name. When everything
+    from admission on passes, admitted (if given) receives the admitted-settings record."""
     m = load()[rid]
     conn = ro()
     bad = []
@@ -710,7 +812,13 @@ def problems(rid: str) -> list[str]:
     rb = runner_problems(m["runner"])
     bad += rb
     if not rb and cfg:  # only the bound binary is executed
-        bad += admission_problems(m["runner"], path)
+        refused, record = admission_problems(m["runner"], path)
+        bad += refused
+        if record is not None:
+            differ = binding_problems(conn, path, record)
+            bad += differ
+            if not differ and admitted is not None:
+                admitted.update(record)
     names = trigger_names(conn)
     if names is None:
         bad.append("v3.db has no late_entry_stage trigger")
@@ -721,9 +829,12 @@ def problems(rid: str) -> list[str]:
 
 def check(args) -> None:
     """Fail closed (read-only): a held repeat, other pins or settings, the name not held on the site, another runner
-    binary, commit, src or build input, a client the bound runner's `admit` refuses exit 1; the trigger lacking the
-    name, when nothing else fails, exits TRIGGER_MISSING (3), the one condition run.sh prepares."""
-    bad = problems(args.id)
+    binary, commit, src or build input, a client the bound runner's `admit` refuses, admitted settings other than v3.db
+    holds now (binding_problems) exit 1; the trigger lacking the name, when nothing else fails, exits TRIGGER_MISSING
+    (3), the one condition run.sh prepares. On success the last line is the admitted-settings record (ADMITTED + JSON),
+    which run.sh keeps for `bound` and `entry`."""
+    admitted = {}
+    bad = problems(args.id, admitted)
     if bad == [NOT_IN_TRIGGER]:
         print(f"{args.id}: {NOT_IN_TRIGGER} (everything else passes)", file=sys.stderr)
         sys.exit(TRIGGER_MISSING)
@@ -734,7 +845,45 @@ def check(args) -> None:
     rn = m["runner"]
     print(f"{args.id}: {len(wanted_pins(m))} pairs pinned in its config, settings as the manifest's, trigger and held "
           f"name in place, runner {rn['commit']} (binary sha256 {rn['binary_sha256'][:16]}…, "
-          f"{len(rn['inputs'])} build inputs as recorded, tree {rn['tree']}), every client admitted (jevgammon admit)")
+          f"{len(rn['inputs'])} build inputs as recorded, tree {rn['tree']}), every client admitted (jevgammon admit), "
+          f"the {len(admitted['clients'])} admitted settings those v3.db holds")
+    print(ADMITTED + json.dumps(admitted, ensure_ascii=False))
+
+
+def read_admitted(rid: str, path: str) -> dict:
+    try:
+        admitted = json.loads(Path(path).read_text())
+        if not (isinstance(admitted, dict) and isinstance(admitted.get("clients"), list)
+                and all(isinstance(c, dict) for c in admitted["clients"])):
+            raise ValueError("not an admitted-settings record")
+        return admitted
+    except (OSError, ValueError) as e:
+        sys.exit(f"{rid}: refused: no admitted-settings record in {path} ({e})")
+
+
+def bound(args) -> None:
+    """Before the league starts (run_league.sh; read-only): the settings it will read are the ones check admitted
+    (binding_problems against the record run.sh kept); exit 1 on any difference."""
+    bad = binding_problems(ro(), HERE / "leagues" / f"{args.id}.json", read_admitted(args.id, args.admitted))
+    if bad:
+        sys.exit(f"{args.id}: refused, not the admitted settings: " + "; ".join(bad))
+    print(f"{args.id}: the league config and v3.db's settings are the admitted ones")
+
+
+def entry(args) -> None:
+    """league-add --entry for a pinned opponent (read-only): its players.settings text, printed only when everything is
+    as admitted (binding_problems) and the text printed is the one admitted (sha256); exit 1 otherwise."""
+    admitted = read_admitted(args.id, args.admitted)
+    conn = ro()
+    bad = binding_problems(conn, HERE / "leagues" / f"{args.id}.json", admitted)
+    if bad:
+        sys.exit(f"{args.id}: refused, not the admitted settings: " + "; ".join(bad))
+    c = next((c for c in admitted["clients"] if c["name"] == args.name and c["source"] != "league config"), None)
+    row = conn.execute("SELECT id, settings FROM players WHERE name = ?", (args.name,)).fetchone()
+    if (c is None or row is None or row[0] != c["player_id"] or not isinstance(row[1], str)
+            or hashlib.sha256(row[1].encode()).hexdigest() != c["settings_sha256"]):
+        sys.exit(f"{args.id}: refused: {args.name}'s settings are not an admitted pinned opponent's")
+    print(row[1])
 
 
 def trigger(args) -> None:
@@ -772,23 +921,41 @@ def league_id(conn, rid: str):
 
 
 def attempt_problems(conn, rid: str, want: dict) -> list[str]:
-    """Each recorded attempt's league is still as recorded: same start, end, status, heartbeat, pins and participants
-    (a process resuming, completing or editing it would change one of them)."""
+    """Each recorded attempt's league is exactly as recorded (Zeki #4886, #4928 L1): its leagues row, every column (a
+    column added, missing or of another value or type differs), and the league's league_players rows, every column and
+    each player's name, in id order (a process resuming, completing or editing it, or any other change, differs); its
+    repeat name and pins as the config's."""
+    def shown(v):
+        return repr(v) if len(repr(v)) <= 80 else repr(v)[:77] + "..."
+
+    def differences(prefix: str, got: dict, rec: dict) -> list[str]:
+        none = "(no column)"
+        return [f"{prefix}{k} {shown(got.get(k, none))} (recorded {shown(rec.get(k, none))})"
+                for k in [*rec, *(k for k in got if k not in rec)]
+                if k not in got or k not in rec or got[k] != rec[k] or type(got[k]) is not type(rec[k])]
     bad = []
     for a in REPEATS[rid].get("attempts", []):
-        row = conn.execute("""SELECT only_pairs_of, started_at, finished_at, status, heartbeat_at, pinned_pairs
-                              FROM leagues WHERE id = ?""", (a["league"],)).fetchone()
+        row = conn.execute("SELECT * FROM leagues WHERE id = ?", (a["league"],)).fetchone()
         if row is None:
             bad.append(f"attempt league #{a['league']} is missing")
             continue
-        names = sorted(r[0] for r in conn.execute(
-            """SELECT p.name FROM league_players lp JOIN players p ON p.id = lp.player_id
-               WHERE lp.league_id = ? AND lp.left_at IS NULL""", (a["league"],)))
-        got = dict(started_at=row["started_at"], finished_at=row["finished_at"], status=row["status"],
-                   heartbeat_at=row["heartbeat_at"], participants=names)
-        if row["only_pairs_of"] != repeat_name(rid) or got != a["record"]:
-            bad.append(f"attempt league #{a['league']} changed: {got}, recorded {a['record']}")
-        if json.loads(row["pinned_pairs"] or "{}") != want:
+        league, rec = dict(row), a["record"]
+        changed = differences("", league, rec["league"])
+        players = [dict(r) for r in conn.execute(
+            """SELECT lp.*, p.name FROM league_players lp LEFT JOIN players p ON p.id = lp.player_id
+               WHERE lp.league_id = ? ORDER BY lp.id""", (a["league"],))]
+        for i in range(max(len(players), len(rec["participants"]))):
+            got = players[i] if i < len(players) else None
+            was = rec["participants"][i] if i < len(rec["participants"]) else None
+            if got is None or was is None:
+                changed.append(f"league_players row {shown(got)} (recorded {shown(was)})")
+            else:
+                changed += differences(f"league_players #{was['id']} ", got, was)
+        if changed:
+            bad.append(f"attempt league #{a['league']} changed: " + "; ".join(changed))
+        if league.get("only_pairs_of") != repeat_name(rid):
+            bad.append(f"attempt league #{a['league']} plays {league.get('only_pairs_of')!r}, not {repeat_name(rid)!r}")
+        if json.loads(league.get("pinned_pairs") or "{}") != want:
             bad.append(f"attempt league #{a['league']} holds other pins")
     return bad
 
@@ -878,6 +1045,15 @@ def main() -> None:
     p.add_argument("id", choices=list(REPEATS))
     p.add_argument("opponents", nargs="*")
     p.set_defaults(fn=pending)
+    p = sub.add_parser("bound")
+    p.add_argument("id", choices=list(REPEATS))
+    p.add_argument("admitted", help="check's admitted-settings record (JSON file)")
+    p.set_defaults(fn=bound)
+    p = sub.add_parser("entry")
+    p.add_argument("id", choices=list(REPEATS))
+    p.add_argument("name", help="a pinned opponent")
+    p.add_argument("admitted", help="check's admitted-settings record (JSON file)")
+    p.set_defaults(fn=entry)
     args = ap.parse_args()
     args.fn(args)
 

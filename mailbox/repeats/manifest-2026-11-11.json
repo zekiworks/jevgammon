@@ -4,7 +4,7 @@
  "requested_by": "Ümit via Zeki, bus #4663, #4666, #4667 (protocol), #4671 (d1-ultra)",
  "seed_mechanism": {
   "finding": "The original runner builds have no per-pair seed field: a new pair's seed and seating come from the two player names and the rules hash (Rules::pair_seed, Rules::sides), so a renamed repeat would get other dice. The late entries' seeds are exactly that (checked for #780, #807, #818, #845, #867, #905, #920); Liquid d1-ultra's League 1 seeds are not (older rule).",
-  "used": "Runner change on branch pinned-pairs, commit 4ca4f08 (Zeki #4710), run as d24d90a (branch pinned-late-reax: the originals' runner line origin/late-reax with 4ca4f08 cherry-picked; Zeki #4860, #4886): league config field pinned_pairs {opponent: {seed: u64, seat_first: bool}} for the only_pairs_of setup, stored in the new column leagues.pinned_pairs and read wherever fixtures are derived (resume, league-add and a running league keep them); league-add --pin. Every game's dice follow from the match seed and every option order from the option-order seed and the position, never from names: a test replays #808, #856, #905 and #190 under a renamed repeat and gets every game's dice and every turn's option order of the original. Each repeat's league config carries a pin for every opponent of its original.",
+  "used": "Runner change on branch pinned-pairs, commit 4ca4f08 (Zeki #4710), run as 0e66836 (branch pinned-late-reax: the originals' runner line origin/late-reax with 4ca4f08 cherry-picked; Zeki #4860, #4886): league config field pinned_pairs {opponent: {seed: u64, seat_first: bool}} for the only_pairs_of setup, stored in the new column leagues.pinned_pairs and read wherever fixtures are derived (resume, league-add and a running league keep them); league-add --pin. Every game's dice follow from the match seed and every option order from the option-order seed and the position, never from names: a test replays #808, #856, #905 and #190 under a renamed repeat and gets every game's dice and every turn's option order of the original. Each repeat's league config carries a pin for every opponent of its original.",
   "migration": "leagues.pinned_pairs is added (ALTER TABLE ADD COLUMN, NULL) by the new build's ensure_schema the first time it opens a database; not applied to production v3.db yet (nothing has run it there); no existing row is edited, and NULL means no pins, so older builds and every existing league are unaffected.",
   "not_used": "The voided-placeholder route (pin --apply) is dropped (Zeki #4710)."
  },
@@ -48,16 +48,16 @@
    "status_file": "mailbox/repeats/mammoth-1-r1 - status.md",
    "runner": {
     "binary": "/home/cbasaran/code/jevgammon/target/pinned-late/release/jevgammon",
-    "binary_sha256": "a7482f887bc5be97e46478f405d9692be7b02ae0dc375800cd28a3e0c80d51ac",
-    "tree": "/home/cbasaran/code/jevgammon-runner-admit-ro",
-    "commit": "d24d90a",
-    "commit_full": "d24d90aacfca4f832329315d5c87ce856db65281",
-    "src_tree": "524da2703a140cd2f9e22860bd2af915f5221dd2",
+    "binary_sha256": "60b3643b9ce7f58fce9217fa53c7a42990b19e56af85468ae3d6d6b8ad7818cc",
+    "tree": "/home/cbasaran/code/jevgammon-runner-admit-bind",
+    "commit": "0e66836",
+    "commit_full": "0e668368dfd8db2da70663cda6b2ed183dd8532e",
+    "src_tree": "280a60ec121341d2488336707e1ee457103f5500",
     "build": {
-     "command": "cd /home/cbasaran/code/jevgammon-runner-admit-ro && CARGO_TARGET_DIR=/home/cbasaran/code/jevgammon/target/pinned-late cargo build --release --locked",
+     "command": "cd /home/cbasaran/code/jevgammon-runner-admit-bind && CARGO_TARGET_DIR=/home/cbasaran/code/jevgammon/target/pinned-late cargo build --release --locked",
      "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14), cargo 1.97.1 (c980f4866 2026-06-30)",
-     "built": "2026-11-11T17:07Z",
-     "tree": "git worktree add /home/cbasaran/code/jevgammon-runner-admit-ro pinned-late-reax (e77e3a0); commit d24d90a; checkout --detach (clean; only the untracked METADATA.worktree added)"
+     "built": "2026-11-11T18:05Z",
+     "tree": "git worktree add /home/cbasaran/code/jevgammon-runner-admit-bind pinned-late-reax (d24d90a); commit 0e66836; checkout --detach (clean; only the untracked METADATA.worktree added)"
     },
     "inputs": {
      "Cargo.toml": "bf64a9f15bd33cd3f5d517dc984140ff38fb9ec93c5d3a50eb0971f658c0ed4b",
@@ -85,9 +85,9 @@
     {
      "league": null,
      "runner": {
-      "commit": "d24d90a",
-      "commit_full": "d24d90aacfca4f832329315d5c87ce856db65281",
-      "binary_sha256": "a7482f887bc5be97e46478f405d9692be7b02ae0dc375800cd28a3e0c80d51ac"
+      "commit": "0e66836",
+      "commit_full": "0e668368dfd8db2da70663cda6b2ed183dd8532e",
+      "binary_sha256": "60b3643b9ce7f58fce9217fa53c7a42990b19e56af85468ae3d6d6b8ad7818cc"
      }
     }
    ],
@@ -229,7 +229,7 @@
    },
    "differences": [
     "Name: '<original> [repeat 1]', a new players row; settings otherwise as the original's (the changed fields are listed under Settings); one match at a time, where the original played several at once.",
-    "Runner: d24d90a, the originals' runner line (origin/late-reax acfd89c) with the pinned-pairs change 4ca4f08 (the pins are its only change for these leagues), where the original ran 104103a (clean); the same prompt version, option-order seed and rules.",
+    "Runner: 0e66836, the originals' runner line (origin/late-reax acfd89c) with the pinned-pairs change 4ca4f08 (the pins are its only change for these leagues), where the original ran 104103a (clean); the same prompt version, option-order seed and rules.",
     "Not replayable today, though played in the original: GPT-6 Luna, Mercury Decide (blockers today); their seed pins are kept so they replay with the original seeds once unblocked."
    ],
    "start": [
@@ -2417,16 +2417,16 @@
    "status_file": "mailbox/repeats/drex-max-v1-r1 - status.md",
    "runner": {
     "binary": "/home/cbasaran/code/jevgammon/target/pinned-late/release/jevgammon",
-    "binary_sha256": "a7482f887bc5be97e46478f405d9692be7b02ae0dc375800cd28a3e0c80d51ac",
-    "tree": "/home/cbasaran/code/jevgammon-runner-admit-ro",
-    "commit": "d24d90a",
-    "commit_full": "d24d90aacfca4f832329315d5c87ce856db65281",
-    "src_tree": "524da2703a140cd2f9e22860bd2af915f5221dd2",
+    "binary_sha256": "60b3643b9ce7f58fce9217fa53c7a42990b19e56af85468ae3d6d6b8ad7818cc",
+    "tree": "/home/cbasaran/code/jevgammon-runner-admit-bind",
+    "commit": "0e66836",
+    "commit_full": "0e668368dfd8db2da70663cda6b2ed183dd8532e",
+    "src_tree": "280a60ec121341d2488336707e1ee457103f5500",
     "build": {
-     "command": "cd /home/cbasaran/code/jevgammon-runner-admit-ro && CARGO_TARGET_DIR=/home/cbasaran/code/jevgammon/target/pinned-late cargo build --release --locked",
+     "command": "cd /home/cbasaran/code/jevgammon-runner-admit-bind && CARGO_TARGET_DIR=/home/cbasaran/code/jevgammon/target/pinned-late cargo build --release --locked",
      "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14), cargo 1.97.1 (c980f4866 2026-06-30)",
-     "built": "2026-11-11T17:07Z",
-     "tree": "git worktree add /home/cbasaran/code/jevgammon-runner-admit-ro pinned-late-reax (e77e3a0); commit d24d90a; checkout --detach (clean; only the untracked METADATA.worktree added)"
+     "built": "2026-11-11T18:05Z",
+     "tree": "git worktree add /home/cbasaran/code/jevgammon-runner-admit-bind pinned-late-reax (d24d90a); commit 0e66836; checkout --detach (clean; only the untracked METADATA.worktree added)"
     },
     "inputs": {
      "Cargo.toml": "bf64a9f15bd33cd3f5d517dc984140ff38fb9ec93c5d3a50eb0971f658c0ed4b",
@@ -2454,9 +2454,9 @@
     {
      "league": null,
      "runner": {
-      "commit": "d24d90a",
-      "commit_full": "d24d90aacfca4f832329315d5c87ce856db65281",
-      "binary_sha256": "a7482f887bc5be97e46478f405d9692be7b02ae0dc375800cd28a3e0c80d51ac"
+      "commit": "0e66836",
+      "commit_full": "0e668368dfd8db2da70663cda6b2ed183dd8532e",
+      "binary_sha256": "60b3643b9ce7f58fce9217fa53c7a42990b19e56af85468ae3d6d6b8ad7818cc"
      }
     }
    ],
@@ -2606,7 +2606,7 @@
    },
    "differences": [
     "Name: '<original> [repeat 1]', a new players row; settings otherwise as the original's (the changed fields are listed under Settings); one match at a time, where the original played several at once.",
-    "Runner: d24d90a, the originals' runner line (origin/late-reax acfd89c) with the pinned-pairs change 4ca4f08 (the pins are its only change for these leagues), where the original ran e58fc6c (clean); the same prompt version, option-order seed and rules.",
+    "Runner: 0e66836, the originals' runner line (origin/late-reax acfd89c) with the pinned-pairs change 4ca4f08 (the pins are its only change for these leagues), where the original ran e58fc6c (clean); the same prompt version, option-order seed and rules.",
     "Not replayable today, though played in the original: Mercury Decide (blockers today); their seed pins are kept so they replay with the original seeds once unblocked."
    ],
    "start": [
@@ -4877,16 +4877,16 @@
    "status_file": "mailbox/repeats/reax-1.3-r1 - status.md",
    "runner": {
     "binary": "/home/cbasaran/code/jevgammon/target/pinned-late/release/jevgammon",
-    "binary_sha256": "a7482f887bc5be97e46478f405d9692be7b02ae0dc375800cd28a3e0c80d51ac",
-    "tree": "/home/cbasaran/code/jevgammon-runner-admit-ro",
-    "commit": "d24d90a",
-    "commit_full": "d24d90aacfca4f832329315d5c87ce856db65281",
-    "src_tree": "524da2703a140cd2f9e22860bd2af915f5221dd2",
+    "binary_sha256": "60b3643b9ce7f58fce9217fa53c7a42990b19e56af85468ae3d6d6b8ad7818cc",
+    "tree": "/home/cbasaran/code/jevgammon-runner-admit-bind",
+    "commit": "0e66836",
+    "commit_full": "0e668368dfd8db2da70663cda6b2ed183dd8532e",
+    "src_tree": "280a60ec121341d2488336707e1ee457103f5500",
     "build": {
-     "command": "cd /home/cbasaran/code/jevgammon-runner-admit-ro && CARGO_TARGET_DIR=/home/cbasaran/code/jevgammon/target/pinned-late cargo build --release --locked",
+     "command": "cd /home/cbasaran/code/jevgammon-runner-admit-bind && CARGO_TARGET_DIR=/home/cbasaran/code/jevgammon/target/pinned-late cargo build --release --locked",
      "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14), cargo 1.97.1 (c980f4866 2026-06-30)",
-     "built": "2026-11-11T17:07Z",
-     "tree": "git worktree add /home/cbasaran/code/jevgammon-runner-admit-ro pinned-late-reax (e77e3a0); commit d24d90a; checkout --detach (clean; only the untracked METADATA.worktree added)"
+     "built": "2026-11-11T18:05Z",
+     "tree": "git worktree add /home/cbasaran/code/jevgammon-runner-admit-bind pinned-late-reax (d24d90a); commit 0e66836; checkout --detach (clean; only the untracked METADATA.worktree added)"
     },
     "inputs": {
      "Cargo.toml": "bf64a9f15bd33cd3f5d517dc984140ff38fb9ec93c5d3a50eb0971f658c0ed4b",
@@ -4919,15 +4919,65 @@
       "binary_sha256": "53816d53b3a020eb9f858ccb44b7e7782d74609f0f8c7312c55f0cd5347a7098"
      },
      "record": {
-      "started_at": "2026-11-11T15:25:16.745Z",
-      "finished_at": null,
-      "status": "running",
-      "heartbeat_at": null,
+      "league": {
+       "id": 24,
+       "started_at": "2026-11-11T15:25:16.745Z",
+       "finished_at": null,
+       "seed": 2567889193785291627,
+       "rounds": 3,
+       "clock_seconds": null,
+       "delay_seconds": null,
+       "max_turns": 300,
+       "status": "running",
+       "ranking": null,
+       "note": "Reproducibility repeat 1 of REAX 1.3 (Ümit via Zeki, bus #4663, #4666, #4667 (protocol), #4671 (d1-ultra), #4710; run repeat-2026-11-11-reax-1.3-r1): REAX 1.3 [repeat 1] plays REAX 1.3's original League 1 field again, one match at a time, each pair pinned to its original match's seed and seating (pinned_pairs), the same option-order seed, prompt, rules and settings. Hidden league; matches stage 'late-entry' and the name held (tools/site/content/held_setups.json): in no standings, table, Cup input or other setup's numbers. mailbox/repeats/manifest-2026-11-11.json",
+       "prompt_version": "bg-v2",
+       "order_seed": 1190975713392774006,
+       "heartbeat_at": null,
+       "mirror_concurrent": 1,
+       "seed_rule": "pair-v1",
+       "hidden": 1,
+       "only_pairs_of": "REAX 1.3 [repeat 1]",
+       "start_position": null,
+       "pinned_pairs": "{\"Celeris-1 Decision\":{\"seed\":7161064289564184736,\"seat_first\":true},\"Clef\":{\"seed\":14863584321610017996,\"seat_first\":true},\"Cygnet (Gemma 4 12B)\":{\"seed\":11364547734129190159,\"seat_first\":false},\"Decider Flash v1.2\":{\"seed\":10926795277747235328,\"seat_first\":false},\"Decider v1.1 27B\":{\"seed\":6810423341903318602,\"seat_first\":true},\"Decider v1.2 27B\":{\"seed\":1021836415416679067,\"seat_first\":true},\"Fastino GLiDE\":{\"seed\":8676420728319782702,\"seat_first\":false},\"Fastino GLiDE v1.2 (local)\":{\"seed\":9547641185966060099,\"seat_first\":true},\"GNUbg weak\":{\"seed\":7687453975057924759,\"seat_first\":false},\"Jev 1.13.0\":{\"seed\":1191860321266350990,\"seat_first\":true},\"Jev 1.14.0\":{\"seed\":12685378779393301775,\"seat_first\":true},\"Liquid d1-ultra\":{\"seed\":18385022176221832218,\"seat_first\":false},\"Mercury Decide\":{\"seed\":847988905885570598,\"seat_first\":true},\"Open-Jev 27B v1.1\":{\"seed\":11746268790371622157,\"seat_first\":false},\"Random\":{\"seed\":14048797037936432625,\"seat_first\":false},\"Safest\":{\"seed\":4250404258724067804,\"seat_first\":false},\"SubQ Snap Preview\":{\"seed\":1831931896691103214,\"seat_first\":false},\"Winnow-12B\":{\"seed\":4483105724799583608,\"seat_first\":true}}"
+      },
       "participants": [
-       "GNUbg weak",
-       "REAX 1.3 [repeat 1]",
-       "Random",
-       "Safest"
+       {
+        "id": 369,
+        "league_id": 24,
+        "player_id": 65,
+        "joined_at": "2026-11-11T15:25:16.745Z",
+        "left_at": null,
+        "note": null,
+        "name": "REAX 1.3 [repeat 1]"
+       },
+       {
+        "id": 370,
+        "league_id": 24,
+        "player_id": 39,
+        "joined_at": "2026-11-11T15:25:16.745Z",
+        "left_at": null,
+        "note": null,
+        "name": "GNUbg weak"
+       },
+       {
+        "id": 371,
+        "league_id": 24,
+        "player_id": 42,
+        "joined_at": "2026-11-11T15:25:16.745Z",
+        "left_at": null,
+        "note": null,
+        "name": "Random"
+       },
+       {
+        "id": 372,
+        "league_id": 24,
+        "player_id": 43,
+        "joined_at": "2026-11-11T15:25:16.745Z",
+        "left_at": null,
+        "note": null,
+        "name": "Safest"
+       }
       ]
      },
      "matches": 0,
@@ -4936,9 +4986,9 @@
     {
      "league": null,
      "runner": {
-      "commit": "d24d90a",
-      "commit_full": "d24d90aacfca4f832329315d5c87ce856db65281",
-      "binary_sha256": "a7482f887bc5be97e46478f405d9692be7b02ae0dc375800cd28a3e0c80d51ac"
+      "commit": "0e66836",
+      "commit_full": "0e668368dfd8db2da70663cda6b2ed183dd8532e",
+      "binary_sha256": "60b3643b9ce7f58fce9217fa53c7a42990b19e56af85468ae3d6d6b8ad7818cc"
      }
     }
    ],
@@ -5083,7 +5133,7 @@
     "note": "One card: the entrant's server (none for d1-ultra) stays up for the whole repeat; the opponent servers run one at a time beside it, smallest first. A pair needs both servers at once, so the opponents in needs_second_gpu (entrant + opponent + 2 GB over 97,887 MiB) wait for a second card (OPP_GPU) or stay unplayed."
    },
    "differences": [
-    "Runner: d24d90a, the originals' runner line (origin/late-reax acfd89c) with the pinned-pairs change 4ca4f08 (the pins are its only change for these leagues), where the original ran acfd89c (clean); the same prompt version, option-order seed and rules.",
+    "Runner: 0e66836, the originals' runner line (origin/late-reax acfd89c) with the pinned-pairs change 4ca4f08 (the pins are its only change for these leagues), where the original ran acfd89c (clean); the same prompt version, option-order seed and rules.",
     "Server: logic's container logic-dm-reax13, on the internal network reax13-offline (internal=true, no outbound route; egress test from inside: Network is unreachable), no published port, reached through a loopback forwarder on 127.0.0.1:19100; read-only root, cap-drop ALL, user 1000:1000 (logic #4785). The original ran reax13-late on the same internal network, reached on the container's address. Same image, engine, kit, weights, config and serve.py arguments; shared in turn with logic's and turkce's repeats.",
     "no-new-privileges: off, as in the original; Can renewed his one-run exception (#2199) for this repeat server, offline only (#4745, answering #4744)."
    ],
@@ -7227,16 +7277,16 @@
    "status_file": "mailbox/repeats/d1-ultra-r1 - status.md",
    "runner": {
     "binary": "/home/cbasaran/code/jevgammon/target/pinned-late/release/jevgammon",
-    "binary_sha256": "a7482f887bc5be97e46478f405d9692be7b02ae0dc375800cd28a3e0c80d51ac",
-    "tree": "/home/cbasaran/code/jevgammon-runner-admit-ro",
-    "commit": "d24d90a",
-    "commit_full": "d24d90aacfca4f832329315d5c87ce856db65281",
-    "src_tree": "524da2703a140cd2f9e22860bd2af915f5221dd2",
+    "binary_sha256": "60b3643b9ce7f58fce9217fa53c7a42990b19e56af85468ae3d6d6b8ad7818cc",
+    "tree": "/home/cbasaran/code/jevgammon-runner-admit-bind",
+    "commit": "0e66836",
+    "commit_full": "0e668368dfd8db2da70663cda6b2ed183dd8532e",
+    "src_tree": "280a60ec121341d2488336707e1ee457103f5500",
     "build": {
-     "command": "cd /home/cbasaran/code/jevgammon-runner-admit-ro && CARGO_TARGET_DIR=/home/cbasaran/code/jevgammon/target/pinned-late cargo build --release --locked",
+     "command": "cd /home/cbasaran/code/jevgammon-runner-admit-bind && CARGO_TARGET_DIR=/home/cbasaran/code/jevgammon/target/pinned-late cargo build --release --locked",
      "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14), cargo 1.97.1 (c980f4866 2026-06-30)",
-     "built": "2026-11-11T17:07Z",
-     "tree": "git worktree add /home/cbasaran/code/jevgammon-runner-admit-ro pinned-late-reax (e77e3a0); commit d24d90a; checkout --detach (clean; only the untracked METADATA.worktree added)"
+     "built": "2026-11-11T18:05Z",
+     "tree": "git worktree add /home/cbasaran/code/jevgammon-runner-admit-bind pinned-late-reax (d24d90a); commit 0e66836; checkout --detach (clean; only the untracked METADATA.worktree added)"
     },
     "inputs": {
      "Cargo.toml": "bf64a9f15bd33cd3f5d517dc984140ff38fb9ec93c5d3a50eb0971f658c0ed4b",
@@ -7264,9 +7314,9 @@
     {
      "league": null,
      "runner": {
-      "commit": "d24d90a",
-      "commit_full": "d24d90aacfca4f832329315d5c87ce856db65281",
-      "binary_sha256": "a7482f887bc5be97e46478f405d9692be7b02ae0dc375800cd28a3e0c80d51ac"
+      "commit": "0e66836",
+      "commit_full": "0e668368dfd8db2da70663cda6b2ed183dd8532e",
+      "binary_sha256": "60b3643b9ce7f58fce9217fa53c7a42990b19e56af85468ae3d6d6b8ad7818cc"
      }
     }
    ],
@@ -7441,7 +7491,7 @@
    },
    "differences": [
     "Name: '<original> [repeat 1]', a new players row; settings otherwise as the original's (the changed fields are listed under Settings); one match at a time, where the original played several at once.",
-    "Runner: its 18 League 1 matches were played by six runner builds (17f3b8e, 2421d9e, 6425197, 356e32a with uncommitted changes; bef3ec8, ec555d6 clean); the repeat uses the pinned-pairs build d24d90a. Same prompt version bg-v2, option-order seed and rules; mirror games off as in its originals.",
+    "Runner: its 18 League 1 matches were played by six runner builds (17f3b8e, 2421d9e, 6425197, 356e32a with uncommitted changes; bef3ec8, ec555d6 clean); the repeat uses the pinned-pairs build 0e66836. Same prompt version bg-v2, option-order seed and rules; mirror games off as in its originals.",
     "Opponent hardware: Clef (#180), Cygnet (#184) and Decider v1.1 27B (#182) answered from DGX Spark (GB10) servers then; they now run on our RTX PRO 6000 cards with the same checkpoints and arguments (their players.device records the move and its 20-request replays: same play 20/20, 20/20 and 19/20).",
     "Hosted model: d1-ultra is served by Liquid; whether the hosted model behind liquid/d1-ultra changed since 2026-10-19 cannot be checked from here.",
     "Not replayable today, though played in the original: GPT-6 Luna, Mercury Decide (blockers today); their seed pins are kept so they replay with the original seeds once unblocked."
@@ -9672,16 +9722,16 @@
    "status_file": "mailbox/repeats/drex-max-1.1-r1 - status.md",
    "runner": {
     "binary": "/home/cbasaran/code/jevgammon/target/pinned-late/release/jevgammon",
-    "binary_sha256": "a7482f887bc5be97e46478f405d9692be7b02ae0dc375800cd28a3e0c80d51ac",
-    "tree": "/home/cbasaran/code/jevgammon-runner-admit-ro",
-    "commit": "d24d90a",
-    "commit_full": "d24d90aacfca4f832329315d5c87ce856db65281",
-    "src_tree": "524da2703a140cd2f9e22860bd2af915f5221dd2",
+    "binary_sha256": "60b3643b9ce7f58fce9217fa53c7a42990b19e56af85468ae3d6d6b8ad7818cc",
+    "tree": "/home/cbasaran/code/jevgammon-runner-admit-bind",
+    "commit": "0e66836",
+    "commit_full": "0e668368dfd8db2da70663cda6b2ed183dd8532e",
+    "src_tree": "280a60ec121341d2488336707e1ee457103f5500",
     "build": {
-     "command": "cd /home/cbasaran/code/jevgammon-runner-admit-ro && CARGO_TARGET_DIR=/home/cbasaran/code/jevgammon/target/pinned-late cargo build --release --locked",
+     "command": "cd /home/cbasaran/code/jevgammon-runner-admit-bind && CARGO_TARGET_DIR=/home/cbasaran/code/jevgammon/target/pinned-late cargo build --release --locked",
      "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14), cargo 1.97.1 (c980f4866 2026-06-30)",
-     "built": "2026-11-11T17:07Z",
-     "tree": "git worktree add /home/cbasaran/code/jevgammon-runner-admit-ro pinned-late-reax (e77e3a0); commit d24d90a; checkout --detach (clean; only the untracked METADATA.worktree added)"
+     "built": "2026-11-11T18:05Z",
+     "tree": "git worktree add /home/cbasaran/code/jevgammon-runner-admit-bind pinned-late-reax (d24d90a); commit 0e66836; checkout --detach (clean; only the untracked METADATA.worktree added)"
     },
     "inputs": {
      "Cargo.toml": "bf64a9f15bd33cd3f5d517dc984140ff38fb9ec93c5d3a50eb0971f658c0ed4b",
@@ -9709,9 +9759,9 @@
     {
      "league": null,
      "runner": {
-      "commit": "d24d90a",
-      "commit_full": "d24d90aacfca4f832329315d5c87ce856db65281",
-      "binary_sha256": "a7482f887bc5be97e46478f405d9692be7b02ae0dc375800cd28a3e0c80d51ac"
+      "commit": "0e66836",
+      "commit_full": "0e668368dfd8db2da70663cda6b2ed183dd8532e",
+      "binary_sha256": "60b3643b9ce7f58fce9217fa53c7a42990b19e56af85468ae3d6d6b8ad7818cc"
      }
     }
    ],
@@ -9912,7 +9962,7 @@
    },
    "differences": [
     "Name: '<original> [repeat 1]', a new players row; settings otherwise as the original's (the changed fields are listed under Settings); one match at a time, where the original played several at once.",
-    "Runner: d24d90a, the originals' runner line (origin/late-reax acfd89c) with the pinned-pairs change 4ca4f08 (the pins are its only change for these leagues), where the original ran e58fc6c (clean); the same prompt version, option-order seed and rules.",
+    "Runner: 0e66836, the originals' runner line (origin/late-reax acfd89c) with the pinned-pairs change 4ca4f08 (the pins are its only change for these leagues), where the original ran e58fc6c (clean); the same prompt version, option-order seed and rules.",
     "Hosted model: Drex Max 1.1 is served by Nace; whether the model behind drex-max-v1.1 changed since 2026-11-06 cannot be checked from here.",
     "Nace pre-send cap: the settings (unchanged) book every request in the original's ledger workspace/drex/state/nace-budget.db, cap $1.25 shared with Drex 2.0, which the original started empty and which held $0.7856 settled on 2026-11-11 (Drex Max 1.1 $0.2853, Drex 2.0 $0.5003); the repeat has the $0.4644 left. Its expected own bill ($0.2751 at $0.03/M) fits; reaching the cap would refuse its requests and leave the repeat incomplete.",
     "Not replayable today, though played in the original: Mercury Decide (blockers today); their seed pins are kept so they replay with the original seeds once unblocked."
@@ -12213,16 +12263,16 @@
    "status_file": "mailbox/repeats/glide-v1.2-r1 - status.md",
    "runner": {
     "binary": "/home/cbasaran/code/jevgammon/target/pinned-late/release/jevgammon",
-    "binary_sha256": "a7482f887bc5be97e46478f405d9692be7b02ae0dc375800cd28a3e0c80d51ac",
-    "tree": "/home/cbasaran/code/jevgammon-runner-admit-ro",
-    "commit": "d24d90a",
-    "commit_full": "d24d90aacfca4f832329315d5c87ce856db65281",
-    "src_tree": "524da2703a140cd2f9e22860bd2af915f5221dd2",
+    "binary_sha256": "60b3643b9ce7f58fce9217fa53c7a42990b19e56af85468ae3d6d6b8ad7818cc",
+    "tree": "/home/cbasaran/code/jevgammon-runner-admit-bind",
+    "commit": "0e66836",
+    "commit_full": "0e668368dfd8db2da70663cda6b2ed183dd8532e",
+    "src_tree": "280a60ec121341d2488336707e1ee457103f5500",
     "build": {
-     "command": "cd /home/cbasaran/code/jevgammon-runner-admit-ro && CARGO_TARGET_DIR=/home/cbasaran/code/jevgammon/target/pinned-late cargo build --release --locked",
+     "command": "cd /home/cbasaran/code/jevgammon-runner-admit-bind && CARGO_TARGET_DIR=/home/cbasaran/code/jevgammon/target/pinned-late cargo build --release --locked",
      "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14), cargo 1.97.1 (c980f4866 2026-06-30)",
-     "built": "2026-11-11T17:07Z",
-     "tree": "git worktree add /home/cbasaran/code/jevgammon-runner-admit-ro pinned-late-reax (e77e3a0); commit d24d90a; checkout --detach (clean; only the untracked METADATA.worktree added)"
+     "built": "2026-11-11T18:05Z",
+     "tree": "git worktree add /home/cbasaran/code/jevgammon-runner-admit-bind pinned-late-reax (d24d90a); commit 0e66836; checkout --detach (clean; only the untracked METADATA.worktree added)"
     },
     "inputs": {
      "Cargo.toml": "bf64a9f15bd33cd3f5d517dc984140ff38fb9ec93c5d3a50eb0971f658c0ed4b",
@@ -12250,9 +12300,9 @@
     {
      "league": null,
      "runner": {
-      "commit": "d24d90a",
-      "commit_full": "d24d90aacfca4f832329315d5c87ce856db65281",
-      "binary_sha256": "a7482f887bc5be97e46478f405d9692be7b02ae0dc375800cd28a3e0c80d51ac"
+      "commit": "0e66836",
+      "commit_full": "0e668368dfd8db2da70663cda6b2ed183dd8532e",
+      "binary_sha256": "60b3643b9ce7f58fce9217fa53c7a42990b19e56af85468ae3d6d6b8ad7818cc"
      }
     }
    ],
@@ -12385,7 +12435,7 @@
    },
    "differences": [
     "Name: '<original> [repeat 1]', a new players row; settings otherwise as the original's (the changed fields are listed under Settings); one match at a time, where the original played several at once.",
-    "Runner: its 18 League 1 matches were played by d2f1f9e with uncommitted changes (#482-#486) and ec555d6 (clean, #487-#499); the repeat uses the pinned-pairs build d24d90a. Same prompt version bg-v2, option-order seed and rules; mirror games off as in its originals.",
+    "Runner: its 18 League 1 matches were played by d2f1f9e with uncommitted changes (#482-#486) and ec555d6 (clean, #487-#499); the repeat uses the pinned-pairs build 0e66836. Same prompt version bg-v2, option-order seed and rules; mirror games off as in its originals.",
     "Opponent hardware: Clef (#484) and Cygnet (#486) answered from DGX Spark (GB10) servers then, Decider v1.1 27B (#483) from spark3 until 22:41 UTC; they now run on our RTX PRO 6000 cards with the same checkpoints and arguments (their players.device records the move and its 20-request replays: same play 20/20, 20/20 and 19/20).",
     "Server: the same script, snapshot and Python environment; the original ran on one RTX PRO 6000 card beside the opponents' servers on two others and the DGX Sparks, the repeat runs it on one card with the opponents one at a time on the same or a second card.",
     "Not replayable today, though played in the original: GPT-6 Luna, Mercury Decide (blockers today); their seed pins are kept so they replay with the original seeds once unblocked."

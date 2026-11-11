@@ -8,15 +8,21 @@
 # Every check comes first and writes nothing (repeats.py check): not held (REAX 1.3 never passes), the league config pins
 # every opponent to its original match's seed and seating (the league holds the same pins once it exists), the settings
 # as the manifest's, the name held in the main checkout's committed site code, the runner binary and every build input
-# at the sha256 recorded for the runner build (repeats.py RUNNER: d24d90a, exact commit, clean tree), then client
+# at the sha256 recorded for the runner build (repeats.py RUNNER: 0e66836, exact commit, clean tree), then client
 # admission by that binary (`jevgammon admit` of the league config with the keys loaded as below: every config player's
 # and pinned opponent's client built, only decision services and the local engines, v3.db and budget ledgers opened
-# read-only and immutable, no request; any refused client fails the check), a recorded attempt's league as recorded
-# (REAX 1.3's #24 on 4ca4f08: kept, never resumed; league-id skips it, so the league unit creates a new league for the
-# repeat), the name in the late_entry_stage trigger.
+# read-only and immutable, no request; any refused client fails the check) and the settings it admitted as v3.db holds
+# them now (its admitted-settings record against an ordinary read-only read, which sees the write-ahead log: the league
+# config's sha256, the config players' rows, each pinned opponent's row and settings sha256; any difference fails), a
+# recorded attempt's league exactly as recorded (REAX 1.3's #24 on 4ca4f08, every column of its leagues and
+# league_players rows: kept, never resumed; league-id skips it, so the league unit creates a new league for the repeat),
+# the name in the late_entry_stage trigger.
 # Only "trigger missing" with everything else passing (check exit 3) leads to the one write: a zstd backup of v3.db
 # (VACUUM INTO, zstd -t), `repeats.py trigger ID` (itself refused on any other failure), then the complete check again.
 # Any other failure exits before anything is written: no backup, no trigger, no state or status file.
+# The final check's admitted-settings record is kept as workspace/repeats/ID/admitted.json: the league unit
+# (run_league.sh) starts no league unless `repeats.py bound` finds the config and v3.db's settings as admitted, and
+# league-add gets each pinned opponent's settings from `repeats.py entry` (the admitted text, else the run stops).
 # REPEATS_HOME (default the main checkout: v3.db, workspace/repeats, the status file) and JEVGAMMON_DB (default
 # REPEATS_HOME/v3.db) are for the scratch regression tests (tools/v3/repeats/test_launcher.sh).
 # The entrant: Mammoth-1 and Drex Max v1 are started here on GPU under RES and smoke-tested as in their originals (and
@@ -71,6 +77,10 @@ elif (( rc != 0 )); then
   echo "check refused (exit $rc); nothing written: $checked" >&2
   exit 1
 fi
+# check's last line, the settings it admitted (repeats.py ADMITTED), is kept for the league unit and league-add.
+admitted=$(sed -n 's/^admitted-settings //p' <<< "$checked")
+checked=$(grep -v '^admitted-settings ' <<< "$checked")
+[[ -n $admitted ]] || { echo "the check passed without an admitted-settings record: $checked" >&2; exit 1; }
 
 mkdir -p "$ST" "$(dirname "$STATUS")"
 rm -f "$ST/done"
@@ -86,6 +96,7 @@ log() { local line; line="$(date -u +%FT%TZ) $*"; echo "$line" >> "$ST/run.log";
 [[ -z $prepared ]] || { log "$prepared"; touch "$ST/prepared"; }
 log "check: $checked"
 [[ -z $MODE ]] || exit 0
+printf '%s\n' "$admitted" > "$ST/admitted.json"
 set -a; . ~/.keys; set +a
 [[ -n ${CELERIS_API_KEY:-} ]] || { CELERIS_API_KEY="$(cat ~/.config/celeris/key)"; export CELERIS_API_KEY; }
 export PATH=$HOME/.local/bin:$PATH
@@ -120,7 +131,8 @@ quiesce() {
 ensure_league() {
   systemctl --user is-active -q "$UNIT" && return 0
   systemctl --user reset-failed "$UNIT" >/dev/null 2>&1 || true
-  systemd-run --user --quiet --unit="$UNIT" --working-directory="$PWD" "$T/run_league.sh" "$RID" "$BIN" "$DB"
+  systemd-run --user --quiet --unit="$UNIT" --working-directory="$PWD" "$T/run_league.sh" "$RID" "$BIN" "$DB" \
+    "$PWD/$ST/admitted.json"
 }
 down=0
 unread=0
@@ -190,7 +202,8 @@ while IFS='|' read -r -u 3 name kind mib start stop blocked; do
     quiesce || { finish "STOPPED before adding $name: league #$ID not confirmed stopped"; exit 1; }
     if ! sqlite3 -readonly "$DB" "SELECT 1 FROM league_players lp JOIN players p ON p.id = lp.player_id
          WHERE lp.league_id = $ID AND lp.left_at IS NULL AND p.name = '${name//\'/\'\'}'" | grep -q 1; then
-      entry=$(sqlite3 -readonly "$DB" "SELECT settings FROM players WHERE name = '${name//\'/\'\'}'")
+      entry=$("${R[@]}" entry "$RID" "$name" "$ST/admitted.json" 2>&1) ||
+        { finish "STOPPED before adding $name: $entry"; exit 1; }
       pin=$(python3 -c 'import json,sys; print(json.dumps(json.load(open(sys.argv[1]))["pinned_pairs"][sys.argv[2]]))' \
         "$T/leagues/$RID.json" "$name")
       "$BIN" league-add --db "$DB" --league "$ID" --entry "$entry" --pin "$pin" >> "repeat-$RID.log" 2>&1 ||

@@ -1,14 +1,22 @@
 #!/usr/bin/env bash
-# Regression tests of run.sh's preflight (Zeki #4737, #4896), on scratch copies only: never the production v3.db, a
-# production budget ledger, the main checkout's state or the runner tree. Each case gets its own copy of these scripts
+# Regression tests of run.sh's preflight (Zeki #4737, #4896, #4928), on scratch copies only: never the production v3.db,
+# a production budget ledger, the main checkout's state or the runner tree. Each case gets its own copy of these scripts
 # and the manifest (repo layout), a clone of the runner tree at the recorded commit, a copy of the recorded binary, and a
 # scratch database (the runner's own schema, created by the copied binary, plus the originals' and programs' players
 # rows from the manifest, the pinned opponents' rows (name and spec as each original played them; specs from the
 # 2026-11-11 admission run, mailbox/pinned-late-review/admission.log) and a late_entry_stage trigger naming the originals
-# only, so every repeat starts with "trigger missing"; and REAX 1.3's recorded attempt, league #24, as v3.db holds it).
+# only, so every repeat starts with "trigger missing"; and REAX 1.3's recorded attempt, league #24, exactly as recorded:
+# every column of its leagues and league_players rows, the participants' players rows at their recorded ids).
 # Drex Max 1.1's Nace ledger is a scratch ledger (the path replaced in the copies of the manifest, the league configs and
 # repeats.py); the keys are a scratch HOME's ~/.keys and Celeris key file with placeholder values (no request is sent).
-#   Recorded attempt: league-id skips league #24 (the league unit then starts a new league); a changed #24 refuses.
+#   Recorded attempt: league-id skips league #24 (the league unit then starts a new league); a changed #24 refuses: a
+#   heartbeat, and (#4928 L1) rounds, seed, hidden, a participant's joined_at, note, max_turns, the pins' stored text, a
+#   participant's note or left_at, a column added, a participant added.
+#   Admitted settings (#4928 S1): Clef's players row replaced by an UPDATE kept in the write-ahead log (clef ->
+#   openai/review-placeholder): admission admits the checkpointed clef, check refuses on the difference alone, run.sh
+#   writes nothing (database file and log byte-identical); after an admission, `repeats.py bound` and run_league.sh (a
+#   stand-in binary) start no league and `repeats.py entry` gives no league-add text once the config or Clef's row
+#   differs from the record, and do while nothing differs.
 #   Refusals (a held repeat: REAX 1.3 marked held in the case's manifest copy, as before its release; bad pins, other
 #   settings, another binary, a changed or missing build input, a changed src, a descendant commit, Drex Max 1.1's and
 #   GLiDE v1.2's pins and budget, a repeat name not yet held in main's site; client admission: a pinned opponent's
@@ -102,9 +110,19 @@ for name, spec in OPPONENTS.items():
 pins = {o for r in man["repeats"] for o in json.loads((leagues / f"{r['id']}.json").read_text())["pinned_pairs"]}
 if pins - set(rows):
     sys.exit(f"pinned opponents without a players row: {sorted(pins - set(rows))}")
-for name, s in rows.items():
-    conn.execute("INSERT INTO players (name, spec, settings, created_at) VALUES (?, ?, ?, '2026-11-11T00:00:00Z')",
-                 (name, s.get("spec") or "program", json.dumps(s)))
+# REAX 1.3's first attempt exactly as v3.db holds it (repeats.py REAX_ATTEMPT_1["record"]): league #24's leagues row
+# and league_players rows, every column, the participants' players rows at their recorded ids (inserted first; the
+# entrant's row as the attempt's league --config inserted it, from the repeat config), no match.
+sys.path.insert(0, str(leagues.parent))
+import repeats
+a = repeats.REAX_ATTEMPT_1
+cfg = json.loads((leagues / "reax-1.3-r1.json").read_text())
+entrant = cfg["players"][0]
+ids = {p["name"]: p["player_id"] for p in a["record"]["participants"]}
+for name, s in sorted([*rows.items(), (entrant["name"], entrant)], key=lambda kv: kv[0] not in ids):
+    conn.execute("INSERT INTO players (id, name, spec, settings, created_at) VALUES (?, ?, ?, ?, ?)",
+                 (ids.get(name), name, s.get("spec") or "program", json.dumps(s),
+                  a["record"]["league"]["started_at"] if name == entrant["name"] else "2026-11-11T00:00:00Z"))
 listed = ", ".join("'" + r["original"].replace("'", "''") + "'" for r in man["repeats"])
 conn.execute(f"""CREATE TRIGGER late_entry_stage AFTER INSERT ON matches
 WHEN EXISTS (SELECT 1 FROM players p WHERE p.id IN (NEW.player1, NEW.player2)
@@ -112,27 +130,18 @@ WHEN EXISTS (SELECT 1 FROM players p WHERE p.id IN (NEW.player1, NEW.player2)
 BEGIN
   UPDATE matches SET stage = 'late-entry' WHERE id = NEW.id;
 END""")
-# REAX 1.3's first attempt as v3.db holds it (repeats.py REAX_ATTEMPT_1): league #24 playing only the repeat name's
-# pairs, with its pins, the repeat name and the programs as participants, no match.
-sys.path.insert(0, str(leagues.parent))
-import repeats
-a = repeats.REAX_ATTEMPT_1
-cfg = json.loads((leagues / "reax-1.3-r1.json").read_text())
-entrant = cfg["players"][0]
-conn.execute("INSERT INTO players (name, spec, settings, created_at) VALUES (?, ?, ?, ?)",
-             (entrant["name"], entrant["spec"], json.dumps(entrant), a["record"]["started_at"]))
-conn.execute("""INSERT INTO leagues (id, started_at, finished_at, seed, rounds, status, heartbeat_at, only_pairs_of,
-                                     hidden, pinned_pairs, prompt_version, order_seed)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)""",
-             (a["league"], a["record"]["started_at"], a["record"]["finished_at"], cfg["seed"], cfg["rounds"],
-              a["record"]["status"], a["record"]["heartbeat_at"], entrant["name"], json.dumps(cfg["pinned_pairs"]),
-              cfg["prompt_version"], cfg["order_seed"]))
-for name in a["record"]["participants"]:
-    conn.execute("""INSERT INTO league_players (league_id, player_id, joined_at)
-                    SELECT ?, id, ? FROM players WHERE name = ?""", (a["league"], a["record"]["started_at"], name))
+league = a["record"]["league"]
+columns = [r[1] for r in conn.execute("PRAGMA table_info(leagues)")]
+if columns != list(league):
+    sys.exit(f"the runner's leagues columns {columns} are not the recorded {list(league)}")
+conn.execute(f"INSERT INTO leagues ({', '.join(league)}) VALUES ({', '.join('?' * len(league))})", list(league.values()))
+for p in a["record"]["participants"]:
+    cols = [k for k in p if k != "name"]
+    conn.execute(f"INSERT INTO league_players ({', '.join(cols)}) VALUES ({', '.join('?' * len(cols))})",
+                 [p[k] for k in cols])
 conn.commit()
-print(f"scratch database: runner schema, {len(rows)} players rows, late_entry_stage naming {listed}, "
-      f"attempt league #{a['league']} as recorded")
+print(f"scratch database: runner schema, {len(rows) + 1} players rows, late_entry_stage naming {listed}, "
+      f"attempt league #{a['league']} as recorded (every column of its leagues and league_players rows)")
 EOF
 
 fails=0
@@ -289,6 +298,116 @@ sqlite3 "$D/home/v3.db" "UPDATE leagues SET heartbeat_at = '2026-11-11T17:00:00.
 refuse reax-1.3-r1
 grep -q "attempt league #24 changed" "$D/check.out" && pass "the refusal names the changed attempt league" ||
   failc "check did not name the changed attempt league: $(cat "$D/check.out")"
+# Zeki #4928 L1: league #24's historical rows are bound column by column, not only its times, status and participant
+# names: the reviewer's changed rounds, seed, hidden flag and participant joined_at, and any other column (its note,
+# max_turns, the same pins in other stored text, a participant's note or left_at, a column added, a participant
+# added) refuse before any write.
+for mutation in "rounds|UPDATE leagues SET rounds = 999 WHERE id = 24" \
+                "seed|UPDATE leagues SET seed = 999 WHERE id = 24" \
+                "hidden|UPDATE leagues SET hidden = 0 WHERE id = 24" \
+                "joined_at|UPDATE league_players SET joined_at = 'changed' WHERE league_id = 24" \
+                "note|UPDATE leagues SET note = note || ' ' WHERE id = 24" \
+                "max_turns|UPDATE leagues SET max_turns = 301 WHERE id = 24" \
+                "pinned_pairs|UPDATE leagues SET pinned_pairs = ' ' || pinned_pairs WHERE id = 24" \
+                "league_players|UPDATE league_players SET note = 'x' WHERE id = 370" \
+                "league_players|UPDATE league_players SET left_at = '2026-11-11T16:00:00.000Z' WHERE id = 372" \
+                "extra|ALTER TABLE leagues ADD COLUMN extra TEXT" \
+                "league_players|INSERT INTO league_players (league_id, player_id, joined_at) SELECT 24, id, 'x' FROM players WHERE name = 'Clef'"; do
+  col=${mutation%%|*} sql=${mutation#*|}
+  setup "attempt-$col-$(sha256sum <<< "$sql" | cut -c1-6)"
+  sqlite3 "$D/home/v3.db" "$sql"
+  echo "     $sql"
+  refuse reax-1.3-r1
+  grep -qE "attempt league #24 changed: (.* )?$col " "$D/check.out" && pass "the refusal names #24's changed $col" ||
+    failc "check did not name #24's changed $col: $(cut -c1-600 "$D/check.out")"
+done
+
+# Zeki #4928 S1: admission reads v3.db immutably (its main file), the league reads the current rows. A writer that never
+# checkpoints commits Clef's replacement (clef -> openai/review-placeholder, the reviewer's fixture) and keeps it in the
+# write-ahead log until $D/release exists.
+hold_wal() {  # db
+  rm -f "$D/held" "$D/release"
+  python3 - "$1" "$D" <<'EOF' &
+import json, os, sqlite3, sys, time
+db, d = sys.argv[1:3]
+c = sqlite3.connect(db)
+c.execute("PRAGMA wal_autocheckpoint = 0")
+c.execute("UPDATE players SET spec = 'openai/review-placeholder', settings = ? WHERE name = 'Clef'",
+          (json.dumps({"name": "Clef", "spec": "openai/review-placeholder"}),))
+c.commit()
+open(os.path.join(d, "held"), "w").close()
+while not os.path.exists(os.path.join(d, "release")):
+    time.sleep(0.1)
+c.close()
+EOF
+  HOLDER=$!
+  for _ in $(seq 100); do [[ -e $D/held ]] && return 0; sleep 0.1; done
+  return 1
+}
+release_wal() { touch "$D/release"; wait "$HOLDER"; }
+# Before any preparation: admission admits the checkpointed clef, check compares its admitted-settings record with an
+# ordinary read-only read (which sees the log) and refuses on that alone (besides the missing trigger); run.sh writes
+# nothing, the database file and its log byte-identical.
+setup clef-in-log
+hold_wal "$D/home/v3.db" || failc "the writer did not commit"
+wal=$(sha256sum < "$D/home/v3.db-wal")
+refuse reax-1.3-r1
+[[ $(sha256sum < "$D/home/v3.db-wal") == "$wal" ]] && pass "the write-ahead log byte-identical (Clef's replacement only there)" ||
+  failc "the write-ahead log changed"
+if [[ $(wc -l < "$D/check.out") == 1 ]] && grep -qE "^reax-1\.3-r1: Clef: v3\.db's settings now \(players #[0-9]+, sha256 [0-9a-f]{16}…\) are not the ones admitted \(players #[0-9]+, sha256 [0-9a-f]{16}…\); trigger missing: late_entry_stage does not name it$" "$D/check.out"; then
+  pass "every client admitted (Clef as clef, from the main file); the refusal is Clef's settings differing from the admitted ones: $(cut -c1-200 "$D/check.out")"
+else
+  failc "check did not refuse on Clef's settings alone: $(cut -c1-600 "$D/check.out")"
+fi
+release_wal
+# After the admission: check passes and its record is kept (as run.sh keeps admitted.json); the league unit
+# (run_league.sh, with a stand-in binary that records any start) starts only while the config and v3.db's settings are
+# the admitted ones, and league-add's entry text is the admitted one: a changed config or Clef replaced in the log after
+# the admission refuses both.
+setup admitted-then-changed
+in_case bash "$D/repo/tools/v3/repeats/run.sh" reax-1.3-r1 --prepare-only > "$D/run.out" 2>&1 || failc "prepare: $(cat "$D/run.out")"
+crc=$(check_rc reax-1.3-r1)
+sed -n 's/^admitted-settings //p' "$D/check.out" > "$D/admitted.json"
+R=(python3 "$D/repo/tools/v3/repeats/repeats.py")
+printf '#!/usr/bin/env bash\necho "$*" >> %q\n' "$D/started" > "$D/bin/stand-in" && chmod +x "$D/bin/stand-in"
+league_unit() { (cd "$D/home" && in_case bash "$D/repo/tools/v3/repeats/run_league.sh" reax-1.3-r1 "$D/bin/stand-in" \
+  "$D/home/v3.db" "$D/admitted.json"); }
+stored=$(sqlite3 "$D/home/v3.db" "SELECT settings FROM players WHERE name = 'Clef'")
+in_case "${R[@]}" bound reax-1.3-r1 "$D/admitted.json" > "$D/bound.out" 2>&1; brc=$?
+e=$(in_case "${R[@]}" entry reax-1.3-r1 Clef "$D/admitted.json" 2>"$D/entry.err"); erc=$?
+league_unit; lrc=$?
+if (( crc == 0 && brc == 0 && erc == 0 && lrc == 0 )) && [[ -s $D/admitted.json && $e == "$stored" ]] &&
+   grep -q "^league --config .*/leagues/reax-1.3-r1.json --db $D/home/v3.db$" "$D/started"; then
+  pass "as admitted: check exit 0 with its record ($(python3 -c 'import json,sys; print(len(json.load(open(sys.argv[1]))["clients"]))' "$D/admitted.json") clients), bound exit 0, entry prints Clef's stored text, the league unit starts the league"
+else
+  failc "as admitted: check $crc, bound $brc, entry $erc ('$e'), league unit $lrc, started: $(cat "$D/started" 2>/dev/null)"
+fi
+rm -f "$D/started"
+cfg=$D/repo/tools/v3/repeats/leagues/reax-1.3-r1.json
+cp "$cfg" "$D/config.kept" && echo >> "$cfg"
+in_case "${R[@]}" bound reax-1.3-r1 "$D/admitted.json" > "$D/bound.out" 2>&1; brc=$?
+league_unit; lrc=$?
+if (( brc == 1 && lrc != 0 )) && [[ ! -e $D/started ]] && grep -q "reax-1.3-r1.json is not the one admitted" "$D/bound.out"; then
+  pass "config changed after the admission: bound exit 1, no league started: $(cut -c1-160 "$D/bound.out")"
+else
+  failc "config changed: bound $brc, league unit $lrc, started: $(cat "$D/started" 2>/dev/null)"
+fi
+cp "$D/config.kept" "$cfg"
+hold_wal "$D/home/v3.db" || failc "the writer did not commit"
+before=$(sha256sum < "$D/home/v3.db")
+in_case "${R[@]}" bound reax-1.3-r1 "$D/admitted.json" > "$D/bound.out" 2>&1; brc=$?
+e=$(in_case "${R[@]}" entry reax-1.3-r1 Clef "$D/admitted.json" 2>"$D/entry.err"); erc=$?
+league_unit; lrc=$?
+after=$(sha256sum < "$D/home/v3.db")
+release_wal
+if (( brc == 1 && erc == 1 && lrc != 0 )) && [[ -z $e && ! -e $D/started && $after == "$before" ]] &&
+   grep -q "Clef: v3.db's settings now" "$D/bound.out" && grep -q "Clef: v3.db's settings now" "$D/entry.err" &&
+   grep -q "refused, not the admitted settings" "$D/home/repeat-reax-1.3-r1.log"; then
+  pass "Clef replaced in the log after the admission: bound and entry exit 1 (no entry text), the league unit starts nothing, the database file unchanged: $(cut -c1-200 "$D/bound.out")"
+else
+  failc "Clef replaced after admission: bound $brc, entry $erc ('$e'), league unit $lrc, started: $(cat "$D/started" 2>/dev/null)"
+fi
+
 
 # A repeat whose held name is not yet in the main checkout's committed held_setups.json (the site branch adding it not
 # merged) must refuse on that alone; once it is held, it takes the trigger-missing case below.

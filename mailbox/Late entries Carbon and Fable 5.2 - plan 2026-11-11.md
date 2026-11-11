@@ -1,7 +1,7 @@
 # Late entries Gemini 4 Carbon (high) and Claude Fable 5.2 (max) - plan 2026-11-11
 
 Ümit via Zeki #4676. Prepared, nothing started. Scripts: `tools/v3/late-carbon-fable` (branch `late-carbon-fable`).
-Site entries (held): branch `carbon-fable-site`.
+Site entries (held): branch `carbon-fable-site` (Carbon class on its standard $4.00: Flagship, as Argon, Ümit #4399).
 
 ## Identity
 
@@ -21,35 +21,48 @@ Site entries (held): branch `carbon-fable-site`.
   "Effort: all five effort levels: low, medium, high, xhigh, and max. The API default is high."; "Reserve max for
   measuring the model's ceiling and for the rare task where time and tokens don't matter."; 128k max output tokens.
 
-## Route smoke (one position each, `jevgammon ask --limit 1 --retries 0`, workspace/late-carbon-fable/smoke.db)
+## Measured: $0 tests on the subscriptions (no money moved)
 
-| | Carbon, Antigravity subscription | Fable 5.2, Claude subscription |
-|---|---|---|
-| Sent | gemini-4-carbon-high, thinkingLevel high | claude-fable-5-2, output_config.effort max, max_tokens 32,000 |
-| Echoed | modelVersion gemini-4-carbon, finishReason STOP | model claude-fable-5-2, msg_011Cgw6WLQ1PfYa31bH1kGAh, stop_reason max_tokens |
-| Tokens | 3,981 in, 19 out + 8,462 thinking | 4,941 in, 32,000 out (all thinking) |
-| Time | 102 s | 349 s |
-| List-price equivalent | $0.0928 | $1.3195 |
-| Answer | M (13/9* 9/8) | none: invalid, random play |
+Dollar figures here are list-price equivalents of $0 subscription requests, not spending.
 
-Billed $0 (subscriptions). OMP has since paused the Antigravity route (account risk): Carbon plays on OpenRouter, pinned
-to Google AI Studio (`player-carbon.json`). Fable 5.2 at max thinks past 32,000 tokens: `player-fable.json` sets
-max_tokens 128,000 (the model's limit; not yet exercised).
+| Test | Route, request | Position | Tokens | Time | Answer |
+|---|---|---|---|---|---|
+| Carbon smoke | Antigravity, our runner: gemini-4-carbon-high, thinkingLevel high; echoed modelVersion gemini-4-carbon | smoke-0001 | 3,981 in, 19 out + 8,462 thinking | 102 s | M (13/9* 9/8); list-price equivalent $0.093 |
+| Fable smoke | Claude subscription, our runner: claude-fable-5-2, output_config.effort max, max_tokens 32,000; echoed claude-fable-5-2 (msg_011Cgw6WLQ1PfYa31bH1kGAh) | smoke-0001 | 4,941 in, 32,000 out (all thinking), stop_reason max_tokens | 349 s | none (invalid, random play); list-price equivalent $1.32 |
+| Fable via Claude Code | `claude --print --model claude-fable-5-2 --effort max --system-prompt-file <our system> --tools "" --output-format json`, our user prompt on stdin (session 1ed824ab-0a50-4be5-9eaf-a25afa210f51) | smoke-0004 | 20,416 in (cache write), 4 requests x 32,000 out = 128,000 (127,999 thinking): Claude Code continued 3 times after each max_tokens stop | 1,395 s | none: "API Error: Claude's response exceeded the 32000 output token maximum"; Claude Code's list-price figure $2.72 |
 
-## Cost (no calls), ~2,082 decisions (109.6 per late-entry match x 19)
+Request shapes (Claude Code's captured on a local listener, nothing sent): Claude Code sends `max_tokens` 32,000,
+`thinking: {"type": "adaptive"}`, `output_config: {"effort": "max"}`, `stream: true`, betas incl. `effort-2025-11-24`
+and `interleaved-thinking-2025-05-14`. Ours: `max_tokens` 32,000, no `thinking` field (adaptive is the model's only mode),
+`output_config: {"effort": "max", "format": <json_schema of the letter>}`, betas `claude-code-20250219,oauth-2025-04-20`,
+not streamed. Neither sends a thinking budget (`budget_tokens`). Claude Code itself thought past 32,000 on our prompt,
+so the no-answer comes from the backgammon prompt at max, not from our request shape; the third allowed test (our
+runner with Claude Code's shape) was not run, to spare the shared quota. Logic's and turkce's max runs (166-364 output
+tokens per Math question; ~560 thinking per Turkish question) are other tasks.
 
-- Carbon (high), OpenRouter google-ai-studio, $2/$10 through 30 Nov ($4/$20 from 1 Dec): $0.093 per decision (smoke)
-  -> ~$193 (Argon (high)'s league mean, $0.086: $179); from 1 Dec ~$386. Stage 1 (10 opponents) ~$100. ~102 s per
-  decision, 2 in flight: ~30 h.
-- Fable 5.2 (max), $8/$40 (Claude subscription $0; OpenRouter the same list price): at least $1.32 per decision ->
-  at least ~$2,750; up to $5.16 per decision at 128,000 output tokens. At least 349 s per decision: ~100 h at 2 in
-  flight. Fable 5.1 (high)'s league record: 1,367 output tokens per decision; this is 23x that or more.
+Antigravity: OMP has paused the route (account risk) since the Carbon smoke; not used again.
+
+## Extrapolated (not measured), ~2,082 decisions (109.6 per late-entry match x 19)
+
+- Carbon (high) on OpenRouter pinned to google-ai-studio ($2/$10 through 30 Nov, $4/$20 from 1 Dec), paid: at the
+  smoke's tokens, $0.093 per decision -> ~$193 (Argon (high)'s league mean $0.086: $179); from 1 Dec ~$386. Stage 1 (10
+  opponents) ~$100. ~102 s per decision, 2 in flight: ~30 h. The OpenRouter request shape is not yet exercised by our
+  runner (turkce: that route works).
+- Fable 5.2 (max) at 32,000 output tokens: every decision ends without an answer (2 of 2 positions), so the entry
+  cannot be played as set: at least $1.32 list price per decision and 349 s each, and no plays. With a larger cap
+  (up to 128,000) the thinking length per decision is unknown: up to $5.16 per decision list price, ~$10,700 for the
+  entry at worst, ~1,400 s per decision.
 - OpenRouter balance 2026-11-11 12:05 UTC: $76.54 (floor $40). Google API: out of credit (402, turkce #4686).
+
+## Decision for Ümit
+
+Fable 5.2 at max does not answer a backgammon decision within 32,000 output tokens. Options: a larger output cap (a
+paid or quota-heavy experiment of unknown length), or a lower effort (xhigh/high) as the entry's highest setting that
+answers. Carbon (high) is ready on OpenRouter once the balance covers ~$200 above the $40 floor.
 
 ## Start (after Main merges the site branch and gives the go)
 
 ```
-cd ~/code/jevgammon && CARGO_TARGET_DIR=target/carbon-fable cargo build --release --manifest-path ~/code/jevgammon-carbon-fable/Cargo.toml
 systemd-run --user --unit=late-carbon --working-directory=/home/cbasaran/code/jevgammon \
   -E PATH=$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin \
   /home/cbasaran/code/jevgammon-carbon-fable/tools/v3/late-carbon-fable/start.sh carbon
@@ -62,6 +75,7 @@ systemd-run --user --unit=late-carbon-locals --working-directory=/home/cbasaran/
   /home/cbasaran/code/jevgammon-carbon-fable/tools/v3/late-carbon-fable/locals.sh carbon
 ```
 
-start.sh refuses to start (exit 3) while the Claude lane (improve-subs-claude, improve-claude-wait) runs, for fable,
-and pauses the entry if it starts; it stops at a route limit (429), at OpenRouter < $40, at paid opponents >= $5, at
-Carbon's own cost >= $250 (OWN_CAP), on blocked pairs, after 48 h.
+Runner: target/carbon-fable/release/jevgammon (built from this branch's base, 9529596). start.sh refuses to start
+(exit 3) while the Claude lane (improve-subs-claude, improve-claude-wait) runs, for fable, and pauses the entry if it
+starts; it stops at a route limit (429), at OpenRouter < $40, at paid opponents >= $5, at Carbon's own cost >= $250
+(OWN_CAP), on blocked pairs, after 48 h.

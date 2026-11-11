@@ -317,7 +317,7 @@ def check_mixing(page: Path, root: Node, S: dict) -> list[str]:
 # --- 5. Links and ids ---------------------------------------------------------------------------------------
 
 # Pages whose anchors are rendered in the browser, not in the built file: the decisions viewer (decisions.js lists the
-# decisions its address asks for, ids d<n> included).
+# decisions its address asks for, ids d<n> included), the current one and every archived copy (results/<hash>/decisions/).
 DYNAMIC_ANCHORS = ("decisions/index.html",)
 _IDS: dict = {}
 
@@ -366,7 +366,7 @@ def check_links(page: Path, root: Node, out: Path, anchors: bool = True) -> list
             if not target.exists():
                 bad.append(f"{page}: link {v} does not resolve")
             elif (frag and target.suffix == ".html" and target.is_relative_to(out.resolve())
-                  and str(target.relative_to(out.resolve())) not in DYNAMIC_ANCHORS
+                  and not str(target.relative_to(out.resolve())).endswith(DYNAMIC_ANCHORS)
                   and frag not in page_ids(target, out.resolve())):
                 bad.append(f"{page}: link {v}: no id #{frag} on {target.relative_to(out.resolve())}")
     return bad

@@ -10,6 +10,7 @@ import textwrap
 
 import analysis as A
 import nack_section
+import own_cost
 import pages as P
 from common import ALL_NOTE, CLOSE_B_SCOPE_NOTE, CONTENT, LATE_ENTRY, NA, NOT_MEASURED, PENDING, PROVISIONAL, PROVISIONAL_NOTE, TOO_FEW, count, esc, fmt, nm, pct, relabel, shown_names_html, status_badge
 from common import name_and_tag, tag_html, tag_text
@@ -991,8 +992,10 @@ def measure_chart(S, lg, which) -> str:
 
     def draw(x, r, q):
         v = q[key]
+        # An own-machine cost is an estimate (Ümit #4450): marked so beside its number.
+        mark = " estimate" if which == "cost" and P.own_machine(q) else ""
         return (f'<rect class="sp-bar" x="{x(0):.1f}" y="9" width="{x(v) - x(0):.1f}" height="14"/>'
-                f'<text x="{x(v) + 6:.1f}" y="20">{fmt(v, 2 if which == "time" else 3)}</text>')
+                f'<text x="{x(v) + 6:.1f}" y="20">{fmt(v, 2 if which == "time" else 3)}{mark}</text>')
     return bars_chart(S, lg, which, "main", rows, val, draw,
                       f"{'Median s per decision' if which == 'time' else '$ per 1,000 decisions'}, League {lg['id']}",
                       top * 1.15, lambda t: fmt(t, 1 if which == "time" else 2))
@@ -1025,8 +1028,9 @@ def tradeoff_chart(S, lg, which) -> str:
                  f'{"$ per 1,000 decisions" if which == "cost" else "Median s per decision"}, log scale</text>'
                  f'<text transform="translate(13 {(T + H - B) / 2}) rotate(-90)" text-anchor="middle">Error rate (PR)</text>')
     for rank, (n, q) in enumerate(sorted(pts, key=lambda p: p[1]["error_rate"])):
+        est = " (cost: estimate, GPU time, at most)" if which == "cost" and P.own_machine(q) else ""
         parts.append(f'<g class="pt"{attrs(S, ds, n)} data-n="{q["scored"]}" data-rank="{rank}"><title>{esc(n)}: '
-                     f'{fmt(q["error_rate"])}</title><circle class="dot" cx="{x(q[key]):.1f}" cy="{y(q["error_rate"]):.1f}" r="4.5"/>'
+                     f'{fmt(q["error_rate"])}{est}</title><circle class="dot" cx="{x(q[key]):.1f}" cy="{y(q["error_rate"]):.1f}" r="4.5"/>'
                      f'<text class="rm-name" x="{x(q[key]) + 7:.1f}" y="{y(q["error_rate"]) + 4:.1f}">{esc(n)}</text></g>')
     return _svg(f"tradeoff-{which}", ds, "main", W, H, "".join(parts),
                 f"Error rate against {which}, League {lg['id']}", 0, 0, 0, sum(q["scored"] for _, q in pts))
@@ -1214,7 +1218,8 @@ def tab_body(S, key: str) -> str:
         "reasoning": "The same model at a lower and a higher reasoning setting, each named by the effort its requests sent.",
         "cost": "Dollars per 1,000 decisions and seconds per decision.",
         "stability": "Does a setup repeat its play on the same position?"}[key]
-    marks = ('<p class="table-note">\u00a7 list-price estimate; runs on our GPUs · \u2020 plays split into groups · '
+    marks = ('<p class="table-note">estimate: runs on our own machine (named after it), GPU time, at most; how it was counted '
+             'on hover or tap · \u2020 plays split into groups · '
              f'{esc(NOT_MEASURED)}: no value recorded. <a href="method/#{METHOD_OF_TAB.get(key, key)}">Method</a></p>')
     cols = {"risk": "good risks, the error rate by risk-call category, stakes, extra hitting rolls, confidence on the call, "
                     "ability and caution",
@@ -1613,9 +1618,13 @@ def _value(S, lg, n, measure, v, lo, hi, r, q) -> tuple[str, str]:
         if v is None:
             why = NOT_MEASURED if q.get("cost_coverage", 0) == 0 else f"Priced for {pct(q['cost_coverage'], 0)} of decisions"
             return nm(why), f"{n}: {why}"
+        shown = f'<span class="cost-1k">${fmt(v, 3)}</span><span class="cost-1m" data-usd="{v!r}">${fmt(v, 3)}</span>'
+        if P.own_machine(q):
+            # On our own machine (Ümit #4450): the number is an estimate, marked; how it was counted in the tooltip.
+            return (f'{shown} <span class="est">estimate</span>',
+                    f"{n}, on {P.own_machine(q)}: " + own_cost.tooltip(q["own_cost"], every_gap=False))
         label = (P.origin_meta(S, lg["dataset"], n).get("price") or {}).get("label") or "label missing"
-        return (f'<span class="cost-1k">${fmt(v, 3)}</span><span class="cost-1m" data-usd="{v!r}">${fmt(v, 3)}</span>',
-                f"{n}: ${fmt(v, 3)} per 1,000 decisions ({label})")
+        return shown, f"{n}: ${fmt(v, 3)} per 1,000 decisions ({label})"
     if v is None:
         return nm(NOT_MEASURED), f"{n}: {NOT_MEASURED}"
     return (f'{P.secs(v)} · {P.secs(q.get("time_p90"))}',
@@ -1718,7 +1727,8 @@ def measure_chart_card(S, measure: str, title: str) -> str:
                             '</i>a program\'s error rate (reference row, named above the axis)')}.get(measure)
     # One caveat per section (Ümit, bus #2570 item 4); the others are on the Method page (Limits, Cost), linked.
     caveat = {"risk-judgement": (RANK_NOTE, "statistics"), "error-rate": (LIMIT_PAIRED, "limits"),
-              "cost": ("\u00a7 list-price estimate; runs on our GPUs: each setup's price label is in its row's tooltip "
+              "cost": ("Setups on our own machines: an estimate, GPU time, at most (wall-clock time \u00d7 hourly rate, "
+                       "an upper bound); each setup's price label and how its cost was counted are in its row's tooltip "
                        "and in the Cost tab.", "cost"),
               "time": (LIMIT_PAIRED, "limits")}[measure]
     return (f'<section class="measure" id="{measure}" aria-label="{esc(title)}"><figure class="panel chart-card chart-wide" '

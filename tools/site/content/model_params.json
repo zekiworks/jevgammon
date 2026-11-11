@@ -357,14 +357,18 @@
     "https://huggingface.co/zai-org/GLM-5.3",
     "https://z.ai/blog/glm-5.3",
     "https://docs.z.ai/guides/llm/glm-5.3",
-    "https://huggingface.co/zai-org/GLM-5.3/raw/main/config.json"
+    "https://huggingface.co/zai-org/GLM-5.3/raw/main/config.json",
+    "https://z.ai/blog/glm-5.2",
+    "https://docs.z.ai/guides/llm/glm-5.2",
+    "https://huggingface.co/zai-org/GLM-5.2/raw/main/README.md"
    ],
-   "read": "2026-11-09",
+   "read": "2026-11-10",
    "note": "Neither the model card, blog nor docs state a parameter count (blog: 'uses the same base model as GLM-5.2'). Total is the HF safetensors figure; active not stated anywhere checked (MoE active unknown). Repo may include MTP layers in the count. Mixture of experts per the maker's Hugging Face config.json (architectures: GlmMoeDsaForCausalLM; first_k_dense_replace 3), so shown as total with active not disclosed.",
    "card_total_b": null,
    "card_active_b": null,
    "card_source": "https://huggingface.co/zai-org/GLM-5.3",
-   "card_quote": "Neither the card, blog nor docs state a parameter count (our checkpoint count 753.33B is not the maker's figure)."
+   "card_quote": "Neither the card, blog nor docs state a parameter count (our checkpoint count 753.33B is not the maker's figure).",
+   "class_from_files": "The maker's model card states no total; 753.33B is counted from the released files (Hugging Face's file total agrees)."
   },
   "GPT-6 Astra": {
    "total_b": null,

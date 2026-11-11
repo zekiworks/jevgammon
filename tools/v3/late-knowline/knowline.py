@@ -23,6 +23,10 @@ v3.db; the league web helpers are this tree's.
   knowline.py server-inflight SINCE UNTIL   SGLang's own batch log on the server host (ssh, read-only; UTC times
                                    'YYYY-MM-DD HH:MM:SS'): most requests in the server (new + running + queued) per
                                    logged batch; other clients of the same server are counted too
+  knowline.py local-only NAME      exit 0 only when KnowLine v NAME and every other open pair of the league run on our
+                                   own hardware with no hosted or paid route (locals.sh skips the OpenRouter balance
+                                   check then, Zeki #4621); prints the evidence per setup; exit 1 with the reason
+                                   otherwise, also for a missing or unknown route (read-only)
 """
 import argparse
 import json
@@ -357,6 +361,71 @@ def server_inflight(args) -> None:
           "server (new + running + queued; other clients included)")
 
 
+# Our own hardware (Zeki #4621). KnowLine: PelaAI's serve_knowline.sh on spark2, exactly this URL. Opponents: decision
+# servers on bariton's loopback (the league runner runs on bariton), reached through one of these runner services
+# (src/players/decision.rs: provider -> default URL and its environment override; none needs a key). A setup with no
+# base_url uses the service default, unless its override variable is set. fastino's default is Fastino's hosted API,
+# so a fastino setup counts only with a loopback base_url of its own. Anything else is not local.
+KNOWLINE_URL = "http://192.168.1.131:19360"
+RUNNER_HOST = "bariton"
+LOCAL_SERVICES = {
+    "clef": ("http://127.0.0.1:18091", "CLEF_BASE_URL"),
+    "cygnet": ("http://127.0.0.1:18093", "CYGNET_BASE_URL"),
+    "pplx-local": ("http://127.0.0.1:18097", "PPLX_LOCAL_BASE_URL"),
+    "winnow": ("http://127.0.0.1:8091", "WINNOW_BASE_URL"),
+    "open-jev": ("http://127.0.0.1:8791", "OPEN_JEV_BASE_URL"),
+    "fastino": (None, "FASTINO_BASE_URL"),
+}
+HOSTED_FIELDS = ("api_key_env", "budget", "request", "reasoning", "rpm", "rate_group")
+
+
+def route(conn, name: str) -> tuple[bool, str]:
+    """(local, evidence) of a setup's recorded route: v3.db players.settings, which the league plays it with."""
+    import os
+    import socket
+    from urllib.parse import urlsplit
+    row = conn.execute("SELECT settings FROM players WHERE name = ?", (name,)).fetchone()
+    if not row:
+        return False, f"{name}: no players row (route unknown)"
+    s = json.loads(row[0])
+    spec = s.get("spec") or ""
+    provider = spec.split("/", 1)[0].lower()
+    head = f"{name}: spec {spec!r}, provider {s.get('provider')!r}, base_url {s.get('base_url')!r}"
+    hosted = [k for k in HOSTED_FIELDS if s.get(k) is not None]
+    if hosted:
+        return False, f"{head}: hosted-route fields {hosted}"
+    if name == NAME:
+        ok = (s == PLAYER and provider == "knowline" and s.get("base_url") == KNOWLINE_URL
+              and str(s.get("provider", "")).startswith("local"))
+        return ok, f"{head}: {'' if ok else 'NOT '}our spark2 KnowLine server (as player.json)"
+    if provider not in LOCAL_SERVICES or not str(s.get("provider", "")).startswith("local"):
+        return False, f"{head}: not a local decision service"
+    default, var = LOCAL_SERVICES[provider]
+    url = s.get("base_url")
+    if url is None:
+        if os.environ.get(var):
+            return False, f"{head}: no base_url and {var} is set (route not from the config)"
+        if default is None:
+            return False, f"{head}: no base_url and the service default is hosted"
+        url = default
+    parts = urlsplit(url)
+    if parts.scheme != "http" or parts.hostname not in ("127.0.0.1", "localhost"):
+        return False, f"{head}: {url} is not this host's loopback"
+    if socket.gethostname() != RUNNER_HOST:
+        return False, f"{head}: loopback here is {socket.gethostname()}, not {RUNNER_HOST}"
+    return True, f"{head}: {url} on {RUNNER_HOST} (our GPU), no key or hosted field"
+
+
+def local_only(args) -> None:
+    conn = ro()
+    others = [o for o in members(conn) if o != args.name and not played(conn, o)]
+    checks = [route(conn, n) for n in [NAME, args.name] + others]
+    for ok, why in checks:
+        print(("local: " if ok else "NOT LOCAL: ") + why)
+    if not all(ok for ok, _ in checks):
+        sys.exit(1)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -374,11 +443,13 @@ def main() -> None:
     s = sub.add_parser("server-inflight")
     s.add_argument("since")
     s.add_argument("until")
+    lo = sub.add_parser("local-only")
+    lo.add_argument("name")
     args = ap.parse_args()
     {"configs": configs, "trigger": trigger, "pending": pending, "open": open_pairs, "billed": billed,
      "scope": scope, "estimate": estimate, "league-id": lambda a: print(league_id() or ""), "settings": settings,
      "parallel-valid": parallel_valid, "parallel-record": parallel_record, "inflight": inflight,
-     "server-inflight": server_inflight}[args.cmd](args)
+     "server-inflight": server_inflight, "local-only": local_only}[args.cmd](args)
 
 
 if __name__ == "__main__":

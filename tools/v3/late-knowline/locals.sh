@@ -5,7 +5,10 @@
 # (+2 GB; a GPU held by someone else is waited for, never freed), starts its server with `agent-bus run RES -- ...`,
 # league-adds it to KnowLine's league, waits until the pair is played, stops the server. It keeps start.sh's guard
 # (OpenRouter balance >= $40 and readable, paid opponents < $5, KnowLine server healthy) itself, so the unit late-knowline
-# (start.sh) must have exited first.
+# (start.sh) must have exited first. The one exception (Zeki #4621): the balance check is skipped while KnowLine v the
+# current opponent and every other open pair of the league are on our own hardware, as `knowline.py local-only`
+# proves from the recorded settings (KnowLine on spark2, the opponent on bariton's loopback, no key, budget or hosted
+# route); a paid, mixed, missing or unknown route keeps the check (the open Mercury Decide pair keeps it too).
 #   systemd-run --user --unit=late-knowline-locals --working-directory=/home/cbasaran/code/jevgammon \
 #     -E OPP_GPU=<n> -E RES=<reservation> /home/cbasaran/code/jevgammon-knowline/tools/v3/late-knowline/locals.sh
 set -uo pipefail
@@ -33,17 +36,28 @@ balance() {
 lt() { python3 -c 'import sys; sys.exit(not float(sys.argv[1]) < float(sys.argv[2]))' "$1" "$2"; }
 spent() { python3 $T/knowline.py billed "$(cat $ST/first)"; }
 healthy() { curl -fsS -m 10 -o /dev/null "$URL/health"; }
-# Guard; returns 1 (and logs) when the run must stop.
+# Guard; returns 1 (and logs) when the run must stop. `current`: the opponent whose pair is being played.
 down=0
 unread=0
+current=
+exempt_for=
 guard() {
-  local bal s
-  if bal=$(balance); then
+  local bal s why
+  if [[ -n $current ]] && why=$(python3 $T/knowline.py local-only "$current" 2>&1); then
+    if [[ $exempt_for != "$current" ]]; then
+      log "locals: OpenRouter balance check skipped for KnowLine v $current, our hardware only (Zeki #4621): $(tr '\n' ' ' <<<"$why")"
+      exempt_for=$current
+    fi
     unread=0
-    if lt "$bal" "$FLOOR"; then log "locals STOPPED: OpenRouter balance \$$bal under \$$FLOOR"; return 1; fi
   else
-    unread=$((unread + 1))
-    (( unread < 3 )) || { log "locals STOPPED: OpenRouter balance unreadable 3 times in a row"; return 1; }
+    exempt_for=
+    if bal=$(balance); then
+      unread=0
+      if lt "$bal" "$FLOOR"; then log "locals STOPPED: OpenRouter balance \$$bal under \$$FLOOR"; return 1; fi
+    else
+      unread=$((unread + 1))
+      (( unread < 3 )) || { log "locals STOPPED: OpenRouter balance unreadable 3 times in a row"; return 1; }
+    fi
   fi
   s=$(spent)
   lt "$s" "$CAP" || { log "locals STOPPED: paid opponents \$$s reached the \$$CAP cap"; return 1; }
@@ -74,6 +88,7 @@ log "locals up: opponents one at a time on GPU $OPP_GPU (reservation $RES); Know
 missing=()
 for o in "${OPPS[@]}"; do
   IFS='|' read -r name need start stop <<<"$o"
+  current=$name
   [[ $(python3 $T/knowline.py pending "$name") == 0 ]] && continue
   guard || { finish "stopped by the guard"; exit 1; }
   until (( $(room "$OPP_GPU") >= need + 2000 )); do sleep 60; done

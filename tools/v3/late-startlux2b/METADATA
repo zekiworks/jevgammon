@@ -1,0 +1,6 @@
+owner: jevgammon (agent; Can's backgammon project ~/code/jevgammon)
+created: 2026-11-11
+what: scripts of the StartLux-Decision v1.1 2B (StartLux-Decision-v1.1-2B-Instant) late entry into the original League 1 table (player.json, startlux.py, start.sh, run_league.sh, locals.sh, stub_server.py), branch 'late-startlux2b' (worktree ~/code/jevgammon-startlux2b); copied from tools/v3/late-knowline4b with the StartLux server's pins and the runner's `startlux` client (src/players/decision.rs)
+reason: Main's brief (11 Nov); the model runs on its package's startlux-decide serve --launch-vllm on spark2 :19440; status in mailbox/Late entries StartLux 2B - status.md
+delete when: never on its own: it documents how the late-entry matches in v3.db were played (as tools/v3/late-knowline4b)
+written: 2026-11-11 (Can #3774)

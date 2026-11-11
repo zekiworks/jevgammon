@@ -1,0 +1,11 @@
+{
+  "name": "StartLux-Decision v1.1 2B",
+  "spec": "startlux",
+  "provider": "local (startlux-decide serve)",
+  "quantization": "bf16",
+  "base_url": "http://192.168.1.131:19440",
+  "note": "StartLux Labs' StartLux-Decision-v1.1-2B-Instant (Hugging Face startlux-models/StartLux-Decision-v1.1-2B-Instant @ f1e6cd147dda82c9ffa3e8e725d5c1f175566fb1, CC BY-NC 4.0; card: 'a 2B decision model', Qwen3_5ForConditionalGeneration with bidirectional prompt attention in its full-attention layers, the uniform average of four seed runs) on our GPU through its package's own server, as the card serves it: startlux-decide 1.1.0 (github.com/StartLuxLabs/StartLux-Decision @ a99977d, clean) serve --launch-vllm with the package's vLLM plugin (bidirectional prompt attention), vLLM 0.31.0 (torch 2.13.0+cu130), BF16 as released, context 131,072, prefix caching and chunked prefill off (Instant folder). Instant: one read-out per pass, no thinking; one letter per option, 26 per pass; longer lists knocked out by the server (groups of at most 25, the 3 best of each to a final pass, the rest share 0.001); serve's default none_check (a hidden 'None of the above' option, choice stays a listed option). No model field; one request at a time from us (one match at a time).",
+  "device": "NVIDIA GB10 (DGX Spark spark2, spark-d9ee), the whole GPU: startlux-decide serve --model <snapshot> --launch-vllm --gpus 0 --host 0.0.0.0 --port 19440 (vLLM 127.0.0.1:8001, --gpu-memory-utilization 0.88)",
+  "parallel": 1,
+  "max_matches": 1
+}

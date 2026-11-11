@@ -950,6 +950,57 @@ mod tests {
         assert_eq!(decision.input_tokens, 1234);
     }
 
+    #[tokio::test(flavor = "multi_thread")]
+    async fn startlux_sends_every_option_without_a_model_field_and_keeps_its_probabilities() {
+        let mut board = Board::start();
+        board.pts[12] = 3;
+        board.pts[7] = 5;
+        let plays = board.legal_plays(2, 1);
+        let n = plays.len();
+        assert!(n > 8, "{n}");
+        let notations: Vec<String> = plays.iter().map(|p| p.notation()).collect();
+        let order: Vec<usize> = (0..n).rev().collect();
+        let retry = RetryTime::default();
+        let req = request(&board, &plays, &notations, &order, 1, &retry);
+        let (url, stub) = systemone_stub();
+        let service = decision::service("startlux").expect("startlux service");
+        let client =
+            decision::DecisionClient::new(reqwest::Client::new(), service, None, Some(&url))
+                .unwrap();
+        assert_eq!(client.max_choices(), 255);
+        let player = Player {
+            spec: "startlux".into(),
+            provider: "startlux".into(),
+            quantization: Some("bf16".into()),
+            reasoning: None,
+            price: None,
+            requests: None,
+            backend: Backend::Decision(client),
+        };
+        let decision = player.decide(&req).await.unwrap();
+        let body = stub.join().unwrap();
+        assert!(
+            body.get("model").is_none(),
+            "the server takes no model field"
+        );
+        assert_eq!(body["state"], prompt::state(&req));
+        assert_eq!(body["questions"]["play"]["type"], "choice");
+        let shown: Vec<&String> = body["questions"]["play"]["criteria"]
+            .as_object()
+            .unwrap()
+            .keys()
+            .collect();
+        let want: Vec<&String> = order.iter().map(|&i| &notations[i]).collect();
+        assert_eq!(shown, want, "every option in the seeded order");
+        assert!(!decision.invalid && decision.group_size.is_none());
+        assert_eq!(decision.exchanges.len(), 1);
+        assert_eq!(decision.index, order[2]);
+        assert_eq!(decision.probability_source, Some("decision"));
+        assert_eq!(decision.probabilities.len(), n);
+        assert!(decision.probabilities.contains(&(order[2], 0.7)));
+        assert_eq!(decision.input_tokens, 1234);
+    }
+
     #[test]
     fn cost_uses_the_price_table() {
         let player = Player {

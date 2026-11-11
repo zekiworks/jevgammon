@@ -259,6 +259,29 @@ pub const SERVICES: &[Service] = &[
         openai_format: false,
         max_choices: 255,
     },
+    // StartLux-Decision v1.1 Instant checkpoints (startlux-models on Hugging Face) behind the
+    // `startlux-decide serve --launch-vllm` server of their package (github.com/StartLuxLabs/
+    // StartLux-Decision, vLLM with its plugin for the bidirectional prompt attention). It takes
+    // no model field (the loaded folder answers) and reads one letter per option, 26 per pass;
+    // longer lists are knocked out by the server itself (groups of at most 25, the 3 best of each
+    // to a final pass; the rest share 0.001), so a question takes up to 255 options here like
+    // every 255-option service. `serve` adds a hidden "None of the above" option to every pass
+    // (none_check) and reports `none_probability`; the choice stays a listed option. It never
+    // truncates: vLLM refuses a prompt over its context (131,072 tokens on spark2) and the server
+    // answers 422, which fails the decision. League 1's longest stored request, 251 options, is
+    // 27,462 tokens of the 2B's tokenizer as one prompt; its longest pass is 5,318.
+    Service {
+        provider: "startlux",
+        label: "StartLux-Decision (local)",
+        base_url: "http://127.0.0.1:19440",
+        url_var: "STARTLUX_BASE_URL",
+        path: "/v1/systemone",
+        key_vars: &[],
+        key_required: false,
+        default_model: None,
+        openai_format: false,
+        max_choices: 255,
+    },
 ];
 
 pub fn service(provider: &str) -> Option<&'static Service> {

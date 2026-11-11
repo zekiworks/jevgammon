@@ -24,8 +24,6 @@ LIMIT_HARD = ("Setups met different positions; risk judgement is not adjusted fo
               "comparisons wait for the shared positions.")
 # Under the risk leaderboard chart (Ümit #2564; wording Zeki #2578).
 RANK_NOTE = "Ranks show observed scores; small gaps need not be meaningful."
-# The hero's three buttons (Ümit #2938 item 2): Every decision, Highlights, Read the method.
-HERO_LINKS = [("Every decision", "decisions/"), ("Highlights", "highlights/"), ("Read the method", "method/")]
 GNUBG_WEAK = "x86-64 build: its noise is shifted, so it overplays gammons"
 CALL_LABEL = {"needless": "needless risks", "missed": "missed risks", "wrong_risk": "wrong risks",
               "right_risk": "right risks", "right_safety": "right safety", "none": "No trade-off"}
@@ -1799,12 +1797,14 @@ def how_scores(S) -> str:
             f'<p class="table-note"><a href="about/#scores">More in About</a></p></section>')
 
 
+# The hero (Ümit #4862 item 5): the section's short name only; the nav carries the ways in (Highlights is its tab).
+HERO_TITLE = "Risk calls"
+
+
 def hero_card(S) -> str:
-    links = "".join(f'<a class="key" href="{href}">{esc(label)}</a>' for label, href in HERO_LINKS)
     return f"""
     <section class="card hero hero-card">
-      <h1>{esc(P.TITLE)}</h1>
-      <nav class="hero-links" aria-label="Main parts">{links}</nav>
+      <h1>{esc(HERO_TITLE)}</h1>
     </section>"""
 
 

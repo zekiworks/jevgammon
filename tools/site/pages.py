@@ -1583,10 +1583,9 @@ def compare_page(S) -> str:
 
 
 def vision_page(S) -> str:
-    return (page_head(S, "Vision", "Vision")
-            + '<section class="card" id="vision"><p>No vision runs yet: every model here reads the board as text '
-              '(points, dice and legal plays), never a picture of the board.</p>'
-              '<p><a href="../">See the text results \u2192</a></p></section>')
+    """One sentence and the way back, nothing else (Ümit #4862 item 8); the heading for screen readers only."""
+    return ('<section class="card" id="vision"><h1 class="visually-hidden">Vision</h1><p>No vision runs yet: every '
+            'model here reads the board as text.</p><p><a href="../">See the text results \u2192</a></p></section>')
 
 
 def disagreements_page(S) -> str:

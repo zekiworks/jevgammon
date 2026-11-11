@@ -645,14 +645,16 @@ def result_row(pm, p, m, refused, i: int, links: dict) -> str:
     else:
         status_, done = esc(progress_status(p)), f'{p["series_done"]} / {V.SERIES}'
     if m is None:
-        change, bar, rs = "<td></td>", "<td></td>", "<td></td>"
+        change, bar, rs, spread = "<td></td>", "<td></td>", "<td></td>", None
     else:
         ch = m["change"]
         change = (f'<td class="num"><strong data-rcell="rf-change">'
                   f'{fmt(ch["risks_found"], 1, signed=True) or nm(NA)}</strong><br><span class="small" data-rcell="rf">'
                   f'{before_after(m, "risks_found")}</span></td>')
-        bar = (f'<td class="num"><span data-rcell="threshold">{num(m["threshold"])}</span><br>'
-               f'<span class="small">spread <span data-rcell="range">{num(m["range"])}</span></span></td>')
+        bar = f'<td class="num"><span data-rcell="threshold">{num(m["threshold"])}</span></td>'
+        # The empty-run spread the threshold comes from (Ümit #4862 item 8): in the row's details, not the table.
+        spread = (f'Empty-run spread <span data-rcell="range">{num(m["range"])}</span> pp (max − min of risks found '
+                  'over its 3 empty runs)')
         rs = f'<td class="num" data-rcell="rs">{before_after(m, "right_safety")}</td>'
     verdict = (f'<span data-rcell="verdict">{verdict_text(m)}</span>' if m is not None else "")
     name = re.sub(r" \([^()]*\)$", "", pm["setup"])
@@ -663,7 +665,7 @@ def result_row(pm, p, m, refused, i: int, links: dict) -> str:
            esc(P.class_note(name)) if P.class_note(name) else None,
            "Route: " + ("our GPU" if pm["route"].startswith("local") else _inline(pm["route"])),
            None if refused else f"Status: {status_}", None if refused else f"Series done {done}",
-           m and answers_line(m), m and change_line(m), links.get(pm["setup"]) or links.get(name)]
+           m and answers_line(m), m and change_line(m), spread, links.get(pm["setup"]) or links.get(name)]
     cls, labelled = model_class(name)
     return (f'<tr data-progress-setup="{esc(pm["setup"])}" data-group="chat" data-class="{cls}" data-box="{bid}">'
             f'{name_cell(pm["setup"], dot, bid, box, sized=labelled)}{change}{bar}<td>{verdict}</td><td>Chat</td>'
@@ -710,10 +712,11 @@ def results_section(L, S=None) -> str:
                       f'{t}</button>' for k, t in (("all", "All"), ("chat", "Chat models"), ("decision", "Decision models")))
             + "</div>" + P.class_keys("improve-class"))
     cap = (f'{count(len(L["plan"]["models"]))} chat models under the pre-registered rule: finished first (by the change '
-           'in risks found), then running, then not started. Bar = what the change must beat: the spread (max − min) of '
-           'the model\'s own risks found over its 3 empty runs, at least 5 points. Rows marked "planned, not a result" '
+           'in risks found), then running, then not started. Improvement threshold = what the change must beat: the '
+           'spread (max − min) of the model\'s own risks found over its 3 empty runs (in each row\'s details), at least '
+           '5 points. Rows marked "planned, not a result" '
            'are not run yet and show no numbers; a decision setup has one row per arm (notes, worst mistakes).')
-    head = ["Model", "Change in risks found (before → after)", "Bar (empty-run spread)", "Improved?", "Group", "Status",
+    head = ["Model", "Change in risks found (before → after)", "Improvement threshold (pp)", "Improved?", "Group", "Status",
             f"Series (of {V.SERIES})", "Right safety before → after"]
     return (keys + P.SWIPE
             + P.table(head, rows_, "Results, one row per model", cls="board list improve-progress",
@@ -748,7 +751,7 @@ def summary() -> str:
             'times with no memory (before = the mean of those empty runs), then plays 5 series of 10 games against '
             'GNUbg weak, writing its own lessons after each game, and takes the test again after game 10 of each '
             'series (after = the mean of the 5). <strong>Improved?</strong> is Yes when risks found rises by more than '
-            'the bar (the spread, max − min, of its own 3 empty runs, at least 5 points) and right safety falls by no '
+            'the improvement threshold (the spread, max − min, of its own 3 empty runs, at least 5 points) and right safety falls by no '
             'more than 5 points. This is an operational threshold, not a statistical test. Yes or No only once every '
             'run is complete.</p>')
 

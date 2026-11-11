@@ -464,7 +464,7 @@ table.headline tbody tr.hl-open > td, #improve-results-table tbody tr.hl-open > 
    the header's) sticky cells, the box in plain text, not the row header's bold. */
 #improve-results-table tbody tr.hl-open > th:first-child { z-index: 4; }
 #improve-results-table .hl-box { font-weight: 400; text-align: left; }
-/* On a phone the table fits the screen (Ümit): Model, Change, Bar and Improved? only (the first four columns, so
+/* On a phone the table fits the screen (Ümit): Model, Change, Improvement threshold and Improved? only (the first four columns, so
    Improved? is in view without a sideways scroll at any width, #4665); the group, status, series and right safety are
    in each row's details box. */
 @media (max-width: 640px) {
@@ -507,15 +507,17 @@ table.headline tr.reference td { color: var(--text-2); }
 .hbar-fill.ts-found, i.swatch-ts-found { background-image: repeating-linear-gradient(135deg, rgba(255, 255, 255, .55) 0 3px, rgba(0, 0, 0, .12) 3px 6px); }
 .hbar-fill.ts-grey, i.swatch-ts-grey { background-color: var(--data-grey); }
 i.swatch-ts-safety, i.swatch-ts-found { background-color: var(--text-2); }
-/* Wide screens: four more columns (Ümit #2938 item 3: risks found, safe right, error rate, $ per 1,000). */
-table.headline th[data-wide], table.headline td.hl-wide, .hl-wide-note { display: none; }
+/* Wide screens: two more columns (Ümit #2938 item 3, #4862 item 4: error rate, $ per 1,000); every other value is in
+   the row's details box, so the table fits its box at 1280 px. */
+table.headline th[data-wide], table.headline td.hl-wide { display: none; }
 @media (min-width: 900px) {
   table.headline th[data-wide], table.headline td.hl-wide { display: table-cell; white-space: nowrap; }
-  td.hl-judgement { width: 34%; }
-  /* Tier (same positions), Ümit #4313: the wide heads wrap (their cells do not) so the fifth column fits at 1280. */
-  table.headline th[data-wide] { white-space: normal; }
-  .hl-wide-note { display: inline; }
+  td.hl-judgement { width: 40%; }
 }
+/* The cost cell (Ümit #4862 item 4): '$x', its short tag under it; the price basis on hover, focus and tap. */
+table.headline .hl-cost-tag { display: block; }
+/* The leaderboard's own table has no fixed height (Ümit #4862 item 4): the page scrolls, not the box. */
+#leaderboard [data-headline-panel="model"] .table-wrap { max-height: none; }
 /* Wide desktop windows: the model column wide enough for the name and its chip on one line (Ümit #3193). */
 @media (min-width: 1200px) {
   table.headline td.model { min-width: 22.5rem; }
@@ -527,9 +529,10 @@ table.headline th[data-wide], table.headline td.hl-wide, .hl-wide-note { display
   table.headline td.model { min-width: 0; }
   table.headline th, table.headline td { padding-left: .35rem; padding-right: .35rem; }
   table.headline tr.hl-sub td.model { padding-left: .6rem; }
-  /* The bar column takes only what the model column leaves (min 8rem), and the chip may wrap between its parts, so
-     names stay readable and the chip never pushes the score and its interval past the table's frame (Zeki #3240). */
-  table.headline td.hl-judgement { width: auto; min-width: 8rem; }
+  /* The bar column takes only what the model column leaves (min 6rem: the interval is in the tooltip, Ümit #4862),
+     and the chip may wrap between its parts, so names stay readable and the chip never pushes the score past the
+     table's frame at 375 px (Zeki #3240). */
+  table.headline td.hl-judgement { width: auto; min-width: 6rem; }
   table.headline td.model > .hl-tag { white-space: normal; border-radius: .6rem; }
 }
 .finding h2 { font-size: 1.25rem; }

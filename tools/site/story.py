@@ -68,7 +68,8 @@ def about_text(S, rel: str) -> str:
             'with the type; a class with no model in the type in view has no key); the programs are reference rows in '
             'every view and in no class. Rank is the league rank and has no tiers: a tier needs a paired exact test '
             '(McNemar, Holm) over one question set every model answered, and the leagues played different positions, so '
-            'no pair of models in different leagues shares one. The Tier column comes from the same 200 positions.</p>'
+            'no pair of models in different leagues shares one. The tier in a row\'s details comes from the same 200 '
+            'positions.</p>'
             f'<p>{esc(P.CLASS_RULE)} The maker\'s own figure (model card, announcement or model name), never our '
             'count; the standard price, never an introductory one, and "(provisional)" where the maker publishes only '
             'an introductory or launch price. Never estimated: Undisclosed is a model with neither (never a chat '
@@ -200,15 +201,15 @@ def row_name(x, kind: str) -> str:
 
 def judgement_cell(r: dict, colour: str | None) -> str:
     """The risk judgement as a bar on 0 to 100 to the score, its 95% interval as the whisker, the line at 50 (always
-    safe), and the number."""
+    safe), and the number; the interval's bounds in the cell's tooltip and the row's details box (Ümit #4425 JOB 8)."""
     j, lo, hi = r["judgement"], r["judgement_lo"], r["judgement_hi"]
     if j is None:
         return f'<td class="num">{nm(r["judgement_na"] or NA)}</td>'
     fill = f' style="width:{j:.2f}%;background-color:{colour}"' if colour else f' style="width:{j:.2f}%"'
-    return (f'<td class="hl-judgement" data-v="{j}"><span class="hl-bar" aria-hidden="true"><span class="hl-fill'
-            f'{"" if colour else " other"}"{fill}></span><span class="hl-int" style="left:{lo:.2f}%;width:{hi - lo:.2f}%">'
-            f'</span><span class="hl-safe"></span></span><span class="hl-val">{fmt(j)}<span class="small">{fmt(lo)} to '
-            f'{fmt(hi)}</span></span></td>')
+    return (f'<td class="hl-judgement" data-v="{j}" title="95% interval {fmt(lo)} to {fmt(hi)}"><span class="hl-bar" '
+            f'aria-hidden="true"><span class="hl-fill{"" if colour else " other"}"{fill}></span><span class="hl-int" '
+            f'style="left:{lo:.2f}%;width:{hi - lo:.2f}%"></span><span class="hl-safe"></span></span>'
+            f'<span class="hl-val">{fmt(j)}</span></td>')
 
 
 def decisions_href(S, x) -> str | None:
@@ -251,11 +252,8 @@ def cost_text(S, x) -> str | None:
     q = x["q"]
     if q is None or q.get("usd_per_1000") is None:
         return f'On {esc(P.own_machine(q))}' if P.own_machine(q) else None
-    if P.own_machine(q):  # on our machines (Ümit #4665 item 4): the estimate, then where it ran
-        label = f"estimate \u00b7 {P.own_machine(q)}"
-    else:
-        label = ((x["late"].get("price") or {}) if x["late"] else
-                 (P.origin_meta(S, x["ds"], x["name"]).get("price") or {})).get("label")
+    # on our machines (Ümit #4665 item 4): the estimate, then where it ran
+    label = f"estimate \u00b7 {P.own_machine(q)}" if P.own_machine(q) else price_label(S, x)
     return (f'<span class="cost-1k">${fmt(q["usd_per_1000"], 3)} per 1,000 decisions</span><span class="cost-1m" '
             f'data-usd="{q["usd_per_1000"]!r}">${fmt(q["usd_per_1000"], 3)}</span><span class="cost-1m"> per 1M decisions</span>'
             + (f' ({esc(label)})' if label else ""))
@@ -297,6 +295,8 @@ def details_box(S, x, kind: str, bid: str, extra: list, ref: str | None = None) 
         (esc(P.class_note(x["model"])) if kind != "program" and P.class_note(x["model"]) else None),
         # The model it is built on (Ümit #4445: in the details, not in the name; content/model_names.json base_model).
         (f'Base model: {esc(base_model(x["model"]))}' if kind != "program" and base_model(x["model"]) else None),
+        # The Same positions tier (Ümit #4313), in the box since the table keeps five columns (Ümit #4862 item 4).
+        f'Tier (same positions) {esc(tier_text(x["name"]))}',
         *extra,
         links_line(S, x)]
     return box_html(bid, x["name"], lines)
@@ -356,7 +356,6 @@ def headline_rows(S) -> tuple[list, list, list]:
             ref = H.ref_label(S, x["ds"], x["name"]) if kind == "program" else None
             extra = []
             if kind == "model":
-                extra.append(f'Tier (same positions) {esc(tier_text(x["name"]))}')
                 month, url = release(name)
                 if url:
                     extra.append(f'Released <a href="{esc(url)}">{month}</a>')
@@ -376,8 +375,8 @@ def headline_rows(S) -> tuple[list, list, list]:
             bid = f"{rid}-box"
             body.append(f'<tr{cls}{tr_attrs(S, x, kind, typ, mclass)} data-box="{bid}">{rank}<td class="model">{dot}{icon}'
                         f'{name_link(S, x, row_name(x, kind), bid)}{labelled}{tag}{more}'
-                        f'{details_box(S, x, kind, bid, extra, ref)}</td>{judgement_cell(x["r"], colour)}{wide_cells(x)}'
-                        f'{tier_cell(x)}</tr>')
+                        f'{details_box(S, x, kind, bid, extra, ref)}</td>{judgement_cell(x["r"], colour)}{wide_cells(S, x)}'
+                        '</tr>')
             for sid, y in zip(sub_ids, others):
                 ycol = H.maker(y["name"])[1] if kind == "model" else None
                 ybid = f"{sid}-box"
@@ -385,25 +384,20 @@ def headline_rows(S) -> tuple[list, list, list]:
                 body.append(f'<tr class="hl-sub{"" if kind == "model" else " reference"}" '
                             f'id="{sid}" hidden{tr_attrs(S, y, kind, typ, mclass)} data-box="{ybid}"><td class="num"></td><td class="model">'
                             f'{name_link(S, y, row_name(y, kind), ybid)}{ytag}'
-                            f'{details_box(S, y, kind, ybid, [], ref)}</td>{judgement_cell(y["r"], ycol)}{wide_cells(y)}'
-                            f'{tier_cell(y)}</tr>')
+                            f'{details_box(S, y, kind, ybid, [], ref)}</td>{judgement_cell(y["r"], ycol)}{wide_cells(S, y)}'
+                            '</tr>')
             if kind != "program" or x["name"] == "GNUbg weak":
                 chart.append((kind, label, x, colour))
     return body, missing, chart
 
 
-# Wide screens add four columns (Ümit #2938 item 3): risks found, safe right, error rate, $ per 1,000 decisions; bg.css
-# hides the hl-wide cells below 900 px, where the details box holds the same values.
-WIDE_HEAD = ["Risks found", "Safe right", "Error rate (PR)",
-             '<span class="cost-1k">$ per 1,000</span><span class="cost-1m">$ per 1M</span>']
-# Ümit #4313: each ranked row's tier from Same positions (story.SAME), after the wide columns (never a guess); a row
-# not in that computation says so (Ümit #4399 JOB 7): 'not run yet', or how many of the 200 answers are stored. The
-# same rule for other-setting rows and program rows: none of them is in the run. Below 900 px the details box carries
-# it, like the other wide columns.
-TIER_HEAD = "Tier (same positions)"
+# Wide screens add two columns (Ümit #2938 item 3, #4862 item 4): error rate and $ per 1,000 decisions, so the table
+# fits its box at 1280 px; bg.css hides the hl-wide cells below 900 px. Risks found, safe right, the decisions and the
+# Same positions tier (Ümit #4313; 'not run yet', or how many of the 200 answers are stored) are in each row's box.
+WIDE_HEAD = ["Error rate (PR)", '<span class="cost-1k">$ per 1,000</span><span class="cost-1m">$ per 1M</span>']
 TIER_NOTE = "Rank comes from league play; tier comes from the same 200 positions for every model."
-HEADLINE_HEAD = ([(h, " data-nosort") for h in ("Rank", "Model", "Risk judgement (95% interval)")]
-                 + [(h, " data-nosort data-wide") for h in WIDE_HEAD] + [(TIER_HEAD, " data-nosort data-wide data-tier")])
+HEADLINE_HEAD = ([(h, " data-nosort") for h in ("Rank", "Model", "Risk judgement")]
+                 + [(h, " data-nosort data-wide") for h in WIDE_HEAD])
 
 
 def tier_text(name: str) -> str:
@@ -413,29 +407,41 @@ def tier_text(name: str) -> str:
     return f'{PARTIAL[name]} of 200 so far' if name in PARTIAL else "not run yet"
 
 
-def tier_cell(x) -> str:
-    """The row's Same positions tier cell (tier_text)."""
-    return f'<td class="num hl-wide">{esc(tier_text(x["name"])) if x["name"] in TIER else nm(tier_text(x["name"]))}</td>'
+def price_label(S, x) -> str | None:
+    """The setup's price basis as its setups.json (a late entry: its own) entry names it."""
+    return ((x["late"].get("price") or {}) if x["late"] else
+            (P.origin_meta(S, x["ds"], x["name"]).get("price") or {})).get("label")
 
 
-def wide_cells(x) -> str:
-    """The four wide-screen cells of a row, each the setup's stored value as its details box prints it; a dash where
-    the data has none."""
-    r, q = x["r"], x["q"]
-    dash = '<span class="muted">\u2013</span>'
-    share = lambda s: pct(s["share"]) if s["den"] else dash  # noqa: E731
-    er = fmt(q["error_rate"]) if q and q.get("error_rate") is not None and not q.get("too_few") else dash
+# The cost cell's one short tag (Ümit #4862 item 4); the price basis in full on hover, focus and tap, and in the box.
+COST_NOTE = "At each setup's price basis (a list price, or API-equivalent for a subscription); not a bill paid."
+
+
+def cost_cell(S, x) -> str:
+    """'$x' and a small tag: 'GPU estimate' on our machines (how it was counted in the tooltip), 'billed' for a billed
+    API price, else 'list price' (the price basis in the tooltip); a dash where the data has none."""
+    q = x["q"]
     usd = q.get("usd_per_1000") if q else None
-    if P.own_machine(q) and usd is not None:  # on our machines (Ümit #4665 item 4): the estimate, the machine under it
-        cost = P.own_cost_text(q, f'<span class="cost-1k">${fmt(usd, 3)}</span><span class="cost-1m" '
-                                  f'data-usd="{usd!r}">${fmt(usd, 3)}</span>')
-    elif P.own_machine(q):
-        cost = P.own_cost_hint(q, esc(P.own_machine(q)))
-    else:
-        cost = (P.own_cost_hint(q, f'<span class="cost-1k">${fmt(usd, 3)}</span><span class="cost-1m" '
-                                   f'data-usd="{usd!r}">${fmt(usd, 3)}</span>') if usd is not None else dash)
-    return "".join(f'<td class="num hl-wide"{t}>{v}</td>' for v, t in
-                   ((share(r["found"]), ""), (share(r["right_safety"]), ""), (er, ""), (cost, P.own_cost_sort(q))))
+    amount = ('<span class="muted">\u2013</span>' if usd is None else
+              f'<span class="cost-1k">${fmt(usd, 3)}</span><span class="cost-1m" data-usd="{usd!r}">${fmt(usd, 3)}</span>')
+    if P.own_machine(q):
+        return P.own_cost_hint(q, amount) + '<span class="small hl-cost-tag">GPU estimate</span>'
+    if usd is None:
+        return amount
+    label = price_label(S, x)
+    tip = f'{label}. {COST_NOTE}' if label else COST_NOTE
+    tag = "billed" if label and "(billed)" in label else "list price"
+    return (f'<span class="hint" tabindex="0" data-tip="{esc(tip)}">{amount}</span>'
+            f'<span class="small hl-cost-tag">{tag}</span>')
+
+
+def wide_cells(S, x) -> str:
+    """The two wide-screen cells of a row: the error rate as its details box prints it, and the cost (cost_cell); a
+    dash where the data has none."""
+    q = x["q"]
+    er = (fmt(q["error_rate"]) if q and q.get("error_rate") is not None and not q.get("too_few")
+          else '<span class="muted">\u2013</span>')
+    return f'<td class="num hl-wide">{er}</td><td class="num hl-wide"{P.own_cost_sort(q)}>{cost_cell(S, x)}</td>'
 
 
 def too_safe(S, chart: list) -> str:
@@ -463,8 +469,7 @@ def too_safe(S, chart: list) -> str:
               '<span><i class="swatch swatch-ts-grey"></i>GNUbg weak, a program: the grey reference pair</span> '
               f'<span>Bars in the maker\'s colour, the same rows as the table:</span> <span class="families">{legend_makers}</span>')
     return (f'<figure class="chart-card chart-wide finding-chart too-safe" id="too-safe"><div class="chart-head">'
-            f'<h3>Too safe</h3><p class="chart-sub">Each model\'s row of the table: the share of its right-safety calls '
-            f'and of the risks it found, as in the table</p></div>{chart_html}<p class="chart-legend">{legend}</p></figure>')
+            f'<h3>Too safe</h3></div>{chart_html}<p class="chart-legend">{legend}</p></figure>')
 
 
 # The two lines around the table (Ümit #2938 item 3): the score's meaning above it, the row rule (with the All leagues
@@ -475,8 +480,8 @@ ROW_LINE = "One row per model at its highest reasoning setting, never its best s
 # Under the table, next to the not-paired note (Ümit #4282 item 2): why # has no tiers, plainly.
 NO_TIERS = ("Rank counts 1, 2, 3 down the models shown, in league order (with a filter on, among those models only); it has no tiers: a tier needs a paired test (McNemar, Holm) over positions every "
             "model answered, and each league played its own positions, so models in different leagues never answered "
-            "the same ones. The Tier column and Same positions (preview) come from 200 positions every model there "
-            "answered.")
+            "the same ones. The tier in each row's details and Same positions (preview) come from 200 positions every "
+            "model there answered.")
 # Same positions (preview, Zeki #4287): the stored E1 answers of 'Did they improve?' (content/same_positions_preview.json,
 # tools/site/same_positions_publish.py), tiers by exact McNemar with Holm.
 SAME = json.loads((CONTENT / "same_positions_preview.json").read_text())
@@ -537,14 +542,17 @@ def headline(S) -> str:
                        f'{l}</button>' for k, l in (("all", "All"), ("chat", "Chat models"), ("decision", "Decision models")))
              + "</div>" + P.class_keys("hl-filter"))
     return (f'<section class="card headline" id="leaderboard" data-dataset="all" aria-labelledby="leaderboard-title">'
-            f'<div class="chart-head"><h2 id="leaderboard-title">Risk calls leaderboard</h2>{keys}</div>'
-            f'<div data-headline-panel="model">{types}{table}<p class="table-note hl-tier-note">{esc(TIER_NOTE)}</p></div>'
+            f'<div class="chart-head"><h2 id="leaderboard-title">Leaderboard</h2>{keys}</div>'
+            f'<div data-headline-panel="model">{types}{table}</div>'
             f'<div data-headline-panel="all" hidden>{H.all_risk_table(S)}{caveat(H.RANK_NOTE, "statistics")}</div>'
             f'<div data-headline-panel="same" hidden>{same_positions()}</div>'
-            f'<p class="table-note headline-rule">{esc(MEANING)} {esc(ROW_LINE)} {esc(ALL_NOTE)} {esc(NO_TIERS)} '
-            '<a href="about/#leaderboard">How rows are chosen</a><span class="hl-wide-note"> $ per 1,000 decisions: at '
-            'each setup\'s price basis, which its details name (a list price, or API-equivalent for a subscription); '
-            'not a bill paid.</span></p></section>')
+            # The score's meaning and the row rule as short labels; the longer notes under '*' (Ümit #4862 item 5).
+            + P.star_note(f'{esc(MEANING)} {esc(ROW_LINE)}',
+                          f'<p>{esc(ALL_NOTE)} {esc(NO_TIERS)} {esc(TIER_NOTE)}</p><p>95% intervals: the whisker on '
+                          f'each bar; the bounds on hover and in each row\'s details. $ per 1,000 decisions: {esc(COST_NOTE)} '
+                          'Each row\'s details name its price basis.</p><p><a href="about/#leaderboard">How rows are '
+                          'chosen</a></p>', cls="table-note headline-rule")
+            + '</section>')
 
 
 # --- Finding sections ----------------------------------------------------------------------------------------------
@@ -596,11 +604,12 @@ def _bars(rows: list, lo: float, hi: float, ticks: list, head: str, zero: bool =
             f'<span class="hbar-head">{head}</span></div><ol class="hbars headed">{"".join(out)}</ol>')
 
 
-def finding(fid: str, heading: str, sentences: str, chart: str, legend: str, warn: str, link: tuple[str, str]) -> str:
-    """A finding section (Ümit #2938 item 2): the heading states the finding, one chart, two or three sentences and one
-    link (href relative to the site's root, label)."""
+def finding(fid: str, heading: str, scope: str, chart: str, legend: str, warn: str, link: tuple[str, str]) -> str:
+    """A finding section (Ümit #2938 item 2): the heading states the finding, one chart, one short label line (scope,
+    counts, units, uncertainty: never a sentence that restates the chart, Ümit #4862 item 5) and one link (href
+    relative to the site's root, label)."""
     return (f'<section class="card finding" id="{fid}" aria-labelledby="{fid}-title"><h2 id="{fid}-title">{esc(heading)}</h2>'
-            f'<p class="finding-text">{sentences}</p><figure class="chart-card chart-wide finding-chart">{chart}'
+            f'<p class="finding-text finding-scope">{scope}</p><figure class="chart-card chart-wide finding-chart">{chart}'
             + (f'<p class="chart-legend">{legend}</p>' if legend else "") + '</figure>'
             f'<p class="table-note section-caveat">{esc(warn)} <a href="{link[0]}">{esc(link[1])}</a></p></section>')
 
@@ -637,19 +646,11 @@ def cautious(S) -> str:
 def flinch(S) -> str:
     rows = q1_bias(S)
     safer = [r for r in rows if r[2] > r[4]]
-    neg = [r for r in rows if r[4] < 0]
     all_ = len(safer) == len(rows)
     # Observed, not tested (Zeki, bus #2578: no new statistics): the heading says what the two versions showed.
     heading = ("With the numbers on screen, every model asked played safer" if all_ else
                f"With the numbers on screen, {count(len(safer))} of {count(len(rows))} models asked played safer")
-    big = max(rows, key=lambda r: r[2] - r[4])
-    small = min(rows, key=lambda r: r[2] - r[4])
-    text = (f'Asked which of two plays is better on the same rollout-confirmed positions, '
-            f'{"all " + count(len(rows)) if all_ else count(len(safer)) + " of " + count(len(rows))} models chose the safe '
-            f'play more often when the prompt showed each play\'s computed numbers than from the board alone: the bias '
-            f'(missed minus needless) moves from {esc(big[3])} to {esc(big[1])} for {esc(big[0])} and from {esc(small[3])} '
-            f'to {esc(small[1])} for {esc(small[0])}. From the board alone, {count(len(neg))} of them '
-            f'({", ".join(esc(r[0]) for r in neg)}) took more needless risks than they missed.')
+    text = f'{count(len(rows))} models asked · the same rollout-confirmed positions, two plays each · bias in pp'
     bars = []
     for m, tn, vn, tb, vb in sorted(rows, key=lambda r: -r[2]):
         bars.append((esc(m), [(vn, "q1-numbers", H.maker(m)[1]), (vb, "q1-board", None)],
@@ -698,19 +699,8 @@ def two_skill(S) -> str:
     right where safety paid."""
     N = two_skill_numbers(S)
     rows, models, gnu, below, heading = N["rows"], N["models"], N["gnu"], N["below"], N["heading"]
-    f = [x["r"]["found"]["share"] for x in N["ends"]["found"]]
-    s = [x["r"]["right_safety"]["share"] for x in N["ends"]["right_safety"]]
-    who = f"Every one of the {count(len(models))}" if len(below) == len(models) else \
-        f"{count(len(below))} of the {count(len(models))}"
-    text = (f'{who} ranked models found a worthwhile risk (a risky play at least 0.001 better than the best safe play) '
-            f'in a smaller share of the risk-pays positions than the share of safety-pays positions they played safe: '
-            f'risks found runs from {pct(f[0])} to {pct(f[-1])}, safe right from {pct(s[0])} to {pct(s[-1])}.')
-    if gnu:
-        g = gnu["r"]
-        text += (f' GNUbg weak, a weak setting of the engine (grey square), is close to even: {pct(g["right_safety"]["share"])} '
-                 f'safe right, {pct(g["found"]["share"])} risks found.')
-    text += (' Above the diagonal, a model succeeds more often when safety pays than when risk pays; the chart compares '
-             'these two success rates, not how often a model plays risky at all.')
+    text = (f'{count(len(models))} ranked models, one dot each · worthwhile risk: at least 0.001 better than the best '
+            f'safe play')
     W, Hh, L, B, T, R = 520, 420, 52, 44, 12, 14
     x = lambda v: L + (W - L - R) * v  # noqa: E731
     y = lambda v: Hh - B - (Hh - B - T) * v  # noqa: E731
@@ -743,7 +733,8 @@ def two_skill(S) -> str:
               + ' <span><i class="swatch swatch-ts-grey"></i>GNUbg weak (program, reference)</span>'
               ' <span>Dashed diagonal: as often right on both</span>')
     return finding("finding-cautious", heading, text, chart, legend,
-                   "Not paired: models met different positions in different leagues.",
+                   "Not paired: models met different positions in different leagues. The chart compares two success "
+                   "rates, not how often a model plays risky.",
                    ("method/#risk-metrics", "How risks found and safe right are counted"))
 
 
@@ -766,12 +757,8 @@ def release_chart(S) -> str:
                    for a, b in zip(months, months[1:]))
     ok = len(spread) >= 2 and all(rising(p) for p in spread.values())
     heading = "Newer models judge risk better" if ok else "Risk judgement by release date"
-    lines = "; ".join(f'{esc(mk)} {", ".join(fmt(p[2]) for p in pts)}' for mk, pts in spread.items())
-    text = (f'A release month is documented for {count(len(dated))} of the {count(len(rows))} ranked models; only those '
-            'are shown, each at the month of its maker\'s own dated statement.')
-    if spread:
-        text += (f' Makers with models in different months, earliest first: {lines}.'
-                 + ("" if ok else " That is not a consistent increase across the makers shown."))
+    text = (f'{count(len(dated))} of the {count(len(rows))} ranked models, those with a documented release month, each '
+            'at the month of its maker\'s own dated statement')
     months = sorted({d[0] for d in dated})
     if not months:
         return ""
@@ -866,10 +853,9 @@ def reasoning(S) -> str:
     N = reasoning_numbers(S)
     if N is None:
         return ""
-    groups, n, heading, ex = N["groups"], N["n"], N["heading"], N["ex"]
-    text = (f'{N["lead"]} {N["counts"]} {esc(ex[0])}, {esc(ex[2][0]["setting"] or "")} to '
-            f'{esc(ex[2][-1]["setting"] or "")}: risk judgement {", ".join(fmt(x["r"]["judgement"]) for x in ex[2])}; '
-            f'error rate {", ".join(fmt(_er(x)) for x in ex[2])}.')
+    groups, n, heading = N["groups"], N["n"], N["heading"]
+    # The two count sentences stay: the Highlights card quotes them from this page (highlight_cards, checks).
+    text = f'{N["lead"]} {N["counts"]}'
     rj = [x["r"]["judgement"] for _, _, xs in groups for x in xs]
     er = [_er(x) for _, _, xs in groups for x in xs]
     W, RH, L, T, B, GAP = 640, 26, 200, 30, 26, 24
@@ -920,19 +906,12 @@ def nack_finding(S) -> str:
              for c in rule if c.get("kind") == "group"]
     clear = bool(comps) and all(c["ci_99"][0] <= 0 <= c["ci_99"][1] for c in comps)
     heading = "A new starting position"
-    rd1 = N["setups"]["Random"]["first"]["drop"]
     worse = [(s, r) for s, r in ((Lt or {}).get("setups") or {}).items() if r.get("label") == "worse"]
-    text = ("Each model was asked Nackgammon positions and standard positions matched to them. "
-            + ("Compared group against group (one group's drop minus another's; a group is the setups from one "
-               "original league: League 1, 2, 3), every 99% interval includes 0, so the test does not show the groups' drops to differ. "
-               if clear else "Compared group against group (one group's drop minus another's), not every 99% "
-               "interval includes 0. ")
-            + f"Random play's own drop is {fmt(rd1, 1, True)} PR on the main 200 pairs: the Nackgammon positions were "
-            f"{'slightly easier' if rd1 < 0 else 'harder'} for random play.")
-    if worse:
-        text += " Outside the groups, " + "; ".join(
-            f'the late entry {esc(s)} dropped ({fmt(r["final"]["drop"], 2, True)} PR, 97.5% interval '
-            f'{fmt(r["final"]["drop_975"][0], 2, True)} to {fmt(r["final"]["drop_975"][1], 2, True)})' for s, r in worse) + "."
+    text = ("Main 200 pairs, Nackgammon against matched standard positions · group drops (League 1, 2, 3 setups) "
+            + ("compared: every 99% interval includes 0" if clear else "compared: not every 99% interval includes 0"))
+    text += "".join(f' · late entry {esc(s)}: {fmt(r["final"]["drop"], 2, True)} PR, 97.5% interval '
+                    f'{fmt(r["final"]["drop_975"][0], 2, True)} to {fmt(r["final"]["drop_975"][1], 2, True)}'
+                    for s, r in worse)
     text += f" <strong>{esc(NS.UNCLEAR_NOTE)}</strong>"
     legend = NS.chart_legend(N)
     return finding("finding-nackgammon", heading, text, NS.chart(N), legend,

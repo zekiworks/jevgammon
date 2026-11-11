@@ -143,8 +143,9 @@ pub struct PlayerConfig {
     /// models: the provider's default).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reasoning: Option<String>,
-    /// Fields merged into every chat-model request body, e.g.
-    /// `{"chat_template_kwargs": {"thinking": true}}`.
+    /// Fields merged into every chat-model and decision-service request body, e.g.
+    /// `{"chat_template_kwargs": {"thinking": true}}`, or OpenRouter's provider routing
+    /// `{"provider": {"only": ["google-ai-studio"], "allow_fallbacks": false}}`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub request: Option<Value>,
     /// Output token limit of a chat-model answer (the reasoning request included).
@@ -523,13 +524,16 @@ impl Player {
             backend,
         };
         if let Some(service) = decision::service(provider) {
-            return Ok(player(Backend::Decision(decision::DecisionClient::new(
-                http,
-                service,
-                model,
-                config.base_url.as_deref(),
-                budget,
-            )?)));
+            return Ok(player(Backend::Decision(
+                decision::DecisionClient::new(
+                    http,
+                    service,
+                    model,
+                    config.base_url.as_deref(),
+                    budget,
+                )?
+                .with_request(config.request.clone()),
+            )));
         }
         let backend = match provider.to_ascii_lowercase().as_str() {
             "random" if model.is_none() => {

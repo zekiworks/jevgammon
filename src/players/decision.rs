@@ -370,6 +370,9 @@ pub struct DecisionClient {
     url: String,
     /// Hard spending cap: every attempt reserves its worst case before it is sent.
     budget: Option<Arc<Ledger>>,
+    /// Fields merged into every request body (a player config's `request`), e.g.
+    /// OpenRouter's `provider` routing.
+    request: Option<Value>,
 }
 
 impl DecisionClient {
@@ -408,7 +411,14 @@ impl DecisionClient {
                 .map(|default| model.unwrap_or_else(|| default.to_owned())),
             url: format!("{}{}", base.trim_end_matches('/'), service.path),
             budget,
+            request: None,
         })
+    }
+
+    /// Merges `request`'s fields into every request body (a null value removes a field).
+    pub fn with_request(mut self, request: Option<Value>) -> Self {
+        self.request = request;
+        self
     }
 
     pub fn max_choices(&self) -> usize {
@@ -535,7 +545,7 @@ impl DecisionClient {
                 json!({QUESTION: {"type": "choice", "instructions": instructions, "criteria": criteria}}),
             );
         }
-        Value::Object(body)
+        super::llm::merged(Value::Object(body), self.request.as_ref())
     }
 
     /// The answer object for the play question, in either response format.
@@ -652,7 +662,11 @@ fn refused(error: &anyhow::Error) -> bool {
 
 #[cfg(test)]
 mod tests {
+    use std::io::{BufRead, BufReader, Read, Write};
+
     use super::*;
+    use crate::board::Board;
+    use crate::players::prompt::PromptVersion;
 
     #[test]
     fn baselabs_sends_the_checkpoint_name_to_the_configured_server() {
@@ -696,6 +710,7 @@ mod tests {
             model: Some(model.to_owned()),
             url: format!("{}{}", base.trim_end_matches('/'), service.path),
             budget: None,
+            request: None,
         }
     }
 
@@ -901,5 +916,130 @@ mod tests {
         }
         let local = service("drex-max").unwrap().unbilled();
         assert!(!local(reqwest::StatusCode::TOO_MANY_REQUESTS));
+    }
+
+    /// Answers one System One request as OpenRouter does (the third option at 0.7, with
+    /// `id`, `provider` and `usage.cost`) and returns the request body.
+    fn openrouter_stub() -> (String, std::thread::JoinHandle<Value>) {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let url = format!("http://{}", listener.local_addr().unwrap());
+        let handle = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            let mut reader = BufReader::new(stream.try_clone().unwrap());
+            let mut length = 0;
+            loop {
+                let mut line = String::new();
+                reader.read_line(&mut line).unwrap();
+                if line == "\r\n" {
+                    break;
+                }
+                if let Some((name, value)) = line.split_once(':')
+                    && name.eq_ignore_ascii_case("content-length")
+                {
+                    length = value.trim().parse().unwrap();
+                }
+            }
+            let mut body = vec![0; length];
+            reader.read_exact(&mut body).unwrap();
+            let body: Value = serde_json::from_slice(&body).unwrap();
+            let keys: Vec<String> = body["questions"][QUESTION]["criteria"]
+                .as_object()
+                .unwrap()
+                .keys()
+                .cloned()
+                .collect();
+            let rest = 0.3 / (keys.len() - 1) as f64;
+            let probabilities: Map<String, Value> = keys
+                .iter()
+                .enumerate()
+                .map(|(i, k)| (k.clone(), (if i == 2 { 0.7 } else { rest }).into()))
+                .collect();
+            let answer = json!({
+                "model": "google/gemini-decision-1-20261111", "provider": "Google AI Studio",
+                "id": "gen-dec-stub",
+                "answers": {QUESTION: {"type": "choice", "choice": keys[2], "probabilities": probabilities, "confidence": 0.6}},
+                "usage": {"input_tokens": 2345, "output_tokens": 0, "cost": 0.0002345}
+            })
+            .to_string();
+            write!(
+                stream,
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{answer}",
+                answer.len()
+            )
+            .unwrap();
+            body
+        });
+        (url, handle)
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn openrouter_request_pins_the_provider_and_keeps_the_probabilities() {
+        let mut board = Board::start();
+        board.pts[12] = 3;
+        board.pts[7] = 5;
+        let plays = board.legal_plays(2, 1);
+        let n = plays.len();
+        assert!(n > 8, "{n}");
+        let notations: Vec<String> = plays.iter().map(|p| p.notation()).collect();
+        let order: Vec<usize> = (0..n).rev().collect();
+        let retry = RetryTime::default();
+        let req = DecisionRequest {
+            board: &board,
+            dice: (2, 1),
+            plays: &plays,
+            notations: &notations,
+            my_score: 0,
+            opp_score: 0,
+            round: 1,
+            rounds: 3,
+            leg: 1,
+            clock: None,
+            my_clock: None,
+            opp_clock: None,
+            turn_no: 1,
+            max_turns: None,
+            player: 1,
+            history: &[],
+            order: &order,
+            seed: 1,
+            version: PromptVersion::BgV2,
+            retry: &retry,
+        };
+        let (url, stub) = openrouter_stub();
+        let service = service("openrouter-decisions").unwrap();
+        let pin = json!({"provider": {"only": ["google-ai-studio"], "allow_fallbacks": false}});
+        let client = DecisionClient {
+            http: reqwest::Client::new(),
+            service,
+            key: Some("test".into()),
+            model: Some("google/gemini-decision-1".into()),
+            url: format!("{url}{}", service.path),
+            budget: None,
+            request: None,
+        }
+        .with_request(Some(pin.clone()));
+        let mut decision = Decision::new(0);
+        let choice = client.choose(&req, &order, &mut decision).await.unwrap();
+        let body = stub.join().unwrap();
+        assert_eq!(body["model"], "google/gemini-decision-1");
+        assert_eq!(body["provider"], pin["provider"]);
+        assert_eq!(body["state"], state(&req));
+        let question = &body["questions"][QUESTION];
+        assert_eq!(question["type"], "choice");
+        let shown: Vec<&String> = question["criteria"].as_object().unwrap().keys().collect();
+        let want: Vec<&String> = order.iter().map(|&i| &notations[i]).collect();
+        assert_eq!(shown, want, "every option in the seeded order");
+        assert_eq!(choice, Some(order[2]));
+        assert_eq!(decision.probability_source, Some("decision"));
+        assert_eq!(decision.probabilities.len(), n);
+        assert!(decision.probabilities.contains(&(order[2], 0.7)));
+        assert_eq!((decision.input_tokens, decision.output_tokens), (2345, 0));
+        assert!(decision.exchanges[0].error.is_none());
+        assert!(decision.exchanges[0].request.contains("\"allow_fallbacks\":false"));
+
+        // Without a config `request` the body carries no provider field, as before.
+        let plain = DecisionClient { request: None, ..client };
+        let body = plain.body("s", "i", &[("a".into(), "a".into()), ("b".into(), "b".into())]);
+        assert!(body.get("provider").is_none());
     }
 }

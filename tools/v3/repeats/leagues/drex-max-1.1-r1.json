@@ -1,0 +1,129 @@
+{
+  "note": "Reproducibility repeat 1 of Drex Max 1.1 (Ümit via Zeki, bus #4663, #4666, #4667 (protocol), #4671 (d1-ultra), #4710; run repeat-2026-11-11-drex-max-1.1-r1): Drex Max 1.1 [repeat 1] plays Drex Max 1.1's original League 1 field again, one match at a time, each pair pinned to its original match's seed and seating (pinned_pairs), the same option-order seed, prompt, rules and settings. Hidden league; matches stage 'late-entry' and the name held (tools/site/content/held_setups.json): in no standings, table, Cup input or other setup's numbers. mailbox/repeats/manifest-2026-11-11.json",
+  "prompt_version": "bg-v2",
+  "seed": 2567889193785291627,
+  "order_seed": 1190975713392774006,
+  "rounds": 3,
+  "clock": 0,
+  "delay": 30,
+  "max_turns": 300,
+  "mirror_concurrent": true,
+  "only_pairs_of": "Drex Max 1.1 [repeat 1]",
+  "hidden": true,
+  "pinned_pairs": {
+    "GPT-6 Luna": {
+      "seed": 7250416052776062427,
+      "seat_first": false
+    },
+    "Jev 1.13.0": {
+      "seed": 3642253627551041290,
+      "seat_first": true
+    },
+    "SubQ Snap Preview": {
+      "seed": 12712156635308121158,
+      "seat_first": true
+    },
+    "Mercury Decide": {
+      "seed": 3799658031648177261,
+      "seat_first": false
+    },
+    "Fastino GLiDE": {
+      "seed": 17925820276143823634,
+      "seat_first": true
+    },
+    "Random": {
+      "seed": 7566466585956348015,
+      "seat_first": true
+    },
+    "Celeris-1 Decision": {
+      "seed": 6159843324005812597,
+      "seat_first": true
+    },
+    "Jev 1.14.0": {
+      "seed": 831970062136130827,
+      "seat_first": true
+    },
+    "GNUbg weak": {
+      "seed": 14626597021848378603,
+      "seat_first": false
+    },
+    "Safest": {
+      "seed": 14846291154243275237,
+      "seat_first": true
+    },
+    "Liquid d1-ultra": {
+      "seed": 6387019485434790555,
+      "seat_first": false
+    },
+    "Decider v1.2 27B": {
+      "seed": 12357934049293828533,
+      "seat_first": false
+    },
+    "Decider Flash v1.2": {
+      "seed": 7004938076882060778,
+      "seat_first": false
+    },
+    "Winnow-12B": {
+      "seed": 6234688349807110872,
+      "seat_first": true
+    },
+    "Cygnet (Gemma 4 12B)": {
+      "seed": 9720388117561978497,
+      "seat_first": true
+    },
+    "Clef": {
+      "seed": 4549479141470018152,
+      "seat_first": false
+    },
+    "Fastino GLiDE v1.2 (local)": {
+      "seed": 5818300811519100669,
+      "seat_first": false
+    },
+    "Open-Jev 27B v1.1": {
+      "seed": 13826954640008933939,
+      "seat_first": false
+    },
+    "Decider v1.1 27B": {
+      "seed": 10391125845900967515,
+      "seat_first": false
+    }
+  },
+  "players": [
+    {
+      "name": "Drex Max 1.1 [repeat 1]",
+      "spec": "nace/drex-max-v1.1",
+      "provider": "nace",
+      "price": {
+        "input_per_mtok": 0.06,
+        "output_per_mtok": 0.0
+      },
+      "note": "Nace.AI's Drex Max 1.1 (drex-max-v1.1; no open weights) through Nace's hosted System One endpoint (https://console.nace.ai/v1/systemone); price = Nace's list price, $0.06 per million input tokens, output not billed (nace.ai/drex, read 2026-11-05); Nace bills the launch price, $0.03 per million (console.nace.ai/docs/drex/reference/pricing, read 2026-11-05). At most 25 options per request. Pre-send cap on its Nace requests: a ledger shared with the other hosted Drex setup reserves each attempt's worst case (one input token per request byte plus 4,096, at the billed price) before sending and refuses past $1.25 spent + reserved; error answers other than Nace's documented unbilled statuses keep the worst case. Late entry to the original League 1 table; not eligible for the Hype Cup Reproducibility repeat 1 (drex-max-1.1-r1; tools/v3/repeats, mailbox/repeats/manifest-2026-11-11.json): the original's League 1 field again, one match at a time, each pair with its original match's seed and seats; held: in no standings, table, Cup input or other setup's numbers.",
+      "parallel": 2,
+      "budget": {
+        "ledger": "/home/cbasaran/code/jevgammon/workspace/drex/state/nace-budget.db",
+        "cap_usd": 1.25,
+        "input_per_mtok": 0.03,
+        "cached_input_per_mtok": 0.03,
+        "output_per_mtok": 0.0
+      },
+      "max_matches": 1
+    },
+    {
+      "name": "GNUbg weak",
+      "spec": "gnubg-weak",
+      "provider": "local",
+      "note": "gnubg 1.08 Beginner level (0-ply, deterministic noise 0.060)",
+      "parallel": 1
+    },
+    {
+      "name": "Random",
+      "spec": "random",
+      "provider": "local"
+    },
+    {
+      "name": "Safest",
+      "spec": "safest",
+      "provider": "local"
+    }
+  ]
+}

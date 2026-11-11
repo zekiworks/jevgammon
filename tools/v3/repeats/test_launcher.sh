@@ -4,8 +4,10 @@
 # clone of the runner tree at the recorded commit, a copy of the recorded binary, and a scratch database (the runner's
 # own schema, created by the copied binary, plus the originals' and programs' players rows from the manifest and a
 # late_entry_stage trigger naming the originals only, so every repeat starts with "trigger missing").
-#   Refusals (held REAX 1.3, bad pins, other settings, another binary, a changed or missing build input, a changed src,
-#   a descendant commit): run.sh ID --prepare-only exits non-zero, the scratch database's sha256 is unchanged, no backup,
+#   Refusals (a held repeat: REAX 1.3 marked held in the case's manifest copy, as before its release; bad pins, other
+#   settings, another binary, a changed or missing build input, a changed src, a descendant commit, Drex Max 1.1's and
+#   GLiDE v1.2's pins and budget, a repeat name not yet held in main's site): run.sh ID --prepare-only exits non-zero,
+#   the scratch database's sha256 is unchanged, no backup,
 #   no state or status file; repeats.py check exits 1 (not 3) and repeats.py trigger refuses without a write.
 #   Trigger missing only (each repeat not held): check exits 3, run.sh prepares (backup verified by zstd -t, trigger),
 #   checks again and exits 0; check then exits 0, and a second run.sh writes nothing more.
@@ -95,7 +97,16 @@ refuse() {  # case id: run after the case's mutation
   if (( ${#bad[@]} )); then failc "${bad[*]}"; else pass "refused; scratch sha256 ${before%% *} unchanged; no backup, state or trigger write"; fi
 }
 
-setup held-reax; refuse reax-1.3-r1
+setup held-reax
+python3 - "$D/repo/mailbox/repeats/$(basename "$MAN")" <<'EOF'
+import json, sys
+m = json.load(open(sys.argv[1]))
+for r in m["repeats"]:
+    if r["id"] == "reax-1.3-r1":
+        r |= dict(status="held", hold="test: held as before its release (ac08899)")
+open(sys.argv[1], "w").write(json.dumps(m, indent=1, ensure_ascii=False) + "\n")
+EOF
+refuse reax-1.3-r1
 setup bad-pins
 python3 - "$D/repo/tools/v3/repeats/leagues/mammoth-1-r1.json" <<'EOF'
 import json, sys
@@ -126,6 +137,20 @@ setup extra-src; echo "// new" > "$D/runner/src/extra.rs"; refuse mammoth-1-r1
 setup descendant-commit
 git -C "$D/runner" -c user.name=test -c user.email=test@localhost commit -q --allow-empty -m "plan-only descendant"
 refuse mammoth-1-r1
+setup bad-pins-glide
+python3 - "$D/repo/tools/v3/repeats/leagues/glide-v1.2-r1.json" <<'EOF'
+import json, sys
+c = json.load(open(sys.argv[1])); c["pinned_pairs"]["Clef"]["seed"] ^= 1
+open(sys.argv[1], "w").write(json.dumps(c, indent=2, ensure_ascii=False) + "\n")
+EOF
+refuse glide-v1.2-r1
+setup bad-settings-drex11
+python3 - "$D/repo/tools/v3/repeats/leagues/drex-max-1.1-r1.json" <<'EOF'
+import json, sys
+c = json.load(open(sys.argv[1])); c["players"][0]["budget"]["cap_usd"] = 2.5
+open(sys.argv[1], "w").write(json.dumps(c, indent=2, ensure_ascii=False) + "\n")
+EOF
+refuse drex-max-1.1-r1
 
 # The real runner as recorded (tree, binary, inputs; the unmodified manifest) against a scratch database: only the
 # trigger is missing (exit 3); nothing is written.
@@ -137,7 +162,23 @@ echo "     check (recorded runner $RTREE, $RBIN): exit $rc: $out"
 if (( rc == 3 )) && [[ $(sha256sum < "$D/v3.db") == "$before" ]]; then pass "the recorded runner binds; only the trigger is missing"
 else failc "check exit $rc or the database changed"; fi
 
-for rid in mammoth-1-r1 drex-max-v1-r1 d1-ultra-r1; do
+# A repeat whose held name is not yet in the main checkout's committed held_setups.json (the site branch adding it not
+# merged) must refuse on that alone; once it is held, it takes the trigger-missing case below.
+held_in_main() {
+  git -C /home/cbasaran/code/jevgammon show HEAD:tools/site/content/held_setups.json 2>/dev/null | python3 -c '
+import json, sys
+name = next(r["name"] for r in json.load(open(sys.argv[2]))["repeats"] if r["id"] == sys.argv[1])
+sys.exit(name not in json.load(sys.stdin).get("held", {}))' "$1" "$MAN"
+}
+prepare=(mammoth-1-r1 drex-max-v1-r1 reax-1.3-r1 d1-ultra-r1)
+for rid in drex-max-1.1-r1 glide-v1.2-r1; do
+  if held_in_main "$rid"; then prepare+=("$rid"); continue; fi
+  setup "not-held-$rid"; refuse "$rid"
+  grep -q "not held in the main checkout" "$D/check.out" && pass "the refusal names the missing held name" ||
+    failc "check did not name the missing held name: $(cat "$D/check.out")"
+done
+
+for rid in "${prepare[@]}"; do
   setup "trigger-missing-$rid"
   before=$(sha256sum < "$D/home/v3.db")
   crc0=$(check_rc "$rid"); out0=$(cat "$D/check.out")

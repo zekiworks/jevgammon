@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Reproducibility repeats of four League 1 setups (Ümit via Zeki, bus #4663, #4666, #4667, #4671): each repeat plays
+"""Reproducibility repeats of six League 1 setups (Ümit via Zeki, bus #4663, #4666, #4667, #4671; #4838 Drex Max 1.1
+and Fastino GLiDE v1.2 (local)): each repeat plays
 the original's own League 1 field again, one match at a time, each pair pinned (league config pinned_pairs, runner
 branch pinned-pairs, Zeki #4710) to its original match's seed (dice) and seating, with the
 same option-order seed, prompt, rules and setup settings, under a separate held name ('<original> [repeat 1]') whose
@@ -66,6 +67,10 @@ MARGIN_MIB = 2000
 # every late entry's guard). Mercury Decide bills OpenRouter (the $40 floor).
 BILLED = set(API)
 FASTINO_RATE = 0.04
+# Entrants billed by the input token at another rate than their recorded cost_usd: Nace bills Drex Max 1.1 its $0.03 per
+# million launch price (its settings.budget; turns.cost_usd records the $0.06 list price).
+ENTRANT_RATE = {"Drex Max 1.1": 0.03}
+NACE_LEDGER = "/home/cbasaran/code/jevgammon/workspace/drex/state/nace-budget.db"
 BLOCKED_TODAY = {
     "GPT-6 Luna": ("no credit: OpenAI Decisions answers 429 'no credits remaining' (Drex #829/#835/#846/#886, REAX, "
                    "Muse Ember and KnowLine runs: deferred); a top-up needs Can"),
@@ -207,9 +212,75 @@ REPEATS = {
             ("Hosted model: d1-ultra is served by Liquid; whether the hosted model behind liquid/d1-ultra changed since "
              "2026-10-19 cannot be checked from here."),
         ]),
+    "drex-max-1.1-r1": dict(
+        original="Drex Max 1.1", original_league=15, original_stage="late-entry",
+        runner=RUNNER, original_runner="e58fc6c255304c085bdb5eb8dec34b83c473573a",
+        server=dict(kind="api", mib=0, start=None, stop=None, health=None, smoke=None,
+                    provenance=("Nace's hosted System One endpoint (https://console.nace.ai/v1/systemone), model "
+                                "drex-max-v1.1, no open weights (NACEAI_API_KEY in ~/.keys); every request booked "
+                                f"first in the original's pre-send ledger {NACE_LEDGER} (its settings.budget)"),
+                    measured="none (hosted)"),
+        settings_change=dict(),
+        rules=dict(mirror_concurrent=True),
+        cost_method=("Each playable pair's billed cost in the original match: the paid opponent's recorded cost_usd "
+                     "(Fastino GLiDE: input tokens x $0.04/M), plus Drex Max 1.1's own input tokens x $0.03/M (Nace's "
+                     "billed launch price; its cost_usd records the $0.06 list price); local setups and programs bill "
+                     "nothing."),
+        server_starts="entrant: none (hosted); each local opponent 1-5 min (state logs of the original)",
+        differences=[
+            RUNNER_DIFFERENCE % "e58fc6c (clean)",
+            ("Hosted model: Drex Max 1.1 is served by Nace; whether the model behind drex-max-v1.1 changed since "
+             "2026-11-06 cannot be checked from here."),
+            ("Nace pre-send cap: the settings (unchanged) book every request in the original's ledger "
+             "workspace/drex/state/nace-budget.db, cap $1.25 shared with Drex 2.0, which the original started empty "
+             "and which held $0.7856 settled on 2026-11-11 (Drex Max 1.1 $0.2853, Drex 2.0 $0.5003); the repeat has "
+             "the $0.4644 left. Its expected own bill ($0.2751 at $0.03/M) fits; reaching the cap would refuse its "
+             "requests and leave the repeat incomplete."),
+        ]),
+    "glide-v1.2-r1": dict(
+        original="Fastino GLiDE v1.2 (local)", original_league=1, original_stage="league",
+        # Its League 1 matches (matchday 24, joined late 2026-10-22; #547 on are ladder matches).
+        original_matches=list(range(482, 500)),
+        runner=RUNNER, original_runner="two builds: d2f1f9e (uncommitted changes) for #482-#486, ec555d6 (clean) for #487-#499",
+        server=dict(kind="ours", mib=62000, start="GLIDE_GPU=$g /home/cbasaran/code/jevgammon/tools/v3/servers/glide-v12.sh start",
+                    stop="/home/cbasaran/code/jevgammon/tools/v3/servers/glide-v12.sh stop",
+                    health="http://127.0.0.1:18101/health", health_any_status=False,
+                    smoke=("S=workspace/repeats/glide-v1.2-r1/smoke.db; rm -f $S && "
+                           "/home/cbasaran/code/jevgammon/target/pinned/release/jevgammon ask --config "
+                           "/home/cbasaran/code/jevgammon/leagues/smoke-glide-v12.json --positions "
+                           "/home/cbasaran/code/jevgammon/positions/smoke.jsonl --setup 'Fastino GLiDE v1.2 (local)' "
+                           "--out $S --time-limit 600 && n=$(sqlite3 $S \"SELECT count(*) FROM answers WHERE setup = "
+                           "'Fastino GLiDE v1.2 (local)' AND error IS NULL AND COALESCE(invalid, 0) = 0 AND "
+                           "probabilities IS NOT NULL\") && echo \"$n/50 answered with probabilities\" && "
+                           "[ \"$n\" = 50 ]"),
+                    provenance=("tools/v3/servers/glide-v12.sh and _lib.sh unchanged since ec555d6 (2026-10-22, the "
+                                "original's start); fastino/GLiDE snapshot a7e45896be7c96ba3354891da790c5ec99c30b6c, "
+                                "bf16, glide/server.py, GLIDE_MAX_BATCH=1; ~/code/glide/.venv torch 2.14.0+cu130, "
+                                "transformers 5.17.0, flash-linear-attention 0.5.2 (checked 2026-11-11). Smoke as "
+                                "its original's: jevgammon ask on the 50 smoke positions (leagues/smoke-glide-v12.json; "
+                                "originally 50/50)"),
+                    measured=("53.6 GiB loaded, 60.2 GB peak for a 39k-token question on bariton GPU 0 "
+                              "(tools/v3/servers/README.md); glide-v12.sh start refuses under 62,000 MiB free")),
+        settings_change=dict(),
+        rules=dict(mirror_concurrent=False),
+        server_starts=("entrant: GLiDE v1.2 loads in about 20 s, its smoke 50 positions about 1 min; each local "
+                       "opponent 1-5 min (state logs of the originals). The local minutes include League 1's pause "
+                       "(17:22 to about 22:23 UTC, Can) in #482, #483, #484 and #486, about 5 h each"),
+        differences=[
+            ("Runner: its 18 League 1 matches were played by d2f1f9e with uncommitted changes (#482-#486) and ec555d6 "
+             f"(clean, #487-#499); the repeat uses the pinned-pairs build {RUNNER['commit']}. Same prompt version "
+             "bg-v2, option-order seed and rules; mirror games off as in its originals."),
+            ("Opponent hardware: Clef (#484) and Cygnet (#486) answered from DGX Spark (GB10) servers then, Decider "
+             "v1.1 27B (#483) from spark3 until 22:41 UTC; they now run on our RTX PRO 6000 cards with the same "
+             "checkpoints and arguments (their players.device records the move and its 20-request replays: same play "
+             "20/20, 20/20 and 19/20)."),
+            ("Server: the original ran on bariton GPU 0 beside the opponents' servers on GPUs 1 and 3 and the Sparks; "
+             "the repeat runs it on GPU (run.sh), the opponents one at a time on OPP_GPU."),
+        ]),
 }
 DISPLAY = {"mammoth-1-r1": "Mammoth-1", "drex-max-v1-r1": "Drex Max v1", "reax-1.3-r1": "REAX 1.3",
-           "d1-ultra-r1": "Liquid d1-ultra"}
+           "d1-ultra-r1": "Liquid d1-ultra", "drex-max-1.1-r1": "Drex Max 1.1",
+           "glide-v1.2-r1": "Fastino GLiDE v1.2 (local)"}
 
 
 def ro() -> sqlite3.Connection:
@@ -256,9 +327,12 @@ def original_pairs(conn, rid: str) -> list[dict]:
                       cost, SUM(t.input_tokens) AS tokens
                FROM turns t JOIN games g ON g.id = t.game_id WHERE g.match_id = ? GROUP BY t.player""", (m["id"],))}
         mine, theirs = agg.get(seat), agg.get(3 - seat)
-        opp_billed = None
+        opp_billed = own_billed = None
         if opp in BILLED and theirs:
             opp_billed = (theirs["tokens"] or 0) * FASTINO_RATE / 1e6 if opp == "Fastino GLiDE" else theirs["cost"]
+        if mine and r["server"]["kind"] == "api":
+            own_billed = ((mine["tokens"] or 0) * ENTRANT_RATE[r["original"]] / 1e6 if r["original"] in ENTRANT_RATE
+                          else mine["cost"])
         out.append(dict(
             opponent=opp, kind=kind_of(opp), original_match=m["id"], status=m["status"],
             error=(m["error"] or "")[:300] or None,
@@ -279,7 +353,7 @@ def original_pairs(conn, rid: str) -> list[dict]:
                         result=g["result"], points=g["points"], turns=g["turns"]) for g in games],
             decisions=dict(original=(mine["decisions"] if mine else 0), opponent=(theirs["decisions"] if theirs else 0)),
             billed_usd=dict(opponent=round(opp_billed, 4) if opp_billed is not None else None,
-                            original=round(mine["cost"], 4) if mine and r["server"]["kind"] == "api" else None),
+                            original=round(own_billed, 4) if own_billed is not None else None),
             blocked_today=BLOCKED_TODAY.get(opp)))
     return out
 
@@ -366,9 +440,10 @@ def manifest(args) -> None:
                                       today=BLOCKED_TODAY.get(o)) for o in missing],
                 unpinned=unpinned),
             cost_basis=dict(
-                method=("Each playable pair's billed cost in the original match: the paid opponent's recorded "
-                        "cost_usd (Fastino GLiDE: input tokens x $0.04/M), plus Liquid d1-ultra's own cost_usd in its "
-                        "repeat; local setups and programs bill nothing."),
+                method=r.get("cost_method", (
+                    "Each playable pair's billed cost in the original match: the paid opponent's recorded "
+                    "cost_usd (Fastino GLiDE: input tokens x $0.04/M), plus Liquid d1-ultra's own cost_usd in its "
+                    "repeat; local setups and programs bill nothing.")),
                 pairs={p["opponent"]: p["billed_usd"] for p in paid},
                 estimate_usd=round(est_opp + est_own, 4), opponents_usd=round(est_opp, 4), entrant_usd=round(est_own, 4),
                 cap_usd=5.0),
@@ -376,8 +451,9 @@ def manifest(args) -> None:
                 method=("Sum of each playable pair's original match duration (start to finish; the originals ran "
                         "several matches at once, so one at a time is about this or less), plus server starts."),
                 minutes_matches=mins, minutes_total_matches=round(sum(mins.values()), 1),
-                server_starts=("entrant: Mammoth-1 1-2 min, Drex Max v1 about 1 min, REAX 1.3 already up (logic), "
-                               "d1-ultra none; each local opponent 1-5 min (state logs of the originals)")),
+                server_starts=r.get("server_starts", (
+                    "entrant: Mammoth-1 1-2 min, Drex Max v1 about 1 min, REAX 1.3 already up (logic), "
+                    "d1-ultra none; each local opponent 1-5 min (state logs of the originals)"))),
             gpu_plan=dict(
                 entrant_mib=srv["mib"], entrant_measured=srv["measured"],
                 fits_beside_entrant=[o for o in LOCAL if o not in big],
@@ -648,6 +724,8 @@ def billed_usd(conn, m) -> float:
                WHERE m.stage = 'late-entry' AND ? IN (a.name, b.name) GROUP BY p.name""", (m["name"],)):
         if r["name"] == "Fastino GLiDE":
             total += (r["tokens"] or 0) * FASTINO_RATE / 1e6
+        elif r["name"] == m["name"] and m["original"] in ENTRANT_RATE:
+            total += (r["tokens"] or 0) * ENTRANT_RATE[m["original"]] / 1e6
         elif r["name"] in BILLED or (r["name"] == m["name"] and m["original"] in BILLED):
             total += r["cost"]
     return total

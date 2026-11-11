@@ -1,0 +1,117 @@
+{
+  "note": "Reproducibility repeat 1 of Fastino GLiDE v1.2 (local) (Ümit via Zeki, bus #4663, #4666, #4667 (protocol), #4671 (d1-ultra), #4710; run repeat-2026-11-11-glide-v1.2-r1): Fastino GLiDE v1.2 (local) [repeat 1] plays Fastino GLiDE v1.2 (local)'s original League 1 field again, one match at a time, each pair pinned to its original match's seed and seating (pinned_pairs), the same option-order seed, prompt, rules and settings. Hidden league; matches stage 'late-entry' and the name held (tools/site/content/held_setups.json): in no standings, table, Cup input or other setup's numbers. mailbox/repeats/manifest-2026-11-11.json",
+  "prompt_version": "bg-v2",
+  "seed": 2567889193785291627,
+  "order_seed": 1190975713392774006,
+  "rounds": 3,
+  "clock": 0,
+  "delay": 30,
+  "max_turns": 300,
+  "mirror_concurrent": false,
+  "only_pairs_of": "Fastino GLiDE v1.2 (local) [repeat 1]",
+  "hidden": true,
+  "pinned_pairs": {
+    "Open-Jev 27B v1.1": {
+      "seed": 5196137547059937845,
+      "seat_first": false
+    },
+    "Decider v1.1 27B": {
+      "seed": 15327648540771815403,
+      "seat_first": true
+    },
+    "Clef": {
+      "seed": 4144322428161051265,
+      "seat_first": true
+    },
+    "SubQ Snap Preview": {
+      "seed": 1566346366478439576,
+      "seat_first": true
+    },
+    "Cygnet (Gemma 4 12B)": {
+      "seed": 4674112995115378218,
+      "seat_first": true
+    },
+    "Random": {
+      "seed": 10544275257463503641,
+      "seat_first": false
+    },
+    "Safest": {
+      "seed": 18014659025886536012,
+      "seat_first": true
+    },
+    "GNUbg weak": {
+      "seed": 10352236998790652409,
+      "seat_first": false
+    },
+    "Liquid d1-ultra": {
+      "seed": 10442249882576386863,
+      "seat_first": true
+    },
+    "Jev 1.14.0": {
+      "seed": 6042180237264967610,
+      "seat_first": true
+    },
+    "Jev 1.13.0": {
+      "seed": 10015117860844379145,
+      "seat_first": false
+    },
+    "Celeris-1 Decision": {
+      "seed": 4204577847179747382,
+      "seat_first": false
+    },
+    "GPT-6 Luna": {
+      "seed": 15501493774537690590,
+      "seat_first": true
+    },
+    "Decider Flash v1.2": {
+      "seed": 13675274375361465514,
+      "seat_first": false
+    },
+    "Winnow-12B": {
+      "seed": 3767119023668623449,
+      "seat_first": true
+    },
+    "Mercury Decide": {
+      "seed": 5189556370653509503,
+      "seat_first": false
+    },
+    "Fastino GLiDE": {
+      "seed": 9690002031883364386,
+      "seat_first": true
+    },
+    "Decider v1.2 27B": {
+      "seed": 4711371212710270238,
+      "seat_first": true
+    }
+  },
+  "players": [
+    {
+      "name": "Fastino GLiDE v1.2 (local) [repeat 1]",
+      "spec": "fastino/glide-v1.2",
+      "provider": "local (glide/server.py)",
+      "quantization": "bf16",
+      "base_url": "http://127.0.0.1:18101",
+      "note": "Fastino's GLiDE v1.2 (served model name glide-v1.2, package version 1.2.0) from its released weights: Hugging Face fastino/GLiDE @ a7e45896be7c96ba3354891da790c5ec99c30b6c (Fastino Community License; a Qwen3.8-27B modification, bf16, 255-way decision readout), run on our GPU through the glide/server.py its repository ships (tools/v3/servers/glide-v12.sh, GLIDE_GPU=0; Python 3.12.13, torch 2.14.0+cu130, transformers 5.17.0, flash-linear-attention 0.5.2; GLIDE_MAX_BATCH=1, so an answer never depends on other traffic); joined late 2026-10-22; smoke test 50/50 answered with probabilities (error rate 22.5; Fastino's API, League 1's \"Fastino GLiDE\", 20.0, same play 48/50, max |dp| 0.022). Not the same setup as \"Fastino GLiDE\", whose API responses name the model glide_v2 Reproducibility repeat 1 (glide-v1.2-r1; tools/v3/repeats, mailbox/repeats/manifest-2026-11-11.json): the original's League 1 field again, one match at a time, each pair with its original match's seed and seats; held: in no standings, table, Cup input or other setup's numbers.",
+      "device": "RTX PRO 6000 (bariton GPU 0); paused 2026-10-22 17:22 UTC; from 2026-10-22 22:21 UTC bariton GPU 0 again, same script and arguments; from 2026-10-23 21:12 UTC (ladder round 1) bariton GPU 0 again, same script and arguments",
+      "parallel": 4,
+      "max_matches": 1
+    },
+    {
+      "name": "GNUbg weak",
+      "spec": "gnubg-weak",
+      "provider": "local",
+      "note": "gnubg 1.08 Beginner level (0-ply, deterministic noise 0.060)",
+      "parallel": 1
+    },
+    {
+      "name": "Random",
+      "spec": "random",
+      "provider": "local"
+    },
+    {
+      "name": "Safest",
+      "spec": "safest",
+      "provider": "local"
+    }
+  ]
+}

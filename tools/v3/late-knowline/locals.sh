@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # KnowLine 31B Gen1.5 v the 8 local League 1 opponents, one opponent server at a time on OPP_GPU under the bus
 # reservation RES (only once Main hands over a free card), as tools/v3/late-ember/locals.sh. KnowLine itself stays on
-# its own server (player.json base_url). For each opponent whose pair is unplayed: stops the league unit (nothing plays
-# while the pair is added and its server starts), league-adds it to KnowLine's league, checks the guard, waits until
+# its own server (player.json base_url). For each opponent whose pair is unplayed: stops the league unit and confirms
+# nothing plays league #ID (quiesce; any failure aborts the run before league-add and server launch, logged),
+# league-adds it to KnowLine's league, checks the guard, waits until
 # OPP_GPU has room for it (+2 GB; a GPU held by someone else is waited for, never freed), starts its server with
 # `agent-bus run RES -- ...`, (re)starts the league unit, waits until the pair is played, stops the server. A server
 # that does not start leaves its pair in the league, unplayed and reported missing (the league's warm-up fails against
@@ -72,6 +73,23 @@ ensure_league() {
   systemctl --user reset-failed $UNIT >/dev/null 2>&1 || true
   systemd-run --user --quiet --unit=$UNIT --working-directory="$PWD" "$T/run_league.sh" "$BIN"
 }
+# Stops the league unit and confirms nothing can play league #ID (Zeki #4628): the stop succeeded (or the unit is not
+# loaded at all: systemd then refuses the stop, exit 5, LoadState not-found); systemctl reports the unit inactive or
+# failed; and pgrep finds no league runner for it (run_league.sh, `league --resume ID --db`, `league --config` of
+# KnowLine's config; pgrep exit 1 = none, 0 = found, anything else = unknown). Returns 1, logged, otherwise.
+quiesce() {
+  local load state found
+  if ! systemctl --user stop $UNIT 2>/dev/null; then
+    load=$(systemctl --user show -p LoadState --value $UNIT 2>/dev/null)
+    [[ $load == not-found ]] || { log "locals: stopping $UNIT failed (LoadState ${load:-unknown})"; return 1; }
+  fi
+  state=$(systemctl --user is-active $UNIT 2>/dev/null)
+  [[ $state == inactive || $state == failed ]] || { log "locals: $UNIT is ${state:-of unknown state} after the stop"; return 1; }
+  pgrep -f -- "late-knowline/run_league\.sh|league --resume $ID --db|league --config [^ ]*knowline-31b-gen1\.5\.json" \
+    >/dev/null 2>&1
+  found=$?
+  (( found == 1 )) || { log "locals: a league runner for league #$ID may still run (pgrep exit $found)"; return 1; }
+}
 # name|MiB|start (GPU in $g)|stop   (sizes as tools/v3/late-ember/locals.sh)
 OPPS=(
   "Cygnet (Gemma 4 12B)|36000|CYGNET_GPU=\$g CYGNET_UTIL=0.34 $S/cygnet.sh start|$S/cygnet.sh stop"
@@ -93,7 +111,7 @@ for o in "${OPPS[@]}"; do
   IFS='|' read -r name need start stop <<<"$o"
   current=$name
   [[ $(python3 $T/knowline.py pending "$name") == 0 ]] && continue
-  systemctl --user stop $UNIT 2>/dev/null
+  quiesce || { finish "aborted before adding $name: league #$ID not confirmed stopped"; exit 1; }
   if ! sqlite3 -readonly v3.db "SELECT 1 FROM league_players lp JOIN players p ON p.id = lp.player_id
        WHERE lp.league_id = $ID AND lp.left_at IS NULL AND p.name = '$name'" | grep -q 1; then
     entry=$(sqlite3 -readonly v3.db "SELECT settings FROM players WHERE name = '$name'")

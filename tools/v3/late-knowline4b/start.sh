@@ -85,7 +85,9 @@ if [[ ! -e $ST/first ]]; then
   fail() { echo "$1" >&2; rm -f "$raw" "$ST/first.new"; exit 1; }
   rm -f "$raw"
   [[ ! -e $bak ]] || fail "$bak already exists"
-  sqlite3 v3.db ".backup '$raw'" || fail "v3.db backup to $raw failed"
+  # VACUUM INTO: one read snapshot, not restarted by other runs' writes (sqlite3 .backup restarted endlessly
+  # under the live lanes' writes on 11 Nov and never finished).
+  sqlite3 v3.db "VACUUM INTO '$raw'" || fail "v3.db backup (VACUUM INTO) to $raw failed"
   zstd -q -T0 "$raw" -o "$bak" || { rm -f "$bak"; fail "zstd of $raw failed"; }
   zstd -q -t "$bak" || { rm -f "$bak"; fail "zstd -t: $bak does not verify"; }
   rm -f "$raw"

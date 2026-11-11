@@ -888,13 +888,17 @@ def site_state(L) -> dict:
 
 
 def render(out: Path, L: dict) -> Path:
+    """The page and its data file alone, under the shown names (common.relabel), as build.py renders them from its
+    relabelled state; returns the page."""
+    L = relabel(L)
     S = site_state(L)
     page = out / PATH / "index.html"
     page.parent.mkdir(parents=True, exist_ok=True)
-    page.write_text(P.layout(S, LP.site_base(), PATH, title(L), body(L), description=DESCRIPTION, scripts=("bg.js",)))
+    page.write_text(P.layout(S, LP.site_base(), PATH, title(L), body(L), description=DESCRIPTION, scripts=("bg.js",),
+                             dataset="improve"))
     for path, t, b in registration_pages(L):
         (out / path).mkdir(parents=True, exist_ok=True)
-        (out / path / "index.html").write_text(P.layout(S, LP.site_base(), path, t, b))
+        (out / path / "index.html").write_text(P.layout(S, LP.site_base(), path, t, b, dataset="improve"))
     (out / DATA).parent.mkdir(parents=True, exist_ok=True)
     (out / DATA).write_text(json.dumps(L, indent=1, ensure_ascii=False))
     return page

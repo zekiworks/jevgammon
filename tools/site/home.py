@@ -1170,6 +1170,11 @@ def default_league(S) -> str:
     return ALL
 
 
+# Each tab's Method link (Ümit #4665: #quality, #reasoning and #stability landed nowhere): the Method section that
+# defines the tab's measure; a tab not listed has a section of its own name.
+METHOD_OF_TAB = {"quality": "error-rate", "reasoning": "setup", "stability": "shared-positions"}
+
+
 def tab_body(S, key: str) -> str:
     out = [risk_all_view(S)] if key == "risk" else []
     for lg in S["leagues"]:
@@ -1210,7 +1215,7 @@ def tab_body(S, key: str) -> str:
         "cost": "Dollars per 1,000 decisions and seconds per decision.",
         "stability": "Does a setup repeat its play on the same position?"}[key]
     marks = ('<p class="table-note">\u00a7 list-price estimate; runs on our GPUs · \u2020 plays split into groups · '
-             f'{esc(NOT_MEASURED)}: no value recorded. <a href="method/#{key}">Method</a></p>')
+             f'{esc(NOT_MEASURED)}: no value recorded. <a href="method/#{METHOD_OF_TAB.get(key, key)}">Method</a></p>')
     cols = {"risk": "good risks, the error rate by risk-call category, stakes, extra hitting rolls, confidence on the call, "
                     "ability and caution",
             "quality": "time, cost, decisions scored and invalid answers"}.get(key)

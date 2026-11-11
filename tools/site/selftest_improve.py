@@ -346,7 +346,8 @@ def main():
                  and all(set(m) == {"setup", "status", "reason", "series_done", "updated_at"}
                          for m in (Ld["progress"] or {}).get("models", [])))
         leaked = [x for x in free + outcome if x in page or x in data] + ([] if shape else ["data file shape"])
-        top = 0 < page.find('id="improve-results"') < page.find('id="improve-commitment"') < page.find('id="improve-rule"')
+        top = (0 < page.find('id="improve-results"') < page.find('id="improve-commitment"')
+               < page.find('id="improve-summary"'))
         case(f"status table ({name}): 15 rows as the data, at the top, no outcome or free text, check_improve clean",
              len(trs) == 15 and got == rows_ and top and not leaked and not bad and Lp["progress_refused"] is None
              and Lp["results"] is None, "; ".join(bad) or f"got {got}, leaked {leaked}")

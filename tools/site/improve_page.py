@@ -9,7 +9,10 @@ site). It follows the learning page (learning_page.py) in every convention. Sour
 
 - the plan (--plan, default mailbox/Did they improve - plan 2026-11-08.md, committed): the single source of the rule,
   the model list (section 3's table: setup, maker, setting, route, status), the routes and settings, the money rules
-  and the commitment line. The rule (section 2) is shown first, verbatim; every other section follows as written.
+  and the commitment line. The results page shows the results, the models table and the lessons with a short
+  reader-facing summary of the rule; the plan itself, every section as written, is on its own dated page
+  (PROTOCOL_PATH, bound to the file by sha256), and the decision models' addendum on another (ADDENDUM_PATH), both
+  linked from the results page (Ümit #4665).
 - the experiment's files as snapshot.py copies them to STATE/improve (--src, default ~/.local/state/bg-site/improve):
   - prompt/lessons_system.txt and lessons_user.txt: the lesson prompt the plan names (the learning pilot's files);
     the render fails unless they hash to the plan's stated sha256 (one hash over the system file's bytes immediately
@@ -64,6 +67,14 @@ TITLE_PREREG = "Did they improve? (pre-registered)"
 PREREGISTRATION_ONLY = False
 COMMITMENT = "Results will be published whichever way they go."
 PLAN = ROOT / "mailbox/Did they improve - plan 2026-11-08.md"
+# The plan as registered gets its own dated page (Ümit #4665), bound to the file by sha256: the render fails unless the
+# plan hashes to PLAN_SHA256 (a changed plan is a new version, with a new date, path and hash).
+PROTOCOL_DATE = "2026-11-08"
+PROTOCOL_PATH = f"{PATH}protocol-{PROTOCOL_DATE}/"
+PLAN_SHA256 = "85a970d09cf1ae40d5567a7540ec0f607133314589119391bd71584b5ef78542"
+PLAN_COMMIT = "7e2bf78f11875062f9c3425fd5df1766650889ae"
+PLAN_URL = ("https://github.com/zekiworks/jevgammon/blob/" + PLAN_COMMIT
+            + "/mailbox/Did%20they%20improve%20-%20plan%202026-11-08.md?plain=1")
 SOURCE = "improve"
 # The results table's planned rows (models and setups not yet run; status only, no numbers), outside the plan.
 PLANNED = SITE / "content/improve_planned.json"
@@ -71,8 +82,10 @@ DESCRIPTION = ("Did they improve? Each chat model on the leaderboard writes its 
                "weak, then takes the risk test again. The pre-registered rule, model list and lesson prompt.")
 # Part 3, the decision models (Ümit/Zeki, #3790): the addendum to the pre-registration, committed at ADDENDUM_COMMIT and
 # bound by sha256 (the harness refuses any other file). The render fails unless the file hashes to ADDENDUM_SHA256. Its
-# sections ADDENDUM_SECTIONS are shown as written in their own section, below the results table and above the plan.
+# sections ADDENDUM_SECTIONS are shown as written on its own dated page (ADDENDUM_PATH), linked from the results page.
 ADDENDUM = ROOT / "mailbox/Did they improve - decision models - addendum 2026-11-09.md"
+ADDENDUM_DATE = "2026-11-09"
+ADDENDUM_PATH = f"{PATH}addendum-{ADDENDUM_DATE}/"
 ADDENDUM_SHA256 = "b370f4dc9660a618aece4586b8c8f5259688372fab580305b4454aaa2d71a967"
 ADDENDUM_COMMIT = "02d6145b5be01c67075511137cfee8c7ee22ad2c"
 ADDENDUM_URL = ("https://github.com/zekiworks/jevgammon/blob/" + ADDENDUM_COMMIT
@@ -86,10 +99,11 @@ TEST_SET = LP.TEST_SET
 RULE_SECTION = "2."
 MODELS_SECTION = "3."
 SETTINGS_SECTION = "4."
-# Phrases the page must carry (checks.check_improve), each from the plan.
+# Phrases the results page must carry (checks.check_improve), each from the plan; the plan's full text, money rules
+# included, is on the protocol page (checked whole there).
 REQUIRED = ("operational threshold, not a statistical test", "not tested: cannot write lessons",
             "pilot (different design)", "not comparable (different design)", "count nowhere",
-            "Provider-side load is not observable", "$110")
+            "Provider-side load is not observable")
 
 
 # --- Sources ------------------------------------------------------------------------------------------------
@@ -193,6 +207,10 @@ def unhost(line: str) -> str:
 
 def read_plan(path: Path) -> dict:
     text = path.read_text()
+    sha = hashlib.sha256(text.encode()).hexdigest()
+    if sha != PLAN_SHA256:
+        raise SystemExit(f"{path}: sha256 {sha}, not the registered plan's {PLAN_SHA256} (a new version needs its own "
+                         "dated protocol page)")
     if COMMITMENT not in text:
         raise SystemExit(f"{path}: the commitment line is missing: {COMMITMENT!r}")
     for h in (PROMPT_SHA256, TEST_SET_SHA256):
@@ -404,7 +422,7 @@ def label(pm) -> str:
 
 
 def route(pm) -> str:
-    detail = (f'<details class="small"><summary>API setup</summary>{_inline(pm["route_detail"])}</details>'
+    detail = (f'<details class="small"><summary>API setup</summary>{_inline(unref(pm["route_detail"]))}</details>'
               if pm["route_detail"] else "")
     return f'{_inline(pm["route"])}{detail}'
 
@@ -439,28 +457,37 @@ def verdict_cell(m) -> str:
 
 
 def model_row(pm, m, results: bool) -> str:
+    """A row of the models table: the model, then (results) its change, the bar and Improved?, so the verdict is in view
+    without a sideways scroll (Ümit #4665), then the plan's maker, setting and route and the other measures."""
     name = (f'<a href="#lessons-{esc(pm["key"])}">{esc(pm["setup"])}</a>' if m else esc(pm["setup"]))
     head = (f'<tr data-setup="{esc(pm["setup"])}" data-key="{esc(pm["key"])}"'
             + (f' data-change="{m["change"]["risks_found"]}"' if m and m["change"]["risks_found"] is not None else "")
-            + f'><th scope="row">{name}{label(pm)}</th><td>{esc(pm["maker"])}</td><td>{_inline(pm["setting"])}</td>'
-            f'<td>{route(pm)}</td>')
+            + f'><th scope="row">{name}{label(pm)}</th>')
+    plan = f'<td>{esc(pm["maker"])}</td><td>{_inline(pm["setting"])}</td><td>{route(pm)}</td>'
     if not results:
-        return head + f'<td>{_inline(pm["status"])}</td><td>{nm("no result yet")}</td></tr>'
+        return head + plan + f'<td>{_inline(unref(pm["status"]))}</td><td>{nm("no result yet")}</td></tr>'
     if m is None:
-        return head + "".join("<td></td>" for _ in range(8)) + f'<td>{_inline(pm["status"])}</td></tr>'
+        return (head + "".join("<td></td>" for _ in range(4)) + f'<td>{_inline(unref(pm["status"]))}</td>' + plan
+                + "".join("<td></td>" for _ in range(4)) + "</tr>")
     ch = m["change"]
     return head + (
         f'<td class="num" data-cell="rf">{before_after(m, "risks_found")}</td>'
         f'<td class="num" data-cell="rf-change">{fmt(ch["risks_found"], 1, signed=True) or nm(NA)}</td>'
         f'<td class="num" data-cell="range">{num(m["range"])}</td>'
         f'<td class="num" data-cell="threshold">{num(m["threshold"])}</td>'
+        f'<td data-cell="verdict">{verdict_cell(m)}</td>' + plan +
         f'<td class="num" data-cell="rs">{before_after(m, "right_safety")} '
         f'({fmt(ch["right_safety"], 1, signed=True) or NA})</td>'
         f'<td class="num" data-cell="er">{before_after(m, "error_rate")}</td>'
         f'<td class="small" data-cell="answers"><strong>Before:</strong> {answers(m["answers_before"])}<br>'
         f'<strong>After:</strong> {answers(m["answers_after"])}</td>'
-        f'<td class="small" data-cell="cost">{cost(pm, m)}</td>'
-        f'<td data-cell="verdict">{verdict_cell(m)}</td></tr>')
+        f'<td class="small" data-cell="cost">{cost(pm, m)}</td></tr>')
+
+
+def unref(text: str) -> str:
+    """Plan text for the results page without the team's message references, e.g. ' (Ümit #3111)' (Ümit #4665: no
+    internal working notes on the public page; the protocol page keeps the text as written)."""
+    return re.sub(r"\s*\([^()]*#\d{3,}[^()]*\)", "", text)
 
 
 def others(L) -> str:
@@ -476,7 +503,7 @@ def others(L) -> str:
              f'<td><strong>not comparable (different design)</strong></td></tr>')
     rows_ = [f'<tr data-row="decision"><th scope="row">Decision models</th><td>{_inline(plan["decision_models"])}'
              '</td><td>not tested: cannot write lessons</td></tr>',
-             f'<tr data-row="cygnet"><th scope="row">Cygnet</th><td>{_inline(plan["cygnet"])}</td>'
+             f'<tr data-row="cygnet"><th scope="row">Cygnet</th><td>{_inline(unref(plan["cygnet"]))}</td>'
              '<td>not tested</td></tr>', pilot]
     return (P.table(["Model", "As the plan states it", "This rule"], rows_, "Not tested, and the pilot row",
                     cls="board list improve-others")
@@ -487,9 +514,9 @@ def models_section(L) -> str:
     plan = L["plan"]
     results = not L["preregistration_only"] and L["results"] is not None
     if results:
-        head = ["Model (v3.db setup)", "Maker", "Setting", "Route", "Risks found before → after", "Change",
-                "Own range", "Threshold", "Right safety before → after (change)", "Error rate (PR) before → after",
-                "Answers: denominators, invalid, answer rate", "Cost", "Improved?"]
+        head = ["Model (v3.db setup)", "Risks found before → after", "Change", "Own range", "Threshold", "Improved?",
+                "Maker", "Setting", "Route", "Right safety before → after (change)", "Error rate (PR) before → after",
+                "Answers: denominators, invalid, answer rate", "Cost"]
         cap = (f'{count(len(plan["models"]))} chat models, sorted by the change in risks found (rows without a change '
                'after); tap a model for its lessons')
     else:
@@ -600,12 +627,15 @@ def result_row(pm, p, m, refused, i: int, links: dict) -> str:
     else:
         status_, done = esc(progress_status(p)), f'{p["series_done"]} / {V.SERIES}'
     if m is None:
-        nums = "<td></td><td></td><td></td>"
+        change, bar, rs = "<td></td>", "<td></td>", "<td></td>"
     else:
         ch = m["change"]
-        nums = (f'<td class="num" data-rcell="rf">{before_after(m, "risks_found")}</td>'
-                f'<td class="num" data-rcell="rf-change">{fmt(ch["risks_found"], 1, signed=True) or nm(NA)}</td>'
-                f'<td class="num" data-rcell="rs">{before_after(m, "right_safety")}</td>')
+        change = (f'<td class="num"><strong data-rcell="rf-change">'
+                  f'{fmt(ch["risks_found"], 1, signed=True) or nm(NA)}</strong><br><span class="small" data-rcell="rf">'
+                  f'{before_after(m, "risks_found")}</span></td>')
+        bar = (f'<td class="num"><span data-rcell="threshold">{num(m["threshold"])}</span><br>'
+               f'<span class="small">spread <span data-rcell="range">{num(m["range"])}</span></span></td>')
+        rs = f'<td class="num" data-rcell="rs">{before_after(m, "right_safety")}</td>'
     verdict = (f'<strong data-rverdict="{"yes" if m["improved"] else "no"}">{esc(m["status"])}</strong>'
                if m is not None and m["verdict"] else "")
     name = re.sub(r" \([^()]*\)$", "", pm["setup"])
@@ -619,12 +649,12 @@ def result_row(pm, p, m, refused, i: int, links: dict) -> str:
            m and answers_line(m), m and change_line(m), links.get(pm["setup"]) or links.get(name)]
     cls, labelled = model_class(name)
     return (f'<tr data-progress-setup="{esc(pm["setup"])}" data-group="chat" data-class="{cls}" data-box="{bid}">'
-            f'{name_cell(pm["setup"], dot, bid, box, sized=labelled)}<td>Chat</td><td data-progress="status">{status_}</td>'
-            f'<td class="num" data-progress="series">{done}</td>{nums}<td>{verdict}</td></tr>')
+            f'{name_cell(pm["setup"], dot, bid, box, sized=labelled)}{change}{bar}<td>{verdict}</td><td>Chat</td>'
+            f'<td data-progress="status">{status_}</td><td class="num" data-progress="series">{done}</td>{rs}</tr>')
 
 
 def planned_row(r, arm, i: int, links: dict) -> str:
-    status_ = r[arm[0]] if arm else r["status"]
+    status_ = unref(r[arm[0]] if arm else r["status"])
     group = f"Decision · {arm[1]}" if arm else "Chat"
     tag = f'<br><span class="small">{esc(r["tag"])}</span>' if r["tag"] else ""
     listed = r["params_model"] is not None
@@ -639,8 +669,8 @@ def planned_row(r, arm, i: int, links: dict) -> str:
     cls, labelled = model_class(r["params_model"])
     return (f'<tr data-planned="{esc(r["setup"])}" data-group="{r["group"]}" data-class="{cls}" '
             f'data-box="{bid}">{name_cell(r["setup"], dot, bid, box, "<br><span class=\"small\">planned, not a result</span>" + tag, labelled)}'
-            f'<td>{group}</td><td>{esc(status_)}</td><td class="num">{nm(NA)}</td><td></td><td></td><td></td>'
-            '<td></td></tr>')
+            f'<td></td><td></td><td></td><td data-pcell="group">{group}</td><td data-pcell="status">{esc(status_)}</td>'
+            f'<td class="num">{nm(NA)}</td><td></td></tr>')
 
 
 def results_section(L, S=None) -> str:
@@ -663,10 +693,11 @@ def results_section(L, S=None) -> str:
                       f'{t}</button>' for k, t in (("all", "All"), ("chat", "Chat models"), ("decision", "Decision models")))
             + "</div>" + P.class_keys("improve-class"))
     cap = (f'{count(len(L["plan"]["models"]))} chat models under the pre-registered rule: finished first (by the change '
-           'in risks found), then running, then not started. Rows marked "planned, not a result" are not run yet and '
-           'show no numbers; a decision setup has one row per arm (notes, worst mistakes).')
-    head = ["Model", "Group", "Status", f"Series (of {V.SERIES})", "Risks found before → after", "Change",
-            "Right safety before → after", "Improved?"]
+           'in risks found), then running, then not started. Bar = what the change must beat: the spread (max − min) of '
+           'the model\'s own risks found over its 3 empty runs, at least 5 points. Rows marked "planned, not a result" '
+           'are not run yet and show no numbers; a decision setup has one row per arm (notes, worst mistakes).')
+    head = ["Model", "Change in risks found (before → after)", "Bar (empty-run spread)", "Improved?", "Group", "Status",
+            f"Series (of {V.SERIES})", "Right safety before → after"]
     return (keys + P.SWIPE
             + P.table(head, rows_, "Results, one row per model", cls="board list improve-progress",
                       attrs=' id="improve-results-table"')
@@ -691,13 +722,24 @@ def status_line(L) -> str:
             f'</strong> <span class="small">· Last update: {when}</span></p>')
 
 
-def money(L) -> str:
-    R = L["results"]
-    if L["preregistration_only"] or R is None:
-        return ""
-    M = R["money"]
-    return (f'<p class="note" id="improve-money">Billed so far: ${fmt(M["billed_total_usd"], 2)} of the approved '
-            f'${fmt(M["total_cap_usd"], 2)} (a cap, not a target). The stop rules are the plan\'s section 9, below.</p>')
+def summary() -> str:
+    """The reader-facing method in short (Ümit #4665); the rule and every condition as registered are on the protocol
+    page."""
+    return ('<p id="improve-summary"><strong>How a model is judged.</strong> It answers the 200-position risk test 3 '
+            'times with no memory (before = the mean of those empty runs), then plays 5 series of 10 games against '
+            'GNUbg weak, writing its own lessons after each game, and takes the test again after game 10 of each '
+            'series (after = the mean of the 5). <strong>Improved?</strong> is Yes when risks found rises by more than '
+            'the bar (the spread, max − min, of its own 3 empty runs, at least 5 points) and right safety falls by no '
+            'more than 5 points. This is an operational threshold, not a statistical test. Yes or No only once every '
+            'run is complete.</p>')
+
+
+def registration_links(L) -> str:
+    plan, A = L["plan"], L["addendum"]
+    return (f'<p class="small" id="improve-registration">Pre-registered before the first model call: '
+            f'<a href="../{PROTOCOL_PATH}">the plan as registered ({PROTOCOL_DATE})</a>, sha256 '
+            f'<code>{plan["sha256"]}</code>; <a href="../{ADDENDUM_PATH}">Decision models (added 9 Nov)</a>, its '
+            f'addendum ({ADDENDUM_DATE}), sha256 <code>{A["sha256"]}</code>.</p>')
 
 
 def test_row(name, t) -> str:
@@ -770,43 +812,72 @@ def title(L) -> str:
     return TITLE if results_shown(L) else TITLE_PREREG
 
 
-def addendum_section(A) -> str:
+def addendum_body(A) -> str:
     """Part 3, the decision models: the addendum's sections as written, its commitment line, and its sha256 with a
     link to the committed file, so the page's copy can be checked against the file the harness is bound to."""
     secs = "".join(f'<h3>{esc(s["title"])}</h3>{spec_markdown(s["markdown"])}' for s in A["sections"])
     return (f'<p class="intro" id="improve-decision-commitment"><strong>{esc(A["commitment"])}</strong></p>'
             '<p>The decision models are pre-registered in an addendum to the plan, committed before their first '
-            'call. Its rule, cohort, writer, money and open decisions follow as written; the planned rows above '
-            'show each setup\'s status per arm.</p>'
+            'call. Its rule, cohort, writer, money and open decisions follow as written (sections '
+            f'{", ".join(s.rstrip(".") for s in ADDENDUM_SECTIONS)}).</p>'
             f'<p class="small" id="improve-decision-sha">Addendum: <a href="{esc(A["url"])}">{esc(A["file"])}</a>, '
             f'sha256 <code>{A["sha256"]}</code></p>{secs}')
 
 
+def back_link() -> str:
+    return f'<p class="small"><a href="../../{PATH}">← Results: {esc(TITLE)}</a></p>'
+
+
+def protocol_body(L) -> str:
+    """The plan as registered (Ümit #4665: moved off the results page, verbatim, on its own dated page): its title,
+    opening and every section as the file states them, server and GPU names replaced as on every page
+    (HOST_REWRITES), with the file's sha256 and a link to the committed file."""
+    plan = L["plan"]
+    withheld = (f'<p class="note">{count(L["redacted"])} private address(es) in the plan are withheld here.</p>'
+                if L["redacted"] else "")
+    head = (f'<header class="card hero page-head"><p class="eyebrow">Pre-registration · {PROTOCOL_DATE}</p>'
+            f'<h1>{esc(plan["title"])}</h1></header>'
+            f'<section class="card" id="protocol-about">{back_link()}<p>The plan of "{esc(TITLE)}" as registered, '
+            'committed before the first model call; the text below is the file\'s, as written (names of our servers '
+            'and GPUs read "our GPU").</p>'
+            f'<p class="small" id="protocol-sha">File: <a href="{esc(PLAN_URL)}">{esc(plan["file"])}</a>, sha256 '
+            f'<code>{plan["sha256"]}</code></p>{withheld}{spec_markdown(plan["intro"])}</section>')
+    secs = [(LP.section_id(s["title"]), s["title"], spec_markdown(s["markdown"])) for s in plan["sections"]]
+    toc = "".join(f'<li><a href="#{i}">{esc(t)}</a></li>' for i, t, _ in secs)
+    return "\n".join([head, f'<nav class="toc card" aria-label="On this page"><ul>{toc}</ul></nav>']
+                     + [f'<section class="card" id="{i}"><h2>{esc(t)}</h2>{h}</section>' for i, t, h in secs])
+
+
+def addendum_page(L) -> str:
+    A = L["addendum"]
+    return (f'<header class="card hero page-head"><p class="eyebrow">Pre-registration · addendum · {ADDENDUM_DATE}</p>'
+            f'<h1>Decision models (added 9 Nov)</h1></header><section class="card" id="improve-decision">'
+            f'{back_link()}{addendum_body(A)}</section>')
+
+
 def body(L, S=None) -> str:
     plan = L["plan"]
-    rule = section(plan["sections"], RULE_SECTION)
-    parts = [("improve-decision", "Decision models (added 9 Nov)", addendum_section(L["addendum"])),
-             ("improve-rule", rule["title"], spec_markdown(rule["markdown"])),
-             ("improve-models", "Models", models_section(L))]
+    parts = [("improve-models", "Models", models_section(L))]
     if results_shown(L):
         parts.append(("improve-lessons", "Lessons and every test, per model", lessons(L)))
     parts.append(("improve-prompt", "Lesson prompt and test set", prompt(L)))
-    parts += [(LP.section_id(s["title"]), s["title"], spec_markdown(s["markdown"])) for s in plan["sections"]
-              if s is not rule]
     toc = "".join(f'<li><a href="#{i}">{esc(t)}</a></li>' for i, t, _ in parts)
-    withheld = (f'<p class="note">{count(L["redacted"])} private address(es) in the plan are withheld here.</p>'
-                if L["redacted"] else "")
-    intro = ("The pre-registered rule, model list, lesson prompt, settings and money rules. No results are on this "
-             "page yet." if not results_shown(L) else
-             "The pre-registered rule, the results as each model's runs come in, and every lesson.")
+    intro = ("No results are on this page yet." if not results_shown(L) else
+             "The results as each model's runs come in, and every lesson.")
     head = (f'<header class="card hero page-head"><p class="eyebrow">{eyebrow(L)}</p><h1>{esc(title(L))}</h1>'
             f'</header><section class="card" id="improve-results"><h2>Results</h2>{results_section(L, S)}</section>')
     about = ('<section class="card" id="improve-about">' + (status_line(L) if results_shown(L) else "")
              + f'<p class="intro" id="improve-commitment"><strong>{esc(plan["commitment"])}</strong></p>'
-             f'<p class="intro">{intro} Data: <a href="../{DATA}">improve.json</a>.</p>{validation_note(L)}{money(L)}'
-             f'<p class="small">Plan: {esc(plan["file"])}, sha256 <code>{plan["sha256"]}</code></p>{withheld}</section>')
+             f'{summary()}<p class="intro">{intro} Data: <a href="../{DATA}">improve.json</a>.</p>'
+             f'{validation_note(L)}{registration_links(L)}</section>')
     return "\n".join([head, about, f'<nav class="toc card" aria-label="On this page"><ul>{toc}</ul></nav>']
                      + [f'<section class="card" id="{i}"><h2>{esc(t)}</h2>{h}</section>' for i, t, h in parts])
+
+
+# The pre-registration's own pages (Ümit #4665): (path, title, body) for each, rendered with the results page.
+def registration_pages(L) -> list:
+    return [(PROTOCOL_PATH, L["plan"]["title"], protocol_body(L)),
+            (ADDENDUM_PATH, "Did they improve? Decision models: addendum (2026-11-09)", addendum_page(L))]
 
 
 def site_state(L) -> dict:
@@ -821,6 +892,9 @@ def render(out: Path, L: dict) -> Path:
     page = out / PATH / "index.html"
     page.parent.mkdir(parents=True, exist_ok=True)
     page.write_text(P.layout(S, LP.site_base(), PATH, title(L), body(L), description=DESCRIPTION, scripts=("bg.js",)))
+    for path, t, b in registration_pages(L):
+        (out / path).mkdir(parents=True, exist_ok=True)
+        (out / path / "index.html").write_text(P.layout(S, LP.site_base(), path, t, b))
     (out / DATA).parent.mkdir(parents=True, exist_ok=True)
     (out / DATA).write_text(json.dumps(L, indent=1, ensure_ascii=False))
     return page

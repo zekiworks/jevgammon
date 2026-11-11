@@ -642,7 +642,7 @@ def _close(t: dict) -> str:
     status = f'{r["title"]}, results published. Gemma 4 31B (on) stopped, not reported.'
     return _section("close-choices", "Close choices", f"""
 <p class="note"><strong>Stage A: results published (Confidence tab, model pages, Every decision filter). {esc(status)}
-  (<a href="../#close-choices-stage-b">home page, {esc(r["title"])}</a>).</strong></p>
+  (<a href="../leagues/#close-choices-stage-b">Leagues page, {esc(r["title"])}</a>).</strong></p>
 <p><strong>{esc(c["definition"])}</strong> {esc(c["label"])} The rules below were fixed and committed on
   {esc(c["fixed_on"][:10])} before any close-choice number was computed. Inspired by <a href="https://arxiv.org/abs/2610.21006">"Can LLMs Anticipate Their
   Cruxes?"</a>. They describe the probabilities a setup gave; they say nothing about how it reasoned or why it chose.</p>
@@ -677,7 +677,7 @@ def _close(t: dict) -> str:
 </ul>
 {_h3("close-choices-b", f"{esc(r['title'])}: does a setup know where it hesitates?")}
 <p>{esc(status)} The {len(r["complete"])} subscription teams ran on 2026-10-25, 10:23–11:02 UTC; their results are on the
-  <a href="../#close-choices-stage-b">home page</a>. <strong>Scope.</strong> {esc(CLOSE_B_SCOPE_NOTE)} (Ümit's decision,
+  <a href="../leagues/#close-choices-stage-b">Leagues page</a>. <strong>Scope.</strong> {esc(CLOSE_B_SCOPE_NOTE)} (Ümit's decision,
   2026-10-25, 16:05 UTC.) The positions and the scoring rules were fixed on 2026-10-24, before any stage B call; the run
   conditions below on 2026-10-25.</p>
 <ul>
@@ -818,7 +818,7 @@ def _nack() -> str:
     """Nackgammon paired test (Method spec 2026-10-24 §10), rendered from the spec file."""
     body = nack_spec_text()
     return _section("nackgammon-paired", "Nackgammon paired test", f"""
-<p class="note"><strong>Results on the <a href="../#nackgammon-paired">home page</a>.</strong> {esc(NACK_SCOPE_NOTE)}
+<p class="note"><strong>Results on the <a href="../nackgammon/#nackgammon-paired">Nackgammon page</a>.</strong> {esc(NACK_SCOPE_NOTE)}
   The text below is §10 of the Method specification of 24 Oct 2026 as committed, with its dated notes and amendments
   (one local database path replaced by its description);
   §10.14 (groups by original league) says in (e) what had been opened before it was written, corrected in (f); (g)

@@ -8,6 +8,15 @@
 //! immutable. No request is sent and the database is read the same way: no database,
 //! ledger or credential file is written, created or locked (gnubg-weak, as in a league,
 //! starts gnubg from a temporary directory it removes).
+//!
+//! Read immutably, the database is its main file only: a change still in the write-ahead
+//! log (a new row, or an UPDATE of an existing opponent's row) is not seen, while the
+//! league later reads the current rows. So a successful admission ends with one line,
+//! `admitted-settings {json}`, naming exactly what was admitted: the SHA-256 of the config
+//! file read (the config players' settings) and, for each pinned opponent, its players row
+//! and the SHA-256 of the settings text its client was built from. The launcher compares
+//! that record with an ordinary read-only (write-ahead-log-aware) read before it prepares
+//! or starts anything and refuses any difference.
 
 use std::path::Path;
 
@@ -17,20 +26,47 @@ use rusqlite::OptionalExtension;
 use crate::league::LeagueConfig;
 use crate::players::{Player, PlayerConfig, Setup};
 
-/// One player's admission: its name, spec, where its settings came from, and why its client
+/// One player's admission: its name, spec, where its settings came from (for a pinned
+/// opponent its players row and the SHA-256 of the settings text read), and why its client
 /// was refused (`None`: built).
 #[derive(Debug)]
 pub struct Admission {
     pub name: String,
     pub spec: String,
     pub source: String,
+    /// The pinned opponent's `players.id` (`None`: a config player, or no row).
+    pub player_id: Option<i64>,
+    /// SHA-256 of the `players.settings` text the pinned opponent's client was built from
+    /// (`None`: a config player, bound by the config file's SHA-256, or no row).
+    pub settings_sha256: Option<String>,
     pub refused: Option<String>,
 }
 
-/// Prints one line per player and fails when any client was refused.
+impl Admission {
+    fn new(name: &str, source: String) -> Self {
+        Self {
+            name: name.to_owned(),
+            spec: String::new(),
+            source,
+            player_id: None,
+            settings_sha256: None,
+            refused: None,
+        }
+    }
+}
+
+/// One admission run: the SHA-256 of the config file read and every client's admission.
+#[derive(Debug)]
+pub struct Admitted {
+    pub config_sha256: String,
+    pub clients: Vec<Admission>,
+}
+
+/// Prints one line per player and fails when any client was refused; else ends with the
+/// `admitted-settings` record.
 pub async fn run(db: &Path, config: &Path, setup: &Setup) -> Result<()> {
-    let admissions = admit(db, config, setup).await?;
-    for a in &admissions {
+    let admitted = admit(db, config, setup).await?;
+    for a in &admitted.clients {
         match &a.refused {
             None => println!(
                 "ok       {} ({}; {}): client built",
@@ -39,32 +75,66 @@ pub async fn run(db: &Path, config: &Path, setup: &Setup) -> Result<()> {
             Some(why) => println!("REFUSED  {} ({}; {}): {why}", a.name, a.spec, a.source),
         }
     }
-    let refused = admissions.iter().filter(|a| a.refused.is_some()).count();
+    let refused = admitted
+        .clients
+        .iter()
+        .filter(|a| a.refused.is_some())
+        .count();
     if refused > 0 {
         bail!(
             "{refused} of {} clients refused; nothing may be written for {}",
-            admissions.len(),
+            admitted.clients.len(),
             config.display()
         );
     }
     println!(
         "admitted: all {} clients of {} built (players: league config; pinned opponents: {} players.settings, read immutably)",
-        admissions.len(),
+        admitted.clients.len(),
         config.display(),
         db.display()
     );
+    println!("admitted-settings {}", record(config, &admitted));
     Ok(())
 }
 
+/// The `admitted-settings` record (one line of JSON): the config file and its SHA-256, then
+/// every client in admission order with its source, players row and settings SHA-256.
+fn record(config: &Path, admitted: &Admitted) -> serde_json::Value {
+    let clients: Vec<_> = admitted
+        .clients
+        .iter()
+        .map(|a| {
+            serde_json::json!({"name": a.name, "source": a.source, "player_id": a.player_id,
+                               "settings_sha256": a.settings_sha256})
+        })
+        .collect();
+    serde_json::json!({"config": config.display().to_string(),
+                       "config_sha256": admitted.config_sha256, "clients": clients})
+}
+
+fn sha256(bytes: &[u8]) -> String {
+    use sha2::Digest as _;
+    hex::encode(sha2::Sha256::digest(bytes))
+}
+
 /// The config's players first, then each pinned opponent the config does not hold.
-pub async fn admit(db: &Path, config: &Path, setup: &Setup) -> Result<Vec<Admission>> {
-    let league = LeagueConfig::load(config)?;
+pub async fn admit(db: &Path, config: &Path, setup: &Setup) -> Result<Admitted> {
+    // Parsed from the bytes whose SHA-256 is recorded (as `LeagueConfig::load` parses them).
+    let text =
+        std::fs::read_to_string(config).with_context(|| format!("reading {}", config.display()))?;
+    let league: LeagueConfig =
+        serde_json::from_str(&text).with_context(|| format!("parsing {}", config.display()))?;
     // Read-only and immutable: nothing written, locked or created, whatever else runs.
     let conn = crate::db::open_immutable(db)?;
-    let mut entries: Vec<(Result<PlayerConfig>, String, String)> = league
+    let mut entries: Vec<(Result<PlayerConfig>, Admission)> = league
         .players
         .iter()
-        .map(|p| (Ok(p.clone()), p.name.clone(), "league config".to_owned()))
+        .map(|p| {
+            (
+                Ok(p.clone()),
+                Admission::new(&p.name, "league config".to_owned()),
+            )
+        })
         .collect();
     for name in league.pinned_pairs.iter().flat_map(|pins| pins.keys()) {
         if league.players.iter().any(|p| &p.name == name) {
@@ -80,33 +150,33 @@ pub async fn admit(db: &Path, config: &Path, setup: &Setup) -> Result<Vec<Admiss
         entries.push(match row {
             Some((id, settings)) => (
                 serde_json::from_str(&settings).with_context(|| format!("players #{id}: settings")),
-                name.clone(),
-                format!("players #{id}"),
+                Admission {
+                    player_id: Some(id),
+                    settings_sha256: Some(sha256(settings.as_bytes())),
+                    ..Admission::new(name, format!("players #{id}"))
+                },
             ),
             None => (
                 Err(anyhow::anyhow!(
                     "pinned opponent without a players row in the database file (read immutably: a row still only in its write-ahead log is not seen)"
                 )),
-                name.clone(),
-                "players: none".to_owned(),
+                Admission::new(name, "players: none".to_owned()),
             ),
         });
     }
-    let mut admissions = Vec::new();
-    for (config, name, source) in entries {
-        let spec = config.as_ref().map_or(String::new(), |c| c.spec.clone());
-        let refused = match config {
+    let mut clients = Vec::new();
+    for (config, mut admission) in entries {
+        admission.spec = config.as_ref().map_or(String::new(), |c| c.spec.clone());
+        admission.refused = match config {
             Err(error) => Some(format!("{error:#}")),
             Ok(config) => build(&config, setup).await.err().map(|e| format!("{e:#}")),
         };
-        admissions.push(Admission {
-            name,
-            spec,
-            source,
-            refused,
-        });
+        clients.push(admission);
     }
-    Ok(admissions)
+    Ok(Admitted {
+        config_sha256: sha256(text.as_bytes()),
+        clients,
+    })
 }
 
 async fn build(config: &PlayerConfig, setup: &Setup) -> Result<()> {
@@ -277,7 +347,7 @@ mod tests {
         let files: [&Path; 4] = [&db, &clean, &pending, &other_cap];
         let before = snapshot(&files);
         let setup = Setup::new(qfork.clone(), "http://127.0.0.1:9/v1".into());
-        let admissions = admit(&db, &config, &setup).await.unwrap();
+        let admissions = admit(&db, &config, &setup).await.unwrap().clients;
         let outcome: Vec<(&str, &str, Option<&str>)> = admissions
             .iter()
             .map(|a| (a.name.as_str(), a.source.as_str(), a.refused.as_deref()))
@@ -331,6 +401,100 @@ mod tests {
         drop((pending_holder, db_holder));
     }
 
+    /// Zeki #4928 S1: an existing pinned opponent's row replaced by an UPDATE still only in
+    /// the write-ahead log (Clef: `clef` checkpointed, `openai/review-placeholder` committed in
+    /// the log). Admission reads the main file and admits the checkpointed `clef`; its record
+    /// says so (the row and the SHA-256 of exactly that text, and the config file's SHA-256),
+    /// so the write-ahead-log-aware read the league makes (here an ordinary read-only
+    /// connection) gives another SHA-256 and the launcher refuses. Nothing is written.
+    #[tokio::test]
+    async fn the_admitted_settings_record_names_the_text_read() {
+        let dir = scratch("record");
+        let db = dir.join("v3.db");
+        drop(crate::db::Db::open(&db).unwrap());
+        let checkpointed = serde_json::json!({"name": "Clef", "spec": "clef"});
+        players(&db, &[("Clef", checkpointed.clone())]);
+        let writer = holder(&db);
+        let replaced = serde_json::json!({"name": "Clef", "spec": "openai/review-placeholder"});
+        writer
+            .execute(
+                "UPDATE players SET spec = 'openai/review-placeholder', settings = ?1 WHERE name = 'Clef'",
+                [replaced.to_string()],
+            )
+            .unwrap();
+        assert!(wal_len(&db) > 0);
+        let clef_id: i64 = writer
+            .query_row("SELECT id FROM players WHERE name = 'Clef'", [], |r| {
+                r.get(0)
+            })
+            .unwrap();
+        let config = dir.join("config.json");
+        let text = serde_json::json!({"players": [{"name": "Entrant", "spec": "random"}],
+                                      "only_pairs_of": "Entrant",
+                                      "pinned_pairs": {"Clef": {"seed": 1, "seat_first": true}}})
+        .to_string();
+        std::fs::write(&config, &text).unwrap();
+        let before = snapshot(&[&db]);
+        let setup = Setup::new(dir.join("qfork-root"), "http://127.0.0.1:9/v1".into());
+        let admitted = admit(&db, &config, &setup).await.unwrap();
+        assert_eq!(snapshot(&[&db]), before, "a file changed");
+        assert_eq!(admitted.config_sha256, sha256(text.as_bytes()));
+        let entrant = &admitted.clients[0];
+        assert_eq!(
+            (
+                entrant.name.as_str(),
+                entrant.source.as_str(),
+                entrant.player_id,
+                &entrant.settings_sha256,
+                &entrant.refused
+            ),
+            ("Entrant", "league config", None, &None, &None)
+        );
+        let clef = &admitted.clients[1];
+        assert_eq!(admitted.clients.len(), 2);
+        assert_eq!(
+            (
+                clef.name.as_str(),
+                clef.spec.as_str(),
+                clef.player_id,
+                &clef.refused
+            ),
+            ("Clef", "clef", Some(clef_id), &None)
+        );
+        assert_eq!(
+            clef.settings_sha256.as_deref(),
+            Some(sha256(checkpointed.to_string().as_bytes()).as_str())
+        );
+        let record = record(&config, &admitted);
+        assert_eq!(
+            record,
+            serde_json::json!({"config": config.display().to_string(),
+                               "config_sha256": sha256(text.as_bytes()),
+                               "clients": [
+                {"name": "Entrant", "source": "league config", "player_id": null, "settings_sha256": null},
+                {"name": "Clef", "source": format!("players #{clef_id}"), "player_id": clef_id,
+                 "settings_sha256": sha256(checkpointed.to_string().as_bytes())}]})
+        );
+        // What the league reads (write-ahead-log-aware): the replacement, another SHA-256.
+        let current: String = Connection::open_with_flags(
+            &db,
+            rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY | rusqlite::OpenFlags::SQLITE_OPEN_NO_MUTEX,
+        )
+        .unwrap()
+        .query_row(
+            "SELECT settings FROM players WHERE id = ?1",
+            [clef_id],
+            |r| r.get(0),
+        )
+        .unwrap();
+        assert_eq!(current, replaced.to_string());
+        assert_ne!(
+            clef.settings_sha256.as_deref(),
+            Some(sha256(current.as_bytes()).as_str())
+        );
+        drop(writer);
+    }
+
     /// A writer that keeps committing to the shared ledger (never checkpointing, so only
     /// admission could change the main file) while admission runs over and over, and a writer
     /// holding an open write transaction: every admission admits and leaves the ledger as
@@ -380,7 +544,7 @@ mod tests {
         // At least 50 admissions, and until the writer has committed 200 times.
         let mut admitted = 0;
         while admitted < 50 || commits.load(Ordering::Relaxed) < 200 {
-            let admissions = admit(&db, &config, &setup).await.unwrap();
+            let admissions = admit(&db, &config, &setup).await.unwrap().clients;
             assert!(
                 admissions.len() == 3 && admissions.iter().all(|a| a.refused.is_none()),
                 "{admissions:?}"
@@ -402,7 +566,7 @@ mod tests {
         conn.execute_batch("BEGIN IMMEDIATE").unwrap();
         book(&conn);
         let before = snapshot(&[&shared, &db]);
-        let admissions = admit(&db, &config, &setup).await.unwrap();
+        let admissions = admit(&db, &config, &setup).await.unwrap().clients;
         assert!(
             admissions.iter().all(|a| a.refused.is_none()),
             "{admissions:?}"
@@ -446,7 +610,7 @@ mod tests {
         let enforced = std::fs::write(ro.join("probe"), b"").is_err();
         let before = snapshot(&[&path]);
         let setup = Setup::new(dir.join("qfork-root"), "http://127.0.0.1:9/v1".into());
-        let admissions = admit(&db, &config, &setup).await.unwrap();
+        let admissions = admit(&db, &config, &setup).await.unwrap().clients;
         assert!(
             admissions.iter().all(|a| a.refused.is_none()),
             "{admissions:?}"

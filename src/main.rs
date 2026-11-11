@@ -89,7 +89,10 @@ enum Command {
     /// the database's players.settings, read immutably) as a league builds its participants,
     /// but only decision services and the local engines (any other client type is refused
     /// before construction) and with budget ledgers read immutably; sends no request and
-    /// writes no database, ledger or credential. Fails when any client is refused.
+    /// writes no database, ledger or credential. Fails when any client is refused; else its
+    /// last line, `admitted-settings {json}`, records the settings admitted (the config
+    /// file's SHA-256, each pinned opponent's players row and settings text SHA-256), for a
+    /// launcher to compare with what the league will read.
     Admit(AdmitArgs),
 }
 

@@ -1,0 +1,11 @@
+{
+  "name": "Claude Fable 5.2 (max)",
+  "spec": "anthropic/claude-fable-5-2",
+  "provider": "claude-subscription",
+  "reasoning": "max",
+  "price": {"input_per_mtok": 8.0, "output_per_mtok": 40.0},
+  "max_tokens": 128000,
+  "note": "claude-fable-5-2; effort max, the highest of its five (low, medium, high, xhigh, max; API default high: platform.claude.com/docs/en/models/fable-5-2/whats-new-fable-5-2), adaptive thinking (always on); max_tokens 128000, the model's output limit (the runner's default 32,000 ran out in the route smoke: 32,000 thinking tokens, stop_reason max_tokens, no answer). Claude subscription; subscription login; cost is API-list-price equivalent ($8/$40 per million tokens). Late entry to the original League 1 table (Ümit via Zeki #4676), one match at a time; not eligible for the Hype Cup",
+  "parallel": 4,
+  "max_matches": 1
+}

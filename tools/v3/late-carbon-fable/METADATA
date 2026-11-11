@@ -1,0 +1,6 @@
+owner: jevgammon (agent; Can's backgammon project ~/code/jevgammon)
+created: 2026-11-11
+what: scripts of the Gemini 4 Carbon (high) and Claude Fable 5.2 (max) late entries into the original League 1 table (player-carbon.json, player-fable.json, late.py, start.sh, run_league.sh, locals.sh; smoke.json: the route smoke, one position per setup), branch 'late-carbon-fable' (worktree ~/code/jevgammon-carbon-fable); from tools/v3/late-knowline4b
+reason: Ümit via Zeki #4676 (highest supported reasoning setting first; lower settings later, phase 2); runner binary target/carbon-fable/release/jevgammon (main checkout) built from this branch
+delete when: never on its own: it documents how the late-entry matches in v3.db were played (as tools/v3/late-knowline4b)
+written: 2026-11-11 (Can #3774)

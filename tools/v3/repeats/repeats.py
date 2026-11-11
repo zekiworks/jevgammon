@@ -158,16 +158,14 @@ REPEATS = {
     "reax-1.3-r1": dict(
         original="REAX 1.3", original_league=19, original_stage="late-entry",
         runner=RUNNER, original_runner="acfd89cdcc710846d7173e475ce8546af7febac1",
-        status="held",
-        hold=("Held (Zeki #4710): the plan to use logic's container (outbound network open) is dropped; the repeat "
-              "needs the original's offline setup (reax13-late on the internal network reax13-offline, no outbound "
-              "route; workspace/reax/reax.sh) and Can's no-new-privileges exception renewed for it, or a new "
-              "approval. Its server settings below are logic's and are not used until then."),
+        status="queued",
+        hold=None,
         server=dict(kind="logic", mib=75000, start=None, stop=None,
                     health=LOGIC_REAX["url"] + "/healthz", health_any_status=False,
                     smoke=f"python3 /home/cbasaran/code/jevgammon/workspace/reax/reax.py smoke {LOGIC_REAX['url']} reax13",
-                    provenance=("logic's unit logic-dm-reax13 (~/code/benchmark/decision/servers.sh, started by Main "
-                                "on bariton GPU 0 under his reservation, Logic & Math repeat first): the same image "
+                    provenance=("logic's unit logic-dm-reax13 (~/code/benchmark/decision/servers.sh), started by logic "
+                                "on bariton GPU 0 under Main's reservation r_57d739c4cd53 at 14:36 UTC 11 Nov, Logic & "
+                                "Math and Reading repeats first (logic #4785, turkce #4819): the same image "
                                 "reax13-runtime (sha256:9622cace…, built 2026-11-06 21:57 UTC, before the original), "
                                 "engine ~/code/reax-engine @ ff8f595, Decision Index kit @ 25c6ec7, weights "
                                 "model-repo unchanged since 2026-11-06, the card's serve.py with /engine/reax13.json "
@@ -180,13 +178,13 @@ REPEATS = {
         rules=dict(mirror_concurrent=True),
         differences=[
             RUNNER_DIFFERENCE % "acfd89c (clean)",
-            ("Server: logic's container logic-dm-reax13 on Docker's default bridge, its API published on the host's "
-             "loopback (outbound network open; offline Hugging Face variables set as before), where the original ran "
-             "reax13-late on the internal network reax13-offline (no outbound route), reached on the container's "
-             "address; logic's env lacks HF_HUB_DISABLE_IMPLICIT_TOKEN=1 (offline either way). Same image, engine, "
-             "kit, weights, config and serve.py arguments."),
-            ("no-new-privileges: the original ran without it under Can's one-run exception (#2199); logic's server "
-             "drops it only with REAX_NO_NNP_EXCEPTION=1 and its own approval, otherwise it does not start."),
+            ("Server: logic's container logic-dm-reax13, on the internal network reax13-offline (internal=true, no "
+             "outbound route; egress test from inside: Network is unreachable), no published port, reached through a "
+             "loopback forwarder on 127.0.0.1:19100; read-only root, cap-drop ALL, user 1000:1000 (logic #4785). The "
+             "original ran reax13-late on the same internal network, reached on the container's address. Same image, "
+             "engine, kit, weights, config and serve.py arguments; shared in turn with logic's and turkce's repeats."),
+            ("no-new-privileges: off, as in the original; Can renewed his one-run exception (#2199) for this repeat "
+             "server, offline only (#4745, answering #4744)."),
         ]),
     "d1-ultra-r1": dict(
         original="Liquid d1-ultra", original_league=1, original_stage="league",

@@ -4848,8 +4848,8 @@
    "original_player_id": 60,
    "original_league": 19,
    "original_stage": "late-entry",
-   "status": "held",
-   "hold": "Held (Zeki #4710): the plan to use logic's container (outbound network open) is dropped; the repeat needs the original's offline setup (reax13-late on the internal network reax13-offline, no outbound route; workspace/reax/reax.sh) and Can's no-new-privileges exception renewed for it, or a new approval. Its server settings below are logic's and are not used until then.",
+   "status": "queued",
+   "hold": null,
    "prepared": "2026-11-11",
    "started": null,
    "finished": null,
@@ -4934,7 +4934,7 @@
     "mib": 75000,
     "health": "http://127.0.0.1:19100/healthz",
     "smoke": "python3 /home/cbasaran/code/jevgammon/workspace/reax/reax.py smoke http://127.0.0.1:19100 reax13",
-    "provenance": "logic's unit logic-dm-reax13 (~/code/benchmark/decision/servers.sh, started by Main on bariton GPU 0 under his reservation, Logic & Math repeat first): the same image reax13-runtime (sha256:9622cace…, built 2026-11-06 21:57 UTC, before the original), engine ~/code/reax-engine @ ff8f595, Decision Index kit @ 25c6ec7, weights model-repo unchanged since 2026-11-06, the card's serve.py with /engine/reax13.json (FP8 per that config), the same env -i variables",
+    "provenance": "logic's unit logic-dm-reax13 (~/code/benchmark/decision/servers.sh), started by logic on bariton GPU 0 under Main's reservation r_57d739c4cd53 at 14:36 UTC 11 Nov, Logic & Math and Reading repeats first (logic #4785, turkce #4819): the same image reax13-runtime (sha256:9622cace…, built 2026-11-06 21:57 UTC, before the original), engine ~/code/reax-engine @ ff8f595, Decision Index kit @ 25c6ec7, weights model-repo unchanged since 2026-11-06, the card's serve.py with /engine/reax13.json (FP8 per that config), the same env -i variables",
     "measured": "about 62 GB loaded, 74.7 GB peak on GPU 0 (mailbox/Late entries REAX - status 2026-11-07.md)",
     "start": null,
     "stop": null
@@ -5031,11 +5031,9 @@
     "note": "One card: the entrant's server (none for d1-ultra) stays up for the whole repeat; the opponent servers run one at a time beside it, smallest first. A pair needs both servers at once, so the opponents in needs_second_gpu (entrant + opponent + 2 GB over 97,887 MiB) wait for a second card (OPP_GPU) or stay unplayed."
    },
    "differences": [
-    "Name: '<original> [repeat 1]', a new players row; settings otherwise as the original's (the changed fields are listed under Settings); one match at a time, where the original played several at once.",
     "Runner: the pinned-pairs build 4ca4f08 (the pins are its only change for these leagues), where the original ran acfd89c (clean); the same prompt version, option-order seed and rules.",
-    "Server: logic's container logic-dm-reax13 on Docker's default bridge, its API published on the host's loopback (outbound network open; offline Hugging Face variables set as before), where the original ran reax13-late on the internal network reax13-offline (no outbound route), reached on the container's address; logic's env lacks HF_HUB_DISABLE_IMPLICIT_TOKEN=1 (offline either way). Same image, engine, kit, weights, config and serve.py arguments.",
-    "no-new-privileges: the original ran without it under Can's one-run exception (#2199); logic's server drops it only with REAX_NO_NNP_EXCEPTION=1 and its own approval, otherwise it does not start.",
-    "Not replayable today, though played in the original: Mercury Decide (blockers today); their seed pins are kept so they replay with the original seeds once unblocked."
+    "Server: logic's container logic-dm-reax13, on the internal network reax13-offline (internal=true, no outbound route; egress test from inside: Network is unreachable), no published port, reached through a loopback forwarder on 127.0.0.1:19100; read-only root, cap-drop ALL, user 1000:1000 (logic #4785). The original ran reax13-late on the same internal network, reached on the container's address. Same image, engine, kit, weights, config and serve.py arguments; shared in turn with logic's and turkce's repeats.",
+    "no-new-privileges: off, as in the original; Can renewed his one-run exception (#2199) for this repeat server, offline only (#4745, answering #4744)."
    ],
    "start": [],
    "pairs": [

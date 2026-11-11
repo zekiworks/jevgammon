@@ -2,6 +2,10 @@
  "_about": "Setups not shown on the site yet (common.HELD), name: reason. Earlier late entries (Drex, REAX 1.3) were shown automatically from their first late-entry match; a held one is left out of every page, data file, leaderboard row, bench score and model list (analysis.late_entries, cup.classify) until its line is removed here, once its entry is complete.",
  "held": {
   "Muse Ember (max)": "late entry running (late-entry league #20, from 2026-11-10 14:45 UTC); shown when complete",
-  "KnowLine 4B Gen5.5": "late entry running (branch late-knowline4b, Ümit #4325; spark2 serve_knowline.sh, FP8 at load); shown when complete"
+  "KnowLine 4B Gen5.5": "late entry running (branch late-knowline4b, Ümit #4325; spark2 serve_knowline.sh, FP8 at load); shown when complete",
+  "Base Labs Mammoth-1 [repeat 1]": "reproducibility repeat (tools/v3/repeats, Zeki #4667): never shown as a setup; its result only in Experiments, Repeat checks",
+  "Drex Max v1 [repeat 1]": "reproducibility repeat (tools/v3/repeats, Zeki #4667): never shown as a setup; its result only in Experiments, Repeat checks",
+  "REAX 1.3 [repeat 1]": "reproducibility repeat (tools/v3/repeats, Zeki #4667): never shown as a setup; its result only in Experiments, Repeat checks",
+  "Liquid d1-ultra [repeat 1]": "reproducibility repeat (tools/v3/repeats, Zeki #4671): never shown as a setup; its result only in Experiments, Repeat checks"
  }
 }

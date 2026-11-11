@@ -1,0 +1,44 @@
+{
+  "note": "Reproducibility repeat 1 of Liquid d1-ultra (Ümit via Zeki, bus #4663, #4666, #4667 (protocol), #4671 (d1-ultra); run repeat-2026-11-11-d1-ultra-r1): Liquid d1-ultra [repeat 1] plays Liquid d1-ultra's original League 1 field again, one match at a time, each pair with its original match's seed and seats (voided placeholder matches, tools/v3/repeats/repeats.py pin), the same option-order seed, prompt, rules and settings. Hidden league; matches stage 'late-entry' and the name held (tools/site/content/held_setups.json): in no standings, table, Cup input or other setup's numbers. mailbox/repeats/manifest-2026-11-11.json",
+  "prompt_version": "bg-v2",
+  "seed": 2567889193785291627,
+  "order_seed": 1190975713392774006,
+  "rounds": 3,
+  "clock": 0,
+  "delay": 30,
+  "max_turns": 300,
+  "mirror_concurrent": false,
+  "only_pairs_of": "Liquid d1-ultra [repeat 1]",
+  "hidden": true,
+  "players": [
+    {
+      "name": "Liquid d1-ultra [repeat 1]",
+      "spec": "liquid/d1-ultra",
+      "provider": "liquid",
+      "price": {
+        "input_per_mtok": 0.042,
+        "output_per_mtok": 0.0
+      },
+      "note": "Liquid AI decisions API, paid tier; list price $0.042 per million input tokens (liquid.ai/blog/d1-ultra, 2026-10-15) Reproducibility repeat 1 (d1-ultra-r1; tools/v3/repeats, mailbox/repeats/manifest-2026-11-11.json): the original's League 1 field again, one match at a time, each pair with its original match's seed and seats; held: in no standings, table, Cup input or other setup's numbers.",
+      "parallel": 2,
+      "max_matches": 1
+    },
+    {
+      "name": "GNUbg weak",
+      "spec": "gnubg-weak",
+      "provider": "local",
+      "note": "gnubg 1.08 Beginner level (0-ply, deterministic noise 0.060)",
+      "parallel": 1
+    },
+    {
+      "name": "Random",
+      "spec": "random",
+      "provider": "local"
+    },
+    {
+      "name": "Safest",
+      "spec": "safest",
+      "provider": "local"
+    }
+  ]
+}

@@ -148,6 +148,13 @@ def compute(args) -> dict:
     # Every match, the Hype Cup and the Nackgammon knockout (Can, 29 Oct 2026): match results only, no league number.
     every = cup.compute(state, leagues)
     late = late_entry_summaries(L["late_entries"])
+    # Repeat checks (Experiments): each original's numbers on the pairs its repeat plays, and the repeat's on its finished
+    # matches of those pairs, the same computation as a setup's; on that page only.
+    repeat_originals = {rid: dict(
+        A.dataset_summary(f"repeat-original/{rid}", r["decisions"], [r["name"]])[r["name"]], matches=r["matches"],
+        repeat=(A.dataset_summary(f"repeat/{rid}", r["repeat_decisions"], [r["repeat_name"]])[r["repeat_name"]]
+                if r["repeat_decisions"] else None), repeat_matches=r["repeat_matches"])
+        for rid, r in L["repeat_originals"].items()}
     return dict(
         as_of=snapshot_time(snap), last_move=L["last_move"], leagues=leagues, setups_meta=setups,
         v1=dict(dataset="v1-set", version="v1", status=EARLIER, positions=len(v1["positions"]),
@@ -173,7 +180,7 @@ def compute(args) -> dict:
         improve=improve_page.from_state(state),
         status=json.loads((CONTENT / "analysis_status.json").read_text()),
         human_scale=json.loads((CONTENT / "human_scale.json").read_text()),
-        _v1_raw=v1, _state=state)
+        _v1_raw=v1, _state=state, _repeat_originals=repeat_originals)
 
 
 def late_entry_summaries(entries: list[dict]) -> list[dict]:
@@ -295,6 +302,12 @@ def write_data(S: dict, out: Path) -> None:
                                                                  "quality_phases")}, **brief(e)) for e in S["late_entries"]]))
     for e in S["late_entries"]:
         write_json(out, f"data/v3/late-entries/{e['slug']}.json", dict(dataset=LATE_ENTRY, version="v3", **e))
+    # Repeat checks (Experiments): what the section shows, original and repeat on the same pairs; in no other number.
+    write_json(out, "data/v3/repeat-checks.json", dict(
+        version="v3", note=("Reproducibility repeats: each original's own decisions on the pairs its repeat plays and the "
+                            "repeat's on the same pairs (same seeds and dice); the repeats are held setups, in no "
+                            "standings, table or other setup's numbers."),
+        repeats=pages.repeat_data(S)))
     v1 = S["v1"]
     write_json(out, "data/v1/v1-set.json", dict(
         {k: v for k, v in v1.items() if k not in ("setups", "pairs", "disagreements")},

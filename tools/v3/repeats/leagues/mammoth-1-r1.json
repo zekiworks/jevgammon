@@ -1,0 +1,47 @@
+{
+  "note": "Reproducibility repeat 1 of Base Labs Mammoth-1 (Ümit via Zeki, bus #4663, #4666, #4667 (protocol), #4671 (d1-ultra); run repeat-2026-11-11-mammoth-1-r1): Base Labs Mammoth-1 [repeat 1] plays Base Labs Mammoth-1's original League 1 field again, one match at a time, each pair with its original match's seed and seats (voided placeholder matches, tools/v3/repeats/repeats.py pin), the same option-order seed, prompt, rules and settings. Hidden league; matches stage 'late-entry' and the name held (tools/site/content/held_setups.json): in no standings, table, Cup input or other setup's numbers. mailbox/repeats/manifest-2026-11-11.json",
+  "prompt_version": "bg-v2",
+  "seed": 2567889193785291627,
+  "order_seed": 1190975713392774006,
+  "rounds": 3,
+  "clock": 0,
+  "delay": 30,
+  "max_turns": 300,
+  "mirror_concurrent": true,
+  "only_pairs_of": "Base Labs Mammoth-1 [repeat 1]",
+  "hidden": true,
+  "players": [
+    {
+      "name": "Base Labs Mammoth-1 [repeat 1]",
+      "spec": "baselabs/baselabs/mammoth-1",
+      "provider": "local (baselabs_server.py)",
+      "quantization": "bf16",
+      "base_url": "http://127.0.0.1:18103",
+      "price": {
+        "input_per_mtok": 0.1,
+        "output_per_mtok": 0.0
+      },
+      "note": "Base Labs' mammoth-1 (Hugging Face baselabs/mammoth-1 @ 61cec44c281c693992e3d6ebeb44dd3402dfa186, bf16; post-trained from Qwen3.5-27B) on our GPU through its model card's loader (qev's DecisionEngine from OneJev 81ce62f with the checkpoint's serve.patch, image baselabs-serve:81ce62f) behind decision-models runner/servers/baselabs_server.py, text only, one request at a time; probabilities come rounded to 6 decimals by that loader and are stored as returned; price = Baseten's Model API list price for the same model ($0.10 per million input tokens, output free, 2026-11-01). Late entry to the original League 1 table; not eligible for the Hype Cup Reproducibility repeat 1 (mammoth-1-r1; tools/v3/repeats, mailbox/repeats/manifest-2026-11-11.json): the original's League 1 field again, one match at a time, each pair with its original match's seed and seats; held: in no standings, table, Cup input or other setup's numbers.",
+      "device": "RTX PRO 6000 (bariton GPU 0), docker image baselabs-serve:81ce62f (workspace/late3/baselabs.sh mammoth, MAMMOTH_GPU=0)",
+      "parallel": 1,
+      "max_matches": 1
+    },
+    {
+      "name": "GNUbg weak",
+      "spec": "gnubg-weak",
+      "provider": "local",
+      "note": "gnubg 1.08 Beginner level (0-ply, deterministic noise 0.060)",
+      "parallel": 1
+    },
+    {
+      "name": "Random",
+      "spec": "random",
+      "provider": "local"
+    },
+    {
+      "name": "Safest",
+      "spec": "safest",
+      "provider": "local"
+    }
+  ]
+}

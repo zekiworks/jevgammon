@@ -316,7 +316,31 @@ def check_mixing(page: Path, root: Node, S: dict) -> list[str]:
 
 # --- 5. Links and ids ---------------------------------------------------------------------------------------
 
+# Pages whose anchors are rendered in the browser, not in the built file: the decisions viewer (decisions.js lists the
+# decisions its address asks for, ids d<n> included).
+DYNAMIC_ANCHORS = ("decisions/index.html",)
+_IDS: dict = {}
+
+
+def page_ids(target: Path, out: Path) -> set:
+    """The ids a built page holds once loaded: its own and, for the Leagues page, those of the per-league views loaded
+    into it (fragments/). Cached per file for one check run."""
+    if target not in _IDS:
+        files = [target] + (sorted((out / "fragments").glob("*.html")) if target == (out / "leagues/index.html").resolve()
+                            else [])
+        ids = set()
+        for f in files:
+            tree = Tree()
+            tree.feed(without_suite_bar(f.read_text()))
+            ids |= {n.attrs["id"] for n in walk(tree.root) if n.attrs.get("id")}
+        _IDS[target] = ids
+    return _IDS[target]
+
+
 def check_links(page: Path, root: Node, out: Path, anchors: bool = True) -> list[str]:
+    """Every relative link resolves; on its own page every #anchor exists (anchors: the page is its own base, not a
+    fragment loaded into another), and a link to another page's #anchor lands on an id of that page (Ümit #4665: a
+    dangling anchor fails the build; bg.js's redirect of moved ids is for old outside links, not for the site's own)."""
     bad, ids = [], []
     for n in walk(root):
         if n.attrs.get("id"):
@@ -341,6 +365,10 @@ def check_links(page: Path, root: Node, out: Path, anchors: bool = True) -> list
                 target = target / "index.html"
             if not target.exists():
                 bad.append(f"{page}: link {v} does not resolve")
+            elif (frag and target.suffix == ".html" and target.is_relative_to(out.resolve())
+                  and str(target.relative_to(out.resolve())) not in DYNAMIC_ANCHORS
+                  and frag not in page_ids(target, out.resolve())):
+                bad.append(f"{page}: link {v}: no id #{frag} on {target.relative_to(out.resolve())}")
     return bad
 
 
@@ -704,6 +732,41 @@ def _improve_expect(m: dict) -> dict:
     return dict(before=before, after=after, change=change, range=rng, threshold=thr, gate=gate, improved=improved)
 
 
+def _improve_registration(out: Path, L: dict, nodes: list) -> list[str]:
+    """The pre-registration's own pages (Ümit #4665): the results page links to both and shows no team message number
+    (#3060 …) outside the models' lesson texts; the protocol page holds the plan's title, opening and every section as
+    the data file gives them, with the registered sha256; the addendum page every shown section of the addendum."""
+    from common import shown_names_html
+    from improve_page import ADDENDUM_PATH, PATH, PLAN_SHA256, PROTOCOL_PATH
+    from method import spec_markdown
+    bad = []
+    hrefs = {n.attrs.get("href") for n in nodes}
+    bad += [f"{PATH}: no link to {p}" for p in (PROTOCOL_PATH, ADDENDUM_PATH) if f"../{p}" not in hrefs]
+    shown = " ".join(" ".join(n.text) for n in nodes if n.tag != "pre" and not any(a.tag == "pre" for a in ancestors(n)))
+    bad += [f"{PATH}: internal message number {m!r} on the results page" for m in re.findall(r"#\d{3,}\b", shown)]
+
+    def flat(h: str) -> str:
+        """The text a page shows for this HTML: after the name pass every page gets (pages.layout)."""
+        t = Tree()
+        t.feed(shown_names_html(h, "improve"))
+        return " ".join(text_of(t.root).split())
+    plan, A = L["plan"], L["addendum"]
+    for path, parts, sha in (
+            (PROTOCOL_PATH, [plan["title"], plan["intro"]] + [p for s in plan["sections"] for p in (s["title"],
+                                                                                                  s["markdown"])],
+             PLAN_SHA256),
+            (ADDENDUM_PATH, [p for s in A["sections"] for p in (s["title"], s["markdown"])], A["sha256"])):
+        p = out / path / "index.html"
+        if not p.exists():
+            bad.append(f"{path}: missing")
+            continue
+        page = flat(p.read_text())
+        if sha not in page or (path == PROTOCOL_PATH and plan["sha256"] != sha):
+            bad.append(f"{path}: not the registered file's sha256 {sha[:12]}…")
+        bad += [f"{path}: missing the registered text {x[:60]!r}" for x in parts if flat(spec_markdown(x)) not in page]
+    return bad
+
+
 def check_improve(out: Path, test_set: Path | None = None) -> list[str]:
     """The "Did they improve?" page (improve_page.py) against its data file: (a) every phrase the pre-registration
     requires is on the page (the commitment line, the rule's "operational threshold" sentence, the seed line, every
@@ -732,8 +795,10 @@ def check_improve(out: Path, test_set: Path | None = None) -> list[str]:
                                                   tag_text(name_and_tag(m["setup"], "improve")[1])) if p]
     want += [m["label"] for m in plan["models"] if m["label"]]
     bad += [f"{PATH}: missing the pre-registered text {w!r}" for w in want if w not in text]
-    # The page names no host or device and shows no withheld mark (improve_page.HOST_REWRITES).
-    raw = page.read_text() + data.read_text()
+    bad += _improve_registration(out, L, nodes)
+    # The pages name no host or device and show no withheld mark (improve_page.HOST_REWRITES).
+    raw = page.read_text() + data.read_text() + "".join(
+        p.read_text() for p in (out / PATH).glob("*/index.html"))
     bad += [f"{PATH}: names a host or shows a withheld mark ({w!r})" for w in ("withheld", "bariton", "GPU-")
             if w in raw.replace("[name withheld]", "")]
     rows = [n for n in nodes if n.tag == "tr" and n.attrs.get("data-setup")]
@@ -784,13 +849,14 @@ def check_improve(out: Path, test_set: Path | None = None) -> list[str]:
         g = lambda v, signed=False: fmt(v, 1, signed=signed) if v is not None else NA  # noqa: E731
         want = {"rf": f"{g(e['before']['risks_found'])} → {g(e['after']['risks_found'])}",
                 "rf-change": g(e["change"]["risks_found"], True),
+                "range": g(e["range"]), "threshold": g(e["threshold"]),
                 "rs": f"{g(e['before']['right_safety'])} → {g(e['after']['right_safety'])}"}
         if rcells != want:
             bad.append(f"{PATH}: {s}: results-table cells {rcells!r}, the data gives {want!r}")
         if rv != (("yes" if e["improved"] else "no") if e["gate"] and not results.get("dry_run") else None):
             bad.append(f"{PATH}: {s}: results-table Yes/No {rv!r} not what the data gives")
     for n in (n for n in nodes if n.tag == "tr" and n.attrs.get("data-planned")):
-        if any(re.search(r"\d", text_of(c)) for c in [c for c in walk(n) if c.tag == "td"][2:]):
+        if any(re.search(r"\d", text_of(c)) for c in walk(n) if c.tag == "td" and not c.attrs.get("data-pcell")):
             bad.append(f"{PATH}: planned row {n.attrs['data-planned']}: shows a number")
 
     changes = [by[s]["change"]["risks_found"] if s in by else None for s in setups]

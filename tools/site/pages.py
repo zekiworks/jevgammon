@@ -1966,6 +1966,8 @@ def write_all(S, out: Path, base: str) -> None:
     import improve_page
     put(improve_page.PATH, improve_page.title(S["improve"]), improve_page.body(S["improve"], S),
         description=improve_page.DESCRIPTION, scripts=("bg.js",), dataset="improve")
+    for path, title, body in improve_page.registration_pages(S["improve"]):
+        put(path, title, body, dataset="improve")
     put("data/", "Data", data_page(S, out))
     put("decisions/", "Every decision", decisions_page(S, decisions_export.body()),
         scripts=("decisions.js",), styles=("decisions.css",))

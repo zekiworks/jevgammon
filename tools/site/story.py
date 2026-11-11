@@ -453,7 +453,7 @@ def too_safe(S, chart: list) -> str:
 MEANING = "Risk judgement: 100 = every call right, 50 = always safe; higher is better."
 ROW_LINE = "One row per model at its highest reasoning setting, never its best score; late entries included."
 # Under the table, next to the not-paired note (Ümit #4282 item 2): why # has no tiers, plainly.
-NO_TIERS = ("Rank is the league rank, which has no tiers: a tier needs a paired test (McNemar, Holm) over positions every "
+NO_TIERS = ("Rank counts 1, 2, 3 down the models shown, in league order (with a filter on, among those models only); it has no tiers: a tier needs a paired test (McNemar, Holm) over positions every "
             "model answered, and each league played its own positions, so models in different leagues never answered "
             "the same ones. The Tier column and Same positions (preview) come from 200 positions every model there "
             "answered.")

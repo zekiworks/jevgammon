@@ -156,7 +156,7 @@
    "source": "https://dev.meta.ai/models/muse-ember",
    "read": "2026-11-10",
    "quote": "muse-ember-1.0 price table: input $0.10, output $0.50 per 1M tokens (prompts up to 200k)",
-   "note": "Held late entry: not shown on the leaderboard yet.",
+   "note": "Late entry (late-entry league #20, 10–11 Nov 2026); OpenRouter's Meta endpoint lists the same price ($0.10/M prompt, $0.50/M completion, read 2026-11-10).",
    "provisional": false,
    "provisional_reason": null
   },

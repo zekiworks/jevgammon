@@ -1,0 +1,43 @@
+{
+  "note": "Reproducibility repeat 1 of REAX 1.3 (Ümit via Zeki, bus #4663, #4666, #4667 (protocol), #4671 (d1-ultra); run repeat-2026-11-11-reax-1.3-r1): REAX 1.3 [repeat 1] plays REAX 1.3's original League 1 field again, one match at a time, each pair with its original match's seed and seats (voided placeholder matches, tools/v3/repeats/repeats.py pin), the same option-order seed, prompt, rules and settings. Hidden league; matches stage 'late-entry' and the name held (tools/site/content/held_setups.json): in no standings, table, Cup input or other setup's numbers. mailbox/repeats/manifest-2026-11-11.json",
+  "prompt_version": "bg-v2",
+  "seed": 2567889193785291627,
+  "order_seed": 1190975713392774006,
+  "rounds": 3,
+  "clock": 0,
+  "delay": 30,
+  "max_turns": 300,
+  "mirror_concurrent": true,
+  "only_pairs_of": "REAX 1.3 [repeat 1]",
+  "hidden": true,
+  "players": [
+    {
+      "name": "REAX 1.3 [repeat 1]",
+      "spec": "reax/reax13",
+      "provider": "local (reax13 serve.py)",
+      "quantization": "fp8",
+      "base_url": "http://127.0.0.1:19100",
+      "note": "REAX 1.3 (Hugging Face decisionmodels/REAX-1.3 @ fa4bf7ee3bb56a8bc421dad090631be1c5845c2d, Apache-2.0; part G: CharlieBT/gx31-decider blended with PelaAI/KnowLine-31B-Gen1, Gemma-4-31B line; part Q: gurujustin/sn92-gen-p5 blended with vllm-sr/d3-ultra, Qwen 27B line; each option's probability the 50/50 mean of the two parts') on one of our GPUs, both parts in dynamic fine-grained FP8, served by the REAX Engine's own server as its card runs it (reax13 mode of github.com/reaxlabs/reax-engine @ ff8f595f149abdd50ea914455eadc74cf97a277f, image reax13-runtime; Decision Index kit @ 25c6ec7b6b5f44a216c63c3a700de3a9c6d6699d mounted read-only), offline (Docker internal network without external route; the API reached on the container's address on that network, from this host only), one request at a time, client timeout 1,800 s; at most 255 options per request (the server's limit per choice question; League 1's largest full lists stay under half the card's 32,000 proxy-token cap). Container without --security-opt no-new-privileges, an exception approved by Can for this run only (bus #2199): snap Docker's AppArmor profile makes every exec fail with EPERM under no_new_privs; --cap-drop ALL, read-only root, non-root user and read-only weights kept. No list price; not billed. Late entry to the original League 1 table; not eligible for the Hype Cup Reproducibility repeat 1 (reax-1.3-r1; tools/v3/repeats, mailbox/repeats/manifest-2026-11-11.json): the original's League 1 field again, one match at a time, each pair with its original match's seed and seats; held: in no standings, table, Cup input or other setup's numbers.",
+      "device": "RTX PRO 6000 (bariton GPU 0), one GPU for both parts (logic's servers.sh unit logic-dm-reax13, loopback port 19100)",
+      "parallel": 1,
+      "max_matches": 1
+    },
+    {
+      "name": "GNUbg weak",
+      "spec": "gnubg-weak",
+      "provider": "local",
+      "note": "gnubg 1.08 Beginner level (0-ply, deterministic noise 0.060)",
+      "parallel": 1
+    },
+    {
+      "name": "Random",
+      "spec": "random",
+      "provider": "local"
+    },
+    {
+      "name": "Safest",
+      "spec": "safest",
+      "provider": "local"
+    }
+  ]
+}

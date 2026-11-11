@@ -1804,7 +1804,108 @@ def experiments_page(S) -> str:
         + '</p></section>'
         for cid, title, status, sub, text, links in cards)
     return page_head(S, "Experiments", "Experiments", "Tests beside the leagues.") + \
-        f'<div class="experiment-cards">{out}</div>'
+        f'<div class="experiment-cards">{out}</div>' + repeat_checks(S)
+
+
+# Repeat checks (Ümit via Zeki #4663, #4667, #4671): the reproducibility repeats' manifest (tools/v3/repeats) and their
+# status file; each original's numbers are computed on the pairs its repeat plays (build: _repeat_originals). The
+# section's numbers are published in data/v3/repeat-checks.json (repeat_data).
+REPEAT_MANIFEST = ROOT / "mailbox/repeats/manifest-2026-11-11.json"
+REPEAT_STATUS = {"queued": "Queued", "running": "Running", "played": "Played"}
+# Changed setting fields in words (a page never names the server-address field).
+REPEAT_FIELDS = {"name": "name", "note": "note", "max_matches": "one match at a time",
+                 "base_url": "server address (logic's REAX server)", "device": "device note"}
+
+
+def repeat_data(S) -> list[dict]:
+    """One record per repeat, everything the Repeat checks section shows: from the manifest, the status file and the
+    build's same-pair numbers (risk judgement at margin 0.001, error rate, decisions)."""
+    from common import CONTENT, label
+    results = json.loads((CONTENT / "repeat_results.json").read_text())["results"]
+
+    def measures(s):
+        q, r = s["quality"], s["risk"]["main"]
+        return dict(judgement=r.get("judgement"), judgement_lo=r.get("judgement_lo"), judgement_hi=r.get("judgement_hi"),
+                    judgement_na=r.get("judgement_na"), error_rate=q.get("error_rate"), error_lo=q.get("error_lo"),
+                    error_hi=q.get("error_hi"), too_few=bool(q.get("too_few")), decisions=q["decisions"])
+
+    out = []
+    for m in json.loads(REPEAT_MANIFEST.read_text())["repeats"]:
+        o, res = S["_repeat_originals"][m["id"]], results[m["id"]]
+        cov, today, cost, rules = m["coverage_original"], m["coverage_repeat_today"], m["cost_basis"], m["rules"]
+        sr = m["settings_repeat"]
+        out.append(dict(
+            id=m["id"], run_id=m["run_id"], model=m["display"], status=res["status"],
+            original_in=("late entry" if m["original_stage"] == "late-entry" else f'League {m["original_league"]}'),
+            original_matches=o["matches"], original=measures(o),
+            repeat=measures(o["repeat"]) if res["status"] == "played" and o["repeat"] else None,
+            repeat_matches=o["repeat_matches"], played=res["played"], playable=today["playable"], field=today["of"],
+            original_played=cov["played"], original_field=cov["of"],
+            original_dates=[min(p["started"] for p in m["pairs"])[:10],
+                            max(p["finished"] or p["started"] for p in m["pairs"])[:10]],
+            not_played=[dict(opponent=label(g["opponent"]), reason=g["reason"]) for g in cov["not_played"]],
+            blocked_today=[label(b["opponent"]) for b in today["blocked"]],
+            setup=(f'its own players row: {sr["spec"]} · {sr.get("provider") or NOT_MEASURED} · '
+                   f'{sr.get("quantization") or "hosted"}'),
+            settings=(f'as the original\'s, changed: {", ".join(REPEAT_FIELDS[k] for k in m["settings_changed"])}; '
+                      f'League 1 rules (prompt {rules["prompt_version"]}, {rules["rounds"]} rounds, {rules["max_turns"]} '
+                      f'turns, the original\'s option-order seed, mirror games {"on" if rules["mirror_concurrent"] else "off"}); '
+                      "each pair with its original match's seed and seats; one match at a time"),
+            dates=dict(prepared=m["prepared"], started=(res.get("started") or "")[:10] or None,
+                       finished=(res.get("finished") or "")[:10] or None),
+            cost=dict(estimate_usd=round(cost["estimate_usd"], 2), entrant_usd=round(cost["entrant_usd"], 2),
+                      cap_usd=cost["cap_usd"]),
+            differences=m["differences"]))
+    return out
+
+
+def repeat_measures(x: dict) -> str:
+    """Risk judgement / error rate / decisions, as one cell."""
+    judgement = (f'{fmt(x["judgement"])}<span class="small">{fmt(x["judgement_lo"])} to {fmt(x["judgement_hi"])}</span>'
+                 if x["judgement"] is not None else nm(x["judgement_na"] or NA))
+    error = (f'{fmt(x["error_rate"])}<span class="small">{fmt(x["error_lo"])} to {fmt(x["error_hi"])}</span>'
+             if x["error_rate"] is not None and not x["too_few"] else nm(TOO_FEW if x["too_few"] else NA))
+    return f'{judgement} / {error} / {count(x["decisions"])}'
+
+
+def repeat_checks(S) -> str:
+    """One row per repeat: the original's risk judgement / error rate / decisions on the pairs its repeat plays, the
+    repeat's (or its status), and the details (run id, settings, dates, cost basis, differences from the original
+    protocol)."""
+    rows, details = [], []
+    for d in repeat_data(S):
+        state = REPEAT_STATUS[d["status"]]
+        rows.append(f'<tr><td class="model"><a class="model-name" href="#repeat-{d["id"]}">{esc(d["model"])}</a>'
+                    f'<span class="small">{esc(d["original_in"])}; {count(len(d["original_matches"]))} pairs</span></td>'
+                    f'<td class="num">{repeat_measures(d["original"])}</td>'
+                    f'<td class="num">{repeat_measures(d["repeat"]) if d["repeat"] else nm(state.lower())}</td>'
+                    f'<td>{status_badge(state)}<span class="small">{count(d["played"])} of {count(d["playable"])} '
+                    f'pairs played</span></td></tr>')
+        gone = "".join(f"; not played: {esc(g['opponent'])} ({esc(g['reason'])})" for g in d["not_played"])
+        cost, dates = d["cost"], d["dates"]
+        items = [
+            ("Run id", esc(d["run_id"])),
+            ("Setup", f'{esc(d["setup"])}; held: in no standings, table or other setup\'s numbers'),
+            ("Settings", esc(d["settings"])),
+            ("Original", f'{count(d["original_played"])} of {count(d["original_field"])} pairs played, '
+                         f'{esc(" to ".join(dict.fromkeys(d["original_dates"])))}{gone}; its numbers here: its '
+                         f'own decisions in the {count(len(d["original_matches"]))} pairs the repeat plays (matches '
+                         f'{esc(", ".join(f"#{i}" for i in d["original_matches"]))})'),
+            ("Dates", f'prepared {esc(dates["prepared"])}; started {esc(dates["started"] or "not yet")}; finished '
+                      f'{esc(dates["finished"] or "not yet")}'),
+            ("Pairs today", f'{count(d["playable"])} of {count(d["field"])}'
+                            + (f'; blocked: {esc(", ".join(d["blocked_today"]))}' if d["blocked_today"] else "")),
+            ("Cost basis", f'${cost["estimate_usd"]:.2f} estimated (the original\'s billed paid-opponent costs'
+                           + (f', with its own ${cost["entrant_usd"]:.2f}' if cost["entrant_usd"] else "")
+                           + f'); cap ${cost["cap_usd"]:.0f} per repeat'),
+            ("Differences from the original protocol",
+             "<ul>" + "".join(f"<li>{esc(x)}</li>" for x in d["differences"]) + "</ul>")]
+        details.append(f'<details class="more" id="repeat-{d["id"]}"><summary>{esc(d["model"])}</summary>'
+                       '<dl class="facts">' + "".join(f"<dt>{k}</dt><dd>{v}</dd>" for k, v in items) + "</dl></details>")
+    return (f'<section class="card" id="repeat-checks"><div class="section-head"><h2>Repeat checks</h2></div>'
+            + table(["Model", "Original: risk judgement / error rate (PR) / decisions", "Repeat", "Status"], rows,
+                    "Repeat checks: each original and its repeat")
+            + "".join(details) + "</section>")
 
 
 def nackgammon_page(S) -> str:

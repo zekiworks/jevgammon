@@ -191,8 +191,47 @@ def load_leagues(snap: Path, plays_dir: Path) -> dict:
     turns_total = conn.execute("SELECT COUNT(*) FROM turns").fetchone()[0]
     last = conn.execute("SELECT MAX(created_at) FROM turns").fetchone()[0]
     late = late_entries(conn, plays)
+    repeats = repeat_originals(conn, plays)
     conn.close()
-    return dict(leagues=leagues, plays=len(plays), turns_total=turns_total, last_move=last, late_entries=late)
+    return dict(leagues=leagues, plays=len(plays), turns_total=turns_total, last_move=last, late_entries=late,
+                repeat_originals=repeats)
+
+
+REPEAT_MANIFEST = ROOT / "mailbox/repeats/manifest-2026-11-11.json"
+
+
+def repeat_originals(conn, plays: dict) -> dict:
+    """Reproducibility repeats (tools/v3/repeats, REPEAT_MANIFEST): per repeat, the repeat's own decisions in its
+    finished valid matches against its original's field (stage 'late-entry', a held name: in no other number), and its
+    original's own decisions in the original matches of the same pairs (until the repeat is played, per
+    content/repeat_results.json: the pairs it plays, played then and not blocked today), so original and repeat are read
+    on the same pairs, seeds and dice. Read only for the Experiments page's Repeat checks."""
+    status = json.loads((ROOT / "tools/site/content/repeat_results.json").read_text())["results"]
+
+    def decisions_of(name: str, match_id: int, seat: int) -> list[dict]:
+        return [decision(t, plays) for t in conn.execute(
+            f"""SELECT {DECISION_COLUMNS}, ? AS name FROM turns t JOIN games g ON g.id = t.game_id
+                WHERE g.match_id = ? AND t.player = ? AND t.decided_by IN ('model', 'fallback')
+                ORDER BY g.id, t.turn_no""", (name, match_id, seat))]
+
+    out = {}
+    for m in json.loads(REPEAT_MANIFEST.read_text())["repeats"]:
+        playable = {p["opponent"]: p for p in m["pairs"] if p["status"] == "finished" and not p["blocked_today"]}
+        played = [r for r in conn.execute(
+            """SELECT m.id, a.name AS a, b.name AS b FROM matches m JOIN players a ON a.id = m.player1
+               JOIN players b ON b.id = m.player2
+               WHERE m.valid = 1 AND m.stage = 'late-entry' AND m.status = 'finished' AND ? IN (a.name, b.name)
+               ORDER BY m.id""", (m["name"],))
+                  if (r["b"] if r["a"] == m["name"] else r["a"]) in playable]
+        done = status[m["id"]]["status"] == "played"
+        pairs = ([playable[r["b"] if r["a"] == m["name"] else r["a"]] for r in played] if done and played
+                 else list(playable.values()))
+        original = [d for p in pairs
+                    for d in decisions_of(m["original"], p["original_match"], 1 if p["original_is_player1"] else 2)]
+        repeat = [d for r in played for d in decisions_of(m["name"], r["id"], 1 if r["a"] == m["name"] else 2)]
+        out[m["id"]] = dict(name=m["original"], matches=sorted(p["original_match"] for p in pairs), decisions=original,
+                            repeat_name=m["name"], repeat_matches=[r["id"] for r in played], repeat_decisions=repeat)
+    return out
 
 
 def original_fields(conn) -> dict[int, set[str]]:

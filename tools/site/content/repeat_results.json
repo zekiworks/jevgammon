@@ -20,12 +20,12 @@
    "finished": null
   },
   "reax-1.3-r1": {
-   "status": "queued",
-   "league": null,
+   "status": "running",
+   "league": 24,
    "played": 0,
    "playable": 17,
    "first_match": null,
-   "started": null,
+   "started": "2026-11-11T15:25:16.745Z",
    "finished": null
   },
   "d1-ultra-r1": {

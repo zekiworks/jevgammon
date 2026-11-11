@@ -250,13 +250,18 @@ def repeat_originals(conn, plays: dict) -> dict:
                        JOIN players a ON a.id = m.player1 JOIN players b ON b.id = m.player2
                        WHERE m.valid = 1 AND m.stage = 'late-entry' AND ? IN (a.name, b.name) ORDER BY m.id""",
                     (m["name"],))]
-        played = [r for r in rows if r["status"] == "finished" and r["opponent"] in playable]
+        # Both runs' games in the manifest's pair order (Zeki #5047): the bootstrap resamples games by position, so neither
+        # interval depends on the order the repeat happened to play its pairs in.
+        order = {o: i for i, o in enumerate(playable)}
+        played = sorted((r for r in rows if r["status"] == "finished" and r["opponent"] in playable),
+                        key=lambda r: (order[r["opponent"]], r["id"]))
         league = conn.execute("SELECT id, status, started_at FROM leagues WHERE only_pairs_of = ? ORDER BY id DESC",
                               (m["name"],)).fetchone()
         state = ("queued" if not rows else "complete" if {r["opponent"] for r in played} >= set(playable)
                  else "running" if (league and league["status"] == "running") or any(r["status"] == "running" for r in rows)
                  else "stopped")
-        pairs = [playable[r["opponent"]] for r in played] if state == "complete" else list(playable.values())
+        done = {r["opponent"] for r in played}
+        pairs = [p for o, p in playable.items() if o in done] if state == "complete" else list(playable.values())
         original = [d for p in pairs
                     for d in decisions_of(m["original"], p["original_match"], 1 if p["original_is_player1"] else 2)]
         repeat = [d for r in played for d in decisions_of(m["name"], r["id"], r["seat"])] if state == "complete" else []

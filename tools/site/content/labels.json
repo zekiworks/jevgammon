@@ -71,6 +71,7 @@
   "Drex Max v1": "NVIDIA RTX PRO 6000 Blackwell",
   "Drex 2.0 (local)": "NVIDIA RTX PRO 6000 Blackwell",
   "REAX 1.3": "NVIDIA RTX PRO 6000 Blackwell",
+  "KnowLine 31B Gen1.5": "NVIDIA DGX Spark (GB10)",
   "Drex 2.0": "API"
  },
  "routes_v1": {

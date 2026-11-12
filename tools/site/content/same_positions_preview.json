@@ -1,5 +1,5 @@
 {
- "about": "Same positions (preview, Zeki #4287): the STORED E1 answers (the 200-position empty-context test of 'Did they improve?') of every ranked leaderboard model that answered all 200; no new model call. Computed read-only by tools/site/same_positions_publish.py on 2026-11-10 from smoke/improve/*.db, the improve test set and the site state. Names: the leaderboard's (the site relabels them). Muse Ember (max) added 2026-11-12 from its own E1 run (ember-E1-20261112T0237Z: the same 200 positions, its league route and settings, one request at a time); every pair and tier recomputed with it in the Holm family, league ranks refreshed from the leaderboard.",
+ "about": "Same positions (preview, Zeki #4287): the STORED E1 answers (the 200-position empty-context test of 'Did they improve?') of every ranked leaderboard model that answered all 200. Computed read-only by tools/site/same_positions_publish.py on 2026-11-12 from smoke/improve/*.db, the improve test set and the site state; Muse Ember (max)'s answers from its own E1 run ember-E1-20261112T0237Z (Zeki #5153: the same 200 positions, its league route and settings, one request at a time). Names: the leaderboard's (the site relabels them).",
  "prompt_equals_league": true,
  "correctness_rule": "correct = valid answer whose play lost < 0.001 equity against GNUbg's best (test_set.json losses, GNUbg 2-ply; tools/site thresholds.json best_play_loss_below, the site's 'Engine's best play'); invalid and failed answers count as wrong. The improve pipeline itself scores error rate / risks found / right safety (workspace/learning-pilot/pilot.py eval_metrics), no correct/incorrect rule.",
  "tier_rule": "Holm-adjusted (all pairs, alpha 0.05) two-sided exact McNemar. Tier 1: the most-correct model and every model not significantly different from it; then the most-correct model left leads tier 2 with every remaining model not significantly different from it; and so on.",
@@ -12,6 +12,24 @@
    "rank": 3,
    "n": 200,
    "correct": 106,
+   "invalid": 0,
+   "failed": 0,
+   "tier": 1
+  },
+  {
+   "name": "Claude Opus 5.5 (high)",
+   "rank": 5,
+   "n": 200,
+   "correct": 106,
+   "invalid": 0,
+   "failed": 0,
+   "tier": 1
+  },
+  {
+   "name": "Claude Sonnet 5.5 (high)",
+   "rank": 8,
+   "n": 200,
+   "correct": 103,
    "invalid": 0,
    "failed": 0,
    "tier": 1
@@ -123,18 +141,27 @@
    "invalid": 0,
    "failed": 0,
    "tier": 2
-  },
-  {
-   "name": "Claude Sonnet 5.5 (high)",
-   "rank": 8,
-   "n": 111,
-   "correct": 34,
-   "invalid": 0,
-   "failed": 0,
-   "tier": null
   }
  ],
  "pairs": [
+  {
+   "a": "Claude Fable 5.1 (high)",
+   "b": "Claude Opus 5.5 (high)",
+   "b01": 12,
+   "b10": 12,
+   "p": 1.0,
+   "p_holm": 1.0,
+   "sig": false
+  },
+  {
+   "a": "Claude Fable 5.1 (high)",
+   "b": "Claude Sonnet 5.5 (high)",
+   "b01": 16,
+   "b10": 13,
+   "p": 0.711071103811264,
+   "p_holm": 1.0,
+   "sig": false
+  },
   {
    "a": "Claude Fable 5.1 (high)",
    "b": "Gemini 4 Argon (high)",
@@ -177,7 +204,7 @@
    "b01": 24,
    "b10": 10,
    "p": 0.024306510109454393,
-   "p_holm": 0.923647384159267,
+   "p_holm": 1.0,
    "sig": false
   },
   {
@@ -186,7 +213,7 @@
    "b01": 34,
    "b10": 16,
    "p": 0.015346677832630107,
-   "p_holm": 0.6292137911378344,
+   "p_holm": 0.859413958627286,
    "sig": false
   },
   {
@@ -195,7 +222,7 @@
    "b01": 34,
    "b10": 13,
    "p": 0.0030876764615186403,
-   "p_holm": 0.15438382307593201,
+   "p_holm": 0.20378664646023026,
    "sig": false
   },
   {
@@ -204,7 +231,7 @@
    "b01": 36,
    "b10": 13,
    "p": 0.001402688503695515,
-   "p_holm": 0.0743424906958623,
+   "p_holm": 0.09959088376238157,
    "sig": false
   },
   {
@@ -213,7 +240,7 @@
    "b01": 40,
    "b10": 12,
    "p": 0.0001275387838557407,
-   "p_holm": 0.007907404599055923,
+   "p_holm": 0.010458180276170737,
    "sig": true
   },
   {
@@ -222,7 +249,7 @@
    "b01": 50,
    "b10": 11,
    "p": 4.588831219506234e-07,
-   "p_holm": 3.4416234146296756e-05,
+   "p_holm": 4.4970545951161095e-05,
    "sig": true
   },
   {
@@ -231,7 +258,7 @@
    "b01": 51,
    "b10": 11,
    "p": 2.775636864143019e-07,
-   "p_holm": 2.1372403853901246e-05,
+   "p_holm": 2.775636864143019e-05,
    "sig": true
   },
   {
@@ -240,7 +267,232 @@
    "b01": 57,
    "b10": 11,
    "p": 1.2750032374450517e-08,
-   "p_holm": 9.945025252071403e-07,
+   "p_holm": 1.3260033669428538e-06,
+   "sig": true
+  },
+  {
+   "a": "Claude Opus 5.5 (high)",
+   "b": "Claude Sonnet 5.5 (high)",
+   "b01": 17,
+   "b10": 14,
+   "p": 0.720100131817162,
+   "p_holm": 1.0,
+   "sig": false
+  },
+  {
+   "a": "Claude Opus 5.5 (high)",
+   "b": "Gemini 4 Argon (high)",
+   "b01": 17,
+   "b10": 12,
+   "p": 0.45825831964612007,
+   "p_holm": 1.0,
+   "sig": false
+  },
+  {
+   "a": "Claude Opus 5.5 (high)",
+   "b": "DeepSeek V4.1 Flash (low)",
+   "b01": 21,
+   "b10": 15,
+   "p": 0.40503224614076316,
+   "p_holm": 1.0,
+   "sig": false
+  },
+  {
+   "a": "Claude Opus 5.5 (high)",
+   "b": "Gemini 3.8 Flash (high)",
+   "b01": 19,
+   "b10": 10,
+   "p": 0.13604594767093658,
+   "p_holm": 1.0,
+   "sig": false
+  },
+  {
+   "a": "Claude Opus 5.5 (high)",
+   "b": "Grok 4.7 (high)",
+   "b01": 25,
+   "b10": 16,
+   "p": 0.21102359760880063,
+   "p_holm": 1.0,
+   "sig": false
+  },
+  {
+   "a": "Claude Opus 5.5 (high)",
+   "b": "Gemma 4 31B (on)",
+   "b01": 22,
+   "b10": 8,
+   "p": 0.016124801710247993,
+   "p_holm": 0.8707392923533916,
+   "sig": false
+  },
+  {
+   "a": "Claude Opus 5.5 (high)",
+   "b": "Muse Ember (max)",
+   "b01": 31,
+   "b10": 13,
+   "p": 0.009559878856634896,
+   "p_holm": 0.5735927313980937,
+   "sig": false
+  },
+  {
+   "a": "Claude Opus 5.5 (high)",
+   "b": "Kimi K3.1 Pro (off)",
+   "b01": 32,
+   "b10": 11,
+   "p": 0.001913961001264397,
+   "p_holm": 0.1339772700885078,
+   "sig": false
+  },
+  {
+   "a": "Claude Opus 5.5 (high)",
+   "b": "GLM-5.3 (low)",
+   "b01": 32,
+   "b10": 9,
+   "p": 0.000430857042374555,
+   "p_holm": 0.03317599226284074,
+   "sig": true
+  },
+  {
+   "a": "Claude Opus 5.5 (high)",
+   "b": "Qwen3.8-27B (low)",
+   "b01": 38,
+   "b10": 10,
+   "p": 6.169640777642371e-05,
+   "p_holm": 0.005182498253219592,
+   "sig": true
+  },
+  {
+   "a": "Claude Opus 5.5 (high)",
+   "b": "Drex Max 1.1",
+   "b01": 49,
+   "b10": 10,
+   "p": 2.706279703008907e-07,
+   "p_holm": 2.733342500038996e-05,
+   "sig": true
+  },
+  {
+   "a": "Claude Opus 5.5 (high)",
+   "b": "Qwen3.8 Flash (off)",
+   "b01": 50,
+   "b10": 10,
+   "p": 1.6163814566157175e-07,
+   "p_holm": 1.648709085748032e-05,
+   "sig": true
+  },
+  {
+   "a": "Claude Opus 5.5 (high)",
+   "b": "SubQ Snap 1.1",
+   "b01": 56,
+   "b10": 10,
+   "p": 6.901424055611068e-09,
+   "p_holm": 7.246495258391621e-07,
+   "sig": true
+  },
+  {
+   "a": "Claude Sonnet 5.5 (high)",
+   "b": "Gemini 4 Argon (high)",
+   "b01": 19,
+   "b10": 17,
+   "p": 0.8679394004284404,
+   "p_holm": 1.0,
+   "sig": false
+  },
+  {
+   "a": "Claude Sonnet 5.5 (high)",
+   "b": "DeepSeek V4.1 Flash (low)",
+   "b01": 20,
+   "b10": 17,
+   "p": 0.7428293587290682,
+   "p_holm": 1.0,
+   "sig": false
+  },
+  {
+   "a": "Claude Sonnet 5.5 (high)",
+   "b": "Gemini 3.8 Flash (high)",
+   "b01": 20,
+   "b10": 14,
+   "p": 0.39152830513194203,
+   "p_holm": 1.0,
+   "sig": false
+  },
+  {
+   "a": "Claude Sonnet 5.5 (high)",
+   "b": "Grok 4.7 (high)",
+   "b01": 25,
+   "b10": 19,
+   "p": 0.4513808323961257,
+   "p_holm": 1.0,
+   "sig": false
+  },
+  {
+   "a": "Claude Sonnet 5.5 (high)",
+   "b": "Gemma 4 31B (on)",
+   "b01": 23,
+   "b10": 12,
+   "p": 0.0895310789346695,
+   "p_holm": 1.0,
+   "sig": false
+  },
+  {
+   "a": "Claude Sonnet 5.5 (high)",
+   "b": "Muse Ember (max)",
+   "b01": 28,
+   "b10": 13,
+   "p": 0.027533155829587486,
+   "p_holm": 1.0,
+   "sig": false
+  },
+  {
+   "a": "Claude Sonnet 5.5 (high)",
+   "b": "Kimi K3.1 Pro (off)",
+   "b01": 34,
+   "b10": 16,
+   "p": 0.015346677832630107,
+   "p_holm": 0.859413958627286,
+   "sig": false
+  },
+  {
+   "a": "Claude Sonnet 5.5 (high)",
+   "b": "GLM-5.3 (low)",
+   "b01": 31,
+   "b10": 11,
+   "p": 0.002887247974285856,
+   "p_holm": 0.19344561427715234,
+   "sig": false
+  },
+  {
+   "a": "Claude Sonnet 5.5 (high)",
+   "b": "Qwen3.8-27B (low)",
+   "b01": 38,
+   "b10": 13,
+   "p": 0.0006210434562277101,
+   "p_holm": 0.046578259217078255,
+   "sig": true
+  },
+  {
+   "a": "Claude Sonnet 5.5 (high)",
+   "b": "Drex Max 1.1",
+   "b01": 45,
+   "b10": 9,
+   "p": 7.288430776686283e-07,
+   "p_holm": 7.020059980294513e-05,
+   "sig": true
+  },
+  {
+   "a": "Claude Sonnet 5.5 (high)",
+   "b": "Qwen3.8 Flash (off)",
+   "b01": 50,
+   "b10": 13,
+   "p": 3.015952084642337e-06,
+   "p_holm": 0.00028048354387173735,
+   "sig": true
+  },
+  {
+   "a": "Claude Sonnet 5.5 (high)",
+   "b": "SubQ Snap 1.1",
+   "b01": 54,
+   "b10": 11,
+   "p": 6.027539034309404e-08,
+   "p_holm": 6.2083652053386866e-06,
    "sig": true
   },
   {
@@ -303,7 +555,7 @@
    "b01": 33,
    "b10": 15,
    "p": 0.013283281562245008,
-   "p_holm": 0.5578978256142904,
+   "p_holm": 0.7571470490479655,
    "sig": false
   },
   {
@@ -312,7 +564,7 @@
    "b01": 38,
    "b10": 15,
    "p": 0.0021901868838920535,
-   "p_holm": 0.11388971796238678,
+   "p_holm": 0.1511228949885517,
    "sig": false
   },
   {
@@ -321,7 +573,7 @@
    "b01": 52,
    "b10": 18,
    "p": 5.849547318695842e-05,
-   "p_holm": 0.003743710283965339,
+   "p_holm": 0.004972115220891466,
    "sig": true
   },
   {
@@ -330,7 +582,7 @@
    "b01": 47,
    "b10": 12,
    "p": 5.1256292496887346e-06,
-   "p_holm": 0.00034854278897883395,
+   "p_holm": 0.0004561810032222974,
    "sig": true
   },
   {
@@ -339,7 +591,7 @@
    "b01": 56,
    "b10": 15,
    "p": 1.0414019304757919e-06,
-   "p_holm": 7.60223409247328e-05,
+   "p_holm": 9.893318339520023e-05,
    "sig": true
   },
   {
@@ -384,7 +636,7 @@
    "b01": 26,
    "b10": 11,
    "p": 0.020073851919732988,
-   "p_holm": 0.8024642802774906,
+   "p_holm": 1.0,
    "sig": false
   },
   {
@@ -393,7 +645,7 @@
    "b01": 25,
    "b10": 8,
    "p": 0.004551384132355452,
-   "p_holm": 0.21846643835306168,
+   "p_holm": 0.2912885844707489,
    "sig": false
   },
   {
@@ -402,7 +654,7 @@
    "b01": 32,
    "b10": 10,
    "p": 0.0009406740282429382,
-   "p_holm": 0.0517370715533616,
+   "p_holm": 0.06866920406173449,
    "sig": false
   },
   {
@@ -411,7 +663,7 @@
    "b01": 42,
    "b10": 9,
    "p": 3.3888279489246997e-06,
-   "p_holm": 0.00023721795642472898,
+   "p_holm": 0.0003083833433521477,
    "sig": true
   },
   {
@@ -420,7 +672,7 @@
    "b01": 43,
    "b10": 9,
    "p": 2.0377698612961126e-06,
-   "p_holm": 0.0001467194300133201,
+   "p_holm": 0.00019155036696183458,
    "sig": true
   },
   {
@@ -429,7 +681,7 @@
    "b01": 53,
    "b10": 13,
    "p": 7.237175237417024e-07,
-   "p_holm": 5.3555096756885976e-05,
+   "p_holm": 7.020059980294513e-05,
    "sig": true
   },
   {
@@ -474,7 +726,7 @@
    "b01": 24,
    "b10": 10,
    "p": 0.024306510109454393,
-   "p_holm": 0.923647384159267,
+   "p_holm": 1.0,
    "sig": false
   },
   {
@@ -483,7 +735,7 @@
    "b01": 34,
    "b10": 15,
    "p": 0.009399241523873059,
-   "p_holm": 0.42296586857428764,
+   "p_holm": 0.5733537329562566,
    "sig": false
   },
   {
@@ -492,7 +744,7 @@
    "b01": 38,
    "b10": 8,
    "p": 9.24769992138863e-06,
-   "p_holm": 0.000601100494890261,
+   "p_holm": 0.0007953021932394222,
    "sig": true
   },
   {
@@ -501,7 +753,7 @@
    "b01": 38,
    "b10": 7,
    "p": 3.1213096463034162e-06,
-   "p_holm": 0.00022161298488754255,
+   "p_holm": 0.0002871604874599143,
    "sig": true
   },
   {
@@ -510,7 +762,7 @@
    "b01": 46,
    "b10": 9,
    "p": 4.336383137015787e-07,
-   "p_holm": 3.295651184131998e-05,
+   "p_holm": 4.293019305645629e-05,
    "sig": true
   },
   {
@@ -555,7 +807,7 @@
    "b01": 33,
    "b10": 14,
    "p": 0.007942726509483578,
-   "p_holm": 0.36536541943624457,
+   "p_holm": 0.4924490435879818,
    "sig": false
   },
   {
@@ -564,7 +816,7 @@
    "b01": 43,
    "b10": 13,
    "p": 7.333218396948782e-05,
-   "p_holm": 0.004619927590077733,
+   "p_holm": 0.006086571269467489,
    "sig": true
   },
   {
@@ -573,7 +825,7 @@
    "b01": 39,
    "b10": 8,
    "p": 5.539621596994948e-06,
-   "p_holm": 0.0003711546469986615,
+   "p_holm": 0.00048748670053555543,
    "sig": true
   },
   {
@@ -582,7 +834,7 @@
    "b01": 51,
    "b10": 14,
    "p": 4.47522484948754e-06,
-   "p_holm": 0.00030879051461464027,
+   "p_holm": 0.0004027702364538786,
    "sig": true
   },
   {
@@ -618,7 +870,7 @@
    "b01": 23,
    "b10": 9,
    "p": 0.020061607006937265,
-   "p_holm": 0.8024642802774906,
+   "p_holm": 1.0,
    "sig": false
   },
   {
@@ -627,7 +879,7 @@
    "b01": 35,
    "b10": 10,
    "p": 0.00024708778460080794,
-   "p_holm": 0.014825267076048476,
+   "p_holm": 0.019767022768064635,
    "sig": true
   },
   {
@@ -636,7 +888,7 @@
    "b01": 36,
    "b10": 10,
    "p": 0.00015641720852954677,
-   "p_holm": 0.009541449720302353,
+   "p_holm": 0.012669793890893288,
    "sig": true
   },
   {
@@ -645,7 +897,7 @@
    "b01": 42,
    "b10": 10,
    "p": 9.063271916964766e-06,
-   "p_holm": 0.0005981759465196745,
+   "p_holm": 0.0007885046567759346,
    "sig": true
   },
   {
@@ -681,7 +933,7 @@
    "b01": 33,
    "b10": 12,
    "p": 0.0024589003220967243,
-   "p_holm": 0.12540391642693294,
+   "p_holm": 0.16720522190257725,
    "sig": false
   },
   {
@@ -690,7 +942,7 @@
    "b01": 32,
    "b10": 10,
    "p": 0.0009406740282429382,
-   "p_holm": 0.0517370715533616,
+   "p_holm": 0.06866920406173449,
    "sig": false
   },
   {
@@ -699,7 +951,7 @@
    "b01": 44,
    "b10": 16,
    "p": 0.00039404324272610154,
-   "p_holm": 0.02285450807811389,
+   "p_holm": 0.03073537293263592,
    "sig": true
   },
   {
@@ -726,7 +978,7 @@
    "b01": 27,
    "b10": 9,
    "p": 0.00393317302223295,
-   "p_holm": 0.19272547808941454,
+   "p_holm": 0.25565624644514173,
    "sig": false
   },
   {
@@ -735,7 +987,7 @@
    "b01": 24,
    "b10": 5,
    "p": 0.0005461126565933228,
-   "p_holm": 0.031128421425819397,
+   "p_holm": 0.04150456190109253,
    "sig": true
   },
   {
@@ -744,7 +996,7 @@
    "b01": 35,
    "b10": 10,
    "p": 0.00024708778460080794,
-   "p_holm": 0.014825267076048476,
+   "p_holm": 0.019767022768064635,
    "sig": true
   },
   {
@@ -762,7 +1014,7 @@
    "b01": 26,
    "b10": 10,
    "p": 0.011330984183587134,
-   "p_holm": 0.4985633040778339,
+   "p_holm": 0.6685280668316409,
    "sig": false
   },
   {
@@ -771,7 +1023,7 @@
    "b01": 27,
    "b10": 10,
    "p": 0.007632078602910042,
-   "p_holm": 0.35870769433677197,
+   "p_holm": 0.48082095198333263,
    "sig": false
   },
   {
@@ -780,8 +1032,8 @@
    "b01": 34,
    "b10": 11,
    "p": 0.0008240823595997426,
-   "p_holm": 0.04614861213758559,
-   "sig": true
+   "p_holm": 0.060982094610380955,
+   "sig": false
   },
   {
    "a": "Qwen3.8-27B (low)",
@@ -807,7 +1059,7 @@
    "b01": 32,
    "b10": 14,
    "p": 0.011351591436778108,
-   "p_holm": 0.4985633040778339,
+   "p_holm": 0.6685280668316409,
    "sig": false
   },
   {
@@ -858,29 +1110,20 @@
    "unavailable": "ChatGPT subscription quota until 13 Nov"
   },
   {
-   "name": "Claude Opus 5.5 (high)",
-   "rank": 5,
-   "route": "subscription",
-   "usd_200": 0.0,
-   "hours_200": 0.35141666666666665,
+   "name": "Gemini Decision 1",
+   "rank": 12,
+   "route": "hosted API",
+   "usd_200": 0.07646909624413147,
+   "hours_200": 0.01361111111111111,
    "gpu_hours": 0.0,
-   "unavailable": "Claude subscription limit"
-  },
-  {
-   "name": "Claude Sonnet 5.5 (high)",
-   "rank": 8,
-   "route": "subscription",
-   "usd_200": 0.0,
-   "hours_200": 0.3605,
-   "gpu_hours": 0.0,
-   "unavailable": "Claude subscription limit"
+   "unavailable": null
   },
   {
    "name": "Liquid d1-ultra",
    "rank": 14,
    "route": "hosted API",
-   "usd_200": 0.02861102494872273,
-   "hours_200": 0.0135,
+   "usd_200": 0.028650085187958665,
+   "hours_200": 0.013777777777777778,
    "gpu_hours": 0.0,
    "unavailable": null
   },
@@ -903,6 +1146,15 @@
    "unavailable": null
   },
   {
+   "name": "KnowLine 31B Gen1.5",
+   "rank": 19,
+   "route": "local GPU",
+   "usd_200": 0.0,
+   "hours_200": 0.19191666666666665,
+   "gpu_hours": 0.19191666666666665,
+   "unavailable": null
+  },
+  {
    "name": "REAX 1.3",
    "rank": 20,
    "route": "local GPU",
@@ -912,11 +1164,11 @@
    "unavailable": null
   },
   {
-   "name": "Fastino GLiDE",
+   "name": "Fastino GLiDE v1.2 (local)",
    "rank": 21,
    "route": "hosted API",
-   "usd_200": 0.030543338224504772,
-   "hours_200": 0.024777777777777777,
+   "usd_200": 0.030514647723977967,
+   "hours_200": 0.02422222222222222,
    "gpu_hours": 0.0,
    "unavailable": null
   },
@@ -924,8 +1176,8 @@
    "name": "Jev 1.13.0",
    "rank": 22,
    "route": "hosted API",
-   "usd_200": 0.032924633373786406,
-   "hours_200": 0.011555555555555557,
+   "usd_200": 0.032857009333622754,
+   "hours_200": 0.010666666666666666,
    "gpu_hours": 0.0,
    "unavailable": null
   },
@@ -933,8 +1185,8 @@
    "name": "Jev 1.14.0",
    "rank": 24,
    "route": "hosted API",
-   "usd_200": 0.03377305981607357,
-   "hours_200": 0.010944444444444444,
+   "usd_200": 0.03378230295819935,
+   "hours_200": 0.010416666666666666,
    "gpu_hours": 0.0,
    "unavailable": null
   },
@@ -943,8 +1195,8 @@
    "rank": 26,
    "route": "local GPU",
    "usd_200": 0.0,
-   "hours_200": 0.09155555555555554,
-   "gpu_hours": 0.09155555555555554,
+   "hours_200": 0.08277777777777778,
+   "gpu_hours": 0.08277777777777778,
    "unavailable": null
   },
   {
@@ -961,16 +1213,16 @@
    "rank": 28,
    "route": "local GPU",
    "usd_200": 0.0,
-   "hours_200": 0.05672222222222222,
-   "gpu_hours": 0.05672222222222222,
+   "hours_200": 0.058,
+   "gpu_hours": 0.058,
    "unavailable": null
   },
   {
    "name": "Celeris-1 Decision",
    "rank": 29,
    "route": "hosted API",
-   "usd_200": 0.02973186061903835,
-   "hours_200": 0.009666666666666665,
+   "usd_200": 0.02968355881006865,
+   "hours_200": 0.009777777777777776,
    "gpu_hours": 0.0,
    "unavailable": null
   },
@@ -988,8 +1240,8 @@
    "rank": 31,
    "route": "local GPU",
    "usd_200": 0.0,
-   "hours_200": 0.07394444444444444,
-   "gpu_hours": 0.07394444444444444,
+   "hours_200": 0.07133333333333333,
+   "gpu_hours": 0.07133333333333333,
    "unavailable": null
   },
   {
@@ -997,8 +1249,8 @@
    "rank": 32,
    "route": "local GPU",
    "usd_200": 0.0,
-   "hours_200": 0.02622222222222222,
-   "gpu_hours": 0.02622222222222222,
+   "hours_200": 0.018222222222222223,
+   "gpu_hours": 0.018222222222222223,
    "unavailable": null
   },
   {
@@ -1006,15 +1258,15 @@
    "rank": 33,
    "route": "local GPU",
    "usd_200": 0.0,
-   "hours_200": 0.050972222222222224,
-   "gpu_hours": 0.050972222222222224,
+   "hours_200": 0.051,
+   "gpu_hours": 0.051,
    "unavailable": null
   },
   {
    "name": "SubQ Snap Preview",
    "rank": 35,
    "route": "hosted API",
-   "usd_200": 0.038351768617021276,
+   "usd_200": 0.03814741434790839,
    "hours_200": 0.013166666666666667,
    "gpu_hours": 0.0,
    "unavailable": null
@@ -1033,8 +1285,8 @@
    "rank": 37,
    "route": "local GPU",
    "usd_200": 0.0,
-   "hours_200": 0.09472222222222222,
-   "gpu_hours": 0.09472222222222222,
+   "hours_200": 0.05388888888888889,
+   "gpu_hours": 0.05388888888888889,
    "unavailable": null
   },
   {
@@ -1060,8 +1312,8 @@
    "rank": 40,
    "route": "local GPU",
    "usd_200": 0.0,
-   "hours_200": 0.030416666666666668,
-   "gpu_hours": 0.030416666666666668,
+   "hours_200": 0.029444444444444443,
+   "gpu_hours": 0.029444444444444443,
    "unavailable": null
   },
   {
@@ -1069,17 +1321,17 @@
    "rank": 41,
    "route": "local GPU",
    "usd_200": 0.0,
-   "hours_200": 0.09655555555555556,
-   "gpu_hours": 0.09655555555555556,
+   "hours_200": 0.09577777777777778,
+   "gpu_hours": 0.09577777777777778,
    "unavailable": null
   }
  ],
  "missing_totals": {
   "models": 26,
-  "usd_hosted": 0.33,
-  "usd_hosted_available": 0.26,
-  "hours_sequential": 19.5,
-  "gpu_hours": 17.5,
-  "unavailable": 5
+  "usd_hosted": 0.4,
+  "usd_hosted_available": 0.34,
+  "hours_sequential": 19.0,
+  "gpu_hours": 17.7,
+  "unavailable": 3
  }
 }

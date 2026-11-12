@@ -38,7 +38,8 @@
   "REAX 1.3 [repeat 1]": "reproducibility repeat (tools/v3/repeats, Zeki #4667): never shown as a setup; its result only in Experiments, Repeat checks",
   "Liquid d1-ultra [repeat 1]": "reproducibility repeat (tools/v3/repeats, Zeki #4671): never shown as a setup; its result only in Experiments, Repeat checks",
   "Drex Max 1.1 [repeat 1]": "reproducibility repeat (tools/v3/repeats, Zeki #4838): never shown as a setup; its result only in Experiments, Repeat checks",
-  "Fastino GLiDE v1.2 (local) [repeat 1]": "reproducibility repeat (tools/v3/repeats, Zeki #4838): never shown as a setup; its result only in Experiments, Repeat checks"
+  "Fastino GLiDE v1.2 (local) [repeat 1]": "reproducibility repeat (tools/v3/repeats, Zeki #4838): never shown as a setup; its result only in Experiments, Repeat checks",
+  "Gemini Decision 1 [repeat 1]": "reproducibility repeat (tools/v3/repeats, Zeki #5359): never shown as a setup; its result only in Experiments, Repeat checks"
  },
  "running": {}
 }

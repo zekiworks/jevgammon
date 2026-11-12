@@ -4,7 +4,5 @@
   "deepseek-v4.1-flash-on": "QC 2026-11-12: Run 2 pending",
   "gemini-4-argon-on": "QC 2026-11-12: Run 2 pending"
  },
- "setups": {
-  "Muse Ember (max)": "one decision under QC (match #926 Run 2 pending)"
- }
+ "setups": {}
 }

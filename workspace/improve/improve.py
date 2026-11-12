@@ -1426,7 +1426,11 @@ def bound_plan(keys):
 
 def summary(only_if_changed=False):
     """The page's file: every plan model, with its progress. `only_if_changed`: leave the file alone when nothing but
-    `updated_at` would change (the exporter's path trigger fires on its own write)."""
+    `updated_at` would change (the exporter's path trigger fires on its own write). IMPROVE_EXPORT=0: write nothing (a
+    run from an unmerged worktree must not publish a roster the live exporter does not have; the live exporter picks
+    the model's runs/ state up once the branch is merged)."""
+    if os.environ.get("IMPROVE_EXPORT") == "0":
+        return None
     keys = list(MODELS) if not DRY else [k for k in MODELS if mdir(k).exists()]
     previous = {}
     if (OUT / "improve.json").exists():

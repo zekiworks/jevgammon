@@ -89,6 +89,18 @@ class SmallModels(unittest.TestCase):
         with self.assertRaises(SystemExit):
             I.league_settings("Erk-14B (on)")  # `run` builds its player from this: no settings, no run
 
+    def test_export_off_writes_nothing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = I.OUT
+            I.OUT = Path(tmp) / "out"
+            os.environ["IMPROVE_EXPORT"] = "0"
+            try:
+                self.assertIsNone(I.summary())
+                self.assertFalse(I.OUT.exists())
+            finally:
+                os.environ.pop("IMPROVE_EXPORT")
+                I.OUT = out
+
     def test_the_local_lane_serves_it_with_logics_command_on_the_lanes_card(self):
         import subprocess
         here = Path(__file__).resolve().parent

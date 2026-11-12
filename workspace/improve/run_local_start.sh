@@ -10,7 +10,7 @@ set -euo pipefail
 cd "$(dirname "$0")/../.."
 UUID=${1:?GPU UUID}; LANE=${2:?lane unit}; WATCH=${3:?watcher unit}; shift 3
 [[ $# -gt 0 ]] || { echo "no models" >&2; exit 1; }
-BIN=$PWD/target/improve-bin/jevgammon-e417a0c
+BIN=$PWD/target/improve-bin/jevgammon-e417a0c  # a worktree: copy (or link) the pinned binary there first
 RUNS=/home/cbasaran/code/jevgammon/workspace/improve/runs
 [[ -x "$BIN" ]] || { echo "missing pinned binary $BIN" >&2; exit 1; }
 container() { case $1 in gemma-4-31b-on) echo v3-gemma4-31b ;; qwen3.8-27b-on) echo v3-qwen38-27b ;; lfm2.5-24b-a2b-on) echo v3-lfm25-24b ;;
@@ -35,5 +35,5 @@ systemd-run --user --unit "$WATCH" --description "Did they improve? Xid/PCIe wat
   "$PWD/workspace/improve/xid_watch.sh" "$UUID" "$LANE" "${containers[@]}"
 systemd-run --user --unit "$LANE" --description "Did they improve? local lane $LANE ($UUID)" \
   --setenv=PATH=/usr/games:/usr/local/bin:/usr/bin:/bin --setenv=IMPROVE_BIN="$BIN" --setenv=IMPROVE_LANE="$LANE" \
-  --property=WorkingDirectory="$PWD" \
+  ${IMPROVE_EXPORT:+--setenv=IMPROVE_EXPORT="$IMPROVE_EXPORT"} --property=WorkingDirectory="$PWD" \
   workspace/improve/run_local.sh "$UUID" "$@"

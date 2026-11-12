@@ -1,0 +1,2 @@
+ExecStart={ path=/home/cbasaran/code/jevgammon-improve-small/workspace/improve/xid_watch.sh ; argv[]=/home/cbasaran/code/jevgammon-improve-small/workspace/improve/xid_watch.sh GPU-1115ade0-3068-1856-5889-5855079d97f7 improve-local-small logic-small-gemma-4-e4b-it ; ignore_errors=no ; start_time=[Thu 2026-11-12 20:10:36 CET] ; stop_time=[n/a] ; pid=1839574 ; code=(null) ; status=0/0 }
+Environment=

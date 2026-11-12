@@ -1,0 +1,3 @@
+ExecStart={ path=/home/cbasaran/code/jevgammon-improve-small/workspace/improve/run_local.sh ; argv[]=/home/cbasaran/code/jevgammon-improve-small/workspace/improve/run_local.sh GPU-1115ade0-3068-1856-5889-5855079d97f7 gemma-4-e4b-on ; ignore_errors=no ; start_time=[Thu 2026-11-12 20:10:36 CET] ; stop_time=[n/a] ; pid=1839576 ; code=(null) ; status=0/0 }
+Environment=PATH=/usr/games:/usr/local/bin:/usr/bin:/bin IMPROVE_BIN=/home/cbasaran/code/jevgammon-improve-small/target/improve-bin/jevgammon-e417a0c IMPROVE_LANE=improve-local-small IMPROVE_EXPORT=0
+WorkingDirectory=/home/cbasaran/code/jevgammon-improve-small

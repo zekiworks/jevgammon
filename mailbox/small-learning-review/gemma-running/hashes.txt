@@ -1,0 +1,5 @@
+base a76fdc981cad6a6d6d756447e3e41a8c002ea4c3
+8c4d7033c9805317c1ea794b8d6c29cd02f3ac5a989e93db18341acf719a865f  workspace/improve/improve.py
+90fe6b0ead90ff4d3d32ec80e5932a8c113456b05ee76e6bb9c5e39a56df9875  /home/cbasaran/code/jevgammon-improve/workspace/improve/improve.py
+e53fa11b4d31dd289e3a62ce74d66dfe227aeb3e58240e19b4d8565c85f13a74  /home/cbasaran/code/jevgammon-improve/workspace/improve/run_queue.sh
+5a33d59664deda26a726d9b853bae09d61202788c1b86166d1e3dca19071d34f  target/improve-bin/jevgammon-e417a0c

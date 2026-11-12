@@ -170,6 +170,11 @@
    "name": "Turion Jev",
    "icon": "fi-turionjev",
    "match": "^(?:Turion Jev)"
+  },
+  {
+   "name": "MiniCPM",
+   "icon": "fi-minicpm",
+   "match": "^(?:MiniCPM)"
   }
  ]
 }

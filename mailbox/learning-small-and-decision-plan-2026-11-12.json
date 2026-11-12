@@ -1,0 +1,1109 @@
+{
+ "written": "2026-11-12",
+ "sources": {
+  "manifest_native": "1570509348072063026",
+  "manifest_sha256": "a1f0f171392f12e4724a34863cf58ecacdcea3777349780e8be1a4452e15b91c",
+  "reconcile": {
+   "file": "f_46c0c122a29f45fd974bc9c59f037c65-tiny_small_learning_reconcile.json",
+   "sha256": "e7c467ae9ff874bfd0cb8f0b1e875e619068745138a0a24d452ac37cd7c07588",
+   "message": "logic #5680 (replaces #5678)"
+  },
+  "scope": [
+   "Zeki #5664",
+   "#5667",
+   "#5674",
+   "#5679"
+  ],
+  "chat_plan_sha256": "85a970d09cf1ae40d5567a7540ec0f607133314589119391bd71584b5ef78542",
+  "addendum_sha256": "b370f4dc9660a618aece4586b8c8f5259688372fab580305b4454aaa2d71a967"
+ },
+ "gpu_rate_usd_per_h_rental_equivalent": 2.49,
+ "learning_h_per_league_median_s": 0.55,
+ "started": false,
+ "rows": [
+  {
+   "source": "gemma-4-e4b-it_en",
+   "display": "Gemma 4 E4B",
+   "cls": "small",
+   "kind": "chat",
+   "bg_identity": "Gemma 4 E4B (on) [leaderboard setting]; also Gemma 4 E4B (off)",
+   "baseline": {
+    "setup": "Gemma 4 E4B (on)",
+    "league": 38,
+    "stage": "first stage 9/9, local 0/8",
+    "n": "924 decisions, 46 games, 9 matches",
+    "risk_judgement": 50.2,
+    "rj_95": [
+     46.7,
+     53.3
+    ],
+    "error_rate_pr": 48.0,
+    "er_95": [
+     42.7,
+     53.4
+    ],
+    "median_s_per_decision": 22.56
+   },
+   "baseline_other": {
+    "setup": "Gemma 4 E4B (off)",
+    "league": 37,
+    "stage": "first stage 9/9, local 0/8",
+    "n": "1,106 decisions, 52 games",
+    "risk_judgement": 50.7,
+    "rj_95": [
+     47.6,
+     53.8
+    ],
+    "error_rate_pr": 51.8,
+    "er_95": [
+     45.6,
+     58.8
+    ],
+    "median_s_per_decision": 0.57
+   },
+   "retained_run": "none",
+   "state": "blocked (admission) -> new eligible job after its local stage",
+   "blocker": "late entry held: local stage 0/8 not played, so not live (chat plan §3: a row is 'every chat model on the live leaderboard ... at its leaderboard setting (highest reasoning setting, late entries included)' with its v3.db players.settings; a held late entry is not live (held_setups.json: shown when complete))",
+   "prerequisite": "local stage of Gemma 4 E4B (on): 8 local League 1 opponents (locals.sh), no cash",
+   "admitted_as_written": "yes once live; needs a MODELS row (branch improve-small e63f309, not merged)",
+   "writer": "self (chat lane), $0",
+   "serving": "logic's small_models.py serve gemma-4-e4b-it <UUID> (vLLM v0.30.0 BF16, port 18602, served gemma-4-e4b-it, 69,632 ctx, util 0.85); weights 16.0 GB",
+   "gpu_hours": {
+    "prereq": "local stage ~3-6 h on 2 cards (entrant + opponents) [INFERENCE from earlier local stages 0.6-6.1 h]",
+    "learning": 12.4
+   },
+   "cash_usd": 0.0
+  },
+  {
+   "source": "minicpm5-2b_en",
+   "display": "MiniCPM5-2B",
+   "cls": "tiny",
+   "kind": "chat",
+   "bg_identity": "MiniCPM5-2B (on) [leaderboard setting; logic tested thinking on]: not played; MiniCPM5-2B (off) played",
+   "baseline": null,
+   "baseline_other": {
+    "setup": "MiniCPM5-2B (off)",
+    "league": 39,
+    "stage": "first stage 9/9, local 0/8",
+    "n": "976 decisions, 48 games",
+    "risk_judgement": 53.3,
+    "rj_95": [
+     50.1,
+     56.6
+    ],
+    "error_rate_pr": 53.8,
+    "er_95": [
+     45.4,
+     64.0
+    ],
+    "median_s_per_decision": 0.16
+   },
+   "retained_run": "none",
+   "state": "blocked",
+   "blocker": "(on) has no league record; (off) is not the leaderboard setting; chat plan §3: a row is 'every chat model on the live leaderboard ... at its leaderboard setting (highest reasoning setting, late entries included)' with its v3.db players.settings; a held late entry is not live (held_setups.json: shown when complete)",
+   "prerequisite": "(on) late-entry first stage (paid opponents, cash) + local stage",
+   "admitted_as_written": "after prerequisite",
+   "writer": "self, $0",
+   "serving": "small_models.py serve minicpm5-2b (vLLM, port 18614); weights 5.0 GB",
+   "gpu_hours": {
+    "prereq": "first stage ~0.1-0.7 h + local ~3-6 h",
+    "learning": "not estimable before (on)'s league latency is measured"
+   },
+   "cash_usd": 0.11
+  },
+  {
+   "source": "lfm2.5-2.6b_en",
+   "display": "LFM2.5-2.6B",
+   "cls": "tiny",
+   "kind": "chat",
+   "bg_identity": "LFM2.5-2.6B (on) [leaderboard setting; always reasons]: not played; LFM2.5-2.6B (off) played",
+   "baseline": null,
+   "baseline_other": {
+    "setup": "LFM2.5-2.6B (off)",
+    "league": 35,
+    "stage": "first stage 9/9, local 0/8",
+    "n": "1,050 decisions, 46 games",
+    "risk_judgement": 47.4,
+    "rj_95": [
+     44.4,
+     50.6
+    ],
+    "error_rate_pr": 58.2,
+    "er_95": [
+     51.8,
+     64.5
+    ],
+    "median_s_per_decision": 0.2
+   },
+   "retained_run": "none",
+   "state": "blocked",
+   "blocker": "(on) has no league record; chat plan §3: a row is 'every chat model on the live leaderboard ... at its leaderboard setting (highest reasoning setting, late entries included)' with its v3.db players.settings; a held late entry is not live (held_setups.json: shown when complete)",
+   "prerequisite": "(on) first stage (cash) + local stage",
+   "admitted_as_written": "after prerequisite",
+   "writer": "self, $0",
+   "serving": "small_models.py serve lfm2.5-2.6b (vLLM, port 18613); 5.4 GB",
+   "gpu_hours": {
+    "prereq": "first ~0.1-0.7 h + local ~3-6 h",
+    "learning": "not estimable yet"
+   },
+   "cash_usd": 0.11
+  },
+  {
+   "source": "lfm2.5-8b-a1b_en",
+   "display": "LFM2.5-8B-A1B",
+   "cls": "small",
+   "kind": "chat",
+   "bg_identity": "no backgammon record (prepared (#5064), not started)",
+   "baseline": null,
+   "baseline_other": null,
+   "retained_run": "none",
+   "state": "blocked",
+   "blocker": "no league record; chat plan §3: a row is 'every chat model on the live leaderboard ... at its leaderboard setting (highest reasoning setting, late entries included)' with its v3.db players.settings; a held late entry is not live (held_setups.json: shown when complete)",
+   "prerequisite": "late entry at its leaderboard (highest) setting: first stage (paid opponents, cash) + local stage",
+   "admitted_as_written": "after prerequisite (protocol needs the league record: players.settings + live row)",
+   "writer": "self, $0",
+   "serving": "small_models.py serve lfm2.5-8b-a1b (port 18601); 16.9 GB",
+   "gpu_hours": {
+    "prereq": "first ~0.1-0.7 h + local ~3-6 h",
+    "learning": "not estimable yet"
+   },
+   "cash_usd": 0.11
+  },
+  {
+   "source": "lfm3-1.7b_en",
+   "display": "LFM3-1.7B",
+   "cls": "tiny",
+   "kind": "chat",
+   "bg_identity": "no backgammon record (prepared (#5064), not started; llama.cpp)",
+   "baseline": null,
+   "baseline_other": null,
+   "retained_run": "none",
+   "state": "blocked",
+   "blocker": "no league record; chat plan §3: a row is 'every chat model on the live leaderboard ... at its leaderboard setting (highest reasoning setting, late entries included)' with its v3.db players.settings; a held late entry is not live (held_setups.json: shown when complete)",
+   "prerequisite": "late entry at its leaderboard (highest) setting: first stage (paid opponents, cash) + local stage",
+   "admitted_as_written": "after prerequisite (protocol needs the league record: players.settings + live row)",
+   "writer": "self, $0",
+   "serving": "small_models.py serve lfm3-1.7b (port 18605); 3.5 GB",
+   "gpu_hours": {
+    "prereq": "first ~0.1-0.7 h + local ~3-6 h",
+    "learning": "not estimable yet"
+   },
+   "cash_usd": 0.11
+  },
+  {
+   "source": "gemma-4-e2b-it_en",
+   "display": "Gemma 4 E2B",
+   "cls": "tiny",
+   "kind": "chat",
+   "bg_identity": "no backgammon record (not prepared (not in late-smallchat models.json))",
+   "baseline": null,
+   "baseline_other": null,
+   "retained_run": "none",
+   "state": "blocked",
+   "blocker": "no league record; chat plan §3: a row is 'every chat model on the live leaderboard ... at its leaderboard setting (highest reasoning setting, late entries included)' with its v3.db players.settings; a held late entry is not live (held_setups.json: shown when complete)",
+   "prerequisite": "late entry at its leaderboard (highest) setting: first stage (paid opponents, cash) + local stage; prepare the late entry first (models.json row, pins, test.sh)",
+   "admitted_as_written": "after prerequisite (protocol needs the league record: players.settings + live row)",
+   "writer": "self, $0",
+   "serving": "small_models.py serve gemma-4-e2b-it (logic's key; port per its SETUPS)",
+   "gpu_hours": {
+    "prereq": "first ~0.1-0.7 h + local ~3-6 h",
+    "learning": "not estimable yet"
+   },
+   "cash_usd": 0.11
+  },
+  {
+   "source": "gemma-4-12b-it_en",
+   "display": "Gemma 4 12B",
+   "cls": "small",
+   "kind": "chat",
+   "bg_identity": "no backgammon record (not prepared; Cygnet (Gemma 4 12B) is a different setup (decision layer))",
+   "baseline": null,
+   "baseline_other": null,
+   "retained_run": "none",
+   "state": "blocked",
+   "blocker": "no league record; chat plan §3: a row is 'every chat model on the live leaderboard ... at its leaderboard setting (highest reasoning setting, late entries included)' with its v3.db players.settings; a held late entry is not live (held_setups.json: shown when complete)",
+   "prerequisite": "late entry at its leaderboard (highest) setting: first stage (paid opponents, cash) + local stage; prepare the late entry first (models.json row, pins, test.sh)",
+   "admitted_as_written": "after prerequisite (protocol needs the league record: players.settings + live row)",
+   "writer": "self, $0",
+   "serving": "small_models.py serve gemma-4-12b-it (logic's key; port per its SETUPS)",
+   "gpu_hours": {
+    "prereq": "first ~0.1-0.7 h + local ~3-6 h",
+    "learning": "not estimable yet"
+   },
+   "cash_usd": 0.11
+  },
+  {
+   "source": "erk-14b_en",
+   "display": "Erk-14B",
+   "cls": "small",
+   "kind": "chat",
+   "bg_identity": "no backgammon record (not prepared; logic tested reasoning off)",
+   "baseline": null,
+   "baseline_other": null,
+   "retained_run": "none",
+   "state": "blocked",
+   "blocker": "no league record; chat plan §3: a row is 'every chat model on the live leaderboard ... at its leaderboard setting (highest reasoning setting, late entries included)' with its v3.db players.settings; a held late entry is not live (held_setups.json: shown when complete)",
+   "prerequisite": "late entry at its leaderboard (highest) setting: first stage (paid opponents, cash) + local stage; prepare the late entry first (models.json row, pins, test.sh)",
+   "admitted_as_written": "after prerequisite (protocol needs the league record: players.settings + live row)",
+   "writer": "self, $0",
+   "serving": "small_models.py serve erk-14b (logic's key; port per its SETUPS)",
+   "gpu_hours": {
+    "prereq": "first ~0.1-0.7 h + local ~3-6 h",
+    "learning": "not estimable yet"
+   },
+   "cash_usd": 0.11
+  },
+  {
+   "source": "qwen3-14b_en",
+   "display": "Qwen3-14B",
+   "cls": "small",
+   "kind": "chat",
+   "bg_identity": "no backgammon record (not prepared; logic tested reasoning off)",
+   "baseline": null,
+   "baseline_other": null,
+   "retained_run": "none",
+   "state": "blocked",
+   "blocker": "no league record; chat plan §3: a row is 'every chat model on the live leaderboard ... at its leaderboard setting (highest reasoning setting, late entries included)' with its v3.db players.settings; a held late entry is not live (held_setups.json: shown when complete)",
+   "prerequisite": "late entry at its leaderboard (highest) setting: first stage (paid opponents, cash) + local stage; prepare the late entry first (models.json row, pins, test.sh)",
+   "admitted_as_written": "after prerequisite (protocol needs the league record: players.settings + live row)",
+   "writer": "self, $0",
+   "serving": "small_models.py serve qwen3-14b (logic's key; port per its SETUPS)",
+   "gpu_hours": {
+    "prereq": "first ~0.1-0.7 h + local ~3-6 h",
+    "learning": "not estimable yet"
+   },
+   "cash_usd": 0.11
+  },
+  {
+   "source": "elephant-1_en",
+   "display": "Elephant-1",
+   "cls": "small",
+   "kind": "decision",
+   "bg_identity": "Base Labs Elephant-1 (League 13, complete; in the Part 3 cohort)",
+   "baseline": {
+    "setup": "Base Labs Elephant-1",
+    "league": 13,
+    "stage": "9/9 + 8/8",
+    "n": "2,044 decisions, 102 games",
+    "risk_judgement": 57.7,
+    "rj_95": [
+     55.8,
+     59.6
+    ],
+    "error_rate_pr": 44.6,
+    "er_95": [
+     40.3,
+     48.9
+    ],
+    "median_s_per_decision": 0.26
+   },
+   "baseline_other": null,
+   "retained_run": "decision/baselabs-elephant-1-worst complete 2026-11-12 16:59Z",
+   "state": "worst arm DONE (reuse); notes arm blocked",
+   "blocker": "notes arm pending D5 (edge settings: past the trained 16,384 tokens), Ümit's decision (addendum §9)",
+   "prerequisite": "D5 answer",
+   "admitted_as_written": "yes (cohort row, Ümit #3746)",
+   "writer": "Arm N: paid writer Qwen3.8 Flash (off) via OpenRouter (cash, est. $0.03); Arm W: none ($0)",
+   "serving": "baselabs-serve:81ce62f (late3/baselabs.sh elephant)",
+   "gpu_hours": {
+    "prereq": "none",
+    "learning": "~1.4 h both arms incl. server start [INFERENCE: Elephant-1 worst 0.43 h at 0.26 s/decision; notes ~1.5x]"
+   },
+   "cash_usd": 0.03
+  },
+  {
+   "source": "cygnet_en",
+   "display": "Cygnet",
+   "cls": "small",
+   "kind": "decision",
+   "bg_identity": "Cygnet (Gemma 4 12B) (League 1, complete)",
+   "baseline": {
+    "setup": "Cygnet (Gemma 4 12B)",
+    "league": 1,
+    "stage": "original 18/18",
+    "n": "2,016 decisions, 100 games",
+    "risk_judgement": 57.1,
+    "rj_95": [
+     55.3,
+     58.8
+    ],
+    "error_rate_pr": 38.6,
+    "er_95": [
+     35.4,
+     41.9
+    ],
+    "median_s_per_decision": 0.37
+   },
+   "baseline_other": null,
+   "retained_run": "none",
+   "state": "blocked (existing cancellation stays visible)",
+   "blocker": "chat plan §3: 'Cygnet (Gemma 4 12B): not tested (Ümit #3111) ... plays through a layer that never sees the lessons'; and addendum §3: 'Every decision model of the leaderboard outside this list is out of scope for Part 3' -> needs a cohort amendment row in decision_cohort.json citing Ümit (#5664/#5674 via Zeki), as #3746/#3758 added rows (those were before publication: this one is after, so the page states it); plus per local route a render check Lr (§6.1: lr/<route>.py renderer + preflight-render) and the identity list from the league's own replies (§3, D7)",
+   "prerequisite": "Ümit to say whether #5674 lifts #3111 for Part 3; then cohort row + Lr render check of its server (must show the block reaches the model)",
+   "admitted_as_written": "no: addendum §3: 'Every decision model of the leaderboard outside this list is out of scope for Part 3'",
+   "writer": "Arm N: paid writer Qwen3.8 Flash (off) via OpenRouter (cash, est. $0.03); Arm W: none ($0)",
+   "serving": "cygnet server (spec cygnet, port 18093; Spark or bariton)",
+   "gpu_hours": {
+    "prereq": "none",
+    "learning": "~1.4 h both arms incl. server start [INFERENCE: Elephant-1 worst 0.43 h at 0.26 s/decision; notes ~1.5x]"
+   },
+   "cash_usd": 0.03
+  },
+  {
+   "source": "winnow_en",
+   "display": "Winnow-12B",
+   "cls": "small",
+   "kind": "decision",
+   "bg_identity": "Winnow-12B (League 1, complete)",
+   "baseline": {
+    "setup": "Winnow-12B",
+    "league": 1,
+    "stage": "original 18/18",
+    "n": "2,015 decisions, 100 games",
+    "risk_judgement": 55.2,
+    "rj_95": [
+     52.9,
+     57.2
+    ],
+    "error_rate_pr": 49.7,
+    "er_95": [
+     45.9,
+     53.6
+    ],
+    "median_s_per_decision": 2.46
+   },
+   "baseline_other": null,
+   "retained_run": "none",
+   "state": "blocked",
+   "blocker": "addendum §3: 'Every decision model of the leaderboard outside this list is out of scope for Part 3' -> needs a cohort amendment row in decision_cohort.json citing Ümit (#5664/#5674 via Zeki), as #3746/#3758 added rows (those were before publication: this one is after, so the page states it); plus per local route a render check Lr (§6.1: lr/<route>.py renderer + preflight-render) and the identity list from the league's own replies (§3, D7)",
+   "prerequisite": "cohort row + new lr/winnow.py renderer (winnow-inference:d4631fb) + preflight-render",
+   "admitted_as_written": "no: addendum §3: 'Every decision model of the leaderboard outside this list is out of scope for Part 3'",
+   "writer": "Arm N: paid writer Qwen3.8 Flash (off) via OpenRouter (cash, est. $0.03); Arm W: none ($0)",
+   "serving": "tools/v3/servers/winnow.sh (Q8_0 GGUF)",
+   "gpu_hours": {
+    "prereq": "none",
+    "learning": "~1.4 h both arms incl. server start [INFERENCE: Elephant-1 worst 0.43 h at 0.26 s/decision; notes ~1.5x]"
+   },
+   "cash_usd": 0.03
+  },
+  {
+   "source": "decider-flash-v1.2_en",
+   "display": "Perplexity Decider Flash v1.2",
+   "cls": "tiny",
+   "kind": "decision",
+   "bg_identity": "Decider Flash v1.2 (League 1, complete)",
+   "baseline": {
+    "setup": "Decider Flash v1.2",
+    "league": 1,
+    "stage": "original 18/18",
+    "n": "2,006 decisions, 98 games",
+    "risk_judgement": 49.1,
+    "rj_95": [
+     46.5,
+     51.6
+    ],
+    "error_rate_pr": 59.6,
+    "er_95": [
+     54.9,
+     64.5
+    ],
+    "median_s_per_decision": 0.56
+   },
+   "baseline_other": null,
+   "retained_run": "none",
+   "state": "blocked",
+   "blocker": "addendum §3: 'Every decision model of the leaderboard outside this list is out of scope for Part 3' -> needs a cohort amendment row in decision_cohort.json citing Ümit (#5664/#5674 via Zeki), as #3746/#3758 added rows (those were before publication: this one is after, so the page states it); plus per local route a render check Lr (§6.1: lr/<route>.py renderer + preflight-render) and the identity list from the league's own replies (§3, D7)",
+   "prerequisite": "cohort row + Lr with the existing lr/decider.py family (decider-v1.2.sh flash) + preflight-render",
+   "admitted_as_written": "no: addendum §3: 'Every decision model of the leaderboard outside this list is out of scope for Part 3'",
+   "writer": "Arm N: paid writer Qwen3.8 Flash (off) via OpenRouter (cash, est. $0.03); Arm W: none ($0)",
+   "serving": "tools/v3/servers/decider-v1.2.sh flash (pplx_decider_server.py)",
+   "gpu_hours": {
+    "prereq": "none",
+    "learning": "~1.4 h both arms incl. server start [INFERENCE: Elephant-1 worst 0.43 h at 0.26 s/decision; notes ~1.5x]"
+   },
+   "cash_usd": 0.03
+  },
+  {
+   "source": "startlux-2b_en",
+   "display": "StartLux-Decision v1.1 2B",
+   "cls": "tiny",
+   "kind": "decision",
+   "bg_identity": "StartLux-Decision v1.1 2B (L23)",
+   "baseline": {
+    "setup": "StartLux-Decision v1.1 2B",
+    "league": 23,
+    "stage": "9/9, local 0/8",
+    "n": "846 decisions, 42 games",
+    "risk_judgement": 54.7,
+    "rj_95": [
+     50.3,
+     58.8
+    ],
+    "error_rate_pr": 49.2,
+    "er_95": [
+     42.5,
+     56.2
+    ],
+    "median_s_per_decision": 0.21
+   },
+   "baseline_other": null,
+   "retained_run": "none",
+   "state": "blocked",
+   "blocker": "late entry held (local stage 0/8: not a leaderboard setup yet) and addendum §3: 'Every decision model of the leaderboard outside this list is out of scope for Part 3' -> needs a cohort amendment row in decision_cohort.json citing Ümit (#5664/#5674 via Zeki), as #3746/#3758 added rows (those were before publication: this one is after, so the page states it); plus per local route a render check Lr (§6.1: lr/<route>.py renderer + preflight-render) and the identity list from the league's own replies (§3, D7)",
+   "prerequisite": "local stage (no cash, 8 local opponents on a bariton card) + cohort row + Lr renderer for its server + preflight-render",
+   "admitted_as_written": "no: addendum §3: 'Every decision model of the leaderboard outside this list is out of scope for Part 3'",
+   "writer": "Arm N: paid writer Qwen3.8 Flash (off) via OpenRouter (cash, est. $0.03); Arm W: none ($0)",
+   "serving": "spark2 :19440 (vLLM); spark2 GPU0 is logic's hold r_cf95c9e58f42 to 13 Nov 14:03Z",
+   "gpu_hours": {
+    "prereq": "local stage ~0.6-6.1 h on one bariton card (measured on earlier decision late entries)",
+    "learning": "~1.4 h both arms incl. server start [INFERENCE: Elephant-1 worst 0.43 h at 0.26 s/decision; notes ~1.5x]"
+   },
+   "cash_usd": 0.03
+  },
+  {
+   "source": "knowline-2b_en",
+   "display": "KnowLine-2B-Gen1",
+   "cls": "tiny",
+   "kind": "decision",
+   "bg_identity": "KnowLine-2B-Gen1 (L40)",
+   "baseline": {
+    "setup": "KnowLine-2B-Gen1",
+    "league": 40,
+    "stage": "9/9, local 0/8",
+    "n": "1,004 decisions, 50 games",
+    "risk_judgement": 53.0,
+    "rj_95": [
+     49.9,
+     55.9
+    ],
+    "error_rate_pr": 50.0,
+    "er_95": [
+     41.9,
+     59.5
+    ],
+    "median_s_per_decision": 0.15
+   },
+   "baseline_other": null,
+   "retained_run": "none",
+   "state": "blocked",
+   "blocker": "late entry held (local stage 0/8: not a leaderboard setup yet) and addendum §3: 'Every decision model of the leaderboard outside this list is out of scope for Part 3' -> needs a cohort amendment row in decision_cohort.json citing Ümit (#5664/#5674 via Zeki), as #3746/#3758 added rows (those were before publication: this one is after, so the page states it); plus per local route a render check Lr (§6.1: lr/<route>.py renderer + preflight-render) and the identity list from the league's own replies (§3, D7)",
+   "prerequisite": "local stage (no cash, 8 local opponents on a bariton card) + cohort row + Lr renderer for its server + preflight-render",
+   "admitted_as_written": "no: addendum §3: 'Every decision model of the leaderboard outside this list is out of scope for Part 3'",
+   "writer": "Arm N: paid writer Qwen3.8 Flash (off) via OpenRouter (cash, est. $0.03); Arm W: none ($0)",
+   "serving": "spark2 :19490; spark2 GPU0 is logic's hold r_cf95c9e58f42 to 13 Nov 14:03Z",
+   "gpu_hours": {
+    "prereq": "local stage ~0.6-6.1 h on one bariton card (measured on earlier decision late entries)",
+    "learning": "~1.4 h both arms incl. server start [INFERENCE: Elephant-1 worst 0.43 h at 0.26 s/decision; notes ~1.5x]"
+   },
+   "cash_usd": 0.03
+  },
+  {
+   "source": "knowline-4b_en",
+   "display": "KnowLine 4B Gen5.5",
+   "cls": "tiny",
+   "kind": "decision",
+   "bg_identity": "KnowLine 4B Gen5.5 (L22)",
+   "baseline": {
+    "setup": "KnowLine 4B Gen5.5",
+    "league": 22,
+    "stage": "9/9, local 0/8",
+    "n": "1,146 decisions, 50 games",
+    "risk_judgement": 49.1,
+    "rj_95": [
+     45.9,
+     52.4
+    ],
+    "error_rate_pr": 57.3,
+    "er_95": [
+     49.6,
+     65.8
+    ],
+    "median_s_per_decision": 0.28
+   },
+   "baseline_other": null,
+   "retained_run": "none",
+   "state": "blocked",
+   "blocker": "late entry held (local stage 0/8: not a leaderboard setup yet) and addendum §3: 'Every decision model of the leaderboard outside this list is out of scope for Part 3' -> needs a cohort amendment row in decision_cohort.json citing Ümit (#5664/#5674 via Zeki), as #3746/#3758 added rows (those were before publication: this one is after, so the page states it); plus per local route a render check Lr (§6.1: lr/<route>.py renderer + preflight-render) and the identity list from the league's own replies (§3, D7)",
+   "prerequisite": "local stage (no cash, 8 local opponents on a bariton card) + cohort row + Lr renderer for its server + preflight-render",
+   "admitted_as_written": "no: addendum §3: 'Every decision model of the leaderboard outside this list is out of scope for Part 3'",
+   "writer": "Arm N: paid writer Qwen3.8 Flash (off) via OpenRouter (cash, est. $0.03); Arm W: none ($0)",
+   "serving": "spark2 :19400 (SGLang); spark2 GPU0 is logic's hold r_cf95c9e58f42 to 13 Nov 14:03Z",
+   "gpu_hours": {
+    "prereq": "local stage ~0.6-6.1 h on one bariton card (measured on earlier decision late entries)",
+    "learning": "~1.4 h both arms incl. server start [INFERENCE: Elephant-1 worst 0.43 h at 0.26 s/decision; notes ~1.5x]"
+   },
+   "cash_usd": 0.03
+  },
+  {
+   "source": "knowline-0.8b_en",
+   "display": "KnowLine-0.8B-Gen1",
+   "cls": "tiny",
+   "kind": "decision",
+   "bg_identity": "KnowLine-0.8B-Gen1 (L25)",
+   "baseline": {
+    "setup": "KnowLine-0.8B-Gen1",
+    "league": 25,
+    "stage": "9/9, local 0/8",
+    "n": "868 decisions, 44 games",
+    "risk_judgement": 48.8,
+    "rj_95": [
+     45.1,
+     52.3
+    ],
+    "error_rate_pr": 70.5,
+    "er_95": [
+     61.7,
+     80.6
+    ],
+    "median_s_per_decision": null
+   },
+   "baseline_other": null,
+   "retained_run": "none",
+   "state": "blocked",
+   "blocker": "late entry held (local stage 0/8: not a leaderboard setup yet) and addendum §3: 'Every decision model of the leaderboard outside this list is out of scope for Part 3' -> needs a cohort amendment row in decision_cohort.json citing Ümit (#5664/#5674 via Zeki), as #3746/#3758 added rows (those were before publication: this one is after, so the page states it); plus per local route a render check Lr (§6.1: lr/<route>.py renderer + preflight-render) and the identity list from the league's own replies (§3, D7)",
+   "prerequisite": "local stage (no cash, 8 local opponents on a bariton card) + cohort row + Lr renderer for its server + preflight-render",
+   "admitted_as_written": "no: addendum §3: 'Every decision model of the leaderboard outside this list is out of scope for Part 3'",
+   "writer": "Arm N: paid writer Qwen3.8 Flash (off) via OpenRouter (cash, est. $0.03); Arm W: none ($0)",
+   "serving": "spark2 :19450; spark2 GPU0 is logic's hold r_cf95c9e58f42 to 13 Nov 14:03Z",
+   "gpu_hours": {
+    "prereq": "local stage ~0.6-6.1 h on one bariton card (measured on earlier decision late entries)",
+    "learning": "~1.4 h both arms incl. server start [INFERENCE: Elephant-1 worst 0.43 h at 0.26 s/decision; notes ~1.5x]"
+   },
+   "cash_usd": 0.03
+  },
+  {
+   "source": "glide-2b_en",
+   "display": "GLiDE 2B (open)",
+   "cls": "tiny",
+   "kind": "decision",
+   "bg_identity": "GLiDE 2B (L41)",
+   "baseline": {
+    "setup": "GLiDE 2B",
+    "league": 41,
+    "stage": "9/9, local 0/8",
+    "n": "818 decisions, 40 games",
+    "risk_judgement": 45.9,
+    "rj_95": [
+     41.3,
+     50.4
+    ],
+    "error_rate_pr": 66.7,
+    "er_95": [
+     56.6,
+     78.9
+    ],
+    "median_s_per_decision": 0.32
+   },
+   "baseline_other": null,
+   "retained_run": "none",
+   "state": "blocked",
+   "blocker": "late entry held (local stage 0/8: not a leaderboard setup yet) and addendum §3: 'Every decision model of the leaderboard outside this list is out of scope for Part 3' -> needs a cohort amendment row in decision_cohort.json citing Ümit (#5664/#5674 via Zeki), as #3746/#3758 added rows (those were before publication: this one is after, so the page states it); plus per local route a render check Lr (§6.1: lr/<route>.py renderer + preflight-render) and the identity list from the league's own replies (§3, D7)",
+   "prerequisite": "local stage (no cash, 8 local opponents on a bariton card) + cohort row + Lr renderer for its server + preflight-render",
+   "admitted_as_written": "no: addendum §3: 'Every decision model of the leaderboard outside this list is out of scope for Part 3'",
+   "writer": "Arm N: paid writer Qwen3.8 Flash (off) via OpenRouter (cash, est. $0.03); Arm W: none ($0)",
+   "serving": "spark2 :19330 (glide.server); spark2 GPU0 is logic's hold r_cf95c9e58f42 to 13 Nov 14:03Z",
+   "gpu_hours": {
+    "prereq": "local stage ~0.6-6.1 h on one bariton card (measured on earlier decision late entries)",
+    "learning": "~1.4 h both arms incl. server start [INFERENCE: Elephant-1 worst 0.43 h at 0.26 s/decision; notes ~1.5x]"
+   },
+   "cash_usd": 0.03
+  },
+  {
+   "source": "startlux-0.8b_en",
+   "display": "StartLux-Decision-v1.1-0.8B-Instant",
+   "cls": "tiny",
+   "kind": "decision",
+   "bg_identity": "StartLux-Decision-v1.1-0.8B-Instant (L27)",
+   "baseline": {
+    "setup": "StartLux-Decision-v1.1-0.8B-Instant",
+    "league": 27,
+    "stage": "9/9, local 0/8",
+    "n": "880 decisions, 42 games",
+    "risk_judgement": 43.4,
+    "rj_95": [
+     40.5,
+     46.4
+    ],
+    "error_rate_pr": 63.9,
+    "er_95": [
+     57.9,
+     70.6
+    ],
+    "median_s_per_decision": null
+   },
+   "baseline_other": null,
+   "retained_run": "none",
+   "state": "blocked",
+   "blocker": "late entry held (local stage 0/8: not a leaderboard setup yet) and addendum §3: 'Every decision model of the leaderboard outside this list is out of scope for Part 3' -> needs a cohort amendment row in decision_cohort.json citing Ümit (#5664/#5674 via Zeki), as #3746/#3758 added rows (those were before publication: this one is after, so the page states it); plus per local route a render check Lr (§6.1: lr/<route>.py renderer + preflight-render) and the identity list from the league's own replies (§3, D7)",
+   "prerequisite": "local stage (no cash, 8 local opponents on a bariton card) + cohort row + Lr renderer for its server + preflight-render",
+   "admitted_as_written": "no: addendum §3: 'Every decision model of the leaderboard outside this list is out of scope for Part 3'",
+   "writer": "Arm N: paid writer Qwen3.8 Flash (off) via OpenRouter (cash, est. $0.03); Arm W: none ($0)",
+   "serving": "spark2 :19460; spark2 GPU0 is logic's hold r_cf95c9e58f42 to 13 Nov 14:03Z",
+   "gpu_hours": {
+    "prereq": "local stage ~0.6-6.1 h on one bariton card (measured on earlier decision late entries)",
+    "learning": "~1.4 h both arms incl. server start [INFERENCE: Elephant-1 worst 0.43 h at 0.26 s/decision; notes ~1.5x]"
+   },
+   "cash_usd": 0.03
+  },
+  {
+   "source": "onejev1.6-0.8b_en",
+   "display": "OneJev1.6-0.8B",
+   "cls": "tiny",
+   "kind": "decision",
+   "bg_identity": "OneJev1.6-0.8B (L30)",
+   "baseline": {
+    "setup": "OneJev1.6-0.8B",
+    "league": 30,
+    "stage": "9/9, local 0/8",
+    "n": "977 decisions, 48 games",
+    "risk_judgement": 42.6,
+    "rj_95": [
+     38.1,
+     46.9
+    ],
+    "error_rate_pr": 83.9,
+    "er_95": [
+     73.5,
+     95.9
+    ],
+    "median_s_per_decision": null
+   },
+   "baseline_other": null,
+   "retained_run": "none",
+   "state": "blocked",
+   "blocker": "late entry held (local stage 0/8: not a leaderboard setup yet) and addendum §3: 'Every decision model of the leaderboard outside this list is out of scope for Part 3' -> needs a cohort amendment row in decision_cohort.json citing Ümit (#5664/#5674 via Zeki), as #3746/#3758 added rows (those were before publication: this one is after, so the page states it); plus per local route a render check Lr (§6.1: lr/<route>.py renderer + preflight-render) and the identity list from the league's own replies (§3, D7)",
+   "prerequisite": "local stage (no cash, 8 local opponents on a bariton card) + cohort row + Lr renderer for its server + preflight-render",
+   "admitted_as_written": "no: addendum §3: 'Every decision model of the leaderboard outside this list is out of scope for Part 3'",
+   "writer": "Arm N: paid writer Qwen3.8 Flash (off) via OpenRouter (cash, est. $0.03); Arm W: none ($0)",
+   "serving": "spark2 :19420; spark2 GPU0 is logic's hold r_cf95c9e58f42 to 13 Nov 14:03Z",
+   "gpu_hours": {
+    "prereq": "local stage ~0.6-6.1 h on one bariton card (measured on earlier decision late entries)",
+    "learning": "~1.4 h both arms incl. server start [INFERENCE: Elephant-1 worst 0.43 h at 0.26 s/decision; notes ~1.5x]"
+   },
+   "cash_usd": 0.03
+  },
+  {
+   "source": "glide-0.8b_en",
+   "display": "GLiDE 0.8B (open)",
+   "cls": "tiny",
+   "kind": "decision",
+   "bg_identity": "GLiDE 0.8B (L42)",
+   "baseline": {
+    "setup": "GLiDE 0.8B",
+    "league": 42,
+    "stage": "9/9, local 0/8",
+    "n": "983 decisions, 48 games",
+    "risk_judgement": 39.9,
+    "rj_95": [
+     36.3,
+     43.6
+    ],
+    "error_rate_pr": 85.4,
+    "er_95": [
+     70.9,
+     100.0
+    ],
+    "median_s_per_decision": null
+   },
+   "baseline_other": null,
+   "retained_run": "none",
+   "state": "blocked",
+   "blocker": "late entry held (local stage 0/8: not a leaderboard setup yet) and addendum §3: 'Every decision model of the leaderboard outside this list is out of scope for Part 3' -> needs a cohort amendment row in decision_cohort.json citing Ümit (#5664/#5674 via Zeki), as #3746/#3758 added rows (those were before publication: this one is after, so the page states it); plus per local route a render check Lr (§6.1: lr/<route>.py renderer + preflight-render) and the identity list from the league's own replies (§3, D7)",
+   "prerequisite": "local stage (no cash, 8 local opponents on a bariton card) + cohort row + Lr renderer for its server + preflight-render",
+   "admitted_as_written": "no: addendum §3: 'Every decision model of the leaderboard outside this list is out of scope for Part 3'",
+   "writer": "Arm N: paid writer Qwen3.8 Flash (off) via OpenRouter (cash, est. $0.03); Arm W: none ($0)",
+   "serving": "spark2 :19340; spark2 GPU0 is logic's hold r_cf95c9e58f42 to 13 Nov 14:03Z",
+   "gpu_hours": {
+    "prereq": "local stage ~0.6-6.1 h on one bariton card (measured on earlier decision late entries)",
+    "learning": "~1.4 h both arms incl. server start [INFERENCE: Elephant-1 worst 0.43 h at 0.26 s/decision; notes ~1.5x]"
+   },
+   "cash_usd": 0.03
+  },
+  {
+   "source": "glide-0.4b_en",
+   "display": "GLiDE 0.4B (open)",
+   "cls": "tiny",
+   "kind": "decision",
+   "bg_identity": "GLiDE 0.4B (L43)",
+   "baseline": {
+    "setup": "GLiDE 0.4B",
+    "league": 43,
+    "stage": "9/9, local 0/8",
+    "n": "765 decisions, 36 games",
+    "risk_judgement": 29.6,
+    "rj_95": [
+     25.3,
+     34.5
+    ],
+    "error_rate_pr": 113.3,
+    "er_95": [
+     97.2,
+     130.0
+    ],
+    "median_s_per_decision": null
+   },
+   "baseline_other": null,
+   "retained_run": "none",
+   "state": "blocked",
+   "blocker": "late entry held (local stage 0/8: not a leaderboard setup yet) and addendum §3: 'Every decision model of the leaderboard outside this list is out of scope for Part 3' -> needs a cohort amendment row in decision_cohort.json citing Ümit (#5664/#5674 via Zeki), as #3746/#3758 added rows (those were before publication: this one is after, so the page states it); plus per local route a render check Lr (§6.1: lr/<route>.py renderer + preflight-render) and the identity list from the league's own replies (§3, D7)",
+   "prerequisite": "local stage (no cash, 8 local opponents on a bariton card) + cohort row + Lr renderer for its server + preflight-render",
+   "admitted_as_written": "no: addendum §3: 'Every decision model of the leaderboard outside this list is out of scope for Part 3'",
+   "writer": "Arm N: paid writer Qwen3.8 Flash (off) via OpenRouter (cash, est. $0.03); Arm W: none ($0)",
+   "serving": "spark2 :19350; spark2 GPU0 is logic's hold r_cf95c9e58f42 to 13 Nov 14:03Z",
+   "gpu_hours": {
+    "prereq": "local stage ~0.6-6.1 h on one bariton card (measured on earlier decision late entries)",
+    "learning": "~1.4 h both arms incl. server start [INFERENCE: Elephant-1 worst 0.43 h at 0.26 s/decision; notes ~1.5x]"
+   },
+   "cash_usd": 0.03
+  },
+  {
+   "source": "gliclass-v4-edge_en",
+   "display": "GLiClass v4 Edge",
+   "cls": "tiny",
+   "kind": "decision",
+   "bg_identity": "GLiClass v4 Edge (L36)",
+   "baseline": {
+    "setup": "GLiClass v4 Edge",
+    "league": 36,
+    "stage": "9/9, local 0/8",
+    "n": "725 decisions, 34 games",
+    "risk_judgement": 20.2,
+    "rj_95": [
+     15.7,
+     24.7
+    ],
+    "error_rate_pr": 138.4,
+    "er_95": [
+     114.8,
+     163.1
+    ],
+    "median_s_per_decision": null
+   },
+   "baseline_other": null,
+   "retained_run": "none",
+   "state": "blocked",
+   "blocker": "late entry held (local stage 0/8: not a leaderboard setup yet) and addendum §3: 'Every decision model of the leaderboard outside this list is out of scope for Part 3' -> needs a cohort amendment row in decision_cohort.json citing Ümit (#5664/#5674 via Zeki), as #3746/#3758 added rows (those were before publication: this one is after, so the page states it); plus per local route a render check Lr (§6.1: lr/<route>.py renderer + preflight-render) and the identity list from the league's own replies (§3, D7)",
+   "prerequisite": "local stage (no cash, 8 local opponents on a bariton card) + cohort row + Lr renderer for its server + preflight-render",
+   "admitted_as_written": "no: addendum §3: 'Every decision model of the leaderboard outside this list is out of scope for Part 3'",
+   "writer": "Arm N: paid writer Qwen3.8 Flash (off) via OpenRouter (cash, est. $0.03); Arm W: none ($0)",
+   "serving": "spark2 :19480 (gliclass_server); spark2 GPU0 is logic's hold r_cf95c9e58f42 to 13 Nov 14:03Z",
+   "gpu_hours": {
+    "prereq": "local stage ~0.6-6.1 h on one bariton card (measured on earlier decision late entries)",
+    "learning": "~1.4 h both arms incl. server start [INFERENCE: Elephant-1 worst 0.43 h at 0.26 s/decision; notes ~1.5x]"
+   },
+   "cash_usd": 0.03
+  },
+  {
+   "source": "clef-flash_en",
+   "display": "Clef-flash",
+   "cls": "small",
+   "kind": "decision",
+   "bg_identity": "no backgammon record (Cloudflare/clef-flash; v3 'Clef' is a different checkpoint)",
+   "baseline": null,
+   "baseline_other": null,
+   "retained_run": "none",
+   "state": "blocked",
+   "blocker": "no league record (addendum §3 freezes players.settings and the response ids from the league's own replies; §6 checks stored league requests) and addendum §3: 'Every decision model of the leaderboard outside this list is out of scope for Part 3' -> needs a cohort amendment row in decision_cohort.json citing Ümit (#5664/#5674 via Zeki), as #3746/#3758 added rows (those were before publication: this one is after, so the page states it); plus per local route a render check Lr (§6.1: lr/<route>.py renderer + preflight-render) and the identity list from the league's own replies (§3, D7)",
+   "prerequisite": "smallest compatible: a late entry (first stage: paid opponents, cash ~$0.09; then local stage) at its own server, then cohort row + Lr",
+   "admitted_as_written": "no: addendum §3: 'Every decision model of the leaderboard outside this list is out of scope for Part 3'",
+   "writer": "Arm N: paid writer Qwen3.8 Flash (off) via OpenRouter (cash, est. $0.03); Arm W: none ($0)",
+   "serving": "needs a backgammon route/server",
+   "gpu_hours": {
+    "prereq": "first stage ~0.1-1.9 h + local ~0.6-6.1 h",
+    "learning": "~1.4 h both arms incl. server start [INFERENCE: Elephant-1 worst 0.43 h at 0.26 s/decision; notes ~1.5x]"
+   },
+   "cash_usd": 0.12
+  },
+  {
+   "source": "glide-9b_en",
+   "display": "GLiDE 9B (open)",
+   "cls": "small",
+   "kind": "decision",
+   "bg_identity": "no backgammon record (fastino/GLiDE-9B; neither 'Fastino GLiDE' (hosted, size unstated) nor GLiDE v1.2 (Qwen3.8-27B) is it)",
+   "baseline": null,
+   "baseline_other": null,
+   "retained_run": "none",
+   "state": "blocked",
+   "blocker": "no league record (addendum §3 freezes players.settings and the response ids from the league's own replies; §6 checks stored league requests) and addendum §3: 'Every decision model of the leaderboard outside this list is out of scope for Part 3' -> needs a cohort amendment row in decision_cohort.json citing Ümit (#5664/#5674 via Zeki), as #3746/#3758 added rows (those were before publication: this one is after, so the page states it); plus per local route a render check Lr (§6.1: lr/<route>.py renderer + preflight-render) and the identity list from the league's own replies (§3, D7)",
+   "prerequisite": "smallest compatible: a late entry (first stage: paid opponents, cash ~$0.09; then local stage) at its own server, then cohort row + Lr",
+   "admitted_as_written": "no: addendum §3: 'Every decision model of the leaderboard outside this list is out of scope for Part 3'",
+   "writer": "Arm N: paid writer Qwen3.8 Flash (off) via OpenRouter (cash, est. $0.03); Arm W: none ($0)",
+   "serving": "needs a backgammon route/server",
+   "gpu_hours": {
+    "prereq": "first stage ~0.1-1.9 h + local ~0.6-6.1 h",
+    "learning": "~1.4 h both arms incl. server start [INFERENCE: Elephant-1 worst 0.43 h at 0.26 s/decision; notes ~1.5x]"
+   },
+   "cash_usd": 0.12
+  },
+  {
+   "source": "metask_en",
+   "display": "Metask-Jev 4B",
+   "cls": "tiny",
+   "kind": "decision",
+   "bg_identity": "no backgammon record",
+   "baseline": null,
+   "baseline_other": null,
+   "retained_run": "none",
+   "state": "blocked",
+   "blocker": "no league record (addendum §3 freezes players.settings and the response ids from the league's own replies; §6 checks stored league requests) and addendum §3: 'Every decision model of the leaderboard outside this list is out of scope for Part 3' -> needs a cohort amendment row in decision_cohort.json citing Ümit (#5664/#5674 via Zeki), as #3746/#3758 added rows (those were before publication: this one is after, so the page states it); plus per local route a render check Lr (§6.1: lr/<route>.py renderer + preflight-render) and the identity list from the league's own replies (§3, D7)",
+   "prerequisite": "smallest compatible: a late entry (first stage: paid opponents, cash ~$0.09; then local stage) at its own server, then cohort row + Lr",
+   "admitted_as_written": "no: addendum §3: 'Every decision model of the leaderboard outside this list is out of scope for Part 3'",
+   "writer": "Arm N: paid writer Qwen3.8 Flash (off) via OpenRouter (cash, est. $0.03); Arm W: none ($0)",
+   "serving": "needs a backgammon route/server",
+   "gpu_hours": {
+    "prereq": "first stage ~0.1-1.9 h + local ~0.6-6.1 h",
+    "learning": "~1.4 h both arms incl. server start [INFERENCE: Elephant-1 worst 0.43 h at 0.26 s/decision; notes ~1.5x]"
+   },
+   "cash_usd": 0.12
+  },
+  {
+   "source": "strands_en",
+   "display": "Strands Decider 2B",
+   "cls": "tiny",
+   "kind": "decision",
+   "bg_identity": "no backgammon record",
+   "baseline": null,
+   "baseline_other": null,
+   "retained_run": "none",
+   "state": "blocked",
+   "blocker": "no league record (addendum §3 freezes players.settings and the response ids from the league's own replies; §6 checks stored league requests) and addendum §3: 'Every decision model of the leaderboard outside this list is out of scope for Part 3' -> needs a cohort amendment row in decision_cohort.json citing Ümit (#5664/#5674 via Zeki), as #3746/#3758 added rows (those were before publication: this one is after, so the page states it); plus per local route a render check Lr (§6.1: lr/<route>.py renderer + preflight-render) and the identity list from the league's own replies (§3, D7)",
+   "prerequisite": "smallest compatible: a late entry (first stage: paid opponents, cash ~$0.09; then local stage) at its own server, then cohort row + Lr",
+   "admitted_as_written": "no: addendum §3: 'Every decision model of the leaderboard outside this list is out of scope for Part 3'",
+   "writer": "Arm N: paid writer Qwen3.8 Flash (off) via OpenRouter (cash, est. $0.03); Arm W: none ($0)",
+   "serving": "needs a backgammon route/server",
+   "gpu_hours": {
+    "prereq": "first stage ~0.1-1.9 h + local ~0.6-6.1 h",
+    "learning": "~1.4 h both arms incl. server start [INFERENCE: Elephant-1 worst 0.43 h at 0.26 s/decision; notes ~1.5x]"
+   },
+   "cash_usd": 0.12
+  },
+  {
+   "source": "d1-2b_en",
+   "display": "Liquid d1-2B (open weights)",
+   "cls": "tiny",
+   "kind": "decision",
+   "bg_identity": "no backgammon record (not prepared for backgammon (snapshot))",
+   "baseline": null,
+   "baseline_other": null,
+   "retained_run": "none",
+   "state": "blocked",
+   "blocker": "no league record (addendum §3 freezes players.settings and the response ids from the league's own replies; §6 checks stored league requests) and addendum §3: 'Every decision model of the leaderboard outside this list is out of scope for Part 3' -> needs a cohort amendment row in decision_cohort.json citing Ümit (#5664/#5674 via Zeki), as #3746/#3758 added rows (those were before publication: this one is after, so the page states it); plus per local route a render check Lr (§6.1: lr/<route>.py renderer + preflight-render) and the identity list from the league's own replies (§3, D7)",
+   "prerequisite": "smallest compatible: a late entry (first stage: paid opponents, cash ~$0.09; then local stage) at its own server, then cohort row + Lr",
+   "admitted_as_written": "no: addendum §3: 'Every decision model of the leaderboard outside this list is out of scope for Part 3'",
+   "writer": "Arm N: paid writer Qwen3.8 Flash (off) via OpenRouter (cash, est. $0.03); Arm W: none ($0)",
+   "serving": "needs a backgammon route/server",
+   "gpu_hours": {
+    "prereq": "first stage ~0.1-1.9 h + local ~0.6-6.1 h",
+    "learning": "~1.4 h both arms incl. server start [INFERENCE: Elephant-1 worst 0.43 h at 0.26 s/decision; notes ~1.5x]"
+   },
+   "cash_usd": 0.12
+  }
+ ],
+ "provenance_exceptions": [
+  {
+   "source": "LFM3-VL-2B (chat, thinking off) `lfm3-vl-2b-nothink` (Vision extra)",
+   "kind": "chat (vision)",
+   "state": "BLOCKED, do not run",
+   "basis": "withdrawn for Ümit's check (#5642/#5643); class 'Tiny' is logic's inference by name, no site class (reconcile #5680)",
+   "bg_identity": "no backgammon record"
+  },
+  {
+   "source": "LFM3-VL-2B (chat, thinking on) `lfm3-vl-2b` (Vision extra)",
+   "kind": "chat (vision)",
+   "state": "BLOCKED, do not run",
+   "basis": "smoke failed (19 letters of 306; no benchmark.db run); class inferred as above (#5679/#5680)",
+   "bg_identity": "no backgammon record"
+  },
+  {
+   "source": "Vision queued, not tested, outside the text 28: Liquid d1-3B, Liquid d1-Omni-2B, Qwen3.5-4B, Qwen3.5-9B",
+   "kind": "decision / chat",
+   "state": "not in the cohort: queued is not tested (#5680)",
+   "basis": "logic: d1 sizes need a bariton card (no d1 environment on spark2); Qwen3.5 waits for its server window",
+   "bg_identity": "none for d1-3B/d1-Omni-2B; Qwen3.5-4B/9B (on)/(off) late entries prepared (#5064), not started"
+  },
+  {
+   "source": "Vision queued for 7 of the 28 (d1-2B, Gemma 4 E2B, KnowLine 4B, KnowLine-0.8B, OneJev1.6-0.8B, StartLux 0.8B, StartLux 2B)",
+   "kind": "—",
+   "state": "no effect: their text runs make them members",
+   "basis": "reconcile #5680 queued_not_tested, in_text_28 true",
+   "bg_identity": "their rows in §1"
+  },
+  {
+   "source": "Spark-X2.6-4B, Granite-4.2-3B/8B/30B (Ümit's earlier list, #5071)",
+   "kind": "chat",
+   "state": "outside the 28; kept visible",
+   "basis": "no Tiny/Small Logic & Math text or Vision test (reconcile #5680)",
+   "bg_identity": "late entries prepared, not started: no record"
+  },
+  {
+   "source": "LFM2.5-24B-A2B (on) (Ümit's earlier list)",
+   "kind": "chat",
+   "state": "queued in the running chat lane (GPU 3, after Qwen3.8-27B S5); not one of the 28",
+   "basis": "already row 13 of the frozen 15 (plan §3); runs where it is",
+   "bg_identity": "League 1, complete: RJ 52.4 [50.3, 54.5], PR 47.7 [44.1, 51.2], 2,193 decisions, 18/18"
+  },
+  {
+   "source": "PKU-KCL-Meteor-0.8B, Base Labs joey-1, Sieve 31B, Turion Jev 31B, Cerno 9B, StartLux 4B (#4577/#4578 backgammon queues)",
+   "kind": "decision",
+   "state": "not in the 28; no change",
+   "basis": "not Logic & Math Tiny/Small tested setups",
+   "bg_identity": "per backgammon snapshot 2026-11-12"
+  }
+ ],
+ "existing_cohort_arms": [
+  {
+   "setup": "Decider v1.2 27B",
+   "arm": "notes",
+   "state": "running (GPU 2, since ~18:21Z)",
+   "cash": "—"
+  },
+  {
+   "setup": "Decider v1.2 27B",
+   "arm": "worst",
+   "state": "eligible, next on GPU 2",
+   "cash": "—"
+  },
+  {
+   "setup": "Fastino GLiDE v1.2 (local)",
+   "arm": "notes, worst",
+   "state": "eligible, queued on GPU 2 after Decider",
+   "cash": "—"
+  },
+  {
+   "setup": "Base Labs Elephant-1",
+   "arm": "worst / notes",
+   "state": "done / pending D5 (Ümit)",
+   "cash": "writer $0.03 (existing estimate)"
+  },
+  {
+   "setup": "Base Labs Mammoth-1",
+   "arm": "both",
+   "state": "pending D5 (Ümit)",
+   "cash": "writer $0.03 (existing)"
+  },
+  {
+   "setup": "REAX 1.3",
+   "arm": "both",
+   "state": "pending D5 (Ümit: read-twice -> read-once)",
+   "cash": "writer $0.03 (existing)"
+  },
+  {
+   "setup": "Drex Max 1.1",
+   "arm": "notes / worst",
+   "state": "done / pending: Nace subcap $0.36 left < $0.88 estimate",
+   "cash": "CASH: subcap raise >= $0.52"
+  },
+  {
+   "setup": "SubQ Snap 1.1",
+   "arm": "both",
+   "state": "done",
+   "cash": "—"
+  },
+  {
+   "setup": "Jev 1.14.0",
+   "arm": "both",
+   "state": "not tested: conservative context guard (addendum §6.2, 1.3% refused with no block)",
+   "cash": "—"
+  },
+  {
+   "setup": "Liquid d1-ultra",
+   "arm": "both",
+   "state": "not tested: native context limit unverified / guard (Zeki #3761; documented 32,768 now recorded, guard still refuses its 61 kB requests)",
+   "cash": "—"
+  },
+  {
+   "setup": "vLLM-SR d3-ultra",
+   "arm": "—",
+   "state": "not started: no league record, no backgammon route",
+   "cash": "—"
+  }
+ ],
+ "order": [
+  {
+   "rank": "1",
+   "item": "Gemma 4 E4B (on)",
+   "cash": "no cash",
+   "needed": "local stage (2 cards) -> live -> chat learning (MODELS row on improve-small)",
+   "note": "ready-closest; the only small chat (on) setup with a league record (RJ 50.2)"
+  },
+  {
+   "rank": "2",
+   "item": "Elephant-1 notes",
+   "cash": "D5 decision (no new cash)",
+   "needed": "none beyond D5",
+   "note": "RJ 57.7; worst arm already done"
+  },
+  {
+   "rank": "3",
+   "item": "Winnow-12B, Decider Flash v1.2 (complete records)",
+   "cash": "no cash for Arm W; Arm N in cash batch",
+   "needed": "cohort row (Ümit) + Lr renderer",
+   "note": "RJ 55.2, 49.1"
+  },
+  {
+   "rank": "-",
+   "item": "Cygnet",
+   "cash": "as 3, plus Ümit on #3111",
+   "needed": "",
+   "note": "RJ 57.1 (ranked here if #3111 is lifted)"
+  },
+  {
+   "rank": "4",
+   "item": "First-stage decision entrants: StartLux 2B 54.7, KnowLine-2B 53.0, KnowLine 4B 49.1, KnowLine-0.8B 48.8, GLiDE 2B 45.9, StartLux 0.8B 43.4, OneJev 42.6, GLiDE 0.8B 39.9, GLiDE 0.4B 29.6, GLiClass 20.2",
+   "cash": "local stage no cash; Arm W no cash",
+   "needed": "local stage + cohort row + Lr",
+   "note": "weak performers kept"
+  },
+  {
+   "rank": "5",
+   "item": "MiniCPM5-2B (on), LFM2.5-2.6B (on) [(off) baselines 53.3, 47.4 as proxy only]",
+   "cash": "cash: (on) first stage",
+   "needed": "first + local stage",
+   "note": ""
+  },
+  {
+   "rank": "6",
+   "item": "No record: chat LFM2.5-8B-A1B, LFM3-1.7B, Gemma 4 E2B, Gemma 4 12B, Erk-14B, Qwen3-14B; decision Clef-flash, GLiDE 9B, Metask-Jev 4B, Strands Decider 2B, d1-2B",
+   "cash": "cash: first stage",
+   "needed": "late entry (prepare where needed)",
+   "note": "unranked: no baseline"
+  }
+ ],
+ "cash_batch": {
+  "items": [
+   {
+    "item": "Arm N writer (Qwen3.8 Flash (off), OpenRouter) for the 18 new decision rows (Elephant-1's is already in the cohort estimate)",
+    "count": 18,
+    "per_item_usd": 0.03,
+    "subtotal_usd": 0.54,
+    "basis": "addendum §7 estimate per arm; rule (a) stops an arm at 1.5x = $0.045"
+   },
+   {
+    "item": "Late-entry first stage at the leaderboard setting, chat rows without one: MiniCPM5-2B (on), LFM2.5-2.6B (on), LFM2.5-8B-A1B (on), LFM3-1.7B (on), Gemma 4 E2B, Gemma 4 12B, Erk-14B, Qwen3-14B",
+    "count": 8,
+    "per_item_usd": 0.11,
+    "subtotal_usd": 0.88,
+    "basis": "measured paid-opponent $ of the 14 small first stages: $0.084-0.126 (mean ~$0.10); guard cap $5 each"
+   },
+   {
+    "item": "Late-entry first stage, decision rows without one: Clef-flash, GLiDE 9B, Metask-Jev 4B, Strands Decider 2B, d1-2B",
+    "count": 5,
+    "per_item_usd": 0.09,
+    "subtotal_usd": 0.45,
+    "basis": "measured tiny8 first stages $0.084-0.122; cap $5 each"
+   },
+   {
+    "item": "Drex Max 1.1 worst arm (existing cohort): raise the Nace subcap from $2.50 to at least $3.02",
+    "count": 1,
+    "per_item_usd": 0.52,
+    "subtotal_usd": 0.52,
+    "basis": "arm estimate $0.88 at list vs $0.36 left (Nace bills its $0.03 launch price, about half)"
+   }
+  ],
+  "total_expected_usd": 2.39,
+  "approval": "pending Ümit"
+ },
+ "first_no_cash_start": {
+  "item": "Gemma 4 E4B (on) local stage, then its learning run",
+  "branch": "improve-small e63f309 (not merged)"
+ }
+}

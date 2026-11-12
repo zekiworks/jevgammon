@@ -1,0 +1,25 @@
+scratch guard: tools/v3/repeats/guards/gemini-decision-1-r1.json with ledger and latch in /home/cbasaran/.cache/tmp/gem-admit.DzXpvh (ledger created empty by repeats.prepare_ledger); production v3.db read immutably
+ok       Gemini Decision 1 [repeat 1] (openrouter-decisions/google/gemini-decision-1; league config): client built
+ok       GNUbg weak (gnubg-weak; league config): client built
+ok       Random (random; league config): client built
+ok       Safest (safest; league config): client built
+ok       Celeris-1 Decision (celeris/celeris-1-decision; players #44): client built
+ok       Clef (clef; players #14): client built
+ok       Cygnet (Gemma 4 12B) (cygnet; players #2): client built
+ok       Decider Flash v1.2 (pplx-local/pplx-decider-flash-v1.2; players #33): client built
+ok       Decider v1.1 27B (pplx-local; players #16): client built
+ok       Decider v1.2 27B (pplx-local/pplx-decider-v1.2; players #11): client built
+ok       Fastino GLiDE (fastino; players #30): client built
+ok       Fastino GLiDE v1.2 (local) (fastino/glide-v1.2; players #41): client built
+ok       Jev 1.13.0 (jev/jev-1.13.0; players #8): client built
+ok       Jev 1.14.0 (jev/jev-1.14.0; players #38): client built
+ok       Liquid d1-ultra (liquid/d1-ultra; players #27): client built
+ok       Open-Jev 27B v1.1 (open-jev; players #4): client built
+ok       SubQ Snap Preview (subq/subq-snap-preview; players #32): client built
+ok       Winnow-12B (winnow/winnow-12b; players #40): client built
+admitted: all 18 clients of tools/v3/repeats/leagues/gemini-decision-1-r1.json built (players: league config; pinned opponents: /home/cbasaran/code/jevgammon/v3.db players.settings, read immutably)
+admitted-settings {"config":"tools/v3/repeats/leagues/gemini-decision-1-r1.json","config_sha256":"5905590aed1a4adadac6029cc6f4b3095123824afa166be7895d26574cb858b5","clients":[{"name":"Gemini Decision 1 [repeat 1]","source":"league config","player_id":null,"settings_sha256":null},{"name":"GNUbg weak","source":"league config","player_id":null,"settings_sha256":null},{"name":"Random","source":"league config","player_id":null,"settings_sha256":null},{"name":"Safest","source":"league config","player_id":null,"settings_sha256":null},{"name":"Celeris-1 Decision","source":"players #44","player_id":44,"settings_sha256":"428eeb5189b73a4b9718ef67cf263ea24966c18360ec362c42b9546a095ce7e3"},{"name":"Clef","source":"players #14","player_id":14,"settings_sha256":"a89599384217c1e5849b1758175f42b736dd8d81bb819123ee7f5734ec10da8b"},{"name":"Cygnet (Gemma 4 12B)","source":"players #2","player_id":2,"settings_sha256":"43db9fa32913bfd168469d1e649cdbc5f5dc26ba6b60f0904eec544c4d30a073"},{"name":"Decider Flash v1.2","source":"players #33","player_id":33,"settings_sha256":"74376dff6845c03bccd178dcda6c010eaefaac8e688d4ecf22eca0eb1e9656f1"},{"name":"Decider v1.1 27B","source":"players #16","player_id":16,"settings_sha256":"86d3e4056f448da52ea697fbb46469413832397fc9a46ec0fc4fa79b89e8835b"},{"name":"Decider v1.2 27B","source":"players #11","player_id":11,"settings_sha256":"4c77455ef69af0e41f806015cd981848f2deb2ebdcad8d8444bc17200b6d3778"},{"name":"Fastino GLiDE","source":"players #30","player_id":30,"settings_sha256":"95348fd7021dfd8e83a440ed79b74ac1d16c32c68fab3d1cfe2a9a0d018ed406"},{"name":"Fastino GLiDE v1.2 (local)","source":"players #41","player_id":41,"settings_sha256":"5f654b531af186eac2e31c4daf0e665cd9ab77b4b4711dc13d3ce2061ab4e248"},{"name":"Jev 1.13.0","source":"players #8","player_id":8,"settings_sha256":"098cab00a76950ad5d824b621b3549c12b957292e7b396eea8a7c3d60b266e0b"},{"name":"Jev 1.14.0","source":"players #38","player_id":38,"settings_sha256":"cc84687319713d4fcce82f0b0f930bd13bff159cdf3473622473822f6488d174"},{"name":"Liquid d1-ultra","source":"players #27","player_id":27,"settings_sha256":"793b6fbaf5139236b47fd904808668298cd6bea5e5ac1b61757b5b4c1c5ce573"},{"name":"Open-Jev 27B v1.1","source":"players #4","player_id":4,"settings_sha256":"3e312f82d2db8a523035575e38adc6fe59d6ea9e8d57ee7627159ec2e14c512a"},{"name":"SubQ Snap Preview","source":"players #32","player_id":32,"settings_sha256":"fcb54b942a49e82a39099a7c685df0959a75f43541c6f70ff4a357d958f94114"},{"name":"Winnow-12B","source":"players #40","player_id":40,"settings_sha256":"8ed6ae819de82b73b4b236d3c409b32ba47ba4ae2ce8fb1403eb9ebf349952a4"}],"guard":{"path":"/home/cbasaran/.cache/tmp/gem-admit.DzXpvh/guard.json","sha256":"549585e1e5b19c10a95e9c4316d44e93ee7805ae29a4e03de42c3ab52348ae45"}}
+admit exit 0
+scratch ledger byte-identical after admission; files: guard-budget.db guard.json 
+jevgammon: GUARD LATCHED (/home/cbasaran/.cache/tmp/gem-admit.DzXpvh/guard-latch): latch; nothing is sent and no guarded league starts until a person removes it
+admit with the latch set: exit 1

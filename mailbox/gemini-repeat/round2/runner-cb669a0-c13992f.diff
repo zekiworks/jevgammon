@@ -1,0 +1,1480 @@
+diff --git a/src/admit.rs b/src/admit.rs
+index 34fe0ff..68e118a 100644
+--- a/src/admit.rs
++++ b/src/admit.rs
+@@ -63,8 +63,13 @@ pub struct Admitted {
+ }
+ 
+ /// Prints one line per player and fails when any client was refused; else ends with the
+-/// `admitted-settings` record.
++/// `admitted-settings` record. Under a guard (`--guard`), its latch must not be set, its
++/// metered setups are built with its ledger (read-only, immutable) and the record names the
++/// guard file's SHA-256.
+ pub async fn run(db: &Path, config: &Path, setup: &Setup) -> Result<()> {
++    if let Some(guard) = &setup.guard {
++        guard.check()?;
++    }
+     let admitted = admit(db, config, setup).await?;
+     for a in &admitted.clients {
+         match &a.refused {
+@@ -93,13 +98,21 @@ pub async fn run(db: &Path, config: &Path, setup: &Setup) -> Result<()> {
+         config.display(),
+         db.display()
+     );
+-    println!("admitted-settings {}", record(config, &admitted));
++    println!(
++        "admitted-settings {}",
++        record(config, &admitted, setup.guard.as_deref())
++    );
+     Ok(())
+ }
+ 
+ /// The `admitted-settings` record (one line of JSON): the config file and its SHA-256, then
+-/// every client in admission order with its source, players row and settings SHA-256.
+-fn record(config: &Path, admitted: &Admitted) -> serde_json::Value {
++/// every client in admission order with its source, players row and settings SHA-256, and,
++/// under a guard, the guard file and its SHA-256.
++fn record(
++    config: &Path,
++    admitted: &Admitted,
++    guard: Option<&crate::guard::Guard>,
++) -> serde_json::Value {
+     let clients: Vec<_> = admitted
+         .clients
+         .iter()
+@@ -108,8 +121,13 @@ fn record(config: &Path, admitted: &Admitted) -> serde_json::Value {
+                                "settings_sha256": a.settings_sha256})
+         })
+         .collect();
+-    serde_json::json!({"config": config.display().to_string(),
+-                       "config_sha256": admitted.config_sha256, "clients": clients})
++    let mut record = serde_json::json!({"config": config.display().to_string(),
++                                        "config_sha256": admitted.config_sha256, "clients": clients});
++    if let Some(guard) = guard {
++        record["guard"] =
++            serde_json::json!({"path": guard.path.display().to_string(), "sha256": guard.sha256});
++    }
++    record
+ }
+ 
+ fn sha256(bytes: &[u8]) -> String {
+@@ -465,7 +483,7 @@ mod tests {
+             clef.settings_sha256.as_deref(),
+             Some(sha256(checkpointed.to_string().as_bytes()).as_str())
+         );
+-        let record = record(&config, &admitted);
++        let record = record(&config, &admitted, None);
+         assert_eq!(
+             record,
+             serde_json::json!({"config": config.display().to_string(),
+diff --git a/src/budget.rs b/src/budget.rs
+index b04bb9b..8d164b9 100644
+--- a/src/budget.rs
++++ b/src/budget.rs
+@@ -223,12 +223,12 @@ impl Ledger {
+         let (spent, reserved) = totals(&tx)?;
+         let cap = self.config.cap_usd;
+         if spent + reserved + amount > cap {
+-            bail!(
++            return Err(anyhow::Error::new(BudgetCap(format!(
+                 "BUDGET CAP: ${spent:.4} spent + ${reserved:.4} reserved in flight + \
+-                 ${amount:.4} for this request would pass the ${cap:.2} hard cap \
++                 ${amount:.4} for this request would pass the ${cap:.4} hard cap \
+                  (ledger {}); stopped before the call",
+                 self.config.ledger
+-            );
++            ))));
+         }
+         tx.execute(
+             "INSERT INTO attempts (setup, pid, started_at, status, reserved_usd)
+@@ -291,6 +291,19 @@ impl Ledger {
+     }
+ }
+ 
++/// A reservation refused because it would pass the cap (the request was not sent); matched by
++/// type (`guard::is_stop`).
++#[derive(Debug)]
++pub struct BudgetCap(pub String);
++
++impl std::fmt::Display for BudgetCap {
++    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
++        f.write_str(&self.0)
++    }
++}
++
++impl std::error::Error for BudgetCap {}
++
+ /// One attempt's reservation. Dropped without `settle`/`refused`, it is booked at its
+ /// worst case (`lost`).
+ pub struct Hold {
+diff --git a/src/guard.rs b/src/guard.rs
+new file mode 100644
+index 0000000..9de61f4
+--- /dev/null
++++ b/src/guard.rs
+@@ -0,0 +1,184 @@
++//! A league's run guard (`league --guard FILE`, `admit --guard FILE`; Zeki #5385): the
++//! guarantees a repeat claims, bound to the setups it names and kept by the runner itself.
++//!
++//! - Money: one budget ledger (`budget.rs`) and one cap shared by every `metered` setup (the
++//!   entrant and the paid opponents). Each request attempt of theirs (warm-ups, retries and
++//!   failed attempts included) first reserves its worst case and is refused before it is sent
++//!   when spent + reserved in flight + that would pass the cap; an answered attempt is settled
++//!   at max(list price, the provider's reported `usage.cost`), any other keeps its worst case.
++//! - Identity: every reply of an `expect_route` setup (warm-ups and each group of a split
++//!   decision included) must name exactly the listed model and provider. A missing or other
++//!   identity fails closed: the client sends nothing more, the league stops.
++//! - Latch: either stop (an identity failure, or a refused reservation) writes the `latch`
++//!   file. While it exists, no guarded league starts or resumes, no guarded client sends and
++//!   admission refuses: there is no automatic re-entry; only a person removes it.
++//!
++//! The players' stored settings are not changed: the guard names setups by player name.
++
++use std::collections::BTreeMap;
++use std::path::{Path, PathBuf};
++use std::sync::Arc;
++use std::sync::atomic::{AtomicBool, Ordering};
++
++use anyhow::{Context as _, Result, bail};
++use serde::{Deserialize, Serialize};
++
++use crate::budget::BudgetConfig;
++use crate::players::llm::ExpectRoute;
++
++/// List prices of a metered setup, per million tokens (worst cases and list-price settlement).
++#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
++#[serde(deny_unknown_fields)]
++pub struct Prices {
++    pub input_per_mtok: f64,
++    pub cached_input_per_mtok: f64,
++    pub output_per_mtok: f64,
++}
++
++/// The guard file.
++#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
++#[serde(deny_unknown_fields)]
++pub struct GuardConfig {
++    /// Free text: what the guard is for.
++    #[serde(default, skip_serializing_if = "Option::is_none")]
++    pub note: Option<String>,
++    /// Budget ledger shared by every metered setup.
++    pub ledger: String,
++    /// Dollars never to be passed by spent + reserved over all metered setups.
++    pub cap_usd: f64,
++    /// Stop latch file: written on a guard stop; while it exists nothing guarded runs.
++    pub latch: PathBuf,
++    /// Setups whose every request attempt is metered, by player name.
++    pub metered: BTreeMap<String, Prices>,
++    /// The identity every reply of these setups must carry, by player name.
++    #[serde(default)]
++    pub expect_route: BTreeMap<String, ExpectRoute>,
++}
++
++pub struct Guard {
++    pub config: GuardConfig,
++    /// SHA-256 of the guard file's bytes (admission's record).
++    pub sha256: String,
++    pub path: PathBuf,
++    stopped: AtomicBool,
++}
++
++/// A guard stop: an identity failure, or the latch already set. Matched by type, so a
++/// league can tell it from an ordinary match failure.
++#[derive(Debug)]
++pub struct GuardStop(pub String);
++
++impl std::fmt::Display for GuardStop {
++    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
++        f.write_str(&self.0)
++    }
++}
++
++impl std::error::Error for GuardStop {}
++
++/// Whether `error` is a guard stop or a refused reservation (`budget::BudgetCap`).
++pub fn is_stop(error: &anyhow::Error) -> bool {
++    error
++        .chain()
++        .any(|e| e.is::<GuardStop>() || e.is::<crate::budget::BudgetCap>())
++}
++
++impl Guard {
++    /// Reads and checks the guard file: a positive cap, and every `expect_route` setup metered.
++    pub fn load(path: &Path) -> Result<Arc<Self>> {
++        let bytes =
++            std::fs::read(path).with_context(|| format!("reading guard {}", path.display()))?;
++        let config: GuardConfig = serde_json::from_slice(&bytes)
++            .with_context(|| format!("parsing guard {}", path.display()))?;
++        if !(config.cap_usd.is_finite() && config.cap_usd > 0.0) {
++            bail!(
++                "guard {}: cap_usd must be a positive number",
++                path.display()
++            );
++        }
++        if let Some(name) = config
++            .expect_route
++            .keys()
++            .find(|n| !config.metered.contains_key(*n))
++        {
++            bail!(
++                "guard {}: {name} has an expect_route but is not metered",
++                path.display()
++            );
++        }
++        use sha2::Digest as _;
++        Ok(Arc::new(Guard {
++            config,
++            sha256: hex::encode(sha2::Sha256::digest(&bytes)),
++            path: path.to_path_buf(),
++            stopped: AtomicBool::new(false),
++        }))
++    }
++
++    pub fn meters(&self, name: &str) -> bool {
++        self.config.metered.contains_key(name)
++    }
++
++    /// The budget of a metered setup: the shared ledger and cap at its list prices.
++    pub fn budget_for(&self, name: &str) -> Option<BudgetConfig> {
++        self.config.metered.get(name).map(|p| BudgetConfig {
++            ledger: self.config.ledger.clone(),
++            cap_usd: self.config.cap_usd,
++            input_per_mtok: p.input_per_mtok,
++            cached_input_per_mtok: p.cached_input_per_mtok,
++            output_per_mtok: p.output_per_mtok,
++        })
++    }
++
++    pub fn route_for(&self, name: &str) -> Option<ExpectRoute> {
++        self.config.expect_route.get(name).cloned()
++    }
++
++    /// The latch's text when it is set (in this process, or by the file).
++    pub fn latched(&self) -> Option<String> {
++        match std::fs::read_to_string(&self.config.latch) {
++            Ok(text) => Some(text.trim().to_owned()),
++            Err(error) if error.kind() == std::io::ErrorKind::NotFound => self
++                .stopped
++                .load(Ordering::SeqCst)
++                .then(|| "stopped in this process (latch file missing)".to_owned()),
++            Err(error) => Some(format!(
++                "latch {} unreadable: {error}",
++                self.config.latch.display()
++            )),
++        }
++    }
++
++    /// Fails with a `GuardStop` while the latch is set: nothing may be sent or started.
++    pub fn check(&self) -> Result<()> {
++        match self.latched() {
++            None => Ok(()),
++            Some(why) => Err(anyhow::Error::new(GuardStop(format!(
++                "GUARD LATCHED ({}): {why}; nothing is sent and no guarded league starts until a person removes it",
++                self.config.latch.display()
++            )))),
++        }
++    }
++
++    /// Sets the latch: in this process at once, and in the latch file (one line appended per
++    /// stop), which keeps every later run from starting.
++    pub fn latch(&self, reason: &str) {
++        self.stopped.store(true, Ordering::SeqCst);
++        let line = format!(
++            "{} {reason}\n",
++            chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Millis, true)
++        );
++        use std::io::Write as _;
++        let written = std::fs::OpenOptions::new()
++            .create(true)
++            .append(true)
++            .open(&self.config.latch)
++            .and_then(|mut f| f.write_all(line.as_bytes()));
++        if let Err(error) = written {
++            eprintln!(
++                "guard: latch {} not written: {error} (latched in this process)",
++                self.config.latch.display()
++            );
++        }
++    }
++}
+diff --git a/src/league.rs b/src/league.rs
+index f0445cb..7abcbb5 100644
+--- a/src/league.rs
++++ b/src/league.rs
+@@ -688,6 +688,10 @@ async fn run_inner(
+     scores: PathBuf,
+     league_id: &mut Option<i64>,
+ ) -> Result<()> {
++    // A latched guard starts nothing: no database is opened, no league created or resumed.
++    if let Some(guard) = &setup.guard {
++        guard.check()?;
++    }
+     let db_path = db_path.to_path_buf();
+     let mut db = Db::open(&db_path)?;
+     let id = match start {
+@@ -887,6 +891,17 @@ async fn play_league(league: Arc<League>, db: &Db, setup: &Setup, mut state: Sta
+             }
+             if set.is_empty() {
+                 if league.control.is_cancelled() {
++                    if let Some(why) = setup.guard.as_ref().and_then(|g| g.latched()) {
++                        bail!(
++                            "league #{id} stopped by its run guard ({}): {why}; not resumed \
++                             automatically: no guarded league starts while the latch is set",
++                            setup.guard.as_ref().map_or(String::new(), |g| g
++                                .config
++                                .latch
++                                .display()
++                                .to_string())
++                        );
++                    }
+                     return Err(stopped());
+                 }
+                 if state.pending.is_empty() && state.skipped == 0 {
+@@ -959,6 +974,15 @@ async fn play_league(league: Arc<League>, db: &Db, setup: &Setup, mut state: Sta
+                                 backoffs.fail(&fixture, &error, Instant::now(), league.backoff);
+                             league.defer(&fixture, &error, &backoff);
+                             state.requeue(fixture);
++                            // A guard stop (a reply without the expected identity, or a refused
++                            // reservation) ends the league: latched, nothing more is started.
++                            if let Some(guard) = &setup.guard
++                                && crate::guard::is_stop(&error)
++                            {
++                                guard.latch(&format!("league #{id} stopped: {error:#}"));
++                                println!("league #{id}: stopped by its run guard: {error:#}");
++                                league.control.cancel();
++                            }
+                         }
+                     }
+                 }
+diff --git a/src/main.rs b/src/main.rs
+index dc93614..56c7173 100644
+--- a/src/main.rs
++++ b/src/main.rs
+@@ -5,6 +5,7 @@ mod board;
+ mod budget;
+ mod db;
+ mod dice;
++mod guard;
+ mod http;
+ mod league;
+ mod migrate;
+@@ -104,6 +105,11 @@ struct AdmitArgs {
+     /// League config file (as for `league --config`).
+     #[arg(long)]
+     config: PathBuf,
++    /// The league's run guard file (as for `league --guard`): its metered setups are built
++    /// with its ledger (read-only, immutable) and its latch must not be set; the record names
++    /// the guard file's SHA-256.
++    #[arg(long)]
++    guard: Option<PathBuf>,
+ }
+ 
+ #[derive(Args)]
+@@ -355,6 +361,11 @@ struct LeagueArgs {
+     /// $XDG_STATE_HOME/bg-site/plays.
+     #[arg(long, env = "JEVGAMMON_SCORES")]
+     scores: Option<PathBuf>,
++    /// Run guard file (JSON; `guard.rs`): a shared hard cap over the setups it meters (every
++    /// request attempt reserved before it is sent), the identity every reply of its
++    /// `expect_route` setups must carry, and a stop latch; a latched guard starts nothing.
++    #[arg(long)]
++    guard: Option<PathBuf>,
+     #[command(flatten)]
+     common: Common,
+ }
+@@ -453,7 +464,13 @@ async fn main() -> ExitCode {
+         Some(Command::Admit(args)) => {
+             // No admitted client type reads a credential root or the local server's URL.
+             let setup = Setup::new(PathBuf::new(), String::new());
+-            admit::run(&args.db, &args.config, &setup).await
++            match args.guard.as_deref().map(guard::Guard::load).transpose() {
++                Ok(Some(guard)) => {
++                    admit::run(&args.db, &args.config, &setup.with_guard(guard)).await
++                }
++                Ok(None) => admit::run(&args.db, &args.config, &setup).await,
++                Err(error) => Err(error),
++            }
+         }
+         Some(Command::RenderStageB(args)) => {
+             ask::render_stage_b(&args.config, &args.positions, &args.setups)
+@@ -519,7 +536,10 @@ async fn main() -> ExitCode {
+ }
+ 
+ async fn run_league(args: LeagueArgs) -> Result<()> {
+-    let setup = args.common.setup();
++    let setup = match &args.guard {
++        Some(path) => args.common.setup().with_guard(guard::Guard::load(path)?),
++        None => args.common.setup(),
++    };
+     let start = match (args.resume, &args.config) {
+         (Some(id), _) => league::Start::Resume(id),
+         (None, Some(path)) => {
+diff --git a/src/players/decision.rs b/src/players/decision.rs
+index 0511bee..12b5766 100644
+--- a/src/players/decision.rs
++++ b/src/players/decision.rs
+@@ -382,6 +382,14 @@ pub struct DecisionClient {
+     /// Fields merged into every request body (a player config's `request`), e.g.
+     /// OpenRouter's `provider` routing.
+     request: Option<Value>,
++    /// A league's run guard naming this setup: its latch is checked before every attempt and,
++    /// with an expected route, every reply's identity after it.
++    guard: Option<Guarded>,
++}
++
++struct Guarded {
++    guard: Arc<crate::guard::Guard>,
++    route: Option<super::llm::ExpectRoute>,
+ }
+ 
+ impl DecisionClient {
+@@ -421,6 +429,7 @@ impl DecisionClient {
+             url: format!("{}{}", base.trim_end_matches('/'), service.path),
+             budget,
+             request: None,
++            guard: None,
+         })
+     }
+ 
+@@ -430,6 +439,16 @@ impl DecisionClient {
+         self
+     }
+ 
++    /// Puts the client under a league's run guard (`None`: none), with the identity the guard
++    /// expects of `name`'s replies, if any.
++    pub fn with_guard(mut self, guard: Option<Arc<crate::guard::Guard>>, name: &str) -> Self {
++        self.guard = guard.map(|guard| Guarded {
++            route: guard.route_for(name),
++            guard,
++        });
++        self
++    }
++
+     pub fn max_choices(&self) -> usize {
+         self.service.max_choices
+     }
+@@ -456,6 +475,13 @@ impl DecisionClient {
+                         error.context(format!("{} refused the warm-up", self.service.label))
+                     );
+                 }
++                // A guard stop (identity, latch, cap) is not cured by waiting.
++                Err(error) if self.guard.is_some() && crate::guard::is_stop(&error) => {
++                    return Err(error.context(format!(
++                        "{} warm-up stopped by the league guard",
++                        self.service.label
++                    )));
++                }
+                 Err(error) if started.elapsed() < WARM_UP_LIMIT => {
+                     eprintln!("{} warming up: {error:#}", self.service.label);
+                     tokio::time::sleep(Duration::from_secs(10)).await;
+@@ -478,10 +504,16 @@ impl DecisionClient {
+     /// built on) never makes a token of less than one byte of the UTF-8 text it encodes, and
+     /// the body holds every byte of the state, instructions and options the model reads (JSON
+     /// escaping only adds bytes); the margin covers the provider's own system prompt and chat
+-    /// template, which it does not publish. An answer with usage is booked at it; a 200
+-    /// without readable usage, an error status the service does not document as unbilled
+-    /// (`Service::unbilled`), and an attempt without a response keep the worst case.
++    /// template, which it does not publish. An answer with usage is booked at max(its list
++    /// price, the provider's reported `usage.cost`); a 200 without readable usage, an error
++    /// status the service does not document as unbilled (`Service::unbilled`), and an attempt
++    /// without a response keep the worst case. Under a league guard nothing is sent while its
++    /// latch is set, and a reply without the expected identity sets it (after its cost is
++    /// booked) and fails with a `GuardStop`.
+     async fn send(&self, body: &Value, retry: &RetryTime) -> Result<String> {
++        if let Some(guarded) = &self.guard {
++            guarded.guard.check()?;
++        }
+         let make = || {
+             let request = self.http.post(&self.url).json(body);
+             match &self.key {
+@@ -493,34 +525,57 @@ impl DecisionClient {
+             e.into_anyhow()
+                 .context(format!("{} request failed", self.service.label))
+         };
+-        let Some(ledger) = &self.budget else {
+-            return http::send(make, retry).await.map_err(failed);
+-        };
+-        let bytes = body.to_string().len();
+-        let worst = ledger.worst_case(bytes + TEMPLATE_MARGIN, bytes as u64);
+-        let (text, hold) = http::send_metered(make, retry, ledger, worst, self.service.unbilled())
+-            .await
+-            .map_err(failed)?;
+-        let value: Option<Value> = serde_json::from_str(&text).ok();
+-        let tokens = |key: &str| {
+-            value
+-                .as_ref()
+-                .and_then(|v| v.pointer(&format!("/usage/{key}")))
+-                .and_then(Value::as_u64)
+-        };
+-        match tokens("input_tokens") {
+-            Some(input_tokens) => {
+-                hold.settle(
+-                    Usage {
+-                        input_tokens,
+-                        cached_tokens: 0,
+-                        output_tokens: tokens("output_tokens").unwrap_or(0),
+-                        reasoning_tokens: 0,
+-                    },
+-                    None,
+-                );
++        let text = match &self.budget {
++            None => http::send(make, retry).await.map_err(failed)?,
++            Some(ledger) => {
++                let bytes = body.to_string().len();
++                let worst = ledger.worst_case(bytes + TEMPLATE_MARGIN, bytes as u64);
++                let (text, hold) =
++                    http::send_metered(make, retry, ledger, worst, self.service.unbilled())
++                        .await
++                        .map_err(failed)?;
++                let value: Option<Value> = serde_json::from_str(&text).ok();
++                let usage = |key: &str| {
++                    value
++                        .as_ref()
++                        .and_then(|v| v.pointer(&format!("/usage/{key}")))
++                };
++                match usage("input_tokens").and_then(Value::as_u64) {
++                    Some(input_tokens) => {
++                        hold.settle(
++                            Usage {
++                                input_tokens,
++                                cached_tokens: 0,
++                                output_tokens: usage("output_tokens")
++                                    .and_then(Value::as_u64)
++                                    .unwrap_or(0),
++                                reasoning_tokens: 0,
++                            },
++                            usage("cost").and_then(Value::as_f64),
++                        );
++                    }
++                    None => hold.kept("200 without readable usage: booked at the worst case"),
++                }
++                text
+             }
+-            None => hold.kept("200 without readable usage: booked at the worst case"),
++        };
++        if let Some(Guarded {
++            guard,
++            route: Some(route),
++        }) = &self.guard
++            && let Err(reason) = super::llm::route_identity(&text, route)
++        {
++            let why = format!(
++                "ROUTE CHECK ({}): {reason}; identity {}",
++                self.service.label,
++                super::llm::identity_fields(&text, route)
++            );
++            guard.latch(&why);
++            let shown: String = text.chars().take(600).collect();
++            return Err(anyhow::Error::new(crate::guard::GuardStop(format!(
++                "{why}; the league guard is latched ({}): no further request is sent; response: {shown}",
++                guard.config.latch.display()
++            ))));
+         }
+         Ok(text)
+     }
+@@ -851,6 +906,7 @@ mod tests {
+             url: format!("{}{}", base.trim_end_matches('/'), service.path),
+             budget: None,
+             request: None,
++            guard: None,
+         }
+     }
+ 
+@@ -1184,6 +1240,7 @@ mod tests {
+             url: format!("{url}{}", service.path),
+             budget: None,
+             request: None,
++            guard: None,
+         }
+         .with_request(Some(pin.clone()));
+         let mut decision = Decision::new(0);
+@@ -1281,6 +1338,7 @@ mod tests {
+                 url: format!("{url}{}", service.path),
+                 budget: None,
+                 request: None,
++                guard: None,
+             };
+             let mut decision = Decision::new(0);
+             let choice = client.choose(&req, &order, &mut decision).await.unwrap();
+@@ -1344,6 +1402,7 @@ mod tests {
+             url: format!("{url}{}", service.path),
+             budget: None,
+             request: None,
++            guard: None,
+         };
+         fn valid(n: usize) -> Vec<(usize, String)> {
+             let rest = 0.3 / (n - 1) as f64;
+diff --git a/src/players/guard_tests.rs b/src/players/guard_tests.rs
+new file mode 100644
+index 0000000..2acf184
+--- /dev/null
++++ b/src/players/guard_tests.rs
+@@ -0,0 +1,679 @@
++//! League run guard (Zeki #5385), offline: stub System One servers on 127.0.0.1, scratch
++//! ledgers, latch files and databases under the temp dir; no network, no production file.
++//! Identity: a mismatched model, a mismatched provider, a missing field, a warm-up reply and
++//! one group of a split decision each fail closed and latch (nothing more is sent, the league
++//! stops and does not start again). Money: retries, warm-ups, failed attempts, decisions in
++//! flight at once and an opponent's spend are all reserved before sending in one shared
++//! ledger and never pass its cap.
++//!
++//! Every guard-specific step goes through `support` (setup under a guard file), so the same
++//! tests run against a runner without the guard (the RED run on cb669a0 replaces `support`
++//! with a stand-in that builds the setup without it).
++
++use std::collections::HashMap;
++use std::io::{BufRead, BufReader, Read, Write};
++use std::path::{Path, PathBuf};
++use std::sync::Arc;
++use std::sync::atomic::{AtomicUsize, Ordering};
++use std::time::Duration;
++
++use serde_json::{Value, json};
++
++use super::{DecisionRequest, Player, PlayerConfig, Setup};
++use crate::board::{Board, Play};
++use crate::http::RetryTime;
++use crate::players::prompt::PromptVersion;
++
++mod support {
++    use super::*;
++    /// The players' setup under the guard file at `guard` (as `league --guard`).
++    pub fn setup(guard: &Path) -> Setup {
++        Setup::new(std::env::temp_dir(), "http://127.0.0.1:9/v1".into())
++            .with_guard(crate::guard::Guard::load(guard).expect("guard file"))
++    }
++}
++
++const MODEL: &str = "google/gemini-decision-1-20261111";
++const PROVIDER: &str = "Google AI Studio";
++
++/// One stub reply: HTTP status, body, delay before answering.
++struct Reply {
++    status: u16,
++    body: String,
++    delay: Duration,
++}
++
++impl Reply {
++    fn ok(body: String) -> Self {
++        Reply {
++            status: 200,
++            body,
++            delay: Duration::ZERO,
++        }
++    }
++}
++
++/// A System One server: answers request `n` (from 0) with `reply(n, request body)`, one thread
++/// per connection; counts the requests it received.
++struct Stub {
++    url: String,
++    count: Arc<AtomicUsize>,
++}
++
++impl Stub {
++    fn start(reply: impl Fn(usize, &Value) -> Reply + Send + Sync + 'static) -> Self {
++        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
++        let url = format!("http://{}", listener.local_addr().unwrap());
++        let count = Arc::new(AtomicUsize::new(0));
++        let seen = count.clone();
++        let reply = Arc::new(reply);
++        std::thread::spawn(move || {
++            for stream in listener.incoming() {
++                let Ok(mut stream) = stream else { continue };
++                let n = seen.fetch_add(1, Ordering::SeqCst);
++                let reply = reply.clone();
++                std::thread::spawn(move || {
++                    let mut reader = BufReader::new(stream.try_clone().unwrap());
++                    let mut length = 0;
++                    loop {
++                        let mut line = String::new();
++                        if reader.read_line(&mut line).unwrap_or(0) == 0 || line == "\r\n" {
++                            break;
++                        }
++                        if let Some((name, value)) = line.split_once(':')
++                            && name.eq_ignore_ascii_case("content-length")
++                        {
++                            length = value.trim().parse().unwrap();
++                        }
++                    }
++                    let mut body = vec![0; length];
++                    reader.read_exact(&mut body).unwrap();
++                    let request: Value = serde_json::from_slice(&body).unwrap_or(Value::Null);
++                    let r = reply(n, &request);
++                    std::thread::sleep(r.delay);
++                    let _ = write!(
++                        stream,
++                        "HTTP/1.1 {} X\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
++                        r.status,
++                        r.body.len(),
++                        r.body
++                    );
++                });
++            }
++        });
++        Stub { url, count }
++    }
++
++    fn requests(&self) -> usize {
++        self.count.load(Ordering::SeqCst)
++    }
++}
++
++/// An answer to `request` picking its first option, with `model`/`provider` when given, 1,000
++/// input tokens and the provider-reported `cost`.
++fn answer(request: &Value, model: Option<&str>, provider: Option<&str>, cost: f64) -> String {
++    let keys: Vec<String> = request
++        .pointer("/questions/play/criteria")
++        .and_then(Value::as_object)
++        .map(|c| c.keys().cloned().collect())
++        .unwrap_or_default();
++    let p = 1.0 / keys.len().max(1) as f64;
++    let probabilities: serde_json::Map<String, Value> =
++        keys.iter().map(|k| (k.clone(), p.into())).collect();
++    let mut reply = json!({
++        "id": "gen-stub",
++        "answers": {"play": {"type": "choice", "choice": keys.first(), "probabilities": probabilities}},
++        "usage": {"input_tokens": 1000, "output_tokens": 0, "cost": cost}
++    });
++    if let Some(model) = model {
++        reply["model"] = model.into();
++    }
++    if let Some(provider) = provider {
++        reply["provider"] = provider.into();
++    }
++    reply.to_string()
++}
++
++fn good(request: &Value) -> String {
++    answer(request, Some(MODEL), Some(PROVIDER), 0.0)
++}
++
++fn scratch(tag: &str) -> PathBuf {
++    let dir = std::env::temp_dir().join(format!("jevgammon-guard-{tag}-{}", uuid::Uuid::new_v4()));
++    std::fs::create_dir_all(&dir).unwrap();
++    dir
++}
++
++/// A guard file in `dir` metering `metered` (name, $ per million input tokens) under `cap`,
++/// expecting the frozen identity of `expect`'s replies.
++fn guard_file(dir: &Path, cap: f64, metered: &[(&str, f64)], expect: &[&str]) -> PathBuf {
++    let path = dir.join("guard.json");
++    let metered: serde_json::Map<String, Value> = metered
++        .iter()
++        .map(|(name, price)| {
++            (
++                (*name).to_owned(),
++                json!({"input_per_mtok": price, "cached_input_per_mtok": price, "output_per_mtok": 0.0}),
++            )
++        })
++        .collect();
++    let expect: serde_json::Map<String, Value> = expect
++        .iter()
++        .map(|name| {
++            (
++                (*name).to_owned(),
++                json!({"models": [MODEL], "provider": PROVIDER}),
++            )
++        })
++        .collect();
++    std::fs::write(
++        &path,
++        json!({"ledger": dir.join("budget.db"), "cap_usd": cap, "latch": dir.join("latch"),
++               "metered": metered, "expect_route": expect})
++        .to_string(),
++    )
++    .unwrap();
++    path
++}
++
++fn latched(dir: &Path) -> bool {
++    dir.join("latch").exists()
++}
++
++/// Ledger rows `(status, reserved_usd, cost_usd)` in order; empty when there is no ledger.
++fn ledger(dir: &Path) -> Vec<(String, f64, Option<f64>)> {
++    let path = dir.join("budget.db");
++    if !path.exists() {
++        return Vec::new();
++    }
++    let conn = rusqlite::Connection::open(&path).unwrap();
++    let mut statement = conn
++        .prepare("SELECT status, reserved_usd, cost_usd FROM attempts ORDER BY id")
++        .unwrap();
++    statement
++        .query_map([], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)))
++        .unwrap()
++        .collect::<rusqlite::Result<_>>()
++        .unwrap()
++}
++
++/// Spent (settled + lost) plus reserved (open): what the cap bounds.
++fn committed(rows: &[(String, f64, Option<f64>)]) -> f64 {
++    rows.iter()
++        .map(|(status, reserved, cost)| match status.as_str() {
++            "settled" => cost.unwrap_or(0.0),
++            _ => *reserved,
++        })
++        .sum()
++}
++
++/// A decision service player (System One, `cygnet`: at most 26 options per request) at `url`.
++async fn player(name: &str, url: &str, parallel: usize, setup: &Setup) -> anyhow::Result<Player> {
++    let config = PlayerConfig {
++        base_url: Some(url.to_owned()),
++        parallel: Some(parallel),
++        ..PlayerConfig::new(name, "cygnet")
++    };
++    Player::from_config(&config, setup).await
++}
++
++struct Position {
++    board: Board,
++    plays: Vec<Play>,
++    notations: Vec<String>,
++    order: Vec<usize>,
++    retry: RetryTime,
++}
++
++impl Position {
++    /// A position with at least `min` legal plays.
++    fn with(min: usize) -> Self {
++        let mut board = Board::start();
++        board.pts[12] = 3;
++        board.pts[7] = 5;
++        let (plays, _) = [(2, 1), (1, 1), (2, 2), (3, 1), (4, 2), (3, 3)]
++            .iter()
++            .map(|&(a, b)| (board.legal_plays(a, b), (a, b)))
++            .find(|(p, _)| p.len() >= min)
++            .expect("a position with enough plays");
++        let notations = plays.iter().map(|p| p.notation()).collect();
++        let order = (0..plays.len()).rev().collect();
++        Position {
++            board,
++            plays,
++            notations,
++            order,
++            retry: RetryTime::default(),
++        }
++    }
++
++    fn request(&self) -> DecisionRequest<'_> {
++        DecisionRequest {
++            board: &self.board,
++            dice: (2, 1),
++            plays: &self.plays,
++            notations: &self.notations,
++            my_score: 0,
++            opp_score: 0,
++            round: 1,
++            rounds: 3,
++            leg: 1,
++            clock: None,
++            my_clock: None,
++            opp_clock: None,
++            turn_no: 1,
++            max_turns: None,
++            player: 1,
++            history: &[],
++            order: &self.order,
++            seed: 1,
++            version: PromptVersion::BgV2,
++            retry: &self.retry,
++        }
++    }
++}
++
++/// One decision against a stub replying `reply`; returns the outcome, the stub, the scratch dir.
++async fn decide_once(
++    tag: &str,
++    reply: impl Fn(usize, &Value) -> Reply + Send + Sync + 'static,
++) -> (
++    anyhow::Result<super::Decision>,
++    Stub,
++    PathBuf,
++    Player,
++    Position,
++) {
++    let stub = Stub::start(reply);
++    let dir = scratch(tag);
++    let setup = support::setup(&guard_file(&dir, 5.0, &[("G", 0.1)], &["G"]));
++    let g = player("G", &stub.url, 1, &setup).await.unwrap();
++    let position = Position::with(3);
++    let outcome = g.decide(&position.request()).await;
++    (outcome, stub, dir, g, position)
++}
++
++/// The identity check failed closed: an error naming the route check, the latch file written,
++/// and the client sends nothing more.
++async fn assert_fails_closed(
++    what: &str,
++    outcome: anyhow::Result<super::Decision>,
++    stub: &Stub,
++    dir: &Path,
++    g: &Player,
++    position: &Position,
++) {
++    let error = match outcome {
++        Ok(decision) => panic!(
++            "{what}: the reply was used (index {}): not checked",
++            decision.index
++        ),
++        Err(error) => format!("{error:#}"),
++    };
++    assert!(error.contains("ROUTE CHECK"), "{what}: {error}");
++    assert!(latched(dir), "{what}: no latch file");
++    let sent = stub.requests();
++    assert!(
++        g.decide(&position.request()).await.is_err(),
++        "{what}: decided after the latch"
++    );
++    assert_eq!(
++        stub.requests(),
++        sent,
++        "{what}: a request was sent after the latch"
++    );
++}
++
++#[tokio::test(flavor = "multi_thread")]
++async fn identity_mismatched_model_fails_closed_and_latches() {
++    let (outcome, stub, dir, g, position) = decide_once("model", |_, r| {
++        Reply::ok(answer(
++            r,
++            Some("google/gemini-decision-1-20261205"),
++            Some(PROVIDER),
++            0.0,
++        ))
++    })
++    .await;
++    assert_fails_closed("mismatched model", outcome, &stub, &dir, &g, &position).await;
++}
++
++#[tokio::test(flavor = "multi_thread")]
++async fn identity_mismatched_provider_fails_closed_and_latches() {
++    let (outcome, stub, dir, g, position) = decide_once("provider", |_, r| {
++        Reply::ok(answer(r, Some(MODEL), Some("Google Vertex"), 0.0))
++    })
++    .await;
++    assert_fails_closed("mismatched provider", outcome, &stub, &dir, &g, &position).await;
++}
++
++#[tokio::test(flavor = "multi_thread")]
++async fn identity_missing_field_fails_closed_and_latches() {
++    let (outcome, stub, dir, g, position) = decide_once("no-provider", |_, r| {
++        Reply::ok(answer(r, Some(MODEL), None, 0.0))
++    })
++    .await;
++    assert_fails_closed("missing provider", outcome, &stub, &dir, &g, &position).await;
++    let (outcome, stub, dir, g, position) = decide_once("no-model", |_, r| {
++        Reply::ok(answer(r, None, Some(PROVIDER), 0.0))
++    })
++    .await;
++    assert_fails_closed("missing model", outcome, &stub, &dir, &g, &position).await;
++    // The control: the frozen identity passes, nothing is latched.
++    let (outcome, _stub, dir, _g, _position) =
++        decide_once("control", |_, r| Reply::ok(good(r))).await;
++    assert!(outcome.is_ok(), "{:#}", outcome.unwrap_err());
++    assert!(!latched(&dir));
++}
++
++#[tokio::test(flavor = "multi_thread")]
++async fn identity_warm_up_mismatch_fails_closed_at_once() {
++    let stub = Stub::start(|_, r| {
++        Reply::ok(answer(
++            r,
++            Some("google/gemini-decision-2"),
++            Some(PROVIDER),
++            0.0,
++        ))
++    });
++    let dir = scratch("warm-up");
++    let setup = support::setup(&guard_file(&dir, 5.0, &[("G", 0.1)], &["G"]));
++    let g = player("G", &stub.url, 1, &setup).await.unwrap();
++    let warmed = tokio::time::timeout(Duration::from_secs(30), g.warm_up())
++        .await
++        .expect("the warm-up ends at once, not after retrying");
++    let error = format!(
++        "{:#}",
++        warmed.expect_err("a warm-up reply with another model passed")
++    );
++    assert!(error.contains("ROUTE CHECK"), "{error}");
++    assert!(latched(&dir));
++    assert_eq!(stub.requests(), 1, "one warm-up request, then nothing");
++}
++
++#[tokio::test(flavor = "multi_thread")]
++async fn identity_split_group_mismatch_fails_closed() {
++    // More than 26 options: split into groups (cygnet takes 26 per request); the second
++    // group's reply names another provider.
++    let stub = Stub::start(|n, r| {
++        Reply::ok(answer(
++            r,
++            Some(MODEL),
++            Some(if n == 1 { "Google Vertex" } else { PROVIDER }),
++            0.0,
++        ))
++    });
++    let dir = scratch("split");
++    let setup = support::setup(&guard_file(&dir, 5.0, &[("G", 0.1)], &["G"]));
++    let g = player("G", &stub.url, 1, &setup).await.unwrap();
++    let position = Position::with(60);
++    assert!(
++        position.plays.len().div_ceil(26) >= 3,
++        "{} plays",
++        position.plays.len()
++    );
++    let outcome = g.decide(&position.request()).await;
++    let error = format!(
++        "{:#}",
++        outcome.expect_err("a split group's reply with another provider was used")
++    );
++    assert!(error.contains("ROUTE CHECK"), "{error}");
++    assert_eq!(
++        stub.requests(),
++        2,
++        "the groups after the failing one are not sent"
++    );
++    assert!(latched(&dir));
++}
++
++#[tokio::test(flavor = "multi_thread")]
++async fn identity_latch_survives_a_restart_and_no_league_starts() {
++    let (outcome, stub, dir, _g, position) = decide_once("restart", |_, r| {
++        Reply::ok(answer(r, Some(MODEL), Some("Google Vertex"), 0.0))
++    })
++    .await;
++    assert!(outcome.is_err());
++    // A new process: the guard file read again, the client built again.
++    let setup = support::setup(&dir.join("guard.json"));
++    let again = player("G", &stub.url, 1, &setup).await.unwrap();
++    assert!(again.decide(&position.request()).await.is_err());
++    assert!(again.warm_up().await.is_err());
++    assert_eq!(stub.requests(), 1, "nothing sent after the restart");
++    let db = dir.join("league.db");
++    let started = crate::league::run(
++        db.clone(),
++        &setup,
++        crate::league::Start::Resume(1),
++        crate::runner::Harness::default(),
++        dir.join("no-scores"),
++    )
++    .await;
++    let error = format!(
++        "{:#}",
++        started.expect_err("a league started under a latched guard")
++    );
++    assert!(error.contains("GUARD LATCHED"), "{error}");
++    assert!(!db.exists(), "the database was opened");
++}
++
++/// A whole league (G v Random): G's replies name another model; the league stops with the
++/// guard instead of deferring and retrying, and does not resume.
++#[tokio::test(flavor = "multi_thread")]
++async fn identity_mismatch_stops_the_league_without_re_entry() {
++    let stub = Stub::start(|_, r| {
++        Reply::ok(answer(
++            r,
++            Some("google/gemini-decision-1-20261205"),
++            Some(PROVIDER),
++            0.0,
++        ))
++    });
++    let dir = scratch("league");
++    let setup = support::setup(&guard_file(&dir, 5.0, &[("G", 0.1)], &["G"]));
++    let db = dir.join("league.db");
++    let models = vec![
++        PlayerConfig {
++            base_url: Some(stub.url.clone()),
++            ..PlayerConfig::new("G", "cygnet")
++        },
++        PlayerConfig::new("R", "random"),
++    ];
++    let rules = crate::db::Rules::new(
++        1,
++        None,
++        Some(60),
++        "bg-v2",
++        9,
++        false,
++        crate::board::StartPosition::Standard,
++    );
++    let run = crate::league::run(
++        db.clone(),
++        &setup,
++        crate::league::Start::New {
++            models,
++            seed: 5,
++            rules,
++            note: None,
++            scope: crate::db::Scope::default(),
++        },
++        crate::runner::Harness::default(),
++        dir.join("no-scores"),
++    );
++    let ended = tokio::time::timeout(Duration::from_secs(60), run)
++        .await
++        .expect("the league stops, not retries");
++    let error = format!(
++        "{:#}",
++        ended.expect_err("the league finished on replies naming another model")
++    );
++    assert!(error.contains("stopped by its run guard"), "{error}");
++    assert!(latched(&dir));
++    let sent = stub.requests();
++    assert_eq!(sent, 1, "only the warm-up reply was received");
++    let resumed = crate::league::run(
++        db,
++        &setup,
++        crate::league::Start::Resume(1),
++        crate::runner::Harness::default(),
++        dir.join("no-scores"),
++    )
++    .await;
++    assert!(format!("{:#}", resumed.expect_err("resumed")).contains("GUARD LATCHED"));
++    assert_eq!(stub.requests(), sent);
++}
++
++/// The worst case one decision request of `position` reserves at `price` per million input
++/// tokens: (request body bytes + the 4,096-token template margin) at that price, the body
++/// measured as the stub received it (and, where a ledger meters it, equal to its reservation).
++async fn worst_case(position: &Position, price: f64) -> f64 {
++    let bytes = Arc::new(AtomicUsize::new(0));
++    let seen = bytes.clone();
++    let stub = Stub::start(move |_, r| {
++        seen.store(r.to_string().len(), Ordering::SeqCst);
++        Reply::ok(good(r))
++    });
++    let dir = scratch("calibrate");
++    let setup = support::setup(&guard_file(&dir, 1000.0, &[("G", price)], &[]));
++    let g = player("G", &stub.url, 1, &setup).await.unwrap();
++    g.decide(&position.request()).await.unwrap();
++    let worst = (bytes.load(Ordering::SeqCst) + 4096) as f64 * price / 1e6;
++    if let [(_, reserved, _)] = ledger(&dir)[..] {
++        assert!((reserved - worst).abs() < 1e-12, "{reserved} {worst}");
++    }
++    worst
++}
++
++#[tokio::test(flavor = "multi_thread")]
++async fn money_retries_are_each_reserved_and_settled_from_the_reported_cost() {
++    // Two 503s, then an answer reporting $0.5 (its list price: 1,000 tokens x $1/M = $0.001).
++    let stub = Stub::start(|n, r| match n {
++        0 | 1 => Reply {
++            status: 503,
++            body: "{}".into(),
++            delay: Duration::ZERO,
++        },
++        _ => Reply::ok(answer(r, Some(MODEL), Some(PROVIDER), 0.5)),
++    });
++    let dir = scratch("retries");
++    let setup = support::setup(&guard_file(&dir, 5.0, &[("G", 1.0)], &["G"]));
++    let g = player("G", &stub.url, 1, &setup).await.unwrap();
++    let position = Position::with(3);
++    g.decide(&position.request()).await.unwrap();
++    assert_eq!(stub.requests(), 3);
++    let rows = ledger(&dir);
++    let statuses: Vec<&str> = rows.iter().map(|r| r.0.as_str()).collect();
++    assert_eq!(
++        statuses,
++        ["lost", "lost", "settled"],
++        "every attempt booked: {rows:?}"
++    );
++    let worst = rows[0].1;
++    assert!(worst > 0.001, "{worst}");
++    assert_eq!(rows[2].2, Some(0.5), "settled at the reported cost");
++    assert!((committed(&rows) - (2.0 * worst + 0.5)).abs() < 1e-9);
++}
++
++#[tokio::test(flavor = "multi_thread")]
++async fn money_warm_ups_are_reserved_and_settled() {
++    let stub = Stub::start(|_, r| Reply::ok(answer(r, Some(MODEL), Some(PROVIDER), 0.25)));
++    let dir = scratch("warm-up-money");
++    let setup = support::setup(&guard_file(&dir, 5.0, &[("G", 1.0)], &["G"]));
++    let g = player("G", &stub.url, 1, &setup).await.unwrap();
++    g.warm_up().await.unwrap();
++    let rows = ledger(&dir);
++    assert_eq!(rows.len(), 1, "the warm-up is metered: {rows:?}");
++    assert_eq!((rows[0].0.as_str(), rows[0].2), ("settled", Some(0.25)));
++}
++
++#[tokio::test(flavor = "multi_thread")]
++async fn money_failed_attempts_keep_their_worst_case() {
++    // A 400 (refused, not retried) and a 200 without usage: both kept at the worst case.
++    let stub = Stub::start(|n, r| match n {
++        0 => Reply {
++            status: 400,
++            body: r#"{"error":"bad"}"#.into(),
++            delay: Duration::ZERO,
++        },
++        _ => {
++            let mut v: Value = serde_json::from_str(&good(r)).unwrap();
++            v.as_object_mut().unwrap().remove("usage");
++            Reply::ok(v.to_string())
++        }
++    });
++    let dir = scratch("failed");
++    let setup = support::setup(&guard_file(&dir, 5.0, &[("G", 1.0)], &["G"]));
++    let g = player("G", &stub.url, 1, &setup).await.unwrap();
++    let position = Position::with(3);
++    assert!(g.decide(&position.request()).await.is_err());
++    g.decide(&position.request()).await.unwrap();
++    let rows = ledger(&dir);
++    assert_eq!(rows.len(), 2, "{rows:?}");
++    assert!(rows.iter().all(|r| r.0 == "lost" && r.1 > 0.0), "{rows:?}");
++    assert!((committed(&rows) - 2.0 * rows[0].1).abs() < 1e-9);
++}
++
++#[tokio::test(flavor = "multi_thread")]
++async fn money_in_flight_reservations_bound_concurrent_requests() {
++    let position = Position::with(3);
++    let worst = worst_case(&position, 1.0).await;
++    // Room for one request in flight, not two: the second is refused before it is sent.
++    let stub = Stub::start(|_, r| Reply {
++        delay: Duration::from_secs(2),
++        ..Reply::ok(good(r))
++    });
++    let dir = scratch("in-flight");
++    let cap = 1.5 * worst;
++    let setup = support::setup(&guard_file(&dir, cap, &[("G", 1.0)], &["G"]));
++    let g = player("G", &stub.url, 2, &setup).await.unwrap();
++    let (first, second) = (position.request(), position.request());
++    let (a, b) = tokio::join!(g.decide(&first), g.decide(&second));
++    assert_eq!(
++        stub.requests(),
++        1,
++        "the second request was sent while the first was in flight"
++    );
++    let refused = [&a, &b].into_iter().filter(|o| o.is_err()).count();
++    assert_eq!(refused, 1);
++    let error = format!("{:#}", [a, b].into_iter().find_map(Result::err).unwrap());
++    assert!(error.contains("BUDGET CAP"), "{error}");
++    assert!(committed(&ledger(&dir)) <= cap + 1e-12);
++}
++
++#[tokio::test(flavor = "multi_thread")]
++async fn money_opponent_spend_crossing_the_cap_stops_the_entrant_before_sending() {
++    let position = Position::with(3);
++    let worst = worst_case(&position, 1.0).await;
++    let cap = 1.0;
++    // The paid opponent's answer reports what leaves less than one worst case for the entrant.
++    let reported = cap - worst / 2.0;
++    let opponent_stub =
++        Stub::start(move |_, r| Reply::ok(answer(r, Some("o"), Some("o"), reported)));
++    let entrant_stub = Stub::start(|_, r| Reply::ok(good(r)));
++    let dir = scratch("opponent");
++    let setup = support::setup(&guard_file(&dir, cap, &[("G", 1.0), ("O", 1.0)], &["G"]));
++    let o = player("O", &opponent_stub.url, 1, &setup).await.unwrap();
++    let g = player("G", &entrant_stub.url, 1, &setup).await.unwrap();
++    o.decide(&position.request()).await.unwrap();
++    let refused = g.decide(&position.request()).await;
++    let error = format!(
++        "{:#}",
++        refused.expect_err("the entrant sent past the shared cap")
++    );
++    assert!(error.contains("BUDGET CAP"), "{error}");
++    assert_eq!(entrant_stub.requests(), 0, "refused before sending");
++    let rows = ledger(&dir);
++    assert!(committed(&rows) <= cap + 1e-12, "{rows:?}");
++    let by_setup: HashMap<String, i64> = {
++        let conn = rusqlite::Connection::open(dir.join("budget.db")).unwrap();
++        let mut s = conn
++            .prepare("SELECT setup, count(*) FROM attempts GROUP BY setup")
++            .unwrap();
++        s.query_map([], |r| Ok((r.get(0)?, r.get(1)?)))
++            .unwrap()
++            .collect::<rusqlite::Result<_>>()
++            .unwrap()
++    };
++    assert_eq!(by_setup.get("O"), Some(&1), "{by_setup:?}");
++    assert_eq!(by_setup.get("G"), None, "{by_setup:?}");
++}
+diff --git a/src/players/llm.rs b/src/players/llm.rs
+index f03e89e..1d1e355 100644
+--- a/src/players/llm.rs
++++ b/src/players/llm.rs
+@@ -90,6 +90,103 @@ pub struct Options {
+     pub budget: Option<Arc<crate::budget::Ledger>>,
+ }
+ 
++/// The identity every reply must carry (a league guard's `expect_route`): the response's model
++/// field (JSON pointer `model_pointer`, default `/model`) must be one of `models`; when
++/// `provider` is set, the field at `provider_pointer` (default `/provider`) must equal it.
++/// Ported from the improve runner (branch improve, 1270c04/bbbea9d: `ExpectRoute`,
++/// `identity_fields`, `route_identity`), without its rejection log (a league guard latches
++/// instead).
++#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
++#[serde(deny_unknown_fields)]
++pub struct ExpectRoute {
++    pub models: Vec<String>,
++    #[serde(default, skip_serializing_if = "Option::is_none")]
++    pub provider: Option<String>,
++    #[serde(default, skip_serializing_if = "Option::is_none")]
++    pub model_pointer: Option<String>,
++    #[serde(default, skip_serializing_if = "Option::is_none")]
++    pub provider_pointer: Option<String>,
++    /// Also accept a listed model followed by a dated snapshot suffix (`<model>-2026-...`).
++    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
++    pub allow_dated: bool,
++}
++
++/// A dated snapshot suffix, exactly `-YYYY-MM-DD` with a valid calendar date and nothing after
++/// (byte-safe: anything that is not that ASCII shape is rejected).
++fn is_dated_suffix(rest: &str) -> bool {
++    let b = rest.as_bytes();
++    b.len() == 11
++        && b[0] == b'-'
++        && b[5] == b'-'
++        && b[8] == b'-'
++        && [1, 2, 3, 4, 6, 7, 9, 10]
++            .iter()
++            .all(|&i| b[i].is_ascii_digit())
++        && chrono::NaiveDate::parse_from_str(&rest[1..], "%Y-%m-%d").is_ok()
++}
++
++/// The identity fields of a reply (`model`, `provider` at the expected pointers), whatever they
++/// hold, for the record.
++pub fn identity_fields(raw: &str, expect: &ExpectRoute) -> Value {
++    let value: Value = serde_json::from_str(raw).unwrap_or(Value::Null);
++    let model_at = expect.model_pointer.as_deref().unwrap_or("/model");
++    let provider_at = expect.provider_pointer.as_deref().unwrap_or("/provider");
++    json!({
++        "model": value.pointer(model_at).cloned().unwrap_or(Value::Null),
++        "provider": if expect.provider.is_some() { value.pointer(provider_at).cloned().unwrap_or(Value::Null) } else { Value::Null },
++    })
++}
++
++/// Whether a raw response names the expected model (and provider): `Ok("accepted")` for a listed
++/// model, `Ok("accepted_dated")` for a listed model plus a dated snapshot suffix (when allowed).
++/// Missing or unreadable identity fails closed.
++pub fn route_identity(
++    raw: &str,
++    expect: &ExpectRoute,
++) -> std::result::Result<&'static str, String> {
++    let value: Value = serde_json::from_str(raw)
++        .map_err(|_| "the response is not JSON: no identity".to_owned())?;
++    let model_at = expect.model_pointer.as_deref().unwrap_or("/model");
++    let model = value.pointer(model_at).and_then(Value::as_str);
++    let Some(model) = model else {
++        return Err(format!(
++            "the response lacks its identity (no model at {model_at})"
++        ));
++    };
++    let verdict = if expect.models.iter().any(|x| x == model) {
++        "accepted"
++    } else if expect.allow_dated
++        && expect
++            .models
++            .iter()
++            .any(|x| model.strip_prefix(x.as_str()).is_some_and(is_dated_suffix))
++    {
++        "accepted_dated"
++    } else {
++        return Err(format!(
++            "the response names model {model:?}, expected one of {:?}",
++            expect.models
++        ));
++    };
++    if let Some(want) = &expect.provider {
++        let provider_at = expect.provider_pointer.as_deref().unwrap_or("/provider");
++        match value.pointer(provider_at).and_then(Value::as_str) {
++            Some(p) if p == want => {}
++            Some(p) => {
++                return Err(format!(
++                    "the response names provider {p:?} for {model:?}, expected {want:?}"
++                ));
++            }
++            None => {
++                return Err(format!(
++                    "the response lacks its identity (no provider at {provider_at})"
++                ));
++            }
++        }
++    }
++    Ok(verdict)
++}
++
+ enum Kind {
+     OpenAiSubscription(Arc<Credentials>),
+     AnthropicSubscription(Arc<Credentials>),
+diff --git a/src/players/mod.rs b/src/players/mod.rs
+index 65eaaba..27be9a3 100644
+--- a/src/players/mod.rs
++++ b/src/players/mod.rs
+@@ -4,7 +4,9 @@
+ pub mod baseline;
+ pub(crate) mod decision;
+ pub mod gnubg;
+-mod llm;
++#[cfg(test)]
++mod guard_tests;
++pub(crate) mod llm;
+ pub mod order;
+ pub mod prompt;
+ 
+@@ -243,6 +245,9 @@ pub struct Setup {
+     pub xai: Arc<Credentials>,
+     /// Request pacers by rate-limit group, shared by every player of the group.
+     pacers: parking_lot::Mutex<HashMap<String, Arc<Pacer>>>,
++    /// A league's run guard (`league --guard`): shared cap and reply identity of the setups
++    /// it names; `None` = no guard.
++    pub guard: Option<Arc<crate::guard::Guard>>,
+ }
+ 
+ /// Spaces the requests of a rate-limit group (e.g. both setups of one OpenRouter model) at
+@@ -305,8 +310,15 @@ impl Setup {
+             qfork_root,
+             local_url,
+             pacers: parking_lot::Mutex::new(HashMap::new()),
++            guard: None,
+         }
+     }
++
++    /// This setup under a league's run guard.
++    pub fn with_guard(mut self, guard: Arc<crate::guard::Guard>) -> Self {
++        self.guard = Some(guard);
++        self
++    }
+ }
+ 
+ /// Close choices, stage B: what a chat-model player would be sent for one position, built
+@@ -477,8 +489,27 @@ impl Player {
+             None => bail!("model spec `{spec}` needs a model name: {provider}/<model>"),
+         };
+         // A hard spending cap (`budget`) for chat requests to an openai-compatible server and
+-        // for decision services: each attempt reserves its worst case before it is sent.
+-        let budget = match &config.budget {
++        // for decision services: each attempt reserves its worst case before it is sent. A
++        // league guard meters the setups it names (their stored settings unchanged) with its
++        // shared ledger and cap; a setup with a budget of its own is not metered twice.
++        let guarded = setup.guard.as_ref().filter(|g| g.meters(&config.name));
++        if guarded.is_some() && decision::service(provider).is_none() {
++            bail!(
++                "{}: the league guard meters it, but `{spec}` is not a decision service",
++                config.name
++            );
++        }
++        let budget_config = match (&config.budget, guarded) {
++            (Some(_), Some(guard)) => bail!(
++                "{}: it has a budget of its own and the league guard {} meters it too",
++                config.name,
++                guard.path.display()
++            ),
++            (Some(budget), None) => Some(budget.clone()),
++            (None, Some(guard)) => guard.budget_for(&config.name),
++            (None, None) => None,
++        };
++        let budget = match &budget_config {
+             Some(budget)
+                 if provider.eq_ignore_ascii_case("openai-compatible")
+                     || decision::service(provider).is_some() =>
+@@ -532,7 +563,8 @@ impl Player {
+                     config.base_url.as_deref(),
+                     budget,
+                 )?
+-                .with_request(config.request.clone()),
++                .with_request(config.request.clone())
++                .with_guard(guarded.cloned(), &config.name),
+             )));
+         }
+         let backend = match provider.to_ascii_lowercase().as_str() {

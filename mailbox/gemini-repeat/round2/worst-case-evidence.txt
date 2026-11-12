@@ -1,0 +1,20 @@
+Worst case vs actual in Gemini Decision 1's 17 original required matches (v3.db read-only, 2026-11-12; exchanges of the
+entrant and the six paid opponents). The guard reserves per attempt (request body bytes + 4,096) input tokens at list
+price (output priced 0 for all seven); an answered attempt is settled at max(list price, reported usage.cost).
+Ratio columns: max over exchanges of input_tokens/(bytes+4096), input_tokens/bytes, and (Gemini, Liquid: they report
+usage.cost) reported cost/((bytes+4096) x $0.10/M).
+
+setup               exchanges  without usage  max tok/(bytes+4096)  max tok/bytes  max cost/worst@$0.10/M
+Celeris-1 Decision  108        0              0.355                 0.412          -
+Fastino GLiDE       66         0              0.418                 0.455          -
+Gemini Decision 1   1704       0              0.421                 0.451          0.421
+Jev 1.13.0          103        0              0.400                 0.455          -
+Jev 1.14.0          119        0              0.399                 0.454          -
+Liquid d1-ultra     130        0              0.267                 0.319          0.112 (at $0.10/M; its own price $0.042/M)
+SubQ Snap Preview   121        0              0.339                 0.408          -
+
+So in every original exchange the settled cost was at most 0.42 of the reservation: the reservation covers the attempt's
+real cost with a margin of more than 2x, and the cap is checked against reservations before sending. (Should a provider
+ever bill more than the reservation, the ledger books the larger reported cost; no attempt is then sent while
+spent + reserved + the next worst case would pass the cap.)
+Query: exchanges JOIN turns/games/matches/players for matches 993-999, 1005, 1013, 1053, 1055-1057, 1060-1063.

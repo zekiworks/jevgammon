@@ -1,0 +1,5 @@
+30a31,32
+>          // RED stand-in: cb669a0 has no league guard; the guard file is written but not used.
+>          let _ = guard;
+32d33
+<              .with_guard(crate::guard::Guard::load(guard).expect("guard file"))

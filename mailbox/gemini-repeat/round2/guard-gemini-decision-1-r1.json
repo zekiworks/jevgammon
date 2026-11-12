@@ -1,0 +1,51 @@
+{
+  "note": "Run guard of Gemini Decision 1 [repeat 1] (gemini-decision-1-r1; Zeki #5385; tools/v3/repeats repeats.py wanted_guard): the entrant and its paid opponents under one pre-send cap; the entrant's reply identity exact; a stop latches",
+  "ledger": "/home/cbasaran/code/jevgammon/workspace/repeats/gemini-decision-1-r1/guard-budget.db",
+  "cap_usd": 3.8181,
+  "latch": "/home/cbasaran/code/jevgammon/workspace/repeats/gemini-decision-1-r1/guard-latch",
+  "metered": {
+    "Gemini Decision 1 [repeat 1]": {
+      "input_per_mtok": 0.1,
+      "cached_input_per_mtok": 0.1,
+      "output_per_mtok": 0.0
+    },
+    "Celeris-1 Decision": {
+      "input_per_mtok": 0.04,
+      "cached_input_per_mtok": 0.04,
+      "output_per_mtok": 0.0
+    },
+    "Fastino GLiDE": {
+      "input_per_mtok": 0.04,
+      "cached_input_per_mtok": 0.04,
+      "output_per_mtok": 0.0
+    },
+    "Jev 1.13.0": {
+      "input_per_mtok": 0.042,
+      "cached_input_per_mtok": 0.042,
+      "output_per_mtok": 0.0
+    },
+    "Jev 1.14.0": {
+      "input_per_mtok": 0.042,
+      "cached_input_per_mtok": 0.042,
+      "output_per_mtok": 0.0
+    },
+    "Liquid d1-ultra": {
+      "input_per_mtok": 0.042,
+      "cached_input_per_mtok": 0.042,
+      "output_per_mtok": 0.0
+    },
+    "SubQ Snap Preview": {
+      "input_per_mtok": 0.05,
+      "cached_input_per_mtok": 0.05,
+      "output_per_mtok": 0.0
+    }
+  },
+  "expect_route": {
+    "Gemini Decision 1 [repeat 1]": {
+      "models": [
+        "google/gemini-decision-1-20261111"
+      ],
+      "provider": "Google AI Studio"
+    }
+  }
+}

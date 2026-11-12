@@ -1,0 +1,40 @@
+Source binding, runner pinned-late-gemini c13992f0f415d81da40a54b1b5bf9fbe60d31ea2 (src tree f60c64c24a5d87dcb8bfd3dba9a5e1819a21a6d2), file:line at that commit.
+Binary: /home/cbasaran/code/jevgammon/target/pinned-gemini/release/jevgammon, sha256 811ef5b033ded7f14912b9e195820dc52f9bd508dd0dbb6daf91540600ef4dde
+(the cb669a0 binary, 0bf67bc35ca864250a16a63ce5b608c68f8d6b62c12a5714e1b975979473dc7f, kept aside as target/pinned-gemini/jevgammon-cb669a0, not used).
+
+Guard file and latch (src/guard.rs)
+  src/guard.rs:41    GuardConfig: ledger, cap_usd, latch, metered {name: prices}, expect_route {name: ExpectRoute} (deny_unknown_fields)
+  src/guard.rs:88    Guard::load: positive cap; every expect_route name must be metered; sha256 of the file bytes kept
+  src/guard.rs:153   Guard::check: GuardStop while the latch file exists (or the in-process latch is set)
+  src/guard.rs:165   Guard::latch: in-process flag + one line appended to the latch file
+  src/guard.rs:80    is_stop: an error chain holding GuardStop or budget::BudgetCap (matched by type)
+
+1. Served identity on every reply (B2)
+  src/players/llm.rs:101   ExpectRoute (ported from improve 1270c04/bbbea9d; models, provider, pointers; allow_dated false by default)
+  src/players/llm.rs:130   identity_fields (for the latch text)
+  src/players/llm.rs:143   route_identity: not JSON / no model / no provider = fail; model must be listed exactly; provider must equal
+  src/players/decision.rs:444  DecisionClient::with_guard: the guard and the route it expects of this player's name
+  src/players/decision.rs:515  send(): latch checked before every attempt (nothing is sent while latched)
+  src/players/decision.rs:566  send(): after every successful response (warm_up, choose, every split group all call send), route_identity
+  src/players/decision.rs:573  ... on failure: guard.latch(reason) then Err(GuardStop) (the reply is not used)
+  src/players/decision.rs:481  warm_up(): a guard stop ends the warm-up at once (no 900 s retry loop)
+  src/league.rs:693   run_inner: a latched guard starts/resumes nothing (before the database is opened)
+  src/league.rs:980   play_league: a match failing with a guard stop latches, cancels the league (no deferral/backoff retry)
+  src/league.rs:896   ... the run ends with "league #N stopped by its run guard"; a later --resume refuses (src/league.rs:693)
+  src/admit.rs:71     admit --guard refuses a latched guard
+
+2. Money: pre-send reservation per attempt, shared by entrant and paid opponents (B1)
+  src/players/mod.rs:495  Player::build: a setup the guard meters gets the guard's ledger and cap at its listed prices (stored settings unchanged);
+                          a setup with its own budget, or a metered setup that is not a decision service, is refused
+  src/players/mod.rs:567  the decision client built with the guard
+  src/players/decision.rs:534  send(): http::send_metered (worst case = (body bytes + 4,096) input tokens + body bytes output tokens at list price)
+  src/http.rs:184      send_with_backoff: every attempt (first, retries) reserves before make().send(); refused before sending past the cap
+  src/budget.rs:225    Ledger::reserve: spent + reserved in flight + this > cap → BudgetCap (IMMEDIATE transaction; shared across processes)
+  src/http.rs (unchanged) a non-2xx answer keeps its worst case (lost) unless the service documents it unbilled; no response = lost at worst case
+  src/players/decision.rs:554  settlement: Hold::settle(usage, usage.cost) = max(list price, reported cost); 200 without usage = kept at worst case
+  src/league.rs:980    a refused reservation (BudgetCap) in a guarded league also latches and stops it
+  src/main.rs:368/540  league --guard FILE; src/main.rs:112/469 admit --guard FILE (metered ledgers opened read-only, immutable)
+  src/admit.rs:127     admitted-settings record names {"guard": {"path", "sha256"}}
+
+Unchanged by the guard: the request bodies (model, provider pin, state, questions, option order), sampling (none set, provider defaults),
+pins, rules, prompts, the 18 build inputs; without --guard every path is as in cb669a0 (Setup::guard None).

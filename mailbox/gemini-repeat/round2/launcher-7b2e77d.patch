@@ -1,0 +1,805 @@
+From 7b2e77dac76bda8c45d1bca81380c09e24e4c7d3 Mon Sep 17 00:00:00 2001
+From: Can Basaran <basaran.can@gmail.com>
+Date: Thu, 12 Nov 2026 15:03:36 +0100
+Subject: [PATCH] repeats: Gemini Decision 1 under the run guard (Zeki #5385):
+ runner c13992f, guard file, ledger preparation, binding
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+RUNNER_GEMINI = pinned-late-gemini c13992f (cb669a0 + the run guard), binary 811ef5b0…, 18 inputs unchanged.
+GEMINI_GUARD / wanted_guard: tools/v3/repeats/guards/gemini-decision-1-r1.json (written by `configs`): one ledger
+(workspace/repeats/gemini-decision-1-r1/guard-budget.db) and the remaining cap $3.8181 over the entrant and its six paid
+opponents (Celeris-1 Decision, Fastino GLiDE, Jev 1.13.0, Jev 1.14.0, Liquid d1-ultra, SubQ Snap Preview; list prices from
+v3.db, Fastino at FASTINO_RATE), the entrant's reply identity (google/gemini-decision-1-20261111, Google AI Studio),
+the latch file. Pins, league config and settings unchanged.
+check: the guard file must equal wanted_guard, its latch must be absent (else exit 1); a missing guard ledger is
+preparable (NO_LEDGER, with the trigger: exit 3; admission waits for the ledger); admission runs `admit --guard`, the
+binding compares the guard file's sha256 with the admitted record (check, bound, entry). trigger (the preparation)
+creates the empty ledger (prepare_ledger: Ledger::open's schema, WAL, cap row) then the trigger; its read connection is
+closed before the write. run_league.sh passes --guard (5th argument from run.sh); run.sh's minute guard stops on the
+latch file; billed = the guard ledger's spent + reserved in flight (replacing stored turns for a guarded repeat).
+Manifest: the Gemini entry regenerated (runner, attempts, guard, cost_basis, differences), the six others as committed.
+test_launcher: each case's guard state in its own directory; latched guard and edited guard file refused; the
+preparation creates the ledger (cap row, no attempt) and admission names the guard; run_league.sh passes --guard;
+billed reads the ledger; a guard file changed after admission refuses bound and starts nothing. 75 ok, ALL PASSED.
+---
+ mailbox/repeats/manifest-2026-11-11.json      |  44 ++--
+ .../repeats/guards/gemini-decision-1-r1.json  |  51 ++++
+ tools/v3/repeats/repeats.py                   | 242 ++++++++++++++----
+ tools/v3/repeats/run.sh                       |  15 +-
+ tools/v3/repeats/run_league.sh                |  12 +-
+ tools/v3/repeats/test_launcher.sh             | 102 +++++++-
+ 6 files changed, 393 insertions(+), 73 deletions(-)
+ create mode 100644 tools/v3/repeats/guards/gemini-decision-1-r1.json
+
+diff --git a/mailbox/repeats/manifest-2026-11-11.json b/mailbox/repeats/manifest-2026-11-11.json
+index 0bfb35d..0924b50 100644
+--- a/mailbox/repeats/manifest-2026-11-11.json
++++ b/mailbox/repeats/manifest-2026-11-11.json
+@@ -14582,16 +14582,16 @@
+    "status_file": "mailbox/repeats/gemini-decision-1-r1 - status.md",
+    "runner": {
+     "binary": "/home/cbasaran/code/jevgammon/target/pinned-gemini/release/jevgammon",
+-    "binary_sha256": "0bf67bc35ca864250a16a63ce5b608c68f8d6b62c12a5714e1b975979473dc7f",
++    "binary_sha256": "811ef5b033ded7f14912b9e195820dc52f9bd508dd0dbb6daf91540600ef4dde",
+     "tree": "/home/cbasaran/code/jevgammon-runner-gemini",
+-    "commit": "cb669a0",
+-    "commit_full": "cb669a08c29689a0846bcdf2596ae9c4fc043e22",
+-    "src_tree": "a1a82e60e4951dffab6ded8a7bd56269a14dd3cf",
++    "commit": "c13992f",
++    "commit_full": "c13992f0f415d81da40a54b1b5bf9fbe60d31ea2",
++    "src_tree": "f60c64c24a5d87dcb8bfd3dba9a5e1819a21a6d2",
+     "build": {
+      "command": "cd /home/cbasaran/code/jevgammon-runner-gemini && CARGO_TARGET_DIR=/home/cbasaran/code/jevgammon/target/pinned-gemini cargo build --release --locked",
+      "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14), cargo 1.97.1 (c980f4866 2026-06-30)",
+-     "built": "2026-11-12T12:57Z",
+-     "tree": "git worktree add -b pinned-late-gemini /home/cbasaran/code/jevgammon-runner-gemini 0e66836; cherry-pick dab6da5 1b234da c0b58f3 38024d6; checkout --detach (clean; only the untracked METADATA.worktree added)"
++     "built": "2026-11-12T13:52Z",
++     "tree": "git worktree add -b pinned-late-gemini /home/cbasaran/code/jevgammon-runner-gemini 0e66836; cherry-pick dab6da5 1b234da c0b58f3 38024d6 (cb669a0); commit c13992f (run guard); checkout --detach (clean; only the untracked METADATA.worktree added); the cb669a0 binary kept aside as target/pinned-gemini/jevgammon-cb669a0"
+     },
+     "inputs": {
+      "Cargo.toml": "bf64a9f15bd33cd3f5d517dc984140ff38fb9ec93c5d3a50eb0971f658c0ed4b",
+@@ -14619,9 +14619,9 @@
+     {
+      "league": null,
+      "runner": {
+-      "commit": "cb669a0",
+-      "commit_full": "cb669a08c29689a0846bcdf2596ae9c4fc043e22",
+-      "binary_sha256": "0bf67bc35ca864250a16a63ce5b608c68f8d6b62c12a5714e1b975979473dc7f"
++      "commit": "c13992f",
++      "commit_full": "c13992f0f415d81da40a54b1b5bf9fbe60d31ea2",
++      "binary_sha256": "811ef5b033ded7f14912b9e195820dc52f9bd508dd0dbb6daf91540600ef4dde"
+      }
+     }
+    ],
+@@ -14753,8 +14753,22 @@
+      "fixtures": []
+     }
+    },
++   "guard": {
++    "ledger": "/home/cbasaran/code/jevgammon/workspace/repeats/gemini-decision-1-r1/guard-budget.db",
++    "latch": "/home/cbasaran/code/jevgammon/workspace/repeats/gemini-decision-1-r1/guard-latch",
++    "expect_route": {
++     "models": [
++      "google/gemini-decision-1-20261111"
++     ],
++     "provider": "Google AI Studio"
++    },
++    "file": "tools/v3/repeats/guards/gemini-decision-1-r1.json",
++    "cap_usd": 3.8181,
++    "metered": "the entrant and the paid opponents it is pinned against (BILLED); prices in the file",
++    "enforced": "runner `league --guard` (c13992f, src/guard.rs): every request attempt reserved before it is sent, refused past the cap; every entrant reply's model and provider exactly the expected ones; a stop latches (no request, no league start, check refuses)"
++   },
+    "cost_basis": {
+-    "method": "Each playable pair's billed cost in the original match: the paid opponent's recorded cost_usd (Fastino GLiDE: input tokens x $0.04/M), plus Gemini Decision 1's own recorded cost_usd (OpenRouter usage.cost, $0.10/M input); local setups and programs bill nothing.",
++    "method": "Each playable pair's billed cost in the original match: the paid opponent's recorded cost_usd (Fastino GLiDE: input tokens x $0.04/M), plus Gemini Decision 1's own recorded cost_usd (OpenRouter usage.cost, $0.10/M input); local setups and programs bill nothing. Enforced in the repeat by the run guard's ledger (spent + reserved in flight), not by stored turns.",
+     "pairs": {
+      "Fastino GLiDE": {
+       "opponent": 0.0117,
+@@ -14829,7 +14843,7 @@
+     "opponents_usd": 0.1022,
+     "entrant_usd": 0.6515,
+     "cap_usd": 3.8181,
+-    "cap_basis": "Gemini Decision 1's entry cap: $5.00 (entrant + paid opponents; tools/v3/late-gemini-decision/start.sh), of which its guard recorded $1.1819 at the entry's end (workspace/late-gemini-decision/state/guard.log, 2026-11-11T22:12:14Z; it billed every late-entry match from #993, other entries' paid opponents included); the repeat's guard stops at the remaining $3.8181 of the repeat's own bill."
++    "cap_basis": "Gemini Decision 1's entry cap: $5.00 (entrant + paid opponents; tools/v3/late-gemini-decision/start.sh), of which its guard recorded $1.1819 at the entry's end (workspace/late-gemini-decision/state/guard.log, 2026-11-11T22:12:14Z; it billed every late-entry match from #993, other entries' paid opponents included); the repeat's run guard (runner c13992f, `league --guard`) holds the entrant and the paid opponents to the remaining $3.8181: every request attempt is reserved at its worst case in one ledger before it is sent and refused when it would pass the cap (the runner refuses to send; run.sh's minute check of the ledger only reports and stops)."
+    },
+    "time": {
+     "method": "Sum of each playable pair's original match duration (start to finish; the originals ran several matches at once, so one at a time is about this or less), plus server starts.",
+@@ -14859,11 +14873,11 @@
+    },
+    "differences": [
+     "Name: '<original> [repeat 1]', a new players row; settings otherwise as the original's (the changed fields are listed under Settings); one match at a time, as the original (start.sh, max_matches 1).",
+-    "Runner: the original ran dab6da5 (clean) for its first stage (#993-#1013) and 38024d6 (clean; map-check v2 and the raw_entries decoder) for its local stage (#1053-#1063), both on origin/main's runner line (ca112dc); the repeat runs cb669a0 (branch pinned-late-gemini): the repeats' runner 0e66836 (late-reax line with the pinned-pairs change 4ca4f08 and admit) with those four runner commits cherry-picked. late-reax adds decision clients (reax, baselabs, drex, nace) and a budget ledger for them, none used by this field; the same prompt version, option-order seed and rules.",
++    "Runner: the original ran dab6da5 (clean) for its first stage (#993-#1013) and 38024d6 (clean; map-check v2 and the raw_entries decoder) for its local stage (#1053-#1063), both on origin/main's runner line (ca112dc); the repeat runs c13992f (branch pinned-late-gemini): the repeats' runner 0e66836 (late-reax line with the pinned-pairs change 4ca4f08 and admit) with those four runner commits cherry-picked (cb669a0) and the run guard (c13992f: reply identity and the shared pre-send cap, used with --guard only). late-reax adds decision clients (reax, baselabs, drex, nace) and a budget ledger, which the run guard uses; requests, sampling (provider defaults, nothing set), the prompt version, option-order seed and rules are the same.",
+     "Map check: map-check v2 (a probability map that is not exactly the shown ids, finite in [0, 1], summing to 1 within 1e-6, stores no probabilities; the returned choice is still played) applies to every repeat pair; the original's first-stage pairs (#993-#1013, dab6da5) ran without it. Plays are not affected; a first-stage pair can store probabilities in the original where the repeat stores none.",
+-    "Hosted model: Gemini Decision 1 is served by Google AI Studio through OpenRouter; whether the model behind google/gemini-decision-1 changed since 2026-11-11 can only be read from the replies' model echo (the original's: google/gemini-decision-1-20261111 on all 1,704 decisions).",
+-    "Route check: the original's guard re-checked OpenRouter's listing every minute (3 failures stopped it); the repeat checks it once before the first match (smoke). Fallbacks stay off, so a changed endpoint fails requests rather than rerouting them.",
+-    "Cap: the original's $5 entry cap with $1.1819 recorded; the repeat's guard stops at the remaining $3.8181 (see cost_basis)."
++    "Hosted model: Gemini Decision 1 is served by Google AI Studio through OpenRouter. The repeat accepts a reply only when it names the original's served model google/gemini-decision-1-20261111 and provider Google AI Studio (as all 1,704 original decisions did); a model served under that same name but changed behind it cannot be detected from here.",
++    "Route check: the original's guard re-checked OpenRouter's listing every minute (3 failures stopped it); the repeat checks it once before the first match (smoke) and, in the runner (run guard), the served identity of every entrant reply: model google/gemini-decision-1-20261111 and provider Google AI Studio exactly, or the guard latches and the league stops for good. Fallbacks stay off.",
++    "Cap: the original's $5 entry cap with $1.1819 recorded (a minute poll of stored turns); the repeat's run guard holds the entrant and paid opponents to the remaining $3.8181 before every request attempt (see cost_basis)."
+    ],
+    "start": [
+     "systemd-run --user --unit=repeat-gemini-decision-1-r1 --working-directory=/home/cbasaran/code/jevgammon -E OPP_GPU=<second card> -E RES=<reservation> /home/cbasaran/code/jevgammon-launcher-gemini/tools/v3/repeats/run.sh gemini-decision-1-r1"
+diff --git a/tools/v3/repeats/guards/gemini-decision-1-r1.json b/tools/v3/repeats/guards/gemini-decision-1-r1.json
+new file mode 100644
+index 0000000..2a5c0a5
+--- /dev/null
++++ b/tools/v3/repeats/guards/gemini-decision-1-r1.json
+@@ -0,0 +1,51 @@
++{
++  "note": "Run guard of Gemini Decision 1 [repeat 1] (gemini-decision-1-r1; Zeki #5385; tools/v3/repeats repeats.py wanted_guard): the entrant and its paid opponents under one pre-send cap; the entrant's reply identity exact; a stop latches",
++  "ledger": "/home/cbasaran/code/jevgammon/workspace/repeats/gemini-decision-1-r1/guard-budget.db",
++  "cap_usd": 3.8181,
++  "latch": "/home/cbasaran/code/jevgammon/workspace/repeats/gemini-decision-1-r1/guard-latch",
++  "metered": {
++    "Gemini Decision 1 [repeat 1]": {
++      "input_per_mtok": 0.1,
++      "cached_input_per_mtok": 0.1,
++      "output_per_mtok": 0.0
++    },
++    "Celeris-1 Decision": {
++      "input_per_mtok": 0.04,
++      "cached_input_per_mtok": 0.04,
++      "output_per_mtok": 0.0
++    },
++    "Fastino GLiDE": {
++      "input_per_mtok": 0.04,
++      "cached_input_per_mtok": 0.04,
++      "output_per_mtok": 0.0
++    },
++    "Jev 1.13.0": {
++      "input_per_mtok": 0.042,
++      "cached_input_per_mtok": 0.042,
++      "output_per_mtok": 0.0
++    },
++    "Jev 1.14.0": {
++      "input_per_mtok": 0.042,
++      "cached_input_per_mtok": 0.042,
++      "output_per_mtok": 0.0
++    },
++    "Liquid d1-ultra": {
++      "input_per_mtok": 0.042,
++      "cached_input_per_mtok": 0.042,
++      "output_per_mtok": 0.0
++    },
++    "SubQ Snap Preview": {
++      "input_per_mtok": 0.05,
++      "cached_input_per_mtok": 0.05,
++      "output_per_mtok": 0.0
++    }
++  },
++  "expect_route": {
++    "Gemini Decision 1 [repeat 1]": {
++      "models": [
++        "google/gemini-decision-1-20261111"
++      ],
++      "provider": "Google AI Studio"
++    }
++  }
++}
+diff --git a/tools/v3/repeats/repeats.py b/tools/v3/repeats/repeats.py
+index b74f665..2982e91 100755
+--- a/tools/v3/repeats/repeats.py
++++ b/tools/v3/repeats/repeats.py
+@@ -153,25 +153,27 @@ RUNNER = dict(
+ RUNNER_DIFFERENCE = ("Runner: " + RUNNER["commit"] + ", the originals' runner line (origin/late-reax acfd89c) with the "
+                      "pinned-pairs change 4ca4f08 (the pins are its only change for these leagues), where the original "
+                      "ran %s; the same prompt version, option-order seed and rules.")
+-# Gemini Decision 1's repeat runner (Ümit via Zeki #5359): branch pinned-late-gemini cb669a0 = RUNNER's 0e66836 + the
+-# four runner commits its original ran, cherry-picked from late-gemini-decision: dab6da5 (decision clients merge the
+-# player's `request` fields, e.g. the OpenRouter provider pin), 1b234da, c0b58f3 (map-check v2 for
+-# google/gemini-decision-1 only) and 38024d6 (raw_entries decoder). src differs from 0e66836 only in
+-# src/players/{decision,llm,mod}.rs (+564 -12); the 18 build inputs are RUNNER's, unchanged. Bound as RUNNER is.
+-# Review package: mailbox/gemini-repeat/.
++# Gemini Decision 1's repeat runner (Ümit via Zeki #5359, #5385): branch pinned-late-gemini c13992f = RUNNER's 0e66836
++# + the four runner commits its original ran, cherry-picked from late-gemini-decision (cb669a0): dab6da5 (decision
++# clients merge the player's `request` fields, e.g. the OpenRouter provider pin), 1b234da, c0b58f3 (map-check v2 for
++# google/gemini-decision-1 only) and 38024d6 (raw_entries decoder); + the run guard (c13992f, Zeki #5385: `league
++# --guard`/`admit --guard`, every reply's served identity and one shared pre-send cap, used only with --guard; see
++# GEMINI_GUARD). The 18 build inputs are RUNNER's, unchanged. Bound as RUNNER is. Review packages:
++# mailbox/gemini-repeat/ (cb669a0) and its round2/ (c13992f).
+ RUNNER_GEMINI = dict(
+     binary=str(MAIN / "target/pinned-gemini/release/jevgammon"),
+-    binary_sha256="0bf67bc35ca864250a16a63ce5b608c68f8d6b62c12a5714e1b975979473dc7f",
+-    tree="/home/cbasaran/code/jevgammon-runner-gemini", commit="cb669a0",
+-    commit_full="cb669a08c29689a0846bcdf2596ae9c4fc043e22", src_tree="a1a82e60e4951dffab6ded8a7bd56269a14dd3cf",
++    binary_sha256="811ef5b033ded7f14912b9e195820dc52f9bd508dd0dbb6daf91540600ef4dde",
++    tree="/home/cbasaran/code/jevgammon-runner-gemini", commit="c13992f",
++    commit_full="c13992f0f415d81da40a54b1b5bf9fbe60d31ea2", src_tree="f60c64c24a5d87dcb8bfd3dba9a5e1819a21a6d2",
+     build=dict(
+         command=("cd /home/cbasaran/code/jevgammon-runner-gemini && CARGO_TARGET_DIR=/home/cbasaran/code/jevgammon/"
+                  "target/pinned-gemini cargo build --release --locked"),
+         toolchain="rustc 1.97.1 (8bab26f4f 2026-07-14), cargo 1.97.1 (c980f4866 2026-06-30)",
+-        built="2026-11-12T12:57Z",
++        built="2026-11-12T13:52Z",
+         tree=("git worktree add -b pinned-late-gemini /home/cbasaran/code/jevgammon-runner-gemini 0e66836; "
+-              "cherry-pick dab6da5 1b234da c0b58f3 38024d6; checkout --detach (clean; only the untracked "
+-              "METADATA.worktree added)")),
++              "cherry-pick dab6da5 1b234da c0b58f3 38024d6 (cb669a0); commit c13992f (run guard); checkout --detach "
++              "(clean; only the untracked METADATA.worktree added); the cb669a0 binary kept aside as "
++              "target/pinned-gemini/jevgammon-cb669a0")),
+     inputs=dict(RUNNER["inputs"]))
+ # The league of a recorded attempt is kept as it is and never resumed: league_id() skips it, so the repeat's next start
+ # creates a new league with the same config (repeat name, pins); check fails while such a league differs from its
+@@ -233,6 +235,18 @@ def repeat_note(rid: str, extra: str = "") -> str:
+ # plus the paid opponents, billed from match #993; its guard recorded $1.1819 when the entry ended
+ # (workspace/late-gemini-decision/state/guard.log, 2026-11-11T22:12:14Z). The repeat stays inside that cap.
+ GEMINI_CAP_USD, GEMINI_SPENT_USD = 5.0, 1.1819
++# Gemini Decision 1's run guard (Zeki #5385; the runner's `league --guard`/`admit --guard`, src/guard.rs): the entrant
++# and its paid opponents (BILLED among its pins) metered in one budget ledger under the remaining cap (each request
++# attempt, warm-ups, retries and failures included, reserved at its worst case before it is sent and refused when it
++# would pass the cap; settled at max(list price, reported usage.cost)), and every reply of the entrant (warm-ups and
++# each split group included) naming exactly the original's served identity (model google/gemini-decision-1-20261111,
++# provider Google AI Studio, as on all 1,704 original decisions). Either stop writes the latch file: the runner then
++# sends and starts nothing, check refuses, run.sh stops; only a person removes it. Written by `configs` as
++# leagues/../guards/ID.json (wanted_guard), its ledger created by the preparation (prepare_ledger).
++GEMINI_STATE = MAIN / "workspace/repeats/gemini-decision-1-r1"
++GEMINI_GUARD = dict(
++    ledger=str(GEMINI_STATE / "guard-budget.db"), latch=str(GEMINI_STATE / "guard-latch"),
++    expect_route=dict(models=["google/gemini-decision-1-20261111"], provider="Google AI Studio"))
+ 
+ 
+ # Per repeat: the original setup, where its original matches are, the runner that played them, its server.
+@@ -416,17 +430,21 @@ REPEATS = {
+                                 "output; listed so on 2026-11-12T13:00Z)"),
+                     measured="none (hosted)"),
+         settings_change=dict(),
++        guard=GEMINI_GUARD,
+         rules=dict(mirror_concurrent=True),
+         cap_usd=round(GEMINI_CAP_USD - GEMINI_SPENT_USD, 4),
+         cap_basis=(f"Gemini Decision 1's entry cap: ${GEMINI_CAP_USD:.2f} (entrant + paid opponents; "
+                    "tools/v3/late-gemini-decision/start.sh), of which its guard recorded "
+                    f"${GEMINI_SPENT_USD} at the entry's end (workspace/late-gemini-decision/state/guard.log, "
+                    "2026-11-11T22:12:14Z; it billed every late-entry match from #993, other entries' paid opponents "
+-                   "included); the repeat's guard stops at the remaining "
+-                   f"${GEMINI_CAP_USD - GEMINI_SPENT_USD:.4f} of the repeat's own bill."),
++                   "included); the repeat's run guard (runner c13992f, `league --guard`) holds the entrant and the paid "
++                   f"opponents to the remaining ${GEMINI_CAP_USD - GEMINI_SPENT_USD:.4f}: every request attempt is "
++                   "reserved at its worst case in one ledger before it is sent and refused when it would pass the cap "
++                   "(the runner refuses to send; run.sh's minute check of the ledger only reports and stops)."),
+         cost_method=("Each playable pair's billed cost in the original match: the paid opponent's recorded cost_usd "
+                      "(Fastino GLiDE: input tokens x $0.04/M), plus Gemini Decision 1's own recorded cost_usd "
+-                     "(OpenRouter usage.cost, $0.10/M input); local setups and programs bill nothing."),
++                     "(OpenRouter usage.cost, $0.10/M input); local setups and programs bill nothing. Enforced in the "
++                     "repeat by the run guard's ledger (spent + reserved in flight), not by stored turns."),
+         server_starts="entrant: none (hosted); each local opponent 1-5 min (state logs of the originals)",
+         opp_gpu=("<second card>", (
+             "Gemini Decision 1 is hosted (no card of its own); its 8 local opponents run one at a time on a second "
+@@ -440,20 +458,25 @@ REPEATS = {
+              "v2 and the raw_entries decoder) for its local stage (#1053-#1063), both on origin/main's runner line "
+              f"(ca112dc); the repeat runs {RUNNER_GEMINI['commit']} (branch pinned-late-gemini): the repeats' runner "
+              f"{RUNNER['commit']} (late-reax line with the pinned-pairs change 4ca4f08 and admit) with those four "
+-             "runner commits cherry-picked. late-reax adds decision clients (reax, baselabs, drex, nace) and a "
+-             "budget ledger for them, none used by this field; the same prompt version, option-order seed and rules."),
++             "runner commits cherry-picked (cb669a0) and the run guard (c13992f: reply identity and the shared "
++             "pre-send cap, used with --guard only). late-reax adds decision clients (reax, baselabs, drex, nace) and "
++             "a budget ledger, which the run guard uses; requests, sampling (provider defaults, nothing set), the "
++             "prompt version, option-order seed and rules are the same."),
+             ("Map check: map-check v2 (a probability map that is not exactly the shown ids, finite in [0, 1], summing "
+              "to 1 within 1e-6, stores no probabilities; the returned choice is still played) applies to every "
+              "repeat pair; the original's first-stage pairs (#993-#1013, dab6da5) ran without it. Plays are not "
+              "affected; a first-stage pair can store probabilities in the original where the repeat stores none."),
+-            ("Hosted model: Gemini Decision 1 is served by Google AI Studio through OpenRouter; whether the model "
+-             "behind google/gemini-decision-1 changed since 2026-11-11 can only be read from the replies' model echo "
+-             "(the original's: google/gemini-decision-1-20261111 on all 1,704 decisions)."),
++            ("Hosted model: Gemini Decision 1 is served by Google AI Studio through OpenRouter. The repeat accepts a "
++             "reply only when it names the original's served model google/gemini-decision-1-20261111 and provider "
++             "Google AI Studio (as all 1,704 original decisions did); a model served under that same name but "
++             "changed behind it cannot be detected from here."),
+             ("Route check: the original's guard re-checked OpenRouter's listing every minute (3 failures stopped "
+-             "it); the repeat checks it once before the first match (smoke). Fallbacks stay off, so a changed "
+-             "endpoint fails requests rather than rerouting them."),
+-            ("Cap: the original's $5 entry cap with $1.1819 recorded; the repeat's guard stops at the remaining "
+-             "$3.8181 (see cost_basis)."),
++             "it); the repeat checks it once before the first match (smoke) and, in the runner (run guard), the served "
++             "identity of every entrant reply: model google/gemini-decision-1-20261111 and provider Google AI Studio "
++             "exactly, or the guard latches and the league stops for good. Fallbacks stay off."),
++            ("Cap: the original's $5 entry cap with $1.1819 recorded (a minute poll of stored turns); the repeat's "
++             "run guard holds the entrant and paid opponents to the remaining $3.8181 before every request attempt "
++             "(see cost_basis)."),
+         ]),
+ }
+ DISPLAY = {"mammoth-1-r1": "Mammoth-1", "drex-max-v1-r1": "Drex Max v1", "reax-1.3-r1": "REAX 1.3",
+@@ -627,6 +650,12 @@ def manifest(args) -> None:
+                 unpinned=unpinned),
+             **({} if not not_required else dict(coverage_required=required_coverage(
+                 pairs, field, not_required, r["rules"]["mirror_concurrent"]))),
++            **({} if not r.get("guard") else dict(guard=dict(
++                r["guard"], file=f"tools/v3/repeats/guards/{rid}.json", cap_usd=r.get("cap_usd", 5.0),
++                metered="the entrant and the paid opponents it is pinned against (BILLED); prices in the file",
++                enforced=("runner `league --guard` (c13992f, src/guard.rs): every request attempt reserved before it "
++                          "is sent, refused past the cap; every entrant reply's model and provider exactly the "
++                          "expected ones; a stop latches (no request, no league start, check refuses)")))),
+             cost_basis=dict(
+                 method=r.get("cost_method", (
+                     "Each playable pair's billed cost in the original match: the paid opponent's recorded "
+@@ -727,15 +756,95 @@ def configs(args) -> None:
+         path = out / f"{rid}.json"
+         path.write_text(json.dumps(cfg, indent=2, ensure_ascii=False) + "\n")
+         print(f"{path.relative_to(REPO)}: {m['name']} v {', '.join(PROGRAMS)} (the rest by league-add)")
++        guard = wanted_guard(conn, rid, m)
++        if guard is not None:
++            gpath = guard_path(rid)
++            gpath.parent.mkdir(exist_ok=True)
++            gpath.write_text(json.dumps(guard, indent=2, ensure_ascii=False) + "\n")
++            print(f"{gpath.relative_to(REPO)}: run guard metering {', '.join(guard['metered'])} under "
++                  f"${guard['cap_usd']}, reply identity of {', '.join(guard['expect_route'])}")
++
++
++def guard_path(rid: str) -> Path | None:
++    """The repeat's run guard file (`league --guard`), or None for a repeat without one."""
++    return HERE / "guards" / f"{rid}.json" if REPEATS[rid].get("guard") else None
++
++
++def guard_prices(name: str, settings: dict) -> dict:
++    """A metered setup's list prices for the run guard: its settings' price (Fastino GLiDE records none: FASTINO_RATE,
++    as every guard's estimate); cached input at the input price."""
++    price = settings.get("price") or ({"input_per_mtok": FASTINO_RATE} if name == "Fastino GLiDE" else None)
++    if not price:
++        sys.exit(f"{name}: a paid setup without a price; the run guard cannot meter it")
++    return dict(input_per_mtok=price["input_per_mtok"], cached_input_per_mtok=price["input_per_mtok"],
++                output_per_mtok=price.get("output_per_mtok", 0.0))
++
++
++def wanted_guard(conn, rid: str, m) -> dict | None:
++    """The run guard the repeat must run under (src/guard.rs GuardConfig): its ledger, the manifest's cap and the latch
++    file; metered: the entrant (its repeat settings' price) and every paid opponent it is pinned against (BILLED; prices
++    from v3.db's players.settings); the entrant's expected reply identity."""
++    g = REPEATS[rid].get("guard")
++    if not g:
++        return None
++    metered = {m["name"]: guard_prices(m["name"], m["settings_repeat"])}
++    for name in sorted(o for o in wanted_pins(m) if o in BILLED):
++        row = conn.execute("SELECT settings FROM players WHERE name = ?", (name,)).fetchone()
++        metered[name] = guard_prices(name, json.loads(row[0]))
++    return dict(note=(f"Run guard of {m['name']} ({rid}; Zeki #5385; tools/v3/repeats repeats.py wanted_guard): "
++                      "the entrant and its paid opponents under one pre-send cap; the entrant's reply identity "
++                      "exact; a stop latches"),
++                ledger=g["ledger"], cap_usd=m["cost_basis"]["cap_usd"], latch=g["latch"], metered=metered,
++                expect_route={m["name"]: g["expect_route"]})
++
++
++# The runner's budget ledger as Ledger::open leaves it (src/budget.rs SCHEMA; WAL; the cap row), for the preparation.
++LEDGER_SCHEMA = """
++CREATE TABLE IF NOT EXISTS budget (id INTEGER PRIMARY KEY CHECK (id = 1), cap_usd REAL NOT NULL);
++CREATE TABLE IF NOT EXISTS attempts (
++    id INTEGER PRIMARY KEY, setup TEXT NOT NULL, pid INTEGER NOT NULL, started_at TEXT NOT NULL, finished_at TEXT,
++    status TEXT NOT NULL, reserved_usd REAL NOT NULL, cost_usd REAL, list_cost_usd REAL, reported_cost_usd REAL,
++    input_tokens INTEGER, cached_tokens INTEGER, output_tokens INTEGER, reasoning_tokens INTEGER, note TEXT);
++"""
++NO_LEDGER = "guard ledger missing: the preparation creates it (admission runs once it exists)"
++# check's preparable failures: run.sh prepares exactly these (backup, ledger, trigger), then checks everything again.
++PREPARABLE = {NOT_IN_TRIGGER, NO_LEDGER}
++
++
++def prepare_ledger(guard: dict) -> None:
++    """Creates the run guard's empty ledger (refused when it exists): as Ledger::open would, closed (checkpointed)."""
++    path = Path(guard["ledger"])
++    if path.exists():
++        sys.exit(f"guard ledger {path} exists; not created again")
++    path.parent.mkdir(parents=True, exist_ok=True)
++    conn = sqlite3.connect(path)
++    conn.execute("PRAGMA journal_mode = WAL")
++    conn.executescript(LEDGER_SCHEMA)
++    conn.execute("INSERT INTO budget (id, cap_usd) VALUES (1, ?)", (guard["cap_usd"],))
++    conn.commit()
++    conn.close()
++
++
++def guard_committed(guard: dict) -> float:
++    """Dollars the run guard's ledger holds against its cap: spent (settled, lost) plus reserved in flight (open)."""
++    path = Path(guard["ledger"])
++    if not path.exists():
++        return 0.0
++    conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True, timeout=60)
++    return conn.execute("""SELECT COALESCE(SUM(CASE status WHEN 'settled' THEN cost_usd WHEN 'lost' THEN reserved_usd
++                                                  WHEN 'open' THEN reserved_usd END), 0) FROM attempts""").fetchone()[0]
+ 
+ 
+ def shell_env(args) -> None:
+     m = load()[args.id]
+     s, r = REPEATS[args.id]["server"], m["runner"]
++    gpath = guard_path(args.id)
++    g = REPEATS[args.id].get("guard") or {}
+     for k, v in dict(NAME=m["name"], RUN_ID=m["run_id"], KIND=s["kind"], BIN=r["binary"], ENTRANT_MIB=s["mib"],
+                      START=s["start"] or "", STOP=s["stop"] or "", HEALTH=s["health"] or "",
+                      HEALTH_ANY=int(bool(s.get("health_any_status"))), SMOKE=s["smoke"] or "",
+-                     STATUS=m["status_file"], CAP=m["cost_basis"]["cap_usd"]).items():
++                     STATUS=m["status_file"], CAP=m["cost_basis"]["cap_usd"], GUARD=gpath or "",
++                     GUARD_LATCH=g.get("latch", "")).items():
+         print(f"{k}={shlex.quote(str(v))}")
+ 
+ 
+@@ -840,17 +949,20 @@ ADMIT_TIMEOUT_S = 600
+ ADMITTED = "admitted-settings "
+ 
+ 
+-def admission_problems(rn, config: Path) -> tuple[list[str], dict | None]:
++def admission_problems(rn, config: Path, guard: Path | None = None) -> tuple[list[str], dict | None]:
+     """Client admission by the bound runner (Zeki #4860, #4896): `jevgammon admit --db DB --config <league config>`
+     builds the client of every config player and of every opponent its pinned_pairs names (from players.settings), as
+     the league builds them, but only decision services and the local engines (any other client type is refused before
+     it is constructed); the database and every budget ledger are opened read-only and immutable and no request is
+     sent, so admission writes nothing. A refused client, an error, no answer in ADMIT_TIMEOUT_S or no admitted-settings
+     record is a problem; else the record (Zeki #4928): the config file's sha256, every client with its source and, for
+-    a pinned opponent, its players row and the sha256 of the settings text admitted."""
++    a pinned opponent, its players row and the sha256 of the settings text admitted. With a run guard (`--guard`, Zeki
++    #5385) the metered clients are built with its ledger, a latched guard is refused, and the record names the guard
++    file's sha256."""
+     try:
+-        r = subprocess.run(["bash", "-c", KEYS + 'exec "$0" admit --db "$1" --config "$2"', rn["binary"], str(DB),
+-                            str(config)], capture_output=True, text=True, timeout=ADMIT_TIMEOUT_S)
++        r = subprocess.run(["bash", "-c", KEYS + 'exec "$0" admit --db "$1" --config "$2" ${3:+--guard "$3"}',
++                            rn["binary"], str(DB), str(config), str(guard or "")],
++                           capture_output=True, text=True, timeout=ADMIT_TIMEOUT_S)
+     except subprocess.TimeoutExpired:
+         return [f"client admission: jevgammon admit gave no answer in {ADMIT_TIMEOUT_S} s"], None
+     if r.returncode == 0:
+@@ -868,15 +980,22 @@ def admission_problems(rn, config: Path) -> tuple[list[str], dict | None]:
+     return [f"client admission refused (jevgammon admit exit {r.returncode}): " + " | ".join(why)], None
+ 
+ 
+-def binding_problems(conn, config: Path, admitted: dict) -> list[str]:
++def binding_problems(conn, config: Path, admitted: dict, guard: Path | None = None) -> list[str]:
+     """The settings admitted are the settings the league runs (Zeki #4928 S1). Admission reads v3.db immutably (its main
+     file only: a change still in the write-ahead log, a new row or an UPDATE of an existing one, is not seen) and
+     records what it admitted; conn is an ordinary read-only connection (write-ahead-log-aware: what league-add and the
+     league read). The config file is the one admitted (sha256); the admitted clients are exactly the config's players
+     and the other opponents its pinned_pairs names; each config player's v3.db row, once there, holds the config's
+     settings (a league resumes its players from v3.db); each pinned opponent's row is the one admitted, its settings
+-    text of the admitted sha256 (the text league-add --entry passes and the league loads). Any difference is a
++    text of the admitted sha256 (the text league-add --entry passes and the league loads). With a run guard, the record
++    names this guard file and its sha256 is the file's now (the league reads it at start). Any difference is a
+     problem."""
++    if guard is not None:
++        g = admitted.get("guard") or {}
++        now = sha256(guard)
++        if g.get("path") != str(guard) or now is None or g.get("sha256") != now:
++            return [f"run guard {guard} is not the one admitted (sha256 {str(now)[:16]}…, admitted "
++                    f"{g.get('path')} {str(g.get('sha256'))[:16]}…)"]
+     try:
+         data = config.read_bytes()
+     except OSError as e:
+@@ -915,8 +1034,9 @@ def binding_problems(conn, config: Path, admitted: dict) -> list[str]:
+ 
+ 
+ def problems(rid: str, admitted: dict | None = None) -> list[str]:
+-    """Everything check verifies, read-only; NOT_IN_TRIGGER stands for the trigger lacking the name. When everything
+-    from admission on passes, admitted (if given) receives the admitted-settings record."""
++    """Everything check verifies, read-only; NOT_IN_TRIGGER stands for the trigger lacking the name, NO_LEDGER for a run
++    guard's ledger not yet created (admission then waits for it). When everything from admission on passes, admitted
++    (if given) receives the admitted-settings record."""
+     m = load()[rid]
+     conn = ro()
+     bad = []
+@@ -942,11 +1062,24 @@ def problems(rid: str, admitted: dict | None = None) -> list[str]:
+         bad.append("not held in the main checkout's committed tools/site/content/held_setups.json")
+     rb = runner_problems(m["runner"])
+     bad += rb
+-    if not rb and cfg:  # only the bound binary is executed
+-        refused, record = admission_problems(m["runner"], path)
++    gpath = guard_path(rid)
++    ledger_ok = True
++    if gpath is not None:  # the run guard (Zeki #5385): exactly the wanted one, not latched, its ledger present
++        want_guard = wanted_guard(conn, rid, m)
++        got_guard = json.loads(gpath.read_text()) if gpath.exists() else None
++        if got_guard != want_guard:
++            bad.append(f"run guard {gpath} differs from the repeat's (or is missing)")
++        latch = Path(want_guard["latch"])
++        if latch.exists():
++            bad.append(f"run guard latched ({latch}): {latch.read_text(errors='replace').strip()[:300]}")
++        ledger_ok = Path(want_guard["ledger"]).exists()
++        if not ledger_ok:
++            bad.append(NO_LEDGER)
++    if not rb and cfg and ledger_ok:  # only the bound binary is executed
++        refused, record = admission_problems(m["runner"], path, gpath)
+         bad += refused
+         if record is not None:
+-            differ = binding_problems(conn, path, record)
++            differ = binding_problems(conn, path, record, gpath)
+             bad += differ
+             if not differ and admitted is not None:
+                 admitted.update(record)
+@@ -960,14 +1093,15 @@ def problems(rid: str, admitted: dict | None = None) -> list[str]:
+ 
+ def check(args) -> None:
+     """Fail closed (read-only): a held repeat, other pins or settings, the name not held on the site, another runner
+-    binary, commit, src or build input, a client the bound runner's `admit` refuses, admitted settings other than v3.db
+-    holds now (binding_problems) exit 1; the trigger lacking the name, when nothing else fails, exits TRIGGER_MISSING
+-    (3), the one condition run.sh prepares. On success the last line is the admitted-settings record (ADMITTED + JSON),
+-    which run.sh keeps for `bound` and `entry`."""
++    binary, commit, src or build input, another or a latched run guard, a client the bound runner's `admit` refuses,
++    admitted settings other than v3.db holds now (binding_problems) exit 1; when the only failures are preparable (the
++    trigger lacking the name, a run guard's ledger not yet created), exits TRIGGER_MISSING (3), the condition run.sh
++    prepares. On success the last line is the admitted-settings record (ADMITTED + JSON), which run.sh keeps for `bound`
++    and `entry`."""
+     admitted = {}
+     bad = problems(args.id, admitted)
+-    if bad == [NOT_IN_TRIGGER]:
+-        print(f"{args.id}: {NOT_IN_TRIGGER} (everything else passes)", file=sys.stderr)
++    if bad and set(bad) <= PREPARABLE:
++        print(f"{args.id}: {'; '.join(bad)} (everything else passes)", file=sys.stderr)
+         sys.exit(TRIGGER_MISSING)
+     if bad:
+         print(f"{args.id}: " + "; ".join(bad), file=sys.stderr)
+@@ -977,7 +1111,9 @@ def check(args) -> None:
+     print(f"{args.id}: {len(wanted_pins(m))} pairs pinned in its config, settings as the manifest's, trigger and held "
+           f"name in place, runner {rn['commit']} (binary sha256 {rn['binary_sha256'][:16]}…, "
+           f"{len(rn['inputs'])} build inputs as recorded, tree {rn['tree']}), every client admitted (jevgammon admit), "
+-          f"the {len(admitted['clients'])} admitted settings those v3.db holds")
++          f"the {len(admitted['clients'])} admitted settings those v3.db holds"
++          + (f"; run guard {admitted['guard']['path']} (sha256 {admitted['guard']['sha256'][:16]}…) admitted, its "
++             "ledger present, not latched" if admitted.get("guard") else ""))
+     print(ADMITTED + json.dumps(admitted, ensure_ascii=False))
+ 
+ 
+@@ -995,7 +1131,8 @@ def read_admitted(rid: str, path: str) -> dict:
+ def bound(args) -> None:
+     """Before the league starts (run_league.sh; read-only): the settings it will read are the ones check admitted
+     (binding_problems against the record run.sh kept); exit 1 on any difference."""
+-    bad = binding_problems(ro(), HERE / "leagues" / f"{args.id}.json", read_admitted(args.id, args.admitted))
++    bad = binding_problems(ro(), HERE / "leagues" / f"{args.id}.json", read_admitted(args.id, args.admitted),
++                           guard_path(args.id))
+     if bad:
+         sys.exit(f"{args.id}: refused, not the admitted settings: " + "; ".join(bad))
+     print(f"{args.id}: the league config and v3.db's settings are the admitted ones")
+@@ -1006,7 +1143,7 @@ def entry(args) -> None:
+     as admitted (binding_problems) and the text printed is the one admitted (sha256); exit 1 otherwise."""
+     admitted = read_admitted(args.id, args.admitted)
+     conn = ro()
+-    bad = binding_problems(conn, HERE / "leagues" / f"{args.id}.json", admitted)
++    bad = binding_problems(conn, HERE / "leagues" / f"{args.id}.json", admitted, guard_path(args.id))
+     if bad:
+         sys.exit(f"{args.id}: refused, not the admitted settings: " + "; ".join(bad))
+     c = next((c for c in admitted["clients"] if c["name"] == args.name and c["source"] != "league config"), None)
+@@ -1018,9 +1155,17 @@ def entry(args) -> None:
+ 
+ 
+ def trigger(args) -> None:
++    """The preparation (run.sh, after a verified backup): refused unless check's only failures are preparable; creates a
++    run guard's empty ledger when it is missing, then adds the repeat name to the late_entry_stage trigger."""
+     bad = problems(args.id)
+-    if bad and bad != [NOT_IN_TRIGGER]:
++    if bad and not set(bad) <= PREPARABLE:
+         sys.exit(f"{args.id}: trigger refused, the check fails beyond the trigger: " + "; ".join(bad))
++    if NO_LEDGER in bad:
++        read = ro()
++        guard = wanted_guard(read, args.id, load()[args.id])
++        read.close()  # no reader left open: the trigger's write below is checkpointed into v3.db when it closes
++        prepare_ledger(guard)
++        print(f"run guard ledger {guard['ledger']} created (cap ${guard['cap_usd']}, empty)")
+     name = load()[args.id]["name"]
+     conn = sqlite3.connect(f"file:{DB}?mode=rw", uri=True, timeout=120)
+     conn.execute("BEGIN IMMEDIATE")
+@@ -1125,6 +1270,11 @@ def pending(args) -> None:
+ 
+ 
+ def billed_usd(conn, m) -> float:
++    """Dollars the repeat has billed: under a run guard its ledger's spent plus reserved in flight (every request
++    attempt of the entrant and the paid opponents, Zeki #5385); otherwise the stored turns' costs."""
++    guard = REPEATS[m["id"]].get("guard")
++    if guard:
++        return guard_committed(guard)
+     total = 0.0
+     for r in conn.execute(
+             """SELECT p.name, SUM(COALESCE(t.cost_usd, 0)) AS cost, SUM(t.input_tokens) AS tokens FROM turns t
+diff --git a/tools/v3/repeats/run.sh b/tools/v3/repeats/run.sh
+index 0ae4ed8..02e8f99 100755
+--- a/tools/v3/repeats/run.sh
++++ b/tools/v3/repeats/run.sh
+@@ -32,8 +32,14 @@
+ # under RES on OPP_GPU when there is room beside everything else (a pair that cannot fit on one card with the entrant is
+ # left missing and reported), the league unit until the pair is played (4 h at most), the server stopped. Opponents
+ # blocked today (GPT-6 Luna, Mercury Decide) are skipped and reported unless RETRY_BLOCKED=1.
+-# Guard every minute, stopping the league (matches resume later from their last turn): billed spend of the repeat >= $5,
+-# OpenRouter balance under $40 or unreadable 3 times in a row, the entrant failing 3 health checks in a row.
++# Guard every minute, stopping the league (matches resume later from their last turn): billed spend of the repeat >= its
++# cap ($5; a repeat with a run guard: its ledger's spent + reserved), OpenRouter balance under $40 or unreadable 3 times
++# in a row, the entrant failing 3 health checks in a row, a run guard's latch file present.
++# A repeat with a run guard (repeats.py GEMINI_GUARD; Zeki #5385) runs its league with `--guard` (run_league.sh): the
++# runner reserves every request attempt of the entrant and the paid opponents before sending and refuses past the cap,
++# checks every entrant reply's served identity, and on either stop latches (latch file) and ends the league; with the
++# latch set the runner starts nothing, check refuses and this loop stops. The guard's ledger is created by the
++# preparation (check exit 3 lists it with the trigger).
+ set -uo pipefail
+ cd "${REPEATS_HOME:-/home/cbasaran/code/jevgammon}" || exit 1
+ RID=${1:?usage: run.sh ID [--prepare-only]}
+@@ -132,12 +138,15 @@ ensure_league() {
+   systemctl --user is-active -q "$UNIT" && return 0
+   systemctl --user reset-failed "$UNIT" >/dev/null 2>&1 || true
+   systemd-run --user --quiet --unit="$UNIT" --working-directory="$PWD" "$T/run_league.sh" "$RID" "$BIN" "$DB" \
+-    "$PWD/$ST/admitted.json"
++    "$PWD/$ST/admitted.json" "$GUARD"
+ }
+ down=0
+ unread=0
+ guard() {
+   local bal s
++  if [[ -n $GUARD_LATCH && -e $GUARD_LATCH ]]; then
++    log "STOPPED: the run guard is latched ($GUARD_LATCH): $(head -c 600 "$GUARD_LATCH" | tr '\n' ' ')"; return 1
++  fi
+   if bal=$(balance); then
+     unread=0
+     if lt "$bal" "$FLOOR"; then log "STOPPED: OpenRouter balance \$$bal under \$$FLOOR"; return 1; fi
+diff --git a/tools/v3/repeats/run_league.sh b/tools/v3/repeats/run_league.sh
+index d4bea31..d04ae84 100755
+--- a/tools/v3/repeats/run_league.sh
++++ b/tools/v3/repeats/run_league.sh
+@@ -5,9 +5,11 @@
+ # the user unit repeat-ID-league with the checked runner build, run.sh's database and the admitted-settings record of
+ # run.sh's check (workspace/repeats/ID/admitted.json); log repeat-ID.log in its working directory. Before the league
+ # starts, `repeats.py bound` compares that record with what the league will read (the config file's sha256, the config
+-# players' and pinned opponents' v3.db settings, read write-ahead-log-aware): any difference and no league starts.
++# players' and pinned opponents' v3.db settings, read write-ahead-log-aware, and a run guard file's sha256): any
++# difference and no league starts. GUARD (5th argument, run.sh's): the repeat's run guard file, passed as `--guard`
++# (the runner then meters, checks reply identity and refuses to start while the guard is latched).
+ set -euo pipefail
+-RID=$1 BIN=$2 ADMITTED=${4:?usage: run_league.sh ID BIN DB ADMITTED}
++RID=$1 BIN=$2 ADMITTED=${4:?usage: run_league.sh ID BIN DB ADMITTED [GUARD]} GUARD=${5:-}
+ export JEVGAMMON_DB=$3
+ T=$(dirname "$(readlink -f "$0")")
+ set -a; . ~/.keys; set +a
+@@ -16,7 +18,9 @@ export PATH=$HOME/.local/bin:$PATH
+ ID=$(python3 "$T/repeats.py" league-id "$RID")
+ exec >> "repeat-$RID.log" 2>&1
+ python3 "$T/repeats.py" bound "$RID" "$ADMITTED" || exit 1
++G=()
++[[ -z $GUARD ]] || G=(--guard "$GUARD")
+ if [[ -n $ID ]]; then
+-  exec "$BIN" league --resume "$ID" --db "$JEVGAMMON_DB"
++  exec "$BIN" league --resume "$ID" --db "$JEVGAMMON_DB" "${G[@]}"
+ fi
+-exec "$BIN" league --config "$T/leagues/$RID.json" --db "$JEVGAMMON_DB"
++exec "$BIN" league --config "$T/leagues/$RID.json" --db "$JEVGAMMON_DB" "${G[@]}"
+diff --git a/tools/v3/repeats/test_launcher.sh b/tools/v3/repeats/test_launcher.sh
+index d1dd239..29a8848 100755
+--- a/tools/v3/repeats/test_launcher.sh
++++ b/tools/v3/repeats/test_launcher.sh
+@@ -30,8 +30,12 @@
+ #   checks again and exits 0 with every client admitted by the repeat's own runner; check then exits 0, and a second
+ #   run.sh writes nothing more. A repeat whose name main does not hold yet (Gemini Decision 1, #5359) refuses on that,
+ #   and takes the same trigger-missing case with its case's repeats.py reading a scratch main checkout that holds it.
+-#   Gemini Decision 1 (runner cb669a0): its entrant without the OpenRouter provider pin, and the 0e66836 binary in
+-#   place of its own, each refuse on that alone (besides the missing trigger).
++#   Gemini Decision 1 (its own runner): its entrant without the OpenRouter provider pin, and the 0e66836 binary in
++#   place of its own, each refuse (besides the preparable trigger and guard ledger). Its run guard (Zeki #5385; each
++#   case's guard state under D/guard-state): a latched guard and a guard file other than the repeat's refuse; the
++#   preparation creates the guard's empty ledger (cap row, no attempt) with the trigger, admission then names the guard
++#   file's sha256; run_league.sh passes --guard; repeats.py billed reads the guard ledger (spent + reserved in flight);
++#   a guard file changed after the admission refuses `bound` and starts no league.
+ #   The scratch Nace ledger is byte-identical after every case, with no -wal or -shm beside it.
+ # Usage: tools/v3/repeats/test_launcher.sh   (TMPDIR defaults to ~/.cache/tmp; exit 0 when every case passes)
+ set -uo pipefail
+@@ -122,6 +126,12 @@ OPPONENTS = {
+     "SubQ Snap Preview": "subq/subq-snap-preview", "Winnow-12B": "winnow/winnow-12b"}
+ for name, spec in OPPONENTS.items():
+     rows.setdefault(name, dict(name=name, spec=spec))
++# A run guard's paid opponents carry their v3.db list price (the guard file's, which `configs` read from v3.db), as the
++# guard meters them; Fastino GLiDE has none in v3.db (the guard uses FASTINO_RATE).
++for guard in (leagues.parent / "guards").glob("*.json"):
++    for name, p in json.loads(guard.read_text())["metered"].items():
++        if name in OPPONENTS and name != "Fastino GLiDE":
++            rows[name] = dict(rows[name], price=dict(input_per_mtok=p["input_per_mtok"], output_per_mtok=p["output_per_mtok"]))
+ pins = {o for r in man["repeats"] for o in json.loads((leagues / f"{r['id']}.json").read_text())["pinned_pairs"]}
+ if pins - set(rows):
+     sys.exit(f"pinned opponents without a players row: {sorted(pins - set(rows))}")
+@@ -181,6 +191,21 @@ for r in m["repeats"]:
+     r["runner"] |= dict(tree=sys.argv[3] + "/runner" + sfx, binary=sys.argv[3] + "/bin" + sfx + "/jevgammon")
+ open(sys.argv[2], "w").write(json.dumps(m, indent=1, ensure_ascii=False) + "\n")
+ EOF
++  # The run guard's state (ledger, latch) in the case's own directory, not the main checkout's workspace.
++  python3 - "$D" "$(basename "$MAN")" <<'EOF'
++import sys
++from pathlib import Path
++d, man = sys.argv[1:3]
++prod, state = "/home/cbasaran/code/jevgammon/workspace/repeats/gemini-decision-1-r1", d + "/guard-state"
++rep = Path(d) / "repo/tools/v3/repeats"
++p, old = rep / "repeats.py", 'GEMINI_STATE = MAIN / "workspace/repeats/gemini-decision-1-r1"'
++t = p.read_text()
++assert t.count(old) == 1, "GEMINI_STATE line not found once"
++p.write_text(t.replace(old, f'GEMINI_STATE = Path("{state}")'))
++for f in [*(rep / "guards").glob("*.json"), Path(d) / "repo/mailbox/repeats" / man]:
++    f.write_text(f.read_text().replace(prod, state))
++EOF
++  mkdir -p "$D/guard-state"
+ }
+ in_case() { HOME=${CASE_HOME:-$S/keys} JEVGAMMON_DB=$D/home/v3.db REPEATS_HOME=$D/home "$@"; }
+ check_rc() { in_case python3 "$D/repo/tools/v3/repeats/repeats.py" check "$1" > "$D/check.out" 2>&1; echo $?; }
+@@ -510,10 +535,28 @@ open(sys.argv[1], "w").write(json.dumps(c, indent=2, ensure_ascii=False) + "\n")
+ EOF
+ refuse gemini-decision-1-r1
+ gemini_only "league config entrant settings differ from the manifest's settings_repeat"
++read -r GC GSHA < <(python3 -c 'import json,sys; r=next(r for r in json.load(open(sys.argv[1]))["repeats"] if r["id"] == "gemini-decision-1-r1")["runner"]
++print(r["commit"], r["binary_sha256"][:16])' "$MAN")
+ setup gemini-other-runner; hold_in_scratch_main gemini-decision-1-r1
+-cp "$D/bin/jevgammon" "$D/bin-cb669a0/jevgammon"
++cp "$D/bin/jevgammon" "$D/bin-$GC/jevgammon"
++refuse gemini-decision-1-r1
++gemini_only "not the $GC build $GSHA…"
++# Zeki #5385: the run guard. A latched guard refuses (not preparable), as does a guard file other than the repeat's.
++setup gemini-guard-latched; hold_in_scratch_main gemini-decision-1-r1
++echo "2026-11-12T00:00:00.000Z test: ROUTE CHECK (OpenRouter (System One)): the response names provider \"Google Vertex\"" \
++  > "$D/guard-state/guard-latch"
+ refuse gemini-decision-1-r1
+-gemini_only "not the cb669a0 build 0bf67bc35ca86425…"
++grep -q "run guard latched ($D/guard-state/guard-latch)" "$D/check.out" && pass "the refusal names the latch" ||
++  failc "check did not name the latch: $(cut -c1-600 "$D/check.out")"
++setup gemini-guard-edited; hold_in_scratch_main gemini-decision-1-r1
++python3 - "$D/repo/tools/v3/repeats/guards/gemini-decision-1-r1.json" <<'EOF'
++import json, sys
++g = json.load(open(sys.argv[1])); g["cap_usd"] = 5.0
++open(sys.argv[1], "w").write(json.dumps(g, indent=2, ensure_ascii=False) + "\n")
++EOF
++refuse gemini-decision-1-r1
++grep -q "run guard .*gemini-decision-1-r1.json differs from the repeat's" "$D/check.out" &&
++  pass "the refusal names the guard file" || failc "check did not name the guard file: $(cut -c1-600 "$D/check.out")"
+ 
+ for rid in "${prepare[@]}" "${scratch_held[@]}"; do
+   setup "trigger-missing-$rid"
+@@ -543,11 +586,60 @@ for rid in "${prepare[@]}" "${scratch_held[@]}"; do
+   [[ $out1 == *"runner $commit (binary sha256"* ]] || bad+=("check after: not runner $commit")
+   (( rc2 == 0 )) && [[ $again == "$after" ]] || bad+=("second run.sh: exit $rc2 or wrote")
+   (( $(compgen -G "$D/home/v3.db.bak-*" | wc -l) == 1 )) || bad+=("more than one backup")
++  guard=$D/repo/tools/v3/repeats/guards/$rid.json
++  [[ -e $guard ]] || guard=
++  if [[ -n $guard ]]; then  # a run guard: its ledger created empty by the preparation, admitted with its sha256
++    [[ $out0 == *"guard ledger missing"* ]] || bad+=("check before did not list the missing guard ledger")
++    ledger_state=$(sqlite3 "$D/guard-state/guard-budget.db" "SELECT (SELECT cap_usd FROM budget), (SELECT count(*) FROM attempts)" 2>&1)
++    [[ $ledger_state == "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["cap_usd"])' "$guard")|0" ]] ||
++      bad+=("guard ledger: $ledger_state")
++    [[ $out1 == *"run guard $guard (sha256 $(sha256sum < "$guard" | cut -c1-16)…) admitted"* ]] || bad+=("check after: guard not admitted")
++  fi
+   if (( ${#bad[@]} )); then failc "${bad[*]}"; else
+-    pass "check exit 3, prepared ($(basename "$bak") verified, trigger added), check exit 0 with every client admitted by runner $commit; second run wrote nothing"
++    pass "check exit 3, prepared ($(basename "$bak") verified, trigger added${guard:+, run guard ledger created}), check exit 0 with every client admitted by runner $commit; second run wrote nothing"
+   fi
++  guard=
+ done
+ 
++# Zeki #5385, after the preparation and the admission (as run.sh keeps admitted.json): the league unit (run_league.sh
++# with a stand-in binary) passes --guard; billed reads the guard ledger (spent + reserved in flight); the guard file
++# changed after the admission refuses `bound` and starts no league.
++setup gemini-admitted; hold_in_scratch_main gemini-decision-1-r1
++in_case bash "$D/repo/tools/v3/repeats/run.sh" gemini-decision-1-r1 --prepare-only > "$D/run.out" 2>&1 || failc "prepare: $(cat "$D/run.out")"
++crc=$(check_rc gemini-decision-1-r1)
++sed -n 's/^admitted-settings //p' "$D/check.out" > "$D/admitted.json"
++R=(python3 "$D/repo/tools/v3/repeats/repeats.py")
++guard=$D/repo/tools/v3/repeats/guards/gemini-decision-1-r1.json
++printf '#!/usr/bin/env bash\necho "$*" >> %q\n' "$D/started" > "$D/bin/stand-in" && chmod +x "$D/bin/stand-in"
++league_unit() { (cd "$D/home" && in_case bash "$D/repo/tools/v3/repeats/run_league.sh" gemini-decision-1-r1 "$D/bin/stand-in" \
++  "$D/home/v3.db" "$D/admitted.json" "$guard"); }
++league_unit; lrc=$?
++if (( crc == 0 && lrc == 0 )) && grep -q "^league --config .*/leagues/gemini-decision-1-r1.json --db $D/home/v3.db --guard $guard$" "$D/started"; then
++  pass "as admitted: the league unit starts the league with --guard $guard"
++else
++  failc "league unit: check $crc, run_league $lrc, started: $(cat "$D/started" 2>/dev/null)"
++fi
++rm -f "$D/started"
++sqlite3 "$D/guard-state/guard-budget.db" "INSERT INTO attempts (setup, pid, started_at, status, reserved_usd, cost_usd)
++  VALUES ('Gemini Decision 1 [repeat 1]', 1, 'x', 'settled', 0.01, 0.5), ('Celeris-1 Decision', 1, 'x', 'open', 0.25, NULL),
++         ('Jev 1.14.0', 1, 'x', 'lost', 0.125, NULL)"
++b=$(in_case "${R[@]}" billed gemini-decision-1-r1)
++[[ $b == 0.8750 ]] && pass "billed = the guard ledger's spent + reserved in flight ($b)" || failc "billed $b, not 0.8750"
++cp "$guard" "$D/guard.kept"
++python3 - "$guard" <<'EOF'
++import json, sys
++g = json.load(open(sys.argv[1])); g["expect_route"] = {}
++open(sys.argv[1], "w").write(json.dumps(g, indent=2, ensure_ascii=False) + "\n")
++EOF
++in_case "${R[@]}" bound gemini-decision-1-r1 "$D/admitted.json" > "$D/bound.out" 2>&1; brc=$?
++league_unit; lrc=$?
++if (( brc == 1 && lrc != 0 )) && [[ ! -e $D/started ]] && grep -q "run guard $guard is not the one admitted" "$D/bound.out"; then
++  pass "guard file changed after the admission: bound exit 1, no league started: $(cut -c1-200 "$D/bound.out")"
++else
++  failc "guard changed: bound $brc, league unit $lrc, started: $(cat "$D/started" 2>/dev/null); $(cat "$D/bound.out")"
++fi
++cp "$D/guard.kept" "$guard"
++
+ C=scratch-ledger
+ ledger_intact && pass "the scratch Nace ledger is byte-identical (sha256 ${LEDGER_SHA%% *}), no -wal or -shm beside it" ||
+   failc "the scratch Nace ledger changed: $(sha256sum < "$LEDGER"); $(ls -la "$S/ledger")"
+-- 
+2.53.0
+

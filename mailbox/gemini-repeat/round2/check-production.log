@@ -1,0 +1,2 @@
+gemini-decision-1-r1: guard ledger missing: the preparation creates it (admission runs once it exists); trigger missing: late_entry_stage does not name it (everything else passes)
+check exit 3

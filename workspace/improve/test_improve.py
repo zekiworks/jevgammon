@@ -538,5 +538,28 @@ class FitCheck(Isolated):
             I.fit_check("qwen3.8-27b-on", server(16383))
 
 
+class Run2(unittest.TestCase):
+    def test_error_reply_matches_the_runners_rule(self):
+        # OpenRouter's 200 with a choice-level provider failure, after its whitespace keep-alive padding (QC D1)
+        self.assertTrue(I.error_reply('\n \n{"choices":[{"finish_reason":"error","error":{"code":502},'
+                                      '"message":{"content":null}}]}'))
+        self.assertTrue(I.error_reply('{"choices":[{"finish_reason":"stop","error":{"code":502}}]}'))
+        self.assertTrue(I.error_reply('{"error":{"code":502,"message":"provider unavailable"}}'))
+        self.assertFalse(I.error_reply('{"choices":[{"finish_reason":"length","message":{"content":""}}]}'))
+        self.assertFalse(I.error_reply('{"choices":[{"finish_reason":"stop","error":null}],"error":false}'))
+        self.assertFalse(I.error_reply("not json"))
+
+    def test_verdict_is_the_sites_rule(self):
+        def t(rf, rs, failed=0):
+            return dict(answered=200, failed=failed, risks_found=rf, right_safety=rs)
+        tests = dict(E1=t(40, 90), E2=t(42, 90), E3=t(41, 90), S1=t(47, 86), S2=t(47, 86), S3=t(47, 86),
+                     S4=t(47, 86), S5=t(47, 86))
+        v = I.verdict_of(tests)
+        self.assertEqual((v["threshold"], v["status"]), (5.0, "Yes"))  # +6 > 5 and -4 >= -5
+        self.assertEqual(I.verdict_of(dict(tests, S1=t(47, 80)))["status"], "No")  # right safety -5.2
+        self.assertEqual(I.verdict_of(dict(tests, E1=t(30, 90)))["status"], "No")  # threshold 12 (range)
+        self.assertIsNone(I.verdict_of(dict(tests, S5=t(47, 86, failed=1)))["improved"])  # the gate
+
+
 if __name__ == "__main__":
     unittest.main()

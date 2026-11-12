@@ -54,9 +54,18 @@ PILOT_CODE = CODE / "workspace/learning-pilot"
 LESSONS_SYSTEM = PILOT_CODE / "lessons_system.txt"
 LESSONS_USER = PILOT_CODE / "lessons_user.txt"
 SCORER = PILOT_CODE / "score_games.py"
-SMOKE = STATE_ROOT / f"smoke/improve{SUFFIX}"
-RUNS = STATE_ROOT / f"workspace/improve/runs{SUFFIX}"
-OUT = STATE_ROOT / f"workspace/improve/out{SUFFIX}"
+# QC Run 2 (QC 2026-11-12, Ümit via Zeki #5264/#5276): IMPROVE_RUN2 is a separate output root for the re-run steps
+# (its own databases, run directories and page file); the inputs (v3.db, test set, plan) and the original runs stay
+# under STATE_ROOT and are only read. Money is the original run's: its ledgers count toward every limit.
+# IMPROVE_RUN2_STEPS limits the steps run (e.g. "S1"); IMPROVE_RUN2_EXPECT ({"key": ["model", ...]}) narrows a
+# model's accepted served identities (route check before use and after the step).
+RUN2 = Path(os.environ["IMPROVE_RUN2"]) if os.environ.get("IMPROVE_RUN2") else None
+BASE_RUNS = STATE_ROOT / "workspace/improve/runs"  # the original run (read only)
+BASE_SMOKE = STATE_ROOT / "smoke/improve"
+SMOKE = RUN2 / f"db{SUFFIX}" if RUN2 else STATE_ROOT / f"smoke/improve{SUFFIX}"
+RUNS = RUN2 / f"runs{SUFFIX}" if RUN2 else STATE_ROOT / f"workspace/improve/runs{SUFFIX}"
+OUT = RUN2 / f"out{SUFFIX}" if RUN2 else STATE_ROOT / f"workspace/improve/out{SUFFIX}"
+RUN2_STEPS = [s for s in os.environ.get("IMPROVE_RUN2_STEPS", "").split(",") if s] if RUN2 else []
 PLAN = STATE_ROOT / "mailbox/Did they improve - plan 2026-11-08.md"
 
 # Fixed by the plan.
@@ -132,6 +141,9 @@ MODELS = {
     "gpt-6-astra-high": dict(setup="GPT-6 Astra (high)", lane="subscription",
                              expect=dict(models=["gpt-6-astra"], allow_dated=True)),
 }
+if RUN2 and os.environ.get("IMPROVE_RUN2_EXPECT"):
+    for _k, _models in json.loads(os.environ["IMPROVE_RUN2_EXPECT"]).items():
+        MODELS[_k]["expect"] = dict(MODELS[_k]["expect"], models=list(_models))
 
 
 class Stop(Exception):
@@ -282,8 +294,13 @@ def ledgers(key, step=None):
 
 
 def billed(key, step=None) -> float:
-    """Booked dollars of a model (or one of its steps), open reservations included (they count until settled)."""
-    return sum(b + r for b, _, r in map(ledger_spent, ledgers(key, step)))
+    """Booked dollars of a model (or one of its steps), open reservations included (they count until settled). In a
+    Run 2, a model's total also holds the original run's ledgers: the Run 2 spends under the original limits."""
+    own = sum(b + r for b, _, r in map(ledger_spent, ledgers(key, step)))
+    if RUN2 and step is None and not DRY:
+        d = BASE_RUNS / key / "ledgers"
+        own += sum(b + r for b, _, r in map(ledger_spent, sorted(d.glob("*.db")) if d.exists() else []))
+    return own
 
 
 def reported(key) -> float:
@@ -331,7 +348,7 @@ def rule_b(total: float, expected: float):
 
 def share_cap():
     """The experiment's share of the shared balance (Main), a pause limit below $110; None = no share limit."""
-    f = RUNS / "share_cap.json"
+    f = (BASE_RUNS if RUN2 else RUNS) / "share_cap.json"
     return json.loads(f.read_text())["usd"] if f.exists() else None
 
 
@@ -371,9 +388,9 @@ def openrouter_balance() -> dict:
                 balance=d["total_credits"] - d["total_usage"], at=now())
 
 
-def money_gate(key, step, balance_reader=openrouter_balance):
+def money_gate(key, step, balance_reader=openrouter_balance, expected=None):
     """Before a billed step: rule (b), then the live balance. Returns the step ledger's cap and its record."""
-    expected = step_estimate(key, step)
+    expected = step_estimate(key, step) if expected is None else expected
     total = billed_total()
     why = rule_b(total, expected)
     if why:
@@ -703,7 +720,7 @@ def open_reservations(ledger_path, pid):
         return 0
 
 
-def ask_watched(key, name, config_path, ledger, poll=0.05, settle_timeout=5.0):
+def ask_watched(key, name, config_path, ledger, poll=0.05, settle_timeout=5.0, positions=TEST_POSITIONS):
     """`jevgammon ask`, watched: at the first answer written by this asking that failed on the provider's account
     limit (or such a failure printed on stdout or stderr), the process is stopped once none of its ledger reservations
     is open, so requests in flight settle first; after `settle_timeout` it is stopped anyway and an open reservation
@@ -716,7 +733,7 @@ def ask_watched(key, name, config_path, ledger, poll=0.05, settle_timeout=5.0):
         # The child writes through its own descriptors; the watcher reads through separate ones (no shared offset).
         with open(out_path, "w") as out, open(err_path, "w") as err, open(out_path) as reader:
             proc = subprocess.Popen([str(BIN), "ask", "--config", str(config_path), "--positions",
-                                     str(TEST_POSITIONS), "--out", str(db_path(key)), "--setup", name], cwd=CODE,
+                                     str(positions), "--out", str(db_path(key)), "--setup", name], cwd=CODE,
                                     stdout=out, stderr=err, text=True)
             found, printed = None, ""
             while proc.poll() is None:
@@ -755,10 +772,11 @@ def answer_error(key, name, marker):
     return row[0] if row else None
 
 
-def test_answers(key, name):
-    if not db_path(key).exists():
+def test_answers(key, name, path=None):
+    path = path or db_path(key)
+    if not path.exists():
         return []
-    db = sqlite3.connect(f"file:{db_path(key)}?mode=ro", uri=True, timeout=60)
+    db = sqlite3.connect(f"file:{path}?mode=ro", uri=True, timeout=60)
     db.row_factory = sqlite3.Row
     try:
         rows = db.execute("SELECT * FROM answers WHERE setup = ? AND repeat = 1 ORDER BY id", (name,)).fetchall()
@@ -1023,7 +1041,7 @@ def step_done(key, step):
 
 
 def next_step(key):
-    return next((s for s in STEPS if not step_done(key, s)), None)
+    return next((s for s in (RUN2_STEPS or STEPS) if not step_done(key, s)), None)
 
 
 # --- Route check (OpenRouter) ----------------------------------------------------------------------------------
@@ -1162,6 +1180,9 @@ def run(key, until=None, balance_reader=openrouter_balance):
     (mdir(key) / "paused.json").unlink(missing_ok=True)
     ensure_runner_db(key)
     bind_plan(key)
+    if RUN2:
+        log(key, "run2_start", steps=RUN2_STEPS or STEPS, root=str(RUN2), base=str(BASE_RUNS / key),
+            expect=m.get("expect"), binary=binary_identity())
     if m["lane"] == "local" and not DRY:
         fit_check(key)
     billed_model = m.get("billed") and not DRY
@@ -1473,6 +1494,174 @@ def receipts():
         print(f"   billed ${billed(k):.4f}, API-equivalent ${api_equivalent(k):.4f}")
 
 
+# --- QC Run 2 (QC 2026-11-12) ----------------------------------------------------------------------------------
+
+def error_reply(raw):
+    """The runner's http::error_reply (018138f): a 200 body holding a provider error, not an answer."""
+    try:
+        v = json.loads(raw)
+    except (TypeError, ValueError):
+        return False
+    present = lambda x: x is not None and x != "" and x is not False  # noqa: E731
+    choice = (v.get("choices") or [None])[0] if isinstance(v, dict) and isinstance(v.get("choices"), list) else None
+    choice = choice if isinstance(choice, dict) else {}
+    return isinstance(v, dict) and (present(v.get("error")) or present(choice.get("error"))
+                                    or choice.get("finish_reason") == "error")
+
+
+def run2_refill(key, step, answer_ids, balance_reader=openrouter_balance, rounds=10):
+    """QC Run 2: re-ask the original T10 answers of `step` that a provider error inside an HTTP-200 reply turned into
+    invalid rows (QC 2026-11-12 D1), with that test's stored request config (same note, settings and option order),
+    into the Run 2 database under the same setup name; the original rows stay. Refused unless every stored
+    deciding reply is such an error reply and the config rebuilds exactly. Returns 0 when all are answered."""
+    if not RUN2:
+        raise SystemExit("refill writes only to a Run 2 root (IMPROVE_RUN2)")
+    check_inputs()
+    base = BASE_RUNS / key / step
+    agg = json.loads((base / "aggregate.json").read_text())
+    name = test_name(key, step, agg["attempt"])
+    bdb = sqlite3.connect(f"file:{BASE_SMOKE / f'{key}.db'}?mode=ro", uri=True, timeout=60)
+    rows = {i: bdb.execute("SELECT setup, position_id, invalid, error FROM answers WHERE id = ?", (i,)).fetchone()
+            for i in answer_ids}
+    for i, row in rows.items():
+        if row is None or row[0] != name or row[2] != 1 or row[3] is not None:
+            raise SystemExit(f"answer {i}: not an invalid row of {name}: {row}")
+        last = bdb.execute("SELECT response FROM answer_exchanges WHERE answer_id = ? ORDER BY id DESC LIMIT 1",
+                           (i,)).fetchone()
+        if not last or not error_reply(last[0]):
+            raise SystemExit(f"answer {i}: its deciding reply is not a provider error reply; not refilled")
+    original_request = {row[1]: bdb.execute(
+        "SELECT request FROM answer_exchanges WHERE answer_id = ? ORDER BY id LIMIT 1", (i,)).fetchone()[0]
+        for i, row in rows.items()}
+    bdb.close()
+    note = (base / "contexts" / "after-g10.txt").read_text()
+    logged = [e["sha256"] for e in events_at(BASE_RUNS / key) if e["event"] == "context" and e["step"] == step
+              and e["after_game"] == GAMES]
+    if not logged or logged[-1] != hashlib.sha256(note.encode()).hexdigest():
+        raise SystemExit(f"{step}: the stored after-g10 context does not match the run log's hash")
+    mdir(key).mkdir(parents=True, exist_ok=True)
+    lock = open(mdir(key) / "lock", "w")
+    fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    ensure_runner_db(key)
+    bind_plan(key)
+    label = f"{step}-refill"
+    d = step_dir(key, label)
+    d.mkdir(parents=True, exist_ok=True)
+    pids = [row[1] for row in rows.values()]
+    gate = None
+    if MODELS[key].get("billed") and not DRY:
+        # the expected cost: each position's worst case (32,768 output tokens at list price), every limit as in a step
+        expected = len(pids) * (32_768 * MODELS[key]["price"][2] + 30_000 * MODELS[key]["price"][0]) / 1e6
+        gate = money_gate(key, label, balance_reader, expected=expected)
+    ledger = new_ledger(key, label, gate)
+    cfg = dict(TEST_CONTEXT, prompt_version=PROMPT_VERSION, order_seed=ORDER_SEED,
+               players=[dict(player_config(key, name, TEST_PARALLEL, ledger=ledger, base_url=base_url_of(key)),
+                             prompt_note=note)])
+    if not DRY:
+        def bare(c):
+            c = json.loads(json.dumps(c))
+            for p in c["players"]:
+                p.pop("budget", None)
+                (p.get("expect_route") or {}).pop("reject_log", None)
+            return c
+        stored = json.loads((base / f"test-{step}.json").read_text())
+        if bare(cfg) != bare(stored):
+            raise SystemExit(f"{step}: the stored test config cannot be rebuilt exactly; not refilled")
+    path = d / f"test-{label}.json"
+    path.write_text(json.dumps(cfg, indent=1))
+    positions = d / "positions.jsonl"
+    positions.write_text("".join(x for x in TEST_POSITIONS.read_text().splitlines(keepends=True)
+                                 if json.loads(x)["id"] in pids))
+    write_atomic(d / "refill-request.json", json.dumps(dict(step=step, setup=name, answers=answer_ids, positions=pids,
+                                                            gate=gate, at=now()), indent=1))
+    log(key, "refill_start", step=step, setup=name, answers=answer_ids, positions=pids, gate=gate,
+        context_sha256=logged[-1], binary=binary_identity())
+    for k in range(rounds):
+        r = ask_watched(key, name, path, ledger, positions=positions)
+        with open(d / "refill.log", "a") as f:
+            f.write(f"--- {now()} round {k + 1}\n{r.stdout}{r.stderr}")
+        got = {a["position_id"]: a for a in test_answers(key, name)}
+        for marker in ("ROUTE CHECK", "BUDGET CAP"):
+            if (why := answer_error(key, name, marker)):
+                log(key, "refill_stopped", step=step, reason=why[:600])
+                raise SystemExit(f"{step} refill: {why[:600]}")
+        if r.key_limit:
+            raise SystemExit(f"{step} refill: provider account limit: {r.key_limit[:300]}")
+        if all(p in got and got[p]["error"] is None for p in pids):
+            break
+        time.sleep(min(600, 30 * (k + 1)))
+    got = {a["position_id"]: dict(a) for a in test_answers(key, name)}
+    db = sqlite3.connect(f"file:{db_path(key)}?mode=ro", uri=True, timeout=60)
+    first = {p: db.execute("SELECT x.request FROM answer_exchanges x WHERE x.answer_id = ? ORDER BY x.id LIMIT 1",
+                           (got[p]["id"],)).fetchone() if p in got else None for p in pids}
+    same = {p: first[p][0] == original_request[p] if first[p] else None for p in pids}
+    db.close()
+    keep = ("id", "position_id", "invalid", "chosen_index", "chosen_position", "letter", "error", "cost_usd",
+            "output_tokens", "harness_commit", "harness_dirty", "created_at")
+    out = dict(step=step, setup=name, original_answers=answer_ids, finished_at=now(),
+               answers=[{k: got[p][k] for k in keep} if p in got else dict(position_id=p, missing=True) for p in pids],
+               first_request_identical_to_original=same, billed=billed(key, label),
+               complete=all(p in got and got[p]["error"] is None for p in pids))
+    write_atomic(d / "refill.json", json.dumps(out, indent=1))
+    log(key, "refill_done", step=step, complete=out["complete"], billed=out["billed"], identical=same)
+    lock.close()
+    return 0 if out["complete"] else 1
+
+
+def events_at(model_dir):
+    f = model_dir / "log.jsonl"
+    return [json.loads(x) for x in f.read_text().splitlines()] if f.exists() else []
+
+
+def verdict_of(tests):
+    """The site's rule (tools/site/improve_validate.py scores): before = mean of the empty runs, after = mean of the
+    tests after game 10; threshold = max(range of the empty runs' risks found, 5); Improved = change in risks found >
+    threshold and change in right safety >= -5; only when every test is 200 of 200 with no failed request."""
+    from statistics import mean
+    e = [tests[s] for s in STEPS if s.startswith("E")]
+    t = [tests[s] for s in STEPS if s.startswith("S")]
+    b = {k: mean(x[k] for x in e) for k in ("risks_found", "right_safety")}
+    a = {k: mean(x[k] for x in t) for k in ("risks_found", "right_safety")}
+    rf = [x["risks_found"] for x in e]
+    thr = max(max(rf) - min(rf), FLOOR_POINTS)
+    ch = {k: a[k] - b[k] for k in b}
+    gate = all(x["answered"] == POSITIONS and x["failed"] == 0 for x in e + t)
+    improved = round(ch["risks_found"], 9) > round(thr, 9) and round(ch["right_safety"], 9) >= -SAFETY_DROP
+    return dict(before=b, after=a, change=ch, threshold=thr, gate=gate, improved=improved if gate else None,
+                status=("Yes" if improved else "No") if gate else "no verdict (gate not met)")
+
+
+def run2_report(key):
+    """QC Run 2: the verdict of the original run and of Run 2 side by side. Run 2 uses its own steps (and refills,
+    in place of the refilled original rows) and reuses every other original step, named as reused."""
+    pos = {p["id"]: p for p in test_set()["positions"]}
+    orig, new, source = {}, {}, {}
+    for step in STEPS:
+        b = json.loads((BASE_RUNS / key / step / "aggregate.json").read_text())
+        orig[step] = b["test"] if step.startswith("E") else b["t10"]
+        own = step_dir(key, step) / "aggregate.json"
+        refill = step_dir(key, f"{step}-refill") / "refill.json"
+        if own.exists():
+            a = json.loads(own.read_text())
+            new[step], source[step] = (a["test"] if step.startswith("E") else a["t10"]), "run2"
+        elif refill.exists():
+            r = json.loads(refill.read_text())
+            rows = {x["position_id"]: dict(x) for x in test_answers(key, r["setup"], BASE_SMOKE / f"{key}.db")}
+            ids = {x["position_id"] for x in r["answers"]}
+            rows.update({x["position_id"]: dict(x) for x in test_answers(key, r["setup"]) if x["position_id"] in ids})
+            new[step] = metrics_from(list(rows.values()), pos)
+            source[step] = f"original + run2 refill of answers {r['original_answers']}"
+        else:
+            new[step], source[step] = orig[step], "reused from the original run"
+    keys = ("answered", "valid", "invalid", "failed", "risk_pays", "safety_pays", "risks_found", "right_safety")
+    out = dict(model=key, at=now(), original=verdict_of(orig), run2=verdict_of(new), source=source,
+               tests={s: dict(original={k: orig[s][k] for k in keys}, run2={k: new[s][k] for k in keys}) for s in STEPS},
+               billed_run2=sum(b + r for b, _, r in map(ledger_spent, ledgers(key))), billed_model_total=billed(key))
+    write_atomic(mdir(key) / "run2-report.json", json.dumps(out, indent=1))
+    print(json.dumps(out, indent=1))
+    return out
+
+
 def status(key=None):
     for k in [key] if key else MODELS:
         if not mdir(k).exists():
@@ -1501,6 +1690,12 @@ def main():
     sub.add_parser("summary")
     sub.add_parser("receipts", help="first calls, cost checks, pauses and stops per model")
     sub.add_parser("export", help="write improve.json from the run directories (for a timer or path trigger)")
+    rf = sub.add_parser("refill", help="QC Run 2: re-ask original T10 answers lost to provider error replies")
+    rf.add_argument("--model", required=True, choices=sorted(MODELS))
+    rf.add_argument("--step", required=True, choices=[s for s in STEPS if s.startswith("S")])
+    rf.add_argument("--answers", required=True, help="original answer ids, comma-separated")
+    rr = sub.add_parser("run2-report", help="QC Run 2: the original and the Run 2 verdict side by side")
+    rr.add_argument("--model", required=True, choices=sorted(MODELS))
     a = ap.parse_args()
     if a.cmd == "after-game":
         after_game(a.model, a.series)
@@ -1512,6 +1707,10 @@ def main():
         receipts()
     elif a.cmd == "export":
         summary(only_if_changed=True)
+    elif a.cmd == "refill":
+        sys.exit(run2_refill(a.model, a.step, [int(x) for x in a.answers.split(",")]))
+    elif a.cmd == "run2-report":
+        run2_report(a.model)
     elif a.cmd == "share-cap":
         write_atomic(RUNS / "share_cap.json", json.dumps(dict(usd=a.usd, note=a.note, at=now()), indent=1))
         with open(RUNS / "share_cap.log", "a") as f:

@@ -1,0 +1,37 @@
+diff --git a/workspace/improve/improve.py b/workspace/improve/improve.py
+index d4ea2e8..36e2966 100644
+--- a/workspace/improve/improve.py
++++ b/workspace/improve/improve.py
+@@ -1431,7 +1431,10 @@ def summary(only_if_changed=False):
+     the model's runs/ state up once the branch is merged)."""
+     if os.environ.get("IMPROVE_EXPORT") == "0":
+         return None
+-    keys = list(MODELS) if not DRY else [k for k in MODELS if mdir(k).exists()]
++    # An amended row is exported once its setup's settings are in v3.db (it cannot run before; the site lists it in
++    # content/improve_amendments.json from then on).
++    keys = ([k for k in MODELS if has_setup(MODELS[k]["setup"])] if not DRY
++            else [k for k in MODELS if mdir(k).exists()])
+     previous = {}
+     if (OUT / "improve.json").exists():
+         try:
+diff --git a/workspace/improve/test_improve.py b/workspace/improve/test_improve.py
+index 5245d17..1e7c73a 100644
+--- a/workspace/improve/test_improve.py
++++ b/workspace/improve/test_improve.py
+@@ -193,12 +193,14 @@ class Schedule(Isolated):
+ 
+     def test_export_keeps_writing_when_a_pause_has_no_page_text(self):
+         first = I.summary()
+-        self.assertEqual(len(first["models"]), 24)
++        n = sum(I.has_setup(m["setup"]) for m in I.MODELS.values())  # exported: the rows whose settings exist
++        self.assertTrue(15 <= n < len(I.MODELS))
++        self.assertEqual([m["key"] for m in first["models"]], [k for k in I.MODELS if I.has_setup(I.MODELS[k]["setup"])])
+         I.write_atomic(I.mdir(KEY) / "paused.json", json.dumps(dict(at="t", reason="an unforeseen pause")))
+         out = I.summary()
+         kept = [m for m in out["models"] if m["key"] == KEY]
+         self.assertEqual(kept, [m for m in first["models"] if m["key"] == KEY])  # the last exported entry, not invented
+-        self.assertEqual(len(out["models"]), 24)
++        self.assertEqual(len(out["models"]), n)
+         self.assertIn("unforeseen", (I.RUNS / "export-errors.log").read_text())
+         written = json.loads((I.OUT / "improve.json").read_text())
+         self.assertEqual(written["updated_at"], out["updated_at"])

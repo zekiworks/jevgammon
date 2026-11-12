@@ -1,0 +1,183 @@
+PASS  state none: accepted=None, check_improve clean
+PASS  state running-1: accepted=True, check_improve clean  Qwen3.8 Flash (off)=running, 1 of 5 series
+PASS  running-1: no Yes/No, 'running, 1 of 5 series'
+PASS  state complete-yes: accepted=True, check_improve clean  Qwen3.8 Flash (off)=Yes
+PASS  complete-yes: Yes
+PASS  state complete-no: accepted=True, check_improve clean  GLM-5.3 (on)=No
+PASS  complete-no: No
+FAIL  state mixed: accepted=True, check_improve clean  improve/: DeepSeek-V4.1-Flash (low): content/run2 report's original is not the data file's
+PASS  mixed: a local model 'running on our GPU', no host named
+PASS  pre-registration-only build: results not read
+PASS  default build: results mode (Ümit/Zeki #3369)
+PASS  default build: check_improve clean
+PASS  status table (none): one row per plan model (15 + the dated amendments) as the data, at the top, no outcome or free text, check_improve clean  got {}, leaked []
+PASS  status table (running-1): one row per plan model (15 + the dated amendments) as the data, at the top, no outcome or free text, check_improve clean  got {'Qwen3.8 Flash (off)': ('running', '1 / 5')}, leaked []
+PASS  status table (paused): one row per plan model (15 + the dated amendments) as the data, at the top, no outcome or free text, check_improve clean  got {'Kimi K3.1 Pro (off)': ('paused (shared-balance priority)', '1 / 5'), 'Claude Opus 5.5 (high)': ('paused (usage limit)', '0 / 5'), 'Qwen3.8-27B (low)': ('paused (waiting for a GPU)', '0 / 5'), 'GPT-6.1 Sol (high)': ('not started (waiting for the ChatGPT reset 13 Nov)', '0 / 5')}, leaked []
+PASS  status table (complete-yes): one row per plan model (15 + the dated amendments) as the data, at the top, no outcome or free text, check_improve clean  got {'Qwen3.8 Flash (off)': ('done', '5 / 5')}, leaked []
+PASS  full validation: paused state accepted (usage limit, waiting for a GPU)
+PASS  full validation: billed total off by the producer's 4-decimal rounding accepted
+PASS  status: a reason already prefixed with its state is not prefixed twice  paused: shared-balance priority, Ümit #3215
+PASS  results view (paused, models not started): check_improve clean
+improve_validate status view (private): improve.json.models[0].progress.status: not an allowed value
+PASS  status fault (default build): progress: status outside the enum (canary)  improve.json.models[0].progress.status: not an allowed value
+improve_validate status view (private): improve.json.models[0].progress.series_done: out of range
+PASS  status fault (default build): progress: series_done 6  improve.json.models[0].progress.series_done: out of range
+improve_validate status view (private): improve.json.models[0].progress.series_done: not a JSON int
+PASS  status fault (default build): progress: series_done not an int  improve.json.models[0].progress.series_done: not a JSON int
+improve_validate status view (private): improve.json.models[0]: progress missing
+PASS  status fault (default build): progress: missing  improve.json.models[0]: progress missing
+improve_validate status view (private): improve.json.models[0].progress: series_done missing
+PASS  status fault (default build): progress: series_done missing  improve.json.models[0].progress: series_done missing
+improve_validate status view (private): improve.json.models[0].progress.updated_at: not an allowed string
+PASS  status fault (default build): progress: updated_at not ISO  improve.json.models[0].progress.updated_at: not an allowed string
+improve_validate status view (private): models[0].progress.updated_at: not a real UTC calendar time
+PASS  status fault (default build): progress: updated_at 30 February (not a calendar day)  models[0].progress.updated_at: not a real UTC calendar time
+improve_validate status view (private): models[0].progress.updated_at: not a real UTC calendar time
+PASS  status fault (default build): progress: updated_at hour 29  models[0].progress.updated_at: not a real UTC calendar time
+improve_validate status view (private): improve.json.models[0].progress.updated_at: not an allowed string
+PASS  status fault (default build): progress: updated_at without a timezone  improve.json.models[0].progress.updated_at: not an allowed string
+improve_validate status view (private): improve.json.models[0].progress.reason: not an allowed value
+PASS  status fault (default build): progress: reason outside the fixed list (canary)  improve.json.models[0].progress.reason: not an allowed value
+improve_validate status view (private): models[0].progress.reason: required when paused
+PASS  status fault (default build): progress: paused without a reason  models[0].progress.reason: required when paused
+improve_validate status view (private): models[0].progress.reason: not allowed when running or done
+PASS  status fault (default build): progress: done with a reason  models[0].progress.reason: not allowed when running or done
+improve_validate status view (private): models[0].progress.series_done: done without all 5 series
+PASS  status fault (default build): progress: done with 4 series  models[0].progress.series_done: done without all 5 series
+improve_validate status view (private): models[0].progress.series_done: all 5 series, but neither done nor stopped
+PASS  status fault (default build): progress: running with all 5 series  models[0].progress.series_done: all 5 series, but neither done nor stopped
+improve_validate status view (private): models[0].progress.reason: allowed only when paused
+PASS  status fault (default build): progress: usage limit while not paused  models[0].progress.reason: allowed only when paused
+improve_validate status view (private): models[0].progress.reason: allowed only when paused
+PASS  status fault (default build): progress: waiting for a GPU while not paused  models[0].progress.reason: allowed only when paused
+improve_validate status view (private): improve.json.models[0].progress: unknown key 'zz_canary_key_7f3a'
+PASS  status fault (default build): progress: unknown key (canary)  improve.json.models[0].progress: unknown key [name withheld]
+improve_validate (private): protocol.plan_sha256: not the pre-registered value
+PASS  fault: bad plan hash  protocol.plan_sha256: not the pre-registered value
+improve_validate (private): protocol.lesson_prompt_sha256: not the pre-registered value
+PASS  fault: bad lesson prompt hash  protocol.lesson_prompt_sha256: not the pre-registered value
+improve_validate (private): protocol.test_set_sha256: not the pre-registered value
+PASS  fault: bad test set hash  protocol.test_set_sha256: not the pre-registered value
+improve_validate (private): protocol.series_per_model: not the pre-registered value
+PASS  fault: protocol: 4 series per model  protocol.series_per_model: not the pre-registered value
+improve_validate (private): protocol.steps: not the pre-registered value
+PASS  fault: steps in another order  protocol.steps: not the pre-registered value
+improve_validate (private): models[0].empty[0]: valid + invalid + failed is not answered
+PASS  fault: counts do not add up (valid + invalid + failed != answered)  models[0].empty[0]: valid + invalid + failed is not answered
+improve_validate (private): models[0].series[0].t10: risk-pays + safety-pays denominators are not the valid answers
+PASS  fault: denominators do not add up to valid  models[0].series[0].t10: risk-pays + safety-pays denominators are not the valid answers
+improve_validate (private): models[0].empty[1]: answer_rate is not 100 x valid / expected
+PASS  fault: answer rate inconsistent  models[0].empty[1]: answer_rate is not 100 x valid / expected
+improve_validate (private): improve.json.models[0].empty[2].risks_found: out of range
+PASS  fault: share out of 0-100  improve.json.models[0].empty[2].risks_found: out of range
+improve_validate (private): models[0].series[0].t10: right_safety must be given exactly when safety_pays is not zero
+improve_validate (private): models[0]: complete, but the verdict gate fails (plan section 7)
+PASS  fault: share missing with a denominator  models[0].series[0].t10: right_safety must be given exactly when safety_pays is not zero; models[0]: complete, but the verdict gate fails (plan section 7)
+improve_validate (private): improve.json: unknown key 'zz_canary_key_7f3a'
+PASS  fault: unknown key at the top (canary)  improve.json: unknown key [name withheld]
+improve_validate (private): improve.json.models[0].series[0].t10: unknown key 'zz_canary_key_7f3a'
+PASS  fault: unknown key in a test (canary)  improve.json.models[0].series[0].t10: unknown key [name withheld]
+improve_validate (private): models[0].setup: 'Canary Model 9 (x)' is not one of the plan's chat models
+PASS  fault: setup outside the plan (canary)  models[0].setup: [name withheld] is not one of the plan's chat models
+improve_validate (private): models[0].series: finished series do not match the series in steps_done
+improve_validate (private): models[0].series: a series in progress outside a running series step
+improve_validate (private): models[0]: complete, but the verdict gate fails (plan section 7)
+PASS  fault: verdict gate: complete with 4 series  models[0].series: finished series do not match the series in steps_done; models[0].series: a series in progress outside a running series step
+improve_validate (private): models[0].series[2].t10: valid + invalid + failed is not answered
+improve_validate (private): models[0]: complete, but the verdict gate fails (plan section 7)
+PASS  fault: verdict gate: complete with a test after game 10 at 199 of 200  models[0].series[2].t10: valid + invalid + failed is not answered; models[0]: complete, but the verdict gate fails (plan section 7)
+improve_validate (private): models[0].series[0]: finished without 10 games and 10 lesson entries
+improve_validate (private): models[0]: complete, but the verdict gate fails (plan section 7)
+PASS  fault: verdict gate: complete with 9 lesson entries  models[0].series[0]: finished without 10 games and 10 lesson entries; models[0]: complete, but the verdict gate fails (plan section 7)
+improve_validate (private): models[0].empty: does not match the empty runs in steps_done
+improve_validate (private): models[0]: complete, but the verdict gate fails (plan section 7)
+PASS  fault: verdict gate: complete with 2 empty runs  models[0].empty: does not match the empty runs in steps_done; models[0]: complete, but the verdict gate fails (plan section 7)
+improve_validate (private): models[0].steps_done: not the plan's step order
+improve_validate (private): models[0]: complete before every step is done
+PASS  fault: steps_done out of order  models[0].steps_done: not the plan's step order; models[0]: complete before every step is done
+improve_validate (private): models[0].series[0].lessons[2]: holds a test position
+PASS  fault: test position (board) in a lesson  models[0].series[0].lessons[2]: holds a test position
+improve_validate (private): models[0].series[0]: lessons_empty is not the count of empty lesson entries
+improve_validate (private): models[0].series[0].lessons[3]: holds a test position
+PASS  fault: test position (board key) in a lesson  models[0].series[0]: lessons_empty is not the count of empty lesson entries; models[0].series[0].lessons[3]: holds a test position
+improve_validate (private): models[0].series[0].lessons[0]: more than 5 lessons kept
+PASS  fault: lesson over the cut rule (6 lessons)  models[0].series[0].lessons[0]: more than 5 lessons kept
+improve_validate (private): models[0].series[0]: lessons_empty is not the count of empty lesson entries
+PASS  fault: lessons_empty does not count the empty entries  models[0].series[0]: lessons_empty is not the count of empty lesson entries
+improve_validate (private): models[0].billed: not the plan's route (billed exactly on OpenRouter)
+improve_validate (private): models[0].cost: billed money on a route that is not billed
+PASS  fault: billed not the plan's route  models[0].billed: not the plan's route (billed exactly on OpenRouter); models[0].cost: billed money on a route that is not billed
+improve_validate (private): money.billed_total_usd: not the sum of the models' billed amounts
+PASS  fault: billed total not the sum  money.billed_total_usd: not the sum of the models' billed amounts
+improve_validate (private): money.billed_total_usd: above the $110 cap
+PASS  fault: billed total above $110  money.billed_total_usd: above the $110 cap
+improve_validate (private): models[0].reason: required exactly when paused, incomplete or stopped
+improve_validate (private): models[0].progress.status: does not match the model's state and steps
+PASS  fault: stopped without a reason  models[0].reason: required exactly when paused, incomplete or stopped; models[0].progress.status: does not match the model's state and steps
+improve_validate (private): improve.json.money: unknown key 'cumulative_cap_usd'
+PASS  fault: a removed field (money.cumulative_cap_usd) present  improve.json.money: unknown key [name withheld]
+improve_validate (private): improve.json.models[0].progress.status: not an allowed value
+PASS  fault: progress: status outside the enum (canary)  improve.json.models[0].progress.status: not an allowed value
+improve_validate (private): improve.json.models[0].progress.series_done: out of range
+PASS  fault: progress: series_done 6  improve.json.models[0].progress.series_done: out of range
+improve_validate (private): improve.json.models[0].progress.series_done: not a JSON int
+PASS  fault: progress: series_done not an int  improve.json.models[0].progress.series_done: not a JSON int
+improve_validate (private): improve.json.models[0]: progress missing
+PASS  fault: progress: missing  improve.json.models[0]: progress missing
+improve_validate (private): improve.json.models[0].progress: series_done missing
+PASS  fault: progress: series_done missing  improve.json.models[0].progress: series_done missing
+improve_validate (private): improve.json.models[0].progress.updated_at: not an allowed string
+PASS  fault: progress: updated_at not ISO  improve.json.models[0].progress.updated_at: not an allowed string
+improve_validate (private): models[0].progress.updated_at: not a real UTC calendar time
+PASS  fault: progress: updated_at 30 February (not a calendar day)  models[0].progress.updated_at: not a real UTC calendar time
+improve_validate (private): models[0].progress.updated_at: not a real UTC calendar time
+PASS  fault: progress: updated_at hour 29  models[0].progress.updated_at: not a real UTC calendar time
+improve_validate (private): improve.json.models[0].progress.updated_at: not an allowed string
+PASS  fault: progress: updated_at without a timezone  improve.json.models[0].progress.updated_at: not an allowed string
+improve_validate (private): improve.json.models[0].progress.reason: not an allowed value
+PASS  fault: progress: reason outside the fixed list (canary)  improve.json.models[0].progress.reason: not an allowed value
+improve_validate (private): models[0].progress.reason: required when paused
+improve_validate (private): models[0].progress.series_done: not the finished series in steps_done
+improve_validate (private): models[0].progress.status: does not match the model's state and steps
+PASS  fault: progress: paused without a reason  models[0].progress.reason: required when paused; models[0].progress.series_done: not the finished series in steps_done
+improve_validate (private): models[0].progress.reason: not allowed when running or done
+PASS  fault: progress: done with a reason  models[0].progress.reason: not allowed when running or done
+improve_validate (private): models[0].progress.series_done: done without all 5 series
+improve_validate (private): models[0].progress.series_done: not the finished series in steps_done
+PASS  fault: progress: done with 4 series  models[0].progress.series_done: done without all 5 series; models[0].progress.series_done: not the finished series in steps_done
+improve_validate (private): models[0].progress.series_done: all 5 series, but neither done nor stopped
+improve_validate (private): models[0].progress.status: does not match the model's state and steps
+PASS  fault: progress: running with all 5 series  models[0].progress.series_done: all 5 series, but neither done nor stopped; models[0].progress.status: does not match the model's state and steps
+improve_validate (private): models[0].progress.reason: allowed only when paused
+improve_validate (private): models[0].progress.status: does not match the model's state and steps
+PASS  fault: progress: usage limit while not paused  models[0].progress.reason: allowed only when paused; models[0].progress.status: does not match the model's state and steps
+improve_validate (private): models[0].progress.reason: allowed only when paused
+improve_validate (private): models[0].progress.status: does not match the model's state and steps
+PASS  fault: progress: waiting for a GPU while not paused  models[0].progress.reason: allowed only when paused; models[0].progress.status: does not match the model's state and steps
+improve_validate (private): improve.json.models[0].progress: unknown key 'zz_canary_key_7f3a'
+PASS  fault: progress: unknown key (canary)  improve.json.models[0].progress: unknown key [name withheld]
+improve_validate (private): money.billed_total_usd: not the sum of the models' billed amounts
+improve_validate (private): models: a key appears twice
+improve_validate (private): models: a setup appears twice
+PASS  fault: same setup twice  money.billed_total_usd: not the sum of the models' billed amounts; models: a key appears twice
+PASS  fault: not JSON  improve.json is not JSON
+improve_validate (private): prompt/: the harness's lesson prompt files are missing or not the pre-registered prompt
+PASS  fault: harness prompt files missing
+PASS  page fault (complete-yes): verdict flipped  improve/: Qwen3.8 Flash (off): verdict 'no' not what the data gives
+PASS  page fault (running-1): verdict before the gate  improve/: Qwen3.8 Flash (off): verdict 'no' not what the data gives
+PASS  page fault (complete-yes): a wrong number  improve/: Qwen3.8 Flash (off): cell rf-change is '+9.9', the data gives '+6.0'
+PASS  page fault (mixed): rows out of order  improve/: DeepSeek-V4.1-Flash (low): content/run2 report's original is not the data file's
+PASS  page fault (complete-yes): commitment line removed  improve/: missing the pre-registered text 'Results will be published whichever way they go.'
+PASS  page fault (complete-yes): operational-threshold sentence removed  improve/: missing the pre-registered text 'operational threshold, not a statistical test'
+PASS  page fault (complete-yes): seed line removed  improve/: missing the pre-registered text 'no shared seed; same settings as the leaderboard'
+PASS  page fault (complete-yes): DeepSeek label removed  improve/: missing the pre-registered text 'tested checkpoint: original V4.1 Flash'
+PASS  page fault (complete-yes): not-comparable cell removed  improve/: missing the pre-registered text 'not comparable (different design)'
+PASS  page fault (complete-yes): a test position in the page  improve/: test position 'your checkers 1:2 2:1 5:'…
+PASS  page fault (complete-yes): a test position id in the page  improve/: test position 'lp-165051'…
+PASS  page fault (complete-yes): a withheld mark on the page  improve/: names a host or shows a withheld mark ('withheld')
+PASS  page fault (complete-yes): a host named on the page  improve/: names a host or shows a withheld mark ('bariton')
+PASS  page fault (complete-yes): a model row removed  improve/: the model table is not one row per plan model
+PASS  page fault (status-paused): status row: a wrong status  improve/: Kimi K3.1 Pro (off): status row not what the data gives
+PASS  page fault (status-paused): status row: a wrong series count  improve/: Kimi K3.1 Pro (off): status row not what the data gives
+PASS  page fault (status-paused): status row removed  improve/: the results table is not one row per plan model
+100/101 cases as expected; renders in /home/cbasaran/.cache/smallplan/site/selftest-keep

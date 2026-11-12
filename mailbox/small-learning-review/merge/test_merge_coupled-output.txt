@@ -1,0 +1,7 @@
+PASS  dry run: plan only (exit 0, heads a76fdc9 d9c3cbd)
+PASS  target pin != target chat file: refused before any merge (exit 2, heads a76fdc9 d9c3cbd)
+PASS  chat not a fast-forward: refused before any merge (exit 2, heads b15857b d9c3cbd)
+PASS  second merge fails: decision reset at once (exit 3, heads a76fdc9 d9c3cbd)
+PASS  full merge: both advanced, fence agrees (exit 0, heads d2acecd 0333578)
+PASS  rollback to the old heads (exit 0, heads a76fdc9 d9c3cbd)
+tracked tree clean after all: 0 0

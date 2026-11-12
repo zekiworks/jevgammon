@@ -1,0 +1,19 @@
+diff --git a/workspace/improve/decision.py b/workspace/improve/decision.py
+index be5f50e..3c38feb 100644
+--- a/workspace/improve/decision.py
++++ b/workspace/improve/decision.py
+@@ -73,10 +73,11 @@ PREFLIGHT = lambda: I.RUNS / "decision" / "preflight"  # noqa: E731
+ DECISION_OUT = lambda: I.OUT / "improve-decision.json"  # noqa: E731
+ # The bounded envelope (Zeki #3788): the billed chat models run only through one serial systemd unit, from pinned code.
+ CHAT_CODE = Path("/home/cbasaran/code/jevgammon-improve/workspace/improve")
+-# improve.py @ improve-small 2c72e14: 1a27793 + the small-model roster amendment (MODELS rows of 9 local, unbilled chat
+-# models, AMENDMENTS export, has_setup, IMPROVE_EXPORT=0; diff sha256 2b0eb1b2…d1ab); BILLED_CHAT unchanged. Merge with improve-small,
++# improve.py @ improve-small-2 d2acecd: 1a27793 + the small-model roster amendment (MODELS rows of 9 local, unbilled
++# chat models, AMENDMENTS, has_setup, IMPROVE_EXPORT=0, rows exported once their settings exist; diff sha256
++# 59548946…f4ea); BILLED_CHAT unchanged. Merge with improve-small-2 (mailbox/small-learning-review/merge),
+ # never alone (a mismatch pauses every decision arm). Before: 90fe6b0e…9875 (1a27793, Zeki #3798).
+-CHAT_IMPROVE_SHA256 = "8c4d7033c9805317c1ea794b8d6c29cd02f3ac5a989e93db18341acf719a865f"
++CHAT_IMPROVE_SHA256 = "564312dab32573a43bad9b109a3b4d31193b3ab57fd0c09f07693c7d5c29d730"
+ CHAT_QUEUE_SHA256 = "e53fa11b4d31dd289e3a62ce74d66dfe227aeb3e58240e19b4d8565c85f13a74"  # run_queue.sh (for-loop, serial)
+ BILLED_CHAT = ("qwen3.8-flash-off", "glm-5.3-on", "kimi-k3.1-pro-off", "deepseek-v4.1-flash-on")  # MODELS billed=True
+ CHAT_UNIT = "improve-openrouter.service"

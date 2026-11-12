@@ -1,9 +1,11 @@
 test_a_name_with_other_settings_is_refused_and_nothing_is_written (test_v3_players.Players.test_a_name_with_other_settings_is_refused_and_nothing_is_written) ... ok
-test_insert_is_exact_and_idempotent (test_v3_players.Players.test_insert_is_exact_and_idempotent) ... ok
-test_on_todays_players_it_only_adds_and_changes_no_row (test_v3_players.Players.test_on_todays_players_it_only_adds_and_changes_no_row) ... ok
-test_rollback_deletes_exactly_these_rows_and_refuses_when_referenced (test_v3_players.Players.test_rollback_deletes_exactly_these_rows_and_refuses_when_referenced) ... ok
+test_a_pre_existing_identical_row_survives_rollback (test_v3_players.Players.test_a_pre_existing_identical_row_survives_rollback) ... ok
+test_insert_is_exact_idempotent_and_records_only_its_own_rows (test_v3_players.Players.test_insert_is_exact_idempotent_and_records_only_its_own_rows) ... ok
+test_on_todays_players_insert_only_adds (test_v3_players.Players.test_on_todays_players_insert_only_adds) ... ok
+test_rollback_refuses_when_a_recorded_row_was_changed (test_v3_players.Players.test_rollback_refuses_when_a_recorded_row_was_changed) ... ok
+test_unreferenced_inserted_rows_go_referenced_ones_stay_and_the_cli_fails_loudly (test_v3_players.Players.test_unreferenced_inserted_rows_go_referenced_ones_stay_and_the_cli_fails_loudly) ... ok
 
 ----------------------------------------------------------------------
-Ran 4 tests in 0.004s
+Ran 6 tests in 0.181s
 
 OK

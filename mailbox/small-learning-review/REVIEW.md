@@ -1,5 +1,7 @@
 # Small-model learning: bounded review package (Zeki #5697, #5699)
 
+**Superseded in part by `DELTA-2026-11-12b.md` (Zeki #5705): merge targets are now improve-small-2 d2acecd and improve-decision-small 0333578, merged with `merge/merge_coupled.sh` after the site branch `site-improve-amendment`; v3_players.py rollback works from an insert manifest.**
+
 Nothing in production is written by this package. The two branches are pushed and **not merged**. Checksums: `SHA256SUMS`.
 
 ## 1. What to review

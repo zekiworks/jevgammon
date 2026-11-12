@@ -1,0 +1,325 @@
+diff --git a/workspace/improve/decision.py b/workspace/improve/decision.py
+index ffcc852..3c38feb 100644
+--- a/workspace/improve/decision.py
++++ b/workspace/improve/decision.py
+@@ -39,6 +39,7 @@ import hashlib
+ import json
+ import math
+ import os
++import shlex
+ import subprocess
+ import sys
+ import time
+@@ -72,7 +73,11 @@ PREFLIGHT = lambda: I.RUNS / "decision" / "preflight"  # noqa: E731
+ DECISION_OUT = lambda: I.OUT / "improve-decision.json"  # noqa: E731
+ # The bounded envelope (Zeki #3788): the billed chat models run only through one serial systemd unit, from pinned code.
+ CHAT_CODE = Path("/home/cbasaran/code/jevgammon-improve/workspace/improve")
+-CHAT_IMPROVE_SHA256 = "90fe6b0ead90ff4d3d32ec80e5932a8c113456b05ee76e6bb9c5e39a56df9875"  # improve.py @ 1a27793 (Zeki #3798: export-only delta from 56a93b4/0e6314d, patch sha256 e0b3ee66…)
++# improve.py @ improve-small-2 d2acecd: 1a27793 + the small-model roster amendment (MODELS rows of 9 local, unbilled
++# chat models, AMENDMENTS, has_setup, IMPROVE_EXPORT=0, rows exported once their settings exist; diff sha256
++# 59548946…f4ea); BILLED_CHAT unchanged. Merge with improve-small-2 (mailbox/small-learning-review/merge),
++# never alone (a mismatch pauses every decision arm). Before: 90fe6b0e…9875 (1a27793, Zeki #3798).
++CHAT_IMPROVE_SHA256 = "564312dab32573a43bad9b109a3b4d31193b3ab57fd0c09f07693c7d5c29d730"
+ CHAT_QUEUE_SHA256 = "e53fa11b4d31dd289e3a62ce74d66dfe227aeb3e58240e19b4d8565c85f13a74"  # run_queue.sh (for-loop, serial)
+ BILLED_CHAT = ("qwen3.8-flash-off", "glm-5.3-on", "kimi-k3.1-pro-off", "deepseek-v4.1-flash-on")  # MODELS billed=True
+ CHAT_UNIT = "improve-openrouter.service"
+@@ -870,6 +875,33 @@ def writer_route_check(key, step):
+ 
+ # --- Run -------------------------------------------------------------------------------------------------------
+ 
++PINS_DIR = Path(__file__).resolve().parent
++
++
++def server_pin_check(slug, runner=subprocess.run):
++    """A row whose served id does not name its checkpoint (KnowLine: every size answers 'm') carries `server_pin`: the
++    league entry's own checks (pins/<slug>.sh, sha256-bound), sourced with the row's URL/port/ssh host: healthy() =
++    the server's /health as pinned, pinned() = the pinned snapshot's processes on that port, read over ssh. Run before
++    every step. Unhealthy: pause (the server is down or not yet handed over); not the pinned process: stop."""
++    pin = setups()[slug].get("server_pin")
++    if not pin or I.DRY:
++        return None
++    f = PINS_DIR / pin["pins"]
++    if I.sha256_file(f) != pin["pins_sha256"]:
++        raise I.Stop(f"server pin: {f} is not the bound file {pin['pins_sha256'][:12]}…")
++    url, ssh = pin["url"], pin["ssh"]
++    port = url.rsplit(":", 1)[1]
++    script = f'URL={shlex.quote(url)}; PORT={port}; SSH_HOST={shlex.quote(ssh)}; . {shlex.quote(str(f))}; ' \
++             'healthy || exit 3; pinned || exit 4'
++    r = runner(["bash", "-c", script], capture_output=True, text=True, timeout=120)
++    if r.returncode == 3:
++        raise I.Pause(f"server pin: {url}/health does not answer as the pinned server")
++    if r.returncode != 0:
++        raise I.Stop(f"server pin: {ssh} port {port} does not run the pinned checkpoint ({pin['pins']}, exit "
++                     f"{r.returncode})")
++    return dict(pins=pin["pins"], pins_sha256=pin["pins_sha256"], url=url, ssh=ssh, at=I.now())
++
++
+ def run(key, until=None, balance_reader=I.openrouter_balance):
+     """Runs the arm's next steps in order; returns 0 (done or reached `until`), STOP or PAUSE (also for an arm that
+     is not eligible: nothing is called)."""
+@@ -922,6 +954,7 @@ def run(key, until=None, balance_reader=I.openrouter_balance):
+                 shared_empty(key, step)
+                 I.log(key, "step_done", step=step, shared_from=arm_key(slug, "notes"))
+                 continue
++            pin = server_pin_check(slug)  # before any gate: a stop or pause here holds no reservation
+             try:
+                 gate = money_gate(key, step, balance_reader) if needs_ledger(key, step) and not I.DRY else None
+             except Refused as e:
+@@ -929,7 +962,7 @@ def run(key, until=None, balance_reader=I.openrouter_balance):
+             except AccountingError as e:
+                 raise I.Pause(f"{step}: accounting unreadable, nothing admitted: {e}") from None
+             I.log(key, "step_start", step=step, gate=gate, binary=I.binary_identity(),
+-                  cohort_sha256=I.sha256_file(COHORT_FILE))
++                  cohort_sha256=I.sha256_file(COHORT_FILE), server_pin=pin)
+             try:
+                 (run_empty if step.startswith("E") else run_series)(key, step, gate)
+             except I.BudgetRefused as e:
+@@ -1082,6 +1115,8 @@ def lr_routes():
+     glide = HF_HUB / "models--fastino--GLiDE/snapshots/a7e45896be7c96ba3354891da790c5ec99c30b6c"
+     decider = HF_HUB / "models--perplexity-ai--pplx-decider-v1.2/snapshots/225c913ddc8761a8264f04f64548e1f97e443eb3"
+     pkg = decider / "source/src/pplx_decider"
++    flash = Path.home() / "code/pplx-decider/checkpoint-flash-v1.2"
++    fpkg = flash / "source/src/pplx_decider"
+     return {
+         "glide-v1.2-local": dict(
+             route="glide/server.py (tools/v3/servers/glide-v12.sh)", renderer=LR_DIR / "glide_v12.py",
+@@ -1094,6 +1129,14 @@ def lr_routes():
+                  "--model", str(decider)],
+             env={}, code=[Path.home() / "code/pplx-decider/pplx_decider_server.py", pkg / "model.py",
+                           pkg / "protocol.py", decider / "tokenizer.json"]),
++        # Decider Flash v1.2 (cohort amendment 2026-11-12): the same server and renderer on the Flash checkpoint and
++        # the pplx_decider package it ships (tools/v3/servers/decider-v1.2.sh flash).
++        "decider-flash-v1.2": dict(
++            route="pplx_decider_server.py (tools/v3/servers/decider-v1.2.sh flash)", renderer=LR_DIR / "decider.py",
++            cmd=[str(Path.home() / "code/pplx-decider/.venv-v1.2/bin/python"), str(LR_DIR / "decider.py"),
++                 "--model", str(flash)],
++            env={}, code=[Path.home() / "code/pplx-decider/pplx_decider_server.py", fpkg / "model.py",
++                          fpkg / "protocol.py", flash / "tokenizer.json"]),
+         "baselabs-elephant-1": baselabs_route("elephant-1", "b3f8a93462fb1051a9de031e94a7ff380e254072"),
+         "baselabs-mammoth-1": baselabs_route("mammoth-1", "61cec44c281c693992e3d6ebeb44dd3402dfa186"),
+     }
+@@ -1332,6 +1375,7 @@ def arm_summary(slug, arm):
+ def summary():
+     rows = [arm_summary(s["slug"], arm) for s in cohort()["setups"] for arm in ARMS]
+     out = dict(updated_at=I.now(), addendum_sha256=ADDENDUM_SHA256, cohort_sha256=I.sha256_file(COHORT_FILE),
++               amendments=cohort().get("amendments", []),
+                writer=dict(setup=I.MODELS[WRITER_KEY]["setup"], label="helper-written notes → decision player"),
+                decisions={k: v for k, v in cohort()["decisions"].items()}, dry_run=I.DRY, rows=rows)
+     I.write_atomic(DECISION_OUT(), json.dumps(out, indent=1))
+diff --git a/workspace/improve/decision_cohort.json b/workspace/improve/decision_cohort.json
+index 5a1318d..fa6e977 100644
+--- a/workspace/improve/decision_cohort.json
++++ b/workspace/improve/decision_cohort.json
+@@ -7,7 +7,9 @@
+  },
+  "decision_lane_cap_usd": 3.00,
+  "decision_lane_cap_status": "hard allocation of the decision lane within the $110 (Zeki #3772): every decision provider, the writer and the probes, open reservations and open allocations included; the chat lanes' share is $107 (runs/share_cap.json), so $107 + $3.00 = $110",
+- "amendments": [],
++ "amendments": [
++  {"at": "2026-11-12", "path": "setups", "added": ["decider-flash-v1.2", "winnow-12b", "cygnet", "startlux-2b", "knowline-2b", "knowline-4b", "knowline-0.8b", "glide-2b", "startlux-0.8b", "onejev1.6-0.8b", "glide-0.8b", "glide-0.4b", "gliclass-v4-edge", "clef-flash", "glide-9b", "metask-jev-4b", "strands-decider-2b", "d1-2b"], "source": "Ümit native 1570509348072063026 (every Tiny and Small model tested on Logic & Math), via Zeki #5674/#5689; priority and cash directive native 1570507658425933987", "note": "Added after the addendum was published: every Tiny and Small decision model tested on Logic & Math (Base Labs Elephant-1 was already in the cohort). Same rule, arms, test and schedule; each local route still needs its render check (§6.1) and the response ids of its own league replies (§3). The notes arm's writer is paid and waits for Ümit's approval of the cash batch. A model with no league record is listed as not started."}
++ ],
+  "provider_subcaps_usd": {"nace": 2.50},
+  "provider_ledgers": {"nace": ["workspace/drex/state/nace-budget.db"]},
+  "setups": [
+@@ -20,6 +22,24 @@
+   {"slug": "baselabs-elephant-1", "setup": "Base Labs Elephant-1", "chosen_by": "Ümit #3746", "lane": "local", "evidence": "pending R", "gate": {"kind": "server"}, "expect": ["baselabs/elephant-1"], "estimate": {"notes": 0.03, "worst": 0.0}, "needs": "D5_edge_settings", "needs_arms": ["notes"], "page_note": "the notes arm runs past the checkpoint's trained 16,384 tokens (the engine refuses above 32,768)"},
+   {"slug": "decider-v1.2-27b", "setup": "Decider v1.2 27B", "chosen_by": "Ümit #3744", "lane": "local", "evidence": "pending R", "gate": {"kind": "server"}, "expect": ["pplx-decider-v1.2"], "estimate": {"notes": 0.03, "worst": 0.0}},
+   {"slug": "jev-1.14.0", "setup": "Jev 1.14.0", "chosen_by": "Ümit #3744", "lane": "hosted", "provider": "jev", "evidence": "Hc", "gate": {"kind": "client", "limit_tokens": 32000}, "expect": ["jev-1.14.0"], "price": [0.042, 0.042, 0.0], "estimate": {"notes": 0.56, "worst": 0.55}},
+-  {"slug": "subq-snap-1.1", "setup": "SubQ Snap 1.1", "chosen_by": "Ümit #3758 (native 1569386902715506699)", "lane": "hosted", "provider": "subq", "evidence": "Hc", "gate": {"kind": "client", "limit_tokens": 393216}, "expect": ["subq-snap-1.1"], "price": [0.04, 0.04, 0.0], "estimate": {"notes": 0.52, "worst": 0.50}}
++  {"slug": "subq-snap-1.1", "setup": "SubQ Snap 1.1", "chosen_by": "Ümit #3758 (native 1569386902715506699)", "lane": "hosted", "provider": "subq", "evidence": "Hc", "gate": {"kind": "client", "limit_tokens": 393216}, "expect": ["subq-snap-1.1"], "price": [0.04, 0.04, 0.0], "estimate": {"notes": 0.52, "worst": 0.50}},
++  {"slug": "decider-flash-v1.2", "setup": "Decider Flash v1.2", "source_setup": "decider-flash-v1.2_en", "size_class": "tiny", "chosen_by": "Ümit native 1570509348072063026 (every Tiny and Small model tested on Logic & Math), via Zeki #5674/#5689", "lane": "local", "evidence": "pending R", "gate": {"kind": "server"}, "expect": ["pplx-decider-flash-v1.2"], "estimate": {"notes": 0.03, "worst": 0.0}, "arm_pending": {"notes": "writer cash: waits for Ümit's approval of the small-model cash batch (mailbox/learning-small-and-decision-plan-2026-11-12.md §4; directive native 1570507658425933987)"}, "server": "bariton: tools/v3/servers/decider-v1.2.sh flash (pplx_decider_server.py, port 18098)"},
++  {"slug": "winnow-12b", "setup": "Winnow-12B", "source_setup": "winnow_en", "size_class": "small", "chosen_by": "Ümit native 1570509348072063026 (every Tiny and Small model tested on Logic & Math), via Zeki #5674/#5689", "lane": "local", "evidence": "pending R", "gate": {"kind": "server"}, "expect": ["winnow-12b"], "estimate": {"notes": 0.03, "worst": 0.0}, "arm_pending": {"notes": "writer cash: waits for Ümit's approval of the small-model cash batch (mailbox/learning-small-and-decision-plan-2026-11-12.md §4; directive native 1570507658425933987)"}, "server": "bariton: tools/v3/servers/winnow.sh (winnow-inference:d4631fb)"},
++  {"slug": "cygnet", "setup": "Cygnet (Gemma 4 12B)", "source_setup": "cygnet_en", "size_class": "small", "chosen_by": "Ümit native 1570509348072063026 (every Tiny and Small model tested on Logic & Math), via Zeki #5674/#5689", "lane": "local", "evidence": "pending R", "gate": {"kind": "server"}, "expect": ["cygnet"], "estimate": {"notes": 0.03, "worst": 0.0}, "arm_pending": {"notes": "Ümit #3111 (chat plan §3: Cygnet not tested, it plays through a layer that never sees the lessons) stands until Ümit says the cohort decision lifts it for Part 3", "worst": "Ümit #3111 (chat plan §3: Cygnet not tested, it plays through a layer that never sees the lessons) stands until Ümit says the cohort decision lifts it for Part 3"}, "server": "bariton or Spark: the cygnet server (port 18093)"},
++  {"slug": "startlux-2b", "setup": "StartLux-Decision v1.1 2B", "source_setup": "startlux-2b_en", "size_class": "tiny", "chosen_by": "Ümit native 1570509348072063026 (every Tiny and Small model tested on Logic & Math), via Zeki #5674/#5689", "lane": "local", "evidence": "pending R", "gate": {"kind": "server"}, "expect": ["StartLux-Decision-v1.1-2B-Instant@f1e6cd147dda82c9ffa3e8e725d5c1f175566fb1"], "estimate": {"notes": 0.03, "worst": 0.0}, "arm_pending": {"notes": "writer cash: waits for Ümit's approval of the small-model cash batch (mailbox/learning-small-and-decision-plan-2026-11-12.md §4; directive native 1570507658425933987)"}, "server": "spark2 :19440 (vLLM); spark2 GPU0 is logic's private hold: runs only on logic's handoff"},
++  {"slug": "knowline-2b", "setup": "KnowLine-2B-Gen1", "source_setup": "knowline-2b_en", "size_class": "tiny", "chosen_by": "Ümit native 1570509348072063026 (every Tiny and Small model tested on Logic & Math), via Zeki #5674/#5689", "lane": "local", "evidence": "pending R", "gate": {"kind": "server"}, "expect": ["m"], "estimate": {"notes": 0.03, "worst": 0.0}, "arm_pending": {"notes": "writer cash: waits for Ümit's approval of the small-model cash batch (mailbox/learning-small-and-decision-plan-2026-11-12.md §4; directive native 1570507658425933987)"}, "server": "spark2 :19490 (SGLang); spark2 GPU0 is logic's private hold: runs only on logic's handoff", "identity_note": "every KnowLine server answers 'm': the reply id cannot tell the sizes apart, so the row is also bound to its endpoint and checkpoint (server_pin: /health as pinned + the pinned snapshot's processes on its port, read over ssh, before every step)", "server_pin": {"pins": "pins/knowline-2b.sh", "pins_sha256": "b0bd9160e0ad4a813b4cbb80b7421ec4e4bc4ca5ccf8ba56f831b6e4664050c5", "url": "http://192.168.1.131:19490", "ssh": "spark2"}},
++  {"slug": "knowline-4b", "setup": "KnowLine 4B Gen5.5", "source_setup": "knowline-4b_en", "size_class": "tiny", "chosen_by": "Ümit native 1570509348072063026 (every Tiny and Small model tested on Logic & Math), via Zeki #5674/#5689", "lane": "local", "evidence": "pending R", "gate": {"kind": "server"}, "expect": ["m"], "estimate": {"notes": 0.03, "worst": 0.0}, "arm_pending": {"notes": "writer cash: waits for Ümit's approval of the small-model cash batch (mailbox/learning-small-and-decision-plan-2026-11-12.md §4; directive native 1570507658425933987)"}, "server": "spark2 :19400 (SGLang); spark2 GPU0 is logic's private hold: runs only on logic's handoff", "identity_note": "every KnowLine server answers 'm': the reply id cannot tell the sizes apart, so the row is also bound to its endpoint and checkpoint (server_pin: /health as pinned + the pinned snapshot's processes on its port, read over ssh, before every step)", "server_pin": {"pins": "pins/knowline-4b.sh", "pins_sha256": "6c02842b7a123aac34375e8461d96f788357f9c6530ab91b4ddaf2d511e4090a", "url": "http://192.168.1.131:19400", "ssh": "spark2"}},
++  {"slug": "knowline-0.8b", "setup": "KnowLine-0.8B-Gen1", "source_setup": "knowline-0.8b_en", "size_class": "tiny", "chosen_by": "Ümit native 1570509348072063026 (every Tiny and Small model tested on Logic & Math), via Zeki #5674/#5689", "lane": "local", "evidence": "pending R", "gate": {"kind": "server"}, "expect": ["m"], "estimate": {"notes": 0.03, "worst": 0.0}, "arm_pending": {"notes": "writer cash: waits for Ümit's approval of the small-model cash batch (mailbox/learning-small-and-decision-plan-2026-11-12.md §4; directive native 1570507658425933987)"}, "server": "spark2 :19450 (SGLang); spark2 GPU0 is logic's private hold: runs only on logic's handoff", "identity_note": "every KnowLine server answers 'm': the reply id cannot tell the sizes apart, so the row is also bound to its endpoint and checkpoint (server_pin: /health as pinned + the pinned snapshot's processes on its port, read over ssh, before every step)", "server_pin": {"pins": "pins/knowline-0.8b.sh", "pins_sha256": "a6d79d70b63c1883c6659b692e2daf098b1e5054cda8987b91dc97c9315ae798", "url": "http://192.168.1.131:19450", "ssh": "spark2"}},
++  {"slug": "glide-2b", "setup": "GLiDE 2B", "source_setup": "glide-2b_en", "size_class": "tiny", "chosen_by": "Ümit native 1570509348072063026 (every Tiny and Small model tested on Logic & Math), via Zeki #5674/#5689", "lane": "local", "evidence": "pending R", "gate": {"kind": "server"}, "expect": ["glide-2b"], "estimate": {"notes": 0.03, "worst": 0.0}, "arm_pending": {"notes": "writer cash: waits for Ümit's approval of the small-model cash batch (mailbox/learning-small-and-decision-plan-2026-11-12.md §4; directive native 1570507658425933987)"}, "server": "spark2 :19330 (glide.server); spark2 GPU0 is logic's private hold: runs only on logic's handoff"},
++  {"slug": "startlux-0.8b", "setup": "StartLux-Decision-v1.1-0.8B-Instant", "source_setup": "startlux-0.8b_en", "size_class": "tiny", "chosen_by": "Ümit native 1570509348072063026 (every Tiny and Small model tested on Logic & Math), via Zeki #5674/#5689", "lane": "local", "evidence": "pending R", "gate": {"kind": "server"}, "expect": ["StartLux-Decision-v1.1-0.8B-Instant@6496ae641cc71b149ce9dad69bd97f2a44e7bf11"], "estimate": {"notes": 0.03, "worst": 0.0}, "arm_pending": {"notes": "writer cash: waits for Ümit's approval of the small-model cash batch (mailbox/learning-small-and-decision-plan-2026-11-12.md §4; directive native 1570507658425933987)"}, "server": "spark2 :19460 (vLLM); spark2 GPU0 is logic's private hold: runs only on logic's handoff"},
++  {"slug": "onejev1.6-0.8b", "setup": "OneJev1.6-0.8B", "source_setup": "onejev1.6-0.8b_en", "size_class": "tiny", "chosen_by": "Ümit native 1570509348072063026 (every Tiny and Small model tested on Logic & Math), via Zeki #5674/#5689", "lane": "local", "evidence": "pending R", "gate": {"kind": "server"}, "expect": ["OmniJev/OneJev1.6-0.8B"], "estimate": {"notes": 0.03, "worst": 0.0}, "arm_pending": {"notes": "writer cash: waits for Ümit's approval of the small-model cash batch (mailbox/learning-small-and-decision-plan-2026-11-12.md §4; directive native 1570507658425933987)"}, "server": "spark2 :19420; spark2 GPU0 is logic's private hold: runs only on logic's handoff"},
++  {"slug": "glide-0.8b", "setup": "GLiDE 0.8B", "source_setup": "glide-0.8b_en", "size_class": "tiny", "chosen_by": "Ümit native 1570509348072063026 (every Tiny and Small model tested on Logic & Math), via Zeki #5674/#5689", "lane": "local", "evidence": "pending R", "gate": {"kind": "server"}, "expect": ["glide-0.8b"], "estimate": {"notes": 0.03, "worst": 0.0}, "arm_pending": {"notes": "writer cash: waits for Ümit's approval of the small-model cash batch (mailbox/learning-small-and-decision-plan-2026-11-12.md §4; directive native 1570507658425933987)"}, "server": "spark2 :19340 (glide.server); spark2 GPU0 is logic's private hold: runs only on logic's handoff"},
++  {"slug": "glide-0.4b", "setup": "GLiDE 0.4B", "source_setup": "glide-0.4b_en", "size_class": "tiny", "chosen_by": "Ümit native 1570509348072063026 (every Tiny and Small model tested on Logic & Math), via Zeki #5674/#5689", "lane": "local", "evidence": "pending R", "gate": {"kind": "server"}, "expect": ["glide-0.4b"], "estimate": {"notes": 0.03, "worst": 0.0}, "arm_pending": {"notes": "writer cash: waits for Ümit's approval of the small-model cash batch (mailbox/learning-small-and-decision-plan-2026-11-12.md §4; directive native 1570507658425933987)"}, "server": "spark2 :19350 (glide.server); spark2 GPU0 is logic's private hold: runs only on logic's handoff"},
++  {"slug": "gliclass-v4-edge", "setup": "GLiClass v4 Edge", "source_setup": "gliclass-v4-edge_en", "size_class": "tiny", "chosen_by": "Ümit native 1570509348072063026 (every Tiny and Small model tested on Logic & Math), via Zeki #5674/#5689", "lane": "local", "evidence": "pending R", "gate": {"kind": "server"}, "expect": ["knowledgator/gliclass-v4-edge"], "estimate": {"notes": 0.03, "worst": 0.0}, "arm_pending": {"notes": "writer cash: waits for Ümit's approval of the small-model cash batch (mailbox/learning-small-and-decision-plan-2026-11-12.md §4; directive native 1570507658425933987)"}, "server": "spark2 :19480 (gliclass_server); spark2 GPU0 is logic's private hold: runs only on logic's handoff"},
++  {"slug": "clef-flash", "setup": "Clef-flash", "source_setup": "clef-flash_en", "size_class": "small", "chosen_by": "Ümit native 1570509348072063026 (every Tiny and Small model tested on Logic & Math), via Zeki #5674/#5689", "lane": "local", "not_started": "no league record (v3 'Clef' is another checkpoint); no backgammon route yet"},
++  {"slug": "glide-9b", "setup": "GLiDE 9B", "source_setup": "glide-9b_en", "size_class": "small", "chosen_by": "Ümit native 1570509348072063026 (every Tiny and Small model tested on Logic & Math), via Zeki #5674/#5689", "lane": "local", "not_started": "no league record (fastino/GLiDE-9B); no backgammon route yet"},
++  {"slug": "metask-jev-4b", "setup": "Metask-Jev 4B", "source_setup": "metask_en", "size_class": "tiny", "chosen_by": "Ümit native 1570509348072063026 (every Tiny and Small model tested on Logic & Math), via Zeki #5674/#5689", "lane": "local", "not_started": "no league record; no backgammon route yet"},
++  {"slug": "strands-decider-2b", "setup": "Strands Decider 2B", "source_setup": "strands_en", "size_class": "tiny", "chosen_by": "Ümit native 1570509348072063026 (every Tiny and Small model tested on Logic & Math), via Zeki #5674/#5689", "lane": "local", "not_started": "no league record; no backgammon route yet"},
++  {"slug": "d1-2b", "setup": "Liquid d1-2B", "source_setup": "d1-2b_en", "size_class": "tiny", "chosen_by": "Ümit native 1570509348072063026 (every Tiny and Small model tested on Logic & Math), via Zeki #5674/#5689", "lane": "local", "not_started": "no league record; no backgammon route yet (logic: needs a bariton card, no d1 environment on spark2)"}
+  ]
+ }
+diff --git a/workspace/improve/pins/knowline-0.8b.sh b/workspace/improve/pins/knowline-0.8b.sh
+new file mode 100644
+index 0000000..2ee5e46
+--- /dev/null
++++ b/workspace/improve/pins/knowline-0.8b.sh
+@@ -0,0 +1,20 @@
++# Sourced by start.sh and locals.sh (URL, PORT and SSH_HOST set there): the model's snapshot, its /health as the
++# pinned server answers it, and pinned(): the pinned server process on PORT, read over ssh (read-only).
++SNAPSHOT=/home/cbasaran/decision-models/KnowLine-0.8B-Gen1@6b27831f7b783c03278bd946d4d8f4f7a98a3798
++LABEL=KnowLine
++healthy() {
++  curl -fsS -m 10 "$URL/health" | python3 -c 'import json,sys; d=json.load(sys.stdin); l=d["layout"]
++sys.exit(not (d["status"] == "ok" and d["model"] == "m" and d["temperature"] == 1.0 and l["read_twice"]
++              and l["twice_max_tokens"] == 3000 and not l["header"]))'
++}
++# serve_knowline.sh's front end on PORT with the card's temperatures file, behind an SGLang in BF16 (no
++# --quantization) that never truncates (no --allow-auto-truncate).
++pinned() {
++  local procs
++  procs=$(timeout 30 ssh -o BatchMode=yes "$SSH_HOST" 'ps -eo args' 2>/dev/null) || return 1
++  grep -F "$SNAPSHOT/knowline_server.py --model $SNAPSHOT --backend sglang" <<<"$procs" |
++    grep -F -- "--temperature 1 --workers 16 " | grep -F -- "--port $PORT " |
++    grep -F -- "--temperatures $SNAPSHOT/temperatures.json" | grep -vF -- "--no-read-twice" | grep -qvF -- "--header" &&
++  grep -F "sglang.launch_server --model-path $SNAPSHOT " <<<"$procs" | grep -F -- "--enable-fp32-lm-head" |
++    grep -vF -- "--quantization" | grep -vqF -- "--allow-auto-truncate"
++}
+diff --git a/workspace/improve/pins/knowline-2b.sh b/workspace/improve/pins/knowline-2b.sh
+new file mode 100644
+index 0000000..190aa97
+--- /dev/null
++++ b/workspace/improve/pins/knowline-2b.sh
+@@ -0,0 +1,20 @@
++# Sourced by start.sh and locals.sh (URL, PORT and SSH_HOST set there): the model's snapshot, its /health as the
++# pinned server answers it, and pinned(): the pinned server process on PORT, read over ssh (read-only).
++SNAPSHOT=/home/cbasaran/decision-models/KnowLine-2B-Gen1@53245d470a4ce316e32fd0d18c24e142c697f40b
++LABEL=KnowLine
++healthy() {
++  curl -fsS -m 10 "$URL/health" | python3 -c 'import json,sys; d=json.load(sys.stdin); l=d["layout"]
++sys.exit(not (d["status"] == "ok" and d["model"] == "m" and d["temperature"] == 1.0 and l["read_twice"]
++              and l["twice_max_tokens"] == 3000 and not l["header"]))'
++}
++# serve_knowline.sh's front end on PORT with the card's temperatures file, behind an SGLang in BF16 (no
++# --quantization) that never truncates (no --allow-auto-truncate).
++pinned() {
++  local procs
++  procs=$(timeout 30 ssh -o BatchMode=yes "$SSH_HOST" 'ps -eo args' 2>/dev/null) || return 1
++  grep -F "$SNAPSHOT/knowline_server.py --model $SNAPSHOT --backend sglang" <<<"$procs" |
++    grep -F -- "--temperature 1 --workers 16 " | grep -F -- "--port $PORT " |
++    grep -F -- "--temperatures $SNAPSHOT/temperatures.json" | grep -vF -- "--no-read-twice" | grep -qvF -- "--header" &&
++  grep -F "sglang.launch_server --model-path $SNAPSHOT " <<<"$procs" | grep -F -- "--enable-fp32-lm-head" |
++    grep -vF -- "--quantization" | grep -vqF -- "--allow-auto-truncate"
++}
+diff --git a/workspace/improve/pins/knowline-4b.sh b/workspace/improve/pins/knowline-4b.sh
+new file mode 100644
+index 0000000..185a647
+--- /dev/null
++++ b/workspace/improve/pins/knowline-4b.sh
+@@ -0,0 +1,21 @@
++# Sourced by decision.py server_pin_check (URL, PORT and SSH_HOST set there): KnowLine 4B Gen5.5's snapshot, its /health
++# as the pinned server answers it, and pinned(): the pinned server process on PORT, read over ssh (read-only). Copied
++# from tools/v3/late-knowline4b/start.sh (branch late-knowline4b), the league entry's own checks.
++SNAPSHOT=/home/cbasaran/decision-models/KnowLine-4B-Gen5.5@779944d2cc8ffa19cef386aee83c83bcb967ade2
++LABEL=KnowLine
++healthy() {
++  curl -fsS -m 10 "$URL/health" | python3 -c 'import json,sys; d=json.load(sys.stdin); l=d["layout"]
++sys.exit(not (d["status"] == "ok" and d["model"] == "m" and d["temperature"] == 1.0 and l["read_twice"]
++              and l["twice_max_tokens"] == 3000 and not l["header"]))'
++}
++# The pinned snapshot's front end on PORT (serve_knowline.sh's arguments, no temperatures file), behind an SGLang with
++# FP8 at load that never truncates (read-only ssh).
++pinned() {
++  local procs
++  procs=$(timeout 30 ssh -o BatchMode=yes "$SSH_HOST" 'ps -eo args' 2>/dev/null) || return 1
++  grep -F "$SNAPSHOT/knowline_server.py --model $SNAPSHOT --backend sglang" <<<"$procs" |
++    grep -F -- "--temperature 1 --workers 16 " | grep -F -- "--port $PORT" | grep -vF -- "--temperatures" |
++    grep -vF -- "--no-read-twice" | grep -qvF -- "--header" &&
++  grep -F "sglang.launch_server --model-path $SNAPSHOT " <<<"$procs" | grep -F -- "--quantization fp8" |
++    grep -F -- "--enable-fp32-lm-head" | grep -vqF -- "--allow-auto-truncate"
++}
+diff --git a/workspace/improve/run_decision_local.sh b/workspace/improve/run_decision_local.sh
+index f8fa189..710d7cd 100755
+--- a/workspace/improve/run_decision_local.sh
++++ b/workspace/improve/run_decision_local.sh
+@@ -3,7 +3,8 @@
+ # GPU under the agent-bus reservation RES, strictly sequential, as the systemd user unit improve-decision-local:
+ #   systemd-run --user --unit=improve-decision-local --working-directory=$HOME/code/jevgammon-improve-decision \
+ #     -E GPU=<n> -E RES=<reservation> workspace/improve/run_decision_local.sh
+-# Per setup, in order (Elephant-1 worst; Decider v1.2 27B notes, worst; GLiDE v1.2 notes, worst): the arms that
++# Per setup, in order (Elephant-1 worst; Decider v1.2 27B notes, worst; GLiDE v1.2 notes, worst; Decider Flash v1.2
++# notes, worst, from the 2026-11-12 cohort amendment; DECISION_SETUPS="slug ..." runs only those): the arms that
+ # `decision.py arm-state` says have steps to run (none: no server); the card must be empty (at most EMPTY MiB in use,
+ # else the script refuses and exits 1, starting nothing); its pinned server is started with the league's own script
+ # under `agent-bus run RES`; the server's own probe must answer with the served model id (P1 is the hosted
+@@ -35,6 +36,7 @@ SETUPS=(
+   "baselabs-elephant-1|worst|ELEPHANT_GPU=$GPU $BL elephant start|$BL elephant stop|$BL elephant probe|baselabs/elephant-1"
+   "decider-v1.2-27b|notes worst|DECIDER_V12_GPU=$GPU $S/decider-v1.2.sh 27b start|$S/decider-v1.2.sh 27b stop|$S/decider-v1.2.sh 27b probe|pplx-decider-v1.2"
+   "glide-v1.2-local|notes worst|GLIDE_GPU=$GPU $S/glide-v12.sh start|$S/glide-v12.sh stop|$S/glide-v12.sh probe|glide-v1.2"
++  "decider-flash-v1.2|notes worst|DECIDER_V12_GPU=$GPU $S/decider-v1.2.sh flash start|$S/decider-v1.2.sh flash stop|$S/decider-v1.2.sh flash probe|pplx-decider-flash-v1.2"
+ )
+ running=""
+ stop_server() { [[ -n $running ]] && { bash -c "$running"; log "server stopped ($running)"; running=""; }; }
+diff --git a/workspace/improve/test_decision.py b/workspace/improve/test_decision.py
+index bd9731d..711584d 100644
+--- a/workspace/improve/test_decision.py
++++ b/workspace/improve/test_decision.py
+@@ -624,6 +624,70 @@ class States(Isolated):
+         self.assertIsNone(I.context_stop("STOPPED: an earlier request failed a pre-send or reply check"))
+ 
+ 
++class SmallAmendment(Isolated):
++    """The 2026-11-12 cohort amendment (Ümit native 1570509348072063026 via Zeki #5674/#5689): every Tiny and Small
++    decision model of Logic & Math, recorded as a dated amendment; no published text or running arm changes."""
++
++    def test_the_amendment_lists_its_rows_and_its_source(self):
++        c = D.cohort()
++        (a,) = [x for x in c["amendments"] if x.get("path") == "setups"]
++        self.assertEqual(len(a["added"]), 18)
++        self.assertIn("1570509348072063026", a["source"])
++        self.assertIn("1570507658425933987", a["source"])
++        slugs = [s["slug"] for s in c["setups"]]
++        self.assertEqual(len(slugs), len(set(slugs)))
++        self.assertTrue(set(a["added"]) <= set(slugs))
++        self.assertNotIn("baselabs-elephant-1", a["added"])  # already in the cohort (#3746)
++
++    def test_new_rows_wait_for_cash_render_check_or_a_record_and_old_rows_are_unchanged(self):
++        added = [x for x in D.cohort()["amendments"] if x.get("path") == "setups"][0]["added"]
++        self.assertEqual(D.arm_state("decider-flash-v1.2", "worst"), ("pending", "local render check (Lr) not passed"))
++        state, why = D.arm_state("decider-flash-v1.2", "notes")
++        self.assertEqual(state, "pending")
++        self.assertIn("cash batch", why)
++        self.assertEqual(D.arm_state("cygnet", "worst")[0], "pending")
++        self.assertIn("#3111", D.arm_state("cygnet", "worst")[1])
++        for slug in ("clef-flash", "glide-9b", "metask-jev-4b", "strands-decider-2b", "d1-2b"):
++            self.assertEqual(D.arm_state(slug, "worst")[0], "not started", slug)
++        self.assertEqual(D.setups()["decider-flash-v1.2"]["expect"], ["pplx-decider-flash-v1.2"])
++        self.assertIn("decider-flash-v1.2", D.lr_routes())
++        self.assertIn("decision/decider-flash-v1.2-worst", D.arm_keys())
++        self.assertNotIn("decision/d1-2b-worst", D.arm_keys())  # not started: no arm until it has a record
++        for slug in ("decider-v1.2-27b", "glide-v1.2-local", "subq-snap-1.1", "drex-max-1.1", "baselabs-elephant-1"):
++            self.assertNotIn(slug, added)
++            self.assertNotIn("arm_pending", D.setups()[slug])
++
++    def test_knowline_rows_are_bound_to_endpoint_and_checkpoint_not_only_to_m(self):
++        rows = {s: D.setups()[s] for s in ("knowline-0.8b", "knowline-2b", "knowline-4b")}
++        self.assertEqual({r["expect"][0] for r in rows.values()}, {"m"})
++        pins = {s: r["server_pin"] for s, r in rows.items()}
++        self.assertEqual(len({p["url"] for p in pins.values()}), 3)  # three endpoints
++        snaps = set()
++        for s, p in pins.items():
++            f = D.PINS_DIR / p["pins"]
++            self.assertEqual(I.sha256_file(f), p["pins_sha256"], s)
++            snaps.add([l for l in f.read_text().splitlines() if l.startswith("SNAPSHOT=")][0])
++        self.assertEqual(len(snaps), 3)  # three checkpoints, each with its revision
++        self.assertTrue(all("@" in x for x in snaps))
++
++    def test_server_pin_check_runs_both_checks_and_pauses_or_stops(self):
++        seen = []
++
++        def runner(code):
++            def run(cmd, **kw):
++                seen.append(cmd[2])
++                return type("R", (), dict(returncode=code, stdout="", stderr=""))()
++            return run
++        rec = D.server_pin_check("knowline-2b", runner=runner(0))
++        self.assertEqual((rec["url"], rec["ssh"]), ("http://192.168.1.131:19490", "spark2"))
++        self.assertIn("PORT=19490", seen[-1])
++        self.assertIn("healthy || exit 3; pinned || exit 4", seen[-1])
++        with self.assertRaises(I.Pause):
++            D.server_pin_check("knowline-2b", runner=runner(3))
++        with self.assertRaises(I.Stop):
++            D.server_pin_check("knowline-2b", runner=runner(4))
++        self.assertIsNone(D.server_pin_check("decider-flash-v1.2", runner=runner(4)))  # no pin: its id names it
++
+ 
+ class Fence(unittest.TestCase):
+     """Zeki #3788: the billed chat side runs only through improve-openrouter, one worker at a time, pinned code."""

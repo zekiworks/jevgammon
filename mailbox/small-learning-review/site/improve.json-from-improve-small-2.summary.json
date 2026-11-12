@@ -1,0 +1,39 @@
+{
+ "sha256": "fdfd1318e3fafe6aaca538db7d64bcb4b63ee3c1a8b542486bee471837abcf99",
+ "top_keys": [
+  "updated_at",
+  "protocol",
+  "money",
+  "models",
+  "amendments"
+ ],
+ "models": [
+  "qwen3.8-flash-off",
+  "glm-5.3-on",
+  "kimi-k3.1-pro-off",
+  "deepseek-v4.1-flash-on",
+  "gemini-3.8-flash-high",
+  "claude-sonnet-5.5-high",
+  "claude-opus-5.5-on",
+  "gemini-4-argon-on",
+  "grok-4.7-on",
+  "claude-fable-5.1-on",
+  "gemma-4-31b-on",
+  "qwen3.8-27b-on",
+  "lfm2.5-24b-a2b-on",
+  "gemma-4-e4b-on",
+  "gpt-6.1-sol-high",
+  "gpt-6-astra-high"
+ ],
+ "amendments_added": [
+  "gemma-4-e4b-on",
+  "minicpm5-2b-on",
+  "lfm2.5-2.6b-on",
+  "lfm2.5-8b-a1b-on",
+  "lfm3-1.7b-on",
+  "gemma-4-e2b-on",
+  "gemma-4-12b-on",
+  "erk-14b-on",
+  "qwen3-14b-on"
+ ]
+}

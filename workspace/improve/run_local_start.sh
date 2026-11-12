@@ -13,7 +13,10 @@ UUID=${1:?GPU UUID}; LANE=${2:?lane unit}; WATCH=${3:?watcher unit}; shift 3
 BIN=$PWD/target/improve-bin/jevgammon-e417a0c
 RUNS=/home/cbasaran/code/jevgammon/workspace/improve/runs
 [[ -x "$BIN" ]] || { echo "missing pinned binary $BIN" >&2; exit 1; }
-container() { case $1 in gemma-4-31b-on) echo v3-gemma4-31b ;; qwen3.8-27b-on) echo v3-qwen38-27b ;; lfm2.5-24b-a2b-on) echo v3-lfm25-24b ;; gemma-4-e4b-on) echo logic-small-gemma-4-e4b-it ;; esac; }
+container() { case $1 in gemma-4-31b-on) echo v3-gemma4-31b ;; qwen3.8-27b-on) echo v3-qwen38-27b ;; lfm2.5-24b-a2b-on) echo v3-lfm25-24b ;;
+  gemma-4-e4b-on|gemma-4-e2b-on|gemma-4-12b-on|minicpm5-2b-on|lfm2.5-2.6b-on|lfm2.5-8b-a1b-on)
+    k=${1%-on}; [[ $k == gemma-* ]] && k=$k-it; echo "logic-small-$k" ;;
+  esac; }
 containers=()
 for m in "$@"; do
   claim=$RUNS/$m/lane.json

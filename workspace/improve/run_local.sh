@@ -21,6 +21,12 @@ server() {  # model key -> "script name port gpu-variable" (script logic:KEY: sm
     qwen3.8-27b-on) echo "qwen38-27b.sh v3-qwen38-27b 8897 QWEN27_GPU" ;;
     lfm2.5-24b-a2b-on) echo "lfm25-24b.sh v3-lfm25-24b 8898 LFM_GPU" ;;
     gemma-4-e4b-on) echo "logic:gemma-4-e4b-it logic-small-gemma-4-e4b-it 18602 -" ;;
+    gemma-4-e2b-on) echo "logic:gemma-4-e2b-it logic-small-gemma-4-e2b-it 18606 -" ;;
+    gemma-4-12b-on) echo "logic:gemma-4-12b-it logic-small-gemma-4-12b-it 18607 -" ;;
+    minicpm5-2b-on) echo "logic:minicpm5-2b logic-small-minicpm5-2b 18614 -" ;;
+    lfm2.5-2.6b-on) echo "logic:lfm2.5-2.6b logic-small-lfm2.5-2.6b 18613 -" ;;
+    lfm2.5-8b-a1b-on) echo "logic:lfm2.5-8b-a1b logic-small-lfm2.5-8b-a1b 18601 -" ;;
+    lfm3-1.7b-on) echo "logic:lfm3-1.7b - 18605 -" ;;  # llama.cpp: a process, no container
     *) return 1 ;;
   esac
 }
@@ -42,13 +48,24 @@ for model in "$@"; do
   # Docker's CDI names GPUs by index here, not by UUID: the index the host gives this UUID now, and the
   # container must then report this UUID (checked below).
   start_server "$script" "$var" "${index%%,*}" || { echo "$model: server did not start"; exit 1; }
-  seen=$(docker exec "$name" nvidia-smi --query-gpu=uuid --format=csv,noheader | tr -d ' ')
+  if [[ $name == - ]]; then  # a process server: the PID listening on the port must hold this GPU
+    pid=$(ss -ltnpH "sport = :$port" | grep -o 'pid=[0-9]*' | head -1 | cut -d= -f2)
+    if [[ -n $pid ]] && nvidia-smi -i "$UUID" --query-compute-apps=pid --format=csv,noheader | grep -qx "$pid"; then
+      seen=$UUID; else seen="pid ${pid:-none} on another GPU"; fi
+  else
+    seen=$(docker exec "$name" nvidia-smi --query-gpu=uuid --format=csv,noheader | tr -d ' ')
+  fi
   if [[ "$seen" != "$UUID" ]]; then
-    echo "$model: the container sees '$seen', not $UUID: stopped"; stop_server "$script"; exit 1
+    echo "$model: the server sees '$seen', not $UUID: stopped"; stop_server "$script"; exit 1
   fi
   mkdir -p "$RUNS/$model"
-  docker inspect "$name" --format '{"image": "{{.Config.Image}}", "image_id": "{{.Image}}", "args": {{json .Args}}, "gpus": {{json .HostConfig.DeviceRequests}}}' \
-    > "$RUNS/$model/server.json"
+  if [[ $name == - ]]; then
+    "$PY" -c 'import json,sys; print(json.dumps(dict(server="process", pid=int(sys.argv[1]), cmdline=open(f"/proc/{sys.argv[1]}/cmdline").read().split("\0")[:-1])))' "$pid" \
+      > "$RUNS/$model/server.json"
+  else
+    docker inspect "$name" --format '{"image": "{{.Config.Image}}", "image_id": "{{.Image}}", "args": {{json .Args}}, "gpus": {{json .HostConfig.DeviceRequests}}}' \
+      > "$RUNS/$model/server.json"
+  fi
   echo "== $model start $(date -u +%FT%TZ) (container sees $seen)"
   "$PY" workspace/improve/improve.py run --model "$model" --base-url "http://127.0.0.1:$port/v1"
   code=$?

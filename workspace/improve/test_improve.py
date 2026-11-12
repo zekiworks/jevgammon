@@ -55,13 +55,39 @@ class Isolated(unittest.TestCase):
 
 
 class SmallModels(unittest.TestCase):
-    """Ümit via Zeki #5664: small chat models under the same plan, local, the league's setup and served name."""
+    """The amendment (Ümit native 1570509348072063026 via Zeki #5674/#5689): the 9 Tiny and Small chat models of
+    Logic & Math, local rows under the same plan, each with its served name."""
 
-    def test_gemma_4_e4b_on_is_a_local_row_with_its_league_setup_and_served_name(self):
-        m = I.MODELS["gemma-4-e4b-on"]
-        self.assertEqual((m["setup"], m["lane"]), ("Gemma 4 E4B (on)", "local"))
-        self.assertEqual(m["expect"], dict(models=["gemma-4-e4b-it"]))
-        self.assertFalse(m.get("billed"))
+    SMALL = {"gemma-4-e4b-on": "gemma-4-e4b-it", "minicpm5-2b-on": "minicpm5-2b", "lfm2.5-2.6b-on": "lfm2.5-2.6b",
+             "lfm2.5-8b-a1b-on": "lfm2.5-8b-a1b", "lfm3-1.7b-on": "lfm3-1.7b", "gemma-4-e2b-on": "gemma-4-e2b-it",
+             "gemma-4-12b-on": "gemma-4-12b-it", "erk-14b-on": "erk-14b", "qwen3-14b-on": "qwen3-14b"}
+
+    def test_every_small_chat_row_is_local_unbilled_with_its_served_name_and_in_the_amendment(self):
+        for key, served in self.SMALL.items():
+            m = I.MODELS[key]
+            self.assertEqual((m["lane"], m["expect"]), ("local", dict(models=[served])), key)
+            self.assertTrue(m["setup"].endswith(" (on)") and not m.get("billed"), key)
+        self.assertEqual(I.MODELS["gemma-4-e4b-on"]["setup"], "Gemma 4 E4B (on)")
+        (a,) = I.AMENDMENTS
+        self.assertEqual(sorted(a["added"]), sorted(self.SMALL))
+        self.assertIn("1570509348072063026", a["source"])
+
+    def test_a_row_without_settings_exports_but_cannot_run(self):
+        saved = I.has_setup
+        I.has_setup = lambda setup: setup != "Erk-14B (on)" and saved(setup)
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                runs, out = I.RUNS, I.OUT
+                I.RUNS, I.OUT = Path(tmp) / "runs", Path(tmp) / "out"
+                try:
+                    self.assertEqual(I.model_summary("erk-14b-on")["route"], "local")
+                    self.assertEqual(I.summary()["amendments"], I.AMENDMENTS)
+                finally:
+                    I.RUNS, I.OUT = runs, out
+        finally:
+            I.has_setup = saved
+        with self.assertRaises(SystemExit):
+            I.league_settings("Erk-14B (on)")  # `run` builds its player from this: no settings, no run
 
     def test_the_local_lane_serves_it_with_logics_command_on_the_lanes_card(self):
         import subprocess
@@ -80,7 +106,15 @@ class SmallModels(unittest.TestCase):
                                "python3 /logic/small_models.py stop gemma-4-e4b-it",
                                "env QWEN27_GPU=3 /srv/qwen38-27b.sh start"])
         start = (here / "run_local_start.sh").read_text()
-        self.assertIn("gemma-4-e4b-on) echo logic-small-gemma-4-e4b-it", start)
+        container = start[start.index("container() {"):].split("esac; }", 1)[0] + "esac; }"
+        for key in self.SMALL:  # the watcher's container is the lane's server container (none for a process server)
+            got = subprocess.run(["bash", "-c", f"{funcs}\n{container}\nread -r s name p v < <(server {key}) || exit 9\n"
+                                  f'echo "$name|$(container {key})"'], capture_output=True, text=True).stdout.strip()
+            if key in ("erk-14b-on", "qwen3-14b-on"):  # no bariton route yet (logic serves them on spark2)
+                self.assertEqual(got, "", key)
+                continue
+            name, watched = got.split("|")
+            self.assertEqual(watched, "" if name == "-" else name, key)
 
 
 class Lessons(unittest.TestCase):
@@ -132,7 +166,7 @@ class Schedule(Isolated):
             rows = {k: I.progress(k, *I.model_state(k)) for k in I.MODELS}
         finally:
             I.run_active = saved_active
-        self.assertEqual(len(rows), 16)
+        self.assertEqual(len(rows), 24)
         self.assertEqual((rows[KEY]["status"], rows[KEY]["reason"], rows[KEY]["series_done"]), ("running", None, 1))
         self.assertEqual((rows["glm-5.3-on"]["status"], rows["glm-5.3-on"]["reason"]), ("paused", "shared-balance priority"))
         self.assertEqual(rows["claude-opus-5.5-on"]["reason"], "waiting for its turn")
@@ -147,12 +181,12 @@ class Schedule(Isolated):
 
     def test_export_keeps_writing_when_a_pause_has_no_page_text(self):
         first = I.summary()
-        self.assertEqual(len(first["models"]), 16)
+        self.assertEqual(len(first["models"]), 24)
         I.write_atomic(I.mdir(KEY) / "paused.json", json.dumps(dict(at="t", reason="an unforeseen pause")))
         out = I.summary()
         kept = [m for m in out["models"] if m["key"] == KEY]
         self.assertEqual(kept, [m for m in first["models"] if m["key"] == KEY])  # the last exported entry, not invented
-        self.assertEqual(len(out["models"]), 16)
+        self.assertEqual(len(out["models"]), 24)
         self.assertIn("unforeseen", (I.RUNS / "export-errors.log").read_text())
         written = json.loads((I.OUT / "improve.json").read_text())
         self.assertEqual(written["updated_at"], out["updated_at"])

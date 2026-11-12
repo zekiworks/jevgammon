@@ -126,10 +126,19 @@ MODELS = {
     "gemma-4-31b-on": dict(setup="Gemma 4 31B (on)", lane="local", expect=dict(models=["gemma-4-31B-it"])),
     "qwen3.8-27b-on": dict(setup="Qwen3.8-27B (on)", lane="local", expect=dict(models=["qwen3.8-27b"])),
     "lfm2.5-24b-a2b-on": dict(setup="LFM2.5-24B-A2B (on)", lane="local", expect=dict(models=["lfm2.5-24b-a2b"])),
-    # Small chat models (Ümit via Zeki #5664: learning for small models under this plan): admitted once the setup's
-    # late entry is complete and live on the leaderboard (plan §3); served by logic's small_models.py serve on our
-    # card, the league's (on) route (#5119); response id = the served name the league's replies carry.
+    # Small chat models: the amendment below (AMENDMENTS). Each at its highest reasoning setting, run with its v3.db
+    # players.settings like every row (a setup not yet in v3.db is refused by `run`: no settings, no run); local, on
+    # logic's small_models.py server on our card (#5119); response id = the served name (the league's replies carry
+    # it where the setup has played: gemma-4-e4b-it, minicpm5-2b, lfm2.5-2.6b).
     "gemma-4-e4b-on": dict(setup="Gemma 4 E4B (on)", lane="local", expect=dict(models=["gemma-4-e4b-it"])),
+    "minicpm5-2b-on": dict(setup="MiniCPM5-2B (on)", lane="local", expect=dict(models=["minicpm5-2b"])),
+    "lfm2.5-2.6b-on": dict(setup="LFM2.5-2.6B (on)", lane="local", expect=dict(models=["lfm2.5-2.6b"])),
+    "lfm2.5-8b-a1b-on": dict(setup="LFM2.5-8B-A1B (on)", lane="local", expect=dict(models=["lfm2.5-8b-a1b"])),
+    "lfm3-1.7b-on": dict(setup="LFM3-1.7B (on)", lane="local", expect=dict(models=["lfm3-1.7b"])),
+    "gemma-4-e2b-on": dict(setup="Gemma 4 E2B (on)", lane="local", expect=dict(models=["gemma-4-e2b-it"])),
+    "gemma-4-12b-on": dict(setup="Gemma 4 12B (on)", lane="local", expect=dict(models=["gemma-4-12b-it"])),
+    "erk-14b-on": dict(setup="Erk-14B (on)", lane="local", expect=dict(models=["erk-14b"])),
+    "qwen3-14b-on": dict(setup="Qwen3-14B (on)", lane="local", expect=dict(models=["qwen3-14b"])),
     # Codex: the stream's served model (response.completed -> response.model), checked against the requested id (a
     # dated snapshot of it allowed): the league stored the answer text only, so there is no league evidence.
     "gpt-6.1-sol-high": dict(setup="GPT-6.1 Sol (high)", lane="subscription",
@@ -137,6 +146,19 @@ MODELS = {
     "gpt-6-astra-high": dict(setup="GPT-6 Astra (high)", lane="subscription",
                              expect=dict(models=["gpt-6-astra"], allow_dated=True)),
 }
+
+# Dated amendments to the roster (plan §3), recorded here and on the page; the plan's text is unchanged (its sha256 is
+# bound by every run).
+AMENDMENTS = [
+    dict(at="2026-11-12", path="MODELS",
+         added=["gemma-4-e4b-on", "minicpm5-2b-on", "lfm2.5-2.6b-on", "lfm2.5-8b-a1b-on", "lfm3-1.7b-on",
+                "gemma-4-e2b-on", "gemma-4-12b-on", "erk-14b-on", "qwen3-14b-on"],
+         source="Ümit, native 1570509348072063026 (cohort: every Tiny and Small model tested on Logic & Math) and "
+                "1570507658425933987 (priority and cash), relayed by Zeki #5674/#5689",
+         note="Added after the plan was published: the 9 Tiny and Small chat models tested on Logic & Math, each at "
+              "its highest reasoning setting, under the same rule, prompt, test and schedule. A model runs only once "
+              "its setup's settings are in the league database."),
+]
 
 
 class Stop(Exception):
@@ -228,6 +250,15 @@ def league_settings(setup: str) -> dict:
     if row is None:
         raise SystemExit(f"no setup {setup!r} in {V3_DB}")
     return json.loads(row[0])
+
+
+def has_setup(setup: str) -> bool:
+    """Whether the setup's settings are in v3.db (an amended row is listed before its settings exist; `run` refuses it)."""
+    db = sqlite3.connect(f"file:{V3_DB}?mode=ro", uri=True, timeout=60)
+    try:
+        return db.execute("SELECT 1 FROM players WHERE name = ?", (setup,)).fetchone() is not None
+    finally:
+        db.close()
 
 
 def player_config(key, name, parallel, note_file=None, ledger=None, base_url=None) -> dict:
@@ -1369,7 +1400,7 @@ def model_summary(key):
                            lesson_calls=a["lesson_calls"], lessons_cut=a["lessons_cut"],
                            lessons_empty=a["lessons_empty"], restarts=a["restarts"], lessons=a["lessons"],
                            t10={k: a["t10"][k] for k in TEST_KEYS}))
-    settings = {} if DRY else league_settings(m["setup"])
+    settings = {} if DRY or not has_setup(m["setup"]) else league_settings(m["setup"])
     route = settings.get("provider") or m["lane"]
     return dict(key=key, setup=m["setup"], route=route, billed=bool(m.get("billed")), state=state,
                 reason=public_reason(reason),
@@ -1421,7 +1452,7 @@ def summary(only_if_changed=False):
                              games_per_series=GAMES, empty_runs=EMPTY_RUNS, test_positions=POSITIONS, steps=STEPS,
                              floor_points=FLOOR_POINTS, safety_drop_points=SAFETY_DROP, dry_run=DRY),
                money=dict(total_cap_usd=TOTAL_CAP_USD, billed_total_usd=round(billed_total(), 4)),
-               models=models)
+               models=models, amendments=AMENDMENTS)
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / "prompt").mkdir(exist_ok=True)
     shutil.copyfile(LESSONS_SYSTEM, OUT / "prompt/lessons_system.txt")

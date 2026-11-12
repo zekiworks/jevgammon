@@ -103,7 +103,7 @@ impl RetryTime {
         Duration::from_millis(self.0.load(Ordering::Relaxed))
     }
 
-    /// Failed network or server attempts so far (counted when `limit_retries_per_call` is on).
+    /// Failed network or server attempts so far, over every send of the call.
     #[cfg(test)]
     pub fn failures(&self) -> u32 {
         self.1.load(Ordering::Relaxed)
@@ -121,6 +121,24 @@ pub fn client() -> reqwest::Client {
 /// Network and server errors: request timeout, rate limit, and every 5xx.
 pub fn retryable(status: StatusCode) -> bool {
     matches!(status.as_u16(), 408 | 429 | 500..=599)
+}
+
+/// The provider error carried by a successful (200) JSON reply, if any: a top-level
+/// `error` (OpenRouter and other gateways, Gemini, the decision services), or an OpenAI-
+/// compatible choice-level failure (`choices[0].error`, `finish_reason: "error"`). Such a
+/// reply holds no answer, so it is a failed attempt, retried like a 5xx, never an answer.
+fn error_reply(body: &str) -> Option<String> {
+    let value: serde_json::Value = serde_json::from_str(body).ok()?;
+    let present = |v: Option<&serde_json::Value>| {
+        v.is_some_and(|v| !v.is_null() && v.as_str() != Some("") && v.as_bool() != Some(false))
+    };
+    let failed = present(value.get("error"))
+        || present(value.pointer("/choices/0/error"))
+        || value
+            .pointer("/choices/0/finish_reason")
+            .and_then(|v| v.as_str())
+            == Some("error");
+    failed.then(|| snippet(body))
 }
 
 /// Sends the request built by `make`, retrying network and server errors; the failed
@@ -233,45 +251,54 @@ async fn send_until(
                     }
                     Err(_) => String::new(),
                 };
-                if status.is_success() {
+                // A provider error inside a 200 fails the attempt like a 5xx. What was
+                // generated is unknown, so `hold` drops and keeps its worst case.
+                let reply_error = status.is_success().then(|| error_reply(&body)).flatten();
+                if status.is_success() && reply_error.is_none() {
                     return Ok((body, hold));
                 }
-                if let Some(hold) = hold {
-                    hold.refused(&format!("{status}"));
+                if let Some(error) = reply_error {
+                    format!("{status} with an error reply: {error}")
+                } else {
+                    if let Some(hold) = hold {
+                        hold.refused(&format!("{status}"));
+                    }
+                    if matches!(status, StatusCode::UNAUTHORIZED | StatusCode::FORBIDDEN) {
+                        return Err(CallError::Auth(format!("{status}: {}", snippet(&body))));
+                    }
+                    if !retryable(status) {
+                        return Err(CallError::Fatal(
+                            StatusError {
+                                status,
+                                message: snippet(&body),
+                            }
+                            .into(),
+                        ));
+                    }
+                    if status == StatusCode::TOO_MANY_REQUESTS && guard.quota_fatal {
+                        return Err(CallError::Fatal(anyhow::anyhow!(
+                            "QUOTA: {status}: {}",
+                            snippet(&body)
+                        )));
+                    }
+                    if status == StatusCode::TOO_MANY_REQUESTS {
+                        // Shared provider pools recover in tens of seconds, not two.
+                        backoff = backoff.max(rate_limit_backoff);
+                    }
+                    if let Some(wait) = retry_after {
+                        backoff = backoff.max(wait).min(MAX_BACKOFF);
+                    }
+                    format!("{status}: {}", snippet(&body))
                 }
-                if matches!(status, StatusCode::UNAUTHORIZED | StatusCode::FORBIDDEN) {
-                    return Err(CallError::Auth(format!("{status}: {}", snippet(&body))));
-                }
-                if !retryable(status) {
-                    return Err(CallError::Fatal(
-                        StatusError {
-                            status,
-                            message: snippet(&body),
-                        }
-                        .into(),
-                    ));
-                }
-                if status == StatusCode::TOO_MANY_REQUESTS && guard.quota_fatal {
-                    return Err(CallError::Fatal(anyhow::anyhow!(
-                        "QUOTA: {status}: {}",
-                        snippet(&body)
-                    )));
-                }
-                if status == StatusCode::TOO_MANY_REQUESTS {
-                    // Shared provider pools recover in tens of seconds, not two.
-                    backoff = backoff.max(rate_limit_backoff);
-                }
-                if let Some(wait) = retry_after {
-                    backoff = backoff.max(wait).min(MAX_BACKOFF);
-                }
-                format!("{status}: {}", snippet(&body))
+
             }
             // No response: `hold` drops here and keeps its worst case.
             Err(error) => format!("{error}"),
         };
         // Failed attempts so far: of this send, or of the whole call under a per-call limit.
+        let call_failures = retry.1.fetch_add(1, Ordering::Relaxed) + 1;
         let failed = if policy.per_call {
-            retry.1.fetch_add(1, Ordering::Relaxed) + 1
+            call_failures
         } else {
             attempt + 1
         };

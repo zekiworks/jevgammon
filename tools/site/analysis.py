@@ -187,6 +187,12 @@ def load_leagues(snap: Path, plays_dir: Path) -> dict:
                    FROM games g JOIN matches m ON m.id = g.match_id JOIN league_match_view lm ON lm.match_id = g.match_id
                    WHERE lm.league_id = ? AND lm.stage = 'league' AND m.status = 'finished'
                      AND g.result IN ('gammon', 'backgammon') GROUP BY 1""", (lid,)).fetchall()),
+            # Runner provenance (Method, Limits): finished league matches, and those started from a runner checkout
+            # with uncommitted changes (matches.harness_dirty). Metadata only: no score reads it.
+            runner=dict(zip(("valid", "dirty"), conn.execute(
+                """SELECT COUNT(*), COALESCE(SUM(m.harness_dirty), 0) FROM matches m WHERE m.status = 'finished'
+                     AND m.id IN (SELECT match_id FROM league_match_view WHERE league_id = ? AND stage = 'league')""",
+                (lid,)).fetchone())),
             decisions=decisions))
     turns_total = conn.execute("SELECT COUNT(*) FROM turns").fetchone()[0]
     last = conn.execute("SELECT MAX(created_at) FROM turns").fetchone()[0]

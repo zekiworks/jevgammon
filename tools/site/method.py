@@ -560,7 +560,8 @@ def _versions(po: dict) -> str:
   Luna (Decisions API) and Mercury Decide are outside the requested scope (Ümit, 12 Nov): no longer work to close.
   They stay unplayed and are labelled so beside the reason they were not played, never a score or a loss; a late entry
   whose only unplayed pairs are these is no longer marked Provisional, since none of its pairs is left to play. No
-  number changed.</p>""")
+  number changed. 12 Nov 2026: <a href="#limits">Limits</a> (Runner commits) states how many original league matches
+  were started from a runner checkout with uncommitted changes (harness_dirty): provenance only. No number changed.</p>""")
 
 
 def _confidence(t: dict, extra: dict) -> str:
@@ -880,8 +881,9 @@ def _time(t: dict) -> str:
 </ul>""")
 
 
-def _limits() -> str:
-    return _section("limits", "Limits", """
+def _limits(runner: list) -> str:
+    dirty = "; ".join(f"League {lg['id']}: {lg['dirty']:,} of {lg['valid']:,} matches" for lg in runner)
+    return _section("limits", "Limits", f"""
 <ul>
   <li><strong>One kind of risk.</strong> The risk calls measure one kind of risk, being hit. Gammon risk and priming are
     not in it.</li>
@@ -902,6 +904,9 @@ def _limits() -> str:
     mark rows that got different inputs. The shared positions avoid group splits.</li>
   <li><strong>Providers vary.</strong> A hosted model can change without notice, and providers differ in quantization.
     We log them; we cannot control them.</li>
+  <li><strong>Runner commits.</strong> Many original league matches were started from a runner checkout with uncommitted
+    changes ({dirty}), recorded per match as harness_dirty. The recorded commit therefore does not fully identify the
+    code that ran. This is a provenance limit, not evidence that any score is wrong; no number changes.</li>
   <li><strong>Models only play each other</strong> and the anchor. Their strength against human players is not
     measured.</li>
 </ul>""")
@@ -981,7 +986,7 @@ def body(ctx: dict) -> str:
     return "\n".join([
         _intro(), _toc(), _setup(), _shared(ctx["shared_sets"]), _prompt(), _error_rate(t), _human_scale(),
         _risk(t, extra), _statistics(t), _thresholds(t), _status(), _versions(ctx["play_order"]),
-        _confidence(t, extra), _offline(t, extra), _close(t), _nack(), _clear_risk(), _cost(), _time(t), _limits(), _home_extras(extra), _archive("v3-notes.html"),
+        _confidence(t, extra), _offline(t, extra), _close(t), _nack(), _clear_risk(), _cost(), _time(t), _limits(ctx["runner"]), _home_extras(extra), _archive("v3-notes.html"),
         _experiments(),
     ])
 

@@ -183,7 +183,9 @@ def compute(args) -> dict:
         human_scale=json.loads((CONTENT / "human_scale.json").read_text()),
         _v1_raw=v1, _state=state, _repeat_originals=repeat_originals,
         # Held late entries shown while they play (held_setups.json "running"): the home leaderboard's unranked rows only.
-        _running=L["running"])
+        _running=L["running"],
+        # Runner provenance per shown league (Method, Limits): metadata only, kept out of the data files.
+        _runner=[dict(id=lg["id"], **lg["runner"]) for lg in L["leagues"]])
 
 
 def late_entry_summaries(entries: list[dict]) -> list[dict]:

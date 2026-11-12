@@ -39,3 +39,33 @@ built_binary_sha256 = 1e529cdb7a210f8fcf7e133a52addd9f41e69fab65dc38d44af16b51bc
 [pinned copies]
 /home/cbasaran/code/jevgammon-improve/target/improve-bin/jevgammon-8b6f9a1 = e415773e876670f4d5cc1379705acc0f65b4acd02c613b91941c8175ed181661
 /home/cbasaran/code/jevgammon-improve/target/improve-bin/jevgammon-724406a = 1e529cdb7a210f8fcf7e133a52addd9f41e69fab65dc38d44af16b51bcfc95fe
+
+# added 2026-11-12T13:14:14Z: e52d7f9 (native_finish_reason) ported to the lane builds (Zeki #5362, Main); built in new worktrees so the running 8b6f9a1/724406a trees keep their HEAD
+
+[e417a0c]
+source_commit = e417a0ce1cd47319322a3a5436e88d48787e986d
+parent = 8b6f9a17cb65e8af09bb7a3d79de16b84c873576
+source_tree = 634dd9d490328bde41f67efa50965510159978f3
+branch = improve-error-reply-native
+tracked_changes = 0
+cargo_lock_sha256 = d7048551c8907fd02c85f7ac8d8d2ffdc088ae4848bf313fc3c0f6e070d88494
+cargo_toml_sha256 = bf64a9f15bd33cd3f5d517dc984140ff38fb9ec93c5d3a50eb0971f658c0ed4b
+build_tree = /home/cbasaran/.cache/wt/improve-error-reply-native
+built_binary = /home/cbasaran/.cache/wt/improve-error-reply-native/target/release/jevgammon
+built_binary_sha256 = 5a33d59664deda26a726d9b853bae09d61202788c1b86166d1e3dca19071d34f
+pinned_copy = /home/cbasaran/code/jevgammon-improve/target/improve-bin/jevgammon-e417a0c
+pinned_copy_sha256 = 5a33d59664deda26a726d9b853bae09d61202788c1b86166d1e3dca19071d34f
+
+[66bbcd6]
+source_commit = 66bbcd629ec7349c5207cdd29e1c4626ba3738dc
+parent = 724406a8d8d6515ea82a91fc18e4032dea15e52c
+source_tree = b57484cae5a73d2425d477ae0fbdfe5e9a3acd41
+branch = improve-codex-error-reply-native
+tracked_changes = 0
+cargo_lock_sha256 = d7048551c8907fd02c85f7ac8d8d2ffdc088ae4848bf313fc3c0f6e070d88494
+cargo_toml_sha256 = bf64a9f15bd33cd3f5d517dc984140ff38fb9ec93c5d3a50eb0971f658c0ed4b
+build_tree = /home/cbasaran/.cache/wt/improve-codex-error-reply-native
+built_binary = /home/cbasaran/.cache/wt/improve-codex-error-reply-native/target/release/jevgammon
+built_binary_sha256 = 475108d99e85d4b920ae1592c9b7b8898f846240e393f4c27944ff30eabd0c62
+pinned_copy = /home/cbasaran/code/jevgammon-improve/target/improve-bin/jevgammon-66bbcd6
+pinned_copy_sha256 = 475108d99e85d4b920ae1592c9b7b8898f846240e393f4c27944ff30eabd0c62

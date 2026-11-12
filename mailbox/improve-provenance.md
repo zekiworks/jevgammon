@@ -90,3 +90,17 @@ Each receipt names the `jevgammon` process that started the step and the binary 
   - **GPT-6.1 Sol (high), GPT-6 Astra (high)** (Codex lane, not started): started with `IMPROVE_PIN=724406a workspace/improve/run_lane.sh <lane> gpt-6.1-sol-high gpt-6-astra-high`, so every step runs on 724406a.
   - All other start and restart scripts (`run_lane.sh`, `run_local_start.sh`, `provider_wait_restart.sh`, `claude_wait_restart.sh`, `run_openrouter.sh`, `run_subs.sh`) now pin 8b6f9a1. Any Run 2 of a finished arm uses it too.
 - **Already-run steps stay as they ran on 1270c04.** The QC found error replies scored as answers only in DeepSeek V4.1 Flash (on): 6 test answers and 1 game turn, handled by its Run 2 (`mailbox/qc-run2/README.md`).
+
+## 2026-11-12, later: jevgammon-e417a0c, with `native_finish_reason` (Zeki #5362, Main)
+
+- **The fix.** e52d7f9 (main, branch `error-reply-native-finish`) makes `error_reply` also fail a 200 reply whose `choices[0].native_finish_reason` is `"error"`. A scan of all 341,071 stored replies found 0 such replies (`mailbox/qc-run2/native-error-scan.json`). The fix was ported anyway, as a precaution.
+- **Ports.** Each was built in a new worktree, so the running 8b6f9a1 and 724406a build trees keep their HEAD. Their processes read the harness commit from those trees.
+  - `jevgammon-e417a0c` = 8b6f9a1 + e52d7f9, sha256 `5a33d59664deda26a726d9b853bae09d61202788c1b86166d1e3dca19071d34f`, Rust 84 passed.
+  - `jevgammon-66bbcd6` = 724406a + e52d7f9 (Codex lane), sha256 `475108d99e85d4b920ae1592c9b7b8898f846240e393f4c27944ff30eabd0c62`, Rust 89 passed.
+- **Pins.** All lane start and restart scripts now pin e417a0c; the Codex lane uses `IMPROVE_PIN=66bbcd6` (improve a76fdc9). `switch_at_boundary.sh` now takes `SWITCH_FROM`, `SWITCH_TO` and `SWITCH_WHY`. It was replaced by rename, so the running copy kept its file.
+- **When each lane switches** (never inside a step; each switch logs a `binary_switch` event; `mailbox/qc-run2/step-boundary-events.jsonl`):
+  - **Grok 4.7 (on)**, unit `improve-switch-xai2`: from 1270c04 straight to e417a0c after S4. The earlier 8b6f9a1 watcher `improve-switch-xai` was stopped at 13:13:55 UTC before it acted. Grok never ran 8b6f9a1.
+  - **Qwen3.8-27B (on)**, unit `improve-switch-local3b`: E3 finishes on 8b6f9a1, then S5 runs on e417a0c.
+  - **LFM2.5-24B-A2B (on)**: every step on e417a0c.
+  - **GPT-6.1 Sol and GPT-6 Astra**: every step on 66bbcd6.
+- **QC Run 2s.** DeepSeek S1 and Argon E1/S1/S2 keep 8b6f9a1 to the end (`run2.sh` pins it).

@@ -518,6 +518,11 @@ class States(Isolated):
 
     def test_liquid_runs_flagged_and_its_guard_fails_closed_without_a_documented_limit(self):
         self.cohort()
+        c = json.loads(D.COHORT_FILE.read_text())
+        liquid = next(s for s in c["setups"] if s["slug"] == "liquid-d1-ultra")
+        self.assertEqual(liquid["gate"]["limit_tokens"], 32768)  # documented by Liquid (limit_source)
+        liquid["gate"]["limit_tokens"] = None
+        D.COHORT_FILE.write_text(json.dumps(c))
         out = D.guard_preflight(write=False, worst=D.worst_block([dec(1, 1, 1, 0.5)], ["Position\nDice: 1-1"]))
         row = out["setups"]["liquid-d1-ultra"]
         self.assertEqual(row["refused"]["none"], row["requests"])  # every request refused: fails closed
@@ -526,6 +531,9 @@ class States(Isolated):
         self.assertTrue(all("delivery unverified (our evidence gap)" in r["delivery_flag"] for r in rows))
         self.assertTrue(all((r["state"], r["reason"]) == ("not tested", "native context limit unverified")
                             for r in rows))
+        self.cohort()  # with the documented limit the guard preflight decides, as for every hosted setup
+        self.guard("liquid-d1-ultra", none=1)
+        self.assertEqual(D.arm_state("liquid-d1-ultra", "notes", dry=True), ("not tested", "conservative context guard"))
 
     def test_a_spent_subcap_keeps_drex_max_pending(self):
         self.cohort(subcaps={"nace": 1.25}, D6_hosted_allowance_usd=dict(ZERO, nace=110))
@@ -533,6 +541,81 @@ class States(Isolated):
         state, why = D.arm_state("drex-max-1.1", "notes", dry=False)
         self.assertEqual(state, "pending")
         self.assertIn("subcap", why)
+
+    def scratch_v3(self, setup, sizes):
+        """A scratch v3.db holding `setup`'s league exchanges (one per size, valid match, with a response)."""
+        saved = I.V3_DB
+        self.addCleanup(setattr, I, "V3_DB", saved)
+        I.V3_DB = self.root / "v3.db"
+        db = sqlite3.connect(I.V3_DB)
+        db.executescript("CREATE TABLE players (id INTEGER PRIMARY KEY, name TEXT);"
+                         "CREATE TABLE matches (id INTEGER PRIMARY KEY, player1 INT, player2 INT, valid INT);"
+                         "CREATE TABLE games (id INTEGER PRIMARY KEY, match_id INT);"
+                         "CREATE TABLE turns (id INTEGER PRIMARY KEY, game_id INT, player INT);"
+                         "CREATE TABLE exchanges (id INTEGER PRIMARY KEY, turn_id INT, request TEXT, response TEXT);")
+        db.execute("INSERT INTO players VALUES (1, ?), (2, 'GNUbg')", (setup,))
+        db.execute("INSERT INTO matches VALUES (1, 2, 1, 1), (2, 1, 2, 0)")
+        db.execute("INSERT INTO games VALUES (1, 1), (2, 2)")
+        for i, n in enumerate(sizes, 1):
+            body = dict(model="m", state="s" * n, questions=dict(play=dict(
+                type="choice", instructions="Choose.", criteria={"24/18": "24/18: hits 0", "13/7": "13/7: hits 1"})))
+            db.execute("INSERT INTO turns VALUES (?, 1, 2)", (i,))
+            db.execute("INSERT INTO exchanges VALUES (?, ?, ?, '{}')", (i, i, json.dumps(body)))
+        db.execute("INSERT INTO turns VALUES (99, 2, 1)")  # an invalid match's request is not retained
+        db.execute("INSERT INTO exchanges VALUES (99, 99, ?, '{}')", (json.dumps(dict(state="x" * 9999)),))
+        db.commit()
+        db.close()
+
+    def test_the_render_check_passes_each_arm_on_its_own_cases(self):
+        """Lr with a stub renderer: every stored request (the largest included) with no block and each arm's block;
+        a block missing from one worst-arm input fails that arm only, and arm_state reads the record per arm."""
+        self.cohort()
+        self.scratch_v3("Decider v1.2 27B", [100, 300, 200])
+        seen = []
+
+        def renderer(cmd, input, **_):
+            out = []
+            for line in input.splitlines():
+                x = json.loads(line)
+                seen.append(x)
+                missing = sorted(k for k, v in x["pieces"].items() if v not in x["body"]["state"]
+                                 and not k.startswith(("instructions", "option")))
+                if x["id"] == "2:worst":
+                    missing = ["block"]
+                out.append(dict(id=x["id"], status="ok", error=None, sequences=[len(x["body"]["state"])],
+                                limits=dict(max_length=10), cut=False, missing=missing, transformed=[], roundtrip=True))
+            return type("P", (), dict(returncode=0, stdout="\n".join(map(json.dumps, out)), stderr=""))()
+
+        rec = D.render_check("decider-v1.2-27b", run=renderer, notes="=== NOTES ===\nn\n", worst="=== WORST ===\nw\n")
+        self.assertEqual((rec["retained_requests"], rec["largest_request_exchange"]), (3, 2))
+        self.assertEqual(len(seen), 9)
+        withblock = next(x for x in seen if x["id"] == "1:notes")
+        self.assertEqual(withblock["body"]["state"], "=== NOTES ===\nn\n\n" + "s" * 100)  # the runner's join
+        self.assertEqual(withblock["pieces"]["block"], "=== NOTES ===\nn")
+        self.assertEqual(rec["arms"], dict(notes=True, worst=False))
+        self.assertEqual(rec["kinds"]["worst"]["failures"], [dict(exchange=2, why=["missing"], error=None,
+                                                                  missing=["block"])])
+        self.assertEqual(D.arm_state("decider-v1.2-27b", "notes", dry=False), ("eligible", None))
+        self.assertEqual(D.arm_state("decider-v1.2-27b", "worst", dry=False),
+                         ("pending", "local render check (Lr) not passed"))
+
+    @unittest.skipUnless(Path(D.lr_routes()["glide-v1.2-local"]["cmd"][0]).exists(), "GLiDE's server venv")
+    def test_the_glide_renderer_finds_a_missing_block_and_the_servers_refusal(self):
+        """The real GLiDE renderer (its server's venv and snapshot tokenizer, CPU, no weights) on a tiny request."""
+        import subprocess
+        route = D.lr_routes()["glide-v1.2-local"]
+        body = dict(model="glide-v1.2", state="BLOCK\n\nleague state", questions=dict(play=dict(
+            type="choice", instructions="Choose.", criteria={"24/18": "24/18: hits 0", "13/7": "13/7: hits 1"})))
+        cases = [dict(id="a", body=body, pieces=dict(block="BLOCK", state="league state")),
+                 dict(id="b", body=dict(body, state="league state"), pieces=dict(block="BLOCK"))]
+        lines = "".join(json.dumps(c) + "\n" for c in cases)
+        out = [json.loads(x) for x in subprocess.run(route["cmd"], input=lines, capture_output=True, text=True,
+                                                     env=dict(os.environ, **route["env"]), check=True).stdout.splitlines()]
+        self.assertEqual([(r["status"], r["missing"], r["roundtrip"]) for r in out],
+                         [("ok", [], True), ("ok", ["block"], True)])
+        small = subprocess.run(route["cmd"] + ["--max-len", "50"], input=lines, capture_output=True, text=True,
+                               env=dict(os.environ, **route["env"]), check=True).stdout.splitlines()
+        self.assertEqual(json.loads(small[0])["status"], "refused")
 
     def test_an_incomplete_marker_from_the_runner_stops_the_arm(self):
         self.assertIsInstance(I.context_stop("Error: CONTEXT GATE: Jev request refused"), I.Incomplete)

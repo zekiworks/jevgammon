@@ -17,6 +17,7 @@ failure or the service's own refusal stops the arm as incomplete.
 
     python3 workspace/improve/decision.py status
     python3 workspace/improve/decision.py preflight-guard            # no call: the conservative guard on league requests
+    python3 workspace/improve/decision.py preflight-render --setup glide-v1.2-local  # no call, no GPU: Lr (§6.1)
     python3 workspace/improve/decision.py run --arm decision/jev-1.14.0-notes [--until S1]
     IMPROVE_DRY=1 python3 workspace/improve/decision.py run --arm decision/fastino-glide-worst --until S1  # no call
     python3 workspace/improve/decision.py probe-p1 --setup jev-1.14.0 --send   # billed (< $0.001); never run by tests
@@ -217,7 +218,7 @@ def arm_state(slug, arm, dry=None):
             return "pending", "accounting probe P1 was run under other settings (or records none): run it again"
     else:
         lr = evidence_record("render", slug)
-        if not (lr and lr.get("passed")):
+        if not (lr or {}).get("arms", {}).get(arm):
             return "pending", "local render check (Lr) not passed"
     return "eligible", None
 
@@ -1064,6 +1065,146 @@ def guard_preflight(write=True, notes=None, worst=None):
     return out
 
 
+# --- Preflight: the local render check Lr (no call, no GPU) ----------------------------------------------------
+
+HF_HUB = Path.home() / ".cache/huggingface/hub"
+LR_DIR = HERE / "lr"
+LR_SAMPLE = 50  # stored league requests per setup: the largest plus evenly spaced ones by size
+
+
+def lr_routes():
+    """Per local setup: the renderer lr/<route>.py, run under the server's own environment and pinned code, and the
+    server files whose hashes the record keeps. Renderer contract: stdin one JSON line per case {id, body (the System
+    One body as the runner sends it), pieces {name: text}}; stdout one line per case, in order, {id, status ok|refused
+    (the server's own pre-inference gate), error, sequences (token count of every inference sequence), limits, cut
+    (any truncation or content-dropping path), missing (pieces not in full in every sequence's final input after the
+    route's declared transformation), transformed, roundtrip (the token ids decode to the final input)}."""
+    glide = HF_HUB / "models--fastino--GLiDE/snapshots/a7e45896be7c96ba3354891da790c5ec99c30b6c"
+    decider = HF_HUB / "models--perplexity-ai--pplx-decider-v1.2/snapshots/225c913ddc8761a8264f04f64548e1f97e443eb3"
+    pkg = decider / "source/src/pplx_decider"
+    return {
+        "glide-v1.2-local": dict(
+            route="glide/server.py (tools/v3/servers/glide-v12.sh)", renderer=LR_DIR / "glide_v12.py",
+            cmd=[str(Path.home() / "code/glide/.venv/bin/python"), str(LR_DIR / "glide_v12.py"), "--model", str(glide)],
+            env=dict(PYTHONPATH=str(glide)),
+            code=[glide / "glide" / f for f in ("server.py", "model.py", "prompt.py")] + [glide / "tokenizer.json"]),
+        "decider-v1.2-27b": dict(
+            route="pplx_decider_server.py (tools/v3/servers/decider-v1.2.sh 27b)", renderer=LR_DIR / "decider.py",
+            cmd=[str(Path.home() / "code/pplx-decider/.venv-v1.2/bin/python"), str(LR_DIR / "decider.py"),
+                 "--model", str(decider)],
+            env={}, code=[Path.home() / "code/pplx-decider/pplx_decider_server.py", pkg / "model.py",
+                          pkg / "protocol.py", decider / "tokenizer.json"]),
+        "baselabs-elephant-1": baselabs_route("elephant-1", "b3f8a93462fb1051a9de031e94a7ff380e254072"),
+        "baselabs-mammoth-1": baselabs_route("mammoth-1", "61cec44c281c693992e3d6ebeb44dd3402dfa186"),
+    }
+
+
+def baselabs_route(model, revision):
+    """baselabs_server.py (decision-models 12a2ea1) in image baselabs-serve:81ce62f, as workspace/late3/baselabs.sh
+    serves it (--name baselabs/<model>): the renderer runs in the image, CPU only, no network."""
+    snap = HF_HUB / f"models--baselabs--{model}/snapshots/{revision}"
+    return dict(
+        route="baselabs_server.py (decision-models 12a2ea1, image baselabs-serve:81ce62f)",
+        renderer=LR_DIR / "baselabs.py",
+        cmd=["docker", "run", "--rm", "-i", "--network", "none", "-e", "HF_HUB_OFFLINE=1", "-e", "CUDA_VISIBLE_DEVICES=",
+             "-v", f"{HF_HUB}:/hf:ro", "-v", f"{LR_DIR}:/lr:ro", "--entrypoint", "/opt/conda/bin/python",
+             "baselabs-serve:81ce62f", "/lr/baselabs.py", "--model", f"/hf/{snap.relative_to(HF_HUB)}",
+             "--name", f"baselabs/{model}"],
+        env={}, code=[Path.home() / "code/analysis/decision-models/runner/servers/baselabs_server.py"]
+        + [snap / f for f in ("engine.py", "serve.patch", "tokenizer.json", "readout.json", "config.json")])
+
+
+def stored_requests(setup, n=LR_SAMPLE):
+    """(exchange id, request body) of the setup's retained league requests (valid matches, with a response): the
+    largest and n - 1 more evenly spaced by size, largest first; and the number retained."""
+    import sqlite3
+    db = sqlite3.connect(f"file:{I.V3_DB}?mode=ro", uri=True, timeout=60)
+    (pid,) = db.execute("SELECT id FROM players WHERE name = ?", (setup,)).fetchone()
+    q = ("FROM exchanges x JOIN turns t ON t.id = x.turn_id JOIN games gm ON gm.id = t.game_id JOIN matches m "
+         "ON m.id = gm.match_id WHERE m.valid = 1 AND x.response IS NOT NULL AND ((m.player1 = ? AND t.player = 1) "
+         "OR (m.player2 = ? AND t.player = 2))")
+    sizes = db.execute(f"SELECT x.id, length(CAST(x.request AS BLOB)) {q} ORDER BY 2 DESC, 1", (pid, pid)).fetchall()
+    pick = {sizes[round(i * (len(sizes) - 1) / max(n - 1, 1))][0] for i in range(n)} if sizes else set()
+    size = dict(sizes)
+    rows = [(i, json.loads(r)) for i, r in db.execute(
+        f"SELECT id, request FROM exchanges WHERE id IN ({','.join('?' * len(pick))})", sorted(pick))]
+    db.close()
+    return sorted(rows, key=lambda r: (-size[r[0]], r[0])), len(sizes)
+
+
+def lr_cases(rows, blocks):
+    """Renderer input lines: every stored request with no block and with each arm's largest block at the start of
+    `state` as the runner puts it (src/players/decision.rs state_with_block: block.trim_end() + blank line + state)."""
+    out = []
+    for xid, body in rows:
+        for kind, block in blocks.items():
+            b = dict(body, state=f"{block.rstrip()}\n\n{body['state']}" if block else body["state"])
+            pieces = dict(state=body["state"])
+            for qk, q in body["questions"].items():
+                pieces[f"instructions:{qk}"] = q.get("instructions") or ""
+                pieces.update({f"option:{qk}:{k}": v for k, v in (q.get("criteria") or {}).items()
+                               if isinstance(v, str) and v})
+            if block:
+                pieces["block"] = block.rstrip()
+            out.append(dict(id=f"{xid}:{kind}", body=b, pieces=pieces))
+    return out
+
+
+def lr_judge(results):
+    """Per kind (none, notes, worst): counts, the largest sequence, and every failing case. A case passes when the
+    server's gate accepts it, no cut path is taken, every piece is present in full and the tokens decode back."""
+    kinds = {}
+    for r in results:
+        xid, kind = r["id"].rsplit(":", 1)
+        k = kinds.setdefault(kind, dict(cases=0, passed=0, refused=0, cut=0, missing=0, roundtrip_failed=0,
+                                        max_tokens=0, max_tokens_exchange=None, limits=r.get("limits"), failures=[]))
+        k["cases"] += 1
+        bad = [why for why, hit in (("refused", r["status"] != "ok"), ("cut", r["cut"]), ("missing", r["missing"]),
+                                    ("roundtrip_failed", not r["roundtrip"])) if hit]
+        for why in bad:
+            k[why] += 1
+        if bad:
+            k["failures"].append(dict(exchange=int(xid), why=bad, error=r.get("error"), missing=r["missing"]))
+        else:
+            k["passed"] += 1
+        top = max(r["sequences"] or [0])
+        if top > k["max_tokens"]:
+            k["max_tokens"], k["max_tokens_exchange"] = top, int(xid)
+    return kinds
+
+
+def render_check(slug, write=True, run=subprocess.run, notes=None, worst=None):
+    """Addendum §6.1 (Lr): a CPU-only render, with the server's own code at its pinned commit, of the final
+    inference input of stored league requests (the largest included) with no block and with each arm's largest block
+    (the guard preflight's: notes 10 games x 5 lessons x 30 words of 12 bytes; worst the 5 largest rendered League
+    position blocks). An arm passes when every case with no block and with its block passes (lr_judge). Recorded in
+    preflight/render-<slug>.json; no model call."""
+    s, route = setups()[slug], lr_routes()[slug]
+    rows, retained = stored_requests(s["setup"])
+    blocks = dict(none="", notes=notes if notes is not None else synthetic_notes_block(),
+                  worst=worst if worst is not None else synthetic_worst_block())
+    payload = "".join(json.dumps(c, ensure_ascii=False) + "\n" for c in lr_cases(rows, blocks))
+    out = run(route["cmd"], input=payload, capture_output=True, text=True, env=dict(os.environ, **route["env"]))
+    if out.returncode != 0:
+        raise RuntimeError(f"{slug} renderer failed: {out.stderr[-2000:]}")
+    kinds = lr_judge([json.loads(x) for x in out.stdout.splitlines() if x.strip()])
+    answered = sum(k["cases"] for k in kinds.values())
+    if answered != len(rows) * len(blocks):
+        raise RuntimeError(f"{slug} renderer answered {answered} of {len(rows) * len(blocks)} cases")
+    ok = {k: v["passed"] == v["cases"] for k, v in kinds.items()}
+    arms = {arm: ok["none"] and ok[arm] for arm in ARMS}
+    rec = dict(at=I.now(), setup=s["setup"], route=route["route"], command=route["cmd"], env=route["env"],
+               renderer_sha256=I.sha256_file(route["renderer"]),
+               code_sha256={str(p): I.sha256_file(p) for p in route["code"]},
+               retained_requests=retained, rendered_requests=len(rows), largest_request_exchange=rows[0][0],
+               largest_request_bytes=len(json.dumps(rows[0][1], ensure_ascii=False).encode()),
+               block_sha256={k: hashlib.sha256(v.encode()).hexdigest() for k, v in blocks.items() if v},
+               kinds=kinds, arms=arms, passed=all(arms.values()))
+    if write:
+        I.write_atomic(PREFLIGHT() / f"render-{slug}.json", json.dumps(rec, indent=1))
+    return rec
+
+
 # --- Preflight: hosted accounting probe P1 (billed; implemented, run only by an operator) ------------------------
 
 def p1_answer(db_path, name, expect):
@@ -1232,6 +1373,8 @@ def main():
     p.add_argument("--setup", required=True)
     p.add_argument("--send", action="store_true")
     sub.add_parser("preflight-guard", help="the conservative guard on retained league requests (no call)")
+    lr = sub.add_parser("preflight-render", help="the local render check Lr of one local setup (no call, no GPU)")
+    lr.add_argument("--setup", required=True, choices=sorted(lr_routes()))
     sub.add_parser("status")
     sub.add_parser("summary")
     a = ap.parse_args()
@@ -1245,6 +1388,13 @@ def main():
         for slug, x in out["setups"].items():
             print(f"{x['setup']}: {x['requests']} requests, max {x['max_bytes']} B, limit {x['limit_tokens']}; "
                   f"refused none {x['refused']['none']}, notes {x['refused']['notes']}, worst {x['refused']['worst']}")
+    elif a.cmd == "preflight-render":
+        rec = render_check(a.setup)
+        for kind, k in rec["kinds"].items():
+            print(f"{rec['setup']} {kind}: {k['passed']}/{k['cases']} passed, max {k['max_tokens']} tokens "
+                  f"(exchange {k['max_tokens_exchange']}), limits {k['limits']}; refused {k['refused']}, cut "
+                  f"{k['cut']}, missing {k['missing']}, round trip failed {k['roundtrip_failed']}")
+        print(f"arms: {rec['arms']}")
     elif a.cmd == "status":
         status()
     elif a.cmd == "summary":

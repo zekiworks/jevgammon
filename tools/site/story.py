@@ -229,8 +229,9 @@ def page_href(S, x) -> str | None:
     return P.model_href("", x["ds"], x["name"], S) if x["q"] is not None else None
 
 
-# The row's details box (Ümit #2904, as Clocktower Bench's): opened by a tap on a phone, by hover or the keyboard focus on
-# a desktop (bg.js), each line filled only from the setup's stored values, a line or part left out where the data has
+# The row's details box (Ümit #2904, as Clocktower Bench's): opened by a tap on the name on a phone (a popover at the
+# name, Ümit via Zeki #5462), by hover or the keyboard focus on a desktop (site.js modelBoxes), each line filled only
+# from the setup's stored values, a line or part left out where the data has
 # none (never "n/a"). The row itself shows the rank, the model (maker dot, the name, one chip after it: setting · type,
 # a late entry's tag) and the risk judgement; every other value of the setup is in its box, its maker, type and setting
 # on the first line (Ümit #3039: nothing under the name; #3193: the chip).
@@ -315,7 +316,7 @@ def links_line(S, x, rel: str = "") -> str:
 
 
 def box_html(bid: str, name: str, lines: list) -> str:
-    """A row's details box (bg.js headlineDetails): one paragraph per line, a line without data left out."""
+    """A row's details box (site.js modelBoxes): one paragraph per line, a line without data left out."""
     return (f'<div class="hl-box" id="{bid}" role="group" aria-label="{esc(name)}: details">'
             + "".join(f"<p>{line}</p>" for line in lines if line) + "</div>")
 

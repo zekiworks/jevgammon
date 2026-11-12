@@ -1972,8 +1972,9 @@ def repeat_checks(S) -> str:
     model (maker dot, family icon, official name and tag, as on the home leaderboard), the repeat's risk judgement /
     error rate / decisions (or its state in words), the first run's on the same pairs, matches finished of the pairs
     playable today and status; Run 1 and Run 2 side by side on the matched pairs (with invalid decisions and billed
-    cost), the run id, settings, dates, cost basis and differences in the row's details. Below 640 px: rank, model, both
-    risk judgements and status; the rest in the details."""
+    cost, the run id, settings, dates, cost basis and differences in the row's details box (story.box_html's kind,
+    site.js modelBoxes: hover or focus on a desktop, a tap on the name on a phone; no Details row under the model,
+    Ümit via Zeki #5462). Below 640 px: rank, model, both risk judgements and status; the rest in the box."""
     import home as H
     # The setup's shown name (maker, family, official name), beside the published record.
     setup = {m["id"]: m["original"] for m in json.loads(REPEAT_MANIFEST.read_text())["repeats"]}
@@ -2023,16 +2024,17 @@ def repeat_checks(S) -> str:
                            + f'); cap ${cost["cap_usd"]:.0f} per repeat'),
             ("Differences from the original protocol",
              "<ul>" + "".join(f"<li>{esc(x)}</li>" for x in d["differences"]) + "</ul>")]
-        details = (f'<details class="more rc-details" id="repeat-{d["id"]}"><summary>Details</summary>'
-                   '<dl class="facts">' + "".join(f"<dt>{k}</dt><dd>{v}</dd>" for k, v in items) + "</dl></details>")
+        bid = f'repeat-{d["id"]}-box'
+        box = (f'<div class="hl-box rc-box" id="{bid}" role="group" aria-label="{esc(setup[d["id"]])}: details">'
+               '<dl class="facts">' + "".join(f"<dt>{k}</dt><dd>{v}</dd>" for k, v in items) + "</dl></div>")
         rank = (count(d["rank"]) if d["rank"] else
                 '<span class="nm"><span class="rc-more">unranked</span><span class="rc-short" title="unranked">–</span></span>')
-        rows.append(f'<tr class="rc-row"><td class="num rc-rank">{rank}</td><td class="model">{dot}{icon}'
-                    f'<span class="model-name">{name_html(setup[d["id"]])}</span></td><td class="num">{repeat}</td>'
+        rows.append(f'<tr class="rc-row" id="repeat-{d["id"]}" data-box="{bid}"><td class="num rc-rank">{rank}</td>'
+                    f'<td class="model">{dot}{icon}<span class="model-name" tabindex="0" aria-describedby="{bid}">'
+                    f'{name_html(setup[d["id"]])}</span>{box}</td><td class="num">{repeat}</td>'
                     f'<td class="num">{repeat_measures(d["original"])}</td>'
                     f'<td class="num rc-pairs">{pairs}</td><td class="rc-status">{status_badge(state)}'
-                    f'<span class="small"> · {esc(counts)}</span></td></tr>'
-                    f'<tr class="rc-detail-row"><td colspan="{len(REPEAT_HEAD)}">{details}</td></tr>')
+                    f'<span class="small"> · {esc(counts)}</span></td></tr>')
     return (f'<section class="card" id="repeat-checks">{H.FAMILY_ICONS}<div class="section-head"><h2>Repeat checks</h2>'
             f'</div><h3>{esc(REPEAT_AREA)}</h3><p class="table-note rc-view">{esc(RUN2_NOTE)}</p>'
             + table(REPEAT_HEAD, rows, f"Repeat checks, {esc(REPEAT_AREA)}, Run 2: each repeat ranked when complete, "

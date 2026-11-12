@@ -202,3 +202,55 @@ Every League 1 late entry plays the same 17-opponent field under the same rules,
 | Kimi K3.1 Pro (off) (League 3) | 11 matches, 58 games, 1,493 own turns, 1,167 decisions, 1,535 exchanges | Request `moonshotai/kimi-k3.1-pro`, provider order `moonshotai/mxfp4`, no fallbacks, reasoning none on all. Echo model and `Moonshot AI` on all. `system_fingerprint` varies (fpv0_24af6fd9 1,415; fpv0_a3ce6857 118; 2 others 1 each), provider-side. All `choice_only` (no logprobs returned, as declared: readout answer). I/O consistent; 131 split decisions consistent. 0 invalid / errors. 11/11 roster. Harness 4649852, `harness_dirty` 1 on all 11 matches (league-wide, see above) | no defect found in checked scope (provenance flag) |
 | Qwen3.8-27B (on) (League 2) | 18 valid league matches, 98 games, 2,605 own turns, 2,108 decisions, 5,471 exchanges (thinking + prefill readout) | **Route:** turn 43536 / match #205 went through OpenRouter → Cerebras (see Defects). All other decisions are local vLLM, served name `qwen3.8-27b`. Two vLLM fingerprints: 14f6ab0d (5,236 exchanges) and 0f28ff8b (234; matches #367, 390, 480), i.e. the disclosed DGX Spark period. 16 harness commits; dirty 1 on 1,450 decisions. **I/O:** letter probabilities recomputed from the readout logprobs equal the stored ones; chosen = max; 217 split decisions consistent. 0 invalid / errors. 18/18 roster. 14 failed-and-resumed matches with intact chains; the voids are the 19 Oct reshape (21) and one 20 Oct void | **DEFECT** (route, 1 decision in match #205; see Defects); otherwise no defect found (provenance flag) |
 | GLM-5.3 (on) (League 2) | 18 valid league matches, 100 games, 2,525 own turns, 1,989 decisions, 2,543 exchanges | Request `z-ai/glm-5.3`, provider order `fireworks`, reasoning low on all. Echo `z-ai/glm-5.3` / `Fireworks` on all. Probabilities equal the recomputed top-5 letter logprobs within 2e-4. One decision (turn 147378) is stored `choice_only` because the provider's token list does not spell out the reply text; the runner then declines the logprobs, as designed. The played letter is the reply's letter and also that token's argmax. 203 split decisions consistent. 0 invalid / errors. 18/18 roster. 13 harness commits; dirty 1 on 1,333 decisions | no defect found in checked scope (provenance flag) |
+
+## Claude route: output cap, continuations and retries (Zeki #5288)
+
+Read-only; no model calls. The only command run was `claude --version` (no request).
+
+**Summary:** no affected run. None of our stored backgammon Claude answers went through the Claude Code CLI. Every one is a single Messages API request whose output is at or below the 32,000 cap. Claude Code was used once, in an unscored smoke test (test C). That test shows the auto-continuation, and it is already recorded as such.
+
+### 1. Binary, version and flags
+
+- **Learning lanes:** Fable 5.1 (on), Opus 5.5 (on), Sonnet 5.5 (high). Players `claude-subscription`, spec `anthropic/claude-*`.
+  - The `claude` CLI is not used. The runner calls `https://api.anthropic.com/v1/messages` directly over HTTP with the subscription OAuth token.
+  - Headers: `anthropic-version: 2023-06-01`, `anthropic-beta: claude-code-20250219,oauth-2025-04-20`. The system prompt starts with the Claude Code identity line.
+  - Not streamed. Code: `src/players/llm.rs` (route `AnthropicSubscription`) and `src/http.rs`.
+  - Binary: `target/improve-bin/jevgammon-1270c04` (sha256 19357c4e…) on every logged `step_start`: Fable 10/10, Opus 8/8, Sonnet 9/9.
+  - Stored requests, the same on every exchange of each arm: `model` claude-fable-5-1 / claude-opus-5-5 / claude-sonnet-5-5, `max_tokens` 32000, `output_config.effort` high, the JSON-schema letter format, no `thinking` field.
+  - Reply `model` equals the request model on all.
+- **League play in v3.db** (same route, 6 setups): Fable 5.1 (off, on), Opus 5.5 (off, on), Sonnet 5.5 (low, high). `max_tokens` 32000 on all; `effort` low or high per setup as declared; reply model = request model.
+- **Fable 5.2 smoke tests:**
+  - `workspace/late-carbon-fable/smoke.db`: 1 Claude answer (answer 2, smoke-0001), our runner as above, `effort` max, `max_tokens` 32000.
+  - `test-C-cli-smoke-0004.json`: the only Claude Code CLI use in backgammon. The command (plan `mailbox/Late entries Carbon and Fable 5.2 - plan 2026-11-11.md`, branch late-carbon-fable) was `claude --print --model claude-fable-5-2 --effort max --system-prompt-file <our system> --tools "" --output-format json`, with our user prompt on stdin. Session 1ed824ab-0a50-4be5-9eaf-a25afa210f51.
+  - The stored JSON has no version field. [INFERENCE] It was 2.1.312: that binary was installed 29 Oct and is the newest in `~/.local/share/claude/versions` (2.1.285, 2.1.302, 2.1.312); the test file is dated 11 Nov.
+- No other backgammon code calls the `claude` CLI: searched `tools/`, `workspace/` and `src/` in jevgammon and jevgammon-improve, and the late-carbon-fable scripts. `workspace/effort_probe.py` also calls the Messages API over HTTP.
+
+### 2. Output tokens against the cap; continuations
+
+| Store | Exchanges / calls | Cap | Max output | Above cap | Stop reasons |
+|---|---|---|---|---|---|
+| Lane Fable 5.1 (on): tests + games (archived attempts included) | 4,451 (2,216 test, 2,235 game) | 32,000 | 21,292 | 0 | end_turn 4,451 |
+| Lane Fable 5.1 (on): lesson calls (`*.call.json`) | 60 | 32,000 | 2,007 | 0 | end_turn 60 |
+| Lane Opus 5.5 (on): tests + games | 3,866 | 32,000 | 4,484 | 0 | end_turn 3,866 |
+| Lane Opus 5.5 (on): lesson calls | 50 | 32,000 | 1,114 | 0 | end_turn 50 |
+| Lane Sonnet 5.5 (high): tests + games | 3,774 | 32,000 | 3,981 | 0 | end_turn 3,774 |
+| Lane Sonnet 5.5 (high): lesson calls | 50 | 32,000 | 388 | 0 | end_turn 50 |
+| v3.db leagues, 6 Claude setups | 21,948 | 32,000 | 13,087 (Fable 5.1 on) | 0 | end_turn 21,948 |
+| Fable 5.2 smoke.db, answer 2 | 1 | 32,000 | 32,000 (= cap) | 0 | max_tokens (no answer, stored invalid; smoke only, never scored) |
+| Claude Code test C (JSON only, not in any DB) | 1 CLI call = 4 requests | 32,000 per request | 32,000 each, 128,000 summed | per request: 0; summed: 128,000 > 32,000 | `num_turns` 4, `api_error` max_output_tokens, no answer; never scored |
+
+- **Continuations on our runner route:** none; there is no `num_turns` field because the route has no agent loop. Each stored exchange is exactly one HTTP request and response. The client returns on the first 2xx (`src/http.rs`), so it can neither continue nor re-ask after a reply.
+  - Per answer or turn, the stored exchange count equals the group-split count exactly (0 mismatches in 3,118 / 2,801 / 2,784 answers and turns). So there are no hidden extra requests.
+  - Every lesson call holds 1 exchange.
+- **Claude Code test C:** the CLI JSON records `num_turns` 4, i.e. 3 automatic continuations, each capped at 32,000. This is already recorded in the plan and in late-carbon-fable commit ea500e4. It produced no answer and no score.
+
+### 3. Refusals and retries
+
+- Across every store above: 0 `stop_reason` refusal, 0 non-null `stop_details`, and no reply without a response. 0 invalid answers and 0 fallback plays on the lane and league Claude rows; the only Claude invalid is smoke answer 2 (max_tokens).
+- **Refusals:** our client never re-asks after a 2xx reply. A refusal would be stored once as an invalid answer, not retried internally; none occurred.
+- **Retries:** the runner retries only non-2xx replies or no response, up to 4 attempts. Those failed attempts are not stored as exchanges, so their status is unknown per answer.
+  - Their time goes into `retry_ms`, which also counts waiting for a free request slot.
+  - Lane answers with `retry_ms` > 0: Fable answers 1027 and 1028 (2026-11-11 07:42Z), each with one stored end_turn reply; Opus 0; Sonnet 0.
+  - Logged HTTP failures (Fable lane `log.jsonl`): S2 attempt 1, 529 overloaded (4 attempts), and S2 attempt 2, 429 usage limit. Both series attempts were archived and replayed (attempt 3); none of their data is used.
+- Only Claude Code test C retried internally: its 4 requests are continuations, not same-model refusal retries.
+- **Affected run ids:** none.

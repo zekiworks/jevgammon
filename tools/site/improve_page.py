@@ -348,7 +348,7 @@ def rows(L) -> list:
     out = [(pm, by.get(pm["setup"])) for pm in L["plan"]["models"]]
     ch = [x for x in out if x[1] and x[1]["change"]["risks_found"] is not None]
     rest = [x for x in out if x not in ch]
-    return sorted(ch, key=lambda x: -x[1]["change"]["risks_found"]) + rest
+    return sorted(ch, key=lambda x: -shown(x[1])["change"]["risks_found"]) + rest
 
 
 def status(L) -> dict:
@@ -468,9 +468,20 @@ RUN2_WHY = {"deepseek-v4.1-flash-on": "7 provider errors were scored as answers 
 
 
 def shown(m) -> dict:
-    """The verdict the page shows: Run 2's (content/run2/<key>.json) where one is published, else the data file's own;
-    improve.json's original numbers stay unchanged."""
-    return RUN2[m["key"]]["run2"] if m["key"] in RUN2 else m
+    """The numbers a model's table rows show and sort by: Run 2's (content/run2/<key>.json: before, after, change,
+    threshold, verdict; the error rate, not in the report, stays the data file's) where one is published, else the data
+    file's own. improve.json's original numbers stay unchanged; the details box shows them."""
+    r = RUN2.get(m["key"], {}).get("run2")
+    if r is None:
+        return m
+    return dict(m, **{k: r[k] for k in ("threshold", "improved", "status")},
+                **{w: dict(m[w], **r[w]) for w in ("before", "after", "change")})
+
+
+def run2_mark(m) -> str:
+    """After a row's change: 'Run 2' where the row shows a published Run 2 (shown)."""
+    return ('<span class="small inline" data-run2="shown" title="Corrected Run 2 after QC; the original run is in the '
+            'details box">Run\u00a02</span>' if m["key"] in RUN2 else "")
 
 
 def verdict_cell(m) -> str:
@@ -527,7 +538,8 @@ def model_row(pm, m, results: bool) -> str:
     without a sideways scroll (Ümit #4665), then the plan's maker, setting and route and the other measures."""
     name = (f'<a href="#lessons-{esc(pm["key"])}">{esc(pm["setup"])}</a>' if m else esc(pm["setup"]))
     head = (f'<tr data-setup="{esc(pm["setup"])}" data-key="{esc(pm["key"])}"'
-            + (f' data-change="{m["change"]["risks_found"]}"' if m and m["change"]["risks_found"] is not None else "")
+            + (f' data-change="{shown(m)["change"]["risks_found"]}"' if m and m["change"]["risks_found"] is not None
+               else "")
             + f'><th scope="row">{name}{label(pm)}</th>')
     plan = f'<td>{esc(pm["maker"])}</td><td>{_inline(pm["setting"])}</td><td>{route(pm)}</td>'
     if not results:
@@ -535,14 +547,16 @@ def model_row(pm, m, results: bool) -> str:
     if m is None:
         return (head + "".join("<td></td>" for _ in range(4)) + f'<td>{_inline(unref(pm["status"]))}</td>' + plan
                 + "".join("<td></td>" for _ in range(4)) + "</tr>")
-    ch = m["change"]
+    v = shown(m)
+    ch = v["change"]
     return head + (
-        f'<td class="num" data-cell="rf">{before_after(m, "risks_found")}</td>'
-        f'<td class="num" data-cell="rf-change">{fmt(ch["risks_found"], 1, signed=True) or nm(NA)}</td>'
+        f'<td class="num" data-cell="rf">{before_after(v, "risks_found")}</td>'
+        f'<td class="num"><span data-cell="rf-change">{fmt(ch["risks_found"], 1, signed=True) or nm(NA)}</span>'
+        f'{run2_mark(m)}</td>'
         f'<td class="num" data-cell="range">{num(m["range"])}</td>'
-        f'<td class="num" data-cell="threshold">{num(m["threshold"])}</td>'
+        f'<td class="num" data-cell="threshold">{num(v["threshold"])}</td>'
         f'<td data-cell="verdict">{verdict_cell(m)}</td>' + plan +
-        f'<td class="num" data-cell="rs">{before_after(m, "right_safety")} '
+        f'<td class="num" data-cell="rs">{before_after(v, "right_safety")} '
         f'({fmt(ch["right_safety"], 1, signed=True) or NA})</td>'
         f'<td class="num" data-cell="er">{before_after(m, "error_rate")}</td>'
         f'<td class="small" data-cell="answers"><strong>Before:</strong> {answers(m["answers_before"])}<br>'
@@ -681,7 +695,7 @@ def result_rows(L) -> list:
         p, m = prog.get(pm["setup"]), by.get(pm["setup"])
         done = m is not None and m["verdict"] and m["change"]["risks_found"] is not None
         started = not L["progress_refused"] and p is not None and p["status"] != "not started"
-        key = (0, -m["change"]["risks_found"], i) if done else ((1, 0, i) if started else (2, 0, i))
+        key = (0, -shown(m)["change"]["risks_found"], i) if done else ((1, 0, i) if started else (2, 0, i))
         out.append((key, pm, p, m))
     return [x[1:] for x in sorted(out, key=lambda x: x[0])]
 
@@ -715,13 +729,13 @@ def result_row(pm, p, m, refused, i: int, links: dict) -> str:
     if m is None:
         change, bar, rs = "<td></td>", "<td></td>", "<td></td>"
     else:
-        ch = m["change"]
+        v = shown(m)
         change = (f'<td class="num"><strong data-rcell="rf-change">'
-                  f'{fmt(ch["risks_found"], 1, signed=True) or nm(NA)}</strong><br><span class="small" data-rcell="rf">'
-                  f'{before_after(m, "risks_found")}</span></td>')
-        bar = (f'<td class="num"><span data-rcell="threshold">{num(m["threshold"])}</span><br>'
+                  f'{fmt(v["change"]["risks_found"], 1, signed=True) or nm(NA)}</strong>{run2_mark(m)}<br>'
+                  f'<span class="small" data-rcell="rf">{before_after(v, "risks_found")}</span></td>')
+        bar = (f'<td class="num"><span data-rcell="threshold">{num(v["threshold"])}</span><br>'
                f'<span class="small">spread <span data-rcell="range">{num(m["range"])}</span></span></td>')
-        rs = f'<td class="num" data-rcell="rs">{before_after(m, "right_safety")}</td>'
+        rs = f'<td class="num" data-rcell="rs">{before_after(v, "right_safety")}</td>'
     verdict = (f'<span data-rcell="verdict">{verdict_text(m)}</span>' if m is not None else "")
     name = re.sub(r" \([^()]*\)$", "", pm["setup"])
     setting = pm["setup"][len(name) + 2:-1] or None

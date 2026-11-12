@@ -273,7 +273,9 @@ How they answer:
 - **Invalid answers** (a reply that names no option, a letter outside the options, a
   refusal) are not repaired or re-asked: the runner plays a uniformly random legal play,
   seeded per decision, and records `decided_by = 'fallback'`, `invalid = 1`.
-- **Network and server errors** (connection failures, HTTP 408, 429, 5xx) are retried up to
+- **Network and server errors** (connection failures, HTTP 408, 429, 5xx, and an HTTP 200
+  reply carrying a provider error: a top-level `error`, `choices[0].error` or
+  `finish_reason: "error"`) are retried up to
   3 times with backoff (2, 4, 8 s; after a 429, 15, 30, 60 s; `Retry-After` can lengthen a wait
   up to 60 s). The time
   spent is logged in `turns.retry_ms` and not charged to the clock. Any other failure, or

@@ -110,7 +110,7 @@ def compute(args) -> dict:
             metric_status=lg["metric_status"], matches=lg["fixtures"], matches_done=lg["done"], games=lg["games"],
             started=lg["started"], finished=lg["finished"],
             decisions=len(lg["decisions"]), scored=sum(1 for d in lg["decisions"] if d["scored"]),
-            matches_list=lg["matches_list"],
+            matches_list=lg["matches_list"], runner=lg["runner"],
             standings=[dict(place=t["place"], name=t["name"], played=t["played"], won=t["won"], drawn=t["drawn"],
                             lost=t["lost"], points=t["points"], games_won=t["gw"], games_lost=t["gl"],
                             gammons_won=lg["gammons"].get(t["name"], 0), to_play=lg["left"].get(t["name"], 0))

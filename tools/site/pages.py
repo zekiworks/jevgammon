@@ -2225,7 +2225,8 @@ def write_all(S, out: Path, base: str) -> None:
         put(f"models/smoke-part-a/{meta(S, 'smoke-part-a', r['setup'])['slug']}/", r["setup"],
             model_page(S, "smoke-part-a", r["setup"], None, r), dataset="smoke-part-a")
     ctx = dict(thresholds=S["thresholds"], play_order=S["v1"]["play_order"], shared_sets=S["shared"]["build_log"],
-               data_as_of=as_of(S), extra=home.method_extras(S))
+               data_as_of=as_of(S), extra=home.method_extras(S),
+               runner=[dict(id=lg["id"], **lg["runner"]) for lg in S["leagues"]])
     method_html = method.body(ctx)
     put("method/", "Method", method_html, main_class="method-page")
     import clear_risk_section

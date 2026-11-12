@@ -1345,6 +1345,19 @@ def status():
             print(f"{r['label']}: {r['state']}{' (' + r['reason'] + ')' if r['reason'] else ''}")
 
 
+def arm_state_cli(key):
+    """Exit code of `arm-state` (no call): 0 the arm has steps to run (eligible, not finished or stopped), 3 pending
+    (a decision or a preflight is missing), 2 nothing to run (complete, stopped, incomplete, not tested, not started).
+    Prints the state and reason; run_decision_local.sh starts a server only for an arm that exits 0."""
+    slug, arm = split(key)
+    r = arm_summary(slug, arm)
+    print(f"{r['label']}: {r['state']}{' (' + r['reason'] + ')' if r['reason'] else ''}")
+    pre, _ = arm_state(slug, arm)
+    if pre == "pending":
+        return I.PAUSE
+    return 0 if pre == "eligible" and r["state"] not in ("complete", "stopped", "incomplete") else I.STOP
+
+
 def probe_p1_cli(slug, send, probe=None):
     """Exit code of `probe-p1`: 0 passed, 2 failed or stopped (stop that setup), 3 refused for now (pause: the
     old-share wait, the chat fence, a balance or subcap pause, unreadable accounting); the reason goes to stderr."""
@@ -1372,6 +1385,8 @@ def main():
     p = sub.add_parser("probe-p1", help="billed: the hosted accounting probe of one setup")
     p.add_argument("--setup", required=True)
     p.add_argument("--send", action="store_true")
+    st = sub.add_parser("arm-state", help="0 the arm has steps to run, 3 pending, 2 nothing to run (no call)")
+    st.add_argument("--arm", required=True, choices=arm_keys())
     sub.add_parser("preflight-guard", help="the conservative guard on retained league requests (no call)")
     lr = sub.add_parser("preflight-render", help="the local render check Lr of one local setup (no call, no GPU)")
     lr.add_argument("--setup", required=True, choices=sorted(lr_routes()))
@@ -1397,6 +1412,8 @@ def main():
         print(f"arms: {rec['arms']}")
     elif a.cmd == "status":
         status()
+    elif a.cmd == "arm-state":
+        sys.exit(arm_state_cli(a.arm))
     elif a.cmd == "summary":
         summary()
     else:

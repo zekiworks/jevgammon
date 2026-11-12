@@ -747,6 +747,78 @@ class Script(unittest.TestCase):
             self.assertRegex(log.splitlines()[0], r"^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ ")
 
 
+class LocalScript(unittest.TestCase):
+    """run_decision_local.sh with stubs for decision.py, the server scripts, agent-bus and nvidia-smi: order, the
+    empty-card refusal, the probe check and that every started server is stopped; no real call, no GPU."""
+
+    def lane(self, states, runs, mib="5", probe_model=None, gpu="2"):
+        import subprocess
+        t = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        (t / "seq.json").write_text(json.dumps(dict(states, **runs)))
+        (t / "stub.py").write_text(
+            "import json, sys\nfrom pathlib import Path\n"
+            f"d = Path({str(t)!r})\n"
+            "k = sys.argv[1] + ' ' + sys.argv[3].removeprefix('decision/')\n"
+            "s = json.loads((d / 'seq.json').read_text())\n"
+            "rc = s[k].pop(0) if isinstance(s[k], list) else s[k]\n(d / 'seq.json').write_text(json.dumps(s))\n"
+            "with open(d / 'calls', 'a') as f: f.write(f'{k} {rc}\\n')\n"
+            "sys.exit(rc)\n")
+        models = {"elephant": "baselabs/elephant-1", "decider-v1.2.sh": "pplx-decider-v1.2", "glide-v12.sh": "glide-v1.2"}
+        for name, model in models.items():
+            served = probe_model or model
+            (t / name).write_text(
+                "#!/usr/bin/env bash\n"
+                f"echo \"server {name} ${{@: -1}} gpu=${{ELEPHANT_GPU:-${{DECIDER_V12_GPU:-${{GLIDE_GPU:-}}}}}}\" >> {t}/calls\n"
+                f"[[ ${{@: -1}} == probe ]] && echo '{{\"model\":\"{served}\",\"answers\":{{}}}}'\nexit 0\n")
+            (t / name).chmod(0o755)
+        (t / "bus").write_text(f"#!/usr/bin/env bash\necho \"bus $1 $2 $3\" >> {t}/calls\nshift 3\nexec \"$@\"\n")
+        (t / "smi").write_text(f"#!/usr/bin/env bash\necho \"smi $*\" >> {t}/calls.smi\necho {mib}\n")
+        for f in ("bus", "smi"):
+            (t / f).chmod(0o755)
+        env = dict(os.environ, DECISION_PY=str(t / "stub.py"), DECISION_SLEEP="0", DECISION_SERVERS=str(t),
+                   DECISION_BASELABS=str(t / "elephant"), DECISION_BUS=str(t / "bus"), DECISION_SMI=str(t / "smi"),
+                   DECISION_FREE_WAIT="0", GPU=gpu, RES="r_test")
+        script = Path(__file__).resolve().parent / "run_decision_local.sh"
+        r = subprocess.run(["bash", str(script)], env=env, capture_output=True, text=True)
+        calls = (t / "calls").read_text().split("\n")[:-1] if (t / "calls").exists() else []
+        return r, calls, (t / "calls.smi").read_text() if (t / "calls.smi").exists() else ""
+
+    def test_sequence(self):
+        states = {"arm-state baselabs-elephant-1-worst": 0, "arm-state decider-v1.2-27b-notes": 0,
+                  "arm-state decider-v1.2-27b-worst": 0, "arm-state glide-v1.2-local-notes": 3,
+                  "arm-state glide-v1.2-local-worst": 2}
+        runs = {"run baselabs-elephant-1-worst": [0], "run decider-v1.2-27b-notes": [3, 0],
+                "run decider-v1.2-27b-worst": [2]}
+        r, calls, smi = self.lane(states, runs)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(calls, [
+            "arm-state baselabs-elephant-1-worst 0", "bus run r_test --", "server elephant start gpu=2",
+            "server elephant probe gpu=", "run baselabs-elephant-1-worst 0", "server elephant stop gpu=",
+            "arm-state decider-v1.2-27b-notes 0", "arm-state decider-v1.2-27b-worst 0", "bus run r_test --",
+            "server decider-v1.2.sh start gpu=2", "server decider-v1.2.sh probe gpu=",
+            "run decider-v1.2-27b-notes 3", "run decider-v1.2-27b-notes 0", "run decider-v1.2-27b-worst 2",
+            "server decider-v1.2.sh stop gpu=",
+            "arm-state glide-v1.2-local-notes 3", "arm-state glide-v1.2-local-worst 2"])  # nothing to run: no server
+        self.assertIn("-i 2 --query-gpu=memory.used", smi)
+        self.assertIn("glide-v1.2-local: no arm to run, no server", r.stdout)
+        self.assertEqual(r.stdout.count("retry in 0s"), 1)
+
+    def test_a_busy_card_is_refused_and_a_wrong_server_is_skipped_and_stopped(self):
+        states = {"arm-state baselabs-elephant-1-worst": 0, "arm-state decider-v1.2-27b-notes": 2,
+                  "arm-state decider-v1.2-27b-worst": 2, "arm-state glide-v1.2-local-notes": 2,
+                  "arm-state glide-v1.2-local-worst": 2}
+        r, calls, _ = self.lane(states, {}, mib="30000")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("REFUSED: GPU 2 is not empty (30000 MiB in use", r.stdout)
+        self.assertEqual(calls, ["arm-state baselabs-elephant-1-worst 0"])  # nothing started
+        r, calls, _ = self.lane(states, {}, probe_model="baselabs/mammoth-1")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("baselabs-elephant-1: server probe failed", r.stdout)
+        self.assertEqual(calls[:5], ["arm-state baselabs-elephant-1-worst 0", "bus run r_test --",
+                                     "server elephant start gpu=2", "server elephant probe gpu=",
+                                     "server elephant stop gpu="])  # no arm run; the next setups are still visited
+
+
 
 if __name__ == "__main__":
     unittest.main()

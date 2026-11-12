@@ -1,0 +1,42 @@
+{
+ "model": "qwen3.8-27b-on",
+ "step": "S5",
+ "setup_pattern": "% | improve | s05 | %",
+ "switch": [
+  {
+   "at": "2026-11-12T14:43:33+00:00",
+   "after_step": "E3",
+   "from_sha256": "e415773e876670f4d5cc1379705acc0f65b4acd02c613b91941c8175ed181661",
+   "to_sha256": "5a33d59664deda26a726d9b853bae09d61202788c1b86166d1e3dca19071d34f"
+  }
+ ],
+ "game_turns_by_recorded_harness": {},
+ "game_turns_on_old_build": 0,
+ "step_events": [
+  {
+   "at": "2026-11-12T14:43:29+00:00",
+   "event": "step_start",
+   "binary_commit": "8b6f9a1",
+   "reason_prefix": null
+  },
+  {
+   "at": "2026-11-12T14:43:29+00:00",
+   "event": "paused",
+   "binary_commit": null,
+   "reason_prefix": "S5: binary switch at the step boundary after E3: jevgammon-8"
+  },
+  {
+   "at": "2026-11-12T14:43:33+00:00",
+   "event": "binary_switch",
+   "binary_commit": null,
+   "reason_prefix": null
+  }
+ ],
+ "answers_by_recorded_harness": {},
+ "answers_on_old_build": 0,
+ "exchanges_by_recorded_harness": {},
+ "exchanges_on_old_build": 0,
+ "first_request": null,
+ "step_files_mtime_utc": {},
+ "note": "the old process wrote test-<step>.json and paused in improve.held() before any `jevgammon ask` started; the test log is written only after an asking round"
+}

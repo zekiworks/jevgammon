@@ -15,13 +15,22 @@ D = Path("/home/cbasaran/code/jevgammon/workspace/improve/runs") / key
 db = sqlite3.connect(f"file:{DB}?mode=ro", uri=True)
 like = f"% | improve | {step}" if step.startswith("E") else f"% | improve | s{int(step[1:]):02d} | %"
 ev = [json.loads(x) for x in (D / "log.jsonl").read_text().splitlines()]
-switch = [e for e in ev if e["event"] == "binary_switch"]
+switch = [e for e in ev if e["event"] == "binary_switch" and Path(e["to"]).name == f"jevgammon-{new}"]
 answers = {}
 for commit, dirty, n, first, last in db.execute(
         "SELECT harness_commit, harness_dirty, COUNT(*), MIN(created_at), MAX(created_at) FROM answers WHERE setup LIKE ? "
         "GROUP BY 1, 2", (like,)):
     answers[f"{commit} dirty={dirty}"] = dict(answers=n, first_created=first, last_created=last,
                                               build="new" if commit.startswith(new) else "old")
+games = {}
+if step.startswith("S"):  # the series' matches (every attempt): game turns and their exchanges, by recorded harness
+    for commit, dirty, n, nx, first, last in db.execute(
+            "SELECT t.harness_commit, t.harness_dirty, COUNT(DISTINCT t.id), COUNT(x.id), MIN(t.created_at), "
+            "MAX(t.created_at) FROM turns t JOIN games g ON g.id = t.game_id JOIN matches m ON m.id = g.match_id "
+            "LEFT JOIN exchanges x ON x.turn_id = t.id WHERE m.model1 LIKE ? AND t.player = 1 GROUP BY 1, 2",
+            (f"% | improve | s{int(step[1:]):02d} | %",)):
+        games[f"{commit} dirty={dirty}"] = dict(model_turns=n, exchanges=nx, first_created=first, last_created=last,
+                                              build="new" if (commit or "").startswith(new) else "old")
 attempts = {}
 for commit, n, mx, first_id in db.execute(
         "SELECT a.harness_commit, COUNT(x.id), MAX(x.attempt), MIN(x.id) FROM answer_exchanges x JOIN answers a ON "
@@ -34,6 +43,8 @@ files = {p.name: datetime.fromtimestamp(p.stat().st_mtime, timezone.utc).isoform
 out = dict(
     model=key, step=step, setup_pattern=like,
     switch=[dict(at=s["at"], after_step=s["after_step"], from_sha256=s["from_sha256"], to_sha256=s["to_sha256"]) for s in switch],
+    game_turns_by_recorded_harness=games,
+    game_turns_on_old_build=sum(v["model_turns"] for v in games.values() if v["build"] == "old"),
     step_events=[dict(at=e["at"], event=e["event"], binary_commit=(e.get("binary") or {}).get("commit"),
                       reason_prefix=(e.get("reason") or "")[:60] or None)
                  for e in ev if e.get("step") == step or (e["event"] in ("paused", "binary_switch") and e["at"] >= (switch[0]["at"][:13] if switch else "9"))],

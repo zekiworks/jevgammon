@@ -14,6 +14,15 @@ e9f20587949ff7bf81e0411304ee4457e394023f4fc9f906ed0152efdcaa7ea3  ./diffs/improv
 5954894642515d125d0ddfe9d9dd3077b40a4e8520cd2526eaa24249e8aff4ea  ./diffs/improve-small-2-d2acecd-vs-a76fdc9.improve.py-only.diff
 c175c518c9284054658f636a742dccc3f24e311bc47e0319914c719ebbdc63d7  ./diffs/improve-small-2c72e14-vs-a76fdc9.diff
 2b0eb1b2079f85c778f5a8dbd3ed21169a1f05d4d1e07c424142d9b4773ad1ab  ./diffs/improve-small-2c72e14-vs-a76fdc9.improve.py-only.diff
+9def5b92c87f98ed279363f19cb29cc44679d8e5757187d507ecf8792131e9e6  ./gemma-running/METADATA
+b6d6a71ead1a7c6bb14bdc2e3892876c066fbff21e151c8cdc40c8a6ab7e6a06  ./gemma-running/hashes.txt
+c175c518c9284054658f636a742dccc3f24e311bc47e0319914c719ebbdc63d7  ./gemma-running/improve-small-2c72e14.diff
+48995a2629ee8b6d055763f97764f0412dffdd484a943379ddcb68861bba373a  ./gemma-running/lane.json
+a11df757c503bf0e6581dfc7a76953080b845fa4f11fddf1bd4ccbcaa7b35c9d  ./gemma-running/plan.json
+58399a55bb547162c3e5075f4b43a4bd57f172e43a63fe697cff4d0f5998cb09  ./gemma-running/server.json
+7ff31d051e9a2338f30017fd616b7f872f341b670ef9d4ef47f375e47943c55a  ./gemma-running/state-paths.txt
+f1694677f597dab4d00a2b29bb4287abc47964ca788293b373032fb53a582126  ./gemma-running/unit-improve-local-small.txt
+a8a7f71af8458e53bed254a8cbb269e760069e2830e520750ed7852ba94e1440  ./gemma-running/unit-xid-watch-small.txt
 20eb62c31dbcff958559dcb388432d5dce531eae3e33ae3ef0764437d8c20437  ./improve.py/improve.py@1d3f9bc
 8c4d7033c9805317c1ea794b8d6c29cd02f3ac5a989e93db18341acf719a865f  ./improve.py/improve.py@2c72e14
 90fe6b0ead90ff4d3d32ec80e5932a8c113456b05ee76e6bb9c5e39a56df9875  ./improve.py/improve.py@a76fdc9

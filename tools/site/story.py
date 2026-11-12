@@ -544,7 +544,8 @@ def same_positions() -> str:
     gone = ", ".join(f'{esc(shown_name(m["name"]))} ({esc(m["unavailable"])})' for m in SAME["missing_ranked"]
                      if m["unavailable"])
     return (f'<p class="table-note">Preview. The stored answers of the "Did they improve?" test without lessons (E1): '
-            f'200 positions every model below answered; no new run. {prompt} Engine\'s best play: the play loses under '
+            f'200 positions every model below answered; Muse Ember\'s answers come from its own run of the same test '
+            f'(12 Nov 2026, its league route and settings). {prompt} Engine\'s best play: the play loses under '
             f'0.001 against GNU Backgammon\'s best; an invalid answer counts as wrong. Tiers: an exact McNemar test on '
             f'every pair, Holm-adjusted at 0.05; tier 1 is the model with the most best plays and every model not '
             f'significantly different from it, then the same for the models left. Rank is the league rank.</p>'

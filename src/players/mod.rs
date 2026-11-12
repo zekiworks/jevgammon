@@ -849,8 +849,8 @@ mod tests {
     }
 
     /// A one-shot System One server on 127.0.0.1: answers the first request with a fixed
-    /// distribution (0.7 for the third option, the rest shared) and hands back its body.
-    fn systemone_stub() -> (String, std::thread::JoinHandle<serde_json::Value>) {
+    /// distribution (0.7 for the third option, the rest shared) and hands back its path and body.
+    fn systemone_stub() -> (String, std::thread::JoinHandle<(String, serde_json::Value)>) {
         use std::io::{BufRead, BufReader, Read, Write};
         let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
         let url = format!("http://{}", listener.local_addr().unwrap());
@@ -858,6 +858,9 @@ mod tests {
             let (stream, _) = listener.accept().unwrap();
             let mut reader = BufReader::new(stream.try_clone().unwrap());
             let mut length = 0;
+            let mut request_line = String::new();
+            reader.read_line(&mut request_line).unwrap();
+            let path = request_line.split(' ').nth(1).unwrap_or_default().to_owned();
             loop {
                 let mut line = String::new();
                 reader.read_line(&mut line).unwrap();
@@ -898,7 +901,7 @@ mod tests {
                 answer.len()
             )
             .unwrap();
-            body
+            (path, body)
         });
         (url, handle)
     }
@@ -931,7 +934,8 @@ mod tests {
             backend: Backend::Decision(client),
         };
         let decision = player.decide(&req).await.unwrap();
-        let body = stub.join().unwrap();
+        let (path, body) = stub.join().unwrap();
+        assert_eq!(path, "/v1/systemone");
         assert_eq!(body["model"], "m");
         assert_eq!(body["state"], prompt::state(&req));
         let shown: Vec<&String> = body["questions"]["play"]["criteria"]
@@ -978,7 +982,8 @@ mod tests {
             backend: Backend::Decision(client),
         };
         let decision = player.decide(&req).await.unwrap();
-        let body = stub.join().unwrap();
+        let (path, body) = stub.join().unwrap();
+        assert_eq!(path, "/v1/systemone");
         assert!(
             body.get("model").is_none(),
             "the server takes no model field"
@@ -1002,9 +1007,9 @@ mod tests {
     }
 
     /// One System One request to `provider`'s service on the stub (option cap `max`, above this
-    /// position's list): every option in the seeded order, the model field `model` (absent for
-    /// `None`), and the stub's probabilities kept.
-    async fn sends_every_option(provider: &str, model: Option<&str>, max: usize) {
+    /// position's list) at `path`: every option in the seeded order, the model field `model`
+    /// (absent for `None`), and the stub's probabilities kept.
+    async fn sends_every_option(provider: &str, model: Option<&str>, max: usize, path: &str) {
         let mut board = Board::start();
         board.pts[12] = 3;
         board.pts[7] = 5;
@@ -1031,7 +1036,8 @@ mod tests {
             backend: Backend::Decision(client),
         };
         let decision = player.decide(&req).await.unwrap();
-        let body = stub.join().unwrap();
+        let (sent_to, body) = stub.join().unwrap();
+        assert_eq!(sent_to, path);
         assert_eq!(body.get("model").and_then(|m| m.as_str()), model);
         assert_eq!(body["state"], prompt::state(&req));
         let shown: Vec<&String> = body["questions"]["play"]["criteria"]
@@ -1051,18 +1057,28 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn glide_sends_no_model_field() {
-        sends_every_option("glide", None, 255).await;
-        sends_every_option("glide-0.4b", None, 74).await;
+        sends_every_option("glide", None, 255, "/v1/systemone").await;
+        sends_every_option("glide-0.4b", None, 74, "/v1/systemone").await;
     }
 
     #[tokio::test(flavor = "multi_thread")]
     async fn onejev_names_the_served_checkpoint() {
-        sends_every_option("onejev", Some("OmniJev/OneJev1.6-0.8B"), 255).await;
+        sends_every_option("onejev", Some("OmniJev/OneJev1.6-0.8B"), 255, "/v1/systemone").await;
     }
 
     #[tokio::test(flavor = "multi_thread")]
     async fn gliclass_names_the_served_checkpoint() {
-        sends_every_option("gliclass", Some("knowledgator/gliclass-v4-edge"), 218).await;
+        sends_every_option("gliclass", Some("knowledgator/gliclass-v4-edge"), 218, "/v1/systemone").await;
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn sieve_posts_to_v1_decide_without_a_model_field() {
+        sends_every_option("sieve", None, 255, "/v1/decide").await;
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn turion_jev_sends_no_model_field() {
+        sends_every_option("turion-jev", None, 255, "/v1/systemone").await;
     }
 
     #[test]

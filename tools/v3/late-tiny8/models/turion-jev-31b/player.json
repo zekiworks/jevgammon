@@ -1,0 +1,11 @@
+{
+  "name": "Turion Jev 31B",
+  "spec": "turion-jev",
+  "provider": "local (turion_jev.serve)",
+  "quantization": "fp8",
+  "base_url": "http://192.168.1.131:19380",
+  "note": "Turion AI's Turion Jev 31B (Hugging Face turion-ai/turion-jev-31b @ 866c0fc6e040cba23fcc72113a80e5c99d5ebab1, Apache-2.0; a LoRA fine-tune of google/gemma-4-31B-it, a uniform soup of three checkpoints merged into BF16 weights, dense; option-code readout: the next-token log-probabilities of one-token codes A..Z, AA.. after a v2 prompt that lists the question before the state, causal attention, calibration.json temperatures choice 1.18; inputs up to 12,000 characters read twice, prompt_config.json) on our GPU through the server its package ships, python -m turion_jev.serve (turion-jev 0.1.0, installed from the snapshot's code/; env ~/envs/turion-jev: vLLM 0.32.0 in process, torch 2.13.0+cu130, transformers 5.19.0) with --backend vllm --quantization fp8 (BF16 weights quantised to FP8 at load, as in the card's run) and --no-recheck (re-scoring off, as in the card's run; the server's default is on), logic's setup; --max-len at its default 65,536 (vLLM max_model_len 65,600). Request at /v1/systemone, no model field (the server ignores it), text only; probabilities rounded to 6 places by the server, no confidence; usage gives its input tokens. 255 options per request (the league's rule and the model's 255 codes; longer lists split). Never truncates: a prompt over 65,536 tokens is refused (422). League 1's longest stored request (251 options) is a 28,006-token prompt with its tokenizer and chat template (31,798 distinct requests counted; none over).",
+  "device": "NVIDIA GB10 (DGX Spark spark2, spark-d9ee), the whole GPU, handed over by logic: ~/envs/turion-jev/bin/python -m turion_jev.serve --model <snapshot> --backend vllm --quantization fp8 --no-recheck --host 0.0.0.0 --port 19380",
+  "parallel": 1,
+  "max_matches": 1
+}

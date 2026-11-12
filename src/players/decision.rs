@@ -356,6 +356,44 @@ pub const SERVICES: &[Service] = &[
         openai_format: false,
         max_choices: 218,
     },
+    // sthanika-ai's Sieve-31B-v3 (@ 8fcee85; Gemma 4 31B full fine-tune, letter readout) behind
+    // the server its card names, sieve-serve of github.com/sthanika-ai/Sieve @ 1e64657 (0.5.1):
+    // the same state and questions at /v1/decide, no model field (it would be ignored), text
+    // only; answers rounded to 4 places, usage without token counts. Up to 255 options per
+    // question (its label count; validate_questions refuses more with 422). It never
+    // truncates; it has no token limit of its own as served (no max_tokens), the model's
+    // context is 262,144. League 1's longest stored request (251 options) is a 28,271-token
+    // pass with its tokenizer and renderer (each request runs in 2 option orders).
+    Service {
+        provider: "sieve",
+        label: "Sieve (local)",
+        base_url: "http://127.0.0.1:19370",
+        url_var: "SIEVE_BASE_URL",
+        path: "/v1/decide",
+        key_vars: &[],
+        key_required: false,
+        default_model: None,
+        openai_format: false,
+        max_choices: 255,
+    },
+    // Turion AI's turion-jev-31b (@ 866c0fc; Gemma 4 31B LoRA merge, option-code readout)
+    // behind the server its package ships (python -m turion_jev.serve, vLLM in process, FP8 at
+    // load): the same request at /v1/systemone; the model field is ignored, so none is sent;
+    // text only; probabilities rounded to 6 places, no confidence. 255 one-token codes per
+    // question (more is refused, 422); a prompt over --max-len (65,536 tokens) is refused (422),
+    // never cut.
+    Service {
+        provider: "turion-jev",
+        label: "Turion Jev (local)",
+        base_url: "http://127.0.0.1:19380",
+        url_var: "TURION_JEV_BASE_URL",
+        path: "/v1/systemone",
+        key_vars: &[],
+        key_required: false,
+        default_model: None,
+        openai_format: false,
+        max_choices: 255,
+    },
 ];
 
 pub fn service(provider: &str) -> Option<&'static Service> {

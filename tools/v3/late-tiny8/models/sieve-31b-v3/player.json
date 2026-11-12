@@ -1,0 +1,11 @@
+{
+  "name": "Sieve 31B v3",
+  "spec": "sieve",
+  "provider": "local (sieve-serve)",
+  "quantization": "bf16",
+  "base_url": "http://192.168.1.131:19370",
+  "note": "Sthānika AI's Sieve-31B-v3 (Hugging Face sthanika-ai/Sieve-31B-v3 @ 8fcee858f7f20a50bfa3c8f984c22adb3cbb46a2, Apache-2.0; a full fine-tune of google/gemma-4-31B-it @ 842da37, dense; letter readout: the model's own output-layer logits of the option labels at an 'Answer: (' slot, bidirectional global attention, head.pt sha256 75b2073d, per-category temperatures, serving policy one read and 2 option orders averaged) on our GPU through the server its card names, sieve-serve of github.com/sthanika-ai/Sieve @ 1e64657 (sieve-decisions 0.5.1, installed from that checkout; env ~/envs/sieve: the repository's requirements.txt except torch 2.14.0+cu130 for 2.8.0, transformers 5.17.0, eager PyTorch), BF16 as released, defaults (no max_tokens, no SIEVE_* overrides). Request at /v1/decide, no model field (it would be ignored), text only; probabilities rounded to 4 places by the server. 255 options per request (the league's rule and the model's 255 labels; longer lists split). Never truncates: as served it has no token limit of its own (the model's context is 262,144); a request it cannot answer is refused (422). League 1's longest stored request (251 options) is a 28,271-token pass with its tokenizer and renderer (31,798 distinct requests counted; none refused). Its replies carry no input-token count (usage gives only the number of questions), so the runner records 0 input tokens: the per-token cost and latency fields are unknown, not zero; there is no price either.",
+  "device": "NVIDIA GB10 (DGX Spark spark2, spark-d9ee), the whole GPU, handed over by logic (unit logic-sieve-31b): ~/envs/sieve/bin/sieve-serve --model <snapshot> --host 0.0.0.0 --port 19370",
+  "parallel": 1,
+  "max_matches": 1
+}

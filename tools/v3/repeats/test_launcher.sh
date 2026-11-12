@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Regression tests of run.sh's preflight (Zeki #4737, #4896, #4928), on scratch copies only: never the production v3.db,
 # a production budget ledger, the main checkout's state or the runner tree. Each case gets its own copy of these scripts
-# and the manifest (repo layout), a clone of the runner tree at the recorded commit, a copy of the recorded binary, and a
+# and the manifest (repo layout), a clone of each runner tree at its recorded commit (the first repeat's runner as
+# runner/, any other a repeat binds, Gemini Decision 1's, as runner-<commit>/), a copy of each recorded binary, and a
 # scratch database (the runner's own schema, created by the copied binary, plus the originals' and programs' players
 # rows from the manifest, the pinned opponents' rows (name and spec as each original played them; specs from the
 # 2026-11-11 admission run, mailbox/pinned-late-review/admission.log) and a late_entry_stage trigger naming the originals
@@ -26,7 +27,11 @@
 #   repeats.py check exits 1 (not 3) and repeats.py trigger refuses without a write. An admission refusal is the
 #   check's only failure besides the missing trigger, and names the refused client; a missing ledger is not created.
 #   Trigger missing only (each repeat not held): check exits 3, run.sh prepares (backup verified by zstd -t, trigger),
-#   checks again and exits 0 with every client admitted; check then exits 0, and a second run.sh writes nothing more.
+#   checks again and exits 0 with every client admitted by the repeat's own runner; check then exits 0, and a second
+#   run.sh writes nothing more. A repeat whose name main does not hold yet (Gemini Decision 1, #5359) refuses on that,
+#   and takes the same trigger-missing case with its case's repeats.py reading a scratch main checkout that holds it.
+#   Gemini Decision 1 (runner cb669a0): its entrant without the OpenRouter provider pin, and the 0e66836 binary in
+#   place of its own, each refuse on that alone (besides the missing trigger).
 #   The scratch Nace ledger is byte-identical after every case, with no -wal or -shm beside it.
 # Usage: tools/v3/repeats/test_launcher.sh   (TMPDIR defaults to ~/.cache/tmp; exit 0 when every case passes)
 set -uo pipefail
@@ -46,6 +51,15 @@ echo "scratch: $S"
 git clone -q --shared --no-checkout "$RTREE" "$S/tpl/runner" && git -C "$S/tpl/runner" checkout -q --detach "$RCOMMIT" ||
   { echo "cannot clone $RTREE at $RCOMMIT"; exit 1; }
 mkdir -p "$S/tpl/bin" && cp "$RBIN" "$S/tpl/bin/jevgammon"
+# Every other runner a repeat binds (Gemini Decision 1's): its own clone and binary, runner-<commit>/ and bin-<commit>/.
+while read -r tree bin commit; do
+  git clone -q --shared --no-checkout "$tree" "$S/tpl/runner-${commit:0:7}" &&
+    git -C "$S/tpl/runner-${commit:0:7}" checkout -q --detach "$commit" || { echo "cannot clone $tree at $commit"; exit 1; }
+  mkdir -p "$S/tpl/bin-${commit:0:7}" && cp "$bin" "$S/tpl/bin-${commit:0:7}/jevgammon"
+  echo "runner as recorded: tree $tree, binary $bin, commit $commit"
+done < <(python3 -c 'import json,sys; rs=[r["runner"] for r in json.load(open(sys.argv[1]))["repeats"]]
+for r in {r["commit_full"]: r for r in rs[1:] if r["commit_full"] != rs[0]["commit_full"]}.values():
+    print(r["tree"], r["binary"], r["commit_full"])' "$MAN")
 mkdir -p "$S/tpl/repo/tools/v3" "$S/tpl/repo/mailbox/repeats" "$S/ledger"
 cp -r "$HERE" "$S/tpl/repo/tools/v3/repeats"
 cp "$MAN" "$S/tpl/repo/mailbox/repeats/"
@@ -154,14 +168,17 @@ setup() {
   C=$1 D=$S/$1 CASE_HOME=
   mkdir -p "$D/repo/tools/v3" "$D/repo/mailbox/repeats" "$D/home"
   cp -r "$S/tpl/repo/tools/v3/repeats" "$D/repo/tools/v3/repeats"
-  cp -a "$S/tpl/runner" "$D/runner"
-  cp -a "$S/tpl/bin" "$D/bin"
+  local t
+  for t in "$S"/tpl/runner* "$S"/tpl/bin*; do cp -a "$t" "$D/"; done
   cp "$S/tpl/v3.db" "$D/home/v3.db"
   python3 - "$TMAN" "$D/repo/mailbox/repeats/$(basename "$MAN")" "$D" <<'EOF'
 import json, sys
 m = json.load(open(sys.argv[1]))
+first = m["repeats"][0]["runner"]["commit_full"]
 for r in m["repeats"]:
-    r["runner"] |= dict(tree=sys.argv[3] + "/runner", binary=sys.argv[3] + "/bin/jevgammon")
+    c = r["runner"]["commit_full"]
+    sfx = "" if c == first else "-" + c[:7]
+    r["runner"] |= dict(tree=sys.argv[3] + "/runner" + sfx, binary=sys.argv[3] + "/bin" + sfx + "/jevgammon")
 open(sys.argv[2], "w").write(json.dumps(m, indent=1, ensure_ascii=False) + "\n")
 EOF
 }
@@ -445,16 +462,63 @@ import json, sys
 name = next(r["name"] for r in json.load(open(sys.argv[2]))["repeats"] if r["id"] == sys.argv[1])
 sys.exit(name not in json.load(sys.stdin).get("held", {}))' "$1" "$MAN"
 }
+# The case's repeats.py reads held_setups.json from a scratch main checkout: main's committed file, the repeat's name
+# added (the site change holding it is reviewed separately), so the rest of the preflight can run for it.
+hold_in_scratch_main() {  # rid
+  local name
+  name=$(python3 -c 'import json,sys; print(next(r["name"] for r in json.load(open(sys.argv[2]))["repeats"] if r["id"] == sys.argv[1]))' "$1" "$MAN")
+  mkdir -p "$D/main/tools/site/content"
+  git -C /home/cbasaran/code/jevgammon show HEAD:tools/site/content/held_setups.json | python3 -c '
+import json, sys
+d = json.load(sys.stdin); d["held"][sys.argv[1]] = "test: held in a scratch main checkout"
+print(json.dumps(d, indent=1, ensure_ascii=False))' "$name" > "$D/main/tools/site/content/held_setups.json"
+  git -C "$D/main" init -q && git -C "$D/main" add -A &&
+    git -C "$D/main" -c user.name=test -c user.email=test@localhost commit -qm "held: $name" || failc "scratch main"
+  python3 - "$D/repo/tools/v3/repeats/repeats.py" "$D/main" <<'EOF'
+import sys
+from pathlib import Path
+p, old = Path(sys.argv[1]), 'MAIN = Path("/home/cbasaran/code/jevgammon")'
+t = p.read_text()
+assert t.count(old) == 1, "MAIN line not found once"
+p.write_text(t.replace(old, f'MAIN = Path("{sys.argv[2]}")'))
+EOF
+}
 prepare=(mammoth-1-r1 drex-max-v1-r1 reax-1.3-r1 d1-ultra-r1)
-for rid in drex-max-1.1-r1 glide-v1.2-r1; do
+scratch_held=()
+for rid in drex-max-1.1-r1 glide-v1.2-r1 gemini-decision-1-r1; do
   if held_in_main "$rid"; then prepare+=("$rid"); continue; fi
   setup "not-held-$rid"; refuse "$rid"
   grep -q "not held in the main checkout" "$D/check.out" && pass "the refusal names the missing held name" ||
     failc "check did not name the missing held name: $(cat "$D/check.out")"
+  scratch_held+=("$rid")
 done
 
-for rid in "${prepare[@]}"; do
+# Gemini Decision 1's binding (held in a scratch main, so only the targeted failure and the missing trigger remain).
+gemini_only() {  # expected-text: check's one line is that failure and the missing trigger
+  if [[ $(wc -l < "$D/check.out") == 1 ]] && grep -q -- "$1" "$D/check.out" &&
+     grep -qE "; trigger missing: late_entry_stage does not name it$" "$D/check.out"; then
+    pass "the refusal is: $(cut -c1-240 "$D/check.out")"
+  else
+    failc "check did not refuse on '$1' alone: $(cut -c1-600 "$D/check.out")"
+  fi
+}
+setup gemini-no-provider-pin; hold_in_scratch_main gemini-decision-1-r1
+python3 - "$D/repo/tools/v3/repeats/leagues/gemini-decision-1-r1.json" <<'EOF'
+import json, sys
+c = json.load(open(sys.argv[1])); del c["players"][0]["request"]
+open(sys.argv[1], "w").write(json.dumps(c, indent=2, ensure_ascii=False) + "\n")
+EOF
+refuse gemini-decision-1-r1
+gemini_only "league config entrant settings differ from the manifest's settings_repeat"
+setup gemini-other-runner; hold_in_scratch_main gemini-decision-1-r1
+cp "$D/bin/jevgammon" "$D/bin-cb669a0/jevgammon"
+refuse gemini-decision-1-r1
+gemini_only "not the cb669a0 build 0bf67bc35ca86425…"
+
+for rid in "${prepare[@]}" "${scratch_held[@]}"; do
   setup "trigger-missing-$rid"
+  [[ " ${scratch_held[*]} " == *" $rid "* ]] && hold_in_scratch_main "$rid"
+  commit=$(python3 -c 'import json,sys; print(next(r["runner"]["commit"] for r in json.load(open(sys.argv[2]))["repeats"] if r["id"] == sys.argv[1]))' "$rid" "$MAN")
   before=$(sha256sum < "$D/home/v3.db")
   crc0=$(check_rc "$rid"); out0=$(cat "$D/check.out")
   in_case bash "$D/repo/tools/v3/repeats/run.sh" "$rid" --prepare-only > "$D/run.out" 2>&1
@@ -476,10 +540,11 @@ for rid in "${prepare[@]}"; do
   [[ -e $D/home/workspace/repeats/$rid/prepared ]] || bad+=("no prepared marker")
   (( crc1 == 0 )) || bad+=("check after exit $crc1")
   [[ $out1 == *"every client admitted (jevgammon admit)"* ]] || bad+=("check after: no admission")
+  [[ $out1 == *"runner $commit (binary sha256"* ]] || bad+=("check after: not runner $commit")
   (( rc2 == 0 )) && [[ $again == "$after" ]] || bad+=("second run.sh: exit $rc2 or wrote")
   (( $(compgen -G "$D/home/v3.db.bak-*" | wc -l) == 1 )) || bad+=("more than one backup")
   if (( ${#bad[@]} )); then failc "${bad[*]}"; else
-    pass "check exit 3, prepared ($(basename "$bak") verified, trigger added), check exit 0 with every client admitted; second run wrote nothing"
+    pass "check exit 3, prepared ($(basename "$bak") verified, trigger added), check exit 0 with every client admitted by runner $commit; second run wrote nothing"
   fi
 done
 

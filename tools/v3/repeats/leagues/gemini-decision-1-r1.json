@@ -1,0 +1,122 @@
+{
+  "note": "Reproducibility repeat 1 of Gemini Decision 1 (Ümit via Zeki, bus #5359 (Ümit #5220: GPT-6 Luna and Mercury Decide not required), #4710; run repeat-2026-11-12-gemini-decision-1-r1): Gemini Decision 1 [repeat 1] plays Gemini Decision 1's original League 1 field again, one match at a time, each pair pinned to its original match's seed and seating (pinned_pairs), the same option-order seed, prompt, rules and settings. Hidden league; matches stage 'late-entry' and the name held (tools/site/content/held_setups.json): in no standings, table, Cup input or other setup's numbers. mailbox/repeats/manifest-2026-11-11.json",
+  "prompt_version": "bg-v2",
+  "seed": 2567889193785291627,
+  "order_seed": 1190975713392774006,
+  "rounds": 3,
+  "clock": 0,
+  "delay": 30,
+  "max_turns": 300,
+  "mirror_concurrent": true,
+  "only_pairs_of": "Gemini Decision 1 [repeat 1]",
+  "hidden": true,
+  "pinned_pairs": {
+    "Fastino GLiDE": {
+      "seed": 10007535720757851450,
+      "seat_first": false
+    },
+    "Celeris-1 Decision": {
+      "seed": 14479689920671036414,
+      "seat_first": false
+    },
+    "GNUbg weak": {
+      "seed": 11625764729692313857,
+      "seat_first": true
+    },
+    "Random": {
+      "seed": 17135395018459308622,
+      "seat_first": true
+    },
+    "Safest": {
+      "seed": 17071390125482411585,
+      "seat_first": false
+    },
+    "Liquid d1-ultra": {
+      "seed": 2513949857367392173,
+      "seat_first": false
+    },
+    "Jev 1.14.0": {
+      "seed": 648011024414861222,
+      "seat_first": true
+    },
+    "Jev 1.13.0": {
+      "seed": 9415613565508060107,
+      "seat_first": true
+    },
+    "SubQ Snap Preview": {
+      "seed": 10867080890180102313,
+      "seat_first": false
+    },
+    "Cygnet (Gemma 4 12B)": {
+      "seed": 8544814846323426751,
+      "seat_first": true
+    },
+    "Winnow-12B": {
+      "seed": 6230572666778943291,
+      "seat_first": true
+    },
+    "Decider Flash v1.2": {
+      "seed": 4283428565475450139,
+      "seat_first": true
+    },
+    "Decider v1.2 27B": {
+      "seed": 8852768348427616659,
+      "seat_first": false
+    },
+    "Fastino GLiDE v1.2 (local)": {
+      "seed": 17163113817390692437,
+      "seat_first": true
+    },
+    "Clef": {
+      "seed": 722099500426768079,
+      "seat_first": true
+    },
+    "Open-Jev 27B v1.1": {
+      "seed": 4607018707599200037,
+      "seat_first": true
+    },
+    "Decider v1.1 27B": {
+      "seed": 13820654526987103780,
+      "seat_first": true
+    }
+  },
+  "players": [
+    {
+      "name": "Gemini Decision 1 [repeat 1]",
+      "spec": "openrouter-decisions/google/gemini-decision-1",
+      "provider": "openrouter (google ai studio)",
+      "request": {
+        "provider": {
+          "only": [
+            "google-ai-studio"
+          ],
+          "allow_fallbacks": false
+        }
+      },
+      "price": {
+        "input_per_mtok": 0.1,
+        "output_per_mtok": 0.0
+      },
+      "note": "Google's Gemini Decision 1 (gemini-decision-1, launched 11 Nov 2026) through OpenRouter's System One route (/api/v1/systemone, model google/gemini-decision-1; replies name google/gemini-decision-1-20261111), pinned to its one provider, Google AI Studio, with fallbacks off (provider.only [google-ai-studio], allow_fallbacks false). List price $0.10 per million input tokens, no output tokens (openrouter.ai/google/gemini-decision-1 and aistudio.google.com/docs/pricing, 11 Nov 2026); latency includes OpenRouter's own time. One choice question per request with up to 255 options (the API's limit; longer lists split by the league's rule); context 262,144 tokens, refused with 400 above it, never cut: League 1's largest stored request (229 options, 57,539 bytes) was 26,133 input tokens at the smoke test. The API sorts option keys alphabetically (UTF-8 bytes) before evaluation, so the model reads the options in that order, not the seeded one (aistudio.google.com/docs/decisions-api#choice). OpenRouter answers some 429s (Google's per-tier token limit): retried as on every route. Reproducibility repeat 1 (gemini-decision-1-r1; tools/v3/repeats, mailbox/repeats/manifest-2026-11-11.json): the original's League 1 field again, one match at a time, each pair with its original match's seed and seats; held: in no standings, table, Cup input or other setup's numbers.",
+      "parallel": 1,
+      "max_matches": 1
+    },
+    {
+      "name": "GNUbg weak",
+      "spec": "gnubg-weak",
+      "provider": "local",
+      "note": "gnubg 1.08 Beginner level (0-ply, deterministic noise 0.060)",
+      "parallel": 1
+    },
+    {
+      "name": "Random",
+      "spec": "random",
+      "provider": "local"
+    },
+    {
+      "name": "Safest",
+      "spec": "safest",
+      "provider": "local"
+    }
+  ]
+}

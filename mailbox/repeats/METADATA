@@ -1,6 +1,6 @@
 owner: jevgammon (agent; Can's backgammon project ~/code/jevgammon)
 created: 2026-11-11
 what: manifest of the reproducibility repeats (manifest-2026-11-11.json: per repeat the original's per-opponent match id, seed and seats, game dice, option-order seed, rules, settings, coverage, today's blockers, gates, cost basis, GPU plan, start commands) and, once started, each repeat's status file ('<id> - status.md')
-reason: Ümit via Zeki, bus #4663, #4666, #4667, #4671; written by tools/v3/repeats/repeats.py manifest from v3.db (read-only); read by the site's Experiments page (Repeat checks)
+reason: Ümit via Zeki, bus #4663, #4666, #4667, #4671, #4838, #5359 (Gemini Decision 1's entry added 2026-11-12 from that day's v3.db, the other entries as written 2026-11-11); written by tools/v3/repeats/repeats.py manifest from v3.db (read-only); read by the site's Experiments page (Repeat checks)
 delete when: never while the Experiments page shows the Repeat checks (the page reads the manifest)
 written: 2026-11-11 (Can #3774)

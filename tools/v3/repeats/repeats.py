@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Reproducibility repeats of six League 1 setups (Ümit via Zeki, bus #4663, #4666, #4667, #4671; #4838 Drex Max 1.1
-and Fastino GLiDE v1.2 (local)): each repeat plays
+"""Reproducibility repeats of seven League 1 setups (Ümit via Zeki, bus #4663, #4666, #4667, #4671; #4838 Drex Max 1.1
+and Fastino GLiDE v1.2 (local); #5359 Gemini Decision 1): each repeat plays
 the original's own League 1 field again, one match at a time, each pair pinned (league config pinned_pairs, runner
 branch pinned-pairs, Zeki #4710) to its original match's seed (dice) and seating, with the
 same option-order seed, prompt, rules and setup settings, under a separate held name ('<original> [repeat 1]') whose
@@ -153,6 +153,26 @@ RUNNER = dict(
 RUNNER_DIFFERENCE = ("Runner: " + RUNNER["commit"] + ", the originals' runner line (origin/late-reax acfd89c) with the "
                      "pinned-pairs change 4ca4f08 (the pins are its only change for these leagues), where the original "
                      "ran %s; the same prompt version, option-order seed and rules.")
+# Gemini Decision 1's repeat runner (Ümit via Zeki #5359): branch pinned-late-gemini cb669a0 = RUNNER's 0e66836 + the
+# four runner commits its original ran, cherry-picked from late-gemini-decision: dab6da5 (decision clients merge the
+# player's `request` fields, e.g. the OpenRouter provider pin), 1b234da, c0b58f3 (map-check v2 for
+# google/gemini-decision-1 only) and 38024d6 (raw_entries decoder). src differs from 0e66836 only in
+# src/players/{decision,llm,mod}.rs (+564 -12); the 18 build inputs are RUNNER's, unchanged. Bound as RUNNER is.
+# Review package: mailbox/gemini-repeat/.
+RUNNER_GEMINI = dict(
+    binary=str(MAIN / "target/pinned-gemini/release/jevgammon"),
+    binary_sha256="0bf67bc35ca864250a16a63ce5b608c68f8d6b62c12a5714e1b975979473dc7f",
+    tree="/home/cbasaran/code/jevgammon-runner-gemini", commit="cb669a0",
+    commit_full="cb669a08c29689a0846bcdf2596ae9c4fc043e22", src_tree="a1a82e60e4951dffab6ded8a7bd56269a14dd3cf",
+    build=dict(
+        command=("cd /home/cbasaran/code/jevgammon-runner-gemini && CARGO_TARGET_DIR=/home/cbasaran/code/jevgammon/"
+                 "target/pinned-gemini cargo build --release --locked"),
+        toolchain="rustc 1.97.1 (8bab26f4f 2026-07-14), cargo 1.97.1 (c980f4866 2026-06-30)",
+        built="2026-11-12T12:57Z",
+        tree=("git worktree add -b pinned-late-gemini /home/cbasaran/code/jevgammon-runner-gemini 0e66836; "
+              "cherry-pick dab6da5 1b234da c0b58f3 38024d6; checkout --detach (clean; only the untracked "
+              "METADATA.worktree added)")),
+    inputs=dict(RUNNER["inputs"]))
 # The league of a recorded attempt is kept as it is and never resumed: league_id() skips it, so the repeat's next start
 # creates a new league with the same config (repeat name, pins); check fails while such a league differs from its
 # record (a process resumed, completed or edited it). The record is the attempt's whole historical state (Zeki #4928
@@ -207,6 +227,12 @@ def repeat_note(rid: str, extra: str = "") -> str:
     return (f" Reproducibility repeat 1 ({rid}; tools/v3/repeats, mailbox/repeats/manifest-2026-11-11.json): the "
             "original's League 1 field again, one match at a time, each pair with its original match's seed and seats; "
             "held: in no standings, table, Cup input or other setup's numbers." + extra)
+
+
+# Gemini Decision 1's entry cap (tools/v3/late-gemini-decision/start.sh on late-gemini-decision): $5 for the entrant
+# plus the paid opponents, billed from match #993; its guard recorded $1.1819 when the entry ended
+# (workspace/late-gemini-decision/state/guard.log, 2026-11-11T22:12:14Z). The repeat stays inside that cap.
+GEMINI_CAP_USD, GEMINI_SPENT_USD = 5.0, 1.1819
 
 
 # Per repeat: the original setup, where its original matches are, the runner that played them, its server.
@@ -357,10 +383,82 @@ REPEATS = {
              "beside the opponents' servers on two others and the DGX Sparks, the repeat runs it on one card with the "
              "opponents one at a time on the same or a second card."),
         ]),
+    "gemini-decision-1-r1": dict(
+        original="Gemini Decision 1", original_league=26, original_stage="late-entry", prepared="2026-11-12",
+        requested_by="Ümit via Zeki, bus #5359 (Ümit #5220: GPT-6 Luna and Mercury Decide not required)",
+        # Its 17 required pairs (League 1 table; #993-#1013 first stage, #1053-#1063 local stage). #1016 (Mercury
+        # Decide, aborted at its start, no game) is not required and not pinned; GPT-6 Luna was never scheduled.
+        original_matches=[993, 994, 995, 996, 997, 998, 999, 1005, 1013, 1053, 1055, 1056, 1057, 1060, 1061, 1062,
+                          1063],
+        not_required={
+            "GPT-6 Luna": dict(match=None, reason=(
+                "not required (Ümit #5220); never scheduled: OpenAI Decisions out of credit (start.sh: deferred)")),
+            "Mercury Decide": dict(match=1016, reason=(
+                "not required (Ümit #5220); #1016 aborted at its start, no game: no OpenRouter endpoint for "
+                "inception/mercury-decide")),
+        },
+        runner=RUNNER_GEMINI,
+        original_runner=("two builds: dab6da5 (clean) for #993-#1013 and the aborted #1016 (every decision before "
+                         "21:46:31Z), 38024d6 (clean; map-check v2) for #1053-#1063"),
+        server=dict(kind="api", mib=0, start=None, stop=None, health=None,
+                    smoke=("curl -fsS -m 20 https://openrouter.ai/api/v1/models/google/gemini-decision-1/endpoints | "
+                           "python3 -c 'import json,sys; e=json.load(sys.stdin)[\"data\"][\"endpoints\"]; "
+                           "ok=(len(e) == 1 and e[0][\"tag\"] == \"google-ai-studio\" and e[0][\"status\"] == 0 and "
+                           "float(e[0][\"pricing\"][\"prompt\"]) == 1e-7 and "
+                           "float(e[0][\"pricing\"][\"completion\"]) == 0); "
+                           "print(\"listed as pinned: one endpoint google-ai-studio, up, $0.10/$0\" if ok else e); "
+                           "sys.exit(not ok)'"),
+                    provenance=("Google's Gemini Decision 1 through OpenRouter's System One route "
+                                "(openrouter-decisions/google/gemini-decision-1; replies name "
+                                "google/gemini-decision-1-20261111), provider pinned to google-ai-studio, fallbacks "
+                                "off (players.settings request), OPENROUTER_API_KEY in ~/.keys; smoke = the "
+                                "original's listed() check (one endpoint, Google AI Studio, up, $0.10/M input, $0 "
+                                "output; listed so on 2026-11-12T13:00Z)"),
+                    measured="none (hosted)"),
+        settings_change=dict(),
+        rules=dict(mirror_concurrent=True),
+        cap_usd=round(GEMINI_CAP_USD - GEMINI_SPENT_USD, 4),
+        cap_basis=(f"Gemini Decision 1's entry cap: ${GEMINI_CAP_USD:.2f} (entrant + paid opponents; "
+                   "tools/v3/late-gemini-decision/start.sh), of which its guard recorded "
+                   f"${GEMINI_SPENT_USD} at the entry's end (workspace/late-gemini-decision/state/guard.log, "
+                   "2026-11-11T22:12:14Z; it billed every late-entry match from #993, other entries' paid opponents "
+                   "included); the repeat's guard stops at the remaining "
+                   f"${GEMINI_CAP_USD - GEMINI_SPENT_USD:.4f} of the repeat's own bill."),
+        cost_method=("Each playable pair's billed cost in the original match: the paid opponent's recorded cost_usd "
+                     "(Fastino GLiDE: input tokens x $0.04/M), plus Gemini Decision 1's own recorded cost_usd "
+                     "(OpenRouter usage.cost, $0.10/M input); local setups and programs bill nothing."),
+        server_starts="entrant: none (hosted); each local opponent 1-5 min (state logs of the originals)",
+        opp_gpu=("<second card>", (
+            "Gemini Decision 1 is hosted (no card of its own); its 8 local opponents run one at a time on a second "
+            "card, OPP_GPU, with room for the largest (Clef, 53,144 MiB + 2,000), as in its original (bariton GPU 2, "
+            "reservation r_82bfcd93782c).")),
+        concurrency=("Name: '<original> [repeat 1]', a new players row; settings otherwise as the original's (the "
+                     "changed fields are listed under Settings); one match at a time, as the original (start.sh, "
+                     "max_matches 1)."),
+        differences=[
+            ("Runner: the original ran dab6da5 (clean) for its first stage (#993-#1013) and 38024d6 (clean; map-check "
+             "v2 and the raw_entries decoder) for its local stage (#1053-#1063), both on origin/main's runner line "
+             f"(ca112dc); the repeat runs {RUNNER_GEMINI['commit']} (branch pinned-late-gemini): the repeats' runner "
+             f"{RUNNER['commit']} (late-reax line with the pinned-pairs change 4ca4f08 and admit) with those four "
+             "runner commits cherry-picked. late-reax adds decision clients (reax, baselabs, drex, nace) and a "
+             "budget ledger for them, none used by this field; the same prompt version, option-order seed and rules."),
+            ("Map check: map-check v2 (a probability map that is not exactly the shown ids, finite in [0, 1], summing "
+             "to 1 within 1e-6, stores no probabilities; the returned choice is still played) applies to every "
+             "repeat pair; the original's first-stage pairs (#993-#1013, dab6da5) ran without it. Plays are not "
+             "affected; a first-stage pair can store probabilities in the original where the repeat stores none."),
+            ("Hosted model: Gemini Decision 1 is served by Google AI Studio through OpenRouter; whether the model "
+             "behind google/gemini-decision-1 changed since 2026-11-11 can only be read from the replies' model echo "
+             "(the original's: google/gemini-decision-1-20261111 on all 1,704 decisions)."),
+            ("Route check: the original's guard re-checked OpenRouter's listing every minute (3 failures stopped "
+             "it); the repeat checks it once before the first match (smoke). Fallbacks stay off, so a changed "
+             "endpoint fails requests rather than rerouting them."),
+            ("Cap: the original's $5 entry cap with $1.1819 recorded; the repeat's guard stops at the remaining "
+             "$3.8181 (see cost_basis)."),
+        ]),
 }
 DISPLAY = {"mammoth-1-r1": "Mammoth-1", "drex-max-v1-r1": "Drex Max v1", "reax-1.3-r1": "REAX 1.3",
            "d1-ultra-r1": "Liquid d1-ultra", "drex-max-1.1-r1": "Drex Max 1.1",
-           "glide-v1.2-r1": "Fastino GLiDE v1.2 (local)"}
+           "glide-v1.2-r1": "Fastino GLiDE v1.2 (local)", "gemini-decision-1-r1": "Gemini Decision 1"}
 
 
 def ro() -> sqlite3.Connection:
@@ -485,7 +583,9 @@ def manifest(args) -> None:
         field = sorted(set(FIELD) - {r["original"]})
         played = [p for p in pairs if p["status"] == "finished"]
         missing = [o for o in field if o not in {p["opponent"] for p in played}]
+        not_required = r.get("not_required", {})
         reasons = {x["opponent"]: x["reason"] for x in late if x["entrant"] == r["original"]}
+        reasons |= {o: n["reason"] for o, n in not_required.items() if o not in reasons}
         playable = [p for p in pairs if p["status"] == "finished" and not p["blocked_today"]]
         dropped = [p["opponent"] for p in played if p["blocked_today"]]
         unpinned = [o for o in missing if o not in {p["opponent"] for p in pairs}]
@@ -501,9 +601,10 @@ def manifest(args) -> None:
         est_own = sum(p["billed_usd"]["original"] or 0 for p in playable)
         mins = {k: round(sum(p["minutes"] or 0 for p in playable if p["kind"] == k), 1) for k in ("program", "api", "local")}
         out["repeats"].append(dict(
-            id=rid, run_id=f"repeat-2026-11-11-{rid}", name=name, display=DISPLAY[rid], original=r["original"],
-            original_player_id=row["id"], original_league=r["original_league"], original_stage=r["original_stage"],
-            status=r.get("status", "queued"), hold=r.get("hold"), prepared="2026-11-11", started=None, finished=None,
+            id=rid, run_id=f"repeat-{r.get('prepared', '2026-11-11')}-{rid}", name=name, display=DISPLAY[rid],
+            original=r["original"], original_player_id=row["id"], original_league=r["original_league"],
+            original_stage=r["original_stage"], status=r.get("status", "queued"), hold=r.get("hold"),
+            prepared=r.get("prepared", "2026-11-11"), started=None, finished=None,
             league_config=f"tools/v3/repeats/leagues/{rid}.json",
             status_file=f"mailbox/repeats/{rid} - status.md",
             runner=dict(r["runner"], original=r["original_runner"]),
@@ -514,7 +615,8 @@ def manifest(args) -> None:
             | dict(start=srv["start"], stop=srv["stop"]),
             coverage_original=dict(
                 played=len(played), of=len(field),
-                not_played=[dict(opponent=o, match=next((p["original_match"] for p in pairs if p["opponent"] == o), None),
+                not_played=[dict(opponent=o, match=next((p["original_match"] for p in pairs if p["opponent"] == o),
+                                                        not_required.get(o, {}).get("match")),
                                  reason=reasons.get(o, "no match")) for o in missing]),
             coverage_repeat_today=dict(
                 playable=len(playable), of=len(field),
@@ -523,6 +625,8 @@ def manifest(args) -> None:
                 not_in_original=[dict(opponent=o, reason=reasons.get(o, "no original match"),
                                       today=BLOCKED_TODAY.get(o)) for o in missing],
                 unpinned=unpinned),
+            **({} if not not_required else dict(coverage_required=required_coverage(
+                pairs, field, not_required, r["rules"]["mirror_concurrent"]))),
             cost_basis=dict(
                 method=r.get("cost_method", (
                     "Each playable pair's billed cost in the original match: the paid opponent's recorded "
@@ -530,7 +634,7 @@ def manifest(args) -> None:
                     "repeat; local setups and programs bill nothing.")),
                 pairs={p["opponent"]: p["billed_usd"] for p in paid},
                 estimate_usd=round(est_opp + est_own, 4), opponents_usd=round(est_opp, 4), entrant_usd=round(est_own, 4),
-                cap_usd=5.0),
+                cap_usd=r.get("cap_usd", 5.0), **({"cap_basis": r["cap_basis"]} if "cap_basis" in r else {})),
             time=dict(
                 method=("Sum of each playable pair's original match duration (start to finish; the originals ran "
                         "several matches at once, so one at a time is about this or less), plus server starts."),
@@ -542,13 +646,15 @@ def manifest(args) -> None:
                 entrant_mib=srv["mib"], entrant_measured=srv["measured"],
                 fits_beside_entrant=[o for o in opps if o not in big],
                 needs_second_gpu=big,
-                note=("One card: the entrant's server (none for d1-ultra) stays up for the whole repeat; the opponent "
-                      "servers run one at a time beside it, smallest first. A pair needs both servers at once, so the "
-                      "opponents in needs_second_gpu (entrant + opponent + 2 GB over 97,887 MiB) wait for a second "
-                      "card (OPP_GPU) or stay unplayed.")),
-            differences=["Name: '<original> [repeat 1]', a new players row; settings otherwise as the original's (the "
-                         "changed fields are listed under Settings); one match at a time, where the original played "
-                         "several at once."]
+                note=r["opp_gpu"][1] if "opp_gpu" in r else (
+                    "One card: the entrant's server (none for d1-ultra) stays up for the whole repeat; the opponent "
+                    "servers run one at a time beside it, smallest first. A pair needs both servers at once, so the "
+                    "opponents in needs_second_gpu (entrant + opponent + 2 GB over 97,887 MiB) wait for a second "
+                    "card (OPP_GPU) or stay unplayed.")),
+            differences=[r.get("concurrency", (
+                "Name: '<original> [repeat 1]', a new players row; settings otherwise as the original's (the "
+                "changed fields are listed under Settings); one match at a time, where the original played "
+                "several at once."))]
                         + r.get("differences", []) + (
                 [f"Not replayable today, though played in the original: {', '.join(dropped)} (blockers today); "
                  "their seed pins are kept so they replay with the original seeds once unblocked."] if dropped else []),
@@ -559,11 +665,35 @@ def manifest(args) -> None:
     print(f"{MANIFEST.relative_to(REPO)}: {len(out['repeats'])} repeats")
 
 
+def required_coverage(pairs: list[dict], field: list[str], not_required: dict, mirror: bool) -> dict:
+    """Coverage over the required pairs (the field less not_required), each count separately: pairs the original
+    played (history), pairs pinned (every pair in pairs is pinned: wanted_pins), pinned pairs playable today (not
+    blocked), and matched fixtures: pinned pairs whose original finished match recorded its games' dice seeds and ran
+    with the repeat's mirror rule (the other rules are one set across the originals, checked above; configs refuses a
+    clock or another start), so the pin's seed and seating give the original's dice, seats and option orders."""
+    required = [o for o in field if o not in not_required]
+    mine = [p for p in pairs if p["opponent"] in required]
+    played = [p["opponent"] for p in mine if p["status"] == "finished"]
+    pinned = [p["opponent"] for p in mine]
+    playable = [p["opponent"] for p in mine if p["status"] == "finished" and not p["blocked_today"]]
+    matched = [p["opponent"] for p in mine if p["status"] == "finished" and p["games"]
+               and all(g["dice_seed"] is not None for g in p["games"]) and p["rules"]["mirror_concurrent"] == mirror]
+    return dict(
+        rule="GPT-6 Luna and Mercury Decide pairs are not required (Ümit #5220)", required=len(required),
+        history_played=len(played), pinned=len(pinned), playable_today=len(playable), matched_fixtures=len(matched),
+        not_required=[dict(opponent=o, **n) for o, n in not_required.items()],
+        missing=dict(history=[o for o in required if o not in played], pins=[o for o in required if o not in pinned],
+                     today=[o for o in required if o not in playable], fixtures=[o for o in required if o not in matched]))
+
+
 def start_commands(rid: str) -> list[str]:
-    run = f"/home/cbasaran/code/jevgammon/tools/v3/repeats/run.sh {rid}"
+    run = f"{HERE}/run.sh {rid}"
     unit = f"systemd-run --user --unit=repeat-{rid} --working-directory=/home/cbasaran/code/jevgammon"
-    gpu = {"ours": "-E GPU=0 -E OPP_GPU=0", "logic": "-E GPU=0 -E OPP_GPU=0", "api": "-E OPP_GPU=0"}[REPEATS[rid]["server"]["kind"]]
-    if REPEATS[rid].get("status") == "held":
+    r = REPEATS[rid]
+    opp = r["opp_gpu"][0] if "opp_gpu" in r else "0"
+    gpu = {"ours": f"-E GPU=0 -E OPP_GPU={opp}", "logic": f"-E GPU=0 -E OPP_GPU={opp}",
+           "api": f"-E OPP_GPU={opp}"}[r["server"]["kind"]]
+    if r.get("status") == "held":
         return []
     return [f"{unit} {gpu} -E RES=<reservation> {run}"]
 
@@ -581,7 +711,8 @@ def configs(args) -> None:
         progs = [json.loads(conn.execute("SELECT settings FROM players WHERE name = ?", (n,)).fetchone()[0])
                  for n in PROGRAMS]
         cfg = dict(
-            note=(f"Reproducibility repeat 1 of {m['original']} ({WRITTEN_FOR}, #4710; run {m['run_id']}): {m['name']} "
+            note=(f"Reproducibility repeat 1 of {m['original']} ({REPEATS[rid].get('requested_by', WRITTEN_FOR)}, "
+                  f"#4710; run {m['run_id']}): {m['name']} "
                   f"plays {m['original']}'s original League 1 field again, one match at a time, each pair pinned to its "
                   "original match's seed and seating (pinned_pairs), the same option-order seed, prompt, rules and "
                   "settings. Hidden league; matches stage 'late-entry' and the name held "
@@ -971,8 +1102,9 @@ def attempt_problems(conn, rid: str, want: dict) -> list[str]:
 
 def attempts(conn, rid: str) -> list[dict]:
     """The repeat's recorded attempts, then the current one (its league once created, else None)."""
-    current = dict(league=league_id(conn, rid), runner=dict(commit=RUNNER["commit"], commit_full=RUNNER["commit_full"],
-                                                             binary_sha256=RUNNER["binary_sha256"]))
+    rn = REPEATS[rid]["runner"]
+    current = dict(league=league_id(conn, rid), runner=dict(commit=rn["commit"], commit_full=rn["commit_full"],
+                                                             binary_sha256=rn["binary_sha256"]))
     return REPEATS[rid].get("attempts", []) + [current]
 
 
@@ -1004,7 +1136,7 @@ def billed_usd(conn, m) -> float:
             total += (r["tokens"] or 0) * FASTINO_RATE / 1e6
         elif r["name"] == m["name"] and m["original"] in ENTRANT_RATE:
             total += (r["tokens"] or 0) * ENTRANT_RATE[m["original"]] / 1e6
-        elif r["name"] in BILLED or (r["name"] == m["name"] and m["original"] in BILLED):
+        elif r["name"] in BILLED or (r["name"] == m["name"] and m["server"]["kind"] == "api"):
             total += r["cost"]
     return total
 

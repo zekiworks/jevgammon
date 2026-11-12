@@ -15,7 +15,7 @@ import re
 import home as H
 import pages as P
 import story as ST
-from common import LATE_ENTRY, model_key, name_and_tag, tag_text, unplayed_text
+from common import LATE_ENTRY, QC_IMPROVE, QC_LABEL, QC_SETUPS, model_key, name_and_tag, tag_text, unplayed_text
 
 PATH = "bench-scores.json"
 METRIC = "error rate (PR, lower is better)"
@@ -122,15 +122,15 @@ def _checkpoint(m: dict) -> tuple[str | None, str | None, str | None]:
     return hit.group(1), hit.group(2), q.group(1).upper() if q else None
 
 
-def _improvement(S, group: list) -> float | None:
-    """The change in risks found (percentage points, lessons minus no memory) of the row's setup in "Did they
-    improve?", once it has a verdict."""
+def _improvement(S, group: list) -> tuple[float | None, str | None]:
+    """(the change in risks found (percentage points, lessons minus no memory) of the row's setup in "Did they
+    improve?", once it has a verdict; that model's key), or (None, None)."""
     names = {x["name"] for x in group}
     done = [m for m in ((S["improve"].get("results") or {}).get("models") or [])
             if m["setup"] in names and m["verdict"] and m["change"]["risks_found"] is not None]
     if len(done) > 1:
         raise ValueError(f"bench-scores: several 'Did they improve?' verdicts for one row: {sorted(names)}")
-    return done[0]["change"]["risks_found"] if done else None
+    return (done[0]["change"]["risks_found"], done[0]["key"]) if done else (None, None)
 
 
 def randoms(prog_rows) -> dict[int, float]:
@@ -159,7 +159,7 @@ def build(S) -> dict:
         q = x["q"] or {}
         p = P.PARAMS[x["model"]]
         repo, commit, quant = _checkpoint(m)
-        imp = _improvement(S, group)
+        imp, imp_key = _improvement(S, group)
         lg = league_of(x)
         notes = [f"League {lg}", CALIBRATION_NOTE]
         if x["late"]:
@@ -181,12 +181,16 @@ def build(S) -> dict:
         ckpt = CHECKPOINTS.get(x["name"])
         if note:
             notes.append(note)
+        if x["name"] in QC_SETUPS:
+            notes.append(f"{QC_LABEL}: {QC_SETUPS[x['name']]}")
         if ckpt and repo is None:
             repo, commit = ckpt
         if imp is not None:
             imp = round(imp, 2)
             notes.append("improvement_points: change in risks found, percentage points of risk-pays decisions "
                          "(with lessons minus no memory)")
+            if imp_key in QC_IMPROVE:
+                notes.append(f"improvement_points {QC_LABEL}: {QC_IMPROVE[imp_key]}")
         rows.append(dict(
             repo=repo, commit=commit, name=name, tag=tag_text(parts), model_key=row_key(x),
             maker=H.maker(x["name"])[0],

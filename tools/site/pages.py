@@ -9,8 +9,8 @@ import analysis as A
 import own_cost
 from common import (EARLIER, EARLIER_NOTE, LATE_ENTRY, LATE_ENTRY_LABEL, LATE_ENTRY_NOTE, NA, NAME_NOTES, NOT_MEASURED,
                     OUT_OF_SCOPE, OUT_OF_SCOPE_OPPONENTS, PENDING, PROVISIONAL, PROVISIONAL_NOTE, PUBLISHED,
-                    REASONING_NOTES, ROOT, SUITE_BAR, TOO_FEW, aliases, count, esc, fmt, nm, pct, relabel, setup_slug,
-                    shown_names_html, slug, status_badge, unplayed_text)
+                    QC_LABEL, QC_SETUPS, REASONING_NOTES, ROOT, SUITE_BAR, TOO_FEW, aliases, count, esc, fmt, nm, pct,
+                    relabel, setup_slug, shown_names_html, slug, status_badge, unplayed_text)
 from common import SHARED_NAMES, effort_aliases, model_key, name_and_tag, name_html, name_text, tag_html, tag_text
 
 # The site's top bar (Ümit #2901, as Clocktower Bench's): the Hilde leaf and the site's name, then one row of tabs. Each
@@ -981,6 +981,12 @@ def subq_note(entrant, opponent=None, tag="span") -> str:
     return f'<{tag} class="small">{esc(text)}</{tag}>'
 
 
+def qc_note(name, tag="span") -> str:
+    """A setup under QC (content/qc_status.json "setups"): 'QC-pending: <note>' after its name; else ''."""
+    note = QC_SETUPS.get(name)
+    return f'<{tag} class="small qc-pending" data-qc="pending">{QC_LABEL}: {esc(note)}</{tag}>' if note else ""
+
+
 def late_results(e, rel) -> str:
     """A late entry's matches, one row per opponent in the order they started: score (its own first), result, match.
     A pair not played for a recorded reason (its stopped match, if any, included) shows the reason, no score."""
@@ -1024,7 +1030,8 @@ def late_entries_section(S, rel) -> str:
     for e in S["late_entries"]:
         c = late_cells(e)
         rows.append(f'<tr data-dataset="{LATE_ENTRY}"><td class="model"><a class="model-name" href="{late_href(rel, e)}">'
-                    f'{esc(e["name"])}</a><span class="small">{late_status(e)}</span>{subq_note(e["name"])}</td>'
+                    f'{esc(e["name"])}</a><span class="small">{late_status(e)}</span>{subq_note(e["name"])}'
+                    f'{qc_note(e["name"])}</td>'
                     f'<td class="date">{c["entry"]}</td>'
                     f'<td>{c["field"]}</td>'
                     + "".join(f'<td class="num"{own_cost_sort(e["quality"]) if k == "cost" else ""}>{c[k]}</td>'
@@ -1061,6 +1068,7 @@ def late_entry_page(S, e) -> str:
     setup = (f'<section class="card" id="setup"><h2>How we called it</h2>{facts(m, q)}</section>' if m else "")
     return (f'<section class="card"><p class="eyebrow">{esc(LATE_ENTRY_LABEL)} · League {e["field_league"]} field</p>'
             f'<h1>{esc(e["name"])}</h1><p class="subtitle">{late_status(e)}</p>{subq_note(e["name"], tag="p")}'
+            f'{qc_note(e["name"], tag="p")}'
             f'<p class="version">{esc(version_line(S))}</p></section>'
             f'<section class="card" id="late-entry" data-dataset="{LATE_ENTRY}"><h2>{esc(LATE_ENTRY_LABEL)}</h2>'
             f'<dl class="facts">'

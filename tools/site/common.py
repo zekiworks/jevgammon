@@ -50,6 +50,12 @@ HELD = _HELD_FILE["held"]
 # story.running_rows); every other page, data file and bench score still leaves them out, as HELD says.
 RUNNING = _HELD_FILE.get("running", {})
 assert set(RUNNING) <= set(HELD), "held_setups.json: a running entry must also be held"
+# Results under QC (content/qc_status.json; QC 2026-11-12, Ümit via Zeki #5264/#5276), shown until their Run 2 lands:
+# "improve" by 'Did they improve?' model key, "setups" by shown setup name, each with its note.
+_QC_FILE = json.loads((CONTENT / "qc_status.json").read_text())
+QC_LABEL = "QC-pending"
+QC_IMPROVE = _QC_FILE["improve"]
+QC_SETUPS = _QC_FILE["setups"]
 # Close choices, stage B: scope note (Ümit, 2026-10-25; Method spec 2026-10-24 §9.13 addendum of 16:05 UTC), verbatim on
 # the home page and the Method page.
 CLOSE_B_SCOPE_NOTE = ("Gemma 4 31B (on) was started but not completed: two reboots and a GPU fault interrupted it, and it "

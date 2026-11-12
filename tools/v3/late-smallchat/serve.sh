@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Our own server for one small chat model (MODEL: a key of models.json) on bariton GPU GPU, the fallback when logic's
-# server (#5080) is not used, and the only route for Gemma 4 E4B and LFM2.5-8B-A1B (not in logic's list). Never started
+# Our own copy of logic's server for one small chat model (MODEL: a key of models.json) on bariton GPU GPU: a fallback
+# only. The route is logic's own command on our card (#5119): python3 ~/code/benchmark/logic/work/small_models.py serve
+# LOGIC_KEY GPU_UUID (start.sh's header); this script repeats its arguments in case that script changes. Never started
 # by start.sh; serves on logic's port and served name for the model (models.json), so the setup's settings are the
 # same on either route, and so never next to logic's server for the same model; one model per card; the card must be empty (refused otherwise, never freed).
 #   tools/v3/late-smallchat/serve.sh MODEL GPU start|stop|status        (UTIL=share, default 0.85)
@@ -9,7 +10,7 @@
 # parser): the same arguments as logic's container logic-small-MODEL (read with docker inspect on 12 Nov for
 # lfm2.5-2.6b), here bound to 127.0.0.1:PORT; top-20 logprobs are vLLM's default limit.
 # llama.cpp (LFM3-1.7B, Spark-X2.6-4B: not in vLLM v0.30.0): logic's build and arguments (official BF16 GGUF, the
-# pinned repo's chat_template.jinja, --reasoning-format deepseek), 16 slots of 69,632 tokens.
+# pinned repo's chat_template.jinja, --reasoning-format deepseek), 32 slots of 69,632 tokens, as logic's.
 # Spark-X2.6-4B: llama.cpp too (vLLM v0.30.0 has no Spark2_5ForCausalLM), with the official GGUF logic serves (#5091).
 source "$(dirname "$(readlink -f "$0")")/../servers/_lib.sh"
 T=$(dirname "$(readlink -f "$0")")
@@ -60,8 +61,8 @@ case $CMD in
       GGUF=$HF_HUB/models--${GGUF_REPO//\//--}/snapshots/$GGUF_REV/$GGUF_FILE
       [[ -f $GGUF ]] || die "$GGUF missing"
       unit_up "$NAME" "$PORT" "$T" -E CUDA_VISIBLE_DEVICES="$GPU" -- \
-        "$LLAMA_SERVER" -m "$GGUF" --alias "$MODEL" --host 127.0.0.1 --port "$PORT" -ngl 999 -fa on -np 16 \
-        -c $((CONTEXT * 16)) --jinja --chat-template-file "$SNAP/chat_template.jinja" --reasoning-format deepseek --no-webui
+        "$LLAMA_SERVER" -m "$GGUF" --alias "$MODEL" --host 127.0.0.1 --port "$PORT" -ngl 999 -fa on -np 32 \
+        -c $((CONTEXT * 32)) --jinja --chat-template-file "$SNAP/chat_template.jinja" --reasoning-format deepseek --no-webui
       unit_wait "$NAME" "$URL" 600
     fi
     ;;

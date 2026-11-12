@@ -57,7 +57,15 @@ entrant_gpu() {
   done
   local pid
   pid=$(pgrep -f -- "llama-server .*--port $PORT " | head -1)
-  [[ -n $pid ]] && tr '\0' '\n' < /proc/$pid/environ 2>/dev/null | sed -n 's/^CUDA_VISIBLE_DEVICES=//p' | head -1
+  [[ -n $pid ]] || return
+  # logic's small_models.py starts llama-server with CUDA_VISIBLE_DEVICES=<GPU UUID>: report its index
+  local dev
+  dev=$(tr '\0' '\n' < /proc/$pid/environ 2>/dev/null | sed -n 's/^CUDA_VISIBLE_DEVICES=//p' | head -1)
+  if [[ $dev == GPU-* ]]; then
+    nvidia-smi --query-gpu=index,uuid --format=csv,noheader | awk -F', ' -v u="$dev" '$2 == u {print $1}'
+  else
+    echo "$dev"
+  fi
 }
 # Guard; returns 1 (and logs) when the run must stop.
 down=0

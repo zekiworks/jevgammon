@@ -2,9 +2,16 @@
 # Late entry of one small chat setup (KEY: models/KEY/player.json, KEY = MODEL-on or MODEL-off) v the original League 1
 # table (Zeki #5064/#5071/#5073; manifest small-chat-full-suite-1570238769422934048), stage 1: the 3 programs and the
 # paid API setups (GPT-6 Luna deferred while OpenAI is out of credit), as tools/v3/late-tiny8. The model runs on a server
-# on bariton started elsewhere, never from here: logic's small_models.py server on GPU 1 (#5080; SMALLCHAT_URL and
-# SMALLCHAT_MODEL point the setup at it when player.json's port/name differ) or ours (serve.sh MODEL GPU start). One
-# setup at a time: start.sh refuses while another smallchat unit runs.
+# on bariton started elsewhere, never from here: logic's server on its GPU 1 for an (off) entry's first stage, else
+# (#5119: every (on) entry and every local-opponent stage) the same command on our card, under our reservation RES:
+#   systemd-run --user --unit=smallchat-serve-MODEL -p RemainAfterExit=yes --working-directory=$HOME/code/benchmark/logic \
+#     -E PATH=$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin \
+#     agent-bus run RES -- python3 work/small_models.py serve LOGIC_KEY GPU_UUID
+#   (stop: python3 ~/code/benchmark/logic/work/small_models.py stop LOGIC_KEY; systemctl --user stop smallchat-serve-MODEL)
+# It uses models.json's logic key, port and served name (player.json's), so no SMALLCHAT_URL/SMALLCHAT_MODEL is needed;
+# RemainAfterExit keeps a llama.cpp server (LFM3-1.7B, Spark-X2.6-4B: a child process, unlike vLLM's container) alive
+# after the serve command returns. serve.sh MODEL GPU start is the fallback copy. One setup at a time: start.sh refuses
+# while another smallchat unit runs.
 # Status: mailbox/Late entries smallchat - KEY - status.md (main checkout); state workspace/late-smallchat/KEY/state.
 #   systemd-run --user --unit=late-smallchat-KEY --working-directory=/home/cbasaran/code/jevgammon \
 #     -E PATH=$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/games [-E SMALLCHAT_URL=... -E SMALLCHAT_MODEL=...] \

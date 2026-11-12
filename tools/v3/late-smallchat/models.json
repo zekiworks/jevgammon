@@ -110,9 +110,7 @@
    "port": 18602,
    "args": [
     "--reasoning-parser",
-    "gemma4",
-    "--limit-mm-per-prompt",
-    "{\"image\":0,\"audio\":0,\"video\":0}"
+    "gemma4"
    ]
   },
   "weights_gb": 16.0,

@@ -205,7 +205,7 @@
   // False where the anchor has left the window (the caller closes it).
   const atAnchor = (box, r) => {
     const vw = document.documentElement.clientWidth, top = headerBottom() + 4, bottom = innerHeight - 8;
-    if (r.bottom < top || r.top > bottom) return false;
+    if (r.bottom <= top - 4 || r.top >= innerHeight) return false;
     box.style.maxHeight = '';
     const width = box.offsetWidth, height = box.offsetHeight;
     box.style.left = `${Math.max(8, Math.min(r.left, vw - width - 8))}px`;
@@ -282,6 +282,10 @@
       quiet = false;
     }
   }
+  // A box or tooltip with its own click listener: WebKit (iOS) moves a tap on text that does not take clicks to a
+  // clickable element nearby (a sort header, another row's name); one that does keeps the tap.
+  const tappable = new WeakSet();
+  const keepTaps = el => { if (!tappable.has(el)) { el.addEventListener('click', () => {}); tappable.add(el); } };
   const show = (tr, pin, byTouch) => {
     if (open !== tr) hide(false);
     const box = boxOf(tr);
@@ -292,6 +296,7 @@
     tr.classList.add('hl-open');
     const name = nameOf(tr);
     if (name !== tr) name.setAttribute('aria-expanded', 'true');
+    keepTaps(box);
     box.classList.add('open');
     place();
   };
@@ -329,6 +334,7 @@
       tip.append(p);
     }
     document.body.append(tip);
+    keepTaps(tip);
     tipFor = mark;
     if (!atAnchor(tip, mark.getBoundingClientRect())) hideTip();
   };
@@ -337,11 +343,26 @@
   // press of the pointer gives (pointing: until the next key; a tap's focus comes after its pointerup) neither opens a
   // box nor holds one: the press itself decides.
   const held = () => !!open && keyed && open.contains(document.activeElement);
+  let down = null;
   document.addEventListener('pointerdown', event => {
     pointing = true;
     pointer = event.pointerType || 'mouse';
+    down = { x: event.clientX, y: event.clientY };
   }, true);
   document.addEventListener('keydown', () => { pointing = false; }, true);
+  // A tap (not a drag) on a touch screen: a chart mark's tooltip opens or closes, and a tap outside closes what is open,
+  // here and not on click, as WebKit sends no click for a tap on an SVG mark or plain text.
+  document.addEventListener('pointerup', event => {
+    if (event.pointerType === 'mouse' || !down || Math.hypot(event.clientX - down.x, event.clientY - down.y) > 10) return;
+    const mark = titled(event.target);
+    if (mark) {
+      hide(false);
+      if (tipFor === mark) hideTip(); else showTip(mark);
+      return;
+    }
+    if (tip && !tip.contains(event.target)) hideTip();
+    if (open && pinned && !open.contains(event.target)) hide(true);
+  }, true);
   const stay = () => { clearTimeout(leaving); leaving = 0; };
   document.addEventListener('pointerover', event => {
     const tr = rowOf(event.target);
@@ -368,11 +389,8 @@
   // Before the page's other click handlers (capture): a prevented click is left alone by tables.js's row links.
   document.addEventListener('click', event => {
     const touched = pointer !== 'mouse' && event.detail !== 0;
-    const mark = touched ? titled(event.target) : null;
-    if (mark) {
-      event.preventDefault();  // the tooltip in place of the mark's link, which the tooltip holds
-      hide(false);
-      if (tipFor === mark) hideTip(); else showTip(mark);
+    if (touched && titled(event.target)) {
+      event.preventDefault();  // the tooltip (pointerup) in place of the mark's link, which the tooltip holds
       return;
     }
     if (tip && !tip.contains(event.target)) hideTip();

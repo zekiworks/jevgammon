@@ -39,6 +39,7 @@ import hashlib
 import json
 import math
 import os
+import shlex
 import subprocess
 import sys
 import time
@@ -873,6 +874,33 @@ def writer_route_check(key, step):
 
 # --- Run -------------------------------------------------------------------------------------------------------
 
+PINS_DIR = Path(__file__).resolve().parent
+
+
+def server_pin_check(slug, runner=subprocess.run):
+    """A row whose served id does not name its checkpoint (KnowLine: every size answers 'm') carries `server_pin`: the
+    league entry's own checks (pins/<slug>.sh, sha256-bound), sourced with the row's URL/port/ssh host: healthy() =
+    the server's /health as pinned, pinned() = the pinned snapshot's processes on that port, read over ssh. Run before
+    every step. Unhealthy: pause (the server is down or not yet handed over); not the pinned process: stop."""
+    pin = setups()[slug].get("server_pin")
+    if not pin or I.DRY:
+        return None
+    f = PINS_DIR / pin["pins"]
+    if I.sha256_file(f) != pin["pins_sha256"]:
+        raise I.Stop(f"server pin: {f} is not the bound file {pin['pins_sha256'][:12]}…")
+    url, ssh = pin["url"], pin["ssh"]
+    port = url.rsplit(":", 1)[1]
+    script = f'URL={shlex.quote(url)}; PORT={port}; SSH_HOST={shlex.quote(ssh)}; . {shlex.quote(str(f))}; ' \
+             'healthy || exit 3; pinned || exit 4'
+    r = runner(["bash", "-c", script], capture_output=True, text=True, timeout=120)
+    if r.returncode == 3:
+        raise I.Pause(f"server pin: {url}/health does not answer as the pinned server")
+    if r.returncode != 0:
+        raise I.Stop(f"server pin: {ssh} port {port} does not run the pinned checkpoint ({pin['pins']}, exit "
+                     f"{r.returncode})")
+    return dict(pins=pin["pins"], pins_sha256=pin["pins_sha256"], url=url, ssh=ssh, at=I.now())
+
+
 def run(key, until=None, balance_reader=I.openrouter_balance):
     """Runs the arm's next steps in order; returns 0 (done or reached `until`), STOP or PAUSE (also for an arm that
     is not eligible: nothing is called)."""
@@ -925,6 +953,7 @@ def run(key, until=None, balance_reader=I.openrouter_balance):
                 shared_empty(key, step)
                 I.log(key, "step_done", step=step, shared_from=arm_key(slug, "notes"))
                 continue
+            pin = server_pin_check(slug)  # before any gate: a stop or pause here holds no reservation
             try:
                 gate = money_gate(key, step, balance_reader) if needs_ledger(key, step) and not I.DRY else None
             except Refused as e:
@@ -932,7 +961,7 @@ def run(key, until=None, balance_reader=I.openrouter_balance):
             except AccountingError as e:
                 raise I.Pause(f"{step}: accounting unreadable, nothing admitted: {e}") from None
             I.log(key, "step_start", step=step, gate=gate, binary=I.binary_identity(),
-                  cohort_sha256=I.sha256_file(COHORT_FILE))
+                  cohort_sha256=I.sha256_file(COHORT_FILE), server_pin=pin)
             try:
                 (run_empty if step.startswith("E") else run_series)(key, step, gate)
             except I.BudgetRefused as e:

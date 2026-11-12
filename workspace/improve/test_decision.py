@@ -657,6 +657,37 @@ class SmallAmendment(Isolated):
             self.assertNotIn(slug, added)
             self.assertNotIn("arm_pending", D.setups()[slug])
 
+    def test_knowline_rows_are_bound_to_endpoint_and_checkpoint_not_only_to_m(self):
+        rows = {s: D.setups()[s] for s in ("knowline-0.8b", "knowline-2b", "knowline-4b")}
+        self.assertEqual({r["expect"][0] for r in rows.values()}, {"m"})
+        pins = {s: r["server_pin"] for s, r in rows.items()}
+        self.assertEqual(len({p["url"] for p in pins.values()}), 3)  # three endpoints
+        snaps = set()
+        for s, p in pins.items():
+            f = D.PINS_DIR / p["pins"]
+            self.assertEqual(I.sha256_file(f), p["pins_sha256"], s)
+            snaps.add([l for l in f.read_text().splitlines() if l.startswith("SNAPSHOT=")][0])
+        self.assertEqual(len(snaps), 3)  # three checkpoints, each with its revision
+        self.assertTrue(all("@" in x for x in snaps))
+
+    def test_server_pin_check_runs_both_checks_and_pauses_or_stops(self):
+        seen = []
+
+        def runner(code):
+            def run(cmd, **kw):
+                seen.append(cmd[2])
+                return type("R", (), dict(returncode=code, stdout="", stderr=""))()
+            return run
+        rec = D.server_pin_check("knowline-2b", runner=runner(0))
+        self.assertEqual((rec["url"], rec["ssh"]), ("http://192.168.1.131:19490", "spark2"))
+        self.assertIn("PORT=19490", seen[-1])
+        self.assertIn("healthy || exit 3; pinned || exit 4", seen[-1])
+        with self.assertRaises(I.Pause):
+            D.server_pin_check("knowline-2b", runner=runner(3))
+        with self.assertRaises(I.Stop):
+            D.server_pin_check("knowline-2b", runner=runner(4))
+        self.assertIsNone(D.server_pin_check("decider-flash-v1.2", runner=runner(4)))  # no pin: its id names it
+
 
 class Fence(unittest.TestCase):
     """Zeki #3788: the billed chat side runs only through improve-openrouter, one worker at a time, pinned code."""

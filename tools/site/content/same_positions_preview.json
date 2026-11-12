@@ -1,5 +1,5 @@
 {
- "about": "Same positions (preview, Zeki #4287): the STORED E1 answers (the 200-position empty-context test of 'Did they improve?') of every ranked leaderboard model that answered all 200; no new model call. Computed read-only by tools/site/same_positions_publish.py on 2026-11-10 from smoke/improve/*.db, the improve test set and the site state. Names: the leaderboard's (the site relabels them).",
+ "about": "Same positions (preview, Zeki #4287): the STORED E1 answers (the 200-position empty-context test of 'Did they improve?') of every ranked leaderboard model that answered all 200; no new model call. Computed read-only by tools/site/same_positions_publish.py on 2026-11-10 from smoke/improve/*.db, the improve test set and the site state. Names: the leaderboard's (the site relabels them). Muse Ember (max) added 2026-11-12 from its own E1 run (ember-E1-20261112T0237Z: the same 200 positions, its league route and settings, one request at a time); every pair and tier recomputed with it in the Holm family, league ranks refreshed from the leaderboard.",
  "prompt_equals_league": true,
  "correctness_rule": "correct = valid answer whose play lost < 0.001 equity against GNUbg's best (test_set.json losses, GNUbg 2-ply; tools/site thresholds.json best_play_loss_below, the site's 'Engine's best play'); invalid and failed answers count as wrong. The improve pipeline itself scores error rate / risks found / right safety (workspace/learning-pilot/pilot.py eval_metrics), no correct/incorrect rule.",
  "tier_rule": "Holm-adjusted (all pairs, alpha 0.05) two-sided exact McNemar. Tier 1: the most-correct model and every model not significantly different from it; then the most-correct model left leads tier 2 with every remaining model not significantly different from it; and so on.",
@@ -54,7 +54,7 @@
   },
   {
    "name": "Gemma 4 31B (on)",
-   "rank": 11,
+   "rank": 13,
    "n": 200,
    "correct": 92,
    "invalid": 0,
@@ -62,8 +62,17 @@
    "tier": 1
   },
   {
-   "name": "Kimi K3.1 Pro (off)",
+   "name": "Muse Ember (max)",
    "rank": 10,
+   "n": 200,
+   "correct": 88,
+   "invalid": 4,
+   "failed": 0,
+   "tier": 1
+  },
+  {
+   "name": "Kimi K3.1 Pro (off)",
+   "rank": 11,
    "n": 200,
    "correct": 85,
    "invalid": 0,
@@ -72,7 +81,7 @@
   },
   {
    "name": "GLM-5.3 (low)",
-   "rank": 16,
+   "rank": 18,
    "n": 200,
    "correct": 83,
    "invalid": 0,
@@ -81,7 +90,7 @@
   },
   {
    "name": "Qwen3.8-27B (low)",
-   "rank": 15,
+   "rank": 17,
    "n": 200,
    "correct": 78,
    "invalid": 0,
@@ -90,7 +99,7 @@
   },
   {
    "name": "Drex Max 1.1",
-   "rank": 22,
+   "rank": 25,
    "n": 200,
    "correct": 67,
    "invalid": 0,
@@ -99,7 +108,7 @@
   },
   {
    "name": "Qwen3.8 Flash (off)",
-   "rank": 20,
+   "rank": 23,
    "n": 200,
    "correct": 66,
    "invalid": 0,
@@ -108,7 +117,7 @@
   },
   {
    "name": "SubQ Snap 1.1",
-   "rank": 31,
+   "rank": 34,
    "n": 200,
    "correct": 60,
    "invalid": 0,
@@ -168,7 +177,16 @@
    "b01": 24,
    "b10": 10,
    "p": 0.024306510109454393,
-   "p_holm": 0.7291953032836318,
+   "p_holm": 0.923647384159267,
+   "sig": false
+  },
+  {
+   "a": "Claude Fable 5.1 (high)",
+   "b": "Muse Ember (max)",
+   "b01": 34,
+   "b10": 16,
+   "p": 0.015346677832630107,
+   "p_holm": 0.6292137911378344,
    "sig": false
   },
   {
@@ -177,7 +195,7 @@
    "b01": 34,
    "b10": 13,
    "p": 0.0030876764615186403,
-   "p_holm": 0.12659473492226425,
+   "p_holm": 0.15438382307593201,
    "sig": false
   },
   {
@@ -186,7 +204,7 @@
    "b01": 36,
    "b10": 13,
    "p": 0.001402688503695515,
-   "p_holm": 0.060315605658907145,
+   "p_holm": 0.0743424906958623,
    "sig": false
   },
   {
@@ -195,7 +213,7 @@
    "b01": 40,
    "b10": 12,
    "p": 0.0001275387838557407,
-   "p_holm": 0.0063769391927870345,
+   "p_holm": 0.007907404599055923,
    "sig": true
   },
   {
@@ -204,7 +222,7 @@
    "b01": 50,
    "b10": 11,
    "p": 4.588831219506234e-07,
-   "p_holm": 2.8909636682889275e-05,
+   "p_holm": 3.4416234146296756e-05,
    "sig": true
   },
   {
@@ -213,7 +231,7 @@
    "b01": 51,
    "b10": 11,
    "p": 2.775636864143019e-07,
-   "p_holm": 1.8041639616929624e-05,
+   "p_holm": 2.1372403853901246e-05,
    "sig": true
   },
   {
@@ -222,7 +240,7 @@
    "b01": 57,
    "b10": 11,
    "p": 1.2750032374450517e-08,
-   "p_holm": 8.415021367137341e-07,
+   "p_holm": 9.945025252071403e-07,
    "sig": true
   },
   {
@@ -263,11 +281,20 @@
   },
   {
    "a": "Gemini 4 Argon (high)",
+   "b": "Muse Ember (max)",
+   "b01": 34,
+   "b10": 21,
+   "p": 0.10478948242660335,
+   "p_holm": 1.0,
+   "sig": false
+  },
+  {
+   "a": "Gemini 4 Argon (high)",
    "b": "Kimi K3.1 Pro (off)",
    "b01": 33,
    "b10": 17,
    "p": 0.032839137564268484,
-   "p_holm": 0.9194958517995175,
+   "p_holm": 1.0,
    "sig": false
   },
   {
@@ -276,7 +303,7 @@
    "b01": 33,
    "b10": 15,
    "p": 0.013283281562245008,
-   "p_holm": 0.4383482915540853,
+   "p_holm": 0.5578978256142904,
    "sig": false
   },
   {
@@ -285,7 +312,7 @@
    "b01": 38,
    "b10": 15,
    "p": 0.0021901868838920535,
-   "p_holm": 0.09198784912346625,
+   "p_holm": 0.11388971796238678,
    "sig": false
   },
   {
@@ -294,7 +321,7 @@
    "b01": 52,
    "b10": 18,
    "p": 5.849547318695842e-05,
-   "p_holm": 0.003041764605721838,
+   "p_holm": 0.003743710283965339,
    "sig": true
   },
   {
@@ -303,7 +330,7 @@
    "b01": 47,
    "b10": 12,
    "p": 5.1256292496887346e-06,
-   "p_holm": 0.00028703523798256914,
+   "p_holm": 0.00034854278897883395,
    "sig": true
   },
   {
@@ -312,7 +339,7 @@
    "b01": 56,
    "b10": 15,
    "p": 1.0414019304757919e-06,
-   "p_holm": 6.35255177590233e-05,
+   "p_holm": 7.60223409247328e-05,
    "sig": true
   },
   {
@@ -344,11 +371,20 @@
   },
   {
    "a": "DeepSeek V4.1 Flash (low)",
+   "b": "Muse Ember (max)",
+   "b01": 24,
+   "b10": 12,
+   "p": 0.06524533522315323,
+   "p_holm": 1.0,
+   "sig": false
+  },
+  {
+   "a": "DeepSeek V4.1 Flash (low)",
    "b": "Kimi K3.1 Pro (off)",
    "b01": 26,
    "b10": 11,
    "p": 0.020073851919732988,
-   "p_holm": 0.6419714242219925,
+   "p_holm": 0.8024642802774906,
    "sig": false
   },
   {
@@ -357,7 +393,7 @@
    "b01": 25,
    "b10": 8,
    "p": 0.004551384132355452,
-   "p_holm": 0.1775039811618626,
+   "p_holm": 0.21846643835306168,
    "sig": false
   },
   {
@@ -366,8 +402,8 @@
    "b01": 32,
    "b10": 10,
    "p": 0.0009406740282429382,
-   "p_holm": 0.04138965724268928,
-   "sig": true
+   "p_holm": 0.0517370715533616,
+   "sig": false
   },
   {
    "a": "DeepSeek V4.1 Flash (low)",
@@ -375,7 +411,7 @@
    "b01": 42,
    "b10": 9,
    "p": 3.3888279489246997e-06,
-   "p_holm": 0.00019655202103763258,
+   "p_holm": 0.00023721795642472898,
    "sig": true
   },
   {
@@ -384,7 +420,7 @@
    "b01": 43,
    "b10": 9,
    "p": 2.0377698612961126e-06,
-   "p_holm": 0.00012226619167776676,
+   "p_holm": 0.0001467194300133201,
    "sig": true
   },
   {
@@ -393,7 +429,7 @@
    "b01": 53,
    "b10": 13,
    "p": 7.237175237417024e-07,
-   "p_holm": 4.487048647198555e-05,
+   "p_holm": 5.3555096756885976e-05,
    "sig": true
   },
   {
@@ -416,6 +452,15 @@
   },
   {
    "a": "Gemini 3.8 Flash (high)",
+   "b": "Muse Ember (max)",
+   "b01": 22,
+   "b10": 13,
+   "p": 0.17546524899080396,
+   "p_holm": 1.0,
+   "sig": false
+  },
+  {
+   "a": "Gemini 3.8 Flash (high)",
    "b": "Kimi K3.1 Pro (off)",
    "b01": 24,
    "b10": 12,
@@ -429,7 +474,7 @@
    "b01": 24,
    "b10": 10,
    "p": 0.024306510109454393,
-   "p_holm": 0.7291953032836318,
+   "p_holm": 0.923647384159267,
    "sig": false
   },
   {
@@ -438,7 +483,7 @@
    "b01": 34,
    "b10": 15,
    "p": 0.009399241523873059,
-   "p_holm": 0.3383726948594301,
+   "p_holm": 0.42296586857428764,
    "sig": false
   },
   {
@@ -447,7 +492,7 @@
    "b01": 38,
    "b10": 8,
    "p": 9.24769992138863e-06,
-   "p_holm": 0.0004901280958335974,
+   "p_holm": 0.000601100494890261,
    "sig": true
   },
   {
@@ -456,7 +501,7 @@
    "b01": 38,
    "b10": 7,
    "p": 3.1213096463034162e-06,
-   "p_holm": 0.00018415726913190156,
+   "p_holm": 0.00022161298488754255,
    "sig": true
   },
   {
@@ -465,7 +510,7 @@
    "b01": 46,
    "b10": 9,
    "p": 4.336383137015787e-07,
-   "p_holm": 2.7752852076901036e-05,
+   "p_holm": 3.295651184131998e-05,
    "sig": true
   },
   {
@@ -474,6 +519,15 @@
    "b01": 19,
    "b10": 14,
    "p": 0.48685024166479707,
+   "p_holm": 1.0,
+   "sig": false
+  },
+  {
+   "a": "Grok 4.7 (high)",
+   "b": "Muse Ember (max)",
+   "b01": 24,
+   "b10": 15,
+   "p": 0.19959086691960692,
    "p_holm": 1.0,
    "sig": false
   },
@@ -492,7 +546,7 @@
    "b01": 26,
    "b10": 12,
    "p": 0.03355243967962451,
-   "p_holm": 0.9194958517995175,
+   "p_holm": 1.0,
    "sig": false
   },
   {
@@ -501,7 +555,7 @@
    "b01": 33,
    "b10": 14,
    "p": 0.007942726509483578,
-   "p_holm": 0.29388088085089237,
+   "p_holm": 0.36536541943624457,
    "sig": false
   },
   {
@@ -510,7 +564,7 @@
    "b01": 43,
    "b10": 13,
    "p": 7.333218396948782e-05,
-   "p_holm": 0.0037399413824438787,
+   "p_holm": 0.004619927590077733,
    "sig": true
   },
   {
@@ -519,7 +573,7 @@
    "b01": 39,
    "b10": 8,
    "p": 5.539621596994948e-06,
-   "p_holm": 0.00030467918783472214,
+   "p_holm": 0.0003711546469986615,
    "sig": true
   },
   {
@@ -528,8 +582,17 @@
    "b01": 51,
    "b10": 14,
    "p": 4.47522484948754e-06,
-   "p_holm": 0.0002550878164207898,
+   "p_holm": 0.00030879051461464027,
    "sig": true
+  },
+  {
+   "a": "Gemma 4 31B (on)",
+   "b": "Muse Ember (max)",
+   "b01": 19,
+   "b10": 15,
+   "p": 0.6075913612730801,
+   "p_holm": 1.0,
+   "sig": false
   },
   {
    "a": "Gemma 4 31B (on)",
@@ -555,7 +618,7 @@
    "b01": 23,
    "b10": 9,
    "p": 0.020061607006937265,
-   "p_holm": 0.6419714242219925,
+   "p_holm": 0.8024642802774906,
    "sig": false
   },
   {
@@ -564,7 +627,7 @@
    "b01": 35,
    "b10": 10,
    "p": 0.00024708778460080794,
-   "p_holm": 0.011860213660838781,
+   "p_holm": 0.014825267076048476,
    "sig": true
   },
   {
@@ -573,7 +636,7 @@
    "b01": 36,
    "b10": 10,
    "p": 0.00015641720852954677,
-   "p_holm": 0.007664443217947792,
+   "p_holm": 0.009541449720302353,
    "sig": true
   },
   {
@@ -582,7 +645,61 @@
    "b01": 42,
    "b10": 10,
    "p": 9.063271916964766e-06,
-   "p_holm": 0.0004894166835160974,
+   "p_holm": 0.0005981759465196745,
+   "sig": true
+  },
+  {
+   "a": "Muse Ember (max)",
+   "b": "Kimi K3.1 Pro (off)",
+   "b01": 22,
+   "b10": 19,
+   "p": 0.755228657504631,
+   "p_holm": 1.0,
+   "sig": false
+  },
+  {
+   "a": "Muse Ember (max)",
+   "b": "GLM-5.3 (low)",
+   "b01": 19,
+   "b10": 14,
+   "p": 0.48685024166479707,
+   "p_holm": 1.0,
+   "sig": false
+  },
+  {
+   "a": "Muse Ember (max)",
+   "b": "Qwen3.8-27B (low)",
+   "b01": 24,
+   "b10": 14,
+   "p": 0.14330665429588407,
+   "p_holm": 1.0,
+   "sig": false
+  },
+  {
+   "a": "Muse Ember (max)",
+   "b": "Drex Max 1.1",
+   "b01": 33,
+   "b10": 12,
+   "p": 0.0024589003220967243,
+   "p_holm": 0.12540391642693294,
+   "sig": false
+  },
+  {
+   "a": "Muse Ember (max)",
+   "b": "Qwen3.8 Flash (off)",
+   "b01": 32,
+   "b10": 10,
+   "p": 0.0009406740282429382,
+   "p_holm": 0.0517370715533616,
+   "sig": false
+  },
+  {
+   "a": "Muse Ember (max)",
+   "b": "SubQ Snap 1.1",
+   "b01": 44,
+   "b10": 16,
+   "p": 0.00039404324272610154,
+   "p_holm": 0.02285450807811389,
    "sig": true
   },
   {
@@ -609,7 +726,7 @@
    "b01": 27,
    "b10": 9,
    "p": 0.00393317302223295,
-   "p_holm": 0.157326920889318,
+   "p_holm": 0.19272547808941454,
    "sig": false
   },
   {
@@ -618,7 +735,7 @@
    "b01": 24,
    "b10": 5,
    "p": 0.0005461126565933228,
-   "p_holm": 0.025121182203292847,
+   "p_holm": 0.031128421425819397,
    "sig": true
   },
   {
@@ -627,7 +744,7 @@
    "b01": 35,
    "b10": 10,
    "p": 0.00024708778460080794,
-   "p_holm": 0.011860213660838781,
+   "p_holm": 0.014825267076048476,
    "sig": true
   },
   {
@@ -645,7 +762,7 @@
    "b01": 26,
    "b10": 10,
    "p": 0.011330984183587134,
-   "p_holm": 0.3965844464255497,
+   "p_holm": 0.4985633040778339,
    "sig": false
   },
   {
@@ -654,7 +771,7 @@
    "b01": 27,
    "b10": 10,
    "p": 0.007632078602910042,
-   "p_holm": 0.2900189869105816,
+   "p_holm": 0.35870769433677197,
    "sig": false
   },
   {
@@ -663,7 +780,7 @@
    "b01": 34,
    "b10": 11,
    "p": 0.0008240823595997426,
-   "p_holm": 0.03708370618198842,
+   "p_holm": 0.04614861213758559,
    "sig": true
   },
   {
@@ -690,7 +807,7 @@
    "b01": 32,
    "b10": 14,
    "p": 0.011351591436778108,
-   "p_holm": 0.3965844464255497,
+   "p_holm": 0.4985633040778339,
    "sig": false
   },
   {
@@ -760,7 +877,7 @@
   },
   {
    "name": "Liquid d1-ultra",
-   "rank": 12,
+   "rank": 14,
    "route": "hosted API",
    "usd_200": 0.02861102494872273,
    "hours_200": 0.0135,
@@ -769,7 +886,7 @@
   },
   {
    "name": "Base Labs Mammoth-1",
-   "rank": 13,
+   "rank": 15,
    "route": "local GPU",
    "usd_200": 0.0,
    "hours_200": 0.040222222222222215,
@@ -778,7 +895,7 @@
   },
   {
    "name": "Drex Max v1",
-   "rank": 14,
+   "rank": 16,
    "route": "local GPU",
    "usd_200": 0.0,
    "hours_200": 0.038000000000000006,
@@ -787,7 +904,7 @@
   },
   {
    "name": "REAX 1.3",
-   "rank": 17,
+   "rank": 20,
    "route": "local GPU",
    "usd_200": 0.0,
    "hours_200": 0.0968611111111111,
@@ -796,7 +913,7 @@
   },
   {
    "name": "Fastino GLiDE",
-   "rank": 18,
+   "rank": 21,
    "route": "hosted API",
    "usd_200": 0.030543338224504772,
    "hours_200": 0.024777777777777777,
@@ -805,7 +922,7 @@
   },
   {
    "name": "Jev 1.13.0",
-   "rank": 19,
+   "rank": 22,
    "route": "hosted API",
    "usd_200": 0.032924633373786406,
    "hours_200": 0.011555555555555557,
@@ -814,7 +931,7 @@
   },
   {
    "name": "Jev 1.14.0",
-   "rank": 21,
+   "rank": 24,
    "route": "hosted API",
    "usd_200": 0.03377305981607357,
    "hours_200": 0.010944444444444444,
@@ -823,7 +940,7 @@
   },
   {
    "name": "Fastino GLiDE v1.2 (local)",
-   "rank": 23,
+   "rank": 26,
    "route": "local GPU",
    "usd_200": 0.0,
    "hours_200": 0.09155555555555554,
@@ -832,7 +949,7 @@
   },
   {
    "name": "Drex 2.0",
-   "rank": 24,
+   "rank": 27,
    "route": "hosted API",
    "usd_200": 0.05165244811564275,
    "hours_200": 0.023333333333333334,
@@ -841,7 +958,7 @@
   },
   {
    "name": "Decider v1.2 27B",
-   "rank": 25,
+   "rank": 28,
    "route": "local GPU",
    "usd_200": 0.0,
    "hours_200": 0.05672222222222222,
@@ -850,7 +967,7 @@
   },
   {
    "name": "Celeris-1 Decision",
-   "rank": 26,
+   "rank": 29,
    "route": "hosted API",
    "usd_200": 0.02973186061903835,
    "hours_200": 0.009666666666666665,
@@ -859,7 +976,7 @@
   },
   {
    "name": "Base Labs Elephant-1",
-   "rank": 27,
+   "rank": 30,
    "route": "local GPU",
    "usd_200": 0.0,
    "hours_200": 0.014416666666666666,
@@ -868,7 +985,7 @@
   },
   {
    "name": "Clef",
-   "rank": 28,
+   "rank": 31,
    "route": "local GPU",
    "usd_200": 0.0,
    "hours_200": 0.07394444444444444,
@@ -877,7 +994,7 @@
   },
   {
    "name": "Cygnet (Gemma 4 12B)",
-   "rank": 29,
+   "rank": 32,
    "route": "local GPU",
    "usd_200": 0.0,
    "hours_200": 0.02622222222222222,
@@ -886,7 +1003,7 @@
   },
   {
    "name": "Decider v1.1 27B",
-   "rank": 30,
+   "rank": 33,
    "route": "local GPU",
    "usd_200": 0.0,
    "hours_200": 0.050972222222222224,
@@ -895,7 +1012,7 @@
   },
   {
    "name": "SubQ Snap Preview",
-   "rank": 32,
+   "rank": 35,
    "route": "hosted API",
    "usd_200": 0.038351768617021276,
    "hours_200": 0.013166666666666667,
@@ -904,7 +1021,7 @@
   },
   {
    "name": "GPT-6 Luna",
-   "rank": 33,
+   "rank": 36,
    "route": "hosted API",
    "usd_200": 0.06671291526689063,
    "hours_200": 0.013000000000000001,
@@ -913,7 +1030,7 @@
   },
   {
    "name": "Winnow-12B",
-   "rank": 34,
+   "rank": 37,
    "route": "local GPU",
    "usd_200": 0.0,
    "hours_200": 0.09472222222222222,
@@ -922,7 +1039,7 @@
   },
   {
    "name": "Mercury Decide",
-   "rank": 35,
+   "rank": 38,
    "route": "hosted API",
    "usd_200": 0.014329537090098697,
    "hours_200": 0.027333333333333334,
@@ -931,7 +1048,7 @@
   },
   {
    "name": "LFM2.5-24B-A2B (on)",
-   "rank": 36,
+   "rank": 39,
    "route": "local GPU",
    "usd_200": 0.0,
    "hours_200": 16.825888888888887,
@@ -940,7 +1057,7 @@
   },
   {
    "name": "Decider Flash v1.2",
-   "rank": 37,
+   "rank": 40,
    "route": "local GPU",
    "usd_200": 0.0,
    "hours_200": 0.030416666666666668,
@@ -949,7 +1066,7 @@
   },
   {
    "name": "Open-Jev 27B v1.1",
-   "rank": 38,
+   "rank": 41,
    "route": "local GPU",
    "usd_200": 0.0,
    "hours_200": 0.09655555555555556,

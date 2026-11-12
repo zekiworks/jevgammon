@@ -82,13 +82,16 @@ PROTOCOL = DICT(dict(plan_sha256=HEX64, lesson_prompt_sha256=HEX64, test_set_sha
                      steps=LIST(("str", r"[A-Z]\d"), 16), floor_points=NUM(), safety_drop_points=NUM(),
                      dry_run=BOOL))
 MONEY = DICT(dict(total_cap_usd=NUM(0), billed_total_usd=NUM(0)))
-TOP = DICT(dict(updated_at=ISO, protocol=PROTOCOL, money=MONEY, models=LIST(MODEL, 15)))
+# models: at most one per plan model (setups_problems: each a plan model, once): the plan's 15 plus the dated roster
+# amendments of content/improve_amendments.json; 64 only bounds the check. `amendments`: the harness's own record of
+# them, allowed by name and never read or shown (the page shows the site's content file instead).
+TOP = DICT(dict(updated_at=ISO, protocol=PROTOCOL, money=MONEY, models=LIST(MODEL, 64)), dict(amendments=("any",)))
 # The status view (pre-registration-only builds): the progress fields only; every other key of the file is allowed by
 # name and never read.
 STATUS_TOP = DICT(dict(updated_at=ISO, models=LIST(DICT(dict(setup=MODEL[1]["setup"], progress=PROGRESS),
                                                          {k: ("any",) for k in MODEL[1] if k not in ("setup", "progress")}),
-                                                    15)),
-                  {k: ("any",) for k in TOP[1] if k not in ("updated_at", "models")})
+                                                    64)),
+                  {k: ("any",) for k in [*TOP[1], *TOP[2]] if k not in ("updated_at", "models")})
 SHARES = ("risks_found", "right_safety", "error_rate")
 
 

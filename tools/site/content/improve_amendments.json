@@ -1,0 +1,43 @@
+{
+ "_about": "Did they improve? Dated roster amendments to the plan's section 3 (the plan file and its sha256 unchanged): each added chat model joins the plan's models for validation and the results table (improve_page.read_plan). The harness records the same amendment in improve.json ('amendments', never read); this file is what the page shows. A model is listed once its setup's settings are in v3.db (the harness exports it from then on).",
+ "amendments": [
+  {
+   "at": "2026-11-12",
+   "source": "Ümit's decision of 12 Nov 2026",
+   "note": "Added 12 Nov, after the plan was published: the Tiny and Small chat models tested on Logic & Math, each at its highest reasoning setting, under the same rule, lesson prompt, test and schedule. Listed here once the setup's settings are in the league database; Gemma 4 E2B, Gemma 4 12B, Erk-14B and Qwen3-14B follow when theirs are.",
+   "models": [
+    {
+     "setup": "Gemma 4 E4B (on)",
+     "maker": "Google",
+     "setting": "on",
+     "route": "local vLLM"
+    },
+    {
+     "setup": "MiniCPM5-2B (on)",
+     "maker": "OpenBMB",
+     "setting": "on",
+     "route": "local vLLM"
+    },
+    {
+     "setup": "LFM2.5-2.6B (on)",
+     "maker": "Liquid AI",
+     "setting": "on",
+     "route": "local vLLM"
+    },
+    {
+     "setup": "LFM2.5-8B-A1B (on)",
+     "maker": "Liquid AI",
+     "setting": "on",
+     "route": "local vLLM"
+    },
+    {
+     "setup": "LFM3-1.7B (on)",
+     "maker": "Liquid AI",
+     "setting": "on",
+     "route": "local llama.cpp"
+    }
+   ],
+   "record": "Ümit native 1570509348072063026 (cohort) and 1570507658425933987 (priority and cash), relayed by Zeki #5674/#5689 (not shown: the page names no internal message)"
+  }
+ ]
+}

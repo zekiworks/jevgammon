@@ -78,6 +78,8 @@ PLAN_URL = ("https://github.com/zekiworks/jevgammon/blob/" + PLAN_COMMIT
 SOURCE = "improve"
 # The results table's planned rows (models and setups not yet run; status only, no numbers), outside the plan.
 PLANNED = SITE / "content/improve_planned.json"
+# Dated roster amendments (content/improve_amendments.json): chat models added to section 3's 15 after publication.
+AMENDMENTS = SITE / "content/improve_amendments.json"
 DESCRIPTION = ("Did they improve? Each chat model on the leaderboard writes its own lessons over 10 games against GNUbg "
                "weak, then takes the risk test again. The pre-registered rule, model list and lesson prompt.")
 # Part 3, the decision models (Ümit/Zeki, #3790): the addendum to the pre-registration, committed at ADDENDUM_COMMIT and
@@ -237,9 +239,18 @@ def read_plan(path: Path) -> dict:
     models = plan_models(models_md)
     if len(models) != 15:
         raise SystemExit(f"the plan's section 3 lists {len(models)} chat models, not 15")
+    amendments = json.loads(AMENDMENTS.read_text())["amendments"] if AMENDMENTS.exists() else []
+    for a in amendments:
+        for m in a["models"]:
+            if any(x["setup"] == m["setup"] for x in models):
+                raise SystemExit(f"content/improve_amendments.json: {m['setup']} is already a plan model")
+            models.append(dict(n=len(models) + 1, setup=m["setup"], label="", late_entry=False, maker=m["maker"],
+                               setting=m["setting"], route=m["route"], route_detail="", billed=False,
+                               status=f"added {a['at']} (amendment)",
+                               key=re.sub(r"[^a-z0-9.]+", "-", m["setup"].lower()).strip("-")))
     return dict(file=path.name, title=title, commitment=COMMITMENT,
                 sha256=hashlib.sha256(text.encode()).hexdigest(), sections=sections, redacted=redacted,
-                intro="\n".join(intro).strip(), models=models,
+                intro="\n".join(intro).strip(), models=models, amendments=amendments,
                 decision_models=paragraph(models_md, "**Decision models"),
                 cygnet=paragraph(models_md, "**Cygnet"), pilot=pilot_row(models_md),
                 seed_line=seed.group(1) if seed else None,
@@ -602,7 +613,9 @@ def models_section(L) -> str:
     else:
         head = ["Model (v3.db setup)", "Maker", "Setting", "Route", "Status in the plan (8 Nov)", "Improved?"]
         cap = f'{count(len(plan["models"]))} chat models (in scope), in the plan\'s order'
-    body = P.SWIPE + P.table(head, [model_row(pm, m, results) for pm, m in rows(L)], esc(cap),
+    amend = "".join(f'<p class="note" id="improve-amendment-{esc(a["at"])}">{esc(a["note"])} ({esc(a["source"])}.)</p>'
+                    for a in plan["amendments"])
+    body = amend + P.SWIPE + P.table(head, [model_row(pm, m, results) for pm, m in rows(L)], esc(cap),
                              cls="board list improve-models")
     seed = (f'<p class="note" id="improve-seed"><strong>{esc(plan["seed_line"])}</strong></p>'
             if plan["seed_line"] else "")

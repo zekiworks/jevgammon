@@ -47,7 +47,7 @@ from pathlib import Path
 SITE = Path(__file__).resolve().parent
 sys.path.insert(0, str(SITE))
 
-from common import NA, ROOT, count, esc, fmt, nm, relabel  # noqa: E402
+from common import NA, QC_IMPROVE, QC_LABEL, ROOT, count, esc, fmt, nm, relabel  # noqa: E402
 from common import label as shown_name  # noqa: E402
 
 import home as H  # noqa: E402
@@ -448,11 +448,25 @@ def cost(pm, m) -> str:
     return f'$0 billed (subscription quota){eq}'
 
 
+def qc_mark(key: str) -> str:
+    """A model whose verdict is under QC (content/qc_status.json "improve"): 'QC-pending · ' before its verdict, its
+    note as the tooltip; its stored numbers stay. Any other model: ''."""
+    note = QC_IMPROVE.get(key)
+    return (f'<span class="qc-pending" data-qc="pending" title="{esc(note)}">{QC_LABEL}</span> \u00b7 ' if note else "")
+
+
+def qc_footnote(L) -> str:
+    """Under the results table: each QC-pending model with its note (content/qc_status.json)."""
+    qc = [f'{esc(pm["setup"])}: {esc(QC_IMPROVE[pm["key"]])}' for pm in L["plan"]["models"] if pm["key"] in QC_IMPROVE]
+    return (f'<p class="table-note" id="improve-qc-note"><strong>{QC_LABEL}</strong>: {"; ".join(qc)}. Numbers as '
+            'stored; the verdict stands once its Run 2 is published.</p>' if qc else "")
+
+
 def verdict_cell(m) -> str:
     if m is None:
         return ""
     if m["verdict"]:
-        return f'<strong data-verdict="{"yes" if m["improved"] else "no"}">{esc(m["status"])}</strong>'
+        return qc_mark(m["key"]) + f'<strong data-verdict="{"yes" if m["improved"] else "no"}">{esc(m["status"])}</strong>'
     return f'<span data-status="{esc(m["state"])}">{esc(m["status"])}</span>'
 
 
@@ -599,7 +613,7 @@ def change_line(m) -> str | None:
     parts = [f'{t} {before_after(m, k)}' for t, k in (("Risks found", "risks_found"), ("right safety", "right_safety"),
                                                      ("error rate", "error_rate"))
              if m["before"][k] is not None and m["after"][k] is not None]
-    parts += [f'Improved? <strong>{esc(m["status"])}</strong>'] if m["verdict"] else []
+    parts += [f'Improved? {qc_mark(m["key"])}<strong>{esc(m["status"])}</strong>'] if m["verdict"] else []
     return " \u00b7 ".join(parts) or None
 
 
@@ -631,7 +645,7 @@ def verdict_text(m) -> str:
     nums = (f' · {fmt(rf, 1, signed=True)}{nb}pp · threshold {num(thr)}{nb}pp' if None not in (rf, thr) else "")
     if not m["verdict"]:
         return "pending" + (f'<span class="small">{nums} (interim)</span>' if nums else "")
-    word = f'<strong data-rverdict="{"yes" if m["improved"] else "no"}">{esc(m["status"])}</strong>'
+    word = qc_mark(m["key"]) + f'<strong data-rverdict="{"yes" if m["improved"] else "no"}">{esc(m["status"])}</strong>'
     if not m["improved"] and round(rf, 9) > round(thr, 9):
         return f'{word} · safety{nb}{fmt(rs, 1, signed=True)}{nb}pp'
     return word + nums
@@ -720,7 +734,7 @@ def results_section(L, S=None) -> str:
                       attrs=' id="improve-results-table"')
             + f'<p class="table-note" id="improve-results-note">{esc(cap)}</p>'
             + P.star_note("Improved? = verdict · change · threshold, in points (pp) of risks found.",
-                          f'<p>{esc(THRESHOLD_NOTE)}</p>') + note)
+                          f'<p>{esc(THRESHOLD_NOTE)}</p>') + qc_footnote(L) + note)
 
 
 def validation_note(L) -> str:
@@ -797,7 +811,8 @@ def lessons(L) -> str:
                 f'empty; {count(s["restarts"])} restarts; game decisions {count(s["game_decisions"])}, invalid '
                 f'{count(s["game_invalid"])}</summary><ul class="notes">{items}</ul></details>')
         out.append(f'<details class="improve-model" id="lessons-{esc(pm["key"])}"><summary><strong>'
-                   f'{esc(pm["setup"])}</strong>: {esc(m["status"])}</summary>{table}{"".join(sers)}</details>')
+                   f'{esc(pm["setup"])}</strong>: {qc_mark(m["key"]) if m["verdict"] else ""}{esc(m["status"])}</summary>'
+                   f'{table}{"".join(sers)}</details>')
     if not out:
         return '<p class="note">No lessons yet.</p>'
     dry = '<p class="note">Dry run: no verdict is given.</p>' if R["dry_run"] else ""

@@ -69,7 +69,7 @@ def improve_card(S) -> dict:
         + num(fmt(m["before"]["risks_found"]), src, ["results", "models", {"setup": pm["setup"]}, "before", "risks_found"], "1")
         + " \u2192 "
         + num(fmt(m["after"]["risks_found"]), src, ["results", "models", {"setup": pm["setup"]}, "after", "risks_found"], "1")
-        + ": " + num(m["status"], src, ["results", "models", {"setup": pm["setup"]}, "status"], "str")
+        + ": " + IP.qc_mark(m["key"]) + num(m["status"], src, ["results", "models", {"setup": pm["setup"]}, "status"], "str")
         for pm, m in done)
     return dict(id="improve", title=IP.title(L), status=IP.eyebrow(L),
                 text=("Each chat model wrote its own lessons over its games against GNUbg weak, then took the risk test "

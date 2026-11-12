@@ -15,7 +15,7 @@ from datetime import datetime
 import home as H
 import own_cost
 import pages as P
-from common import ALL_NOTE, CONTENT, LATE_ENTRY, NA, count, esc, fmt, nm, pct, relabel, unplayed_text
+from common import ALL_NOTE, CONTENT, LATE_ENTRY, NA, QC_LABEL, QC_SETUPS, count, esc, fmt, nm, pct, relabel, unplayed_text
 from common import label as shown_name
 from common import base_model, name_and_tag
 
@@ -183,14 +183,15 @@ def late_tag(x) -> str | None:
 
 def chip_text(S, x, kind: str, league: bool = False) -> str:
     """The one small grey chip after a row's name (Ümit #3193, #4445): 'setting · route · snapshot · <chat|decision>'
-    (common.name_and_tag; each part left out where the setup has none), then its late-entry tag; a program 'program'
-    (an other-league row of a program: its league first)."""
+    (common.name_and_tag; each part left out where the setup has none), then its late-entry tag, then 'QC-pending' for a
+    setup under QC (content/qc_status.json; its note in the details box); a program 'program' (an other-league row of a
+    program: its league first)."""
     if kind == "program":
         parts = [f'League {x["lg"]["id"]}' if league and x["lg"] else None, "program"]
     else:
         typ = model_type(S, x)
         parts = [*name_and_tag(x["name"], x["ds"])[1], typ if typ in TYPE_LABEL else None]
-    return " \u00b7 ".join(p for p in parts + [late_tag(x)] if p)
+    return " \u00b7 ".join(p for p in parts + [late_tag(x), QC_LABEL if x["name"] in QC_SETUPS else None] if p)
 
 
 def row_name(x, kind: str) -> str:
@@ -292,6 +293,7 @@ def details_box(S, x, kind: str, bid: str, extra: list, ref: str | None = None) 
                "matches"] + [esc(unplayed_text(g)) for g in e.get("not_played") or []])
          if e and (e["status"] == P.PROVISIONAL or e.get("not_played")) else None),
         (esc(P.SUBQ_SELF) if e and x["name"] == P.SUBQ_11 else None),
+        (f'{QC_LABEL}: {esc(QC_SETUPS[x["name"]])}' if x["name"] in QC_SETUPS else None),
         join([cost_text(S, x), f'{count(q["decisions"])} decisions' if q else None]),
         (f'Cost: {esc(own_cost.tooltip(q["own_cost"], every_gap=False))}' if q and q.get("own_cost") else None),
         (f'Parameters: {P.params_html(x["model"])}' if kind != "program" else None),

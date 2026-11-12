@@ -40,8 +40,8 @@ from pathlib import Path
 
 import findings
 from common import (ALL_NOTE, BANNED, CONTENT, INTERNAL, LATE_ENTRY, MODEL_NAMES_FILE, NAMES_SHA256, PROVISIONAL,
-                    PROVISIONAL_NOTE, ROOT, SUITE_BAR, name_and_tag, old_model_spans, shown_names_html, split_spans,
-                    tag_text)
+                    PROVISIONAL_NOTE, QC_IMPROVE, QC_LABEL, ROOT, SUITE_BAR, name_and_tag, old_model_spans,
+                    shown_names_html, split_spans, tag_text)
 
 NUM = re.compile(r"(?<![\w.\u2212+-])([\u2212+-]?)(\d{1,3}(?:,\d{3})+|\d+)(\.\d+)?")
 DATE = re.compile(r"\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2})?(?:\.\d+)?Z?)?|\b\d{1,2}:\d{2}\b|"
@@ -859,15 +859,17 @@ def check_improve(out: Path, test_set: Path | None = None) -> list[str]:
                 "range": g(e["range"]), "threshold": g(e["threshold"]),
                 "rs": f"{g(e['before']['right_safety'])} → {g(e['after']['right_safety'])}"}
         # The Improved? cell (Ümit via Zeki #4841): verdict · change · threshold in pp; a No the safety condition alone
-        # decides: "No · safety −x pp"; before the gate "pending" with the interim numbers.
+        # decides: "No · safety −x pp"; before the gate "pending" with the interim numbers. A verdict under QC
+        # (content/qc_status.json) is prefixed "QC-pending · ".
         rf_c, thr = e["change"]["risks_found"], e["threshold"]
         nums = f" · {g(rf_c, True)} pp · threshold {g(thr)} pp" if None not in (rf_c, thr) else ""
+        qc = f"{QC_LABEL} · " if m["key"] in QC_IMPROVE else ""
         if not e["gate"] or results.get("dry_run"):
             want["verdict"] = "pending" + (nums + " (interim)" if nums else "")
         elif not e["improved"] and round(rf_c, 9) > round(thr, 9):
-            want["verdict"] = f"No · safety {g(e['change']['right_safety'], True)} pp"
+            want["verdict"] = f"{qc}No · safety {g(e['change']['right_safety'], True)} pp"
         else:
-            want["verdict"] = ("Yes" if e["improved"] else "No") + nums
+            want["verdict"] = qc + ("Yes" if e["improved"] else "No") + nums
         if rcells != want:
             bad.append(f"{PATH}: {s}: results-table cells {rcells!r}, the data gives {want!r}")
         if rv != (("yes" if e["improved"] else "no") if e["gate"] and not results.get("dry_run") else None):

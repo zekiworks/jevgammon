@@ -20,6 +20,9 @@ States (every number and lesson SYNTHETIC; never results):
   paused         Kimi K3.1 Pro (off) paused (shared-balance priority), GPT-6.1 Sol (high) not started (waiting for the
                  ChatGPT reset 13 Nov), Claude Opus 5.5 (on) paused (usage limit), Qwen3.8-27B (on) paused (waiting
                  for a GPU); accepted by the status view and the full validation;
+  run2           DeepSeek V4.1 Flash (on) complete with a No of its own: the row shows its published Run 2's verdict
+                 (content/run2) with the Run 2 mark. Every state gets the real Run 2 report with its original
+                 recomputed from that state's row (run2_aware), as checks.py requires the original to be the data's;
   status table   the default build (pre-registration only) in states none, running-1, paused and complete-yes (done):
                  the results table at the top (first under the title), 15 rows as the data's progress fields, no outcome number
                  and no free-text reason from the file on the page or in its data file;
@@ -48,7 +51,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import checks  # noqa: E402
 import improve_page as IP  # noqa: E402
 import improve_validate as V  # noqa: E402
-from common import label  # noqa: E402
+from common import RUN2, label  # noqa: E402
 
 WS = {"dir": IP.ROOT / "workspace"}  # set from --workspace
 CANARY_KEY, CANARY_SETUP = "zz_canary_key_7f3a", "Canary Model 9 (x)"
@@ -149,13 +152,37 @@ def states() -> dict:
                     reason="SYNTHETIC: 429", why="usage limit"),
               model(by["Qwen3.8-27B (on)"], "paused", ["E1"], [test(31, 93, 30.0)], [],
                     reason="SYNTHETIC: device lost", why="waiting for a GPU")]
+    # run2: DeepSeek complete with a No of its own (SYNTHETIC), and a published Run 2 (content/run2): the row shows
+    # Run 2's verdict.
     return {"none": None, "running-1": document([running], plan_sha),
             "complete-yes": document([qwen_yes(q)], plan_sha), "complete-no": document([glm_no(g)], plan_sha),
-            "mixed": document(mixed, plan_sha), "paused": document(paused, plan_sha)}
+            "mixed": document(mixed, plan_sha), "paused": document(paused, plan_sha),
+            "run2": document([glm_no(ds)], plan_sha)}
+
+
+# The published Run 2 reports (content/run2/<key>.json; common.RUN2, the one dict checks.py and improve_page.py read).
+REAL_RUN2 = copy.deepcopy(RUN2)
+
+
+def run2_aware(doc):
+    """A state's row for a model with a published Run 2 is shown as the site shows it: Run 2's verdict and numbers,
+    and checks.py requires the report's original to be the data file's own. The data here is SYNTHETIC, so each state
+    gets the real report with its original recomputed from that state's row (checks._improve_expect); Run 2's part is
+    the report's own. A state without the row keeps the real report (nothing to show)."""
+    for key, real in REAL_RUN2.items():
+        r = copy.deepcopy(real)
+        m = next((x for x in (doc or {}).get("models", []) if x["key"] == key), None)
+        if m is not None:
+            e = checks._improve_expect(m)
+            r["original"].update({w: {k: e[w][k] for k in ("risks_found", "right_safety")}
+                                  for w in ("before", "after", "change")},
+                                 threshold=e["threshold"], gate=e["gate"], improved=e["improved"])
+        RUN2[key] = r
 
 
 def write_state(d: Path, doc) -> Path:
-    """d/improve in snapshot.py's layout: prompt/ (the plan's prompt), harness-prompt/ and improve.json."""
+    """d/improve in snapshot.py's layout: prompt/ (the plan's prompt), harness-prompt/ and improve.json; the Run 2
+    reports set for this state (run2_aware)."""
     src = d / "improve"
     shutil.rmtree(src, ignore_errors=True)
     for sub in ("prompt", "harness-prompt"):
@@ -164,6 +191,7 @@ def write_state(d: Path, doc) -> Path:
             shutil.copy(WS["dir"] / "learning-pilot" / f, src / sub / f)
     if doc is not None:
         (src / "improve.json").write_text(json.dumps(doc, indent=1, ensure_ascii=False))
+    run2_aware(doc)
     return src
 
 
@@ -307,6 +335,13 @@ def main():
                  and "withheld" not in page and "bariton" not in page)
         if name == "complete-no":
             case("complete-no: No", 'data-verdict="no"' in page and 'data-verdict="yes"' not in page)
+        if name == "run2":
+            r2 = RUN2["deepseek-v4.1-flash-on"]["run2"]
+            own = checks._improve_expect(doc["models"][0])["improved"]
+            want = "yes" if r2["improved"] else "no"
+            case(f"run2: DeepSeek's own data says {'Yes' if own else 'No'}, the row shows Run 2's "
+                 f"{r2['status']} and its Run 2 mark", own is False and f'data-verdict="{want}"' in page
+                 and f'data-verdict="{"no" if want == "yes" else "yes"}"' not in page and "Run\u00a02" in page)
     # The pre-registration-only build reads only improve.json's progress fields, never its results.
     src = base / "states" / "complete-yes" / "improve"
     Lp = IP.data(IP.PLAN, src, TS(), preregistration_only=True)
@@ -456,6 +491,7 @@ def main():
         t = p.read_text()
         t2 = f(t)
         p.write_text(t2)
+        run2_aware(S[state.removeprefix("status-")])  # the Run 2 reports as for the page's own state
         bad = checks.check_improve(out, TS())
         case(f"page fault ({state}): {name}", t2 != t and bool(bad), bad[0] if bad else "NOT DETECTED")
     n_ok = sum(results)

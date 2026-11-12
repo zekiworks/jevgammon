@@ -35,7 +35,9 @@
 #   case's guard state under D/guard-state): a latched guard and a guard file other than the repeat's refuse; the
 #   preparation creates the guard's empty ledger (cap row, no attempt) with the trigger, admission then names the guard
 #   file's sha256; run_league.sh passes --guard; repeats.py billed reads the guard ledger (spent + reserved in flight);
-#   a guard file changed after the admission refuses `bound` and starts no league.
+#   a guard file changed after the admission refuses `bound` and starts no league. Zeki #5396 G03: with the guard ledger
+#   not created yet, every client is still admitted (under a scratch ledger) before any preparation: a missing
+#   OpenRouter key refuses (check exit 1), with no database, backup, trigger, guard ledger or state write.
 #   The scratch Nace ledger is byte-identical after every case, with no -wal or -shm beside it.
 # Usage: tools/v3/repeats/test_launcher.sh   (TMPDIR defaults to ~/.cache/tmp; exit 0 when every case passes)
 set -uo pipefail
@@ -557,6 +559,18 @@ EOF
 refuse gemini-decision-1-r1
 grep -q "run guard .*gemini-decision-1-r1.json differs from the repeat's" "$D/check.out" &&
   pass "the refusal names the guard file" || failc "check did not name the guard file: $(cut -c1-600 "$D/check.out")"
+# Zeki #5396 G03: a fresh guard (no ledger yet) and a client refusal (OPENROUTER_API_KEY missing): the refusal is found
+# before the preparation, so nothing is written (no database change, backup, trigger, guard ledger or state).
+setup gemini-fresh-missing-key; hold_in_scratch_main gemini-decision-1-r1
+CASE_HOME=$D/keys; keys_home "$CASE_HOME" OPENROUTER_API_KEY
+refuse gemini-decision-1-r1
+if [[ $(wc -l < "$D/check.out") == 1 ]] &&
+   grep -qE "client admission refused \(jevgammon admit exit 1\): .*Gemini Decision 1 \[repeat 1\] \(openrouter-decisions/google/gemini-decision-1; league config\): .*needs an API key.* \(admitted under a scratch guard ledger: the guard ledger is not created yet\)" "$D/check.out"; then
+  pass "the refusal names the client and its missing key, found before any preparation: $(grep -oE "REFUSED[^|]*needs an API key[^|;]*" "$D/check.out" | head -1 | cut -c1-200)"
+else
+  failc "check did not refuse on the missing key: $(cut -c1-800 "$D/check.out")"
+fi
+[[ -z $(ls -A "$D/guard-state") ]] && pass "no guard ledger or latch written" || failc "guard state written: $(ls -A "$D/guard-state")"
 
 for rid in "${prepare[@]}" "${scratch_held[@]}"; do
   setup "trigger-missing-$rid"

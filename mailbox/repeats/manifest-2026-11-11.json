@@ -14582,16 +14582,16 @@
    "status_file": "mailbox/repeats/gemini-decision-1-r1 - status.md",
    "runner": {
     "binary": "/home/cbasaran/code/jevgammon/target/pinned-gemini/release/jevgammon",
-    "binary_sha256": "811ef5b033ded7f14912b9e195820dc52f9bd508dd0dbb6daf91540600ef4dde",
+    "binary_sha256": "7e0d15b013a5afc6dcdb9983e9a85b9ca1c1c94ac3a0d8bbd11081cb7ca578ce",
     "tree": "/home/cbasaran/code/jevgammon-runner-gemini",
-    "commit": "c13992f",
-    "commit_full": "c13992f0f415d81da40a54b1b5bf9fbe60d31ea2",
-    "src_tree": "f60c64c24a5d87dcb8bfd3dba9a5e1819a21a6d2",
+    "commit": "959a8a2",
+    "commit_full": "959a8a2f69a524f9d0477b971c8c8a70306bd1d2",
+    "src_tree": "8be0aadf1c2ea369b18639f3def5933f354b122a",
     "build": {
      "command": "cd /home/cbasaran/code/jevgammon-runner-gemini && CARGO_TARGET_DIR=/home/cbasaran/code/jevgammon/target/pinned-gemini cargo build --release --locked",
      "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14), cargo 1.97.1 (c980f4866 2026-06-30)",
-     "built": "2026-11-12T13:52Z",
-     "tree": "git worktree add -b pinned-late-gemini /home/cbasaran/code/jevgammon-runner-gemini 0e66836; cherry-pick dab6da5 1b234da c0b58f3 38024d6 (cb669a0); commit c13992f (run guard); checkout --detach (clean; only the untracked METADATA.worktree added); the cb669a0 binary kept aside as target/pinned-gemini/jevgammon-cb669a0"
+     "built": "2026-11-12T14:39Z",
+     "tree": "git worktree add -b pinned-late-gemini /home/cbasaran/code/jevgammon-runner-gemini 0e66836; cherry-pick dab6da5 1b234da c0b58f3 38024d6 (cb669a0); commits c13992f (run guard) and 959a8a2 (its round-3 fixes); checkout --detach (clean; only the untracked METADATA.worktree added); the cb669a0 and c13992f binaries kept aside as target/pinned-gemini/jevgammon-cb669a0 and jevgammon-c13992f"
     },
     "inputs": {
      "Cargo.toml": "bf64a9f15bd33cd3f5d517dc984140ff38fb9ec93c5d3a50eb0971f658c0ed4b",
@@ -14619,9 +14619,9 @@
     {
      "league": null,
      "runner": {
-      "commit": "c13992f",
-      "commit_full": "c13992f0f415d81da40a54b1b5bf9fbe60d31ea2",
-      "binary_sha256": "811ef5b033ded7f14912b9e195820dc52f9bd508dd0dbb6daf91540600ef4dde"
+      "commit": "959a8a2",
+      "commit_full": "959a8a2f69a524f9d0477b971c8c8a70306bd1d2",
+      "binary_sha256": "7e0d15b013a5afc6dcdb9983e9a85b9ca1c1c94ac3a0d8bbd11081cb7ca578ce"
      }
     }
    ],
@@ -14765,7 +14765,7 @@
     "file": "tools/v3/repeats/guards/gemini-decision-1-r1.json",
     "cap_usd": 3.8181,
     "metered": "the entrant and the paid opponents it is pinned against (BILLED); prices in the file",
-    "enforced": "runner `league --guard` (c13992f, src/guard.rs): every request attempt reserved before it is sent, refused past the cap; every entrant reply's model and provider exactly the expected ones; a stop latches (no request, no league start, check refuses)"
+    "enforced": "runner `league --guard` (959a8a2, src/guard.rs): every request attempt reserved before it is sent, refused past the cap; every entrant reply's model and provider exactly the expected ones; a stop latches (no request, no league start, check refuses)"
    },
    "cost_basis": {
     "method": "Each playable pair's billed cost in the original match: the paid opponent's recorded cost_usd (Fastino GLiDE: input tokens x $0.04/M), plus Gemini Decision 1's own recorded cost_usd (OpenRouter usage.cost, $0.10/M input); local setups and programs bill nothing. Enforced in the repeat by the run guard's ledger (spent + reserved in flight), not by stored turns.",
@@ -14843,7 +14843,7 @@
     "opponents_usd": 0.1022,
     "entrant_usd": 0.6515,
     "cap_usd": 3.8181,
-    "cap_basis": "Gemini Decision 1's entry cap: $5.00 (entrant + paid opponents; tools/v3/late-gemini-decision/start.sh), of which its guard recorded $1.1819 at the entry's end (workspace/late-gemini-decision/state/guard.log, 2026-11-11T22:12:14Z; it billed every late-entry match from #993, other entries' paid opponents included); the repeat's run guard (runner c13992f, `league --guard`) holds the entrant and the paid opponents to the remaining $3.8181: every request attempt is reserved at its worst case in one ledger before it is sent and refused when it would pass the cap (the runner refuses to send; run.sh's minute check of the ledger only reports and stops)."
+    "cap_basis": "Gemini Decision 1's entry cap: $5.00 (entrant + paid opponents; tools/v3/late-gemini-decision/start.sh), of which its guard recorded $1.1819 at the entry's end (workspace/late-gemini-decision/state/guard.log, 2026-11-11T22:12:14Z; it billed every late-entry match from #993, other entries' paid opponents included); the repeat's run guard (runner 959a8a2, `league --guard`) holds the entrant and the paid opponents to the remaining $3.8181: every request attempt is reserved at its worst case in one ledger before it is sent and refused when it would pass the cap (the runner refuses to send; run.sh's minute check of the ledger only reports and stops)."
    },
    "time": {
     "method": "Sum of each playable pair's original match duration (start to finish; the originals ran several matches at once, so one at a time is about this or less), plus server starts.",
@@ -14873,7 +14873,7 @@
    },
    "differences": [
     "Name: '<original> [repeat 1]', a new players row; settings otherwise as the original's (the changed fields are listed under Settings); one match at a time, as the original (start.sh, max_matches 1).",
-    "Runner: the original ran dab6da5 (clean) for its first stage (#993-#1013) and 38024d6 (clean; map-check v2 and the raw_entries decoder) for its local stage (#1053-#1063), both on origin/main's runner line (ca112dc); the repeat runs c13992f (branch pinned-late-gemini): the repeats' runner 0e66836 (late-reax line with the pinned-pairs change 4ca4f08 and admit) with those four runner commits cherry-picked (cb669a0) and the run guard (c13992f: reply identity and the shared pre-send cap, used with --guard only). late-reax adds decision clients (reax, baselabs, drex, nace) and a budget ledger, which the run guard uses; requests, sampling (provider defaults, nothing set), the prompt version, option-order seed and rules are the same.",
+    "Runner: the original ran dab6da5 (clean) for its first stage (#993-#1013) and 38024d6 (clean; map-check v2 and the raw_entries decoder) for its local stage (#1053-#1063), both on origin/main's runner line (ca112dc); the repeat runs 959a8a2 (branch pinned-late-gemini): the repeats' runner 0e66836 (late-reax line with the pinned-pairs change 4ca4f08 and admit) with those four runner commits cherry-picked (cb669a0) and the run guard (c13992f, 959a8a2: reply identity and the shared pre-send cap, used with --guard only). late-reax adds decision clients (reax, baselabs, drex, nace) and a budget ledger, which the run guard uses; requests, sampling (provider defaults, nothing set), the prompt version, option-order seed and rules are the same.",
     "Map check: map-check v2 (a probability map that is not exactly the shown ids, finite in [0, 1], summing to 1 within 1e-6, stores no probabilities; the returned choice is still played) applies to every repeat pair; the original's first-stage pairs (#993-#1013, dab6da5) ran without it. Plays are not affected; a first-stage pair can store probabilities in the original where the repeat stores none.",
     "Hosted model: Gemini Decision 1 is served by Google AI Studio through OpenRouter. The repeat accepts a reply only when it names the original's served model google/gemini-decision-1-20261111 and provider Google AI Studio (as all 1,704 original decisions did); a model served under that same name but changed behind it cannot be detected from here.",
     "Route check: the original's guard re-checked OpenRouter's listing every minute (3 failures stopped it); the repeat checks it once before the first match (smoke) and, in the runner (run guard), the served identity of every entrant reply: model google/gemini-decision-1-20261111 and provider Google AI Studio exactly, or the guard latches and the league stops for good. Fallbacks stay off.",

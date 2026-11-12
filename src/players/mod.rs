@@ -335,11 +335,18 @@ impl Setup {
 /// prediction call (`LlmClient::predict`), each as sent (configured extra fields merged in).
 /// `shown` is the option order (at most 26). OpenAI-compatible servers' play calls (letter
 /// probabilities in two steps) are not rendered here: `play` is null for them.
-pub fn render_stage_b(config: &PlayerConfig, req: &DecisionRequest<'_>, shown: &[usize]) -> Result<Value> {
+pub fn render_stage_b(
+    config: &PlayerConfig,
+    req: &DecisionRequest<'_>,
+    shown: &[usize],
+) -> Result<Value> {
     use serde_json::json;
     let spec = config.spec.as_str();
     let Some((provider, model)) = spec.split_once('/').filter(|(_, m)| !m.is_empty()) else {
-        bail!("{}: `{spec}` is not a chat model (no prediction call)", config.name);
+        bail!(
+            "{}: `{spec}` is not a chat model (no prediction call)",
+            config.name
+        );
     };
     let (route, model) = match provider.to_ascii_lowercase().as_str() {
         "openai" => (llm::Route::OpenAiSubscription, model.to_ascii_lowercase()),
@@ -350,11 +357,20 @@ pub fn render_stage_b(config: &PlayerConfig, req: &DecisionRequest<'_>, shown: &
             llm::antigravity_model(model, config.reasoning.as_deref()),
         ),
         "xai" | "xai-oauth" | "grok" => (llm::Route::Xai, model.to_owned()),
-        "local" | "openai-compatible" | "ollama" => (llm::Route::OpenAiCompatible, model.to_owned()),
-        other => bail!("{}: provider `{other}` is not a chat model (no prediction call)", config.name),
+        "local" | "openai-compatible" | "ollama" => {
+            (llm::Route::OpenAiCompatible, model.to_owned())
+        }
+        other => bail!(
+            "{}: provider `{other}` is not a chat model (no prediction call)",
+            config.name
+        ),
     };
     if shown.len() > prompt::LETTERS.len() {
-        bail!("{}: {} options, more than one request holds", config.name, shown.len());
+        bail!(
+            "{}: {} options, more than one request holds",
+            config.name,
+            shown.len()
+        );
     }
     let options = llm::Options {
         reasoning: config.reasoning.clone(),
@@ -374,12 +390,24 @@ pub fn render_stage_b(config: &PlayerConfig, req: &DecisionRequest<'_>, shown: &
     let prediction_user = prompt::prediction_user(req, shown);
     let play = (route != llm::Route::OpenAiCompatible).then(|| {
         llm::as_sent(
-            llm::constrained_request(route, &model, &options, &play_user, llm::Answer::Letter(shown.len())),
+            llm::constrained_request(
+                route,
+                &model,
+                &options,
+                &play_user,
+                llm::Answer::Letter(shown.len()),
+            ),
             &options,
         )
     });
     let prediction = llm::as_sent(
-        llm::constrained_request(route, &model, &options, &prediction_user, llm::Answer::Prediction),
+        llm::constrained_request(
+            route,
+            &model,
+            &options,
+            &prediction_user,
+            llm::Answer::Prediction,
+        ),
         &options,
     );
     Ok(json!({
@@ -663,7 +691,10 @@ impl Player {
         let _slot = match &self.requests {
             Some(slots) => {
                 let started = Instant::now();
-                let slot = slots.acquire().await.expect("the semaphore is never closed");
+                let slot = slots
+                    .acquire()
+                    .await
+                    .expect("the semaphore is never closed");
                 req.retry.add(started.elapsed());
                 Some(slot)
             }
@@ -890,6 +921,118 @@ mod tests {
         assert!(!ok.invalid && ok.group_size.is_none());
         assert_eq!(ok.index, order[2]);
         assert_eq!(asked(&player), vec![order.clone()]);
+    }
+
+    /// An OpenAI-compatible stub answering request k with `bodies[k]` (the last repeats),
+    /// all with HTTP 200; returns its base URL and the request count.
+    fn chat_stub(bodies: Vec<&'static str>) -> (String, Arc<std::sync::atomic::AtomicUsize>) {
+        use std::io::{Read, Write};
+        use std::sync::atomic::Ordering;
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let url = format!("http://{}", listener.local_addr().unwrap());
+        let count = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let seen = count.clone();
+        std::thread::spawn(move || {
+            for stream in listener.incoming() {
+                let mut stream = stream.unwrap();
+                let mut buffer = vec![0u8; 1 << 20];
+                let _ = stream.read(&mut buffer);
+                let k = seen.fetch_add(1, Ordering::SeqCst);
+                let body = bodies[k.min(bodies.len() - 1)];
+                let _ = write!(
+                    stream,
+                    "HTTP/1.1 200 OK\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{body}",
+                    body.len()
+                );
+            }
+        });
+        (url, count)
+    }
+
+    fn chat_player(url: String) -> Player {
+        let options = llm::Options {
+            reasoning: Some("high".into()),
+            request: None,
+            max_tokens: None,
+            top_logprobs: None,
+            readout: Default::default(),
+            answer_prefix: None,
+            prompt_note: None,
+            prompt_note_file: None,
+            pacer: None,
+            budget: None,
+            expect_route: None,
+            quota_pause: false,
+        };
+        Player {
+            spec: "stub".into(),
+            provider: "test".into(),
+            quantization: None,
+            reasoning: Some("high".into()),
+            price: None,
+            requests: None,
+            in_flight: AtomicUsize::new(0),
+            backend: Backend::Llm(llm::LlmClient::openai_compatible(
+                reqwest::Client::new(),
+                "m".into(),
+                url,
+                None,
+                options,
+            )),
+        }
+    }
+
+    /// OpenRouter's HTTP 200 provider failure (match #926, exchange 238613): no answer.
+    const PROVIDER_ERROR: &str = r#"{"choices":[{"message":{"content":"","reasoning":"partial"},"finish_reason":"error","error":{"code":502,"message":"provider unavailable"}}],"usage":{"cost":0}}"#;
+
+    /// A 200 reply carrying a provider error is a failed attempt, retried as a 5xx: the
+    /// next attempt's answer is used, and one retry is counted.
+    #[tokio::test]
+    async fn error_reply_is_retried_and_the_next_answer_used() {
+        let (url, count) = chat_stub(vec![
+            r#"{"error":{"code":502,"message":"provider unavailable"}}"#,
+            r#"{"choices":[{"message":{"content":"B"},"finish_reason":"stop"}]}"#,
+        ]);
+        let board = Board::start();
+        let plays = board.legal_plays(3, 1);
+        let notations: Vec<String> = plays.iter().map(|p| p.notation()).collect();
+        let order: Vec<usize> = (0..plays.len()).collect();
+        let retry = RetryTime::default();
+        let req = request(&board, &plays, &notations, &order, 1, &retry);
+        let decision = chat_player(url).decide(&req).await.unwrap();
+        assert!(!decision.invalid);
+        assert_eq!(decision.index, order[1]);
+        // The failed attempt, then the reasoning call and the letter readout: two
+        // exchanges stored, none of them the error reply.
+        assert_eq!(count.load(std::sync::atomic::Ordering::SeqCst), 3);
+        assert_eq!(decision.exchanges.len(), 2);
+        assert!(
+            decision.exchanges.iter().all(|e| !e
+                .response
+                .as_deref()
+                .unwrap_or("")
+                .contains("error"))
+        );
+        assert_eq!(retry.failures(), 1);
+        assert!(retry.get() >= Duration::from_secs(2), "{:?}", retry.get());
+    }
+
+    /// Errors only: the decision fails like a transport failure (the match is deferred and
+    /// resumed), never an invalid answer with a random play.
+    #[tokio::test]
+    async fn error_replies_only_fail_the_decision_as_transport() {
+        let (url, count) = chat_stub(vec![PROVIDER_ERROR]);
+        let board = Board::start();
+        let plays = board.legal_plays(3, 1);
+        let notations: Vec<String> = plays.iter().map(|p| p.notation()).collect();
+        let order: Vec<usize> = (0..plays.len()).collect();
+        let retry = RetryTime::default();
+        let req = request(&board, &plays, &notations, &order, 1, &retry);
+        let error = chat_player(url).decide(&req).await.unwrap_err();
+        let message = format!("{error:#}");
+        assert!(message.contains("request failed"), "{message}");
+        assert!(message.contains("gave up after 4 attempts"), "{message}");
+        assert_eq!(count.load(std::sync::atomic::Ordering::SeqCst), 4);
     }
 
     #[tokio::test]

@@ -1,11 +1,15 @@
 test_a_name_with_other_settings_is_refused_and_nothing_is_written (test_v3_players.Players.test_a_name_with_other_settings_is_refused_and_nothing_is_written) ... ok
 test_a_pre_existing_identical_row_survives_rollback (test_v3_players.Players.test_a_pre_existing_identical_row_survives_rollback) ... ok
+test_foreign_keys_off_is_refused (test_v3_players.Players.test_foreign_keys_off_is_refused) ... ok
 test_insert_is_exact_idempotent_and_records_only_its_own_rows (test_v3_players.Players.test_insert_is_exact_idempotent_and_records_only_its_own_rows) ... ok
+test_nothing_can_reference_a_row_between_its_check_and_its_delete (test_v3_players.Players.test_nothing_can_reference_a_row_between_its_check_and_its_delete)
+BEGIN IMMEDIATE holds the write lock from before the checks to the commit: another connection's attempt to ... ok
 test_on_todays_players_insert_only_adds (test_v3_players.Players.test_on_todays_players_insert_only_adds) ... ok
 test_rollback_refuses_when_a_recorded_row_was_changed (test_v3_players.Players.test_rollback_refuses_when_a_recorded_row_was_changed) ... ok
+test_the_engine_also_refuses_deleting_a_referenced_row (test_v3_players.Players.test_the_engine_also_refuses_deleting_a_referenced_row) ... ok
 test_unreferenced_inserted_rows_go_referenced_ones_stay_and_the_cli_fails_loudly (test_v3_players.Players.test_unreferenced_inserted_rows_go_referenced_ones_stay_and_the_cli_fails_loudly) ... ok
 
 ----------------------------------------------------------------------
-Ran 6 tests in 0.181s
+Ran 9 tests in 0.255s
 
 OK

@@ -7,7 +7,11 @@ only: no existing row changes, no turns, replies, matches or league rows, no ran
 
 rows.json: {"rows": [{"key", "source", "settings"}]}; each `settings` is the prepared late-entry player.json.
 
-insert (one transaction, all or nothing):
+Every connection has PRAGMA foreign_keys = ON (connect()); insert and rollback each run as ONE guarded transaction
+(BEGIN IMMEDIATE: the write lock from the first statement, so no other connection writes between a check and the
+change it guards; refused when foreign keys are off or a transaction is already open). Zeki #5763.
+
+insert (all or nothing; the plan is made inside the transaction):
 - name absent: INSERT with the columns the runner fills (spec, provider, quantization, device, price from the
   settings; settings = compact JSON in the file's key order, as the runner stores it; created_at now);
 - name present with equal settings (parsed JSON): nothing; it is NOT recorded (this script did not insert it);
@@ -15,10 +19,11 @@ insert (one transaction, all or nothing):
 Every row this run inserted is appended to the manifest (provenance): {id, name, settings_sha256, inserted_at} with
 the database path and rows.json's sha256. The manifest is written only after the commit.
 
-rollback: for each id in the manifest only (never a row this script did not insert, so never a pre-existing
-identical row): the row must still have the recorded name and settings (else refused: nothing deleted); a row that
-any match (player1/player2) or league_players row references is KEPT; the others are deleted in one transaction and
-removed from the manifest. Exit status 1, naming every kept row, when any is kept.
+rollback (inside the transaction: identity, then references, then deletes): for each id in the manifest only (never a
+row this script did not insert, so never a pre-existing identical row, nor any other player such as the running
+Gemma 4 E4B (on)): the row must still have the recorded name and settings (else refused: nothing deleted); a row that
+any match (player1/player2) or league_players row references is KEPT; the others are deleted (DELETE by id and name)
+and removed from the manifest. Exit status 1, naming every kept row, when any is kept.
 """
 import argparse
 import hashlib
@@ -78,17 +83,38 @@ def write_manifest(path, doc):
     tmp.replace(p)
 
 
-def insert(db, rows, manifest, db_path, rows_sha):
-    actions = plan(db, rows)
-    bad = [a for a in actions if a[0] == "conflict"]
-    if bad:
-        raise SystemExit("refused, nothing written: a player of this name has other settings: "
-                         + ", ".join(f"{n} (id {i})" for _, n, i in bad))
+def connect(path):
+    """A connection as the script uses it: foreign keys enforced (SQLite's default is off; a DELETE of a referenced
+    player then fails in the engine too), transactions opened explicitly (BEGIN IMMEDIATE)."""
+    db = sqlite3.connect(str(path), timeout=60)
+    db.execute("PRAGMA foreign_keys = ON")
+    return db
+
+
+def immediate(db):
+    """Starts the guarded transaction: foreign keys must be on, no transaction may be open; BEGIN IMMEDIATE takes the
+    write lock at once, so no other connection can add a row (a reference included) until commit or rollback."""
+    if db.execute("PRAGMA foreign_keys").fetchone()[0] != 1:
+        raise SystemExit("refused: foreign keys are off on this connection (use connect())")
+    if db.in_transaction:
+        raise SystemExit("refused: a transaction is already open on this connection")
+    db.execute("BEGIN IMMEDIATE")
+
+
+def insert(db, rows, manifest, db_path, rows_sha, _locked=None):
     doc = read_manifest(manifest) or dict(db=str(db_path), inserted=[])
     if doc["db"] != str(db_path):
         raise SystemExit(f"refused: the manifest belongs to {doc['db']}, not {db_path}")
-    at, new = now(), []
-    with db:
+    immediate(db)
+    try:
+        if _locked:
+            _locked()  # tests only: runs while the write lock is held
+        actions = plan(db, rows)  # inside the lock: no other writer between this plan and the inserts
+        bad = [a for a in actions if a[0] == "conflict"]
+        if bad:
+            raise SystemExit("refused, nothing written: a player of this name has other settings: "
+                             + ", ".join(f"{n} (id {i})" for _, n, i in bad))
+        at, new = now(), []
         for r, (act, name, _) in zip(rows, actions):
             if act != "insert":
                 continue
@@ -100,31 +126,48 @@ def insert(db, rows, manifest, db_path, rows_sha):
                               json.dumps(price) if price is not None else None, compact(s), at))
             new.append(dict(id=cur.lastrowid, name=name, settings_sha256=sha(compact(s)), inserted_at=at,
                             rows_sha256=rows_sha))
+        db.commit()
+    except BaseException:
+        db.rollback()
+        raise
     if new:
         doc["inserted"] += new
         write_manifest(manifest, doc)
     return actions, new
 
 
-def rollback(db, manifest, db_path):
+def rollback(db, manifest, db_path, _locked=None):
+    """One guarded transaction (BEGIN IMMEDIATE): the identity of every recorded id, then its references, then the
+    deletes, all under the write lock, so nothing can reference a row between its check and its delete. Only the
+    manifest's ids are read or deleted (each DELETE also names the recorded name)."""
     doc = read_manifest(manifest)
     if not doc or not doc["inserted"]:
         return [], []
     if doc["db"] != str(db_path):
         raise SystemExit(f"refused: the manifest belongs to {doc['db']}, not {db_path}")
-    for e in doc["inserted"]:
-        hit = db.execute("SELECT name, settings FROM players WHERE id = ?", (e["id"],)).fetchone()
-        if hit is None or hit[0] != e["name"] or sha(hit[1]) != e["settings_sha256"]:
-            raise SystemExit(f"refused, nothing deleted: id {e['id']} is no longer the row this script inserted "
-                             f"({e['name']})")
-    kept, gone = [], []
-    for e in doc["inserted"]:
-        m = db.execute("SELECT count(*) FROM matches WHERE player1 = ? OR player2 = ?", (e["id"], e["id"])).fetchone()[0]
-        lp = db.execute("SELECT count(*) FROM league_players WHERE player_id = ?", (e["id"],)).fetchone()[0]
-        (kept if m or lp else gone).append(dict(e, matches=m, league_rows=lp))
-    with db:
+    immediate(db)
+    try:
+        if _locked:
+            _locked()  # tests only: runs while the write lock is held
+        for e in doc["inserted"]:
+            hit = db.execute("SELECT name, settings FROM players WHERE id = ?", (e["id"],)).fetchone()
+            if hit is None or hit[0] != e["name"] or sha(hit[1]) != e["settings_sha256"]:
+                raise SystemExit(f"refused, nothing deleted: id {e['id']} is no longer the row this script inserted "
+                                 f"({e['name']})")
+        kept, gone = [], []
+        for e in doc["inserted"]:
+            m = db.execute("SELECT count(*) FROM matches WHERE player1 = ? OR player2 = ?",
+                           (e["id"], e["id"])).fetchone()[0]
+            lp = db.execute("SELECT count(*) FROM league_players WHERE player_id = ?", (e["id"],)).fetchone()[0]
+            (kept if m or lp else gone).append(dict(e, matches=m, league_rows=lp))
         for e in gone:
-            db.execute("DELETE FROM players WHERE id = ?", (e["id"],))
+            n = db.execute("DELETE FROM players WHERE id = ? AND name = ?", (e["id"], e["name"])).rowcount
+            if n != 1:
+                raise SystemExit(f"refused, nothing deleted: id {e['id']} delete touched {n} rows")
+        db.commit()
+    except BaseException:
+        db.rollback()
+        raise
     doc["inserted"] = [e for e in doc["inserted"] if e["id"] in {k["id"] for k in kept}]
     write_manifest(manifest, doc)
     return gone, kept
@@ -138,7 +181,7 @@ def main():
     ap.add_argument("--manifest", help="provenance file of the ids this script inserted (insert, rollback)")
     a = ap.parse_args()
     db_path = Path(a.db).resolve()
-    db = sqlite3.connect(str(db_path), timeout=60)
+    db = connect(db_path)
     if a.cmd == "check":
         for act, name, i in plan(db, load_rows(a.rows)):
             print(f"{act:8} {name}" + (f" (id {i})" if i else ""))

@@ -21,6 +21,11 @@ expect() {  # name, wanted exit, wanted heads ("" = any), command...
   if [[ $got == "$want" && ( -z $wh || $h == "$wh" ) ]]; then echo "PASS  $name (exit $got, heads $h)"
   else echo "FAIL  $name: exit $got (want $want), heads $h (want $wh)"; cat "$T/out"; fail=1; fi
 }
+agrees() {  # the failure path ended in an agreeing, clean state, and said so
+  if grep -q "STATE: .*fence and chat file agree" "$T/out" && [[ -z $(git -C "$T/chat" status --porcelain -uno) ]]
+  then echo "PASS  $1: STATE line says agree, tree clean"
+  else echo "FAIL  $1: end state"; cat "$T/out"; fail=1; fi
+}
 OLD="$(heads)"
 NEW="$(git -C "$T/chat" rev-parse --short "$CHAT_TARGET") $(git -C "$T/dec" rev-parse --short "$DEC_TARGET")"
 expect "dry run: plan only" 0 "$OLD" $M --dry-run
@@ -30,8 +35,22 @@ git -C "$T/chat" commit -q --allow-empty -m "diverged"
 expect "chat not a fast-forward: refused before any merge" 2 "$(heads)" $M
 git -C "$T/chat" reset -q --hard a76fdc9
 expect "second merge fails: decision reset at once" 3 "$OLD" env MC_FAIL_SECOND=1 $M
+agrees "second merge fails"
+expect "pin mismatch after both merges: both restored" 4 "$OLD" env MC_BREAK_AFTER=1 $M
+agrees "pin mismatch after merge"
 expect "full merge: both advanced, fence agrees" 0 "$NEW" $M
 grep -q "fence pin 564312da" "$T/out" || { echo "FAIL  full merge: fence line"; fail=1; }
+# Rollback (Zeki #5763): pre-checks before either reset, compensation, post-check.
+expect "rollback to an unknown commit: refused, nothing reset" 2 "$NEW" $M --rollback 0000000 d9c3cbd
+expect "rollback targets that disagree (old chat, new pin): refused, nothing reset" 2 "$NEW" \
+  $M --rollback a76fdc9 0333578
+expect "rollback, second reset fails: decision restored" 3 "$NEW" env MC_FAIL_SECOND=1 $M --rollback a76fdc9 d9c3cbd
+agrees "rollback second reset fails"
+expect "rollback, pin mismatch after both resets: both restored" 4 "$NEW" \
+  env MC_BREAK_AFTER=1 $M --rollback a76fdc9 d9c3cbd
+agrees "rollback pin mismatch"
 expect "rollback to the old heads" 0 "$OLD" $M --rollback a76fdc9 d9c3cbd
-echo "tracked tree clean after all: $(git -C "$T/chat" status --porcelain -uno | wc -l) $(git -C "$T/dec" status --porcelain -uno | wc -l)"
+dirty="$(git -C "$T/chat" status --porcelain -uno | wc -l) $(git -C "$T/dec" status --porcelain -uno | wc -l)"
+echo "tracked tree clean after all: $dirty"
+[[ $dirty == "0 0" ]] || fail=1
 exit $fail

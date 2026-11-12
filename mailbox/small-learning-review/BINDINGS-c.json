@@ -1,0 +1,125 @@
+{
+ "about": "Zeki #5763: the actual bytes of each artifact, bound by sha256; git artifacts re-made from the repositories and compared byte for byte (2026-11-12).",
+ "items": [
+  {
+   "path": "improve.py/improve.py@d2acecd",
+   "sha256": "564312dab32573a43bad9b109a3b4d31193b3ab57fd0c09f07693c7d5c29d730",
+   "bytes": 77861,
+   "reproduce": "git -C /home/cbasaran/code/jevgammon-improve show d2acecd:workspace/improve/improve.py",
+   "reproduced_byte_identical": true,
+   "what": "chat improve.py at improve-small-2 d2acecd (the fence pins this file's sha256)"
+  },
+  {
+   "path": "diffs/improve-small-2-d2acecd-vs-2c72e14.diff",
+   "sha256": "e9f20587949ff7bf81e0411304ee4457e394023f4fc9f906ed0152efdcaa7ea3",
+   "bytes": 2144,
+   "reproduce": "git -C /home/cbasaran/code/jevgammon-improve diff 2c72e14 d2acecd",
+   "reproduced_byte_identical": true,
+   "what": "chat incremental, all files"
+  },
+  {
+   "path": "diffs/improve-decision-small-0333578-vs-ec21352.diff",
+   "sha256": "b7f2e697d042f90e5e1acc1f2e785003d1b9cafa02c2a613c4927f953b3bd9aa",
+   "bytes": 1697,
+   "reproduce": "git -C /home/cbasaran/code/jevgammon-improve-decision diff ec21352 0333578",
+   "reproduced_byte_identical": true,
+   "what": "decision incremental, all files"
+  },
+  {
+   "path": "diffs/improve-small-2-d2acecd-vs-a76fdc9.diff",
+   "sha256": "7d6311e32fca88457c13832bcb1b93b2612faa9bb2e3bfdb9dc21587e1e3d1cf",
+   "bytes": 20264,
+   "reproduce": "git -C /home/cbasaran/code/jevgammon-improve diff a76fdc9 d2acecd",
+   "reproduced_byte_identical": true,
+   "what": "chat vs base, ALL files (improve.py, run_local.sh, run_local_start.sh, test_improve.py): SHA256SUMS 7d6311\u2026"
+  },
+  {
+   "path": "diffs/improve-small-2-d2acecd-vs-a76fdc9.improve.py-only.diff",
+   "sha256": "5954894642515d125d0ddfe9d9dd3077b40a4e8520cd2526eaa24249e8aff4ea",
+   "bytes": 7233,
+   "reproduce": "git -C /home/cbasaran/code/jevgammon-improve diff a76fdc9 d2acecd -- workspace/improve/improve.py",
+   "reproduced_byte_identical": true,
+   "what": "chat vs base, improve.py ONLY: the 595489\u2026 DELTA-b cites"
+  },
+  {
+   "path": "diffs/improve-small-2c72e14-vs-a76fdc9.improve.py-only.diff",
+   "sha256": "2b0eb1b2079f85c778f5a8dbd3ed21169a1f05d4d1e07c424142d9b4773ad1ab",
+   "bytes": 6912,
+   "reproduce": "git -C /home/cbasaran/code/jevgammon-improve diff a76fdc9 2c72e14 -- workspace/improve/improve.py",
+   "reproduced_byte_identical": true,
+   "what": "improve.py only: the 2b0eb1b2\u2026 REVIEW.md cites"
+  },
+  {
+   "path": "diffs/improve-small-1d3f9bc-vs-a76fdc9.improve.py-only.diff",
+   "sha256": "9bcf1e1f549a829bb82970ff59518ef77a6e6681682707705e4563de719a80b6",
+   "bytes": 6109,
+   "reproduce": "git -C /home/cbasaran/code/jevgammon-improve diff a76fdc9 1d3f9bc -- workspace/improve/improve.py",
+   "reproduced_byte_identical": true,
+   "what": "improve.py only: the 9bcf1e1f\u2026 decision.py's comment at 227ccc7 cited"
+  },
+  {
+   "path": "diffs/improve-decision-small-0333578-vs-d9c3cbd.diff",
+   "sha256": "cdd68e67ffee0451bb91a68ee711d84d94653ee9c9f44bc56cd371c8641b7d9e",
+   "bytes": 33712,
+   "reproduce": "git -C /home/cbasaran/code/jevgammon-improve-decision diff d9c3cbd 0333578",
+   "reproduced_byte_identical": true,
+   "what": "decision vs base, all files"
+  },
+  {
+   "path": "site/site-improve-amendment-5bd5505-vs-main.diff",
+   "sha256": "651ade7d0d468fdb44950cf3a1abf6601a3fcfb5cb59732f6ddd176acabd24ef",
+   "bytes": 36900,
+   "reproduce": "git -C /home/cbasaran/code/jevgammon diff 193c8ab 5bd5505",
+   "reproduced_byte_identical": true,
+   "what": "site branch vs its base (merge-base with main: 193c8ab)"
+  },
+  {
+   "path": "site/build-live-export.log",
+   "sha256": "89a0b43ba2de2c5abf00cd49a56fb3b7e726dd24be6639261d1f5f2ce2937e46",
+   "bytes": 66,
+   "reproduce": null,
+   "reproduced_byte_identical": null,
+   "what": "improve_page.py on the site branch, today's live improve.json: exit 0, no validation problem"
+  },
+  {
+   "path": "site/build-improve-small-2-export.log",
+   "sha256": "c933d1b84606e936e7da69dce741ff2312b235539c5d5a0857cfe3488b026a6a",
+   "bytes": 68,
+   "reproduce": null,
+   "reproduced_byte_identical": null,
+   "what": "improve_page.py on the site branch, improve-small-2's export: exit 0, no validation problem"
+  },
+  {
+   "path": "site/build-main-code-on-improve-small-2-export.log",
+   "sha256": "ac3656850db4119512711420491628525c51f222cd8469fcfb33e4a05ecefdc0",
+   "bytes": 283,
+   "reproduce": null,
+   "reproduced_byte_identical": null,
+   "what": "main's site code on improve-small-2's export: refused (the finding)"
+  },
+  {
+   "path": "site/selftest_improve-site-branch.log",
+   "sha256": "da28757ae4a326ce17bd2a9325c3d676aa8c5e65ddcb6362b3824d2182eb958a",
+   "bytes": 19995,
+   "reproduce": null,
+   "reproduced_byte_identical": null,
+   "what": "selftest_improve on the site branch: 100/101 (the one failure as on main)"
+  },
+  {
+   "path": "site/selftest_improve-main.log",
+   "sha256": "ab7ba53b3ef2e74435db5e003029b51dcd27a5f6a6962d531f4dd66d1f0f35ea",
+   "bytes": 19823,
+   "reproduce": null,
+   "reproduced_byte_identical": null,
+   "what": "selftest_improve on main: 100/101 (DeepSeek Run 2; fixed on branch selftest-run2 3e36e33)"
+  },
+  {
+   "path": "site/improve.json-from-improve-small-2.summary.json",
+   "sha256": "1712be6d42fdbb2a4575f1b9a8ed81b62053d0616b8631145b39f6ca77916fcc",
+   "bytes": 746,
+   "reproduce": null,
+   "reproduced_byte_identical": null,
+   "what": "summary of the export (its sha256, keys, models; the raw file is not committed)"
+  }
+ ]
+}

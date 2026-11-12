@@ -5,16 +5,20 @@
 #   1. both checkouts on their branch, no tracked change; targets fetched;
 #   2. BEFORE either merge: both fast-forwards possible (git merge-base --is-ancestor HEAD target) and the targets
 #      agree (target decision.py's pin == sha256 of target chat improve.py); else nothing is touched (exit 2);
-#   3. decision merge, then chat merge; if the chat merge fails, the decision checkout is reset to its old head at once
-#      (exit 3);
-#   4. verify the working files agree (pin == chat improve.py); else both are reset to their old heads (exit 4);
-#   5. print the rollback command (both old heads).
-# --dry-run: steps 1-2 and the plan, nothing merged. --rollback OLD_CHAT OLD_DEC: reset both to those heads (decision
-# first), then step 4 (exit 4 on mismatch). Pushes nothing. Run it right after a step_start of the running GPU 2 arm.
+#   3. decision merge, then chat merge; if the chat merge fails, the decision checkout is restored to its old head at
+#      once (exit 3);
+#   4. verify the working files agree (pin == chat improve.py); else both are restored to their old heads (exit 4);
+#   5. print the rollback command (both old heads). Every failure ends with one STATE line (both heads, agree or not).
+# --dry-run: steps 1-2 and the plan, nothing changed. --rollback OLD_CHAT OLD_DEC (Zeki #5763: the same paired-update
+# safety): BEFORE either reset, both targets must be commits of their repository and must agree (target pin == target
+# chat improve.py), else nothing is reset (exit 2); decision reset, then chat reset; if the chat reset fails, the
+# decision checkout is restored to the head it had before the rollback (exit 3); post-check as step 4, both restored
+# on a mismatch (exit 4). Pushes nothing. Run it right after a step_start of the running GPU 2 arm.
 #   merge_coupled.sh [--dry-run|--no-fetch] [--rollback OLD_CHAT OLD_DEC]
 # Defaults (override for tests): CHAT_REPO=~/code/jevgammon-improve CHAT_BRANCH=improve CHAT_TARGET=origin/improve-small-2
 #   DEC_REPO=~/code/jevgammon-improve-decision DEC_BRANCH=improve-decision DEC_TARGET=origin/improve-decision-small
-#   MC_FAIL_SECOND=1 (tests only): make the second merge fail.
+#   Tests only: MC_FAIL_SECOND=1 fails the second update (merge or reset); MC_BREAK_AFTER=1 changes the chat file after
+#   both updates (a pin mismatch for the post-check).
 set -uo pipefail
 CHAT_REPO=${CHAT_REPO:-$HOME/code/jevgammon-improve}; CHAT_BRANCH=${CHAT_BRANCH:-improve}
 CHAT_TARGET=${CHAT_TARGET:-origin/improve-small-2}
@@ -47,13 +51,39 @@ for r in "$CHAT_REPO:$CHAT_BRANCH" "$DEC_REPO:$DEC_BRANCH"; do
   git -C "$repo" diff --quiet HEAD -- || { log "REFUSED: $repo has tracked changes"; exit 2; }
 done
 OLD_CHAT=$(git -C "$CHAT_REPO" rev-parse HEAD); OLD_DEC=$(git -C "$DEC_REPO" rev-parse HEAD)
+state() {  # the clear end state, whatever happened
+  local s="MISMATCH: the decision arms pause at their next billed step; fix before anything else"
+  agree && s="fence and chat file agree"
+  log "STATE: chat $(git -C "$CHAT_REPO" rev-parse --short HEAD), decision $(git -C "$DEC_REPO" rev-parse --short HEAD); $s"
+}
+restore() {  # both checkouts back to the heads they had when this run started
+  git -C "$DEC_REPO" reset -q --hard "$OLD_DEC"; local a=$?
+  git -C "$CHAT_REPO" reset -q --hard "$OLD_CHAT"; local b=$?
+  (( a == 0 && b == 0 )) || log "RESTORE FAILED (decision $a, chat $b)"
+}
+# Test hooks only: MC_FAIL_SECOND=1 fails the second update (merge or reset); MC_BREAK_AFTER=1 changes the chat file
+# after both updates, so the post-check sees a pin mismatch.
+second_fails() { [[ ${MC_FAIL_SECOND:-0} == 1 ]]; }
+break_after() { [[ ${MC_BREAK_AFTER:-0} == 1 ]] && echo "# test hook" >> "$CHAT_REPO/$CHAT_FILE"; return 0; }
 
 if (( ${#ROLLBACK[@]} )); then
-  log "rollback: decision $OLD_DEC -> ${ROLLBACK[1]}, chat $OLD_CHAT -> ${ROLLBACK[0]}"
+  # Same paired-update safety as the merge: both targets must be commits of their repository and must agree (the
+  # target decision.py pin == the target chat improve.py) BEFORE either reset.
+  TO_CHAT=$(git -C "$CHAT_REPO" rev-parse -q --verify "${ROLLBACK[0]}^{commit}") ||
+    { log "REFUSED: chat ${ROLLBACK[0]} is not a commit here; nothing reset"; exit 2; }
+  TO_DEC=$(git -C "$DEC_REPO" rev-parse -q --verify "${ROLLBACK[1]}^{commit}") ||
+    { log "REFUSED: decision ${ROLLBACK[1]} is not a commit here; nothing reset"; exit 2; }
+  want=$(pin_at "$TO_DEC"); have=$(sha_at "$TO_CHAT")
+  [[ -n $want && $want == "$have" ]] ||
+    { log "REFUSED: rollback target pin ${want:-none} != target chat improve.py $have; nothing reset"; exit 2; }
+  log "rollback plan: decision $OLD_DEC -> $TO_DEC, chat $OLD_CHAT -> $TO_CHAT (fence pin $want)"
   (( DRY )) && { log "dry run: nothing reset"; exit 0; }
-  git -C "$DEC_REPO" reset -q --hard "${ROLLBACK[1]}" && git -C "$CHAT_REPO" reset -q --hard "${ROLLBACK[0]}" ||
-    { log "ROLLBACK FAILED: check both checkouts now"; exit 4; }
-  agree || { log "MISMATCH after rollback: the decision arms will pause; fix before anything else"; exit 4; }
+  git -C "$DEC_REPO" reset -q --hard "$TO_DEC" || { log "FAILED: decision reset"; restore; state; exit 3; }
+  if second_fails || ! git -C "$CHAT_REPO" reset -q --hard "$TO_CHAT"; then
+    log "FAILED: chat reset; restoring the decision checkout to $OLD_DEC"; restore; state; exit 3
+  fi
+  break_after
+  if ! agree; then log "MISMATCH after rollback: both restored to the heads before it"; restore; state; exit 4; fi
   log "rolled back; fence and chat file agree"; exit 0
 fi
 
@@ -67,14 +97,10 @@ want=$(pin_at "$NEW_DEC"); have=$(sha_at "$NEW_CHAT")
 log "plan: decision $OLD_DEC -> $NEW_DEC, chat $OLD_CHAT -> $NEW_CHAT (fence pin $want)"
 (( DRY )) && { log "dry run: nothing merged"; exit 0; }
 
-git -C "$DEC_REPO" merge -q --ff-only "$NEW_DEC" || { log "FAILED: decision merge; nothing changed"; exit 3; }
-second() { [[ ${MC_FAIL_SECOND:-0} == 1 ]] && return 1; git -C "$CHAT_REPO" merge -q --ff-only "$NEW_CHAT"; }
-if ! second; then
-  git -C "$DEC_REPO" reset -q --hard "$OLD_DEC"
-  log "FAILED: chat merge; decision reset to $OLD_DEC"; agree || log "MISMATCH: check both checkouts now"; exit 3
+git -C "$DEC_REPO" merge -q --ff-only "$NEW_DEC" || { log "FAILED: decision merge; nothing changed"; state; exit 3; }
+if second_fails || ! git -C "$CHAT_REPO" merge -q --ff-only "$NEW_CHAT"; then
+  log "FAILED: chat merge; decision reset to $OLD_DEC"; restore; state; exit 3
 fi
-if ! agree; then
-  git -C "$DEC_REPO" reset -q --hard "$OLD_DEC"; git -C "$CHAT_REPO" reset -q --hard "$OLD_CHAT"
-  log "MISMATCH after merge: both reset to their old heads"; exit 4
-fi
+break_after
+if ! agree; then log "MISMATCH after merge: both reset to their old heads"; restore; state; exit 4; fi
 log "merged; fence and chat file agree. Rollback: $0 --rollback $OLD_CHAT $OLD_DEC"

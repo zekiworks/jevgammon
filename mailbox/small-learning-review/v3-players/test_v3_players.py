@@ -1,6 +1,6 @@
 """Scratch-DB tests of v3_players.py (no production write): python3 -B -m unittest -v test_v3_players.py
-Scratch DBs have v3.db's own schema (read-only from production) and live in memory or under ~/.cache (never /tmp);
-two scenarios copy today's players rows."""
+Scratch DBs have v3.db's own schema (read-only from production), foreign keys ON as the script's own connections,
+and live in memory or under ~/.cache (never /tmp); two scenarios copy today's players rows."""
 import json
 import sqlite3
 import subprocess
@@ -28,12 +28,19 @@ def scratch(copy_players=False, path=":memory:"):
         db.execute(s)
     if players:
         db.executemany(f"INSERT INTO players VALUES ({','.join('?' * len(players[0]))})", players)
+    db.execute("INSERT INTO leagues (id, started_at, seed, rounds, status) VALUES (1, 't', 1, 3, 'done')")
     db.commit()
+    db.execute("PRAGMA foreign_keys = ON")
     return db
 
 
 def count(db):
     return db.execute("SELECT count(*) FROM players").fetchone()[0]
+
+
+def reference(db, pid):
+    db.execute("INSERT INTO league_players (league_id, player_id, joined_at) VALUES (1, ?, 't')", (pid,))
+    db.commit()
 
 
 class Players(unittest.TestCase):
@@ -72,6 +79,7 @@ class Players(unittest.TestCase):
         with self.assertRaises(SystemExit):
             P.insert(db, self.rows, self.manifest, self.dbp, "x")
         self.assertEqual(count(db), 1)
+        self.assertFalse(db.in_transaction)
         self.assertFalse(self.manifest.exists())
 
     def test_a_pre_existing_identical_row_survives_rollback(self):
@@ -98,17 +106,15 @@ class Players(unittest.TestCase):
         r = subprocess.run(cli + ["insert", "--db", str(self.dbp), "--manifest", str(self.manifest)],
                            capture_output=True, text=True)
         self.assertEqual(r.returncode, 0, r.stderr)
-        doc = json.loads(self.manifest.read_text())
-        used = doc["inserted"][0]
-        db = sqlite3.connect(str(self.dbp))
-        db.execute("INSERT INTO league_players (league_id, player_id, joined_at) VALUES (1, ?, 't')", (used["id"],))
-        db.commit()
+        used = json.loads(self.manifest.read_text())["inserted"][0]
+        db = P.connect(self.dbp)
+        reference(db, used["id"])
         db.close()
         r = subprocess.run(cli + ["rollback", "--db", str(self.dbp), "--manifest", str(self.manifest)],
                            capture_output=True, text=True)
         self.assertEqual(r.returncode, 1)
         self.assertIn(f"KEPT     {used['name']} (id {used['id']})", r.stderr)
-        db = sqlite3.connect(str(self.dbp))
+        db = P.connect(self.dbp)
         self.assertEqual(count(db), n0 + 1)
         self.assertIsNotNone(db.execute("SELECT 1 FROM players WHERE id = ?", (used["id"],)).fetchone())
         self.assertEqual([e["id"] for e in json.loads(self.manifest.read_text())["inserted"]], [used["id"]])
@@ -121,6 +127,50 @@ class Players(unittest.TestCase):
         with self.assertRaises(SystemExit):
             P.rollback(db, self.manifest, self.dbp)
         self.assertEqual(count(db), len(self.rows))
+        self.assertFalse(db.in_transaction)
+
+    def test_foreign_keys_off_is_refused(self):
+        db = scratch()
+        P.insert(db, self.rows, self.manifest, self.dbp, "x")
+        db.execute("PRAGMA foreign_keys = OFF")
+        with self.assertRaises(SystemExit):
+            P.rollback(db, self.manifest, self.dbp)
+        with self.assertRaises(SystemExit):
+            P.insert(db, self.rows, self.manifest, self.dbp, "x")
+        self.assertEqual(count(db), len(self.rows))
+
+    def test_nothing_can_reference_a_row_between_its_check_and_its_delete(self):
+        """BEGIN IMMEDIATE holds the write lock from before the checks to the commit: another connection's attempt to
+        reference a recorded row in that window fails (database is locked); after the commit the row is gone and a
+        late reference is refused by the foreign key."""
+        db = scratch(path=self.dbp)
+        _, new = P.insert(db, self.rows, self.manifest, self.dbp, "x")
+        target = new[0]["id"]
+        tried = []
+
+        def other_writer():
+            other = sqlite3.connect(str(self.dbp), timeout=0)
+            other.execute("PRAGMA foreign_keys = ON")
+            try:
+                reference(other, target)
+                tried.append("written")
+            except sqlite3.OperationalError as e:
+                tried.append(str(e))
+            finally:
+                other.close()
+        gone, kept = P.rollback(db, self.manifest, self.dbp, _locked=other_writer)
+        self.assertEqual(tried, ["database is locked"])
+        self.assertEqual((len(gone), kept), (len(self.rows), []))
+        other = P.connect(self.dbp)
+        with self.assertRaises(sqlite3.IntegrityError):  # the deleted id cannot be referenced afterwards
+            reference(other, target)
+
+    def test_the_engine_also_refuses_deleting_a_referenced_row(self):
+        db = scratch()
+        _, new = P.insert(db, self.rows, self.manifest, self.dbp, "x")
+        reference(db, new[0]["id"])
+        with self.assertRaises(sqlite3.IntegrityError):
+            db.execute("DELETE FROM players WHERE id = ?", (new[0]["id"],))
 
     def test_on_todays_players_insert_only_adds(self):
         db = scratch(copy_players=True)

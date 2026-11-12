@@ -32,8 +32,14 @@
 # under RES on OPP_GPU when there is room beside everything else (a pair that cannot fit on one card with the entrant is
 # left missing and reported), the league unit until the pair is played (4 h at most), the server stopped. Opponents
 # blocked today (GPT-6 Luna, Mercury Decide) are skipped and reported unless RETRY_BLOCKED=1.
-# Guard every minute, stopping the league (matches resume later from their last turn): billed spend of the repeat >= $5,
-# OpenRouter balance under $40 or unreadable 3 times in a row, the entrant failing 3 health checks in a row.
+# Guard every minute, stopping the league (matches resume later from their last turn): billed spend of the repeat >= its
+# cap ($5; a repeat with a run guard: its ledger's spent + reserved), OpenRouter balance under $40 or unreadable 3 times
+# in a row, the entrant failing 3 health checks in a row, a run guard's latch file present.
+# A repeat with a run guard (repeats.py GEMINI_GUARD; Zeki #5385) runs its league with `--guard` (run_league.sh): the
+# runner reserves every request attempt of the entrant and the paid opponents before sending and refuses past the cap,
+# checks every entrant reply's served identity, and on either stop latches (latch file) and ends the league; with the
+# latch set the runner starts nothing, check refuses and this loop stops. The guard's ledger is created by the
+# preparation (check exit 3 lists it with the trigger).
 set -uo pipefail
 cd "${REPEATS_HOME:-/home/cbasaran/code/jevgammon}" || exit 1
 RID=${1:?usage: run.sh ID [--prepare-only]}
@@ -132,12 +138,15 @@ ensure_league() {
   systemctl --user is-active -q "$UNIT" && return 0
   systemctl --user reset-failed "$UNIT" >/dev/null 2>&1 || true
   systemd-run --user --quiet --unit="$UNIT" --working-directory="$PWD" "$T/run_league.sh" "$RID" "$BIN" "$DB" \
-    "$PWD/$ST/admitted.json"
+    "$PWD/$ST/admitted.json" "$GUARD"
 }
 down=0
 unread=0
 guard() {
   local bal s
+  if [[ -n $GUARD_LATCH && -e $GUARD_LATCH ]]; then
+    log "STOPPED: the run guard is latched ($GUARD_LATCH): $(head -c 600 "$GUARD_LATCH" | tr '\n' ' ')"; return 1
+  fi
   if bal=$(balance); then
     unread=0
     if lt "$bal" "$FLOOR"; then log "STOPPED: OpenRouter balance \$$bal under \$$FLOOR"; return 1; fi

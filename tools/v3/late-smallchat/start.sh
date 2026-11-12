@@ -74,7 +74,11 @@ OPPS=("GNUbg weak" "Random" "Safest" "Celeris-1 Decision" "Fastino GLiDE" "Jev 1
 [[ -z $(git -C "$T" status --porcelain --untracked-files=no) ]] || { echo "runner tree $T is dirty" >&2; exit 1; }
 others=$(systemctl --user list-units --state=active --plain --no-legend 'late-smallchat-*' 2>/dev/null |
   awk '{print $1}' | grep -vxF -e "late-smallchat-$KEY.service" -e "$UNIT.service")
-[[ -z $others ]] || { echo "another smallchat entry runs: $others (one setup at a time)" >&2; exit 1; }
+# One setup at a time unless ALLOW_CONCURRENT=1. With it, another running entry's paid opponents also count in this
+# entry's spent() (smallchat.py billed sums every late-entry match from $ST/first on, any entrant but this one), so
+# concurrency only makes the $5 cap stop earlier, never later.
+[[ -z $others || ${ALLOW_CONCURRENT:-0} == 1 ]] || { echo "another smallchat entry runs: $others (one setup at a time)" >&2; exit 1; }
+[[ -z $others ]] || echo "concurrent with: $others (ALLOW_CONCURRENT=1)" >&2
 healthy || { echo "$LABEL server $URL: does not serve $SERVED" >&2; exit 1; }
 pinned || { echo "$LABEL: the process on port $PORT is not the pinned $PIN_REPO@$PIN_REV (BF16, context >= $MIN_CONTEXT)" >&2; exit 1; }
 bal=$(balance) || { echo "OpenRouter credits unreadable" >&2; exit 1; }

@@ -110,7 +110,7 @@ def compute(args) -> dict:
             metric_status=lg["metric_status"], matches=lg["fixtures"], matches_done=lg["done"], games=lg["games"],
             started=lg["started"], finished=lg["finished"],
             decisions=len(lg["decisions"]), scored=sum(1 for d in lg["decisions"] if d["scored"]),
-            matches_list=lg["matches_list"], runner=lg["runner"],
+            matches_list=lg["matches_list"],
             standings=[dict(place=t["place"], name=t["name"], played=t["played"], won=t["won"], drawn=t["drawn"],
                             lost=t["lost"], points=t["points"], games_won=t["gw"], games_lost=t["gl"],
                             gammons_won=lg["gammons"].get(t["name"], 0), to_play=lg["left"].get(t["name"], 0))
@@ -183,7 +183,9 @@ def compute(args) -> dict:
         human_scale=json.loads((CONTENT / "human_scale.json").read_text()),
         _v1_raw=v1, _state=state, _repeat_originals=repeat_originals,
         # Held late entries shown while they play (held_setups.json "running"): the home leaderboard's unranked rows only.
-        _running=L["running"])
+        _running=L["running"],
+        # Runner provenance per shown league (Method, Limits): metadata only, kept out of the data files.
+        _runner=[dict(id=lg["id"], **lg["runner"]) for lg in L["leagues"]])
 
 
 def late_entry_summaries(entries: list[dict]) -> list[dict]:

@@ -83,3 +83,10 @@ For Ümit (Zeki #5220, #5232). Read only: v3.db, systemd units, mailbox status f
 | Claude Fable 5.2 (max) | Ümit via Zeki #4676 | blocked | not started | not started | n/a | n/a | no | Ümit's decision: max effort gave no answer within 4 x 32,000 (smoke-0004) |
 
 Resources now: spark2 GPU0 logic r_cf95c9e58f42 (Ümit's queue, to 13 Nov 14:03Z); bariton GPU-bee4b5d4 jevgammon r_980dca7fec68 (Gemma 4 E4B serve, to 13:58Z); GPU-7a85a208 logic r_60f5f0a89a09 (small chat servers, to 13 Nov 01:07Z); GPU-e4f2a538 jevgammon r_355c890cc9ab (learning lane 3, ends 13:09Z today); GPU-1115ade0 logic r_da26c4c4f4f0 (REAX server for the finished repeat, to 16:05Z).
+
+## Corrections (added 2026-11-12 10:27 UTC, Zeki #5244/#5246; table above unchanged)
+- Capture time: the reads were made just before commit 8edb7d6 at 10:12:03 UTC; the "~10:30 UTC" in the title is wrong.
+- Gemma 4 E4B (off): its first stage finished 9/9 (L37) at ~10:12 UTC and its units were stopped then; Gemma 4 E4B (on) started 10:14:19 UTC on jevgammon's GPU 2 server (running).
+- Gemini 4 Carbon: blocked on route/phase (subscription-only via agbench, which is not answering; English academic runs first); no API cap is sought.
+- LFM2.5-24B-A2B (off) and (on): League 1 original players with complete records (old, compatible, reused); nothing new starts.
+- League 24: kept as recorded; the "close" remark suggested a status flag only, no deletion or replay.

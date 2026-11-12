@@ -200,6 +200,12 @@ impl Ledger {
             / 1e6
     }
 
+    /// Whether output tokens are priced (an answer without output tokens then has incomplete
+    /// usage).
+    pub fn output_priced(&self) -> bool {
+        self.config.output_per_mtok > 0.0
+    }
+
     /// List-price cost of an answered attempt; cached tokens are part of `input_tokens`.
     pub fn list_cost(&self, usage: &Usage) -> f64 {
         let cached = usage.cached_tokens.min(usage.input_tokens);
@@ -240,6 +246,7 @@ impl Ledger {
         Ok(Hold {
             ledger: Arc::clone(self),
             id,
+            reserved: amount,
             done: false,
         })
     }
@@ -289,6 +296,31 @@ impl Ledger {
             eprintln!("budget ledger: attempt {id} not updated: {error:#}");
         }
     }
+
+    /// Books an attempt whose tokens are unknown at `cost`, recording the provider's reported
+    /// charge.
+    fn finish_known(&self, id: i64, cost: f64, reported: f64, note: &str) {
+        let result = self.conn.lock().execute(
+            "UPDATE attempts SET status = 'settled', finished_at = ?2, cost_usd = ?3,
+                 reported_cost_usd = ?4, note = ?5
+             WHERE id = ?1",
+            params![id, now(), cost, reported, note],
+        );
+        if let Err(error) = result {
+            // The row stays open, so it keeps counting at its worst case.
+            eprintln!("budget ledger: attempt {id} not updated: {error:#}");
+        }
+    }
+}
+
+/// The charge a response body reports (`usage.cost`), read on its own, whatever else its usage
+/// holds: a finite, non-negative number, else `None`.
+pub fn reported_cost(body: &str) -> Option<f64> {
+    serde_json::from_str::<serde_json::Value>(body)
+        .ok()?
+        .pointer("/usage/cost")?
+        .as_f64()
+        .filter(|c| c.is_finite() && *c >= 0.0)
 }
 
 /// A reservation refused because it would pass the cap (the request was not sent); matched by
@@ -309,6 +341,8 @@ impl std::error::Error for BudgetCap {}
 pub struct Hold {
     ledger: Arc<Ledger>,
     id: i64,
+    /// The worst case reserved for this attempt.
+    reserved: f64,
     done: bool,
 }
 
@@ -335,10 +369,24 @@ impl Hold {
         self.done = true;
     }
 
-    /// The provider answered with an error status it does not document as unbilled: the
-    /// attempt keeps its worst case (`lost`), as one without a response does.
-    pub fn kept(mut self, note: &str) {
-        self.ledger.finish(self.id, "lost", None, note);
+    /// An attempt whose usage is incomplete or that ended in an error status: booked at
+    /// max(its worst case, the charge the provider reported), or kept at the worst case when
+    /// no charge is known.
+    pub fn kept_at_least(mut self, known: Option<f64>, note: &str) {
+        match known {
+            Some(charge) => {
+                let cost = self.reserved.max(charge);
+                self.ledger.finish_known(self.id, cost, charge, note);
+            }
+            None => self.ledger.finish(self.id, "lost", None, note),
+        }
+        self.done = true;
+    }
+
+    /// An error status the provider documents as unbilled, whose body nonetheless reports a
+    /// charge: booked at that charge, never erased.
+    pub fn charged(mut self, charge: f64, note: &str) {
+        self.ledger.finish_known(self.id, charge, charge, note);
         self.done = true;
     }
 }

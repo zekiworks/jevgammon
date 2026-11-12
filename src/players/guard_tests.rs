@@ -677,3 +677,124 @@ async fn money_opponent_spend_crossing_the_cap_stops_the_entrant_before_sending(
     assert_eq!(by_setup.get("O"), Some(&1), "{by_setup:?}");
     assert_eq!(by_setup.get("G"), None, "{by_setup:?}");
 }
+
+/// Zeki #5396 G01: the latch set while a retry waits out its backoff: the retry is neither
+/// reserved nor sent; the attempt already sent keeps its accounting.
+#[tokio::test(flavor = "multi_thread")]
+async fn latch_set_during_backoff_stops_the_retry() {
+    let stub = Stub::start(|_, _| Reply {
+        status: 503,
+        body: "{}".into(),
+        delay: Duration::ZERO,
+    });
+    let dir = scratch("backoff-latch");
+    let setup = support::setup(&guard_file(&dir, 5.0, &[("G", 1.0)], &["G"]));
+    let g = player("G", &stub.url, 1, &setup).await.unwrap();
+    let position = Position::with(3);
+    let request = position.request();
+    let latch_while_waiting = async {
+        while stub.requests() == 0 {
+            tokio::time::sleep(Duration::from_millis(20)).await;
+        }
+        // The first attempt failed (503); its retry waits 2 s. Set the latch meanwhile, as
+        // another match's identity failure would.
+        tokio::time::sleep(Duration::from_millis(300)).await;
+        std::fs::write(dir.join("latch"), "test: latched during the backoff\n").unwrap();
+    };
+    let (outcome, ()) = tokio::time::timeout(Duration::from_secs(60), async {
+        tokio::join!(g.decide(&request), latch_while_waiting)
+    })
+    .await
+    .expect("the decision ends");
+    let error = format!(
+        "{:#}",
+        outcome.expect_err("a retry was answered after the latch")
+    );
+    assert_eq!(
+        stub.requests(),
+        1,
+        "a retry was sent after the latch was set: {error}"
+    );
+    assert!(error.contains("GUARD LATCHED"), "{error}");
+    let rows = ledger(&dir);
+    assert_eq!(
+        rows.len(),
+        1,
+        "only the sent attempt is booked, the retry not reserved: {rows:?}"
+    );
+    assert!(
+        rows[0].0 == "lost" && rows[0].1 > 0.0,
+        "the 503 keeps its worst case: {rows:?}"
+    );
+}
+
+/// Zeki #5396 G02 (cost only): a 200 whose usage reports only its charge is booked at
+/// max(worst case, charge), and the next request's reservation is checked against it.
+#[tokio::test(flavor = "multi_thread")]
+async fn cost_only_usage_is_booked_and_bounds_the_next_send() {
+    let position = Position::with(3);
+    let worst = worst_case(&position, 1.0).await;
+    let charge = 2.0 * worst;
+    let stub = Stub::start(move |_, r| {
+        let mut v: Value = serde_json::from_str(&good(r)).unwrap();
+        v["usage"] = json!({"cost": charge});
+        Reply::ok(v.to_string())
+    });
+    let dir = scratch("cost-only");
+    let cap = 2.5 * worst;
+    let setup = support::setup(&guard_file(&dir, cap, &[("G", 1.0)], &["G"]));
+    let g = player("G", &stub.url, 1, &setup).await.unwrap();
+    g.decide(&position.request()).await.unwrap();
+    let rows = ledger(&dir);
+    assert!(
+        (committed(&rows) - charge).abs() < 1e-12,
+        "the reported charge is booked: {rows:?}"
+    );
+    let next = g.decide(&position.request()).await;
+    let error = format!(
+        "{:#}",
+        next.expect_err("sent although the known charge leaves no room")
+    );
+    assert!(error.contains("BUDGET CAP"), "{error}");
+    assert_eq!(stub.requests(), 1, "the next request was sent");
+    assert!(committed(&ledger(&dir)) <= cap + 1e-12);
+}
+
+/// Zeki #5396 G02 (charged error): an error status whose body reports a charge is booked at
+/// max(worst case, charge), never erased, and bounds the next request's reservation.
+#[tokio::test(flavor = "multi_thread")]
+async fn charged_error_is_booked_and_bounds_the_next_send() {
+    let position = Position::with(3);
+    let worst = worst_case(&position, 1.0).await;
+    let charge = 2.0 * worst;
+    let stub = Stub::start(move |n, r| match n {
+        0 => Reply {
+            status: 400,
+            body: json!({"error": {"message": "bad request"}, "usage": {"cost": charge}})
+                .to_string(),
+            delay: Duration::ZERO,
+        },
+        _ => Reply::ok(good(r)),
+    });
+    let dir = scratch("charged-error");
+    let cap = 2.5 * worst;
+    let setup = support::setup(&guard_file(&dir, cap, &[("G", 1.0)], &["G"]));
+    let g = player("G", &stub.url, 1, &setup).await.unwrap();
+    assert!(
+        g.decide(&position.request()).await.is_err(),
+        "the 400 is an error"
+    );
+    let rows = ledger(&dir);
+    assert!(
+        (committed(&rows) - charge).abs() < 1e-12,
+        "the error's charge is booked: {rows:?}"
+    );
+    let next = g.decide(&position.request()).await;
+    let error = format!(
+        "{:#}",
+        next.expect_err("sent although the known charge leaves no room")
+    );
+    assert!(error.contains("BUDGET CAP"), "{error}");
+    assert_eq!(stub.requests(), 1, "the next request was sent");
+    assert!(committed(&ledger(&dir)) <= cap + 1e-12);
+}

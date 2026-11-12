@@ -129,13 +129,27 @@ pub async fn send(
     make: impl Fn() -> RequestBuilder,
     retry: &RetryTime,
 ) -> Result<String, CallError> {
-    let (body, _) = send_with_backoff(
+    send_checked(make, retry, None).await
+}
+
+/// A check run before every attempt (the first and each retry after its backoff wait), before
+/// anything is reserved or sent; an error ends the call there (a league guard's latch).
+pub type Stop<'a> = Option<&'a (dyn Fn() -> anyhow::Result<()> + Sync)>;
+
+/// As `send`, with `stop` checked before every attempt.
+pub async fn send_checked(
+    make: impl Fn() -> RequestBuilder,
+    retry: &RetryTime,
+    stop: Stop<'_>,
+) -> Result<String, CallError> {
+    let (body, _) = send_with_backoff_stop(
         make,
         retry,
         None,
         FIRST_BACKOFF,
         RATE_LIMIT_BACKOFF,
         RetryPolicy::current(),
+        stop,
     )
     .await?;
     Ok(body)
@@ -147,9 +161,10 @@ pub type FreeStatus = fn(StatusCode) -> bool;
 
 /// As `send`, under a budget: every attempt first reserves `worst_case` dollars in `ledger`
 /// (refused, before the call, when that would pass the cap). An attempt answered with an
-/// error status for which `free` holds is booked at nothing; one answered with any other
-/// error status, or without a response, keeps its worst case. The successful attempt's
-/// reservation is returned for the caller to settle at its cost.
+/// error status for which `free` holds is booked at nothing (at the charge its body reports,
+/// if it reports one); one answered with any other error status is booked at max(its worst
+/// case, the reported charge); one without a response keeps its worst case. The successful
+/// attempt's reservation is returned for the caller to settle at its cost.
 pub async fn send_metered(
     make: impl Fn() -> RequestBuilder,
     retry: &RetryTime,
@@ -157,18 +172,32 @@ pub async fn send_metered(
     worst_case: f64,
     free: FreeStatus,
 ) -> Result<(String, Hold), CallError> {
-    let (body, hold) = send_with_backoff(
+    send_metered_checked(make, retry, ledger, worst_case, free, None).await
+}
+
+/// As `send_metered`, with `stop` checked before every attempt (before its reservation).
+pub async fn send_metered_checked(
+    make: impl Fn() -> RequestBuilder,
+    retry: &RetryTime,
+    ledger: &Arc<Ledger>,
+    worst_case: f64,
+    free: FreeStatus,
+    stop: Stop<'_>,
+) -> Result<(String, Hold), CallError> {
+    let (body, hold) = send_with_backoff_stop(
         make,
         retry,
         Some((ledger, worst_case, free)),
         FIRST_BACKOFF,
         RATE_LIMIT_BACKOFF,
         RetryPolicy::current(),
+        stop,
     )
     .await?;
     Ok((body, hold.expect("a metered attempt holds a reservation")))
 }
 
+#[cfg(test)]
 async fn send_with_backoff(
     make: impl Fn() -> RequestBuilder,
     retry: &RetryTime,
@@ -177,9 +206,34 @@ async fn send_with_backoff(
     rate_limit_backoff: Duration,
     policy: RetryPolicy,
 ) -> Result<(String, Option<Hold>), CallError> {
+    send_with_backoff_stop(
+        make,
+        retry,
+        budget,
+        first_backoff,
+        rate_limit_backoff,
+        policy,
+        None,
+    )
+    .await
+}
+
+async fn send_with_backoff_stop(
+    make: impl Fn() -> RequestBuilder,
+    retry: &RetryTime,
+    budget: Option<(&Arc<Ledger>, f64, FreeStatus)>,
+    first_backoff: Duration,
+    rate_limit_backoff: Duration,
+    policy: RetryPolicy,
+    stop: Stop<'_>,
+) -> Result<(String, Option<Hold>), CallError> {
     let mut backoff = first_backoff;
     let mut attempt = 0;
     loop {
+        // Every attempt edge, after any backoff wait: nothing is reserved or sent once stopped.
+        if let Some(stop) = stop {
+            stop()?;
+        }
         let hold = match budget {
             Some((ledger, amount, _)) => Some(ledger.reserve(amount)?),
             None => None,
@@ -208,12 +262,20 @@ async fn send_with_backoff(
                     return Ok((body, hold));
                 }
                 if let (Some(hold), Some((_, _, free))) = (hold, budget) {
-                    if free(status) {
-                        hold.refused(&format!("{status}"));
-                    } else {
-                        hold.kept(&format!(
-                            "{status}: not documented as unbilled; booked at the worst case"
-                        ));
+                    // A charge the error body reports is never erased.
+                    let known = crate::budget::reported_cost(&body);
+                    match (free(status), known) {
+                        (true, None) => hold.refused(&format!("{status}")),
+                        (true, Some(charge)) => hold.charged(
+                            charge,
+                            &format!("{status}: documented as unbilled, but the body reports a charge"),
+                        ),
+                        (false, known) => hold.kept_at_least(
+                            known,
+                            &format!(
+                                "{status}: not documented as unbilled; booked at max(worst case, reported charge)"
+                            ),
+                        ),
                     }
                 }
                 if matches!(status, StatusCode::UNAUTHORIZED | StatusCode::FORBIDDEN) {

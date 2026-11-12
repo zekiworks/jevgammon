@@ -504,16 +504,21 @@ impl DecisionClient {
     /// built on) never makes a token of less than one byte of the UTF-8 text it encodes, and
     /// the body holds every byte of the state, instructions and options the model reads (JSON
     /// escaping only adds bytes); the margin covers the provider's own system prompt and chat
-    /// template, which it does not publish. An answer with usage is booked at max(its list
-    /// price, the provider's reported `usage.cost`); a 200 without readable usage, an error
-    /// status the service does not document as unbilled (`Service::unbilled`), and an attempt
-    /// without a response keep the worst case. Under a league guard nothing is sent while its
-    /// latch is set, and a reply without the expected identity sets it (after its cost is
-    /// booked) and fails with a `GuardStop`.
+    /// template, which it does not publish. An answer with complete usage is booked at max(its
+    /// list price, the provider's reported `usage.cost`); an answer with incomplete usage (no
+    /// input tokens, or no output tokens when output is priced) or an error status the service
+    /// does not document as unbilled (`Service::unbilled`) at max(its worst case, the reported
+    /// charge, read on its own); an attempt without a response, or without a known charge,
+    /// keeps the worst case. Under a league guard the latch is checked before every attempt
+    /// (the first, and each retry after its backoff wait: nothing is reserved or sent once it is
+    /// set), and a reply without the expected identity sets it (after its cost is booked) and
+    /// fails with a `GuardStop`.
     async fn send(&self, body: &Value, retry: &RetryTime) -> Result<String> {
-        if let Some(guarded) = &self.guard {
-            guarded.guard.check()?;
-        }
+        let latch = || match &self.guard {
+            Some(guarded) => guarded.guard.check(),
+            None => Ok(()),
+        };
+        let stop: http::Stop<'_> = self.guard.is_some().then_some(&latch as _);
         let make = || {
             let request = self.http.post(&self.url).json(body);
             match &self.key {
@@ -526,35 +531,47 @@ impl DecisionClient {
                 .context(format!("{} request failed", self.service.label))
         };
         let text = match &self.budget {
-            None => http::send(make, retry).await.map_err(failed)?,
+            None => http::send_checked(make, retry, stop)
+                .await
+                .map_err(failed)?,
             Some(ledger) => {
                 let bytes = body.to_string().len();
                 let worst = ledger.worst_case(bytes + TEMPLATE_MARGIN, bytes as u64);
-                let (text, hold) =
-                    http::send_metered(make, retry, ledger, worst, self.service.unbilled())
-                        .await
-                        .map_err(failed)?;
+                let (text, hold) = http::send_metered_checked(
+                    make,
+                    retry,
+                    ledger,
+                    worst,
+                    self.service.unbilled(),
+                    stop,
+                )
+                .await
+                .map_err(failed)?;
                 let value: Option<Value> = serde_json::from_str(&text).ok();
-                let usage = |key: &str| {
+                let tokens = |key: &str| {
                     value
                         .as_ref()
                         .and_then(|v| v.pointer(&format!("/usage/{key}")))
+                        .and_then(Value::as_u64)
                 };
-                match usage("input_tokens").and_then(Value::as_u64) {
-                    Some(input_tokens) => {
+                let reported = crate::budget::reported_cost(&text);
+                let output = tokens("output_tokens").or((!ledger.output_priced()).then_some(0));
+                match (tokens("input_tokens"), output) {
+                    (Some(input_tokens), Some(output_tokens)) => {
                         hold.settle(
                             Usage {
                                 input_tokens,
                                 cached_tokens: 0,
-                                output_tokens: usage("output_tokens")
-                                    .and_then(Value::as_u64)
-                                    .unwrap_or(0),
+                                output_tokens,
                                 reasoning_tokens: 0,
                             },
-                            usage("cost").and_then(Value::as_f64),
+                            reported,
                         );
                     }
-                    None => hold.kept("200 without readable usage: booked at the worst case"),
+                    _ => hold.kept_at_least(
+                        reported,
+                        "200 with incomplete usage: booked at max(worst case, reported charge)",
+                    ),
                 }
                 text
             }

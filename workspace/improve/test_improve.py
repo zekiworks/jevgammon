@@ -193,12 +193,14 @@ class Schedule(Isolated):
 
     def test_export_keeps_writing_when_a_pause_has_no_page_text(self):
         first = I.summary()
-        self.assertEqual(len(first["models"]), 24)
+        n = sum(I.has_setup(m["setup"]) for m in I.MODELS.values())  # exported: the rows whose settings exist
+        self.assertTrue(15 <= n < len(I.MODELS))
+        self.assertEqual([m["key"] for m in first["models"]], [k for k in I.MODELS if I.has_setup(I.MODELS[k]["setup"])])
         I.write_atomic(I.mdir(KEY) / "paused.json", json.dumps(dict(at="t", reason="an unforeseen pause")))
         out = I.summary()
         kept = [m for m in out["models"] if m["key"] == KEY]
         self.assertEqual(kept, [m for m in first["models"] if m["key"] == KEY])  # the last exported entry, not invented
-        self.assertEqual(len(out["models"]), 24)
+        self.assertEqual(len(out["models"]), n)
         self.assertIn("unforeseen", (I.RUNS / "export-errors.log").read_text())
         written = json.loads((I.OUT / "improve.json").read_text())
         self.assertEqual(written["updated_at"], out["updated_at"])

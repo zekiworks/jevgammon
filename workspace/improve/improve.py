@@ -1431,7 +1431,10 @@ def summary(only_if_changed=False):
     the model's runs/ state up once the branch is merged)."""
     if os.environ.get("IMPROVE_EXPORT") == "0":
         return None
-    keys = list(MODELS) if not DRY else [k for k in MODELS if mdir(k).exists()]
+    # An amended row is exported once its setup's settings are in v3.db (it cannot run before; the site lists it in
+    # content/improve_amendments.json from then on).
+    keys = ([k for k in MODELS if has_setup(MODELS[k]["setup"])] if not DRY
+            else [k for k in MODELS if mdir(k).exists()])
     previous = {}
     if (OUT / "improve.json").exists():
         try:

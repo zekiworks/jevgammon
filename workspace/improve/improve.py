@@ -89,7 +89,8 @@ MARKS = [(0.16, "very bad"), (0.08, "bad"), (0.04, "doubtful")]
 CREDITS_URL = "https://openrouter.ai/api/v1/credits"
 STOP, PAUSE = 2, 3  # exit codes of `run`
 
-# The 15 chat models (plan §3). `settings` = the v3.db setup whose players.settings is used unchanged except name,
+# The chat models (plan §3: the 15 of 8 Nov, then each chat model whose leaderboard row goes live later, at its
+# leaderboard setting). `settings` = the v3.db setup whose players.settings is used unchanged except name,
 # parallel, prompt_note_file, budget and (local servers) base_url. Billed models: list prices for the ledger, the
 # plan's estimates (§9), and the OpenRouter response fields every response must carry (route check).
 MODELS = {
@@ -125,6 +126,10 @@ MODELS = {
     "gemma-4-31b-on": dict(setup="Gemma 4 31B (on)", lane="local", expect=dict(models=["gemma-4-31B-it"])),
     "qwen3.8-27b-on": dict(setup="Qwen3.8-27B (on)", lane="local", expect=dict(models=["qwen3.8-27b"])),
     "lfm2.5-24b-a2b-on": dict(setup="LFM2.5-24B-A2B (on)", lane="local", expect=dict(models=["lfm2.5-24b-a2b"])),
+    # Small chat models (Ümit via Zeki #5664: learning for small models under this plan): admitted once the setup's
+    # late entry is complete and live on the leaderboard (plan §3); served by logic's small_models.py serve on our
+    # card, the league's (on) route (#5119); response id = the served name the league's replies carry.
+    "gemma-4-e4b-on": dict(setup="Gemma 4 E4B (on)", lane="local", expect=dict(models=["gemma-4-e4b-it"])),
     # Codex: the stream's served model (response.completed -> response.model), checked against the requested id (a
     # dated snapshot of it allowed): the league stored the answer text only, so there is no league evidence.
     "gpt-6.1-sol-high": dict(setup="GPT-6.1 Sol (high)", lane="subscription",

@@ -54,6 +54,35 @@ class Isolated(unittest.TestCase):
             I.write_atomic(I.step_dir(key, s) / "aggregate.json", "{}")
 
 
+class SmallModels(unittest.TestCase):
+    """Ümit via Zeki #5664: small chat models under the same plan, local, the league's setup and served name."""
+
+    def test_gemma_4_e4b_on_is_a_local_row_with_its_league_setup_and_served_name(self):
+        m = I.MODELS["gemma-4-e4b-on"]
+        self.assertEqual((m["setup"], m["lane"]), ("Gemma 4 E4B (on)", "local"))
+        self.assertEqual(m["expect"], dict(models=["gemma-4-e4b-it"]))
+        self.assertFalse(m.get("billed"))
+
+    def test_the_local_lane_serves_it_with_logics_command_on_the_lanes_card(self):
+        import subprocess
+        here = Path(__file__).resolve().parent
+        script = (here / "run_local.sh").read_text()
+        funcs = "\n".join(script[script.index(f"{name}() {{"):].split("\n}\n", 1)[0] + "\n}"
+                          for name in ("server", "start_server", "stop_server"))
+        stub = (f'UUID=GPU-x; SERVERS=/srv; SMALL_MODELS=/logic/small_models.py\n{funcs}\n'
+                'python3() { echo "python3 $*"; }; env() { echo "env $*"; }\n'
+                'read -r script name port var < <(server gemma-4-e4b-on); echo "$name $port"\n'
+                'start_server "$script" "$var" 3; stop_server "$script"\n'
+                'read -r script name port var < <(server qwen3.8-27b-on); start_server "$script" "$var" 3\n')
+        out = subprocess.run(["bash", "-c", stub], capture_output=True, text=True, check=True).stdout.splitlines()
+        self.assertEqual(out, ["logic-small-gemma-4-e4b-it 18602",
+                               "python3 /logic/small_models.py serve gemma-4-e4b-it GPU-x",
+                               "python3 /logic/small_models.py stop gemma-4-e4b-it",
+                               "env QWEN27_GPU=3 /srv/qwen38-27b.sh start"])
+        start = (here / "run_local_start.sh").read_text()
+        self.assertIn("gemma-4-e4b-on) echo logic-small-gemma-4-e4b-it", start)
+
+
 class Lessons(unittest.TestCase):
     def test_cut_rule_keeps_five_lessons_and_150_words(self):
         text = "\n".join(f"- lesson {k} " + "w " * 40 for k in range(7))
@@ -103,7 +132,7 @@ class Schedule(Isolated):
             rows = {k: I.progress(k, *I.model_state(k)) for k in I.MODELS}
         finally:
             I.run_active = saved_active
-        self.assertEqual(len(rows), 15)
+        self.assertEqual(len(rows), 16)
         self.assertEqual((rows[KEY]["status"], rows[KEY]["reason"], rows[KEY]["series_done"]), ("running", None, 1))
         self.assertEqual((rows["glm-5.3-on"]["status"], rows["glm-5.3-on"]["reason"]), ("paused", "shared-balance priority"))
         self.assertEqual(rows["claude-opus-5.5-on"]["reason"], "waiting for its turn")
@@ -118,12 +147,12 @@ class Schedule(Isolated):
 
     def test_export_keeps_writing_when_a_pause_has_no_page_text(self):
         first = I.summary()
-        self.assertEqual(len(first["models"]), 15)
+        self.assertEqual(len(first["models"]), 16)
         I.write_atomic(I.mdir(KEY) / "paused.json", json.dumps(dict(at="t", reason="an unforeseen pause")))
         out = I.summary()
         kept = [m for m in out["models"] if m["key"] == KEY]
         self.assertEqual(kept, [m for m in first["models"] if m["key"] == KEY])  # the last exported entry, not invented
-        self.assertEqual(len(out["models"]), 15)
+        self.assertEqual(len(out["models"]), 16)
         self.assertIn("unforeseen", (I.RUNS / "export-errors.log").read_text())
         written = json.loads((I.OUT / "improve.json").read_text())
         self.assertEqual(written["updated_at"], out["updated_at"])

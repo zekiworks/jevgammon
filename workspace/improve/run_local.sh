@@ -12,14 +12,24 @@ UUID=$1; shift
 LANE=${IMPROVE_LANE:?IMPROVE_LANE: the lane unit name}
 PY=/home/cbasaran/.pyenv/versions/3.12.13/bin/python3
 SERVERS=/home/cbasaran/code/jevgammon/tools/v3/servers
+# Small chat models: the league's (on) route, logic's own serve command on our card (#5119); `logic:KEY` below.
+SMALL_MODELS=${IMPROVE_SMALL_MODELS:-/home/cbasaran/code/benchmark/logic/work/small_models.py}
 RUNS=/home/cbasaran/code/jevgammon/workspace/improve/runs
-server() {  # model key -> "script name port gpu-variable"
+server() {  # model key -> "script name port gpu-variable" (script logic:KEY: small_models.py KEY, by UUID)
   case $1 in
     gemma-4-31b-on) echo "gemma4-31b.sh v3-gemma4-31b 8894 GEMMA_GPU" ;;
     qwen3.8-27b-on) echo "qwen38-27b.sh v3-qwen38-27b 8897 QWEN27_GPU" ;;
     lfm2.5-24b-a2b-on) echo "lfm25-24b.sh v3-lfm25-24b 8898 LFM_GPU" ;;
+    gemma-4-e4b-on) echo "logic:gemma-4-e4b-it logic-small-gemma-4-e4b-it 18602 -" ;;
     *) return 1 ;;
   esac
+}
+start_server() {  # script gpu-variable index
+  if [[ $1 == logic:* ]]; then python3 "$SMALL_MODELS" serve "${1#logic:}" "$UUID"
+  else env "$2=$3" "$SERVERS/$1" start; fi
+}
+stop_server() {
+  if [[ $1 == logic:* ]]; then python3 "$SMALL_MODELS" stop "${1#logic:}"; else "$SERVERS/$1" stop; fi
 }
 echo "local lane $LANE start $(date -u +%FT%TZ) on $UUID: $*"
 for model in "$@"; do
@@ -31,10 +41,10 @@ for model in "$@"; do
   echo "== $model: host GPU $index"
   # Docker's CDI names GPUs by index here, not by UUID: the index the host gives this UUID now, and the
   # container must then report this UUID (checked below).
-  env "$var=${index%%,*}" "$SERVERS/$script" start || { echo "$model: server did not start"; exit 1; }
+  start_server "$script" "$var" "${index%%,*}" || { echo "$model: server did not start"; exit 1; }
   seen=$(docker exec "$name" nvidia-smi --query-gpu=uuid --format=csv,noheader | tr -d ' ')
   if [[ "$seen" != "$UUID" ]]; then
-    echo "$model: the container sees '$seen', not $UUID: stopped"; "$SERVERS/$script" stop; exit 1
+    echo "$model: the container sees '$seen', not $UUID: stopped"; stop_server "$script"; exit 1
   fi
   mkdir -p "$RUNS/$model"
   docker inspect "$name" --format '{"image": "{{.Config.Image}}", "image_id": "{{.Image}}", "args": {{json .Args}}, "gpus": {{json .HostConfig.DeviceRequests}}}' \
@@ -44,7 +54,7 @@ for model in "$@"; do
   code=$?
   echo "== $model exit $code $(date -u +%FT%TZ)"
   "$PY" workspace/improve/improve.py status --model "$model"
-  "$SERVERS/$script" stop
+  stop_server "$script"
   case $code in
     0|2) continue ;;
     3) echo "local lane paused at $model"; exit 3 ;;

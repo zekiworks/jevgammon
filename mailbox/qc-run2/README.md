@@ -33,7 +33,7 @@ The two new tests (`error_reply_is_retried_and_the_next_answer_used`, `error_rep
 - Each game's play requests carry exactly that series' `contexts/after-g(N-1)`. Game 1 has no notes. Mismatches: 0 (S1 259, S2 295, S3 300, S4 289, S5 365 exchanges).
 - Each T10 request carries that series' own `after-g10`: 276 of 276 in S5, with sha256 `19f30d96…` equal to the log's `context` hash. S1 shows the same.
 - Every `after-gN` recomputes from that series' `lessons-g01..gN` (10/10). Every lesson file recomputes from its call (10/10).
-- The lesson calls send only `lesson-system.txt` plus that game's record. The template fields are `{game}` and `{record}`. No lesson line from any series appears in any lesson call.
+- The lesson calls: v1 checked only that `lesson-system.txt` and that game's user file appear in the request (substring). The canonical check that replaces it (`verify_series_reset_v2.py`, below) finds every lesson request to be exactly 2 messages, `system,user`, each byte-equal to those two files. The template fields are `{game}` and `{record}`. No lesson line from any series appears in any lesson call.
 - No lesson line of another series appears in any game or T10 request: 0 everywhere.
 - The E runs carry no notes.
 
@@ -140,7 +140,7 @@ Under either reading, the hashes show no context crossing series. [INFERENCE: wh
 - A whole-arm re-run would take ≈ 22 h.
 
 **Verdict** (`argon-verdict.json`):
-- Stored (original run, as published): No. Change in risks found +6.48 against a threshold of 12.67. That threshold was E1's 66.7 (under `-d`, 45 invalid) minus E3's 54.0.
+- Stored (original run, as published): No. Change in risks found +6.48 against a threshold of 12.67. That threshold was E1's 66.7 (under `-d`, 45 invalid) minus E2's 54.0, the lowest; E3 was 55.0.
 - Run 2 uses the **same threshold formula**: max(range of the empty runs' risks found over E1 (Run 2, corrected) + E2 + E3, 5), as `tools/site/improve_validate.py` and improve.py `verdict_of`. The old 12.67 is not reused, and no threshold is chosen after the fact.
 - Run 2: **verdict pending until Run 2 completes**. The site shows QC-pending.
 
@@ -163,3 +163,60 @@ Components, run ids, units, binaries, seeds, routes and reused steps: `run2-mani
   - Step ledger cap $15.6768 (rule (a)).
 - **Argon E1, S1, S2.** Running since 11:48:16 UTC. At 12:07 UTC: E1 87/200, 0 failed, 0 invalid; 116/116 replies `gemini-4-argon`.
 - Final numbers and `run2-report.json` per model are added when each run completes. They contain counts only: no question, option or answer text.
+
+## Evidence for Zeki #5362 (source and stored metadata only; no content, no re-runs, running Run 2s untouched)
+
+**1. Series reset, canonical** (`verify_series_reset_v2.py`; outputs `deepseek-reset-v2.json`, `argon-reset-v2.json`). The v2 check compares whole message arrays, not substrings.
+- **Play requests.** Each request (games per game, T10, E runs) is normalised to (role, text) pairs. The system message must equal the runner's composition (8b6f9a1 `src/players/llm.rs:289-301`, `play_system`): the base system S0, plus `"\n\n"` and the note when the note is non-empty. The note must be the series' own context file: game N uses `after-g(N-1)`, game 1 uses none, T10 uses `after-g10`, E runs use none.
+  - DeepSeek: 2,888 of 2,888 game and T10 requests equal, 0 mismatches; E runs 830 of 830 equal S0.
+  - Argon: 3,130 of 3,130, 0 mismatches; E runs 811 of 811.
+  - Every request has the role sequence `system,user` (2 messages).
+  - 0 notes markers outside the system message.
+  - All 10 games of every series have requests, and only game 1 has an empty expected note.
+- **Lesson requests.** 50 of 50 per arm have exactly 2 messages: system byte-equal to the series' `lesson-system.txt`, user byte-equal to `lessons-gNN.user.txt`. 0 notes markers.
+- The JSON holds the base system hash and each expected note's sha256; no text.
+
+**2. Boundary, measured** (`boundary_counts.py`; output `boundary-counts-qwen-E3.json`).
+- Qwen E3 in the lane DB:
+  - 0 answers and 0 answer exchanges on the old build (old 1270c04 rows record harness `5389e3d…`, as the S4 T10 rows do);
+  - 91 answers and 240 exchanges recorded under `8b6f9a1…`, clean;
+  - the first E3 request is exchange 3325 (answer 1201, attempt 1, 2026-11-12T11:33:30.712Z; request sha256 `a8875168…`), after the switch at 11:29:58Z.
+- The old process logged E3 `step_start` (1270c04) and `paused` at 11:29:53Z. In the source, `run_test` calls `held()` before any `ask_watched` (improve 0771b84 `workspace/improve/improve.py` `run_test`: `held(key, step)` precedes the asking loop), so no `jevgammon ask` started on 1270c04.
+- Build binding per attempt: every answer row carries its build's recorded harness. Each exchange (attempt) belongs to one answer, and the counts above are per recorded harness.
+
+**3. Argon Run 2 enforcement, source binding.**
+- **Launcher.** improve-run2 06afc1f `workspace/improve/run2.sh:29` exports `IMPROVE_RUN2_EXPECT='{"gemini-4-argon-on": ["gemini-4-argon"]}'`.
+- **improve.py** (06afc1f):
+  - `:144-146` replaces `MODELS["gemini-4-argon-on"]["expect"]["models"]` at import;
+  - `player_config` `:259` writes it as `expect_route` into every player config:
+    - tests: `run_test` `:622`, written to `test-<step>.json`;
+    - games: `run_series` `:890`/`:896`, `player.json`;
+    - lessons: `write_lessons` `:983`/`:985`, `lesson-player.json`;
+  - after each step, `route_check` `:1204` re-checks every stored identity against the same list, and `:1191` stops before the next step if the rejection log is non-empty.
+- **Runner** 8b6f9a1, all three paths:
+  - all three load their player through `Player::from_config`: `ask` at `src/ask.rs:400` (tests), `--model1-config` at `src/main.rs:833` (games), `lesson` at `src/lesson.rs:32`;
+  - `from_config` sets `options.expect_route` (`src/players/mod.rs:503`);
+  - every model call goes through `LlmClient::call` (`src/players/llm.rs:817-890`), which checks `route_identity` (`:124`, at `/response/modelVersion`) before the reply is used;
+  - a failure latches `route_rejected`, so no further request is sent (`:823`, and `http::Guard` `src/http.rs:224`), and the reply goes to the rejection log.
+- **Frozen effective configs** (`run2_effective_config.py`; `run2-effective-config-argon.json`, `run2-effective-config-deepseek.json`):
+  - each step's `test-*.json`, `player.json` and `lesson-player.json` with sha256 and route fields; prompt notes are given only as hashes. Argon E1 `test-E1.json` is `277394d1…`, S1 `player.json` `ef7476eb…`, S1 `lesson-player.json` `d3520830…`; all carry `expect_route.models = ["gemini-4-argon"]`;
+  - the live `improve.py run` process environment (`/proc/<pid>/environ`) carries `IMPROVE_RUN2_EXPECT`;
+  - S1-T10 and S2 configs are added when they exist.
+- A tally of what was served is not the enforcement. The enforcement is the check above, and a `-d` reply stops the run.
+
+**4. Ember #926 Run 2 config** (`ember-926-run2-binding.json`).
+- **max_tokens.** The player config sets no `max_tokens`; v3.db `players.settings` are unchanged. The runner default applies: 175141f `src/players/llm.rs:511-514`, openai-compatible, letter readout `answer`, reasoning set, `max_tokens.unwrap_or(32768)`. The stored requests carry `max_tokens` 32768 in all 50 Run 2 and all 50 original #926 Ember requests.
+- **Request settings.** The full request-settings signature (body without messages, letter enum folded) is identical in both.
+- **Rules.** Config `clock` 0 / `delay` 30 is normalised by 175141f `src/main.rs:503-509`: clock 0 gives no Clock, so no delay is kept (`src/db.rs:50-53`). Hence `clock_seconds`/`delay_seconds` are NULL in both rows. Every rules column of the Run 2 match equals #926's, as do seed and seats. The canonical rules string is unchanged.
+
+**5. `native_finish_reason`.**
+- **Fix.** Branch `error-reply-native-finish` (e52d7f9 on main): `error_reply` also fails `choices[0].native_finish_reason == "error"`. Patch: `native-finish-patch.diff`.
+- **Test.** `error_reply_markers_one_by_one` checks each marker alone: top-level `error`, `choices[0].error`, `finish_reason`, `native_finish_reason`, and whitespace-padded bodies. It also checks that genuine `stop`/`length` finishes and neutral error fields (`null`, `""`, `false`) pass. Rust 76 passed (`test-error-reply-native-finish.txt`).
+- **Not ported yet.** The fix is not yet in the lane builds 8b6f9a1/724406a.
+- **Stored-reply scan** (`native_error_scan.py`; `native-error-scan.json`): counts below.
+
+**6.** README: "minus E3's 54.0" corrected to E2's 54.0 (E3 55.0).
+  - **Scan result.** 341,071 stored replies: league v3.db 289,016; the learning DBs and lesson calls; the Run 2 DBs and lesson calls.
+    - `native_finish_reason == "error"`: **0**, so native-only error replies: **0**.
+    - Replies the 018138f detector already catches: 14 (v3.db 7; DeepSeek learning DB 7). These are counts only, with no new defect claim.
+    - 0 replies are not JSON.

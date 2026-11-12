@@ -1,0 +1,68 @@
+diff --git a/src/http.rs b/src/http.rs
+index 6efd93d..62e42fe 100644
+--- a/src/http.rs
++++ b/src/http.rs
+@@ -125,19 +125,24 @@ pub fn retryable(status: StatusCode) -> bool {
+ 
+ /// The provider error carried by a successful (200) JSON reply, if any: a top-level
+ /// `error` (OpenRouter and other gateways, Gemini, the decision services), or an OpenAI-
+-/// compatible choice-level failure (`choices[0].error`, `finish_reason: "error"`). Such a
+-/// reply holds no answer, so it is a failed attempt, retried like a 5xx, never an answer.
++/// compatible choice-level failure (`choices[0].error`, `finish_reason: "error"`, or
++/// OpenRouter's upstream `native_finish_reason: "error"`). Such a reply holds no answer, so it
++/// is a failed attempt, retried like a 5xx, never an answer.
+ fn error_reply(body: &str) -> Option<String> {
+     let value: serde_json::Value = serde_json::from_str(body).ok()?;
+     let present = |v: Option<&serde_json::Value>| {
+         v.is_some_and(|v| !v.is_null() && v.as_str() != Some("") && v.as_bool() != Some(false))
+     };
++    let finished_with_error = |field: &str| {
++        value
++            .pointer(&format!("/choices/0/{field}"))
++            .and_then(|v| v.as_str())
++            == Some("error")
++    };
+     let failed = present(value.get("error"))
+         || present(value.pointer("/choices/0/error"))
+-        || value
+-            .pointer("/choices/0/finish_reason")
+-            .and_then(|v| v.as_str())
+-            == Some("error");
++        || finished_with_error("finish_reason")
++        || finished_with_error("native_finish_reason");
+     failed.then(|| snippet(body))
+ }
+ 
+@@ -360,6 +365,32 @@ mod tests {
+         }
+     }
+ 
++    /// Each marker alone fails the reply; a genuine model finish (stop, length) or a neutral
++    /// error field does not (QC 2026-11-12, Zeki #5362).
++    #[test]
++    fn error_reply_markers_one_by_one() {
++        let failed = [
++            r#"{"error":{"code":502,"message":"provider unavailable"}}"#,
++            r#"{"choices":[{"error":{"code":502},"finish_reason":"stop","message":{"content":"A"}}]}"#,
++            r#"{"choices":[{"finish_reason":"error","message":{"content":""}}]}"#,
++            r#"{"choices":[{"finish_reason":"stop","native_finish_reason":"error","message":{"content":""}}]}"#,
++            "\n \n{\"choices\":[{\"finish_reason\":null,\"native_finish_reason\":\"error\"}]}",
++        ];
++        for body in failed {
++            assert!(error_reply(body).is_some(), "{body}");
++        }
++        let answers = [
++            r#"{"choices":[{"finish_reason":"stop","native_finish_reason":"stop","message":{"content":"A"}}]}"#,
++            r#"{"choices":[{"finish_reason":"length","native_finish_reason":"length","message":{"content":""}}]}"#,
++            r#"{"choices":[{"finish_reason":"stop","error":null,"message":{"content":"A"}}],"error":false}"#,
++            r#"{"choices":[{"finish_reason":"stop","error":"","message":{"content":"error"}}]}"#,
++            "not json",
++        ];
++        for body in answers {
++            assert!(error_reply(body).is_none(), "{body}");
++        }
++    }
++
+     #[tokio::test]
+     async fn three_retries_then_success_or_failure_with_time_logged() {
+         let http = reqwest::Client::new();

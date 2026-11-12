@@ -1,0 +1,145 @@
+{
+ "model": "deepseek-v4.1-flash-on",
+ "root": "/home/cbasaran/code/jevgammon/smoke/improve-run2/runs/deepseek-v4.1-flash-on",
+ "steps": {
+  "S1": {
+   "player.json": {
+    "sha256": "5a4f07ace2f89c0e57e081ffe5d007cf13f67e2f1d39ece1667c75d2ac057d88",
+    "rules": {},
+    "players": [
+     {
+      "name": "DeepSeek V4.1 Flash (on) | improve | s01 | a1",
+      "spec": "openai-compatible/deepseek/deepseek-v4.1-flash",
+      "provider": "openrouter:fireworks",
+      "reasoning": "low",
+      "request": {
+       "provider": {
+        "order": [
+         "fireworks"
+        ],
+        "allow_fallbacks": false,
+        "require_parameters": true
+       },
+       "usage": {
+        "include": true
+       }
+      },
+      "expect_route": {
+       "models": [
+        "deepseek/deepseek-v4.1-flash",
+        "deepseek/deepseek-v4.1-flash-20260910"
+       ],
+       "provider": "Fireworks",
+       "reject_log": "/home/cbasaran/code/jevgammon/smoke/improve-run2/runs/deepseek-v4.1-flash-on/route-rejections.jsonl"
+      },
+      "parallel": 1,
+      "letter_readout": "answer",
+      "base_url": "https://openrouter.ai/api/v1",
+      "prompt_note_file": "note.txt",
+      "budget_cap_usd": 15.557679
+     }
+    ]
+   },
+   "lesson-player.json": {
+    "sha256": "664e179fba77eafe8ac4d4f504cd80d7fb9450895566358dbd39ef766f7c9306",
+    "rules": {},
+    "players": [
+     {
+      "name": "DeepSeek V4.1 Flash (on) | improve | s01 | a1",
+      "spec": "openai-compatible/deepseek/deepseek-v4.1-flash",
+      "provider": "openrouter:fireworks",
+      "reasoning": "low",
+      "request": {
+       "provider": {
+        "order": [
+         "fireworks"
+        ],
+        "allow_fallbacks": false,
+        "require_parameters": true
+       },
+       "usage": {
+        "include": true
+       }
+      },
+      "expect_route": {
+       "models": [
+        "deepseek/deepseek-v4.1-flash",
+        "deepseek/deepseek-v4.1-flash-20260910"
+       ],
+       "provider": "Fireworks",
+       "reject_log": "/home/cbasaran/code/jevgammon/smoke/improve-run2/runs/deepseek-v4.1-flash-on/route-rejections.jsonl"
+      },
+      "parallel": 1,
+      "letter_readout": "answer",
+      "base_url": "https://openrouter.ai/api/v1",
+      "budget_cap_usd": 15.557679
+     }
+    ]
+   }
+  },
+  "S5-refill": {
+   "test-S5-refill.json": {
+    "sha256": "eb1d595e747eb6a74324d39807156a893926ca61aacfe5d84f743f2417c36681",
+    "rules": {
+     "rounds": 3,
+     "max_turns": 300,
+     "clock": 0,
+     "prompt_version": "bg-v2",
+     "order_seed": 1190975713392774006
+    },
+    "players": [
+     {
+      "name": "DeepSeek V4.1 Flash (on) | improve | s05 | a1 | T10",
+      "spec": "openai-compatible/deepseek/deepseek-v4.1-flash",
+      "provider": "openrouter:fireworks",
+      "reasoning": "low",
+      "request": {
+       "provider": {
+        "order": [
+         "fireworks"
+        ],
+        "allow_fallbacks": false,
+        "require_parameters": true
+       },
+       "usage": {
+        "include": true
+       }
+      },
+      "expect_route": {
+       "models": [
+        "deepseek/deepseek-v4.1-flash",
+        "deepseek/deepseek-v4.1-flash-20260910"
+       ],
+       "provider": "Fireworks",
+       "reject_log": "/home/cbasaran/code/jevgammon/smoke/improve-run2/runs/deepseek-v4.1-flash-on/route-rejections.jsonl"
+      },
+      "parallel": 4,
+      "letter_readout": "answer",
+      "base_url": "https://openrouter.ai/api/v1",
+      "prompt_note_sha256": "19f30d96586b676df2fc85bee12d5e59e084e3ae8bcdc905d4c018bc155a0511",
+      "budget_cap_usd": 15.676803
+     }
+    ]
+   }
+  },
+  "ledgers": {}
+ },
+ "live_process_env": [
+  {
+   "pid": 2727182,
+   "cmdline": [
+    "/home/cbasaran/.pyenv/versions/3.12.13/bin/python3",
+    "workspace/improve/improve.py",
+    "run",
+    "--model",
+    "deepseek-v4.1-flash-on"
+   ],
+   "env": {
+    "IMPROVE_BIN": "/home/cbasaran/code/jevgammon-improve/target/improve-bin/jevgammon-8b6f9a1",
+    "IMPROVE_ROOT": "/home/cbasaran/code/jevgammon",
+    "IMPROVE_RUN2_STEPS": "S1",
+    "IMPROVE_RUN2": "/home/cbasaran/code/jevgammon/smoke/improve-run2"
+   }
+  }
+ ]
+}

@@ -1,0 +1,68 @@
+{
+ "model": "qwen3.8-27b-on",
+ "step": "E3",
+ "setup_pattern": "% | improve | E3",
+ "switch": [
+  {
+   "at": "2026-11-12T11:29:58+00:00",
+   "after_step": "S4",
+   "from_sha256": "19357c4e46af78eb07bc8125d7bf7f99e9b463464951caea41d5f4f18dd7fa11",
+   "to_sha256": "e415773e876670f4d5cc1379705acc0f65b4acd02c613b91941c8175ed181661"
+  }
+ ],
+ "step_events": [
+  {
+   "at": "2026-11-12T11:29:53+00:00",
+   "event": "step_start",
+   "binary_commit": "1270c04",
+   "reason_prefix": null
+  },
+  {
+   "at": "2026-11-12T11:29:53+00:00",
+   "event": "paused",
+   "binary_commit": null,
+   "reason_prefix": "E3: binary switch at the step boundary after S4: jevgammon-1"
+  },
+  {
+   "at": "2026-11-12T11:29:58+00:00",
+   "event": "binary_switch",
+   "binary_commit": null,
+   "reason_prefix": null
+  },
+  {
+   "at": "2026-11-12T11:32:50+00:00",
+   "event": "step_start",
+   "binary_commit": "8b6f9a1",
+   "reason_prefix": null
+  }
+ ],
+ "answers_by_recorded_harness": {
+  "8b6f9a17cb65e8af09bb7a3d79de16b84c873576 dirty=0": {
+   "answers": 91,
+   "first_created": "2026-11-12T11:33:30.712Z",
+   "last_created": "2026-11-12T12:56:39.691Z",
+   "build": "new"
+  }
+ },
+ "answers_on_old_build": 0,
+ "exchanges_by_recorded_harness": {
+  "8b6f9a17cb65e8af09bb7a3d79de16b84c873576": {
+   "exchanges": 240,
+   "max_attempt": 8,
+   "first_exchange_id": 3325
+  }
+ },
+ "exchanges_on_old_build": 0,
+ "first_request": {
+  "exchange_id": 3325,
+  "answer_id": 1201,
+  "attempt": 1,
+  "answer_created": "2026-11-12T11:33:30.712Z",
+  "harness_commit": "8b6f9a17cb65e8af09bb7a3d79de16b84c873576",
+  "request_sha256": "a8875168da2a2dcbddb0a783f19a3640516fe22c77f45b8c0bb4fbe4fa2c04e9"
+ },
+ "step_files_mtime_utc": {
+  "test-E3.json": "2026-11-12T11:32:50.620+00:00"
+ },
+ "note": "the old process wrote test-<step>.json and paused in improve.held() before any `jevgammon ask` started; the test log is written only after an asking round"
+}

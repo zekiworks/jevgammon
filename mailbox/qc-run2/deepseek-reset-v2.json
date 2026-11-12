@@ -1,0 +1,618 @@
+{
+ "model": "deepseek-v4.1-flash-on",
+ "base_system_sha256": "547f5cb476dc1d82a769f3f59e22fe0f216569064afb2545ed655b39dae97ca1",
+ "composition": "runner 8b6f9a1 src/players/llm.rs:289-301 play_system",
+ "series": {
+  "S1": {
+   "match": 1,
+   "attempt": 1,
+   "t10_setup_sha256": "550a9a7b625c3ee6cc49c15ea5de262d06c899d7a64214d534dcaae4fa241d24",
+   "games": {
+    "g01": {
+     "requests": 19,
+     "roles system,user": 19,
+     "message_count 2": 19,
+     "system_equal_to_S0_plus_own_note": 19,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": null,
+     "expected_note_empty": true
+    },
+    "g02": {
+     "requests": 21,
+     "roles system,user": 21,
+     "message_count 2": 21,
+     "system_equal_to_S0_plus_own_note": 21,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": "3038bbafa4f88297a971ea4b01abf82983439bfcfd75e6b3f426b85471c9a677",
+     "expected_note_empty": false
+    },
+    "g03": {
+     "requests": 28,
+     "roles system,user": 28,
+     "message_count 2": 28,
+     "system_equal_to_S0_plus_own_note": 28,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": "1cc61e8281ad5749bb20adf10a8c4b079d544b14fe7579101059fe2f1c6f3781",
+     "expected_note_empty": false
+    },
+    "g04": {
+     "requests": 22,
+     "roles system,user": 22,
+     "message_count 2": 22,
+     "system_equal_to_S0_plus_own_note": 22,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": "7af4422d8cf38e68960dc0a31a5086de08748ca34e89c5afb8761d4eda63b59e",
+     "expected_note_empty": false
+    },
+    "g05": {
+     "requests": 31,
+     "roles system,user": 31,
+     "message_count 2": 31,
+     "system_equal_to_S0_plus_own_note": 31,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": "06bcdbb89b82b983af44e520d3af83f47f5c6872bb105b69a63a3cd7e744a6dc",
+     "expected_note_empty": false
+    },
+    "g06": {
+     "requests": 26,
+     "roles system,user": 26,
+     "message_count 2": 26,
+     "system_equal_to_S0_plus_own_note": 26,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": "e278cfae687af60bf69dc797ff8f1c6f9119357de875b27e154f995b7a86a3b8",
+     "expected_note_empty": false
+    },
+    "g07": {
+     "requests": 21,
+     "roles system,user": 21,
+     "message_count 2": 21,
+     "system_equal_to_S0_plus_own_note": 21,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": "07f670c2df5e999a363b7774b07d5bd9a91e76f4e53426d663e754392436c2ca",
+     "expected_note_empty": false
+    },
+    "g08": {
+     "requests": 22,
+     "roles system,user": 22,
+     "message_count 2": 22,
+     "system_equal_to_S0_plus_own_note": 22,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": "7e260d5e9677f795b4b58fad10bf5fa8452be5abf9d3464584b1799a31de80c2",
+     "expected_note_empty": false
+    },
+    "g09": {
+     "requests": 50,
+     "roles system,user": 50,
+     "message_count 2": 50,
+     "system_equal_to_S0_plus_own_note": 50,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": "d8e2d8c8264a7995701a90b8272ac8c8843319522e1637ae68b6ef560054f82a",
+     "expected_note_empty": false
+    },
+    "g10": {
+     "requests": 19,
+     "roles system,user": 19,
+     "message_count 2": 19,
+     "system_equal_to_S0_plus_own_note": 19,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": "d276e0fe1be4a82f2edd791ec0d695bba3934dcf658606fc463a4b52999c14c9",
+     "expected_note_empty": false
+    }
+   },
+   "t10": {
+    "requests": 276,
+    "roles system,user": 276,
+    "message_count 2": 276,
+    "system_equal_to_S0_plus_own_note": 276,
+    "notes_marker_in_non_system_message": 0,
+    "expected_note_sha256": "43c2448d168147f800fcb1c2e6e81168939e728df1735fda4dc26359d01d5354",
+    "expected_note_empty": false
+   },
+   "lesson_calls": {
+    "requests": 10,
+    "roles system,user": 10,
+    "message_count 2": 10,
+    "exactly_system_file_and_user_file": 10,
+    "notes_marker_present": 0
+   },
+   "games_with_requests": 10
+  },
+  "S2": {
+   "match": 2,
+   "attempt": 1,
+   "t10_setup_sha256": "c478117153e5615cb36230d29559c5c6877886a92d34e913b47082a7f2955bfe",
+   "games": {
+    "g01": {
+     "requests": 17,
+     "roles system,user": 17,
+     "message_count 2": 17,
+     "system_equal_to_S0_plus_own_note": 17,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": null,
+     "expected_note_empty": true
+    },
+    "g02": {
+     "requests": 34,
+     "roles system,user": 34,
+     "message_count 2": 34,
+     "system_equal_to_S0_plus_own_note": 34,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": "3442d548355ca7b12f3cad5e559f954cf4eadbc005fdbba7860f0c09f2daca04",
+     "expected_note_empty": false
+    },
+    "g03": {
+     "requests": 22,
+     "roles system,user": 22,
+     "message_count 2": 22,
+     "system_equal_to_S0_plus_own_note": 22,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": "c4527759a1f1ee25fdb2e020014b4f83026e4af1b614854f99ca75eec3fc7ed1",
+     "expected_note_empty": false
+    },
+    "g04": {
+     "requests": 24,
+     "roles system,user": 24,
+     "message_count 2": 24,
+     "system_equal_to_S0_plus_own_note": 24,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": "a88be46294f4fe2a044aaf5bd8c41b2ced89bb48e28557dccfb616faad74c120",
+     "expected_note_empty": false
+    },
+    "g05": {
+     "requests": 25,
+     "roles system,user": 25,
+     "message_count 2": 25,
+     "system_equal_to_S0_plus_own_note": 25,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": "f6151a29976b0038a2eeb3b8b841516c9e029c652f35f549430e862ad314b795",
+     "expected_note_empty": false
+    },
+    "g06": {
+     "requests": 30,
+     "roles system,user": 30,
+     "message_count 2": 30,
+     "system_equal_to_S0_plus_own_note": 30,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": "2b5b9a8166c7d27c56b5ab7e077305d8d8a5c900f052eebf24268ef25cc883c6",
+     "expected_note_empty": false
+    },
+    "g07": {
+     "requests": 37,
+     "roles system,user": 37,
+     "message_count 2": 37,
+     "system_equal_to_S0_plus_own_note": 37,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": "99c22d8df09cb4efd12feb42e96e930eb547f8a71db9334841d530a311aad0df",
+     "expected_note_empty": false
+    },
+    "g08": {
+     "requests": 30,
+     "roles system,user": 30,
+     "message_count 2": 30,
+     "system_equal_to_S0_plus_own_note": 30,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": "b50190a8c4949a5cd8b75bb3e46b66c5c433ad8580385a35fc82bd9c25d62c45",
+     "expected_note_empty": false
+    },
+    "g09": {
+     "requests": 31,
+     "roles system,user": 31,
+     "message_count 2": 31,
+     "system_equal_to_S0_plus_own_note": 31,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": "c7c27f94cdc982b0f5a375571064fc089d8fcef6823eaec91250e05d32487db8",
+     "expected_note_empty": false
+    },
+    "g10": {
+     "requests": 45,
+     "roles system,user": 45,
+     "message_count 2": 45,
+     "system_equal_to_S0_plus_own_note": 45,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": "381d611aff2809a459b1f94a6c1c81a38ecf109479d90586f6c05f1598cfa5d7",
+     "expected_note_empty": false
+    }
+   },
+   "t10": {
+    "requests": 277,
+    "roles system,user": 277,
+    "message_count 2": 277,
+    "system_equal_to_S0_plus_own_note": 277,
+    "notes_marker_in_non_system_message": 0,
+    "expected_note_sha256": "92bfbe190c49d4c878cbb33865a1ab204d5e92157a07412cb2d68d8aeb02abf1",
+    "expected_note_empty": false
+   },
+   "lesson_calls": {
+    "requests": 10,
+    "roles system,user": 10,
+    "message_count 2": 10,
+    "exactly_system_file_and_user_file": 10,
+    "notes_marker_present": 0
+   },
+   "games_with_requests": 10
+  },
+  "S3": {
+   "match": 3,
+   "attempt": 1,
+   "t10_setup_sha256": "251321c90749908ab894b2d6e41032ef43ebdd9ef49ff495561f1e6db22412f5",
+   "games": {
+    "g01": {
+     "requests": 32,
+     "roles system,user": 32,
+     "message_count 2": 32,
+     "system_equal_to_S0_plus_own_note": 32,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": null,
+     "expected_note_empty": true
+    },
+    "g02": {
+     "requests": 20,
+     "roles system,user": 20,
+     "message_count 2": 20,
+     "system_equal_to_S0_plus_own_note": 20,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": "7549516f4cdb3f7e385247c46aa31cdda995ca7416577c188c454dc7f1e1e6ac",
+     "expected_note_empty": false
+    },
+    "g03": {
+     "requests": 34,
+     "roles system,user": 34,
+     "message_count 2": 34,
+     "system_equal_to_S0_plus_own_note": 34,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": "f7be0af23f85f92e20f402869f60a213ed7172061b1b46c842ff453f79b5d820",
+     "expected_note_empty": false
+    },
+    "g04": {
+     "requests": 32,
+     "roles system,user": 32,
+     "message_count 2": 32,
+     "system_equal_to_S0_plus_own_note": 32,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": "8edaeb7e5c2b67db77bcdae3fda680ef53ded9ea11b0202a73172206e27ec98a",
+     "expected_note_empty": false
+    },
+    "g05": {
+     "requests": 37,
+     "roles system,user": 37,
+     "message_count 2": 37,
+     "system_equal_to_S0_plus_own_note": 37,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": "dc4009229c5c3f1c049edb06645bbe6af4387149c7b72dc2211963f99f7cc8b0",
+     "expected_note_empty": false
+    },
+    "g06": {
+     "requests": 26,
+     "roles system,user": 26,
+     "message_count 2": 26,
+     "system_equal_to_S0_plus_own_note": 26,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": "ba239e09e0a09f7d64a0477984ee529b8e7e2bbddb66b014e799d498cb31ab8d",
+     "expected_note_empty": false
+    },
+    "g07": {
+     "requests": 30,
+     "roles system,user": 30,
+     "message_count 2": 30,
+     "system_equal_to_S0_plus_own_note": 30,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": "cccc86b329f83d733bf8519699897679508cdcc5d09f2d319dad176f56dfe9d1",
+     "expected_note_empty": false
+    },
+    "g08": {
+     "requests": 29,
+     "roles system,user": 29,
+     "message_count 2": 29,
+     "system_equal_to_S0_plus_own_note": 29,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": "4800d4a826d60323d9bef271e8b03b4af897d5be9bab449d1ba3b446c3e6ab42",
+     "expected_note_empty": false
+    },
+    "g09": {
+     "requests": 37,
+     "roles system,user": 37,
+     "message_count 2": 37,
+     "system_equal_to_S0_plus_own_note": 37,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": "0bd8ac6ab0cd5d6a19f7932edc06115bcba96cc6fb37b95c5e61a54d47656cef",
+     "expected_note_empty": false
+    },
+    "g10": {
+     "requests": 23,
+     "roles system,user": 23,
+     "message_count 2": 23,
+     "system_equal_to_S0_plus_own_note": 23,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": "647aa8cd9adfe80b79a0677a1d8d22ef8f159aeda8cf56f7d4cbfd4f4f7c5c39",
+     "expected_note_empty": false
+    }
+   },
+   "t10": {
+    "requests": 276,
+    "roles system,user": 276,
+    "message_count 2": 276,
+    "system_equal_to_S0_plus_own_note": 276,
+    "notes_marker_in_non_system_message": 0,
+    "expected_note_sha256": "da26d89d5d7a9e04e5c26e3daaa15190316031e219cd3c8b6521794c43f7aa38",
+    "expected_note_empty": false
+   },
+   "lesson_calls": {
+    "requests": 10,
+    "roles system,user": 10,
+    "message_count 2": 10,
+    "exactly_system_file_and_user_file": 10,
+    "notes_marker_present": 0
+   },
+   "games_with_requests": 10
+  },
+  "S4": {
+   "match": 4,
+   "attempt": 1,
+   "t10_setup_sha256": "0bd8ada80a5bd765ad6479267853a03daa03e403109f08dfb9b141f7a93bff71",
+   "games": {
+    "g01": {
+     "requests": 20,
+     "roles system,user": 20,
+     "message_count 2": 20,
+     "system_equal_to_S0_plus_own_note": 20,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": null,
+     "expected_note_empty": true
+    },
+    "g02": {
+     "requests": 38,
+     "roles system,user": 38,
+     "message_count 2": 38,
+     "system_equal_to_S0_plus_own_note": 38,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": "0abf05d9d3db0e8d9f8d66816f7934ab0acf7010fad7d88278be88c7ccaa0c96",
+     "expected_note_empty": false
+    },
+    "g03": {
+     "requests": 30,
+     "roles system,user": 30,
+     "message_count 2": 30,
+     "system_equal_to_S0_plus_own_note": 30,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": "4d0c83f572b858b7e72ce442289931a1d72cd2005cb9ebdd307af44dfdab09f5",
+     "expected_note_empty": false
+    },
+    "g04": {
+     "requests": 30,
+     "roles system,user": 30,
+     "message_count 2": 30,
+     "system_equal_to_S0_plus_own_note": 30,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": "37c63605fff3545314a5e073046dc0781137d5b6851a62eda97ecc645604bb35",
+     "expected_note_empty": false
+    },
+    "g05": {
+     "requests": 26,
+     "roles system,user": 26,
+     "message_count 2": 26,
+     "system_equal_to_S0_plus_own_note": 26,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": "23f5ec6c64fe8bd78f37d05fd47b94f95d820fd5e690497a415589bb95bbbb29",
+     "expected_note_empty": false
+    },
+    "g06": {
+     "requests": 19,
+     "roles system,user": 19,
+     "message_count 2": 19,
+     "system_equal_to_S0_plus_own_note": 19,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": "89abdec4e2b9d19e0a3ff01ac6a7cafeb36ee56ec23cd8cde5d5cf38166ab6e0",
+     "expected_note_empty": false
+    },
+    "g07": {
+     "requests": 37,
+     "roles system,user": 37,
+     "message_count 2": 37,
+     "system_equal_to_S0_plus_own_note": 37,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": "385689789d086666dfe410266f4a30a8ef3cf38d2fb27479ade69ed2a43ec01d",
+     "expected_note_empty": false
+    },
+    "g08": {
+     "requests": 29,
+     "roles system,user": 29,
+     "message_count 2": 29,
+     "system_equal_to_S0_plus_own_note": 29,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": "be99a680c4f6e25b93481c1b3f35ad91d9539e33073c793759cb62fb8c574226",
+     "expected_note_empty": false
+    },
+    "g09": {
+     "requests": 23,
+     "roles system,user": 23,
+     "message_count 2": 23,
+     "system_equal_to_S0_plus_own_note": 23,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": "3712cff4d6c84a642894972a97b59ef63f4f6549eaa829b76e8c750c7ed98cf0",
+     "expected_note_empty": false
+    },
+    "g10": {
+     "requests": 37,
+     "roles system,user": 37,
+     "message_count 2": 37,
+     "system_equal_to_S0_plus_own_note": 37,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": "ad40513a7ec31d2ec6b4a73a317f15e18eb69400f0c075e6d4bcdf07154d44ae",
+     "expected_note_empty": false
+    }
+   },
+   "t10": {
+    "requests": 275,
+    "roles system,user": 275,
+    "message_count 2": 275,
+    "system_equal_to_S0_plus_own_note": 275,
+    "notes_marker_in_non_system_message": 0,
+    "expected_note_sha256": "7f0211385c0b4ac1a1da78080992fe45ff13238e57adc5ea1d328d9e283739a9",
+    "expected_note_empty": false
+   },
+   "lesson_calls": {
+    "requests": 10,
+    "roles system,user": 10,
+    "message_count 2": 10,
+    "exactly_system_file_and_user_file": 10,
+    "notes_marker_present": 0
+   },
+   "games_with_requests": 10
+  },
+  "S5": {
+   "match": 5,
+   "attempt": 1,
+   "t10_setup_sha256": "86033f22845788e77b0baa4a7818e3fe57a454da39130add9c7f90e65744a709",
+   "games": {
+    "g01": {
+     "requests": 41,
+     "roles system,user": 41,
+     "message_count 2": 41,
+     "system_equal_to_S0_plus_own_note": 41,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": null,
+     "expected_note_empty": true
+    },
+    "g02": {
+     "requests": 35,
+     "roles system,user": 35,
+     "message_count 2": 35,
+     "system_equal_to_S0_plus_own_note": 35,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": "bcfeb73cc9de14bfcc74add5cc17eed7b09db3fc6cb9359503f43dc718088419",
+     "expected_note_empty": false
+    },
+    "g03": {
+     "requests": 29,
+     "roles system,user": 29,
+     "message_count 2": 29,
+     "system_equal_to_S0_plus_own_note": 29,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": "2aa45fa8173723dceb6812fbd2f4708075aecb8bd1c6d142e60840ef25e08512",
+     "expected_note_empty": false
+    },
+    "g04": {
+     "requests": 67,
+     "roles system,user": 67,
+     "message_count 2": 67,
+     "system_equal_to_S0_plus_own_note": 67,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": "efbc7d708171a37adf6d4d696cb7c0facab76a4b9e8384e62b7e17570542cfd8",
+     "expected_note_empty": false
+    },
+    "g05": {
+     "requests": 33,
+     "roles system,user": 33,
+     "message_count 2": 33,
+     "system_equal_to_S0_plus_own_note": 33,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": "bca4db963f25a239666dab687686b592265742460288e679a92ee119a6c189af",
+     "expected_note_empty": false
+    },
+    "g06": {
+     "requests": 29,
+     "roles system,user": 29,
+     "message_count 2": 29,
+     "system_equal_to_S0_plus_own_note": 29,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": "56b895cc347b47871c7c2c8bef8826fffa9aea4d987748fe51e14c6c3fbe99f8",
+     "expected_note_empty": false
+    },
+    "g07": {
+     "requests": 25,
+     "roles system,user": 25,
+     "message_count 2": 25,
+     "system_equal_to_S0_plus_own_note": 25,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": "b8dc057dfa5533d7186ec81c8752e67138e8d0f17d9ff313253b4ffd1c13f7a3",
+     "expected_note_empty": false
+    },
+    "g08": {
+     "requests": 41,
+     "roles system,user": 41,
+     "message_count 2": 41,
+     "system_equal_to_S0_plus_own_note": 41,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": "5fe4358ab9a0058f12f0486569cc21c7f210fb48388c6844152e8106cd488b79",
+     "expected_note_empty": false
+    },
+    "g09": {
+     "requests": 38,
+     "roles system,user": 38,
+     "message_count 2": 38,
+     "system_equal_to_S0_plus_own_note": 38,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": "3fcacd2eae097917a0bb41acd8e0ab4165695b38129e6055078c951690de3d1c",
+     "expected_note_empty": false
+    },
+    "g10": {
+     "requests": 27,
+     "roles system,user": 27,
+     "message_count 2": 27,
+     "system_equal_to_S0_plus_own_note": 27,
+     "notes_marker_in_non_system_message": 0,
+     "expected_note_sha256": "68d9d3af3a5a9f4ffd4289b99fd3c40789fd25a27cfe479ddd3650356a6ddc55",
+     "expected_note_empty": false
+    }
+   },
+   "t10": {
+    "requests": 276,
+    "roles system,user": 276,
+    "message_count 2": 276,
+    "system_equal_to_S0_plus_own_note": 276,
+    "notes_marker_in_non_system_message": 0,
+    "expected_note_sha256": "19f30d96586b676df2fc85bee12d5e59e084e3ae8bcdc905d4c018bc155a0511",
+    "expected_note_empty": false
+   },
+   "lesson_calls": {
+    "requests": 10,
+    "roles system,user": 10,
+    "message_count 2": 10,
+    "exactly_system_file_and_user_file": 10,
+    "notes_marker_present": 0
+   },
+   "games_with_requests": 10
+  }
+ },
+ "empty_runs": {
+  "E1": {
+   "requests": 277,
+   "roles system,user": 277,
+   "message_count 2": 277,
+   "system_equal_to_S0_plus_own_note": 277,
+   "notes_marker_in_non_system_message": 0,
+   "expected_note_sha256": null,
+   "expected_note_empty": true
+  },
+  "E2": {
+   "requests": 276,
+   "roles system,user": 276,
+   "message_count 2": 276,
+   "system_equal_to_S0_plus_own_note": 276,
+   "notes_marker_in_non_system_message": 0,
+   "expected_note_sha256": null,
+   "expected_note_empty": true
+  },
+  "E3": {
+   "requests": 277,
+   "roles system,user": 277,
+   "message_count 2": 277,
+   "system_equal_to_S0_plus_own_note": 277,
+   "notes_marker_in_non_system_message": 0,
+   "expected_note_sha256": null,
+   "expected_note_empty": true
+  }
+ },
+ "totals": {
+  "requests": 2888,
+  "system_equal_to_S0_plus_own_note": 2888,
+  "system_mismatch": 0,
+  "notes_marker_in_non_system_message": 0,
+  "lesson requests": 50,
+  "lesson exactly_system_file_and_user_file": 50,
+  "lesson lesson_request_mismatch": 0,
+  "E requests": 830,
+  "E system_equal_to_S0_plus_own_note": 830,
+  "E system_mismatch": 0
+ }
+}

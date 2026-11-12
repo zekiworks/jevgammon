@@ -1,0 +1,96 @@
+{
+ "model": "gemini-4-argon-on",
+ "root": "/home/cbasaran/code/jevgammon/smoke/improve-run2/runs/gemini-4-argon-on",
+ "steps": {
+  "E1": {
+   "test-E1.json": {
+    "sha256": "277394d16c7e7cc22cca08e70144a49fb28bb7f4c06d8efb572345562ea988fe",
+    "rules": {
+     "rounds": 3,
+     "max_turns": 300,
+     "clock": 0,
+     "prompt_version": "bg-v2",
+     "order_seed": 1190975713392774006
+    },
+    "players": [
+     {
+      "name": "Gemini 4 Argon (on) | improve | E1",
+      "spec": "antigravity/gemini-4-argon",
+      "provider": "antigravity-subscription",
+      "reasoning": "high",
+      "expect_route": {
+       "models": [
+        "gemini-4-argon"
+       ],
+       "model_pointer": "/response/modelVersion",
+       "reject_log": "/home/cbasaran/code/jevgammon/smoke/improve-run2/runs/gemini-4-argon-on/route-rejections.jsonl"
+      },
+      "parallel": 4
+     }
+    ]
+   }
+  },
+  "S1": {
+   "player.json": {
+    "sha256": "ef7476eb1d124b2443fa73c3798fdf9b65d2af4fde245196c3d7c530db237a3e",
+    "rules": {},
+    "players": [
+     {
+      "name": "Gemini 4 Argon (on) | improve | s01 | a1",
+      "spec": "antigravity/gemini-4-argon",
+      "provider": "antigravity-subscription",
+      "reasoning": "high",
+      "expect_route": {
+       "models": [
+        "gemini-4-argon"
+       ],
+       "model_pointer": "/response/modelVersion",
+       "reject_log": "/home/cbasaran/code/jevgammon/smoke/improve-run2/runs/gemini-4-argon-on/route-rejections.jsonl"
+      },
+      "parallel": 1,
+      "prompt_note_file": "note.txt"
+     }
+    ]
+   },
+   "lesson-player.json": {
+    "sha256": "d3520830035a241e97f5484fa72fce6ad1600f8f0dfb25f5c3c282e7ce33fb9c",
+    "rules": {},
+    "players": [
+     {
+      "name": "Gemini 4 Argon (on) | improve | s01 | a1",
+      "spec": "antigravity/gemini-4-argon",
+      "provider": "antigravity-subscription",
+      "reasoning": "high",
+      "expect_route": {
+       "models": [
+        "gemini-4-argon"
+       ],
+       "model_pointer": "/response/modelVersion",
+       "reject_log": "/home/cbasaran/code/jevgammon/smoke/improve-run2/runs/gemini-4-argon-on/route-rejections.jsonl"
+      },
+      "parallel": 1
+     }
+    ]
+   }
+  }
+ },
+ "live_process_env": [
+  {
+   "pid": 2686745,
+   "cmdline": [
+    "/home/cbasaran/.pyenv/versions/3.12.13/bin/python3",
+    "workspace/improve/improve.py",
+    "run",
+    "--model",
+    "gemini-4-argon-on"
+   ],
+   "env": {
+    "IMPROVE_BIN": "/home/cbasaran/code/jevgammon-improve/target/improve-bin/jevgammon-8b6f9a1",
+    "IMPROVE_ROOT": "/home/cbasaran/code/jevgammon",
+    "IMPROVE_RUN2_STEPS": "E1,S1,S2",
+    "IMPROVE_RUN2_EXPECT": "{\"gemini-4-argon-on\": [\"gemini-4-argon\"]}",
+    "IMPROVE_RUN2": "/home/cbasaran/code/jevgammon/smoke/improve-run2"
+   }
+  }
+ ]
+}

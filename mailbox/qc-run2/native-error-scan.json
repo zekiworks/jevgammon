@@ -1,0 +1,162 @@
+{
+ "league v3.db exchanges": {
+  "replies": 289016,
+  "not_json": 0,
+  "not_object": 0,
+  "caught_by_018138f": 7,
+  "native_finish_reason_error": 0,
+  "native_error_only": 0
+ },
+ "learning claude-fable-5.1-on.db": {
+  "replies": 4451,
+  "not_json": 0,
+  "not_object": 0,
+  "caught_by_018138f": 0,
+  "native_finish_reason_error": 0,
+  "native_error_only": 0
+ },
+ "learning claude-opus-5.5-on.db": {
+  "replies": 3866,
+  "not_json": 0,
+  "not_object": 0,
+  "caught_by_018138f": 0,
+  "native_finish_reason_error": 0,
+  "native_error_only": 0
+ },
+ "learning claude-sonnet-5.5-high.db": {
+  "replies": 3774,
+  "not_json": 0,
+  "not_object": 0,
+  "caught_by_018138f": 0,
+  "native_finish_reason_error": 0,
+  "native_error_only": 0
+ },
+ "learning deepseek-v4.1-flash-on.db": {
+  "replies": 3718,
+  "not_json": 0,
+  "not_object": 0,
+  "caught_by_018138f": 7,
+  "native_finish_reason_error": 0,
+  "native_error_only": 0
+ },
+ "learning gemini-3.8-flash-high.db": {
+  "replies": 3846,
+  "not_json": 0,
+  "not_object": 0,
+  "caught_by_018138f": 0,
+  "native_finish_reason_error": 0,
+  "native_error_only": 0
+ },
+ "learning gemini-4-argon-on.db": {
+  "replies": 3941,
+  "not_json": 0,
+  "not_object": 0,
+  "caught_by_018138f": 0,
+  "native_finish_reason_error": 0,
+  "native_error_only": 0
+ },
+ "learning gemma-4-31b-on.db": {
+  "replies": 7488,
+  "not_json": 0,
+  "not_object": 0,
+  "caught_by_018138f": 0,
+  "native_finish_reason_error": 0,
+  "native_error_only": 0
+ },
+ "learning glm-5.3-on.db": {
+  "replies": 3605,
+  "not_json": 0,
+  "not_object": 0,
+  "caught_by_018138f": 0,
+  "native_finish_reason_error": 0,
+  "native_error_only": 0
+ },
+ "learning grok-4.7-on.db": {
+  "replies": 2570,
+  "not_json": 0,
+  "not_object": 0,
+  "caught_by_018138f": 0,
+  "native_finish_reason_error": 0,
+  "native_error_only": 0
+ },
+ "learning kimi-k3.1-pro-off.db": {
+  "replies": 3870,
+  "not_json": 0,
+  "not_object": 0,
+  "caught_by_018138f": 0,
+  "native_finish_reason_error": 0,
+  "native_error_only": 0
+ },
+ "learning muse-ember-max.db": {
+  "replies": 275,
+  "not_json": 0,
+  "not_object": 0,
+  "caught_by_018138f": 0,
+  "native_finish_reason_error": 0,
+  "native_error_only": 0
+ },
+ "learning qwen3.8-27b-on.db": {
+  "replies": 5938,
+  "not_json": 0,
+  "not_object": 0,
+  "caught_by_018138f": 0,
+  "native_finish_reason_error": 0,
+  "native_error_only": 0
+ },
+ "learning qwen3.8-flash-off.db": {
+  "replies": 3659,
+  "not_json": 0,
+  "not_object": 0,
+  "caught_by_018138f": 0,
+  "native_finish_reason_error": 0,
+  "native_error_only": 0
+ },
+ "learning lesson calls (incl. archived attempts)": {
+  "replies": 591,
+  "not_json": 0,
+  "not_object": 0,
+  "caught_by_018138f": 0,
+  "native_finish_reason_error": 0,
+  "native_error_only": 0
+ },
+ "run2 deepseek-v4.1-flash-on.db": {
+  "replies": 70,
+  "not_json": 0,
+  "not_object": 0,
+  "caught_by_018138f": 0,
+  "native_finish_reason_error": 0,
+  "native_error_only": 0
+ },
+ "run2 gemini-4-argon-on.db": {
+  "replies": 339,
+  "not_json": 0,
+  "not_object": 0,
+  "caught_by_018138f": 0,
+  "native_finish_reason_error": 0,
+  "native_error_only": 0
+ },
+ "run2 ember-926-run2.db": {
+  "replies": 50,
+  "not_json": 0,
+  "not_object": 0,
+  "caught_by_018138f": 0,
+  "native_finish_reason_error": 0,
+  "native_error_only": 0
+ },
+ "run2 lesson calls": {
+  "replies": 4,
+  "not_json": 0,
+  "not_object": 0,
+  "caught_by_018138f": 0,
+  "native_finish_reason_error": 0,
+  "native_error_only": 0
+ },
+ "TOTAL": {
+  "replies": 341071,
+  "not_json": 0,
+  "not_object": 0,
+  "caught_by_018138f": 14,
+  "native_finish_reason_error": 0,
+  "native_error_only": 0
+ }
+}

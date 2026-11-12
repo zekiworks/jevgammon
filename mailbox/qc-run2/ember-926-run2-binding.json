@@ -1,0 +1,78 @@
+{
+ "max_tokens": {
+  "config_value": null,
+  "config_note": "not set in the player config (v3.db players.settings unchanged): the runner's default applies",
+  "source_default": "runner 175141f src/players/llm.rs:511-514 (openai-compatible, letter_readout answer, reasoning set: options.max_tokens.unwrap_or(32768))",
+  "original_926_request_values": [
+   32768
+  ],
+  "run2_request_values": [
+   32768
+  ]
+ },
+ "request_settings": {
+  "note": "every Ember request body with `messages` removed and the per-position letter enum folded; counts per distinct signature",
+  "original_926": {
+   "{\"max_tokens\": 32768, \"model\": \"meta/muse-ember\", \"provider\": {\"allow_fallbacks\": false, \"only\": [\"meta\"]}, \"reasoning_effort\": \"max\", \"response_format\": \"json_schema (letter enum, per position)\", \"temperature\": 1.0, \"usage\": {\"include\": true}}": 50
+  },
+  "run2": {
+   "{\"max_tokens\": 32768, \"model\": \"meta/muse-ember\", \"provider\": {\"allow_fallbacks\": false, \"only\": [\"meta\"]}, \"reasoning_effort\": \"max\", \"response_format\": \"json_schema (letter enum, per position)\", \"temperature\": 1.0, \"usage\": {\"include\": true}}": 50
+  },
+  "identical_signature_sets": true
+ },
+ "rules": {
+  "config": {
+   "rounds": 3,
+   "clock": 0,
+   "delay": 30,
+   "max_turns": 300,
+   "prompt_version": "bg-v2",
+   "order_seed": 1190975713392774006,
+   "mirror_concurrent": true
+  },
+  "normalisation": "runner 175141f src/main.rs:503-509: clock 0 -> no Clock, so delay is not kept (db.rs:50-53 clock_seconds/delay_seconds = None); max_turns > 0 kept; canonical rules string db.rs Rules::canonical",
+  "original_926_row": {
+   "rounds_planned": 3,
+   "clock_seconds": null,
+   "delay_seconds": null,
+   "max_turns": 300,
+   "prompt_version": "bg-v2",
+   "order_seed": 1190975713392774006,
+   "mirror_concurrent": 1,
+   "start_position": null,
+   "seed": -7919611811006792258,
+   "model1": "openai-compatible/meta/muse-ember",
+   "model2": "random"
+  },
+  "run2_row": {
+   "rounds_planned": 3,
+   "clock_seconds": null,
+   "delay_seconds": null,
+   "max_turns": 300,
+   "prompt_version": "bg-v2",
+   "order_seed": 1190975713392774006,
+   "mirror_concurrent": 1,
+   "start_position": null,
+   "seed": -7919611811006792258,
+   "model1": "openai-compatible/meta/muse-ember",
+   "model2": "random"
+  },
+  "identical_except_ids": {
+   "rounds_planned": true,
+   "clock_seconds": true,
+   "delay_seconds": true,
+   "max_turns": true,
+   "prompt_version": true,
+   "order_seed": true,
+   "mirror_concurrent": true,
+   "start_position": true,
+   "seed": true,
+   "model1": true,
+   "model2": true
+  },
+  "canonical": "rules-v1 rounds=3 clock=- delay=- max_turns=300 prompt=bg-v2 order_seed=1190975713392774006 mirror=1",
+  "pair_seed_recomputed": -7919611811006792258
+ },
+ "config_sha256": "bebce71b5e7c7d742a11e82df5fccd4f8db3c182c7bb78e97642a8759e94a6f2",
+ "config_equals_mailbox_copy": true
+}

@@ -18,8 +18,10 @@
 #     be read 3 times in a row (fail closed: the floor is never left unchecked);
 #   - when the paid opponents' cost from the first match reaches $CAP ($5; the entrant itself costs nothing);
 #   - when the entrant's server fails 3 health checks in a row (fail closed);
-#   - when the 10 pairs are played (done), every open pair is blocked, or after 12 h.
-# One match at a time from the first match on (as late-tiny8, Zeki #4561): player.json has max_matches 1 and parallel 1.
+#   - when the 10 pairs are played (done), every open pair is blocked, or after 36 h (Granite-4.2-30B (on): ~25 h).
+# Up to 16 matches and 16 requests at once (player.json max_matches 16, parallel 16), League 1's rule for its local chat
+# setups (Main, 12 Nov): the server is ours alone after turkce's 'done KEY'. Before the first start of a setup, test.sh
+# KEY sends it one test decision through the real client; a setup whose test fails is reported, not started.
 set -uo pipefail
 cd /home/cbasaran/code/jevgammon
 KEY=${1:?usage: start.sh KEY}
@@ -96,7 +98,7 @@ if [[ ! -e $ST/first ]]; then
 fi
 [[ -e $STATUS ]] || printf '# Late entries smallchat - %s (%s) - status\n\nGo: Zeki #5064/#5071/#5073. First match id: #%s.\n\n## Log\n' \
   "$KEY" "$NAME" "$(cat $ST/first)" > "$STATUS"
-log "guard up: runner $(git -C "$T" rev-parse --short HEAD) clean; $NAME at $URL ($SERVED) pinned $PIN_REPO@${PIN_REV:0:8}; OpenRouter \$$bal; floor \$$FLOOR; paid-opponent cap \$$CAP from #$(cat $ST/first); 10 opponents, one match at a time (GPT-6 Luna deferred: no OpenAI credit; 8 local setups queued for a GPU)"
+log "guard up: runner $(git -C "$T" rev-parse --short HEAD) clean; $NAME at $URL ($SERVED) pinned $PIN_REPO@${PIN_REV:0:8}; OpenRouter \$$bal; floor \$$FLOOR; paid-opponent cap \$$CAP from #$(cat $ST/first); 10 opponents, up to 16 matches at once (GPT-6 Luna deferred: no OpenAI credit; 8 local setups queued for a GPU)"
 
 stop_league() { systemctl --user stop $UNIT 2>/dev/null; }
 restarts=0
@@ -144,6 +146,6 @@ while true; do
     systemctl --user reset-failed $UNIT >/dev/null 2>&1 || true
     systemd-run --user --quiet --unit=$UNIT --working-directory="$PWD" "$T/run_league.sh" "$BIN" "$KEY"
   fi
-  (( SECONDS - t0 > 43200 )) && { stop_league; log "STOPPED: pairs still open after 12 h"; exit 1; }
+  (( SECONDS - t0 > 129600 )) && { stop_league; log "STOPPED: pairs still open after 36 h"; exit 1; }
   sleep 60
 done

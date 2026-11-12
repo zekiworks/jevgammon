@@ -2,7 +2,7 @@
 """Late entries of the 11 small chat models into the original League 1 table (Zeki #5064/#5071/#5073; manifest
 small-chat-full-suite-1570238769422934048), one setup at a time, one match at a time, as tools/v3/late-tiny8. KEY names
 the setup: models/KEY/player.json (its v3.db settings; KEY = MODEL-on or MODEL-off, MODEL a key of models.json).
-SMALLCHAT_URL / SMALLCHAT_MODEL (optional) replace player.json's base_url / served model name, for logic's server once
+SMALLCHAT_OUT (optional) moves the league config (test.sh). SMALLCHAT_URL / SMALLCHAT_MODEL (optional) replace player.json's base_url / served model name, for logic's server once
 its port and name for the model are known (#5080); the settings stored in v3.db are the replaced ones. Runs against the
 main checkout's v3.db; the league web helpers are this tree's.
 
@@ -34,7 +34,7 @@ KEYS = sorted(p.name for p in (HERE / "models").iterdir() if (p / "player.json")
 if len(sys.argv) < 2 or sys.argv[1] not in KEYS:
     sys.exit(f"usage: smallchat.py KEY COMMAND ...; KEY one of {', '.join(KEYS)}")
 KEY = sys.argv.pop(1)
-OUT = ROOT / "workspace" / "late-smallchat" / KEY / "leagues"
+OUT = Path(os.environ.get("SMALLCHAT_OUT") or ROOT / "workspace" / "late-smallchat" / KEY / "leagues")
 CONFIG = OUT / f"{KEY}.json"
 sys.path.insert(0, str(HERE.parents[1]))
 from league_web import league_origins  # noqa: E402

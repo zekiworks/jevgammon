@@ -8,8 +8,8 @@
   "answer_prefix": "<think></think>Answer:",
   "top_logprobs": 20,
   "letter_readout": "prefill",
-  "note": "LiquidAI/LFM2.5-2.6B @ 7141b56cd4650af95c7c7b86983443aed050c96a, BF16, on our GPU through vLLM v0.30.0 (vllm/vllm-openai:v0.30.0) in BF16, --generation-config auto, reasoning parser qwen3; logic's server (small_models.py key lfm2.5-2.6b, port 18613, bariton GPU 1, #5080/#5091) or ours on the same port and name (tools/v3/late-smallchat/serve.sh). no reasoning: the letter continues a prefilled <think></think>Answer: (as LFM2.5-24B-A2B (off)). Sampling: the league's temperature 1 (chat client), the rest the server's defaults (generation_config.json via --generation-config auto), as the League 1 local chat setups; output cap 1 token (prefill readout). Late entry v the original League 1 table (tools/v3/late-smallchat; Zeki #5064/#5071/#5073)",
+  "note": "LiquidAI/LFM2.5-2.6B @ 7141b56cd4650af95c7c7b86983443aed050c96a, BF16, on our GPU through vLLM v0.30.0 (vllm/vllm-openai:v0.30.0) in BF16, --generation-config auto; logic's server (small_models.py key lfm2.5-2.6b, port 18613, bariton GPU 1, #5080/#5091; ours alone after turkce's 'done') or ours on the same port and name (tools/v3/late-smallchat/serve.sh). no reasoning: the letter continues a prefilled <think></think>Answer: (as LFM2.5-24B-A2B (off)); server reasoning split: vLLM reasoning parser qwen3 (no reasoning generated). Sampling: League 1's local chat rule, per request: temperature 1.0 from the chat client, everything else the server's default (generation_config.json via --generation-config auto, else vLLM neutral), no seed; it differs from logic's Logic & Math runs: logic sends temperature 0.1, top_k 50, repetition_penalty 1.1, seed 0 (our top_k/repetition_penalty come from generation_config.json, the same values; temperature 1 vs 0.1). Output cap 1 token (prefill readout). Up to 16 matches and 16 requests at once, League 1's rule for its local chat setups (the server is ours alone after turkce's 'done'). Late entry v the original League 1 table (tools/v3/late-smallchat; Zeki #5064/#5071/#5073; Main's decisions 12 Nov)",
   "device": "RTX PRO 6000 (bariton), one GPU",
-  "parallel": 1,
-  "max_matches": 1
+  "parallel": 16,
+  "max_matches": 16
 }

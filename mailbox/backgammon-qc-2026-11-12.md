@@ -141,3 +141,64 @@ Method (applied identically to every lane arm):
 | 1 | Muse Ember (max) | League #20 match #926 (v Random, seed −7919611811006792258, League 1 rules), OpenRouter → Meta only, reasoning max | Runner counts `choices[0].error` / `finish_reason:"error"` as a failed request (retried), not invalid |
 | 2 | DeepSeek V4.1 Flash (on) | Re-ask answers 204, 205 (S1-T10) and 1465, 1466, 1491, 1492 (S5-T10) with the stored `after-g10` contexts; replay S1 (10 games, lessons, T10) with the same dice, or disclose turn 19 | Same runner fix, in the pinned improve build |
 | 3 | Gemini 4 Argon (on) | E1, S1 and S2 (games, lessons, T10); `expect_route.models = ["gemini-4-argon"]` only | Route check rejects `-d` replies |
+
+
+## Gemini Decision 1 and neighbours (follow-up, Zeki #5273, Ümit)
+
+Same read-only method as above (snapshot 2026-11-12 ~11:40 UTC). Neighbours come from the live `bench-scores.json` (updated 2026-11-12T11:05Z; metric "error rate (PR, lower is better)"). The 95% interval 25.0–31.1 was given by Main; the feed itself carries no interval.
+
+### Defects
+
+1. **Qwen3.8-27B (on), League 2, match #205: one decision on a different provider/route.**
+   - Turn 43536 (game 906, turn 1, 2026-10-19 19:41Z) was answered through OpenRouter → Cerebras: request model `qwen/qwen3.8-27b`, provider order `cerebras/fp16`, reply provider `Cerebras`, turn provider `openrouter:cerebras/fp16`, harness 89df012.
+   - The match then failed (OpenRouter 402, insufficient credits; `failed_at` 20:56Z). It resumed at 22:34Z on the declared local vLLM route, and every other decision in it is local.
+   - The declared setting (players #20) is `local-vllm` fp16. The archive note says Qwen "finished no match" on Cerebras; that is true, but this one Cerebras decision remains in a scored match.
+   - Affected scope: 1 of 2,108 decisions, match #205 (Claude Sonnet 5.5 (high) v Qwen3.8-27B (on)).
+   - Proposed fix: replay match #205 (same seed, League 2 rules) as a separate Run 2 under the frozen local-vLLM setting, or disclose the decision.
+
+No other defect in this section.
+
+### Gemini Decision 1: league #26
+
+| Arm | Checked scope | Findings | Verdict |
+|---|---|---|---|
+| Gemini Decision 1 — league #26 | 17 valid matches (#993–999, 1005, 1013 first stage; #1053, 1055–1057, 1060–1063 local stage), 86 games, 2,063 own turns, 1,704 decisions (all `model`), 1,704 exchanges (1 per decision, attempt 1, no splits) | **1 Route:** every request is `google/gemini-decision-1` with provider `only:[google-ai-studio]`, no fallbacks. Every reply echoes model `google/gemini-decision-1-20261111` and provider `Google AI Studio`. Turns: provider `openrouter (google ai studio)`, bg-v2, probability source `decision`. **Harness:** dab6da5 on 926 decisions, every one created before 21:46:31Z (matches #993–1013, and #1016 aborted). 38024d6 on 778 decisions, every one after it (#1053–1063). All clean. `git diff dab6da5 38024d6 -- src` touches only `src/players/decision.rs`: the map check (c0b58f3, 38024d6 on top of 1b234da). **2 I/O:** every play is legal (recomputed). The criteria are the plays in our option order; the choice is among the shown ids and equals the move on all 1,704. **Map-check v2 predicate** (exactly the shown ids, finite values in [0, 1], \|sum − 1\| ≤ 1e-6): 1,704/1,704 pass, both before the switch (926, checked offline) and after it (778). Max \|sum − 1\| is 8.9e-16. Raw response text: 0 repeated keys, 0 NaN/Infinity tokens. The choice is the argmax on all (0 exact ties). Stored probabilities equal the returned map (max diff ≤ 1e-12, no nulls). **3 Invalid:** 0 invalid, 0 fallback, 0 exchange errors, no transport error stored. **4 Completeness:** 17/17 required pairs. #1016 (Mercury) aborted at warm-up with 0 games; out of scope. No duplicate games or turns, turn numbers contiguous, position chains replay, mirrored legs have equal dice, scores = sum of game points. | no defect found in checked scope |
+
+### Neighbours: PR within 25.0–31.1 (Gemini Decision 1: 27.97)
+
+Nearest first on each side. Decision and chat are listed separately. "Same table" means the original League 1 field under League 1's rules.
+
+**Decision models**
+
+| Side | Setup (feed name / v3.db player) | PR | League / table | Opponents played | Recorded settings (v3.db players.settings) | Fixtures, settings and opponents match Gemini Decision 1? |
+|---|---|---|---|---|---|---|
+| below | REAX 1.3 (#60) | 27.77 | League 1 late entry (league #19): same table, same League 1 rules (seed 2567889193785291627, pair-v1, bg-v2, order seed 1190975713392774006, mirror_concurrent, 3 rounds, 300 turns, no clock) | 18 (Gemini's 17 + Mercury Decide) | local `reax13 serve.py`, fp8, parallel 1 | Opponents: no (extra Mercury pair). Dice: no (pair-v1 seeds are per pair, 0 of 17 shared). Settings: different setup. Rules: yes |
+| below | KnowLine 31B Gen1.5 (#62) | 26.22 | League 1 late entry (#21): same table and rules | 17 (the same 17 as Gemini) | local `knowline_server.py`, bf16, parallel 1, max_matches 1 | Opponents: yes. Dice: no (0 of 17 pair seeds shared). Rules: yes |
+| above | Base Labs Mammoth-1 (#55) | 28.54 | League 1 late entry (#14): same table and rules | 19 (Gemini's 17 + Mercury + GPT-6 Luna) | local `baselabs_server.py`, bf16, parallel 1 | Opponents: no (+2). Dice: no. Rules: yes |
+| above | Liquid d1-ultra (#27) | 30.34 | League 2 (original): a different league and field | 18 | `liquid` API, parallel 2 | No: different league, field and positions |
+| above | Drex Max v1 (#58) | 30.40 | League 1 late entry (#17): same table and rules | 18 (+Mercury) | local `drex_max_server.py`, bf16, parallel 1 | Opponents: no (+1). Dice: no. Rules: yes |
+| above | Drex Max 1.1 (#56) | 30.94 | League 1 late entry (#15): same table and rules | 18 (+Mercury) | `nace` API, parallel 2 | Opponents: no (+1). Dice: no. Rules: yes |
+
+**Chat models** (none below 27.97 inside the interval)
+
+| Side | Setup | PR | League / table | Opponents played | Recorded settings | Match? |
+|---|---|---|---|---|---|---|
+| above | Kimi K3.1 Pro (off) (#51) | 28.05 | League 3 (original): a different league | 11 (full League 3 roster) | OpenRouter, provider order `moonshotai/mxfp4`, no fallbacks, reasoning none, letter_readout answer, mxfp4, parallel 4 | No: different league, field and positions |
+| above | Qwen3.8-27B (on) (#20; feed tag "low") | 29.03 | League 2 (original) | 18 (full roster) | local vLLM fp16, `enable_thinking` true, reasoning low, letter_readout prefill, parallel 16 | No |
+| above | GLM-5.3 (on) (#26; feed tag "low") | 30.87 | League 2 (original) | 18 (full roster) | OpenRouter, provider order `fireworks`, no fallbacks, require_parameters, reasoning low, top_logprobs 5, letter_readout answer, parallel 8 | No |
+
+Every League 1 late entry plays the same 17-opponent field under the same rules, but each pair has its own dice, so the positions differ. Opponents match exactly only for KnowLine 31B Gen1.5. No setup in the interval matches Gemini Decision 1 on fixtures, settings and opponents together. No comparison claim is made.
+
+### QC of the neighbour arms (each over the decisions its bench row scores; the decision counts equal the feed's `questions`)
+
+| Arm | Checked scope | Findings | Verdict |
+|---|---|---|---|
+| REAX 1.3 | 18 matches #905–922, 96 games, 2,433 own turns, 1,998 decisions, 2,000 exchanges | Model echo `reax13` on all; local / fp8; harness acfd89c clean on all. All plays legal; criteria = option order; choice shown and = move; probabilities equal the map (diff ≤ 1e-16); choice = argmax; 1 split decision consistent. 0 invalid / fallback / errors. 18/18 played (17 required + Mercury); no non-valid matches; chains, dice and scores OK | no defect found in checked scope |
+| KnowLine 31B Gen1.5 | 17 matches #937–945, 947–954, 92 games, 2,343 own turns, 1,928 decisions | Echo `m`; local / bf16. Harness ea31b9f (993 decisions) then b727222 (935), both clean; `git diff -- src` between them is empty. I/O all consistent. 0 invalid / errors. 17/17 required. #933–936 were voided (4 matches at once) and replayed with the same seeds. #946 (Mercury) aborted, out of scope. Chains, dice and scores OK | no defect found in checked scope |
+| Base Labs Mammoth-1 | 19 matches #780–828, 96 games, 2,508 own turns, 2,021 decisions, 2,046 exchanges | Echo `baselabs/mammoth-1`; local / bf16; harness 104103a clean. I/O consistent; 12 split decisions consistent. 0 invalid / errors. 19 played (17 required + Mercury + Luna). #818 failed and resumed: chain intact, no fallback | no defect found in checked scope |
+| Drex Max v1 | 18 matches #845–885, 102 games, 2,703 own turns, 2,148 decisions, 2,780 exchanges | Echo `drex-max-v1`; local / bf16; harness e58fc6c clean. 244 split decisions consistent (round 1 partitions every play, winners carried forward, final = move). 0 invalid / errors. 17/17 required + Mercury. #846 aborted, out of scope. #885 failed and resumed cleanly | no defect found in checked scope |
+| Drex Max 1.1 | 18 matches #830–884, 104 games, 2,677 own turns, 2,154 decisions, 2,734 exchanges | Echo `drex-max-v1.1`; provider `nace`; harness e58fc6c clean. 221 split decisions consistent. 0 invalid / errors. 17/17 required + Mercury. #829 aborted, out of scope | no defect found in checked scope |
+| Liquid d1-ultra (League 2) | 18 valid league matches, 102 games, 2,602 own turns, 2,071 decisions, 2,073 exchanges | Echo `d1-ultra`; provider `liquid`. I/O consistent; 1 split decision. 0 invalid / errors. 18/18 roster pairs. Voids: 5 matches removed with the 19 Oct reshape (fixture removed). #522, 523, 525 and 643 failed and resumed cleanly. **Provenance:** 7 harness commits; `harness_dirty` 1 on 1,798 decisions (17 of 18 matches). This is league-wide: 140 of 171 League 2 matches, 127 of 171 League 1 and 64 of 66 League 3 ran a dirty runner tree; I found no disclosure of this on the site | no defect found in checked scope (provenance flag: dirty runner, league-wide) |
+| Kimi K3.1 Pro (off) (League 3) | 11 matches, 58 games, 1,493 own turns, 1,167 decisions, 1,535 exchanges | Request `moonshotai/kimi-k3.1-pro`, provider order `moonshotai/mxfp4`, no fallbacks, reasoning none on all. Echo model and `Moonshot AI` on all. `system_fingerprint` varies (fpv0_24af6fd9 1,415; fpv0_a3ce6857 118; 2 others 1 each), provider-side. All `choice_only` (no logprobs returned, as declared: readout answer). I/O consistent; 131 split decisions consistent. 0 invalid / errors. 11/11 roster. Harness 4649852, `harness_dirty` 1 on all 11 matches (league-wide, see above) | no defect found in checked scope (provenance flag) |
+| Qwen3.8-27B (on) (League 2) | 18 valid league matches, 98 games, 2,605 own turns, 2,108 decisions, 5,471 exchanges (thinking + prefill readout) | **Route:** turn 43536 / match #205 went through OpenRouter → Cerebras (see Defects). All other decisions are local vLLM, served name `qwen3.8-27b`. Two vLLM fingerprints: 14f6ab0d (5,236 exchanges) and 0f28ff8b (234; matches #367, 390, 480), i.e. the disclosed DGX Spark period. 16 harness commits; dirty 1 on 1,450 decisions. **I/O:** letter probabilities recomputed from the readout logprobs equal the stored ones; chosen = max; 217 split decisions consistent. 0 invalid / errors. 18/18 roster. 14 failed-and-resumed matches with intact chains; the voids are the 19 Oct reshape (21) and one 20 Oct void | **DEFECT** (route, 1 decision in match #205; see Defects); otherwise no defect found (provenance flag) |
+| GLM-5.3 (on) (League 2) | 18 valid league matches, 100 games, 2,525 own turns, 1,989 decisions, 2,543 exchanges | Request `z-ai/glm-5.3`, provider order `fireworks`, reasoning low on all. Echo `z-ai/glm-5.3` / `Fireworks` on all. Probabilities equal the recomputed top-5 letter logprobs within 2e-4. One decision (turn 147378) is stored `choice_only` because the provider's token list does not spell out the reply text; the runner then declines the logprobs, as designed. The played letter is the reply's letter and also that token's argmax. 203 split decisions consistent. 0 invalid / errors. 18/18 roster. 13 harness commits; dirty 1 on 1,333 decisions | no defect found in checked scope (provenance flag) |

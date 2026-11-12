@@ -1,0 +1,214 @@
+{
+ "written_by": "QCRun2 (agent) for Can; \u00dcmit via Zeki #5264/#5276/#5319",
+ "components": [
+  {
+   "component": "DeepSeek V4.1 Flash (on) S5-T10 refill",
+   "model": "deepseek-v4.1-flash-on",
+   "run_id": "/home/cbasaran/code/jevgammon/smoke/improve-run2/runs/deepseek-v4.1-flash-on/S5-refill",
+   "database": "/home/cbasaran/code/jevgammon/smoke/improve-run2/db/deepseek-v4.1-flash-on.db",
+   "unit": "qc-run2-deepseek",
+   "unit_invocation": "b1ee3e1950ff4fe2a5ce56dc754c66b9",
+   "started_at": "2026-11-12T11:48:16Z",
+   "setup": "DeepSeek V4.1 Flash (on) | improve | s05 | a1 | T10",
+   "original_answers": [
+    1465,
+    1466,
+    1491,
+    1492
+   ],
+   "positions": [
+    "lp-31646",
+    "lp-173367",
+    "lp-90458",
+    "lp-18007"
+   ],
+   "order_seed": 1190975713392774006,
+   "prompt_version": "bg-v2",
+   "context": "original S5 contexts/after-g10.txt, sha256 19f30d96586b676df2fc85bee12d5e59e084e3ae8bcdc905d4c018bc155a0511 (= the run log's context hash)",
+   "config_check": "the stored S5 test config rebuilt exactly (budget and reject-log path aside) before any request",
+   "binary": "/home/cbasaran/code/jevgammon-improve/target/improve-bin/jevgammon-8b6f9a1",
+   "binary_sha256": "e415773e876670f4d5cc1379705acc0f65b4acd02c613b91941c8175ed181661",
+   "runner_commit": "8b6f9a1",
+   "harness_branch": "improve-run2",
+   "harness_commit": "06afc1f",
+   "harness_worktree": "/home/cbasaran/.cache/wt/improve-run2",
+   "launcher": "workspace/improve/run2.sh",
+   "route": "OpenRouter, provider order [fireworks], fallbacks off; v3.db players.settings of 'DeepSeek V4.1 Flash (on)' unchanged",
+   "expect_models": [
+    "deepseek/deepseek-v4.1-flash",
+    "deepseek/deepseek-v4.1-flash-20260910"
+   ],
+   "expect_provider": "Fireworks"
+  },
+  {
+   "component": "DeepSeek V4.1 Flash (on) S1 (10 games, 10 lessons, T10)",
+   "model": "deepseek-v4.1-flash-on",
+   "run_id": "/home/cbasaran/code/jevgammon/smoke/improve-run2/runs/deepseek-v4.1-flash-on/S1",
+   "database": "/home/cbasaran/code/jevgammon/smoke/improve-run2/db/deepseek-v4.1-flash-on.db",
+   "unit": "qc-run2-deepseek",
+   "unit_invocation": "b1ee3e1950ff4fe2a5ce56dc754c66b9",
+   "started_at": "2026-11-12T11:54:21Z",
+   "seed": 5588155524604542475,
+   "order_seed": 1190975713392774006,
+   "prompt_version": "bg-v2",
+   "opponent": "gnubg-weak",
+   "money": "step ledger hard cap $15.6768 (rule (a): 1.5 x $44 - DeepSeek billed incl. the original run); experiment total and $107 share include the original ledgers",
+   "binary": "/home/cbasaran/code/jevgammon-improve/target/improve-bin/jevgammon-8b6f9a1",
+   "binary_sha256": "e415773e876670f4d5cc1379705acc0f65b4acd02c613b91941c8175ed181661",
+   "runner_commit": "8b6f9a1",
+   "harness_branch": "improve-run2",
+   "harness_commit": "06afc1f",
+   "harness_worktree": "/home/cbasaran/.cache/wt/improve-run2",
+   "launcher": "workspace/improve/run2.sh",
+   "route": "OpenRouter, provider order [fireworks], fallbacks off; v3.db players.settings of 'DeepSeek V4.1 Flash (on)' unchanged",
+   "expect_models": [
+    "deepseek/deepseek-v4.1-flash",
+    "deepseek/deepseek-v4.1-flash-20260910"
+   ],
+   "expect_provider": "Fireworks"
+  },
+  {
+   "component": "Gemini 4 Argon (on) E1",
+   "model": "gemini-4-argon-on",
+   "run_id": "/home/cbasaran/code/jevgammon/smoke/improve-run2/runs/gemini-4-argon-on/E1",
+   "database": "/home/cbasaran/code/jevgammon/smoke/improve-run2/db/gemini-4-argon-on.db",
+   "unit": "qc-run2-argon",
+   "unit_invocation": "1ec62525313f4c8b9dac8e75d0ba629f",
+   "started_at": "2026-11-12T11:48:16Z (steps in order E1, S1, S2)",
+   "seed": null,
+   "note": "empty run: no notes, no dice",
+   "order_seed": 1190975713392774006,
+   "prompt_version": "bg-v2",
+   "money": "$0 (subscription)",
+   "binary": "/home/cbasaran/code/jevgammon-improve/target/improve-bin/jevgammon-8b6f9a1",
+   "binary_sha256": "e415773e876670f4d5cc1379705acc0f65b4acd02c613b91941c8175ed181661",
+   "runner_commit": "8b6f9a1",
+   "harness_branch": "improve-run2",
+   "harness_commit": "06afc1f",
+   "harness_worktree": "/home/cbasaran/.cache/wt/improve-run2",
+   "launcher": "workspace/improve/run2.sh",
+   "route": "Antigravity subscription, antigravity/gemini-4-argon, reasoning high (Antigravity id gemini-4-argon-high); v3.db players.settings of 'Gemini 4 Argon (on)' unchanged",
+   "expect_models": [
+    "gemini-4-argon"
+   ],
+   "expect_pointer": "/response/modelVersion",
+   "expect_note": "original run accepted gemini-4-argon and gemini-4-argon-d; Run 2 accepts gemini-4-argon only (IMPROVE_RUN2_EXPECT); a -d reply fails the route check and stops the run",
+   "probe": "2026-11-12T11:45:17Z, jevgammon-8b6f9a1 lesson on the league route: served modelVersion gemini-4-argon, finish STOP ($0)"
+  },
+  {
+   "component": "Gemini 4 Argon (on) S1",
+   "model": "gemini-4-argon-on",
+   "run_id": "/home/cbasaran/code/jevgammon/smoke/improve-run2/runs/gemini-4-argon-on/S1",
+   "database": "/home/cbasaran/code/jevgammon/smoke/improve-run2/db/gemini-4-argon-on.db",
+   "unit": "qc-run2-argon",
+   "unit_invocation": "1ec62525313f4c8b9dac8e75d0ba629f",
+   "started_at": "2026-11-12T11:48:16Z (steps in order E1, S1, S2)",
+   "seed": 5588155524604542475,
+   "order_seed": 1190975713392774006,
+   "prompt_version": "bg-v2",
+   "money": "$0 (subscription)",
+   "binary": "/home/cbasaran/code/jevgammon-improve/target/improve-bin/jevgammon-8b6f9a1",
+   "binary_sha256": "e415773e876670f4d5cc1379705acc0f65b4acd02c613b91941c8175ed181661",
+   "runner_commit": "8b6f9a1",
+   "harness_branch": "improve-run2",
+   "harness_commit": "06afc1f",
+   "harness_worktree": "/home/cbasaran/.cache/wt/improve-run2",
+   "launcher": "workspace/improve/run2.sh",
+   "route": "Antigravity subscription, antigravity/gemini-4-argon, reasoning high (Antigravity id gemini-4-argon-high); v3.db players.settings of 'Gemini 4 Argon (on)' unchanged",
+   "expect_models": [
+    "gemini-4-argon"
+   ],
+   "expect_pointer": "/response/modelVersion",
+   "expect_note": "original run accepted gemini-4-argon and gemini-4-argon-d; Run 2 accepts gemini-4-argon only (IMPROVE_RUN2_EXPECT); a -d reply fails the route check and stops the run",
+   "probe": "2026-11-12T11:45:17Z, jevgammon-8b6f9a1 lesson on the league route: served modelVersion gemini-4-argon, finish STOP ($0)"
+  },
+  {
+   "component": "Gemini 4 Argon (on) S2",
+   "model": "gemini-4-argon-on",
+   "run_id": "/home/cbasaran/code/jevgammon/smoke/improve-run2/runs/gemini-4-argon-on/S2",
+   "database": "/home/cbasaran/code/jevgammon/smoke/improve-run2/db/gemini-4-argon-on.db",
+   "unit": "qc-run2-argon",
+   "unit_invocation": "1ec62525313f4c8b9dac8e75d0ba629f",
+   "started_at": "2026-11-12T11:48:16Z (steps in order E1, S1, S2)",
+   "seed": 9059240225405464449,
+   "order_seed": 1190975713392774006,
+   "prompt_version": "bg-v2",
+   "money": "$0 (subscription)",
+   "binary": "/home/cbasaran/code/jevgammon-improve/target/improve-bin/jevgammon-8b6f9a1",
+   "binary_sha256": "e415773e876670f4d5cc1379705acc0f65b4acd02c613b91941c8175ed181661",
+   "runner_commit": "8b6f9a1",
+   "harness_branch": "improve-run2",
+   "harness_commit": "06afc1f",
+   "harness_worktree": "/home/cbasaran/.cache/wt/improve-run2",
+   "launcher": "workspace/improve/run2.sh",
+   "route": "Antigravity subscription, antigravity/gemini-4-argon, reasoning high (Antigravity id gemini-4-argon-high); v3.db players.settings of 'Gemini 4 Argon (on)' unchanged",
+   "expect_models": [
+    "gemini-4-argon"
+   ],
+   "expect_pointer": "/response/modelVersion",
+   "expect_note": "original run accepted gemini-4-argon and gemini-4-argon-d; Run 2 accepts gemini-4-argon only (IMPROVE_RUN2_EXPECT); a -d reply fails the route check and stops the run",
+   "probe": "2026-11-12T11:45:17Z, jevgammon-8b6f9a1 lesson on the league route: served modelVersion gemini-4-argon, finish STOP ($0)"
+  },
+  {
+   "component": "Muse Ember (max) League #20 match #926, full-match Run 2",
+   "model": "Muse Ember (max)",
+   "run_id": "match 1 in /home/cbasaran/code/jevgammon/workspace/late-ember/run2/ember-926-run2.db",
+   "database": "/home/cbasaran/code/jevgammon/workspace/late-ember/run2/ember-926-run2.db",
+   "config": "mailbox/qc-run2/ember-926-run2.json",
+   "unit": "qc-run2-ember-926 (started by Main)",
+   "started_at": "2026-11-12T11:38:23.903Z",
+   "finished_at": "2026-11-12T11:49:26.393Z",
+   "seed": -7919611811006792258,
+   "seats": "Muse Ember (max) model1 (= #926)",
+   "binary": "/home/cbasaran/.cache/wt/runner-175141f/target/release/jevgammon",
+   "binary_sha256": "034a39b491e955e7182c51e4708009fe386600e3cd2e7141434c8d5ee9ca0e27",
+   "runner_commit": "175141f",
+   "recorded_harness": "175141f6e2406489854cc36e788f5b22d451cc4b, dirty 0",
+   "route": "OpenRouter, provider only [meta], fallbacks off, reasoning_effort max, max_tokens 32768; v3.db players.settings unchanged; ledger workspace/late-ember/state/ember-budget.db, hard cap $19.50",
+   "expect_models": null,
+   "served": "50/50 exchanges model meta/muse-ember, provider Meta",
+   "counting": "own database: the original #926 row and League #20's table unchanged; never counted"
+  }
+ ],
+ "reused_original_steps": {
+  "model": "gemini-4-argon-on",
+  "steps": {
+   "E2": {
+    "disclosed_as": "reused from the original run (not fresh)",
+    "context_independence": "mailbox/qc-run2/argon-reset.json (empty_runs: 0 requests with notes)",
+    "served_identity": "mailbox/qc-run2/argon-served-identity.json (100% gemini-4-argon)"
+   },
+   "E3": {
+    "disclosed_as": "reused from the original run (not fresh)",
+    "context_independence": "mailbox/qc-run2/argon-reset.json (empty_runs: 0 requests with notes)",
+    "served_identity": "mailbox/qc-run2/argon-served-identity.json (100% gemini-4-argon)"
+   },
+   "S3": {
+    "disclosed_as": "reused from the original run (not fresh)",
+    "context_independence": "mailbox/qc-run2/argon-reset.json (series.S3: own contexts only, game 1 without notes, 0 lesson lines of another series)",
+    "served_identity": "mailbox/qc-run2/argon-served-identity.json (100% gemini-4-argon)"
+   },
+   "S4": {
+    "disclosed_as": "reused from the original run (not fresh)",
+    "context_independence": "mailbox/qc-run2/argon-reset.json (series.S4: own contexts only, game 1 without notes, 0 lesson lines of another series)",
+    "served_identity": "mailbox/qc-run2/argon-served-identity.json (100% gemini-4-argon)"
+   },
+   "S5": {
+    "disclosed_as": "reused from the original run (not fresh)",
+    "context_independence": "mailbox/qc-run2/argon-reset.json (series.S5: own contexts only, game 1 without notes, 0 lesson lines of another series)",
+    "served_identity": "mailbox/qc-run2/argon-served-identity.json (100% gemini-4-argon)"
+   }
+  }
+ },
+ "deepseek_reused_steps": {
+  "steps": [
+   "E1",
+   "E2",
+   "E3",
+   "S2",
+   "S3",
+   "S4"
+  ],
+  "note": "unaffected by D1 (0 provider error replies); context independence: mailbox/qc-run2/deepseek-reset.json; S5 is original + the 4-answer refill"
+ }
+}

@@ -63,11 +63,11 @@ Each series therefore starts from a reset. S2–S5 do not depend on S1, and S5's
 
 **Time.** S1 took 4 h 58 min (13:03–18:01 UTC on 9 Nov, T10 68 min). The refill takes minutes.
 
-**Verdict effect** (script: `verdict_margin.py`; output: `deepseek-verdict.json`):
-- Stored: Yes. Change in risks found +7.21 against a threshold of 5.00. Change in right safety −4.17, against a limit of −5.
-- S5 refill: all 4 positions are risk positions. Over all 81 outcomes, S5-T10 risks found ranges 50.00–54.08 and right safety stays 84.85. **The verdict cannot change** (Yes in 81 of 81).
-- S1 replay: the verdict flips to No if S1-T10's right safety falls by more than 4.16 points (from 87.0 to below 82.84), or its risks found by more than 11.07 points (from 48.42 to below 37.36). The other T10s range 84.8–89.8 in right safety, so a flip is possible.
-- The site shows DeepSeek as QC-pending (branch `site-qc-pending`).
+**Verdict** (output: `deepseek-verdict.json`):
+- Stored (original run, as published): Yes. Change in risks found +7.21 against a threshold of 5.00. Change in right safety −4.17, against a limit of −5.
+- Run 2: **verdict pending until Run 2 completes** (S1 is being replayed). No bound is claimed. An earlier draft said the S5 refill could not flip the verdict; that claim is withdrawn (Zeki #5319).
+- The refill itself has finished (counts below, under "Run 2 progress"). The final Run 2 verdict comes from `run2-report.json` (improve.py `run2-report`: the site's rule, original and Run 2 side by side, every step named run2, refill or reused).
+- The site shows DeepSeek as QC-pending.
 
 ## 3. Muse Ember (max) #926: full-match Run 2 (proposal, not run)
 
@@ -139,6 +139,27 @@ Under either reading, the hashes show no context crossing series. [INFERENCE: wh
 - Under `-d`: E1 took 3 h 14 min and S1 15 h 31 min. If `-d` is served, Run 2 stops at once instead. Antigravity quota pauses would come on top.
 - A whole-arm re-run would take ≈ 22 h.
 
-**Verdict effect** (`argon-verdict.json`):
-- Stored: No. Change in risks found +6.48 against a threshold of 12.67. That threshold is E1's 66.7 (under `-d`, 45 invalid) minus E3's 54.0.
-- If E1 Run 2 lands near E2/E3 (54–55), the threshold falls toward 5 and the change could pass it. The verdict can flip either way. The site shows QC-pending.
+**Verdict** (`argon-verdict.json`):
+- Stored (original run, as published): No. Change in risks found +6.48 against a threshold of 12.67. That threshold was E1's 66.7 (under `-d`, 45 invalid) minus E3's 54.0.
+- Run 2 uses the **same threshold formula**: max(range of the empty runs' risks found over E1 (Run 2, corrected) + E2 + E3, 5), as `tools/site/improve_validate.py` and improve.py `verdict_of`. The old 12.67 is not reused, and no threshold is chosen after the fact.
+- Run 2: **verdict pending until Run 2 completes**. The site shows QC-pending.
+
+## Run 2 progress (2026-11-12, approved by Main within Zeki #5264/#5276)
+
+Components, run ids, units, binaries, seeds, routes and reused steps: `run2-manifest.json`. Build identity: `build-identity.txt`. Step-boundary switches in the live lanes: `step-boundary-events.jsonl` (regenerate with `boundary_events.py`). Argon's served identity per step: `argon-served-identity.json` (`served_identity.py`).
+
+- **Ember #926 Run 2.** Done 11:38–11:49 UTC, own database, match 1.
+  - Seed −7919611811006792258, Muse Ember (max) model1, harness 175141f clean.
+  - Muse Ember (max) 6–0 Random (original #926: 5–0), 1 round.
+  - 52 Ember turns: 36 model, 12 forced, 2 no-move, 2 fallback. Both fallbacks are model replies cut at the output limit (`finish_reason` length at 32,939 and 32,944 tokens), scored invalid as in the original; 0 provider error replies.
+  - 50/50 exchanges `meta/muse-ember` / Meta. Cost $0.2864.
+  - The original #926 row and League #20's table are unchanged.
+- **DeepSeek, S5-T10 refill.** Done.
+  - 4/4 answered, 0 invalid, 0 failed, billed $0.1191, harness 8b6f9a1 clean.
+  - Each position's first request is byte-identical to the original's.
+  - S5-T10 with the refill: valid 193 → 197, invalid 7 → 3, risks found 52.13 → 53.06, right safety 84.85 (unchanged: all 4 are risk positions).
+- **DeepSeek, S1.** Running since 11:54:21 UTC.
+  - Game 1's first decision: the same dice (4-1), the same position, and a byte-identical request as the original's.
+  - Step ledger cap $15.6768 (rule (a)).
+- **Argon E1, S1, S2.** Running since 11:48:16 UTC. At 12:07 UTC: E1 87/200, 0 failed, 0 invalid; 116/116 replies `gemini-4-argon`.
+- Final numbers and `run2-report.json` per model are added when each run completes. They contain counts only: no question, option or answer text.

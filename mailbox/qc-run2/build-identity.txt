@@ -1,0 +1,41 @@
+# QC 2026-11-12 Run 2: build identity of the three fixed runner builds (written 2026-11-12T12:05:38Z)
+# toolchain (all three): rustc 1.97.1 (8bab26f4f 2026-07-14); cargo 1.97.1 (c980f4866 2026-06-30)
+# build command (all three, in the worktree): CARGO_TARGET_DIR=<worktree>/target cargo build --release
+# the runner records harness_commit/harness_dirty by running git in its build tree (CARGO_MANIFEST_DIR) at startup
+
+[175141f]
+source_commit = 175141f6e2406489854cc36e788f5b22d451cc4b
+source_tree = 1b5884844a3277f07bebafd338262d9a4e135563
+branch = HEAD
+tracked_changes = 0
+cargo_lock_sha256 = d7048551c8907fd02c85f7ac8d8d2ffdc088ae4848bf313fc3c0f6e070d88494
+cargo_toml_sha256 = bf64a9f15bd33cd3f5d517dc984140ff38fb9ec93c5d3a50eb0971f658c0ed4b
+build_tree = /home/cbasaran/.cache/wt/runner-175141f
+built_binary = /home/cbasaran/.cache/wt/runner-175141f/target/release/jevgammon
+built_binary_sha256 = 034a39b491e955e7182c51e4708009fe386600e3cd2e7141434c8d5ee9ca0e27
+
+[8b6f9a1]
+source_commit = 8b6f9a17cb65e8af09bb7a3d79de16b84c873576
+source_tree = ffb0be4cea9f900b8e3d423f725ba1e5d2249835
+branch = improve-error-reply-fix
+tracked_changes = 0
+cargo_lock_sha256 = d7048551c8907fd02c85f7ac8d8d2ffdc088ae4848bf313fc3c0f6e070d88494
+cargo_toml_sha256 = bf64a9f15bd33cd3f5d517dc984140ff38fb9ec93c5d3a50eb0971f658c0ed4b
+build_tree = /home/cbasaran/.cache/wt/improve-error-reply-fix
+built_binary = /home/cbasaran/.cache/wt/improve-error-reply-fix/target/release/jevgammon
+built_binary_sha256 = e415773e876670f4d5cc1379705acc0f65b4acd02c613b91941c8175ed181661
+
+[724406a]
+source_commit = 724406a8d8d6515ea82a91fc18e4032dea15e52c
+source_tree = 21a5b6ecdd1438181e6bdbd07d22146ebe76f89e
+branch = improve-codex-error-reply-fix
+tracked_changes = 0
+cargo_lock_sha256 = d7048551c8907fd02c85f7ac8d8d2ffdc088ae4848bf313fc3c0f6e070d88494
+cargo_toml_sha256 = bf64a9f15bd33cd3f5d517dc984140ff38fb9ec93c5d3a50eb0971f658c0ed4b
+build_tree = /home/cbasaran/.cache/wt/improve-codex-error-reply-fix
+built_binary = /home/cbasaran/.cache/wt/improve-codex-error-reply-fix/target/release/jevgammon
+built_binary_sha256 = 1e529cdb7a210f8fcf7e133a52addd9f41e69fab65dc38d44af16b51bcfc95fe
+
+[pinned copies]
+/home/cbasaran/code/jevgammon-improve/target/improve-bin/jevgammon-8b6f9a1 = e415773e876670f4d5cc1379705acc0f65b4acd02c613b91941c8175ed181661
+/home/cbasaran/code/jevgammon-improve/target/improve-bin/jevgammon-724406a = 1e529cdb7a210f8fcf7e133a52addd9f41e69fab65dc38d44af16b51bcfc95fe

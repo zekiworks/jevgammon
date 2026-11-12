@@ -1,0 +1,331 @@
+{
+ "model": "gemini-4-argon-on",
+ "pointer": "/response/modelVersion",
+ "counts": {
+  "S1 game 01": {
+   "gemini-4-argon-d": 25
+  },
+  "S1 game 02": {
+   "gemini-4-argon-d": 39
+  },
+  "S1 game 03": {
+   "gemini-4-argon-d": 31
+  },
+  "S1 game 04": {
+   "gemini-4-argon-d": 22
+  },
+  "S1 game 05": {
+   "gemini-4-argon-d": 24
+  },
+  "S1 game 06": {
+   "gemini-4-argon-d": 47
+  },
+  "S1 game 07": {
+   "gemini-4-argon-d": 22
+  },
+  "S1 game 08": {
+   "gemini-4-argon-d": 42
+  },
+  "S1 game 09": {
+   "gemini-4-argon-d": 20
+  },
+  "S1 game 10": {
+   "gemini-4-argon-d": 19
+  },
+  "S1 lesson g01": {
+   "gemini-4-argon-d": 1
+  },
+  "S1 lesson g02": {
+   "gemini-4-argon-d": 1
+  },
+  "S1 lesson g03": {
+   "gemini-4-argon-d": 1
+  },
+  "S1 lesson g04": {
+   "gemini-4-argon-d": 1
+  },
+  "S1 lesson g05": {
+   "gemini-4-argon-d": 1
+  },
+  "S1 lesson g06": {
+   "gemini-4-argon-d": 1
+  },
+  "S1 lesson g07": {
+   "gemini-4-argon-d": 1
+  },
+  "S1 lesson g08": {
+   "gemini-4-argon-d": 1
+  },
+  "S1 lesson g09": {
+   "gemini-4-argon-d": 1
+  },
+  "S1 lesson g10": {
+   "gemini-4-argon-d": 1
+  },
+  "S2 game 01": {
+   "gemini-4-argon-d": 30
+  },
+  "S2 game 02": {
+   "gemini-4-argon-d": 46
+  },
+  "S2 game 03": {
+   "gemini-4-argon-d": 50
+  },
+  "S2 game 04": {
+   "gemini-4-argon-d": 20
+  },
+  "S2 game 05": {
+   "gemini-4-argon-d": 27
+  },
+  "S2 game 06": {
+   "gemini-4-argon-d": 10,
+   "gemini-4-argon": 31
+  },
+  "S2 game 07": {
+   "gemini-4-argon": 28
+  },
+  "S2 game 08": {
+   "gemini-4-argon": 30
+  },
+  "S2 game 09": {
+   "gemini-4-argon": 30
+  },
+  "S2 game 10": {
+   "gemini-4-argon": 43
+  },
+  "S2 lesson g01": {
+   "gemini-4-argon-d": 1
+  },
+  "S2 lesson g02": {
+   "gemini-4-argon-d": 1
+  },
+  "S2 lesson g03": {
+   "gemini-4-argon-d": 1
+  },
+  "S2 lesson g04": {
+   "gemini-4-argon-d": 1
+  },
+  "S2 lesson g05": {
+   "gemini-4-argon-d": 1
+  },
+  "S2 lesson g06": {
+   "gemini-4-argon": 1
+  },
+  "S2 lesson g07": {
+   "gemini-4-argon": 1
+  },
+  "S2 lesson g08": {
+   "gemini-4-argon": 1
+  },
+  "S2 lesson g09": {
+   "gemini-4-argon": 1
+  },
+  "S2 lesson g10": {
+   "gemini-4-argon": 1
+  },
+  "S3 game 01": {
+   "gemini-4-argon": 38
+  },
+  "S3 game 02": {
+   "gemini-4-argon": 20
+  },
+  "S3 game 03": {
+   "gemini-4-argon": 50
+  },
+  "S3 game 04": {
+   "gemini-4-argon": 44
+  },
+  "S3 game 05": {
+   "gemini-4-argon": 24
+  },
+  "S3 game 06": {
+   "gemini-4-argon": 42
+  },
+  "S3 game 07": {
+   "gemini-4-argon": 40
+  },
+  "S3 game 08": {
+   "gemini-4-argon": 21
+  },
+  "S3 game 09": {
+   "gemini-4-argon": 34
+  },
+  "S3 game 10": {
+   "gemini-4-argon": 29
+  },
+  "S3 lesson g01": {
+   "gemini-4-argon": 1
+  },
+  "S3 lesson g02": {
+   "gemini-4-argon": 1
+  },
+  "S3 lesson g03": {
+   "gemini-4-argon": 1
+  },
+  "S3 lesson g04": {
+   "gemini-4-argon": 1
+  },
+  "S3 lesson g05": {
+   "gemini-4-argon": 1
+  },
+  "S3 lesson g06": {
+   "gemini-4-argon": 1
+  },
+  "S3 lesson g07": {
+   "gemini-4-argon": 1
+  },
+  "S3 lesson g08": {
+   "gemini-4-argon": 1
+  },
+  "S3 lesson g09": {
+   "gemini-4-argon": 1
+  },
+  "S3 lesson g10": {
+   "gemini-4-argon": 1
+  },
+  "S4 game 01": {
+   "gemini-4-argon": 17
+  },
+  "S4 game 02": {
+   "gemini-4-argon": 20
+  },
+  "S4 game 03": {
+   "gemini-4-argon": 32
+  },
+  "S4 game 04": {
+   "gemini-4-argon": 27
+  },
+  "S4 game 05": {
+   "gemini-4-argon": 55
+  },
+  "S4 game 06": {
+   "gemini-4-argon": 25
+  },
+  "S4 game 07": {
+   "gemini-4-argon": 55
+  },
+  "S4 game 08": {
+   "gemini-4-argon": 63
+  },
+  "S4 game 09": {
+   "gemini-4-argon": 39
+  },
+  "S4 game 10": {
+   "gemini-4-argon": 30
+  },
+  "S4 lesson g01": {
+   "gemini-4-argon": 1
+  },
+  "S4 lesson g02": {
+   "gemini-4-argon": 1
+  },
+  "S4 lesson g03": {
+   "gemini-4-argon": 1
+  },
+  "S4 lesson g04": {
+   "gemini-4-argon": 1
+  },
+  "S4 lesson g05": {
+   "gemini-4-argon": 1
+  },
+  "S4 lesson g06": {
+   "gemini-4-argon": 1
+  },
+  "S4 lesson g07": {
+   "gemini-4-argon": 1
+  },
+  "S4 lesson g08": {
+   "gemini-4-argon": 1
+  },
+  "S4 lesson g09": {
+   "gemini-4-argon": 1
+  },
+  "S4 lesson g10": {
+   "gemini-4-argon": 1
+  },
+  "S5 game 01": {
+   "gemini-4-argon": 60
+  },
+  "S5 game 02": {
+   "gemini-4-argon": 76
+  },
+  "S5 game 03": {
+   "gemini-4-argon": 30
+  },
+  "S5 game 04": {
+   "gemini-4-argon": 52
+  },
+  "S5 game 05": {
+   "gemini-4-argon": 32
+  },
+  "S5 game 06": {
+   "gemini-4-argon": 36
+  },
+  "S5 game 07": {
+   "gemini-4-argon": 27
+  },
+  "S5 game 08": {
+   "gemini-4-argon": 30
+  },
+  "S5 game 09": {
+   "gemini-4-argon": 45
+  },
+  "S5 game 10": {
+   "gemini-4-argon": 30
+  },
+  "S5 lesson g01": {
+   "gemini-4-argon": 1
+  },
+  "S5 lesson g02": {
+   "gemini-4-argon": 1
+  },
+  "S5 lesson g03": {
+   "gemini-4-argon": 1
+  },
+  "S5 lesson g04": {
+   "gemini-4-argon": 1
+  },
+  "S5 lesson g05": {
+   "gemini-4-argon": 1
+  },
+  "S5 lesson g06": {
+   "gemini-4-argon": 1
+  },
+  "S5 lesson g07": {
+   "gemini-4-argon": 1
+  },
+  "S5 lesson g08": {
+   "gemini-4-argon": 1
+  },
+  "S5 lesson g09": {
+   "gemini-4-argon": 1
+  },
+  "S5 lesson g10": {
+   "gemini-4-argon": 1
+  },
+  "test E1": {
+   "gemini-4-argon-d": 257
+  },
+  "test E2": {
+   "gemini-4-argon": 277
+  },
+  "test E3": {
+   "gemini-4-argon": 277
+  },
+  "test s01 | a1 | T10": {
+   "gemini-4-argon-d": 263
+  },
+  "test s02 | a1 | T10": {
+   "gemini-4-argon": 277
+  },
+  "test s03 | a1 | T10": {
+   "gemini-4-argon": 277
+  },
+  "test s04 | a1 | T10": {
+   "gemini-4-argon": 277
+  },
+  "test s05 | a1 | T10": {
+   "gemini-4-argon": 277
+  }
+ }
+}

@@ -8,7 +8,8 @@
   "change_rf": 6.482539682539681,
   "change_rs": -1.4781467332745564,
   "threshold": 12.666666666666671,
-  "improved": false
+  "improved": false,
+  "note": "the original run's verdict as published (site rule)"
  },
  "per_test": {
   "E1": {
@@ -84,10 +85,6 @@
    "right_safety": 93.0
   }
  },
- "margin": {
-  "after_rf_mean_slack": -6.184126984126991,
-  "after_rs_mean_slack": 3.5218532667254436,
-  "one_t10_rf_slack": -30.920634920634953,
-  "one_t10_rs_slack": 17.609266333627218
- }
+ "run2_verdict": "pending until Run 2 completes",
+ "threshold_rule": "Run 2 uses the same threshold formula as the original and the site: max(range of the empty runs' risks found over E1 (Run 2, corrected) + E2 + E3, 5) (tools/site/improve_validate.py scores; improve.py verdict_of). Never the old 12.67, never a choice after the fact."
 }

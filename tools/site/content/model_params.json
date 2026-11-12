@@ -797,6 +797,215 @@
    "card_source": "https://huggingface.co/fastino/GLiDE-2B",
    "card_quote": "'GLiDE 2B is a GLiDE decision model with 1.88B parameters.'; table: 'Parameters | 1.88 B (1.88 B language model, of which 509 M token embeddings; 0.52 M decision readout)'."
   },
+  "LFM3-1.7B": {
+   "total_b": 1.73,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/LiquidAI/LFM3-1.7B/tree/0dc4268b561499c648c7ba7c9466bf3d8d01517a",
+   "quote": "LiquidAI/LFM3-1.7B @ 0dc4268b561499c648c7ba7c9466bf3d8d01517a, model.safetensors (286 tensors, BF16): 1,728,801,536 parameters (the file's safetensors header); Lfm3ForCausalLM, dense, text only, tied embeddings. Maker's text (card table): 'Parameters | 1.73B'.",
+   "checked": [
+    "https://huggingface.co/api/models/LiquidAI/LFM3-1.7B/revision/0dc4268b561499c648c7ba7c9466bf3d8d01517a",
+    "https://huggingface.co/LiquidAI/LFM3-1.7B/raw/0dc4268b561499c648c7ba7c9466bf3d8d01517a/README.md"
+   ],
+   "read": "2026-11-12",
+   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors headers (~/.cache/huggingface/hub); The same count as logic's small_models_prep.md (HF safetensors 1,728,801,536). Played from the official BF16 GGUF LiquidAI/LFM3-1.7B-GGUF @ cd0c74c575b5c416f3011b5b4c298077f26ca8c2 (LFM3-1.7B-BF16.gguf) on llama.cpp, as logic serves it (vLLM v0.30.0 has no Lfm3ForCausalLM); the count is that of the pinned safetensors checkpoint. Held late entry (held_setups.json; small chat models, Zeki #5064/#5071/#5073) until its entry is complete.",
+   "terms": "1.73B; card: 1.73B",
+   "card_total_b": 1.73,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/LiquidAI/LFM3-1.7B",
+   "card_quote": "Card table: 'Parameters | 1.73B'."
+  },
+  "LFM2.5-2.6B": {
+   "total_b": 2.7,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/LiquidAI/LFM2.5-2.6B/tree/7141b56cd4650af95c7c7b86983443aed050c96a",
+   "quote": "LiquidAI/LFM2.5-2.6B @ 7141b56cd4650af95c7c7b86983443aed050c96a, 2 safetensors shards (266 tensors, BF16): 2,697,198,592 parameters (the files' safetensors headers); Lfm2ForCausalLM, dense, text only, tied embeddings. Maker's text (card): 'Total parameters: 2.69B'.",
+   "checked": [
+    "https://huggingface.co/api/models/LiquidAI/LFM2.5-2.6B/revision/7141b56cd4650af95c7c7b86983443aed050c96a",
+    "https://huggingface.co/LiquidAI/LFM2.5-2.6B/raw/7141b56cd4650af95c7c7b86983443aed050c96a/README.md"
+   ],
+   "read": "2026-11-12",
+   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors headers (~/.cache/huggingface/hub); Not in logic's small_models_prep.md (not one of its 13 models). Held late entry (held_setups.json; small chat models, Zeki #5064/#5071/#5073) until its entry is complete.",
+   "terms": "2.70B; card: 2.69B (2.6B in its name)",
+   "card_total_b": 2.69,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/LiquidAI/LFM2.5-2.6B",
+   "card_quote": "Card: 'LFM2.5-2.6B is a general-purpose text-only model with the following features: - **Total parameters**: 2.69B'; model table: '2.6B'."
+  },
+  "MiniCPM5-2B": {
+   "total_b": 2.52,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/openbmb/MiniCPM5-2B/tree/42433e90dad95123ab87729fd7011e7110629556",
+   "quote": "openbmb/MiniCPM5-2B @ 42433e90dad95123ab87729fd7011e7110629556, model-00000-of-00001.safetensors (381 tensors, BF16): 2,516,756,480 parameters (the file's safetensors header); LlamaForCausalLM, dense, text only, untied embeddings (lm_head 267,386,880). Maker's text (card): 'Number of Parameters: 2,516,756,480'.",
+   "checked": [
+    "https://huggingface.co/api/models/openbmb/MiniCPM5-2B/revision/42433e90dad95123ab87729fd7011e7110629556",
+    "https://huggingface.co/openbmb/MiniCPM5-2B/raw/42433e90dad95123ab87729fd7011e7110629556/README.md"
+   ],
+   "read": "2026-11-12",
+   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors headers (~/.cache/huggingface/hub); Equal to the card's exact figure. Not in logic's small_models_prep.md. Held late entry (held_setups.json; small chat models, Zeki #5064/#5071/#5073) until its entry is complete.",
+   "terms": "2.52B; card: 2,516,756,480 ('a dense 2B Transformer')",
+   "card_total_b": 2.52,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/openbmb/MiniCPM5-2B",
+   "card_quote": "Card: '- **Number of Parameters**: 2,516,756,480', '- **Number of Non-Embedding Parameters**: 1,981,982,720'; 'It is a dense 2B Transformer'."
+  },
+  "LFM2.5-8B-A1B": {
+   "total_b": 8.47,
+   "active_b": 1.5,
+   "effective_b": null,
+   "moe": true,
+   "source": "https://huggingface.co/LiquidAI/LFM2.5-8B-A1B/tree/dd83f5cb02aa2938b66bba9a9998d38d0517c1f3",
+   "quote": "LiquidAI/LFM2.5-8B-A1B @ dd83f5cb02aa2938b66bba9a9998d38d0517c1f3, model.safetensors (2,302 tensors): BF16 8,467,856,128 logical parameters (the file's safetensors header); the 22 x expert_bias F32 tensors (704 elements) are buffers (transformers @ b2556881, models/lfm2_moe/modeling_lfm2_moe.py: expert_bias = nn.Buffer, as for LFM2.5-24B-A2B), not counted. Lfm2MoeForCausalLM, 32 experts, 4 per token, text only. Maker's text (card): 'Total parameters: 8.3B', 'Active parameters: 1.5B'.",
+   "checked": [
+    "https://huggingface.co/api/models/LiquidAI/LFM2.5-8B-A1B/revision/dd83f5cb02aa2938b66bba9a9998d38d0517c1f3",
+    "https://huggingface.co/LiquidAI/LFM2.5-8B-A1B/raw/dd83f5cb02aa2938b66bba9a9998d38d0517c1f3/README.md"
+   ],
+   "read": "2026-11-12",
+   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors headers (~/.cache/huggingface/hub); Active 1.5B from the card (a checkpoint has no active count). Logic's small_models_prep.md gives the card's 8.3B / 1.5B (its table writes '1.5B / 8.3B active / total', the order swapped). Held late entry (held_setups.json; small chat models, Zeki #5064/#5071/#5073) until its entry is complete.",
+   "terms": "8.47B total, 1.5B active (card); card: 8.3B total",
+   "card_total_b": 8.3,
+   "card_active_b": 1.5,
+   "card_source": "https://huggingface.co/LiquidAI/LFM2.5-8B-A1B",
+   "card_quote": "Card: '- **Total parameters**: 8.3B', '- **Active parameters**: 1.5B'; model table: '8.3B total / 1.5B active'."
+  },
+  "Gemma 4 E4B": {
+   "total_b": 8.0,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/google/gemma-4-E4B-it/tree/4ecc2ba63bcac23ba4a767fc87025b1450f84c9c",
+   "quote": "google/gemma-4-E4B-it @ 4ecc2ba63bcac23ba4a767fc87025b1450f84c9c, model.safetensors (2,130 tensors, BF16; language model incl. per-layer embeddings, vision and audio encoders): 7,996,156,448 parameters = all tensor elements 7,996,157,418 (the file's safetensors header) minus buffers 232 x 4 vision-encoder clip bounds (input_min/input_max/output_min/output_max) + 42 x layer_scalar = 970 (huggingface/transformers @ b25568817a6cb458f6d8b180a32698c2ab11fd26, models/gemma4/modeling_gemma4.py: all nn.Buffer); language model 7,518,068,992, audio tower 304,824,608 + embed_audio 3,932,160, vision tower 167,364,608 + embed_vision 1,966,080 (after buffers). Maker's text: card table 'E4B | 4.5B effective (8B with embeddings)'.",
+   "checked": [
+    "https://huggingface.co/api/models/google/gemma-4-E4B-it/revision/4ecc2ba63bcac23ba4a767fc87025b1450f84c9c",
+    "https://huggingface.co/google/gemma-4-E4B-it/raw/4ecc2ba63bcac23ba4a767fc87025b1450f84c9c/README.md"
+   ],
+   "read": "2026-11-12",
+   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors headers (~/.cache/huggingface/hub); Dense; 'E' is the card's 'effective' size without per-layer embeddings, not a MoE active count, so no active figure (as logic's prep: 8B dense total). Logic's small_models_prep.md gives HF safetensors 7,996,156,490 = this total with the 928 clip-bound buffers removed but the 42 layer_scalar buffers kept; here both are removed, as for Gemma 4 31B and Cygnet. Held late entry (held_setups.json; small chat models, Zeki #5064/#5071/#5073) until its entry is complete.",
+   "terms": "8.00B incl. its per-layer embeddings, vision and audio encoders; card: 4.5B effective, 8B with embeddings",
+   "card_total_b": 8,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/google/gemma-4-E4B-it",
+   "card_quote": "Card table, 'E4B' column: 'Total Parameters | 4.5B effective (8B with embeddings)'; 'Vision Encoder Parameters | ~150M'; 'Audio Encoder Parameters | ~300M'."
+  },
+  "Qwen3.5-4B": {
+   "total_b": 4.66,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/Qwen/Qwen3.5-4B/tree/851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+   "quote": "Qwen/Qwen3.5-4B @ 851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a, 2 safetensors shards (738 tensors; BF16 4,659,861,248 + F32 3,840): 4,659,865,088 logical parameters (the files' safetensors headers; language model, MTP layer and vision encoder). Maker's text: 'Number of Parameters: 4B'.",
+   "checked": [
+    "https://huggingface.co/api/models/Qwen/Qwen3.5-4B/revision/851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+    "https://huggingface.co/Qwen/Qwen3.5-4B/raw/851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a/README.md"
+   ],
+   "read": "2026-11-12",
+   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors headers (~/.cache/huggingface/hub); Logic's small_models_prep.md: '4B language model; 4.66B stored incl. vision encoder'. Played text-only (logic's --language-model-only); the count is the released checkpoint's. Held late entry (held_setups.json; small chat models, Zeki #5064/#5071/#5073) until its entry is complete.",
+   "terms": "4.66B incl. its vision encoder and MTP layer; card: 4B",
+   "card_total_b": 4,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/Qwen/Qwen3.5-4B",
+   "card_quote": "Card: '- Number of Parameters: 4B'."
+  },
+  "Qwen3.5-9B": {
+   "total_b": 9.65,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/Qwen/Qwen3.5-9B/tree/c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+   "quote": "Qwen/Qwen3.5-9B @ c202236235762e1c871ad0ccb60c8ee5ba337b9a, 4 safetensors shards (775 tensors; BF16 9,653,100,528 + F32 3,840): 9,653,104,368 logical parameters (the files' safetensors headers; language model, MTP layer and vision encoder, untied embeddings). Maker's text: 'Number of Parameters: 9B'.",
+   "checked": [
+    "https://huggingface.co/api/models/Qwen/Qwen3.5-9B/revision/c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+    "https://huggingface.co/Qwen/Qwen3.5-9B/raw/c202236235762e1c871ad0ccb60c8ee5ba337b9a/README.md"
+   ],
+   "read": "2026-11-12",
+   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors headers (~/.cache/huggingface/hub); Logic's small_models_prep.md: '9B language model; 9.65B stored'. Played text-only (logic's --language-model-only); the count is the released checkpoint's. Held late entry (held_setups.json; small chat models, Zeki #5064/#5071/#5073) until its entry is complete.",
+   "terms": "9.65B incl. its vision encoder and MTP layer; card: 9B",
+   "card_total_b": 9,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/Qwen/Qwen3.5-9B",
+   "card_quote": "Card: '- Number of Parameters: 9B'."
+  },
+  "Spark-X2.6-4B": {
+   "total_b": 4.11,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/XHToken/Spark-X2.6-4B/tree/64ca8f2a295b8ceb2757b9d4749a6558c4759e5b",
+   "quote": "XHToken/Spark-X2.6-4B @ 64ca8f2a295b8ceb2757b9d4749a6558c4759e5b, 5 safetensors shards (290 tensors, BF16): 4,112,079,360 parameters (the files' safetensors headers); Spark2_5ForCausalLM (remote code), dense, text only, tied embeddings. Maker's text: the card gives no parameter count beyond the '4B' in the name.",
+   "checked": [
+    "https://huggingface.co/api/models/XHToken/Spark-X2.6-4B/revision/64ca8f2a295b8ceb2757b9d4749a6558c4759e5b",
+    "https://huggingface.co/XHToken/Spark-X2.6-4B/raw/64ca8f2a295b8ceb2757b9d4749a6558c4759e5b/README.md"
+   ],
+   "read": "2026-11-12",
+   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors headers (~/.cache/huggingface/hub); Not in logic's small_models_prep.md. Served from the official BF16 GGUF XHToken/Spark-X2.6-4B-GGUF @ 9d716770ac7477776de5f891f70cdf98b003a5cd (the shared names file's open_note); the count is that of the pinned safetensors checkpoint. Held late entry (held_setups.json; small chat models, Zeki #5064/#5071/#5073) until its entry is complete.",
+   "terms": "4.11B; card: 4B (its name)",
+   "card_total_b": 4,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/XHToken/Spark-X2.6-4B",
+   "card_quote": "Card title: 'Spark-X2.6-4B: Advancing the Frontier of On-Device Agents for Real-World Tasks'; no parameter line."
+  },
+  "Granite-4.2-3B": {
+   "total_b": 3.66,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/ibm-granite/granite-4.2-3b/tree/4e9c275e232f10211ec88644d106a1f6a1b60e06",
+   "quote": "ibm-granite/granite-4.2-3b @ 4e9c275e232f10211ec88644d106a1f6a1b60e06, 2 safetensors shards (363 tensors, BF16): 3,659,737,600 parameters (the files' safetensors headers); GraniteForCausalLM, dense, text only, untied embeddings (lm_head 256,901,120). Maker's text: card table '| **Parameters** | 3B |'.",
+   "checked": [
+    "https://huggingface.co/api/models/ibm-granite/granite-4.2-3b/revision/4e9c275e232f10211ec88644d106a1f6a1b60e06",
+    "https://huggingface.co/ibm-granite/granite-4.2-3b/raw/4e9c275e232f10211ec88644d106a1f6a1b60e06/README.md"
+   ],
+   "read": "2026-11-12",
+   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors headers (~/.cache/huggingface/hub); Not in logic's small_models_prep.md. Held late entry (held_setups.json; small chat models, Zeki #5064/#5071/#5073) until its entry is complete.",
+   "terms": "3.66B; card: 3B",
+   "card_total_b": 3,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/ibm-granite/granite-4.2-3b",
+   "card_quote": "Card: '| **Parameters** | 3B |'; family table '3B Dense'."
+  },
+  "Granite-4.2-8B": {
+   "total_b": 8.79,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/ibm-granite/granite-4.2-8b/tree/a7042144125ce5ae64f89610e8289647fc000b9a",
+   "quote": "ibm-granite/granite-4.2-8b @ a7042144125ce5ae64f89610e8289647fc000b9a, 4 safetensors shards (363 tensors, BF16): 8,791,592,960 parameters (the files' safetensors headers); GraniteForCausalLM, dense, text only, untied embeddings (lm_head 411,041,792). Maker's text: card table '| **Parameters** | 8B |'.",
+   "checked": [
+    "https://huggingface.co/api/models/ibm-granite/granite-4.2-8b/revision/a7042144125ce5ae64f89610e8289647fc000b9a",
+    "https://huggingface.co/ibm-granite/granite-4.2-8b/raw/a7042144125ce5ae64f89610e8289647fc000b9a/README.md"
+   ],
+   "read": "2026-11-12",
+   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors headers (~/.cache/huggingface/hub); Not in logic's small_models_prep.md. Held late entry (held_setups.json; small chat models, Zeki #5064/#5071/#5073) until its entry is complete.",
+   "terms": "8.79B; card: 8B",
+   "card_total_b": 8,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/ibm-granite/granite-4.2-8b",
+   "card_quote": "Card: '| **Parameters** | 8B |'; family table '8B Dense'."
+  },
+  "Granite-4.2-30B": {
+   "total_b": 29.28,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/ibm-granite/granite-4.2-30b/tree/9e668ce1c538387ef24d3644e9b0606647762636",
+   "quote": "ibm-granite/granite-4.2-30b @ 9e668ce1c538387ef24d3644e9b0606647762636, 11 safetensors shards (579 tensors, BF16): 29,276,770,304 parameters (the files' safetensors headers); GraniteForCausalLM, dense, text only, untied embeddings (lm_head 411,041,792). Maker's text: card table '| **Parameters** | 30B |'.",
+   "checked": [
+    "https://huggingface.co/api/models/ibm-granite/granite-4.2-30b/revision/9e668ce1c538387ef24d3644e9b0606647762636",
+    "https://huggingface.co/ibm-granite/granite-4.2-30b/raw/9e668ce1c538387ef24d3644e9b0606647762636/README.md"
+   ],
+   "read": "2026-11-12",
+   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors headers (~/.cache/huggingface/hub); Not in logic's small_models_prep.md. Held late entry (held_setups.json; small chat models, Zeki #5064/#5071/#5073) until its entry is complete.",
+   "terms": "29.28B; card: 30B",
+   "card_total_b": 30,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/ibm-granite/granite-4.2-30b",
+   "card_quote": "Card: '| **Parameters** | 30B |'; family table '30B Dense'."
+  },
   "Kimi K3.1 Pro": {
    "total_b": 2800,
    "active_b": 104,

@@ -1,0 +1,2831 @@
+diff --git a/mailbox/repeats/METADATA b/mailbox/repeats/METADATA
+index 57fcc51..333441d 100644
+--- a/mailbox/repeats/METADATA
++++ b/mailbox/repeats/METADATA
+@@ -1,6 +1,6 @@
+ owner: jevgammon (agent; Can's backgammon project ~/code/jevgammon)
+ created: 2026-11-11
+ what: manifest of the reproducibility repeats (manifest-2026-11-11.json: per repeat the original's per-opponent match id, seed and seats, game dice, option-order seed, rules, settings, coverage, today's blockers, gates, cost basis, GPU plan, start commands) and, once started, each repeat's status file ('<id> - status.md')
+-reason: Ümit via Zeki, bus #4663, #4666, #4667, #4671; written by tools/v3/repeats/repeats.py manifest from v3.db (read-only); read by the site's Experiments page (Repeat checks)
++reason: Ümit via Zeki, bus #4663, #4666, #4667, #4671, #4838, #5359 (Gemini Decision 1's entry added 2026-11-12 from that day's v3.db, the other entries as written 2026-11-11); written by tools/v3/repeats/repeats.py manifest from v3.db (read-only); read by the site's Experiments page (Repeat checks)
+ delete when: never while the Experiments page shows the Repeat checks (the page reads the manifest)
+ written: 2026-11-11 (Can #3774)
+diff --git a/mailbox/repeats/manifest-2026-11-11.json b/mailbox/repeats/manifest-2026-11-11.json
+index 3f66213..0bfb35d 100644
+--- a/mailbox/repeats/manifest-2026-11-11.json
++++ b/mailbox/repeats/manifest-2026-11-11.json
+@@ -14563,6 +14563,2248 @@
+      "blocked_today": null
+     }
+    ]
++  },
++  {
++   "id": "gemini-decision-1-r1",
++   "run_id": "repeat-2026-11-12-gemini-decision-1-r1",
++   "name": "Gemini Decision 1 [repeat 1]",
++   "display": "Gemini Decision 1",
++   "original": "Gemini Decision 1",
++   "original_player_id": 67,
++   "original_league": 26,
++   "original_stage": "late-entry",
++   "status": "queued",
++   "hold": null,
++   "prepared": "2026-11-12",
++   "started": null,
++   "finished": null,
++   "league_config": "tools/v3/repeats/leagues/gemini-decision-1-r1.json",
++   "status_file": "mailbox/repeats/gemini-decision-1-r1 - status.md",
++   "runner": {
++    "binary": "/home/cbasaran/code/jevgammon/target/pinned-gemini/release/jevgammon",
++    "binary_sha256": "0bf67bc35ca864250a16a63ce5b608c68f8d6b62c12a5714e1b975979473dc7f",
++    "tree": "/home/cbasaran/code/jevgammon-runner-gemini",
++    "commit": "cb669a0",
++    "commit_full": "cb669a08c29689a0846bcdf2596ae9c4fc043e22",
++    "src_tree": "a1a82e60e4951dffab6ded8a7bd56269a14dd3cf",
++    "build": {
++     "command": "cd /home/cbasaran/code/jevgammon-runner-gemini && CARGO_TARGET_DIR=/home/cbasaran/code/jevgammon/target/pinned-gemini cargo build --release --locked",
++     "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14), cargo 1.97.1 (c980f4866 2026-06-30)",
++     "built": "2026-11-12T12:57Z",
++     "tree": "git worktree add -b pinned-late-gemini /home/cbasaran/code/jevgammon-runner-gemini 0e66836; cherry-pick dab6da5 1b234da c0b58f3 38024d6; checkout --detach (clean; only the untracked METADATA.worktree added)"
++    },
++    "inputs": {
++     "Cargo.toml": "bf64a9f15bd33cd3f5d517dc984140ff38fb9ec93c5d3a50eb0971f658c0ed4b",
++     "Cargo.lock": "d7048551c8907fd02c85f7ac8d8d2ffdc088ae4848bf313fc3c0f6e070d88494",
++     "tools/gnubg_player.py": "085601d706df41ddec7f1732428a2366c157aa58bb8e514b1cf1dd1b0f3f3aab",
++     "tools/v3/engine.py": "511ab4b2490732632f7e810f2e3da616fb5da4cd91d75eb2cf1ac4604e50e046",
++     "tools/v3/rules.py": "18dd032837ff061f64d2af32a5e7e813ad187b64f28a5a6e139f7695202f8480",
++     "tools/v3/order_vectors.json": "9efbb3ada083c02c51bdf74e539d48ee61b2f49e8d2f0fe58e29db8c6d8cb499",
++     "prompts/bg-v2.md": "3c59036a1f416f6187ccec06ec939e4d888a2029441daf30f6ee06a69015c465",
++     "prompts/nack-v2.md": "fa7397be6e9a7d337389a401d61464464bcbbe5725b8a2c70e01e6cb670395a8",
++     "prompts/bg-v3-std-notable.md": "1a145a09713fdd694696cb16d826406711567394697f0938300c285e4cba703f",
++     "prompts/bg-v3-nack.md": "13c744f06613f4051888af99bf9d1692011cb95d6f301c1898f94e13d67fef33",
++     "prompts/instructions.txt": "445735bf10ff30e4cc7f1a90dbeaa0c8858f0cf0b7bfe3f9dd3a0da1f1f0ec2d",
++     "prompts/instructions-notation.txt": "8565178e44a566f703fe1443f028ab2877d3d931b9ddef43547b92f9d1a7acdb",
++     "prompts/question.txt": "ef76def6baccec519ff9515c66b41d4c233b8e2927acf18115ad1e2e494211dc",
++     "prompts/letter-system.txt": "21059b268bae257dab3aa7f608d1545d9d6a610f6f2782fc4baa84e728a6c82e",
++     "prompts/prediction.txt": "cf3b989784a3b815fe1440589e2f212acc4e106ec4fe1e784d256ab58b128725",
++     "prompts/prediction-system.txt": "4d08045b72eeedc28602af09f82475a60bac768819d40a00a50601a661da332f",
++     "src/league/testdata/repeat_originals.json": "1e8611f27444c8e2429cd0998475dba52e5e21bdbd67e22ee51cfd282101a994",
++     "src/players/testdata/league8_request.json": "a285c55eb6e76c959801ec314305d0ee193131a2658da49926c9c73eccbee818"
++    },
++    "original": "two builds: dab6da5 (clean) for #993-#1013 and the aborted #1016 (every decision before 21:46:31Z), 38024d6 (clean; map-check v2) for #1053-#1063"
++   },
++   "attempts": [
++    {
++     "league": null,
++     "runner": {
++      "commit": "cb669a0",
++      "commit_full": "cb669a08c29689a0846bcdf2596ae9c4fc043e22",
++      "binary_sha256": "0bf67bc35ca864250a16a63ce5b608c68f8d6b62c12a5714e1b975979473dc7f"
++     }
++    }
++   ],
++   "rules": {
++    "rounds": 3,
++    "clock_seconds": null,
++    "delay_seconds": null,
++    "max_turns": 300,
++    "prompt_version": "bg-v2",
++    "order_seed": 1190975713392774006,
++    "order_seed_u64": "1190975713392774006",
++    "mirror_concurrent": true,
++    "start_position": null
++   },
++   "settings_original": {
++    "name": "Gemini Decision 1",
++    "spec": "openrouter-decisions/google/gemini-decision-1",
++    "provider": "openrouter (google ai studio)",
++    "request": {
++     "provider": {
++      "only": [
++       "google-ai-studio"
++      ],
++      "allow_fallbacks": false
++     }
++    },
++    "price": {
++     "input_per_mtok": 0.1,
++     "output_per_mtok": 0.0
++    },
++    "note": "Google's Gemini Decision 1 (gemini-decision-1, launched 11 Nov 2026) through OpenRouter's System One route (/api/v1/systemone, model google/gemini-decision-1; replies name google/gemini-decision-1-20261111), pinned to its one provider, Google AI Studio, with fallbacks off (provider.only [google-ai-studio], allow_fallbacks false). List price $0.10 per million input tokens, no output tokens (openrouter.ai/google/gemini-decision-1 and aistudio.google.com/docs/pricing, 11 Nov 2026); latency includes OpenRouter's own time. One choice question per request with up to 255 options (the API's limit; longer lists split by the league's rule); context 262,144 tokens, refused with 400 above it, never cut: League 1's largest stored request (229 options, 57,539 bytes) was 26,133 input tokens at the smoke test. The API sorts option keys alphabetically (UTF-8 bytes) before evaluation, so the model reads the options in that order, not the seeded one (aistudio.google.com/docs/decisions-api#choice). OpenRouter answers some 429s (Google's per-tier token limit): retried as on every route.",
++    "parallel": 1,
++    "max_matches": 1
++   },
++   "settings_repeat": {
++    "name": "Gemini Decision 1 [repeat 1]",
++    "spec": "openrouter-decisions/google/gemini-decision-1",
++    "provider": "openrouter (google ai studio)",
++    "request": {
++     "provider": {
++      "only": [
++       "google-ai-studio"
++      ],
++      "allow_fallbacks": false
++     }
++    },
++    "price": {
++     "input_per_mtok": 0.1,
++     "output_per_mtok": 0.0
++    },
++    "note": "Google's Gemini Decision 1 (gemini-decision-1, launched 11 Nov 2026) through OpenRouter's System One route (/api/v1/systemone, model google/gemini-decision-1; replies name google/gemini-decision-1-20261111), pinned to its one provider, Google AI Studio, with fallbacks off (provider.only [google-ai-studio], allow_fallbacks false). List price $0.10 per million input tokens, no output tokens (openrouter.ai/google/gemini-decision-1 and aistudio.google.com/docs/pricing, 11 Nov 2026); latency includes OpenRouter's own time. One choice question per request with up to 255 options (the API's limit; longer lists split by the league's rule); context 262,144 tokens, refused with 400 above it, never cut: League 1's largest stored request (229 options, 57,539 bytes) was 26,133 input tokens at the smoke test. The API sorts option keys alphabetically (UTF-8 bytes) before evaluation, so the model reads the options in that order, not the seeded one (aistudio.google.com/docs/decisions-api#choice). OpenRouter answers some 429s (Google's per-tier token limit): retried as on every route. Reproducibility repeat 1 (gemini-decision-1-r1; tools/v3/repeats, mailbox/repeats/manifest-2026-11-11.json): the original's League 1 field again, one match at a time, each pair with its original match's seed and seats; held: in no standings, table, Cup input or other setup's numbers.",
++    "parallel": 1,
++    "max_matches": 1
++   },
++   "settings_changed": [
++    "name",
++    "note"
++   ],
++   "server": {
++    "kind": "api",
++    "mib": 0,
++    "health": null,
++    "smoke": "curl -fsS -m 20 https://openrouter.ai/api/v1/models/google/gemini-decision-1/endpoints | python3 -c 'import json,sys; e=json.load(sys.stdin)[\"data\"][\"endpoints\"]; ok=(len(e) == 1 and e[0][\"tag\"] == \"google-ai-studio\" and e[0][\"status\"] == 0 and float(e[0][\"pricing\"][\"prompt\"]) == 1e-7 and float(e[0][\"pricing\"][\"completion\"]) == 0); print(\"listed as pinned: one endpoint google-ai-studio, up, $0.10/$0\" if ok else e); sys.exit(not ok)'",
++    "provenance": "Google's Gemini Decision 1 through OpenRouter's System One route (openrouter-decisions/google/gemini-decision-1; replies name google/gemini-decision-1-20261111), provider pinned to google-ai-studio, fallbacks off (players.settings request), OPENROUTER_API_KEY in ~/.keys; smoke = the original's listed() check (one endpoint, Google AI Studio, up, $0.10/M input, $0 output; listed so on 2026-11-12T13:00Z)",
++    "measured": "none (hosted)",
++    "start": null,
++    "stop": null
++   },
++   "coverage_original": {
++    "played": 17,
++    "of": 19,
++    "not_played": [
++     {
++      "opponent": "GPT-6 Luna",
++      "match": null,
++      "reason": "not required (Ümit #5220); never scheduled: OpenAI Decisions out of credit (start.sh: deferred)"
++     },
++     {
++      "opponent": "Mercury Decide",
++      "match": 1016,
++      "reason": "not required (Ümit #5220); #1016 aborted at its start, no game: no OpenRouter endpoint for inception/mercury-decide"
++     }
++    ]
++   },
++   "coverage_repeat_today": {
++    "playable": 17,
++    "of": 19,
++    "blocked": [],
++    "not_in_original": [
++     {
++      "opponent": "GPT-6 Luna",
++      "reason": "not required (Ümit #5220); never scheduled: OpenAI Decisions out of credit (start.sh: deferred)",
++      "today": "no credit: OpenAI Decisions answers 429 'no credits remaining' (Drex #829/#835/#846/#886, REAX, Muse Ember and KnowLine runs: deferred); a top-up needs Can"
++     },
++     {
++      "opponent": "Mercury Decide",
++      "reason": "not required (Ümit #5220); #1016 aborted at its start, no game: no OpenRouter endpoint for inception/mercury-decide",
++      "today": "no OpenRouter endpoint: 404 'No endpoints found for inception/mercury-decide' at warm-up (Muse Ember #932, 2026-11-10 15:57 UTC; KnowLine #946, 2026-11-10 23:55 UTC)"
++     }
++    ],
++    "unpinned": [
++     "GPT-6 Luna",
++     "Mercury Decide"
++    ]
++   },
++   "coverage_required": {
++    "rule": "GPT-6 Luna and Mercury Decide pairs are not required (Ümit #5220)",
++    "required": 17,
++    "history_played": 17,
++    "pinned": 17,
++    "playable_today": 17,
++    "matched_fixtures": 17,
++    "not_required": [
++     {
++      "opponent": "GPT-6 Luna",
++      "match": null,
++      "reason": "not required (Ümit #5220); never scheduled: OpenAI Decisions out of credit (start.sh: deferred)"
++     },
++     {
++      "opponent": "Mercury Decide",
++      "match": 1016,
++      "reason": "not required (Ümit #5220); #1016 aborted at its start, no game: no OpenRouter endpoint for inception/mercury-decide"
++     }
++    ],
++    "missing": {
++     "history": [],
++     "pins": [],
++     "today": [],
++     "fixtures": []
++    }
++   },
++   "cost_basis": {
++    "method": "Each playable pair's billed cost in the original match: the paid opponent's recorded cost_usd (Fastino GLiDE: input tokens x $0.04/M), plus Gemini Decision 1's own recorded cost_usd (OpenRouter usage.cost, $0.10/M input); local setups and programs bill nothing.",
++    "pairs": {
++     "Fastino GLiDE": {
++      "opponent": 0.0117,
++      "original": 0.0296
++     },
++     "Celeris-1 Decision": {
++      "opponent": 0.0155,
++      "original": 0.0419
++     },
++     "GNUbg weak": {
++      "opponent": null,
++      "original": 0.0272
++     },
++     "Random": {
++      "opponent": null,
++      "original": 0.0199
++     },
++     "Safest": {
++      "opponent": null,
++      "original": 0.049
++     },
++     "Liquid d1-ultra": {
++      "opponent": 0.0169,
++      "original": 0.0534
++     },
++     "Jev 1.14.0": {
++      "opponent": 0.0207,
++      "original": 0.0486
++     },
++     "Jev 1.13.0": {
++      "opponent": 0.0166,
++      "original": 0.043
++     },
++     "SubQ Snap Preview": {
++      "opponent": 0.0208,
++      "original": 0.044
++     },
++     "Cygnet (Gemma 4 12B)": {
++      "opponent": null,
++      "original": 0.0276
++     },
++     "Winnow-12B": {
++      "opponent": null,
++      "original": 0.0437
++     },
++     "Decider Flash v1.2": {
++      "opponent": null,
++      "original": 0.016
++     },
++     "Decider v1.2 27B": {
++      "opponent": null,
++      "original": 0.0481
++     },
++     "Fastino GLiDE v1.2 (local)": {
++      "opponent": null,
++      "original": 0.0377
++     },
++     "Clef": {
++      "opponent": null,
++      "original": 0.0352
++     },
++     "Open-Jev 27B v1.1": {
++      "opponent": null,
++      "original": 0.041
++     },
++     "Decider v1.1 27B": {
++      "opponent": null,
++      "original": 0.0456
++     }
++    },
++    "estimate_usd": 0.7537,
++    "opponents_usd": 0.1022,
++    "entrant_usd": 0.6515,
++    "cap_usd": 3.8181,
++    "cap_basis": "Gemini Decision 1's entry cap: $5.00 (entrant + paid opponents; tools/v3/late-gemini-decision/start.sh), of which its guard recorded $1.1819 at the entry's end (workspace/late-gemini-decision/state/guard.log, 2026-11-11T22:12:14Z; it billed every late-entry match from #993, other entries' paid opponents included); the repeat's guard stops at the remaining $3.8181 of the repeat's own bill."
++   },
++   "time": {
++    "method": "Sum of each playable pair's original match duration (start to finish; the originals ran several matches at once, so one at a time is about this or less), plus server starts.",
++    "minutes_matches": {
++     "program": 7.0,
++     "api": 18.9,
++     "local": 15.8
++    },
++    "minutes_total_matches": 41.7,
++    "server_starts": "entrant: none (hosted); each local opponent 1-5 min (state logs of the originals)"
++   },
++   "gpu_plan": {
++    "entrant_mib": 0,
++    "entrant_measured": "none (hosted)",
++    "fits_beside_entrant": [
++     "Decider Flash v1.2",
++     "Winnow-12B",
++     "Cygnet (Gemma 4 12B)",
++     "Decider v1.1 27B",
++     "Decider v1.2 27B",
++     "Fastino GLiDE v1.2 (local)",
++     "Open-Jev 27B v1.1",
++     "Clef"
++    ],
++    "needs_second_gpu": [],
++    "note": "Gemini Decision 1 is hosted (no card of its own); its 8 local opponents run one at a time on a second card, OPP_GPU, with room for the largest (Clef, 53,144 MiB + 2,000), as in its original (bariton GPU 2, reservation r_82bfcd93782c)."
++   },
++   "differences": [
++    "Name: '<original> [repeat 1]', a new players row; settings otherwise as the original's (the changed fields are listed under Settings); one match at a time, as the original (start.sh, max_matches 1).",
++    "Runner: the original ran dab6da5 (clean) for its first stage (#993-#1013) and 38024d6 (clean; map-check v2 and the raw_entries decoder) for its local stage (#1053-#1063), both on origin/main's runner line (ca112dc); the repeat runs cb669a0 (branch pinned-late-gemini): the repeats' runner 0e66836 (late-reax line with the pinned-pairs change 4ca4f08 and admit) with those four runner commits cherry-picked. late-reax adds decision clients (reax, baselabs, drex, nace) and a budget ledger for them, none used by this field; the same prompt version, option-order seed and rules.",
++    "Map check: map-check v2 (a probability map that is not exactly the shown ids, finite in [0, 1], summing to 1 within 1e-6, stores no probabilities; the returned choice is still played) applies to every repeat pair; the original's first-stage pairs (#993-#1013, dab6da5) ran without it. Plays are not affected; a first-stage pair can store probabilities in the original where the repeat stores none.",
++    "Hosted model: Gemini Decision 1 is served by Google AI Studio through OpenRouter; whether the model behind google/gemini-decision-1 changed since 2026-11-11 can only be read from the replies' model echo (the original's: google/gemini-decision-1-20261111 on all 1,704 decisions).",
++    "Route check: the original's guard re-checked OpenRouter's listing every minute (3 failures stopped it); the repeat checks it once before the first match (smoke). Fallbacks stay off, so a changed endpoint fails requests rather than rerouting them.",
++    "Cap: the original's $5 entry cap with $1.1819 recorded; the repeat's guard stops at the remaining $3.8181 (see cost_basis)."
++   ],
++   "start": [
++    "systemd-run --user --unit=repeat-gemini-decision-1-r1 --working-directory=/home/cbasaran/code/jevgammon -E OPP_GPU=<second card> -E RES=<reservation> /home/cbasaran/code/jevgammon-launcher-gemini/tools/v3/repeats/run.sh gemini-decision-1-r1"
++   ],
++   "pairs": [
++    {
++     "opponent": "Fastino GLiDE",
++     "kind": "api",
++     "original_match": 993,
++     "status": "finished",
++     "error": null,
++     "seed": -8439208352951700166,
++     "seed_u64": "10007535720757851450",
++     "original_is_player1": false,
++     "model1": "Fastino GLiDE",
++     "model2": "Gemini Decision 1",
++     "rules": {
++      "rounds": 3,
++      "clock_seconds": null,
++      "delay_seconds": null,
++      "max_turns": 300,
++      "prompt_version": "bg-v2",
++      "order_seed": 1190975713392774006,
++      "order_seed_u64": "1190975713392774006",
++      "mirror_concurrent": true,
++      "start_position": null
++     },
++     "harness": {
++      "commit": "dab6da5e5cf2f7143b414a8e0443bb05f06613e6",
++      "dirty": false
++     },
++     "started": "2026-11-11T19:28:30.308Z",
++     "finished": "2026-11-11T19:30:16.674Z",
++     "minutes": 1.8,
++     "score_for": 5,
++     "score_against": 1,
++     "games": [
++      {
++       "round": 1,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": -478481622996441366,
++       "dice_seed_u64": "17968262450713110250",
++       "opening": [
++        2,
++        3
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 38
++      },
++      {
++       "round": 1,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": -478481622996441366,
++       "dice_seed_u64": "17968262450713110250",
++       "opening": [
++        2,
++        3
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 38
++      },
++      {
++       "round": 2,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": -8304294188203388958,
++       "dice_seed_u64": "10142449885506162658",
++       "opening": [
++        4,
++        3
++       ],
++       "result": "gammon",
++       "points": 2,
++       "turns": 36
++      },
++      {
++       "round": 2,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": -8304294188203388958,
++       "dice_seed_u64": "10142449885506162658",
++       "opening": [
++        4,
++        3
++       ],
++       "result": "gammon",
++       "points": 2,
++       "turns": 51
++      }
++     ],
++     "decisions": {
++      "original": 70,
++      "opponent": 66
++     },
++     "billed_usd": {
++      "opponent": 0.0117,
++      "original": 0.0296
++     },
++     "blocked_today": null
++    },
++    {
++     "opponent": "Celeris-1 Decision",
++     "kind": "api",
++     "original_match": 994,
++     "status": "finished",
++     "error": null,
++     "seed": -3967054153038515202,
++     "seed_u64": "14479689920671036414",
++     "original_is_player1": false,
++     "model1": "Celeris-1 Decision",
++     "model2": "Gemini Decision 1",
++     "rules": {
++      "rounds": 3,
++      "clock_seconds": null,
++      "delay_seconds": null,
++      "max_turns": 300,
++      "prompt_version": "bg-v2",
++      "order_seed": 1190975713392774006,
++      "order_seed_u64": "1190975713392774006",
++      "mirror_concurrent": true,
++      "start_position": null
++     },
++     "harness": {
++      "commit": "dab6da5e5cf2f7143b414a8e0443bb05f06613e6",
++      "dirty": false
++     },
++     "started": "2026-11-11T19:30:17.052Z",
++     "finished": "2026-11-11T19:37:18.836Z",
++     "minutes": 7.0,
++     "score_for": 2,
++     "score_against": 6,
++     "games": [
++      {
++       "round": 1,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": 4774471836746111089,
++       "dice_seed_u64": "4774471836746111089",
++       "opening": [
++        5,
++        1
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 38
++      },
++      {
++       "round": 1,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": 4774471836746111089,
++       "dice_seed_u64": "4774471836746111089",
++       "opening": [
++        5,
++        1
++       ],
++       "result": "gammon",
++       "points": 2,
++       "turns": 38
++      },
++      {
++       "round": 2,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": -8033609562501193986,
++       "dice_seed_u64": "10413134511208357630",
++       "opening": [
++        5,
++        3
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 41
++      },
++      {
++       "round": 2,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": -8033609562501193986,
++       "dice_seed_u64": "10413134511208357630",
++       "opening": [
++        5,
++        3
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 54
++      },
++      {
++       "round": 3,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": -6225799121162104142,
++       "dice_seed_u64": "12220944952547447474",
++       "opening": [
++        4,
++        2
++       ],
++       "result": "gammon",
++       "points": 2,
++       "turns": 71
++      },
++      {
++       "round": 3,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": -6225799121162104142,
++       "dice_seed_u64": "12220944952547447474",
++       "opening": [
++        4,
++        2
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 41
++      }
++     ],
++     "decisions": {
++      "original": 113,
++      "opponent": 108
++     },
++     "billed_usd": {
++      "opponent": 0.0155,
++      "original": 0.0419
++     },
++     "blocked_today": null
++    },
++    {
++     "opponent": "GNUbg weak",
++     "kind": "program",
++     "original_match": 995,
++     "status": "finished",
++     "error": null,
++     "seed": -6820979344017237759,
++     "seed_u64": "11625764729692313857",
++     "original_is_player1": true,
++     "model1": "Gemini Decision 1",
++     "model2": "GNUbg weak",
++     "rules": {
++      "rounds": 3,
++      "clock_seconds": null,
++      "delay_seconds": null,
++      "max_turns": 300,
++      "prompt_version": "bg-v2",
++      "order_seed": 1190975713392774006,
++      "order_seed_u64": "1190975713392774006",
++      "mirror_concurrent": true,
++      "start_position": null
++     },
++     "harness": {
++      "commit": "dab6da5e5cf2f7143b414a8e0443bb05f06613e6",
++      "dirty": false
++     },
++     "started": "2026-11-11T19:37:19.189Z",
++     "finished": "2026-11-11T19:41:11.881Z",
++     "minutes": 3.9,
++     "score_for": 1,
++     "score_against": 5,
++     "games": [
++      {
++       "round": 1,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": 8003096018400754062,
++       "dice_seed_u64": "8003096018400754062",
++       "opening": [
++        1,
++        6
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 48
++      },
++      {
++       "round": 1,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": 8003096018400754062,
++       "dice_seed_u64": "8003096018400754062",
++       "opening": [
++        1,
++        6
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 44
++      },
++      {
++       "round": 2,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": -2412714017194416498,
++       "dice_seed_u64": "16034030056515135118",
++       "opening": [
++        5,
++        6
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 61
++      },
++      {
++       "round": 2,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": -2412714017194416498,
++       "dice_seed_u64": "16034030056515135118",
++       "opening": [
++        5,
++        6
++       ],
++       "result": "backgammon",
++       "points": 3,
++       "turns": 46
++      }
++     ],
++     "decisions": {
++      "original": 65,
++      "opponent": 82
++     },
++     "billed_usd": {
++      "opponent": null,
++      "original": 0.0272
++     },
++     "blocked_today": null
++    },
++    {
++     "opponent": "Random",
++     "kind": "program",
++     "original_match": 996,
++     "status": "finished",
++     "error": null,
++     "seed": -1311349055250242994,
++     "seed_u64": "17135395018459308622",
++     "original_is_player1": true,
++     "model1": "Gemini Decision 1",
++     "model2": "Random",
++     "rules": {
++      "rounds": 3,
++      "clock_seconds": null,
++      "delay_seconds": null,
++      "max_turns": 300,
++      "prompt_version": "bg-v2",
++      "order_seed": 1190975713392774006,
++      "order_seed_u64": "1190975713392774006",
++      "mirror_concurrent": true,
++      "start_position": null
++     },
++     "harness": {
++      "commit": "dab6da5e5cf2f7143b414a8e0443bb05f06613e6",
++      "dirty": false
++     },
++     "started": "2026-11-11T19:41:12.296Z",
++     "finished": "2026-11-11T19:42:09.985Z",
++     "minutes": 1.0,
++     "score_for": 5,
++     "score_against": 0,
++     "games": [
++      {
++       "round": 1,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": -6694175579581034542,
++       "dice_seed_u64": "11752568494128517074",
++       "opening": [
++        3,
++        6
++       ],
++       "result": "gammon",
++       "points": 2,
++       "turns": 70
++      },
++      {
++       "round": 1,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": -6694175579581034542,
++       "dice_seed_u64": "11752568494128517074",
++       "opening": [
++        3,
++        6
++       ],
++       "result": "backgammon",
++       "points": 3,
++       "turns": 47
++      }
++     ],
++     "decisions": {
++      "original": 49,
++      "opponent": 36
++     },
++     "billed_usd": {
++      "opponent": null,
++      "original": 0.0199
++     },
++     "blocked_today": null
++    },
++    {
++     "opponent": "Safest",
++     "kind": "program",
++     "original_match": 997,
++     "status": "finished",
++     "error": null,
++     "seed": -1375353948227140031,
++     "seed_u64": "17071390125482411585",
++     "original_is_player1": false,
++     "model1": "Safest",
++     "model2": "Gemini Decision 1",
++     "rules": {
++      "rounds": 3,
++      "clock_seconds": null,
++      "delay_seconds": null,
++      "max_turns": 300,
++      "prompt_version": "bg-v2",
++      "order_seed": 1190975713392774006,
++      "order_seed_u64": "1190975713392774006",
++      "mirror_concurrent": true,
++      "start_position": null
++     },
++     "harness": {
++      "commit": "dab6da5e5cf2f7143b414a8e0443bb05f06613e6",
++      "dirty": false
++     },
++     "started": "2026-11-11T19:42:10.321Z",
++     "finished": "2026-11-11T19:44:16.122Z",
++     "minutes": 2.1,
++     "score_for": 7,
++     "score_against": 1,
++     "games": [
++      {
++       "round": 1,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": 1065913632610385137,
++       "dice_seed_u64": "1065913632610385137",
++       "opening": [
++        5,
++        1
++       ],
++       "result": "gammon",
++       "points": 2,
++       "turns": 50
++      },
++      {
++       "round": 1,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": 1065913632610385137,
++       "dice_seed_u64": "1065913632610385137",
++       "opening": [
++        5,
++        1
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 51
++      },
++      {
++       "round": 2,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": 5445787529398632042,
++       "dice_seed_u64": "5445787529398632042",
++       "opening": [
++        2,
++        1
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 47
++      },
++      {
++       "round": 2,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": 5445787529398632042,
++       "dice_seed_u64": "5445787529398632042",
++       "opening": [
++        2,
++        1
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 45
++      },
++      {
++       "round": 3,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": -5411798764292545016,
++       "dice_seed_u64": "13034945309417006600",
++       "opening": [
++        6,
++        1
++       ],
++       "result": "gammon",
++       "points": 2,
++       "turns": 54
++      },
++      {
++       "round": 3,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": -5411798764292545016,
++       "dice_seed_u64": "13034945309417006600",
++       "opening": [
++        6,
++        1
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 53
++      }
++     ],
++     "decisions": {
++      "original": 131,
++      "opponent": 119
++     },
++     "billed_usd": {
++      "opponent": null,
++      "original": 0.049
++     },
++     "blocked_today": null
++    },
++    {
++     "opponent": "Liquid d1-ultra",
++     "kind": "api",
++     "original_match": 998,
++     "status": "finished",
++     "error": null,
++     "seed": 2513949857367392173,
++     "seed_u64": "2513949857367392173",
++     "original_is_player1": false,
++     "model1": "Liquid d1-ultra",
++     "model2": "Gemini Decision 1",
++     "rules": {
++      "rounds": 3,
++      "clock_seconds": null,
++      "delay_seconds": null,
++      "max_turns": 300,
++      "prompt_version": "bg-v2",
++      "order_seed": 1190975713392774006,
++      "order_seed_u64": "1190975713392774006",
++      "mirror_concurrent": true,
++      "start_position": null
++     },
++     "harness": {
++      "commit": "dab6da5e5cf2f7143b414a8e0443bb05f06613e6",
++      "dirty": false
++     },
++     "started": "2026-11-11T19:44:16.496Z",
++     "finished": "2026-11-11T19:48:23.162Z",
++     "minutes": 4.1,
++     "score_for": 4,
++     "score_against": 3,
++     "games": [
++      {
++       "round": 1,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": 6242605466276603311,
++       "dice_seed_u64": "6242605466276603311",
++       "opening": [
++        5,
++        3
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 50
++      },
++      {
++       "round": 1,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": 6242605466276603311,
++       "dice_seed_u64": "6242605466276603311",
++       "opening": [
++        5,
++        3
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 48
++      },
++      {
++       "round": 2,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": -2598361233239915180,
++       "dice_seed_u64": "15848382840469636436",
++       "opening": [
++        5,
++        6
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 66
++      },
++      {
++       "round": 2,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": -2598361233239915180,
++       "dice_seed_u64": "15848382840469636436",
++       "opening": [
++        5,
++        6
++       ],
++       "result": "gammon",
++       "points": 2,
++       "turns": 64
++      },
++      {
++       "round": 3,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": -8982751825913228165,
++       "dice_seed_u64": "9463992247796323451",
++       "opening": [
++        2,
++        1
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 72
++      },
++      {
++       "round": 3,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": -8982751825913228165,
++       "dice_seed_u64": "9463992247796323451",
++       "opening": [
++        2,
++        1
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 48
++      }
++     ],
++     "decisions": {
++      "original": 141,
++      "opponent": 130
++     },
++     "billed_usd": {
++      "opponent": 0.0169,
++      "original": 0.0534
++     },
++     "blocked_today": null
++    },
++    {
++     "opponent": "Jev 1.14.0",
++     "kind": "api",
++     "original_match": 999,
++     "status": "finished",
++     "error": null,
++     "seed": 648011024414861222,
++     "seed_u64": "648011024414861222",
++     "original_is_player1": true,
++     "model1": "Gemini Decision 1",
++     "model2": "Jev 1.14.0",
++     "rules": {
++      "rounds": 3,
++      "clock_seconds": null,
++      "delay_seconds": null,
++      "max_turns": 300,
++      "prompt_version": "bg-v2",
++      "order_seed": 1190975713392774006,
++      "order_seed_u64": "1190975713392774006",
++      "mirror_concurrent": true,
++      "start_position": null
++     },
++     "harness": {
++      "commit": "dab6da5e5cf2f7143b414a8e0443bb05f06613e6",
++      "dirty": false
++     },
++     "started": "2026-11-11T19:48:23.541Z",
++     "finished": "2026-11-11T19:51:40.712Z",
++     "minutes": 3.3,
++     "score_for": 6,
++     "score_against": 2,
++     "games": [
++      {
++       "round": 1,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": -6492893736598256231,
++       "dice_seed_u64": "11953850337111295385",
++       "opening": [
++        6,
++        3
++       ],
++       "result": "gammon",
++       "points": 2,
++       "turns": 47
++      },
++      {
++       "round": 1,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": -6492893736598256231,
++       "dice_seed_u64": "11953850337111295385",
++       "opening": [
++        6,
++        3
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 50
++      },
++      {
++       "round": 2,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": 1802554441676184724,
++       "dice_seed_u64": "1802554441676184724",
++       "opening": [
++        5,
++        1
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 48
++      },
++      {
++       "round": 2,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": 1802554441676184724,
++       "dice_seed_u64": "1802554441676184724",
++       "opening": [
++        5,
++        1
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 48
++      },
++      {
++       "round": 3,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": 8992084255544168648,
++       "dice_seed_u64": "8992084255544168648",
++       "opening": [
++        2,
++        6
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 57
++      },
++      {
++       "round": 3,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": 8992084255544168648,
++       "dice_seed_u64": "8992084255544168648",
++       "opening": [
++        2,
++        6
++       ],
++       "result": "gammon",
++       "points": 2,
++       "turns": 49
++      }
++     ],
++     "decisions": {
++      "original": 122,
++      "opponent": 119
++     },
++     "billed_usd": {
++      "opponent": 0.0207,
++      "original": 0.0486
++     },
++     "blocked_today": null
++    },
++    {
++     "opponent": "Jev 1.13.0",
++     "kind": "api",
++     "original_match": 1005,
++     "status": "finished",
++     "error": null,
++     "seed": -9031130508201491509,
++     "seed_u64": "9415613565508060107",
++     "original_is_player1": true,
++     "model1": "Gemini Decision 1",
++     "model2": "Jev 1.13.0",
++     "rules": {
++      "rounds": 3,
++      "clock_seconds": null,
++      "delay_seconds": null,
++      "max_turns": 300,
++      "prompt_version": "bg-v2",
++      "order_seed": 1190975713392774006,
++      "order_seed_u64": "1190975713392774006",
++      "mirror_concurrent": true,
++      "start_position": null
++     },
++     "harness": {
++      "commit": "dab6da5e5cf2f7143b414a8e0443bb05f06613e6",
++      "dirty": false
++     },
++     "started": "2026-11-11T19:51:41.050Z",
++     "finished": "2026-11-11T19:53:31.421Z",
++     "minutes": 1.8,
++     "score_for": 3,
++     "score_against": 5,
++     "games": [
++      {
++       "round": 1,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": -1197176665720386177,
++       "dice_seed_u64": "17249567407989165439",
++       "opening": [
++        4,
++        2
++       ],
++       "result": "gammon",
++       "points": 2,
++       "turns": 45
++      },
++      {
++       "round": 1,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": -1197176665720386177,
++       "dice_seed_u64": "17249567407989165439",
++       "opening": [
++        4,
++        2
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 59
++      },
++      {
++       "round": 2,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": 5957481936406026177,
++       "dice_seed_u64": "5957481936406026177",
++       "opening": [
++        1,
++        4
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 42
++      },
++      {
++       "round": 2,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": 5957481936406026177,
++       "dice_seed_u64": "5957481936406026177",
++       "opening": [
++        1,
++        4
++       ],
++       "result": "gammon",
++       "points": 2,
++       "turns": 40
++      },
++      {
++       "round": 3,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": -4585925909850535964,
++       "dice_seed_u64": "13860818163859015652",
++       "opening": [
++        6,
++        1
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 40
++      },
++      {
++       "round": 3,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": -4585925909850535964,
++       "dice_seed_u64": "13860818163859015652",
++       "opening": [
++        6,
++        1
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 45
++      }
++     ],
++     "decisions": {
++      "original": 111,
++      "opponent": 103
++     },
++     "billed_usd": {
++      "opponent": 0.0166,
++      "original": 0.043
++     },
++     "blocked_today": null
++    },
++    {
++     "opponent": "SubQ Snap Preview",
++     "kind": "api",
++     "original_match": 1013,
++     "status": "finished",
++     "error": null,
++     "seed": -7579663183529449303,
++     "seed_u64": "10867080890180102313",
++     "original_is_player1": false,
++     "model1": "SubQ Snap Preview",
++     "model2": "Gemini Decision 1",
++     "rules": {
++      "rounds": 3,
++      "clock_seconds": null,
++      "delay_seconds": null,
++      "max_turns": 300,
++      "prompt_version": "bg-v2",
++      "order_seed": 1190975713392774006,
++      "order_seed_u64": "1190975713392774006",
++      "mirror_concurrent": true,
++      "start_position": null
++     },
++     "harness": {
++      "commit": "dab6da5e5cf2f7143b414a8e0443bb05f06613e6",
++      "dirty": false
++     },
++     "started": "2026-11-11T19:53:31.735Z",
++     "finished": "2026-11-11T19:54:26.228Z",
++     "minutes": 0.9,
++     "score_for": 1,
++     "score_against": 5,
++     "games": [
++      {
++       "round": 1,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": 2460056948506255726,
++       "dice_seed_u64": "2460056948506255726",
++       "opening": [
++        2,
++        6
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 52
++      },
++      {
++       "round": 1,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": 2460056948506255726,
++       "dice_seed_u64": "2460056948506255726",
++       "opening": [
++        2,
++        6
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 47
++      },
++      {
++       "round": 2,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": 6894671203927653213,
++       "dice_seed_u64": "6894671203927653213",
++       "opening": [
++        1,
++        6
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 43
++      },
++      {
++       "round": 2,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": 6894671203927653213,
++       "dice_seed_u64": "6894671203927653213",
++       "opening": [
++        1,
++        6
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 43
++      },
++      {
++       "round": 3,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": 1300642267375700331,
++       "dice_seed_u64": "1300642267375700331",
++       "opening": [
++        5,
++        2
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 47
++      },
++      {
++       "round": 3,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": 1300642267375700331,
++       "dice_seed_u64": "1300642267375700331",
++       "opening": [
++        5,
++        2
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 48
++      }
++     ],
++     "decisions": {
++      "original": 124,
++      "opponent": 121
++     },
++     "billed_usd": {
++      "opponent": 0.0208,
++      "original": 0.044
++     },
++     "blocked_today": null
++    },
++    {
++     "opponent": "Cygnet (Gemma 4 12B)",
++     "kind": "local",
++     "original_match": 1053,
++     "status": "finished",
++     "error": null,
++     "seed": 8544814846323426751,
++     "seed_u64": "8544814846323426751",
++     "original_is_player1": true,
++     "model1": "Gemini Decision 1",
++     "model2": "Cygnet (Gemma 4 12B)",
++     "rules": {
++      "rounds": 3,
++      "clock_seconds": null,
++      "delay_seconds": null,
++      "max_turns": 300,
++      "prompt_version": "bg-v2",
++      "order_seed": 1190975713392774006,
++      "order_seed_u64": "1190975713392774006",
++      "mirror_concurrent": true,
++      "start_position": null
++     },
++     "harness": {
++      "commit": "38024d6a6becfe13eaac3001b913eda6481582d9",
++      "dirty": false
++     },
++     "started": "2026-11-11T21:48:59.594Z",
++     "finished": "2026-11-11T21:49:24.181Z",
++     "minutes": 0.4,
++     "score_for": 6,
++     "score_against": 0,
++     "games": [
++      {
++       "round": 1,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": -1431392200445807319,
++       "dice_seed_u64": "17015351873263744297",
++       "opening": [
++        5,
++        1
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 49
++      },
++      {
++       "round": 1,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": -1431392200445807319,
++       "dice_seed_u64": "17015351873263744297",
++       "opening": [
++        5,
++        1
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 46
++      },
++      {
++       "round": 2,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": 4674814127954098382,
++       "dice_seed_u64": "4674814127954098382",
++       "opening": [
++        6,
++        2
++       ],
++       "result": "gammon",
++       "points": 2,
++       "turns": 43
++      },
++      {
++       "round": 2,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": 4674814127954098382,
++       "dice_seed_u64": "4674814127954098382",
++       "opening": [
++        6,
++        2
++       ],
++       "result": "gammon",
++       "points": 2,
++       "turns": 36
++      }
++     ],
++     "decisions": {
++      "original": 72,
++      "opponent": 67
++     },
++     "billed_usd": {
++      "opponent": null,
++      "original": 0.0276
++     },
++     "blocked_today": null
++    },
++    {
++     "opponent": "Winnow-12B",
++     "kind": "local",
++     "original_match": 1055,
++     "status": "finished",
++     "error": null,
++     "seed": 6230572666778943291,
++     "seed_u64": "6230572666778943291",
++     "original_is_player1": true,
++     "model1": "Gemini Decision 1",
++     "model2": "Winnow-12B",
++     "rules": {
++      "rounds": 3,
++      "clock_seconds": null,
++      "delay_seconds": null,
++      "max_turns": 300,
++      "prompt_version": "bg-v2",
++      "order_seed": 1190975713392774006,
++      "order_seed_u64": "1190975713392774006",
++      "mirror_concurrent": true,
++      "start_position": null
++     },
++     "harness": {
++      "commit": "38024d6a6becfe13eaac3001b913eda6481582d9",
++      "dirty": false
++     },
++     "started": "2026-11-11T21:50:25.757Z",
++     "finished": "2026-11-11T21:51:33.547Z",
++     "minutes": 1.1,
++     "score_for": 6,
++     "score_against": 1,
++     "games": [
++      {
++       "round": 1,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": -1902431341780927088,
++       "dice_seed_u64": "16544312731928624528",
++       "opening": [
++        4,
++        5
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 63
++      },
++      {
++       "round": 1,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": -1902431341780927088,
++       "dice_seed_u64": "16544312731928624528",
++       "opening": [
++        4,
++        5
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 39
++      },
++      {
++       "round": 2,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": 7215990982223462455,
++       "dice_seed_u64": "7215990982223462455",
++       "opening": [
++        1,
++        5
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 52
++      },
++      {
++       "round": 2,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": 7215990982223462455,
++       "dice_seed_u64": "7215990982223462455",
++       "opening": [
++        1,
++        5
++       ],
++       "result": "gammon",
++       "points": 2,
++       "turns": 47
++      },
++      {
++       "round": 3,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": 3400841021484602781,
++       "dice_seed_u64": "3400841021484602781",
++       "opening": [
++        4,
++        5
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 52
++      },
++      {
++       "round": 3,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": 3400841021484602781,
++       "dice_seed_u64": "3400841021484602781",
++       "opening": [
++        4,
++        5
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 47
++      }
++     ],
++     "decisions": {
++      "original": 124,
++      "opponent": 119
++     },
++     "billed_usd": {
++      "opponent": null,
++      "original": 0.0437
++     },
++     "blocked_today": null
++    },
++    {
++     "opponent": "Decider Flash v1.2",
++     "kind": "local",
++     "original_match": 1056,
++     "status": "finished",
++     "error": null,
++     "seed": 4283428565475450139,
++     "seed_u64": "4283428565475450139",
++     "original_is_player1": true,
++     "model1": "Gemini Decision 1",
++     "model2": "Decider Flash v1.2",
++     "rules": {
++      "rounds": 3,
++      "clock_seconds": null,
++      "delay_seconds": null,
++      "max_turns": 300,
++      "prompt_version": "bg-v2",
++      "order_seed": 1190975713392774006,
++      "order_seed_u64": "1190975713392774006",
++      "mirror_concurrent": true,
++      "start_position": null
++     },
++     "harness": {
++      "commit": "38024d6a6becfe13eaac3001b913eda6481582d9",
++      "dirty": false
++     },
++     "started": "2026-11-11T21:52:38.152Z",
++     "finished": "2026-11-11T21:52:57.413Z",
++     "minutes": 0.3,
++     "score_for": 5,
++     "score_against": 0,
++     "games": [
++      {
++       "round": 1,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": -2171937136388847515,
++       "dice_seed_u64": "16274806937320704101",
++       "opening": [
++        3,
++        1
++       ],
++       "result": "gammon",
++       "points": 2,
++       "turns": 43
++      },
++      {
++       "round": 1,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": -2171937136388847515,
++       "dice_seed_u64": "16274806937320704101",
++       "opening": [
++        3,
++        1
++       ],
++       "result": "backgammon",
++       "points": 3,
++       "turns": 44
++      }
++     ],
++     "decisions": {
++      "original": 36,
++      "opponent": 30
++     },
++     "billed_usd": {
++      "opponent": null,
++      "original": 0.016
++     },
++     "blocked_today": null
++    },
++    {
++     "opponent": "Decider v1.2 27B",
++     "kind": "local",
++     "original_match": 1057,
++     "status": "finished",
++     "error": null,
++     "seed": 8852768348427616659,
++     "seed_u64": "8852768348427616659",
++     "original_is_player1": false,
++     "model1": "Decider v1.2 27B",
++     "model2": "Gemini Decision 1",
++     "rules": {
++      "rounds": 3,
++      "clock_seconds": null,
++      "delay_seconds": null,
++      "max_turns": 300,
++      "prompt_version": "bg-v2",
++      "order_seed": 1190975713392774006,
++      "order_seed_u64": "1190975713392774006",
++      "mirror_concurrent": true,
++      "start_position": null
++     },
++     "harness": {
++      "commit": "38024d6a6becfe13eaac3001b913eda6481582d9",
++      "dirty": false
++     },
++     "started": "2026-11-11T21:54:02.259Z",
++     "finished": "2026-11-11T21:57:39.800Z",
++     "minutes": 3.6,
++     "score_for": 4,
++     "score_against": 2,
++     "games": [
++      {
++       "round": 1,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": -321622533512840079,
++       "dice_seed_u64": "18125121540196711537",
++       "opening": [
++        6,
++        1
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 55
++      },
++      {
++       "round": 1,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": -321622533512840079,
++       "dice_seed_u64": "18125121540196711537",
++       "opening": [
++        6,
++        1
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 49
++      },
++      {
++       "round": 2,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": 7279680269900006119,
++       "dice_seed_u64": "7279680269900006119",
++       "opening": [
++        3,
++        4
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 50
++      },
++      {
++       "round": 2,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": 7279680269900006119,
++       "dice_seed_u64": "7279680269900006119",
++       "opening": [
++        3,
++        4
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 40
++      },
++      {
++       "round": 3,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": -6056293745696001453,
++       "dice_seed_u64": "12390450328013550163",
++       "opening": [
++        2,
++        6
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 45
++      },
++      {
++       "round": 3,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": -6056293745696001453,
++       "dice_seed_u64": "12390450328013550163",
++       "opening": [
++        2,
++        6
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 54
++      }
++     ],
++     "decisions": {
++      "original": 126,
++      "opponent": 125
++     },
++     "billed_usd": {
++      "opponent": null,
++      "original": 0.0481
++     },
++     "blocked_today": null
++    },
++    {
++     "opponent": "Fastino GLiDE v1.2 (local)",
++     "kind": "local",
++     "original_match": 1060,
++     "status": "finished",
++     "error": null,
++     "seed": -1283630256318859179,
++     "seed_u64": "17163113817390692437",
++     "original_is_player1": true,
++     "model1": "Gemini Decision 1",
++     "model2": "Fastino GLiDE v1.2 (local)",
++     "rules": {
++      "rounds": 3,
++      "clock_seconds": null,
++      "delay_seconds": null,
++      "max_turns": 300,
++      "prompt_version": "bg-v2",
++      "order_seed": 1190975713392774006,
++      "order_seed_u64": "1190975713392774006",
++      "mirror_concurrent": true,
++      "start_position": null
++     },
++     "harness": {
++      "commit": "38024d6a6becfe13eaac3001b913eda6481582d9",
++      "dirty": false
++     },
++     "started": "2026-11-11T21:58:18.630Z",
++     "finished": "2026-11-11T22:00:32.474Z",
++     "minutes": 2.2,
++     "score_for": 5,
++     "score_against": 2,
++     "games": [
++      {
++       "round": 1,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": -4318039167422818964,
++       "dice_seed_u64": "14128704906286732652",
++       "opening": [
++        3,
++        5
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 47
++      },
++      {
++       "round": 1,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": -4318039167422818964,
++       "dice_seed_u64": "14128704906286732652",
++       "opening": [
++        3,
++        5
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 48
++      },
++      {
++       "round": 2,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": -6980990531937474498,
++       "dice_seed_u64": "11465753541772077118",
++       "opening": [
++        5,
++        3
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 45
++      },
++      {
++       "round": 2,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": -6980990531937474498,
++       "dice_seed_u64": "11465753541772077118",
++       "opening": [
++        5,
++        3
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 44
++      },
++      {
++       "round": 3,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": -7668695779446645307,
++       "dice_seed_u64": "10778048294262906309",
++       "opening": [
++        1,
++        3
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 40
++      },
++      {
++       "round": 3,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": -7668695779446645307,
++       "dice_seed_u64": "10778048294262906309",
++       "opening": [
++        1,
++        3
++       ],
++       "result": "gammon",
++       "points": 2,
++       "turns": 41
++      }
++     ],
++     "decisions": {
++      "original": 107,
++      "opponent": 105
++     },
++     "billed_usd": {
++      "opponent": null,
++      "original": 0.0377
++     },
++     "blocked_today": null
++    },
++    {
++     "opponent": "Clef",
++     "kind": "local",
++     "original_match": 1061,
++     "status": "finished",
++     "error": null,
++     "seed": 722099500426768079,
++     "seed_u64": "722099500426768079",
++     "original_is_player1": true,
++     "model1": "Gemini Decision 1",
++     "model2": "Clef",
++     "rules": {
++      "rounds": 3,
++      "clock_seconds": null,
++      "delay_seconds": null,
++      "max_turns": 300,
++      "prompt_version": "bg-v2",
++      "order_seed": 1190975713392774006,
++      "order_seed_u64": "1190975713392774006",
++      "mirror_concurrent": true,
++      "start_position": null
++     },
++     "harness": {
++      "commit": "38024d6a6becfe13eaac3001b913eda6481582d9",
++      "dirty": false
++     },
++     "started": "2026-11-11T22:01:35.878Z",
++     "finished": "2026-11-11T22:03:48.915Z",
++     "minutes": 2.2,
++     "score_for": 6,
++     "score_against": 1,
++     "games": [
++      {
++       "round": 1,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": -263030379778630765,
++       "dice_seed_u64": "18183713693930920851",
++       "opening": [
++        6,
++        2
++       ],
++       "result": "gammon",
++       "points": 2,
++       "turns": 75
++      },
++      {
++       "round": 1,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": -263030379778630765,
++       "dice_seed_u64": "18183713693930920851",
++       "opening": [
++        6,
++        2
++       ],
++       "result": "gammon",
++       "points": 2,
++       "turns": 44
++      },
++      {
++       "round": 2,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": 6009469611286875558,
++       "dice_seed_u64": "6009469611286875558",
++       "opening": [
++        3,
++        2
++       ],
++       "result": "gammon",
++       "points": 2,
++       "turns": 39
++      },
++      {
++       "round": 2,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": 6009469611286875558,
++       "dice_seed_u64": "6009469611286875558",
++       "opening": [
++        3,
++        2
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 57
++      }
++     ],
++     "decisions": {
++      "original": 90,
++      "opponent": 81
++     },
++     "billed_usd": {
++      "opponent": null,
++      "original": 0.0352
++     },
++     "blocked_today": null
++    },
++    {
++     "opponent": "Open-Jev 27B v1.1",
++     "kind": "local",
++     "original_match": 1062,
++     "status": "finished",
++     "error": null,
++     "seed": 4607018707599200037,
++     "seed_u64": "4607018707599200037",
++     "original_is_player1": true,
++     "model1": "Gemini Decision 1",
++     "model2": "Open-Jev 27B v1.1",
++     "rules": {
++      "rounds": 3,
++      "clock_seconds": null,
++      "delay_seconds": null,
++      "max_turns": 300,
++      "prompt_version": "bg-v2",
++      "order_seed": 1190975713392774006,
++      "order_seed_u64": "1190975713392774006",
++      "mirror_concurrent": true,
++      "start_position": null
++     },
++     "harness": {
++      "commit": "38024d6a6becfe13eaac3001b913eda6481582d9",
++      "dirty": false
++     },
++     "started": "2026-11-11T22:04:52.839Z",
++     "finished": "2026-11-11T22:08:19.110Z",
++     "minutes": 3.4,
++     "score_for": 5,
++     "score_against": 3,
++     "games": [
++      {
++       "round": 1,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": 4022980750666078229,
++       "dice_seed_u64": "4022980750666078229",
++       "opening": [
++        4,
++        6
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 46
++      },
++      {
++       "round": 1,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": 4022980750666078229,
++       "dice_seed_u64": "4022980750666078229",
++       "opening": [
++        4,
++        6
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 47
++      },
++      {
++       "round": 2,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": -8367992954857632054,
++       "dice_seed_u64": "10078751118851919562",
++       "opening": [
++        5,
++        6
++       ],
++       "result": "gammon",
++       "points": 2,
++       "turns": 37
++      },
++      {
++       "round": 2,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": -8367992954857632054,
++       "dice_seed_u64": "10078751118851919562",
++       "opening": [
++        5,
++        6
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 37
++      },
++      {
++       "round": 3,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": 7609823138235173632,
++       "dice_seed_u64": "7609823138235173632",
++       "opening": [
++        1,
++        6
++       ],
++       "result": "gammon",
++       "points": 2,
++       "turns": 44
++      },
++      {
++       "round": 3,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": 7609823138235173632,
++       "dice_seed_u64": "7609823138235173632",
++       "opening": [
++        1,
++        6
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 32
++      }
++     ],
++     "decisions": {
++      "original": 103,
++      "opponent": 103
++     },
++     "billed_usd": {
++      "opponent": null,
++      "original": 0.041
++     },
++     "blocked_today": null
++    },
++    {
++     "opponent": "Decider v1.1 27B",
++     "kind": "local",
++     "original_match": 1063,
++     "status": "finished",
++     "error": null,
++     "seed": -4626089546722447836,
++     "seed_u64": "13820654526987103780",
++     "original_is_player1": true,
++     "model1": "Gemini Decision 1",
++     "model2": "Decider v1.1 27B",
++     "rules": {
++      "rounds": 3,
++      "clock_seconds": null,
++      "delay_seconds": null,
++      "max_turns": 300,
++      "prompt_version": "bg-v2",
++      "order_seed": 1190975713392774006,
++      "order_seed_u64": "1190975713392774006",
++      "mirror_concurrent": true,
++      "start_position": null
++     },
++     "harness": {
++      "commit": "38024d6a6becfe13eaac3001b913eda6481582d9",
++      "dirty": false
++     },
++     "started": "2026-11-11T22:09:15.320Z",
++     "finished": "2026-11-11T22:11:49.810Z",
++     "minutes": 2.6,
++     "score_for": 4,
++     "score_against": 3,
++     "games": [
++      {
++       "round": 1,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": 6127745752977499858,
++       "dice_seed_u64": "6127745752977499858",
++       "opening": [
++        2,
++        6
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 58
++      },
++      {
++       "round": 1,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": 6127745752977499858,
++       "dice_seed_u64": "6127745752977499858",
++       "opening": [
++        2,
++        6
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 49
++      },
++      {
++       "round": 2,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": -1984027598031673626,
++       "dice_seed_u64": "16462716475677877990",
++       "opening": [
++        6,
++        5
++       ],
++       "result": "gammon",
++       "points": 2,
++       "turns": 42
++      },
++      {
++       "round": 2,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": -1984027598031673626,
++       "dice_seed_u64": "16462716475677877990",
++       "opening": [
++        6,
++        5
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 42
++      },
++      {
++       "round": 3,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": 1829393679788583373,
++       "dice_seed_u64": "1829393679788583373",
++       "opening": [
++        6,
++        5
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 46
++      },
++      {
++       "round": 3,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": 1829393679788583373,
++       "dice_seed_u64": "1829393679788583373",
++       "opening": [
++        6,
++        5
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 42
++      }
++     ],
++     "decisions": {
++      "original": 120,
++      "opponent": 115
++     },
++     "billed_usd": {
++      "opponent": null,
++      "original": 0.0456
++     },
++     "blocked_today": null
++    }
++   ]
+   }
+  ]
+ }
+diff --git a/tools/v3/repeats/METADATA b/tools/v3/repeats/METADATA
+index aeb59c9..f71983e 100644
+--- a/tools/v3/repeats/METADATA
++++ b/tools/v3/repeats/METADATA
+@@ -1,6 +1,6 @@
+ owner: jevgammon (agent; Can's backgammon project ~/code/jevgammon)
+ created: 2026-11-11
+-what: scripts of the reproducibility repeats of Base Labs Mammoth-1, Drex Max v1, REAX 1.3 and Liquid d1-ultra (repeats.py: manifest, league configs, seed pins, trigger, guard helpers, results; run.sh: one repeat, one match at a time, with the late entries' gates; run_league.sh; leagues/ID.json), branch 'repeat-checks'
+-reason: Ümit via Zeki, bus #4663, #4666, #4667, #4671; manifest mailbox/repeats/manifest-2026-11-11.json; prepared, not started
++what: scripts of the reproducibility repeats of Base Labs Mammoth-1, Drex Max v1, REAX 1.3, Liquid d1-ultra, Drex Max 1.1, Fastino GLiDE v1.2 (local) and Gemini Decision 1 (repeats.py: manifest, league configs, seed pins, trigger, guard helpers, results; run.sh: one repeat, one match at a time, with the late entries' gates; run_league.sh; leagues/ID.json), branch 'repeat-checks'
++reason: Ümit via Zeki, bus #4663, #4666, #4667, #4671, #4838, #5359 (Gemini Decision 1: prepared 2026-11-12, not started); manifest mailbox/repeats/manifest-2026-11-11.json
+ delete when: never on its own: it documents how the repeat matches in v3.db were played (as tools/v3/late-knowline)
+ written: 2026-11-11 (Can #3774)
+diff --git a/tools/v3/repeats/leagues/gemini-decision-1-r1.json b/tools/v3/repeats/leagues/gemini-decision-1-r1.json
+new file mode 100644
+index 0000000..2500b46
+--- /dev/null
++++ b/tools/v3/repeats/leagues/gemini-decision-1-r1.json
+@@ -0,0 +1,122 @@
++{
++  "note": "Reproducibility repeat 1 of Gemini Decision 1 (Ümit via Zeki, bus #5359 (Ümit #5220: GPT-6 Luna and Mercury Decide not required), #4710; run repeat-2026-11-12-gemini-decision-1-r1): Gemini Decision 1 [repeat 1] plays Gemini Decision 1's original League 1 field again, one match at a time, each pair pinned to its original match's seed and seating (pinned_pairs), the same option-order seed, prompt, rules and settings. Hidden league; matches stage 'late-entry' and the name held (tools/site/content/held_setups.json): in no standings, table, Cup input or other setup's numbers. mailbox/repeats/manifest-2026-11-11.json",
++  "prompt_version": "bg-v2",
++  "seed": 2567889193785291627,
++  "order_seed": 1190975713392774006,
++  "rounds": 3,
++  "clock": 0,
++  "delay": 30,
++  "max_turns": 300,
++  "mirror_concurrent": true,
++  "only_pairs_of": "Gemini Decision 1 [repeat 1]",
++  "hidden": true,
++  "pinned_pairs": {
++    "Fastino GLiDE": {
++      "seed": 10007535720757851450,
++      "seat_first": false
++    },
++    "Celeris-1 Decision": {
++      "seed": 14479689920671036414,
++      "seat_first": false
++    },
++    "GNUbg weak": {
++      "seed": 11625764729692313857,
++      "seat_first": true
++    },
++    "Random": {
++      "seed": 17135395018459308622,
++      "seat_first": true
++    },
++    "Safest": {
++      "seed": 17071390125482411585,
++      "seat_first": false
++    },
++    "Liquid d1-ultra": {
++      "seed": 2513949857367392173,
++      "seat_first": false
++    },
++    "Jev 1.14.0": {
++      "seed": 648011024414861222,
++      "seat_first": true
++    },
++    "Jev 1.13.0": {
++      "seed": 9415613565508060107,
++      "seat_first": true
++    },
++    "SubQ Snap Preview": {
++      "seed": 10867080890180102313,
++      "seat_first": false
++    },
++    "Cygnet (Gemma 4 12B)": {
++      "seed": 8544814846323426751,
++      "seat_first": true
++    },
++    "Winnow-12B": {
++      "seed": 6230572666778943291,
++      "seat_first": true
++    },
++    "Decider Flash v1.2": {
++      "seed": 4283428565475450139,
++      "seat_first": true
++    },
++    "Decider v1.2 27B": {
++      "seed": 8852768348427616659,
++      "seat_first": false
++    },
++    "Fastino GLiDE v1.2 (local)": {
++      "seed": 17163113817390692437,
++      "seat_first": true
++    },
++    "Clef": {
++      "seed": 722099500426768079,
++      "seat_first": true
++    },
++    "Open-Jev 27B v1.1": {
++      "seed": 4607018707599200037,
++      "seat_first": true
++    },
++    "Decider v1.1 27B": {
++      "seed": 13820654526987103780,
++      "seat_first": true
++    }
++  },
++  "players": [
++    {
++      "name": "Gemini Decision 1 [repeat 1]",
++      "spec": "openrouter-decisions/google/gemini-decision-1",
++      "provider": "openrouter (google ai studio)",
++      "request": {
++        "provider": {
++          "only": [
++            "google-ai-studio"
++          ],
++          "allow_fallbacks": false
++        }
++      },
++      "price": {
++        "input_per_mtok": 0.1,
++        "output_per_mtok": 0.0
++      },
++      "note": "Google's Gemini Decision 1 (gemini-decision-1, launched 11 Nov 2026) through OpenRouter's System One route (/api/v1/systemone, model google/gemini-decision-1; replies name google/gemini-decision-1-20261111), pinned to its one provider, Google AI Studio, with fallbacks off (provider.only [google-ai-studio], allow_fallbacks false). List price $0.10 per million input tokens, no output tokens (openrouter.ai/google/gemini-decision-1 and aistudio.google.com/docs/pricing, 11 Nov 2026); latency includes OpenRouter's own time. One choice question per request with up to 255 options (the API's limit; longer lists split by the league's rule); context 262,144 tokens, refused with 400 above it, never cut: League 1's largest stored request (229 options, 57,539 bytes) was 26,133 input tokens at the smoke test. The API sorts option keys alphabetically (UTF-8 bytes) before evaluation, so the model reads the options in that order, not the seeded one (aistudio.google.com/docs/decisions-api#choice). OpenRouter answers some 429s (Google's per-tier token limit): retried as on every route. Reproducibility repeat 1 (gemini-decision-1-r1; tools/v3/repeats, mailbox/repeats/manifest-2026-11-11.json): the original's League 1 field again, one match at a time, each pair with its original match's seed and seats; held: in no standings, table, Cup input or other setup's numbers.",
++      "parallel": 1,
++      "max_matches": 1
++    },
++    {
++      "name": "GNUbg weak",
++      "spec": "gnubg-weak",
++      "provider": "local",
++      "note": "gnubg 1.08 Beginner level (0-ply, deterministic noise 0.060)",
++      "parallel": 1
++    },
++    {
++      "name": "Random",
++      "spec": "random",
++      "provider": "local"
++    },
++    {
++      "name": "Safest",
++      "spec": "safest",
++      "provider": "local"
++    }
++  ]
++}
+diff --git a/tools/v3/repeats/repeats.py b/tools/v3/repeats/repeats.py
+index 7e1ab8b..b74f665 100755
+--- a/tools/v3/repeats/repeats.py
++++ b/tools/v3/repeats/repeats.py
+@@ -1,6 +1,6 @@
+ #!/usr/bin/env python3
+-"""Reproducibility repeats of six League 1 setups (Ümit via Zeki, bus #4663, #4666, #4667, #4671; #4838 Drex Max 1.1
+-and Fastino GLiDE v1.2 (local)): each repeat plays
++"""Reproducibility repeats of seven League 1 setups (Ümit via Zeki, bus #4663, #4666, #4667, #4671; #4838 Drex Max 1.1
++and Fastino GLiDE v1.2 (local); #5359 Gemini Decision 1): each repeat plays
+ the original's own League 1 field again, one match at a time, each pair pinned (league config pinned_pairs, runner
+ branch pinned-pairs, Zeki #4710) to its original match's seed (dice) and seating, with the
+ same option-order seed, prompt, rules and setup settings, under a separate held name ('<original> [repeat 1]') whose
+@@ -153,6 +153,26 @@ RUNNER = dict(
+ RUNNER_DIFFERENCE = ("Runner: " + RUNNER["commit"] + ", the originals' runner line (origin/late-reax acfd89c) with the "
+                      "pinned-pairs change 4ca4f08 (the pins are its only change for these leagues), where the original "
+                      "ran %s; the same prompt version, option-order seed and rules.")
++# Gemini Decision 1's repeat runner (Ümit via Zeki #5359): branch pinned-late-gemini cb669a0 = RUNNER's 0e66836 + the
++# four runner commits its original ran, cherry-picked from late-gemini-decision: dab6da5 (decision clients merge the
++# player's `request` fields, e.g. the OpenRouter provider pin), 1b234da, c0b58f3 (map-check v2 for
++# google/gemini-decision-1 only) and 38024d6 (raw_entries decoder). src differs from 0e66836 only in
++# src/players/{decision,llm,mod}.rs (+564 -12); the 18 build inputs are RUNNER's, unchanged. Bound as RUNNER is.
++# Review package: mailbox/gemini-repeat/.
++RUNNER_GEMINI = dict(
++    binary=str(MAIN / "target/pinned-gemini/release/jevgammon"),
++    binary_sha256="0bf67bc35ca864250a16a63ce5b608c68f8d6b62c12a5714e1b975979473dc7f",
++    tree="/home/cbasaran/code/jevgammon-runner-gemini", commit="cb669a0",
++    commit_full="cb669a08c29689a0846bcdf2596ae9c4fc043e22", src_tree="a1a82e60e4951dffab6ded8a7bd56269a14dd3cf",
++    build=dict(
++        command=("cd /home/cbasaran/code/jevgammon-runner-gemini && CARGO_TARGET_DIR=/home/cbasaran/code/jevgammon/"
++                 "target/pinned-gemini cargo build --release --locked"),
++        toolchain="rustc 1.97.1 (8bab26f4f 2026-07-14), cargo 1.97.1 (c980f4866 2026-06-30)",
++        built="2026-11-12T12:57Z",
++        tree=("git worktree add -b pinned-late-gemini /home/cbasaran/code/jevgammon-runner-gemini 0e66836; "
++              "cherry-pick dab6da5 1b234da c0b58f3 38024d6; checkout --detach (clean; only the untracked "
++              "METADATA.worktree added)")),
++    inputs=dict(RUNNER["inputs"]))
+ # The league of a recorded attempt is kept as it is and never resumed: league_id() skips it, so the repeat's next start
+ # creates a new league with the same config (repeat name, pins); check fails while such a league differs from its
+ # record (a process resumed, completed or edited it). The record is the attempt's whole historical state (Zeki #4928
+@@ -209,6 +229,12 @@ def repeat_note(rid: str, extra: str = "") -> str:
+             "held: in no standings, table, Cup input or other setup's numbers." + extra)
+ 
+ 
++# Gemini Decision 1's entry cap (tools/v3/late-gemini-decision/start.sh on late-gemini-decision): $5 for the entrant
++# plus the paid opponents, billed from match #993; its guard recorded $1.1819 when the entry ended
++# (workspace/late-gemini-decision/state/guard.log, 2026-11-11T22:12:14Z). The repeat stays inside that cap.
++GEMINI_CAP_USD, GEMINI_SPENT_USD = 5.0, 1.1819
++
++
+ # Per repeat: the original setup, where its original matches are, the runner that played them, its server.
+ REPEATS = {
+     "mammoth-1-r1": dict(
+@@ -357,10 +383,82 @@ REPEATS = {
+              "beside the opponents' servers on two others and the DGX Sparks, the repeat runs it on one card with the "
+              "opponents one at a time on the same or a second card."),
+         ]),
++    "gemini-decision-1-r1": dict(
++        original="Gemini Decision 1", original_league=26, original_stage="late-entry", prepared="2026-11-12",
++        requested_by="Ümit via Zeki, bus #5359 (Ümit #5220: GPT-6 Luna and Mercury Decide not required)",
++        # Its 17 required pairs (League 1 table; #993-#1013 first stage, #1053-#1063 local stage). #1016 (Mercury
++        # Decide, aborted at its start, no game) is not required and not pinned; GPT-6 Luna was never scheduled.
++        original_matches=[993, 994, 995, 996, 997, 998, 999, 1005, 1013, 1053, 1055, 1056, 1057, 1060, 1061, 1062,
++                          1063],
++        not_required={
++            "GPT-6 Luna": dict(match=None, reason=(
++                "not required (Ümit #5220); never scheduled: OpenAI Decisions out of credit (start.sh: deferred)")),
++            "Mercury Decide": dict(match=1016, reason=(
++                "not required (Ümit #5220); #1016 aborted at its start, no game: no OpenRouter endpoint for "
++                "inception/mercury-decide")),
++        },
++        runner=RUNNER_GEMINI,
++        original_runner=("two builds: dab6da5 (clean) for #993-#1013 and the aborted #1016 (every decision before "
++                         "21:46:31Z), 38024d6 (clean; map-check v2) for #1053-#1063"),
++        server=dict(kind="api", mib=0, start=None, stop=None, health=None,
++                    smoke=("curl -fsS -m 20 https://openrouter.ai/api/v1/models/google/gemini-decision-1/endpoints | "
++                           "python3 -c 'import json,sys; e=json.load(sys.stdin)[\"data\"][\"endpoints\"]; "
++                           "ok=(len(e) == 1 and e[0][\"tag\"] == \"google-ai-studio\" and e[0][\"status\"] == 0 and "
++                           "float(e[0][\"pricing\"][\"prompt\"]) == 1e-7 and "
++                           "float(e[0][\"pricing\"][\"completion\"]) == 0); "
++                           "print(\"listed as pinned: one endpoint google-ai-studio, up, $0.10/$0\" if ok else e); "
++                           "sys.exit(not ok)'"),
++                    provenance=("Google's Gemini Decision 1 through OpenRouter's System One route "
++                                "(openrouter-decisions/google/gemini-decision-1; replies name "
++                                "google/gemini-decision-1-20261111), provider pinned to google-ai-studio, fallbacks "
++                                "off (players.settings request), OPENROUTER_API_KEY in ~/.keys; smoke = the "
++                                "original's listed() check (one endpoint, Google AI Studio, up, $0.10/M input, $0 "
++                                "output; listed so on 2026-11-12T13:00Z)"),
++                    measured="none (hosted)"),
++        settings_change=dict(),
++        rules=dict(mirror_concurrent=True),
++        cap_usd=round(GEMINI_CAP_USD - GEMINI_SPENT_USD, 4),
++        cap_basis=(f"Gemini Decision 1's entry cap: ${GEMINI_CAP_USD:.2f} (entrant + paid opponents; "
++                   "tools/v3/late-gemini-decision/start.sh), of which its guard recorded "
++                   f"${GEMINI_SPENT_USD} at the entry's end (workspace/late-gemini-decision/state/guard.log, "
++                   "2026-11-11T22:12:14Z; it billed every late-entry match from #993, other entries' paid opponents "
++                   "included); the repeat's guard stops at the remaining "
++                   f"${GEMINI_CAP_USD - GEMINI_SPENT_USD:.4f} of the repeat's own bill."),
++        cost_method=("Each playable pair's billed cost in the original match: the paid opponent's recorded cost_usd "
++                     "(Fastino GLiDE: input tokens x $0.04/M), plus Gemini Decision 1's own recorded cost_usd "
++                     "(OpenRouter usage.cost, $0.10/M input); local setups and programs bill nothing."),
++        server_starts="entrant: none (hosted); each local opponent 1-5 min (state logs of the originals)",
++        opp_gpu=("<second card>", (
++            "Gemini Decision 1 is hosted (no card of its own); its 8 local opponents run one at a time on a second "
++            "card, OPP_GPU, with room for the largest (Clef, 53,144 MiB + 2,000), as in its original (bariton GPU 2, "
++            "reservation r_82bfcd93782c).")),
++        concurrency=("Name: '<original> [repeat 1]', a new players row; settings otherwise as the original's (the "
++                     "changed fields are listed under Settings); one match at a time, as the original (start.sh, "
++                     "max_matches 1)."),
++        differences=[
++            ("Runner: the original ran dab6da5 (clean) for its first stage (#993-#1013) and 38024d6 (clean; map-check "
++             "v2 and the raw_entries decoder) for its local stage (#1053-#1063), both on origin/main's runner line "
++             f"(ca112dc); the repeat runs {RUNNER_GEMINI['commit']} (branch pinned-late-gemini): the repeats' runner "
++             f"{RUNNER['commit']} (late-reax line with the pinned-pairs change 4ca4f08 and admit) with those four "
++             "runner commits cherry-picked. late-reax adds decision clients (reax, baselabs, drex, nace) and a "
++             "budget ledger for them, none used by this field; the same prompt version, option-order seed and rules."),
++            ("Map check: map-check v2 (a probability map that is not exactly the shown ids, finite in [0, 1], summing "
++             "to 1 within 1e-6, stores no probabilities; the returned choice is still played) applies to every "
++             "repeat pair; the original's first-stage pairs (#993-#1013, dab6da5) ran without it. Plays are not "
++             "affected; a first-stage pair can store probabilities in the original where the repeat stores none."),
++            ("Hosted model: Gemini Decision 1 is served by Google AI Studio through OpenRouter; whether the model "
++             "behind google/gemini-decision-1 changed since 2026-11-11 can only be read from the replies' model echo "
++             "(the original's: google/gemini-decision-1-20261111 on all 1,704 decisions)."),
++            ("Route check: the original's guard re-checked OpenRouter's listing every minute (3 failures stopped "
++             "it); the repeat checks it once before the first match (smoke). Fallbacks stay off, so a changed "
++             "endpoint fails requests rather than rerouting them."),
++            ("Cap: the original's $5 entry cap with $1.1819 recorded; the repeat's guard stops at the remaining "
++             "$3.8181 (see cost_basis)."),
++        ]),
+ }
+ DISPLAY = {"mammoth-1-r1": "Mammoth-1", "drex-max-v1-r1": "Drex Max v1", "reax-1.3-r1": "REAX 1.3",
+            "d1-ultra-r1": "Liquid d1-ultra", "drex-max-1.1-r1": "Drex Max 1.1",
+-           "glide-v1.2-r1": "Fastino GLiDE v1.2 (local)"}
++           "glide-v1.2-r1": "Fastino GLiDE v1.2 (local)", "gemini-decision-1-r1": "Gemini Decision 1"}
+ 
+ 
+ def ro() -> sqlite3.Connection:
+@@ -485,7 +583,9 @@ def manifest(args) -> None:
+         field = sorted(set(FIELD) - {r["original"]})
+         played = [p for p in pairs if p["status"] == "finished"]
+         missing = [o for o in field if o not in {p["opponent"] for p in played}]
++        not_required = r.get("not_required", {})
+         reasons = {x["opponent"]: x["reason"] for x in late if x["entrant"] == r["original"]}
++        reasons |= {o: n["reason"] for o, n in not_required.items() if o not in reasons}
+         playable = [p for p in pairs if p["status"] == "finished" and not p["blocked_today"]]
+         dropped = [p["opponent"] for p in played if p["blocked_today"]]
+         unpinned = [o for o in missing if o not in {p["opponent"] for p in pairs}]
+@@ -501,9 +601,10 @@ def manifest(args) -> None:
+         est_own = sum(p["billed_usd"]["original"] or 0 for p in playable)
+         mins = {k: round(sum(p["minutes"] or 0 for p in playable if p["kind"] == k), 1) for k in ("program", "api", "local")}
+         out["repeats"].append(dict(
+-            id=rid, run_id=f"repeat-2026-11-11-{rid}", name=name, display=DISPLAY[rid], original=r["original"],
+-            original_player_id=row["id"], original_league=r["original_league"], original_stage=r["original_stage"],
+-            status=r.get("status", "queued"), hold=r.get("hold"), prepared="2026-11-11", started=None, finished=None,
++            id=rid, run_id=f"repeat-{r.get('prepared', '2026-11-11')}-{rid}", name=name, display=DISPLAY[rid],
++            original=r["original"], original_player_id=row["id"], original_league=r["original_league"],
++            original_stage=r["original_stage"], status=r.get("status", "queued"), hold=r.get("hold"),
++            prepared=r.get("prepared", "2026-11-11"), started=None, finished=None,
+             league_config=f"tools/v3/repeats/leagues/{rid}.json",
+             status_file=f"mailbox/repeats/{rid} - status.md",
+             runner=dict(r["runner"], original=r["original_runner"]),
+@@ -514,7 +615,8 @@ def manifest(args) -> None:
+             | dict(start=srv["start"], stop=srv["stop"]),
+             coverage_original=dict(
+                 played=len(played), of=len(field),
+-                not_played=[dict(opponent=o, match=next((p["original_match"] for p in pairs if p["opponent"] == o), None),
++                not_played=[dict(opponent=o, match=next((p["original_match"] for p in pairs if p["opponent"] == o),
++                                                        not_required.get(o, {}).get("match")),
+                                  reason=reasons.get(o, "no match")) for o in missing]),
+             coverage_repeat_today=dict(
+                 playable=len(playable), of=len(field),
+@@ -523,6 +625,8 @@ def manifest(args) -> None:
+                 not_in_original=[dict(opponent=o, reason=reasons.get(o, "no original match"),
+                                       today=BLOCKED_TODAY.get(o)) for o in missing],
+                 unpinned=unpinned),
++            **({} if not not_required else dict(coverage_required=required_coverage(
++                pairs, field, not_required, r["rules"]["mirror_concurrent"]))),
+             cost_basis=dict(
+                 method=r.get("cost_method", (
+                     "Each playable pair's billed cost in the original match: the paid opponent's recorded "
+@@ -530,7 +634,7 @@ def manifest(args) -> None:
+                     "repeat; local setups and programs bill nothing.")),
+                 pairs={p["opponent"]: p["billed_usd"] for p in paid},
+                 estimate_usd=round(est_opp + est_own, 4), opponents_usd=round(est_opp, 4), entrant_usd=round(est_own, 4),
+-                cap_usd=5.0),
++                cap_usd=r.get("cap_usd", 5.0), **({"cap_basis": r["cap_basis"]} if "cap_basis" in r else {})),
+             time=dict(
+                 method=("Sum of each playable pair's original match duration (start to finish; the originals ran "
+                         "several matches at once, so one at a time is about this or less), plus server starts."),
+@@ -542,13 +646,15 @@ def manifest(args) -> None:
+                 entrant_mib=srv["mib"], entrant_measured=srv["measured"],
+                 fits_beside_entrant=[o for o in opps if o not in big],
+                 needs_second_gpu=big,
+-                note=("One card: the entrant's server (none for d1-ultra) stays up for the whole repeat; the opponent "
+-                      "servers run one at a time beside it, smallest first. A pair needs both servers at once, so the "
+-                      "opponents in needs_second_gpu (entrant + opponent + 2 GB over 97,887 MiB) wait for a second "
+-                      "card (OPP_GPU) or stay unplayed.")),
+-            differences=["Name: '<original> [repeat 1]', a new players row; settings otherwise as the original's (the "
+-                         "changed fields are listed under Settings); one match at a time, where the original played "
+-                         "several at once."]
++                note=r["opp_gpu"][1] if "opp_gpu" in r else (
++                    "One card: the entrant's server (none for d1-ultra) stays up for the whole repeat; the opponent "
++                    "servers run one at a time beside it, smallest first. A pair needs both servers at once, so the "
++                    "opponents in needs_second_gpu (entrant + opponent + 2 GB over 97,887 MiB) wait for a second "
++                    "card (OPP_GPU) or stay unplayed.")),
++            differences=[r.get("concurrency", (
++                "Name: '<original> [repeat 1]', a new players row; settings otherwise as the original's (the "
++                "changed fields are listed under Settings); one match at a time, where the original played "
++                "several at once."))]
+                         + r.get("differences", []) + (
+                 [f"Not replayable today, though played in the original: {', '.join(dropped)} (blockers today); "
+                  "their seed pins are kept so they replay with the original seeds once unblocked."] if dropped else []),
+@@ -559,11 +665,35 @@ def manifest(args) -> None:
+     print(f"{MANIFEST.relative_to(REPO)}: {len(out['repeats'])} repeats")
+ 
+ 
++def required_coverage(pairs: list[dict], field: list[str], not_required: dict, mirror: bool) -> dict:
++    """Coverage over the required pairs (the field less not_required), each count separately: pairs the original
++    played (history), pairs pinned (every pair in pairs is pinned: wanted_pins), pinned pairs playable today (not
++    blocked), and matched fixtures: pinned pairs whose original finished match recorded its games' dice seeds and ran
++    with the repeat's mirror rule (the other rules are one set across the originals, checked above; configs refuses a
++    clock or another start), so the pin's seed and seating give the original's dice, seats and option orders."""
++    required = [o for o in field if o not in not_required]
++    mine = [p for p in pairs if p["opponent"] in required]
++    played = [p["opponent"] for p in mine if p["status"] == "finished"]
++    pinned = [p["opponent"] for p in mine]
++    playable = [p["opponent"] for p in mine if p["status"] == "finished" and not p["blocked_today"]]
++    matched = [p["opponent"] for p in mine if p["status"] == "finished" and p["games"]
++               and all(g["dice_seed"] is not None for g in p["games"]) and p["rules"]["mirror_concurrent"] == mirror]
++    return dict(
++        rule="GPT-6 Luna and Mercury Decide pairs are not required (Ümit #5220)", required=len(required),
++        history_played=len(played), pinned=len(pinned), playable_today=len(playable), matched_fixtures=len(matched),
++        not_required=[dict(opponent=o, **n) for o, n in not_required.items()],
++        missing=dict(history=[o for o in required if o not in played], pins=[o for o in required if o not in pinned],
++                     today=[o for o in required if o not in playable], fixtures=[o for o in required if o not in matched]))
++
++
+ def start_commands(rid: str) -> list[str]:
+-    run = f"/home/cbasaran/code/jevgammon/tools/v3/repeats/run.sh {rid}"
++    run = f"{HERE}/run.sh {rid}"
+     unit = f"systemd-run --user --unit=repeat-{rid} --working-directory=/home/cbasaran/code/jevgammon"
+-    gpu = {"ours": "-E GPU=0 -E OPP_GPU=0", "logic": "-E GPU=0 -E OPP_GPU=0", "api": "-E OPP_GPU=0"}[REPEATS[rid]["server"]["kind"]]
+-    if REPEATS[rid].get("status") == "held":
++    r = REPEATS[rid]
++    opp = r["opp_gpu"][0] if "opp_gpu" in r else "0"
++    gpu = {"ours": f"-E GPU=0 -E OPP_GPU={opp}", "logic": f"-E GPU=0 -E OPP_GPU={opp}",
++           "api": f"-E OPP_GPU={opp}"}[r["server"]["kind"]]
++    if r.get("status") == "held":
+         return []
+     return [f"{unit} {gpu} -E RES=<reservation> {run}"]
+ 
+@@ -581,7 +711,8 @@ def configs(args) -> None:
+         progs = [json.loads(conn.execute("SELECT settings FROM players WHERE name = ?", (n,)).fetchone()[0])
+                  for n in PROGRAMS]
+         cfg = dict(
+-            note=(f"Reproducibility repeat 1 of {m['original']} ({WRITTEN_FOR}, #4710; run {m['run_id']}): {m['name']} "
++            note=(f"Reproducibility repeat 1 of {m['original']} ({REPEATS[rid].get('requested_by', WRITTEN_FOR)}, "
++                  f"#4710; run {m['run_id']}): {m['name']} "
+                   f"plays {m['original']}'s original League 1 field again, one match at a time, each pair pinned to its "
+                   "original match's seed and seating (pinned_pairs), the same option-order seed, prompt, rules and "
+                   "settings. Hidden league; matches stage 'late-entry' and the name held "
+@@ -971,8 +1102,9 @@ def attempt_problems(conn, rid: str, want: dict) -> list[str]:
+ 
+ def attempts(conn, rid: str) -> list[dict]:
+     """The repeat's recorded attempts, then the current one (its league once created, else None)."""
+-    current = dict(league=league_id(conn, rid), runner=dict(commit=RUNNER["commit"], commit_full=RUNNER["commit_full"],
+-                                                             binary_sha256=RUNNER["binary_sha256"]))
++    rn = REPEATS[rid]["runner"]
++    current = dict(league=league_id(conn, rid), runner=dict(commit=rn["commit"], commit_full=rn["commit_full"],
++                                                             binary_sha256=rn["binary_sha256"]))
+     return REPEATS[rid].get("attempts", []) + [current]
+ 
+ 
+@@ -1004,7 +1136,7 @@ def billed_usd(conn, m) -> float:
+             total += (r["tokens"] or 0) * FASTINO_RATE / 1e6
+         elif r["name"] == m["name"] and m["original"] in ENTRANT_RATE:
+             total += (r["tokens"] or 0) * ENTRANT_RATE[m["original"]] / 1e6
+-        elif r["name"] in BILLED or (r["name"] == m["name"] and m["original"] in BILLED):
++        elif r["name"] in BILLED or (r["name"] == m["name"] and m["server"]["kind"] == "api"):
+             total += r["cost"]
+     return total
+ 
+diff --git a/tools/v3/repeats/test_launcher.sh b/tools/v3/repeats/test_launcher.sh
+index b7b1d2b..d1dd239 100755
+--- a/tools/v3/repeats/test_launcher.sh
++++ b/tools/v3/repeats/test_launcher.sh
+@@ -1,7 +1,8 @@
+ #!/usr/bin/env bash
+ # Regression tests of run.sh's preflight (Zeki #4737, #4896, #4928), on scratch copies only: never the production v3.db,
+ # a production budget ledger, the main checkout's state or the runner tree. Each case gets its own copy of these scripts
+-# and the manifest (repo layout), a clone of the runner tree at the recorded commit, a copy of the recorded binary, and a
++# and the manifest (repo layout), a clone of each runner tree at its recorded commit (the first repeat's runner as
++# runner/, any other a repeat binds, Gemini Decision 1's, as runner-<commit>/), a copy of each recorded binary, and a
+ # scratch database (the runner's own schema, created by the copied binary, plus the originals' and programs' players
+ # rows from the manifest, the pinned opponents' rows (name and spec as each original played them; specs from the
+ # 2026-11-11 admission run, mailbox/pinned-late-review/admission.log) and a late_entry_stage trigger naming the originals
+@@ -26,7 +27,11 @@
+ #   repeats.py check exits 1 (not 3) and repeats.py trigger refuses without a write. An admission refusal is the
+ #   check's only failure besides the missing trigger, and names the refused client; a missing ledger is not created.
+ #   Trigger missing only (each repeat not held): check exits 3, run.sh prepares (backup verified by zstd -t, trigger),
+-#   checks again and exits 0 with every client admitted; check then exits 0, and a second run.sh writes nothing more.
++#   checks again and exits 0 with every client admitted by the repeat's own runner; check then exits 0, and a second
++#   run.sh writes nothing more. A repeat whose name main does not hold yet (Gemini Decision 1, #5359) refuses on that,
++#   and takes the same trigger-missing case with its case's repeats.py reading a scratch main checkout that holds it.
++#   Gemini Decision 1 (runner cb669a0): its entrant without the OpenRouter provider pin, and the 0e66836 binary in
++#   place of its own, each refuse on that alone (besides the missing trigger).
+ #   The scratch Nace ledger is byte-identical after every case, with no -wal or -shm beside it.
+ # Usage: tools/v3/repeats/test_launcher.sh   (TMPDIR defaults to ~/.cache/tmp; exit 0 when every case passes)
+ set -uo pipefail
+@@ -46,6 +51,15 @@ echo "scratch: $S"
+ git clone -q --shared --no-checkout "$RTREE" "$S/tpl/runner" && git -C "$S/tpl/runner" checkout -q --detach "$RCOMMIT" ||
+   { echo "cannot clone $RTREE at $RCOMMIT"; exit 1; }
+ mkdir -p "$S/tpl/bin" && cp "$RBIN" "$S/tpl/bin/jevgammon"
++# Every other runner a repeat binds (Gemini Decision 1's): its own clone and binary, runner-<commit>/ and bin-<commit>/.
++while read -r tree bin commit; do
++  git clone -q --shared --no-checkout "$tree" "$S/tpl/runner-${commit:0:7}" &&
++    git -C "$S/tpl/runner-${commit:0:7}" checkout -q --detach "$commit" || { echo "cannot clone $tree at $commit"; exit 1; }
++  mkdir -p "$S/tpl/bin-${commit:0:7}" && cp "$bin" "$S/tpl/bin-${commit:0:7}/jevgammon"
++  echo "runner as recorded: tree $tree, binary $bin, commit $commit"
++done < <(python3 -c 'import json,sys; rs=[r["runner"] for r in json.load(open(sys.argv[1]))["repeats"]]
++for r in {r["commit_full"]: r for r in rs[1:] if r["commit_full"] != rs[0]["commit_full"]}.values():
++    print(r["tree"], r["binary"], r["commit_full"])' "$MAN")
+ mkdir -p "$S/tpl/repo/tools/v3" "$S/tpl/repo/mailbox/repeats" "$S/ledger"
+ cp -r "$HERE" "$S/tpl/repo/tools/v3/repeats"
+ cp "$MAN" "$S/tpl/repo/mailbox/repeats/"
+@@ -154,14 +168,17 @@ setup() {
+   C=$1 D=$S/$1 CASE_HOME=
+   mkdir -p "$D/repo/tools/v3" "$D/repo/mailbox/repeats" "$D/home"
+   cp -r "$S/tpl/repo/tools/v3/repeats" "$D/repo/tools/v3/repeats"
+-  cp -a "$S/tpl/runner" "$D/runner"
+-  cp -a "$S/tpl/bin" "$D/bin"
++  local t
++  for t in "$S"/tpl/runner* "$S"/tpl/bin*; do cp -a "$t" "$D/"; done
+   cp "$S/tpl/v3.db" "$D/home/v3.db"
+   python3 - "$TMAN" "$D/repo/mailbox/repeats/$(basename "$MAN")" "$D" <<'EOF'
+ import json, sys
+ m = json.load(open(sys.argv[1]))
++first = m["repeats"][0]["runner"]["commit_full"]
+ for r in m["repeats"]:
+-    r["runner"] |= dict(tree=sys.argv[3] + "/runner", binary=sys.argv[3] + "/bin/jevgammon")
++    c = r["runner"]["commit_full"]
++    sfx = "" if c == first else "-" + c[:7]
++    r["runner"] |= dict(tree=sys.argv[3] + "/runner" + sfx, binary=sys.argv[3] + "/bin" + sfx + "/jevgammon")
+ open(sys.argv[2], "w").write(json.dumps(m, indent=1, ensure_ascii=False) + "\n")
+ EOF
+ }
+@@ -445,16 +462,63 @@ import json, sys
+ name = next(r["name"] for r in json.load(open(sys.argv[2]))["repeats"] if r["id"] == sys.argv[1])
+ sys.exit(name not in json.load(sys.stdin).get("held", {}))' "$1" "$MAN"
+ }
++# The case's repeats.py reads held_setups.json from a scratch main checkout: main's committed file, the repeat's name
++# added (the site change holding it is reviewed separately), so the rest of the preflight can run for it.
++hold_in_scratch_main() {  # rid
++  local name
++  name=$(python3 -c 'import json,sys; print(next(r["name"] for r in json.load(open(sys.argv[2]))["repeats"] if r["id"] == sys.argv[1]))' "$1" "$MAN")
++  mkdir -p "$D/main/tools/site/content"
++  git -C /home/cbasaran/code/jevgammon show HEAD:tools/site/content/held_setups.json | python3 -c '
++import json, sys
++d = json.load(sys.stdin); d["held"][sys.argv[1]] = "test: held in a scratch main checkout"
++print(json.dumps(d, indent=1, ensure_ascii=False))' "$name" > "$D/main/tools/site/content/held_setups.json"
++  git -C "$D/main" init -q && git -C "$D/main" add -A &&
++    git -C "$D/main" -c user.name=test -c user.email=test@localhost commit -qm "held: $name" || failc "scratch main"
++  python3 - "$D/repo/tools/v3/repeats/repeats.py" "$D/main" <<'EOF'
++import sys
++from pathlib import Path
++p, old = Path(sys.argv[1]), 'MAIN = Path("/home/cbasaran/code/jevgammon")'
++t = p.read_text()
++assert t.count(old) == 1, "MAIN line not found once"
++p.write_text(t.replace(old, f'MAIN = Path("{sys.argv[2]}")'))
++EOF
++}
+ prepare=(mammoth-1-r1 drex-max-v1-r1 reax-1.3-r1 d1-ultra-r1)
+-for rid in drex-max-1.1-r1 glide-v1.2-r1; do
++scratch_held=()
++for rid in drex-max-1.1-r1 glide-v1.2-r1 gemini-decision-1-r1; do
+   if held_in_main "$rid"; then prepare+=("$rid"); continue; fi
+   setup "not-held-$rid"; refuse "$rid"
+   grep -q "not held in the main checkout" "$D/check.out" && pass "the refusal names the missing held name" ||
+     failc "check did not name the missing held name: $(cat "$D/check.out")"
++  scratch_held+=("$rid")
+ done
+ 
+-for rid in "${prepare[@]}"; do
++# Gemini Decision 1's binding (held in a scratch main, so only the targeted failure and the missing trigger remain).
++gemini_only() {  # expected-text: check's one line is that failure and the missing trigger
++  if [[ $(wc -l < "$D/check.out") == 1 ]] && grep -q -- "$1" "$D/check.out" &&
++     grep -qE "; trigger missing: late_entry_stage does not name it$" "$D/check.out"; then
++    pass "the refusal is: $(cut -c1-240 "$D/check.out")"
++  else
++    failc "check did not refuse on '$1' alone: $(cut -c1-600 "$D/check.out")"
++  fi
++}
++setup gemini-no-provider-pin; hold_in_scratch_main gemini-decision-1-r1
++python3 - "$D/repo/tools/v3/repeats/leagues/gemini-decision-1-r1.json" <<'EOF'
++import json, sys
++c = json.load(open(sys.argv[1])); del c["players"][0]["request"]
++open(sys.argv[1], "w").write(json.dumps(c, indent=2, ensure_ascii=False) + "\n")
++EOF
++refuse gemini-decision-1-r1
++gemini_only "league config entrant settings differ from the manifest's settings_repeat"
++setup gemini-other-runner; hold_in_scratch_main gemini-decision-1-r1
++cp "$D/bin/jevgammon" "$D/bin-cb669a0/jevgammon"
++refuse gemini-decision-1-r1
++gemini_only "not the cb669a0 build 0bf67bc35ca86425…"
++
++for rid in "${prepare[@]}" "${scratch_held[@]}"; do
+   setup "trigger-missing-$rid"
++  [[ " ${scratch_held[*]} " == *" $rid "* ]] && hold_in_scratch_main "$rid"
++  commit=$(python3 -c 'import json,sys; print(next(r["runner"]["commit"] for r in json.load(open(sys.argv[2]))["repeats"] if r["id"] == sys.argv[1]))' "$rid" "$MAN")
+   before=$(sha256sum < "$D/home/v3.db")
+   crc0=$(check_rc "$rid"); out0=$(cat "$D/check.out")
+   in_case bash "$D/repo/tools/v3/repeats/run.sh" "$rid" --prepare-only > "$D/run.out" 2>&1
+@@ -476,10 +540,11 @@ for rid in "${prepare[@]}"; do
+   [[ -e $D/home/workspace/repeats/$rid/prepared ]] || bad+=("no prepared marker")
+   (( crc1 == 0 )) || bad+=("check after exit $crc1")
+   [[ $out1 == *"every client admitted (jevgammon admit)"* ]] || bad+=("check after: no admission")
++  [[ $out1 == *"runner $commit (binary sha256"* ]] || bad+=("check after: not runner $commit")
+   (( rc2 == 0 )) && [[ $again == "$after" ]] || bad+=("second run.sh: exit $rc2 or wrote")
+   (( $(compgen -G "$D/home/v3.db.bak-*" | wc -l) == 1 )) || bad+=("more than one backup")
+   if (( ${#bad[@]} )); then failc "${bad[*]}"; else
+-    pass "check exit 3, prepared ($(basename "$bak") verified, trigger added), check exit 0 with every client admitted; second run wrote nothing"
++    pass "check exit 3, prepared ($(basename "$bak") verified, trigger added), check exit 0 with every client admitted by runner $commit; second run wrote nothing"
+   fi
+ done
+ 

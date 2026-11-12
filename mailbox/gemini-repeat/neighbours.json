@@ -1,0 +1,3157 @@
+{
+ "written": "2026-11-12T13:01:24Z",
+ "sources": {
+  "db": "/home/cbasaran/code/jevgammon/v3.db (opened read-only, mode=ro)",
+  "repeat_manifest": "/home/cbasaran/code/jevgammon-launcher-bind/mailbox/repeats/manifest-2026-11-11.json",
+  "repeat_status": "mailbox/repeats/*status.md (main checkout)"
+ },
+ "feed": {
+  "url": "https://zekiworks.github.io/analysis/backgammon/bench-scores.json",
+  "updated": "2026-11-12T12:50Z",
+  "metric": "error rate (PR, lower is better)",
+  "rows": 41,
+  "note": "No repeat rows in feed; Cygnet is kind 'decision' in the feed."
+ },
+ "gemini": {
+  "player_id": 67,
+  "name": "Gemini Decision 1",
+  "pr": 27.97,
+  "pr_raw": 27.968576685153824,
+  "league": 26,
+  "stage": "late-entry",
+  "required_pairs": 17,
+  "league_rules": {
+   "seed": 2567889193785291627,
+   "seed_rule": "pair-v1",
+   "prompt_version": "bg-v2",
+   "order_seed": 1190975713392774006,
+   "rounds": 3,
+   "max_turns": 300,
+   "mirror_concurrent": 1,
+   "clock_seconds": null,
+   "delay_seconds": null
+  },
+  "matches": [
+   {
+    "opponent": "Fastino GLiDE",
+    "match": 993,
+    "seed": -8439208352951700166,
+    "seat_first": false
+   },
+   {
+    "opponent": "Celeris-1 Decision",
+    "match": 994,
+    "seed": -3967054153038515202,
+    "seat_first": false
+   },
+   {
+    "opponent": "GNUbg weak",
+    "match": 995,
+    "seed": -6820979344017237759,
+    "seat_first": true
+   },
+   {
+    "opponent": "Random",
+    "match": 996,
+    "seed": -1311349055250242994,
+    "seat_first": true
+   },
+   {
+    "opponent": "Safest",
+    "match": 997,
+    "seed": -1375353948227140031,
+    "seat_first": false
+   },
+   {
+    "opponent": "Liquid d1-ultra",
+    "match": 998,
+    "seed": 2513949857367392173,
+    "seat_first": false
+   },
+   {
+    "opponent": "Jev 1.14.0",
+    "match": 999,
+    "seed": 648011024414861222,
+    "seat_first": true
+   },
+   {
+    "opponent": "Jev 1.13.0",
+    "match": 1005,
+    "seed": -9031130508201491509,
+    "seat_first": true
+   },
+   {
+    "opponent": "SubQ Snap Preview",
+    "match": 1013,
+    "seed": -7579663183529449303,
+    "seat_first": false
+   },
+   {
+    "opponent": "Cygnet (Gemma 4 12B)",
+    "match": 1053,
+    "seed": 8544814846323426751,
+    "seat_first": true
+   },
+   {
+    "opponent": "Winnow-12B",
+    "match": 1055,
+    "seed": 6230572666778943291,
+    "seat_first": true
+   },
+   {
+    "opponent": "Decider Flash v1.2",
+    "match": 1056,
+    "seed": 4283428565475450139,
+    "seat_first": true
+   },
+   {
+    "opponent": "Decider v1.2 27B",
+    "match": 1057,
+    "seed": 8852768348427616659,
+    "seat_first": false
+   },
+   {
+    "opponent": "Fastino GLiDE v1.2 (local)",
+    "match": 1060,
+    "seed": -1283630256318859179,
+    "seat_first": true
+   },
+   {
+    "opponent": "Clef",
+    "match": 1061,
+    "seed": 722099500426768079,
+    "seat_first": true
+   },
+   {
+    "opponent": "Open-Jev 27B v1.1",
+    "match": 1062,
+    "seed": 4607018707599200037,
+    "seat_first": true
+   },
+   {
+    "opponent": "Decider v1.1 27B",
+    "match": 1063,
+    "seed": -4626089546722447836,
+    "seat_first": true
+   }
+  ],
+  "not_required": {
+   "note": "GPT-6 Luna and Mercury Decide not required (Ümit #5220)",
+   "matches": [
+    {
+     "opponent": "Mercury Decide",
+     "match": 1016,
+     "status": "aborted",
+     "seed": 5705471907912929391,
+     "seat_first": false
+    }
+   ]
+  }
+ },
+ "selection": {
+  "measure": "absolute difference in the feed's PR (error rate, lower is better) from 27.97, in PR points",
+  "tiebreak": "ties (none occur at 3 decimals) broken by lower PR, then feed name",
+  "k_open": true,
+  "statement": "K is open (Ümit/Main decide); selection measure = absolute difference in the feed's PR (error rate, lower is better) from 27.97, in PR points; ties (none occur at 3 decimals) broken by lower PR, then feed name.",
+  "excluded": "Gemini Decision 1 itself; held repeat rows (none in feed)",
+  "interval_25_31_1_given_by_main": {
+   "low": 25.0,
+   "high": 31.1,
+   "inside": [
+    "Kimi K3.1 Pro",
+    "REAX 1.3",
+    "Mammoth-1",
+    "Qwen3.8-27B",
+    "KnowLine-31B-Gen1.5",
+    "d1-ultra",
+    "Drex Max",
+    "GLM-5.3",
+    "Drex Max v1.1"
+   ]
+  }
+ },
+ "lists": {
+  "decision": {
+   "k3": [
+    {
+     "feed_name": "REAX 1.3",
+     "kind": "decision",
+     "pr": 27.772,
+     "distance": 0.198,
+     "in_interval": true
+    },
+    {
+     "feed_name": "Mammoth-1",
+     "kind": "decision",
+     "pr": 28.543,
+     "distance": 0.573,
+     "in_interval": true
+    },
+    {
+     "feed_name": "KnowLine-31B-Gen1.5",
+     "kind": "decision",
+     "pr": 26.215,
+     "distance": 1.755,
+     "in_interval": true
+    }
+   ],
+   "k5": [
+    {
+     "feed_name": "REAX 1.3",
+     "kind": "decision",
+     "pr": 27.772,
+     "distance": 0.198,
+     "in_interval": true
+    },
+    {
+     "feed_name": "Mammoth-1",
+     "kind": "decision",
+     "pr": 28.543,
+     "distance": 0.573,
+     "in_interval": true
+    },
+    {
+     "feed_name": "KnowLine-31B-Gen1.5",
+     "kind": "decision",
+     "pr": 26.215,
+     "distance": 1.755,
+     "in_interval": true
+    },
+    {
+     "feed_name": "d1-ultra",
+     "kind": "decision",
+     "pr": 30.337,
+     "distance": 2.367,
+     "in_interval": true
+    },
+    {
+     "feed_name": "Drex Max",
+     "kind": "decision",
+     "pr": 30.399,
+     "distance": 2.429,
+     "in_interval": true
+    }
+   ]
+  },
+  "chat": {
+   "k3": [
+    {
+     "feed_name": "Kimi K3.1 Pro",
+     "kind": "chat",
+     "pr": 28.046,
+     "distance": 0.076,
+     "in_interval": true
+    },
+    {
+     "feed_name": "Qwen3.8-27B",
+     "kind": "chat",
+     "pr": 29.033,
+     "distance": 1.063,
+     "in_interval": true
+    },
+    {
+     "feed_name": "GLM-5.3",
+     "kind": "chat",
+     "pr": 30.866,
+     "distance": 2.896,
+     "in_interval": true
+    }
+   ],
+   "k5": [
+    {
+     "feed_name": "Kimi K3.1 Pro",
+     "kind": "chat",
+     "pr": 28.046,
+     "distance": 0.076,
+     "in_interval": true
+    },
+    {
+     "feed_name": "Qwen3.8-27B",
+     "kind": "chat",
+     "pr": 29.033,
+     "distance": 1.063,
+     "in_interval": true
+    },
+    {
+     "feed_name": "GLM-5.3",
+     "kind": "chat",
+     "pr": 30.866,
+     "distance": 2.896,
+     "in_interval": true
+    },
+    {
+     "feed_name": "Qwen3.8 Flash",
+     "kind": "chat",
+     "pr": 33.578,
+     "distance": 5.608,
+     "in_interval": false
+    },
+    {
+     "feed_name": "Muse Ember",
+     "kind": "chat",
+     "pr": 20.106,
+     "distance": 7.864,
+     "in_interval": false
+    }
+   ]
+  },
+  "combined": {
+   "k3": [
+    {
+     "feed_name": "Kimi K3.1 Pro",
+     "kind": "chat",
+     "pr": 28.046,
+     "distance": 0.076,
+     "in_interval": true
+    },
+    {
+     "feed_name": "REAX 1.3",
+     "kind": "decision",
+     "pr": 27.772,
+     "distance": 0.198,
+     "in_interval": true
+    },
+    {
+     "feed_name": "Mammoth-1",
+     "kind": "decision",
+     "pr": 28.543,
+     "distance": 0.573,
+     "in_interval": true
+    }
+   ],
+   "k5": [
+    {
+     "feed_name": "Kimi K3.1 Pro",
+     "kind": "chat",
+     "pr": 28.046,
+     "distance": 0.076,
+     "in_interval": true
+    },
+    {
+     "feed_name": "REAX 1.3",
+     "kind": "decision",
+     "pr": 27.772,
+     "distance": 0.198,
+     "in_interval": true
+    },
+    {
+     "feed_name": "Mammoth-1",
+     "kind": "decision",
+     "pr": 28.543,
+     "distance": 0.573,
+     "in_interval": true
+    },
+    {
+     "feed_name": "Qwen3.8-27B",
+     "kind": "chat",
+     "pr": 29.033,
+     "distance": 1.063,
+     "in_interval": true
+    },
+    {
+     "feed_name": "KnowLine-31B-Gen1.5",
+     "kind": "decision",
+     "pr": 26.215,
+     "distance": 1.755,
+     "in_interval": true
+    }
+   ]
+  }
+ },
+ "setups": [
+  {
+   "feed_name": "REAX 1.3",
+   "kind": "decision",
+   "pr": 27.772,
+   "distance": 0.198,
+   "in_interval_25_31_1": true,
+   "player_id": 60,
+   "player_name": "REAX 1.3",
+   "scored_matches": 18,
+   "leagues": [
+    {
+     "league": 19,
+     "label": "League 1 table, pinned-pairs league for REAX 1.3 (Late entry)",
+     "league_status": "finished",
+     "stages": [
+      "late-entry"
+     ],
+     "matches": 18,
+     "match_ids": [
+      905,
+      906,
+      907,
+      908,
+      909,
+      910,
+      911,
+      912,
+      913,
+      914,
+      915,
+      916,
+      917,
+      918,
+      919,
+      920,
+      921,
+      922
+     ],
+     "rules": {
+      "seed": 2567889193785291627,
+      "seed_rule": "pair-v1",
+      "prompt_version": "bg-v2",
+      "order_seed": 1190975713392774006,
+      "rounds": 3,
+      "max_turns": 300,
+      "mirror_concurrent": 1,
+      "clock_seconds": null,
+      "delay_seconds": null
+     }
+    }
+   ],
+   "match_rules_distinct": [
+    {
+     "prompt_version": "bg-v2",
+     "order_seed": 1190975713392774006,
+     "max_turns": 300,
+     "clock_seconds": null,
+     "delay_seconds": null,
+     "mirror_concurrent": 1,
+     "rounds_planned": 3
+    }
+   ],
+   "opponents": {
+    "names": [
+     "Celeris-1 Decision",
+     "Clef",
+     "Cygnet (Gemma 4 12B)",
+     "Decider Flash v1.2",
+     "Decider v1.1 27B",
+     "Decider v1.2 27B",
+     "Fastino GLiDE",
+     "Fastino GLiDE v1.2 (local)",
+     "GNUbg weak",
+     "Jev 1.13.0",
+     "Jev 1.14.0",
+     "Liquid d1-ultra",
+     "Mercury Decide",
+     "Open-Jev 27B v1.1",
+     "Random",
+     "Safest",
+     "SubQ Snap Preview",
+     "Winnow-12B"
+    ],
+    "count": 18,
+    "equal_to_gemini_required": 17,
+    "extras": [
+     "Mercury Decide"
+    ],
+    "missing": []
+   },
+   "settings_summary": {
+    "spec": "reax/reax13",
+    "provider": "local (reax13 serve.py)",
+    "quantization": "fp8",
+    "device": "RTX PRO 6000 (bariton GPU 0), one GPU for both parts (workspace/reax/reax.sh, REAX_GPU)",
+    "base_url": "http://172.30.106.2:8080",
+    "note": "REAX 1.3 (Hugging Face decisionmodels/REAX-1.3 @ fa4bf7ee3bb56a8bc421dad090631be1c5845c2d, Apache-2.0; part G: CharlieBT/gx31-decider blended with PelaAI/KnowLine-31B-Gen1, Gemma-4-31B line; part Q: gurujustin/sn92-gen-p5 blended with vllm-sr/d3-ultra, Qwen 27B line; each option's probability the 50/50 mean of the two parts') on one of our GPUs, both parts in dynamic fine-grained FP8, served by the REAX Engine's own server as its card runs it (reax13 mode of github.com/reaxlabs/reax-engine @ ff8f595f149abdd50ea914455eadc74cf97a277f, image reax13-runtime; Decision Index kit @ 25c6ec7b6b5f44a216c63c3a700de3a9c6d6699d mounted read-only), offline (Docker internal network without external route; the API reached on the container's address on that network, from this host only), one request at a time, client timeout 1,800 s; at most 255 options per request (the server's limit per choice question; League 1's largest full lists stay under half the card's 32,000 proxy-token cap). Container without --security-opt no-new-privileges, an exception approved by Can for this run only (bus #2199): snap Docker's AppArmor profile makes every exec fail with EPERM under no_new_privs; --cap-drop ALL, read-only root, non-root user and read-only weights kept. No list price; not billed. Late entry to the original League 1 table; not eligible for the Hype Cup",
+    "parallel": 1
+   },
+   "settings": {
+    "name": "REAX 1.3",
+    "spec": "reax/reax13",
+    "provider": "local (reax13 serve.py)",
+    "quantization": "fp8",
+    "base_url": "http://172.30.106.2:8080",
+    "note": "REAX 1.3 (Hugging Face decisionmodels/REAX-1.3 @ fa4bf7ee3bb56a8bc421dad090631be1c5845c2d, Apache-2.0; part G: CharlieBT/gx31-decider blended with PelaAI/KnowLine-31B-Gen1, Gemma-4-31B line; part Q: gurujustin/sn92-gen-p5 blended with vllm-sr/d3-ultra, Qwen 27B line; each option's probability the 50/50 mean of the two parts') on one of our GPUs, both parts in dynamic fine-grained FP8, served by the REAX Engine's own server as its card runs it (reax13 mode of github.com/reaxlabs/reax-engine @ ff8f595f149abdd50ea914455eadc74cf97a277f, image reax13-runtime; Decision Index kit @ 25c6ec7b6b5f44a216c63c3a700de3a9c6d6699d mounted read-only), offline (Docker internal network without external route; the API reached on the container's address on that network, from this host only), one request at a time, client timeout 1,800 s; at most 255 options per request (the server's limit per choice question; League 1's largest full lists stay under half the card's 32,000 proxy-token cap). Container without --security-opt no-new-privileges, an exception approved by Can for this run only (bus #2199): snap Docker's AppArmor profile makes every exec fail with EPERM under no_new_privs; --cap-drop ALL, read-only root, non-root user and read-only weights kept. No list price; not billed. Late entry to the original League 1 table; not eligible for the Hype Cup",
+    "device": "RTX PRO 6000 (bariton GPU 0), one GPU for both parts (workspace/reax/reax.sh, REAX_GPU)",
+    "parallel": 1
+   },
+   "shared_pair_seeds": {
+    "count": 0,
+    "pairs": [],
+    "matches_with_any_gemini_seed": [],
+    "checked_over": "all valid finished matches of this player",
+    "note": "Gemini Decision 1's own matches (e.g. its match v this setup) excluded from the check",
+    "mercury_luna": {
+     "gemini_matches": [
+      {
+       "opponent": "Mercury Decide",
+       "match": 1016,
+       "status": "aborted",
+       "seed": 5705471907912929391,
+       "seat_first": false
+      }
+     ],
+     "equal_seed_matches": []
+    }
+   },
+   "excluded_valid_matches": [],
+   "retained_repeat": {
+    "status_file": "mailbox/repeats/reax-1.3-r1 - status.md (main checkout)",
+    "manifest": "/home/cbasaran/code/jevgammon-launcher-bind/mailbox/repeats/manifest-2026-11-11.json",
+    "repeats": [
+     {
+      "league": 24,
+      "player_id": 65,
+      "player_name": "REAX 1.3 [repeat 1]",
+      "league_status": "running",
+      "started_at": "2026-11-11T15:25:16.745Z",
+      "finished_at": null,
+      "state": "stopped attempt, 0 matches (leagues.status still 'running', finished_at NULL; every REAX 1.3 [repeat 1] match started after league #34 began 2026-11-12T05:50:33Z; league_match_view also maps #1114-1116 to #24 only because the same players are members of both)",
+      "valid_finished_matches": 0,
+      "matched_pairs_count": 0,
+      "matched_pairs": [],
+      "unmatched_repeat_matches": [],
+      "rules": {
+       "seed": 2567889193785291627,
+       "seed_rule": "pair-v1",
+       "prompt_version": "bg-v2",
+       "order_seed": 1190975713392774006,
+       "rounds": 3,
+       "max_turns": 300,
+       "mirror_concurrent": 1,
+       "clock_seconds": null,
+       "delay_seconds": null
+      },
+      "rules_diff_vs_gemini_league_26": {},
+      "opponents_equal_to_gemini_required": 0,
+      "opponent_extras": [],
+      "opponent_missing": [
+       "Celeris-1 Decision",
+       "Clef",
+       "Cygnet (Gemma 4 12B)",
+       "Decider Flash v1.2",
+       "Decider v1.1 27B",
+       "Decider v1.2 27B",
+       "Fastino GLiDE",
+       "Fastino GLiDE v1.2 (local)",
+       "GNUbg weak",
+       "Jev 1.13.0",
+       "Jev 1.14.0",
+       "Liquid d1-ultra",
+       "Open-Jev 27B v1.1",
+       "Random",
+       "Safest",
+       "SubQ Snap Preview",
+       "Winnow-12B"
+      ],
+      "compatible": false,
+      "compatible_note": "no matches"
+     },
+     {
+      "league": 34,
+      "player_id": 65,
+      "player_name": "REAX 1.3 [repeat 1]",
+      "league_status": "finished",
+      "started_at": "2026-11-12T05:50:33.745Z",
+      "finished_at": "2026-11-12T07:57:19.015Z",
+      "state": "finished",
+      "valid_finished_matches": 17,
+      "matched_pairs_count": 17,
+      "matched_pairs": [
+       {
+        "opponent": "Random",
+        "original_match": 905,
+        "repeat_match": 1114,
+        "seed": -4397947035773118991,
+        "seat_first": false
+       },
+       {
+        "opponent": "GNUbg weak",
+        "original_match": 906,
+        "repeat_match": 1115,
+        "seed": 7687453975057924759,
+        "seat_first": false
+       },
+       {
+        "opponent": "Safest",
+        "original_match": 907,
+        "repeat_match": 1116,
+        "seed": 4250404258724067804,
+        "seat_first": false
+       },
+       {
+        "opponent": "Celeris-1 Decision",
+        "original_match": 916,
+        "repeat_match": 1117,
+        "seed": 7161064289564184736,
+        "seat_first": true
+       },
+       {
+        "opponent": "Fastino GLiDE",
+        "original_match": 917,
+        "repeat_match": 1118,
+        "seed": 8676420728319782702,
+        "seat_first": false
+       },
+       {
+        "opponent": "Jev 1.13.0",
+        "original_match": 918,
+        "repeat_match": 1119,
+        "seed": 1191860321266350990,
+        "seat_first": true
+       },
+       {
+        "opponent": "Jev 1.14.0",
+        "original_match": 919,
+        "repeat_match": 1120,
+        "seed": -5761365294316249841,
+        "seat_first": true
+       },
+       {
+        "opponent": "Liquid d1-ultra",
+        "original_match": 920,
+        "repeat_match": 1121,
+        "seed": -61721897487719398,
+        "seat_first": false
+       },
+       {
+        "opponent": "SubQ Snap Preview",
+        "original_match": 922,
+        "repeat_match": 1122,
+        "seed": 1831931896691103214,
+        "seat_first": false
+       },
+       {
+        "opponent": "Decider Flash v1.2",
+        "original_match": 910,
+        "repeat_match": 1133,
+        "seed": -7519948795962316288,
+        "seat_first": false
+       },
+       {
+        "opponent": "Winnow-12B",
+        "original_match": 909,
+        "repeat_match": 1134,
+        "seed": 4483105724799583608,
+        "seat_first": true
+       },
+       {
+        "opponent": "Cygnet (Gemma 4 12B)",
+        "original_match": 908,
+        "repeat_match": 1135,
+        "seed": -7082196339580361457,
+        "seat_first": false
+       },
+       {
+        "opponent": "Decider v1.1 27B",
+        "original_match": 915,
+        "repeat_match": 1136,
+        "seed": 6810423341903318602,
+        "seat_first": true
+       },
+       {
+        "opponent": "Decider v1.2 27B",
+        "original_match": 911,
+        "repeat_match": 1137,
+        "seed": 1021836415416679067,
+        "seat_first": true
+       },
+       {
+        "opponent": "Fastino GLiDE v1.2 (local)",
+        "original_match": 912,
+        "repeat_match": 1138,
+        "seed": -8899102887743491517,
+        "seat_first": true
+       },
+       {
+        "opponent": "Open-Jev 27B v1.1",
+        "original_match": 914,
+        "repeat_match": 1139,
+        "seed": -6700475283337929459,
+        "seat_first": false
+       },
+       {
+        "opponent": "Clef",
+        "original_match": 913,
+        "repeat_match": 1140,
+        "seed": -3583159752099533620,
+        "seat_first": true
+       }
+      ],
+      "unmatched_repeat_matches": [],
+      "rules": {
+       "seed": 2567889193785291627,
+       "seed_rule": "pair-v1",
+       "prompt_version": "bg-v2",
+       "order_seed": 1190975713392774006,
+       "rounds": 3,
+       "max_turns": 300,
+       "mirror_concurrent": 1,
+       "clock_seconds": null,
+       "delay_seconds": null
+      },
+      "rules_diff_vs_gemini_league_26": {},
+      "opponents_equal_to_gemini_required": 17,
+      "opponent_extras": [],
+      "opponent_missing": [],
+      "compatible": true,
+      "compatible_note": "Same 17 opponents as Gemini's required field, League 1 rules identical to league #26; pinned to the original's seeds/seats (all matched). Compatible."
+     }
+    ]
+   }
+  },
+  {
+   "feed_name": "Mammoth-1",
+   "kind": "decision",
+   "pr": 28.543,
+   "distance": 0.573,
+   "in_interval_25_31_1": true,
+   "player_id": 55,
+   "player_name": "Base Labs Mammoth-1",
+   "scored_matches": 19,
+   "leagues": [
+    {
+     "league": 14,
+     "label": "League 1 table, pinned-pairs league for Base Labs Mammoth-1 (Late entry)",
+     "league_status": "finished",
+     "stages": [
+      "late-entry"
+     ],
+     "matches": 19,
+     "match_ids": [
+      780,
+      781,
+      782,
+      783,
+      806,
+      807,
+      808,
+      809,
+      810,
+      811,
+      812,
+      813,
+      814,
+      815,
+      816,
+      818,
+      820,
+      821,
+      828
+     ],
+     "rules": {
+      "seed": 2567889193785291627,
+      "seed_rule": "pair-v1",
+      "prompt_version": "bg-v2",
+      "order_seed": 1190975713392774006,
+      "rounds": 3,
+      "max_turns": 300,
+      "mirror_concurrent": 1,
+      "clock_seconds": null,
+      "delay_seconds": null
+     }
+    }
+   ],
+   "match_rules_distinct": [
+    {
+     "prompt_version": "bg-v2",
+     "order_seed": 1190975713392774006,
+     "max_turns": 300,
+     "clock_seconds": null,
+     "delay_seconds": null,
+     "mirror_concurrent": 1,
+     "rounds_planned": 3
+    }
+   ],
+   "opponents": {
+    "names": [
+     "Celeris-1 Decision",
+     "Clef",
+     "Cygnet (Gemma 4 12B)",
+     "Decider Flash v1.2",
+     "Decider v1.1 27B",
+     "Decider v1.2 27B",
+     "Fastino GLiDE",
+     "Fastino GLiDE v1.2 (local)",
+     "GNUbg weak",
+     "GPT-6 Luna",
+     "Jev 1.13.0",
+     "Jev 1.14.0",
+     "Liquid d1-ultra",
+     "Mercury Decide",
+     "Open-Jev 27B v1.1",
+     "Random",
+     "Safest",
+     "SubQ Snap Preview",
+     "Winnow-12B"
+    ],
+    "count": 19,
+    "equal_to_gemini_required": 17,
+    "extras": [
+     "GPT-6 Luna",
+     "Mercury Decide"
+    ],
+    "missing": []
+   },
+   "settings_summary": {
+    "spec": "baselabs/baselabs/mammoth-1",
+    "provider": "local (baselabs_server.py)",
+    "quantization": "bf16",
+    "device": "RTX PRO 6000 (bariton GPU 0), docker image baselabs-serve:81ce62f (workspace/late3/baselabs.sh mammoth, MAMMOTH_GPU=0)",
+    "base_url": "http://127.0.0.1:18103",
+    "note": "Base Labs' mammoth-1 (Hugging Face baselabs/mammoth-1 @ 61cec44c281c693992e3d6ebeb44dd3402dfa186, bf16; post-trained from Qwen3.5-27B) on our GPU through its model card's loader (qev's DecisionEngine from OneJev 81ce62f with the checkpoint's serve.patch, image baselabs-serve:81ce62f) behind decision-models runner/servers/baselabs_server.py, text only, one request at a time; probabilities come rounded to 6 decimals by that loader and are stored as returned; price = Baseten's Model API list price for the same model ($0.10 per million input tokens, output free, 2026-11-01). Late entry to the original League 1 table; not eligible for the Hype Cup",
+    "parallel": 1
+   },
+   "settings": {
+    "name": "Base Labs Mammoth-1",
+    "spec": "baselabs/baselabs/mammoth-1",
+    "provider": "local (baselabs_server.py)",
+    "quantization": "bf16",
+    "base_url": "http://127.0.0.1:18103",
+    "price": {
+     "input_per_mtok": 0.1,
+     "output_per_mtok": 0.0
+    },
+    "note": "Base Labs' mammoth-1 (Hugging Face baselabs/mammoth-1 @ 61cec44c281c693992e3d6ebeb44dd3402dfa186, bf16; post-trained from Qwen3.5-27B) on our GPU through its model card's loader (qev's DecisionEngine from OneJev 81ce62f with the checkpoint's serve.patch, image baselabs-serve:81ce62f) behind decision-models runner/servers/baselabs_server.py, text only, one request at a time; probabilities come rounded to 6 decimals by that loader and are stored as returned; price = Baseten's Model API list price for the same model ($0.10 per million input tokens, output free, 2026-11-01). Late entry to the original League 1 table; not eligible for the Hype Cup",
+    "device": "RTX PRO 6000 (bariton GPU 0), docker image baselabs-serve:81ce62f (workspace/late3/baselabs.sh mammoth, MAMMOTH_GPU=0)",
+    "parallel": 1
+   },
+   "shared_pair_seeds": {
+    "count": 0,
+    "pairs": [],
+    "matches_with_any_gemini_seed": [],
+    "checked_over": "all valid finished matches of this player",
+    "note": "Gemini Decision 1's own matches (e.g. its match v this setup) excluded from the check",
+    "mercury_luna": {
+     "gemini_matches": [
+      {
+       "opponent": "Mercury Decide",
+       "match": 1016,
+       "status": "aborted",
+       "seed": 5705471907912929391,
+       "seat_first": false
+      }
+     ],
+     "equal_seed_matches": []
+    }
+   },
+   "excluded_valid_matches": [],
+   "retained_repeat": {
+    "status_file": "mailbox/repeats/mammoth-1-r1 - status.md (main checkout)",
+    "manifest": "/home/cbasaran/code/jevgammon-launcher-bind/mailbox/repeats/manifest-2026-11-11.json",
+    "repeats": [
+     {
+      "league": 31,
+      "player_id": 72,
+      "player_name": "Base Labs Mammoth-1 [repeat 1]",
+      "league_status": "finished",
+      "started_at": "2026-11-11T22:19:14.818Z",
+      "finished_at": "2026-11-11T23:29:03.881Z",
+      "state": "finished",
+      "valid_finished_matches": 17,
+      "matched_pairs_count": 17,
+      "matched_pairs": [
+       {
+        "opponent": "Random",
+        "original_match": 813,
+        "repeat_match": 1064,
+        "seed": 4362141510172531886,
+        "seat_first": false
+       },
+       {
+        "opponent": "GNUbg weak",
+        "original_match": 812,
+        "repeat_match": 1065,
+        "seed": -6396665827944610524,
+        "seat_first": false
+       },
+       {
+        "opponent": "Safest",
+        "original_match": 808,
+        "repeat_match": 1066,
+        "seed": 8912082069680013991,
+        "seat_first": true
+       },
+       {
+        "opponent": "Celeris-1 Decision",
+        "original_match": 781,
+        "repeat_match": 1067,
+        "seed": -2153822681112005625,
+        "seat_first": false
+       },
+       {
+        "opponent": "Fastino GLiDE",
+        "original_match": 782,
+        "repeat_match": 1068,
+        "seed": -794500382061023195,
+        "seat_first": false
+       },
+       {
+        "opponent": "Jev 1.13.0",
+        "original_match": 806,
+        "repeat_match": 1069,
+        "seed": -2921811454543437844,
+        "seat_first": false
+       },
+       {
+        "opponent": "Jev 1.14.0",
+        "original_match": 783,
+        "repeat_match": 1070,
+        "seed": 384638883687945505,
+        "seat_first": false
+       },
+       {
+        "opponent": "Liquid d1-ultra",
+        "original_match": 811,
+        "repeat_match": 1071,
+        "seed": -1622952454044231214,
+        "seat_first": true
+       },
+       {
+        "opponent": "SubQ Snap Preview",
+        "original_match": 780,
+        "repeat_match": 1072,
+        "seed": -5805083703214501103,
+        "seat_first": false
+       },
+       {
+        "opponent": "Decider Flash v1.2",
+        "original_match": 814,
+        "repeat_match": 1073,
+        "seed": 7201838220502392468,
+        "seat_first": true
+       },
+       {
+        "opponent": "Winnow-12B",
+        "original_match": 810,
+        "repeat_match": 1074,
+        "seed": 3950770289274967254,
+        "seat_first": false
+       },
+       {
+        "opponent": "Cygnet (Gemma 4 12B)",
+        "original_match": 820,
+        "repeat_match": 1075,
+        "seed": 231389076767029198,
+        "seat_first": false
+       },
+       {
+        "opponent": "Decider v1.1 27B",
+        "original_match": 818,
+        "repeat_match": 1076,
+        "seed": 6980247384385673010,
+        "seat_first": true
+       },
+       {
+        "opponent": "Decider v1.2 27B",
+        "original_match": 816,
+        "repeat_match": 1077,
+        "seed": -1074810712199831386,
+        "seat_first": true
+       },
+       {
+        "opponent": "Fastino GLiDE v1.2 (local)",
+        "original_match": 815,
+        "repeat_match": 1078,
+        "seed": -2722981839106946320,
+        "seat_first": true
+       },
+       {
+        "opponent": "Open-Jev 27B v1.1",
+        "original_match": 828,
+        "repeat_match": 1079,
+        "seed": -6964589983474747502,
+        "seat_first": false
+       },
+       {
+        "opponent": "Clef",
+        "original_match": 821,
+        "repeat_match": 1080,
+        "seed": -6140772581031558626,
+        "seat_first": true
+       }
+      ],
+      "unmatched_repeat_matches": [],
+      "rules": {
+       "seed": 2567889193785291627,
+       "seed_rule": "pair-v1",
+       "prompt_version": "bg-v2",
+       "order_seed": 1190975713392774006,
+       "rounds": 3,
+       "max_turns": 300,
+       "mirror_concurrent": 1,
+       "clock_seconds": null,
+       "delay_seconds": null
+      },
+      "rules_diff_vs_gemini_league_26": {},
+      "opponents_equal_to_gemini_required": 17,
+      "opponent_extras": [],
+      "opponent_missing": [],
+      "compatible": true,
+      "compatible_note": "Same 17 opponents as Gemini's required field, League 1 rules identical to league #26; pinned to the original's seeds/seats (all matched). Compatible."
+     }
+    ]
+   }
+  },
+  {
+   "feed_name": "KnowLine-31B-Gen1.5",
+   "kind": "decision",
+   "pr": 26.215,
+   "distance": 1.755,
+   "in_interval_25_31_1": true,
+   "player_id": 62,
+   "player_name": "KnowLine 31B Gen1.5",
+   "scored_matches": 17,
+   "leagues": [
+    {
+     "league": 21,
+     "label": "League 1 table, pinned-pairs league for KnowLine 31B Gen1.5 (Late entry)",
+     "league_status": "running",
+     "stages": [
+      "late-entry"
+     ],
+     "matches": 17,
+     "match_ids": [
+      937,
+      938,
+      939,
+      940,
+      941,
+      942,
+      943,
+      944,
+      945,
+      947,
+      948,
+      949,
+      950,
+      951,
+      952,
+      953,
+      954
+     ],
+     "rules": {
+      "seed": 2567889193785291627,
+      "seed_rule": "pair-v1",
+      "prompt_version": "bg-v2",
+      "order_seed": 1190975713392774006,
+      "rounds": 3,
+      "max_turns": 300,
+      "mirror_concurrent": 1,
+      "clock_seconds": null,
+      "delay_seconds": null
+     }
+    }
+   ],
+   "match_rules_distinct": [
+    {
+     "prompt_version": "bg-v2",
+     "order_seed": 1190975713392774006,
+     "max_turns": 300,
+     "clock_seconds": null,
+     "delay_seconds": null,
+     "mirror_concurrent": 1,
+     "rounds_planned": 3
+    }
+   ],
+   "opponents": {
+    "names": [
+     "Celeris-1 Decision",
+     "Clef",
+     "Cygnet (Gemma 4 12B)",
+     "Decider Flash v1.2",
+     "Decider v1.1 27B",
+     "Decider v1.2 27B",
+     "Fastino GLiDE",
+     "Fastino GLiDE v1.2 (local)",
+     "GNUbg weak",
+     "Jev 1.13.0",
+     "Jev 1.14.0",
+     "Liquid d1-ultra",
+     "Open-Jev 27B v1.1",
+     "Random",
+     "Safest",
+     "SubQ Snap Preview",
+     "Winnow-12B"
+    ],
+    "count": 17,
+    "equal_to_gemini_required": 17,
+    "extras": [],
+    "missing": []
+   },
+   "settings_summary": {
+    "spec": "knowline/m",
+    "provider": "local (knowline_server.py)",
+    "quantization": "bf16",
+    "device": "NVIDIA GB10 (DGX Spark spark2, spark-d9ee), the whole GPU: serve_knowline.sh <snapshot> 0 19360 (front end 0.0.0.0:19360, SGLang 127.0.0.1:20360, KV pool 53,181 tokens)",
+    "base_url": "http://192.168.1.131:19360",
+    "note": "PelaAI's KnowLine-31B-Gen1.5 (Hugging Face PelaAI/KnowLine-31B-Gen1.5 @ 8e56aa1b236a6dd1064dcfd22ba1e5e360e4c140, Apache-2.0; dense, a LoRA fine-tune of google/gemma-4-31B-it merged into bf16 weights, byte-identical to KnowLine-31B-Gen1; readout temperature 1.44 folded into the weights) on our GPU through the repo's own serve_knowline.sh: SGLang 0.5.21 (transformers 5.12.1, torch 2.13.0+cu130) in bf16, --mem-fraction-static 0.85, --enable-fp32-lm-head, then the repo's knowline_server.py System One front end (served model name m, temperature 1, 16 scoring threads, read twice up to 3,000 tokens, question header and one read for longer text-only requests up to 32,768 tokens, temperatures.json; sha256 of knowline_server.py 6014957e, knowline_layout.py 2e839fa2, serve_knowline.sh 701e7e85, as the repo's SHA256SUMS). Label-token readout: one prefill per question, a softmax over the option labels; probabilities stored as returned. At most 255 options per question: longer play lists are split into equal groups of at most 255, as for every 255-option service. Nothing is truncated: SGLang runs without --allow-auto-truncate, so a prompt over its limit (min(context 262,144, KV pool) - 6 tokens) is refused (front end 422) and the decision fails. No hosted API and no list price: cost not recorded. Late entry to the original League 1 table (Ümit #4325); not eligible for the Hype Cup. One league match at a time (max_matches 1) and one decision in flight (parallel 1), so the server gets at most one request at a time, as it was handed over (Zeki #4561); from 2026-11-10 the first run's 4 parallel matches #933-#936 are void and replayed (Zeki #4564).",
+    "parallel": 1,
+    "max_matches": 1
+   },
+   "settings": {
+    "name": "KnowLine 31B Gen1.5",
+    "spec": "knowline/m",
+    "provider": "local (knowline_server.py)",
+    "quantization": "bf16",
+    "base_url": "http://192.168.1.131:19360",
+    "note": "PelaAI's KnowLine-31B-Gen1.5 (Hugging Face PelaAI/KnowLine-31B-Gen1.5 @ 8e56aa1b236a6dd1064dcfd22ba1e5e360e4c140, Apache-2.0; dense, a LoRA fine-tune of google/gemma-4-31B-it merged into bf16 weights, byte-identical to KnowLine-31B-Gen1; readout temperature 1.44 folded into the weights) on our GPU through the repo's own serve_knowline.sh: SGLang 0.5.21 (transformers 5.12.1, torch 2.13.0+cu130) in bf16, --mem-fraction-static 0.85, --enable-fp32-lm-head, then the repo's knowline_server.py System One front end (served model name m, temperature 1, 16 scoring threads, read twice up to 3,000 tokens, question header and one read for longer text-only requests up to 32,768 tokens, temperatures.json; sha256 of knowline_server.py 6014957e, knowline_layout.py 2e839fa2, serve_knowline.sh 701e7e85, as the repo's SHA256SUMS). Label-token readout: one prefill per question, a softmax over the option labels; probabilities stored as returned. At most 255 options per question: longer play lists are split into equal groups of at most 255, as for every 255-option service. Nothing is truncated: SGLang runs without --allow-auto-truncate, so a prompt over its limit (min(context 262,144, KV pool) - 6 tokens) is refused (front end 422) and the decision fails. No hosted API and no list price: cost not recorded. Late entry to the original League 1 table (Ümit #4325); not eligible for the Hype Cup. One league match at a time (max_matches 1) and one decision in flight (parallel 1), so the server gets at most one request at a time, as it was handed over (Zeki #4561); from 2026-11-10 the first run's 4 parallel matches #933-#936 are void and replayed (Zeki #4564).",
+    "device": "NVIDIA GB10 (DGX Spark spark2, spark-d9ee), the whole GPU: serve_knowline.sh <snapshot> 0 19360 (front end 0.0.0.0:19360, SGLang 127.0.0.1:20360, KV pool 53,181 tokens)",
+    "parallel": 1,
+    "max_matches": 1
+   },
+   "shared_pair_seeds": {
+    "count": 0,
+    "pairs": [],
+    "matches_with_any_gemini_seed": [],
+    "checked_over": "all valid finished matches of this player",
+    "note": "Gemini Decision 1's own matches (e.g. its match v this setup) excluded from the check",
+    "mercury_luna": {
+     "gemini_matches": [
+      {
+       "opponent": "Mercury Decide",
+       "match": 1016,
+       "status": "aborted",
+       "seed": 5705471907912929391,
+       "seat_first": false
+      }
+     ],
+     "equal_seed_matches": []
+    }
+   },
+   "excluded_valid_matches": [],
+   "retained_repeat": null
+  },
+  {
+   "feed_name": "d1-ultra",
+   "kind": "decision",
+   "pr": 30.337,
+   "distance": 2.367,
+   "in_interval_25_31_1": true,
+   "player_id": 27,
+   "player_name": "Liquid d1-ultra",
+   "scored_matches": 21,
+   "leagues": [
+    {
+     "league": 2,
+     "label": "League 2 (original)",
+     "league_status": "finished",
+     "stages": [
+      "league"
+     ],
+     "matches": 18,
+     "match_ids": [
+      180,
+      192,
+      265,
+      376,
+      500,
+      501,
+      502,
+      503,
+      517,
+      519,
+      520,
+      522,
+      523,
+      525,
+      548,
+      600,
+      630,
+      643
+     ],
+     "rules": {
+      "seed": 8637860750269043463,
+      "seed_rule": "pair-v1",
+      "prompt_version": "bg-v2",
+      "order_seed": 1190975713392774006,
+      "rounds": 3,
+      "max_turns": 300,
+      "mirror_concurrent": 1,
+      "clock_seconds": null,
+      "delay_seconds": null
+     }
+    },
+    {
+     "league": 4,
+     "label": "League 2 table, pinned-pairs league for Gemini 4 Argon (off) (Early start for round 3)",
+     "league_status": "finished",
+     "stages": [
+      "league"
+     ],
+     "matches": 2,
+     "match_ids": [
+      513,
+      661
+     ],
+     "rules": {
+      "seed": 8637860750269043463,
+      "seed_rule": "pair-v1",
+      "prompt_version": "bg-v2",
+      "order_seed": 1190975713392774006,
+      "rounds": 3,
+      "max_turns": 300,
+      "mirror_concurrent": 1,
+      "clock_seconds": null,
+      "delay_seconds": null
+     }
+    },
+    {
+     "league": 5,
+     "label": "League 2 table, pinned-pairs league for Celeris-1 Decision (Early start for round 5)",
+     "league_status": "finished",
+     "stages": [
+      "league"
+     ],
+     "matches": 1,
+     "match_ids": [
+      264
+     ],
+     "rules": {
+      "seed": 8637860750269043463,
+      "seed_rule": "pair-v1",
+      "prompt_version": "bg-v2",
+      "order_seed": 1190975713392774006,
+      "rounds": 3,
+      "max_turns": 300,
+      "mirror_concurrent": 1,
+      "clock_seconds": null,
+      "delay_seconds": null
+     }
+    }
+   ],
+   "match_rules_distinct": [
+    {
+     "prompt_version": "bg-v2",
+     "order_seed": 1190975713392774006,
+     "max_turns": 300,
+     "clock_seconds": null,
+     "delay_seconds": null,
+     "mirror_concurrent": 0,
+     "rounds_planned": 3
+    },
+    {
+     "prompt_version": "bg-v2",
+     "order_seed": 1190975713392774006,
+     "max_turns": 300,
+     "clock_seconds": null,
+     "delay_seconds": null,
+     "mirror_concurrent": 1,
+     "rounds_planned": 3
+    }
+   ],
+   "opponents": {
+    "names": [
+     "Celeris-1 Decision",
+     "Claude Fable 5.1 (off)",
+     "Claude Sonnet 5.5 (high)",
+     "Claude Sonnet 5.5 (low)",
+     "Clef",
+     "DeepSeek V4.1 Flash (off)",
+     "DeepSeek V4.1 Flash (on)",
+     "DeepSeek V4.1 Flash 1017 (off)",
+     "DeepSeek V4.1 Flash 1017 (on)",
+     "Fastino GLiDE",
+     "GLM-5.3 (on)",
+     "GNUbg weak",
+     "Gemini 3.8 Flash (high)",
+     "Gemini 3.8 Flash (low)",
+     "Gemini 4 Argon (off)",
+     "Gemma 4 31B (off)",
+     "Gemma 4 31B (on)",
+     "Grok 4.7 (off)",
+     "Jev 1.14.0",
+     "Qwen3.8 Flash (off)",
+     "Qwen3.8-27B (on)"
+    ],
+    "count": 21,
+    "equal_to_gemini_required": 5,
+    "extras": [
+     "Claude Fable 5.1 (off)",
+     "Claude Sonnet 5.5 (high)",
+     "Claude Sonnet 5.5 (low)",
+     "DeepSeek V4.1 Flash (off)",
+     "DeepSeek V4.1 Flash (on)",
+     "DeepSeek V4.1 Flash 1017 (off)",
+     "DeepSeek V4.1 Flash 1017 (on)",
+     "GLM-5.3 (on)",
+     "Gemini 3.8 Flash (high)",
+     "Gemini 3.8 Flash (low)",
+     "Gemini 4 Argon (off)",
+     "Gemma 4 31B (off)",
+     "Gemma 4 31B (on)",
+     "Grok 4.7 (off)",
+     "Qwen3.8 Flash (off)",
+     "Qwen3.8-27B (on)"
+    ],
+    "missing": [
+     "Cygnet (Gemma 4 12B)",
+     "Decider Flash v1.2",
+     "Decider v1.1 27B",
+     "Decider v1.2 27B",
+     "Fastino GLiDE v1.2 (local)",
+     "Jev 1.13.0",
+     "Liquid d1-ultra",
+     "Open-Jev 27B v1.1",
+     "Random",
+     "Safest",
+     "SubQ Snap Preview",
+     "Winnow-12B"
+    ]
+   },
+   "settings_summary": {
+    "spec": "liquid/d1-ultra",
+    "provider": "liquid",
+    "quantization": null,
+    "device": null,
+    "note": "Liquid AI decisions API, paid tier; list price $0.042 per million input tokens (liquid.ai/blog/d1-ultra, 2026-10-15)",
+    "parallel": 2
+   },
+   "settings": {
+    "name": "Liquid d1-ultra",
+    "spec": "liquid/d1-ultra",
+    "provider": "liquid",
+    "price": {
+     "input_per_mtok": 0.042,
+     "output_per_mtok": 0.0
+    },
+    "note": "Liquid AI decisions API, paid tier; list price $0.042 per million input tokens (liquid.ai/blog/d1-ultra, 2026-10-15)",
+    "parallel": 2
+   },
+   "shared_pair_seeds": {
+    "count": 0,
+    "pairs": [],
+    "matches_with_any_gemini_seed": [],
+    "checked_over": "all valid finished matches of this player",
+    "note": "Gemini Decision 1's own matches (e.g. its match v this setup) excluded from the check",
+    "mercury_luna": {
+     "gemini_matches": [
+      {
+       "opponent": "Mercury Decide",
+       "match": 1016,
+       "status": "aborted",
+       "seed": 5705471907912929391,
+       "seat_first": false
+      }
+     ],
+     "equal_seed_matches": []
+    }
+   },
+   "excluded_valid_matches": [
+    {
+     "match": 512,
+     "opponent": "GPT-6.1 Sol (high)",
+     "stage": "league",
+     "reason": "not in league_match_view (an opponent left the league roster)"
+    },
+    {
+     "match": 521,
+     "opponent": "LFM2.5-24B-A2B (on)",
+     "stage": "league",
+     "reason": "not in league_match_view (an opponent left the league roster)"
+    },
+    {
+     "match": 524,
+     "opponent": "Qwen3.8-27B (off)",
+     "stage": "league",
+     "reason": "not in league_match_view (an opponent left the league roster)"
+    },
+    {
+     "match": 789,
+     "opponent": "SubQ Snap 1.1",
+     "stage": "late-entry",
+     "reason": "opponent's late-entry match (scored for the late entry, not this setup)"
+    },
+    {
+     "match": 800,
+     "opponent": "Base Labs Elephant-1",
+     "stage": "late-entry",
+     "reason": "opponent's late-entry match (scored for the late entry, not this setup)"
+    },
+    {
+     "match": 811,
+     "opponent": "Base Labs Mammoth-1",
+     "stage": "late-entry",
+     "reason": "opponent's late-entry match (scored for the late entry, not this setup)"
+    },
+    {
+     "match": 852,
+     "opponent": "Drex 2.0",
+     "stage": "late-entry",
+     "reason": "opponent's late-entry match (scored for the late entry, not this setup)"
+    },
+    {
+     "match": 862,
+     "opponent": "Drex Max 1.1",
+     "stage": "late-entry",
+     "reason": "opponent's late-entry match (scored for the late entry, not this setup)"
+    },
+    {
+     "match": 867,
+     "opponent": "Drex Max v1",
+     "stage": "late-entry",
+     "reason": "opponent's late-entry match (scored for the late entry, not this setup)"
+    },
+    {
+     "match": 896,
+     "opponent": "Drex 2.0 (local)",
+     "stage": "late-entry",
+     "reason": "opponent's late-entry match (scored for the late entry, not this setup)"
+    },
+    {
+     "match": 920,
+     "opponent": "REAX 1.3",
+     "stage": "late-entry",
+     "reason": "opponent's late-entry match (scored for the late entry, not this setup)"
+    },
+    {
+     "match": 928,
+     "opponent": "Muse Ember (max)",
+     "stage": "late-entry",
+     "reason": "opponent's late-entry match (scored for the late entry, not this setup)"
+    },
+    {
+     "match": 942,
+     "opponent": "KnowLine 31B Gen1.5",
+     "stage": "late-entry",
+     "reason": "opponent's late-entry match (scored for the late entry, not this setup)"
+    },
+    {
+     "match": 962,
+     "opponent": "KnowLine 4B Gen5.5",
+     "stage": "late-entry",
+     "reason": "opponent's late-entry match (scored for the late entry, not this setup)"
+    },
+    {
+     "match": 975,
+     "opponent": "StartLux-Decision v1.1 2B",
+     "stage": "late-entry",
+     "reason": "opponent's late-entry match (scored for the late entry, not this setup)"
+    },
+    {
+     "match": 988,
+     "opponent": "KnowLine-0.8B-Gen1",
+     "stage": "late-entry",
+     "reason": "opponent's late-entry match (scored for the late entry, not this setup)"
+    },
+    {
+     "match": 998,
+     "opponent": "Gemini Decision 1",
+     "stage": "late-entry",
+     "reason": "opponent's late-entry match (scored for the late entry, not this setup)"
+    },
+    {
+     "match": 1009,
+     "opponent": "StartLux-Decision-v1.1-0.8B-Instant",
+     "stage": "late-entry",
+     "reason": "opponent's late-entry match (scored for the late entry, not this setup)"
+    },
+    {
+     "match": 1036,
+     "opponent": "Drex Max 1.1 [repeat 1]",
+     "stage": "late-entry",
+     "reason": "opponent's late-entry match (scored for the late entry, not this setup)"
+    },
+    {
+     "match": 1046,
+     "opponent": "OneJev1.6-0.8B",
+     "stage": "late-entry",
+     "reason": "opponent's late-entry match (scored for the late entry, not this setup)"
+    },
+    {
+     "match": 1071,
+     "opponent": "Base Labs Mammoth-1 [repeat 1]",
+     "stage": "late-entry",
+     "reason": "opponent's late-entry match (scored for the late entry, not this setup)"
+    },
+    {
+     "match": 1088,
+     "opponent": "Drex Max v1 [repeat 1]",
+     "stage": "late-entry",
+     "reason": "opponent's late-entry match (scored for the late entry, not this setup)"
+    },
+    {
+     "match": 1105,
+     "opponent": "Fastino GLiDE v1.2 (local) [repeat 1]",
+     "stage": "late-entry",
+     "reason": "opponent's late-entry match (scored for the late entry, not this setup)"
+    },
+    {
+     "match": 1121,
+     "opponent": "REAX 1.3 [repeat 1]",
+     "stage": "late-entry",
+     "reason": "opponent's late-entry match (scored for the late entry, not this setup)"
+    },
+    {
+     "match": 1127,
+     "opponent": "LFM2.5-2.6B (off)",
+     "stage": "late-entry",
+     "reason": "opponent's late-entry match (scored for the late entry, not this setup)"
+    },
+    {
+     "match": 1153,
+     "opponent": "Gemma 4 E4B (off)",
+     "stage": "late-entry",
+     "reason": "opponent's late-entry match (scored for the late entry, not this setup)"
+    },
+    {
+     "match": 1161,
+     "opponent": "Gemma 4 E4B (on)",
+     "stage": "late-entry",
+     "reason": "opponent's late-entry match (scored for the late entry, not this setup)"
+    },
+    {
+     "match": 1166,
+     "opponent": "GLiClass v4 Edge",
+     "stage": "late-entry",
+     "reason": "opponent's late-entry match (scored for the late entry, not this setup)"
+    },
+    {
+     "match": 181,
+     "stage": "league",
+     "reason": "League 1 match before promotion to League 2 (league_players: left League 1 2026-10-23, 'ladder round 1: promoted to league 2'); view maps it to league #12; not part of its League 2 score"
+    },
+    {
+     "match": 182,
+     "stage": "league",
+     "reason": "League 1 match before promotion to League 2 (league_players: left League 1 2026-10-23, 'ladder round 1: promoted to league 2'); view maps it to league #12; not part of its League 2 score"
+    },
+    {
+     "match": 184,
+     "stage": "league",
+     "reason": "League 1 match before promotion to League 2 (league_players: left League 1 2026-10-23, 'ladder round 1: promoted to league 2'); view maps it to league #12; not part of its League 2 score"
+    },
+    {
+     "match": 190,
+     "stage": "league",
+     "reason": "League 1 match before promotion to League 2 (league_players: left League 1 2026-10-23, 'ladder round 1: promoted to league 2'); view maps it to league #12; not part of its League 2 score"
+    },
+    {
+     "match": 191,
+     "stage": "league",
+     "reason": "League 1 match before promotion to League 2 (league_players: left League 1 2026-10-23, 'ladder round 1: promoted to league 2'); view maps it to league #12; not part of its League 2 score"
+    },
+    {
+     "match": 223,
+     "stage": "league",
+     "reason": "League 1 match before promotion to League 2 (league_players: left League 1 2026-10-23, 'ladder round 1: promoted to league 2'); view maps it to league #12; not part of its League 2 score"
+    },
+    {
+     "match": 268,
+     "stage": "league",
+     "reason": "League 1 match before promotion to League 2 (league_players: left League 1 2026-10-23, 'ladder round 1: promoted to league 2'); view maps it to league #12; not part of its League 2 score"
+    },
+    {
+     "match": 275,
+     "stage": "league",
+     "reason": "League 1 match before promotion to League 2 (league_players: left League 1 2026-10-23, 'ladder round 1: promoted to league 2'); view maps it to league #12; not part of its League 2 score"
+    },
+    {
+     "match": 280,
+     "stage": "league",
+     "reason": "League 1 match before promotion to League 2 (league_players: left League 1 2026-10-23, 'ladder round 1: promoted to league 2'); view maps it to league #12; not part of its League 2 score"
+    },
+    {
+     "match": 283,
+     "stage": "league",
+     "reason": "League 1 match before promotion to League 2 (league_players: left League 1 2026-10-23, 'ladder round 1: promoted to league 2'); view maps it to league #12; not part of its League 2 score"
+    },
+    {
+     "match": 365,
+     "stage": "league",
+     "reason": "League 1 match before promotion to League 2 (league_players: left League 1 2026-10-23, 'ladder round 1: promoted to league 2'); view maps it to league #12; not part of its League 2 score"
+    },
+    {
+     "match": 399,
+     "stage": "league",
+     "reason": "League 1 match before promotion to League 2 (league_players: left League 1 2026-10-23, 'ladder round 1: promoted to league 2'); view maps it to league #12; not part of its League 2 score"
+    },
+    {
+     "match": 490,
+     "stage": "league",
+     "reason": "League 1 match before promotion to League 2 (league_players: left League 1 2026-10-23, 'ladder round 1: promoted to league 2'); view maps it to league #12; not part of its League 2 score"
+    }
+   ],
+   "retained_repeat": {
+    "status_file": "mailbox/repeats/d1-ultra-r1 - status.md (main checkout)",
+    "manifest": "/home/cbasaran/code/jevgammon-launcher-bind/mailbox/repeats/manifest-2026-11-11.json",
+    "repeats": [
+     {
+      "league": 28,
+      "player_id": 69,
+      "player_name": "Liquid d1-ultra [repeat 1]",
+      "league_status": "finished",
+      "started_at": "2026-11-11T19:51:03.173Z",
+      "finished_at": "2026-11-11T20:37:26.252Z",
+      "state": "finished",
+      "valid_finished_matches": 16,
+      "matched_pairs_count": 16,
+      "matched_pairs": [
+       {
+        "opponent": "Random",
+        "original_match": 190,
+        "repeat_match": 1002,
+        "seed": 5434299141657422090,
+        "seat_first": true
+       },
+       {
+        "opponent": "GNUbg weak",
+        "original_match": 192,
+        "repeat_match": 1004,
+        "seed": -4500631350180980009,
+        "seat_first": true
+       },
+       {
+        "opponent": "Safest",
+        "original_match": 191,
+        "repeat_match": 1008,
+        "seed": -9150861684757123037,
+        "seat_first": true
+       },
+       {
+        "opponent": "Celeris-1 Decision",
+        "original_match": 264,
+        "repeat_match": 1011,
+        "seed": -7895556184478985602,
+        "seat_first": true
+       },
+       {
+        "opponent": "Fastino GLiDE",
+        "original_match": 376,
+        "repeat_match": 1017,
+        "seed": -4340748616553441756,
+        "seat_first": true
+       },
+       {
+        "opponent": "Jev 1.13.0",
+        "original_match": 280,
+        "repeat_match": 1018,
+        "seed": 6410236347400271523,
+        "seat_first": true
+       },
+       {
+        "opponent": "Jev 1.14.0",
+        "original_match": 265,
+        "repeat_match": 1019,
+        "seed": 4750228731398360226,
+        "seat_first": true
+       },
+       {
+        "opponent": "SubQ Snap Preview",
+        "original_match": 181,
+        "repeat_match": 1020,
+        "seed": 4110204326658156475,
+        "seat_first": false
+       },
+       {
+        "opponent": "Decider Flash v1.2",
+        "original_match": 268,
+        "repeat_match": 1021,
+        "seed": -3427556284922656970,
+        "seat_first": false
+       },
+       {
+        "opponent": "Winnow-12B",
+        "original_match": 283,
+        "repeat_match": 1022,
+        "seed": -4212191690790034946,
+        "seat_first": false
+       },
+       {
+        "opponent": "Cygnet (Gemma 4 12B)",
+        "original_match": 184,
+        "repeat_match": 1023,
+        "seed": 4496681061505309226,
+        "seat_first": true
+       },
+       {
+        "opponent": "Decider v1.1 27B",
+        "original_match": 182,
+        "repeat_match": 1024,
+        "seed": 3296664533817822337,
+        "seat_first": false
+       },
+       {
+        "opponent": "Decider v1.2 27B",
+        "original_match": 399,
+        "repeat_match": 1025,
+        "seed": 2510174432292934373,
+        "seat_first": true
+       },
+       {
+        "opponent": "Fastino GLiDE v1.2 (local)",
+        "original_match": 490,
+        "repeat_match": 1028,
+        "seed": -8004494191133164753,
+        "seat_first": false
+       },
+       {
+        "opponent": "Open-Jev 27B v1.1",
+        "original_match": 223,
+        "repeat_match": 1031,
+        "seed": -1303203783828864376,
+        "seat_first": false
+       },
+       {
+        "opponent": "Clef",
+        "original_match": 180,
+        "repeat_match": 1034,
+        "seed": 7015214181411837251,
+        "seat_first": false
+       }
+      ],
+      "unmatched_repeat_matches": [],
+      "rules": {
+       "seed": 2567889193785291627,
+       "seed_rule": "pair-v1",
+       "prompt_version": "bg-v2",
+       "order_seed": 1190975713392774006,
+       "rounds": 3,
+       "max_turns": 300,
+       "mirror_concurrent": 0,
+       "clock_seconds": null,
+       "delay_seconds": null
+      },
+      "rules_diff_vs_gemini_league_26": {
+       "mirror_concurrent": [
+        0,
+        1
+       ]
+      },
+      "opponents_equal_to_gemini_required": 16,
+      "opponent_extras": [],
+      "opponent_missing": [
+       "Liquid d1-ultra"
+      ],
+      "compatible": false,
+      "compatible_note": "Repeats d1-ultra's pre-promotion League 1 matches (original ids above, mirror_concurrent 0 as they were), not its scored League 2 row. Field = Gemini's 17 minus d1-ultra itself (16/17); rules equal League 1's except mirror_concurrent 0 v 1. Not fully compatible."
+     }
+    ]
+   }
+  },
+  {
+   "feed_name": "Drex Max",
+   "kind": "decision",
+   "pr": 30.399,
+   "distance": 2.429,
+   "in_interval_25_31_1": true,
+   "player_id": 58,
+   "player_name": "Drex Max v1",
+   "scored_matches": 18,
+   "leagues": [
+    {
+     "league": 17,
+     "label": "League 1 table, pinned-pairs league for Drex Max v1 (Late entry)",
+     "league_status": "running",
+     "stages": [
+      "late-entry"
+     ],
+     "matches": 18,
+     "match_ids": [
+      845,
+      847,
+      848,
+      855,
+      856,
+      857,
+      859,
+      861,
+      864,
+      867,
+      868,
+      870,
+      872,
+      873,
+      874,
+      879,
+      882,
+      885
+     ],
+     "rules": {
+      "seed": 2567889193785291627,
+      "seed_rule": "pair-v1",
+      "prompt_version": "bg-v2",
+      "order_seed": 1190975713392774006,
+      "rounds": 3,
+      "max_turns": 300,
+      "mirror_concurrent": 1,
+      "clock_seconds": null,
+      "delay_seconds": null
+     }
+    }
+   ],
+   "match_rules_distinct": [
+    {
+     "prompt_version": "bg-v2",
+     "order_seed": 1190975713392774006,
+     "max_turns": 300,
+     "clock_seconds": null,
+     "delay_seconds": null,
+     "mirror_concurrent": 1,
+     "rounds_planned": 3
+    }
+   ],
+   "opponents": {
+    "names": [
+     "Celeris-1 Decision",
+     "Clef",
+     "Cygnet (Gemma 4 12B)",
+     "Decider Flash v1.2",
+     "Decider v1.1 27B",
+     "Decider v1.2 27B",
+     "Fastino GLiDE",
+     "Fastino GLiDE v1.2 (local)",
+     "GNUbg weak",
+     "Jev 1.13.0",
+     "Jev 1.14.0",
+     "Liquid d1-ultra",
+     "Mercury Decide",
+     "Open-Jev 27B v1.1",
+     "Random",
+     "Safest",
+     "SubQ Snap Preview",
+     "Winnow-12B"
+    ],
+    "count": 18,
+    "equal_to_gemini_required": 17,
+    "extras": [
+     "Mercury Decide"
+    ],
+    "missing": []
+   },
+   "settings_summary": {
+    "spec": "drex-max/drex-max-v1",
+    "provider": "local (drex_max_server.py)",
+    "quantization": "bf16",
+    "device": "RTX PRO 6000 (bariton), one GPU (workspace/drex/drexmax.sh, DREX_MAX_GPU)",
+    "base_url": "http://127.0.0.1:18104",
+    "note": "Nace.AI's Drex Max v1 open weights (Hugging Face nace-ai/drex-max-v1 @ cac65e1982a0237e996419ba559004522d9a33ac, bf16; Qwen3.8-27B backbone with a 255-way readout) on our GPU, scored by Nace's own loader (drex_max from github.com/nace-ai/drex-decision-models @ e206b278e3988ad1b58e6f1556b559a65947a4e6, .venv-drex-max: torch 2.15.0, transformers 5.17.0) behind decision-models runner/servers/drex_max_server.py, as the Turkish runs served it, one request at a time, the loader's default 16,384-token limit; at most 25 options per request; price = Nace's list price for the hosted model ($0.06 per million input tokens, nace.ai/drex, read 2026-11-05; as on the Decision Models page), not billed. Late entry to the original League 1 table; not eligible for the Hype Cup",
+    "parallel": 1
+   },
+   "settings": {
+    "name": "Drex Max v1",
+    "spec": "drex-max/drex-max-v1",
+    "provider": "local (drex_max_server.py)",
+    "quantization": "bf16",
+    "base_url": "http://127.0.0.1:18104",
+    "price": {
+     "input_per_mtok": 0.06,
+     "output_per_mtok": 0.0
+    },
+    "note": "Nace.AI's Drex Max v1 open weights (Hugging Face nace-ai/drex-max-v1 @ cac65e1982a0237e996419ba559004522d9a33ac, bf16; Qwen3.8-27B backbone with a 255-way readout) on our GPU, scored by Nace's own loader (drex_max from github.com/nace-ai/drex-decision-models @ e206b278e3988ad1b58e6f1556b559a65947a4e6, .venv-drex-max: torch 2.15.0, transformers 5.17.0) behind decision-models runner/servers/drex_max_server.py, as the Turkish runs served it, one request at a time, the loader's default 16,384-token limit; at most 25 options per request; price = Nace's list price for the hosted model ($0.06 per million input tokens, nace.ai/drex, read 2026-11-05; as on the Decision Models page), not billed. Late entry to the original League 1 table; not eligible for the Hype Cup",
+    "device": "RTX PRO 6000 (bariton), one GPU (workspace/drex/drexmax.sh, DREX_MAX_GPU)",
+    "parallel": 1
+   },
+   "shared_pair_seeds": {
+    "count": 0,
+    "pairs": [],
+    "matches_with_any_gemini_seed": [],
+    "checked_over": "all valid finished matches of this player",
+    "note": "Gemini Decision 1's own matches (e.g. its match v this setup) excluded from the check",
+    "mercury_luna": {
+     "gemini_matches": [
+      {
+       "opponent": "Mercury Decide",
+       "match": 1016,
+       "status": "aborted",
+       "seed": 5705471907912929391,
+       "seat_first": false
+      }
+     ],
+     "equal_seed_matches": []
+    }
+   },
+   "excluded_valid_matches": [],
+   "retained_repeat": {
+    "status_file": "mailbox/repeats/drex-max-v1-r1 - status.md (main checkout)",
+    "manifest": "/home/cbasaran/code/jevgammon-launcher-bind/mailbox/repeats/manifest-2026-11-11.json",
+    "repeats": [
+     {
+      "league": 32,
+      "player_id": 73,
+      "player_name": "Drex Max v1 [repeat 1]",
+      "league_status": "finished",
+      "started_at": "2026-11-12T01:03:21.173Z",
+      "finished_at": "2026-11-12T02:03:15.606Z",
+      "state": "finished",
+      "valid_finished_matches": 17,
+      "matched_pairs_count": 17,
+      "matched_pairs": [
+       {
+        "opponent": "Random",
+        "original_match": 856,
+        "repeat_match": 1081,
+        "seed": -3038760561100507778,
+        "seat_first": false
+       },
+       {
+        "opponent": "GNUbg weak",
+        "original_match": 861,
+        "repeat_match": 1082,
+        "seed": 7323308491602056259,
+        "seat_first": false
+       },
+       {
+        "opponent": "Safest",
+        "original_match": 864,
+        "repeat_match": 1083,
+        "seed": 2561309086991491001,
+        "seat_first": true
+       },
+       {
+        "opponent": "Celeris-1 Decision",
+        "original_match": 857,
+        "repeat_match": 1084,
+        "seed": -8605839840547564294,
+        "seat_first": false
+       },
+       {
+        "opponent": "Fastino GLiDE",
+        "original_match": 855,
+        "repeat_match": 1085,
+        "seed": -142180579762006975,
+        "seat_first": true
+       },
+       {
+        "opponent": "Jev 1.13.0",
+        "original_match": 847,
+        "repeat_match": 1086,
+        "seed": -7441137430863053764,
+        "seat_first": true
+       },
+       {
+        "opponent": "Jev 1.14.0",
+        "original_match": 859,
+        "repeat_match": 1087,
+        "seed": -6513067396093598724,
+        "seat_first": true
+       },
+       {
+        "opponent": "Liquid d1-ultra",
+        "original_match": 867,
+        "repeat_match": 1088,
+        "seed": -7389221022264876874,
+        "seat_first": true
+       },
+       {
+        "opponent": "SubQ Snap Preview",
+        "original_match": 848,
+        "repeat_match": 1089,
+        "seed": 5008997222355474043,
+        "seat_first": true
+       },
+       {
+        "opponent": "Decider Flash v1.2",
+        "original_match": 870,
+        "repeat_match": 1090,
+        "seed": -6334224264511882480,
+        "seat_first": true
+       },
+       {
+        "opponent": "Winnow-12B",
+        "original_match": 872,
+        "repeat_match": 1091,
+        "seed": 5933853776950260856,
+        "seat_first": true
+       },
+       {
+        "opponent": "Cygnet (Gemma 4 12B)",
+        "original_match": 873,
+        "repeat_match": 1092,
+        "seed": -7030385286462944028,
+        "seat_first": true
+       },
+       {
+        "opponent": "Decider v1.1 27B",
+        "original_match": 885,
+        "repeat_match": 1093,
+        "seed": -6340329846420277173,
+        "seat_first": true
+       },
+       {
+        "opponent": "Decider v1.2 27B",
+        "original_match": 868,
+        "repeat_match": 1094,
+        "seed": 205605674475530312,
+        "seat_first": true
+       },
+       {
+        "opponent": "Fastino GLiDE v1.2 (local)",
+        "original_match": 879,
+        "repeat_match": 1095,
+        "seed": -3769513006383021775,
+        "seat_first": false
+       },
+       {
+        "opponent": "Open-Jev 27B v1.1",
+        "original_match": 882,
+        "repeat_match": 1096,
+        "seed": 951292442080725756,
+        "seat_first": false
+       },
+       {
+        "opponent": "Clef",
+        "original_match": 874,
+        "repeat_match": 1097,
+        "seed": 4725177579945299308,
+        "seat_first": false
+       }
+      ],
+      "unmatched_repeat_matches": [],
+      "rules": {
+       "seed": 2567889193785291627,
+       "seed_rule": "pair-v1",
+       "prompt_version": "bg-v2",
+       "order_seed": 1190975713392774006,
+       "rounds": 3,
+       "max_turns": 300,
+       "mirror_concurrent": 1,
+       "clock_seconds": null,
+       "delay_seconds": null
+      },
+      "rules_diff_vs_gemini_league_26": {},
+      "opponents_equal_to_gemini_required": 17,
+      "opponent_extras": [],
+      "opponent_missing": [],
+      "compatible": true,
+      "compatible_note": "Same 17 opponents as Gemini's required field, League 1 rules identical to league #26; pinned to the original's seeds/seats (all matched). Compatible."
+     }
+    ]
+   }
+  },
+  {
+   "feed_name": "Kimi K3.1 Pro",
+   "kind": "chat",
+   "pr": 28.046,
+   "distance": 0.076,
+   "in_interval_25_31_1": true,
+   "player_id": 51,
+   "player_name": "Kimi K3.1 Pro (off)",
+   "scored_matches": 13,
+   "leagues": [
+    {
+     "league": 3,
+     "label": "League 3 (original)",
+     "league_status": "finished",
+     "stages": [
+      "league"
+     ],
+     "matches": 11,
+     "match_ids": [
+      602,
+      603,
+      604,
+      605,
+      614,
+      615,
+      616,
+      617,
+      618,
+      619,
+      624
+     ],
+     "rules": {
+      "seed": 3685413082999515901,
+      "seed_rule": "pair-v1",
+      "prompt_version": "bg-v2",
+      "order_seed": 1190975713392774006,
+      "rounds": 3,
+      "max_turns": 300,
+      "mirror_concurrent": 1,
+      "clock_seconds": null,
+      "delay_seconds": null
+     }
+    },
+    {
+     "league": 6,
+     "label": "League 3 table, pinned-pairs league for Kimi K3.1 Pro (off) (Gap matches)",
+     "league_status": "finished",
+     "stages": [
+      "league"
+     ],
+     "matches": 2,
+     "match_ids": [
+      750,
+      751
+     ],
+     "rules": {
+      "seed": 3685413082999515901,
+      "seed_rule": "pair-v1",
+      "prompt_version": "bg-v2",
+      "order_seed": 1190975713392774006,
+      "rounds": 3,
+      "max_turns": 300,
+      "mirror_concurrent": 1,
+      "clock_seconds": null,
+      "delay_seconds": null
+     }
+    }
+   ],
+   "match_rules_distinct": [
+    {
+     "prompt_version": "bg-v2",
+     "order_seed": 1190975713392774006,
+     "max_turns": 300,
+     "clock_seconds": null,
+     "delay_seconds": null,
+     "mirror_concurrent": 1,
+     "rounds_planned": 3
+    }
+   ],
+   "opponents": {
+    "names": [
+     "Claude Fable 5.1 (off)",
+     "Claude Fable 5.1 (on)",
+     "Claude Opus 5.5 (off)",
+     "Claude Opus 5.5 (on)",
+     "GNUbg weak",
+     "GPT-6 Astra (off)",
+     "GPT-6 Astra (on)",
+     "GPT-6.1 Sol (high)",
+     "GPT-6.1 Sol (low)",
+     "Gemini 4 Argon (off)",
+     "Gemini 4 Argon (on)",
+     "Grok 4.7 (off)",
+     "Grok 4.7 (on)"
+    ],
+    "count": 13,
+    "equal_to_gemini_required": 1,
+    "extras": [
+     "Claude Fable 5.1 (off)",
+     "Claude Fable 5.1 (on)",
+     "Claude Opus 5.5 (off)",
+     "Claude Opus 5.5 (on)",
+     "GPT-6 Astra (off)",
+     "GPT-6 Astra (on)",
+     "GPT-6.1 Sol (high)",
+     "GPT-6.1 Sol (low)",
+     "Gemini 4 Argon (off)",
+     "Gemini 4 Argon (on)",
+     "Grok 4.7 (off)",
+     "Grok 4.7 (on)"
+    ],
+    "missing": [
+     "Celeris-1 Decision",
+     "Clef",
+     "Cygnet (Gemma 4 12B)",
+     "Decider Flash v1.2",
+     "Decider v1.1 27B",
+     "Decider v1.2 27B",
+     "Fastino GLiDE",
+     "Fastino GLiDE v1.2 (local)",
+     "Jev 1.13.0",
+     "Jev 1.14.0",
+     "Liquid d1-ultra",
+     "Open-Jev 27B v1.1",
+     "Random",
+     "Safest",
+     "SubQ Snap Preview",
+     "Winnow-12B"
+    ]
+   },
+   "settings_summary": {
+    "spec": "openai-compatible/moonshotai/kimi-k3.1-pro",
+    "provider": "openrouter:moonshotai/mxfp4",
+    "quantization": "mxfp4",
+    "device": null,
+    "base_url": "https://openrouter.ai/api/v1",
+    "api_key_env": "OPENROUTER_API_KEY",
+    "reasoning": "none",
+    "letter_readout": "answer",
+    "note": "Moonshot's Kimi K3.1 Pro (moonshotai/kimi-k3.1-pro, canonical moonshotai/kimi-k3.1-pro-20261023) via OpenRouter pinned to Moonshot AI's standard endpoint (tag moonshotai/mxfp4, service_tier null; not moonshotai/highspeed), fallbacks off. Off = reasoning_effort none, the lowest effort OpenRouter lists for this model on 2026-10-24 (supported_efforts max/high/low/none, default max). Letter constrained by JSON schema; logprobs asked, read when returned. Temperature 1.0. List price $2/$10 per million, cache read $0.20 (OpenRouter endpoints API, 2026-10-24). $30 hard cap shared with (on)",
+    "parallel": 4
+   },
+   "settings": {
+    "name": "Kimi K3.1 Pro (off)",
+    "spec": "openai-compatible/moonshotai/kimi-k3.1-pro",
+    "provider": "openrouter:moonshotai/mxfp4",
+    "quantization": "mxfp4",
+    "base_url": "https://openrouter.ai/api/v1",
+    "api_key_env": "OPENROUTER_API_KEY",
+    "reasoning": "none",
+    "request": {
+     "provider": {
+      "order": [
+       "moonshotai/mxfp4"
+      ],
+      "allow_fallbacks": false
+     },
+     "usage": {
+      "include": true
+     }
+    },
+    "letter_readout": "answer",
+    "price": {
+     "input_per_mtok": 2.0,
+     "output_per_mtok": 10.0
+    },
+    "note": "Moonshot's Kimi K3.1 Pro (moonshotai/kimi-k3.1-pro, canonical moonshotai/kimi-k3.1-pro-20261023) via OpenRouter pinned to Moonshot AI's standard endpoint (tag moonshotai/mxfp4, service_tier null; not moonshotai/highspeed), fallbacks off. Off = reasoning_effort none, the lowest effort OpenRouter lists for this model on 2026-10-24 (supported_efforts max/high/low/none, default max). Letter constrained by JSON schema; logprobs asked, read when returned. Temperature 1.0. List price $2/$10 per million, cache read $0.20 (OpenRouter endpoints API, 2026-10-24). $30 hard cap shared with (on)",
+    "parallel": 4,
+    "budget": {
+     "ledger": "smoke/kimi-k31-budget.db",
+     "cap_usd": 30.0,
+     "input_per_mtok": 2.0,
+     "cached_input_per_mtok": 0.2,
+     "output_per_mtok": 10.0
+    }
+   },
+   "shared_pair_seeds": {
+    "count": 0,
+    "pairs": [],
+    "matches_with_any_gemini_seed": [],
+    "checked_over": "all valid finished matches of this player",
+    "note": "Gemini Decision 1's own matches (e.g. its match v this setup) excluded from the check",
+    "mercury_luna": {
+     "gemini_matches": [
+      {
+       "opponent": "Mercury Decide",
+       "match": 1016,
+       "status": "aborted",
+       "seed": 5705471907912929391,
+       "seat_first": false
+      }
+     ],
+     "equal_seed_matches": []
+    }
+   },
+   "excluded_valid_matches": [
+    {
+     "match": 699,
+     "opponent": "Gemini 3.8 Flash (low)",
+     "stage": "league",
+     "reason": "not in league_match_view (an opponent left the league roster)"
+    },
+    {
+     "match": 771,
+     "opponent": "GPT-6 Astra (high)",
+     "stage": "late-entry",
+     "reason": "opponent's late-entry match (scored for the late entry, not this setup)"
+    }
+   ],
+   "retained_repeat": null
+  },
+  {
+   "feed_name": "Qwen3.8-27B",
+   "kind": "chat",
+   "pr": 29.033,
+   "distance": 1.063,
+   "in_interval_25_31_1": true,
+   "player_id": 20,
+   "player_name": "Qwen3.8-27B (on)",
+   "scored_matches": 21,
+   "leagues": [
+    {
+     "league": 2,
+     "label": "League 2 (original)",
+     "league_status": "finished",
+     "stages": [
+      "league"
+     ],
+     "matches": 18,
+     "match_ids": [
+      205,
+      220,
+      221,
+      222,
+      304,
+      337,
+      340,
+      367,
+      390,
+      480,
+      525,
+      554,
+      574,
+      623,
+      639,
+      648,
+      698,
+      719
+     ],
+     "rules": {
+      "seed": 8637860750269043463,
+      "seed_rule": "pair-v1",
+      "prompt_version": "bg-v2",
+      "order_seed": 1190975713392774006,
+      "rounds": 3,
+      "max_turns": 300,
+      "mirror_concurrent": 1,
+      "clock_seconds": null,
+      "delay_seconds": null
+     }
+    },
+    {
+     "league": 4,
+     "label": "League 2 table, pinned-pairs league for Gemini 4 Argon (off) (Early start for round 3)",
+     "league_status": "finished",
+     "stages": [
+      "league"
+     ],
+     "matches": 2,
+     "match_ids": [
+      198,
+      666
+     ],
+     "rules": {
+      "seed": 8637860750269043463,
+      "seed_rule": "pair-v1",
+      "prompt_version": "bg-v2",
+      "order_seed": 1190975713392774006,
+      "rounds": 3,
+      "max_turns": 300,
+      "mirror_concurrent": 1,
+      "clock_seconds": null,
+      "delay_seconds": null
+     }
+    },
+    {
+     "league": 5,
+     "label": "League 2 table, pinned-pairs league for Celeris-1 Decision (Early start for round 5)",
+     "league_status": "finished",
+     "stages": [
+      "league"
+     ],
+     "matches": 1,
+     "match_ids": [
+      745
+     ],
+     "rules": {
+      "seed": 8637860750269043463,
+      "seed_rule": "pair-v1",
+      "prompt_version": "bg-v2",
+      "order_seed": 1190975713392774006,
+      "rounds": 3,
+      "max_turns": 300,
+      "mirror_concurrent": 1,
+      "clock_seconds": null,
+      "delay_seconds": null
+     }
+    }
+   ],
+   "match_rules_distinct": [
+    {
+     "prompt_version": "bg-v2",
+     "order_seed": 1190975713392774006,
+     "max_turns": 300,
+     "clock_seconds": null,
+     "delay_seconds": null,
+     "mirror_concurrent": 1,
+     "rounds_planned": 3
+    }
+   ],
+   "opponents": {
+    "names": [
+     "Celeris-1 Decision",
+     "Claude Fable 5.1 (off)",
+     "Claude Sonnet 5.5 (high)",
+     "Claude Sonnet 5.5 (low)",
+     "Clef",
+     "DeepSeek V4.1 Flash (off)",
+     "DeepSeek V4.1 Flash (on)",
+     "DeepSeek V4.1 Flash 1017 (off)",
+     "DeepSeek V4.1 Flash 1017 (on)",
+     "Fastino GLiDE",
+     "GLM-5.3 (on)",
+     "GNUbg weak",
+     "Gemini 3.8 Flash (high)",
+     "Gemini 3.8 Flash (low)",
+     "Gemini 4 Argon (off)",
+     "Gemma 4 31B (off)",
+     "Gemma 4 31B (on)",
+     "Grok 4.7 (off)",
+     "Jev 1.14.0",
+     "Liquid d1-ultra",
+     "Qwen3.8 Flash (off)"
+    ],
+    "count": 21,
+    "equal_to_gemini_required": 6,
+    "extras": [
+     "Claude Fable 5.1 (off)",
+     "Claude Sonnet 5.5 (high)",
+     "Claude Sonnet 5.5 (low)",
+     "DeepSeek V4.1 Flash (off)",
+     "DeepSeek V4.1 Flash (on)",
+     "DeepSeek V4.1 Flash 1017 (off)",
+     "DeepSeek V4.1 Flash 1017 (on)",
+     "GLM-5.3 (on)",
+     "Gemini 3.8 Flash (high)",
+     "Gemini 3.8 Flash (low)",
+     "Gemini 4 Argon (off)",
+     "Gemma 4 31B (off)",
+     "Gemma 4 31B (on)",
+     "Grok 4.7 (off)",
+     "Qwen3.8 Flash (off)"
+    ],
+    "missing": [
+     "Cygnet (Gemma 4 12B)",
+     "Decider Flash v1.2",
+     "Decider v1.1 27B",
+     "Decider v1.2 27B",
+     "Fastino GLiDE v1.2 (local)",
+     "Jev 1.13.0",
+     "Open-Jev 27B v1.1",
+     "Random",
+     "Safest",
+     "SubQ Snap Preview",
+     "Winnow-12B"
+    ]
+   },
+   "settings_summary": {
+    "spec": "openai-compatible/qwen3.8-27b",
+    "provider": "local-vllm",
+    "quantization": "fp16 (bf16 checkpoint served in fp16 by vLLM; fp16 KV cache)",
+    "device": "Cerebras (OpenRouter) until 2026-10-19 22:26 UTC; then RTX PRO 6000 (bariton GPU 1), the whole GPU (memory share 0.90, 32 sequences); paused 2026-10-20 (GPUs needed elsewhere); from 2026-10-20 20:16 UTC bariton GPU 3 (same model of GPU, image, checkpoint and arguments); from 2026-10-20 21:10 UTC NVIDIA GB10 (DGX Spark spark-002e), same image, checkpoint and arguments except memory share 0.85, while bariton's four GPUs serve DeepSeek V4.1 Flash; 20 stored League 2 (off) requests (bariton) replayed there: same top letter 20/20, max |dp| 0.005, median 0.002; from 2026-10-21 01:25 UTC back on bariton GPU 3, same script and arguments, while DeepSeek V4.1 Flash is paused (its four GPUs freed for League 2's non-DeepSeek thinking matches); 20 stored (off) requests: same top letter 20/20, max |dp| 0.009; from 2026-10-21 05:00 UTC NVIDIA GB10 (DGX Spark spark-002e) again, the same server as from 2026-10-20 21:10 UTC, while DeepSeek V4.1 Flash plays its last matches on bariton; from 2026-10-22 15:37 UTC back on RTX PRO 6000 (bariton GPU 3), same image, checkpoint and arguments (memory share 0.90); 20 stored League 2 (off) requests replayed there: same top letter 20/20, max |dp| 0.007, median 0.0008; from 2026-10-23 21:34 UTC (ladder round 1) bariton GPU 0, same script, image, checkpoint and arguments (QWEN27_GPU=0); 2026-10-23 23:09 UTC the server died (CUDA unknown error after another GPU fell off the bus); matches deferred until bariton is reset; from 2026-10-25 09:49 UTC (ladder round 2) bariton GPU 1 (QWEN27_GPU=1), same script, image, checkpoint and arguments",
+    "base_url": "http://127.0.0.1:8897/v1",
+    "reasoning": "low",
+    "letter_readout": "prefill",
+    "note": "reasoning effort low (the chat template's reasoning_effort); Cerebras (fp16 via OpenRouter) before 2026-10-19 22:26 UTC, where it finished no match; from then vLLM on our GPU (tools/v3/servers/qwen38-27b.sh), letter read after the reasoning from a prefilled Answer:; smoke (5 positions): all answered with probabilities, 484-10,211 reasoning tokens, about 27 tokens/s per request",
+    "parallel": 16,
+    "max_matches": 16
+   },
+   "settings": {
+    "name": "Qwen3.8-27B (on)",
+    "spec": "openai-compatible/qwen3.8-27b",
+    "provider": "local-vllm",
+    "quantization": "fp16 (bf16 checkpoint served in fp16 by vLLM; fp16 KV cache)",
+    "base_url": "http://127.0.0.1:8897/v1",
+    "reasoning": "low",
+    "request": {
+     "chat_template_kwargs": {
+      "enable_thinking": true
+     },
+     "response_format": null
+    },
+    "letter_readout": "prefill",
+    "note": "reasoning effort low (the chat template's reasoning_effort); Cerebras (fp16 via OpenRouter) before 2026-10-19 22:26 UTC, where it finished no match; from then vLLM on our GPU (tools/v3/servers/qwen38-27b.sh), letter read after the reasoning from a prefilled Answer:; smoke (5 positions): all answered with probabilities, 484-10,211 reasoning tokens, about 27 tokens/s per request",
+    "device": "Cerebras (OpenRouter) until 2026-10-19 22:26 UTC; then RTX PRO 6000 (bariton GPU 1), the whole GPU (memory share 0.90, 32 sequences); paused 2026-10-20 (GPUs needed elsewhere); from 2026-10-20 20:16 UTC bariton GPU 3 (same model of GPU, image, checkpoint and arguments); from 2026-10-20 21:10 UTC NVIDIA GB10 (DGX Spark spark-002e), same image, checkpoint and arguments except memory share 0.85, while bariton's four GPUs serve DeepSeek V4.1 Flash; 20 stored League 2 (off) requests (bariton) replayed there: same top letter 20/20, max |dp| 0.005, median 0.002; from 2026-10-21 01:25 UTC back on bariton GPU 3, same script and arguments, while DeepSeek V4.1 Flash is paused (its four GPUs freed for League 2's non-DeepSeek thinking matches); 20 stored (off) requests: same top letter 20/20, max |dp| 0.009; from 2026-10-21 05:00 UTC NVIDIA GB10 (DGX Spark spark-002e) again, the same server as from 2026-10-20 21:10 UTC, while DeepSeek V4.1 Flash plays its last matches on bariton; from 2026-10-22 15:37 UTC back on RTX PRO 6000 (bariton GPU 3), same image, checkpoint and arguments (memory share 0.90); 20 stored League 2 (off) requests replayed there: same top letter 20/20, max |dp| 0.007, median 0.0008; from 2026-10-23 21:34 UTC (ladder round 1) bariton GPU 0, same script, image, checkpoint and arguments (QWEN27_GPU=0); 2026-10-23 23:09 UTC the server died (CUDA unknown error after another GPU fell off the bus); matches deferred until bariton is reset; from 2026-10-25 09:49 UTC (ladder round 2) bariton GPU 1 (QWEN27_GPU=1), same script, image, checkpoint and arguments",
+    "parallel": 16,
+    "max_matches": 16
+   },
+   "shared_pair_seeds": {
+    "count": 0,
+    "pairs": [],
+    "matches_with_any_gemini_seed": [],
+    "checked_over": "all valid finished matches of this player",
+    "note": "Gemini Decision 1's own matches (e.g. its match v this setup) excluded from the check",
+    "mercury_luna": {
+     "gemini_matches": [
+      {
+       "opponent": "Mercury Decide",
+       "match": 1016,
+       "status": "aborted",
+       "seed": 5705471907912929391,
+       "seat_first": false
+      }
+     ],
+     "equal_seed_matches": []
+    }
+   },
+   "excluded_valid_matches": [
+    {
+     "match": 204,
+     "opponent": "GPT-6.1 Sol (high)",
+     "stage": "league",
+     "reason": "not in league_match_view (an opponent left the league roster)"
+    },
+    {
+     "match": 218,
+     "opponent": "GPT-6.1 Sol (low)",
+     "stage": "league",
+     "reason": "not in league_match_view (an opponent left the league roster)"
+    },
+    {
+     "match": 332,
+     "opponent": "LFM2.5-24B-A2B (on)",
+     "stage": "league",
+     "reason": "not in league_match_view (an opponent left the league roster)"
+    },
+    {
+     "match": 336,
+     "opponent": "LFM2.5-24B-A2B (off)",
+     "stage": "league",
+     "reason": "not in league_match_view (an opponent left the league roster)"
+    },
+    {
+     "match": 413,
+     "opponent": "Qwen3.8-27B (off)",
+     "stage": "league",
+     "reason": "not in league_match_view (an opponent left the league roster)"
+    }
+   ],
+   "retained_repeat": null
+  },
+  {
+   "feed_name": "GLM-5.3",
+   "kind": "chat",
+   "pr": 30.866,
+   "distance": 2.896,
+   "in_interval_25_31_1": true,
+   "player_id": 26,
+   "player_name": "GLM-5.3 (on)",
+   "scored_matches": 21,
+   "leagues": [
+    {
+     "league": 2,
+     "label": "League 2 (original)",
+     "league_status": "finished",
+     "stages": [
+      "league"
+     ],
+     "matches": 18,
+     "match_ids": [
+      104,
+      107,
+      112,
+      118,
+      125,
+      196,
+      231,
+      367,
+      385,
+      388,
+      519,
+      527,
+      569,
+      598,
+      627,
+      636,
+      676,
+      715
+     ],
+     "rules": {
+      "seed": 8637860750269043463,
+      "seed_rule": "pair-v1",
+      "prompt_version": "bg-v2",
+      "order_seed": 1190975713392774006,
+      "rounds": 3,
+      "max_turns": 300,
+      "mirror_concurrent": 1,
+      "clock_seconds": null,
+      "delay_seconds": null
+     }
+    },
+    {
+     "league": 4,
+     "label": "League 2 table, pinned-pairs league for Gemini 4 Argon (off) (Early start for round 3)",
+     "league_status": "finished",
+     "stages": [
+      "league"
+     ],
+     "matches": 2,
+     "match_ids": [
+      132,
+      654
+     ],
+     "rules": {
+      "seed": 8637860750269043463,
+      "seed_rule": "pair-v1",
+      "prompt_version": "bg-v2",
+      "order_seed": 1190975713392774006,
+      "rounds": 3,
+      "max_turns": 300,
+      "mirror_concurrent": 1,
+      "clock_seconds": null,
+      "delay_seconds": null
+     }
+    },
+    {
+     "league": 5,
+     "label": "League 2 table, pinned-pairs league for Celeris-1 Decision (Early start for round 5)",
+     "league_status": "finished",
+     "stages": [
+      "league"
+     ],
+     "matches": 1,
+     "match_ids": [
+      734
+     ],
+     "rules": {
+      "seed": 8637860750269043463,
+      "seed_rule": "pair-v1",
+      "prompt_version": "bg-v2",
+      "order_seed": 1190975713392774006,
+      "rounds": 3,
+      "max_turns": 300,
+      "mirror_concurrent": 1,
+      "clock_seconds": null,
+      "delay_seconds": null
+     }
+    }
+   ],
+   "match_rules_distinct": [
+    {
+     "prompt_version": "bg-v2",
+     "order_seed": 1190975713392774006,
+     "max_turns": 300,
+     "clock_seconds": null,
+     "delay_seconds": null,
+     "mirror_concurrent": 1,
+     "rounds_planned": 3
+    }
+   ],
+   "opponents": {
+    "names": [
+     "Celeris-1 Decision",
+     "Claude Fable 5.1 (off)",
+     "Claude Sonnet 5.5 (high)",
+     "Claude Sonnet 5.5 (low)",
+     "Clef",
+     "DeepSeek V4.1 Flash (off)",
+     "DeepSeek V4.1 Flash (on)",
+     "DeepSeek V4.1 Flash 1017 (off)",
+     "DeepSeek V4.1 Flash 1017 (on)",
+     "Fastino GLiDE",
+     "GNUbg weak",
+     "Gemini 3.8 Flash (high)",
+     "Gemini 3.8 Flash (low)",
+     "Gemini 4 Argon (off)",
+     "Gemma 4 31B (off)",
+     "Gemma 4 31B (on)",
+     "Grok 4.7 (off)",
+     "Jev 1.14.0",
+     "Liquid d1-ultra",
+     "Qwen3.8 Flash (off)",
+     "Qwen3.8-27B (on)"
+    ],
+    "count": 21,
+    "equal_to_gemini_required": 6,
+    "extras": [
+     "Claude Fable 5.1 (off)",
+     "Claude Sonnet 5.5 (high)",
+     "Claude Sonnet 5.5 (low)",
+     "DeepSeek V4.1 Flash (off)",
+     "DeepSeek V4.1 Flash (on)",
+     "DeepSeek V4.1 Flash 1017 (off)",
+     "DeepSeek V4.1 Flash 1017 (on)",
+     "Gemini 3.8 Flash (high)",
+     "Gemini 3.8 Flash (low)",
+     "Gemini 4 Argon (off)",
+     "Gemma 4 31B (off)",
+     "Gemma 4 31B (on)",
+     "Grok 4.7 (off)",
+     "Qwen3.8 Flash (off)",
+     "Qwen3.8-27B (on)"
+    ],
+    "missing": [
+     "Cygnet (Gemma 4 12B)",
+     "Decider Flash v1.2",
+     "Decider v1.1 27B",
+     "Decider v1.2 27B",
+     "Fastino GLiDE v1.2 (local)",
+     "Jev 1.13.0",
+     "Open-Jev 27B v1.1",
+     "Random",
+     "Safest",
+     "SubQ Snap Preview",
+     "Winnow-12B"
+    ]
+   },
+   "settings_summary": {
+    "spec": "openai-compatible/z-ai/glm-5.3",
+    "provider": "openrouter:fireworks",
+    "quantization": null,
+    "device": null,
+    "base_url": "https://openrouter.ai/api/v1",
+    "api_key_env": "OPENROUTER_API_KEY",
+    "reasoning": "low",
+    "top_logprobs": 5,
+    "letter_readout": "answer",
+    "note": "reasoning is mandatory on this endpoint, so no off setup; effort low",
+    "parallel": 8,
+    "rpm": 18
+   },
+   "settings": {
+    "name": "GLM-5.3 (on)",
+    "spec": "openai-compatible/z-ai/glm-5.3",
+    "provider": "openrouter:fireworks",
+    "base_url": "https://openrouter.ai/api/v1",
+    "api_key_env": "OPENROUTER_API_KEY",
+    "reasoning": "low",
+    "request": {
+     "provider": {
+      "order": [
+       "fireworks"
+      ],
+      "allow_fallbacks": false,
+      "require_parameters": true
+     },
+     "usage": {
+      "include": true
+     }
+    },
+    "top_logprobs": 5,
+    "letter_readout": "answer",
+    "price": {
+     "input_per_mtok": 1.4,
+     "output_per_mtok": 4.4
+    },
+    "note": "reasoning is mandatory on this endpoint, so no off setup; effort low",
+    "parallel": 8,
+    "rpm": 18
+   },
+   "shared_pair_seeds": {
+    "count": 0,
+    "pairs": [],
+    "matches_with_any_gemini_seed": [],
+    "checked_over": "all valid finished matches of this player",
+    "note": "Gemini Decision 1's own matches (e.g. its match v this setup) excluded from the check",
+    "mercury_luna": {
+     "gemini_matches": [
+      {
+       "opponent": "Mercury Decide",
+       "match": 1016,
+       "status": "aborted",
+       "seed": 5705471907912929391,
+       "seat_first": false
+      }
+     ],
+     "equal_seed_matches": []
+    }
+   },
+   "excluded_valid_matches": [
+    {
+     "match": 99,
+     "opponent": "GPT-6.1 Sol (low)",
+     "stage": "league",
+     "reason": "not in league_match_view (an opponent left the league roster)"
+    },
+    {
+     "match": 131,
+     "opponent": "GPT-6.1 Sol (high)",
+     "stage": "league",
+     "reason": "not in league_match_view (an opponent left the league roster)"
+    },
+    {
+     "match": 314,
+     "opponent": "LFM2.5-24B-A2B (on)",
+     "stage": "league",
+     "reason": "not in league_match_view (an opponent left the league roster)"
+    },
+    {
+     "match": 331,
+     "opponent": "LFM2.5-24B-A2B (off)",
+     "stage": "league",
+     "reason": "not in league_match_view (an opponent left the league roster)"
+    },
+    {
+     "match": 406,
+     "opponent": "Qwen3.8-27B (off)",
+     "stage": "league",
+     "reason": "not in league_match_view (an opponent left the league roster)"
+    }
+   ],
+   "retained_repeat": null
+  },
+  {
+   "feed_name": "Qwen3.8 Flash",
+   "kind": "chat",
+   "pr": 33.578,
+   "distance": 5.608,
+   "in_interval_25_31_1": false,
+   "player_id": 25,
+   "player_name": "Qwen3.8 Flash (off)",
+   "scored_matches": 21,
+   "leagues": [
+    {
+     "league": 2,
+     "label": "League 2 (original)",
+     "league_status": "finished",
+     "stages": [
+      "league"
+     ],
+     "matches": 18,
+     "match_ids": [
+      309,
+      315,
+      316,
+      326,
+      343,
+      344,
+      385,
+      387,
+      390,
+      458,
+      520,
+      529,
+      570,
+      599,
+      629,
+      642,
+      679,
+      716
+     ],
+     "rules": {
+      "seed": 8637860750269043463,
+      "seed_rule": "pair-v1",
+      "prompt_version": "bg-v2",
+      "order_seed": 1190975713392774006,
+      "rounds": 3,
+      "max_turns": 300,
+      "mirror_concurrent": 1,
+      "clock_seconds": null,
+      "delay_seconds": null
+     }
+    },
+    {
+     "league": 4,
+     "label": "League 2 table, pinned-pairs league for Gemini 4 Argon (off) (Early start for round 3)",
+     "league_status": "finished",
+     "stages": [
+      "league"
+     ],
+     "matches": 2,
+     "match_ids": [
+      386,
+      663
+     ],
+     "rules": {
+      "seed": 8637860750269043463,
+      "seed_rule": "pair-v1",
+      "prompt_version": "bg-v2",
+      "order_seed": 1190975713392774006,
+      "rounds": 3,
+      "max_turns": 300,
+      "mirror_concurrent": 1,
+      "clock_seconds": null,
+      "delay_seconds": null
+     }
+    },
+    {
+     "league": 5,
+     "label": "League 2 table, pinned-pairs league for Celeris-1 Decision (Early start for round 5)",
+     "league_status": "finished",
+     "stages": [
+      "league"
+     ],
+     "matches": 1,
+     "match_ids": [
+      737
+     ],
+     "rules": {
+      "seed": 8637860750269043463,
+      "seed_rule": "pair-v1",
+      "prompt_version": "bg-v2",
+      "order_seed": 1190975713392774006,
+      "rounds": 3,
+      "max_turns": 300,
+      "mirror_concurrent": 1,
+      "clock_seconds": null,
+      "delay_seconds": null
+     }
+    }
+   ],
+   "match_rules_distinct": [
+    {
+     "prompt_version": "bg-v2",
+     "order_seed": 1190975713392774006,
+     "max_turns": 300,
+     "clock_seconds": null,
+     "delay_seconds": null,
+     "mirror_concurrent": 1,
+     "rounds_planned": 3
+    }
+   ],
+   "opponents": {
+    "names": [
+     "Celeris-1 Decision",
+     "Claude Fable 5.1 (off)",
+     "Claude Sonnet 5.5 (high)",
+     "Claude Sonnet 5.5 (low)",
+     "Clef",
+     "DeepSeek V4.1 Flash (off)",
+     "DeepSeek V4.1 Flash (on)",
+     "DeepSeek V4.1 Flash 1017 (off)",
+     "DeepSeek V4.1 Flash 1017 (on)",
+     "Fastino GLiDE",
+     "GLM-5.3 (on)",
+     "GNUbg weak",
+     "Gemini 3.8 Flash (high)",
+     "Gemini 3.8 Flash (low)",
+     "Gemini 4 Argon (off)",
+     "Gemma 4 31B (off)",
+     "Gemma 4 31B (on)",
+     "Grok 4.7 (off)",
+     "Jev 1.14.0",
+     "Liquid d1-ultra",
+     "Qwen3.8-27B (on)"
+    ],
+    "count": 21,
+    "equal_to_gemini_required": 6,
+    "extras": [
+     "Claude Fable 5.1 (off)",
+     "Claude Sonnet 5.5 (high)",
+     "Claude Sonnet 5.5 (low)",
+     "DeepSeek V4.1 Flash (off)",
+     "DeepSeek V4.1 Flash (on)",
+     "DeepSeek V4.1 Flash 1017 (off)",
+     "DeepSeek V4.1 Flash 1017 (on)",
+     "GLM-5.3 (on)",
+     "Gemini 3.8 Flash (high)",
+     "Gemini 3.8 Flash (low)",
+     "Gemini 4 Argon (off)",
+     "Gemma 4 31B (off)",
+     "Gemma 4 31B (on)",
+     "Grok 4.7 (off)",
+     "Qwen3.8-27B (on)"
+    ],
+    "missing": [
+     "Cygnet (Gemma 4 12B)",
+     "Decider Flash v1.2",
+     "Decider v1.1 27B",
+     "Decider v1.2 27B",
+     "Fastino GLiDE v1.2 (local)",
+     "Jev 1.13.0",
+     "Open-Jev 27B v1.1",
+     "Random",
+     "Safest",
+     "SubQ Snap Preview",
+     "Winnow-12B"
+    ]
+   },
+   "settings_summary": {
+    "spec": "openai-compatible/qwen/qwen3.8-flash",
+    "provider": "openrouter:alibaba",
+    "quantization": null,
+    "device": null,
+    "base_url": "https://openrouter.ai/api/v1",
+    "api_key_env": "OPENROUTER_API_KEY",
+    "top_logprobs": 5,
+    "letter_readout": "answer",
+    "note": "Alibaba via OpenRouter (only provider); replaces Qwen3.8 Flash Next, which is not on OpenRouter; quantization not published",
+    "parallel": 8,
+    "rpm": 18
+   },
+   "settings": {
+    "name": "Qwen3.8 Flash (off)",
+    "spec": "openai-compatible/qwen/qwen3.8-flash",
+    "provider": "openrouter:alibaba",
+    "base_url": "https://openrouter.ai/api/v1",
+    "api_key_env": "OPENROUTER_API_KEY",
+    "request": {
+     "provider": {
+      "order": [
+       "alibaba"
+      ],
+      "allow_fallbacks": false,
+      "require_parameters": true
+     },
+     "usage": {
+      "include": true
+     },
+     "reasoning": {
+      "enabled": false
+     }
+    },
+    "top_logprobs": 5,
+    "letter_readout": "answer",
+    "price": {
+     "input_per_mtok": 0.15,
+     "output_per_mtok": 0.47
+    },
+    "note": "Alibaba via OpenRouter (only provider); replaces Qwen3.8 Flash Next, which is not on OpenRouter; quantization not published",
+    "parallel": 8,
+    "rpm": 18
+   },
+   "shared_pair_seeds": {
+    "count": 0,
+    "pairs": [],
+    "matches_with_any_gemini_seed": [],
+    "checked_over": "all valid finished matches of this player",
+    "note": "Gemini Decision 1's own matches (e.g. its match v this setup) excluded from the check",
+    "mercury_luna": {
+     "gemini_matches": [
+      {
+       "opponent": "Mercury Decide",
+       "match": 1016,
+       "status": "aborted",
+       "seed": 5705471907912929391,
+       "seat_first": false
+      }
+     ],
+     "equal_seed_matches": []
+    }
+   },
+   "excluded_valid_matches": [
+    {
+     "match": 342,
+     "opponent": "LFM2.5-24B-A2B (off)",
+     "stage": "league",
+     "reason": "not in league_match_view (an opponent left the league roster)"
+    },
+    {
+     "match": 345,
+     "opponent": "LFM2.5-24B-A2B (on)",
+     "stage": "league",
+     "reason": "not in league_match_view (an opponent left the league roster)"
+    },
+    {
+     "match": 350,
+     "opponent": "GPT-6.1 Sol (low)",
+     "stage": "league",
+     "reason": "not in league_match_view (an opponent left the league roster)"
+    },
+    {
+     "match": 384,
+     "opponent": "GPT-6.1 Sol (high)",
+     "stage": "league",
+     "reason": "not in league_match_view (an opponent left the league roster)"
+    },
+    {
+     "match": 405,
+     "opponent": "Qwen3.8-27B (off)",
+     "stage": "league",
+     "reason": "not in league_match_view (an opponent left the league roster)"
+    }
+   ],
+   "retained_repeat": null
+  },
+  {
+   "feed_name": "Muse Ember",
+   "kind": "chat",
+   "pr": 20.106,
+   "distance": 7.864,
+   "in_interval_25_31_1": false,
+   "player_id": 61,
+   "player_name": "Muse Ember (max)",
+   "scored_matches": 17,
+   "leagues": [
+    {
+     "league": 20,
+     "label": "League 1 table, pinned-pairs league for Muse Ember (max) (Late entry)",
+     "league_status": "running",
+     "stages": [
+      "late-entry"
+     ],
+     "matches": 17,
+     "match_ids": [
+      923,
+      924,
+      925,
+      926,
+      927,
+      928,
+      929,
+      930,
+      931,
+      955,
+      956,
+      967,
+      968,
+      969,
+      980,
+      981,
+      982
+     ],
+     "rules": {
+      "seed": 2567889193785291627,
+      "seed_rule": "pair-v1",
+      "prompt_version": "bg-v2",
+      "order_seed": 1190975713392774006,
+      "rounds": 3,
+      "max_turns": 300,
+      "mirror_concurrent": 1,
+      "clock_seconds": null,
+      "delay_seconds": null
+     }
+    }
+   ],
+   "match_rules_distinct": [
+    {
+     "prompt_version": "bg-v2",
+     "order_seed": 1190975713392774006,
+     "max_turns": 300,
+     "clock_seconds": null,
+     "delay_seconds": null,
+     "mirror_concurrent": 1,
+     "rounds_planned": 3
+    }
+   ],
+   "opponents": {
+    "names": [
+     "Celeris-1 Decision",
+     "Clef",
+     "Cygnet (Gemma 4 12B)",
+     "Decider Flash v1.2",
+     "Decider v1.1 27B",
+     "Decider v1.2 27B",
+     "Fastino GLiDE",
+     "Fastino GLiDE v1.2 (local)",
+     "GNUbg weak",
+     "Jev 1.13.0",
+     "Jev 1.14.0",
+     "Liquid d1-ultra",
+     "Open-Jev 27B v1.1",
+     "Random",
+     "Safest",
+     "SubQ Snap Preview",
+     "Winnow-12B"
+    ],
+    "count": 17,
+    "equal_to_gemini_required": 17,
+    "extras": [],
+    "missing": []
+   },
+   "settings_summary": {
+    "spec": "openai-compatible/meta/muse-ember",
+    "provider": "openrouter:meta",
+    "quantization": null,
+    "device": null,
+    "base_url": "https://openrouter.ai/api/v1",
+    "api_key_env": "OPENROUTER_API_KEY",
+    "reasoning": "max",
+    "letter_readout": "answer",
+    "note": "meta/muse-ember via OpenRouter, provider only=[meta] (reply provider Meta), fallbacks off, reasoning_effort max (top of OpenRouter's listed efforts on 2026-11-10). Cloned from 'Kimi K3.1 Pro (off)' league settings (v3.db players.settings): only name, spec, provider pin, reasoning, price, note changed. request.logprobs/top_logprobs = null (removed from the body: the maker endpoints reject or ignore logprobs; the answer letter is read from the reply, 'choice only').",
+    "parallel": 4
+   },
+   "settings": {
+    "name": "Muse Ember (max)",
+    "spec": "openai-compatible/meta/muse-ember",
+    "provider": "openrouter:meta",
+    "base_url": "https://openrouter.ai/api/v1",
+    "api_key_env": "OPENROUTER_API_KEY",
+    "reasoning": "max",
+    "request": {
+     "provider": {
+      "only": [
+       "meta"
+      ],
+      "allow_fallbacks": false
+     },
+     "usage": {
+      "include": true
+     },
+     "logprobs": null,
+     "top_logprobs": null
+    },
+    "letter_readout": "answer",
+    "price": {
+     "input_per_mtok": 0.1,
+     "output_per_mtok": 0.5
+    },
+    "note": "meta/muse-ember via OpenRouter, provider only=[meta] (reply provider Meta), fallbacks off, reasoning_effort max (top of OpenRouter's listed efforts on 2026-11-10). Cloned from 'Kimi K3.1 Pro (off)' league settings (v3.db players.settings): only name, spec, provider pin, reasoning, price, note changed. request.logprobs/top_logprobs = null (removed from the body: the maker endpoints reject or ignore logprobs; the answer letter is read from the reply, 'choice only').",
+    "parallel": 4,
+    "budget": {
+     "ledger": "/home/cbasaran/code/jevgammon/workspace/late-ember/state/ember-budget.db",
+     "cap_usd": 19.5,
+     "input_per_mtok": 0.1,
+     "cached_input_per_mtok": 0.1,
+     "output_per_mtok": 0.5
+    }
+   },
+   "shared_pair_seeds": {
+    "count": 0,
+    "pairs": [],
+    "matches_with_any_gemini_seed": [],
+    "checked_over": "all valid finished matches of this player",
+    "note": "Gemini Decision 1's own matches (e.g. its match v this setup) excluded from the check",
+    "mercury_luna": {
+     "gemini_matches": [
+      {
+       "opponent": "Mercury Decide",
+       "match": 1016,
+       "status": "aborted",
+       "seed": 5705471907912929391,
+       "seat_first": false
+      }
+     ],
+     "equal_seed_matches": []
+    }
+   },
+   "excluded_valid_matches": [],
+   "retained_repeat": null
+  }
+ ]
+}

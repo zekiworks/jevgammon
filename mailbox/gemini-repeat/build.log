@@ -1,0 +1,8 @@
+tree: /home/cbasaran/code/jevgammon-runner-gemini at cb669a08c29689a0846bcdf2596ae9c4fc043e22 (?? METADATA.worktree )
+command: cd /home/cbasaran/code/jevgammon-runner-gemini && CARGO_TARGET_DIR=/home/cbasaran/code/jevgammon/target/pinned-gemini cargo build --release --locked; rustc 1.97.1 (8bab26f4f 2026-07-14); cargo 1.97.1 (c980f4866 2026-06-30)
+started 2026-11-12T12:57:22Z
+   Compiling rusqlite v0.40.2
+   Compiling jevgammon v0.1.0 (/home/cbasaran/code/jevgammon-runner-gemini)
+    Finished `release` profile [optimized] target(s) in 33.89s
+build exit 0; finished 2026-11-12T12:57:56Z
+0bf67bc35ca864250a16a63ce5b608c68f8d6b62c12a5714e1b975979473dc7f  /home/cbasaran/code/jevgammon/target/pinned-gemini/release/jevgammon

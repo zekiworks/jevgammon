@@ -1,0 +1,1505 @@
+diff --git a/src/players/decision.rs b/src/players/decision.rs
+index b02f2f4..0511bee 100644
+--- a/src/players/decision.rs
++++ b/src/players/decision.rs
+@@ -21,6 +21,15 @@ const WARM_UP_LIMIT: Duration = Duration::from_secs(900);
+ /// system prompt and chat template (unpublished for the hosted services; Drex Max v1's own
+ /// loader adds about 80, measured with its tokenizer on an empty two-option question).
+ const TEMPLATE_MARGIN: usize = 4096;
++/// Models whose probability maps must pass `map_fault` (Zeki #4977, #4985): Gemini Decision 1's late entry only, so
++/// no other setup's stored rows change. A map that fails keeps its raw response and the returned choice is played,
++/// but the decision stores no probabilities (probability_source NULL, as for an invalid answer).
++const MAP_CHECKED_MODELS: &[&str] = &["google/gemini-decision-1"];
++/// Named in every map-check error, so answers before the switch (no check) stay distinguishable.
++const MAP_CHECK: &str = "map-check v2";
++/// Largest |sum - 1| a checked map may have. No frozen sum tolerance existed (the runner never checked a sum); 1e-6
++/// was chosen 11 Nov for Gemini Decision 1 only (Main), covering a provider's float32 rounding.
++const SUM_TOLERANCE: f64 = 1e-6;
+ 
+ /// A decision service and how to call it.
+ pub struct Service {
+@@ -370,6 +379,9 @@ pub struct DecisionClient {
+     url: String,
+     /// Hard spending cap: every attempt reserves its worst case before it is sent.
+     budget: Option<Arc<Ledger>>,
++    /// Fields merged into every request body (a player config's `request`), e.g.
++    /// OpenRouter's `provider` routing.
++    request: Option<Value>,
+ }
+ 
+ impl DecisionClient {
+@@ -408,9 +420,16 @@ impl DecisionClient {
+                 .map(|default| model.unwrap_or_else(|| default.to_owned())),
+             url: format!("{}{}", base.trim_end_matches('/'), service.path),
+             budget,
++            request: None,
+         })
+     }
+ 
++    /// Merges `request`'s fields into every request body (a null value removes a field).
++    pub fn with_request(mut self, request: Option<Value>) -> Self {
++        self.request = request;
++        self
++    }
++
+     pub fn max_choices(&self) -> usize {
+         self.service.max_choices
+     }
+@@ -535,7 +554,7 @@ impl DecisionClient {
+                 json!({QUESTION: {"type": "choice", "instructions": instructions, "criteria": criteria}}),
+             );
+         }
+-        Value::Object(body)
++        super::llm::merged(Value::Object(body), self.request.as_ref())
+     }
+ 
+     /// The answer object for the play question, in either response format.
+@@ -612,7 +631,7 @@ impl DecisionClient {
+             .and_then(|a| a.get("choice"))
+             .and_then(Value::as_str)
+             .and_then(|choice| shown.iter().copied().find(|&i| req.notations[i] == choice));
+-        let error = match (&value, refused, choice) {
++        let mut error = match (&value, refused, choice) {
+             (None, _, _) => Some("response is not JSON".to_owned()),
+             (_, true, _) => Some("refusal".to_owned()),
+             (_, _, None) => Some(format!("no {QUESTION} choice among the candidates")),
+@@ -631,6 +650,26 @@ impl DecisionClient {
+                 .collect();
+             decision.probability_source =
+                 (!decision.probabilities.is_empty()).then_some("decision");
++            if self.map_checked() {
++                let fault = map_fault(
++                    &raw_entries(&text),
++                    shown.iter().map(|&i| req.notations[i].as_str()),
++                );
++                if let Some(fault) = fault {
++                    error = Some(fault);
++                }
++                // One failed map in any group of a split decision leaves the whole decision without probabilities.
++                let failed = error.is_some()
++                    || decision.exchanges.iter().any(|e| {
++                        e.error
++                            .as_deref()
++                            .is_some_and(|e| e.starts_with("probability map rejected"))
++                    });
++                if failed {
++                    decision.probabilities.clear();
++                    decision.probability_source = None;
++                }
++            }
+         }
+         decision.exchanges.push(Exchange {
+             request: body.to_string(),
+@@ -640,6 +679,117 @@ impl DecisionClient {
+         });
+         Ok(choice)
+     }
++
++    fn map_checked(&self) -> bool {
++        self.service.provider == "openrouter-decisions"
++            && self
++                .model
++                .as_deref()
++                .is_some_and(|m| MAP_CHECKED_MODELS.contains(&m))
++    }
++}
++
++/// Every probability entry of the play answer as the raw response text has it, in either format, read with a visitor
++/// so a repeated key stays two entries (`serde_json::Value` keeps only the last): `None` for a value that is not a
++/// number. Nothing is dropped or normalised; a response this cannot read gives no entries (every id then missing).
++fn raw_entries(text: &str) -> Vec<(String, Option<f64>)> {
++    use serde::Deserialize;
++    use serde::de::{Deserializer, MapAccess, SeqAccess, Visitor};
++
++    struct Entries(Vec<(String, Option<f64>)>);
++    impl<'de> Deserialize<'de> for Entries {
++        fn deserialize<D: Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
++            struct V;
++            impl<'de> Visitor<'de> for V {
++                type Value = Entries;
++                fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
++                    f.write_str("a probability object or list")
++                }
++                fn visit_map<A: MapAccess<'de>>(self, mut map: A) -> Result<Entries, A::Error> {
++                    let mut out = Vec::new();
++                    while let Some((id, p)) = map.next_entry::<String, Value>()? {
++                        out.push((id, p.as_f64()));
++                    }
++                    Ok(Entries(out))
++                }
++                fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<Entries, A::Error> {
++                    let mut out = Vec::new();
++                    while let Some(p) = seq.next_element::<Value>()? {
++                        let id = p.get("value").and_then(Value::as_str).unwrap_or("");
++                        out.push((id.to_owned(), p.get("probability").and_then(Value::as_f64)));
++                    }
++                    Ok(Entries(out))
++                }
++            }
++            d.deserialize_any(V)
++        }
++    }
++    #[derive(Deserialize)]
++    struct Answer {
++        probabilities: Entries,
++    }
++    // QUESTION is "play": the answer's field name.
++    #[derive(Deserialize)]
++    struct Answers {
++        play: Answer,
++    }
++    #[derive(Deserialize)]
++    struct Response {
++        answers: Answers,
++    }
++    serde_json::from_str::<Response>(text)
++        .map(|r| r.answers.play.probabilities.0)
++        .unwrap_or_default()
++}
++
++/// Why a probability map is not usable, or `None` when it is: exactly one entry per shown id (none missing, unknown
++/// or repeated), every value a finite number in [0, 1], and the values summing to 1 within `SUM_TOLERANCE`.
++fn map_fault<'a>(
++    map: &[(String, Option<f64>)],
++    shown: impl Iterator<Item = &'a str>,
++) -> Option<String> {
++    let shown: Vec<&str> = shown.collect();
++    let count = |id: &str| map.iter().filter(|(p, _)| p == id).count();
++    let ids = |pick: &dyn Fn(&(String, Option<f64>)) -> bool| -> Vec<&str> {
++        map.iter()
++            .filter(|e| pick(e))
++            .map(|(p, _)| p.as_str())
++            .collect()
++    };
++    let mut causes = Vec::new();
++    let missing: Vec<&str> = shown.iter().copied().filter(|&id| count(id) == 0).collect();
++    let repeated: Vec<&str> = shown.iter().copied().filter(|&id| count(id) > 1).collect();
++    let unknown = ids(&|(p, _)| !shown.contains(&p.as_str()));
++    let non_numeric = ids(&|(_, v)| v.is_none());
++    let non_finite = ids(&|(_, v)| v.is_some_and(|v| !v.is_finite()));
++    let below = ids(&|(_, v)| v.is_some_and(|v| v.is_finite() && v < 0.0));
++    let above = ids(&|(_, v)| v.is_some_and(|v| v.is_finite() && v > 1.0));
++    for (cause, list) in [
++        ("missing", &missing),
++        ("unknown", &unknown),
++        ("repeated", &repeated),
++        ("not a number", &non_numeric),
++        ("not finite", &non_finite),
++        ("below 0", &below),
++        ("above 1", &above),
++    ] {
++        if !list.is_empty() {
++            causes.push(format!("{cause} {list:?}"));
++        }
++    }
++    let sum: f64 = map.iter().filter_map(|(_, v)| *v).sum();
++    if map.iter().all(|(_, v)| v.is_some_and(f64::is_finite)) && (sum - 1.0).abs() > SUM_TOLERANCE {
++        causes.push(format!("sum {sum} outside 1 +/- {SUM_TOLERANCE:e}"));
++    }
++    if causes.is_empty() {
++        return None;
++    }
++    Some(format!(
++        "probability map rejected ({MAP_CHECK}) over {} shown options: {}; the returned choice was played, no \
++         probabilities stored (raw map in the response)",
++        shown.len(),
++        causes.join("; ")
++    ))
+ }
+ 
+ /// Whether the service refused the request (a 4xx other than 425 Too Early).
+@@ -652,7 +802,11 @@ fn refused(error: &anyhow::Error) -> bool {
+ 
+ #[cfg(test)]
+ mod tests {
++    use std::io::{BufRead, BufReader, Read, Write};
++
+     use super::*;
++    use crate::board::Board;
++    use crate::players::prompt::PromptVersion;
+ 
+     #[test]
+     fn baselabs_sends_the_checkpoint_name_to_the_configured_server() {
+@@ -696,6 +850,7 @@ mod tests {
+             model: Some(model.to_owned()),
+             url: format!("{}{}", base.trim_end_matches('/'), service.path),
+             budget: None,
++            request: None,
+         }
+     }
+ 
+@@ -902,4 +1057,397 @@ mod tests {
+         let local = service("drex-max").unwrap().unbilled();
+         assert!(!local(reqwest::StatusCode::TOO_MANY_REQUESTS));
+     }
++
++    /// Answers one System One request as OpenRouter does (the third option at 0.7, with
++    /// `id`, `provider` and `usage.cost`) and returns the request body; `tamper` edits the
++    /// probability map before it is sent.
++    fn openrouter_stub(
++        tamper: fn(&[String], &mut Map<String, Value>),
++    ) -> (String, std::thread::JoinHandle<Value>) {
++        literal_stub(move |keys| {
++            let rest = 0.3 / (keys.len() - 1) as f64;
++            let mut probabilities: Map<String, Value> = keys
++                .iter()
++                .enumerate()
++                .map(|(i, k)| (k.clone(), (if i == 2 { 0.7 } else { rest }).into()))
++                .collect();
++            tamper(keys, &mut probabilities);
++            json!({
++                "model": "google/gemini-decision-1-20261111", "provider": "Google AI Studio",
++                "id": "gen-dec-stub",
++                "answers": {QUESTION: {"type": "choice", "choice": keys[2], "probabilities": probabilities, "confidence": 0.6}},
++                "usage": {"input_tokens": 2345, "output_tokens": 0, "cost": 0.0002345}
++            })
++            .to_string()
++        })
++    }
++
++    /// Answers one request with the literal response text `respond` makes from the shown ids
++    /// (the request's criteria keys, in order) and returns the request body.
++    fn literal_stub(
++        respond: impl FnOnce(&[String]) -> String + Send + 'static,
++    ) -> (String, std::thread::JoinHandle<Value>) {
++        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
++        let url = format!("http://{}", listener.local_addr().unwrap());
++        let handle = std::thread::spawn(move || {
++            let (mut stream, _) = listener.accept().unwrap();
++            let mut reader = BufReader::new(stream.try_clone().unwrap());
++            let mut length = 0;
++            loop {
++                let mut line = String::new();
++                reader.read_line(&mut line).unwrap();
++                if line == "\r\n" {
++                    break;
++                }
++                if let Some((name, value)) = line.split_once(':')
++                    && name.eq_ignore_ascii_case("content-length")
++                {
++                    length = value.trim().parse().unwrap();
++                }
++            }
++            let mut body = vec![0; length];
++            reader.read_exact(&mut body).unwrap();
++            let body: Value = serde_json::from_slice(&body).unwrap();
++            let keys: Vec<String> = body["questions"][QUESTION]["criteria"]
++                .as_object()
++                .unwrap()
++                .keys()
++                .cloned()
++                .collect();
++            let answer = respond(&keys);
++            write!(
++                stream,
++                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{answer}",
++                answer.len()
++            )
++            .unwrap();
++            body
++        });
++        (url, handle)
++    }
++
++    /// A raw System One answer: `entries` written as given (so a key may repeat, or a value be
++    /// a bare `NaN`), the third shown id chosen.
++    fn raw_answer(keys: &[String], entries: &[(usize, &str)]) -> String {
++        let map: Vec<String> = entries
++            .iter()
++            .map(|&(i, v)| format!("{}:{v}", serde_json::to_string(&keys[i]).unwrap()))
++            .collect();
++        format!(
++            r#"{{"model":"google/gemini-decision-1-20261111","provider":"Google AI Studio","answers":{{"play":{{"type":"choice","choice":{},"probabilities":{{{}}},"confidence":0.6}}}},"usage":{{"input_tokens":2345,"output_tokens":0}}}}"#,
++            serde_json::to_string(&keys[2]).unwrap(),
++            map.join(",")
++        )
++    }
++
++    #[tokio::test(flavor = "multi_thread")]
++    async fn openrouter_request_pins_the_provider_and_keeps_the_probabilities() {
++        let mut board = Board::start();
++        board.pts[12] = 3;
++        board.pts[7] = 5;
++        let plays = board.legal_plays(2, 1);
++        let n = plays.len();
++        assert!(n > 8, "{n}");
++        let notations: Vec<String> = plays.iter().map(|p| p.notation()).collect();
++        let order: Vec<usize> = (0..n).rev().collect();
++        let retry = RetryTime::default();
++        let req = DecisionRequest {
++            board: &board,
++            dice: (2, 1),
++            plays: &plays,
++            notations: &notations,
++            my_score: 0,
++            opp_score: 0,
++            round: 1,
++            rounds: 3,
++            leg: 1,
++            clock: None,
++            my_clock: None,
++            opp_clock: None,
++            turn_no: 1,
++            max_turns: None,
++            player: 1,
++            history: &[],
++            order: &order,
++            seed: 1,
++            version: PromptVersion::BgV2,
++            retry: &retry,
++        };
++        let (url, stub) = openrouter_stub(|_, _| {});
++        let service = service("openrouter-decisions").unwrap();
++        let pin = json!({"provider": {"only": ["google-ai-studio"], "allow_fallbacks": false}});
++        let client = DecisionClient {
++            http: reqwest::Client::new(),
++            service,
++            key: Some("test".into()),
++            model: Some("google/gemini-decision-1".into()),
++            url: format!("{url}{}", service.path),
++            budget: None,
++            request: None,
++        }
++        .with_request(Some(pin.clone()));
++        let mut decision = Decision::new(0);
++        let choice = client.choose(&req, &order, &mut decision).await.unwrap();
++        let body = stub.join().unwrap();
++        assert_eq!(body["model"], "google/gemini-decision-1");
++        assert_eq!(body["provider"], pin["provider"]);
++        assert_eq!(body["state"], state(&req));
++        let question = &body["questions"][QUESTION];
++        assert_eq!(question["type"], "choice");
++        let shown: Vec<&String> = question["criteria"].as_object().unwrap().keys().collect();
++        let want: Vec<&String> = order.iter().map(|&i| &notations[i]).collect();
++        assert_eq!(shown, want, "every option in the seeded order");
++        assert_eq!(choice, Some(order[2]));
++        assert_eq!(decision.probability_source, Some("decision"));
++        assert_eq!(decision.probabilities.len(), n);
++        assert!(decision.probabilities.contains(&(order[2], 0.7)));
++        assert_eq!((decision.input_tokens, decision.output_tokens), (2345, 0));
++        assert!(decision.exchanges[0].error.is_none());
++        assert!(
++            decision.exchanges[0]
++                .request
++                .contains("\"allow_fallbacks\":false")
++        );
++
++        // Without a config `request` the body carries no provider field, as before.
++        let plain = DecisionClient {
++            request: None,
++            ..client
++        };
++        let body = plain.body(
++            "s",
++            "i",
++            &[("a".into(), "a".into()), ("b".into(), "b".into())],
++        );
++        assert!(body.get("provider").is_none());
++
++        // Gemini's maps must be exactly the shown ids, finite values in [0, 1], summing to 1
++        // within 1e-6. A failed map: the returned choice is still played, the raw response
++        // is kept, the exchange names the cause and the decision stores no probabilities.
++        type Tamper = fn(&[String], &mut Map<String, Value>);
++        let cases: [(&str, Tamper, &str); 7] = [
++            ("valid control", |_, _| {}, ""),
++            (
++                "missing",
++                |k, p| {
++                    p.remove(k.last().unwrap());
++                },
++                "missing [",
++            ),
++            (
++                "extra",
++                |_, p| {
++                    p.insert("24/1".into(), 0.0.into());
++                },
++                "unknown [\"24/1\"]",
++            ),
++            (
++                "not a number",
++                |k, p| {
++                    p.insert(k[0].clone(), "0.1".into());
++                },
++                "not a number [",
++            ),
++            (
++                "below 0",
++                |k, p| {
++                    p.insert(k[0].clone(), (-0.01).into());
++                },
++                "below 0 [",
++            ),
++            (
++                "above 1",
++                |k, p| {
++                    p.insert(k[0].clone(), 1.5.into());
++                },
++                "above 1 [",
++            ),
++            (
++                "sum",
++                |_, p| {
++                    p.values_mut()
++                        .for_each(|v| *v = (v.as_f64().unwrap() * 0.99).into());
++                },
++                "outside 1 +/- 1e-6",
++            ),
++        ];
++        for (name, tamper, cause) in cases {
++            let (url, stub) = openrouter_stub(tamper);
++            let client = DecisionClient {
++                http: reqwest::Client::new(),
++                service,
++                key: Some("test".into()),
++                model: Some("google/gemini-decision-1".into()),
++                url: format!("{url}{}", service.path),
++                budget: None,
++                request: None,
++            };
++            let mut decision = Decision::new(0);
++            let choice = client.choose(&req, &order, &mut decision).await.unwrap();
++            stub.join().unwrap();
++            assert_eq!(
++                choice,
++                Some(order[2]),
++                "{name}: the returned choice is played"
++            );
++            assert!(
++                decision.exchanges[0].response.is_some(),
++                "{name}: raw response kept"
++            );
++            assert_eq!(
++                (decision.input_tokens, decision.output_tokens),
++                (2345, 0),
++                "{name}"
++            );
++            match decision.exchanges[0].error.as_deref() {
++                None => {
++                    assert!(cause.is_empty(), "{name}: not rejected");
++                    assert_eq!(decision.probability_source, Some("decision"));
++                    assert_eq!(decision.probabilities.len(), n);
++                }
++                Some(error) => {
++                    assert!(
++                        !cause.is_empty() && error.contains(cause),
++                        "{name}: {error}"
++                    );
++                    assert!(error.contains("map-check v2"), "{error}");
++                    assert_eq!(decision.probability_source, None, "{name}");
++                    assert!(decision.probabilities.is_empty(), "{name}");
++                }
++            }
++        }
++
++        // Other models through the same route are not checked: a bad map is kept as before.
++        let (url, stub) = openrouter_stub(|k, p| {
++            p.remove(k.last().unwrap());
++        });
++        let mercury = DecisionClient {
++            url: format!("{url}{}", service.path),
++            model: Some("inception/mercury-decide".into()),
++            ..plain
++        };
++        let mut decision = Decision::new(0);
++        mercury.choose(&req, &order, &mut decision).await.unwrap();
++        stub.join().unwrap();
++        assert!(decision.exchanges[0].error.is_none());
++        assert_eq!(decision.probabilities.len(), n - 1);
++        assert_eq!(decision.probability_source, Some("decision"));
++
++        // Raw response bytes through the real decode path. A repeated key (one of the two
++        // entries at 0, so the sum stays 1): serde_json's map keeps only the last, the
++        // map check still sees both entries and rejects the map.
++        let gemini = |url: &str| DecisionClient {
++            http: reqwest::Client::new(),
++            service,
++            key: Some("test".into()),
++            model: Some("google/gemini-decision-1".into()),
++            url: format!("{url}{}", service.path),
++            budget: None,
++            request: None,
++        };
++        fn valid(n: usize) -> Vec<(usize, String)> {
++            let rest = 0.3 / (n - 1) as f64;
++            (0..n)
++                .map(|i| (i, (if i == 2 { 0.7 } else { rest }).to_string()))
++                .collect()
++        }
++        let (url, stub) = literal_stub(|keys| {
++            let mut e = valid(keys.len());
++            e.push((0, "0.0".into()));
++            e.push((0, e[0].1.clone()));
++            e.remove(0);
++            let e: Vec<(usize, &str)> = e.iter().map(|(i, v)| (*i, v.as_str())).collect();
++            raw_answer(keys, &e)
++        });
++        let mut decision = Decision::new(0);
++        let choice = gemini(&url)
++            .choose(&req, &order, &mut decision)
++            .await
++            .unwrap();
++        stub.join().unwrap();
++        let raw = decision.exchanges[0].response.as_deref().unwrap();
++        let parsed: Value = serde_json::from_str(raw).unwrap();
++        assert_eq!(
++            parsed["answers"]["play"]["probabilities"]
++                .as_object()
++                .unwrap()
++                .len(),
++            n,
++            "serde_json's map hides the repeat"
++        );
++        assert_eq!(choice, Some(order[2]), "the returned choice is played");
++        let error = decision.exchanges[0].error.as_deref().unwrap();
++        let first = &notations[order[0]];
++        assert!(error.contains(&format!("repeated [{first:?}]")), "{error}");
++        assert!(!error.contains("sum"), "{error}");
++        assert_eq!(decision.probability_source, None);
++        assert!(decision.probabilities.is_empty());
++
++        // Bare NaN or Infinity tokens are not JSON: the whole response fails to parse, so the
++        // answer is invalid (seeded random play by the caller), as for any unreadable reply.
++        for token in ["NaN", "Infinity", "-Infinity"] {
++            let (url, stub) = literal_stub(move |keys| {
++                let mut e = valid(keys.len());
++                e[0].1 = token.into();
++                let e: Vec<(usize, &str)> = e.iter().map(|(i, v)| (*i, v.as_str())).collect();
++                raw_answer(keys, &e)
++            });
++            let mut decision = Decision::new(0);
++            let choice = gemini(&url)
++                .choose(&req, &order, &mut decision)
++                .await
++                .unwrap();
++            stub.join().unwrap();
++            assert_eq!(choice, None, "{token}: invalid answer");
++            assert_eq!(
++                decision.exchanges[0].error.as_deref(),
++                Some("response is not JSON"),
++                "{token}"
++            );
++            assert!(
++                decision.exchanges[0]
++                    .response
++                    .as_deref()
++                    .unwrap()
++                    .contains(token)
++            );
++            assert!(decision.probabilities.is_empty() && decision.probability_source.is_none());
++        }
++    }
++
++    #[test]
++    fn map_fault_needs_one_finite_probability_per_shown_id_summing_to_one() {
++        let m = |e: &[(&str, f64)]| -> Vec<(String, Option<f64>)> {
++            e.iter().map(|&(id, v)| (id.to_owned(), Some(v))).collect()
++        };
++        let shown = || ["a", "b"].into_iter();
++        assert_eq!(
++            map_fault(&m(&[("b", 0.25), ("a", 0.75)]), shown()),
++            None,
++            "valid control"
++        );
++        assert_eq!(
++            map_fault(&m(&[("a", 0.5 + 4e-7), ("b", 0.5)]), shown()),
++            None,
++            "within 1e-6"
++        );
++        let fault = |e: Vec<(String, Option<f64>)>| map_fault(&e, shown()).unwrap();
++        assert!(fault(m(&[("a", 1.0)])).contains("missing [\"b\"]"));
++        assert!(fault(m(&[("a", 0.5), ("b", 0.5), ("c", 0.0)])).contains("unknown [\"c\"]"));
++        assert!(fault(m(&[("a", 0.25), ("a", 0.25), ("b", 0.5)])).contains("repeated [\"a\"]"));
++        assert!(fault(m(&[("a", f64::NAN), ("b", 0.5)])).contains("not finite [\"a\"]"));
++        assert!(fault(m(&[("a", f64::INFINITY), ("b", 0.0)])).contains("not finite [\"a\"]"));
++        assert!(
++            fault(vec![("a".into(), None), ("b".into(), Some(1.0))])
++                .contains("not a number [\"a\"]")
++        );
++        assert!(fault(m(&[("a", -0.5), ("b", 1.5)])).contains("below 0 [\"a\"]; above 1 [\"b\"]"));
++        assert!(fault(m(&[("a", 0.5), ("b", 0.5 + 2e-6)])).contains("outside 1 +/- 1e-6"));
++        // The list format's repeated ids reach the check as sent.
++        let list = r#"{"answers":{"play":{"probabilities":[{"value":"a","probability":0.5},{"value":"a","probability":0.5}]}}}"#;
++        assert!(fault(raw_entries(list)).contains("missing [\"b\"]; repeated"));
++        // So do the object format's, which serde_json's map would collapse.
++        let object = r#"{"answers":{"play":{"probabilities":{"a":0.5,"a":0.0,"b":0.5}}}}"#;
++        assert!(fault(raw_entries(object)).contains("repeated [\"a\"]"));
++    }
+ }
+diff --git a/src/players/llm.rs b/src/players/llm.rs
+index a327b5a..f03e89e 100644
+--- a/src/players/llm.rs
++++ b/src/players/llm.rs
+@@ -366,7 +366,7 @@ fn tokens(value: &Value, pointer: &str) -> u64 {
+ 
+ /// `body` with the configured extra fields merged in at the top level; a null value
+ /// removes that field.
+-fn merged(mut body: Value, extra: Option<&Value>) -> Value {
++pub(super) fn merged(mut body: Value, extra: Option<&Value>) -> Value {
+     if let (Some(Value::Object(extra)), Value::Object(fields)) = (extra, &mut body) {
+         for (key, value) in extra {
+             if value.is_null() {
+diff --git a/src/players/mod.rs b/src/players/mod.rs
+index 1e5cd67..65eaaba 100644
+--- a/src/players/mod.rs
++++ b/src/players/mod.rs
+@@ -143,8 +143,9 @@ pub struct PlayerConfig {
+     /// models: the provider's default).
+     #[serde(default, skip_serializing_if = "Option::is_none")]
+     pub reasoning: Option<String>,
+-    /// Fields merged into every chat-model request body, e.g.
+-    /// `{"chat_template_kwargs": {"thinking": true}}`.
++    /// Fields merged into every chat-model and decision-service request body, e.g.
++    /// `{"chat_template_kwargs": {"thinking": true}}`, or OpenRouter's provider routing
++    /// `{"provider": {"only": ["google-ai-studio"], "allow_fallbacks": false}}`.
+     #[serde(default, skip_serializing_if = "Option::is_none")]
+     pub request: Option<Value>,
+     /// Output token limit of a chat-model answer (the reasoning request included).
+@@ -523,13 +524,16 @@ impl Player {
+             backend,
+         };
+         if let Some(service) = decision::service(provider) {
+-            return Ok(player(Backend::Decision(decision::DecisionClient::new(
+-                http,
+-                service,
+-                model,
+-                config.base_url.as_deref(),
+-                budget,
+-            )?)));
++            return Ok(player(Backend::Decision(
++                decision::DecisionClient::new(
++                    http,
++                    service,
++                    model,
++                    config.base_url.as_deref(),
++                    budget,
++                )?
++                .with_request(config.request.clone()),
++            )));
+         }
+         let backend = match provider.to_ascii_lowercase().as_str() {
+             "random" if model.is_none() => {
+diff --git a/tools/v3/late-gemini-decision/METADATA b/tools/v3/late-gemini-decision/METADATA
+new file mode 100644
+index 0000000..90261e3
+--- /dev/null
++++ b/tools/v3/late-gemini-decision/METADATA
+@@ -0,0 +1,6 @@
++owner: jevgammon (agent; Can's backgammon project ~/code/jevgammon)
++created: 2026-11-11
++what: scripts of Google's Gemini Decision 1 late entry into the original League 1 table (hosted: OpenRouter's System One route, model google/gemini-decision-1, provider pinned to Google AI Studio, fallbacks off): player.json (v3.db settings), gemini.py, start.sh (programs + paid API opponents), locals.sh (local opponents, bariton GPU 2), run_league.sh BIN; branch 'late-gemini-decision' (worktree ~/code/jevgammon-gemini-decision), from tools/v3/late-tiny8, with the runner's decision clients taking a player config's `request` fields (src/players/decision.rs)
++reason: Ümit wants it asap (Can #4966; Main, 11 Nov); status in mailbox/Late entry Gemini Decision 1 - status.md
++delete when: never on its own: it documents how the late-entry matches in v3.db were played (as tools/v3/late-tiny8)
++written: 2026-11-11 (Can #4966)
+diff --git a/tools/v3/late-gemini-decision/gemini.py b/tools/v3/late-gemini-decision/gemini.py
+new file mode 100755
+index 0000000..280729a
+--- /dev/null
++++ b/tools/v3/late-gemini-decision/gemini.py
+@@ -0,0 +1,302 @@
++#!/usr/bin/env python3
++"""Late entry of Google's Gemini Decision 1 (hosted, through OpenRouter pinned to Google AI Studio) into the original
++League 1 table (Main, 11 Nov; Ümit, Can #4966), as tools/v3/late-tiny8, one match at a time from the first match on.
++player.json holds its v3.db settings. Runs against the main checkout's v3.db; the league web helpers are this tree's.
++
++  gemini.py configs              league config: the entrant v the 3 programs and the paid API setups (GPT-6 Luna
++                                 left out while OpenAI is out of credit, as REAX/Ember); the 8 local setups join later
++                                 by league-add; read-only on v3.db
++  gemini.py trigger              adds the entrant to v3.db's late_entry_stage trigger (writes v3.db)
++  gemini.py league-id            the entrant's late-entry league id (read-only)
++  gemini.py pending NAME...      opponents among NAME... without a finished valid late-entry match (count; read-only)
++  gemini.py open                 open pairs of the entrant's late-entry league (read-only)
++  gemini.py billed FIRST         dollars of the entry from match FIRST on: the entrant plus the paid opponents
++                                 (read-only)
++  gemini.py scope                open and blocked pairs: "OPEN BLOCKED", then one line per blocked pair (read-only)
++  gemini.py estimate             decisions, entrant tokens and dollars expected, from earlier late entries (read-only)
++  gemini.py inflight FIRST N     the entrant's first N decisions in valid late-entry matches from match FIRST on:
++                                 most requests in flight (request start = created_at - request_ms) and most of
++                                 its matches running at once (read-only)
++"""
++import argparse
++import json
++import re
++import sqlite3
++import sys
++from pathlib import Path
++
++ROOT = Path("/home/cbasaran/code/jevgammon")
++DB = ROOT / "v3.db"
++HERE = Path(__file__).resolve().parent
++OUT = ROOT / "workspace" / "late-gemini-decision" / "leagues"
++CONFIG = OUT / "gemini-decision-1.json"
++sys.path.insert(0, str(HERE.parents[1]))
++from league_web import league_origins  # noqa: E402
++
++PLAYER = json.loads((HERE / "player.json").read_text())
++NAME = PLAYER["name"]
++# Original League 1 table (league_web.league_origins, as tools/original_league.py), 19 setups.
++API = ["Celeris-1 Decision", "Fastino GLiDE", "GPT-6 Luna", "Jev 1.13.0", "Jev 1.14.0", "Liquid d1-ultra",
++       "Mercury Decide", "SubQ Snap Preview"]
++ENGINES = ["GNUbg weak", "Random", "Safest"]
++LOCAL = ["Clef", "Cygnet (Gemma 4 12B)", "Decider Flash v1.2", "Decider v1.1 27B", "Decider v1.2 27B",
++         "Fastino GLiDE v1.2 (local)", "Open-Jev 27B v1.1", "Winnow-12B"]
++FIELD = sorted(API + ENGINES + LOCAL)
++SKIPPED = ["GPT-6 Luna"]  # OpenAI out of credit: deferred, never dropped (as REAX 1.3, Muse Ember)
++NOW = ENGINES + [n for n in API if n not in SKIPPED]
++TRIGGER = re.compile(r"p\.name IN \((.*?)\)\)", re.S)
++# Earlier decision-model late entries against the same table, for the estimate.
++EARLIER = ["Base Labs Elephant-1", "Base Labs Mammoth-1", "Drex 2.0 (local)", "REAX 1.3", "Muse Ember (max)"]
++# Gemini input tokens per byte of a stored System One request, the highest of the smoke test's three (11 Nov:
++# 2,801 / 9,074, 4,053 / 12,162, 26,133 / 58,077 bytes), for the estimate.
++TOKENS_PER_BYTE = 0.45
++# A System One decision request of the original League 1 table, as the entrant sends it (same body; model and the
++# provider pin aside).
++REFERENCE = "Mercury Decide"
++
++
++def ro() -> sqlite3.Connection:
++    conn = sqlite3.connect(f"file:{DB}?mode=ro", uri=True, timeout=60)
++    conn.row_factory = sqlite3.Row
++    return conn
++
++
++def configs(_args) -> None:
++    conn = ro()
++    field = set()
++    for lid in (1, 2, 3):
++        field |= {n for n, o in league_origins(conn, lid).items() if o == 1}
++    if sorted(field) != FIELD:
++        sys.exit(f"original League 1 table changed: {sorted(field ^ set(FIELD))}")
++    row = conn.execute("SELECT settings FROM players WHERE name = ?", (NAME,)).fetchone()
++    if row and json.loads(row["settings"]) != PLAYER:
++        sys.exit(f"{NAME} is already in v3.db with other settings: {row['settings']}")
++    l1 = conn.execute("SELECT seed, order_seed, rounds, max_turns, prompt_version FROM leagues WHERE id = 1").fetchone()
++    base = json.loads((HERE.parents[2] / "leagues" / "league1.json").read_text())
++    players = [PLAYER] + [json.loads(conn.execute("SELECT settings FROM players WHERE name = ?", (n,)).fetchone()[0])
++                          for n in NOW]
++    cfg = {
++        "note": (f"Late entry (Main, 11 Nov; Ümit, Can #4966): {NAME} plays the original League 1 table once (all 19 "
++                 "setups; the programs and the paid API setups first, GPT-6 Luna deferred while OpenAI is out of "
++                 "credit, the setups on our GPUs by league-add when their servers run). Hidden league (not on the "
++                 "site, the dashboard or the ladder tools); only its pairs are played; League 1's rules (seed, pair-v1 "
++                 "dice, bg-v2, option-order seed, mirror_concurrent, 3 rounds, no clock, delay 30 s, 300 turns). "
++                 "Opponent settings unchanged (v3.db players.settings). Not eligible for the Hype Cup. "
++                 "mailbox/Late entry Gemini Decision 1 - status.md"),
++        "prompt_version": l1["prompt_version"],
++        "seed": l1["seed"],
++        "order_seed": l1["order_seed"],
++        "rounds": l1["rounds"],
++        "clock": base["clock"],
++        "delay": base["delay"],
++        "max_turns": l1["max_turns"],
++        "mirror_concurrent": True,
++        "only_pairs_of": NAME,
++        "hidden": True,
++        "players": players,
++    }
++    OUT.mkdir(parents=True, exist_ok=True)
++    CONFIG.write_text(json.dumps(cfg, indent=2, ensure_ascii=False) + "\n")
++    print(f"{CONFIG}: {NAME} v {len(NOW)}: {', '.join(NOW)}")
++
++
++def trigger(_args) -> None:
++    conn = sqlite3.connect(DB, timeout=60)
++    conn.execute("BEGIN IMMEDIATE")
++    sql = conn.execute("SELECT sql FROM sqlite_master WHERE type = 'trigger' AND name = 'late_entry_stage'").fetchone()
++    if not sql:
++        sys.exit("v3.db has no late_entry_stage trigger")
++    names = [n.replace("''", "'") for n in re.findall(r"'((?:[^']|'')*)'", TRIGGER.search(sql[0]).group(1))]
++    if NAME in names:
++        print("trigger already names", NAME)
++        conn.rollback()
++        return
++    listed = ", ".join("'" + n.replace("'", "''") + "'" for n in names + [NAME])
++    conn.execute("DROP TRIGGER late_entry_stage")
++    conn.execute(f"""CREATE TRIGGER late_entry_stage AFTER INSERT ON matches
++WHEN EXISTS (SELECT 1 FROM players p WHERE p.id IN (NEW.player1, NEW.player2)
++             AND p.name IN ({listed}))
++BEGIN
++  UPDATE matches SET stage = 'late-entry' WHERE id = NEW.id;
++END""")
++    conn.commit()
++    print("late_entry_stage now names:", listed)
++
++
++def league_id():
++    row = ro().execute("SELECT id FROM leagues WHERE only_pairs_of = ? ORDER BY id DESC LIMIT 1", (NAME,)).fetchone()
++    return row[0] if row else None
++
++
++def played(conn, opp) -> bool:
++    return bool(conn.execute(
++        """SELECT COUNT(*) FROM matches m JOIN players a ON a.id = m.player1 JOIN players b ON b.id = m.player2
++           WHERE m.valid = 1 AND m.status = 'finished' AND m.stage = 'late-entry'
++             AND ((a.name = ?1 AND b.name = ?2) OR (a.name = ?2 AND b.name = ?1))""", (NAME, opp)).fetchone()[0])
++
++
++def members(conn) -> list[str]:
++    lid = league_id()
++    if lid is None:
++        return []
++    return [r[0] for r in conn.execute(
++        """SELECT p.name FROM league_players lp JOIN players p ON p.id = lp.player_id
++           WHERE lp.league_id = ? AND lp.left_at IS NULL AND p.name <> ?""", (lid, NAME))]
++
++
++def pending(args) -> None:
++    conn = ro()
++    print(sum(not played(conn, o) for o in args.opponents))
++
++
++def open_pairs(_args) -> None:
++    conn = ro()
++    print(sum(not played(conn, o) for o in members(conn)))
++
++
++def billed(args) -> None:
++    """The entrant's and the paid opponents' recorded cost_usd (Fastino GLiDE records none: $0.04 per million input
++    tokens, as before)."""
++    rows = ro().execute(
++        """SELECT p.name, SUM(COALESCE(t.cost_usd, 0)), SUM(t.input_tokens) FROM turns t JOIN games g ON g.id = t.game_id
++           JOIN matches m ON m.id = g.match_id
++           JOIN players p ON p.id = CASE t.player WHEN 1 THEN m.player1 ELSE m.player2 END
++           WHERE m.stage = 'late-entry' AND m.id >= ? GROUP BY p.name""", (args.first,)).fetchall()
++    total = 0.0
++    for name, cost, tokens in rows:
++        if name == "Fastino GLiDE":
++            total += (tokens or 0) * 0.04 / 1e6
++        elif name in API or name == NAME:
++            total += cost
++    print(f"{total:.4f}")
++
++
++# An aborted match whose last error is one of these is blocked: retrying does not cure it (out of credit, key or model
++# not available, a request the entrant's server refuses). It stays in the league and is reported as missing, never dropped.
++BLOCKING = re.compile(r"refused|\b40[0-4]\b|\b422\b|budget|insufficient|Payment Required|not available", re.I)
++
++
++def scope(_args) -> None:
++    conn = ro()
++    blocked = []
++    opened = 0
++    for opp in members(conn):
++        if played(conn, opp):
++            continue
++        opened += 1
++        last = conn.execute(
++            """SELECT m.id, m.status, m.error FROM matches m JOIN players a ON a.id = m.player1
++               JOIN players b ON b.id = m.player2
++               WHERE m.valid = 1 AND m.stage = 'late-entry'
++                 AND ((a.name = ?1 AND b.name = ?2) OR (a.name = ?2 AND b.name = ?1))
++               ORDER BY m.id DESC LIMIT 1""", (NAME, opp)).fetchone()
++        if last and last["status"] == "aborted" and last["error"] and BLOCKING.search(last["error"]):
++            blocked.append(f"{NAME} v {opp} (match #{last['id']}): {last['error'][:200]}")
++    print(opened, len(blocked))
++    for line in blocked:
++        print(line)
++
++
++def estimate(_args) -> None:
++    """Expected entrant decisions (earlier entrants' model decisions per late-entry match x 19 opponents), the
++    entrant's tokens and dollars (League 1's stored System One request bytes per decision x TOKENS_PER_BYTE at its list
++    price), and paid opponents' dollars per match."""
++    conn = ro()
++    side = """JOIN games g ON g.id = t.game_id JOIN matches m ON m.id = g.match_id
++              JOIN players p ON p.id = CASE t.player WHEN 1 THEN m.player1 ELSE m.player2 END
++              JOIN players o ON o.id = CASE t.player WHEN 1 THEN m.player2 ELSE m.player1 END"""
++    ok = "m.valid = 1 AND m.status = 'finished' AND m.stage = 'late-entry'"
++    marks = ",".join("?" * len(EARLIER))
++    dec, matches = conn.execute(
++        f"""SELECT SUM(t.decided_by IN ('model', 'fallback')), COUNT(DISTINCT m.id) FROM turns t {side}
++            WHERE {ok} AND p.name IN ({marks})""", EARLIER).fetchone()
++    per_match = dec / matches
++    over = conn.execute("""SELECT COUNT(*), SUM(legal_count > 255) FROM turns WHERE decided_by IN ('model', 'fallback')
++                           AND prompt_version = 'bg-v2'""").fetchone()
++    price = PLAYER["price"]["input_per_mtok"]
++    # Bytes of the answered System One requests per decision of the reference setup, over its valid matches.
++    ref_bytes, ref_dec = conn.execute(
++        f"""SELECT SUM(LENGTH(CAST(e.request AS BLOB))), COUNT(DISTINCT t.id) FROM exchanges e
++            JOIN turns t ON t.id = e.turn_id {side}
++            WHERE p.name = ? AND m.valid = 1 AND e.error IS NULL AND t.decided_by IN ('model', 'fallback')""",
++        (REFERENCE,)).fetchone()
++    per_dec = ref_bytes / ref_dec * TOKENS_PER_BYTE
++    paid = {}
++    for opp in API:
++        cost, tokens, n = conn.execute(
++            f"""SELECT SUM(COALESCE(t.cost_usd, 0)), SUM(t.input_tokens), COUNT(DISTINCT m.id) FROM turns t {side}
++                WHERE {ok} AND o.name IN ({marks}) AND p.name = ?""", EARLIER + [opp]).fetchone()
++        if n:
++            paid[opp] = ((tokens or 0) * 0.04 / 1e6 if opp == "Fastino GLiDE" else cost) / n
++    total = per_match * len(FIELD)
++    print(f"decisions per match {per_match:.1f} ({dec} over {matches} late-entry matches of {', '.join(EARLIER)})")
++    print(f"expected {NAME} decisions: {total:.0f} (19 opponents); now (programs + API less Luna): "
++          f"{per_match * len(NOW):.0f}; locals: {per_match * len(LOCAL):.0f}")
++    print(f"decisions over 255 options in bg-v2: {over[1]} of {over[0]} -> {total * over[1] / over[0]:.1f} expected")
++    print(f"entrant tokens per decision ~{per_dec:,.0f} ({REFERENCE}'s {ref_bytes / ref_dec:,.0f} request bytes per "
++          f"decision over {ref_dec} decisions x {TOKENS_PER_BYTE}) -> ${per_dec * price / 1e6:.5f} per decision; "
++          f"all {total:.0f}: ${total * per_dec * price / 1e6:.2f}; "
++          f"now: ${per_match * len(NOW) * per_dec * price / 1e6:.2f}")
++    print("paid opponents per match: " + ", ".join(f"{k} ${v:.4f}" for k, v in paid.items())
++          + f"; all {len(paid)}: ${sum(paid.values()):.3f}; now: ${sum(v for k, v in paid.items() if k in NOW):.3f}")
++
++
++def entrant_turns(conn, where: str, params: tuple):
++    return conn.execute(
++        f"""SELECT t.id, m.id AS match_id, t.created_at, t.request_ms, t.decided_by FROM turns t
++            JOIN games g ON g.id = t.game_id JOIN matches m ON m.id = g.match_id
++            JOIN players p ON p.id = CASE t.player WHEN 1 THEN m.player1 ELSE m.player2 END
++            WHERE p.name = ? AND {where} ORDER BY t.created_at, t.id""", (NAME,) + params).fetchall()
++
++
++def ts(s: str) -> float:
++    from datetime import datetime
++    return datetime.fromisoformat(s.replace("Z", "+00:00")).timestamp()
++
++
++def peak(intervals) -> int:
++    events = sorted([(s, 1) for s, _ in intervals] + [(e, -1) for _, e in intervals])
++    cur = most = 0
++    for _, d in events:
++        cur += d
++        most = max(most, cur)
++    return most
++
++
++def inflight(args) -> None:
++    conn = ro()
++    turns = entrant_turns(conn, "m.id >= ? AND m.valid = 1 AND m.stage = 'late-entry' AND t.decided_by IN "
++                                 "('model', 'fallback') AND t.request_ms IS NOT NULL", (args.first,))[:args.n]
++    if not turns:
++        print("0 decisions")
++        return
++    iv = [(ts(t["created_at"]) - t["request_ms"] / 1000, ts(t["created_at"])) for t in turns]
++    spans = {}
++    for t, (s, e) in zip(turns, iv):
++        lo, hi = spans.get(t["match_id"], (s, e))
++        spans[t["match_id"]] = (min(lo, s), max(hi, e))
++    print(f"{len(turns)} decisions (turn ids {turns[0]['id']}-{turns[-1]['id']}, {turns[0]['created_at']} to "
++          f"{turns[-1]['created_at']}): at most {peak(iv)} in flight; at most {peak(spans.values())} {NAME} "
++          f"matches deciding at once (matches {', '.join(f'#{m}' for m in spans)})")
++
++
++def main() -> None:
++    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
++    sub = ap.add_subparsers(dest="cmd", required=True)
++    for cmd in ("configs", "trigger", "league-id", "open", "scope", "estimate"):
++        sub.add_parser(cmd)
++    p = sub.add_parser("pending")
++    p.add_argument("opponents", nargs="+")
++    b = sub.add_parser("billed")
++    b.add_argument("first", type=int)
++    i = sub.add_parser("inflight")
++    i.add_argument("first", type=int)
++    i.add_argument("n", type=int)
++    args = ap.parse_args()
++    {"configs": configs, "trigger": trigger, "pending": pending, "open": open_pairs, "billed": billed,
++     "scope": scope, "estimate": estimate, "league-id": lambda a: print(league_id() or ""),
++     "inflight": inflight}[args.cmd](args)
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/tools/v3/late-gemini-decision/locals.sh b/tools/v3/late-gemini-decision/locals.sh
+new file mode 100755
+index 0000000..16fda0d
+--- /dev/null
++++ b/tools/v3/late-gemini-decision/locals.sh
+@@ -0,0 +1,135 @@
++#!/usr/bin/env bash
++# Gemini Decision 1 v the 8 local League 1 opponents, one opponent server at a time on OPP_GPU (bariton GPU 2) under the
++# bus reservation RES (r_82bfcd93782c), as tools/v3/late-tiny8/locals.sh. The entrant stays on OpenRouter (player.json).
++# For each opponent whose pair is unplayed: waits until OPP_GPU has room for it (+2 GB; a GPU held by someone else is
++# waited for, never freed), starts its server with `agent-bus run RES -- ...`, league-adds it to the entrant's league,
++# waits until the pair is played, stops the server. It keeps start.sh's guard (OpenRouter balance >= $40 and readable,
++# entry cost < $5, the model listed as pinned) itself, so the unit late-gemini-decision (start.sh) must have exited
++# first. Before each opponent's server starts and before its league-add, quiesce() confirms nothing plays league #ID;
++# any failure aborts the run there, logged (Zeki #4628, as late-knowline).
++#   systemd-run --user --unit=late-gemini-decision-locals --working-directory=/home/cbasaran/code/jevgammon \
++#     -E PATH=$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin -E OPP_GPU=2 -E RES=r_82bfcd93782c \
++#     /home/cbasaran/code/jevgammon-gemini-decision/tools/v3/late-gemini-decision/locals.sh
++set -uo pipefail
++cd /home/cbasaran/code/jevgammon
++export PATH=$HOME/.local/bin:$PATH  # agent-bus
++T=$(dirname "$(readlink -f "$0")")
++W=workspace/late-gemini-decision
++ST=$W/state
++S=tools/v3/servers
++BIN=/home/cbasaran/code/jevgammon/target/gemini-decision/release/jevgammon
++STATUS="mailbox/Late entry Gemini Decision 1 - status.md"
++UNIT=late-gemini-decision-league
++FLOOR=40
++CAP=5
++MODEL=google/gemini-decision-1
++gem() { python3 "$T/gemini.py" "$@"; }
++listed() {
++  curl -fsS -m 20 "https://openrouter.ai/api/v1/models/$MODEL/endpoints" | python3 -c 'import json,sys
++e=json.load(sys.stdin)["data"]["endpoints"]
++sys.exit(not (len(e) == 1 and e[0]["tag"] == "google-ai-studio" and e[0]["status"] == 0
++              and float(e[0]["pricing"]["prompt"]) == 1e-7 and float(e[0]["pricing"]["completion"]) == 0))'
++}
++: "${OPP_GPU:?}" "${RES:?}"
++set -a; . ~/.keys; set +a
++[[ -n ${CELERIS_API_KEY:-} ]] || { CELERIS_API_KEY="$(cat ~/.config/celeris/key)"; export CELERIS_API_KEY; }
++log() { local line; line="$(date -u +%FT%TZ) $*"; echo "$line" >> $ST/locals.log; echo "- $line" >> "$STATUS"; }
++room() { nvidia-smi -i "$1" --query-gpu=memory.total,memory.used --format=csv,noheader,nounits | awk -F', ' '{print $1-$2}'; }
++gpus() { nvidia-smi --query-gpu=index,memory.used --format=csv,noheader | tr '\n' ' '; }
++balance() {
++  curl -fsS -m 20 https://openrouter.ai/api/v1/credits -H "Authorization: Bearer $OPENROUTER_API_KEY" |
++    python3 -c 'import json,sys; d=json.load(sys.stdin)["data"]; print(round(d["total_credits"]-d["total_usage"],4))'
++}
++lt() { python3 -c 'import sys; sys.exit(not float(sys.argv[1]) < float(sys.argv[2]))' "$1" "$2"; }
++spent() { gem billed "$(cat $ST/first)"; }
++# Guard; returns 1 (and logs) when the run must stop.
++down=0
++unread=0
++guard() {
++  local bal s
++  if bal=$(balance); then
++    unread=0
++    if lt "$bal" "$FLOOR"; then log "locals STOPPED: OpenRouter balance \$$bal under \$$FLOOR"; return 1; fi
++  else
++    unread=$((unread + 1))
++    (( unread < 3 )) || { log "locals STOPPED: OpenRouter balance unreadable 3 times in a row"; return 1; }
++  fi
++  s=$(spent)
++  lt "$s" "$CAP" || { log "locals STOPPED: entry \$$s (entrant + paid opponents) reached the \$$CAP cap"; return 1; }
++  if listed; then down=0; else down=$((down + 1)); fi
++  (( down < 3 )) || { log "locals STOPPED: OpenRouter did not list $MODEL as pinned 3 checks in a row"; return 1; }
++}
++ensure_league() {
++  systemctl --user is-active -q $UNIT && return 0
++  systemctl --user reset-failed $UNIT >/dev/null 2>&1 || true
++  systemd-run --user --quiet --unit=$UNIT --working-directory="$PWD" "$T/run_league.sh" "$BIN"
++}
++# Stops the league unit and confirms nothing can play league #ID (Zeki #4628, as tools/v3/late-knowline/locals.sh
++# 4d7502f): the stop succeeded (or the unit is not loaded at all: systemd then refuses the stop, exit 5, LoadState
++# not-found); systemctl reports the unit inactive or failed; and pgrep finds no league runner for it (run_league.sh,
++# `league --resume ID --db`, `league --config` of this model's config; pgrep exit 1 = none, 0 = found, anything else =
++# unknown). Returns 1, logged, otherwise.
++quiesce() {
++  local load state found
++  if ! systemctl --user stop $UNIT 2>/dev/null; then
++    load=$(systemctl --user show -p LoadState --value $UNIT 2>/dev/null)
++    [[ $load == not-found ]] || { log "locals: stopping $UNIT failed (LoadState ${load:-unknown})"; return 1; }
++  fi
++  state=$(systemctl --user is-active $UNIT 2>/dev/null)
++  [[ $state == inactive || $state == failed ]] || { log "locals: $UNIT is ${state:-of unknown state} after the stop"; return 1; }
++  pgrep -f -- "late-gemini-decision/run_league\.sh [^ ]+\$|league --resume $ID --db|league --config [^ ]*late-gemini-decision/leagues/" \
++    >/dev/null 2>&1
++  found=$?
++  (( found == 1 )) || { log "locals: a league runner for league #$ID may still run (pgrep exit $found)"; return 1; }
++}
++# name|MiB|start (GPU in $g)|stop   (sizes as tools/v3/late-ember/locals.sh)
++OPPS=(
++  "Cygnet (Gemma 4 12B)|36000|CYGNET_GPU=\$g CYGNET_UTIL=0.34 $S/cygnet.sh start|$S/cygnet.sh stop"
++  "Winnow-12B|30000|WINNOW_GPU=\$g $S/winnow.sh start|$S/winnow.sh stop"
++  "Decider Flash v1.2|30000|DECIDER_V12_GPU=\$g $S/decider-v1.2.sh flash start|$S/decider-v1.2.sh flash stop"
++  "Decider v1.2 27B|56000|DECIDER_V12_GPU=\$g $S/decider-v1.2.sh 27b start|$S/decider-v1.2.sh 27b stop"
++  "Fastino GLiDE v1.2 (local)|56000|GLIDE_GPU=\$g $S/glide-v12.sh start|$S/glide-v12.sh stop"
++  "Clef|57000|CLEF_GPU=\$g $S/clef.sh start|$S/clef.sh stop"
++  "Open-Jev 27B v1.1|55000|OPEN_JEV_GPU=\$g $S/open-jev.sh start|$S/open-jev.sh stop"
++  "Decider v1.1 27B|54000|DECIDER_GPU=\$g $S/decider.sh start|$S/decider.sh stop"
++)
++systemctl --user is-active -q late-gemini-decision && { echo "stop the unit late-gemini-decision first" >&2; exit 1; }
++ID=$(gem league-id)
++[[ -n $ID ]] || { log "locals: the league of Gemini Decision 1 is not in v3.db"; exit 1; }
++finish() { systemctl --user stop $UNIT 2>/dev/null; log "locals: $1; entry \$$(spent); GPU $OPP_GPU free of us ($(gpus))"; }
++log "locals up: opponents one at a time on GPU $OPP_GPU (reservation $RES); Gemini Decision 1 via OpenRouter ($MODEL)"
++missing=()
++for o in "${OPPS[@]}"; do
++  IFS='|' read -r name need start stop <<<"$o"
++  [[ $(gem pending "$name") == 0 ]] && continue
++  guard || { finish "stopped by the guard"; exit 1; }
++  quiesce || { finish "aborted before starting $name: league #$ID not confirmed stopped"; exit 1; }
++  until (( $(room "$OPP_GPU") >= need + 2000 )); do sleep 60; done
++  if ! agent-bus run "$RES" -- bash -c "g=$OPP_GPU; $start" >> $ST/servers.log 2>&1; then
++    bash -c "$stop" >> $ST/servers.log 2>&1
++    log "locals: $name did not start on GPU $OPP_GPU (state/servers.log); its pair stays missing"
++    missing+=("$name"); continue
++  fi
++  log "locals: started $name on GPU $OPP_GPU ($(gpus))"
++  if ! sqlite3 -readonly v3.db "SELECT 1 FROM league_players lp JOIN players p ON p.id = lp.player_id
++       WHERE lp.league_id = $ID AND lp.left_at IS NULL AND p.name = '$name'" | grep -q 1; then
++    entry=$(sqlite3 -readonly v3.db "SELECT settings FROM players WHERE name = '$name'")
++    quiesce || { bash -c "$stop" >> $ST/servers.log 2>&1; finish "aborted before adding $name: league #$ID not confirmed stopped"; exit 1; }
++    "$BIN" league-add --db v3.db --league "$ID" --entry "$entry" >> late-gemini-decision.log 2>&1 ||
++      { log "locals: league-add of $name failed"; bash -c "$stop" >> $ST/servers.log 2>&1; missing+=("$name"); continue; }
++    log "locals: $name added to league #$ID"
++  fi
++  # Played, or given up after 4 h with the pair still open (an aborted match is retried by the league runner).
++  t0=$SECONDS
++  until [[ $(gem pending "$name") == 0 ]] || (( SECONDS - t0 > 14400 )); do
++    guard || { bash -c "$stop" >> $ST/servers.log 2>&1; finish "stopped by the guard during $name"; exit 1; }
++    ensure_league; sleep 60
++  done
++  bash -c "$stop" >> $ST/servers.log 2>&1
++  if [[ $(gem pending "$name") == 0 ]]; then
++    log "locals: $name played; its server stopped"
++  else
++    log "locals: $name not played within 4 h; its server stopped, pair missing"; missing+=("$name")
++  fi
++done
++finish "done${missing:+; missing: ${missing[*]}}"
+diff --git a/tools/v3/late-gemini-decision/map_audit.py b/tools/v3/late-gemini-decision/map_audit.py
+new file mode 100755
+index 0000000..376f17d
+--- /dev/null
++++ b/tools/v3/late-gemini-decision/map_audit.py
+@@ -0,0 +1,158 @@
++#!/usr/bin/env python3
++"""Offline audit of every stored Gemini Decision 1 answer under the runner's map-check v2 (src/players/decision.rs
++map_fault; Zeki #4985): a probability map is usable only when it has exactly one entry per shown id (none missing,
++unknown or repeated), every value a finite number in [0, 1], and the values sum to 1 within 1e-6 (no frozen sum
++tolerance existed; 1e-6 chosen 11 Nov for Gemini Decision 1 only). Reads the raw response text stored in
++exchanges.response (the HTTP body as received) with every JSON object kept as its key/value pairs, so a repeated key
++shows (a plain dict keeps only the last), and as strict JSON: a bare NaN/Infinity token makes the response unreadable,
++as the runner's serde_json does (an invalid answer there). Read-only on v3.db; metadata only (counts, ids of failing
++exchanges, max |sum - 1|), never a probability is changed.
++
++    map_audit.py [V3_DB]          audit (default: the main checkout's v3.db)
++    map_audit.py --controls       run the predicate on hand-made bad maps (each must be rejected) and a valid one,
++                                  and the raw-text reader on a repeated key and a NaN token
++"""
++import json
++import math
++import sqlite3
++import sys
++
++NAME = "Gemini Decision 1"
++SUM_TOLERANCE = 1e-6
++KINDS = ("missing", "unknown", "repeated", "not a number", "not finite", "below 0", "above 1", "sum")
++
++
++def faults(entries, shown) -> set[str]:
++    """entries: [(id, value)] as sent (repeats kept); shown: the request's ids. The causes that fail the map."""
++    ids = [i for i, _ in entries]
++    out = set()
++    if any(s not in ids for s in shown):
++        out.add("missing")
++    if any(i not in shown for i in ids):
++        out.add("unknown")
++    if any(ids.count(s) > 1 for s in shown):
++        out.add("repeated")
++    nums = [v for _, v in entries if isinstance(v, (int, float)) and not isinstance(v, bool)]
++    if len(nums) < len(entries):
++        out.add("not a number")
++    if any(not math.isfinite(v) for v in nums):
++        out.add("not finite")
++    if any(v < 0 for v in nums if math.isfinite(v)):
++        out.add("below 0")
++    if any(v > 1 for v in nums if math.isfinite(v)):
++        out.add("above 1")
++    if len(nums) == len(entries) and all(math.isfinite(v) for v in nums) and abs(sum(nums) - 1) > SUM_TOLERANCE:
++        out.add("sum")
++    return out
++
++
++class Pairs(dict):
++    """A JSON object as parsed (last value per key, for lookups) with every key/value pair as sent in `pairs`."""
++
++    def __init__(self, pairs):
++        super().__init__(pairs)
++        self.pairs = pairs
++
++
++def strict(token):
++    raise ValueError(f"non-standard JSON token {token}")
++
++
++def parse(text: str):
++    return json.loads(text, object_pairs_hook=Pairs, parse_constant=strict)
++
++
++def entries_of(probabilities):
++    if isinstance(probabilities, list):
++        return [(p.get("value"), p.get("probability")) for p in probabilities]
++    if isinstance(probabilities, Pairs):
++        return list(probabilities.pairs)
++    return []
++
++
++def audit(db: str) -> None:
++    conn = sqlite3.connect(f"file:{db}?mode=ro", uri=True, timeout=60)
++    rows = conn.execute(
++        """SELECT e.id, t.id, m.id, e.request, e.response, e.error, t.probability_source FROM exchanges e
++           JOIN turns t ON t.id = e.turn_id JOIN games g ON g.id = t.game_id JOIN matches m ON m.id = g.match_id
++           JOIN players p ON p.id = CASE t.player WHEN 1 THEN m.player1 ELSE m.player2 END
++           WHERE p.name = ? ORDER BY e.id""", (NAME,)).fetchall()
++    counts = dict.fromkeys(KINDS, 0)
++    audited = no_answer = unreadable = failed = 0
++    worst = 0.0
++    bad = []
++    matches = sorted({r[2] for r in rows})
++    for eid, tid, mid, request, response, error, source in rows:
++        try:
++            shown = list(json.loads(request)["questions"]["play"]["criteria"])
++            parsed = parse(response or "")
++        except ValueError:
++            unreadable += 1
++            continue
++        try:
++            answer = parsed["answers"]["play"]
++        except (KeyError, TypeError):
++            no_answer += 1
++            continue
++        if answer.get("type") != "choice" or "probabilities" not in answer:
++            no_answer += 1
++            continue
++        audited += 1
++        entries = entries_of(answer["probabilities"])
++        nums = [v for _, v in entries if isinstance(v, (int, float)) and not isinstance(v, bool)]
++        if nums and all(math.isfinite(v) for v in nums):
++            worst = max(worst, abs(sum(nums) - 1))
++        f = faults(entries, shown)
++        for k in f:
++            counts[k] += 1
++        if f:
++            failed += 1
++            bad.append(f"exchange {eid} (turn {tid}, match #{mid}): {', '.join(sorted(f))}")
++    print(f"{NAME}: {len(rows)} exchanges in matches {', '.join(f'#{m}' for m in matches)}, raw response text stored "
++          f"for {sum(1 for r in rows if r[4])}; {audited} answers with a probability map audited, {unreadable} "
++          f"unreadable as strict JSON, {no_answer} without a choice answer")
++    print("| failing maps | " + " | ".join(KINDS) + " | max abs(sum - 1) |")
++    print("|---" * (len(KINDS) + 2) + "|")
++    print(f"| {failed} | " + " | ".join(str(counts[k]) for k in KINDS) + f" | {worst:.3g} |")
++    for line in bad:
++        print(line)
++
++
++def controls() -> None:
++    shown = ["a", "b"]
++    cases = [
++        ("valid", [("a", 0.25), ("b", 0.75)], set()),
++        ("missing", [("a", 1.0)], {"missing"}),
++        ("extra", [("a", 0.5), ("b", 0.5), ("c", 0.0)], {"unknown"}),
++        ("repeated", [("a", 0.25), ("a", 0.25), ("b", 0.5)], {"repeated"}),
++        ("NaN", [("a", float("nan")), ("b", 0.5)], {"not finite"}),
++        ("inf", [("a", float("inf")), ("b", 0.0)], {"not finite"}),
++        ("string", [("a", "0.5"), ("b", 0.5)], {"not a number"}),
++        ("below 0", [("a", -0.5), ("b", 1.5)], {"below 0", "above 1"}),
++        ("sum 1 + 2e-6", [("a", 0.5), ("b", 0.5 + 2e-6)], {"sum"}),
++        ("sum 1 + 4e-7 (inside)", [("a", 0.5 + 4e-7), ("b", 0.5)], set()),
++    ]
++    ok = True
++    for name, entries, want in cases:
++        got = faults(entries, shown)
++        ok &= got == want
++        print(f"{'ok ' if got == want else 'BAD'} {name}: {sorted(got) or 'accepted'}")
++    # The raw-text reader: a repeated key in the object (a plain dict would keep one) and a bare NaN token.
++    raw = '{"answers":{"play":{"type":"choice","choice":"a","probabilities":{"a":0.5,"a":0.0,"b":0.5}}}}'
++    got = faults(entries_of(parse(raw)["answers"]["play"]["probabilities"]), shown)
++    ok &= got == {"repeated"}
++    print(f"{'ok ' if got == {'repeated'} else 'BAD'} raw text, repeated key: {sorted(got) or 'accepted'}")
++    try:
++        parse('{"answers":{"play":{"probabilities":{"a":NaN,"b":0.5}}}}')
++        ok = False
++        print("BAD raw text, NaN token: read")
++    except ValueError as e:
++        print(f"ok  raw text, NaN token: unreadable ({e})")
++    sys.exit(0 if ok else 1)
++
++
++if __name__ == "__main__":
++    if sys.argv[1:] == ["--controls"]:
++        controls()
++    else:
++        audit(sys.argv[1] if len(sys.argv) > 1 else "/home/cbasaran/code/jevgammon/v3.db")
+diff --git a/tools/v3/late-gemini-decision/player.json b/tools/v3/late-gemini-decision/player.json
+new file mode 100644
+index 0000000..4eb5532
+--- /dev/null
++++ b/tools/v3/late-gemini-decision/player.json
+@@ -0,0 +1,20 @@
++{
++  "name": "Gemini Decision 1",
++  "spec": "openrouter-decisions/google/gemini-decision-1",
++  "provider": "openrouter (google ai studio)",
++  "price": {
++    "input_per_mtok": 0.1,
++    "output_per_mtok": 0.0
++  },
++  "request": {
++    "provider": {
++      "only": [
++        "google-ai-studio"
++      ],
++      "allow_fallbacks": false
++    }
++  },
++  "note": "Google's Gemini Decision 1 (gemini-decision-1, launched 11 Nov 2026) through OpenRouter's System One route (/api/v1/systemone, model google/gemini-decision-1; replies name google/gemini-decision-1-20261111), pinned to its one provider, Google AI Studio, with fallbacks off (provider.only [google-ai-studio], allow_fallbacks false). List price $0.10 per million input tokens, no output tokens (openrouter.ai/google/gemini-decision-1 and aistudio.google.com/docs/pricing, 11 Nov 2026); latency includes OpenRouter's own time. One choice question per request with up to 255 options (the API's limit; longer lists split by the league's rule); context 262,144 tokens, refused with 400 above it, never cut: League 1's largest stored request (229 options, 57,539 bytes) was 26,133 input tokens at the smoke test. Option ids are our move notations (unchanged), submitted in our seeded order; the model's effective order is Google's UTF-8 byte-sorted keys, as Google's docs state (aistudio.google.com/docs/decisions-api#choice; not verified by us), and an exact tie goes to the alphabetically first key (same docs); the runner plays the returned choice. OpenRouter answers some 429s (Google's per-tier token limit): retried as on every route. Probability maps: matches up to the switch (from #993, runner dab6da5) were played with no map check; from the switch on, runner map-check v2 (Zeki #4985): a map is usable only with exactly one entry per shown id, every value finite in [0, 1], summing to 1 within 1e-6 (no frozen sum tolerance existed; 1e-6 chosen 11 Nov for Gemini Decision 1 only); a failed map keeps the raw response and the returned choice is played, the exchange error names the cause ('map-check v2') and the decision stores no probabilities (probability_source NULL).",
++  "parallel": 1,
++  "max_matches": 1
++}
+diff --git a/tools/v3/late-gemini-decision/run_league.sh b/tools/v3/late-gemini-decision/run_league.sh
+new file mode 100755
+index 0000000..4dae3dc
+--- /dev/null
++++ b/tools/v3/late-gemini-decision/run_league.sh
+@@ -0,0 +1,19 @@
++#!/usr/bin/env bash
++# Gemini Decision 1's late-entry league, as tools/v3/late-tiny8/run_league.sh: starts it from its config, or resumes it
++# once v3.db has it (league --resume ID, which also plays pairs added by league-add). Started by start.sh (and
++# locals.sh) as the user unit late-gemini-decision-league; log late-gemini-decision.log in the main checkout.
++#   run_league.sh BIN
++set -euo pipefail
++cd /home/cbasaran/code/jevgammon
++BIN=$1
++T=$(dirname "$(readlink -f "$0")")
++set -a; . ~/.keys; set +a
++[[ -n ${CELERIS_API_KEY:-} ]] || { CELERIS_API_KEY="$(cat ~/.config/celeris/key)"; export CELERIS_API_KEY; }
++export PATH=$HOME/.local/bin:$PATH
++CONFIG=workspace/late-gemini-decision/leagues/gemini-decision-1.json
++ID=$(python3 "$T/gemini.py" league-id)
++exec >> late-gemini-decision.log 2>&1
++if [[ -n $ID ]]; then
++  exec "$BIN" league --resume "$ID" --db v3.db
++fi
++exec "$BIN" league --config "$CONFIG" --db v3.db
+diff --git a/tools/v3/late-gemini-decision/start.sh b/tools/v3/late-gemini-decision/start.sh
+new file mode 100755
+index 0000000..e5844eb
+--- /dev/null
++++ b/tools/v3/late-gemini-decision/start.sh
+@@ -0,0 +1,142 @@
++#!/usr/bin/env bash
++# Late entry of Google's Gemini Decision 1 (player.json: OpenRouter's System One route, model google/gemini-decision-1,
++# provider pinned to Google AI Studio, fallbacks off) v the original League 1 table (Main, 11 Nov; Ümit, Can #4966),
++# stage 1: the 3 programs and the paid API setups (GPT-6 Luna deferred while OpenAI is out of credit), as
++# tools/v3/late-tiny8. The 8 local setups follow later with locals.sh (bariton GPU 2, reservation r_82bfcd93782c).
++# Status: mailbox/Late entry Gemini Decision 1 - status.md (main checkout); state workspace/late-gemini-decision/state.
++#   systemd-run --user --unit=late-gemini-decision --working-directory=/home/cbasaran/code/jevgammon \
++#     -E PATH=$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin \
++#     /home/cbasaran/code/jevgammon-gemini-decision/tools/v3/late-gemini-decision/start.sh
++# Before anything: OpenRouter lists google/gemini-decision-1 as pinned (listed(): its one endpoint is Google AI Studio,
++# up, at $0.10 per million input tokens and $0 output). Once: v3.db backup (VACUUM INTO, zstd -t), first match id, the
++# late_entry_stage trigger, the league config. Then starts the league unit late-gemini-decision-league and guards it
++# every 60 s; it stops the league unit (matches resume later from their last turn):
++#   - when OpenRouter's balance (shared with other lanes; the entrant and Mercury Decide bill there) is under $FLOOR
++#     ($40), or cannot be read 3 times in a row (fail closed: the floor is never left unchecked);
++#   - when the entry's cost from the first match (the entrant plus the paid opponents) reaches $CAP ($5);
++#   - when the listing check fails 3 times in a row (fail closed);
++#   - when the 10 pairs are played (done), every open pair is blocked, or after 12 h.
++# One match at a time from the first match on: player.json has max_matches 1 and parallel 1. After the first 20
++# decisions, their measured in-flight peak is logged once.
++set -uo pipefail
++cd /home/cbasaran/code/jevgammon
++T=$(dirname "$(readlink -f "$0")")
++W=workspace/late-gemini-decision
++ST=$W/state
++BIN=/home/cbasaran/code/jevgammon/target/gemini-decision/release/jevgammon
++STATUS="mailbox/Late entry Gemini Decision 1 - status.md"
++FLOOR=40
++CAP=5
++UNIT=late-gemini-decision-league
++MODEL=google/gemini-decision-1
++NAME=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["name"])' "$T/player.json")
++export PATH=$HOME/.local/bin:$PATH
++gem() { python3 "$T/gemini.py" "$@"; }
++mkdir -p $ST
++[[ -e $W/METADATA ]] || printf '%s\n' "owner: jevgammon (agent; Can's backgammon project ~/code/jevgammon)" \
++  "created: $(date -u +%F)" \
++  "what: state (guard and locals logs, first match id), league config and smoke receipts of the $NAME late entry" \
++  "reason: Ümit wants it asap (Can #4966); scripts in ~/code/jevgammon-gemini-decision/tools/v3/late-gemini-decision (branch late-gemini-decision)" \
++  "delete when: after the entry is complete and reported (the matches stay in v3.db)" \
++  "written: $(date -u +%FT%TZ) (Can #4966)" > $W/METADATA
++set -a; . ~/.keys; set +a
++[[ -n ${CELERIS_API_KEY:-} ]] || { CELERIS_API_KEY="$(cat ~/.config/celeris/key)"; export CELERIS_API_KEY; }
++log() { local line; line="$(date -u +%FT%TZ) $*"; echo "$line" >> $ST/guard.log; echo "- $line" >> "$STATUS"; }
++balance() {
++  curl -fsS -m 20 https://openrouter.ai/api/v1/credits -H "Authorization: Bearer $OPENROUTER_API_KEY" |
++    python3 -c 'import json,sys; d=json.load(sys.stdin)["data"]; print(round(d["total_credits"]-d["total_usage"],4))'
++}
++# OpenRouter still serves the model as pinned: exactly one endpoint, Google AI Studio, up (status 0), at the list price.
++listed() {
++  curl -fsS -m 20 "https://openrouter.ai/api/v1/models/$MODEL/endpoints" | python3 -c 'import json,sys
++e=json.load(sys.stdin)["data"]["endpoints"]
++sys.exit(not (len(e) == 1 and e[0]["tag"] == "google-ai-studio" and e[0]["status"] == 0
++              and float(e[0]["pricing"]["prompt"]) == 1e-7 and float(e[0]["pricing"]["completion"]) == 0))'
++}
++lt() { python3 -c 'import sys; sys.exit(not float(sys.argv[1]) < float(sys.argv[2]))' "$1" "$2"; }
++spent() { gem billed "$(cat $ST/first)"; }
++OPPS=("GNUbg weak" "Random" "Safest" "Celeris-1 Decision" "Fastino GLiDE" "Jev 1.13.0" "Jev 1.14.0" "Liquid d1-ultra"
++      "Mercury Decide" "SubQ Snap Preview")
++
++[[ -x $BIN ]] || { echo "no runner $BIN" >&2; exit 1; }
++[[ -z $(git -C "$T" status --porcelain --untracked-files=no) ]] || { echo "runner tree $T is dirty" >&2; exit 1; }
++listed || { echo "OpenRouter: $MODEL not listed as pinned (one Google AI Studio endpoint, up, \$0.10/\$0)" >&2; exit 1; }
++bal=$(balance) || { echo "OpenRouter credits unreadable" >&2; exit 1; }
++lt "$bal" "$FLOOR" && { echo "OpenRouter balance \$$bal: under \$$FLOOR" >&2; exit 1; }
++
++# Once, fail closed: every step must succeed, else nothing after it runs and state/first is not written (so the block
++# runs again next time). The backup goes to v3.db's own disk (/tmp is a smaller tmpfs) and the .zst is verified with
++# zstd -t before anything writes v3.db.
++if [[ ! -e $ST/first ]]; then
++  raw=$PWD/v3-before-gemini-decision.db
++  bak=$PWD/v3.db.bak-$(date -u +%Y%m%dT%H%M%S)-before-gemini-decision.zst
++  fail() { echo "$1" >&2; rm -f "$raw" "$ST/first.new"; exit 1; }
++  rm -f "$raw"
++  [[ ! -e $bak ]] || fail "$bak already exists"
++  # VACUUM INTO: one read snapshot, not restarted by other runs' writes (sqlite3 .backup restarted endlessly
++  # under the live lanes' writes on 11 Nov and never finished).
++  sqlite3 v3.db "VACUUM INTO '$raw'" || fail "v3.db backup (VACUUM INTO) to $raw failed"
++  zstd -q -T0 "$raw" -o "$bak" || { rm -f "$bak"; fail "zstd of $raw failed"; }
++  zstd -q -t "$bak" || { rm -f "$bak"; fail "zstd -t: $bak does not verify"; }
++  rm -f "$raw"
++  sqlite3 -readonly v3.db "SELECT COALESCE(MAX(id), 0) + 1 FROM matches" > "$ST/first.new" && [[ -s $ST/first.new ]] ||
++    fail "first match id unreadable"
++  gem trigger >> $ST/guard.log 2>&1 || fail "trigger failed"
++  gem configs >> $ST/guard.log 2>&1 || fail "configs failed"
++  date -u '+%F %T' > $ST/since || fail "state/since not written"
++  mv "$ST/first.new" "$ST/first" || fail "state/first not written"
++  echo "$(date -u +%FT%TZ) backup $bak verified (zstd -t); first match #$(cat $ST/first)" >> $ST/guard.log
++fi
++[[ -e $STATUS ]] || printf '# Late entry Gemini Decision 1 - status\n\nGo: Main (11 Nov; Can #4966). First match id: #%s.\n\n## Log\n' \
++  "$(cat $ST/first)" > "$STATUS"
++log "guard up: runner $(git -C "$T" rev-parse --short HEAD) clean; $NAME via OpenRouter ($MODEL, Google AI Studio only, fallbacks off) listed as pinned; OpenRouter \$$bal; floor \$$FLOOR; entry cap \$$CAP (entrant + paid opponents) from #$(cat $ST/first); 10 opponents, one match at a time (GPT-6 Luna deferred: no OpenAI credit; 8 local setups later on bariton GPU 2)"
++
++stop_league() { systemctl --user stop $UNIT 2>/dev/null; }
++restarts=0
++down=0
++unread=0
++t0=$SECONDS
++while true; do
++  if [[ $(gem pending "${OPPS[@]}") == 0 ]]; then
++    stop_league; log "done: all 10 pairs played; entry \$$(spent); OpenRouter \$$(balance)"; exit 0
++  fi
++  if bal=$(balance); then
++    unread=0
++    if lt "$bal" "$FLOOR"; then
++      stop_league; log "STOPPED: OpenRouter balance \$$bal under \$$FLOOR; entry \$$(spent)"; exit 1
++    fi
++  else
++    unread=$((unread + 1))
++    if (( unread >= 3 )); then
++      stop_league; log "STOPPED: OpenRouter balance unreadable 3 times in a row; entry \$$(spent)"; exit 1
++    fi
++  fi
++  s=$(spent)
++  if ! lt "$s" "$CAP"; then
++    stop_league; log "STOPPED: entry \$$s (entrant + paid opponents) reached the \$$CAP cap"; exit 1
++  fi
++  if listed; then down=0; else down=$((down + 1)); fi
++  if (( down >= 3 )); then
++    stop_league; log "STOPPED: OpenRouter did not list $MODEL as pinned 3 checks in a row; entry \$$s"; exit 1
++  fi
++  if [[ ! -e $ST/inflight-logged ]]; then
++    first20=$(gem inflight "$(cat $ST/first)" 20 2>&1)
++    if [[ $first20 == "20 decisions"* ]]; then
++      log "in flight, first decisions: $first20"
++      touch $ST/inflight-logged
++    fi
++  fi
++  if ! systemctl --user is-active -q $UNIT; then
++    read -r opened blocked < <(gem scope | head -1)
++    if [[ -n ${opened:-} && $opened -gt 0 && $opened == "$blocked" ]]; then
++      log "STOPPED: every open pair is blocked: $(gem scope | tail -n +2 | tr '\n' ' ')"; exit 1
++    fi
++    (( restarts > 6 )) && { log "STOPPED: league unit ended 7 times with pairs open"; exit 1; }
++    (( restarts > 0 )) && log "league unit not running with pairs open: restart $restarts"
++    restarts=$((restarts + 1))
++    systemctl --user reset-failed $UNIT >/dev/null 2>&1 || true
++    systemd-run --user --quiet --unit=$UNIT --working-directory="$PWD" "$T/run_league.sh" "$BIN"
++  fi
++  (( SECONDS - t0 > 43200 )) && { stop_league; log "STOPPED: pairs still open after 12 h"; exit 1; }
++  sleep 60
++done

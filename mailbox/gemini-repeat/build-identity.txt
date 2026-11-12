@@ -1,0 +1,43 @@
+runner build pinned-late-gemini cb669a08c29689a0846bcdf2596ae9c4fc043e22 (src tree a1a82e60e4951dffab6ded8a7bd56269a14dd3cf, commit tree 951033e95d1e604edb709819cfb0df91606e66e2)
+base: 0e668368dfd8db2da70663cda6b2ed183dd8532e (pinned-late-reax, the six repeats' runner, reviewed: Zeki #4958, #5014); commits since: four cherry-picks of late-gemini-decision:
+  e782128 <- late-gemini-decision: Google's Gemini Decision 1 late entry into the original League 1 table (Ümit, Can #4
+  9df3af1 <- decision clients: an exchange error when the returned probability map is not exactly the shown ids (missing
+  52f7612 <- decision clients: map-check v2 for Gemini Decision 1 only (Zeki #4985; MAP_CHECKED_MODELS = google/gemini-d
+  cb669a0 <- map-check v2: read Gemini's probability map from the raw response text with a visitor (raw_entries), so a r
+  e782128: cherry picked from commit dab6da5e5cf2f7143b414a8e0443bb05f06613e6
+  9df3af1: cherry picked from commit 1b234da712469d447285a025df6c0b2aaee3afd8
+  52f7612: cherry picked from commit c0b58f3d84852e140cfda42608945af57f34b2f9
+  cb669a0: cherry picked from commit 38024d6a6becfe13eaac3001b913eda6481582d9
+tree: git worktree add -b pinned-late-gemini /home/cbasaran/code/jevgammon-runner-gemini 0e66836; git cherry-pick dab6da5 1b234da c0b58f3 38024d6 (conflicts in dab6da5 and c0b58f3 resolved by keeping both sides; budget: None added to the three new test literals, folded into their commits); git checkout --detach (clean: git status shows only the untracked METADATA.worktree); pushed to origin/pinned-late-gemini
+command: cd /home/cbasaran/code/jevgammon-runner-gemini && CARGO_TARGET_DIR=/home/cbasaran/code/jevgammon/target/pinned-gemini cargo build --release --locked; rustc 1.97.1 (8bab26f4f 2026-07-14); cargo 1.97.1 (c980f4866 2026-06-30)
+started 2026-11-12T12:57:22Z
+   Compiling rusqlite v0.40.2
+build exit 0; finished 2026-11-12T12:57:56Z
+
+binary sha256:
+0bf67bc35ca864250a16a63ce5b608c68f8d6b62c12a5714e1b975979473dc7f  /home/cbasaran/code/jevgammon/target/pinned-gemini/release/jevgammon
+
+inputs sha256 (include_str! files outside src, src testdata, Cargo.toml, Cargo.lock; no build.rs), read from the tree; identical to 0e66836's 18 (repeats.py RUNNER inputs); the four commits touch no include_str!/testdata:
+bf64a9f15bd33cd3f5d517dc984140ff38fb9ec93c5d3a50eb0971f658c0ed4b  Cargo.toml
+d7048551c8907fd02c85f7ac8d8d2ffdc088ae4848bf313fc3c0f6e070d88494  Cargo.lock
+085601d706df41ddec7f1732428a2366c157aa58bb8e514b1cf1dd1b0f3f3aab  tools/gnubg_player.py
+511ab4b2490732632f7e810f2e3da616fb5da4cd91d75eb2cf1ac4604e50e046  tools/v3/engine.py
+18dd032837ff061f64d2af32a5e7e813ad187b64f28a5a6e139f7695202f8480  tools/v3/rules.py
+9efbb3ada083c02c51bdf74e539d48ee61b2f49e8d2f0fe58e29db8c6d8cb499  tools/v3/order_vectors.json
+3c59036a1f416f6187ccec06ec939e4d888a2029441daf30f6ee06a69015c465  prompts/bg-v2.md
+fa7397be6e9a7d337389a401d61464464bcbbe5725b8a2c70e01e6cb670395a8  prompts/nack-v2.md
+1a145a09713fdd694696cb16d826406711567394697f0938300c285e4cba703f  prompts/bg-v3-std-notable.md
+13c744f06613f4051888af99bf9d1692011cb95d6f301c1898f94e13d67fef33  prompts/bg-v3-nack.md
+445735bf10ff30e4cc7f1a90dbeaa0c8858f0cf0b7bfe3f9dd3a0da1f1f0ec2d  prompts/instructions.txt
+8565178e44a566f703fe1443f028ab2877d3d931b9ddef43547b92f9d1a7acdb  prompts/instructions-notation.txt
+ef76def6baccec519ff9515c66b41d4c233b8e2927acf18115ad1e2e494211dc  prompts/question.txt
+21059b268bae257dab3aa7f608d1545d9d6a610f6f2782fc4baa84e728a6c82e  prompts/letter-system.txt
+cf3b989784a3b815fe1440589e2f212acc4e106ec4fe1e784d256ab58b128725  prompts/prediction.txt
+4d08045b72eeedc28602af09f82475a60bac768819d40a00a50601a661da332f  prompts/prediction-system.txt
+1e8611f27444c8e2429cd0998475dba52e5e21bdbd67e22ee51cfd282101a994  src/league/testdata/repeat_originals.json
+a285c55eb6e76c959801ec314305d0ee193131a2658da49926c9c73eccbee818  src/players/testdata/league8_request.json
+
+bundles (git archive --prefix=jevgammon-<c>/ <c> Cargo.toml Cargo.lock src + the 14 include_str! inputs outside src | gzip -n):
+8afeb895aa9f6db5fdc349e98b0317dbbfc05ebacd9f60203566cbf6e2317f6a  base-0e66836.tar.gz
+a044eeb2c92e46ba97f0371524b7a373b6c000006fb04936eb208315b3549519  candidate-cb669a0.tar.gz
+base-0e66836.tar.gz is byte-identical to mailbox/pinned-late-review/round3/candidate-0e66836.tar.gz (8afeb895…)

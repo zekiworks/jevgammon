@@ -1,0 +1,35 @@
+From 7708a5153a88bbf6cca47930c9662bda476931f9 Mon Sep 17 00:00:00 2001
+From: Can Basaran <basaran.can@gmail.com>
+Date: Thu, 12 Nov 2026 14:05:51 +0100
+Subject: [PATCH] =?UTF-8?q?site:=20hold=20'Gemini=20Decision=201=20[repeat?=
+ =?UTF-8?q?=201]'=20(reproducibility=20repeat=20of=20Gemini=20Decision=201?=
+ =?UTF-8?q?,=20tools/v3/repeats=20gemini-decision-1-r1;=20=C3=9Cmit=20via?=
+ =?UTF-8?q?=20Zeki=20#5359):=20never=20shown=20as=20a=20setup;=20its=20res?=
+ =?UTF-8?q?ult=20only=20in=20Experiments,=20Repeat=20checks.=20The=20repea?=
+ =?UTF-8?q?t's=20preflight=20(repeats.py=20check)=20refuses=20until=20main?=
+ =?UTF-8?q?=20holds=20the=20name;=20not=20started?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ tools/site/content/held_setups.json | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/tools/site/content/held_setups.json b/tools/site/content/held_setups.json
+index 2d57bb1..5618cc7 100644
+--- a/tools/site/content/held_setups.json
++++ b/tools/site/content/held_setups.json
+@@ -38,7 +38,8 @@
+   "REAX 1.3 [repeat 1]": "reproducibility repeat (tools/v3/repeats, Zeki #4667): never shown as a setup; its result only in Experiments, Repeat checks",
+   "Liquid d1-ultra [repeat 1]": "reproducibility repeat (tools/v3/repeats, Zeki #4671): never shown as a setup; its result only in Experiments, Repeat checks",
+   "Drex Max 1.1 [repeat 1]": "reproducibility repeat (tools/v3/repeats, Zeki #4838): never shown as a setup; its result only in Experiments, Repeat checks",
+-  "Fastino GLiDE v1.2 (local) [repeat 1]": "reproducibility repeat (tools/v3/repeats, Zeki #4838): never shown as a setup; its result only in Experiments, Repeat checks"
++  "Fastino GLiDE v1.2 (local) [repeat 1]": "reproducibility repeat (tools/v3/repeats, Zeki #4838): never shown as a setup; its result only in Experiments, Repeat checks",
++  "Gemini Decision 1 [repeat 1]": "reproducibility repeat (tools/v3/repeats, Zeki #5359): never shown as a setup; its result only in Experiments, Repeat checks"
+  },
+  "running": {}
+ }
+-- 
+2.53.0
+

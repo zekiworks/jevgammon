@@ -1,0 +1,175 @@
+1:  dab6da5 ! 1:  e782128 late-gemini-decision: Google's Gemini Decision 1 late entry into the original League 1 table (Ümit, Can #4966; Main, 11 Nov), from tools/v3/late-tiny8. Runner: decision clients merge a player config's `request` fields into every request body (as chat models do; llm::merged shared), so OpenRouter's provider routing can be pinned; stub test (System One body with model google/gemini-decision-1 and provider {only [google-ai-studio], allow_fallbacks false}, every option in the seeded order, probabilities, tokens; no provider field without `request`). player.json: openrouter-decisions/google/gemini-decision-1 (System One route, as Mercury Decide), Google AI Studio only, fallbacks off, $0.10/M input, $0 output, parallel 1, max_matches 1; 255 options per request (the API's limit; longer lists split by the league's rule), context 262,144 tokens, refused (400) above it, never cut. start.sh: listed() (OpenRouter lists one endpoint, google-ai-studio, up, $0.10/$0) before start and every 60 s (3 failures stop); OpenRouter >= $40 with the 3-unreadable rule; entry cost (entrant + paid opponents) < $5; VACUUM INTO backup; one match at a time; 12 h. locals.sh for the 8 local opponents on bariton GPU 2 (reservation r_82bfcd93782c), quiesce() as late-tiny8. gemini.py estimate: ~2,040 decisions, ~$1.00 entrant, ~$0.15 paid opponents.
+    @@ Metadata
+      ## Commit message ##
+         late-gemini-decision: Google's Gemini Decision 1 late entry into the original League 1 table (Ümit, Can #4966; Main, 11 Nov), from tools/v3/late-tiny8. Runner: decision clients merge a player config's `request` fields into every request body (as chat models do; llm::merged shared), so OpenRouter's provider routing can be pinned; stub test (System One body with model google/gemini-decision-1 and provider {only [google-ai-studio], allow_fallbacks false}, every option in the seeded order, probabilities, tokens; no provider field without `request`). player.json: openrouter-decisions/google/gemini-decision-1 (System One route, as Mercury Decide), Google AI Studio only, fallbacks off, $0.10/M input, $0 output, parallel 1, max_matches 1; 255 options per request (the API's limit; longer lists split by the league's rule), context 262,144 tokens, refused (400) above it, never cut. start.sh: listed() (OpenRouter lists one endpoint, google-ai-studio, up, $0.10/$0) before start and every 60 s (3 failures stop); OpenRouter >= $40 with the 3-unreadable rule; entry cost (entrant + paid opponents) < $5; VACUUM INTO backup; one match at a time; 12 h. locals.sh for the 8 local opponents on bariton GPU 2 (reservation r_82bfcd93782c), quiesce() as late-tiny8. gemini.py estimate: ~2,040 decisions, ~$1.00 entrant, ~$0.15 paid opponents.
+     
+    +    (cherry picked from commit dab6da5e5cf2f7143b414a8e0443bb05f06613e6 onto pinned-late-reax 0e66836 for the Gemini Decision 1 repeat) Conflicts resolved (pinned-late-gemini): DecisionClient keeps both fields, budget (late-reax e58fc6c/eea4de5) and request; Player::from_config passes budget to DecisionClient::new and then applies with_request; test module keeps the late-reax tests and adds the OpenRouter stub test (its DecisionClient literal gains budget: None, the client() helper gains request: None).
+    +
+      ## src/players/decision.rs ##
+     @@ src/players/decision.rs: pub struct DecisionClient {
+    -     /// `None` when the service takes no `model` field.
+    -     model: Option<String>,
+          url: String,
+    +     /// Hard spending cap: every attempt reserves its worst case before it is sent.
+    +     budget: Option<Arc<Ledger>>,
+     +    /// Fields merged into every request body (a player config's `request`), e.g.
+     +    /// OpenRouter's `provider` routing.
+     +    request: Option<Value>,
+    @@ src/players/decision.rs: pub struct DecisionClient {
+      
+      impl DecisionClient {
+     @@ src/players/decision.rs: impl DecisionClient {
+    -                 .default_model
+                      .map(|default| model.unwrap_or_else(|| default.to_owned())),
+                  url: format!("{}{}", base.trim_end_matches('/'), service.path),
+    +             budget,
+     +            request: None,
+              })
+          }
+    @@ src/players/decision.rs: impl DecisionClient {
+      
+          /// The answer object for the play question, in either response format.
+     @@ src/players/decision.rs: fn refused(error: &anyhow::Error) -> bool {
+    -             .is_some_and(|s| s.status.is_client_error() && s.status.as_u16() != 425)
+    -     })
+    - }
+    -+
+    -+#[cfg(test)]
+    -+mod tests {
+    + 
+    + #[cfg(test)]
+    + mod tests {
+     +    use std::io::{BufRead, BufReader, Read, Write};
+     +
+    -+    use super::*;
+    +     use super::*;
+     +    use crate::board::Board;
+     +    use crate::players::prompt::PromptVersion;
+    + 
+    +     #[test]
+    +     fn baselabs_sends_the_checkpoint_name_to_the_configured_server() {
+    +@@ src/players/decision.rs: mod tests {
+    +             model: Some(model.to_owned()),
+    +             url: format!("{}{}", base.trim_end_matches('/'), service.path),
+    +             budget: None,
+    ++            request: None,
+    +         }
+    +     }
+    + 
+    +@@ src/players/decision.rs: mod tests {
+    +         let local = service("drex-max").unwrap().unbilled();
+    +         assert!(!local(reqwest::StatusCode::TOO_MANY_REQUESTS));
+    +     }
+     +
+     +    /// Answers one System One request as OpenRouter does (the third option at 0.7, with
+     +    /// `id`, `provider` and `usage.cost`) and returns the request body.
+    @@ src/players/decision.rs: fn refused(error: &anyhow::Error) -> bool {
+     +            key: Some("test".into()),
+     +            model: Some("google/gemini-decision-1".into()),
+     +            url: format!("{url}{}", service.path),
+    ++            budget: None,
+     +            request: None,
+     +        }
+     +        .with_request(Some(pin.clone()));
+    @@ src/players/decision.rs: fn refused(error: &anyhow::Error) -> bool {
+     +        let body = plain.body("s", "i", &[("a".into(), "a".into()), ("b".into(), "b".into())]);
+     +        assert!(body.get("provider").is_none());
+     +    }
+    -+}
+    + }
+     
+      ## src/players/llm.rs ##
+     @@ src/players/llm.rs: fn tokens(value: &Value, pointer: &str) -> u64 {
+    @@ src/players/mod.rs: impl Player {
+     -                service,
+     -                model,
+     -                config.base_url.as_deref(),
+    +-                budget,
+     -            )?)));
+     +            return Ok(player(Backend::Decision(
+    -+                decision::DecisionClient::new(http, service, model, config.base_url.as_deref())?
+    -+                    .with_request(config.request.clone()),
+    ++                decision::DecisionClient::new(
+    ++                    http,
+    ++                    service,
+    ++                    model,
+    ++                    config.base_url.as_deref(),
+    ++                    budget,
+    ++                )?
+    ++                .with_request(config.request.clone()),
+     +            )));
+              }
+              let backend = match provider.to_ascii_lowercase().as_str() {
+2:  1b234da ! 2:  9df3af1 decision clients: an exchange error when the returned probability map is not exactly the shown ids (missing, unknown or repeated ids named; Zeki #4977, Main): the returned choice is still played and the probabilities it has kept, the decision does not fail; stub test (map lacking the last shown option and naming an unshown id) and coverage_gap unit test; rustfmt reflow of the earlier stub test
+    @@ Metadata
+      ## Commit message ##
+         decision clients: an exchange error when the returned probability map is not exactly the shown ids (missing, unknown or repeated ids named; Zeki #4977, Main): the returned choice is still played and the probabilities it has kept, the decision does not fail; stub test (map lacking the last shown option and naming an unshown id) and coverage_gap unit test; rustfmt reflow of the earlier stub test
+     
+    +    (cherry picked from commit 1b234da712469d447285a025df6c0b2aaee3afd8 onto pinned-late-reax 0e66836 for the Gemini Decision 1 repeat) Applied without conflict.
+    +
+      ## src/players/decision.rs ##
+     @@ src/players/decision.rs: impl DecisionClient {
+                  .and_then(|a| a.get("choice"))
+    @@ src/players/decision.rs: impl DecisionClient {
+      fn refused(error: &anyhow::Error) -> bool {
+          error.chain().any(|e| {
+     @@ src/players/decision.rs: mod tests {
+    -     use crate::players::prompt::PromptVersion;
+    +     }
+      
+          /// Answers one System One request as OpenRouter does (the third option at 0.7, with
+     -    /// `id`, `provider` and `usage.cost`) and returns the request body.
+3:  c0b58f3 ! 3:  52f7612 decision clients: map-check v2 for Gemini Decision 1 only (Zeki #4985; MAP_CHECKED_MODELS = google/gemini-decision-1 on openrouter-decisions, so no other setup's rows change; replaces 1b234da's error-only coverage check): a usable map has exactly one entry per shown id (none missing, unknown or repeated), every value a finite number in [0, 1], and sums to 1 within 1e-6 (no frozen sum tolerance existed; 1e-6 chosen 11 Nov for Gemini Decision 1 only, Main); never normalised, no key dropped. A failed map: the returned choice is still played, the raw response and cost kept, the exchange error names each cause and 'map-check v2', and the decision stores no probabilities (probabilities NULL, probability_source NULL, as for an invalid answer; one failed group fails a split decision). Stub tests: valid control, missing, extra, not a number, below 0, above 1, sum out (over the wire), Mercury Decide unchecked; unit tests for repeated (list format), NaN, inf, the 1e-6 edge. tools/v3/late-gemini-decision/map_audit.py: the same predicate offline over stored answers (read-only), with --controls. player.json note: ids/order/tie provenance and the map-check boundary
+    @@ Metadata
+      ## Commit message ##
+         decision clients: map-check v2 for Gemini Decision 1 only (Zeki #4985; MAP_CHECKED_MODELS = google/gemini-decision-1 on openrouter-decisions, so no other setup's rows change; replaces 1b234da's error-only coverage check): a usable map has exactly one entry per shown id (none missing, unknown or repeated), every value a finite number in [0, 1], and sums to 1 within 1e-6 (no frozen sum tolerance existed; 1e-6 chosen 11 Nov for Gemini Decision 1 only, Main); never normalised, no key dropped. A failed map: the returned choice is still played, the raw response and cost kept, the exchange error names each cause and 'map-check v2', and the decision stores no probabilities (probabilities NULL, probability_source NULL, as for an invalid answer; one failed group fails a split decision). Stub tests: valid control, missing, extra, not a number, below 0, above 1, sum out (over the wire), Mercury Decide unchecked; unit tests for repeated (list format), NaN, inf, the 1e-6 edge. tools/v3/late-gemini-decision/map_audit.py: the same predicate offline over stored answers (read-only), with --controls. player.json note: ids/order/tie provenance and the map-check boundary
+     
+    +    (cherry picked from commit c0b58f3d84852e140cfda42608945af57f34b2f9 onto pinned-late-reax 0e66836 for the Gemini Decision 1 repeat) Conflicts resolved (pinned-late-gemini): the constants block keeps late-reax's TEMPLATE_MARGIN beside MAP_CHECKED_MODELS, MAP_CHECK and SUM_TOLERANCE; the map-check stub test's DecisionClient literal gains budget: None.
+    +
+      ## src/players/decision.rs ##
+    -@@ src/players/decision.rs: use crate::http::{self, RetryTime};
+    - const QUESTION: &str = "play";
+    - /// Longest wait for a service to answer its warm-up request.
+    - const WARM_UP_LIMIT: Duration = Duration::from_secs(900);
+    +@@ src/players/decision.rs: const WARM_UP_LIMIT: Duration = Duration::from_secs(900);
+    + /// system prompt and chat template (unpublished for the hosted services; Drex Max v1's own
+    + /// loader adds about 80, measured with its tokenizer on an empty two-option question).
+    + const TEMPLATE_MARGIN: usize = 4096;
+     +/// Models whose probability maps must pass `map_fault` (Zeki #4977, #4985): Gemini Decision 1's late entry only, so
+     +/// no other setup's stored rows change. A map that fails keeps its raw response and the returned choice is played,
+     +/// but the decision stores no probabilities (probability_source NULL, as for an invalid answer).
+    @@ src/players/decision.rs: impl DecisionClient {
+      }
+      
+     @@ src/players/decision.rs: mod tests {
+    -     use crate::players::prompt::PromptVersion;
+    +     }
+      
+          /// Answers one System One request as OpenRouter does (the third option at 0.7, with
+     -    /// `id`, `provider` and `usage.cost`) and returns the request body. With `gap`, the
+    @@ src/players/decision.rs: mod tests {
+     +                key: Some("test".into()),
+     +                model: Some("google/gemini-decision-1".into()),
+     +                url: format!("{url}{}", service.path),
+    ++                budget: None,
+     +                request: None,
+     +            };
+     +            let mut decision = Decision::new(0);
+4:  38024d6 ! 4:  cb669a0 map-check v2: read Gemini's probability map from the raw response text with a visitor (raw_entries), so a repeated key in the object stays two entries and fails the check as 'repeated' (serde_json's map keeps only the last; Zeki #4992); bare NaN/Infinity tokens are not JSON, so such a response is unreadable and the answer invalid (seeded random play), as any unreadable reply. Tests feed literal response bytes through the real decode path (literal_stub): a repeated key (rejected, choice played, no probabilities) and NaN, Infinity, -Infinity (invalid). map_audit.py reads the stored raw response text as key/value pairs and as strict JSON, with raw-text controls
+    @@ Metadata
+      ## Commit message ##
+         map-check v2: read Gemini's probability map from the raw response text with a visitor (raw_entries), so a repeated key in the object stays two entries and fails the check as 'repeated' (serde_json's map keeps only the last; Zeki #4992); bare NaN/Infinity tokens are not JSON, so such a response is unreadable and the answer invalid (seeded random play), as any unreadable reply. Tests feed literal response bytes through the real decode path (literal_stub): a repeated key (rejected, choice played, no probabilities) and NaN, Infinity, -Infinity (invalid). map_audit.py reads the stored raw response text as key/value pairs and as strict JSON, with raw-text controls
+     
+    +    (cherry picked from commit 38024d6a6becfe13eaac3001b913eda6481582d9 onto pinned-late-reax 0e66836 for the Gemini Decision 1 repeat) Applied without conflict; the raw-entries test's DecisionClient literal gains budget: None.
+    +
+      ## src/players/decision.rs ##
+     @@ src/players/decision.rs: impl DecisionClient {
+                      (!decision.probabilities.is_empty()).then_some("decision");
+    @@ src/players/decision.rs: mod tests {
+     +            key: Some("test".into()),
+     +            model: Some("google/gemini-decision-1".into()),
+     +            url: format!("{url}{}", service.path),
+    ++            budget: None,
+     +            request: None,
+     +        };
+     +        fn valid(n: usize) -> Vec<(usize, String)> {

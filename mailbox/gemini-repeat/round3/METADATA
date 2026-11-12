@@ -1,0 +1,26 @@
+owner: jevgammon (agent GeminiRepeat) for Can
+what: round 3 of the Gemini Decision 1 repeat review (Zeki #5405 on f_7ed8f426…-gemini-bg-guards-5396-parent-verification.json: G5396-01..03), stopped by the withdrawal (Zeki #5409) and resumed (Zeki #5434). Offline only; NOT started. Same 17 pins, settings, route (OpenRouter System One, google-ai-studio only, fallbacks off) and $3.8181 cap; guard file unchanged.
+  Runner: pinned-late-gemini 959a8a2 = c13992f + one commit (G01, G02): src/budget.rs, src/http.rs, src/players/decision.rs, src/players/guard_tests.rs (+285 -37). Binary sha256 7e0d15b013a5afc6dcdb9983e9a85b9ca1c1c94ac3a0d8bbd11081cb7ca578ce (target/pinned-gemini/release/jevgammon; c13992f's kept as jevgammon-c13992f, cb669a0's as jevgammon-cb669a0). 18 build inputs unchanged.
+  Launcher: gemini-repeat c88b725 = 7b2e77d + c907dfa (round-2 package) + f9d31d1 (G03 code, committed as WIP at the withdrawal; code unchanged since) + c88b725 (METADATA note; completes round 3). Code diff 7b2e77d..c88b725: repeats.py, test_launcher.sh, METADATA, the Gemini manifest entry (runner 959a8a2).
+  G01: the guard latch is checked before every attempt, the first and each retry after its backoff wait, before its reservation (http::send_checked / send_metered_checked); the attempt already sent keeps its accounting.
+  G02: usage.cost read on its own (finite, >= 0); a 200 with incomplete usage and an error status not documented as unbilled are booked at max(worst case, reported charge); an error documented as unbilled but reporting a charge is booked at that charge; no charge known: the worst case, as before.
+  G03: with the guard ledger not created yet, check no longer skips admission: every client is admitted under a scratch copy of the guard with an empty scratch ledger (temporary directory, removed after); a refusal (key, client, settings) fails check with exit 1, so run.sh writes no backup, trigger, guard ledger or state.
+files:
+  runner-cb669a0-959a8a2.diff        runner since round 1 (cb669a0): run guard + round-3 fixes
+  runner-c13992f-959a8a2.diff, runner-959a8a2.patch   the round-3 runner commit (diff; format-patch with message)
+  launcher-7b2e77d-c88b725.diff      launcher code since round 2 (tools/, mailbox/repeats; the round-2 package commit excluded)
+  launcher-c88b725.patch             format-patch c907dfa..c88b725 (f9d31d1 WIP + c88b725)
+  red-c13992f.log                    RED: the round-3 guard_tests.rs on c13992f: the 3 new tests fail (latch_set_during_backoff_stops_the_retry: a retry was sent after the latch, gave up after 4 attempts; cost_only_usage_is_booked_and_bounds_the_next_send and charged_error_is_booked_and_bounds_the_next_send: booked at the worst case only, [("lost", 0.0151, None)]); the 12 round-2 tests pass
+  green-959a8a2.log                  GREEN: the 15 guard tests on 959a8a2: 15 passed
+  red-7b2e77d-test_launcher.log      RED: the round-3 test_launcher.sh on launcher 7b2e77d (fixture only: the Gemini runner binary path pointed at the kept c13992f binary, sha256 as recorded): the new case gemini-fresh-missing-key fails 3 ways (database changed + backup written; check refused only after the preparation; guard ledger written); every other case passes (75 ok)
+  test_launcher-output-c88b725.log   GREEN: test_launcher.sh at c88b725: 78 ok, ALL PASSED (gemini-fresh-missing-key: refused, scratch DB unchanged, no backup/state/trigger, the refusal names the missing OpenRouter key, no guard ledger or latch)
+  cargo-test-959a8a2.log             full suite in the build tree: 108 passed; clippy --all-targets exit 0 (the same 2 type_complexity warnings); fmt --check exit 0
+  candidate-959a8a2.tar.gz, cargo-test-bundle-959a8a2.log   bundle and its isolated cargo test --release: 108 passed
+  build-959a8a2.log                  release build, binary sha256
+  source-binding.txt                 file:line of G01, G02, G03, the tests, and the warm-up note
+  manifest-entry-gemini-decision-1-r1.json   the Gemini manifest entry at c88b725
+note (Zeki #5396 nonblocking qualification; not a gate): the warm-up early stop applies to guarded clients only (src/players/decision.rs:479 at 959a8a2: `self.guard.is_some() && guard::is_stop`). Without --guard the warm-up is as in 0e66836: a refused reservation (budget::BudgetCap, now a typed error with an unchanged message) is retried every 10 s up to 900 s; so the round-2 qualification that the typed BudgetCap stops an unguarded warm-up at once does not hold at source. The no-guard differences that do exist (959a8a2, for a player with its own budget, i.e. the Drex/Nace ledger): an error reply or a 200 with incomplete usage whose body reports usage.cost is booked at max(worst case, that charge) instead of the worst case; an error status documented as unbilled whose body reports a charge is booked at it instead of nothing. Also recorded in tools/v3/repeats/METADATA.
+not done: no production write, no live probe, no request to any provider, no GPU, no start. Production check was not rerun this round (round 2: exit 3, guard ledger + trigger only).
+reason: Zeki #5405 (G5396-01..03), Zeki #5434 (resume)
+delete when: Zeki closed this review and the repeat is reported
+written: 2026-11-12 (GeminiRepeat)

@@ -1,0 +1,464 @@
+diff --git a/src/budget.rs b/src/budget.rs
+index 8d164b9..5117dfb 100644
+--- a/src/budget.rs
++++ b/src/budget.rs
+@@ -200,6 +200,12 @@ impl Ledger {
+             / 1e6
+     }
+ 
++    /// Whether output tokens are priced (an answer without output tokens then has incomplete
++    /// usage).
++    pub fn output_priced(&self) -> bool {
++        self.config.output_per_mtok > 0.0
++    }
++
+     /// List-price cost of an answered attempt; cached tokens are part of `input_tokens`.
+     pub fn list_cost(&self, usage: &Usage) -> f64 {
+         let cached = usage.cached_tokens.min(usage.input_tokens);
+@@ -240,6 +246,7 @@ impl Ledger {
+         Ok(Hold {
+             ledger: Arc::clone(self),
+             id,
++            reserved: amount,
+             done: false,
+         })
+     }
+@@ -289,6 +296,31 @@ impl Ledger {
+             eprintln!("budget ledger: attempt {id} not updated: {error:#}");
+         }
+     }
++
++    /// Books an attempt whose tokens are unknown at `cost`, recording the provider's reported
++    /// charge.
++    fn finish_known(&self, id: i64, cost: f64, reported: f64, note: &str) {
++        let result = self.conn.lock().execute(
++            "UPDATE attempts SET status = 'settled', finished_at = ?2, cost_usd = ?3,
++                 reported_cost_usd = ?4, note = ?5
++             WHERE id = ?1",
++            params![id, now(), cost, reported, note],
++        );
++        if let Err(error) = result {
++            // The row stays open, so it keeps counting at its worst case.
++            eprintln!("budget ledger: attempt {id} not updated: {error:#}");
++        }
++    }
++}
++
++/// The charge a response body reports (`usage.cost`), read on its own, whatever else its usage
++/// holds: a finite, non-negative number, else `None`.
++pub fn reported_cost(body: &str) -> Option<f64> {
++    serde_json::from_str::<serde_json::Value>(body)
++        .ok()?
++        .pointer("/usage/cost")?
++        .as_f64()
++        .filter(|c| c.is_finite() && *c >= 0.0)
+ }
+ 
+ /// A reservation refused because it would pass the cap (the request was not sent); matched by
+@@ -309,6 +341,8 @@ impl std::error::Error for BudgetCap {}
+ pub struct Hold {
+     ledger: Arc<Ledger>,
+     id: i64,
++    /// The worst case reserved for this attempt.
++    reserved: f64,
+     done: bool,
+ }
+ 
+@@ -335,10 +369,24 @@ impl Hold {
+         self.done = true;
+     }
+ 
+-    /// The provider answered with an error status it does not document as unbilled: the
+-    /// attempt keeps its worst case (`lost`), as one without a response does.
+-    pub fn kept(mut self, note: &str) {
+-        self.ledger.finish(self.id, "lost", None, note);
++    /// An attempt whose usage is incomplete or that ended in an error status: booked at
++    /// max(its worst case, the charge the provider reported), or kept at the worst case when
++    /// no charge is known.
++    pub fn kept_at_least(mut self, known: Option<f64>, note: &str) {
++        match known {
++            Some(charge) => {
++                let cost = self.reserved.max(charge);
++                self.ledger.finish_known(self.id, cost, charge, note);
++            }
++            None => self.ledger.finish(self.id, "lost", None, note),
++        }
++        self.done = true;
++    }
++
++    /// An error status the provider documents as unbilled, whose body nonetheless reports a
++    /// charge: booked at that charge, never erased.
++    pub fn charged(mut self, charge: f64, note: &str) {
++        self.ledger.finish_known(self.id, charge, charge, note);
+         self.done = true;
+     }
+ }
+diff --git a/src/http.rs b/src/http.rs
+index b5a6056..4fed94e 100644
+--- a/src/http.rs
++++ b/src/http.rs
+@@ -129,13 +129,27 @@ pub async fn send(
+     make: impl Fn() -> RequestBuilder,
+     retry: &RetryTime,
+ ) -> Result<String, CallError> {
+-    let (body, _) = send_with_backoff(
++    send_checked(make, retry, None).await
++}
++
++/// A check run before every attempt (the first and each retry after its backoff wait), before
++/// anything is reserved or sent; an error ends the call there (a league guard's latch).
++pub type Stop<'a> = Option<&'a (dyn Fn() -> anyhow::Result<()> + Sync)>;
++
++/// As `send`, with `stop` checked before every attempt.
++pub async fn send_checked(
++    make: impl Fn() -> RequestBuilder,
++    retry: &RetryTime,
++    stop: Stop<'_>,
++) -> Result<String, CallError> {
++    let (body, _) = send_with_backoff_stop(
+         make,
+         retry,
+         None,
+         FIRST_BACKOFF,
+         RATE_LIMIT_BACKOFF,
+         RetryPolicy::current(),
++        stop,
+     )
+     .await?;
+     Ok(body)
+@@ -147,9 +161,10 @@ pub type FreeStatus = fn(StatusCode) -> bool;
+ 
+ /// As `send`, under a budget: every attempt first reserves `worst_case` dollars in `ledger`
+ /// (refused, before the call, when that would pass the cap). An attempt answered with an
+-/// error status for which `free` holds is booked at nothing; one answered with any other
+-/// error status, or without a response, keeps its worst case. The successful attempt's
+-/// reservation is returned for the caller to settle at its cost.
++/// error status for which `free` holds is booked at nothing (at the charge its body reports,
++/// if it reports one); one answered with any other error status is booked at max(its worst
++/// case, the reported charge); one without a response keeps its worst case. The successful
++/// attempt's reservation is returned for the caller to settle at its cost.
+ pub async fn send_metered(
+     make: impl Fn() -> RequestBuilder,
+     retry: &RetryTime,
+@@ -157,18 +172,32 @@ pub async fn send_metered(
+     worst_case: f64,
+     free: FreeStatus,
+ ) -> Result<(String, Hold), CallError> {
+-    let (body, hold) = send_with_backoff(
++    send_metered_checked(make, retry, ledger, worst_case, free, None).await
++}
++
++/// As `send_metered`, with `stop` checked before every attempt (before its reservation).
++pub async fn send_metered_checked(
++    make: impl Fn() -> RequestBuilder,
++    retry: &RetryTime,
++    ledger: &Arc<Ledger>,
++    worst_case: f64,
++    free: FreeStatus,
++    stop: Stop<'_>,
++) -> Result<(String, Hold), CallError> {
++    let (body, hold) = send_with_backoff_stop(
+         make,
+         retry,
+         Some((ledger, worst_case, free)),
+         FIRST_BACKOFF,
+         RATE_LIMIT_BACKOFF,
+         RetryPolicy::current(),
++        stop,
+     )
+     .await?;
+     Ok((body, hold.expect("a metered attempt holds a reservation")))
+ }
+ 
++#[cfg(test)]
+ async fn send_with_backoff(
+     make: impl Fn() -> RequestBuilder,
+     retry: &RetryTime,
+@@ -176,10 +205,35 @@ async fn send_with_backoff(
+     first_backoff: Duration,
+     rate_limit_backoff: Duration,
+     policy: RetryPolicy,
++) -> Result<(String, Option<Hold>), CallError> {
++    send_with_backoff_stop(
++        make,
++        retry,
++        budget,
++        first_backoff,
++        rate_limit_backoff,
++        policy,
++        None,
++    )
++    .await
++}
++
++async fn send_with_backoff_stop(
++    make: impl Fn() -> RequestBuilder,
++    retry: &RetryTime,
++    budget: Option<(&Arc<Ledger>, f64, FreeStatus)>,
++    first_backoff: Duration,
++    rate_limit_backoff: Duration,
++    policy: RetryPolicy,
++    stop: Stop<'_>,
+ ) -> Result<(String, Option<Hold>), CallError> {
+     let mut backoff = first_backoff;
+     let mut attempt = 0;
+     loop {
++        // Every attempt edge, after any backoff wait: nothing is reserved or sent once stopped.
++        if let Some(stop) = stop {
++            stop()?;
++        }
+         let hold = match budget {
+             Some((ledger, amount, _)) => Some(ledger.reserve(amount)?),
+             None => None,
+@@ -208,12 +262,20 @@ async fn send_with_backoff(
+                     return Ok((body, hold));
+                 }
+                 if let (Some(hold), Some((_, _, free))) = (hold, budget) {
+-                    if free(status) {
+-                        hold.refused(&format!("{status}"));
+-                    } else {
+-                        hold.kept(&format!(
+-                            "{status}: not documented as unbilled; booked at the worst case"
+-                        ));
++                    // A charge the error body reports is never erased.
++                    let known = crate::budget::reported_cost(&body);
++                    match (free(status), known) {
++                        (true, None) => hold.refused(&format!("{status}")),
++                        (true, Some(charge)) => hold.charged(
++                            charge,
++                            &format!("{status}: documented as unbilled, but the body reports a charge"),
++                        ),
++                        (false, known) => hold.kept_at_least(
++                            known,
++                            &format!(
++                                "{status}: not documented as unbilled; booked at max(worst case, reported charge)"
++                            ),
++                        ),
+                     }
+                 }
+                 if matches!(status, StatusCode::UNAUTHORIZED | StatusCode::FORBIDDEN) {
+diff --git a/src/players/decision.rs b/src/players/decision.rs
+index 12b5766..f8ab3ee 100644
+--- a/src/players/decision.rs
++++ b/src/players/decision.rs
+@@ -504,16 +504,21 @@ impl DecisionClient {
+     /// built on) never makes a token of less than one byte of the UTF-8 text it encodes, and
+     /// the body holds every byte of the state, instructions and options the model reads (JSON
+     /// escaping only adds bytes); the margin covers the provider's own system prompt and chat
+-    /// template, which it does not publish. An answer with usage is booked at max(its list
+-    /// price, the provider's reported `usage.cost`); a 200 without readable usage, an error
+-    /// status the service does not document as unbilled (`Service::unbilled`), and an attempt
+-    /// without a response keep the worst case. Under a league guard nothing is sent while its
+-    /// latch is set, and a reply without the expected identity sets it (after its cost is
+-    /// booked) and fails with a `GuardStop`.
++    /// template, which it does not publish. An answer with complete usage is booked at max(its
++    /// list price, the provider's reported `usage.cost`); an answer with incomplete usage (no
++    /// input tokens, or no output tokens when output is priced) or an error status the service
++    /// does not document as unbilled (`Service::unbilled`) at max(its worst case, the reported
++    /// charge, read on its own); an attempt without a response, or without a known charge,
++    /// keeps the worst case. Under a league guard the latch is checked before every attempt
++    /// (the first, and each retry after its backoff wait: nothing is reserved or sent once it is
++    /// set), and a reply without the expected identity sets it (after its cost is booked) and
++    /// fails with a `GuardStop`.
+     async fn send(&self, body: &Value, retry: &RetryTime) -> Result<String> {
+-        if let Some(guarded) = &self.guard {
+-            guarded.guard.check()?;
+-        }
++        let latch = || match &self.guard {
++            Some(guarded) => guarded.guard.check(),
++            None => Ok(()),
++        };
++        let stop: http::Stop<'_> = self.guard.is_some().then_some(&latch as _);
+         let make = || {
+             let request = self.http.post(&self.url).json(body);
+             match &self.key {
+@@ -526,35 +531,47 @@ impl DecisionClient {
+                 .context(format!("{} request failed", self.service.label))
+         };
+         let text = match &self.budget {
+-            None => http::send(make, retry).await.map_err(failed)?,
++            None => http::send_checked(make, retry, stop)
++                .await
++                .map_err(failed)?,
+             Some(ledger) => {
+                 let bytes = body.to_string().len();
+                 let worst = ledger.worst_case(bytes + TEMPLATE_MARGIN, bytes as u64);
+-                let (text, hold) =
+-                    http::send_metered(make, retry, ledger, worst, self.service.unbilled())
+-                        .await
+-                        .map_err(failed)?;
++                let (text, hold) = http::send_metered_checked(
++                    make,
++                    retry,
++                    ledger,
++                    worst,
++                    self.service.unbilled(),
++                    stop,
++                )
++                .await
++                .map_err(failed)?;
+                 let value: Option<Value> = serde_json::from_str(&text).ok();
+-                let usage = |key: &str| {
++                let tokens = |key: &str| {
+                     value
+                         .as_ref()
+                         .and_then(|v| v.pointer(&format!("/usage/{key}")))
++                        .and_then(Value::as_u64)
+                 };
+-                match usage("input_tokens").and_then(Value::as_u64) {
+-                    Some(input_tokens) => {
++                let reported = crate::budget::reported_cost(&text);
++                let output = tokens("output_tokens").or((!ledger.output_priced()).then_some(0));
++                match (tokens("input_tokens"), output) {
++                    (Some(input_tokens), Some(output_tokens)) => {
+                         hold.settle(
+                             Usage {
+                                 input_tokens,
+                                 cached_tokens: 0,
+-                                output_tokens: usage("output_tokens")
+-                                    .and_then(Value::as_u64)
+-                                    .unwrap_or(0),
++                                output_tokens,
+                                 reasoning_tokens: 0,
+                             },
+-                            usage("cost").and_then(Value::as_f64),
++                            reported,
+                         );
+                     }
+-                    None => hold.kept("200 without readable usage: booked at the worst case"),
++                    _ => hold.kept_at_least(
++                        reported,
++                        "200 with incomplete usage: booked at max(worst case, reported charge)",
++                    ),
+                 }
+                 text
+             }
+diff --git a/src/players/guard_tests.rs b/src/players/guard_tests.rs
+index 2acf184..d1c27f1 100644
+--- a/src/players/guard_tests.rs
++++ b/src/players/guard_tests.rs
+@@ -677,3 +677,124 @@ async fn money_opponent_spend_crossing_the_cap_stops_the_entrant_before_sending(
+     assert_eq!(by_setup.get("O"), Some(&1), "{by_setup:?}");
+     assert_eq!(by_setup.get("G"), None, "{by_setup:?}");
+ }
++
++/// Zeki #5396 G01: the latch set while a retry waits out its backoff: the retry is neither
++/// reserved nor sent; the attempt already sent keeps its accounting.
++#[tokio::test(flavor = "multi_thread")]
++async fn latch_set_during_backoff_stops_the_retry() {
++    let stub = Stub::start(|_, _| Reply {
++        status: 503,
++        body: "{}".into(),
++        delay: Duration::ZERO,
++    });
++    let dir = scratch("backoff-latch");
++    let setup = support::setup(&guard_file(&dir, 5.0, &[("G", 1.0)], &["G"]));
++    let g = player("G", &stub.url, 1, &setup).await.unwrap();
++    let position = Position::with(3);
++    let request = position.request();
++    let latch_while_waiting = async {
++        while stub.requests() == 0 {
++            tokio::time::sleep(Duration::from_millis(20)).await;
++        }
++        // The first attempt failed (503); its retry waits 2 s. Set the latch meanwhile, as
++        // another match's identity failure would.
++        tokio::time::sleep(Duration::from_millis(300)).await;
++        std::fs::write(dir.join("latch"), "test: latched during the backoff\n").unwrap();
++    };
++    let (outcome, ()) = tokio::time::timeout(Duration::from_secs(60), async {
++        tokio::join!(g.decide(&request), latch_while_waiting)
++    })
++    .await
++    .expect("the decision ends");
++    let error = format!(
++        "{:#}",
++        outcome.expect_err("a retry was answered after the latch")
++    );
++    assert_eq!(
++        stub.requests(),
++        1,
++        "a retry was sent after the latch was set: {error}"
++    );
++    assert!(error.contains("GUARD LATCHED"), "{error}");
++    let rows = ledger(&dir);
++    assert_eq!(
++        rows.len(),
++        1,
++        "only the sent attempt is booked, the retry not reserved: {rows:?}"
++    );
++    assert!(
++        rows[0].0 == "lost" && rows[0].1 > 0.0,
++        "the 503 keeps its worst case: {rows:?}"
++    );
++}
++
++/// Zeki #5396 G02 (cost only): a 200 whose usage reports only its charge is booked at
++/// max(worst case, charge), and the next request's reservation is checked against it.
++#[tokio::test(flavor = "multi_thread")]
++async fn cost_only_usage_is_booked_and_bounds_the_next_send() {
++    let position = Position::with(3);
++    let worst = worst_case(&position, 1.0).await;
++    let charge = 2.0 * worst;
++    let stub = Stub::start(move |_, r| {
++        let mut v: Value = serde_json::from_str(&good(r)).unwrap();
++        v["usage"] = json!({"cost": charge});
++        Reply::ok(v.to_string())
++    });
++    let dir = scratch("cost-only");
++    let cap = 2.5 * worst;
++    let setup = support::setup(&guard_file(&dir, cap, &[("G", 1.0)], &["G"]));
++    let g = player("G", &stub.url, 1, &setup).await.unwrap();
++    g.decide(&position.request()).await.unwrap();
++    let rows = ledger(&dir);
++    assert!(
++        (committed(&rows) - charge).abs() < 1e-12,
++        "the reported charge is booked: {rows:?}"
++    );
++    let next = g.decide(&position.request()).await;
++    let error = format!(
++        "{:#}",
++        next.expect_err("sent although the known charge leaves no room")
++    );
++    assert!(error.contains("BUDGET CAP"), "{error}");
++    assert_eq!(stub.requests(), 1, "the next request was sent");
++    assert!(committed(&ledger(&dir)) <= cap + 1e-12);
++}
++
++/// Zeki #5396 G02 (charged error): an error status whose body reports a charge is booked at
++/// max(worst case, charge), never erased, and bounds the next request's reservation.
++#[tokio::test(flavor = "multi_thread")]
++async fn charged_error_is_booked_and_bounds_the_next_send() {
++    let position = Position::with(3);
++    let worst = worst_case(&position, 1.0).await;
++    let charge = 2.0 * worst;
++    let stub = Stub::start(move |n, r| match n {
++        0 => Reply {
++            status: 400,
++            body: json!({"error": {"message": "bad request"}, "usage": {"cost": charge}})
++                .to_string(),
++            delay: Duration::ZERO,
++        },
++        _ => Reply::ok(good(r)),
++    });
++    let dir = scratch("charged-error");
++    let cap = 2.5 * worst;
++    let setup = support::setup(&guard_file(&dir, cap, &[("G", 1.0)], &["G"]));
++    let g = player("G", &stub.url, 1, &setup).await.unwrap();
++    assert!(
++        g.decide(&position.request()).await.is_err(),
++        "the 400 is an error"
++    );
++    let rows = ledger(&dir);
++    assert!(
++        (committed(&rows) - charge).abs() < 1e-12,
++        "the error's charge is booked: {rows:?}"
++    );
++    let next = g.decide(&position.request()).await;
++    let error = format!(
++        "{:#}",
++        next.expect_err("sent although the known charge leaves no room")
++    );
++    assert!(error.contains("BUDGET CAP"), "{error}");
++    assert_eq!(stub.requests(), 1, "the next request was sent");
++    assert!(committed(&ledger(&dir)) <= cap + 1e-12);
++}

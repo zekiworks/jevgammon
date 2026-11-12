@@ -1,0 +1,52 @@
+RED: c13992f (round 2) + the round-3 src/players/guard_tests.rs unchanged (the 3 new tests: G01 latch_set_during_backoff_stops_the_retry, G02 cost_only_usage_is_booked_and_bounds_the_next_send, charged_error_is_booked_and_bounds_the_next_send); rustc 1.97.1 (8bab26f4f 2026-07-14)
+command: cd /home/cbasaran/.cache/gemini-repeat/red-c13992f && TMPDIR=~/.cache/tmp CARGO_TARGET_DIR=/home/cbasaran/code/jevgammon/target/pinned-gemini-red cargo test --locked guard_tests -- --test-threads 4
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.69s
+     Running unittests src/main.rs (/home/cbasaran/code/jevgammon/target/pinned-gemini-red/debug/deps/jevgammon-6b0ddef3bb859ea4)
+
+running 15 tests
+test players::guard_tests::identity_latch_survives_a_restart_and_no_league_starts ... ok
+test players::guard_tests::charged_error_is_booked_and_bounds_the_next_send ... FAILED
+test players::guard_tests::cost_only_usage_is_booked_and_bounds_the_next_send ... FAILED
+test players::guard_tests::identity_mismatch_stops_the_league_without_re_entry ... ok
+test players::guard_tests::identity_mismatched_model_fails_closed_and_latches ... ok
+test players::guard_tests::identity_mismatched_provider_fails_closed_and_latches ... ok
+test players::guard_tests::identity_warm_up_mismatch_fails_closed_at_once ... ok
+test players::guard_tests::identity_split_group_mismatch_fails_closed ... ok
+test players::guard_tests::money_failed_attempts_keep_their_worst_case ... ok
+test players::guard_tests::identity_missing_field_fails_closed_and_latches ... ok
+test players::guard_tests::money_opponent_spend_crossing_the_cap_stops_the_entrant_before_sending ... ok
+test players::guard_tests::money_warm_ups_are_reserved_and_settled ... ok
+test players::guard_tests::money_in_flight_reservations_bound_concurrent_requests ... ok
+test players::guard_tests::money_retries_are_each_reserved_and_settled_from_the_reported_cost ... ok
+test players::guard_tests::latch_set_during_backoff_stops_the_retry ... FAILED
+
+failures:
+
+---- players::guard_tests::charged_error_is_booked_and_bounds_the_next_send stdout ----
+
+thread 'players::guard_tests::charged_error_is_booked_and_bounds_the_next_send' (4059030) panicked at src/players/guard_tests.rs:788:5:
+the error's charge is booked: [("lost", 0.0151, None)]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- players::guard_tests::cost_only_usage_is_booked_and_bounds_the_next_send stdout ----
+
+thread 'players::guard_tests::cost_only_usage_is_booked_and_bounds_the_next_send' (4059031) panicked at src/players/guard_tests.rs:749:5:
+the reported charge is booked: [("lost", 0.0151, None)]
+
+---- players::guard_tests::latch_set_during_backoff_stops_the_retry stdout ----
+
+thread 'players::guard_tests::latch_set_during_backoff_stops_the_retry' (4059528) panicked at src/players/guard_tests.rs:713:5:
+assertion `left == right` failed: a retry was sent after the latch was set: Cygnet request failed: gave up after 4 attempts: 503 Service Unavailable: {}
+  left: 4
+ right: 1
+
+
+failures:
+    players::guard_tests::charged_error_is_booked_and_bounds_the_next_send
+    players::guard_tests::cost_only_usage_is_booked_and_bounds_the_next_send
+    players::guard_tests::latch_set_during_backoff_stops_the_retry
+
+test result: FAILED. 12 passed; 3 failed; 0 ignored; 0 measured; 93 filtered out; finished in 14.44s
+
+error: test failed, to rerun pass `--bin jevgammon`
+exit: 101

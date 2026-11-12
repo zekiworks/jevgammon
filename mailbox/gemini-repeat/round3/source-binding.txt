@@ -1,0 +1,43 @@
+Source binding, round 3 (Zeki #5396 G01-G03; resumed per Zeki #5434).
+Runner: pinned-late-gemini 959a8a2f69a524f9d0477b971c8c8a70306bd1d2 (src tree 8be0aadf1c2ea369b18639f3def5933f354b122a)
+  binary /home/cbasaran/code/jevgammon/target/pinned-gemini/release/jevgammon, sha256 7e0d15b013a5afc6dcdb9983e9a85b9ca1c1c94ac3a0d8bbd11081cb7ca578ce
+  (c13992f's binary 811ef5b0... kept aside as target/pinned-gemini/jevgammon-c13992f, cb669a0's 0bf67bc3... as jevgammon-cb669a0; neither used)
+Launcher: gemini-repeat (the round-3 commit after f9d31d1), tools/v3/repeats/repeats.py and test_launcher.sh at that head.
+
+G01 latch at every attempt edge (runner)
+  src/http.rs:137      Stop: a check run before every attempt
+  src/http.rs:140,179  send_checked / send_metered_checked (send / send_metered: unchanged behaviour, no check)
+  src/http.rs:234-235  send_with_backoff_stop: stop() at the top of every loop iteration, i.e. before the first attempt
+                       and before each retry after its backoff wait, before ledger.reserve and make().send()
+  src/players/decision.rs:517-521  DecisionClient::send: stop = the guard's latch check (Guard::check) when guarded
+  src/players/decision.rs:534,540  both paths (unmetered, metered) use the checked sends
+  an attempt already sent keeps its accounting: its Hold is settled/kept before the wait (src/http.rs:266-273), the
+  stop happens before the next reservation
+
+G02 known charges never dropped (runner)
+  src/budget.rs:318    reported_cost(body): usage.cost read on its own, finite and >= 0
+  src/budget.rs:375    Hold::kept_at_least: max(reservation, known charge); no known charge: the worst case (lost)
+  src/budget.rs:388    Hold::charged: an error documented as unbilled whose body reports a charge: booked at it
+  src/budget.rs:249    Hold remembers its reservation
+  src/budget.rs:205    Ledger::output_priced (usage without output tokens is incomplete only when output is priced)
+  src/http.rs:266-273  error statuses: (unbilled, no charge) nothing; (unbilled, charge) charged; (other) kept_at_least
+  src/players/decision.rs:557-571  200s: complete usage -> settle(max(list, reported)); incomplete -> kept_at_least
+
+G03 admission before any preparation write (launcher)
+  tools/v3/repeats/repeats.py:1088-1093  problems(): guard ledger missing -> scratch_admission_problems (not skipped)
+  tools/v3/repeats/repeats.py:1102-1110  scratch copy of the guard with an empty scratch ledger in a temporary directory
+                                         ($TMPDIR, else ~/.cache/tmp; removed after); any refusal is a non-preparable
+                                         failure (check exit 1), so run.sh writes no backup, trigger, ledger or state
+  tools/v3/repeats/repeats.py:811,813    NO_LEDGER stays preparable only together with a clean scratch admission
+
+Tests
+  src/players/guard_tests.rs:684  latch_set_during_backoff_stops_the_retry (G01)
+  src/players/guard_tests.rs:734  cost_only_usage_is_booked_and_bounds_the_next_send (G02)
+  src/players/guard_tests.rs:766  charged_error_is_booked_and_bounds_the_next_send (G02)
+  tools/v3/repeats/test_launcher.sh:564  gemini-fresh-missing-key (G03)
+
+Warm-up stop without a guard (note requested by Zeki #5396; not a gate)
+  src/players/decision.rs:479  the warm-up stops at once on a guard stop only when the client is guarded
+  (`self.guard.is_some() && guard::is_stop`). Without --guard a refused reservation (BudgetCap) is retried every 10 s
+  up to WARM_UP_LIMIT (900 s) exactly as in 0e66836 (git show 0e66836:src/players/decision.rs, warm_up: refused() ->
+  return; else retry until the limit); BudgetCap is a typed error with the message unchanged.

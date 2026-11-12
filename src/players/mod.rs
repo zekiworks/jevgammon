@@ -4,7 +4,9 @@
 pub mod baseline;
 pub(crate) mod decision;
 pub mod gnubg;
-mod llm;
+#[cfg(test)]
+mod guard_tests;
+pub(crate) mod llm;
 pub mod order;
 pub mod prompt;
 
@@ -243,6 +245,9 @@ pub struct Setup {
     pub xai: Arc<Credentials>,
     /// Request pacers by rate-limit group, shared by every player of the group.
     pacers: parking_lot::Mutex<HashMap<String, Arc<Pacer>>>,
+    /// A league's run guard (`league --guard`): shared cap and reply identity of the setups
+    /// it names; `None` = no guard.
+    pub guard: Option<Arc<crate::guard::Guard>>,
 }
 
 /// Spaces the requests of a rate-limit group (e.g. both setups of one OpenRouter model) at
@@ -305,7 +310,14 @@ impl Setup {
             qfork_root,
             local_url,
             pacers: parking_lot::Mutex::new(HashMap::new()),
+            guard: None,
         }
+    }
+
+    /// This setup under a league's run guard.
+    pub fn with_guard(mut self, guard: Arc<crate::guard::Guard>) -> Self {
+        self.guard = Some(guard);
+        self
     }
 }
 
@@ -477,8 +489,27 @@ impl Player {
             None => bail!("model spec `{spec}` needs a model name: {provider}/<model>"),
         };
         // A hard spending cap (`budget`) for chat requests to an openai-compatible server and
-        // for decision services: each attempt reserves its worst case before it is sent.
-        let budget = match &config.budget {
+        // for decision services: each attempt reserves its worst case before it is sent. A
+        // league guard meters the setups it names (their stored settings unchanged) with its
+        // shared ledger and cap; a setup with a budget of its own is not metered twice.
+        let guarded = setup.guard.as_ref().filter(|g| g.meters(&config.name));
+        if guarded.is_some() && decision::service(provider).is_none() {
+            bail!(
+                "{}: the league guard meters it, but `{spec}` is not a decision service",
+                config.name
+            );
+        }
+        let budget_config = match (&config.budget, guarded) {
+            (Some(_), Some(guard)) => bail!(
+                "{}: it has a budget of its own and the league guard {} meters it too",
+                config.name,
+                guard.path.display()
+            ),
+            (Some(budget), None) => Some(budget.clone()),
+            (None, Some(guard)) => guard.budget_for(&config.name),
+            (None, None) => None,
+        };
+        let budget = match &budget_config {
             Some(budget)
                 if provider.eq_ignore_ascii_case("openai-compatible")
                     || decision::service(provider).is_some() =>
@@ -532,7 +563,8 @@ impl Player {
                     config.base_url.as_deref(),
                     budget,
                 )?
-                .with_request(config.request.clone()),
+                .with_request(config.request.clone())
+                .with_guard(guarded.cloned(), &config.name),
             )));
         }
         let backend = match provider.to_ascii_lowercase().as_str() {

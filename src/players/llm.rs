@@ -90,6 +90,103 @@ pub struct Options {
     pub budget: Option<Arc<crate::budget::Ledger>>,
 }
 
+/// The identity every reply must carry (a league guard's `expect_route`): the response's model
+/// field (JSON pointer `model_pointer`, default `/model`) must be one of `models`; when
+/// `provider` is set, the field at `provider_pointer` (default `/provider`) must equal it.
+/// Ported from the improve runner (branch improve, 1270c04/bbbea9d: `ExpectRoute`,
+/// `identity_fields`, `route_identity`), without its rejection log (a league guard latches
+/// instead).
+#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ExpectRoute {
+    pub models: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub provider: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub model_pointer: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub provider_pointer: Option<String>,
+    /// Also accept a listed model followed by a dated snapshot suffix (`<model>-2026-...`).
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub allow_dated: bool,
+}
+
+/// A dated snapshot suffix, exactly `-YYYY-MM-DD` with a valid calendar date and nothing after
+/// (byte-safe: anything that is not that ASCII shape is rejected).
+fn is_dated_suffix(rest: &str) -> bool {
+    let b = rest.as_bytes();
+    b.len() == 11
+        && b[0] == b'-'
+        && b[5] == b'-'
+        && b[8] == b'-'
+        && [1, 2, 3, 4, 6, 7, 9, 10]
+            .iter()
+            .all(|&i| b[i].is_ascii_digit())
+        && chrono::NaiveDate::parse_from_str(&rest[1..], "%Y-%m-%d").is_ok()
+}
+
+/// The identity fields of a reply (`model`, `provider` at the expected pointers), whatever they
+/// hold, for the record.
+pub fn identity_fields(raw: &str, expect: &ExpectRoute) -> Value {
+    let value: Value = serde_json::from_str(raw).unwrap_or(Value::Null);
+    let model_at = expect.model_pointer.as_deref().unwrap_or("/model");
+    let provider_at = expect.provider_pointer.as_deref().unwrap_or("/provider");
+    json!({
+        "model": value.pointer(model_at).cloned().unwrap_or(Value::Null),
+        "provider": if expect.provider.is_some() { value.pointer(provider_at).cloned().unwrap_or(Value::Null) } else { Value::Null },
+    })
+}
+
+/// Whether a raw response names the expected model (and provider): `Ok("accepted")` for a listed
+/// model, `Ok("accepted_dated")` for a listed model plus a dated snapshot suffix (when allowed).
+/// Missing or unreadable identity fails closed.
+pub fn route_identity(
+    raw: &str,
+    expect: &ExpectRoute,
+) -> std::result::Result<&'static str, String> {
+    let value: Value = serde_json::from_str(raw)
+        .map_err(|_| "the response is not JSON: no identity".to_owned())?;
+    let model_at = expect.model_pointer.as_deref().unwrap_or("/model");
+    let model = value.pointer(model_at).and_then(Value::as_str);
+    let Some(model) = model else {
+        return Err(format!(
+            "the response lacks its identity (no model at {model_at})"
+        ));
+    };
+    let verdict = if expect.models.iter().any(|x| x == model) {
+        "accepted"
+    } else if expect.allow_dated
+        && expect
+            .models
+            .iter()
+            .any(|x| model.strip_prefix(x.as_str()).is_some_and(is_dated_suffix))
+    {
+        "accepted_dated"
+    } else {
+        return Err(format!(
+            "the response names model {model:?}, expected one of {:?}",
+            expect.models
+        ));
+    };
+    if let Some(want) = &expect.provider {
+        let provider_at = expect.provider_pointer.as_deref().unwrap_or("/provider");
+        match value.pointer(provider_at).and_then(Value::as_str) {
+            Some(p) if p == want => {}
+            Some(p) => {
+                return Err(format!(
+                    "the response names provider {p:?} for {model:?}, expected {want:?}"
+                ));
+            }
+            None => {
+                return Err(format!(
+                    "the response lacks its identity (no provider at {provider_at})"
+                ));
+            }
+        }
+    }
+    Ok(verdict)
+}
+
 enum Kind {
     OpenAiSubscription(Arc<Credentials>),
     AnthropicSubscription(Arc<Credentials>),

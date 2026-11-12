@@ -63,8 +63,13 @@ pub struct Admitted {
 }
 
 /// Prints one line per player and fails when any client was refused; else ends with the
-/// `admitted-settings` record.
+/// `admitted-settings` record. Under a guard (`--guard`), its latch must not be set, its
+/// metered setups are built with its ledger (read-only, immutable) and the record names the
+/// guard file's SHA-256.
 pub async fn run(db: &Path, config: &Path, setup: &Setup) -> Result<()> {
+    if let Some(guard) = &setup.guard {
+        guard.check()?;
+    }
     let admitted = admit(db, config, setup).await?;
     for a in &admitted.clients {
         match &a.refused {
@@ -93,13 +98,21 @@ pub async fn run(db: &Path, config: &Path, setup: &Setup) -> Result<()> {
         config.display(),
         db.display()
     );
-    println!("admitted-settings {}", record(config, &admitted));
+    println!(
+        "admitted-settings {}",
+        record(config, &admitted, setup.guard.as_deref())
+    );
     Ok(())
 }
 
 /// The `admitted-settings` record (one line of JSON): the config file and its SHA-256, then
-/// every client in admission order with its source, players row and settings SHA-256.
-fn record(config: &Path, admitted: &Admitted) -> serde_json::Value {
+/// every client in admission order with its source, players row and settings SHA-256, and,
+/// under a guard, the guard file and its SHA-256.
+fn record(
+    config: &Path,
+    admitted: &Admitted,
+    guard: Option<&crate::guard::Guard>,
+) -> serde_json::Value {
     let clients: Vec<_> = admitted
         .clients
         .iter()
@@ -108,8 +121,13 @@ fn record(config: &Path, admitted: &Admitted) -> serde_json::Value {
                                "settings_sha256": a.settings_sha256})
         })
         .collect();
-    serde_json::json!({"config": config.display().to_string(),
-                       "config_sha256": admitted.config_sha256, "clients": clients})
+    let mut record = serde_json::json!({"config": config.display().to_string(),
+                                        "config_sha256": admitted.config_sha256, "clients": clients});
+    if let Some(guard) = guard {
+        record["guard"] =
+            serde_json::json!({"path": guard.path.display().to_string(), "sha256": guard.sha256});
+    }
+    record
 }
 
 fn sha256(bytes: &[u8]) -> String {
@@ -465,7 +483,7 @@ mod tests {
             clef.settings_sha256.as_deref(),
             Some(sha256(checkpointed.to_string().as_bytes()).as_str())
         );
-        let record = record(&config, &admitted);
+        let record = record(&config, &admitted, None);
         assert_eq!(
             record,
             serde_json::json!({"config": config.display().to_string(),

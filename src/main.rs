@@ -5,6 +5,7 @@ mod board;
 mod budget;
 mod db;
 mod dice;
+mod guard;
 mod http;
 mod league;
 mod migrate;
@@ -104,6 +105,11 @@ struct AdmitArgs {
     /// League config file (as for `league --config`).
     #[arg(long)]
     config: PathBuf,
+    /// The league's run guard file (as for `league --guard`): its metered setups are built
+    /// with its ledger (read-only, immutable) and its latch must not be set; the record names
+    /// the guard file's SHA-256.
+    #[arg(long)]
+    guard: Option<PathBuf>,
 }
 
 #[derive(Args)]
@@ -355,6 +361,11 @@ struct LeagueArgs {
     /// $XDG_STATE_HOME/bg-site/plays.
     #[arg(long, env = "JEVGAMMON_SCORES")]
     scores: Option<PathBuf>,
+    /// Run guard file (JSON; `guard.rs`): a shared hard cap over the setups it meters (every
+    /// request attempt reserved before it is sent), the identity every reply of its
+    /// `expect_route` setups must carry, and a stop latch; a latched guard starts nothing.
+    #[arg(long)]
+    guard: Option<PathBuf>,
     #[command(flatten)]
     common: Common,
 }
@@ -453,7 +464,13 @@ async fn main() -> ExitCode {
         Some(Command::Admit(args)) => {
             // No admitted client type reads a credential root or the local server's URL.
             let setup = Setup::new(PathBuf::new(), String::new());
-            admit::run(&args.db, &args.config, &setup).await
+            match args.guard.as_deref().map(guard::Guard::load).transpose() {
+                Ok(Some(guard)) => {
+                    admit::run(&args.db, &args.config, &setup.with_guard(guard)).await
+                }
+                Ok(None) => admit::run(&args.db, &args.config, &setup).await,
+                Err(error) => Err(error),
+            }
         }
         Some(Command::RenderStageB(args)) => {
             ask::render_stage_b(&args.config, &args.positions, &args.setups)
@@ -519,7 +536,10 @@ async fn main() -> ExitCode {
 }
 
 async fn run_league(args: LeagueArgs) -> Result<()> {
-    let setup = args.common.setup();
+    let setup = match &args.guard {
+        Some(path) => args.common.setup().with_guard(guard::Guard::load(path)?),
+        None => args.common.setup(),
+    };
     let start = match (args.resume, &args.config) {
         (Some(id), _) => league::Start::Resume(id),
         (None, Some(path)) => {

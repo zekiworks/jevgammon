@@ -688,6 +688,10 @@ async fn run_inner(
     scores: PathBuf,
     league_id: &mut Option<i64>,
 ) -> Result<()> {
+    // A latched guard starts nothing: no database is opened, no league created or resumed.
+    if let Some(guard) = &setup.guard {
+        guard.check()?;
+    }
     let db_path = db_path.to_path_buf();
     let mut db = Db::open(&db_path)?;
     let id = match start {
@@ -887,6 +891,17 @@ async fn play_league(league: Arc<League>, db: &Db, setup: &Setup, mut state: Sta
             }
             if set.is_empty() {
                 if league.control.is_cancelled() {
+                    if let Some(why) = setup.guard.as_ref().and_then(|g| g.latched()) {
+                        bail!(
+                            "league #{id} stopped by its run guard ({}): {why}; not resumed \
+                             automatically: no guarded league starts while the latch is set",
+                            setup.guard.as_ref().map_or(String::new(), |g| g
+                                .config
+                                .latch
+                                .display()
+                                .to_string())
+                        );
+                    }
                     return Err(stopped());
                 }
                 if state.pending.is_empty() && state.skipped == 0 {
@@ -959,6 +974,15 @@ async fn play_league(league: Arc<League>, db: &Db, setup: &Setup, mut state: Sta
                                 backoffs.fail(&fixture, &error, Instant::now(), league.backoff);
                             league.defer(&fixture, &error, &backoff);
                             state.requeue(fixture);
+                            // A guard stop (a reply without the expected identity, or a refused
+                            // reservation) ends the league: latched, nothing more is started.
+                            if let Some(guard) = &setup.guard
+                                && crate::guard::is_stop(&error)
+                            {
+                                guard.latch(&format!("league #{id} stopped: {error:#}"));
+                                println!("league #{id}: stopped by its run guard: {error:#}");
+                                league.control.cancel();
+                            }
                         }
                     }
                 }

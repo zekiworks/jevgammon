@@ -382,6 +382,14 @@ pub struct DecisionClient {
     /// Fields merged into every request body (a player config's `request`), e.g.
     /// OpenRouter's `provider` routing.
     request: Option<Value>,
+    /// A league's run guard naming this setup: its latch is checked before every attempt and,
+    /// with an expected route, every reply's identity after it.
+    guard: Option<Guarded>,
+}
+
+struct Guarded {
+    guard: Arc<crate::guard::Guard>,
+    route: Option<super::llm::ExpectRoute>,
 }
 
 impl DecisionClient {
@@ -421,12 +429,23 @@ impl DecisionClient {
             url: format!("{}{}", base.trim_end_matches('/'), service.path),
             budget,
             request: None,
+            guard: None,
         })
     }
 
     /// Merges `request`'s fields into every request body (a null value removes a field).
     pub fn with_request(mut self, request: Option<Value>) -> Self {
         self.request = request;
+        self
+    }
+
+    /// Puts the client under a league's run guard (`None`: none), with the identity the guard
+    /// expects of `name`'s replies, if any.
+    pub fn with_guard(mut self, guard: Option<Arc<crate::guard::Guard>>, name: &str) -> Self {
+        self.guard = guard.map(|guard| Guarded {
+            route: guard.route_for(name),
+            guard,
+        });
         self
     }
 
@@ -456,6 +475,13 @@ impl DecisionClient {
                         error.context(format!("{} refused the warm-up", self.service.label))
                     );
                 }
+                // A guard stop (identity, latch, cap) is not cured by waiting.
+                Err(error) if self.guard.is_some() && crate::guard::is_stop(&error) => {
+                    return Err(error.context(format!(
+                        "{} warm-up stopped by the league guard",
+                        self.service.label
+                    )));
+                }
                 Err(error) if started.elapsed() < WARM_UP_LIMIT => {
                     eprintln!("{} warming up: {error:#}", self.service.label);
                     tokio::time::sleep(Duration::from_secs(10)).await;
@@ -478,10 +504,16 @@ impl DecisionClient {
     /// built on) never makes a token of less than one byte of the UTF-8 text it encodes, and
     /// the body holds every byte of the state, instructions and options the model reads (JSON
     /// escaping only adds bytes); the margin covers the provider's own system prompt and chat
-    /// template, which it does not publish. An answer with usage is booked at it; a 200
-    /// without readable usage, an error status the service does not document as unbilled
-    /// (`Service::unbilled`), and an attempt without a response keep the worst case.
+    /// template, which it does not publish. An answer with usage is booked at max(its list
+    /// price, the provider's reported `usage.cost`); a 200 without readable usage, an error
+    /// status the service does not document as unbilled (`Service::unbilled`), and an attempt
+    /// without a response keep the worst case. Under a league guard nothing is sent while its
+    /// latch is set, and a reply without the expected identity sets it (after its cost is
+    /// booked) and fails with a `GuardStop`.
     async fn send(&self, body: &Value, retry: &RetryTime) -> Result<String> {
+        if let Some(guarded) = &self.guard {
+            guarded.guard.check()?;
+        }
         let make = || {
             let request = self.http.post(&self.url).json(body);
             match &self.key {
@@ -493,34 +525,57 @@ impl DecisionClient {
             e.into_anyhow()
                 .context(format!("{} request failed", self.service.label))
         };
-        let Some(ledger) = &self.budget else {
-            return http::send(make, retry).await.map_err(failed);
-        };
-        let bytes = body.to_string().len();
-        let worst = ledger.worst_case(bytes + TEMPLATE_MARGIN, bytes as u64);
-        let (text, hold) = http::send_metered(make, retry, ledger, worst, self.service.unbilled())
-            .await
-            .map_err(failed)?;
-        let value: Option<Value> = serde_json::from_str(&text).ok();
-        let tokens = |key: &str| {
-            value
-                .as_ref()
-                .and_then(|v| v.pointer(&format!("/usage/{key}")))
-                .and_then(Value::as_u64)
-        };
-        match tokens("input_tokens") {
-            Some(input_tokens) => {
-                hold.settle(
-                    Usage {
-                        input_tokens,
-                        cached_tokens: 0,
-                        output_tokens: tokens("output_tokens").unwrap_or(0),
-                        reasoning_tokens: 0,
-                    },
-                    None,
-                );
+        let text = match &self.budget {
+            None => http::send(make, retry).await.map_err(failed)?,
+            Some(ledger) => {
+                let bytes = body.to_string().len();
+                let worst = ledger.worst_case(bytes + TEMPLATE_MARGIN, bytes as u64);
+                let (text, hold) =
+                    http::send_metered(make, retry, ledger, worst, self.service.unbilled())
+                        .await
+                        .map_err(failed)?;
+                let value: Option<Value> = serde_json::from_str(&text).ok();
+                let usage = |key: &str| {
+                    value
+                        .as_ref()
+                        .and_then(|v| v.pointer(&format!("/usage/{key}")))
+                };
+                match usage("input_tokens").and_then(Value::as_u64) {
+                    Some(input_tokens) => {
+                        hold.settle(
+                            Usage {
+                                input_tokens,
+                                cached_tokens: 0,
+                                output_tokens: usage("output_tokens")
+                                    .and_then(Value::as_u64)
+                                    .unwrap_or(0),
+                                reasoning_tokens: 0,
+                            },
+                            usage("cost").and_then(Value::as_f64),
+                        );
+                    }
+                    None => hold.kept("200 without readable usage: booked at the worst case"),
+                }
+                text
             }
-            None => hold.kept("200 without readable usage: booked at the worst case"),
+        };
+        if let Some(Guarded {
+            guard,
+            route: Some(route),
+        }) = &self.guard
+            && let Err(reason) = super::llm::route_identity(&text, route)
+        {
+            let why = format!(
+                "ROUTE CHECK ({}): {reason}; identity {}",
+                self.service.label,
+                super::llm::identity_fields(&text, route)
+            );
+            guard.latch(&why);
+            let shown: String = text.chars().take(600).collect();
+            return Err(anyhow::Error::new(crate::guard::GuardStop(format!(
+                "{why}; the league guard is latched ({}): no further request is sent; response: {shown}",
+                guard.config.latch.display()
+            ))));
         }
         Ok(text)
     }
@@ -851,6 +906,7 @@ mod tests {
             url: format!("{}{}", base.trim_end_matches('/'), service.path),
             budget: None,
             request: None,
+            guard: None,
         }
     }
 
@@ -1184,6 +1240,7 @@ mod tests {
             url: format!("{url}{}", service.path),
             budget: None,
             request: None,
+            guard: None,
         }
         .with_request(Some(pin.clone()));
         let mut decision = Decision::new(0);
@@ -1281,6 +1338,7 @@ mod tests {
                 url: format!("{url}{}", service.path),
                 budget: None,
                 request: None,
+                guard: None,
             };
             let mut decision = Decision::new(0);
             let choice = client.choose(&req, &order, &mut decision).await.unwrap();
@@ -1344,6 +1402,7 @@ mod tests {
             url: format!("{url}{}", service.path),
             budget: None,
             request: None,
+            guard: None,
         };
         fn valid(n: usize) -> Vec<(usize, String)> {
             let rest = 0.3 / (n - 1) as f64;

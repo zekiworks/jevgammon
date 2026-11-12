@@ -223,12 +223,12 @@ impl Ledger {
         let (spent, reserved) = totals(&tx)?;
         let cap = self.config.cap_usd;
         if spent + reserved + amount > cap {
-            bail!(
+            return Err(anyhow::Error::new(BudgetCap(format!(
                 "BUDGET CAP: ${spent:.4} spent + ${reserved:.4} reserved in flight + \
-                 ${amount:.4} for this request would pass the ${cap:.2} hard cap \
+                 ${amount:.4} for this request would pass the ${cap:.4} hard cap \
                  (ledger {}); stopped before the call",
                 self.config.ledger
-            );
+            ))));
         }
         tx.execute(
             "INSERT INTO attempts (setup, pid, started_at, status, reserved_usd)
@@ -290,6 +290,19 @@ impl Ledger {
         }
     }
 }
+
+/// A reservation refused because it would pass the cap (the request was not sent); matched by
+/// type (`guard::is_stop`).
+#[derive(Debug)]
+pub struct BudgetCap(pub String);
+
+impl std::fmt::Display for BudgetCap {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.0)
+    }
+}
+
+impl std::error::Error for BudgetCap {}
 
 /// One attempt's reservation. Dropped without `settle`/`refused`, it is booked at its
 /// worst case (`lost`).

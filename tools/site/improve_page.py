@@ -458,8 +458,9 @@ def qc_mark(key: str) -> str:
 def qc_footnote(L) -> str:
     """Under the results table: each QC-pending model with its note (content/qc_status.json)."""
     qc = [f'{esc(pm["setup"])}: {esc(QC_IMPROVE[pm["key"]])}' for pm in L["plan"]["models"] if pm["key"] in QC_IMPROVE]
-    return (f'<p class="table-note" id="improve-qc-note"><strong>{QC_LABEL}</strong>: {"; ".join(qc)}. Numbers as '
-            'stored; the verdict stands once its Run 2 is published.</p>' if qc else "")
+    return (f'<p class="table-note" id="improve-qc-note"><strong>{QC_LABEL}</strong>: {"; ".join(qc)}. The original '
+            'numbers and verdict are retained as stored; the corrected Run 2 verdict is pending and may change.</p>'
+            if qc else "")
 
 
 def verdict_cell(m) -> str:

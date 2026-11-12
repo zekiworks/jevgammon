@@ -40,7 +40,7 @@ from pathlib import Path
 
 import findings
 from common import (ALL_NOTE, BANNED, CONTENT, INTERNAL, LATE_ENTRY, MODEL_NAMES_FILE, NAMES_SHA256, PROVISIONAL,
-                    PROVISIONAL_NOTE, QC_IMPROVE, QC_LABEL, ROOT, SUITE_BAR, name_and_tag, old_model_spans,
+                    PROVISIONAL_NOTE, QC_IMPROVE, QC_LABEL, ROOT, RUN2, SUITE_BAR, name_and_tag, old_model_spans,
                     shown_names_html, split_spans, tag_text)
 
 NUM = re.compile(r"(?<![\w.\u2212+-])([\u2212+-]?)(\d{1,3}(?:,\d{3})+|\d+)(\.\d+)?")
@@ -860,7 +860,14 @@ def check_improve(out: Path, test_set: Path | None = None) -> list[str]:
                 "rs": f"{g(e['before']['right_safety'])} → {g(e['after']['right_safety'])}"}
         # The Improved? cell (Ümit via Zeki #4841): verdict · change · threshold in pp; a No the safety condition alone
         # decides: "No · safety −x pp"; before the gate "pending" with the interim numbers. A verdict under QC
-        # (content/qc_status.json) is prefixed "QC-pending · ".
+        # (content/qc_status.json) is prefixed "QC-pending · ". A model with a published Run 2 (content/run2/) shows
+        # Run 2's verdict; the report's original must be the data file's own.
+        if m["key"] in RUN2:
+            o = RUN2[m["key"]]["original"]
+            if any(round(o[w][k], 9) != round(e[w][k], 9) for w in ("before", "after", "change")
+                   for k in ("risks_found", "right_safety")) or o["improved"] != e["improved"]:
+                bad.append(f"{PATH}: {s}: content/run2 report's original is not the data file's")
+            e = dict(e, **{k: RUN2[m["key"]]["run2"][k] for k in ("change", "threshold", "improved")})
         rf_c, thr = e["change"]["risks_found"], e["threshold"]
         nums = f" · {g(rf_c, True)} pp · threshold {g(thr)} pp" if None not in (rf_c, thr) else ""
         qc = f"{QC_LABEL} · " if m["key"] in QC_IMPROVE else ""

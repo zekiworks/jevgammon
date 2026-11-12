@@ -47,7 +47,7 @@ from pathlib import Path
 SITE = Path(__file__).resolve().parent
 sys.path.insert(0, str(SITE))
 
-from common import NA, QC_IMPROVE, QC_LABEL, ROOT, count, esc, fmt, nm, relabel  # noqa: E402
+from common import NA, QC_IMPROVE, QC_LABEL, ROOT, RUN2, count, esc, fmt, nm, relabel  # noqa: E402
 from common import label as shown_name  # noqa: E402
 
 import home as H  # noqa: E402
@@ -463,12 +463,63 @@ def qc_footnote(L) -> str:
             if qc else "")
 
 
+# Why a model's Run 2 replaced its original verdict (QC audit 2026-11-12), by model key (common.RUN2's reports).
+RUN2_WHY = {"deepseek-v4.1-flash-on": "7 provider errors were scored as answers in the original run"}
+
+
+def shown(m) -> dict:
+    """The verdict the page shows: Run 2's (content/run2/<key>.json) where one is published, else the data file's own;
+    improve.json's original numbers stay unchanged."""
+    return RUN2[m["key"]]["run2"] if m["key"] in RUN2 else m
+
+
 def verdict_cell(m) -> str:
     if m is None:
         return ""
     if m["verdict"]:
-        return qc_mark(m["key"]) + f'<strong data-verdict="{"yes" if m["improved"] else "no"}">{esc(m["status"])}</strong>'
+        v = shown(m)
+        return qc_mark(m["key"]) + f'<strong data-verdict="{"yes" if v["improved"] else "no"}">{esc(v["status"])}</strong>'
     return f'<span data-status="{esc(m["state"])}">{esc(m["status"])}</span>'
+
+
+def run2_sources(source: dict) -> str:
+    """A Run 2 report's source per step, in words: steps replayed, tests refilled (with their answer count), then the
+    steps reused from the original run."""
+    done, reused = [], []
+    for step, how in source.items():
+        refill = re.fullmatch(r"original \+ run2 refill of answers \[([\d, ]+)\]", how)
+        if how == "run2":
+            done.append(f"{step} replayed")
+        elif refill:
+            n = len(refill.group(1).split(","))
+            done.append(f'{step} test refilled ({count(n)} answer{"s" if n != 1 else ""})')
+        elif how == "reused from the original run":
+            reused.append(step)
+        else:
+            raise ValueError(f"run2 report: unknown source for {step}: {how!r}")
+    return "; ".join(done + ([f'{", ".join(reused)} reused from the original run'] if reused else []))
+
+
+def run2_lines(m) -> list:
+    """A model with a published Run 2 (details box): the original verdict, superseded and why, then Run 2's verdict,
+    its source per step and its billed cost. []: no Run 2."""
+    r = RUN2.get(m["key"])
+    if r is None:
+        return []
+    nb = "\u00a0"
+
+    def line(v):
+        c = v["change"]
+        return (f'<strong>{esc(v["status"])}</strong> · {fmt(c["risks_found"], 1, signed=True)}{nb}pp · safety{nb}'
+                f'{fmt(c["right_safety"], 1, signed=True)}{nb}pp · threshold {num(v["threshold"])}{nb}pp')
+    o, n = r["original"], r["run2"]
+    return [f'Original run: {line(o)} (risks found {num(o["before"]["risks_found"])} → {num(o["after"]["risks_found"])}'
+            f', right safety {num(o["before"]["right_safety"])} → {num(o["after"]["right_safety"])}): superseded by Run 2 '
+            f'after QC; {esc(RUN2_WHY[m["key"]])}',
+            f'Run 2: {line(n)} (risks found {num(n["before"]["risks_found"])} → {num(n["after"]["risks_found"])}, right '
+            f'safety {num(n["before"]["right_safety"])} → {num(n["after"]["right_safety"])}); billed '
+            f'${fmt(r["billed_run2"], 2)}',
+            "Run 2 source per step: " + run2_sources(r["source"])]
 
 
 def model_row(pm, m, results: bool) -> str:
@@ -614,7 +665,8 @@ def change_line(m) -> str | None:
     parts = [f'{t} {before_after(m, k)}' for t, k in (("Risks found", "risks_found"), ("right safety", "right_safety"),
                                                      ("error rate", "error_rate"))
              if m["before"][k] is not None and m["after"][k] is not None]
-    parts += [f'Improved? {qc_mark(m["key"])}<strong>{esc(m["status"])}</strong>'] if m["verdict"] else []
+    parts += ([f'Improved? {qc_mark(m["key"])}<strong>{esc(m["status"])}</strong>'] if m["verdict"] and m["key"] not in RUN2
+              else [])
     return " \u00b7 ".join(parts) or None
 
 
@@ -641,13 +693,14 @@ THRESHOLD_NOTE = ("Threshold: the larger of the model's own spread over its thre
 def verdict_text(m) -> str:
     """The Improved? cell (Ümit via Zeki #4841): Yes/No with its change and threshold in points side by side; a No the
     safety condition alone decides says so; before the verdict gate 'pending' with the interim numbers. HTML."""
-    rf, thr, rs = m["change"]["risks_found"], m["threshold"], m["change"]["right_safety"]
+    v = shown(m)
+    rf, thr, rs = v["change"]["risks_found"], v["threshold"], v["change"]["right_safety"]
     nb = "\u00a0"  # a number keeps its unit when the cell wraps
     nums = (f' · {fmt(rf, 1, signed=True)}{nb}pp · threshold {num(thr)}{nb}pp' if None not in (rf, thr) else "")
     if not m["verdict"]:
         return "pending" + (f'<span class="small">{nums} (interim)</span>' if nums else "")
-    word = qc_mark(m["key"]) + f'<strong data-rverdict="{"yes" if m["improved"] else "no"}">{esc(m["status"])}</strong>'
-    if not m["improved"] and round(rf, 9) > round(thr, 9):
+    word = qc_mark(m["key"]) + f'<strong data-rverdict="{"yes" if v["improved"] else "no"}">{esc(v["status"])}</strong>'
+    if not v["improved"] and round(rf, 9) > round(thr, 9):
         return f'{word} · safety{nb}{fmt(rs, 1, signed=True)}{nb}pp'
     return word + nums
 
@@ -678,7 +731,8 @@ def result_row(pm, p, m, refused, i: int, links: dict) -> str:
            esc(P.class_note(name)) if P.class_note(name) else None,
            "Route: " + ("our GPU" if pm["route"].startswith("local") else _inline(pm["route"])),
            None if refused else f"Status: {status_}", None if refused else f"Series done {done}",
-           m and answers_line(m), m and change_line(m), links.get(pm["setup"]) or links.get(name)]
+           m and answers_line(m), m and change_line(m), *(run2_lines(m) if m else []),
+           links.get(pm["setup"]) or links.get(name)]
     cls, labelled = model_class(name)
     return (f'<tr data-progress-setup="{esc(pm["setup"])}" data-group="chat" data-class="{cls}" data-box="{bid}">'
             f'{name_cell(pm["setup"], dot, bid, box, sized=labelled)}{change}{bar}<td>{verdict}</td><td>Chat</td>'
@@ -812,7 +866,8 @@ def lessons(L) -> str:
                 f'empty; {count(s["restarts"])} restarts; game decisions {count(s["game_decisions"])}, invalid '
                 f'{count(s["game_invalid"])}</summary><ul class="notes">{items}</ul></details>')
         out.append(f'<details class="improve-model" id="lessons-{esc(pm["key"])}"><summary><strong>'
-                   f'{esc(pm["setup"])}</strong>: {qc_mark(m["key"]) if m["verdict"] else ""}{esc(m["status"])}</summary>'
+                   f'{esc(pm["setup"])}</strong>: {qc_mark(m["key"]) if m["verdict"] else ""}'
+                   f'{esc(shown(m)["status"] if m["verdict"] else m["status"])}</summary>'
                    f'{table}{"".join(sers)}</details>')
     if not out:
         return '<p class="note">No lessons yet.</p>'

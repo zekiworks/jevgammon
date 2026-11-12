@@ -15,7 +15,8 @@ import re
 import home as H
 import pages as P
 import story as ST
-from common import LATE_ENTRY, QC_IMPROVE, QC_LABEL, QC_SETUPS, model_key, name_and_tag, tag_text, unplayed_text
+from common import (LATE_ENTRY, QC_IMPROVE, QC_LABEL, QC_SETUPS, RUN2, model_key, name_and_tag, tag_text,
+                    unplayed_text)
 
 PATH = "bench-scores.json"
 METRIC = "error rate (PR, lower is better)"
@@ -186,9 +187,12 @@ def build(S) -> dict:
         if ckpt and repo is None:
             repo, commit = ckpt
         if imp is not None:
-            imp = round(imp, 2)
             notes.append("improvement_points: change in risks found, percentage points of risk-pays decisions "
                          "(with lessons minus no memory)")
+            if imp_key in RUN2:
+                notes.append(f"improvement_points from Run 2 after QC; original run {imp:+.2f}, superseded")
+                imp = RUN2[imp_key]["run2"]["change"]["risks_found"]
+            imp = round(imp, 2)
             if imp_key in QC_IMPROVE:
                 notes.append(f"improvement_points {QC_LABEL}: {QC_IMPROVE[imp_key]}")
         rows.append(dict(

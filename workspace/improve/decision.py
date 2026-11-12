@@ -1082,6 +1082,8 @@ def lr_routes():
     glide = HF_HUB / "models--fastino--GLiDE/snapshots/a7e45896be7c96ba3354891da790c5ec99c30b6c"
     decider = HF_HUB / "models--perplexity-ai--pplx-decider-v1.2/snapshots/225c913ddc8761a8264f04f64548e1f97e443eb3"
     pkg = decider / "source/src/pplx_decider"
+    flash = Path.home() / "code/pplx-decider/checkpoint-flash-v1.2"
+    fpkg = flash / "source/src/pplx_decider"
     return {
         "glide-v1.2-local": dict(
             route="glide/server.py (tools/v3/servers/glide-v12.sh)", renderer=LR_DIR / "glide_v12.py",
@@ -1094,6 +1096,14 @@ def lr_routes():
                  "--model", str(decider)],
             env={}, code=[Path.home() / "code/pplx-decider/pplx_decider_server.py", pkg / "model.py",
                           pkg / "protocol.py", decider / "tokenizer.json"]),
+        # Decider Flash v1.2 (cohort amendment 2026-11-12): the same server and renderer on the Flash checkpoint and
+        # the pplx_decider package it ships (tools/v3/servers/decider-v1.2.sh flash).
+        "decider-flash-v1.2": dict(
+            route="pplx_decider_server.py (tools/v3/servers/decider-v1.2.sh flash)", renderer=LR_DIR / "decider.py",
+            cmd=[str(Path.home() / "code/pplx-decider/.venv-v1.2/bin/python"), str(LR_DIR / "decider.py"),
+                 "--model", str(flash)],
+            env={}, code=[Path.home() / "code/pplx-decider/pplx_decider_server.py", fpkg / "model.py",
+                          fpkg / "protocol.py", flash / "tokenizer.json"]),
         "baselabs-elephant-1": baselabs_route("elephant-1", "b3f8a93462fb1051a9de031e94a7ff380e254072"),
         "baselabs-mammoth-1": baselabs_route("mammoth-1", "61cec44c281c693992e3d6ebeb44dd3402dfa186"),
     }
@@ -1332,6 +1342,7 @@ def arm_summary(slug, arm):
 def summary():
     rows = [arm_summary(s["slug"], arm) for s in cohort()["setups"] for arm in ARMS]
     out = dict(updated_at=I.now(), addendum_sha256=ADDENDUM_SHA256, cohort_sha256=I.sha256_file(COHORT_FILE),
+               amendments=cohort().get("amendments", []),
                writer=dict(setup=I.MODELS[WRITER_KEY]["setup"], label="helper-written notes → decision player"),
                decisions={k: v for k, v in cohort()["decisions"].items()}, dry_run=I.DRY, rows=rows)
     I.write_atomic(DECISION_OUT(), json.dumps(out, indent=1))

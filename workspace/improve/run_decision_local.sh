@@ -3,7 +3,8 @@
 # GPU under the agent-bus reservation RES, strictly sequential, as the systemd user unit improve-decision-local:
 #   systemd-run --user --unit=improve-decision-local --working-directory=$HOME/code/jevgammon-improve-decision \
 #     -E GPU=<n> -E RES=<reservation> workspace/improve/run_decision_local.sh
-# Per setup, in order (Elephant-1 worst; Decider v1.2 27B notes, worst; GLiDE v1.2 notes, worst): the arms that
+# Per setup, in order (Elephant-1 worst; Decider v1.2 27B notes, worst; GLiDE v1.2 notes, worst; Decider Flash v1.2
+# notes, worst, from the 2026-11-12 cohort amendment; DECISION_SETUPS="slug ..." runs only those): the arms that
 # `decision.py arm-state` says have steps to run (none: no server); the card must be empty (at most EMPTY MiB in use,
 # else the script refuses and exits 1, starting nothing); its pinned server is started with the league's own script
 # under `agent-bus run RES`; the server's own probe must answer with the served model id (P1 is the hosted
@@ -35,6 +36,7 @@ SETUPS=(
   "baselabs-elephant-1|worst|ELEPHANT_GPU=$GPU $BL elephant start|$BL elephant stop|$BL elephant probe|baselabs/elephant-1"
   "decider-v1.2-27b|notes worst|DECIDER_V12_GPU=$GPU $S/decider-v1.2.sh 27b start|$S/decider-v1.2.sh 27b stop|$S/decider-v1.2.sh 27b probe|pplx-decider-v1.2"
   "glide-v1.2-local|notes worst|GLIDE_GPU=$GPU $S/glide-v12.sh start|$S/glide-v12.sh stop|$S/glide-v12.sh probe|glide-v1.2"
+  "decider-flash-v1.2|notes worst|DECIDER_V12_GPU=$GPU $S/decider-v1.2.sh flash start|$S/decider-v1.2.sh flash stop|$S/decider-v1.2.sh flash probe|pplx-decider-flash-v1.2"
 )
 running=""
 stop_server() { [[ -n $running ]] && { bash -c "$running"; log "server stopped ($running)"; running=""; }; }

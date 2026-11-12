@@ -624,6 +624,39 @@ class States(Isolated):
         self.assertIsNone(I.context_stop("STOPPED: an earlier request failed a pre-send or reply check"))
 
 
+class SmallAmendment(Isolated):
+    """The 2026-11-12 cohort amendment (Ümit native 1570509348072063026 via Zeki #5674/#5689): every Tiny and Small
+    decision model of Logic & Math, recorded as a dated amendment; no published text or running arm changes."""
+
+    def test_the_amendment_lists_its_rows_and_its_source(self):
+        c = D.cohort()
+        (a,) = [x for x in c["amendments"] if x.get("path") == "setups"]
+        self.assertEqual(len(a["added"]), 18)
+        self.assertIn("1570509348072063026", a["source"])
+        self.assertIn("1570507658425933987", a["source"])
+        slugs = [s["slug"] for s in c["setups"]]
+        self.assertEqual(len(slugs), len(set(slugs)))
+        self.assertTrue(set(a["added"]) <= set(slugs))
+        self.assertNotIn("baselabs-elephant-1", a["added"])  # already in the cohort (#3746)
+
+    def test_new_rows_wait_for_cash_render_check_or_a_record_and_old_rows_are_unchanged(self):
+        added = [x for x in D.cohort()["amendments"] if x.get("path") == "setups"][0]["added"]
+        self.assertEqual(D.arm_state("decider-flash-v1.2", "worst"), ("pending", "local render check (Lr) not passed"))
+        state, why = D.arm_state("decider-flash-v1.2", "notes")
+        self.assertEqual(state, "pending")
+        self.assertIn("cash batch", why)
+        self.assertEqual(D.arm_state("cygnet", "worst")[0], "pending")
+        self.assertIn("#3111", D.arm_state("cygnet", "worst")[1])
+        for slug in ("clef-flash", "glide-9b", "metask-jev-4b", "strands-decider-2b", "d1-2b"):
+            self.assertEqual(D.arm_state(slug, "worst")[0], "not started", slug)
+        self.assertEqual(D.setups()["decider-flash-v1.2"]["expect"], ["pplx-decider-flash-v1.2"])
+        self.assertIn("decider-flash-v1.2", D.lr_routes())
+        self.assertIn("decision/decider-flash-v1.2-worst", D.arm_keys())
+        self.assertNotIn("decision/d1-2b-worst", D.arm_keys())  # not started: no arm until it has a record
+        for slug in ("decider-v1.2-27b", "glide-v1.2-local", "subq-snap-1.1", "drex-max-1.1", "baselabs-elephant-1"):
+            self.assertNotIn(slug, added)
+            self.assertNotIn("arm_pending", D.setups()[slug])
+
 
 class Fence(unittest.TestCase):
     """Zeki #3788: the billed chat side runs only through improve-openrouter, one worker at a time, pinned code."""

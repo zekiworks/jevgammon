@@ -56,6 +56,9 @@ _QC_FILE = json.loads((CONTENT / "qc_status.json").read_text())
 QC_LABEL = "QC-pending"
 QC_IMPROVE = _QC_FILE["improve"]
 QC_SETUPS = _QC_FILE["setups"]
+# Published Run 2 reports of 'Did they improve?' (content/run2/<model key>.json, copied unchanged from the QC rerun's
+# run2-report.json), by model key: the row's verdict is Run 2's; the original stays in improve.json and the details box.
+RUN2 = {r["model"]: r for r in (json.loads(p.read_text()) for p in sorted((CONTENT / "run2").glob("*.json")))}
 # Close choices, stage B: scope note (Ümit, 2026-10-25; Method spec 2026-10-24 §9.13 addendum of 16:05 UTC), verbatim on
 # the home page and the Method page.
 CLOSE_B_SCOPE_NOTE = ("Gemma 4 31B (on) was started but not completed: two reboots and a GPU fault interrupted it, and it "

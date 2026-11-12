@@ -40,7 +40,7 @@ from pathlib import Path
 
 import findings
 from common import (ALL_NOTE, BANNED, CONTENT, INTERNAL, LATE_ENTRY, MODEL_NAMES_FILE, NAMES_SHA256, PROVISIONAL,
-                    PROVISIONAL_NOTE, QC_IMPROVE, QC_LABEL, ROOT, SUITE_BAR, name_and_tag, old_model_spans,
+                    PROVISIONAL_NOTE, QC_IMPROVE, QC_LABEL, ROOT, RUN2, SUITE_BAR, name_and_tag, old_model_spans,
                     shown_names_html, split_spans, tag_text)
 
 NUM = re.compile(r"(?<![\w.\u2212+-])([\u2212+-]?)(\d{1,3}(?:,\d{3})+|\d+)(\.\d+)?")
@@ -771,6 +771,22 @@ def _improve_registration(out: Path, L: dict, nodes: list) -> list[str]:
     return bad
 
 
+def _shown_expect(m: dict, bad: list, page: str) -> dict:
+    """_improve_expect, then, for a model with a published Run 2 (content/run2/<key>.json), Run 2's before, after,
+    change, threshold and verdict, as the page's rows show and sort by them (the error rate stays the data file's).
+    The report's original must be the data file's own."""
+    e = _improve_expect(m)
+    r = RUN2.get(m["key"])
+    if r is None:
+        return e
+    o = r["original"]
+    if any(round(o[w][k], 9) != round(e[w][k], 9) for w in ("before", "after", "change")
+           for k in ("risks_found", "right_safety")) or o["improved"] != e["improved"]:
+        bad.append(f"{page}: {m['setup']}: content/run2 report's original is not the data file's")
+    return dict(e, threshold=r["run2"]["threshold"], improved=r["run2"]["improved"],
+                **{w: dict(e[w], **r["run2"][w]) for w in ("before", "after", "change")})
+
+
 def check_improve(out: Path, test_set: Path | None = None) -> list[str]:
     """The "Did they improve?" page (improve_page.py) against its data file: (a) every phrase the pre-registration
     requires is on the page (the commitment line, the rule's "operational threshold" sentence, the seed line, every
@@ -824,10 +840,12 @@ def check_improve(out: Path, test_set: Path | None = None) -> list[str]:
     if sorted(psetups) != sorted(m["setup"] for m in plan["models"]):
         bad.append(f"{PATH}: the results table is not one row per plan model")
 
+    shown = {s: _shown_expect(m, bad, PATH) for s, m in by.items()}
+
     def rank(s):
         m, p = by.get(s), prog.get(s)
-        if m is not None and _improve_expect(m)["gate"] and not results.get("dry_run"):
-            return (0, -m["change"]["risks_found"])
+        if m is not None and shown[s]["gate"] and not results.get("dry_run"):
+            return (0, -shown[s]["change"]["risks_found"])
         return (1, 0) if p is not None and p["status"] != "not started" and not L.get("progress_refused") else (2, 0)
     ranks = [rank(s) for s in psetups]
     if ranks != sorted(ranks):
@@ -852,7 +870,7 @@ def check_improve(out: Path, test_set: Path | None = None) -> list[str]:
             if rcells or rv:
                 bad.append(f"{PATH}: {s}: results-table numbers without validated results")
             continue
-        e = _improve_expect(m)
+        e = shown[s]
         g = lambda v, signed=False: fmt(v, 1, signed=signed) if v is not None else NA  # noqa: E731
         want = {"rf": f"{g(e['before']['risks_found'])} → {g(e['after']['risks_found'])}",
                 "rf-change": g(e["change"]["risks_found"], True),
@@ -860,7 +878,7 @@ def check_improve(out: Path, test_set: Path | None = None) -> list[str]:
                 "rs": f"{g(e['before']['right_safety'])} → {g(e['after']['right_safety'])}"}
         # The Improved? cell (Ümit via Zeki #4841): verdict · change · threshold in pp; a No the safety condition alone
         # decides: "No · safety −x pp"; before the gate "pending" with the interim numbers. A verdict under QC
-        # (content/qc_status.json) is prefixed "QC-pending · ".
+        # (content/qc_status.json) is prefixed "QC-pending · ". A model with a published Run 2 shows Run 2's numbers.
         rf_c, thr = e["change"]["risks_found"], e["threshold"]
         nums = f" · {g(rf_c, True)} pp · threshold {g(thr)} pp" if None not in (rf_c, thr) else ""
         qc = f"{QC_LABEL} · " if m["key"] in QC_IMPROVE else ""
@@ -878,7 +896,7 @@ def check_improve(out: Path, test_set: Path | None = None) -> list[str]:
         if any(re.search(r"\d", text_of(c)) for c in walk(n) if c.tag == "td" and not c.attrs.get("data-pcell")):
             bad.append(f"{PATH}: planned row {n.attrs['data-planned']}: shows a number")
 
-    changes = [by[s]["change"]["risks_found"] if s in by else None for s in setups]
+    changes = [shown[s]["change"]["risks_found"] if s in by else None for s in setups]
     seen_none = False
     for i, c in enumerate(changes):
         seen_none |= c is None
@@ -896,7 +914,7 @@ def check_improve(out: Path, test_set: Path | None = None) -> list[str]:
             if verdict is not None:
                 bad.append(f"{PATH}: {n.attrs['data-setup']}: a verdict without data")
             continue
-        e = _improve_expect(m)
+        e = shown[m["setup"]]
         if verdict is not None and (not e["gate"] or L["results"].get("dry_run")
                                     or verdict.attrs["data-verdict"] != ("yes" if e["improved"] else "no")):
             bad.append(f"{PATH}: {m['setup']}: verdict {verdict.attrs['data-verdict']!r} not what the data gives")

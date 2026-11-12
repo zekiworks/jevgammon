@@ -17,7 +17,7 @@ from pathlib import Path
 
 import improve_page as IP
 import story as ST
-from common import count, esc, fmt, name_and_tag, pct, tag_text
+from common import RUN2, count, esc, fmt, name_and_tag, pct, tag_text
 
 LEAGUE_DATA = "data/v3/{}.json"
 LATE_DATA = "data/v3/late-entries.json"
@@ -60,6 +60,25 @@ def tagged(x) -> str:
     return name(x["name"], x["ds"]) + (f", {esc(tag)}" if tag else "")
 
 
+def run2_note(m) -> str:
+    """After a model's line, where a Run 2 is published (common.RUN2): the line is the original run's; Run 2's change
+    and verdict, from its report, each number a "quote" span of the sentence the improve page's details box writes it
+    in (improve_page.run2_lines). HTML."""
+    r = RUN2.get(m["key"])
+    if r is None:
+        return ""
+    n, page = r["run2"], IP.PATH + "index.html"
+    rf = fmt(n["change"]["risks_found"], 1, signed=True)
+    src = "Run 2 source per step: " + IP.run2_sources(r["source"])
+    verdict = f'Run 2: {n["status"]} · {rf} pp'
+    replayed = [s for s, how in r["source"].items() if how == "run2"]
+    return ('<span class="small inline" data-run2="note">(original run; after QC, '
+            + num("Run 2", page, [verdict], "quote")
+            + (" (" + ", ".join(num(s, page, [src], "quote") for s in replayed) + " replayed)" if replayed else "")
+            + ": " + num(rf, page, [verdict], "quote") + "\u00a0pp, "
+            + f'{"still" if n["status"] == m["status"] else "now"} {esc(n["status"])})</span>')
+
+
 def improve_card(S) -> dict:
     L = S["improve"]
     done = [(pm, m) for pm, _, m in IP.result_rows(L) if m is not None and m["verdict"]]
@@ -70,6 +89,7 @@ def improve_card(S) -> dict:
         + " \u2192 "
         + num(fmt(m["after"]["risks_found"]), src, ["results", "models", {"setup": pm["setup"]}, "after", "risks_found"], "1")
         + ": " + IP.qc_mark(m["key"]) + num(m["status"], src, ["results", "models", {"setup": pm["setup"]}, "status"], "str")
+        + run2_note(m)
         for pm, m in done)
     return dict(id="improve", title=IP.title(L), status=IP.eyebrow(L),
                 text=("Each chat model wrote its own lessons over its games against GNUbg weak, then took the risk test "

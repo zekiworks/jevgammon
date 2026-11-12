@@ -1,0 +1,116 @@
+{
+ "model": "deepseek-v4.1-flash-on",
+ "lesson_user_template_fields": [
+  "game",
+  "record"
+ ],
+ "series": {
+  "S1": {
+   "match": 1,
+   "attempt": 1,
+   "contexts_recomputed": "10/10",
+   "contexts_log_sha": "10/10",
+   "lessons_recomputed": "10/10",
+   "lesson_calls_own_files_no_notes": "10/10",
+   "lesson_calls_with_any_lesson_line": 0,
+   "game_exchanges_own_context": 259,
+   "game_exchanges_other": 0,
+   "game1_exchanges_with_notes": 0,
+   "game_exchanges_with_another_series_lesson": 0,
+   "t10_setup": "DeepSeek V4.1 Flash (on) | improve | s01 | a1 | T10",
+   "t10_exchanges_own_after_g10": 276,
+   "t10_exchanges_other": 0,
+   "t10_exchanges_with_another_series_lesson": 0,
+   "after_g10_sha256": "43c2448d168147f800fcb1c2e6e81168939e728df1735fda4dc26359d01d5354"
+  },
+  "S2": {
+   "match": 2,
+   "attempt": 1,
+   "contexts_recomputed": "10/10",
+   "contexts_log_sha": "10/10",
+   "lessons_recomputed": "10/10",
+   "lesson_calls_own_files_no_notes": "10/10",
+   "lesson_calls_with_any_lesson_line": 0,
+   "game_exchanges_own_context": 295,
+   "game_exchanges_other": 0,
+   "game1_exchanges_with_notes": 0,
+   "game_exchanges_with_another_series_lesson": 0,
+   "t10_setup": "DeepSeek V4.1 Flash (on) | improve | s02 | a1 | T10",
+   "t10_exchanges_own_after_g10": 277,
+   "t10_exchanges_other": 0,
+   "t10_exchanges_with_another_series_lesson": 0,
+   "after_g10_sha256": "92bfbe190c49d4c878cbb33865a1ab204d5e92157a07412cb2d68d8aeb02abf1"
+  },
+  "S3": {
+   "match": 3,
+   "attempt": 1,
+   "contexts_recomputed": "10/10",
+   "contexts_log_sha": "10/10",
+   "lessons_recomputed": "10/10",
+   "lesson_calls_own_files_no_notes": "10/10",
+   "lesson_calls_with_any_lesson_line": 0,
+   "game_exchanges_own_context": 300,
+   "game_exchanges_other": 0,
+   "game1_exchanges_with_notes": 0,
+   "game_exchanges_with_another_series_lesson": 0,
+   "t10_setup": "DeepSeek V4.1 Flash (on) | improve | s03 | a1 | T10",
+   "t10_exchanges_own_after_g10": 276,
+   "t10_exchanges_other": 0,
+   "t10_exchanges_with_another_series_lesson": 0,
+   "after_g10_sha256": "da26d89d5d7a9e04e5c26e3daaa15190316031e219cd3c8b6521794c43f7aa38"
+  },
+  "S4": {
+   "match": 4,
+   "attempt": 1,
+   "contexts_recomputed": "10/10",
+   "contexts_log_sha": "10/10",
+   "lessons_recomputed": "10/10",
+   "lesson_calls_own_files_no_notes": "10/10",
+   "lesson_calls_with_any_lesson_line": 0,
+   "game_exchanges_own_context": 289,
+   "game_exchanges_other": 0,
+   "game1_exchanges_with_notes": 0,
+   "game_exchanges_with_another_series_lesson": 0,
+   "t10_setup": "DeepSeek V4.1 Flash (on) | improve | s04 | a1 | T10",
+   "t10_exchanges_own_after_g10": 275,
+   "t10_exchanges_other": 0,
+   "t10_exchanges_with_another_series_lesson": 0,
+   "after_g10_sha256": "7f0211385c0b4ac1a1da78080992fe45ff13238e57adc5ea1d328d9e283739a9"
+  },
+  "S5": {
+   "match": 5,
+   "attempt": 1,
+   "contexts_recomputed": "10/10",
+   "contexts_log_sha": "10/10",
+   "lessons_recomputed": "10/10",
+   "lesson_calls_own_files_no_notes": "10/10",
+   "lesson_calls_with_any_lesson_line": 0,
+   "game_exchanges_own_context": 365,
+   "game_exchanges_other": 0,
+   "game1_exchanges_with_notes": 0,
+   "game_exchanges_with_another_series_lesson": 0,
+   "t10_setup": "DeepSeek V4.1 Flash (on) | improve | s05 | a1 | T10",
+   "t10_exchanges_own_after_g10": 276,
+   "t10_exchanges_other": 0,
+   "t10_exchanges_with_another_series_lesson": 0,
+   "after_g10_sha256": "19f30d96586b676df2fc85bee12d5e59e084e3ae8bcdc905d4c018bc155a0511"
+  }
+ },
+ "empty_runs": {
+  "E1": {
+   "setup": "DeepSeek V4.1 Flash (on) | improve | E1",
+   "exchanges": 277,
+   "with_notes": 0
+  },
+  "E2": {
+   "setup": "DeepSeek V4.1 Flash (on) | improve | E2",
+   "exchanges": 276,
+   "with_notes": 0
+  },
+  "E3": {
+   "setup": "DeepSeek V4.1 Flash (on) | improve | E3",
+   "exchanges": 277,
+   "with_notes": 0
+  }
+ }
+}

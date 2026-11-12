@@ -1,0 +1,5 @@
+owner: jevgammon (agent QCRun2) for Can
+what: QC 2026-11-12 Run 2 package: the parser patch (git diff 1d08e51..018138f), its ports to the lane runners (8b6f9a1, 724406a), test output, binary sha256 and build inputs, read-only check scripts and outputs (ids, counts and hashes only), the Ember #926 Run 2 config, plans for DeepSeek, Ember and Argon
+reason: Ümit via Zeki #5264 / #5276: evidence for Zeki before any Run 2 is approved
+delete when: never (audit record)
+written: 2026-11-12T11:37:26Z

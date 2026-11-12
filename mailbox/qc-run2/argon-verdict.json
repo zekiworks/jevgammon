@@ -1,0 +1,93 @@
+{
+ "model": "gemini-4-argon-on",
+ "stored": {
+  "before_rf": 58.55555555555556,
+  "before_rs": 94.65863453815261,
+  "after_rf": 65.03809523809524,
+  "after_rs": 93.18048780487806,
+  "change_rf": 6.482539682539681,
+  "change_rs": -1.4781467332745564,
+  "threshold": 12.666666666666671,
+  "improved": false
+ },
+ "per_test": {
+  "E1": {
+   "valid": 155,
+   "invalid": 45,
+   "failed": 0,
+   "risk_pays": 72,
+   "safety_pays": 83,
+   "risks_found": 66.66666666666667,
+   "right_safety": 93.97590361445783
+  },
+  "E2": {
+   "valid": 200,
+   "invalid": 0,
+   "failed": 0,
+   "risk_pays": 100,
+   "safety_pays": 100,
+   "risks_found": 54.0,
+   "right_safety": 96.0
+  },
+  "E3": {
+   "valid": 200,
+   "invalid": 0,
+   "failed": 0,
+   "risk_pays": 100,
+   "safety_pays": 100,
+   "risks_found": 55.0,
+   "right_safety": 94.0
+  },
+  "S1-T10": {
+   "valid": 166,
+   "invalid": 34,
+   "failed": 0,
+   "risk_pays": 84,
+   "safety_pays": 82,
+   "risks_found": 76.19047619047619,
+   "right_safety": 93.90243902439025
+  },
+  "S2-T10": {
+   "valid": 200,
+   "invalid": 0,
+   "failed": 0,
+   "risk_pays": 100,
+   "safety_pays": 100,
+   "risks_found": 67.0,
+   "right_safety": 92.0
+  },
+  "S3-T10": {
+   "valid": 200,
+   "invalid": 0,
+   "failed": 0,
+   "risk_pays": 100,
+   "safety_pays": 100,
+   "risks_found": 62.0,
+   "right_safety": 93.0
+  },
+  "S4-T10": {
+   "valid": 200,
+   "invalid": 0,
+   "failed": 0,
+   "risk_pays": 100,
+   "safety_pays": 100,
+   "risks_found": 59.0,
+   "right_safety": 94.0
+  },
+  "S5-T10": {
+   "valid": 200,
+   "invalid": 0,
+   "failed": 0,
+   "risk_pays": 100,
+   "safety_pays": 100,
+   "risks_found": 61.0,
+   "right_safety": 93.0
+  }
+ },
+ "margin": {
+  "after_rf_mean_slack": -6.184126984126991,
+  "after_rs_mean_slack": 3.5218532667254436,
+  "one_t10_rf_slack": -30.920634920634953,
+  "one_t10_rs_slack": 17.609266333627218
+ }
+}

@@ -1,0 +1,394 @@
+diff --git a/README.md b/README.md
+index aecb910..1750767 100644
+--- a/README.md
++++ b/README.md
+@@ -273,7 +273,9 @@ How they answer:
+ - **Invalid answers** (a reply that names no option, a letter outside the options, a
+   refusal) are not repaired or re-asked: the runner plays a uniformly random legal play,
+   seeded per decision, and records `decided_by = 'fallback'`, `invalid = 1`.
+-- **Network and server errors** (connection failures, HTTP 408, 429, 5xx) are retried up to
++- **Network and server errors** (connection failures, HTTP 408, 429, 5xx, and an HTTP 200
++  reply carrying a provider error: a top-level `error`, `choices[0].error` or
++  `finish_reason: "error"`) are retried up to
+   3 times with backoff (2, 4, 8 s; after a 429, 15, 30, 60 s; `Retry-After` can lengthen a wait
+   up to 60 s). The time
+   spent is logged in `turns.retry_ms` and not charged to the clock. Any other failure, or
+diff --git a/src/http.rs b/src/http.rs
+index f765066..6efd93d 100644
+--- a/src/http.rs
++++ b/src/http.rs
+@@ -103,7 +103,7 @@ impl RetryTime {
+         Duration::from_millis(self.0.load(Ordering::Relaxed))
+     }
+ 
+-    /// Failed network or server attempts so far (counted when `limit_retries_per_call` is on).
++    /// Failed network or server attempts so far, over every send of the call.
+     #[cfg(test)]
+     pub fn failures(&self) -> u32 {
+         self.1.load(Ordering::Relaxed)
+@@ -123,6 +123,24 @@ pub fn retryable(status: StatusCode) -> bool {
+     matches!(status.as_u16(), 408 | 429 | 500..=599)
+ }
+ 
++/// The provider error carried by a successful (200) JSON reply, if any: a top-level
++/// `error` (OpenRouter and other gateways, Gemini, the decision services), or an OpenAI-
++/// compatible choice-level failure (`choices[0].error`, `finish_reason: "error"`). Such a
++/// reply holds no answer, so it is a failed attempt, retried like a 5xx, never an answer.
++fn error_reply(body: &str) -> Option<String> {
++    let value: serde_json::Value = serde_json::from_str(body).ok()?;
++    let present = |v: Option<&serde_json::Value>| {
++        v.is_some_and(|v| !v.is_null() && v.as_str() != Some("") && v.as_bool() != Some(false))
++    };
++    let failed = present(value.get("error"))
++        || present(value.pointer("/choices/0/error"))
++        || value
++            .pointer("/choices/0/finish_reason")
++            .and_then(|v| v.as_str())
++            == Some("error");
++    failed.then(|| snippet(body))
++}
++
+ /// Sends the request built by `make`, retrying network and server errors; the failed
+ /// attempts and the waits are added to `retry`. Returns the body of a successful response.
+ pub async fn send(
+@@ -198,39 +216,47 @@ async fn send_with_backoff(
+                     }
+                     Err(_) => String::new(),
+                 };
+-                if status.is_success() {
++                // A provider error inside a 200 fails the attempt like a 5xx. What was
++                // generated is unknown, so `hold` drops and keeps its worst case.
++                let reply_error = status.is_success().then(|| error_reply(&body)).flatten();
++                if status.is_success() && reply_error.is_none() {
+                     return Ok((body, hold));
+                 }
+-                if let Some(hold) = hold {
+-                    hold.refused(&format!("{status}"));
+-                }
+-                if matches!(status, StatusCode::UNAUTHORIZED | StatusCode::FORBIDDEN) {
+-                    return Err(CallError::Auth(format!("{status}: {}", snippet(&body))));
+-                }
+-                if !retryable(status) {
+-                    return Err(CallError::Fatal(
+-                        StatusError {
+-                            status,
+-                            message: snippet(&body),
+-                        }
+-                        .into(),
+-                    ));
+-                }
+-                if status == StatusCode::TOO_MANY_REQUESTS {
+-                    // Shared provider pools recover in tens of seconds, not two.
+-                    backoff = backoff.max(rate_limit_backoff);
+-                }
+-                if let Some(wait) = retry_after {
+-                    backoff = backoff.max(wait).min(MAX_BACKOFF);
++                if let Some(error) = reply_error {
++                    format!("{status} with an error reply: {error}")
++                } else {
++                    if let Some(hold) = hold {
++                        hold.refused(&format!("{status}"));
++                    }
++                    if matches!(status, StatusCode::UNAUTHORIZED | StatusCode::FORBIDDEN) {
++                        return Err(CallError::Auth(format!("{status}: {}", snippet(&body))));
++                    }
++                    if !retryable(status) {
++                        return Err(CallError::Fatal(
++                            StatusError {
++                                status,
++                                message: snippet(&body),
++                            }
++                            .into(),
++                        ));
++                    }
++                    if status == StatusCode::TOO_MANY_REQUESTS {
++                        // Shared provider pools recover in tens of seconds, not two.
++                        backoff = backoff.max(rate_limit_backoff);
++                    }
++                    if let Some(wait) = retry_after {
++                        backoff = backoff.max(wait).min(MAX_BACKOFF);
++                    }
++                    format!("{status}: {}", snippet(&body))
+                 }
+-                format!("{status}: {}", snippet(&body))
+             }
+             // No response: `hold` drops here and keeps its worst case.
+             Err(error) => format!("{error}"),
+         };
+         // Failed attempts so far: of this send, or of the whole call under a per-call limit.
++        let call_failures = retry.1.fetch_add(1, Ordering::Relaxed) + 1;
+         let failed = if policy.per_call {
+-            retry.1.fetch_add(1, Ordering::Relaxed) + 1
++            call_failures
+         } else {
+             attempt + 1
+         };
+diff --git a/src/players/baseline.rs b/src/players/baseline.rs
+index 3df95b1..c556ab6 100644
+--- a/src/players/baseline.rs
++++ b/src/players/baseline.rs
+@@ -83,7 +83,13 @@ mod tests {
+         let chosen = &plays[safest_play(&plays, &in_order(&plays))];
+         assert_eq!(chosen.result.pts[6], 2, "{}", chosen.notation());
+         assert_eq!(chosen.result.flip().hitting_rolls(), 0);
+-        assert!(plays.iter().filter(|p| p.result.flip().hitting_rolls() == 0).count() == 1);
++        assert!(
++            plays
++                .iter()
++                .filter(|p| p.result.flip().hitting_rolls() == 0)
++                .count()
++                == 1
++        );
+         assert!(plays.iter().any(|p| p.result.flip().hitting_rolls() > 0));
+     }
+ 
+diff --git a/src/players/gnubg.rs b/src/players/gnubg.rs
+index b98bc6a..5d825ec 100644
+--- a/src/players/gnubg.rs
++++ b/src/players/gnubg.rs
+@@ -15,7 +15,10 @@ use crate::board::{Board, Play};
+ 
+ /// The script and the tools/v3 modules it imports, written to one folder at start-up.
+ const FILES: [(&str, &str); 3] = [
+-    ("gnubg_player.py", include_str!("../../tools/gnubg_player.py")),
++    (
++        "gnubg_player.py",
++        include_str!("../../tools/gnubg_player.py"),
++    ),
+     ("engine.py", include_str!("../../tools/v3/engine.py")),
+     ("rules.py", include_str!("../../tools/v3/rules.py")),
+ ];
+diff --git a/src/players/mod.rs b/src/players/mod.rs
+index 1258189..b5469ec 100644
+--- a/src/players/mod.rs
++++ b/src/players/mod.rs
+@@ -313,11 +313,18 @@ impl Setup {
+ /// prediction call (`LlmClient::predict`), each as sent (configured extra fields merged in).
+ /// `shown` is the option order (at most 26). OpenAI-compatible servers' play calls (letter
+ /// probabilities in two steps) are not rendered here: `play` is null for them.
+-pub fn render_stage_b(config: &PlayerConfig, req: &DecisionRequest<'_>, shown: &[usize]) -> Result<Value> {
++pub fn render_stage_b(
++    config: &PlayerConfig,
++    req: &DecisionRequest<'_>,
++    shown: &[usize],
++) -> Result<Value> {
+     use serde_json::json;
+     let spec = config.spec.as_str();
+     let Some((provider, model)) = spec.split_once('/').filter(|(_, m)| !m.is_empty()) else {
+-        bail!("{}: `{spec}` is not a chat model (no prediction call)", config.name);
++        bail!(
++            "{}: `{spec}` is not a chat model (no prediction call)",
++            config.name
++        );
+     };
+     let (route, model) = match provider.to_ascii_lowercase().as_str() {
+         "openai" => (llm::Route::OpenAiSubscription, model.to_ascii_lowercase()),
+@@ -328,11 +335,20 @@ pub fn render_stage_b(config: &PlayerConfig, req: &DecisionRequest<'_>, shown: &
+             llm::antigravity_model(model, config.reasoning.as_deref()),
+         ),
+         "xai" | "xai-oauth" | "grok" => (llm::Route::Xai, model.to_owned()),
+-        "local" | "openai-compatible" | "ollama" => (llm::Route::OpenAiCompatible, model.to_owned()),
+-        other => bail!("{}: provider `{other}` is not a chat model (no prediction call)", config.name),
++        "local" | "openai-compatible" | "ollama" => {
++            (llm::Route::OpenAiCompatible, model.to_owned())
++        }
++        other => bail!(
++            "{}: provider `{other}` is not a chat model (no prediction call)",
++            config.name
++        ),
+     };
+     if shown.len() > prompt::LETTERS.len() {
+-        bail!("{}: {} options, more than one request holds", config.name, shown.len());
++        bail!(
++            "{}: {} options, more than one request holds",
++            config.name,
++            shown.len()
++        );
+     }
+     let options = llm::Options {
+         reasoning: config.reasoning.clone(),
+@@ -348,12 +364,24 @@ pub fn render_stage_b(config: &PlayerConfig, req: &DecisionRequest<'_>, shown: &
+     let prediction_user = prompt::prediction_user(req, shown);
+     let play = (route != llm::Route::OpenAiCompatible).then(|| {
+         llm::as_sent(
+-            llm::constrained_request(route, &model, &options, &play_user, llm::Answer::Letter(shown.len())),
++            llm::constrained_request(
++                route,
++                &model,
++                &options,
++                &play_user,
++                llm::Answer::Letter(shown.len()),
++            ),
+             &options,
+         )
+     });
+     let prediction = llm::as_sent(
+-        llm::constrained_request(route, &model, &options, &prediction_user, llm::Answer::Prediction),
++        llm::constrained_request(
++            route,
++            &model,
++            &options,
++            &prediction_user,
++            llm::Answer::Prediction,
++        ),
+         &options,
+     );
+     Ok(json!({
+@@ -622,7 +650,10 @@ impl Player {
+         let _slot = match &self.requests {
+             Some(slots) => {
+                 let started = Instant::now();
+-                let slot = slots.acquire().await.expect("the semaphore is never closed");
++                let slot = slots
++                    .acquire()
++                    .await
++                    .expect("the semaphore is never closed");
+                 req.retry.add(started.elapsed());
+                 Some(slot)
+             }
+@@ -815,6 +846,113 @@ mod tests {
+         assert_eq!(asked(&player), vec![order.clone()]);
+     }
+ 
++    /// An OpenAI-compatible stub answering request k with `bodies[k]` (the last repeats),
++    /// all with HTTP 200; returns its base URL and the request count.
++    fn chat_stub(bodies: Vec<&'static str>) -> (String, Arc<std::sync::atomic::AtomicUsize>) {
++        use std::io::{Read, Write};
++        use std::sync::atomic::Ordering;
++        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
++        let url = format!("http://{}", listener.local_addr().unwrap());
++        let count = Arc::new(std::sync::atomic::AtomicUsize::new(0));
++        let seen = count.clone();
++        std::thread::spawn(move || {
++            for stream in listener.incoming() {
++                let mut stream = stream.unwrap();
++                let mut buffer = vec![0u8; 1 << 20];
++                let _ = stream.read(&mut buffer);
++                let k = seen.fetch_add(1, Ordering::SeqCst);
++                let body = bodies[k.min(bodies.len() - 1)];
++                let _ = write!(
++                    stream,
++                    "HTTP/1.1 200 OK\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{body}",
++                    body.len()
++                );
++            }
++        });
++        (url, count)
++    }
++
++    fn chat_player(url: String) -> Player {
++        let options = llm::Options {
++            reasoning: Some("high".into()),
++            request: None,
++            max_tokens: None,
++            top_logprobs: None,
++            readout: Default::default(),
++            answer_prefix: None,
++            pacer: None,
++            budget: None,
++        };
++        Player {
++            spec: "stub".into(),
++            provider: "test".into(),
++            quantization: None,
++            reasoning: Some("high".into()),
++            price: None,
++            requests: None,
++            backend: Backend::Llm(llm::LlmClient::openai_compatible(
++                reqwest::Client::new(),
++                "m".into(),
++                url,
++                None,
++                options,
++            )),
++        }
++    }
++
++    /// OpenRouter's HTTP 200 provider failure (match #926, exchange 238613): no answer.
++    const PROVIDER_ERROR: &str = r#"{"choices":[{"message":{"content":"","reasoning":"partial"},"finish_reason":"error","error":{"code":502,"message":"provider unavailable"}}],"usage":{"cost":0}}"#;
++
++    /// A 200 reply carrying a provider error is a failed attempt, retried as a 5xx: the
++    /// next attempt's answer is used, and one retry is counted.
++    #[tokio::test]
++    async fn error_reply_is_retried_and_the_next_answer_used() {
++        let (url, count) = chat_stub(vec![
++            r#"{"error":{"code":502,"message":"provider unavailable"}}"#,
++            r#"{"choices":[{"message":{"content":"B"},"finish_reason":"stop"}]}"#,
++        ]);
++        let board = Board::start();
++        let plays = board.legal_plays(3, 1);
++        let notations: Vec<String> = plays.iter().map(|p| p.notation()).collect();
++        let order: Vec<usize> = (0..plays.len()).collect();
++        let retry = RetryTime::default();
++        let req = request(&board, &plays, &notations, &order, 1, &retry);
++        let decision = chat_player(url).decide(&req).await.unwrap();
++        assert!(!decision.invalid);
++        assert_eq!(decision.index, order[1]);
++        // The failed attempt, then the reasoning call and the letter readout: two
++        // exchanges stored, none of them the error reply.
++        assert_eq!(count.load(std::sync::atomic::Ordering::SeqCst), 3);
++        assert_eq!(decision.exchanges.len(), 2);
++        assert!(
++            decision.exchanges.iter().all(|e| !e
++                .response
++                .as_deref()
++                .unwrap_or("")
++                .contains("error"))
++        );
++        assert_eq!(retry.failures(), 1);
++        assert!(retry.get() >= Duration::from_secs(2), "{:?}", retry.get());
++    }
++
++    /// Errors only: the decision fails like a transport failure (the match is deferred and
++    /// resumed), never an invalid answer with a random play.
++    #[tokio::test]
++    async fn error_replies_only_fail_the_decision_as_transport() {
++        let (url, count) = chat_stub(vec![PROVIDER_ERROR]);
++        let board = Board::start();
++        let plays = board.legal_plays(3, 1);
++        let notations: Vec<String> = plays.iter().map(|p| p.notation()).collect();
++        let order: Vec<usize> = (0..plays.len()).collect();
++        let retry = RetryTime::default();
++        let req = request(&board, &plays, &notations, &order, 1, &retry);
++        let error = chat_player(url).decide(&req).await.unwrap_err();
++        let message = format!("{error:#}");
++        assert!(message.contains("request failed"), "{message}");
++        assert!(message.contains("gave up after 4 attempts"), "{message}");
++        assert_eq!(count.load(std::sync::atomic::Ordering::SeqCst), 4);
++    }
++
+     #[tokio::test]
+     async fn long_lists_are_split_into_equal_groups() {
+         let mut board = Board::start();
+diff --git a/src/players/prompt.rs b/src/players/prompt.rs
+index ec2b4e1..7ef8b4b 100644
+--- a/src/players/prompt.rs
++++ b/src/players/prompt.rs
+@@ -800,7 +800,9 @@ mod tests {
+         // the line naming the starting setup.
+         let std_state = state(&fixture.request(PromptVersion::BgV3StdNoTable, dice));
+         let nack3_state = state(&fixture.request(PromptVersion::BgV3Nack, dice));
+-        assert!(!std_state.contains("## Opening rolls") && !nack3_state.contains("## Opening rolls"));
++        assert!(
++            !std_state.contains("## Opening rolls") && !nack3_state.contains("## Opening rolls")
++        );
+         let differ: Vec<(&str, &str)> = std_state
+             .lines()
+             .zip(nack3_state.lines())
+@@ -808,8 +810,14 @@ mod tests {
+             .collect();
+         assert_eq!(std_state.lines().count(), nack3_state.lines().count());
+         assert_eq!(differ.len(), 1);
+-        assert!(differ[0].0.contains("in the standard starting position: two on the 24-point, five"));
+-        assert!(differ[0].1.contains("in the Nackgammon starting position: two on the 24-point, two on the 23-point"));
++        assert!(
++            differ[0]
++                .0
++                .contains("in the standard starting position: two on the 24-point, five")
++        );
++        assert!(differ[0].1.contains(
++            "in the Nackgammon starting position: two on the 24-point, two on the 23-point"
++        ));
+ 
+         // Letters follow the request's order.
+         let user = letter_user(&bg, bg.order);

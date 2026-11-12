@@ -24,6 +24,22 @@ ALL_NOTE = "Leagues played different positions; close scores across leagues need
 LATE_ENTRY = "late-entry"
 LATE_ENTRY_LABEL = "Late entry, not in standings"
 LATE_ENTRY_NOTE = "Provisional: late entry still playing"
+# Pairs outside the requested scope (Ümit via Zeki #5220, 12 Nov 2026): a late entry's or repeat's pair with these
+# opponents (raw player names) is not work still to do. The pair stays unplayed, never a score or a loss, and the reason
+# it was not played stays beside this label; results recorded before are kept.
+OUT_OF_SCOPE = "outside the requested scope (Ümit, 12 Nov)"
+OUT_OF_SCOPE_OPPONENTS = frozenset({"GPT-6 Luna", "Mercury Decide"})
+
+
+def unplayed_text(g: dict) -> str:
+    """One unplayed pair of a late entry (build.late_entry_summaries' not_played item), plain text: 'not played: X
+    (reason)', or for a pair outside the requested scope 'X: outside the requested scope (Ümit, 12 Nov); not played
+    (reason)'."""
+    if g.get("out_of_scope"):
+        return f'{g["opponent"]}: {OUT_OF_SCOPE}; not played ({g["reason"]})'
+    return f'not played: {g["opponent"]} ({g["reason"]})'
+
+
 # Setups not shown yet (content/held_setups.json, name: reason): a late entry still playing is held until its entry is
 # complete, so no moving partial numbers are published; analysis.late_entries and cup.classify leave them out, so no
 # page, data file, leaderboard row, bench score or model list carries them.

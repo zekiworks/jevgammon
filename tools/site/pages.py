@@ -8,8 +8,9 @@ from pathlib import Path
 import analysis as A
 import own_cost
 from common import (EARLIER, EARLIER_NOTE, LATE_ENTRY, LATE_ENTRY_LABEL, LATE_ENTRY_NOTE, NA, NAME_NOTES, NOT_MEASURED,
-                    PENDING, PROVISIONAL, PROVISIONAL_NOTE, PUBLISHED, REASONING_NOTES, ROOT, SUITE_BAR, TOO_FEW, aliases, count, esc, fmt,
-                    nm, pct, relabel, setup_slug, shown_names_html, slug, status_badge)
+                    OUT_OF_SCOPE, OUT_OF_SCOPE_OPPONENTS, PENDING, PROVISIONAL, PROVISIONAL_NOTE, PUBLISHED,
+                    REASONING_NOTES, ROOT, SUITE_BAR, TOO_FEW, aliases, count, esc, fmt, nm, pct, relabel, setup_slug,
+                    shown_names_html, slug, status_badge, unplayed_text)
 from common import SHARED_NAMES, effort_aliases, model_key, name_and_tag, name_html, name_text, tag_html, tag_text
 
 # The site's top bar (Ümit #2901, as Clocktower Bench's): the Hilde leaf and the site's name, then one row of tabs. Each
@@ -889,13 +890,15 @@ LATE_METHOD = ("Error rate and risk judgement: 95% intervals, whole games resamp
 
 
 def late_status(e) -> str:
-    """Published when every pair of its field was played; a pair not played for a recorded reason (content/
-    late_entries.json) is named as such, never as a loss; otherwise still playing."""
+    """Published when every pair of its field was played or is outside the requested scope (build.late_entry_summaries);
+    a pair not played for a recorded reason (content/late_entries.json) is named as such, never as a loss; otherwise
+    still playing."""
     if e["status"] != PROVISIONAL:
         return status_badge(PUBLISHED)
     gone = e.get("not_played") or []
-    if gone and not e["running"] and e["played"] + len(gone) == e["total"]:
-        return status_badge(f"{PROVISIONAL}: {count(len(gone))} {'pair' if len(gone) == 1 else 'pairs'} not played")
+    left = [g for g in gone if not g.get("out_of_scope")]
+    if left and not e["running"] and e["played"] + len(gone) == e["total"]:
+        return status_badge(f"{PROVISIONAL}: {count(len(left))} {'pair' if len(left) == 1 else 'pairs'} not played")
     return status_badge(LATE_ENTRY_NOTE)
 
 
@@ -930,8 +933,7 @@ def late_cells(e) -> dict:
         field=f'League {e["field_league"]} (original table)<span class="small">{count(e["total"])} setups</span>',
         played=(f'{count(e["played"])} / {count(e["total"])}'
                 + (f'<span class="small">{count(e["running"])} running</span>' if e["running"] else "")
-                + "".join(f'<span class="small">not played: {esc(g["opponent"])} ({esc(g["reason"])})</span>'
-                          for g in gone)),
+                + "".join(f'<span class="small">{esc(unplayed_text(g))}</span>' for g in gone)),
         record=(f'{count(e["record"]["won"])}\u2013{count(e["record"]["drawn"])}\u2013{count(e["record"]["lost"])}'
                 f'<span class="small">won\u2013drawn\u2013lost</span>'),
         error=td(er_cell(q)), judgement=td(home.judgement_td(r)), ability=td(home.ability_td(r)),
@@ -996,12 +998,17 @@ def late_results(e, rel) -> str:
                     f'<td class="num">' + (f'<a href="{rel}matches/#{match_anchor("v3", m["id"])}">{m["id"]}</a>' if done
                                            else str(m["id"])) + '</td>'
                     f'<td class="date">{(m["finished"] or "")[:10]}</td></tr>')
-    for opp, why in gone.items():
-        rows.append(f'<tr data-dataset="{LATE_ENTRY}"><td class="model"><span class="model-name">{esc(opp)}</span></td>'
-                    f'<td class="num">{nm("No score")}</td><td>Not played ({esc(why)})</td><td class="num">{nm(NA)}</td>'
+    for g in e.get("not_played") or []:
+        why = (f'{esc(OUT_OF_SCOPE[0].upper() + OUT_OF_SCOPE[1:])}; not played ({esc(g["reason"])})' if g.get("out_of_scope")
+               else f'Not played ({esc(g["reason"])})')
+        rows.append(f'<tr data-dataset="{LATE_ENTRY}"><td class="model"><span class="model-name">{esc(g["opponent"])}</span></td>'
+                    f'<td class="num">{nm("No score")}</td><td>{why}</td><td class="num">{nm(NA)}</td>'
                     f'<td class="date"></td></tr>')
     r = e["record"]
-    unplayed = f"; {count(len(gone))} not played, not a loss" if gone else ""
+    scope = sum(bool(g.get("out_of_scope")) for g in e.get("not_played") or [])
+    unplayed = "".join([f"; {count(scope)} {esc(OUT_OF_SCOPE)}, not played" if scope else "",
+                        f"; {count(len(gone) - scope)} not played" if len(gone) > scope else ""])
+    unplayed += ", not a loss" if gone else ""
     return (SWIPE + table(["Opponent", "Score", "Result", "#", "Finished"], rows,
                           f"{esc(e['name'])} against each opponent, its score first: {count(r['won'])} won, "
                           f"{count(r['drawn'])} drawn, {count(r['lost'])} lost{unplayed}; none counts in a standings table",
@@ -1850,9 +1857,10 @@ def repeat_data(S) -> list[dict]:
             playable=o["playable"], field=today["of"], original_played=cov["played"], original_field=cov["of"],
             original_dates=[min(p["started"] for p in m["pairs"])[:10],
                             max(p["finished"] or p["started"] for p in m["pairs"])[:10]],
-            not_played=[dict(opponent=label(g["opponent"]), reason=g["reason"]) for g in cov["not_played"]],
-            blocked_today=[dict(opponent=label(b["opponent"]), played_in_original=b["opponent"] in played_then)
-                           for b in today["blocked"]],
+            not_played=[dict(opponent=label(g["opponent"]), reason=g["reason"],
+                             out_of_scope=g["opponent"] in OUT_OF_SCOPE_OPPONENTS) for g in cov["not_played"]],
+            blocked_today=[dict(opponent=label(b["opponent"]), played_in_original=b["opponent"] in played_then,
+                                out_of_scope=b["opponent"] in OUT_OF_SCOPE_OPPONENTS) for b in today["blocked"]],
             setup=(f'its own players row: {sr["spec"]} · {sr.get("provider") or NOT_MEASURED} · '
                    f'{sr.get("quantization") or "hosted"}'),
             settings=(f'as the original\'s, changed: {", ".join(REPEAT_FIELDS[k] for k in m["settings_changed"])}; '
@@ -1862,8 +1870,25 @@ def repeat_data(S) -> list[dict]:
             dates=dict(prepared=m["prepared"], started=o["started"], finished=o["finished"]),
             cost=dict(estimate_usd=round(cost["estimate_usd"], 2), entrant_usd=round(cost["entrant_usd"], 2),
                       cap_usd=cost["cap_usd"]),
-            differences=m["differences"]))
+            differences=repeat_differences(m, played_then)))
     return run2_order(out)
+
+
+REPLAY_LINE = "Not replayable today, though played in the original: "
+
+
+def repeat_differences(m: dict, played_then: set) -> list[str]:
+    """The manifest's differences, as written, except its line on the pairs not replayable today when every one of those
+    is outside the requested scope (Ümit #5220): then it says so, without implying they are still to be replayed."""
+    gone = [b for b in m["coverage_repeat_today"]["blocked"] if b["opponent"] in played_then]
+    if not gone or not all(b["opponent"] in OUT_OF_SCOPE_OPPONENTS for b in gone):
+        return m["differences"]
+    from common import label
+    # The manifest's reason starts with its short form before the first colon ('no credit', 'no OpenRouter endpoint').
+    why = ", ".join(f'{label(b["opponent"])} ({b["reason"].split(":", 1)[0]})' for b in gone)
+    line = (f"Not replayed, though played in the original: {why}: {OUT_OF_SCOPE}, and blocked today as well; their seed "
+            "pins are kept.")
+    return [line if x.startswith(REPLAY_LINE) else x for x in m["differences"]]
 
 
 def run2_order(rows: list[dict]) -> list[dict]:
@@ -1952,12 +1977,17 @@ def repeat_checks(S) -> str:
         dot = f'<i class="swatch hl-dot" style="background:{colour}" title="{esc(mk)}"></i>'
         repeat = repeat_measures(d["repeat"]) if d["repeat"] else nm(f"{state.lower()} · {counts}")
         pairs = f'{count(d["played"])} of {count(d["playable"])}'
-        gone = "".join(f"; not played: {esc(g['opponent'])} ({esc(g['reason'])})" for g in d["not_played"])
+        gone = "".join(f"; {esc(unplayed_text(g))}" for g in d["not_played"])
         blocked = "; ".join(
             f'{esc(b["opponent"])} ('
             + ("played in the first run, blocked only today" if b["played_in_original"]
                else "not played in the first run either") + ")"
-            for b in d["blocked_today"])
+            for b in d["blocked_today"] if not b["out_of_scope"])
+        scope = [b for b in d["blocked_today"] if b["out_of_scope"]]
+        scope = (f'; {esc(OUT_OF_SCOPE)}: ' + ", ".join(
+            f'{esc(b["opponent"])} (' + ("played in the first run" if b["played_in_original"]
+                                        else "not played in the first run either") + "; blocked today as well)"
+            for b in scope)) if scope else ""
         cost = d["cost"]
         same = (f'the {count(len(d["original_matches"]))} pairs the repeat finished' if d["status"] == "complete"
                 else f'the {count(len(d["original_matches"]))} pairs playable today')
@@ -1979,7 +2009,7 @@ def repeat_checks(S) -> str:
                       f'finished {esc(utc_time(d["dates"]["finished"]))}'),
             ("Pairs today", f'{count(d["playable"])} of {count(d["field"])} playable (first run: '
                             f'{count(d["original_played"])} of {count(d["original_field"])} played)'
-                            + (f'; blocked today: {blocked}' if blocked else "")),
+                            + (f'; blocked today: {blocked}' if blocked else "") + scope),
             ("Cost basis", f'${cost["estimate_usd"]:.2f} estimated (the original\'s billed paid-opponent costs'
                            + (f', with its own ${cost["entrant_usd"]:.2f}' if cost["entrant_usd"] else "")
                            + f'); cap ${cost["cap_usd"]:.0f} per repeat'),

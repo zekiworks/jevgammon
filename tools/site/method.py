@@ -556,7 +556,11 @@ def _versions(po: dict) -> str:
   through OpenRouter (pinned to Google AI Studio) on 11 Nov (its pairs with GPT-6 Luna (Decisions API), its API out of
   credit, and Mercury Decide, no longer served on OpenRouter, not played; runner dab6da5 without a probability-map check,
   then 38024d6 with map-check v2, whose sum rule (within 1e-6) applies to this entry only), with a page of its own; its
-  cost is its billed cost per decision. No score changed.</p>""")
+  cost is its billed cost per decision. No score changed. 12 Nov 2026: the late entries' and repeats' pairs with GPT-6
+  Luna (Decisions API) and Mercury Decide are outside the requested scope (Ümit, 12 Nov): no longer work to close.
+  They stay unplayed and are labelled so beside the reason they were not played, never a score or a loss; a late entry
+  whose only unplayed pairs are these is no longer marked Provisional, since none of its pairs is left to play. No
+  number changed.</p>""")
 
 
 def _confidence(t: dict, extra: dict) -> str:

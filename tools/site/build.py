@@ -39,8 +39,8 @@ import improve_page  # noqa: E402
 import learning_page  # noqa: E402
 import offline as O  # noqa: E402
 import pages  # noqa: E402
-from common import (CONTENT, EARLIER, INTERNAL, LATE_ENTRY, PENDING, PROVISIONAL, PUBLISHED, ROOT, SITE,  # noqa: E402
-                    THRESHOLDS, aliases, label, relabel, setup_slug)
+from common import (CONTENT, EARLIER, INTERNAL, LATE_ENTRY, OUT_OF_SCOPE_OPPONENTS, PENDING, PROVISIONAL,  # noqa: E402
+                    PUBLISHED, ROOT, SITE, THRESHOLDS, aliases, label, relabel, setup_slug)
 
 BASE = "https://zekiworks.github.io/analysis/backgammon/"
 # The files of tools/site/assets/ copied to the site's root (hilde-leaf.svg: the top bar's mark, Ümit #2901).
@@ -190,8 +190,10 @@ def late_entry_summaries(entries: list[dict]) -> list[dict]:
     """Late entries (analysis.late_entries): the same per-setup computation as a league's, fed with the entrant's own
     late-entry decisions only; in no standings table, league table, Cup input or other setup's numbers. Record: its
     finished late-entry matches won, drawn (level score) and lost. Not played: the pairs of its field that
-    content/late_entries.json lists with a reason (no score, never a loss); a listed pair that was played, or an
-    opponent outside its field, stops the build."""
+    content/late_entries.json lists with a reason (no score, never a loss), each marked out_of_scope when its opponent is
+    outside the requested scope (common.OUT_OF_SCOPE_OPPONENTS, Ümit #5220); a listed pair that was played, or an
+    opponent outside its field, stops the build. Published once every pair of its field is played or out of scope: no
+    pair is left to play, so its numbers no longer change; else Provisional."""
     reasons = {}
     for p in json.loads((CONTENT / "late_entries.json").read_text())["not_played"]:
         reasons.setdefault(p["entrant"], {})[p["opponent"]] = p["reason"]
@@ -207,8 +209,9 @@ def late_entry_summaries(entries: list[dict]) -> list[dict]:
         for opp, why in sorted(reasons.pop(e["name"], {}).items()):
             if opp not in e["field"] or any(m["opponent"] == opp for m in done):
                 raise RuntimeError(f"content/late_entries.json: {e['name']} v {opp} is not an unplayed pair of its field")
-            not_played.append(dict(opponent=opp, reason=why))
-        s = dict(e, status=PUBLISHED if e["played"] == e["total"] else PROVISIONAL, record=record,
+            not_played.append(dict(opponent=opp, reason=why, out_of_scope=opp in OUT_OF_SCOPE_OPPONENTS))
+        closed = e["played"] + sum(g["out_of_scope"] for g in not_played)
+        s = dict(e, status=PUBLISHED if closed == e["total"] else PROVISIONAL, record=record,
                  not_played=not_played, **A.dataset_summary(LATE_ENTRY, decs, [e["name"]])[e["name"]])
         # Price: its setups.json entry's (label, source, date read); billed at another price: that figure too.
         price = (meta.get((LATE_ENTRY, e["name"])) or {}).get("price")

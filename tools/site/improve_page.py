@@ -464,18 +464,26 @@ def qc_footnote(L) -> str:
 
 
 # Why a model's Run 2 replaced its original verdict (QC audit 2026-11-12), by model key (common.RUN2's reports).
-RUN2_WHY = {"deepseek-v4.1-flash-on": "7 provider errors were scored as answers in the original run"}
+RUN2_WHY = {"deepseek-v4.1-flash-on": "7 provider errors were scored as answers in the original run",
+            "gemini-4-argon-on": "the served model changed mid-run (gemini-4-argon-d until ~06:15 UTC 10 Nov) and its "
+                                 "first empty test cut 45 answers"}
+
+
+def run2_range(r: dict) -> float:
+    """A Run 2 report's spread (max − min) of risks found over its empty runs (E1–E3, each as Run 2 has it)."""
+    rf = [t["run2"]["risks_found"] for k, t in r["tests"].items() if re.fullmatch(r"E\d", k)]
+    return max(rf) - min(rf)
 
 
 def shown(m) -> dict:
     """The numbers a model's table rows show and sort by: Run 2's (content/run2/<key>.json: before, after, change,
-    threshold, verdict; the error rate, not in the report, stays the data file's) where one is published, else the data
-    file's own. improve.json's original numbers stay unchanged; the details box shows them."""
-    r = RUN2.get(m["key"], {}).get("run2")
+    spread, threshold, verdict; the error rate, not in the report, stays the data file's) where one is published, else
+    the data file's own. improve.json's original numbers stay unchanged; the details box shows them."""
+    r = RUN2.get(m["key"])
     if r is None:
         return m
-    return dict(m, **{k: r[k] for k in ("threshold", "improved", "status")},
-                **{w: dict(m[w], **r[w]) for w in ("before", "after", "change")})
+    return dict(m, range=run2_range(r), **{k: r["run2"][k] for k in ("threshold", "improved", "status")},
+                **{w: dict(m[w], **r["run2"][w]) for w in ("before", "after", "change")})
 
 
 def run2_mark(m) -> str:
@@ -511,9 +519,9 @@ def run2_sources(source: dict) -> str:
     return "; ".join(done + ([f'{", ".join(reused)} reused from the original run'] if reused else []))
 
 
-def run2_lines(m) -> list:
+def run2_lines(m, pm) -> list:
     """A model with a published Run 2 (details box): the original verdict, superseded and why, then Run 2's verdict,
-    its source per step and its billed cost. []: no Run 2."""
+    its source per step and its cost (billed, or $0 on a subscription). []: no Run 2."""
     r = RUN2.get(m["key"])
     if r is None:
         return []
@@ -528,8 +536,8 @@ def run2_lines(m) -> list:
             f', right safety {num(o["before"]["right_safety"])} → {num(o["after"]["right_safety"])}): superseded by Run 2 '
             f'after QC; {esc(RUN2_WHY[m["key"]])}',
             f'Run 2: {line(n)} (risks found {num(n["before"]["risks_found"])} → {num(n["after"]["risks_found"])}, right '
-            f'safety {num(n["before"]["right_safety"])} → {num(n["after"]["right_safety"])}); billed '
-            f'${fmt(r["billed_run2"], 2)}',
+            f'safety {num(n["before"]["right_safety"])} → {num(n["after"]["right_safety"])}); '
+            + (f'billed ${fmt(r["billed_run2"], 2)}' if pm["billed"] else "$0 billed (subscription quota)"),
             "Run 2 source per step: " + run2_sources(r["source"])]
 
 
@@ -553,7 +561,7 @@ def model_row(pm, m, results: bool) -> str:
         f'<td class="num" data-cell="rf">{before_after(v, "risks_found")}</td>'
         f'<td class="num"><span data-cell="rf-change">{fmt(ch["risks_found"], 1, signed=True) or nm(NA)}</span>'
         f'{run2_mark(m)}</td>'
-        f'<td class="num" data-cell="range">{num(m["range"])}</td>'
+        f'<td class="num" data-cell="range">{num(v["range"])}</td>'
         f'<td class="num" data-cell="threshold">{num(v["threshold"])}</td>'
         f'<td data-cell="verdict">{verdict_cell(m)}</td>' + plan +
         f'<td class="num" data-cell="rs">{before_after(v, "right_safety")} '
@@ -734,7 +742,7 @@ def result_row(pm, p, m, refused, i: int, links: dict) -> str:
                   f'{fmt(v["change"]["risks_found"], 1, signed=True) or nm(NA)}</strong>{run2_mark(m)}<br>'
                   f'<span class="small" data-rcell="rf">{before_after(v, "risks_found")}</span></td>')
         bar = (f'<td class="num"><span data-rcell="threshold">{num(v["threshold"])}</span><br>'
-               f'<span class="small">spread <span data-rcell="range">{num(m["range"])}</span></span></td>')
+               f'<span class="small">spread <span data-rcell="range">{num(v["range"])}</span></span></td>')
         rs = f'<td class="num" data-rcell="rs">{before_after(v, "right_safety")}</td>'
     verdict = (f'<span data-rcell="verdict">{verdict_text(m)}</span>' if m is not None else "")
     name = re.sub(r" \([^()]*\)$", "", pm["setup"])
@@ -745,7 +753,7 @@ def result_row(pm, p, m, refused, i: int, links: dict) -> str:
            esc(P.class_note(name)) if P.class_note(name) else None,
            "Route: " + ("our GPU" if pm["route"].startswith("local") else _inline(pm["route"])),
            None if refused else f"Status: {status_}", None if refused else f"Series done {done}",
-           m and answers_line(m), m and change_line(m), *(run2_lines(m) if m else []),
+           m and answers_line(m), m and change_line(m), *(run2_lines(m, pm) if m else []),
            links.get(pm["setup"]) or links.get(name)]
     cls, labelled = model_class(name)
     return (f'<tr data-progress-setup="{esc(pm["setup"])}" data-group="chat" data-class="{cls}" data-box="{bid}">'

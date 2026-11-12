@@ -1,7 +1,5 @@
 {
  "_about": "Results under QC (common.QC_LABEL 'QC-pending'; QC audit mailbox/backgammon-qc-2026-11-12.md, Ümit via Zeki #5264/#5276), shown until their Run 2 lands; remove a line once its Run 2 is published. \"improve\": 'Did they improve?' model key (the plan's and improve.json's key): the note; the model's Improved? cell, details box and highlight line are prefixed 'QC-pending' (its stored numbers stay), the note under the results table, and its bench-scores row's notes. \"setups\": shown setup name: the note; the setup's leaderboard chip gets 'QC-pending', its details box, late-entry row and page and its bench-scores row the note.",
- "improve": {
-  "gemini-4-argon-on": "QC 2026-11-12: Run 2 pending"
- },
+ "improve": {},
  "setups": {}
 }

@@ -773,18 +773,30 @@ def _improve_registration(out: Path, L: dict, nodes: list) -> list[str]:
 
 def _shown_expect(m: dict, bad: list, page: str) -> dict:
     """_improve_expect, then, for a model with a published Run 2 (content/run2/<key>.json), Run 2's before, after,
-    change, threshold and verdict, as the page's rows show and sort by them (the error rate stays the data file's).
-    The report's original must be the data file's own."""
+    change, spread, threshold and verdict, as the page's rows show and sort by them (the error rate stays the data
+    file's). The report's original must be the data file's own, and its Run 2 verdict the plan's rule applied to its own
+    Run 2 empty runs and change."""
+    from improve_validate import FLOOR, SAFETY_DROP
     e = _improve_expect(m)
     r = RUN2.get(m["key"])
     if r is None:
         return e
-    o = r["original"]
-    if any(round(o[w][k], 9) != round(e[w][k], 9) for w in ("before", "after", "change")
-           for k in ("risks_found", "right_safety")) or o["improved"] != e["improved"]:
+    o, n = r["original"], r["run2"]
+    def same(a, b):
+        return a is b is None or (None not in (a, b) and round(a, 9) == round(b, 9))
+    if not all(same(o[w][k], e[w][k]) for w in ("before", "after", "change") for k in ("risks_found", "right_safety")) \
+            or o["improved"] != e["improved"] or not same(o["threshold"], e["threshold"]):
         bad.append(f"{page}: {m['setup']}: content/run2 report's original is not the data file's")
-    return dict(e, threshold=r["run2"]["threshold"], improved=r["run2"]["improved"],
-                **{w: dict(e[w], **r["run2"][w]) for w in ("before", "after", "change")})
+    empty = [t["run2"]["risks_found"] for k, t in r["tests"].items() if re.fullmatch(r"E\d", k)]
+    rng = max(empty) - min(empty)
+    thr = max(rng, FLOOR)
+    ch = n["change"]
+    if (round(n["threshold"], 9) != round(thr, 9) or n["improved"] != (
+            round(ch["risks_found"], 9) > round(thr, 9) and round(ch["right_safety"], 9) >= -SAFETY_DROP)
+            or n["status"] != ("Yes" if n["improved"] else "No")):
+        bad.append(f"{page}: {m['setup']}: content/run2 report's Run 2 verdict is not the rule's on its own numbers")
+    return dict(e, range=rng, threshold=n["threshold"], improved=n["improved"],
+                **{w: dict(e[w], **n[w]) for w in ("before", "after", "change")})
 
 
 def check_improve(out: Path, test_set: Path | None = None) -> list[str]:

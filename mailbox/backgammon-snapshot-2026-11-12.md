@@ -2,7 +2,7 @@
 
 For Ümit (Zeki #5220, #5232). Read only: v3.db, systemd units, mailbox status files, `improve.py status`, bus reservations, live site + bench-scores.json (09:50Z). JSON twin: `backgammon-snapshot-2026-11-12.json`.
 
-- Late entries play the original League 1 table: 19 pairs = 10 programs + API opponents (first stage) + 8 local opponents (local stage) + 1 per entrant-side count. N per stage below excludes the 2 pairs below.
+- Late entries play the original League 1 table: 19 pairs = 10 programs + API opponents (first stage, incl. Mercury Decide) + 8 local opponents (local stage) + GPT-6 Luna.
 - **GPT-6 Luna and Mercury Decide pairs: not required (Ümit #5220).** Not missing work, never a score; past results kept. So the first stage is n/9, the full entry n/17.
 - 'held' = built but not shown on the site until complete (held_setups.json). Site wording for Luna/Mercury: branch `scope-luna-mercury` (not merged).
 

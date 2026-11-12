@@ -8,7 +8,7 @@ set -uo pipefail
 INTERVAL=${1:-600}
 cd "$(dirname "$0")/../.."
 PY=/home/cbasaran/.pyenv/versions/3.12.13/bin/python3
-BIN=$PWD/target/improve-bin/jevgammon-8b6f9a1
+BIN=$PWD/target/improve-bin/jevgammon-e417a0c
 LOG=/home/cbasaran/code/jevgammon/workspace/improve/runs/claude-fable-5.1-on/log.jsonl
 P=$(mktemp -d)
 "$PY" -c "

@@ -15,7 +15,7 @@ import re
 import home as H
 import pages as P
 import story as ST
-from common import LATE_ENTRY, model_key, name_and_tag, tag_text
+from common import LATE_ENTRY, model_key, name_and_tag, tag_text, unplayed_text
 
 PATH = "bench-scores.json"
 METRIC = "error rate (PR, lower is better)"
@@ -166,10 +166,13 @@ def build(S) -> dict:
             e = x["late"]
             notes.append(f"late entry: its own decisions in late-entry matches against League {lg}'s field "
                          f"(different positions from the league's); scored against League {lg}'s Random")
-            # Coverage carried to All benches so a partial entry never reads as complete (Zeki #4657).
-            if e.get("status") == P.PROVISIONAL:
-                notes.append(f"provisional: played {e['played']} of {e['total']} matches" + "".join(
-                    f"; not played: {g['opponent']} ({g['reason']})" for g in e.get("not_played") or []))
+            # Coverage carried to All benches so a partial entry never reads as complete (Zeki #4657); an entry whose
+            # only unplayed pairs are outside the requested scope (Ümit #5220) is complete but keeps its count.
+            gone = e.get("not_played") or []
+            if e.get("status") == P.PROVISIONAL or gone:
+                notes.append(("provisional: " if e.get("status") == P.PROVISIONAL else "")
+                             + f"played {e['played']} of {e['total']} matches"
+                             + "".join(f"; {unplayed_text(g)}" for g in gone))
             if m.get("notes"):
                 notes.append(m["notes"])
         notes.append("run on our GPUs" if m.get("runs_on") == "our GPUs" else "hosted (API or subscription)")

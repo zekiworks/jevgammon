@@ -15,7 +15,7 @@ from datetime import datetime
 import home as H
 import own_cost
 import pages as P
-from common import ALL_NOTE, CONTENT, LATE_ENTRY, NA, count, esc, fmt, nm, pct, relabel
+from common import ALL_NOTE, CONTENT, LATE_ENTRY, NA, count, esc, fmt, nm, pct, relabel, unplayed_text
 from common import label as shown_name
 from common import base_model, name_and_tag
 
@@ -288,9 +288,9 @@ def details_box(S, x, kind: str, bid: str, extra: list, ref: str | None = None) 
               esc(late_tag(x)) if e else None]),
         (None if e else f'League {x["lg"]["id"]}'),
         (f'Played the original League {e["field_league"]} field after the league finished (late entry)' if e else None),
-        (join([f'Provisional: {count(e["played"])} of {count(e["total"])} matches'] + [
-            f'not played: {esc(g["opponent"])} ({esc(g["reason"])})' for g in e.get("not_played") or []])
-         if e and e["status"] == P.PROVISIONAL else None),
+        (join([("Provisional: " if e["status"] == P.PROVISIONAL else "") + f'{count(e["played"])} of {count(e["total"])} '
+               "matches"] + [esc(unplayed_text(g)) for g in e.get("not_played") or []])
+         if e and (e["status"] == P.PROVISIONAL or e.get("not_played")) else None),
         (esc(P.SUBQ_SELF) if e and x["name"] == P.SUBQ_11 else None),
         join([cost_text(S, x), f'{count(q["decisions"])} decisions' if q else None]),
         (f'Cost: {esc(own_cost.tooltip(q["own_cost"], every_gap=False))}' if q and q.get("own_cost") else None),

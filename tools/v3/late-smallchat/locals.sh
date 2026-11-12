@@ -4,7 +4,7 @@
 # tools/v3/late-tiny8/locals.sh. The entrant stays on its own server (player.json base_url, or SMALLCHAT_URL). For each
 # opponent whose pair is unplayed: waits until OPP_GPU has room for it (+2 GB; a GPU held by someone else is waited
 # for, never freed), starts its server with `agent-bus run RES -- ...`, league-adds it to the entrant's league, waits
-# until the pair is played, stops the server. It keeps start.sh's guard (OpenRouter balance >= $40 and readable, paid
+# until the pair is played (or its models.json pair_hours limit passes: logged missing with the reason), stops the server. It keeps start.sh's guard (OpenRouter balance >= $40 and readable, paid
 # opponents < $5, entrant server healthy) itself, so the unit late-smallchat-KEY (start.sh) must have exited first.
 # Before each opponent's server starts and before its league-add, quiesce() confirms nothing plays league #ID; any
 # failure aborts the run there, logged (Zeki #4628, as late-knowline).
@@ -33,6 +33,8 @@ PORT=${URL%/v1}
 PORT=${PORT##*:}
 . "$T/pins.sh"
 tiny() { python3 "$T/smallchat.py" "$KEY" "$@"; }
+PAIR_HOURS=$(python3 -c 'import json,sys; print(int(json.load(open(sys.argv[1]))[sys.argv[2]]["pair_hours"]))' "$T/models.json" "$MODEL") ||
+  { echo "pair_hours of $MODEL unreadable" >&2; exit 1; }
 : "${OPP_GPU:?}" "${RES:?}"
 set -a; . ~/.keys; set +a
 [[ -n ${CELERIS_API_KEY:-} ]] || { CELERIS_API_KEY="$(cat ~/.config/celeris/key)"; export CELERIS_API_KEY; }
@@ -123,8 +125,8 @@ for o in "${OPPS[@]}"; do
   until (( $(room "$OPP_GPU") >= need + 2000 )); do sleep 60; done
   if ! agent-bus run "$RES" -- bash -c "g=$OPP_GPU; $start" >> $ST/servers.log 2>&1; then
     bash -c "$stop" >> $ST/servers.log 2>&1
-    log "locals: $name did not start on GPU $OPP_GPU (state/servers.log); its pair stays missing"
-    missing+=("$name"); continue
+    log "locals: $name MISSING: its server did not start on GPU $OPP_GPU (state/servers.log)"
+    missing+=("$name (server did not start)"); continue
   fi
   log "locals: started $name on GPU $OPP_GPU ($(gpus))"
   if ! sqlite3 -readonly v3.db "SELECT 1 FROM league_players lp JOIN players p ON p.id = lp.player_id
@@ -132,12 +134,13 @@ for o in "${OPPS[@]}"; do
     entry=$(sqlite3 -readonly v3.db "SELECT settings FROM players WHERE name = '$name'")
     quiesce || { bash -c "$stop" >> $ST/servers.log 2>&1; finish "aborted before adding $name: league #$ID not confirmed stopped"; exit 1; }
     "$BIN" league-add --db v3.db --league "$ID" --entry "$entry" >> "late-smallchat-$KEY.log" 2>&1 ||
-      { log "locals: league-add of $name failed"; bash -c "$stop" >> $ST/servers.log 2>&1; missing+=("$name"); continue; }
+      { log "locals: $name MISSING: league-add failed"; bash -c "$stop" >> $ST/servers.log 2>&1; missing+=("$name (league-add failed)"); continue; }
     log "locals: $name added to league #$ID"
   fi
-  # Played, or given up after 4 h with the pair still open (an aborted match is retried by the league runner).
+  # Played, or given up after PAIR_HOURS (models.json pair_hours: 12 h, Granite-4.2-30B 30 h) with the pair still open
+  # (an aborted match is retried by the league runner meanwhile); a pair given up is logged missing with the reason.
   t0=$SECONDS
-  until [[ $(tiny pending "$name") == 0 ]] || (( SECONDS - t0 > 14400 )); do
+  until [[ $(tiny pending "$name") == 0 ]] || (( SECONDS - t0 > PAIR_HOURS * 3600 )); do
     guard || { bash -c "$stop" >> $ST/servers.log 2>&1; finish "stopped by the guard during $name"; exit 1; }
     ensure_league; sleep 60
   done
@@ -145,7 +148,8 @@ for o in "${OPPS[@]}"; do
   if [[ $(tiny pending "$name") == 0 ]]; then
     log "locals: $name played; its server stopped"
   else
-    log "locals: $name not played within 4 h; its server stopped, pair missing"; missing+=("$name")
+    log "locals: $name MISSING: pair not played within the ${PAIR_HOURS} h limit (last match: $(tiny last "$name")); its server stopped"
+    missing+=("$name (not played within ${PAIR_HOURS} h)")
   fi
 done
 finish "done${missing:+; missing: ${missing[*]}}"

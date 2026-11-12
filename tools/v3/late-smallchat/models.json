@@ -1,5 +1,5 @@
 {
- "_note": "The 11 small chat models of the late-smallchat entries (Zeki #5064/#5071/#5073; manifest small-chat-full-suite-1570238769422934048). Per model: pinned repo/revision; thinking = 'switch' (chat_template_kwargs.enable_thinking, both setups (on)/(off)) or 'always' (no switch: (off) reads the letter after a prefilled <think></think>Answer:, as LFM2.5-24B-A2B); logic = logic's small_models.py key/port/server (#5080/#5091, bariton GPU 1, 0.0.0.0; ports of Qwen3.5-4B/9B, Gemma 4 E4B, LFM2.5-8B-A1B from small_models.py, not yet announced); own = our fallback server (serve.sh) on the same port and served name, so player.json is the same on either route; weights_gb = safetensors bytes (GGUF for llama.cpp); context = the card's/config's context length.",
+ "_note": "The 11 small chat models of the late-smallchat entries (Zeki #5064/#5071/#5073; manifest small-chat-full-suite-1570238769422934048). Per model: pinned repo/revision; thinking = 'switch' (chat_template_kwargs.enable_thinking, both setups (on)/(off)) or 'always' (no switch: (off) reads the letter after a prefilled <think></think>Answer:, as LFM2.5-24B-A2B); logic = logic's small_models.py key/port/server (#5080/#5091, bariton GPU 1, 0.0.0.0; ports of Qwen3.5-4B/9B, Gemma 4 E4B, LFM2.5-8B-A1B from small_models.py, not yet announced); own = our fallback server (serve.sh) on the same port and served name, so player.json is the same on either route; weights_gb = safetensors bytes (GGUF for llama.cpp); context = the card's/config's context length.; pair_hours = locals.sh's limit per local opponent's pair (one match), after which the pair is logged missing with the reason (Main, 12 Nov: 12 h; Granite-4.2-30B 30 h: ~105 decisions x ~20k tokens at ~25 tok/s ~ 23 h)",
  "lfm3-1.7b": {
   "name": "LFM3-1.7B",
   "repo": "LiquidAI/LFM3-1.7B",
@@ -21,7 +21,8 @@
     "LFM3-1.7B-BF16.gguf"
    ]
   },
-  "weights_gb": 3.5
+  "weights_gb": 3.5,
+  "pair_hours": 12
  },
  "lfm2.5-2.6b": {
   "name": "LFM2.5-2.6B",
@@ -43,7 +44,8 @@
     "qwen3"
    ]
   },
-  "weights_gb": 5.4
+  "weights_gb": 5.4,
+  "pair_hours": 12
  },
  "minicpm5-2b": {
   "name": "MiniCPM5-2B",
@@ -65,7 +67,8 @@
     "qwen3"
    ]
   },
-  "weights_gb": 5.0
+  "weights_gb": 5.0,
+  "pair_hours": 12
  },
  "lfm2.5-8b-a1b": {
   "name": "LFM2.5-8B-A1B",
@@ -87,7 +90,8 @@
     "qwen3"
    ]
   },
-  "weights_gb": 16.9
+  "weights_gb": 16.9,
+  "pair_hours": 12
  },
  "gemma-4-e4b": {
   "name": "Gemma 4 E4B",
@@ -111,7 +115,8 @@
     "{\"image\":0,\"audio\":0,\"video\":0}"
    ]
   },
-  "weights_gb": 16.0
+  "weights_gb": 16.0,
+  "pair_hours": 12
  },
  "qwen3.5-4b": {
   "name": "Qwen3.5-4B",
@@ -134,7 +139,8 @@
     "--language-model-only"
    ]
   },
-  "weights_gb": 9.3
+  "weights_gb": 9.3,
+  "pair_hours": 12
  },
  "qwen3.5-9b": {
   "name": "Qwen3.5-9B",
@@ -157,7 +163,8 @@
     "--language-model-only"
    ]
   },
-  "weights_gb": 19.3
+  "weights_gb": 19.3,
+  "pair_hours": 12
  },
  "spark-x2.6-4b": {
   "name": "Spark-X2.6-4B",
@@ -181,7 +188,8 @@
    ],
    "note": "vLLM v0.30.0 has no Spark2_5ForCausalLM (the remote-code Transformers fallback bypasses vLLM's attention); llama.cpp as logic serves it (#5091)"
   },
-  "weights_gb": 8.2
+  "weights_gb": 8.2,
+  "pair_hours": 12
  },
  "granite-4.2-3b": {
   "name": "Granite-4.2-3B",
@@ -205,7 +213,8 @@
     "granite_thinking_parser"
    ]
   },
-  "weights_gb": 6.8
+  "weights_gb": 6.8,
+  "pair_hours": 12
  },
  "granite-4.2-8b": {
   "name": "Granite-4.2-8B",
@@ -229,7 +238,8 @@
     "granite_thinking_parser"
    ]
   },
-  "weights_gb": 16.8
+  "weights_gb": 16.8,
+  "pair_hours": 12
  },
  "granite-4.2-30b": {
   "name": "Granite-4.2-30B",
@@ -253,6 +263,7 @@
     "granite_thinking_parser"
    ]
   },
-  "weights_gb": 58.6
+  "weights_gb": 58.6,
+  "pair_hours": 30
  }
 }

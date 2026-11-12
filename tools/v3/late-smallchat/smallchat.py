@@ -15,6 +15,7 @@ main checkout's v3.db; the league web helpers are this tree's.
   smallchat.py KEY pending NAME...  opponents among NAME... without a finished valid late-entry match (count; read-only)
   smallchat.py KEY open             open pairs of the entrant's late-entry league (read-only)
   smallchat.py KEY billed FIRST     paid opponents' dollars in late-entry matches from match FIRST on (read-only)
+  smallchat.py KEY last OPPONENT    the latest late-entry match v OPPONENT: id, status, error (read-only)
   smallchat.py KEY scope            open and blocked pairs: "OPEN BLOCKED", then one line per blocked pair (read-only)
   smallchat.py KEY inflight FIRST N the entrant's first N decisions from match FIRST on: most requests in flight and most
                                     of its matches running at once (read-only)
@@ -178,6 +179,17 @@ def billed(args) -> None:
 BLOCKING = re.compile(r"refused|\b40[0-4]\b|\b422\b|budget|insufficient|Payment Required|not available", re.I)
 
 
+def last(args) -> None:
+    """The latest late-entry match of the entrant v OPPONENT: id, status and error (read-only)."""
+    row = ro().execute(
+        """SELECT m.id, m.status, m.error FROM matches m JOIN players a ON a.id = m.player1
+           JOIN players b ON b.id = m.player2
+           WHERE m.valid = 1 AND m.stage = 'late-entry'
+             AND ((a.name = ?1 AND b.name = ?2) OR (a.name = ?2 AND b.name = ?1))
+           ORDER BY m.id DESC LIMIT 1""", (NAME, args.opponent)).fetchone()
+    print(f"#{row['id']} {row['status']}" + (f": {row['error'][:200]}" if row["error"] else "") if row else "none")
+
+
 def scope(_args) -> None:
     conn = ro()
     blocked = []
@@ -243,6 +255,8 @@ def main() -> None:
     sub = ap.add_subparsers(dest="cmd", required=True)
     for cmd in ("player", "configs", "trigger", "league-id", "open", "scope"):
         sub.add_parser(cmd)
+    o = sub.add_parser("last")
+    o.add_argument("opponent")
     p = sub.add_parser("pending")
     p.add_argument("opponents", nargs="+")
     b = sub.add_parser("billed")
@@ -253,7 +267,7 @@ def main() -> None:
     args = ap.parse_args()
     {"configs": configs, "trigger": trigger, "pending": pending, "open": open_pairs, "billed": billed,
      "scope": scope, "player": lambda a: print(json.dumps(PLAYER, ensure_ascii=False)), "league-id": lambda a: print(league_id() or ""),
-     "inflight": inflight}[args.cmd](args)
+     "inflight": inflight, "last": last}[args.cmd](args)
 
 
 if __name__ == "__main__":

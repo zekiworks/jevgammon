@@ -567,7 +567,7 @@ def model_class(name: str | None) -> tuple[str, str]:
 
 
 # Each row's maker dot and details box (Ümit via Zeki #3803): the home leaderboard's (home.maker on the shared palette,
-# story.box_html, bg.js headlineDetails). A row's model without a palette maker fails the build. Box lines without data
+# story.box_html, site.js modelBoxes). A row's model without a palette maker fails the build. Box lines without data
 # are left out (never "n/a").
 
 

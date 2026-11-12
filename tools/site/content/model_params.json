@@ -797,6 +797,44 @@
    "card_source": "https://huggingface.co/fastino/GLiDE-2B",
    "card_quote": "'GLiDE 2B is a GLiDE decision model with 1.88B parameters.'; table: 'Parameters | 1.88 B (1.88 B language model, of which 509 M token embeddings; 0.52 M decision readout)'."
   },
+  "Sieve 31B v3": {
+   "total_b": 31.27,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/sthanika-ai/Sieve-31B-v3/tree/8fcee858f7f20a50bfa3c8f984c22adb3cbb46a2",
+   "quote": "sthanika-ai/Sieve-31B-v3 @ 8fcee858f7f20a50bfa3c8f984c22adb3cbb46a2: 31,273,086,512 parameters (Hugging Face's safetensors total for the revision and the index's metadata total_parameters; 31,273,088,876 BF16 tensor elements less the 2,364 elements of Gemma 4's buffers, as for KnowLine 31B Gen1.5), 13 shards, 1,188 tensors incl. the 356 of the vision encoder; the same count as google/gemma-4-31B-it, whose full fine-tune it is (dense). head.pt holds no weights (readout settings and temperatures).",
+   "checked": [
+    "https://huggingface.co/api/models/sthanika-ai/Sieve-31B-v3/revision/8fcee858f7f20a50bfa3c8f984c22adb3cbb46a2",
+    "https://huggingface.co/sthanika-ai/Sieve-31B-v3/raw/8fcee858f7f20a50bfa3c8f984c22adb3cbb46a2/README.md"
+   ],
+   "read": "2026-11-12",
+   "note": "Checkpoint total at the pinned revision (#3508 rule): 31.27B incl. its vision encoder (the backbone's; served text only). The card states no total: it names the size (Sieve-31B-v3) and the backbone google/gemma-4-31B-it, and trains 29.29B of it (every linear projection of the 60 decoder layers); the card figure 31B is shown. Served in BF16 by sieve-serve (github.com/sthanika-ai/Sieve @ 1e64657, 0.5.1), which plays our late entry. Plays with up to 255 options per request (the league's usual rule); no request is over its limits.",
+   "terms": "31.27B incl. its vision encoder; card: 31B (backbone gemma-4-31B-it; 29.29B trained)",
+   "card_total_b": 31,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/sthanika-ai/Sieve-31B-v3",
+   "card_quote": "'# Sieve-31B-v3'; 'It is a full fine-tune of google/gemma-4-31B-it (revision 842da37).'; summary table: 'Trained weights | full fine-tune of every linear projection of the 60 decoder layers (29.29B parameters); the token embeddings (tied with the output layer) and every norm are the backbone's'."
+  },
+  "Turion Jev 31B": {
+   "total_b": 31.27,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/turion-ai/turion-jev-31b/tree/866c0fc6e040cba23fcc72113a80e5c99d5ebab1",
+   "quote": "turion-ai/turion-jev-31b @ 866c0fc6e040cba23fcc72113a80e5c99d5ebab1: 31,273,086,512 parameters (Hugging Face's safetensors total for the revision and the index's metadata total_parameters; 31,273,088,876 BF16 tensor elements less the 2,364 elements of Gemma 4's buffers, as for KnowLine 31B Gen1.5), 13 shards, 1,188 tensors incl. the 356 of the vision encoder; the same count as google/gemma-4-31B-it, whose LoRA fine-tune (a soup of three checkpoints) merged into BF16 weights it is (dense).",
+   "checked": [
+    "https://huggingface.co/api/models/turion-ai/turion-jev-31b/revision/866c0fc6e040cba23fcc72113a80e5c99d5ebab1",
+    "https://huggingface.co/turion-ai/turion-jev-31b/raw/866c0fc6e040cba23fcc72113a80e5c99d5ebab1/README.md"
+   ],
+   "read": "2026-11-12",
+   "note": "Checkpoint total at the pinned revision (#3508 rule): 31.27B incl. its vision encoder (the backbone's; served text only). The card states no total: it names the size (Turion Jev 31B) and the base model google/gemma-4-31B-it; the card figure 31B is shown. Served by the package's turion_jev.serve (vLLM 0.32.0), BF16 weights quantised to FP8 at load as in the card's run, which plays our late entry. Plays with up to 255 options per request (the league's usual rule); no request is over its limits.",
+   "terms": "31.27B incl. its vision encoder; card: 31B (base gemma-4-31B-it)",
+   "card_total_b": 31,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/turion-ai/turion-jev-31b",
+   "card_quote": "'# Turion Jev 31B'; 'Turion Jev 31B is a decision model by Turion AI, fine-tuned from google/gemma-4-31B-it on the Turion AI model training platform.'; 'Merge. A uniform soup of the checkpoints at steps 300, 375 and 450, merged into the base at full scale and saved in BF16.'"
+  },
   "LFM3-1.7B": {
    "total_b": 1.73,
    "active_b": null,

@@ -160,6 +160,16 @@
    "name": "GLiClass",
    "icon": "fi-gliclass",
    "match": "^(?:GLiClass)"
+  },
+  {
+   "name": "Sieve",
+   "icon": "fi-sieve",
+   "match": "^(?:Sieve)"
+  },
+  {
+   "name": "Turion Jev",
+   "icon": "fi-turionjev",
+   "match": "^(?:Turion Jev)"
   }
  ]
 }

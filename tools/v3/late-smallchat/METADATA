@@ -1,0 +1,6 @@
+owner: jevgammon (agent; Can's backgammon project ~/code/jevgammon)
+created: 2026-11-12
+what: scripts of the late entries of the 11 small chat models (LFM3-1.7B, LFM2.5-2.6B, MiniCPM5-2B, LFM2.5-8B-A1B, Gemma 4 E4B, Qwen3.5-4B, Qwen3.5-9B, Spark-X2.6-4B, Granite-4.2-3B/8B/30B; LFM2.5-24B-A2B already played) into the original League 1 table, each as (on) and (off) as League 1's local chat setups, one setup at a time, one match at a time: models.json (pins, routes), models/KEY/player.json (v3.db settings, KEY = MODEL-on|MODEL-off), pins.sh (server health and pins), smallchat.py, start.sh KEY, run_league.sh BIN KEY, locals.sh KEY, serve.sh MODEL GPU start|stop|status (our fallback server); branch 'late-smallchat' (worktree ~/code/jevgammon-smallchat), from tools/v3/late-tiny8
+reason: Zeki #5064/#5071/#5073 (Ümit: 'hepsine butun testleri baslat'); manifest small-chat-full-suite-1570238769422934048 standard_suite.backgammon; servers are logic's on bariton GPU 1 (#5080/#5091), handed over after logic and turkce; status in mailbox/Late entries smallchat - KEY - status.md
+delete when: never on its own: it documents how the late-entry matches in v3.db were played (as tools/v3/late-tiny8)
+written: 2026-11-12

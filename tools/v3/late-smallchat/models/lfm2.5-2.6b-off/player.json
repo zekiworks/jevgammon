@@ -1,0 +1,15 @@
+{
+  "name": "LFM2.5-2.6B (off)",
+  "spec": "openai-compatible/lfm2.5-2.6b",
+  "provider": "local-vllm",
+  "quantization": "bf16",
+  "base_url": "http://127.0.0.1:18613/v1",
+  "request": {},
+  "answer_prefix": "<think></think>Answer:",
+  "top_logprobs": 20,
+  "letter_readout": "prefill",
+  "note": "LiquidAI/LFM2.5-2.6B @ 7141b56cd4650af95c7c7b86983443aed050c96a, BF16, on our GPU through vLLM v0.30.0 (vllm/vllm-openai:v0.30.0) in BF16, --generation-config auto, reasoning parser qwen3; logic's server (small_models.py key lfm2.5-2.6b, port 18613, bariton GPU 1, #5080/#5091) or ours on the same port and name (tools/v3/late-smallchat/serve.sh). no reasoning: the letter continues a prefilled <think></think>Answer: (as LFM2.5-24B-A2B (off)). Sampling: the league's temperature 1 (chat client), the rest the server's defaults (generation_config.json via --generation-config auto), as the League 1 local chat setups; output cap 1 token (prefill readout). Late entry v the original League 1 table (tools/v3/late-smallchat; Zeki #5064/#5071/#5073)",
+  "device": "RTX PRO 6000 (bariton), one GPU",
+  "parallel": 1,
+  "max_matches": 1
+}

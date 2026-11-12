@@ -1,0 +1,21 @@
+{
+  "name": "Granite-4.2-8B (on)",
+  "spec": "openai-compatible/granite-4.2-8b",
+  "provider": "local-vllm",
+  "quantization": "bf16",
+  "base_url": "http://127.0.0.1:18617/v1",
+  "reasoning": "template default",
+  "request": {
+    "chat_template_kwargs": {
+      "enable_thinking": true
+    },
+    "reasoning_effort": null
+  },
+  "max_tokens": 32768,
+  "top_logprobs": 20,
+  "letter_readout": "prefill",
+  "note": "ibm-granite/granite-4.2-8b @ a7042144125ce5ae64f89610e8289647fc000b9a, BF16, on our GPU through vLLM v0.30.0 (vllm/vllm-openai:v0.30.0) in BF16, --generation-config auto, reasoning parser granite_thinking_parser; logic's server (small_models.py key granite-4.2-8b, port 18617, bariton GPU 1, #5080/#5091) or ours on the same port and name (tools/v3/late-smallchat/serve.sh). thinking on (enable_thinking true), no effort sent (reasoning_effort removed: template default); the letter is read after the reasoning from a prefilled Answer: (as Gemma 4 31B (on)). Sampling: the league's temperature 1 (chat client), the rest the server's defaults (generation_config.json via --generation-config auto), as the League 1 local chat setups; output cap 32,768 tokens (the chat client default, as Qwen3.8-27B (on)). Late entry v the original League 1 table (tools/v3/late-smallchat; Zeki #5064/#5071/#5073)",
+  "device": "RTX PRO 6000 (bariton), one GPU",
+  "parallel": 1,
+  "max_matches": 1
+}

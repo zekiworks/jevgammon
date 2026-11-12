@@ -1,0 +1,18 @@
+{
+  "name": "LFM3-1.7B (off)",
+  "spec": "openai-compatible/lfm3-1.7b",
+  "provider": "local-llama.cpp",
+  "quantization": "bf16",
+  "base_url": "http://127.0.0.1:18605/v1",
+  "request": {
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "top_logprobs": 20,
+  "letter_readout": "prefill",
+  "note": "LiquidAI/LFM3-1.7B @ 0dc4268b561499c648c7ba7c9466bf3d8d01517a, BF16, on our GPU through llama.cpp server b12020 (official GGUF LiquidAI/LFM3-1.7B-GGUF @ cd0c74c5 LFM3-1.7B-BF16.gguf, chat template from the pinned repo, --reasoning-format deepseek; vLLM v0.30.0 lacks the architecture); logic's server (small_models.py key lfm3-1.7b, port 18605, bariton GPU 1, #5080/#5091) or ours on the same port and name (tools/v3/late-smallchat/serve.sh). thinking off (enable_thinking false); the letter is read from a prefilled Answer: (as Gemma 4 31B (off)). Sampling: the league's temperature 1 (chat client), the rest the server's defaults (llama.cpp defaults), as the League 1 local chat setups; output cap 1 token (prefill readout). Late entry v the original League 1 table (tools/v3/late-smallchat; Zeki #5064/#5071/#5073)",
+  "device": "RTX PRO 6000 (bariton), one GPU",
+  "parallel": 1,
+  "max_matches": 1
+}

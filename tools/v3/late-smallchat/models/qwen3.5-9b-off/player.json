@@ -1,0 +1,18 @@
+{
+  "name": "Qwen3.5-9B (off)",
+  "spec": "openai-compatible/qwen3.5-9b",
+  "provider": "local-vllm",
+  "quantization": "bf16",
+  "base_url": "http://127.0.0.1:18610/v1",
+  "request": {
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "top_logprobs": 20,
+  "letter_readout": "prefill",
+  "note": "Qwen/Qwen3.5-9B @ c202236235762e1c871ad0ccb60c8ee5ba337b9a, BF16, on our GPU through vLLM v0.30.0 (vllm/vllm-openai:v0.30.0) in BF16, --generation-config auto, reasoning parser qwen3; logic's server (small_models.py key qwen3.5-9b, port 18610, bariton GPU 1, #5080/#5091) or ours on the same port and name (tools/v3/late-smallchat/serve.sh). thinking off (enable_thinking false); the letter is read from a prefilled Answer: (as Gemma 4 31B (off)). Sampling: the league's temperature 1 (chat client), the rest the server's defaults (generation_config.json via --generation-config auto), as the League 1 local chat setups; output cap 1 token (prefill readout). Late entry v the original League 1 table (tools/v3/late-smallchat; Zeki #5064/#5071/#5073)",
+  "device": "RTX PRO 6000 (bariton), one GPU",
+  "parallel": 1,
+  "max_matches": 1
+}

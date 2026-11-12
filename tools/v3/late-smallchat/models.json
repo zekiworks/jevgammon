@@ -1,0 +1,258 @@
+{
+ "_note": "The 11 small chat models of the late-smallchat entries (Zeki #5064/#5071/#5073; manifest small-chat-full-suite-1570238769422934048). Per model: pinned repo/revision; thinking = 'switch' (chat_template_kwargs.enable_thinking, both setups (on)/(off)) or 'always' (no switch: (off) reads the letter after a prefilled <think></think>Answer:, as LFM2.5-24B-A2B); logic = logic's small_models.py key/port/server (#5080/#5091, bariton GPU 1, 0.0.0.0; ports of Qwen3.5-4B/9B, Gemma 4 E4B, LFM2.5-8B-A1B from small_models.py, not yet announced); own = our fallback server (serve.sh) on the same port and served name, so player.json is the same on either route; weights_gb = safetensors bytes (GGUF for llama.cpp); context = the card's/config's context length.",
+ "lfm3-1.7b": {
+  "name": "LFM3-1.7B",
+  "repo": "LiquidAI/LFM3-1.7B",
+  "rev": "0dc4268b561499c648c7ba7c9466bf3d8d01517a",
+  "thinking": "switch",
+  "context": 262144,
+  "logic": {
+   "key": "lfm3-1.7b",
+   "port": 18605,
+   "server": "llama.cpp",
+   "port_source": "logic's small_models.py SETUPS (port not yet announced for #5080)"
+  },
+  "own": {
+   "server": "llama.cpp",
+   "port": 18605,
+   "gguf": [
+    "LiquidAI/LFM3-1.7B-GGUF",
+    "cd0c74c575b5c416f3011b5b4c298077f26ca8c2",
+    "LFM3-1.7B-BF16.gguf"
+   ]
+  },
+  "weights_gb": 3.5
+ },
+ "lfm2.5-2.6b": {
+  "name": "LFM2.5-2.6B",
+  "repo": "LiquidAI/LFM2.5-2.6B",
+  "rev": "7141b56cd4650af95c7c7b86983443aed050c96a",
+  "thinking": "always",
+  "context": 131072,
+  "logic": {
+   "key": "lfm2.5-2.6b",
+   "port": 18613,
+   "server": "vllm",
+   "port_source": "logic #5091"
+  },
+  "own": {
+   "server": "vllm",
+   "port": 18613,
+   "args": [
+    "--reasoning-parser",
+    "qwen3"
+   ]
+  },
+  "weights_gb": 5.4
+ },
+ "minicpm5-2b": {
+  "name": "MiniCPM5-2B",
+  "repo": "openbmb/MiniCPM5-2B",
+  "rev": "42433e90dad95123ab87729fd7011e7110629556",
+  "thinking": "switch",
+  "context": 131072,
+  "logic": {
+   "key": "minicpm5-2b",
+   "port": 18614,
+   "server": "vllm",
+   "port_source": "logic #5091"
+  },
+  "own": {
+   "server": "vllm",
+   "port": 18614,
+   "args": [
+    "--reasoning-parser",
+    "qwen3"
+   ]
+  },
+  "weights_gb": 5.0
+ },
+ "lfm2.5-8b-a1b": {
+  "name": "LFM2.5-8B-A1B",
+  "repo": "LiquidAI/LFM2.5-8B-A1B",
+  "rev": "dd83f5cb02aa2938b66bba9a9998d38d0517c1f3",
+  "thinking": "always",
+  "context": 128000,
+  "logic": {
+   "key": "lfm2.5-8b-a1b",
+   "port": 18601,
+   "server": "vllm",
+   "port_source": "logic's small_models.py SETUPS (port not yet announced for #5080)"
+  },
+  "own": {
+   "server": "vllm",
+   "port": 18601,
+   "args": [
+    "--reasoning-parser",
+    "qwen3"
+   ]
+  },
+  "weights_gb": 16.9
+ },
+ "gemma-4-e4b": {
+  "name": "Gemma 4 E4B",
+  "repo": "google/gemma-4-E4B-it",
+  "rev": "4ecc2ba63bcac23ba4a767fc87025b1450f84c9c",
+  "thinking": "switch",
+  "context": 131072,
+  "logic": {
+   "key": "gemma-4-e4b-it",
+   "port": 18602,
+   "server": "vllm",
+   "port_source": "logic's small_models.py SETUPS (port not yet announced for #5080)"
+  },
+  "own": {
+   "server": "vllm",
+   "port": 18602,
+   "args": [
+    "--reasoning-parser",
+    "gemma4",
+    "--limit-mm-per-prompt",
+    "{\"image\":0,\"audio\":0,\"video\":0}"
+   ]
+  },
+  "weights_gb": 16.0
+ },
+ "qwen3.5-4b": {
+  "name": "Qwen3.5-4B",
+  "repo": "Qwen/Qwen3.5-4B",
+  "rev": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+  "thinking": "switch",
+  "context": 262144,
+  "logic": {
+   "key": "qwen3.5-4b",
+   "port": 18604,
+   "server": "vllm",
+   "port_source": "logic's small_models.py SETUPS (port not yet announced for #5080)"
+  },
+  "own": {
+   "server": "vllm",
+   "port": 18604,
+   "args": [
+    "--reasoning-parser",
+    "qwen3",
+    "--language-model-only"
+   ]
+  },
+  "weights_gb": 9.3
+ },
+ "qwen3.5-9b": {
+  "name": "Qwen3.5-9B",
+  "repo": "Qwen/Qwen3.5-9B",
+  "rev": "c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+  "thinking": "switch",
+  "context": 262144,
+  "logic": {
+   "key": "qwen3.5-9b",
+   "port": 18610,
+   "server": "vllm",
+   "port_source": "logic's small_models.py SETUPS (port not yet announced for #5080)"
+  },
+  "own": {
+   "server": "vllm",
+   "port": 18610,
+   "args": [
+    "--reasoning-parser",
+    "qwen3",
+    "--language-model-only"
+   ]
+  },
+  "weights_gb": 19.3
+ },
+ "spark-x2.6-4b": {
+  "name": "Spark-X2.6-4B",
+  "repo": "XHToken/Spark-X2.6-4B",
+  "rev": "64ca8f2a295b8ceb2757b9d4749a6558c4759e5b",
+  "thinking": "switch",
+  "context": 1048576,
+  "logic": {
+   "key": "spark-x2.6-4b",
+   "port": 18615,
+   "server": "llama.cpp",
+   "port_source": "logic #5091"
+  },
+  "own": {
+   "server": "llama.cpp",
+   "port": 18615,
+   "gguf": [
+    "XHToken/Spark-X2.6-4B-GGUF",
+    "9d716770ac7477776de5f891f70cdf98b003a5cd",
+    "Spark-X2.6-4B.gguf"
+   ],
+   "note": "vLLM v0.30.0 has no Spark2_5ForCausalLM (the remote-code Transformers fallback bypasses vLLM's attention); llama.cpp as logic serves it (#5091)"
+  },
+  "weights_gb": 8.2
+ },
+ "granite-4.2-3b": {
+  "name": "Granite-4.2-3B",
+  "repo": "ibm-granite/granite-4.2-3b",
+  "rev": "4e9c275e232f10211ec88644d106a1f6a1b60e06",
+  "thinking": "switch",
+  "context": 131072,
+  "logic": {
+   "key": "granite-4.2-3b",
+   "port": 18616,
+   "server": "vllm",
+   "port_source": "logic #5091"
+  },
+  "own": {
+   "server": "vllm",
+   "port": 18616,
+   "args": [
+    "--reasoning-parser-plugin",
+    "/root/.cache/huggingface/hub/models--ibm-granite--granite-4.2-3b/snapshots/4e9c275e232f10211ec88644d106a1f6a1b60e06/granite_thinking_parser.py",
+    "--reasoning-parser",
+    "granite_thinking_parser"
+   ]
+  },
+  "weights_gb": 6.8
+ },
+ "granite-4.2-8b": {
+  "name": "Granite-4.2-8B",
+  "repo": "ibm-granite/granite-4.2-8b",
+  "rev": "a7042144125ce5ae64f89610e8289647fc000b9a",
+  "thinking": "switch",
+  "context": 131072,
+  "logic": {
+   "key": "granite-4.2-8b",
+   "port": 18617,
+   "server": "vllm",
+   "port_source": "logic #5091"
+  },
+  "own": {
+   "server": "vllm",
+   "port": 18617,
+   "args": [
+    "--reasoning-parser-plugin",
+    "/root/.cache/huggingface/hub/models--ibm-granite--granite-4.2-8b/snapshots/a7042144125ce5ae64f89610e8289647fc000b9a/granite_thinking_parser.py",
+    "--reasoning-parser",
+    "granite_thinking_parser"
+   ]
+  },
+  "weights_gb": 16.8
+ },
+ "granite-4.2-30b": {
+  "name": "Granite-4.2-30B",
+  "repo": "ibm-granite/granite-4.2-30b",
+  "rev": "9e668ce1c538387ef24d3644e9b0606647762636",
+  "thinking": "switch",
+  "context": 131072,
+  "logic": {
+   "key": "granite-4.2-30b",
+   "port": 18619,
+   "server": "vllm",
+   "port_source": "logic #5091"
+  },
+  "own": {
+   "server": "vllm",
+   "port": 18619,
+   "args": [
+    "--reasoning-parser-plugin",
+    "/root/.cache/huggingface/hub/models--ibm-granite--granite-4.2-30b/snapshots/9e668ce1c538387ef24d3644e9b0606647762636/granite_thinking_parser.py",
+    "--reasoning-parser",
+    "granite_thinking_parser"
+   ]
+  },
+  "weights_gb": 58.6
+ }
+}

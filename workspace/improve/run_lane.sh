@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # "Did they improve?" Phase 2: starts an API/subscription lane (no local server) as the systemd user unit LANE-UNIT
 # (transient, so a reboot loses it: run this again), one model at a time through run_queue.sh, with the pinned runner
-# binary jevgammon-1270c04. The lane's models are claimed for it (runs/<model>/lane.json); improve.py refuses a model
+# binary jevgammon-8b6f9a1 (1270c04 + the 200-error-reply fix, QC 2026-11-12; was jevgammon-1270c04 until then).
+# The Codex lane pins its own build: IMPROVE_PIN=724406a (938c842 + the same fix). The lane's models are claimed for
+# it (runs/<model>/lane.json); improve.py refuses a model
 # claimed by another lane, so a model runs in exactly one lane.
 #   workspace/improve/run_lane.sh improve-subs-xai grok-4.7-on
 #   workspace/improve/run_lane.sh improve-subs-claude claude-sonnet-5.5-high claude-opus-5.5-on claude-fable-5.1-on
@@ -9,7 +11,7 @@ set -euo pipefail
 cd "$(dirname "$0")/../.."
 LANE=${1:?lane unit}; shift
 [[ $# -gt 0 ]] || { echo "no models" >&2; exit 1; }
-BIN=$PWD/target/improve-bin/jevgammon-1270c04
+BIN=$PWD/target/improve-bin/jevgammon-${IMPROVE_PIN:-8b6f9a1}
 RUNS=/home/cbasaran/code/jevgammon/workspace/improve/runs
 [[ -x "$BIN" ]] || { echo "missing pinned binary $BIN" >&2; exit 1; }
 for m in "$@"; do

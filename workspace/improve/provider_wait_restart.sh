@@ -10,7 +10,7 @@ cd "$(dirname "$0")/../.."
 INTERVAL=${1:?interval seconds}; MODEL=${2:?model key to probe}; LANE=${3:?lane unit}; shift 3
 [[ $# -gt 0 ]] || { echo "no lane models" >&2; exit 1; }
 PY=/home/cbasaran/.pyenv/versions/3.12.13/bin/python3
-BIN=$PWD/target/improve-bin/jevgammon-1270c04
+BIN=$PWD/target/improve-bin/jevgammon-8b6f9a1
 LOG=/home/cbasaran/code/jevgammon/workspace/improve/runs/$MODEL/log.jsonl
 P=$(mktemp -d)
 "$PY" - "$MODEL" "$P/player.json" <<'EOF'

@@ -1,0 +1,9 @@
+test_a_name_with_other_settings_is_refused_and_nothing_is_written (test_v3_players.Players.test_a_name_with_other_settings_is_refused_and_nothing_is_written) ... ok
+test_insert_is_exact_and_idempotent (test_v3_players.Players.test_insert_is_exact_and_idempotent) ... ok
+test_on_todays_players_it_only_adds_and_changes_no_row (test_v3_players.Players.test_on_todays_players_it_only_adds_and_changes_no_row) ... ok
+test_rollback_deletes_exactly_these_rows_and_refuses_when_referenced (test_v3_players.Players.test_rollback_deletes_exactly_these_rows_and_refuses_when_referenced) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.004s
+
+OK

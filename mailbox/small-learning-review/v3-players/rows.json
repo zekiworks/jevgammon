@@ -1,0 +1,117 @@
+{
+ "about": "Path (b), Zeki #5699: frozen settings of the small chat rows as v3.db players rows without play. Each settings object is the prepared late-entry player.json, unchanged.",
+ "rows": [
+  {
+   "key": "minicpm5-2b-on",
+   "source": "late-smallchat models/minicpm5-2b-on/player.json @ 171698f84a2e45b0dd7668d5749f72dfc0ce3712 (branch late-smallchat), sha256 84164b637ccddaa4301a00d53f05983f3c347bee65fb8ce00ff29ccfde30bd68",
+   "settings": {
+    "name": "MiniCPM5-2B (on)",
+    "spec": "openai-compatible/minicpm5-2b",
+    "provider": "local-vllm",
+    "quantization": "bf16",
+    "base_url": "http://127.0.0.1:18614/v1",
+    "reasoning": "template default",
+    "request": {
+     "chat_template_kwargs": {
+      "enable_thinking": true
+     },
+     "reasoning_effort": null
+    },
+    "max_tokens": 32768,
+    "top_logprobs": 20,
+    "letter_readout": "prefill",
+    "note": "openbmb/MiniCPM5-2B @ 42433e90dad95123ab87729fd7011e7110629556, BF16, on our GPU through vLLM v0.30.0 (vllm/vllm-openai:v0.30.0) in BF16, --generation-config auto; logic's server (small_models.py key minicpm5-2b, port 18614, bariton GPU 1, #5080/#5091; ours alone after turkce's 'done') or ours on the same port and name (tools/v3/late-smallchat/serve.sh). thinking on (enable_thinking true), no effort sent (reasoning_effort removed: template default); the letter is read after the reasoning from a prefilled Answer: (as Gemma 4 31B (on)); reasoning split by the server's vLLM reasoning parser qwen3 (it matters only for replies cut off before </think>: the letter is read from logprobs after the prefilled answer). Sampling: League 1's local chat rule, per request: temperature 1.0 from the chat client, everything else the server's default (generation_config.json via --generation-config auto, else vLLM neutral), no seed; it differs from logic's Logic & Math runs: logic sends temperature 1.0, top_p 0.95, seed 0 (ours: the same temperature and top_p from generation_config.json; no seed). Output cap 32,768 tokens (the chat client default, as Qwen3.8-27B (on)). Up to 16 matches and 16 requests at once, League 1's rule for its local chat setups (the server is ours alone after turkce's 'done'). Late entry v the original League 1 table (tools/v3/late-smallchat; Zeki #5064/#5071/#5073; Main's decisions 12 Nov)",
+    "device": "RTX PRO 6000 (bariton), one GPU",
+    "parallel": 16,
+    "max_matches": 16
+   }
+  },
+  {
+   "key": "lfm2.5-2.6b-on",
+   "source": "late-smallchat models/lfm2.5-2.6b-on/player.json @ 171698f84a2e45b0dd7668d5749f72dfc0ce3712 (branch late-smallchat), sha256 a2b0d5cf3d5ef941a0d75b75092b5d30056ceb7366ecdfc4c12b4e209729c7a5",
+   "settings": {
+    "name": "LFM2.5-2.6B (on)",
+    "spec": "openai-compatible/lfm2.5-2.6b",
+    "provider": "local-vllm",
+    "quantization": "bf16",
+    "base_url": "http://127.0.0.1:18613/v1",
+    "reasoning": "low",
+    "request": {},
+    "max_tokens": 32768,
+    "top_logprobs": 20,
+    "letter_readout": "prefill",
+    "note": "LiquidAI/LFM2.5-2.6B @ 7141b56cd4650af95c7c7b86983443aed050c96a, BF16, on our GPU through vLLM v0.30.0 (vllm/vllm-openai:v0.30.0) in BF16, --generation-config auto; logic's server (small_models.py key lfm2.5-2.6b, port 18613, bariton GPU 1, #5080/#5091; ours alone after turkce's 'done') or ours on the same port and name (tools/v3/late-smallchat/serve.sh). reasons on every answer (its template has no switch or effort knob; \"low\" is sent and ignored, as LFM2.5-24B-A2B (on)), then the letter continues a prefilled Answer:; reasoning split by the server's vLLM reasoning parser qwen3 (it matters only for replies cut off before </think>: the letter is read from logprobs after the prefilled answer). Sampling: League 1's local chat rule, per request: temperature 1.0 from the chat client, everything else the server's default (generation_config.json via --generation-config auto, else vLLM neutral), no seed; it differs from logic's Logic & Math runs: logic sends temperature 0.1, top_k 50, repetition_penalty 1.1, seed 0 (our top_k/repetition_penalty come from generation_config.json, the same values; temperature 1 vs 0.1). Output cap 32,768 tokens (the chat client default, as Qwen3.8-27B (on)). Up to 16 matches and 16 requests at once, League 1's rule for its local chat setups (the server is ours alone after turkce's 'done'). Late entry v the original League 1 table (tools/v3/late-smallchat; Zeki #5064/#5071/#5073; Main's decisions 12 Nov)",
+    "device": "RTX PRO 6000 (bariton), one GPU",
+    "parallel": 16,
+    "max_matches": 16
+   }
+  },
+  {
+   "key": "lfm2.5-8b-a1b-on",
+   "source": "late-smallchat models/lfm2.5-8b-a1b-on/player.json @ 171698f84a2e45b0dd7668d5749f72dfc0ce3712 (branch late-smallchat), sha256 bff75ed7bd6ceb370ee2f8ee628eb910a0c76057503c625e0ee552e4638c1ff8",
+   "settings": {
+    "name": "LFM2.5-8B-A1B (on)",
+    "spec": "openai-compatible/lfm2.5-8b-a1b",
+    "provider": "local-vllm",
+    "quantization": "bf16",
+    "base_url": "http://127.0.0.1:18601/v1",
+    "reasoning": "low",
+    "request": {},
+    "max_tokens": 32768,
+    "top_logprobs": 20,
+    "letter_readout": "prefill",
+    "note": "LiquidAI/LFM2.5-8B-A1B @ dd83f5cb02aa2938b66bba9a9998d38d0517c1f3, BF16, on our GPU through vLLM v0.30.0 (vllm/vllm-openai:v0.30.0) in BF16, --generation-config auto; logic's server (small_models.py key lfm2.5-8b-a1b, port 18601, bariton GPU 1, #5080/#5091; ours alone after turkce's 'done') or ours on the same port and name (tools/v3/late-smallchat/serve.sh). reasons on every answer (its template has no switch or effort knob; \"low\" is sent and ignored, as LFM2.5-24B-A2B (on)), then the letter continues a prefilled Answer:; reasoning split by the server's vLLM reasoning parser qwen3 (it matters only for replies cut off before </think>: the letter is read from logprobs after the prefilled answer). Sampling: League 1's local chat rule, per request: temperature 1.0 from the chat client, everything else the server's default (generation_config.json via --generation-config auto, else vLLM neutral), no seed; it differs from logic's Logic & Math runs: logic sends temperature 0.2, top_k 80, repetition_penalty 1.05, seed 0 (our top_k/repetition_penalty come from generation_config.json, the same values; temperature 1 vs 0.2). Output cap 32,768 tokens (the chat client default, as Qwen3.8-27B (on)). Up to 16 matches and 16 requests at once, League 1's rule for its local chat setups (the server is ours alone after turkce's 'done'). Late entry v the original League 1 table (tools/v3/late-smallchat; Zeki #5064/#5071/#5073; Main's decisions 12 Nov)",
+    "device": "RTX PRO 6000 (bariton), one GPU",
+    "parallel": 16,
+    "max_matches": 16
+   }
+  },
+  {
+   "key": "lfm3-1.7b-on",
+   "source": "late-smallchat models/lfm3-1.7b-on/player.json @ 171698f84a2e45b0dd7668d5749f72dfc0ce3712 (branch late-smallchat), sha256 e8306efb0ab710d08dcba2b42d2bef51ed65cbda349c016f0a68931f942654fa",
+   "settings": {
+    "name": "LFM3-1.7B (on)",
+    "spec": "openai-compatible/lfm3-1.7b",
+    "provider": "local-llama.cpp",
+    "quantization": "bf16",
+    "base_url": "http://127.0.0.1:18605/v1",
+    "reasoning": "template default",
+    "request": {
+     "chat_template_kwargs": {
+      "enable_thinking": true
+     },
+     "reasoning_effort": null
+    },
+    "max_tokens": 32768,
+    "top_logprobs": 20,
+    "letter_readout": "prefill",
+    "note": "LiquidAI/LFM3-1.7B @ 0dc4268b561499c648c7ba7c9466bf3d8d01517a, BF16, on our GPU through llama.cpp server b12020 (official BF16 GGUF LiquidAI/LFM3-1.7B-GGUF @ cd0c74c5 LFM3-1.7B-BF16.gguf, chat template from the pinned repo; vLLM v0.30.0 lacks the architecture); logic's server (small_models.py key lfm3-1.7b, port 18605, bariton GPU 1, #5080/#5091; ours alone after turkce's 'done') or ours on the same port and name (tools/v3/late-smallchat/serve.sh). thinking on (enable_thinking true), no effort sent (reasoning_effort removed: template default); the letter is read after the reasoning from a prefilled Answer: (as Gemma 4 31B (on)); reasoning split by the server's llama.cpp --reasoning-format deepseek (it matters only for replies cut off before </think>: the letter is read from logprobs after the prefilled answer). Sampling: League 1's local chat rule, per request: temperature 1.0 from the chat client, everything else the server's default (llama.cpp defaults), no seed; it differs from logic's Logic & Math runs: logic sends temperature 0.1, top_k 50, repeat_penalty 1.1 over the whole context, top_p 1, min_p 0, seed 0. Output cap 32,768 tokens (the chat client default, as Qwen3.8-27B (on)). Up to 16 matches and 16 requests at once, League 1's rule for its local chat setups (the server is ours alone after turkce's 'done'). Late entry v the original League 1 table (tools/v3/late-smallchat; Zeki #5064/#5071/#5073; Main's decisions 12 Nov)",
+    "device": "RTX PRO 6000 (bariton), one GPU",
+    "parallel": 16,
+    "max_matches": 16
+   }
+  }
+ ],
+ "not_yet_prepared": [
+  {
+   "name": "Gemma 4 E2B (on)",
+   "why": "no prepared late-entry player.json exists (not in late-smallchat models.json); preparing it (models.json row with logic's pinned repo/revision/port, pins.sh, test.sh) comes first; nothing is invented here",
+   "source_pins": "logic small_models.py SETUPS gemma-4-e2b-it (vLLM, port 18606)"
+  },
+  {
+   "name": "Gemma 4 12B (on)",
+   "why": "no prepared late-entry player.json exists (not in late-smallchat models.json); preparing it (models.json row with logic's pinned repo/revision/port, pins.sh, test.sh) comes first; nothing is invented here",
+   "source_pins": "logic small_models.py SETUPS gemma-4-12b-it (vLLM, port 18607)"
+  },
+  {
+   "name": "Erk-14B (on)",
+   "why": "no prepared late-entry player.json exists (not in late-smallchat models.json); preparing it (models.json row with logic's pinned repo/revision/port, pins.sh, test.sh) comes first; nothing is invented here",
+   "source_pins": "logic flash_models.py erk-14b: ecloudtech/Erk-14B @ 8584b14a829d5cc803bc227f44e9012e36e8ad04 (spark2 port 19501, max-model-len 16,384, reasoning off)"
+  },
+  {
+   "name": "Qwen3-14B (on)",
+   "why": "no prepared late-entry player.json exists (not in late-smallchat models.json); preparing it (models.json row with logic's pinned repo/revision/port, pins.sh, test.sh) comes first; nothing is invented here",
+   "source_pins": "logic flash_models.py qwen3-14b: Qwen/Qwen3-14B @ 40c069824f4251a91eefaf281ebe4c544efd3e18 (spark2 port 19500, max-model-len 16,384, reasoning off)"
+  }
+ ]
+}

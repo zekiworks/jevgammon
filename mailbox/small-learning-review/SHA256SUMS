@@ -1,0 +1,17 @@
+49edf98a907b1743ae8419c286ec7c62c813de0651437136ca0fa530800bcb66  ./METADATA
+08a928ef2fb9ce6e737a262587285b4d5cbcc618e87670012db8f98ba4b5caac  ./REVIEW.md
+40519191d44eb1bc7d5b6b57d31dc1483ea0cb59768d8d296bd38dda5dcf247a  ./diffs/improve-decision-small-227ccc7-vs-d9c3cbd.diff
+cce932299eb790ec02127383f68b8fd610da4813c17494ab712dfad063e17b0e  ./diffs/improve-decision-small-ec21352-vs-d9c3cbd.diff
+293abd019e4649369c7ebad2b31110fdf2407ed8c06e24416e4118cead350dd6  ./diffs/improve-small-1d3f9bc-vs-a76fdc9.diff
+c175c518c9284054658f636a742dccc3f24e311bc47e0319914c719ebbdc63d7  ./diffs/improve-small-2c72e14-vs-a76fdc9.diff
+20eb62c31dbcff958559dcb388432d5dce531eae3e33ae3ef0764437d8c20437  ./improve.py/improve.py@1d3f9bc
+8c4d7033c9805317c1ea794b8d6c29cd02f3ac5a989e93db18341acf719a865f  ./improve.py/improve.py@2c72e14
+90fe6b0ead90ff4d3d32ec80e5932a8c113456b05ee76e6bb9c5e39a56df9875  ./improve.py/improve.py@a76fdc9
+3aca555f41b533e0a85d6b0d5cdc52d130b7e57fc1c35bf5bf1aabc37a296ba6  ./tests/test_decision-227ccc7.txt
+4018c0d35883b95ad074fa9e372df1054eb70b8e14151c8810bdbad81d90533a  ./tests/test_decision-ec21352.txt
+0c5dfc78ae7f336ead52e87a74d2fc98b2e1c7876bd9d0c7bfc0585f99529627  ./tests/test_improve-1d3f9bc.txt
+078938337fe8ce5e5ef0360429773f64b6bb78bc5f0e9148d62635363ceb4b8f  ./tests/test_improve-2c72e14.txt
+cc3a2aa860454e5102842aab9b1febcf2fcdbcc91a52bf7b7fc573c242b1a236  ./v3-players/rows.json
+480da84b3ea50ba549b1b826c1a7c735617fd23e65dbfb3a889eeefbaa858ede  ./v3-players/test_v3_players-output.txt
+dd44bba6ea8f58ca6cccbbdb56f6a2724c2cce31b030408e813396b351a591bf  ./v3-players/test_v3_players.py
+5e777abab0e86adbf8ec1d69d577bb7df04b73f5ea114d29261d614b75e41488  ./v3-players/v3_players.py

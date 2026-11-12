@@ -1,0 +1,52 @@
+test_kv_capacity_must_hold_four_full_sequences (workspace.improve.test_improve.FitCheck.test_kv_capacity_must_hold_four_full_sequences) ... ok
+test_a_fresh_key_limit_on_the_highest_id_retry_pauses (workspace.improve.test_improve.KeyLimit.test_a_fresh_key_limit_on_the_highest_id_retry_pauses)
+Zeki #3285: the re-asked position reuses the highest row id; its fresh failure is still this asking's. ... /home/cbasaran/.cache/smallplan/rev/chat-1d3f9bc/workspace/improve/test_improve.py:532: ResourceWarning: unclosed file <_io.TextIOWrapper name='/home/cbasaran/code/jevgammon/workspace/learning-pilot/test_positions.jsonl' mode='r' encoding='UTF-8'>
+  ids = [json.loads(line)["id"] for line in open(I.TEST_POSITIONS)]
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_a_key_limit_printed_on_stdout_only_is_detected (workspace.improve.test_improve.KeyLimit.test_a_key_limit_printed_on_stdout_only_is_detected) ... ok
+test_a_successful_resume_ignores_stale_failures (workspace.improve.test_improve.KeyLimit.test_a_successful_resume_ignores_stale_failures) ... ok
+test_an_ordinary_403_is_a_failed_request_as_before (workspace.improve.test_improve.KeyLimit.test_an_ordinary_403_is_a_failed_request_as_before) ... ok
+test_key_limit_pauses_at_once_and_resume_reasks_only_failed_positions (workspace.improve.test_improve.KeyLimit.test_key_limit_pauses_at_once_and_resume_reasks_only_failed_positions) ... ok
+test_key_limit_texts (workspace.improve.test_improve.KeyLimit.test_key_limit_texts) ... ok
+test_context_is_the_pilots (workspace.improve.test_improve.Lessons.test_context_is_the_pilots) ... ok
+test_cut_rule_keeps_five_lessons_and_150_words (workspace.improve.test_improve.Lessons.test_cut_rule_keeps_five_lessons_and_150_words) ... ok
+test_cut_rule_without_dash_lines_and_empty (workspace.improve.test_improve.Lessons.test_cut_rule_without_dash_lines_and_empty) ... ok
+test_lesson_prompt_and_seeds_are_the_pilots (workspace.improve.test_improve.Lessons.test_lesson_prompt_and_seeds_are_the_pilots) ... ok
+test_shares_over_valid_answers_with_counts (workspace.improve.test_improve.Metrics.test_shares_over_valid_answers_with_counts) ... ok
+test_a_rejected_route_stops_before_any_step (workspace.improve.test_improve.Money.test_a_rejected_route_stops_before_any_step) ... STOPPED qwen3.8-flash-off: route check: {"reason": "wrong model"}
+ok
+test_billed_counts_settled_lost_and_in_flight (workspace.improve.test_improve.Money.test_billed_counts_settled_lost_and_in_flight) ... ok
+test_billed_players_carry_the_route_guard (workspace.improve.test_improve.Money.test_billed_players_carry_the_route_guard) ... ok
+test_ledger_cap_takes_the_binding_limit (workspace.improve.test_improve.Money.test_ledger_cap_takes_the_binding_limit) ... ok
+test_money_gate_stops_pauses_or_caps (workspace.improve.test_improve.Money.test_money_gate_stops_pauses_or_caps) ... ok
+test_plan_identity_is_stored_and_resume_refuses_a_changed_plan (workspace.improve.test_improve.Money.test_plan_identity_is_stored_and_resume_refuses_a_changed_plan) ... ok
+test_route_check (workspace.improve.test_improve.Money.test_route_check) ... ok
+test_rule_a_projection_at_the_boundary (workspace.improve.test_improve.Money.test_rule_a_projection_at_the_boundary) ... ok
+test_rule_b_and_balance (workspace.improve.test_improve.Money.test_rule_b_and_balance) ... ok
+test_run_stops_or_pauses_by_the_binding_limit_and_applies_rule_a (workspace.improve.test_improve.Money.test_run_stops_or_pauses_by_the_binding_limit_and_applies_rule_a) ... STOPPED qwen3.8-flash-off: rule (a): projected full cost $3.95 (5 x S1 $0.70 + 3 x E1 $0.15) > 1.5 x estimate $2.30 = $3.45
+qwen3.8-flash-off: stopped: rule (a): projected full cost $3.95 (5 x S1 $0.70 + 3 x E1 $0.15) > 1.5 x estimate $2.30 = $3.45
+PAUSED glm-5.3-on: balance $5.50 - $5 reserve does not cover the step's expected cost $1.75
+STOPPED glm-5.3-on: E1: rule (a) limit reached before a request: BUDGET CAP: refused
+ok
+test_share_limit_pauses (workspace.improve.test_improve.Money.test_share_limit_pauses) ... ok
+test_step_estimate_switches_to_measured_after_the_cost_check (workspace.improve.test_improve.Money.test_step_estimate_switches_to_measured_after_the_cost_check) ... ok
+test_a_model_claimed_by_another_lane_is_refused (workspace.improve.test_improve.Schedule.test_a_model_claimed_by_another_lane_is_refused) ... ok
+test_a_started_model_without_a_run_process_is_waiting_for_its_turn (workspace.improve.test_improve.Schedule.test_a_started_model_without_a_run_process_is_waiting_for_its_turn)
+Main (Ümit #3465): a model whose lane was reordered mid-E1 is waiting, not running; kept answers stay. ... ok
+test_every_exported_reason_passes_the_site_text_pattern (workspace.improve.test_improve.Schedule.test_every_exported_reason_passes_the_site_text_pattern)
+Main: models[].reason must match the site's TEXT pattern (improve_validate: [^<>&\x00-\x1f]{1,400}). ... ok
+test_every_plan_model_has_a_progress_object (workspace.improve.test_improve.Schedule.test_every_plan_model_has_a_progress_object) ... ok
+test_export_keeps_writing_when_a_pause_has_no_page_text (workspace.improve.test_improve.Schedule.test_export_keeps_writing_when_a_pause_has_no_page_text) ... improve export: qwen3.8-flash-off: no page reason for a pause: 'an unforeseen pause'; keeping its previous entry
+ok
+test_restarted_series_is_archived_with_new_names (workspace.improve.test_improve.Schedule.test_restarted_series_is_archived_with_new_names) ... ok
+test_run_active_finds_a_run_process (workspace.improve.test_improve.Schedule.test_run_active_finds_a_run_process) ... ok
+test_step_order_and_next_step (workspace.improve.test_improve.Schedule.test_step_order_and_next_step) ... ok
+test_a_row_without_settings_exports_but_cannot_run (workspace.improve.test_improve.SmallModels.test_a_row_without_settings_exports_but_cannot_run) ... ok
+test_every_small_chat_row_is_local_unbilled_with_its_served_name_and_in_the_amendment (workspace.improve.test_improve.SmallModels.test_every_small_chat_row_is_local_unbilled_with_its_served_name_and_in_the_amendment) ... ok
+test_the_local_lane_serves_it_with_logics_command_on_the_lanes_card (workspace.improve.test_improve.SmallModels.test_the_local_lane_serves_it_with_logics_command_on_the_lanes_card) ... ok
+
+----------------------------------------------------------------------
+Ran 35 tests in 51.186s
+
+OK

@@ -1,0 +1,57 @@
+test_a_changed_cohort_refuses_the_resume_and_money_needs_an_amendment (workspace.improve.test_decision.Binding.test_a_changed_cohort_refuses_the_resume_and_money_needs_an_amendment) ... ok
+test_an_arm_is_bound_to_the_published_addendum (workspace.improve.test_decision.Binding.test_an_arm_is_bound_to_the_published_addendum) ... ok
+test_an_unpublished_addendum_binds_nothing (workspace.improve.test_decision.Binding.test_an_unpublished_addendum_binds_nothing) ... ok
+test_the_player_carries_gate_route_check_and_this_experiments_ledger (workspace.improve.test_decision.Configs.test_the_player_carries_gate_route_check_and_this_experiments_ledger) ... ok
+test_the_writer_is_the_live_plans_lesson_call (workspace.improve.test_decision.Configs.test_the_writer_is_the_live_plans_lesson_call) ... ok
+test_codes (workspace.improve.test_decision.ExitCodes.test_codes) ... ok
+test_a_billed_worker_outside_the_unit_refuses (workspace.improve.test_decision.Fence.test_a_billed_worker_outside_the_unit_refuses) ... ok
+test_changed_chat_code_or_queue_refuses (workspace.improve.test_decision.Fence.test_changed_chat_code_or_queue_refuses) ... ok
+test_one_billed_worker_in_the_unit_is_allowed (workspace.improve.test_decision.Fence.test_one_billed_worker_in_the_unit_is_allowed) ... ok
+test_the_admission_runs_the_fence (workspace.improve.test_decision.Fence.test_the_admission_runs_the_fence) ... ok
+test_two_billed_workers_refuse (workspace.improve.test_decision.Fence.test_two_billed_workers_refuse) ... ok
+test_unreadable_or_ambiguous_state_refuses (workspace.improve.test_decision.Fence.test_unreadable_or_ambiguous_state_refuses) ... ok
+test_a_busy_card_is_refused_and_a_wrong_server_is_skipped_and_stopped (workspace.improve.test_decision.LocalScript.test_a_busy_card_is_refused_and_a_wrong_server_is_skipped_and_stopped) ... ok
+test_sequence (workspace.improve.test_decision.LocalScript.test_sequence) ... ok
+test_a_lost_chat_reservation_stays_a_balance_liability (workspace.improve.test_decision.Money.test_a_lost_chat_reservation_stays_a_balance_liability) ... ok
+test_a_zero_allowance_keeps_the_arm_pending_and_calls_nothing (workspace.improve.test_decision.Money.test_a_zero_allowance_keeps_the_arm_pending_and_calls_nothing) ... decision/jev-1.14.0-notes: pending: D6 open: hosted spending outside OpenRouter not authorised; nothing called
+ok
+test_a_zero_allowance_refuses_every_billed_hosted_step (workspace.improve.test_decision.Money.test_a_zero_allowance_refuses_every_billed_hosted_step) ... ok
+test_an_exhausted_nace_subcap_refuses_even_a_mocked_probe (workspace.improve.test_decision.Money.test_an_exhausted_nace_subcap_refuses_even_a_mocked_probe) ... ok
+test_an_open_chat_step_capped_under_an_old_share_blocks_admission_until_it_ends (workspace.improve.test_decision.Money.test_an_open_chat_step_capped_under_an_old_share_blocks_admission_until_it_ends) ... ok
+test_an_orphan_provider_ledger_counts_in_its_subcap_and_an_unattributed_one_refuses (workspace.improve.test_decision.Money.test_an_orphan_provider_ledger_counts_in_its_subcap_and_an_unattributed_one_refuses) ... ok
+test_an_unbilled_chat_reservation_does_not_reuse_the_openrouter_reserve (workspace.improve.test_decision.Money.test_an_unbilled_chat_reservation_does_not_reuse_the_openrouter_reserve) ... ok
+test_concurrent_admissions_cannot_jointly_pass_the_lane_cap (workspace.improve.test_decision.Money.test_concurrent_admissions_cannot_jointly_pass_the_lane_cap) ... ok
+test_each_chat_ledger_is_read_once_per_admission (workspace.improve.test_decision.Money.test_each_chat_ledger_is_read_once_per_admission) ... ok
+test_every_decision_ledger_counts_in_the_110_and_a_chat_share_must_leave_room (workspace.improve.test_decision.Money.test_every_decision_ledger_counts_in_the_110_and_a_chat_share_must_leave_room) ... ok
+test_open_chat_step_caps_are_liabilities_of_the_total_and_the_balance (workspace.improve.test_decision.Money.test_open_chat_step_caps_are_liabilities_of_the_total_and_the_balance) ... ok
+test_p1_counts_only_under_the_current_effective_settings (workspace.improve.test_decision.Money.test_p1_counts_only_under_the_current_effective_settings) ... ok
+test_p1_needs_fresh_successful_answers_and_never_reuses_an_earlier_attempt (workspace.improve.test_decision.Money.test_p1_needs_fresh_successful_answers_and_never_reuses_an_earlier_attempt) ... ok
+test_the_openrouter_reserve_is_not_reused_across_writer_allocations (workspace.improve.test_decision.Money.test_the_openrouter_reserve_is_not_reused_across_writer_allocations) ... ok
+test_unreadable_accounting_refuses (workspace.improve.test_decision.Money.test_unreadable_accounting_refuses) ... ok
+test_writer_steps_check_the_openrouter_balance (workspace.improve.test_decision.Money.test_writer_steps_check_the_openrouter_balance) ... ok
+test_sequence (workspace.improve.test_decision.Script.test_sequence) ... ok
+test_best_plays_invalid_and_unscored_are_not_eligible (workspace.improve.test_decision.Selector.test_best_plays_invalid_and_unscored_are_not_eligible) ... ok
+test_block_format_and_empty (workspace.improve.test_decision.Selector.test_block_format_and_empty) ... ok
+test_deterministic_over_input_order (workspace.improve.test_decision.Selector.test_deterministic_over_input_order) ... ok
+test_largest_loss_first_with_the_tie_break (workspace.improve.test_decision.Selector.test_largest_loss_first_with_the_tie_break) ... ok
+test_position_block_is_the_league_states_last (workspace.improve.test_decision.Selector.test_position_block_is_the_league_states_last) ... ok
+test_test_positions_are_removed_before_selection (workspace.improve.test_decision.Selector.test_test_positions_are_removed_before_selection) ... ok
+test_new_rows_wait_for_cash_render_check_or_a_record_and_old_rows_are_unchanged (workspace.improve.test_decision.SmallAmendment.test_new_rows_wait_for_cash_render_check_or_a_record_and_old_rows_are_unchanged) ... ok
+test_the_amendment_lists_its_rows_and_its_source (workspace.improve.test_decision.SmallAmendment.test_the_amendment_lists_its_rows_and_its_source) ... ok
+test_a_spent_subcap_keeps_drex_max_pending (workspace.improve.test_decision.States.test_a_spent_subcap_keeps_drex_max_pending) ... ok
+test_an_incomplete_marker_from_the_runner_stops_the_arm (workspace.improve.test_decision.States.test_an_incomplete_marker_from_the_runner_stops_the_arm) ... ok
+test_guard_refusals_make_arms_not_tested (workspace.improve.test_decision.States.test_guard_refusals_make_arms_not_tested) ... ok
+test_liquid_runs_flagged_and_its_guard_fails_closed_without_a_documented_limit (workspace.improve.test_decision.States.test_liquid_runs_flagged_and_its_guard_fails_closed_without_a_documented_limit) ... ok
+test_rows_without_an_arm_stay_visible_with_their_reason (workspace.improve.test_decision.States.test_rows_without_an_arm_stay_visible_with_their_reason) ... ok
+test_the_glide_renderer_finds_a_missing_block_and_the_servers_refusal (workspace.improve.test_decision.States.test_the_glide_renderer_finds_a_missing_block_and_the_servers_refusal)
+The real GLiDE renderer (its server's venv and snapshot tokenizer, CPU, no weights) on a tiny request. ... ok
+test_the_render_check_passes_each_arm_on_its_own_cases (workspace.improve.test_decision.States.test_the_render_check_passes_each_arm_on_its_own_cases)
+Lr with a stub renderer: every stored request (the largest included) with no block and each arm's block; ... ok
+test_the_largest_notes_block_is_within_the_cut_rule (workspace.improve.test_decision.Writer.test_the_largest_notes_block_is_within_the_cut_rule) ... ok
+test_the_pilot_prompt_is_unchanged (workspace.improve.test_decision.Writer.test_the_pilot_prompt_is_unchanged) ... ok
+test_the_writer_never_reads_a_test_position (workspace.improve.test_decision.Writer.test_the_writer_never_reads_a_test_position) ... ok
+
+----------------------------------------------------------------------
+Ran 49 tests in 9.099s
+
+OK

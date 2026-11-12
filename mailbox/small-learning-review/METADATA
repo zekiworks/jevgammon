@@ -1,0 +1,6 @@
+owner: jevgammon (agent SmallLearningPlan for Main)
+created: 2026-11-12
+what: bounded review package for the small-model learning amendment (Zeki #5697, #5699): diffs of improve-small and improve-decision-small, chat improve.py at a76fdc9/1d3f9bc/2c72e14 with sha256, fence pin before/after, retained test outputs, coupled merge + rollback order, KnowLine server pin, path (b) v3.db players rows (rows.json, insert/rollback script, scratch-DB test), cash note; nothing written to production
+reason: Zeki #5697 / #5699 via Main
+delete when: after both branches are merged or dropped and Zeki's review is closed
+written: 2026-11-12T19:17:14Z

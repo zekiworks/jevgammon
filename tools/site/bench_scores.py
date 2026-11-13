@@ -3,9 +3,10 @@ bench-scores.json at the site's root, in the three benches' shared schema (turkc
 
 One row per model row of the leaderboard (story.leaderboard_rows: the model's leaderboard setup, late entries
 included); the programs (GNUbg weak, Safest, Random) are left out. Every number is the setup's stored error rate
-(analysis.quality, the leaderboard's own): score_0_100 = 100 x (1 - error rate / Random's error rate in the same
-league), Random's being the leaderboard's Random row of that league (played, or computed on its positions; a late
-entry: the league whose field it played); no floor (turkce #4076: below 0 = worse than a random legal play).
+(analysis.quality, the leaderboard's own): score_0_100 = 100 x (1 - error rate / Random's error rate on the same
+positions), Random's being the leaderboard's Random row of that league (played, or computed on its positions); a late
+entry: Random computed on the entrant's own scored positions in its late-entry matches against the league whose field
+it played (Ümit #6225); no floor (turkce #4076: below 0 = worse than a random legal play).
 calibration_error stays null until Ümit decides its definition; improvement_points is "Did they improve?"'s change
 in risks found for a model with a verdict."""
 
@@ -151,6 +152,12 @@ def league_of(x) -> int:
     return x["late"]["field_league"] if x["late"] else x["lg"]["id"]
 
 
+def random_of(x, rnd: dict[int, float]) -> float:
+    """Random's error rate the row is scored against: its league's Random row; a late entry: Random computed on its own
+    scored positions (build.late_entry_summaries, analysis.references), the positions of its own error rate."""
+    return x["late"]["random_same_positions"]["error_rate"] if x["late"] else rnd[league_of(x)]
+
+
 def build(S) -> dict:
     model_rows, prog_rows = ST.leaderboard_rows(S)
     rnd = randoms(prog_rows)
@@ -166,7 +173,9 @@ def build(S) -> dict:
         if x["late"]:
             e = x["late"]
             notes.append(f"late entry: its own decisions in late-entry matches against League {lg}'s field "
-                         f"(different positions from the league's); scored against League {lg}'s Random")
+                         f"(different positions from the league's); scored against Random computed on those same "
+                         f"positions (error rate {e['random_same_positions']['error_rate']:.1f} on "
+                         f"{e['random_same_positions']['positions']} positions)")
             # Coverage carried to All benches so a partial entry never reads as complete (Zeki #4657); an entry whose
             # only unplayed pairs are outside the requested scope (Ümit #5220) is complete but keeps its count.
             gone = e.get("not_played") or []
@@ -200,16 +209,17 @@ def build(S) -> dict:
             maker=H.maker(x["name"])[0],
             kind=ST.model_type(S, x),
             params_total=p["total_b"], params_active=p["active_b"] if p["moe"] else p["total_b"], quantization=quant,
-            score_0_100=score(q.get("error_rate"), rnd[lg]),
+            score_0_100=score(q.get("error_rate"), random_of(x, rnd)),
             raw=dict(metric=METRIC, value=q.get("error_rate"), questions=q.get("scored"), options=None),
             calibration_error=None, improvement_points=imp, runs=[f"backgammon:{m['slug']}"], notes="; ".join(notes)))
     rows.sort(key=lambda r: (r["score_0_100"] is None, -(r["score_0_100"] or 0), r["name"]))
     per = ", ".join(f"League {k}: {v:.1f}" for k, v in sorted(rnd.items()))
     return dict(
         bench="backgammon", title="Backgammon", url=S["base"], updated=S["as_of"],
-        score=dict(zero=f"0 = a random legal play's error rate in the same league ({per}; late entries: the league "
-                        "whose field they played); below 0 = worse than a random legal play. score = 100 × (1 − "
-                        "error rate / Random's error rate in that league); error rate (PR) = 500 × mean GNUbg equity "
+        score=dict(zero=f"0 = a random legal play's error rate on the same positions ({per}; a late entry: Random "
+                        "computed on its own positions against the field it played); below 0 = worse than a random "
+                        "legal play. score = 100 × (1 − error rate / Random's error rate on those positions); error "
+                        "rate (PR) = 500 × mean GNUbg equity "
                         "loss per decision",
                    hundred="100 = error rate 0: the engine's best play on every decision"),
         models=rows)
@@ -228,8 +238,8 @@ def problems(S, doc) -> list[str]:
         return [f"{PATH}: bench/title/url/updated/score/models of the wrong type"]
     model_rows, prog_rows = ST.leaderboard_rows(S)
     rnd = randoms(prog_rows)
-    expect = {row_key(x): ((x["q"] or {}).get("error_rate"), league_of(x), name_and_tag(x["name"], x["ds"]))
-              for x, *_ in model_rows}
+    expect = {row_key(x): ((x["q"] or {}).get("error_rate"), league_of(x), name_and_tag(x["name"], x["ds"]),
+                           random_of(x, rnd)) for x, *_ in model_rows}
     if len(expect) != len(model_rows):
         out.append(f"{PATH}: two leaderboard model rows with one model_key")
     unused = sorted((set(FEED_ROWS) | set(CHECKPOINTS)) - {x["name"] for x, *_ in model_rows})
@@ -262,15 +272,15 @@ def problems(S, doc) -> list[str]:
         key = r["model_key"]
         if key not in expect:
             continue
-        er, lg, (want_name, parts) = expect[key]
+        er, lg, (want_name, parts), base = expect[key]
         if (name, r["tag"]) != (want_name, tag_text(parts)):
             out.append(f"{PATH}: row {key!r}: name and tag {name!r} / {r['tag']!r}, the site shows {want_name!r} / "
                        f"{tag_text(parts)!r}")
-        want = score(er, rnd[lg])
+        want = score(er, base)
         if raw["value"] != er or not r["notes"].startswith(f"League {lg};") or (want is None) != (
                 r["score_0_100"] is None) or (want is not None and want != r["score_0_100"]):
             out.append(f"{PATH}: row {key!r}: score {r['score_0_100']} / error rate {raw['value']}, the leaderboard's "
-                       f"error rate {er} against League {lg}'s Random gives {want}")
+                       f"error rate {er} against its Random ({base}) gives {want}")
         if r["improvement_points"] is not None and r["improvement_points"] != round(r["improvement_points"], 2):
             out.append(f"{PATH}: row {key!r}: improvement_points not rounded to 2 decimals")
     keys = sorted(r.get("model_key") for r in doc["models"] if isinstance(r, dict))

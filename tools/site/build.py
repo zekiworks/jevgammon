@@ -229,6 +229,10 @@ def late_entry_summaries(entries: list[dict]) -> list[dict]:
         closed = e["played"] + sum(g["out_of_scope"] for g in not_played)
         s = dict(e, status=PUBLISHED if closed == e["total"] else PROVISIONAL, record=record,
                  not_played=not_played, **A.dataset_summary(LATE_ENTRY, decs, [e["name"]])[e["name"]])
+        # Random computed on the entrant's own scored positions (analysis.references, B6.4's computed Random, main
+        # margin): what its All benches score is measured against (bench_scores.random_of, Ümit #6225).
+        ref = A.references(LATE_ENTRY, decs, [])["Random (computed)"]
+        s["random_same_positions"] = dict(error_rate=ref["risk"]["main"]["error_rate"], positions=ref["positions"])
         # Price: its setups.json entry's (label, source, date read); billed at another price: that figure too.
         price = (meta.get((LATE_ENTRY, e["name"])) or {}).get("price")
         s["price"] = price

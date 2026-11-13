@@ -91,6 +91,9 @@ pub struct Options {
     /// Learning pilot: read before every play call; its text, when not empty, replaces
     /// `prompt_note`.
     pub prompt_note_file: Option<std::path::PathBuf>,
+    /// Prefill text with reasoning on, `{reasoning}` standing for the reasoning (default
+    /// `<think>{reasoning}</think>Answer:`).
+    pub reasoning_prefill: Option<String>,
     /// Rate-limit pacing shared with the other players of the group.
     pub pacer: Option<Arc<super::Pacer>>,
     /// Hard spending cap (OpenAI-compatible servers): every attempt reserves its worst case.
@@ -535,6 +538,20 @@ pub fn free_text_request(route: Route, model: &str, options: &Options, system: &
     }
 }
 
+/// The assistant text the letter continues after the reasoning: `layout` with `{reasoning}`
+/// replaced by the reasoning without its outer newlines, or the reasoning-off prefill when
+/// that is empty (a template that re-renders reasoning drops an empty block); without a
+/// layout `<think>REASONING</think>Answer:`, the reasoning as returned.
+fn reasoned_prefill(layout: Option<&str>, answer_prefix: Option<&str>, reasoning: &str) -> String {
+    match layout {
+        Some(_) if reasoning.trim_matches('\n').is_empty() => {
+            answer_prefix.unwrap_or(ANSWER_PREFIX).to_owned()
+        }
+        Some(layout) => layout.replace("{reasoning}", reasoning.trim_matches('\n')),
+        None => format!("<think>{reasoning}</think>{ANSWER_PREFIX}"),
+    }
+}
+
 /// JSON schema of a one-letter answer among `count` options.
 fn letter_schema(count: usize) -> Value {
     json!({
@@ -734,9 +751,10 @@ impl LlmClient {
                 });
                 let completion = self.call(&body, req.retry, decision).await?;
                 constrained = self.constrained_letter(&completion, count, decision);
-                format!(
-                    "<think>{}</think>{ANSWER_PREFIX}",
-                    completion.reasoning.unwrap_or_default()
+                reasoned_prefill(
+                    self.options.reasoning_prefill.as_deref(),
+                    self.options.answer_prefix.as_deref(),
+                    &completion.reasoning.unwrap_or_default(),
                 )
             }
             None => self
@@ -1844,6 +1862,7 @@ mod tests {
                 answer_prefix: None,
                 prompt_note: None,
                 prompt_note_file: None,
+                reasoning_prefill: None,
                 pacer: None,
                 budget: None,
                 expect_route: None,
@@ -1904,6 +1923,25 @@ mod tests {
         assert!(parse_xai(r#"{"status": "incomplete", "output": []}"#).is_err());
     }
 
+    /// Reasoning on: the default prefill keeps the reasoning as returned; a layout gets it
+    /// without its outer newlines (MiniCPM5's template re-renders it so), and an empty
+    /// reasoning gets the reasoning-off prefill (such a template drops an empty block).
+    #[test]
+    fn reasoned_prefill_follows_the_layout() {
+        assert_eq!(
+            reasoned_prefill(None, None, "\nR\n"),
+            "<think>\nR\n</think>Answer:"
+        );
+        assert_eq!(reasoned_prefill(None, None, ""), "<think></think>Answer:");
+        let minicpm = Some("<think>\n{reasoning}\n</think>\n\nAnswer:");
+        assert_eq!(
+            reasoned_prefill(minicpm, None, "\n\nR1\nR2\n"),
+            "<think>\nR1\nR2\n</think>\n\nAnswer:"
+        );
+        assert_eq!(reasoned_prefill(minicpm, None, "\n"), "Answer:");
+        assert_eq!(reasoned_prefill(minicpm, Some("X:"), ""), "X:");
+    }
+
     /// Close choices, stage B: on every route the prediction request is the play request with
     /// only the user text and the answer format changed (same model, system prompt, reasoning
     /// setting, temperature, token limit and extra fields).
@@ -1918,6 +1956,7 @@ mod tests {
             answer_prefix: None,
             prompt_note: None,
             prompt_note_file: None,
+            reasoning_prefill: None,
             pacer: None,
             budget: None,
             expect_route: None,
@@ -2049,6 +2088,7 @@ mod tests {
             answer_prefix: None,
             prompt_note: None,
             prompt_note_file: None,
+            reasoning_prefill: None,
             pacer: None,
             budget: None,
             expect_route: None,
@@ -2094,6 +2134,7 @@ mod tests {
             answer_prefix: None,
             prompt_note: None,
             prompt_note_file: None,
+            reasoning_prefill: None,
             pacer: None,
             budget: None,
             expect_route: None,
@@ -2176,6 +2217,7 @@ mod tests {
                 answer_prefix: None,
                 prompt_note: None,
                 prompt_note_file: None,
+                reasoning_prefill: None,
                 pacer: None,
                 budget: None,
                 expect_route: Some(ExpectRoute {
@@ -2372,6 +2414,7 @@ mod tests {
                 answer_prefix: None,
                 prompt_note: None,
                 prompt_note_file: None,
+                reasoning_prefill: None,
                 pacer: None,
                 budget: None,
                 expect_route: Some(ExpectRoute {

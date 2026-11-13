@@ -3,9 +3,11 @@
 # smallchat.py's read-only config read): the stub listens on 127.0.0.1:STUB_PORT (default 28600 + n), test.sh gets it
 # through SMALLCHAT_URL, and pins.sh's pinned() sees the stub as the pinned server: for llama.cpp setups the stub's
 # command line carries llama-server's pinned arguments (pgrep), for vLLM setups a docker shim first on PATH reports
-# a container with the pinned arguments (the real docker is never called). Exit 0 when every KEY's test passed and
-# the stub refused nothing.
-#   tools/v3/late-smallchat/stub_test.sh KEY...      (STUB_PYTHON: a python with transformers, default d1-2b's venv)
+# a container with the pinned arguments (the real docker is never called). The runner is test.sh's (SMALLCHAT_BIN).
+# KEY: expected to pass (test.sh exit 0, nothing refused); KEY=refused: expected to fail with at least one request
+# refused (regression: MiniCPM5-2B (on) with a runner that ignores reasoning_prefill gets vLLM's 400). Exit 0 when
+# every KEY behaved as expected.
+#   tools/v3/late-smallchat/stub_test.sh KEY[=refused]...  (STUB_PYTHON: a python with transformers, default d1-2b's venv)
 set -uo pipefail
 T=$(dirname "$(readlink -f "$0")")
 PY=${STUB_PYTHON:-$HOME/code/d1-2b/.venv/bin/python}
@@ -13,7 +15,8 @@ HUB=$HOME/.cache/huggingface/hub
 WORK=$HOME/.cache/smallchat/stub-test
 mkdir -p "$WORK/bin"
 fail=0 n=0
-for KEY in "$@"; do
+for ARG in "$@"; do
+  KEY=${ARG%=refused}; EXPECT=pass; [[ $ARG == *=refused ]] && EXPECT=refused
   n=$((n + 1)); PORT=$((28600 + n)); LOG=$WORK/$KEY.jsonl; : >"$LOG"
   MODEL=${KEY%-on}; MODEL=${MODEL%-off}
   eval "$(python3 - "$T/models.json" "$MODEL" <<'EOF'
@@ -45,6 +48,10 @@ EOF
   python3 -c 'import json,sys
 for l in open(sys.argv[1]):
     r = json.loads(l); print("  request: readout=%(readout)s prompt_tokens=%(prompt_tokens)s max_tokens=%(max_tokens)s refused=%(refused)s" % r)' "$LOG"
-  if (( rc == 0 && refused == 0 )); then echo "$KEY: STUB TEST PASSED"; else echo "$KEY: STUB TEST FAILED (test.sh $rc, refused $refused)"; fail=1; fi
+  if [[ $EXPECT == pass ]] && (( rc == 0 && refused == 0 )); then echo "$KEY: STUB TEST PASSED"
+  elif [[ $EXPECT == refused ]] && (( rc != 0 )) &&
+       python3 -c 'import json,sys; sys.exit(not any((json.loads(l)["refused"] or "").startswith("chat template:") for l in open(sys.argv[1])))' "$LOG"
+  then echo "$KEY: STUB TEST PASSED (refused by the chat template as expected)"
+  else echo "$KEY: STUB TEST FAILED (expected $EXPECT; test.sh $rc, refused $refused)"; fail=1; fi
 done
 exit $fail

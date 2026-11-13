@@ -9,7 +9,10 @@ B the highest probability), and refuses with 400 what the setup must never send:
   - chat_template_kwargs.enable_thinking other than player.json's, or a reasoning_effort field;
   - (on) request 1: max_tokens other than player.json's, no letter schema in response_format;
   - the read-out request: not continue_final_message true / add_generation_prompt false / max_tokens 1 / logprobs with
-    player.json's top_logprobs, or (on) an assistant message that is not <think>...</think>Answer:;
+    player.json's top_logprobs, or (on) an assistant message other than the prefill of the stub's reasoning
+    ("\nstub reasoning\n"): player.json's reasoning_prefill layout, else <think>REASONING</think>Answer:;
+  - a chat template error (the prompt rendered with transformers as vLLM v0.30.0 does: continue_final_message refused
+    when the template rewrites the prefilled message), as vLLM answers it: 400;
   - prompt tokens + max_tokens over CONTEXT (69,632: logic's servers, 65,536 + 4,096 per sequence or llama.cpp slot),
     counted with the model's own tokenizer and the pinned repo's chat_template.jinja (the template the server applies),
     as vLLM refuses (llama.cpp would cut the reply instead; the client must never get there).
@@ -31,6 +34,9 @@ MODEL = KEY.removesuffix("-on").removesuffix("-off")
 PIN = json.loads((HERE / "models.json").read_text())[MODEL]
 SERVED = PLAYER["spec"].split("/", 1)[1]
 THINKING = PLAYER["request"]["chat_template_kwargs"]["enable_thinking"]
+REASONING = "\nstub reasoning\n"  # with outer newlines, as Qwen-style parsers often return it
+PREFILL = (PLAYER["reasoning_prefill"].replace("{reasoning}", REASONING.strip("\n")) if "reasoning_prefill" in PLAYER
+           else f"<think>{REASONING}</think>Answer:")
 CONTEXT = 69632
 SNAP = Path.home() / ".cache/huggingface/hub" / f"models--{PIN['repo'].replace('/', '--')}" / "snapshots" / PIN["rev"]
 TOKENIZER = AutoTokenizer.from_pretrained(SNAP)
@@ -61,8 +67,7 @@ def check(body):
                  (body.get("logprobs") is True, "read-out without logprobs"),
                  (body.get("top_logprobs") == PLAYER["top_logprobs"], "read-out top_logprobs differs from player.json"),
                  (last["role"] == "assistant" and last["content"].endswith("Answer:"), "no prefilled Answer:"),
-                 (not THINKING or (last["content"].startswith("<think>") and "</think>Answer:" in last["content"]),
-                  "(on) prefill is not <think>...</think>Answer:")]
+                 (not THINKING or last["content"] == PREFILL, f"(on) prefill is not {PREFILL!r}")]
     else:
         schema = (body.get("response_format") or {}).get("json_schema", {}).get("schema", {})
         rules = [(not THINKING or body.get("max_tokens") == PLAYER["max_tokens"], "max_tokens differs from player.json"),
@@ -97,8 +102,8 @@ class Handler(BaseHTTPRequestHandler):
         reason, readout = check(body)
         try:
             tokens = prompt_tokens(body)
-        except ValueError as error:  # vLLM answers a chat template error with 400
-            tokens, reason = None, reason or f"chat template: {str(error).split('Rendered chat')[0].strip()}"
+        except ValueError as error:  # vLLM answers a chat template error with 400 (reported before the stub's rules)
+            tokens, reason = None, f"chat template: {str(error).split('Rendered chat')[0].strip()}"
         if reason is None and tokens + body.get("max_tokens", 0) > CONTEXT:
             reason = f"{tokens} prompt tokens + max_tokens {body.get('max_tokens')} > context {CONTEXT}"
         with LOCK, LOG.open("a") as log:
@@ -113,7 +118,7 @@ class Handler(BaseHTTPRequestHandler):
             logprobs = {"content": [{"token": "B", "logprob": -0.2, "top_logprobs": top}]}
         else:
             message = {"role": "assistant", "content": '{"choice": "B"}',
-                       "reasoning_content": "stub reasoning" if THINKING else None}
+                       "reasoning_content": REASONING if THINKING else None}
             logprobs = None
         self.send(200, {"object": "chat.completion", "model": SERVED, "usage": usage, "choices": [
             {"index": 0, "message": message, "logprobs": logprobs, "finish_reason": "stop"}]})

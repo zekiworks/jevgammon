@@ -14,10 +14,12 @@ cd /home/cbasaran/code/jevgammon
 KEY=${1:?usage: test.sh KEY}
 T=$(dirname "$(readlink -f "$0")")
 [[ -f $T/models/$KEY/player.json ]] || { echo "unknown setup $KEY" >&2; exit 1; }
-BIN=/home/cbasaran/code/jevgammon/target/smallchat/release/jevgammon
+BIN=${SMALLCHAT_BIN:-/home/cbasaran/code/jevgammon/target/smallchat/release/jevgammon}
 OUT=$HOME/.cache/smallchat/test/$KEY
 PLAYER=$(python3 "$T/smallchat.py" "$KEY" player) || { echo "settings of $KEY unreadable" >&2; exit 1; }
 field() { python3 -c 'import json,sys; print(eval(sys.argv[2], {}, {"p": json.loads(sys.argv[1])}))' "$PLAYER" "$1"; }
+[[ $(field '"reasoning_prefill" in p') == False || -n ${SMALLCHAT_BIN:-} ]] ||
+  { echo "$KEY sets reasoning_prefill: SMALLCHAT_BIN must name a runner built with it" >&2; exit 1; }
 URL=$(field 'p["base_url"]')
 NAME=$(field 'p["name"]')
 SERVED=$(field 'p["spec"].split("/", 1)[1]')

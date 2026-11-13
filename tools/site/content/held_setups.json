@@ -5,6 +5,7 @@
   "StartLux-Decision v1.1 2B": "late entry running (branch late-startlux2b, Main 11 Nov; spark2 startlux-decide serve, BF16); shown when complete",
   "KnowLine-0.8B-Gen1": "late entry prepared (branch late-tiny8, Main 11 Nov); not started; shown when complete",
   "StartLux-Decision-v1.1-0.8B-Instant": "late entry prepared (branch late-tiny8, Main 11 Nov); not started; shown when complete",
+  "StartLux-Decision-v1.1-4B-Instant": "late entry running (branch late-tiny8, first stage 13 Nov; spark2 startlux-decide serve, BF16); shown when complete",
   "OneJev1.6-0.8B": "late entry prepared (branch late-tiny8, Main 11 Nov); not started; shown when complete",
   "GLiClass v4 Edge": "late entry prepared (branch late-tiny8, Main 11 Nov); not started; shown when complete",
   "KnowLine-2B-Gen1": "late entry prepared (branch late-tiny8, Main 11 Nov); not started; shown when complete",

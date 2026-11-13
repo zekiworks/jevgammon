@@ -1299,6 +1299,25 @@
    "card_active_b": null,
    "card_source": "https://huggingface.co/vllm-sr/d3-ultra",
    "card_quote": "Card: 'Parameters | 26.09B, including the 0.46B vision encoder'."
+  },
+  "StartLux-Decision-v1.1-4B-Instant": {
+   "total_b": 4.66,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/startlux-models/StartLux-Decision-v1.1-4B-Instant/tree/416088f77cfce09633906a3675c7cd2e5dabcf10",
+   "quote": "startlux-models/StartLux-Decision-v1.1-4B-Instant @ 416088f77cfce09633906a3675c7cd2e5dabcf10: 4,659,865,088 parameters (the snapshot's safetensors header) = language model incl. MTP layer 4,326,350,848 + vision encoder 333,514,240. Qwen3_5ForConditionalGeneration, dense.",
+   "checked": [
+    "https://huggingface.co/api/models/startlux-models/StartLux-Decision-v1.1-4B-Instant/revision/416088f77cfce09633906a3675c7cd2e5dabcf10",
+    "https://huggingface.co/startlux-models/StartLux-Decision-v1.1-4B-Instant/raw/416088f77cfce09633906a3675c7cd2e5dabcf10/README.md"
+   ],
+   "read": "2026-11-13",
+   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors header on spark2: 4.66B (4,659,865,088) incl. its vision encoder and MTP layer; the card states 4B, the figure shown (Ümit #4260). Stored and served in BF16 by the package's startlux-decide serve --launch-vllm (vLLM 0.31.0 with its plugin), which plays our late entry. Plays with up to 255 options per request (the league's usual rule); no request is over its limits.",
+   "terms": "4.66B incl. its vision encoder and MTP layer; card: 4B",
+   "card_total_b": 4.0,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/startlux-models/StartLux-Decision-v1.1-4B-Instant",
+   "card_quote": "'StartLux-Decision-v1.1-4B-Instant is a 4B decision model.'"
   }
  }
 }

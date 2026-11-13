@@ -1,0 +1,5 @@
+owner: jevgammon (agent SmallBgBench; Ümit #6225)
+created: 2026-11-13
+what: Clear-risk Part 2 (Q1 with numbers + board only, Q2 board only; the 438 Part 2 items) for the small models of Ümit #6225, prepared, not run: items_q1q2.jsonl + meta.json (byte copies of the 30 Oct Part 2 inputs), models.json (pinned league settings per model), crp2.py (items check, configs, request plan, frozen Q1/Q2 scoring + invalid share), run.sh KEY (one model through `jevgammon quiz`), stub_chat.py, test_crp2.py (stub dry runs; prompt identity with Part 2's stored requests); branch small-clearrisk-p2 (runner = quiz-command + late-tiny8's decision clients)
+reason: Ümit #6225 small models backgammon bench prep
+delete when: after the branch is merged or dropped

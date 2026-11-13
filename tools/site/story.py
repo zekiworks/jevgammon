@@ -845,7 +845,8 @@ def leaderboard(S) -> str:
     """The home page's head and leaderboard (Ümit #4862; the bench kit, zw_ui.results): the short title, its scope,
     the Models · Class · Rows filters, the Measure keys and the compact table (Leaderboard) with its notes, then Same
     positions (preview). The block keeps the old #leaderboard anchor."""
-    return (P.KIT_ALIASES + ui.results(Leaderboard(S), block_id="leaderboard", box_prefix="lb-box")
+    import improve_page as IP
+    return (P.KIT_ALIASES + IP.head_tips(ui.results(Leaderboard(S), block_id="leaderboard", box_prefix="lb-box"), "leaderboard")
             + learning_section()
             + f'<section class="card same-positions" id="same-positions" aria-labelledby="same-positions-title">'
               f'<h2 id="same-positions-title">{esc(SAME_KEY)}</h2>{same_positions()}</section>')

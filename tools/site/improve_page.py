@@ -719,15 +719,55 @@ def result_rows(L) -> list:
 THRESHOLD_NOTE = ("Threshold: the larger of the model's own spread over its three empty runs (max − min) and 5 points; "
                   "right safety may fall by at most 5 points.")
 # The results table's order, said above it (Ümit via Zeki #6257), on /improve/ and on the home page's Learning tab.
-ORDER_LINE = ("Ordered: Yes, then No, then not finished; within Yes and within No by the change in risks found. Not a "
-              "ranking of learning success.")
-# Its columns (Ümit via Zeki #6257), each value in its own column; the change stays beside the result on a phone, the
-# others with their names and units in the row's details there.
-RESULT_COLUMN = ui.Column("Result", "Yes · No · or the model's state")
-NUMBER_COLUMNS = (ui.Column("Risks found", "before → after: empty runs' mean → after the series", num=True),
-                  ui.Column("Change", "risks found, pp", num=True, unit="pp", phone=True),
-                  ui.Column("Right safety change", f"pp · may fall {V.SAFETY_DROP} at most", num=True, unit="pp"),
-                  ui.Column("Threshold", "pp", num=True, unit="pp"))
+ORDER_LINE = "Ordered: Yes, then No, then not finished; each by the change in risks found. Not a ranking."
+# Its columns (Ümit via Zeki #6257, #6371, #6374): a short head and its unit; the result and its change side by side,
+# then risks found before → after, right safety change and threshold next to them (bg.css keeps the table compact).
+# Each head's explanation opens from it (head_tips: hover, keyboard focus, a tap); on a phone the change stays beside
+# the result, the others with their heads in the row's details.
+RESULT_COLUMN = ui.Column("Result")
+NUMBER_COLUMNS = (ui.Column("Change (pp)", num=True, phone=True), ui.Column("Risks found (%)"),
+                  ui.Column("Right safety change (pp)", num=True), ui.Column("Threshold (pp)", num=True))
+HEAD_TIPS = {
+    "Model": "The setup tested: the model and its setting. Tap or point at a name for its details.",
+    "Result": (f"Yes: the change in risks found is above the threshold and right safety falls by no more than "
+               f"{V.SAFETY_DROP} pp. No: either fails. Shown once every run is complete; before that, the model's state "
+               "(running, queued, waiting and why, not tested and the rule)."),
+    "Change (pp)": ("Risks found after the series minus before, in percentage points (pp): points of the share, not a "
+                    "relative percent."),
+    "Risks found (%)": ("Took the risk when it paid, as a share of the positions where it did: before = the mean of its "
+                        "3 empty runs (no lessons), after = after the series of lessons."),
+    "Right safety change (pp)": (f"Right safety (played safe when safe was right) after minus before, in percentage "
+                                 f"points. A fall of more than {V.SAFETY_DROP} pp makes the result No."),
+    "Threshold (pp)": (f"What the change must beat: the larger of the model's own spread over its 3 empty runs "
+                       f"(max − min of risks found) and {V.FLOOR} pp."),
+}
+
+
+def head_tips(html: str, prefix: str) -> str:
+    """The results tables' heads (those with a Result column) with their explanations: each head's text becomes the
+    kit's tip key (zw-ui.js and zw-ui.css: hover, keyboard focus, a tap; a second tap, a tap outside or Escape closes
+    it), its HEAD_TIPS text the tip."""
+    n = [0]
+
+    def th(m):
+        label = re.sub(r"<[^>]+>", "", m.group(2))
+        tip = HEAD_TIPS.get(label.replace("&#x27;", "'"))
+        if tip is None:
+            return m.group(0)
+        n[0] += 1
+        tid = f"{prefix}-head-{n[0]}"
+        return (f'{m.group(1)}<span class="zw-tip"><button type="button" class="zw-tip-key" aria-expanded="false" '
+                f'aria-controls="{tid}" aria-describedby="{tid}">{label}</button><span class="zw-tip-body" id="{tid}" '
+                f'role="tooltip">{esc(tip)}</span></span></th>')
+
+    def thead(m):
+        if 'class="zw-measure">Result</th>' not in m.group(0):
+            return m.group(0)
+        return re.sub(r'(<th scope="col"[^>]*>)(.*?)</th>', th, m.group(0))
+
+    return re.sub(r"<thead>.*?</thead>", thead, html, flags=re.S)
+
+
 GROUP_LABEL = {0: "Improved: Yes", 1: "Improved: No", 2: "Not finished", 3: "Not finished"}
 
 
@@ -753,9 +793,9 @@ def result_cells(m) -> tuple[str, tuple[str, str, str, str]]:
     why = ('<span class="zw-int learn-why">right safety fell past the limit</span>'
            if m["verdict"] and not v["improved"] and beyond else "")
     return (f'<span data-rcell="verdict">{result}</span>{why}',
-            (f'<span class="zw-val" data-rcell="rf">{before_after(v, "risks_found")}</span>',
-             f'<span class="zw-val"><span data-rcell="rf-change">{fmt(ch["risks_found"], 1, signed=True) or nm(NA)}</span>'
+            (f'<span class="zw-val"><span data-rcell="rf-change">{fmt(ch["risks_found"], 1, signed=True) or nm(NA)}</span>'
              f'{run2_mark(m)}</span>',
+             f'<span class="zw-val" data-rcell="rf">{before_after(v, "risks_found")}</span>',
              f'<span class="zw-val{" learn-beyond" if beyond else ""}"><span data-rcell="rs-change">'
              f'{fmt(rs, 1, signed=True) or nm(NA)}</span>'
              + (f'<span class="zw-int">past the \u2212{V.SAFETY_DROP} limit</span>' if beyond else "") + '</span>',
@@ -875,7 +915,8 @@ def results_section(L, S=None) -> str:
     note = ('<p class="note" id="improve-progress-refused"><strong>Status unavailable.</strong> The latest results '
             'file\'s status fields failed the site\'s checks:</p><ul class="notes">'
             + "".join(f"<li>{esc(p)}</li>" for p in refused) + "</ul>" if refused else "")
-    return P.KIT_ALIASES + ui.results(Results(L, S), block_id="improve-results", box_prefix="ir-box") + note
+    return P.KIT_ALIASES + head_tips(ui.results(Results(L, S), block_id="improve-results", box_prefix="ir-box"),
+                                     "improve-results") + note
 
 
 def validation_note(L) -> str:

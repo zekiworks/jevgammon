@@ -394,6 +394,26 @@ pub const SERVICES: &[Service] = &[
         openai_format: false,
         max_choices: 255,
     },
+    // Apertix AI's cerno-9b-v1.2 (@ f02a632; Qwen3.5-9B full fine-tune, block attention, letter
+    // readout) on the card's in-process CernoEngine behind logic's thin server (cerno_server.py):
+    // the same request at /v1/systemone; a model field, when sent, must be the served name, so
+    // none is sent; text only; probabilities rounded to 4 places. 255 option letters per question
+    // (more is refused, 422). The decider cuts a state over 32,768 tokens without refusing, so
+    // League 1's states were counted with its tokenizer and renderer: of 31,793 distinct stored
+    // requests (17,905 read twice) none has a state over it (longest 5,856 tokens); the longest
+    // prompt (251 options) is 28,349 tokens, within the model's 262,144.
+    Service {
+        provider: "cerno",
+        label: "Cerno (local)",
+        base_url: "http://127.0.0.1:19390",
+        url_var: "CERNO_BASE_URL",
+        path: "/v1/systemone",
+        key_vars: &[],
+        key_required: false,
+        default_model: None,
+        openai_format: false,
+        max_choices: 255,
+    },
 ];
 
 pub fn service(provider: &str) -> Option<&'static Service> {

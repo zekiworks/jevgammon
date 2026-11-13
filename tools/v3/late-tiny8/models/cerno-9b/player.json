@@ -1,0 +1,11 @@
+{
+  "name": "Cerno 9B v1.2",
+  "spec": "cerno",
+  "provider": "local (cerno_server.py around CernoEngine)",
+  "quantization": "bf16",
+  "base_url": "http://192.168.1.131:19390",
+  "note": "Apertix AI's Cerno 9B v1.2 (Hugging Face apertixai/cerno-9b-v1.2 @ f02a632fbe3a4698cd1ff5c0b929ea240e2b8eda, Apache-2.0; a full fine-tune of Qwen/Qwen3.5-9B, dense, 8,953,803,264 parameters; block-bidirectional attention, read twice up to 3,000 tokens, temperature 1.256 from decider_config.json; letter-logit readout, up to 255 options) on our GPU through the card's own in-process transformers engine, CernoEngine (inference/evals/decision_index/engine.py, vendored decider 1c15a48, decision-index kit 9eb2dbe; the card ships no server), behind logic's thin System One server (benchmark/decision/servers/cerno_server.py: request/response mapping only, engine defaults), env ~/envs/cerno exactly the card's inference/requirements-v1.2.txt (torch 2.14.1+cu130, transformers 5.17.0, fla 0.5.2), BF16 as released. /v1/systemone, no model field, text only; probabilities rounded to 4 places.  The decider cuts a state ('Context:' block) over 32,768 tokens (engine default max_state_tokens) without refusing: League 1's 31,793 distinct stored requests counted with its tokenizer and the decider's own prompt build (17,905 read twice): none over it (longest state block 5,856 tokens), none outside 2..255 options; the longest prompt (251 options) is 28,349 tokens, within its 262,144 context. Prices: none (our GPU).",
+  "device": "NVIDIA GB10 (DGX Spark spark2, spark-d9ee), the whole GPU, handed over by logic: PYTHONPATH=<snapshot>/inference HF_HUB_OFFLINE=1 ~/envs/cerno/bin/python ~/decision-src/cerno_server.py --model <snapshot> --name apertixai/cerno-9b-v1.2 --host 0.0.0.0 --port 19390",
+  "parallel": 1,
+  "max_matches": 1
+}

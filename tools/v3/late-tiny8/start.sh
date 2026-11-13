@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Late entry of one of the eight small decision models, or of Sieve 31B v3 or Turion Jev 31B (KEY: models/KEY/player.json, models/KEY/pins.sh) v the original
+# Late entry of one of the eight small decision models, or of Sieve 31B v3, Turion Jev 31B, StartLux 4B or Cerno 9B v1.2 (KEY: models/KEY/player.json, models/KEY/pins.sh) v the original
 # League 1 table (Main, 11 Nov), stage 1: the 3 programs and the paid API setups (GPT-6 Luna deferred while OpenAI is out
 # of credit), as tools/v3/late-startlux2b. The model runs on its own server on spark2 (player.json base_url), handed over
 # by logic one at a time and never started from here. One model at a time: start.sh refuses while another tiny8 unit

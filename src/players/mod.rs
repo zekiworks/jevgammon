@@ -1081,6 +1081,11 @@ mod tests {
         sends_every_option("turion-jev", None, 255, "/v1/systemone").await;
     }
 
+    #[tokio::test(flavor = "multi_thread")]
+    async fn cerno_sends_no_model_field() {
+        sends_every_option("cerno", None, 255, "/v1/systemone").await;
+    }
+
     #[test]
     fn cost_uses_the_price_table() {
         let player = Player {

@@ -24,8 +24,6 @@ LIMIT_HARD = ("Setups met different positions; risk judgement is not adjusted fo
               "comparisons wait for the shared positions.")
 # Under the risk leaderboard chart (Ümit #2564; wording Zeki #2578).
 RANK_NOTE = "Ranks show observed scores; small gaps need not be meaningful."
-# The hero's three buttons (Ümit #2938 item 2): Every decision, Highlights, Read the method.
-HERO_LINKS = [("Every decision", "decisions/"), ("Highlights", "highlights/"), ("Read the method", "method/")]
 GNUBG_WEAK = "x86-64 build: its noise is shifted, so it overplays gammons"
 CALL_LABEL = {"needless": "needless risks", "missed": "missed risks", "wrong_risk": "wrong risks",
               "right_risk": "right risks", "right_safety": "right safety", "none": "No trade-off"}
@@ -1799,15 +1797,6 @@ def how_scores(S) -> str:
             f'<p class="table-note"><a href="about/#scores">More in About</a></p></section>')
 
 
-def hero_card(S) -> str:
-    links = "".join(f'<a class="key" href="{href}">{esc(label)}</a>' for label, href in HERO_LINKS)
-    return f"""
-    <section class="card hero hero-card">
-      <h1>{esc(P.TITLE)}</h1>
-      <nav class="hero-links" aria-label="Main parts">{links}</nav>
-    </section>"""
-
-
 # The home page's content that moved to the Leagues page (Ümit #2938 item 2): what each block is, for the old anchors.
 def leagues_moved(S) -> tuple[str, str]:
     """(top, bottom): the blocks of the old home page that now sit on the Leagues page, written relative to the site's
@@ -1846,14 +1835,14 @@ def leagues_moved(S) -> tuple[str, str]:
 
 
 def home(S) -> str:
-    """The front page (Ümit #2938 item 2): the hero, the leaderboard, the finding sections a-f, How the scores work.
-    Everything else of the old front page is on the Leagues page (leagues_moved) or the Nackgammon page; the old
-    anchors are sent there (pages.moved_anchors, bg.js)."""
+    """The front page (Ümit #2938 item 2): the leaderboard under its short title (story.leaderboard: the bench kit's
+    block; Ümit #4862 item 5: no hero buttons), the finding sections a-f, How the scores work. Everything else of the
+    old front page is on the Leagues page (leagues_moved) or the Nackgammon page; the old anchors are sent there
+    (pages.moved_anchors, bg.js)."""
     import story
     return f"""
     {FAMILY_ICONS}
-    {hero_card(S)}
-    {story.headline(S)}
+    {story.leaderboard(S)}
     {hero_figure(S)}
     {story.findings(S)}
     {findings_block(S)}

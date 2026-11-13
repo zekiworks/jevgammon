@@ -47,7 +47,7 @@ from pathlib import Path
 SITE = Path(__file__).resolve().parent
 sys.path.insert(0, str(SITE))
 
-from common import NA, QC_IMPROVE, QC_LABEL, ROOT, RUN2, count, esc, fmt, nm, relabel  # noqa: E402
+from common import NA, QC_IMPROVE, QC_LABEL, ROOT, RUN2, count, esc, fmt, name_and_tag, nm, relabel, tag_text  # noqa: E402
 from common import label as shown_name  # noqa: E402
 
 import home as H  # noqa: E402
@@ -55,6 +55,7 @@ import improve_validate as V  # noqa: E402
 import learning_page as LP  # noqa: E402
 import pages as P  # noqa: E402
 from method import _inline, spec_markdown  # noqa: E402
+import zw_ui as ui  # noqa: E402
 
 PATH = "improve/"
 DATA = "data/v3/improve.json"
@@ -630,18 +631,17 @@ ARM_LABEL = {"notes": "helper-written notes", "worst_mistakes": "worst mistakes"
 
 
 # Classes (Ümit #4245): the leaderboard's (P.model_class, P.class_label); a model the parameter file does not list, or
-# one without a class: none (in the All view only).
+# one without a class: 'none' (in the All view only).
 def model_class(name: str | None) -> tuple[str, str]:
-    """(the row's class key, '' for none; its class label after the name, '' for a model the file does not list)."""
+    """(the row's class key, 'none' for none; its class label after the name, '' for a model the file does not list)."""
     if name in P.PARAMS:
-        label = P.class_label(name)
-        return P.model_class(name) or "", f'<span class="hl-size">{esc(label)}</span>' if label else ""
-    return "", ""
+        return P.model_class(name) or "none", P.class_label(name)
+    return "none", ""
 
 
 # Each row's maker dot and details box (Ümit via Zeki #3803): the home leaderboard's (home.maker on the shared palette,
-# story.box_html, site.js modelBoxes). A row's model without a palette maker fails the build. Box lines without data
-# are left out (never "n/a").
+# the bench kit's box). A row's model without a palette maker fails the build. Box lines without data are left out
+# (never "n/a").
 
 
 def board_links(S) -> dict:
@@ -656,18 +656,6 @@ def board_links(S) -> dict:
                 out.setdefault(y["name"], line)
                 out.setdefault(y["model"], line)
     return out
-
-
-def maker_dot(setup: str) -> tuple[str, str]:
-    """(maker, the row's dot) as on the leaderboard."""
-    mk, colour = H.maker(setup)
-    return mk, f'<i class="swatch hl-dot" style="background:{colour}" title="{esc(mk)}"></i>'
-
-
-def name_cell(setup: str, dot: str, bid: str, box: list, extra: str = "", sized: str = "") -> str:
-    from story import box_html
-    return (f'<th scope="row" class="model">{dot}<span class="model-name" tabindex="0" aria-describedby="{bid}">'
-            f'{esc(setup)}</span>{sized}{extra}{box_html(bid, setup, box)}</th>')
 
 
 def first_line(model: str, mk: str | None, typ: str, setting: str | None) -> str:
@@ -727,91 +715,123 @@ def verdict_text(m) -> str:
     return word + nums
 
 
-def result_row(pm, p, m, refused, i: int, links: dict) -> str:
+def result_row(pm, p, m, refused, links: dict) -> ui.Row:
+    """A plan model's row: Change (with before → after), Improvement threshold and Improved? (verdict · change ·
+    threshold); its status, series, the empty-run spread (Ümit #4862 item 8) and right safety in its details.
+    data-progress-setup, data-progress and data-rcell mark what checks.check_improve reads back."""
     if refused:
         status_, done = nm(NA), nm(NA)
     elif p is None:
         status_, done = "not started", f"0 / {V.SERIES}"
     else:
         status_, done = esc(progress_status(p)), f'{p["series_done"]} / {V.SERIES}'
-    if m is None:
-        change, bar, rs = "<td></td>", "<td></td>", "<td></td>"
-    else:
+    change = threshold = verdict = ""
+    extra = []
+    if m is not None:
         v = shown(m)
-        change = (f'<td class="num"><strong data-rcell="rf-change">'
-                  f'{fmt(v["change"]["risks_found"], 1, signed=True) or nm(NA)}</strong>{run2_mark(m)}<br>'
-                  f'<span class="small" data-rcell="rf">{before_after(v, "risks_found")}</span></td>')
-        bar = (f'<td class="num"><span data-rcell="threshold">{num(v["threshold"])}</span><br>'
-               f'<span class="small">spread <span data-rcell="range">{num(v["range"])}</span></span></td>')
-        rs = f'<td class="num" data-rcell="rs">{before_after(v, "right_safety")}</td>'
-    verdict = (f'<span data-rcell="verdict">{verdict_text(m)}</span>' if m is not None else "")
+        change = (f'<span class="zw-val"><strong data-rcell="rf-change">{fmt(v["change"]["risks_found"], 1, signed=True) or nm(NA)}'
+                  f'</strong>{run2_mark(m)}<span class="zw-int" data-rcell="rf">{before_after(v, "risks_found")}</span></span>')
+        threshold = f'<span class="zw-val" data-rcell="threshold">{num(v["threshold"])}</span>'
+        verdict = f'<span data-rcell="verdict">{verdict_text(m)}</span>'
+        extra = [f'Empty-run spread <span data-rcell="range">{num(v["range"])}</span> pp (max − min of risks found over '
+                 'its 3 empty runs)', f'Right safety before → after <span data-rcell="rs">{before_after(v, "right_safety")}</span>']
     name = re.sub(r" \([^()]*\)$", "", pm["setup"])
     setting = pm["setup"][len(name) + 2:-1] or None
-    mk, dot = maker_dot(pm["setup"])
-    bid = f"ir-{i}-box"
+    mk, colour = H.maker(pm["setup"])
+    cls, label = model_class(name)
+    official, parts = name_and_tag(pm["setup"], "improve")
     box = [first_line(name, mk, "chat model", setting), f"Parameters: {P.params_html(name)}",
-           esc(P.class_note(name)) if P.class_note(name) else None,
+           esc(P.class_note(name)) if P.class_note(name) else None, "Group: Chat",
            "Route: " + ("our GPU" if pm["route"].startswith("local") else _inline(pm["route"])),
-           None if refused else f"Status: {status_}", None if refused else f"Series done {done}",
-           m and answers_line(m), m and change_line(m), *(run2_lines(m, pm) if m else []),
+           f'Status: <span data-progress="status">{status_}</span>', f'Series <span data-progress="series">{done}</span>',
+           m and answers_line(m), m and change_line(m), *extra, *(run2_lines(m, pm) if m else []),
            links.get(pm["setup"]) or links.get(name)]
-    cls, labelled = model_class(name)
-    return (f'<tr data-progress-setup="{esc(pm["setup"])}" data-group="chat" data-class="{cls}" data-box="{bid}">'
-            f'{name_cell(pm["setup"], dot, bid, box, sized=labelled)}{change}{bar}<td>{verdict}</td><td>Chat</td>'
-            f'<td data-progress="status">{status_}</td><td class="num" data-progress="series">{done}</td>{rs}</tr>')
+    finished = m is not None and m["verdict"] and m["change"]["risks_found"] is not None
+    return ui.Row(model=ui.Model(official, colour, mk, label, tag=tag_text(parts)), measure=change, helpers=(threshold, verdict),
+                  details=[x for x in box if x], details_label=f'{pm["setup"]}: details',
+                  filters={"models": "chat", "class": cls}, attrs={"data-progress-setup": pm["setup"]},
+                  untiered=not finished)
 
 
-def planned_row(r, arm, i: int, links: dict) -> str:
+def planned_row(r, arm, links: dict) -> ui.Row:
+    """A planned row (content/improve_planned.json): status only, never a number; data-planned for the check."""
     status_ = unref(r[arm[0]] if arm else r["status"])
     group = f"Decision · {arm[1]}" if arm else "Chat"
-    tag = f'<br><span class="small">{esc(r["tag"])}</span>' if r["tag"] else ""
     listed = r["params_model"] is not None
-    mk, dot = maker_dot(r["setup"])
-    bid = f"ir-{i}-box"
+    mk, colour = H.maker(r["setup"])
+    cls, label = model_class(r["params_model"])
+    official, parts = name_and_tag(r["setup"], "improve")
     box = [first_line(r["setup"], mk, "decision model" if arm else "chat model", None),
            f'Parameters: {P.params_html(r["params_model"])}' if listed else None,
            esc(P.class_note(r["params_model"])) if listed and P.class_note(r["params_model"]) else None,
-           f"Arm: {ARM_LABEL[arm[0]]}" if arm else None, f"Status: {esc(status_)}",
+           f"Group: {esc(group)}", f"Arm: {ARM_LABEL[arm[0]]}" if arm else None, f"Status: {esc(status_)}",
            " \u00b7 ".join(["Planned, not a result"] + ([esc(r["tag"])] if r["tag"] else [])),
            links.get(r["setup"]) or (links.get(r["params_model"]) if listed else None)]
-    cls, labelled = model_class(r["params_model"])
-    return (f'<tr data-planned="{esc(r["setup"])}" data-group="{r["group"]}" data-class="{cls}" '
-            f'data-box="{bid}">{name_cell(r["setup"], dot, bid, box, "<br><span class=\"small\">planned, not a result</span>" + tag, labelled)}'
-            f'<td></td><td></td><td></td><td data-pcell="group">{group}</td><td data-pcell="status">{esc(status_)}</td>'
-            f'<td class="num">{nm(NA)}</td><td></td></tr>')
+    return ui.Row(model=ui.Model(official, colour, mk, label, flag="planned, not a result",
+                                 tag=" \u00b7 ".join(p for p in (tag_text(parts), r["tag"], arm and arm[1]) if p)),
+                  measure="", helpers=("", ""), details=[x for x in box if x], details_label=f'{r["setup"]}: details',
+                  filters={"models": r["group"], "class": cls}, attrs={"data-planned": r["setup"]}, untiered=True)
+
+
+class Results(ui.Bench):
+    """The page's first table on the bench kit (zw_ui; Ümit/Zeki #3710, #4862): one row per model, the plan's chat
+    models (status and series from the validated progress fields; numbers from the validated results; Yes or No only
+    past the verdict gate), then the planned rows (status only, never a number). Filters: Models (All, Chat, Decision)
+    and Class. Rank counts the finished models by the change in risks found; the others show '–'. Every row shows."""
+    labels = ui.Labels(empty="No model of this kind in the plan.")
+    top = None
+    default_view = "table"
+
+    def __init__(self, L, S=None):
+        self.L = L
+        # S (the site's state, absent in the page's own renders): the boxes' links to the leaderboard's decisions and
+        # model pages.
+        self.links = board_links(S) if S else {}
+
+    def title(self) -> str:
+        return title(self.L)
+
+    def scope(self, part) -> str:
+        return f'{eyebrow(self.L)} · change in risks found, in points (pp)'
+
+    def filter_rows(self) -> list:
+        return P.kit_filters()
+
+    def panel_title(self, part, measure) -> tuple:
+        return "Results", "one row per model · finished first, by the change in risks found"
+
+    def columns(self, part, measure):
+        # Improved? stays in the table on a phone (Column.phone; Ümit #4665: in view without a sideways scroll at any
+        # width), beside the change.
+        return ui.Columns("Rank", "Model", ui.Column("Change", "risks found, pp · before → after", num=True),
+                          (ui.Column("Improvement threshold", "pp", num=True, unit="pp"),
+                           ui.Column("Improved?", "verdict · change · threshold", phone=True)))
+
+    def notes(self, part, measure) -> list:
+        return [esc(f'{count(len(self.L["plan"]["models"]))} chat models under the pre-registered rule: finished first '
+                    '(by the change in risks found), then running, then not started. Improvement threshold = what the '
+                    'change must beat: the spread (max − min) of the model\'s own risks found over its 3 empty runs (in '
+                    'each row\'s details), at least 5 points. Rows marked "planned, not a result" are not run yet and '
+                    'show no numbers; a decision setup has one row per arm (notes, worst mistakes).'),
+                ui.Note(P.star_note("Improved? = verdict · change · threshold, in points (pp) of risks found.",
+                                    f'<p>{esc(THRESHOLD_NOTE)}</p>'), raw=True),
+                ui.Note(P.class_rule_note(), raw=True)] + ([ui.Note(qc, raw=True)] if (qc := qc_footnote(self.L)) else [])
+
+    def rows(self, part, measure, setups) -> list:
+        L = self.L
+        return ([result_row(pm, p, m, L["progress_refused"], self.links) for pm, p, m in result_rows(L)]
+                + [planned_row(r, arm, self.links) for r in L["planned"]
+                   for arm in ((None,) if r["group"] == "chat" else ARMS)])
 
 
 def results_section(L, S=None) -> str:
-    """The page's first table (Ümit/Zeki #3710): one row per model, the plan's chat models (status and series from
-    the validated progress fields; numbers from the validated results; Yes or No only past the verdict gate), then the
-    planned rows (content/improve_planned.json: status only, never a number). Filters: type (All, Chat, Decision) and
-    class (P.class_keys), combined. Each
-    row: its maker dot and details box; S (the site's state, absent in the page's own renders): the boxes' links to
-    the leaderboard's decisions and model pages."""
+    """The results block (Results with its notes, under the page's short title and scope), then the refused-status
+    note where the data's status fields failed."""
     refused = L["progress_refused"]
-    links = board_links(S) if S else {}
-    rows_ = [result_row(pm, p, m, refused, i, links) for i, (pm, p, m) in enumerate(result_rows(L), 1)]
-    rows_ += [planned_row(r, arm, i, links) for i, (r, arm) in enumerate(
-        ((r, arm) for r in L["planned"] for arm in ((None,) if r["group"] == "chat" else ARMS)), len(rows_) + 1)]
     note = ('<p class="note" id="improve-progress-refused"><strong>Status unavailable.</strong> The latest results '
             'file\'s status fields failed the site\'s checks:</p><ul class="notes">'
             + "".join(f"<li>{esc(p)}</li>" for p in refused) + "</ul>" if refused else "")
-    keys = ('<div class="keys needs-js" role="group" aria-label="Model type">'
-            + "".join(f'<button type="button" class="key" data-improve-filter="{k}" aria-pressed="{str(k == "all").lower()}">'
-                      f'{t}</button>' for k, t in (("all", "All"), ("chat", "Chat models"), ("decision", "Decision models")))
-            + "</div>" + P.class_keys("improve-class"))
-    cap = (f'{count(len(L["plan"]["models"]))} chat models under the pre-registered rule: finished first (by the change '
-           'in risks found), then running, then not started. Bar = what the change must beat: the spread (max − min) of '
-           'the model\'s own risks found over its 3 empty runs, at least 5 points. Rows marked "planned, not a result" '
-           'are not run yet and show no numbers; a decision setup has one row per arm (notes, worst mistakes).')
-    head = ["Model", "Change in risks found (before → after)", "Bar (empty-run spread)", "Improved?", "Group", "Status",
-            f"Series (of {V.SERIES})", "Right safety before → after"]
-    return (keys + P.SWIPE
-            + P.table(head, rows_, "Results, one row per model", cls="board list improve-progress",
-                      attrs=' id="improve-results-table"')
-            + f'<p class="table-note" id="improve-results-note">{esc(cap)}</p>'
-            + P.star_note("Improved? = verdict · change · threshold, in points (pp) of risks found.",
-                          f'<p>{esc(THRESHOLD_NOTE)}</p>') + qc_footnote(L) + note)
+    return P.KIT_ALIASES + ui.results(Results(L, S), block_id="improve-results", box_prefix="ir-box") + note
 
 
 def validation_note(L) -> str:
@@ -839,7 +859,7 @@ def summary() -> str:
             'times with no memory (before = the mean of those empty runs), then plays 5 series of 10 games against '
             'GNUbg weak, writing its own lessons after each game, and takes the test again after game 10 of each '
             'series (after = the mean of the 5). <strong>Improved?</strong> is Yes when risks found rises by more than '
-            'the bar (the spread, max − min, of its own 3 empty runs, at least 5 points) and right safety falls by no '
+            'the improvement threshold (the spread, max − min, of its own 3 empty runs, at least 5 points) and right safety falls by no '
             'more than 5 points. This is an operational threshold, not a statistical test. Yes or No only once every '
             'run is complete.</p>')
 
@@ -976,8 +996,8 @@ def body(L, S=None) -> str:
     toc = "".join(f'<li><a href="#{i}">{esc(t)}</a></li>' for i, t, _ in parts)
     intro = ("No results are on this page yet." if not results_shown(L) else
              "The results as each model's runs come in, and every lesson.")
-    head = (f'<header class="card hero page-head"><p class="eyebrow">{eyebrow(L)}</p><h1>{esc(title(L))}</h1>'
-            f'</header><section class="card" id="improve-results"><h2>Results</h2>{results_section(L, S)}</section>')
+    # The page's head is the bench kit's (its short title and scope line, then the results; zw-ui.md section 3).
+    head = results_section(L, S)
     about = ('<section class="card" id="improve-about">' + (status_line(L) if results_shown(L) else "")
              + f'<p class="intro" id="improve-commitment"><strong>{esc(plan["commitment"])}</strong></p>'
              f'{summary()}<p class="intro">{intro} Data: <a href="../{DATA}">improve.json</a>.</p>'
@@ -1006,8 +1026,8 @@ def render(out: Path, L: dict) -> Path:
     S = site_state(L)
     page = out / PATH / "index.html"
     page.parent.mkdir(parents=True, exist_ok=True)
-    page.write_text(P.layout(S, LP.site_base(), PATH, title(L), body(L), description=DESCRIPTION, scripts=("bg.js",),
-                             dataset="improve"))
+    page.write_text(P.layout(S, LP.site_base(), PATH, title(L), body(L), description=DESCRIPTION, scripts=("zw-ui.js",),
+                             styles=("zw-ui.css",), dataset="improve"))
     for path, t, b in registration_pages(L):
         (out / path).mkdir(parents=True, exist_ok=True)
         (out / path / "index.html").write_text(P.layout(S, LP.site_base(), path, t, b, dataset="improve"))

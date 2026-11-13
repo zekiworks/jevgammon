@@ -374,8 +374,12 @@ def main():
         page = (out / IP.PATH / "index.html").read_text()
         data = (out / IP.DATA).read_text()
         bad = checks.check_improve(out, TS())
-        trs = re.findall(r'<tr data-progress-setup="([^"]+)"[^>]*>.*?data-progress="status">([^<]*)<.*?'
-                         r'data-progress="series">([^<]*)<', page)
+        # Each row's status and series are in its details box, shared after the results (data-zw-box names it).
+        box = {b: (st, n) for b, st, n in re.findall(r'<div class="zw-box" id="([^"]+)"(?:(?!</div>).)*?data-progress='
+                                                     r'"status">([^<]*)<(?:(?!</div>).)*?data-progress="series">([^<]*)<', page)}
+        tags = re.findall(r'<tr[^>]*data-progress-setup="[^"]+"[^>]*>', page)
+        trs = [(re.search(r'data-progress-setup="([^"]+)"', t).group(1), *box[re.search(r'data-zw-box="([^"]+)"', t).group(1)])
+               for t in tags]
         got = {s: (st, n) for s, st, n in trs if (st, n) != ("not started", "0 / 5")}
         free = [m["reason"] for m in (S[name] or {}).get("models", []) if m["reason"]]
         outcome = ["data-cell=", "data-verdict=", 'id="improve-lessons"']
@@ -480,7 +484,7 @@ def main():
         ("status-paused", "status row: a wrong series count", lambda t: t.replace(
             'data-progress="series">1 / 5<', 'data-progress="series">2 / 5<')),
         ("status-paused", "status row removed", lambda t: re.sub(
-            rf'<tr data-progress-setup="{re.escape(label("Grok 4.7 (on)"))}".*?</tr>', "", t, flags=re.S)),
+            rf'<tr[^>]*data-progress-setup="{re.escape(label("Grok 4.7 (on)"))}"[^>]*>.*?</tr>', "", t, flags=re.S)),
     ]
     for state, name, f in page_faults:
         src_page = base / "pages" / state

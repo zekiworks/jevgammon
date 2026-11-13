@@ -47,15 +47,18 @@ def slug(s):
 
 
 def ranked_rows():
+    """The leaderboard's ranked rows: the bench kit's first table (Risk judgement, one row per model; the programs are
+    pinned rows without data-models, never ranked); each row's name from its details box (shared, after the results)."""
     h = (STATE / "analysis/backgammon/index.html").read_text()
+    table = re.search(r'<table class="zw-table".*?</table>', h, re.S).group(0)
+    names = dict(re.findall(r'<div class="zw-box" id="([^"]+)"[^>]*><p><strong>([^<]*)</strong>', h))
     out = []
-    for r in re.findall(r'<tr[^>]*>(?:(?!</tr>).)*?hl-judgement(?:(?!</tr>).)*</tr>', h, re.S):
-        rank = re.search(r'<td class="num">(\d+)</td>', r)
-        if not rank:
-            continue  # a row's other settings and the programs: not ranked
-        ds, sl = re.search(r'data-dataset="([^"]*)" data-setup="([^"]*)"', r).groups()
-        out.append(dict(rank=int(rank.group(1)), dataset=ds, slug=sl,
-                        display=re.search(r'<p><strong>([^<]*)</strong>', r).group(1)))
+    for m in re.finditer(r'<tr data-models=[^>]*data-zw-box="([^"]+)"[^>]*>(.*?)</tr>', table, re.S):
+        r = m.group(2)
+        rank = re.search(r'<td class="zw-rank">(\d+)</td>', r)
+        link = (re.search(r'href="decisions/\?d=([^&"]+)&amp;s=([^"&]+)"', r)
+                or re.search(r'href="models/(late-entry)/([^/"]+)/"', r))
+        out.append(dict(rank=int(rank.group(1)), dataset=link.group(1), slug=link.group(2), display=names[m.group(1)]))
     return out
 
 

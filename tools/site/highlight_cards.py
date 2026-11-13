@@ -147,7 +147,7 @@ def leaderboard_card(S) -> dict | None:
                       "leagues, and a late entry played its league's field after the league finished, so the rows "
                       "compare only loosely."),
                 line=f"{part(ci, c, 'chat')} \u00b7 {part(di, d, 'decision')}",
-                link=("#headline-table", "The leaderboard"))
+                link=("#leaderboard", "The leaderboard"))
 
 
 def reasoning_card(S) -> dict | None:
@@ -200,10 +200,15 @@ def _resolve(out: Path, src: str, path: list):
 def _shown(out: Path, src: str, path: list, kind: str, texts: dict):
     """What the built site holds for one span, written as the card writes it."""
     if kind == "rank":
-        # The row's details box is labelled with the setup's shown name as stored (story.details_box: x["name"], no
-        # tag), so a name with a snapshot tag (Gemini Decision 1) is found too.
-        m = re.search(r'id="hl-(\d+)-box" role="group" aria-label="' + re.escape(esc(path[0])) + ': details"',
-                      (out / src).read_text())
+        # The row in the leaderboard's first table (the bench kit's: Risk judgement, one row per model): its rank cell,
+        # in the row whose details box (shared, after the results) is labelled with the setup's shown name as stored
+        # (story.Leaderboard: x["name"], no tag), so a name with a snapshot tag (Gemini Decision 1) is found too.
+        page = (out / src).read_text()
+        box = re.search(r'<div class="zw-box" id="([^"]+)" role="group" aria-label="'
+                        + re.escape(esc(path[0])) + ': details"', page)
+        table = re.search(r'<table class="zw-table".*?</table>', page, re.S).group(0)
+        m = box and re.search(r'<tr[^>]*data-zw-box="' + re.escape(box.group(1)) + r'"[^>]*><td class="zw-rank">(\d+)</td>',
+                              table)
         return m and m.group(1)
     if kind == "quote":
         texts.setdefault(src, _text(out / src))

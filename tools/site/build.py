@@ -45,7 +45,21 @@ from common import (CONTENT, EARLIER, INTERNAL, LATE_ENTRY, OUT_OF_SCOPE_OPPONEN
 BASE = "https://zekiworks.github.io/analysis/backgammon/"
 # The files of tools/site/assets/ copied to the site's root (hilde-leaf.svg: the top bar's mark, Ümit #2901).
 ASSETS = ("site.css", "site.js", "tables.js", "png.js", "bg.css", "suite-bar.css", "bg.js", "decisions.css", "decisions.js",
-          "hilde-leaf.svg")
+          "hilde-leaf.svg", "zw-ui.css", "zw-ui.js")
+# The Zeki Works bench kit (turkce, bench-ui e1b8a6f0, v2.4; Zeki #4879): zw_ui.py writes the
+# leaderboard's and the /improve/ results block, zw-ui.css and zw-ui.js paint and run it. Copied byte for byte, never
+# edited here: the build fails unless each file is the shared kit's (its sha256), as the suite strip and the maker
+# palette are pinned.
+KIT_SHA256 = {"zw_ui.py": "f33c2ac9573a8bbe4f8c0d8190339aeeffce32c955aca89c5413f00bc64f1ec9",
+              "assets/zw-ui.css": "938f6fdcd5fb16ade3e1e3fc649c3026f3754fe6cf4954aeb9ede33381ff000f",
+              "assets/zw-ui.js": "063f9c72dc002d058395fd990803dd0697b3fb73216e148efa757dc5cb653be4"}
+
+
+def check_kit() -> None:
+    bad = [f"tools/site/{rel}: sha256 {got}, not the shared kit's {want}" for rel, want in KIT_SHA256.items()
+           if (got := hashlib.sha256((SITE / rel).read_bytes()).hexdigest()) != want]
+    if bad:
+        raise SystemExit("\n".join(bad))
 
 
 def load_setups() -> dict:
@@ -513,6 +527,7 @@ def main():
     ap.add_argument("--preview-redirects", metavar="DIR",
                     help="write a redirect to the live address for every page of the build into DIR (the old preview path)")
     args = ap.parse_args()
+    check_kit()
     out = Path(args.out).expanduser()
     out.mkdir(parents=True, exist_ok=True)
     # Shown names (content/labels.json): everything is computed under the databases' names, then relabelled.

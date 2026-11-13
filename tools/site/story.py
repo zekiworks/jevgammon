@@ -10,14 +10,17 @@ supporting must be reworded by hand."""
 import json
 import math
 import re
+from dataclasses import dataclass
 from datetime import datetime
 
 import home as H
 import own_cost
 import pages as P
-from common import ALL_NOTE, CONTENT, LATE_ENTRY, NA, QC_LABEL, QC_SETUPS, count, esc, fmt, nm, pct, relabel, unplayed_text
+from common import (ALL_NOTE, CONTENT, LATE_ENTRY, NA, QC_LABEL, QC_SETUPS, ROOT, count, esc, fmt, nm, pct, relabel,
+                    tag_text, unplayed_text)
 from common import label as shown_name
 from common import base_model, name_and_tag
+import zw_ui as ui
 
 RELEASES = relabel(json.loads((CONTENT / "release_months.json").read_text())["models"])
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
@@ -57,19 +60,21 @@ def about_text(S, rel: str) -> str:
     Ümit #2921 item 5, and the notes that stood beside it before #2938 item 3 (bars and ranks, the row rule, Released),
     unchanged but for where the filters and Every number now are (Leagues)."""
     n_models = len(leaderboard_rows(S)[0])
-    missing = headline_rows(S)[1]
+    missing = release_missing(S)
     released = (f'<p>Released (in a row\'s details): the month of the maker\'s own dated statement that this exact model '
                 f'was released or became available to the public (an announcement before public availability does not '
                 f'count), linked; left out where no such statement is on record ({count(len(missing))} of '
                 f'{count(n_models)} models).</p>' if missing else "")
     return ('<p><strong>A fixed table:</strong> the filters on the Leagues page do not change it. Tap a model (or '
             'point at it) for its details and its decisions.</p>'
-            '<p>Rank is the rank among all models, in every view of the table\'s filters (type: All · Chat models · '
-            'Decision models; class: All · Tiny · Small · Medium · Large · Efficient · Workhorse · Flagship, combined '
-            'with the type; a class with no model in the type in view has no key); the programs are reference rows in '
-            'every view and in no class. Rank is the league rank and has no tiers: a tier needs a paired exact test '
+            '<p>Rank counts 1, 2, 3 down the rows shown, by the measure chosen (Risk judgement, Error rate (PR) or Cost '
+            'per 1,000 decisions), among the rows of the table\'s filters (models: All · Chat · Decision; class: All · '
+            'Tiny · Small · Medium · Large · Efficient · Workhorse · Flagship, combined with the models; a class with no '
+            'model in view has no key; rows: one per model or all setups); the programs are reference rows in every view '
+            'and in no class, never ranked. Rank has no tiers: a tier needs a paired exact test '
             '(McNemar, Holm) over one question set every model answered, and the leagues played different positions, so '
-            'no pair of models in different leagues shares one. The Tier column comes from the same 200 positions.</p>'
+            'no pair of models in different leagues shares one. The tier in a row\'s details comes from the same 200 '
+            'positions.</p>'
             f'<p>{esc(P.CLASS_RULE)} The maker\'s own figure (model card, announcement or model name), never our '
             'count; the standard price, never an introductory one, and "(provisional)" where the maker publishes only '
             'an introductory or launch price. Never estimated: Undisclosed is a model with neither (never a chat '
@@ -86,7 +91,7 @@ def about_text(S, rel: str) -> str:
             'decision model\'s single setup), never its best score; late-entry setups count as the model\'s setups '
             '(a late entry stands in the league order of the league whose field it played). Several setups at that '
             'setting: the first in league order, then by setup name (no score). Every value of a row and of its details '
-            'is that setup\'s own; its other settings are under the row\'s expander and under All setups. Version names '
+            'is that setup\'s own; its other settings are rows of their own under All setups. Version names '
             'are separate models; ' + "; ".join(f"{esc(k)} is under {esc(v)}" for k, v in SAME_MODEL.items()) + ' (a '
             f'dated checkpoint under its original). Every column of every setup: <a href="{rel}leagues/#board-panel">Every '
             'number</a>.</p>' + released)
@@ -200,27 +205,14 @@ def row_name(x, kind: str) -> str:
     return x["name"] if kind == "program" else name_and_tag(x["name"], x["ds"])[0]
 
 
-def judgement_cell(r: dict, colour: str | None) -> str:
-    """The risk judgement as a bar on 0 to 100 to the score, its 95% interval as the whisker, the line at 50 (always
-    safe), and the number."""
-    j, lo, hi = r["judgement"], r["judgement_lo"], r["judgement_hi"]
-    if j is None:
-        return f'<td class="num">{nm(r["judgement_na"] or NA)}</td>'
-    fill = f' style="width:{j:.2f}%;background-color:{colour}"' if colour else f' style="width:{j:.2f}%"'
-    return (f'<td class="hl-judgement" data-v="{j}"><span class="hl-bar" aria-hidden="true"><span class="hl-fill'
-            f'{"" if colour else " other"}"{fill}></span><span class="hl-int" style="left:{lo:.2f}%;width:{hi - lo:.2f}%">'
-            f'</span><span class="hl-safe"></span></span><span class="hl-val">{fmt(j)}<span class="small">{fmt(lo)} to '
-            f'{fmt(hi)}</span></span></td>')
-
-
 def decisions_href(S, x) -> str | None:
     """Every decision filtered to the setup (decisions/?d=…&s=…); a late entry, which Every decision does not hold, its
-    own page; a computed reference row none."""
+    own page; a computed reference row none. Unescaped: the kit escapes its links."""
     if x["late"]:
         return P.late_href("", x["late"])
     if x["q"] is None:
         return None
-    return f'decisions/?d={x["ds"]}&amp;s={P.meta(S, x["ds"], x["name"])["slug"]}'
+    return f'decisions/?d={x["ds"]}&s={P.meta(S, x["ds"], x["name"])["slug"]}'
 
 
 def page_href(S, x) -> str | None:
@@ -229,12 +221,11 @@ def page_href(S, x) -> str | None:
     return P.model_href("", x["ds"], x["name"], S) if x["q"] is not None else None
 
 
-# The row's details box (Ümit #2904, as Clocktower Bench's): opened by a tap on the name on a phone (a popover at the
-# name, Ümit via Zeki #5462), by hover or the keyboard focus on a desktop (site.js modelBoxes), each line filled only
-# from the setup's stored values, a line or part left out where the data has
-# none (never "n/a"). The row itself shows the rank, the model (maker dot, the name, one chip after it: setting · type,
-# a late entry's tag) and the risk judgement; every other value of the setup is in its box, its maker, type and setting
-# on the first line (Ümit #3039: nothing under the name; #3193: the chip).
+# The row's details box (Ümit #2904, as Clocktower Bench's; the kit's box since zw-ui): opened by a tap, a click, a mouse
+# on the row or the keyboard (zw-ui.js), each line filled only from the setup's stored values, a line or part left out
+# where the data has none (never "n/a"). The row itself shows the rank, the model (maker dot, the name, its class label,
+# one chip after it: setting · type, a late entry's tag), the selected measure and two helper columns; every other value
+# of the setup is in its box, its maker, type and setting on the first line (Ümit #3039, #3193).
 TYPE_LABEL = {"chat": "chat model", "decision": "decision model"}
 
 
@@ -264,7 +255,7 @@ def cost_text(S, x) -> str | None:
             + (f' ({esc(label)})' if label else ""))
 
 
-def details_box(S, x, kind: str, bid: str, extra: list, ref: str | None = None) -> str:
+def details_lines(S, x, kind: str, extra: list, ref: str | None = None) -> list:
     """The lines of one setup's details box; extra: lines about the row's model (release month, checkpoint); ref: a
     program's reference label (home.ref_label of its row), on the first line in place of maker, type and setting."""
     r, q, e = x["r"], x["q"], x["late"]
@@ -299,11 +290,12 @@ def details_box(S, x, kind: str, bid: str, extra: list, ref: str | None = None) 
         (f'Cost: {esc(own_cost.tooltip(q["own_cost"], every_gap=False))}' if q and q.get("own_cost") else None),
         (f'Parameters: {P.params_html(x["model"])}' if kind != "program" else None),
         (esc(P.class_note(x["model"])) if kind != "program" and P.class_note(x["model"]) else None),
-        # The model it is built on (Ümit #4445: in the details, not in the name; content/model_names.json base_model).
         (f'Base model: {esc(base_model(x["model"]))}' if kind != "program" and base_model(x["model"]) else None),
+        # The Same positions tier (Ümit #4313), in the box: the table keeps five columns (Ümit #4862 item 4).
+        (f'Tier (same positions) {esc(tier_text(x["name"]))}' if kind != "program" else None),
         *extra,
         links_line(S, x)]
-    return box_html(bid, x["name"], lines)
+    return [line for line in lines if line]
 
 
 def links_line(S, x, rel: str = "") -> str:
@@ -311,141 +303,437 @@ def links_line(S, x, rel: str = "") -> str:
     rel: the page's way to the site root."""
     href, page = decisions_href(S, x), page_href(S, x)
     return " \u00b7 ".join(p for p in (
-        f'<a href="{rel}{href}">{"Its late-entry page" if x["late"] else "Its decisions"} \u2192</a>' if href else None,
+        f'<a href="{rel}{esc(href)}">{"Its late-entry page" if x["late"] else "Its decisions"} \u2192</a>' if href else None,
         f'<a href="{rel}{page}">Model page</a>' if page else None) if p)
 
 
-def box_html(bid: str, name: str, lines: list) -> str:
-    """A row's details box (site.js modelBoxes): one paragraph per line, a line without data left out."""
-    return (f'<div class="hl-box" id="{bid}" role="group" aria-label="{esc(name)}: details">'
-            + "".join(f"<p>{line}</p>" for line in lines if line) + "</div>")
+def release_missing(S) -> list:
+    """The ranked models without a documented release month (About counts them)."""
+    return [name for _, _, name, _ in leaderboard_rows(S)[0] if not release(name)[1]]
 
 
-def name_link(S, x, text, bid) -> str:
-    href = decisions_href(S, x)
-    return (f'<a class="model-name" href="{href}" aria-describedby="{bid}">{esc(text)}</a>' if href else
-            f'<span class="model-name" tabindex="0" aria-describedby="{bid}">{esc(text)}</span>')
-
-
-def tr_attrs(S, x, kind, typ, cls: str | None = None) -> str:
-    """cls: the row's model's class (P.model_class; a program none) (its other-settings rows go with it)."""
-    hl = f' data-hl-type="{typ}"' + (f' data-hl-class="{cls}"' if cls else "")
-    if x["late"]:
-        return f' data-dataset="{LATE_ENTRY}" data-setup="{esc(x["late"]["slug"])}" data-kind="late"{hl}'
-    return H.attrs(S, x["ds"], H.slug_name(x["name"]), kind == "program") + hl
-
-
-def headline_rows(S) -> tuple[list, list, list]:
-    """The table rows (each followed by its hidden other-settings rows) and the models without a release month."""
-    ranked, progs = leaderboard_rows(S)
-    body, missing, chart = [], [], []
-    for kind, rows in (("model", ranked), ("program", progs)):
-        if kind == "program":
-            body.extend(running_rows(S))
-        if kind == "program" and rows:
-            body.append(f'<tr class="hl-group"><th scope="rowgroup" colspan="{len(HEADLINE_HEAD)}">Programs: reference rows, '
-                        f'never ranked</th></tr>')
-        for i, (x, others, name, group) in enumerate(rows, 1):
-            mk, colour = H.maker(x["name"]) if kind == "model" else (None, None)
-            fam = H.family(x["name"]) if kind != "program" else None
-            icon = f'<svg class="fam-icon" aria-hidden="true" focusable="false"><use href="#{fam["icon"]}"/></svg>' if fam else ""
-            dot = f'<i class="swatch hl-dot" style="background:{colour}" title="{esc(mk)}"></i>' if colour else \
-                '<i class="swatch hl-dot swatch-program"></i>'
-            typ = "program" if kind == "program" else model_type(S, x)
-            mclass = P.model_class(x["model"]) if kind == "model" else None
-            # The model's class label after its name (Ümit #4217): small grey text; wraps under it on a phone.
-            label_html = esc(P.class_label(x["model"])) if kind == "model" else ""
-            labelled = f'<span class="hl-size">{label_html}</span>' if label_html else ""
-            # Nothing under the name (Ümit #3039); after it one small grey chip (Ümit #3193): setting · type, a late
-            # entry's tag in it (a caveat on its rank); the maker only in the dot and the box.
-            tag = f'<span class="hl-tag">{esc(chip_text(S, x, kind))}</span>'
-            ref = H.ref_label(S, x["ds"], x["name"]) if kind == "program" else None
-            extra = []
-            if kind == "model":
-                extra.append(f'Tier (same positions) {esc(tier_text(x["name"]))}')
-                month, url = release(name)
-                if url:
-                    extra.append(f'Released <a href="{esc(url)}">{month}</a>')
-                else:
-                    missing.append(name)
-                ckpt = sorted({y["model"] for y in group if y["model"] != name})
-                if ckpt:
-                    extra.append("With its dated checkpoint " + ", ".join(esc(c) for c in ckpt) + " (under the expander)")
-            rid = f'hl-{"p-" if kind == "program" else ""}{i}'
-            sub_ids = [f"{rid}-{k}" for k in range(1, len(others) + 1)]
-            what = "league" if kind == "program" else "setting"
-            more = (f'<button type="button" class="hl-more needs-js" aria-expanded="false" aria-controls="{" ".join(sub_ids)}">'
-                    f'{count(len(others))} other {what}{"s" if len(others) > 1 else ""}</button>' if others else "")
-            rank = f'<td class="num">{i}</td>' if kind == "model" else '<td class="num"><span class="muted" title="never ranked">\u2013</span></td>'
-            cls = ' class="reference"' if kind == "program" else ""
-            label = x["name"] if kind == "program" else name
-            bid = f"{rid}-box"
-            body.append(f'<tr{cls}{tr_attrs(S, x, kind, typ, mclass)} data-box="{bid}">{rank}<td class="model">{dot}{icon}'
-                        f'{name_link(S, x, row_name(x, kind), bid)}{labelled}{tag}{more}'
-                        f'{details_box(S, x, kind, bid, extra, ref)}</td>{judgement_cell(x["r"], colour)}{wide_cells(x)}'
-                        f'{tier_cell(x)}</tr>')
-            for sid, y in zip(sub_ids, others):
-                ycol = H.maker(y["name"])[1] if kind == "model" else None
-                ybid = f"{sid}-box"
-                ytag = f'<span class="hl-tag">{esc(chip_text(S, y, kind, league=True))}</span>'
-                body.append(f'<tr class="hl-sub{"" if kind == "model" else " reference"}" '
-                            f'id="{sid}" hidden{tr_attrs(S, y, kind, typ, mclass)} data-box="{ybid}"><td class="num"></td><td class="model">'
-                            f'{name_link(S, y, row_name(y, kind), ybid)}{ytag}'
-                            f'{details_box(S, y, kind, ybid, [], ref)}</td>{judgement_cell(y["r"], ycol)}{wide_cells(y)}'
-                            f'{tier_cell(y)}</tr>')
-            if kind != "program" or x["name"] == "GNUbg weak":
-                chart.append((kind, label, x, colour))
-    return body, missing, chart
-
-
-def running_rows(S) -> list:
-    """A held late entry still playing (held_setups.json "running", analysis.running_entries; Ümit via Zeki #5001): one
-    unranked row after the ranked models, rank '–', every score cell empty (no score until its entry is complete), its
-    finished matches of its field as its status; the league, start, route, runner and the pairs still to play in its
-    details box. data-kind="running": bg.js never numbers it; no data-dataset, as it is in no data file."""
-    out = []
-    for i, e in enumerate(S["_running"], 1):
-        name = e["name"]
-        mk, colour = H.maker(name)
-        fam = H.family(name)
-        icon = f'<svg class="fam-icon" aria-hidden="true" focusable="false"><use href="#{fam["icon"]}"/></svg>' if fam else ""
-        dot = f'<i class="swatch hl-dot" style="background:{colour}" title="{esc(mk)}"></i>'
-        label_html = esc(P.class_label(name))
-        mclass = P.model_class(name)
-        status = f'Running \u00b7 {count(e["finished"])} of {count(e["total"])} matches'
-        bid = f"hl-r-{i}-box"
-        started = datetime.fromisoformat(e["started"].replace("Z", "+00:00"))
-        lines = [
-            " \u00b7 ".join(p for p in (f'<strong>{esc(name)}</strong>', esc(mk), TYPE_LABEL.get(e["type"])) if p),
-            f'{esc(status)}: late entry still playing; no score or rank until its entry is complete',
-            f'Late-entry league #{e["league"]}, started {started.day} {started:%B %Y}, {started:%H:%M} UTC',
-            f'Route: {esc(e["route"])}, model {esc(e["model_id"])}',
-            ("Runner: " + "; then ".join(
-                esc(r["commit"]) + (f' ({esc(r["note"])})' if r["note"] else "") for r in e["runners"]))
-            if e["runners"] else None,
-            "Pending: " + "; ".join(esc(p) for p in e["pending"]),
-            f'Parameters: {P.params_html(name)}']
-        cells = '<td class="num"></td>' + '<td class="num hl-wide"></td>' * (len(WIDE_HEAD) + 1)
-        out.append(f'<tr data-kind="running" data-hl-type="{e["type"]}"' + (f' data-hl-class="{mclass}"' if mclass else "")
-                   + f' data-box="{bid}"><td class="num"><span class="muted" title="not ranked until complete">\u2013</span>'
-                   f'</td><td class="model">{dot}{icon}<span class="model-name" tabindex="0" aria-describedby="{bid}">'
-                   f'{esc(name)}</span><span class="hl-size">{label_html}</span><span class="hl-tag">{esc(status)}</span>'
-                   f'{box_html(bid, name, lines)}</td>{cells}</tr>')
+def model_extras(name: str, group: list, chosen: bool) -> list:
+    """The box lines about a row's model: its release month; on its chosen row, the dated checkpoint shown with it."""
+    month, url = release(name)
+    out = [f'Released <a href="{esc(url)}">{month}</a>'] if url else []
+    ckpt = sorted({y["model"] for y in group if y["model"] != name}) if chosen else []
+    if ckpt:
+        out.append("With its dated checkpoint " + ", ".join(esc(c) for c in ckpt) + " (its own rows under All setups)")
     return out
 
 
-# Wide screens add four columns (Ümit #2938 item 3): risks found, safe right, error rate, $ per 1,000 decisions; bg.css
-# hides the hl-wide cells below 900 px, where the details box holds the same values.
-WIDE_HEAD = ["Risks found", "Safe right", "Error rate (PR)",
-             '<span class="cost-1k">$ per 1,000</span><span class="cost-1m">$ per 1M</span>']
-# Ümit #4313: each ranked row's tier from Same positions (story.SAME), after the wide columns (never a guess); a row
-# not in that computation says so (Ümit #4399 JOB 7): 'not run yet', or how many of the 200 answers are stored. The
-# same rule for other-setting rows and program rows: none of them is in the run. Below 900 px the details box carries
-# it, like the other wide columns.
-TIER_HEAD = "Tier (same positions)"
-TIER_NOTE = "Rank comes from league play; tier comes from the same 200 positions for every model."
-HEADLINE_HEAD = ([(h, " data-nosort") for h in ("Rank", "Model", "Risk judgement (95% interval)")]
-                 + [(h, " data-nosort data-wide") for h in WIDE_HEAD] + [(TIER_HEAD, " data-nosort data-wide data-tier")])
+# --- Learning (Ümit #6068, #6069): the "Did they improve?" state of every leaderboard model, from its sources only ---
+# The chat lane's plan models: improve.json through improve_page (verdicts, Run 2 where published, progress); the
+# decision lane: its status file (one state and reason per arm); the Tiny / Small and decision plan of 12 Nov: each
+# row's state and blocker; any other setup: not in the learning plan. Never a number the sources do not hold.
+LEARN_DECISION = ROOT / "workspace/improve/out/improve-decision.json"
+LEARN_PLAN = ROOT / "mailbox/learning-small-and-decision-plan-2026-11-12.json"
+LANE_WORD = {"pending": "waiting", "complete": "complete", "stopped": "stopped", "not tested": "not tested",
+             "not started": "not started", "running": "running"}
+# The lanes' reasons are working notes (hosts, ledgers, message numbers): a page shows what each says in public words,
+# matched on the note's own terms, in this order; a note none of them matches shows its state alone.
+REASONS = [("D5", "Ümit's D5 decision"), ("cash", "cash approval"), ("subcap", "cash approval"),
+           ("BUDGET CAP", "its budget cap was reached"), ("context guard", "conservative context guard"),
+           ("frozen settings", "no frozen settings yet"), ("renderer", "a request renderer for its server"),
+           ("render check", "its render check"), ("no backgammon route", "no backgammon route yet"),
+           ("no league record", "no league record"), ("never sees the lessons", "its layer never sees the lessons"),
+           ("merged", "the plan amendment's merge")]
+
+
+def public_reason(*notes: str | None) -> str:
+    text = " ".join(n for n in notes if n)
+    seen = []
+    for term, words in REASONS:
+        if term in text and words not in seen:
+            seen.append(words)
+    return "; ".join(seen)
+
+
+NOT_IN_PLAN = "not in the learning plan"
+
+
+@dataclass(frozen=True)
+class Learn:
+    """One setup's learning state: setup (as its source names it), rank (minus the change in risks found, where a
+    verdict is published; None: no verdict), state (HTML: the Improved? cell), change and threshold (HTML helper cells),
+    line (the details box's line)."""
+    setup: str
+    rank: float | None
+    state: str
+    change: str
+    threshold: str
+    line: str
+
+
+def _chat_lane(S) -> dict:
+    import improve_page as IP
+    import improve_validate as V
+    L = S["improve"]
+    prog = {m["setup"]: m for m in (L["progress"] or {}).get("models", [])}
+    by = {m["setup"]: m for m in (L["results"] or {}).get("models", [])} if IP.results_shown(L) else {}
+    out = {}
+    for pm in L["plan"]["models"]:
+        s, p, m = pm["setup"], prog.get(pm["setup"]), by.get(pm["setup"])
+        if m is not None and m["verdict"]:
+            v = IP.shown(m)
+            out[s] = Learn(s, -v["change"]["risks_found"], f'<span data-learn="verdict">{IP.verdict_text(m)}</span>',
+                           f'<span class="zw-val">{fmt(v["change"]["risks_found"], 1, signed=True) or nm(NA)}'
+                           f'{IP.run2_mark(m)}<span class="zw-int">{IP.before_after(v, "risks_found")}</span></span>',
+                           f'<span class="zw-val">{IP.num(v["threshold"])}</span>',
+                           f'Did they improve? {IP.qc_mark(m["key"])}{esc(v["status"])} · '
+                           f'{fmt(v["change"]["risks_found"], 1, signed=True)} pp · threshold {IP.num(v["threshold"])} pp')
+            continue
+        state = (NA if L["progress_refused"] else "not started" if p is None else
+                 f'{IP.progress_status(p)} · series {p["series_done"]} of {V.SERIES}')
+        out[s] = Learn(s, None, f'<span data-learn="state">{esc(state)}</span>', "", "", f"Did they improve? {esc(state)}")
+    return out
+
+
+def _decision_lane() -> dict:
+    """The decision lane's arms (improve-decision.json): one state per setup, its arms' states and reasons joined."""
+    rows = json.loads(LEARN_DECISION.read_text())["rows"]
+    arms: dict[str, list] = {}
+    for r in rows:
+        arms.setdefault(relabel(r["setup"]), []).append(r)
+    out = {}
+    for s, rs in arms.items():
+        def one(r):
+            why = public_reason(r.get("reason"))
+            return LANE_WORD.get(r["state"], r["state"]) + (f" ({why})" if why else "")
+        texts = [one(r) for r in rs]
+        state = texts[0] if len(set(texts)) == 1 else " · ".join(f'{r["arm"]}: {t}' for r, t in zip(rs, texts))
+        out[s] = Learn(s, None, f'<span data-learn="state">{esc(state)}</span>', "", "",
+                       f"Did they improve? (decision models, two arms) {esc(state)}")
+    return out
+
+
+def _plan_rows() -> dict:
+    """The Tiny / Small and decision plan of 12 Nov: each row's league setups with its state and blocker."""
+    out = {}
+    for r in json.loads(LEARN_PLAN.read_text())["rows"]:
+        kind = ("queued" if r["state"].startswith("READY") else
+                "not tested" if "not tested" in (r.get("blocker") or "") else
+                "not started" if r["state"].startswith("not started") else "waiting")
+        why = public_reason(r["state"], r.get("blocker"))
+        state = kind + (f" ({why})" if why else "")
+        for b in (r.get("baseline"), r.get("baseline_other")):
+            if b and b.get("setup"):
+                s = relabel(b["setup"])
+                out.setdefault(s, Learn(s, None, f'<span data-learn="state">{esc(state)}</span>', "", "",
+                                        f"Did they improve? (learning plan, 12 Nov) {esc(state)}"))
+    return out
+
+
+def learning_states(S) -> dict:
+    """{setup name (shown): Learn}: the chat lane first, then the decision lane, then the plan of 12 Nov."""
+    out = _plan_rows()
+    out.update(_decision_lane())
+    out.update(_chat_lane(S))
+    return out
+
+
+def base_name(setup: str) -> str:
+    return re.sub(r" \([^()]*\)$", "", setup)
+
+
+def learning_of(states: dict, x, group: list | None) -> Learn | None:
+    """A row's learning state: its own setup's; on a model's own row (group given), else the state of another setup of
+    the model (the setting the test used); None: not in the learning plan."""
+    own = states.get(x["name"])
+    if own is not None or group is None:
+        return own
+    names = {y["name"] for y in group} | {y["model"] for y in group}
+    return next((v for k, v in states.items() if k in names or base_name(k) in names), None)
+
+
+def learning_cells(states: dict, x, group: list | None) -> tuple[Learn | None, str, str, str]:
+    """(state, Improved? cell, Change cell, Threshold cell) of a row; a state from another setting of the model says
+    which setting the test used."""
+    v = learning_of(states, x, group)
+    if v is None:
+        return None, f'<span data-learn="none">{NOT_IN_PLAN}</span>', "", ""
+    other = "" if v.setup == x["name"] else f'<span class="zw-int">at {esc(tag_text(name_and_tag(v.setup)[1]) or v.setup)}</span>'
+    return v, v.state + other, v.change, v.threshold
+
+
+# The leaderboard on the bench kit (zw_ui, turkce's bench-ui; Zeki #4879), in Reading's form (Ümit #6068: Reading's
+# home on the kit): Models · Class · Rows filters, the Measure keys Risk judgement · Learning · Error rate · Cost, each
+# panel's Chart / Table views (the table first), the compact table (rank · model · the selected measure · two helper
+# columns), every row in view (no Top 10 to fold back), one list per panel (each model's other settings as sub-rows;
+# All setups is that list shown flat); every other value in each setup's details box. Rank counts 1, 2, 3 down the rows
+# shown, by the selected measure (the risk judgement's order is the league order of leaderboard_rows; Learning: the
+# models with a verdict, by the change in risks found); the programs (GNUbg weak, Safest, Random) are pinned reference
+# rows: in every Models and Class view, never ranked, after the models.
+HERO_TITLE = "Risk calls"  # the page's short title (Ümit #4862 item 5: no hero buttons; the nav carries the ways in)
+MEASURE_KEYS = [ui.Key("risk", "Risk judgement"), ui.Key("learning", "Learning"), ui.Key("error", "Error rate (PR)"),
+                ui.Key("cost", "Cost per 1,000 decisions")]
+VALUED = ("risk", "error", "cost")  # the measures of every setup; Learning is its own (learning_cells)
+COST_UNITS = dict(unit="per 1,000 decisions", unit_1m="per 1M decisions")  # the site's cost-unit switch (site.js)
+MEASURE_COLUMN = {"risk": ui.Column("Risk judgement", "95% interval"),
+                  "error": ui.Column("Error rate (PR)", "95% interval", num=True),
+                  "cost": ui.Column("Cost", "$ per 1,000 decisions", num=True, sub_1m="$ per 1M decisions", **COST_UNITS),
+                  "learning": ui.Column("Improved?", "verdict · change · threshold, pp; or its state")}
+HELPER_COLUMN = {"risk": ui.Column("Risk judgement", num=True), "error": ui.Column("Error rate (PR)", num=True),
+                 "cost": ui.Column("Cost", "$ / 1,000", num=True, sub_1m="$ / 1M", **COST_UNITS)}
+LEARN_HELPERS = (ui.Column("Change", "risks found, pp · before → after", num=True, unit="pp"),
+                 ui.Column("Improvement threshold", "pp", num=True, unit="pp"))
+PANEL_SUB = {"risk": "all leagues · 95% interval · higher is better",
+             "error": "all leagues · 95% interval · lower is better",
+             "cost": "all leagues · lower is better",
+             "learning": "Did they improve? · every model: its verdict after lessons, or its state"}
+PROGRAM_COLOUR = "var(--data-grey)"
+SAFE_MARK = "50 = always safe"  # the reference mark on the risk judgement's bar
+# The cost cell's one short tag (Ümit #4862 item 4); how it was counted opens from the tag, and the box names the basis.
+COST_NOTE = "At each setup's price basis (a list price, or API-equivalent for a subscription); not a bill paid."
+
+
+def price_label(S, x) -> str | None:
+    """The setup's price basis as its setups.json (a late entry: its own) entry names it."""
+    return ((x["late"].get("price") or {}) if x["late"] else
+            (P.origin_meta(S, x["ds"], x["name"]).get("price") or {})).get("label")
+
+
+def usd(x) -> float | None:
+    return x["q"].get("usd_per_1000") if x["q"] else None
+
+
+def per_million(v: float) -> str:
+    """A cost per 1M decisions as site.js writes it from a cost per 1,000 (setupCostUnit perMillion; checks.py allows
+    these 1,000-fold forms of every stored usd_per_1000)."""
+    m = v * 1000
+    return f"${m:,.0f}" if m >= 100 else f"${m:,.2f}"
+
+
+def cost_cell(S, x) -> str:
+    """'$x' (per 1,000 decisions, and per 1M for the site's cost-unit switch) and one tag opening its calculation: 'GPU
+    estimate' on our machines (own_cost's account), 'Billed' for a billed API price, else 'List price' (the price
+    basis); a dash where the data has none."""
+    q, v = x["q"], usd(x)
+    amount = ui.Cost(f"${fmt(v, 3)}", per_million(v)) if v is not None else "\u2013"
+    if P.own_machine(q):
+        return ui.cost_cell(amount, "GPU estimate", "estimate", own_cost.tooltip(q["own_cost"], every_gap=False))
+    if v is None:
+        return ui.value(amount)
+    label = price_label(S, x)
+    billed = bool(label) and "(billed)" in label
+    return ui.cost_cell(amount, "Billed" if billed else "List price", "billed" if billed else "list",
+                        f"{label}. {COST_NOTE}" if label else COST_NOTE)
+
+
+def judgement_cell(x, colour: str, bar: bool) -> str:
+    """The risk judgement: as the measure, a bar on 0 to 100 with its 95% interval as the whisker, the mark at 50
+    (always safe) and beside it the number; as a helper, the number."""
+    r = x["r"]
+    j = r["judgement"]
+    if j is None:
+        return nm(r["judgement_na"] or NA)
+    if not bar:
+        return ui.value(fmt(j))
+    lo, hi = r["judgement_lo"], r["judgement_hi"]
+    return ui.bar(j / 100, lo / 100, hi / 100, colour, fmt(j), f"{fmt(lo)}\u2013{fmt(hi)}", ref=.5, ref_label=SAFE_MARK)
+
+
+def family_icon(name: str) -> str:
+    """The model's family icon (home.family; the page's FAMILY_ICONS sprite), '' without one."""
+    fam = H.family(name)
+    return f'<svg class="fam-icon" aria-hidden="true" focusable="false"><use href="#{fam["icon"]}"/></svg>' if fam else ""
+
+
+def running_row(S, e, measure: str, states: dict) -> ui.Row:
+    """A held late entry still playing (held_setups.json "running", analysis.running_entries; Ümit via Zeki #5001): one
+    unranked row after the ranked models, every score cell empty (no score until its entry is complete), its finished
+    matches of its field as its tag; the league, start, route, runner and the pairs still to play in its details box.
+    In no data file. On Learning, its learning state."""
+    name = e["name"]
+    mk, colour = H.maker(name)
+    status = f'Running \u00b7 {count(e["finished"])} of {count(e["total"])} matches'
+    started = datetime.fromisoformat(e["started"].replace("Z", "+00:00"))
+    lines = [
+        " \u00b7 ".join(p for p in (f'<strong>{esc(name)}</strong>', esc(mk), TYPE_LABEL.get(e["type"])) if p),
+        f'{esc(status)}: late entry still playing; no score or rank until its entry is complete',
+        f'Late-entry league #{e["league"]}, started {started.day} {started:%B %Y}, {started:%H:%M} UTC',
+        f'Route: {esc(e["route"])}, model {esc(e["model_id"])}',
+        ("Runner: " + "; then ".join(esc(r["commit"]) + (f' ({esc(r["note"])})' if r["note"] else "")
+                                     for r in e["runners"])) if e["runners"] else None,
+        "Pending: " + "; ".join(esc(p) for p in e["pending"]),
+        f'Parameters: {P.params_html(name)}']
+    learn = states.get(name)
+    cells = (learn.state if learn else f'<span data-learn="none">{NOT_IN_PLAN}</span>', "", "") if measure == "learning" \
+        else ("", "", "")
+    return ui.Row(model=ui.Model(name, colour, mk, P.class_label(name), tag=status, icon=family_icon(name)),
+                  measure=cells[0], helpers=cells[1:], details=[x for x in lines if x], details_label=f"{name}: details",
+                  filters={"models": e["type"], "class": P.model_class(name) or "none"}, box_key=f"running/{name}",
+                  attrs={"data-kind": "running"}, untiered=True)
+
+
+def error_cell(x, interval: bool) -> str:
+    v = _er(x)
+    if v is None:
+        return ui.value("\u2013")
+    q = x["q"]
+    return ui.value(fmt(v), f'{fmt(q["error_lo"])}\u2013{fmt(q["error_hi"])}' if interval else "")
+
+
+def risk_key(x) -> tuple:
+    return (x["r"]["judgement"] is None, -(x["r"]["judgement"] or 0), x["name"])
+
+
+class Leaderboard(ui.Bench):
+    labels = ui.Labels(empty="No model of this kind on the leaderboard.")
+    # Every row in view, as Reading's and Logic's live leaderboards: no Top 10 to fold back (Ümit #6070: closing the kit's
+    # Show top 10 scrolled the page up by the folded rows).
+    top = None
+    default_view = "table"
+    # One list per panel (kit v2.1, as Reading's home): one row per model with its other settings as sub-rows; All
+    # setups is that list shown flat, in its own order and ranks (rows(..., "all")).
+    one_list = True
+
+    def __init__(self, S):
+        self.S = S
+        self.ranked, self.progs = leaderboard_rows(S)
+        self.states = learning_states(S)
+        # The chart axes span every row's value and interval, the programs' too (Random's error rate is the highest).
+        setups = [y for _, _, _, g in self.ranked + self.progs for y in g]
+        errors = [v for y in setups if _er(y) is not None for v in (_er(y), y["q"]["error_hi"])]
+        self.er_top = math.ceil(max(errors) / 10) * 10
+        costs = [v for v in map(usd, setups) if v]
+        self.cost_range = (10 ** math.floor(math.log10(min(costs))), 10 ** math.ceil(math.log10(max(costs))))
+
+    def title(self) -> str:
+        return HERO_TITLE
+
+    def scope(self, part) -> str:
+        S = self.S
+        return (f'{count(S["counts"]["decisions_scored"])} decisions scored in {len(S["leagues"])} leagues · GNU '
+                'Backgammon 1.08, 2-ply')
+
+    def filter_rows(self) -> list:
+        return P.kit_filters() + [ui.KeyRow("setups", "Rows", [ui.Key("models", "One row per model", ""),
+                                                               ui.Key("all", "All setups")])]
+
+    def measure_keys(self):
+        return ui.KeyRow("measure", "Measure", MEASURE_KEYS)
+
+    def views(self, part, measure) -> tuple:
+        """A chart beside every measure's table (the table first), as Reading's; Learning, a state per model, a table."""
+        return ("table",) if measure == "learning" else ("chart", "table")
+
+    def chart_rank(self, part, measure) -> bool:
+        return True
+
+    def axis(self, part, measure):
+        if measure == "risk":
+            return ui.Axis([(v / 100, str(v)) for v in (0, 25, 50, 75, 100)], "risk judgement")
+        if measure == "error":
+            step = 10 if self.er_top <= 60 else 20 if self.er_top <= 120 else 50
+            return ui.Axis([(v / self.er_top, str(v)) for v in range(0, self.er_top + 1, step)], "error rate (PR)")
+        if measure == "cost":
+            return ui.log_axis(*self.cost_range, lambda v: f"${v:g}", "$ per 1,000 decisions, log scale")
+        return None
+
+    def panel_title(self, part, measure) -> tuple:
+        return next(k.label for k in MEASURE_KEYS if k.value == measure), PANEL_SUB[measure]
+
+    def columns(self, part, measure):
+        if measure == "learning":
+            return ui.Columns("Rank", "Model", MEASURE_COLUMN[measure], LEARN_HELPERS)
+        others = [m for m in VALUED if m != measure]
+        return ui.Columns("Rank", "Model", MEASURE_COLUMN[measure], tuple(HELPER_COLUMN[m] for m in others))
+
+    def notes(self, part, measure) -> list:
+        import improve_page as IP
+        class_rule = ui.Note(P.class_rule_note(), raw=True)
+        if measure == "learning":
+            qc = IP.qc_footnote(self.S["improve"])
+            return ['Every model on the leaderboard: its verdict after lessons where one is published (Run 2 where it '
+                    'replaced the original), else its state in the learning lanes, as their status files give it. '
+                    '<a href="improve/">Did they improve?</a>',
+                    ui.Note(P.star_note("Improved? = verdict · change · threshold, in points (pp) of risks found.",
+                                        f'<p>{esc(IP.THRESHOLD_NOTE)}</p>'), raw=True),
+                    class_rule] + ([ui.Note(qc, raw=True)] if qc else [])
+        lead = f"{esc(MEANING)} " if measure == "risk" else ""
+        return [f'{lead}{esc(ROW_LINE)} All setups: every setup of every model. '
+                '<a href="about/#leaderboard">How rows are chosen</a>',
+                ui.Note(P.star_note(esc(ALL_NOTE),
+                                    f'<p>{esc(NO_TIERS)} {esc(TIER_NOTE)} {esc(H.RANK_NOTE)}</p><p>$ per 1,000 decisions: '
+                                    f'{esc(COST_NOTE)} Each cost\'s tag opens how it was counted; each row\'s details name '
+                                    'its price basis.</p><p><a href="about/#leaderboard">How rows are chosen</a></p>',
+                                    cls="table-note headline-rule"), raw=True),
+                class_rule]
+
+    def sort_key(self, measure: str, x, group: list | None):
+        if measure == "learning":
+            v = learning_of(self.states, x, group)
+            return (v is None or v.rank is None, v.rank if v is not None and v.rank is not None else 0)
+        value = {"risk": None, "error": _er, "cost": usd}[measure]
+        return (value(x) is None, value(x) or 0) if value else risk_key(x)
+
+    def rows(self, part, measure, setups) -> list:
+        if setups == "models":
+            models = []
+            for x, _, name, group in self.ranked:
+                others = sorted((y for y in group if y is not x), key=lambda y: self.sort_key(measure, y, None))
+                models.append((x, model_extras(name, group, True), group,
+                               [self.row(y, "model", model_extras(name, group, False), measure, setups, None)
+                                for y in others]))
+            progs = [(x, [self.row(y, "program", [], measure, setups, None) for y in g if y is not x])
+                     for x, _, _, g in self.progs]
+            models.sort(key=lambda e: self.sort_key(measure, e[0], e[2]))
+            out = [self.row(x, "model", extra, measure, setups, group, subs) for x, extra, group, subs in models]
+        else:
+            flat = sorted(((y, model_extras(name, group, y is x)) for x, _, name, group in self.ranked for y in group),
+                          key=lambda e: risk_key(e[0]))
+            flat.sort(key=lambda e: self.sort_key(measure, e[0], None))
+            progs = [(y, []) for _, _, _, g in self.progs for y in g]
+            out = [self.row(x, "model", extra, measure, setups, None) for x, extra in flat]
+        out += [running_row(self.S, e, measure, self.states) for e in self.S["_running"]]
+        return out + [self.row(x, "program", [], measure, setups, None, subs) for x, subs in progs]
+
+    def row(self, x, kind: str, extra: list, measure: str, setups: str, group: list | None, others=()) -> ui.Row:
+        """One setup's row; group: the model's setups on its own row of one row per model (Learning may then show the
+        state of the setting the test used)."""
+        S = self.S
+        model = kind == "model"
+        mk, colour = H.maker(x["name"]) if model else ("program", PROGRAM_COLOUR)
+        ref = None if model else H.ref_label(S, x["ds"], x["name"])
+        cells = {"risk": judgement_cell(x, colour, measure == "risk"), "error": error_cell(x, measure == "error"),
+                 "cost": cost_cell(S, x)}
+        if measure == "learning":
+            learn, state, change, threshold = (learning_cells(self.states, x, group) if model else
+                                               (None, f'<span data-learn="none">program · {NOT_IN_PLAN}</span>', "", ""))
+            measure_html, helpers = state, (change, threshold)
+            untiered = learn is None or learn.rank is None
+        else:
+            value = {"risk": None, "error": _er, "cost": usd}[measure]
+            measure_html, helpers = cells[measure], tuple(cells[m] for m in VALUED if m != measure)
+            untiered = value is not None and value(x) is None
+        own = learning_of(self.states, x, None) if model else None
+        lines = details_lines(S, x, kind, extra, ref) + ([own.line] if own else
+                                                         [f"Did they improve? {NOT_IN_PLAN}"] if model else [])
+        return ui.Row(
+            model=ui.Model(row_name(x, kind), colour, mk, P.class_label(x["model"]) if model else "",
+                           decisions_href(S, x), tag=chip_text(S, x, kind, league=not model and setups == "all"),
+                           icon=family_icon(x["name"]) if model else ""),
+            measure=measure_html, helpers=helpers, details=lines, details_label=f'{x["name"]}: details',
+            filters={"models": model_type(S, x), "class": P.model_class(x["model"]) or "none"} if model else {},
+            chart=self.bar(x, measure, colour) if measure in VALUED else None, missing="No value",
+            box_key=f'{x["ds"]}/{x["name"]}', others=list(others),
+            # A model without a value of the measure shown is not ranked by it; a program is a pinned reference row.
+            untiered=model and untiered, pinned=not model)
+
+    def bar(self, x, measure: str, colour: str):
+        if measure == "risk":
+            r = x["r"]
+            j = r["judgement"]
+            return None if j is None else ui.Bar(j / 100, fmt(j), r["judgement_lo"] / 100, r["judgement_hi"] / 100,
+                                                 ref=.5, ref_label=SAFE_MARK)
+        if measure == "error":
+            v = _er(x)
+            q = x["q"]
+            return None if v is None else ui.Bar(v / self.er_top, fmt(v), q["error_lo"] / self.er_top,
+                                                 q["error_hi"] / self.er_top)
+        v = usd(x)
+        return None if not v else ui.Bar(ui.log_share(v, *self.cost_range), f"${fmt(v, 3)}")
 
 
 def tier_text(name: str) -> str:
@@ -453,31 +741,6 @@ def tier_text(name: str) -> str:
     if name in TIER:
         return str(TIER[name])
     return f'{PARTIAL[name]} of 200 so far' if name in PARTIAL else "not run yet"
-
-
-def tier_cell(x) -> str:
-    """The row's Same positions tier cell (tier_text)."""
-    return f'<td class="num hl-wide">{esc(tier_text(x["name"])) if x["name"] in TIER else nm(tier_text(x["name"]))}</td>'
-
-
-def wide_cells(x) -> str:
-    """The four wide-screen cells of a row, each the setup's stored value as its details box prints it; a dash where
-    the data has none."""
-    r, q = x["r"], x["q"]
-    dash = '<span class="muted">\u2013</span>'
-    share = lambda s: pct(s["share"]) if s["den"] else dash  # noqa: E731
-    er = fmt(q["error_rate"]) if q and q.get("error_rate") is not None and not q.get("too_few") else dash
-    usd = q.get("usd_per_1000") if q else None
-    if P.own_machine(q) and usd is not None:  # on our machines (Ümit #4665 item 4): the estimate, the machine under it
-        cost = P.own_cost_text(q, f'<span class="cost-1k">${fmt(usd, 3)}</span><span class="cost-1m" '
-                                  f'data-usd="{usd!r}">${fmt(usd, 3)}</span>')
-    elif P.own_machine(q):
-        cost = P.own_cost_hint(q, esc(P.own_machine(q)))
-    else:
-        cost = (P.own_cost_hint(q, f'<span class="cost-1k">${fmt(usd, 3)}</span><span class="cost-1m" '
-                                   f'data-usd="{usd!r}">${fmt(usd, 3)}</span>') if usd is not None else dash)
-    return "".join(f'<td class="num hl-wide"{t}>{v}</td>' for v, t in
-                   ((share(r["found"]), ""), (share(r["right_safety"]), ""), (er, ""), (cost, P.own_cost_sort(q))))
 
 
 def too_safe(S, chart: list) -> str:
@@ -515,10 +778,12 @@ def too_safe(S, chart: list) -> str:
 MEANING = "Risk judgement: 100 = every call right, 50 = always safe; higher is better."
 ROW_LINE = "One row per model at its highest reasoning setting, never its best score; late entries included."
 # Under the table, next to the not-paired note (Ümit #4282 item 2): why # has no tiers, plainly.
-NO_TIERS = ("Rank counts 1, 2, 3 down the models shown, in league order (with a filter on, among those models only); it has no tiers: a tier needs a paired test (McNemar, Holm) over positions every "
+NO_TIERS = ("Rank counts 1, 2, 3 down the rows shown, by the measure shown (with a filter on, among those rows only); "
+            "it has no tiers: a tier needs a paired test (McNemar, Holm) over positions every "
             "model answered, and each league played its own positions, so models in different leagues never answered "
-            "the same ones. The Tier column and Same positions (preview) come from 200 positions every model there "
-            "answered.")
+            "the same ones. The tier in each row's details and Same positions (preview) come from 200 positions every "
+            "model there answered.")
+TIER_NOTE = "Rank comes from league play; tier comes from the same 200 positions for every model."
 # Same positions (preview, Zeki #4287): the stored E1 answers of 'Did they improve?' (content/same_positions_preview.json,
 # tools/site/same_positions_publish.py), tiers by exact McNemar with Holm.
 SAME = json.loads((CONTENT / "same_positions_preview.json").read_text())
@@ -561,33 +826,26 @@ def same_positions() -> str:
             f'of which {T["gpu_hours"]} hours on our GPUs. Not available now: {gone}.</p>')
 
 
-def headline(S) -> str:
-    """One row per model at its highest reasoning setting (a fixed rule, not the best score), its other settings
-    behind a per-row expander, the programs as grey unranked rows; the All setups key shows the full All leagues risk
-    table (every setup, programs as reference rows) in its place."""
-    rows = headline_rows(S)[0]
-    table = P.table(HEADLINE_HEAD, rows, "One row per model at its highest reasoning setting; all leagues, all phases",
-                    cls="board headline",
-                    attrs=' data-dataset="all" id="headline-table"')
-    keys = ('<span class="keys needs-js" role="group" aria-label="Rows"><button type="button" class="key" '
-            'data-headline-view="model" aria-pressed="true">One row per model</button><button type="button" '
-            'class="key" data-headline-view="all" aria-pressed="false">All setups</button><button type="button" '
-            f'class="key" data-headline-view="same" aria-pressed="false">{esc(SAME_KEY)}</button></span>')
-    # The table's own filter (Ümit #2907): local to this table, never the page's filters; programs stay in every view.
-    # Type and Class (Ümit #4217) combine: a row shows when it is of the pressed type and class (P.model_class).
-    types = ('<div class="keys hl-filter needs-js" role="group" aria-label="Model type">'
-             + "".join(f'<button type="button" class="key" data-hl-filter="{k}" aria-pressed="{str(k == "all").lower()}">'
-                       f'{l}</button>' for k, l in (("all", "All"), ("chat", "Chat models"), ("decision", "Decision models")))
-             + "</div>" + P.class_keys("hl-filter"))
-    return (f'<section class="card headline" id="leaderboard" data-dataset="all" aria-labelledby="leaderboard-title">'
-            f'<div class="chart-head"><h2 id="leaderboard-title">Risk calls leaderboard</h2>{keys}</div>'
-            f'<div data-headline-panel="model">{types}{table}<p class="table-note hl-tier-note">{esc(TIER_NOTE)}</p></div>'
-            f'<div data-headline-panel="all" hidden>{H.all_risk_table(S)}{caveat(H.RANK_NOTE, "statistics")}</div>'
-            f'<div data-headline-panel="same" hidden>{same_positions()}</div>'
-            f'<p class="table-note headline-rule">{esc(MEANING)} {esc(ROW_LINE)} {esc(ALL_NOTE)} {esc(NO_TIERS)} '
-            '<a href="about/#leaderboard">How rows are chosen</a><span class="hl-wide-note"> $ per 1,000 decisions: at '
-            'each setup\'s price basis, which its details name (a list price, or API-equivalent for a subscription); '
-            'not a bill paid.</span></p></section>')
+def leaderboard(S) -> str:
+    """The home page's head and leaderboard (Ümit #4862; the bench kit, zw_ui.results): the short title, its scope,
+    the Models · Class · Rows filters, the Measure keys and the compact table (Leaderboard) with its notes, then Same
+    positions (preview). The block keeps the old #leaderboard anchor."""
+    return (P.KIT_ALIASES + ui.results(Leaderboard(S), block_id="leaderboard", box_prefix="lb-box")
+            + learning_section()
+            + f'<section class="card same-positions" id="same-positions" aria-labelledby="same-positions-title">'
+              f'<h2 id="same-positions-title">{esc(SAME_KEY)}</h2>{same_positions()}</section>')
+
+
+def learning_section() -> str:
+    """Under the leaderboard, in its own box (Ümit #6068): what the Learning tab shows and how a model is judged (the
+    "Did they improve?" page's short method, word for word), and the way to that page."""
+    import improve_page as IP
+    return ('<section class="card learning-section" id="learning" aria-labelledby="learning-title">'
+            '<h2 id="learning-title">Learning: did they improve?</h2>'
+            '<p>The leaderboard\'s Learning tab shows, for every model, its verdict where one is published, else its '
+            'state in the learning lanes: running, waiting (and why), not tested (and the rule), or not in the learning '
+            'plan.</p>' + IP.summary().replace(' id="improve-summary"', '')
+            + '<p><a href="improve/">Did they improve? Every result, test and lesson \u2192</a></p></section>')
 
 
 # --- Finding sections ----------------------------------------------------------------------------------------------
@@ -718,7 +976,9 @@ def _svg(label: str, w: int, h: int, body: str) -> str:
 
 def _rows_chart(S) -> list:
     """The leaderboard's model rows and GNUbg weak: (kind, row name, chosen setup, maker colour)."""
-    return headline_rows(S)[2]
+    ranked, progs = leaderboard_rows(S)
+    return ([("model", name, x, H.maker(x["name"])[1]) for x, _, name, _ in ranked]
+            + [("program", x["name"], x, None) for x, _, _, _ in progs if x["name"] == "GNUbg weak"])
 
 
 def two_skill_numbers(S) -> dict:

@@ -150,9 +150,30 @@ def _collect(obj, nums: set, texts: list):
             _collect(v, nums, texts)
 
 
+def _per_million(obj, nums: set):
+    """Every stored usd_per_1000, per 1M decisions (the 1,000-fold form the cost-unit switch shows: site.js
+    perMillion, story.per_million): a unit change of a data file's number, not a new number."""
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            if k == "usd_per_1000" and isinstance(v, (int, float)) and not isinstance(v, bool):
+                _forms(1000 * float(v), nums)
+            else:
+                _per_million(v, nums)
+    elif isinstance(obj, list):
+        for v in obj:
+            _per_million(v, nums)
+
+
 def allowed_numbers(out: Path, S: dict) -> set:
     nums, texts = set(), []
     for p in (out / "data").rglob("*.json"):
+        data = json.loads(p.read_text())
+        _collect(data, nums, texts)
+        _per_million(data, nums)
+    # The learning lanes' status files the home page's Learning tab quotes (story.LEARN_DECISION, LEARN_PLAN): their
+    # reasons' figures (a subcap, a token limit) as written there.
+    import story
+    for p in (story.LEARN_DECISION, story.LEARN_PLAN):
         _collect(json.loads(p.read_text()), nums, texts)
     idx = out / "decisions/index.json"
     if idx.exists():
@@ -293,10 +314,9 @@ def check_mixing(page: Path, root: Node, S: dict) -> list[str]:
         what = "a table" if t.tag == "table" else "a chart"
         merged = t.tag == "table" and t.attrs.get("data-dataset") == "all"
         if merged:
-            # The All leagues table (Can, approved by Ümit, 30 Oct 2026): every league's rows, each with its League. The
-            # leaderboard (id headline-table) also ranks the late entries, each tagged (Ümit #2921 (b)).
+            # The All leagues table (Can, approved by Ümit, 30 Oct 2026): every league's rows, each with its League.
             ds -= {"all"}
-            allowed = {lg["dataset"] for lg in S["leagues"]} | ({LATE_ENTRY} if t.attrs.get("id") == "headline-table" else set())
+            allowed = {lg["dataset"] for lg in S["leagues"]}
             if ds - allowed:
                 bad.append(f"{page}: the All leagues table holds rows outside the leagues {sorted(ds)}")
             if not any(ALL_NOTE in text_of(a) for a in ancestors(t) if a.attrs.get("data-dataset") == "all"):
@@ -862,9 +882,13 @@ def check_improve(out: Path, test_set: Path | None = None) -> list[str]:
     ranks = [rank(s) for s in psetups]
     if ranks != sorted(ranks):
         bad.append(f"{PATH}: the results table is not finished (by change), then running, then not started")
+    # A row's details box is the bench kit's shared box after the results (data-zw-box names it): read with the row.
+    boxes = {n.attrs["id"]: n for n in nodes if n.attrs.get("id") and "zw-box" in (n.attrs.get("class") or "").split()}
     for n in prows:
         s = n.attrs["data-progress-setup"]
-        cells = {c.attrs["data-progress"]: " ".join(text_of(c).split()) for c in walk(n) if c.attrs.get("data-progress")}
+        box = boxes.get(n.attrs.get("data-zw-box", ""))
+        parts = list(walk(n)) + (list(walk(box)) if box is not None else [])
+        cells = {c.attrs["data-progress"]: " ".join(text_of(c).split()) for c in parts if c.attrs.get("data-progress")}
         p = prog.get(s)
         if L.get("progress_refused"):
             want_s, want_d = NA, NA
@@ -875,8 +899,8 @@ def check_improve(out: Path, test_set: Path | None = None) -> list[str]:
             want_d = f'{p["series_done"]} / 5'
         if cells.get("status") != want_s or cells.get("series") != want_d:
             bad.append(f"{PATH}: {s}: status row not what the data gives")
-        rcells = {c.attrs["data-rcell"]: " ".join(ordered_text(c).split()) for c in walk(n) if c.attrs.get("data-rcell")}
-        rv = next((c.attrs["data-rverdict"] for c in walk(n) if c.attrs.get("data-rverdict")), None)
+        rcells = {c.attrs["data-rcell"]: " ".join(ordered_text(c).split()) for c in parts if c.attrs.get("data-rcell")}
+        rv = next((c.attrs["data-rverdict"] for c in parts if c.attrs.get("data-rverdict")), None)
         m = by.get(s)
         if m is None:
             if rcells or rv:
@@ -904,8 +928,10 @@ def check_improve(out: Path, test_set: Path | None = None) -> list[str]:
             bad.append(f"{PATH}: {s}: results-table cells {rcells!r}, the data gives {want!r}")
         if rv != (("yes" if e["improved"] else "no") if e["gate"] and not results.get("dry_run") else None):
             bad.append(f"{PATH}: {s}: results-table Yes/No {rv!r} not what the data gives")
+    # A planned row's result cells (the kit table's rank, measure and helper cells) hold no number.
     for n in (n for n in nodes if n.tag == "tr" and n.attrs.get("data-planned")):
-        if any(re.search(r"\d", text_of(c)) for c in walk(n) if c.tag == "td" and not c.attrs.get("data-pcell")):
+        if any(re.search(r"\d", text_of(c)) for c in walk(n) if c.tag == "td" and {"zw-rank", "zw-measure", "zw-help"}
+               & set((c.attrs.get("class") or "").split())):
             bad.append(f"{PATH}: planned row {n.attrs['data-planned']}: shows a number")
 
     changes = [shown[s]["change"]["risks_found"] if s in by else None for s in setups]
@@ -1052,10 +1078,12 @@ def check_model_classes(out: Path) -> list[str]:
             for m, e in P.PRICES.items()
             if not isinstance(e.get("provisional"), bool) or bool(e.get("provisional_reason")) != e["provisional"]]
     home = (out / "index.html").read_text()
-    rows = re.findall(r'<tr[^>]*data-hl-type="(?!program)[^"]*"[^>]*>', home)
-    bad += [f"index.html: leaderboard row without a class: {r[:120]}" for r in rows if "data-hl-class=" not in r]
+    # The leaderboard's model rows (the bench kit's table: data-models; the programs carry none).
+    rows = re.findall(r'<tr[^>]*data-models="[^"]*"[^>]*>', home)
+    bad += [f"index.html: leaderboard row without a class: {r[:120]}" for r in rows
+            if "data-class=" not in r or 'data-class="none"' in r]
     bad += [f"index.html: chat model row in Undisclosed (Ümit #4259): {r[:120]}" for r in rows
-            if 'data-hl-type="chat"' in r and 'data-hl-class="undisclosed"' in r]
+            if 'data-models="chat"' in r and 'data-class="undisclosed"' in r]
     import html as html_mod
     bad += [] if html_mod.escape(P.CLASS_RULE) in home else ["index.html: the class rule sentence (Ümit #4245) missing"]
     return bad + ([] if rows else ["index.html: no leaderboard model rows"])

@@ -12,6 +12,7 @@ from common import (EARLIER, EARLIER_NOTE, LATE_ENTRY, LATE_ENTRY_LABEL, LATE_EN
                     QC_LABEL, QC_SETUPS, REASONING_NOTES, ROOT, SUITE_BAR, TOO_FEW, aliases, count, esc, fmt, nm, pct,
                     relabel, setup_slug, shown_names_html, slug, status_badge, unplayed_text)
 from common import SHARED_NAMES, effort_aliases, model_key, name_and_tag, name_html, name_text, tag_html, tag_text
+import zw_ui as ui
 
 # The site's top bar (Ümit #2901, as Clocktower Bench's): the Hilde leaf and the site's name, then one row of tabs. Each
 # tab is a page; every other page sits under one tab (SECTION), which is marked while it is in view. The pages that are
@@ -336,6 +337,9 @@ def layout(S, base, path: str, title: str, body: str, description: str | None = 
           f'<meta name="twitter:image" content="{image}">') if image else ""
     css = "".join(f'<link rel="stylesheet" href="{rel}{s}">' for s in ("suite-bar.css", "site.css", "bg.css") + tuple(styles))
     js = "".join(f'<script src="{rel}{s}" defer></script>' for s in ("site.js", "tables.js", "png.js") + tuple(scripts))
+    # A page with the bench kit's block (zw-ui.js; zw-ui.md section 1): its class before the first paint, so the
+    # default view paints at once and the script changes it only for an address that asks for another.
+    kit = '<script>document.documentElement.classList.add("zw-js");</script>' if "zw-ui.js" in scripts else ""
     # The Dark / Light switch sits in the site's bar beside its name, as on the Decision models site (Ümit, 31 Oct 2026);
     # More options keeps the page export ("More" on a phone, its name unchanged).
     theme = ('<div class="theme-switch" role="group" aria-label="Colour theme" hidden><button type="button" class="key" '
@@ -363,7 +367,7 @@ def layout(S, base, path: str, title: str, body: str, description: str | None = 
   <meta name="twitter:title" content="{esc(social)}"><meta name="twitter:description" content="{esc(desc)}">
   {og}
   <meta name="color-scheme" content="dark light">
-  {HEAD_SCRIPT}
+  {HEAD_SCRIPT}{kit}
   {css}
   {js}
 </head>
@@ -1279,6 +1283,12 @@ def class_note(model: str) -> str | None:
     return None
 
 
+def class_rule_note() -> str:
+    """The class rule (CLASS_RULE, word for word) under a short line and a '*' (Ümit #4245)."""
+    return star_note("Class: by the maker's total parameters, or by list price when the size is undisclosed",
+                     f'<p>{esc(CLASS_RULE)}</p>', "table-note class-note")
+
+
 def class_keys(cls: str) -> str:
     """The Class row under a table's type keys (Ümit #4217, #4245): All · Tiny · Small · Medium · Large · Efficient ·
     Workhorse · Flagship (data-class-key; the page's script hides a key with no model in the type in view), and the
@@ -1287,8 +1297,26 @@ def class_keys(cls: str) -> str:
             'Class:</span>' + "".join(f'<button type="button" class="key" data-class-key="{k}" aria-pressed='
                                       f'"{str(k == "all").lower()}">{l}</button>'
                                       for k, l in (("all", "All"),) + CLASSES)
-            + '</div>' + star_note("Class: by the maker's total parameters, or by list price when the size is "
-                                   "undisclosed", f'<p>{esc(CLASS_RULE)}</p>', "table-note class-note"))
+            + '</div>' + class_rule_note())
+
+
+def kit_filters() -> list:
+    """The bench kit's Models and Class rows (zw_ui; the leaderboard's and the /improve/ table's): a second tap clears
+    either to All; a class with no row in view loses its key. A row carries data-models (chat, decision; a program
+    none: in every view) and data-class (CLASSES, 'none' for a model without one: in the All view only)."""
+    return [ui.KeyRow("models", "Models", [ui.Key("all", "All", "All models"), ui.Key("chat", "Chat", "Chat models"),
+                                           ui.Key("decision", "Decision", "Decision models")], any="all"),
+            ui.KeyRow("class", "Class", [ui.Key("all", "All", "")] + [ui.Key(k, l) for k, l in CLASSES], any="all",
+                      hide_empty=True)]
+
+
+# The old filter addresses of the leaderboard and the /improve/ table, rewritten before zw-ui.js reads the address
+# (zw-ui.md section 12: aliases are the site's): ?models=small-chat / small-decision (and small: Small chat), which
+# opened on that type with Tiny and Small, open on that type and both classes (the kit's class=tiny,small).
+KIT_ALIASES = ('<script>(function () { var u = new URL(location.href), q = u.searchParams, m = q.get("models"); '
+               'if (m === "small") m = "small-chat"; if (!m || m.indexOf("small-") !== 0) return; '
+               'q.set("models", m.slice(6)); if (!q.get("class")) q.set("class", "tiny,small"); '
+               'try { history.replaceState(history.state, "", u); } catch (e) {} })();</script>')
 
 
 B7 = [("model_id", "Model ID"), ("provider", "Provider or endpoint"), ("date_run", "Date run"), ("price", "Price"),
@@ -1972,7 +2000,7 @@ def repeat_checks(S) -> str:
     model (maker dot, family icon, official name and tag, as on the home leaderboard), the repeat's risk judgement /
     error rate / decisions (or its state in words), the first run's on the same pairs, matches finished of the pairs
     playable today and status; Run 1 and Run 2 side by side on the matched pairs (with invalid decisions and billed
-    cost, the run id, settings, dates, cost basis and differences in the row's details box (story.box_html's kind,
+    cost, the run id, settings, dates, cost basis and differences in the row's details box (site.js modelBoxes' kind,
     site.js modelBoxes: hover or focus on a desktop, a tap on the name on a phone; no Details row under the model,
     Ümit via Zeki #5462). Below 640 px: rank, model, both risk judgements and status; the rest in the box."""
     import home as H
@@ -2199,8 +2227,9 @@ def write_all(S, out: Path, base: str) -> None:
     home_html = home.home(S)
     moved = moved_anchors({"leagues/": moved_ids, "nackgammon/": ids_of(nack)}, league_ids)
     moved = {k: v for k, v in moved.items() if k not in ids_of(home_html)}
+    moved["headline-table"] = "#leaderboard"  # the leaderboard's old table: its block on the bench kit (story.leaderboard)
     home_html += f'<script type="application/json" id="moved-anchors">{json.dumps(moved, sort_keys=True)}</script>'
-    put("", TITLE, home_html, scripts=("bg.js",), styles=("decisions.css",), body_class="home")
+    put("", TITLE, home_html, scripts=("bg.js", "zw-ui.js"), styles=("decisions.css", "zw-ui.css"), body_class="home")
     home.fragments(S, out)
     put("leagues/", "Leagues", leagues, scripts=("bg.js",), styles=("decisions.css",))
     put("nackgammon/", "Nackgammon", nack, scripts=("bg.js",), dataset="nackgammon",
@@ -2244,7 +2273,7 @@ def write_all(S, out: Path, base: str) -> None:
         description=learning_page.DESCRIPTION, dataset="learning")
     import improve_page
     put(improve_page.PATH, improve_page.title(S["improve"]), improve_page.body(S["improve"], S),
-        description=improve_page.DESCRIPTION, scripts=("bg.js",), dataset="improve")
+        description=improve_page.DESCRIPTION, scripts=("zw-ui.js",), styles=("zw-ui.css",), dataset="improve")
     for path, title, body in improve_page.registration_pages(S["improve"]):
         put(path, title, body, dataset="improve")
     put("data/", "Data", data_page(S, out))

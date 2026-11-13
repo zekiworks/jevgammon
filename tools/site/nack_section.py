@@ -116,7 +116,7 @@ def is_program(group: str) -> bool:
 
 
 def maker_mark(name: str, group: str) -> str:
-    """The row's maker dot and family icon as on the home leaderboard (story.headline_table): the shared palette's colour
+    """The row's maker dot and family icon as on the home leaderboard (story.Leaderboard): the shared palette's colour
     (home.maker, which fails the build for a model setup with no palette maker); a program the striped program grey."""
     import home as H
     if is_program(group):

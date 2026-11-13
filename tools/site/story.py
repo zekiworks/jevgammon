@@ -482,6 +482,22 @@ MEASURE_COLUMN = {"risk": ui.Column("Risk judgement", "95% interval"),
 }
 HELPER_COLUMN = {"risk": ui.Column("Risk judgement", num=True), "error": ui.Column("Error rate (PR)", num=True),
                  "cost": ui.Column("Cost", "$ / 1,000", num=True, sub_1m="$ / 1M", **COST_UNITS)}
+# Every measure side by side (Ümit via Zeki #6721): the chosen one first, the others, then the median request time per
+# decision (analysis: turns.request_ms, as the Cost and time tables), a column only, never a measure key. No
+# calibration column: its definition is pending (bench_scores.CALIBRATION_NOTE).
+LATENCY_COLUMN = ui.Column("Latency", "median s", num=True, unit="s, median per decision")
+# Each head's meaning opens from it (improve_page.head_tips: hover, keyboard focus, a tap), from the method's words.
+HEAD_TIPS = {
+    "Rank": "Counts 1, 2, 3 down the rows shown, by the measure chosen; no tiers.",
+    "Model": "The model and its setting. Tap or point at a name for its details.",
+    "Risk judgement": "100 = every call right, 50 = always safe; higher is better.",
+    "Error rate (PR)": (f'{json.loads((CONTENT / "thresholds.json").read_text())["equity_scale"]} × mean 2-ply equity '
+                        "loss per decision, the checker-play performance rating (PR) backgammon players use; lower is "
+                        "better."),
+    "Cost": ("Dollars per 1,000 decisions at each setup's price basis (a list price, or API-equivalent for a "
+             "subscription); not a bill paid."),
+    "Latency": "Median request seconds per decision (waits between retries not included).",
+}
 # The Learning tab's groups (Ümit via Zeki #6257): improve_page.result_group's, then the models outside the plan.
 LEARN_GROUP = {0: "Improved: Yes", 1: "Improved: No", 2: "Not finished", None: "Not in the learning plan"}
 PANEL_SUB = {"risk": "all leagues · 95% interval · higher is better",
@@ -570,7 +586,7 @@ def running_row(S, e, measure: str, states: dict) -> ui.Row:
         cells = (learn.result, *learn.numbers) if learn else (IP.chip(NOT_IN_PLAN, "none"), *NO_NUMBERS)
         group = LEARN_GROUP[learn.order[0] if learn else None]
     else:
-        cells, group = ("", "", ""), ""
+        cells, group = ("", "", "", ""), ""
     return ui.Row(model=ui.Model(name, colour, mk, P.class_label(name), tag=status, icon=family_icon(name)),
                   measure=cells[0], helpers=tuple(cells[1:]), details=[x for x in lines if x],
                   details_label=f"{name}: details", filters={"models": e["type"], "class": P.model_class(name) or "none"},
@@ -653,7 +669,8 @@ class Leaderboard(ui.Bench):
             import improve_page as IP
             return ui.Columns("", "Model", IP.RESULT_COLUMN, IP.NUMBER_COLUMNS)
         others = [m for m in VALUED if m != measure]
-        return ui.Columns("Rank", "Model", MEASURE_COLUMN[measure], tuple(HELPER_COLUMN[m] for m in others))
+        return ui.Columns("Rank", "Model", MEASURE_COLUMN[measure],
+                          tuple(HELPER_COLUMN[m] for m in others) + (LATENCY_COLUMN,))
 
     def notes(self, part, measure) -> list:
         import improve_page as IP
@@ -720,7 +737,10 @@ class Leaderboard(ui.Bench):
             untiered, row_group = True, LEARN_GROUP[learn.order[0] if learn else None]
         else:
             value = {"risk": None, "error": _er, "cost": usd}[measure]
-            measure_html, helpers = cells[measure], tuple(cells[m] for m in VALUED if m != measure)
+            measure_html = cells[measure]
+            helpers = (*(cells[m] for m in VALUED if m != measure),
+                       ui.value(P.secs((x["q"] or {}).get("time_median")))
+                       if (x["q"] or {}).get("time_median") is not None else P.secs(None))
             untiered, row_group = value is not None and value(x) is None, ""
         own = learning_of(self.states, x, None) if model else None
         lines = details_lines(S, x, kind, extra, ref) + ([own.line] if own else
@@ -846,7 +866,8 @@ def leaderboard(S) -> str:
     the Models · Class · Rows filters, the Measure keys and the compact table (Leaderboard) with its notes, then Same
     positions (preview). The block keeps the old #leaderboard anchor."""
     import improve_page as IP
-    return (P.KIT_ALIASES + IP.head_tips(ui.results(Leaderboard(S), block_id="leaderboard", box_prefix="lb-box"), "leaderboard")
+    return (P.KIT_ALIASES + IP.head_tips(ui.results(Leaderboard(S), block_id="leaderboard", box_prefix="lb-box"),
+                                         "leaderboard", HEAD_TIPS)
             + learning_section()
             + f'<section class="card same-positions" id="same-positions" aria-labelledby="same-positions-title">'
               f'<h2 id="same-positions-title">{esc(SAME_KEY)}</h2>{same_positions()}</section>')

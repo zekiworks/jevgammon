@@ -693,61 +693,93 @@ def change_line(m) -> str | None:
     return " \u00b7 ".join(parts) or None
 
 
+def result_group(m) -> int:
+    """A model's place in the results order (Ümit via Zeki #6257): 0 Yes, 1 No, 2 not finished (no verdict yet)."""
+    if m is None or not m["verdict"] or m["change"]["risks_found"] is None:
+        return 2
+    return 0 if shown(m)["improved"] else 1
+
+
 def result_rows(L) -> list:
-    """The plan's chat models for the results table, as (pm, progress, validated data): finished first by the change
-    in risks found (largest first), then running (any other started status), then not started; plan order within a
-    group."""
+    """The plan's chat models for the results table, as (pm, progress, validated data): Yes, then No, each by the change
+    in risks found (largest first), then the models without a verdict: running (any other started status), then not
+    started; plan order within a group. Not a ranking of learning success (ORDER_LINE)."""
     prog = {m["setup"]: m for m in (L["progress"] or {}).get("models", [])}
     by = {m["setup"]: m for m in (L["results"] or {}).get("models", [])} if results_shown(L) else {}
     out = []
     for i, pm in enumerate(L["plan"]["models"]):
         p, m = prog.get(pm["setup"]), by.get(pm["setup"])
-        done = m is not None and m["verdict"] and m["change"]["risks_found"] is not None
+        group = result_group(m)
         started = not L["progress_refused"] and p is not None and p["status"] != "not started"
-        key = (0, -shown(m)["change"]["risks_found"], i) if done else ((1, 0, i) if started else (2, 0, i))
+        key = (group, -shown(m)["change"]["risks_found"], i) if group < 2 else ((2, 0, i) if started else (3, 0, i))
         out.append((key, pm, p, m))
     return [x[1:] for x in sorted(out, key=lambda x: x[0])]
 
 
 THRESHOLD_NOTE = ("Threshold: the larger of the model's own spread over its three empty runs (max − min) and 5 points; "
                   "right safety may fall by at most 5 points.")
+# The results table's order, said above it (Ümit via Zeki #6257), on /improve/ and on the home page's Learning tab.
+ORDER_LINE = ("Ordered: Yes, then No, then not finished; within Yes and within No by the change in risks found. Not a "
+              "ranking of learning success.")
+# Its columns (Ümit via Zeki #6257), each value in its own column; the change stays beside the result on a phone, the
+# others with their names and units in the row's details there.
+RESULT_COLUMN = ui.Column("Result", "Yes · No · or the model's state")
+NUMBER_COLUMNS = (ui.Column("Risks found", "before → after: empty runs' mean → after the series", num=True),
+                  ui.Column("Change", "risks found, pp", num=True, unit="pp", phone=True),
+                  ui.Column("Right safety change", f"pp · may fall {V.SAFETY_DROP} at most", num=True, unit="pp"),
+                  ui.Column("Threshold", "pp", num=True, unit="pp"))
+GROUP_LABEL = {0: "Improved: Yes", 1: "Improved: No", 2: "Not finished", 3: "Not finished"}
 
 
-def verdict_text(m) -> str:
-    """The Improved? cell (Ümit via Zeki #4841): Yes/No with its change and threshold in points side by side; a No the
-    safety condition alone decides says so; before the verdict gate 'pending' with the interim numbers. HTML."""
+def chip(word: str, kind: str, attrs: str = "") -> str:
+    """A result's chip in the site's palette (bg.css .learn-*): the word always written, never colour alone."""
+    return f'<span class="status learn-{kind}"{attrs}>{word}</span>'
+
+
+def result_cells(m) -> tuple[str, tuple[str, str, str, str]]:
+    """A model's Result cell and its four number cells (Run 2's where published): the verdict as a chip (QC-pending
+    before it), 'pending' before the verdict gate (its numbers interim); risks found before → after, the change, the
+    right safety change (marked where it falls past the limit: why such a model is No) and the threshold."""
     v = shown(m)
-    rf, thr, rs = v["change"]["risks_found"], v["threshold"], v["change"]["right_safety"]
-    nb = "\u00a0"  # a number keeps its unit when the cell wraps
-    nums = (f' · {fmt(rf, 1, signed=True)}{nb}pp · threshold {num(thr)}{nb}pp' if None not in (rf, thr) else "")
-    if not m["verdict"]:
-        return "pending" + (f'<span class="small">{nums} (interim)</span>' if nums else "")
-    word = qc_mark(m["key"]) + f'<strong data-rverdict="{"yes" if v["improved"] else "no"}">{esc(v["status"])}</strong>'
-    if not v["improved"] and round(rf, 9) > round(thr, 9):
-        return f'{word} · safety{nb}{fmt(rs, 1, signed=True)}{nb}pp'
-    return word + nums
+    ch = v["change"]
+    if m["verdict"]:
+        word = "yes" if v["improved"] else "no"
+        result = chip(qc_mark(m["key"]) + esc(v["status"]), word, f' data-rverdict="{word}"')
+    else:
+        result = chip("pending · numbers interim" if ch["risks_found"] is not None else "pending", "state")
+    rs = ch["right_safety"]
+    beyond = rs is not None and round(rs, 9) < -V.SAFETY_DROP
+    # A No that the safety limit decides says so beside it, so a phone (where that column is in the details) shows why.
+    why = ('<span class="zw-int learn-why">right safety fell past the limit</span>'
+           if m["verdict"] and not v["improved"] and beyond else "")
+    return (f'<span data-rcell="verdict">{result}</span>{why}',
+            (f'<span class="zw-val" data-rcell="rf">{before_after(v, "risks_found")}</span>',
+             f'<span class="zw-val"><span data-rcell="rf-change">{fmt(ch["risks_found"], 1, signed=True) or nm(NA)}</span>'
+             f'{run2_mark(m)}</span>',
+             f'<span class="zw-val{" learn-beyond" if beyond else ""}"><span data-rcell="rs-change">'
+             f'{fmt(rs, 1, signed=True) or nm(NA)}</span>'
+             + (f'<span class="zw-int">past the \u2212{V.SAFETY_DROP} limit</span>' if beyond else "") + '</span>',
+             f'<span class="zw-val" data-rcell="threshold">{num(v["threshold"])}</span>'))
 
 
 def result_row(pm, p, m, refused, links: dict) -> ui.Row:
-    """A plan model's row: Change (with before → after), Improvement threshold and Improved? (verdict · change ·
-    threshold); its status, series, the empty-run spread (Ümit #4862 item 8) and right safety in its details.
-    data-progress-setup, data-progress and data-rcell mark what checks.check_improve reads back."""
+    """A plan model's row: Result, risks found before → after, change, right safety change and threshold; its status,
+    series, the empty-run spread (Ümit #4862 item 8) and right safety before → after in its details. data-progress-setup,
+    data-progress and data-rcell mark what checks.check_improve reads back."""
     if refused:
         status_, done = nm(NA), nm(NA)
     elif p is None:
         status_, done = "not started", f"0 / {V.SERIES}"
     else:
         status_, done = esc(progress_status(p)), f'{p["series_done"]} / {V.SERIES}'
-    change = threshold = verdict = ""
-    extra = []
     if m is not None:
         v = shown(m)
-        change = (f'<span class="zw-val"><strong data-rcell="rf-change">{fmt(v["change"]["risks_found"], 1, signed=True) or nm(NA)}'
-                  f'</strong>{run2_mark(m)}<span class="zw-int" data-rcell="rf">{before_after(v, "risks_found")}</span></span>')
-        threshold = f'<span class="zw-val" data-rcell="threshold">{num(v["threshold"])}</span>'
-        verdict = f'<span data-rcell="verdict">{verdict_text(m)}</span>'
+        result, numbers = result_cells(m)
         extra = [f'Empty-run spread <span data-rcell="range">{num(v["range"])}</span> pp (max − min of risks found over '
                  'its 3 empty runs)', f'Right safety before → after <span data-rcell="rs">{before_after(v, "right_safety")}</span>']
+    else:
+        # No result yet: its state from the validated progress fields (the details box holds them too).
+        result, numbers, extra = chip(status_ if refused else f"{status_} · series {done}", "state"), ("", "", "", ""), []
     name = re.sub(r" \([^()]*\)$", "", pm["setup"])
     setting = pm["setup"][len(name) + 2:-1] or None
     mk, colour = H.maker(pm["setup"])
@@ -759,11 +791,11 @@ def result_row(pm, p, m, refused, links: dict) -> ui.Row:
            f'Status: <span data-progress="status">{status_}</span>', f'Series <span data-progress="series">{done}</span>',
            m and answers_line(m), m and change_line(m), *extra, *(run2_lines(m, pm) if m else []),
            links.get(pm["setup"]) or links.get(name)]
-    finished = m is not None and m["verdict"] and m["change"]["risks_found"] is not None
-    return ui.Row(model=ui.Model(official, colour, mk, label, tag=tag_text(parts)), measure=change, helpers=(threshold, verdict),
+    group = result_group(m)
+    return ui.Row(model=ui.Model(official, colour, mk, label, tag=tag_text(parts)), measure=result, helpers=numbers,
                   details=[x for x in box if x], details_label=f'{pm["setup"]}: details',
                   filters={"models": "chat", "class": cls}, attrs={"data-progress-setup": pm["setup"]},
-                  untiered=not finished)
+                  group=GROUP_LABEL[group], untiered=True)
 
 
 def planned_row(r, arm, links: dict) -> ui.Row:
@@ -782,15 +814,18 @@ def planned_row(r, arm, links: dict) -> ui.Row:
            links.get(r["setup"]) or (links.get(r["params_model"]) if listed else None)]
     return ui.Row(model=ui.Model(official, colour, mk, label, flag="planned, not a result",
                                  tag=" \u00b7 ".join(p for p in (tag_text(parts), r["tag"], arm and arm[1]) if p)),
-                  measure="", helpers=("", ""), details=[x for x in box if x], details_label=f'{r["setup"]}: details',
-                  filters={"models": r["group"], "class": cls}, attrs={"data-planned": r["setup"]}, untiered=True)
+                  measure=chip("planned, not a result", "none"),
+                  helpers=("", "", "", ""), details=[x for x in box if x], details_label=f'{r["setup"]}: details',
+                  filters={"models": r["group"], "class": cls}, attrs={"data-planned": r["setup"]},
+                  group="Planned, not a result", untiered=True)
 
 
 class Results(ui.Bench):
-    """The page's first table on the bench kit (zw_ui; Ümit/Zeki #3710, #4862): one row per model, the plan's chat
-    models (status and series from the validated progress fields; numbers from the validated results; Yes or No only
-    past the verdict gate), then the planned rows (status only, never a number). Filters: Models (All, Chat, Decision)
-    and Class. Rank counts the finished models by the change in risks found; the others show '–'. Every row shows."""
+    """The page's first table on the bench kit (zw_ui; Ümit/Zeki #3710, #4862, #6257): one row per model, the plan's
+    chat models (status and series from the validated progress fields; numbers from the validated results; Yes or No
+    only past the verdict gate), then the planned rows (status only, never a number). Filters: Models (All, Chat,
+    Decision) and Class. Rows in groups (Yes, No, not finished, planned) in the order ORDER_LINE says, never ranked:
+    the rank column stays empty. Every row shows."""
     labels = ui.Labels(empty="No model of this kind in the plan.")
     top = None
     default_view = "table"
@@ -811,23 +846,19 @@ class Results(ui.Bench):
         return P.kit_filters()
 
     def panel_title(self, part, measure) -> tuple:
-        return "Results", "one row per model · finished first, by the change in risks found"
+        return "Results", ORDER_LINE
 
     def columns(self, part, measure):
-        # Improved? stays in the table on a phone (Column.phone; Ümit #4665: in view without a sideways scroll at any
-        # width), beside the change.
-        return ui.Columns("Rank", "Model", ui.Column("Change", "risks found, pp · before → after", num=True),
-                          (ui.Column("Improvement threshold", "pp", num=True, unit="pp"),
-                           ui.Column("Improved?", "verdict · change · threshold", phone=True)))
+        return ui.Columns("", "Model", RESULT_COLUMN, NUMBER_COLUMNS)
 
     def notes(self, part, measure) -> list:
-        return [esc(f'{count(len(self.L["plan"]["models"]))} chat models under the pre-registered rule: finished first '
-                    '(by the change in risks found), then running, then not started. Improvement threshold = what the '
-                    'change must beat: the spread (max − min) of the model\'s own risks found over its 3 empty runs (in '
-                    'each row\'s details), at least 5 points. Rows marked "planned, not a result" are not run yet and '
-                    'show no numbers; a decision setup has one row per arm (notes, worst mistakes).'),
-                ui.Note(P.star_note("Improved? = verdict · change · threshold, in points (pp) of risks found.",
-                                    f'<p>{esc(THRESHOLD_NOTE)}</p>'), raw=True),
+        return [esc(f'{count(len(self.L["plan"]["models"]))} chat models under the pre-registered rule. Threshold = what '
+                    'the change must beat: the spread (max − min) of the model\'s own risks found over its 3 empty runs (in '
+                    'each row\'s details), at least 5 points; right safety may fall by at most 5 points. Rows marked '
+                    '"planned, not a result" are not run yet and show no numbers; a decision setup has one row per arm '
+                    '(notes, worst mistakes).'),
+                ui.Note(P.star_note("Result: Yes or No once every run is complete; the change, right safety change and "
+                                    "threshold are in points (pp).", f'<p>{esc(THRESHOLD_NOTE)}</p>'), raw=True),
                 ui.Note(P.class_rule_note(), raw=True)] + ([ui.Note(qc, raw=True)] if (qc := qc_footnote(self.L)) else [])
 
     def rows(self, part, measure, setups) -> list:

@@ -877,11 +877,11 @@ def check_improve(out: Path, test_set: Path | None = None) -> list[str]:
     def rank(s):
         m, p = by.get(s), prog.get(s)
         if m is not None and shown[s]["gate"] and not results.get("dry_run"):
-            return (0, -shown[s]["change"]["risks_found"])
-        return (1, 0) if p is not None and p["status"] != "not started" and not L.get("progress_refused") else (2, 0)
+            return (0 if shown[s]["improved"] else 1, -shown[s]["change"]["risks_found"])
+        return (2, 0) if p is not None and p["status"] != "not started" and not L.get("progress_refused") else (3, 0)
     ranks = [rank(s) for s in psetups]
     if ranks != sorted(ranks):
-        bad.append(f"{PATH}: the results table is not finished (by change), then running, then not started")
+        bad.append(f"{PATH}: the results table is not Yes, then No (each by change), then running, then not started")
     # A row's details box is the bench kit's shared box after the results (data-zw-box names it): read with the row.
     boxes = {n.attrs["id"]: n for n in nodes if n.attrs.get("id") and "zw-box" in (n.attrs.get("class") or "").split()}
     for n in prows:
@@ -911,19 +911,16 @@ def check_improve(out: Path, test_set: Path | None = None) -> list[str]:
         want = {"rf": f"{g(e['before']['risks_found'])} → {g(e['after']['risks_found'])}",
                 "rf-change": g(e["change"]["risks_found"], True),
                 "range": g(e["range"]), "threshold": g(e["threshold"]),
-                "rs": f"{g(e['before']['right_safety'])} → {g(e['after']['right_safety'])}"}
-        # The Improved? cell (Ümit via Zeki #4841): verdict · change · threshold in pp; a No the safety condition alone
-        # decides: "No · safety −x pp"; before the gate "pending" with the interim numbers. A verdict under QC
-        # (content/qc_status.json) is prefixed "QC-pending · ". A model with a published Run 2 shows Run 2's numbers.
-        rf_c, thr = e["change"]["risks_found"], e["threshold"]
-        nums = f" · {g(rf_c, True)} pp · threshold {g(thr)} pp" if None not in (rf_c, thr) else ""
+                "rs": f"{g(e['before']['right_safety'])} → {g(e['after']['right_safety'])}",
+                "rs-change": g(e["change"]["right_safety"], True)}
+        # The Result cell (Ümit via Zeki #6257): the verdict alone (its numbers in their own columns), "QC-pending · "
+        # before a verdict under QC (content/qc_status.json); before the gate "pending", its numbers interim. A model
+        # with a published Run 2 shows Run 2's numbers.
         qc = f"{QC_LABEL} · " if m["key"] in QC_IMPROVE else ""
         if not e["gate"] or results.get("dry_run"):
-            want["verdict"] = "pending" + (nums + " (interim)" if nums else "")
-        elif not e["improved"] and round(rf_c, 9) > round(thr, 9):
-            want["verdict"] = f"{qc}No · safety {g(e['change']['right_safety'], True)} pp"
+            want["verdict"] = "pending" + (" · numbers interim" if e["change"]["risks_found"] is not None else "")
         else:
-            want["verdict"] = qc + ("Yes" if e["improved"] else "No") + nums
+            want["verdict"] = qc + ("Yes" if e["improved"] else "No")
         if rcells != want:
             bad.append(f"{PATH}: {s}: results-table cells {rcells!r}, the data gives {want!r}")
         if rv != (("yes" if e["improved"] else "no") if e["gate"] and not results.get("dry_run") else None):

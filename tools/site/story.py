@@ -354,18 +354,22 @@ NOT_IN_PLAN = "not in the learning plan"
 
 @dataclass(frozen=True)
 class Learn:
-    """One setup's learning state: setup (as its source names it), rank (minus the change in risks found, where a
-    verdict is published; None: no verdict), state (HTML: the Improved? cell), change and threshold (HTML helper cells),
-    line (the details box's line)."""
+    """One setup's learning state: setup (as its source names it), order (its place: improve_page.result_group's 0 Yes,
+    1 No, 2 not finished, then minus the change in risks found), result (HTML: the Result cell), numbers (the four
+    number cells of improve_page.NUMBER_COLUMNS, empty without a result), line (the details box's line)."""
     setup: str
-    rank: float | None
-    state: str
-    change: str
-    threshold: str
+    order: tuple
+    result: str
+    numbers: tuple
     line: str
 
 
+NO_NUMBERS = ("", "", "", "")
+
+
 def _chat_lane(S) -> dict:
+    """The chat lane's plan models (with the dated roster amendments): /improve/'s own cells (improve_page.result_cells),
+    or the state from the validated progress fields."""
     import improve_page as IP
     import improve_validate as V
     L = S["improve"]
@@ -374,23 +378,24 @@ def _chat_lane(S) -> dict:
     out = {}
     for pm in L["plan"]["models"]:
         s, p, m = pm["setup"], prog.get(pm["setup"]), by.get(pm["setup"])
-        if m is not None and m["verdict"]:
+        if m is not None:
             v = IP.shown(m)
-            out[s] = Learn(s, -v["change"]["risks_found"], f'<span data-learn="verdict">{IP.verdict_text(m)}</span>',
-                           f'<span class="zw-val">{fmt(v["change"]["risks_found"], 1, signed=True) or nm(NA)}'
-                           f'{IP.run2_mark(m)}<span class="zw-int">{IP.before_after(v, "risks_found")}</span></span>',
-                           f'<span class="zw-val">{IP.num(v["threshold"])}</span>',
-                           f'Did they improve? {IP.qc_mark(m["key"])}{esc(v["status"])} · '
-                           f'{fmt(v["change"]["risks_found"], 1, signed=True)} pp · threshold {IP.num(v["threshold"])} pp')
+            group = IP.result_group(m)
+            result, numbers = IP.result_cells(m)
+            rf = v["change"]["risks_found"]
+            line = (f'Did they improve? {IP.qc_mark(m["key"])}{esc(v["status"])} · {fmt(rf, 1, signed=True)} pp · '
+                    f'threshold {IP.num(v["threshold"])} pp' if group < 2 else "Did they improve? pending")
+            out[s] = Learn(s, (group, -(rf or 0) if group < 2 else 0), result, numbers, line)
             continue
         state = (NA if L["progress_refused"] else "not started" if p is None else
                  f'{IP.progress_status(p)} · series {p["series_done"]} of {V.SERIES}')
-        out[s] = Learn(s, None, f'<span data-learn="state">{esc(state)}</span>', "", "", f"Did they improve? {esc(state)}")
+        out[s] = Learn(s, (2, 0), IP.chip(esc(state), "state"), NO_NUMBERS, f"Did they improve? {esc(state)}")
     return out
 
 
 def _decision_lane() -> dict:
     """The decision lane's arms (improve-decision.json): one state per setup, its arms' states and reasons joined."""
+    import improve_page as IP
     rows = json.loads(LEARN_DECISION.read_text())["rows"]
     arms: dict[str, list] = {}
     for r in rows:
@@ -402,13 +407,14 @@ def _decision_lane() -> dict:
             return LANE_WORD.get(r["state"], r["state"]) + (f" ({why})" if why else "")
         texts = [one(r) for r in rs]
         state = texts[0] if len(set(texts)) == 1 else " · ".join(f'{r["arm"]}: {t}' for r, t in zip(rs, texts))
-        out[s] = Learn(s, None, f'<span data-learn="state">{esc(state)}</span>', "", "",
+        out[s] = Learn(s, (2, 0), IP.chip(esc(state), "state"), NO_NUMBERS,
                        f"Did they improve? (decision models, two arms) {esc(state)}")
     return out
 
 
 def _plan_rows() -> dict:
     """The Tiny / Small and decision plan of 12 Nov: each row's league setups with its state and blocker."""
+    import improve_page as IP
     out = {}
     for r in json.loads(LEARN_PLAN.read_text())["rows"]:
         kind = ("queued" if r["state"].startswith("READY") else
@@ -419,7 +425,7 @@ def _plan_rows() -> dict:
         for b in (r.get("baseline"), r.get("baseline_other")):
             if b and b.get("setup"):
                 s = relabel(b["setup"])
-                out.setdefault(s, Learn(s, None, f'<span data-learn="state">{esc(state)}</span>', "", "",
+                out.setdefault(s, Learn(s, (2, 0), IP.chip(esc(state), "state"), NO_NUMBERS,
                                         f"Did they improve? (learning plan, 12 Nov) {esc(state)}"))
     return out
 
@@ -446,14 +452,15 @@ def learning_of(states: dict, x, group: list | None) -> Learn | None:
     return next((v for k, v in states.items() if k in names or base_name(k) in names), None)
 
 
-def learning_cells(states: dict, x, group: list | None) -> tuple[Learn | None, str, str, str]:
-    """(state, Improved? cell, Change cell, Threshold cell) of a row; a state from another setting of the model says
-    which setting the test used."""
+def learning_cells(states: dict, x, group: list | None) -> tuple[Learn | None, str, tuple]:
+    """(state, Result cell, the four number cells) of a row; a state from another setting of the model says which
+    setting the test used."""
+    import improve_page as IP
     v = learning_of(states, x, group)
     if v is None:
-        return None, f'<span data-learn="none">{NOT_IN_PLAN}</span>', "", ""
+        return None, IP.chip(NOT_IN_PLAN, "none"), NO_NUMBERS
     other = "" if v.setup == x["name"] else f'<span class="zw-int">at {esc(tag_text(name_and_tag(v.setup)[1]) or v.setup)}</span>'
-    return v, v.state + other, v.change, v.threshold
+    return v, v.result + other, v.numbers
 
 
 # The leaderboard on the bench kit (zw_ui, turkce's bench-ui; Zeki #4879), in Reading's form (Ümit #6068: Reading's
@@ -472,15 +479,15 @@ COST_UNITS = dict(unit="per 1,000 decisions", unit_1m="per 1M decisions")  # the
 MEASURE_COLUMN = {"risk": ui.Column("Risk judgement", "95% interval"),
                   "error": ui.Column("Error rate (PR)", "95% interval", num=True),
                   "cost": ui.Column("Cost", "$ per 1,000 decisions", num=True, sub_1m="$ per 1M decisions", **COST_UNITS),
-                  "learning": ui.Column("Improved?", "verdict · change · threshold, pp; or its state")}
+}
 HELPER_COLUMN = {"risk": ui.Column("Risk judgement", num=True), "error": ui.Column("Error rate (PR)", num=True),
                  "cost": ui.Column("Cost", "$ / 1,000", num=True, sub_1m="$ / 1M", **COST_UNITS)}
-LEARN_HELPERS = (ui.Column("Change", "risks found, pp · before → after", num=True, unit="pp"),
-                 ui.Column("Improvement threshold", "pp", num=True, unit="pp"))
+# The Learning tab's groups (Ümit via Zeki #6257): improve_page.result_group's, then the models outside the plan.
+LEARN_GROUP = {0: "Improved: Yes", 1: "Improved: No", 2: "Not finished", None: "Not in the learning plan"}
 PANEL_SUB = {"risk": "all leagues · 95% interval · higher is better",
              "error": "all leagues · 95% interval · lower is better",
              "cost": "all leagues · lower is better",
-             "learning": "Did they improve? · every model: its verdict after lessons, or its state"}
+             "learning": None}  # Learning: improve_page.ORDER_LINE, the order above the table
 PROGRAM_COLOUR = "var(--data-grey)"
 SAFE_MARK = "50 = always safe"  # the reference mark on the risk judgement's bar
 # The cost cell's one short tag (Ümit #4862 item 4); how it was counted opens from the tag, and the box names the basis.
@@ -557,13 +564,17 @@ def running_row(S, e, measure: str, states: dict) -> ui.Row:
                                      for r in e["runners"])) if e["runners"] else None,
         "Pending: " + "; ".join(esc(p) for p in e["pending"]),
         f'Parameters: {P.params_html(name)}']
+    import improve_page as IP
     learn = states.get(name)
-    cells = (learn.state if learn else f'<span data-learn="none">{NOT_IN_PLAN}</span>', "", "") if measure == "learning" \
-        else ("", "", "")
+    if measure == "learning":
+        cells = (learn.result, *learn.numbers) if learn else (IP.chip(NOT_IN_PLAN, "none"), *NO_NUMBERS)
+        group = LEARN_GROUP[learn.order[0] if learn else None]
+    else:
+        cells, group = ("", "", ""), ""
     return ui.Row(model=ui.Model(name, colour, mk, P.class_label(name), tag=status, icon=family_icon(name)),
-                  measure=cells[0], helpers=cells[1:], details=[x for x in lines if x], details_label=f"{name}: details",
-                  filters={"models": e["type"], "class": P.model_class(name) or "none"}, box_key=f"running/{name}",
-                  attrs={"data-kind": "running"}, untiered=True)
+                  measure=cells[0], helpers=tuple(cells[1:]), details=[x for x in lines if x],
+                  details_label=f"{name}: details", filters={"models": e["type"], "class": P.model_class(name) or "none"},
+                  box_key=f"running/{name}", attrs={"data-kind": "running"}, group=group, untiered=True)
 
 
 def error_cell(x, interval: bool) -> str:
@@ -632,11 +643,15 @@ class Leaderboard(ui.Bench):
         return None
 
     def panel_title(self, part, measure) -> tuple:
-        return next(k.label for k in MEASURE_KEYS if k.value == measure), PANEL_SUB[measure]
+        import improve_page as IP
+        return next(k.label for k in MEASURE_KEYS if k.value == measure), PANEL_SUB[measure] or IP.ORDER_LINE
 
     def columns(self, part, measure):
         if measure == "learning":
-            return ui.Columns("Rank", "Model", MEASURE_COLUMN[measure], LEARN_HELPERS)
+            # /improve/'s columns (Ümit via Zeki #6257), each value its own column; no rank: the rows are in the order
+            # the line above the table states, in groups, never ranked.
+            import improve_page as IP
+            return ui.Columns("", "Model", IP.RESULT_COLUMN, IP.NUMBER_COLUMNS)
         others = [m for m in VALUED if m != measure]
         return ui.Columns("Rank", "Model", MEASURE_COLUMN[measure], tuple(HELPER_COLUMN[m] for m in others))
 
@@ -648,8 +663,8 @@ class Leaderboard(ui.Bench):
             return ['Every model on the leaderboard: its verdict after lessons where one is published (Run 2 where it '
                     'replaced the original), else its state in the learning lanes, as their status files give it. '
                     '<a href="improve/">Did they improve?</a>',
-                    ui.Note(P.star_note("Improved? = verdict · change · threshold, in points (pp) of risks found.",
-                                        f'<p>{esc(IP.THRESHOLD_NOTE)}</p>'), raw=True),
+                    ui.Note(P.star_note("Result: Yes or No once every run is complete; the change, right safety change "
+                                        "and threshold are in points (pp).", f'<p>{esc(IP.THRESHOLD_NOTE)}</p>'), raw=True),
                     class_rule] + ([ui.Note(qc, raw=True)] if qc else [])
         lead = f"{esc(MEANING)} " if measure == "risk" else ""
         return [f'{lead}{esc(ROW_LINE)} All setups: every setup of every model. '
@@ -664,7 +679,7 @@ class Leaderboard(ui.Bench):
     def sort_key(self, measure: str, x, group: list | None):
         if measure == "learning":
             v = learning_of(self.states, x, group)
-            return (v is None or v.rank is None, v.rank if v is not None and v.rank is not None else 0)
+            return v.order if v is not None else (3, 0)
         value = {"risk": None, "error": _er, "cost": usd}[measure]
         return (value(x) is None, value(x) or 0) if value else risk_key(x)
 
@@ -699,14 +714,14 @@ class Leaderboard(ui.Bench):
         cells = {"risk": judgement_cell(x, colour, measure == "risk"), "error": error_cell(x, measure == "error"),
                  "cost": cost_cell(S, x)}
         if measure == "learning":
-            learn, state, change, threshold = (learning_cells(self.states, x, group) if model else
-                                               (None, f'<span data-learn="none">program · {NOT_IN_PLAN}</span>', "", ""))
-            measure_html, helpers = state, (change, threshold)
-            untiered = learn is None or learn.rank is None
+            import improve_page as IP
+            learn, measure_html, helpers = (learning_cells(self.states, x, group) if model else
+                                            (None, IP.chip(f"program · {NOT_IN_PLAN}", "none"), NO_NUMBERS))
+            untiered, row_group = True, LEARN_GROUP[learn.order[0] if learn else None]
         else:
             value = {"risk": None, "error": _er, "cost": usd}[measure]
             measure_html, helpers = cells[measure], tuple(cells[m] for m in VALUED if m != measure)
-            untiered = value is not None and value(x) is None
+            untiered, row_group = value is not None and value(x) is None, ""
         own = learning_of(self.states, x, None) if model else None
         lines = details_lines(S, x, kind, extra, ref) + ([own.line] if own else
                                                          [f"Did they improve? {NOT_IN_PLAN}"] if model else [])
@@ -717,7 +732,7 @@ class Leaderboard(ui.Bench):
             measure=measure_html, helpers=helpers, details=lines, details_label=f'{x["name"]}: details',
             filters={"models": model_type(S, x), "class": P.model_class(x["model"]) or "none"} if model else {},
             chart=self.bar(x, measure, colour) if measure in VALUED else None, missing="No value",
-            box_key=f'{x["ds"]}/{x["name"]}', others=list(others),
+            box_key=f'{x["ds"]}/{x["name"]}', others=list(others), group=row_group,
             # A model without a value of the measure shown is not ranked by it; a program is a pinned reference row.
             untiered=model and untiered, pinned=not model)
 

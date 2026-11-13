@@ -1,0 +1,6 @@
+owner: jevgammon (agent SmallRepeatLauncher for Main)
+created: 2026-11-13
+what: review package for the pinned-seed repeats (Run 2) of GLiDE 2B and MiniCPM5-2B (off): branches small-repeat-runner 6578a73 (runner, vs 0e66836), small-repeat 7b39482 (launcher, vs 33fa52b), small-repeat-held f669702 (site held names); diffs, cargo test and test_launcher logs (scratch databases), byte-identity replays against the stored exchanges (harness and results), binary sha256, read-only production admission/check/pins logs, manifest entries and league configs, start commands (not run), open items; nothing started, nothing written to production
+reason: Ümit #6410 via Main; plan mailbox/small-backgammon-bench-2026-11-13.md §9
+delete when: after Zeki's review is closed and the two repeats are reported or dropped
+written: 2026-11-13 (SmallRepeatLauncher)

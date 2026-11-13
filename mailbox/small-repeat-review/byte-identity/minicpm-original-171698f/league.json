@@ -1,0 +1,115 @@
+{
+  "note": "byte-identity replay of MiniCPM5-2B (off) (original)",
+  "prompt_version": "bg-v2",
+  "seed": 2567889193785291627,
+  "order_seed": 1190975713392774006,
+  "rounds": 3,
+  "clock": 0,
+  "delay": 30,
+  "max_turns": 300,
+  "mirror_concurrent": true,
+  "only_pairs_of": "MiniCPM5-2B (off)",
+  "hidden": true,
+  "players": [
+    {
+      "name": "MiniCPM5-2B (off)",
+      "spec": "openai-compatible/minicpm5-2b",
+      "provider": "local-vllm",
+      "quantization": "bf16",
+      "base_url": "http://127.0.0.1:47370/v1",
+      "request": {
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        }
+      },
+      "top_logprobs": 20,
+      "letter_readout": "prefill",
+      "note": "openbmb/MiniCPM5-2B @ 42433e90dad95123ab87729fd7011e7110629556, BF16, on our GPU through vLLM v0.30.0 (vllm/vllm-openai:v0.30.0) in BF16, --generation-config auto; logic's server (small_models.py key minicpm5-2b, port 18614, bariton GPU 1, #5080/#5091; ours alone after turkce's 'done') or ours on the same port and name (tools/v3/late-smallchat/serve.sh). thinking off (enable_thinking false); the letter is read from a prefilled Answer: (as Gemma 4 31B (off)); server reasoning split: vLLM reasoning parser qwen3 (no reasoning generated). Sampling: League 1's local chat rule, per request: temperature 1.0 from the chat client, everything else the server's default (generation_config.json via --generation-config auto, else vLLM neutral), no seed; it differs from logic's Logic & Math runs: logic sends temperature 1.0, top_p 0.95, seed 0 (ours: the same temperature and top_p from generation_config.json; no seed). Output cap 1 token (prefill readout). Up to 16 matches and 16 requests at once, League 1's rule for its local chat setups (the server is ours alone after turkce's 'done'). Late entry v the original League 1 table (tools/v3/late-smallchat; Zeki #5064/#5071/#5073; Main's decisions 12 Nov)",
+      "device": "RTX PRO 6000 (bariton), one GPU",
+      "parallel": 16,
+      "max_matches": 16
+    },
+    {
+      "name": "Fastino GLiDE",
+      "spec": "fastino",
+      "provider": "fastino",
+      "note": "Fastino's hosted System One API; key added 2026-10-20",
+      "base_url": "http://127.0.0.1:47371"
+    },
+    {
+      "name": "Jev 1.14.0",
+      "spec": "jev/jev-1.14.0",
+      "provider": "jev",
+      "price": {
+        "input_per_mtok": 0.042,
+        "output_per_mtok": 0.0
+      },
+      "note": "TypeSafe System One API; list price $0.042 per million input tokens, the same as 1.13.0 (docs.typesafe.ai/models, 2026-10-16)",
+      "parallel": 2,
+      "base_url": "http://127.0.0.1:47372"
+    },
+    {
+      "name": "Jev 1.13.0",
+      "spec": "jev/jev-1.13.0",
+      "provider": "jev",
+      "price": {
+        "input_per_mtok": 0.042,
+        "output_per_mtok": 0.0
+      },
+      "note": "TypeSafe System One API; list price $0.042 per million input tokens (typesafe.ai/blog/introducing-system-one-models-and-jev, 2026-10-08)",
+      "parallel": 2,
+      "base_url": "http://127.0.0.1:47373"
+    },
+    {
+      "name": "Celeris-1 Decision",
+      "spec": "celeris/celeris-1-decision",
+      "provider": "celeris",
+      "price": {
+        "input_per_mtok": 0.04,
+        "output_per_mtok": 0.0
+      },
+      "note": "Celeris System One endpoint (inference.celeris.ai/celeris-1-decision); list price $0.04 per million input tokens, output free (docs.celeris.ai/pricing, 2026-10-10); probabilities come rounded to two decimals",
+      "parallel": 2,
+      "base_url": "http://127.0.0.1:47374"
+    },
+    {
+      "name": "Safest",
+      "spec": "safest",
+      "provider": "local"
+    },
+    {
+      "name": "GNUbg weak",
+      "spec": "gnubg-weak",
+      "provider": "local",
+      "note": "gnubg 1.08 Beginner level (0-ply, deterministic noise 0.060)",
+      "parallel": 1
+    },
+    {
+      "name": "Random",
+      "spec": "random",
+      "provider": "local"
+    },
+    {
+      "name": "SubQ Snap Preview",
+      "spec": "subq/subq-snap-preview",
+      "provider": "subq",
+      "price": {
+        "input_per_mtok": 0.05,
+        "output_per_mtok": 0.0
+      },
+      "base_url": "http://127.0.0.1:47375"
+    },
+    {
+      "name": "Liquid d1-ultra",
+      "spec": "liquid/d1-ultra",
+      "provider": "liquid",
+      "price": {
+        "input_per_mtok": 0.042,
+        "output_per_mtok": 0.0
+      },
+      "note": "Liquid AI decisions API, paid tier; list price $0.042 per million input tokens (liquid.ai/blog/d1-ultra, 2026-10-15)",
+      "parallel": 2,
+      "base_url": "http://127.0.0.1:47376"
+    }
+  ]
+}

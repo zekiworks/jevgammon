@@ -1,0 +1,211 @@
+diff --git a/src/players/llm.rs b/src/players/llm.rs
+index bbd268e..030ec1f 100644
+--- a/src/players/llm.rs
++++ b/src/players/llm.rs
+@@ -84,6 +84,12 @@ pub struct Options {
+     pub readout: Readout,
+     /// Prefill text before the letter when reasoning is off (default `Answer:`).
+     pub answer_prefix: Option<String>,
++    /// Prefill text with reasoning on, `{reasoning}` standing for the reasoning (default
++    /// `<think>{reasoning}</think>Answer:`).
++    pub reasoning_prefill: Option<String>,
++    /// With reasoning on: the read-out's assistant message carries the reasoning in this
++    /// field and `Answer:` alone as its content (instead of `reasoning_prefill`).
++    pub reasoning_field: Option<String>,
+     /// Rate-limit pacing shared with the other players of the group.
+     pub pacer: Option<Arc<super::Pacer>>,
+     /// Hard spending cap (OpenAI-compatible servers): every attempt reserves its worst case.
+@@ -343,6 +349,41 @@ pub fn constrained_request(
+     }
+ }
+ 
++/// The read-out's assistant message after the reasoning: with `field`, `Answer:` as content
++/// and the reasoning in that field; else the content `reasoned_prefill` makes.
++fn reasoned_message(
++    field: Option<&str>,
++    layout: Option<&str>,
++    answer_prefix: Option<&str>,
++    reasoning: &str,
++) -> Value {
++    match field {
++        Some(field) => {
++            let mut message = json!({"role": "assistant", "content": ANSWER_PREFIX});
++            message[field] = Value::String(reasoning.to_owned());
++            message
++        }
++        None => json!({
++            "role": "assistant",
++            "content": reasoned_prefill(layout, answer_prefix, reasoning),
++        }),
++    }
++}
++
++/// The assistant text the letter continues after the reasoning: `layout` with `{reasoning}`
++/// replaced by the reasoning without its outer newlines, or the reasoning-off prefill when
++/// that is empty (a template that re-renders reasoning drops an empty block); without a
++/// layout `<think>REASONING</think>Answer:`, the reasoning as returned.
++fn reasoned_prefill(layout: Option<&str>, answer_prefix: Option<&str>, reasoning: &str) -> String {
++    match layout {
++        Some(_) if reasoning.trim_matches('\n').is_empty() => {
++            answer_prefix.unwrap_or(ANSWER_PREFIX).to_owned()
++        }
++        Some(layout) => layout.replace("{reasoning}", reasoning.trim_matches('\n')),
++        None => format!("<think>{reasoning}</think>{ANSWER_PREFIX}"),
++    }
++}
++
+ /// JSON schema of a one-letter answer among `count` options.
+ fn letter_schema(count: usize) -> Value {
+     json!({
+@@ -528,7 +569,7 @@ impl LlmClient {
+         }
+         // Reasoning on: the model reasons and answers with a constrained letter.
+         let mut constrained = None;
+-        let prefill = match &self.options.reasoning {
++        let assistant = match &self.options.reasoning {
+             Some(effort) => {
+                 let body = json!({
+                     "model": self.model,
+@@ -540,21 +581,23 @@ impl LlmClient {
+                 });
+                 let completion = self.call(&body, req, decision).await?;
+                 constrained = self.constrained_letter(&completion, count, decision);
+-                format!(
+-                    "<think>{}</think>{ANSWER_PREFIX}",
+-                    completion.reasoning.unwrap_or_default()
++                reasoned_message(
++                    self.options.reasoning_field.as_deref(),
++                    self.options.reasoning_prefill.as_deref(),
++                    self.options.answer_prefix.as_deref(),
++                    &completion.reasoning.unwrap_or_default(),
+                 )
+             }
+-            None => self
++            None => json!({"role": "assistant", "content": self
+                 .options
+                 .answer_prefix
+                 .clone()
+-                .unwrap_or_else(|| ANSWER_PREFIX.to_owned()),
++                .unwrap_or_else(|| ANSWER_PREFIX.to_owned())}),
+         };
+         // The letter probabilities after "Answer:".
+         if !self.no_logprobs.load(Ordering::Relaxed) {
+             let mut conversation = messages.as_array().cloned().unwrap_or_default();
+-            conversation.push(json!({"role": "assistant", "content": prefill}));
++            conversation.push(assistant);
+             let body = json!({
+                 "model": self.model,
+                 "messages": conversation,
+@@ -1528,6 +1571,8 @@ mod tests {
+                 top_logprobs: None,
+                 readout: Readout::Prefill,
+                 answer_prefix: None,
++                reasoning_prefill: None,
++                reasoning_field: None,
+                 pacer: None,
+                 budget: None,
+             },
+@@ -1586,6 +1631,39 @@ mod tests {
+         assert!(parse_xai(r#"{"status": "incomplete", "output": []}"#).is_err());
+     }
+ 
++    /// Reasoning on: the default prefill keeps the reasoning as returned; a layout gets it
++    /// without its outer newlines (MiniCPM5's template re-renders it so), and an empty
++    /// reasoning gets the reasoning-off prefill (such a template drops an empty block).
++    #[test]
++    fn reasoned_prefill_follows_the_layout() {
++        assert_eq!(
++            reasoned_prefill(None, None, "\nR\n"),
++            "<think>\nR\n</think>Answer:"
++        );
++        assert_eq!(reasoned_prefill(None, None, ""), "<think></think>Answer:");
++        let minicpm = Some("<think>\n{reasoning}\n</think>\n\nAnswer:");
++        assert_eq!(
++            reasoned_prefill(minicpm, None, "\n\nR1\nR2\n"),
++            "<think>\nR1\nR2\n</think>\n\nAnswer:"
++        );
++        assert_eq!(reasoned_prefill(minicpm, None, "\n"), "Answer:");
++        assert_eq!(reasoned_prefill(minicpm, Some("X:"), ""), "X:");
++    }
++
++    /// A reasoning field: `Answer:` alone as content, the reasoning as returned in the field;
++    /// without one, the default message is `{"role", "content"}` exactly as before.
++    #[test]
++    fn reasoned_message_puts_the_reasoning_in_its_field() {
++        assert_eq!(
++            reasoned_message(Some("reasoning"), None, None, "\nR\n"),
++            json!({"role": "assistant", "content": "Answer:", "reasoning": "\nR\n"})
++        );
++        assert_eq!(
++            reasoned_message(None, None, None, "R").to_string(),
++            json!({"role": "assistant", "content": "<think>R</think>Answer:"}).to_string()
++        );
++    }
++
+     /// Close choices, stage B: on every route the prediction request is the play request with
+     /// only the user text and the answer format changed (same model, system prompt, reasoning
+     /// setting, temperature, token limit and extra fields).
+@@ -1598,6 +1676,8 @@ mod tests {
+             top_logprobs: None,
+             readout: Readout::Prefill,
+             answer_prefix: None,
++            reasoning_prefill: None,
++            reasoning_field: None,
+             pacer: None,
+             budget: None,
+         };
+@@ -1725,6 +1805,8 @@ mod tests {
+             top_logprobs: None,
+             readout: Readout::Prefill,
+             answer_prefix: None,
++            reasoning_prefill: None,
++            reasoning_field: None,
+             pacer: None,
+             budget: None,
+         };
+diff --git a/src/players/mod.rs b/src/players/mod.rs
+index 1258189..f32395a 100644
+--- a/src/players/mod.rs
++++ b/src/players/mod.rs
+@@ -163,6 +163,23 @@ pub struct PlayerConfig {
+     /// reasoning block on every answer and has no switch to turn it off.
+     #[serde(default, skip_serializing_if = "Option::is_none")]
+     pub answer_prefix: Option<String>,
++    /// Prefill readout with reasoning on: the assistant text the letter continues, with
++    /// `{reasoning}` replaced by the reasoning without its leading and trailing newlines
++    /// (default `<think>{reasoning}</think>Answer:`, the reasoning kept as returned), e.g.
++    /// `<think>\n{reasoning}\n</think>\n\nAnswer:` for a chat template that re-renders an
++    /// assistant turn's reasoning that way (MiniCPM5), so that the server finds the prefill
++    /// verbatim in the rendered prompt (`continue_final_message`). An empty reasoning
++    /// sends the reasoning-off prefill (`answer_prefix`, default `Answer:`) instead.
++    #[serde(default, skip_serializing_if = "Option::is_none")]
++    pub reasoning_prefill: Option<String>,
++    /// Prefill readout with reasoning on: the read-out's assistant message carries the
++    /// reasoning in this field (e.g. `reasoning`, which vLLM hands to the chat template as
++    /// `reasoning` and `reasoning_content`) and only `Answer:` as its content, so that the
++    /// template renders the reasoning turn itself. For LFM3 under vLLM, whose content format
++    /// `openai` makes the template open an extra empty think block before a content that
++    /// carries `<think>...</think>`. Takes precedence over `reasoning_prefill`.
++    #[serde(default, skip_serializing_if = "Option::is_none")]
++    pub reasoning_field: Option<String>,
+     #[serde(default, skip_serializing_if = "Option::is_none")]
+     pub price: Option<Price>,
+     /// Free text kept with the roster (how the setup was pinned, what a level means).
+@@ -341,6 +358,8 @@ pub fn render_stage_b(config: &PlayerConfig, req: &DecisionRequest<'_>, shown: &
+         top_logprobs: config.top_logprobs,
+         readout: llm::Readout::parse(config.letter_readout.as_deref())?,
+         answer_prefix: config.answer_prefix.clone(),
++        reasoning_prefill: config.reasoning_prefill.clone(),
++        reasoning_field: config.reasoning_field.clone(),
+         pacer: None,
+         budget: None,
+     };
+@@ -421,6 +440,8 @@ impl Player {
+             top_logprobs: config.top_logprobs,
+             readout: llm::Readout::parse(config.letter_readout.as_deref())?,
+             answer_prefix: config.answer_prefix.clone(),
++            reasoning_prefill: config.reasoning_prefill.clone(),
++            reasoning_field: config.reasoning_field.clone(),
+             pacer: config.rpm.filter(|&rpm| rpm > 0).map(|rpm| {
+                 let group = config.rate_group.clone().unwrap_or_else(|| {
+                     format!("{}|{spec}", config.base_url.as_deref().unwrap_or(""))

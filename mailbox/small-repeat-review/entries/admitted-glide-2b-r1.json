@@ -1,0 +1,66 @@
+{
+ "config": "leagues/glide-2b-r1.json",
+ "config_sha256": "b5acef12539a7e668db2fad4438d91744a57821d26d71a83f0195e0d85d68c7d",
+ "clients": [
+  {
+   "name": "GLiDE 2B [repeat 1]",
+   "source": "league config",
+   "player_id": null,
+   "settings_sha256": null
+  },
+  {
+   "name": "GNUbg weak",
+   "source": "league config",
+   "player_id": null,
+   "settings_sha256": null
+  },
+  {
+   "name": "Random",
+   "source": "league config",
+   "player_id": null,
+   "settings_sha256": null
+  },
+  {
+   "name": "Safest",
+   "source": "league config",
+   "player_id": null,
+   "settings_sha256": null
+  },
+  {
+   "name": "Celeris-1 Decision",
+   "source": "players #44",
+   "player_id": 44,
+   "settings_sha256": "428eeb5189b73a4b9718ef67cf263ea24966c18360ec362c42b9546a095ce7e3"
+  },
+  {
+   "name": "Fastino GLiDE",
+   "source": "players #30",
+   "player_id": 30,
+   "settings_sha256": "95348fd7021dfd8e83a440ed79b74ac1d16c32c68fab3d1cfe2a9a0d018ed406"
+  },
+  {
+   "name": "Jev 1.13.0",
+   "source": "players #8",
+   "player_id": 8,
+   "settings_sha256": "098cab00a76950ad5d824b621b3549c12b957292e7b396eea8a7c3d60b266e0b"
+  },
+  {
+   "name": "Jev 1.14.0",
+   "source": "players #38",
+   "player_id": 38,
+   "settings_sha256": "cc84687319713d4fcce82f0b0f930bd13bff159cdf3473622473822f6488d174"
+  },
+  {
+   "name": "Liquid d1-ultra",
+   "source": "players #27",
+   "player_id": 27,
+   "settings_sha256": "793b6fbaf5139236b47fd904808668298cd6bea5e5ac1b61757b5b4c1c5ce573"
+  },
+  {
+   "name": "SubQ Snap Preview",
+   "source": "players #32",
+   "player_id": 32,
+   "settings_sha256": "fcb54b942a49e82a39099a7c685df0959a75f43541c6f70ff4a357d958f94114"
+  }
+ ]
+}

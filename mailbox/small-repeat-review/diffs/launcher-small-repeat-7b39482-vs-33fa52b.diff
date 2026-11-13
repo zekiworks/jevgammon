@@ -1,0 +1,4349 @@
+diff --git a/mailbox/repeats/METADATA b/mailbox/repeats/METADATA
+index 57fcc51..5c052cb 100644
+--- a/mailbox/repeats/METADATA
++++ b/mailbox/repeats/METADATA
+@@ -1,6 +1,6 @@
+ owner: jevgammon (agent; Can's backgammon project ~/code/jevgammon)
+ created: 2026-11-11
+ what: manifest of the reproducibility repeats (manifest-2026-11-11.json: per repeat the original's per-opponent match id, seed and seats, game dice, option-order seed, rules, settings, coverage, today's blockers, gates, cost basis, GPU plan, start commands) and, once started, each repeat's status file ('<id> - status.md')
+-reason: Ümit via Zeki, bus #4663, #4666, #4667, #4671; written by tools/v3/repeats/repeats.py manifest from v3.db (read-only); read by the site's Experiments page (Repeat checks)
++reason: Ümit via Zeki, bus #4663, #4666, #4667, #4671, #4838; Ümit #6410 (GLiDE 2B's and MiniCPM5-2B (off)'s entries added 2026-11-13 from that day's v3.db, the other entries as written 2026-11-11); written by tools/v3/repeats/repeats.py manifest from v3.db (read-only); read by the site's Experiments page (Repeat checks)
+ delete when: never while the Experiments page shows the Repeat checks (the page reads the manifest)
+ written: 2026-11-11 (Can #3774)
+diff --git a/mailbox/repeats/manifest-2026-11-11.json b/mailbox/repeats/manifest-2026-11-11.json
+index 3f66213..a528972 100644
+--- a/mailbox/repeats/manifest-2026-11-11.json
++++ b/mailbox/repeats/manifest-2026-11-11.json
+@@ -14563,6 +14563,2788 @@
+      "blocked_today": null
+     }
+    ]
++  },
++  {
++   "id": "glide-2b-r1",
++   "run_id": "repeat-2026-11-13-glide-2b-r1",
++   "name": "GLiDE 2B [repeat 1]",
++   "display": "GLiDE 2B",
++   "original": "GLiDE 2B",
++   "original_player_id": 81,
++   "original_league": 41,
++   "original_stage": "late-entry",
++   "status": "queued",
++   "hold": null,
++   "prepared": "2026-11-13",
++   "started": null,
++   "finished": null,
++   "league_config": "tools/v3/repeats/leagues/glide-2b-r1.json",
++   "status_file": "mailbox/repeats/glide-2b-r1 - status.md",
++   "runner": {
++    "binary": "/home/cbasaran/code/jevgammon/target/small-repeat/release/jevgammon",
++    "binary_sha256": "79409d713a5992556d47dd06adf3a8d793fbea2eb039a178736b55dc1213615b",
++    "tree": "/home/cbasaran/code/jevgammon-small-repeat-runner",
++    "commit": "6578a73",
++    "commit_full": "6578a73694cc84233d8b3ed8b209f648232218bd",
++    "src_tree": "53e913702ba91019b31e0422bf34361805381277",
++    "build": {
++     "command": "cd /home/cbasaran/code/jevgammon-small-repeat-runner && CARGO_TARGET_DIR=/home/cbasaran/code/jevgammon/target/small-repeat cargo build --release --locked",
++     "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14), cargo 1.97.1 (c980f4866 2026-06-30)",
++     "built": "2026-11-13T16:32Z",
++     "tree": "git worktree add -b small-repeat-runner /home/cbasaran/code/jevgammon-small-repeat-runner 0e66836; src patches, commit 6578a73; checkout --detach (clean; only the untracked METADATA.worktree added)"
++    },
++    "inputs": {
++     "Cargo.toml": "bf64a9f15bd33cd3f5d517dc984140ff38fb9ec93c5d3a50eb0971f658c0ed4b",
++     "Cargo.lock": "d7048551c8907fd02c85f7ac8d8d2ffdc088ae4848bf313fc3c0f6e070d88494",
++     "tools/gnubg_player.py": "085601d706df41ddec7f1732428a2366c157aa58bb8e514b1cf1dd1b0f3f3aab",
++     "tools/v3/engine.py": "511ab4b2490732632f7e810f2e3da616fb5da4cd91d75eb2cf1ac4604e50e046",
++     "tools/v3/rules.py": "18dd032837ff061f64d2af32a5e7e813ad187b64f28a5a6e139f7695202f8480",
++     "tools/v3/order_vectors.json": "9efbb3ada083c02c51bdf74e539d48ee61b2f49e8d2f0fe58e29db8c6d8cb499",
++     "prompts/bg-v2.md": "3c59036a1f416f6187ccec06ec939e4d888a2029441daf30f6ee06a69015c465",
++     "prompts/nack-v2.md": "fa7397be6e9a7d337389a401d61464464bcbbe5725b8a2c70e01e6cb670395a8",
++     "prompts/bg-v3-std-notable.md": "1a145a09713fdd694696cb16d826406711567394697f0938300c285e4cba703f",
++     "prompts/bg-v3-nack.md": "13c744f06613f4051888af99bf9d1692011cb95d6f301c1898f94e13d67fef33",
++     "prompts/instructions.txt": "445735bf10ff30e4cc7f1a90dbeaa0c8858f0cf0b7bfe3f9dd3a0da1f1f0ec2d",
++     "prompts/instructions-notation.txt": "8565178e44a566f703fe1443f028ab2877d3d931b9ddef43547b92f9d1a7acdb",
++     "prompts/question.txt": "ef76def6baccec519ff9515c66b41d4c233b8e2927acf18115ad1e2e494211dc",
++     "prompts/letter-system.txt": "21059b268bae257dab3aa7f608d1545d9d6a610f6f2782fc4baa84e728a6c82e",
++     "prompts/prediction.txt": "cf3b989784a3b815fe1440589e2f212acc4e106ec4fe1e784d256ab58b128725",
++     "prompts/prediction-system.txt": "4d08045b72eeedc28602af09f82475a60bac768819d40a00a50601a661da332f",
++     "src/league/testdata/repeat_originals.json": "1e8611f27444c8e2429cd0998475dba52e5e21bdbd67e22ee51cfd282101a994",
++     "src/players/testdata/league8_request.json": "a285c55eb6e76c959801ec314305d0ee193131a2658da49926c9c73eccbee818"
++    },
++    "original": "e4ce0e9baa7f1c13ea91116bbf72af75e62312b5"
++   },
++   "attempts": [
++    {
++     "league": null,
++     "runner": {
++      "commit": "6578a73",
++      "commit_full": "6578a73694cc84233d8b3ed8b209f648232218bd",
++      "binary_sha256": "79409d713a5992556d47dd06adf3a8d793fbea2eb039a178736b55dc1213615b"
++     }
++    }
++   ],
++   "rules": {
++    "rounds": 3,
++    "clock_seconds": null,
++    "delay_seconds": null,
++    "max_turns": 300,
++    "prompt_version": "bg-v2",
++    "order_seed": 1190975713392774006,
++    "order_seed_u64": "1190975713392774006",
++    "mirror_concurrent": true,
++    "start_position": null
++   },
++   "settings_original": {
++    "name": "GLiDE 2B",
++    "spec": "glide",
++    "provider": "local (glide.server)",
++    "quantization": "bf16",
++    "base_url": "http://192.168.1.131:19330",
++    "note": "Fastino's GLiDE 2B (Hugging Face fastino/GLiDE-2B @ 00f122c120cdeed82284106cb77d9bab5a50ad16, Fastino Community License) on our GPU through the server its repository ships (python -m glide.server; env ~/envs/glide-family: CPython 3.12.13, torch 2.14.0+cu130, transformers 5.17.0, flash-linear-attention 0.5.2), BF16, GLIDE_MAX_BATCH=1 (one request at a time), no model field (the server passes only state and questions to the model), 255-way code readout; 255 options per request (the league's rule; longer lists split); never truncates: a question prompt over GLIDE_MAX_LEN 40,000 tokens is refused (422). League 1's longest stored request (251 options) is 28,323 tokens of its tokenizer with the card's prompt; none over.",
++    "device": "NVIDIA GB10 (DGX Spark spark2, spark-d9ee), the whole GPU, handed over by logic one server at a time: GLIDE_MAX_BATCH=1 ~/envs/glide-family/bin/python -m glide.server --model <snapshot> --host 0.0.0.0 --port 19330",
++    "parallel": 1,
++    "max_matches": 1
++   },
++   "settings_repeat": {
++    "name": "GLiDE 2B [repeat 1]",
++    "spec": "glide",
++    "provider": "local (glide.server)",
++    "quantization": "bf16",
++    "base_url": "http://192.168.1.131:19330",
++    "note": "Fastino's GLiDE 2B (Hugging Face fastino/GLiDE-2B @ 00f122c120cdeed82284106cb77d9bab5a50ad16, Fastino Community License) on our GPU through the server its repository ships (python -m glide.server; env ~/envs/glide-family: CPython 3.12.13, torch 2.14.0+cu130, transformers 5.17.0, flash-linear-attention 0.5.2), BF16, GLIDE_MAX_BATCH=1 (one request at a time), no model field (the server passes only state and questions to the model), 255-way code readout; 255 options per request (the league's rule; longer lists split); never truncates: a question prompt over GLIDE_MAX_LEN 40,000 tokens is refused (422). League 1's longest stored request (251 options) is 28,323 tokens of its tokenizer with the card's prompt; none over. Reproducibility repeat 1 (glide-2b-r1; tools/v3/repeats, mailbox/repeats/manifest-2026-11-11.json): the original's League 1 field again, one match at a time, as the original, each pair with its original match's seed and seats; held: in no standings, table, Cup input or other setup's numbers.",
++    "device": "NVIDIA GB10 (DGX Spark spark2, spark-d9ee), the whole GPU, handed over by logic one server at a time: GLIDE_MAX_BATCH=1 ~/envs/glide-family/bin/python -m glide.server --model <snapshot> --host 0.0.0.0 --port 19330",
++    "parallel": 1,
++    "max_matches": 1
++   },
++   "settings_changed": [
++    "name",
++    "note"
++   ],
++   "server": {
++    "kind": "pinned",
++    "mib": 0,
++    "health": "http://192.168.1.131:19330/health",
++    "pins": {
++     "source": "late-tiny8 a72223d tools/v3/late-tiny8/models/glide-2b/pins.sh (blob ebd8047, the same at e4ce0e9)",
++     "files": {
++      "pins.sh": "c2a654f72ef49f05b80351d2a172686ca1b0e7297773f73b8cd8c7942644990c"
++     },
++     "env": {
++      "URL": "http://192.168.1.131:19330",
++      "PORT": "19330",
++      "SSH_HOST": "spark2"
++     }
++    },
++    "smoke": "S=workspace/repeats/glide-2b-r1/smoke.db; rm -f $S && /home/cbasaran/code/jevgammon/target/small-repeat/release/jevgammon ask --config /home/cbasaran/code/jevgammon-small-repeat/tools/v3/repeats/smoke/glide-2b-r1.json --positions /home/cbasaran/code/jevgammon/positions/smoke.jsonl --setup 'GLiDE 2B' --out $S --time-limit 600 && n=$(sqlite3 $S \"SELECT count(*) FROM answers WHERE setup = 'GLiDE 2B' AND error IS NULL AND COALESCE(invalid, 0) = 0 AND probabilities IS NOT NULL\") && echo \"$n/50 answered with probabilities\" && [ \"$n\" = 50 ]",
++    "provenance": "logic's spark2 (DGX Spark GB10), handed over one server at a time: GLIDE_MAX_BATCH=1 ~/envs/glide-family/bin/python -m glide.server --model /home/cbasaran/glide-family/models/GLiDE-2B@00f122c120cdeed82284106cb77d9bab5a50ad16 --host 0.0.0.0 --port 19330 (players.settings device), BF16, GLIDE_MAX_LEN 40000; pinned by its late entry's pins.sh (healthy: /health status ok, max_len 40000, max_batch 1, no quantization; pinned: that process on port 19330, read over ssh spark2). Never started or stopped here. Smoke: jevgammon ask on the 50 smoke positions (smoke/glide-2b-r1.json, the original's settings)",
++    "measured": "none on our cards (spark2's GB10, logic's)",
++    "start": null,
++    "stop": null
++   },
++   "coverage_original": {
++    "played": 9,
++    "of": 19,
++    "not_played": [
++     {
++      "opponent": "Clef",
++      "match": null,
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
++     },
++     {
++      "opponent": "Cygnet (Gemma 4 12B)",
++      "match": null,
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
++     },
++     {
++      "opponent": "Decider Flash v1.2",
++      "match": null,
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
++     },
++     {
++      "opponent": "Decider v1.1 27B",
++      "match": null,
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
++     },
++     {
++      "opponent": "Decider v1.2 27B",
++      "match": null,
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
++     },
++     {
++      "opponent": "Fastino GLiDE v1.2 (local)",
++      "match": null,
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
++     },
++     {
++      "opponent": "GPT-6 Luna",
++      "match": null,
++      "reason": "not required (Ümit #6410: only the pairs the original played); never scheduled: OpenAI Decisions out of credit (start.sh: deferred)"
++     },
++     {
++      "opponent": "Mercury Decide",
++      "match": 1200,
++      "reason": "not required (Ümit #6410: only the pairs the original played); #1200 aborted at its warm-up, no game: no OpenRouter endpoint for inception/mercury-decide"
++     },
++     {
++      "opponent": "Open-Jev 27B v1.1",
++      "match": null,
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
++     },
++     {
++      "opponent": "Winnow-12B",
++      "match": null,
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
++     }
++    ]
++   },
++   "coverage_repeat_today": {
++    "playable": 9,
++    "of": 19,
++    "blocked": [],
++    "not_in_original": [
++     {
++      "opponent": "Clef",
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)",
++      "today": null
++     },
++     {
++      "opponent": "Cygnet (Gemma 4 12B)",
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)",
++      "today": null
++     },
++     {
++      "opponent": "Decider Flash v1.2",
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)",
++      "today": null
++     },
++     {
++      "opponent": "Decider v1.1 27B",
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)",
++      "today": null
++     },
++     {
++      "opponent": "Decider v1.2 27B",
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)",
++      "today": null
++     },
++     {
++      "opponent": "Fastino GLiDE v1.2 (local)",
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)",
++      "today": null
++     },
++     {
++      "opponent": "GPT-6 Luna",
++      "reason": "not required (Ümit #6410: only the pairs the original played); never scheduled: OpenAI Decisions out of credit (start.sh: deferred)",
++      "today": "no credit: OpenAI Decisions answers 429 'no credits remaining' (Drex #829/#835/#846/#886, REAX, Muse Ember and KnowLine runs: deferred); a top-up needs Can"
++     },
++     {
++      "opponent": "Mercury Decide",
++      "reason": "not required (Ümit #6410: only the pairs the original played); #1200 aborted at its warm-up, no game: no OpenRouter endpoint for inception/mercury-decide",
++      "today": "no OpenRouter endpoint: 404 'No endpoints found for inception/mercury-decide' at warm-up (Muse Ember #932, 2026-11-10 15:57 UTC; KnowLine #946, 2026-11-10 23:55 UTC)"
++     },
++     {
++      "opponent": "Open-Jev 27B v1.1",
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)",
++      "today": null
++     },
++     {
++      "opponent": "Winnow-12B",
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)",
++      "today": null
++     }
++    ],
++    "unpinned": [
++     "Clef",
++     "Cygnet (Gemma 4 12B)",
++     "Decider Flash v1.2",
++     "Decider v1.1 27B",
++     "Decider v1.2 27B",
++     "Fastino GLiDE v1.2 (local)",
++     "GPT-6 Luna",
++     "Mercury Decide",
++     "Open-Jev 27B v1.1",
++     "Winnow-12B"
++    ]
++   },
++   "coverage_required": {
++    "rule": "only the pairs the original played are repeated (Ümit #6410): GPT-6 Luna, Mercury Decide (aborted at its warm-up) and the 8 local setups are not required",
++    "required": 9,
++    "history_played": 9,
++    "pinned": 9,
++    "playable_today": 9,
++    "matched_fixtures": 9,
++    "not_required": [
++     {
++      "opponent": "GPT-6 Luna",
++      "match": null,
++      "reason": "not required (Ümit #6410: only the pairs the original played); never scheduled: OpenAI Decisions out of credit (start.sh: deferred)"
++     },
++     {
++      "opponent": "Decider Flash v1.2",
++      "match": null,
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
++     },
++     {
++      "opponent": "Winnow-12B",
++      "match": null,
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
++     },
++     {
++      "opponent": "Cygnet (Gemma 4 12B)",
++      "match": null,
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
++     },
++     {
++      "opponent": "Decider v1.1 27B",
++      "match": null,
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
++     },
++     {
++      "opponent": "Decider v1.2 27B",
++      "match": null,
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
++     },
++     {
++      "opponent": "Fastino GLiDE v1.2 (local)",
++      "match": null,
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
++     },
++     {
++      "opponent": "Open-Jev 27B v1.1",
++      "match": null,
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
++     },
++     {
++      "opponent": "Clef",
++      "match": null,
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
++     },
++     {
++      "opponent": "Mercury Decide",
++      "match": 1200,
++      "reason": "not required (Ümit #6410: only the pairs the original played); #1200 aborted at its warm-up, no game: no OpenRouter endpoint for inception/mercury-decide"
++     }
++    ],
++    "missing": {
++     "history": [],
++     "pins": [],
++     "today": [],
++     "fixtures": []
++    }
++   },
++   "cost_basis": {
++    "method": "Each playable pair's billed cost in the original match: the paid opponent's recorded cost_usd (Fastino GLiDE: input tokens x $0.04/M); GLiDE 2B (logic's spark2) and the programs bill nothing.",
++    "pairs": {
++     "Fastino GLiDE": {
++      "opponent": 0.0173,
++      "original": null
++     },
++     "Celeris-1 Decision": {
++      "opponent": 0.0166,
++      "original": null
++     },
++     "Liquid d1-ultra": {
++      "opponent": 0.0119,
++      "original": null
++     },
++     "Jev 1.14.0": {
++      "opponent": 0.0117,
++      "original": null
++     },
++     "Jev 1.13.0": {
++      "opponent": 0.0071,
++      "original": null
++     },
++     "SubQ Snap Preview": {
++      "opponent": 0.0234,
++      "original": null
++     }
++    },
++    "estimate_usd": 0.088,
++    "opponents_usd": 0.088,
++    "entrant_usd": 0,
++    "cap_usd": 5.0
++   },
++   "time": {
++    "method": "Sum of each playable pair's original match duration (start to finish; the originals ran several matches at once, so one at a time is about this or less), plus server starts.",
++    "minutes_matches": {
++     "program": 1.6,
++     "api": 4.9,
++     "local": 0
++    },
++    "minutes_total_matches": 6.5,
++    "server_starts": "entrant: none (logic's spark2 server, already up); no local opponent"
++   },
++   "gpu_plan": {
++    "entrant_mib": 0,
++    "entrant_measured": "none on our cards (spark2's GB10, logic's)",
++    "fits_beside_entrant": [
++     "Decider Flash v1.2",
++     "Winnow-12B",
++     "Cygnet (Gemma 4 12B)",
++     "Decider v1.1 27B",
++     "Decider v1.2 27B",
++     "Fastino GLiDE v1.2 (local)",
++     "Open-Jev 27B v1.1",
++     "Clef"
++    ],
++    "needs_second_gpu": [],
++    "note": "GLiDE 2B runs on logic's spark2 (no card of ours) and no local opponent is repeated: no GPU."
++   },
++   "differences": [
++    "Name: '<original> [repeat 1]', a new players row; settings otherwise as the original's (the changed fields are listed under Settings); one match at a time, as the original (players.settings max_matches 1, parallel 1).",
++    "Runner: the original ran e4ce0e9 (late-tiny8, target/tiny8 (clean; origin/main's runner line 18cc78d with late-tiny8's decision clients); the repeat runs 6578a73 (branch small-repeat-runner): the repeats' runner 0e66836 (origin/late-reax line: decision clients reax, baselabs, drex-max, drex-local, nace and a pre-send budget ledger for decision services and openai-compatible chat, none used by this field; the pinned-pairs change 4ca4f08; admit) with late-tiny8-small3 8ebad40's decision clients and late-smallchat-on a083fb4's reasoning_prefill / reasoning_field keys (unused here). Every request of the original's 9 matches replays byte for byte: GLiDE 2B 820 of 820 requests, its opponents 558 of 558 (mailbox/small-repeat-review/byte-identity). Same prompt version bg-v2, option-order seed and rules.",
++    "Server: logic's GLiDE 2B server on spark2, pinned and checked as in the original (pins.sh healthy and pinned before any write and every minute, 3 failures in a row stop); the original's guard checked pinned once at its start."
++   ],
++   "start": [
++    "systemd-run --user --unit=repeat-glide-2b-r1 --working-directory=/home/cbasaran/code/jevgammon /home/cbasaran/code/jevgammon-small-repeat/tools/v3/repeats/run.sh glide-2b-r1"
++   ],
++   "pairs": [
++    {
++     "opponent": "Fastino GLiDE",
++     "kind": "api",
++     "original_match": 1191,
++     "status": "finished",
++     "error": null,
++     "seed": -2886825026339856919,
++     "seed_u64": "15559919047369694697",
++     "original_is_player1": true,
++     "model1": "GLiDE 2B",
++     "model2": "Fastino GLiDE",
++     "rules": {
++      "rounds": 3,
++      "clock_seconds": null,
++      "delay_seconds": null,
++      "max_turns": 300,
++      "prompt_version": "bg-v2",
++      "order_seed": 1190975713392774006,
++      "order_seed_u64": "1190975713392774006",
++      "mirror_concurrent": true,
++      "start_position": null
++     },
++     "harness": {
++      "commit": "e4ce0e9baa7f1c13ea91116bbf72af75e62312b5",
++      "dirty": false
++     },
++     "started": "2026-11-12T16:58:16.155Z",
++     "finished": "2026-11-12T16:59:45.713Z",
++     "minutes": 1.5,
++     "score_for": 1,
++     "score_against": 7,
++     "games": [
++      {
++       "round": 1,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": 6284051498672239545,
++       "dice_seed_u64": "6284051498672239545",
++       "opening": [
++        2,
++        1
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 44
++      },
++      {
++       "round": 1,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": 6284051498672239545,
++       "dice_seed_u64": "6284051498672239545",
++       "opening": [
++        2,
++        1
++       ],
++       "result": "gammon",
++       "points": 2,
++       "turns": 47
++      },
++      {
++       "round": 2,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": 8409684665812073817,
++       "dice_seed_u64": "8409684665812073817",
++       "opening": [
++        6,
++        3
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 65
++      },
++      {
++       "round": 2,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": 8409684665812073817,
++       "dice_seed_u64": "8409684665812073817",
++       "opening": [
++        6,
++        3
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 65
++      },
++      {
++       "round": 3,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": 7353245885173886856,
++       "dice_seed_u64": "7353245885173886856",
++       "opening": [
++        4,
++        1
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 48
++      },
++      {
++       "round": 3,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": 7353245885173886856,
++       "dice_seed_u64": "7353245885173886856",
++       "opening": [
++        4,
++        1
++       ],
++       "result": "gammon",
++       "points": 2,
++       "turns": 43
++      }
++     ],
++     "decisions": {
++      "original": 122,
++      "opponent": 117
++     },
++     "billed_usd": {
++      "opponent": 0.0173,
++      "original": null
++     },
++     "blocked_today": null
++    },
++    {
++     "opponent": "Celeris-1 Decision",
++     "kind": "api",
++     "original_match": 1192,
++     "status": "finished",
++     "error": null,
++     "seed": -5808196307987728185,
++     "seed_u64": "12638547765721823431",
++     "original_is_player1": false,
++     "model1": "Celeris-1 Decision",
++     "model2": "GLiDE 2B",
++     "rules": {
++      "rounds": 3,
++      "clock_seconds": null,
++      "delay_seconds": null,
++      "max_turns": 300,
++      "prompt_version": "bg-v2",
++      "order_seed": 1190975713392774006,
++      "order_seed_u64": "1190975713392774006",
++      "mirror_concurrent": true,
++      "start_position": null
++     },
++     "harness": {
++      "commit": "e4ce0e9baa7f1c13ea91116bbf72af75e62312b5",
++      "dirty": false
++     },
++     "started": "2026-11-12T16:59:48.313Z",
++     "finished": "2026-11-12T17:00:47.032Z",
++     "minutes": 1.0,
++     "score_for": 2,
++     "score_against": 4,
++     "games": [
++      {
++       "round": 1,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": 649433310438331678,
++       "dice_seed_u64": "649433310438331678",
++       "opening": [
++        1,
++        5
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 52
++      },
++      {
++       "round": 1,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": 649433310438331678,
++       "dice_seed_u64": "649433310438331678",
++       "opening": [
++        1,
++        5
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 46
++      },
++      {
++       "round": 2,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": -559185419146315200,
++       "dice_seed_u64": "17887558654563236416",
++       "opening": [
++        2,
++        4
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 61
++      },
++      {
++       "round": 2,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": -559185419146315200,
++       "dice_seed_u64": "17887558654563236416",
++       "opening": [
++        2,
++        4
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 59
++      },
++      {
++       "round": 3,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": 3318334776613459615,
++       "dice_seed_u64": "3318334776613459615",
++       "opening": [
++        2,
++        4
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 52
++      },
++      {
++       "round": 3,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": 3318334776613459615,
++       "dice_seed_u64": "3318334776613459615",
++       "opening": [
++        2,
++        4
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 43
++      }
++     ],
++     "decisions": {
++      "original": 121,
++      "opponent": 118
++     },
++     "billed_usd": {
++      "opponent": 0.0166,
++      "original": null
++     },
++     "blocked_today": null
++    },
++    {
++     "opponent": "GNUbg weak",
++     "kind": "program",
++     "original_match": 1193,
++     "status": "finished",
++     "error": null,
++     "seed": 501093501360735733,
++     "seed_u64": "501093501360735733",
++     "original_is_player1": true,
++     "model1": "GLiDE 2B",
++     "model2": "GNUbg weak",
++     "rules": {
++      "rounds": 3,
++      "clock_seconds": null,
++      "delay_seconds": null,
++      "max_turns": 300,
++      "prompt_version": "bg-v2",
++      "order_seed": 1190975713392774006,
++      "order_seed_u64": "1190975713392774006",
++      "mirror_concurrent": true,
++      "start_position": null
++     },
++     "harness": {
++      "commit": "e4ce0e9baa7f1c13ea91116bbf72af75e62312b5",
++      "dirty": false
++     },
++     "started": "2026-11-12T17:00:47.276Z",
++     "finished": "2026-11-12T17:01:02.221Z",
++     "minutes": 0.2,
++     "score_for": 0,
++     "score_against": 6,
++     "games": [
++      {
++       "round": 1,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": 1445695602023459914,
++       "dice_seed_u64": "1445695602023459914",
++       "opening": [
++        5,
++        4
++       ],
++       "result": "backgammon",
++       "points": 3,
++       "turns": 64
++      },
++      {
++       "round": 1,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": 1445695602023459914,
++       "dice_seed_u64": "1445695602023459914",
++       "opening": [
++        5,
++        4
++       ],
++       "result": "backgammon",
++       "points": 3,
++       "turns": 49
++      }
++     ],
++     "decisions": {
++      "original": 38,
++      "opponent": 50
++     },
++     "billed_usd": {
++      "opponent": null,
++      "original": null
++     },
++     "blocked_today": null
++    },
++    {
++     "opponent": "Random",
++     "kind": "program",
++     "original_match": 1194,
++     "status": "finished",
++     "error": null,
++     "seed": -3184559060406936088,
++     "seed_u64": "15262185013302615528",
++     "original_is_player1": false,
++     "model1": "Random",
++     "model2": "GLiDE 2B",
++     "rules": {
++      "rounds": 3,
++      "clock_seconds": null,
++      "delay_seconds": null,
++      "max_turns": 300,
++      "prompt_version": "bg-v2",
++      "order_seed": 1190975713392774006,
++      "order_seed_u64": "1190975713392774006",
++      "mirror_concurrent": true,
++      "start_position": null
++     },
++     "harness": {
++      "commit": "e4ce0e9baa7f1c13ea91116bbf72af75e62312b5",
++      "dirty": false
++     },
++     "started": "2026-11-12T17:01:02.495Z",
++     "finished": "2026-11-12T17:01:37.471Z",
++     "minutes": 0.6,
++     "score_for": 5,
++     "score_against": 0,
++     "games": [
++      {
++       "round": 1,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": -8174891846996880333,
++       "dice_seed_u64": "10271852226712671283",
++       "opening": [
++        5,
++        2
++       ],
++       "result": "gammon",
++       "points": 2,
++       "turns": 70
++      },
++      {
++       "round": 1,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": -8174891846996880333,
++       "dice_seed_u64": "10271852226712671283",
++       "opening": [
++        5,
++        2
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 61
++      },
++      {
++       "round": 2,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": -5984078623005259750,
++       "dice_seed_u64": "12462665450704291866",
++       "opening": [
++        2,
++        3
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 53
++      },
++      {
++       "round": 2,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": -5984078623005259750,
++       "dice_seed_u64": "12462665450704291866",
++       "opening": [
++        2,
++        3
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 46
++      }
++     ],
++     "decisions": {
++      "original": 92,
++      "opponent": 102
++     },
++     "billed_usd": {
++      "opponent": null,
++      "original": null
++     },
++     "blocked_today": null
++    },
++    {
++     "opponent": "Safest",
++     "kind": "program",
++     "original_match": 1195,
++     "status": "finished",
++     "error": null,
++     "seed": -3144524690129716424,
++     "seed_u64": "15302219383579835192",
++     "original_is_player1": true,
++     "model1": "GLiDE 2B",
++     "model2": "Safest",
++     "rules": {
++      "rounds": 3,
++      "clock_seconds": null,
++      "delay_seconds": null,
++      "max_turns": 300,
++      "prompt_version": "bg-v2",
++      "order_seed": 1190975713392774006,
++      "order_seed_u64": "1190975713392774006",
++      "mirror_concurrent": true,
++      "start_position": null
++     },
++     "harness": {
++      "commit": "e4ce0e9baa7f1c13ea91116bbf72af75e62312b5",
++      "dirty": false
++     },
++     "started": "2026-11-12T17:01:37.732Z",
++     "finished": "2026-11-12T17:02:25.534Z",
++     "minutes": 0.8,
++     "score_for": 1,
++     "score_against": 6,
++     "games": [
++      {
++       "round": 1,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": 5234568217098403838,
++       "dice_seed_u64": "5234568217098403838",
++       "opening": [
++        1,
++        2
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 47
++      },
++      {
++       "round": 1,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": 5234568217098403838,
++       "dice_seed_u64": "5234568217098403838",
++       "opening": [
++        1,
++        2
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 49
++      },
++      {
++       "round": 2,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": -2034681513844266806,
++       "dice_seed_u64": "16412062559865284810",
++       "opening": [
++        4,
++        3
++       ],
++       "result": "gammon",
++       "points": 2,
++       "turns": 56
++      },
++      {
++       "round": 2,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": -2034681513844266806,
++       "dice_seed_u64": "16412062559865284810",
++       "opening": [
++        4,
++        3
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 47
++      },
++      {
++       "round": 3,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": -3698147146195507144,
++       "dice_seed_u64": "14748596927514044472",
++       "opening": [
++        2,
++        4
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 49
++      },
++      {
++       "round": 3,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": -3698147146195507144,
++       "dice_seed_u64": "14748596927514044472",
++       "opening": [
++        2,
++        4
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 48
++      }
++     ],
++     "decisions": {
++      "original": 124,
++      "opponent": 110
++     },
++     "billed_usd": {
++      "opponent": null,
++      "original": null
++     },
++     "blocked_today": null
++    },
++    {
++     "opponent": "Liquid d1-ultra",
++     "kind": "api",
++     "original_match": 1196,
++     "status": "finished",
++     "error": null,
++     "seed": 8844248524737138184,
++     "seed_u64": "8844248524737138184",
++     "original_is_player1": true,
++     "model1": "GLiDE 2B",
++     "model2": "Liquid d1-ultra",
++     "rules": {
++      "rounds": 3,
++      "clock_seconds": null,
++      "delay_seconds": null,
++      "max_turns": 300,
++      "prompt_version": "bg-v2",
++      "order_seed": 1190975713392774006,
++      "order_seed_u64": "1190975713392774006",
++      "mirror_concurrent": true,
++      "start_position": null
++     },
++     "harness": {
++      "commit": "e4ce0e9baa7f1c13ea91116bbf72af75e62312b5",
++      "dirty": false
++     },
++     "started": "2026-11-12T17:02:25.745Z",
++     "finished": "2026-11-12T17:03:05.775Z",
++     "minutes": 0.7,
++     "score_for": 0,
++     "score_against": 7,
++     "games": [
++      {
++       "round": 1,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": 334895795645033943,
++       "dice_seed_u64": "334895795645033943",
++       "opening": [
++        6,
++        1
++       ],
++       "result": "gammon",
++       "points": 2,
++       "turns": 48
++      },
++      {
++       "round": 1,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": 334895795645033943,
++       "dice_seed_u64": "334895795645033943",
++       "opening": [
++        6,
++        1
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 59
++      },
++      {
++       "round": 2,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": 8246333043816995089,
++       "dice_seed_u64": "8246333043816995089",
++       "opening": [
++        6,
++        1
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 56
++      },
++      {
++       "round": 2,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": 8246333043816995089,
++       "dice_seed_u64": "8246333043816995089",
++       "opening": [
++        6,
++        1
++       ],
++       "result": "backgammon",
++       "points": 3,
++       "turns": 45
++      }
++     ],
++     "decisions": {
++      "original": 78,
++      "opponent": 80
++     },
++     "billed_usd": {
++      "opponent": 0.0119,
++      "original": null
++     },
++     "blocked_today": null
++    },
++    {
++     "opponent": "Jev 1.14.0",
++     "kind": "api",
++     "original_match": 1197,
++     "status": "finished",
++     "error": null,
++     "seed": 6978671576940928040,
++     "seed_u64": "6978671576940928040",
++     "original_is_player1": true,
++     "model1": "GLiDE 2B",
++     "model2": "Jev 1.14.0",
++     "rules": {
++      "rounds": 3,
++      "clock_seconds": null,
++      "delay_seconds": null,
++      "max_turns": 300,
++      "prompt_version": "bg-v2",
++      "order_seed": 1190975713392774006,
++      "order_seed_u64": "1190975713392774006",
++      "mirror_concurrent": true,
++      "start_position": null
++     },
++     "harness": {
++      "commit": "e4ce0e9baa7f1c13ea91116bbf72af75e62312b5",
++      "dirty": false
++     },
++     "started": "2026-11-12T17:03:06.030Z",
++     "finished": "2026-11-12T17:03:33.917Z",
++     "minutes": 0.5,
++     "score_for": 0,
++     "score_against": 5,
++     "games": [
++      {
++       "round": 1,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": 817469125744824465,
++       "dice_seed_u64": "817469125744824465",
++       "opening": [
++        3,
++        4
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 43
++      },
++      {
++       "round": 1,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": 817469125744824465,
++       "dice_seed_u64": "817469125744824465",
++       "opening": [
++        3,
++        4
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 42
++      },
++      {
++       "round": 2,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": 4004409712740612357,
++       "dice_seed_u64": "4004409712740612357",
++       "opening": [
++        3,
++        2
++       ],
++       "result": "gammon",
++       "points": 2,
++       "turns": 46
++      },
++      {
++       "round": 2,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": 4004409712740612357,
++       "dice_seed_u64": "4004409712740612357",
++       "opening": [
++        3,
++        2
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 51
++      }
++     ],
++     "decisions": {
++      "original": 76,
++      "opponent": 74
++     },
++     "billed_usd": {
++      "opponent": 0.0117,
++      "original": null
++     },
++     "blocked_today": null
++    },
++    {
++     "opponent": "Jev 1.13.0",
++     "kind": "api",
++     "original_match": 1198,
++     "status": "finished",
++     "error": null,
++     "seed": 6498334176674890690,
++     "seed_u64": "6498334176674890690",
++     "original_is_player1": false,
++     "model1": "Jev 1.13.0",
++     "model2": "GLiDE 2B",
++     "rules": {
++      "rounds": 3,
++      "clock_seconds": null,
++      "delay_seconds": null,
++      "max_turns": 300,
++      "prompt_version": "bg-v2",
++      "order_seed": 1190975713392774006,
++      "order_seed_u64": "1190975713392774006",
++      "mirror_concurrent": true,
++      "start_position": null
++     },
++     "harness": {
++      "commit": "e4ce0e9baa7f1c13ea91116bbf72af75e62312b5",
++      "dirty": false
++     },
++     "started": "2026-11-12T17:03:34.181Z",
++     "finished": "2026-11-12T17:03:50.717Z",
++     "minutes": 0.3,
++     "score_for": 0,
++     "score_against": 5,
++     "games": [
++      {
++       "round": 1,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": 3475092312431889666,
++       "dice_seed_u64": "3475092312431889666",
++       "opening": [
++        6,
++        5
++       ],
++       "result": "gammon",
++       "points": 2,
++       "turns": 51
++      },
++      {
++       "round": 1,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": 3475092312431889666,
++       "dice_seed_u64": "3475092312431889666",
++       "opening": [
++        6,
++        5
++       ],
++       "result": "backgammon",
++       "points": 3,
++       "turns": 44
++      }
++     ],
++     "decisions": {
++      "original": 35,
++      "opponent": 41
++     },
++     "billed_usd": {
++      "opponent": 0.0071,
++      "original": null
++     },
++     "blocked_today": null
++    },
++    {
++     "opponent": "SubQ Snap Preview",
++     "kind": "api",
++     "original_match": 1199,
++     "status": "finished",
++     "error": null,
++     "seed": -1704890822461472530,
++     "seed_u64": "16741853251248079086",
++     "original_is_player1": false,
++     "model1": "SubQ Snap Preview",
++     "model2": "GLiDE 2B",
++     "rules": {
++      "rounds": 3,
++      "clock_seconds": null,
++      "delay_seconds": null,
++      "max_turns": 300,
++      "prompt_version": "bg-v2",
++      "order_seed": 1190975713392774006,
++      "order_seed_u64": "1190975713392774006",
++      "mirror_concurrent": true,
++      "start_position": null
++     },
++     "harness": {
++      "commit": "e4ce0e9baa7f1c13ea91116bbf72af75e62312b5",
++      "dirty": false
++     },
++     "started": "2026-11-12T17:03:50.941Z",
++     "finished": "2026-11-12T17:04:45.386Z",
++     "minutes": 0.9,
++     "score_for": 1,
++     "score_against": 6,
++     "games": [
++      {
++       "round": 1,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": 8747985904488991361,
++       "dice_seed_u64": "8747985904488991361",
++       "opening": [
++        4,
++        6
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 60
++      },
++      {
++       "round": 1,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": 8747985904488991361,
++       "dice_seed_u64": "8747985904488991361",
++       "opening": [
++        4,
++        6
++       ],
++       "result": "gammon",
++       "points": 2,
++       "turns": 47
++      },
++      {
++       "round": 2,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": -6902276567340943192,
++       "dice_seed_u64": "11544467506368608424",
++       "opening": [
++        5,
++        6
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 49
++      },
++      {
++       "round": 2,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": -6902276567340943192,
++       "dice_seed_u64": "11544467506368608424",
++       "opening": [
++        5,
++        6
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 73
++      },
++      {
++       "round": 3,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": 6778524988744129852,
++       "dice_seed_u64": "6778524988744129852",
++       "opening": [
++        3,
++        6
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 48
++      },
++      {
++       "round": 3,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": 6778524988744129852,
++       "dice_seed_u64": "6778524988744129852",
++       "opening": [
++        3,
++        6
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 51
++      }
++     ],
++     "decisions": {
++      "original": 132,
++      "opponent": 128
++     },
++     "billed_usd": {
++      "opponent": 0.0234,
++      "original": null
++     },
++     "blocked_today": null
++    }
++   ]
++  },
++  {
++   "id": "minicpm5-2b-off-r1",
++   "run_id": "repeat-2026-11-13-minicpm5-2b-off-r1",
++   "name": "MiniCPM5-2B (off) [repeat 1]",
++   "display": "MiniCPM5-2B (off)",
++   "original": "MiniCPM5-2B (off)",
++   "original_player_id": 79,
++   "original_league": 39,
++   "original_stage": "late-entry",
++   "status": "queued",
++   "hold": null,
++   "prepared": "2026-11-13",
++   "started": null,
++   "finished": null,
++   "league_config": "tools/v3/repeats/leagues/minicpm5-2b-off-r1.json",
++   "status_file": "mailbox/repeats/minicpm5-2b-off-r1 - status.md",
++   "runner": {
++    "binary": "/home/cbasaran/code/jevgammon/target/small-repeat/release/jevgammon",
++    "binary_sha256": "79409d713a5992556d47dd06adf3a8d793fbea2eb039a178736b55dc1213615b",
++    "tree": "/home/cbasaran/code/jevgammon-small-repeat-runner",
++    "commit": "6578a73",
++    "commit_full": "6578a73694cc84233d8b3ed8b209f648232218bd",
++    "src_tree": "53e913702ba91019b31e0422bf34361805381277",
++    "build": {
++     "command": "cd /home/cbasaran/code/jevgammon-small-repeat-runner && CARGO_TARGET_DIR=/home/cbasaran/code/jevgammon/target/small-repeat cargo build --release --locked",
++     "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14), cargo 1.97.1 (c980f4866 2026-06-30)",
++     "built": "2026-11-13T16:32Z",
++     "tree": "git worktree add -b small-repeat-runner /home/cbasaran/code/jevgammon-small-repeat-runner 0e66836; src patches, commit 6578a73; checkout --detach (clean; only the untracked METADATA.worktree added)"
++    },
++    "inputs": {
++     "Cargo.toml": "bf64a9f15bd33cd3f5d517dc984140ff38fb9ec93c5d3a50eb0971f658c0ed4b",
++     "Cargo.lock": "d7048551c8907fd02c85f7ac8d8d2ffdc088ae4848bf313fc3c0f6e070d88494",
++     "tools/gnubg_player.py": "085601d706df41ddec7f1732428a2366c157aa58bb8e514b1cf1dd1b0f3f3aab",
++     "tools/v3/engine.py": "511ab4b2490732632f7e810f2e3da616fb5da4cd91d75eb2cf1ac4604e50e046",
++     "tools/v3/rules.py": "18dd032837ff061f64d2af32a5e7e813ad187b64f28a5a6e139f7695202f8480",
++     "tools/v3/order_vectors.json": "9efbb3ada083c02c51bdf74e539d48ee61b2f49e8d2f0fe58e29db8c6d8cb499",
++     "prompts/bg-v2.md": "3c59036a1f416f6187ccec06ec939e4d888a2029441daf30f6ee06a69015c465",
++     "prompts/nack-v2.md": "fa7397be6e9a7d337389a401d61464464bcbbe5725b8a2c70e01e6cb670395a8",
++     "prompts/bg-v3-std-notable.md": "1a145a09713fdd694696cb16d826406711567394697f0938300c285e4cba703f",
++     "prompts/bg-v3-nack.md": "13c744f06613f4051888af99bf9d1692011cb95d6f301c1898f94e13d67fef33",
++     "prompts/instructions.txt": "445735bf10ff30e4cc7f1a90dbeaa0c8858f0cf0b7bfe3f9dd3a0da1f1f0ec2d",
++     "prompts/instructions-notation.txt": "8565178e44a566f703fe1443f028ab2877d3d931b9ddef43547b92f9d1a7acdb",
++     "prompts/question.txt": "ef76def6baccec519ff9515c66b41d4c233b8e2927acf18115ad1e2e494211dc",
++     "prompts/letter-system.txt": "21059b268bae257dab3aa7f608d1545d9d6a610f6f2782fc4baa84e728a6c82e",
++     "prompts/prediction.txt": "cf3b989784a3b815fe1440589e2f212acc4e106ec4fe1e784d256ab58b128725",
++     "prompts/prediction-system.txt": "4d08045b72eeedc28602af09f82475a60bac768819d40a00a50601a661da332f",
++     "src/league/testdata/repeat_originals.json": "1e8611f27444c8e2429cd0998475dba52e5e21bdbd67e22ee51cfd282101a994",
++     "src/players/testdata/league8_request.json": "a285c55eb6e76c959801ec314305d0ee193131a2658da49926c9c73eccbee818"
++    },
++    "original": "171698f84a2e45b0dd7668d5749f72dfc0ce3712"
++   },
++   "attempts": [
++    {
++     "league": null,
++     "runner": {
++      "commit": "6578a73",
++      "commit_full": "6578a73694cc84233d8b3ed8b209f648232218bd",
++      "binary_sha256": "79409d713a5992556d47dd06adf3a8d793fbea2eb039a178736b55dc1213615b"
++     }
++    }
++   ],
++   "rules": {
++    "rounds": 3,
++    "clock_seconds": null,
++    "delay_seconds": null,
++    "max_turns": 300,
++    "prompt_version": "bg-v2",
++    "order_seed": 1190975713392774006,
++    "order_seed_u64": "1190975713392774006",
++    "mirror_concurrent": true,
++    "start_position": null
++   },
++   "settings_original": {
++    "name": "MiniCPM5-2B (off)",
++    "spec": "openai-compatible/minicpm5-2b",
++    "provider": "local-vllm",
++    "quantization": "bf16",
++    "base_url": "http://127.0.0.1:18614/v1",
++    "request": {
++     "chat_template_kwargs": {
++      "enable_thinking": false
++     }
++    },
++    "top_logprobs": 20,
++    "letter_readout": "prefill",
++    "note": "openbmb/MiniCPM5-2B @ 42433e90dad95123ab87729fd7011e7110629556, BF16, on our GPU through vLLM v0.30.0 (vllm/vllm-openai:v0.30.0) in BF16, --generation-config auto; logic's server (small_models.py key minicpm5-2b, port 18614, bariton GPU 1, #5080/#5091; ours alone after turkce's 'done') or ours on the same port and name (tools/v3/late-smallchat/serve.sh). thinking off (enable_thinking false); the letter is read from a prefilled Answer: (as Gemma 4 31B (off)); server reasoning split: vLLM reasoning parser qwen3 (no reasoning generated). Sampling: League 1's local chat rule, per request: temperature 1.0 from the chat client, everything else the server's default (generation_config.json via --generation-config auto, else vLLM neutral), no seed; it differs from logic's Logic & Math runs: logic sends temperature 1.0, top_p 0.95, seed 0 (ours: the same temperature and top_p from generation_config.json; no seed). Output cap 1 token (prefill readout). Up to 16 matches and 16 requests at once, League 1's rule for its local chat setups (the server is ours alone after turkce's 'done'). Late entry v the original League 1 table (tools/v3/late-smallchat; Zeki #5064/#5071/#5073; Main's decisions 12 Nov)",
++    "device": "RTX PRO 6000 (bariton), one GPU",
++    "parallel": 16,
++    "max_matches": 16
++   },
++   "settings_repeat": {
++    "name": "MiniCPM5-2B (off) [repeat 1]",
++    "spec": "openai-compatible/minicpm5-2b",
++    "provider": "local-vllm",
++    "quantization": "bf16",
++    "base_url": "http://127.0.0.1:18614/v1",
++    "request": {
++     "chat_template_kwargs": {
++      "enable_thinking": false
++     }
++    },
++    "top_logprobs": 20,
++    "letter_readout": "prefill",
++    "note": "openbmb/MiniCPM5-2B @ 42433e90dad95123ab87729fd7011e7110629556, BF16, on our GPU through vLLM v0.30.0 (vllm/vllm-openai:v0.30.0) in BF16, --generation-config auto; logic's server (small_models.py key minicpm5-2b, port 18614, bariton GPU 1, #5080/#5091; ours alone after turkce's 'done') or ours on the same port and name (tools/v3/late-smallchat/serve.sh). thinking off (enable_thinking false); the letter is read from a prefilled Answer: (as Gemma 4 31B (off)); server reasoning split: vLLM reasoning parser qwen3 (no reasoning generated). Sampling: League 1's local chat rule, per request: temperature 1.0 from the chat client, everything else the server's default (generation_config.json via --generation-config auto, else vLLM neutral), no seed; it differs from logic's Logic & Math runs: logic sends temperature 1.0, top_p 0.95, seed 0 (ours: the same temperature and top_p from generation_config.json; no seed). Output cap 1 token (prefill readout). Up to 16 matches and 16 requests at once, League 1's rule for its local chat setups (the server is ours alone after turkce's 'done'). Late entry v the original League 1 table (tools/v3/late-smallchat; Zeki #5064/#5071/#5073; Main's decisions 12 Nov) Reproducibility repeat 1 (minicpm5-2b-off-r1; tools/v3/repeats, mailbox/repeats/manifest-2026-11-11.json): the original's League 1 field again, up to 16 matches at once, as the original, each pair with its original match's seed and seats; held: in no standings, table, Cup input or other setup's numbers.",
++    "device": "RTX PRO 6000 (bariton), one GPU",
++    "parallel": 16,
++    "max_matches": 16
++   },
++   "settings_changed": [
++    "name",
++    "note"
++   ],
++   "server": {
++    "kind": "pinned",
++    "mib": 0,
++    "health": "http://127.0.0.1:18614/v1/models",
++    "pins": {
++     "source": "late-smallchat 171698f tools/v3/late-smallchat/pins.sh (blob 5081854) and models.json (blob 8ce1456), KEY minicpm5-2b-off",
++     "files": {
++      "pins.sh": "d203ff05f756c674c780f66561317fb18f0219bd0099a1479045975f075b80e4",
++      "models.json": "3dfc6278885bcf5cea810d423247f88eadd953acb1453d49b80b7e6dbeb8040b"
++     },
++     "env": {
++      "KEY": "minicpm5-2b-off",
++      "URL": "http://127.0.0.1:18614/v1",
++      "PORT": "18614",
++      "SERVED": "minicpm5-2b"
++     }
++    },
++    "smoke": "S=workspace/repeats/minicpm5-2b-off-r1/smoke.db; rm -f $S && /home/cbasaran/code/jevgammon/target/small-repeat/release/jevgammon ask --config /home/cbasaran/code/jevgammon-small-repeat/tools/v3/repeats/smoke/minicpm5-2b-off-r1.json --positions /home/cbasaran/code/jevgammon/positions/smoke.jsonl --setup 'MiniCPM5-2B (off)' --out $S --time-limit 600 && n=$(sqlite3 $S \"SELECT count(*) FROM answers WHERE setup = 'MiniCPM5-2B (off)' AND error IS NULL AND COALESCE(invalid, 0) = 0 AND probabilities IS NOT NULL\") && echo \"$n/50 answered with probabilities\" && [ \"$n\" = 50 ]",
++    "provenance": "logic's small_models.py vLLM server (key minicpm5-2b, port 18614, bariton GPU 1; vllm/vllm-openai:v0.30.0, BF16, --generation-config auto), served name minicpm5-2b, openbmb/MiniCPM5-2B @ 42433e90; pinned by its late entry's pins.sh (healthy: /v1/models lists minicpm5-2b; pinned: the docker container on port 18614 runs openbmb/MiniCPM5-2B --revision 42433e90… (or its snapshot), --dtype bfloat16, --max-model-len >= 38,000). Never started or stopped here; thinking off per request (chat_template_kwargs). Smoke: jevgammon ask on the 50 smoke positions (smoke/minicpm5-2b-off-r1.json, the original's settings)",
++    "measured": "none of ours (logic's container on bariton GPU 1)",
++    "start": null,
++    "stop": null
++   },
++   "coverage_original": {
++    "played": 9,
++    "of": 19,
++    "not_played": [
++     {
++      "opponent": "Clef",
++      "match": null,
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
++     },
++     {
++      "opponent": "Cygnet (Gemma 4 12B)",
++      "match": null,
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
++     },
++     {
++      "opponent": "Decider Flash v1.2",
++      "match": null,
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
++     },
++     {
++      "opponent": "Decider v1.1 27B",
++      "match": null,
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
++     },
++     {
++      "opponent": "Decider v1.2 27B",
++      "match": null,
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
++     },
++     {
++      "opponent": "Fastino GLiDE v1.2 (local)",
++      "match": null,
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
++     },
++     {
++      "opponent": "GPT-6 Luna",
++      "match": null,
++      "reason": "not required (Ümit #6410: only the pairs the original played); never scheduled: OpenAI Decisions out of credit (start.sh: deferred)"
++     },
++     {
++      "opponent": "Mercury Decide",
++      "match": 1172,
++      "reason": "not required (Ümit #6410: only the pairs the original played); #1172 aborted at its warm-up, no game: no OpenRouter endpoint for inception/mercury-decide"
++     },
++     {
++      "opponent": "Open-Jev 27B v1.1",
++      "match": null,
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
++     },
++     {
++      "opponent": "Winnow-12B",
++      "match": null,
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
++     }
++    ]
++   },
++   "coverage_repeat_today": {
++    "playable": 9,
++    "of": 19,
++    "blocked": [],
++    "not_in_original": [
++     {
++      "opponent": "Clef",
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)",
++      "today": null
++     },
++     {
++      "opponent": "Cygnet (Gemma 4 12B)",
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)",
++      "today": null
++     },
++     {
++      "opponent": "Decider Flash v1.2",
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)",
++      "today": null
++     },
++     {
++      "opponent": "Decider v1.1 27B",
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)",
++      "today": null
++     },
++     {
++      "opponent": "Decider v1.2 27B",
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)",
++      "today": null
++     },
++     {
++      "opponent": "Fastino GLiDE v1.2 (local)",
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)",
++      "today": null
++     },
++     {
++      "opponent": "GPT-6 Luna",
++      "reason": "not required (Ümit #6410: only the pairs the original played); never scheduled: OpenAI Decisions out of credit (start.sh: deferred)",
++      "today": "no credit: OpenAI Decisions answers 429 'no credits remaining' (Drex #829/#835/#846/#886, REAX, Muse Ember and KnowLine runs: deferred); a top-up needs Can"
++     },
++     {
++      "opponent": "Mercury Decide",
++      "reason": "not required (Ümit #6410: only the pairs the original played); #1172 aborted at its warm-up, no game: no OpenRouter endpoint for inception/mercury-decide",
++      "today": "no OpenRouter endpoint: 404 'No endpoints found for inception/mercury-decide' at warm-up (Muse Ember #932, 2026-11-10 15:57 UTC; KnowLine #946, 2026-11-10 23:55 UTC)"
++     },
++     {
++      "opponent": "Open-Jev 27B v1.1",
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)",
++      "today": null
++     },
++     {
++      "opponent": "Winnow-12B",
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)",
++      "today": null
++     }
++    ],
++    "unpinned": [
++     "Clef",
++     "Cygnet (Gemma 4 12B)",
++     "Decider Flash v1.2",
++     "Decider v1.1 27B",
++     "Decider v1.2 27B",
++     "Fastino GLiDE v1.2 (local)",
++     "GPT-6 Luna",
++     "Mercury Decide",
++     "Open-Jev 27B v1.1",
++     "Winnow-12B"
++    ]
++   },
++   "coverage_required": {
++    "rule": "only the pairs the original played are repeated (Ümit #6410): GPT-6 Luna, Mercury Decide (aborted at its warm-up) and the 8 local setups are not required",
++    "required": 9,
++    "history_played": 9,
++    "pinned": 9,
++    "playable_today": 9,
++    "matched_fixtures": 9,
++    "not_required": [
++     {
++      "opponent": "GPT-6 Luna",
++      "match": null,
++      "reason": "not required (Ümit #6410: only the pairs the original played); never scheduled: OpenAI Decisions out of credit (start.sh: deferred)"
++     },
++     {
++      "opponent": "Decider Flash v1.2",
++      "match": null,
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
++     },
++     {
++      "opponent": "Winnow-12B",
++      "match": null,
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
++     },
++     {
++      "opponent": "Cygnet (Gemma 4 12B)",
++      "match": null,
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
++     },
++     {
++      "opponent": "Decider v1.1 27B",
++      "match": null,
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
++     },
++     {
++      "opponent": "Decider v1.2 27B",
++      "match": null,
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
++     },
++     {
++      "opponent": "Fastino GLiDE v1.2 (local)",
++      "match": null,
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
++     },
++     {
++      "opponent": "Open-Jev 27B v1.1",
++      "match": null,
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
++     },
++     {
++      "opponent": "Clef",
++      "match": null,
++      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
++     },
++     {
++      "opponent": "Mercury Decide",
++      "match": 1172,
++      "reason": "not required (Ümit #6410: only the pairs the original played); #1172 aborted at its warm-up, no game: no OpenRouter endpoint for inception/mercury-decide"
++     }
++    ],
++    "missing": {
++     "history": [],
++     "pins": [],
++     "today": [],
++     "fixtures": []
++    }
++   },
++   "cost_basis": {
++    "method": "Each playable pair's billed cost in the original match: the paid opponent's recorded cost_usd (Fastino GLiDE: input tokens x $0.04/M); MiniCPM5-2B (off) (logic's server) and the programs bill nothing.",
++    "pairs": {
++     "Fastino GLiDE": {
++      "opponent": 0.0198,
++      "original": null
++     },
++     "Jev 1.14.0": {
++      "opponent": 0.0181,
++      "original": null
++     },
++     "Jev 1.13.0": {
++      "opponent": 0.0138,
++      "original": null
++     },
++     "Celeris-1 Decision": {
++      "opponent": 0.0169,
++      "original": null
++     },
++     "SubQ Snap Preview": {
++      "opponent": 0.0194,
++      "original": null
++     },
++     "Liquid d1-ultra": {
++      "opponent": 0.0193,
++      "original": null
++     }
++    },
++    "estimate_usd": 0.1073,
++    "opponents_usd": 0.1073,
++    "entrant_usd": 0,
++    "cap_usd": 5.0
++   },
++   "time": {
++    "method": "Sum of each playable pair's original match duration (start to finish; the originals ran several matches at once, so one at a time is about this or less), plus server starts.",
++    "minutes_matches": {
++     "program": 1.0,
++     "api": 3.2,
++     "local": 0
++    },
++    "minutes_total_matches": 4.2,
++    "server_starts": "entrant: none (logic's vLLM container, already up); no local opponent"
++   },
++   "gpu_plan": {
++    "entrant_mib": 0,
++    "entrant_measured": "none of ours (logic's container on bariton GPU 1)",
++    "fits_beside_entrant": [
++     "Decider Flash v1.2",
++     "Winnow-12B",
++     "Cygnet (Gemma 4 12B)",
++     "Decider v1.1 27B",
++     "Decider v1.2 27B",
++     "Fastino GLiDE v1.2 (local)",
++     "Open-Jev 27B v1.1",
++     "Clef"
++    ],
++    "needs_second_gpu": [],
++    "note": "MiniCPM5-2B (off) runs on logic's container (no card of ours) and no local opponent is repeated: no GPU."
++   },
++   "differences": [
++    "Name: '<original> [repeat 1]', a new players row; settings otherwise as the original's (the changed fields are listed under Settings); its 9 pairs at once as in the original (players.settings max_matches 16, parallel 16: run.sh adds every paid opponent before the league plays, as the original's league held them all).",
++    "Runner: the original ran 171698f (late-smallchat, target/smallchat (clean; its src is origin/main's 18cc78d); the repeat runs 6578a73 (branch small-repeat-runner): the repeats' runner 0e66836 (origin/late-reax line: decision clients reax, baselabs, drex-max, drex-local, nace and a pre-send budget ledger for decision services and openai-compatible chat, none used by this field; the pinned-pairs change 4ca4f08; admit) with late-tiny8-small3 8ebad40's decision clients and late-smallchat-on a083fb4's reasoning_prefill / reasoning_field keys (unused here). Every request of the original's 9 matches replays byte for byte: MiniCPM5-2B (off) 1,300 of 1,300 requests, its opponents 676 of 676 (mailbox/small-repeat-review/byte-identity). Same prompt version bg-v2, option-order seed and rules.",
++    "Server: logic's vLLM container, pinned and checked as in the original (pins.sh healthy and pinned before any write and every minute, 3 failures in a row stop); the original's guard checked pinned once at its start. Its pins.sh checks the checkpoint, revision, dtype and context, not the vLLM image."
++   ],
++   "start": [
++    "systemd-run --user --unit=repeat-minicpm5-2b-off-r1 --working-directory=/home/cbasaran/code/jevgammon /home/cbasaran/code/jevgammon-small-repeat/tools/v3/repeats/run.sh minicpm5-2b-off-r1"
++   ],
++   "pairs": [
++    {
++     "opponent": "Fastino GLiDE",
++     "kind": "api",
++     "original_match": 1171,
++     "status": "finished",
++     "error": null,
++     "seed": 2919656595479347799,
++     "seed_u64": "2919656595479347799",
++     "original_is_player1": false,
++     "model1": "Fastino GLiDE",
++     "model2": "MiniCPM5-2B (off)",
++     "rules": {
++      "rounds": 3,
++      "clock_seconds": null,
++      "delay_seconds": null,
++      "max_turns": 300,
++      "prompt_version": "bg-v2",
++      "order_seed": 1190975713392774006,
++      "order_seed_u64": "1190975713392774006",
++      "mirror_concurrent": true,
++      "start_position": null
++     },
++     "harness": {
++      "commit": "171698f84a2e45b0dd7668d5749f72dfc0ce3712",
++      "dirty": false
++     },
++     "started": "2026-11-12T13:47:39.022Z",
++     "finished": "2026-11-12T13:48:26.640Z",
++     "minutes": 0.8,
++     "score_for": 3,
++     "score_against": 4,
++     "games": [
++      {
++       "round": 1,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": 2161927558890356053,
++       "dice_seed_u64": "2161927558890356053",
++       "opening": [
++        4,
++        2
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 47
++      },
++      {
++       "round": 1,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": 2161927558890356053,
++       "dice_seed_u64": "2161927558890356053",
++       "opening": [
++        4,
++        2
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 50
++      },
++      {
++       "round": 2,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": -8687256244996182685,
++       "dice_seed_u64": "9759487828713368931",
++       "opening": [
++        3,
++        5
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 55
++      },
++      {
++       "round": 2,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": -8687256244996182685,
++       "dice_seed_u64": "9759487828713368931",
++       "opening": [
++        3,
++        5
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 43
++      },
++      {
++       "round": 3,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": -6317009214413206525,
++       "dice_seed_u64": "12129734859296345091",
++       "opening": [
++        1,
++        3
++       ],
++       "result": "gammon",
++       "points": 2,
++       "turns": 55
++      },
++      {
++       "round": 3,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": -6317009214413206525,
++       "dice_seed_u64": "12129734859296345091",
++       "opening": [
++        1,
++        3
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 59
++      }
++     ],
++     "decisions": {
++      "original": 128,
++      "opponent": 124
++     },
++     "billed_usd": {
++      "opponent": 0.0198,
++      "original": null
++     },
++     "blocked_today": null
++    },
++    {
++     "opponent": "Jev 1.14.0",
++     "kind": "api",
++     "original_match": 1173,
++     "status": "finished",
++     "error": null,
++     "seed": -6228112901277551766,
++     "seed_u64": "12218631172431999850",
++     "original_is_player1": false,
++     "model1": "Jev 1.14.0",
++     "model2": "MiniCPM5-2B (off)",
++     "rules": {
++      "rounds": 3,
++      "clock_seconds": null,
++      "delay_seconds": null,
++      "max_turns": 300,
++      "prompt_version": "bg-v2",
++      "order_seed": 1190975713392774006,
++      "order_seed_u64": "1190975713392774006",
++      "mirror_concurrent": true,
++      "start_position": null
++     },
++     "harness": {
++      "commit": "171698f84a2e45b0dd7668d5749f72dfc0ce3712",
++      "dirty": false
++     },
++     "started": "2026-11-12T13:47:39.037Z",
++     "finished": "2026-11-12T13:48:02.385Z",
++     "minutes": 0.4,
++     "score_for": 1,
++     "score_against": 5,
++     "games": [
++      {
++       "round": 1,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": 7260878121274415580,
++       "dice_seed_u64": "7260878121274415580",
++       "opening": [
++        3,
++        6
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 52
++      },
++      {
++       "round": 1,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": 7260878121274415580,
++       "dice_seed_u64": "7260878121274415580",
++       "opening": [
++        3,
++        6
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 61
++      },
++      {
++       "round": 2,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": 7418278430297283145,
++       "dice_seed_u64": "7418278430297283145",
++       "opening": [
++        6,
++        1
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 49
++      },
++      {
++       "round": 2,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": 7418278430297283145,
++       "dice_seed_u64": "7418278430297283145",
++       "opening": [
++        6,
++        1
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 45
++      },
++      {
++       "round": 3,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": -2141640515106225150,
++       "dice_seed_u64": "16305103558603326466",
++       "opening": [
++        4,
++        5
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 44
++      },
++      {
++       "round": 3,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": -2141640515106225150,
++       "dice_seed_u64": "16305103558603326466",
++       "opening": [
++        4,
++        5
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 35
++      }
++     ],
++     "decisions": {
++      "original": 101,
++      "opponent": 113
++     },
++     "billed_usd": {
++      "opponent": 0.0181,
++      "original": null
++     },
++     "blocked_today": null
++    },
++    {
++     "opponent": "Jev 1.13.0",
++     "kind": "api",
++     "original_match": 1174,
++     "status": "finished",
++     "error": null,
++     "seed": -7252618160719997970,
++     "seed_u64": "11194125912989553646",
++     "original_is_player1": false,
++     "model1": "Jev 1.13.0",
++     "model2": "MiniCPM5-2B (off)",
++     "rules": {
++      "rounds": 3,
++      "clock_seconds": null,
++      "delay_seconds": null,
++      "max_turns": 300,
++      "prompt_version": "bg-v2",
++      "order_seed": 1190975713392774006,
++      "order_seed_u64": "1190975713392774006",
++      "mirror_concurrent": true,
++      "start_position": null
++     },
++     "harness": {
++      "commit": "171698f84a2e45b0dd7668d5749f72dfc0ce3712",
++      "dirty": false
++     },
++     "started": "2026-11-12T13:47:39.052Z",
++     "finished": "2026-11-12T13:47:59.077Z",
++     "minutes": 0.3,
++     "score_for": 2,
++     "score_against": 5,
++     "games": [
++      {
++       "round": 1,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": 1326227046277751882,
++       "dice_seed_u64": "1326227046277751882",
++       "opening": [
++        3,
++        4
++       ],
++       "result": "backgammon",
++       "points": 3,
++       "turns": 46
++      },
++      {
++       "round": 1,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": 1326227046277751882,
++       "dice_seed_u64": "1326227046277751882",
++       "opening": [
++        3,
++        4
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 44
++      },
++      {
++       "round": 2,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": 5724415115617975953,
++       "dice_seed_u64": "5724415115617975953",
++       "opening": [
++        4,
++        2
++       ],
++       "result": "gammon",
++       "points": 2,
++       "turns": 55
++      },
++      {
++       "round": 2,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": 5724415115617975953,
++       "dice_seed_u64": "5724415115617975953",
++       "opening": [
++        4,
++        2
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 61
++      }
++     ],
++     "decisions": {
++      "original": 82,
++      "opponent": 82
++     },
++     "billed_usd": {
++      "opponent": 0.0138,
++      "original": null
++     },
++     "blocked_today": null
++    },
++    {
++     "opponent": "Celeris-1 Decision",
++     "kind": "api",
++     "original_match": 1175,
++     "status": "finished",
++     "error": null,
++     "seed": -7176481776803923642,
++     "seed_u64": "11270262296905627974",
++     "original_is_player1": false,
++     "model1": "Celeris-1 Decision",
++     "model2": "MiniCPM5-2B (off)",
++     "rules": {
++      "rounds": 3,
++      "clock_seconds": null,
++      "delay_seconds": null,
++      "max_turns": 300,
++      "prompt_version": "bg-v2",
++      "order_seed": 1190975713392774006,
++      "order_seed_u64": "1190975713392774006",
++      "mirror_concurrent": true,
++      "start_position": null
++     },
++     "harness": {
++      "commit": "171698f84a2e45b0dd7668d5749f72dfc0ce3712",
++      "dirty": false
++     },
++     "started": "2026-11-12T13:47:39.072Z",
++     "finished": "2026-11-12T13:48:05.627Z",
++     "minutes": 0.4,
++     "score_for": 2,
++     "score_against": 4,
++     "games": [
++      {
++       "round": 1,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": -2654051561809790797,
++       "dice_seed_u64": "15792692511899760819",
++       "opening": [
++        5,
++        3
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 48
++      },
++      {
++       "round": 1,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": -2654051561809790797,
++       "dice_seed_u64": "15792692511899760819",
++       "opening": [
++        5,
++        3
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 42
++      },
++      {
++       "round": 2,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": 4243364445793370587,
++       "dice_seed_u64": "4243364445793370587",
++       "opening": [
++        3,
++        6
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 47
++      },
++      {
++       "round": 2,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": 4243364445793370587,
++       "dice_seed_u64": "4243364445793370587",
++       "opening": [
++        3,
++        6
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 43
++      },
++      {
++       "round": 3,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": -920473815722014276,
++       "dice_seed_u64": "17526270257987537340",
++       "opening": [
++        5,
++        6
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 46
++      },
++      {
++       "round": 3,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": -920473815722014276,
++       "dice_seed_u64": "17526270257987537340",
++       "opening": [
++        5,
++        6
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 43
++      }
++     ],
++     "decisions": {
++      "original": 116,
++      "opponent": 112
++     },
++     "billed_usd": {
++      "opponent": 0.0169,
++      "original": null
++     },
++     "blocked_today": null
++    },
++    {
++     "opponent": "Safest",
++     "kind": "program",
++     "original_match": 1176,
++     "status": "finished",
++     "error": null,
++     "seed": 5754350776924833690,
++     "seed_u64": "5754350776924833690",
++     "original_is_player1": true,
++     "model1": "MiniCPM5-2B (off)",
++     "model2": "Safest",
++     "rules": {
++      "rounds": 3,
++      "clock_seconds": null,
++      "delay_seconds": null,
++      "max_turns": 300,
++      "prompt_version": "bg-v2",
++      "order_seed": 1190975713392774006,
++      "order_seed_u64": "1190975713392774006",
++      "mirror_concurrent": true,
++      "start_position": null
++     },
++     "harness": {
++      "commit": "171698f84a2e45b0dd7668d5749f72dfc0ce3712",
++      "dirty": false
++     },
++     "started": "2026-11-12T13:47:39.122Z",
++     "finished": "2026-11-12T13:47:54.463Z",
++     "minutes": 0.3,
++     "score_for": 0,
++     "score_against": 5,
++     "games": [
++      {
++       "round": 1,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": -3541933321370097380,
++       "dice_seed_u64": "14904810752339454236",
++       "opening": [
++        3,
++        1
++       ],
++       "result": "gammon",
++       "points": 2,
++       "turns": 48
++      },
++      {
++       "round": 1,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": -3541933321370097380,
++       "dice_seed_u64": "14904810752339454236",
++       "opening": [
++        3,
++        1
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 61
++      },
++      {
++       "round": 2,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": -8492378083615820606,
++       "dice_seed_u64": "9954365990093731010",
++       "opening": [
++        5,
++        1
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 54
++      },
++      {
++       "round": 2,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": -8492378083615820606,
++       "dice_seed_u64": "9954365990093731010",
++       "opening": [
++        5,
++        1
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 47
++      }
++     ],
++     "decisions": {
++      "original": 85,
++      "opponent": 75
++     },
++     "billed_usd": {
++      "opponent": null,
++      "original": null
++     },
++     "blocked_today": null
++    },
++    {
++     "opponent": "GNUbg weak",
++     "kind": "program",
++     "original_match": 1177,
++     "status": "finished",
++     "error": null,
++     "seed": 1681289006452444015,
++     "seed_u64": "1681289006452444015",
++     "original_is_player1": true,
++     "model1": "MiniCPM5-2B (off)",
++     "model2": "GNUbg weak",
++     "rules": {
++      "rounds": 3,
++      "clock_seconds": null,
++      "delay_seconds": null,
++      "max_turns": 300,
++      "prompt_version": "bg-v2",
++      "order_seed": 1190975713392774006,
++      "order_seed_u64": "1190975713392774006",
++      "mirror_concurrent": true,
++      "start_position": null
++     },
++     "harness": {
++      "commit": "171698f84a2e45b0dd7668d5749f72dfc0ce3712",
++      "dirty": false
++     },
++     "started": "2026-11-12T13:47:39.147Z",
++     "finished": "2026-11-12T13:48:00.294Z",
++     "minutes": 0.4,
++     "score_for": 2,
++     "score_against": 7,
++     "games": [
++      {
++       "round": 1,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": 5117903876743035782,
++       "dice_seed_u64": "5117903876743035782",
++       "opening": [
++        3,
++        1
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 65
++      },
++      {
++       "round": 1,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": 5117903876743035782,
++       "dice_seed_u64": "5117903876743035782",
++       "opening": [
++        3,
++        1
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 51
++      },
++      {
++       "round": 2,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": -918253055663979220,
++       "dice_seed_u64": "17528491018045572396",
++       "opening": [
++        6,
++        1
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 45
++      },
++      {
++       "round": 2,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": -918253055663979220,
++       "dice_seed_u64": "17528491018045572396",
++       "opening": [
++        6,
++        1
++       ],
++       "result": "gammon",
++       "points": 2,
++       "turns": 57
++      },
++      {
++       "round": 3,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": 8476578272582588215,
++       "dice_seed_u64": "8476578272582588215",
++       "opening": [
++        6,
++        3
++       ],
++       "result": "gammon",
++       "points": 2,
++       "turns": 42
++      },
++      {
++       "round": 3,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": 8476578272582588215,
++       "dice_seed_u64": "8476578272582588215",
++       "opening": [
++        6,
++        3
++       ],
++       "result": "gammon",
++       "points": 2,
++       "turns": 57
++      }
++     ],
++     "decisions": {
++      "original": 121,
++      "opponent": 121
++     },
++     "billed_usd": {
++      "opponent": null,
++      "original": null
++     },
++     "blocked_today": null
++    },
++    {
++     "opponent": "Random",
++     "kind": "program",
++     "original_match": 1178,
++     "status": "finished",
++     "error": null,
++     "seed": 8602035541704542871,
++     "seed_u64": "8602035541704542871",
++     "original_is_player1": true,
++     "model1": "MiniCPM5-2B (off)",
++     "model2": "Random",
++     "rules": {
++      "rounds": 3,
++      "clock_seconds": null,
++      "delay_seconds": null,
++      "max_turns": 300,
++      "prompt_version": "bg-v2",
++      "order_seed": 1190975713392774006,
++      "order_seed_u64": "1190975713392774006",
++      "mirror_concurrent": true,
++      "start_position": null
++     },
++     "harness": {
++      "commit": "171698f84a2e45b0dd7668d5749f72dfc0ce3712",
++      "dirty": false
++     },
++     "started": "2026-11-12T13:47:39.197Z",
++     "finished": "2026-11-12T13:47:56.794Z",
++     "minutes": 0.3,
++     "score_for": 5,
++     "score_against": 1,
++     "games": [
++      {
++       "round": 1,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": -8842620369264063994,
++       "dice_seed_u64": "9604123704445487622",
++       "opening": [
++        1,
++        6
++       ],
++       "result": "gammon",
++       "points": 2,
++       "turns": 62
++      },
++      {
++       "round": 1,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": -8842620369264063994,
++       "dice_seed_u64": "9604123704445487622",
++       "opening": [
++        1,
++        6
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 67
++      },
++      {
++       "round": 2,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": -1388584363731294525,
++       "dice_seed_u64": "17058159709978257091",
++       "opening": [
++        4,
++        5
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 67
++      },
++      {
++       "round": 2,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": -1388584363731294525,
++       "dice_seed_u64": "17058159709978257091",
++       "opening": [
++        4,
++        5
++       ],
++       "result": "gammon",
++       "points": 2,
++       "turns": 51
++      }
++     ],
++     "decisions": {
++      "original": 99,
++      "opponent": 89
++     },
++     "billed_usd": {
++      "opponent": null,
++      "original": null
++     },
++     "blocked_today": null
++    },
++    {
++     "opponent": "SubQ Snap Preview",
++     "kind": "api",
++     "original_match": 1179,
++     "status": "finished",
++     "error": null,
++     "seed": -9061457014801232657,
++     "seed_u64": "9385287058908318959",
++     "original_is_player1": false,
++     "model1": "SubQ Snap Preview",
++     "model2": "MiniCPM5-2B (off)",
++     "rules": {
++      "rounds": 3,
++      "clock_seconds": null,
++      "delay_seconds": null,
++      "max_turns": 300,
++      "prompt_version": "bg-v2",
++      "order_seed": 1190975713392774006,
++      "order_seed_u64": "1190975713392774006",
++      "mirror_concurrent": true,
++      "start_position": null
++     },
++     "harness": {
++      "commit": "171698f84a2e45b0dd7668d5749f72dfc0ce3712",
++      "dirty": false
++     },
++     "started": "2026-11-12T13:47:39.248Z",
++     "finished": "2026-11-12T13:48:07.485Z",
++     "minutes": 0.5,
++     "score_for": 3,
++     "score_against": 5,
++     "games": [
++      {
++       "round": 1,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": -1049366859450894382,
++       "dice_seed_u64": "17397377214258657234",
++       "opening": [
++        3,
++        2
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 49
++      },
++      {
++       "round": 1,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": -1049366859450894382,
++       "dice_seed_u64": "17397377214258657234",
++       "opening": [
++        3,
++        2
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 43
++      },
++      {
++       "round": 2,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": 832211073105151190,
++       "dice_seed_u64": "832211073105151190",
++       "opening": [
++        6,
++        2
++       ],
++       "result": "gammon",
++       "points": 2,
++       "turns": 47
++      },
++      {
++       "round": 2,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": 832211073105151190,
++       "dice_seed_u64": "832211073105151190",
++       "opening": [
++        6,
++        2
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 52
++      },
++      {
++       "round": 3,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": 1643413841957108798,
++       "dice_seed_u64": "1643413841957108798",
++       "opening": [
++        2,
++        1
++       ],
++       "result": "gammon",
++       "points": 2,
++       "turns": 38
++      },
++      {
++       "round": 3,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": 1643413841957108798,
++       "dice_seed_u64": "1643413841957108798",
++       "opening": [
++        2,
++        1
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 42
++      }
++     ],
++     "decisions": {
++      "original": 112,
++      "opponent": 108
++     },
++     "billed_usd": {
++      "opponent": 0.0194,
++      "original": null
++     },
++     "blocked_today": null
++    },
++    {
++     "opponent": "Liquid d1-ultra",
++     "kind": "api",
++     "original_match": 1180,
++     "status": "finished",
++     "error": null,
++     "seed": -5485891016246744913,
++     "seed_u64": "12960853057462806703",
++     "original_is_player1": true,
++     "model1": "MiniCPM5-2B (off)",
++     "model2": "Liquid d1-ultra",
++     "rules": {
++      "rounds": 3,
++      "clock_seconds": null,
++      "delay_seconds": null,
++      "max_turns": 300,
++      "prompt_version": "bg-v2",
++      "order_seed": 1190975713392774006,
++      "order_seed_u64": "1190975713392774006",
++      "mirror_concurrent": true,
++      "start_position": null
++     },
++     "harness": {
++      "commit": "171698f84a2e45b0dd7668d5749f72dfc0ce3712",
++      "dirty": false
++     },
++     "started": "2026-11-12T13:47:39.348Z",
++     "finished": "2026-11-12T13:48:27.287Z",
++     "minutes": 0.8,
++     "score_for": 2,
++     "score_against": 5,
++     "games": [
++      {
++       "round": 1,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": -715208401235187581,
++       "dice_seed_u64": "17731535672474364035",
++       "opening": [
++        1,
++        4
++       ],
++       "result": "gammon",
++       "points": 2,
++       "turns": 55
++      },
++      {
++       "round": 1,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": -715208401235187581,
++       "dice_seed_u64": "17731535672474364035",
++       "opening": [
++        1,
++        4
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 42
++      },
++      {
++       "round": 2,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": -9060253477491510437,
++       "dice_seed_u64": "9386490596218041179",
++       "opening": [
++        6,
++        2
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 59
++      },
++      {
++       "round": 2,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": -9060253477491510437,
++       "dice_seed_u64": "9386490596218041179",
++       "opening": [
++        6,
++        2
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 51
++      },
++      {
++       "round": 3,
++       "leg": 1,
++       "white_player": 1,
++       "dice_seed": 2648461812511279649,
++       "dice_seed_u64": "2648461812511279649",
++       "opening": [
++        1,
++        5
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 64
++      },
++      {
++       "round": 3,
++       "leg": 2,
++       "white_player": 2,
++       "dice_seed": 2648461812511279649,
++       "dice_seed_u64": "2648461812511279649",
++       "opening": [
++        1,
++        5
++       ],
++       "result": "single",
++       "points": 1,
++       "turns": 68
++      }
++     ],
++     "decisions": {
++      "original": 132,
++      "opponent": 135
++     },
++     "billed_usd": {
++      "opponent": 0.0193,
++      "original": null
++     },
++     "blocked_today": null
++    }
++   ]
+   }
+  ]
+ }
+diff --git a/tools/v3/repeats/METADATA b/tools/v3/repeats/METADATA
+index aeb59c9..3fc3b22 100644
+--- a/tools/v3/repeats/METADATA
++++ b/tools/v3/repeats/METADATA
+@@ -1,6 +1,6 @@
+ owner: jevgammon (agent; Can's backgammon project ~/code/jevgammon)
+ created: 2026-11-11
+-what: scripts of the reproducibility repeats of Base Labs Mammoth-1, Drex Max v1, REAX 1.3 and Liquid d1-ultra (repeats.py: manifest, league configs, seed pins, trigger, guard helpers, results; run.sh: one repeat, one match at a time, with the late entries' gates; run_league.sh; leagues/ID.json), branch 'repeat-checks'
+-reason: Ümit via Zeki, bus #4663, #4666, #4667, #4671; manifest mailbox/repeats/manifest-2026-11-11.json; prepared, not started
++what: scripts of the reproducibility repeats of Base Labs Mammoth-1, Drex Max v1, REAX 1.3, Liquid d1-ultra, Drex Max 1.1, Fastino GLiDE v1.2 (local), GLiDE 2B and MiniCPM5-2B (off) (repeats.py: manifest, league configs, seed pins, trigger, guard helpers, pinned-server checks, results; run.sh: one repeat, one match at a time or at its original's concurrency, with the late entries' gates; run_league.sh; leagues/ID.json; pins/ID: the small late entries' own pins.sh copies; smoke/ID.json), branch 'repeat-checks'
++reason: Ümit via Zeki, bus #4663, #4666, #4667, #4671, #4838; Ümit #6410 (GLiDE 2B, MiniCPM5-2B (off): prepared 2026-11-13, not started, branch small-repeat); manifest mailbox/repeats/manifest-2026-11-11.json; prepared, not started
+ delete when: never on its own: it documents how the repeat matches in v3.db were played (as tools/v3/late-knowline)
+ written: 2026-11-11 (Can #3774)
+diff --git a/tools/v3/repeats/leagues/glide-2b-r1.json b/tools/v3/repeats/leagues/glide-2b-r1.json
+new file mode 100644
+index 0000000..e7aba92
+--- /dev/null
++++ b/tools/v3/repeats/leagues/glide-2b-r1.json
+@@ -0,0 +1,81 @@
++{
++  "note": "Reproducibility repeat 1 of GLiDE 2B (Ümit #6410 (plan mailbox/small-backgammon-bench-2026-11-13.md §9), #4710; run repeat-2026-11-13-glide-2b-r1): GLiDE 2B [repeat 1] plays GLiDE 2B's original League 1 field again, one match at a time, as the original, each pair pinned to its original match's seed and seating (pinned_pairs), the same option-order seed, prompt, rules and settings. Hidden league; matches stage 'late-entry' and the name held (tools/site/content/held_setups.json): in no standings, table, Cup input or other setup's numbers. mailbox/repeats/manifest-2026-11-11.json",
++  "prompt_version": "bg-v2",
++  "seed": 2567889193785291627,
++  "order_seed": 1190975713392774006,
++  "rounds": 3,
++  "clock": 0,
++  "delay": 30,
++  "max_turns": 300,
++  "mirror_concurrent": true,
++  "only_pairs_of": "GLiDE 2B [repeat 1]",
++  "hidden": true,
++  "pinned_pairs": {
++    "Fastino GLiDE": {
++      "seed": 15559919047369694697,
++      "seat_first": true
++    },
++    "Celeris-1 Decision": {
++      "seed": 12638547765721823431,
++      "seat_first": false
++    },
++    "GNUbg weak": {
++      "seed": 501093501360735733,
++      "seat_first": true
++    },
++    "Random": {
++      "seed": 15262185013302615528,
++      "seat_first": false
++    },
++    "Safest": {
++      "seed": 15302219383579835192,
++      "seat_first": true
++    },
++    "Liquid d1-ultra": {
++      "seed": 8844248524737138184,
++      "seat_first": true
++    },
++    "Jev 1.14.0": {
++      "seed": 6978671576940928040,
++      "seat_first": true
++    },
++    "Jev 1.13.0": {
++      "seed": 6498334176674890690,
++      "seat_first": false
++    },
++    "SubQ Snap Preview": {
++      "seed": 16741853251248079086,
++      "seat_first": false
++    }
++  },
++  "players": [
++    {
++      "name": "GLiDE 2B [repeat 1]",
++      "spec": "glide",
++      "provider": "local (glide.server)",
++      "quantization": "bf16",
++      "base_url": "http://192.168.1.131:19330",
++      "note": "Fastino's GLiDE 2B (Hugging Face fastino/GLiDE-2B @ 00f122c120cdeed82284106cb77d9bab5a50ad16, Fastino Community License) on our GPU through the server its repository ships (python -m glide.server; env ~/envs/glide-family: CPython 3.12.13, torch 2.14.0+cu130, transformers 5.17.0, flash-linear-attention 0.5.2), BF16, GLIDE_MAX_BATCH=1 (one request at a time), no model field (the server passes only state and questions to the model), 255-way code readout; 255 options per request (the league's rule; longer lists split); never truncates: a question prompt over GLIDE_MAX_LEN 40,000 tokens is refused (422). League 1's longest stored request (251 options) is 28,323 tokens of its tokenizer with the card's prompt; none over. Reproducibility repeat 1 (glide-2b-r1; tools/v3/repeats, mailbox/repeats/manifest-2026-11-11.json): the original's League 1 field again, one match at a time, as the original, each pair with its original match's seed and seats; held: in no standings, table, Cup input or other setup's numbers.",
++      "device": "NVIDIA GB10 (DGX Spark spark2, spark-d9ee), the whole GPU, handed over by logic one server at a time: GLIDE_MAX_BATCH=1 ~/envs/glide-family/bin/python -m glide.server --model <snapshot> --host 0.0.0.0 --port 19330",
++      "parallel": 1,
++      "max_matches": 1
++    },
++    {
++      "name": "GNUbg weak",
++      "spec": "gnubg-weak",
++      "provider": "local",
++      "note": "gnubg 1.08 Beginner level (0-ply, deterministic noise 0.060)",
++      "parallel": 1
++    },
++    {
++      "name": "Random",
++      "spec": "random",
++      "provider": "local"
++    },
++    {
++      "name": "Safest",
++      "spec": "safest",
++      "provider": "local"
++    }
++  ]
++}
+diff --git a/tools/v3/repeats/leagues/minicpm5-2b-off-r1.json b/tools/v3/repeats/leagues/minicpm5-2b-off-r1.json
+new file mode 100644
+index 0000000..c22aa9f
+--- /dev/null
++++ b/tools/v3/repeats/leagues/minicpm5-2b-off-r1.json
+@@ -0,0 +1,88 @@
++{
++  "note": "Reproducibility repeat 1 of MiniCPM5-2B (off) (Ümit #6410 (plan mailbox/small-backgammon-bench-2026-11-13.md §9), #4710; run repeat-2026-11-13-minicpm5-2b-off-r1): MiniCPM5-2B (off) [repeat 1] plays MiniCPM5-2B (off)'s original League 1 field again, up to 16 matches at once, as the original, each pair pinned to its original match's seed and seating (pinned_pairs), the same option-order seed, prompt, rules and settings. Hidden league; matches stage 'late-entry' and the name held (tools/site/content/held_setups.json): in no standings, table, Cup input or other setup's numbers. mailbox/repeats/manifest-2026-11-11.json",
++  "prompt_version": "bg-v2",
++  "seed": 2567889193785291627,
++  "order_seed": 1190975713392774006,
++  "rounds": 3,
++  "clock": 0,
++  "delay": 30,
++  "max_turns": 300,
++  "mirror_concurrent": true,
++  "only_pairs_of": "MiniCPM5-2B (off) [repeat 1]",
++  "hidden": true,
++  "pinned_pairs": {
++    "Fastino GLiDE": {
++      "seed": 2919656595479347799,
++      "seat_first": false
++    },
++    "Jev 1.14.0": {
++      "seed": 12218631172431999850,
++      "seat_first": false
++    },
++    "Jev 1.13.0": {
++      "seed": 11194125912989553646,
++      "seat_first": false
++    },
++    "Celeris-1 Decision": {
++      "seed": 11270262296905627974,
++      "seat_first": false
++    },
++    "Safest": {
++      "seed": 5754350776924833690,
++      "seat_first": true
++    },
++    "GNUbg weak": {
++      "seed": 1681289006452444015,
++      "seat_first": true
++    },
++    "Random": {
++      "seed": 8602035541704542871,
++      "seat_first": true
++    },
++    "SubQ Snap Preview": {
++      "seed": 9385287058908318959,
++      "seat_first": false
++    },
++    "Liquid d1-ultra": {
++      "seed": 12960853057462806703,
++      "seat_first": true
++    }
++  },
++  "players": [
++    {
++      "name": "MiniCPM5-2B (off) [repeat 1]",
++      "spec": "openai-compatible/minicpm5-2b",
++      "provider": "local-vllm",
++      "quantization": "bf16",
++      "base_url": "http://127.0.0.1:18614/v1",
++      "request": {
++        "chat_template_kwargs": {
++          "enable_thinking": false
++        }
++      },
++      "top_logprobs": 20,
++      "letter_readout": "prefill",
++      "note": "openbmb/MiniCPM5-2B @ 42433e90dad95123ab87729fd7011e7110629556, BF16, on our GPU through vLLM v0.30.0 (vllm/vllm-openai:v0.30.0) in BF16, --generation-config auto; logic's server (small_models.py key minicpm5-2b, port 18614, bariton GPU 1, #5080/#5091; ours alone after turkce's 'done') or ours on the same port and name (tools/v3/late-smallchat/serve.sh). thinking off (enable_thinking false); the letter is read from a prefilled Answer: (as Gemma 4 31B (off)); server reasoning split: vLLM reasoning parser qwen3 (no reasoning generated). Sampling: League 1's local chat rule, per request: temperature 1.0 from the chat client, everything else the server's default (generation_config.json via --generation-config auto, else vLLM neutral), no seed; it differs from logic's Logic & Math runs: logic sends temperature 1.0, top_p 0.95, seed 0 (ours: the same temperature and top_p from generation_config.json; no seed). Output cap 1 token (prefill readout). Up to 16 matches and 16 requests at once, League 1's rule for its local chat setups (the server is ours alone after turkce's 'done'). Late entry v the original League 1 table (tools/v3/late-smallchat; Zeki #5064/#5071/#5073; Main's decisions 12 Nov) Reproducibility repeat 1 (minicpm5-2b-off-r1; tools/v3/repeats, mailbox/repeats/manifest-2026-11-11.json): the original's League 1 field again, up to 16 matches at once, as the original, each pair with its original match's seed and seats; held: in no standings, table, Cup input or other setup's numbers.",
++      "device": "RTX PRO 6000 (bariton), one GPU",
++      "parallel": 16,
++      "max_matches": 16
++    },
++    {
++      "name": "GNUbg weak",
++      "spec": "gnubg-weak",
++      "provider": "local",
++      "note": "gnubg 1.08 Beginner level (0-ply, deterministic noise 0.060)",
++      "parallel": 1
++    },
++    {
++      "name": "Random",
++      "spec": "random",
++      "provider": "local"
++    },
++    {
++      "name": "Safest",
++      "spec": "safest",
++      "provider": "local"
++    }
++  ]
++}
+diff --git a/tools/v3/repeats/pins/glide-2b-r1/pins.sh b/tools/v3/repeats/pins/glide-2b-r1/pins.sh
+new file mode 100644
+index 0000000..ebd8047
+--- /dev/null
++++ b/tools/v3/repeats/pins/glide-2b-r1/pins.sh
+@@ -0,0 +1,14 @@
++# Sourced by start.sh and locals.sh (URL, PORT and SSH_HOST set there): the model's snapshot, its /health as the
++# pinned server answers it, and pinned(): the pinned server process on PORT, read over ssh (read-only).
++SNAPSHOT=/home/cbasaran/glide-family/models/GLiDE-2B@00f122c120cdeed82284106cb77d9bab5a50ad16
++LABEL=GLiDE
++# glide.server's /health: one request at a time (GLIDE_MAX_BATCH=1), BF16 (no NVFP4), GLIDE_MAX_LEN 40000.
++healthy() {
++  curl -fsS -m 10 "$URL/health" | python3 -c 'import json,sys; d=json.load(sys.stdin)
++sys.exit(not (d["status"] == "ok" and d["max_len"] == 40000 and d["max_batch"] == 1 and d["quantization"] is None))'
++}
++pinned() {
++  local procs
++  procs=$(timeout 30 ssh -o BatchMode=yes "$SSH_HOST" 'ps -eo args' 2>/dev/null) || return 1
++  grep -F -- "-m glide.server --model $SNAPSHOT " <<<"$procs" | grep -qF -- "--port $PORT"
++}
+diff --git a/tools/v3/repeats/pins/minicpm5-2b-off-r1/models.json b/tools/v3/repeats/pins/minicpm5-2b-off-r1/models.json
+new file mode 100644
+index 0000000..8ce1456
+--- /dev/null
++++ b/tools/v3/repeats/pins/minicpm5-2b-off-r1/models.json
+@@ -0,0 +1,267 @@
++{
++ "_note": "The 11 small chat models of the late-smallchat entries (Zeki #5064/#5071/#5073; manifest small-chat-full-suite-1570238769422934048). Per model: pinned repo/revision; thinking = 'switch' (chat_template_kwargs.enable_thinking, both setups (on)/(off)) or 'always' (no switch: (off) reads the letter after a prefilled <think></think>Answer:, as LFM2.5-24B-A2B); logic = logic's small_models.py key/port/server (#5080/#5091, bariton GPU 1, 0.0.0.0; ports of Qwen3.5-4B/9B, Gemma 4 E4B, LFM2.5-8B-A1B from small_models.py, not yet announced); own = our fallback server (serve.sh) on the same port and served name, so player.json is the same on either route; weights_gb = safetensors bytes (GGUF for llama.cpp); context = the card's/config's context length.; pair_hours = locals.sh's limit per local opponent's pair (one match), after which the pair is logged missing with the reason (Main, 12 Nov: 12 h; Granite-4.2-30B 30 h: ~105 decisions x ~20k tokens at ~25 tok/s ~ 23 h)",
++ "lfm3-1.7b": {
++  "name": "LFM3-1.7B",
++  "repo": "LiquidAI/LFM3-1.7B",
++  "rev": "0dc4268b561499c648c7ba7c9466bf3d8d01517a",
++  "thinking": "switch",
++  "context": 262144,
++  "logic": {
++   "key": "lfm3-1.7b",
++   "port": 18605,
++   "server": "llama.cpp",
++   "port_source": "logic's small_models.py SETUPS (port not yet announced for #5080)"
++  },
++  "own": {
++   "server": "llama.cpp",
++   "port": 18605,
++   "gguf": [
++    "LiquidAI/LFM3-1.7B-GGUF",
++    "cd0c74c575b5c416f3011b5b4c298077f26ca8c2",
++    "LFM3-1.7B-BF16.gguf"
++   ]
++  },
++  "weights_gb": 3.5,
++  "pair_hours": 12
++ },
++ "lfm2.5-2.6b": {
++  "name": "LFM2.5-2.6B",
++  "repo": "LiquidAI/LFM2.5-2.6B",
++  "rev": "7141b56cd4650af95c7c7b86983443aed050c96a",
++  "thinking": "always",
++  "context": 131072,
++  "logic": {
++   "key": "lfm2.5-2.6b",
++   "port": 18613,
++   "server": "vllm",
++   "port_source": "logic #5091"
++  },
++  "own": {
++   "server": "vllm",
++   "port": 18613,
++   "args": [
++    "--reasoning-parser",
++    "qwen3"
++   ]
++  },
++  "weights_gb": 5.4,
++  "pair_hours": 12
++ },
++ "minicpm5-2b": {
++  "name": "MiniCPM5-2B",
++  "repo": "openbmb/MiniCPM5-2B",
++  "rev": "42433e90dad95123ab87729fd7011e7110629556",
++  "thinking": "switch",
++  "context": 131072,
++  "logic": {
++   "key": "minicpm5-2b",
++   "port": 18614,
++   "server": "vllm",
++   "port_source": "logic #5091"
++  },
++  "own": {
++   "server": "vllm",
++   "port": 18614,
++   "args": [
++    "--reasoning-parser",
++    "qwen3"
++   ]
++  },
++  "weights_gb": 5.0,
++  "pair_hours": 12
++ },
++ "lfm2.5-8b-a1b": {
++  "name": "LFM2.5-8B-A1B",
++  "repo": "LiquidAI/LFM2.5-8B-A1B",
++  "rev": "dd83f5cb02aa2938b66bba9a9998d38d0517c1f3",
++  "thinking": "always",
++  "context": 128000,
++  "logic": {
++   "key": "lfm2.5-8b-a1b",
++   "port": 18601,
++   "server": "vllm",
++   "port_source": "logic's small_models.py SETUPS (port not yet announced for #5080)"
++  },
++  "own": {
++   "server": "vllm",
++   "port": 18601,
++   "args": [
++    "--reasoning-parser",
++    "qwen3"
++   ]
++  },
++  "weights_gb": 16.9,
++  "pair_hours": 12
++ },
++ "gemma-4-e4b": {
++  "name": "Gemma 4 E4B",
++  "repo": "google/gemma-4-E4B-it",
++  "rev": "4ecc2ba63bcac23ba4a767fc87025b1450f84c9c",
++  "thinking": "switch",
++  "context": 131072,
++  "logic": {
++   "key": "gemma-4-e4b-it",
++   "port": 18602,
++   "server": "vllm",
++   "port_source": "logic's small_models.py SETUPS (port not yet announced for #5080)"
++  },
++  "own": {
++   "server": "vllm",
++   "port": 18602,
++   "args": [
++    "--reasoning-parser",
++    "gemma4"
++   ]
++  },
++  "weights_gb": 16.0,
++  "pair_hours": 12
++ },
++ "qwen3.5-4b": {
++  "name": "Qwen3.5-4B",
++  "repo": "Qwen/Qwen3.5-4B",
++  "rev": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
++  "thinking": "switch",
++  "context": 262144,
++  "logic": {
++   "key": "qwen3.5-4b",
++   "port": 18604,
++   "server": "vllm",
++   "port_source": "logic's small_models.py SETUPS (port not yet announced for #5080)"
++  },
++  "own": {
++   "server": "vllm",
++   "port": 18604,
++   "args": [
++    "--reasoning-parser",
++    "qwen3",
++    "--language-model-only"
++   ]
++  },
++  "weights_gb": 9.3,
++  "pair_hours": 12
++ },
++ "qwen3.5-9b": {
++  "name": "Qwen3.5-9B",
++  "repo": "Qwen/Qwen3.5-9B",
++  "rev": "c202236235762e1c871ad0ccb60c8ee5ba337b9a",
++  "thinking": "switch",
++  "context": 262144,
++  "logic": {
++   "key": "qwen3.5-9b",
++   "port": 18610,
++   "server": "vllm",
++   "port_source": "logic's small_models.py SETUPS (port not yet announced for #5080)"
++  },
++  "own": {
++   "server": "vllm",
++   "port": 18610,
++   "args": [
++    "--reasoning-parser",
++    "qwen3",
++    "--language-model-only"
++   ]
++  },
++  "weights_gb": 19.3,
++  "pair_hours": 12
++ },
++ "spark-x2.6-4b": {
++  "name": "Spark-X2.6-4B",
++  "repo": "XHToken/Spark-X2.6-4B",
++  "rev": "64ca8f2a295b8ceb2757b9d4749a6558c4759e5b",
++  "thinking": "switch",
++  "context": 1048576,
++  "logic": {
++   "key": "spark-x2.6-4b",
++   "port": 18615,
++   "server": "llama.cpp",
++   "port_source": "logic #5091"
++  },
++  "own": {
++   "server": "llama.cpp",
++   "port": 18615,
++   "gguf": [
++    "XHToken/Spark-X2.6-4B-GGUF",
++    "9d716770ac7477776de5f891f70cdf98b003a5cd",
++    "Spark-X2.6-4B.gguf"
++   ],
++   "note": "vLLM v0.30.0 has no Spark2_5ForCausalLM (the remote-code Transformers fallback bypasses vLLM's attention); llama.cpp as logic serves it (#5091)"
++  },
++  "weights_gb": 8.2,
++  "pair_hours": 12
++ },
++ "granite-4.2-3b": {
++  "name": "Granite-4.2-3B",
++  "repo": "ibm-granite/granite-4.2-3b",
++  "rev": "4e9c275e232f10211ec88644d106a1f6a1b60e06",
++  "thinking": "switch",
++  "context": 131072,
++  "logic": {
++   "key": "granite-4.2-3b",
++   "port": 18616,
++   "server": "vllm",
++   "port_source": "logic #5091"
++  },
++  "own": {
++   "server": "vllm",
++   "port": 18616,
++   "args": [
++    "--reasoning-parser-plugin",
++    "/root/.cache/huggingface/hub/models--ibm-granite--granite-4.2-3b/snapshots/4e9c275e232f10211ec88644d106a1f6a1b60e06/granite_thinking_parser.py",
++    "--reasoning-parser",
++    "granite_thinking_parser"
++   ]
++  },
++  "weights_gb": 6.8,
++  "pair_hours": 12
++ },
++ "granite-4.2-8b": {
++  "name": "Granite-4.2-8B",
++  "repo": "ibm-granite/granite-4.2-8b",
++  "rev": "a7042144125ce5ae64f89610e8289647fc000b9a",
++  "thinking": "switch",
++  "context": 131072,
++  "logic": {
++   "key": "granite-4.2-8b",
++   "port": 18617,
++   "server": "vllm",
++   "port_source": "logic #5091"
++  },
++  "own": {
++   "server": "vllm",
++   "port": 18617,
++   "args": [
++    "--reasoning-parser-plugin",
++    "/root/.cache/huggingface/hub/models--ibm-granite--granite-4.2-8b/snapshots/a7042144125ce5ae64f89610e8289647fc000b9a/granite_thinking_parser.py",
++    "--reasoning-parser",
++    "granite_thinking_parser"
++   ]
++  },
++  "weights_gb": 16.8,
++  "pair_hours": 12
++ },
++ "granite-4.2-30b": {
++  "name": "Granite-4.2-30B",
++  "repo": "ibm-granite/granite-4.2-30b",
++  "rev": "9e668ce1c538387ef24d3644e9b0606647762636",
++  "thinking": "switch",
++  "context": 131072,
++  "logic": {
++   "key": "granite-4.2-30b",
++   "port": 18619,
++   "server": "vllm",
++   "port_source": "logic #5091"
++  },
++  "own": {
++   "server": "vllm",
++   "port": 18619,
++   "args": [
++    "--reasoning-parser-plugin",
++    "/root/.cache/huggingface/hub/models--ibm-granite--granite-4.2-30b/snapshots/9e668ce1c538387ef24d3644e9b0606647762636/granite_thinking_parser.py",
++    "--reasoning-parser",
++    "granite_thinking_parser"
++   ]
++  },
++  "weights_gb": 58.6,
++  "pair_hours": 30
++ }
++}
+diff --git a/tools/v3/repeats/pins/minicpm5-2b-off-r1/pins.sh b/tools/v3/repeats/pins/minicpm5-2b-off-r1/pins.sh
+new file mode 100644
+index 0000000..5081854
+--- /dev/null
++++ b/tools/v3/repeats/pins/minicpm5-2b-off-r1/pins.sh
+@@ -0,0 +1,39 @@
++# Sourced by start.sh and locals.sh (KEY, T, URL, PORT and SERVED set there): healthy() and pinned() for the setup's
++# server, whoever runs it (logic's small_models.py server on bariton GPU 1 #5080, or ours from serve.sh), read-only.
++#   healthy: GET URL/models answers and lists the served model name the setup sends (SERVED).
++#   pinned:  the process serving PORT runs the pinned checkpoint: a docker container (vLLM) whose arguments carry
++#            --port PORT, the pinned repo with --revision REV (or its snapshot path), BF16, --max-model-len of at least
++#            38,000 (the longest League 1 request, at most ~4,750 tokens through the 11 templates, + 32,768 output: never
++#            refused for length, never truncated); or, for llama.cpp
++#            (LFM3-1.7B), a llama-server on PORT with the pinned GGUF and the pinned repo's chat template.
++MODEL=${KEY%-on}
++MODEL=${MODEL%-off}
++eval "$(python3 - "$T/models.json" "$MODEL" <<'EOF'
++import json, shlex, sys
++m = json.load(open(sys.argv[1]))[sys.argv[2]]
++g = (m["own"].get("gguf") or ["", "", ""])
++print(f"PIN_REPO={shlex.quote(m['repo'])} PIN_REV={m['rev']} PIN_GGUF_REV={g[1]} PIN_GGUF_FILE={shlex.quote(g[2])}")
++EOF
++)"
++LABEL="$MODEL ($PIN_REPO@${PIN_REV:0:8})"
++MIN_CONTEXT=38000
++healthy() {
++  curl -fsS -m 10 "$URL/models" 2>/dev/null | python3 -c 'import json,sys; ids=[m["id"] for m in json.load(sys.stdin)["data"]]
++sys.exit(sys.argv[1] not in ids)' "$SERVED" 2>/dev/null
++}
++pinned() {
++  local c args
++  for c in $(docker ps -q 2>/dev/null); do
++    args=$(docker inspect --format '{{join .Args " "}}' "$c" 2>/dev/null) || continue
++    [[ " $args " == *" --port $PORT "* ]] || continue
++    { [[ " $args " == *" $PIN_REPO "* && " $args " == *" --revision $PIN_REV "* ]] ||
++      [[ $args == *"snapshots/$PIN_REV"* ]]; } || return 1
++    [[ " $args " == *" --dtype bfloat16 "* ]] || return 1
++    python3 -c 'import re,sys; m=re.search(r"--max-model-len[ =](\d+)", sys.argv[1]); sys.exit(not (m and int(m.group(1)) >= int(sys.argv[2])))' \
++      "$args" "$MIN_CONTEXT" || return 1
++    return 0
++  done
++  [[ -n $PIN_GGUF_REV ]] || return 1
++  pgrep -af llama-server 2>/dev/null | grep -F -- "--port $PORT " | grep -F -- "snapshots/$PIN_GGUF_REV/$PIN_GGUF_FILE" |
++    grep -qF -- "snapshots/$PIN_REV/chat_template.jinja"
++}
+diff --git a/tools/v3/repeats/repeats.py b/tools/v3/repeats/repeats.py
+index 7e1ab8b..a89edf0 100755
+--- a/tools/v3/repeats/repeats.py
++++ b/tools/v3/repeats/repeats.py
+@@ -1,19 +1,23 @@
+ #!/usr/bin/env python3
+ """Reproducibility repeats of six League 1 setups (Ümit via Zeki, bus #4663, #4666, #4667, #4671; #4838 Drex Max 1.1
+-and Fastino GLiDE v1.2 (local)): each repeat plays
+-the original's own League 1 field again, one match at a time, each pair pinned (league config pinned_pairs, runner
++and Fastino GLiDE v1.2 (local)) and of two small late entries (Ümit #6410: GLiDE 2B, MiniCPM5-2B (off), on their
++entries' own pinned servers, server kind 'pinned'): each repeat plays
++the original's own League 1 field again, one match at a time (the small late entries: at the original's own
++concurrency), each pair pinned (league config pinned_pairs, runner
+ branch pinned-pairs, Zeki #4710) to its original match's seed (dice) and seating, with the
+ same option-order seed, prompt, rules and setup settings, under a separate held name ('<original> [repeat 1]') whose
+ matches carry stage 'late-entry' (late_entry_stage trigger) and are held off every page, table and league computation
+ (tools/site/content/held_setups.json). Published rows are never changed. Run from anywhere; v3.db is the main
+ checkout's (JEVGAMMON_DB overrides).
+ 
+-  repeats.py manifest                 writes mailbox/repeats/manifest-2026-11-11.json from v3.db (read-only)
+-  repeats.py configs                  writes tools/v3/repeats/leagues/ID.json from the manifest
++  repeats.py manifest [ID...]         writes mailbox/repeats/manifest-2026-11-11.json from v3.db (read-only); with IDs
++                                      only those entries (added or replaced), the others kept as committed
++  repeats.py configs [ID...]          writes tools/v3/repeats/leagues/ID.json from the manifest (every ID by default)
+   repeats.py plan ID                  opponents to play, in order: NAME|KIND|MiB|START|STOP|BLOCKED (read-only)
+   repeats.py check ID                 fail-closed preflight (read-only): held, config pins and settings, a recorded
+                                       attempt's league exactly as recorded, held name on the site, runner binary and
+-                                      build inputs (sha256), every client admitted by that runner and the settings it
++                                      build inputs (sha256), a 'pinned' entrant's server (pins), every client admitted
++                                      by that runner and the settings it
+                                       admitted those v3.db holds now, trigger; exit 3 = only the trigger lacks the name,
+                                       1 = anything else; on success the last line is the admitted-settings record
+   repeats.py bound ID FILE            the league config and v3.db's settings are those of check's admitted-settings
+@@ -21,6 +25,8 @@ checkout's (JEVGAMMON_DB overrides).
+   repeats.py entry ID NAME FILE       a pinned opponent's settings text as admitted in FILE, for league-add --entry
+                                       (read-only; exit 1 when anything differs from FILE)
+   repeats.py env ID                   shell assignments for run.sh (NAME KIND BIN ENTRANT_MIB START STOP HEALTH ...)
++  repeats.py pins ID                  a 'pinned' entrant's server (read-only): the late entry's pins.sh (copies in
++                                      pins/ID at their recorded sha256) healthy, then pinned; exit 1 on any failure
+   repeats.py trigger ID               WRITES v3.db: adds the repeat name to the late_entry_stage trigger (refused unless
+                                       that is check's only failure)
+   repeats.py league-id ID             the repeat's current league id (never a recorded attempt's), or nothing (read-only)
+@@ -153,6 +159,61 @@ RUNNER = dict(
+ RUNNER_DIFFERENCE = ("Runner: " + RUNNER["commit"] + ", the originals' runner line (origin/late-reax acfd89c) with the "
+                      "pinned-pairs change 4ca4f08 (the pins are its only change for these leagues), where the original "
+                      "ran %s; the same prompt version, option-order seed and rules.")
++# The small late entries' repeat runner (Ümit #6410; plan mailbox/small-backgammon-bench-2026-11-13.md §9): branch
++# small-repeat-runner 6578a73 = RUNNER's 0e66836 + the src of late-tiny8-small3 8ebad40 (late-tiny8 e4ce0e9..a72223d's
++# decision providers glide, glide-0.4b, onejev, gliclass, knowline, startlux, sieve, turion-jev, and d1-local, strands,
++# metask) + late-smallchat-on a083fb4's chat keys reasoning_prefill / reasoning_field (absent: as before), applied as
++# patches; admission also builds openai-compatible clients. late-smallchat 171698f's src is 18cc78d's, contained in
++# 0e66836. src differs from 0e66836 only in src/admit.rs, src/main.rs and src/players/{decision,llm,mod}.rs; the 18
++# build inputs are RUNNER's, unchanged. Byte identity: replaying GLiDE 2B's #1191-#1199 and MiniCPM5-2B (off)'s #1171,
++# #1173-#1180 against the stored responses, every stored request of the entrant and its opponents is sent byte for
++# byte (mailbox/small-repeat-review/). Bound as RUNNER is.
++RUNNER_SMALL = dict(
++    binary=str(MAIN / "target/small-repeat/release/jevgammon"),
++    binary_sha256="79409d713a5992556d47dd06adf3a8d793fbea2eb039a178736b55dc1213615b",
++    tree="/home/cbasaran/code/jevgammon-small-repeat-runner", commit="6578a73",
++    commit_full="6578a73694cc84233d8b3ed8b209f648232218bd", src_tree="53e913702ba91019b31e0422bf34361805381277",
++    build=dict(
++        command=("cd /home/cbasaran/code/jevgammon-small-repeat-runner && CARGO_TARGET_DIR=/home/cbasaran/code/"
++                 "jevgammon/target/small-repeat cargo build --release --locked"),
++        toolchain="rustc 1.97.1 (8bab26f4f 2026-07-14), cargo 1.97.1 (c980f4866 2026-06-30)",
++        built="2026-11-13T16:32Z",
++        tree=("git worktree add -b small-repeat-runner /home/cbasaran/code/jevgammon-small-repeat-runner 0e66836; "
++              "src patches, commit 6578a73; checkout --detach (clean; only the untracked METADATA.worktree added)")),
++    inputs=dict(RUNNER["inputs"]))
++SMALL_RUNNER_DIFFERENCE = (
++    "Runner: the original ran %s (clean; %s); the repeat runs " + RUNNER_SMALL["commit"] + " (branch "
++    "small-repeat-runner): the repeats' runner " + RUNNER["commit"] + " (origin/late-reax line: decision clients reax, "
++    "baselabs, drex-max, drex-local, nace and a pre-send budget ledger for decision services and openai-compatible "
++    "chat, none used by this field; the pinned-pairs change 4ca4f08; admit) with late-tiny8-small3 8ebad40's decision "
++    "clients and late-smallchat-on a083fb4's reasoning_prefill / reasoning_field keys (unused here). Every request "
++    "of the original's 9 matches replays byte for byte: %s (mailbox/small-repeat-review/byte-identity). Same prompt "
++    "version bg-v2, option-order seed and rules.")
++# The 'pinned' server kind (an entrant served by someone else and pinned by its late entry): no start or stop, no card
++# of ours, MiB 0. Its late entry's own pins.sh (healthy and pinned), copied byte for byte into pins/ID (sha256 below,
++# blobs of the entry's commit), is sourced with the variables its start.sh sets (env) by `repeats.py pins`: check runs
++# it before admission (a failure refuses before any write) and run.sh's guard every minute (3 failures in a row stop).
++PINS_GLIDE_2B = dict(
++    source="late-tiny8 a72223d tools/v3/late-tiny8/models/glide-2b/pins.sh (blob ebd8047, the same at e4ce0e9)",
++    files={"pins.sh": "c2a654f72ef49f05b80351d2a172686ca1b0e7297773f73b8cd8c7942644990c"},
++    env=dict(URL="http://192.168.1.131:19330", PORT="19330", SSH_HOST="spark2"))
++PINS_MINICPM5_2B_OFF = dict(
++    source=("late-smallchat 171698f tools/v3/late-smallchat/pins.sh (blob 5081854) and models.json (blob 8ce1456), "
++            "KEY minicpm5-2b-off"),
++    files={"pins.sh": "d203ff05f756c674c780f66561317fb18f0219bd0099a1479045975f075b80e4",
++           "models.json": "3dfc6278885bcf5cea810d423247f88eadd953acb1453d49b80b7e6dbeb8040b"},
++    env=dict(KEY="minicpm5-2b-off", URL="http://127.0.0.1:18614/v1", PORT="18614", SERVED="minicpm5-2b"))
++# The small late entries' coverage rule: only the pairs the original played are repeated (Ümit #6410, plan §9): GPT-6
++# Luna was never scheduled (OpenAI Decisions out of credit), Mercury Decide's match aborted at its warm-up (no
++# OpenRouter endpoint, no game), and no local setup was played (0 of 8, queued for a GPU when the entry stopped).
++SMALL_NOT_REQUIRED = {
++    "GPT-6 Luna": dict(match=None, reason=("not required (Ümit #6410: only the pairs the original played); never "
++                                           "scheduled: OpenAI Decisions out of credit (start.sh: deferred)")),
++    **{o: dict(match=None, reason=("not required (Ümit #6410: only the pairs the original played); local setup, "
++                                   "not played by the original (0 of 8 locals: queued for a GPU)")) for o in LOCAL},
++}
++SMALL_RULE = ("only the pairs the original played are repeated (Ümit #6410): GPT-6 Luna, Mercury Decide (aborted at "
++              "its warm-up) and the 8 local setups are not required")
+ # The league of a recorded attempt is kept as it is and never resumed: league_id() skips it, so the repeat's next start
+ # creates a new league with the same config (repeat name, pins); check fails while such a league differs from its
+ # record (a process resumed, completed or edited it). The record is the attempt's whole historical state (Zeki #4928
+@@ -205,7 +266,8 @@ REAX_ATTEMPT_1 = dict(
+ 
+ def repeat_note(rid: str, extra: str = "") -> str:
+     return (f" Reproducibility repeat 1 ({rid}; tools/v3/repeats, mailbox/repeats/manifest-2026-11-11.json): the "
+-            "original's League 1 field again, one match at a time, each pair with its original match's seed and seats; "
++            f"original's League 1 field again, {REPEATS[rid].get('pace', 'one match at a time')}, each pair with its "
++            "original match's seed and seats; "
+             "held: in no standings, table, Cup input or other setup's numbers." + extra)
+ 
+ 
+@@ -357,10 +419,105 @@ REPEATS = {
+              "beside the opponents' servers on two others and the DGX Sparks, the repeat runs it on one card with the "
+              "opponents one at a time on the same or a second card."),
+         ]),
++    "glide-2b-r1": dict(
++        original="GLiDE 2B", original_league=41, original_stage="late-entry", prepared="2026-11-13",
++        requested_by="Ümit #6410 (plan mailbox/small-backgammon-bench-2026-11-13.md §9)",
++        # Its 9 played pairs (league #41, one match at a time). #1200 (Mercury Decide) aborted at its warm-up, no game:
++        # not required, not pinned; GPT-6 Luna never scheduled; no local setup played.
++        original_matches=list(range(1191, 1200)),
++        not_required=SMALL_NOT_REQUIRED | {"Mercury Decide": dict(match=1200, reason=(
++            "not required (Ümit #6410: only the pairs the original played); #1200 aborted at its warm-up, no game: "
++            "no OpenRouter endpoint for inception/mercury-decide"))},
++        coverage_rule=SMALL_RULE,
++        runner=RUNNER_SMALL, original_runner="e4ce0e9baa7f1c13ea91116bbf72af75e62312b5",
++        server=dict(kind="pinned", mib=0, start=None, stop=None, health="http://192.168.1.131:19330/health",
++                    pins=PINS_GLIDE_2B,
++                    smoke=("S=workspace/repeats/glide-2b-r1/smoke.db; rm -f $S && " + RUNNER_SMALL["binary"]
++                           + f" ask --config {HERE}/smoke/glide-2b-r1.json --positions "
++                           "/home/cbasaran/code/jevgammon/positions/smoke.jsonl --setup 'GLiDE 2B' --out $S "
++                           "--time-limit 600 && n=$(sqlite3 $S \"SELECT count(*) FROM answers WHERE setup = 'GLiDE "
++                           "2B' AND error IS NULL AND COALESCE(invalid, 0) = 0 AND probabilities IS NOT NULL\") && "
++                           "echo \"$n/50 answered with probabilities\" && [ \"$n\" = 50 ]"),
++                    provenance=("logic's spark2 (DGX Spark GB10), handed over one server at a time: GLIDE_MAX_BATCH=1 "
++                                "~/envs/glide-family/bin/python -m glide.server --model "
++                                "/home/cbasaran/glide-family/models/GLiDE-2B@00f122c120cdeed82284106cb77d9bab5a50ad16 "
++                                "--host 0.0.0.0 --port 19330 (players.settings device), BF16, GLIDE_MAX_LEN 40000; "
++                                "pinned by its late entry's pins.sh (healthy: /health status ok, max_len 40000, "
++                                "max_batch 1, no quantization; pinned: that process on port 19330, read over ssh "
++                                "spark2). Never started or stopped here. Smoke: jevgammon ask on the 50 smoke "
++                                "positions (smoke/glide-2b-r1.json, the original's settings)"),
++                    measured="none on our cards (spark2's GB10, logic's)"),
++        settings_change=dict(), settings_as_original=True,
++        rules=dict(mirror_concurrent=True),
++        cost_method=("Each playable pair's billed cost in the original match: the paid opponent's recorded cost_usd "
++                     "(Fastino GLiDE: input tokens x $0.04/M); GLiDE 2B (logic's spark2) and the programs bill "
++                     "nothing."),
++        server_starts="entrant: none (logic's spark2 server, already up); no local opponent",
++        opp_gpu=(None, "GLiDE 2B runs on logic's spark2 (no card of ours) and no local opponent is repeated: no GPU."),
++        pace="one match at a time, as the original",
++        concurrency=("Name: '<original> [repeat 1]', a new players row; settings otherwise as the original's (the "
++                     "changed fields are listed under Settings); one match at a time, as the original (players.settings "
++                     "max_matches 1, parallel 1)."),
++        differences=[
++            SMALL_RUNNER_DIFFERENCE % ("e4ce0e9 (late-tiny8, target/tiny8", "origin/main's runner line 18cc78d with "
++                                       "late-tiny8's decision clients", "GLiDE 2B 820 of 820 requests, its opponents "
++                                       "558 of 558"),
++            ("Server: logic's GLiDE 2B server on spark2, pinned and checked as in the original (pins.sh healthy and "
++             "pinned before any write and every minute, 3 failures in a row stop); the original's guard checked "
++             "pinned once at its start."),
++        ]),
++    "minicpm5-2b-off-r1": dict(
++        original="MiniCPM5-2B (off)", original_league=39, original_stage="late-entry", prepared="2026-11-13",
++        requested_by="Ümit #6410 (plan mailbox/small-backgammon-bench-2026-11-13.md §9)",
++        # Its 9 played pairs (league #39, up to 16 matches at once). #1172 (Mercury Decide) aborted at its warm-up.
++        original_matches=[1171, *range(1173, 1181)],
++        not_required=SMALL_NOT_REQUIRED | {"Mercury Decide": dict(match=1172, reason=(
++            "not required (Ümit #6410: only the pairs the original played); #1172 aborted at its warm-up, no game: "
++            "no OpenRouter endpoint for inception/mercury-decide"))},
++        coverage_rule=SMALL_RULE,
++        runner=RUNNER_SMALL, original_runner="171698f84a2e45b0dd7668d5749f72dfc0ce3712",
++        server=dict(kind="pinned", mib=0, start=None, stop=None, health="http://127.0.0.1:18614/v1/models",
++                    pins=PINS_MINICPM5_2B_OFF,
++                    smoke=("S=workspace/repeats/minicpm5-2b-off-r1/smoke.db; rm -f $S && " + RUNNER_SMALL["binary"]
++                           + f" ask --config {HERE}/smoke/minicpm5-2b-off-r1.json --positions "
++                           "/home/cbasaran/code/jevgammon/positions/smoke.jsonl --setup 'MiniCPM5-2B (off)' --out $S "
++                           "--time-limit 600 && n=$(sqlite3 $S \"SELECT count(*) FROM answers WHERE setup = "
++                           "'MiniCPM5-2B (off)' AND error IS NULL AND COALESCE(invalid, 0) = 0 AND probabilities IS "
++                           "NOT NULL\") && echo \"$n/50 answered with probabilities\" && [ \"$n\" = 50 ]"),
++                    provenance=("logic's small_models.py vLLM server (key minicpm5-2b, port 18614, bariton GPU 1; "
++                                "vllm/vllm-openai:v0.30.0, BF16, --generation-config auto), served name "
++                                "minicpm5-2b, openbmb/MiniCPM5-2B @ 42433e90; pinned by its late entry's pins.sh "
++                                "(healthy: /v1/models lists minicpm5-2b; pinned: the docker container on port 18614 "
++                                "runs openbmb/MiniCPM5-2B --revision 42433e90… (or its snapshot), --dtype bfloat16, "
++                                "--max-model-len >= 38,000). Never started or stopped here; thinking off per request "
++                                "(chat_template_kwargs). Smoke: jevgammon ask on the 50 smoke positions "
++                                "(smoke/minicpm5-2b-off-r1.json, the original's settings)"),
++                    measured="none of ours (logic's container on bariton GPU 1)"),
++        settings_change=dict(), settings_as_original=True,
++        rules=dict(mirror_concurrent=True),
++        cost_method=("Each playable pair's billed cost in the original match: the paid opponent's recorded cost_usd "
++                     "(Fastino GLiDE: input tokens x $0.04/M); MiniCPM5-2B (off) (logic's server) and the programs "
++                     "bill nothing."),
++        server_starts="entrant: none (logic's vLLM container, already up); no local opponent",
++        opp_gpu=(None, "MiniCPM5-2B (off) runs on logic's container (no card of ours) and no local opponent is "
++                       "repeated: no GPU."),
++        pace="up to 16 matches at once, as the original",
++        concurrency=("Name: '<original> [repeat 1]', a new players row; settings otherwise as the original's (the "
++                     "changed fields are listed under Settings); its 9 pairs at once as in the original "
++                     "(players.settings max_matches 16, parallel 16: run.sh adds every paid opponent before the "
++                     "league plays, as the original's league held them all)."),
++        differences=[
++            SMALL_RUNNER_DIFFERENCE % ("171698f (late-smallchat, target/smallchat", "its src is origin/main's 18cc78d",
++                                       "MiniCPM5-2B (off) 1,300 of 1,300 requests, its opponents 676 of 676"),
++            ("Server: logic's vLLM container, pinned and checked as in the original (pins.sh healthy and pinned "
++             "before any write and every minute, 3 failures in a row stop); the original's guard checked pinned "
++             "once at its start. Its pins.sh checks the checkpoint, revision, dtype and context, not the vLLM image."),
++        ]),
+ }
+ DISPLAY = {"mammoth-1-r1": "Mammoth-1", "drex-max-v1-r1": "Drex Max v1", "reax-1.3-r1": "REAX 1.3",
+            "d1-ultra-r1": "Liquid d1-ultra", "drex-max-1.1-r1": "Drex Max 1.1",
+-           "glide-v1.2-r1": "Fastino GLiDE v1.2 (local)"}
++           "glide-v1.2-r1": "Fastino GLiDE v1.2 (local)", "glide-2b-r1": "GLiDE 2B",
++           "minicpm5-2b-off-r1": "MiniCPM5-2B (off)"}
+ 
+ 
+ def ro() -> sqlite3.Connection:
+@@ -474,18 +631,27 @@ def manifest(args) -> None:
+                          "health checks in a row.")),
+         gpu_card=dict(name="NVIDIA RTX PRO 6000 Blackwell Workstation Edition", mib=GPU_MIB, margin_mib=MARGIN_MIB),
+         repeats=[])
++    if args.ids:  # only these entries, added or replaced in place; the top level and the other entries as committed
++        kept = json.loads(MANIFEST.read_text())
++        out = dict(kept, repeats=[r for r in kept["repeats"] if r["id"] not in args.ids])
+     for rid, r in REPEATS.items():
++        if args.ids and rid not in args.ids:
++            continue
+         name = repeat_name(rid)
+         row = conn.execute("SELECT id, settings FROM players WHERE name = ?", (r["original"],)).fetchone()
+         settings = json.loads(row["settings"])
+-        rep = dict(settings, name=name, max_matches=1, **r["settings_change"])
++        # The small late entries keep the original's own concurrency (max_matches, parallel); the six play one at a time.
++        rep = dict(settings, name=name, **({} if r.get("settings_as_original") else dict(max_matches=1)),
++                   **r["settings_change"])
+         rep["note"] = (settings.get("note") or "") + repeat_note(rid)
+         diff = [k for k in sorted(set(settings) | set(rep)) if settings.get(k) != rep.get(k)]
+         pairs = original_pairs(conn, rid)
+         field = sorted(set(FIELD) - {r["original"]})
+         played = [p for p in pairs if p["status"] == "finished"]
+         missing = [o for o in field if o not in {p["opponent"] for p in played}]
++        not_required = r.get("not_required", {})
+         reasons = {x["opponent"]: x["reason"] for x in late if x["entrant"] == r["original"]}
++        reasons |= {o: n["reason"] for o, n in not_required.items() if o not in reasons}
+         playable = [p for p in pairs if p["status"] == "finished" and not p["blocked_today"]]
+         dropped = [p["opponent"] for p in played if p["blocked_today"]]
+         unpinned = [o for o in missing if o not in {p["opponent"] for p in pairs}]
+@@ -500,10 +666,11 @@ def manifest(args) -> None:
+         est_opp = sum(p["billed_usd"]["opponent"] or 0 for p in playable)
+         est_own = sum(p["billed_usd"]["original"] or 0 for p in playable)
+         mins = {k: round(sum(p["minutes"] or 0 for p in playable if p["kind"] == k), 1) for k in ("program", "api", "local")}
+-        out["repeats"].append(dict(
+-            id=rid, run_id=f"repeat-2026-11-11-{rid}", name=name, display=DISPLAY[rid], original=r["original"],
+-            original_player_id=row["id"], original_league=r["original_league"], original_stage=r["original_stage"],
+-            status=r.get("status", "queued"), hold=r.get("hold"), prepared="2026-11-11", started=None, finished=None,
++        entry = dict(
++            id=rid, run_id=f"repeat-{r.get('prepared', '2026-11-11')}-{rid}", name=name, display=DISPLAY[rid],
++            original=r["original"], original_player_id=row["id"], original_league=r["original_league"],
++            original_stage=r["original_stage"], status=r.get("status", "queued"), hold=r.get("hold"),
++            prepared=r.get("prepared", "2026-11-11"), started=None, finished=None,
+             league_config=f"tools/v3/repeats/leagues/{rid}.json",
+             status_file=f"mailbox/repeats/{rid} - status.md",
+             runner=dict(r["runner"], original=r["original_runner"]),
+@@ -514,7 +681,8 @@ def manifest(args) -> None:
+             | dict(start=srv["start"], stop=srv["stop"]),
+             coverage_original=dict(
+                 played=len(played), of=len(field),
+-                not_played=[dict(opponent=o, match=next((p["original_match"] for p in pairs if p["opponent"] == o), None),
++                not_played=[dict(opponent=o, match=next((p["original_match"] for p in pairs if p["opponent"] == o),
++                                                        not_required.get(o, {}).get("match")),
+                                  reason=reasons.get(o, "no match")) for o in missing]),
+             coverage_repeat_today=dict(
+                 playable=len(playable), of=len(field),
+@@ -523,6 +691,8 @@ def manifest(args) -> None:
+                 not_in_original=[dict(opponent=o, reason=reasons.get(o, "no original match"),
+                                       today=BLOCKED_TODAY.get(o)) for o in missing],
+                 unpinned=unpinned),
++            **({} if not not_required else dict(coverage_required=required_coverage(
++                pairs, field, not_required, r["rules"]["mirror_concurrent"], r["coverage_rule"]))),
+             cost_basis=dict(
+                 method=r.get("cost_method", (
+                     "Each playable pair's billed cost in the original match: the paid opponent's recorded "
+@@ -530,7 +700,7 @@ def manifest(args) -> None:
+                     "repeat; local setups and programs bill nothing.")),
+                 pairs={p["opponent"]: p["billed_usd"] for p in paid},
+                 estimate_usd=round(est_opp + est_own, 4), opponents_usd=round(est_opp, 4), entrant_usd=round(est_own, 4),
+-                cap_usd=5.0),
++                cap_usd=r.get("cap_usd", 5.0)),
+             time=dict(
+                 method=("Sum of each playable pair's original match duration (start to finish; the originals ran "
+                         "several matches at once, so one at a time is about this or less), plus server starts."),
+@@ -542,29 +712,61 @@ def manifest(args) -> None:
+                 entrant_mib=srv["mib"], entrant_measured=srv["measured"],
+                 fits_beside_entrant=[o for o in opps if o not in big],
+                 needs_second_gpu=big,
+-                note=("One card: the entrant's server (none for d1-ultra) stays up for the whole repeat; the opponent "
+-                      "servers run one at a time beside it, smallest first. A pair needs both servers at once, so the "
+-                      "opponents in needs_second_gpu (entrant + opponent + 2 GB over 97,887 MiB) wait for a second "
+-                      "card (OPP_GPU) or stay unplayed.")),
+-            differences=["Name: '<original> [repeat 1]', a new players row; settings otherwise as the original's (the "
+-                         "changed fields are listed under Settings); one match at a time, where the original played "
+-                         "several at once."]
++                note=r["opp_gpu"][1] if "opp_gpu" in r else (
++                    "One card: the entrant's server (none for d1-ultra) stays up for the whole repeat; the opponent "
++                    "servers run one at a time beside it, smallest first. A pair needs both servers at once, so the "
++                    "opponents in needs_second_gpu (entrant + opponent + 2 GB over 97,887 MiB) wait for a second "
++                    "card (OPP_GPU) or stay unplayed.")),
++            differences=[r.get("concurrency", (
++                "Name: '<original> [repeat 1]', a new players row; settings otherwise as the original's (the "
++                "changed fields are listed under Settings); one match at a time, where the original played "
++                "several at once."))]
+                         + r.get("differences", []) + (
+                 [f"Not replayable today, though played in the original: {', '.join(dropped)} (blockers today); "
+                  "their seed pins are kept so they replay with the original seeds once unblocked."] if dropped else []),
+             start=start_commands(rid),
+-            pairs=pairs))
++            pairs=pairs)
++        at = next((i for i, x in enumerate(kept["repeats"]) if x["id"] == rid), None) if args.ids else None
++        if at is None:
++            out["repeats"].append(entry)
++        else:
++            out["repeats"].insert(at, entry)
+     MANIFEST.parent.mkdir(parents=True, exist_ok=True)
+     MANIFEST.write_text(json.dumps(out, indent=1, ensure_ascii=False) + "\n")
+     print(f"{MANIFEST.relative_to(REPO)}: {len(out['repeats'])} repeats")
+ 
+ 
++def required_coverage(pairs: list[dict], field: list[str], not_required: dict, mirror: bool, rule: str) -> dict:
++    """Coverage over the required pairs (the field less not_required), each count separately: pairs the original
++    played (history), pairs pinned (every pair in pairs is pinned: wanted_pins), pinned pairs playable today (not
++    blocked), and matched fixtures: pinned pairs whose original finished match recorded its games' dice seeds and ran
++    with the repeat's mirror rule (the other rules are one set across the originals, checked above; configs refuses a
++    clock or another start), so the pin's seed and seating give the original's dice, seats and option orders."""
++    required = [o for o in field if o not in not_required]
++    mine = [p for p in pairs if p["opponent"] in required]
++    played = [p["opponent"] for p in mine if p["status"] == "finished"]
++    pinned = [p["opponent"] for p in mine]
++    playable = [p["opponent"] for p in mine if p["status"] == "finished" and not p["blocked_today"]]
++    matched = [p["opponent"] for p in mine if p["status"] == "finished" and p["games"]
++               and all(g["dice_seed"] is not None for g in p["games"]) and p["rules"]["mirror_concurrent"] == mirror]
++    return dict(
++        rule=rule, required=len(required),
++        history_played=len(played), pinned=len(pinned), playable_today=len(playable), matched_fixtures=len(matched),
++        not_required=[dict(opponent=o, **n) for o, n in not_required.items()],
++        missing=dict(history=[o for o in required if o not in played], pins=[o for o in required if o not in pinned],
++                     today=[o for o in required if o not in playable], fixtures=[o for o in required if o not in matched]))
++
++
+ def start_commands(rid: str) -> list[str]:
+-    run = f"/home/cbasaran/code/jevgammon/tools/v3/repeats/run.sh {rid}"
+-    unit = f"systemd-run --user --unit=repeat-{rid} --working-directory=/home/cbasaran/code/jevgammon"
+-    gpu = {"ours": "-E GPU=0 -E OPP_GPU=0", "logic": "-E GPU=0 -E OPP_GPU=0", "api": "-E OPP_GPU=0"}[REPEATS[rid]["server"]["kind"]]
+-    if REPEATS[rid].get("status") == "held":
++    r = REPEATS[rid]
++    if r.get("status") == "held":
+         return []
++    unit = f"systemd-run --user --unit=repeat-{rid} --working-directory=/home/cbasaran/code/jevgammon"
++    if r["server"]["kind"] == "pinned":
++        # No card of ours and no local opponent: neither GPU, OPP_GPU nor RES (run.sh needs them only with locals).
++        return [f"{unit} {HERE}/run.sh {rid}"]
++    run = f"/home/cbasaran/code/jevgammon/tools/v3/repeats/run.sh {rid}"
++    gpu = {"ours": "-E GPU=0 -E OPP_GPU=0", "logic": "-E GPU=0 -E OPP_GPU=0", "api": "-E OPP_GPU=0"}[r["server"]["kind"]]
+     return [f"{unit} {gpu} -E RES=<reservation> {run}"]
+ 
+ 
+@@ -577,12 +779,15 @@ def configs(args) -> None:
+     out = HERE / "leagues"
+     out.mkdir(exist_ok=True)
+     for rid, m in load().items():
++        if args.ids and rid not in args.ids:
++            continue
+         r = m["rules"]
+         progs = [json.loads(conn.execute("SELECT settings FROM players WHERE name = ?", (n,)).fetchone()[0])
+                  for n in PROGRAMS]
+         cfg = dict(
+-            note=(f"Reproducibility repeat 1 of {m['original']} ({WRITTEN_FOR}, #4710; run {m['run_id']}): {m['name']} "
+-                  f"plays {m['original']}'s original League 1 field again, one match at a time, each pair pinned to its "
++            note=(f"Reproducibility repeat 1 of {m['original']} ({REPEATS[rid].get('requested_by', WRITTEN_FOR)}, "
++                  f"#4710; run {m['run_id']}): {m['name']} plays {m['original']}'s original League 1 field again, "
++                  f"{REPEATS[rid].get('pace', 'one match at a time')}, each pair pinned to its "
+                   "original match's seed and seating (pinned_pairs), the same option-order seed, prompt, rules and "
+                   "settings. Hidden league; matches stage 'late-entry' and the name held "
+                   "(tools/site/content/held_setups.json): in no standings, table, Cup input or other setup's numbers. "
+@@ -604,7 +809,11 @@ def shell_env(args) -> None:
+     for k, v in dict(NAME=m["name"], RUN_ID=m["run_id"], KIND=s["kind"], BIN=r["binary"], ENTRANT_MIB=s["mib"],
+                      START=s["start"] or "", STOP=s["stop"] or "", HEALTH=s["health"] or "",
+                      HEALTH_ANY=int(bool(s.get("health_any_status"))), SMOKE=s["smoke"] or "",
+-                     STATUS=m["status_file"], CAP=m["cost_basis"]["cap_usd"]).items():
++                     STATUS=m["status_file"], CAP=m["cost_basis"]["cap_usd"],
++                     # Local opponents in the plan (OPP_GPU and RES are needed only then); the original's concurrency
++                     # (max_matches over 1: run.sh adds every paid opponent before the league plays them).
++                     LOCALS=sum(p["kind"] == "local" and p["status"] == "finished" for p in m["pairs"]),
++                     CONCURRENT=int((m["settings_repeat"].get("max_matches") or 1) > 1)).items():
+         print(f"{k}={shlex.quote(str(v))}")
+ 
+ 
+@@ -672,7 +881,8 @@ def runner_problems(rn) -> list[str]:
+ 
+ def settings_problems(conn, rid: str, m, cfg) -> list[str]:
+     """The league config plays the manifest's repeat settings under the original's rules, the original's stored
+-    settings are the manifest's, and the repeat changes only its name, max_matches, note and its listed changes."""
++    settings are the manifest's, and the repeat changes only its name, max_matches, note and its listed changes (a
++    repeat at the original's own concurrency, settings_as_original: only its name, note and listed changes)."""
+     bad = []
+     players = cfg.get("players") or [None]
+     if players[0] != m["settings_repeat"]:
+@@ -681,7 +891,8 @@ def settings_problems(conn, rid: str, m, cfg) -> list[str]:
+     if row is None or json.loads(row[0]) != m["settings_original"]:
+         bad.append(f"{m['original']}'s stored settings differ from the manifest's settings_original")
+     orig, rep = m["settings_original"], m["settings_repeat"]
+-    allowed = {"name", "max_matches", "note"} | set(REPEATS[rid]["settings_change"])
++    allowed = ({"name", "note"} | ({"max_matches"} if not REPEATS[rid].get("settings_as_original") else set())
++               | set(REPEATS[rid]["settings_change"]))
+     extra = sorted(k for k in set(orig) | set(rep) if orig.get(k) != rep.get(k) and k not in allowed)
+     if extra:
+         bad.append(f"repeat settings change {', '.join(extra)} beyond the listed changes")
+@@ -809,9 +1020,12 @@ def problems(rid: str, admitted: dict | None = None) -> list[str]:
+                                      capture_output=True, text=True).stdout or "{}").get("held", {})
+     if m["name"] not in held:
+         bad.append("not held in the main checkout's committed tools/site/content/held_setups.json")
++    # A 'pinned' entrant's server is its late entry's (pins.sh healthy and pinned) before any admission.
++    pb = pins_problems(rid) if REPEATS[rid]["server"]["kind"] == "pinned" else []
++    bad += pb
+     rb = runner_problems(m["runner"])
+     bad += rb
+-    if not rb and cfg:  # only the bound binary is executed
++    if not rb and not pb and cfg:  # only the bound binary is executed
+         refused, record = admission_problems(m["runner"], path)
+         bad += refused
+         if record is not None:
+@@ -827,6 +1041,48 @@ def problems(rid: str, admitted: dict | None = None) -> list[str]:
+     return bad
+ 
+ 
++PINS_TIMEOUT_S = 120
++
++
++def pins_problems(rid: str) -> list[str]:
++    """A 'pinned' entrant's server (read-only): the copies of its late entry's pins files (pins/ID) at their recorded
++    sha256, then its pins.sh sourced as its start.sh sources it (the variables of pins env, T = the copies' folder)
++    and healthy, then pinned run; any failure, error or no answer in PINS_TIMEOUT_S is a problem."""
++    p = REPEATS[rid]["server"]["pins"]
++    d = HERE / "pins" / rid
++    bad = []
++    for f, want in p["files"].items():
++        got = sha256(d / f)
++        if got != want:
++            bad.append(f"pins file pins/{rid}/{f} " + ("missing" if got is None else f"has sha256 {got[:16]}…")
++                       + f", recorded {want[:16]}… ({p['source']})")
++    if bad:
++        return bad
++    try:
++        r = subprocess.run(["bash", "-c", '. "$0" || exit 3; healthy || exit 4; pinned || exit 5', str(d / "pins.sh")],
++                           env=dict(os.environ, T=str(d), **p["env"]), capture_output=True, text=True,
++                           timeout=PINS_TIMEOUT_S)
++    except subprocess.TimeoutExpired:
++        return [f"pinned server: pins.sh gave no answer in {PINS_TIMEOUT_S} s"]
++    why = {3: "pins.sh could not be sourced", 4: f"not healthy (pins.sh healthy failed for {p['env']['URL']})",
++           5: f"not the pinned server (pins.sh pinned failed for port {p['env']['PORT']})"}
++    if r.returncode:
++        err = " ".join(r.stderr.split())[:200]
++        bad.append(f"pinned server: {why.get(r.returncode, f'pins.sh exit {r.returncode}')}" + (f" ({err})" if err else ""))
++    return bad
++
++
++def pins(args) -> None:
++    """run.sh's health check of a 'pinned' entrant (each guard tick): pins_problems; exit 1 on any."""
++    if REPEATS[args.id]["server"]["kind"] != "pinned":
++        sys.exit(f"{args.id}: not a 'pinned' server")
++    bad = pins_problems(args.id)
++    if bad:
++        sys.exit(f"{args.id}: " + "; ".join(bad))
++    print(f"{args.id}: {REPEATS[args.id]['server']['health']} healthy and pinned "
++          f"({REPEATS[args.id]['server']['pins']['source']})")
++
++
+ def check(args) -> None:
+     """Fail closed (read-only): a held repeat, other pins or settings, the name not held on the site, another runner
+     binary, commit, src or build input, a client the bound runner's `admit` refuses, admitted settings other than v3.db
+@@ -971,8 +1227,9 @@ def attempt_problems(conn, rid: str, want: dict) -> list[str]:
+ 
+ def attempts(conn, rid: str) -> list[dict]:
+     """The repeat's recorded attempts, then the current one (its league once created, else None)."""
+-    current = dict(league=league_id(conn, rid), runner=dict(commit=RUNNER["commit"], commit_full=RUNNER["commit_full"],
+-                                                             binary_sha256=RUNNER["binary_sha256"]))
++    rn = REPEATS[rid]["runner"]
++    current = dict(league=league_id(conn, rid), runner=dict(commit=rn["commit"], commit_full=rn["commit_full"],
++                                                             binary_sha256=rn["binary_sha256"]))
+     return REPEATS[rid].get("attempts", []) + [current]
+ 
+ 
+@@ -1040,10 +1297,13 @@ def results(args) -> None:
+ def main() -> None:
+     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+     sub = ap.add_subparsers(dest="cmd", required=True)
+-    sub.add_parser("manifest").set_defaults(fn=manifest)
+-    sub.add_parser("configs").set_defaults(fn=configs)
++    for cmd, fn in (("manifest", manifest), ("configs", configs)):
++        p = sub.add_parser(cmd)
++        p.add_argument("ids", nargs="*", metavar="ID", help="only these repeats (default: every one)")
++        p.set_defaults(fn=fn)
+     sub.add_parser("results").set_defaults(fn=results)
+-    for cmd, fn in (("plan", plan), ("check", check), ("trigger", trigger), ("billed", billed), ("env", shell_env)):
++    for cmd, fn in (("plan", plan), ("check", check), ("trigger", trigger), ("billed", billed), ("env", shell_env),
++                    ("pins", pins)):
+         p = sub.add_parser(cmd)
+         p.add_argument("id", choices=list(REPEATS))
+         p.set_defaults(fn=fn)
+@@ -1064,6 +1324,9 @@ def main() -> None:
+     p.add_argument("admitted", help="check's admitted-settings record (JSON file)")
+     p.set_defaults(fn=entry)
+     args = ap.parse_args()
++    unknown = [i for i in getattr(args, "ids", []) if i not in REPEATS]
++    if unknown:
++        ap.error(f"unknown repeat id(s): {', '.join(unknown)}")
+     args.fn(args)
+ 
+ 
+diff --git a/tools/v3/repeats/run.sh b/tools/v3/repeats/run.sh
+index 0ae4ed8..627df53 100755
+--- a/tools/v3/repeats/run.sh
++++ b/tools/v3/repeats/run.sh
+@@ -2,8 +2,9 @@
+ # One reproducibility repeat (tools/v3/repeats; manifest mailbox/repeats/manifest-2026-11-11.json), one match at a time,
+ # as the late entries' start.sh + locals.sh (tools/v3/late-knowline) in one loop:
+ #   systemd-run --user --unit=repeat-ID --working-directory=/home/cbasaran/code/jevgammon \
+-#     [-E GPU=<entrant card>] -E OPP_GPU=<card for opponent servers> -E RES=<agent-bus reservation> \
++#     [-E GPU=<entrant card>] [-E OPP_GPU=<card for opponent servers> -E RES=<agent-bus reservation>] \
+ #     /home/cbasaran/code/jevgammon/tools/v3/repeats/run.sh ID
++# OPP_GPU and RES are required when the plan has a local opponent, and only then (repeats.py env LOCALS).
+ # run.sh ID --prepare-only: the checks and, when needed, the preparation below; nothing starts or plays.
+ # Every check comes first and writes nothing (repeats.py check): not held (REAX 1.3 never passes), the league config pins
+ # every opponent to its original match's seed and seating (the league holds the same pins once it exists), the settings
+@@ -27,7 +28,12 @@
+ # REPEATS_HOME/v3.db) are for the scratch regression tests (tools/v3/repeats/test_launcher.sh).
+ # The entrant: Mammoth-1 and Drex Max v1 are started here on GPU under RES and smoke-tested as in their originals (and
+ # stopped at the end); REAX 1.3 must already answer on logic's server (unit logic-dm-reax13, image checked, smoke-tested;
+-# never started or stopped here); Liquid d1-ultra is hosted. Then each opponent of the plan in turn (programs, paid API,
++# never started or stopped here); Liquid d1-ultra is hosted; GLiDE 2B and MiniCPM5-2B (off) (server kind 'pinned') run
++# on someone else's server, never started or stopped here, no card of ours: `repeats.py pins` (their late entry's own
++# pins.sh, healthy then pinned) is part of check, so a failure refuses before any write, runs again before the first
++# match and at every guard tick (3 failures in a row stop). A repeat at its original's concurrency (CONCURRENT: the
++# original's max_matches over 1, MiniCPM5-2B (off)'s 16) gets every paid opponent added before the league plays, so its
++# pairs run at once as in the original. Then each opponent of the plan in turn (programs, paid API,
+ # local servers smallest first): league-add after confirming nothing plays the league (quiesce), the opponent's server
+ # under RES on OPP_GPU when there is room beside everything else (a pair that cannot fit on one card with the entrant is
+ # left missing and reported), the league unit until the pair is played (4 h at most), the server stopped. Opponents
+@@ -51,7 +57,7 @@ UNIT=repeat-$RID-league
+ W=workspace/repeats
+ ST=$W/$RID
+ if [[ -z $MODE ]]; then
+-  : "${OPP_GPU:?set OPP_GPU}" "${RES:?set RES (agent-bus reservation)}"
++  if (( LOCALS > 0 )); then : "${OPP_GPU:?set OPP_GPU}" "${RES:?set RES (agent-bus reservation)}"; fi
+   [[ $KIND != ours || -n ${GPU:-} ]] || { echo "set GPU (the entrant's card)" >&2; exit 1; }
+ fi
+ 
+@@ -108,6 +114,8 @@ lt() { python3 -c 'import sys; sys.exit(not float(sys.argv[1]) < float(sys.argv[
+ spent() { "${R[@]}" billed "$RID"; }
+ pending() { "${R[@]}" pending "$RID" "$@"; }
+ healthy() {
++  # A 'pinned' entrant: its late entry's pins.sh, healthy then pinned (repeats.py pins).
++  if [[ $KIND == pinned ]]; then "${R[@]}" pins "$RID" >> "$ST/pins.log" 2>&1; return; fi
+   [[ -z $HEALTH ]] && return 0
+   if [[ $HEALTH_ANY == 1 ]]; then curl -sS -m 10 -o /dev/null "$HEALTH" 2>/dev/null; else curl -fsS -m 10 -o /dev/null "$HEALTH" 2>/dev/null; fi
+ }
+@@ -175,6 +183,9 @@ case $KIND in
+     want=$(python3 -c 'import sys; sys.path.insert(0, sys.argv[1]); import repeats; print(repeats.LOGIC_REAX["image"])' "$T")
+     [[ $img == "$want" ]] || { log "STOPPED before any match: logic-dm-reax13 runs image ${img:-none}, not $want"; exit 1; }
+     log "REAX on logic's server $HEALTH, image $img" ;;
++  pinned)
++    out=$("${R[@]}" pins "$RID" 2>&1) || { log "STOPPED before any match: $out"; exit 1; }
++    log "$out" ;;
+ esac
+ if [[ -n $SMOKE ]]; then
+   if bash -c "$SMOKE" >> "$ST/smoke.log" 2>&1; then
+@@ -183,33 +194,47 @@ if [[ -n $SMOKE ]]; then
+     finish "STOPPED: smoke test failed ($ST/smoke.log)"; exit 1
+   fi
+ fi
+-log "repeat up: $NAME, runner $BIN; OpenRouter \$$bal (floor \$$FLOOR); cap \$$CAP; opponents on GPU $OPP_GPU (reservation $RES)"
++log "repeat up: $NAME, runner $BIN; OpenRouter \$$bal (floor \$$FLOOR); cap \$$CAP; opponents on GPU ${OPP_GPU:-none} (reservation ${RES:-none})"
+ 
+ missing=()
+ opp_stop=
++# league-add of an opponent (once the league exists, created on the first call, and is confirmed stopped); 1 when
++# league-add fails.
++join() {
++  local name=$1 entry pin
++  ID=$("${R[@]}" league-id "$RID")
++  if [[ -z $ID ]]; then
++    ensure_league
++    for _ in $(seq 60); do ID=$("${R[@]}" league-id "$RID"); [[ -n $ID ]] && break; sleep 10; done
++    [[ -n $ID ]] || { finish "STOPPED: the league did not appear in v3.db"; exit 1; }
++  fi
++  quiesce || { finish "STOPPED before adding $name: league #$ID not confirmed stopped"; exit 1; }
++  if ! sqlite3 -readonly "$DB" "SELECT 1 FROM league_players lp JOIN players p ON p.id = lp.player_id
++       WHERE lp.league_id = $ID AND lp.left_at IS NULL AND p.name = '${name//\'/\'\'}'" | grep -q 1; then
++    entry=$("${R[@]}" entry "$RID" "$name" "$ST/admitted.json" 2>&1) ||
++      { finish "STOPPED before adding $name: $entry"; exit 1; }
++    pin=$(python3 -c 'import json,sys; print(json.dumps(json.load(open(sys.argv[1]))["pinned_pairs"][sys.argv[2]]))' \
++      "$T/leagues/$RID.json" "$name")
++    "$BIN" league-add --db "$DB" --league "$ID" --entry "$entry" --pin "$pin" >> "repeat-$RID.log" 2>&1 ||
++      { log "league-add of $name failed"; return 1; }
++    log "$name added to league #$ID"
++  fi
++}
++# At the original's concurrency, every paid opponent of the plan joins before the league plays (the loop below then
++# waits for each pair in turn while they all play); a failed league-add is tried again in the loop.
++if (( CONCURRENT )); then
++  while IFS='|' read -r -u 3 name kind _ _ _ blocked; do
++    [[ $kind == api && ( -z $blocked || ${RETRY_BLOCKED:-} == 1 ) && $(pending "$name") != 0 ]] || continue
++    join "$name" || log "$name: tried again in turn"
++  done 3< <("${R[@]}" plan "$RID")
++fi
+ while IFS='|' read -r -u 3 name kind mib start stop blocked; do
+   [[ $(pending "$name") == 0 ]] && continue
+   if [[ -n $blocked && ${RETRY_BLOCKED:-} != 1 ]]; then
+     log "$name: skipped, blocked today (manifest blockers_today)"; missing+=("$name (blocked)"); continue
+   fi
+   if [[ $kind != program ]]; then
+-    ID=$("${R[@]}" league-id "$RID")
+-    if [[ -z $ID ]]; then
+-      ensure_league
+-      for _ in $(seq 60); do ID=$("${R[@]}" league-id "$RID"); [[ -n $ID ]] && break; sleep 10; done
+-      [[ -n $ID ]] || { finish "STOPPED: the league did not appear in v3.db"; exit 1; }
+-    fi
+-    quiesce || { finish "STOPPED before adding $name: league #$ID not confirmed stopped"; exit 1; }
+-    if ! sqlite3 -readonly "$DB" "SELECT 1 FROM league_players lp JOIN players p ON p.id = lp.player_id
+-         WHERE lp.league_id = $ID AND lp.left_at IS NULL AND p.name = '${name//\'/\'\'}'" | grep -q 1; then
+-      entry=$("${R[@]}" entry "$RID" "$name" "$ST/admitted.json" 2>&1) ||
+-        { finish "STOPPED before adding $name: $entry"; exit 1; }
+-      pin=$(python3 -c 'import json,sys; print(json.dumps(json.load(open(sys.argv[1]))["pinned_pairs"][sys.argv[2]]))' \
+-        "$T/leagues/$RID.json" "$name")
+-      "$BIN" league-add --db "$DB" --league "$ID" --entry "$entry" --pin "$pin" >> "repeat-$RID.log" 2>&1 ||
+-        { log "league-add of $name failed"; missing+=("$name (league-add failed)"); continue; }
+-      log "$name added to league #$ID"
+-    fi
++    join "$name" || { missing+=("$name (league-add failed)"); continue; }
+   fi
+   guard || { finish "stopped by the guard"; exit 1; }
+   if [[ $kind == local ]]; then
+diff --git a/tools/v3/repeats/smoke/glide-2b-r1.json b/tools/v3/repeats/smoke/glide-2b-r1.json
+new file mode 100644
+index 0000000..60515d3
+--- /dev/null
++++ b/tools/v3/repeats/smoke/glide-2b-r1.json
+@@ -0,0 +1,23 @@
++{
++  "note": "GLiDE 2B smoke test before its reproducibility repeat (glide-2b-r1; tools/v3/repeats, Ümit #6410): the 50 smoke positions (positions/smoke.jsonl), the same prompt (bg-v2) and option-order seed as League 1, its players.settings unchanged (v3.db, read-only), logic's spark2 server, pinned by late-tiny8's models/glide-2b/pins.sh. Not a league: run with `jevgammon ask` only (run.sh's SMOKE, the repeat runner).",
++  "prompt_version": "bg-v2",
++  "seed": 0,
++  "order_seed": 1190975713392774006,
++  "rounds": 3,
++  "clock": 0,
++  "delay": 30,
++  "max_turns": 300,
++  "players": [
++    {
++      "name": "GLiDE 2B",
++      "spec": "glide",
++      "provider": "local (glide.server)",
++      "quantization": "bf16",
++      "base_url": "http://192.168.1.131:19330",
++      "note": "Fastino's GLiDE 2B (Hugging Face fastino/GLiDE-2B @ 00f122c120cdeed82284106cb77d9bab5a50ad16, Fastino Community License) on our GPU through the server its repository ships (python -m glide.server; env ~/envs/glide-family: CPython 3.12.13, torch 2.14.0+cu130, transformers 5.17.0, flash-linear-attention 0.5.2), BF16, GLIDE_MAX_BATCH=1 (one request at a time), no model field (the server passes only state and questions to the model), 255-way code readout; 255 options per request (the league's rule; longer lists split); never truncates: a question prompt over GLIDE_MAX_LEN 40,000 tokens is refused (422). League 1's longest stored request (251 options) is 28,323 tokens of its tokenizer with the card's prompt; none over.",
++      "device": "NVIDIA GB10 (DGX Spark spark2, spark-d9ee), the whole GPU, handed over by logic one server at a time: GLIDE_MAX_BATCH=1 ~/envs/glide-family/bin/python -m glide.server --model <snapshot> --host 0.0.0.0 --port 19330",
++      "parallel": 1,
++      "max_matches": 1
++    }
++  ]
++}
+diff --git a/tools/v3/repeats/smoke/minicpm5-2b-off-r1.json b/tools/v3/repeats/smoke/minicpm5-2b-off-r1.json
+new file mode 100644
+index 0000000..e142133
+--- /dev/null
++++ b/tools/v3/repeats/smoke/minicpm5-2b-off-r1.json
+@@ -0,0 +1,30 @@
++{
++  "note": "MiniCPM5-2B (off) smoke test before its reproducibility repeat (minicpm5-2b-off-r1; tools/v3/repeats, Ümit #6410): the 50 smoke positions (positions/smoke.jsonl), the same prompt (bg-v2) and option-order seed as League 1, its players.settings unchanged (v3.db, read-only), logic's vLLM container on :18614, pinned by late-smallchat's pins.sh. Not a league: run with `jevgammon ask` only (run.sh's SMOKE, the repeat runner).",
++  "prompt_version": "bg-v2",
++  "seed": 0,
++  "order_seed": 1190975713392774006,
++  "rounds": 3,
++  "clock": 0,
++  "delay": 30,
++  "max_turns": 300,
++  "players": [
++    {
++      "name": "MiniCPM5-2B (off)",
++      "spec": "openai-compatible/minicpm5-2b",
++      "provider": "local-vllm",
++      "quantization": "bf16",
++      "base_url": "http://127.0.0.1:18614/v1",
++      "request": {
++        "chat_template_kwargs": {
++          "enable_thinking": false
++        }
++      },
++      "top_logprobs": 20,
++      "letter_readout": "prefill",
++      "note": "openbmb/MiniCPM5-2B @ 42433e90dad95123ab87729fd7011e7110629556, BF16, on our GPU through vLLM v0.30.0 (vllm/vllm-openai:v0.30.0) in BF16, --generation-config auto; logic's server (small_models.py key minicpm5-2b, port 18614, bariton GPU 1, #5080/#5091; ours alone after turkce's 'done') or ours on the same port and name (tools/v3/late-smallchat/serve.sh). thinking off (enable_thinking false); the letter is read from a prefilled Answer: (as Gemma 4 31B (off)); server reasoning split: vLLM reasoning parser qwen3 (no reasoning generated). Sampling: League 1's local chat rule, per request: temperature 1.0 from the chat client, everything else the server's default (generation_config.json via --generation-config auto, else vLLM neutral), no seed; it differs from logic's Logic & Math runs: logic sends temperature 1.0, top_p 0.95, seed 0 (ours: the same temperature and top_p from generation_config.json; no seed). Output cap 1 token (prefill readout). Up to 16 matches and 16 requests at once, League 1's rule for its local chat setups (the server is ours alone after turkce's 'done'). Late entry v the original League 1 table (tools/v3/late-smallchat; Zeki #5064/#5071/#5073; Main's decisions 12 Nov)",
++      "device": "RTX PRO 6000 (bariton), one GPU",
++      "parallel": 16,
++      "max_matches": 16
++    }
++  ]
++}
+diff --git a/tools/v3/repeats/test_launcher.sh b/tools/v3/repeats/test_launcher.sh
+index b7b1d2b..ebb82ef 100755
+--- a/tools/v3/repeats/test_launcher.sh
++++ b/tools/v3/repeats/test_launcher.sh
+@@ -46,6 +46,18 @@ echo "scratch: $S"
+ git clone -q --shared --no-checkout "$RTREE" "$S/tpl/runner" && git -C "$S/tpl/runner" checkout -q --detach "$RCOMMIT" ||
+   { echo "cannot clone $RTREE at $RCOMMIT"; exit 1; }
+ mkdir -p "$S/tpl/bin" && cp "$RBIN" "$S/tpl/bin/jevgammon"
++# Every other runner a repeat binds (the small late entries' RUNNER_SMALL): runner-<commit>/ and bin-<commit>/.
++while read -r tree bin commit short; do
++  echo "runner as recorded: tree $tree, binary $bin, commit $commit"
++  git clone -q --shared --no-checkout "$tree" "$S/tpl/runner-$short" &&
++    git -C "$S/tpl/runner-$short" checkout -q --detach "$commit" || { echo "cannot clone $tree at $commit"; exit 1; }
++  mkdir -p "$S/tpl/bin-$short" && cp "$bin" "$S/tpl/bin-$short/jevgammon"
++done < <(python3 -c 'import json,sys
++seen = {}
++for r in json.load(open(sys.argv[1]))["repeats"]:
++    seen.setdefault(r["runner"]["commit_full"], r["runner"])
++for c, r in list(seen.items())[1:]:
++    print(r["tree"], r["binary"], c, r["commit"])' "$MAN")
+ mkdir -p "$S/tpl/repo/tools/v3" "$S/tpl/repo/mailbox/repeats" "$S/ledger"
+ cp -r "$HERE" "$S/tpl/repo/tools/v3/repeats"
+ cp "$MAN" "$S/tpl/repo/mailbox/repeats/"
+@@ -144,6 +156,68 @@ conn.commit()
+ print(f"scratch database: runner schema, {len(rows) + 1} players rows, late_entry_stage naming {listed}, "
+       f"attempt league #{a['league']} as recorded (every column of its leagues and league_players rows)")
+ EOF
++# The small late entries' originals (Ümit #6410): their leagues (#39, #41), league_players and matches rows (the 9
++# played pairs and the aborted Mercury Decide match of each), copied from the production v3.db read-only (mode=ro), every
++# column the scratch schema has; orig_rows prints their sha256, so a case can show them untouched.
++python3 - "$S/tpl/v3.db" "$TMAN" <<'EOF' || { echo "originals fixture failed"; exit 1; }
++import json, sqlite3, sys
++db, man = sys.argv[1], json.load(open(sys.argv[2]))
++prod = sqlite3.connect("file:/home/cbasaran/code/jevgammon/v3.db?mode=ro", uri=True)
++conn = sqlite3.connect(db)
++small = [r for r in man["repeats"] if r["server"]["kind"] == "pinned"]
++leagues = [r["original_league"] for r in small]
++matches = sorted({p["original_match"] for r in small for p in r["pairs"]}
++                 | {n["match"] for r in small for n in r["coverage_required"]["not_required"] if n["match"]})
++n = 0
++for table, where, keys in (("leagues", "id", leagues), ("league_players", "league_id", leagues), ("matches", "id", matches)):
++    cols = [c[1] for c in conn.execute(f"PRAGMA table_info({table})")]
++    have = [c[1] for c in prod.execute(f"PRAGMA table_info({table})")]
++    cols = [c for c in cols if c in have]
++    for row in prod.execute(f"SELECT {', '.join(cols)} FROM {table} WHERE {where} IN ({', '.join('?' * len(keys))})", keys):
++        conn.execute(f"INSERT INTO {table} ({', '.join(cols)}) VALUES ({', '.join('?' * len(cols))})", row)
++        n += 1
++conn.commit()
++print(f"originals' rows: leagues {leagues}, their league_players, matches {matches[0]}-{matches[-1]} ({len(matches)}): {n} rows")
++EOF
++ORIG_LEAGUES=$(python3 -c 'import json,sys; print(",".join(str(r["original_league"]) for r in json.load(open(sys.argv[1]))["repeats"] if r["server"]["kind"] == "pinned"))' "$MAN")
++orig_rows() {  # db: sha256 of the originals' leagues, league_players and matches rows (every column)
++  sqlite3 "$1" "SELECT * FROM leagues WHERE id IN ($ORIG_LEAGUES) ORDER BY id;
++    SELECT * FROM league_players WHERE league_id IN ($ORIG_LEAGUES) ORDER BY id;
++    SELECT * FROM matches WHERE id IN (1171,1172,1173,1174,1175,1176,1177,1178,1179,1180,1191,1192,1193,1194,1195,1196,1197,1198,1199,1200) ORDER BY id" |
++    sha256sum | cut -c1-64
++}
++[[ $(sqlite3 "$S/tpl/v3.db" "SELECT count(*) FROM matches WHERE id BETWEEN 1171 AND 1200") == 20 ]] ||
++  { echo "originals fixture: not the 20 original matches"; exit 1; }
++
++# Stand-ins for the commands the small late entries' pins.sh run (curl, ssh, docker), answering from the case's
++# $FAKE folder: health (glide.server /health), models (vLLM /v1/models), ps (spark2's `ps -eo args`), docker-args (the
++# container's arguments); a missing file fails as the command would. Every call is logged in $FAKE/calls. The default
++# answers are the pinned servers' (healthy and pinned); a case edits its own copy.
++mkdir -p "$S/fakebin" "$S/tpl/fake"
++cat > "$S/fakebin/curl" <<'EOF'
++#!/usr/bin/env bash
++url=${!#}; echo "curl $url" >> "$FAKE/calls"
++case $url in */health) f=$FAKE/health ;; */models) f=$FAKE/models ;; *) exit 7 ;; esac
++[[ -f $f ]] || exit 22
++cat "$f"
++EOF
++cat > "$S/fakebin/ssh" <<'EOF'
++#!/usr/bin/env bash
++echo "ssh $*" >> "$FAKE/calls"
++[[ -f $FAKE/ps ]] || exit 255
++cat "$FAKE/ps"
++EOF
++cat > "$S/fakebin/docker" <<'EOF'
++#!/usr/bin/env bash
++echo "docker $*" >> "$FAKE/calls"
++[[ -f $FAKE/docker-args ]] || exit 0
++case $1 in ps) echo c0ffee ;; inspect) cat "$FAKE/docker-args" ;; *) exit 1 ;; esac
++EOF
++chmod +x "$S/fakebin/"*
++echo '{"status": "ok", "max_len": 40000, "max_batch": 1, "quantization": null}' > "$S/tpl/fake/health"
++echo '{"object": "list", "data": [{"id": "minicpm5-2b", "object": "model"}]}' > "$S/tpl/fake/models"
++echo "/home/cbasaran/envs/glide-family/bin/python -m glide.server --model /home/cbasaran/glide-family/models/GLiDE-2B@00f122c120cdeed82284106cb77d9bab5a50ad16 --host 0.0.0.0 --port 19330" > "$S/tpl/fake/ps"
++echo "--model openbmb/MiniCPM5-2B --revision 42433e90dad95123ab87729fd7011e7110629556 --served-model-name minicpm5-2b --host 0.0.0.0 --port 18614 --dtype bfloat16 --max-model-len 65536 --generation-config auto" > "$S/tpl/fake/docker-args"
+ 
+ fails=0
+ pass() { echo "ok   $C: $*"; }
+@@ -154,18 +228,21 @@ setup() {
+   C=$1 D=$S/$1 CASE_HOME=
+   mkdir -p "$D/repo/tools/v3" "$D/repo/mailbox/repeats" "$D/home"
+   cp -r "$S/tpl/repo/tools/v3/repeats" "$D/repo/tools/v3/repeats"
+-  cp -a "$S/tpl/runner" "$D/runner"
+-  cp -a "$S/tpl/bin" "$D/bin"
++  local t
++  for t in "$S"/tpl/runner* "$S"/tpl/bin*; do cp -a "$t" "$D/"; done
++  cp -r "$S/tpl/fake" "$D/fake"
+   cp "$S/tpl/v3.db" "$D/home/v3.db"
+-  python3 - "$TMAN" "$D/repo/mailbox/repeats/$(basename "$MAN")" "$D" <<'EOF'
++  python3 - "$TMAN" "$D/repo/mailbox/repeats/$(basename "$MAN")" "$D" "$RCOMMIT" <<'EOF'
+ import json, sys
+ m = json.load(open(sys.argv[1]))
+ for r in m["repeats"]:
+-    r["runner"] |= dict(tree=sys.argv[3] + "/runner", binary=sys.argv[3] + "/bin/jevgammon")
++    rn = r["runner"]
++    suffix = "" if rn["commit_full"] == sys.argv[4] else "-" + rn["commit"]
++    rn |= dict(tree=f"{sys.argv[3]}/runner{suffix}", binary=f"{sys.argv[3]}/bin{suffix}/jevgammon")
+ open(sys.argv[2], "w").write(json.dumps(m, indent=1, ensure_ascii=False) + "\n")
+ EOF
+ }
+-in_case() { HOME=${CASE_HOME:-$S/keys} JEVGAMMON_DB=$D/home/v3.db REPEATS_HOME=$D/home "$@"; }
++in_case() { HOME=${CASE_HOME:-$S/keys} JEVGAMMON_DB=$D/home/v3.db REPEATS_HOME=$D/home PATH="$S/fakebin:$PATH" FAKE=$D/fake "$@"; }
+ check_rc() { in_case python3 "$D/repo/tools/v3/repeats/repeats.py" check "$1" > "$D/check.out" 2>&1; echo $?; }
+ # An admission refusal is the check's only failure besides the missing trigger (problems() lists every other check
+ # before admission and only the trigger after it), and its text names the refusal.
+@@ -446,7 +523,7 @@ name = next(r["name"] for r in json.load(open(sys.argv[2]))["repeats"] if r["id"
+ sys.exit(name not in json.load(sys.stdin).get("held", {}))' "$1" "$MAN"
+ }
+ prepare=(mammoth-1-r1 drex-max-v1-r1 reax-1.3-r1 d1-ultra-r1)
+-for rid in drex-max-1.1-r1 glide-v1.2-r1; do
++for rid in drex-max-1.1-r1 glide-v1.2-r1 glide-2b-r1 minicpm5-2b-off-r1; do
+   if held_in_main "$rid"; then prepare+=("$rid"); continue; fi
+   setup "not-held-$rid"; refuse "$rid"
+   grep -q "not held in the main checkout" "$D/check.out" && pass "the refusal names the missing held name" ||
+@@ -483,6 +560,174 @@ for rid in "${prepare[@]}"; do
+   fi
+ done
+ 
++# The small late entries' repeats (Ümit #6410): server kind 'pinned', runner RUNNER_SMALL. Their names are held in a
++# scratch main checkout (the site change holding them is reviewed separately) so the rest of the preflight runs.
++hold_in_scratch_main() {  # rid: the case's repeats.py reads held_setups.json from $D/main (main's file + the name)
++  local name
++  name=$(python3 -c 'import json,sys; print(next(r["name"] for r in json.load(open(sys.argv[2]))["repeats"] if r["id"] == sys.argv[1]))' "$1" "$MAN")
++  mkdir -p "$D/main/tools/site/content"
++  git -C /home/cbasaran/code/jevgammon show HEAD:tools/site/content/held_setups.json | python3 -c '
++import json, sys
++d = json.load(sys.stdin); d["held"][sys.argv[1]] = "test: held in a scratch main checkout"
++print(json.dumps(d, indent=1, ensure_ascii=False))' "$name" > "$D/main/tools/site/content/held_setups.json"
++  git -C "$D/main" init -q && git -C "$D/main" add -A &&
++    git -C "$D/main" -c user.name=test -c user.email=test@localhost commit -qm "held: $name" || failc "scratch main"
++  python3 - "$D/repo/tools/v3/repeats/repeats.py" "$D/main" <<'EOF'
++import sys
++from pathlib import Path
++p, old = Path(sys.argv[1]), 'MAIN = Path("/home/cbasaran/code/jevgammon")'
++t = p.read_text()
++assert t.count(old) == 1, "MAIN line not found once"
++p.write_text(t.replace(old, f'MAIN = Path("{sys.argv[2]}")'))
++EOF
++}
++only_failure() {  # rid expected-text: check's one line is that failure and the missing trigger
++  if [[ $(wc -l < "$D/check.out") == 1 ]] && grep -qF -- "$2" "$D/check.out" &&
++     grep -qE "^$1: .*; trigger missing: late_entry_stage does not name it$" "$D/check.out"; then
++    pass "the refusal is: $(cut -c1-300 "$D/check.out")"
++  else
++    failc "check did not refuse on '$2' alone: $(cut -c1-700 "$D/check.out")"
++  fi
++}
++R0=(python3 "$HERE/repeats.py")
++for rid in glide-2b-r1 minicpm5-2b-off-r1; do
++  # The plan is exactly the original's 9 played pairs, each pinned to its original match's seed and seating, read here
++  # from the original matches rows (copied from v3.db): seed as u64, seat_first = the original was player 1.
++  C=plan-$rid D=$S/plan-$rid
++  mkdir -p "$D"
++  "${R0[@]}" plan "$rid" > "$D/plan.out"
++  python3 - "$rid" "$MAN" "$HERE/leagues/$rid.json" "$S/tpl/v3.db" "$D/plan.out" > "$D/plan.check" 2>&1 <<'EOF'
++import json, sqlite3, sys
++rid, man, cfg, db, plan = sys.argv[1:6]
++m = next(r for r in json.load(open(man))["repeats"] if r["id"] == rid)
++pins = json.load(open(cfg))["pinned_pairs"]
++names = [line.split("|")[0] for line in open(plan).read().splitlines()]
++conn = sqlite3.connect(db)
++want = {}
++for p in m["pairs"]:
++    seed, p1, p2, status = conn.execute("SELECT seed, player1, player2, status FROM matches WHERE id = ?",
++                                        (p["original_match"],)).fetchone()
++    assert status == "finished" and m["original_player_id"] in (p1, p2), p
++    want[p["opponent"]] = dict(seed=seed & (2**64 - 1), seat_first=p1 == m["original_player_id"])
++ids = sorted(p["original_match"] for p in m["pairs"])
++ok = len(names) == 9 == len(set(names)) and sorted(names) == sorted(pins) == sorted(want) and pins == want
++ok &= "Mercury Decide" not in pins and not any(p["kind"] == "local" for p in m["pairs"])
++print(f"{'OK' if ok else 'BAD'}: plan {len(names)} pairs {names}; pins = original seeds/seats of #{ids[0]}..#{ids[-1]} "
++      f"{ids}: {pins == want}; Mercury Decide and locals not pinned: {'Mercury Decide' not in pins}")
++sys.exit(not ok)
++EOF
++  if (( $? == 0 )); then pass "$(cat "$D/plan.check")"; else failc "$(cat "$D/plan.check")"; fi
++  # The original's concurrency is copied (settings_change {}): the config entrant's max_matches and parallel are the
++  # original's players.settings (the manifest's settings_original, which check binds to v3.db); env CONCURRENT and
++  # LOCALS follow.
++  C=concurrency-$rid
++  read -r mm pa omm opa < <(python3 -c 'import json,sys
++m = next(r for r in json.load(open(sys.argv[2]))["repeats"] if r["id"] == sys.argv[1]); c = json.load(open(sys.argv[3]))["players"][0]
++print(c.get("max_matches"), c.get("parallel"), m["settings_original"].get("max_matches"), m["settings_original"].get("parallel"))' \
++    "$rid" "$MAN" "$HERE/leagues/$rid.json")
++  envs=$("${R0[@]}" env "$rid" | grep -E '^(CONCURRENT|LOCALS|KIND|ENTRANT_MIB)=' | tr '\n' ' ')
++  want_c=$(( mm > 1 ? 1 : 0 ))
++  if [[ $mm == "$omm" && $pa == "$opa" && $envs == *"CONCURRENT=$want_c "* && $envs == *"LOCALS=0 "* && $envs == *"KIND=pinned "* && $envs == *"ENTRANT_MIB=0 "* ]]; then
++    pass "config max_matches $mm, parallel $pa = the original's ($omm, $opa); env $envs"
++  else
++    failc "config max_matches $mm parallel $pa, original $omm $opa; env $envs"
++  fi
++done
++[[ $("${R0[@]}" env minicpm5-2b-off-r1 | grep '^CONCURRENT=') == CONCURRENT=1 && $("${R0[@]}" env glide-2b-r1 | grep '^CONCURRENT=') == CONCURRENT=0 &&
++   $("${R0[@]}" env mammoth-1-r1 | grep '^CONCURRENT=') == CONCURRENT=0 ]] &&
++  { C=concurrency; pass "MiniCPM5-2B (off) at its 16 (CONCURRENT=1), GLiDE 2B and the six one at a time (CONCURRENT=0)"; } ||
++  { C=concurrency; failc "CONCURRENT not as the originals"; }
++# A concurrency other than the original's refuses: MiniCPM5-2B (off) [repeat 1] at max_matches 1 (config and manifest).
++setup minicpm-one-at-a-time; hold_in_scratch_main minicpm5-2b-off-r1
++python3 - "$D/repo/tools/v3/repeats/leagues/minicpm5-2b-off-r1.json" "$D/repo/mailbox/repeats/$(basename "$MAN")" <<'EOF'
++import json, sys
++c = json.load(open(sys.argv[1])); c["players"][0]["max_matches"] = 1
++open(sys.argv[1], "w").write(json.dumps(c, indent=2, ensure_ascii=False) + "\n")
++m = json.load(open(sys.argv[2]))
++next(r for r in m["repeats"] if r["id"] == "minicpm5-2b-off-r1")["settings_repeat"]["max_matches"] = 1
++open(sys.argv[2], "w").write(json.dumps(m, indent=1, ensure_ascii=False) + "\n")
++EOF
++refuse minicpm5-2b-off-r1
++only_failure minicpm5-2b-off-r1 "repeat settings change max_matches beyond the listed changes"
++
++for rid in glide-2b-r1 minicpm5-2b-off-r1; do
++  # Healthy and pinned (the default stand-ins): check exits 3 (trigger only), run.sh prepares, check exits 0 with every
++  # client admitted by RUNNER_SMALL (MiniCPM5-2B (off)'s openai-compatible client included); the originals' leagues,
++  # league_players and matches rows unchanged by all of it.
++  setup "pinned-ok-$rid"; hold_in_scratch_main "$rid"
++  rows0=$(orig_rows "$D/home/v3.db")
++  before=$(sha256sum < "$D/home/v3.db")
++  crc0=$(check_rc "$rid"); out0=$(cat "$D/check.out")
++  in_case bash "$D/repo/tools/v3/repeats/run.sh" "$rid" --prepare-only > "$D/run.out" 2>&1; rc=$?
++  crc1=$(check_rc "$rid"); out1=$(cat "$D/check.out")
++  rows1=$(orig_rows "$D/home/v3.db")
++  echo "     check before: exit $crc0: $(cut -c1-300 <<< "$out0")"
++  echo "     run.sh: exit $rc; run.log: $(head -2 "$D/home/workspace/repeats/$rid/run.log" 2>/dev/null | tr '\n' ' ' | cut -c1-600)"
++  echo "     check after: exit $crc1: $(head -1 <<< "$out1" | cut -c1-400)"
++  echo "     pins calls: $(sort -u "$D/fake/calls" | tr '\n' ';' | cut -c1-300)"
++  bad=()
++  (( crc0 == 3 )) || bad+=("check before exit $crc0, not 3")
++  (( rc == 0 )) || bad+=("run.sh exit $rc: $(cat "$D/run.out")")
++  [[ $(sha256sum < "$D/home/v3.db") != "$before" ]] || bad+=("trigger not written")
++  (( crc1 == 0 )) || bad+=("check after exit $crc1")
++  [[ $out1 == *"every client admitted (jevgammon admit)"* && $out1 == *"runner 6578a73"* ]] || bad+=("check after: not admitted by 6578a73")
++  [[ $rows1 == "$rows0" ]] || bad+=("the originals' rows changed")
++  grep -q '^\(curl\|ssh\|docker\)' "$D/fake/calls" || bad+=("pins.sh not run")
++  if (( ${#bad[@]} )); then failc "${bad[*]}"; else
++    pass "check exit 3, prepared, check exit 0 (pins healthy and pinned; every client admitted by 6578a73); the originals' rows unchanged (sha256 ${rows0:0:16}…)"
++  fi
++
++  # Wrong pin: the server answers but is not the pinned one (another port on spark2; another revision in the container):
++  # refused before any write, admission not run.
++  setup "wrong-pin-$rid"; hold_in_scratch_main "$rid"
++  sed -i 's/--port 19330/--port 19331/; s/--revision 42433e90dad95123ab87729fd7011e7110629556/--revision 0000000000000000000000000000000000000000/' \
++    "$D/fake/ps" "$D/fake/docker-args"
++  rows0=$(orig_rows "$D/home/v3.db")
++  refuse "$rid"
++  only_failure "$rid" "pinned server: not the pinned server (pins.sh pinned failed for port"
++  grep -q "client admission" "$D/check.out" && failc "admission ran despite the wrong pin" || pass "no admission after the wrong pin"
++  [[ $(orig_rows "$D/home/v3.db") == "$rows0" ]] && pass "the originals' rows unchanged" || failc "the originals' rows changed"
++
++  # Health failing (no /health or /v1/models answer): refused before any write and before admission.
++  setup "unhealthy-$rid"; hold_in_scratch_main "$rid"
++  rm -f "$D/fake/health" "$D/fake/models"
++  refuse "$rid"
++  only_failure "$rid" "pinned server: not healthy (pins.sh healthy failed for"
++  grep -q "client admission" "$D/check.out" && failc "admission ran despite the failed health check" || pass "no admission after the failed health check"
++
++  # The pins copies are bound by sha256: an edited pins.sh refuses.
++  setup "pins-edited-$rid"; hold_in_scratch_main "$rid"
++  echo "pinned() { return 0; }" >> "$D/repo/tools/v3/repeats/pins/$rid/pins.sh"
++  refuse "$rid"
++  only_failure "$rid" "pins file pins/$rid/pins.sh has sha256"
++done
++
++# OPP_GPU and RES: optional without local opponents (the small repeats: run.sh goes on to the check, here refused on a
++# wrong pin, nothing written), still required with them (Mammoth-1: run.sh stops before the check, nothing written).
++setup opp-gpu-optional; hold_in_scratch_main glide-2b-r1
++sed -i 's/--port 19330/--port 19331/' "$D/fake/ps"
++before=$(sha256sum < "$D/home/v3.db")
++in_case env -u OPP_GPU -u RES bash "$D/repo/tools/v3/repeats/run.sh" glide-2b-r1 > "$D/run.out" 2>&1; rc=$?
++if (( rc != 0 )) && ! grep -q "OPP_GPU\|RES (agent-bus" "$D/run.out" && grep -q "^check refused (exit 1); nothing written" "$D/run.out" &&
++   [[ $(sha256sum < "$D/home/v3.db") == "$before" && ! -e $D/home/workspace ]]; then
++  pass "no OPP_GPU/RES asked without locals; went on to the check (refused: wrong pin), nothing written"
++else
++  failc "run.sh exit $rc: $(cut -c1-400 "$D/run.out")"
++fi
++setup opp-gpu-required
++before=$(sha256sum < "$D/home/v3.db")
++in_case env -u OPP_GPU -u RES bash "$D/repo/tools/v3/repeats/run.sh" mammoth-1-r1 > "$D/run.out" 2>&1; rc=$?
++if (( rc != 0 )) && grep -q "OPP_GPU: set OPP_GPU" "$D/run.out" && ! grep -q "check" "$D/run.out" &&
++   [[ $(sha256sum < "$D/home/v3.db") == "$before" && ! -e $D/home/workspace ]]; then
++  pass "OPP_GPU still required with locals (Mammoth-1: $("${R0[@]}" env mammoth-1-r1 | grep '^LOCALS=')): $(cut -c1-120 "$D/run.out"); nothing written"
++else
++  failc "run.sh exit $rc: $(cut -c1-400 "$D/run.out")"
++fi
++in_case env -u RES OPP_GPU=1 bash "$D/repo/tools/v3/repeats/run.sh" mammoth-1-r1 > "$D/run.out" 2>&1; rc=$?
++C=opp-gpu-required-res
++(( rc != 0 )) && grep -q "RES: set RES" "$D/run.out" && [[ $(sha256sum < "$D/home/v3.db") == "$before" ]] &&
++  pass "RES still required with locals: $(cut -c1-120 "$D/run.out")" || failc "run.sh exit $rc: $(cut -c1-400 "$D/run.out")"
++
+ C=scratch-ledger
+ ledger_intact && pass "the scratch Nace ledger is byte-identical (sha256 ${LEDGER_SHA%% *}), no -wal or -shm beside it" ||
+   failc "the scratch Nace ledger changed: $(sha256sum < "$LEDGER"); $(ls -la "$S/ledger")"

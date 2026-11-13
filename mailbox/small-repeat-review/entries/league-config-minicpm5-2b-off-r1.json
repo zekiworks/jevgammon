@@ -1,0 +1,88 @@
+{
+  "note": "Reproducibility repeat 1 of MiniCPM5-2B (off) (Ümit #6410 (plan mailbox/small-backgammon-bench-2026-11-13.md §9), #4710; run repeat-2026-11-13-minicpm5-2b-off-r1): MiniCPM5-2B (off) [repeat 1] plays MiniCPM5-2B (off)'s original League 1 field again, up to 16 matches at once, as the original, each pair pinned to its original match's seed and seating (pinned_pairs), the same option-order seed, prompt, rules and settings. Hidden league; matches stage 'late-entry' and the name held (tools/site/content/held_setups.json): in no standings, table, Cup input or other setup's numbers. mailbox/repeats/manifest-2026-11-11.json",
+  "prompt_version": "bg-v2",
+  "seed": 2567889193785291627,
+  "order_seed": 1190975713392774006,
+  "rounds": 3,
+  "clock": 0,
+  "delay": 30,
+  "max_turns": 300,
+  "mirror_concurrent": true,
+  "only_pairs_of": "MiniCPM5-2B (off) [repeat 1]",
+  "hidden": true,
+  "pinned_pairs": {
+    "Fastino GLiDE": {
+      "seed": 2919656595479347799,
+      "seat_first": false
+    },
+    "Jev 1.14.0": {
+      "seed": 12218631172431999850,
+      "seat_first": false
+    },
+    "Jev 1.13.0": {
+      "seed": 11194125912989553646,
+      "seat_first": false
+    },
+    "Celeris-1 Decision": {
+      "seed": 11270262296905627974,
+      "seat_first": false
+    },
+    "Safest": {
+      "seed": 5754350776924833690,
+      "seat_first": true
+    },
+    "GNUbg weak": {
+      "seed": 1681289006452444015,
+      "seat_first": true
+    },
+    "Random": {
+      "seed": 8602035541704542871,
+      "seat_first": true
+    },
+    "SubQ Snap Preview": {
+      "seed": 9385287058908318959,
+      "seat_first": false
+    },
+    "Liquid d1-ultra": {
+      "seed": 12960853057462806703,
+      "seat_first": true
+    }
+  },
+  "players": [
+    {
+      "name": "MiniCPM5-2B (off) [repeat 1]",
+      "spec": "openai-compatible/minicpm5-2b",
+      "provider": "local-vllm",
+      "quantization": "bf16",
+      "base_url": "http://127.0.0.1:18614/v1",
+      "request": {
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        }
+      },
+      "top_logprobs": 20,
+      "letter_readout": "prefill",
+      "note": "openbmb/MiniCPM5-2B @ 42433e90dad95123ab87729fd7011e7110629556, BF16, on our GPU through vLLM v0.30.0 (vllm/vllm-openai:v0.30.0) in BF16, --generation-config auto; logic's server (small_models.py key minicpm5-2b, port 18614, bariton GPU 1, #5080/#5091; ours alone after turkce's 'done') or ours on the same port and name (tools/v3/late-smallchat/serve.sh). thinking off (enable_thinking false); the letter is read from a prefilled Answer: (as Gemma 4 31B (off)); server reasoning split: vLLM reasoning parser qwen3 (no reasoning generated). Sampling: League 1's local chat rule, per request: temperature 1.0 from the chat client, everything else the server's default (generation_config.json via --generation-config auto, else vLLM neutral), no seed; it differs from logic's Logic & Math runs: logic sends temperature 1.0, top_p 0.95, seed 0 (ours: the same temperature and top_p from generation_config.json; no seed). Output cap 1 token (prefill readout). Up to 16 matches and 16 requests at once, League 1's rule for its local chat setups (the server is ours alone after turkce's 'done'). Late entry v the original League 1 table (tools/v3/late-smallchat; Zeki #5064/#5071/#5073; Main's decisions 12 Nov) Reproducibility repeat 1 (minicpm5-2b-off-r1; tools/v3/repeats, mailbox/repeats/manifest-2026-11-11.json): the original's League 1 field again, up to 16 matches at once, as the original, each pair with its original match's seed and seats; held: in no standings, table, Cup input or other setup's numbers.",
+      "device": "RTX PRO 6000 (bariton), one GPU",
+      "parallel": 16,
+      "max_matches": 16
+    },
+    {
+      "name": "GNUbg weak",
+      "spec": "gnubg-weak",
+      "provider": "local",
+      "note": "gnubg 1.08 Beginner level (0-ply, deterministic noise 0.060)",
+      "parallel": 1
+    },
+    {
+      "name": "Random",
+      "spec": "random",
+      "provider": "local"
+    },
+    {
+      "name": "Safest",
+      "spec": "safest",
+      "provider": "local"
+    }
+  ]
+}

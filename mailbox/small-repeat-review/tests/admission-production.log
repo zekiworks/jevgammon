@@ -1,0 +1,28 @@
+2026-11-13T16:48:10Z jevgammon admit --db /home/cbasaran/code/jevgammon/v3.db --config leagues/glide-2b-r1.json (runner 6578a73; read-only, immutable; keys from ~/.keys, no request):
+ok       GLiDE 2B [repeat 1] (glide; league config): client built
+ok       GNUbg weak (gnubg-weak; league config): client built
+ok       Random (random; league config): client built
+ok       Safest (safest; league config): client built
+ok       Celeris-1 Decision (celeris/celeris-1-decision; players #44): client built
+ok       Fastino GLiDE (fastino; players #30): client built
+ok       Jev 1.13.0 (jev/jev-1.13.0; players #8): client built
+ok       Jev 1.14.0 (jev/jev-1.14.0; players #38): client built
+ok       Liquid d1-ultra (liquid/d1-ultra; players #27): client built
+ok       SubQ Snap Preview (subq/subq-snap-preview; players #32): client built
+admitted: all 10 clients of leagues/glide-2b-r1.json built (players: league config; pinned opponents: /home/cbasaran/code/jevgammon/v3.db players.settings, read immutably)
+admitted-settings {…} (record kept in the package as admitted-glide-2b-r1.json)
+exit 0
+2026-11-13T16:48:10Z jevgammon admit --db /home/cbasaran/code/jevgammon/v3.db --config leagues/minicpm5-2b-off-r1.json (runner 6578a73; read-only, immutable; keys from ~/.keys, no request):
+ok       MiniCPM5-2B (off) [repeat 1] (openai-compatible/minicpm5-2b; league config): client built
+ok       GNUbg weak (gnubg-weak; league config): client built
+ok       Random (random; league config): client built
+ok       Safest (safest; league config): client built
+ok       Celeris-1 Decision (celeris/celeris-1-decision; players #44): client built
+ok       Fastino GLiDE (fastino; players #30): client built
+ok       Jev 1.13.0 (jev/jev-1.13.0; players #8): client built
+ok       Jev 1.14.0 (jev/jev-1.14.0; players #38): client built
+ok       Liquid d1-ultra (liquid/d1-ultra; players #27): client built
+ok       SubQ Snap Preview (subq/subq-snap-preview; players #32): client built
+admitted: all 10 clients of leagues/minicpm5-2b-off-r1.json built (players: league config; pinned opponents: /home/cbasaran/code/jevgammon/v3.db players.settings, read immutably)
+admitted-settings {…} (record kept in the package as admitted-minicpm5-2b-off-r1.json)
+exit 0

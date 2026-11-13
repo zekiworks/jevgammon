@@ -1,0 +1,15 @@
+diff --git a/tools/site/content/held_setups.json b/tools/site/content/held_setups.json
+index 4c0abc7..e55d02c 100644
+--- a/tools/site/content/held_setups.json
++++ b/tools/site/content/held_setups.json
+@@ -45,7 +45,9 @@
+   "Liquid d1-ultra [repeat 1]": "reproducibility repeat (tools/v3/repeats, Zeki #4671): never shown as a setup; its result only in Experiments, Repeat checks",
+   "Drex Max 1.1 [repeat 1]": "reproducibility repeat (tools/v3/repeats, Zeki #4838): never shown as a setup; its result only in Experiments, Repeat checks",
+   "Fastino GLiDE v1.2 (local) [repeat 1]": "reproducibility repeat (tools/v3/repeats, Zeki #4838): never shown as a setup; its result only in Experiments, Repeat checks",
+-  "Gemini Decision 1 [repeat 1]": "reproducibility repeat (tools/v3/repeats, Zeki #5359): never shown as a setup; its result only in Experiments, Repeat checks"
++  "Gemini Decision 1 [repeat 1]": "reproducibility repeat (tools/v3/repeats, Zeki #5359): never shown as a setup; its result only in Experiments, Repeat checks",
++  "GLiDE 2B [repeat 1]": "reproducibility repeat (tools/v3/repeats, Ümit #6410): never shown as a setup; its result only in Experiments, Repeat checks",
++  "MiniCPM5-2B (off) [repeat 1]": "reproducibility repeat (tools/v3/repeats, Ümit #6410): never shown as a setup; its result only in Experiments, Repeat checks"
+  },
+  "running": {}
+ }

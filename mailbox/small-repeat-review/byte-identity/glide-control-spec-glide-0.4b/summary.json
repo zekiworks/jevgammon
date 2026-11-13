@@ -1,0 +1,126 @@
+{
+ "entrant": "GLiDE 2B",
+ "mode": "repeat",
+ "binary": "/home/cbasaran/code/jevgammon/target/small-repeat/release/jevgammon",
+ "binary_sha256": "79409d713a5992556d47dd06adf3a8d793fbea2eb039a178736b55dc1213615b",
+ "league_exit": "stopped at REPLAY_LEAGUE_TIMEOUT",
+ "seconds": 90.0,
+ "exchanges": {
+  "GLiDE 2B": {
+   "stored": 820,
+   "received": 47,
+   "identical": 46,
+   "received_not_stored": 1,
+   "warm_ups": 1,
+   "paths": {
+    "/v1/systemone": 47
+   }
+  },
+  "Fastino GLiDE": {
+   "stored": 117,
+   "received": 0,
+   "identical": 0,
+   "received_not_stored": 0,
+   "warm_ups": 0,
+   "paths": {}
+  },
+  "Celeris-1 Decision": {
+   "stored": 118,
+   "received": 44,
+   "identical": 44,
+   "received_not_stored": 0,
+   "warm_ups": 1,
+   "paths": {
+    "/v1/systemone": 44
+   }
+  },
+  "Liquid d1-ultra": {
+   "stored": 80,
+   "received": 0,
+   "identical": 0,
+   "received_not_stored": 0,
+   "warm_ups": 0,
+   "paths": {}
+  },
+  "Jev 1.14.0": {
+   "stored": 74,
+   "received": 0,
+   "identical": 0,
+   "received_not_stored": 0,
+   "warm_ups": 0,
+   "paths": {}
+  },
+  "Jev 1.13.0": {
+   "stored": 41,
+   "received": 0,
+   "identical": 0,
+   "received_not_stored": 0,
+   "warm_ups": 0,
+   "paths": {}
+  },
+  "SubQ Snap Preview": {
+   "stored": 128,
+   "received": 0,
+   "identical": 0,
+   "received_not_stored": 0,
+   "warm_ups": 0,
+   "paths": {}
+  }
+ },
+ "pairs": [
+  {
+   "opponent": "Fastino GLiDE",
+   "original": 1191,
+   "replay": null
+  },
+  {
+   "opponent": "Celeris-1 Decision",
+   "original": 1192,
+   "replay": 1,
+   "status": "aborted",
+   "seed_same": true,
+   "seat_same": true,
+   "score_same": false,
+   "turns": [
+    313,
+    107
+   ],
+   "turns_identical": false
+  },
+  {
+   "opponent": "GNUbg weak",
+   "original": 1193,
+   "replay": null
+  },
+  {
+   "opponent": "Random",
+   "original": 1194,
+   "replay": null
+  },
+  {
+   "opponent": "Safest",
+   "original": 1195,
+   "replay": null
+  },
+  {
+   "opponent": "Liquid d1-ultra",
+   "original": 1196,
+   "replay": null
+  },
+  {
+   "opponent": "Jev 1.14.0",
+   "original": 1197,
+   "replay": null
+  },
+  {
+   "opponent": "Jev 1.13.0",
+   "original": 1198,
+   "replay": null
+  },
+  {
+   "opponent": "SubQ Snap Preview",
+   "original": 1199,
+   "replay": null
+  }
+ ]
+}

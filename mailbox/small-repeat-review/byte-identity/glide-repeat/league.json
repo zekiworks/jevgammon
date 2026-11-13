@@ -1,0 +1,146 @@
+{
+  "note": "byte-identity replay of GLiDE 2B (repeat)",
+  "prompt_version": "bg-v2",
+  "seed": 2567889193785291627,
+  "order_seed": 1190975713392774006,
+  "rounds": 3,
+  "clock": 0,
+  "delay": 30,
+  "max_turns": 300,
+  "mirror_concurrent": true,
+  "only_pairs_of": "GLiDE 2B [repeat 1]",
+  "hidden": true,
+  "players": [
+    {
+      "name": "GLiDE 2B [repeat 1]",
+      "spec": "glide",
+      "provider": "local (glide.server)",
+      "quantization": "bf16",
+      "base_url": "http://127.0.0.1:47310",
+      "note": "Fastino's GLiDE 2B (Hugging Face fastino/GLiDE-2B @ 00f122c120cdeed82284106cb77d9bab5a50ad16, Fastino Community License) on our GPU through the server its repository ships (python -m glide.server; env ~/envs/glide-family: CPython 3.12.13, torch 2.14.0+cu130, transformers 5.17.0, flash-linear-attention 0.5.2), BF16, GLIDE_MAX_BATCH=1 (one request at a time), no model field (the server passes only state and questions to the model), 255-way code readout; 255 options per request (the league's rule; longer lists split); never truncates: a question prompt over GLIDE_MAX_LEN 40,000 tokens is refused (422). League 1's longest stored request (251 options) is 28,323 tokens of its tokenizer with the card's prompt; none over.",
+      "device": "NVIDIA GB10 (DGX Spark spark2, spark-d9ee), the whole GPU, handed over by logic one server at a time: GLIDE_MAX_BATCH=1 ~/envs/glide-family/bin/python -m glide.server --model <snapshot> --host 0.0.0.0 --port 19330",
+      "parallel": 1,
+      "max_matches": 1
+    },
+    {
+      "name": "Fastino GLiDE",
+      "spec": "fastino",
+      "provider": "fastino",
+      "note": "Fastino's hosted System One API; key added 2026-10-20",
+      "base_url": "http://127.0.0.1:47311"
+    },
+    {
+      "name": "Celeris-1 Decision",
+      "spec": "celeris/celeris-1-decision",
+      "provider": "celeris",
+      "price": {
+        "input_per_mtok": 0.04,
+        "output_per_mtok": 0.0
+      },
+      "note": "Celeris System One endpoint (inference.celeris.ai/celeris-1-decision); list price $0.04 per million input tokens, output free (docs.celeris.ai/pricing, 2026-10-10); probabilities come rounded to two decimals",
+      "parallel": 2,
+      "base_url": "http://127.0.0.1:47312"
+    },
+    {
+      "name": "GNUbg weak",
+      "spec": "gnubg-weak",
+      "provider": "local",
+      "note": "gnubg 1.08 Beginner level (0-ply, deterministic noise 0.060)",
+      "parallel": 1
+    },
+    {
+      "name": "Random",
+      "spec": "random",
+      "provider": "local"
+    },
+    {
+      "name": "Safest",
+      "spec": "safest",
+      "provider": "local"
+    },
+    {
+      "name": "Liquid d1-ultra",
+      "spec": "liquid/d1-ultra",
+      "provider": "liquid",
+      "price": {
+        "input_per_mtok": 0.042,
+        "output_per_mtok": 0.0
+      },
+      "note": "Liquid AI decisions API, paid tier; list price $0.042 per million input tokens (liquid.ai/blog/d1-ultra, 2026-10-15)",
+      "parallel": 2,
+      "base_url": "http://127.0.0.1:47313"
+    },
+    {
+      "name": "Jev 1.14.0",
+      "spec": "jev/jev-1.14.0",
+      "provider": "jev",
+      "price": {
+        "input_per_mtok": 0.042,
+        "output_per_mtok": 0.0
+      },
+      "note": "TypeSafe System One API; list price $0.042 per million input tokens, the same as 1.13.0 (docs.typesafe.ai/models, 2026-10-16)",
+      "parallel": 2,
+      "base_url": "http://127.0.0.1:47314"
+    },
+    {
+      "name": "Jev 1.13.0",
+      "spec": "jev/jev-1.13.0",
+      "provider": "jev",
+      "price": {
+        "input_per_mtok": 0.042,
+        "output_per_mtok": 0.0
+      },
+      "note": "TypeSafe System One API; list price $0.042 per million input tokens (typesafe.ai/blog/introducing-system-one-models-and-jev, 2026-10-08)",
+      "parallel": 2,
+      "base_url": "http://127.0.0.1:47315"
+    },
+    {
+      "name": "SubQ Snap Preview",
+      "spec": "subq/subq-snap-preview",
+      "provider": "subq",
+      "price": {
+        "input_per_mtok": 0.05,
+        "output_per_mtok": 0.0
+      },
+      "base_url": "http://127.0.0.1:47316"
+    }
+  ],
+  "pinned_pairs": {
+    "Fastino GLiDE": {
+      "seed": 15559919047369694697,
+      "seat_first": true
+    },
+    "Celeris-1 Decision": {
+      "seed": 12638547765721823431,
+      "seat_first": false
+    },
+    "GNUbg weak": {
+      "seed": 501093501360735733,
+      "seat_first": true
+    },
+    "Random": {
+      "seed": 15262185013302615528,
+      "seat_first": false
+    },
+    "Safest": {
+      "seed": 15302219383579835192,
+      "seat_first": true
+    },
+    "Liquid d1-ultra": {
+      "seed": 8844248524737138184,
+      "seat_first": true
+    },
+    "Jev 1.14.0": {
+      "seed": 6978671576940928040,
+      "seat_first": true
+    },
+    "Jev 1.13.0": {
+      "seed": 6498334176674890690,
+      "seat_first": false
+    },
+    "SubQ Snap Preview": {
+      "seed": 16741853251248079086,
+      "seat_first": false
+    }
+  }
+}

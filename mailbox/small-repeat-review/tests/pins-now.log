@@ -1,0 +1,6 @@
+2026-11-13T16:44:53Z
+glide-2b-r1: pinned server: not healthy (pins.sh healthy failed for http://192.168.1.131:19330) (curl: (7) Failed to connect to 192.168.1.131 port 19330 after 0 ms: Could not connect to server Traceback (most recent call last): File "<string>", line 1, in <module> File "/home/cbasaran/.pyenv/vers)
+exit 1
+2026-11-13T16:44:53Z
+minicpm5-2b-off-r1: pinned server: not healthy (pins.sh healthy failed for http://127.0.0.1:18614/v1)
+exit 1

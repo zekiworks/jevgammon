@@ -1,0 +1,86 @@
+[
+ {
+  "player": "Celeris-1 Decision",
+  "warm_up": false,
+  "matched": true,
+  "requests": 118
+ },
+ {
+  "player": "Celeris-1 Decision",
+  "warm_up": true,
+  "matched": false,
+  "requests": 1
+ },
+ {
+  "player": "Fastino GLiDE",
+  "warm_up": false,
+  "matched": true,
+  "requests": 117
+ },
+ {
+  "player": "Fastino GLiDE",
+  "warm_up": true,
+  "matched": false,
+  "requests": 1
+ },
+ {
+  "player": "GLiDE 2B",
+  "warm_up": false,
+  "matched": true,
+  "requests": 820
+ },
+ {
+  "player": "GLiDE 2B",
+  "warm_up": true,
+  "matched": false,
+  "requests": 9
+ },
+ {
+  "player": "Jev 1.13.0",
+  "warm_up": false,
+  "matched": true,
+  "requests": 41
+ },
+ {
+  "player": "Jev 1.13.0",
+  "warm_up": true,
+  "matched": false,
+  "requests": 1
+ },
+ {
+  "player": "Jev 1.14.0",
+  "warm_up": false,
+  "matched": true,
+  "requests": 74
+ },
+ {
+  "player": "Jev 1.14.0",
+  "warm_up": true,
+  "matched": false,
+  "requests": 1
+ },
+ {
+  "player": "Liquid d1-ultra",
+  "warm_up": false,
+  "matched": true,
+  "requests": 80
+ },
+ {
+  "player": "Liquid d1-ultra",
+  "warm_up": true,
+  "matched": false,
+  "requests": 1
+ },
+ {
+  "player": "SubQ Snap Preview",
+  "warm_up": false,
+  "matched": true,
+  "requests": 128
+ },
+ {
+  "player": "SubQ Snap Preview",
+  "warm_up": true,
+  "matched": false,
+  "requests": 1
+ }
+]

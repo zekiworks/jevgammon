@@ -1,0 +1,1455 @@
+{
+ "id": "minicpm5-2b-off-r1",
+ "run_id": "repeat-2026-11-13-minicpm5-2b-off-r1",
+ "name": "MiniCPM5-2B (off) [repeat 1]",
+ "display": "MiniCPM5-2B (off)",
+ "original": "MiniCPM5-2B (off)",
+ "original_player_id": 79,
+ "original_league": 39,
+ "original_stage": "late-entry",
+ "status": "queued",
+ "hold": null,
+ "prepared": "2026-11-13",
+ "started": null,
+ "finished": null,
+ "league_config": "tools/v3/repeats/leagues/minicpm5-2b-off-r1.json",
+ "status_file": "mailbox/repeats/minicpm5-2b-off-r1 - status.md",
+ "runner": {
+  "binary": "/home/cbasaran/code/jevgammon/target/small-repeat/release/jevgammon",
+  "binary_sha256": "79409d713a5992556d47dd06adf3a8d793fbea2eb039a178736b55dc1213615b",
+  "tree": "/home/cbasaran/code/jevgammon-small-repeat-runner",
+  "commit": "6578a73",
+  "commit_full": "6578a73694cc84233d8b3ed8b209f648232218bd",
+  "src_tree": "53e913702ba91019b31e0422bf34361805381277",
+  "build": {
+   "command": "cd /home/cbasaran/code/jevgammon-small-repeat-runner && CARGO_TARGET_DIR=/home/cbasaran/code/jevgammon/target/small-repeat cargo build --release --locked",
+   "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14), cargo 1.97.1 (c980f4866 2026-06-30)",
+   "built": "2026-11-13T16:32Z",
+   "tree": "git worktree add -b small-repeat-runner /home/cbasaran/code/jevgammon-small-repeat-runner 0e66836; src patches, commit 6578a73; checkout --detach (clean; only the untracked METADATA.worktree added)"
+  },
+  "inputs": {
+   "Cargo.toml": "bf64a9f15bd33cd3f5d517dc984140ff38fb9ec93c5d3a50eb0971f658c0ed4b",
+   "Cargo.lock": "d7048551c8907fd02c85f7ac8d8d2ffdc088ae4848bf313fc3c0f6e070d88494",
+   "tools/gnubg_player.py": "085601d706df41ddec7f1732428a2366c157aa58bb8e514b1cf1dd1b0f3f3aab",
+   "tools/v3/engine.py": "511ab4b2490732632f7e810f2e3da616fb5da4cd91d75eb2cf1ac4604e50e046",
+   "tools/v3/rules.py": "18dd032837ff061f64d2af32a5e7e813ad187b64f28a5a6e139f7695202f8480",
+   "tools/v3/order_vectors.json": "9efbb3ada083c02c51bdf74e539d48ee61b2f49e8d2f0fe58e29db8c6d8cb499",
+   "prompts/bg-v2.md": "3c59036a1f416f6187ccec06ec939e4d888a2029441daf30f6ee06a69015c465",
+   "prompts/nack-v2.md": "fa7397be6e9a7d337389a401d61464464bcbbe5725b8a2c70e01e6cb670395a8",
+   "prompts/bg-v3-std-notable.md": "1a145a09713fdd694696cb16d826406711567394697f0938300c285e4cba703f",
+   "prompts/bg-v3-nack.md": "13c744f06613f4051888af99bf9d1692011cb95d6f301c1898f94e13d67fef33",
+   "prompts/instructions.txt": "445735bf10ff30e4cc7f1a90dbeaa0c8858f0cf0b7bfe3f9dd3a0da1f1f0ec2d",
+   "prompts/instructions-notation.txt": "8565178e44a566f703fe1443f028ab2877d3d931b9ddef43547b92f9d1a7acdb",
+   "prompts/question.txt": "ef76def6baccec519ff9515c66b41d4c233b8e2927acf18115ad1e2e494211dc",
+   "prompts/letter-system.txt": "21059b268bae257dab3aa7f608d1545d9d6a610f6f2782fc4baa84e728a6c82e",
+   "prompts/prediction.txt": "cf3b989784a3b815fe1440589e2f212acc4e106ec4fe1e784d256ab58b128725",
+   "prompts/prediction-system.txt": "4d08045b72eeedc28602af09f82475a60bac768819d40a00a50601a661da332f",
+   "src/league/testdata/repeat_originals.json": "1e8611f27444c8e2429cd0998475dba52e5e21bdbd67e22ee51cfd282101a994",
+   "src/players/testdata/league8_request.json": "a285c55eb6e76c959801ec314305d0ee193131a2658da49926c9c73eccbee818"
+  },
+  "original": "171698f84a2e45b0dd7668d5749f72dfc0ce3712"
+ },
+ "attempts": [
+  {
+   "league": null,
+   "runner": {
+    "commit": "6578a73",
+    "commit_full": "6578a73694cc84233d8b3ed8b209f648232218bd",
+    "binary_sha256": "79409d713a5992556d47dd06adf3a8d793fbea2eb039a178736b55dc1213615b"
+   }
+  }
+ ],
+ "rules": {
+  "rounds": 3,
+  "clock_seconds": null,
+  "delay_seconds": null,
+  "max_turns": 300,
+  "prompt_version": "bg-v2",
+  "order_seed": 1190975713392774006,
+  "order_seed_u64": "1190975713392774006",
+  "mirror_concurrent": true,
+  "start_position": null
+ },
+ "settings_original": {
+  "name": "MiniCPM5-2B (off)",
+  "spec": "openai-compatible/minicpm5-2b",
+  "provider": "local-vllm",
+  "quantization": "bf16",
+  "base_url": "http://127.0.0.1:18614/v1",
+  "request": {
+   "chat_template_kwargs": {
+    "enable_thinking": false
+   }
+  },
+  "top_logprobs": 20,
+  "letter_readout": "prefill",
+  "note": "openbmb/MiniCPM5-2B @ 42433e90dad95123ab87729fd7011e7110629556, BF16, on our GPU through vLLM v0.30.0 (vllm/vllm-openai:v0.30.0) in BF16, --generation-config auto; logic's server (small_models.py key minicpm5-2b, port 18614, bariton GPU 1, #5080/#5091; ours alone after turkce's 'done') or ours on the same port and name (tools/v3/late-smallchat/serve.sh). thinking off (enable_thinking false); the letter is read from a prefilled Answer: (as Gemma 4 31B (off)); server reasoning split: vLLM reasoning parser qwen3 (no reasoning generated). Sampling: League 1's local chat rule, per request: temperature 1.0 from the chat client, everything else the server's default (generation_config.json via --generation-config auto, else vLLM neutral), no seed; it differs from logic's Logic & Math runs: logic sends temperature 1.0, top_p 0.95, seed 0 (ours: the same temperature and top_p from generation_config.json; no seed). Output cap 1 token (prefill readout). Up to 16 matches and 16 requests at once, League 1's rule for its local chat setups (the server is ours alone after turkce's 'done'). Late entry v the original League 1 table (tools/v3/late-smallchat; Zeki #5064/#5071/#5073; Main's decisions 12 Nov)",
+  "device": "RTX PRO 6000 (bariton), one GPU",
+  "parallel": 16,
+  "max_matches": 16
+ },
+ "settings_repeat": {
+  "name": "MiniCPM5-2B (off) [repeat 1]",
+  "spec": "openai-compatible/minicpm5-2b",
+  "provider": "local-vllm",
+  "quantization": "bf16",
+  "base_url": "http://127.0.0.1:18614/v1",
+  "request": {
+   "chat_template_kwargs": {
+    "enable_thinking": false
+   }
+  },
+  "top_logprobs": 20,
+  "letter_readout": "prefill",
+  "note": "openbmb/MiniCPM5-2B @ 42433e90dad95123ab87729fd7011e7110629556, BF16, on our GPU through vLLM v0.30.0 (vllm/vllm-openai:v0.30.0) in BF16, --generation-config auto; logic's server (small_models.py key minicpm5-2b, port 18614, bariton GPU 1, #5080/#5091; ours alone after turkce's 'done') or ours on the same port and name (tools/v3/late-smallchat/serve.sh). thinking off (enable_thinking false); the letter is read from a prefilled Answer: (as Gemma 4 31B (off)); server reasoning split: vLLM reasoning parser qwen3 (no reasoning generated). Sampling: League 1's local chat rule, per request: temperature 1.0 from the chat client, everything else the server's default (generation_config.json via --generation-config auto, else vLLM neutral), no seed; it differs from logic's Logic & Math runs: logic sends temperature 1.0, top_p 0.95, seed 0 (ours: the same temperature and top_p from generation_config.json; no seed). Output cap 1 token (prefill readout). Up to 16 matches and 16 requests at once, League 1's rule for its local chat setups (the server is ours alone after turkce's 'done'). Late entry v the original League 1 table (tools/v3/late-smallchat; Zeki #5064/#5071/#5073; Main's decisions 12 Nov) Reproducibility repeat 1 (minicpm5-2b-off-r1; tools/v3/repeats, mailbox/repeats/manifest-2026-11-11.json): the original's League 1 field again, up to 16 matches at once, as the original, each pair with its original match's seed and seats; held: in no standings, table, Cup input or other setup's numbers.",
+  "device": "RTX PRO 6000 (bariton), one GPU",
+  "parallel": 16,
+  "max_matches": 16
+ },
+ "settings_changed": [
+  "name",
+  "note"
+ ],
+ "server": {
+  "kind": "pinned",
+  "mib": 0,
+  "health": "http://127.0.0.1:18614/v1/models",
+  "pins": {
+   "source": "late-smallchat 171698f tools/v3/late-smallchat/pins.sh (blob 5081854) and models.json (blob 8ce1456), KEY minicpm5-2b-off",
+   "files": {
+    "pins.sh": "d203ff05f756c674c780f66561317fb18f0219bd0099a1479045975f075b80e4",
+    "models.json": "3dfc6278885bcf5cea810d423247f88eadd953acb1453d49b80b7e6dbeb8040b"
+   },
+   "env": {
+    "KEY": "minicpm5-2b-off",
+    "URL": "http://127.0.0.1:18614/v1",
+    "PORT": "18614",
+    "SERVED": "minicpm5-2b"
+   }
+  },
+  "smoke": "S=workspace/repeats/minicpm5-2b-off-r1/smoke.db; rm -f $S && /home/cbasaran/code/jevgammon/target/small-repeat/release/jevgammon ask --config /home/cbasaran/code/jevgammon-small-repeat/tools/v3/repeats/smoke/minicpm5-2b-off-r1.json --positions /home/cbasaran/code/jevgammon/positions/smoke.jsonl --setup 'MiniCPM5-2B (off)' --out $S --time-limit 600 && n=$(sqlite3 $S \"SELECT count(*) FROM answers WHERE setup = 'MiniCPM5-2B (off)' AND error IS NULL AND COALESCE(invalid, 0) = 0 AND probabilities IS NOT NULL\") && echo \"$n/50 answered with probabilities\" && [ \"$n\" = 50 ]",
+  "provenance": "logic's small_models.py vLLM server (key minicpm5-2b, port 18614, bariton GPU 1; vllm/vllm-openai:v0.30.0, BF16, --generation-config auto), served name minicpm5-2b, openbmb/MiniCPM5-2B @ 42433e90; pinned by its late entry's pins.sh (healthy: /v1/models lists minicpm5-2b; pinned: the docker container on port 18614 runs openbmb/MiniCPM5-2B --revision 42433e90… (or its snapshot), --dtype bfloat16, --max-model-len >= 38,000). Never started or stopped here; thinking off per request (chat_template_kwargs). Smoke: jevgammon ask on the 50 smoke positions (smoke/minicpm5-2b-off-r1.json, the original's settings)",
+  "measured": "none of ours (logic's container on bariton GPU 1)",
+  "start": null,
+  "stop": null
+ },
+ "coverage_original": {
+  "played": 9,
+  "of": 19,
+  "not_played": [
+   {
+    "opponent": "Clef",
+    "match": null,
+    "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
+   },
+   {
+    "opponent": "Cygnet (Gemma 4 12B)",
+    "match": null,
+    "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
+   },
+   {
+    "opponent": "Decider Flash v1.2",
+    "match": null,
+    "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
+   },
+   {
+    "opponent": "Decider v1.1 27B",
+    "match": null,
+    "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
+   },
+   {
+    "opponent": "Decider v1.2 27B",
+    "match": null,
+    "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
+   },
+   {
+    "opponent": "Fastino GLiDE v1.2 (local)",
+    "match": null,
+    "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
+   },
+   {
+    "opponent": "GPT-6 Luna",
+    "match": null,
+    "reason": "not required (Ümit #6410: only the pairs the original played); never scheduled: OpenAI Decisions out of credit (start.sh: deferred)"
+   },
+   {
+    "opponent": "Mercury Decide",
+    "match": 1172,
+    "reason": "not required (Ümit #6410: only the pairs the original played); #1172 aborted at its warm-up, no game: no OpenRouter endpoint for inception/mercury-decide"
+   },
+   {
+    "opponent": "Open-Jev 27B v1.1",
+    "match": null,
+    "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
+   },
+   {
+    "opponent": "Winnow-12B",
+    "match": null,
+    "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
+   }
+  ]
+ },
+ "coverage_repeat_today": {
+  "playable": 9,
+  "of": 19,
+  "blocked": [],
+  "not_in_original": [
+   {
+    "opponent": "Clef",
+    "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)",
+    "today": null
+   },
+   {
+    "opponent": "Cygnet (Gemma 4 12B)",
+    "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)",
+    "today": null
+   },
+   {
+    "opponent": "Decider Flash v1.2",
+    "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)",
+    "today": null
+   },
+   {
+    "opponent": "Decider v1.1 27B",
+    "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)",
+    "today": null
+   },
+   {
+    "opponent": "Decider v1.2 27B",
+    "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)",
+    "today": null
+   },
+   {
+    "opponent": "Fastino GLiDE v1.2 (local)",
+    "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)",
+    "today": null
+   },
+   {
+    "opponent": "GPT-6 Luna",
+    "reason": "not required (Ümit #6410: only the pairs the original played); never scheduled: OpenAI Decisions out of credit (start.sh: deferred)",
+    "today": "no credit: OpenAI Decisions answers 429 'no credits remaining' (Drex #829/#835/#846/#886, REAX, Muse Ember and KnowLine runs: deferred); a top-up needs Can"
+   },
+   {
+    "opponent": "Mercury Decide",
+    "reason": "not required (Ümit #6410: only the pairs the original played); #1172 aborted at its warm-up, no game: no OpenRouter endpoint for inception/mercury-decide",
+    "today": "no OpenRouter endpoint: 404 'No endpoints found for inception/mercury-decide' at warm-up (Muse Ember #932, 2026-11-10 15:57 UTC; KnowLine #946, 2026-11-10 23:55 UTC)"
+   },
+   {
+    "opponent": "Open-Jev 27B v1.1",
+    "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)",
+    "today": null
+   },
+   {
+    "opponent": "Winnow-12B",
+    "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)",
+    "today": null
+   }
+  ],
+  "unpinned": [
+   "Clef",
+   "Cygnet (Gemma 4 12B)",
+   "Decider Flash v1.2",
+   "Decider v1.1 27B",
+   "Decider v1.2 27B",
+   "Fastino GLiDE v1.2 (local)",
+   "GPT-6 Luna",
+   "Mercury Decide",
+   "Open-Jev 27B v1.1",
+   "Winnow-12B"
+  ]
+ },
+ "coverage_required": {
+  "rule": "only the pairs the original played are repeated (Ümit #6410): GPT-6 Luna, Mercury Decide (aborted at its warm-up) and the 8 local setups are not required",
+  "required": 9,
+  "history_played": 9,
+  "pinned": 9,
+  "playable_today": 9,
+  "matched_fixtures": 9,
+  "not_required": [
+   {
+    "opponent": "GPT-6 Luna",
+    "match": null,
+    "reason": "not required (Ümit #6410: only the pairs the original played); never scheduled: OpenAI Decisions out of credit (start.sh: deferred)"
+   },
+   {
+    "opponent": "Decider Flash v1.2",
+    "match": null,
+    "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
+   },
+   {
+    "opponent": "Winnow-12B",
+    "match": null,
+    "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
+   },
+   {
+    "opponent": "Cygnet (Gemma 4 12B)",
+    "match": null,
+    "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
+   },
+   {
+    "opponent": "Decider v1.1 27B",
+    "match": null,
+    "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
+   },
+   {
+    "opponent": "Decider v1.2 27B",
+    "match": null,
+    "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
+   },
+   {
+    "opponent": "Fastino GLiDE v1.2 (local)",
+    "match": null,
+    "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
+   },
+   {
+    "opponent": "Open-Jev 27B v1.1",
+    "match": null,
+    "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
+   },
+   {
+    "opponent": "Clef",
+    "match": null,
+    "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
+   },
+   {
+    "opponent": "Mercury Decide",
+    "match": 1172,
+    "reason": "not required (Ümit #6410: only the pairs the original played); #1172 aborted at its warm-up, no game: no OpenRouter endpoint for inception/mercury-decide"
+   }
+  ],
+  "missing": {
+   "history": [],
+   "pins": [],
+   "today": [],
+   "fixtures": []
+  }
+ },
+ "cost_basis": {
+  "method": "Each playable pair's billed cost in the original match: the paid opponent's recorded cost_usd (Fastino GLiDE: input tokens x $0.04/M); MiniCPM5-2B (off) (logic's server) and the programs bill nothing.",
+  "pairs": {
+   "Fastino GLiDE": {
+    "opponent": 0.0198,
+    "original": null
+   },
+   "Jev 1.14.0": {
+    "opponent": 0.0181,
+    "original": null
+   },
+   "Jev 1.13.0": {
+    "opponent": 0.0138,
+    "original": null
+   },
+   "Celeris-1 Decision": {
+    "opponent": 0.0169,
+    "original": null
+   },
+   "SubQ Snap Preview": {
+    "opponent": 0.0194,
+    "original": null
+   },
+   "Liquid d1-ultra": {
+    "opponent": 0.0193,
+    "original": null
+   }
+  },
+  "estimate_usd": 0.1073,
+  "opponents_usd": 0.1073,
+  "entrant_usd": 0,
+  "cap_usd": 5.0
+ },
+ "time": {
+  "method": "Sum of each playable pair's original match duration (start to finish; the originals ran several matches at once, so one at a time is about this or less), plus server starts.",
+  "minutes_matches": {
+   "program": 1.0,
+   "api": 3.2,
+   "local": 0
+  },
+  "minutes_total_matches": 4.2,
+  "server_starts": "entrant: none (logic's vLLM container, already up); no local opponent"
+ },
+ "gpu_plan": {
+  "entrant_mib": 0,
+  "entrant_measured": "none of ours (logic's container on bariton GPU 1)",
+  "fits_beside_entrant": [
+   "Decider Flash v1.2",
+   "Winnow-12B",
+   "Cygnet (Gemma 4 12B)",
+   "Decider v1.1 27B",
+   "Decider v1.2 27B",
+   "Fastino GLiDE v1.2 (local)",
+   "Open-Jev 27B v1.1",
+   "Clef"
+  ],
+  "needs_second_gpu": [],
+  "note": "MiniCPM5-2B (off) runs on logic's container (no card of ours) and no local opponent is repeated: no GPU."
+ },
+ "differences": [
+  "Name: '<original> [repeat 1]', a new players row; settings otherwise as the original's (the changed fields are listed under Settings); its 9 pairs at once as in the original (players.settings max_matches 16, parallel 16: run.sh adds every paid opponent before the league plays, as the original's league held them all).",
+  "Runner: the original ran 171698f (late-smallchat, target/smallchat (clean; its src is origin/main's 18cc78d); the repeat runs 6578a73 (branch small-repeat-runner): the repeats' runner 0e66836 (origin/late-reax line: decision clients reax, baselabs, drex-max, drex-local, nace and a pre-send budget ledger for decision services and openai-compatible chat, none used by this field; the pinned-pairs change 4ca4f08; admit) with late-tiny8-small3 8ebad40's decision clients and late-smallchat-on a083fb4's reasoning_prefill / reasoning_field keys (unused here). Every request of the original's 9 matches replays byte for byte: MiniCPM5-2B (off) 1,300 of 1,300 requests, its opponents 676 of 676 (mailbox/small-repeat-review/byte-identity). Same prompt version bg-v2, option-order seed and rules.",
+  "Server: logic's vLLM container, pinned and checked as in the original (pins.sh healthy and pinned before any write and every minute, 3 failures in a row stop); the original's guard checked pinned once at its start. Its pins.sh checks the checkpoint, revision, dtype and context, not the vLLM image."
+ ],
+ "start": [
+  "systemd-run --user --unit=repeat-minicpm5-2b-off-r1 --working-directory=/home/cbasaran/code/jevgammon /home/cbasaran/code/jevgammon-small-repeat/tools/v3/repeats/run.sh minicpm5-2b-off-r1"
+ ],
+ "pairs": [
+  {
+   "opponent": "Fastino GLiDE",
+   "kind": "api",
+   "original_match": 1171,
+   "status": "finished",
+   "error": null,
+   "seed": 2919656595479347799,
+   "seed_u64": "2919656595479347799",
+   "original_is_player1": false,
+   "model1": "Fastino GLiDE",
+   "model2": "MiniCPM5-2B (off)",
+   "rules": {
+    "rounds": 3,
+    "clock_seconds": null,
+    "delay_seconds": null,
+    "max_turns": 300,
+    "prompt_version": "bg-v2",
+    "order_seed": 1190975713392774006,
+    "order_seed_u64": "1190975713392774006",
+    "mirror_concurrent": true,
+    "start_position": null
+   },
+   "harness": {
+    "commit": "171698f84a2e45b0dd7668d5749f72dfc0ce3712",
+    "dirty": false
+   },
+   "started": "2026-11-12T13:47:39.022Z",
+   "finished": "2026-11-12T13:48:26.640Z",
+   "minutes": 0.8,
+   "score_for": 3,
+   "score_against": 4,
+   "games": [
+    {
+     "round": 1,
+     "leg": 1,
+     "white_player": 1,
+     "dice_seed": 2161927558890356053,
+     "dice_seed_u64": "2161927558890356053",
+     "opening": [
+      4,
+      2
+     ],
+     "result": "single",
+     "points": 1,
+     "turns": 47
+    },
+    {
+     "round": 1,
+     "leg": 2,
+     "white_player": 2,
+     "dice_seed": 2161927558890356053,
+     "dice_seed_u64": "2161927558890356053",
+     "opening": [
+      4,
+      2
+     ],
+     "result": "single",
+     "points": 1,
+     "turns": 50
+    },
+    {
+     "round": 2,
+     "leg": 1,
+     "white_player": 1,
+     "dice_seed": -8687256244996182685,
+     "dice_seed_u64": "9759487828713368931",
+     "opening": [
+      3,
+      5
+     ],
+     "result": "single",
+     "points": 1,
+     "turns": 55
+    },
+    {
+     "round": 2,
+     "leg": 2,
+     "white_player": 2,
+     "dice_seed": -8687256244996182685,
+     "dice_seed_u64": "9759487828713368931",
+     "opening": [
+      3,
+      5
+     ],
+     "result": "single",
+     "points": 1,
+     "turns": 43
+    },
+    {
+     "round": 3,
+     "leg": 1,
+     "white_player": 1,
+     "dice_seed": -6317009214413206525,
+     "dice_seed_u64": "12129734859296345091",
+     "opening": [
+      1,
+      3
+     ],
+     "result": "gammon",
+     "points": 2,
+     "turns": 55
+    },
+    {
+     "round": 3,
+     "leg": 2,
+     "white_player": 2,
+     "dice_seed": -6317009214413206525,
+     "dice_seed_u64": "12129734859296345091",
+     "opening": [
+      1,
+      3
+     ],
+     "result": "single",
+     "points": 1,
+     "turns": 59
+    }
+   ],
+   "decisions": {
+    "original": 128,
+    "opponent": 124
+   },
+   "billed_usd": {
+    "opponent": 0.0198,
+    "original": null
+   },
+   "blocked_today": null
+  },
+  {
+   "opponent": "Jev 1.14.0",
+   "kind": "api",
+   "original_match": 1173,
+   "status": "finished",
+   "error": null,
+   "seed": -6228112901277551766,
+   "seed_u64": "12218631172431999850",
+   "original_is_player1": false,
+   "model1": "Jev 1.14.0",
+   "model2": "MiniCPM5-2B (off)",
+   "rules": {
+    "rounds": 3,
+    "clock_seconds": null,
+    "delay_seconds": null,
+    "max_turns": 300,
+    "prompt_version": "bg-v2",
+    "order_seed": 1190975713392774006,
+    "order_seed_u64": "1190975713392774006",
+    "mirror_concurrent": true,
+    "start_position": null
+   },
+   "harness": {
+    "commit": "171698f84a2e45b0dd7668d5749f72dfc0ce3712",
+    "dirty": false
+   },
+   "started": "2026-11-12T13:47:39.037Z",
+   "finished": "2026-11-12T13:48:02.385Z",
+   "minutes": 0.4,
+   "score_for": 1,
+   "score_against": 5,
+   "games": [
+    {
+     "round": 1,
+     "leg": 1,
+     "white_player": 1,
+     "dice_seed": 7260878121274415580,
+     "dice_seed_u64": "7260878121274415580",
+     "opening": [
+      3,
+      6
+     ],
+     "result": "single",
+     "points": 1,
+     "turns": 52
+    },
+    {
+     "round": 1,
+     "leg": 2,
+     "white_player": 2,
+     "dice_seed": 7260878121274415580,
+     "dice_seed_u64": "7260878121274415580",
+     "opening": [
+      3,
+      6
+     ],
+     "result": "single",
+     "points": 1,
+     "turns": 61
+    },
+    {
+     "round": 2,
+     "leg": 1,
+     "white_player": 1,
+     "dice_seed": 7418278430297283145,
+     "dice_seed_u64": "7418278430297283145",
+     "opening": [
+      6,
+      1
+     ],
+     "result": "single",
+     "points": 1,
+     "turns": 49
+    },
+    {
+     "round": 2,
+     "leg": 2,
+     "white_player": 2,
+     "dice_seed": 7418278430297283145,
+     "dice_seed_u64": "7418278430297283145",
+     "opening": [
+      6,
+      1
+     ],
+     "result": "single",
+     "points": 1,
+     "turns": 45
+    },
+    {
+     "round": 3,
+     "leg": 1,
+     "white_player": 1,
+     "dice_seed": -2141640515106225150,
+     "dice_seed_u64": "16305103558603326466",
+     "opening": [
+      4,
+      5
+     ],
+     "result": "single",
+     "points": 1,
+     "turns": 44
+    },
+    {
+     "round": 3,
+     "leg": 2,
+     "white_player": 2,
+     "dice_seed": -2141640515106225150,
+     "dice_seed_u64": "16305103558603326466",
+     "opening": [
+      4,
+      5
+     ],
+     "result": "single",
+     "points": 1,
+     "turns": 35
+    }
+   ],
+   "decisions": {
+    "original": 101,
+    "opponent": 113
+   },
+   "billed_usd": {
+    "opponent": 0.0181,
+    "original": null
+   },
+   "blocked_today": null
+  },
+  {
+   "opponent": "Jev 1.13.0",
+   "kind": "api",
+   "original_match": 1174,
+   "status": "finished",
+   "error": null,
+   "seed": -7252618160719997970,
+   "seed_u64": "11194125912989553646",
+   "original_is_player1": false,
+   "model1": "Jev 1.13.0",
+   "model2": "MiniCPM5-2B (off)",
+   "rules": {
+    "rounds": 3,
+    "clock_seconds": null,
+    "delay_seconds": null,
+    "max_turns": 300,
+    "prompt_version": "bg-v2",
+    "order_seed": 1190975713392774006,
+    "order_seed_u64": "1190975713392774006",
+    "mirror_concurrent": true,
+    "start_position": null
+   },
+   "harness": {
+    "commit": "171698f84a2e45b0dd7668d5749f72dfc0ce3712",
+    "dirty": false
+   },
+   "started": "2026-11-12T13:47:39.052Z",
+   "finished": "2026-11-12T13:47:59.077Z",
+   "minutes": 0.3,
+   "score_for": 2,
+   "score_against": 5,
+   "games": [
+    {
+     "round": 1,
+     "leg": 1,
+     "white_player": 1,
+     "dice_seed": 1326227046277751882,
+     "dice_seed_u64": "1326227046277751882",
+     "opening": [
+      3,
+      4
+     ],
+     "result": "backgammon",
+     "points": 3,
+     "turns": 46
+    },
+    {
+     "round": 1,
+     "leg": 2,
+     "white_player": 2,
+     "dice_seed": 1326227046277751882,
+     "dice_seed_u64": "1326227046277751882",
+     "opening": [
+      3,
+      4
+     ],
+     "result": "single",
+     "points": 1,
+     "turns": 44
+    },
+    {
+     "round": 2,
+     "leg": 1,
+     "white_player": 1,
+     "dice_seed": 5724415115617975953,
+     "dice_seed_u64": "5724415115617975953",
+     "opening": [
+      4,
+      2
+     ],
+     "result": "gammon",
+     "points": 2,
+     "turns": 55
+    },
+    {
+     "round": 2,
+     "leg": 2,
+     "white_player": 2,
+     "dice_seed": 5724415115617975953,
+     "dice_seed_u64": "5724415115617975953",
+     "opening": [
+      4,
+      2
+     ],
+     "result": "single",
+     "points": 1,
+     "turns": 61
+    }
+   ],
+   "decisions": {
+    "original": 82,
+    "opponent": 82
+   },
+   "billed_usd": {
+    "opponent": 0.0138,
+    "original": null
+   },
+   "blocked_today": null
+  },
+  {
+   "opponent": "Celeris-1 Decision",
+   "kind": "api",
+   "original_match": 1175,
+   "status": "finished",
+   "error": null,
+   "seed": -7176481776803923642,
+   "seed_u64": "11270262296905627974",
+   "original_is_player1": false,
+   "model1": "Celeris-1 Decision",
+   "model2": "MiniCPM5-2B (off)",
+   "rules": {
+    "rounds": 3,
+    "clock_seconds": null,
+    "delay_seconds": null,
+    "max_turns": 300,
+    "prompt_version": "bg-v2",
+    "order_seed": 1190975713392774006,
+    "order_seed_u64": "1190975713392774006",
+    "mirror_concurrent": true,
+    "start_position": null
+   },
+   "harness": {
+    "commit": "171698f84a2e45b0dd7668d5749f72dfc0ce3712",
+    "dirty": false
+   },
+   "started": "2026-11-12T13:47:39.072Z",
+   "finished": "2026-11-12T13:48:05.627Z",
+   "minutes": 0.4,
+   "score_for": 2,
+   "score_against": 4,
+   "games": [
+    {
+     "round": 1,
+     "leg": 1,
+     "white_player": 1,
+     "dice_seed": -2654051561809790797,
+     "dice_seed_u64": "15792692511899760819",
+     "opening": [
+      5,
+      3
+     ],
+     "result": "single",
+     "points": 1,
+     "turns": 48
+    },
+    {
+     "round": 1,
+     "leg": 2,
+     "white_player": 2,
+     "dice_seed": -2654051561809790797,
+     "dice_seed_u64": "15792692511899760819",
+     "opening": [
+      5,
+      3
+     ],
+     "result": "single",
+     "points": 1,
+     "turns": 42
+    },
+    {
+     "round": 2,
+     "leg": 1,
+     "white_player": 1,
+     "dice_seed": 4243364445793370587,
+     "dice_seed_u64": "4243364445793370587",
+     "opening": [
+      3,
+      6
+     ],
+     "result": "single",
+     "points": 1,
+     "turns": 47
+    },
+    {
+     "round": 2,
+     "leg": 2,
+     "white_player": 2,
+     "dice_seed": 4243364445793370587,
+     "dice_seed_u64": "4243364445793370587",
+     "opening": [
+      3,
+      6
+     ],
+     "result": "single",
+     "points": 1,
+     "turns": 43
+    },
+    {
+     "round": 3,
+     "leg": 1,
+     "white_player": 1,
+     "dice_seed": -920473815722014276,
+     "dice_seed_u64": "17526270257987537340",
+     "opening": [
+      5,
+      6
+     ],
+     "result": "single",
+     "points": 1,
+     "turns": 46
+    },
+    {
+     "round": 3,
+     "leg": 2,
+     "white_player": 2,
+     "dice_seed": -920473815722014276,
+     "dice_seed_u64": "17526270257987537340",
+     "opening": [
+      5,
+      6
+     ],
+     "result": "single",
+     "points": 1,
+     "turns": 43
+    }
+   ],
+   "decisions": {
+    "original": 116,
+    "opponent": 112
+   },
+   "billed_usd": {
+    "opponent": 0.0169,
+    "original": null
+   },
+   "blocked_today": null
+  },
+  {
+   "opponent": "Safest",
+   "kind": "program",
+   "original_match": 1176,
+   "status": "finished",
+   "error": null,
+   "seed": 5754350776924833690,
+   "seed_u64": "5754350776924833690",
+   "original_is_player1": true,
+   "model1": "MiniCPM5-2B (off)",
+   "model2": "Safest",
+   "rules": {
+    "rounds": 3,
+    "clock_seconds": null,
+    "delay_seconds": null,
+    "max_turns": 300,
+    "prompt_version": "bg-v2",
+    "order_seed": 1190975713392774006,
+    "order_seed_u64": "1190975713392774006",
+    "mirror_concurrent": true,
+    "start_position": null
+   },
+   "harness": {
+    "commit": "171698f84a2e45b0dd7668d5749f72dfc0ce3712",
+    "dirty": false
+   },
+   "started": "2026-11-12T13:47:39.122Z",
+   "finished": "2026-11-12T13:47:54.463Z",
+   "minutes": 0.3,
+   "score_for": 0,
+   "score_against": 5,
+   "games": [
+    {
+     "round": 1,
+     "leg": 1,
+     "white_player": 1,
+     "dice_seed": -3541933321370097380,
+     "dice_seed_u64": "14904810752339454236",
+     "opening": [
+      3,
+      1
+     ],
+     "result": "gammon",
+     "points": 2,
+     "turns": 48
+    },
+    {
+     "round": 1,
+     "leg": 2,
+     "white_player": 2,
+     "dice_seed": -3541933321370097380,
+     "dice_seed_u64": "14904810752339454236",
+     "opening": [
+      3,
+      1
+     ],
+     "result": "single",
+     "points": 1,
+     "turns": 61
+    },
+    {
+     "round": 2,
+     "leg": 1,
+     "white_player": 1,
+     "dice_seed": -8492378083615820606,
+     "dice_seed_u64": "9954365990093731010",
+     "opening": [
+      5,
+      1
+     ],
+     "result": "single",
+     "points": 1,
+     "turns": 54
+    },
+    {
+     "round": 2,
+     "leg": 2,
+     "white_player": 2,
+     "dice_seed": -8492378083615820606,
+     "dice_seed_u64": "9954365990093731010",
+     "opening": [
+      5,
+      1
+     ],
+     "result": "single",
+     "points": 1,
+     "turns": 47
+    }
+   ],
+   "decisions": {
+    "original": 85,
+    "opponent": 75
+   },
+   "billed_usd": {
+    "opponent": null,
+    "original": null
+   },
+   "blocked_today": null
+  },
+  {
+   "opponent": "GNUbg weak",
+   "kind": "program",
+   "original_match": 1177,
+   "status": "finished",
+   "error": null,
+   "seed": 1681289006452444015,
+   "seed_u64": "1681289006452444015",
+   "original_is_player1": true,
+   "model1": "MiniCPM5-2B (off)",
+   "model2": "GNUbg weak",
+   "rules": {
+    "rounds": 3,
+    "clock_seconds": null,
+    "delay_seconds": null,
+    "max_turns": 300,
+    "prompt_version": "bg-v2",
+    "order_seed": 1190975713392774006,
+    "order_seed_u64": "1190975713392774006",
+    "mirror_concurrent": true,
+    "start_position": null
+   },
+   "harness": {
+    "commit": "171698f84a2e45b0dd7668d5749f72dfc0ce3712",
+    "dirty": false
+   },
+   "started": "2026-11-12T13:47:39.147Z",
+   "finished": "2026-11-12T13:48:00.294Z",
+   "minutes": 0.4,
+   "score_for": 2,
+   "score_against": 7,
+   "games": [
+    {
+     "round": 1,
+     "leg": 1,
+     "white_player": 1,
+     "dice_seed": 5117903876743035782,
+     "dice_seed_u64": "5117903876743035782",
+     "opening": [
+      3,
+      1
+     ],
+     "result": "single",
+     "points": 1,
+     "turns": 65
+    },
+    {
+     "round": 1,
+     "leg": 2,
+     "white_player": 2,
+     "dice_seed": 5117903876743035782,
+     "dice_seed_u64": "5117903876743035782",
+     "opening": [
+      3,
+      1
+     ],
+     "result": "single",
+     "points": 1,
+     "turns": 51
+    },
+    {
+     "round": 2,
+     "leg": 1,
+     "white_player": 1,
+     "dice_seed": -918253055663979220,
+     "dice_seed_u64": "17528491018045572396",
+     "opening": [
+      6,
+      1
+     ],
+     "result": "single",
+     "points": 1,
+     "turns": 45
+    },
+    {
+     "round": 2,
+     "leg": 2,
+     "white_player": 2,
+     "dice_seed": -918253055663979220,
+     "dice_seed_u64": "17528491018045572396",
+     "opening": [
+      6,
+      1
+     ],
+     "result": "gammon",
+     "points": 2,
+     "turns": 57
+    },
+    {
+     "round": 3,
+     "leg": 1,
+     "white_player": 1,
+     "dice_seed": 8476578272582588215,
+     "dice_seed_u64": "8476578272582588215",
+     "opening": [
+      6,
+      3
+     ],
+     "result": "gammon",
+     "points": 2,
+     "turns": 42
+    },
+    {
+     "round": 3,
+     "leg": 2,
+     "white_player": 2,
+     "dice_seed": 8476578272582588215,
+     "dice_seed_u64": "8476578272582588215",
+     "opening": [
+      6,
+      3
+     ],
+     "result": "gammon",
+     "points": 2,
+     "turns": 57
+    }
+   ],
+   "decisions": {
+    "original": 121,
+    "opponent": 121
+   },
+   "billed_usd": {
+    "opponent": null,
+    "original": null
+   },
+   "blocked_today": null
+  },
+  {
+   "opponent": "Random",
+   "kind": "program",
+   "original_match": 1178,
+   "status": "finished",
+   "error": null,
+   "seed": 8602035541704542871,
+   "seed_u64": "8602035541704542871",
+   "original_is_player1": true,
+   "model1": "MiniCPM5-2B (off)",
+   "model2": "Random",
+   "rules": {
+    "rounds": 3,
+    "clock_seconds": null,
+    "delay_seconds": null,
+    "max_turns": 300,
+    "prompt_version": "bg-v2",
+    "order_seed": 1190975713392774006,
+    "order_seed_u64": "1190975713392774006",
+    "mirror_concurrent": true,
+    "start_position": null
+   },
+   "harness": {
+    "commit": "171698f84a2e45b0dd7668d5749f72dfc0ce3712",
+    "dirty": false
+   },
+   "started": "2026-11-12T13:47:39.197Z",
+   "finished": "2026-11-12T13:47:56.794Z",
+   "minutes": 0.3,
+   "score_for": 5,
+   "score_against": 1,
+   "games": [
+    {
+     "round": 1,
+     "leg": 1,
+     "white_player": 1,
+     "dice_seed": -8842620369264063994,
+     "dice_seed_u64": "9604123704445487622",
+     "opening": [
+      1,
+      6
+     ],
+     "result": "gammon",
+     "points": 2,
+     "turns": 62
+    },
+    {
+     "round": 1,
+     "leg": 2,
+     "white_player": 2,
+     "dice_seed": -8842620369264063994,
+     "dice_seed_u64": "9604123704445487622",
+     "opening": [
+      1,
+      6
+     ],
+     "result": "single",
+     "points": 1,
+     "turns": 67
+    },
+    {
+     "round": 2,
+     "leg": 1,
+     "white_player": 1,
+     "dice_seed": -1388584363731294525,
+     "dice_seed_u64": "17058159709978257091",
+     "opening": [
+      4,
+      5
+     ],
+     "result": "single",
+     "points": 1,
+     "turns": 67
+    },
+    {
+     "round": 2,
+     "leg": 2,
+     "white_player": 2,
+     "dice_seed": -1388584363731294525,
+     "dice_seed_u64": "17058159709978257091",
+     "opening": [
+      4,
+      5
+     ],
+     "result": "gammon",
+     "points": 2,
+     "turns": 51
+    }
+   ],
+   "decisions": {
+    "original": 99,
+    "opponent": 89
+   },
+   "billed_usd": {
+    "opponent": null,
+    "original": null
+   },
+   "blocked_today": null
+  },
+  {
+   "opponent": "SubQ Snap Preview",
+   "kind": "api",
+   "original_match": 1179,
+   "status": "finished",
+   "error": null,
+   "seed": -9061457014801232657,
+   "seed_u64": "9385287058908318959",
+   "original_is_player1": false,
+   "model1": "SubQ Snap Preview",
+   "model2": "MiniCPM5-2B (off)",
+   "rules": {
+    "rounds": 3,
+    "clock_seconds": null,
+    "delay_seconds": null,
+    "max_turns": 300,
+    "prompt_version": "bg-v2",
+    "order_seed": 1190975713392774006,
+    "order_seed_u64": "1190975713392774006",
+    "mirror_concurrent": true,
+    "start_position": null
+   },
+   "harness": {
+    "commit": "171698f84a2e45b0dd7668d5749f72dfc0ce3712",
+    "dirty": false
+   },
+   "started": "2026-11-12T13:47:39.248Z",
+   "finished": "2026-11-12T13:48:07.485Z",
+   "minutes": 0.5,
+   "score_for": 3,
+   "score_against": 5,
+   "games": [
+    {
+     "round": 1,
+     "leg": 1,
+     "white_player": 1,
+     "dice_seed": -1049366859450894382,
+     "dice_seed_u64": "17397377214258657234",
+     "opening": [
+      3,
+      2
+     ],
+     "result": "single",
+     "points": 1,
+     "turns": 49
+    },
+    {
+     "round": 1,
+     "leg": 2,
+     "white_player": 2,
+     "dice_seed": -1049366859450894382,
+     "dice_seed_u64": "17397377214258657234",
+     "opening": [
+      3,
+      2
+     ],
+     "result": "single",
+     "points": 1,
+     "turns": 43
+    },
+    {
+     "round": 2,
+     "leg": 1,
+     "white_player": 1,
+     "dice_seed": 832211073105151190,
+     "dice_seed_u64": "832211073105151190",
+     "opening": [
+      6,
+      2
+     ],
+     "result": "gammon",
+     "points": 2,
+     "turns": 47
+    },
+    {
+     "round": 2,
+     "leg": 2,
+     "white_player": 2,
+     "dice_seed": 832211073105151190,
+     "dice_seed_u64": "832211073105151190",
+     "opening": [
+      6,
+      2
+     ],
+     "result": "single",
+     "points": 1,
+     "turns": 52
+    },
+    {
+     "round": 3,
+     "leg": 1,
+     "white_player": 1,
+     "dice_seed": 1643413841957108798,
+     "dice_seed_u64": "1643413841957108798",
+     "opening": [
+      2,
+      1
+     ],
+     "result": "gammon",
+     "points": 2,
+     "turns": 38
+    },
+    {
+     "round": 3,
+     "leg": 2,
+     "white_player": 2,
+     "dice_seed": 1643413841957108798,
+     "dice_seed_u64": "1643413841957108798",
+     "opening": [
+      2,
+      1
+     ],
+     "result": "single",
+     "points": 1,
+     "turns": 42
+    }
+   ],
+   "decisions": {
+    "original": 112,
+    "opponent": 108
+   },
+   "billed_usd": {
+    "opponent": 0.0194,
+    "original": null
+   },
+   "blocked_today": null
+  },
+  {
+   "opponent": "Liquid d1-ultra",
+   "kind": "api",
+   "original_match": 1180,
+   "status": "finished",
+   "error": null,
+   "seed": -5485891016246744913,
+   "seed_u64": "12960853057462806703",
+   "original_is_player1": true,
+   "model1": "MiniCPM5-2B (off)",
+   "model2": "Liquid d1-ultra",
+   "rules": {
+    "rounds": 3,
+    "clock_seconds": null,
+    "delay_seconds": null,
+    "max_turns": 300,
+    "prompt_version": "bg-v2",
+    "order_seed": 1190975713392774006,
+    "order_seed_u64": "1190975713392774006",
+    "mirror_concurrent": true,
+    "start_position": null
+   },
+   "harness": {
+    "commit": "171698f84a2e45b0dd7668d5749f72dfc0ce3712",
+    "dirty": false
+   },
+   "started": "2026-11-12T13:47:39.348Z",
+   "finished": "2026-11-12T13:48:27.287Z",
+   "minutes": 0.8,
+   "score_for": 2,
+   "score_against": 5,
+   "games": [
+    {
+     "round": 1,
+     "leg": 1,
+     "white_player": 1,
+     "dice_seed": -715208401235187581,
+     "dice_seed_u64": "17731535672474364035",
+     "opening": [
+      1,
+      4
+     ],
+     "result": "gammon",
+     "points": 2,
+     "turns": 55
+    },
+    {
+     "round": 1,
+     "leg": 2,
+     "white_player": 2,
+     "dice_seed": -715208401235187581,
+     "dice_seed_u64": "17731535672474364035",
+     "opening": [
+      1,
+      4
+     ],
+     "result": "single",
+     "points": 1,
+     "turns": 42
+    },
+    {
+     "round": 2,
+     "leg": 1,
+     "white_player": 1,
+     "dice_seed": -9060253477491510437,
+     "dice_seed_u64": "9386490596218041179",
+     "opening": [
+      6,
+      2
+     ],
+     "result": "single",
+     "points": 1,
+     "turns": 59
+    },
+    {
+     "round": 2,
+     "leg": 2,
+     "white_player": 2,
+     "dice_seed": -9060253477491510437,
+     "dice_seed_u64": "9386490596218041179",
+     "opening": [
+      6,
+      2
+     ],
+     "result": "single",
+     "points": 1,
+     "turns": 51
+    },
+    {
+     "round": 3,
+     "leg": 1,
+     "white_player": 1,
+     "dice_seed": 2648461812511279649,
+     "dice_seed_u64": "2648461812511279649",
+     "opening": [
+      1,
+      5
+     ],
+     "result": "single",
+     "points": 1,
+     "turns": 64
+    },
+    {
+     "round": 3,
+     "leg": 2,
+     "white_player": 2,
+     "dice_seed": 2648461812511279649,
+     "dice_seed_u64": "2648461812511279649",
+     "opening": [
+      1,
+      5
+     ],
+     "result": "single",
+     "points": 1,
+     "turns": 68
+    }
+   ],
+   "decisions": {
+    "original": 132,
+    "opponent": 135
+   },
+   "billed_usd": {
+    "opponent": 0.0193,
+    "original": null
+   },
+   "blocked_today": null
+  }
+ ]
+}

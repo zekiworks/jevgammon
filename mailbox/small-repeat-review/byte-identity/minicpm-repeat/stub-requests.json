@@ -1,0 +1,80 @@
+[
+ {
+  "player": "Celeris-1 Decision",
+  "warm_up": false,
+  "matched": true,
+  "requests": 112
+ },
+ {
+  "player": "Celeris-1 Decision",
+  "warm_up": true,
+  "matched": false,
+  "requests": 1
+ },
+ {
+  "player": "Fastino GLiDE",
+  "warm_up": false,
+  "matched": true,
+  "requests": 126
+ },
+ {
+  "player": "Fastino GLiDE",
+  "warm_up": true,
+  "matched": false,
+  "requests": 1
+ },
+ {
+  "player": "Jev 1.13.0",
+  "warm_up": false,
+  "matched": true,
+  "requests": 82
+ },
+ {
+  "player": "Jev 1.13.0",
+  "warm_up": true,
+  "matched": false,
+  "requests": 1
+ },
+ {
+  "player": "Jev 1.14.0",
+  "warm_up": false,
+  "matched": true,
+  "requests": 113
+ },
+ {
+  "player": "Jev 1.14.0",
+  "warm_up": true,
+  "matched": false,
+  "requests": 1
+ },
+ {
+  "player": "Liquid d1-ultra",
+  "warm_up": false,
+  "matched": true,
+  "requests": 135
+ },
+ {
+  "player": "Liquid d1-ultra",
+  "warm_up": true,
+  "matched": false,
+  "requests": 1
+ },
+ {
+  "player": "MiniCPM5-2B (off)",
+  "warm_up": false,
+  "matched": true,
+  "requests": 1300
+ },
+ {
+  "player": "SubQ Snap Preview",
+  "warm_up": false,
+  "matched": true,
+  "requests": 108
+ },
+ {
+  "player": "SubQ Snap Preview",
+  "warm_up": true,
+  "matched": false,
+  "requests": 1
+ }
+]

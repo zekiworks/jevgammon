@@ -1,0 +1,208 @@
+{
+ "entrant": "MiniCPM5-2B (off)",
+ "mode": "original",
+ "binary": "/home/cbasaran/code/jevgammon/target/small-repeat/orig-171698f/release/jevgammon",
+ "binary_sha256": "a7f6e420dba242673b9c2736229d06d953ab4d094804dfb715236680e66d6266",
+ "league_exit": 0,
+ "seconds": 15.7,
+ "exchanges": {
+  "MiniCPM5-2B (off)": {
+   "stored": 1300,
+   "received": 1300,
+   "identical": 1300,
+   "received_not_stored": 0,
+   "warm_ups": 0,
+   "paths": {
+    "/v1/chat/completions": 1300
+   }
+  },
+  "Fastino GLiDE": {
+   "stored": 126,
+   "received": 126,
+   "identical": 126,
+   "received_not_stored": 0,
+   "warm_ups": 1,
+   "paths": {
+    "/v1/systemone": 126
+   }
+  },
+  "Jev 1.14.0": {
+   "stored": 113,
+   "received": 113,
+   "identical": 113,
+   "received_not_stored": 0,
+   "warm_ups": 1,
+   "paths": {
+    "/v1/systemone": 113
+   }
+  },
+  "Jev 1.13.0": {
+   "stored": 82,
+   "received": 82,
+   "identical": 82,
+   "received_not_stored": 0,
+   "warm_ups": 1,
+   "paths": {
+    "/v1/systemone": 82
+   }
+  },
+  "Celeris-1 Decision": {
+   "stored": 112,
+   "received": 112,
+   "identical": 112,
+   "received_not_stored": 0,
+   "warm_ups": 1,
+   "paths": {
+    "/v1/systemone": 112
+   }
+  },
+  "SubQ Snap Preview": {
+   "stored": 108,
+   "received": 108,
+   "identical": 108,
+   "received_not_stored": 0,
+   "warm_ups": 1,
+   "paths": {
+    "/v1/systemone": 108
+   }
+  },
+  "Liquid d1-ultra": {
+   "stored": 135,
+   "received": 135,
+   "identical": 135,
+   "received_not_stored": 0,
+   "warm_ups": 1,
+   "paths": {
+    "/v1/systemone": 135
+   }
+  }
+ },
+ "pairs": [
+  {
+   "opponent": "Fastino GLiDE",
+   "original": 1171,
+   "replay": 3,
+   "status": "finished",
+   "seed_same": true,
+   "seat_same": true,
+   "score_same": true,
+   "turns": [
+    309,
+    309
+   ],
+   "turns_identical": true
+  },
+  {
+   "opponent": "Jev 1.14.0",
+   "original": 1173,
+   "replay": 4,
+   "status": "finished",
+   "seed_same": true,
+   "seat_same": true,
+   "score_same": true,
+   "turns": [
+    286,
+    286
+   ],
+   "turns_identical": true
+  },
+  {
+   "opponent": "Jev 1.13.0",
+   "original": 1174,
+   "replay": 7,
+   "status": "finished",
+   "seed_same": true,
+   "seat_same": true,
+   "score_same": true,
+   "turns": [
+    206,
+    206
+   ],
+   "turns_identical": true
+  },
+  {
+   "opponent": "Celeris-1 Decision",
+   "original": 1175,
+   "replay": 9,
+   "status": "finished",
+   "seed_same": true,
+   "seat_same": true,
+   "score_same": true,
+   "turns": [
+    269,
+    269
+   ],
+   "turns_identical": true
+  },
+  {
+   "opponent": "Safest",
+   "original": 1176,
+   "replay": 6,
+   "status": "finished",
+   "seed_same": true,
+   "seat_same": true,
+   "score_same": true,
+   "turns": [
+    210,
+    210
+   ],
+   "turns_identical": true
+  },
+  {
+   "opponent": "GNUbg weak",
+   "original": 1177,
+   "replay": 2,
+   "status": "finished",
+   "seed_same": true,
+   "seat_same": true,
+   "score_same": true,
+   "turns": [
+    317,
+    317
+   ],
+   "turns_identical": true
+  },
+  {
+   "opponent": "Random",
+   "original": 1178,
+   "replay": 1,
+   "status": "finished",
+   "seed_same": true,
+   "seat_same": true,
+   "score_same": true,
+   "turns": [
+    247,
+    247
+   ],
+   "turns_identical": true
+  },
+  {
+   "opponent": "SubQ Snap Preview",
+   "original": 1179,
+   "replay": 8,
+   "status": "finished",
+   "seed_same": true,
+   "seat_same": true,
+   "score_same": true,
+   "turns": [
+    271,
+    271
+   ],
+   "turns_identical": true
+  },
+  {
+   "opponent": "Liquid d1-ultra",
+   "original": 1180,
+   "replay": 5,
+   "status": "finished",
+   "seed_same": true,
+   "seat_same": true,
+   "score_same": true,
+   "turns": [
+    339,
+    339
+   ],
+   "turns_identical": true
+  }
+ ]
+}

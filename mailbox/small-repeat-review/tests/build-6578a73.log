@@ -1,0 +1,10 @@
+built: 2026-11-13T16:32Z (UTC)
+tree: /home/cbasaran/code/jevgammon-small-repeat-runner at 6578a73694cc84233d8b3ed8b209f648232218bd (clean; detached; untracked METADATA.worktree only)
+command: cd /home/cbasaran/code/jevgammon-small-repeat-runner && CARGO_TARGET_DIR=/home/cbasaran/code/jevgammon/target/small-repeat cargo build --release --locked
+rustc 1.97.1 (8bab26f4f 2026-07-14)
+cargo 1.97.1 (c980f4866 2026-06-30)
+   Compiling jevgammon v0.1.0 (/home/cbasaran/code/jevgammon-small-repeat-runner)
+    Finished `release` profile [optimized] target(s) in 7.80s
+79409d713a5992556d47dd06adf3a8d793fbea2eb039a178736b55dc1213615b  /home/cbasaran/code/jevgammon/target/small-repeat/release/jevgammon
+0ae2efd4616385fa2014fa71d9bc06fec48e9551a6005c5ad973f2d56ee46b82  /home/cbasaran/code/jevgammon/target/small-repeat/orig-e4ce0e9/release/jevgammon
+a7f6e420dba242673b9c2736229d06d953ab4d094804dfb715236680e66d6266  /home/cbasaran/code/jevgammon/target/small-repeat/orig-171698f/release/jevgammon

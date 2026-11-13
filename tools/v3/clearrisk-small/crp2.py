@@ -70,9 +70,10 @@ def check_items(scratch):
 
 def player(key):
     m = models()[key]
-    if "blocked" in m:
-        raise SystemExit(f"{key}: blocked: {m['blocked']}")
-    text = subprocess.run(["git", "-C", str(ROOT), "show", m["source"]], check=True, capture_output=True).stdout
+    if m["source"].startswith("file:"):  # settings copied byte-exact from v3.db players.settings (test_crp2 checks)
+        text = (HERE / m["source"][5:]).read_bytes()
+    else:
+        text = subprocess.run(["git", "-C", str(ROOT), "show", m["source"]], check=True, capture_output=True).stdout
     assert hashlib.sha256(text).hexdigest() == m["sha256"], f"{key}: {m['source']} is not the pinned file"
     p = json.loads(text)
     assert p["name"] == m["name"], (p["name"], m["name"])
@@ -94,16 +95,16 @@ def plan(requests_tsv=None):
     its = items()
     rows, out = [], []
     for key, m in models().items():
-        if "blocked" in m:
-            out.append(f"| {m['name']} | {m['kind']} | no: {m['blocked']} | 0 | – | – |")
-            continue
         n = len(its)
         if m["kind"] == "decision":
             bad = [i["id"] for i in its if not 2 <= len(i["options"]) <= m["max_choices"]]
             assert not bad, (key, bad[:3])
-            minutes = n * m["league_ms_le4"] / 60000
-            est = (f"{minutes:.1f} [INFERENCE: {n} × league median {m['league_ms_le4']:g} ms at ≤4 plays (n = "
-                   f"{m['league_n_le4']}), one request at a time; server start/handover not included]")
+            if "league_ms_le4" in m:
+                ms, basis = m["league_ms_le4"], f"league median at ≤4 plays (n = {m['league_n_le4']})"
+            else:
+                ms, basis = m["est_ms"], m["est_basis"]
+            est = (f"{n * ms / 60000:.1f} [INFERENCE: {n} × {ms:g} ms, {basis}; one request at a time; server "
+                   f"start/handover not included]")
         else:
             est = ("10–140 [INFERENCE: no (on) league record; 438 requests at 16 in parallel × 22.6 s (Gemma 4 E4B (on), "
                    "median 2,100 output tokens) to 303 s (LFM2.5-24B-A2B (on), median 17,168); output cap 32,768]")

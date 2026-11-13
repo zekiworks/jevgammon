@@ -7,11 +7,11 @@
 - prompt identity: this branch's runner, given Part 2's config (smoke/clearrisk-config.json; base_url to stubs, budget
   ledger and rpm pacing dropped), sends byte-for-byte the requests stored for Celeris-1 Decision, Jev 1.14.0, Liquid
   d1-ultra, Kimi K3.1 Pro (off) and GLM-5.3 (on) on all 438 Q1/Q2 items.
-- every runnable small model, through run.sh at its pinned league settings against its stub kind (late-tiny8's
-  stub_server.py @ a72223d; stub_chat.py): 438 answer rows, none failed, one request per question; decision requests
-  equal Celeris's stored request but for the model field; chat requests carry the item's system/user (= Kimi's stored
-  messages), the item's schema (= GLM's stored response_format), the player's switches; a rerun asks nothing; --smoke
-  asks one question; the blocked models have no config; run.sh refuses without a server.
+- every small model (15), through run.sh at its pinned league settings against its stub kind (late-tiny8's
+  stub_server.py @ 8ebad40, branch late-tiny8-small3; stub_chat.py): 438 answer rows, none failed, one request per
+  question; decision requests equal Celeris's stored request but for the model field; chat requests carry the item's
+  system/user (= Kimi's stored messages), the item's schema (= GLM's stored response_format), the player's switches;
+  a rerun asks nothing; --smoke asks one question; run.sh refuses without a server.
 - invalid share: a chat stub answering prose every 7th request gives 62 invalid answers in crp2.score().
 Scratch: ~/.cache/clearrisk-small/test (wiped first). Production files are only read.
 """
@@ -36,10 +36,11 @@ PART2_CONFIG = MAIN / "smoke" / "clearrisk-config.json"
 SCRATCH = MAIN / "workspace" / "clearrisk-scratch"
 BIN = os.environ.get("BIN", str(Path.home() / ".cache/clearrisk-small/target/release/jevgammon"))
 TMP = Path.home() / ".cache" / "clearrisk-small" / "test"
-STUB_COMMIT = "a72223d0ee08b1f4020ece622c89a70dca6065d3"
+STUB_COMMIT = "8ebad40cf435cdabc28c565c01fd16200db5afed"
 IDENTITY = ["Celeris-1 Decision", "Jev 1.14.0", "Liquid d1-ultra", "Kimi K3.1 Pro (off)", "GLM-5.3 (on)"]
 EXPECTED_MODEL = {"knowline": "m", "onejev": "OmniJev/OneJev1.6-0.8B", "gliclass": "knowledgator/gliclass-v4-edge",
-                  "startlux": None, "glide": None, "glide-0.4b": None}
+                  "startlux": None, "glide": None, "glide-0.4b": None, "d1-local": "LiquidAI/d1-2B", "strands": None,
+                  "metask": None, "pplx-local": "pplx-decider-flash-v1.2"}
 ITEMS = crp2.items()
 PROCS = []
 
@@ -97,6 +98,15 @@ def test_items():
     crp2.check_items(SCRATCH)
 
 
+def test_decider_flash_settings_are_v3_db_players_33():
+    c = sqlite3.connect(f"file:{MAIN / 'v3.db'}?mode=ro", uri=True)
+    name, settings = c.execute("SELECT name, settings FROM players WHERE id = 33").fetchone()
+    c.close()
+    assert name == "Decider Flash v1.2"
+    assert (HERE / "decider-flash-v1.2.player.json").read_text() == settings
+    assert crp2.player("decider-flash-v1.2")["base_url"] == "http://127.0.0.1:18098"
+
+
 def test_frozen_scoring_reproduces_part2():
     R, _ = crp2.score(PART2_DB, sorted(crp2.PART2_CHAT | {"Celeris-1 Decision", "Jev 1.14.0", "Liquid d1-ultra"}))
     frozen = json.loads((SCRATCH / "p2rep.json").read_text())
@@ -148,16 +158,17 @@ def test_small_models_dry_run():
     kimi = {k: json.loads(v[0]) for k, v in requests(PART2_DB, "Kimi K3.1 Pro (off)").items()}
     glm = {k: json.loads(v[0]) for k, v in requests(PART2_DB, "GLM-5.3 (on)").items()}
     by_id = {i["id"]: i for i in ITEMS}
-    runnable = {k: m for k, m in crp2.models().items() if "blocked" not in m}
-    assert len(runnable) == 12
+    runnable = crp2.models()
+    assert len(runnable) == 16
     for key, m in runnable.items():
         p = crp2.player(key)
         if m["kind"] == "decision":
             _, port = stub(m["stub"])
             run_sh(key, f"http://127.0.0.1:{port}", out)
-            # One request per question, no split (gliclass_server.py has no GET route, so its stub has no /health).
+            # One request per question, no split (gliclass_server.py and metask's server.py have no GET route; the d1
+            # and strands stubs answer /health with their real servers' fields, without counts).
             assert exchanges(out, p["name"]) == 438, key
-            if m["stub"] != "gliclass":
+            if m["stub"] not in ("gliclass", "metask", "d1", "strands"):
                 assert health(port)["requests"] == 438, key
             provider = p["spec"].split("/")[0]
             for item_id, (request, choice, text, error) in requests(out, p["name"]).items():
@@ -192,13 +203,6 @@ def test_small_models_dry_run():
     # No server: refused before any question.
     r = run_sh("knowline-2b", f"http://127.0.0.1:{free_port()}", TMP / "none.db", check=False)
     assert r.returncode == 1 and "no server" in r.stderr and not (TMP / "none.db").exists()
-    # Blocked models: no route, no config.
-    for key in ("d1-2b", "strands-decider-2b", "metask-jev-4b"):
-        try:
-            crp2.player(key)
-            raise AssertionError(key)
-        except SystemExit as e:
-            assert "late-tiny8" in str(e)
     # Scoring of the dry run: stubs pick the first shown option (A); MiniCPM's stub answered prose every 7th request.
     R, md = crp2.score(out)
     names = {crp2.models()[k]["name"] for k in runnable}

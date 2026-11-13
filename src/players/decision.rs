@@ -394,6 +394,64 @@ pub const SERVICES: &[Service] = &[
         openai_format: false,
         max_choices: 255,
     },
+    // Liquid AI's open d1-2B (LiquidAI/d1-2B @ 10e7671; LFM3-VL-2B base, one forward pass,
+    // option codes A..Z then AA..) behind logic's d1_server.py, the card's model.system_one
+    // call unchanged (transformers, BF16, the snapshot's own code): the System One request at
+    // /v1/systemone, the model field naming the checkpoint (another name is refused, 400).
+    // 255 options per question get distinct single-token codes. Its context is 128,000
+    // positions; nothing in its code shortens a prompt, and a request it cannot answer is
+    // refused (400), never cut. League 1's longest stored request (251 options) is 20,759
+    // tokens with its tokenizer and prompt.
+    Service {
+        provider: "d1-local",
+        label: "Liquid d1 (local)",
+        base_url: "http://127.0.0.1:19260",
+        url_var: "D1_LOCAL_BASE_URL",
+        path: "/v1/systemone",
+        key_vars: &[],
+        key_required: false,
+        default_model: Some("LiquidAI/d1-2B"),
+        openai_format: false,
+        max_choices: 255,
+    },
+    // Strands Agents' strands-decider-2B-hobson-v21 (@ 2b52a62; LoRA and pointer head on
+    // Qwen3.5-2B-Base) behind the server its package ships (strands-decider serve, BF16): the
+    // System One request at /v1/systemone; the model field is ignored, so none is sent. Served
+    // with --strict-window: a prompt over the checkpoint's 4,096-token window is refused (422),
+    // never cut (without it the server cuts the state). With its tokenizer and renderer the
+    // state plus the 13 longest options of any League 1 stored request is at most 4,025
+    // tokens (14 can reach 4,143), so longer play lists are split into groups of at most 13.
+    Service {
+        provider: "strands",
+        label: "Strands Decider (local)",
+        base_url: "http://127.0.0.1:19270",
+        url_var: "STRANDS_BASE_URL",
+        path: "/v1/systemone",
+        key_vars: &[],
+        key_required: false,
+        default_model: None,
+        openai_format: false,
+        max_choices: 13,
+    },
+    // Metask Lab's Metask-Jev-4B (wayfind/metask-jev-4b-policy-mix @ ea20fe8; Qwen3.5-4B with
+    // its LoRA merged, one letter per option) behind logic's metask-jev server.py (the vendor's
+    // jev_scorer and prompt, BF16): the System One request at /v1/systemone; the model field is
+    // ignored, so none is sent. It never truncates: a prompt over 4,096 tokens or a list over 26
+    // options is refused (400). With its tokenizer and prompt the state plus the 11 longest
+    // options of any League 1 stored request is at most 4,008 tokens (12 can reach 4,135), so
+    // longer play lists are split into groups of at most 11.
+    Service {
+        provider: "metask",
+        label: "Metask-Jev (local)",
+        base_url: "http://127.0.0.1:19250",
+        url_var: "METASK_BASE_URL",
+        path: "/v1/systemone",
+        key_vars: &[],
+        key_required: false,
+        default_model: None,
+        openai_format: false,
+        max_choices: 11,
+    },
 ];
 
 pub fn service(provider: &str) -> Option<&'static Service> {

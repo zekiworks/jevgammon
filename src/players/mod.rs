@@ -1202,14 +1202,16 @@ mod tests {
         assert_eq!(decision.input_tokens, 1234);
     }
 
-    /// One System One request to `provider`'s service on the stub (option cap `max`, above this
-    /// position's list) at `path`: every option in the seeded order, the model field `model`
-    /// (absent for `None`), and the stub's probabilities kept.
+    /// One System One request to `provider`'s service on the stub (option cap `max`; the
+    /// position's list cut to at most `max` plays, so it goes in one request) at `path`: every
+    /// option in the seeded order, the model field `model` (absent for `None`), and the stub's
+    /// probabilities kept.
     async fn sends_every_option(provider: &str, model: Option<&str>, max: usize, path: &str) {
         let mut board = Board::start();
         board.pts[12] = 3;
         board.pts[7] = 5;
-        let plays = board.legal_plays(2, 1);
+        let mut plays = board.legal_plays(2, 1);
+        plays.truncate(max);
         let n = plays.len();
         let notations: Vec<String> = plays.iter().map(|p| p.notation()).collect();
         let order: Vec<usize> = (0..n).rev().collect();
@@ -1275,6 +1277,21 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     async fn turion_jev_sends_no_model_field() {
         sends_every_option("turion-jev", None, 255, "/v1/systemone").await;
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn d1_local_names_the_served_checkpoint() {
+        sends_every_option("d1-local", Some("LiquidAI/d1-2B"), 255, "/v1/systemone").await;
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn strands_sends_no_model_field_and_at_most_13_options() {
+        sends_every_option("strands", None, 13, "/v1/systemone").await;
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn metask_sends_no_model_field_and_at_most_11_options() {
+        sends_every_option("metask", None, 11, "/v1/systemone").await;
     }
 
     #[test]

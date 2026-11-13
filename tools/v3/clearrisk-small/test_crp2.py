@@ -191,6 +191,11 @@ def test_small_models_dry_run():
                     "name": item["schema_name"], "schema": item["schema"], "strict": True}} == glm[item_id]["response_format"]
                 assert body["chat_template_kwargs"] == {"enable_thinking": True} and "reasoning_effort" not in body
                 assert body["temperature"] == 1.0 and body["max_tokens"] == 32768
+                # reasoning_prefill / reasoning_field shape only the league read-out's assistant turn: a quiz
+                # request has none, and the keys never reach the body.
+                assert set(body) == {"model", "messages", "temperature", "max_tokens", "response_format",
+                                     "chat_template_kwargs"}, sorted(body)
+                assert p.get("reasoning_field" if key == "lfm3-1.7b-on" else "reasoning_prefill"), key
         rows = requests(out, p["name"])
         assert len(rows) == 438 and not any(r[3] for r in rows.values()), key
     # A rerun asks nothing (every item answered); --smoke asks one question into its own DB.

@@ -163,6 +163,23 @@ pub struct PlayerConfig {
     /// reasoning block on every answer and has no switch to turn it off.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub answer_prefix: Option<String>,
+    /// Prefill readout with reasoning on: the assistant text the letter continues, with
+    /// `{reasoning}` replaced by the reasoning without its leading and trailing newlines
+    /// (default `<think>{reasoning}</think>Answer:`, the reasoning kept as returned), e.g.
+    /// `<think>\n{reasoning}\n</think>\n\nAnswer:` for a chat template that re-renders an
+    /// assistant turn's reasoning that way (MiniCPM5), so that the server finds the prefill
+    /// verbatim in the rendered prompt (`continue_final_message`). An empty reasoning
+    /// sends the reasoning-off prefill (`answer_prefix`, default `Answer:`) instead.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reasoning_prefill: Option<String>,
+    /// Prefill readout with reasoning on: the read-out's assistant message carries the
+    /// reasoning in this field (e.g. `reasoning`, which vLLM hands to the chat template as
+    /// `reasoning` and `reasoning_content`) and only `Answer:` as its content, so that the
+    /// template renders the reasoning turn itself. For LFM3 under vLLM, whose content format
+    /// `openai` makes the template open an extra empty think block before a content that
+    /// carries `<think>...</think>`. Takes precedence over `reasoning_prefill`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reasoning_field: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub price: Option<Price>,
     /// Free text kept with the roster (how the setup was pinned, what a level means).
@@ -381,6 +398,8 @@ pub fn render_stage_b(
         top_logprobs: config.top_logprobs,
         readout: llm::Readout::parse(config.letter_readout.as_deref())?,
         answer_prefix: config.answer_prefix.clone(),
+        reasoning_prefill: config.reasoning_prefill.clone(),
+        reasoning_field: config.reasoning_field.clone(),
         pacer: None,
         budget: None,
     };
@@ -473,6 +492,8 @@ impl Player {
             top_logprobs: config.top_logprobs,
             readout: llm::Readout::parse(config.letter_readout.as_deref())?,
             answer_prefix: config.answer_prefix.clone(),
+            reasoning_prefill: config.reasoning_prefill.clone(),
+            reasoning_field: config.reasoning_field.clone(),
             pacer: config.rpm.filter(|&rpm| rpm > 0).map(|rpm| {
                 let group = config.rate_group.clone().unwrap_or_else(|| {
                     format!("{}|{spec}", config.base_url.as_deref().unwrap_or(""))
@@ -938,6 +959,8 @@ mod tests {
             top_logprobs: None,
             readout: Default::default(),
             answer_prefix: None,
+            reasoning_prefill: None,
+            reasoning_field: None,
             pacer: None,
             budget: None,
         };

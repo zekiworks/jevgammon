@@ -170,6 +170,16 @@
    "name": "Turion Jev",
    "icon": "fi-turionjev",
    "match": "^(?:Turion Jev)"
+  },
+  {
+   "name": "Strands",
+   "icon": "fi-strands",
+   "match": "^(?:Strands)"
+  },
+  {
+   "name": "Metask",
+   "icon": "fi-metask",
+   "match": "^(?:Metask)"
   }
  ]
 }

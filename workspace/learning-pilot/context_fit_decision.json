@@ -1,0 +1,503 @@
+{
+ "records": {
+  "count": 100,
+  "largest": {
+   "game": [
+    "s10",
+    "Game 7 (you lost 2 point(s), gammon):"
+   ],
+   "chars": 10998
+  },
+  "median": {
+   "game": [
+    "s07",
+    "Game 7 (you lost 1 point(s), single):"
+   ],
+   "chars": 6007
+  }
+ },
+ "models": [
+  {
+   "model": "d1-2B (LiquidAI/d1-2B)",
+   "key": "d1-2b",
+   "tokenizer": "LiquidAI/d1-2B@10e7671d",
+   "method": "plain",
+   "limit": 128000,
+   "limit_basis": "card 'Context length 128,000 tokens' (config text_config.max_position_embeddings 128,000); card: answers less reliable past ~64K tokens of state",
+   "block_tokens": {
+    "median": 2945,
+    "largest": 5437
+   },
+   "tokens": {
+    "largest+none": 24328,
+    "largest+median": 27274,
+    "largest+largest": 29766,
+    "median+none": 3086,
+    "median+median": 6032,
+    "median+largest": 8524
+   },
+   "verdict": "fit",
+   "why": "largest record on the largest request: 29,766 <= 128,000",
+   "notes": [
+    "no backgammon route or League 1 record (logic: no d1 environment on spark2; bariton card)"
+   ],
+   "requests": {
+    "largest": {
+     "exchange": 261690,
+     "bytes": 61556,
+     "setup": "OneJev1.6-0.8B"
+    },
+    "median": {
+     "exchange": 262030,
+     "bytes": 10497,
+     "setup": "OneJev1.6-0.8B"
+    }
+   }
+  },
+  {
+   "model": "GLiDE 2B",
+   "key": "glide-2b",
+   "tokenizer": "fastino/GLiDE-2B@00f122c1",
+   "method": "glide",
+   "limit": 39992,
+   "limit_basis": "glide.server GLIDE_MAX_LEN 40,000: a question prompt of len + 8 > 40,000 is refused (422), never cut",
+   "block_tokens": {
+    "median": 3276,
+    "largest": 6139
+   },
+   "tokens": {
+    "largest+none": 28463,
+    "largest+median": 31740,
+    "largest+largest": 34603,
+    "median+none": 3279,
+    "median+median": 6556,
+    "median+largest": 9419
+   },
+   "verdict": "fit",
+   "why": "largest record on the largest request: 34,603 <= 39,992",
+   "notes": [],
+   "requests": {
+    "largest": {
+     "exchange": 292823,
+     "bytes": 61416,
+     "setup": "GLiDE 2B"
+    },
+    "median": {
+     "exchange": 292762,
+     "bytes": 10242,
+     "setup": "GLiDE 2B"
+    }
+   }
+  },
+  {
+   "model": "GLiDE 0.8B",
+   "key": "glide-0.8b",
+   "tokenizer": "fastino/GLiDE-0.8B@9eacdeec",
+   "method": "glide",
+   "limit": 39992,
+   "limit_basis": "glide.server GLIDE_MAX_LEN 40,000 (as GLiDE 2B)",
+   "block_tokens": {
+    "median": 3276,
+    "largest": 6139
+   },
+   "tokens": {
+    "largest+none": 25510,
+    "largest+median": 28787,
+    "largest+largest": 31650,
+    "median+none": 3467,
+    "median+median": 6744,
+    "median+largest": 9607
+   },
+   "verdict": "fit",
+   "why": "largest record on the largest request: 31,650 <= 39,992",
+   "notes": [],
+   "requests": {
+    "largest": {
+     "exchange": 294086,
+     "bytes": 56016,
+     "setup": "GLiDE 0.8B"
+    },
+    "median": {
+     "exchange": 294177,
+     "bytes": 10650,
+     "setup": "GLiDE 0.8B"
+    }
+   }
+  },
+  {
+   "model": "GLiDE 0.4B",
+   "key": "glide-0.4b",
+   "tokenizer": "fastino/GLiDE-0.4B@6bda7ab9",
+   "method": "plain",
+   "limit": 7999,
+   "limit_basis": "encoder max_len 7,999 (glide/encoder.py would shorten a longer prompt to the first 1,024 tokens + the tail); served with GLIDE_MAX_LEN=8006, which refuses (422) such a prompt before it is shortened; plain text undercounts the card's prompt (League 1 largest: 7,833 with it)",
+   "block_tokens": {
+    "median": 2489,
+    "largest": 4578
+   },
+   "tokens": {
+    "largest+none": 7556,
+    "largest+median": 10047,
+    "largest+largest": 12136,
+    "median+none": 3205,
+    "median+median": 5696,
+    "median+largest": 7785
+   },
+   "verdict": "partial",
+   "why": "the largest record on the largest request is 12,136 tokens > 7,999 (refused, not cut: those decisions fail unless the request is split further)",
+   "notes": [],
+   "requests": {
+    "largest": {
+     "exchange": 296329,
+     "bytes": 24318,
+     "setup": "GLiDE 0.4B"
+    },
+    "median": {
+     "exchange": 296350,
+     "bytes": 11440,
+     "setup": "GLiDE 0.4B"
+    }
+   },
+   "over_limit": {
+    "requests": 840,
+    "median": 88,
+    "largest": 348
+   }
+  },
+  {
+   "model": "KnowLine 4B Gen5.5",
+   "key": "knowline-4b",
+   "tokenizer": "PelaAI/KnowLine-4B-Gen5.5@779944d2",
+   "method": "plain",
+   "limit": 262138,
+   "limit_basis": "SGLang context 262,144 - 6, refused above (no --allow-auto-truncate)",
+   "block_tokens": {
+    "median": 3276,
+    "largest": 6139
+   },
+   "tokens": {
+    "largest+none": 26566,
+    "largest+median": 29843,
+    "largest+largest": 32706,
+    "median+none": 3317,
+    "median+median": 6594,
+    "median+largest": 9457
+   },
+   "verdict": "fit",
+   "why": "largest record on the largest request: 32,706 <= 262,138",
+   "notes": [
+    "read twice only up to 3,000 tokens: with the block every request is read once (median request alone: 3,317 tokens)"
+   ],
+   "requests": {
+    "largest": {
+     "exchange": 245455,
+     "bytes": 60130,
+     "setup": "KnowLine 4B Gen5.5"
+    },
+    "median": {
+     "exchange": 245110,
+     "bytes": 10466,
+     "setup": "KnowLine 4B Gen5.5"
+    }
+   }
+  },
+  {
+   "model": "KnowLine-2B-Gen1",
+   "key": "knowline-2b",
+   "tokenizer": "PelaAI/KnowLine-2B-Gen1@53245d47",
+   "method": "plain",
+   "limit": 262138,
+   "limit_basis": "SGLang context 262,144 - 6, refused above",
+   "block_tokens": {
+    "median": 3276,
+    "largest": 6139
+   },
+   "tokens": {
+    "largest+none": 23122,
+    "largest+median": 26399,
+    "largest+largest": 29262,
+    "median+none": 3343,
+    "median+median": 6620,
+    "median+largest": 9483
+   },
+   "verdict": "fit",
+   "why": "largest record on the largest request: 29,262 <= 262,138",
+   "notes": [
+    "read twice only up to 3,000 tokens: with the block every request is read once (median request alone: 3,343 tokens)"
+   ],
+   "requests": {
+    "largest": {
+     "exchange": 291622,
+     "bytes": 53673,
+     "setup": "KnowLine-2B-Gen1"
+    },
+    "median": {
+     "exchange": 292306,
+     "bytes": 10377,
+     "setup": "KnowLine-2B-Gen1"
+    }
+   }
+  },
+  {
+   "model": "KnowLine-0.8B-Gen1",
+   "key": "knowline-0.8b",
+   "tokenizer": "PelaAI/KnowLine-0.8B-Gen1@6b27831f",
+   "method": "plain",
+   "limit": 262138,
+   "limit_basis": "SGLang context 262,144 - 6, refused above",
+   "block_tokens": {
+    "median": 3276,
+    "largest": 6139
+   },
+   "tokens": {
+    "largest+none": 21776,
+    "largest+median": 25053,
+    "largest+largest": 27916,
+    "median+none": 3237,
+    "median+median": 6514,
+    "median+largest": 9377
+   },
+   "verdict": "fit",
+   "why": "largest record on the largest request: 27,916 <= 262,138",
+   "notes": [
+    "read twice only up to 3,000 tokens: with the block every request is read once (median request alone: 3,237 tokens)"
+   ],
+   "requests": {
+    "largest": {
+     "exchange": 249650,
+     "bytes": 50706,
+     "setup": "KnowLine-0.8B-Gen1"
+    },
+    "median": {
+     "exchange": 250432,
+     "bytes": 10285,
+     "setup": "KnowLine-0.8B-Gen1"
+    }
+   }
+  },
+  {
+   "model": "StartLux-Decision v1.1 2B (Instant)",
+   "key": "startlux-2b",
+   "tokenizer": "startlux-models/StartLux-Decision-v1.1-2B-Instant@f1e6cd14",
+   "method": "plain",
+   "limit": 131072,
+   "limit_basis": "startlux-decide --launch-vllm: Instant folders served at 131,072 (launch.py), vLLM refuses above; each pass holds the state and <= 25 options (whole request counted here: an upper bound)",
+   "block_tokens": {
+    "median": 3276,
+    "largest": 6139
+   },
+   "tokens": {
+    "largest+none": 23746,
+    "largest+median": 27023,
+    "largest+largest": 29886,
+    "median+none": 3317,
+    "median+median": 6594,
+    "median+largest": 9457
+   },
+   "verdict": "fit",
+   "why": "largest record on the largest request: 29,886 <= 131,072",
+   "notes": [],
+   "requests": {
+    "largest": {
+     "exchange": 247489,
+     "bytes": 53292,
+     "setup": "StartLux-Decision v1.1 2B"
+    },
+    "median": {
+     "exchange": 247713,
+     "bytes": 10450,
+     "setup": "StartLux-Decision v1.1 2B"
+    }
+   }
+  },
+  {
+   "model": "StartLux-Decision-v1.1-0.8B-Instant",
+   "key": "startlux-0.8b",
+   "tokenizer": "startlux-models/StartLux-Decision-v1.1-0.8B-Instant@6496ae64",
+   "method": "plain",
+   "limit": 131072,
+   "limit_basis": "as StartLux 2B: 131,072, refused above",
+   "block_tokens": {
+    "median": 3276,
+    "largest": 6139
+   },
+   "tokens": {
+    "largest+none": 24730,
+    "largest+median": 28007,
+    "largest+largest": 30870,
+    "median+none": 3404,
+    "median+median": 6681,
+    "median+largest": 9544
+   },
+   "verdict": "fit",
+   "why": "largest record on the largest request: 30,870 <= 131,072",
+   "notes": [],
+   "requests": {
+    "largest": {
+     "exchange": 252460,
+     "bytes": 55422,
+     "setup": "StartLux-Decision-v1.1-0.8B-Instant"
+    },
+    "median": {
+     "exchange": 253813,
+     "bytes": 10661,
+     "setup": "StartLux-Decision-v1.1-0.8B-Instant"
+    }
+   }
+  },
+  {
+   "model": "OneJev1.6-0.8B",
+   "key": "onejev1.6-0.8b",
+   "tokenizer": "OmniJev/OneJev1.6-0.8B@bcd88a38",
+   "method": "plain",
+   "limit": 32768,
+   "limit_basis": "flide serve (onejev-slot-v2): state + one question over 32,768 tokens is refused (422); a request over 65,536",
+   "block_tokens": {
+    "median": 3276,
+    "largest": 6139
+   },
+   "tokens": {
+    "largest+none": 27632,
+    "largest+median": 30909,
+    "largest+largest": 33772,
+    "median+none": 3321,
+    "median+median": 6598,
+    "median+largest": 9461
+   },
+   "verdict": "partial",
+   "why": "the largest record on the largest request is 33,772 tokens > 32,768 (refused, not cut: those decisions fail unless the request is split further)",
+   "notes": [],
+   "requests": {
+    "largest": {
+     "exchange": 261690,
+     "bytes": 61556,
+     "setup": "OneJev1.6-0.8B"
+    },
+    "median": {
+     "exchange": 262030,
+     "bytes": 10497,
+     "setup": "OneJev1.6-0.8B"
+    }
+   },
+   "over_limit": {
+    "requests": 977,
+    "median": 0,
+    "largest": 1
+   }
+  },
+  {
+   "model": "Strands Decider 2B",
+   "key": "strands",
+   "tokenizer": "StrandsAgents/strands-decider-2B-hobson-v21@2b52a623",
+   "method": "plain",
+   "limit": 4096,
+   "limit_basis": "strands_decider_config.json max_length 4,096; strands_decider infer.py _fit truncates the state to max_length minus the question's reserve (no refusal by default)",
+   "block_tokens": {
+    "median": 3276,
+    "largest": 6139
+   },
+   "tokens": {
+    "largest+none": 27632,
+    "largest+median": 30909,
+    "largest+largest": 33772,
+    "median+none": 3321,
+    "median+median": 6598,
+    "median+largest": 9461
+   },
+   "verdict": "skip",
+   "why": "a median game record on a median request is 6,598 tokens > 4,096",
+   "notes": [
+    "no backgammon route or League 1 record"
+   ],
+   "requests": {
+    "largest": {
+     "exchange": 261690,
+     "bytes": 61556,
+     "setup": "OneJev1.6-0.8B"
+    },
+    "median": {
+     "exchange": 262030,
+     "bytes": 10497,
+     "setup": "OneJev1.6-0.8B"
+    }
+   }
+  },
+  {
+   "model": "Metask-Jev-4B",
+   "key": "metask",
+   "tokenizer": "metask-ai/metask-jev@ea20fe85",
+   "method": "plain",
+   "limit": 4096,
+   "limit_basis": "~/code/metask-jev/server.py MAX_INPUT_TOKENS 4,096 (jev_schema: longer prompts refused, nothing truncated)",
+   "block_tokens": {
+    "median": 3276,
+    "largest": 6139
+   },
+   "tokens": {
+    "largest+none": 27632,
+    "largest+median": 30909,
+    "largest+largest": 33772,
+    "median+none": 3321,
+    "median+median": 6598,
+    "median+largest": 9461
+   },
+   "verdict": "skip",
+   "why": "a median game record on a median request is 6,598 tokens > 4,096",
+   "notes": [
+    "no backgammon route or League 1 record"
+   ],
+   "requests": {
+    "largest": {
+     "exchange": 261690,
+     "bytes": 61556,
+     "setup": "OneJev1.6-0.8B"
+    },
+    "median": {
+     "exchange": 262030,
+     "bytes": 10497,
+     "setup": "OneJev1.6-0.8B"
+    }
+   }
+  },
+  {
+   "model": "GLiClass v4 Edge",
+   "key": "gliclass-v4-edge",
+   "tokenizer": "knowledgator/gliclass-v4-edge@885af1af",
+   "method": "plain",
+   "limit": 16384,
+   "limit_basis": "gliclass_server.py: state, instructions and up to max_choices 218 labels share one 16,384-token input, refused (422) above, never cut",
+   "block_tokens": {
+    "median": 2518,
+    "largest": 4625
+   },
+   "tokens": {
+    "largest+none": 15257,
+    "largest+median": 17775,
+    "largest+largest": 19882,
+    "median+none": 3214,
+    "median+median": 5732,
+    "median+largest": 7839
+   },
+   "verdict": "partial",
+   "why": "the largest record on the largest request is 19,882 tokens > 16,384 (refused, not cut: those decisions fail unless the request is split further)",
+   "notes": [],
+   "requests": {
+    "largest": {
+     "exchange": 285547,
+     "bytes": 55996,
+     "setup": "GLiClass v4 Edge"
+    },
+    "median": {
+     "exchange": 286596,
+     "bytes": 12273,
+     "setup": "GLiClass v4 Edge"
+    }
+   },
+   "over_limit": {
+    "requests": 744,
+    "median": 4,
+    "largest": 12
+   }
+  }
+ ]
+}

@@ -1,0 +1,53 @@
+{
+ "key": "minicpm5-2b-on",
+ "note": "Learning pilot protocol (mailbox/Learning pilot - plan 2026-11-07.md, all four arms) for MiniCPM5-2B (on) (Ümit #6225): player = late-smallchat 171698f models/minicpm5-2b-on/player.json unchanged (the runner overrides parallel: 1 per arm, 4 at T0); server = logic's small_models.py serve minicpm5-2b on one bariton card. Differences from Gemma 4 31B (off): reasoning on, so every game decision and evaluation leaves max_output_tokens free in the context (note budget = context_limit - max_output_tokens - prompt_max - 1,500) and the lesson call keeps the model's own switches and output limit (lesson_request, lesson_max_tokens), lessons read from the reply's content; tokens counted with the model's own tokenizer. prompt_max: context_fit.py chat.",
+ "players": [
+  {
+   "name": "MiniCPM5-2B (on)",
+   "spec": "openai-compatible/minicpm5-2b",
+   "provider": "local-vllm",
+   "quantization": "bf16",
+   "base_url": "http://127.0.0.1:18614/v1",
+   "reasoning": "template default",
+   "request": {
+    "chat_template_kwargs": {
+     "enable_thinking": true
+    },
+    "reasoning_effort": null
+   },
+   "max_tokens": 32768,
+   "top_logprobs": 20,
+   "letter_readout": "prefill",
+   "note": "openbmb/MiniCPM5-2B @ 42433e90dad95123ab87729fd7011e7110629556, BF16, on our GPU through vLLM v0.30.0 (vllm/vllm-openai:v0.30.0) in BF16, --generation-config auto; logic's server (small_models.py key minicpm5-2b, port 18614, bariton GPU 1, #5080/#5091; ours alone after turkce's 'done') or ours on the same port and name (tools/v3/late-smallchat/serve.sh). thinking on (enable_thinking true), no effort sent (reasoning_effort removed: template default); the letter is read after the reasoning from a prefilled Answer: (as Gemma 4 31B (on)); reasoning split by the server's vLLM reasoning parser qwen3 (it matters only for replies cut off before </think>: the letter is read from logprobs after the prefilled answer). Sampling: League 1's local chat rule, per request: temperature 1.0 from the chat client, everything else the server's default (generation_config.json via --generation-config auto, else vLLM neutral), no seed; it differs from logic's Logic & Math runs: logic sends temperature 1.0, top_p 0.95, seed 0 (ours: the same temperature and top_p from generation_config.json; no seed). Output cap 32,768 tokens (the chat client default, as Qwen3.8-27B (on)). Up to 16 matches and 16 requests at once, League 1's rule for its local chat setups (the server is ours alone after turkce's 'done'). Late entry v the original League 1 table (tools/v3/late-smallchat; Zeki #5064/#5071/#5073; Main's decisions 12 Nov)",
+   "device": "RTX PRO 6000 (bariton), one GPU",
+   "parallel": 16,
+   "max_matches": 16
+  }
+ ],
+ "served_model": "minicpm5-2b",
+ "binary": "target/release/jevgammon",
+ "context_limit": 69632,
+ "max_output_tokens": 32768,
+ "prompt_max": 4238,
+ "tokenizer_file": "/home/cbasaran/.cache/huggingface/hub/models--openbmb--MiniCPM5-2B/snapshots/42433e90dad95123ab87729fd7011e7110629556/tokenizer.json",
+ "tokenizer_source": "openbmb/MiniCPM5-2B@42433e90dad95123ab87729fd7011e7110629556",
+ "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+ "lesson_request": {
+  "chat_template_kwargs": {
+   "enable_thinking": true
+  }
+ },
+ "lesson_max_tokens": 32768,
+ "lesson_timeout_s": 1800,
+ "server": {
+  "logic_key": "minicpm5-2b",
+  "port": 18614,
+  "engine": "vLLM v0.30.0 (vllm/vllm-openai:v0.30.0), BF16, --generation-config auto, --reasoning-parser qwen3, --max-num-seqs 16, --gpu-memory-utilization 0.85",
+  "context": "--max-model-len 69632 (small_models.py CONTEXT = 65,536 + 4,096)"
+ },
+ "prompt_version": "bg-v2",
+ "order_seed": 1190975713392774006,
+ "rounds": 3,
+ "max_turns": 300,
+ "clock": 0
+}

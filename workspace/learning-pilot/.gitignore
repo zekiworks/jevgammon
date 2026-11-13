@@ -1,0 +1,8 @@
+# Private pilot files (plan §9): the evaluation set, answers, contexts and run outputs are never committed.
+test_set*.json
+test_positions*.jsonl
+render_check.jsonl
+runs*/
+out*/
+logs/
+__pycache__/

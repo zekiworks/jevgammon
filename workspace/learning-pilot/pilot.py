@@ -5,6 +5,7 @@ context. Plan and rules: mailbox/Learning pilot - plan 2026-11-07.md (the single
     python3 workspace/learning-pilot/pilot.py t0                     # the shared evaluation before game 1 (once)
     python3 workspace/learning-pilot/pilot.py run --series 1-3       # smoke; later --series 4-10
     python3 workspace/learning-pilot/pilot.py summary
+    PILOT_CONFIG=configs/lfm3-1.7b-on.json python3 workspace/learning-pilot/pilot.py t0   # another model (Ümit #6225)
 
 Run from the repo root. Arms: control (no context), records (all earlier games of the series with GNUbg's evaluation
 of each decision), lessons (one lesson call after each game; the context is every lesson written so far in the
@@ -17,7 +18,7 @@ non-control arms.
 
 Private outputs (never committed): smoke/learning-pilot.db (games, evaluation answers, every request),
 smoke/learning-pilot-plays.db (2-ply scores), workspace/learning-pilot/runs/ (contexts, lessons, logs, per-series
-aggregates), learning.jsonl, seeds.json, learning-pilot.json.
+aggregates), learning.jsonl, seeds.json, learning-pilot.json; with a keyed PILOT_CONFIG the same names with -<key>.
 """
 
 import argparse
@@ -36,22 +37,30 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
-BIN = ROOT.parent / "jevgammon-learning-pilot/target/release/jevgammon"
-# PILOT_DRY=1: an offline harness check with no model call: the `safest` program plays in Gemma's seat, evaluations
-# are skipped and lessons are canned; everything goes to separate -dry files.
+# PILOT_CONFIG: the model's config (default configs/base.json, Gemma 4 31B (off), the run of 7-8 Nov, unchanged). A
+# config with a "key" (configs/<key>.json: the small models, Ümit #6225) runs the same protocol for that model into its
+# own files (smoke/learning-pilot-<key>.db, runs-<key>/, out-<key>/), with its own served name, tokenizer, context
+# limit, output allowance, lesson-call request and runner binary; the dice, option orders, evaluation set and lesson
+# prompt are the pilot's.
+CONFIG = HERE / os.environ.get("PILOT_CONFIG", "configs/base.json")
+BASE = json.loads(CONFIG.read_text())
+KEY = BASE.get("key")
+BIN = ROOT / BASE["binary"] if "binary" in BASE else ROOT.parent / "jevgammon-learning-pilot/target/release/jevgammon"
+# PILOT_DRY=1: an offline harness check with no model call: the `safest` program plays in the model's seat,
+# evaluations are skipped and lessons are canned; everything goes to separate -dry files.
 DRY = os.environ.get("PILOT_DRY") == "1"
-SUFFIX = "-dry" if DRY else ""
+SUFFIX = (f"-{KEY}" if KEY else "") + ("-dry" if DRY else "")
 DB = ROOT / f"smoke/learning-pilot{SUFFIX}.db"
 PLAYS = ROOT / f"smoke/learning-pilot-plays{SUFFIX}.db"
 RUNS = HERE / f"runs{SUFFIX}"
 OUTPUTS = HERE / f"out{SUFFIX}"
 TEST_SET = HERE / "test_set.json"
 TEST_POSITIONS = HERE / "test_positions.jsonl"
-BASE = json.loads((HERE / "configs/base.json").read_text())
 PLAYER = dict(BASE["players"][0], spec="safest") if DRY else BASE["players"][0]
+LABEL = BASE["players"][0]["name"]
 ORDER_SEED = BASE["order_seed"]
 SERVER = BASE["players"][0]["base_url"]
-MODEL = "gemma-4-31B-it"
+MODEL = BASE.get("served_model", "gemma-4-31B-it")
 MASTER_SEED = "learning-pilot 2026-11-07"
 BOOT_SEED = 20261107
 BOOT = 10000
@@ -61,18 +70,27 @@ CHECKPOINTS = (5, 10)  # after these games, for the non-control arms; T0 is shar
 ARMS = ["control", "records", "lessons", "budget"]
 MARGIN = 0.001  # the site's risk margin
 SCALE = 500  # the site's equity scale: error rate = 500 x mean 2-ply equity loss
-CONTEXT_LIMIT = 32768  # spark3's max_model_len
-PROMPT_MAX = 4389  # largest evaluation prompt (system + user, Gemma tokens), measured
-NOTE_BUDGET = CONTEXT_LIMIT - PROMPT_MAX - 1500  # tokens for a context; the rest is margin
+CONTEXT_LIMIT = BASE.get("context_limit", 32768)  # the server's context per sequence (spark3's max_model_len)
+PROMPT_MAX = BASE.get("prompt_max", 4389)  # largest evaluation prompt (system + user, model tokens), measured
+MAX_OUTPUT = BASE.get("max_output_tokens", 0)  # reasoning allowance the context must leave free (0: reasoning off)
+NOTE_BUDGET = CONTEXT_LIMIT - MAX_OUTPUT - PROMPT_MAX - 1500  # tokens for a context; the rest is margin
+TOKENIZER = BASE.get("tokenizer_file", "/home/cbasaran/code/models/gemma-4-31B-it/tokenizer.json")
+TEST_SET_SHA256 = BASE.get("test_set_sha256")  # set: the evaluation set must be the pilot's (same positions)
 MARKS = [(0.16, "very bad"), (0.08, "bad"), (0.04, "doubtful")]  # GNUbg's default skill marks
 OPEN = "=== NOTES FROM YOUR EARLIER GAMES IN THIS SERIES ==="
 CLOSE = "=== END OF NOTES ==="
 LESSONS_SYSTEM = HERE / "lessons_system.txt"
 LESSONS_USER = HERE / "lessons_user.txt"
-LESSONS_MAX_TOKENS = 400
+# The lesson call: Gemma (off) as the plan (reasoning off, 400 tokens); a model run with reasoning on keeps its own
+# request switches and output limit (the config's lesson_request, lesson_max_tokens) and the lessons are read from the
+# reply's content (the server's reasoning parser splits the reasoning off).
+LESSONS_REQUEST = BASE.get("lesson_request", {"chat_template_kwargs": {"enable_thinking": False}})
+LESSONS_MAX_TOKENS = BASE.get("lesson_max_tokens", 400)
+LESSONS_TIMEOUT = BASE.get("lesson_timeout_s", 900)
 MAX_LESSONS, MAX_WORDS = 5, 150
 LOCK = threading.Lock()
-T0_NAME = "Gemma 4 31B (off) | T0 shared"
+T0_NAME = f"{LABEL} | T0 shared"
+RUNNER_FIELDS = ("players", "prompt_version", "order_seed", "rounds", "max_turns", "clock")  # base.json's, all
 
 
 def now():
@@ -99,7 +117,7 @@ def run_dir(arm: str, s: int) -> Path:
 
 
 def player_name(arm: str, s: int) -> str:
-    return f"Gemma 4 31B (off) | {arm} | s{s:02d}"
+    return f"{LABEL} | {arm} | s{s:02d}"
 
 
 def log(arm, s, event, **kw):
@@ -123,7 +141,7 @@ def tokens(text: str) -> int:
         return 0
     if _TOK is None:
         from tokenizers import Tokenizer
-        _TOK = Tokenizer.from_file("/home/cbasaran/code/models/gemma-4-31B-it/tokenizer.json")
+        _TOK = Tokenizer.from_file(TOKENIZER)
     return len(_TOK.encode(text).ids)
 
 
@@ -298,14 +316,13 @@ def ctx_budget(decs, results, exclude, arm, s, g, budget_tokens):
 
 
 def chat(messages, max_tokens):
-    body = dict(model=MODEL, messages=messages, temperature=1.0, max_tokens=max_tokens,
-                chat_template_kwargs=dict(enable_thinking=False))
+    body = dict(model=MODEL, messages=messages, temperature=1.0, max_tokens=max_tokens, **LESSONS_REQUEST)
     req = urllib.request.Request(f"{SERVER}/chat/completions", data=json.dumps(body).encode(),
                                  headers={"Content-Type": "application/json"})
     started = time.time()
     for attempt in range(4):  # network and server errors: 3 retries, as in the leagues
         try:
-            with urllib.request.urlopen(req, timeout=900) as r:
+            with urllib.request.urlopen(req, timeout=LESSONS_TIMEOUT) as r:
                 return json.loads(r.read()), time.time() - started, body
         except Exception:
             if attempt == 3:
@@ -419,7 +436,7 @@ def run_eval(name, note, workdir, parallel=1):
     tag = name.split(" | ")[-1]
     if DRY:
         return dict(name=name, wall_seconds=0.0, dry=True)
-    cfg = dict(BASE)
+    cfg = {k: v for k, v in BASE.items() if k in RUNNER_FIELDS}  # the runner refuses the pilot's own fields
     p = dict(PLAYER, name=name, parallel=parallel)
     if note:
         p["prompt_note"] = note
@@ -676,10 +693,12 @@ def file_sha256(path: Path):
 
 def protocol():
     """The registered protocol this run is bound to; the site compares it with its own fixed copy."""
+    model = (dict(model=LABEL, config=CONFIG.name, config_sha256=file_sha256(CONFIG), note_budget=NOTE_BUDGET)
+             if KEY else {})
     return dict(arms=ARMS, planned_series_per_arm=PLANNED, games_per_series=GAMES,
                 checkpoints=dict(shared=["T0"], non_control=[f"T{cp}" for cp in CHECKPOINTS]),
                 evaluation_positions=len(test_set()["positions"]), lesson_prompt_sha256=lesson_prompt_sha256(),
-                test_set_sha256=file_sha256(TEST_SET), dry_run=DRY)
+                test_set_sha256=file_sha256(TEST_SET), dry_run=DRY, **model)
 
 
 def series_finished(arm, a):
@@ -822,6 +841,8 @@ def main():
     h.add_argument("--series", type=int, required=True)
     sub.add_parser("summary")
     a = ap.parse_args()
+    if a.cmd in ("t0", "run") and TEST_SET_SHA256 and file_sha256(TEST_SET) != TEST_SET_SHA256:
+        sys.exit(f"{TEST_SET} is not the pilot's evaluation set (sha256 {TEST_SET_SHA256})")
     if a.cmd == "after-game":
         after_game(a.arm, a.series)
     elif a.cmd == "t0":

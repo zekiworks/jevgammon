@@ -1,0 +1,64 @@
+[
+ {
+  "model": "LFM3-1.7B (on)",
+  "config": "lfm3-1.7b-on.json",
+  "tokenizer": "LiquidAI/LFM3-1.7B@0dc4268b561499c648c7ba7c9466bf3d8d01517a",
+  "served_context": 69632,
+  "max_output_tokens": 32768,
+  "prompt_max_t0": {
+   "kind": "t0",
+   "id": 234,
+   "setup": "Gemma 4 31B (off) | T0 shared",
+   "tokens": 4277,
+   "chars": 13452
+  },
+  "longest_stored_request": {
+   "kind": "game",
+   "id": 6031,
+   "setup": "Gemma 4 31B (off) | records | s05",
+   "tokens": 28477,
+   "chars": 61320
+  },
+  "longest_needs": 61245,
+  "longest_fits": true,
+  "note_budget": 31087,
+  "config_prompt_max": 4277,
+  "largest_records_context": {
+   "file": "s05/contexts/after-g09.txt",
+   "tokens": 24302,
+   "gemma_tokens": 26830,
+   "fits_note_budget": true
+  }
+ },
+ {
+  "model": "MiniCPM5-2B (on)",
+  "config": "minicpm5-2b-on.json",
+  "tokenizer": "openbmb/MiniCPM5-2B@42433e90dad95123ab87729fd7011e7110629556",
+  "served_context": 69632,
+  "max_output_tokens": 32768,
+  "prompt_max_t0": {
+   "kind": "t0",
+   "id": 234,
+   "setup": "Gemma 4 31B (off) | T0 shared",
+   "tokens": 4238,
+   "chars": 13452
+  },
+  "longest_stored_request": {
+   "kind": "game",
+   "id": 6031,
+   "setup": "Gemma 4 31B (off) | records | s05",
+   "tokens": 28371,
+   "chars": 61320
+  },
+  "longest_needs": 61139,
+  "longest_fits": true,
+  "note_budget": 31126,
+  "config_prompt_max": 4238,
+  "largest_records_context": {
+   "file": "s05/contexts/after-g09.txt",
+   "tokens": 24206,
+   "gemma_tokens": 26830,
+   "fits_note_budget": true
+  }
+ }
+]

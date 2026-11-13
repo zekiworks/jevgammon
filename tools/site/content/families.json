@@ -175,6 +175,16 @@
    "name": "MiniCPM",
    "icon": "fi-minicpm",
    "match": "^(?:MiniCPM)"
+  },
+  {
+   "name": "Strands",
+   "icon": "fi-strands",
+   "match": "^(?:Strands)"
+  },
+  {
+   "name": "Metask",
+   "icon": "fi-metask",
+   "match": "^(?:Metask)"
   }
  ]
 }

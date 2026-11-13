@@ -835,6 +835,63 @@
    "card_source": "https://huggingface.co/turion-ai/turion-jev-31b",
    "card_quote": "'# Turion Jev 31B'; 'Turion Jev 31B is a decision model by Turion AI, fine-tuned from google/gemma-4-31B-it on the Turion AI model training platform.'; 'Merge. A uniform soup of the checkpoints at steps 300, 375 and 450, merged into the base at full scale and saved in BF16.'"
   },
+  "Liquid d1-2B": {
+   "total_b": 1.92,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/LiquidAI/d1-2B/tree/10e7671d44e4b37700020b1eed3f594c5f2af0b4",
+   "quote": "LiquidAI/d1-2B @ 10e7671d44e4b37700020b1eed3f594c5f2af0b4, model.safetensors (424 tensors, BF16): 1,918,181,888 parameters (the snapshot's safetensors header; Hugging Face's safetensors total agrees) = language model 1,728,801,536 + vision tower 164,206,336 + projector 25,174,016. LFM3-VL-2B base, dense; the same count as logic's model_sizes.json. Main @ 652f920 changes only README.md.",
+   "checked": [
+    "https://huggingface.co/api/models/LiquidAI/d1-2B/revision/10e7671d44e4b37700020b1eed3f594c5f2af0b4",
+    "https://huggingface.co/LiquidAI/d1-2B/raw/10e7671d44e4b37700020b1eed3f594c5f2af0b4/README.md"
+   ],
+   "read": "2026-11-13",
+   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors header on bariton: 1.92B (1,918,181,888) incl. its vision tower and projector; the card states 1.92B, the figure shown (Ümit #4260). Served in BF16 by logic's runner/servers/d1_server.py (the card's model.system_one, unchanged), which plays our late entry. Plays with up to 255 options per request (the league's usual rule); no request is over its limits (League 1's longest stored request is 20,759 tokens of its 128,000).",
+   "terms": "1.92B incl. its vision tower; card: 1.92B",
+   "card_total_b": 1.92,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/LiquidAI/d1-2B",
+   "card_quote": "'d1-2B is a **decision model for text, pictures, and video**, built on LFM3-VL-2B.'; table: 'Parameters | 1.92B'."
+  },
+  "Strands Decider 2B": {
+   "total_b": 2.29,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/StrandsAgents/strands-decider-2B-hobson-v21/tree/2b52a6235c1b8306bbfa30b00b9d4b74b63a39f5",
+   "quote": "StrandsAgents/strands-decider-2B-hobson-v21 @ 2b52a6235c1b8306bbfa30b00b9d4b74b63a39f5 holds a LoRA adapter (lora/adapter_model.safetensors, 372 tensors: 16,819,200) and a pointer readout head (head.safetensors, 6 tensors: 1,053,184), sha256 as its provenance.json records; its base Qwen/Qwen3.5-2B-Base @ b1485b2fa6dfa1287294f269f5fb618e03d52d7c (provenance.json) has 2,274,069,824 (the shard's safetensors header; Hugging Face's safetensors total agrees) = language model 1,881,825,088 + vision encoder 331,416,576 + MTP layer 60,828,160. Composition: 2,291,942,208, the same count as logic's model_sizes.json.",
+   "checked": [
+    "https://huggingface.co/api/models/StrandsAgents/strands-decider-2B-hobson-v21/revision/2b52a6235c1b8306bbfa30b00b9d4b74b63a39f5",
+    "https://huggingface.co/api/models/Qwen/Qwen3.5-2B-Base/revision/b1485b2fa6dfa1287294f269f5fb618e03d52d7c"
+   ],
+   "read": "2026-11-13",
+   "note": "Released composition at the stated revisions, scope written out (logic #3550, turkce #3552, Zeki #3574): the repo holds only the adapter and head; the total is the base its provenance.json pins plus the adapter and head (headers counted on bariton): 2.29B incl. the base's vision encoder and MTP layer (served text only). The card states no total; its name gives 2B, the figure shown (turkce #4263). Served in BF16 by the package's own strands-decider serve with --strict-window, which plays our late entry. Plays with max_choices 13: within its 4,096-token window the worst case is 4,025 tokens; longer lists are split into equal groups of at most 13, then a final among the winners.",
+   "terms": "2.29B: Qwen3.5-2B-Base 2.27B incl. its vision encoder + LoRA 16.8M + decision head 1.1M (the repo holds only the adapter and head); card: 2B (name)",
+   "card_total_b": 2,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/StrandsAgents/strands-decider-2B-hobson-v21",
+   "card_quote": "'# strands-decider-2B-hobson-v21'; 'This repository holds one trained checkpoint: a LoRA adapter on `Qwen/Qwen3.5-2B-Base` plus a small readout head that scores the options of a typed question'."
+  },
+  "Metask-Jev-4B": {
+   "total_b": 4.54,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/wayfind/metask-jev-4b-policy-mix/tree/ea20fe85b28733b1522721dec119bec50947a869",
+   "quote": "wayfind/metask-jev-4b-policy-mix @ ea20fe85b28733b1522721dec119bec50947a869, model.safetensors (723 tensors, BF16): 4,539,265,536 parameters (the file's safetensors header; Hugging Face's safetensors total agrees) = language model 4,205,751,296 + vision encoder 333,514,240. Qwen3.5-4B with its LoRA merged, dense; the same count as logic's model_sizes.json.",
+   "checked": [
+    "https://huggingface.co/api/models/wayfind/metask-jev-4b-policy-mix/revision/ea20fe85b28733b1522721dec119bec50947a869",
+    "https://huggingface.co/wayfind/metask-jev-4b-policy-mix/raw/ea20fe85b28733b1522721dec119bec50947a869/README.md"
+   ],
+   "read": "2026-11-13",
+   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors header on bariton: 4.54B (4,539,265,536) incl. its vision encoder (the base's; served text only); the card states 4.54B, the figure shown (Ümit #4260). Served in BF16 by logic's metask-jev server.py (the vendor's scorer and prompt), which plays our late entry. Plays with max_choices 11: within its 4,096-token limit the worst case is 4,008 tokens; longer lists are split into equal groups of at most 11, then a final among the winners.",
+   "terms": "4.54B incl. its vision encoder; card: 4.54B",
+   "card_total_b": 4.54,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/wayfind/metask-jev-4b-policy-mix",
+   "card_quote": "'# Metask-Jev-4B'; table: '| backbone | Qwen3.5-4B (decoder, LoRA merged) |', '| params | 4.54B |'."
+  },
   "LFM3-1.7B": {
    "total_b": 1.73,
    "active_b": null,

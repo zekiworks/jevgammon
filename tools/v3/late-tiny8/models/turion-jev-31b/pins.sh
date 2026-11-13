@@ -17,17 +17,25 @@ sys.exit(not (d == {"ok": True, "model": "turion-jev-31b"}))'
 # --port PORT` from ENV (logic's setup: re-scoring off as in the card's run; --max-len and the recheck threshold at
 # their defaults, 65,536 and unused), no TURION_JEV_API_KEY in its environment, the installed package the snapshot's
 # code, turion-jev 0.1.0 with vLLM 0.32.0, and the snapshot's calibration.json and prompt_config.json.
+# Or, from 13 Nov (logic #6191, after an OOM kill on spark2), the same arguments through logic's launcher
+# turion_serve_headroom.py --gpu-mem 0.80 (sets only vLLM's memory share, i.e. the KV cache size, then runs
+# turion_jev.serve.main() unchanged), pinned by its sha256 in the process's working directory.
+HEADROOM_SHA=8c4228bed02b13748cf06fb6dfa28b82b44844aae5660ec97f0feec63f145e2c
 pinned() {
-  local procs args="-m turion_jev.serve --model $SNAPSHOT --backend vllm --quantization fp8 --no-recheck --host 0.0.0.0 --port $PORT"
+  local procs rest="--model $SNAPSHOT --backend vllm --quantization fp8 --no-recheck --host 0.0.0.0 --port $PORT"
+  local args="-m turion_jev.serve $rest" wrap="turion_serve_headroom.py --gpu-mem 0.80 -- $rest"
   local sp=$ENV/lib/python3.12/site-packages
   procs=$(timeout 30 ssh -o BatchMode=yes "$SSH_HOST" "ps -eo pid=,args= | while read -r pid a; do
+      k=\$(tr '\\0' '\\n' < /proc/\$pid/environ 2>/dev/null | grep -c '^TURION_JEV_API_KEY=')
       case \"\$a\" in '$ENV/bin/python $args'|'$ENV/bin/python3 $args'|'$ENV/bin/python3.12 $args')
-        echo \"server \$(tr '\\0' '\\n' < /proc/\$pid/environ | grep -c '^TURION_JEV_API_KEY=')\";; esac; done; echo @@;
+        echo \"server \$k\";;
+      '$ENV/bin/python $wrap'|'$ENV/bin/python3 $wrap'|'$ENV/bin/python3.12 $wrap')
+        echo \"server \$k headroom \$(sha256sum \$(readlink /proc/\$pid/cwd)/turion_serve_headroom.py | cut -d' ' -f1)\";; esac; done; echo @@;
     echo \"tree \$(cd $sp && find turion_jev -name '*.py' | LC_ALL=C sort | xargs sha256sum | sha256sum)\";
     echo \"code \$(cd $SNAPSHOT/code && find turion_jev -name '*.py' | LC_ALL=C sort | xargs sha256sum | sha256sum)\";
     ls -d $sp/turion_jev-0.1.0.dist-info $sp/vllm-0.32.0.dist-info; sha256sum $SNAPSHOT/calibration.json $SNAPSHOT/prompt_config.json" \
     2>/dev/null) || return 1
-  grep -qxF "server 0" <<<"$procs" &&
+  grep -qxE "server 0( headroom $HEADROOM_SHA)?" <<<"$procs" &&
   grep -qxF "tree $TREE_SHA  -" <<<"$procs" && grep -qxF "code $TREE_SHA  -" <<<"$procs" &&
   grep -qxF "$sp/turion_jev-0.1.0.dist-info" <<<"$procs" && grep -qxF "$sp/vllm-0.32.0.dist-info" <<<"$procs" &&
   grep -qxF "$CALIBRATION_SHA  $SNAPSHOT/calibration.json" <<<"$procs" &&

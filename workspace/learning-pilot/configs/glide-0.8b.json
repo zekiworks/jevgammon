@@ -1,0 +1,37 @@
+{
+ "key": "glide-0.8b",
+ "mode": "decision",
+ "arms": [
+  "control",
+  "records"
+ ],
+ "note": "Learning pilot protocol, decision mode (Ümit #6225): arms control and records only; the records go at the start of `state` + a blank line (decision.rs state_with_block); context_gate server_invalid: a request the server refuses as too long is an invalid answer, the player goes on. Player: v3.db players.settings of 'GLiDE 0.8B' (the league's frozen settings), plus context_gate. Limit 39,992 (glide.server GLIDE_MAX_LEN 40,000 (as GLiDE 2B)); prompt_max = the largest League 1 request alone, 25,510 tokens of its tokenizer (glide), so the note budget is limit - prompt_max - 1,500 = 12,982; the oldest whole games are dropped past it (logged).",
+ "players": [
+  {
+   "name": "GLiDE 0.8B",
+   "spec": "glide",
+   "provider": "local (glide.server)",
+   "quantization": "bf16",
+   "base_url": "http://192.168.1.131:19340",
+   "note": "Fastino's GLiDE 0.8B (Hugging Face fastino/GLiDE-0.8B @ 9eacdeec79fa48ec52a8d6f54b331376b4bbfaf0, Fastino Community License) on our GPU through the server its repository ships (python -m glide.server; env ~/envs/glide-family: CPython 3.12.13, torch 2.14.0+cu130, transformers 5.17.0, flash-linear-attention 0.5.2), BF16, GLIDE_MAX_BATCH=1 (one request at a time), no model field (the server passes only state and questions to the model), 255-way code readout; 255 options per request (the league's rule; longer lists split); never truncates: a question prompt over GLIDE_MAX_LEN 40,000 tokens is refused (422). League 1's longest stored request (251 options) is 28,323 tokens of its tokenizer with the card's prompt; none over.",
+   "device": "NVIDIA GB10 (DGX Spark spark2, spark-d9ee), the whole GPU, handed over by logic one server at a time: GLIDE_MAX_BATCH=1 ~/envs/glide-family/bin/python -m glide.server --model <snapshot> --host 0.0.0.0 --port 19340",
+   "parallel": 1,
+   "max_matches": 1,
+   "context_gate": {
+    "kind": "server_invalid"
+   }
+  }
+ ],
+ "binary": "/home/cbasaran/.cache/jevgammon-wt/target-small-learning-runner/jevgammon-b01eca2",
+ "context_limit": 39992,
+ "max_output_tokens": 0,
+ "prompt_max": 25510,
+ "tokenizer_file": "/home/cbasaran/.cache/huggingface/hub/models--fastino--GLiDE-0.8B/snapshots/9eacdeec79fa48ec52a8d6f54b331376b4bbfaf0/tokenizer.json",
+ "tokenizer_source": "fastino/GLiDE-0.8B@9eacdeec",
+ "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+ "prompt_version": "bg-v2",
+ "order_seed": 1190975713392774006,
+ "rounds": 3,
+ "max_turns": 300,
+ "clock": 0
+}

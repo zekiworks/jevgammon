@@ -1,0 +1,37 @@
+{
+ "key": "d1-2b",
+ "mode": "decision",
+ "arms": [
+  "control",
+  "records"
+ ],
+ "note": "Learning pilot protocol, decision mode (Ümit #6225): arms control and records only; the records go at the start of `state` + a blank line (decision.rs state_with_block); context_gate server_invalid: a request the server refuses as too long is an invalid answer, the player goes on. Player: late-tiny8-small3 8ebad40 tools/v3/late-tiny8/models/d1-2b/player.json, plus context_gate. Limit 128,000 (card 'Context length 128,000 tokens' (config text_config.max_position_embeddings 128,000); card: answers less reliable past ~64K tokens of state); prompt_max = the largest League 1 request alone, 24,328 tokens of its tokenizer (plain), so the note budget is limit - prompt_max - 1,500 = 102,172; the oldest whole games are dropped past it (logged). no backgammon route or League 1 record (logic: no d1 environment on spark2; bariton card)",
+ "players": [
+  {
+   "name": "Liquid d1-2B",
+   "spec": "d1-local",
+   "provider": "local (d1_server.py)",
+   "quantization": "bf16",
+   "base_url": "http://127.0.0.1:19260",
+   "note": "Liquid AI's open decision model d1-2B (Hugging Face LiquidAI/d1-2B @ 10e7671d44e4b37700020b1eed3f594c5f2af0b4, LFM Open License v1.0 (lfm1.0: free below its commercial-use revenue threshold); LFM3-VL-2B base, 1.92B, one forward pass, option codes A..Z then AA.. (d1_codes 2), set attention, calibration.json temperature) on our GPU through logic's runner/servers/d1_server.py (sha256 ab105fbd…, the card's call model.system_one(state, questions) unchanged: transformers AutoModel with the snapshot's own code, BF16; env ~/code/d1-2b/.venv: CPython 3.12, torch 2.15.0+cu132, transformers 5.22.1), the command and env of logic's decision/servers.sh d1-2b (Logic & Math runs d1-2b_en, 7 Nov). The model field must name LiquidAI/d1-2B (else 400). 255 options per request (the league's rule; longer lists split): every count gets distinct single-token codes (A..IU at 255). Context 128,000 positions (card: less reliable past about 64K tokens of state); nothing in its code shortens a prompt, and a request it cannot answer is refused (400), never cut. League 1's longest stored request (251 options) is 20,759 tokens of its tokenizer with its own prompt; none of the 31,798 distinct stored requests is over 128,000.",
+   "device": "NVIDIA RTX PRO 6000 Blackwell (96 GB) on bariton, one card handed over by Main (about 4.3 GB as logic measured): CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=<gpu> HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 PYTHONDONTWRITEBYTECODE=1 /home/cbasaran/code/d1-2b/.venv/bin/python -B /home/cbasaran/code/benchmark/decision/runner/servers/d1_server.py --model LiquidAI/d1-2B --revision 10e7671d44e4b37700020b1eed3f594c5f2af0b4 --device cuda:0 --host 127.0.0.1 --port 19260 (= ~/code/benchmark/decision/servers.sh start d1-2b <gpu>)",
+   "parallel": 1,
+   "max_matches": 1,
+   "context_gate": {
+    "kind": "server_invalid"
+   }
+  }
+ ],
+ "binary": "/home/cbasaran/.cache/jevgammon-wt/target-small-learning-runner/jevgammon-b01eca2",
+ "context_limit": 128000,
+ "max_output_tokens": 0,
+ "prompt_max": 24328,
+ "tokenizer_file": "/home/cbasaran/.cache/huggingface/hub/models--LiquidAI--d1-2B/snapshots/10e7671d44e4b37700020b1eed3f594c5f2af0b4/tokenizer.json",
+ "tokenizer_source": "LiquidAI/d1-2B@10e7671d",
+ "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+ "prompt_version": "bg-v2",
+ "order_seed": 1190975713392774006,
+ "rounds": 3,
+ "max_turns": 300,
+ "clock": 0
+}

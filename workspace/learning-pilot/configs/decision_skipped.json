@@ -1,0 +1,75 @@
+{
+ "about": "Decision models left out of the learning pilot's decision mode (Ümit #6225): one full game record does not fit; numbers from context_fit.py decision",
+ "skipped": [
+  {
+   "model": "GLiDE 0.4B",
+   "key": "glide-0.4b",
+   "tokenizer": "fastino/GLiDE-0.4B@6bda7ab9",
+   "limit": 7999,
+   "limit_basis": "encoder max_len 7,999 (glide/encoder.py would shorten a longer prompt to the first 1,024 tokens + the tail); served with GLIDE_MAX_LEN=8006, which refuses (422) such a prompt before it is shortened; plain text undercounts the card's prompt (League 1 largest: 7,833 with it)",
+   "tokens": {
+    "largest+none": 7556,
+    "largest+median": 10047,
+    "largest+largest": 12136,
+    "median+none": 3205,
+    "median+median": 5696,
+    "median+largest": 7785
+   },
+   "block_tokens": {
+    "median": 2489,
+    "largest": 4578
+   },
+   "over_limit": {
+    "requests": 840,
+    "median": 88,
+    "largest": 348
+   },
+   "why": "the largest record on the largest request is 12,136 tokens > 7,999 (refused, not cut: those decisions fail unless the request is split further)",
+   "decision": "skip: 88/840 League 1 requests over 7,999 with the median record and 348/840 (41%) with the largest, plain text undercounting the card's prompt; one record does not fit"
+  },
+  {
+   "model": "Strands Decider 2B",
+   "key": "strands",
+   "tokenizer": "StrandsAgents/strands-decider-2B-hobson-v21@2b52a623",
+   "limit": 4096,
+   "limit_basis": "strands_decider_config.json max_length 4,096; served with --strict-window (late-tiny8-small3 8ebad40): a prompt over 4,096 tokens is refused (422), never cut; max_choices 13",
+   "tokens": {
+    "largest+none": 27632,
+    "largest+median": 30909,
+    "largest+largest": 33772,
+    "median+none": 3321,
+    "median+median": 6598,
+    "median+largest": 9461
+   },
+   "block_tokens": {
+    "median": 3276,
+    "largest": 6139
+   },
+   "over_limit": null,
+   "why": "a median game record on a median request is 6,598 tokens > 4,096",
+   "decision": "skip: the median record on the median request is 6,598 tokens > 4,096 (strict window refuses); no League 1 record"
+  },
+  {
+   "model": "Metask-Jev-4B",
+   "key": "metask",
+   "tokenizer": "metask-ai/metask-jev@ea20fe85",
+   "limit": 4096,
+   "limit_basis": "~/code/metask-jev/server.py MAX_INPUT_TOKENS 4,096 (jev_schema: longer prompts refused, nothing truncated)",
+   "tokens": {
+    "largest+none": 27632,
+    "largest+median": 30909,
+    "largest+largest": 33772,
+    "median+none": 3321,
+    "median+median": 6598,
+    "median+largest": 9461
+   },
+   "block_tokens": {
+    "median": 3276,
+    "largest": 6139
+   },
+   "over_limit": null,
+   "why": "a median game record on a median request is 6,598 tokens > 4,096",
+   "decision": "skip: the median record on the median request is 6,598 tokens > 4,096 (refused); no League 1 record"
+  }
+ ]
+}

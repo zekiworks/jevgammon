@@ -1,13 +1,13 @@
 {
  "key": "lfm3-1.7b-on",
- "note": "Learning pilot protocol (mailbox/Learning pilot - plan 2026-11-07.md, all four arms) for LFM3-1.7B (on) (Ümit #6225): player = late-smallchat 171698f models/lfm3-1.7b-on/player.json unchanged (the runner overrides parallel: 1 per arm, 4 at T0); server = logic's small_models.py serve lfm3-1.7b on one bariton card. Differences from Gemma 4 31B (off): reasoning on, so every game decision and evaluation leaves max_output_tokens free in the context (note budget = context_limit - max_output_tokens - prompt_max - 1,500) and the lesson call keeps the model's own switches and output limit (lesson_request, lesson_max_tokens), lessons read from the reply's content; tokens counted with the model's own tokenizer. prompt_max: context_fit.py chat.",
+ "note": "Learning pilot protocol (mailbox/Learning pilot - plan 2026-11-07.md, all four arms) for LFM3-1.7B (on) (Ümit #6225): player = late-smallchat-on a083fb4 models/lfm3-1.7b-on/player.json unchanged (repinned to logic's vLLM rerun server lfm3-1.7b-vllm-rerun on port 18634; reasoning_field 'reasoning': the read-out's assistant message carries the reasoning in that field and Answer: as content, for vLLM's openai content format); runner small-learning-runner b01eca2 (the pilot's runner features + that read-out; the runner overrides parallel: 1 per arm, 4 at T0); server = logic's small_models.py lfm3-1.7b-vllm-rerun on one bariton card. Differences from Gemma 4 31B (off): reasoning on, so every game decision and evaluation leaves max_output_tokens free in the context (note budget = context_limit - max_output_tokens - prompt_max - 1,500) and the lesson call keeps the model's own switches and output limit (lesson_request, lesson_max_tokens), lessons read from the reply's content; tokens counted with the model's own tokenizer. prompt_max: context_fit.py chat.",
  "players": [
   {
    "name": "LFM3-1.7B (on)",
    "spec": "openai-compatible/lfm3-1.7b",
-   "provider": "local-llama.cpp",
+   "provider": "local-vllm",
    "quantization": "bf16",
-   "base_url": "http://127.0.0.1:18605/v1",
+   "base_url": "http://127.0.0.1:18634/v1",
    "reasoning": "template default",
    "request": {
     "chat_template_kwargs": {
@@ -18,14 +18,15 @@
    "max_tokens": 32768,
    "top_logprobs": 20,
    "letter_readout": "prefill",
-   "note": "LiquidAI/LFM3-1.7B @ 0dc4268b561499c648c7ba7c9466bf3d8d01517a, BF16, on our GPU through llama.cpp server b12020 (official BF16 GGUF LiquidAI/LFM3-1.7B-GGUF @ cd0c74c5 LFM3-1.7B-BF16.gguf, chat template from the pinned repo; vLLM v0.30.0 lacks the architecture); logic's server (small_models.py key lfm3-1.7b, port 18605, bariton GPU 1, #5080/#5091; ours alone after turkce's 'done') or ours on the same port and name (tools/v3/late-smallchat/serve.sh). thinking on (enable_thinking true), no effort sent (reasoning_effort removed: template default); the letter is read after the reasoning from a prefilled Answer: (as Gemma 4 31B (on)); reasoning split by the server's llama.cpp --reasoning-format deepseek (it matters only for replies cut off before </think>: the letter is read from logprobs after the prefilled answer). Sampling: League 1's local chat rule, per request: temperature 1.0 from the chat client, everything else the server's default (llama.cpp defaults), no seed; it differs from logic's Logic & Math runs: logic sends temperature 0.1, top_k 50, repeat_penalty 1.1 over the whole context, top_p 1, min_p 0, seed 0. Output cap 32,768 tokens (the chat client default, as Qwen3.8-27B (on)). Up to 16 matches and 16 requests at once, League 1's rule for its local chat setups (the server is ours alone after turkce's 'done'). Late entry v the original League 1 table (tools/v3/late-smallchat; Zeki #5064/#5071/#5073; Main's decisions 12 Nov)",
+   "reasoning_field": "reasoning",
+   "note": "LiquidAI/LFM3-1.7B @ 0dc4268b561499c648c7ba7c9466bf3d8d01517a, BF16, BF16 safetensors, on our GPU through vLLM 0.34.0rc1.dev302+gbe47189f3 (nightly, commit be47189f37f6, docker vllm/vllm-openai@sha256:7f0618da95bac2f1cc97fcd1791380d7c1a06d24a4998da45aeb7fbe6c49179e; no vLLM release has Lfm3ForCausalLM), the pinned repo's chat template, --max-model-len 69,632, 32 sequences, --generation-config auto, reasoning parser qwen3: logic's server small_models.py key lfm3-1.7b-vllm-rerun (served name lfm3-1.7b, port 18634, bariton GPU 1, work/lfm3_rerun.sh, Ümit #6250 via Main; the server args of its twin lfm3-1.7b-vllm on port 18605 are the same; ours alone after turkce's 'done') or ours on the same port and name (tools/v3/late-smallchat/serve.sh). Was llama.cpp b12020 with the BF16 GGUF until 13 Nov (Main: logic serves LFM3-1.7B on this vLLM from ~21:00Z); no LFM3-1.7B decision was played on llama.cpp. thinking on (enable_thinking true), no effort sent (reasoning_effort removed: template default); the letter is read after the reasoning from a prefilled Answer: (as Gemma 4 31B (on)); reasoning split by the server's vLLM reasoning parser qwen3 (it matters only for replies cut off before </think>: the letter is read from logprobs after the prefilled answer). Sampling: League 1's local chat rule, per request: temperature 1.0 from the chat client, everything else the server's default (vLLM --generation-config auto: generation_config.json's top_k 50 and repetition_penalty 1.1; its temperature 0.1 is replaced by the request's 1.0), no seed; it differs from logic's Logic & Math runs: logic sends temperature 0.1, top_k 50, repetition_penalty 1.1, top_p 1, min_p 0, seed 0. Output cap 32,768 tokens (the chat client default, as Qwen3.8-27B (on)). Up to 16 matches and 16 requests at once, League 1's rule for its local chat setups (the server is ours alone after turkce's 'done'). Late entry v the original League 1 table (tools/v3/late-smallchat; Zeki #5064/#5071/#5073; Main's decisions 12 Nov). Read-out message: the reasoning in the assistant message's reasoning field and Answer: as its content (player key reasoning_field, runner branch late-smallchat-on), which LFM3's template renders as <think>REASONING</think>Answer:; vLLM hands this template its content as a list of parts (content format openai, its auto-detection), and then the template opens an extra empty <think></think> before a content carrying <think>REASONING</think>Answer: (no error, a wrong prompt); tools/v3/late-smallchat/stub_test.sh.",
    "device": "RTX PRO 6000 (bariton), one GPU",
    "parallel": 16,
    "max_matches": 16
   }
  ],
  "served_model": "lfm3-1.7b",
- "binary": "target/release/jevgammon",
+ "binary": "/home/cbasaran/.cache/jevgammon-wt/target-small-learning-runner/jevgammon-b01eca2",
  "context_limit": 69632,
  "max_output_tokens": 32768,
  "prompt_max": 4277,
@@ -40,10 +41,10 @@
  "lesson_max_tokens": 32768,
  "lesson_timeout_s": 1800,
  "server": {
-  "logic_key": "lfm3-1.7b",
-  "port": 18605,
-  "engine": "llama.cpp server b12020 (commit 0ec4027), official BF16 GGUF LiquidAI/LFM3-1.7B-GGUF@cd0c74c5 LFM3-1.7B-BF16.gguf, the pinned repo's chat_template.jinja, --reasoning-format deepseek",
-  "context": "-np 32 -c 69632x32: 69,632 tokens per slot (small_models.py CONTEXT = 65,536 + 4,096)"
+  "logic_key": "lfm3-1.7b-vllm-rerun",
+  "port": 18634,
+  "engine": "vLLM 0.34.0rc1.dev302+gbe47189f3 nightly (docker vllm/vllm-openai@sha256:7f0618da95bac2f1…), LiquidAI/LFM3-1.7B@0dc4268 BF16 safetensors, --max-num-seqs 32, --generation-config auto, --reasoning-parser qwen3 (logic's work/lfm3_rerun.sh, Ümit #6250)",
+  "context": "--max-model-len 69632"
  },
  "prompt_version": "bg-v2",
  "order_seed": 1190975713392774006,

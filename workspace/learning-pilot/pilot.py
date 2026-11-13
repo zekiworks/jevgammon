@@ -67,7 +67,10 @@ BOOT = 10000
 GAMES = 10
 PLANNED = 10  # series per arm, fixed by the plan; a smoke summary can never be complete
 CHECKPOINTS = (5, 10)  # after these games, for the non-control arms; T0 is shared
-ARMS = ["control", "records", "lessons", "budget"]
+# Decision models (Ümit #6225): only control and records ("arms" in the config). Their player carries
+# context_gate server_invalid: the notes go at the start of `state` (decision.rs state_with_block) and a request the
+# server refuses as too long is an invalid answer (small-learning-runner).
+ARMS = BASE.get("arms", ["control", "records", "lessons", "budget"])
 MARGIN = 0.001  # the site's risk margin
 SCALE = 500  # the site's equity scale: error rate = 500 x mean 2-ply equity loss
 CONTEXT_LIMIT = BASE.get("context_limit", 32768)  # the server's context per sequence (spark3's max_model_len)
@@ -142,6 +145,7 @@ def tokens(text: str) -> int:
     if _TOK is None:
         from tokenizers import Tokenizer
         _TOK = Tokenizer.from_file(TOKENIZER)
+        _TOK.no_truncation()  # a model's tokenizer.json may carry its window as a cut; every token counts here
     return len(_TOK.encode(text).ids)
 
 

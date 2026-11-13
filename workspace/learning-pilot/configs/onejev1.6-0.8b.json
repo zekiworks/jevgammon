@@ -1,0 +1,37 @@
+{
+ "key": "onejev1.6-0.8b",
+ "mode": "decision",
+ "arms": [
+  "control",
+  "records"
+ ],
+ "note": "Learning pilot protocol, decision mode (Ümit #6225): arms control and records only; the records go at the start of `state` + a blank line (decision.rs state_with_block); context_gate server_invalid: a request the server refuses as too long is an invalid answer, the player goes on. Player: v3.db players.settings of 'OneJev1.6-0.8B' (the league's frozen settings), plus context_gate. Limit 32,768 (flide serve (onejev-slot-v2): state + one question over 32,768 tokens is refused (422); a request over 65,536); prompt_max = the median League 1 request alone, 3,321 tokens of its tokenizer (plain), so the note budget is limit - prompt_max - 1,500 = 27,947; the oldest whole games are dropped past it (logged). Partial fit: with one game record at the start of state, 0 of 977 stored League 1 requests are over the limit with the median record and 1 with the largest (context_fit.py); with several games in the note more are refused; each refusal counts as an invalid answer.",
+ "players": [
+  {
+   "name": "OneJev1.6-0.8B",
+   "spec": "onejev",
+   "provider": "local (flide serve)",
+   "quantization": "bf16",
+   "base_url": "http://192.168.1.131:19420",
+   "note": "OmniJev's OneJev1.6-0.8B (Hugging Face OmniJev/OneJev1.6-0.8B @ bcd88a382f314b26cb7b1b7f369c1ed3502ee7a0, Apache-2.0; average of three Qwen3.5-0.8B fine-tunes; no calibration.json shipped, so temperature 1; main moved from c89933c2 on 10 Nov with README.md only) on our GPU through the server its card names, Flide 0.1.11 (flide serve --name OmniJev/OneJev1.6-0.8B, format onejev-slot-v2, BF16), model field OmniJev/OneJev1.6-0.8B; probabilities rounded to 6 places by the server. 255 options per request (the league's rule; longer lists split). Never truncates: state plus a question over 32,768 tokens, or a request over 65,536, is refused (422). League 1's longest stored request (251 options) is 27,333 tokens of its tokenizer; none over.",
+   "device": "NVIDIA GB10 (DGX Spark spark2, spark-d9ee), the whole GPU, handed over by logic one server at a time: ~/envs/onejev16/bin/flide serve --model <snapshot> --name OmniJev/OneJev1.6-0.8B --host 0.0.0.0 --port 19420",
+   "parallel": 1,
+   "max_matches": 1,
+   "context_gate": {
+    "kind": "server_invalid"
+   }
+  }
+ ],
+ "binary": "/home/cbasaran/.cache/jevgammon-wt/target-small-learning-runner/jevgammon-b01eca2",
+ "context_limit": 32768,
+ "max_output_tokens": 0,
+ "prompt_max": 3321,
+ "tokenizer_file": "/home/cbasaran/.cache/small-bench-tok/OneJev1.6-0.8B@bcd88a382f314b26cb7b1b7f369c1ed3502ee7a0/tokenizer.json",
+ "tokenizer_source": "OmniJev/OneJev1.6-0.8B@bcd88a38",
+ "test_set_sha256": "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6",
+ "prompt_version": "bg-v2",
+ "order_seed": 1190975713392774006,
+ "rounds": 3,
+ "max_turns": 300,
+ "clock": 0
+}

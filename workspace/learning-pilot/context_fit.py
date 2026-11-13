@@ -134,7 +134,7 @@ def largest_and_median(records):
 
 def chat_configs():
     return [json.loads(p.read_text()) | dict(path=p.name) for p in sorted((HERE / "configs").glob("*.json"))
-            if "key" in json.loads(p.read_text())]
+            if "key" in json.loads(p.read_text()) and json.loads(p.read_text()).get("mode") != "decision"]
 
 
 def chat_fit(cfg, requests=None, contexts=None):
@@ -223,9 +223,15 @@ DECISION = [
     dict(key="strands", name="Strands Decider 2B", setup=None,
          source="StrandsAgents/strands-decider-2B-hobson-v21@2b52a623",
          tok=Path.home() / "code/strands-decider/model/tokenizer.json", method="plain", limit=4096,
-         limit_basis="strands_decider_config.json max_length 4,096; strands_decider infer.py _fit truncates the "
-         "state to max_length minus the question's reserve (no refusal by default)", capped=True,
-         route="no backgammon route or League 1 record"),
+         limit_basis="strands_decider_config.json max_length 4,096; served with --strict-window (late-tiny8-small3 "
+         "8ebad40): a prompt over 4,096 tokens is refused (422), never cut; max_choices 13",
+         route="no League 1 record (late entry prepared on late-tiny8-small3, not started)"),
+    dict(key="decider-flash-v1.2", name="Decider Flash v1.2", setup="Decider Flash v1.2",
+         source="perplexity-ai/pplx-decider-flash-v1.2 (release-manifest repo_id; checkpoint "
+         "~/code/pplx-decider/checkpoint-flash-v1.2, no HF cache revision)",
+         tok=Path.home() / "code/pplx-decider/checkpoint-flash-v1.2/tokenizer.json", method="plain",
+         limit=262144, limit_basis="pplx_decider model.py DEFAULT_MAX_LENGTH 262,144 (lr/decider.py): the encoder "
+         "bisects the questions past it, a single question over it is refused (400), nothing truncated"),
     dict(key="metask", name="Metask-Jev-4B", setup=None, source="metask-ai/metask-jev@ea20fe85",
          tok=Path.home() / "code/metask-jev/model/tokenizer.json", method="plain", limit=4096,
          limit_basis="~/code/metask-jev/server.py MAX_INPUT_TOKENS 4,096 (jev_schema: longer prompts refused, "

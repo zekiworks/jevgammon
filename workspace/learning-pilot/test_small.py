@@ -25,7 +25,20 @@ sys.path.insert(0, str(HERE))
 import context_fit as F  # noqa: E402
 
 SMALL = ["lfm3-1.7b-on", "minicpm5-2b-on"]
-SMALLCHAT = Path("/home/cbasaran/code/jevgammon-smallchat")  # branch late-smallchat (the player settings)
+# The player settings: late-smallchat-on a083fb4 (LFM3 repinned to logic's vLLM rerun with reasoning_field; MiniCPM5's
+# reasoning_prefill from 7170908, unchanged there)
+PLAYER_SOURCE = {"lfm3-1.7b-on": "a083fb4", "minicpm5-2b-on": "a083fb4"}
+MAIN = Path("/home/cbasaran/code/jevgammon")
+RUNNER = Path("/home/cbasaran/.cache/jevgammon-wt/target-small-learning-runner/jevgammon-b01eca2")
+DECISION = ["d1-2b", "glide-2b", "glide-0.8b", "knowline-4b", "knowline-2b", "knowline-0.8b", "startlux-2b",
+            "startlux-0.8b", "onejev1.6-0.8b", "gliclass-v4-edge", "decider-flash-v1.2"]
+# tools/v3/late-tiny8/stub_server.py kind per decision config (Decider Flash: startlux, no model rule)
+KIND = {"d1-2b": "d1", "glide-2b": "glide", "glide-0.8b": "glide", "knowline-4b": "knowline", "knowline-2b": "knowline",
+        "knowline-0.8b": "knowline", "startlux-2b": "startlux", "startlux-0.8b": "startlux", "onejev1.6-0.8b": "onejev",
+        "gliclass-v4-edge": "gliclass", "decider-flash-v1.2": "startlux"}
+SCRATCH = Path.home() / ".cache/jevgammon-wt/small-learning-tmp"  # never /tmp
+SCRATCH.mkdir(parents=True, exist_ok=True)
+tempfile.tempdir = str(SCRATCH)
 
 
 def pilot(config, **env):
@@ -71,15 +84,37 @@ def test_small_configs():
         assert p["LESSONS_REQUEST"] == {"chat_template_kwargs": cfg["players"][0]["request"]["chat_template_kwargs"]}
         assert p["LESSONS_REQUEST"] == {"chat_template_kwargs": {"enable_thinking": True}}
         assert p["LESSONS_MAX_TOKENS"] == cfg["players"][0]["max_tokens"] == 32768
-        assert Path(p["TOKENIZER"]).exists() and p["BIN"] == ROOT / "target/release/jevgammon"
+        assert Path(p["TOKENIZER"]).exists()
+        assert p["BIN"] == RUNNER
         assert p["T0_NAME"] == f"{cfg['players'][0]['name']} | T0 shared"
         assert p["ORDER_SEED"] == pilot("configs/base.json")["ORDER_SEED"]
         assert p["TEST_SET_SHA256"] == "6c92e7416745125ca3ea09c9e41e450a52716f8ad018772278b07f992f7318e6"
         # the player is the late entry's, byte for byte as JSON
-        own = subprocess.run(["git", "-C", str(SMALLCHAT), "show",
-                              f"late-smallchat:tools/v3/late-smallchat/models/{key}/player.json"],
+        own = subprocess.run(["git", "-C", str(MAIN), "show",
+                              f"{PLAYER_SOURCE[key]}:tools/v3/late-smallchat/models/{key}/player.json"],
                              capture_output=True, text=True, check=True).stdout
         assert cfg["players"][0] == json.loads(own)
+    assert "reasoning_prefill" in json.loads((HERE / "configs/minicpm5-2b-on.json").read_text())["players"][0]
+
+
+def test_decision_configs():
+    v3 = sqlite3.connect("file:/home/cbasaran/code/jevgammon/v3.db?mode=ro", uri=True)
+    fit = {m["key"]: m for m in json.loads((HERE / "context_fit_decision.json").read_text())["models"]}
+    for key in DECISION:
+        cfg = json.loads((HERE / f"configs/{key}.json").read_text())
+        p = pilot(f"configs/{key}.json")
+        assert p["ARMS"] == ["control", "records"] and p["BIN"] == RUNNER and RUNNER.exists()
+        assert p["NOTE_BUDGET"] == cfg["context_limit"] - cfg["prompt_max"] - 1500 > 0
+        assert Path(p["TOKENIZER"]).exists() and fit[key]["verdict"] in ("fit", "partial")
+        player = dict(cfg["players"][0])
+        assert player.pop("context_gate") == {"kind": "server_invalid"}
+        row = v3.execute("SELECT settings FROM players WHERE name = ?", (F.DECISION[[m["key"] for m in F.DECISION]
+                                                                                 .index(key)]["setup"],)).fetchone()
+        if row:  # a league setup: its frozen settings, unchanged
+            assert player == json.loads(row[0]), key
+    skipped = json.loads((HERE / "configs/decision_skipped.json").read_text())["skipped"]
+    assert sorted(s["key"] for s in skipped) == ["glide-0.4b", "metask", "strands"]
+    assert not any((HERE / f"configs/{s['key']}.json").exists() for s in skipped)
 
 
 # --- context_fit -------------------------------------------------------------------------------------------------
@@ -170,12 +205,16 @@ class Stub(BaseHTTPRequestHandler):
         if body.get("model") != self.server.served:
             return self.reply({"error": {"message": "unknown model"}}, 404)
         if body.get("continue_final_message"):
+            # vLLM's rule (transformers): the prefilled final message must appear verbatim in the rendered prompt
+            if self.server.template and body["messages"][-1]["content"] not in self.server.render(body["messages"]):
+                return self.reply({"error": {"message": "continue_final_message is set but the final message does "
+                                             "not appear in the chat after applying the chat template!"}}, 400)
             top = [{"token": c, "logprob": -0.1 - i} for i, c in enumerate("ABCDEFGHIJKLMNOPQRST")]
             msg = {"role": "assistant", "content": "A"}
             choice = {"message": msg, "finish_reason": "length",
                       "logprobs": {"content": [{"token": "A", "logprob": -0.1, "top_logprobs": top}]}}
         elif "response_format" in body:
-            msg = {"role": "assistant", "content": '{"choice": "A"}', "reasoning_content": "stub reasoning"}
+            msg = {"role": "assistant", "content": '{"choice": "A"}', "reasoning_content": "\nstub reasoning\n"}
             choice = {"message": msg, "finish_reason": "stop"}
         else:
             lessons = "\n".join(f"- stub lesson {k}: keep the blots safe" for k in range(1, 6))
@@ -221,10 +260,39 @@ def run_pilot(config, *args, **env):
     return r
 
 
-def test_end_to_end_stub():
-    key = "lfm3-1.7b-on"
+def render_final(snapshot):
+    """The prompt as transformers renders a conversation whose last (assistant) message is continued."""
+    from transformers.utils.chat_template_utils import render_jinja_template
+    tc = json.loads((snapshot / "tokenizer_config.json").read_text())
+    tpl = (snapshot / "chat_template.jinja").read_text()
+
+    def render(messages):
+        # vLLM hands a message's `reasoning` to the template as both `reasoning` and `reasoning_content`
+        messages = [dict(m, reasoning_content=m["reasoning"]) if "reasoning" in m else m for m in messages]
+        out, _ = render_jinja_template(conversations=[messages], chat_template=tpl, add_generation_prompt=False,
+                                       bos_token=tc.get("bos_token") or "", eos_token=tc.get("eos_token"),
+                                       enable_thinking=True)
+        return out[0]
+    return render
+
+
+def test_template_rule_of_the_stub():
+    """The stub refuses MiniCPM5's old (on) prefill and accepts the reasoning_prefill layout, as vLLM did/does."""
+    cfg = json.loads((HERE / "configs/minicpm5-2b-on.json").read_text())
+    render = render_final(Path(cfg["tokenizer_file"]).parent)
+    msgs = [{"role": "system", "content": "S"}, {"role": "user", "content": "U"}]
+    old = "<think>\nstub reasoning\n</think>Answer:"
+    new = cfg["players"][0]["reasoning_prefill"].replace("{reasoning}", "stub reasoning")
+    assert old not in render(msgs + [{"role": "assistant", "content": old}])
+    assert new in render(msgs + [{"role": "assistant", "content": new}])
+
+
+def chat_end_to_end(key):
+    cfg0 = json.loads((HERE / f"configs/{key}.json").read_text())
     server = ThreadingHTTPServer(("127.0.0.1", 0), Stub)
-    server.served = json.loads((HERE / f"configs/{key}.json").read_text())["served_model"]
+    server.served = cfg0["served_model"]
+    server.template = True
+    server.render = render_final(Path(cfg0["tokenizer_file"]).parent)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     Stub.seen.clear()
     with tempfile.TemporaryDirectory() as tmp:
@@ -236,7 +304,7 @@ def test_end_to_end_stub():
             p = pilot(config)
             out = json.loads((p["OUTPUTS"] / "learning-pilot.json").read_text())
             assert out["series_finished"] == {arm: [1] for arm in p["ARMS"]}, out["series_finished"]
-            assert out["t0_done"] and out["protocol"]["model"] == "LFM3-1.7B (on)"
+            assert out["t0_done"] and out["protocol"]["model"] == cfg0["players"][0]["name"]
             assert out["protocol"]["note_budget"] == p["NOTE_BUDGET"]
             t0 = json.loads((p["RUNS"] / "t0/aggregate.json").read_text())["metrics"]
             assert t0["answered"] == 200 and t0["invalid"] == 0 and t0["failed"] == 0
@@ -266,9 +334,91 @@ def test_end_to_end_stub():
             # the records arm's notes reach the system prompt once a game is played
             noted = [b for b in reasoning if p["OPEN"] in b["messages"][0]["content"]]
             assert noted and all(p["CLOSE"] in b["messages"][0]["content"] for b in noted)
+            finals = [b["messages"][-1] for b in Stub.seen if b.get("continue_final_message")]
+            player = cfg0["players"][0]
+            if player.get("reasoning_field"):  # LFM3 under vLLM: Answer: as content, the reasoning in its field
+                want = {"role": "assistant", "content": "Answer:", player["reasoning_field"]: "\nstub reasoning\n"}
+            else:
+                layout = player.get("reasoning_prefill")
+                want = {"role": "assistant", "content": layout.replace("{reasoning}", "stub reasoning") if layout
+                        else "<think>\nstub reasoning\n</think>Answer:"}
+            assert finals and all(m == want for m in finals), finals[:1]
         finally:
             server.shutdown()
             clean(cfg["key"])
+
+
+def test_end_to_end_stub_lfm3():
+    chat_end_to_end("lfm3-1.7b-on")
+
+
+def test_end_to_end_stub_minicpm5():
+    chat_end_to_end("minicpm5-2b-on")
+
+
+def stub_server(kind, port):
+    """tools/v3/late-tiny8/stub_server.py as on late-tiny8-small3 8ebad40, from git (read-only)."""
+    src = subprocess.run(["git", "-C", str(MAIN), "show", "8ebad40:tools/v3/late-tiny8/stub_server.py"],
+                         capture_output=True, text=True, check=True).stdout
+    path = SCRATCH / "stub_server.py"
+    path.write_text(src)
+    return subprocess.Popen([sys.executable, str(path), kind, str(port)])
+
+
+def free_port():
+    import socket
+    with socket.socket() as s:
+        s.bind(("127.0.0.1", 0))
+        return s.getsockname()[1]
+
+
+def decision_end_to_end(key):
+    import time
+    import urllib.request
+    port = free_port()
+    proc = stub_server(KIND[key], port)
+    with tempfile.TemporaryDirectory() as tmp:
+        config, cfg = throwaway(key, tmp, f"http://127.0.0.1:{port}")
+        clean(cfg["key"])
+        try:
+            for _ in range(50):
+                try:
+                    urllib.request.urlopen(f"http://127.0.0.1:{port}/stats", timeout=1).close()
+                    break
+                except OSError:
+                    time.sleep(0.1)
+            run_pilot(config, "t0")
+            run_pilot(config, "run", "--series", "1-1")
+            p = pilot(config)
+            out = json.loads((p["OUTPUTS"] / "learning-pilot.json").read_text())
+            assert out["series_finished"] == {"control": [1], "records": [1]}, out["series_finished"]
+            t0 = json.loads((p["RUNS"] / "t0/aggregate.json").read_text())["metrics"]
+            assert t0["answered"] == 200 and t0["invalid"] == 0 and t0["failed"] == 0
+            rec = json.loads((p["RUNS"] / "records/s01/aggregate.json").read_text())
+            assert all(rec["evaluations"][t]["answered"] == 200 for t in ("T5", "T10"))
+            assert rec["context_tokens_after_game"]["9"] > 0
+            db = sqlite3.connect(f"file:{p['DB']}?mode=ro", uri=True)
+            states = [json.loads(r[0])["state"] for r in db.execute(
+                "SELECT ae.request FROM answer_exchanges ae JOIN answers a ON a.id = ae.answer_id "
+                "WHERE a.setup LIKE '% | records | s01 | T10'")]
+            plain = [json.loads(r[0])["state"] for r in db.execute(
+                "SELECT ae.request FROM answer_exchanges ae JOIN answers a ON a.id = ae.answer_id "
+                "WHERE a.setup LIKE '% | T0 shared'")]
+            db.close()
+            note = (p["RUNS"] / "records/s01/contexts/after-g10.txt").read_text()
+            # the records block at the start of state + a blank line (decision.rs state_with_block); T0 has none
+            assert states and all(s.startswith(note.rstrip() + "\n\n") for s in states)
+            assert plain and not any(s.startswith(p["OPEN"]) for s in plain)
+            return rec["context_tokens_after_game"]
+        finally:
+            proc.terminate()
+            clean(cfg["key"])
+
+
+def test_decision_end_to_end_stub():
+    for key in os.environ.get("DECISION_KEYS", ",".join(DECISION)).split(","):
+        ctx = decision_end_to_end(key)
+        print(f"  {key}: records context tokens after game 10 = {ctx['10']}", flush=True)
 
 
 def test_dry_run():

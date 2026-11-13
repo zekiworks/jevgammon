@@ -391,7 +391,7 @@
    "tokenizer": "StrandsAgents/strands-decider-2B-hobson-v21@2b52a623",
    "method": "plain",
    "limit": 4096,
-   "limit_basis": "strands_decider_config.json max_length 4,096; strands_decider infer.py _fit truncates the state to max_length minus the question's reserve (no refusal by default)",
+   "limit_basis": "strands_decider_config.json max_length 4,096; served with --strict-window (late-tiny8-small3 8ebad40): a prompt over 4,096 tokens is refused (422), never cut; max_choices 13",
    "block_tokens": {
     "median": 3276,
     "largest": 6139
@@ -407,7 +407,7 @@
    "verdict": "skip",
    "why": "a median game record on a median request is 6,598 tokens > 4,096",
    "notes": [
-    "no backgammon route or League 1 record"
+    "no League 1 record (late entry prepared on late-tiny8-small3, not started)"
    ],
    "requests": {
     "largest": {
@@ -419,6 +419,41 @@
      "exchange": 262030,
      "bytes": 10497,
      "setup": "OneJev1.6-0.8B"
+    }
+   }
+  },
+  {
+   "model": "Decider Flash v1.2",
+   "key": "decider-flash-v1.2",
+   "tokenizer": "perplexity-ai/pplx-decider-flash-v1.2 (release-manifest repo_id; checkpoint ~/code/pplx-decider/checkpoint-flash-v1.2, no HF cache revision)",
+   "method": "plain",
+   "limit": 262144,
+   "limit_basis": "pplx_decider model.py DEFAULT_MAX_LENGTH 262,144 (lr/decider.py): the encoder bisects the questions past it, a single question over it is refused (400), nothing truncated",
+   "block_tokens": {
+    "median": 3276,
+    "largest": 6139
+   },
+   "tokens": {
+    "largest+none": 4959,
+    "largest+median": 8236,
+    "largest+largest": 11099,
+    "median+none": 3331,
+    "median+median": 6608,
+    "median+largest": 9471
+   },
+   "verdict": "fit",
+   "why": "largest record on the largest request: 11,099 <= 262,144",
+   "notes": [],
+   "requests": {
+    "largest": {
+     "exchange": 54707,
+     "bytes": 13841,
+     "setup": "Decider Flash v1.2"
+    },
+    "median": {
+     "exchange": 212930,
+     "bytes": 10505,
+     "setup": "Decider Flash v1.2"
     }
    }
   },

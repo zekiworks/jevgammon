@@ -10,6 +10,7 @@
 //! to the constrained letter (choice only). Subscription models return no probabilities and
 //! answer with one constrained letter.
 
+use std::borrow::Cow;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Instant;
@@ -84,10 +85,100 @@ pub struct Options {
     pub readout: Readout,
     /// Prefill text before the letter when reasoning is off (default `Answer:`).
     pub answer_prefix: Option<String>,
+    /// Learning pilot: text appended to the play call's system prompt after a blank line
+    /// (the note carries its own delimiters); `None` = the league's system prompt alone.
+    pub prompt_note: Option<String>,
+    /// Learning pilot: read before every play call; its text, when not empty, replaces
+    /// `prompt_note`.
+    pub prompt_note_file: Option<std::path::PathBuf>,
     /// Rate-limit pacing shared with the other players of the group.
     pub pacer: Option<Arc<super::Pacer>>,
     /// Hard spending cap (OpenAI-compatible servers): every attempt reserves its worst case.
     pub budget: Option<Arc<crate::budget::Ledger>>,
+    /// "Did they improve?": the model and provider every response must name (OpenRouter's
+    /// `model` and `provider` fields); `None` = no check.
+    pub expect_route: Option<ExpectRoute>,
+    /// "Did they improve?" (Claude): a 429 ends the request at once, no retry.
+    pub quota_pause: bool,
+}
+
+/// "Did they improve?" route identity: the response's model field (JSON pointer `model_pointer`,
+/// default `/model`) must be one of `models`; when `provider` is set, the field at
+/// `provider_pointer` (default `/provider`) must equal it. A failing reply is appended to
+/// `reject_log` (JSON lines).
+#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct ExpectRoute {
+    pub models: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub provider: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub model_pointer: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub provider_pointer: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reject_log: Option<std::path::PathBuf>,
+    /// Also accept a listed model followed by a dated snapshot suffix (`<model>-2026...`): for
+    /// routes whose league records hold no served model (Codex).
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub allow_dated: bool,
+}
+
+/// A dated snapshot suffix, exactly `-YYYY-MM-DD` with a valid calendar date and nothing after
+/// (byte-safe: anything that is not that ASCII shape is rejected).
+fn is_dated_suffix(rest: &str) -> bool {
+    let b = rest.as_bytes();
+    b.len() == 11
+        && b[0] == b'-'
+        && b[5] == b'-'
+        && b[8] == b'-'
+        && [1, 2, 3, 4, 6, 7, 9, 10].iter().all(|&i| b[i].is_ascii_digit())
+        && chrono::NaiveDate::parse_from_str(&rest[1..], "%Y-%m-%d").is_ok()
+}
+
+/// The identity fields of a reply (`model`, `provider` at the expected pointers), whatever they
+/// hold, for the record.
+pub fn identity_fields(raw: &str, expect: &ExpectRoute) -> Value {
+    let value: Value = serde_json::from_str(raw).unwrap_or(Value::Null);
+    let model_at = expect.model_pointer.as_deref().unwrap_or("/model");
+    let provider_at = expect.provider_pointer.as_deref().unwrap_or("/provider");
+    json!({
+        "model": value.pointer(model_at).cloned().unwrap_or(Value::Null),
+        "provider": if expect.provider.is_some() { value.pointer(provider_at).cloned().unwrap_or(Value::Null) } else { Value::Null },
+    })
+}
+
+/// Whether a raw response names the expected model (and provider): `Ok("accepted")` for a listed
+/// model, `Ok("accepted_dated")` for a listed model plus a dated snapshot suffix (when allowed).
+/// Missing or unreadable identity fails closed.
+pub fn route_identity(raw: &str, expect: &ExpectRoute) -> std::result::Result<&'static str, String> {
+    let value: Value =
+        serde_json::from_str(raw).map_err(|_| "the response is not JSON: no identity".to_owned())?;
+    let model_at = expect.model_pointer.as_deref().unwrap_or("/model");
+    let model = value.pointer(model_at).and_then(Value::as_str);
+    let Some(model) = model else {
+        return Err(format!("the response lacks its identity (no model at {model_at})"));
+    };
+    let verdict = if expect.models.iter().any(|x| x == model) {
+        "accepted"
+    } else if expect.allow_dated
+        && expect
+            .models
+            .iter()
+            .any(|x| model.strip_prefix(x.as_str()).is_some_and(is_dated_suffix))
+    {
+        "accepted_dated"
+    } else {
+        return Err(format!("the response names model {model:?}, expected one of {:?}", expect.models));
+    };
+    if let Some(want) = &expect.provider {
+        let provider_at = expect.provider_pointer.as_deref().unwrap_or("/provider");
+        match value.pointer(provider_at).and_then(Value::as_str) {
+            Some(p) if p == want => {}
+            Some(p) => return Err(format!("the response names provider {p:?} for {model:?}, expected {want:?}")),
+            None => return Err(format!("the response lacks its identity (no provider at {provider_at})")),
+        }
+    }
+    Ok(verdict)
 }
 
 enum Kind {
@@ -114,6 +205,10 @@ pub struct LlmClient {
     /// Set when the server answered a logprobs request without logprobs; later decisions
     /// skip that request and use the constrained letter.
     no_logprobs: AtomicBool,
+    /// Set when a response failed the route check: no further request is sent.
+    route_rejected: AtomicBool,
+    /// The Codex endpoint (`CODEX_URL`; a mock server in tests).
+    codex_url: String,
 }
 
 #[derive(Debug, Default, PartialEq)]
@@ -137,6 +232,9 @@ struct Completion {
     reasoning_tokens: Option<u64>,
     /// Dollars, when the provider reports them (OpenRouter's `usage.cost`).
     cost: Option<f64>,
+    /// The served model of a Codex stream (`response.completed` → `response.model`), whose
+    /// stored reply is the answer text only.
+    served_model: Option<String>,
 }
 
 impl Completion {
@@ -229,6 +327,22 @@ pub fn as_sent(body: Value, options: &Options) -> Value {
     merged(body, options.request.as_ref())
 }
 
+/// The play call's system prompt: the letter readout's, then the player's prompt note (learning
+/// pilot) after a blank line when it has one.
+pub fn play_system(options: &Options) -> Cow<'static, str> {
+    let from_file = options.prompt_note_file.as_ref().map(|path| {
+        std::fs::read_to_string(path)
+            .unwrap_or_else(|error| panic!("prompt_note_file {}: {error}", path.display()))
+    });
+    let note = from_file
+        .filter(|text| !text.trim().is_empty())
+        .or_else(|| options.prompt_note.clone());
+    match note {
+        Some(note) => Cow::Owned(format!("{}\n\n{}", letter_system(), note.trim_end())),
+        None => Cow::Borrowed(letter_system()),
+    }
+}
+
 /// A request constrained by the provider to `answer`, before the configured extra fields
 /// (`as_sent`). The play call (`Answer::Letter`) is the league request; the prediction differs
 /// only in its user text, its system prompt (neutral, Method §9.13) and its answer format.
@@ -240,8 +354,8 @@ pub fn constrained_request(
     answer: Answer,
 ) -> Value {
     let system = match answer {
-        Answer::Letter(_) => letter_system(),
-        Answer::Prediction => prediction_system(),
+        Answer::Letter(_) => play_system(options),
+        Answer::Prediction => Cow::Borrowed(prediction_system()),
     };
     let effort = options.reasoning.as_deref();
     let (name, compatible_name) = match answer {
@@ -343,6 +457,84 @@ pub fn constrained_request(
     }
 }
 
+/// "Did they improve?" lesson call: one free-text request (no answer format) through the
+/// route, before the configured extra fields (`as_sent`). Everything else is the route's
+/// league request: the player's reasoning setting, the temperature the league sends (1.0 on
+/// Gemini/Antigravity and OpenAI-compatible servers, none elsewhere) and the league's output
+/// limit (Anthropic `max_tokens`, default 32,000; OpenAI-compatible `max_tokens`, default
+/// 32,768, the cap of the league's free reasoning request; none on Codex, xAI and Gemini).
+pub fn free_text_request(route: Route, model: &str, options: &Options, system: &str, user: &str) -> Value {
+    let effort = options.reasoning.as_deref();
+    match route {
+        Route::OpenAiSubscription => {
+            let mut body = json!({
+                "model": model,
+                "instructions": system,
+                "input": [{"type": "message", "role": "user", "content": [{"type": "input_text", "text": user}]}],
+                "stream": true,
+                "store": false,
+            });
+            if let Some(effort) = effort {
+                body["reasoning"] = json!({"effort": effort});
+            }
+            body
+        }
+        Route::Xai => {
+            let mut body = json!({
+                "model": model,
+                "instructions": system,
+                "input": [{"role": "user", "content": user}],
+                "store": false,
+            });
+            if let Some(effort) = effort {
+                body["reasoning"] = json!({"effort": effort});
+            }
+            body
+        }
+        Route::AnthropicSubscription => {
+            let mut body = json!({
+                "model": model,
+                "max_tokens": options.max_tokens.unwrap_or(32000),
+                "system": [
+                    {"type": "text", "text": CLAUDE_CODE_IDENTITY},
+                    {"type": "text", "text": system},
+                ],
+                "messages": [{"role": "user", "content": user}],
+            });
+            if let Some(effort) = effort {
+                body["output_config"] = json!({"effort": effort});
+            }
+            body
+        }
+        Route::Gemini | Route::Antigravity => {
+            let mut config = json!({"temperature": 1.0});
+            if let Some(effort) = effort {
+                config["thinkingConfig"] = json!({"thinkingLevel": effort});
+            }
+            json!({
+                "systemInstruction": {"parts": [{"text": system}]},
+                "contents": [{"role": "user", "parts": [{"text": user}]}],
+                "generationConfig": config,
+            })
+        }
+        Route::OpenAiCompatible => {
+            let mut body = json!({
+                "model": model,
+                "messages": [
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": user},
+                ],
+                "temperature": 1.0,
+                "max_tokens": options.max_tokens.unwrap_or(32768),
+            });
+            if let Some(effort) = effort {
+                body["reasoning_effort"] = json!(effort);
+            }
+            body
+        }
+    }
+}
+
 /// JSON schema of a one-letter answer among `count` options.
 fn letter_schema(count: usize) -> Value {
     json!({
@@ -392,6 +584,8 @@ impl LlmClient {
             session_id: uuid::Uuid::new_v4().to_string(),
             options,
             no_logprobs: AtomicBool::new(false),
+            route_rejected: AtomicBool::new(false),
+            codex_url: CODEX_URL.to_owned(),
         }
     }
 
@@ -466,7 +660,7 @@ impl LlmClient {
             }
             _ => {
                 let body = self.constrained_body(&user, count);
-                let completion = self.call(&body, req, decision).await?;
+                let completion = self.call(&body, req.retry, decision).await?;
                 self.constrained_letter(&completion, count, decision)
                     .map(|position| (position, None))
             }
@@ -494,7 +688,7 @@ impl LlmClient {
         decision: &mut Decision,
     ) -> Result<Option<(usize, Option<Vec<f64>>)>> {
         let messages = json!([
-            {"role": "system", "content": letter_system()},
+            {"role": "system", "content": play_system(&self.options)},
             {"role": "user", "content": user},
         ]);
         let top_logprobs = self.options.top_logprobs.unwrap_or(TOP_LOGPROBS);
@@ -519,7 +713,7 @@ impl LlmClient {
             if let Some(effort) = &self.options.reasoning {
                 body["reasoning_effort"] = json!(effort);
             }
-            let completion = self.call(&body, req, decision).await?;
+            let completion = self.call(&body, req.retry, decision).await?;
             let (picked, note) = answer_decision(&completion, count);
             if let Some(note) = note {
                 mark(decision, &note);
@@ -538,7 +732,7 @@ impl LlmClient {
                     "reasoning_effort": effort,
                     "response_format": schema,
                 });
-                let completion = self.call(&body, req, decision).await?;
+                let completion = self.call(&body, req.retry, decision).await?;
                 constrained = self.constrained_letter(&completion, count, decision);
                 format!(
                     "<think>{}</think>{ANSWER_PREFIX}",
@@ -566,7 +760,7 @@ impl LlmClient {
                 "logprobs": true,
                 "top_logprobs": top_logprobs,
             });
-            let completion = self.call(&body, req, decision).await?;
+            let completion = self.call(&body, req.retry, decision).await?;
             match completion.prefill_top() {
                 Some(top) => match letter_probabilities(top, count) {
                     Some(probabilities) => {
@@ -583,7 +777,7 @@ impl LlmClient {
         // No probabilities: the constrained letter, asked now when reasoning is off.
         if self.options.reasoning.is_none() {
             let body = self.constrained_body(user, count);
-            let completion = self.call(&body, req, decision).await?;
+            let completion = self.call(&body, req.retry, decision).await?;
             constrained = self.constrained_letter(&completion, count, decision);
         }
         Ok(constrained.map(|position| (position, None)))
@@ -632,7 +826,7 @@ impl LlmClient {
             &user,
             Answer::Prediction,
         );
-        let completion = self.call(&body, req, decision).await?;
+        let completion = self.call(&body, req.retry, decision).await?;
         let parsed = parse_prediction(&completion.text);
         if let Err(reason) = &parsed {
             mark(decision, &format!("invalid prediction: {reason}"));
@@ -640,33 +834,143 @@ impl LlmClient {
         Ok(parsed)
     }
 
+    /// "Did they improve?" lesson call: `user` under `system` as free text
+    /// (`free_text_request`). Returns the answer text and the reasoning, when the route returns
+    /// it separately.
+    pub async fn free_text(
+        &self,
+        system: &str,
+        user: &str,
+        retry: &http::RetryTime,
+        decision: &mut Decision,
+    ) -> Result<(String, Option<String>)> {
+        let body = free_text_request(self.kind.route(), &self.model, &self.options, system, user);
+        let completion = self.call(&body, retry, decision).await?;
+        Ok((completion.text, completion.reasoning))
+    }
+
+    /// A reply failed the route check: set the latch (no further request) and append the
+    /// rejection, with its identity fields, raw reply and cost, to the rejection log.
+    fn reject(&self, expect: &ExpectRoute, identity: Value, request: &Value, raw: Option<&str>, cost: Option<f64>) {
+        self.route_rejected.store(true, Ordering::SeqCst);
+        let Some(log) = &expect.reject_log else {
+            return;
+        };
+        let line = json!({
+            "at": chrono::Utc::now().to_rfc3339(),
+            "identity": identity,
+            "request": request,
+            "response": raw,
+            "reported_cost_usd": cost,
+        });
+        use std::io::Write as _;
+        let written = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(log)
+            .and_then(|mut f| writeln!(f, "{line}"));
+        if let Err(error) = written {
+            eprintln!("route check: rejection log {}: {error}", log.display());
+        }
+    }
+
+    /// The stops of every HTTP attempt: the route-check latch and, when set, the quota pause.
+    fn guard(&self) -> http::Guard<'_> {
+        http::Guard {
+            stop: Some(&self.route_rejected),
+            quota_fatal: self.options.quota_pause,
+        }
+    }
+
     /// Sends `body` (with the configured extra fields) and records the exchange and tokens.
     async fn call(
         &self,
         body: &Value,
-        req: &DecisionRequest<'_>,
+        retry: &http::RetryTime,
         decision: &mut Decision,
     ) -> Result<Completion> {
+        if self.route_rejected.load(Ordering::SeqCst) {
+            return Err(anyhow!(
+                "ROUTE CHECK: an earlier response of {} failed the route check; no further request is sent",
+                self.model
+            ));
+        }
         let body = merged(body.clone(), self.options.request.as_ref());
         if let Some(pacer) = &self.options.pacer {
             // Not thinking time: logged with the retries, off the clock.
-            req.retry.add(pacer.wait().await);
+            retry.add(pacer.wait().await);
         }
         let started = Instant::now();
-        let retry_before = req.retry.get();
-        let result = self.send(&body, req).await;
+        let retry_before = retry.get();
+        let result = self.send(&body, retry).await;
         let latency_ms = started
             .elapsed()
-            .saturating_sub(req.retry.get() - retry_before)
+            .saturating_sub(retry.get() - retry_before)
             .as_millis() as u64;
         let (raw, completion) = match result {
             Ok(done) => done,
+            // A Codex stream without `response.completed` carries no served model: under a route
+            // check that is a missing identity, so it fails closed like a wrong one.
+            Err(CallError::Fatal(error))
+                if self.options.expect_route.is_some()
+                    && matches!(self.kind, Kind::OpenAiSubscription(_))
+                    && format!("{error:#}").contains("before response.completed") =>
+            {
+                let reason = format!("the Codex stream ended without response.completed (no served model): {error:#}");
+                if let Some(expect) = &self.options.expect_route {
+                    self.reject(
+                        expect,
+                        json!({"result": "missing", "fields": {"model": null, "provider": null}, "reason": reason}),
+                        &body,
+                        None,
+                        None,
+                    );
+                }
+                return Err(anyhow!("ROUTE CHECK: {reason}"));
+            }
             Err(error) => {
                 return Err(error
                     .into_anyhow()
                     .context(format!("{} request failed", self.model)));
             }
         };
+        // Before the reply is used or another request is sent: the response must name the
+        // pre-registered model and provider. Its cost is already booked (`send`); the raw reply
+        // is kept in the rejection log and the error.
+        let mut identity_record = None;
+        if let Some(expect) = &self.options.expect_route {
+            // Codex stores the answer text only: its identity is the stream's served model.
+            let identity = match self.kind {
+                Kind::OpenAiSubscription(_) => json!({"model": completion.served_model}).to_string(),
+                _ => raw.clone(),
+            };
+            let fields = identity_fields(&identity, expect);
+            match route_identity(&identity, expect) {
+                Ok(verdict) => {
+                    identity_record = Some(json!({"result": verdict, "fields": fields}).to_string());
+                }
+                Err(reason) => {
+                    let result = if reason.contains("lacks") || reason.contains("not JSON") { "missing" } else { "wrong" };
+                    self.reject(
+                        expect,
+                        json!({"result": result, "fields": fields, "reason": reason}),
+                        &body,
+                        Some(&raw),
+                        completion.cost,
+                    );
+                    let shown: String = raw.chars().take(1500).collect();
+                    return Err(anyhow!("ROUTE CHECK: {reason}; identity {fields}; response: {shown}"));
+                }
+            }
+            // A request already in flight when another reply failed the check: answered (and
+            // booked), but its reply is not used either.
+            if self.route_rejected.load(Ordering::SeqCst) {
+                return Err(anyhow!(
+                    "ROUTE CHECK: a reply of {} arrived after another failed the route check; not used",
+                    self.model
+                ));
+            }
+        }
         decision.input_tokens += completion.input_tokens;
         decision.output_tokens += completion.output_tokens;
         if let Some(reasoning) = completion.reasoning_tokens {
@@ -680,6 +984,7 @@ impl LlmClient {
             response: Some(raw),
             error: None,
             latency_ms,
+            identity: identity_record,
         });
         Ok(completion)
     }
@@ -689,9 +994,8 @@ impl LlmClient {
     async fn send(
         &self,
         body: &Value,
-        req: &DecisionRequest<'_>,
+        retry: &http::RetryTime,
     ) -> Result<(String, Completion), CallError> {
-        let retry = req.retry;
         match &self.kind {
             Kind::OpenAiSubscription(creds) => {
                 let mut token = creds.token().await?;
@@ -700,7 +1004,7 @@ impl LlmClient {
                     let request = || {
                         let mut builder = self
                             .http
-                            .post(CODEX_URL)
+                            .post(&self.codex_url)
                             .bearer_auth(&token.access)
                             .header("OAI-Product-Sku", "codex")
                             .header("originator", "codex_cli_rs")
@@ -712,7 +1016,7 @@ impl LlmClient {
                         }
                         builder
                     };
-                    match http::send(request, retry).await {
+                    match http::send(request, retry, self.guard()).await {
                         Err(CallError::Auth(_)) if !refreshed => {
                             token = creds.refresh_after_rejection(&token.access).await?;
                             refreshed = true;
@@ -736,7 +1040,7 @@ impl LlmClient {
                             .header("anthropic-beta", "claude-code-20250219,oauth-2025-04-20")
                             .json(body)
                     };
-                    match http::send(request, retry).await {
+                    match http::send(request, retry, self.guard()).await {
                         Err(CallError::Auth(_)) if !refreshed => {
                             token = creds.refresh_after_rejection(&token.access).await?;
                             refreshed = true;
@@ -759,7 +1063,7 @@ impl LlmClient {
                             .bearer_auth(&token.access)
                             .json(body)
                     };
-                    match http::send(request, retry).await {
+                    match http::send(request, retry, self.guard()).await {
                         Err(CallError::Auth(_)) if !refreshed => {
                             token = creds.refresh_after_rejection(&token.access).await?;
                             refreshed = true;
@@ -782,6 +1086,7 @@ impl LlmClient {
                             .json(body)
                     },
                     retry,
+                    self.guard(),
                 )
                 .await?;
                 let completion = parse_gemini(&raw)?;
@@ -806,7 +1111,7 @@ impl LlmClient {
                             .header("User-Agent", ANTIGRAVITY_USER_AGENT)
                             .json(&envelope)
                     };
-                    match http::send(request, retry).await {
+                    match http::send(request, retry, self.guard()).await {
                         Err(CallError::Auth(_)) if !refreshed => {
                             token = creds.refresh_after_rejection(&token.access).await?;
                             refreshed = true;
@@ -833,7 +1138,7 @@ impl LlmClient {
                     }
                 };
                 let Some(ledger) = &self.options.budget else {
-                    let raw = http::send(make, retry).await?;
+                    let raw = http::send(make, retry, self.guard()).await?;
                     let completion = parse_chat_completion(&raw)?;
                     return Ok((raw, completion));
                 };
@@ -842,7 +1147,9 @@ impl LlmClient {
                     .and_then(Value::as_u64)
                     .unwrap_or(32768);
                 let worst = ledger.worst_case(body.to_string().len(), max_output);
-                let (raw, hold) = http::send_metered(make, retry, ledger, worst).await?;
+                // As before: an error status from the openai-compatible server is booked at
+                // nothing (no answer is generated).
+                let (raw, hold) = http::send_metered(make, retry, ledger, worst, |_| true, self.guard()).await?;
                 match parse_chat_completion(&raw) {
                     Ok(completion) => {
                         hold.settle(
@@ -983,6 +1290,7 @@ fn parse_codex_sse(stream: &str) -> Result<Completion> {
     let mut text = String::new();
     let mut done_text = None;
     let mut usage = Value::Null;
+    let mut served_model = None;
     for line in stream.lines() {
         let Some(data) = line.strip_prefix("data:") else {
             continue;
@@ -1006,7 +1314,11 @@ fn parse_codex_sse(stream: &str) -> Result<Completion> {
                 usage = event
                     .pointer("/response/usage")
                     .cloned()
-                    .unwrap_or_default()
+                    .unwrap_or_default();
+                served_model = event
+                    .pointer("/response/model")
+                    .and_then(Value::as_str)
+                    .map(str::to_owned);
             }
             Some("response.failed" | "response.incomplete" | "error") => {
                 return Err(anyhow!("OpenAI response failed: {event}"));
@@ -1022,6 +1334,7 @@ fn parse_codex_sse(stream: &str) -> Result<Completion> {
         input_tokens: tokens(&usage, "/input_tokens"),
         output_tokens: tokens(&usage, "/output_tokens"),
         reasoning_tokens: optional(&usage, "/output_tokens_details/reasoning_tokens"),
+        served_model,
         ..Completion::default()
     })
 }
@@ -1211,6 +1524,7 @@ fn parse_chat_completion(body: &str) -> Result<Completion> {
         reasoning_tokens: optional(&value, "/usage/completion_tokens_details/reasoning_tokens")
             .or_else(|| optional(&value, "/usage/reasoning_tokens")),
         cost: value.pointer("/usage/cost").and_then(Value::as_f64),
+        served_model: None,
     })
 }
 
@@ -1528,8 +1842,12 @@ mod tests {
                 top_logprobs: None,
                 readout: Readout::Prefill,
                 answer_prefix: None,
+                prompt_note: None,
+                prompt_note_file: None,
                 pacer: None,
                 budget: None,
+                expect_route: None,
+            quota_pause: false,
             },
         );
         let body = client.constrained_body("the position", 3);
@@ -1598,8 +1916,12 @@ mod tests {
             top_logprobs: None,
             readout: Readout::Prefill,
             answer_prefix: None,
+            prompt_note: None,
+            prompt_note_file: None,
             pacer: None,
             budget: None,
+            expect_route: None,
+            quota_pause: false,
         };
         let routes = [
             (Route::OpenAiSubscription, Some("high"), "/text/format"),
@@ -1725,8 +2047,12 @@ mod tests {
             top_logprobs: None,
             readout: Readout::Prefill,
             answer_prefix: None,
+            prompt_note: None,
+            prompt_note_file: None,
             pacer: None,
             budget: None,
+            expect_route: None,
+            quota_pause: false,
         };
         let sent = as_sent(
             constrained_request(
@@ -1753,4 +2079,411 @@ mod tests {
         assert!(sent.get("reasoning_effort").is_none());
         assert_eq!(sent["chat_template_kwargs"]["enable_thinking"], true);
     }
+
+    /// "Did they improve?": the lesson call is the route's league request without its answer
+    /// format (same model, reasoning setting, temperature and output limit); the setup's
+    /// extra fields are merged in as in the league.
+    #[test]
+    fn free_text_request_is_the_league_request_without_an_answer_format() {
+        let options = |reasoning: Option<&str>, max_tokens: Option<u32>| Options {
+            reasoning: reasoning.map(str::to_owned),
+            request: None,
+            max_tokens,
+            top_logprobs: None,
+            readout: Readout::Prefill,
+            answer_prefix: None,
+            prompt_note: None,
+            prompt_note_file: None,
+            pacer: None,
+            budget: None,
+            expect_route: None,
+            quota_pause: false,
+        };
+        let cases: [(Route, Option<&str>, Option<u32>, &[&str]); 7] = [
+            (Route::OpenAiSubscription, Some("high"), None, &["/text"]),
+            (Route::Xai, Some("high"), None, &["/text"]),
+            (Route::AnthropicSubscription, Some("high"), None, &["/output_config/format"]),
+            (Route::Antigravity, Some("high"), None, &["/generationConfig/responseMimeType", "/generationConfig/responseSchema"]),
+            (Route::Gemini, None, None, &["/generationConfig/responseMimeType", "/generationConfig/responseSchema"]),
+            (Route::OpenAiCompatible, Some("low"), None, &["/response_format"]),
+            (Route::OpenAiCompatible, Some("template default"), Some(24000), &["/response_format"]),
+        ];
+        for (route, reasoning, max_tokens, format) in cases {
+            let o = options(reasoning, max_tokens);
+            let system = play_system(&o);
+            let mut league = constrained_request(route, "m", &o, "U", Answer::Letter(3));
+            for pointer in format {
+                let (parent, key) = pointer.rsplit_once('/').unwrap();
+                let parent = if parent.is_empty() { &mut league } else { league.pointer_mut(parent).unwrap() };
+                parent.as_object_mut().unwrap().remove(key).expect("the league request has the format");
+            }
+            let free = free_text_request(route, "m", &o, &system, "U");
+            assert_eq!(free, league, "{route:?}");
+        }
+        // OpenAI-compatible without reasoning (Qwen3.8 Flash (off)): the league's one-letter play
+        // call sends max_tokens 16; the lesson call gets the route's default limit instead.
+        let free = free_text_request(Route::OpenAiCompatible, "m", &options(None, None), "S", "U");
+        assert_eq!(free["max_tokens"], 32768);
+        assert_eq!(free["temperature"], 1.0);
+        assert!(free.get("reasoning_effort").is_none() && free.get("response_format").is_none());
+        // The setup's extra fields (provider pinning, a removed field) are merged as in the league.
+        let mut o = options(Some("low"), None);
+        o.request = Some(json!({"provider": {"order": ["fireworks"], "allow_fallbacks": false}, "reasoning_effort": null}));
+        let sent = as_sent(free_text_request(Route::OpenAiCompatible, "m", &o, "S", "U"), &o);
+        assert_eq!(sent["provider"]["order"][0], "fireworks");
+        assert!(sent.get("reasoning_effort").is_none());
+        // Codex and xAI: no output cap; Anthropic: the league's 32,000.
+        let o = options(Some("high"), None);
+        assert!(free_text_request(Route::OpenAiSubscription, "m", &o, "S", "U").get("max_output_tokens").is_none());
+        assert_eq!(free_text_request(Route::AnthropicSubscription, "m", &o, "S", "U")["max_tokens"], 32000);
+    }
+
+    /// A local server answering every request with `body` (status 200); counts the requests.
+    fn serve_json(body: &'static str) -> (String, Arc<std::sync::atomic::AtomicUsize>) {
+        use std::io::{Read as _, Write as _};
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let url = format!("http://{}/v1", listener.local_addr().unwrap());
+        let count = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let seen = count.clone();
+        std::thread::spawn(move || {
+            for stream in listener.incoming() {
+                let mut stream = stream.unwrap();
+                let mut buffer = [0u8; 65536];
+                let _ = stream.read(&mut buffer);
+                seen.fetch_add(1, Ordering::SeqCst);
+                let _ = write!(
+                    stream,
+                    "HTTP/1.1 200 OK\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{body}",
+                    body.len()
+                );
+            }
+        });
+        (url, count)
+    }
+
+    fn guarded(url: String, reject_log: std::path::PathBuf) -> LlmClient {
+        LlmClient::openai_compatible(
+            reqwest::Client::new(),
+            "deepseek/deepseek-v4.1-flash".into(),
+            url,
+            None,
+            Options {
+                reasoning: Some("low".into()),
+                request: None,
+                max_tokens: None,
+                top_logprobs: None,
+                readout: Readout::Answer,
+                answer_prefix: None,
+                prompt_note: None,
+                prompt_note_file: None,
+                pacer: None,
+                budget: None,
+                expect_route: Some(ExpectRoute {
+                    models: vec!["deepseek/deepseek-v4.1-flash".into()],
+                    provider: Some("Fireworks".into()),
+                    model_pointer: None,
+                    provider_pointer: None,
+                    reject_log: Some(reject_log),
+                    allow_dated: false,
+                }),
+                quota_pause: false,
+            },
+        )
+    }
+
+    const RIGHT: &str = r#"{"model":"deepseek/deepseek-v4.1-flash","provider":"Fireworks","choices":[{"message":{"content":"- keep it simple"},"finish_reason":"stop"}],"usage":{"prompt_tokens":10,"completion_tokens":5,"cost":0.001}}"#;
+    const WRONG: &str = r#"{"model":"deepseek/deepseek-v4.1-flash-1017","provider":"Fireworks","choices":[{"message":{"content":"- keep it simple"},"finish_reason":"stop"}],"usage":{"prompt_tokens":10,"completion_tokens":5,"cost":0.001}}"#;
+    const ANONYMOUS: &str = r#"{"choices":[{"message":{"content":"- keep it simple"},"finish_reason":"stop"}],"usage":{"prompt_tokens":10,"completion_tokens":5}}"#;
+
+    #[test]
+    fn route_identity_fails_closed() {
+        let expect = ExpectRoute {
+            models: vec!["deepseek/deepseek-v4.1-flash".into(), "deepseek/deepseek-v4.1-flash-20260910".into()],
+            provider: Some("Fireworks".into()),
+            model_pointer: None,
+            provider_pointer: None,
+            reject_log: None,
+            allow_dated: false,
+        };
+        assert!(route_identity(RIGHT, &expect).is_ok());
+        assert!(route_identity(WRONG, &expect).unwrap_err().contains("1017"));
+        assert!(route_identity(&RIGHT.replace("Fireworks", "Alibaba"), &expect).is_err());
+        assert!(route_identity(ANONYMOUS, &expect).unwrap_err().contains("lacks its identity"));
+        assert!(route_identity("data: not json", &expect).is_err());
+        assert!(route_identity("", &expect).is_err());
+    }
+
+    /// "Did they improve?" (Zeki #3179): a reply naming the wrong model is rejected before its
+    /// text is used, logged with its raw response and cost, and no further request is sent.
+    #[tokio::test]
+    async fn a_wrong_route_stops_before_the_reply_is_used_and_nothing_more_is_sent() {
+        let dir = std::env::temp_dir().join(format!("route-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let retry = http::RetryTime::default();
+        // The first response names the 1017 checkpoint: rejected, nothing returned.
+        let (url, count) = serve_json(WRONG);
+        let client = guarded(url, dir.join("reject.jsonl"));
+        let mut decision = Decision::default();
+        let error = client.free_text("S", "U", &retry, &mut decision).await.unwrap_err();
+        assert!(format!("{error:#}").contains("ROUTE CHECK"), "{error:#}");
+        assert!(decision.exchanges.is_empty(), "the rejected reply is not used");
+        assert_eq!(count.load(Ordering::SeqCst), 1);
+        let log = std::fs::read_to_string(dir.join("reject.jsonl")).unwrap();
+        let line: Value = serde_json::from_str(log.lines().next().unwrap()).unwrap();
+        assert!(line["response"].as_str().unwrap().contains("1017"));
+        assert_eq!(line["reported_cost_usd"], 0.001);
+        // No further dispatch from this player.
+        let error = client.free_text("S", "U", &retry, &mut decision).await.unwrap_err();
+        assert!(format!("{error:#}").contains("no further request"));
+        assert_eq!(count.load(Ordering::SeqCst), 1);
+        // A response without identity fails closed too.
+        let (url, count) = serve_json(ANONYMOUS);
+        let client = guarded(url, dir.join("reject2.jsonl"));
+        assert!(client.free_text("S", "U", &retry, &mut Decision::default()).await.is_err());
+        assert_eq!(count.load(Ordering::SeqCst), 1);
+        // The right identity passes and its text is used.
+        let (url, _) = serve_json(RIGHT);
+        let client = guarded(url, dir.join("reject3.jsonl"));
+        let mut decision = Decision::default();
+        let (text, _) = client.free_text("S", "U", &retry, &mut decision).await.unwrap();
+        assert_eq!(text, "- keep it simple");
+        assert_eq!(decision.exchanges.len(), 1);
+        assert!(!dir.join("reject3.jsonl").exists());
+    }
+
+    /// A server answering request k with `replies[k]` (status, body; the last repeats).
+    fn serve_seq(replies: Vec<(u16, &'static str)>) -> (String, Arc<std::sync::atomic::AtomicUsize>) {
+        use std::io::{Read as _, Write as _};
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let url = format!("http://{}/v1", listener.local_addr().unwrap());
+        let count = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let seen = count.clone();
+        std::thread::spawn(move || {
+            for stream in listener.incoming() {
+                let mut stream = stream.unwrap();
+                let mut buffer = [0u8; 65536];
+                let _ = stream.read(&mut buffer);
+                let k = seen.fetch_add(1, Ordering::SeqCst);
+                let (status, body) = replies[k.min(replies.len() - 1)];
+                let _ = write!(
+                    stream,
+                    "HTTP/1.1 {status} X\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{body}",
+                    body.len()
+                );
+            }
+        });
+        (url, count)
+    }
+
+    /// Zeki #3184: request A is waiting to retry (503, backoff) when request B's reply fails the
+    /// route check; when A wakes it makes no further HTTP attempt.
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn a_request_in_backoff_sends_nothing_after_another_fails_the_route_check() {
+        let dir = std::env::temp_dir().join(format!("route-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let (url, count) = serve_seq(vec![(503, "busy"), (200, WRONG), (200, RIGHT)]);
+        let client = guarded(url, dir.join("reject.jsonl"));
+        let a = async {
+            let retry = http::RetryTime::default();
+            client.free_text("S", "A", &retry, &mut Decision::default()).await
+        };
+        let b = async {
+            // B starts once A has had its 503 and is in its backoff (2 s).
+            while count.load(Ordering::SeqCst) < 1 {
+                tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+            }
+            let retry = http::RetryTime::default();
+            client.free_text("S", "B", &retry, &mut Decision::default()).await
+        };
+        let (a, b) = tokio::join!(a, b);
+        assert!(format!("{:#}", b.unwrap_err()).contains("ROUTE CHECK"));
+        let a = format!("{:#}", a.unwrap_err());
+        assert!(a.contains("no further HTTP attempt"), "{a}");
+        // A's 503 and B's rejected reply: nothing after the latch reached the server.
+        std::thread::sleep(std::time::Duration::from_millis(200));
+        assert_eq!(count.load(Ordering::SeqCst), 2);
+    }
+
+    /// Subscription and local routes: the identity sits elsewhere (Antigravity's
+    /// `response.modelVersion`) or there is no provider field.
+    #[test]
+    fn route_identity_reads_the_routes_own_fields() {
+        let antigravity = ExpectRoute {
+            models: vec!["gemini-3.8-flash".into()],
+            provider: None,
+            model_pointer: Some("/response/modelVersion".into()),
+            provider_pointer: None,
+            reject_log: None,
+            allow_dated: false,
+        };
+        assert!(route_identity(r#"{"response":{"modelVersion":"gemini-3.8-flash"},"traceId":"x"}"#, &antigravity).is_ok());
+        assert!(route_identity(r#"{"response":{"modelVersion":"gemini-4-argon"}}"#, &antigravity).is_err());
+        assert!(route_identity(r#"{"response":{}}"#, &antigravity).unwrap_err().contains("lacks"));
+        let claude = ExpectRoute { models: vec!["claude-sonnet-5-5".into()], provider: None, model_pointer: None,
+                                   provider_pointer: None, reject_log: None, allow_dated: false };
+        assert!(route_identity(r#"{"model":"claude-sonnet-5-5","content":[]}"#, &claude).is_ok());
+        assert!(route_identity(r#"{"model":"claude-opus-5-5","content":[]}"#, &claude).is_err());
+    }
+
+    /// Codex: the served model comes from `response.completed`; a dated snapshot of the requested
+    /// id is accepted only when asked; a stream without it fails closed.
+    #[test]
+    fn codex_identity_is_the_streams_served_model() {
+        let stream = "data: {\"type\":\"response.output_text.done\",\"text\":\"{\\\"choice\\\":\\\"B\\\"}\"}\n\
+                      data: {\"type\":\"response.completed\",\"response\":{\"model\":\"gpt-6.1-sol-2026-10-01\",\"usage\":{\"input_tokens\":5,\"output_tokens\":2}}}\n";
+        let completion = parse_codex_sse(stream).unwrap();
+        assert_eq!(completion.served_model.as_deref(), Some("gpt-6.1-sol-2026-10-01"));
+        let mut expect = ExpectRoute { models: vec!["gpt-6.1-sol".into()], provider: None, model_pointer: None,
+                                       provider_pointer: None, reject_log: None, allow_dated: true };
+        let identity = json!({"model": completion.served_model}).to_string();
+        assert!(route_identity(&identity, &expect).is_ok());
+        assert!(route_identity(r#"{"model":"gpt-6.1-sol-mini"}"#, &expect).is_err());
+        assert!(route_identity(r#"{"model":"gpt-6-astra"}"#, &expect).is_err());
+        assert!(route_identity(r#"{"model":null}"#, &expect).is_err());
+        expect.allow_dated = false;
+        assert!(route_identity(&identity, &expect).is_err());
+    }
+
+    fn codex_stream(model: Option<&str>, completed: bool) -> String {
+        let mut out = String::from(
+            "data: {\"type\":\"response.output_text.done\",\"text\":\"- keep it simple\"}\n\n",
+        );
+        if completed {
+            let model = model.map_or("null".to_owned(), |m| format!("\"{m}\""));
+            out += &format!(
+                "data: {{\"type\":\"response.completed\",\"response\":{{\"model\":{model},\"usage\":{{\"input_tokens\":5,\"output_tokens\":2}}}}}}\n\n"
+            );
+        }
+        out
+    }
+
+    fn codex_client(url: String) -> LlmClient {
+        let creds = Arc::new(Credentials::fixed(crate::auth::Subscription::OpenAi, "test-token"));
+        let mut client = LlmClient::openai_subscription(
+            reqwest::Client::new(),
+            "gpt-6.1-sol".into(),
+            creds,
+            Options {
+                reasoning: Some("high".into()),
+                request: None,
+                max_tokens: None,
+                top_logprobs: None,
+                readout: Readout::Prefill,
+                answer_prefix: None,
+                prompt_note: None,
+                prompt_note_file: None,
+                pacer: None,
+                budget: None,
+                expect_route: Some(ExpectRoute {
+                    models: vec!["gpt-6.1-sol".into()],
+                    provider: None,
+                    model_pointer: None,
+                    provider_pointer: None,
+                    reject_log: None,
+                    allow_dated: true,
+                }),
+                quota_pause: false,
+            },
+        );
+        client.codex_url = url;
+        client
+    }
+
+    /// Codex (Zeki/Main before 13 Nov): the stream's served model is checked before the text is
+    /// used; a wrong model, a dated snapshot of another id, a stream without response.completed
+    /// or without response.model fail closed: nothing used, nothing further sent.
+    #[tokio::test]
+    async fn codex_replies_are_used_only_with_the_requested_model() {
+        let retry = http::RetryTime::default();
+        let ok = |m: &'static str| Box::leak(codex_stream(Some(m), true).into_boxed_str()) as &'static str;
+        for good in ["gpt-6.1-sol", "gpt-6.1-sol-2026-10-01"] {
+            let (url, count) = serve_json(ok(good));
+            let client = codex_client(url.replace("/v1", "/codex"));
+            let mut decision = Decision::default();
+            let (text, _) = client.free_text("S", "U", &retry, &mut decision).await.unwrap();
+            assert_eq!(text, "- keep it simple");
+            assert_eq!((decision.exchanges.len(), count.load(Ordering::SeqCst)), (1, 1));
+        }
+        let bad: [&'static str; 4] = [
+            ok("gpt-6-astra"),
+            ok("gpt-6-astra-2026-10-01"),
+            Box::leak(codex_stream(None, true).into_boxed_str()),
+            Box::leak(codex_stream(Some("gpt-6.1-sol"), false).into_boxed_str()),
+        ];
+        for stream in bad {
+            let (url, count) = serve_json(stream);
+            let client = codex_client(url.replace("/v1", "/codex"));
+            let mut decision = Decision::default();
+            let error = client.free_text("S", "U", &retry, &mut decision).await.unwrap_err();
+            assert!(format!("{error:#}").contains("ROUTE CHECK"), "{stream}: {error:#}");
+            assert!(decision.exchanges.is_empty(), "nothing used");
+            let again = client.free_text("S", "U", &retry, &mut Decision::default()).await.unwrap_err();
+            assert!(format!("{again:#}").contains("no further"), "{again:#}");
+            assert_eq!(count.load(Ordering::SeqCst), 1, "nothing further sent");
+        }
+    }
+
+    /// Zeki #3236: the dated grammar is exactly `-YYYY-MM-DD`, a real date, nothing after;
+    /// byte-safe on any input.
+    #[test]
+    fn dated_suffix_is_a_complete_valid_date() {
+        for good in ["-2026-10-01", "-2024-02-29"] {
+            assert!(is_dated_suffix(good), "{good}");
+        }
+        for bad in [
+            "", "-", "-2026", "-1234", "-2026-10", "-2026-10-1", "-2026-1-01", "-2026-10-01x", "-2026-10-01-mini",
+            "-2026-other-model", "-2026-13-01", "-2026-02-30", "-2025-02-29", "2026-10-01", "-2026/10/01",
+            "-２０２６-10-01", "-2026-10-0é", "-é", "-202é-10-01", "-2026-10-01\u{0301}",
+        ] {
+            assert!(!is_dated_suffix(bad), "{bad:?}");
+        }
+        let expect = ExpectRoute { models: vec!["gpt-6.1-sol".into()], provider: None, model_pointer: None,
+                                   provider_pointer: None, reject_log: None, allow_dated: true };
+        assert_eq!(route_identity(r#"{"model":"gpt-6.1-sol"}"#, &expect), Ok("accepted"));
+        assert_eq!(route_identity(r#"{"model":"gpt-6.1-sol-2026-10-01"}"#, &expect), Ok("accepted_dated"));
+        for model in ["gpt-6.1-sol-2026-other-model", "gpt-6.1-sol-1234", "gpt-6.1-sol-2026-10-01-mini",
+                      "gpt-6.1-sol-２０２６-10-01", "gpt-6.1-solé", "gpt-6.1-sol-"] {
+            assert!(route_identity(&json!({"model": model}).to_string(), &expect).is_err(), "{model}");
+        }
+    }
+
+    /// Zeki #3236: the served model and the check's result are kept with the exchange (accepted),
+    /// or in the rejection log with the raw identity fields (wrong, missing).
+    #[tokio::test]
+    async fn the_served_identity_is_persisted_per_exchange() {
+        let dir = std::env::temp_dir().join(format!("route-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let retry = http::RetryTime::default();
+        let dated: &'static str = Box::leak(codex_stream(Some("gpt-6.1-sol-2026-10-01"), true).into_boxed_str());
+        let (url, _) = serve_json(dated);
+        let client = codex_client(url.replace("/v1", "/codex"));
+        let mut decision = Decision::default();
+        client.free_text("S", "U", &retry, &mut decision).await.unwrap();
+        let identity: Value = serde_json::from_str(decision.exchanges[0].identity.as_deref().unwrap()).unwrap();
+        assert_eq!(identity["result"], "accepted_dated");
+        assert_eq!(identity["fields"]["model"], "gpt-6.1-sol-2026-10-01");
+        for (stream, result, model) in [
+            (codex_stream(Some("gpt-6-astra"), true), "wrong", json!("gpt-6-astra")),
+            (codex_stream(None, true), "missing", Value::Null),
+            (codex_stream(Some("gpt-6.1-sol"), false), "missing", Value::Null),
+        ] {
+            let (url, _) = serve_json(Box::leak(stream.into_boxed_str()));
+            let mut client = codex_client(url.replace("/v1", "/codex"));
+            let log = dir.join(format!("reject-{}.jsonl", uuid::Uuid::new_v4()));
+            client.options.expect_route.as_mut().unwrap().reject_log = Some(log.clone());
+            assert!(client.free_text("S", "U", &retry, &mut Decision::default()).await.is_err());
+            let line: Value = serde_json::from_str(std::fs::read_to_string(&log).unwrap().lines().next().unwrap()).unwrap();
+            assert_eq!(line["identity"]["result"], result);
+            assert_eq!(line["identity"]["fields"]["model"], model);
+        }
+        // Other routes: the identity is recorded the same way, from the raw reply.
+        let (url, _) = serve_json(RIGHT);
+        let client = guarded(url, dir.join("r.jsonl"));
+        let mut decision = Decision::default();
+        client.free_text("S", "U", &retry, &mut decision).await.unwrap();
+        let identity: Value = serde_json::from_str(decision.exchanges[0].identity.as_deref().unwrap()).unwrap();
+        assert_eq!(identity["result"], "accepted");
+        assert_eq!(identity["fields"], json!({"model": "deepseek/deepseek-v4.1-flash", "provider": "Fireworks"}));
+    }
 }
+

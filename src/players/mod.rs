@@ -2,7 +2,7 @@
 //! one of them; an invalid answer is replaced by a random legal play.
 
 pub mod baseline;
-mod decision;
+pub(crate) mod decision;
 pub mod gnubg;
 mod llm;
 pub mod order;
@@ -11,6 +11,7 @@ pub mod prompt;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
 
 use anyhow::{Result, bail};
@@ -95,6 +96,8 @@ pub struct Decision {
     pub reasoning_tokens: Option<u64>,
     /// Dollars the provider reported for the decision's requests (OpenRouter).
     pub reported_cost: Option<f64>,
+    /// This player's decisions in flight when this one started, itself included.
+    pub in_flight: Option<usize>,
 }
 
 impl Decision {
@@ -163,6 +166,15 @@ pub struct PlayerConfig {
     /// reasoning block on every answer and has no switch to turn it off.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub answer_prefix: Option<String>,
+    /// Learning pilot: text appended to the play call's system prompt (chat models), e.g. a
+    /// feedback note from earlier games; `None` = the league's prompt.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub prompt_note: Option<String>,
+    /// Learning pilot: a file read before every play call whose text, when not empty, is
+    /// appended like `prompt_note` (in its place when both are set): the note can change
+    /// between games of one match.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub prompt_note_file: Option<std::path::PathBuf>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub price: Option<Price>,
     /// Free text kept with the roster (how the setup was pinned, what a level means).
@@ -189,9 +201,22 @@ pub struct PlayerConfig {
     pub rpm: Option<u32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub rate_group: Option<String>,
-    /// Hard spending cap with a shared ledger (OpenAI-compatible servers only).
+    /// Hard spending cap with a shared ledger (OpenAI-compatible servers and decision
+    /// services): every request attempt reserves its worst case before it is sent.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub budget: Option<crate::budget::BudgetConfig>,
+    /// "Did they improve?": the model and provider every response must name; a response that
+    /// does not is rejected before it is used and no further request is sent.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub expect_route: Option<llm::ExpectRoute>,
+    /// "Did they improve?" (Claude subscription): a 429 usage-limit reply ends the request at
+    /// once (no retry), so the run can pause without spending the shared quota.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub quota_pause: bool,
+    /// "Did they improve?" (decision models): the per-request context gate (see
+    /// `decision::ContextGate`); required with a `prompt_note`/`prompt_note_file`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub context_gate: Option<decision::ContextGate>,
 }
 
 impl PlayerConfig {
@@ -213,6 +238,8 @@ pub struct Player {
     pub price: Option<Price>,
     /// Permits for decisions in flight (`PlayerConfig::parallel`); `None` = unlimited.
     requests: Option<tokio::sync::Semaphore>,
+    /// Decisions in flight now (`Decision::in_flight`).
+    in_flight: AtomicUsize,
     backend: Backend,
 }
 
@@ -313,11 +340,18 @@ impl Setup {
 /// prediction call (`LlmClient::predict`), each as sent (configured extra fields merged in).
 /// `shown` is the option order (at most 26). OpenAI-compatible servers' play calls (letter
 /// probabilities in two steps) are not rendered here: `play` is null for them.
-pub fn render_stage_b(config: &PlayerConfig, req: &DecisionRequest<'_>, shown: &[usize]) -> Result<Value> {
+pub fn render_stage_b(
+    config: &PlayerConfig,
+    req: &DecisionRequest<'_>,
+    shown: &[usize],
+) -> Result<Value> {
     use serde_json::json;
     let spec = config.spec.as_str();
     let Some((provider, model)) = spec.split_once('/').filter(|(_, m)| !m.is_empty()) else {
-        bail!("{}: `{spec}` is not a chat model (no prediction call)", config.name);
+        bail!(
+            "{}: `{spec}` is not a chat model (no prediction call)",
+            config.name
+        );
     };
     let (route, model) = match provider.to_ascii_lowercase().as_str() {
         "openai" => (llm::Route::OpenAiSubscription, model.to_ascii_lowercase()),
@@ -328,11 +362,20 @@ pub fn render_stage_b(config: &PlayerConfig, req: &DecisionRequest<'_>, shown: &
             llm::antigravity_model(model, config.reasoning.as_deref()),
         ),
         "xai" | "xai-oauth" | "grok" => (llm::Route::Xai, model.to_owned()),
-        "local" | "openai-compatible" | "ollama" => (llm::Route::OpenAiCompatible, model.to_owned()),
-        other => bail!("{}: provider `{other}` is not a chat model (no prediction call)", config.name),
+        "local" | "openai-compatible" | "ollama" => {
+            (llm::Route::OpenAiCompatible, model.to_owned())
+        }
+        other => bail!(
+            "{}: provider `{other}` is not a chat model (no prediction call)",
+            config.name
+        ),
     };
     if shown.len() > prompt::LETTERS.len() {
-        bail!("{}: {} options, more than one request holds", config.name, shown.len());
+        bail!(
+            "{}: {} options, more than one request holds",
+            config.name,
+            shown.len()
+        );
     }
     let options = llm::Options {
         reasoning: config.reasoning.clone(),
@@ -341,25 +384,41 @@ pub fn render_stage_b(config: &PlayerConfig, req: &DecisionRequest<'_>, shown: &
         top_logprobs: config.top_logprobs,
         readout: llm::Readout::parse(config.letter_readout.as_deref())?,
         answer_prefix: config.answer_prefix.clone(),
+        prompt_note: config.prompt_note.clone(),
+        prompt_note_file: config.prompt_note_file.clone(),
         pacer: None,
         budget: None,
+        expect_route: None,
+        quota_pause: false,
     };
     let play_user = prompt::letter_user(req, shown);
     let prediction_user = prompt::prediction_user(req, shown);
     let play = (route != llm::Route::OpenAiCompatible).then(|| {
         llm::as_sent(
-            llm::constrained_request(route, &model, &options, &play_user, llm::Answer::Letter(shown.len())),
+            llm::constrained_request(
+                route,
+                &model,
+                &options,
+                &play_user,
+                llm::Answer::Letter(shown.len()),
+            ),
             &options,
         )
     });
     let prediction = llm::as_sent(
-        llm::constrained_request(route, &model, &options, &prediction_user, llm::Answer::Prediction),
+        llm::constrained_request(
+            route,
+            &model,
+            &options,
+            &prediction_user,
+            llm::Answer::Prediction,
+        ),
         &options,
     );
     Ok(json!({
         "route": route.id(),
         "model": model,
-        "play": {"system": prompt::letter_system(), "user": play_user, "body": play},
+        "play": {"system": llm::play_system(&options), "user": play_user, "body": play},
         "prediction": {"system": prompt::prediction_system(), "user": prediction_user, "body": prediction},
     }))
 }
@@ -367,6 +426,15 @@ pub fn render_stage_b(config: &PlayerConfig, req: &DecisionRequest<'_>, shown: &
 /// Index of a uniformly random legal play, seeded per decision.
 pub fn random_play(req: &DecisionRequest<'_>) -> usize {
     Dice::new(derive_seed(req.seed, "invalid answer")).below(req.plays.len())
+}
+
+/// Counts one decision in flight until dropped.
+struct InFlight<'a>(&'a AtomicUsize);
+
+impl Drop for InFlight<'_> {
+    fn drop(&mut self) {
+        self.0.fetch_sub(1, Ordering::SeqCst);
+    }
 }
 
 impl Player {
@@ -379,6 +447,7 @@ impl Player {
             reasoning: None,
             price: None,
             requests: None,
+            in_flight: AtomicUsize::new(0),
             backend: Backend::Engine(engine),
         }
     }
@@ -414,6 +483,21 @@ impl Player {
             Some(model) => Ok(model),
             None => bail!("model spec `{spec}` needs a model name: {provider}/<model>"),
         };
+        // A hard spending cap (`budget`) for chat requests to an openai-compatible server and
+        // for decision services: each attempt reserves its worst case before it is sent.
+        let budget = match &config.budget {
+            Some(budget)
+                if provider.eq_ignore_ascii_case("openai-compatible")
+                    || decision::service(provider).is_some() =>
+            {
+                Some(crate::budget::Ledger::open(budget, &config.name)?)
+            }
+            Some(_) => bail!(
+                "{}: a budget needs an openai-compatible spec or a decision service",
+                config.name
+            ),
+            None => None,
+        };
         let options = llm::Options {
             reasoning: config.reasoning.clone(),
             request: config.request.clone(),
@@ -421,19 +505,17 @@ impl Player {
             top_logprobs: config.top_logprobs,
             readout: llm::Readout::parse(config.letter_readout.as_deref())?,
             answer_prefix: config.answer_prefix.clone(),
+            prompt_note: config.prompt_note.clone(),
+            prompt_note_file: config.prompt_note_file.clone(),
             pacer: config.rpm.filter(|&rpm| rpm > 0).map(|rpm| {
                 let group = config.rate_group.clone().unwrap_or_else(|| {
                     format!("{}|{spec}", config.base_url.as_deref().unwrap_or(""))
                 });
                 setup.pacer(group, rpm)
             }),
-            budget: match &config.budget {
-                Some(budget) if provider.eq_ignore_ascii_case("openai-compatible") => {
-                    Some(crate::budget::Ledger::open(budget, &config.name)?)
-                }
-                Some(_) => bail!("{}: a budget needs an openai-compatible spec", config.name),
-                None => None,
-            },
+            budget: budget.clone(),
+            expect_route: config.expect_route.clone(),
+            quota_pause: config.quota_pause,
         };
         let player = |backend| Player {
             spec: spec.to_owned(),
@@ -445,15 +527,29 @@ impl Player {
             reasoning: config.reasoning.clone(),
             price: config.price,
             requests: None,
+            in_flight: AtomicUsize::new(0),
             backend,
         };
         if let Some(service) = decision::service(provider) {
+            // The notes/examples block goes at the start of `state` (`input`), never into a
+            // system prompt; the client re-reads `prompt_note_file` before every request.
+            let extras = decision::Extras {
+                prompt_note: config.prompt_note.clone(),
+                prompt_note_file: config.prompt_note_file.clone(),
+                context_gate: config.context_gate.clone(),
+                expect_route: config.expect_route.clone(),
+            };
             return Ok(player(Backend::Decision(decision::DecisionClient::new(
                 http,
                 service,
                 model,
                 config.base_url.as_deref(),
+                budget,
+                extras,
             )?)));
+        }
+        if config.context_gate.is_some() {
+            bail!("{}: context_gate applies to decision services only", config.name);
         }
         let backend = match provider.to_ascii_lowercase().as_str() {
             "random" if model.is_none() => {
@@ -622,7 +718,10 @@ impl Player {
         let _slot = match &self.requests {
             Some(slots) => {
                 let started = Instant::now();
-                let slot = slots.acquire().await.expect("the semaphore is never closed");
+                let slot = slots
+                    .acquire()
+                    .await
+                    .expect("the semaphore is never closed");
                 req.retry.add(started.elapsed());
                 Some(slot)
             }
@@ -652,6 +751,17 @@ impl Player {
             }
             None => None,
         };
+        // Decisions of this player in flight when this one starts, itself included (stored
+        // with the decision as `in_flight`).
+        let in_flight = self.in_flight.fetch_add(1, Ordering::SeqCst) + 1;
+        let _active = InFlight(&self.in_flight);
+        let mut decision = self.decide_held(req).await?;
+        decision.in_flight = Some(in_flight);
+        Ok(decision)
+    }
+
+    /// `decide` once its request slot is held.
+    async fn decide_held(&self, req: &DecisionRequest<'_>) -> Result<Decision> {
         if let Backend::Engine(engine) = &self.backend {
             return tokio::task::block_in_place(|| engine.decide(req));
         }
@@ -686,6 +796,30 @@ impl Player {
         }
         decision.index = candidates[0];
         Ok(decision)
+    }
+
+    /// "Did they improve?" lesson call: one free-text request through the chat model's own
+    /// route (`llm::free_text_request`), once a request slot is free. Returns the decision
+    /// (tokens, cost, exchange), the answer text and the separate reasoning, if any.
+    pub async fn free_text(
+        &self,
+        system: &str,
+        user: &str,
+        retry: &RetryTime,
+    ) -> Result<(Decision, String, Option<String>)> {
+        let _slot = match &self.requests {
+            Some(slots) => Some(slots.acquire().await.expect("the semaphore is never closed")),
+            None => None,
+        };
+        let Backend::Llm(client) = &self.backend else {
+            bail!("{}: not a chat model, it cannot write free text", self.spec);
+        };
+        let in_flight = self.in_flight.fetch_add(1, Ordering::SeqCst) + 1;
+        let _active = InFlight(&self.in_flight);
+        let mut decision = Decision::default();
+        let (text, reasoning) = client.free_text(system, user, retry, &mut decision).await?;
+        decision.in_flight = Some(in_flight);
+        Ok((decision, text, reasoning))
     }
 
     /// Dollars for this decision: what the provider reported, else the tokens at the
@@ -733,6 +867,7 @@ mod tests {
             reasoning: None,
             price: None,
             requests: None,
+            in_flight: AtomicUsize::new(0),
             backend: Backend::Scripted {
                 max,
                 answers: parking_lot::Mutex::new(answers),
@@ -920,9 +1055,15 @@ mod tests {
         let req = request(&board, &plays, &notations, &order, 1, &retry);
         let (url, stub) = systemone_stub();
         let service = decision::service("knowline").expect("knowline service");
-        let client =
-            decision::DecisionClient::new(reqwest::Client::new(), service, None, Some(&url))
-                .unwrap();
+        let client = decision::DecisionClient::new(
+            reqwest::Client::new(),
+            service,
+            None,
+            Some(&url),
+            None,
+            decision::Extras::default(),
+        )
+        .unwrap();
         assert_eq!(client.max_choices(), 255);
         let player = Player {
             spec: "knowline".into(),
@@ -931,6 +1072,7 @@ mod tests {
             reasoning: None,
             price: None,
             requests: None,
+            in_flight: AtomicUsize::new(0),
             backend: Backend::Decision(client),
         };
         let decision = player.decide(&req).await.unwrap();
@@ -968,9 +1110,15 @@ mod tests {
         let req = request(&board, &plays, &notations, &order, 1, &retry);
         let (url, stub) = systemone_stub();
         let service = decision::service("startlux").expect("startlux service");
-        let client =
-            decision::DecisionClient::new(reqwest::Client::new(), service, None, Some(&url))
-                .unwrap();
+        let client = decision::DecisionClient::new(
+            reqwest::Client::new(),
+            service,
+            None,
+            Some(&url),
+            None,
+            decision::Extras::default(),
+        )
+        .unwrap();
         assert_eq!(client.max_choices(), 255);
         let player = Player {
             spec: "startlux".into(),
@@ -979,6 +1127,7 @@ mod tests {
             reasoning: None,
             price: None,
             requests: None,
+            in_flight: AtomicUsize::new(0),
             backend: Backend::Decision(client),
         };
         let decision = player.decide(&req).await.unwrap();
@@ -1023,9 +1172,15 @@ mod tests {
         let req = request(&board, &plays, &notations, &order, 1, &retry);
         let (url, stub) = systemone_stub();
         let service = decision::service(provider).expect("service");
-        let client =
-            decision::DecisionClient::new(reqwest::Client::new(), service, None, Some(&url))
-                .unwrap();
+        let client = decision::DecisionClient::new(
+            reqwest::Client::new(),
+            service,
+            None,
+            Some(&url),
+            None,
+            decision::Extras::default(),
+        )
+        .unwrap();
         assert_eq!(client.max_choices(), max);
         assert!(n <= max, "{n}");
         let player = Player {
@@ -1035,6 +1190,7 @@ mod tests {
             reasoning: None,
             price: None,
             requests: None,
+            in_flight: AtomicUsize::new(0),
             backend: Backend::Decision(client),
         };
         let decision = player.decide(&req).await.unwrap();
@@ -1110,6 +1266,7 @@ mod tests {
                 output_per_mtok: 10.0,
             }),
             requests: None,
+            in_flight: AtomicUsize::new(0),
             backend: Backend::Engine(Box::new(baseline::Baseline::Random)),
         };
         let mut decision = Decision::new(0);

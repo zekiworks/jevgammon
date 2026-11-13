@@ -83,7 +83,13 @@ mod tests {
         let chosen = &plays[safest_play(&plays, &in_order(&plays))];
         assert_eq!(chosen.result.pts[6], 2, "{}", chosen.notation());
         assert_eq!(chosen.result.flip().hitting_rolls(), 0);
-        assert!(plays.iter().filter(|p| p.result.flip().hitting_rolls() == 0).count() == 1);
+        assert!(
+            plays
+                .iter()
+                .filter(|p| p.result.flip().hitting_rolls() == 0)
+                .count()
+                == 1
+        );
         assert!(plays.iter().any(|p| p.result.flip().hitting_rolls() > 0));
     }
 

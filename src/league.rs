@@ -1269,6 +1269,8 @@ impl League {
                 clock: self.rules.clock(),
                 max_turns: self.rules.max_turns,
                 concurrent_mirror: self.rules.mirror_concurrent,
+                fixed_rounds: false,
+                after_game: None,
                 start_position: self.rules.start_position,
                 protocol: self.protocol.clone(),
             },

@@ -134,6 +134,21 @@ impl Credentials {
         }
     }
 
+    /// Tests: credentials holding `access`, valid for an hour, never read from disk.
+    #[cfg(test)]
+    pub fn fixed(provider: Subscription, access: &str) -> Self {
+        let credentials = Credentials::new(provider, PathBuf::new(), reqwest::Client::new());
+        *credentials.current.try_lock().expect("new") = Some(Token {
+            access: access.to_owned(),
+            account_id: None,
+            project: None,
+            refresh: String::new(),
+            expires_at_ms: now_ms() + 3_600_000,
+            source: Source::Qfork(PathBuf::new()),
+        });
+        credentials
+    }
+
     /// A usable access token, refreshing it when it is about to expire.
     pub async fn token(&self) -> Result<Token> {
         let mut current = self.current.lock().await;

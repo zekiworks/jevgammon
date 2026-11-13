@@ -6,6 +6,7 @@ mod db;
 mod dice;
 mod http;
 mod league;
+mod lesson;
 mod migrate;
 mod players;
 mod runner;
@@ -83,6 +84,10 @@ enum Command {
     /// error rate from the site's GNUbg scores) and stores the ranking; prints the stored
     /// and the new ranking.
     Rank(RankArgs),
+    /// "Did they improve?": one free-text request (a lesson call) through a chat-model
+    /// player's own route, login and reasoning setting; writes the answer, usage, cost and
+    /// the exchange as JSON (--out). No database.
+    Lesson(LessonCliArgs),
 }
 
 #[derive(Args)]
@@ -260,14 +265,43 @@ struct AskArgs {
 }
 
 #[derive(Args)]
+struct LessonCliArgs {
+    /// One player's config: a JSON object as in a league config's `players` list.
+    #[arg(long)]
+    player: PathBuf,
+    /// System prompt file.
+    #[arg(long)]
+    system: PathBuf,
+    /// User message file.
+    #[arg(long)]
+    user: PathBuf,
+    /// Output JSON file (written atomically).
+    #[arg(long)]
+    out: PathBuf,
+    /// qfork/Glyph credential root read for subscription logins and API keys.
+    #[arg(long, env = "JEVGAMMON_QFORK_ROOT")]
+    qfork_root: Option<PathBuf>,
+}
+
+#[derive(Args)]
 struct MatchArgs {
     /// First player: openai/<model>, anthropic/<model>, gemini/<model>, antigravity/<model>,
     /// xai/<model>, ollama/<model>, local/<model>, random, safest, gnubg-weak, or a decision service: jev, fastino,
     /// openai-decisions, perplexity, liquid, clef, open-jev, cygnet, gemma, pplx-local, d3, knowline, startlux,
     /// glide, glide-0.4b, onejev, gliclass, sieve, turion-jev, d1-local, strands, metask
     /// (optionally /<model>). Reasoning, prices and other providers need a league --config.
-    #[arg(long, required = true)]
+    #[arg(long, required_unless_present = "model1_config", conflicts_with = "model1_config")]
     model1: Option<String>,
+    /// First player from a player config entry (JSON file, `{name, spec, ...}` as in a league
+    /// config: base_url, request fields, prompt_note); its name is the match's model1.
+    #[arg(long)]
+    model1_config: Option<PathBuf>,
+    /// Play exactly --rounds rounds: no early end at 5 points, no tie-break round.
+    #[arg(long)]
+    fixed_rounds: bool,
+    /// Shell command run after every game and waited for (MATCH_ID, GAME_ROUND, GAME_LEG set).
+    #[arg(long)]
+    after_game: Option<String>,
     /// Second player (same forms as --model1).
     #[arg(long, required = true)]
     model2: Option<String>,
@@ -472,6 +506,24 @@ async fn main() -> ExitCode {
                     max_cost: args.max_cost,
                     time_limit: args.time_limit.map(std::time::Duration::from_secs),
                     once: args.once,
+                },
+                &setup,
+            )
+            .await
+        }
+        Some(Command::Lesson(args)) => {
+            let setup = Setup::new(
+                args.qfork_root
+                    .clone()
+                    .unwrap_or_else(auth::default_qfork_root),
+                "http://localhost:8080/v1".to_owned(),
+            );
+            lesson::lesson(
+                lesson::LessonArgs {
+                    player: args.player,
+                    system: args.system,
+                    user: args.user,
+                    out: args.out,
                 },
                 &setup,
             )
@@ -770,22 +822,34 @@ fn checked(models: Vec<PlayerConfig>) -> Result<Vec<PlayerConfig>> {
 
 async fn run_match(args: MatchArgs) -> Result<()> {
     let setup = args.common.setup();
-    let (Some(model1), Some(model2)) = (args.model1, args.model2) else {
-        bail!("--model1 and --model2 are required");
+    let Some(model2) = args.model2 else {
+        bail!("--model2 is required");
     };
+    let (player1, name1) = match (&args.model1_config, &args.model1) {
+        (Some(path), _) => {
+            let config: PlayerConfig = serde_json::from_str(
+                &std::fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))?,
+            )
+            .context("--model1-config")?;
+            let player = Player::from_config(&config, &setup).await.context("--model1-config")?;
+            (player, config.name)
+        }
+        (None, Some(model1)) => {
+            let player = Player::from_spec(model1, &setup).await.context("--model1")?;
+            let name = player.spec.clone();
+            (player, name)
+        }
+        (None, None) => bail!("--model1 or --model1-config is required"),
+    };
+    let player1 = Arc::new(player1);
     let start_position = args.common.start_position;
     args.common.prompt_version.check_start(start_position)?;
-    let player1 = Arc::new(
-        Player::from_spec(&model1, &setup)
-            .await
-            .context("--model1")?,
-    );
     let player2 = Arc::new(
         Player::from_spec(&model2, &setup)
             .await
             .context("--model2")?,
     );
-    let names = [player1.spec.clone(), player2.spec.clone()];
+    let names = [name1, player2.spec.clone()];
     for (name, player) in names.iter().zip([&player1, &player2]) {
         player
             .warm_up()
@@ -829,6 +893,8 @@ async fn run_match(args: MatchArgs) -> Result<()> {
             max_turns,
             // The board view follows one game at a time.
             concurrent_mirror: false,
+            fixed_rounds: args.fixed_rounds,
+            after_game: args.after_game.clone(),
             start_position,
             protocol: protocol.clone(),
         },

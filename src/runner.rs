@@ -232,6 +232,13 @@ pub struct MatchSettings {
     /// Plays the two games of a round at once, both showing the score at the start of the
     /// round; otherwise game 2 starts after game 1 and shows the score after it.
     pub concurrent_mirror: bool,
+    /// Learning pilot: play exactly `rounds` rounds (no early end at `FIRST_TO`, no
+    /// tie-break round).
+    pub fixed_rounds: bool,
+    /// Learning pilot: a shell command run after every game (sequential games only) and
+    /// waited for before the next one starts, with MATCH_ID, GAME_ROUND and GAME_LEG set; a
+    /// failing command stops the match.
+    pub after_game: Option<String>,
     /// The position every game starts from, also when a stored game is replayed.
     pub start_position: StartPosition,
     pub protocol: Arc<Protocol>,
@@ -353,11 +360,16 @@ impl Runner {
                     self.count(&game, &end, &mut score, &mut games_won);
                     self.db.lock().update_match_score(id, round, score)?;
                     if !end.stored {
+                        self.after_game(&game).await?;
+                    }
+                    if !end.stored {
                         self.control.pace(3).await?;
                     }
                 }
             }
-            (rounds, tie_break) = rounds_after(round, rounds, score, tie_break);
+            if !self.settings.fixed_rounds {
+                (rounds, tie_break) = rounds_after(round, rounds, score, tie_break);
+            }
             round += 1;
         }
         if let Some(game) = stored.values().next() {
@@ -383,6 +395,24 @@ impl Runner {
             games_won,
             winner,
         })
+    }
+
+    async fn after_game(&self, game: &Game) -> Result<()> {
+        let Some(command) = &self.settings.after_game else {
+            return Ok(());
+        };
+        let status = tokio::process::Command::new("sh")
+            .arg("-c")
+            .arg(command)
+            .env("MATCH_ID", self.settings.match_id.to_string())
+            .env("GAME_ROUND", game.round.to_string())
+            .env("GAME_LEG", game.leg.to_string())
+            .status()
+            .await?;
+        if !status.success() {
+            bail!("after-game command failed ({status}) after round {} game {}", game.round, game.leg);
+        }
+        Ok(())
     }
 
     /// Adds a finished game to the score; reports it unless that happened before the match
@@ -674,6 +704,7 @@ impl Runner {
                 invalid: decision.as_ref().is_some_and(|d| d.invalid),
                 group_size: decision.as_ref().and_then(|d| d.group_size),
                 reasoning_tokens: decision.as_ref().and_then(|d| d.reasoning_tokens),
+                in_flight: decision.as_ref().and_then(|d| d.in_flight),
             });
             let (input_tokens, output_tokens) = decision
                 .as_ref()
@@ -867,6 +898,8 @@ mod tests {
                 clock: None,
                 max_turns: Some(300),
                 concurrent_mirror,
+                fixed_rounds: false,
+                after_game: None,
                 start_position: start,
                 protocol,
             },

@@ -1,0 +1,5 @@
+You just played game {game} of a series of games against the same opponent. Below is the record of that game: every decision you made, with the GNU Backgammon engine's evaluation of it (2-ply: its best play, the equity you lost, and its verdict). Boards are given in your point numbering.
+
+{record}
+
+Write at most 5 lessons for your next games in this series, at most 150 words in total. Each lesson is one line starting with "- ", general advice rather than a comment on one specific position. Reply with the lessons only.

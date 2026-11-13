@@ -349,6 +349,8 @@ CREATE TABLE IF NOT EXISTS turns (
     group_size      INTEGER,
     -- Reasoning tokens of the decision, when the provider reports them.
     reasoning_tokens INTEGER,
+    -- The player's decisions in flight when this one started, itself included.
+    in_flight       INTEGER,
     UNIQUE (game_id, turn_no)
 );
 
@@ -359,7 +361,9 @@ CREATE TABLE IF NOT EXISTS exchanges (
     request         TEXT NOT NULL,
     response        TEXT,
     error           TEXT,
-    latency_ms      INTEGER NOT NULL
+    latency_ms      INTEGER NOT NULL,
+    -- "Did they improve?": the reply's checked identity (served model fields and the result).
+    identity        TEXT
 );
 
 CREATE TABLE IF NOT EXISTS leagues (
@@ -449,7 +453,7 @@ JOIN players p2 ON p2.id = m.player2
 ";
 
 /// Columns added after the first release, for databases created before them.
-const ADDED_COLUMNS: [(&str, &str, &str); 43] = [
+const ADDED_COLUMNS: [(&str, &str, &str); 45] = [
     ("matches", "clock_seconds", "INTEGER"),
     ("turns", "clock_ms", "INTEGER"),
     ("matches", "delay_seconds", "INTEGER"),
@@ -477,6 +481,8 @@ const ADDED_COLUMNS: [(&str, &str, &str); 43] = [
     ("turns", "invalid", "INTEGER"),
     ("turns", "group_size", "INTEGER"),
     ("turns", "reasoning_tokens", "INTEGER"),
+    ("turns", "in_flight", "INTEGER"),
+    ("exchanges", "identity", "TEXT"),
     ("leagues", "heartbeat_at", "TEXT"),
     ("leagues", "mirror_concurrent", "INTEGER"),
     ("matches", "player1", "INTEGER REFERENCES players(id)"),
@@ -593,6 +599,7 @@ pub struct DecisionLog<'a> {
     pub invalid: bool,
     pub group_size: Option<usize>,
     pub reasoning_tokens: Option<u64>,
+    pub in_flight: Option<usize>,
 }
 
 #[derive(Clone, Debug)]
@@ -601,6 +608,8 @@ pub struct Exchange {
     pub response: Option<String>,
     pub error: Option<String>,
     pub latency_ms: u64,
+    /// "Did they improve?": the checked identity of the reply (JSON), when a route check applies.
+    pub identity: Option<String>,
 }
 
 /// A game of a match as stored, for resuming the match.
@@ -967,9 +976,9 @@ impl Db {
                                 harness_commit, harness_dirty, provider, quantization,
                                 option_order, letter, chosen_position, probabilities,
                                 probability_source, request_ms, retry_ms, cost_usd, invalid,
-                                group_size, reasoning_tokens)
+                                group_size, reasoning_tokens, in_flight)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17,
-                     ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28, ?29, ?30, ?31, ?32)",
+                     ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28, ?29, ?30, ?31, ?32, ?33)",
             params![
                 turn.game_id,
                 turn.turn_no,
@@ -1004,20 +1013,22 @@ impl Db {
                 log.map(|l| l.invalid),
                 log.and_then(|l| l.group_size).map(|g| g as i64),
                 log.and_then(|l| l.reasoning_tokens).map(|r| r as i64),
+                log.and_then(|l| l.in_flight).map(|n| n as i64),
             ],
         )?;
         let turn_id = tx.last_insert_rowid();
         for (attempt, exchange) in exchanges.iter().enumerate() {
             tx.execute(
-                "INSERT INTO exchanges (turn_id, attempt, request, response, error, latency_ms)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                "INSERT INTO exchanges (turn_id, attempt, request, response, error, latency_ms, identity)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
                 params![
                     turn_id,
                     (attempt + 1) as i64,
                     exchange.request,
                     exchange.response,
                     exchange.error,
-                    exchange.latency_ms as i64
+                    exchange.latency_ms as i64,
+                    exchange.identity
                 ],
             )?;
         }
@@ -1576,6 +1587,49 @@ mod tests {
                 .unwrap();
             assert!(exists, "{table}.{column}");
         }
+        drop(db);
+        let _ = std::fs::remove_file(&path);
+    }
+
+    /// "Did they improve?" (Zeki #3236): a reply's checked identity is stored with its exchange.
+    #[test]
+    fn exchange_identity_is_stored() {
+        let path = std::env::temp_dir().join(format!("identity-{}.db", uuid::Uuid::new_v4()));
+        let mut db = Db::open(&path).unwrap();
+        // The turn stands alone here (no match or game rows): only the exchange's storage is tested.
+        db.conn.pragma_update(None, "foreign_keys", false).unwrap();
+        let board = Board::start();
+        let turn = TurnRecord {
+            game_id: 1,
+            turn_no: 1,
+            side: Side::White,
+            player: 1,
+            dice: (3, 1),
+            position: &board,
+            legal_count: 2,
+            chosen_index: Some(0),
+            notation: "8/5 6/5",
+            decided_by: "model",
+            latency_ms: 10,
+            input_tokens: 5,
+            output_tokens: 2,
+            clock_ms: None,
+            decision: None,
+        };
+        let identity = r#"{"result":"accepted_dated","fields":{"model":"gpt-6.1-sol-2026-10-01","provider":null}}"#;
+        let exchange = Exchange {
+            request: "{}".into(),
+            response: Some("- text".into()),
+            error: None,
+            latency_ms: 10,
+            identity: Some(identity.into()),
+        };
+        db.record_turn(&turn, &[exchange]).unwrap();
+        let stored: String = db
+            .conn
+            .query_row("SELECT identity FROM exchanges", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(stored, identity);
         drop(db);
         let _ = std::fs::remove_file(&path);
     }

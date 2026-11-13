@@ -255,3 +255,22 @@ Before publishing anything: the invalid share per model from its own matches/ans
 - **Random scoring:** merging late-random-same-positions changes 11 published scores.
 - **Part 2 page:** the small models need their own publish list (no Q3); not built yet.
 - **Incidents (fixed):** (1) for ~10 min a subagent's site edits (held_setups.json, families.json, model_params.json, additions only) sat in the main checkout before being moved to small3-site and reverted; the 15:35Z live build's deployed data contains none of the three names (checked). (2) A subagent briefly wrote scratch files under /tmp (one file deleted at once; test temp folders moved to ~/.cache/jevgammon-wt/small-learning-tmp).
+
+## 9. Repeats (Run 2) for the four urgent models (Ümit #6407/#6408/#6410; added 13 Nov, not started)
+Ümit #6410: for LFM3-1.7B, MiniCPM5-2B, d1-2B, GLiDE 2B, what is done gets a pinned-seed repeat, as the six repeats (tools/v3/repeats/repeats.py + run.sh; launcher 33fa52b on branches gemini-repeat / launcher-bind, runner 0e66836 = `target/pinned`, Zeki-reviewed).
+
+| Repeat id (proposed) | Original | Original league / matches (v3.db) | Original runner | Entrant's server | When |
+|---|---|---|---|---|---|
+| glide-2b-r1 → 'GLiDE 2B [repeat 1]' | GLiDE 2B | L41, #1191–#1199 (9 finished; #1200 Mercury aborted, not required) | late-tiny8 e4ce0e9 (`target/tiny8`), clean | spark2 :19330, logic's (handoff), one match at a time | now prepareable |
+| minicpm5-2b-off-r1 → 'MiniCPM5-2B (off) [repeat 1]' | MiniCPM5-2B (off) | L39, #1171, #1173–#1180 (9; #1172 Mercury aborted) | late-smallchat 171698f (`target/smallchat`), clean | logic's small_models.py vLLM v0.30.0 :18614 (GPU 1 after LFM3), up to 16 matches at once as the original | now prepareable |
+| lfm3-1.7b-on-r1, d1-2b-r1, minicpm5-2b-on-r1 | — | after their first runs | — | — | later |
+
+Each repeat pins every original pair's seed and seating (repeats.py `pin`: a voided placeholder per opponent, `check` fails closed), its name joins the late_entry_stage trigger and content/held_setups.json (never shown as a setup), only the pairs the original played are repeated (9 each; local 0/8 in both originals, so no local opponents).
+
+**What the launcher is missing (checked at 33fa52b / 0e66836):**
+1. **Runner:** `target/pinned` (0e66836) has neither the late-tiny8 decision clients (`glide` provider etc.; e4ce0e9 is not an ancestor) nor late-smallchat's chat client changes (171698f not an ancestor). A repeat runner = 0e66836 + late-tiny8's clients (+ late-tiny8-small3 8ebad40 for d1-2B later) + late-smallchat 171698f's client (+ late-smallchat-on a083fb4 for the (on) setups later), with a test that its requests are byte-identical to the stored original requests of #1191–#1199 and #1171–#1180 (as small-clearrisk-p2 proved for Part 2).
+2. **Entry kind:** run.sh knows `ours` (we start/stop the server on GPU), `logic` (hard-wired to REAX: `docker inspect logic-dm-reax13` image check) and `api`. GLiDE 2B (spark2, logic's) and MiniCPM5-2B/LFM3-1.7B (logic's GPU 1 container) need a new kind, e.g. `pinned`: no start/stop, no entrant GPU; before any match and every 60 s, the late entry's own pins.sh `healthy` + `pinned` (spark2 process over ssh; for smallchat the container image digest and arguments), stop on 3 failed health checks; MiB 0 on our cards.
+3. **OPP_GPU/RES:** run.sh requires both even when the plan has no local opponent; with 0 local pairs they should be optional (or the plan must state a card is booked for nothing).
+4. **Concurrency:** GLiDE 2B's original ran one match at a time (player max_matches 1, parallel 1), MiniCPM5-2B (off)'s up to 16 at once; the repeat players copy the original settings unchanged (settings_change {}) and `rules.mirror_concurrent` as League 1 (true).
+5. **Smoke:** an `ask` smoke on positions/smoke.jsonl like glide-v1.2-r1's, with the repeat runner.
+Cost [INFERENCE from the originals]: paid opponents ≈ $0.09 (GLiDE 2B) and ≈ $0.11 (MiniCPM (off)); server time ≈ 0.1 h each; under the $30 total.

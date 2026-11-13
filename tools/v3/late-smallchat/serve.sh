@@ -9,22 +9,23 @@
 # 69,632 = 65,536 + 4,096, 16 sequences, chunked prefill, prefix caching, --generation-config auto, the model's reasoning
 # parser): the same arguments as logic's container logic-small-MODEL (read with docker inspect on 12 Nov for
 # lfm2.5-2.6b), here bound to 127.0.0.1:PORT; top-20 logprobs are vLLM's default limit.
-# llama.cpp (LFM3-1.7B, Spark-X2.6-4B: not in vLLM v0.30.0): logic's build and arguments (official BF16 GGUF, the
-# pinned repo's chat_template.jinja, --reasoning-format deepseek), 32 slots of 69,632 tokens, as logic's.
-# Spark-X2.6-4B: llama.cpp too (vLLM v0.30.0 has no Spark2_5ForCausalLM), with the official GGUF logic serves (#5091).
+# LFM3-1.7B: vLLM too, on the nightly logic serves it with (models.json image, the be47189f3 nightly by digest: no vLLM
+# release has Lfm3ForCausalLM) and 32 sequences (models.json own.max_num_seqs), as logic's lfm3-1.7b-vllm-rerun.
+# llama.cpp (Spark-X2.6-4B: not in vLLM v0.30.0, no Spark2_5ForCausalLM): logic's build and arguments (the official
+# GGUF logic serves #5091, the pinned repo's chat_template.jinja, --reasoning-format deepseek), 32 slots of 69,632.
 source "$(dirname "$(readlink -f "$0")")/../servers/_lib.sh"
 T=$(dirname "$(readlink -f "$0")")
 MODEL=${1:?usage: serve.sh MODEL GPU start|stop|status}
 GPU=${2:?usage: serve.sh MODEL GPU start|stop|status}
 CMD=${3:?usage: serve.sh MODEL GPU start|stop|status}
 CONTEXT=69632
-IMAGE=vllm/vllm-openai:v0.30.0
 LLAMA_SERVER=/home/cbasaran/code/llama.cpp/build-cuda/bin/llama-server
 eval "$(python3 - "$T/models.json" "$MODEL" <<'EOF'
 import json, shlex, sys
 m = json.load(open(sys.argv[1])).get(sys.argv[2]) or sys.exit(f"echo 'unknown model {sys.argv[2]}' >&2; exit 1")
 own = m["own"]
 print(f"REPO={shlex.quote(m['repo'])} REV={m['rev']} SERVER={own['server']} PORT={own['port']}")
+print(f"IMAGE={shlex.quote(m.get('image', 'vllm/vllm-openai:v0.30.0'))} SEQS={own.get('max_num_seqs', 16)}")
 print("ARGS=(" + " ".join(shlex.quote(a) for a in own.get("args", [])) + ")")
 print(f"BLOCKER={shlex.quote(own.get('blocker', ''))}")
 g = own.get("gguf") or ["", "", ""]
@@ -54,7 +55,7 @@ case $CMD in
         -v "$(dirname "$HF_HUB"):/root/.cache/huggingface:ro" \
         --entrypoint vllm "$IMAGE" serve "$REPO" --revision "$REV" --tokenizer-revision "$REV" \
         --served-model-name "$MODEL" --host 0.0.0.0 --port "$PORT" --dtype bfloat16 --max-model-len $CONTEXT \
-        --max-num-seqs 16 --gpu-memory-utilization "${UTIL:-0.85}" --tensor-parallel-size 1 \
+        --max-num-seqs "$SEQS" --gpu-memory-utilization "${UTIL:-0.85}" --tensor-parallel-size 1 \
         --enable-chunked-prefill --enable-prefix-caching --generation-config auto "${ARGS[@]}"
       docker_wait "$NAME" "$URL" 1800
     else

@@ -9,15 +9,22 @@ B the highest probability), and refuses with 400 what the setup must never send:
   - chat_template_kwargs.enable_thinking other than player.json's, or a reasoning_effort field;
   - (on) request 1: max_tokens other than player.json's, no letter schema in response_format;
   - the read-out request: not continue_final_message true / add_generation_prompt false / max_tokens 1 / logprobs with
-    player.json's top_logprobs, or (on) an assistant message other than the prefill of the stub's reasoning
-    ("\nstub reasoning\n"): player.json's reasoning_prefill layout, else <think>REASONING</think>Answer:;
-  - a chat template error (the prompt rendered with transformers as vLLM v0.30.0 does: continue_final_message refused
-    when the template rewrites the prefilled message), as vLLM answers it: 400;
+    player.json's top_logprobs, or (on) an assistant message other than the one the runner must build from the stub's
+    reasoning ("\nstub reasoning\n"): with player.json's reasoning_field, content Answer: and the reasoning in that
+    field; else content in player.json's reasoning_prefill layout, else <think>REASONING</think>Answer:;
+  - a chat template error (the prompt rendered with transformers as vLLM does: continue_final_message refused when the
+    template rewrites the prefilled message), as vLLM answers it: 400; the messages are given to the template as vLLM
+    gives them (models.json content_format 'openai': every content a list of text parts, vLLM's auto-detection for
+    LFM3's template; else strings; an assistant reasoning field also as reasoning_content);
+  - a wrong read-out prompt, even without an error: the rendered read-out must be the reasoning request's rendered
+    prompt (its generation prompt included) followed by text without another <think> (and, (on), with the reasoning),
+    ending in Answer: (LFM3's template under content format openai opens an extra <think></think> otherwise);
   - prompt tokens + max_tokens over CONTEXT (69,632: logic's servers, 65,536 + 4,096 per sequence or llama.cpp slot),
     counted with the model's own tokenizer and the pinned repo's chat_template.jinja (the template the server applies),
     as vLLM refuses (llama.cpp would cut the reply instead; the client must never get there).
 usage (bound to 127.0.0.1): stub_chat.py KEY PORT LOG   (LOG: one JSON line per request, with the counted tokens)
-Needs transformers (e.g. STUB_PYTHON=~/code/d1-2b/.venv/bin/python, see stub_test.sh); the HF cache must hold the pin.
+Needs transformers (STUB_PYTHON, see stub_test.sh: transformers 5.22.2, the vLLM be47189f3 image's); the HF cache must
+hold the pin.
 """
 import json
 import sys
@@ -35,8 +42,14 @@ PIN = json.loads((HERE / "models.json").read_text())[MODEL]
 SERVED = PLAYER["spec"].split("/", 1)[1]
 THINKING = PLAYER["request"]["chat_template_kwargs"]["enable_thinking"]
 REASONING = "\nstub reasoning\n"  # with outer newlines, as Qwen-style parsers often return it
-PREFILL = (PLAYER["reasoning_prefill"].replace("{reasoning}", REASONING.strip("\n")) if "reasoning_prefill" in PLAYER
-           else f"<think>{REASONING}</think>Answer:")
+FIELD = PLAYER.get("reasoning_field")
+if FIELD:
+    EXPECTED = {"role": "assistant", "content": "Answer:", FIELD: REASONING}
+elif "reasoning_prefill" in PLAYER:
+    EXPECTED = {"role": "assistant", "content": PLAYER["reasoning_prefill"].replace("{reasoning}", REASONING.strip("\n"))}
+else:
+    EXPECTED = {"role": "assistant", "content": f"<think>{REASONING}</think>Answer:"}
+CONTENT_FORMAT = PIN.get("content_format", "string")
 CONTEXT = 69632
 SNAP = Path.home() / ".cache/huggingface/hub" / f"models--{PIN['repo'].replace('/', '--')}" / "snapshots" / PIN["rev"]
 TOKENIZER = AutoTokenizer.from_pretrained(SNAP)
@@ -44,12 +57,37 @@ TEMPLATE = (SNAP / "chat_template.jinja").read_text()
 LOCK = threading.Lock()
 
 
-def prompt_tokens(body):
-    ids = TOKENIZER.apply_chat_template(
-        body["messages"], chat_template=TEMPLATE, tokenize=True, enable_thinking=THINKING,
-        add_generation_prompt=body.get("add_generation_prompt", True),
-        continue_final_message=bool(body.get("continue_final_message")))
-    return len(ids["input_ids"] if hasattr(ids, "keys") else ids)
+def as_vllm(messages):
+    """The messages as vLLM hands them to the chat template."""
+    out = []
+    for m in messages:
+        m = dict(m)
+        if CONTENT_FORMAT == "openai" and isinstance(m.get("content"), str):
+            m["content"] = [{"type": "text", "text": m["content"]}]
+        if m.get("reasoning") is not None:
+            m["reasoning_content"] = m["reasoning"]
+        out.append(m)
+    return out
+
+
+def render(messages, **kwargs):
+    return TOKENIZER.apply_chat_template(as_vllm(messages), chat_template=TEMPLATE, tokenize=False,
+                                         enable_thinking=THINKING, **kwargs)
+
+
+def prompt(body):
+    """Rendered prompt and its token count; the read-out's wrong-prompt reason or None. ValueError: template error."""
+    readout = bool(body.get("continue_final_message"))
+    text = render(body["messages"], add_generation_prompt=body.get("add_generation_prompt", True),
+                  continue_final_message=readout)
+    tokens = len(TOKENIZER.encode(text, add_special_tokens=False))
+    wrong = None
+    if readout:
+        head = render(body["messages"][:-1], add_generation_prompt=True)
+        rest = text[len(head):] if text.startswith(head) else None
+        if rest is None or "<think>" in rest or not rest.endswith("Answer:") or (THINKING and "stub reasoning" not in rest):
+            wrong = f"read-out prompt is not the reasoning request's prompt + reasoning + Answer: (assistant turn {text[len(head) - 40:]!r})"
+    return tokens, wrong
 
 
 def check(body):
@@ -67,7 +105,7 @@ def check(body):
                  (body.get("logprobs") is True, "read-out without logprobs"),
                  (body.get("top_logprobs") == PLAYER["top_logprobs"], "read-out top_logprobs differs from player.json"),
                  (last["role"] == "assistant" and last["content"].endswith("Answer:"), "no prefilled Answer:"),
-                 (not THINKING or last["content"] == PREFILL, f"(on) prefill is not {PREFILL!r}")]
+                 (not THINKING or last == EXPECTED, f"(on) read-out message is not {EXPECTED!r}")]
     else:
         schema = (body.get("response_format") or {}).get("json_schema", {}).get("schema", {})
         rules = [(not THINKING or body.get("max_tokens") == PLAYER["max_tokens"], "max_tokens differs from player.json"),
@@ -101,8 +139,9 @@ class Handler(BaseHTTPRequestHandler):
             return self.send(404, {"error": f"model {body.get('model')!r} does not exist; served: {SERVED}"})
         reason, readout = check(body)
         try:
-            tokens = prompt_tokens(body)
-        except ValueError as error:  # vLLM answers a chat template error with 400 (reported before the stub's rules)
+            tokens, wrong = prompt(body)
+            reason = wrong or reason  # a wrong prompt is reported before the stub's rules
+        except ValueError as error:  # vLLM answers a chat template error with 400 (reported first)
             tokens, reason = None, f"chat template: {str(error).split('Rendered chat')[0].strip()}"
         if reason is None and tokens + body.get("max_tokens", 0) > CONTEXT:
             reason = f"{tokens} prompt tokens + max_tokens {body.get('max_tokens')} > context {CONTEXT}"

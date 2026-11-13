@@ -3,14 +3,18 @@
 # smallchat.py's read-only config read): the stub listens on 127.0.0.1:STUB_PORT (default 28600 + n), test.sh gets it
 # through SMALLCHAT_URL, and pins.sh's pinned() sees the stub as the pinned server: for llama.cpp setups the stub's
 # command line carries llama-server's pinned arguments (pgrep), for vLLM setups a docker shim first on PATH reports
-# a container with the pinned arguments (the real docker is never called). The runner is test.sh's (SMALLCHAT_BIN).
-# KEY: expected to pass (test.sh exit 0, nothing refused); KEY=refused: expected to fail with at least one request
-# refused (regression: MiniCPM5-2B (on) with a runner that ignores reasoning_prefill gets vLLM's 400). Exit 0 when
-# every KEY behaved as expected.
-#   tools/v3/late-smallchat/stub_test.sh KEY[=refused]...  (STUB_PYTHON: a python with transformers, default d1-2b's venv)
+# a container with the pinned arguments and models.json's image (the real docker is never called). The runner is
+# test.sh's (SMALLCHAT_BIN). KEY: expected to pass (test.sh exit 0, nothing refused); KEY=refused: expected to fail
+# with a request refused by the chat template or for a wrong read-out prompt (regressions with a runner that ignores
+# reasoning_prefill / reasoning_field: MiniCPM5-2B (on) gets vLLM's 400, LFM3-1.7B (on) an extra <think></think>).
+# Exit 0 when every KEY behaved as expected.
+#   tools/v3/late-smallchat/stub_test.sh KEY[=refused]...
+# STUB_PYTHON: a python with transformers 5.22.2 (the vLLM be47189f3 image's), default ~/.cache/smallchat/venv-tf5222
+# (python3 -m venv ~/.cache/smallchat/venv-tf5222 && ~/.cache/smallchat/venv-tf5222/bin/pip install
+# transformers==5.22.2 tokenizers jinja2).
 set -uo pipefail
 T=$(dirname "$(readlink -f "$0")")
-PY=${STUB_PYTHON:-$HOME/code/d1-2b/.venv/bin/python}
+PY=${STUB_PYTHON:-$HOME/.cache/smallchat/venv-tf5222/bin/python}
 HUB=$HOME/.cache/huggingface/hub
 WORK=$HOME/.cache/smallchat/stub-test
 mkdir -p "$WORK/bin"
@@ -24,6 +28,7 @@ import json, shlex, sys
 m = json.load(open(sys.argv[1]))[sys.argv[2]]
 g = m["own"].get("gguf") or ["", "", ""]
 print(f"REPO={shlex.quote(m['repo'])} REV={m['rev']} SERVER={m['own']['server']} GREPO={shlex.quote(g[0])} GREV={g[1]} GFILE={shlex.quote(g[2])}")
+print(f"IMAGE={shlex.quote(m.get('image', 'vllm/vllm-openai:v0.30.0'))}")
 EOF
 )"
   SNAP=$HUB/models--${REPO//\//--}/snapshots/$REV
@@ -33,8 +38,8 @@ EOF
     printf '#!/bin/sh\nexit 0\n' >"$WORK/bin/docker"
   else
     ARGS=()
-    printf '#!/bin/sh\ncase $1 in ps) echo stub;; inspect) echo "serve %s --revision %s --port %s --dtype bfloat16 --max-model-len 69632";; esac\n' \
-      "$REPO" "$REV" "$PORT" >"$WORK/bin/docker"
+    printf '#!/bin/sh\ncase $1 in ps) echo stub;; inspect) case "$3" in *Config.Image*) echo "%s sha256:0";; *) echo "serve %s --revision %s --port %s --dtype bfloat16 --max-model-len 69632";; esac;; esac\n' \
+      "$IMAGE" "$REPO" "$REV" "$PORT" >"$WORK/bin/docker"
   fi
   chmod +x "$WORK/bin/docker"
   "$PY" "$T/stub_chat.py" "$KEY" "$PORT" "$LOG" "${ARGS[@]}" >"$WORK/$KEY.stub.log" 2>&1 &
@@ -50,8 +55,8 @@ for l in open(sys.argv[1]):
     r = json.loads(l); print("  request: readout=%(readout)s prompt_tokens=%(prompt_tokens)s max_tokens=%(max_tokens)s refused=%(refused)s" % r)' "$LOG"
   if [[ $EXPECT == pass ]] && (( rc == 0 && refused == 0 )); then echo "$KEY: STUB TEST PASSED"
   elif [[ $EXPECT == refused ]] && (( rc != 0 )) &&
-       python3 -c 'import json,sys; sys.exit(not any((json.loads(l)["refused"] or "").startswith("chat template:") for l in open(sys.argv[1])))' "$LOG"
-  then echo "$KEY: STUB TEST PASSED (refused by the chat template as expected)"
+       python3 -c 'import json,sys; sys.exit(not any((json.loads(l)["refused"] or "").startswith(("chat template:", "read-out prompt")) for l in open(sys.argv[1])))' "$LOG"
+  then echo "$KEY: STUB TEST PASSED (refused as expected: chat template or wrong read-out prompt)"
   else echo "$KEY: STUB TEST FAILED (expected $EXPECT; test.sh $rc, refused $refused)"; fail=1; fi
 done
 exit $fail

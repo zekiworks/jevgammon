@@ -9,7 +9,7 @@
 #     agent-bus run RES -- python3 work/small_models.py serve LOGIC_KEY GPU_UUID
 #   (stop: python3 ~/code/benchmark/logic/work/small_models.py stop LOGIC_KEY; systemctl --user stop smallchat-serve-MODEL)
 # It uses models.json's logic key, port and served name (player.json's), so no SMALLCHAT_URL/SMALLCHAT_MODEL is needed;
-# RemainAfterExit keeps a llama.cpp server (LFM3-1.7B, Spark-X2.6-4B: a child process, unlike vLLM's container) alive
+# RemainAfterExit keeps a llama.cpp server (Spark-X2.6-4B: a child process, unlike vLLM's container) alive
 # after the serve command returns. serve.sh MODEL GPU start is the fallback copy. One setup at a time: start.sh refuses
 # while another smallchat unit runs.
 # Status: mailbox/Late entries smallchat - KEY - status.md (main checkout); state workspace/late-smallchat/KEY/state.
@@ -17,7 +17,8 @@
 #     -E PATH=$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/games [-E SMALLCHAT_URL=... -E SMALLCHAT_MODEL=...] \
 #     [-E SMALLCHAT_BIN=RUNNER] /home/cbasaran/code/jevgammon-smallchat/tools/v3/late-smallchat/start.sh KEY
 # SMALLCHAT_BIN (also test.sh, locals.sh): the runner, default target/smallchat/release/jevgammon of the main
-# checkout; required for a setup whose player.json sets reasoning_prefill (MiniCPM5-2B (on)), which that runner lacks.
+# checkout; required for a setup whose player.json sets reasoning_prefill (MiniCPM5-2B (on)) or reasoning_field
+# (LFM3-1.7B (on)), which that runner lacks.
 # Before anything: the server answers /v1/models with the setup's served name (pins.sh healthy) and the process on its
 # port runs the pinned repo@revision in BF16 with a context of at least 38,000 tokens (pins.sh pinned). Once: v3.db
 # backup (VACUUM INTO, zstd -t), first match id, the late_entry_stage trigger, the league config. Then starts the league
@@ -45,8 +46,8 @@ CAP=5
 UNIT=late-smallchat-$KEY-league
 PLAYER=$(python3 "$T/smallchat.py" "$KEY" player) || { echo "settings of $KEY unreadable" >&2; exit 1; }
 field() { python3 -c 'import json,sys; print(eval(sys.argv[2], {}, {"p": json.loads(sys.argv[1])}))' "$PLAYER" "$1"; }
-[[ $(field '"reasoning_prefill" in p') == False || -n ${SMALLCHAT_BIN:-} ]] ||
-  { echo "$KEY sets reasoning_prefill: SMALLCHAT_BIN must name a runner built with it" >&2; exit 1; }
+[[ $(field '"reasoning_prefill" in p or "reasoning_field" in p') == False || -n ${SMALLCHAT_BIN:-} ]] ||
+  { echo "$KEY sets reasoning_prefill/reasoning_field: SMALLCHAT_BIN must name a runner built with it" >&2; exit 1; }
 URL=$(field 'p["base_url"]')
 NAME=$(field 'p["name"]')
 SERVED=$(field 'p["spec"].split("/", 1)[1]')

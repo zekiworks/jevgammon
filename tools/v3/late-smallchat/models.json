@@ -7,22 +7,26 @@
   "thinking": "switch",
   "context": 262144,
   "logic": {
-   "key": "lfm3-1.7b",
-   "port": 18605,
-   "server": "llama.cpp",
-   "port_source": "logic's small_models.py SETUPS (port not yet announced for #5080)"
+   "key": "lfm3-1.7b-vllm-rerun",
+   "port": 18634,
+   "server": "vllm",
+   "port_source": "logic's small_models.py SETUPS (lfm3-1.7b-vllm-rerun, no explicit port: 18600 + its position = 18634); work/lfm3_rerun.sh serves it on bariton GPU 1 and leaves it up (Ümit #6250 via Main); its twin lfm3-1.7b-vllm (port 18605) runs the same server arguments and is accepted by pins.sh through SMALLCHAT_URL=http://127.0.0.1:18605/v1"
   },
   "own": {
-   "server": "llama.cpp",
-   "port": 18605,
-   "gguf": [
-    "LiquidAI/LFM3-1.7B-GGUF",
-    "cd0c74c575b5c416f3011b5b4c298077f26ca8c2",
-    "LFM3-1.7B-BF16.gguf"
+   "server": "vllm",
+   "port": 18634,
+   "max_num_seqs": 32,
+   "args": [
+    "--reasoning-parser",
+    "qwen3"
    ]
   },
   "weights_gb": 3.5,
-  "pair_hours": 12
+  "pair_hours": 12,
+  "image": "vllm/vllm-openai@sha256:7f0618da95bac2f1cc97fcd1791380d7c1a06d24a4998da45aeb7fbe6c49179e",
+  "engine": "vLLM 0.34.0rc1.dev302+gbe47189f3 (nightly, commit be47189f37f6, CUDA 13.5 image; docker vllm/vllm-openai@sha256:7f0618da95bac2f1cc97fcd1791380d7c1a06d24a4998da45aeb7fbe6c49179e), BF16: no vLLM release has Lfm3ForCausalLM",
+  "content_format": "openai",
+  "content_format_source": "vLLM be47189f3's auto-detection (vllm/renderers/hf.py _detect_content_format, run on the pinned chat_template.jinja): the template loops over content in a macro called with message.content; MiniCPM5-2B's: string"
  },
  "lfm2.5-2.6b": {
   "name": "LFM2.5-2.6B",

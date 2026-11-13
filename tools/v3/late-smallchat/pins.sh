@@ -4,15 +4,19 @@
 #   pinned:  the process serving PORT runs the pinned checkpoint: a docker container (vLLM) whose arguments carry
 #            --port PORT, the pinned repo with --revision REV (or its snapshot path), BF16, --max-model-len of at least
 #            38,000 (the longest League 1 request, at most ~4,750 tokens through the 11 templates, + 32,768 output: never
-#            refused for length, never truncated); or, for llama.cpp
-#            (LFM3-1.7B), a llama-server on PORT with the pinned GGUF and the pinned repo's chat template.
+#            refused for length, never truncated), and, where models.json names an image (LFM3-1.7B: the vLLM
+#            be47189f3 nightly by digest), a container of that image (docker inspect .Config.Image or .Image carries
+#            its sha256); or, for llama.cpp (Spark-X2.6-4B), a llama-server on PORT with the pinned GGUF and the pinned
+#            repo's chat template.
 MODEL=${KEY%-on}
 MODEL=${MODEL%-off}
 eval "$(python3 - "$T/models.json" "$MODEL" <<'EOF'
 import json, shlex, sys
 m = json.load(open(sys.argv[1]))[sys.argv[2]]
 g = (m["own"].get("gguf") or ["", "", ""])
+digest = m.get("image", "").partition("@sha256:")[2]
 print(f"PIN_REPO={shlex.quote(m['repo'])} PIN_REV={m['rev']} PIN_GGUF_REV={g[1]} PIN_GGUF_FILE={shlex.quote(g[2])}")
+print(f"PIN_IMAGE={digest}")
 EOF
 )"
 LABEL="$MODEL ($PIN_REPO@${PIN_REV:0:8})"
@@ -29,6 +33,8 @@ pinned() {
     { [[ " $args " == *" $PIN_REPO "* && " $args " == *" --revision $PIN_REV "* ]] ||
       [[ $args == *"snapshots/$PIN_REV"* ]]; } || return 1
     [[ " $args " == *" --dtype bfloat16 "* ]] || return 1
+    [[ -z $PIN_IMAGE || $(docker inspect --format '{{.Config.Image}} {{.Image}}' "$c" 2>/dev/null) == *"$PIN_IMAGE"* ]] ||
+      return 1
     python3 -c 'import re,sys; m=re.search(r"--max-model-len[ =](\d+)", sys.argv[1]); sys.exit(not (m and int(m.group(1)) >= int(sys.argv[2])))' \
       "$args" "$MIN_CONTEXT" || return 1
     return 0

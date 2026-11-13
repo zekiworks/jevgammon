@@ -1,9 +1,9 @@
 {
   "name": "LFM3-1.7B (off)",
   "spec": "openai-compatible/lfm3-1.7b",
-  "provider": "local-llama.cpp",
+  "provider": "local-vllm",
   "quantization": "bf16",
-  "base_url": "http://127.0.0.1:18605/v1",
+  "base_url": "http://127.0.0.1:18634/v1",
   "request": {
     "chat_template_kwargs": {
       "enable_thinking": false
@@ -11,7 +11,7 @@
   },
   "top_logprobs": 20,
   "letter_readout": "prefill",
-  "note": "LiquidAI/LFM3-1.7B @ 0dc4268b561499c648c7ba7c9466bf3d8d01517a, BF16, on our GPU through llama.cpp server b12020 (official BF16 GGUF LiquidAI/LFM3-1.7B-GGUF @ cd0c74c5 LFM3-1.7B-BF16.gguf, chat template from the pinned repo; vLLM v0.30.0 lacks the architecture); logic's server (small_models.py key lfm3-1.7b, port 18605, bariton GPU 1, #5080/#5091; ours alone after turkce's 'done') or ours on the same port and name (tools/v3/late-smallchat/serve.sh). thinking off (enable_thinking false); the letter is read from a prefilled Answer: (as Gemma 4 31B (off)); server reasoning split: llama.cpp --reasoning-format deepseek (no reasoning generated). Sampling: League 1's local chat rule, per request: temperature 1.0 from the chat client, everything else the server's default (llama.cpp defaults), no seed; it differs from logic's Logic & Math runs: logic sends temperature 0.1, top_k 50, repeat_penalty 1.1 over the whole context, top_p 1, min_p 0, seed 0. Output cap 1 token (prefill readout). Up to 16 matches and 16 requests at once, League 1's rule for its local chat setups (the server is ours alone after turkce's 'done'). Late entry v the original League 1 table (tools/v3/late-smallchat; Zeki #5064/#5071/#5073; Main's decisions 12 Nov)",
+  "note": "LiquidAI/LFM3-1.7B @ 0dc4268b561499c648c7ba7c9466bf3d8d01517a, BF16, BF16 safetensors, on our GPU through vLLM 0.34.0rc1.dev302+gbe47189f3 (nightly, commit be47189f37f6, docker vllm/vllm-openai@sha256:7f0618da95bac2f1cc97fcd1791380d7c1a06d24a4998da45aeb7fbe6c49179e; no vLLM release has Lfm3ForCausalLM), the pinned repo's chat template, --max-model-len 69,632, 32 sequences, --generation-config auto, reasoning parser qwen3: logic's server small_models.py key lfm3-1.7b-vllm-rerun (served name lfm3-1.7b, port 18634, bariton GPU 1, work/lfm3_rerun.sh, Ümit #6250 via Main; the server args of its twin lfm3-1.7b-vllm on port 18605 are the same; ours alone after turkce's 'done') or ours on the same port and name (tools/v3/late-smallchat/serve.sh). Was llama.cpp b12020 with the BF16 GGUF until 13 Nov (Main: logic serves LFM3-1.7B on this vLLM from ~21:00Z); no LFM3-1.7B decision was played on llama.cpp. thinking off (enable_thinking false); the letter is read from a prefilled Answer: (as Gemma 4 31B (off)); server reasoning split: vLLM reasoning parser qwen3 (no reasoning generated: the template opens <think></think>). Sampling: League 1's local chat rule, per request: temperature 1.0 from the chat client, everything else the server's default (vLLM --generation-config auto: generation_config.json's top_k 50 and repetition_penalty 1.1; its temperature 0.1 is replaced by the request's 1.0), no seed; it differs from logic's Logic & Math runs: logic sends temperature 0.1, top_k 50, repetition_penalty 1.1, top_p 1, min_p 0, seed 0. Output cap 1 token (prefill readout). Up to 16 matches and 16 requests at once, League 1's rule for its local chat setups (the server is ours alone after turkce's 'done'). Late entry v the original League 1 table (tools/v3/late-smallchat; Zeki #5064/#5071/#5073; Main's decisions 12 Nov)",
   "device": "RTX PRO 6000 (bariton), one GPU",
   "parallel": 16,
   "max_matches": 16

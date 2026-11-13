@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # One test decision of a small chat setup (KEY: models/KEY) through the real chat client against the real server, before
-# its first start (Main, 12 Nov): llama.cpp's handling of the prefilled answer (LFM3-1.7B, Spark-X2.6-4B) and the
-# templates predicted to refuse the (on) prefill (Qwen3.5, MiniCPM5, Gemma 4 E4B) are checked here, and only here.
+# its first start (Main, 12 Nov): llama.cpp's handling of the prefilled answer (Spark-X2.6-4B), the vLLM nightly's
+# (LFM3-1.7B) and the templates predicted to refuse the (on) prefill (Qwen3.5, MiniCPM5, Gemma 4 E4B) are checked
+# here, and only here (tools/v3/late-smallchat/stub_test.sh: the same through a template-exact stub, no GPU).
 # Run only when the server is ours alone (after turkce's 'done KEY'); it costs nothing (no paid player is asked).
 #   tools/v3/late-smallchat/test.sh KEY        [SMALLCHAT_URL / SMALLCHAT_MODEL as for start.sh]
 # What it does: the server is the pinned one (pins.sh), the setup's League 1 config is written to
@@ -18,8 +19,8 @@ BIN=${SMALLCHAT_BIN:-/home/cbasaran/code/jevgammon/target/smallchat/release/jevg
 OUT=$HOME/.cache/smallchat/test/$KEY
 PLAYER=$(python3 "$T/smallchat.py" "$KEY" player) || { echo "settings of $KEY unreadable" >&2; exit 1; }
 field() { python3 -c 'import json,sys; print(eval(sys.argv[2], {}, {"p": json.loads(sys.argv[1])}))' "$PLAYER" "$1"; }
-[[ $(field '"reasoning_prefill" in p') == False || -n ${SMALLCHAT_BIN:-} ]] ||
-  { echo "$KEY sets reasoning_prefill: SMALLCHAT_BIN must name a runner built with it" >&2; exit 1; }
+[[ $(field '"reasoning_prefill" in p or "reasoning_field" in p') == False || -n ${SMALLCHAT_BIN:-} ]] ||
+  { echo "$KEY sets reasoning_prefill/reasoning_field: SMALLCHAT_BIN must name a runner built with it" >&2; exit 1; }
 URL=$(field 'p["base_url"]')
 NAME=$(field 'p["name"]')
 SERVED=$(field 'p["spec"].split("/", 1)[1]')

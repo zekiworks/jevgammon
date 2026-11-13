@@ -1375,6 +1375,25 @@
    "card_active_b": null,
    "card_source": "https://huggingface.co/startlux-models/StartLux-Decision-v1.1-4B-Instant",
    "card_quote": "'StartLux-Decision-v1.1-4B-Instant is a 4B decision model.'"
+  },
+  "Cerno 9B v1.2": {
+   "total_b": 8.95,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/apertixai/cerno-9b-v1.2/tree/f02a632fbe3a4698cd1ff5c0b929ea240e2b8eda",
+   "quote": "apertixai/cerno-9b-v1.2 @ f02a632fbe3a4698cd1ff5c0b929ea240e2b8eda, 1 safetensors file (427 tensors, all BF16): 8,953,803,264 parameters (the snapshot's safetensors header on spark2, equal to Hugging Face's safetensors total for the revision) = backbone 7,936,684,544 + untied lm_head 1,017,118,720, text only. A full fine-tune of Qwen/Qwen3.5-9B, dense; the same count as logic's model_sizes.json.",
+   "checked": [
+    "https://huggingface.co/api/models/apertixai/cerno-9b-v1.2/revision/f02a632fbe3a4698cd1ff5c0b929ea240e2b8eda",
+    "https://huggingface.co/apertixai/cerno-9b-v1.2/raw/f02a632fbe3a4698cd1ff5c0b929ea240e2b8eda/README.md"
+   ],
+   "read": "2026-11-13",
+   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors header on spark2: 8.95B (8,953,803,264) incl. its untied lm_head; the card states 9B, the figure shown (Ümit #4260). Stored and served in BF16 on the card's own transformers engine (CernoEngine: block attention, read twice up to 3,000 tokens, temperature 1.256) behind logic's thin System One server, which plays our late entry. Plays with up to 255 options per request (the league's usual rule); no request is over its limits.",
+   "terms": "8.95B (untied lm_head); card: 9B",
+   "card_total_b": 9,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/apertixai/cerno-9b-v1.2",
+   "card_quote": "'Jev-style System One decision model · 9B · one forward pass · calibrated probabilities · block attention · read twice'; 'v1.2 (2026-10-30): a new 9B, trained from the post-trained Qwen3.5-9B with block-bidirectional attention and served with read twice.'"
   }
  }
 }

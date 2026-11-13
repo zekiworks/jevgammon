@@ -847,7 +847,7 @@
     "https://huggingface.co/LiquidAI/LFM3-1.7B/raw/0dc4268b561499c648c7ba7c9466bf3d8d01517a/README.md"
    ],
    "read": "2026-11-12",
-   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors headers (~/.cache/huggingface/hub); The same count as logic's small_models_prep.md (HF safetensors 1,728,801,536). Played from the official BF16 GGUF LiquidAI/LFM3-1.7B-GGUF @ cd0c74c575b5c416f3011b5b4c298077f26ca8c2 (LFM3-1.7B-BF16.gguf) on llama.cpp, as logic serves it (vLLM v0.30.0 has no Lfm3ForCausalLM); the count is that of the pinned safetensors checkpoint. Held late entry (held_setups.json; small chat models, Zeki #5064/#5071/#5073) until its entry is complete.",
+   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors headers (~/.cache/huggingface/hub); The same count as logic's small_models_prep.md (HF safetensors 1,728,801,536). Played from this pinned BF16 safetensors checkpoint on vLLM 0.34.0rc1.dev302+gbe47189f3 (nightly, commit be47189f37f6; no vLLM release has Lfm3ForCausalLM), as logic serves it (small_models.py lfm3-1.7b-vllm-rerun; branch late-smallchat-on, Main 13 Nov); the count is that of this checkpoint. Held late entry (held_setups.json; small chat models, Zeki #5064/#5071/#5073) until its entry is complete.",
    "terms": "1.73B; card: 1.73B",
    "card_total_b": 1.73,
    "card_active_b": null,

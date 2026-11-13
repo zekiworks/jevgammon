@@ -743,27 +743,28 @@ HEAD_TIPS = {
 }
 
 
-def head_tips(html: str, prefix: str) -> str:
-    """The results tables' heads (those with a Result column) with their explanations: each head's text becomes the
-    kit's tip key (zw-ui.js and zw-ui.css: hover, keyboard focus, a tap; a second tap, a tap outside or Escape closes
-    it), its HEAD_TIPS text the tip."""
+def head_tips(html: str, prefix: str, others: dict | None = None) -> str:
+    """The tables' heads with their explanations: each head's text (before its unit line) becomes the kit's tip key
+    (zw-ui.js and zw-ui.css: hover, keyboard focus, a tap; a second tap, a tap outside or Escape closes it), its tip
+    text the tip: HEAD_TIPS in the results tables (those with a Result column), others in every other table."""
     n = [0]
 
-    def th(m):
-        label = re.sub(r"<[^>]+>", "", m.group(2))
-        tip = HEAD_TIPS.get(label.replace("&#x27;", "'"))
+    def th(m, tips):
+        label = re.sub(r"<[^>]+>", "", m.group(2).split('<span class="zw-sub">')[0])
+        tip = tips.get(label.replace("&#x27;", "'"))
         if tip is None:
             return m.group(0)
         n[0] += 1
         tid = f"{prefix}-head-{n[0]}"
         return (f'{m.group(1)}<span class="zw-tip"><button type="button" class="zw-tip-key" aria-expanded="false" '
-                f'aria-controls="{tid}" aria-describedby="{tid}">{label}</button><span class="zw-tip-body" id="{tid}" '
-                f'role="tooltip">{esc(tip)}</span></span></th>')
+                f'aria-controls="{tid}" aria-describedby="{tid}">{m.group(2)}</button><span class="zw-tip-body" '
+                f'id="{tid}" role="tooltip">{esc(tip)}</span></span></th>')
 
     def thead(m):
-        if 'class="zw-measure">Result</th>' not in m.group(0):
+        tips = HEAD_TIPS if 'class="zw-measure">Result</th>' in m.group(0) else others
+        if not tips:
             return m.group(0)
-        return re.sub(r'(<th scope="col"[^>]*>)(.*?)</th>', th, m.group(0))
+        return re.sub(r'(<th scope="col"[^>]*>)(.*?)</th>', lambda t: th(t, tips), m.group(0))
 
     return re.sub(r"<thead>.*?</thead>", thead, html, flags=re.S)
 

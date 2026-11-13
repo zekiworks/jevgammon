@@ -1,0 +1,1028 @@
+{
+ "title": "Small models on the backgammon bench: plan (Ümit #6225)",
+ "date": "2026-11-13",
+ "started": false,
+ "source": "Ümit #6225 (15:09Z 13 Nov), verified",
+ "league": {
+  "MiniCPM5-2B (off)": {
+   "player_id": 79,
+   "league": 39,
+   "first_stage": "9/9",
+   "local_stage": "0/8",
+   "finished_match_ids": [
+    1171,
+    1173,
+    1174,
+    1175,
+    1176,
+    1177,
+    1178,
+    1179,
+    1180
+   ],
+   "not_finished": [
+    {
+     "id": 1172,
+     "opponent": "Mercury Decide"
+    }
+   ],
+   "vs_random": {
+    "match": 1178,
+    "for": 5,
+    "against": 1
+   },
+   "paid_opponents_usd": 0.1073,
+   "entrant_median_s": 0.164
+  },
+  "GLiDE 2B": {
+   "player_id": 81,
+   "league": 41,
+   "first_stage": "9/9",
+   "local_stage": "0/8",
+   "finished_match_ids": [
+    1191,
+    1192,
+    1193,
+    1194,
+    1195,
+    1196,
+    1197,
+    1198,
+    1199
+   ],
+   "not_finished": [
+    {
+     "id": 1200,
+     "opponent": "Mercury Decide"
+    }
+   ],
+   "vs_random": {
+    "match": 1194,
+    "for": 5,
+    "against": 0
+   },
+   "paid_opponents_usd": 0.088,
+   "entrant_median_s": 0.321
+  },
+  "GLiDE 0.8B": {
+   "player_id": 82,
+   "league": 42,
+   "first_stage": "9/9",
+   "local_stage": "0/8",
+   "finished_match_ids": [
+    1201,
+    1202,
+    1203,
+    1204,
+    1205,
+    1206,
+    1207,
+    1208,
+    1209
+   ],
+   "not_finished": [
+    {
+     "id": 1210,
+     "opponent": "Mercury Decide"
+    }
+   ],
+   "vs_random": {
+    "match": 1204,
+    "for": 6,
+    "against": 5
+   },
+   "paid_opponents_usd": 0.0988,
+   "entrant_median_s": 0.227
+  },
+  "GLiDE 0.4B": {
+   "player_id": 83,
+   "league": 43,
+   "first_stage": "9/9",
+   "local_stage": "0/8",
+   "finished_match_ids": [
+    1211,
+    1212,
+    1213,
+    1214,
+    1215,
+    1216,
+    1217,
+    1218,
+    1219
+   ],
+   "not_finished": [
+    {
+     "id": 1220,
+     "opponent": "Mercury Decide"
+    }
+   ],
+   "vs_random": {
+    "match": 1214,
+    "for": 7,
+    "against": 3
+   },
+   "paid_opponents_usd": 0.0841,
+   "entrant_median_s": 0.13
+  },
+  "KnowLine 4B Gen5.5": {
+   "player_id": 63,
+   "league": 22,
+   "first_stage": "9/9",
+   "local_stage": "0/8",
+   "finished_match_ids": [
+    957,
+    958,
+    959,
+    960,
+    961,
+    962,
+    963,
+    964,
+    965
+   ],
+   "not_finished": [
+    {
+     "id": 966,
+     "opponent": "Mercury Decide"
+    }
+   ],
+   "vs_random": {
+    "match": 960,
+    "for": 8,
+    "against": 2
+   },
+   "paid_opponents_usd": 0.1218,
+   "entrant_median_s": 0.285
+  },
+  "KnowLine-2B-Gen1": {
+   "player_id": 80,
+   "league": 40,
+   "first_stage": "9/9",
+   "local_stage": "0/8",
+   "finished_match_ids": [
+    1181,
+    1182,
+    1183,
+    1184,
+    1185,
+    1186,
+    1187,
+    1188,
+    1189
+   ],
+   "not_finished": [
+    {
+     "id": 1190,
+     "opponent": "Mercury Decide"
+    }
+   ],
+   "vs_random": {
+    "match": 1184,
+    "for": 5,
+    "against": 2
+   },
+   "paid_opponents_usd": 0.102,
+   "entrant_median_s": 0.152
+  },
+  "KnowLine-0.8B-Gen1": {
+   "player_id": 66,
+   "league": 25,
+   "first_stage": "9/9",
+   "local_stage": "0/8",
+   "finished_match_ids": [
+    983,
+    984,
+    985,
+    986,
+    987,
+    988,
+    989,
+    990,
+    991
+   ],
+   "not_finished": [
+    {
+     "id": 992,
+     "opponent": "Mercury Decide"
+    }
+   ],
+   "vs_random": {
+    "match": 986,
+    "for": 6,
+    "against": 3
+   },
+   "paid_opponents_usd": 0.0901,
+   "entrant_median_s": 0.109
+  },
+  "StartLux-Decision v1.1 2B": {
+   "player_id": 64,
+   "league": 23,
+   "first_stage": "9/9",
+   "local_stage": "0/8",
+   "finished_match_ids": [
+    970,
+    971,
+    972,
+    973,
+    974,
+    975,
+    976,
+    977,
+    978
+   ],
+   "not_finished": [
+    {
+     "id": 979,
+     "opponent": "Mercury Decide"
+    }
+   ],
+   "vs_random": {
+    "match": 973,
+    "for": 5,
+    "against": 1
+   },
+   "paid_opponents_usd": 0.0911,
+   "entrant_median_s": 0.206
+  },
+  "StartLux-Decision-v1.1-0.8B-Instant": {
+   "player_id": 68,
+   "league": 27,
+   "first_stage": "9/9",
+   "local_stage": "0/8",
+   "finished_match_ids": [
+    1000,
+    1001,
+    1003,
+    1006,
+    1007,
+    1009,
+    1010,
+    1012,
+    1014
+   ],
+   "not_finished": [
+    {
+     "id": 1015,
+     "opponent": "Mercury Decide"
+    }
+   ],
+   "vs_random": {
+    "match": 1006,
+    "for": 8,
+    "against": 0
+   },
+   "paid_opponents_usd": 0.0926,
+   "entrant_median_s": 0.131
+  },
+  "OneJev1.6-0.8B": {
+   "player_id": 71,
+   "league": 30,
+   "first_stage": "9/9",
+   "local_stage": "0/8",
+   "finished_match_ids": [
+    1041,
+    1042,
+    1043,
+    1044,
+    1045,
+    1046,
+    1047,
+    1048,
+    1049
+   ],
+   "not_finished": [
+    {
+     "id": 1050,
+     "opponent": "Mercury Decide"
+    }
+   ],
+   "vs_random": {
+    "match": 1044,
+    "for": 4,
+    "against": 5
+   },
+   "paid_opponents_usd": 0.1094,
+   "entrant_median_s": 0.096
+  },
+  "GLiClass v4 Edge": {
+   "player_id": 76,
+   "league": 36,
+   "first_stage": "9/9",
+   "local_stage": "0/8",
+   "finished_match_ids": [
+    1141,
+    1142,
+    1143,
+    1144,
+    1165,
+    1166,
+    1167,
+    1168,
+    1169
+   ],
+   "not_finished": [
+    {
+     "id": 1170,
+     "opponent": "Mercury Decide"
+    }
+   ],
+   "vs_random": {
+    "match": 1144,
+    "for": 1,
+    "against": 5
+   },
+   "paid_opponents_usd": 0.0844,
+   "entrant_median_s": 1.403
+  },
+  "Decider Flash v1.2": {
+   "player_id": 33,
+   "league": 1,
+   "first_stage": "original League 1 member, 18/18",
+   "local_stage": null
+  }
+ },
+ "invalid": {
+  "MiniCPM5-2B (off)": {
+   "decisions": 976,
+   "fallback": 0,
+   "invalid_column": 0,
+   "share": 0.0,
+   "matches": 9,
+   "stage": "late-entry"
+  },
+  "GLiDE 2B": {
+   "decisions": 818,
+   "fallback": 0,
+   "invalid_column": 0,
+   "share": 0.0,
+   "matches": 9,
+   "stage": "late-entry"
+  },
+  "GLiDE 0.8B": {
+   "decisions": 983,
+   "fallback": 0,
+   "invalid_column": 0,
+   "share": 0.0,
+   "matches": 9,
+   "stage": "late-entry"
+  },
+  "GLiDE 0.4B": {
+   "decisions": 765,
+   "fallback": 0,
+   "invalid_column": 0,
+   "share": 0.0,
+   "matches": 9,
+   "stage": "late-entry"
+  },
+  "KnowLine 4B Gen5.5": {
+   "decisions": 1146,
+   "fallback": 0,
+   "invalid_column": 0,
+   "share": 0.0,
+   "matches": 9,
+   "stage": "late-entry"
+  },
+  "KnowLine-2B-Gen1": {
+   "decisions": 1004,
+   "fallback": 0,
+   "invalid_column": 0,
+   "share": 0.0,
+   "matches": 9,
+   "stage": "late-entry"
+  },
+  "KnowLine-0.8B-Gen1": {
+   "decisions": 868,
+   "fallback": 0,
+   "invalid_column": 0,
+   "share": 0.0,
+   "matches": 9,
+   "stage": "late-entry"
+  },
+  "StartLux-Decision v1.1 2B": {
+   "decisions": 846,
+   "fallback": 0,
+   "invalid_column": 0,
+   "share": 0.0,
+   "matches": 9,
+   "stage": "late-entry"
+  },
+  "StartLux-Decision-v1.1-0.8B-Instant": {
+   "decisions": 880,
+   "fallback": 0,
+   "invalid_column": 0,
+   "share": 0.0,
+   "matches": 9,
+   "stage": "late-entry"
+  },
+  "OneJev1.6-0.8B": {
+   "decisions": 977,
+   "fallback": 0,
+   "invalid_column": 0,
+   "share": 0.0,
+   "matches": 9,
+   "stage": "late-entry"
+  },
+  "GLiClass v4 Edge": {
+   "decisions": 725,
+   "fallback": 0,
+   "invalid_column": 0,
+   "share": 0.0,
+   "matches": 9,
+   "stage": "late-entry"
+  },
+  "Decider Flash v1.2": {
+   "decisions": 2309,
+   "fallback": 0,
+   "invalid_column": 0,
+   "share": 0.0,
+   "matches": 22,
+   "stage": "league (League 1)"
+  }
+ },
+ "random_scoring": {
+  "league1_random_played": 121.11,
+  "league1_random_decisions": 1337,
+  "rows": {
+   "KnowLine 31B Gen1.5": {
+    "decisions": 1928,
+    "error_rate": 26.22,
+    "score_now": 78.35,
+    "random_own_positions": 118.85,
+    "score_proposed": 77.94,
+    "score_proposed_ci95_game_bootstrap": [
+     75.1,
+     80.7
+    ]
+   },
+   "REAX 1.3": {
+    "decisions": 1998,
+    "error_rate": 27.77,
+    "score_now": 77.07,
+    "random_own_positions": 119.57,
+    "score_proposed": 76.77,
+    "score_proposed_ci95_game_bootstrap": [
+     74.2,
+     79.3
+    ]
+   },
+   "Gemini Decision 1": {
+    "decisions": 1704,
+    "error_rate": 27.97,
+    "score_now": 76.9,
+    "random_own_positions": 120.0,
+    "score_proposed": 76.69,
+    "score_proposed_ci95_game_bootstrap": [
+     73.7,
+     79.4
+    ]
+   },
+   "GLiDE 2B": {
+    "decisions": 818,
+    "error_rate": 66.69,
+    "score_now": 44.93,
+    "random_own_positions": 110.41,
+    "score_proposed": 39.6,
+    "score_proposed_ci95_game_bootstrap": [
+     33.2,
+     45.6
+    ]
+   },
+   "StartLux-Decision v1.1 2B": {
+    "decisions": 846,
+    "error_rate": 49.22,
+    "score_now": 59.35,
+    "random_own_positions": 110.58,
+    "score_proposed": 55.49,
+    "score_proposed_ci95_game_bootstrap": [
+     50.1,
+     60.5
+    ]
+   },
+   "KnowLine 4B Gen5.5": {
+    "decisions": 1146,
+    "error_rate": 57.3,
+    "score_now": 52.69,
+    "random_own_positions": 118.53,
+    "score_proposed": 51.66,
+    "score_proposed_ci95_game_bootstrap": [
+     47.0,
+     56.5
+    ]
+   },
+   "MiniCPM5-2B (off)": {
+    "decisions": 976,
+    "error_rate": 53.82,
+    "score_now": 55.56,
+    "random_own_positions": 119.09,
+    "score_proposed": 54.81,
+    "score_proposed_ci95_game_bootstrap": [
+     48.9,
+     60.9
+    ]
+   },
+   "GLiDE 0.8B": {
+    "decisions": 983,
+    "error_rate": 85.41,
+    "score_now": 29.47,
+    "random_own_positions": 134.45,
+    "score_proposed": 36.47,
+    "score_proposed_ci95_game_bootstrap": [
+     29.9,
+     42.8
+    ]
+   },
+   "GLiDE 0.4B": {
+    "decisions": 765,
+    "error_rate": 113.3,
+    "score_now": 6.44,
+    "random_own_positions": 119.34,
+    "score_proposed": 5.06,
+    "score_proposed_ci95_game_bootstrap": [
+     1.2,
+     9.4
+    ]
+   },
+   "KnowLine-2B-Gen1": {
+    "decisions": 1004,
+    "error_rate": 49.96,
+    "score_now": 58.75,
+    "random_own_positions": 114.05,
+    "score_proposed": 56.2,
+    "score_proposed_ci95_game_bootstrap": [
+     50.1,
+     62.3
+    ]
+   },
+   "KnowLine-0.8B-Gen1": {
+    "decisions": 868,
+    "error_rate": 70.49,
+    "score_now": 41.79,
+    "random_own_positions": 118.67,
+    "score_proposed": 40.6,
+    "score_proposed_ci95_game_bootstrap": [
+     34.6,
+     46.4
+    ]
+   },
+   "StartLux-Decision-v1.1-0.8B-Instant": {
+    "decisions": 880,
+    "error_rate": 63.95,
+    "score_now": 47.2,
+    "random_own_positions": 121.52,
+    "score_proposed": 47.38,
+    "score_proposed_ci95_game_bootstrap": [
+     43.6,
+     51.4
+    ]
+   },
+   "OneJev1.6-0.8B": {
+    "decisions": 977,
+    "error_rate": 83.92,
+    "score_now": 30.7,
+    "random_own_positions": 117.9,
+    "score_proposed": 28.82,
+    "score_proposed_ci95_game_bootstrap": [
+     22.5,
+     34.8
+    ]
+   },
+   "GLiClass v4 Edge": {
+    "decisions": 725,
+    "error_rate": 138.41,
+    "score_now": -14.29,
+    "random_own_positions": 136.45,
+    "score_proposed": -1.44,
+    "score_proposed_ci95_game_bootstrap": [
+     -6.4,
+     3.9
+    ]
+   }
+  }
+ },
+ "costs": {
+  "cash": {
+   "expected_usd": 0.5,
+   "ceiling_usd": 25.0,
+   "limit_usd": 30,
+   "items": [
+    "5 first stages x ~$0.09-0.11 paid opponents, $5 cap each (start.sh)",
+    "locals $0",
+    "Part 2 $0",
+    "learning $0 (no paid writer)"
+   ]
+  },
+  "gpu": {
+   "first_stages_chat": "~0.4 h each (up to 3-5 h)",
+   "first_stages_new_decision": "<0.1 h busy, card held 0.1-1.8 h each",
+   "locals": "~0.7 h each x 15 = ~10.5 h bariton + ~7 h spark2",
+   "part2": "~18 min spark2 + ~9 min bariton decision + 10-140 min per chat",
+   "learning_chat": "50-387 h each",
+   "rental_rate_usd_per_h": 2.49,
+   "learning_decision": "~33 h (27 h spark2) + d1-2B"
+  }
+ },
+ "models": {
+  "chat": [
+   "LFM3-1.7B (on)",
+   "MiniCPM5-2B (on)"
+  ],
+  "decision": [
+   "Liquid d1-2B",
+   "GLiDE 2B",
+   "GLiDE 0.8B",
+   "GLiDE 0.4B",
+   "KnowLine 4B Gen5.5",
+   "KnowLine-2B-Gen1",
+   "KnowLine-0.8B-Gen1",
+   "StartLux-Decision v1.1 2B",
+   "StartLux-Decision-v1.1-0.8B-Instant",
+   "OneJev1.6-0.8B",
+   "Strands Decider 2B",
+   "Metask-Jev-4B",
+   "GLiClass v4 Edge"
+  ],
+  "already_in": [
+   "Decider Flash v1.2"
+  ]
+ },
+ "branches": {
+  "late-random-same-positions": {
+   "commit": "c7ddcf9",
+   "base": "main 6fa83cb",
+   "what": "late entry scored against Random computed on its own positions"
+  },
+  "late-smallchat-on": {
+   "commit": "a083fb4",
+   "base": "late-smallchat 171698f",
+   "what": "MiniCPM5-2B (on) reasoning_prefill; LFM3-1.7B (off/on) repinned to logic lfm3-1.7b-vllm-rerun (vLLM nightly be47189f3, :18634) + reasoning_field"
+  },
+  "late-tiny8-small3": {
+   "commit": "8ebad40",
+   "base": "late-tiny8 a72223d",
+   "what": "Liquid d1-2B, Strands Decider 2B, Metask-Jev-4B late entries"
+  },
+  "small3-site": {
+   "commit": "e118111",
+   "base": "main 6fa83cb",
+   "what": "site holds, params, families for the three"
+  },
+  "small-clearrisk-p2": {
+   "commit": "f6b623b",
+   "base": "main + quiz-command a52da92 + late-tiny8/-small3 clients + late-smallchat-on keys",
+   "what": "Clear risk Part 2 runner for the 16 models"
+  },
+  "small-learning-pilot": {
+   "commit": "0c3d01b",
+   "base": "learning-pilot e18ff59",
+   "what": "pilot configs (2 chat, 11 decision, skip list), context fit"
+  },
+  "smallchat-lfm3-vllm-site": {
+   "commit": "d8ca1da",
+   "base": "main",
+   "what": "LFM3-1.7B params note: vLLM"
+  },
+  "small-learning-runner": {
+   "commit": "b01eca2",
+   "base": "late-tiny8-small3 + improve-decision-small 0333578 + late-smallchat-on keys",
+   "what": "pilot runner for the small models, server_invalid gate"
+  }
+ },
+ "new_entries": {
+  "LFM3-1.7B (on)": {
+   "branch": "late-smallchat-on a083fb4",
+   "server": "logic lfm3-1.7b-vllm-rerun: vLLM 0.34.0rc1.dev302+gbe47189f3 (image vllm/vllm-openai@sha256:7f0618da…), bariton GPU 1 :18634, served lfm3-1.7b",
+   "pins": "LiquidAI/LFM3-1.7B@0dc4268 BF16 safetensors",
+   "context": 69632,
+   "longest_league1_prompt": 4375,
+   "with_output": 37143,
+   "max_tokens": 32768,
+   "split": "groups of <=26",
+   "ready": "after review of reasoning_field; real test.sh once logic's server is up (~21:00Z)",
+   "blocker_fixed": "vLLM list-of-parts content gave the read-out an extra <think></think> silently; fixed by reasoning_field"
+  },
+  "MiniCPM5-2B (on)": {
+   "branch": "late-smallchat-on 7170908",
+   "server": "vLLM 0.30.0, bariton :18614",
+   "pins": "@42433e90",
+   "context": 69632,
+   "longest_league1_prompt": 4336,
+   "with_output": 37104,
+   "max_tokens": 32768,
+   "split": "groups of <=26",
+   "ready": "after review of the runner fix",
+   "blocker_fixed": "read-out prefill re-rendered by the template -> vLLM 400; fixed by reasoning_prefill"
+  },
+  "Liquid d1-2B": {
+   "branch": "late-tiny8-small3 8ebad40",
+   "repo": "LiquidAI/d1-2B@10e7671d",
+   "license": "LFM Open License v1.0",
+   "params_b": 1.92,
+   "server": "logic d1_server.py, bariton 127.0.0.1:19260",
+   "limit": "128,000 tokens, 400",
+   "options_per_request": 255,
+   "league1_longest": 20759,
+   "league1_over": 0,
+   "requests_per_decision": 1
+  },
+  "Strands Decider 2B": {
+   "branch": "late-tiny8-small3 8ebad40",
+   "repo": "StrandsAgents/strands-decider-2B-hobson-v21@2b52a623 on Qwen/Qwen3.5-2B-Base@b1485b2f",
+   "license": "Apache-2.0",
+   "params_b": 2.29,
+   "server": "strands-decider serve --strict-window, bariton :19270",
+   "limit": "4,096 tokens, 422",
+   "options_per_request": 13,
+   "league1_worst_group": 4025,
+   "league1_over": 0,
+   "requests_per_decision": 1.87
+  },
+  "Metask-Jev-4B": {
+   "branch": "late-tiny8-small3 8ebad40",
+   "repo": "wayfind/metask-jev-4b-policy-mix@ea20fe85",
+   "license": "Apache-2.0",
+   "params_b": 4.54,
+   "server": "logic ~/code/metask-jev/server.py, bariton :19250",
+   "limit": "4,096 tokens or >26 options, 400",
+   "options_per_request": 11,
+   "league1_worst_group": 4008,
+   "league1_over": 0,
+   "requests_per_decision": 2.09
+  }
+ },
+ "part2": {
+  "source": {
+   "runner": "jevgammon quiz (quiz-command a52da92)",
+   "items": "workspace/clearrisk-scratch/items_{chat,decision}.jsonl -> pinned items_q1q2.jsonl sha256 1344aa4a…",
+   "scoring": "p2rep.py (frozen)"
+  },
+  "questions": {
+   "Q1_with_numbers": 189,
+   "Q1_board_only": 189,
+   "Q2_board_only": 60,
+   "Q2_with_numbers": "does not exist"
+  },
+  "requests_per_model": 438,
+  "total_requests": 7008,
+  "tests": "5 passed; Rust 88; 2,190 requests byte-identical to stored Part 2 requests; p2rep numbers reproduced",
+  "models": {
+   "LFM3-1.7B (on)": {
+    "runnable": true,
+    "gpu_min": "10-140",
+    "server": "bariton GPU 1 :18634"
+   },
+   "MiniCPM5-2B (on)": {
+    "runnable": true,
+    "gpu_min": "10-140",
+    "server": "bariton :18614"
+   },
+   "GLiDE 2B": {
+    "runnable": true,
+    "gpu_min": 1.9,
+    "server": "spark2 :19330"
+   },
+   "GLiDE 0.8B": {
+    "runnable": true,
+    "gpu_min": 1.2,
+    "server": "spark2 :19340"
+   },
+   "GLiDE 0.4B": {
+    "runnable": true,
+    "gpu_min": 0.6,
+    "server": "spark2 :19350"
+   },
+   "KnowLine 4B Gen5.5": {
+    "runnable": true,
+    "gpu_min": 3.0,
+    "server": "spark2 :19400"
+   },
+   "KnowLine-2B-Gen1": {
+    "runnable": true,
+    "gpu_min": 1.6,
+    "server": "spark2 :19490"
+   },
+   "KnowLine-0.8B-Gen1": {
+    "runnable": true,
+    "gpu_min": 1.0,
+    "server": "spark2 :19450"
+   },
+   "StartLux-Decision v1.1 2B": {
+    "runnable": true,
+    "gpu_min": 1.2,
+    "server": "spark2 :19440"
+   },
+   "StartLux-Decision-v1.1-0.8B-Instant": {
+    "runnable": true,
+    "gpu_min": 0.7,
+    "server": "spark2 :19460"
+   },
+   "OneJev1.6-0.8B": {
+    "runnable": true,
+    "gpu_min": 0.5,
+    "server": "spark2 :19420"
+   },
+   "GLiClass v4 Edge": {
+    "runnable": true,
+    "gpu_min": 5.5,
+    "server": "spark2 :19480"
+   },
+   "Liquid d1-2B": {
+    "runnable": true,
+    "gpu_min": 1.9,
+    "server": "bariton :19260"
+   },
+   "Strands Decider 2B": {
+    "runnable": true,
+    "gpu_min": 1.9,
+    "server": "bariton :19270"
+   },
+   "Metask-Jev-4B": {
+    "runnable": true,
+    "gpu_min": 1.9,
+    "server": "bariton :19250"
+   },
+   "Decider Flash v1.2": {
+    "runnable": true,
+    "gpu_min": 3.3,
+    "server": "bariton :18098"
+   }
+  }
+ },
+ "learning": {
+  "runner": "workspace/learning-pilot/pilot.py (sha256 454092f7…)",
+  "arms": [
+   "no memory",
+   "full records",
+   "own lessons",
+   "budget"
+  ],
+  "games": "10 series x 10 games per arm v GNUbg Beginner",
+  "tests": "200 positions at T0, T5, T10 (12,200 answers)",
+  "gemma_hours": {
+   "no_memory": 3.21,
+   "records": 10.89,
+   "lessons": 12.26,
+   "budget": 7.49,
+   "whole_run": 13.5
+  },
+  "chat": {
+   "LFM3-1.7B (on)": {
+    "context": 69632,
+    "longest_pilot_request_plus_output": 61245,
+    "fits": true,
+    "gpu_hours_inference": "50 / ~144 / 387 (low/central/high)"
+   },
+   "MiniCPM5-2B (on)": {
+    "context": 69632,
+    "longest_pilot_request_plus_output": 61139,
+    "fits": true,
+    "gpu_hours_inference": "50 / ~148 / 387"
+   }
+  },
+  "decision_fit": {
+   "Liquid d1-2B": [
+    "fit",
+    29766,
+    128000
+   ],
+   "GLiDE 2B": [
+    "fit",
+    34603,
+    39992
+   ],
+   "GLiDE 0.8B": [
+    "fit",
+    31650,
+    39992
+   ],
+   "GLiDE 0.4B": [
+    "skip: 348 of 840 over with the largest record",
+    12136,
+    7999
+   ],
+   "KnowLine 4B Gen5.5": [
+    "fit; read-twice off with a record",
+    32706,
+    262138
+   ],
+   "KnowLine-2B-Gen1": [
+    "fit; read-twice off",
+    29262,
+    262138
+   ],
+   "KnowLine-0.8B-Gen1": [
+    "fit; read-twice off",
+    27916,
+    262138
+   ],
+   "StartLux-Decision v1.1 2B": [
+    "fit",
+    29886,
+    131072
+   ],
+   "StartLux-Decision-v1.1-0.8B-Instant": [
+    "fit",
+    30870,
+    131072
+   ],
+   "OneJev1.6-0.8B": [
+    "partial: 1 of 977 over",
+    33772,
+    32768
+   ],
+   "GLiClass v4 Edge": [
+    "partial: 12 of 744 over",
+    19882,
+    16384
+   ],
+   "Strands Decider 2B": [
+    "skip: 4,096 window",
+    null,
+    4096
+   ],
+   "Metask-Jev-4B": [
+    "skip: 4,096 limit",
+    null,
+    4096
+   ],
+   "Decider Flash v1.2": [
+    "fit",
+    11099,
+    262144
+   ]
+  },
+  "decision_needed": "lesson call thinking on 32,768 vs plan's reasoning off 400",
+  "decision_configs": {
+   "d1-2b": {
+    "host": "bariton :19260",
+    "room": 102172,
+    "gpu_h": null
+   },
+   "glide-2b": {
+    "host": "spark2 :19330",
+    "room": 10029,
+    "gpu_h": 2.1
+   },
+   "glide-0.8b": {
+    "host": "spark2 :19340",
+    "room": 12982,
+    "gpu_h": 1.8
+   },
+   "knowline-4b": {
+    "host": "spark2 :19400",
+    "room": 234072,
+    "gpu_h": 3.5
+   },
+   "knowline-2b": {
+    "host": "spark2 :19490",
+    "room": 237516,
+    "gpu_h": 1.9
+   },
+   "knowline-0.8b": {
+    "host": "spark2 :19450",
+    "room": 238862,
+    "gpu_h": 1.3
+   },
+   "startlux-2b": {
+    "host": "spark2 :19440",
+    "room": 105826,
+    "gpu_h": 2.5
+   },
+   "startlux-0.8b": {
+    "host": "spark2 :19460",
+    "room": 104842,
+    "gpu_h": 1.6
+   },
+   "onejev1.6-0.8b": {
+    "host": "spark2 :19420",
+    "room": 27947,
+    "gpu_h": 1.2
+   },
+   "gliclass-v4-edge": {
+    "host": "spark2 :19480",
+    "room": 11670,
+    "gpu_h": 10.8
+   },
+   "decider-flash-v1.2": {
+    "host": "bariton :18098",
+    "room": 255685,
+    "gpu_h": 6.5
+   }
+  },
+  "decision_skipped": [
+   "GLiDE 0.4B",
+   "Strands Decider 2B",
+   "Metask-Jev-4B"
+  ]
+ },
+ "blockers": [
+  "no free bariton card now; spark2 needs logic's handoffs",
+  "review runner keys reasoning_prefill/reasoning_field (late-smallchat-on)",
+  "approve lesson-call setting",
+  "learning chat GPU time 50-387 h each",
+  "KnowLine read-twice -> read-once with records",
+  "merging late-random-same-positions changes 11 published scores",
+  "Part 2 small-model publish list (no Q3) not built",
+  "start.sh one at a time: refuses while Turion runs"
+ ],
+ "plan_markdown": "mailbox/small-backgammon-bench-2026-11-13.md"
+}

@@ -184,6 +184,14 @@ pub struct PlayerConfig {
     /// sends the reasoning-off prefill (`answer_prefix`, default `Answer:`) instead.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reasoning_prefill: Option<String>,
+    /// Prefill readout with reasoning on: the read-out's assistant message carries the
+    /// reasoning in this field (e.g. `reasoning`, which vLLM hands to the chat template as
+    /// `reasoning` and `reasoning_content`) and only `Answer:` as its content, so that the
+    /// template renders the reasoning turn itself. For LFM3 under vLLM, whose content format
+    /// `openai` makes the template open an extra empty think block before a content that
+    /// carries `<think>...</think>`. Takes precedence over `reasoning_prefill`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reasoning_field: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub price: Option<Price>,
     /// Free text kept with the roster (how the setup was pinned, what a level means).
@@ -396,6 +404,7 @@ pub fn render_stage_b(
         prompt_note: config.prompt_note.clone(),
         prompt_note_file: config.prompt_note_file.clone(),
         reasoning_prefill: config.reasoning_prefill.clone(),
+        reasoning_field: config.reasoning_field.clone(),
         pacer: None,
         budget: None,
         expect_route: None,
@@ -518,6 +527,7 @@ impl Player {
             prompt_note: config.prompt_note.clone(),
             prompt_note_file: config.prompt_note_file.clone(),
             reasoning_prefill: config.reasoning_prefill.clone(),
+            reasoning_field: config.reasoning_field.clone(),
             pacer: config.rpm.filter(|&rpm| rpm > 0).map(|rpm| {
                 let group = config.rate_group.clone().unwrap_or_else(|| {
                     format!("{}|{spec}", config.base_url.as_deref().unwrap_or(""))

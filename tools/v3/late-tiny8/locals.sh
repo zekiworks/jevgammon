@@ -10,7 +10,9 @@
 # there, logged (Zeki #4628, as late-knowline).
 #   systemd-run --user --unit=late-tiny8-KEY-locals --working-directory=/home/cbasaran/code/jevgammon \
 #     -E PATH=$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin -E OPP_GPU=<n> -E RES=<reservation> \
-#     /home/cbasaran/code/jevgammon-tiny8/tools/v3/late-tiny8/locals.sh KEY
+#     [-E TINY_BIN=<runner>] /home/cbasaran/code/jevgammon-tiny8/tools/v3/late-tiny8/locals.sh KEY
+# TINY_BIN: the runner binary, the one start.sh ran (default target/tiny8/release/jevgammon). A bariton entrant
+# (d1-2b, strands-decider-2b, metask-jev-4b) keeps its own card; OPP_GPU may be the same card when it has room.
 set -uo pipefail
 cd /home/cbasaran/code/jevgammon
 export PATH=$HOME/.local/bin:$PATH  # agent-bus
@@ -20,7 +22,7 @@ T=$(dirname "$(readlink -f "$0")")
 W=workspace/late-tiny8/$KEY
 ST=$W/state
 S=tools/v3/servers
-BIN=/home/cbasaran/code/jevgammon/target/tiny8/release/jevgammon
+BIN=${TINY_BIN:-/home/cbasaran/code/jevgammon/target/tiny8/release/jevgammon}
 STATUS="mailbox/Late entries tiny8 - $KEY - status.md"
 UNIT=late-tiny8-$KEY-league
 FLOOR=40

@@ -1,0 +1,11 @@
+{
+  "name": "Liquid d1-2B",
+  "spec": "d1-local",
+  "provider": "local (d1_server.py)",
+  "quantization": "bf16",
+  "base_url": "http://127.0.0.1:19260",
+  "note": "Liquid AI's open decision model d1-2B (Hugging Face LiquidAI/d1-2B @ 10e7671d44e4b37700020b1eed3f594c5f2af0b4, LFM Open License v1.0 (lfm1.0: free below its commercial-use revenue threshold); LFM3-VL-2B base, 1.92B, one forward pass, option codes A..Z then AA.. (d1_codes 2), set attention, calibration.json temperature) on our GPU through logic's runner/servers/d1_server.py (sha256 ab105fbd…, the card's call model.system_one(state, questions) unchanged: transformers AutoModel with the snapshot's own code, BF16; env ~/code/d1-2b/.venv: CPython 3.12, torch 2.15.0+cu132, transformers 5.22.1), the command and env of logic's decision/servers.sh d1-2b (Logic & Math runs d1-2b_en, 7 Nov). The model field must name LiquidAI/d1-2B (else 400). 255 options per request (the league's rule; longer lists split): every count gets distinct single-token codes (A..IU at 255). Context 128,000 positions (card: less reliable past about 64K tokens of state); nothing in its code shortens a prompt, and a request it cannot answer is refused (400), never cut. League 1's longest stored request (251 options) is 20,759 tokens of its tokenizer with its own prompt; none of the 31,798 distinct stored requests is over 128,000.",
+  "device": "NVIDIA RTX PRO 6000 Blackwell (96 GB) on bariton, one card handed over by Main (about 4.3 GB as logic measured): CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=<gpu> HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 PYTHONDONTWRITEBYTECODE=1 /home/cbasaran/code/d1-2b/.venv/bin/python -B /home/cbasaran/code/benchmark/decision/runner/servers/d1_server.py --model LiquidAI/d1-2B --revision 10e7671d44e4b37700020b1eed3f594c5f2af0b4 --device cuda:0 --host 127.0.0.1 --port 19260 (= ~/code/benchmark/decision/servers.sh start d1-2b <gpu>)",
+  "parallel": 1,
+  "max_matches": 1
+}

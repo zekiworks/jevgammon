@@ -1,0 +1,11 @@
+{
+  "name": "Strands Decider 2B",
+  "spec": "strands",
+  "provider": "local (strands-decider serve)",
+  "quantization": "bf16",
+  "base_url": "http://127.0.0.1:19270",
+  "note": "Strands Agents' Strands Decider 2B (Hugging Face StrandsAgents/strands-decider-2B-hobson-v21 @ 2b52a6235c1b8306bbfa30b00b9d4b74b63a39f5, Apache-2.0: a LoRA adapter and pointer readout head on Qwen/Qwen3.5-2B-Base @ b1485b2, 2.29B with them; one forward pass, per-kind temperatures) on our GPU through the server its package ships, strands-decider serve (strands_decider 0.0.1.dev11+g3e94e9d84; env ~/code/strands-decider/.venv: CPython 3.12, torch 2.7.1+cu128, transformers 5.17.0, peft 0.21.0), BF16, offline from the checkout's Hugging Face cache, with --strict-window: a prompt over the checkpoint's 4,096-token window (max_length, the card's evaluation window) is refused (422), never cut (without it the server cuts the state). No model field (it would be ignored). max_choices 13 (runner provider strands): with its tokenizer and its own renderer, the state plus the 13 longest options of any League 1 stored request is at most 4,025 tokens, 14 can reach 4,143; so longer play lists are split into equal groups of at most 13, then a final among the winners, and no request is over its window. As stored (whole lists), 6,496 of League 1's 31,798 distinct requests would be over 4,096 (longest 28,538 tokens, 251 options).",
+  "device": "NVIDIA RTX PRO 6000 Blackwell (96 GB) on bariton, one card handed over by Main (about 4.3 GB as logic measured): CUDA_VISIBLE_DEVICES=<gpu> HF_HUB_CACHE=/home/cbasaran/code/strands-decider/hf-cache HF_HUB_OFFLINE=1 /home/cbasaran/code/strands-decider/.venv/bin/strands-decider serve /home/cbasaran/code/strands-decider/model --host 127.0.0.1 --port 19270 --device cuda --model-name strands-decider-2b --strict-window",
+  "parallel": 1,
+  "max_matches": 1
+}

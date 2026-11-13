@@ -2,7 +2,8 @@
 """Offline stand-in for the tiny8 entrants' /v1/systemone servers, for a dry run of the runner's clients without a GPU
 or a model: the request and response shapes and the request rules of each server kind, fixed read-outs instead of a
 model (option j in shown order gets weight 1/(j+1), so the first shown option wins), and the most options seen in one
-question reported by /health. Kinds (the server each one stands for, and what it refuses with 422 / 404):
+question reported by /health (GET /stats for every kind). Kinds (the server each one stands for, and what it refuses
+with 422 / 404 / 400):
 
   knowline    knowline_server.py: model field "m"; 2..255 options
   startlux    startlux-decide serve: no model field needed (ignored); 2..255 options (knocked out by the server)
@@ -13,6 +14,13 @@ question reported by /health. Kinds (the server each one stands for, and what it
   glide       glide.server (0.8B, 2B): model field ignored; 1..255 options
   glide-0.4b  glide.server with the 0.4B: as glide, but refuses more than 74 options here, so a dry run shows the
               client splits at its cap (the real model would shorten such prompts; GLIDE_MAX_LEN=8006 refuses them)
+  d1          logic's d1_server.py with LiquidAI/d1-2B: model field absent or LiquidAI/d1-2B (400 otherwise); 2..255
+              options; /health as the real server answers it ({"status": "ok", "model": "LiquidAI/d1-2B"})
+  strands     strands-decider serve --strict-window: model field ignored; refuses (422) more than STRANDS_CAP options
+              here, so a dry run shows the client splits at its cap (the real server refuses prompts over its 4,096-token
+              window); /health with the real server's fields
+  metask      metask-jev server.py: model field ignored; no GET route (501); refuses (400) more than METASK_CAP options
+              here (the real server refuses prompts over 4,096 tokens and lists over 26)
 
 usage (bound to 127.0.0.1): stub_server.py KIND PORT
 """
@@ -22,12 +30,18 @@ import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 KIND, PORT = sys.argv[1], int(sys.argv[2])
-CAP = {"gliclass": 218, "glide-0.4b": 74}.get(KIND, 255)
+STRANDS_CAP, METASK_CAP = 13, 11
+CAP = {"gliclass": 218, "glide-0.4b": 74, "strands": STRANDS_CAP, "metask": METASK_CAP}.get(KIND, 255)
 MODEL_RULE = {
     "knowline": lambda m: m == "m",
     "onejev": lambda m: m == "OmniJev/OneJev1.6-0.8B",
     "gliclass": lambda m: m in (None, "knowledgator/gliclass-v4-edge"),
+    "d1": lambda m: m in (None, "LiquidAI/d1-2B"),
 }.get(KIND, lambda m: True)
+REFUSED = {"d1": 400, "metask": 400}.get(KIND, 422)
+STRANDS_HEALTH = {"model": "strands-decider-2b", "checkpoint": "/home/cbasaran/code/strands-decider/model",
+                  "base_model": "Qwen/Qwen3.5-2B-Base", "num_slots": 24, "max_length": 4096,
+                  "temperature": 0.935220152138837, "device": "cuda", "prefix_cache": True, "vision": False}
 LOCK = threading.Lock()
 STATS = {"requests": 0, "refused": 0, "most_options": 0, "options_seen": {}}
 
@@ -55,11 +69,19 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(data)
 
     def do_GET(self):  # noqa: N802
-        if KIND == "gliclass":
+        if self.path.startswith("/stats"):
+            with LOCK:
+                self.send(200, {"stub": KIND, "cap": CAP, **STATS})
+        elif KIND in ("gliclass", "metask"):
             self.send(501, {"error": "no GET route"})
         elif self.path.startswith("/health"):
-            with LOCK:
-                self.send(200, {"status": "ok", "stub": KIND, "cap": CAP, **STATS})
+            if KIND == "d1":
+                self.send(200, {"status": "ok", "model": "LiquidAI/d1-2B"})
+            elif KIND == "strands":
+                self.send(200, {"status": "ok", **STRANDS_HEALTH})
+            else:
+                with LOCK:
+                    self.send(200, {"status": "ok", "stub": KIND, "cap": CAP, **STATS})
         else:
             self.send(404, {"error": "not found"})
 
@@ -68,7 +90,7 @@ class Handler(BaseHTTPRequestHandler):
         if not MODEL_RULE(body.get("model")):
             with LOCK:
                 STATS["refused"] += 1
-            return self.send(404 if KIND == "onejev" else 422, {"error": f"model {body.get('model')!r} not served"})
+            return self.send(404 if KIND == "onejev" else REFUSED, {"error": f"model {body.get('model')!r} not served"})
         try:
             answers, n = {}, 0
             for qid, spec in body["questions"].items():
@@ -77,7 +99,7 @@ class Handler(BaseHTTPRequestHandler):
         except (KeyError, ValueError, AttributeError) as exc:
             with LOCK:
                 STATS["refused"] += 1
-            return self.send(422, {"error": str(exc)})
+            return self.send(REFUSED, {"error": str(exc)})
         with LOCK:
             STATS["requests"] += 1
             STATS["most_options"] = max(STATS["most_options"], n)

@@ -1,0 +1,11 @@
+{
+  "name": "Metask-Jev-4B",
+  "spec": "metask",
+  "provider": "local (metask-jev server.py)",
+  "quantization": "bf16",
+  "base_url": "http://127.0.0.1:19250",
+  "note": "Metask Lab's Metask-Jev-4B (Hugging Face wayfind/metask-jev-4b-policy-mix @ ea20fe85b28733b1522721dec119bec50947a869, Apache-2.0; Qwen/Qwen3.5-4B with its LoRA merged, 4.54B; one forward pass, a softmax over the option letters' logits, choice temperature 1.9 from temperature.json) on our GPU through logic's ~/code/metask-jev/server.py (sha256 d2307789…: System One over the vendor's jev_scorer.score and jev_schema.prepare_prompts with the checkpoint's chat template; the model's own serve.py returns no choice and older temperatures, so it is not used), BF16; env ~/code/metask-jev/.venv: CPython 3.12, torch 2.11.0, transformers 5.10.2; the command of logic's decision/servers.sh metask (Logic & Math runs metask_en, 7 Nov). No model field (it would be ignored). It never truncates: a prompt over 4,096 tokens (the card's validated window) or a list over 26 options (one letter each) is refused (400, 'Nothing was truncated'). max_choices 11 (runner provider metask): with its tokenizer and its own prompt, the state plus the 11 longest options of any League 1 stored request is at most 4,008 tokens, 12 can reach 4,135; so longer play lists are split into equal groups of at most 11, then a final among the winners, and no request is over its limits. As stored (whole lists, one prompt), 8,799 of League 1's 31,798 distinct requests would be over 4,096 tokens (longest 30,745, 251 options) and 2,479 over 26 options.",
+  "device": "NVIDIA RTX PRO 6000 Blackwell (96 GB) on bariton, one card handed over by Main (about 9.4 GB as logic measured): cd /home/cbasaran/code/metask-jev && CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=<gpu> HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 PYTHONDONTWRITEBYTECODE=1 /home/cbasaran/code/metask-jev/.venv/bin/python -B server.py --device cuda:0 --host 127.0.0.1 --port 19250 (= ~/code/benchmark/decision/servers.sh start metask <gpu>)",
+  "parallel": 1,
+  "max_matches": 1
+}

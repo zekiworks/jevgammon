@@ -1,14 +1,18 @@
 #!/usr/bin/env bash
-# Late entry of one of the eight small decision models, or of Sieve 31B v3 or Turion Jev 31B (KEY: models/KEY/player.json, models/KEY/pins.sh) v the original
+# Late entry of one of the eight small decision models, or of Sieve 31B v3 or Turion Jev 31B, or (Ümit #6225) of d1-2B,
+# Strands Decider 2B or Metask-Jev-4B (KEY: models/KEY/player.json, models/KEY/pins.sh) v the original
 # League 1 table (Main, 11 Nov), stage 1: the 3 programs and the paid API setups (GPT-6 Luna deferred while OpenAI is out
-# of credit), as tools/v3/late-startlux2b. The model runs on its own server on spark2 (player.json base_url), handed over
-# by logic one at a time and never started from here. One model at a time: start.sh refuses while another tiny8 unit
-# runs.
+# of credit), as tools/v3/late-startlux2b. The model runs on its own server (player.json base_url): on spark2, handed
+# over by logic one at a time, or on a bariton card (d1-2b, strands-decider-2b, metask-jev-4b), and never started from
+# here. One model at a time: start.sh refuses while another tiny8 unit runs.
 # Status: mailbox/Late entries tiny8 - KEY - status.md (main checkout); state workspace/late-tiny8/KEY/state.
 #   systemd-run --user --unit=late-tiny8-KEY --working-directory=/home/cbasaran/code/jevgammon \
-#     /home/cbasaran/code/jevgammon-tiny8/tools/v3/late-tiny8/start.sh KEY
-# Before anything: the server answers /health as pinned (pins.sh healthy) and, read over ssh ($TINY_SSH, default
-# spark2), runs the pinned server process on PORT (pins.sh pinned). Once: v3.db backup (VACUUM INTO, zstd -t), first
+#     [-E TINY_BIN=<runner>] /home/cbasaran/code/jevgammon-tiny8/tools/v3/late-tiny8/start.sh KEY
+# TINY_BIN: the runner binary (default target/tiny8/release/jevgammon); a KEY whose client is newer than that build
+# (d1-local, strands, metask) needs a runner built from its branch.
+# Before anything: the server answers /health as pinned (pins.sh healthy) and runs the pinned server process on PORT
+# (pins.sh pinned: read over ssh, $TINY_SSH, default spark2; a bariton model's pins.sh reads this host's processes and
+# names it in SSH_HOST). Once: v3.db backup (VACUUM INTO, zstd -t), first
 # match id, the late_entry_stage trigger, the league config. Then starts the league unit late-tiny8-KEY-league and
 # guards it every 60 s; it stops the league unit (matches resume later from their last turn):
 #   - when OpenRouter's balance (shared with other lanes; Mercury Decide bills there) is under $FLOOR ($40), or cannot
@@ -25,7 +29,7 @@ T=$(dirname "$(readlink -f "$0")")
 [[ -f $T/models/$KEY/player.json && -f $T/models/$KEY/pins.sh ]] || { echo "unknown model $KEY" >&2; exit 1; }
 W=workspace/late-tiny8/$KEY
 ST=$W/state
-BIN=/home/cbasaran/code/jevgammon/target/tiny8/release/jevgammon
+BIN=${TINY_BIN:-/home/cbasaran/code/jevgammon/target/tiny8/release/jevgammon}
 STATUS="mailbox/Late entries tiny8 - $KEY - status.md"
 FLOOR=40
 CAP=5

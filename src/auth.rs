@@ -1,10 +1,12 @@
 //! Subscription (OAuth) and API-key credentials.
 //!
-//! The OpenAI (ChatGPT) subscription is OMP's `openai-codex` login (`~/.omp/agent/agent.db`,
-//! read-only, the account id from the access token's claims). OpenAI rotates the refresh
-//! token, so it is refreshed only by OMP (`omp token openai-codex --force-refresh`), as xAI's
-//! below. Without an OMP login it falls back to the qfork/Glyph credential envelope and the
-//! Codex CLI (`~/.codex/auth.json`).
+//! The OpenAI (ChatGPT) subscription is one OMP `openai-codex` login (`~/.omp/agent/agent.db`,
+//! read-only, the account id from the access token's claims), pinned by its email:
+//! `IMPROVE_CODEX_ACCOUNT`, else Can's; another account is never used. OpenAI rotates the
+//! refresh token, so it is refreshed only by OMP (`omp token openai-codex --account N
+//! --force-refresh`, N from `--list`), as xAI's below. Without any OMP `openai-codex` login it
+//! falls back to the qfork/Glyph credential envelope and the Codex CLI (`~/.codex/auth.json`),
+//! still only for the pinned account (the access token's profile email).
 //!
 //! The Anthropic subscription (and the OpenAI fallback) is read from the stores other local
 //! tools already maintain: the qfork/Glyph credential envelopes and Claude Code
@@ -52,6 +54,9 @@ const ANTIGRAVITY: &str = "google-antigravity";
 const XAI: &str = "xai-oauth";
 /// OMP's provider id for its OpenAI (ChatGPT subscription) login.
 const OPENAI_CODEX: &str = "openai-codex";
+/// The email of the OMP `openai-codex` login to use; unset: `DEFAULT_CODEX_ACCOUNT`.
+const CODEX_ACCOUNT_ENV: &str = "IMPROVE_CODEX_ACCOUNT";
+const DEFAULT_CODEX_ACCOUNT: &str = "basaran.can@gmail.com";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Subscription {
@@ -190,7 +195,12 @@ impl Credentials {
         let mut looked = Vec::new();
         let hint = match self.provider {
             Subscription::OpenAi => {
-                return openai_login(&omp_db_path(), &self.qfork_root, &codex_auth_path());
+                return openai_login(
+                    &omp_db_path(),
+                    &self.qfork_root,
+                    &codex_auth_path(),
+                    &codex_account(),
+                );
             }
             Subscription::Anthropic => {
                 let qfork = self.qfork_root.clone();
@@ -209,18 +219,28 @@ impl Credentials {
             }
             Subscription::Xai => {
                 looked.push(omp_db_path().display().to_string());
-                candidates.extend(read_omp(&omp_db_path(), XAI, xai_token)?);
+                candidates.extend(read_omp(&omp_db_path(), XAI, None, xai_token)?);
                 "log in to xAI (Grok) with omp (/login)"
             }
         };
-        freshest(self.provider, candidates, &looked, hint)
+        candidates
+            .into_iter()
+            .max_by_key(|t| t.expires_at_ms)
+            .ok_or_else(|| {
+                anyhow!(
+                    "no {} subscription login found (looked in: {}); {hint}",
+                    self.provider.label(),
+                    looked.join(", ")
+                )
+            })
     }
 
     async fn refresh(&self, stale: Token) -> Result<Token> {
         match (self.provider, &stale.source) {
-            (Subscription::Xai, _) => return refresh_omp(XAI, xai_token, &stale).await,
+            (Subscription::Xai, _) => return refresh_omp(XAI, None, xai_token, &stale).await,
             (Subscription::OpenAi, Source::Omp(_)) => {
-                return refresh_omp(OPENAI_CODEX, codex_token, &stale).await;
+                let account = codex_account();
+                return refresh_omp(OPENAI_CODEX, Some(&account), codex_token, &stale).await;
             }
             _ => {}
         }
@@ -400,15 +420,16 @@ fn antigravity_cache_path() -> PathBuf {
 
 /// The Antigravity tokens in OMP's database and in jevgammon's cache.
 fn stored_antigravity() -> Result<Vec<Token>> {
-    let mut tokens = read_omp(&omp_db_path(), ANTIGRAVITY, antigravity_token)?;
+    let mut tokens = read_omp(&omp_db_path(), ANTIGRAVITY, None, antigravity_token)?;
     tokens.extend(read_cache(&antigravity_cache_path())?);
     Ok(tokens)
 }
 
-/// OMP's enabled logins of `provider`, read-only, parsed by `parse`.
+/// OMP's enabled logins of `provider` (only `email`'s, if given), read-only, parsed by `parse`.
 fn read_omp(
     path: &Path,
     provider: &str,
+    email: Option<&str>,
     parse: fn(&Value, Source) -> Option<Token>,
 ) -> Result<Vec<Token>> {
     use rusqlite::{Connection, OpenFlags};
@@ -431,6 +452,9 @@ fn read_omp(
     Ok(rows
         .iter()
         .filter_map(|data| serde_json::from_str::<Value>(data).ok())
+        .filter(|data| {
+            email.is_none_or(|email| data.get("email").and_then(Value::as_str) == Some(email))
+        })
         .filter_map(|data| parse(&data, Source::Omp(path.to_owned())))
         .collect())
 }
@@ -486,50 +510,47 @@ fn codex_token(data: &Value, source: Source) -> Option<Token> {
     })
 }
 
-/// The freshest ChatGPT login: OMP's when it has one, else the qfork envelope's and the Codex
-/// CLI's.
-fn openai_login(omp_db: &Path, qfork_root: &Path, codex: &Path) -> Result<Token> {
-    let looked = [
-        omp_db.display().to_string(),
-        Source::Qfork(qfork_root.to_owned()).describe(),
-        codex.display().to_string(),
-    ];
-    freshest(
-        Subscription::OpenAi,
-        stored_openai(omp_db, qfork_root, codex)?,
-        &looked,
-        "log in to ChatGPT (openai-codex) with omp (/login)",
-    )
+/// The pinned ChatGPT account's email: `IMPROVE_CODEX_ACCOUNT`, else `DEFAULT_CODEX_ACCOUNT`.
+fn codex_account() -> String {
+    std::env::var(CODEX_ACCOUNT_ENV)
+        .ok()
+        .filter(|email| !email.is_empty())
+        .unwrap_or_else(|| DEFAULT_CODEX_ACCOUNT.to_owned())
 }
 
-/// The longest-valid of `candidates`, else which stores were empty and how to log in.
-fn freshest(
-    provider: Subscription,
-    candidates: Vec<Token>,
-    looked: &[String],
-    hint: &str,
-) -> Result<Token> {
-    candidates
+/// The freshest login of ChatGPT `account`: OMP's, else (OMP has no `openai-codex` login at
+/// all) the qfork envelope's and the Codex CLI's. Never another account's.
+fn openai_login(omp_db: &Path, qfork_root: &Path, codex: &Path, account: &str) -> Result<Token> {
+    stored_openai(omp_db, qfork_root, codex, account)?
         .into_iter()
         .max_by_key(|t| t.expires_at_ms)
         .ok_or_else(|| {
             anyhow!(
-                "no {} subscription login found (looked in: {}); {hint}",
-                provider.label(),
-                looked.join(", ")
+                "no {} subscription login for {account} found (looked in: {}, {}, {}); log in to \
+                 ChatGPT as {account} with omp (/login), or set {CODEX_ACCOUNT_ENV} to the email \
+                 of another OMP openai-codex login",
+                Subscription::OpenAi.label(),
+                omp_db.display(),
+                Source::Qfork(qfork_root.to_owned()).describe(),
+                codex.display()
             )
         })
 }
 
-fn stored_openai(omp_db: &Path, qfork_root: &Path, codex: &Path) -> Result<Vec<Token>> {
-    let omp = read_omp(omp_db, OPENAI_CODEX, codex_token)?;
-    if !omp.is_empty() {
-        return Ok(omp);
+fn stored_openai(
+    omp_db: &Path,
+    qfork_root: &Path,
+    codex: &Path,
+    account: &str,
+) -> Result<Vec<Token>> {
+    if !read_omp(omp_db, OPENAI_CODEX, None, codex_token)?.is_empty() {
+        return read_omp(omp_db, OPENAI_CODEX, Some(account), codex_token);
     }
     let mut tokens: Vec<Token> = read_qfork(Subscription::OpenAi, qfork_root)?
         .into_iter()
         .collect();
     tokens.extend(read_codex(codex)?);
+    tokens.retain(|t| openai_email(&t.access).as_deref() == Some(account));
     Ok(tokens)
 }
 
@@ -540,10 +561,12 @@ fn omp_bin() -> PathBuf {
         .unwrap_or_else(|| dirs::home_dir().unwrap_or_default().join(".local/bin/omp"))
 }
 
-/// A fresh token of OMP's `provider` login other than `stale`, refreshed by OMP (xAI and
-/// OpenAI rotate refresh tokens, so only OMP may spend its refresh token).
+/// A fresh token of OMP's `provider` login (`account`'s, if given) other than `stale`,
+/// refreshed by OMP (xAI and OpenAI rotate refresh tokens, so only OMP may spend its refresh
+/// token).
 async fn refresh_omp(
     provider: &str,
+    account: Option<&str>,
     parse: fn(&Value, Source) -> Option<Token>,
     stale: &Token,
 ) -> Result<Token> {
@@ -552,6 +575,7 @@ async fn refresh_omp(
         &omp_db_path(),
         &omp_bin(),
         provider,
+        account,
         parse,
         stale,
     )
@@ -559,18 +583,20 @@ async fn refresh_omp(
 }
 
 /// Under a per-provider lock in `lock_root`: re-read `db` once another caller may have had
-/// OMP refresh the login, else run `<omp> token <provider> --force-refresh` and read it back.
+/// OMP refresh the login, else run `<omp> token <provider> [--account N] --force-refresh`
+/// (N: `account`'s index in `<omp> token <provider> --list`) and read it back.
 async fn refresh_omp_at(
     lock_root: &Path,
     db: &Path,
     omp: &Path,
     provider: &str,
+    account: Option<&str>,
     parse: fn(&Value, Source) -> Option<Token>,
     stale: &Token,
 ) -> Result<Token> {
     let _guard = lock(lock_root, &format!("{provider}.oauth-refresh")).await?;
     let fresh = || -> Result<Option<Token>> {
-        Ok(read_omp(db, provider, parse)?
+        Ok(read_omp(db, provider, account, parse)?
             .into_iter()
             .filter(|t| t.access != stale.access && !t.needs_refresh())
             .max_by_key(|t| t.expires_at_ms))
@@ -578,8 +604,14 @@ async fn refresh_omp_at(
     if let Some(token) = fresh()? {
         return Ok(token);
     }
+    let mut args = vec!["token".to_owned(), provider.to_owned()];
+    if let Some(email) = account {
+        let index = omp_account_index(omp, provider, email).await?;
+        args.extend(["--account".to_owned(), index.to_string()]);
+    }
+    args.push("--force-refresh".to_owned());
     let output = tokio::process::Command::new(omp)
-        .args(["token", provider, "--force-refresh"])
+        .args(&args)
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::null())
         .output()
@@ -587,18 +619,51 @@ async fn refresh_omp_at(
         .with_context(|| format!("running {}", omp.display()))?;
     if !output.status.success() {
         bail!(
-            "`{} token {provider} --force-refresh` failed ({}): {}",
+            "`{} {}` failed ({}): {}",
             omp.display(),
+            args.join(" "),
             output.status,
             snippet(&String::from_utf8_lossy(&output.stderr))
         );
     }
     fresh()?.ok_or_else(|| {
         anyhow!(
-            "OMP refreshed its {provider} login, but {} holds no fresh token",
+            "OMP refreshed its {provider} login{}, but {} holds no fresh token",
+            account.map(|a| format!(" for {a}")).unwrap_or_default(),
             db.display()
         )
     })
+}
+
+/// The 1-based `--account` index of `email` in `<omp> token <provider> --list`
+/// (lines `N. <email> (<plan>)`).
+async fn omp_account_index(omp: &Path, provider: &str, email: &str) -> Result<usize> {
+    let output = tokio::process::Command::new(omp)
+        .args(["token", provider, "--list"])
+        .stdin(std::process::Stdio::null())
+        .output()
+        .await
+        .with_context(|| format!("running {}", omp.display()))?;
+    if !output.status.success() {
+        bail!(
+            "`{} token {provider} --list` failed ({}): {}",
+            omp.display(),
+            output.status,
+            snippet(&String::from_utf8_lossy(&output.stderr))
+        );
+    }
+    String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .find_map(|line| {
+            let (index, rest) = line.trim().split_once(". ")?;
+            (rest.split_whitespace().next() == Some(email)).then(|| index.parse().ok())?
+        })
+        .ok_or_else(|| {
+            anyhow!(
+                "`{} token {provider} --list` has no account {email}",
+                omp.display()
+            )
+        })
 }
 
 /// Caches a refreshed Antigravity token in OMP's credential shape.
@@ -882,6 +947,14 @@ fn jwt_exp_ms(jwt: &str) -> Option<i64> {
     jwt_claims(jwt)?.get("exp")?.as_i64().map(|s| s * 1000)
 }
 
+/// The ChatGPT login's email, from an access token's profile claim.
+fn openai_email(access: &str) -> Option<String> {
+    jwt_claims(access)?
+        .pointer("/https:~1~1api.openai.com~1profile/email")?
+        .as_str()
+        .map(str::to_owned)
+}
+
 fn openai_account_id(id_token: &str) -> Option<String> {
     let claims = jwt_claims(id_token)?;
     claims
@@ -1005,7 +1078,7 @@ mod tests {
             .unwrap();
         drop(connection);
         let before = fs::read(&db).unwrap();
-        let tokens = read_omp(&db, ANTIGRAVITY, antigravity_token).unwrap();
+        let tokens = read_omp(&db, ANTIGRAVITY, None, antigravity_token).unwrap();
         assert_eq!(tokens.len(), 1);
         assert_eq!(
             (tokens[0].access.as_str(), tokens[0].refresh.as_str()),
@@ -1015,7 +1088,7 @@ mod tests {
             (tokens[0].expires_at_ms, tokens[0].project.as_deref()),
             (5, Some("p"))
         );
-        let grok = read_omp(&db, XAI, xai_token).unwrap();
+        let grok = read_omp(&db, XAI, None, xai_token).unwrap();
         assert_eq!(
             grok.iter()
                 .map(|t| (t.access.as_str(), t.expires_at_ms, t.project.is_none()))
@@ -1024,9 +1097,14 @@ mod tests {
         );
         assert_eq!(fs::read(&db).unwrap(), before);
         assert!(
-            read_omp(&root.join("missing.db"), ANTIGRAVITY, antigravity_token)
-                .unwrap()
-                .is_empty()
+            read_omp(
+                &root.join("missing.db"),
+                ANTIGRAVITY,
+                None,
+                antigravity_token
+            )
+            .unwrap()
+            .is_empty()
         );
 
         let cache = root.join("state/google-antigravity.json");
@@ -1118,39 +1196,52 @@ mod tests {
         }
     }
 
-    fn codex_row(access: &str, refresh: &str, expires: i64, account: &str) -> Value {
-        json!({"access": access, "refresh": refresh, "expires": expires,
-               "accountId": account, "email": "e@x", "authorizedAt": 1})
+    const CAN: &str = "can@example.com";
+    const UMIT: &str = "umit@example.com";
+
+    /// A ChatGPT access token for `email`'s `account`, expiring at `exp` (seconds).
+    fn chatgpt_access(email: &str, account: &str, exp: i64) -> String {
+        jwt(
+            json!({"exp": exp, "https://api.openai.com/auth": {"chatgpt_account_id": account},
+                   "https://api.openai.com/profile": {"email": email}}),
+        )
     }
 
-    /// OMP's `openai-codex` login wins over a fresher Codex CLI file, is read without changing
-    /// either store, and takes its account id from the access token's claims.
+    fn codex_row(email: &str, access: &str, refresh: &str, expires: i64, account: &str) -> Value {
+        json!({"access": access, "refresh": refresh, "expires": expires,
+               "accountId": account, "email": email, "authorizedAt": 1})
+    }
+
+    /// The pinned account's OMP login wins over a fresher login of another account and over a
+    /// fresher Codex CLI file, is read without changing either store, and takes its account id
+    /// from the access token's claims.
     #[test]
-    fn openai_reads_omp_login_with_account_id_from_claims() {
+    fn openai_reads_the_pinned_omp_login_with_account_id_from_claims() {
         let root = temp_dir();
         let db = root.join("agent.db");
         let access = codex_access("acct-claims", 4_000_000_000);
+        let other = |exp| codex_access("acct-umit", exp);
         omp_db(
             &db,
             &[
                 (
                     OPENAI_CODEX,
-                    codex_row(&access, "r1", 3_999_999_999_000, "acct-stored"),
+                    codex_row(UMIT, &other(4_200_000_000), "ru", 4_200_000_000_000, "u"),
                     None,
                 ),
                 (
                     OPENAI_CODEX,
-                    codex_row(
-                        &codex_access("acct-old", 4_100_000_000),
-                        "r0",
-                        4_100_000_000_000,
-                        "x",
-                    ),
+                    codex_row(CAN, &access, "r1", 3_999_999_999_000, "acct-stored"),
+                    None,
+                ),
+                (
+                    OPENAI_CODEX,
+                    codex_row(CAN, &other(4_100_000_000), "r0", 4_100_000_000_000, "x"),
                     Some("revoked"),
                 ),
                 (
                     XAI,
-                    json!({"access": "g", "refresh": "gr", "expires": 4_200_000_000_000_i64}),
+                    json!({"access": "g", "refresh": "gr", "expires": 4_200_000_000_000_i64, "email": CAN}),
                     None,
                 ),
             ],
@@ -1158,19 +1249,24 @@ mod tests {
         let codex = root.join("auth.json");
         fs::write(
             &codex,
-            json!({"tokens": {"access_token": codex_access("acct-file", 4_300_000_000),
+            json!({"tokens": {"access_token": chatgpt_access(CAN, "acct-file", 4_300_000_000),
             "refresh_token": "file-r", "account_id": "acct-file"}})
             .to_string(),
         )
         .unwrap();
         let (db_before, codex_before) = (fs::read(&db).unwrap(), fs::read(&codex).unwrap());
 
-        let token = openai_login(&db, &root, &codex).unwrap();
+        let token = openai_login(&db, &root, &codex, CAN).unwrap();
         assert_eq!(token.access, access);
         assert_eq!(token.refresh, "r1");
         assert_eq!(token.account_id.as_deref(), Some("acct-claims"));
         assert_eq!(token.expires_at_ms, 3_999_999_999_000);
         assert!(matches!(token.source, Source::Omp(_)));
+        // Ümit's login only when pinned explicitly.
+        assert_eq!(
+            openai_login(&db, &root, &codex, UMIT).unwrap().refresh,
+            "ru"
+        );
         assert_eq!(fs::read(&db).unwrap(), db_before);
         assert_eq!(fs::read(&codex).unwrap(), codex_before);
 
@@ -1187,9 +1283,63 @@ mod tests {
         fs::remove_dir_all(root).unwrap();
     }
 
-    /// Without an OMP `openai-codex` login the Codex CLI file is used, as before.
+    /// OMP has logins, but not the pinned account's: refuse, without falling back to another
+    /// account or the Codex CLI file.
     #[test]
-    fn openai_falls_back_to_codex_file_without_omp_login() {
+    fn openai_refuses_when_the_pinned_account_has_no_omp_login() {
+        let root = temp_dir();
+        let db = root.join("agent.db");
+        omp_db(
+            &db,
+            &[
+                (
+                    OPENAI_CODEX,
+                    codex_row(
+                        UMIT,
+                        &codex_access("u", 4_200_000_000),
+                        "ru",
+                        4_200_000_000_000,
+                        "u",
+                    ),
+                    None,
+                ),
+                (
+                    OPENAI_CODEX,
+                    codex_row(CAN, "a", "r", 4_200_000_000_000, "x"),
+                    Some("revoked"),
+                ),
+            ],
+        );
+        let codex = root.join("auth.json");
+        fs::write(
+            &codex,
+            json!({"tokens": {"access_token": chatgpt_access(CAN, "acct-file", 4_300_000_000),
+            "refresh_token": "file-r"}})
+            .to_string(),
+        )
+        .unwrap();
+        let error = openai_login(&db, &root, &codex, CAN)
+            .err()
+            .unwrap()
+            .to_string();
+        assert_eq!(
+            error,
+            format!(
+                "no OpenAI (ChatGPT) subscription login for {CAN} found (looked in: {}, qfork store \
+                 {}, {}); log in to ChatGPT as {CAN} with omp (/login), or set IMPROVE_CODEX_ACCOUNT \
+                 to the email of another OMP openai-codex login",
+                db.display(),
+                root.display(),
+                codex.display()
+            )
+        );
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    /// Without any OMP `openai-codex` login the Codex CLI file is used, as before, but only
+    /// when its token is the pinned account's.
+    #[test]
+    fn openai_falls_back_to_codex_file_of_the_pinned_account_without_omp_login() {
         let root = temp_dir();
         let db = root.join("agent.db");
         omp_db(
@@ -1200,11 +1350,15 @@ mod tests {
                     json!({"access": "g", "refresh": "gr", "expires": 1}),
                     None,
                 ),
-                (OPENAI_CODEX, codex_row("a", "r", 1, "x"), Some("revoked")),
+                (
+                    OPENAI_CODEX,
+                    codex_row(CAN, "a", "r", 1, "x"),
+                    Some("revoked"),
+                ),
             ],
         );
         let codex = root.join("auth.json");
-        let access = codex_access("acct-file", 4_300_000_000);
+        let access = chatgpt_access(CAN, "acct-file", 4_300_000_000);
         fs::write(
             &codex,
             json!({"tokens": {"access_token": access,
@@ -1212,36 +1366,28 @@ mod tests {
             .to_string(),
         )
         .unwrap();
-        let token = openai_login(&db, &root, &codex).unwrap();
+        let token = openai_login(&db, &root, &codex, CAN).unwrap();
         assert_eq!(
             (token.access.as_str(), token.refresh.as_str()),
             (access.as_str(), "file-r")
         );
         assert!(matches!(token.source, Source::Codex(_)));
-        fs::remove_dir_all(root).unwrap();
-    }
-
-    #[test]
-    fn openai_missing_login_says_where_it_looked_and_to_log_in_with_omp() {
-        let root = temp_dir();
-        let db = root.join("agent.db");
-        let codex = root.join("auth.json");
-        let error = openai_login(&db, &root, &codex).err().unwrap().to_string();
-        assert_eq!(
-            error,
-            format!(
-                "no OpenAI (ChatGPT) subscription login found (looked in: {}, qfork store {}, {}); \
-                 log in to ChatGPT (openai-codex) with omp (/login)",
-                db.display(),
-                root.display(),
-                codex.display()
+        assert!(openai_login(&db, &root, &codex, UMIT).is_err());
+        assert!(
+            openai_login(
+                &root.join("missing.db"),
+                &root,
+                &root.join("missing.json"),
+                CAN
             )
+            .is_err()
         );
         fs::remove_dir_all(root).unwrap();
     }
 
-    /// A fake `omp` that records its arguments, then (exit 0) replaces the database with
-    /// `after.db` or (exit 1) complains on stderr.
+    /// A fake `omp` that records its arguments; `--list` prints Ümit's account first and
+    /// Can's second; otherwise (exit 0) it replaces the database with `after.db` or (exit 1)
+    /// complains on stderr.
     fn fake_omp(root: &Path, succeed: bool) -> PathBuf {
         let path = root.join("omp");
         let action = if succeed {
@@ -1255,7 +1401,9 @@ mod tests {
         fs::write(
             &path,
             format!(
-                "#!/bin/sh\necho \"$@\" >> '{}/omp-calls'\n{action}\n",
+                "#!/bin/sh\necho \"$@\" >> '{}/omp-calls'\n\
+                 if [ \"$3\" = --list ]; then printf '1. {UMIT} (pro)\\n2. {CAN} (prolite)\\n'; exit 0; fi\n\
+                 {action}\n",
                 root.display()
             ),
         )
@@ -1264,39 +1412,64 @@ mod tests {
         path
     }
 
-    /// A stale OMP login is refreshed by `omp token openai-codex --force-refresh` and read
-    /// back from OMP's database; jevgammon never posts the refresh token itself, and a
-    /// caller that finds an already-refreshed token does not run OMP again.
+    /// A stale login of the pinned account is refreshed by `omp token openai-codex --account N
+    /// --force-refresh` (N its `--list` index) and read back from OMP's database, never
+    /// switching to the other account's fresher token; jevgammon never posts the refresh token
+    /// itself, and a caller that finds an already-refreshed token does not run OMP again.
     #[tokio::test]
-    async fn openai_refresh_goes_through_omp_only() {
+    async fn openai_refresh_goes_through_omp_for_the_pinned_account_only() {
         let root = temp_dir();
         let db = root.join("agent.db");
         let stale_access = codex_access("acct-1", 1);
+        let umit = codex_row(
+            UMIT,
+            &codex_access("u", 4_200_000_000),
+            "ru",
+            4_200_000_000_000,
+            "u",
+        );
         omp_db(
             &db,
-            &[(
-                OPENAI_CODEX,
-                codex_row(&stale_access, "r-old", 1_000, "acct-1"),
-                None,
-            )],
+            &[
+                (OPENAI_CODEX, umit.clone(), None),
+                (
+                    OPENAI_CODEX,
+                    codex_row(CAN, &stale_access, "r-old", 1_000, "acct-1"),
+                    None,
+                ),
+            ],
         );
         let fresh_access = codex_access("acct-1", 4_000_000_000);
         omp_db(
             &root.join("after.db"),
-            &[(
-                OPENAI_CODEX,
-                codex_row(&fresh_access, "r-new", 4_000_000_000_000, "acct-1"),
-                None,
-            )],
+            &[
+                (OPENAI_CODEX, umit, None),
+                (
+                    OPENAI_CODEX,
+                    codex_row(CAN, &fresh_access, "r-new", 4_000_000_000_000, "acct-1"),
+                    None,
+                ),
+            ],
         );
-        let stale = read_omp(&db, OPENAI_CODEX, codex_token).unwrap().remove(0);
+        let stale = read_omp(&db, OPENAI_CODEX, Some(CAN), codex_token)
+            .unwrap()
+            .remove(0);
         assert!(stale.needs_refresh());
         let omp = fake_omp(&root, true);
         let locks = root.join("state");
 
-        let token = refresh_omp_at(&locks, &db, &omp, OPENAI_CODEX, codex_token, &stale)
-            .await
-            .unwrap();
+        let refresh = || {
+            refresh_omp_at(
+                &locks,
+                &db,
+                &omp,
+                OPENAI_CODEX,
+                Some(CAN),
+                codex_token,
+                &stale,
+            )
+        };
+        let token = refresh().await.unwrap();
         assert_eq!(
             (token.access.as_str(), token.refresh.as_str()),
             (fresh_access.as_str(), "r-new")
@@ -1304,37 +1477,72 @@ mod tests {
         assert_eq!(token.account_id.as_deref(), Some("acct-1"));
         assert!(locks.join("locks/openai-codex.oauth-refresh.lock").exists());
 
-        let again = refresh_omp_at(&locks, &db, &omp, OPENAI_CODEX, codex_token, &stale)
-            .await
-            .unwrap();
-        assert_eq!(again.access, fresh_access);
+        assert_eq!(refresh().await.unwrap().access, fresh_access);
         assert_eq!(
             fs::read_to_string(root.join("omp-calls")).unwrap(),
-            "token openai-codex --force-refresh\n"
+            "token openai-codex --list\ntoken openai-codex --account 2 --force-refresh\n"
         );
         fs::remove_dir_all(root).unwrap();
     }
 
     #[tokio::test]
-    async fn openai_refresh_reports_omp_failure() {
+    async fn openai_refresh_reports_omp_failure_and_unlisted_account() {
         let root = temp_dir();
         let db = root.join("agent.db");
         omp_db(
             &db,
-            &[(OPENAI_CODEX, codex_row("stale", "r", 1_000, "acct-1"), None)],
+            &[(
+                OPENAI_CODEX,
+                codex_row(CAN, "stale", "r", 1_000, "acct-1"),
+                None,
+            )],
         );
-        let stale = read_omp(&db, OPENAI_CODEX, codex_token).unwrap().remove(0);
-        let omp = fake_omp(&root, false);
-        let error = refresh_omp_at(&root, &db, &omp, OPENAI_CODEX, codex_token, &stale)
-            .await
-            .err()
+        let stale = read_omp(&db, OPENAI_CODEX, None, codex_token)
             .unwrap()
-            .to_string();
+            .remove(0);
+        let omp = fake_omp(&root, false);
+        let error = refresh_omp_at(
+            &root,
+            &db,
+            &omp,
+            OPENAI_CODEX,
+            Some(CAN),
+            codex_token,
+            &stale,
+        )
+        .await
+        .err()
+        .unwrap()
+        .to_string();
         assert!(
-            error.contains("token openai-codex --force-refresh` failed"),
+            error.contains("token openai-codex --account 2 --force-refresh` failed"),
             "{error}"
         );
         assert!(error.contains("refresh_token_reused"), "{error}");
+
+        let missing = "nobody@example.com";
+        let error = refresh_omp_at(
+            &root,
+            &db,
+            &omp,
+            OPENAI_CODEX,
+            Some(missing),
+            codex_token,
+            &stale,
+        )
+        .await
+        .err()
+        .unwrap()
+        .to_string();
+        assert!(
+            error.contains("--list` has no account nobody@example.com"),
+            "{error}"
+        );
+        assert_eq!(
+            fs::read_to_string(root.join("omp-calls")).unwrap(),
+            "token openai-codex --list\ntoken openai-codex --account 2 --force-refresh\n\
+             token openai-codex --list\n"
+        );
         fs::remove_dir_all(root).unwrap();
     }
 }

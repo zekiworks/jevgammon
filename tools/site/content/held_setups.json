@@ -14,6 +14,7 @@
   "GLiDE 2B": "late entry prepared (branch late-tiny8, Main 11 Nov); not started; shown when complete",
   "Sieve 31B v3": "late entry prepared (branch late-tiny8, Main 12 Nov; spark2 sieve-serve, BF16); not started; shown when complete",
   "Turion Jev 31B": "late entry prepared (branch late-tiny8, Main 12 Nov; spark2 turion_jev.serve, FP8 at load); not started; shown when complete",
+  "Cerno 9B v1.2": "late entry prepared (branch late-tiny8, Main 13 Nov; spark2 logic's server around the card's CernoEngine, BF16); not started; shown when complete",
   "Liquid d1-2B": "late entry prepared (branch late-tiny8-small3, Ümit #6225; bariton d1_server.py, BF16); not started; shown when complete",
   "Strands Decider 2B": "late entry prepared (branch late-tiny8-small3, Ümit #6225; bariton strands-decider serve --strict-window, BF16); not started; shown when complete",
   "Metask-Jev-4B": "late entry prepared (branch late-tiny8-small3, Ümit #6225; bariton metask-jev server.py, BF16); not started; shown when complete",

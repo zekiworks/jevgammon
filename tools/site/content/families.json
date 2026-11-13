@@ -185,6 +185,11 @@
    "name": "Metask",
    "icon": "fi-metask",
    "match": "^(?:Metask)"
+  },
+  {
+   "name": "Cerno",
+   "icon": "fi-cerno",
+   "match": "^(?:Cerno)"
   }
  ]
 }

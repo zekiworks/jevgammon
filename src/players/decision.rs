@@ -334,6 +334,219 @@ pub const SERVICES: &[Service] = &[
         openai_format: false,
         max_choices: 255,
     },
+    // PelaAI's KnowLine-31B-Gen1.5 (dense Gemma 4 31B fine-tune) behind the knowline_server.py its
+    // Hugging Face repo ships, started by the repo's serve_knowline.sh (SGLang bf16 + the
+    // /v1/systemone front end, served model name `m`, which the front end echoes and otherwise
+    // ignores). One label token per option: at most 255 options per question (longer play lists
+    // are split as for every 255-option service) and 64 questions per request. The front end
+    // never truncates: SGLang (no --allow-auto-truncate) refuses a prompt longer than its context
+    // or KV pool and the front end answers 422, which fails the decision. League 1's longest
+    // single request, 251 options, is 27,849 Gemma 4 tokens; spark2's pool holds 53,181.
+    Service {
+        provider: "knowline",
+        label: "KnowLine (local)",
+        base_url: "http://127.0.0.1:19360",
+        url_var: "KNOWLINE_BASE_URL",
+        path: "/v1/systemone",
+        key_vars: &[],
+        key_required: false,
+        default_model: Some("m"),
+        openai_format: false,
+        max_choices: 255,
+    },
+    // StartLux-Decision v1.1 Instant checkpoints (startlux-models on Hugging Face) behind the
+    // `startlux-decide serve --launch-vllm` server of their package (github.com/StartLuxLabs/
+    // StartLux-Decision, vLLM with its plugin for the bidirectional prompt attention). It takes
+    // no model field (the loaded folder answers) and reads one letter per option, 26 per pass;
+    // longer lists are knocked out by the server itself (groups of at most 25, the 3 best of each
+    // to a final pass; the rest share 0.001), so a question takes up to 255 options here like
+    // every 255-option service. `serve` adds a hidden "None of the above" option to every pass
+    // (none_check) and reports `none_probability`; the choice stays a listed option. It never
+    // truncates: vLLM refuses a prompt over its context (131,072 tokens on spark2) and the server
+    // answers 422, which fails the decision. League 1's longest stored request, 251 options, is
+    // 27,462 tokens of the 2B's tokenizer as one prompt; its longest pass is 5,318.
+    Service {
+        provider: "startlux",
+        label: "StartLux-Decision (local)",
+        base_url: "http://127.0.0.1:19440",
+        url_var: "STARTLUX_BASE_URL",
+        path: "/v1/systemone",
+        key_vars: &[],
+        key_required: false,
+        default_model: None,
+        openai_format: false,
+        max_choices: 255,
+    },
+    // Fastino's released small GLiDE checkpoints (fastino/GLiDE-0.8B @ 9eacdee, GLiDE-2B @
+    // 00f122c) behind the server each repository ships (`python -m glide.server`,
+    // GLIDE_MAX_BATCH=1), as GLiDE v1.2 runs locally but without Fastino's key: the server takes
+    // no key and passes only `state` and `questions` to the model, so no model field is sent.
+    // One readout code per option: 255 options per question. It never truncates: a question
+    // prompt over GLIDE_MAX_LEN (40,000 tokens) is refused (422); League 1's longest stored
+    // request, 251 options, is 28,323 tokens of their tokenizer with the card's prompt.
+    Service {
+        provider: "glide",
+        label: "GLiDE (local)",
+        base_url: "http://127.0.0.1:19330",
+        url_var: "GLIDE_BASE_URL",
+        path: "/v1/systemone",
+        key_vars: &[],
+        key_required: false,
+        default_model: None,
+        openai_format: false,
+        max_choices: 255,
+    },
+    // fastino/GLiDE-0.4B @ 6bda7ab, the same server and request, but an encoder (ModernBERT) whose
+    // model shortens any prompt over 7,999 tokens (the first 1,024 kept, then the tail) instead of
+    // refusing it. Every League 1 stored request of at most 74 options fits (at most 7,833 encoder
+    // tokens with the card's prompt); 77 or more never does. So longer play lists are split into
+    // groups of at most 74, as for every limited service, and nothing is ever cut; the server runs
+    // with GLIDE_MAX_LEN=8006, which refuses (422) any prompt the model would shorten.
+    Service {
+        provider: "glide-0.4b",
+        label: "GLiDE 0.4B (local)",
+        base_url: "http://127.0.0.1:19350",
+        url_var: "GLIDE_04B_BASE_URL",
+        path: "/v1/systemone",
+        key_vars: &[],
+        key_required: false,
+        default_model: None,
+        openai_format: false,
+        max_choices: 74,
+    },
+    // OmniJev's OneJev1.6-0.8B (OmniJev/OneJev1.6-0.8B @ bcd88a3) behind Flide 0.1.11, the server
+    // its card names (`flide serve --name OmniJev/OneJev1.6-0.8B`, format onejev-slot-v2): the
+    // model field must be that name (or an alias); 255 options per question; it never truncates:
+    // state plus a question over 32,768 tokens, or a request over 65,536, is refused (422).
+    Service {
+        provider: "onejev",
+        label: "OneJev (Flide)",
+        base_url: "http://127.0.0.1:19420",
+        url_var: "ONEJEV_BASE_URL",
+        path: "/v1/systemone",
+        key_vars: &[],
+        key_required: false,
+        default_model: Some("OmniJev/OneJev1.6-0.8B"),
+        openai_format: false,
+        max_choices: 255,
+    },
+    // knowledgator's GLiClass v4 Edge (knowledgator/gliclass-v4-edge @ 885af1a), a zero-shot
+    // classifier, behind turkce's runner/servers/gliclass_server.py (the card's own System One
+    // mapping: one gliclass 0.1.22 pass per choice question, the state as text, the instructions
+    // as prompt, every option's description as a label). No option cap of its own: options,
+    // instructions and state share one 16,384-token input, refused (422) above it, never cut.
+    // League 1's worst case with its tokenizer: the longest state and instructions (2,197
+    // tokens with [CLS], [SEP] and <<SEP>>) plus 218 options at the longest label (65 tokens
+    // with <<LABEL>>) is 16,367; so longer play lists are split into groups of at most 218.
+    // The model field must name the checkpoint (or be absent).
+    Service {
+        provider: "gliclass",
+        label: "GLiClass (local)",
+        base_url: "http://127.0.0.1:19480",
+        url_var: "GLICLASS_BASE_URL",
+        path: "/v1/systemone",
+        key_vars: &[],
+        key_required: false,
+        default_model: Some("knowledgator/gliclass-v4-edge"),
+        openai_format: false,
+        max_choices: 218,
+    },
+    // sthanika-ai's Sieve-31B-v3 (@ 8fcee85; Gemma 4 31B full fine-tune, letter readout) behind
+    // the server its card names, sieve-serve of github.com/sthanika-ai/Sieve @ 1e64657 (0.5.1):
+    // the same state and questions at /v1/decide, no model field (it would be ignored), text
+    // only; answers rounded to 4 places, usage without token counts. Up to 255 options per
+    // question (its label count; validate_questions refuses more with 422). It never
+    // truncates; it has no token limit of its own as served (no max_tokens), the model's
+    // context is 262,144. League 1's longest stored request (251 options) is a 28,271-token
+    // pass with its tokenizer and renderer (each request runs in 2 option orders).
+    Service {
+        provider: "sieve",
+        label: "Sieve (local)",
+        base_url: "http://127.0.0.1:19370",
+        url_var: "SIEVE_BASE_URL",
+        path: "/v1/decide",
+        key_vars: &[],
+        key_required: false,
+        default_model: None,
+        openai_format: false,
+        max_choices: 255,
+    },
+    // Turion AI's turion-jev-31b (@ 866c0fc; Gemma 4 31B LoRA merge, option-code readout)
+    // behind the server its package ships (python -m turion_jev.serve, vLLM in process, FP8 at
+    // load): the same request at /v1/systemone; the model field is ignored, so none is sent;
+    // text only; probabilities rounded to 6 places, no confidence. 255 one-token codes per
+    // question (more is refused, 422); a prompt over --max-len (65,536 tokens) is refused (422),
+    // never cut.
+    Service {
+        provider: "turion-jev",
+        label: "Turion Jev (local)",
+        base_url: "http://127.0.0.1:19380",
+        url_var: "TURION_JEV_BASE_URL",
+        path: "/v1/systemone",
+        key_vars: &[],
+        key_required: false,
+        default_model: None,
+        openai_format: false,
+        max_choices: 255,
+    },
+    // Liquid AI's open d1-2B (LiquidAI/d1-2B @ 10e7671; LFM3-VL-2B base, one forward pass,
+    // option codes A..Z then AA..) behind logic's d1_server.py, the card's model.system_one
+    // call unchanged (transformers, BF16, the snapshot's own code): the System One request at
+    // /v1/systemone, the model field naming the checkpoint (another name is refused, 400).
+    // 255 options per question get distinct single-token codes. Its context is 128,000
+    // positions; nothing in its code shortens a prompt, and a request it cannot answer is
+    // refused (400), never cut. League 1's longest stored request (251 options) is 20,759
+    // tokens with its tokenizer and prompt.
+    Service {
+        provider: "d1-local",
+        label: "Liquid d1 (local)",
+        base_url: "http://127.0.0.1:19260",
+        url_var: "D1_LOCAL_BASE_URL",
+        path: "/v1/systemone",
+        key_vars: &[],
+        key_required: false,
+        default_model: Some("LiquidAI/d1-2B"),
+        openai_format: false,
+        max_choices: 255,
+    },
+    // Strands Agents' strands-decider-2B-hobson-v21 (@ 2b52a62; LoRA and pointer head on
+    // Qwen3.5-2B-Base) behind the server its package ships (strands-decider serve, BF16): the
+    // System One request at /v1/systemone; the model field is ignored, so none is sent. Served
+    // with --strict-window: a prompt over the checkpoint's 4,096-token window is refused (422),
+    // never cut (without it the server cuts the state). With its tokenizer and renderer the
+    // state plus the 13 longest options of any League 1 stored request is at most 4,025
+    // tokens (14 can reach 4,143), so longer play lists are split into groups of at most 13.
+    Service {
+        provider: "strands",
+        label: "Strands Decider (local)",
+        base_url: "http://127.0.0.1:19270",
+        url_var: "STRANDS_BASE_URL",
+        path: "/v1/systemone",
+        key_vars: &[],
+        key_required: false,
+        default_model: None,
+        openai_format: false,
+        max_choices: 13,
+    },
+    // Metask Lab's Metask-Jev-4B (wayfind/metask-jev-4b-policy-mix @ ea20fe8; Qwen3.5-4B with
+    // its LoRA merged, one letter per option) behind logic's metask-jev server.py (the vendor's
+    // jev_scorer and prompt, BF16): the System One request at /v1/systemone; the model field is
+    // ignored, so none is sent. It never truncates: a prompt over 4,096 tokens or a list over 26
+    // options is refused (400). With its tokenizer and prompt the state plus the 11 longest
+    // options of any League 1 stored request is at most 4,008 tokens (12 can reach 4,135), so
+    // longer play lists are split into groups of at most 11.
+    Service {
+        provider: "metask",
+        label: "Metask-Jev (local)",
+        base_url: "http://127.0.0.1:19250",
+        url_var: "METASK_BASE_URL",
+        path: "/v1/systemone",
+        key_vars: &[],
+        key_required: false,
+        default_model: None,
+        openai_format: false,
+        max_choices: 11,
+    },
 ];
 
 pub fn service(provider: &str) -> Option<&'static Service> {

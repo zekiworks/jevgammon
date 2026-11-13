@@ -163,6 +163,23 @@ pub struct PlayerConfig {
     /// reasoning block on every answer and has no switch to turn it off.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub answer_prefix: Option<String>,
+    /// Prefill readout with reasoning on: the assistant text the letter continues, with
+    /// `{reasoning}` replaced by the reasoning without its leading and trailing newlines
+    /// (default `<think>{reasoning}</think>Answer:`, the reasoning kept as returned), e.g.
+    /// `<think>\n{reasoning}\n</think>\n\nAnswer:` for a chat template that re-renders an
+    /// assistant turn's reasoning that way (MiniCPM5), so that the server finds the prefill
+    /// verbatim in the rendered prompt (`continue_final_message`). An empty reasoning
+    /// sends the reasoning-off prefill (`answer_prefix`, default `Answer:`) instead.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reasoning_prefill: Option<String>,
+    /// Prefill readout with reasoning on: the read-out's assistant message carries the
+    /// reasoning in this field (e.g. `reasoning`, which vLLM hands to the chat template as
+    /// `reasoning` and `reasoning_content`) and only `Answer:` as its content, so that the
+    /// template renders the reasoning turn itself. For LFM3 under vLLM, whose content format
+    /// `openai` makes the template open an extra empty think block before a content that
+    /// carries `<think>...</think>`. Takes precedence over `reasoning_prefill`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reasoning_field: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub price: Option<Price>,
     /// Free text kept with the roster (how the setup was pinned, what a level means).
@@ -358,6 +375,8 @@ pub fn render_stage_b(
         top_logprobs: config.top_logprobs,
         readout: llm::Readout::parse(config.letter_readout.as_deref())?,
         answer_prefix: config.answer_prefix.clone(),
+        reasoning_prefill: config.reasoning_prefill.clone(),
+        reasoning_field: config.reasoning_field.clone(),
         pacer: None,
         budget: None,
     };
@@ -437,22 +456,24 @@ impl Player {
 
     /// The client `from_config` builds, for admission (`jevgammon admit`). Only the client
     /// types of the repeats' rosters are built: decision services (a key from the
-    /// environment, nothing else read) and the local engines random, safest and
-    /// gnubg-weak. Every other type is refused before anything is constructed: the
-    /// subscription logins (openai, anthropic, antigravity, xai), whose constructors can
-    /// refresh a token over the network and write credentials, and the other chat clients.
+    /// environment, nothing else read), openai-compatible chat servers (the small chat late
+    /// entries' route: a key only from the variable the settings name, no request, no
+    /// login) and the local engines random, safest and gnubg-weak. Every other type is
+    /// refused before anything is constructed: the subscription logins (openai, anthropic,
+    /// antigravity, xai), whose constructors can refresh a token over the network and write
+    /// credentials, and the other chat clients.
     /// A budget ledger is read by `Ledger::open_read_only`, never opened for writing.
     pub async fn for_admission(config: &PlayerConfig, setup: &Setup) -> Result<Self> {
         let provider = match config.spec.split_once('/') {
             Some((provider, model)) if !model.is_empty() => provider,
             _ => config.spec.as_str(),
         };
-        let engine = ["random", "safest", "gnubg-weak"]
+        let roster = ["random", "safest", "gnubg-weak", "openai-compatible"]
             .iter()
             .any(|e| e.eq_ignore_ascii_case(provider));
-        if !engine && decision::service(provider).is_none() {
+        if !roster && decision::service(provider).is_none() {
             bail!(
-                "provider `{provider}` of `{}` is outside the admission roster (decision services and random, safest, gnubg-weak); refused before its client is constructed",
+                "provider `{provider}` of `{}` is outside the admission roster (decision services, openai-compatible and random, safest, gnubg-weak); refused before its client is constructed",
                 config.spec
             );
         }
@@ -502,6 +523,8 @@ impl Player {
             top_logprobs: config.top_logprobs,
             readout: llm::Readout::parse(config.letter_readout.as_deref())?,
             answer_prefix: config.answer_prefix.clone(),
+            reasoning_prefill: config.reasoning_prefill.clone(),
+            reasoning_field: config.reasoning_field.clone(),
             pacer: config.rpm.filter(|&rpm| rpm > 0).map(|rpm| {
                 let group = config.rate_group.clone().unwrap_or_else(|| {
                     format!("{}|{spec}", config.base_url.as_deref().unwrap_or(""))
@@ -925,6 +948,272 @@ mod tests {
         assert!(decision.invalid);
         assert_eq!(decision.index, random_play(&req));
         assert_eq!(asked(&player).len(), 2);
+    }
+
+    /// A one-shot System One server on 127.0.0.1: answers the first request with a fixed
+    /// distribution (0.7 for the third option, the rest shared) and hands back its path and body.
+    fn systemone_stub() -> (String, std::thread::JoinHandle<(String, serde_json::Value)>) {
+        use std::io::{BufRead, BufReader, Read, Write};
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let url = format!("http://{}", listener.local_addr().unwrap());
+        let handle = std::thread::spawn(move || {
+            let (stream, _) = listener.accept().unwrap();
+            let mut reader = BufReader::new(stream.try_clone().unwrap());
+            let mut length = 0;
+            let mut request_line = String::new();
+            reader.read_line(&mut request_line).unwrap();
+            let path = request_line
+                .split(' ')
+                .nth(1)
+                .unwrap_or_default()
+                .to_owned();
+            loop {
+                let mut line = String::new();
+                reader.read_line(&mut line).unwrap();
+                if line == "\r\n" {
+                    break;
+                }
+                if let Some((name, value)) = line.split_once(':')
+                    && name.eq_ignore_ascii_case("content-length")
+                {
+                    length = value.trim().parse().unwrap();
+                }
+            }
+            let mut body = vec![0; length];
+            reader.read_exact(&mut body).unwrap();
+            let body: serde_json::Value = serde_json::from_slice(&body).unwrap();
+            let keys: Vec<String> = body["questions"]["play"]["criteria"]
+                .as_object()
+                .unwrap()
+                .keys()
+                .cloned()
+                .collect();
+            let rest = 0.3 / (keys.len() - 1) as f64;
+            let probabilities: serde_json::Map<String, serde_json::Value> = keys
+                .iter()
+                .enumerate()
+                .map(|(i, k)| (k.clone(), (if i == 2 { 0.7 } else { rest }).into()))
+                .collect();
+            let answer = serde_json::json!({
+                "id": "jev-stub", "model": body["model"],
+                "answers": {"play": {"type": "choice", "choice": keys[2], "probabilities": probabilities, "confidence": 0.5}},
+                "usage": {"input_tokens": 1234, "output_tokens": 1}
+            })
+            .to_string();
+            let mut stream = stream;
+            write!(
+                stream,
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{answer}",
+                answer.len()
+            )
+            .unwrap();
+            (path, body)
+        });
+        (url, handle)
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn knowline_sends_every_option_in_one_request_and_keeps_its_probabilities() {
+        let mut board = Board::start();
+        board.pts[12] = 3;
+        board.pts[7] = 5;
+        let plays = board.legal_plays(2, 1);
+        let n = plays.len();
+        assert!(n > 8, "{n}");
+        let notations: Vec<String> = plays.iter().map(|p| p.notation()).collect();
+        let order: Vec<usize> = (0..n).rev().collect();
+        let retry = RetryTime::default();
+        let req = request(&board, &plays, &notations, &order, 1, &retry);
+        let (url, stub) = systemone_stub();
+        let service = decision::service("knowline").expect("knowline service");
+        let client =
+            decision::DecisionClient::new(reqwest::Client::new(), service, None, Some(&url), None)
+                .unwrap();
+        assert_eq!(client.max_choices(), 255);
+        let player = Player {
+            spec: "knowline".into(),
+            provider: "knowline".into(),
+            quantization: Some("bf16".into()),
+            reasoning: None,
+            price: None,
+            requests: None,
+            backend: Backend::Decision(client),
+        };
+        let decision = player.decide(&req).await.unwrap();
+        let (path, body) = stub.join().unwrap();
+        assert_eq!(path, "/v1/systemone");
+        assert_eq!(body["model"], "m");
+        assert_eq!(body["state"], prompt::state(&req));
+        let shown: Vec<&String> = body["questions"]["play"]["criteria"]
+            .as_object()
+            .unwrap()
+            .keys()
+            .collect();
+        let want: Vec<&String> = order.iter().map(|&i| &notations[i]).collect();
+        assert_eq!(shown, want, "every option in the seeded order");
+        assert!(!decision.invalid && decision.group_size.is_none());
+        assert_eq!(decision.exchanges.len(), 1);
+        assert_eq!(decision.index, order[2]);
+        assert_eq!(decision.probability_source, Some("decision"));
+        assert_eq!(decision.probabilities.len(), n);
+        assert!(decision.probabilities.contains(&(order[2], 0.7)));
+        assert_eq!(decision.input_tokens, 1234);
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn startlux_sends_every_option_without_a_model_field_and_keeps_its_probabilities() {
+        let mut board = Board::start();
+        board.pts[12] = 3;
+        board.pts[7] = 5;
+        let plays = board.legal_plays(2, 1);
+        let n = plays.len();
+        assert!(n > 8, "{n}");
+        let notations: Vec<String> = plays.iter().map(|p| p.notation()).collect();
+        let order: Vec<usize> = (0..n).rev().collect();
+        let retry = RetryTime::default();
+        let req = request(&board, &plays, &notations, &order, 1, &retry);
+        let (url, stub) = systemone_stub();
+        let service = decision::service("startlux").expect("startlux service");
+        let client =
+            decision::DecisionClient::new(reqwest::Client::new(), service, None, Some(&url), None)
+                .unwrap();
+        assert_eq!(client.max_choices(), 255);
+        let player = Player {
+            spec: "startlux".into(),
+            provider: "startlux".into(),
+            quantization: Some("bf16".into()),
+            reasoning: None,
+            price: None,
+            requests: None,
+            backend: Backend::Decision(client),
+        };
+        let decision = player.decide(&req).await.unwrap();
+        let (path, body) = stub.join().unwrap();
+        assert_eq!(path, "/v1/systemone");
+        assert!(
+            body.get("model").is_none(),
+            "the server takes no model field"
+        );
+        assert_eq!(body["state"], prompt::state(&req));
+        assert_eq!(body["questions"]["play"]["type"], "choice");
+        let shown: Vec<&String> = body["questions"]["play"]["criteria"]
+            .as_object()
+            .unwrap()
+            .keys()
+            .collect();
+        let want: Vec<&String> = order.iter().map(|&i| &notations[i]).collect();
+        assert_eq!(shown, want, "every option in the seeded order");
+        assert!(!decision.invalid && decision.group_size.is_none());
+        assert_eq!(decision.exchanges.len(), 1);
+        assert_eq!(decision.index, order[2]);
+        assert_eq!(decision.probability_source, Some("decision"));
+        assert_eq!(decision.probabilities.len(), n);
+        assert!(decision.probabilities.contains(&(order[2], 0.7)));
+        assert_eq!(decision.input_tokens, 1234);
+    }
+
+    /// One System One request to `provider`'s service on the stub (option cap `max`; the
+    /// position's list cut to at most `max` plays, so it goes in one request) at `path`: every
+    /// option in the seeded order, the model field `model` (absent for `None`), and the stub's
+    /// probabilities kept.
+    async fn sends_every_option(provider: &str, model: Option<&str>, max: usize, path: &str) {
+        let mut board = Board::start();
+        board.pts[12] = 3;
+        board.pts[7] = 5;
+        let mut plays = board.legal_plays(2, 1);
+        plays.truncate(max);
+        let n = plays.len();
+        let notations: Vec<String> = plays.iter().map(|p| p.notation()).collect();
+        let order: Vec<usize> = (0..n).rev().collect();
+        let retry = RetryTime::default();
+        let req = request(&board, &plays, &notations, &order, 1, &retry);
+        let (url, stub) = systemone_stub();
+        let service = decision::service(provider).expect("service");
+        let client =
+            decision::DecisionClient::new(reqwest::Client::new(), service, None, Some(&url), None)
+                .unwrap();
+        assert_eq!(client.max_choices(), max);
+        assert!(n <= max, "{n}");
+        let player = Player {
+            spec: provider.into(),
+            provider: provider.into(),
+            quantization: Some("bf16".into()),
+            reasoning: None,
+            price: None,
+            requests: None,
+            backend: Backend::Decision(client),
+        };
+        let decision = player.decide(&req).await.unwrap();
+        let (sent_to, body) = stub.join().unwrap();
+        assert_eq!(sent_to, path);
+        assert_eq!(body.get("model").and_then(|m| m.as_str()), model);
+        assert_eq!(body["state"], prompt::state(&req));
+        let shown: Vec<&String> = body["questions"]["play"]["criteria"]
+            .as_object()
+            .unwrap()
+            .keys()
+            .collect();
+        let want: Vec<&String> = order.iter().map(|&i| &notations[i]).collect();
+        assert_eq!(shown, want, "every option in the seeded order");
+        assert!(!decision.invalid && decision.group_size.is_none());
+        assert_eq!(decision.index, order[2]);
+        assert_eq!(decision.probability_source, Some("decision"));
+        assert_eq!(decision.probabilities.len(), n);
+        assert!(decision.probabilities.contains(&(order[2], 0.7)));
+        assert_eq!(decision.input_tokens, 1234);
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn glide_sends_no_model_field() {
+        sends_every_option("glide", None, 255, "/v1/systemone").await;
+        sends_every_option("glide-0.4b", None, 74, "/v1/systemone").await;
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn onejev_names_the_served_checkpoint() {
+        sends_every_option(
+            "onejev",
+            Some("OmniJev/OneJev1.6-0.8B"),
+            255,
+            "/v1/systemone",
+        )
+        .await;
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn gliclass_names_the_served_checkpoint() {
+        sends_every_option(
+            "gliclass",
+            Some("knowledgator/gliclass-v4-edge"),
+            218,
+            "/v1/systemone",
+        )
+        .await;
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn sieve_posts_to_v1_decide_without_a_model_field() {
+        sends_every_option("sieve", None, 255, "/v1/decide").await;
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn turion_jev_sends_no_model_field() {
+        sends_every_option("turion-jev", None, 255, "/v1/systemone").await;
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn d1_local_names_the_served_checkpoint() {
+        sends_every_option("d1-local", Some("LiquidAI/d1-2B"), 255, "/v1/systemone").await;
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn strands_sends_no_model_field_and_at_most_13_options() {
+        sends_every_option("strands", None, 13, "/v1/systemone").await;
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn metask_sends_no_model_field_and_at_most_11_options() {
+        sends_every_option("metask", None, 11, "/v1/systemone").await;
     }
 
     #[test]

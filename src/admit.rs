@@ -2,12 +2,12 @@
 //! player of a league config and every opponent its `pinned_pairs` names (with its
 //! `players.settings`, as `league-add --entry` adds it) gets its client built by
 //! `Player::for_admission`: the construction `Player::from_config` (the call a league makes
-//! for each participant) does, restricted to decision services and the local engines (any
-//! other client type, e.g. a subscription login that could refresh a token, is refused
-//! before anything is constructed) and with every budget ledger opened read-only and
-//! immutable. No request is sent and the database is read the same way: no database,
-//! ledger or credential file is written, created or locked (gnubg-weak, as in a league,
-//! starts gnubg from a temporary directory it removes).
+//! for each participant) does, restricted to decision services, openai-compatible chat
+//! servers and the local engines (any other client type, e.g. a subscription login that
+//! could refresh a token, is refused before anything is constructed) and with every budget
+//! ledger opened read-only and immutable. No request is sent and the database is read the
+//! same way: no database, ledger or credential file is written, created or locked
+//! (gnubg-weak, as in a league, starts gnubg from a temporary directory it removes).
 //!
 //! Read immutably, the database is its main file only: a change still in the write-ahead
 //! log (a new row, or an UPDATE of an existing opponent's row) is not seen, while the
@@ -369,11 +369,14 @@ mod tests {
         refused(5, "has cap $2, the config says $1.25");
         // Every client type outside the roster, refused before its constructor runs: the
         // constructors would ask for a login (openai, anthropic, antigravity, xai), a Gemini
-        // key (qfork root), a key variable, or open (create) the budget ledger.
-        for i in 6..=13 {
+        // key (qfork root) or a key variable.
+        for i in 6..=12 {
             refused(i, "outside the admission roster");
             refused(i, "refused before its client is constructed");
         }
+        // openai-compatible is in the roster: its budget ledger is opened read-only, so a
+        // missing ledger is refused, never created.
+        refused(13, "does not exist");
         // Pinned opponents in name order; Random is the config's, not read again.
         assert_eq!(outcome[14].0, "Opp in log");
         refused(14, "a row still only in its write-ahead log is not seen");

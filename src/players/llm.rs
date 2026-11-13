@@ -84,6 +84,12 @@ pub struct Options {
     pub readout: Readout,
     /// Prefill text before the letter when reasoning is off (default `Answer:`).
     pub answer_prefix: Option<String>,
+    /// Prefill text with reasoning on, `{reasoning}` standing for the reasoning (default
+    /// `<think>{reasoning}</think>Answer:`).
+    pub reasoning_prefill: Option<String>,
+    /// With reasoning on: the read-out's assistant message carries the reasoning in this
+    /// field and `Answer:` alone as its content (instead of `reasoning_prefill`).
+    pub reasoning_field: Option<String>,
     /// Rate-limit pacing shared with the other players of the group.
     pub pacer: Option<Arc<super::Pacer>>,
     /// Hard spending cap (OpenAI-compatible servers): every attempt reserves its worst case.
@@ -343,6 +349,41 @@ pub fn constrained_request(
     }
 }
 
+/// The read-out's assistant message after the reasoning: with `field`, `Answer:` as content
+/// and the reasoning in that field; else the content `reasoned_prefill` makes.
+fn reasoned_message(
+    field: Option<&str>,
+    layout: Option<&str>,
+    answer_prefix: Option<&str>,
+    reasoning: &str,
+) -> Value {
+    match field {
+        Some(field) => {
+            let mut message = json!({"role": "assistant", "content": ANSWER_PREFIX});
+            message[field] = Value::String(reasoning.to_owned());
+            message
+        }
+        None => json!({
+            "role": "assistant",
+            "content": reasoned_prefill(layout, answer_prefix, reasoning),
+        }),
+    }
+}
+
+/// The assistant text the letter continues after the reasoning: `layout` with `{reasoning}`
+/// replaced by the reasoning without its outer newlines, or the reasoning-off prefill when
+/// that is empty (a template that re-renders reasoning drops an empty block); without a
+/// layout `<think>REASONING</think>Answer:`, the reasoning as returned.
+fn reasoned_prefill(layout: Option<&str>, answer_prefix: Option<&str>, reasoning: &str) -> String {
+    match layout {
+        Some(_) if reasoning.trim_matches('\n').is_empty() => {
+            answer_prefix.unwrap_or(ANSWER_PREFIX).to_owned()
+        }
+        Some(layout) => layout.replace("{reasoning}", reasoning.trim_matches('\n')),
+        None => format!("<think>{reasoning}</think>{ANSWER_PREFIX}"),
+    }
+}
+
 /// JSON schema of a one-letter answer among `count` options.
 fn letter_schema(count: usize) -> Value {
     json!({
@@ -528,7 +569,7 @@ impl LlmClient {
         }
         // Reasoning on: the model reasons and answers with a constrained letter.
         let mut constrained = None;
-        let prefill = match &self.options.reasoning {
+        let assistant = match &self.options.reasoning {
             Some(effort) => {
                 let body = json!({
                     "model": self.model,
@@ -540,21 +581,23 @@ impl LlmClient {
                 });
                 let completion = self.call(&body, req, decision).await?;
                 constrained = self.constrained_letter(&completion, count, decision);
-                format!(
-                    "<think>{}</think>{ANSWER_PREFIX}",
-                    completion.reasoning.unwrap_or_default()
+                reasoned_message(
+                    self.options.reasoning_field.as_deref(),
+                    self.options.reasoning_prefill.as_deref(),
+                    self.options.answer_prefix.as_deref(),
+                    &completion.reasoning.unwrap_or_default(),
                 )
             }
-            None => self
+            None => json!({"role": "assistant", "content": self
                 .options
                 .answer_prefix
                 .clone()
-                .unwrap_or_else(|| ANSWER_PREFIX.to_owned()),
+                .unwrap_or_else(|| ANSWER_PREFIX.to_owned())}),
         };
         // The letter probabilities after "Answer:".
         if !self.no_logprobs.load(Ordering::Relaxed) {
             let mut conversation = messages.as_array().cloned().unwrap_or_default();
-            conversation.push(json!({"role": "assistant", "content": prefill}));
+            conversation.push(assistant);
             let body = json!({
                 "model": self.model,
                 "messages": conversation,
@@ -1530,6 +1573,8 @@ mod tests {
                 top_logprobs: None,
                 readout: Readout::Prefill,
                 answer_prefix: None,
+                reasoning_prefill: None,
+                reasoning_field: None,
                 pacer: None,
                 budget: None,
             },
@@ -1588,6 +1633,39 @@ mod tests {
         assert!(parse_xai(r#"{"status": "incomplete", "output": []}"#).is_err());
     }
 
+    /// Reasoning on: the default prefill keeps the reasoning as returned; a layout gets it
+    /// without its outer newlines (MiniCPM5's template re-renders it so), and an empty
+    /// reasoning gets the reasoning-off prefill (such a template drops an empty block).
+    #[test]
+    fn reasoned_prefill_follows_the_layout() {
+        assert_eq!(
+            reasoned_prefill(None, None, "\nR\n"),
+            "<think>\nR\n</think>Answer:"
+        );
+        assert_eq!(reasoned_prefill(None, None, ""), "<think></think>Answer:");
+        let minicpm = Some("<think>\n{reasoning}\n</think>\n\nAnswer:");
+        assert_eq!(
+            reasoned_prefill(minicpm, None, "\n\nR1\nR2\n"),
+            "<think>\nR1\nR2\n</think>\n\nAnswer:"
+        );
+        assert_eq!(reasoned_prefill(minicpm, None, "\n"), "Answer:");
+        assert_eq!(reasoned_prefill(minicpm, Some("X:"), ""), "X:");
+    }
+
+    /// A reasoning field: `Answer:` alone as content, the reasoning as returned in the field;
+    /// without one, the default message is `{"role", "content"}` exactly as before.
+    #[test]
+    fn reasoned_message_puts_the_reasoning_in_its_field() {
+        assert_eq!(
+            reasoned_message(Some("reasoning"), None, None, "\nR\n"),
+            json!({"role": "assistant", "content": "Answer:", "reasoning": "\nR\n"})
+        );
+        assert_eq!(
+            reasoned_message(None, None, None, "R").to_string(),
+            json!({"role": "assistant", "content": "<think>R</think>Answer:"}).to_string()
+        );
+    }
+
     /// Close choices, stage B: on every route the prediction request is the play request with
     /// only the user text and the answer format changed (same model, system prompt, reasoning
     /// setting, temperature, token limit and extra fields).
@@ -1600,6 +1678,8 @@ mod tests {
             top_logprobs: None,
             readout: Readout::Prefill,
             answer_prefix: None,
+            reasoning_prefill: None,
+            reasoning_field: None,
             pacer: None,
             budget: None,
         };
@@ -1727,6 +1807,8 @@ mod tests {
             top_logprobs: None,
             readout: Readout::Prefill,
             answer_prefix: None,
+            reasoning_prefill: None,
+            reasoning_field: None,
             pacer: None,
             budget: None,
         };

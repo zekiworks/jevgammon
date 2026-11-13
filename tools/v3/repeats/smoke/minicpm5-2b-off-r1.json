@@ -1,0 +1,30 @@
+{
+  "note": "MiniCPM5-2B (off) smoke test before its reproducibility repeat (minicpm5-2b-off-r1; tools/v3/repeats, Ümit #6410): the 50 smoke positions (positions/smoke.jsonl), the same prompt (bg-v2) and option-order seed as League 1, its players.settings unchanged (v3.db, read-only), logic's vLLM container on :18614, pinned by late-smallchat's pins.sh. Not a league: run with `jevgammon ask` only (run.sh's SMOKE, the repeat runner).",
+  "prompt_version": "bg-v2",
+  "seed": 0,
+  "order_seed": 1190975713392774006,
+  "rounds": 3,
+  "clock": 0,
+  "delay": 30,
+  "max_turns": 300,
+  "players": [
+    {
+      "name": "MiniCPM5-2B (off)",
+      "spec": "openai-compatible/minicpm5-2b",
+      "provider": "local-vllm",
+      "quantization": "bf16",
+      "base_url": "http://127.0.0.1:18614/v1",
+      "request": {
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        }
+      },
+      "top_logprobs": 20,
+      "letter_readout": "prefill",
+      "note": "openbmb/MiniCPM5-2B @ 42433e90dad95123ab87729fd7011e7110629556, BF16, on our GPU through vLLM v0.30.0 (vllm/vllm-openai:v0.30.0) in BF16, --generation-config auto; logic's server (small_models.py key minicpm5-2b, port 18614, bariton GPU 1, #5080/#5091; ours alone after turkce's 'done') or ours on the same port and name (tools/v3/late-smallchat/serve.sh). thinking off (enable_thinking false); the letter is read from a prefilled Answer: (as Gemma 4 31B (off)); server reasoning split: vLLM reasoning parser qwen3 (no reasoning generated). Sampling: League 1's local chat rule, per request: temperature 1.0 from the chat client, everything else the server's default (generation_config.json via --generation-config auto, else vLLM neutral), no seed; it differs from logic's Logic & Math runs: logic sends temperature 1.0, top_p 0.95, seed 0 (ours: the same temperature and top_p from generation_config.json; no seed). Output cap 1 token (prefill readout). Up to 16 matches and 16 requests at once, League 1's rule for its local chat setups (the server is ours alone after turkce's 'done'). Late entry v the original League 1 table (tools/v3/late-smallchat; Zeki #5064/#5071/#5073; Main's decisions 12 Nov)",
+      "device": "RTX PRO 6000 (bariton), one GPU",
+      "parallel": 16,
+      "max_matches": 16
+    }
+  ]
+}

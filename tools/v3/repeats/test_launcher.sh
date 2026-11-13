@@ -46,6 +46,18 @@ echo "scratch: $S"
 git clone -q --shared --no-checkout "$RTREE" "$S/tpl/runner" && git -C "$S/tpl/runner" checkout -q --detach "$RCOMMIT" ||
   { echo "cannot clone $RTREE at $RCOMMIT"; exit 1; }
 mkdir -p "$S/tpl/bin" && cp "$RBIN" "$S/tpl/bin/jevgammon"
+# Every other runner a repeat binds (the small late entries' RUNNER_SMALL): runner-<commit>/ and bin-<commit>/.
+while read -r tree bin commit short; do
+  echo "runner as recorded: tree $tree, binary $bin, commit $commit"
+  git clone -q --shared --no-checkout "$tree" "$S/tpl/runner-$short" &&
+    git -C "$S/tpl/runner-$short" checkout -q --detach "$commit" || { echo "cannot clone $tree at $commit"; exit 1; }
+  mkdir -p "$S/tpl/bin-$short" && cp "$bin" "$S/tpl/bin-$short/jevgammon"
+done < <(python3 -c 'import json,sys
+seen = {}
+for r in json.load(open(sys.argv[1]))["repeats"]:
+    seen.setdefault(r["runner"]["commit_full"], r["runner"])
+for c, r in list(seen.items())[1:]:
+    print(r["tree"], r["binary"], c, r["commit"])' "$MAN")
 mkdir -p "$S/tpl/repo/tools/v3" "$S/tpl/repo/mailbox/repeats" "$S/ledger"
 cp -r "$HERE" "$S/tpl/repo/tools/v3/repeats"
 cp "$MAN" "$S/tpl/repo/mailbox/repeats/"
@@ -144,6 +156,68 @@ conn.commit()
 print(f"scratch database: runner schema, {len(rows) + 1} players rows, late_entry_stage naming {listed}, "
       f"attempt league #{a['league']} as recorded (every column of its leagues and league_players rows)")
 EOF
+# The small late entries' originals (Ümit #6410): their leagues (#39, #41), league_players and matches rows (the 9
+# played pairs and the aborted Mercury Decide match of each), copied from the production v3.db read-only (mode=ro), every
+# column the scratch schema has; orig_rows prints their sha256, so a case can show them untouched.
+python3 - "$S/tpl/v3.db" "$TMAN" <<'EOF' || { echo "originals fixture failed"; exit 1; }
+import json, sqlite3, sys
+db, man = sys.argv[1], json.load(open(sys.argv[2]))
+prod = sqlite3.connect("file:/home/cbasaran/code/jevgammon/v3.db?mode=ro", uri=True)
+conn = sqlite3.connect(db)
+small = [r for r in man["repeats"] if r["server"]["kind"] == "pinned"]
+leagues = [r["original_league"] for r in small]
+matches = sorted({p["original_match"] for r in small for p in r["pairs"]}
+                 | {n["match"] for r in small for n in r["coverage_required"]["not_required"] if n["match"]})
+n = 0
+for table, where, keys in (("leagues", "id", leagues), ("league_players", "league_id", leagues), ("matches", "id", matches)):
+    cols = [c[1] for c in conn.execute(f"PRAGMA table_info({table})")]
+    have = [c[1] for c in prod.execute(f"PRAGMA table_info({table})")]
+    cols = [c for c in cols if c in have]
+    for row in prod.execute(f"SELECT {', '.join(cols)} FROM {table} WHERE {where} IN ({', '.join('?' * len(keys))})", keys):
+        conn.execute(f"INSERT INTO {table} ({', '.join(cols)}) VALUES ({', '.join('?' * len(cols))})", row)
+        n += 1
+conn.commit()
+print(f"originals' rows: leagues {leagues}, their league_players, matches {matches[0]}-{matches[-1]} ({len(matches)}): {n} rows")
+EOF
+ORIG_LEAGUES=$(python3 -c 'import json,sys; print(",".join(str(r["original_league"]) for r in json.load(open(sys.argv[1]))["repeats"] if r["server"]["kind"] == "pinned"))' "$MAN")
+orig_rows() {  # db: sha256 of the originals' leagues, league_players and matches rows (every column)
+  sqlite3 "$1" "SELECT * FROM leagues WHERE id IN ($ORIG_LEAGUES) ORDER BY id;
+    SELECT * FROM league_players WHERE league_id IN ($ORIG_LEAGUES) ORDER BY id;
+    SELECT * FROM matches WHERE id IN (1171,1172,1173,1174,1175,1176,1177,1178,1179,1180,1191,1192,1193,1194,1195,1196,1197,1198,1199,1200) ORDER BY id" |
+    sha256sum | cut -c1-64
+}
+[[ $(sqlite3 "$S/tpl/v3.db" "SELECT count(*) FROM matches WHERE id BETWEEN 1171 AND 1200") == 20 ]] ||
+  { echo "originals fixture: not the 20 original matches"; exit 1; }
+
+# Stand-ins for the commands the small late entries' pins.sh run (curl, ssh, docker), answering from the case's
+# $FAKE folder: health (glide.server /health), models (vLLM /v1/models), ps (spark2's `ps -eo args`), docker-args (the
+# container's arguments); a missing file fails as the command would. Every call is logged in $FAKE/calls. The default
+# answers are the pinned servers' (healthy and pinned); a case edits its own copy.
+mkdir -p "$S/fakebin" "$S/tpl/fake"
+cat > "$S/fakebin/curl" <<'EOF'
+#!/usr/bin/env bash
+url=${!#}; echo "curl $url" >> "$FAKE/calls"
+case $url in */health) f=$FAKE/health ;; */models) f=$FAKE/models ;; *) exit 7 ;; esac
+[[ -f $f ]] || exit 22
+cat "$f"
+EOF
+cat > "$S/fakebin/ssh" <<'EOF'
+#!/usr/bin/env bash
+echo "ssh $*" >> "$FAKE/calls"
+[[ -f $FAKE/ps ]] || exit 255
+cat "$FAKE/ps"
+EOF
+cat > "$S/fakebin/docker" <<'EOF'
+#!/usr/bin/env bash
+echo "docker $*" >> "$FAKE/calls"
+[[ -f $FAKE/docker-args ]] || exit 0
+case $1 in ps) echo c0ffee ;; inspect) cat "$FAKE/docker-args" ;; *) exit 1 ;; esac
+EOF
+chmod +x "$S/fakebin/"*
+echo '{"status": "ok", "max_len": 40000, "max_batch": 1, "quantization": null}' > "$S/tpl/fake/health"
+echo '{"object": "list", "data": [{"id": "minicpm5-2b", "object": "model"}]}' > "$S/tpl/fake/models"
+echo "/home/cbasaran/envs/glide-family/bin/python -m glide.server --model /home/cbasaran/glide-family/models/GLiDE-2B@00f122c120cdeed82284106cb77d9bab5a50ad16 --host 0.0.0.0 --port 19330" > "$S/tpl/fake/ps"
+echo "--model openbmb/MiniCPM5-2B --revision 42433e90dad95123ab87729fd7011e7110629556 --served-model-name minicpm5-2b --host 0.0.0.0 --port 18614 --dtype bfloat16 --max-model-len 65536 --generation-config auto" > "$S/tpl/fake/docker-args"
 
 fails=0
 pass() { echo "ok   $C: $*"; }
@@ -154,18 +228,21 @@ setup() {
   C=$1 D=$S/$1 CASE_HOME=
   mkdir -p "$D/repo/tools/v3" "$D/repo/mailbox/repeats" "$D/home"
   cp -r "$S/tpl/repo/tools/v3/repeats" "$D/repo/tools/v3/repeats"
-  cp -a "$S/tpl/runner" "$D/runner"
-  cp -a "$S/tpl/bin" "$D/bin"
+  local t
+  for t in "$S"/tpl/runner* "$S"/tpl/bin*; do cp -a "$t" "$D/"; done
+  cp -r "$S/tpl/fake" "$D/fake"
   cp "$S/tpl/v3.db" "$D/home/v3.db"
-  python3 - "$TMAN" "$D/repo/mailbox/repeats/$(basename "$MAN")" "$D" <<'EOF'
+  python3 - "$TMAN" "$D/repo/mailbox/repeats/$(basename "$MAN")" "$D" "$RCOMMIT" <<'EOF'
 import json, sys
 m = json.load(open(sys.argv[1]))
 for r in m["repeats"]:
-    r["runner"] |= dict(tree=sys.argv[3] + "/runner", binary=sys.argv[3] + "/bin/jevgammon")
+    rn = r["runner"]
+    suffix = "" if rn["commit_full"] == sys.argv[4] else "-" + rn["commit"]
+    rn |= dict(tree=f"{sys.argv[3]}/runner{suffix}", binary=f"{sys.argv[3]}/bin{suffix}/jevgammon")
 open(sys.argv[2], "w").write(json.dumps(m, indent=1, ensure_ascii=False) + "\n")
 EOF
 }
-in_case() { HOME=${CASE_HOME:-$S/keys} JEVGAMMON_DB=$D/home/v3.db REPEATS_HOME=$D/home "$@"; }
+in_case() { HOME=${CASE_HOME:-$S/keys} JEVGAMMON_DB=$D/home/v3.db REPEATS_HOME=$D/home PATH="$S/fakebin:$PATH" FAKE=$D/fake "$@"; }
 check_rc() { in_case python3 "$D/repo/tools/v3/repeats/repeats.py" check "$1" > "$D/check.out" 2>&1; echo $?; }
 # An admission refusal is the check's only failure besides the missing trigger (problems() lists every other check
 # before admission and only the trigger after it), and its text names the refusal.
@@ -446,7 +523,7 @@ name = next(r["name"] for r in json.load(open(sys.argv[2]))["repeats"] if r["id"
 sys.exit(name not in json.load(sys.stdin).get("held", {}))' "$1" "$MAN"
 }
 prepare=(mammoth-1-r1 drex-max-v1-r1 reax-1.3-r1 d1-ultra-r1)
-for rid in drex-max-1.1-r1 glide-v1.2-r1; do
+for rid in drex-max-1.1-r1 glide-v1.2-r1 glide-2b-r1 minicpm5-2b-off-r1; do
   if held_in_main "$rid"; then prepare+=("$rid"); continue; fi
   setup "not-held-$rid"; refuse "$rid"
   grep -q "not held in the main checkout" "$D/check.out" && pass "the refusal names the missing held name" ||
@@ -482,6 +559,174 @@ for rid in "${prepare[@]}"; do
     pass "check exit 3, prepared ($(basename "$bak") verified, trigger added), check exit 0 with every client admitted; second run wrote nothing"
   fi
 done
+
+# The small late entries' repeats (Ümit #6410): server kind 'pinned', runner RUNNER_SMALL. Their names are held in a
+# scratch main checkout (the site change holding them is reviewed separately) so the rest of the preflight runs.
+hold_in_scratch_main() {  # rid: the case's repeats.py reads held_setups.json from $D/main (main's file + the name)
+  local name
+  name=$(python3 -c 'import json,sys; print(next(r["name"] for r in json.load(open(sys.argv[2]))["repeats"] if r["id"] == sys.argv[1]))' "$1" "$MAN")
+  mkdir -p "$D/main/tools/site/content"
+  git -C /home/cbasaran/code/jevgammon show HEAD:tools/site/content/held_setups.json | python3 -c '
+import json, sys
+d = json.load(sys.stdin); d["held"][sys.argv[1]] = "test: held in a scratch main checkout"
+print(json.dumps(d, indent=1, ensure_ascii=False))' "$name" > "$D/main/tools/site/content/held_setups.json"
+  git -C "$D/main" init -q && git -C "$D/main" add -A &&
+    git -C "$D/main" -c user.name=test -c user.email=test@localhost commit -qm "held: $name" || failc "scratch main"
+  python3 - "$D/repo/tools/v3/repeats/repeats.py" "$D/main" <<'EOF'
+import sys
+from pathlib import Path
+p, old = Path(sys.argv[1]), 'MAIN = Path("/home/cbasaran/code/jevgammon")'
+t = p.read_text()
+assert t.count(old) == 1, "MAIN line not found once"
+p.write_text(t.replace(old, f'MAIN = Path("{sys.argv[2]}")'))
+EOF
+}
+only_failure() {  # rid expected-text: check's one line is that failure and the missing trigger
+  if [[ $(wc -l < "$D/check.out") == 1 ]] && grep -qF -- "$2" "$D/check.out" &&
+     grep -qE "^$1: .*; trigger missing: late_entry_stage does not name it$" "$D/check.out"; then
+    pass "the refusal is: $(cut -c1-300 "$D/check.out")"
+  else
+    failc "check did not refuse on '$2' alone: $(cut -c1-700 "$D/check.out")"
+  fi
+}
+R0=(python3 "$HERE/repeats.py")
+for rid in glide-2b-r1 minicpm5-2b-off-r1; do
+  # The plan is exactly the original's 9 played pairs, each pinned to its original match's seed and seating, read here
+  # from the original matches rows (copied from v3.db): seed as u64, seat_first = the original was player 1.
+  C=plan-$rid D=$S/plan-$rid
+  mkdir -p "$D"
+  "${R0[@]}" plan "$rid" > "$D/plan.out"
+  python3 - "$rid" "$MAN" "$HERE/leagues/$rid.json" "$S/tpl/v3.db" "$D/plan.out" > "$D/plan.check" 2>&1 <<'EOF'
+import json, sqlite3, sys
+rid, man, cfg, db, plan = sys.argv[1:6]
+m = next(r for r in json.load(open(man))["repeats"] if r["id"] == rid)
+pins = json.load(open(cfg))["pinned_pairs"]
+names = [line.split("|")[0] for line in open(plan).read().splitlines()]
+conn = sqlite3.connect(db)
+want = {}
+for p in m["pairs"]:
+    seed, p1, p2, status = conn.execute("SELECT seed, player1, player2, status FROM matches WHERE id = ?",
+                                        (p["original_match"],)).fetchone()
+    assert status == "finished" and m["original_player_id"] in (p1, p2), p
+    want[p["opponent"]] = dict(seed=seed & (2**64 - 1), seat_first=p1 == m["original_player_id"])
+ids = sorted(p["original_match"] for p in m["pairs"])
+ok = len(names) == 9 == len(set(names)) and sorted(names) == sorted(pins) == sorted(want) and pins == want
+ok &= "Mercury Decide" not in pins and not any(p["kind"] == "local" for p in m["pairs"])
+print(f"{'OK' if ok else 'BAD'}: plan {len(names)} pairs {names}; pins = original seeds/seats of #{ids[0]}..#{ids[-1]} "
+      f"{ids}: {pins == want}; Mercury Decide and locals not pinned: {'Mercury Decide' not in pins}")
+sys.exit(not ok)
+EOF
+  if (( $? == 0 )); then pass "$(cat "$D/plan.check")"; else failc "$(cat "$D/plan.check")"; fi
+  # The original's concurrency is copied (settings_change {}): the config entrant's max_matches and parallel are the
+  # original's players.settings (the manifest's settings_original, which check binds to v3.db); env CONCURRENT and
+  # LOCALS follow.
+  C=concurrency-$rid
+  read -r mm pa omm opa < <(python3 -c 'import json,sys
+m = next(r for r in json.load(open(sys.argv[2]))["repeats"] if r["id"] == sys.argv[1]); c = json.load(open(sys.argv[3]))["players"][0]
+print(c.get("max_matches"), c.get("parallel"), m["settings_original"].get("max_matches"), m["settings_original"].get("parallel"))' \
+    "$rid" "$MAN" "$HERE/leagues/$rid.json")
+  envs=$("${R0[@]}" env "$rid" | grep -E '^(CONCURRENT|LOCALS|KIND|ENTRANT_MIB)=' | tr '\n' ' ')
+  want_c=$(( mm > 1 ? 1 : 0 ))
+  if [[ $mm == "$omm" && $pa == "$opa" && $envs == *"CONCURRENT=$want_c "* && $envs == *"LOCALS=0 "* && $envs == *"KIND=pinned "* && $envs == *"ENTRANT_MIB=0 "* ]]; then
+    pass "config max_matches $mm, parallel $pa = the original's ($omm, $opa); env $envs"
+  else
+    failc "config max_matches $mm parallel $pa, original $omm $opa; env $envs"
+  fi
+done
+[[ $("${R0[@]}" env minicpm5-2b-off-r1 | grep '^CONCURRENT=') == CONCURRENT=1 && $("${R0[@]}" env glide-2b-r1 | grep '^CONCURRENT=') == CONCURRENT=0 &&
+   $("${R0[@]}" env mammoth-1-r1 | grep '^CONCURRENT=') == CONCURRENT=0 ]] &&
+  { C=concurrency; pass "MiniCPM5-2B (off) at its 16 (CONCURRENT=1), GLiDE 2B and the six one at a time (CONCURRENT=0)"; } ||
+  { C=concurrency; failc "CONCURRENT not as the originals"; }
+# A concurrency other than the original's refuses: MiniCPM5-2B (off) [repeat 1] at max_matches 1 (config and manifest).
+setup minicpm-one-at-a-time; hold_in_scratch_main minicpm5-2b-off-r1
+python3 - "$D/repo/tools/v3/repeats/leagues/minicpm5-2b-off-r1.json" "$D/repo/mailbox/repeats/$(basename "$MAN")" <<'EOF'
+import json, sys
+c = json.load(open(sys.argv[1])); c["players"][0]["max_matches"] = 1
+open(sys.argv[1], "w").write(json.dumps(c, indent=2, ensure_ascii=False) + "\n")
+m = json.load(open(sys.argv[2]))
+next(r for r in m["repeats"] if r["id"] == "minicpm5-2b-off-r1")["settings_repeat"]["max_matches"] = 1
+open(sys.argv[2], "w").write(json.dumps(m, indent=1, ensure_ascii=False) + "\n")
+EOF
+refuse minicpm5-2b-off-r1
+only_failure minicpm5-2b-off-r1 "repeat settings change max_matches beyond the listed changes"
+
+for rid in glide-2b-r1 minicpm5-2b-off-r1; do
+  # Healthy and pinned (the default stand-ins): check exits 3 (trigger only), run.sh prepares, check exits 0 with every
+  # client admitted by RUNNER_SMALL (MiniCPM5-2B (off)'s openai-compatible client included); the originals' leagues,
+  # league_players and matches rows unchanged by all of it.
+  setup "pinned-ok-$rid"; hold_in_scratch_main "$rid"
+  rows0=$(orig_rows "$D/home/v3.db")
+  before=$(sha256sum < "$D/home/v3.db")
+  crc0=$(check_rc "$rid"); out0=$(cat "$D/check.out")
+  in_case bash "$D/repo/tools/v3/repeats/run.sh" "$rid" --prepare-only > "$D/run.out" 2>&1; rc=$?
+  crc1=$(check_rc "$rid"); out1=$(cat "$D/check.out")
+  rows1=$(orig_rows "$D/home/v3.db")
+  echo "     check before: exit $crc0: $(cut -c1-300 <<< "$out0")"
+  echo "     run.sh: exit $rc; run.log: $(head -2 "$D/home/workspace/repeats/$rid/run.log" 2>/dev/null | tr '\n' ' ' | cut -c1-600)"
+  echo "     check after: exit $crc1: $(head -1 <<< "$out1" | cut -c1-400)"
+  echo "     pins calls: $(sort -u "$D/fake/calls" | tr '\n' ';' | cut -c1-300)"
+  bad=()
+  (( crc0 == 3 )) || bad+=("check before exit $crc0, not 3")
+  (( rc == 0 )) || bad+=("run.sh exit $rc: $(cat "$D/run.out")")
+  [[ $(sha256sum < "$D/home/v3.db") != "$before" ]] || bad+=("trigger not written")
+  (( crc1 == 0 )) || bad+=("check after exit $crc1")
+  [[ $out1 == *"every client admitted (jevgammon admit)"* && $out1 == *"runner 6578a73"* ]] || bad+=("check after: not admitted by 6578a73")
+  [[ $rows1 == "$rows0" ]] || bad+=("the originals' rows changed")
+  grep -q '^\(curl\|ssh\|docker\)' "$D/fake/calls" || bad+=("pins.sh not run")
+  if (( ${#bad[@]} )); then failc "${bad[*]}"; else
+    pass "check exit 3, prepared, check exit 0 (pins healthy and pinned; every client admitted by 6578a73); the originals' rows unchanged (sha256 ${rows0:0:16}…)"
+  fi
+
+  # Wrong pin: the server answers but is not the pinned one (another port on spark2; another revision in the container):
+  # refused before any write, admission not run.
+  setup "wrong-pin-$rid"; hold_in_scratch_main "$rid"
+  sed -i 's/--port 19330/--port 19331/; s/--revision 42433e90dad95123ab87729fd7011e7110629556/--revision 0000000000000000000000000000000000000000/' \
+    "$D/fake/ps" "$D/fake/docker-args"
+  rows0=$(orig_rows "$D/home/v3.db")
+  refuse "$rid"
+  only_failure "$rid" "pinned server: not the pinned server (pins.sh pinned failed for port"
+  grep -q "client admission" "$D/check.out" && failc "admission ran despite the wrong pin" || pass "no admission after the wrong pin"
+  [[ $(orig_rows "$D/home/v3.db") == "$rows0" ]] && pass "the originals' rows unchanged" || failc "the originals' rows changed"
+
+  # Health failing (no /health or /v1/models answer): refused before any write and before admission.
+  setup "unhealthy-$rid"; hold_in_scratch_main "$rid"
+  rm -f "$D/fake/health" "$D/fake/models"
+  refuse "$rid"
+  only_failure "$rid" "pinned server: not healthy (pins.sh healthy failed for"
+  grep -q "client admission" "$D/check.out" && failc "admission ran despite the failed health check" || pass "no admission after the failed health check"
+
+  # The pins copies are bound by sha256: an edited pins.sh refuses.
+  setup "pins-edited-$rid"; hold_in_scratch_main "$rid"
+  echo "pinned() { return 0; }" >> "$D/repo/tools/v3/repeats/pins/$rid/pins.sh"
+  refuse "$rid"
+  only_failure "$rid" "pins file pins/$rid/pins.sh has sha256"
+done
+
+# OPP_GPU and RES: optional without local opponents (the small repeats: run.sh goes on to the check, here refused on a
+# wrong pin, nothing written), still required with them (Mammoth-1: run.sh stops before the check, nothing written).
+setup opp-gpu-optional; hold_in_scratch_main glide-2b-r1
+sed -i 's/--port 19330/--port 19331/' "$D/fake/ps"
+before=$(sha256sum < "$D/home/v3.db")
+in_case env -u OPP_GPU -u RES bash "$D/repo/tools/v3/repeats/run.sh" glide-2b-r1 > "$D/run.out" 2>&1; rc=$?
+if (( rc != 0 )) && ! grep -q "OPP_GPU\|RES (agent-bus" "$D/run.out" && grep -q "^check refused (exit 1); nothing written" "$D/run.out" &&
+   [[ $(sha256sum < "$D/home/v3.db") == "$before" && ! -e $D/home/workspace ]]; then
+  pass "no OPP_GPU/RES asked without locals; went on to the check (refused: wrong pin), nothing written"
+else
+  failc "run.sh exit $rc: $(cut -c1-400 "$D/run.out")"
+fi
+setup opp-gpu-required
+before=$(sha256sum < "$D/home/v3.db")
+in_case env -u OPP_GPU -u RES bash "$D/repo/tools/v3/repeats/run.sh" mammoth-1-r1 > "$D/run.out" 2>&1; rc=$?
+if (( rc != 0 )) && grep -q "OPP_GPU: set OPP_GPU" "$D/run.out" && ! grep -q "check" "$D/run.out" &&
+   [[ $(sha256sum < "$D/home/v3.db") == "$before" && ! -e $D/home/workspace ]]; then
+  pass "OPP_GPU still required with locals (Mammoth-1: $("${R0[@]}" env mammoth-1-r1 | grep '^LOCALS=')): $(cut -c1-120 "$D/run.out"); nothing written"
+else
+  failc "run.sh exit $rc: $(cut -c1-400 "$D/run.out")"
+fi
+in_case env -u RES OPP_GPU=1 bash "$D/repo/tools/v3/repeats/run.sh" mammoth-1-r1 > "$D/run.out" 2>&1; rc=$?
+C=opp-gpu-required-res
+(( rc != 0 )) && grep -q "RES: set RES" "$D/run.out" && [[ $(sha256sum < "$D/home/v3.db") == "$before" ]] &&
+  pass "RES still required with locals: $(cut -c1-120 "$D/run.out")" || failc "run.sh exit $rc: $(cut -c1-400 "$D/run.out")"
 
 C=scratch-ledger
 ledger_intact && pass "the scratch Nace ledger is byte-identical (sha256 ${LEDGER_SHA%% *}), no -wal or -shm beside it" ||

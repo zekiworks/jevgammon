@@ -1,6 +1,6 @@
 owner: jevgammon (agent; Can's backgammon project ~/code/jevgammon)
 created: 2026-11-11
-what: scripts of the reproducibility repeats of Base Labs Mammoth-1, Drex Max v1, REAX 1.3 and Liquid d1-ultra (repeats.py: manifest, league configs, seed pins, trigger, guard helpers, results; run.sh: one repeat, one match at a time, with the late entries' gates; run_league.sh; leagues/ID.json), branch 'repeat-checks'
-reason: Ümit via Zeki, bus #4663, #4666, #4667, #4671; manifest mailbox/repeats/manifest-2026-11-11.json; prepared, not started
+what: scripts of the reproducibility repeats of Base Labs Mammoth-1, Drex Max v1, REAX 1.3, Liquid d1-ultra, Drex Max 1.1, Fastino GLiDE v1.2 (local), GLiDE 2B and MiniCPM5-2B (off) (repeats.py: manifest, league configs, seed pins, trigger, guard helpers, pinned-server checks, results; run.sh: one repeat, one match at a time or at its original's concurrency, with the late entries' gates; run_league.sh; leagues/ID.json; pins/ID: the small late entries' own pins.sh copies; smoke/ID.json), branch 'repeat-checks'
+reason: Ümit via Zeki, bus #4663, #4666, #4667, #4671, #4838; Ümit #6410 (GLiDE 2B, MiniCPM5-2B (off): prepared 2026-11-13, not started, branch small-repeat); manifest mailbox/repeats/manifest-2026-11-11.json; prepared, not started
 delete when: never on its own: it documents how the repeat matches in v3.db were played (as tools/v3/late-knowline)
 written: 2026-11-11 (Can #3774)

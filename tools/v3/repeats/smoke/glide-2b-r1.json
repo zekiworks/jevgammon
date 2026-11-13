@@ -1,0 +1,23 @@
+{
+  "note": "GLiDE 2B smoke test before its reproducibility repeat (glide-2b-r1; tools/v3/repeats, Ümit #6410): the 50 smoke positions (positions/smoke.jsonl), the same prompt (bg-v2) and option-order seed as League 1, its players.settings unchanged (v3.db, read-only), logic's spark2 server, pinned by late-tiny8's models/glide-2b/pins.sh. Not a league: run with `jevgammon ask` only (run.sh's SMOKE, the repeat runner).",
+  "prompt_version": "bg-v2",
+  "seed": 0,
+  "order_seed": 1190975713392774006,
+  "rounds": 3,
+  "clock": 0,
+  "delay": 30,
+  "max_turns": 300,
+  "players": [
+    {
+      "name": "GLiDE 2B",
+      "spec": "glide",
+      "provider": "local (glide.server)",
+      "quantization": "bf16",
+      "base_url": "http://192.168.1.131:19330",
+      "note": "Fastino's GLiDE 2B (Hugging Face fastino/GLiDE-2B @ 00f122c120cdeed82284106cb77d9bab5a50ad16, Fastino Community License) on our GPU through the server its repository ships (python -m glide.server; env ~/envs/glide-family: CPython 3.12.13, torch 2.14.0+cu130, transformers 5.17.0, flash-linear-attention 0.5.2), BF16, GLIDE_MAX_BATCH=1 (one request at a time), no model field (the server passes only state and questions to the model), 255-way code readout; 255 options per request (the league's rule; longer lists split); never truncates: a question prompt over GLIDE_MAX_LEN 40,000 tokens is refused (422). League 1's longest stored request (251 options) is 28,323 tokens of its tokenizer with the card's prompt; none over.",
+      "device": "NVIDIA GB10 (DGX Spark spark2, spark-d9ee), the whole GPU, handed over by logic one server at a time: GLIDE_MAX_BATCH=1 ~/envs/glide-family/bin/python -m glide.server --model <snapshot> --host 0.0.0.0 --port 19330",
+      "parallel": 1,
+      "max_matches": 1
+    }
+  ]
+}

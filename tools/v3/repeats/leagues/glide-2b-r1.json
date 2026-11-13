@@ -1,0 +1,81 @@
+{
+  "note": "Reproducibility repeat 1 of GLiDE 2B (Ümit #6410 (plan mailbox/small-backgammon-bench-2026-11-13.md §9), #4710; run repeat-2026-11-13-glide-2b-r1): GLiDE 2B [repeat 1] plays GLiDE 2B's original League 1 field again, one match at a time, as the original, each pair pinned to its original match's seed and seating (pinned_pairs), the same option-order seed, prompt, rules and settings. Hidden league; matches stage 'late-entry' and the name held (tools/site/content/held_setups.json): in no standings, table, Cup input or other setup's numbers. mailbox/repeats/manifest-2026-11-11.json",
+  "prompt_version": "bg-v2",
+  "seed": 2567889193785291627,
+  "order_seed": 1190975713392774006,
+  "rounds": 3,
+  "clock": 0,
+  "delay": 30,
+  "max_turns": 300,
+  "mirror_concurrent": true,
+  "only_pairs_of": "GLiDE 2B [repeat 1]",
+  "hidden": true,
+  "pinned_pairs": {
+    "Fastino GLiDE": {
+      "seed": 15559919047369694697,
+      "seat_first": true
+    },
+    "Celeris-1 Decision": {
+      "seed": 12638547765721823431,
+      "seat_first": false
+    },
+    "GNUbg weak": {
+      "seed": 501093501360735733,
+      "seat_first": true
+    },
+    "Random": {
+      "seed": 15262185013302615528,
+      "seat_first": false
+    },
+    "Safest": {
+      "seed": 15302219383579835192,
+      "seat_first": true
+    },
+    "Liquid d1-ultra": {
+      "seed": 8844248524737138184,
+      "seat_first": true
+    },
+    "Jev 1.14.0": {
+      "seed": 6978671576940928040,
+      "seat_first": true
+    },
+    "Jev 1.13.0": {
+      "seed": 6498334176674890690,
+      "seat_first": false
+    },
+    "SubQ Snap Preview": {
+      "seed": 16741853251248079086,
+      "seat_first": false
+    }
+  },
+  "players": [
+    {
+      "name": "GLiDE 2B [repeat 1]",
+      "spec": "glide",
+      "provider": "local (glide.server)",
+      "quantization": "bf16",
+      "base_url": "http://192.168.1.131:19330",
+      "note": "Fastino's GLiDE 2B (Hugging Face fastino/GLiDE-2B @ 00f122c120cdeed82284106cb77d9bab5a50ad16, Fastino Community License) on our GPU through the server its repository ships (python -m glide.server; env ~/envs/glide-family: CPython 3.12.13, torch 2.14.0+cu130, transformers 5.17.0, flash-linear-attention 0.5.2), BF16, GLIDE_MAX_BATCH=1 (one request at a time), no model field (the server passes only state and questions to the model), 255-way code readout; 255 options per request (the league's rule; longer lists split); never truncates: a question prompt over GLIDE_MAX_LEN 40,000 tokens is refused (422). League 1's longest stored request (251 options) is 28,323 tokens of its tokenizer with the card's prompt; none over. Reproducibility repeat 1 (glide-2b-r1; tools/v3/repeats, mailbox/repeats/manifest-2026-11-11.json): the original's League 1 field again, one match at a time, as the original, each pair with its original match's seed and seats; held: in no standings, table, Cup input or other setup's numbers.",
+      "device": "NVIDIA GB10 (DGX Spark spark2, spark-d9ee), the whole GPU, handed over by logic one server at a time: GLIDE_MAX_BATCH=1 ~/envs/glide-family/bin/python -m glide.server --model <snapshot> --host 0.0.0.0 --port 19330",
+      "parallel": 1,
+      "max_matches": 1
+    },
+    {
+      "name": "GNUbg weak",
+      "spec": "gnubg-weak",
+      "provider": "local",
+      "note": "gnubg 1.08 Beginner level (0-ply, deterministic noise 0.060)",
+      "parallel": 1
+    },
+    {
+      "name": "Random",
+      "spec": "random",
+      "provider": "local"
+    },
+    {
+      "name": "Safest",
+      "spec": "safest",
+      "provider": "local"
+    }
+  ]
+}

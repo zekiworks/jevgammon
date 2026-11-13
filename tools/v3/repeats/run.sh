@@ -2,8 +2,9 @@
 # One reproducibility repeat (tools/v3/repeats; manifest mailbox/repeats/manifest-2026-11-11.json), one match at a time,
 # as the late entries' start.sh + locals.sh (tools/v3/late-knowline) in one loop:
 #   systemd-run --user --unit=repeat-ID --working-directory=/home/cbasaran/code/jevgammon \
-#     [-E GPU=<entrant card>] -E OPP_GPU=<card for opponent servers> -E RES=<agent-bus reservation> \
+#     [-E GPU=<entrant card>] [-E OPP_GPU=<card for opponent servers> -E RES=<agent-bus reservation>] \
 #     /home/cbasaran/code/jevgammon/tools/v3/repeats/run.sh ID
+# OPP_GPU and RES are required when the plan has a local opponent, and only then (repeats.py env LOCALS).
 # run.sh ID --prepare-only: the checks and, when needed, the preparation below; nothing starts or plays.
 # Every check comes first and writes nothing (repeats.py check): not held (REAX 1.3 never passes), the league config pins
 # every opponent to its original match's seed and seating (the league holds the same pins once it exists), the settings
@@ -27,7 +28,12 @@
 # REPEATS_HOME/v3.db) are for the scratch regression tests (tools/v3/repeats/test_launcher.sh).
 # The entrant: Mammoth-1 and Drex Max v1 are started here on GPU under RES and smoke-tested as in their originals (and
 # stopped at the end); REAX 1.3 must already answer on logic's server (unit logic-dm-reax13, image checked, smoke-tested;
-# never started or stopped here); Liquid d1-ultra is hosted. Then each opponent of the plan in turn (programs, paid API,
+# never started or stopped here); Liquid d1-ultra is hosted; GLiDE 2B and MiniCPM5-2B (off) (server kind 'pinned') run
+# on someone else's server, never started or stopped here, no card of ours: `repeats.py pins` (their late entry's own
+# pins.sh, healthy then pinned) is part of check, so a failure refuses before any write, runs again before the first
+# match and at every guard tick (3 failures in a row stop). A repeat at its original's concurrency (CONCURRENT: the
+# original's max_matches over 1, MiniCPM5-2B (off)'s 16) gets every paid opponent added before the league plays, so its
+# pairs run at once as in the original. Then each opponent of the plan in turn (programs, paid API,
 # local servers smallest first): league-add after confirming nothing plays the league (quiesce), the opponent's server
 # under RES on OPP_GPU when there is room beside everything else (a pair that cannot fit on one card with the entrant is
 # left missing and reported), the league unit until the pair is played (4 h at most), the server stopped. Opponents
@@ -51,7 +57,7 @@ UNIT=repeat-$RID-league
 W=workspace/repeats
 ST=$W/$RID
 if [[ -z $MODE ]]; then
-  : "${OPP_GPU:?set OPP_GPU}" "${RES:?set RES (agent-bus reservation)}"
+  if (( LOCALS > 0 )); then : "${OPP_GPU:?set OPP_GPU}" "${RES:?set RES (agent-bus reservation)}"; fi
   [[ $KIND != ours || -n ${GPU:-} ]] || { echo "set GPU (the entrant's card)" >&2; exit 1; }
 fi
 
@@ -108,6 +114,8 @@ lt() { python3 -c 'import sys; sys.exit(not float(sys.argv[1]) < float(sys.argv[
 spent() { "${R[@]}" billed "$RID"; }
 pending() { "${R[@]}" pending "$RID" "$@"; }
 healthy() {
+  # A 'pinned' entrant: its late entry's pins.sh, healthy then pinned (repeats.py pins).
+  if [[ $KIND == pinned ]]; then "${R[@]}" pins "$RID" >> "$ST/pins.log" 2>&1; return; fi
   [[ -z $HEALTH ]] && return 0
   if [[ $HEALTH_ANY == 1 ]]; then curl -sS -m 10 -o /dev/null "$HEALTH" 2>/dev/null; else curl -fsS -m 10 -o /dev/null "$HEALTH" 2>/dev/null; fi
 }
@@ -175,6 +183,9 @@ case $KIND in
     want=$(python3 -c 'import sys; sys.path.insert(0, sys.argv[1]); import repeats; print(repeats.LOGIC_REAX["image"])' "$T")
     [[ $img == "$want" ]] || { log "STOPPED before any match: logic-dm-reax13 runs image ${img:-none}, not $want"; exit 1; }
     log "REAX on logic's server $HEALTH, image $img" ;;
+  pinned)
+    out=$("${R[@]}" pins "$RID" 2>&1) || { log "STOPPED before any match: $out"; exit 1; }
+    log "$out" ;;
 esac
 if [[ -n $SMOKE ]]; then
   if bash -c "$SMOKE" >> "$ST/smoke.log" 2>&1; then
@@ -183,33 +194,47 @@ if [[ -n $SMOKE ]]; then
     finish "STOPPED: smoke test failed ($ST/smoke.log)"; exit 1
   fi
 fi
-log "repeat up: $NAME, runner $BIN; OpenRouter \$$bal (floor \$$FLOOR); cap \$$CAP; opponents on GPU $OPP_GPU (reservation $RES)"
+log "repeat up: $NAME, runner $BIN; OpenRouter \$$bal (floor \$$FLOOR); cap \$$CAP; opponents on GPU ${OPP_GPU:-none} (reservation ${RES:-none})"
 
 missing=()
 opp_stop=
+# league-add of an opponent (once the league exists, created on the first call, and is confirmed stopped); 1 when
+# league-add fails.
+join() {
+  local name=$1 entry pin
+  ID=$("${R[@]}" league-id "$RID")
+  if [[ -z $ID ]]; then
+    ensure_league
+    for _ in $(seq 60); do ID=$("${R[@]}" league-id "$RID"); [[ -n $ID ]] && break; sleep 10; done
+    [[ -n $ID ]] || { finish "STOPPED: the league did not appear in v3.db"; exit 1; }
+  fi
+  quiesce || { finish "STOPPED before adding $name: league #$ID not confirmed stopped"; exit 1; }
+  if ! sqlite3 -readonly "$DB" "SELECT 1 FROM league_players lp JOIN players p ON p.id = lp.player_id
+       WHERE lp.league_id = $ID AND lp.left_at IS NULL AND p.name = '${name//\'/\'\'}'" | grep -q 1; then
+    entry=$("${R[@]}" entry "$RID" "$name" "$ST/admitted.json" 2>&1) ||
+      { finish "STOPPED before adding $name: $entry"; exit 1; }
+    pin=$(python3 -c 'import json,sys; print(json.dumps(json.load(open(sys.argv[1]))["pinned_pairs"][sys.argv[2]]))' \
+      "$T/leagues/$RID.json" "$name")
+    "$BIN" league-add --db "$DB" --league "$ID" --entry "$entry" --pin "$pin" >> "repeat-$RID.log" 2>&1 ||
+      { log "league-add of $name failed"; return 1; }
+    log "$name added to league #$ID"
+  fi
+}
+# At the original's concurrency, every paid opponent of the plan joins before the league plays (the loop below then
+# waits for each pair in turn while they all play); a failed league-add is tried again in the loop.
+if (( CONCURRENT )); then
+  while IFS='|' read -r -u 3 name kind _ _ _ blocked; do
+    [[ $kind == api && ( -z $blocked || ${RETRY_BLOCKED:-} == 1 ) && $(pending "$name") != 0 ]] || continue
+    join "$name" || log "$name: tried again in turn"
+  done 3< <("${R[@]}" plan "$RID")
+fi
 while IFS='|' read -r -u 3 name kind mib start stop blocked; do
   [[ $(pending "$name") == 0 ]] && continue
   if [[ -n $blocked && ${RETRY_BLOCKED:-} != 1 ]]; then
     log "$name: skipped, blocked today (manifest blockers_today)"; missing+=("$name (blocked)"); continue
   fi
   if [[ $kind != program ]]; then
-    ID=$("${R[@]}" league-id "$RID")
-    if [[ -z $ID ]]; then
-      ensure_league
-      for _ in $(seq 60); do ID=$("${R[@]}" league-id "$RID"); [[ -n $ID ]] && break; sleep 10; done
-      [[ -n $ID ]] || { finish "STOPPED: the league did not appear in v3.db"; exit 1; }
-    fi
-    quiesce || { finish "STOPPED before adding $name: league #$ID not confirmed stopped"; exit 1; }
-    if ! sqlite3 -readonly "$DB" "SELECT 1 FROM league_players lp JOIN players p ON p.id = lp.player_id
-         WHERE lp.league_id = $ID AND lp.left_at IS NULL AND p.name = '${name//\'/\'\'}'" | grep -q 1; then
-      entry=$("${R[@]}" entry "$RID" "$name" "$ST/admitted.json" 2>&1) ||
-        { finish "STOPPED before adding $name: $entry"; exit 1; }
-      pin=$(python3 -c 'import json,sys; print(json.dumps(json.load(open(sys.argv[1]))["pinned_pairs"][sys.argv[2]]))' \
-        "$T/leagues/$RID.json" "$name")
-      "$BIN" league-add --db "$DB" --league "$ID" --entry "$entry" --pin "$pin" >> "repeat-$RID.log" 2>&1 ||
-        { log "league-add of $name failed"; missing+=("$name (league-add failed)"); continue; }
-      log "$name added to league #$ID"
-    fi
+    join "$name" || { missing+=("$name (league-add failed)"); continue; }
   fi
   guard || { finish "stopped by the guard"; exit 1; }
   if [[ $kind == local ]]; then

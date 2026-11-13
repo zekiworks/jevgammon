@@ -81,7 +81,10 @@ SUMMARY=$(python3 tools/site/snapshot.py "$ROOT/v3.db" "$STATE" | tail -1)
 FP=$(python3 -c 'import json, sys; print(json.loads(sys.argv[1])["fingerprint"])' "$SUMMARY")
 LEARNING=$(python3 -c 'import json, sys; print(json.loads(sys.argv[1])["learning"])' "$SUMMARY")
 IMPROVE=$(python3 -c 'import json, sys; print(json.loads(sys.argv[1])["improve"])' "$SUMMARY")
-KEY="$FP learning:$LEARNING improve:$IMPROVE code:$CODE smoke:$(sha256sum "$ROOT/smoke/part-a.json" | cut -c1-12) v1:$(stat -c %Y "$ROOT/replay.db")"
+# The home page's Learning tab also reads the decision lane's status file and the learning plan (story.LEARN_DECISION,
+# LEARN_PLAN): a change of either rebuilds the site.
+LANES=$(cat "$ROOT/workspace/improve/out/improve-decision.json" "$ROOT/mailbox/learning-small-and-decision-plan-2026-11-12.json" | sha256sum | cut -c1-12)
+KEY="$FP learning:$LEARNING improve:$IMPROVE lanes:$LANES code:$CODE smoke:$(sha256sum "$ROOT/smoke/part-a.json" | cut -c1-12) v1:$(stat -c %Y "$ROOT/replay.db")"
 if [ "${1:-}" != "--force" ] && [ -f "$STATE/deployed.key" ] && [ "$(cat "$STATE/deployed.key")" = "$KEY" ]; then
   log "no change ($FP)"
   rm -f "$LOOP_FAILED"

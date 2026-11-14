@@ -45,7 +45,8 @@
  "model_names_sha256": "af615d260e25658223a085eb08b996f63302a2c7c5d3b810860f70d98ee80f22",
  "name_keys": {
   "deepseek-v4.1-flash": "deepseek-v4.1-flash-first-release",
-  "startlux-decision-v1.1-2b-instant": "startlux-decision-v1.1-2b"
+  "startlux-decision-v1.1-2b-instant": "startlux-decision-v1.1-2b",
+  "startlux-decision-v1.1-4b-instant": "startlux-decision-v1.1-4b"
  },
  "routes": {
   "Perplexity Decider 27B v1.1 (local GPU)": "NVIDIA RTX PRO 6000 Blackwell + NVIDIA DGX Spark",
@@ -74,6 +75,20 @@
   "Drex 2.0 (local)": "NVIDIA RTX PRO 6000 Blackwell",
   "REAX 1.3": "NVIDIA RTX PRO 6000 Blackwell",
   "KnowLine 31B Gen1.5": "NVIDIA DGX Spark (GB10)",
+  "GLiDE 2B": "NVIDIA DGX Spark (GB10)",
+  "GLiDE 0.8B": "NVIDIA DGX Spark (GB10)",
+  "GLiDE 0.4B": "NVIDIA DGX Spark (GB10)",
+  "KnowLine-0.8B-Gen1": "NVIDIA DGX Spark (GB10)",
+  "KnowLine-2B-Gen1": "NVIDIA DGX Spark (GB10)",
+  "KnowLine 4B Gen5.5": "NVIDIA DGX Spark (GB10)",
+  "StartLux-Decision-v1.1-0.8B-Instant": "NVIDIA DGX Spark (GB10)",
+  "StartLux-Decision-v1.1-2B-Instant": "NVIDIA DGX Spark (GB10)",
+  "StartLux-Decision-v1.1-4B-Instant": "NVIDIA DGX Spark (GB10)",
+  "OneJev1.6-0.8B": "NVIDIA DGX Spark (GB10)",
+  "GLiClass v4 Edge": "NVIDIA DGX Spark (GB10)",
+  "Cerno 9B v1.2": "NVIDIA DGX Spark (GB10)",
+  "Turion Jev 31B": "NVIDIA DGX Spark (GB10)",
+  "Sieve 31B v3": "NVIDIA DGX Spark (GB10)",
   "Drex 2.0": "API"
  },
  "routes_v1": {

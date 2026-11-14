@@ -561,7 +561,16 @@ def _versions(po: dict) -> str:
   They stay unplayed and are labelled so beside the reason they were not played, never a score or a loss; a late entry
   whose only unplayed pairs are these is no longer marked Provisional, since none of its pairs is left to play. No
   number changed. 12 Nov 2026: <a href="#limits">Limits</a> (Runner commits) states how many original league matches
-  were started from a runner checkout with uncommitted changes (harness_dirty): provenance only. No number changed.</p>""")
+  were started from a runner checkout with uncommitted changes (harness_dirty): provenance only. No number changed.
+  14 Nov 2026: fourteen small decision models, late entries to the original League 1 table on
+  <a href="../leagues/#late-entries">Leagues</a> (Late entries): GLiDE 2B, GLiDE 0.8B, GLiDE 0.4B, KnowLine-0.8B-Gen1,
+  KnowLine-2B-Gen1, KnowLine 4B Gen5.5, StartLux-Decision-v1.1-0.8B-Instant, StartLux-Decision-v1.1-2B-Instant,
+  StartLux-Decision-v1.1-4B-Instant, OneJev1.6-0.8B, GLiClass v4 Edge, Cerno 9B v1.2, Turion Jev 31B and Sieve 31B v3,
+  each served on our DGX Spark, played 11–14 Nov in two stages (its hosted and program opponents, then the 8 setups we
+  run ourselves; its pairs with GPT-6 Luna (Decisions API) and Mercury Decide not played, outside the requested scope),
+  each with a page of its own; GLiDE 0.4B gets at most 74 options per request and GLiClass v4 Edge at most 218, longer
+  play lists split into groups by the league's rule; their cost is an estimate from their time on the DGX Spark (GPU
+  time, at most). No score changed.</p>""")
 
 
 def _confidence(t: dict, extra: dict) -> str:

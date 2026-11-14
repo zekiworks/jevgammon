@@ -854,6 +854,24 @@
    "card_source": "https://huggingface.co/LiquidAI/d1-2B",
    "card_quote": "'d1-2B is a **decision model for text, pictures, and video**, built on LFM3-VL-2B.'; table: 'Parameters | 1.92B'."
   },
+  "Liquid d1-Omni-2B": {
+   "total_b": 2.17,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/LiquidAI/d1-Omni-2B/tree/81222dae8bf8bdd7f903643b5b2a8803bf2e3176",
+   "quote": "LiquidAI/d1-Omni-2B @ 81222dae8bf8bdd7f903643b5b2a8803bf2e3176, model.safetensors (665 tensors, BF16): 2,166,928,384 parameters (the snapshot's safetensors header) = language model 1,728,801,536 + vision tower 164,206,336 + audio encoder 109,505,344 + depth decoder 83,898,560 + codebook embedding 49,569,792 + projector 25,174,016 + audio projector 5,772,800. LFM3-Omni-2B base, dense.",
+   "checked": [
+    "https://huggingface.co/LiquidAI/d1-Omni-2B/raw/81222dae8bf8bdd7f903643b5b2a8803bf2e3176/README.md"
+   ],
+   "read": "2026-11-14",
+   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors header on bariton: 2.17B (2,166,928,384) incl. its vision tower, audio encoder and audio decoder parts; the card states 2.17B, the figure shown (Ümit #4260). Served in BF16 by logic's runner/servers/d1_server.py (the card's model.system_one, unchanged, text only), which plays our late entry. Plays with up to 255 options per request (the league's usual rule); no request is over its limits (its text tokenizes as d1-2B's: League 1's longest stored request is 20,759 tokens of its 128,000).",
+   "terms": "2.17B incl. its vision and audio parts; card: 2.17B",
+   "card_total_b": 2.17,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/LiquidAI/d1-Omni-2B",
+   "card_quote": "'d1-Omni-2B is a **decision model for text, pictures, and audio**, built on LFM3-Omni-2B.'; table: 'Parameters | 2.17B'."
+  },
   "Strands Decider 2B": {
    "total_b": 2.29,
    "active_b": null,

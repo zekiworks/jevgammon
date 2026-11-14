@@ -89,6 +89,7 @@
   "Cerno 9B v1.2": "NVIDIA DGX Spark (GB10)",
   "Turion Jev 31B": "NVIDIA DGX Spark (GB10)",
   "Sieve 31B v3": "NVIDIA DGX Spark (GB10)",
+  "Liquid d1-2B": "NVIDIA RTX PRO 6000 Blackwell",
   "Drex 2.0": "API"
  },
  "routes_v1": {

@@ -570,7 +570,10 @@ def _versions(po: dict) -> str:
   run ourselves; its pairs with GPT-6 Luna (Decisions API) and Mercury Decide not played, outside the requested scope),
   each with a page of its own; GLiDE 0.4B gets at most 74 options per request and GLiClass v4 Edge at most 218, longer
   play lists split into groups by the league's rule; their cost is an estimate from their time on the DGX Spark (GPU
-  time, at most). No score changed.</p>""")
+  time, at most). No score changed. 14 Nov 2026: Liquid d1-2B, a late entry to the original League 1 table on
+  <a href="../leagues/#late-entries">Leagues</a> (Late entries), played on one RTX PRO 6000 Blackwell of ours on 14 Nov
+  (its pairs with GPT-6 Luna (Decisions API) and Mercury Decide not played, outside the requested scope), with a page
+  of its own; its cost is an estimate from its time on that card (GPU time, at most). No score changed.</p>""")
 
 
 def _confidence(t: dict, extra: dict) -> str:

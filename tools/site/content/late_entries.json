@@ -78,6 +78,10 @@
   {"entrant": "Sieve 31B v3", "opponent": "GPT-6 Luna", "reason": "opponent's API out of credit",
    "source": "mailbox/Late entries tiny8 - sieve-31b-v3 - status.md (GPT-6 Luna deferred: no OpenAI credit)"},
   {"entrant": "Sieve 31B v3", "opponent": "Mercury Decide", "reason": "opponent no longer served on OpenRouter",
-   "source": "mailbox/Late entries tiny8 - sieve-31b-v3 - status.md (match #1230 aborted: OpenRouter refused Mercury Decide's warm-up, no endpoint; pair left open)"}
+   "source": "mailbox/Late entries tiny8 - sieve-31b-v3 - status.md (match #1230 aborted: OpenRouter refused Mercury Decide's warm-up, no endpoint; pair left open)"},
+  {"entrant": "Liquid d1-2B", "opponent": "GPT-6 Luna", "reason": "opponent's API out of credit",
+   "source": "mailbox/Late entries tiny8 - d1-2b - status.md (GPT-6 Luna deferred: no OpenAI credit)"},
+  {"entrant": "Liquid d1-2B", "opponent": "Mercury Decide", "reason": "opponent no longer served on OpenRouter",
+   "source": "mailbox/Late entries tiny8 - d1-2b - status.md (match #1428 aborted: OpenRouter refused Mercury Decide's warm-up, no endpoint; pair left open)"}
  ]
 }

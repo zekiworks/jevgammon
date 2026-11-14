@@ -80,7 +80,8 @@
   "GLiClass v4 Edge": [{"from": "2026-11-12T08:43Z", "to": "2026-11-14T03:58Z", "machine": "dgx_spark"}],
   "Cerno 9B v1.2": [{"from": "2026-11-13T17:21Z", "to": "2026-11-14T06:18Z", "machine": "dgx_spark"}],
   "Turion Jev 31B": [{"from": "2026-11-13T12:30Z", "to": "2026-11-14T07:38Z", "machine": "dgx_spark"}],
-  "Sieve 31B v3": [{"from": "2026-11-12T19:29Z", "to": "2026-11-14T10:30Z", "machine": "dgx_spark"}]
+  "Sieve 31B v3": [{"from": "2026-11-12T19:29Z", "to": "2026-11-14T10:30Z", "machine": "dgx_spark"}],
+  "Liquid d1-2B": []
  },
  "token_priced": {
   "Fastino GLiDE": {"input_per_mtok": 0.04, "output_per_mtok": 0, "source": "https://docs.fastino.ai/pricing", "read": "2026-11-10",

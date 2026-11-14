@@ -232,8 +232,8 @@ struct Completion {
     reasoning_tokens: Option<u64>,
     /// Dollars, when the provider reports them (OpenRouter's `usage.cost`).
     cost: Option<f64>,
-    /// The served model of a Codex stream (`response.completed` → `response.model`), whose
-    /// stored reply is the answer text only.
+    /// The served model of a Codex stream (`response.completed` → `response.model`), stored
+    /// with its answer text (`codex_stored`).
     served_model: Option<String>,
 }
 
@@ -939,13 +939,8 @@ impl LlmClient {
         // is kept in the rejection log and the error.
         let mut identity_record = None;
         if let Some(expect) = &self.options.expect_route {
-            // Codex stores the answer text only: its identity is the stream's served model.
-            let identity = match self.kind {
-                Kind::OpenAiSubscription(_) => json!({"model": completion.served_model}).to_string(),
-                _ => raw.clone(),
-            };
-            let fields = identity_fields(&identity, expect);
-            match route_identity(&identity, expect) {
+            let fields = identity_fields(&raw, expect);
+            match route_identity(&raw, expect) {
                 Ok(verdict) => {
                     identity_record = Some(json!({"result": verdict, "fields": fields}).to_string());
                 }
@@ -989,8 +984,8 @@ impl LlmClient {
         Ok(completion)
     }
 
-    /// The response as stored (raw body; the answer text for Codex's event stream) and
-    /// its parse.
+    /// The response as stored (raw body; for Codex's event stream, `codex_stored`) and its
+    /// parse.
     async fn send(
         &self,
         body: &Value,
@@ -1023,7 +1018,7 @@ impl LlmClient {
                         }
                         other => {
                             let completion = parse_codex_sse(&other?)?;
-                            return Ok((completion.text.clone(), completion));
+                            return Ok((codex_stored(&completion), completion));
                         }
                     }
                 }
@@ -1282,6 +1277,13 @@ fn top_logprobs(entry: &Value) -> Option<Vec<(String, f64)>> {
         })
         .collect();
     (!top.is_empty()).then_some(top)
+}
+
+/// A Codex reply as stored: the served model (null when `response.completed` names none, so a
+/// route check fails closed) and the answer text, as `{"model", "output_text"}`. The stream
+/// itself is not kept; the text is what was parsed.
+fn codex_stored(completion: &Completion) -> String {
+    json!({"model": completion.served_model, "output_text": completion.text}).to_string()
 }
 
 fn parse_codex_sse(stream: &str) -> Result<Completion> {
@@ -2333,7 +2335,7 @@ mod tests {
         assert_eq!(completion.served_model.as_deref(), Some("gpt-6.1-sol-2026-10-01"));
         let mut expect = ExpectRoute { models: vec!["gpt-6.1-sol".into()], provider: None, model_pointer: None,
                                        provider_pointer: None, reject_log: None, allow_dated: true };
-        let identity = json!({"model": completion.served_model}).to_string();
+        let identity = codex_stored(&completion);
         assert!(route_identity(&identity, &expect).is_ok());
         assert!(route_identity(r#"{"model":"gpt-6.1-sol-mini"}"#, &expect).is_err());
         assert!(route_identity(r#"{"model":"gpt-6-astra"}"#, &expect).is_err());
@@ -2482,6 +2484,95 @@ mod tests {
         let identity: Value = serde_json::from_str(decision.exchanges[0].identity.as_deref().unwrap()).unwrap();
         assert_eq!(identity["result"], "accepted");
         assert_eq!(identity["fields"], json!({"model": "deepseek/deepseek-v4.1-flash", "provider": "Fireworks"}));
+    }
+
+    const CODEX_B_SOL: &str = concat!(
+        "data: {\"type\":\"response.output_text.done\",\"text\":\"{\\\"choice\\\":\\\"B\\\"}\"}\n\n",
+        "data: {\"type\":\"response.completed\",\"response\":{\"model\":\"gpt-6.1-sol\",\"usage\":{\"input_tokens\":5,\"output_tokens\":2}}}\n\n"
+    );
+    const CODEX_B_SOL_DATED: &str = concat!(
+        "data: {\"type\":\"response.output_text.done\",\"text\":\"{\\\"choice\\\":\\\"B\\\"}\"}\n\n",
+        "data: {\"type\":\"response.completed\",\"response\":{\"model\":\"gpt-6.1-sol-2026-10-01\",\"usage\":{\"input_tokens\":5,\"output_tokens\":2}}}\n\n"
+    );
+    const CODEX_B_ANONYMOUS: &str = concat!(
+        "data: {\"type\":\"response.output_text.done\",\"text\":\"{\\\"choice\\\":\\\"B\\\"}\"}\n\n",
+        "data: {\"type\":\"response.completed\",\"response\":{\"usage\":{\"input_tokens\":5,\"output_tokens\":2}}}\n\n"
+    );
+
+    /// "Did they improve?" (Codex lane, 14 Nov): the stored reply names the served model next to
+    /// the answer text, so the harness's check of the stored responses (`/model`) reads it; a
+    /// stream whose `response.completed` names no model is stored with `"model": null` (fails
+    /// closed); what is parsed and chosen is the answer text, as before.
+    #[tokio::test]
+    async fn codex_replies_are_stored_with_their_served_model() {
+        let board = crate::board::Board::start();
+        let plays = board.legal_plays(3, 1);
+        let notations: Vec<String> = plays.iter().map(|p| p.notation()).collect();
+        let order: Vec<usize> = (0..plays.len()).collect();
+        let shown: Vec<usize> = (0..plays.len().min(26)).rev().collect();
+        let retry = http::RetryTime::default();
+        let req = DecisionRequest {
+            board: &board,
+            dice: (3, 1),
+            plays: &plays,
+            notations: &notations,
+            my_score: 0,
+            opp_score: 0,
+            round: 1,
+            rounds: 3,
+            leg: 1,
+            clock: None,
+            my_clock: None,
+            opp_clock: None,
+            turn_no: 1,
+            max_turns: None,
+            player: 1,
+            history: &[],
+            order: &order,
+            seed: 7,
+            version: super::super::prompt::PromptVersion::BgV2,
+            retry: &retry,
+        };
+        // Served model stored (exact and dated); the choice is letter B as before.
+        for (stream, served) in [(CODEX_B_SOL, "gpt-6.1-sol"), (CODEX_B_SOL_DATED, "gpt-6.1-sol-2026-10-01")] {
+            let (url, _) = serve_json(stream);
+            let client = codex_client(url.replace("/v1", "/codex"));
+            let mut decision = Decision::default();
+            let picked = client.choose(&req, &shown, &mut decision).await.unwrap();
+            assert_eq!(picked, Some(shown[1]));
+            assert_eq!(decision.probabilities, vec![(shown[1], 1.0)]);
+            assert_eq!(decision.probability_source, Some("choice_only"));
+            let stored: Value = serde_json::from_str(decision.exchanges[0].response.as_deref().unwrap()).unwrap();
+            assert_eq!(stored, json!({"model": served, "output_text": "{\"choice\":\"B\"}"}));
+            let identity: Value = serde_json::from_str(decision.exchanges[0].identity.as_deref().unwrap()).unwrap();
+            assert_eq!(identity["fields"]["model"], served);
+        }
+        // No served model, no route check (the league's use): the same choice, stored with
+        // `"model": null`.
+        let (url, _) = serve_json(CODEX_B_ANONYMOUS);
+        let mut client = codex_client(url.replace("/v1", "/codex"));
+        client.options.expect_route = None;
+        let mut decision = Decision::default();
+        assert_eq!(client.choose(&req, &shown, &mut decision).await.unwrap(), Some(shown[1]));
+        assert_eq!(decision.probabilities, vec![(shown[1], 1.0)]);
+        let stored: Value = serde_json::from_str(decision.exchanges[0].response.as_deref().unwrap()).unwrap();
+        assert_eq!(stored, json!({"model": null, "output_text": "{\"choice\":\"B\"}"}));
+        assert!(decision.exchanges[0].identity.is_none());
+        // No served model under the route check: nothing used; the rejection log keeps the
+        // stored form with `"model": null`.
+        let log = std::env::temp_dir().join(format!("codex-null-{}.jsonl", uuid::Uuid::new_v4()));
+        let (url, _) = serve_json(CODEX_B_ANONYMOUS);
+        let mut client = codex_client(url.replace("/v1", "/codex"));
+        client.options.expect_route.as_mut().unwrap().reject_log = Some(log.clone());
+        let mut decision = Decision::default();
+        let error = client.choose(&req, &shown, &mut decision).await.unwrap_err();
+        assert!(format!("{error:#}").contains("ROUTE CHECK"), "{error:#}");
+        assert!(decision.exchanges.is_empty());
+        let line: Value = serde_json::from_str(std::fs::read_to_string(&log).unwrap().lines().next().unwrap()).unwrap();
+        let rejected: Value = serde_json::from_str(line["response"].as_str().unwrap()).unwrap();
+        assert_eq!(rejected["model"], Value::Null);
+        assert_eq!(line["identity"]["result"], "missing");
+        std::fs::remove_file(&log).unwrap();
     }
 }
 

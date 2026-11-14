@@ -3803,6 +3803,38 @@
   },
   {
    "dataset": "late-entry",
+   "name": "Liquid d1-Omni-2B",
+   "slug": "liquid-d1-omni-2b",
+   "model": "Liquid d1-Omni-2B",
+   "setting": null,
+   "model_id": "LiquidAI/d1-Omni-2B @ 81222dae8bf8bdd7f903643b5b2a8803bf2e3176 (Hugging Face, LFM Open License v1.0; LFM3-Omni-2B base)",
+   "provider": "our GPU (NVIDIA RTX PRO 6000 Blackwell), BF16, through logic's d1_server.py (the command of logic's decision/servers.sh d1-omni-2b), text only, one request at a time",
+   "date_run": "14 Nov 2026",
+   "price": {
+    "input_per_mtok": null,
+    "output_per_mtok": null,
+    "date": null,
+    "label": "estimate: GPU time, at most",
+    "source": "content/own_cost.json (wall clock on our machines × hourly rate)"
+   },
+   "model_type": "decision model",
+   "weights": "open",
+   "runs_on": "our GPUs",
+   "reasoning": "none (decision model)",
+   "confidence_source": "decision-model probability",
+   "rules_text": "long",
+   "option_groups": "up to 255 options per request; more legal plays are split into equal groups, a winner per group, then among the winners",
+   "sampling": "not sent (decision request)",
+   "notes": "Late entry to the original League 1 table (not in standings, not eligible for the Hype Cup), late-entry league #53. LiquidAI/d1-Omni-2B @ 81222da, d1-2B with audio added (the card: text, pictures and audio in), on one RTX PRO 6000 Blackwell of ours (GPU 2, the card d1-2B used, after it), BF16, through logic's d1_server.py: the command of logic's decision/servers.sh d1-omni-2b in d1-2B's environment (torch 2.15.0+cu132, transformers 5.22.1), the card's call model.system_one(state, questions) unchanged, model field LiquidAI/d1-Omni-2B; text only: backgammon positions are text, so its audio and picture inputs are unused; one request at a time; never on a hosted API. Its request and limits are d1-2B's: the model's request code is byte-identical to d1-2B's and its tokenizer only adds two audio tokens, so text prompts tokenize the same. First stage 14 Nov 2026, 19:47–19:50 UTC: its 9 hosted and program opponents (#1437–#1445); local stage 14 Nov 2026, 19:56–20:15 UTC: the 8 setups we run ourselves, one at a time on the same card (#1447–#1454); runner 46c984e throughout. It played 17 of its 19 opponents: its pair with Mercury Decide was not played (Mercury Decide is no longer served on OpenRouter; match #1446 aborted at its warm-up; outside the requested scope, Ümit, 12 Nov) and its pair with GPT-6 Luna was not played (GPT-6 Luna's API was out of credit; outside the requested scope, Ümit, 12 Nov). Every option count gets distinct single-token codes (A..IU at 255). Context 128,000 positions; nothing in its code shortens a prompt, and a request it cannot answer is refused (400), never cut: League 1's longest stored request (251 options) is 20,759 tokens; nothing refused. Its cost is an estimate from its time on the RTX PRO 6000 (GPU time, at most).",
+   "sources": [
+    "players.settings (v3.db, read-only)",
+    "turns.provider/quantization/probability_source/group_size (v3.db, read-only)",
+    "mailbox/Late entries tiny8 - d1-omni-2b - status.md"
+   ],
+   "missing": []
+  },
+  {
+   "dataset": "late-entry",
    "name": "GPT-6 Astra (high)",
    "slug": "gpt-6-astra-high",
    "model": "GPT-6 Astra",

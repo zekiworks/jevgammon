@@ -16571,6 +16571,1333 @@
      "blocked_today": null
     }
    ]
+  },
+  {
+   "id": "glide-2b-r1",
+   "run_id": "repeat-2026-11-13-glide-2b-r1",
+   "name": "GLiDE 2B [repeat 1]",
+   "display": "GLiDE 2B",
+   "original": "GLiDE 2B",
+   "original_player_id": 81,
+   "original_league": 41,
+   "original_stage": "late-entry",
+   "status": "queued",
+   "hold": null,
+   "prepared": "2026-11-13",
+   "started": null,
+   "finished": null,
+   "league_config": "tools/v3/repeats/leagues/glide-2b-r1.json",
+   "status_file": "mailbox/repeats/glide-2b-r1 - status.md",
+   "runner": {
+    "binary": "/home/cbasaran/code/jevgammon/target/small-repeat/release/jevgammon",
+    "binary_sha256": "79409d713a5992556d47dd06adf3a8d793fbea2eb039a178736b55dc1213615b",
+    "tree": "/home/cbasaran/code/jevgammon-small-repeat-runner",
+    "commit": "6578a73",
+    "commit_full": "6578a73694cc84233d8b3ed8b209f648232218bd",
+    "src_tree": "53e913702ba91019b31e0422bf34361805381277",
+    "build": {
+     "command": "cd /home/cbasaran/code/jevgammon-small-repeat-runner && CARGO_TARGET_DIR=/home/cbasaran/code/jevgammon/target/small-repeat cargo build --release --locked",
+     "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14), cargo 1.97.1 (c980f4866 2026-06-30)",
+     "built": "2026-11-13T16:32Z",
+     "tree": "git worktree add -b small-repeat-runner /home/cbasaran/code/jevgammon-small-repeat-runner 0e66836; src patches, commit 6578a73; checkout --detach (clean; only the untracked METADATA.worktree added)"
+    },
+    "inputs": {
+     "Cargo.toml": "bf64a9f15bd33cd3f5d517dc984140ff38fb9ec93c5d3a50eb0971f658c0ed4b",
+     "Cargo.lock": "d7048551c8907fd02c85f7ac8d8d2ffdc088ae4848bf313fc3c0f6e070d88494",
+     "tools/gnubg_player.py": "085601d706df41ddec7f1732428a2366c157aa58bb8e514b1cf1dd1b0f3f3aab",
+     "tools/v3/engine.py": "511ab4b2490732632f7e810f2e3da616fb5da4cd91d75eb2cf1ac4604e50e046",
+     "tools/v3/rules.py": "18dd032837ff061f64d2af32a5e7e813ad187b64f28a5a6e139f7695202f8480",
+     "tools/v3/order_vectors.json": "9efbb3ada083c02c51bdf74e539d48ee61b2f49e8d2f0fe58e29db8c6d8cb499",
+     "prompts/bg-v2.md": "3c59036a1f416f6187ccec06ec939e4d888a2029441daf30f6ee06a69015c465",
+     "prompts/nack-v2.md": "fa7397be6e9a7d337389a401d61464464bcbbe5725b8a2c70e01e6cb670395a8",
+     "prompts/bg-v3-std-notable.md": "1a145a09713fdd694696cb16d826406711567394697f0938300c285e4cba703f",
+     "prompts/bg-v3-nack.md": "13c744f06613f4051888af99bf9d1692011cb95d6f301c1898f94e13d67fef33",
+     "prompts/instructions.txt": "445735bf10ff30e4cc7f1a90dbeaa0c8858f0cf0b7bfe3f9dd3a0da1f1f0ec2d",
+     "prompts/instructions-notation.txt": "8565178e44a566f703fe1443f028ab2877d3d931b9ddef43547b92f9d1a7acdb",
+     "prompts/question.txt": "ef76def6baccec519ff9515c66b41d4c233b8e2927acf18115ad1e2e494211dc",
+     "prompts/letter-system.txt": "21059b268bae257dab3aa7f608d1545d9d6a610f6f2782fc4baa84e728a6c82e",
+     "prompts/prediction.txt": "cf3b989784a3b815fe1440589e2f212acc4e106ec4fe1e784d256ab58b128725",
+     "prompts/prediction-system.txt": "4d08045b72eeedc28602af09f82475a60bac768819d40a00a50601a661da332f",
+     "src/league/testdata/repeat_originals.json": "1e8611f27444c8e2429cd0998475dba52e5e21bdbd67e22ee51cfd282101a994",
+     "src/players/testdata/league8_request.json": "a285c55eb6e76c959801ec314305d0ee193131a2658da49926c9c73eccbee818"
+    },
+    "original": "e4ce0e9baa7f1c13ea91116bbf72af75e62312b5"
+   },
+   "attempts": [
+    {
+     "league": null,
+     "runner": {
+      "commit": "6578a73",
+      "commit_full": "6578a73694cc84233d8b3ed8b209f648232218bd",
+      "binary_sha256": "79409d713a5992556d47dd06adf3a8d793fbea2eb039a178736b55dc1213615b"
+     }
+    }
+   ],
+   "rules": {
+    "rounds": 3,
+    "clock_seconds": null,
+    "delay_seconds": null,
+    "max_turns": 300,
+    "prompt_version": "bg-v2",
+    "order_seed": 1190975713392774006,
+    "order_seed_u64": "1190975713392774006",
+    "mirror_concurrent": true,
+    "start_position": null
+   },
+   "settings_original": {
+    "name": "GLiDE 2B",
+    "spec": "glide",
+    "provider": "local (glide.server)",
+    "quantization": "bf16",
+    "base_url": "http://192.168.1.131:19330",
+    "note": "Fastino's GLiDE 2B (Hugging Face fastino/GLiDE-2B @ 00f122c120cdeed82284106cb77d9bab5a50ad16, Fastino Community License) on our GPU through the server its repository ships (python -m glide.server; env ~/envs/glide-family: CPython 3.12.13, torch 2.14.0+cu130, transformers 5.17.0, flash-linear-attention 0.5.2), BF16, GLIDE_MAX_BATCH=1 (one request at a time), no model field (the server passes only state and questions to the model), 255-way code readout; 255 options per request (the league's rule; longer lists split); never truncates: a question prompt over GLIDE_MAX_LEN 40,000 tokens is refused (422). League 1's longest stored request (251 options) is 28,323 tokens of its tokenizer with the card's prompt; none over.",
+    "device": "NVIDIA GB10 (DGX Spark spark2, spark-d9ee), the whole GPU, handed over by logic one server at a time: GLIDE_MAX_BATCH=1 ~/envs/glide-family/bin/python -m glide.server --model <snapshot> --host 0.0.0.0 --port 19330",
+    "parallel": 1,
+    "max_matches": 1
+   },
+   "settings_repeat": {
+    "name": "GLiDE 2B [repeat 1]",
+    "spec": "glide",
+    "provider": "local (glide.server)",
+    "quantization": "bf16",
+    "base_url": "http://192.168.1.131:19330",
+    "note": "Fastino's GLiDE 2B (Hugging Face fastino/GLiDE-2B @ 00f122c120cdeed82284106cb77d9bab5a50ad16, Fastino Community License) on our GPU through the server its repository ships (python -m glide.server; env ~/envs/glide-family: CPython 3.12.13, torch 2.14.0+cu130, transformers 5.17.0, flash-linear-attention 0.5.2), BF16, GLIDE_MAX_BATCH=1 (one request at a time), no model field (the server passes only state and questions to the model), 255-way code readout; 255 options per request (the league's rule; longer lists split); never truncates: a question prompt over GLIDE_MAX_LEN 40,000 tokens is refused (422). League 1's longest stored request (251 options) is 28,323 tokens of its tokenizer with the card's prompt; none over. Reproducibility repeat 1 (glide-2b-r1; tools/v3/repeats, mailbox/repeats/manifest-2026-11-11.json): the original's League 1 field again, one match at a time, as the original, each pair with its original match's seed and seats; held: in no standings, table, Cup input or other setup's numbers.",
+    "device": "NVIDIA GB10 (DGX Spark spark2, spark-d9ee), the whole GPU, handed over by logic one server at a time: GLIDE_MAX_BATCH=1 ~/envs/glide-family/bin/python -m glide.server --model <snapshot> --host 0.0.0.0 --port 19330",
+    "parallel": 1,
+    "max_matches": 1
+   },
+   "settings_changed": [
+    "name",
+    "note"
+   ],
+   "server": {
+    "kind": "pinned",
+    "mib": 0,
+    "health": "http://192.168.1.131:19330/health",
+    "pins": {
+     "source": "late-tiny8 a72223d tools/v3/late-tiny8/models/glide-2b/pins.sh (blob ebd8047, the same at e4ce0e9)",
+     "files": {
+      "pins.sh": "c2a654f72ef49f05b80351d2a172686ca1b0e7297773f73b8cd8c7942644990c"
+     },
+     "env": {
+      "URL": "http://192.168.1.131:19330",
+      "PORT": "19330",
+      "SSH_HOST": "spark2"
+     }
+    },
+    "smoke": "S=workspace/repeats/glide-2b-r1/smoke.db; rm -f $S && /home/cbasaran/code/jevgammon/target/small-repeat/release/jevgammon ask --config /home/cbasaran/code/jevgammon-small-repeat/tools/v3/repeats/smoke/glide-2b-r1.json --positions /home/cbasaran/code/jevgammon/positions/smoke.jsonl --setup 'GLiDE 2B' --out $S --time-limit 600 && n=$(sqlite3 $S \"SELECT count(*) FROM answers WHERE setup = 'GLiDE 2B' AND error IS NULL AND COALESCE(invalid, 0) = 0 AND probabilities IS NOT NULL\") && echo \"$n/50 answered with probabilities\" && [ \"$n\" = 50 ]",
+    "provenance": "logic's spark2 (DGX Spark GB10), handed over one server at a time: GLIDE_MAX_BATCH=1 ~/envs/glide-family/bin/python -m glide.server --model /home/cbasaran/glide-family/models/GLiDE-2B@00f122c120cdeed82284106cb77d9bab5a50ad16 --host 0.0.0.0 --port 19330 (players.settings device), BF16, GLIDE_MAX_LEN 40000; pinned by its late entry's pins.sh (healthy: /health status ok, max_len 40000, max_batch 1, no quantization; pinned: that process on port 19330, read over ssh spark2). Never started or stopped here. Smoke: jevgammon ask on the 50 smoke positions (smoke/glide-2b-r1.json, the original's settings)",
+    "measured": "none on our cards (spark2's GB10, logic's)",
+    "start": null,
+    "stop": null
+   },
+   "coverage_original": {
+    "played": 9,
+    "of": 19,
+    "not_played": [
+     {
+      "opponent": "Clef",
+      "match": null,
+      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
+     },
+     {
+      "opponent": "Cygnet (Gemma 4 12B)",
+      "match": null,
+      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
+     },
+     {
+      "opponent": "Decider Flash v1.2",
+      "match": null,
+      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
+     },
+     {
+      "opponent": "Decider v1.1 27B",
+      "match": null,
+      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
+     },
+     {
+      "opponent": "Decider v1.2 27B",
+      "match": null,
+      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
+     },
+     {
+      "opponent": "Fastino GLiDE v1.2 (local)",
+      "match": null,
+      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
+     },
+     {
+      "opponent": "GPT-6 Luna",
+      "match": null,
+      "reason": "not required (Ümit #6410: only the pairs the original played); never scheduled: OpenAI Decisions out of credit (start.sh: deferred)"
+     },
+     {
+      "opponent": "Mercury Decide",
+      "match": 1200,
+      "reason": "not required (Ümit #6410: only the pairs the original played); #1200 aborted at its warm-up, no game: no OpenRouter endpoint for inception/mercury-decide"
+     },
+     {
+      "opponent": "Open-Jev 27B v1.1",
+      "match": null,
+      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
+     },
+     {
+      "opponent": "Winnow-12B",
+      "match": null,
+      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
+     }
+    ]
+   },
+   "coverage_repeat_today": {
+    "playable": 9,
+    "of": 19,
+    "blocked": [],
+    "not_in_original": [
+     {
+      "opponent": "Clef",
+      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)",
+      "today": null
+     },
+     {
+      "opponent": "Cygnet (Gemma 4 12B)",
+      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)",
+      "today": null
+     },
+     {
+      "opponent": "Decider Flash v1.2",
+      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)",
+      "today": null
+     },
+     {
+      "opponent": "Decider v1.1 27B",
+      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)",
+      "today": null
+     },
+     {
+      "opponent": "Decider v1.2 27B",
+      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)",
+      "today": null
+     },
+     {
+      "opponent": "Fastino GLiDE v1.2 (local)",
+      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)",
+      "today": null
+     },
+     {
+      "opponent": "GPT-6 Luna",
+      "reason": "not required (Ümit #6410: only the pairs the original played); never scheduled: OpenAI Decisions out of credit (start.sh: deferred)",
+      "today": "no credit: OpenAI Decisions answers 429 'no credits remaining' (Drex #829/#835/#846/#886, REAX, Muse Ember and KnowLine runs: deferred); a top-up needs Can"
+     },
+     {
+      "opponent": "Mercury Decide",
+      "reason": "not required (Ümit #6410: only the pairs the original played); #1200 aborted at its warm-up, no game: no OpenRouter endpoint for inception/mercury-decide",
+      "today": "no OpenRouter endpoint: 404 'No endpoints found for inception/mercury-decide' at warm-up (Muse Ember #932, 2026-11-10 15:57 UTC; KnowLine #946, 2026-11-10 23:55 UTC)"
+     },
+     {
+      "opponent": "Open-Jev 27B v1.1",
+      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)",
+      "today": null
+     },
+     {
+      "opponent": "Winnow-12B",
+      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)",
+      "today": null
+     }
+    ],
+    "unpinned": [
+     "Clef",
+     "Cygnet (Gemma 4 12B)",
+     "Decider Flash v1.2",
+     "Decider v1.1 27B",
+     "Decider v1.2 27B",
+     "Fastino GLiDE v1.2 (local)",
+     "GPT-6 Luna",
+     "Mercury Decide",
+     "Open-Jev 27B v1.1",
+     "Winnow-12B"
+    ]
+   },
+   "coverage_required": {
+    "rule": "only the pairs the original played are repeated (Ümit #6410): GPT-6 Luna, Mercury Decide (aborted at its warm-up) and the 8 local setups are not required",
+    "required": 9,
+    "history_played": 9,
+    "pinned": 9,
+    "playable_today": 9,
+    "matched_fixtures": 9,
+    "not_required": [
+     {
+      "opponent": "GPT-6 Luna",
+      "match": null,
+      "reason": "not required (Ümit #6410: only the pairs the original played); never scheduled: OpenAI Decisions out of credit (start.sh: deferred)"
+     },
+     {
+      "opponent": "Decider Flash v1.2",
+      "match": null,
+      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
+     },
+     {
+      "opponent": "Winnow-12B",
+      "match": null,
+      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
+     },
+     {
+      "opponent": "Cygnet (Gemma 4 12B)",
+      "match": null,
+      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
+     },
+     {
+      "opponent": "Decider v1.1 27B",
+      "match": null,
+      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
+     },
+     {
+      "opponent": "Decider v1.2 27B",
+      "match": null,
+      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
+     },
+     {
+      "opponent": "Fastino GLiDE v1.2 (local)",
+      "match": null,
+      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
+     },
+     {
+      "opponent": "Open-Jev 27B v1.1",
+      "match": null,
+      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
+     },
+     {
+      "opponent": "Clef",
+      "match": null,
+      "reason": "not required (Ümit #6410: only the pairs the original played); local setup, not played by the original (0 of 8 locals: queued for a GPU)"
+     },
+     {
+      "opponent": "Mercury Decide",
+      "match": 1200,
+      "reason": "not required (Ümit #6410: only the pairs the original played); #1200 aborted at its warm-up, no game: no OpenRouter endpoint for inception/mercury-decide"
+     }
+    ],
+    "missing": {
+     "history": [],
+     "pins": [],
+     "today": [],
+     "fixtures": []
+    }
+   },
+   "cost_basis": {
+    "method": "Each playable pair's billed cost in the original match: the paid opponent's recorded cost_usd (Fastino GLiDE: input tokens x $0.04/M); GLiDE 2B (logic's spark2) and the programs bill nothing.",
+    "pairs": {
+     "Fastino GLiDE": {
+      "opponent": 0.0173,
+      "original": null
+     },
+     "Celeris-1 Decision": {
+      "opponent": 0.0166,
+      "original": null
+     },
+     "Liquid d1-ultra": {
+      "opponent": 0.0119,
+      "original": null
+     },
+     "Jev 1.14.0": {
+      "opponent": 0.0117,
+      "original": null
+     },
+     "Jev 1.13.0": {
+      "opponent": 0.0071,
+      "original": null
+     },
+     "SubQ Snap Preview": {
+      "opponent": 0.0234,
+      "original": null
+     }
+    },
+    "estimate_usd": 0.088,
+    "opponents_usd": 0.088,
+    "entrant_usd": 0,
+    "cap_usd": 5.0
+   },
+   "time": {
+    "method": "Sum of each playable pair's original match duration (start to finish; the originals ran several matches at once, so one at a time is about this or less), plus server starts.",
+    "minutes_matches": {
+     "program": 1.6,
+     "api": 4.9,
+     "local": 0
+    },
+    "minutes_total_matches": 6.5,
+    "server_starts": "entrant: none (logic's spark2 server, already up); no local opponent"
+   },
+   "gpu_plan": {
+    "entrant_mib": 0,
+    "entrant_measured": "none on our cards (spark2's GB10, logic's)",
+    "fits_beside_entrant": [
+     "Decider Flash v1.2",
+     "Winnow-12B",
+     "Cygnet (Gemma 4 12B)",
+     "Decider v1.1 27B",
+     "Decider v1.2 27B",
+     "Fastino GLiDE v1.2 (local)",
+     "Open-Jev 27B v1.1",
+     "Clef"
+    ],
+    "needs_second_gpu": [],
+    "note": "GLiDE 2B runs on logic's spark2 (no card of ours) and no local opponent is repeated: no GPU."
+   },
+   "differences": [
+    "Name: '<original> [repeat 1]', a new players row; settings otherwise as the original's (the changed fields are listed under Settings); one match at a time, as the original (players.settings max_matches 1, parallel 1).",
+    "Runner: the original ran e4ce0e9 (late-tiny8, target/tiny8 (clean; origin/main's runner line 18cc78d with late-tiny8's decision clients); the repeat runs 6578a73 (branch small-repeat-runner): the repeats' runner 0e66836 (origin/late-reax line: decision clients reax, baselabs, drex-max, drex-local, nace and a pre-send budget ledger for decision services and openai-compatible chat, none used by this field; the pinned-pairs change 4ca4f08; admit) with late-tiny8-small3 8ebad40's decision clients and late-smallchat-on a083fb4's reasoning_prefill / reasoning_field keys (unused here). Every request of the original's 9 matches replays byte for byte: GLiDE 2B 820 of 820 requests, its opponents 558 of 558 (mailbox/small-repeat-review/byte-identity). Same prompt version bg-v2, option-order seed and rules.",
+    "Server: logic's GLiDE 2B server on spark2, pinned and checked as in the original (pins.sh healthy and pinned before any write and every minute, 3 failures in a row stop); the original's guard checked pinned once at its start."
+   ],
+   "start": [
+    "systemd-run --user --unit=repeat-glide-2b-r1 --working-directory=/home/cbasaran/code/jevgammon /home/cbasaran/code/jevgammon-small-repeat/tools/v3/repeats/run.sh glide-2b-r1"
+   ],
+   "pairs": [
+    {
+     "opponent": "Fastino GLiDE",
+     "kind": "api",
+     "original_match": 1191,
+     "status": "finished",
+     "error": null,
+     "seed": -2886825026339856919,
+     "seed_u64": "15559919047369694697",
+     "original_is_player1": true,
+     "model1": "GLiDE 2B",
+     "model2": "Fastino GLiDE",
+     "rules": {
+      "rounds": 3,
+      "clock_seconds": null,
+      "delay_seconds": null,
+      "max_turns": 300,
+      "prompt_version": "bg-v2",
+      "order_seed": 1190975713392774006,
+      "order_seed_u64": "1190975713392774006",
+      "mirror_concurrent": true,
+      "start_position": null
+     },
+     "harness": {
+      "commit": "e4ce0e9baa7f1c13ea91116bbf72af75e62312b5",
+      "dirty": false
+     },
+     "started": "2026-11-12T16:58:16.155Z",
+     "finished": "2026-11-12T16:59:45.713Z",
+     "minutes": 1.5,
+     "score_for": 1,
+     "score_against": 7,
+     "games": [
+      {
+       "round": 1,
+       "leg": 1,
+       "white_player": 1,
+       "dice_seed": 6284051498672239545,
+       "dice_seed_u64": "6284051498672239545",
+       "opening": [
+        2,
+        1
+       ],
+       "result": "single",
+       "points": 1,
+       "turns": 44
+      },
+      {
+       "round": 1,
+       "leg": 2,
+       "white_player": 2,
+       "dice_seed": 6284051498672239545,
+       "dice_seed_u64": "6284051498672239545",
+       "opening": [
+        2,
+        1
+       ],
+       "result": "gammon",
+       "points": 2,
+       "turns": 47
+      },
+      {
+       "round": 2,
+       "leg": 1,
+       "white_player": 1,
+       "dice_seed": 8409684665812073817,
+       "dice_seed_u64": "8409684665812073817",
+       "opening": [
+        6,
+        3
+       ],
+       "result": "single",
+       "points": 1,
+       "turns": 65
+      },
+      {
+       "round": 2,
+       "leg": 2,
+       "white_player": 2,
+       "dice_seed": 8409684665812073817,
+       "dice_seed_u64": "8409684665812073817",
+       "opening": [
+        6,
+        3
+       ],
+       "result": "single",
+       "points": 1,
+       "turns": 65
+      },
+      {
+       "round": 3,
+       "leg": 1,
+       "white_player": 1,
+       "dice_seed": 7353245885173886856,
+       "dice_seed_u64": "7353245885173886856",
+       "opening": [
+        4,
+        1
+       ],
+       "result": "single",
+       "points": 1,
+       "turns": 48
+      },
+      {
+       "round": 3,
+       "leg": 2,
+       "white_player": 2,
+       "dice_seed": 7353245885173886856,
+       "dice_seed_u64": "7353245885173886856",
+       "opening": [
+        4,
+        1
+       ],
+       "result": "gammon",
+       "points": 2,
+       "turns": 43
+      }
+     ],
+     "decisions": {
+      "original": 122,
+      "opponent": 117
+     },
+     "billed_usd": {
+      "opponent": 0.0173,
+      "original": null
+     },
+     "blocked_today": null
+    },
+    {
+     "opponent": "Celeris-1 Decision",
+     "kind": "api",
+     "original_match": 1192,
+     "status": "finished",
+     "error": null,
+     "seed": -5808196307987728185,
+     "seed_u64": "12638547765721823431",
+     "original_is_player1": false,
+     "model1": "Celeris-1 Decision",
+     "model2": "GLiDE 2B",
+     "rules": {
+      "rounds": 3,
+      "clock_seconds": null,
+      "delay_seconds": null,
+      "max_turns": 300,
+      "prompt_version": "bg-v2",
+      "order_seed": 1190975713392774006,
+      "order_seed_u64": "1190975713392774006",
+      "mirror_concurrent": true,
+      "start_position": null
+     },
+     "harness": {
+      "commit": "e4ce0e9baa7f1c13ea91116bbf72af75e62312b5",
+      "dirty": false
+     },
+     "started": "2026-11-12T16:59:48.313Z",
+     "finished": "2026-11-12T17:00:47.032Z",
+     "minutes": 1.0,
+     "score_for": 2,
+     "score_against": 4,
+     "games": [
+      {
+       "round": 1,
+       "leg": 1,
+       "white_player": 1,
+       "dice_seed": 649433310438331678,
+       "dice_seed_u64": "649433310438331678",
+       "opening": [
+        1,
+        5
+       ],
+       "result": "single",
+       "points": 1,
+       "turns": 52
+      },
+      {
+       "round": 1,
+       "leg": 2,
+       "white_player": 2,
+       "dice_seed": 649433310438331678,
+       "dice_seed_u64": "649433310438331678",
+       "opening": [
+        1,
+        5
+       ],
+       "result": "single",
+       "points": 1,
+       "turns": 46
+      },
+      {
+       "round": 2,
+       "leg": 1,
+       "white_player": 1,
+       "dice_seed": -559185419146315200,
+       "dice_seed_u64": "17887558654563236416",
+       "opening": [
+        2,
+        4
+       ],
+       "result": "single",
+       "points": 1,
+       "turns": 61
+      },
+      {
+       "round": 2,
+       "leg": 2,
+       "white_player": 2,
+       "dice_seed": -559185419146315200,
+       "dice_seed_u64": "17887558654563236416",
+       "opening": [
+        2,
+        4
+       ],
+       "result": "single",
+       "points": 1,
+       "turns": 59
+      },
+      {
+       "round": 3,
+       "leg": 1,
+       "white_player": 1,
+       "dice_seed": 3318334776613459615,
+       "dice_seed_u64": "3318334776613459615",
+       "opening": [
+        2,
+        4
+       ],
+       "result": "single",
+       "points": 1,
+       "turns": 52
+      },
+      {
+       "round": 3,
+       "leg": 2,
+       "white_player": 2,
+       "dice_seed": 3318334776613459615,
+       "dice_seed_u64": "3318334776613459615",
+       "opening": [
+        2,
+        4
+       ],
+       "result": "single",
+       "points": 1,
+       "turns": 43
+      }
+     ],
+     "decisions": {
+      "original": 121,
+      "opponent": 118
+     },
+     "billed_usd": {
+      "opponent": 0.0166,
+      "original": null
+     },
+     "blocked_today": null
+    },
+    {
+     "opponent": "GNUbg weak",
+     "kind": "program",
+     "original_match": 1193,
+     "status": "finished",
+     "error": null,
+     "seed": 501093501360735733,
+     "seed_u64": "501093501360735733",
+     "original_is_player1": true,
+     "model1": "GLiDE 2B",
+     "model2": "GNUbg weak",
+     "rules": {
+      "rounds": 3,
+      "clock_seconds": null,
+      "delay_seconds": null,
+      "max_turns": 300,
+      "prompt_version": "bg-v2",
+      "order_seed": 1190975713392774006,
+      "order_seed_u64": "1190975713392774006",
+      "mirror_concurrent": true,
+      "start_position": null
+     },
+     "harness": {
+      "commit": "e4ce0e9baa7f1c13ea91116bbf72af75e62312b5",
+      "dirty": false
+     },
+     "started": "2026-11-12T17:00:47.276Z",
+     "finished": "2026-11-12T17:01:02.221Z",
+     "minutes": 0.2,
+     "score_for": 0,
+     "score_against": 6,
+     "games": [
+      {
+       "round": 1,
+       "leg": 1,
+       "white_player": 1,
+       "dice_seed": 1445695602023459914,
+       "dice_seed_u64": "1445695602023459914",
+       "opening": [
+        5,
+        4
+       ],
+       "result": "backgammon",
+       "points": 3,
+       "turns": 64
+      },
+      {
+       "round": 1,
+       "leg": 2,
+       "white_player": 2,
+       "dice_seed": 1445695602023459914,
+       "dice_seed_u64": "1445695602023459914",
+       "opening": [
+        5,
+        4
+       ],
+       "result": "backgammon",
+       "points": 3,
+       "turns": 49
+      }
+     ],
+     "decisions": {
+      "original": 38,
+      "opponent": 50
+     },
+     "billed_usd": {
+      "opponent": null,
+      "original": null
+     },
+     "blocked_today": null
+    },
+    {
+     "opponent": "Random",
+     "kind": "program",
+     "original_match": 1194,
+     "status": "finished",
+     "error": null,
+     "seed": -3184559060406936088,
+     "seed_u64": "15262185013302615528",
+     "original_is_player1": false,
+     "model1": "Random",
+     "model2": "GLiDE 2B",
+     "rules": {
+      "rounds": 3,
+      "clock_seconds": null,
+      "delay_seconds": null,
+      "max_turns": 300,
+      "prompt_version": "bg-v2",
+      "order_seed": 1190975713392774006,
+      "order_seed_u64": "1190975713392774006",
+      "mirror_concurrent": true,
+      "start_position": null
+     },
+     "harness": {
+      "commit": "e4ce0e9baa7f1c13ea91116bbf72af75e62312b5",
+      "dirty": false
+     },
+     "started": "2026-11-12T17:01:02.495Z",
+     "finished": "2026-11-12T17:01:37.471Z",
+     "minutes": 0.6,
+     "score_for": 5,
+     "score_against": 0,
+     "games": [
+      {
+       "round": 1,
+       "leg": 1,
+       "white_player": 1,
+       "dice_seed": -8174891846996880333,
+       "dice_seed_u64": "10271852226712671283",
+       "opening": [
+        5,
+        2
+       ],
+       "result": "gammon",
+       "points": 2,
+       "turns": 70
+      },
+      {
+       "round": 1,
+       "leg": 2,
+       "white_player": 2,
+       "dice_seed": -8174891846996880333,
+       "dice_seed_u64": "10271852226712671283",
+       "opening": [
+        5,
+        2
+       ],
+       "result": "single",
+       "points": 1,
+       "turns": 61
+      },
+      {
+       "round": 2,
+       "leg": 1,
+       "white_player": 1,
+       "dice_seed": -5984078623005259750,
+       "dice_seed_u64": "12462665450704291866",
+       "opening": [
+        2,
+        3
+       ],
+       "result": "single",
+       "points": 1,
+       "turns": 53
+      },
+      {
+       "round": 2,
+       "leg": 2,
+       "white_player": 2,
+       "dice_seed": -5984078623005259750,
+       "dice_seed_u64": "12462665450704291866",
+       "opening": [
+        2,
+        3
+       ],
+       "result": "single",
+       "points": 1,
+       "turns": 46
+      }
+     ],
+     "decisions": {
+      "original": 92,
+      "opponent": 102
+     },
+     "billed_usd": {
+      "opponent": null,
+      "original": null
+     },
+     "blocked_today": null
+    },
+    {
+     "opponent": "Safest",
+     "kind": "program",
+     "original_match": 1195,
+     "status": "finished",
+     "error": null,
+     "seed": -3144524690129716424,
+     "seed_u64": "15302219383579835192",
+     "original_is_player1": true,
+     "model1": "GLiDE 2B",
+     "model2": "Safest",
+     "rules": {
+      "rounds": 3,
+      "clock_seconds": null,
+      "delay_seconds": null,
+      "max_turns": 300,
+      "prompt_version": "bg-v2",
+      "order_seed": 1190975713392774006,
+      "order_seed_u64": "1190975713392774006",
+      "mirror_concurrent": true,
+      "start_position": null
+     },
+     "harness": {
+      "commit": "e4ce0e9baa7f1c13ea91116bbf72af75e62312b5",
+      "dirty": false
+     },
+     "started": "2026-11-12T17:01:37.732Z",
+     "finished": "2026-11-12T17:02:25.534Z",
+     "minutes": 0.8,
+     "score_for": 1,
+     "score_against": 6,
+     "games": [
+      {
+       "round": 1,
+       "leg": 1,
+       "white_player": 1,
+       "dice_seed": 5234568217098403838,
+       "dice_seed_u64": "5234568217098403838",
+       "opening": [
+        1,
+        2
+       ],
+       "result": "single",
+       "points": 1,
+       "turns": 47
+      },
+      {
+       "round": 1,
+       "leg": 2,
+       "white_player": 2,
+       "dice_seed": 5234568217098403838,
+       "dice_seed_u64": "5234568217098403838",
+       "opening": [
+        1,
+        2
+       ],
+       "result": "single",
+       "points": 1,
+       "turns": 49
+      },
+      {
+       "round": 2,
+       "leg": 1,
+       "white_player": 1,
+       "dice_seed": -2034681513844266806,
+       "dice_seed_u64": "16412062559865284810",
+       "opening": [
+        4,
+        3
+       ],
+       "result": "gammon",
+       "points": 2,
+       "turns": 56
+      },
+      {
+       "round": 2,
+       "leg": 2,
+       "white_player": 2,
+       "dice_seed": -2034681513844266806,
+       "dice_seed_u64": "16412062559865284810",
+       "opening": [
+        4,
+        3
+       ],
+       "result": "single",
+       "points": 1,
+       "turns": 47
+      },
+      {
+       "round": 3,
+       "leg": 1,
+       "white_player": 1,
+       "dice_seed": -3698147146195507144,
+       "dice_seed_u64": "14748596927514044472",
+       "opening": [
+        2,
+        4
+       ],
+       "result": "single",
+       "points": 1,
+       "turns": 49
+      },
+      {
+       "round": 3,
+       "leg": 2,
+       "white_player": 2,
+       "dice_seed": -3698147146195507144,
+       "dice_seed_u64": "14748596927514044472",
+       "opening": [
+        2,
+        4
+       ],
+       "result": "single",
+       "points": 1,
+       "turns": 48
+      }
+     ],
+     "decisions": {
+      "original": 124,
+      "opponent": 110
+     },
+     "billed_usd": {
+      "opponent": null,
+      "original": null
+     },
+     "blocked_today": null
+    },
+    {
+     "opponent": "Liquid d1-ultra",
+     "kind": "api",
+     "original_match": 1196,
+     "status": "finished",
+     "error": null,
+     "seed": 8844248524737138184,
+     "seed_u64": "8844248524737138184",
+     "original_is_player1": true,
+     "model1": "GLiDE 2B",
+     "model2": "Liquid d1-ultra",
+     "rules": {
+      "rounds": 3,
+      "clock_seconds": null,
+      "delay_seconds": null,
+      "max_turns": 300,
+      "prompt_version": "bg-v2",
+      "order_seed": 1190975713392774006,
+      "order_seed_u64": "1190975713392774006",
+      "mirror_concurrent": true,
+      "start_position": null
+     },
+     "harness": {
+      "commit": "e4ce0e9baa7f1c13ea91116bbf72af75e62312b5",
+      "dirty": false
+     },
+     "started": "2026-11-12T17:02:25.745Z",
+     "finished": "2026-11-12T17:03:05.775Z",
+     "minutes": 0.7,
+     "score_for": 0,
+     "score_against": 7,
+     "games": [
+      {
+       "round": 1,
+       "leg": 1,
+       "white_player": 1,
+       "dice_seed": 334895795645033943,
+       "dice_seed_u64": "334895795645033943",
+       "opening": [
+        6,
+        1
+       ],
+       "result": "gammon",
+       "points": 2,
+       "turns": 48
+      },
+      {
+       "round": 1,
+       "leg": 2,
+       "white_player": 2,
+       "dice_seed": 334895795645033943,
+       "dice_seed_u64": "334895795645033943",
+       "opening": [
+        6,
+        1
+       ],
+       "result": "single",
+       "points": 1,
+       "turns": 59
+      },
+      {
+       "round": 2,
+       "leg": 1,
+       "white_player": 1,
+       "dice_seed": 8246333043816995089,
+       "dice_seed_u64": "8246333043816995089",
+       "opening": [
+        6,
+        1
+       ],
+       "result": "single",
+       "points": 1,
+       "turns": 56
+      },
+      {
+       "round": 2,
+       "leg": 2,
+       "white_player": 2,
+       "dice_seed": 8246333043816995089,
+       "dice_seed_u64": "8246333043816995089",
+       "opening": [
+        6,
+        1
+       ],
+       "result": "backgammon",
+       "points": 3,
+       "turns": 45
+      }
+     ],
+     "decisions": {
+      "original": 78,
+      "opponent": 80
+     },
+     "billed_usd": {
+      "opponent": 0.0119,
+      "original": null
+     },
+     "blocked_today": null
+    },
+    {
+     "opponent": "Jev 1.14.0",
+     "kind": "api",
+     "original_match": 1197,
+     "status": "finished",
+     "error": null,
+     "seed": 6978671576940928040,
+     "seed_u64": "6978671576940928040",
+     "original_is_player1": true,
+     "model1": "GLiDE 2B",
+     "model2": "Jev 1.14.0",
+     "rules": {
+      "rounds": 3,
+      "clock_seconds": null,
+      "delay_seconds": null,
+      "max_turns": 300,
+      "prompt_version": "bg-v2",
+      "order_seed": 1190975713392774006,
+      "order_seed_u64": "1190975713392774006",
+      "mirror_concurrent": true,
+      "start_position": null
+     },
+     "harness": {
+      "commit": "e4ce0e9baa7f1c13ea91116bbf72af75e62312b5",
+      "dirty": false
+     },
+     "started": "2026-11-12T17:03:06.030Z",
+     "finished": "2026-11-12T17:03:33.917Z",
+     "minutes": 0.5,
+     "score_for": 0,
+     "score_against": 5,
+     "games": [
+      {
+       "round": 1,
+       "leg": 1,
+       "white_player": 1,
+       "dice_seed": 817469125744824465,
+       "dice_seed_u64": "817469125744824465",
+       "opening": [
+        3,
+        4
+       ],
+       "result": "single",
+       "points": 1,
+       "turns": 43
+      },
+      {
+       "round": 1,
+       "leg": 2,
+       "white_player": 2,
+       "dice_seed": 817469125744824465,
+       "dice_seed_u64": "817469125744824465",
+       "opening": [
+        3,
+        4
+       ],
+       "result": "single",
+       "points": 1,
+       "turns": 42
+      },
+      {
+       "round": 2,
+       "leg": 1,
+       "white_player": 1,
+       "dice_seed": 4004409712740612357,
+       "dice_seed_u64": "4004409712740612357",
+       "opening": [
+        3,
+        2
+       ],
+       "result": "gammon",
+       "points": 2,
+       "turns": 46
+      },
+      {
+       "round": 2,
+       "leg": 2,
+       "white_player": 2,
+       "dice_seed": 4004409712740612357,
+       "dice_seed_u64": "4004409712740612357",
+       "opening": [
+        3,
+        2
+       ],
+       "result": "single",
+       "points": 1,
+       "turns": 51
+      }
+     ],
+     "decisions": {
+      "original": 76,
+      "opponent": 74
+     },
+     "billed_usd": {
+      "opponent": 0.0117,
+      "original": null
+     },
+     "blocked_today": null
+    },
+    {
+     "opponent": "Jev 1.13.0",
+     "kind": "api",
+     "original_match": 1198,
+     "status": "finished",
+     "error": null,
+     "seed": 6498334176674890690,
+     "seed_u64": "6498334176674890690",
+     "original_is_player1": false,
+     "model1": "Jev 1.13.0",
+     "model2": "GLiDE 2B",
+     "rules": {
+      "rounds": 3,
+      "clock_seconds": null,
+      "delay_seconds": null,
+      "max_turns": 300,
+      "prompt_version": "bg-v2",
+      "order_seed": 1190975713392774006,
+      "order_seed_u64": "1190975713392774006",
+      "mirror_concurrent": true,
+      "start_position": null
+     },
+     "harness": {
+      "commit": "e4ce0e9baa7f1c13ea91116bbf72af75e62312b5",
+      "dirty": false
+     },
+     "started": "2026-11-12T17:03:34.181Z",
+     "finished": "2026-11-12T17:03:50.717Z",
+     "minutes": 0.3,
+     "score_for": 0,
+     "score_against": 5,
+     "games": [
+      {
+       "round": 1,
+       "leg": 1,
+       "white_player": 1,
+       "dice_seed": 3475092312431889666,
+       "dice_seed_u64": "3475092312431889666",
+       "opening": [
+        6,
+        5
+       ],
+       "result": "gammon",
+       "points": 2,
+       "turns": 51
+      },
+      {
+       "round": 1,
+       "leg": 2,
+       "white_player": 2,
+       "dice_seed": 3475092312431889666,
+       "dice_seed_u64": "3475092312431889666",
+       "opening": [
+        6,
+        5
+       ],
+       "result": "backgammon",
+       "points": 3,
+       "turns": 44
+      }
+     ],
+     "decisions": {
+      "original": 35,
+      "opponent": 41
+     },
+     "billed_usd": {
+      "opponent": 0.0071,
+      "original": null
+     },
+     "blocked_today": null
+    },
+    {
+     "opponent": "SubQ Snap Preview",
+     "kind": "api",
+     "original_match": 1199,
+     "status": "finished",
+     "error": null,
+     "seed": -1704890822461472530,
+     "seed_u64": "16741853251248079086",
+     "original_is_player1": false,
+     "model1": "SubQ Snap Preview",
+     "model2": "GLiDE 2B",
+     "rules": {
+      "rounds": 3,
+      "clock_seconds": null,
+      "delay_seconds": null,
+      "max_turns": 300,
+      "prompt_version": "bg-v2",
+      "order_seed": 1190975713392774006,
+      "order_seed_u64": "1190975713392774006",
+      "mirror_concurrent": true,
+      "start_position": null
+     },
+     "harness": {
+      "commit": "e4ce0e9baa7f1c13ea91116bbf72af75e62312b5",
+      "dirty": false
+     },
+     "started": "2026-11-12T17:03:50.941Z",
+     "finished": "2026-11-12T17:04:45.386Z",
+     "minutes": 0.9,
+     "score_for": 1,
+     "score_against": 6,
+     "games": [
+      {
+       "round": 1,
+       "leg": 1,
+       "white_player": 1,
+       "dice_seed": 8747985904488991361,
+       "dice_seed_u64": "8747985904488991361",
+       "opening": [
+        4,
+        6
+       ],
+       "result": "single",
+       "points": 1,
+       "turns": 60
+      },
+      {
+       "round": 1,
+       "leg": 2,
+       "white_player": 2,
+       "dice_seed": 8747985904488991361,
+       "dice_seed_u64": "8747985904488991361",
+       "opening": [
+        4,
+        6
+       ],
+       "result": "gammon",
+       "points": 2,
+       "turns": 47
+      },
+      {
+       "round": 2,
+       "leg": 1,
+       "white_player": 1,
+       "dice_seed": -6902276567340943192,
+       "dice_seed_u64": "11544467506368608424",
+       "opening": [
+        5,
+        6
+       ],
+       "result": "single",
+       "points": 1,
+       "turns": 49
+      },
+      {
+       "round": 2,
+       "leg": 2,
+       "white_player": 2,
+       "dice_seed": -6902276567340943192,
+       "dice_seed_u64": "11544467506368608424",
+       "opening": [
+        5,
+        6
+       ],
+       "result": "single",
+       "points": 1,
+       "turns": 73
+      },
+      {
+       "round": 3,
+       "leg": 1,
+       "white_player": 1,
+       "dice_seed": 6778524988744129852,
+       "dice_seed_u64": "6778524988744129852",
+       "opening": [
+        3,
+        6
+       ],
+       "result": "single",
+       "points": 1,
+       "turns": 48
+      },
+      {
+       "round": 3,
+       "leg": 2,
+       "white_player": 2,
+       "dice_seed": 6778524988744129852,
+       "dice_seed_u64": "6778524988744129852",
+       "opening": [
+        3,
+        6
+       ],
+       "result": "single",
+       "points": 1,
+       "turns": 51
+      }
+     ],
+     "decisions": {
+      "original": 132,
+      "opponent": 128
+     },
+     "billed_usd": {
+      "opponent": 0.0234,
+      "original": null
+     },
+     "blocked_today": null
+    }
+   ]
   }
  ]
 }

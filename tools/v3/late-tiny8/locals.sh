@@ -12,7 +12,7 @@
 #     -E PATH=$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin -E OPP_GPU=<n> -E RES=<reservation> \
 #     [-E TINY_BIN=<runner>] /home/cbasaran/code/jevgammon-tiny8/tools/v3/late-tiny8/locals.sh KEY
 # TINY_BIN: the runner binary, the one start.sh ran (default target/tiny8/release/jevgammon). A bariton entrant
-# (d1-2b, strands-decider-2b, metask-jev-4b) keeps its own card; OPP_GPU may be the same card when it has room.
+# (d1-2b, d1-omni-2b, strands-decider-2b, metask-jev-4b) keeps its own card; OPP_GPU may be the same card when it has room.
 set -uo pipefail
 cd /home/cbasaran/code/jevgammon
 export PATH=$HOME/.local/bin:$PATH  # agent-bus

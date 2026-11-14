@@ -16,6 +16,8 @@ with 422 / 404 / 400):
               client splits at its cap (the real model would shorten such prompts; GLIDE_MAX_LEN=8006 refuses them)
   d1          logic's d1_server.py with LiquidAI/d1-2B: model field absent or LiquidAI/d1-2B (400 otherwise); 2..255
               options; /health as the real server answers it ({"status": "ok", "model": "LiquidAI/d1-2B"})
+  d1-omni     the same server with LiquidAI/d1-Omni-2B: as d1 with that name, but the field is required here, so a dry
+              run shows the client names it (a request without it or naming d1-2B is refused, 400)
   strands     strands-decider serve --strict-window: model field ignored; refuses (422) more than STRANDS_CAP options
               here, so a dry run shows the client splits at its cap (the real server refuses prompts over its 4,096-token
               window); /health with the real server's fields
@@ -37,8 +39,10 @@ MODEL_RULE = {
     "onejev": lambda m: m == "OmniJev/OneJev1.6-0.8B",
     "gliclass": lambda m: m in (None, "knowledgator/gliclass-v4-edge"),
     "d1": lambda m: m in (None, "LiquidAI/d1-2B"),
+    "d1-omni": lambda m: m == "LiquidAI/d1-Omni-2B",
 }.get(KIND, lambda m: True)
-REFUSED = {"d1": 400, "metask": 400}.get(KIND, 422)
+D1_MODEL = {"d1": "LiquidAI/d1-2B", "d1-omni": "LiquidAI/d1-Omni-2B"}.get(KIND)
+REFUSED = {"d1": 400, "d1-omni": 400, "metask": 400}.get(KIND, 422)
 STRANDS_HEALTH = {"model": "strands-decider-2b", "checkpoint": "/home/cbasaran/code/strands-decider/model",
                   "base_model": "Qwen/Qwen3.5-2B-Base", "num_slots": 24, "max_length": 4096,
                   "temperature": 0.935220152138837, "device": "cuda", "prefix_cache": True, "vision": False}
@@ -75,8 +79,8 @@ class Handler(BaseHTTPRequestHandler):
         elif KIND in ("gliclass", "metask"):
             self.send(501, {"error": "no GET route"})
         elif self.path.startswith("/health"):
-            if KIND == "d1":
-                self.send(200, {"status": "ok", "model": "LiquidAI/d1-2B"})
+            if D1_MODEL:
+                self.send(200, {"status": "ok", "model": D1_MODEL})
             elif KIND == "strands":
                 self.send(200, {"status": "ok", **STRANDS_HEALTH})
             else:

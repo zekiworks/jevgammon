@@ -3,7 +3,7 @@
 # Strands Decider 2B or Metask-Jev-4B (KEY: models/KEY/player.json, models/KEY/pins.sh) v the original
 # League 1 table (Main, 11 Nov), stage 1: the 3 programs and the paid API setups (GPT-6 Luna deferred while OpenAI is out
 # of credit), as tools/v3/late-startlux2b. The model runs on its own server (player.json base_url): on spark2, handed
-# over by logic one at a time, or on a bariton card (d1-2b, strands-decider-2b, metask-jev-4b), and never started from
+# over by logic one at a time, or on a bariton card (d1-2b, d1-omni-2b, strands-decider-2b, metask-jev-4b), and never started from
 # here. One model at a time: start.sh refuses while another tiny8 unit runs.
 # Status: mailbox/Late entries tiny8 - KEY - status.md (main checkout); state workspace/late-tiny8/KEY/state.
 #   systemd-run --user --unit=late-tiny8-KEY --working-directory=/home/cbasaran/code/jevgammon \

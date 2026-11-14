@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Offline checks of a bariton-served late entry (Ümit #6225: d1-2b, strands-decider-2b, metask-jev-4b) before its first
+# Offline checks of a bariton-served late entry (Ümit #6225: d1-2b, strands-decider-2b, metask-jev-4b; #7649: d1-omni-2b) before its first
 # start, without a GPU, a model server or v3.db:
 #   1. pins.sh healthy() passes against stub_server.py KIND (the server's own /health shape) and fails with no server;
 #   2. pins.sh pinned() against a stand-in process table (a `ps` first on PATH listing a sleeping process that has the

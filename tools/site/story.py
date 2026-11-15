@@ -10,7 +10,7 @@ supporting must be reworded by hand."""
 import json
 import math
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 
 import home as H
@@ -476,11 +476,13 @@ MEASURE_KEYS = [ui.Key("risk", "Risk judgement"), ui.Key("learning", "Learning")
                 ui.Key("cost", "Cost per 1,000 decisions")]
 VALUED = ("risk", "error", "cost")  # the measures of every setup; Learning is its own (learning_cells)
 COST_UNITS = dict(unit="per 1,000 decisions", unit_1m="per 1M decisions")  # the site's cost-unit switch (site.js)
-MEASURE_COLUMN = {"risk": ui.Column("Risk judgement", "95% interval"),
-                  "error": ui.Column("Error rate (PR)", "95% interval", num=True),
+MEASURE_COLUMN = {"risk": ui.Column("Risk judgement", "0–100 · 95% interval"),
+                  "error": ui.Column("Error rate (PR)", "PR per decision · 95% interval", num=True),
                   "cost": ui.Column("Cost", "$ per 1,000 decisions", num=True, sub_1m="$ per 1M decisions", **COST_UNITS),
 }
-HELPER_COLUMN = {"risk": ui.Column("Risk judgement", num=True), "error": ui.Column("Error rate (PR)", num=True),
+# Every head: its short name, a unit line under it and its meaning in its tip (Ümit #9110, as Answer Check's).
+HELPER_COLUMN = {"risk": ui.Column("Risk judgement", "0–100", num=True),
+                 "error": ui.Column("Error rate (PR)", "PR, per decision", num=True),
                  "cost": ui.Column("Cost", "$ / 1,000", num=True, sub_1m="$ / 1M", **COST_UNITS)}
 # Every measure side by side (Ümit via Zeki #6721): the chosen one first, the others, then the median request time per
 # decision (analysis: turns.request_ms, as the Cost and time tables), a column only, never a measure key. No
@@ -495,8 +497,8 @@ HEAD_TIPS = {
                         "loss per decision, the checker-play performance rating (PR) backgammon players use; lower is "
                         "better."),
     "Cost": ("Dollars per 1,000 decisions at each setup's price basis (a list price, or API-equivalent for a "
-             "subscription); not a bill paid."),
-    "Latency": "Median request seconds per decision (waits between retries not included).",
+             "subscription); not a bill paid. Lower is better."),
+    "Latency": "Median request seconds per decision (waits between retries not included). Lower is better.",
 }
 # The Learning tab's groups (Ümit via Zeki #6257): improve_page.result_group's, then the models outside the plan.
 LEARN_GROUP = {0: "Improved: Yes", 1: "Improved: No", 2: "Not finished", None: "Not in the learning plan"}
@@ -639,7 +641,12 @@ class Leaderboard(ui.Bench):
                                                                ui.Key("all", "All setups")])]
 
     def measure_keys(self):
-        return ui.KeyRow("measure", "Measure", MEASURE_KEYS)
+        # Each Measure key explains its measure on hover and keyboard focus (zw-ui v2.7 Key.help, Ümit #9113), in its
+        # column head's words; Learning in its Result head's.
+        import improve_page as IP
+        help = {"risk": HEAD_TIPS["Risk judgement"], "error": HEAD_TIPS["Error rate (PR)"], "cost": HEAD_TIPS["Cost"],
+                "learning": f"Did the model improve after lessons? {IP.HEAD_TIPS['Result']}"}
+        return ui.KeyRow("measure", "Measure", [replace(k, help=esc(help[k.value])) for k in MEASURE_KEYS])
 
     def views(self, part, measure) -> tuple:
         """A chart beside every measure's table (the table first), as Reading's; Learning, a state per model, a table."""

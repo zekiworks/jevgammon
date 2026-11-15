@@ -50,7 +50,7 @@ def ranked_rows():
     """The leaderboard's ranked rows: the bench kit's first table (Risk judgement, one row per model; the programs are
     pinned rows without data-models, never ranked); each row's name from its details box (shared, after the results)."""
     h = (STATE / "analysis/backgammon/index.html").read_text()
-    table = re.search(r'<table class="zw-table".*?</table>', h, re.S).group(0)
+    table = re.search(r'<table class="zw-table[ "].*?</table>', h, re.S).group(0)
     names = dict(re.findall(r'<div class="zw-box" id="([^"]+)"[^>]*><p><strong>([^<]*)</strong>', h))
     out = []
     for m in re.finditer(r'<tr data-models=[^>]*data-zw-box="([^"]+)"[^>]*>(.*?)</tr>', table, re.S):

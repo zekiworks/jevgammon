@@ -46,13 +46,13 @@ BASE = "https://zekiworks.github.io/analysis/backgammon/"
 # The files of tools/site/assets/ copied to the site's root (hilde-leaf.svg: the top bar's mark, Ümit #2901).
 ASSETS = ("site.css", "site.js", "tables.js", "png.js", "bg.css", "suite-bar.css", "bg.js", "decisions.css", "decisions.js",
           "hilde-leaf.svg", "zw-ui.css", "zw-ui.js")
-# The Zeki Works bench kit (turkce, bench-ui e1b8a6f0, v2.4; Zeki #4879): zw_ui.py writes the
+# The Zeki Works bench kit (turkce, zw-ui v2.7 from tb-next 5d5bc0d5c; Zeki #4879, #9130): zw_ui.py writes the
 # leaderboard's and the /improve/ results block, zw-ui.css and zw-ui.js paint and run it. Copied byte for byte, never
 # edited here: the build fails unless each file is the shared kit's (its sha256), as the suite strip and the maker
 # palette are pinned.
-KIT_SHA256 = {"zw_ui.py": "f33c2ac9573a8bbe4f8c0d8190339aeeffce32c955aca89c5413f00bc64f1ec9",
-              "assets/zw-ui.css": "938f6fdcd5fb16ade3e1e3fc649c3026f3754fe6cf4954aeb9ede33381ff000f",
-              "assets/zw-ui.js": "063f9c72dc002d058395fd990803dd0697b3fb73216e148efa757dc5cb653be4"}
+KIT_SHA256 = {"zw_ui.py": "20a57a6233227eb1adcc763ec2f3b46bb10bbc0390b2b4dd989ce0553df629a8",
+              "assets/zw-ui.css": "e44c0f376cc506e5225e6ac9b728c7bb33f79c37c060c77123130adb23de1467",
+              "assets/zw-ui.js": "372fa25ee593ea46e4150dd84f7dc8633d2be6c890868dfc13359b79e48a2af7"}
 
 
 def check_kit() -> None:

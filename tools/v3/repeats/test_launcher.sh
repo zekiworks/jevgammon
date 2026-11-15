@@ -28,6 +28,10 @@
 #   Trigger missing only (each repeat not held): check exits 3, run.sh prepares (backup verified by zstd -t, trigger),
 #   checks again and exits 0 with every client admitted; check then exits 0, and a second run.sh writes nothing more.
 #   The scratch Nace ledger is byte-identical after every case, with no -wal or -shm beside it.
+#   Zeki SR1 (#6548): MiniCPM5-2B (off) at 16 at once, run.sh for real inside bwrap's own network (loopback only) with a
+#   stub entrant recording every request: fresh start and resume send nothing before the barrier (guard up, the 9 pinned
+#   pairs admitted and written); a guard not up, a league holding 4 of 9, and creation failing after 4 of 9 pairs stop
+#   with no league request (the first two with none at all).
 # Usage: tools/v3/repeats/test_launcher.sh   (TMPDIR defaults to ~/.cache/tmp; exit 0 when every case passes)
 set -uo pipefail
 HERE=$(dirname "$(readlink -f "$0")")
@@ -192,12 +196,22 @@ orig_rows() {  # db: sha256 of the originals' leagues, league_players and matche
 # Stand-ins for the commands the small late entries' pins.sh run (curl, ssh, docker), answering from the case's
 # $FAKE folder: health (glide.server /health), models (vLLM /v1/models), ps (spark2's `ps -eo args`), docker-args (the
 # container's arguments); a missing file fails as the command would. Every call is logged in $FAKE/calls. The default
-# answers are the pinned servers' (healthy and pinned); a case edits its own copy.
+# answers are the pinned servers' (healthy and pinned); a case edits its own copy. curl also answers run.sh's OpenRouter
+# balance from $FAKE/credits (unreadable after $FAKE/credits-fail-after answers, when that file exists).
 mkdir -p "$S/fakebin" "$S/tpl/fake"
 cat > "$S/fakebin/curl" <<'EOF'
 #!/usr/bin/env bash
-url=${!#}; echo "curl $url" >> "$FAKE/calls"
-case $url in */health) f=$FAKE/health ;; */models) f=$FAKE/models ;; *) exit 7 ;; esac
+url=${!#}
+for a; do [[ $a == http://* || $a == https://* ]] && url=$a; done
+echo "curl $url" >> "$FAKE/calls"
+case $url in
+  */credits)
+    f=$FAKE/credits
+    [[ -f $FAKE/credits-fail-after ]] && (( $(grep -c '/credits$' "$FAKE/calls") > $(cat "$FAKE/credits-fail-after") )) && exit 22 ;;
+  */health) f=$FAKE/health ;;
+  */models) f=$FAKE/models ;;
+  *) exit 7 ;;
+esac
 [[ -f $f ]] || exit 22
 cat "$f"
 EOF
@@ -218,6 +232,7 @@ echo '{"status": "ok", "max_len": 40000, "max_batch": 1, "quantization": null}' 
 echo '{"object": "list", "data": [{"id": "minicpm5-2b", "object": "model"}]}' > "$S/tpl/fake/models"
 echo "/home/cbasaran/envs/glide-family/bin/python -m glide.server --model /home/cbasaran/glide-family/models/GLiDE-2B@00f122c120cdeed82284106cb77d9bab5a50ad16 --host 0.0.0.0 --port 19330" > "$S/tpl/fake/ps"
 echo "--model openbmb/MiniCPM5-2B --revision 42433e90dad95123ab87729fd7011e7110629556 --served-model-name minicpm5-2b --host 0.0.0.0 --port 18614 --dtype bfloat16 --max-model-len 65536 --generation-config auto" > "$S/tpl/fake/docker-args"
+echo '{"data": {"total_credits": 100, "total_usage": 10}}' > "$S/tpl/fake/credits"
 
 fails=0
 pass() { echo "ok   $C: $*"; }
@@ -727,6 +742,329 @@ in_case env -u RES OPP_GPU=1 bash "$D/repo/tools/v3/repeats/run.sh" mammoth-1-r1
 C=opp-gpu-required-res
 (( rc != 0 )) && grep -q "RES: set RES" "$D/run.out" && [[ $(sha256sum < "$D/home/v3.db") == "$before" ]] &&
   pass "RES still required with locals: $(cut -c1-120 "$D/run.out")" || failc "run.sh exit $rc: $(cut -c1-400 "$D/run.out")"
+
+# Zeki SR1 (#6548, #8831): MiniCPM5-2B (off) at its original's 16 matches at once sends no request before its whole
+# roster (the 9 pinned pairs) is admitted and written and its guard is up; at 7b39482 the league unit was started from
+# a config with only the programs, so their 3 pairs played before the paid opponents were added and before the guard's
+# first tick. Here run.sh runs for real (not --prepare-only) inside bwrap's own network and pid namespaces: loopback
+# only, so no request can leave the machine, and a stub entrant on 127.0.0.1:18614 (the config's own URL, unchanged)
+# records every request with its time and, at that moment, whether run.log holds the barrier line and which roster and
+# pins v3.db's league holds; the decision services' base URLs (TYPESAFE_ LIQUID_ SUBQ_ CELERIS_ FASTINO_BASE_URL) point
+# at the same stub (/opp/...), so their requests are recorded too. systemd-run and systemctl are stand-ins (the league
+# unit is a process group in the namespace), nvidia-smi answers nothing; the smoke test is a stand-in sending one request
+# marked X-Repeat-Smoke (the real one runs the production binary against the production URL). The real runner 6578a73
+# (the case's copy) creates and plays the league.
+SR1=$S/sr1
+mkdir -p "$SR1" "$S/fakebin-units"
+cat > "$S/fakebin-units/systemd-run" <<'EOF'
+#!/usr/bin/env bash
+# systemd-run --user --quiet --unit=U --working-directory=DIR CMD...: CMD in its own session; pid and exit in $FAKE/units.
+unit= dir=$PWD
+while [[ ${1:-} == -* ]]; do
+  case $1 in --unit=*) unit=${1#--unit=} ;; --working-directory=*) dir=${1#--working-directory=} ;; esac
+  shift
+done
+mkdir -p "$FAKE/units" && rm -f "$FAKE/units/$unit.rc"
+echo "$(date +%s%N) systemd-run $unit $*" >> "$FAKE/events"
+cd "$dir" || exit 1
+setsid bash -c '"$@"; echo $? > "$0"' "$FAKE/units/$unit.rc" "$@" < /dev/null > /dev/null 2>&1 &
+echo $! > "$FAKE/units/$unit.pid"
+EOF
+cat > "$S/fakebin-units/systemctl" <<'EOF'
+#!/usr/bin/env bash
+# systemctl --user is-active [-q] | stop | show -p LoadState --value | reset-failed UNIT, for systemd-run's stand-in.
+args=() q=0
+for a; do case $a in --user) ;; -q|--quiet) q=1 ;; *) args+=("$a") ;; esac; done
+cmd=${args[0]} unit=${args[-1]} p=$FAKE/units/${args[-1]}.pid
+alive() { [[ -f $p ]] && kill -0 -- "-$(cat "$p")" 2>/dev/null; }
+state() {
+  if alive; then echo active
+  elif [[ -f $FAKE/units/$unit.rc && $(cat "$FAKE/units/$unit.rc") != 0 ]]; then echo failed
+  else echo inactive; fi
+}
+case $cmd in
+  is-active) s=$(state); (( q )) || echo "$s"; [[ $s == active ]] ;;
+  stop)
+    [[ -f $p ]] || exit 5
+    echo "$(date +%s%N) systemctl stop $unit" >> "$FAKE/events"
+    kill -TERM -- "-$(cat "$p")" 2>/dev/null
+    for _ in $(seq 150); do alive || exit 0; sleep 0.1; done
+    kill -KILL -- "-$(cat "$p")" 2>/dev/null ;;
+  show) if [[ -f $p ]]; then echo loaded; else echo not-found; fi ;;
+  reset-failed) rm -f "$FAKE/units/$unit.rc" ;;
+  *) exit 1 ;;
+esac
+EOF
+printf '#!/usr/bin/env bash\necho "0, 0"\n' > "$S/fakebin-units/nvidia-smi"
+chmod +x "$S/fakebin-units/"*
+cat > "$SR1/stub.py" <<'EOF'
+# The stub entrant (and decision services under /opp/): every request recorded with its time and, at that moment, the
+# number of barrier lines in run.log and the roster and pins of the repeat's newest league in v3.db (read-only).
+import json, sqlite3, sys, threading, time
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+db, runlog, out, name = sys.argv[1:5]
+lock = threading.Lock()
+def snapshot():
+    try:
+        with open(runlog) as f:
+            barrier = sum(" barrier: guard up" in line for line in f)
+    except FileNotFoundError:
+        barrier = 0
+    for _ in range(100):
+        try:
+            c = sqlite3.connect(f"file:{db}?mode=ro", uri=True, timeout=5)
+            row = c.execute("SELECT id, pinned_pairs FROM leagues WHERE only_pairs_of = ? ORDER BY id DESC LIMIT 1",
+                            (name,)).fetchone()
+            roster = None if row is None else [r[0] for r in c.execute(
+                """SELECT p.name FROM league_players lp JOIN players p ON p.id = lp.player_id
+                   WHERE lp.league_id = ? AND lp.left_at IS NULL ORDER BY lp.id""", (row[0],))]
+            c.close()
+            return dict(barrier=barrier, league=row and row[0], roster=roster, pins=row and json.loads(row[1] or "{}"))
+        except sqlite3.OperationalError:
+            time.sleep(0.05)
+    return dict(barrier=barrier, league="unreadable", roster=None, pins=None)
+class Stub(BaseHTTPRequestHandler):
+    def log_message(self, *args):
+        pass
+    def serve(self):
+        t = time.time_ns()
+        n = int(self.headers.get("Content-Length") or 0)
+        body = self.rfile.read(n) if n else b""
+        kind = "smoke" if self.headers.get("X-Repeat-Smoke") else "opponent" if self.path.startswith("/opp/") else "entrant"
+        rec = dict(t_ns=t, method=self.command, path=self.path, kind=kind, bytes=len(body), **snapshot())
+        with lock, open(out, "a") as f:
+            f.write(json.dumps(rec) + "\n")
+        code, data = (200, b'{"ok": true}') if kind == "smoke" else (503, b'{"error": {"message": "stub: no model"}}')
+        self.send_response(code)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+    do_GET = do_POST = serve
+ThreadingHTTPServer(("127.0.0.1", 18614), Stub).serve_forever()
+EOF
+cat > "$SR1/run.sh" <<'EOF'
+#!/usr/bin/env bash
+# Inside bwrap: the stub, then run.sh ID until the first league request to the entrant (WAIT play; 5 s more) or its
+# exit, LIMIT s at most; then run.sh and every stand-in unit stopped. $D/netns.rc: run.sh's exit, or 'running'.
+D=$1 RID=$2 WAIT=$3 LIMIT=$4
+[[ $(awk -F: 'NR > 2 {gsub(/ /, "", $1); print $1}' /proc/net/dev | tr '\n' ' ') == "lo " ]] ||
+  { echo "not isolated" > "$D/netns.rc"; exit 1; }
+python3 "$SR1/stub.py" "$D/home/v3.db" "$D/home/workspace/repeats/$RID/run.log" "$D/requests.jsonl" "$NAME" \
+  > "$D/stub.log" 2>&1 &
+for _ in $(seq 100); do python3 -c 'import socket; socket.create_connection(("127.0.0.1", 18614), 1)' 2>/dev/null && break; sleep 0.1; done
+bash "$D/repo/tools/v3/repeats/run.sh" "$RID" > "$D/run.out" 2>&1 &
+pid=$! rc=running t0=$SECONDS
+while (( SECONDS - t0 < LIMIT )); do
+  if ! kill -0 "$pid" 2>/dev/null; then wait "$pid"; rc=$?; break; fi
+  if [[ $WAIT == play ]] && grep -q '"kind": "entrant"' "$D/requests.jsonl" 2>/dev/null; then
+    for _ in $(seq 40); do grep -q ' playing (' "$D/home/workspace/repeats/$RID/run.log" && break; sleep 0.5; done
+    sleep 3; break
+  fi
+  sleep 0.5
+done
+kill -0 "$pid" 2>/dev/null && kill -TERM "$pid"
+for u in "$FAKE"/units/*.pid; do [[ -e $u ]] && systemctl --user stop "$(basename "$u" .pid)"; done
+echo "$rc" > "$D/netns.rc"
+EOF
+cat > "$SR1/requests.py" <<'EOF'
+# requests.jsonl against the case's config: mode played (league requests, each after the barrier with the whole roster
+# and pins in v3.db; the smoke stand-in's after the barrier and before any league request), smoke-only, none.
+import json, sys
+from pathlib import Path
+path, cfg, base, mode = Path(sys.argv[1]), json.load(open(sys.argv[2])), int(sys.argv[3]), sys.argv[4]
+reqs = [json.loads(line) for line in path.read_text().splitlines()] if path.exists() else []
+names, pins = sorted(p["name"] for p in cfg["players"]), cfg["pinned_pairs"]
+smoke = [r for r in reqs if r["kind"] == "smoke"]
+play = [r for r in reqs if r["kind"] != "smoke"]
+entrant = [r for r in play if r["kind"] == "entrant"]
+early = [r for r in reqs if r["barrier"] <= base]
+partial = [r for r in play if sorted(r["roster"] or []) != names or r["pins"] != pins]
+late_smoke = [r for r in smoke if play and r["t_ns"] > min(p["t_ns"] for p in play)]
+out = (f"{len(reqs)} requests ({len(entrant)} to the entrant, {len(play) - len(entrant)} to decision services, "
+       f"{len(smoke)} smoke); before the barrier line: {len(early)}; league requests without the whole roster and "
+       f"pins in v3.db: {len(partial)}; smoke after a league request: {len(late_smoke)}")
+if play:
+    out += (f"; league #{play[0]['league']} with {len(play[0]['roster'] or [])} players at the first league request, "
+            f"{(min(r['t_ns'] for r in play) - min(r['t_ns'] for r in reqs)) / 1e9:.2f} s after the first request")
+ok = dict(played=bool(entrant and smoke) and not early and not partial and not late_smoke,
+          none=not reqs, **{"smoke-only": bool(smoke) and not play and not early})[mode]
+print(out)
+sys.exit(not ok)
+EOF
+SR1_RID=minicpm5-2b-off-r1
+SR1_NAME=$(python3 -c 'import json,sys; print(next(r["name"] for r in json.load(open(sys.argv[1]))["repeats"] if r["id"] == sys.argv[2]))' "$MAN" "$SR1_RID")
+sr1_setup() {  # case: MiniCPM5-2B (off) held in a scratch main, the smoke stand-in in the case's repeats.py
+  setup "$1"; hold_in_scratch_main "$SR1_RID"
+  python3 - "$D/repo/tools/v3/repeats/repeats.py" "$SR1_RID" <<'EOF'
+import sys
+from pathlib import Path
+p, rid = Path(sys.argv[1]), sys.argv[2]
+t, anchor = p.read_text(), '\nif __name__ == "__main__":\n'
+assert t.count(anchor) == 1, "main guard not found once"
+smoke = ("python3 -c 'import urllib.request as u; u.urlopen(u.Request(\"http://127.0.0.1:18614/v1/chat/completions\", "
+         "data=b\"{}\", headers={\"X-Repeat-Smoke\": \"1\", \"Content-Type\": \"application/json\"}), timeout=10)' "
+         "&& echo 'smoke stand-in: 1 request answered'")
+p.write_text(t.replace(anchor, f"\nREPEATS[{rid!r}]['server']['smoke'] = {smoke!r}\n" + anchor))
+EOF
+}
+sr1_run() {  # wait (play|exit) [limit s]
+  rm -f "$D/netns.rc"
+  bwrap --dev-bind / / --unshare-net --unshare-pid --proc /proc --die-with-parent \
+    env HOME="$S/keys" JEVGAMMON_DB="$D/home/v3.db" REPEATS_HOME="$D/home" FAKE="$D/fake" SR1="$SR1" NAME="$SR1_NAME" \
+      PATH="$S/fakebin-units:$S/fakebin:$PATH" TYPESAFE_BASE_URL=http://127.0.0.1:18614/opp/typesafe \
+      LIQUID_BASE_URL=http://127.0.0.1:18614/opp/liquid SUBQ_BASE_URL=http://127.0.0.1:18614/opp/subq \
+      CELERIS_BASE_URL=http://127.0.0.1:18614/opp/celeris FASTINO_BASE_URL=http://127.0.0.1:18614/opp/fastino \
+      bash "$SR1/run.sh" "$D" "$SR1_RID" "$1" "${2:-300}"
+  SR1_RC=$(cat "$D/netns.rc" 2>/dev/null || echo "bwrap failed")
+  echo "     run.sh: ${SR1_RC/running/still running (stopped by the test)}; run.log: $(grep -oE '(barrier|smoke test|league #|STOPPED)[^;]{0,150}' "$D/home/workspace/repeats/$SR1_RID/run.log" 2>/dev/null | tr '\n' '|' | cut -c1-700)"
+}
+sr1_requests() {  # base mode: requests.py's line, ok when the mode holds
+  python3 "$SR1/requests.py" "$D/requests.jsonl" "$D/repo/tools/v3/repeats/leagues/$SR1_RID.json" "$1" "$2"
+}
+sr1_league() { in_case python3 "$D/repo/tools/v3/repeats/repeats.py" league-id "$SR1_RID"; }
+sr1_units() { cat "$D/fake/events" 2>/dev/null | grep -c ' systemd-run '; }
+# The league's matches against the pins: one per pinned opponent, each with its pin's seed and seating.
+sr1_matches() {
+  python3 - "$D/home/v3.db" "$D/repo/tools/v3/repeats/leagues/$SR1_RID.json" "$SR1_NAME" <<'EOF'
+import json, sqlite3, sys
+db, cfg, name = sys.argv[1], json.load(open(sys.argv[2])), sys.argv[3]
+rows = sqlite3.connect(f"file:{db}?mode=ro", uri=True).execute(
+    """SELECT a.name, b.name, m.seed, m.status FROM matches m JOIN players a ON a.id = m.player1
+       JOIN players b ON b.id = m.player2 WHERE ? IN (a.name, b.name) ORDER BY m.id""", (name,)).fetchall()
+got = {(b if a == name else a): dict(seed=seed & (2**64 - 1), seat_first=a == name) for a, b, seed, _ in rows}
+ok = len(rows) == len(got) == 9 and got == cfg["pinned_pairs"]
+print(f"{len(rows)} matches, one per pinned opponent with its pin's seed and seating: {got == cfg['pinned_pairs']}; "
+      f"status: {', '.join(sorted({r[3] for r in rows}))}")
+sys.exit(not ok)
+EOF
+}
+
+# Fresh start: the barrier (guard up, roster) is logged, then the smoke test, then the league with its whole roster.
+sr1_setup sr1-fresh
+rows0=$(orig_rows "$D/home/v3.db")
+sr1_run play
+req=$(sr1_requests 0 played); rrc=$?
+lid=$(sr1_league)
+mat=$(sr1_matches); mrc=$?
+players=$(sqlite3 "$D/home/v3.db" "SELECT count(*) FROM league_players WHERE league_id = ${lid:-0} AND left_at IS NULL")
+order=$(grep -oE 'barrier: guard up|smoke test passed|league #[0-9]+ playing' "$D/home/workspace/repeats/$SR1_RID/run.log" | tr '\n' '|')
+echo "     requests: $req"; echo "     matches: $mat"
+bad=()
+[[ $SR1_RC == running ]] || bad+=("run.sh ended ($SR1_RC): $(tail -3 "$D/run.out")")
+(( rrc == 0 )) || bad+=("requests")
+[[ -n $lid && $players == 10 ]] || bad+=("league '${lid}' with $players players")
+(( mrc == 0 )) || bad+=("matches not the 9 pinned pairs")
+[[ $order == "barrier: guard up|smoke test passed|league #$lid playing|" ]] || bad+=("run.log order: $order")
+[[ $(sr1_units) == 1 ]] || bad+=("$(sr1_units) league unit starts")
+[[ $(orig_rows "$D/home/v3.db") == "$rows0" ]] || bad+=("the originals' rows changed")
+if (( ${#bad[@]} )); then failc "${bad[*]}"; else
+  pass "no request before the barrier (guard up, roster of 9 admitted); the smoke stand-in after it; every league request with league #$lid's 10 players and the pins in v3.db (one transaction); its 9 pairs at once with their pins' seeds and seating; the originals' rows unchanged"
+fi
+# The fresh league as it stands, for the short-roster case below.
+fresh_db=$S/sr1-fresh.db
+sqlite3 "$D/home/v3.db" ".backup '$fresh_db'"
+fresh_lid=$lid
+
+# Resume: the fresh league as a later start finds it (its heartbeat and turns 10 min old: the stopped runner gone; the
+# stand-in stop kills it after 15 s), one pair done (Random, a stand-in result), the others aborted or running as the
+# stop left them. The barrier comes first again; the league resumes with all 9 opponents, none added.
+C=sr1-resume
+base=$(grep -c ' barrier: guard up' "$D/home/workspace/repeats/$SR1_RID/run.log")
+mv "$D/requests.jsonl" "$D/requests-fresh.jsonl"; mv "$D/fake/events" "$D/fake/events-fresh"
+sqlite3 "$D/home/v3.db" "UPDATE leagues SET heartbeat_at = strftime('%Y-%m-%dT%H:%M:%fZ', heartbeat_at, '-10 minutes') WHERE id = $lid;
+  UPDATE turns SET created_at = strftime('%Y-%m-%dT%H:%M:%fZ', created_at, '-10 minutes')
+    WHERE game_id IN (SELECT g.id FROM games g JOIN matches m ON m.id = g.match_id JOIN players a ON a.id = m.player1
+      JOIN players b ON b.id = m.player2 WHERE '$SR1_NAME' IN (a.name, b.name));
+  UPDATE matches SET status = 'finished', score1 = 5, score2 = 0, winner = 1, finished_at = started_at, error = NULL
+    WHERE id = (SELECT m.id FROM matches m JOIN players a ON a.id = m.player1 JOIN players b ON b.id = m.player2
+      WHERE '$SR1_NAME' IN (a.name, b.name) AND 'Random' IN (a.name, b.name))"
+states=$(sqlite3 "$D/home/v3.db" "SELECT m.status, count(*) FROM matches m JOIN players a ON a.id = m.player1 JOIN players b ON b.id = m.player2 WHERE '$SR1_NAME' IN (a.name, b.name) GROUP BY m.status" | tr '\n' ' ')
+pend=$(in_case python3 "$D/repo/tools/v3/repeats/repeats.py" pending "$SR1_RID")
+lp0=$(sqlite3 "$D/home/v3.db" "SELECT * FROM league_players WHERE league_id = $lid" | sha256sum)
+echo "     before the resume: matches $states; $pend pairs pending"
+sr1_run play
+req=$(sr1_requests "$base" played); rrc=$?
+echo "     requests: $req"
+bad=()
+[[ $SR1_RC == running ]] || bad+=("run.sh ended ($SR1_RC): $(tail -3 "$D/run.out")")
+(( rrc == 0 )) || bad+=("requests")
+[[ $(sr1_league) == "$lid" && $(sqlite3 "$D/home/v3.db" "SELECT count(*) FROM leagues WHERE only_pairs_of = '$SR1_NAME'") == 1 ]] || bad+=("not league #$lid resumed")
+[[ $(sqlite3 "$D/home/v3.db" "SELECT * FROM league_players WHERE league_id = $lid" | sha256sum) == "$lp0" ]] || bad+=("league_players changed")
+grep -q " barrier: guard up .*league #$lid holds exactly them" "$D/home/workspace/repeats/$SR1_RID/run.log" || bad+=("no roster check of league #$lid")
+[[ $(sr1_units) == 1 && $(grep -c "^league #$lid: 10 models" "$D/home/repeat-$SR1_RID.log") == 2 ]] || bad+=("not one resume of #$lid")
+[[ $pend == 8 ]] || bad+=("pending $pend, not 8")
+if (( ${#bad[@]} )); then failc "${bad[*]}"; else
+  pass "resume of league #$lid (1 pair done, the rest aborted or running): no request before the second barrier (guard up, league #$lid holding exactly the 9 with their pins); the league resumed with its 10 players, none added"
+fi
+
+# Failure: the guard does not come up (OpenRouter's balance readable for run.sh's first look, then not at the guard's
+# first tick): stopped before any request; no smoke, no league unit, no league.
+sr1_setup sr1-guard-down
+echo 1 > "$D/fake/credits-fail-after"
+rows0=$(orig_rows "$D/home/v3.db")
+sr1_run exit
+req=$(sr1_requests 0 none); rrc=$?
+echo "     requests: $req"
+bad=()
+[[ $SR1_RC =~ ^[0-9]+$ ]] && (( SR1_RC != 0 )) || bad+=("run.sh: $SR1_RC")
+grep -q "STOPPED before any request: the guard did not come up (OpenRouter balance unreadable 1" "$D/home/workspace/repeats/$SR1_RID/run.log" || bad+=("no guard message")
+(( rrc == 0 )) || bad+=("requests")
+[[ $(sr1_units) == 0 && -z $(sr1_league) && ! -e $D/home/workspace/repeats/$SR1_RID/smoke.log ]] || bad+=("a unit, league or smoke test")
+[[ $(orig_rows "$D/home/v3.db") == "$rows0" ]] || bad+=("the originals' rows changed")
+if (( ${#bad[@]} )); then failc "${bad[*]}"; else
+  pass "guard not up: exit $SR1_RC, 'STOPPED before any request: the guard did not come up'; zero requests, no smoke test, no league unit, no league"
+fi
+
+# Failure: the league holds only 4 of the 9 (pair creation stopped after 4: the fresh league with 5 opponents removed
+# by the runner's league-remove): the barrier refuses; zero requests, no league unit, the league untouched.
+sr1_setup sr1-short-roster
+cp "$fresh_db" "$D/home/v3.db"
+for o in "Fastino GLiDE" "Jev 1.13.0" "Jev 1.14.0" "Liquid d1-ultra" "SubQ Snap Preview"; do
+  in_case "$D/bin-6578a73/jevgammon" league-remove --db "$D/home/v3.db" --league "$fresh_lid" --player "$o" \
+    --reason "test: pair creation stopped after 4 of 9" > /dev/null 2>&1 || failc "league-remove $o"
+done
+state0=$(sqlite3 "$D/home/v3.db" "SELECT * FROM leagues WHERE id = $fresh_lid; SELECT * FROM league_players WHERE league_id = $fresh_lid; SELECT * FROM matches" | sha256sum)
+sr1_run exit
+req=$(sr1_requests 0 none); rrc=$?
+echo "     requests: $req"
+bad=()
+[[ $SR1_RC =~ ^[0-9]+$ ]] && (( SR1_RC != 0 )) || bad+=("run.sh: $SR1_RC")
+grep -q "STOPPED before any request: $SR1_RID: roster refused, nothing may play: .*league #$fresh_lid holds 4 of the 9 pinned opponents; missing: Fastino GLiDE, Jev 1.13.0, Jev 1.14.0, Liquid d1-ultra, SubQ Snap Preview" "$D/home/workspace/repeats/$SR1_RID/run.log" || bad+=("no roster refusal")
+(( rrc == 0 )) || bad+=("requests")
+[[ $(sr1_units) == 0 && ! -e $D/home/workspace/repeats/$SR1_RID/smoke.log ]] || bad+=("a unit or smoke test")
+[[ $(sqlite3 "$D/home/v3.db" "SELECT * FROM leagues WHERE id = $fresh_lid; SELECT * FROM league_players WHERE league_id = $fresh_lid; SELECT * FROM matches" | sha256sum) == "$state0" ]] || bad+=("league or matches changed")
+if (( ${#bad[@]} )); then failc "${bad[*]}"; else
+  pass "league #$fresh_lid with 4 of 9: exit $SR1_RC, roster refused ($(grep -oE 'holds 4 of the 9[^;]*; missing: [^;]*' "$D/home/workspace/repeats/$SR1_RID/run.log" | head -1)); zero requests, no smoke test, no league unit; league and matches unchanged"
+fi
+
+# Failure: the league's creation fails after 4 of the 9 pairs (a trigger aborts the 5th opponent's league_players row
+# inside league --config's one transaction): no league, no league_players row, no league request; run.sh stops.
+sr1_setup sr1-create-fails
+rows0=$(orig_rows "$D/home/v3.db")
+top=$(sqlite3 "$D/home/v3.db" "SELECT max(id) FROM leagues")
+lps=$(sqlite3 "$D/home/v3.db" "SELECT count(*) FROM league_players")
+sqlite3 "$D/home/v3.db" "CREATE TRIGGER sr1_fail_after_4 BEFORE INSERT ON league_players
+  WHEN NEW.league_id > $top AND (SELECT count(*) FROM league_players WHERE league_id = NEW.league_id) >= 5
+  BEGIN SELECT RAISE(ABORT, 'injected: pair creation fails after 4 of 9 pairs'); END"
+sr1_run exit
+req=$(sr1_requests 0 smoke-only); rrc=$?
+echo "     requests: $req"
+bad=()
+[[ $SR1_RC =~ ^[0-9]+$ ]] && (( SR1_RC != 0 )) || bad+=("run.sh: $SR1_RC")
+grep -q "STOPPED: the league unit ended without a league" "$D/home/workspace/repeats/$SR1_RID/run.log" || bad+=("no stop message")
+grep -q "injected: pair creation fails after 4 of 9 pairs" "$D/home/repeat-$SR1_RID.log" || bad+=("the injection did not fire")
+(( rrc == 0 )) || bad+=("requests")
+[[ -z $(sr1_league) && $(sqlite3 "$D/home/v3.db" "SELECT max(id) FROM leagues") == "$top" && $(sqlite3 "$D/home/v3.db" "SELECT count(*) FROM league_players") == "$lps" ]] || bad+=("a league or league_players row written")
+[[ $(orig_rows "$D/home/v3.db") == "$rows0" ]] || bad+=("the originals' rows changed")
+if (( ${#bad[@]} )); then failc "${bad[*]}"; else
+  pass "creation fails after 4 of 9 pairs: exit $SR1_RC, 'the league unit ended without a league'; no league or league_players row (one transaction), zero league requests (only the smoke stand-in's, after the barrier)"
+fi
+
+# One at a time (GLiDE 2B, the six): roster has nothing to check (exit 0, silent), so run_league.sh is as before.
+C=sr1-roster-one-at-a-time
+out=$(for rid in glide-2b-r1 mammoth-1-r1; do "${R0[@]}" roster "$rid" /nonexistent 2>&1 || echo "$rid: exit $?"; done)
+[[ -z $out ]] && pass "roster: exit 0 and silent for glide-2b-r1 and mammoth-1-r1" || failc "$out"
 
 C=scratch-ledger
 ledger_intact && pass "the scratch Nace ledger is byte-identical (sha256 ${LEDGER_SHA%% *}), no -wal or -shm beside it" ||

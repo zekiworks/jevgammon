@@ -5,7 +5,9 @@
 # the user unit repeat-ID-league with the checked runner build, run.sh's database and the admitted-settings record of
 # run.sh's check (workspace/repeats/ID/admitted.json); log repeat-ID.log in its working directory. Before the league
 # starts, `repeats.py bound` compares that record with what the league will read (the config file's sha256, the config
-# players' and pinned opponents' v3.db settings, read write-ahead-log-aware): any difference and no league starts.
+# players' and pinned opponents' v3.db settings, read write-ahead-log-aware): any difference and no league starts. At the
+# original's concurrency, `repeats.py roster` too (Zeki SR1 #6548): the config holds the entrant and every pinned
+# opponent as admitted, and a league that exists holds exactly them with those settings and pins; else no league starts.
 set -euo pipefail
 RID=$1 BIN=$2 ADMITTED=${4:?usage: run_league.sh ID BIN DB ADMITTED}
 export JEVGAMMON_DB=$3
@@ -16,6 +18,7 @@ export PATH=$HOME/.local/bin:$PATH
 ID=$(python3 "$T/repeats.py" league-id "$RID")
 exec >> "repeat-$RID.log" 2>&1
 python3 "$T/repeats.py" bound "$RID" "$ADMITTED" || exit 1
+python3 "$T/repeats.py" roster "$RID" "$ADMITTED" || exit 1
 if [[ -n $ID ]]; then
   exec "$BIN" league --resume "$ID" --db "$JEVGAMMON_DB"
 fi

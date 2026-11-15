@@ -32,9 +32,15 @@
 # on someone else's server, never started or stopped here, no card of ours: `repeats.py pins` (their late entry's own
 # pins.sh, healthy then pinned) is part of check, so a failure refuses before any write, runs again before the first
 # match and at every guard tick (3 failures in a row stop). A repeat at its original's concurrency (CONCURRENT: the
-# original's max_matches over 1, MiniCPM5-2B (off)'s 16) gets every paid opponent added before the league plays, so its
-# pairs run at once as in the original. Then each opponent of the plan in turn (programs, paid API,
-# local servers smallest first): league-add after confirming nothing plays the league (quiesce), the opponent's server
+# original's max_matches over 1, MiniCPM5-2B (off)'s 16) holds every pinned opponent in its league config, so the league
+# is created with its whole roster and pins in one transaction (league --config) and its pairs run at once as in the
+# original; no request (smoke test, league) is sent before its barrier (Zeki SR1 #6548): any league unit of the repeat
+# stopped (quiesce), the guard's first tick clean (balance read and over the floor, billed under the cap, the entrant
+# healthy) and `repeats.py roster` passing (the admitted config holds the entrant and all its pinned opponents with the
+# pins; a league that exists holds exactly them, current, with those settings and pins; run_league.sh checks it again
+# before every league start); any failure there stops with nothing requested. Then each opponent of the plan in turn
+# (programs, paid API, local servers smallest first): one at a time, league-add after confirming nothing plays the
+# league (quiesce; at the original's concurrency every opponent is in the league already), the opponent's server
 # under RES on OPP_GPU when there is room beside everything else (a pair that cannot fit on one card with the entrant is
 # left missing and reported), the league unit until the pair is played (4 h at most), the server stopped. Opponents
 # blocked today (GPT-6 Luna, Mercury Decide) are skipped and reported unless RETRY_BLOCKED=1.
@@ -187,13 +193,26 @@ case $KIND in
     out=$("${R[@]}" pins "$RID" 2>&1) || { log "STOPPED before any match: $out"; exit 1; }
     log "$out" ;;
 esac
-if [[ -n $SMOKE ]]; then
+smoke() {
+  [[ -n $SMOKE ]] || return 0
   if bash -c "$SMOKE" >> "$ST/smoke.log" 2>&1; then
     log "smoke test passed ($(tail -1 "$ST/smoke.log"))"
   else
     finish "STOPPED: smoke test failed ($ST/smoke.log)"; exit 1
   fi
+}
+# The barrier of a repeat at its original's concurrency (above); one at a time, the smoke test comes first as before.
+if (( CONCURRENT )); then
+  ID=$("${R[@]}" league-id "$RID")
+  quiesce || { finish "STOPPED before any request: league ${ID:+#$ID }not confirmed stopped"; exit 1; }
+  if ! guard || (( unread || down )); then
+    finish "STOPPED before any request: the guard did not come up (OpenRouter balance unreadable $unread, $NAME's health check failed $down)"
+    exit 1
+  fi
+  out=$("${R[@]}" roster "$RID" "$ST/admitted.json" 2>&1) || { finish "STOPPED before any request: $out"; exit 1; }
+  log "barrier: guard up (OpenRouter balance, billed, $NAME healthy and pinned); $out"
 fi
+smoke
 log "repeat up: $NAME, runner $BIN; OpenRouter \$$bal (floor \$$FLOOR); cap \$$CAP; opponents on GPU ${OPP_GPU:-none} (reservation ${RES:-none})"
 
 missing=()
@@ -220,20 +239,26 @@ join() {
     log "$name added to league #$ID"
   fi
 }
-# At the original's concurrency, every paid opponent of the plan joins before the league plays (the loop below then
-# waits for each pair in turn while they all play); a failed league-add is tried again in the loop.
+# At the original's concurrency the league starts now, once: created from the config with its whole roster (or resumed
+# once more after the barrier); the loop below waits for each pair in turn while they all play.
 if (( CONCURRENT )); then
-  while IFS='|' read -r -u 3 name kind _ _ _ blocked; do
-    [[ $kind == api && ( -z $blocked || ${RETRY_BLOCKED:-} == 1 ) && $(pending "$name") != 0 ]] || continue
-    join "$name" || log "$name: tried again in turn"
-  done 3< <("${R[@]}" plan "$RID")
+  ensure_league || { finish "STOPPED before any match: the league unit $UNIT did not start"; exit 1; }
+  for _ in $(seq 600); do
+    ID=$("${R[@]}" league-id "$RID")
+    [[ -n $ID ]] && break
+    systemctl --user is-active -q "$UNIT" || { ID=$("${R[@]}" league-id "$RID"); break; }
+    sleep 1
+  done
+  [[ -n $ID ]] || { finish "STOPPED: the league unit ended without a league (repeat-$RID.log); no match"; exit 1; }
+  log "league #$ID playing ($UNIT): $NAME and its pinned opponents, all at once"
 fi
 while IFS='|' read -r -u 3 name kind mib start stop blocked; do
   [[ $(pending "$name") == 0 ]] && continue
   if [[ -n $blocked && ${RETRY_BLOCKED:-} != 1 ]]; then
     log "$name: skipped, blocked today (manifest blockers_today)"; missing+=("$name (blocked)"); continue
   fi
-  if [[ $kind != program ]]; then
+  # At the original's concurrency every opponent is already in the league (the barrier): no league-add, no quiesce.
+  if [[ $kind != program ]] && (( ! CONCURRENT )); then
     join "$name" || { missing+=("$name (league-add failed)"); continue; }
   fi
   guard || { finish "stopped by the guard"; exit 1; }

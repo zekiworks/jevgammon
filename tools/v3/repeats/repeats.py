@@ -12,7 +12,8 @@ checkout's (JEVGAMMON_DB overrides).
 
   repeats.py manifest [ID...]         writes mailbox/repeats/manifest-2026-11-11.json from v3.db (read-only); with IDs
                                       only those entries (added or replaced), the others kept as committed
-  repeats.py configs [ID...]          writes tools/v3/repeats/leagues/ID.json from the manifest (every ID by default)
+  repeats.py configs [ID...]          writes tools/v3/repeats/leagues/ID.json from the manifest (every ID by default):
+                                      the entrant and the programs; at the original's concurrency every pinned opponent
   repeats.py plan ID                  opponents to play, in order: NAME|KIND|MiB|START|STOP|BLOCKED (read-only)
   repeats.py check ID                 fail-closed preflight (read-only): held, config pins and settings, a recorded
                                       attempt's league exactly as recorded, held name on the site, runner binary and
@@ -22,6 +23,10 @@ checkout's (JEVGAMMON_DB overrides).
                                       1 = anything else; on success the last line is the admitted-settings record
   repeats.py bound ID FILE            the league config and v3.db's settings are those of check's admitted-settings
                                       record FILE, else exit 1 (read-only; run_league.sh before the league starts)
+  repeats.py roster ID FILE           at the original's concurrency, the barrier before the league starts (read-only;
+                                      run.sh and run_league.sh): as bound, plus the config holding exactly the admitted
+                                      entrant and pinned opponents with the pins and the league, once it exists, holding
+                                      them all; exit 1 on any difference (one at a time: exit 0, nothing to check)
   repeats.py entry ID NAME FILE       a pinned opponent's settings text as admitted in FILE, for league-add --entry
                                       (read-only; exit 1 when anything differs from FILE)
   repeats.py env ID                   shell assignments for run.sh (NAME KIND BIN ENTRANT_MIB START STOP HEALTH ...)
@@ -504,8 +509,10 @@ REPEATS = {
         pace="up to 16 matches at once, as the original",
         concurrency=("Name: '<original> [repeat 1]', a new players row; settings otherwise as the original's (the "
                      "changed fields are listed under Settings); its 9 pairs at once as in the original "
-                     "(players.settings max_matches 16, parallel 16: run.sh adds every paid opponent before the "
-                     "league plays, as the original's league held them all)."),
+                     "(players.settings max_matches 16, parallel 16): its league config holds all 9 pinned "
+                     "opponents, as the original's league held them all, so the league is created with its whole "
+                     "roster and pins in one transaction, and run.sh starts it only once that roster is admitted "
+                     "and its guard is up (Zeki SR1 #6548)."),
         differences=[
             SMALL_RUNNER_DIFFERENCE % ("171698f (late-smallchat, target/smallchat", "its src is origin/main's 18cc78d",
                                        "MiniCPM5-2B (off) 1,300 of 1,300 requests, its opponents 676 of 676"),
@@ -782,8 +789,12 @@ def configs(args) -> None:
         if args.ids and rid not in args.ids:
             continue
         r = m["rules"]
-        progs = [json.loads(conn.execute("SELECT settings FROM players WHERE name = ?", (n,)).fetchone()[0])
-                 for n in PROGRAMS]
+        opponents = []
+        for n in config_opponents(m):
+            row = conn.execute("SELECT settings FROM players WHERE name = ?", (n,)).fetchone()
+            if row is None:
+                sys.exit(f"{rid}: no players row for {n}")
+            opponents.append(json.loads(row[0]))
         cfg = dict(
             note=(f"Reproducibility repeat 1 of {m['original']} ({REPEATS[rid].get('requested_by', WRITTEN_FOR)}, "
                   f"#4710; run {m['run_id']}): {m['name']} plays {m['original']}'s original League 1 field again, "
@@ -795,12 +806,13 @@ def configs(args) -> None:
             prompt_version=r["prompt_version"], seed=conn.execute("SELECT seed FROM leagues WHERE id = 1").fetchone()[0],
             order_seed=r["order_seed"], rounds=r["rounds"], clock=0, delay=30, max_turns=r["max_turns"],
             mirror_concurrent=r["mirror_concurrent"], only_pairs_of=m["name"], hidden=True,
-            pinned_pairs=wanted_pins(m), players=[m["settings_repeat"]] + progs)
+            pinned_pairs=wanted_pins(m), players=[m["settings_repeat"]] + opponents)
         if r["clock_seconds"] is not None or r["start_position"] is not None:
             sys.exit(f"{rid}: originals ran with a clock or another start; not covered")
         path = out / f"{rid}.json"
         path.write_text(json.dumps(cfg, indent=2, ensure_ascii=False) + "\n")
-        print(f"{path.relative_to(REPO)}: {m['name']} v {', '.join(PROGRAMS)} (the rest by league-add)")
+        print(f"{path.relative_to(REPO)}: {m['name']} v {', '.join(config_opponents(m))}"
+              + ("" if concurrent(m) else " (the rest by league-add)"))
 
 
 def shell_env(args) -> None:
@@ -811,9 +823,9 @@ def shell_env(args) -> None:
                      HEALTH_ANY=int(bool(s.get("health_any_status"))), SMOKE=s["smoke"] or "",
                      STATUS=m["status_file"], CAP=m["cost_basis"]["cap_usd"],
                      # Local opponents in the plan (OPP_GPU and RES are needed only then); the original's concurrency
-                     # (max_matches over 1: run.sh adds every paid opponent before the league plays them).
+                     # (max_matches over 1: the league config holds every pinned opponent, config_opponents).
                      LOCALS=sum(p["kind"] == "local" and p["status"] == "finished" for p in m["pairs"]),
-                     CONCURRENT=int((m["settings_repeat"].get("max_matches") or 1) > 1)).items():
+                     CONCURRENT=int(concurrent(m))).items():
         print(f"{k}={shlex.quote(str(v))}")
 
 
@@ -832,6 +844,69 @@ def plan(args) -> None:
 def wanted_pins(m) -> dict:
     """The pin of every opponent of the original: its match's seed (u64) and whether the original sat first."""
     return {p["opponent"]: dict(seed=int(p["seed_u64"]), seat_first=p["original_is_player1"]) for p in m["pairs"]}
+
+
+def concurrent(m) -> bool:
+    """A repeat at its original's concurrency (max_matches over 1: MiniCPM5-2B (off)'s 16)."""
+    return (m["settings_repeat"].get("max_matches") or 1) > 1
+
+
+def config_opponents(m) -> list[str]:
+    """The league config's players besides the entrant. One at a time: the programs (the rest join by league-add, each
+    when its turn comes). At the original's concurrency (Zeki SR1 #6548): every pinned opponent, programs first, then
+    by name, so `league --config` writes the whole roster and its pins in one transaction before its first match
+    (league-add after the league's creation would let the founders' pairs play before the roster is complete)."""
+    if not concurrent(m):
+        return list(PROGRAMS)
+    return [*PROGRAMS, *sorted(o for o in wanted_pins(m) if o not in PROGRAMS)]
+
+
+def roster_problems(conn, rid: str, m, cfg, admitted: dict) -> list[str]:
+    """The barrier before a repeat at its original's concurrency plays (Zeki SR1 #6548; read-only): its league config
+    holds the entrant and exactly its pinned opponents (every played pair of the original, none local: they all start
+    at once) with the manifest's pins, each admitted (a config client of the admitted-settings record); once the
+    repeat's league exists, it holds exactly those players as current participants, each with the config's settings,
+    and the config's pins. Any difference is a problem: nothing may play on a partial roster."""
+    want = wanted_pins(m)
+    played = [p for p in m["pairs"] if p["status"] == "finished"]
+    names = [p.get("name") for p in cfg.get("players") or [{}]]
+    bad = []
+    if sorted(want) != sorted(p["opponent"] for p in played):
+        bad.append(f"{len(want)} pins for {len(played)} played pairs")
+    local = sorted(p["opponent"] for p in m["pairs"] if p["kind"] == "local")
+    if local:
+        bad.append(f"local opponents {', '.join(local)} cannot start at once with the others")
+    if names[:1] != [m["name"]] or names[1:] != config_opponents(m):
+        bad.append(f"the league config's players are not {m['name']} and its {len(want)} pinned opponents")
+    if cfg.get("pinned_pairs") != want:
+        bad.append("the league config's pins are not the manifest's")
+    got = [c.get("name") for c in admitted.get("clients") or [] if c.get("source") == "league config"]
+    if got != names:
+        bad.append(f"admitted: {', '.join(map(str, got)) or 'none'}, not the league config's {len(names)} players")
+    lid = league_id(conn, rid)
+    if lid is None:
+        return bad
+    pins = conn.execute("SELECT pinned_pairs FROM leagues WHERE id = ?", (lid,)).fetchone()[0]
+    if json.loads(pins or "{}") != want:
+        bad.append(f"league #{lid} holds other pins")
+    rows = conn.execute("""SELECT p.name, p.settings FROM league_players lp JOIN players p ON p.id = lp.player_id
+                           WHERE lp.league_id = ? AND lp.left_at IS NULL ORDER BY lp.id""", (lid,)).fetchall()
+    have = [r[0] for r in rows]
+    if sorted(have) != sorted(names):
+        missing = [n for n in names if n not in have]
+        extra = sorted({n for n in have if n not in names or have.count(n) > 1})
+        bad.append(f"league #{lid} holds {sum(n in want for n in have)} of the {len(want)} pinned opponents"
+                   + (f"; missing: {', '.join(missing)}" if missing else "")
+                   + (f"; besides the config's: {', '.join(extra)}" if extra else ""))
+    config = {p.get("name"): p for p in cfg.get("players") or []}
+    for name, settings in rows:
+        try:
+            same = json.loads(settings) == config[name]
+        except (KeyError, TypeError, ValueError):
+            same = name not in config
+        if not same:
+            bad.append(f"league #{lid}: {name}'s settings are not the league config's")
+    return bad
 
 
 def trigger_names(conn) -> list[str] | None:
@@ -902,8 +977,8 @@ def settings_problems(conn, rid: str, m, cfg) -> list[str]:
                      hidden=True).items():
         if cfg.get(k) != v:
             bad.append(f"league config {k} is {cfg.get(k)!r}, not {v!r}")
-    if [p.get("name") for p in players[1:] if p] != PROGRAMS:
-        bad.append(f"league config programs are not {', '.join(PROGRAMS)}")
+    if [p.get("name") for p in players[1:] if p] != config_opponents(m):
+        bad.append(f"league config players besides the entrant are not {', '.join(config_opponents(m))}")
     for p in players[1:]:
         row = conn.execute("SELECT settings FROM players WHERE name = ?", ((p or {}).get("name"),)).fetchone()
         if row is None or json.loads(row[0]) != p:
@@ -1126,6 +1201,31 @@ def bound(args) -> None:
     print(f"{args.id}: the league config and v3.db's settings are the admitted ones")
 
 
+def roster(args) -> None:
+    """The barrier before a repeat at its original's concurrency starts its league (run.sh, then run_league.sh; Zeki
+    SR1 #6548; read-only): binding_problems and roster_problems against the admitted-settings record; exit 1 on any
+    problem. A repeat one match at a time grows its roster by league-add: nothing to check, exit 0 silently."""
+    m = load()[args.id]
+    if not concurrent(m):
+        return
+    admitted = read_admitted(args.id, args.admitted)
+    conn = ro()
+    path = HERE / "leagues" / f"{args.id}.json"
+    bad = binding_problems(conn, path, admitted)
+    try:
+        cfg = json.loads(path.read_text())
+    except (OSError, ValueError) as e:
+        sys.exit(f"{args.id}: roster refused: league config {path} unreadable ({e})")
+    bad += roster_problems(conn, args.id, m, cfg, admitted)
+    if bad:
+        sys.exit(f"{args.id}: roster refused, nothing may play: " + "; ".join(bad))
+    lid = league_id(conn, args.id)
+    print(f"{args.id}: roster complete: {m['name']} and its {len(wanted_pins(m))} pinned opponents, admitted, in the "
+          "league config with the manifest's pins; " + (f"league #{lid} holds exactly them, current, with the config's "
+          "settings and pins" if lid else "no league yet: league --config writes them and the pins in one "
+          "transaction before its first match"))
+
+
 def entry(args) -> None:
     """league-add --entry for a pinned opponent (read-only): its players.settings text, printed only when everything is
     as admitted (binding_problems) and the text printed is the one admitted (sha256); exit 1 otherwise."""
@@ -1318,6 +1418,10 @@ def main() -> None:
     p.add_argument("id", choices=list(REPEATS))
     p.add_argument("admitted", help="check's admitted-settings record (JSON file)")
     p.set_defaults(fn=bound)
+    p = sub.add_parser("roster")
+    p.add_argument("id", choices=list(REPEATS))
+    p.add_argument("admitted", help="check's admitted-settings record (JSON file)")
+    p.set_defaults(fn=roster)
     p = sub.add_parser("entry")
     p.add_argument("id", choices=list(REPEATS))
     p.add_argument("name", help="a pinned opponent")

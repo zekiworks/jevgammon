@@ -60,6 +60,9 @@ class Key:
     value: str  # its URL value
     label: str  # its text
     summary: str | None = None  # its words in the phone's scope summary; None: the label, '': nothing (Class: All)
+    # Its explanation (html), shown as a tip by hover and keyboard focus (v2.7, Ümit #9113): what a Measure key's measure
+    # is, in the bench's own words. A tap still only chooses the key; on touch the same words are the column head's tip.
+    help: str | None = None
 
 
 @dataclass(frozen=True)
@@ -108,6 +111,8 @@ class Column:
     sub_1m: str = ""  # sub and unit per 1M questions, for the site's cost-unit switch (data-cost-unit="1m")
     unit_1m: str = ""
     phone: bool = False  # a helper column that stays in the table on a phone (else its value moves into the details box)
+    tip: str = ""  # what the column means (HTML), opened by hover, keyboard focus and tap on its head, as the rank head's
+    # rank_note (v2.6); its head then explains and never sorts
 
 
 @dataclass(frozen=True)
@@ -122,6 +127,9 @@ class Model:
     flag: str = ""
     tag: str = ""  # setting · route · snapshot, never part of the name
     icon: str = ""  # HTML after the dot: the family's icon (an inline <svg> or <img>), the site's own markup
+    # Short labelled lines under the name on a phone only, so what a wide table holds past the screen's edge reads at a
+    # glance (v2.6: Grading's latency and cost, Zeki #6754); never on a wider screen, where the columns show.
+    glance: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -304,6 +312,13 @@ class Bench:
         {'cost': {'measure': 'cost'}, 'calibration': {'measure': 'confidence'}}."""
         return {}
 
+    def shortcuts(self) -> tuple[str, Sequence[tuple[str, Mapping[str, str]]]] | None:
+        """Preset keys under the scope line, outside the Filters (so the phone shows them closed): a row label and
+        (text, {param: value}) pairs, each setting those filter values at once: ('Up to 15B', [('Small chat models',
+        {'models': 'chat', 'class': 'tiny,small'}), ...]). A preset is pressed while the view is exactly it (zw-ui.js).
+        None: no such row."""
+        return None
+
     def empty_text(self, part: str | None, measure: str | None) -> str:
         return self.labels.empty
 
@@ -383,10 +398,15 @@ def key_row(row: KeyRow, *, hidden_keys: Iterable[str] = (), label_id: str | Non
     label_id = label_id or f"zw-label-{row.param}"
     hidden = set(hidden_keys)
     pressed = row.chosen_values
-    keys = "".join(f'<button type="button" class="zw-key" data-zw-value="{esc(key.value)}"'
-                   f'{attrs({"data-zw-summary": key.summary if key.summary is not None else None, "hidden": key.value in hidden})}'
-                   f' aria-pressed="{"true" if key.value in pressed else "false"}">{esc(key.label)}</button>'
-                   for key in row.keys)
+    def button(key: Key) -> str:
+        tip_id = f"{label_id}-{key.value}-help"
+        html = (f'<button type="button" class="zw-key" data-zw-value="{esc(key.value)}"'
+                f'{attrs({"data-zw-summary": key.summary if key.summary is not None else None, "hidden": key.value in hidden, "aria-describedby": tip_id if key.help else None})}'
+                f' aria-pressed="{"true" if key.value in pressed else "false"}">{esc(key.label)}</button>')
+        if not key.help:
+            return html
+        return f'<span class="zw-tip zw-key-tip">{html}<span class="zw-tip-body" id="{esc(tip_id)}" role="tooltip">{key.help}</span></span>'
+    keys = "".join(button(key) for key in row.keys)
     row_cls = classes("zw-row", "zw-measures" if row.param == MEASURE else None, cls)
     return (f'<div{attrs({"class": row_cls, "data-zw-param": row.param, "data-zw-default": row.chosen, "data-zw-any": row.any, "data-zw-hide-empty": row.hide_empty})}'
             f' role="group" aria-labelledby="{esc(label_id)}"><span class="zw-row-label" id="{esc(label_id)}">{esc(row.label)}</span>'
@@ -702,26 +722,38 @@ def model_cell(model: Model, box_id: str, box_label: str, lines: Sequence[str], 
     return (f'<td class="zw-model"><i class="zw-dot" style="--zw-dot:{esc(model.colour)}"{attrs({"title": model.dot_title or None})}></i>'
             + (f'<span class="zw-icon" aria-hidden="true">{model.icon}</span>' if model.icon else "") + name
             + (f' <span class="zw-tag">{esc(model.tag)}</span>' if model.tag else "")
-            + (f'<span class="zw-flag">{esc(model.flag)}</span>' if model.flag else "")
-            + (f'<span class="zw-class">{esc(model.class_label)}</span>' if model.class_label else "")
+            # A space before the flag and the class (v2.6): where the cell is narrow they move to the next line, the name
+            # stays whole beside its icon.
+            + (f' <span class="zw-flag">{esc(model.flag)}</span>' if model.flag else "")
+            + (f' <span class="zw-class">{esc(model.class_label)}</span>' if model.class_label else "")
+            + "".join(f'<span class="zw-glance">{esc(line)}</span>' for line in model.glance)
             + tail + "</td>")
 
 
 # --- The compact table, the chart, a list, a panel ----------------------------------------------------------------
-def head_cell(column: Column, cls: str = "") -> str:
-    """A column head; a helper's head also carries its label and unit for the phone's details line (zw-ui.js)."""
+def head_cell(column: Column, cls: str = "", tip_id: str = "") -> str:
+    """A column head; a helper's head also carries its label and unit for the phone's details line (zw-ui.js). With a tip
+    (and its tip_id, unique in the page) the label is a key whose explanation opens by hover, focus and tap (v2.6)."""
     helper = "zw-help" in cls.split()
+    label = esc(column.label)
+    if column.tip and tip_id:
+        label = _tip(label, column.tip, tip_id)
     return (f'<th scope="col"{attrs({"class": classes(cls, "zw-num" if column.num else None, "zw-keep-phone" if column.phone else None), "data-zw-label": column.label if helper else None, "data-zw-unit": units(column.unit, column.unit_1m) if helper and column.unit else None})}>'
-            f'{esc(column.label)}' + (f'<span class="zw-sub">{units(column.sub, column.sub_1m)}</span>' if column.sub else "") + "</th>")
+            f'{label}' + (f'<span class="zw-sub">{units(column.sub, column.sub_1m)}</span>' if column.sub else "") + "</th>")
+
+
+def _tip(label_html: str, tip_html: str, tip_id: str) -> str:
+    """A key (label_html) whose explanation (tip_html) opens by hover, keyboard focus and tap (zw-ui.js, .zw-tip)."""
+    return (f'<span class="zw-tip"><button type="button" class="zw-tip-key" aria-expanded="false" aria-controls="{esc(tip_id)}" '
+            f'aria-describedby="{esc(tip_id)}">{label_html}</button>'
+            f'<span class="zw-tip-body" id="{esc(tip_id)}" role="tooltip">{tip_html}</span></span>')
 
 
 def rank_head(columns: Columns, tip_id: str) -> str:
     """The rank head (Tier or Rank); with rank_note, a key whose explanation opens by hover, focus and tap."""
     if not columns.rank_note:
         return f'<th scope="col" class="zw-rank">{esc(columns.rank)}</th>'
-    return (f'<th scope="col" class="zw-rank"><span class="zw-tip"><button type="button" class="zw-tip-key" aria-expanded="false" '
-            f'aria-controls="{esc(tip_id)}" aria-describedby="{esc(tip_id)}">{esc(columns.rank)}</button>'
-            f'<span class="zw-tip-body" id="{esc(tip_id)}" role="tooltip">{columns.rank_note}</span></span></th>')
+    return f'<th scope="col" class="zw-rank">{_tip(esc(columns.rank), columns.rank_note, tip_id)}</th>'
 
 
 def _row_attrs(row: Row, extra: Mapping[str, str | bool | None], cls: str | None) -> str:
@@ -822,7 +854,8 @@ def compact_table(columns: Columns, rows: Sequence[Row], ids: Iterable[str], *, 
     view = dict(state) if state is not None else {name: (any_values or {}).get(name) or "all" for name in tier_by}
     numbers = _numbers(rows, tier_by, view, marks)
     head = (f'<thead><tr>{rank_head(columns, f"{row_prefix}-tip")}<th scope="col">{esc(columns.model)}</th>'
-            + head_cell(columns.measure, "zw-measure") + "".join(head_cell(column, "zw-help") for column in columns.helpers)
+            + head_cell(columns.measure, "zw-measure", f"{row_prefix}-tip-m")
+            + "".join(head_cell(column, "zw-help", f"{row_prefix}-tip-{index}") for index, column in enumerate(columns.helpers))
             + "</tr></thead>")
     ids = iter(ids)
 
@@ -856,8 +889,13 @@ def compact_table(columns: Columns, rows: Sequence[Row], ids: Iterable[str], *, 
             other_box = boxes.box(other, labels) if boxes is not None else f"{sub_id}-box"
             body.append(f'<tr{_row_attrs(other, {"id": sub_id, "data-zw-of": row_id, "data-zw-box": other_box}, classes("zw-sub zw-sub-closed", mark))}>'
                         '<td class="zw-rank"></td>' + cells(other, other_box) + "</tr>")
-    return (f'<table{attrs({"class": "zw-table", "data-zw-tier-by": " ".join(tier_by) or None, "aria-labelledby": label_id})}>'
-            f'{head}<tbody>{"".join(body)}</tbody></table>')
+    # More than two helpers (v2.6: Grading's every measure side by side): the measure column takes no fixed share of the
+    # width, only its minimum, so the helpers' columns fit (zw-ui.css .zw-many); where they still do not (a tablet), the
+    # table scrolls inside its own box, never the page (.zw-wide, zw-ui.js wides).
+    many = len(columns.helpers) > 2
+    table = (f'<table{attrs({"class": classes("zw-table", "zw-many" if many else None), "data-zw-tier-by": " ".join(tier_by) or None, "aria-labelledby": label_id})}>'
+             f'{head}<tbody>{"".join(body)}</tbody></table>')
+    return f'<div class="zw-wide"><div class="zw-wide-box">{table}</div></div>' if many else table
 
 
 def bar_chart(rows: Sequence[Row], *, marks: Sequence[str | None] = (), label: str = "",
@@ -1180,8 +1218,16 @@ def results(bench: Bench, *, block_id: str = "zw", box_prefix: str | None = None
                    for param, found in present.items() if base[param]}
     scope_lines = "".join(f'<span{attrs({"class": classes("zw-scope-part", None if part == default.get("part") else "zw-away"), "data-part": part})}>'
                           f"{esc(bench.scope(part))}</span>" for part in parts if bench.scope(part)) if parts != [None] else esc(bench.scope(None))
+    shortcut = bench.shortcuts()
     head = (f'<header class="zw-pagehead"><h1 class="zw-title" id="{esc(block_id)}-title">{esc(bench.title())}</h1>'
             + (f'<p class="zw-scope">{scope_lines}</p>' if scope_lines else "") + "</header>")
+    if shortcut:  # the preset keys: links without the script, keys pressed from the view with it
+        presets_id = f"{block_id}-label-presets"
+        head += (f'<div class="zw-row zw-presets" role="group" aria-labelledby="{esc(presets_id)}">'
+                 f'<span class="zw-row-label" id="{esc(presets_id)}">{esc(shortcut[0])}</span><div class="zw-keys">'
+                 + "".join(f'<a class="zw-key" role="button" href="?{esc("&".join(f"{k}={v}" for k, v in values.items()))}"'
+                           f' data-zw-preset="{esc(json.dumps(dict(values), separators=(",", ":")))}" aria-pressed="false">{esc(text)}</a>'
+                           for text, values in shortcut[1]) + "</div></div>")
     filters_id = f"{block_id}-filters"
     anchors = bench.anchors()
     main_calcs: set[str] = set()

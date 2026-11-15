@@ -206,7 +206,7 @@ def _shown(out: Path, src: str, path: list, kind: str, texts: dict):
         page = (out / src).read_text()
         box = re.search(r'<div class="zw-box" id="([^"]+)" role="group" aria-label="'
                         + re.escape(esc(path[0])) + ': details"', page)
-        table = re.search(r'<table class="zw-table".*?</table>', page, re.S).group(0)
+        table = re.search(r'<table class="zw-table[ "].*?</table>', page, re.S).group(0)
         m = box and re.search(r'<tr[^>]*data-zw-box="' + re.escape(box.group(1)) + r'"[^>]*><td class="zw-rank">(\d+)</td>',
                               table)
         return m and m.group(1)

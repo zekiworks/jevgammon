@@ -6,8 +6,8 @@
 # Run only when the server is ours alone (after turkce's 'done KEY'); it costs nothing (no paid player is asked).
 #   tools/v3/late-smallchat/test.sh KEY        [SMALLCHAT_URL / SMALLCHAT_MODEL as for start.sh]
 # What it does: the server is the pinned one (pins.sh), the setup's League 1 config is written to
-# ~/.cache/smallchat/test/KEY (never workspace/ or v3.db), and `jevgammon ask` puts the first smoke position
-# (positions/smoke.jsonl) to the setup once, answers in ~/.cache/smallchat/test/KEY/answers.db. Exit 0 only when that
+# ~/.cache/smallchat/test/KEY (SMALLCHAT_TEST_OUT replaces it; never workspace/ or v3.db), and `jevgammon ask` puts
+# the first smoke position (positions/smoke.jsonl) to the setup once, answers in OUT/answers.db. Exit 0 only when that
 # answer is valid with the letter probabilities read from logprobs (probability_source 'logprobs'), as every decision of
 # League 1's local chat setups was; otherwise exit 1 and the setup is reported, not started.
 set -uo pipefail
@@ -16,7 +16,7 @@ KEY=${1:?usage: test.sh KEY}
 T=$(dirname "$(readlink -f "$0")")
 [[ -f $T/models/$KEY/player.json ]] || { echo "unknown setup $KEY" >&2; exit 1; }
 BIN=${SMALLCHAT_BIN:-/home/cbasaran/code/jevgammon/target/smallchat/release/jevgammon}
-OUT=$HOME/.cache/smallchat/test/$KEY
+OUT=${SMALLCHAT_TEST_OUT:-$HOME/.cache/smallchat/test/$KEY}
 PLAYER=$(python3 "$T/smallchat.py" "$KEY" player) || { echo "settings of $KEY unreadable" >&2; exit 1; }
 field() { python3 -c 'import json,sys; print(eval(sys.argv[2], {}, {"p": json.loads(sys.argv[1])}))' "$PLAYER" "$1"; }
 [[ $(field '"reasoning_prefill" in p or "reasoning_field" in p') == False || -n ${SMALLCHAT_BIN:-} ]] ||

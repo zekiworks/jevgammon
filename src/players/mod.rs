@@ -177,7 +177,9 @@ pub struct PlayerConfig {
     /// `reasoning` and `reasoning_content`) and only `Answer:` as its content, so that the
     /// template renders the reasoning turn itself. For LFM3 under vLLM, whose content format
     /// `openai` makes the template open an extra empty think block before a content that
-    /// carries `<think>...</think>`. Takes precedence over `reasoning_prefill`.
+    /// carries `<think>...</think>`, and for Qwen3.5, whose template re-renders such a content
+    /// as `<think>\n{trimmed reasoning}\n</think>\n\n`. Takes precedence over
+    /// `reasoning_prefill`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reasoning_field: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]

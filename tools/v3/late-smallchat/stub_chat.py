@@ -23,8 +23,8 @@ B the highest probability), and refuses with 400 what the setup must never send:
     counted with the model's own tokenizer and the pinned repo's chat_template.jinja (the template the server applies),
     as vLLM refuses (llama.cpp would cut the reply instead; the client must never get there).
 usage (bound to 127.0.0.1): stub_chat.py KEY PORT LOG   (LOG: one JSON line per request, with the counted tokens)
-Needs transformers (STUB_PYTHON, see stub_test.sh: transformers 5.22.2, the vLLM be47189f3 image's); the HF cache must
-hold the pin.
+Needs transformers (stub_test.sh: the version in the setup's vLLM image, 5.17.0 for v0.30.0, 5.22.2 for the be47189f3
+nightly); the HF cache must hold the pin.
 """
 import json
 import sys
@@ -85,7 +85,11 @@ def prompt(body):
     if readout:
         head = render(body["messages"][:-1], add_generation_prompt=True)
         rest = text[len(head):] if text.startswith(head) else None
-        if rest is None or "<think>" in rest or not rest.endswith("Answer:") or (THINKING and "stub reasoning" not in rest):
+        # A template whose generation prompt opens the think block must not get another one (LFM3 under content format
+        # openai); a template that does not know think tags (Gemma 4) gets the prefill's own <think>...</think> as text.
+        opened = head.rstrip().endswith("<think>")
+        if (rest is None or (opened and "<think>" in rest) or not rest.endswith("Answer:")
+                or (THINKING and "stub reasoning" not in rest)):
             wrong = f"read-out prompt is not the reasoning request's prompt + reasoning + Answer: (assistant turn {text[len(head) - 40:]!r})"
     return tokens, wrong
 

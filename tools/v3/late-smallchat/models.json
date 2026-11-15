@@ -7,14 +7,14 @@
   "thinking": "switch",
   "context": 262144,
   "logic": {
-   "key": "lfm3-1.7b-vllm-rerun",
-   "port": 18634,
+   "key": "lfm3-1.7b-vllm",
+   "port": 18605,
    "server": "vllm",
-   "port_source": "logic's small_models.py SETUPS (lfm3-1.7b-vllm-rerun, no explicit port: 18600 + its position = 18634); work/lfm3_rerun.sh serves it on bariton GPU 1 and leaves it up (Ümit #6250 via Main); its twin lfm3-1.7b-vllm (port 18605) runs the same server arguments and is accepted by pins.sh through SMALLCHAT_URL=http://127.0.0.1:18605/v1"
+   "port_source": "logic's small_models.py SETUPS lfm3-1.7b-vllm (port=18605, served name lfm3-1.7b via continues; Main 15 Nov: logic's current serve key); the same server arguments as lfm3-1.7b-vllm-rerun/-seed1/-seed2 (port 18634): SMALLCHAT_URL=http://127.0.0.1:18634/v1 if one of those serves instead; LFM3-1.7B (off) is already in v3.db (its first stage, 13 Nov) with base_url :18634, so its player.json keeps 18634 and its local stage needs a server there (lfm3-1.7b-vllm-rerun/-seed1/-seed2) or a recorded change of players.settings"
   },
   "own": {
    "server": "vllm",
-   "port": 18634,
+   "port": 18605,
    "max_num_seqs": 32,
    "args": [
     "--reasoning-parser",
@@ -142,7 +142,9 @@
    ]
   },
   "weights_gb": 9.3,
-  "pair_hours": 12
+  "pair_hours": 12,
+  "content_format": "openai",
+  "content_format_source": "vLLM v0.30.0's auto-detection (vllm/renderers/hf.py _detect_content_format, run on the pinned chat_template.jinja: render_content loops over content); MiniCPM5-2B's: string"
  },
  "qwen3.5-9b": {
   "name": "Qwen3.5-9B",
@@ -166,7 +168,9 @@
    ]
   },
   "weights_gb": 19.3,
-  "pair_hours": 12
+  "pair_hours": 12,
+  "content_format": "openai",
+  "content_format_source": "vLLM v0.30.0's auto-detection (vllm/renderers/hf.py _detect_content_format, run on the pinned chat_template.jinja: render_content loops over content); MiniCPM5-2B's: string"
  },
  "spark-x2.6-4b": {
   "name": "Spark-X2.6-4B",

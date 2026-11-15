@@ -1024,6 +1024,44 @@
    "card_source": "https://huggingface.co/Qwen/Qwen3.5-4B",
    "card_quote": "Card: '- Number of Parameters: 4B'."
   },
+  "Qwen3.5-2B": {
+   "total_b": 2.27,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/Qwen/Qwen3.5-2B/tree/15852e8c16360a2fea060d615a32b45270f8a8fc",
+   "quote": "Qwen/Qwen3.5-2B @ 15852e8c16360a2fea060d615a32b45270f8a8fc, model.safetensors-00001-of-00001.safetensors (632 tensors; BF16 2,274,067,232 + F32 2,592): 2,274,069,824 logical parameters (the file's safetensors header; language model 1,881,825,088 incl. tied embeddings, vision encoder 331,416,576, MTP layer 60,828,160). Maker's text: 'Number of Parameters: 2B'.",
+   "checked": [
+    "https://huggingface.co/api/models/Qwen/Qwen3.5-2B/revision/15852e8c16360a2fea060d615a32b45270f8a8fc",
+    "https://huggingface.co/Qwen/Qwen3.5-2B/raw/15852e8c16360a2fea060d615a32b45270f8a8fc/README.md"
+   ],
+   "read": "2026-11-15",
+   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors header (~/.cache/huggingface/hub); equal to logic's small_models.py size (checkpoint 2,274,069,824). Played text-only; the count is the released checkpoint's. Held late entry (held_setups.json; small chat models, Ümit #8445/#6516) until its entry is complete.",
+   "terms": "2.27B incl. its vision encoder and MTP layer; card: 2B",
+   "card_total_b": 2,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/Qwen/Qwen3.5-2B",
+   "card_quote": "Card: '- Number of Parameters: 2B'."
+  },
+  "Gemma 4 E2B": {
+   "total_b": 5.12,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/google/gemma-4-E2B-it/tree/4adf15748de9e1a0097b6274cee9c15836c41c37",
+   "quote": "google/gemma-4-E2B-it @ 4adf15748de9e1a0097b6274cee9c15836c41c37, model.safetensors (2,011 tensors, BF16; language model incl. per-layer embeddings, vision and audio encoders): 5,123,178,016 parameters = all tensor elements 5,123,178,979 (the file's safetensors header) minus buffers 232 x 4 vision-encoder clip bounds (input_min/input_max/output_min/output_max) + 35 x layer_scalar = 963 (as Gemma 4 E4B: all nn.Buffer in transformers' models/gemma4/modeling_gemma4.py); language model 4,647,449,856, audio tower 304,824,608 + embed_audio 2,359,296, vision tower 167,364,608 + embed_vision 1,179,648 (after buffers). Maker's text: card table 'E2B | 2.3B effective (5.1B with embeddings)'.",
+   "checked": [
+    "https://huggingface.co/api/models/google/gemma-4-E2B-it/revision/4adf15748de9e1a0097b6274cee9c15836c41c37",
+    "https://huggingface.co/google/gemma-4-E2B-it/raw/4adf15748de9e1a0097b6274cee9c15836c41c37/README.md"
+   ],
+   "read": "2026-11-15",
+   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors header (~/.cache/huggingface/hub); Dense; 'E' is the card's 'effective' size without per-layer embeddings, not a MoE active count, so no active figure. Logic's small_models.py gives checkpoint 5,123,178,979 = this total with the buffers kept; here they are removed, as for Gemma 4 E4B, Gemma 4 31B and Cygnet. Held late entry (held_setups.json; small chat models, Ümit #8445/#6516) until its entry is complete.",
+   "terms": "5.12B incl. its per-layer embeddings, vision and audio encoders; card: 2.3B effective, 5.1B with embeddings",
+   "card_total_b": 5.1,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/google/gemma-4-E2B-it",
+   "card_quote": "Card table, 'E2B' column: 'Total Parameters | 2.3B effective (5.1B with embeddings)'; 'Vision Encoder Parameters | ~150M'; 'Audio Encoder Parameters | ~300M'."
+  },
   "Qwen3.5-9B": {
    "total_b": 9.65,
    "active_b": null,

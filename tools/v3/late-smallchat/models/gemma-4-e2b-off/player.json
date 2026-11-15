@@ -1,0 +1,18 @@
+{
+  "name": "Gemma 4 E2B (off)",
+  "spec": "openai-compatible/gemma-4-e2b-it",
+  "provider": "local-vllm",
+  "quantization": "bf16",
+  "base_url": "http://127.0.0.1:18606/v1",
+  "request": {
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "top_logprobs": 20,
+  "letter_readout": "prefill",
+  "note": "google/gemma-4-E2B-it @ 4adf15748de9e1a0097b6274cee9c15836c41c37, BF16, on our GPU through vLLM v0.30.0 (vllm/vllm-openai:v0.30.0) in BF16, --generation-config auto; logic's server (small_models.py key gemma-4-e2b-it, port 18606, bariton, started by small_models.py serve for this setup alone (Ümit #8445/#6516, 15 Nov)) or ours on the same port and name (tools/v3/late-smallchat/serve.sh). thinking off (enable_thinking false); the letter is read from a prefilled Answer: (as Gemma 4 31B (off)); server reasoning split: vLLM reasoning parser gemma4 (no reasoning generated). Sampling: League 1's local chat rule, per request: temperature 1.0 from the chat client, everything else the server's default (generation_config.json via --generation-config auto, else vLLM neutral), no seed; it differs from logic's Logic & Math runs: logic's own Gemma 4 E2B run is thinking off, temperature 0, max_tokens 8,192 (as its Gemma 4 31B run); ours: temperature 1, top_p 0.95 and top_k 64 from generation_config.json. Output cap 1 token (prefill readout). Length: League 1's longest stored request (10,225 decisions) is 4,705 prompt tokens with this model's tokenizer and pinned chat_template.jinja (thinking off; transformers 5.17.0, v0.30.0's), far inside the server's --max-model-len 69,632 with the 1-token cap; never truncated. Up to 16 matches and 16 requests at once, League 1's rule for its local chat setups (the server is this setup's alone). Late entry v the original League 1 table (tools/v3/late-smallchat; Ümit #8445/#6516, 15 Nov; as Gemma 4 E4B)",
+  "device": "RTX PRO 6000 (bariton), one GPU",
+  "parallel": 16,
+  "max_matches": 16
+}

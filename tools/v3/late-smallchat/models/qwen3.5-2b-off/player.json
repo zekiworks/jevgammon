@@ -1,0 +1,18 @@
+{
+  "name": "Qwen3.5-2B (off)",
+  "spec": "openai-compatible/qwen3.5-2b-nothink",
+  "provider": "local-vllm",
+  "quantization": "bf16",
+  "base_url": "http://127.0.0.1:18643/v1",
+  "request": {
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "top_logprobs": 20,
+  "letter_readout": "prefill",
+  "note": "Qwen/Qwen3.5-2B @ 15852e8c16360a2fea060d615a32b45270f8a8fc, BF16, on our GPU through vLLM v0.30.0 (vllm/vllm-openai:v0.30.0) in BF16, --generation-config auto; logic's server (small_models.py key qwen3.5-2b-nothink, port 18643, served name qwen3.5-2b-nothink, bariton, started by small_models.py serve for this setup alone (Ümit #8445/#6516, 15 Nov)); serve.sh's fallback serves models.json's qwen3.5-2b port and name (18635, qwen3.5-2b), not these. thinking off (enable_thinking false); the letter is read from a prefilled Answer: (as Gemma 4 31B (off)); server reasoning split: vLLM reasoning parser qwen3 (no reasoning generated). Sampling: League 1's local chat rule, per request: temperature 1.0 from the chat client, everything else the server's default (generation_config.json via --generation-config auto, else vLLM neutral), no seed; it differs from logic's Logic & Math runs: logic sends the card's temperature 1.0, top_p 0.95, top_k 20, min_p 0, presence_penalty 1.5, seed 0; ours gets vLLM's neutral defaults for everything but temperature (top_p 1, top_k off, presence_penalty 0), the repo having no generation_config.json. Output cap 1 token (prefill readout). Length: League 1's longest stored request (10,225 decisions) is 4,732 prompt tokens with this model's tokenizer and pinned chat_template.jinja (thinking off; transformers 5.17.0, v0.30.0's), far inside the server's --max-model-len 69,632 with the 1-token cap; never truncated. Up to 16 matches and 16 requests at once, League 1's rule for its local chat setups (the server is this setup's alone). Late entry v the original League 1 table (tools/v3/late-smallchat; Ümit #8445/#6516, 15 Nov; as Qwen3.5-4B)",
+  "device": "RTX PRO 6000 (bariton), one GPU",
+  "parallel": 16,
+  "max_matches": 16
+}

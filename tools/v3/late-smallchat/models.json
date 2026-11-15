@@ -271,5 +271,53 @@
   },
   "weights_gb": 58.6,
   "pair_hours": 30
+ },
+ "qwen3.5-2b": {
+  "name": "Qwen3.5-2B",
+  "repo": "Qwen/Qwen3.5-2B",
+  "rev": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+  "thinking": "switch",
+  "context": 262144,
+  "logic": {
+   "key": "qwen3.5-2b",
+   "port": 18635,
+   "server": "vllm",
+   "port_source": "logic's small_models.py SETUPS qwen3.5-2b (port 18635, served name qwen3.5-2b; Qwen3.5-2B (on)); Qwen3.5-2B (off) is served by its twin qwen3.5-2b-nothink (same pin, image and server arguments; port 18643, served name qwen3.5-2b-nothink: its player.json); late entry, Ümit #8445/#6516 (15 Nov)"
+  },
+  "own": {
+   "server": "vllm",
+   "port": 18635,
+   "args": [
+    "--reasoning-parser",
+    "qwen3"
+   ]
+  },
+  "weights_gb": 4.5,
+  "pair_hours": 12,
+  "content_format": "openai",
+  "content_format_source": "as Qwen3.5-4B: the pinned chat_template.jinja differs from Qwen3.5-4B's only in the enable_thinking default (lines 149-152), render_content loops over content"
+ },
+ "gemma-4-e2b": {
+  "name": "Gemma 4 E2B",
+  "repo": "google/gemma-4-E2B-it",
+  "rev": "4adf15748de9e1a0097b6274cee9c15836c41c37",
+  "thinking": "switch",
+  "context": 131072,
+  "logic": {
+   "key": "gemma-4-e2b-it",
+   "port": 18606,
+   "server": "vllm",
+   "port_source": "logic's small_models.py SETUPS gemma-4-e2b-it (port 18606, served name gemma-4-e2b-it, bariton, vllm/vllm-openai:v0.30.0) for both setups, as Gemma 4 E4B (thinking switched per request); not gemma-4-e2b-it-think (port 18624): that one is served on spark (remote, the v0.30.0 index digest), which small_models.py serve with a bariton GPU and pins.sh's local docker check cannot use; late entry, Ümit #8445/#6516 (15 Nov)"
+  },
+  "own": {
+   "server": "vllm",
+   "port": 18606,
+   "args": [
+    "--reasoning-parser",
+    "gemma4"
+   ]
+  },
+  "weights_gb": 10.2,
+  "pair_hours": 12
  }
 }

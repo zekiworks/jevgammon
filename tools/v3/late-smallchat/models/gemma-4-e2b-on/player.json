@@ -1,0 +1,21 @@
+{
+  "name": "Gemma 4 E2B (on)",
+  "spec": "openai-compatible/gemma-4-e2b-it",
+  "provider": "local-vllm",
+  "quantization": "bf16",
+  "base_url": "http://127.0.0.1:18606/v1",
+  "reasoning": "template default",
+  "request": {
+    "chat_template_kwargs": {
+      "enable_thinking": true
+    },
+    "reasoning_effort": null
+  },
+  "max_tokens": 32768,
+  "top_logprobs": 20,
+  "letter_readout": "prefill",
+  "note": "google/gemma-4-E2B-it @ 4adf15748de9e1a0097b6274cee9c15836c41c37, BF16, on our GPU through vLLM v0.30.0 (vllm/vllm-openai:v0.30.0) in BF16, --generation-config auto; logic's server (small_models.py key gemma-4-e2b-it, port 18606, bariton, started by small_models.py serve for this setup alone (Ümit #8445/#6516, 15 Nov)) or ours on the same port and name (tools/v3/late-smallchat/serve.sh); thinking is switched per request, as Gemma 4 E4B (on) on gemma-4-e4b-it's server; not logic's gemma-4-e2b-it-think (port 18624), which is served on spark (remote) and cannot be started on a bariton GPU nor seen by pins.sh. thinking on (enable_thinking true), no effort sent (reasoning_effort removed: template default); the letter is read after the reasoning from a prefilled Answer: (as Gemma 4 31B (on)); reasoning split by the server's vLLM reasoning parser gemma4 (it matters only for replies cut off before </think>: the letter is read from logprobs after the prefilled answer). Sampling: League 1's local chat rule, per request: temperature 1.0 from the chat client, everything else the server's default (generation_config.json via --generation-config auto, else vLLM neutral), no seed; it differs from logic's Logic & Math runs: logic's own Gemma 4 E2B runs are temperature 0 with max_tokens 8,192 (thinking off; thinking on: gemma-4-e2b-it-think 8,192, -think-32k 32,768); ours: temperature 1, top_p 0.95 and top_k 64 from generation_config.json. Output cap 32,768 tokens (the chat client default, as Qwen3.8-27B (on)). Length: League 1's longest stored request (10,225 decisions) is 4,707 prompt tokens with this model's tokenizer and pinned chat_template.jinja (thinking on; transformers 5.17.0, v0.30.0's): 4,707 + 32,768 = 37,475 <= the server's --max-model-len 69,632 (the read-out adds the reasoning, at most 32,768, and a few prefill tokens); never truncated. Up to 16 matches and 16 requests at once, League 1's rule for its local chat setups (the server is this setup's alone). Late entry v the original League 1 table (tools/v3/late-smallchat; Ümit #8445/#6516, 15 Nov; as Gemma 4 E4B)",
+  "device": "RTX PRO 6000 (bariton), one GPU",
+  "parallel": 16,
+  "max_matches": 16
+}

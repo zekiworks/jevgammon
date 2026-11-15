@@ -1,0 +1,8 @@
+ mailbox/repeats/manifest-2026-11-11.json         |   2 +-
+ tools/v3/repeats/METADATA                        |   2 +-
+ tools/v3/repeats/leagues/minicpm5-2b-off-r1.json |  59 ++++
+ tools/v3/repeats/repeats.py                      | 126 ++++++++-
+ tools/v3/repeats/run.sh                          |  47 +++-
+ tools/v3/repeats/run_league.sh                   |   5 +-
+ tools/v3/repeats/test_launcher.sh                | 344 ++++++++++++++++++++++-
+ 7 files changed, 557 insertions(+), 28 deletions(-)

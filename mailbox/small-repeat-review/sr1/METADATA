@@ -1,0 +1,6 @@
+owner: jevgammon (agent RepeatBarrier for Main)
+created: 2026-11-15
+what: review package for Zeki SR1 (hold #6548 on minicpm5-2b-off-r1): branch small-repeat-sr1 34f4337 (from small-repeat 7b39482): diff vs 7b39482 and its stat, test_launcher logs at 7b39482 (95 ok) and at 34f4337 (101 ok, six SR1 cases; scratch databases, stub entrant inside bwrap's own network namespace, no request leaves the machine), SHA256SUMS; nothing started, nothing written to production
+reason: Zeki SR1 #8831
+delete when: with mailbox/small-repeat-review/ (Zeki's review closed and the two repeats reported or dropped)
+written: 2026-11-15 (RepeatBarrier)

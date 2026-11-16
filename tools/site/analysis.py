@@ -924,7 +924,8 @@ def paired(decs_a: list[dict], decs_b: list[dict], key: str) -> dict:
 
 
 def disagreements(v1: dict) -> dict:
-    """Positions of the v1 set where the setups chose different plays."""
+    """Positions of the v1 set where the setups chose different plays: counts and shares only, never a play (no bench
+    publishes its questions, Zeki #11091)."""
     by_pos = defaultdict(dict)
     for d in v1["decisions"]:
         if not d["invalid"]:
@@ -936,9 +937,8 @@ def disagreements(v1: dict) -> dict:
         best = min(range(len(pos["losses"])), key=lambda i: pos["losses"][i])
         common, k = c.most_common(1)[0]
         rows.append(dict(id=pos["key"], pid=pid, phase=pos["phase"], plays=len(pos["plays"]), setups=len(picks),
-                         distinct=len(c), best_share=c.get(best, 0) / len(picks),
-                         common=pos["plays"][common], common_share=k / len(picks),
-                         common_loss=pos["losses"][common], best=pos["plays"][best]))
+                         distinct=len(c), best_share=c.get(best, 0) / len(picks), common_share=k / len(picks),
+                         common_loss=pos["losses"][common]))
     rows.sort(key=lambda r: (-r["distinct"], r["best_share"], r["id"]))
     dist = Counter(r["distinct"] for r in rows)
     return dict(positions=len(rows), all_agree=dist.get(1, 0), distribution=dict(sorted(dist.items())), rows=rows)

@@ -1604,10 +1604,9 @@ def disagreements_page(S) -> str:
         rows.append(f'<tr data-dataset="v1-set"><td>{esc(r["id"])}</td>'
                     f'<td>{esc(PHASE_LABEL.get(r["phase"], r["phase"]))}</td><td class="num">{r["plays"]}</td>'
                     f'<td class="num">{r["distinct"]}</td><td class="num">{pct(r["best_share"], 0)}</td>'
-                    f'<td>{esc(r["common"])}<span class="small">{pct(r["common_share"], 0)} of setups, loses {eq(r["common_loss"])}</span></td>'
-                    f'<td>{esc(r["best"])}</td></tr>')
+                    f'<td class="num">{pct(r["common_share"], 0)}</td><td class="num">{eq(r["common_loss"])}</td></tr>')
     head = ["Position", "Phase", "Legal plays", "Different plays chosen", "Setups choosing the engine's best",
-            "Most common play", "Engine's best play"]
+            "Setups choosing the most common play", "Equity the most common play loses"]
     return (page_head(S, "Where models disagree", "Where do models disagree?")
             + f'<section class="card" id="v1" data-version="v1"><div class="section-head"><h2>Earlier version: the v1 set</h2>{status_badge(EARLIER)}</div>'
               + SWIPE + table(head, rows, "The 150 positions with the most different plays (then the fewest engine-best choices)",

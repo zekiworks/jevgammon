@@ -1012,10 +1012,18 @@ def run(S: dict, out: Path) -> list[str]:
     return failures
 
 
+# A backgammon move as the site writes plays ("13/9", "bar/23", "6/off").
+MOVE = re.compile(r"\b(?:bar|\d{1,2})/(?:off|\d{1,2})\b")
+
+
 def _items(x) -> bool:
-    """Whether a JSON value holds a decision record: a board together with its plays, the best or the chosen play."""
+    """Whether a JSON value holds a decision record: a board together with its plays, the best or the chosen play; or
+    a disagreement row (a position's best_share) carrying a play: a move string or a payload keyed by moves."""
     if isinstance(x, dict):
         if "board" in x and any(k in x for k in ("best", "chosen", "plays")):
+            return True
+        if "best_share" in x and any(MOVE.search(str(k)) or isinstance(v, str) and MOVE.search(v) or
+                                     isinstance(v, (dict, list)) and MOVE.search(json.dumps(v)) for k, v in x.items()):
             return True
         return any(_items(v) for v in x.values())
     return isinstance(x, list) and any(_items(v) for v in x)
@@ -1026,10 +1034,11 @@ POSITION_TEXT = re.compile(r"your checkers:\s+\d+:\d+")
 
 
 def check_no_questions(out: Path) -> list[str]:
-    """No bench publishes its questions (Ümit via Zeki #11048, #11050): no file anywhere in the output, the frozen
-    results/ and archive/ copies included, holds a decision record (a board with its plays or the engine's best play),
-    draws a board (board.py's SVG, class bd-frame) or writes a position as a prompt does (POSITION_TEXT); decisions/
-    holds only its note page and the shared rules texts (contexts/*.txt)."""
+    """No bench publishes its questions (Ümit via Zeki #11048, #11050, #11091): no file anywhere in the output, the
+    frozen results/ and archive/ copies included, holds a decision record (a board with its plays or the engine's best
+    play) or a disagreement row with a play (_items), draws a board (board.py's SVG, class bd-frame), writes a position
+    as a prompt does (POSITION_TEXT) or shows a play in a Where models disagree row (data-dataset="v1-set" rows of
+    disagreements/index.html); decisions/ holds only its note page and the shared rules texts (contexts/*.txt)."""
     bad = []
     for p in out.rglob("*"):
         if not p.is_file():
@@ -1048,6 +1057,10 @@ def check_no_questions(out: Path) -> list[str]:
                 bad.append(f"{rel}: draws a board")
             if POSITION_TEXT.search(text):
                 bad.append(f"{rel}: writes a position as a prompt does")
+            if rel.parts[-2:] == ("disagreements", "index.html") and any(
+                    MOVE.search(re.sub(r"<[^>]+>", " ", row))
+                    for row in re.findall(r'<tr data-dataset="v1-set">.*?</tr>', text, re.S)):
+                bad.append(f"{rel}: a disagreement row shows a play")
     return bad
 
 

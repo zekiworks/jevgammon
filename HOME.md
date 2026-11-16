@@ -1,5 +1,5 @@
 # jevgammon: the backgammon benchmark (league, late entries, repeat checks, "Did they improve?" learning, backgammon site)
-_Updated 2026-11-16 03:45 CET_
+_Updated 2026-11-17 01:05 CET_
 
 ## Now
 - **Working on:** nothing running. Ümit's "only the models I named" (#9201) pauses my model work; Ümit also paused website work (#9200).
@@ -11,6 +11,8 @@ _Updated 2026-11-16 03:45 CET_
 - Learning lanes Grok 4.7, GPT-6.1 Sol / GPT-6 Astra, LFM2.5-24B-A2B · on hold for the big-model pause (Ümit #8603, Zeki #8637), results kept
 
 ## Done (newest first)
+- 2026-11-17 00:01 Question items removed from the backgammon site (per-decision boards/prompts/best plays, v1 set, Disagreements move strings), live and frozen snapshot; Zeki acceptance PASS (#11118)
+- 2026-11-16 21:01 Liquid d1.2-ultra / d1.2 first stages 9/9, 0 invalid ($0.33 / $0.28); local matches running
 - 2026-11-16 03:40 MiniCPM5-2B (off) repeat live on Experiments: risk 53.3 → 53.0, PR 53.8 → 52.7, 0 invalid, no verdict (#9741)
 - 2026-11-16 02:56 MiniCPM5-2B (thinking off) repeat (Run 2): 9/9 pinned pairs, seeds = originals, 1,370 decisions, 0 invalid, $0.13; GPU 3 released (#9683)
 - 2026-11-16 00:33 GPU 2 booking released (card empty since 00:02 after logic's/turkce's seed runs); Toolbench told it may re-book (#9558)

@@ -12,7 +12,10 @@
 # must be answered. Once: v3.db backup (VACUUM INTO and zstd, both on ~/T9/jevgammon-league-backups, not /; zstd -t),
 # first match id, the late_entry_stage trigger, the league config. Then starts the league unit late-KEY-league and
 # guards it every 60 s; it stops the league unit (matches resume later from their last turn):
-#   - when OpenRouter's balance (paid opponents bill there) is under $FLOOR ($40), or cannot be read 3 times in a row;
+#   - when OpenRouter's balance is under $FLOOR ($40; FLOOR_USD overrides it), or cannot be read 3 times in a row.
+#     None of this entry's 9 opponents bills through OpenRouter (Celeris, Fastino, Jev, Liquid and SubQ use their own
+#     keys; Mercury Decide is skipped), so the floor only guards the shared balance for others; run with FLOOR_USD=0
+#     when that balance is below $40 for other benches' approved runs (Ümit's no-cap approval, Zeki #10931);
 #   - when the entry's cost from the first match (the entrant plus the paid opponents) reaches $CAP ($5);
 #   - when the 9 pairs are played (done), every open pair is blocked (e.g. Liquid 404s the model), or after 12 h.
 set -uo pipefail
@@ -25,7 +28,7 @@ W=workspace/late-$KEY
 ST=$W/state
 BIN=/home/cbasaran/code/jevgammon/target/gemini-decision/release/jevgammon
 BACKUPS=/home/cbasaran/T9/jevgammon-league-backups
-FLOOR=40
+FLOOR=${FLOOR_USD:-40}
 CAP=5
 UNIT=late-$KEY-league
 NAME=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["name"])' "$T/player-$KEY.json")

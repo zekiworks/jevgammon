@@ -178,6 +178,30 @@ pub fn connect(path: &Path) -> Result<Connection> {
     Ok(conn)
 }
 
+/// Opens `path` read-only and immutable (`file:…?mode=ro&immutable=1`), for admission: no
+/// write, no lock, no `-wal`/`-shm` opened or created and no checkpoint on close, whatever
+/// other connections do. Only the main file is read: pages still only in the write-ahead
+/// log are not seen, and a checkpoint running meanwhile can make a read fail.
+pub fn open_immutable(path: &Path) -> Result<Connection> {
+    use std::os::unix::ffi::OsStrExt as _;
+    let mut uri = String::from("file:");
+    for &b in path.as_os_str().as_bytes() {
+        if b.is_ascii_alphanumeric() || b"-._~/".contains(&b) {
+            uri.push(b as char);
+        } else {
+            uri.push_str(&format!("%{b:02X}"));
+        }
+    }
+    uri.push_str("?mode=ro&immutable=1");
+    Connection::open_with_flags(
+        uri,
+        rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY
+            | rusqlite::OpenFlags::SQLITE_OPEN_URI
+            | rusqlite::OpenFlags::SQLITE_OPEN_NO_MUTEX,
+    )
+    .with_context(|| format!("opening {} read-only, immutable", path.display()))
+}
+
 fn has_column(conn: &Connection, table: &str, column: &str) -> Result<bool> {
     Ok(conn.query_row(
         "SELECT COUNT(*) > 0 FROM pragma_table_info(?1) WHERE name = ?2",

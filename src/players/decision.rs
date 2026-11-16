@@ -2,6 +2,7 @@
 //! OpenAI's Decisions API. The legal plays become the options of one `choice` question, in
 //! the seeded option order, and the service returns its probability for each.
 
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use anyhow::{Result, bail};
@@ -9,12 +10,17 @@ use serde_json::{Map, Value, json};
 
 use super::prompt::{instructions, option_text, state};
 use super::{Decision, DecisionRequest};
+use crate::budget::{Ledger, Usage};
 use crate::db::Exchange;
 use crate::http::{self, RetryTime};
 
 const QUESTION: &str = "play";
 /// Longest wait for a service to answer its warm-up request.
 const WARM_UP_LIMIT: Duration = Duration::from_secs(900);
+/// Budget worst case: input tokens a provider may add to a request's own bytes for its
+/// system prompt and chat template (unpublished for the hosted services; Drex Max v1's own
+/// loader adds about 80, measured with its tokenizer on an empty two-option question).
+const TEMPLATE_MARGIN: usize = 4096;
 
 /// A decision service and how to call it.
 pub struct Service {
@@ -247,6 +253,16 @@ pub fn service(provider: &str) -> Option<&'static Service> {
         .find(|s| s.provider.eq_ignore_ascii_case(provider))
 }
 
+/// The URL a client of `service` calls: `base_url` (a player config's), else the service's
+/// environment variable, else its default, then its path.
+pub fn endpoint(service: &Service, base_url: Option<&str>) -> String {
+    let base = match base_url {
+        Some(url) => url.to_owned(),
+        None => std::env::var(service.url_var).unwrap_or_else(|_| service.base_url.into()),
+    };
+    format!("{}{}", base.trim_end_matches('/'), service.path)
+}
+
 pub struct DecisionClient {
     http: reqwest::Client,
     service: &'static Service,
@@ -254,17 +270,23 @@ pub struct DecisionClient {
     /// `None` when the service takes no `model` field.
     model: Option<String>,
     url: String,
+    /// Hard spending cap: every attempt reserves its worst case before it is sent.
+    budget: Option<Arc<Ledger>>,
+    /// A league's run guard naming this setup: its latch is checked before every attempt.
+    guard: Option<Arc<crate::guard::Guard>>,
 }
 
 impl DecisionClient {
     /// `model` overrides the service's default; it is ignored by services without a
     /// `model` field. `base_url` (a player config's) overrides the service's URL and its
-    /// environment variable. Fails when a required API key is missing.
+    /// environment variable. `budget` meters every request attempt. Fails when a required
+    /// API key is missing.
     pub fn new(
         http: reqwest::Client,
         service: &'static Service,
         model: Option<String>,
         base_url: Option<&str>,
+        budget: Option<Arc<Ledger>>,
     ) -> Result<Self> {
         let key = service
             .key_vars
@@ -277,10 +299,6 @@ impl DecisionClient {
                 service.key_vars.join(" or ")
             );
         }
-        let base = match base_url {
-            Some(url) => url.to_owned(),
-            None => std::env::var(service.url_var).unwrap_or_else(|_| service.base_url.into()),
-        };
         Ok(DecisionClient {
             http,
             service,
@@ -288,8 +306,16 @@ impl DecisionClient {
             model: service
                 .default_model
                 .map(|default| model.unwrap_or_else(|| default.to_owned())),
-            url: format!("{}{}", base.trim_end_matches('/'), service.path),
+            url: endpoint(service, base_url),
+            budget,
+            guard: None,
         })
+    }
+
+    /// Puts the client under a league's run guard (`None`: none).
+    pub fn with_guard(mut self, guard: Option<Arc<crate::guard::Guard>>) -> Self {
+        self.guard = guard;
+        self
     }
 
     pub fn max_choices(&self) -> usize {
@@ -318,6 +344,13 @@ impl DecisionClient {
                         error.context(format!("{} refused the warm-up", self.service.label))
                     );
                 }
+                // A guard stop (latch, cap) is not cured by waiting.
+                Err(error) if self.guard.is_some() && crate::guard::is_stop(&error) => {
+                    return Err(error.context(format!(
+                        "{} warm-up stopped by the league guard",
+                        self.service.label
+                    )));
+                }
                 Err(error) if started.elapsed() < WARM_UP_LIMIT => {
                     eprintln!("{} warming up: {error:#}", self.service.label);
                     tokio::time::sleep(Duration::from_secs(10)).await;
@@ -333,22 +366,72 @@ impl DecisionClient {
         }
     }
 
+    /// With a budget, each attempt (retries included) first reserves its worst case, and is
+    /// refused before the call when spent + reserved + that would pass the cap. Worst case:
+    /// one input token per byte of the JSON body plus `TEMPLATE_MARGIN` tokens, and as many
+    /// output tokens as body bytes. A byte-level BPE tokenizer never makes a token of less
+    /// than one byte of the UTF-8 text it encodes, and the body holds every byte of the state,
+    /// instructions and options the model reads (JSON escaping only adds bytes); the margin
+    /// covers the provider's own system prompt and chat template, which it does not publish.
+    /// An answer with complete usage is booked at max(its list price, the provider's reported
+    /// `usage.cost`); an answer with incomplete usage (no input tokens, or no output tokens
+    /// when output is priced) or any error status (no service here documents one as unbilled)
+    /// at max(its worst case, the reported charge, read on its own); an attempt without a
+    /// response, or without a known charge, keeps the worst case. Under a league guard the
+    /// latch is checked before every attempt (the first, and each retry after its backoff
+    /// wait: nothing is reserved or sent once it is set).
     async fn send(&self, body: &Value, retry: &RetryTime) -> Result<String> {
-        http::send(
-            || {
-                let request = self.http.post(&self.url).json(body);
-                match &self.key {
-                    Some(key) => request.bearer_auth(key),
-                    None => request,
-                }
-            },
-            retry,
-        )
-        .await
-        .map_err(|e| {
+        let latch = || match &self.guard {
+            Some(guard) => guard.check(),
+            None => Ok(()),
+        };
+        let stop: http::Stop<'_> = self.guard.is_some().then_some(&latch as _);
+        let make = || {
+            let request = self.http.post(&self.url).json(body);
+            match &self.key {
+                Some(key) => request.bearer_auth(key),
+                None => request,
+            }
+        };
+        let failed = |e: http::CallError| {
             e.into_anyhow()
                 .context(format!("{} request failed", self.service.label))
-        })
+        };
+        let Some(ledger) = &self.budget else {
+            return http::send_checked(make, retry, stop).await.map_err(failed);
+        };
+        let bytes = body.to_string().len();
+        let worst = ledger.worst_case(bytes + TEMPLATE_MARGIN, bytes as u64);
+        let (text, hold) = http::send_metered_checked(make, retry, ledger, worst, |_| false, stop)
+            .await
+            .map_err(failed)?;
+        let value: Option<Value> = serde_json::from_str(&text).ok();
+        let tokens = |key: &str| {
+            value
+                .as_ref()
+                .and_then(|v| v.pointer(&format!("/usage/{key}")))
+                .and_then(Value::as_u64)
+        };
+        let reported = crate::budget::reported_cost(&text);
+        let output = tokens("output_tokens").or((!ledger.output_priced()).then_some(0));
+        match (tokens("input_tokens"), output) {
+            (Some(input_tokens), Some(output_tokens)) => {
+                hold.settle(
+                    Usage {
+                        input_tokens,
+                        cached_tokens: 0,
+                        output_tokens,
+                        reasoning_tokens: 0,
+                    },
+                    reported,
+                );
+            }
+            _ => hold.kept_at_least(
+                reported,
+                "200 with incomplete usage: booked at max(worst case, reported charge)",
+            ),
+        }
+        Ok(text)
     }
 
     /// `plays`: `(notation, description)`; the notation identifies the option in the answer

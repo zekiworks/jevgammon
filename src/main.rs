@@ -1,9 +1,11 @@
+mod admit;
 mod ask;
 mod auth;
 mod board;
 mod budget;
 mod db;
 mod dice;
+mod guard;
 mod http;
 mod league;
 mod migrate;
@@ -83,6 +85,37 @@ enum Command {
     /// error rate from the site's GNUbg scores) and stores the ranking; prints the stored
     /// and the new ranking.
     Rank(RankArgs),
+    /// Offline client admission, before anything is written: builds the client of every
+    /// player of a league config as a league builds its participants, but only decision
+    /// services, the local engines and chat servers on a loopback address (any other client
+    /// type is refused before construction) and with budget ledgers read immutably; sends no
+    /// request and writes no database, ledger or credential. Under `--guard`, every player
+    /// must be metered by the guard or local. Fails when any client is refused; else its last
+    /// line, `admitted-settings {json}`, records the config (and guard) file's SHA-256.
+    Admit(AdmitArgs),
+    /// Creates a run guard's shared budget ledger with the guard's cap (or checks that an
+    /// existing one has it) and prints its spent and reserved dollars; refused while the
+    /// guard's latch is set. Run once before `admit --guard`, which only reads the ledger.
+    GuardLedger(GuardLedgerArgs),
+}
+
+#[derive(Args)]
+struct AdmitArgs {
+    /// League config file (as for `league --config`).
+    #[arg(long)]
+    config: PathBuf,
+    /// The league's run guard file (as for `league --guard`): its metered setups are built
+    /// with its ledger (read-only, immutable), every other player must be local and its latch
+    /// must not be set; the record names the guard file's SHA-256.
+    #[arg(long)]
+    guard: Option<PathBuf>,
+}
+
+#[derive(Args)]
+struct GuardLedgerArgs {
+    /// Run guard file (JSON; `guard.rs`).
+    #[arg(long)]
+    guard: PathBuf,
 }
 
 #[derive(Args)]
@@ -329,6 +362,11 @@ struct LeagueArgs {
     /// $XDG_STATE_HOME/bg-site/plays.
     #[arg(long, env = "JEVGAMMON_SCORES")]
     scores: Option<PathBuf>,
+    /// Run guard file (JSON; `guard.rs`): a shared hard cap over the setups it meters (every
+    /// request attempt reserved before it is sent; any other participant must be local) and a
+    /// stop latch; a latched guard starts nothing.
+    #[arg(long)]
+    guard: Option<PathBuf>,
     #[command(flatten)]
     common: Common,
 }
@@ -424,6 +462,23 @@ async fn main() -> ExitCode {
         Some(Command::Void(args)) => void(args),
         Some(Command::Migrate(args)) => migrate::run(&args),
         Some(Command::Rank(args)) => rank(args),
+        Some(Command::Admit(args)) => {
+            // No admitted client type reads a credential root or the local server's URL.
+            let setup = Setup::new(PathBuf::new(), String::new());
+            match args.guard.as_deref().map(guard::Guard::load).transpose() {
+                Ok(Some(guard)) => admit::run(&args.config, &setup.with_guard(guard)).await,
+                Ok(None) => admit::run(&args.config, &setup).await,
+                Err(error) => Err(error),
+            }
+        }
+        Some(Command::GuardLedger(args)) => guard::Guard::load(&args.guard).and_then(|guard| {
+            let (spent, reserved) = guard.open_ledger()?;
+            println!(
+                "guard ledger {}: cap ${}, spent ${spent:.6}, reserved ${reserved:.6}",
+                guard.config.ledger, guard.config.cap_usd
+            );
+            Ok(())
+        }),
         Some(Command::RenderStageB(args)) => {
             ask::render_stage_b(&args.config, &args.positions, &args.setups)
         }
@@ -488,7 +543,10 @@ async fn main() -> ExitCode {
 }
 
 async fn run_league(args: LeagueArgs) -> Result<()> {
-    let setup = args.common.setup();
+    let setup = match &args.guard {
+        Some(path) => args.common.setup().with_guard(guard::Guard::load(path)?),
+        None => args.common.setup(),
+    };
     let start = match (args.resume, &args.config) {
         (Some(id), _) => league::Start::Resume(id),
         (None, Some(path)) => {

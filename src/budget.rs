@@ -122,12 +122,88 @@ impl Ledger {
         }))
     }
 
+    /// The ledger as `open` finds it, for admission: the file is opened read-only and
+    /// immutable (`mode=ro&immutable=1`: no write, no lock, no `-wal`/`-shm` opened or
+    /// created, no checkpoint on close), so neither this process nor a concurrent writer
+    /// can make admission change it. What `open` would add (the file, WAL mode, a table,
+    /// the cap row) is refused instead of added, as is a different cap. Only the main file
+    /// is read: a ledger whose tables or cap are still only in its write-ahead log (never
+    /// checkpointed since creation), or that a checkpoint changes mid-read, is refused, never
+    /// admitted. The returned ledger can reserve nothing.
+    pub fn open_read_only(config: &BudgetConfig, setup: &str) -> Result<Arc<Self>> {
+        let path = PathBuf::from(&config.ledger);
+        if !path.is_file() {
+            bail!(
+                "budget ledger {} does not exist (opening it would create it)",
+                path.display()
+            );
+        }
+        // Bytes 18 and 19 of the header (file format versions) are 2 in WAL mode.
+        let mut header = [0u8; 20];
+        std::io::Read::read_exact(
+            &mut std::fs::File::open(&path)
+                .with_context(|| format!("reading budget ledger {}", path.display()))?,
+            &mut header,
+        )
+        .with_context(|| format!("reading the header of budget ledger {}", path.display()))?;
+        if header[18..20] != [2, 2] {
+            bail!(
+                "budget ledger {} is not in WAL mode (opening it would switch it to WAL)",
+                path.display()
+            );
+        }
+        let conn = crate::db::open_immutable(&path)
+            .with_context(|| format!("budget ledger {}", path.display()))?;
+        for table in ["budget", "attempts"] {
+            let found: Option<i64> = conn
+                .query_row(
+                    "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?1",
+                    [table],
+                    |r| r.get(0),
+                )
+                .optional()?;
+            if found.is_none() {
+                bail!(
+                    "budget ledger {} has no table {table} (opening it would add it)",
+                    path.display()
+                );
+            }
+        }
+        let stored: Option<f64> = conn
+            .query_row("SELECT cap_usd FROM budget WHERE id = 1", [], |r| r.get(0))
+            .optional()?;
+        match stored {
+            None => bail!(
+                "budget ledger {} has no cap (opening it would store ${})",
+                path.display(),
+                config.cap_usd
+            ),
+            Some(cap) if cap != config.cap_usd => bail!(
+                "budget ledger {} has cap ${cap}, the config says ${}",
+                path.display(),
+                config.cap_usd
+            ),
+            Some(_) => {}
+        }
+        Ok(Arc::new(Ledger {
+            config: config.clone(),
+            setup: setup.to_owned(),
+            conn: Mutex::new(conn),
+        }))
+    }
+
     /// Worst case of one attempt: every byte of the request body an uncached input token
     /// (a token is never shorter than one byte) and the whole output allowance used.
     pub fn worst_case(&self, body_bytes: usize, max_output_tokens: u64) -> f64 {
         (body_bytes as f64 * self.config.input_per_mtok
             + max_output_tokens as f64 * self.config.output_per_mtok)
             / 1e6
+    }
+
+    /// Whether output tokens are priced (an answer without output tokens then has incomplete
+    /// usage).
+    pub fn output_priced(&self) -> bool {
+        self.config.output_per_mtok > 0.0
     }
 
     /// List-price cost of an answered attempt; cached tokens are part of `input_tokens`.
@@ -139,6 +215,11 @@ impl Ledger {
             / 1e6
     }
 
+    /// Spent (settled + lost) and reserved (open) dollars in the whole ledger.
+    pub fn totals(&self) -> Result<(f64, f64)> {
+        totals(&self.conn.lock())
+    }
+
     /// Reserves `amount` for one attempt, or refuses it (an error naming the cap) when
     /// spent + reserved + amount would pass the cap.
     pub fn reserve(self: &Arc<Self>, amount: f64) -> Result<Hold> {
@@ -147,12 +228,12 @@ impl Ledger {
         let (spent, reserved) = totals(&tx)?;
         let cap = self.config.cap_usd;
         if spent + reserved + amount > cap {
-            bail!(
+            return Err(anyhow::Error::new(BudgetCap(format!(
                 "BUDGET CAP: ${spent:.4} spent + ${reserved:.4} reserved in flight + \
-                 ${amount:.4} for this request would pass the ${cap:.2} hard cap \
+                 ${amount:.4} for this request would pass the ${cap:.4} hard cap \
                  (ledger {}); stopped before the call",
                 self.config.ledger
-            );
+            ))));
         }
         tx.execute(
             "INSERT INTO attempts (setup, pid, started_at, status, reserved_usd)
@@ -164,6 +245,7 @@ impl Ledger {
         Ok(Hold {
             ledger: Arc::clone(self),
             id,
+            reserved: amount,
             done: false,
         })
     }
@@ -213,13 +295,53 @@ impl Ledger {
             eprintln!("budget ledger: attempt {id} not updated: {error:#}");
         }
     }
+
+    /// Books an attempt whose tokens are unknown at `cost`, recording the provider's reported
+    /// charge.
+    fn finish_known(&self, id: i64, cost: f64, reported: f64, note: &str) {
+        let result = self.conn.lock().execute(
+            "UPDATE attempts SET status = 'settled', finished_at = ?2, cost_usd = ?3,
+                 reported_cost_usd = ?4, note = ?5
+             WHERE id = ?1",
+            params![id, now(), cost, reported, note],
+        );
+        if let Err(error) = result {
+            // The row stays open, so it keeps counting at its worst case.
+            eprintln!("budget ledger: attempt {id} not updated: {error:#}");
+        }
+    }
 }
+
+/// The charge a response body reports (`usage.cost`), read on its own, whatever else its usage
+/// holds: a finite, non-negative number, else `None`.
+pub fn reported_cost(body: &str) -> Option<f64> {
+    serde_json::from_str::<serde_json::Value>(body)
+        .ok()?
+        .pointer("/usage/cost")?
+        .as_f64()
+        .filter(|c| c.is_finite() && *c >= 0.0)
+}
+
+/// A reservation refused because it would pass the cap (the request was not sent); matched by
+/// type (`guard::is_stop`).
+#[derive(Debug)]
+pub struct BudgetCap(pub String);
+
+impl std::fmt::Display for BudgetCap {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.0)
+    }
+}
+
+impl std::error::Error for BudgetCap {}
 
 /// One attempt's reservation. Dropped without `settle`/`refused`, it is booked at its
 /// worst case (`lost`).
 pub struct Hold {
     ledger: Arc<Ledger>,
     id: i64,
+    /// The worst case reserved for this attempt.
+    reserved: f64,
     done: bool,
 }
 
@@ -243,6 +365,27 @@ impl Hold {
     /// The provider answered with an error status (nothing generated, nothing billed).
     pub fn refused(mut self, note: &str) {
         self.ledger.finish(self.id, "settled", None, note);
+        self.done = true;
+    }
+
+    /// An attempt whose usage is incomplete or that ended in an error status: booked at
+    /// max(its worst case, the charge the provider reported), or kept at the worst case when
+    /// no charge is known.
+    pub fn kept_at_least(mut self, known: Option<f64>, note: &str) {
+        match known {
+            Some(charge) => {
+                let cost = self.reserved.max(charge);
+                self.ledger.finish_known(self.id, cost, charge, note);
+            }
+            None => self.ledger.finish(self.id, "lost", None, note),
+        }
+        self.done = true;
+    }
+
+    /// An error status the provider documents as unbilled, whose body nonetheless reports a
+    /// charge: booked at that charge, never erased.
+    pub fn charged(mut self, charge: f64, note: &str) {
+        self.ledger.finish_known(self.id, charge, charge, note);
         self.done = true;
     }
 }
@@ -305,5 +448,61 @@ mod tests {
         assert!(other.reserve(0.48).is_ok());
         // Another cap for the same ledger is refused.
         assert!(Ledger::open(&config(&path, 2.0), "c").is_err());
+    }
+
+    /// What `open` would add is refused, a different cap too, the file is left byte-identical
+    /// and nothing is created next to it; the read-only ledger reserves nothing.
+    #[test]
+    fn read_only_open_refuses_what_open_would_change_and_writes_nothing() {
+        let dir = std::env::temp_dir().join(format!("budget-ro-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let listing = || {
+            let mut names: Vec<String> = std::fs::read_dir(&dir)
+                .unwrap()
+                .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
+                .collect();
+            names.sort();
+            names
+        };
+        let refused = |path: &Path, cap: f64, why: &str| {
+            let before = std::fs::read(path).ok();
+            let names = listing();
+            let error = Ledger::open_read_only(&config(path, cap), "a")
+                .err()
+                .unwrap();
+            assert!(format!("{error:#}").contains(why), "{error:#}");
+            assert_eq!(std::fs::read(path).ok(), before);
+            assert_eq!(listing(), names);
+        };
+        refused(&dir.join("missing.db"), 1.0, "does not exist");
+        let rollback = dir.join("rollback.db");
+        Connection::open(&rollback)
+            .unwrap()
+            .execute_batch(SCHEMA)
+            .unwrap();
+        refused(&rollback, 1.0, "is not in WAL mode");
+        let empty = dir.join("empty.db");
+        Connection::open(&empty)
+            .unwrap()
+            .pragma_update(None, "journal_mode", "WAL")
+            .unwrap();
+        refused(&empty, 1.0, "has no table budget");
+        let uncapped = dir.join("uncapped.db");
+        let conn = Connection::open(&uncapped).unwrap();
+        conn.pragma_update(None, "journal_mode", "WAL").unwrap();
+        conn.execute_batch(SCHEMA).unwrap();
+        drop(conn);
+        refused(&uncapped, 1.0, "has no cap");
+        let path = dir.join("ledger ?#%.db");
+        drop(Ledger::open(&config(&path, 1.0), "a").unwrap());
+        refused(&path, 2.0, "has cap $1, the config says $2");
+        let names = listing();
+        let before = std::fs::read(&path).unwrap();
+        let ledger = Ledger::open_read_only(&config(&path, 1.0), "a").unwrap();
+        assert_eq!(ledger.totals().unwrap(), (0.0, 0.0));
+        assert!(ledger.reserve(0.1).is_err());
+        drop(ledger);
+        assert_eq!(std::fs::read(&path).unwrap(), before);
+        assert_eq!(listing(), names);
     }
 }

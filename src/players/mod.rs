@@ -4,6 +4,8 @@
 pub mod baseline;
 mod decision;
 pub mod gnubg;
+#[cfg(test)]
+mod guard_tests;
 mod llm;
 pub mod order;
 pub mod prompt;
@@ -260,6 +262,9 @@ pub struct Setup {
     pub xai: Arc<Credentials>,
     /// Request pacers by rate-limit group, shared by every player of the group.
     pacers: parking_lot::Mutex<HashMap<String, Arc<Pacer>>>,
+    /// A league's run guard (`league --guard`): shared cap of the setups it meters; `None` =
+    /// no guard.
+    pub guard: Option<Arc<crate::guard::Guard>>,
 }
 
 /// Spaces the requests of a rate-limit group (e.g. both setups of one OpenRouter model) at
@@ -322,7 +327,14 @@ impl Setup {
             qfork_root,
             local_url,
             pacers: parking_lot::Mutex::new(HashMap::new()),
+            guard: None,
         }
+    }
+
+    /// This setup under a league's run guard.
+    pub fn with_guard(mut self, guard: Arc<crate::guard::Guard>) -> Self {
+        self.guard = Some(guard);
+        self
     }
 }
 
@@ -390,6 +402,52 @@ pub fn random_play(req: &DecisionRequest<'_>) -> usize {
     Dice::new(derive_seed(req.seed, "invalid answer")).below(req.plays.len())
 }
 
+/// How `Player::build` reaches a budget ledger: a league opens it for writing; admission
+/// reads it read-only and immutable.
+#[derive(Clone, Copy)]
+enum Ledgers {
+    Open,
+    ReadOnly,
+}
+
+/// Whether a setup runs on this machine and costs nothing per request: a local engine
+/// (random, safest, gnubg-weak), or a decision service, `openai-compatible` or `local` client
+/// whose endpoint is a loopback address. Under a league guard every other participant must
+/// be metered.
+fn runs_locally(config: &PlayerConfig, setup: &Setup) -> bool {
+    let (provider, has_model) = match config.spec.split_once('/') {
+        Some((provider, model)) if !model.is_empty() => (provider, true),
+        _ => (config.spec.as_str(), false),
+    };
+    let endpoint = match decision::service(provider) {
+        Some(service) => decision::endpoint(service, config.base_url.as_deref()),
+        None => match provider.to_ascii_lowercase().as_str() {
+            "random" | "safest" | "gnubg-weak" if !has_model => return true,
+            "openai-compatible" => match &config.base_url {
+                Some(url) => url.clone(),
+                None => return false,
+            },
+            "local" => config
+                .base_url
+                .clone()
+                .unwrap_or_else(|| setup.local_url.clone()),
+            _ => return false,
+        },
+    };
+    let Ok(url) = reqwest::Url::parse(&endpoint) else {
+        return false;
+    };
+    let host = url.host_str().unwrap_or("");
+    match host
+        .trim_start_matches('[')
+        .trim_end_matches(']')
+        .parse::<std::net::IpAddr>()
+    {
+        Ok(ip) => ip.is_loopback(),
+        Err(_) => host.eq_ignore_ascii_case("localhost"),
+    }
+}
+
 impl Player {
     /// A local engine player (baselines, GNUbg).
     pub fn engine(spec: &str, engine: Box<dyn Engine>) -> Self {
@@ -412,11 +470,40 @@ impl Player {
     /// Parses `provider/model` (or a bare decision provider such as `jev`), resolves its
     /// credentials, and limits its decisions in flight to `config.parallel`.
     pub async fn from_config(config: &PlayerConfig, setup: &Setup) -> Result<Self> {
-        let mut player = Self::build(config, setup).await?;
+        let mut player = Self::build(config, setup, Ledgers::Open).await?;
         player.requests = config
             .parallel
             .map(|n| tokio::sync::Semaphore::new(n.max(1)));
         Ok(player)
+    }
+
+    /// The client `from_config` builds, for admission (`jevgammon admit`). Only the client
+    /// types of the late-entry rosters are built: decision services (a key from the
+    /// environment, nothing else read), the local engines random, safest and gnubg-weak, and
+    /// an `openai-compatible`/`local` chat server on a loopback address (the entrant). Every
+    /// other type is refused before anything is constructed: the subscription logins (openai,
+    /// anthropic, antigravity, xai), whose constructors can refresh a token over the network
+    /// and write credentials, and remote chat clients. A budget ledger is read by
+    /// `Ledger::open_read_only`, never opened for writing.
+    pub async fn for_admission(config: &PlayerConfig, setup: &Setup) -> Result<Self> {
+        let provider = match config.spec.split_once('/') {
+            Some((provider, model)) if !model.is_empty() => provider,
+            _ => config.spec.as_str(),
+        };
+        let engine = ["random", "safest", "gnubg-weak"]
+            .iter()
+            .any(|e| e.eq_ignore_ascii_case(provider));
+        let local_chat = ["openai-compatible", "local"]
+            .iter()
+            .any(|p| p.eq_ignore_ascii_case(provider))
+            && runs_locally(config, setup);
+        if !engine && !local_chat && decision::service(provider).is_none() {
+            bail!(
+                "provider `{provider}` of `{}` is outside the admission roster (decision services, random, safest, gnubg-weak and chat servers on a loopback address); refused before its client is constructed",
+                config.spec
+            );
+        }
+        Self::build(config, setup, Ledgers::ReadOnly).await
     }
 
     /// Whether the player decides locally (random, safest, gnubg-weak), not by request.
@@ -424,7 +511,7 @@ impl Player {
         matches!(self.backend, Backend::Engine(_))
     }
 
-    async fn build(config: &PlayerConfig, setup: &Setup) -> Result<Self> {
+    async fn build(config: &PlayerConfig, setup: &Setup, ledgers: Ledgers) -> Result<Self> {
         let spec = config.spec.as_str();
         let (provider, model) = match spec.split_once('/') {
             Some((provider, model)) if !model.is_empty() => (provider, Some(model.to_owned())),
@@ -434,6 +521,57 @@ impl Player {
         let need_model = |model: Option<String>| match model {
             Some(model) => Ok(model),
             None => bail!("model spec `{spec}` needs a model name: {provider}/<model>"),
+        };
+        // A hard spending cap (`budget`) for chat requests to an openai-compatible server and
+        // for decision services: each attempt reserves its worst case before it is sent. A
+        // league guard meters the setups it names (their stored settings unchanged) with its
+        // shared ledger and cap; a setup with a budget of its own is not metered twice. Under a
+        // guard, a participant it does not meter must run locally: an unexpected paid
+        // participant is refused before its client is built (fail closed).
+        let guarded = setup.guard.as_ref().filter(|g| g.meters(&config.name));
+        if let Some(guard) = &setup.guard
+            && guarded.is_none()
+            && !runs_locally(config, setup)
+        {
+            bail!(
+                "{}: `{spec}` is neither metered by the league guard {} nor local (an engine or a loopback endpoint): an unexpected paid participant, refused",
+                config.name,
+                guard.path.display()
+            );
+        }
+        if guarded.is_some() && decision::service(provider).is_none() {
+            bail!(
+                "{}: the league guard meters it, but `{spec}` is not a decision service",
+                config.name
+            );
+        }
+        let budget_config = match (&config.budget, guarded) {
+            (Some(_), Some(guard)) => bail!(
+                "{}: it has a budget of its own and the league guard {} meters it too",
+                config.name,
+                guard.path.display()
+            ),
+            (Some(budget), None) => Some(budget.clone()),
+            (None, Some(guard)) => guard.budget_for(&config.name),
+            (None, None) => None,
+        };
+        let budget = match &budget_config {
+            Some(budget)
+                if provider.eq_ignore_ascii_case("openai-compatible")
+                    || decision::service(provider).is_some() =>
+            {
+                Some(match ledgers {
+                    Ledgers::Open => crate::budget::Ledger::open(budget, &config.name)?,
+                    Ledgers::ReadOnly => {
+                        crate::budget::Ledger::open_read_only(budget, &config.name)?
+                    }
+                })
+            }
+            Some(_) => bail!(
+                "{}: a budget needs an openai-compatible spec or a decision service",
+                config.name
+            ),
+            None => None,
         };
         let options = llm::Options {
             reasoning: config.reasoning.clone(),
@@ -450,13 +588,7 @@ impl Player {
                 });
                 setup.pacer(group, rpm)
             }),
-            budget: match &config.budget {
-                Some(budget) if provider.eq_ignore_ascii_case("openai-compatible") => {
-                    Some(crate::budget::Ledger::open(budget, &config.name)?)
-                }
-                Some(_) => bail!("{}: a budget needs an openai-compatible spec", config.name),
-                None => None,
-            },
+            budget: budget.clone(),
         };
         let player = |backend| Player {
             spec: spec.to_owned(),
@@ -471,12 +603,16 @@ impl Player {
             backend,
         };
         if let Some(service) = decision::service(provider) {
-            return Ok(player(Backend::Decision(decision::DecisionClient::new(
-                http,
-                service,
-                model,
-                config.base_url.as_deref(),
-            )?)));
+            return Ok(player(Backend::Decision(
+                decision::DecisionClient::new(
+                    http,
+                    service,
+                    model,
+                    config.base_url.as_deref(),
+                    budget,
+                )?
+                .with_guard(guarded.cloned()),
+            )));
         }
         let backend = match provider.to_ascii_lowercase().as_str() {
             "random" if model.is_none() => {

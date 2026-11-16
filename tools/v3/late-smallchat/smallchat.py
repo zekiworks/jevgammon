@@ -19,6 +19,10 @@ main checkout's v3.db; the league web helpers are this tree's.
   smallchat.py KEY scope            open and blocked pairs: "OPEN BLOCKED", then one line per blocked pair (read-only)
   smallchat.py KEY inflight FIRST N the entrant's first N decisions from match FIRST on: most requests in flight and most
                                     of its matches running at once (read-only)
+  smallchat.py KEY guard CAP LEDGER LATCH
+                                    the batch's run guard file (runner `league/admit --guard`, Zeki #10062) on stdout:
+                                    every paid opponent of the league configs metered at its list price under one
+                                    shared ledger and cap (read-only; the same file for every KEY of a batch)
 """
 import argparse
 import json
@@ -54,6 +58,10 @@ LOCAL = ["Clef", "Cygnet (Gemma 4 12B)", "Decider Flash v1.2", "Decider v1.1 27B
          "Fastino GLiDE v1.2 (local)", "Open-Jev 27B v1.1", "Winnow-12B"]
 FIELD = sorted(API + ENGINES + LOCAL)
 SKIPPED = ["GPT-6 Luna"]  # OpenAI out of credit: deferred, never dropped (as REAX 1.3, Muse Ember)
+# List prices of paid opponents whose v3.db settings record none (the guard needs one for every paid opponent; a
+# missing price fails closed). Fastino GLiDE: $0.15 per million input tokens, output free (docs.fastino.ai/pricing,
+# 2026-10-08, as analysis/decision-models/results.json).
+LIST_PRICES = {"Fastino GLiDE": {"input_per_mtok": 0.15, "output_per_mtok": 0.0}}
 NOW = ENGINES + [n for n in API if n not in SKIPPED]
 TRIGGER = re.compile(r"p\.name IN \((.*?)\)\)", re.S)
 
@@ -250,6 +258,29 @@ def inflight(args) -> None:
           f"matches deciding at once (matches {', '.join(f'#{m}' for m in spans)})")
 
 
+def guard(args) -> None:
+    """The batch's run guard: the paid opponents a config holds (NOW minus the engines), each metered at its stored
+    list price (players.settings price; LIST_PRICES where none is stored), cached input at the input price. The
+    entrant and the engines are local and unmetered; the runner refuses any other participant that is not local."""
+    conn = ro()
+    metered = {}
+    for name in NOW:
+        if name in ENGINES:
+            continue
+        price = json.loads(conn.execute("SELECT settings FROM players WHERE name = ?", (name,)).fetchone()[0]).get(
+            "price") or LIST_PRICES.get(name)
+        if not price:
+            sys.exit(f"{name}: no list price; its worst case cannot be bounded, so no guard is written")
+        metered[name] = {"input_per_mtok": price["input_per_mtok"], "cached_input_per_mtok": price["input_per_mtok"],
+                         "output_per_mtok": price["output_per_mtok"]}
+    print(json.dumps({
+        "note": (f"Small chat first stages, one batch (Zeki #10062): one ledger and a ${args.cap} cap over every paid "
+                 "opponent of the late-entry configs; each request attempt reserves (request bytes + 4,096) x input "
+                 "price + request bytes x output price before it is sent, settled at max(list, usage.cost). Prices: "
+                 "v3.db players.settings price; Fastino GLiDE docs.fastino.ai/pricing (2026-10-08)."),
+        "ledger": args.ledger, "cap_usd": args.cap, "latch": args.latch, "metered": metered}, indent=2))
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -264,10 +295,14 @@ def main() -> None:
     i = sub.add_parser("inflight")
     i.add_argument("first", type=int)
     i.add_argument("n", type=int)
+    g = sub.add_parser("guard")
+    g.add_argument("cap", type=float)
+    g.add_argument("ledger")
+    g.add_argument("latch")
     args = ap.parse_args()
     {"configs": configs, "trigger": trigger, "pending": pending, "open": open_pairs, "billed": billed,
      "scope": scope, "player": lambda a: print(json.dumps(PLAYER, ensure_ascii=False)), "league-id": lambda a: print(league_id() or ""),
-     "inflight": inflight, "last": last}[args.cmd](args)
+     "inflight": inflight, "last": last, "guard": guard}[args.cmd](args)
 
 
 if __name__ == "__main__":

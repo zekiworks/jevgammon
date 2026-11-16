@@ -659,6 +659,10 @@ async fn run_inner(
     scores: PathBuf,
     league_id: &mut Option<i64>,
 ) -> Result<()> {
+    // A latched guard starts nothing: no database is opened, no league created or resumed.
+    if let Some(guard) = &setup.guard {
+        guard.check()?;
+    }
     let db_path = db_path.to_path_buf();
     let mut db = Db::open(&db_path)?;
     let id = match start {
@@ -858,6 +862,15 @@ async fn play_league(league: Arc<League>, db: &Db, setup: &Setup, mut state: Sta
             }
             if set.is_empty() {
                 if league.control.is_cancelled() {
+                    if let Some(guard) = &setup.guard
+                        && let Some(why) = guard.latched()
+                    {
+                        bail!(
+                            "league #{id} stopped by its run guard ({}): {why}; not resumed \
+                             automatically: no guarded league starts while the latch is set",
+                            guard.config.latch.display()
+                        );
+                    }
                     return Err(stopped());
                 }
                 if state.pending.is_empty() && state.skipped == 0 {
@@ -930,6 +943,15 @@ async fn play_league(league: Arc<League>, db: &Db, setup: &Setup, mut state: Sta
                                 backoffs.fail(&fixture, &error, Instant::now(), league.backoff);
                             league.defer(&fixture, &error, &backoff);
                             state.requeue(fixture);
+                            // A guard stop (a refused reservation, or the latch set) ends the
+                            // league: latched, nothing more is started.
+                            if let Some(guard) = &setup.guard
+                                && crate::guard::is_stop(&error)
+                            {
+                                guard.latch(&format!("league #{id} stopped: {error:#}"));
+                                println!("league #{id}: stopped by its run guard: {error:#}");
+                                league.control.cancel();
+                            }
                         }
                     }
                 }

@@ -33,6 +33,14 @@
 # Up to 16 matches and 16 requests at once (player.json max_matches 16, parallel 16), League 1's rule for its local chat
 # setups (Main, 12 Nov): the server is ours alone after turkce's 'done KEY'. Before the first start of a setup, test.sh
 # KEY sends it one test decision through the real client; a setup whose test fails is reported, not started.
+# GUARD_FILE (optional; workspace/on-chain.sh writes one per batch with smallchat.py guard): the runner's run guard,
+# the hard cap per request (Zeki #10062). Before the first write to v3.db and before every league (re)start the runner's
+# `admit --guard` builds every client of the league config offline (paid opponents metered under the guard's shared
+# ledger, every other participant local, else refused) and the league runs with `--guard`: every request attempt of a
+# paid opponent reserves its worst case in the batch's one ledger before it is sent and is refused when spent +
+# reserved + it would pass the batch cap; a refused reservation stops the league and writes the guard's latch, which
+# keeps every guarded league and admission from starting until a person removes it (this guard then stops too). The
+# 60-s cost check above stays as a second line. Without GUARD_FILE: admission without a guard, the league as before.
 set -uo pipefail
 cd /home/cbasaran/code/jevgammon
 KEY=${1:?usage: start.sh KEY}
@@ -44,6 +52,14 @@ BIN=${SMALLCHAT_BIN:-/home/cbasaran/code/jevgammon/target/smallchat/release/jevg
 STATUS="mailbox/Late entries smallchat - $KEY - status.md"
 FLOOR=40
 CAP=${ENTRY_CAP_USD:-5}
+GUARD=()
+if [[ -n ${GUARD_FILE:-} ]]; then
+  GUARD_FILE=$(readlink -f "$GUARD_FILE")
+  [[ -f $GUARD_FILE ]] || { echo "guard file $GUARD_FILE missing" >&2; exit 1; }
+  LATCH=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["latch"])' "$GUARD_FILE") ||
+    { echo "guard file $GUARD_FILE unreadable" >&2; exit 1; }
+  GUARD=(--guard "$GUARD_FILE")
+fi
 UNIT=late-smallchat-$KEY-league
 PLAYER=$(python3 "$T/smallchat.py" "$KEY" player) || { echo "settings of $KEY unreadable" >&2; exit 1; }
 field() { python3 -c 'import json,sys; print(eval(sys.argv[2], {}, {"p": json.loads(sys.argv[1])}))' "$PLAYER" "$1"; }
@@ -73,6 +89,9 @@ balance() {
 }
 lt() { python3 -c 'import sys; sys.exit(not float(sys.argv[1]) < float(sys.argv[2]))' "$1" "$2"; }
 spent() { tiny billed "$(cat $ST/first)"; }
+# Offline admission of every client of the league config (the runner's `admit`, read-only; under the guard: paid
+# opponents metered, every other participant local). Its output, ending with the admitted-settings record, goes to the log.
+admitted() { "$BIN" admit --config "$W/leagues/$KEY.json" "${GUARD[@]}" >> $ST/guard.log 2>&1; }
 OPPS=("GNUbg weak" "Random" "Safest" "Celeris-1 Decision" "Fastino GLiDE" "Jev 1.13.0" "Jev 1.14.0" "Liquid d1-ultra"
       "Mercury Decide" "SubQ Snap Preview")
 
@@ -89,6 +108,11 @@ healthy || { echo "$LABEL server $URL: does not serve $SERVED" >&2; exit 1; }
 pinned || { echo "$LABEL: the process on port $PORT is not the pinned $PIN_REPO@$PIN_REV (BF16, context >= $MIN_CONTEXT)" >&2; exit 1; }
 bal=$(balance) || { echo "OpenRouter credits unreadable" >&2; exit 1; }
 lt "$bal" "$FLOOR" && { echo "OpenRouter balance \$$bal: under \$$FLOOR" >&2; exit 1; }
+# The guard's shared ledger, created once with its cap (admission only reads it); refused while the latch is set.
+if [[ -n ${GUARD_FILE:-} ]]; then
+  "$BIN" guard-ledger --guard "$GUARD_FILE" >> $ST/guard.log 2>&1 ||
+    { echo "run guard $GUARD_FILE refused (latched, or its ledger has another cap): see $ST/guard.log" >&2; exit 1; }
+fi
 
 # Once, fail closed: every step must succeed, else nothing after it runs and state/first is not written (so the block
 # runs again next time). The backup goes to v3.db's own disk (/tmp is a smaller tmpfs) and the .zst is verified with
@@ -107,15 +131,16 @@ if [[ ! -e $ST/first ]]; then
   rm -f "$raw"
   sqlite3 -readonly v3.db "SELECT COALESCE(MAX(id), 0) + 1 FROM matches" > "$ST/first.new" && [[ -s $ST/first.new ]] ||
     fail "first match id unreadable"
-  tiny trigger >> $ST/guard.log 2>&1 || fail "trigger failed"
   tiny configs >> $ST/guard.log 2>&1 || fail "configs failed"
+  admitted || fail "admission refused the league config's clients (see $ST/guard.log); v3.db not written"
+  tiny trigger >> $ST/guard.log 2>&1 || fail "trigger failed"
   date -u '+%F %T' > $ST/since || fail "state/since not written"
   mv "$ST/first.new" "$ST/first" || fail "state/first not written"
   echo "$(date -u +%FT%TZ) backup $bak verified (zstd -t); first match #$(cat $ST/first)" >> $ST/guard.log
 fi
 [[ -e $STATUS ]] || printf '# Late entries smallchat - %s (%s) - status\n\nGo: Zeki #5064/#5071/#5073. First match id: #%s.\n\n## Log\n' \
   "$KEY" "$NAME" "$(cat $ST/first)" > "$STATUS"
-log "guard up: runner $(git -C "$T" rev-parse --short HEAD) clean; $NAME at $URL ($SERVED) pinned $PIN_REPO@${PIN_REV:0:8}; OpenRouter \$$bal; floor \$$FLOOR; paid-opponent cap \$$CAP from #$(cat $ST/first); 10 opponents, up to 16 matches at once (GPT-6 Luna deferred: no OpenAI credit; 8 local setups queued for a GPU)"
+log "guard up: runner $(git -C "$T" rev-parse --short HEAD) clean; $NAME at $URL ($SERVED) pinned $PIN_REPO@${PIN_REV:0:8}; OpenRouter \$$bal; floor \$$FLOOR; paid-opponent cap \$$CAP from #$(cat $ST/first); run guard ${GUARD_FILE:-none}${GUARD_FILE:+ (sha256 $(sha256sum "$GUARD_FILE" | cut -c1-16)…, latch $LATCH)}; 10 opponents, up to 16 matches at once (GPT-6 Luna deferred: no OpenAI credit; 8 local setups queued for a GPU)"
 
 stop_league() { systemctl --user stop $UNIT 2>/dev/null; }
 restarts=0
@@ -123,6 +148,9 @@ down=0
 unread=0
 t0=$SECONDS
 while true; do
+  if [[ -n ${GUARD_FILE:-} && -e $LATCH ]]; then
+    stop_league; log "STOPPED: run guard latched ($LATCH): $(tail -1 "$LATCH" | cut -c1-300); paid opponents \$$(spent)"; exit 1
+  fi
   if [[ $(tiny pending "${OPPS[@]}") == 0 ]]; then
     stop_league; log "done: all 10 pairs played; paid opponents \$$(spent); OpenRouter \$$(balance)"; exit 0
   fi
@@ -160,8 +188,9 @@ while true; do
     (( restarts > 6 )) && { log "STOPPED: league unit ended 7 times with pairs open"; exit 1; }
     (( restarts > 0 )) && log "league unit not running with pairs open: restart $restarts"
     restarts=$((restarts + 1))
+    admitted || { log "STOPPED: admission refused before the league (re)start (see $ST/guard.log)"; exit 1; }
     systemctl --user reset-failed $UNIT >/dev/null 2>&1 || true
-    systemd-run --user --quiet --unit=$UNIT --working-directory="$PWD" "$T/run_league.sh" "$BIN" "$KEY"
+    systemd-run --user --quiet --unit=$UNIT --working-directory="$PWD" "$T/run_league.sh" "$BIN" "$KEY" ${GUARD_FILE:+"$GUARD_FILE"}
   fi
   (( SECONDS - t0 > 129600 )) && { stop_league; log "STOPPED: pairs still open after 36 h"; exit 1; }
   sleep 60

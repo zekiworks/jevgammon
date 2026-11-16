@@ -43,9 +43,11 @@ from common import (CONTENT, EARLIER, INTERNAL, LATE_ENTRY, OUT_OF_SCOPE_OPPONEN
                     PUBLISHED, ROOT, SITE, THRESHOLDS, aliases, label, relabel, setup_slug)
 
 BASE = "https://zekiworks.github.io/analysis/backgammon/"
-# The files of tools/site/assets/ copied to the site's root (hilde-leaf.svg: the top bar's mark, Ümit #2901).
+# The files of tools/site/assets/ copied to the site's root (hilde-leaf-transparent.png and the hilde-favicon/apple-touch
+# PNGs: Hilde Reader's mark, byte-identical from zekiworks/hilde dd56ed2f, Ümit #10114).
 ASSETS = ("site.css", "site.js", "tables.js", "png.js", "bg.css", "suite-bar.css", "bg.js", "decisions.css", "decisions.js",
-          "hilde-leaf.svg", "zw-ui.css", "zw-ui.js")
+          "hilde-leaf-transparent.png", "hilde-favicon-16.png", "hilde-favicon-32.png",
+          "hilde-apple-touch-180.png", "zw-ui.css", "zw-ui.js")
 # The Zeki Works bench kit (turkce, zw-ui v2.7 from tb-next 5d5bc0d5c; Zeki #4879, #9130): zw_ui.py writes the
 # leaderboard's and the /improve/ results block, zw-ui.css and zw-ui.js paint and run it. Copied byte for byte, never
 # edited here: the build fails unless each file is the shared kit's (its sha256), as the suite strip and the maker

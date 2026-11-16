@@ -27,8 +27,7 @@ MORE_PAGES = [("matches/", "Matches"), ("phases/", "Phases"), ("compare/", "Comp
               ("disagreements/", "Where models disagree"), ("leagues/", "Leagues"), ("models/", "Every model setup"),
               ("method/", "Method"), ("data/", "Data")]
 SITE_NAME = "Backgammon bench"
-# The Hilde leaf: Hilde Reader's bare copper leaf (hilde repository, assets/reader-leaf.svg), copied byte for byte.
-LEAF = "hilde-leaf.svg"
+LEAF = "hilde-leaf-transparent.png"  # Hilde Reader's mark, byte-identical (zekiworks/hilde dd56ed2f; Ümit #10114, turkce #10173)
 TITLE = "Backgammon: do models take the right risks, and do they learn from their games?"
 # The learning pilot's tab name inside its page (Ümit #2553/#2557) and its address.
 TAB_LEARNING = "Learning across games"
@@ -367,6 +366,7 @@ def layout(S, base, path: str, title: str, body: str, description: str | None = 
   <meta name="twitter:title" content="{esc(social)}"><meta name="twitter:description" content="{esc(desc)}">
   {og}
   <meta name="color-scheme" content="dark light">
+  <link rel="icon" type="image/png" sizes="32x32" href="{rel}hilde-favicon-32.png"><link rel="icon" type="image/png" sizes="16x16" href="{rel}hilde-favicon-16.png"><link rel="apple-touch-icon" href="{rel}hilde-apple-touch-180.png">
   {HEAD_SCRIPT}{kit}
   {css}
   {js}

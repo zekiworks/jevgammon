@@ -1,0 +1,2 @@
+jevgammon, 2026-11-16: review carrier for the small-chat run guard (Zeki #10142/#10242). Source-only; no game DB, prompts or credentials. Delete after review.
+Runner: branch late-smallchat-on-wip, commits d5d0b8d + ab4c970 (parent 2e93f54), pushed. Wrapper: main 02705fa (workspace/on-chain.sh).

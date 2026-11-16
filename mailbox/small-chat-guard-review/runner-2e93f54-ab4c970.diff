@@ -1,0 +1,2534 @@
+diff --git a/src/admit.rs b/src/admit.rs
+new file mode 100644
+index 0000000..fe3d536
+--- /dev/null
++++ b/src/admit.rs
+@@ -0,0 +1,115 @@
++//! `jevgammon admit`: offline client admission before a league writes anything (ported from
++//! 959a8a2 without its pinned_pairs opponents, which this tree has not). Every player of a
++//! league config gets its client built by `Player::for_admission`: the construction
++//! `Player::from_config` (the call a league makes for each participant) does, restricted to
++//! decision services, the local engines and chat servers on a loopback address (any other
++//! client type, e.g. a subscription login that could refresh a token, is refused before
++//! anything is constructed) and with every budget ledger opened read-only and immutable. No
++//! request is sent: no database, ledger or credential file is written, created or locked
++//! (gnubg-weak, as in a league, starts gnubg from a temporary directory it removes).
++//!
++//! Under a guard (`--guard`) its latch must not be set, its metered setups are built with its
++//! ledger and every other player must run locally (`Player::build`): an unexpected paid
++//! participant is refused. A successful admission ends with one line, `admitted-settings
++//! {json}`: the SHA-256 of the config file read and, under a guard, of the guard file.
++
++use std::path::Path;
++
++use anyhow::{Context, Result, bail};
++
++use crate::league::LeagueConfig;
++use crate::players::{Player, Setup};
++
++/// One player's admission: its name, spec, and why its client was refused (`None`: built).
++#[derive(Debug)]
++pub struct Admission {
++    pub name: String,
++    pub spec: String,
++    pub refused: Option<String>,
++}
++
++/// One admission run: the SHA-256 of the config file read and every client's admission.
++#[derive(Debug)]
++pub struct Admitted {
++    pub config_sha256: String,
++    pub clients: Vec<Admission>,
++}
++
++/// Prints one line per player and fails when any client was refused; else ends with the
++/// `admitted-settings` record.
++pub async fn run(config: &Path, setup: &Setup) -> Result<()> {
++    if let Some(guard) = &setup.guard {
++        guard.check()?;
++    }
++    let admitted = admit(config, setup).await?;
++    for a in &admitted.clients {
++        match &a.refused {
++            None => println!("ok       {} ({}): client built", a.name, a.spec),
++            Some(why) => println!("REFUSED  {} ({}): {why}", a.name, a.spec),
++        }
++    }
++    let refused = admitted
++        .clients
++        .iter()
++        .filter(|a| a.refused.is_some())
++        .count();
++    if refused > 0 {
++        bail!(
++            "{refused} of {} clients refused; nothing may be written for {}",
++            admitted.clients.len(),
++            config.display()
++        );
++    }
++    println!(
++        "admitted: all {} clients of {} built",
++        admitted.clients.len(),
++        config.display()
++    );
++    println!(
++        "admitted-settings {}",
++        record(config, &admitted, setup.guard.as_deref())
++    );
++    Ok(())
++}
++
++/// The `admitted-settings` record (one line of JSON): the config file and its SHA-256, the
++/// clients in admission order and, under a guard, the guard file and its SHA-256.
++fn record(
++    config: &Path,
++    admitted: &Admitted,
++    guard: Option<&crate::guard::Guard>,
++) -> serde_json::Value {
++    let clients: Vec<_> = admitted.clients.iter().map(|a| a.name.clone()).collect();
++    let mut record = serde_json::json!({"config": config.display().to_string(),
++                                        "config_sha256": admitted.config_sha256, "clients": clients});
++    if let Some(guard) = guard {
++        record["guard"] =
++            serde_json::json!({"path": guard.path.display().to_string(), "sha256": guard.sha256});
++    }
++    record
++}
++
++/// Every player of the config, in its order.
++pub async fn admit(config: &Path, setup: &Setup) -> Result<Admitted> {
++    // Parsed from the bytes whose SHA-256 is recorded (as `LeagueConfig::load` parses them).
++    let text =
++        std::fs::read_to_string(config).with_context(|| format!("reading {}", config.display()))?;
++    let league: LeagueConfig =
++        serde_json::from_str(&text).with_context(|| format!("parsing {}", config.display()))?;
++    let mut clients = Vec::new();
++    for player in &league.players {
++        clients.push(Admission {
++            name: player.name.clone(),
++            spec: player.spec.clone(),
++            refused: Player::for_admission(player, setup)
++                .await
++                .err()
++                .map(|e| format!("{e:#}")),
++        });
++    }
++    use sha2::Digest as _;
++    Ok(Admitted {
++        config_sha256: hex::encode(sha2::Sha256::digest(text.as_bytes())),
++        clients,
++    })
++}
+diff --git a/src/budget.rs b/src/budget.rs
+index 5de4c79..e732ebe 100644
+--- a/src/budget.rs
++++ b/src/budget.rs
+@@ -122,6 +122,76 @@ impl Ledger {
+         }))
+     }
+ 
++    /// The ledger as `open` finds it, for admission: the file is opened read-only and
++    /// immutable (`mode=ro&immutable=1`: no write, no lock, no `-wal`/`-shm` opened or
++    /// created, no checkpoint on close), so neither this process nor a concurrent writer
++    /// can make admission change it. What `open` would add (the file, WAL mode, a table,
++    /// the cap row) is refused instead of added, as is a different cap. Only the main file
++    /// is read: a ledger whose tables or cap are still only in its write-ahead log (never
++    /// checkpointed since creation), or that a checkpoint changes mid-read, is refused, never
++    /// admitted. The returned ledger can reserve nothing.
++    pub fn open_read_only(config: &BudgetConfig, setup: &str) -> Result<Arc<Self>> {
++        let path = PathBuf::from(&config.ledger);
++        if !path.is_file() {
++            bail!(
++                "budget ledger {} does not exist (opening it would create it)",
++                path.display()
++            );
++        }
++        // Bytes 18 and 19 of the header (file format versions) are 2 in WAL mode.
++        let mut header = [0u8; 20];
++        std::io::Read::read_exact(
++            &mut std::fs::File::open(&path)
++                .with_context(|| format!("reading budget ledger {}", path.display()))?,
++            &mut header,
++        )
++        .with_context(|| format!("reading the header of budget ledger {}", path.display()))?;
++        if header[18..20] != [2, 2] {
++            bail!(
++                "budget ledger {} is not in WAL mode (opening it would switch it to WAL)",
++                path.display()
++            );
++        }
++        let conn = crate::db::open_immutable(&path)
++            .with_context(|| format!("budget ledger {}", path.display()))?;
++        for table in ["budget", "attempts"] {
++            let found: Option<i64> = conn
++                .query_row(
++                    "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?1",
++                    [table],
++                    |r| r.get(0),
++                )
++                .optional()?;
++            if found.is_none() {
++                bail!(
++                    "budget ledger {} has no table {table} (opening it would add it)",
++                    path.display()
++                );
++            }
++        }
++        let stored: Option<f64> = conn
++            .query_row("SELECT cap_usd FROM budget WHERE id = 1", [], |r| r.get(0))
++            .optional()?;
++        match stored {
++            None => bail!(
++                "budget ledger {} has no cap (opening it would store ${})",
++                path.display(),
++                config.cap_usd
++            ),
++            Some(cap) if cap != config.cap_usd => bail!(
++                "budget ledger {} has cap ${cap}, the config says ${}",
++                path.display(),
++                config.cap_usd
++            ),
++            Some(_) => {}
++        }
++        Ok(Arc::new(Ledger {
++            config: config.clone(),
++            setup: setup.to_owned(),
++            conn: Mutex::new(conn),
++        }))
++    }
++
+     /// Worst case of one attempt: every byte of the request body an uncached input token
+     /// (a token is never shorter than one byte) and the whole output allowance used.
+     pub fn worst_case(&self, body_bytes: usize, max_output_tokens: u64) -> f64 {
+@@ -130,6 +200,12 @@ impl Ledger {
+             / 1e6
+     }
+ 
++    /// Whether output tokens are priced (an answer without output tokens then has incomplete
++    /// usage).
++    pub fn output_priced(&self) -> bool {
++        self.config.output_per_mtok > 0.0
++    }
++
+     /// List-price cost of an answered attempt; cached tokens are part of `input_tokens`.
+     pub fn list_cost(&self, usage: &Usage) -> f64 {
+         let cached = usage.cached_tokens.min(usage.input_tokens);
+@@ -139,6 +215,11 @@ impl Ledger {
+             / 1e6
+     }
+ 
++    /// Spent (settled + lost) and reserved (open) dollars in the whole ledger.
++    pub fn totals(&self) -> Result<(f64, f64)> {
++        totals(&self.conn.lock())
++    }
++
+     /// Reserves `amount` for one attempt, or refuses it (an error naming the cap) when
+     /// spent + reserved + amount would pass the cap.
+     pub fn reserve(self: &Arc<Self>, amount: f64) -> Result<Hold> {
+@@ -147,12 +228,12 @@ impl Ledger {
+         let (spent, reserved) = totals(&tx)?;
+         let cap = self.config.cap_usd;
+         if spent + reserved + amount > cap {
+-            bail!(
++            return Err(anyhow::Error::new(BudgetCap(format!(
+                 "BUDGET CAP: ${spent:.4} spent + ${reserved:.4} reserved in flight + \
+-                 ${amount:.4} for this request would pass the ${cap:.2} hard cap \
++                 ${amount:.4} for this request would pass the ${cap:.4} hard cap \
+                  (ledger {}); stopped before the call",
+                 self.config.ledger
+-            );
++            ))));
+         }
+         tx.execute(
+             "INSERT INTO attempts (setup, pid, started_at, status, reserved_usd)
+@@ -164,6 +245,7 @@ impl Ledger {
+         Ok(Hold {
+             ledger: Arc::clone(self),
+             id,
++            reserved: amount,
+             done: false,
+         })
+     }
+@@ -213,13 +295,53 @@ impl Ledger {
+             eprintln!("budget ledger: attempt {id} not updated: {error:#}");
+         }
+     }
++
++    /// Books an attempt whose tokens are unknown at `cost`, recording the provider's reported
++    /// charge.
++    fn finish_known(&self, id: i64, cost: f64, reported: f64, note: &str) {
++        let result = self.conn.lock().execute(
++            "UPDATE attempts SET status = 'settled', finished_at = ?2, cost_usd = ?3,
++                 reported_cost_usd = ?4, note = ?5
++             WHERE id = ?1",
++            params![id, now(), cost, reported, note],
++        );
++        if let Err(error) = result {
++            // The row stays open, so it keeps counting at its worst case.
++            eprintln!("budget ledger: attempt {id} not updated: {error:#}");
++        }
++    }
++}
++
++/// The charge a response body reports (`usage.cost`), read on its own, whatever else its usage
++/// holds: a finite, non-negative number, else `None`.
++pub fn reported_cost(body: &str) -> Option<f64> {
++    serde_json::from_str::<serde_json::Value>(body)
++        .ok()?
++        .pointer("/usage/cost")?
++        .as_f64()
++        .filter(|c| c.is_finite() && *c >= 0.0)
++}
++
++/// A reservation refused because it would pass the cap (the request was not sent); matched by
++/// type (`guard::is_stop`).
++#[derive(Debug)]
++pub struct BudgetCap(pub String);
++
++impl std::fmt::Display for BudgetCap {
++    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
++        f.write_str(&self.0)
++    }
+ }
+ 
++impl std::error::Error for BudgetCap {}
++
+ /// One attempt's reservation. Dropped without `settle`/`refused`, it is booked at its
+ /// worst case (`lost`).
+ pub struct Hold {
+     ledger: Arc<Ledger>,
+     id: i64,
++    /// The worst case reserved for this attempt.
++    reserved: f64,
+     done: bool,
+ }
+ 
+@@ -245,6 +367,27 @@ impl Hold {
+         self.ledger.finish(self.id, "settled", None, note);
+         self.done = true;
+     }
++
++    /// An attempt whose usage is incomplete or that ended in an error status: booked at
++    /// max(its worst case, the charge the provider reported), or kept at the worst case when
++    /// no charge is known.
++    pub fn kept_at_least(mut self, known: Option<f64>, note: &str) {
++        match known {
++            Some(charge) => {
++                let cost = self.reserved.max(charge);
++                self.ledger.finish_known(self.id, cost, charge, note);
++            }
++            None => self.ledger.finish(self.id, "lost", None, note),
++        }
++        self.done = true;
++    }
++
++    /// An error status the provider documents as unbilled, whose body nonetheless reports a
++    /// charge: booked at that charge, never erased.
++    pub fn charged(mut self, charge: f64, note: &str) {
++        self.ledger.finish_known(self.id, charge, charge, note);
++        self.done = true;
++    }
+ }
+ 
+ impl Drop for Hold {
+@@ -306,4 +449,60 @@ mod tests {
+         // Another cap for the same ledger is refused.
+         assert!(Ledger::open(&config(&path, 2.0), "c").is_err());
+     }
++
++    /// What `open` would add is refused, a different cap too, the file is left byte-identical
++    /// and nothing is created next to it; the read-only ledger reserves nothing.
++    #[test]
++    fn read_only_open_refuses_what_open_would_change_and_writes_nothing() {
++        let dir = std::env::temp_dir().join(format!("budget-ro-{}", uuid::Uuid::new_v4()));
++        std::fs::create_dir_all(&dir).unwrap();
++        let listing = || {
++            let mut names: Vec<String> = std::fs::read_dir(&dir)
++                .unwrap()
++                .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
++                .collect();
++            names.sort();
++            names
++        };
++        let refused = |path: &Path, cap: f64, why: &str| {
++            let before = std::fs::read(path).ok();
++            let names = listing();
++            let error = Ledger::open_read_only(&config(path, cap), "a")
++                .err()
++                .unwrap();
++            assert!(format!("{error:#}").contains(why), "{error:#}");
++            assert_eq!(std::fs::read(path).ok(), before);
++            assert_eq!(listing(), names);
++        };
++        refused(&dir.join("missing.db"), 1.0, "does not exist");
++        let rollback = dir.join("rollback.db");
++        Connection::open(&rollback)
++            .unwrap()
++            .execute_batch(SCHEMA)
++            .unwrap();
++        refused(&rollback, 1.0, "is not in WAL mode");
++        let empty = dir.join("empty.db");
++        Connection::open(&empty)
++            .unwrap()
++            .pragma_update(None, "journal_mode", "WAL")
++            .unwrap();
++        refused(&empty, 1.0, "has no table budget");
++        let uncapped = dir.join("uncapped.db");
++        let conn = Connection::open(&uncapped).unwrap();
++        conn.pragma_update(None, "journal_mode", "WAL").unwrap();
++        conn.execute_batch(SCHEMA).unwrap();
++        drop(conn);
++        refused(&uncapped, 1.0, "has no cap");
++        let path = dir.join("ledger ?#%.db");
++        drop(Ledger::open(&config(&path, 1.0), "a").unwrap());
++        refused(&path, 2.0, "has cap $1, the config says $2");
++        let names = listing();
++        let before = std::fs::read(&path).unwrap();
++        let ledger = Ledger::open_read_only(&config(&path, 1.0), "a").unwrap();
++        assert_eq!(ledger.totals().unwrap(), (0.0, 0.0));
++        assert!(ledger.reserve(0.1).is_err());
++        drop(ledger);
++        assert_eq!(std::fs::read(&path).unwrap(), before);
++        assert_eq!(listing(), names);
++    }
+ }
+diff --git a/src/db.rs b/src/db.rs
+index 06e8d21..acd1c5d 100644
+--- a/src/db.rs
++++ b/src/db.rs
+@@ -178,6 +178,30 @@ pub fn connect(path: &Path) -> Result<Connection> {
+     Ok(conn)
+ }
+ 
++/// Opens `path` read-only and immutable (`file:…?mode=ro&immutable=1`), for admission: no
++/// write, no lock, no `-wal`/`-shm` opened or created and no checkpoint on close, whatever
++/// other connections do. Only the main file is read: pages still only in the write-ahead
++/// log are not seen, and a checkpoint running meanwhile can make a read fail.
++pub fn open_immutable(path: &Path) -> Result<Connection> {
++    use std::os::unix::ffi::OsStrExt as _;
++    let mut uri = String::from("file:");
++    for &b in path.as_os_str().as_bytes() {
++        if b.is_ascii_alphanumeric() || b"-._~/".contains(&b) {
++            uri.push(b as char);
++        } else {
++            uri.push_str(&format!("%{b:02X}"));
++        }
++    }
++    uri.push_str("?mode=ro&immutable=1");
++    Connection::open_with_flags(
++        uri,
++        rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY
++            | rusqlite::OpenFlags::SQLITE_OPEN_URI
++            | rusqlite::OpenFlags::SQLITE_OPEN_NO_MUTEX,
++    )
++    .with_context(|| format!("opening {} read-only, immutable", path.display()))
++}
++
+ fn has_column(conn: &Connection, table: &str, column: &str) -> Result<bool> {
+     Ok(conn.query_row(
+         "SELECT COUNT(*) > 0 FROM pragma_table_info(?1) WHERE name = ?2",
+diff --git a/src/guard.rs b/src/guard.rs
+new file mode 100644
+index 0000000..2084b07
+--- /dev/null
++++ b/src/guard.rs
+@@ -0,0 +1,192 @@
++//! A league's run guard (`league --guard FILE`, `admit --guard FILE`; Zeki #5385, ported from
++//! 959a8a2 for the small chat first stages, Zeki #10062): the batch's spending cap, kept by the
++//! runner itself per request.
++//!
++//! - Money: one budget ledger (`budget.rs`) and one cap shared by every `metered` setup (the
++//!   paid opponents, by player name). Each request attempt of theirs (warm-ups, retries and
++//!   failed attempts included) first reserves its worst case and is refused before it is sent
++//!   when spent + reserved in flight + that would pass the cap; an answered attempt is settled
++//!   at max(list price, the provider's reported `usage.cost`), any other keeps its worst case.
++//! - Paid participants: under a guard every participant is either metered or local (an engine,
++//!   or a client whose endpoint is a loopback address); any other is refused before its client
++//!   is built (`Player::from_config`, `admit`).
++//! - Latch: a refused reservation writes the `latch` file. While it exists, no guarded league
++//!   starts or resumes, no guarded client sends and admission refuses: there is no automatic
++//!   re-entry; only a person removes it.
++//!
++//! The players' stored settings are not changed: the guard names setups by player name. (The
++//! route identity check of 959a8a2, `expect_route`, is not ported: no setup here needs it.)
++
++use std::collections::BTreeMap;
++use std::path::{Path, PathBuf};
++use std::sync::Arc;
++use std::sync::atomic::{AtomicBool, Ordering};
++
++use anyhow::{Context as _, Result, bail};
++use serde::{Deserialize, Serialize};
++
++use crate::budget::BudgetConfig;
++
++/// List prices of a metered setup, per million tokens (worst cases and list-price settlement).
++#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
++#[serde(deny_unknown_fields)]
++pub struct Prices {
++    pub input_per_mtok: f64,
++    pub cached_input_per_mtok: f64,
++    pub output_per_mtok: f64,
++}
++
++/// The guard file.
++#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
++#[serde(deny_unknown_fields)]
++pub struct GuardConfig {
++    /// Free text: what the guard is for.
++    #[serde(default, skip_serializing_if = "Option::is_none")]
++    pub note: Option<String>,
++    /// Budget ledger shared by every metered setup.
++    pub ledger: String,
++    /// Dollars never to be passed by spent + reserved over all metered setups.
++    pub cap_usd: f64,
++    /// Stop latch file: written on a guard stop; while it exists nothing guarded runs.
++    pub latch: PathBuf,
++    /// Setups whose every request attempt is metered, by player name.
++    pub metered: BTreeMap<String, Prices>,
++}
++
++pub struct Guard {
++    pub config: GuardConfig,
++    /// SHA-256 of the guard file's bytes (admission's record).
++    pub sha256: String,
++    pub path: PathBuf,
++    stopped: AtomicBool,
++}
++
++/// A guard stop: the latch already set. Matched by type, so a league can tell it from an
++/// ordinary match failure.
++#[derive(Debug)]
++pub struct GuardStop(pub String);
++
++impl std::fmt::Display for GuardStop {
++    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
++        f.write_str(&self.0)
++    }
++}
++
++impl std::error::Error for GuardStop {}
++
++/// Whether `error` is a guard stop or a refused reservation (`budget::BudgetCap`).
++pub fn is_stop(error: &anyhow::Error) -> bool {
++    error
++        .chain()
++        .any(|e| e.is::<GuardStop>() || e.is::<crate::budget::BudgetCap>())
++}
++
++impl Guard {
++    /// Reads and checks the guard file: a positive cap, finite non-negative prices.
++    pub fn load(path: &Path) -> Result<Arc<Self>> {
++        let bytes =
++            std::fs::read(path).with_context(|| format!("reading guard {}", path.display()))?;
++        let config: GuardConfig = serde_json::from_slice(&bytes)
++            .with_context(|| format!("parsing guard {}", path.display()))?;
++        if !(config.cap_usd.is_finite() && config.cap_usd > 0.0) {
++            bail!(
++                "guard {}: cap_usd must be a positive number",
++                path.display()
++            );
++        }
++        if let Some((name, _)) = config.metered.iter().find(|(_, p)| {
++            ![p.input_per_mtok, p.cached_input_per_mtok, p.output_per_mtok]
++                .iter()
++                .all(|v| v.is_finite() && *v >= 0.0)
++        }) {
++            bail!(
++                "guard {}: {name}'s prices must be finite, non-negative numbers",
++                path.display()
++            );
++        }
++        use sha2::Digest as _;
++        Ok(Arc::new(Guard {
++            config,
++            sha256: hex::encode(sha2::Sha256::digest(&bytes)),
++            path: path.to_path_buf(),
++            stopped: AtomicBool::new(false),
++        }))
++    }
++
++    pub fn meters(&self, name: &str) -> bool {
++        self.config.metered.contains_key(name)
++    }
++
++    /// The budget of a metered setup: the shared ledger and cap at its list prices.
++    pub fn budget_for(&self, name: &str) -> Option<BudgetConfig> {
++        self.config.metered.get(name).map(|p| BudgetConfig {
++            ledger: self.config.ledger.clone(),
++            cap_usd: self.config.cap_usd,
++            input_per_mtok: p.input_per_mtok,
++            cached_input_per_mtok: p.cached_input_per_mtok,
++            output_per_mtok: p.output_per_mtok,
++        })
++    }
++
++    /// Creates the shared ledger with the guard's cap (or checks an existing one has it), so
++    /// admission, which reads it read-only, finds it; returns spent and reserved dollars.
++    pub fn open_ledger(&self) -> Result<(f64, f64)> {
++        self.check()?;
++        let budget = BudgetConfig {
++            ledger: self.config.ledger.clone(),
++            cap_usd: self.config.cap_usd,
++            input_per_mtok: 0.0,
++            cached_input_per_mtok: 0.0,
++            output_per_mtok: 0.0,
++        };
++        crate::budget::Ledger::open(&budget, "guard-ledger")?.totals()
++    }
++
++    /// The latch's text when it is set (in this process, or by the file).
++    pub fn latched(&self) -> Option<String> {
++        match std::fs::read_to_string(&self.config.latch) {
++            Ok(text) => Some(text.trim().to_owned()),
++            Err(error) if error.kind() == std::io::ErrorKind::NotFound => self
++                .stopped
++                .load(Ordering::SeqCst)
++                .then(|| "stopped in this process (latch file missing)".to_owned()),
++            Err(error) => Some(format!(
++                "latch {} unreadable: {error}",
++                self.config.latch.display()
++            )),
++        }
++    }
++
++    /// Fails with a `GuardStop` while the latch is set: nothing may be sent or started.
++    pub fn check(&self) -> Result<()> {
++        match self.latched() {
++            None => Ok(()),
++            Some(why) => Err(anyhow::Error::new(GuardStop(format!(
++                "GUARD LATCHED ({}): {why}; nothing is sent and no guarded league starts until a person removes it",
++                self.config.latch.display()
++            )))),
++        }
++    }
++
++    /// Sets the latch: in this process at once, and in the latch file (one line appended per
++    /// stop), which keeps every later run from starting.
++    pub fn latch(&self, reason: &str) {
++        self.stopped.store(true, Ordering::SeqCst);
++        let line = format!(
++            "{} {reason}\n",
++            chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Millis, true)
++        );
++        use std::io::Write as _;
++        let written = std::fs::OpenOptions::new()
++            .create(true)
++            .append(true)
++            .open(&self.config.latch)
++            .and_then(|mut f| f.write_all(line.as_bytes()));
++        if let Err(error) = written {
++            eprintln!(
++                "guard: latch {} not written: {error} (latched in this process)",
++                self.config.latch.display()
++            );
++        }
++    }
++}
+diff --git a/src/http.rs b/src/http.rs
+index f765066..1716be2 100644
+--- a/src/http.rs
++++ b/src/http.rs
+@@ -129,53 +129,113 @@ pub async fn send(
+     make: impl Fn() -> RequestBuilder,
+     retry: &RetryTime,
+ ) -> Result<String, CallError> {
+-    let (body, _) = send_with_backoff(
++    send_checked(make, retry, None).await
++}
++
++/// A check run before every attempt (the first and each retry after its backoff wait), before
++/// anything is reserved or sent; an error ends the call there (a league guard's latch).
++pub type Stop<'a> = Option<&'a (dyn Fn() -> anyhow::Result<()> + Sync)>;
++
++/// As `send`, with `stop` checked before every attempt.
++pub async fn send_checked(
++    make: impl Fn() -> RequestBuilder,
++    retry: &RetryTime,
++    stop: Stop<'_>,
++) -> Result<String, CallError> {
++    let (body, _) = send_with_backoff_stop(
+         make,
+         retry,
+         None,
+         FIRST_BACKOFF,
+         RATE_LIMIT_BACKOFF,
+         RetryPolicy::current(),
++        stop,
+     )
+     .await?;
+     Ok(body)
+ }
+ 
++/// Error statuses a metered provider documents as not billed: such an attempt is booked at
++/// nothing; any other error status keeps the attempt's worst case.
++pub type FreeStatus = fn(StatusCode) -> bool;
++
+ /// As `send`, under a budget: every attempt first reserves `worst_case` dollars in `ledger`
+ /// (refused, before the call, when that would pass the cap). An attempt answered with an
+-/// error status is booked at nothing; one without a response keeps its worst case. The
+-/// successful attempt's reservation is returned for the caller to settle at its cost.
++/// error status for which `free` holds is booked at nothing (at the charge its body reports,
++/// if it reports one); one answered with any other error status is booked at max(its worst
++/// case, the reported charge); one without a response keeps its worst case. The successful
++/// attempt's reservation is returned for the caller to settle at its cost.
+ pub async fn send_metered(
+     make: impl Fn() -> RequestBuilder,
+     retry: &RetryTime,
+     ledger: &Arc<Ledger>,
+     worst_case: f64,
++    free: FreeStatus,
+ ) -> Result<(String, Hold), CallError> {
+-    let (body, hold) = send_with_backoff(
++    send_metered_checked(make, retry, ledger, worst_case, free, None).await
++}
++
++/// As `send_metered`, with `stop` checked before every attempt (before its reservation).
++pub async fn send_metered_checked(
++    make: impl Fn() -> RequestBuilder,
++    retry: &RetryTime,
++    ledger: &Arc<Ledger>,
++    worst_case: f64,
++    free: FreeStatus,
++    stop: Stop<'_>,
++) -> Result<(String, Hold), CallError> {
++    let (body, hold) = send_with_backoff_stop(
+         make,
+         retry,
+-        Some((ledger, worst_case)),
++        Some((ledger, worst_case, free)),
+         FIRST_BACKOFF,
+         RATE_LIMIT_BACKOFF,
+         RetryPolicy::current(),
++        stop,
+     )
+     .await?;
+     Ok((body, hold.expect("a metered attempt holds a reservation")))
+ }
+ 
++#[cfg(test)]
+ async fn send_with_backoff(
+     make: impl Fn() -> RequestBuilder,
+     retry: &RetryTime,
+-    budget: Option<(&Arc<Ledger>, f64)>,
++    budget: Option<(&Arc<Ledger>, f64, FreeStatus)>,
+     first_backoff: Duration,
+     rate_limit_backoff: Duration,
+     policy: RetryPolicy,
++) -> Result<(String, Option<Hold>), CallError> {
++    send_with_backoff_stop(
++        make,
++        retry,
++        budget,
++        first_backoff,
++        rate_limit_backoff,
++        policy,
++        None,
++    )
++    .await
++}
++
++async fn send_with_backoff_stop(
++    make: impl Fn() -> RequestBuilder,
++    retry: &RetryTime,
++    budget: Option<(&Arc<Ledger>, f64, FreeStatus)>,
++    first_backoff: Duration,
++    rate_limit_backoff: Duration,
++    policy: RetryPolicy,
++    stop: Stop<'_>,
+ ) -> Result<(String, Option<Hold>), CallError> {
+     let mut backoff = first_backoff;
+     let mut attempt = 0;
+     loop {
++        // Every attempt edge, after any backoff wait: nothing is reserved or sent once stopped.
++        if let Some(stop) = stop {
++            stop()?;
++        }
+         let hold = match budget {
+-            Some((ledger, amount)) => Some(ledger.reserve(amount)?),
++            Some((ledger, amount, _)) => Some(ledger.reserve(amount)?),
+             None => None,
+         };
+         let started = Instant::now();
+@@ -201,8 +261,22 @@ async fn send_with_backoff(
+                 if status.is_success() {
+                     return Ok((body, hold));
+                 }
+-                if let Some(hold) = hold {
+-                    hold.refused(&format!("{status}"));
++                if let (Some(hold), Some((_, _, free))) = (hold, budget) {
++                    // A charge the error body reports is never erased.
++                    let known = crate::budget::reported_cost(&body);
++                    match (free(status), known) {
++                        (true, None) => hold.refused(&format!("{status}")),
++                        (true, Some(charge)) => hold.charged(
++                            charge,
++                            &format!("{status}: documented as unbilled, but the body reports a charge"),
++                        ),
++                        (false, known) => hold.kept_at_least(
++                            known,
++                            &format!(
++                                "{status}: not documented as unbilled; booked at max(worst case, reported charge)"
++                            ),
++                        ),
++                    }
+                 }
+                 if matches!(status, StatusCode::UNAUTHORIZED | StatusCode::FORBIDDEN) {
+                     return Err(CallError::Auth(format!("{status}: {}", snippet(&body))));
+@@ -417,7 +491,7 @@ mod tests {
+         let (_, hold) = send_with_backoff(
+             || http.get(&url),
+             &retry,
+-            Some((&ledger, 0.7)),
++            Some((&ledger, 0.7, ANY_ERROR_FREE)),
+             backoff,
+             backoff,
+             LEAGUE,
+@@ -430,7 +504,7 @@ mod tests {
+         let error = send_with_backoff(
+             || http.get(&url),
+             &retry,
+-            Some((&ledger, 0.4)),
++            Some((&ledger, 0.4, ANY_ERROR_FREE)),
+             backoff,
+             backoff,
+             LEAGUE,
+@@ -451,7 +525,7 @@ mod tests {
+             send_with_backoff(
+                 || http.get(&url),
+                 &retry,
+-                Some((&ledger, 0.4)),
++                Some((&ledger, 0.4, ANY_ERROR_FREE)),
+                 backoff,
+                 backoff,
+                 LEAGUE
+@@ -460,4 +534,106 @@ mod tests {
+             .is_ok()
+         );
+     }
++
++    /// The earlier behaviour (openai-compatible chat servers): every error status unbilled.
++    const ANY_ERROR_FREE: FreeStatus = |_| true;
++    /// One attempt, no retry.
++    const ONCE: RetryPolicy = RetryPolicy {
++        limit: 0,
++        per_call: false,
++    };
++
++    fn paid_ledger(cap: f64) -> Arc<Ledger> {
++        let dir = std::env::temp_dir().join(format!("budget-{}", uuid::Uuid::new_v4()));
++        std::fs::create_dir_all(&dir).unwrap();
++        Ledger::open(
++            &crate::budget::BudgetConfig {
++                ledger: dir.join("ledger.db").to_string_lossy().into_owned(),
++                cap_usd: cap,
++                input_per_mtok: 0.06,
++                cached_input_per_mtok: 0.06,
++                output_per_mtok: 0.0,
++            },
++            "Jev 1.14.0",
++        )
++        .unwrap()
++    }
++
++    /// A paid decision service (none documents an unbilled error status): every error status
++    /// (429, 500, 529, 503, 400, 403) and an attempt without a response (a timeout, a refused
++    /// connection) keep the reservation's worst case.
++    #[tokio::test]
++    async fn paid_error_statuses_keep_their_worst_case() {
++        let paid: FreeStatus = |_| false;
++        let http = reqwest::Client::new();
++        let backoff = Duration::from_millis(5);
++        let retry = RetryTime::default();
++        for (status, booked) in [
++            (429, 0.25),
++            (500, 0.25),
++            (529, 0.25),
++            (503, 0.25),
++            (400, 0.25),
++            (403, 0.25),
++        ] {
++            let ledger = paid_ledger(1.0);
++            let (url, count) = serve(vec![status]);
++            let result = send_with_backoff(
++                || http.get(&url),
++                &retry,
++                Some((&ledger, 0.25, paid)),
++                backoff,
++                backoff,
++                ONCE,
++            )
++            .await;
++            assert!(result.is_err(), "{status}");
++            assert_eq!(count.load(Ordering::SeqCst), 1, "{status}");
++            let (spent, reserved) = ledger.totals().unwrap();
++            assert_eq!((spent, reserved), (booked, 0.0), "{status}");
++        }
++        // Timeout: the server takes the request and never answers.
++        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
++        let url = format!("http://{}/", listener.local_addr().unwrap());
++        std::thread::spawn(move || {
++            let _held: Vec<_> = listener.incoming().take(1).collect();
++            std::thread::sleep(Duration::from_secs(5));
++        });
++        let slow = reqwest::Client::builder()
++            .timeout(Duration::from_millis(200))
++            .build()
++            .unwrap();
++        let ledger = paid_ledger(1.0);
++        assert!(
++            send_with_backoff(
++                || slow.get(&url),
++                &retry,
++                Some((&ledger, 0.25, paid)),
++                backoff,
++                backoff,
++                ONCE
++            )
++            .await
++            .is_err()
++        );
++        assert_eq!(ledger.totals().unwrap(), (0.25, 0.0));
++        // No response at all: nothing listens on the port.
++        let closed = TcpListener::bind("127.0.0.1:0").unwrap();
++        let url = format!("http://{}/", closed.local_addr().unwrap());
++        drop(closed);
++        let ledger = paid_ledger(1.0);
++        assert!(
++            send_with_backoff(
++                || http.get(&url),
++                &retry,
++                Some((&ledger, 0.25, paid)),
++                backoff,
++                backoff,
++                ONCE
++            )
++            .await
++            .is_err()
++        );
++        assert_eq!(ledger.totals().unwrap(), (0.25, 0.0));
++    }
+ }
+diff --git a/src/league.rs b/src/league.rs
+index 19947b2..59d0465 100644
+--- a/src/league.rs
++++ b/src/league.rs
+@@ -659,6 +659,10 @@ async fn run_inner(
+     scores: PathBuf,
+     league_id: &mut Option<i64>,
+ ) -> Result<()> {
++    // A latched guard starts nothing: no database is opened, no league created or resumed.
++    if let Some(guard) = &setup.guard {
++        guard.check()?;
++    }
+     let db_path = db_path.to_path_buf();
+     let mut db = Db::open(&db_path)?;
+     let id = match start {
+@@ -858,6 +862,15 @@ async fn play_league(league: Arc<League>, db: &Db, setup: &Setup, mut state: Sta
+             }
+             if set.is_empty() {
+                 if league.control.is_cancelled() {
++                    if let Some(guard) = &setup.guard
++                        && let Some(why) = guard.latched()
++                    {
++                        bail!(
++                            "league #{id} stopped by its run guard ({}): {why}; not resumed \
++                             automatically: no guarded league starts while the latch is set",
++                            guard.config.latch.display()
++                        );
++                    }
+                     return Err(stopped());
+                 }
+                 if state.pending.is_empty() && state.skipped == 0 {
+@@ -930,6 +943,15 @@ async fn play_league(league: Arc<League>, db: &Db, setup: &Setup, mut state: Sta
+                                 backoffs.fail(&fixture, &error, Instant::now(), league.backoff);
+                             league.defer(&fixture, &error, &backoff);
+                             state.requeue(fixture);
++                            // A guard stop (a refused reservation, or the latch set) ends the
++                            // league: latched, nothing more is started.
++                            if let Some(guard) = &setup.guard
++                                && crate::guard::is_stop(&error)
++                            {
++                                guard.latch(&format!("league #{id} stopped: {error:#}"));
++                                println!("league #{id}: stopped by its run guard: {error:#}");
++                                league.control.cancel();
++                            }
+                         }
+                     }
+                 }
+diff --git a/src/main.rs b/src/main.rs
+index 4481fb5..24c1f4b 100644
+--- a/src/main.rs
++++ b/src/main.rs
+@@ -1,9 +1,11 @@
++mod admit;
+ mod ask;
+ mod auth;
+ mod board;
+ mod budget;
+ mod db;
+ mod dice;
++mod guard;
+ mod http;
+ mod league;
+ mod migrate;
+@@ -83,6 +85,37 @@ enum Command {
+     /// error rate from the site's GNUbg scores) and stores the ranking; prints the stored
+     /// and the new ranking.
+     Rank(RankArgs),
++    /// Offline client admission, before anything is written: builds the client of every
++    /// player of a league config as a league builds its participants, but only decision
++    /// services, the local engines and chat servers on a loopback address (any other client
++    /// type is refused before construction) and with budget ledgers read immutably; sends no
++    /// request and writes no database, ledger or credential. Under `--guard`, every player
++    /// must be metered by the guard or local. Fails when any client is refused; else its last
++    /// line, `admitted-settings {json}`, records the config (and guard) file's SHA-256.
++    Admit(AdmitArgs),
++    /// Creates a run guard's shared budget ledger with the guard's cap (or checks that an
++    /// existing one has it) and prints its spent and reserved dollars; refused while the
++    /// guard's latch is set. Run once before `admit --guard`, which only reads the ledger.
++    GuardLedger(GuardLedgerArgs),
++}
++
++#[derive(Args)]
++struct AdmitArgs {
++    /// League config file (as for `league --config`).
++    #[arg(long)]
++    config: PathBuf,
++    /// The league's run guard file (as for `league --guard`): its metered setups are built
++    /// with its ledger (read-only, immutable), every other player must be local and its latch
++    /// must not be set; the record names the guard file's SHA-256.
++    #[arg(long)]
++    guard: Option<PathBuf>,
++}
++
++#[derive(Args)]
++struct GuardLedgerArgs {
++    /// Run guard file (JSON; `guard.rs`).
++    #[arg(long)]
++    guard: PathBuf,
+ }
+ 
+ #[derive(Args)]
+@@ -329,6 +362,11 @@ struct LeagueArgs {
+     /// $XDG_STATE_HOME/bg-site/plays.
+     #[arg(long, env = "JEVGAMMON_SCORES")]
+     scores: Option<PathBuf>,
++    /// Run guard file (JSON; `guard.rs`): a shared hard cap over the setups it meters (every
++    /// request attempt reserved before it is sent; any other participant must be local) and a
++    /// stop latch; a latched guard starts nothing.
++    #[arg(long)]
++    guard: Option<PathBuf>,
+     #[command(flatten)]
+     common: Common,
+ }
+@@ -424,6 +462,23 @@ async fn main() -> ExitCode {
+         Some(Command::Void(args)) => void(args),
+         Some(Command::Migrate(args)) => migrate::run(&args),
+         Some(Command::Rank(args)) => rank(args),
++        Some(Command::Admit(args)) => {
++            // No admitted client type reads a credential root or the local server's URL.
++            let setup = Setup::new(PathBuf::new(), String::new());
++            match args.guard.as_deref().map(guard::Guard::load).transpose() {
++                Ok(Some(guard)) => admit::run(&args.config, &setup.with_guard(guard)).await,
++                Ok(None) => admit::run(&args.config, &setup).await,
++                Err(error) => Err(error),
++            }
++        }
++        Some(Command::GuardLedger(args)) => guard::Guard::load(&args.guard).and_then(|guard| {
++            let (spent, reserved) = guard.open_ledger()?;
++            println!(
++                "guard ledger {}: cap ${}, spent ${spent:.6}, reserved ${reserved:.6}",
++                guard.config.ledger, guard.config.cap_usd
++            );
++            Ok(())
++        }),
+         Some(Command::RenderStageB(args)) => {
+             ask::render_stage_b(&args.config, &args.positions, &args.setups)
+         }
+@@ -488,7 +543,10 @@ async fn main() -> ExitCode {
+ }
+ 
+ async fn run_league(args: LeagueArgs) -> Result<()> {
+-    let setup = args.common.setup();
++    let setup = match &args.guard {
++        Some(path) => args.common.setup().with_guard(guard::Guard::load(path)?),
++        None => args.common.setup(),
++    };
+     let start = match (args.resume, &args.config) {
+         (Some(id), _) => league::Start::Resume(id),
+         (None, Some(path)) => {
+diff --git a/src/players/decision.rs b/src/players/decision.rs
+index f6119ad..fdc4f5d 100644
+--- a/src/players/decision.rs
++++ b/src/players/decision.rs
+@@ -2,6 +2,7 @@
+ //! OpenAI's Decisions API. The legal plays become the options of one `choice` question, in
+ //! the seeded option order, and the service returns its probability for each.
+ 
++use std::sync::Arc;
+ use std::time::{Duration, Instant};
+ 
+ use anyhow::{Result, bail};
+@@ -9,12 +10,17 @@ use serde_json::{Map, Value, json};
+ 
+ use super::prompt::{instructions, option_text, state};
+ use super::{Decision, DecisionRequest};
++use crate::budget::{Ledger, Usage};
+ use crate::db::Exchange;
+ use crate::http::{self, RetryTime};
+ 
+ const QUESTION: &str = "play";
+ /// Longest wait for a service to answer its warm-up request.
+ const WARM_UP_LIMIT: Duration = Duration::from_secs(900);
++/// Budget worst case: input tokens a provider may add to a request's own bytes for its
++/// system prompt and chat template (unpublished for the hosted services; Drex Max v1's own
++/// loader adds about 80, measured with its tokenizer on an empty two-option question).
++const TEMPLATE_MARGIN: usize = 4096;
+ 
+ /// A decision service and how to call it.
+ pub struct Service {
+@@ -247,6 +253,16 @@ pub fn service(provider: &str) -> Option<&'static Service> {
+         .find(|s| s.provider.eq_ignore_ascii_case(provider))
+ }
+ 
++/// The URL a client of `service` calls: `base_url` (a player config's), else the service's
++/// environment variable, else its default, then its path.
++pub fn endpoint(service: &Service, base_url: Option<&str>) -> String {
++    let base = match base_url {
++        Some(url) => url.to_owned(),
++        None => std::env::var(service.url_var).unwrap_or_else(|_| service.base_url.into()),
++    };
++    format!("{}{}", base.trim_end_matches('/'), service.path)
++}
++
+ pub struct DecisionClient {
+     http: reqwest::Client,
+     service: &'static Service,
+@@ -254,17 +270,23 @@ pub struct DecisionClient {
+     /// `None` when the service takes no `model` field.
+     model: Option<String>,
+     url: String,
++    /// Hard spending cap: every attempt reserves its worst case before it is sent.
++    budget: Option<Arc<Ledger>>,
++    /// A league's run guard naming this setup: its latch is checked before every attempt.
++    guard: Option<Arc<crate::guard::Guard>>,
+ }
+ 
+ impl DecisionClient {
+     /// `model` overrides the service's default; it is ignored by services without a
+     /// `model` field. `base_url` (a player config's) overrides the service's URL and its
+-    /// environment variable. Fails when a required API key is missing.
++    /// environment variable. `budget` meters every request attempt. Fails when a required
++    /// API key is missing.
+     pub fn new(
+         http: reqwest::Client,
+         service: &'static Service,
+         model: Option<String>,
+         base_url: Option<&str>,
++        budget: Option<Arc<Ledger>>,
+     ) -> Result<Self> {
+         let key = service
+             .key_vars
+@@ -277,10 +299,6 @@ impl DecisionClient {
+                 service.key_vars.join(" or ")
+             );
+         }
+-        let base = match base_url {
+-            Some(url) => url.to_owned(),
+-            None => std::env::var(service.url_var).unwrap_or_else(|_| service.base_url.into()),
+-        };
+         Ok(DecisionClient {
+             http,
+             service,
+@@ -288,10 +306,18 @@ impl DecisionClient {
+             model: service
+                 .default_model
+                 .map(|default| model.unwrap_or_else(|| default.to_owned())),
+-            url: format!("{}{}", base.trim_end_matches('/'), service.path),
++            url: endpoint(service, base_url),
++            budget,
++            guard: None,
+         })
+     }
+ 
++    /// Puts the client under a league's run guard (`None`: none).
++    pub fn with_guard(mut self, guard: Option<Arc<crate::guard::Guard>>) -> Self {
++        self.guard = guard;
++        self
++    }
++
+     pub fn max_choices(&self) -> usize {
+         self.service.max_choices
+     }
+@@ -318,6 +344,13 @@ impl DecisionClient {
+                         error.context(format!("{} refused the warm-up", self.service.label))
+                     );
+                 }
++                // A guard stop (latch, cap) is not cured by waiting.
++                Err(error) if self.guard.is_some() && crate::guard::is_stop(&error) => {
++                    return Err(error.context(format!(
++                        "{} warm-up stopped by the league guard",
++                        self.service.label
++                    )));
++                }
+                 Err(error) if started.elapsed() < WARM_UP_LIMIT => {
+                     eprintln!("{} warming up: {error:#}", self.service.label);
+                     tokio::time::sleep(Duration::from_secs(10)).await;
+@@ -333,22 +366,72 @@ impl DecisionClient {
+         }
+     }
+ 
++    /// With a budget, each attempt (retries included) first reserves its worst case, and is
++    /// refused before the call when spent + reserved + that would pass the cap. Worst case:
++    /// one input token per byte of the JSON body plus `TEMPLATE_MARGIN` tokens, and as many
++    /// output tokens as body bytes. A byte-level BPE tokenizer never makes a token of less
++    /// than one byte of the UTF-8 text it encodes, and the body holds every byte of the state,
++    /// instructions and options the model reads (JSON escaping only adds bytes); the margin
++    /// covers the provider's own system prompt and chat template, which it does not publish.
++    /// An answer with complete usage is booked at max(its list price, the provider's reported
++    /// `usage.cost`); an answer with incomplete usage (no input tokens, or no output tokens
++    /// when output is priced) or any error status (no service here documents one as unbilled)
++    /// at max(its worst case, the reported charge, read on its own); an attempt without a
++    /// response, or without a known charge, keeps the worst case. Under a league guard the
++    /// latch is checked before every attempt (the first, and each retry after its backoff
++    /// wait: nothing is reserved or sent once it is set).
+     async fn send(&self, body: &Value, retry: &RetryTime) -> Result<String> {
+-        http::send(
+-            || {
+-                let request = self.http.post(&self.url).json(body);
+-                match &self.key {
+-                    Some(key) => request.bearer_auth(key),
+-                    None => request,
+-                }
+-            },
+-            retry,
+-        )
+-        .await
+-        .map_err(|e| {
++        let latch = || match &self.guard {
++            Some(guard) => guard.check(),
++            None => Ok(()),
++        };
++        let stop: http::Stop<'_> = self.guard.is_some().then_some(&latch as _);
++        let make = || {
++            let request = self.http.post(&self.url).json(body);
++            match &self.key {
++                Some(key) => request.bearer_auth(key),
++                None => request,
++            }
++        };
++        let failed = |e: http::CallError| {
+             e.into_anyhow()
+                 .context(format!("{} request failed", self.service.label))
+-        })
++        };
++        let Some(ledger) = &self.budget else {
++            return http::send_checked(make, retry, stop).await.map_err(failed);
++        };
++        let bytes = body.to_string().len();
++        let worst = ledger.worst_case(bytes + TEMPLATE_MARGIN, bytes as u64);
++        let (text, hold) = http::send_metered_checked(make, retry, ledger, worst, |_| false, stop)
++            .await
++            .map_err(failed)?;
++        let value: Option<Value> = serde_json::from_str(&text).ok();
++        let tokens = |key: &str| {
++            value
++                .as_ref()
++                .and_then(|v| v.pointer(&format!("/usage/{key}")))
++                .and_then(Value::as_u64)
++        };
++        let reported = crate::budget::reported_cost(&text);
++        let output = tokens("output_tokens").or((!ledger.output_priced()).then_some(0));
++        match (tokens("input_tokens"), output) {
++            (Some(input_tokens), Some(output_tokens)) => {
++                hold.settle(
++                    Usage {
++                        input_tokens,
++                        cached_tokens: 0,
++                        output_tokens,
++                        reasoning_tokens: 0,
++                    },
++                    reported,
++                );
++            }
++            _ => hold.kept_at_least(
++                reported,
++                "200 with incomplete usage: booked at max(worst case, reported charge)",
++            ),
++        }
++        Ok(text)
+     }
+ 
+     /// `plays`: `(notation, description)`; the notation identifies the option in the answer
+diff --git a/src/players/guard_tests.rs b/src/players/guard_tests.rs
+new file mode 100644
+index 0000000..6a3161a
+--- /dev/null
++++ b/src/players/guard_tests.rs
+@@ -0,0 +1,792 @@
++//! League run guard (Zeki #5385; ported from 959a8a2 for the small chat first stages, Zeki
++//! #10062), offline: stub System One servers on 127.0.0.1, scratch ledgers, latch files and
++//! databases under the temp dir; no network, no production file. Money: retries, warm-ups,
++//! failed attempts, decisions in flight at once and an opponent's spend are all reserved before
++//! sending in one shared ledger and never pass its cap; settled at max(list, usage.cost); one
++//! ledger shared by two entries (two leagues) stops the second; a refused reservation latches
++//! and the latch blocks a restart; under a guard an unexpected paid participant is refused at
++//! admission and by the league; a local-only roster needs no guard.
++
++use std::io::{BufRead, BufReader, Read, Write};
++use std::path::{Path, PathBuf};
++use std::sync::Arc;
++use std::sync::atomic::{AtomicUsize, Ordering};
++use std::time::Duration;
++
++use serde_json::{Value, json};
++
++use super::{DecisionRequest, Player, PlayerConfig, Setup};
++use crate::board::{Board, Play};
++use crate::http::RetryTime;
++use crate::players::prompt::PromptVersion;
++
++/// The players' setup under the guard file at `guard` (as `league --guard`).
++fn guarded(guard: &Path) -> Setup {
++    Setup::new(std::env::temp_dir(), "http://127.0.0.1:9/v1".into())
++        .with_guard(crate::guard::Guard::load(guard).expect("guard file"))
++}
++
++/// One stub reply: HTTP status, body, delay before answering.
++struct Reply {
++    status: u16,
++    body: String,
++    delay: Duration,
++}
++
++impl Reply {
++    fn ok(body: String) -> Self {
++        Reply {
++            status: 200,
++            body,
++            delay: Duration::ZERO,
++        }
++    }
++}
++
++/// A System One server: answers request `n` (from 0) with `reply(n, request body)`, one thread
++/// per connection; counts the requests it received.
++struct Stub {
++    url: String,
++    count: Arc<AtomicUsize>,
++}
++
++impl Stub {
++    fn start(reply: impl Fn(usize, &Value) -> Reply + Send + Sync + 'static) -> Self {
++        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
++        let url = format!("http://{}", listener.local_addr().unwrap());
++        let count = Arc::new(AtomicUsize::new(0));
++        let seen = count.clone();
++        let reply = Arc::new(reply);
++        std::thread::spawn(move || {
++            for stream in listener.incoming() {
++                let Ok(mut stream) = stream else { continue };
++                let n = seen.fetch_add(1, Ordering::SeqCst);
++                let reply = reply.clone();
++                std::thread::spawn(move || {
++                    let mut reader = BufReader::new(stream.try_clone().unwrap());
++                    let mut length = 0;
++                    loop {
++                        let mut line = String::new();
++                        if reader.read_line(&mut line).unwrap_or(0) == 0 || line == "\r\n" {
++                            break;
++                        }
++                        if let Some((name, value)) = line.split_once(':')
++                            && name.eq_ignore_ascii_case("content-length")
++                        {
++                            length = value.trim().parse().unwrap();
++                        }
++                    }
++                    let mut body = vec![0; length];
++                    reader.read_exact(&mut body).unwrap();
++                    let request: Value = serde_json::from_slice(&body).unwrap_or(Value::Null);
++                    let r = reply(n, &request);
++                    std::thread::sleep(r.delay);
++                    let _ = write!(
++                        stream,
++                        "HTTP/1.1 {} X\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
++                        r.status,
++                        r.body.len(),
++                        r.body
++                    );
++                });
++            }
++        });
++        Stub { url, count }
++    }
++
++    fn requests(&self) -> usize {
++        self.count.load(Ordering::SeqCst)
++    }
++}
++
++/// An answer to `request` picking its first option, with 1,000 input tokens and the
++/// provider-reported `cost` (`None`: no cost field, as Jev, Celeris, SubQ and Fastino answer).
++fn answer(request: &Value, cost: Option<f64>) -> String {
++    let keys: Vec<String> = request
++        .pointer("/questions/play/criteria")
++        .and_then(Value::as_object)
++        .map(|c| c.keys().cloned().collect())
++        .unwrap_or_default();
++    let p = 1.0 / keys.len().max(1) as f64;
++    let probabilities: serde_json::Map<String, Value> =
++        keys.iter().map(|k| (k.clone(), p.into())).collect();
++    let mut usage = json!({"input_tokens": 1000, "output_tokens": 0});
++    if let Some(cost) = cost {
++        usage["cost"] = cost.into();
++    }
++    json!({
++        "answers": {"play": {"type": "choice", "choice": keys.first(), "probabilities": probabilities}},
++        "usage": usage
++    })
++    .to_string()
++}
++
++fn good(request: &Value) -> String {
++    answer(request, Some(0.0))
++}
++
++fn scratch(tag: &str) -> PathBuf {
++    let dir = std::env::temp_dir().join(format!("jevgammon-guard-{tag}-{}", uuid::Uuid::new_v4()));
++    std::fs::create_dir_all(&dir).unwrap();
++    dir
++}
++
++/// A guard file `name` in `dir` metering `metered` (name, $ per million input tokens) under
++/// `cap`, with the ledger `budget.db` and the latch `latch` in `dir`.
++fn guard_named(dir: &Path, name: &str, cap: f64, metered: &[(&str, f64)]) -> PathBuf {
++    let path = dir.join(name);
++    let metered: serde_json::Map<String, Value> = metered
++        .iter()
++        .map(|(name, price)| {
++            (
++                (*name).to_owned(),
++                json!({"input_per_mtok": price, "cached_input_per_mtok": price, "output_per_mtok": 0.0}),
++            )
++        })
++        .collect();
++    std::fs::write(
++        &path,
++        json!({"ledger": dir.join("budget.db"), "cap_usd": cap, "latch": dir.join("latch"),
++               "metered": metered})
++        .to_string(),
++    )
++    .unwrap();
++    path
++}
++
++fn guard_file(dir: &Path, cap: f64, metered: &[(&str, f64)]) -> PathBuf {
++    guard_named(dir, "guard.json", cap, metered)
++}
++
++fn latched(dir: &Path) -> bool {
++    dir.join("latch").exists()
++}
++
++/// Ledger rows `(status, reserved_usd, cost_usd)` in order; empty when there is no ledger.
++fn ledger(dir: &Path) -> Vec<(String, f64, Option<f64>)> {
++    let path = dir.join("budget.db");
++    if !path.exists() {
++        return Vec::new();
++    }
++    let conn = rusqlite::Connection::open(&path).unwrap();
++    let mut statement = conn
++        .prepare("SELECT status, reserved_usd, cost_usd FROM attempts ORDER BY id")
++        .unwrap();
++    statement
++        .query_map([], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)))
++        .unwrap()
++        .collect::<rusqlite::Result<_>>()
++        .unwrap()
++}
++
++/// Spent (settled + lost) plus reserved (open): what the cap bounds.
++fn committed(rows: &[(String, f64, Option<f64>)]) -> f64 {
++    rows.iter()
++        .map(|(status, reserved, cost)| match status.as_str() {
++            "settled" => cost.unwrap_or(0.0),
++            _ => *reserved,
++        })
++        .sum()
++}
++
++/// A decision service player (System One, `cygnet`: at most 26 options per request) at `url`.
++fn config(name: &str, url: &str) -> PlayerConfig {
++    PlayerConfig {
++        base_url: Some(url.to_owned()),
++        ..PlayerConfig::new(name, "cygnet")
++    }
++}
++
++async fn player(name: &str, url: &str, parallel: usize, setup: &Setup) -> anyhow::Result<Player> {
++    let config = PlayerConfig {
++        parallel: Some(parallel),
++        ..config(name, url)
++    };
++    Player::from_config(&config, setup).await
++}
++
++struct Position {
++    board: Board,
++    plays: Vec<Play>,
++    notations: Vec<String>,
++    order: Vec<usize>,
++    retry: RetryTime,
++}
++
++impl Position {
++    /// A position with at least `min` legal plays.
++    fn with(min: usize) -> Self {
++        let mut board = Board::start();
++        board.pts[12] = 3;
++        board.pts[7] = 5;
++        let (plays, _) = [(2, 1), (1, 1), (2, 2), (3, 1), (4, 2), (3, 3)]
++            .iter()
++            .map(|&(a, b)| (board.legal_plays(a, b), (a, b)))
++            .find(|(p, _)| p.len() >= min)
++            .expect("a position with enough plays");
++        let notations = plays.iter().map(|p| p.notation()).collect();
++        let order = (0..plays.len()).rev().collect();
++        Position {
++            board,
++            plays,
++            notations,
++            order,
++            retry: RetryTime::default(),
++        }
++    }
++
++    fn request(&self) -> DecisionRequest<'_> {
++        DecisionRequest {
++            board: &self.board,
++            dice: (2, 1),
++            plays: &self.plays,
++            notations: &self.notations,
++            my_score: 0,
++            opp_score: 0,
++            round: 1,
++            rounds: 3,
++            leg: 1,
++            clock: None,
++            my_clock: None,
++            opp_clock: None,
++            turn_no: 1,
++            max_turns: None,
++            player: 1,
++            history: &[],
++            order: &self.order,
++            seed: 1,
++            version: PromptVersion::BgV2,
++            retry: &self.retry,
++        }
++    }
++}
++
++/// The worst case one decision request of `position` reserves at `price` per million input
++/// tokens: (request body bytes + the 4,096-token template margin) at that price, the body
++/// measured as the stub received it (and equal to the ledger's reservation).
++async fn worst_case(position: &Position, price: f64) -> f64 {
++    let bytes = Arc::new(AtomicUsize::new(0));
++    let seen = bytes.clone();
++    let stub = Stub::start(move |_, r| {
++        seen.store(r.to_string().len(), Ordering::SeqCst);
++        Reply::ok(good(r))
++    });
++    let dir = scratch("calibrate");
++    let setup = guarded(&guard_file(&dir, 1000.0, &[("G", price)]));
++    let g = player("G", &stub.url, 1, &setup).await.unwrap();
++    g.decide(&position.request()).await.unwrap();
++    let worst = (bytes.load(Ordering::SeqCst) + 4096) as f64 * price / 1e6;
++    let rows = ledger(&dir);
++    assert_eq!(rows.len(), 1, "{rows:?}");
++    assert!((rows[0].1 - worst).abs() < 1e-12, "{} {worst}", rows[0].1);
++    worst
++}
++
++/// A league of `models` (1 round, 60 turns, no clock) in `db` under `setup`.
++async fn league(
++    db: &Path,
++    setup: &Setup,
++    models: Vec<PlayerConfig>,
++    dir: &Path,
++) -> anyhow::Result<()> {
++    let rules = crate::db::Rules::new(
++        1,
++        None,
++        Some(60),
++        "bg-v2",
++        9,
++        false,
++        crate::board::StartPosition::Standard,
++    );
++    let run = crate::league::run(
++        db.to_path_buf(),
++        setup,
++        crate::league::Start::New {
++            models,
++            seed: 5,
++            rules,
++            note: None,
++            scope: crate::db::Scope::default(),
++        },
++        crate::runner::Harness::default(),
++        dir.join("no-scores"),
++    );
++    tokio::time::timeout(Duration::from_secs(120), run)
++        .await
++        .expect("the league ends")
++}
++
++async fn resume(db: &Path, setup: &Setup, id: i64, dir: &Path) -> anyhow::Result<()> {
++    crate::league::run(
++        db.to_path_buf(),
++        setup,
++        crate::league::Start::Resume(id),
++        crate::runner::Harness::default(),
++        dir.join("no-scores"),
++    )
++    .await
++}
++
++/// A league config file in `dir` holding `players`.
++fn league_config(dir: &Path, players: &[PlayerConfig]) -> PathBuf {
++    let path = dir.join("league.json");
++    std::fs::write(&path, json!({"players": players}).to_string()).unwrap();
++    path
++}
++
++/// The entrant of a small chat first stage: a chat server on a loopback address, unmetered.
++fn entrant() -> PlayerConfig {
++    PlayerConfig {
++        base_url: Some("http://127.0.0.1:18614/v1".into()),
++        ..PlayerConfig::new("Entrant (on)", "openai-compatible/minicpm5-2b")
++    }
++}
++
++#[tokio::test(flavor = "multi_thread")]
++async fn money_retries_are_each_reserved_and_settled_from_the_reported_cost() {
++    // Two 503s, then an answer reporting $0.5 (its list price: 1,000 tokens x $1/M = $0.001).
++    let stub = Stub::start(|n, r| match n {
++        0 | 1 => Reply {
++            status: 503,
++            body: "{}".into(),
++            delay: Duration::ZERO,
++        },
++        _ => Reply::ok(answer(r, Some(0.5))),
++    });
++    let dir = scratch("retries");
++    let setup = guarded(&guard_file(&dir, 5.0, &[("G", 1.0)]));
++    let g = player("G", &stub.url, 1, &setup).await.unwrap();
++    let position = Position::with(3);
++    g.decide(&position.request()).await.unwrap();
++    assert_eq!(stub.requests(), 3);
++    let rows = ledger(&dir);
++    let statuses: Vec<&str> = rows.iter().map(|r| r.0.as_str()).collect();
++    assert_eq!(
++        statuses,
++        ["lost", "lost", "settled"],
++        "every attempt booked: {rows:?}"
++    );
++    let worst = rows[0].1;
++    assert!(worst > 0.001, "{worst}");
++    assert_eq!(rows[2].2, Some(0.5), "settled at the reported cost");
++    assert!((committed(&rows) - (2.0 * worst + 0.5)).abs() < 1e-9);
++}
++
++/// Settlement is max(list price, usage.cost): a reported cost above the list price is booked
++/// as reported, one below it (or none, as most of the paid services answer) at the list price.
++#[tokio::test(flavor = "multi_thread")]
++async fn money_settles_at_the_larger_of_list_price_and_reported_cost() {
++    // 1,000 input tokens at $100/M: list price $0.1.
++    for (reported, booked) in [(Some(0.5), 0.5), (Some(0.01), 0.1), (None, 0.1)] {
++        let stub = Stub::start(move |_, r| Reply::ok(answer(r, reported)));
++        let dir = scratch("settle");
++        let setup = guarded(&guard_file(&dir, 50.0, &[("G", 100.0)]));
++        let g = player("G", &stub.url, 1, &setup).await.unwrap();
++        g.decide(&Position::with(3).request()).await.unwrap();
++        let rows = ledger(&dir);
++        assert_eq!(rows.len(), 1, "{rows:?}");
++        assert_eq!(rows[0].0, "settled", "{rows:?}");
++        let cost = rows[0].2.unwrap();
++        assert!(
++            (cost - booked).abs() < 1e-12,
++            "reported {reported:?}: booked {cost}, expected {booked}"
++        );
++    }
++}
++
++#[tokio::test(flavor = "multi_thread")]
++async fn money_warm_ups_are_reserved_and_settled() {
++    let stub = Stub::start(|_, r| Reply::ok(answer(r, Some(0.25))));
++    let dir = scratch("warm-up-money");
++    let setup = guarded(&guard_file(&dir, 5.0, &[("G", 1.0)]));
++    let g = player("G", &stub.url, 1, &setup).await.unwrap();
++    g.warm_up().await.unwrap();
++    let rows = ledger(&dir);
++    assert_eq!(rows.len(), 1, "the warm-up is metered: {rows:?}");
++    assert_eq!((rows[0].0.as_str(), rows[0].2), ("settled", Some(0.25)));
++}
++
++#[tokio::test(flavor = "multi_thread")]
++async fn money_failed_attempts_keep_their_worst_case() {
++    // A 400 (refused, not retried) and a 200 without usage: both kept at the worst case.
++    let stub = Stub::start(|n, r| match n {
++        0 => Reply {
++            status: 400,
++            body: r#"{"error":"bad"}"#.into(),
++            delay: Duration::ZERO,
++        },
++        _ => {
++            let mut v: Value = serde_json::from_str(&good(r)).unwrap();
++            v.as_object_mut().unwrap().remove("usage");
++            Reply::ok(v.to_string())
++        }
++    });
++    let dir = scratch("failed");
++    let setup = guarded(&guard_file(&dir, 5.0, &[("G", 1.0)]));
++    let g = player("G", &stub.url, 1, &setup).await.unwrap();
++    let position = Position::with(3);
++    assert!(g.decide(&position.request()).await.is_err());
++    g.decide(&position.request()).await.unwrap();
++    let rows = ledger(&dir);
++    assert_eq!(rows.len(), 2, "{rows:?}");
++    assert!(rows.iter().all(|r| r.0 == "lost" && r.1 > 0.0), "{rows:?}");
++    assert!((committed(&rows) - 2.0 * rows[0].1).abs() < 1e-9);
++}
++
++/// A cap below one request's worst case: the reservation is refused and nothing reaches the
++/// stub, the decision and the warm-up alike.
++#[tokio::test(flavor = "multi_thread")]
++async fn money_reservation_past_the_cap_is_refused_before_sending() {
++    let position = Position::with(3);
++    let worst = worst_case(&position, 1.0).await;
++    let stub = Stub::start(|_, r| Reply::ok(good(r)));
++    let dir = scratch("at-cap");
++    let setup = guarded(&guard_file(&dir, worst * 0.99, &[("G", 1.0)]));
++    let g = player("G", &stub.url, 1, &setup).await.unwrap();
++    let error = format!("{:#}", g.decide(&position.request()).await.unwrap_err());
++    assert!(error.contains("BUDGET CAP"), "{error}");
++    let tiny = scratch("at-cap-warm-up");
++    let setup = guarded(&guard_file(&tiny, 1e-6, &[("G", 1.0)]));
++    let g = player("G", &stub.url, 1, &setup).await.unwrap();
++    let error = format!("{:#}", g.warm_up().await.unwrap_err());
++    assert!(error.contains("BUDGET CAP"), "{error}");
++    assert_eq!(stub.requests(), 0, "a request reached the stub");
++    assert!(ledger(&dir).is_empty() && ledger(&tiny).is_empty());
++}
++
++#[tokio::test(flavor = "multi_thread")]
++async fn money_in_flight_reservations_bound_concurrent_requests() {
++    let position = Position::with(3);
++    let worst = worst_case(&position, 1.0).await;
++    // Room for one request in flight, not two: the second is refused before it is sent.
++    let stub = Stub::start(|_, r| Reply {
++        delay: Duration::from_secs(2),
++        ..Reply::ok(good(r))
++    });
++    let dir = scratch("in-flight");
++    let cap = 1.5 * worst;
++    let setup = guarded(&guard_file(&dir, cap, &[("G", 1.0)]));
++    let g = player("G", &stub.url, 2, &setup).await.unwrap();
++    let (first, second) = (position.request(), position.request());
++    let (a, b) = tokio::join!(g.decide(&first), g.decide(&second));
++    assert_eq!(
++        stub.requests(),
++        1,
++        "the second request was sent while the first was in flight"
++    );
++    let refused = [&a, &b].into_iter().filter(|o| o.is_err()).count();
++    assert_eq!(refused, 1);
++    let error = format!("{:#}", [a, b].into_iter().find_map(Result::err).unwrap());
++    assert!(error.contains("BUDGET CAP"), "{error}");
++    assert!(committed(&ledger(&dir)) <= cap + 1e-12);
++}
++
++#[tokio::test(flavor = "multi_thread")]
++async fn money_one_opponents_spend_stops_another_before_sending() {
++    let position = Position::with(3);
++    let worst = worst_case(&position, 1.0).await;
++    let cap = 1.0;
++    // One paid opponent's answer reports what leaves less than one worst case for the other.
++    let reported = cap - worst / 2.0;
++    let first_stub = Stub::start(move |_, r| Reply::ok(answer(r, Some(reported))));
++    let second_stub = Stub::start(|_, r| Reply::ok(good(r)));
++    let dir = scratch("opponent");
++    let setup = guarded(&guard_file(&dir, cap, &[("A", 1.0), ("B", 1.0)]));
++    let a = player("A", &first_stub.url, 1, &setup).await.unwrap();
++    let b = player("B", &second_stub.url, 1, &setup).await.unwrap();
++    a.decide(&position.request()).await.unwrap();
++    let error = format!("{:#}", b.decide(&position.request()).await.unwrap_err());
++    assert!(error.contains("BUDGET CAP"), "{error}");
++    assert_eq!(second_stub.requests(), 0, "refused before sending");
++    assert!(committed(&ledger(&dir)) <= cap + 1e-12);
++}
++
++/// Zeki #5396 G01: the latch set while a retry waits out its backoff: the retry is neither
++/// reserved nor sent; the attempt already sent keeps its accounting.
++#[tokio::test(flavor = "multi_thread")]
++async fn latch_set_during_backoff_stops_the_retry() {
++    let stub = Stub::start(|_, _| Reply {
++        status: 503,
++        body: "{}".into(),
++        delay: Duration::ZERO,
++    });
++    let dir = scratch("backoff-latch");
++    let setup = guarded(&guard_file(&dir, 5.0, &[("G", 1.0)]));
++    let g = player("G", &stub.url, 1, &setup).await.unwrap();
++    let position = Position::with(3);
++    let request = position.request();
++    let latch_while_waiting = async {
++        while stub.requests() == 0 {
++            tokio::time::sleep(Duration::from_millis(20)).await;
++        }
++        // The first attempt failed (503); its retry waits 2 s. Set the latch meanwhile, as
++        // another entry's refused reservation would.
++        tokio::time::sleep(Duration::from_millis(300)).await;
++        std::fs::write(dir.join("latch"), "test: latched during the backoff\n").unwrap();
++    };
++    let (outcome, ()) = tokio::time::timeout(Duration::from_secs(60), async {
++        tokio::join!(g.decide(&request), latch_while_waiting)
++    })
++    .await
++    .expect("the decision ends");
++    let error = format!(
++        "{:#}",
++        outcome.expect_err("a retry was answered after the latch")
++    );
++    assert_eq!(
++        stub.requests(),
++        1,
++        "a retry was sent after the latch: {error}"
++    );
++    assert!(error.contains("GUARD LATCHED"), "{error}");
++    let rows = ledger(&dir);
++    assert_eq!(rows.len(), 1, "the retry was reserved: {rows:?}");
++    assert!(rows[0].0 == "lost" && rows[0].1 > 0.0, "{rows:?}");
++}
++
++/// Zeki #5396 G02 (cost only): a 200 whose usage reports only its charge is booked at
++/// max(worst case, charge), and the next request's reservation is checked against it.
++#[tokio::test(flavor = "multi_thread")]
++async fn cost_only_usage_is_booked_and_bounds_the_next_send() {
++    let position = Position::with(3);
++    let worst = worst_case(&position, 1.0).await;
++    let charge = 2.0 * worst;
++    let stub = Stub::start(move |_, r| {
++        let mut v: Value = serde_json::from_str(&good(r)).unwrap();
++        v["usage"] = json!({"cost": charge});
++        Reply::ok(v.to_string())
++    });
++    let dir = scratch("cost-only");
++    let cap = 2.5 * worst;
++    let setup = guarded(&guard_file(&dir, cap, &[("G", 1.0)]));
++    let g = player("G", &stub.url, 1, &setup).await.unwrap();
++    g.decide(&position.request()).await.unwrap();
++    assert!((committed(&ledger(&dir)) - charge).abs() < 1e-12);
++    let error = format!("{:#}", g.decide(&position.request()).await.unwrap_err());
++    assert!(error.contains("BUDGET CAP"), "{error}");
++    assert_eq!(stub.requests(), 1, "the next request was sent");
++}
++
++/// Zeki #5396 G02 (charged error): an error status whose body reports a charge is booked at
++/// max(worst case, charge), never erased, and bounds the next request's reservation.
++#[tokio::test(flavor = "multi_thread")]
++async fn charged_error_is_booked_and_bounds_the_next_send() {
++    let position = Position::with(3);
++    let worst = worst_case(&position, 1.0).await;
++    let charge = 2.0 * worst;
++    let stub = Stub::start(move |n, r| match n {
++        0 => Reply {
++            status: 400,
++            body: json!({"error": {"message": "bad request"}, "usage": {"cost": charge}})
++                .to_string(),
++            delay: Duration::ZERO,
++        },
++        _ => Reply::ok(good(r)),
++    });
++    let dir = scratch("charged-error");
++    let cap = 2.5 * worst;
++    let setup = guarded(&guard_file(&dir, cap, &[("G", 1.0)]));
++    let g = player("G", &stub.url, 1, &setup).await.unwrap();
++    assert!(g.decide(&position.request()).await.is_err());
++    assert!((committed(&ledger(&dir)) - charge).abs() < 1e-12);
++    let error = format!("{:#}", g.decide(&position.request()).await.unwrap_err());
++    assert!(error.contains("BUDGET CAP"), "{error}");
++    assert_eq!(stub.requests(), 1, "the next request was sent");
++}
++
++/// A whole league (a local entrant, played by `random`, v a paid opponent O whose warm-up's
++/// worst case passes the cap): no request reaches O's stub, the league stops by its guard and
++/// latches; the latch then blocks a restart (resume, a new process's client, admission and
++/// the ledger command), and nothing is sent.
++#[tokio::test(flavor = "multi_thread")]
++async fn league_refused_reservation_latches_and_the_latch_blocks_a_restart() {
++    let stub = Stub::start(|_, r| Reply::ok(good(r)));
++    let dir = scratch("league-cap");
++    let guard = guard_file(&dir, 1e-4, &[("O", 1.0)]);
++    let setup = guarded(&guard);
++    let db = dir.join("league.db");
++    let models = vec![PlayerConfig::new("E", "random"), config("O", &stub.url)];
++    let error = format!(
++        "{:#}",
++        league(&db, &setup, models.clone(), &dir)
++            .await
++            .expect_err("the league played past its cap")
++    );
++    assert!(error.contains("stopped by its run guard"), "{error}");
++    assert!(error.contains("BUDGET CAP"), "{error}");
++    assert_eq!(stub.requests(), 0, "a request reached the paid opponent");
++    assert!(latched(&dir));
++    assert!(ledger(&dir).is_empty(), "nothing reserved");
++    // A restart, as a new process: the guard file read again.
++    let again = guarded(&guard);
++    let error = format!("{:#}", resume(&db, &again, 1, &dir).await.unwrap_err());
++    assert!(error.contains("GUARD LATCHED"), "{error}");
++    let fresh_db = dir.join("fresh.db");
++    let error = format!(
++        "{:#}",
++        league(&fresh_db, &again, models.clone(), &dir)
++            .await
++            .unwrap_err()
++    );
++    assert!(error.contains("GUARD LATCHED"), "{error}");
++    assert!(
++        !fresh_db.exists(),
++        "the database was opened under the latch"
++    );
++    let o = player("O", &stub.url, 1, &again).await.unwrap();
++    assert!(o.warm_up().await.is_err());
++    assert!(o.decide(&Position::with(3).request()).await.is_err());
++    let config = league_config(&dir, &models);
++    let error = format!(
++        "{:#}",
++        crate::admit::run(&config, &again).await.unwrap_err()
++    );
++    assert!(error.contains("GUARD LATCHED"), "{error}");
++    let error = format!(
++        "{:#}",
++        again.guard.as_ref().unwrap().open_ledger().unwrap_err()
++    );
++    assert!(error.contains("GUARD LATCHED"), "{error}");
++    assert_eq!(stub.requests(), 0, "a request was sent after the latch");
++}
++
++/// Two entries of one batch (two leagues, each a local entrant v a paid opponent), one guard
++/// ledger: the first plays to the end and spends most of the cap; the second's paid opponent
++/// is refused before its first request (its warm-up) by what the first spent, and its league
++/// stops by its guard. Control: on a fresh ledger with the same cap the second's warm-up is sent.
++#[tokio::test(flavor = "multi_thread")]
++async fn shared_ledger_across_two_entries_stops_the_second() {
++    // O's first answer reports $1, every later one nothing (booked at list: 1,000 tokens at
++    // $1/M = $0.001); O2 at $100/M reserves about $0.43 for a warm-up.
++    let first = Stub::start(|n, r| Reply::ok(answer(r, Some(if n == 0 { 1.0 } else { 0.0 }))));
++    let second = Stub::start(|_, r| Reply::ok(good(r)));
++    let dir = scratch("two-entries");
++    let cap = 1.2;
++    let guard = guard_file(&dir, cap, &[("O", 1.0), ("O2", 100.0)]);
++    let db = dir.join("league.db");
++    league(
++        &db,
++        &guarded(&guard),
++        vec![PlayerConfig::new("E1", "random"), config("O", &first.url)],
++        &dir,
++    )
++    .await
++    .expect("the first entry plays to the end");
++    let spent = committed(&ledger(&dir));
++    assert!(
++        first.requests() > 1 && spent >= 1.0 && spent <= cap,
++        "{spent}"
++    );
++    assert!(!latched(&dir), "the first entry latched");
++    // The second entry: a new process, the same guard file, the same database.
++    let error = format!(
++        "{:#}",
++        league(
++            &db,
++            &guarded(&guard),
++            vec![PlayerConfig::new("E2", "random"), config("O2", &second.url)],
++            &dir,
++        )
++        .await
++        .expect_err("the second entry played past the shared cap")
++    );
++    assert!(error.contains("stopped by its run guard"), "{error}");
++    assert!(error.contains("BUDGET CAP"), "{error}");
++    assert_eq!(
++        second.requests(),
++        0,
++        "the second entry's opponent was sent a request"
++    );
++    assert!(latched(&dir));
++    assert!(committed(&ledger(&dir)) <= cap + 1e-12);
++    // Control: the same cap on a fresh ledger lets O2's warm-up through.
++    let fresh = scratch("two-entries-control");
++    let setup = guarded(&guard_file(&fresh, cap, &[("O", 1.0), ("O2", 100.0)]));
++    player("O2", &second.url, 1, &setup)
++        .await
++        .unwrap()
++        .warm_up()
++        .await
++        .unwrap();
++    assert_eq!(second.requests(), 1);
++}
++
++/// Under a guard, a participant that is neither metered nor local (here Jev 1.14.0 at
++/// TypeSafe's API, and a remote chat server) is refused at admission and by the league's own
++/// client construction; the metered opponent, the engines and the loopback entrant are admitted.
++#[tokio::test(flavor = "multi_thread")]
++async fn unexpected_paid_participant_is_refused_at_admission() {
++    let dir = scratch("unexpected");
++    let guard = guard_file(&dir, 2.0, &[("O", 1.0)]);
++    let setup = guarded(&guard);
++    setup.guard.as_ref().unwrap().open_ledger().unwrap();
++    let jev = PlayerConfig::new("Jev 1.14.0", "jev/jev-1.14.0");
++    let remote_chat = PlayerConfig {
++        base_url: Some("https://api.example.com/v1".into()),
++        ..PlayerConfig::new("Remote chat", "openai-compatible/some-model")
++    };
++    let admitted = vec![
++        entrant(),
++        PlayerConfig::new("Random", "random"),
++        PlayerConfig::new("Safest", "safest"),
++        config("O", "http://127.0.0.1:9"),
++    ];
++    let mut players = admitted.clone();
++    players.extend([jev.clone(), remote_chat]);
++    let config_path = league_config(&dir, &players);
++    let result = crate::admit::admit(&config_path, &setup).await.unwrap();
++    let refused: Vec<(&str, &str)> = result
++        .clients
++        .iter()
++        .filter_map(|a| a.refused.as_deref().map(|why| (a.name.as_str(), why)))
++        .collect();
++    assert_eq!(refused.len(), 2, "{refused:?}");
++    assert_eq!(refused[0].0, "Jev 1.14.0");
++    assert!(
++        refused[0].1.contains("unexpected paid participant"),
++        "{refused:?}"
++    );
++    assert_eq!(refused[1].0, "Remote chat");
++    assert!(crate::admit::run(&config_path, &setup).await.is_err());
++    let error = format!(
++        "{:#}",
++        Player::from_config(&jev, &setup).await.err().unwrap()
++    );
++    assert!(error.contains("unexpected paid participant"), "{error}");
++    // Without the unexpected players, admission passes.
++    let ok = league_config(&scratch("expected"), &admitted);
++    crate::admit::run(&ok, &setup).await.unwrap();
++}
++
++/// A local-only roster (loopback entrant, engines, a decision server on 127.0.0.1) needs no
++/// guard: admitted without one, every client local; a remote chat server is still refused at
++/// admission without a guard.
++#[tokio::test(flavor = "multi_thread")]
++async fn local_only_roster_is_admitted_without_a_guard() {
++    let dir = scratch("local-only");
++    let setup = Setup::new(PathBuf::new(), String::new());
++    let players = vec![
++        entrant(),
++        PlayerConfig::new("Random", "random"),
++        PlayerConfig::new("Safest", "safest"),
++        config("Local decider", "http://127.0.0.1:9"),
++    ];
++    let config_path = league_config(&dir, &players);
++    let admitted = crate::admit::admit(&config_path, &setup).await.unwrap();
++    assert!(
++        admitted.clients.iter().all(|a| a.refused.is_none()),
++        "{:?}",
++        admitted.clients
++    );
++    assert!(players.iter().all(|p| super::runs_locally(p, &setup)));
++    crate::admit::run(&config_path, &setup).await.unwrap();
++    let remote = vec![PlayerConfig {
++        base_url: Some("https://api.example.com/v1".into()),
++        ..PlayerConfig::new("Remote chat", "openai-compatible/some-model")
++    }];
++    let refused = crate::admit::admit(&league_config(&scratch("remote"), &remote), &setup)
++        .await
++        .unwrap();
++    assert!(refused.clients[0].refused.is_some());
++    assert!(!dir.join("budget.db").exists(), "a ledger was created");
++}
+diff --git a/src/players/llm.rs b/src/players/llm.rs
+index 030ec1f..0bd399d 100644
+--- a/src/players/llm.rs
++++ b/src/players/llm.rs
+@@ -885,7 +885,9 @@ impl LlmClient {
+                     .and_then(Value::as_u64)
+                     .unwrap_or(32768);
+                 let worst = ledger.worst_case(body.to_string().len(), max_output);
+-                let (raw, hold) = http::send_metered(make, retry, ledger, worst).await?;
++                // As before: an error status from the openai-compatible server is booked at
++                // nothing (no answer is generated).
++                let (raw, hold) = http::send_metered(make, retry, ledger, worst, |_| true).await?;
+                 match parse_chat_completion(&raw) {
+                     Ok(completion) => {
+                         hold.settle(
+diff --git a/src/players/mod.rs b/src/players/mod.rs
+index 399ecec..1bc32ba 100644
+--- a/src/players/mod.rs
++++ b/src/players/mod.rs
+@@ -4,6 +4,8 @@
+ pub mod baseline;
+ mod decision;
+ pub mod gnubg;
++#[cfg(test)]
++mod guard_tests;
+ mod llm;
+ pub mod order;
+ pub mod prompt;
+@@ -260,6 +262,9 @@ pub struct Setup {
+     pub xai: Arc<Credentials>,
+     /// Request pacers by rate-limit group, shared by every player of the group.
+     pacers: parking_lot::Mutex<HashMap<String, Arc<Pacer>>>,
++    /// A league's run guard (`league --guard`): shared cap of the setups it meters; `None` =
++    /// no guard.
++    pub guard: Option<Arc<crate::guard::Guard>>,
+ }
+ 
+ /// Spaces the requests of a rate-limit group (e.g. both setups of one OpenRouter model) at
+@@ -322,8 +327,15 @@ impl Setup {
+             qfork_root,
+             local_url,
+             pacers: parking_lot::Mutex::new(HashMap::new()),
++            guard: None,
+         }
+     }
++
++    /// This setup under a league's run guard.
++    pub fn with_guard(mut self, guard: Arc<crate::guard::Guard>) -> Self {
++        self.guard = Some(guard);
++        self
++    }
+ }
+ 
+ /// Close choices, stage B: what a chat-model player would be sent for one position, built
+@@ -390,6 +402,52 @@ pub fn random_play(req: &DecisionRequest<'_>) -> usize {
+     Dice::new(derive_seed(req.seed, "invalid answer")).below(req.plays.len())
+ }
+ 
++/// How `Player::build` reaches a budget ledger: a league opens it for writing; admission
++/// reads it read-only and immutable.
++#[derive(Clone, Copy)]
++enum Ledgers {
++    Open,
++    ReadOnly,
++}
++
++/// Whether a setup runs on this machine and costs nothing per request: a local engine
++/// (random, safest, gnubg-weak), or a decision service, `openai-compatible` or `local` client
++/// whose endpoint is a loopback address. Under a league guard every other participant must
++/// be metered.
++fn runs_locally(config: &PlayerConfig, setup: &Setup) -> bool {
++    let (provider, has_model) = match config.spec.split_once('/') {
++        Some((provider, model)) if !model.is_empty() => (provider, true),
++        _ => (config.spec.as_str(), false),
++    };
++    let endpoint = match decision::service(provider) {
++        Some(service) => decision::endpoint(service, config.base_url.as_deref()),
++        None => match provider.to_ascii_lowercase().as_str() {
++            "random" | "safest" | "gnubg-weak" if !has_model => return true,
++            "openai-compatible" => match &config.base_url {
++                Some(url) => url.clone(),
++                None => return false,
++            },
++            "local" => config
++                .base_url
++                .clone()
++                .unwrap_or_else(|| setup.local_url.clone()),
++            _ => return false,
++        },
++    };
++    let Ok(url) = reqwest::Url::parse(&endpoint) else {
++        return false;
++    };
++    let host = url.host_str().unwrap_or("");
++    match host
++        .trim_start_matches('[')
++        .trim_end_matches(']')
++        .parse::<std::net::IpAddr>()
++    {
++        Ok(ip) => ip.is_loopback(),
++        Err(_) => host.eq_ignore_ascii_case("localhost"),
++    }
++}
++
+ impl Player {
+     /// A local engine player (baselines, GNUbg).
+     pub fn engine(spec: &str, engine: Box<dyn Engine>) -> Self {
+@@ -412,19 +470,48 @@ impl Player {
+     /// Parses `provider/model` (or a bare decision provider such as `jev`), resolves its
+     /// credentials, and limits its decisions in flight to `config.parallel`.
+     pub async fn from_config(config: &PlayerConfig, setup: &Setup) -> Result<Self> {
+-        let mut player = Self::build(config, setup).await?;
++        let mut player = Self::build(config, setup, Ledgers::Open).await?;
+         player.requests = config
+             .parallel
+             .map(|n| tokio::sync::Semaphore::new(n.max(1)));
+         Ok(player)
+     }
+ 
++    /// The client `from_config` builds, for admission (`jevgammon admit`). Only the client
++    /// types of the late-entry rosters are built: decision services (a key from the
++    /// environment, nothing else read), the local engines random, safest and gnubg-weak, and
++    /// an `openai-compatible`/`local` chat server on a loopback address (the entrant). Every
++    /// other type is refused before anything is constructed: the subscription logins (openai,
++    /// anthropic, antigravity, xai), whose constructors can refresh a token over the network
++    /// and write credentials, and remote chat clients. A budget ledger is read by
++    /// `Ledger::open_read_only`, never opened for writing.
++    pub async fn for_admission(config: &PlayerConfig, setup: &Setup) -> Result<Self> {
++        let provider = match config.spec.split_once('/') {
++            Some((provider, model)) if !model.is_empty() => provider,
++            _ => config.spec.as_str(),
++        };
++        let engine = ["random", "safest", "gnubg-weak"]
++            .iter()
++            .any(|e| e.eq_ignore_ascii_case(provider));
++        let local_chat = ["openai-compatible", "local"]
++            .iter()
++            .any(|p| p.eq_ignore_ascii_case(provider))
++            && runs_locally(config, setup);
++        if !engine && !local_chat && decision::service(provider).is_none() {
++            bail!(
++                "provider `{provider}` of `{}` is outside the admission roster (decision services, random, safest, gnubg-weak and chat servers on a loopback address); refused before its client is constructed",
++                config.spec
++            );
++        }
++        Self::build(config, setup, Ledgers::ReadOnly).await
++    }
++
+     /// Whether the player decides locally (random, safest, gnubg-weak), not by request.
+     pub fn is_engine(&self) -> bool {
+         matches!(self.backend, Backend::Engine(_))
+     }
+ 
+-    async fn build(config: &PlayerConfig, setup: &Setup) -> Result<Self> {
++    async fn build(config: &PlayerConfig, setup: &Setup, ledgers: Ledgers) -> Result<Self> {
+         let spec = config.spec.as_str();
+         let (provider, model) = match spec.split_once('/') {
+             Some((provider, model)) if !model.is_empty() => (provider, Some(model.to_owned())),
+@@ -435,6 +522,57 @@ impl Player {
+             Some(model) => Ok(model),
+             None => bail!("model spec `{spec}` needs a model name: {provider}/<model>"),
+         };
++        // A hard spending cap (`budget`) for chat requests to an openai-compatible server and
++        // for decision services: each attempt reserves its worst case before it is sent. A
++        // league guard meters the setups it names (their stored settings unchanged) with its
++        // shared ledger and cap; a setup with a budget of its own is not metered twice. Under a
++        // guard, a participant it does not meter must run locally: an unexpected paid
++        // participant is refused before its client is built (fail closed).
++        let guarded = setup.guard.as_ref().filter(|g| g.meters(&config.name));
++        if let Some(guard) = &setup.guard
++            && guarded.is_none()
++            && !runs_locally(config, setup)
++        {
++            bail!(
++                "{}: `{spec}` is neither metered by the league guard {} nor local (an engine or a loopback endpoint): an unexpected paid participant, refused",
++                config.name,
++                guard.path.display()
++            );
++        }
++        if guarded.is_some() && decision::service(provider).is_none() {
++            bail!(
++                "{}: the league guard meters it, but `{spec}` is not a decision service",
++                config.name
++            );
++        }
++        let budget_config = match (&config.budget, guarded) {
++            (Some(_), Some(guard)) => bail!(
++                "{}: it has a budget of its own and the league guard {} meters it too",
++                config.name,
++                guard.path.display()
++            ),
++            (Some(budget), None) => Some(budget.clone()),
++            (None, Some(guard)) => guard.budget_for(&config.name),
++            (None, None) => None,
++        };
++        let budget = match &budget_config {
++            Some(budget)
++                if provider.eq_ignore_ascii_case("openai-compatible")
++                    || decision::service(provider).is_some() =>
++            {
++                Some(match ledgers {
++                    Ledgers::Open => crate::budget::Ledger::open(budget, &config.name)?,
++                    Ledgers::ReadOnly => {
++                        crate::budget::Ledger::open_read_only(budget, &config.name)?
++                    }
++                })
++            }
++            Some(_) => bail!(
++                "{}: a budget needs an openai-compatible spec or a decision service",
++                config.name
++            ),
++            None => None,
++        };
+         let options = llm::Options {
+             reasoning: config.reasoning.clone(),
+             request: config.request.clone(),
+@@ -450,13 +588,7 @@ impl Player {
+                 });
+                 setup.pacer(group, rpm)
+             }),
+-            budget: match &config.budget {
+-                Some(budget) if provider.eq_ignore_ascii_case("openai-compatible") => {
+-                    Some(crate::budget::Ledger::open(budget, &config.name)?)
+-                }
+-                Some(_) => bail!("{}: a budget needs an openai-compatible spec", config.name),
+-                None => None,
+-            },
++            budget: budget.clone(),
+         };
+         let player = |backend| Player {
+             spec: spec.to_owned(),
+@@ -471,12 +603,16 @@ impl Player {
+             backend,
+         };
+         if let Some(service) = decision::service(provider) {
+-            return Ok(player(Backend::Decision(decision::DecisionClient::new(
+-                http,
+-                service,
+-                model,
+-                config.base_url.as_deref(),
+-            )?)));
++            return Ok(player(Backend::Decision(
++                decision::DecisionClient::new(
++                    http,
++                    service,
++                    model,
++                    config.base_url.as_deref(),
++                    budget,
++                )?
++                .with_guard(guarded.cloned()),
++            )));
+         }
+         let backend = match provider.to_ascii_lowercase().as_str() {
+             "random" if model.is_none() => {
+diff --git a/tools/v3/late-smallchat/run_league.sh b/tools/v3/late-smallchat/run_league.sh
+index 0d52606..b2b0fc0 100755
+--- a/tools/v3/late-smallchat/run_league.sh
++++ b/tools/v3/late-smallchat/run_league.sh
+@@ -1,12 +1,16 @@
+ #!/usr/bin/env bash
+ # One small chat setup's late-entry league (KEY: models/KEY), as tools/v3/late-tiny8/run_league.sh: starts it from its
+ # config, or resumes it once v3.db has it (league --resume ID, which also plays pairs added by league-add). Started by
+-# start.sh as the user unit late-smallchat-KEY-league; log late-smallchat-KEY.log in the main checkout.
+-#   run_league.sh BIN KEY
++# start.sh as the user unit late-smallchat-KEY-league; log late-smallchat-KEY.log in the main checkout. GUARD (start.sh's
++# GUARD_FILE): the league runs under the runner's run guard (`league --guard`: per-request reservations against the
++# batch's shared ledger and cap, unexpected paid participants refused, latch).
++#   run_league.sh BIN KEY [GUARD]
+ set -euo pipefail
+ cd /home/cbasaran/code/jevgammon
+ BIN=$1
+ KEY=$2
++GUARD=()
++[[ -z ${3:-} ]] || GUARD=(--guard "$3")
+ T=$(dirname "$(readlink -f "$0")")
+ set -a; . ~/.keys; set +a
+ [[ -n ${CELERIS_API_KEY:-} ]] || { CELERIS_API_KEY="$(cat ~/.config/celeris/key)"; export CELERIS_API_KEY; }
+@@ -15,6 +19,6 @@ CONFIG=workspace/late-smallchat/$KEY/leagues/$KEY.json
+ ID=$(python3 "$T/smallchat.py" "$KEY" league-id)
+ exec >> "late-smallchat-$KEY.log" 2>&1
+ if [[ -n $ID ]]; then
+-  exec "$BIN" league --resume "$ID" --db v3.db
++  exec "$BIN" league --resume "$ID" --db v3.db "${GUARD[@]}"
+ fi
+-exec "$BIN" league --config "$CONFIG" --db v3.db
++exec "$BIN" league --config "$CONFIG" --db v3.db "${GUARD[@]}"
+diff --git a/tools/v3/late-smallchat/smallchat.py b/tools/v3/late-smallchat/smallchat.py
+index abecb12..4785598 100755
+--- a/tools/v3/late-smallchat/smallchat.py
++++ b/tools/v3/late-smallchat/smallchat.py
+@@ -19,6 +19,10 @@ main checkout's v3.db; the league web helpers are this tree's.
+   smallchat.py KEY scope            open and blocked pairs: "OPEN BLOCKED", then one line per blocked pair (read-only)
+   smallchat.py KEY inflight FIRST N the entrant's first N decisions from match FIRST on: most requests in flight and most
+                                     of its matches running at once (read-only)
++  smallchat.py KEY guard CAP LEDGER LATCH
++                                    the batch's run guard file (runner `league/admit --guard`, Zeki #10062) on stdout:
++                                    every paid opponent of the league configs metered at its list price under one
++                                    shared ledger and cap (read-only; the same file for every KEY of a batch)
+ """
+ import argparse
+ import json
+@@ -54,6 +58,10 @@ LOCAL = ["Clef", "Cygnet (Gemma 4 12B)", "Decider Flash v1.2", "Decider v1.1 27B
+          "Fastino GLiDE v1.2 (local)", "Open-Jev 27B v1.1", "Winnow-12B"]
+ FIELD = sorted(API + ENGINES + LOCAL)
+ SKIPPED = ["GPT-6 Luna"]  # OpenAI out of credit: deferred, never dropped (as REAX 1.3, Muse Ember)
++# List prices of paid opponents whose v3.db settings record none (the guard needs one for every paid opponent; a
++# missing price fails closed). Fastino GLiDE: $0.15 per million input tokens, output free (docs.fastino.ai/pricing,
++# 2026-10-08, as analysis/decision-models/results.json).
++LIST_PRICES = {"Fastino GLiDE": {"input_per_mtok": 0.15, "output_per_mtok": 0.0}}
+ NOW = ENGINES + [n for n in API if n not in SKIPPED]
+ TRIGGER = re.compile(r"p\.name IN \((.*?)\)\)", re.S)
+ 
+@@ -158,7 +166,8 @@ def open_pairs(_args) -> None:
+ 
+ 
+ def billed(args) -> None:
+-    """Paid opponents' recorded cost_usd (Fastino GLiDE records none: $0.04 per million input tokens, as before).
++    """Paid opponents' recorded cost_usd (Fastino GLiDE records none: its input tokens at LIST_PRICES' $0.15 per million,
++    the price the run guard reserves and settles at; until 16 Nov this check used $0.04, which undercounted it ~4x).
+     The entrant itself runs on our GPU and costs nothing."""
+     rows = ro().execute(
+         """SELECT p.name, SUM(COALESCE(t.cost_usd, 0)), SUM(t.input_tokens) FROM turns t JOIN games g ON g.id = t.game_id
+@@ -168,7 +177,7 @@ def billed(args) -> None:
+     total = 0.0
+     for name, cost, tokens in rows:
+         if name == "Fastino GLiDE":
+-            total += (tokens or 0) * 0.04 / 1e6
++            total += (tokens or 0) * LIST_PRICES[name]["input_per_mtok"] / 1e6
+         elif name in API:
+             total += cost
+     print(f"{total:.4f}")
+@@ -250,6 +259,29 @@ def inflight(args) -> None:
+           f"matches deciding at once (matches {', '.join(f'#{m}' for m in spans)})")
+ 
+ 
++def guard(args) -> None:
++    """The batch's run guard: the paid opponents a config holds (NOW minus the engines), each metered at its stored
++    list price (players.settings price; LIST_PRICES where none is stored), cached input at the input price. The
++    entrant and the engines are local and unmetered; the runner refuses any other participant that is not local."""
++    conn = ro()
++    metered = {}
++    for name in NOW:
++        if name in ENGINES:
++            continue
++        price = json.loads(conn.execute("SELECT settings FROM players WHERE name = ?", (name,)).fetchone()[0]).get(
++            "price") or LIST_PRICES.get(name)
++        if not price:
++            sys.exit(f"{name}: no list price; its worst case cannot be bounded, so no guard is written")
++        metered[name] = {"input_per_mtok": price["input_per_mtok"], "cached_input_per_mtok": price["input_per_mtok"],
++                         "output_per_mtok": price["output_per_mtok"]}
++    print(json.dumps({
++        "note": (f"Small chat first stages, one batch (Zeki #10062): one ledger and a ${args.cap} cap over every paid "
++                 "opponent of the late-entry configs; each request attempt reserves (request bytes + 4,096) x input "
++                 "price + request bytes x output price before it is sent, settled at max(list, usage.cost). Prices: "
++                 "v3.db players.settings price; Fastino GLiDE docs.fastino.ai/pricing (2026-10-08)."),
++        "ledger": args.ledger, "cap_usd": args.cap, "latch": args.latch, "metered": metered}, indent=2))
++
++
+ def main() -> None:
+     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+     sub = ap.add_subparsers(dest="cmd", required=True)
+@@ -264,10 +296,14 @@ def main() -> None:
+     i = sub.add_parser("inflight")
+     i.add_argument("first", type=int)
+     i.add_argument("n", type=int)
++    g = sub.add_parser("guard")
++    g.add_argument("cap", type=float)
++    g.add_argument("ledger")
++    g.add_argument("latch")
+     args = ap.parse_args()
+     {"configs": configs, "trigger": trigger, "pending": pending, "open": open_pairs, "billed": billed,
+      "scope": scope, "player": lambda a: print(json.dumps(PLAYER, ensure_ascii=False)), "league-id": lambda a: print(league_id() or ""),
+-     "inflight": inflight, "last": last}[args.cmd](args)
++     "inflight": inflight, "last": last, "guard": guard}[args.cmd](args)
+ 
+ 
+ if __name__ == "__main__":
+diff --git a/tools/v3/late-smallchat/start.sh b/tools/v3/late-smallchat/start.sh
+index ea740ea..3f73f80 100755
+--- a/tools/v3/late-smallchat/start.sh
++++ b/tools/v3/late-smallchat/start.sh
+@@ -33,6 +33,14 @@
+ # Up to 16 matches and 16 requests at once (player.json max_matches 16, parallel 16), League 1's rule for its local chat
+ # setups (Main, 12 Nov): the server is ours alone after turkce's 'done KEY'. Before the first start of a setup, test.sh
+ # KEY sends it one test decision through the real client; a setup whose test fails is reported, not started.
++# GUARD_FILE (optional; workspace/on-chain.sh writes one per batch with smallchat.py guard): the runner's run guard,
++# the hard cap per request (Zeki #10062). Before the first write to v3.db and before every league (re)start the runner's
++# `admit --guard` builds every client of the league config offline (paid opponents metered under the guard's shared
++# ledger, every other participant local, else refused) and the league runs with `--guard`: every request attempt of a
++# paid opponent reserves its worst case in the batch's one ledger before it is sent and is refused when spent +
++# reserved + it would pass the batch cap; a refused reservation stops the league and writes the guard's latch, which
++# keeps every guarded league and admission from starting until a person removes it (this guard then stops too). The
++# 60-s cost check above stays as a second line. Without GUARD_FILE: admission without a guard, the league as before.
+ set -uo pipefail
+ cd /home/cbasaran/code/jevgammon
+ KEY=${1:?usage: start.sh KEY}
+@@ -44,6 +52,14 @@ BIN=${SMALLCHAT_BIN:-/home/cbasaran/code/jevgammon/target/smallchat/release/jevg
+ STATUS="mailbox/Late entries smallchat - $KEY - status.md"
+ FLOOR=40
+ CAP=${ENTRY_CAP_USD:-5}
++GUARD=()
++if [[ -n ${GUARD_FILE:-} ]]; then
++  GUARD_FILE=$(readlink -f "$GUARD_FILE")
++  [[ -f $GUARD_FILE ]] || { echo "guard file $GUARD_FILE missing" >&2; exit 1; }
++  LATCH=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["latch"])' "$GUARD_FILE") ||
++    { echo "guard file $GUARD_FILE unreadable" >&2; exit 1; }
++  GUARD=(--guard "$GUARD_FILE")
++fi
+ UNIT=late-smallchat-$KEY-league
+ PLAYER=$(python3 "$T/smallchat.py" "$KEY" player) || { echo "settings of $KEY unreadable" >&2; exit 1; }
+ field() { python3 -c 'import json,sys; print(eval(sys.argv[2], {}, {"p": json.loads(sys.argv[1])}))' "$PLAYER" "$1"; }
+@@ -73,6 +89,9 @@ balance() {
+ }
+ lt() { python3 -c 'import sys; sys.exit(not float(sys.argv[1]) < float(sys.argv[2]))' "$1" "$2"; }
+ spent() { tiny billed "$(cat $ST/first)"; }
++# Offline admission of every client of the league config (the runner's `admit`, read-only; under the guard: paid
++# opponents metered, every other participant local). Its output, ending with the admitted-settings record, goes to the log.
++admitted() { "$BIN" admit --config "$W/leagues/$KEY.json" "${GUARD[@]}" >> $ST/guard.log 2>&1; }
+ OPPS=("GNUbg weak" "Random" "Safest" "Celeris-1 Decision" "Fastino GLiDE" "Jev 1.13.0" "Jev 1.14.0" "Liquid d1-ultra"
+       "Mercury Decide" "SubQ Snap Preview")
+ 
+@@ -89,6 +108,11 @@ healthy || { echo "$LABEL server $URL: does not serve $SERVED" >&2; exit 1; }
+ pinned || { echo "$LABEL: the process on port $PORT is not the pinned $PIN_REPO@$PIN_REV (BF16, context >= $MIN_CONTEXT)" >&2; exit 1; }
+ bal=$(balance) || { echo "OpenRouter credits unreadable" >&2; exit 1; }
+ lt "$bal" "$FLOOR" && { echo "OpenRouter balance \$$bal: under \$$FLOOR" >&2; exit 1; }
++# The guard's shared ledger, created once with its cap (admission only reads it); refused while the latch is set.
++if [[ -n ${GUARD_FILE:-} ]]; then
++  "$BIN" guard-ledger --guard "$GUARD_FILE" >> $ST/guard.log 2>&1 ||
++    { echo "run guard $GUARD_FILE refused (latched, or its ledger has another cap): see $ST/guard.log" >&2; exit 1; }
++fi
+ 
+ # Once, fail closed: every step must succeed, else nothing after it runs and state/first is not written (so the block
+ # runs again next time). The backup goes to v3.db's own disk (/tmp is a smaller tmpfs) and the .zst is verified with
+@@ -107,15 +131,16 @@ if [[ ! -e $ST/first ]]; then
+   rm -f "$raw"
+   sqlite3 -readonly v3.db "SELECT COALESCE(MAX(id), 0) + 1 FROM matches" > "$ST/first.new" && [[ -s $ST/first.new ]] ||
+     fail "first match id unreadable"
+-  tiny trigger >> $ST/guard.log 2>&1 || fail "trigger failed"
+   tiny configs >> $ST/guard.log 2>&1 || fail "configs failed"
++  admitted || fail "admission refused the league config's clients (see $ST/guard.log); v3.db not written"
++  tiny trigger >> $ST/guard.log 2>&1 || fail "trigger failed"
+   date -u '+%F %T' > $ST/since || fail "state/since not written"
+   mv "$ST/first.new" "$ST/first" || fail "state/first not written"
+   echo "$(date -u +%FT%TZ) backup $bak verified (zstd -t); first match #$(cat $ST/first)" >> $ST/guard.log
+ fi
+ [[ -e $STATUS ]] || printf '# Late entries smallchat - %s (%s) - status\n\nGo: Zeki #5064/#5071/#5073. First match id: #%s.\n\n## Log\n' \
+   "$KEY" "$NAME" "$(cat $ST/first)" > "$STATUS"
+-log "guard up: runner $(git -C "$T" rev-parse --short HEAD) clean; $NAME at $URL ($SERVED) pinned $PIN_REPO@${PIN_REV:0:8}; OpenRouter \$$bal; floor \$$FLOOR; paid-opponent cap \$$CAP from #$(cat $ST/first); 10 opponents, up to 16 matches at once (GPT-6 Luna deferred: no OpenAI credit; 8 local setups queued for a GPU)"
++log "guard up: runner $(git -C "$T" rev-parse --short HEAD) clean; $NAME at $URL ($SERVED) pinned $PIN_REPO@${PIN_REV:0:8}; OpenRouter \$$bal; floor \$$FLOOR; paid-opponent cap \$$CAP from #$(cat $ST/first); run guard ${GUARD_FILE:-none}${GUARD_FILE:+ (sha256 $(sha256sum "$GUARD_FILE" | cut -c1-16)…, latch $LATCH)}; 10 opponents, up to 16 matches at once (GPT-6 Luna deferred: no OpenAI credit; 8 local setups queued for a GPU)"
+ 
+ stop_league() { systemctl --user stop $UNIT 2>/dev/null; }
+ restarts=0
+@@ -123,6 +148,9 @@ down=0
+ unread=0
+ t0=$SECONDS
+ while true; do
++  if [[ -n ${GUARD_FILE:-} && -e $LATCH ]]; then
++    stop_league; log "STOPPED: run guard latched ($LATCH): $(tail -1 "$LATCH" | cut -c1-300); paid opponents \$$(spent)"; exit 1
++  fi
+   if [[ $(tiny pending "${OPPS[@]}") == 0 ]]; then
+     stop_league; log "done: all 10 pairs played; paid opponents \$$(spent); OpenRouter \$$(balance)"; exit 0
+   fi
+@@ -160,8 +188,9 @@ while true; do
+     (( restarts > 6 )) && { log "STOPPED: league unit ended 7 times with pairs open"; exit 1; }
+     (( restarts > 0 )) && log "league unit not running with pairs open: restart $restarts"
+     restarts=$((restarts + 1))
++    admitted || { log "STOPPED: admission refused before the league (re)start (see $ST/guard.log)"; exit 1; }
+     systemctl --user reset-failed $UNIT >/dev/null 2>&1 || true
+-    systemd-run --user --quiet --unit=$UNIT --working-directory="$PWD" "$T/run_league.sh" "$BIN" "$KEY"
++    systemd-run --user --quiet --unit=$UNIT --working-directory="$PWD" "$T/run_league.sh" "$BIN" "$KEY" ${GUARD_FILE:+"$GUARD_FILE"}
+   fi
+   (( SECONDS - t0 > 129600 )) && { stop_league; log "STOPPED: pairs still open after 36 h"; exit 1; }
+   sleep 60

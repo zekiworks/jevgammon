@@ -1,0 +1,12 @@
+--- /dev/fd/63	2026-11-16 13:21:56.076272041 +0100
++++ /dev/fd/62	2026-11-16 13:21:56.076311050 +0100
+@@ -215,8 +215,7 @@
+             / 1e6
+     }
+ 
+-    /// Spent (settled + lost) and reserved (open) dollars in the whole ledger (tests).
+-    #[cfg(test)]
++    /// Spent (settled + lost) and reserved (open) dollars in the whole ledger.
+     pub fn totals(&self) -> Result<(f64, f64)> {
+         totals(&self.conn.lock())
+     }

@@ -1,0 +1,87 @@
+--- /dev/fd/63	2026-11-16 13:21:56.079602539 +0100
++++ /dev/fd/62	2026-11-16 13:21:56.079622649 +0100
+@@ -543,7 +543,7 @@
+         per_call: false,
+     };
+ 
+-    fn nace_ledger(cap: f64) -> Arc<Ledger> {
++    fn paid_ledger(cap: f64) -> Arc<Ledger> {
+         let dir = std::env::temp_dir().join(format!("budget-{}", uuid::Uuid::new_v4()));
+         std::fs::create_dir_all(&dir).unwrap();
+         Ledger::open(
+@@ -554,35 +554,34 @@
+                 cached_input_per_mtok: 0.06,
+                 output_per_mtok: 0.0,
+             },
+-            "Drex 2.0",
++            "Jev 1.14.0",
+         )
+         .unwrap()
+     }
+ 
+-    /// The Nace path's error statuses: 429, 500 and 529 are booked at nothing (Nace's pricing
+-    /// page: only a 200 is debited; 401, 402, 422, 429, 500 and 529 cost nothing); any other
+-    /// error status (here 503, 400, 403) and an attempt without a response (a timeout, a refused
++    /// A paid decision service (none documents an unbilled error status): every error status
++    /// (429, 500, 529, 503, 400, 403) and an attempt without a response (a timeout, a refused
+     /// connection) keep the reservation's worst case.
+     #[tokio::test]
+-    async fn nace_error_statuses_are_booked_as_documented() {
+-        let nace = crate::players::decision::nace_unbilled;
++    async fn paid_error_statuses_keep_their_worst_case() {
++        let paid: FreeStatus = |_| false;
+         let http = reqwest::Client::new();
+         let backoff = Duration::from_millis(5);
+         let retry = RetryTime::default();
+         for (status, booked) in [
+-            (429, 0.0),
+-            (500, 0.0),
+-            (529, 0.0),
++            (429, 0.25),
++            (500, 0.25),
++            (529, 0.25),
+             (503, 0.25),
+             (400, 0.25),
+             (403, 0.25),
+         ] {
+-            let ledger = nace_ledger(1.0);
++            let ledger = paid_ledger(1.0);
+             let (url, count) = serve(vec![status]);
+             let result = send_with_backoff(
+                 || http.get(&url),
+                 &retry,
+-                Some((&ledger, 0.25, nace)),
++                Some((&ledger, 0.25, paid)),
+                 backoff,
+                 backoff,
+                 ONCE,
+@@ -604,12 +603,12 @@
+             .timeout(Duration::from_millis(200))
+             .build()
+             .unwrap();
+-        let ledger = nace_ledger(1.0);
++        let ledger = paid_ledger(1.0);
+         assert!(
+             send_with_backoff(
+                 || slow.get(&url),
+                 &retry,
+-                Some((&ledger, 0.25, nace)),
++                Some((&ledger, 0.25, paid)),
+                 backoff,
+                 backoff,
+                 ONCE
+@@ -622,12 +621,12 @@
+         let closed = TcpListener::bind("127.0.0.1:0").unwrap();
+         let url = format!("http://{}/", closed.local_addr().unwrap());
+         drop(closed);
+-        let ledger = nace_ledger(1.0);
++        let ledger = paid_ledger(1.0);
+         assert!(
+             send_with_backoff(
+                 || http.get(&url),
+                 &retry,
+-                Some((&ledger, 0.25, nace)),
++                Some((&ledger, 0.25, paid)),
+                 backoff,
+                 backoff,
+                 ONCE

@@ -579,7 +579,10 @@ def _versions(po: dict) -> str:
   <a href="../leagues/#late-entries">Leagues</a> (Late entries), played text only on the same RTX PRO 6000 Blackwell
   after d1-2B on 14 Nov (its pairs with GPT-6 Luna (Decisions API) and Mercury Decide not played, outside the requested
   scope), with a page of its own; its cost is an estimate from its time on that card (GPU time, at most). No score
-  changed.</p>""")
+  changed. 16 Nov 2026: Liquid d1.2-ultra and Liquid d1.2, two late entries to the original League 1 table on
+  <a href="../leagues/#late-entries">Leagues</a> (Late entries), played through Liquid AI's decisions API on 16 Nov
+  (their pairs with GPT-6 Luna (Decisions API) and Mercury Decide not played, outside the requested scope), each with
+  a page of its own; their cost is Liquid's list price times our recorded tokens. No score changed.</p>""")
 
 
 def _confidence(t: dict, extra: dict) -> str:

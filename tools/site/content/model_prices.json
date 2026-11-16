@@ -150,6 +150,24 @@
    "provisional": false,
    "provisional_reason": null
   },
+  "Liquid d1.2-ultra": {
+   "weights": "closed",
+   "input_per_mtok": 0.042,
+   "source": "https://www.liquid.ai/pricing",
+   "read": "2026-11-17",
+   "quote": "d1.2-ultra | Input $0.042 / MTok | Output $0.00 / MTok",
+   "provisional": false,
+   "provisional_reason": null
+  },
+  "Liquid d1.2": {
+   "weights": "closed",
+   "input_per_mtok": 0.02,
+   "source": "https://www.liquid.ai/pricing",
+   "read": "2026-11-17",
+   "quote": "d1.2 | Input $0.02 / MTok | Output $0.00 / MTok",
+   "provisional": false,
+   "provisional_reason": null
+  },
   "Mercury Decide": {
    "weights": "closed",
    "input_per_mtok": 0.04,

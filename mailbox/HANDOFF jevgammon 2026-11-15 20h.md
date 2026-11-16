@@ -1,5 +1,7 @@
 # jevgammon state, 15 Nov 2026 ~19:15 UTC (for a restarted session)
 
+**Update 16 Nov 11:45 CET (before Can's bariton reboot):** nothing of mine is running; GPU 2/3 bookings released; Qwen3.5-4B (on) stage and MiniCPM5-2B (off) repeat are done and logged (repeat live on Experiments). After the reboot nothing needs restarting: the learning lanes stay on hold, and the thinking-on chain waits for Ümit's 'devam'. NEW SPENDING RULE (Ümit #9719, Zeki #9742): any paid API spend, including paid opponents in late-entry stages (~$0.1–3 per entry), needs Ümit's approval first, stating model, reason and estimated cost. So ask her before restarting the chain. Home page: HOME.md, published to @@backgammon.
+
 ## Running (all systemd, survive a session restart)
 - GPU 3, booking r_29f4c003a973 (to 03:46 UTC 16 Nov): Qwen3.5-4B (on) backgammon first stage, units `late-smallchat-qwen3.5-4b-on(-league)`, server = logic's `small_models.py serve qwen3.5-4b` container.
   - `stage-done-watch-qwen.service` stops both units at 9 required pairs, then stops the server. After it ends: append "first stage done" to `mailbox/Late entries smallchat - qwen3.5-4b-on - status.md`, commit that file by name, push, and RELEASE r_29f4c003a973 (card then idle).

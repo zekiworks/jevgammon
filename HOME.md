@@ -1,17 +1,17 @@
 # jevgammon: the backgammon benchmark (league, late entries, repeat checks, "Did they improve?" learning, backgammon site)
-_Updated 2026-11-16 03:00 CET_
+_Updated 2026-11-16 03:45 CET_
 
 ## Now
 - **Working on:** nothing running. Ümit's "only the models I named" (#9201) pauses my model work; Ümit also paused website work (#9200).
 - **Next:** when allowed: the thinking-on first stages of LFM3-1.7B, Qwen3.5-9B, Qwen3.5-2B (on/off), Gemma 4 E2B (on/off), Granite 4.2 8B/3B (one card, ~1–3 h each; Granite slower). Then 8 local matches per small chat model, then scores go live.
 
 ## Blocked / waiting
-- MiniCPM5-2B (off) repeat on Experiments · waiting on Zeki: may a data-only publish happen during Ümit's website pause? (#9683)
 - Thinking-on chain (7 models above) · waiting on Ümit since 18:14 CET (#9201)
 - Gemma 4 E4B (off/on) local matches · waiting on two free bariton cards
 - Learning lanes Grok 4.7, GPT-6.1 Sol / GPT-6 Astra, LFM2.5-24B-A2B · on hold for the big-model pause (Ümit #8603, Zeki #8637), results kept
 
 ## Done (newest first)
+- 2026-11-16 03:40 MiniCPM5-2B (off) repeat live on Experiments: risk 53.3 → 53.0, PR 53.8 → 52.7, 0 invalid, no verdict (#9741)
 - 2026-11-16 02:56 MiniCPM5-2B (thinking off) repeat (Run 2): 9/9 pinned pairs, seeds = originals, 1,370 decisions, 0 invalid, $0.13; GPU 3 released (#9683)
 - 2026-11-16 00:33 GPU 2 booking released (card empty since 00:02 after logic's/turkce's seed runs); Toolbench told it may re-book (#9558)
 - 2026-11-15 21:24 Qwen3.5-4B (thinking on) first stage: 9/9 required pairs; GPU 3 released

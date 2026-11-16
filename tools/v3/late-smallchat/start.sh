@@ -26,7 +26,8 @@
 # last turn):
 #   - when OpenRouter's balance (shared with other lanes; Mercury Decide bills there) is under $FLOOR ($40), or cannot
 #     be read 3 times in a row (fail closed: the floor is never left unchecked);
-#   - when the paid opponents' cost from the first match reaches $CAP ($5; the entrant itself costs nothing);
+#   - when the paid opponents' cost from the first match reaches $CAP ($5, or ENTRY_CAP_USD when set: a batch under an
+#     approved ceiling (workspace/on-chain.sh, Ümit #9719) passes a smaller per-entry cap; the entrant itself costs nothing);
 #   - when the entrant's server fails 3 health checks in a row (fail closed);
 #   - when the 10 pairs are played (done), every open pair is blocked, or after 36 h (Granite-4.2-30B (on): ~25 h).
 # Up to 16 matches and 16 requests at once (player.json max_matches 16, parallel 16), League 1's rule for its local chat
@@ -42,7 +43,7 @@ ST=$W/state
 BIN=${SMALLCHAT_BIN:-/home/cbasaran/code/jevgammon/target/smallchat/release/jevgammon}
 STATUS="mailbox/Late entries smallchat - $KEY - status.md"
 FLOOR=40
-CAP=5
+CAP=${ENTRY_CAP_USD:-5}
 UNIT=late-smallchat-$KEY-league
 PLAYER=$(python3 "$T/smallchat.py" "$KEY" player) || { echo "settings of $KEY unreadable" >&2; exit 1; }
 field() { python3 -c 'import json,sys; print(eval(sys.argv[2], {}, {"p": json.loads(sys.argv[1])}))' "$PLAYER" "$1"; }

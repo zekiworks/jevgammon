@@ -1021,11 +1021,15 @@ def _items(x) -> bool:
     return isinstance(x, list) and any(_items(v) for v in x)
 
 
+# A position as the prompts write it (STATE/prompts.db's turn text): the mover's checkers with real point:count pairs.
+POSITION_TEXT = re.compile(r"your checkers:\s+\d+:\d+")
+
+
 def check_no_questions(out: Path) -> list[str]:
     """No bench publishes its questions (Ümit via Zeki #11048, #11050): no file anywhere in the output, the frozen
-    results/ and archive/ copies included, holds a decision record (a board with its plays or the engine's best play)
-    or draws a board (board.py's SVG, class bd-frame); decisions/ holds only its note page and the shared rules texts
-    (contexts/*.txt)."""
+    results/ and archive/ copies included, holds a decision record (a board with its plays or the engine's best play),
+    draws a board (board.py's SVG, class bd-frame) or writes a position as a prompt does (POSITION_TEXT); decisions/
+    holds only its note page and the shared rules texts (contexts/*.txt)."""
     bad = []
     for p in out.rglob("*"):
         if not p.is_file():
@@ -1038,8 +1042,12 @@ def check_no_questions(out: Path) -> list[str]:
             raw = p.read_bytes()
             if _items(json.loads(gzip.decompress(raw) if p.suffix == ".gz" else raw)):
                 bad.append(f"{rel}: holds a decision record (a board with its plays or best play)")
-        elif p.suffix in (".html", ".js") and "bd-frame" in p.read_text(errors="replace"):
-            bad.append(f"{rel}: draws a board")
+        elif p.suffix in (".html", ".js", ".txt"):
+            text = p.read_text(errors="replace")
+            if "bd-frame" in text:
+                bad.append(f"{rel}: draws a board")
+            if POSITION_TEXT.search(text):
+                bad.append(f"{rel}: writes a position as a prompt does")
     return bad
 
 

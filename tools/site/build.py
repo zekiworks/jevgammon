@@ -358,6 +358,11 @@ def write_data(S: dict, out: Path) -> None:
     write_json(out, learning_page.DATA, S["learning"])
     # Did they improve?: the plan's model list and, once published, the validated aggregates and lessons only.
     write_json(out, improve_page.DATA, S["improve"])
+    # The QC Run 2 reports the Run 2 rows above are built from, copied byte for byte (turkce #9964: Atlas reads them instead
+    # of the page). improve.json keeps the original runs unchanged.
+    for f in sorted((Path(__file__).parent / "content/run2").glob("*.json")):
+        (out / "data/v3/improve-run2").mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(f, out / "data/v3/improve-run2" / f.name)
     write_json(out, "data/smoke/part-a.json", dict(dataset="smoke-part-a", status="Smoke test", rows=S["smoke"]))
     write_json(out, "data/setups.json", dict(setups=[v for v in S["setups_meta"].values()]))
     write_json(out, "data/thresholds.json", S["thresholds"])

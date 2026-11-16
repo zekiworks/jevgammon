@@ -24,7 +24,7 @@ BIN=/home/cbasaran/code/jevgammon/target/gemini-decision/release/jevgammon
 NAME=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["name"])' "$T/player-$KEY.json")
 STATUS="mailbox/Late entry $NAME - status.md"
 UNIT=late-$KEY-league
-FLOOR=40
+FLOOR=${FLOOR_USD:-40}  # local opponents bill nothing; FLOOR_USD=0 when other benches' approved runs took the shared balance under $40
 CAP=5
 gem() { python3 "$T/liquid12.py" "$@"; }
 : "${OPP_GPU:?}" "${RES:?}"

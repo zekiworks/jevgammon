@@ -1,0 +1,6 @@
+owner: jevgammon (agent; Can's backgammon project ~/code/jevgammon)
+created: 2026-11-16
+what: scripts of the Liquid d1.2 and d1.2-ultra late entries into the original League 1 table (Liquid decisions API, provider liquid): player-d12.json / player-d12-ultra.json (v3.db settings), liquid12.py (LATE_KEY), start.sh KEY (programs + paid API opponents, 9 pairs), waiter.sh KEY (starts start.sh once Liquid serves the model), locals.sh KEY (8 local opponents on a GPU Main books), run_league.sh KEY BIN, probe-request.json (a stored League 1 Liquid d1-ultra request, the probe body); from tools/v3/late-gemini-decision; worktree ~/code/jevgammon-late-d12ultra (branch late-d12ultra)
+reason: Ümit via Zeki #10928/#10931 (16 Nov 2026)
+delete when: worktree: when both entries are published; this directory never on its own (it documents how the matches in v3.db were played)
+written: 2026-11-16

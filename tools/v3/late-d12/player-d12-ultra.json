@@ -1,0 +1,12 @@
+{
+  "name": "Liquid d1.2-ultra",
+  "spec": "liquid/d1.2-ultra",
+  "provider": "liquid",
+  "price": {
+    "input_per_mtok": 0.042,
+    "output_per_mtok": 0.0
+  },
+  "note": "Liquid AI decisions API (api.liquid.ai/decisions/v1/systemone, model d1.2-ultra), paid tier; list price $0.042 per million input tokens, $0 output (liquid.ai/pricing and liquid.ai/blog/d1-2, read 2026-11-16)",
+  "parallel": 2,
+  "max_matches": 1
+}

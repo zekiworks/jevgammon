@@ -1050,7 +1050,8 @@ def check_no_questions(out: Path) -> list[str]:
         if p.name.endswith((".json", ".json.gz")):
             raw = p.read_bytes()
             if _items(json.loads(gzip.decompress(raw) if p.suffix == ".gz" else raw)):
-                bad.append(f"{rel}: holds a decision record (a board with its plays or best play)")
+                bad.append(f"{rel}: holds a decision record (a board with its plays or best play) or a disagreement "
+                           f"row with a play")
         elif p.suffix in (".html", ".js", ".txt"):
             text = p.read_text(errors="replace")
             if "bd-frame" in text:

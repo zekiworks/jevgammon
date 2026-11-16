@@ -34,6 +34,11 @@ pub struct Prices {
     pub input_per_mtok: f64,
     pub cached_input_per_mtok: f64,
     pub output_per_mtok: f64,
+    /// Billable input tokens per request body byte the worst case assumes (default 1; at
+    /// least 1): worst case = (factor x body bytes + 4,096) x input price + body bytes x
+    /// output price.
+    #[serde(default = "crate::budget::one")]
+    pub input_bytes_factor: f64,
 }
 
 /// The guard file.
@@ -98,9 +103,10 @@ impl Guard {
             ![p.input_per_mtok, p.cached_input_per_mtok, p.output_per_mtok]
                 .iter()
                 .all(|v| v.is_finite() && *v >= 0.0)
+                || !(p.input_bytes_factor.is_finite() && p.input_bytes_factor >= 1.0)
         }) {
             bail!(
-                "guard {}: {name}'s prices must be finite, non-negative numbers",
+                "guard {}: {name}'s prices must be finite, non-negative numbers and its input_bytes_factor a number of at least 1",
                 path.display()
             );
         }
@@ -125,6 +131,7 @@ impl Guard {
             input_per_mtok: p.input_per_mtok,
             cached_input_per_mtok: p.cached_input_per_mtok,
             output_per_mtok: p.output_per_mtok,
+            input_bytes_factor: p.input_bytes_factor,
         })
     }
 
@@ -138,6 +145,7 @@ impl Guard {
             input_per_mtok: 0.0,
             cached_input_per_mtok: 0.0,
             output_per_mtok: 0.0,
+            input_bytes_factor: 1.0,
         };
         crate::budget::Ledger::open(&budget, "guard-ledger")?.totals()
     }

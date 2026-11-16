@@ -372,6 +372,69 @@ async fn money_retries_are_each_reserved_and_settled_from_the_reported_cost() {
     assert!((committed(&rows) - (2.0 * worst + 0.5)).abs() < 1e-9);
 }
 
+/// Zeki #10299: a provider that bills more input tokens than the body has bytes (Fastino
+/// GLiDE: up to 4.3 per byte in v3.db). The stub reports 4 tokens per body byte. With
+/// `input_bytes_factor` 8 the reservation bounds the settlement; with the default factor 1
+/// the attempt is settled above its reservation (booked at the settlement, never at less),
+/// and the next send is still checked against the cap with that booking.
+#[tokio::test(flavor = "multi_thread")]
+async fn input_bytes_factor_bounds_a_provider_billing_more_tokens_than_bytes() {
+    let position = Position::with(3);
+    let worst = worst_case(&position, 1.0).await; // (B + 4,096) x $1/M
+    let bytes = (worst * 1e6).round() as usize - 4096;
+    let stub = Stub::start(|_, r| {
+        let mut v: Value = serde_json::from_str(&answer(r, None)).unwrap();
+        v["usage"]["input_tokens"] = (4 * r.to_string().len()).into();
+        Reply::ok(v.to_string())
+    });
+    let billed = 4.0 * bytes as f64 / 1e6;
+    // Factor 8: reserved (8B + 4,096) x $1/M, settled 4B x $1/M.
+    let dir = scratch("factor-8");
+    let guard = dir.join("guard.json");
+    std::fs::write(
+        &guard,
+        json!({"ledger": dir.join("budget.db"), "cap_usd": 5.0, "latch": dir.join("latch"),
+               "metered": {"F": {"input_per_mtok": 1.0, "cached_input_per_mtok": 1.0,
+                                 "output_per_mtok": 0.0, "input_bytes_factor": 8.0}}})
+        .to_string(),
+    )
+    .unwrap();
+    let f = player("F", &stub.url, 1, &guarded(&guard)).await.unwrap();
+    f.decide(&position.request()).await.unwrap();
+    let rows = ledger(&dir);
+    assert_eq!(rows.len(), 1, "{rows:?}");
+    let reserved = rows[0].1;
+    assert!(
+        (reserved - (8 * bytes + 4096) as f64 / 1e6).abs() < 1e-12,
+        "{rows:?}"
+    );
+    let settled = rows[0].2.unwrap();
+    assert!((settled - billed).abs() < 1e-12, "{rows:?}");
+    assert!(
+        reserved >= settled,
+        "the reservation did not bound the bill: {rows:?}"
+    );
+    // Factor 1: reserved (B + 4,096) x $1/M, settled above it at 4B x $1/M; the cap leaves
+    // room for the first reservation, not for a second after that booking.
+    let dir = scratch("factor-1");
+    let cap = billed + worst / 2.0;
+    let setup = guarded(&guard_file(&dir, cap, &[("S", 1.0)]));
+    let s = player("S", &stub.url, 1, &setup).await.unwrap();
+    s.decide(&position.request()).await.unwrap();
+    let rows = ledger(&dir);
+    assert!((rows[0].1 - worst).abs() < 1e-12, "{rows:?}");
+    let settled = rows[0].2.unwrap();
+    assert!(
+        settled > rows[0].1 && (settled - billed).abs() < 1e-12,
+        "booked at the settlement: {rows:?}"
+    );
+    let sent = stub.requests();
+    let error = format!("{:#}", s.decide(&position.request()).await.unwrap_err());
+    assert!(error.contains("BUDGET CAP"), "{error}");
+    assert_eq!(stub.requests(), sent, "the next request was sent");
+    assert!(committed(&ledger(&dir)) <= cap + 1e-12);
+}
+
 /// Settlement is max(list price, usage.cost): a reported cost above the list price is booked
 /// as reported, one below it (or none, as most of the paid services answer) at the list price.
 #[tokio::test(flavor = "multi_thread")]

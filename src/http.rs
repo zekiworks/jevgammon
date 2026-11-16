@@ -484,6 +484,7 @@ mod tests {
             input_per_mtok: 2.0,
             cached_input_per_mtok: 0.2,
             output_per_mtok: 10.0,
+            input_bytes_factor: 1.0,
         };
         let ledger = Ledger::open(&config, "t").unwrap();
         let (url, count) = serve(vec![503, 200]);
@@ -553,6 +554,7 @@ mod tests {
                 input_per_mtok: 0.06,
                 cached_input_per_mtok: 0.06,
                 output_per_mtok: 0.0,
+                input_bytes_factor: 1.0,
             },
             "Jev 1.14.0",
         )

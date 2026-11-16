@@ -27,6 +27,20 @@ pub struct BudgetConfig {
     pub input_per_mtok: f64,
     pub cached_input_per_mtok: f64,
     pub output_per_mtok: f64,
+    /// Billable input tokens per request body byte a decision service's worst case assumes
+    /// (default 1: a byte-level tokenizer never makes a token of less than one byte). A
+    /// provider that bills more tokens than the body has bytes (Fastino GLiDE: up to 4.3 per
+    /// byte measured in v3.db) needs a larger factor.
+    #[serde(default = "one", skip_serializing_if = "is_one")]
+    pub input_bytes_factor: f64,
+}
+
+pub fn one() -> f64 {
+    1.0
+}
+
+fn is_one(factor: &f64) -> bool {
+    *factor == 1.0
 }
 
 /// Token counts of one answered attempt.
@@ -204,6 +218,11 @@ impl Ledger {
     /// usage).
     pub fn output_priced(&self) -> bool {
         self.config.output_per_mtok > 0.0
+    }
+
+    /// Billable input tokens per request body byte assumed by a decision service's worst case.
+    pub fn input_bytes_factor(&self) -> f64 {
+        self.config.input_bytes_factor
     }
 
     /// List-price cost of an answered attempt; cached tokens are part of `input_tokens`.
@@ -415,6 +434,7 @@ mod tests {
             input_per_mtok: 2.0,
             cached_input_per_mtok: 0.2,
             output_per_mtok: 10.0,
+            input_bytes_factor: 1.0,
         }
     }
 

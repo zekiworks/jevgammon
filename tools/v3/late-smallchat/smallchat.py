@@ -62,6 +62,13 @@ SKIPPED = ["GPT-6 Luna"]  # OpenAI out of credit: deferred, never dropped (as RE
 # missing price fails closed). Fastino GLiDE: $0.15 per million input tokens, output free (docs.fastino.ai/pricing,
 # 2026-10-08, as analysis/decision-models/results.json).
 LIST_PRICES = {"Fastino GLiDE": {"input_per_mtok": 0.15, "output_per_mtok": 0.0}}
+# Billable input tokens per request body byte the guard's worst case assumes (Zeki #10299): (factor x request bytes +
+# 4,096) x input price. Measured per request by input_ratio.py (v3.db late-entry turns from id 360000, 4,888 answered
+# requests, usage.input_tokens / request body bytes, max): Celeris-1 Decision 0.454, Fastino GLiDE 0.454, Jev 1.13.0
+# 0.471, Jev 1.14.0 0.467, Liquid d1-ultra 0.334, SubQ Snap Preview 0.449, so factor 1 is about 2x their maximum (Fastino's
+# per-turn 4.32 adds up the requests of a split decision and is no per-request bound). Mercury Decide has no data: 2.
+# Empirical, not a provider-documented maximum.
+INPUT_BYTES_FACTOR = {"Mercury Decide": 2.0}
 NOW = ENGINES + [n for n in API if n not in SKIPPED]
 TRIGGER = re.compile(r"p\.name IN \((.*?)\)\)", re.S)
 
@@ -273,12 +280,18 @@ def guard(args) -> None:
         if not price:
             sys.exit(f"{name}: no list price; its worst case cannot be bounded, so no guard is written")
         metered[name] = {"input_per_mtok": price["input_per_mtok"], "cached_input_per_mtok": price["input_per_mtok"],
-                         "output_per_mtok": price["output_per_mtok"]}
+                         "output_per_mtok": price["output_per_mtok"],
+                         "input_bytes_factor": INPUT_BYTES_FACTOR.get(name, 1.0)}
     print(json.dumps({
         "note": (f"Small chat first stages, one batch (Zeki #10062): one ledger and a ${args.cap} cap over every paid "
-                 "opponent of the late-entry configs; each request attempt reserves (request bytes + 4,096) x input "
-                 "price + request bytes x output price before it is sent, settled at max(list, usage.cost). Prices: "
-                 "v3.db players.settings price; Fastino GLiDE docs.fastino.ai/pricing (2026-10-08)."),
+                 "opponent of the late-entry configs; each request attempt reserves (input_bytes_factor x request bytes "
+                 "+ 4,096) x input price + request bytes x output price before it is sent, settled at max(list, "
+                 "usage.cost). input_bytes_factor (Zeki #10299): 1 for the six measured providers, whose billed input "
+                 "is at most 0.471 tokens per request body byte, measured per request (input_ratio.py: v3.db late-entry "
+                 "turns from id 360000, 4,888 requests; Celeris 0.454, Fastino GLiDE 0.454, Jev 1.13.0 0.471, Jev 1.14.0 "
+                 "0.467, Liquid d1-ultra 0.334, SubQ 0.449), plus the 4,096-token margin; 2 for Mercury Decide (no "
+                 "data). The bound is empirical, not a provider-documented maximum. Prices: v3.db players.settings "
+                 "price; Fastino GLiDE docs.fastino.ai/pricing (2026-10-08)."),
         "ledger": args.ledger, "cap_usd": args.cap, "latch": args.latch, "metered": metered}, indent=2))
 
 

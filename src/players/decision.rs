@@ -368,11 +368,13 @@ impl DecisionClient {
 
     /// With a budget, each attempt (retries included) first reserves its worst case, and is
     /// refused before the call when spent + reserved + that would pass the cap. Worst case:
-    /// one input token per byte of the JSON body plus `TEMPLATE_MARGIN` tokens, and as many
-    /// output tokens as body bytes. A byte-level BPE tokenizer never makes a token of less
-    /// than one byte of the UTF-8 text it encodes, and the body holds every byte of the state,
-    /// instructions and options the model reads (JSON escaping only adds bytes); the margin
-    /// covers the provider's own system prompt and chat template, which it does not publish.
+    /// `input_bytes_factor` (default 1) input tokens per byte of the JSON body plus
+    /// `TEMPLATE_MARGIN` tokens, and as many output tokens as body bytes. A byte-level BPE
+    /// tokenizer never makes a token of less than one byte of the UTF-8 text it encodes, and
+    /// the body holds every byte of the state, instructions and options the model reads (JSON
+    /// escaping only adds bytes); the margin covers the provider's own system prompt and chat
+    /// template, which it does not publish. A provider that bills more input tokens than the
+    /// body has bytes (Fastino GLiDE: up to 4.3 per byte in v3.db) gets a larger factor.
     /// An answer with complete usage is booked at max(its list price, the provider's reported
     /// `usage.cost`); an answer with incomplete usage (no input tokens, or no output tokens
     /// when output is priced) or any error status (no service here documents one as unbilled)
@@ -401,7 +403,8 @@ impl DecisionClient {
             return http::send_checked(make, retry, stop).await.map_err(failed);
         };
         let bytes = body.to_string().len();
-        let worst = ledger.worst_case(bytes + TEMPLATE_MARGIN, bytes as u64);
+        let input = (bytes as f64 * ledger.input_bytes_factor()).ceil() as usize;
+        let worst = ledger.worst_case(input + TEMPLATE_MARGIN, bytes as u64);
         let (text, hold) = http::send_metered_checked(make, retry, ledger, worst, |_| false, stop)
             .await
             .map_err(failed)?;

@@ -1,5 +1,5 @@
---- /dev/fd/63	2026-11-16 13:21:56.090198353 +0100
-+++ /dev/fd/62	2026-11-16 13:21:56.090209299 +0100
+--- /dev/fd/63	2026-11-16 14:16:03.935394188 +0100
++++ /dev/fd/62	2026-11-16 14:16:03.935395309 +0100
 @@ -1,16 +1,12 @@
 -//! League run guard (Zeki #5385), offline: stub System One servers on 127.0.0.1, scratch
 -//! ledgers, latch files and databases under the temp dir; no network, no production file.
@@ -490,13 +490,76 @@
      let g = player("G", &stub.url, 1, &setup).await.unwrap();
      let position = Position::with(3);
      g.decide(&position.request()).await.unwrap();
-@@ -574,11 +372,33 @@
+@@ -574,11 +372,96 @@
      assert!((committed(&rows) - (2.0 * worst + 0.5)).abs() < 1e-9);
  }
  
++/// Zeki #10299: a provider that bills more input tokens than the body has bytes (Fastino
++/// GLiDE: up to 4.3 per byte in v3.db). The stub reports 4 tokens per body byte. With
++/// `input_bytes_factor` 8 the reservation bounds the settlement; with the default factor 1
++/// the attempt is settled above its reservation (booked at the settlement, never at less),
++/// and the next send is still checked against the cap with that booking.
+ #[tokio::test(flavor = "multi_thread")]
++async fn input_bytes_factor_bounds_a_provider_billing_more_tokens_than_bytes() {
++    let position = Position::with(3);
++    let worst = worst_case(&position, 1.0).await; // (B + 4,096) x $1/M
++    let bytes = (worst * 1e6).round() as usize - 4096;
++    let stub = Stub::start(|_, r| {
++        let mut v: Value = serde_json::from_str(&answer(r, None)).unwrap();
++        v["usage"]["input_tokens"] = (4 * r.to_string().len()).into();
++        Reply::ok(v.to_string())
++    });
++    let billed = 4.0 * bytes as f64 / 1e6;
++    // Factor 8: reserved (8B + 4,096) x $1/M, settled 4B x $1/M.
++    let dir = scratch("factor-8");
++    let guard = dir.join("guard.json");
++    std::fs::write(
++        &guard,
++        json!({"ledger": dir.join("budget.db"), "cap_usd": 5.0, "latch": dir.join("latch"),
++               "metered": {"F": {"input_per_mtok": 1.0, "cached_input_per_mtok": 1.0,
++                                 "output_per_mtok": 0.0, "input_bytes_factor": 8.0}}})
++        .to_string(),
++    )
++    .unwrap();
++    let f = player("F", &stub.url, 1, &guarded(&guard)).await.unwrap();
++    f.decide(&position.request()).await.unwrap();
++    let rows = ledger(&dir);
++    assert_eq!(rows.len(), 1, "{rows:?}");
++    let reserved = rows[0].1;
++    assert!(
++        (reserved - (8 * bytes + 4096) as f64 / 1e6).abs() < 1e-12,
++        "{rows:?}"
++    );
++    let settled = rows[0].2.unwrap();
++    assert!((settled - billed).abs() < 1e-12, "{rows:?}");
++    assert!(
++        reserved >= settled,
++        "the reservation did not bound the bill: {rows:?}"
++    );
++    // Factor 1: reserved (B + 4,096) x $1/M, settled above it at 4B x $1/M; the cap leaves
++    // room for the first reservation, not for a second after that booking.
++    let dir = scratch("factor-1");
++    let cap = billed + worst / 2.0;
++    let setup = guarded(&guard_file(&dir, cap, &[("S", 1.0)]));
++    let s = player("S", &stub.url, 1, &setup).await.unwrap();
++    s.decide(&position.request()).await.unwrap();
++    let rows = ledger(&dir);
++    assert!((rows[0].1 - worst).abs() < 1e-12, "{rows:?}");
++    let settled = rows[0].2.unwrap();
++    assert!(
++        settled > rows[0].1 && (settled - billed).abs() < 1e-12,
++        "booked at the settlement: {rows:?}"
++    );
++    let sent = stub.requests();
++    let error = format!("{:#}", s.decide(&position.request()).await.unwrap_err());
++    assert!(error.contains("BUDGET CAP"), "{error}");
++    assert_eq!(stub.requests(), sent, "the next request was sent");
++    assert!(committed(&ledger(&dir)) <= cap + 1e-12);
++}
++
 +/// Settlement is max(list price, usage.cost): a reported cost above the list price is booked
 +/// as reported, one below it (or none, as most of the paid services answer) at the list price.
- #[tokio::test(flavor = "multi_thread")]
++#[tokio::test(flavor = "multi_thread")]
 +async fn money_settles_at_the_larger_of_list_price_and_reported_cost() {
 +    // 1,000 input tokens at $100/M: list price $0.1.
 +    for (reported, booked) in [(Some(0.5), 0.5), (Some(0.01), 0.1), (None, 0.1)] {
@@ -526,7 +589,7 @@
      let g = player("G", &stub.url, 1, &setup).await.unwrap();
      g.warm_up().await.unwrap();
      let rows = ledger(&dir);
-@@ -602,7 +422,7 @@
+@@ -602,7 +485,7 @@
          }
      });
      let dir = scratch("failed");
@@ -535,7 +598,7 @@
      let g = player("G", &stub.url, 1, &setup).await.unwrap();
      let position = Position::with(3);
      assert!(g.decide(&position.request()).await.is_err());
-@@ -613,7 +433,28 @@
+@@ -613,7 +496,28 @@
      assert!((committed(&rows) - 2.0 * rows[0].1).abs() < 1e-9);
  }
  
@@ -564,7 +627,7 @@
  async fn money_in_flight_reservations_bound_concurrent_requests() {
      let position = Position::with(3);
      let worst = worst_case(&position, 1.0).await;
-@@ -624,7 +465,7 @@
+@@ -624,7 +528,7 @@
      });
      let dir = scratch("in-flight");
      let cap = 1.5 * worst;
@@ -573,7 +636,7 @@
      let g = player("G", &stub.url, 2, &setup).await.unwrap();
      let (first, second) = (position.request(), position.request());
      let (a, b) = tokio::join!(g.decide(&first), g.decide(&second));
-@@ -641,41 +482,23 @@
+@@ -641,41 +545,23 @@
  }
  
  #[tokio::test(flavor = "multi_thread")]
@@ -626,7 +689,7 @@
  }
  
  /// Zeki #5396 G01: the latch set while a retry waits out its backoff: the retry is neither
-@@ -688,7 +511,7 @@
+@@ -688,7 +574,7 @@
          delay: Duration::ZERO,
      });
      let dir = scratch("backoff-latch");
@@ -635,7 +698,7 @@
      let g = player("G", &stub.url, 1, &setup).await.unwrap();
      let position = Position::with(3);
      let request = position.request();
-@@ -697,7 +520,7 @@
+@@ -697,7 +583,7 @@
              tokio::time::sleep(Duration::from_millis(20)).await;
          }
          // The first attempt failed (503); its retry waits 2 s. Set the latch meanwhile, as
@@ -644,7 +707,7 @@
          tokio::time::sleep(Duration::from_millis(300)).await;
          std::fs::write(dir.join("latch"), "test: latched during the backoff\n").unwrap();
      };
-@@ -713,19 +536,12 @@
+@@ -713,19 +599,12 @@
      assert_eq!(
          stub.requests(),
          1,
@@ -667,7 +730,7 @@
  }
  
  /// Zeki #5396 G02 (cost only): a 200 whose usage reports only its charge is booked at
-@@ -742,22 +558,13 @@
+@@ -742,22 +621,13 @@
      });
      let dir = scratch("cost-only");
      let cap = 2.5 * worst;
@@ -693,7 +756,7 @@
  }
  
  /// Zeki #5396 G02 (charged error): an error status whose body reports a charge is booked at
-@@ -778,23 +585,208 @@
+@@ -778,23 +648,208 @@
      });
      let dir = scratch("charged-error");
      let cap = 2.5 * worst;

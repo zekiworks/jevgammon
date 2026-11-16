@@ -1,0 +1,312 @@
+diff --git a/src/budget.rs b/src/budget.rs
+index e732ebe..974e472 100644
+--- a/src/budget.rs
++++ b/src/budget.rs
+@@ -27,6 +27,20 @@ pub struct BudgetConfig {
+     pub input_per_mtok: f64,
+     pub cached_input_per_mtok: f64,
+     pub output_per_mtok: f64,
++    /// Billable input tokens per request body byte a decision service's worst case assumes
++    /// (default 1: a byte-level tokenizer never makes a token of less than one byte). A
++    /// provider that bills more tokens than the body has bytes (Fastino GLiDE: up to 4.3 per
++    /// byte measured in v3.db) needs a larger factor.
++    #[serde(default = "one", skip_serializing_if = "is_one")]
++    pub input_bytes_factor: f64,
++}
++
++pub fn one() -> f64 {
++    1.0
++}
++
++fn is_one(factor: &f64) -> bool {
++    *factor == 1.0
+ }
+ 
+ /// Token counts of one answered attempt.
+@@ -206,6 +220,11 @@ impl Ledger {
+         self.config.output_per_mtok > 0.0
+     }
+ 
++    /// Billable input tokens per request body byte assumed by a decision service's worst case.
++    pub fn input_bytes_factor(&self) -> f64 {
++        self.config.input_bytes_factor
++    }
++
+     /// List-price cost of an answered attempt; cached tokens are part of `input_tokens`.
+     pub fn list_cost(&self, usage: &Usage) -> f64 {
+         let cached = usage.cached_tokens.min(usage.input_tokens);
+@@ -415,6 +434,7 @@ mod tests {
+             input_per_mtok: 2.0,
+             cached_input_per_mtok: 0.2,
+             output_per_mtok: 10.0,
++            input_bytes_factor: 1.0,
+         }
+     }
+ 
+diff --git a/src/guard.rs b/src/guard.rs
+index 2084b07..b83ca80 100644
+--- a/src/guard.rs
++++ b/src/guard.rs
+@@ -34,6 +34,11 @@ pub struct Prices {
+     pub input_per_mtok: f64,
+     pub cached_input_per_mtok: f64,
+     pub output_per_mtok: f64,
++    /// Billable input tokens per request body byte the worst case assumes (default 1; at
++    /// least 1): worst case = (factor x body bytes + 4,096) x input price + body bytes x
++    /// output price.
++    #[serde(default = "crate::budget::one")]
++    pub input_bytes_factor: f64,
+ }
+ 
+ /// The guard file.
+@@ -98,9 +103,10 @@ impl Guard {
+             ![p.input_per_mtok, p.cached_input_per_mtok, p.output_per_mtok]
+                 .iter()
+                 .all(|v| v.is_finite() && *v >= 0.0)
++                || !(p.input_bytes_factor.is_finite() && p.input_bytes_factor >= 1.0)
+         }) {
+             bail!(
+-                "guard {}: {name}'s prices must be finite, non-negative numbers",
++                "guard {}: {name}'s prices must be finite, non-negative numbers and its input_bytes_factor a number of at least 1",
+                 path.display()
+             );
+         }
+@@ -125,6 +131,7 @@ impl Guard {
+             input_per_mtok: p.input_per_mtok,
+             cached_input_per_mtok: p.cached_input_per_mtok,
+             output_per_mtok: p.output_per_mtok,
++            input_bytes_factor: p.input_bytes_factor,
+         })
+     }
+ 
+@@ -138,6 +145,7 @@ impl Guard {
+             input_per_mtok: 0.0,
+             cached_input_per_mtok: 0.0,
+             output_per_mtok: 0.0,
++            input_bytes_factor: 1.0,
+         };
+         crate::budget::Ledger::open(&budget, "guard-ledger")?.totals()
+     }
+diff --git a/src/http.rs b/src/http.rs
+index 1716be2..627e0d3 100644
+--- a/src/http.rs
++++ b/src/http.rs
+@@ -484,6 +484,7 @@ mod tests {
+             input_per_mtok: 2.0,
+             cached_input_per_mtok: 0.2,
+             output_per_mtok: 10.0,
++            input_bytes_factor: 1.0,
+         };
+         let ledger = Ledger::open(&config, "t").unwrap();
+         let (url, count) = serve(vec![503, 200]);
+@@ -553,6 +554,7 @@ mod tests {
+                 input_per_mtok: 0.06,
+                 cached_input_per_mtok: 0.06,
+                 output_per_mtok: 0.0,
++                input_bytes_factor: 1.0,
+             },
+             "Jev 1.14.0",
+         )
+diff --git a/src/players/decision.rs b/src/players/decision.rs
+index fdc4f5d..e7a1fa3 100644
+--- a/src/players/decision.rs
++++ b/src/players/decision.rs
+@@ -368,11 +368,13 @@ impl DecisionClient {
+ 
+     /// With a budget, each attempt (retries included) first reserves its worst case, and is
+     /// refused before the call when spent + reserved + that would pass the cap. Worst case:
+-    /// one input token per byte of the JSON body plus `TEMPLATE_MARGIN` tokens, and as many
+-    /// output tokens as body bytes. A byte-level BPE tokenizer never makes a token of less
+-    /// than one byte of the UTF-8 text it encodes, and the body holds every byte of the state,
+-    /// instructions and options the model reads (JSON escaping only adds bytes); the margin
+-    /// covers the provider's own system prompt and chat template, which it does not publish.
++    /// `input_bytes_factor` (default 1) input tokens per byte of the JSON body plus
++    /// `TEMPLATE_MARGIN` tokens, and as many output tokens as body bytes. A byte-level BPE
++    /// tokenizer never makes a token of less than one byte of the UTF-8 text it encodes, and
++    /// the body holds every byte of the state, instructions and options the model reads (JSON
++    /// escaping only adds bytes); the margin covers the provider's own system prompt and chat
++    /// template, which it does not publish. A provider that bills more input tokens than the
++    /// body has bytes (Fastino GLiDE: up to 4.3 per byte in v3.db) gets a larger factor.
+     /// An answer with complete usage is booked at max(its list price, the provider's reported
+     /// `usage.cost`); an answer with incomplete usage (no input tokens, or no output tokens
+     /// when output is priced) or any error status (no service here documents one as unbilled)
+@@ -401,7 +403,8 @@ impl DecisionClient {
+             return http::send_checked(make, retry, stop).await.map_err(failed);
+         };
+         let bytes = body.to_string().len();
+-        let worst = ledger.worst_case(bytes + TEMPLATE_MARGIN, bytes as u64);
++        let input = (bytes as f64 * ledger.input_bytes_factor()).ceil() as usize;
++        let worst = ledger.worst_case(input + TEMPLATE_MARGIN, bytes as u64);
+         let (text, hold) = http::send_metered_checked(make, retry, ledger, worst, |_| false, stop)
+             .await
+             .map_err(failed)?;
+diff --git a/src/players/guard_tests.rs b/src/players/guard_tests.rs
+index 6a3161a..c2f00b8 100644
+--- a/src/players/guard_tests.rs
++++ b/src/players/guard_tests.rs
+@@ -372,6 +372,69 @@ async fn money_retries_are_each_reserved_and_settled_from_the_reported_cost() {
+     assert!((committed(&rows) - (2.0 * worst + 0.5)).abs() < 1e-9);
+ }
+ 
++/// Zeki #10299: a provider that bills more input tokens than the body has bytes (Fastino
++/// GLiDE: up to 4.3 per byte in v3.db). The stub reports 4 tokens per body byte. With
++/// `input_bytes_factor` 8 the reservation bounds the settlement; with the default factor 1
++/// the attempt is settled above its reservation (booked at the settlement, never at less),
++/// and the next send is still checked against the cap with that booking.
++#[tokio::test(flavor = "multi_thread")]
++async fn input_bytes_factor_bounds_a_provider_billing_more_tokens_than_bytes() {
++    let position = Position::with(3);
++    let worst = worst_case(&position, 1.0).await; // (B + 4,096) x $1/M
++    let bytes = (worst * 1e6).round() as usize - 4096;
++    let stub = Stub::start(|_, r| {
++        let mut v: Value = serde_json::from_str(&answer(r, None)).unwrap();
++        v["usage"]["input_tokens"] = (4 * r.to_string().len()).into();
++        Reply::ok(v.to_string())
++    });
++    let billed = 4.0 * bytes as f64 / 1e6;
++    // Factor 8: reserved (8B + 4,096) x $1/M, settled 4B x $1/M.
++    let dir = scratch("factor-8");
++    let guard = dir.join("guard.json");
++    std::fs::write(
++        &guard,
++        json!({"ledger": dir.join("budget.db"), "cap_usd": 5.0, "latch": dir.join("latch"),
++               "metered": {"F": {"input_per_mtok": 1.0, "cached_input_per_mtok": 1.0,
++                                 "output_per_mtok": 0.0, "input_bytes_factor": 8.0}}})
++        .to_string(),
++    )
++    .unwrap();
++    let f = player("F", &stub.url, 1, &guarded(&guard)).await.unwrap();
++    f.decide(&position.request()).await.unwrap();
++    let rows = ledger(&dir);
++    assert_eq!(rows.len(), 1, "{rows:?}");
++    let reserved = rows[0].1;
++    assert!(
++        (reserved - (8 * bytes + 4096) as f64 / 1e6).abs() < 1e-12,
++        "{rows:?}"
++    );
++    let settled = rows[0].2.unwrap();
++    assert!((settled - billed).abs() < 1e-12, "{rows:?}");
++    assert!(
++        reserved >= settled,
++        "the reservation did not bound the bill: {rows:?}"
++    );
++    // Factor 1: reserved (B + 4,096) x $1/M, settled above it at 4B x $1/M; the cap leaves
++    // room for the first reservation, not for a second after that booking.
++    let dir = scratch("factor-1");
++    let cap = billed + worst / 2.0;
++    let setup = guarded(&guard_file(&dir, cap, &[("S", 1.0)]));
++    let s = player("S", &stub.url, 1, &setup).await.unwrap();
++    s.decide(&position.request()).await.unwrap();
++    let rows = ledger(&dir);
++    assert!((rows[0].1 - worst).abs() < 1e-12, "{rows:?}");
++    let settled = rows[0].2.unwrap();
++    assert!(
++        settled > rows[0].1 && (settled - billed).abs() < 1e-12,
++        "booked at the settlement: {rows:?}"
++    );
++    let sent = stub.requests();
++    let error = format!("{:#}", s.decide(&position.request()).await.unwrap_err());
++    assert!(error.contains("BUDGET CAP"), "{error}");
++    assert_eq!(stub.requests(), sent, "the next request was sent");
++    assert!(committed(&ledger(&dir)) <= cap + 1e-12);
++}
++
+ /// Settlement is max(list price, usage.cost): a reported cost above the list price is booked
+ /// as reported, one below it (or none, as most of the paid services answer) at the list price.
+ #[tokio::test(flavor = "multi_thread")]
+diff --git a/tools/v3/late-smallchat/input_ratio.py b/tools/v3/late-smallchat/input_ratio.py
+new file mode 100755
+index 0000000..7a9ccec
+--- /dev/null
++++ b/tools/v3/late-smallchat/input_ratio.py
+@@ -0,0 +1,49 @@
++#!/usr/bin/env python3
++"""Billable input tokens per request body byte of the paid opponents (Zeki #10299), read-only on v3.db: the bound behind
++the run guard's input_bytes_factor (smallchat.py guard). The guard reserves every request against its own body, so the
++ratio that matters is per request: usage.input_tokens of each answered exchange / length of its request body. The
++per-turn ratio (turns.input_tokens, which adds up every request of a split decision, / the turn's last request body) is
++printed beside it to show why it is not a per-request bound (a split decision's last request is its small final round).
++
++  input_ratio.py [--db V3DB] [--from-turn ID] [NAME ...]   (default: the paid opponents of the small chat configs)
++"""
++import argparse
++import sqlite3
++
++PAID = ["Celeris-1 Decision", "Fastino GLiDE", "Jev 1.13.0", "Jev 1.14.0", "Liquid d1-ultra", "Mercury Decide",
++        "SubQ Snap Preview"]
++
++
++def main() -> None:
++    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
++    ap.add_argument("--db", default="/home/cbasaran/code/jevgammon/v3.db")
++    ap.add_argument("--from-turn", type=int, default=360000)
++    ap.add_argument("names", nargs="*", default=PAID)
++    args = ap.parse_args()
++    conn = sqlite3.connect(f"file:{args.db}?mode=ro", uri=True, timeout=60)
++    q = ",".join("?" * len(args.names))
++    rows = {r[0]: r[1:] for r in conn.execute(f"""
++        WITH tt AS (
++          SELECT t.id, t.input_tokens, p.name FROM turns t JOIN games g ON g.id = t.game_id
++          JOIN matches m ON m.id = g.match_id
++          JOIN players p ON p.id = CASE t.player WHEN 1 THEN m.player1 ELSE m.player2 END
++          WHERE t.id >= ? AND m.stage = 'late-entry' AND p.name IN ({q})),
++        ex AS (
++          SELECT e.turn_id, length(e.request) AS bytes, json_extract(e.response, '$.usage.input_tokens') AS tokens,
++                 ROW_NUMBER() OVER (PARTITION BY e.turn_id ORDER BY e.attempt DESC, e.id DESC) AS last
++          FROM exchanges e WHERE e.turn_id IN (SELECT id FROM tt))
++        SELECT tt.name, COUNT(DISTINCT tt.id), COUNT(ex.tokens), MAX(1.0 * ex.tokens / ex.bytes),
++               MAX(CASE ex.last WHEN 1 THEN 1.0 * tt.input_tokens / ex.bytes END)
++        FROM tt JOIN ex ON ex.turn_id = tt.id GROUP BY tt.name""", [args.from_turn, *args.names])}
++    print(f"late-entry turns from id {args.from_turn} ({args.db}, read-only)")
++    print(f"{'setup':<20} {'turns':>6} {'requests':>9} {'max tokens/byte per request':>28} {'per turn (not a bound)':>23}")
++    for name in args.names:
++        if name not in rows:
++            print(f"{name:<20} {'0':>6} {'0':>9} {'no data':>28} {'-':>23}")
++            continue
++        turns, requests, per_request, per_turn = rows[name]
++        print(f"{name:<20} {turns:>6} {requests:>9} {per_request or 0:>28.3f} {per_turn or 0:>23.3f}")
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/tools/v3/late-smallchat/smallchat.py b/tools/v3/late-smallchat/smallchat.py
+index 4785598..b81cc59 100755
+--- a/tools/v3/late-smallchat/smallchat.py
++++ b/tools/v3/late-smallchat/smallchat.py
+@@ -62,6 +62,13 @@ SKIPPED = ["GPT-6 Luna"]  # OpenAI out of credit: deferred, never dropped (as RE
+ # missing price fails closed). Fastino GLiDE: $0.15 per million input tokens, output free (docs.fastino.ai/pricing,
+ # 2026-10-08, as analysis/decision-models/results.json).
+ LIST_PRICES = {"Fastino GLiDE": {"input_per_mtok": 0.15, "output_per_mtok": 0.0}}
++# Billable input tokens per request body byte the guard's worst case assumes (Zeki #10299): (factor x request bytes +
++# 4,096) x input price. Measured per request by input_ratio.py (v3.db late-entry turns from id 360000, 4,888 answered
++# requests, usage.input_tokens / request body bytes, max): Celeris-1 Decision 0.454, Fastino GLiDE 0.454, Jev 1.13.0
++# 0.471, Jev 1.14.0 0.467, Liquid d1-ultra 0.334, SubQ Snap Preview 0.449, so factor 1 is about 2x their maximum (Fastino's
++# per-turn 4.32 adds up the requests of a split decision and is no per-request bound). Mercury Decide has no data: 2.
++# Empirical, not a provider-documented maximum.
++INPUT_BYTES_FACTOR = {"Mercury Decide": 2.0}
+ NOW = ENGINES + [n for n in API if n not in SKIPPED]
+ TRIGGER = re.compile(r"p\.name IN \((.*?)\)\)", re.S)
+ 
+@@ -273,12 +280,18 @@ def guard(args) -> None:
+         if not price:
+             sys.exit(f"{name}: no list price; its worst case cannot be bounded, so no guard is written")
+         metered[name] = {"input_per_mtok": price["input_per_mtok"], "cached_input_per_mtok": price["input_per_mtok"],
+-                         "output_per_mtok": price["output_per_mtok"]}
++                         "output_per_mtok": price["output_per_mtok"],
++                         "input_bytes_factor": INPUT_BYTES_FACTOR.get(name, 1.0)}
+     print(json.dumps({
+         "note": (f"Small chat first stages, one batch (Zeki #10062): one ledger and a ${args.cap} cap over every paid "
+-                 "opponent of the late-entry configs; each request attempt reserves (request bytes + 4,096) x input "
+-                 "price + request bytes x output price before it is sent, settled at max(list, usage.cost). Prices: "
+-                 "v3.db players.settings price; Fastino GLiDE docs.fastino.ai/pricing (2026-10-08)."),
++                 "opponent of the late-entry configs; each request attempt reserves (input_bytes_factor x request bytes "
++                 "+ 4,096) x input price + request bytes x output price before it is sent, settled at max(list, "
++                 "usage.cost). input_bytes_factor (Zeki #10299): 1 for the six measured providers, whose billed input "
++                 "is at most 0.471 tokens per request body byte, measured per request (input_ratio.py: v3.db late-entry "
++                 "turns from id 360000, 4,888 requests; Celeris 0.454, Fastino GLiDE 0.454, Jev 1.13.0 0.471, Jev 1.14.0 "
++                 "0.467, Liquid d1-ultra 0.334, SubQ 0.449), plus the 4,096-token margin; 2 for Mercury Decide (no "
++                 "data). The bound is empirical, not a provider-documented maximum. Prices: v3.db players.settings "
++                 "price; Fastino GLiDE docs.fastino.ai/pricing (2026-10-08)."),
+         "ledger": args.ledger, "cap_usd": args.cap, "latch": args.latch, "metered": metered}, indent=2))
+ 
+ 

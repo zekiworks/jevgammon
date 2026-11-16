@@ -1,6 +1,14 @@
---- /dev/fd/63	2026-11-16 13:21:56.079602539 +0100
-+++ /dev/fd/62	2026-11-16 13:21:56.079622649 +0100
-@@ -543,7 +543,7 @@
+--- /dev/fd/63	2026-11-16 14:16:03.930631272 +0100
++++ /dev/fd/62	2026-11-16 14:16:03.930633706 +0100
+@@ -484,6 +484,7 @@
+             input_per_mtok: 2.0,
+             cached_input_per_mtok: 0.2,
+             output_per_mtok: 10.0,
++            input_bytes_factor: 1.0,
+         };
+         let ledger = Ledger::open(&config, "t").unwrap();
+         let (url, count) = serve(vec![503, 200]);
+@@ -543,7 +544,7 @@
          per_call: false,
      };
  
@@ -9,9 +17,11 @@
          let dir = std::env::temp_dir().join(format!("budget-{}", uuid::Uuid::new_v4()));
          std::fs::create_dir_all(&dir).unwrap();
          Ledger::open(
-@@ -554,35 +554,34 @@
+@@ -553,36 +554,36 @@
+                 input_per_mtok: 0.06,
                  cached_input_per_mtok: 0.06,
                  output_per_mtok: 0.0,
++                input_bytes_factor: 1.0,
              },
 -            "Drex 2.0",
 +            "Jev 1.14.0",
@@ -55,7 +65,7 @@
                  backoff,
                  backoff,
                  ONCE,
-@@ -604,12 +603,12 @@
+@@ -604,12 +605,12 @@
              .timeout(Duration::from_millis(200))
              .build()
              .unwrap();
@@ -70,7 +80,7 @@
                  backoff,
                  backoff,
                  ONCE
-@@ -622,12 +621,12 @@
+@@ -622,12 +623,12 @@
          let closed = TcpListener::bind("127.0.0.1:0").unwrap();
          let url = format!("http://{}/", closed.local_addr().unwrap());
          drop(closed);

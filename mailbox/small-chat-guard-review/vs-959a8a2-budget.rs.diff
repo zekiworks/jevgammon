@@ -1,6 +1,41 @@
---- /dev/fd/63	2026-11-16 13:21:56.076272041 +0100
-+++ /dev/fd/62	2026-11-16 13:21:56.076311050 +0100
-@@ -215,8 +215,7 @@
+--- /dev/fd/63	2026-11-16 14:16:03.926902507 +0100
++++ /dev/fd/62	2026-11-16 14:16:03.926905041 +0100
+@@ -27,8 +27,22 @@
+     pub input_per_mtok: f64,
+     pub cached_input_per_mtok: f64,
+     pub output_per_mtok: f64,
++    /// Billable input tokens per request body byte a decision service's worst case assumes
++    /// (default 1: a byte-level tokenizer never makes a token of less than one byte). A
++    /// provider that bills more tokens than the body has bytes (Fastino GLiDE: up to 4.3 per
++    /// byte measured in v3.db) needs a larger factor.
++    #[serde(default = "one", skip_serializing_if = "is_one")]
++    pub input_bytes_factor: f64,
+ }
+ 
++pub fn one() -> f64 {
++    1.0
++}
++
++fn is_one(factor: &f64) -> bool {
++    *factor == 1.0
++}
++
+ /// Token counts of one answered attempt.
+ #[derive(Clone, Copy, Debug, Default, PartialEq)]
+ pub struct Usage {
+@@ -206,6 +220,11 @@
+         self.config.output_per_mtok > 0.0
+     }
+ 
++    /// Billable input tokens per request body byte assumed by a decision service's worst case.
++    pub fn input_bytes_factor(&self) -> f64 {
++        self.config.input_bytes_factor
++    }
++
+     /// List-price cost of an answered attempt; cached tokens are part of `input_tokens`.
+     pub fn list_cost(&self, usage: &Usage) -> f64 {
+         let cached = usage.cached_tokens.min(usage.input_tokens);
+@@ -215,8 +234,7 @@
              / 1e6
      }
  
@@ -10,3 +45,11 @@
      pub fn totals(&self) -> Result<(f64, f64)> {
          totals(&self.conn.lock())
      }
+@@ -416,6 +434,7 @@
+             input_per_mtok: 2.0,
+             cached_input_per_mtok: 0.2,
+             output_per_mtok: 10.0,
++            input_bytes_factor: 1.0,
+         }
+     }
+ 

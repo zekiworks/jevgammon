@@ -1,5 +1,5 @@
---- /dev/fd/63	2026-11-16 13:21:56.083003713 +0100
-+++ /dev/fd/62	2026-11-16 13:21:56.083012737 +0100
+--- /dev/fd/63	2026-11-16 14:16:03.924720335 +0100
++++ /dev/fd/62	2026-11-16 14:16:03.924757581 +0100
 @@ -1,60 +1,33 @@
 -//! `jevgammon admit`: offline client admission before a league writes anything. Every
 -//! player of a league config and every opponent its `pinned_pairs` names (with its

@@ -1,15 +1,16 @@
- src/admit.rs                          | 115 +++++
- src/budget.rs                         | 205 ++++++++-
- src/db.rs                             |  24 ++
- src/guard.rs                          | 192 +++++++++
- src/http.rs                           | 200 ++++++++-
- src/league.rs                         |  22 +
- src/main.rs                           |  60 ++-
- src/players/decision.rs               | 121 +++++-
- src/players/guard_tests.rs            | 792 ++++++++++++++++++++++++++++++++++
- src/players/llm.rs                    |   4 +-
- src/players/mod.rs                    | 166 ++++++-
- tools/v3/late-smallchat/run_league.sh |  12 +-
- tools/v3/late-smallchat/smallchat.py  |  42 +-
- tools/v3/late-smallchat/start.sh      |  35 +-
- 14 files changed, 1929 insertions(+), 61 deletions(-)
+ src/admit.rs                           | 115 +++++
+ src/budget.rs                          | 225 ++++++++-
+ src/db.rs                              |  24 +
+ src/guard.rs                           | 200 ++++++++
+ src/http.rs                            | 202 +++++++-
+ src/league.rs                          |  22 +
+ src/main.rs                            |  60 ++-
+ src/players/decision.rs                | 124 ++++-
+ src/players/guard_tests.rs             | 855 +++++++++++++++++++++++++++++++++
+ src/players/llm.rs                     |   4 +-
+ src/players/mod.rs                     | 166 ++++++-
+ tools/v3/late-smallchat/input_ratio.py |  49 ++
+ tools/v3/late-smallchat/run_league.sh  |  12 +-
+ tools/v3/late-smallchat/smallchat.py   |  55 ++-
+ tools/v3/late-smallchat/start.sh       |  35 +-
+ 15 files changed, 2087 insertions(+), 61 deletions(-)

@@ -1,0 +1,9 @@
+late-entry turns from id 360000 (/home/cbasaran/code/jevgammon/v3.db, read-only)
+setup                 turns  requests  max tokens/byte per request  per turn (not a bound)
+Celeris-1 Decision      831       831                        0.454                   0.454
+Fastino GLiDE           817       819                        0.454                   4.320
+Jev 1.13.0              673       673                        0.471                   0.471
+Jev 1.14.0              864       864                        0.467                   0.467
+Liquid d1-ultra         825       825                        0.334                   0.334
+Mercury Decide            0         0                      no data                       -
+SubQ Snap Preview       876       876                        0.449                   0.449

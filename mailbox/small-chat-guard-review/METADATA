@@ -1,2 +1,2 @@
-jevgammon, 2026-11-16: review carrier for the small-chat run guard (Zeki #10142/#10242). Source-only; no game DB, prompts or credentials. Delete after review.
-Runner: branch late-smallchat-on-wip, commits d5d0b8d + ab4c970 (parent 2e93f54), pushed. Wrapper: main 02705fa (workspace/on-chain.sh).
+jevgammon, 2026-11-16: review carrier for the small-chat run guard (Zeki #10142/#10242/#10299). Source-only; no game DB, prompts or credentials. Delete after review.
+Runner: branch late-smallchat-on-wip, commits d5d0b8d + ab4c970 + 8342116 (input_bytes_factor; parent 2e93f54), pushed; binary.sha256 = release build of 8342116. Wrapper: main 02705fa (workspace/on-chain.sh). input_ratio.txt: tools/v3/late-smallchat/input_ratio.py on v3.db (read-only), the per-request bound behind input_bytes_factor.

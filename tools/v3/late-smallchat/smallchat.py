@@ -166,7 +166,8 @@ def open_pairs(_args) -> None:
 
 
 def billed(args) -> None:
-    """Paid opponents' recorded cost_usd (Fastino GLiDE records none: $0.04 per million input tokens, as before).
+    """Paid opponents' recorded cost_usd (Fastino GLiDE records none: its input tokens at LIST_PRICES' $0.15 per million,
+    the price the run guard reserves and settles at; until 16 Nov this check used $0.04, which undercounted it ~4x).
     The entrant itself runs on our GPU and costs nothing."""
     rows = ro().execute(
         """SELECT p.name, SUM(COALESCE(t.cost_usd, 0)), SUM(t.input_tokens) FROM turns t JOIN games g ON g.id = t.game_id
@@ -176,7 +177,7 @@ def billed(args) -> None:
     total = 0.0
     for name, cost, tokens in rows:
         if name == "Fastino GLiDE":
-            total += (tokens or 0) * 0.04 / 1e6
+            total += (tokens or 0) * LIST_PRICES[name]["input_per_mtok"] / 1e6
         elif name in API:
             total += cost
     print(f"{total:.4f}")
